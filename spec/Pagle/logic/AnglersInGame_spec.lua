@@ -469,4 +469,148 @@ describe("the Companion's data files", function()
 			)
 		end)
 	end)
+
+	describe("the Pagle block", function()
+		-- A tooltip card as Pagle_Anglers gives it (IGV-R10), `fields` over it.
+		local function tooltipCard(fields)
+			local card = {
+				followed = false,
+				title = "Seeker of the Deep",
+				level = 60,
+				prestige = 0,
+				ledger = 37,
+				legends = 3,
+				legendsTotal = 12,
+				hardcore = false,
+			}
+			for key, value in pairs(fields or {}) do
+				card[key] = value
+			end
+			return card
+		end
+
+		-- The block's "Angler Level" line's right text for a tooltip card at prestige rank `rank`.
+		local function levelText(rank)
+			for _, line in ipairs(ns.AnglerTooltipLines(tooltipCard({ prestige = rank }))) do
+				if line.left == "Angler Level" then
+					return line.right
+				end
+			end
+		end
+
+		it("writes a Followed Angler's lines, Following at the header's right (VIEW-R21, VIEW-R93)", function()
+			local card = ns.LookUpAngler(
+				ns.ReadFollowingFile(anglerFileExamples().following),
+				ns.ReadAnglersFile(anglerFileExamples().anglers),
+				"Player-4618-0A1B2C3D",
+				FOLLOWING_AT
+			)
+
+			assert.are.same({
+				{ left = " " },
+				{ left = "|T136245:0|t Pagle Angler", leftColor = "teal", right = "Following", rightColor = "green" },
+				{ left = "Warden of Feralas Waters", leftColor = "gold" },
+				{ left = "Angler Level", leftColor = "parchment", right = "23 · Prestige I", rightColor = "white" },
+				{ left = "Ledger", leftColor = "parchment", right = "37%", rightColor = "white" },
+				{ left = "Legends", leftColor = "parchment", right = "3 of 12", rightColor = "white" },
+			}, ns.AnglerTooltipLines(card))
+		end)
+
+		it("writes a tooltip card's lines, nothing at the header's right and no region (VIEW-R21, IGV-R6)", function()
+			local card = ns.LookUpAngler(
+				ns.ReadFollowingFile(anglerFileExamples().following),
+				ns.ReadAnglersFile(anglerFileExamples().anglers),
+				"Player-4395-01234567",
+				ANGLERS_AT
+			)
+
+			assert.are.same({
+				{ left = " " },
+				{ left = "|T136245:0|t Pagle Angler", leftColor = "teal" },
+				{ left = "Seeker of the Deep", leftColor = "gold" },
+				{
+					left = "Angler Level",
+					leftColor = "parchment",
+					right = "60 · Master Prestige 2",
+					rightColor = "white",
+				},
+				{ left = "Ledger", leftColor = "parchment", right = "100%", rightColor = "white" },
+				{ left = "Legends", leftColor = "parchment", right = "7 of 12", rightColor = "white" },
+				{ left = "Hardcore Angler", leftColor = "red" },
+			}, ns.AnglerTooltipLines(card))
+		end)
+
+		it("writes Prestige I to X, then Master Prestige rank − 10 in words (VIEW-R21, LED-R34, LED-R146)", function()
+			assert.are.same({
+				"60",
+				"60 · Prestige I",
+				"60 · Prestige V",
+				"60 · Prestige X",
+				"60 · Master Prestige 1",
+				"60 · Master Prestige 13",
+			}, { levelText(0), levelText(1), levelText(5), levelText(10), levelText(11), levelText(23) })
+		end)
+
+		it("leaves the title line out when there's none (VIEW-R21, IGV-R14)", function()
+			local lines = ns.AnglerTooltipLines(tooltipCard({ title = "" }))
+
+			assert.are.same({ " ", "|T136245:0|t Pagle Angler", "Angler Level", "Ledger", "Legends" }, {
+				lines[1].left,
+				lines[2].left,
+				lines[3].left,
+				lines[4].left,
+				lines[5].left,
+			})
+			assert.are.equal(5, #lines)
+		end)
+
+		it("ends with Hardcore Angler, in red, for a Hardcore Angler (VIEW-R21)", function()
+			local lines = ns.AnglerTooltipLines(tooltipCard({ hardcore = true }))
+
+			assert.are.equal(7, #lines)
+			assert.are.same(
+				{ left = "Legends", leftColor = "parchment", right = "3 of 12", rightColor = "white" },
+				lines[6]
+			)
+			assert.are.same({ left = "Hardcore Angler", leftColor = "red" }, lines[7])
+		end)
+
+		it(
+			"writes no block for a card with a number that isn't one, and no title line for a title that isn't text (VIEW-R20)",
+			function()
+				local written = {}
+				for _, field in ipairs({ "level", "prestige", "ledger", "legends", "legendsTotal" }) do
+					written[field] = ns.AnglerTooltipLines(tooltipCard({ [field] = "7" })) ~= nil
+				end
+				assert.are.same(
+					{ level = false, prestige = false, ledger = false, legends = false, legendsTotal = false },
+					written
+				)
+				assert.are.equal(5, #ns.AnglerTooltipLines(tooltipCard({ title = 7 })))
+			end
+		)
+
+		it("draws no glyph outside CORE-R9's set, at any rank (VIEW-R21, CORE-R9)", function()
+			for _, rank in ipairs({ 0, 1, 10, 11, 23 }) do
+				local card = tooltipCard({ prestige = rank, hardcore = true })
+				for _, followed in ipairs({ false, true }) do
+					card.followed = followed
+					for _, line in ipairs(ns.AnglerTooltipLines(card)) do
+						assert.are.same({}, glyphsOutside(line.left .. (line.right or "")))
+					end
+				end
+			end
+		end)
+
+		it("names each colour it uses (VIEW-R21, IGV-R81)", function()
+			assert.are.same({
+				teal = "5FD3C4",
+				green = "1EFF00",
+				gold = "FFD100",
+				parchment = "E9D8AE",
+				white = "FFFFFF",
+				red = "FF4B3A",
+			}, ns.ANGLER_TIP_COLORS)
+		end)
+	end)
 end)

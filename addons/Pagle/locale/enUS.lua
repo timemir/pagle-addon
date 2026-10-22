@@ -352,6 +352,21 @@ ns.L = {
 	VIEWS_BLOCK_NOT_NUMBER = "block %d's %s isn't a number",
 	VIEWS_BLOCK_NOT_TITLES = "block %d's titles isn't a table",
 	VIEWS_BLOCK_LENGTH = "block %d's %s isn't %s bytes long",
+	-- The Pagle block on a player's tooltip (VIEW-R21), in its order: the header, then "Following" at its right for a
+	-- Followed Angler; the Angler Level line, with the level and its Prestige (LED-R34: I to X by PRESTIGE_NUMERALS,
+	-- then a Master Prestige's rank − 10, in words as the bookplate writes it, LED-R146, since ★ isn't in the client's
+	-- fonts, CORE-R9); the Ledger's completion %; the Legends caught of N; and a Hardcore Angler's line.
+	ANGLER_TIP_HEADER = "Pagle Angler",
+	ANGLER_TIP_FOLLOWING = "Following",
+	ANGLER_TIP_LEVEL = "Angler Level",
+	ANGLER_TIP_PRESTIGE = "%d · Prestige %s",
+	ANGLER_TIP_MASTER_PRESTIGE = "%d · Master Prestige %d",
+	PRESTIGE_NUMERALS = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" },
+	ANGLER_TIP_LEDGER = "Ledger",
+	ANGLER_TIP_LEDGER_VALUE = "%d%%",
+	ANGLER_TIP_LEGENDS = "Legends",
+	ANGLER_TIP_LEGENDS_VALUE = "%d of %d",
+	ANGLER_TIP_HARDCORE = "Hardcore Angler",
 	-- /pagle dev onboarding (ONB-R83): its subcommands' usages, " | " between them, in the order added.
 	DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding %s",
 	DEV_ONBOARDING_RESET = "Pagle dev: onboarding is back as a new Angler's, with the Letter waiting; /reload to"

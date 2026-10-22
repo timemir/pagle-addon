@@ -6,10 +6,10 @@ local ns = select(2, ...)
 -- PagleAnglersData, every Published Angler in the player's regions with the tooltip card. Their formats, and what
 -- makes one absent or expired, are pagle-backend's (in-game-views.md: IGV-R40–R47, Contracts › The addon folders);
 -- this file reads them as those say (VIEW-R1, VIEW-R2), says when Pagle_Anglers loads (VIEW-R3), looks a unit up in
--- them (VIEW-R10) and hands out the Followed Anglers (VIEW-R11). Pure logic over what it's handed (CORE-R7):
--- logic/Wiring.lua's ns.WireAnglerViews hands it the client's seams, or FakePagle's. Nothing flows back (VIEW-R4):
--- Core never writes either file, and never logs, stores or prints what they hold, but for `/pagle dev views`' states
--- and counts (VIEW-R12).
+-- them (VIEW-R10), writes the Pagle block from a card (VIEW-R21) and hands out the Followed Anglers (VIEW-R11). Pure
+-- logic over what it's handed (CORE-R7): logic/Wiring.lua's ns.WireAnglerViews hands it the client's seams, or
+-- FakePagle's. Nothing flows back (VIEW-R4): Core never writes either file, and never logs, stores or prints what they
+-- hold, but for `/pagle dev views`' states and counts (VIEW-R12) and the block on the tooltip (VIEW-R20).
 
 local floor = math.floor
 
@@ -377,6 +377,81 @@ function ns.LookUpAngler(following, anglers, guid, now)
 		end
 	end
 	return nil
+end
+
+--- The Pagle block's colours (VIEW-R21), each a hex RRGGBB by its key: variant A's (IGV-R81), Pagle teal for the
+--- header, green for "Following", the game's tooltip gold for a title, parchment for the stat names, white for their
+--- values, red for a Hardcore Angler. No Core colour matches them: ns.ANNOUNCE_COLORS are inks for paper.
+---@type table<PagleTooltipColor, string>
+ns.ANGLER_TIP_COLORS = {
+	teal = "5FD3C4",
+	green = "1EFF00",
+	gold = "FFD100",
+	parchment = "E9D8AE",
+	white = "FFFFFF",
+	red = "FF4B3A",
+}
+
+---@alias PagleTooltipColor "teal"|"green"|"gold"|"parchment"|"white"|"red"
+
+--- One line of the Pagle block (VIEW-R21): its left text and colour, and for a double line its right text and colour.
+--- The gap is a line of one space, with no colour.
+---@class PagleTooltipLine
+---@field left string
+---@field leftColor PagleTooltipColor?
+---@field right string?
+---@field rightColor PagleTooltipColor?
+
+-- The card's fields the block writes as numbers.
+local NUMBERS = { "level", "prestige", "ledger", "legends", "legendsTotal" }
+
+-- The Angler Level line's right text (VIEW-R21, LED-R34): the level, then " · Prestige {I…X}" at ranks 1 to 10, or
+-- " · Master Prestige {rank − 10}" from rank 11.
+---@param level integer
+---@param rank integer
+---@return string
+local function levelText(level, rank)
+	local L = ns.L
+	if rank > #L.PRESTIGE_NUMERALS then
+		return L.ANGLER_TIP_MASTER_PRESTIGE:format(level, rank - #L.PRESTIGE_NUMERALS)
+	elseif rank >= 1 then
+		return L.ANGLER_TIP_PRESTIGE:format(level, L.PRESTIGE_NUMERALS[floor(rank)])
+	end
+	return ("%d"):format(level)
+end
+
+--- The Pagle block for a unit's card (VIEW-R21), in its order: a gap; the fish icon and "Pagle Angler", with
+--- "Following" at the right for a Followed Angler; the title, left out when there's none; Angler Level, Ledger and
+--- Legends; and "Hardcore Angler" for a Hardcore Angler. It names no region (IGV-R6). Nil for a card with a number
+--- that isn't one, which a file only IGV-R44 checks can hold: no block, as for no card (VIEW-R20). The fish is
+--- Trade_Fishing (ns.DEFAULT_ICON), at the line's height.
+---@param card PagleAnglerCard
+---@return PagleTooltipLine[]?
+function ns.AnglerTooltipLines(card)
+	for _, field in ipairs(NUMBERS) do
+		if type(card[field]) ~= "number" then
+			return nil
+		end
+	end
+	local L = ns.L
+	local header = { left = ("|T%d:0|t %s"):format(ns.DEFAULT_ICON, L.ANGLER_TIP_HEADER), leftColor = "teal" }
+	if card.followed then
+		header.right, header.rightColor = L.ANGLER_TIP_FOLLOWING, "green"
+	end
+	local lines = { { left = " " }, header }
+	if type(card.title) == "string" and card.title ~= "" then
+		lines[#lines + 1] = { left = card.title, leftColor = "gold" }
+	end
+	local function stat(name, value)
+		lines[#lines + 1] = { left = name, leftColor = "parchment", right = value, rightColor = "white" }
+	end
+	stat(L.ANGLER_TIP_LEVEL, levelText(card.level, card.prestige))
+	stat(L.ANGLER_TIP_LEDGER, L.ANGLER_TIP_LEDGER_VALUE:format(card.ledger))
+	stat(L.ANGLER_TIP_LEGENDS, L.ANGLER_TIP_LEGENDS_VALUE:format(card.legends, card.legendsTotal))
+	if card.hardcore == true then
+		lines[#lines + 1] = { left = L.ANGLER_TIP_HARDCORE, leftColor = "red" }
+	end
+	return lines
 end
 
 ---@alias PagleFollowedState "ok"|"none"|"expired"|"absent"
