@@ -147,8 +147,12 @@ The Angler's bounded 100%: every Species caught, every Sub-collection item and e
 _Avoid_: 100%, completionist score, total progress
 
 **Simulated Size**:
-Pagle's own length for a Species Catch, decided by the Catch alone and never by anything the player did, shown with its Size band and kept as personal records per Species. Hunts and Notices may ask for a Size band, but it never earns Angler Level XP, stars, Zone Mastery or Ledger completion, and it is never presented as game data.
+Pagle's own length for a Species Catch, decided by the Catch, the catching character's fishing skill at the time and how many of that fish the Angler had caught before, never by lures, auras, conditions or place. Skill and experience don't make the fish bigger; they set how big a fish the Angler can land. It is shown with its Size band and kept as personal records per Species. Hunts and Notices may ask for a Size band, but it never earns Angler Level XP, stars, Zone Mastery or Ledger completion, and it is never presented as game data.
 _Avoid_: weight (which is the real number on trophy fish), size roll
+
+**Reach**:
+The longest Simulated Size the Angler can land of a fish at a given Cast: the lesser of what the catching character's fishing skill allows and what the Angler's earlier Catches of that fish allow. Their first Catch of a fish is always its smallest length, and every Catch is at most the Reach. Legends have no Reach.
+_Avoid_: cap, ceiling, max size, limit
 
 **Size band**:
 The word that places a Simulated Size within its Species' range: Tiddler, Decent, Hefty, Whopper or Monster. It stands in for heft; Pagle never shows a simulated weight.
