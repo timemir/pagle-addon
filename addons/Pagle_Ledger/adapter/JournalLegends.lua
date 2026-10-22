@@ -18,8 +18,7 @@ local W, H = 884, 546
 local MID = W / 2
 
 ---@class LedgerLegendPlate: Button
----@field crest Frame
----@field crestIcon Texture
+---@field crest PagleLegendCrestFrame
 ---@field kicker FontString
 ---@field name FontString
 ---@field first FontString
@@ -30,8 +29,9 @@ local MID = W / 2
 ---@field place LedgerJournalPlace?
 ---@field open fun(place: LedgerJournalPlace)?
 
--- The crest's place on the plate, and its size.
-local CREST_X, CREST_Y, CREST_W = 354, 56.2, 176
+-- The crest's width on the plate (LED-R153), and its place: centred, its plaque's foot just over the Legend's name.
+local CREST_W = 190
+local CREST_X, CREST_Y = MID - CREST_W / 2, 50
 
 --- Builds the plate over `pagesFrame`, hidden: a click anywhere on it opens its place (back to the Legend's page).
 ---@param pagesFrame Frame
@@ -66,18 +66,8 @@ function ns.BuildLegendPlate(pagesFrame)
 	end
 	plate.kicker = ns.JournalLabel(plate, "sc", 16, INK.kicker, ns.L.LEGENDS_PLATE_KICKER, { justify = "CENTER" })
 	plate.kicker:SetPoint("TOP", plate, "TOPLEFT", MID, -30)
-	-- the crest, with the Legend's icon in its well
-	plate.crest = CreateFrame("Frame", nil, plate)
-	plate.crest:SetSize(CREST_W, CREST_W * 194 / 176)
-	local frameArt = ns.JournalSprite(plate.crest, "Crests", "crest-legend", "ARTWORK", 1, CREST_W)
-	ns.JournalBoxAt(frameArt, plate.crest, 0, 0)
-	plate.crestIcon = ns.JournalCrisp(plate.crest:CreateTexture(nil, "ARTWORK", nil, 2))
-	plate.crestIcon:SetSize(108, 108)
-	plate.crestIcon:SetPoint("CENTER", plate.crest, "TOPLEFT", CREST_W / 2, -87)
-	local mask = plate.crest:CreateMaskTexture()
-	mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-	mask:SetAllPoints(plate.crestIcon)
-	plate.crestIcon:AddMaskTexture(mask)
+	-- the Legend's own crest (Core's, LED-R153), with its icon in the well
+	plate.crest = Pagle.NewLegendCrest(plate, CREST_W)
 	ns.JournalAt(plate.crest, plate, CREST_X, CREST_Y)
 	plate.name = ns.JournalLabel(plate, "print", 38, INK.title, "", { justify = "CENTER" })
 	plate.name:SetPoint("TOP", plate, "TOPLEFT", MID, -258)
@@ -102,14 +92,15 @@ function ns.BuildLegendPlate(pagesFrame)
 	return plate
 end
 
---- Fills the plate from `block` (LED-R147): the Legend's icon, name, first Catch (`lines[1]`, in the hand), its record's
---- size text (`lines[2]`, left out without a size), its title by the seal (`seal`, left out without one) and the foot
---- (`value`); a click opens `block.place`.
+--- Fills the plate from `block` (LED-R147): the Legend's own crest with its icon (LED-R153), moving while the plate
+--- shows; its name, first Catch (`lines[1]`, in the hand), its record's size text (`lines[2]`, left out without a size),
+--- its title by the seal (`seal`, left out without one) and the foot (`value`); a click opens `block.place`.
 ---@param plate LedgerLegendPlate
 ---@param block LedgerBlock
 ---@param open fun(place: LedgerJournalPlace)
 function ns.FillLegendPlate(plate, block, open)
-	ns.JournalItemIcon(plate.crestIcon, block.icon, "sepia")
+	plate.crest:SetLegend(block.icon, true)
+	plate.crest:Play()
 	local lines = block.lines or {}
 	plate.name:SetText(block.text or "")
 	ns.JournalBound(plate.name, W - 80)
@@ -160,7 +151,7 @@ function ns.OpenLegendPlate(plate)
 	end)
 end
 
---- Closes the plate (it fades out, 0.18 s), then calls `after`.
+--- Closes the plate (it fades out, 0.18 s), its crest coming to rest as it goes, then calls `after`.
 ---@param plate LedgerLegendPlate
 ---@param after fun()?
 function ns.CloseLegendPlate(plate, after)
@@ -175,6 +166,7 @@ function ns.CloseLegendPlate(plate, after)
 			end,
 		},
 	}, function()
+		plate.crest:Stop()
 		plate:Hide()
 		plate:SetAlpha(1)
 		if after then

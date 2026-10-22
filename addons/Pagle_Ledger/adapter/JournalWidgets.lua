@@ -1108,43 +1108,41 @@ end
 ---@class LedgerIconWidget: LedgerJournalWidget
 ---@field medal LedgerMedal
 ---@field medalLarge LedgerMedal
----@field crest LedgerSpriteTexture
----@field crestIcon Texture
+---@field crest PagleLegendCrestFrame? a Legend's crest, Core's (Pagle.NewLegendCrest), made at the first Legend drawn
+
+-- A Legend's crest on its page: its width (LED-R153), and the room the block takes.
+local LEGEND_CREST_W, LEGEND_CREST_ROOM = 150, 170
 
 -- An icon (LED-R140, LED-R141, LED-R147): an entry's medallion, the item's icon round in sepia in its double ink ring
 -- (a caught fish's 60 units, beside its title), or the unknown fish's dashed medallion, centred, for one never caught
--- (LED-R124); with `style` "legend", the Legend's crest, its icon in the crest's well, or the crest's own plain fish
--- for one uncaught.
+-- (LED-R124); with `style` "legend", the Legend's crest (LED-R153), Core's, centred: a caught Legend's own with its
+-- icon in the well, the Unwritten crest with its own plain fish for one uncaught. The crest moves while it shows.
 makers.icon = function(parent)
 	local widget = newWidget(parent) --[[@as LedgerIconWidget]]
 	widget.medal = ns.JournalMedal(widget, 60)
 	widget.medalLarge = ns.JournalMedal(widget, 88)
-	widget.crest = ns.JournalSprite(widget, "Crests", "crest-legend", "ARTWORK", 1, 150, 165)
-	widget.crestIcon = ns.JournalCrisp(widget:CreateTexture(nil, "ARTWORK", nil, 2))
-	local mask = widget:CreateMaskTexture()
-	mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-	mask:SetAllPoints(widget.crestIcon)
-	widget.crestIcon:AddMaskTexture(mask)
 	widget.texture = widget.medal.icon
 	function widget.Fill(self, block, width, _, draw)
 		local legend = block.style == "legend"
 		local unknown = block.look == "silhouette"
 		self.medal:SetShown(not legend and not unknown)
 		self.medalLarge:SetShown(not legend and unknown)
-		self.crest:SetShown(legend)
-		self.crestIcon:SetShown(legend and not unknown)
 		self.floatW, self.floatH = nil, nil
+		local crest = self.crest
 		if legend then
-			-- the crest centred, 150 wide; its well, where the icon sits, a little above its middle
-			ns.JournalBoxAt(self.crest, self, (width - 150) / 2, 2)
-			local well = 92
-			self.crestIcon:SetSize(well, well)
-			self.crestIcon:ClearAllPoints()
-			self.crestIcon:SetPoint("CENTER", self, "TOPLEFT", width / 2, -(2 + 74))
-			if not unknown then
-				ns.JournalItemIcon(self.crestIcon, block.icon, "sepia")
+			if not crest then
+				crest = Pagle.NewLegendCrest(self, LEGEND_CREST_W)
+				self.crest = crest
 			end
-			return 170
+			ns.JournalAt(crest, self, (width - LEGEND_CREST_W) / 2, 2)
+			crest:Show()
+			-- an uncaught Legend's block carries nothing of it, and Core is handed nothing of it (LED-R124)
+			crest:SetLegend(not unknown and block.icon or nil, not unknown)
+			crest:Play()
+			return LEGEND_CREST_ROOM
+		elseif crest then
+			crest:Stop()
+			crest:Hide()
 		end
 		if unknown then
 			self.medalLarge:ClearAllPoints()

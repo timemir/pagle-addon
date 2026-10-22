@@ -59,13 +59,14 @@ local FIXTURE = {
 }
 
 -- A Ledger on a fake over the catalogue and `log` (the fixture by default), logged in, in the world, every name
--- loaded, with the Journal open on spread `id` with `args`.
+-- loaded, with the Journal open on spread `id` with `args`; with `motion`, Animations on and the book moving.
 ---@param id string
 ---@param args table?
 ---@param log table[]?
+---@param motion boolean?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
-local function spread(id, args, log)
+local function spread(id, args, log, motion)
 	return openJournal({
 		catalogue = catalogue(),
 		characters = { characterRecord(PLAYER_GUID, "Angler") },
@@ -75,7 +76,13 @@ local function spread(id, args, log)
 		areaNames = ZONES,
 		id = id,
 		args = args,
+		motion = motion,
 	})
+end
+
+-- The Legend crest the right page draws (Core's, through Pagle.NewLegendCrest; the fake keeps its look and layers).
+local function pageCrest(loaded)
+	return loaded.ns.journal.frame.right.drawn.icon[1].crest
 end
 
 describe("the Journal's Legends spread (LED-R147)", function()
@@ -161,8 +168,11 @@ describe("the Journal's Legends spread (LED-R147)", function()
 			"Title: Keefer's Rival",
 			"Open the plate",
 		}, blockTexts(right))
-		-- the Legend's crest with its icon in sepia, and the plate's button
+		-- the Legend's own crest, 150 wide, with its icon in sepia (LED-R153), and the plate's button
 		assert.are.same({ kind = "icon", icon = ANGELFISH, look = "sepia", large = true, style = "legend" }, right[2])
+		local crest = pageCrest(loaded)
+		assert.are.same({ "angelfish", ANGELFISH, 150 }, { crest.look.key, crest.look.icon, crest:GetWidth() })
+		assert.is_true(crest:IsShown())
 		assert.are.same({ "button", { id = "legends", args = { legend = ANGELFISH, plate = true } } }, {
 			right[7].style,
 			right[7].place,
@@ -186,7 +196,8 @@ describe("the Journal's Legends spread (LED-R147)", function()
 	end)
 
 	it(
-		"shows an uncaught Legend as a plain fish silhouette, never its icon, with the shared line (LED-R147, LED-R124)",
+		"shows an uncaught Legend in the Unwritten crest with its own plain fish, never its own crest or icon, with"
+			.. " the shared line (LED-R147, LED-R153, LED-R124)",
 		function()
 			local _, loaded = spread("legends", { legend = QUEENFISH })
 			local right = loaded.ns.journal.pages.right
@@ -197,12 +208,17 @@ describe("the Journal's Legends spread (LED-R147)", function()
 				"An unwritten legend",
 				"Some fish are only caught once in a long while. This page waits for one.",
 			}, blockTexts(right))
-			local icon = right[2]
-			assert.are.equal("silhouette", icon.look)
-			assert.are.equal("string", type(icon.icon))
-			-- The same plain fish for every uncaught Legend: nothing about the Legend shows through.
+			-- The block names nothing of the Legend, and Core is handed nothing of it either.
+			assert.are.same({ kind = "icon", look = "silhouette", large = true, style = "legend" }, right[2])
+			local crest = pageCrest(loaded)
+			assert.are.same(
+				{ "unwritten", nil, "UNWRITTEN" },
+				{ crest.look.key, crest.look.icon, crest.label:GetText() }
+			)
+			assert.is_true(crest.layers[2].shown) -- the Unwritten crest's own well, its plain fish
+			-- The same crest for every uncaught Legend: nothing about the Legend shows through.
 			loaded.ns.journal:Open("legends", { legend = RACER })
-			assert.are.equal(icon.icon, loaded.ns.journal.pages.right[2].icon)
+			assert.are.same({ "unwritten", nil }, { pageCrest(loaded).look.key, pageCrest(loaded).look.icon })
 		end
 	)
 
@@ -288,11 +304,17 @@ describe("a Legend's plate (LED-R147)", function()
 				place = { id = "legends", args = { legend = ANGELFISH } },
 			}, pages.left[1])
 			assert.is_truthy(size:find("^%a+ · [%d.]+ %a+$"))
-			-- drawn over both pages: the crest with the icon, the words, and the title by the Title seal
+			-- drawn over both pages: the Legend's own crest, 190 wide, with the icon (LED-R153), the words, and the title
+			-- by the Title seal
 			local plate = loaded.ns.journal.frame.legendPlate
 			assert.is_true(plate:IsShown())
+			assert.are.same(
+				{ "angelfish", ANGELFISH, 190 },
+				{ plate.crest.look.key, plate.crest.look.icon, plate.crest:GetWidth() }
+			)
 			assert.are.same({
 				"A Legend of these waters",
+				"LEGEND",
 				"Keefer's Angelfish",
 				"11 Oct, Stranglethorn Vale, Angler",
 				size,
@@ -342,6 +364,84 @@ describe("a Legend's plate (LED-R147)", function()
 		assert.are.same({ id = "legends", args = { legend = ANGELFISH } }, journal.router:Place())
 		assert.is_false(frame.legendPlate:IsShown())
 		assert.are.equal("Open the plate", blockOfKind(journal.pages.right, "link").text)
+	end)
+end)
+
+describe("a Legend's crest moving in the Journal (LED-R153)", function()
+	-- The Angel's left wing's turn now, in degrees: its crest's second layer.
+	local function wing(crest)
+		return crest.layers[2].state.transform[3]
+	end
+
+	-- Runs the client's frames for `seconds`, a tenth of a second at a time.
+	local function run(loaded, seconds)
+		for _ = 1, math.floor(seconds * 10 + 0.5) do
+			loaded.client.update(0.1)
+		end
+	end
+
+	it("moves while the Legends spread is open, and rests once the book closes", function()
+		local _, loaded = spread("legends", { legend = ANGELFISH }, nil, true)
+		local crest = pageCrest(loaded)
+
+		run(loaded, 0.4)
+		assert.is_true(wing(crest) > 0)
+
+		loaded.ns.journal:Close()
+		run(loaded, 0.4)
+		assert.are.same({ 0, nil }, { wing(crest), crest.moving })
+	end)
+
+	it("moves again as the book opens again on it", function()
+		local _, loaded = spread("legends", { legend = ANGELFISH }, nil, true)
+		loaded.ns.journal:Close()
+		run(loaded, 0.4)
+
+		loaded.ns.journal:Toggle()
+		run(loaded, 0.4)
+
+		assert.is_true(wing(pageCrest(loaded)) > 0)
+	end)
+
+	it("rests once the page turns away from it", function()
+		local _, loaded = spread("legends", { legend = ANGELFISH }, nil, true)
+		local crest = pageCrest(loaded)
+		run(loaded, 0.4)
+
+		loaded.ns.journal:Open("home")
+		run(loaded, 1)
+
+		assert.are.same({ 0, nil }, { wing(crest), crest.moving })
+	end)
+
+	it("moves on the plate while it shows, and rests once it is clicked away", function()
+		local _, loaded = spread("legends", { legend = ANGELFISH, plate = true }, nil, true)
+		local plate = loaded.ns.journal.frame.legendPlate
+		run(loaded, 0.4)
+		assert.is_true(wing(plate.crest) > 0)
+
+		plate:Click()
+		run(loaded, 0.5)
+
+		assert.are.same({ 0, nil }, { wing(plate.crest), plate.crest.moving })
+	end)
+
+	it("moves for an uncaught Legend too: the Unwritten crest's mist drifts", function()
+		local _, loaded = spread("legends", { legend = QUEENFISH }, nil, true)
+		local crest = pageCrest(loaded)
+
+		run(loaded, 1)
+
+		assert.is_true(crest.layers[1].state.transform[1] > -6)
+	end)
+
+	it("keeps each crest's resting frame with Animations off (SET-R30)", function()
+		local _, loaded = spread("legends", { legend = ANGELFISH })
+		local crest = pageCrest(loaded)
+
+		run(loaded, 0.5)
+
+		assert.are.same({ 0, nil }, { wing(crest), crest.moving })
 	end)
 end)
 

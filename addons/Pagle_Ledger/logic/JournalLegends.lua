@@ -12,10 +12,6 @@ local ns = select(2, ...)
 
 -- The spread is ns.JOURNAL_LEGENDS, its place ns.JournalPlace.legends (logic/Journal.lua).
 
--- The plain fish an uncaught Legend's page shows as a silhouette (LED-R147): the same for every Legend, never its
--- own icon (LED-R124). An in-client texture.
-local PLAIN_FISH = "Interface\\Icons\\INV_Misc_Fish_02"
-
 -- Lore (LED-R160): a Legend's blurb and title, and the shared uncaught line; nil without text (LED-R161).
 ---@param context LedgerSpreadContext
 ---@param itemID integer
@@ -77,9 +73,10 @@ local function index(context, legends, chosen)
 	return blocks
 end
 
--- The right page, the chosen Legend (LED-R147). Caught: its icon in sepia, its name, its first Catch, its blurb, its
--- title, the plate's button, and the removed line (LED-R12). Uncaught, never named (LED-R124): a plain fish's
--- silhouette and the shared lore line.
+-- The right page, the chosen Legend (LED-R147). Caught: its own crest with its icon in sepia (LED-R153), its name, its
+-- first Catch, its blurb, its title, the plate's button, and the removed line (LED-R12). Uncaught, never named
+-- (LED-R124): the Unwritten crest with its own plain fish, the block carrying nothing of the Legend, and the shared lore
+-- line.
 ---@param context LedgerSpreadContext
 ---@param itemID integer
 ---@return LedgerBlock[]
@@ -90,7 +87,7 @@ local function legendPage(context, itemID)
 		---@type LedgerBlock[]
 		local blocks = {
 			{ kind = "kicker", text = L.LEGEND_TITLE },
-			{ kind = "icon", icon = PLAIN_FISH, look = "silhouette", large = true, style = "legend" },
+			{ kind = "icon", look = "silhouette", large = true, style = "legend" },
 			{ kind = "title", text = L.LEGENDS_UNWRITTEN_TITLE },
 		}
 		local line = context.text:Lore("line.uncaughtlegend.text")
