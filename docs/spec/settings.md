@@ -46,7 +46,7 @@ Trackers
   [Tackle Board]            Show goals workable here;  Tackle Board tracker frame
 Look and Feel
   [Announcements]           Toast style;  Sound set
-  [Bookplate]               Bookplate crest
+  [Crests]                  Crests
   [Fish Journal]            Journal binding
   [Hunts]                   Notebook cover
   [Trackers]                Hunts tracker frame;  Stats tracker frame;  Tackle Board tracker frame
@@ -203,7 +203,7 @@ The rules below are authoritative; this sketch only summarises them.
 
 - **SET-R50** Core builds Look and Feel from the goods registry; Modules add no rows to it (CORE-R42, wallet-and-shop.md UI). It shows, in order:
   1. a paragraph: "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing."
-  2. for each slot category in the order Announcements, Bookplate, Fish Journal, Hunts, Trackers, skipping a category with no slot shown: a header with the category's name, then one slot dropdown (SET-R51) per registered slot of Core or of an On Module, Core's slots first, then by `def.order`
+  2. for each slot category in the order Announcements, Crests, Fish Journal, Hunts, Trackers, skipping a category with no slot shown: a header with the category's name, then one slot dropdown (SET-R51) per registered slot of Core or of an On Module, Core's slots first, then by `def.order`
   3. a header "Curio Shop" and a button row "Buy more looks with Pagle Coins" with the caption "Open the Curio Shop", which closes the panel and calls `Pagle.OpenShop()` (SHOP-R40, SET-R12)
 
   The slots in 1.0:
@@ -211,7 +211,7 @@ The rules below are authoritative; this sketch only summarises them.
   | Category | Slot (label) | Owner | Rule |
   |---|---|---|---|
   | Announcements | `core.toaststyle` (Toast style), `core.soundset` (Sound set) | Core | SHOP-R25 |
-  | Bookplate | `core.crest` (Bookplate crest), shown whatever Modules are On | Core | SHOP-R25 |
+  | Crests | `core.crest` (Crests), shown whatever Modules are On; its dropdown is where the earned zone and fish crests are equipped, as the Curio Shop doesn't list them | Core | SHOP-R25 |
   | Fish Journal | `ledger.binding` (Journal binding) | Ledger | LED-R110 |
   | Hunts | `hunts.notebookcover` (Notebook cover) | Hunts | HNT-R120 |
   | Trackers | `hunts.trackerframe` (Hunts tracker frame), `stats.trackerframe` (Stats tracker frame), `tackleboard.trackerframe` (Tackle Board tracker frame) | Hunts, Stats, Tackle Board | HNT-R120, STA-R88, TKB-R125 |

@@ -66,7 +66,7 @@ local function newWorld(entries, db, syncLimit)
 		report = error,
 	})
 	local goods = world.goods
-	assert.is_nil(goods:RegisterSlot("Core", { id = "core.crest", label = "Bookplate crest", category = "Bookplate" }))
+	assert.is_nil(goods:RegisterSlot("Core", { id = "core.crest", label = "Crests", category = "Crests" }))
 	assert.is_nil(
 		goods:RegisterGood("Core", { id = "core.crest.plain", slot = "core.crest", name = "Plain", default = true })
 	)

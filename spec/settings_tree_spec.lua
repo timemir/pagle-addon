@@ -170,8 +170,8 @@ local EXPECTED = {
 			{ "header", "Announcements" },
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
-			{ "header", "Bookplate" },
-			{ "slot", "Bookplate crest" },
+			{ "header", "Crests" },
+			{ "slot", "Crests" },
 			{ "header", "Fish Journal", of = "Ledger" },
 			{ "slot", "Journal binding", of = "Ledger" },
 			{ "header", "Hunts", of = "Hunts" },
@@ -793,7 +793,7 @@ describe("Each page's Defaults button", function()
 				"Tackle Board tracker frame",
 			}, restoredOn(loaded, "Trackers"))
 			assert.are.same({
-				"Bookplate crest",
+				"Crests",
 				"Hunts tracker frame",
 				"Journal binding",
 				"Notebook cover",

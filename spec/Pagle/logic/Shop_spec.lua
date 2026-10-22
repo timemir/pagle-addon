@@ -15,17 +15,6 @@ local function coreWithModules(off)
 	return fake, handles
 end
 
--- Core's fish crests (VAR-R12) as the list outlines them under their group (SHOP-R27), none of their varieties
--- caught: named by their IDs, as their lore isn't loaded here, each with its row's tag (VAR-R13).
----@return string[]
-local function fishCrestLines()
-	local lines = { "  -- Fish crests" }
-	for _, speciesID in ipairs(FISH_CREST_SPECIES) do
-		lines[#lines + 1] = ("  core.crest.fish.%d 0 of 10 varieties"):format(speciesID)
-	end
-	return lines
-end
-
 -- `lines`, then `more`, as one new list.
 ---@param lines string[]
 ---@param more string[]
@@ -38,13 +27,9 @@ local function joined(lines, more)
 	return all
 end
 
--- The crest slot's heading with its fish crests counted (VAR-R12): `owned` of Plain, `others` and the fish crests.
----@param owned integer
----@param others integer? the crests besides Plain and the fish crests
----@return string
-local function crestHeading(owned, others)
-	return ("Bookplate crest (%d of %d)"):format(owned, 1 + (others or 0) + #FISH_CREST_SPECIES)
-end
+-- The crest slot as the list outlines it with Plain in use: Plain alone, as no crest is for sale and its earned crests,
+-- Core's fish crests (VAR-R12) among them, are neither listed nor counted (SHOP-R25).
+local CREST_LINES = { "Crests (1 of 1)", "  core.crest.plain In use" }
 
 -- The Curio Shop expansion's toast styles and sound sets (SHOP-R25), each slot's in its order, with their tiers.
 local EXPANSION = {
@@ -133,10 +118,7 @@ local CORE_UNBOUGHT = joined(
 		),
 		expansionLines("soundset", 0)
 	),
-	joined({
-		crestHeading(1),
-		"  core.crest.plain In use",
-	}, fishCrestLines())
+	CREST_LINES
 )
 
 -- CORE_UNBOUGHT, then `lines`.
@@ -374,7 +356,7 @@ describe("The Curio Shop's list", function()
 								"  core.soundset.gilded 400" .. " [red]",
 							}, expansionLines("soundset", 300))
 						),
-						joined({ crestHeading(1), "  core.crest.plain In use" }, fishCrestLines())
+						CREST_LINES
 					),
 					{
 						"Journal binding (1 of 2)",
@@ -406,25 +388,24 @@ describe("The Curio Shop's list", function()
 		end
 	)
 
-	it(
-		"marks a crest's row and stage to draw its shield, another Module's too, and no other good's (SHOP-R25)",
-		function()
-			local fake, handles = shopping()
-			fake.enterWorld()
-			ledgerCrests(handles.Ledger, { value = false })
-			handles.Ledger:ReportCoinsEarned(1000)
-			local shop = model(fake)
+	it("marks a crest's row, stage and purchase to draw its shield, and no other good's (SHOP-R25)", function()
+		local fake, handles = shopping()
+		fake.enterWorld()
+		-- No crest is for sale (SHOP-R25), but the shop draws any good of the slot as its shield: one of Core's here.
+		fake.ns.RegisterCoreGood({ id = "core.crest.peaks", slot = "core.crest", name = "Peaks", tier = 2 })
+		handles.Ledger:ReportCoinsEarned(1000)
+		local shop = model(fake)
 
-			local rows = shop:List({ category = "Bookplate" })[1].rows
-			local velvet = shop:List({ category = "Hunts" })[1].rows[2]
+		local rows = shop:List({ category = "Crests" })[1].rows
+		local velvet = shop:List({ category = "Hunts" })[1].rows[2]
 
-			assert.are.same({ true, true, true }, { rows[1].shield, rows[2].shield, rows[3].shield })
-			assert.is_nil(velvet.shield)
-			assert.is_true(shop:Stage("ledger.crest.tanaris").shield)
-			assert.is_nil(shop:Stage("hunts.cover.velvet").shield)
-			assert.is_nil(shop:Purchase("core.toaststyle.lanternglow").shield)
-		end
-	)
+		assert.are.same({ true, true }, { rows[1].shield, rows[2].shield })
+		assert.is_nil(velvet.shield)
+		assert.is_true(shop:Stage("core.crest.peaks").shield)
+		assert.is_true(shop:Purchase("core.crest.peaks").shield)
+		assert.is_nil(shop:Stage("hunts.cover.velvet").shield)
+		assert.is_nil(shop:Purchase("core.toaststyle.lanternglow").shield)
+	end)
 
 	it("matches the search against names, ignoring case (wallet-and-shop.md › UI)", function()
 		local fake = shopping()
@@ -434,7 +415,7 @@ describe("The Curio Shop's list", function()
 			"  ledger.binding.lapis 900" .. " [red]",
 		}, outline(model(fake):List({ search = "LaPi" })))
 		assert.are.same({
-			crestHeading(1),
+			"Crests (1 of 1)",
 			"  core.crest.plain In use",
 			"Notebook cover (1 of 3)",
 			"  hunts.cover.plain In use",
@@ -456,7 +437,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11 + 24 + #FISH_CREST_SPECIES, #ids("all"))
+		assert.are.equal(11 + 24, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",
@@ -469,9 +450,6 @@ describe("The Curio Shop's list", function()
 			joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", math.huge)),
 			joined({ "core.soundset.gilded" }, expansionAffordable("soundset", math.huge))
 		)
-		for _, speciesID in ipairs(FISH_CREST_SPECIES) do
-			notOwned[#notOwned + 1] = "core.crest.fish." .. speciesID
-		end
 		assert.are.same(
 			joined(notOwned, { "ledger.binding.lapis", "hunts.cover.velvet", "hunts.cover.gold" }),
 			ids("notOwned")
@@ -496,7 +474,7 @@ describe("The Curio Shop's list", function()
 
 			assert.are.same({
 				{ category = "Announcements", label = "Announcements" },
-				{ category = "Bookplate", label = "Bookplate" },
+				{ category = "Crests", label = "Crests" },
 				{ category = "Fish Journal", label = "Fish Journal" },
 				{ category = "Hunts", label = "Hunts" },
 			}, shop:Chips())
@@ -762,7 +740,7 @@ describe("The Curio Shop's Put away group", function()
 			)
 			assert.are.same({
 				{ category = "Announcements", label = "Announcements" },
-				{ category = "Bookplate", label = "Bookplate" },
+				{ category = "Crests", label = "Crests" },
 				{ category = "Fish Journal", label = "Fish Journal" },
 			}, model(fake):Chips(), "no chip for a slot that isn't live")
 		end
@@ -1196,11 +1174,43 @@ describe("Buying", function()
 	)
 end)
 
+-- Two of the Ledger's earned goods in Core's toast style slot, open to earned goods (SHOP-R23): The Old Oak, earned
+-- while `earned.value`, and The Desert Sun, never; each earnedText a function giving `texts[id]` (the row's tag, then
+-- the stage's note) and counting its calls in `texts.calls`. Neither has a preview of its own.
+local function ledgerStyles(ledger, earned, texts)
+	texts = texts
+		or {
+			["ledger.toaststyle.oak"] = { "Expert · 88%", "Earned when Elwynn reaches Master." },
+			["ledger.toaststyle.sun"] = { "Unfished", "Earned when Tanaris reaches Master. Catch anything there." },
+		}
+	texts.calls = texts.calls or 0
+	local function style(id, name, isEarned)
+		ledger:RegisterGood({
+			id = id,
+			slot = "core.toaststyle",
+			name = name,
+			isEarned = isEarned,
+			earnedText = function()
+				texts.calls = texts.calls + 1
+				local given = texts[id] or {}
+				return given[1], given[2]
+			end,
+		})
+	end
+	style("ledger.toaststyle.oak", "The Old Oak", function()
+		return earned.value
+	end)
+	style("ledger.toaststyle.sun", "The Desert Sun", function()
+		return false
+	end)
+	return texts
+end
+
 describe("Another Module's earned goods in a Core slot open to them", function()
-	-- Core, the Ledger's zone crests in Core's crest slot (The Old Oak earned while `earned.value`), logged in.
-	local function crested(earned, texts)
+	-- Core, the Ledger's two toast styles in Core's toast style slot (The Old Oak earned while `earned.value`), logged in.
+	local function styled(earned, texts)
 		local fake, handles = coreWithModules()
-		texts = ledgerCrests(handles.Ledger, earned, texts)
+		texts = ledgerStyles(handles.Ledger, earned, texts)
 		fake.login()
 		return fake, handles, texts
 	end
@@ -1208,16 +1218,22 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 	it(
 		"lists them in the slot after its own, counted, each not yet earned with its earnedText function's first text (SHOP-R22, SHOP-R23)",
 		function()
-			local fake = crested({ value = true })
+			local fake = styled({ value = true })
 
 			assert.are.same(
-				joined({
-					crestHeading(2, 2),
-					"  core.crest.plain In use",
-					"  ledger.crest.elwynn Owned",
-					"  ledger.crest.tanaris Unfished",
-				}, fishCrestLines()),
-				outline(model(fake):List({ category = "Bookplate" }))
+				joined(
+					joined({
+						"Toast style (2 of 17)",
+						"  core.toaststyle.page In use",
+						"  core.toaststyle.ripple 150" .. " [red]",
+						"  core.toaststyle.lanternglow 400" .. " [red]",
+					}, expansionLines("toaststyle", 0)),
+					{
+						"  ledger.toaststyle.oak Owned",
+						"  ledger.toaststyle.sun Unfished",
+					}
+				),
+				outline({ model(fake):List({ category = "Announcements" })[1] })
 			)
 		end
 	)
@@ -1225,13 +1241,13 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 	it(
 		"shows the function's second text on the stage, then whose reward it is, its owner the good's Module (SHOP-R22, SHOP-R23)",
 		function()
-			local fake = crested({ value = false })
+			local fake = styled({ value = false })
 
-			local stage = model(fake):Stage("ledger.crest.elwynn")
+			local stage = model(fake):Stage("ledger.toaststyle.oak")
 
 			assert.are.same({
 				"unearned",
-				"Bookplate crest · Ledger",
+				"Toast style · Ledger",
 				{ "Earned when Elwynn reaches Master.", "A Ledger reward, not for sale" },
 				{},
 			}, { stage.state, stage.slotLine, stage.notes, stage.tags })
@@ -1243,20 +1259,20 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 		"calls the function each time it draws a good not owned, and never for an owned one (SHOP-R22, SHOP-R30)",
 		function()
 			local earned = { value = false }
-			local fake, handles, texts = crested(earned)
+			local fake, handles, texts = styled(earned)
 			local before = texts.calls
 
-			model(fake):Row("ledger.crest.elwynn")
-			model(fake):Row("ledger.crest.elwynn")
-			texts["ledger.crest.elwynn"] = { "Master · 100%" }
-			local row = model(fake):Row("ledger.crest.elwynn")
+			model(fake):Row("ledger.toaststyle.oak")
+			model(fake):Row("ledger.toaststyle.oak")
+			texts["ledger.toaststyle.oak"] = { "Master · 100%" }
+			local row = model(fake):Row("ledger.toaststyle.oak")
 			assert.are.equal(before + 3, texts.calls)
 			assert.are.equal("Master · 100%", row.tag) -- never cached
 
 			earned.value = true
 			handles.Ledger:RefreshGoods()
 			local calls = texts.calls
-			local owned = model(fake):Stage("ledger.crest.elwynn")
+			local owned = model(fake):Stage("ledger.toaststyle.oak")
 
 			assert.are.equal(calls, texts.calls)
 			assert.are.same({ "owned", { "Owned" }, { "A Ledger reward, not for sale" } }, {
@@ -1270,14 +1286,14 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 	it(
 		"has no stage note when the function gives none, and the reward line on the row when it gives no text (SHOP-R22)",
 		function()
-			local fake = crested({ value = false }, {
-				["ledger.crest.elwynn"] = { "Expert · 88%" },
-				["ledger.crest.tanaris"] = {},
+			local fake = styled({ value = false }, {
+				["ledger.toaststyle.oak"] = { "Expert · 88%" },
+				["ledger.toaststyle.sun"] = {},
 			})
 			local shop = model(fake)
 
-			assert.are.same({ "A Ledger reward, not for sale" }, shop:Stage("ledger.crest.elwynn").notes)
-			assert.are.equal("A Ledger reward, not for sale", shop:Row("ledger.crest.tanaris").tag)
+			assert.are.same({ "A Ledger reward, not for sale" }, shop:Stage("ledger.toaststyle.oak").notes)
+			assert.are.equal("A Ledger reward, not for sale", shop:Row("ledger.toaststyle.sun").tag)
 		end
 	)
 
@@ -1289,7 +1305,7 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 			fake.ns.RegisterCoreSlot({
 				id = "core.plate",
 				label = "Plate",
-				category = "Bookplate",
+				category = "Announcements",
 				openToEarned = true,
 				preview = function(stage, good)
 					drawn[#drawn + 1] = { stage, good.id, good.icon }
@@ -1320,44 +1336,123 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 
 			shop:Stage("ledger.plate.oak").preview("stage")
 			shop:Stage("core.plate.plain").preview("other") -- Core's own, registered here without one, too
-
 			assert.are.same({ { "stage", "ledger.plate.oak", 134939 }, { "other", "core.plate.plain" } }, drawn)
 			assert.are.equal(own, shop:Stage("ledger.plate.own").preview)
 		end
 	)
 
-	it("puts an owned one away while its Module is off, drawn as its shield, and hides the rest (SHOP-R35)", function()
-		local fake, handles = coreWithModules("Ledger")
-		fake.global.goods["ledger.crest.elwynn"] = {
-			name = "The Old Oak",
-			slot = "core.crest",
-			slotLabel = "Bookplate crest",
-			category = "Bookplate",
-			module = "Ledger",
-			earned = true,
-		}
-		fake.global.goods["ledger.crest.tanaris"] = {
-			name = "The Desert Sun",
-			slot = "core.crest",
-			slotLabel = "Bookplate crest",
-			category = "Bookplate",
-			module = "Ledger",
-			earned = false,
-		}
-		huntsCovers(handles.Hunts, { value = false })
+	it("puts an owned one away while its Module is off, and hides the rest (SHOP-R35)", function()
+		local fake = coreWithModules("Ledger")
+		for id, cached in pairs({
+			["ledger.toaststyle.oak"] = { name = "The Old Oak", earned = true },
+			["ledger.toaststyle.sun"] = { name = "The Desert Sun", earned = false },
+		}) do
+			cached.slot, cached.slotLabel, cached.category, cached.module =
+				"core.toaststyle", "Toast style", "Announcements", "Ledger"
+			fake.global.goods[id] = cached
+		end
 		fake.login()
 		local shop = model(fake)
 
-		local groups = shop:List({ category = "Bookplate" })
+		local groups = shop:List({ category = "Announcements" })
 
 		assert.are.same(
-			joined(joined({ crestHeading(1), "  core.crest.plain In use" }, fishCrestLines()), {
-				"Put away: Module off (Yours to keep)",
-				"  ledger.crest.elwynn Ledger is off",
-			}),
-			outline(groups)
+			{ "Put away: Module off (Yours to keep)", "  ledger.toaststyle.oak Ledger is off" },
+			outline({ groups[#groups] })
 		)
-		assert.is_true(groups[2].rows[1].shield)
-		assert.is_nil(shop:Select("ledger.crest.tanaris"))
+		assert.is_nil(groups[#groups].rows[1].shield)
+		assert.is_nil(shop:Select("ledger.toaststyle.sun"))
 	end)
+end)
+
+describe("The earned crests, which Look and Feel equips and the Curio Shop doesn't list", function()
+	-- The first fish crest (VAR-R12), and the second.
+	local FISH = "core.crest.fish." .. FISH_CREST_SPECIES[1]
+	local OTHER_FISH = "core.crest.fish." .. FISH_CREST_SPECIES[2]
+
+	-- Core with the Ledger's two zone crests (The Old Oak earned while `earned.value`, LED-R113) and Core's fish crests,
+	-- logged in, the first fish crest earned as its cache says (SHOP-R30). Returns the fake and the zone crests' texts.
+	local function crested(earned)
+		local fake, handles = coreWithModules()
+		local texts = ledgerCrests(handles.Ledger, earned)
+		fake.login()
+		fake.global.goods[FISH].earned = true
+		assert.is_true(fake.Pagle.IsOwned(FISH))
+		return fake, texts
+	end
+
+	it(
+		"lists only the crest slot's default and its crests for sale, never an earned one, owned or in use, nor counts"
+			.. " them (SHOP-R25, SHOP-R27)",
+		function()
+			local fake = crested({ value = true })
+			fake.ns.RegisterCoreGood({ id = "core.crest.peaks", slot = "core.crest", name = "Peaks", tier = 2 })
+			assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.elwynn"))
+			local shop = model(fake)
+
+			assert.are.same(
+				{ "Crests (1 of 2)", "  core.crest.plain default", "  core.crest.peaks 400" .. " [red]" },
+				outline(shop:List({ category = "Crests" }))
+			)
+			assert.are.same(
+				{ "Crests (1 of 2)", "  core.crest.plain default" },
+				outline(shop:List({ category = "Crests", filter = "owned" }))
+			)
+			assert.are.same({}, shop:List({ search = "oak" }))
+			assert.are.equal("ledger.crest.elwynn", fake.Pagle.GetEquipped("core.crest"), "still in use")
+		end
+	)
+
+	it(
+		"has no row, stage or purchase for one, nor selects it, so the shop opened on one selects nothing, and never"
+			.. " asks its texts (SHOP-R22, SHOP-R40)",
+		function()
+			local fake, texts = crested({ value = true })
+			local shop = model(fake)
+			local before = texts.calls
+
+			for _, id in ipairs({ "ledger.crest.elwynn", "ledger.crest.tanaris", FISH, OTHER_FISH }) do
+				assert.are.same({ id, "none" }, {
+					id,
+					(shop:Select(id) or shop:Row(id) or shop:Stage(id) or shop:Purchase(id)) and "some" or "none",
+				})
+			end
+			shop:List({})
+			assert.are.equal(before, texts.calls)
+			assert.are.equal("core.crest.plain", shop:Select("core.crest.plain"))
+		end
+	)
+
+	it("puts none away while its Module is off (SHOP-R35)", function()
+		local fake = coreWithModules("Ledger")
+		fake.global.goods["ledger.crest.elwynn"] = {
+			name = "The Old Oak",
+			slot = "core.crest",
+			slotLabel = "Crests",
+			category = "Crests",
+			module = "Ledger",
+			earned = true,
+		}
+		fake.login()
+		local shop = model(fake)
+
+		assert.are.same(CREST_LINES, outline(shop:List({ category = "Crests" })), "nothing put away")
+		assert.is_nil(shop:Select("ledger.crest.elwynn"))
+	end)
+
+	it(
+		"leaves them to Look and Feel, whose crest dropdown lists the owned ones, none more in the shop (SET-R51)",
+		function()
+			local fake = crested({ value = true })
+
+			local values = {}
+			for _, choice in ipairs(fake.ns.SlotChoices(fake.ns.goods, "core.crest")) do
+				values[#values + 1] = choice.value
+			end
+			table.sort(values)
+
+			assert.are.same({ FISH, "core.crest.plain", "ledger.crest.elwynn" }, values)
+			assert.are.equal(0, fake.ns.SlotMoreInShop(fake.ns.goods, "core.crest"))
+		end
+	)
 end)

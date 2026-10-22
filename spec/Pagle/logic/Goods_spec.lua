@@ -293,7 +293,7 @@ describe("ns.NewGoods", function()
 				"Ledger",
 				{ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" }
 			)
-			env.goods:RegisterSlot("Core", { id = "core.crest", label = "Bookplate crest", category = "Bookplate" })
+			env.goods:RegisterSlot("Core", { id = "core.crest", label = "Crests", category = "Crests" })
 			env.goods:RegisterSlot(
 				"Core",
 				{ id = "core.toaststyle", label = "Toast style", category = "Announcements" }
@@ -860,7 +860,7 @@ describe("ns.NewGoods", function()
 			assert.is_nil(
 				env.goods:RegisterSlot(
 					"Core",
-					{ id = "core.crest", label = "Bookplate crest", category = "Bookplate", openToEarned = true }
+					{ id = "core.crest", label = "Crests", category = "Crests", openToEarned = true }
 				)
 			)
 			assert.is_nil(
@@ -907,7 +907,7 @@ describe("ns.NewGoods", function()
 				ids[i] = good.id .. " " .. good.module
 			end
 			assert.are.same({ "core.crest.plain Core", "ledger.crest.elwynn Ledger" }, ids)
-			assert.are.same({ "Ledger", "core.crest", "Bookplate crest", true }, {
+			assert.are.same({ "Ledger", "core.crest", "Crests", true }, {
 				env.db.global.goods["ledger.crest.elwynn"].module,
 				env.db.global.goods["ledger.crest.elwynn"].slot,
 				env.db.global.goods["ledger.crest.elwynn"].slotLabel,

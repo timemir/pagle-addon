@@ -164,7 +164,8 @@ function ns.NewTrailerHistory(catalogue, characters, char, snapshot, now)
 	for i, item in ipairs(collectibles) do
 		cast(item[1], item[2], now - 500 + i)
 	end
-	-- Everything the home water lists, caught there, masters it: its zone crest is earned in the sample's shop.
+	-- Everything the home water lists, caught there, masters it: its zone crest is earned in the sample, for the
+	-- Angler page's bookplate to wear.
 	local at = now - 500 + #collectibles
 	for _, entry in ipairs(catalogue.GetZoneCatches(zones[1]) or {}) do
 		local item = catalogue.GetItem(entry.itemID)
@@ -240,10 +241,10 @@ ns.TRAILER_CUES = {
 	{ 192, "shop.bill" },
 	{ 196, "shop.buy" },
 	{ 201, "shop.result" },
+	{ 204, "shop.close" },
 	{ 204, "caption", "TRAILER_CAPTION_CRESTS" },
 	{ 204, "Ledger.crest" },
-	{ 209, "Ledger.crestProgress" },
-	{ 214, "shop.close" },
+	{ 214, "Ledger.close" },
 	{ 214, "caption", "TRAILER_CAPTION_COZY" },
 	{ 214, "cozy" },
 	{ 217, "cozy.on" },
