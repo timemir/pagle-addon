@@ -360,7 +360,7 @@ function ns.WeekdayName(serverTime)
 end
 
 --- When a goal was posted, in realm time (TKB-R102): "Posted {weekday} {day} {month}, {time}", the time in Core's
---- clock format, "14:05" or "2:05 pm" (`Pagle.FormatClock`, CORE-R87).
+--- clock format, "14:05" or "2:05 PM" (`Pagle.FormatClock`, CORE-R87).
 ---@param serverTime integer its record's `time`
 ---@return string
 function ns.PostedTime(serverTime)

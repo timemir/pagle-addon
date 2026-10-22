@@ -1,7 +1,7 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- The clock format (CORE-R87): how a time of day reads, "18:05" or "6:05 pm". Pure logic over the stored choice
+-- The clock format (CORE-R87): how a time of day reads, "18:05" or "6:05 PM". Pure logic over the stored choice
 -- (PagleDB.profile.clockFormat) and what the game's clock CVar, timeMgrUseMilitaryTime, answered; Pagle.FormatClock
 -- reads it through logic/Wiring.lua's ns.WireClock. Only the display changes with the format: times are kept and
 -- compared as hours and minutes.
@@ -27,8 +27,8 @@ function ns.ClockFormatOf(stored, military)
 	return military == "0" and "12h" or "24h"
 end
 
---- A time of day in `format` (CORE-R87): 24-hour "00:05", "18:30"; 12-hour "12:05 am", "6:30 pm", midnight "12:00
---- am" and noon "12:00 pm". The hour is taken mod 24, so 24:00, a day's end, reads as midnight.
+--- A time of day in `format` (CORE-R87): 24-hour "00:05", "18:30"; 12-hour "12:05 AM", "6:30 PM", midnight "12:00
+--- AM" and noon "12:00 PM". The hour is taken mod 24, so 24:00, a day's end, reads as midnight.
 ---@param hour integer 0–24
 ---@param minute integer 0–59
 ---@param format PagleClockFormat

@@ -197,17 +197,19 @@ function ns.PublishSize(Pagle, host, wrap)
 end
 
 --- The clock format (CORE-R87) as ns.ClockFormat(): PagleDB.profile.clockFormat, or with none stored (or before
---- PagleDB is open) the game's clock, read at each call. Returns Pagle.FormatClock, a time of day in it, which notes
---- the format it wrote in; ns.NoteClockFormat() fires `ClockFormatChanged(format)` when the format now differs from
---- that one, so the event comes exactly when a time already written is in the old format, and never before any is.
+--- PagleDB is open) the game's clock, read at each call. Returns Pagle.FormatClock, a time of day in it, and
+--- Pagle.GetClockFormat, the format itself, each of which notes the format a Module wrote in;
+--- ns.NoteClockFormat() fires `ClockFormatChanged(format)` when the format now differs from that one, so the event
+--- comes exactly when a time already written is in the old format, and never before any is.
 ---@param host PagleHost
----@return fun(hour: integer, minute: integer): string
+---@return fun(hour: integer, minute: integer): string formatClock
+---@return fun(): PagleClockFormat getClockFormat
 function ns.WireClock(host)
 	function ns.ClockFormat()
 		local db = host.db()
 		return ns.ClockFormatOf(db and db.profile.clockFormat, host.militaryTime())
 	end
-	local written -- the format Pagle.FormatClock last wrote in; nil before its first call
+	local written -- the format a Module last wrote in; nil before its first call
 	function ns.NoteClockFormat()
 		local format = ns.ClockFormat()
 		if written ~= nil and format ~= written then
@@ -215,23 +217,31 @@ function ns.WireClock(host)
 			host.fire("ClockFormatChanged", format)
 		end
 	end
-	return function(hour, minute)
+	local function getClockFormat()
 		written = ns.ClockFormat()
-		return ns.FormatClock(hour, minute, written)
+		return written
 	end
+	return function(hour, minute)
+		return ns.FormatClock(hour, minute, getClockFormat())
+	end, getClockFormat
 end
 
---- Publishes `Pagle.FormatClock(hour, minute)` on ns.WireClock (CORE-R87).
+--- Publishes `Pagle.FormatClock(hour, minute)` and `Pagle.GetClockFormat()` on ns.WireClock (CORE-R87).
 ---@param Pagle table
 ---@param host PagleHost
 function ns.PublishClock(Pagle, host)
 	---@class Pagle
 	local api = Pagle
-	--- A time of day in the Angler's clock format: "18:05" or "6:05 pm" (CORE-R87). The format is
+	local formatClock, getClockFormat = ns.WireClock(host)
+	--- A time of day in the Angler's clock format: "18:05" or "6:05 PM" (CORE-R87). The format is
 	--- PagleDB.profile.clockFormat, or the game's clock (the CVar timeMgrUseMilitaryTime), 24-hour unless the game's
 	--- is set to 12-hour. `hour` is taken mod 24. A Module redraws what shows a clock on `ClockFormatChanged`.
 	---@type fun(hour: integer, minute: integer): string
-	api.FormatClock = ns.WireClock(host)
+	api.FormatClock = formatClock
+	--- The Angler's clock format now, "24h" or "12h" (CORE-R87), for a Module that writes a time its own way, such as
+	--- the Hunts timeline's compact hour ticks ("18", "6p"). It counts as writing in it, for `ClockFormatChanged`.
+	---@type fun(): PagleClockFormat
+	api.GetClockFormat = getClockFormat
 end
 
 --- Publishes the variety rarities on `Pagle` (VAR-R11): `Pagle.VARIETY_RARITIES`, Common to Epic, each

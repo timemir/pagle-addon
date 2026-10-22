@@ -214,7 +214,7 @@ describe("Stats' words", function()
 			fake.profile.clockFormat = "12h"
 			local ns = loaded.ns
 
-			assert.are.same({ "9:07 am", "11:59 pm", "12:00 am", "6:00 am", "6:05 pm", "12:00 am" }, {
+			assert.are.same({ "9:07 AM", "11:59 PM", "12:00 AM", "6:00 AM", "6:05 PM", "12:00 AM" }, {
 				ns.Time(MONDAY_5_OCTOBER + 9 * 3600 + 7 * 60),
 				ns.Time(MONDAY_5_OCTOBER + 23 * 3600 + 59 * 60),
 				ns.WindowTime(0),

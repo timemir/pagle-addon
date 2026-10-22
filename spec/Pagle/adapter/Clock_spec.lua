@@ -32,7 +32,7 @@ end
 
 describe("Pagle.FormatClock", function()
 	it(
-		"writes 18:30 in the stored 24-hour and 6:30 pm in the stored 12-hour, whatever the game's (CORE-R87)",
+		"writes 18:30 in the stored 24-hour and 6:30 PM in the stored 12-hour, whatever the game's (CORE-R87)",
 		function()
 			local loaded = core("0")
 			local profile = loaded.ns.db.profile
@@ -41,7 +41,7 @@ describe("Pagle.FormatClock", function()
 			local twentyFour = loaded.env.Pagle.FormatClock(18, 30)
 			profile.clockFormat = "12h"
 
-			assert.are.same({ "18:30", "6:30 pm" }, { twentyFour, loaded.env.Pagle.FormatClock(18, 30) })
+			assert.are.same({ "18:30", "6:30 PM" }, { twentyFour, loaded.env.Pagle.FormatClock(18, 30) })
 		end
 	)
 
@@ -56,7 +56,7 @@ describe("Pagle.FormatClock", function()
 				read[i] = loaded.env.Pagle.FormatClock(0, 5)
 			end
 
-			assert.are.same({ "12:05 am", "00:05", "00:05" }, read)
+			assert.are.same({ "12:05 AM", "00:05", "00:05" }, read)
 		end
 	)
 end)
@@ -73,6 +73,17 @@ describe("ClockFormatChanged", function()
 		loaded.env.SetCVar("timeMgrUseMilitaryTime", "1")
 
 		assert.are.same({ "12h", "24h" }, formats)
+	end)
+
+	it("counts Pagle.GetClockFormat's answer as a time written in it (CORE-R87)", function()
+		local loaded = core("0")
+		local formats = heard(loaded)
+
+		local before = loaded.env.Pagle.GetClockFormat() -- the Hunts ruler labels its ticks in it
+		loaded.env.SetCVar("timeMgrUseMilitaryTime", "1")
+
+		assert.are.same({ "12h", "24h" }, { before, loaded.env.Pagle.GetClockFormat() })
+		assert.are.same({ "24h" }, formats)
 	end)
 
 	it("doesn't fire for the game's clock while a format is stored, nor before any time is written", function()
@@ -106,7 +117,7 @@ describe("The root's Clock row", function()
 		assert.are.same({
 			"game Follow the game's clock",
 			"24h 24-hour (18:30)",
-			"12h 12-hour (6:30 pm)",
+			"12h 12-hour (6:30 PM)",
 		}, options)
 	end)
 
@@ -132,7 +143,7 @@ describe("The root's Clock row", function()
 			local twentyFour = { profile.clockFormat, loaded.env.Pagle.FormatClock(18, 30) }
 			row:GetSetting():SetValue("game")
 
-			assert.are.same({ "12h", "6:30 pm" }, twelve)
+			assert.are.same({ "12h", "6:30 PM" }, twelve)
 			assert.are.same({ "24h", "18:30" }, twentyFour)
 			assert.are.same({ "game", "18:30" }, { row:GetSetting():GetValue(), loaded.env.Pagle.FormatClock(18, 30) })
 			assert.is_nil(profile.clockFormat)

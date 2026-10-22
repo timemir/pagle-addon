@@ -500,7 +500,7 @@ describe("realm dates and times", function()
 		local loaded, fake = board.load()
 		fake.profile.clockFormat = "12h"
 
-		assert.are.same({ "Posted Sun 11 Oct, 8:15 am", "Posted Sat 10 Oct, 11:15 pm" }, {
+		assert.are.same({ "Posted Sun 11 Oct, 8:15 AM", "Posted Sat 10 Oct, 11:15 PM" }, {
 			loaded.ns.PostedTime(SERVER_TIME),
 			loaded.ns.PostedTime(SERVER_TIME - 9 * HOUR),
 		})

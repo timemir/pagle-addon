@@ -143,6 +143,11 @@ function ns.ClockTime(hour, minute)
 	return Pagle.FormatClock(hour, minute)
 end
 
+-- The format the timeline's hour ticks read in (HNT-R62, CORE-R87): ns.FormatRulerHour asks it at each tick.
+function ns.ClockFormat()
+	return Pagle.GetClockFormat()
+end
+
 --- Starts the event name lookup (HNT-R53): at the first PLAYER_ENTERING_WORLD, or at the first
 --- RestrictionChanged(false) if that falls while restricted; and the clock's redraw, every view at once when Core's
 --- clock format changes (HNT-R50). The adapter's OnInitialize calls it once Hunts is active.

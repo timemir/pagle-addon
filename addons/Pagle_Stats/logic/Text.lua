@@ -138,7 +138,7 @@ local function dayOf(time)
 end
 
 --- A time of day in the player's local clock, as the game's timestamps (STA-R59): `date`'s hour and minute in
---- Core's clock format (CORE-R87), "09:07" or "9:07 am".
+--- Core's clock format (CORE-R87), "09:07" or "9:07 AM".
 ---@param time integer server time
 ---@return string
 function ns.Time(time)
@@ -163,7 +163,7 @@ function ns.SessionHeading(time)
 end
 
 --- A window's bound, in realm time (STA-R59): a minute of the realm's day in Core's clock format (CORE-R87), "18:00"
---- or "6:00 pm"; 1440, the day's end, as midnight, "00:00" or "12:00 am".
+--- or "6:00 PM"; 1440, the day's end, as midnight, "00:00" or "12:00 AM".
 ---@param minute integer 0–1440
 ---@return string
 function ns.WindowTime(minute)

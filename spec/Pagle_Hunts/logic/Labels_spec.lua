@@ -504,11 +504,11 @@ describe("Labels in Core's clock format (HNT-R50, CORE-R87)", function()
 		)
 	end)
 
-	it("writes 12-hour: midnight 12:00 am, 12:05 am, noon 12:00 pm, 11:59 pm, and a day's end as 12:00 am", function()
+	it("writes 12-hour: midnight 12:00 AM, 12:05 AM, noon 12:00 PM, 11:59 PM, and a day's end as 12:00 AM", function()
 		local ns = twelveHour()
 
 		assert.are.same(
-			{ "12:00 am", "12:05 am", "12:00 pm", "11:59 pm", "12:00 am" },
+			{ "12:00 AM", "12:05 AM", "12:00 PM", "11:59 PM", "12:00 AM" },
 			{ ns.FormatClock(0), ns.FormatClock(5), ns.FormatClock(720), ns.FormatClock(1439), ns.FormatClock(1440) }
 		)
 	end)
@@ -518,9 +518,9 @@ describe("Labels in Core's clock format (HNT-R50, CORE-R87)", function()
 		local c = { group = "later", window = { opensAt = NOW + 37 * MINUTE }, now = NOW, snapshot = SUNDAY }
 
 		assert.are.same({
-			"8:15 am · Sun 11 Oct",
-			"Opens at 8:52 am.",
-			"Mon 12:00 am",
+			"8:15 AM · Sun 11 Oct",
+			"Opens at 8:52 AM.",
+			"Mon 12:00 AM",
 		}, {
 			ns.TimelineClock(NOW, SUNDAY, nil, false),
 			ns.HuntWindowLine(c, {}),
@@ -538,11 +538,29 @@ describe("Labels in Core's clock format (HNT-R50, CORE-R87)", function()
 		}
 
 		assert.are.same({
-			"Realm time 10:00 pm–4:00 am",
-			"Stranglethorn Fishing Extravaganza, Sundays 2:00 pm for 2h",
+			"Realm time 10:00 PM–4:00 AM",
+			"Stranglethorn Fishing Extravaganza, Sundays 2:00 PM for 2h",
 		}, {
 			ns.HuntConditionsLine({ time = { { 1320, 240 } } }, nil, NOW, SUNDAY, names),
 			ns.HuntConditionsLine({ events = { 301 } }, "event.301", NOW, SUNDAY, names),
 		})
 	end)
+
+	it(
+		"labels the ruler's hour ticks 06 and 18 in 24-hour, and compact 6a, 6p, 12a, 12p in 12-hour (HNT-R62)",
+		function()
+			local ns24 = hunts.load().ns
+			local ns12 = twelveHour()
+			local function labels(ns)
+				local out = {}
+				for i, hour in ipairs({ 0, 6, 12, 18, 21 }) do
+					out[i] = ns.FormatRulerHour(hour)
+				end
+				return out
+			end
+
+			assert.are.same({ "00", "06", "12", "18", "21" }, labels(ns24))
+			assert.are.same({ "12a", "6a", "12p", "6p", "9p" }, labels(ns12))
+		end
+	)
 end)

@@ -1,4 +1,4 @@
--- The clock format (CORE-R87): how a time of day reads, "18:05" or "6:05 pm", as pure logic over the stored choice
+-- The clock format (CORE-R87): how a time of day reads, "18:05" or "6:05 PM", as pure logic over the stored choice
 -- and the game's clock CVar, timeMgrUseMilitaryTime.
 
 local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
@@ -15,10 +15,10 @@ describe("a clock time", function()
 	end)
 
 	it(
-		"reads 12-hour without a leading zero: midnight 12:00 am, 12:05 am, 9:07 am, noon 12:00 pm, 6:30 pm,"
-			.. " 11:59 pm (CORE-R87)",
+		"reads 12-hour as the game does, without a leading zero: midnight 12:00 AM, 12:05 AM, 9:07 AM, noon 12:00 PM,"
+			.. " 6:30 PM, 11:59 PM (CORE-R87)",
 		function()
-			assert.are.same({ "12:00 am", "12:05 am", "9:07 am", "12:00 pm", "6:30 pm", "11:59 pm" }, {
+			assert.are.same({ "12:00 AM", "12:05 AM", "9:07 AM", "12:00 PM", "6:30 PM", "11:59 PM" }, {
 				ns.FormatClock(0, 0, "12h"),
 				ns.FormatClock(0, 5, "12h"),
 				ns.FormatClock(9, 7, "12h"),
@@ -30,7 +30,7 @@ describe("a clock time", function()
 	)
 
 	it("takes the hour mod 24, so 24:00, a day's end, reads as midnight (CORE-R87)", function()
-		assert.are.same({ "00:00", "12:00 am" }, { ns.FormatClock(24, 0, "24h"), ns.FormatClock(24, 0, "12h") })
+		assert.are.same({ "00:00", "12:00 AM" }, { ns.FormatClock(24, 0, "24h"), ns.FormatClock(24, 0, "12h") })
 	end)
 end)
 

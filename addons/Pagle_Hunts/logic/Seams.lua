@@ -33,8 +33,11 @@ local ns = select(2, ...)
 --                             when Core's clock format changes (ClockFormatChanged, adapter/Names.lua).
 --                             A view that is hidden may ignore it.
 --   ns.ClockTime(hour, minute) A time of day as Core writes it, `Pagle.FormatClock` (HNT-R50, CORE-R87): "18:05" or
---                             "6:05 pm". ns.FormatClock (logic/Labels.lua) writes every clock time Hunts shows through
+--                             "6:05 PM". ns.FormatClock (logic/Labels.lua) writes every clock time Hunts shows through
 --                             it. The stand-in here writes 24-hour; adapter/Names.lua replaces it with Core's.
+--   ns.ClockFormat()          Core's clock format, "24h" or "12h" (`Pagle.GetClockFormat`, CORE-R87), for the
+--                             timeline's compact hour ticks (ns.FormatRulerHour, HNT-R62). The stand-in here is
+--                             "24h"; adapter/Names.lua replaces it with Core's.
 --   ns.SetViewShown(view, shown) A view tells the grouping it showed or hid (HNT-R42's refresh): the board
 --                             ("board") and the tracker ("tracker"). Defined in adapter/Groups.lua.
 --
@@ -121,6 +124,13 @@ end
 ---@return string
 function ns.ClockTime(hour, minute)
 	return ns.L.CLOCK:format(hour, minute)
+end
+
+--- Core's clock format (HNT-R62): this stand-in's "24h" until adapter/Names.lua puts `Pagle.GetClockFormat` here
+--- (CORE-R87).
+---@return "24h"|"12h"
+function ns.ClockFormat()
+	return "24h"
 end
 
 local redrawn = {} -- the subscribed views' redraws, in subscription order
