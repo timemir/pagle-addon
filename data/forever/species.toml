@@ -64,15 +64,6 @@ typicalLength = 250
 [species.6522]
 typicalLength = 300
 
-# Gaffer Jack: a crevalle jack, about 60 cm
-[species.6717]
-typicalLength = 600
-
-# Electropeller: an electric fish with no clear counterpart, caught for the same quest giver as the Gaffer Jack; a
-# little smaller than it
-[species.6718]
-typicalLength = 450
-
 # Raw Mithril Head Trout: a rainbow trout, about 50 cm
 [species.8365]
 typicalLength = 500

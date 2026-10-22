@@ -17,6 +17,8 @@ function ns.ModuleDef(toggleBoard)
 		name = "Hunts",
 		title = ns.L.TITLE,
 		order = 20,
+		-- Hunts' line on the Field guide's What's in the box (ONB-R91); Hunts has no guide step.
+		guideBlurb = ns.L.GUIDE_BLURB,
 		views = { { id = "board", label = ns.L.BOARD, open = toggleBoard } },
 		slash = {
 			{

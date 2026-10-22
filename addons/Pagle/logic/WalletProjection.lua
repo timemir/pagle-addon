@@ -119,9 +119,11 @@ end
 --- Core's own projections for Pagle's backend (#223): its projection driver folds the Catch log through logic/ alone,
 --- without adapter/ (CORE-R7). Calls `newProjection(name, def)` for each of Core's projections (LOG-R78) the backend
 --- folds, named by its PagleDB.global.projections key, each over a table of its own making: the wallet's ("wallet"),
---- whose state carries the Coins spent (SHOP-R11). The Field report's is left out: its input, the diagnostics buffer,
---- never leaves the client (LOG-R82).
+--- whose state carries the Coins spent (SHOP-R11), and the varieties' ("varieties"), whose state carries each
+--- Species' varieties caught (VAR-R10, logic/VarietyProjection.lua). The Field report's is left out: its input, the
+--- diagnostics buffer, never leaves the client (LOG-R82).
 ---@param newProjection fun(name: string, def: PagleProjectionDef)
 function ns.BindCoreProjections(newProjection)
 	newProjection("wallet", ns.WalletProjectionDef({}, function() end))
+	newProjection("varieties", ns.VarietyProjectionDef({}, function() end))
 end

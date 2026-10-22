@@ -19,11 +19,13 @@ LORE_IDS = ("core", "ledger", "hunts", "stats", "tackleboard")
 class Checks:
     """typical_length: DATA-R20's check that every Species has a typical length. lore: the lore IDs whose lore check
     is on (DATA-R107). event_pool: DATA-R99's minimum of rotating events per band, on once the 1.0 pool is authored
-    (#306); left out, it is off."""
+    (#306); left out, it is off. varieties: DATA-R132's check that every sized, non-Legend Species has its ten
+    varieties (VAR-R2), on from the varieties release; left out, it is off."""
 
     typical_length: bool = False
     lore: tuple[str, ...] = field(default_factory=tuple)
     event_pool: bool = False
+    varieties: bool = False
 
 
 def _switch(document: Mapping[str, object], key: str, at: At, problems: Problems) -> bool:
@@ -41,9 +43,10 @@ def read_checks(root: Path, problems: Problems) -> Checks:
     if document is None:
         return Checks()
     at = At(CHECKS)
-    check_keys(document, at, problems, required=("typicalLength", "lore"), optional=("eventPool",))
+    check_keys(document, at, problems, required=("typicalLength", "lore"), optional=("eventPool", "varieties"))
     typical_length = _switch(document, "typicalLength", at, problems)
     event_pool = _switch(document, "eventPool", at, problems)
+    varieties = _switch(document, "varieties", at, problems)
     lore: list[str] = []
     if "lore" in document:
         value = document["lore"]
@@ -59,4 +62,4 @@ def read_checks(root: Path, problems: Problems) -> Checks:
                 problems.add(item_at, f"'{item}' is listed twice")
             else:
                 lore.append(item)
-    return Checks(typical_length, tuple(lore), event_pool)
+    return Checks(typical_length, tuple(lore), event_pool, varieties)

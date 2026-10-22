@@ -1,6 +1,7 @@
 """A small item layer for the generator's tests: data/forever/items.toml, species.toml and families.toml
 (DATA-R10) and data/checks.toml (DATA-R66), as a fixture tree needs them to generate."""
 
+import re
 from pathlib import Path
 
 # Categories for baseline_fixture.CSVS' items (DATA-R17): 13759 and 6303 are area loot and 19807 pool loot. 6358 is
@@ -49,3 +50,20 @@ def write_item_layer(
     (forever / "families.toml").write_text(families, encoding="utf-8")
     (root / "data" / "checks.toml").write_text(checks, encoding="utf-8")
     return root
+
+
+def item_records_lua(catalogue_lua: str) -> dict[int, str]:
+    """Each item record's Lua in a Catalogue.lua, by item ID, on one line: a record with a nested table (varieties,
+    VAR-R4) spans lines in the file, and is joined here as to_lua writes a flat one, { key = value, ... }."""
+    block = re.search(r"^\titems = \{\n(.*?)^\t\},$", catalogue_lua, flags=re.MULTILINE | re.DOTALL)
+    assert block is not None, catalogue_lua
+    found: dict[int, str] = {}
+    for item, flat, nested in re.findall(
+        r"^\t\t\[(\d+)\] = (?:(\{[^\n]*\})|\{\n(.*?)^\t\t\}),$", block.group(1), re.MULTILINE | re.DOTALL
+    ):
+        if flat:
+            found[int(item)] = flat
+        else:
+            fields = [line.strip().removesuffix(",") for line in nested.splitlines()]
+            found[int(item)] = "{ " + ", ".join(fields) + " }"
+    return found

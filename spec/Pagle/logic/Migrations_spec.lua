@@ -104,7 +104,11 @@ describe("ns.Migrate", function()
 end)
 
 describe("ns.PAGLEDB_DEFAULTS", function()
-	it("gives each of Core's own projections its table, the Field report's and the wallet's (LOG-R78)", function()
-		assert.are.same({ fieldReport = {}, wallet = {} }, ns.PAGLEDB_DEFAULTS.global.projections)
-	end)
+	it(
+		"gives each of Core's own projections its table, the Field report's, the wallet's and the varieties'"
+			.. " (LOG-R78, VAR-R10)",
+		function()
+			assert.are.same({ fieldReport = {}, wallet = {}, varieties = {} }, ns.PAGLEDB_DEFAULTS.global.projections)
+		end
+	)
 end)

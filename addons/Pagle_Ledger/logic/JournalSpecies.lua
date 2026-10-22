@@ -235,7 +235,8 @@ end
 
 -- The fish spread's right page (LED-R142): "Where to find it", "Its waters", its listed zones as tiles in tile order
 -- (LED-R131) with "caught ✓" where caught, each opening the zone's spread with the fish selected; "When" with each
--- element window's line, its state forecast now (LED-R127); and for a caught Species its ★, ★★ and ★★★ checklist.
+-- element window's line, its state forecast now (LED-R127); and for a caught Species its ★, ★★ and ★★★ checklist,
+-- then its varieties (VAR-R23).
 ---@param id integer
 ---@param context LedgerSpreadContext
 ---@return LedgerBlock[]
@@ -280,6 +281,10 @@ local function waters(id, context)
 			kind = "text",
 			text = L.FISH_REGULAR:format(box(3), math.min(species.n, ns.REGULAR_CATCHES), ns.REGULAR_CATCHES),
 		}
+	end
+	-- under the checklist, its varieties and the link to them (VAR-R23, logic/JournalVarieties.lua)
+	for _, block in ipairs(ns.JournalFishVarieties(id, context)) do
+		blocks[#blocks + 1] = block
 	end
 	return blocks
 end

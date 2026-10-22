@@ -85,8 +85,8 @@ HUNTS_OWNER = "hunts"
 # DATA-R101: a kind is lowercase letters; a field is the last dot-separated segment of a key.
 _KIND = re.compile(r"[a-z]+")
 _FIELD = re.compile(r"[a-z][A-Za-z0-9]*")
-# DATA-R108: the one placeholder in 1.0.
-PLACEHOLDERS = ("zone",)
+# DATA-R108: the placeholders: {zone}, and {fish} in a fish crest's name (VAR-R12, DATA-R134).
+PLACEHOLDERS = ("zone", "fish")
 
 
 def lore_file(lore_id: str) -> str:
@@ -190,7 +190,8 @@ def _read_ids(value: object, at: At, problems: Problems) -> dict[str, frozenset[
             for name in placeholders:
                 if name not in PLACEHOLDERS:
                     shown = f"'{name}'" if isinstance(name, str) else describe(name)
-                    problems.add(item_at / "placeholders", f"{{zone}} is the only placeholder (DATA-R108), got {shown}")
+                    only = "{zone} and {fish} are the only placeholders (DATA-R108)"
+                    problems.add(item_at / "placeholders", f"{only}, got {shown}")
                 else:
                     allowed.append(name)
         else:
@@ -327,8 +328,8 @@ def _catalogue_id(id_: str) -> int | None:
 # Legend's title field (DATA-R103), and "name" every kind's name field.
 FIELD_LIMITS = {"riddle": 80, "blurb": 200, "plaque": 100, "name": 28, "title": 32}
 # By (kind, field), for one kind's field only: the text of a title, the Ledger's Module-defined title kind and the
-# Tackle Board's boardtitle (DATA-R106, TKB-R130).
-KIND_FIELD_LIMITS = {("title", "text"): 32, ("boardtitle", "text"): 32}
+# Tackle Board's boardtitle (DATA-R106, TKB-R130), and a fish variety's description (VAR-R11, DATA-R134).
+KIND_FIELD_LIMITS = {("title", "text"): 32, ("boardtitle", "text"): 32, ("variety", "description"): 200}
 
 
 def limit(kind: str, name: str) -> int | None:

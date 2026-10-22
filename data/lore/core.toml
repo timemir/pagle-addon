@@ -7,7 +7,8 @@
 #
 # The Curio Shop shows a good's name and description beside its preview, under its slot and Module
 # (wallet-and-shop.md › UI), so a description is about the look or the sound itself, never the shop or the addon.
-# Plain is Core's only crest: the zone crests are the Ledger's earned goods, their lore in ledger.toml (LED-R113).
+# Core's crests are Plain and, from the varieties release, the fish crests (core/varieties.md), followed by the fish
+# varieties: the zone crests are the Ledger's earned goods, their lore in ledger.toml (LED-R113).
 
 [good."core.toaststyle.page"] # Toast style, the default, was "Timber"
 name = "Torn Page"
@@ -32,3 +33,1636 @@ description = "Small, bright bells. A touch grand for a mackerel, and none the w
 [good."core.crest.plain"] # Bookplate crest, the default
 name = "Plain"
 description = "No emblem, only the owner's name. Plenty of fine anglers never wanted more."
+
+[good."core.crest.fish.1467"] # Bookplate crest, earned: all ten varieties of Spotted Sunfish
+name = "{fish} Crest"
+description = "A sunfish on a field of lake green. For the angler who has seen every spot it can wear."
+
+[good."core.crest.fish.4603"] # Bookplate crest, earned: all ten varieties of Raw Spotted Yellowtail
+name = "{fish} Crest"
+description = "A yellowtail rising through blue water, tail first in every sense."
+
+[good."core.crest.fish.6289"] # Bookplate crest, earned: all ten varieties of Raw Longjaw Mud Snapper
+name = "{fish} Crest"
+description = "A snapper all jaw, on pond green. Earned one bite at a time."
+
+[good."core.crest.fish.6291"] # Bookplate crest, earned: all ten varieties of Raw Brilliant Smallfish
+name = "{fish} Crest"
+description = "The smallest fish on any shield, and the hardest to stop catching."
+
+[good."core.crest.fish.6299"] # Bookplate crest, earned: all ten varieties of Sickly Looking Fish
+name = "{fish} Crest"
+description = "A sad grey fish on dark water. Somebody had to collect them all. It was you."
+
+[good."core.crest.fish.6303"] # Bookplate crest, earned: all ten varieties of Raw Slitherskin Mackerel
+name = "{fish} Crest"
+description = "A barred mackerel on open sea, slipping out of the frame as usual."
+
+[good."core.crest.fish.6308"] # Bookplate crest, earned: all ten varieties of Raw Bristle Whisker Catfish
+name = "{fish} Crest"
+description = "Whiskers, grudge and river green. Every last one of them has sulked on your line."
+
+[good."core.crest.fish.6317"] # Bookplate crest, earned: all ten varieties of Raw Loch Frenzy
+name = "{fish} Crest"
+description = "Teeth on a field of loch water. Dwarves would approve, then count their fingers."
+
+[good."core.crest.fish.6358"] # Bookplate crest, earned: all ten varieties of Oily Blackmouth
+name = "{fish} Crest"
+description = "An oily salmon on blue, gleaming. Every colour the oil could make, accounted for."
+
+[good."core.crest.fish.6359"] # Bookplate crest, earned: all ten varieties of Firefin Snapper
+name = "{fish} Crest"
+description = "A red snapper rising through warm water, for the angler who has seen it in every colour it comes in."
+
+[good."core.crest.fish.6361"] # Bookplate crest, earned: all ten varieties of Raw Rainbow Fin Albacore
+name = "{fish} Crest"
+description = "An albacore with its rainbow fins spread wide, colours that never fade on a shield."
+
+[good."core.crest.fish.6362"] # Bookplate crest, earned: all ten varieties of Raw Rockscale Cod
+name = "{fish} Crest"
+description = "A mottled cod on deep blue, stubborn as the rocks it hides among."
+
+[good."core.crest.fish.6458"] # Bookplate crest, earned: all ten varieties of Oil Covered Fish
+name = "{fish} Crest"
+description = "A small fish on murky water, as clean as it will ever be."
+
+[good."core.crest.fish.6522"] # Bookplate crest, earned: all ten varieties of Deviate Fish
+name = "{fish} Crest"
+description = "Something with too many eyes on a field of bad water. Proof of a strong stomach."
+
+[good."core.crest.fish.8365"] # Bookplate crest, earned: all ten varieties of Raw Mithril Head Trout
+name = "{fish} Crest"
+description = "A trout with a shining head, on river green. The smith has stopped asking."
+
+[good."core.crest.fish.12238"] # Bookplate crest, earned: all ten varieties of Darkshore Grouper
+name = "{fish} Crest"
+description = "A broad grey grouper on the grey sea it is named for, mouth open as ever."
+
+[good."core.crest.fish.13422"] # Bookplate crest, earned: all ten varieties of Stonescale Eel
+name = "{fish} Crest"
+description = "A stone-scaled eel coiled across blue water. Armourers covet the shield."
+
+[good."core.crest.fish.13754"] # Bookplate crest, earned: all ten varieties of Raw Glossy Mightfish
+name = "{fish} Crest"
+description = "A heavy blue fish on the open sea, built like a fist."
+
+[good."core.crest.fish.13755"] # Bookplate crest, earned: all ten varieties of Raw Winter Squid
+name = "{fish} Crest"
+description = "A pale squid on winter ice-blue, every arm untangled at last."
+
+[good."core.crest.fish.13756"] # Bookplate crest, earned: all ten varieties of Raw Summer Bass
+name = "{fish} Crest"
+description = "A bass on lake green, mouth wide enough for the whole season."
+
+[good."core.crest.fish.13757"] # Bookplate crest, earned: all ten varieties of Lightning Eel
+name = "{fish} Crest"
+description = "An eel across a stormy field, sparks still at its edges."
+
+[good."core.crest.fish.13758"] # Bookplate crest, earned: all ten varieties of Raw Redgill
+name = "{fish} Crest"
+description = "A barred perch on a field of ember red. The gills are the brightest thing on it."
+
+[good."core.crest.fish.13759"] # Bookplate crest, earned: all ten varieties of Raw Nightfin Snapper
+name = "{fish} Crest"
+description = "A violet snapper on night water. Earned in the dark, mostly."
+
+[good."core.crest.fish.13760"] # Bookplate crest, earned: all ten varieties of Raw Sunscale Salmon
+name = "{fish} Crest"
+description = "A gold-flecked salmon rising through green water, catching every hour of light."
+
+[good."core.crest.fish.13888"] # Bookplate crest, earned: all ten varieties of Darkclaw Lobster
+name = "{fish} Crest"
+description = "A lobster on the blue, claws first, as it insists."
+
+[good."core.crest.fish.13889"] # Bookplate crest, earned: all ten varieties of Raw Whitescale Salmon
+name = "{fish} Crest"
+description = "A frost-pale salmon on cold blue. Every colour of it, caught before it melted."
+
+[good."core.crest.fish.13890"] # Bookplate crest, earned: all ten varieties of Raw Plated Armorfish
+name = "{fish} Crest"
+description = "A fish in bony plates on ice-blue, its armour finally outmatched."
+
+[good."core.crest.fish.13893"] # Bookplate crest, earned: all ten varieties of Large Raw Mightfish
+name = "{fish} Crest"
+description = "The big cousin on a field of deep sea. Took both hands, and a friend, many times."
+
+[good."core.crest.fish.16967"] # Bookplate crest, earned: all ten varieties of Feralas Ahi
+name = "{fish} Crest"
+description = "A yellowfin tuna on river green, long fins swept back like banners."
+
+[good."core.crest.fish.16968"] # Bookplate crest, earned: all ten varieties of Sar'theris Striker
+name = "{fish} Crest"
+description = "A barred hunter crossing blue water, teeth first."
+
+[good."core.crest.fish.16969"] # Bookplate crest, earned: all ten varieties of Savage Coast Blue Sailfin
+name = "{fish} Crest"
+description = "A sailfish on the jungle coast's green-blue, sail raised for the audience."
+
+[good."core.crest.fish.16970"] # Bookplate crest, earned: all ten varieties of Misty Reed Mahi Mahi
+name = "{fish} Crest"
+description = "A green and gold mahi on the jungle coast, bright as the day it was landed."
+
+[good."core.crest.fish.19807"] # Bookplate crest, earned: all ten varieties of Speckled Tastyfish
+name = "{fish} Crest"
+description = "A freckled fish on the contest coast. Every kind of it, every contest."
+
+[good."core.crest.fish.19975"] # Bookplate crest, earned: all ten varieties of Zulian Mudskunk
+name = "{fish} Crest"
+description = "A squat brown fish on murky water. The shield, mercifully, does not smell."
+
+[good."core.crest.fish.21071"] # Bookplate crest, earned: all ten varieties of Raw Sagefish
+name = "{fish} Crest"
+description = "A small fish with its tall fin raised, on hillside-stream green."
+
+[good."core.crest.fish.21153"] # Bookplate crest, earned: all ten varieties of Raw Greater Sagefish
+name = "{fish} Crest"
+description = "The elder of its kind, grown old and grand, its fin a banner on green water."
+
+[good."core.crest.fish.251524"] # Bookplate crest, earned: all ten varieties of Whimsyfin
+name = "{fish} Crest"
+description = "A gold fish trailing blue silk on green water. Still nobody knows how it got here."
+
+# Fish varieties (VAR-R11): each variety's name (28) and description (200), Core's kind core.variety, keyed
+# <speciesID>.<key> by data/forever/varieties.toml. Shown only once the variety is first caught (VAR-R27). Neither
+# names a place or a fish from the game (DATA-R3, DATA-R135). Drafted with the varieties kit (#338); the comment after
+# each table is the Species' enUS name and the variety's rarity, for review only.
+
+[variety."1467.sunset-breasted"] # Spotted Sunfish, Common
+name = "Sunset-breasted"
+description = "Olive flanks, dark spots, a breast like a sunset over the lake. The one everybody knows."
+
+[variety."1467.pale-shallows"] # Spotted Sunfish, Common
+name = "Pale Shallows"
+description = "Bleached by warm shallows and long afternoons. The spots barely bother."
+
+[variety."1467.copper-breasted"] # Spotted Sunfish, Common
+name = "Copper-breasted"
+description = "A breast like a polished kettle. The cooks hesitate, briefly."
+
+[variety."1467.peppered"] # Spotted Sunfish, Common
+name = "Peppered"
+description = "Spots ground down to pepper. Same fish, finer seasoning."
+
+[variety."1467.blue-cheeked"] # Spotted Sunfish, Uncommon
+name = "Blue-cheeked"
+description = "Two blue lines on each cheek, like war paint for a very small war."
+
+[variety."1467.barred"] # Spotted Sunfish, Uncommon
+name = "Barred"
+description = "Faint bars down the flanks, the way the young wear them. Some never grow out of it."
+
+[variety."1467.ember-spotted"] # Spotted Sunfish, Uncommon
+name = "Ember-spotted"
+description = "The spots run red in the warm months, as if it sat too close to the fire."
+
+[variety."1467.golden"] # Spotted Sunfish, Rare
+name = "Golden"
+description = "All the green gone, only gold left. Herons see it from across the lake."
+
+[variety."1467.midnight"] # Spotted Sunfish, Rare
+name = "Midnight"
+description = "Black as lake mud, spots and all. Easy to miss, which is rather the point."
+
+[variety."1467.sunburst"] # Spotted Sunfish, Epic
+name = "Sunburst"
+description = "Orange rays run out from the eye like morning over still water. It stays warm in the hand."
+
+[variety."4603.classic"] # Raw Spotted Yellowtail, Common
+name = "Classic"
+description = "Blue-grey back, yellow tail, a scatter of dark spots. The look every coastal cook expects."
+
+[variety."4603.gold-striped"] # Raw Spotted Yellowtail, Common
+name = "Gold-striped"
+description = "A yellow line runs nose to tail, as if somebody underlined it."
+
+[variety."4603.greenback"] # Raw Spotted Yellowtail, Common
+name = "Greenback"
+description = "Greener along the back, from weedy coasts. The tail stays proudly yellow."
+
+[variety."4603.silverside"] # Raw Spotted Yellowtail, Common
+name = "Silverside"
+description = "More mirror than fish down the flanks. Spots few and shy."
+
+[variety."4603.dusky"] # Raw Spotted Yellowtail, Uncommon
+name = "Dusky"
+description = "Dark from deep water, the yellow dulled to old brass."
+
+[variety."4603.leopard"] # Raw Spotted Yellowtail, Uncommon
+name = "Leopard"
+description = "The spots grew greedy and joined up. Handsome, in a crowded way."
+
+[variety."4603.sunset-tailed"] # Raw Spotted Yellowtail, Uncommon
+name = "Sunset-tailed"
+description = "The tail burns orange instead of yellow. Even prouder of itself, if that were possible."
+
+[variety."4603.all-gold"] # Raw Spotted Yellowtail, Rare
+name = "All-gold"
+description = "Yellow from tail to nose. Gulls follow the boat for miles."
+
+[variety."4603.ghost"] # Raw Spotted Yellowtail, Rare
+name = "Ghost"
+description = "Nearly white, with a faint yellow blush at the tail. Looks underwater even out of it."
+
+[variety."4603.tidecaller"] # Raw Spotted Yellowtail, Epic
+name = "Tidecaller"
+description = "Fine blue netting glows along its flanks. Old sailors say the tide turns when one is landed."
+
+[variety."6289.mudbank"] # Raw Longjaw Mud Snapper, Common
+name = "Mudbank"
+description = "Brown above, tan below, jaw first. The snapper every pond in the world seems to have."
+
+[variety."6289.reedbed"] # Raw Longjaw Mud Snapper, Common
+name = "Reedbed"
+description = "Faint green bars, from hiding among the reeds. Still bites first."
+
+[variety."6289.red-clay"] # Raw Longjaw Mud Snapper, Common
+name = "Red Clay"
+description = "Rust-red, from riverbanks of red clay. Tastes the same, looks hotter."
+
+[variety."6289.speckled"] # Raw Longjaw Mud Snapper, Common
+name = "Speckled"
+description = "Freckled all over, like a farmhand after harvest."
+
+[variety."6289.blackjaw"] # Raw Longjaw Mud Snapper, Uncommon
+name = "Blackjaw"
+description = "The jaw is ink-dark to the gills. It has opinions and it shares them."
+
+[variety."6289.brindle"] # Raw Longjaw Mud Snapper, Uncommon
+name = "Brindle"
+description = "Streaked like a hound's coat. Some anglers swear it growls."
+
+[variety."6289.lantern-eyed"] # Raw Longjaw Mud Snapper, Uncommon
+name = "Lantern-eyed"
+description = "Eyes that catch the light like a lamp in a window. Easier to find at dusk."
+
+[variety."6289.golden"] # Raw Longjaw Mud Snapper, Rare
+name = "Golden"
+description = "A gold snapper from a brown pond. The pond seems as surprised as anyone."
+
+[variety."6289.pale"] # Raw Longjaw Mud Snapper, Rare
+name = "Pale"
+description = "Milk-pale, pink at the fins. Too pretty for the jaw it carries."
+
+[variety."6289.old-bootbiter"] # Raw Longjaw Mud Snapper, Epic
+name = "Old Bootbiter"
+description = "Hook scars, a torn fin and an expression of total confidence. Every pond keeps one."
+
+[variety."6291.silver"] # Raw Brilliant Smallfish, Common
+name = "Silver"
+description = "Plain silver, flashing in the shallows by the hundred. The first fish in a great many books."
+
+[variety."6291.blue-striped"] # Raw Brilliant Smallfish, Common
+name = "Blue-striped"
+description = "A neat blue stripe down each side, as if it were trying to look official."
+
+[variety."6291.greenback"] # Raw Brilliant Smallfish, Common
+name = "Greenback"
+description = "Green across the back, from shallow weedy water. Twice as hard to spot."
+
+[variety."6291.dotted"] # Raw Brilliant Smallfish, Common
+name = "Dotted"
+description = "A row of small dots along the flank, neat as stitching."
+
+[variety."6291.redfin"] # Raw Brilliant Smallfish, Uncommon
+name = "Redfin"
+description = "Fins dipped in red. Shows off in a school, rarely alone."
+
+[variety."6291.rainbow"] # Raw Brilliant Smallfish, Uncommon
+name = "Rainbow"
+description = "Throws colours like a soap bubble when it turns. Gone grey once landed."
+
+[variety."6291.glass"] # Raw Brilliant Smallfish, Uncommon
+name = "Glass"
+description = "You can see its backbone. It can probably see yours."
+
+[variety."6291.golden"] # Raw Brilliant Smallfish, Rare
+name = "Golden"
+description = "A gold coin with fins. Children want to keep it. Anglers want to keep it too."
+
+[variety."6291.inkfin"] # Raw Brilliant Smallfish, Rare
+name = "Inkfin"
+description = "Dark as a quill's tip. Swims with the bright ones and fools nobody."
+
+[variety."6291.starlit"] # Raw Brilliant Smallfish, Epic
+name = "Starlit"
+description = "Tiny pale specks glow along its back like a clear night. Remarkable, for something this small."
+
+[variety."6299.greyish"] # Sickly Looking Fish, Common
+name = "Greyish"
+description = "Grey, limp and faintly apologetic. It looks bad and smells worse."
+
+[variety."6299.greenish"] # Sickly Looking Fish, Common
+name = "Greenish"
+description = "Patches of green that should not be there. The smell arrives before the fish does."
+
+[variety."6299.blotchy"] # Sickly Looking Fish, Common
+name = "Blotchy"
+description = "Covered in sad brown blotches. Nobody asks what caused them."
+
+[variety."6299.bony"] # Sickly Looking Fish, Common
+name = "Bony"
+description = "More ribs than fish. It tried its best."
+
+[variety."6299.bilious"] # Sickly Looking Fish, Uncommon
+name = "Bilious"
+description = "Yellow-green, like a bad morning. Handle with gloves."
+
+[variety."6299.bruised"] # Sickly Looking Fish, Uncommon
+name = "Bruised"
+description = "Purple and blue in patches, as if it lost a fight with the current."
+
+[variety."6299.wheezing"] # Sickly Looking Fish, Uncommon
+name = "Wheezing"
+description = "Gills flap in a way that sounds almost like a sigh. It knows."
+
+[variety."6299.recovered"] # Sickly Looking Fish, Rare
+name = "Recovered"
+description = "Healthier than the rest. Still unmistakably one of them, somehow."
+
+[variety."6299.ashen"] # Sickly Looking Fish, Rare
+name = "Ashen"
+description = "Grey to the bone, like it swam through ash. Even the flies keep their distance."
+
+[variety."6299.blighted"] # Sickly Looking Fish, Epic
+name = "Blighted"
+description = "Faint green veins glow under the scales. Some waters remember what was spilled in them."
+
+[variety."6303.tiger-backed"] # Raw Slitherskin Mackerel, Common
+name = "Tiger-backed"
+description = "Wavy dark bars across a blue-green back, like ripples frozen in place."
+
+[variety."6303.blueback"] # Raw Slitherskin Mackerel, Common
+name = "Blueback"
+description = "Bluer, from the open sea. Fries up just as well."
+
+[variety."6303.spotted"] # Raw Slitherskin Mackerel, Common
+name = "Spotted"
+description = "Dots where the bars should be. Mackerel are not careful about the rules."
+
+[variety."6303.shallow-water"] # Raw Slitherskin Mackerel, Common
+name = "Shallow-water"
+description = "Paler, from sandy bays near the shore. Still slithers."
+
+[variety."6303.emerald"] # Raw Slitherskin Mackerel, Uncommon
+name = "Emerald"
+description = "Green as kelp, with a shimmer that fades within the hour."
+
+[variety."6303.bronze"] # Raw Slitherskin Mackerel, Uncommon
+name = "Bronze"
+description = "Bronze along the back like an old coin. Odd for a mackerel. It doesn't care."
+
+[variety."6303.plainback"] # Raw Slitherskin Mackerel, Uncommon
+name = "Plainback"
+description = "No bars at all. Slips through the hands faster without them, apparently."
+
+[variety."6303.golden"] # Raw Slitherskin Mackerel, Rare
+name = "Golden"
+description = "Gold bars on gold. Looks expensive. Fries like a mackerel."
+
+[variety."6303.pearl"] # Raw Slitherskin Mackerel, Rare
+name = "Pearl"
+description = "White as a shell, the bars only a ghost of themselves. Lovely, and still slippery."
+
+[variety."6303.sea-witch"] # Raw Slitherskin Mackerel, Epic
+name = "Sea-witch"
+description = "Bars that glow sea-green in the dark. Sailors throw these back. Then they regret it."
+
+[variety."6308.mudback"] # Raw Bristle Whisker Catfish, Common
+name = "Mudback"
+description = "Mud-brown above, cream below, whiskers everywhere. The catfish every river seems to keep."
+
+[variety."6308.spotted"] # Raw Bristle Whisker Catfish, Common
+name = "Spotted"
+description = "Dark spots along the flanks, like a channel catfish in its youth."
+
+[variety."6308.slate"] # Raw Bristle Whisker Catfish, Common
+name = "Slate"
+description = "Blue-grey as river stone. Just as stubborn."
+
+[variety."6308.yellowbelly"] # Raw Bristle Whisker Catfish, Common
+name = "Yellowbelly"
+description = "A yellow belly and no shame about it. Fights anyway."
+
+[variety."6308.marbled"] # Raw Bristle Whisker Catfish, Uncommon
+name = "Marbled"
+description = "Mottled like a riverbed, which is exactly where it spends its time."
+
+[variety."6308.long-whiskered"] # Raw Bristle Whisker Catfish, Uncommon
+name = "Long-whiskered"
+description = "Whiskers twice the usual length. Wise-looking. Isn't."
+
+[variety."6308.black-barbel"] # Raw Bristle Whisker Catfish, Uncommon
+name = "Black Barbel"
+description = "Inky from whisker to tail. Swallows the light and most of the bait."
+
+[variety."6308.calico"] # Raw Bristle Whisker Catfish, Rare
+name = "Calico"
+description = "Orange, white and black in patches, like a barn cat. Just as unimpressed."
+
+[variety."6308.albino"] # Raw Bristle Whisker Catfish, Rare
+name = "Albino"
+description = "White with pink eyes. Has clearly never seen the sun, and does not intend to."
+
+[variety."6308.riverbed-king"] # Raw Bristle Whisker Catfish, Epic
+name = "Riverbed King"
+description = "Whiskers thick as rope and a mouth like a cellar door. The river has been feeding it for years."
+
+[variety."6317.slate-backed"] # Raw Loch Frenzy, Common
+name = "Slate-backed"
+description = "Grey back, red belly, teeth. Named for how it behaves when held."
+
+[variety."6317.redbelly"] # Raw Loch Frenzy, Common
+name = "Redbelly"
+description = "A belly red as a forge. The teeth are the same."
+
+[variety."6317.peat-stained"] # Raw Loch Frenzy, Common
+name = "Peat-stained"
+description = "Brown from peaty water. Tastes faintly of smoke."
+
+[variety."6317.silverflank"] # Raw Loch Frenzy, Common
+name = "Silverflank"
+description = "Bright silver flanks with a glitter of scales. Still all teeth."
+
+[variety."6317.ironjaw"] # Raw Loch Frenzy, Uncommon
+name = "Ironjaw"
+description = "Jaw dark as old iron, and almost as hard. Gloves are advised."
+
+[variety."6317.ale-barred"] # Raw Loch Frenzy, Uncommon
+name = "Ale-barred"
+description = "Amber bars like a well-poured ale. Dwarves name these fondly."
+
+[variety."6317.snowmelt"] # Raw Loch Frenzy, Uncommon
+name = "Snowmelt"
+description = "Pale from the coldest corner of the loch. Bites just as hard."
+
+[variety."6317.ruby"] # Raw Loch Frenzy, Rare
+name = "Ruby"
+description = "Red all over, like a gem in a miner's lamp. Somebody always tries to sell it."
+
+[variety."6317.blackwater"] # Raw Loch Frenzy, Rare
+name = "Blackwater"
+description = "Black as the bottom of a mine shaft. The teeth are white."
+
+[variety."6317.dam-breaker"] # Raw Loch Frenzy, Epic
+name = "Dam-Breaker"
+description = "Teeth like chisels and a jaw full of old splinters. Loch-side stories begin and end with this one."
+
+[variety."6358.black-gummed"] # Oily Blackmouth, Common
+name = "Black-gummed"
+description = "Black gums, spotted back, an oily sheen. Alchemists want the oil."
+
+[variety."6358.greenback"] # Oily Blackmouth, Common
+name = "Greenback"
+description = "Greener above, from kelp coasts. Just as oily."
+
+[variety."6358.bright-silver"] # Oily Blackmouth, Common
+name = "Bright Silver"
+description = "Fresh from open water and bright as a blade. The oil is there all the same."
+
+[variety."6358.spotless"] # Oily Blackmouth, Common
+name = "Spotless"
+description = "Not a single spot. The oil does the decorating."
+
+[variety."6358.rainbow-slicked"] # Oily Blackmouth, Uncommon
+name = "Rainbow-slicked"
+description = "The oil shows every colour in sunlight. Prettier than anything this greasy deserves."
+
+[variety."6358.redflank"] # Oily Blackmouth, Uncommon
+name = "Redflank"
+description = "Gone red along the flanks for spawning. Oilier than ever."
+
+[variety."6358.hooknose"] # Oily Blackmouth, Uncommon
+name = "Hooknose"
+description = "A hooked jaw from its spawning run. Looks offended at all times."
+
+[variety."6358.pearl"] # Oily Blackmouth, Rare
+name = "Pearl"
+description = "White, with a pearly sheen from all that oil. Prettier than its reputation."
+
+[variety."6358.tar-black"] # Oily Blackmouth, Rare
+name = "Tar-black"
+description = "Black from mouth to tail and slick as tar. Leaves a mark on everything it touches."
+
+[variety."6358.lampblack"] # Oily Blackmouth, Epic
+name = "Lampblack"
+description = "Gold oil seeps along its scales and glows faintly. Lamp-makers would pay anything. They usually do."
+
+[variety."6359.flame-finned"] # Firefin Snapper, Common
+name = "Flame-finned"
+description = "Red body, fins like flame. The colour most anglers picture when they hear the name."
+
+[variety."6359.coral"] # Firefin Snapper, Common
+name = "Coral"
+description = "Pinker, from reef water. A little cooler in the hand."
+
+[variety."6359.ember-spotted"] # Firefin Snapper, Common
+name = "Ember-spotted"
+description = "Dark spots like cinders on red. Smells faintly of smoke when landed."
+
+[variety."6359.goldfin"] # Firefin Snapper, Common
+name = "Goldfin"
+description = "Fins of gold instead of red. Still warm."
+
+[variety."6359.deepwater"] # Firefin Snapper, Uncommon
+name = "Deepwater"
+description = "Dark crimson from deep water. Holds the heat longer."
+
+[variety."6359.flame-striped"] # Firefin Snapper, Uncommon
+name = "Flame-striped"
+description = "Yellow lines run down it like flames up a wall."
+
+[variety."6359.smouldering"] # Firefin Snapper, Uncommon
+name = "Smouldering"
+description = "Dark as a banked fire, red at the edges. Too warm to hold for long."
+
+[variety."6359.white-flame"] # Firefin Snapper, Rare
+name = "White-flame"
+description = "White, with fins the pink of a hot coal. The heat is real."
+
+[variety."6359.charred"] # Firefin Snapper, Rare
+name = "Charred"
+description = "Black as a burnt log, fins still glowing red. Looks cooked. Isn't."
+
+[variety."6359.phoenix-fin"] # Firefin Snapper, Epic
+name = "Phoenix-fin"
+description = "Fins burn gold and the body glows like a forge. Water steams around it as it lands."
+
+[variety."6361.many-hued"] # Raw Rainbow Fin Albacore, Common
+name = "Many-hued"
+description = "Steel-blue back, silver belly, fins in every colour. They fade within the hour, so look quickly."
+
+[variety."6361.deep-blue"] # Raw Rainbow Fin Albacore, Common
+name = "Deep Blue"
+description = "Darker, from far offshore. The fins keep their colours a little longer."
+
+[variety."6361.barred"] # Raw Rainbow Fin Albacore, Common
+name = "Barred"
+description = "Pale bars down the flanks, as albacore show when feeding hard."
+
+[variety."6361.silverflank"] # Raw Rainbow Fin Albacore, Common
+name = "Silverflank"
+description = "More silver than blue. The rainbow lives in the fins alone."
+
+[variety."6361.sunset-finned"] # Raw Rainbow Fin Albacore, Uncommon
+name = "Sunset-finned"
+description = "Fins of orange and rose, like a sky at the end of a good day's fishing."
+
+[variety."6361.violet"] # Raw Rainbow Fin Albacore, Uncommon
+name = "Violet"
+description = "A violet sheen along the back. Colours fade to a sulky grey after landing."
+
+[variety."6361.longfin"] # Raw Rainbow Fin Albacore, Uncommon
+name = "Longfin"
+description = "Pectoral fins as long as a forearm. Swims like it owns the sea."
+
+[variety."6361.prism"] # Raw Rainbow Fin Albacore, Rare
+name = "Prism"
+description = "White as sea-foam, every stripe a different colour. Holds them for a whole day."
+
+[variety."6361.stormback"] # Raw Rainbow Fin Albacore, Rare
+name = "Stormback"
+description = "Grey as thunderheads, fins dulled to pewter. Bites best just before rain."
+
+[variety."6361.aurora"] # Raw Rainbow Fin Albacore, Epic
+name = "Aurora"
+description = "Colours ripple over it in waves, green to violet, and never fade. Nobody can explain why."
+
+[variety."6362.rock-mottled"] # Raw Rockscale Cod, Common
+name = "Rock-mottled"
+description = "Mottled brown like the rocks it hides among, with a pale line down each flank."
+
+[variety."6362.kelp-green"] # Raw Rockscale Cod, Common
+name = "Kelp-green"
+description = "Green-brown from kelp beds. Pulls harder than it looks."
+
+[variety."6362.sandy"] # Raw Rockscale Cod, Common
+name = "Sandy"
+description = "Pale as a beach, fine-freckled. Shows up well on a plate."
+
+[variety."6362.harbour-grey"] # Raw Rockscale Cod, Common
+name = "Harbour Grey"
+description = "Grey from harbour water. Just as sweet once cooked."
+
+[variety."6362.red-rock"] # Raw Rockscale Cod, Uncommon
+name = "Red Rock"
+description = "Rusty red, from red-rock coasts. Locals call it a different fish. It isn't."
+
+[variety."6362.leopard"] # Raw Rockscale Cod, Uncommon
+name = "Leopard"
+description = "Bold dark spots on a sandy body. Stubborn even by cod standards."
+
+[variety."6362.barnacled"] # Raw Rockscale Cod, Uncommon
+name = "Barnacled"
+description = "Barnacles on its head, like an old hull. Has clearly been at this a long time."
+
+[variety."6362.golden"] # Raw Rockscale Cod, Rare
+name = "Golden"
+description = "Gold mottling over gold. Looks like a statue someone forgot to finish."
+
+[variety."6362.granite"] # Raw Rockscale Cod, Rare
+name = "Granite"
+description = "Black and white speckle like a millstone. Weighs as if it were one."
+
+[variety."6362.stoneheart"] # Raw Rockscale Cod, Epic
+name = "Stoneheart"
+description = "Scales like slate, a faint glow between them. Found where the cliffs meet deep water, and nowhere else."
+
+[variety."6458.slicked"] # Oil Covered Fish, Common
+name = "Slicked"
+description = "A small fish under a black coat of oil. Somewhere upstream, somebody is very busy."
+
+[variety."6458.rainbow-slick"] # Oil Covered Fish, Common
+name = "Rainbow Slick"
+description = "The oil throws rainbows in the sun. A pretty sight, and a bad sign."
+
+[variety."6458.tarred"] # Oil Covered Fish, Common
+name = "Tarred"
+description = "Thick black tar in patches. Sticks to the line and the angler."
+
+[variety."6458.muddy"] # Oil Covered Fish, Common
+name = "Muddy"
+description = "More mud than oil. An improvement, of a sort."
+
+[variety."6458.half-clean"] # Oil Covered Fish, Uncommon
+name = "Half-clean"
+description = "The oil only got half of it. The other half looks quietly relieved."
+
+[variety."6458.sulphur-stained"] # Oil Covered Fish, Uncommon
+name = "Sulphur-stained"
+description = "Yellow from something worse than oil. Smells like it, too."
+
+[variety."6458.rust-streaked"] # Oil Covered Fish, Uncommon
+name = "Rust-streaked"
+description = "Streaks of rust from old machine runoff. Very nearly a fish."
+
+[variety."6458.somehow-clean"] # Oil Covered Fish, Rare
+name = "Somehow Clean"
+description = "Clean, bright, healthy. It must have swum in from somewhere else."
+
+[variety."6458.black-gold"] # Oil Covered Fish, Rare
+name = "Black Gold"
+description = "Coated so thick it gleams like a polished boot. Prospectors take one look and start digging."
+
+[variety."6458.still-burning"] # Oil Covered Fish, Epic
+name = "Still Burning"
+description = "The oil on its back still smoulders, and nothing puts it out. Best not cooked indoors."
+
+[variety."6522.misshapen"] # Deviate Fish, Common
+name = "Misshapen"
+description = "Green, lumpy and wrong in several places at once. Eat at your own risk."
+
+[variety."6522.purple-finned"] # Deviate Fish, Common
+name = "Purple-finned"
+description = "Fins of bruise-purple. Nobody agrees on whether that's better or worse."
+
+[variety."6522.two-tailed"] # Deviate Fish, Common
+name = "Two-tailed"
+description = "Two tails, and it swims as if arguing with itself about which to use."
+
+[variety."6522.spined"] # Deviate Fish, Common
+name = "Spined"
+description = "A ridge of spines down the back that weren't there yesterday."
+
+[variety."6522.many-eyed"] # Deviate Fish, Uncommon
+name = "Many-eyed"
+description = "Eyespots all down the flanks. At least two of them blink."
+
+[variety."6522.glowgill"] # Deviate Fish, Uncommon
+name = "Glowgill"
+description = "Gills that glow faintly green. Reads as a warning, and it is."
+
+[variety."6522.lizard-scaled"] # Deviate Fish, Uncommon
+name = "Lizard-scaled"
+description = "Scales like a raptor's hide. Half fish, half something with opinions."
+
+[variety."6522.pale-nightmare"] # Deviate Fish, Rare
+name = "Pale Nightmare"
+description = "Ghost-pale, organs faintly visible. Has the look of a bad dream at noon."
+
+[variety."6522.crimson"] # Deviate Fish, Rare
+name = "Crimson"
+description = "Red where it should be green. The stories about the hour after eating one get worse."
+
+[variety."6522.dreamers-spawn"] # Deviate Fish, Epic
+name = "Dreamer's Spawn"
+description = "Green light pulses beneath its scales, slow as breathing in sleep. The caverns' nightmare left its mark here."
+
+[variety."8365.bright-headed"] # Raw Mithril Head Trout, Common
+name = "Bright-headed"
+description = "Olive body, freckled flanks, a head that shines like polished metal. The usual trout of warm rivers."
+
+[variety."8365.rainbow-banded"] # Raw Mithril Head Trout, Common
+name = "Rainbow-banded"
+description = "A pink band down the flank, as a rainbow trout wears it."
+
+[variety."8365.brook-spotted"] # Raw Mithril Head Trout, Common
+name = "Brook-spotted"
+description = "Pale spots on olive, from cold quick streams."
+
+[variety."8365.steelhead"] # Raw Mithril Head Trout, Common
+name = "Steelhead"
+description = "Grey-blue and bright, from big waters. Pulls like it means it."
+
+[variety."8365.red-spotted"] # Raw Mithril Head Trout, Uncommon
+name = "Red-spotted"
+description = "Red spots ringed in blue. Pretty enough to make an angler pause before the pan."
+
+[variety."8365.goldhead"] # Raw Mithril Head Trout, Uncommon
+name = "Goldhead"
+description = "Gold where the shine should be silver. The smith asks twice."
+
+[variety."8365.parr-marked"] # Raw Mithril Head Trout, Uncommon
+name = "Parr-marked"
+description = "Thumbprint marks down the flanks, as young trout wear. A late bloomer."
+
+[variety."8365.golden"] # Raw Mithril Head Trout, Rare
+name = "Golden"
+description = "Gold all over, like the rare trout of high mountain lakes."
+
+[variety."8365.ironhead"] # Raw Mithril Head Trout, Rare
+name = "Ironhead"
+description = "Dark all over, the head like cast iron. Equally hard to cook."
+
+[variety."8365.quicksilver"] # Raw Mithril Head Trout, Epic
+name = "Quicksilver"
+description = "Silver from nose to tail, with a pale blue gleam. The smith finally has a case."
+
+[variety."12238.coast-grey"] # Darkshore Grouper, Common
+name = "Coast Grey"
+description = "Grey mottled with darker grey, broad as a shield. Moves only when it must."
+
+[variety."12238.mottled"] # Darkshore Grouper, Common
+name = "Mottled"
+description = "Dark blotches like rocks under shallow water. Sits still and waits."
+
+[variety."12238.brown"] # Darkshore Grouper, Common
+name = "Brown"
+description = "Brown from muddy estuaries. Makes the same stew."
+
+[variety."12238.moon-pale"] # Darkshore Grouper, Common
+name = "Moon-pale"
+description = "Pale grey, as if the moon bleached it. A better stew than first impression."
+
+[variety."12238.rust-spotted"] # Darkshore Grouper, Uncommon
+name = "Rust-spotted"
+description = "Rusty spots over grey, like an anchor left out too long."
+
+[variety."12238.barred"] # Darkshore Grouper, Uncommon
+name = "Barred"
+description = "Broad dark bars that fade when it rests. It rests a lot."
+
+[variety."12238.bigmouth"] # Darkshore Grouper, Uncommon
+name = "Bigmouth"
+description = "A mouth that could swallow a lantern. Possibly did."
+
+[variety."12238.night-dark"] # Darkshore Grouper, Rare
+name = "Night-dark"
+description = "Nearly black, from the deepest part of the bay. Nobody sees it until it bites."
+
+[variety."12238.silverscale"] # Darkshore Grouper, Rare
+name = "Silverscale"
+description = "Silver where it should be grey. Coast anglers say it's lucky. Coast anglers need luck."
+
+[variety."12238.moonkissed"] # Darkshore Grouper, Epic
+name = "Moonkissed"
+description = "Pale specks shine on it like stars on dark water. Caught under a full moon, if the stories are right."
+
+[variety."13422.pebble-scaled"] # Stonescale Eel, Common
+name = "Pebble-scaled"
+description = "Scales like small grey stones. Armourers pay well. The eel disagrees."
+
+[variety."13422.slate"] # Stonescale Eel, Common
+name = "Slate"
+description = "Blue-grey, like roofing slate. Just as hard to cut."
+
+[variety."13422.sandstone"] # Stonescale Eel, Common
+name = "Sandstone"
+description = "Warm sandy scales, from desert coasts. Still bites."
+
+[variety."13422.moray-spotted"] # Stonescale Eel, Common
+name = "Moray-spotted"
+description = "Dark spots all over, like a moray's hide. Equally pleased to see you."
+
+[variety."13422.banded"] # Stonescale Eel, Uncommon
+name = "Banded"
+description = "Rings of dark stone down its length, like a carved pillar."
+
+[variety."13422.greenstone"] # Stonescale Eel, Uncommon
+name = "Greenstone"
+description = "Mossy green scales. Looks like it lay on a riverbed for a century."
+
+[variety."13422.marble"] # Stonescale Eel, Uncommon
+name = "Marble"
+description = "White veined with grey, like a temple floor. Armourers fight over it."
+
+[variety."13422.obsidian"] # Stonescale Eel, Rare
+name = "Obsidian"
+description = "Black glassy scales with an edge on every one. Handle by the tail, and carefully."
+
+[variety."13422.gold-veined"] # Stonescale Eel, Rare
+name = "Gold-veined"
+description = "Gold runs through the grey like ore in rock. Jewellers have been known to weep."
+
+[variety."13422.bedrock-ancient"] # Stonescale Eel, Epic
+name = "Bedrock Ancient"
+description = "Huge stone scales, cracked and glowing amber in the seams. As old as the cliff it came from, by the look."
+
+[variety."13754.polished"] # Raw Glossy Mightfish, Common
+name = "Polished"
+description = "Stout, blue and polished like a new boot. Pulls like something twice its size."
+
+[variety."13754.green-glass"] # Raw Glossy Mightfish, Common
+name = "Green Glass"
+description = "Green as a bottle held to the light. Just as heavy."
+
+[variety."13754.dappled"] # Raw Glossy Mightfish, Common
+name = "Dappled"
+description = "Light dapples across its back like sun through shallow water."
+
+[variety."13754.bronzeback"] # Raw Glossy Mightfish, Common
+name = "Bronzeback"
+description = "A bronze back and a pale belly. Heavy enough to anchor a skiff."
+
+[variety."13754.barred"] # Raw Glossy Mightfish, Uncommon
+name = "Barred"
+description = "Broad bars across the gloss, like a fish dressed for battle."
+
+[variety."13754.humpbacked"] # Raw Glossy Mightfish, Uncommon
+name = "Humpbacked"
+description = "A hump of muscle behind the head. Pulls like a mule."
+
+[variety."13754.mirror"] # Raw Glossy Mightfish, Uncommon
+name = "Mirror"
+description = "So glossy the angler can check their hair in it. Most don't, after the fight."
+
+[variety."13754.cobalt"] # Raw Glossy Mightfish, Rare
+name = "Cobalt"
+description = "Deep cobalt blue that shimmers violet. Looks like a jewel. Weighs like an anvil."
+
+[variety."13754.onyx"] # Raw Glossy Mightfish, Rare
+name = "Onyx"
+description = "Black gloss, as if lacquered. Swallows the light, and the hook."
+
+[variety."13754.tidemight"] # Raw Glossy Mightfish, Epic
+name = "Tidemight"
+description = "Lines of sea-light run under the gloss. It pulls like the tide itself is on the other end."
+
+[variety."13755.frost-pink"] # Raw Winter Squid, Common
+name = "Frost-pink"
+description = "Pale pink, freckled with dark spots that come and go as it breathes. Arrives with the frost."
+
+[variety."13755.blushing"] # Raw Winter Squid, Common
+name = "Blushing"
+description = "Flushed red all over, the way squid go when startled. Usually by the angler."
+
+[variety."13755.milky"] # Raw Winter Squid, Common
+name = "Milky"
+description = "White and nearly see-through. Easy to lose in the ice."
+
+[variety."13755.brindled"] # Raw Winter Squid, Common
+name = "Brindled"
+description = "Dark stripes along the mantle, like frost cracks in a window."
+
+[variety."13755.long-armed"] # Raw Winter Squid, Uncommon
+name = "Long-armed"
+description = "Arms twice the usual length. More to untangle, which seemed impossible."
+
+[variety."13755.ring-spotted"] # Raw Winter Squid, Uncommon
+name = "Ring-spotted"
+description = "Dark rings across the mantle like a row of watching eyes."
+
+[variety."13755.blueflash"] # Raw Winter Squid, Uncommon
+name = "Blueflash"
+description = "Flashes blue when touched. It is not pleased to be touched."
+
+[variety."13755.crimson"] # Raw Winter Squid, Rare
+name = "Crimson"
+description = "Deep crimson all over, the colour of a warning. Inks twice as much."
+
+[variety."13755.glassfrost"] # Raw Winter Squid, Rare
+name = "Glassfrost"
+description = "Clear as ice, rimed at the edges. Melts a little in the hand, or seems to."
+
+[variety."13755.frostlight"] # Raw Winter Squid, Epic
+name = "Frostlight"
+description = "Glows pale blue in the dark, like moonlight on new snow. Only seen in the deepest cold."
+
+[variety."13756.lateral-lined"] # Raw Summer Bass, Common
+name = "Lateral-lined"
+description = "Green with a dark line down each flank. Lurks under anything that gives shade."
+
+[variety."13756.lily-pad"] # Raw Summer Bass, Common
+name = "Lily-pad"
+description = "Mottled like a pond full of lily pads, which is exactly where it lurks."
+
+[variety."13756.bronze"] # Raw Summer Bass, Common
+name = "Bronze"
+description = "Bronze with faint bars, from rocky water. Jumps more than the green ones."
+
+[variety."13756.sun-bleached"] # Raw Summer Bass, Common
+name = "Sun-bleached"
+description = "Pale from shallow summer water, the stripe faded to a smudge. Warm to hold."
+
+[variety."13756.bucketmouth"] # Raw Summer Bass, Uncommon
+name = "Bucketmouth"
+description = "A mouth like a bucket. Swallows lures whole, and sometimes small ducks."
+
+[variety."13756.red-eyed"] # Raw Summer Bass, Uncommon
+name = "Red-eyed"
+description = "Eyes red as a summer sunset. Feeds hardest in the evening heat."
+
+[variety."13756.tiger"] # Raw Summer Bass, Uncommon
+name = "Tiger"
+description = "Dark bars broken like tiger stripes. Fights like one, briefly."
+
+[variety."13756.golden"] # Raw Summer Bass, Rare
+name = "Golden"
+description = "Gold with a bronze stripe. A summer's afternoon of a fish."
+
+[variety."13756.shadow"] # Raw Summer Bass, Rare
+name = "Shadow"
+description = "Black-green and hard to see. Lives in the shade and prefers it."
+
+[variety."13756.midsummer"] # Raw Summer Bass, Epic
+name = "Midsummer"
+description = "Glows warm gold, like the longest evening of the year. Caught at the height of summer, and only then."
+
+[variety."13757.thunder-dark"] # Lightning Eel, Common
+name = "Thunder-dark"
+description = "Olive-dark and buzzing. Tingles. Don't lick it."
+
+[variety."13757.bolt-striped"] # Lightning Eel, Common
+name = "Bolt-striped"
+description = "Yellow zigzags down the flanks, like a child's drawing of lightning."
+
+[variety."13757.slate"] # Lightning Eel, Common
+name = "Slate"
+description = "Grey as storm clouds. Hums at a lower note."
+
+[variety."13757.ember-bellied"] # Lightning Eel, Common
+name = "Ember-bellied"
+description = "An orange belly, like an electric eel of warm rivers. Bites with a spark."
+
+[variety."13757.spark-spotted"] # Lightning Eel, Uncommon
+name = "Spark-spotted"
+description = "Pale spots that crackle when it thrashes. Gloves are no help."
+
+[variety."13757.long"] # Lightning Eel, Uncommon
+name = "Long"
+description = "A fin that runs the whole length of its body. It ripples like a flag in a gale."
+
+[variety."13757.ozone"] # Lightning Eel, Uncommon
+name = "Ozone"
+description = "Smells of rain after a storm. The air around it goes sharp."
+
+[variety."13757.white-bolt"] # Lightning Eel, Rare
+name = "White Bolt"
+description = "White as a lightning flash, and briefly blinding when it twists."
+
+[variety."13757.blackout"] # Lightning Eel, Rare
+name = "Blackout"
+description = "Black and silent until touched. Then not silent at all."
+
+[variety."13757.stormcaller"] # Lightning Eel, Epic
+name = "Stormcaller"
+description = "Blue lightning forks across its body and into the water. Clouds gather while it's on the line, or seem to."
+
+[variety."13758.ember-gilled"] # Raw Redgill, Common
+name = "Ember-gilled"
+description = "Barred like a perch, with gills red as embers. The usual look, and the usual temper."
+
+[variety."13758.yellow"] # Raw Redgill, Common
+name = "Yellow"
+description = "Yellow-gold with dark bars. Bright as a lamp in green water."
+
+[variety."13758.olive"] # Raw Redgill, Common
+name = "Olive"
+description = "Darker olive, from overgrown rivers. The gills shine brighter by contrast."
+
+[variety."13758.spotted"] # Raw Redgill, Common
+name = "Spotted"
+description = "Spots instead of bars. Same temper."
+
+[variety."13758.redfin"] # Raw Redgill, Uncommon
+name = "Redfin"
+description = "Fins as red as the gills. The whole fish looks angry, because it is."
+
+[variety."13758.cinder"] # Raw Redgill, Uncommon
+name = "Cinder"
+description = "Ash-grey with glowing red gills, like a coal pulled from a dead fire."
+
+[variety."13758.fire-gilled"] # Raw Redgill, Uncommon
+name = "Fire-gilled"
+description = "The gills actually glow. Nobody's sure the water was cold enough."
+
+[variety."13758.golden"] # Raw Redgill, Rare
+name = "Golden"
+description = "Gold with scarlet gills. Looks like something from a lord's fountain."
+
+[variety."13758.ghost"] # Raw Redgill, Rare
+name = "Ghost"
+description = "Pale, with pink gills and faint bars. Feels cold even in summer."
+
+[variety."13758.fel-scarred"] # Raw Redgill, Epic
+name = "Fel-scarred"
+description = "Green fire runs under the scales where its red should be. It came from water that remembers a corruption."
+
+[variety."13759.starfeeder"] # Raw Nightfin Snapper, Common
+name = "Starfeeder"
+description = "Dark violet with fins like the night. Feeds by starlight."
+
+[variety."13759.dusk"] # Raw Nightfin Snapper, Common
+name = "Dusk"
+description = "Violet back, rose belly, like the sky just after sunset."
+
+[variety."13759.indigo"] # Raw Nightfin Snapper, Common
+name = "Indigo"
+description = "Deep indigo. Vanishes in the water as soon as the moon goes in."
+
+[variety."13759.star-speckled"] # Raw Nightfin Snapper, Common
+name = "Star-speckled"
+description = "Pale specks along the back, like a sky with a few stars out."
+
+[variety."13759.moonfin"] # Raw Nightfin Snapper, Uncommon
+name = "Moonfin"
+description = "Silver-white fins that catch the moonlight. Anglers learn to like the dark."
+
+[variety."13759.crescent-marked"] # Raw Nightfin Snapper, Uncommon
+name = "Crescent-marked"
+description = "A pale crescent on each flank, as if the moon left a fingerprint."
+
+[variety."13759.owl-eyed"] # Raw Nightfin Snapper, Uncommon
+name = "Owl-eyed"
+description = "Huge golden eyes made for the dark. Stares right back."
+
+[variety."13759.eclipse"] # Raw Nightfin Snapper, Rare
+name = "Eclipse"
+description = "Black, rimmed with gold at the fins, like the sun gone dark."
+
+[variety."13759.dawn-caught"] # Raw Nightfin Snapper, Rare
+name = "Dawn-caught"
+description = "Pink and gold, caught as the night ended. A night fish that stayed up too late."
+
+[variety."13759.starsong"] # Raw Nightfin Snapper, Epic
+name = "Starsong"
+description = "Its specks shine like the night sky and move as it turns, like stars wheeling. Silence falls on the dock."
+
+[variety."13760.coin-scaled"] # Raw Sunscale Salmon, Common
+name = "Coin-scaled"
+description = "Silver with gold-flecked scales that catch the light like coins in a stream."
+
+[variety."13760.morning"] # Raw Sunscale Salmon, Common
+name = "Morning"
+description = "Flushed peach along the belly, like first light on a river."
+
+[variety."13760.river-dark"] # Raw Sunscale Salmon, Common
+name = "River-dark"
+description = "Darker, from shaded rivers. The gold flecks stand out."
+
+[variety."13760.silverbright"] # Raw Sunscale Salmon, Common
+name = "Silverbright"
+description = "Bright silver, fresh from the sea. Barely a fleck of gold."
+
+[variety."13760.red-run"] # Raw Sunscale Salmon, Uncommon
+name = "Red Run"
+description = "Gone red for the spawning run, with a green head. The river turns red with them in a good year."
+
+[variety."13760.hooknose"] # Raw Sunscale Salmon, Uncommon
+name = "Hooknose"
+description = "A fierce hooked jaw from its run upriver. Looks ready to fight a bear."
+
+[variety."13760.noonday"] # Raw Sunscale Salmon, Uncommon
+name = "Noonday"
+description = "Gold all along the back, like a river at noon."
+
+[variety."13760.copper"] # Raw Sunscale Salmon, Rare
+name = "Copper"
+description = "Polished copper from head to tail. Tastes like salmon, looks like a kettle."
+
+[variety."13760.twilight"] # Raw Sunscale Salmon, Rare
+name = "Twilight"
+description = "Violet and orange, like the last light on the river. Gone by full dark."
+
+[variety."13760.sunfire"] # Raw Sunscale Salmon, Epic
+name = "Sunfire"
+description = "Every scale lit gold like a tiny sun. Warm as a hearthstone. Hard to look at directly."
+
+[variety."13888.blue-black"] # Darkclaw Lobster, Common
+name = "Blue-black"
+description = "Blue-black shell, lightly speckled, claws first. The kind that hides under every rock in the bay."
+
+[variety."13888.sea-green"] # Darkclaw Lobster, Common
+name = "Sea-green"
+description = "Green-black, like a lobster of colder seas."
+
+[variety."13888.mud-brown"] # Darkclaw Lobster, Common
+name = "Mud-brown"
+description = "Brown from muddy shelves. Pinches just as hard."
+
+[variety."13888.barnacled"] # Darkclaw Lobster, Common
+name = "Barnacled"
+description = "Barnacles all over the shell. Hasn't moulted in a long while, and isn't sorry."
+
+[variety."13888.red-banded"] # Darkclaw Lobster, Uncommon
+name = "Red-banded"
+description = "Red bands across the tail. Looks half-cooked already. Isn't."
+
+[variety."13888.bigclaw"] # Darkclaw Lobster, Uncommon
+name = "Bigclaw"
+description = "One claw twice the size of the other. Knows exactly which one to use."
+
+[variety."13888.calico"] # Darkclaw Lobster, Uncommon
+name = "Calico"
+description = "Orange and black in patches, like a tortoiseshell cat. Hardly anyone believes it."
+
+[variety."13888.sapphire"] # Darkclaw Lobster, Rare
+name = "Sapphire"
+description = "Bright blue all over. One in a great many. Pinches like the rest."
+
+[variety."13888.ghost"] # Darkclaw Lobster, Rare
+name = "Ghost"
+description = "White as bone. Even the claws are pale. Even the temper isn't."
+
+[variety."13888.abyssal"] # Darkclaw Lobster, Epic
+name = "Abyssal"
+description = "Violet light glows from the joints of its shell. Climbed up from very deep water, and seems annoyed about it."
+
+[variety."13889.frost-white"] # Raw Whitescale Salmon, Common
+name = "Frost-white"
+description = "Pale silver, lightly speckled, cold to the touch however long it sits in the sun."
+
+[variety."13889.silverblue"] # Raw Whitescale Salmon, Common
+name = "Silverblue"
+description = "A blue cast along the back, from glacier water."
+
+[variety."13889.snowflake"] # Raw Whitescale Salmon, Common
+name = "Snowflake"
+description = "Bright white spots on silver, like snow on a frozen lake."
+
+[variety."13889.pearl"] # Raw Whitescale Salmon, Common
+name = "Pearl"
+description = "A pearly sheen with no spots at all. Looks carved."
+
+[variety."13889.spawn-blush"] # Raw Whitescale Salmon, Uncommon
+name = "Spawn-blush"
+description = "A pink blush along the flanks for spawning. Rare in such cold water."
+
+[variety."13889.hot-spring"] # Raw Whitescale Salmon, Uncommon
+name = "Hot-spring"
+description = "Warmer-toned, from waters where the springs rise. Steam comes off it when landed."
+
+[variety."13889.hooknose"] # Raw Whitescale Salmon, Uncommon
+name = "Hooknose"
+description = "A hooked jaw and a cold stare. Frost on the whiskers that it doesn't have."
+
+[variety."13889.crystal"] # Raw Whitescale Salmon, Rare
+name = "Crystal"
+description = "Clear as ice in places. The pan seems wrong somehow."
+
+[variety."13889.ashen"] # Raw Whitescale Salmon, Rare
+name = "Ashen"
+description = "Grey as ash, from waters near the blighted lands. Still fine eating, they say."
+
+[variety."13889.wintersheen"] # Raw Whitescale Salmon, Epic
+name = "Wintersheen"
+description = "Frost patterns cover every scale and glow faintly blue. It never thaws, not even in the pan."
+
+[variety."13890.bony-backed"] # Raw Plated Armorfish, Common
+name = "Bony-backed"
+description = "Bony plates down the back like a sturgeon. Wears its armour outside, temper inside."
+
+[variety."13890.bronze-plated"] # Raw Plated Armorfish, Common
+name = "Bronze-plated"
+description = "Plates the colour of old bronze. Looks fit for a parade."
+
+[variety."13890.iron-plated"] # Raw Plated Armorfish, Common
+name = "Iron-plated"
+description = "Grey plates like iron armour. Bring a heavier knife."
+
+[variety."13890.moss-backed"] # Raw Plated Armorfish, Common
+name = "Moss-backed"
+description = "Green moss on its plates. Hasn't moved in a while, then suddenly has."
+
+[variety."13890.spiked"] # Raw Plated Armorfish, Uncommon
+name = "Spiked"
+description = "Every plate tipped with a spike. Sensible anglers use the net."
+
+[variety."13890.battle-scarred"] # Raw Plated Armorfish, Uncommon
+name = "Battle-scarred"
+description = "Dented plates and old gouges. Whatever tried to eat it gave up."
+
+[variety."13890.ring-plated"] # Raw Plated Armorfish, Uncommon
+name = "Ring-plated"
+description = "Plates in neat rings, like a coat of banded mail."
+
+[variety."13890.gilded"] # Raw Plated Armorfish, Rare
+name = "Gilded"
+description = "Gold-edged plates, like a knight's parade armour. Fights like a knight, too."
+
+[variety."13890.ore-plated"] # Raw Plated Armorfish, Rare
+name = "Ore-plated"
+description = "Plates with a green-grey shine, like the hardest ore in the mountains. The knife gives up first."
+
+[variety."13890.ancient-bulwark"] # Raw Plated Armorfish, Epic
+name = "Ancient Bulwark"
+description = "Plates thick as shields, carved with old lines that glow gold. As if somebody forged it long ago and set it swimming."
+
+[variety."13893.big-blue"] # Large Raw Mightfish, Common
+name = "Big Blue"
+description = "Huge, blue and broad. Both hands, and probably a friend."
+
+[variety."13893.storm-grey"] # Large Raw Mightfish, Common
+name = "Storm-grey"
+description = "Grey as the bay in a storm. Feels like it weighs as much."
+
+[variety."13893.barred"] # Large Raw Mightfish, Common
+name = "Barred"
+description = "Broad dark bars down its sides like ribs on a ship's hull."
+
+[variety."13893.sea-green"] # Large Raw Mightfish, Common
+name = "Sea-green"
+description = "Green as deep water. Takes three to pull it into the boat."
+
+[variety."13893.old-scarback"] # Large Raw Mightfish, Uncommon
+name = "Old Scarback"
+description = "Scars from teeth bigger than any angler wants to meet."
+
+[variety."13893.hump-shouldered"] # Large Raw Mightfish, Uncommon
+name = "Hump-shouldered"
+description = "A great hump behind the head. Built like a dock piling."
+
+[variety."13893.spotted"] # Large Raw Mightfish, Uncommon
+name = "Spotted"
+description = "Pale spots across a dark back like foam on a wave."
+
+[variety."13893.golden"] # Large Raw Mightfish, Rare
+name = "Golden"
+description = "A golden giant. Nobody believes the story without the fish."
+
+[variety."13893.abyss-dark"] # Large Raw Mightfish, Rare
+name = "Abyss-dark"
+description = "Black-blue, from the deepest trench of the bay. Tugs like the trench wants it back."
+
+[variety."13893.leviathans-get"] # Large Raw Mightfish, Epic
+name = "Leviathan's Get"
+description = "Glowing lines like old runes along its flanks. The bay's oldest stories are about something bigger than this. It's a start."
+
+[variety."16967.yellowfin"] # Feralas Ahi, Common
+name = "Yellowfin"
+description = "Dark blue back, silver belly, long yellow fins. The fish the river is famous for."
+
+[variety."16967.verdant"] # Feralas Ahi, Common
+name = "Verdant"
+description = "A green cast along the back, from river water under the great trees."
+
+[variety."16967.feeding-barred"] # Feralas Ahi, Common
+name = "Feeding-barred"
+description = "Pale bars flash on its flanks, as tuna show when hunting. Caught mid-meal."
+
+[variety."16967.silverflank"] # Feralas Ahi, Common
+name = "Silverflank"
+description = "Brighter silver all down the side. The yellow fins look painted on."
+
+[variety."16967.sickle-fin"] # Feralas Ahi, Uncommon
+name = "Sickle-fin"
+description = "Fins grown long and curved like sickles. Built for long journeys downriver."
+
+[variety."16967.gold-belted"] # Feralas Ahi, Uncommon
+name = "Gold-belted"
+description = "A gold stripe from eye to tail. A favour fish in its finest clothes."
+
+[variety."16967.mossback"] # Feralas Ahi, Uncommon
+name = "Mossback"
+description = "Green-black above, as if the forest grew on it. Swims slow, then very fast."
+
+[variety."16967.imperial"] # Feralas Ahi, Rare
+name = "Imperial"
+description = "Deep royal blue with fins of bright gold. Looks too fine to be a favour for anybody."
+
+[variety."16967.ghostfin"] # Feralas Ahi, Rare
+name = "Ghostfin"
+description = "Pale all over, the fins almost clear. Swims like a reflection."
+
+[variety."16967.leaf-lit"] # Feralas Ahi, Epic
+name = "Leaf-lit"
+description = "Pale green light moves under its scales like sun through leaves. The forest's old magic is in these waters."
+
+[variety."16968.silver-barred"] # Sar'theris Striker, Common
+name = "Silver-barred"
+description = "Long, silver and barred, with a jaw full of teeth. Built for one thing."
+
+[variety."16968.sandstrand"] # Sar'theris Striker, Common
+name = "Sandstrand"
+description = "Sand-coloured, from the shallows of a dry coast. Invisible until it strikes."
+
+[variety."16968.spotted"] # Sar'theris Striker, Common
+name = "Spotted"
+description = "Black spots near the tail, as the big ones grow. Still waiting for an argument."
+
+[variety."16968.greyback"] # Sar'theris Striker, Common
+name = "Greyback"
+description = "Plain grey above, white below. Just teeth and intent."
+
+[variety."16968.needlejaw"] # Sar'theris Striker, Uncommon
+name = "Needlejaw"
+description = "Teeth like a row of needles. Count your fingers after."
+
+[variety."16968.bronze"] # Sar'theris Striker, Uncommon
+name = "Bronze"
+description = "Bronze-barred, from warm water. Twice the temper."
+
+[variety."16968.chevron"] # Sar'theris Striker, Uncommon
+name = "Chevron"
+description = "Dark chevrons down its back like arrows pointing at trouble."
+
+[variety."16968.blackback"] # Sar'theris Striker, Rare
+name = "Blackback"
+description = "Black above, steel below. Strikes from the dark."
+
+[variety."16968.ghost"] # Sar'theris Striker, Rare
+name = "Ghost"
+description = "White and nearly clear, the bars a shadow of themselves. The teeth are perfectly solid."
+
+[variety."16968.bonecutter"] # Sar'theris Striker, Epic
+name = "Bonecutter"
+description = "Teeth like bone saws and a back covered in old marks. Dry-coast stories say it outlived three hunters."
+
+[variety."16969.spotted-sail"] # Savage Coast Blue Sailfin, Common
+name = "Spotted Sail"
+description = "Blue back, silver belly, a tall sail dotted with spots. Raises it the moment anyone watches."
+
+[variety."16969.barred"] # Savage Coast Blue Sailfin, Common
+name = "Barred"
+description = "Pale blue bars down the flanks, lit up mid-fight. Best seen in the air, which is where it spends the fight."
+
+[variety."16969.violet-sail"] # Savage Coast Blue Sailfin, Common
+name = "Violet Sail"
+description = "The sail glows violet when it's excited. It's always excited."
+
+[variety."16969.silver"] # Savage Coast Blue Sailfin, Common
+name = "Silver"
+description = "Silver more than blue. The sail stays bright as ever."
+
+[variety."16969.tall-sailed"] # Savage Coast Blue Sailfin, Uncommon
+name = "Tall-sailed"
+description = "A sail taller than the fish is deep. Wind catches it on the line."
+
+[variety."16969.jungle-green"] # Savage Coast Blue Sailfin, Uncommon
+name = "Jungle-green"
+description = "Green as the jungle behind the coast. Shows off just the same."
+
+[variety."16969.sunset-sail"] # Savage Coast Blue Sailfin, Uncommon
+name = "Sunset Sail"
+description = "An orange sail, like the coast at evening. Leaps more than the blue ones."
+
+[variety."16969.royal"] # Savage Coast Blue Sailfin, Rare
+name = "Royal"
+description = "Deep royal blue, the sail spotted gold. Anglers take turns holding it."
+
+[variety."16969.white-sail"] # Savage Coast Blue Sailfin, Rare
+name = "White Sail"
+description = "Pale as a ship's canvas. Sailors swear it's a sign of good weather."
+
+[variety."16969.skyleaper"] # Savage Coast Blue Sailfin, Epic
+name = "Skyleaper"
+description = "Lines of blue light ripple up the sail as it leaps. Seems to hang in the air longer than any fish should."
+
+[variety."16970.dorado"] # Misty Reed Mahi Mahi, Common
+name = "Dorado"
+description = "Green and gold with blue spots, like a parrot that took up swimming."
+
+[variety."16970.gold-flanked"] # Misty Reed Mahi Mahi, Common
+name = "Gold-flanked"
+description = "More gold than green. Fades to grey soon after landing, so look quickly."
+
+[variety."16970.bluefin"] # Misty Reed Mahi Mahi, Common
+name = "Bluefin"
+description = "Blue along the back and fins. Cooler-headed. Not by much."
+
+[variety."16970.reed-green"] # Misty Reed Mahi Mahi, Common
+name = "Reed-green"
+description = "Dull green, from the misty reeds. Hard to see until it jumps."
+
+[variety."16970.bull-headed"] # Misty Reed Mahi Mahi, Uncommon
+name = "Bull-headed"
+description = "A blunt, tall forehead like a bull mahi. Charges the boat."
+
+[variety."16970.barred"] # Misty Reed Mahi Mahi, Uncommon
+name = "Barred"
+description = "Dark bars flash on its sides when hooked. It's furious."
+
+[variety."16970.fog-pale"] # Misty Reed Mahi Mahi, Uncommon
+name = "Fog-pale"
+description = "Pale, as if the swamp mist got into the colour. Fights like a fog bank, then like a mule."
+
+[variety."16970.emerald"] # Misty Reed Mahi Mahi, Rare
+name = "Emerald"
+description = "Pure green, no gold at all. Like a gem dropped in the marsh."
+
+[variety."16970.sunfire"] # Misty Reed Mahi Mahi, Rare
+name = "Sunfire"
+description = "Orange and gold, like a fire at the water's edge. The swamp goes quiet to look."
+
+[variety."16970.marsh-lantern"] # Misty Reed Mahi Mahi, Epic
+name = "Marsh Lantern"
+description = "Its spots glow green-gold in the mist, like lanterns in a swamp. Locals say it leads anglers astray."
+
+[variety."19807.contest-speckle"] # Speckled Tastyfish, Common
+name = "Contest Speckle"
+description = "Silvery-grey and freckled. Every contestant on the dock knows this one by sight."
+
+[variety."19807.silver-speckle"] # Speckled Tastyfish, Common
+name = "Silver Speckle"
+description = "Brighter silver, from open water. Same freckles."
+
+[variety."19807.olive"] # Speckled Tastyfish, Common
+name = "Olive"
+description = "Green-backed, from weedy shallows. Contestants grab them anyway."
+
+[variety."19807.big-spotted"] # Speckled Tastyfish, Common
+name = "Big-spotted"
+description = "Spots like thrown coins. Somebody always claims it's a different fish."
+
+[variety."19807.red-speckled"] # Speckled Tastyfish, Uncommon
+name = "Red-speckled"
+description = "Red freckles. Looks seasoned already."
+
+[variety."19807.gilded"] # Speckled Tastyfish, Uncommon
+name = "Gilded"
+description = "Gold with brown freckles. A crowd gathers on the dock."
+
+[variety."19807.lucky-speckle"] # Speckled Tastyfish, Uncommon
+name = "Lucky Speckle"
+description = "One speckle shaped like a horseshoe. Kept for luck, then eaten for lunch."
+
+[variety."19807.pale"] # Speckled Tastyfish, Rare
+name = "Pale"
+description = "White with faint cream freckles. Turns heads at every contest."
+
+[variety."19807.black"] # Speckled Tastyfish, Rare
+name = "Black"
+description = "Black with white freckles, like a night sky in a hurry."
+
+[variety."19807.champions"] # Speckled Tastyfish, Epic
+name = "Champion's"
+description = "Every freckle shines like a gold coin. The kind of fish that gets its own story told for years."
+
+[variety."19975.slimeback"] # Zulian Mudskunk, Common
+name = "Slimeback"
+description = "Brown, slimy and squat. The nose finds it before the eyes do."
+
+[variety."19975.skunk-striped"] # Zulian Mudskunk, Common
+name = "Skunk-striped"
+description = "A pale stripe from head to tail. A warning, and a fair one."
+
+[variety."19975.jungle-mud"] # Zulian Mudskunk, Common
+name = "Jungle-mud"
+description = "Green-brown, from deep jungle mud. Smells of it, too."
+
+[variety."19975.spotted"] # Zulian Mudskunk, Common
+name = "Spotted"
+description = "Dark spots on brown, like mud splashed on mud."
+
+[variety."19975.ochre"] # Zulian Mudskunk, Uncommon
+name = "Ochre"
+description = "Ochre-yellow, like the clay the trolls paint with. Smells no better."
+
+[variety."19975.long-whiskered"] # Zulian Mudskunk, Uncommon
+name = "Long-whiskered"
+description = "Long barbels that trail in the mud. Finds every bait, smells every one."
+
+[variety."19975.masked"] # Zulian Mudskunk, Uncommon
+name = "Masked"
+description = "A dark band across the eyes like a carved mask. Looks like it knows things."
+
+[variety."19975.bloodmud"] # Zulian Mudskunk, Rare
+name = "Bloodmud"
+description = "Dark red, from mud where old offerings were made. Best not asked about."
+
+[variety."19975.pale"] # Zulian Mudskunk, Rare
+name = "Pale"
+description = "Bone-pale, from water under ancient stone. The smell survives the colour."
+
+[variety."19975.idol-touched"] # Zulian Mudskunk, Epic
+name = "Idol-touched"
+description = "Faint red-violet veins glow on its back like old idol paint. Even the beasts of these waters keep clear of it."
+
+[variety."21071.hillside"] # Raw Sagefish, Common
+name = "Hillside"
+description = "Sage-green and freckled, like the hills above the stream it came from."
+
+[variety."21071.silver-sage"] # Raw Sagefish, Common
+name = "Silver Sage"
+description = "Silvery, like sage leaves turned over in the wind."
+
+[variety."21071.dark-sage"] # Raw Sagefish, Common
+name = "Dark Sage"
+description = "Deep green, from shaded streams. Smells stronger."
+
+[variety."21071.banded"] # Raw Sagefish, Common
+name = "Banded"
+description = "Faint bands like rows in a herb garden."
+
+[variety."21071.lavender-finned"] # Raw Sagefish, Uncommon
+name = "Lavender-finned"
+description = "Fins the colour of lavender. Smells, faintly, of it too."
+
+[variety."21071.thyme-spotted"] # Raw Sagefish, Uncommon
+name = "Thyme-spotted"
+description = "Tiny purple spots like thyme flowers. The cooks approve."
+
+[variety."21071.gold-sage"] # Raw Sagefish, Uncommon
+name = "Gold Sage"
+description = "Yellow-green like dry summer grass. Smells of a long hot day."
+
+[variety."21071.frost-sage"] # Raw Sagefish, Rare
+name = "Frost Sage"
+description = "Pale with a frosted edge to every scale. Tastes cleaner, somehow."
+
+[variety."21071.sweetgrass"] # Raw Sagefish, Rare
+name = "Sweetgrass"
+description = "Bright green and sweet-smelling. The only fish anybody has wanted to put in a drawer with the linen."
+
+[variety."21071.mindbright"] # Raw Sagefish, Epic
+name = "Mindbright"
+description = "Pale light flickers in the lines of its scales. Anglers who eat it say they think more clearly. They say that a lot."
+
+[variety."21153.full-grown"] # Raw Greater Sagefish, Common
+name = "Full-grown"
+description = "The sage grew up: bigger, darker, still fragrant."
+
+[variety."21153.moss-green"] # Raw Greater Sagefish, Common
+name = "Moss-green"
+description = "Mottled like moss on old stone. Smells of a damp forest."
+
+[variety."21153.silver"] # Raw Greater Sagefish, Common
+name = "Silver"
+description = "A silver giant of its kind. Grew up and got bright."
+
+[variety."21153.bronze"] # Raw Greater Sagefish, Common
+name = "Bronze"
+description = "Bronze from tannin-dark rivers. Tastes faintly of tea."
+
+[variety."21153.banded"] # Raw Greater Sagefish, Uncommon
+name = "Banded"
+description = "Broad bands like the rings of a tree. The old ones have more."
+
+[variety."21153.violet-finned"] # Raw Greater Sagefish, Uncommon
+name = "Violet-finned"
+description = "Purple fins, like a sage in bloom. The scent is stronger in spring."
+
+[variety."21153.bearded"] # Raw Greater Sagefish, Uncommon
+name = "Bearded"
+description = "Long trailing fins like an old sage's beard. Looks wiser than it is."
+
+[variety."21153.golden"] # Raw Greater Sagefish, Rare
+name = "Golden"
+description = "Gold and fragrant. Smells like honey on warm stone."
+
+[variety."21153.ashen"] # Raw Greater Sagefish, Rare
+name = "Ashen"
+description = "Grey as smoke, and it smells faintly of incense. Nobody burns sage near the water any more."
+
+[variety."21153.elder-sage"] # Raw Greater Sagefish, Epic
+name = "Elder Sage"
+description = "Old, huge, its scales lit with pale gold lines like veins in a leaf. Some places keep their oldest things."
+
+[variety."251524.whimsical"] # Whimsyfin, Common
+name = "Whimsical"
+description = "Gold, with flowing blue fins like a dancer's scarves. Looks painted by somebody in a very good mood."
+
+[variety."251524.mint"] # Whimsyfin, Common
+name = "Mint"
+description = "Mint green with pink dots. Looks like a sweet from a fair."
+
+[variety."251524.lemon"] # Whimsyfin, Common
+name = "Lemon"
+description = "Lemon yellow with blue dots. It seems very pleased about something."
+
+[variety."251524.lilac"] # Whimsyfin, Common
+name = "Lilac"
+description = "Lilac with cream stripes. Swims in loops, for no clear reason."
+
+[variety."251524.polka-dotted"] # Whimsyfin, Uncommon
+name = "Polka-dotted"
+description = "Big white dots on pink, like a festival dress. It knows."
+
+[variety."251524.swirled"] # Whimsyfin, Uncommon
+name = "Swirled"
+description = "Pink and blue swirled together like icing. Makes anglers hungry for the wrong thing."
+
+[variety."251524.frill-finned"] # Whimsyfin, Uncommon
+name = "Frill-finned"
+description = "Fins like lace ruffles. Hopeless at swimming, delighted anyway."
+
+[variety."251524.rainbow"] # Whimsyfin, Rare
+name = "Rainbow"
+description = "Every colour in stripes, as if painted by a child with a full box. It glitters."
+
+[variety."251524.murk-touched"] # Whimsyfin, Rare
+name = "Murk-touched"
+description = "Dark purple, its dots dimmed. The only one of its kind that looks like it has had a bad day."
+
+[variety."251524.dreamfin"] # Whimsyfin, Epic
+name = "Dreamfin"
+description = "Glows soft pink and blue, and leaves a faint shimmer in the water behind it. Small children are told it grants wishes. Nobody checks."

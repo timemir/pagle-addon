@@ -21,6 +21,9 @@ function ns.Hunts.OnInitialize()
 	end
 	-- Hunts' slots and goods, right after RegisterModule (HNT-R122).
 	ns.RegisterGoods(ns.Module)
+	-- The board's First look, before the board first opens, so it joins Off you go's list and the tour (ONB-R56), on a
+	-- Core that has First looks (ONB-R90).
+	ns.RegisterBoardLook(ns.Module)
 
 	-- Account-wide, one shared profile, with the defaults in hunts.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleHuntsDB", ns.DB_DEFAULTS, true)

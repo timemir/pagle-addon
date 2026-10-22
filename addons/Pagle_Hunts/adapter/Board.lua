@@ -53,6 +53,7 @@ local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
 
 ---@class BoardFrame: Frame
 ---@field close BoardCloseButton
+---@field help BoardHelpButton                 -- the "?" beside it (ONB-R59)
 ---@field cover BoardLeatherView               -- the leather, in the cover it wears (HNT-R70)
 ---@field papers table<BoardSide, BoardParchmentView>
 ---@field paperFrames table<BoardSide, Frame>  -- each page's paper: the spreads' clip frames sit on it
@@ -256,6 +257,15 @@ local function build(board)
 	frame.close:SetScript("OnClick", function()
 		board:Hide()
 	end)
+	-- the "?" beside it, in the same wax: the First look's notes again (ONB-R59, adapter/Look.lua); hidden on a Core
+	-- without First looks (ONB-R90)
+	frame.help = ns.NewBoardHelp(frame, ns.L.LOOK_AGAIN)
+	frame.help:SetPoint("RIGHT", frame.close, "LEFT", -4, 0)
+	frame.help:SetFrameLevel(frame:GetFrameLevel() + 10)
+	frame.help:SetScript("OnClick", function()
+		ns.ShowBoardLookAgain()
+	end)
+	frame.help:SetShown(ns.HasBoardLook())
 	frame:SetScript("OnHide", function()
 		board:Hidden()
 	end)
@@ -330,6 +340,8 @@ function Board:Open(place)
 		local ribbons = frame.anchors.ribbons --[[@as { rowWidth: number? }]]
 		local width = math.max(EXTENT_WIDTH, 2 * (RIBBONS_LEFT + (ribbons.rowWidth or 0)) - WIDTH)
 		ns.FitBoard(frame, width, EXTENT_HEIGHT, RIBBONS_LIFT)
+		-- drawn and fitted: the First evening list's item and, the first time, the First look (adapter/Look.lua)
+		ns.BoardOpened()
 	end
 end
 

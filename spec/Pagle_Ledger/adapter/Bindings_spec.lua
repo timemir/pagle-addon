@@ -72,7 +72,9 @@ local function noteRefreshes(fake)
 	local goods = fake.ns.goods
 	local refresh = goods.Refresh
 	goods.Refresh = function(self, module)
-		modes[#modes + 1] = fake.projections:Mode() or "idle"
+		if module == "Ledger" then -- not Core's own, its fish crests' (VAR-R13)
+			modes[#modes + 1] = fake.projections:Mode() or "idle"
+		end
 		return refresh(self, module)
 	end
 	return modes
@@ -290,11 +292,13 @@ describe("the Ledger's zone crests", function()
 				return loaded.client.areaNames[areaID]
 			end)
 
+			-- Plain, then Core's fish crests, registered before any Module (VAR-R12), then the Ledger's.
 			local registered = fake.ns.goods:GoodsOf("core.crest")
-			assert.are.equal(54, #registered)
+			local before = 1 + #FISH_CREST_SPECIES
+			assert.are.equal(before + 53, #registered)
 			assert.are.equal("core.crest.plain", registered[1].id)
 			for i, crest in ipairs(sorted) do
-				local good = registered[i + 1]
+				local good = registered[before + i]
 				assert.are.same({
 					ns.ZoneCrestID(crest),
 					"Ledger",
