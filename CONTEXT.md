@@ -158,6 +158,18 @@ _Avoid_: cap, ceiling, max size, limit
 The word that places a Simulated Size within its Species' range: Tiddler, Decent, Hefty, Whopper or Monster. It stands in for heft; Pagle never shows a simulated weight.
 _Avoid_: weight, bracket, size class, trophy (which is a real pound fish)
 
+**Variety**:
+One of the ten looks a sized Species comes in, such as a Firefin Snapper's Coral. Every Catch of that Species is exactly one of them, fixed by its Catch ID and independent of its size. Until the Angler first catches a variety, Pagle shows only its rarity, never its name or colours.
+_Avoid_: colour, skin, morph, variant
+
+**Rarity**:
+How often a Variety turns up: Common, Uncommon, Rare or Epic. Each Species has four Common, three Uncommon, two Rare and one Epic.
+_Avoid_: quality (which is an item's own grade in the game), tier
+
+**Fish crest**:
+A Bookplate crest earned by catching all ten varieties of one Species.
+_Avoid_: species crest, variety crest
+
 **Catch Milestone**:
 A lifetime Catch count the Angler reaches, such as the 1,000th Catch, recognised with a banner. It is recognition only and earns no XP.
 _Avoid_: Skill Milestone (which is about fishing skill), catch achievement
