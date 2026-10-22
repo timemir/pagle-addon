@@ -20,7 +20,8 @@ DATA-R99 is silent:
 - a Hunt's share is its mean over the zones' areas (each zone and subzone with a loot table, alike): fishing round
   the zones, since a one-row subzone table would otherwise set the pace;
 - the top 3 Species with a 45-minute tier of at least 1 get a draft each; a Legend is never a Named fish;
-- a Timed span is the night or day window's, or 18:00-21:00 (dusk); a tier below 20 rounds to a whole number, above
+- a Timed span is the night or day window's, or 18:00-21:00 (dusk), each only if it passes DATA-R99's run checks
+  (closed at most 36 hours at a stretch, open at least 3 hours in every run); a tier below 20 rounds to a whole number, above
   to the nearest 5; drafts go to a dated folder under the system temp directory unless --out says otherwise.
 """
 
@@ -244,14 +245,15 @@ def _hunt(
 
 
 def _spans(layers: Layers) -> list[tuple[str, list[list[int]]]]:
-    """The Timed spans in turn: the night and day windows' time, then dusk, each with its tag (DATA-R97)."""
+    """The Timed spans in turn: the night and day windows' time, then dusk, each with its tag (DATA-R97), leaving out
+    any a run can't always complete (DATA-R99, Tunables)."""
     spans: list[tuple[str, list[list[int]]]] = []
     for window in SPAN_WINDOWS:
         time = layers.windows.get(window, {}).get("time")
         if isinstance(time, list):
             spans.append((window, [list(span) for span in time]))
     spans.append(("dusk", DUSK))
-    return spans
+    return [(span, time) for span, time in spans if run_openness({"time": time}, layers.forever.events).fits]
 
 
 def propose(

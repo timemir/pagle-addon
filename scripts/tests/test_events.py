@@ -3,6 +3,7 @@ data/hunts/events/<event-id>.toml, their checks, EventList.lua, the event Hunts'
 event lore in Pagle_Hunts' Lore.lua."""
 
 import hashlib
+from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
@@ -24,7 +25,9 @@ from events_fixture import (
 from hunts_fixture import write_hunts
 from pagle_data.events import (
     EVENT_LIST_LUA,
+    LEAST_OPEN_MINUTES,
     EventList,
+    RunOpenness,
     band_of,
     event_file,
     event_hunt_hashes,
@@ -35,6 +38,7 @@ from pagle_data.generate import CATALOGUE_LUA, event_list_of, read_layers
 from pagle_data.hunts import HUNT_LIST_LUA
 
 HUNTS_LORE_LUA = "addons/Pagle_Hunts/data/Lore.lua"
+REPO = Path(__file__).resolve().parents[2]
 LOCK = "data/hunts/released.lock"
 LORE_ON = 'typicalLength = false\nlore = ["hunts"]\n'
 
@@ -434,6 +438,44 @@ def test_a_hunt_open_3_hours_on_one_weekday_fails(tmp_path: Path, capsys: pytest
     daily = 'class = "species.any"\nconditions = { time = [[0, 180]] }\n'
     write_event(tmp_path, "weekly", event("weekly", hunt_body=daily))
     assert run(tmp_path, capsys)[0] == 0
+
+
+def test_a_hunt_open_15_minutes_a_day_fails_the_floor(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # DATA-R99, Tunables: open 00:00-00:15 every day, the Hunt is closed only 23 hours 45 minutes at a stretch, but a
+    # run has it open 45 minutes, less than the 3 hours every run needs (the dev's decision, 22 Oct); it fails,
+    # naming the event's file, the Hunt and its least open time per run.
+    brief = 'class = "species.any"\nconditions = { time = [[0, 15]] }\n'
+    write_tree(tmp_path, {"brief": event("brief", hunt_body=brief)})
+    _fails(
+        tmp_path,
+        capsys,
+        "data/hunts/events/brief.toml: hunt.brief_1.conditions: a run can have it open as little as 45 minutes, less"
+        " than the 3 hours every 72-hour run needs (DATA-R99)",
+    )
+
+
+def test_a_hunt_open_1_hour_a_day_meets_the_floor(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # DATA-R99, Tunables: open 00:00-01:00 every day, a run has it open exactly 3 hours, the floor, so it passes.
+    hourly = 'class = "species.any"\nconditions = { time = [[0, 60]] }\n'
+    write_tree(tmp_path, {"hourly": event("hourly", hunt_body=hourly)})
+    assert run_openness({"time": [[0, 60]]}, {}).least_open == LEAST_OPEN_MINUTES
+    code, output = run(tmp_path, capsys)
+    assert code == 0, output
+
+
+def test_every_timed_hunt_in_the_shipped_pool_meets_the_floor() -> None:
+    # DATA-R99, Tunables: the 1.0 pool's Timed Hunts are each open at least 9 hours in every run, over the floor of 3
+    # and closed no more than 36 hours at a stretch.
+    layers = read_layers(REPO)
+    timed: dict[str, RunOpenness] = {}
+    for found_event in layers.events.events:
+        for hunt in found_event.hunts:
+            conditions = hunt.get("conditions")
+            if isinstance(conditions, Mapping) and {"time", "events"} & set(conditions):
+                timed[hunt.id] = run_openness(conditions, layers.forever.events)
+    assert timed
+    assert all(found.fits for found in timed.values()), timed
+    assert min(found.least_open for found in timed.values()) >= 9 * HOUR
 
 
 # --- The pool minimum (DATA-R99, DATA-R66) ---
