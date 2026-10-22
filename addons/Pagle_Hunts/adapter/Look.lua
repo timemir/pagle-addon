@@ -30,7 +30,7 @@ ns.BOARD_LOOK_ID = "hunts.board"
 -- Each note's width, the canvas's, and where it sits in the board's units from its top left (920 × 600): in the left
 -- margin 85 off the leather, or the right 79 past it, as the canvas has them; down from the board's top as the canvas's
 -- board, drawn at 0.92 from (297, 65), has them, beside what each points at (ONB-R58). The fifth sits in the left
--- margin under the second, not in the right as drawn: the canvas hung "Pagle's Wagers" last, at the right, and the
+-- margin under the second, not in the right as drawn: the canvas hung "Pagle Wagers" last, at the right, and the
 -- board hangs it second (HNT-R162), so its arrow stays short and crosses no other ribbon.
 local LEFT_W, RIGHT_W = 196, 200
 local LEFT_X, RIGHT_X = -(LEFT_W + 85), 920 + 79

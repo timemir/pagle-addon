@@ -336,8 +336,8 @@ ns.L = {
 	-- Onboarding (core/onboarding.md; adapter/Look.lua). Hunts' line on the Field guide's What's in the box (ONB-R91);
 	-- the board's First look (ONB-R57): its window's name on the coach bar ("First look · Hunts") and its five notes,
 	-- verbatim from the canvas (board 13, the kit's World.lua), each *term* pencilled in red by Core. The fifth is
-	-- ONB-R57's, naming Pagle Wagers as its ribbon reads (WAGERS_KICKER), not "Pagle’s Wagers". Then the "?" beside the
-	-- board's close (ONB-R59).
+	-- ONB-R57's, naming Pagle Wagers as its ribbon reads (WAGERS_KICKER) and its wagers as players see them, never as
+	-- Hunt Events. Then the "?" beside the board's close (ONB-R59).
 	GUIDE_BLURB = "Fish that only bite at night, in winter or at the fair, and which of them bite right now.",
 	LOOK_TITLE = "Hunts",
 	LOOK_GROUPS = "*Now*, *Soon* and *Later*: what’s open, what opens within three hours, and the rest.",
@@ -345,7 +345,7 @@ ns.L = {
 	LOOK_NATURAL = "*Natural* means the game itself keeps this fish to its hours. Imposed Hunts are Pagle’s own rules.",
 	LOOK_PIN = "*Pin* a Hunt to keep it on your tracker while you fish.",
 	LOOK_SETS = "Each ribbon is a *Hunt set*. Finish every Hunt in one and its title is yours. *Pagle Wagers* holds the "
-		.. "Hunt Events running now.",
+		.. "wagers on the table now.",
 	LOOK_HELP = "?",
 	LOOK_AGAIN = "Show the notes for this page again",
 	-- The companion hint (HNT-R170–R172, HNT-R176): logic/Companion.lua and adapter/Companion.lua, shown only while the
