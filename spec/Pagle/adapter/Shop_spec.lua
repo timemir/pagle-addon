@@ -443,7 +443,7 @@ describe("The Curio Shop's list", function()
 			assert.are.equal(loaded.env.Pagle.GetGood(id).icon, bezel.Shield.texture)
 			assert.are.same({ 30, 35 }, { bezel.Shield:GetSize() })
 			assert.are.same({ 0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1 }, bezel.Shield.texCoord)
-			assert.is_nil(bezel.Shield.masks, "the shield is drawn whole, not masked round")
+			assert.is_nil(bezel.Shield.masks) -- drawn whole, not masked round
 			assert.is_false(bezel.Shield:IsDesaturated())
 		end
 		-- a row reused for a good that isn't a crest shows the medallion again
