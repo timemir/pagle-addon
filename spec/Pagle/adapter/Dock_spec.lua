@@ -21,6 +21,17 @@ local function dockFixture(loaded, name, order, height, id)
 	return handle, frame
 end
 
+-- The trackers the Modules docked, in stack order: every docked one but Core's own First evening list (ONB-R60).
+local function modulesTrackers(loaded)
+	local list = {}
+	for _, tracker in ipairs(loaded.ns.dock:Trackers()) do
+		if tracker.module ~= "Core" then
+			list[#list + 1] = tracker
+		end
+	end
+	return list
+end
+
 -- A frame's first anchor, as { point, relativeTo, relativePoint, x, y }.
 local function anchorOf(frame)
 	return { frame:GetPoint(1) }
@@ -121,7 +132,7 @@ describe("The tracker dock", function()
 
 		loaded.client.fire("PLAYER_LOGIN")
 
-		local trackers = loaded.ns.dock:Trackers()
+		local trackers = modulesTrackers(loaded)
 		assert.are.equal(1, #trackers)
 		assert.are.equal(hunts, trackers[1].frame)
 		assert.are.same({ "TOPRIGHT", loaded.ns.dockFrame, "TOPRIGHT", 0, 0 }, anchorOf(hunts))
@@ -151,7 +162,7 @@ describe("M:RegisterTracker", function()
 
 			assert.is_false(ok)
 			assert.matches("Dock_spec.lua:%d+: M:RegisterTracker: " .. case[3]:gsub("%p", "%%%0"), tostring(err))
-			assert.are.same({}, loaded.ns.dock:Trackers())
+			assert.are.same({}, modulesTrackers(loaded))
 			if tracker.frame then
 				assert.are.equal(0, tracker.frame:GetNumPoints())
 			end
@@ -170,7 +181,7 @@ describe("M:RegisterTracker", function()
 
 		assert.is_false(ok)
 		assert.matches("Dock_spec.lua:%d+: M:RegisterTracker: pins is already docked", tostring(err))
-		local trackers = loaded.ns.dock:Trackers()
+		local trackers = modulesTrackers(loaded)
 		assert.are.equal(1, #trackers)
 		assert.are.equal(first, trackers[1].frame)
 		assert.are.equal(0, second:GetNumPoints())

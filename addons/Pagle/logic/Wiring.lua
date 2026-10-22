@@ -50,6 +50,7 @@ local ns = select(2, ...)
 ---@field guideSteps PagleGuideSteps The Field guide's step registry (ns.WireGuide, ONB-R21).
 ---@field guide PagleGuide The Field guide (ns.WireGuide, ONB-R20–R27).
 ---@field letter PagleLetter The Letter (ns.WireLetter, ONB-R10–R14).
+---@field evening PagleEvening The First evening list (ns.WireEvening, ONB-R60–R63).
 ---@field marginNotes PagleMarginNotes Core's Margin notes (ns.WireMarginNotes, ONB-R50–R53).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
@@ -561,6 +562,7 @@ end
 ---@field Toggle fun()              -- /pagle shop
 ---@field Buy fun(goodID: string, useNow: boolean): boolean -- the bill of sale's Buy: true if it bought
 ---@field Use fun(goodID: string): boolean -- the stage's Use: true if it equipped the good
+---@field OnOpen fun(fn: fun())     -- fn is called each time the shop opens (the First evening list's `shop`)
 
 --- The Curio Shop's entry points as ns.shop (SHOP-R40, SHOP-R41), its buying (ns.shop.Buy), and ns.ShopModel, the
 --- shop's data now: Core's goods, their cache, the Modules On, the balance and whether a projection is updating
@@ -614,6 +616,10 @@ function ns.WireShop(host, seams)
 		return good ~= nil and ns.goods:SetEquipped(good.slot, good.id)
 	end
 
+	-- What hears the shop open (ns.shop.OnOpen): the First evening list's `shop` item (ONB-R61).
+	---@type fun()[]
+	local openers = {}
+
 	---@param goodID string?
 	local function open(goodID)
 		if host.isRestricted() then
@@ -625,6 +631,9 @@ function ns.WireShop(host, seams)
 			selection = ns.ShopModel():Select(goodID) or false
 		end
 		seams.show(selection, goodID)
+		for _, opened in ipairs(openers) do
+			host.call(opened)
+		end
 	end
 	local function toggle()
 		if seams.isShown() then
@@ -633,7 +642,12 @@ function ns.WireShop(host, seams)
 			open()
 		end
 	end
-	ns.shop = { Open = open, Toggle = toggle, Buy = buy, Use = use }
+	--- Adds a function called, through `call`, each time the shop opens or is opened again while open.
+	---@param fn fun()
+	local function onOpen(fn)
+		openers[#openers + 1] = fn
+	end
+	ns.shop = { Open = open, Toggle = toggle, Buy = buy, Use = use, OnOpen = onOpen }
 	-- CORE-R33's row, SHOP-R41: an open shop closes as restriction starts. Its own owner on the bus.
 	host.listen("Pagle shop", "RestrictionChanged", function(_, isRestricted)
 		if isRestricted and seams.isShown() then
@@ -764,13 +778,27 @@ function ns.WireDock(host, view)
 	---@param tracker { id: string, order: number, frame: table }
 	function ModuleHandle:RegisterTracker(tracker)
 		local module = host.registry:ModuleCalling(self, "RegisterTracker", "{ id, order, frame }")
-		local docked, problem = trackers:Add(module.def.name, tracker)
-		if not docked then
+		local problem = dock:Add(module.def.name, tracker)
+		if problem then
 			error(problem, 2)
 		end
-		view.watch(docked)
-		view.reflow()
 	end
+end
+
+--- Docks `owner`'s tracker (CORE-R70): a Module's through M:RegisterTracker, Core's own (the First evening list,
+--- ns.WireEvening) under ns.CORE_OWNER. Its frame is watched and the stack reflowed. Returns why it can't, docking
+--- nothing (PagleDock:Add).
+---@param owner string a Module's def.name, or ns.CORE_OWNER
+---@param tracker { id: string, order: number, frame: table }
+---@return string? problem
+function DockWiring:Add(owner, tracker)
+	local docked, problem = self.trackers:Add(owner, tracker)
+	if not docked then
+		return problem
+	end
+	self.view.watch(docked)
+	self.view.reflow()
+	return nil
 end
 
 --- The Field report's two readers (field-report.md › The projection).
@@ -1180,6 +1208,112 @@ function ns.WireLetter(host, view)
 	ns.onboarding:AddDevCommand("letter", "letter", function()
 		letter:ShowNow()
 	end)
+end
+
+--- Where the First evening list is drawn: adapter/Evening.lua's tracker, FakePagle's record of it.
+---@class PagleEveningWiringView: PagleEveningView
+---@field frame table the tracker frame Core docks (CORE-R70): the dock reads its IsShown, GetWidth and GetHeight
+
+--- The First evening list (core/onboarding.md › The First evening list) as ns.evening: Core docks its frame as its own
+--- tracker at order 1 (CORE-R70, ONB-R60), above every Module's; `M:CompleteEveningItem` goes on every Module handle;
+--- Core's own items tick on CastStarted, Catch, SessionEnded and the Curio Shop opening (ONB-R61, LOG-R2, LOG-R9,
+--- LOG-R62); Off to the water docks it (ONB-R38); login shows it again while due (ns.StartOnboarding); `/pagle dev
+--- onboarding evening` docks it (ONB-R83); and ns.AddEveningTourStop adds `core.onboarding.evening` (ONB-R84). Call it
+--- after ns.WireDock, ns.WireShop, ns.WireDev, ns.WireOnboarding and ns.WireGuide.
+---@param host PagleHost
+---@param view PagleEveningWiringView
+function ns.WireEvening(host, view)
+	local evening = ns.NewEvening({
+		onboarding = function()
+			return ns.onboarding
+		end,
+		registered = function(owner)
+			if owner == ns.CORE_OWNER then
+				return true
+			end
+			for _, module in ipairs(host.registry:Modules()) do
+				if module.def.name == owner then
+					return true
+				end
+			end
+			return false
+		end,
+		after = host.after,
+		view = view,
+	})
+	ns.evening = evening
+
+	local problem = ns.dock:Add(ns.CORE_OWNER, { id = "evening", order = ns.EVENING_ORDER, frame = view.frame })
+	if problem then
+		error(problem)
+	end
+
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Marks one of the Module's First evening items done (ONB-R61): "journal" for the Ledger as the Fish Journal opens,
+	--- "hunts" for Hunts as its board opens. Ignored when the list is closed or the item done; kept before the list
+	--- docks. Call it only `if M.CompleteEveningItem then`, so it runs on a Core without it (ONB-R90). Raises an error
+	--- at the Module's call for an id that isn't one of its items.
+	---@param id string
+	function ModuleHandle:CompleteEveningItem(id)
+		local module = host.registry:ModuleCalling(self, "CompleteEveningItem", "id")
+		local item = ns.EveningItem(id)
+		if not item or item.owner ~= module.def.name then
+			error(
+				("M:CompleteEveningItem: %s is not one of %s's First evening items"):format(
+					tostring(id),
+					module.def.name
+				),
+				2
+			)
+		end
+		evening:Complete(id)
+	end
+
+	-- Core's own items (ONB-R61), each on its own owner on the bus.
+	host.listen("Pagle evening cast", "CastStarted", function()
+		evening:Complete("cast")
+	end)
+	host.listen("Pagle evening catch", "Catch", function()
+		evening:Complete("catch")
+	end)
+	-- Whether or not a card shows (ANN-R53).
+	host.listen("Pagle evening session", "SessionEnded", function()
+		evening:Complete("session")
+	end)
+	-- The shop a tour stop opens isn't the Angler's doing (CORE-R68).
+	ns.shop.OnOpen(function()
+		if not (ns.tour and ns.tour:IsRunning()) then
+			evening:Complete("shop")
+		end
+	end)
+
+	ns.guide:SetOffToTheWater(function()
+		evening:OffToTheWater()
+	end)
+	local start = ns.StartOnboarding
+	--- Login step 2's onboarding (ns.WireOnboarding), then the First evening list, shown again while due (ONB-R60).
+	function ns.StartOnboarding()
+		start()
+		evening:Login()
+	end
+	ns.onboarding:AddDevCommand("evening", "evening", function()
+		evening:Dock()
+	end)
+
+	--- Adds the tour stop `core.onboarding.evening` to ns.tourStops (ONB-R84, CORE-R65): the list docked with two items
+	--- done, writing nothing, and its hide puts the list back as it was (CORE-R68). Core's adapter calls it; FakePagle
+	--- doesn't, so a Module's tour spec sees only its own stops.
+	function ns.AddEveningTourStop()
+		local added = ns.tourStops:Add(ns.TOUR_CORE, "onboarding.evening", ns.L.DEV_TOUR_EVENING, function()
+			evening:TourShow()
+		end, function()
+			evening:TourHide()
+		end)
+		if added then
+			host.report(added)
+		end
+	end
 end
 
 --- What Margin notes' wiring needs from where Core runs, beyond the host: Core's adapter draws the notes

@@ -105,7 +105,8 @@ describe("the live tracker", function()
 			for _, tracker in ipairs(fake.ns.dock:Trackers()) do
 				stats_[#stats_ + 1] = { tracker.id, tracker.order, tracker.module }
 			end
-			assert.are.same({ { "hunts", 10, "Hunts" }, { "stats", 20, "Stats" } }, stats_)
+			-- Core's own First evening list is docked at order 1, hidden until Off to the water (ONB-R60).
+			assert.are.same({ { "evening", 1, "Core" }, { "hunts", 10, "Hunts" }, { "stats", 20, "Stats" } }, stats_)
 			assert.are.same({ "hunts" }, docked(fake))
 			assert.is_false(loaded.ns.tracker.block:IsShown())
 		end)
@@ -154,7 +155,7 @@ describe("the live tracker", function()
 			fake.login()
 
 			assert.are.same({ "hunts" }, docked(fake))
-			assert.are.equal(1, #fake.ns.dock:Trackers())
+			assert.are.equal(2, #fake.ns.dock:Trackers()) -- Hunts' and Core's First evening list (ONB-R60)
 		end)
 	end)
 

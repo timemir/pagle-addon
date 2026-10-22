@@ -199,6 +199,14 @@
 --- M:SetDialogOpen on the handle tells it a Module's dialog is open (ONB-R100), letter:IsDialogOpen() reads it.
 ---@field letterOnScreen boolean Whether the Letter's frame would be on screen now (ONB-R11).
 ---@field inInstance boolean What IsInInstance() answers the Letter (ONB-R10); false unless a spec sets it.
+---@field evening PagleEvening The First evening list (core/onboarding.md › The First evening list), Core's own on its
+--- wiring (ns.WireEvening): M:CompleteEveningItem on the handle marks a Module's own item, as Core's items tick on
+--- CastStarted, Catch, SessionEnded and the shop opening; fake.guide:Finish() (Off to the water) docks it for a new
+--- Angler, and fake.login shows it again while due. evening:IsEveningItemDone isn't here: read
+--- fake.onboarding:IsEveningItemDone(id), or evening:List().
+---@field eveningList PagleEveningList? The list as Core would draw it now, docked; nil while it isn't shown. Its
+--- tracker is in fake.dock.stack() as Core's own ("evening", order 1, module "Core") while it shows.
+---@field eveningSounds string[] Each sound the list played, in order: `tick`, `listDone` (core/onboarding.md › Sounds).
 ---@field notesShown PagleMarginNote[] Each Margin note Core would show, in order (ONB-R50–R52): M:ShowMarginNote's,
 --- and core.welcome and core.character on fake.menuButton. Once per account and only with Margin notes on.
 ---@field marginNotes PagleMarginNotes Core's Margin notes on its wiring: :Showing() is what is on screen now, and
@@ -1248,6 +1256,44 @@ part(function(fake, _, ns, host)
 		end,
 	})
 	fake.letter = ns.letter
+end)
+
+-- The First evening list (core/onboarding.md › The First evening list), on Core's wiring: M:CompleteEveningItem on
+-- the handle, Core's own items on CastStarted, Catch, SessionEnded and the shop opening, Off to the water and login.
+-- Its tracker is a stand-in frame docked as Core's own at order 1, so fake.dock.stack() lists it while it shows; what
+-- it would draw lands in fake.eveningList, each sound in fake.eveningSounds.
+part(function(fake, _, ns, host)
+	local frame = { shown = false }
+	function frame:IsShown()
+		return self.shown
+	end
+	-- The kit's tracker is 274 wide (adapter/Evening.lua); its height here stands for any.
+	function frame.GetWidth()
+		return 274
+	end
+	function frame.GetHeight()
+		return 160
+	end
+	fake.eveningSounds = {}
+	ns.WireEvening(host, {
+		frame = frame,
+		draw = function(list)
+			fake.eveningList = list
+			frame.shown = true
+		end,
+		hide = function()
+			fake.eveningList = nil
+			frame.shown = false
+		end,
+		fold = function()
+			fake.eveningList = nil
+			frame.shown = false
+		end,
+		sound = function(name)
+			fake.eveningSounds[#fake.eveningSounds + 1] = name
+		end,
+	})
+	fake.evening = ns.evening
 end)
 
 -- Margin notes (core/onboarding.md › Margin notes), on Core's wiring: M:ShowMarginNote validates as Core does, shows a

@@ -45,7 +45,7 @@ end)
 local ROW_TEMPLATE = "PagleSettingsRowTemplate"
 
 -- Core's widgets on one of its own row frames, by frame. Weak, as the panel owns the frames.
----@type table<Frame, { text: FontString, name: FontString, version: FontString, state: FontString, button: Button }>
+---@type table<Frame, { text: FontString, name: FontString, version: FontString, state: FontString, button: Button, check: CheckButton, line: FontString }>
 local widgetsOf = setmetatable({}, { __mode = "k" })
 
 -- Lays out a font string at `x` in a status row.
@@ -58,6 +58,9 @@ local function fontString(frame, x)
 	text:SetJustifyH("LEFT")
 	return text
 end
+
+-- Where Getting started's checkbox sits on a row, and its line after it (SET-R10 rows 4–6).
+local CHECK_X, LINE_X = 150, 180
 
 -- Core's widgets on `frame`, all hidden, made the first time Core draws on it.
 ---@param frame Frame
@@ -74,6 +77,12 @@ local function widgets(frame)
 		own.button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate") --[[@as Button]]
 		own.button:SetPoint("TOPLEFT", 380, 3)
 		own.button:SetSize(160, 22)
+		-- Getting started's checkbox and line (SET-R10 rows 4–6)
+		own.check = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate") --[[@as CheckButton]]
+		own.check:SetPoint("TOPLEFT", CHECK_X, 5)
+		own.check:SetSize(26, 26)
+		own.line = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		own.line:SetJustifyH("LEFT")
 		widgetsOf[frame] = own
 	end
 	own.text:Hide()
@@ -81,6 +90,12 @@ local function widgets(frame)
 	own.version:Hide()
 	own.state:Hide()
 	own.button:Hide()
+	own.button:SetScript("OnClick", nil)
+	own.check:Hide()
+	own.check:SetScript("OnClick", nil)
+	own.line:Hide()
+	frame:SetScript("OnEnter", nil)
+	frame:SetScript("OnLeave", nil)
 	return own
 end
 
@@ -248,8 +263,105 @@ local function pagleMenuSection(category, layout)
 	Settings.CreateCheckbox(category, shown, L.SETTINGS_MINIMAP_ICON_TOOLTIP)
 end
 
+-- A row's label, at the status list's name column.
+---@param own table
+---@param label string
+local function rowLabel(own, label)
+	own.name:SetText(label)
+	own.name:Show()
+end
+
+-- A row's line, at `x`.
+---@param own table
+---@param x number
+---@param text string
+local function rowLine(own, x, text)
+	own.line:ClearAllPoints()
+	own.line:SetPoint("TOPLEFT", x, -1)
+	own.line:SetText(text)
+	own.line:Show()
+end
+
+-- A row's button, at the status list's button column.
+---@param own table
+---@param caption string
+---@param onClick fun()
+local function rowButton(own, caption, onClick)
+	own.button:SetText(caption)
+	own.button:SetScript("OnClick", onClick)
+	own.button:Show()
+end
+
+-- A row's checkbox, `checked` as it is now; a click hands `onClick` the state it toggled to.
+---@param own table
+---@param checked boolean
+---@param onClick fun(checked: boolean)
+local function rowCheck(own, checked, onClick)
+	own.check:SetChecked(checked)
+	own.check:SetScript("OnClick", function(check)
+		onClick(check:GetChecked() == true)
+	end)
+	own.check:Show()
+end
+
+-- The Getting started section (CORE-R40, SET-R10 rows 4–6, ONB-R81), Core's own rows, drawn by Core on its frames
+-- (SET-R5, SET-R6): "Field guide" with its line and Show me around again, which closes the panel as the status list's
+-- buttons do (SET-R12) and opens the guide (ONB-R22); Margin notes' checkbox (notesOn, with its tooltip) and Show
+-- them again (as /pagle guide notes, ONB-R80); and, only while the list is offered (an item isn't done, and the Angler
+-- isn't returning), the First evening list's checkbox, which shows or closes the list (ONB-R63) with "{done} of
+-- {total} done". The last row is left out when it isn't offered as the tree is built, and draws nothing should the
+-- list finish meanwhile. None registers a setting, so the root's Defaults button leaves them (SET-R13).
+---@param layout SettingsLayout
+local function gettingStarted(layout)
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_GETTING_STARTED))
+	layout:AddInitializer(customRow(function(frame)
+		local own = widgets(frame)
+		rowLabel(own, L.SETTINGS_FIELD_GUIDE)
+		rowLine(own, CHECK_X, L.SETTINGS_FIELD_GUIDE_LINE)
+		rowButton(own, L.SETTINGS_SHOW_ME_AROUND, function()
+			HideUIPanel(SettingsPanel)
+			ns.guide:Open()
+		end)
+	end, L.SETTINGS_FIELD_GUIDE))
+	layout:AddInitializer(customRow(function(frame)
+		local own = widgets(frame)
+		local onboarding = ns.onboarding
+		rowLabel(own, L.SETTINGS_MARGIN_NOTES)
+		rowCheck(own, onboarding:AreNotesOn(), function(checked)
+			onboarding:SetNotesOn(checked)
+		end)
+		rowButton(own, L.SETTINGS_SHOW_NOTES_AGAIN, function()
+			onboarding:Guide("notes")
+		end)
+		frame:SetScript("OnEnter", function(row)
+			GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+			GameTooltip:SetText(L.SETTINGS_MARGIN_NOTES)
+			GameTooltip:AddLine(L.SETTINGS_MARGIN_NOTES_TOOLTIP, 1, 1, 1, true)
+			GameTooltip:Show()
+		end)
+		frame:SetScript("OnLeave", function()
+			GameTooltip:Hide()
+		end)
+	end, L.SETTINGS_MARGIN_NOTES))
+	local evening = ns.evening
+	if not evening:IsOffered() then
+		return
+	end
+	layout:AddInitializer(customRow(function(frame)
+		local own = widgets(frame)
+		if not evening:IsOffered() then
+			return
+		end
+		rowLabel(own, L.SETTINGS_EVENING)
+		rowCheck(own, evening:IsShowing(), function(checked)
+			evening:SetShown(checked)
+		end)
+		rowLine(own, LINE_X, L.SETTINGS_EVENING_LINE:format(evening:Count()))
+	end, L.SETTINGS_EVENING))
+end
+
 -- The root's rows (SET-R10): the paragraph while no Module is On, the status list under "Modules", the note, the
--- Field report section, then Saving's reminder checkbox and the Units section, whose defaults the root's Defaults
+-- Getting started section, the Field report section, then Saving's reminder checkbox and the Units section, whose defaults the root's Defaults
 -- button restores (SET-R13), and last the Pagle menu section.
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
@@ -263,6 +375,7 @@ local function buildRoot(category, layout, anyModuleOn)
 		layout:AddInitializer(line)
 	end
 	layout:AddInitializer(textRow(L.SETTINGS_MODULES_NOTE))
+	gettingStarted(layout)
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.HELP_CHART))
 	layout:AddInitializer(fieldReportRow())
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_SAVING))

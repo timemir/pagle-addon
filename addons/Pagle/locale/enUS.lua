@@ -44,6 +44,17 @@ ns.L = {
 	SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them.",
 	SETTINGS_MODULES = "Modules",
 	SETTINGS_MODULES_NOTE = "Turn Modules on or off in the AddOns list.",
+	-- The root's Getting started section (SET-R10 rows 4–6, ONB-R81): the Field guide's row and its line, Margin
+	-- notes with its tooltip and Show them again, and the First evening list with "{done} of {total} done".
+	SETTINGS_GETTING_STARTED = "Getting started",
+	SETTINGS_FIELD_GUIDE = "Field guide",
+	SETTINGS_FIELD_GUIDE_LINE = "The eight pages you saw on your first day.",
+	SETTINGS_SHOW_ME_AROUND = "Show me around again",
+	SETTINGS_MARGIN_NOTES = "Margin notes",
+	SETTINGS_MARGIN_NOTES_TOOLTIP = "Explain things the first time they happen.",
+	SETTINGS_SHOW_NOTES_AGAIN = "Show them again",
+	SETTINGS_EVENING = "First evening list",
+	SETTINGS_EVENING_LINE = "%d of %d done",
 	-- The root's Saving section (SET-R10 row 5): its header, the reminder's label, and its tooltip with LOG-R86's step.
 	SETTINGS_SAVING = "Saving",
 	SETTINGS_RELOAD_REMINDER = "Remind me to /reload when Casts are unsaved",
@@ -373,6 +384,26 @@ ns.L = {
 	DEV_GUIDE_NO_STEP = "Pagle dev: no guide step %s; the steps are %s.",
 	-- A tour stop per guide step (ONB-R84): its label for /pagle dev tour list.
 	DEV_TOUR_GUIDE_STEP = "the Field guide at its %s step",
+	-- The First evening list (ONB-R60, ONB-R61): its header, "{done} of {total}", its close mark (ONB-R63, × is
+	-- Latin-1), each item and the hint shown under the next one, verbatim from onboarding.md; the cast hint by QoL on
+	-- or off (ONB-R101).
+	EVENING_TITLE = "First evening",
+	EVENING_COUNT = "%d of %d",
+	EVENING_CLOSE = "×",
+	EVENING_CAST = "Make a Cast",
+	EVENING_CAST_HINT = "press your Fishing key, or double right-click",
+	EVENING_CAST_HINT_NO_QOL = "right-click the water with Fishing",
+	EVENING_CATCH = "Land a Catch",
+	EVENING_JOURNAL = "Open the Fish Journal",
+	EVENING_JOURNAL_HINT = "Pagle menu by the minimap » Fish Journal",
+	EVENING_HUNTS = "See what’s biting on Hunts",
+	EVENING_HUNTS_HINT = "Pagle menu » Hunts",
+	EVENING_SESSION = "Finish a Session",
+	EVENING_SESSION_HINT = "step away 5 minutes for your summary",
+	EVENING_SHOP = "Peek into the Curio Shop",
+	EVENING_SHOP_HINT = "Pagle menu » Curio Shop",
+	-- The First evening list's tour stop (ONB-R84): its label for /pagle dev tour list.
+	DEV_TOUR_EVENING = "the First evening list",
 	-- Core's own steps (ONB-R30, ONB-R31, ONB-R34, ONB-R38): their ribbons, the Welcome step's foot (ONB-R26), and
 	-- their pages, verbatim from the probe (PagleArtGuide's Guide.lua) with › written » (CORE-R9). A *term* between
 	-- asterisks is in the red pencil (ns.GuideRedPencil).

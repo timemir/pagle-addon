@@ -73,6 +73,7 @@ logic\MarginNotes.lua
 logic\Guide.lua
 logic\GuidePages.lua
 logic\Letter.lua
+logic\Evening.lua
 logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
@@ -130,5 +131,6 @@ adapter\GuidePages.lua
 adapter\Guide.lua
 adapter\Letter.lua
 adapter\Tour.lua
+adapter\Evening.lua
 adapter\MarginNotes.lua
 adapter\Login.lua

@@ -144,10 +144,12 @@ describe("the Tackle Board's tracker in the dock (TKB-R120, TKB-R2, CORE-R70, CO
 		for _, tracker in ipairs(fake.ns.dock:Trackers()) do
 			trackers[#trackers + 1] = { tracker.id, tracker.order, tracker.module }
 		end
-		assert.are.same(
-			{ { "hunts", 10, "Hunts" }, { "stats", 20, "Stats" }, { "tackleboard", 30, "TackleBoard" } },
-			trackers
-		)
+		assert.are.same({
+			{ "evening", 1, "Core" }, -- Core's own First evening list, hidden until Off to the water (ONB-R60)
+			{ "hunts", 10, "Hunts" },
+			{ "stats", 20, "Stats" },
+			{ "tackleboard", 30, "TackleBoard" },
+		}, trackers)
 		assert.are.same({ "hunts", "stats" }, docked(fake)) -- TKB-R2: nothing before Start
 		assert.is_false(ns.tracker.block:IsShown())
 
@@ -204,7 +206,7 @@ describe("the Tackle Board's tracker in the dock (TKB-R120, TKB-R2, CORE-R70, CO
 		fake.login()
 
 		assert.are.same({ "hunts", "stats" }, docked(fake))
-		assert.are.equal(2, #fake.ns.dock:Trackers())
+		assert.are.equal(3, #fake.ns.dock:Trackers()) -- with Core's First evening list (ONB-R60)
 	end)
 end)
 
