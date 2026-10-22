@@ -7,7 +7,7 @@ local ns = select(2, ...)
 
 -- The Tackle Board's step in the Field guide (ONB-R37; board 8 of the onboarding kit, its Guide.lua's "7 · Tackle
 -- Board"): its two pages, drawn once with the board's own art (adapter/BoardArt.lua, adapter/BoardWidgets.lua) and the
--- guide's coin bullet (nav.Part), as ONB-R92 has a Module draw its step. Core draws the book, the ribbons and the foot
+-- guide's coin bullet and window edge (nav.Part, nav.Panel), as ONB-R92 has a Module draw its step. Core draws the book, the ribbons and the foot
 -- (« back, the skip link "Not now" and Next »). The left page shows a sample strip of two Notices, the Campfire and
 -- the Fly Box, standing still: the pins' own papers and the ledge's own art, taking no mouse and never moving. The
 -- right page's Start my board is the board's own start (TKB-R5); once the board is up it reads "Your board is up",
@@ -96,12 +96,18 @@ local function dots(page, x, y, width)
 	end
 end
 
--- The sample's frame: a dark edge and a gilt rule inside it, over the sample, as the board's tooltip edges itself.
+-- The sample's frame, over it: the guide's window edge (the kit's P.Nine "win", 6 at each corner) through nav.Panel;
+-- on a Core whose nav has none, a dark edge and a gilt rule inside it, as the board's tooltip edges itself.
 ---@param sample Frame
-local function edge(sample)
+---@param nav PagleGuideNav
+local function edge(sample, nav)
 	local over = CreateFrame("Frame", nil, sample)
 	over:SetAllPoints()
 	over:SetFrameLevel(sample:GetFrameLevel() + 20)
+	if nav.Panel then
+		nav.Panel(over, "win", 6)
+		return
+	end
 	for _, ring in ipairs({ { 0, 2, "2A1A08" }, { 2, 1, "C9A24A" } }) do
 		local inset, thickness, hex = ring[1], ring[2], ring[3]
 		for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
@@ -125,13 +131,14 @@ end
 -- A sample's frame on `page` at `x`, `y`, `width` × `height`, cutting off what overflows it, with the board's art drawn
 -- on a frame inside it at `scale`, `width / scale` × `height / scale` of the board's units. Returns that frame.
 ---@param page Frame
+---@param nav PagleGuideNav
 ---@param x number
 ---@param y number
 ---@param width number
 ---@param height number
 ---@param scale number
 ---@return Frame
-local function sampleFrame(page, x, y, width, height, scale)
+local function sampleFrame(page, nav, x, y, width, height, scale)
 	local sample = CreateFrame("Frame", nil, page)
 	sample:SetSize(width, height)
 	at(sample, page, x, y)
@@ -140,16 +147,17 @@ local function sampleFrame(page, x, y, width, height, scale)
 	inner:SetScale(scale)
 	inner:SetSize(width / scale, height / scale)
 	inner:SetPoint("TOPLEFT")
-	edge(sample)
+	edge(sample, nav)
 	return inner
 end
 
 -- The two sample Notices on cork (TKB-R100, TKB-R102): the pins' own papers, leaning, taking no mouse.
 ---@param page Frame
+---@param nav PagleGuideNav
 ---@param sample TackleGuideSample
 ---@return TackleGoalSlipView[]
-local function drawNotices(page, sample)
-	local cork = sampleFrame(page, COLUMN_X, STRIP_Y, STRIP_WIDTH, STRIP_HEIGHT, STRIP_SCALE)
+local function drawNotices(page, nav, sample)
+	local cork = sampleFrame(page, nav, COLUMN_X, STRIP_Y, STRIP_WIDTH, STRIP_HEIGHT, STRIP_SCALE)
 	local tile = cork:CreateTexture(nil, "BACKGROUND", nil, -8)
 	tile:SetTexture(ns.CORK_TEXTURE, "REPEAT", "REPEAT")
 	tile:SetAllPoints()
@@ -173,10 +181,11 @@ end
 -- The sample Campfire (TKB-R106): a cut of the ledge, the fire in its stage at rest with its glow, its days, its
 -- Kindling and its longest, as the ledge draws them.
 ---@param page Frame
+---@param nav PagleGuideNav
 ---@param sample TackleGuideSample
 ---@return { ledge: Texture, burning: TackleBoardFire }
-local function drawFire(page, sample)
-	local inner = sampleFrame(page, COLUMN_X, FIRE_Y, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLE_WIDTH / SAMPLE_CUT)
+local function drawFire(page, nav, sample)
+	local inner = sampleFrame(page, nav, COLUMN_X, FIRE_Y, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLE_WIDTH / SAMPLE_CUT)
 	local cutX, cutY = FIRE_CUT[1], FIRE_CUT[2]
 	local ledge = ns.SetSpriteCut(
 		inner:CreateTexture(nil, "BACKGROUND"),
@@ -217,10 +226,11 @@ end
 
 -- The sample Fly Box (TKB-R106): a cut of the ledge, the box with its name in gilt and its count by hand.
 ---@param page Frame
+---@param nav PagleGuideNav
 ---@param sample TackleGuideSample
 ---@return { ledge: Texture }
-local function drawBox(page, sample)
-	local inner = sampleFrame(page, COLUMN_X, BOX_Y, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLE_WIDTH / SAMPLE_CUT)
+local function drawBox(page, nav, sample)
+	local inner = sampleFrame(page, nav, COLUMN_X, BOX_Y, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLE_WIDTH / SAMPLE_CUT)
 	local cutX, cutY = BOX_CUT[1], BOX_CUT[2]
 	local ledge = ns.SetSpriteCut(
 		inner:CreateTexture(nil, "BACKGROUND"),
@@ -270,17 +280,18 @@ end
 
 -- The left page: the kicker, the title and the paragraph, then the sample strip and its lines.
 ---@param left Frame
+---@param nav PagleGuideNav
 ---@return TackleGuidePage
-local function buildLeft(left)
+local function buildLeft(left, nav)
 	local L = ns.L
 	write(left, "GuideKicker", L.GUIDE_KICKER, COLUMN_X, 24, 14)
 	write(left, "GuideTitle", L.GUIDE_TITLE, COLUMN_X, 41, 29 * 1.05)
 	write(left, "GuideBody", L.GUIDE_BODY, COLUMN_X, 83.4, 20.7, COLUMN_WIDTH)
 	local sample = ns.GuideSample()
 	local page = {
-		notices = drawNotices(left, sample),
-		fire = drawFire(left, sample),
-		box = drawBox(left, sample),
+		notices = drawNotices(left, nav, sample),
+		fire = drawFire(left, nav, sample),
+		box = drawBox(left, nav, sample),
 	}
 	local campfire = ns.Fill(L.GUIDE_CAMPFIRE, {
 		campfire = inked(TERM_INK, L.GUIDE_CAMPFIRE_TERM),
@@ -324,7 +335,7 @@ end
 ---@param right Frame
 ---@param nav PagleGuideNav
 local function build(left, right, nav)
-	local page = buildLeft(left)
+	local page = buildLeft(left, nav)
 	buildRight(right, nav, page)
 	ns.guidePage = page
 	refresh()

@@ -169,6 +169,18 @@ describe("the Tackle Board's guide pages (ONB-R37)", function()
 			assert.are.equal(atlases.Frame.file, page.box.ledge.texture)
 			assert.are.equal("F L Y   B O X", holding(texts, "F L Y   B O X"))
 			assert.are.equal("26 of 30 tied", holding(texts, "26 of 30 tied"))
+			-- Each sample framed in the guide's window edge, over it.
+			local frames = {}
+			local function framed(widget)
+				for _, child in ipairs(widget.children) do
+					if child.panel then
+						frames[#frames + 1] = child.panel .. " " .. child.panelCap
+					end
+					framed(child)
+				end
+			end
+			framed(pages.left)
+			assert.are.same({ "win 6", "win 6", "win 6" }, frames)
 		end
 	)
 
