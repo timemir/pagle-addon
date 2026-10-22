@@ -215,6 +215,8 @@ describe("a toast style change", function()
 		if style then
 			equip(loaded, style)
 		end
+		-- A budget of 4 per 5 min, which the burst's 8 interruptions spend (ANN-R31, ANN-R32).
+		loaded.ns.db.profile.announcements.budget.count = 4
 		for i = 1, 3 do
 			M:RaiseMoment({ rung = "toast", kind = "spec", title = "Toast " .. i })
 		end
