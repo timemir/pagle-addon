@@ -22,7 +22,7 @@ stds.wow = {
 				"AddOnRestrictionType",
 				AddOnRestrictionState = { fields = { "Inactive" } },
 				AddOnEnableState = { fields = { "None" } }, -- CORE-R16
-				TooltipDataType = { fields = { "Object" } }, -- LOG-R80
+				TooltipDataType = { fields = { "Object", "Unit" } }, -- LOG-R80; the Pagle block (VIEW-R20)
 			},
 		},
 		-- Attaching a Module (CORE-R13, CORE-R16, CORE-R41); QoL's conflict check and its choices (QOL-R80, QOL-R83);

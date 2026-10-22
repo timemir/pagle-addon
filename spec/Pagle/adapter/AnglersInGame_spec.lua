@@ -347,4 +347,128 @@ describe("the Companion's data addons", function()
 			loaded.printed[#loaded.printed]
 		)
 	end)
+
+	describe("the Pagle block", function()
+		-- The fish and the header, as the block draws them (VIEW-R21).
+		local HEADER = "|T136245:0|t Pagle Angler"
+
+		-- The mouse goes over a unit with `guid`: GameTooltip's texts then, the game's own line first.
+		local function tooltipOf(loaded, guid)
+			loaded.client.hoverUnit(guid, "Ada")
+			return loaded.client.tooltipLines()
+		end
+
+		it(
+			"adds a Followed Angler's block after the game's lines, on the player's own character too, with every Module off (VIEW-R20, VIEW-R21, VIEW-R93)",
+			function()
+				local loaded = core()
+				enterWorld(loaded)
+
+				assert.are.same({
+					"Ada",
+					" ",
+					HEADER,
+					"Following",
+					"Warden of Feralas Waters",
+					"Angler Level",
+					"23 · Prestige I",
+					"Ledger",
+					"37%",
+					"Legends",
+					"3 of 12",
+				}, tooltipOf(loaded, ADA))
+				assert.are.same(
+					{
+						"",
+						"FFFFFF",
+						"5FD3C4",
+						"1EFF00",
+						"FFD100",
+						"E9D8AE",
+						"FFFFFF",
+						"E9D8AE",
+						"FFFFFF",
+						"E9D8AE",
+						"FFFFFF",
+					},
+					loaded.client.tooltipColors()
+				)
+			end
+		)
+
+		it(
+			"adds a tooltip card's block once Pagle_Anglers has loaded, Hardcore Angler in red (VIEW-R20, VIEW-R21)",
+			function()
+				local loaded = core()
+				enterWorld(loaded)
+
+				assert.are.same({
+					"Ada",
+					" ",
+					HEADER,
+					"Seeker of the Deep",
+					"Angler Level",
+					"60 · Master Prestige 2",
+					"Ledger",
+					"100%",
+					"Legends",
+					"7 of 12",
+					"Hardcore Angler",
+				}, tooltipOf(loaded, CARD_2))
+				assert.are.equal("FF4B3A", loaded.client.tooltipColors()[11])
+				assert.are.same({ "Pagle_Anglers" }, loaded.client.loads)
+			end
+		)
+
+		it(
+			"adds nothing for a player with no card, a unit that isn't a player's, or a secret or missing GUID (VIEW-R20, CORE-R31)",
+			function()
+				local loaded = core()
+				enterWorld(loaded)
+				local secret = "Player-4618-0A1B2C3E"
+				loaded.env.issecretvalue = function(value)
+					return value == secret
+				end
+
+				assert.are.same({ "Ada" }, tooltipOf(loaded, "Creature-0-4618-0-1-2-0000000001"))
+				assert.are.same({ "Ada" }, tooltipOf(loaded, secret))
+				assert.are.same({ "Ada" }, tooltipOf(loaded, nil))
+				assert.are.same({}, loaded.client.loads) -- none of them is a player's hover that can be told (VIEW-R3)
+				assert.are.same({ "Ada" }, tooltipOf(loaded, "Player-1-00000002"))
+				assert.are.same({ "Pagle_Anglers" }, loaded.client.loads)
+			end
+		)
+
+		it(
+			"shows in combat, finding Followed Anglers only until Pagle_Anglers loads after it (VIEW-R22, VIEW-R3)",
+			function()
+				local loaded = core()
+				enterWorld(loaded)
+
+				setCombat(loaded, true)
+				assert.are.equal("Following", tooltipOf(loaded, ADA)[4])
+				assert.are.same({ "Ada" }, tooltipOf(loaded, CARD_2))
+				setCombat(loaded, false)
+
+				assert.are.equal("Seeker of the Deep", tooltipOf(loaded, CARD_2)[4])
+			end
+		)
+
+		it(
+			"adds nothing, and never loads Pagle_Anglers, with the setting off; on again, the next hover does both (VIEW-R30, VIEW-R3)",
+			function()
+				local loaded = core()
+				enterWorld(loaded)
+
+				loaded.ns.db.profile.anglerTooltips = false
+				assert.are.same({ "Ada" }, tooltipOf(loaded, ADA))
+				assert.are.same({ "Ada" }, tooltipOf(loaded, CARD_2))
+				assert.are.same({}, loaded.client.loads)
+				loaded.ns.db.profile.anglerTooltips = true
+
+				assert.are.equal(HEADER, tooltipOf(loaded, CARD_2)[3])
+				assert.are.same({ "Pagle_Anglers" }, loaded.client.loads)
+			end
+		)
+	end)
 end)

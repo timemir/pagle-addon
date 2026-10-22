@@ -79,6 +79,7 @@ ns.API_INVENTORY = {
 	"Enum.AddOnRestrictionType",
 	"Enum.TooltipDataType",
 	"Enum.TooltipDataType.Object",
+	"Enum.TooltipDataType.Unit",
 	"GameTooltip",
 	"GetBindingAction",
 	"GetBindingKey",
