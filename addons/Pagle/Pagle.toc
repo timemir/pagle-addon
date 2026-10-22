@@ -94,6 +94,7 @@ adapter\Modules.lua
 adapter\Host.lua
 adapter\CatchLog.lua
 adapter\Size.lua
+adapter\Variety.lua
 adapter\Projections.lua
 adapter\Angler.lua
 adapter\Fishing.lua

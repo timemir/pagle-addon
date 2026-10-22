@@ -107,6 +107,49 @@ describe("ns.NewCatalogue", function()
 	end)
 end)
 
+describe("ns.NewCatalogue's varieties", function()
+	local KEYS = { "k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9", "k10" }
+
+	-- The fixture with two items of Species 6359 listing its ten varieties, and a Species (6358) without any.
+	local function withVarieties()
+		local data = fixture()
+		local function fish(species, varieties)
+			return {
+				category = "fish",
+				species = species,
+				typicalLength = 300,
+				legend = false,
+				noise = false,
+				varieties = varieties,
+			}
+		end
+		data.items = { [6359] = fish(6359, KEYS), [21153] = fish(6359, KEYS), [6358] = fish(6358) }
+		return data
+	end
+
+	it("lists a Species' ten in order, by its Species ID (VAR-R4, VAR-R11)", function()
+		local varieties = ns.NewCatalogue(withVarieties()).GetVarieties(6359)
+
+		assert.are.equal(10, #varieties)
+		assert.are.same(ns.VarietyList(6359, KEYS), varieties)
+		assert.are.equal("6359.k10", varieties[10].id)
+		assert.are.equal("epic", varieties[10].rarity)
+	end)
+
+	it("gives nil for a Species without varieties, or none in the catalogue (VAR-R11)", function()
+		local catalogue = ns.NewCatalogue(withVarieties())
+
+		assert.is_nil(catalogue.GetVarieties(6358))
+		assert.is_nil(catalogue.GetVarieties(9999))
+	end)
+
+	it("hands out one shared list per Species, built once (VAR-R11, CORE-R18)", function()
+		local catalogue = ns.NewCatalogue(withVarieties())
+
+		assert.are.equal(catalogue.GetVarieties(6359), catalogue.GetVarieties(6359))
+	end)
+end)
+
 describe("ns.NewCatalogue's Core-internal reads", function()
 	local catalogue = ns.NewCatalogue(fixture())
 

@@ -1908,6 +1908,44 @@ describe("FakePagle", function()
 		)
 	end)
 
+	describe("varieties", function()
+		local KEYS = { "k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9", "k10" }
+
+		it("serves Pagle.VARIETY_RARITIES as Core does, read-only (VAR-R11, CORE-R18)", function()
+			local Pagle = loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle
+			local fake = newFakePagle()
+
+			assert.are.same(Pagle.VARIETY_RARITIES, fake.Pagle.VARIETY_RARITIES)
+			assert.has_error(function()
+				fake.Pagle.VARIETY_RARITIES[1].name = "Plain"
+			end)
+			assert.are.equal("Common", fake.ns.VARIETY_RARITIES[1].name)
+		end)
+
+		it(
+			"serves Pagle.GetVarieties and puts Core's variety on the played Cast and its Catch event, over the"
+				.. " catalogue served now (VAR-R4, VAR-R11)",
+			function()
+				local fake = newFakePagle()
+				fake.ns.catalogue.items[6358].varieties = KEYS
+				fake.setCatalogue(fake.ns.catalogue)
+				fake.login()
+				local catches = {}
+				fake.Pagle.RegisterCallback("Spec", "Catch", function(_, catch)
+					catches[#catches + 1] = catch
+				end)
+				local species = fake.ns.catalogue.items[6358].species
+
+				assert.are.equal(species .. ".k10", fake.Pagle.GetVarieties(species)[10].id)
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				local expected = fake.ns.VarietyOf(cast.items[1].catchId, fake.ns.catalogue.items[6358])
+				assert.is_table(expected)
+				assert.are.same(expected.id, cast.items[1].variety.id)
+				assert.are.same(expected.id, catches[1].variety.id)
+			end
+		)
+	end)
+
 	describe("the length unit", function()
 		it("reads Pagle.FormatLength in inches by default, as Core does on region 1 (LOG-R69)", function()
 			local fake = newFakePagle()

@@ -131,6 +131,32 @@ function ns.NewCatalogue(data)
 		return data.items[itemID]
 	end
 
+	-- Each Species' ten variety keys (VAR-R4), from the first of its items, by item ID, that lists them; and each
+	-- Species' ten as GetVarieties hands them out, built the first time it's asked for and shared from then on.
+	---@type table<integer, string[]>
+	local varietyKeys = {}
+	for _, itemID in ipairs(sortedKeys(data.items)) do
+		local item = data.items[itemID]
+		if item.species and item.varieties and not varietyKeys[item.species] then
+			varietyKeys[item.species] = item.varieties
+		end
+	end
+	---@type table<integer, PagleVarietyEntry[]>
+	local varietyLists = {}
+
+	--- A Species' ten varieties in order (VAR-R11), each `{ id, key, index, rarity, name, description, art }`
+	--- (ns.VarietyList), or nil for a Species without varieties. The static list: it never says which were caught.
+	---@param speciesID integer
+	---@return PagleVarietyEntry[]?
+	function catalogue.GetVarieties(speciesID)
+		local keys = varietyKeys[speciesID]
+		if not keys then
+			return nil
+		end
+		varietyLists[speciesID] = varietyLists[speciesID] or ns.VarietyList(speciesID, keys)
+		return varietyLists[speciesID]
+	end
+
 	--- Every zone areaID (`parent = 0`) in the AreaTable slice, ascending (LOG-R55).
 	---@return integer[]
 	function catalogue.GetZones()

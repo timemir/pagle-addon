@@ -190,6 +190,31 @@ function ns.PublishSize(Pagle, host, wrap)
 	api.FormatLength = ns.WireLength(host)
 end
 
+--- Publishes the variety rarities on `Pagle` (VAR-R11): `Pagle.VARIETY_RARITIES`, Common to Epic, each
+--- `{ key, name, weight, color, ink }`, a copy of Core's own so a Module can't change Core's. `wrap` turns the list
+--- into what Modules get: Core's adapter passes none, FakePagle its read-only proxy (CORE-R18). Pagle.GetVarieties
+--- comes with the catalogue (adapter/Catalogue.lua).
+---@param Pagle table
+---@param wrap (fun(value: any): any)?
+function ns.PublishVarieties(Pagle, wrap)
+	---@class Pagle
+	local api = Pagle
+	local rarities = {}
+	for rarity, entry in ipairs(ns.VARIETY_RARITIES) do
+		rarities[rarity] = {
+			key = entry.key,
+			name = entry.name,
+			weight = entry.weight,
+			color = { unpack(entry.color) },
+			ink = { unpack(entry.ink) },
+		}
+	end
+	--- The variety rarities in order, Common to Epic: `{ key, name, weight, color, ink }`, `weight` one variety's
+	--- Catches per 10,000 of its Species and the colours { r, g, b } (VAR-R2, VAR-R3, VAR-R11).
+	---@type PagleVarietyRarity[]
+	api.VARIETY_RARITIES = wrap and wrap(rarities) or rarities
+end
+
 --- Core's moment collector as ns.moments (ANN-R1–R4, ANN-R10–R12), and `M:RaiseMoment` on every Module handle. Each
 --- Announcement goes to `show`, the display; every moment Core keeps goes to ns.summary (ANN-R25).
 ---@param host PagleHost
