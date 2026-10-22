@@ -63,6 +63,8 @@ local ns = select(2, ...)
 ---@field askPrestige fun()
 ---@field pickTitle fun(key: string?)
 ---@field goods LedgerJournalGoods
+---@field activityXP? ActivityXP                     -- Pagle.GetActivityXP() (AXP-R6, LED-R150)
+---@field prestigeSources? LedgerPrestigeSources     -- PagleLedgerDB.global.prestigeSources (LED-R150)
 
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:
 --- - `kicker`, `title`, `text` (`text`, in the serif face; `hand` for the handwriting face, `color` "faded", "red" or
@@ -75,7 +77,9 @@ local ns = select(2, ...)
 --- - `stamps` (`stamps`: ink stamps, each `{ text, inked }`)
 --- - `tiles` (`tiles`: zone tiles, LedgerZoneTile)
 --- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette", `large` on an entry, LED-R140)
---- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar)
+--- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar; `tip`, its tooltip, ns.XPBarTip, LED-R145)
+--- - `xpSource` (a line of "Where your XP came from", LED-R150: `text` its source, `value` this climb's XP and
+---   `total` all told's in two columns at the right, `off` greyed and struck through; `header` for the columns' heads)
 --- - `tabs` (`tabs`: tabs side by side, each `{ text, on, place }`, the chosen one `on`, LED-R130)
 --- - `bookplate` (the level `text` in large numerals, its caption `value` with the Prestige `mark` beside it and the
 ---   active title `signature` in handwriting under it, and a wax seal reading `seal`, LED-R132)
@@ -92,7 +96,7 @@ local ns = select(2, ...)
 ---   crest's `icon` pinned on it, LED-R146), drawn by adapter/JournalAngler.lua; `rule` (the fleuron rule); `map`
 ---   (uncharted waters' blank chart, LED-R138)
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"crest"|"rule"|"map"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"crest"|"rule"|"map"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -104,6 +108,10 @@ local ns = select(2, ...)
 ---@field look? "sepia"|"silhouette"
 ---@field large? boolean
 ---@field bar? LedgerInkXpBar
+---@field tip? LedgerXpTip       -- the ink XP bar's tooltip
+---@field total? string          -- an xpSource line's all told
+---@field off? boolean           -- an xpSource line struck through: its Module is off
+---@field header? boolean        -- the xpSource columns' heads
 ---@field tabs? { text: string, on: boolean, place: LedgerJournalPlace }[]
 ---@field seal? string
 ---@field action? fun()

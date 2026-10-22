@@ -7,8 +7,8 @@ local ns = select(2, ...)
 
 -- The Fish Journal's Angler page (LED-R146): the bookplate on the left, with the crest (LED-R112), the active title
 -- (LED-R77), the Prestige emblem and button (LED-R33, LED-R34) and the next Catch Milestone (LED-R42); the hands on
--- the rod, the Skill Milestones, "Signed As" and "Bindings" on the right. Pure logic, everything read from the
--- spread's context (CORE-R7); the book draws it (adapter/Journal.lua).
+-- the rod, the Skill Milestones, "Signed As", "Bindings" and "Where your XP came from" (LED-R150) on the right. Pure
+-- logic, everything read from the spread's context (CORE-R7); the book draws it (adapter/Journal.lua).
 
 -- The Angler page is ns.JOURNAL_ANGLER, its place ns.JournalPlace.angler (logic/Journal.lua).
 
@@ -56,7 +56,11 @@ local function bookplate(context)
 		mark = mark.emblem and mark or nil,
 		note = ns.PrestigeName(state.prestige) or L.ANGLER_NO_PRESTIGE,
 	}
-	blocks[#blocks + 1] = { kind = "xpBar", bar = ns.InkXpBar(state, celebrated, context.now, format) }
+	blocks[#blocks + 1] = {
+		kind = "xpBar",
+		bar = ns.InkXpBar(state, celebrated, context.now, format),
+		tip = ns.XPBarTip(ns.XPSourceLines(state, context.activityXP, context.prestigeSources), format),
+	}
 	if context.canPrestige then
 		blocks[#blocks + 1] = { kind = "button", text = L.ANGLER_PRESTIGE, action = context.askPrestige }
 	end
@@ -194,6 +198,27 @@ local function bindings(context, blocks)
 	end
 end
 
+-- "Where your XP came from" (LED-R150): its heading, the columns' heads "This climb" and "All told", then the Ledger's
+-- own line and one per source in Core's Module order (ns.XPSourceLines), a disabled source's `off`: greyed and struck
+-- through, still counted (AXP-R90).
+---@param context LedgerSpreadContext
+---@param blocks LedgerBlock[]
+local function xpSources(context, blocks)
+	local L = ns.L
+	local format = context.formatNumber
+	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_XP_SOURCES }
+	blocks[#blocks + 1] = { kind = "xpSource", header = true, value = L.ANGLER_XP_CLIMB, total = L.ANGLER_XP_ALL }
+	for _, line in ipairs(ns.XPSourceLines(context.state, context.activityXP, context.prestigeSources)) do
+		blocks[#blocks + 1] = {
+			kind = "xpSource",
+			text = line.name,
+			value = format(line.climb),
+			total = format(line.total),
+			off = line.off,
+		}
+	end
+end
+
 ns.RegisterJournalSpread(ns.JOURNAL_ANGLER, {
 	-- Home ❧ The Angler (LED-R125).
 	crumbs = function()
@@ -205,6 +230,7 @@ ns.RegisterJournalSpread(ns.JOURNAL_ANGLER, {
 		milestones(context, right)
 		signedAs(context, right)
 		bindings(context, right)
+		xpSources(context, right)
 		return { left = bookplate(context), right = right }
 	end,
 })

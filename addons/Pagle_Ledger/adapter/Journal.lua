@@ -124,6 +124,10 @@ function Journal:Context() -- luacheck: no self
 			setEquipped = Pagle.SetEquipped,
 			openShop = Pagle.OpenShop,
 		},
+		-- "Where your XP came from" and the XP bar's tooltip (LED-R150, LED-R145): Core's totals now, and each source's
+		-- at the latest Prestige
+		activityXP = Pagle.GetActivityXP(),
+		prestigeSources = ns.db.global.prestigeSources,
 	}
 end
 
