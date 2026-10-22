@@ -41,9 +41,3 @@ follow_untyped_imports = true
 [[tool.mypy.overrides]]
 module = "scipy.*"
 ignore_missing_imports = true
-
-# Pillow is not in .tools/: only the web art export (pagle_data/web_art.py, scripts/export-web-art.py) uses it, run
-# with a Python that has it, and its test skips without it. Where Pillow is installed, mypy reads its own types.
-[[tool.mypy.overrides]]
-module = ["PIL", "PIL.*"]
-ignore_missing_imports = true

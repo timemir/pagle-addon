@@ -426,11 +426,11 @@ The two event scripts (DATA-R99) share the generator's readers and checks. *Deci
 The website (pagle-backend) shows the Prestige frames, the Prestige emblems and the Legend crests from the same art the addon draws. `scripts/export-web-art.py` (logic in `pagle_data/web_art.py`) writes them from `data/art/prestige/`; nothing it writes is committed. pagle-backend runs it at a pinned commit of this repo and copies the output, so a change to the art reaches the site when pagle-backend moves its pin.
 
 ```
-python scripts/export-web-art.py                         # everything, into build/web-art/ (git-ignored)
-python scripts/export-web-art.py --out <dir> --only prestige-frame-5 legend-crest-19803 prestige-emblem-master
+.tools/bin/python scripts/export-web-art.py              # everything, into build/web-art/ (git-ignored)
+.tools/bin/python scripts/export-web-art.py --out <dir> --only prestige-frame-5 legend-crest-19803 prestige-emblem-master
 ```
 
-It needs Python 3.12+ with Pillow built with WebP. The pinned Python in `.tools/` has no Pillow, so it runs with any other Python that does, and its test (`scripts/tests/test_web_art.py`) skips where Pillow is missing.
+It runs on the pinned Python, whose Pillow (`PYTHON_PACKAGES` in `scripts/tools.env`) brings WebP, or on any Python 3.12+ with Pillow built with WebP. Its test, `scripts/tests/test_web_art.py`, runs in the check's generator stage.
 
 - **No game art.** Every pixel comes from the Pagle-drawn atlases or `wells/*.svg`; no Blizzard texture or icon goes into any output (pagle-backend ANG-R54). Where the client draws a Legend's item icon in its crest's well, the export draws the kit's sepia fish for that Legend (`wells/<legend key>.svg` on the well's sepia ground); the Unwritten crest keeps the dark fish in its own atlas.
 - **Keys.** Frames `prestige-frame-<none|1…10|master>`; emblems `prestige-emblem-<1…10|master>-<64|34|22>`; crests `legend-crest-<19803|19805|19806|unwritten>`.

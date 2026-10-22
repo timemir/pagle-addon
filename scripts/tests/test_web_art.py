@@ -1,6 +1,5 @@
 """The web art export (scripts/export-web-art.py, pagle_data/web_art.py), run on a few pieces: the file names, the
-manifest's shape, the CSS keyframes and the WebP sizes. Needs Pillow, which the pinned .tools/ Python lacks, so the
-suite skips it there."""
+manifest's shape, the CSS keyframes and the WebP sizes."""
 
 import json
 import re
@@ -8,12 +7,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from PIL import Image
 
-pytest.importorskip("PIL")
-
-from PIL import Image  # noqa: E402 (after the skip)
-
-from pagle_data.web_art import ART_DIR, export  # noqa: E402
+from pagle_data.web_art import ART_DIR, export
 
 REPO = Path(__file__).resolve().parents[2]
 SUBSET = ["prestige-frame-none", "prestige-frame-5", "prestige-frame-6", "legend-crest-19803",

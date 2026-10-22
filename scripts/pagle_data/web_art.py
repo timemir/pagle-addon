@@ -17,7 +17,7 @@ Pagle-drawn atlases in data/art/prestige/tga/ or from wells/*.svg: where the cli
 crest's well, the export draws a Pagle-drawn sepia fish instead (the kit's own stand-ins, f_legend.py's SEPIA), and
 the Unwritten crest keeps its own dark fish, which is in its atlas.
 
-Needs Pillow built with WebP. The pinned Python in .tools/ has no Pillow; run it with a Python that does.
+Needs Pillow built with WebP: the pinned one in .tools/ (PYTHON_PACKAGES in scripts/tools.env) is.
 """
 
 from __future__ import annotations

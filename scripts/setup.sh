@@ -148,8 +148,8 @@ if stale wow-api "$key"; then
 	stamp wow-api "$key"
 fi
 
-# Python, pytest and mypy for the content generator (DATA-R60), and numpy, soundfile and SciPy for render-sounds.py
-# (ANN-R74): one component, since the venv is built on that CPython. uv runs with no user config and its caches in $tmp, and leaves ~/.local/bin alone (--no-bin). The venv
+# Python, pytest and mypy for the content generator (DATA-R60), numpy, soundfile and SciPy for render-sounds.py
+# (ANN-R74), and Pillow for export-web-art.py: one component, since the venv is built on that CPython. uv runs with no user config and its caches in $tmp, and leaves ~/.local/bin alone (--no-bin). The venv
 # hardcodes its paths, hence the prefix in the key.
 # shellcheck disable=SC2086
 packages=$(echo $PYTHON_PACKAGES)
