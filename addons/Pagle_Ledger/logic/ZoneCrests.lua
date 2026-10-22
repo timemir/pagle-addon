@@ -20,7 +20,7 @@ local ICONS = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\"
 
 --- A zone crest (LED-R113): its key (`ledger.crest.<key>`, its lore `crest.<key>.*` and its texture), its zone's
 --- areaID and the zone's ContinentID (0 the Eastern Kingdoms, 1 Kalimdor, 2991 Forever's isles).
----@class LedgerZoneCrest
+---@class LedgerZoneCrestRow
 ---@field key string
 ---@field areaID integer
 ---@field continent integer
@@ -28,7 +28,7 @@ local ICONS = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\"
 --- LED-R113's table: the two continents' outdoor zones (the mountain's gate, the lake and the sea among them, areaIDs
 --- 25, 170 and 457), their capital cities and Forever's new zones, the six not yet charted among them, each
 --- continent's in its zones' enUS order. No dungeon, raid or battleground.
----@type LedgerZoneCrest[]
+---@type LedgerZoneCrestRow[]
 ns.ZONE_CRESTS = {
 	{ key = "alterac", areaID = 36, continent = 0 },
 	{ key = "arathi", areaID = 45, continent = 0 },
@@ -86,7 +86,7 @@ ns.ZONE_CRESTS = {
 }
 
 --- A zone crest's good ID (LED-R113).
----@param crest LedgerZoneCrest
+---@param crest LedgerZoneCrestRow
 ---@return string
 function ns.ZoneCrestID(crest)
 	return "ledger.crest." .. crest.key
@@ -95,7 +95,7 @@ end
 --- The zone crest of the zone `areaID` (LED-R113): its good's ID and its name (its lore, or its ID while the key has no
 --- text, LED-R161), for the Zone Master banner's crest line; nil for a zone without a crest.
 ---@param areaID integer
----@return { id: string, name: string }?
+---@return LedgerZoneCrest?
 function ns.ZoneCrestOf(areaID)
 	for _, crest in ipairs(ns.ZONE_CRESTS) do
 		if crest.areaID == areaID then
@@ -113,7 +113,7 @@ local CONTINENT_ORDER = { [0] = 1, [1] = 2 }
 --- by ContinentID), each continent's by its zones' names from `areaName`, then by key. A zone the client has no name
 --- for comes after its continent's named ones.
 ---@param areaName fun(areaID: integer): string? C_Map.GetAreaInfo
----@return LedgerZoneCrest[]
+---@return LedgerZoneCrestRow[]
 function ns.SortedZoneCrests(areaName)
 	local names, sorted = {}, {}
 	for i, crest in ipairs(ns.ZONE_CRESTS) do

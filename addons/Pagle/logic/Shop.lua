@@ -202,7 +202,7 @@ function Model:Entry(goodID)
 			end
 		end
 		local earnedText, earnedNote = goods:EarnedTexts(goodID)
-		return {
+		local entry = {
 			id = goodID,
 			name = good.name,
 			icon = good.icon,
@@ -219,6 +219,7 @@ function Model:Entry(goodID)
 			price = price,
 			state = state,
 		}
+		return entry
 	end
 	local cached = self.sources.cache[goodID]
 	if type(cached) ~= "table" or self.on[cached.module] or cached.default or not goods:IsOwned(goodID) then
@@ -237,6 +238,30 @@ function Model:Entry(goodID)
 		default = false,
 		state = "putAway",
 	}
+end
+
+-- Keeps the dots of `dots` that are well made, { color = { r, g, b }, filled = boolean }, as fresh copies; nil when
+-- none is, or `dots` isn't a list.
+---@param dots any
+---@return PagleProgressDot[]?
+local function wellMadeDots(dots)
+	if type(dots) ~= "table" then
+		return nil
+	end
+	local kept = {}
+	for _, dot in ipairs(dots) do
+		local color = type(dot) == "table" and dot.color
+		if
+			type(color) == "table"
+			and type(color[1]) == "number"
+			and type(color[2]) == "number"
+			and type(color[3]) == "number"
+			and (dot.filled == nil or type(dot.filled) == "boolean")
+		then
+			kept[#kept + 1] = { color = { color[1], color[2], color[3] }, filled = dot.filled == true }
+		end
+	end
+	return kept[1] and kept or nil
 end
 
 --- A good on the list (wallet-and-shop.md › UI): its swatch, name and state.
@@ -312,10 +337,43 @@ end
 ---@field putAway? true         -- the Put away group: greyed
 ---@field note? string          -- the Put away group's "Yours to keep"
 ---@field rows PagleShopRow[]
+---@field headings? table<integer, string> -- a grouped slot's (SHOP-R27): a group's name, over the row at that index
 
---- The list (wallet-and-shop.md › UI, SHOP-R35): the goods `query` keeps, grouped by live slot (Core's first, then
---- by Module order), each with its owned count; then the owned goods of Modules that aren't On, from the cache, as
---- the last group, "Put away: Module off". A group with no row left isn't listed.
+-- A slot's goods in the order the list shows them (SHOP-R27): for a slot with groups, the goods with none first, then
+-- each group's in the slot's order, each in registration order; for one without, in registration order. With each,
+-- the name of the group it opens, if it is the first of its group.
+---@param slot PagleRegisteredSlot
+---@param slotGoods PagleRegisteredGood[]
+---@return PagleRegisteredGood[] ordered
+---@return table<PagleRegisteredGood, string> opens
+local function inGroups(slot, slotGoods)
+	if not slot.groups then
+		return slotGoods, {}
+	end
+	local ordered, opens = {}, {}
+	local function add(key, name)
+		local first = true
+		for _, good in ipairs(slotGoods) do
+			if good.group == key then
+				ordered[#ordered + 1] = good
+				if first and name then
+					opens[good] = name
+				end
+				first = false
+			end
+		end
+	end
+	add(nil)
+	for _, group in ipairs(slot.groups) do
+		add(group.key, group.name)
+	end
+	return ordered, opens
+end
+
+--- The list (wallet-and-shop.md › UI, SHOP-R27, SHOP-R35): the goods `query` keeps, grouped by live slot (Core's
+--- first, then by Module order), each with its owned count, a grouped slot's goods under their groups' names; then
+--- the owned goods of Modules that aren't On, from the cache, as the last group, "Put away: Module off". A group with
+--- no row left isn't listed, nor a slot's group's name with none of its rows left.
 ---@param query PagleShopQuery
 ---@return PagleShopGroup[]
 function Model:List(query)
@@ -324,13 +382,21 @@ function Model:List(query)
 	local groups = {}
 	for _, slot in ipairs(self.slotList) do
 		local rows, owned, slotGoods = {}, 0, goods:GoodsOf(slot.id)
-		for _, good in ipairs(slotGoods) do
+		local ordered, opens = inGroups(slot, slotGoods)
+		local headings, heading
+		for _, good in ipairs(ordered) do
 			local entry = assert(self:Entry(good.id))
 			if OWNED[entry.state] then
 				owned = owned + 1
 			end
+			heading = opens[good] or heading
 			if matches(entry, query) then
 				rows[#rows + 1] = self:RowOf(entry)
+				if heading then
+					headings = headings or {}
+					headings[#rows] = heading
+					heading = nil
+				end
 			end
 		end
 		if #rows > 0 then
@@ -338,6 +404,7 @@ function Model:List(query)
 				label = slot.label,
 				count = L.SHOP_OWNED_COUNT:format(owned, #slotGoods),
 				rows = rows,
+				headings = headings,
 			}
 		end
 	end
@@ -392,6 +459,7 @@ end
 ---@field tags string[]             -- "Owned", "In use", "default", "Hunts is off"
 ---@field notes string[]            -- an earned good's earnedText (a function's second text) and "A Ledger reward, not
 --- for sale"; "Yours to keep"
+---@field progress? PagleProgressDot[] -- an earned good's dots while it isn't owned, from its progress (SHOP-R22)
 
 --- The stage for `goodID`, or nil when the shop doesn't show that good (Select).
 ---@param goodID any
@@ -443,6 +511,10 @@ function Model:Stage(goodID)
 			stage.notes[#stage.notes + 1] = entry.earnedNote
 		end
 		stage.notes[#stage.notes + 1] = L.SHOP_REWARD:format(owner)
+	end
+	-- Its progress, asked for only here, for the stage, and only while it isn't earned (SHOP-R22, Goods:Progress).
+	if state == "unearned" then
+		stage.progress = wellMadeDots(self.sources.goods:Progress(entry.id))
 	end
 	return stage
 end

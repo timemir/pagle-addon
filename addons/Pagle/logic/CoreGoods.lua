@@ -22,6 +22,7 @@ local ns = select(2, ...)
 ---@field label string
 ---@field category "Announcements"|"Bookplate"
 ---@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): the crest slot
+---@field groups? PagleSlotGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
 local ICONS = "Interface\\Icons\\"
@@ -78,6 +79,11 @@ ns.CORE_GOODS = {
 		label = L.SLOT_CREST,
 		category = "Bookplate",
 		openToEarned = true,
+		-- The Ledger's zone crests and Core's fish crests name these; Plain names none, so it lists first (SHOP-R27).
+		groups = {
+			{ key = "zone", name = L.SLOT_CREST_ZONES },
+			{ key = "fish", name = L.SLOT_CREST_FISH },
+		},
 		goods = {
 			{ id = "core.crest.plain", default = true, icon = CRESTS .. "plain" },
 		},
@@ -127,6 +133,7 @@ function ns.RegisterCoreGoods(previews)
 			id = slot.id,
 			label = slot.label,
 			category = slot.category,
+			groups = slot.groups,
 			openToEarned = slot.openToEarned,
 			preview = slot.openToEarned and previews and function(stage, good)
 				local draw = previews[slot.id]

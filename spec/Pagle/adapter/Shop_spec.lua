@@ -76,12 +76,15 @@ local function shopFrame(loaded)
 	return loaded.ns.shopFrame
 end
 
--- The list as shown: each group header as "<label> <count or note>", each row as "<name> | <tag or price>".
+-- The list as shown: each group header as "<label> <count or note>", a grouped slot's group header (SHOP-R27) as
+-- "<name>", each row as "<name> | <tag or price>".
 local function listed(loaded)
 	local lines = {}
 	for _, line in ipairs(shopFrame(loaded).lines) do
 		if line:IsShown() then
-			if line.header then
+			if line.header and not line.count:IsShown() then
+				lines[#lines + 1] = line.label:GetText()
+			elseif line.header then
 				lines[#lines + 1] = ("%s %s"):format(line.label:GetText(), line.count:GetText())
 			elseif line.price:IsShown() then
 				lines[#lines + 1] = ("%s | %s"):format(line.label:GetText(), line.price.amount:GetText())
@@ -101,6 +104,32 @@ local function rowOf(loaded, goodID)
 		end
 	end
 	error("no row for " .. goodID)
+end
+
+-- Hunts' frames on its handle, a grouped slot (SHOP-R27): Gilt frames then Wooden frames; Plain (default), Oak
+-- (Ash, wooden, tier 1) and Gold leaf (gilt, earned never, "2 of 3 gilded", with `progress` as its progress).
+local function huntsFrames(hunts, progress)
+	hunts:RegisterSlot({
+		id = "hunts.frame",
+		label = "Frame",
+		category = "Hunts",
+		groups = { { key = "gilt", name = "Gilt frames" }, { key = "wood", name = "Wooden frames" } },
+	})
+	hunts:RegisterGood({ id = "hunts.frame.plain", slot = "hunts.frame", name = "Plain", default = true })
+	hunts:RegisterGood({ id = "hunts.frame.ash", slot = "hunts.frame", name = "Ash", tier = 1, group = "wood" })
+	hunts:RegisterGood({
+		id = "hunts.frame.leaf",
+		slot = "hunts.frame",
+		name = "Gold leaf",
+		group = "gilt",
+		isEarned = function()
+			return false
+		end,
+		earnedText = function()
+			return "2 of 3 gilded", "Gild three frames."
+		end,
+		progress = progress,
+	})
 end
 
 -- The words on each shown pill of `pills`, in order.
@@ -555,6 +584,56 @@ describe("The Curio Shop's list", function()
 		end
 	)
 
+	it(
+		"heads a grouped slot's groups with their names in the chips' gilt capitals, never as goods (SHOP-R27,"
+			.. " wallet-and-shop.md › UI)",
+		function()
+			local loaded, handles = shopCore()
+			huntsFrames(handles.Hunts)
+
+			loaded.env.Pagle.OpenShop()
+
+			local shown = listed(loaded)
+			assert.are.same({
+				"FRAME 1 of 3",
+				"Plain | IN USE",
+				"GILT FRAMES",
+				"Gold leaf | 2 of 3 gilded",
+				"WOODEN FRAMES",
+				"Ash | 150",
+			}, { unpack(shown, #shown - 5) })
+			local heading
+			for _, line in ipairs(shopFrame(loaded).lines) do
+				if line:IsShown() and line.label:GetText() == "GILT FRAMES" then
+					heading = line
+				end
+			end
+			heading = assert(heading)
+			assert.is_true(heading.header)
+			assert.is_nil(heading.goodID)
+			assert.is_false(heading.mouseEnabled)
+			assert.are.equal(loaded.ns.SHOP_FONTS.Chip, heading.label.fontObject)
+			assert.are.same(
+				{ true, false, false, false },
+				{ heading.rule:IsShown(), heading.bezel:IsShown(), heading.price:IsShown(), heading.tag:IsShown() }
+			)
+			assert.are.equal(26, heading:GetHeight())
+		end
+	)
+
+	it("points the First look's note at a good's medallion, never a group's header (SHOP-R27, ONB-R57)", function()
+		local loaded, handles = shopCore()
+		huntsFrames(handles.Hunts)
+		loaded.env.Pagle.OpenShop()
+		local frame = shopFrame(loaded)
+
+		frame.search:Type("ash")
+
+		assert.are.same({ "FRAME 1 of 3", "WOODEN FRAMES", "Ash | 150" }, listed(loaded))
+		local looks = loaded.ns.ShopFirstLook()
+		assert.are.equal(rowOf(loaded, "hunts.frame.ash").bezel, looks.notes[2].target())
+	end)
+
 	it("puts a clicked row's good on the stage (wallet-and-shop.md › UI)", function()
 		local loaded = shopCore()
 		loaded.env.Pagle.OpenShop()
@@ -714,6 +793,52 @@ describe("The Curio Shop's stage", function()
 				end
 			end
 			assert.are.same({ 60, 70 }, { assert(crest, "the crest on the stage's bookplate"):GetSize() })
+		end
+	)
+
+	it(
+		"shows an earned good's progress as dots under its description, filled or ringed in their colours, its note"
+			.. " under them (SHOP-R22, wallet-and-shop.md › UI)",
+		function()
+			local loaded, handles = shopCore()
+			local calls = 0
+			huntsFrames(handles.Hunts, function()
+				calls = calls + 1
+				return {
+					{ color = { 0.8, 0.2, 0.1 }, filled = true },
+					{ color = { 0.1, 0.4, 0.9 }, filled = false },
+					{ color = { 0.6, 0.3, 0.9 }, filled = false },
+				}
+			end)
+
+			loaded.env.Pagle.OpenShop("hunts.frame.leaf")
+
+			local stage = shopFrame(loaded).stage
+			local dots = stage.dots
+			assert.is_true(dots:IsShown())
+			assert.are.same({ "TOP", stage.description, "BOTTOM", 0, -8 }, { dots:GetPoint() })
+			assert.are.same({ "TOPLEFT", stage.description, "BOTTOMLEFT", 0, -26 }, { stage.notes:GetPoint() })
+			assert.are.equal("Gild three frames.\nA Hunts reward, not for sale", stage.notes:GetText())
+			local shown = {}
+			for _, dot in ipairs(dots.dots) do
+				if dot:IsShown() then
+					shown[#shown + 1] = dot
+				end
+			end
+			assert.are.equal(3, #shown)
+			assert.are.same({ 10, 10 }, { shown[1]:GetSize() })
+			assert.are.same({ 0.8, 0.2, 0.1, 1 }, shown[1].fill.color)
+			assert.is_false(shown[1].hollow:IsShown())
+			assert.are.same({ 0.1, 0.4, 0.9, 1 }, shown[2].fill.color)
+			assert.is_true(shown[2].hollow:IsShown()) -- ringed: the paper shows inside
+			for _, texture in ipairs({ shown[2].edge, shown[2].fill, shown[2].hollow }) do
+				assert.are.equal(1, #texture.masks, "each drawn round")
+			end
+			assert.are.equal(1, calls)
+
+			loaded.env.Pagle.OpenShop("hunts.cover.velvet")
+			assert.is_false(dots:IsShown())
+			assert.are.same({ "TOPLEFT", stage.description, "BOTTOMLEFT", 0, -6 }, { stage.notes:GetPoint() })
 		end
 	)
 

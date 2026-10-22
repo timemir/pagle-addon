@@ -38,6 +38,7 @@ describe("the Ledger's projection def", function()
 			FormatNumber = tostring,
 			RefreshGoods = note("RefreshGoods"),
 			SizeText = function() end,
+			ZoneCrest = function() end,
 		}
 	end
 	local outlets = noting({})

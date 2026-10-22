@@ -182,16 +182,49 @@ describe("The Curio Shop's purse", function()
 	end)
 end)
 
--- Each group's label and owned count, and its rows as "<id> <tag or price>", from a list.
+-- Each group's label and owned count, and its rows as "<id> <tag or price>", from a list; a grouped slot's header
+-- (SHOP-R27) as "  -- <name>" before the row it heads.
 local function outline(groups)
 	local lines = {}
 	for _, group in ipairs(groups) do
 		lines[#lines + 1] = ("%s (%s)"):format(group.label, group.count or group.note)
-		for _, row in ipairs(group.rows) do
+		for i, row in ipairs(group.rows) do
+			local heading = group.headings and group.headings[i]
+			if heading then
+				lines[#lines + 1] = "  -- " .. heading
+			end
 			lines[#lines + 1] = ("  %s %s%s"):format(row.id, row.tag or row.price, row.short and " [red]" or "")
 		end
 	end
 	return lines
+end
+
+-- Hunts' frames, a grouped slot (SHOP-R27): Gilt frames then Wooden frames, its goods registered out of that order:
+-- Plain (default), Oak (wooden, tier 1), Gold leaf (gilt, earned while `earned.value`, its texts a function's),
+-- Velvet (tier 1, no group) and Birch (wooden, tier 2).
+local function huntsFrames(hunts, earned)
+	hunts:RegisterSlot({
+		id = "hunts.frame",
+		label = "Frame",
+		category = "Hunts",
+		groups = { { key = "gilt", name = "Gilt frames" }, { key = "wood", name = "Wooden frames" } },
+	})
+	hunts:RegisterGood({ id = "hunts.frame.plain", slot = "hunts.frame", name = "Plain", default = true })
+	hunts:RegisterGood({ id = "hunts.frame.oak", slot = "hunts.frame", name = "Oak", tier = 1, group = "wood" })
+	hunts:RegisterGood({
+		id = "hunts.frame.leaf",
+		slot = "hunts.frame",
+		name = "Gold leaf",
+		group = "gilt",
+		isEarned = function()
+			return earned.value
+		end,
+		earnedText = function()
+			return "2 of 3 gilded", "Gild 3 frames. 2 gilded so far."
+		end,
+	})
+	hunts:RegisterGood({ id = "hunts.frame.velvet", slot = "hunts.frame", name = "Velvet", tier = 1 })
+	hunts:RegisterGood({ id = "hunts.frame.birch", slot = "hunts.frame", name = "Birch", tier = 2, group = "wood" })
 end
 
 describe("The Curio Shop's list", function()
@@ -358,6 +391,186 @@ describe("The Curio Shop's list", function()
 			}),
 			outline(model(fake):List({}))
 		)
+	end)
+end)
+
+describe("A grouped slot on the Curio Shop's list", function()
+	-- Hunts' frames alone of Hunts' (Gold leaf not yet earned), logged in, with a balance of 200.
+	local function framing()
+		local fake, handles = coreWithModules()
+		huntsFrames(handles.Hunts, { value = false })
+		fake.login()
+		handles.Ledger:ReportCoinsEarned(200)
+		return fake, handles
+	end
+
+	it(
+		"lists the goods with no group first, then each group in the slot's order under its name, each in"
+			.. " registration order (SHOP-R27)",
+		function()
+			local fake = framing()
+
+			assert.are.same({
+				"Frame (1 of 5)",
+				"  hunts.frame.plain In use",
+				"  hunts.frame.velvet 150",
+				"  -- Gilt frames",
+				"  hunts.frame.leaf 2 of 3 gilded",
+				"  -- Wooden frames",
+				"  hunts.frame.oak 150",
+				"  hunts.frame.birch 400" .. " [red]",
+			}, outline(model(fake):List({ category = "Hunts" })))
+		end
+	)
+
+	it("heads only the groups with a row left once the list is narrowed (SHOP-R27)", function()
+		local fake = framing()
+		local shop = model(fake)
+
+		assert.are.same({
+			"Frame (1 of 5)",
+			"  -- Wooden frames",
+			"  hunts.frame.birch 400" .. " [red]",
+		}, outline(shop:List({ search = "birch" })))
+		assert.are.same({
+			"Frame (1 of 5)",
+			"  hunts.frame.velvet 150",
+			"  -- Wooden frames",
+			"  hunts.frame.oak 150",
+		}, outline(shop:List({ category = "Hunts", filter = "canAfford" })))
+		assert.are.same(
+			{ "Frame (1 of 5)", "  hunts.frame.plain In use" },
+			outline(shop:List({ search = "plain", category = "Hunts" }))
+		)
+	end)
+
+	it("lists a slot with no groups as before, its goods in registration order (SHOP-R27)", function()
+		local fake, handles = coreWithModules()
+		huntsCovers(handles.Hunts, { value = false })
+		fake.login()
+
+		local group = model(fake):List({ category = "Hunts" })[1]
+
+		assert.is_nil(group.headings)
+		assert.are.same({ "hunts.cover.plain", "hunts.cover.velvet", "hunts.cover.gold" }, {
+			group.rows[1].id,
+			group.rows[2].id,
+			group.rows[3].id,
+		})
+	end)
+
+	it("gives Core's crest slot its Zone crests and Fish crests groups, in that order (SHOP-R25, SHOP-R27)", function()
+		local fake = coreWithModules()
+		fake.login()
+
+		local crest
+		for _, slot in ipairs(fake.ns.goods:Slots()) do
+			if slot.id == "core.crest" then
+				crest = slot
+			end
+		end
+
+		assert.are.same(
+			{ { key = "zone", name = "Zone crests" }, { key = "fish", name = "Fish crests" } },
+			assert(crest).groups
+		)
+	end)
+end)
+
+describe("An earned good's texts and progress in the Curio Shop", function()
+	-- Hunts' frames (Gold leaf earned while `earned.value`, with `progress` as its progress if given), logged in.
+	local function earning(earned, progress)
+		local fake, handles = coreWithModules()
+		handles.Hunts:RegisterSlot({ id = "hunts.frame", label = "Frame", category = "Hunts" })
+		handles.Hunts:RegisterGood({ id = "hunts.frame.plain", slot = "hunts.frame", name = "Plain", default = true })
+		handles.Hunts:RegisterGood({
+			id = "hunts.frame.leaf",
+			slot = "hunts.frame",
+			name = "Gold leaf",
+			isEarned = function()
+				return earned.value
+			end,
+			earnedText = function()
+				return ("%d of 3 gilded"):format(earned.gilded or 2), "Gild 3 frames."
+			end,
+			progress = progress,
+		})
+		fake.login()
+		return fake, handles
+	end
+
+	-- Two dots: the first filled in red, the second ringed in blue.
+	local function twoDots()
+		return { { color = { 1, 0, 0 }, filled = true }, { color = { 0, 0, 1 }, filled = false } }
+	end
+
+	it(
+		"shows an earnedText function's first text on the row and its second as the stage's note, read afresh at"
+			.. " each draw (SHOP-R22)",
+		function()
+			local earned = { value = false }
+			local fake = earning(earned)
+
+			assert.are.equal("2 of 3 gilded", assert(model(fake):Row("hunts.frame.leaf")).tag)
+			assert.are.same(
+				{ "Gild 3 frames.", "A Hunts reward, not for sale" },
+				assert(model(fake):Stage("hunts.frame.leaf")).notes
+			)
+			earned.gilded = 1
+			assert.are.equal("1 of 3 gilded", assert(model(fake):Row("hunts.frame.leaf")).tag)
+		end
+	)
+
+	it(
+		"shows an earned good's progress dots on the stage while it isn't owned, read at each draw (SHOP-R22)",
+		function()
+			local calls = 0
+			local earned = { value = false }
+			local fake, handles = earning(earned, function()
+				calls = calls + 1
+				return twoDots()
+			end)
+			assert.are.equal(0, calls, "never called to register or own it")
+
+			local stage = assert(model(fake):Stage("hunts.frame.leaf"))
+
+			assert.are.same(twoDots(), stage.progress)
+			assert.are.equal(1, calls)
+			model(fake):Stage("hunts.frame.leaf")
+			assert.are.equal(2, calls)
+			assert.is_nil(model(fake):Stage("hunts.frame.plain").progress)
+
+			earned.value = true
+			handles.Hunts:RefreshGoods()
+			local owned = assert(model(fake):Stage("hunts.frame.leaf"))
+			assert.are.same({ "owned", { "A Hunts reward, not for sale" } }, { owned.state, owned.notes })
+			assert.is_nil(owned.progress)
+			assert.are.equal(2, calls)
+		end
+	)
+
+	it("keeps only well-made dots, and none when progress raises (SHOP-R22)", function()
+		local fake = earning({ value = false }, function()
+			return {
+				{ color = { 1, 0.5, 0 }, filled = true },
+				{ color = { 1, 0.5 }, filled = true },
+				{ color = "red", filled = false },
+				"dot",
+				{ color = { 0, 0, 1 } },
+			}
+		end)
+
+		assert.are.same(
+			{ { color = { 1, 0.5, 0 }, filled = true }, { color = { 0, 0, 1 }, filled = false } },
+			assert(model(fake):Stage("hunts.frame.leaf")).progress
+		)
+
+		local raising = earning({ value = false }, function()
+			error("no dots today")
+		end)
+		assert.is_nil(assert(model(raising):Stage("hunts.frame.leaf")).progress)
+		assert.are.equal(1, #raising.reported)
+		assert.matches("no dots today", raising.reported[1])
 	end)
 end)
 
