@@ -636,20 +636,29 @@ describe("Hunts' earned goods, through the projection", function()
 		append(fake, { cast(3, hunts.DAY, WESTFALL, { C.UNCOMMON }, { C.RACK_AURA }) })
 	end
 
-	-- The fixture list with fixture_wagers its only set: its title is every set's.
-	local function wagersOnly(loaded)
-		local list, hunts_ = loaded.ns.huntList, {}
+	-- The fixture list with only the sets `ids`, in that order, and their Hunts.
+	local function setsOnly(loaded, ids)
+		local list, keep, sets, hunts_ = loaded.ns.huntList, {}, {}, {}
+		for _, id in ipairs(ids) do
+			keep[id] = true
+			sets[#sets + 1] = { id = id }
+		end
 		for _, hunt in ipairs(list.hunts) do
-			if hunt.set == "fixture_wagers" then
+			if keep[hunt.set] then
 				hunts_[#hunts_ + 1] = hunt
 			end
 		end
-		loaded.ns.huntList = {
-			fingerprint = list.fingerprint,
-			sets = { { id = "fixture_wagers" } },
-			hunts = hunts_,
-			classes = list.classes,
-		}
+		loaded.ns.huntList = { fingerprint = list.fingerprint, sets = sets, hunts = hunts_, classes = list.classes }
+	end
+
+	-- The fixture list with fixture_wagers its only set: its title is every set's.
+	local function wagersOnly(loaded)
+		setsOnly(loaded, { "fixture_wagers" })
+	end
+
+	-- A later release's list: fixture_pair added after fixture_wagers, its title not yet earned.
+	local function pairAdded(loaded)
+		setsOnly(loaded, { "fixture_wagers", "fixture_pair" })
 	end
 
 	-- `n` fixture_vale runs, each completed by one Cast in Elwynn with a Blackmouth and an uncommon item (HNT-R146).
@@ -749,6 +758,52 @@ describe("Hunts' earned goods, through the projection", function()
 			assert.is_true(nextFake.Pagle.IsOwned(NIGHT_WATCH))
 		end
 	)
+
+	it(
+		"keep Five-Set Seal and Night Watch, earned by a live Cast, when a release adds a set not yet titled (HNT-R122, HNT-R20)",
+		function()
+			local loaded, fake = hunts.login(oddity, { prepare = wagersOnly })
+			fishAt(fake, hunts.DAY, WESTFALL, { C.RACK_AURA })
+			fake.playCast("caught", { { itemID = C.UNCOMMON, quantity = 1 } })
+			fake.nextFrame()
+			assert.is_true(fake.Pagle.IsOwned(FIVESEAL))
+			-- Noted the first time the rule held, on the live entry.
+			local goods = loaded.env.PagleHuntsDB.global.celebrated.goods
+			assert.is_true(goods[FIVESEAL])
+			assert.is_true(goods[NIGHT_WATCH])
+			assert.is_true(goods[PATHFINDER])
+
+			local next, nextFake = rebuilt(fake, loaded, pairAdded)
+
+			assert.is_nil(next.ns.State().sets.fixture_pair)
+			assert.is_true(nextFake.Pagle.IsOwned(FIVESEAL))
+			assert.is_true(nextFake.Pagle.IsOwned(NIGHT_WATCH))
+		end
+	)
+
+	it(
+		"keep Five-Set Seal and Night Watch, earned before login, when a release adds a set not yet titled (HNT-R122, HNT-R20)",
+		function()
+			local loaded, fake = hunts.login(wagersTitle, { prepare = wagersOnly })
+			-- Noted in done, where the rule first held.
+			local goods = loaded.env.PagleHuntsDB.global.celebrated.goods
+			assert.is_true(goods[FIVESEAL])
+			assert.is_true(goods[NIGHT_WATCH])
+
+			local next, nextFake = rebuilt(fake, loaded, pairAdded)
+
+			assert.is_nil(next.ns.State().sets.fixture_pair)
+			assert.is_true(next.ns.State().sets.fixture_wagers ~= nil)
+			assert.is_true(nextFake.Pagle.IsOwned(FIVESEAL))
+			assert.is_true(nextFake.Pagle.IsOwned(NIGHT_WATCH))
+		end
+	)
+
+	it("note no good while no rule holds (HNT-R122)", function()
+		local loaded = hunts.login(oddity)
+
+		assert.is_nil(loaded.env.PagleHuntsDB.global.celebrated.goods)
+	end)
 
 	it(
 		"own Winner's Brocade and Winner's Ribbon at ten completed runs, from done, and after a rebuild (HNT-R122, HNT-R148)",

@@ -232,6 +232,7 @@ describe("Hunts' moments", function()
 				sets = { fixture_wagers = true },
 				runs = {},
 				ladder = {},
+				goods = { ["hunts.notebookcover.pathfinder"] = true }, -- noted once its rule held (HNT-R122)
 			}, loaded.env.PagleHuntsDB.global.celebrated)
 
 			-- Already celebrated: the next Nightfin, fixture_snapper's second, raises nothing (HNT-R91).
@@ -315,6 +316,7 @@ describe("Hunts' moments", function()
 				sets = { fixture_wagers = true },
 				runs = {},
 				ladder = {},
+				goods = { ["hunts.notebookcover.pathfinder"] = true }, -- noted once its rule held (HNT-R122)
 			}, loaded.env.PagleHuntsDB.global.celebrated)
 		end)
 
@@ -431,6 +433,7 @@ describe("Hunts' moments", function()
 				sets = { fixture_wagers = true },
 				runs = {},
 				ladder = {},
+				goods = { ["hunts.notebookcover.pathfinder"] = true }, -- noted once its rule held (HNT-R122)
 			}, loaded.env.PagleHuntsDB.global.celebrated)
 		end)
 	end)

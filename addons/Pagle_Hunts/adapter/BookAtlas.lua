@@ -23,10 +23,6 @@ ns.BOOK_FILES = { leather = CORE .. "Leather", parchment = CORE .. "Parchment" }
 --- v2's Oilcloth and Verdigris, Hunts' own media, loaded only when worn.
 ns.COVER_FILES = { oilcloth = OWN .. "Cover-oil", verdigris = OWN .. "Cover-verd" }
 
---- Where the Curio Shop expansion's covers keep their materials (HNT-R123): `media/books/covers/<key>`, each a
---- power-of-two square tiled at its cover's repeat, Hunts' own media, loaded only when worn.
-ns.COVER_TILES = OWN .. "covers\\"
-
 -- The expansion kit's sprites (goods.json): Covers2's closed-notebook swatches, each 230 x 295 texels at 1.25 to the UI
 -- unit, the notebook 150 x 196 in it; TrackerFrames2's frames, 556 x 440 texels at 2, the frame 262 x 200 in it.
 ---@param at table<string, integer[]>
