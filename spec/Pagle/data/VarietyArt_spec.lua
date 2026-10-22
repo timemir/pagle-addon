@@ -17,7 +17,7 @@ describe("the variety art table", function()
 			if item.varieties and item.species == itemID then
 				species = species + 1
 				local art = ns.VARIETY_ART[itemID]
-				assert.is_table(art, tostring(itemID))
+				assert.is_table(art)
 				assert.are.equal(#item.varieties, #art)
 				for _, cell in ipairs(art) do
 					assert.is_truthy(ns.VARIETY_ATLASES[cell[1]])
