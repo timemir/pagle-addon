@@ -85,14 +85,25 @@ function ns.DrawNudge(nudge, parts)
 		return (region.Text or region):GetStringWidth()
 	end)
 	ns.SetThreeSlice(nudge, "Field", "nudge", width, 26, "BACKGROUND")
+	local lift = 0 -- the piece before's: how far its middle sits above the strip's
 	for i, part in ipairs(parts) do
 		local kind, region = kindOf(part), drawn[i]
 		if kind == "key" then
 			ns.SetKeyCap(region, part.key, pieces[i].width, 24)
 		end
 		-- The kit's baselines: a key cap sits 2 px up, the red words 1 px down.
+		local y = kind == "key" and 2 or kind == "em" and -1 or 0
 		region:ClearAllPoints()
-		region:SetPoint("LEFT", nudge, "LEFT", pieces[i].x, kind == "key" and 2 or kind == "em" and -1 or 0)
+		-- The first piece at its place on the paper; each after it 8 px past the right end of the one before as it
+		-- draws, not as it measured: a strip drawn smaller (the Field guide's sample) sets its type at other pixel
+		-- sizes, whose widths don't shrink in step, and pieces placed by the measured widths ran into each other.
+		if i == 1 then
+			region:SetPoint("LEFT", nudge, "LEFT", pieces[i].x, y)
+		else
+			local before = pieces[i - 1]
+			region:SetPoint("LEFT", drawn[i - 1], "RIGHT", pieces[i].x - before.x - before.width, y - lift)
+		end
+		lift = y
 		region:Show()
 	end
 end
