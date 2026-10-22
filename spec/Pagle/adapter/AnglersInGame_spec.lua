@@ -377,22 +377,19 @@ describe("the Companion's data addons", function()
 					"Legends",
 					"3 of 12",
 				}, tooltipOf(loaded, ADA))
-				assert.are.same(
-					{
-						"",
-						"FFFFFF",
-						"5FD3C4",
-						"1EFF00",
-						"FFD100",
-						"E9D8AE",
-						"FFFFFF",
-						"E9D8AE",
-						"FFFFFF",
-						"E9D8AE",
-						"FFFFFF",
-					},
-					loaded.client.tooltipColors()
-				)
+				assert.are.same({
+					"",
+					"FFFFFF",
+					"5FD3C4",
+					"1EFF00",
+					"FFD100",
+					"E9D8AE",
+					"FFFFFF",
+					"E9D8AE",
+					"FFFFFF",
+					"E9D8AE",
+					"FFFFFF",
+				}, loaded.client.tooltipColors())
 			end
 		)
 
@@ -468,6 +465,77 @@ describe("the Companion's data addons", function()
 
 				assert.are.equal(HEADER, tooltipOf(loaded, CARD_2)[3])
 				assert.are.same({ "Pagle_Anglers" }, loaded.client.loads)
+			end
+		)
+	end)
+
+	describe("Show other Anglers on player tooltips", function()
+		-- The root's last two rows: the Pagle website header and the row (SET-R10 row 11).
+		local function websiteRows(loaded)
+			local initializers = loaded.client.settings.category("Pagle").layout.initializers
+			return initializers[#initializers - 1], initializers[#initializers]
+		end
+
+		it(
+			"is a checkbox under a Pagle website header, the root's last rows, with its tooltip (SET-R10 row 11, VIEW-R30)",
+			function()
+				local loaded = core()
+				enterWorld(loaded)
+
+				local header, row = websiteRows(loaded)
+
+				assert.are.same(
+					{ "Pagle website", "SettingsListSectionHeaderTemplate" },
+					{ header:GetName(), header.template }
+				)
+				assert.are.same(
+					{ "Show other Anglers on player tooltips", "SettingsCheckboxControlTemplate" },
+					{ row:GetName(), row.template }
+				)
+				assert.are.equal(
+					"Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle"
+						.. " Companion.",
+					row.data.tooltip
+				)
+			end
+		)
+
+		it(
+			"reads PagleDB.profile.anglerTooltips, on by default, with no default for Defaults to restore (VIEW-R30, SET-R13)",
+			function()
+				local loaded = core()
+				enterWorld(loaded)
+				local setting = select(2, websiteRows(loaded)):GetSetting()
+
+				assert.is_true(setting:GetValue())
+				assert.is_nil(setting:GetDefaultValue())
+				loaded.ns.db.profile.anglerTooltips = false
+				assert.is_false(setting:GetValue())
+			end
+		)
+
+		it(
+			"off, removes the block and never loads Pagle_Anglers; on, the next hover loads it (VIEW-R30, VIEW-R3)",
+			function()
+				local loaded = core()
+				enterWorld(loaded)
+				local setting = select(2, websiteRows(loaded)):GetSetting()
+
+				setting:SetValue(false)
+				loaded.client.hoverUnit(CARD_2, "Ada")
+				loaded.client.hoverUnit(ADA, "Ada")
+				assert.are.same({ false, { "Ada" }, {} }, {
+					loaded.ns.db.profile.anglerTooltips,
+					loaded.client.tooltipLines(),
+					loaded.client.loads,
+				})
+
+				setting:SetValue(true)
+				loaded.client.hoverUnit(CARD_2, "Ada")
+				assert.are.same(
+					{ true, "Seeker of the Deep", { "Pagle_Anglers" } },
+					{ loaded.ns.db.profile.anglerTooltips, loaded.client.tooltipLines()[4], loaded.client.loads }
+				)
 			end
 		)
 	end)

@@ -55,6 +55,8 @@ local TIPS = {
 	marginNotes = "Explain things the first time they happen.",
 	minimapIcon = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns "
 		.. "button by the minimap.",
+	anglerTooltips = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle "
+		.. "Companion.",
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
 	huntsTracker = "A small tracker under the minimap with the Hunts you've pinned on the board.",
 	statsTracker = "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell turns it on.",
@@ -104,6 +106,8 @@ local EXPECTED = {
 			{ "dropdown", "Length unit", tip = TIPS.lengthUnit },
 			{ "header", "Pagle menu" },
 			{ "checkbox", "Show the minimap icon", tip = TIPS.minimapIcon },
+			{ "header", "Pagle website" },
+			{ "checkbox", "Show other Anglers on player tooltips", tip = TIPS.anglerTooltips },
 		},
 	},
 	{
@@ -803,12 +807,13 @@ describe("Each page's Defaults button", function()
 
 	it(
 		"on the root restores the reminder to off and the length unit to the region's, leaving Show the minimap icon"
-			.. " (SET-R13, LOG-R69, CORE-R56)",
+			.. " and Show other Anglers on player tooltips (SET-R13, LOG-R69, CORE-R56, VIEW-R30)",
 		function()
 			local loaded = ready()
 			setRow(loaded, "Pagle", "Remind me to /reload when Casts are unsaved", true)
 			setRow(loaded, "Pagle", "Length unit", "cm")
 			setRow(loaded, "Pagle", "Show the minimap icon", false)
+			setRow(loaded, "Pagle", "Show other Anglers on player tooltips", false)
 
 			loaded.client.settings.defaults(loaded.client.settings.page("Pagle"))
 
@@ -816,6 +821,7 @@ describe("Each page's Defaults button", function()
 				["Remind me to /reload when Casts are unsaved"] = false,
 				["Length unit"] = "in", -- the fake client's realm is a US one
 				["Show the minimap icon"] = false,
+				["Show other Anglers on player tooltips"] = false,
 			}, valuesOn(loaded, "Pagle"))
 			assert.is_nil(loaded.namespaces.Pagle.db.profile.lengthUnit) -- following the region (SET-R13)
 		end
@@ -1234,6 +1240,7 @@ end
 -- The capitalised words a row may have after its first: CONTEXT.md's terms and names, which keep their capitals.
 local NAMES = {
 	AddOns = true,
+	Anglers = true,
 	Board = true,
 	Casts = true,
 	Catches = true,

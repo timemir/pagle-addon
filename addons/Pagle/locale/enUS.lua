@@ -70,6 +70,10 @@ ns.L = {
 	SETTINGS_PAGLE_MENU = "Pagle menu",
 	SETTINGS_MINIMAP_ICON = "Show the minimap icon",
 	SETTINGS_MINIMAP_ICON_TOOLTIP = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button by the minimap.",
+	-- The root's Pagle website section (SET-R10 row 11, VIEW-R30).
+	SETTINGS_PAGLE_WEBSITE = "Pagle website",
+	SETTINGS_ANGLER_TOOLTIPS = "Show other Anglers on player tooltips",
+	SETTINGS_ANGLER_TOOLTIPS_TOOLTIP = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle Companion.",
 	-- The Announcements page's Core rows (SET-R30): labels and tooltips, and Per's value in minutes.
 	SETTINGS_COZY = "Cozy mode",
 	SETTINGS_COZY_TOOLTIP = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently.",
