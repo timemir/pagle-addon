@@ -85,6 +85,18 @@ local function text(parent, face, size, ink, words, x, y, lh, options)
 	return fontString
 end
 
+-- Where a text that text() set at `y`, `size` in a line box `lh` tall, ends: its measured height as the client wraps it
+-- (its lines and the spacing between them) and the half-leading above its first line and below its last. A page
+-- lays what follows a text that can wrap from this, not from a fixed step, so a longer wrap pushes it down.
+---@param fontString FontString
+---@param y number
+---@param size number
+---@param lh number
+---@return number
+local function below(fontString, y, size, lh)
+	return y + fontString:GetStringHeight() + (lh - size)
+end
+
 -- A printed paragraph across the column (the kit's body), and its small print and italic note.
 ---@param page Frame
 ---@param words string
@@ -200,32 +212,44 @@ end
 
 -- ---------------------------------------------------------------------------------------------------- Welcome
 
--- The letter's paragraphs' places, and the three promises' first (each 85.8 under the last).
-local LETTER_Y = { 87.4, 183.6, 279.7 }
-local PROMISE_Y, PROMISE_STEP = 89.3, 85.8
+-- The letter's first paragraph's place, the room between its paragraphs and from the last to the signature; the
+-- three promises' first place, a disc's height and the room under a promise's line. Each follows what is above it
+-- as measured (ONB-R30), so a paragraph or a promise that wraps a line more pushes the rest down instead of running
+-- into it; wrapped as the art's (the paragraphs to 3, 3 and 2 lines, each promise's line to 2) they sit where the
+-- art has them: the paragraphs at 87.4, 183.6 and 279.7, the signature at 345.8, the promises 85.8 apart from 89.3.
+local LETTER_Y, LETTER_GAP, SIGNED_GAP = 87.4, 11.97, 9.98
+local PROMISE_Y, DISC, PROMISE_GAP = 89.3, 46, 17.98
 
---- Welcome (ONB-R30, board 2): the letter in the hand, signed, with the foot line; the three promises beside their
---- wax discs, the third naming the roster's size. Core's foot carries "I’ll find my own way" and "Show me around »".
+--- Welcome (ONB-R30, board 2): the letter in the hand, signed under its last line, with the foot line; the three
+--- promises beside their wax discs, the third naming the roster's size. Core's foot carries "I’ll find my own way"
+--- and "Show me around »".
 ---@type PagleCoreGuideStepDrawing
 local WELCOME = {
 	build = function(left, right)
 		ns.NewGuideKicker(left, L.GUIDE_WELCOME_KICKER)
 		ns.NewGuideTitle(left, L.GUIDE_WELCOME_TITLE)
+		local y = LETTER_Y
 		for i, words in ipairs(L.GUIDE_WELCOME_LETTER) do
-			text(left, "hand", 23, "hand", words, X, LETTER_Y[i], 28.06, { wrap = true, width = W })
+			if i > 1 then
+				y = y + LETTER_GAP
+			end
+			y = below(text(left, "hand", 23, "hand", words, X, y, 28.06, { wrap = true, width = W }), y, 23, 28.06)
 		end
-		text(left, "handBold", 30, "body", L.GUIDE_WELCOME_SIGNED, X, 345.8, 30)
+		text(left, "handBold", 30, "body", L.GUIDE_WELCOME_SIGNED, X, y + SIGNED_GAP, 30)
 		text(left, "italic", 13, "note", L.GUIDE_WELCOME_FOOT, X, 505.8, 18.2)
 
 		ns.NewGuideKicker(right, L.GUIDE_WELCOME_RIGHT_KICKER)
 		ns.NewGuideTitle(right, L.GUIDE_WELCOME_RIGHT_TITLE, 25)
-		for i, promise in ipairs(L.GUIDE_WELCOME_PROMISES) do
-			local y = PROMISE_Y + (i - 1) * PROMISE_STEP
+		y = PROMISE_Y
+		for _, promise in ipairs(L.GUIDE_WELCOME_PROMISES) do
+			-- the disc, its numeral and the heading keep their places to each other; the next promise starts under
+			-- the lower of the disc and the line
 			part(right, "disc", X, y)
 			text(right, "gilt", 15, "wax", promise[1], 53, y + 13.5, 19, { center = true, shadow = true })
 			text(right, "print", 19, "title", promise[2], 90, y + 4, 21.85)
-			local line = promise[3] or ns.GuidePartsLine(#ns.MODULE_ROSTER)
-			text(right, "print", 14.5, "small", line, 90, y + 27.8, 20.01, { wrap = true, width = 322 })
+			local words = promise[3] or ns.GuidePartsLine(#ns.MODULE_ROSTER)
+			local line = text(right, "print", 14.5, "small", words, 90, y + 27.8, 20.01, { wrap = true, width = 322 })
+			y = math.max(y + DISC, below(line, y + 27.8, 14.5, 20.01)) + PROMISE_GAP
 		end
 	end,
 }
@@ -349,6 +373,7 @@ local ROW_TOP, ROW_STEP = 55, 73.98
 ---@field ownMix FontString?                    -- "Your own mix, kept as it is."
 ---@field presetNote FontString?                -- the note under the cards
 ---@field presetPage Frame?                     -- the page they're on
+---@field cardsEnd number?                      -- where the last card ends on it, Your own mix and the note under it
 ---@field offWindow PagleGuideSampleWindow?     -- Off you go's sample Nod's window
 ---@field offSample PagleAnnouncementFrame?
 ---@field evening PagleGuideEveningView?        -- the First evening list as it will look
@@ -405,19 +430,32 @@ local SAMPLES = {
 	{ form = "banner", x = X, y = 261.3, w = 214, h = 104, name = 286.6 },
 }
 
--- The preset cards' places and heights, and how many lines each card's italic line takes.
-local CARDS = {
-	lively = { y = 81.3, h = 83.4, lines = 1 },
-	quieter = { y = 172.6, h = 101.6, lines = 2 },
-	cozy = { y = 282.2, h = 101.6, lines = 2 },
-}
--- "Your own mix" under the cards, and the note under it, which steps down when it shows.
-local OWN_Y, NOTE_Y, NOTE_Y_OWN = 391, 397.8, 418
+-- The preset cards (ONB-R35), each as tall as its words and the next 7.95 under it, the first at 81.3. In a card: its
+-- italic line's line box, 18.2 a line at 13.5 from 32.5 (the kit's card sets it, ns.NewGuideChoiceCard), the
+-- pencilled line's box 17.6 tall 4 under it, and 11.1 under that. Lively's line on one line and the others' on two,
+-- they are the art's: 83.4 tall at 81.3, 101.6 at 172.6 and 101.6 at 282.2.
+local CARDS_Y, CARD_GAP = 81.3, 7.95
+local LINE_Y, LINE_SIZE, LINE_LH, WHAT_GAP, WHAT_LH, CARD_FOOT = 32.5, 13.5, 18.2, 4, 17.6, 11.1
+-- "Your own mix" 7.2 under the last card, and the note 14 under it, 34.2 when Your own mix shows (the art's 391,
+-- 397.8 and 418 under cards ending at 383.8).
+local OWN_GAP, NOTE_GAP, NOTE_GAP_OWN = 7.2, 14, 34.2
+
+-- Sizes a preset card to its words and pencils its line under its italic line, however many lines that wraps to.
+---@param card PagleGuidePresetCard
+---@param what string
+---@return number height
+local function fitCard(card, what)
+	local y = card.line and below(card.line, LINE_Y, LINE_SIZE, LINE_LH) or LINE_Y
+	card.what = text(card, "hand", 16, "hand", what, 37, y + WHAT_GAP, WHAT_LH)
+	local height = y + WHAT_GAP + WHAT_LH + CARD_FOOT
+	card:SetHeight(height)
+	return height
+end
 
 -- Chooses the card the settings match (ONB-R35), or none, with Your own mix in its place.
 local function choose()
-	local cards, page = pages.cards, pages.presetPage
-	if not (cards and page and pages.ownMix and pages.presetNote) then
+	local cards, page, under = pages.cards, pages.presetPage, pages.cardsEnd
+	if not (cards and page and under and pages.ownMix and pages.presetNote) then
 		return
 	end
 	local chosen = ns.GuidePresetOf(ns.db.profile.announcements)
@@ -426,7 +464,7 @@ local function choose()
 	end
 	pages.ownMix:SetShown(chosen == nil)
 	-- the note's line box is 17.55 tall at 13, as note() sets it
-	ns.GuideAt(pages.presetNote, page, X, (chosen == nil and NOTE_Y_OWN or NOTE_Y) + (17.55 - 13) / 2)
+	ns.GuideAt(pages.presetNote, page, X, under + (chosen == nil and NOTE_GAP_OWN or NOTE_GAP) + (17.55 - 13) / 2)
 end
 
 --- Moments (ONB-R34, ONB-R35, board 6): on the left, a Nod, a toast and a banner drawn by the real display frames,
@@ -452,24 +490,27 @@ local MOMENTS = {
 
 		ns.NewGuideKicker(right, L.GUIDE_MOMENTS_RIGHT_KICKER)
 		ns.NewGuideTitle(right, L.GUIDE_MOMENTS_RIGHT_TITLE, 25)
-		local cards = {}
-		for _, preset in ipairs(ns.GUIDE_PRESETS) do
-			local words, at = L.GUIDE_PRESETS[preset.id], CARDS[preset.id]
+		local cards, y = {}, CARDS_Y
+		for i, preset in ipairs(ns.GUIDE_PRESETS) do
+			local words = L.GUIDE_PRESETS[preset.id]
 			local card = nav.ChoiceCard(right, words[1], words[2], words[3]) --[[@as PagleGuidePresetCard]]
-			card:SetSize(W, at.h)
-			ns.GuideAt(card, right, X, at.y)
+			-- its width first: the italic line wraps to it (leaving the tag its room) before the card is measured
+			card:SetWidth(W)
+			if i > 1 then
+				y = y + CARD_GAP
+			end
+			ns.GuideAt(card, right, X, y)
 			card.preset = preset.id
-			local what = ns.GuidePresetWhat(preset)
-			card.what = text(card, "hand", 16, "hand", what, 37, 32.5 + at.lines * 18.2 + 4, 17.6)
+			y = y + fitCard(card, ns.GuidePresetWhat(preset))
 			card:HookScript("OnClick", function()
 				ns.ApplyGuidePreset(ns.db.profile.announcements, preset.id)
 				choose()
 			end)
 			cards[#cards + 1] = card
 		end
-		pages.cards, pages.presetPage = cards, right
-		pages.ownMix = text(right, "hand", 17, "hand", L.GUIDE_PRESET_OWN, X, OWN_Y, 20)
-		pages.presetNote = note(right, L.GUIDE_MOMENTS_NOTE, NOTE_Y)
+		pages.cards, pages.presetPage, pages.cardsEnd = cards, right, y
+		pages.ownMix = text(right, "hand", 17, "hand", L.GUIDE_PRESET_OWN, X, y + OWN_GAP, 20)
+		pages.presetNote = note(right, L.GUIDE_MOMENTS_NOTE, y + NOTE_GAP)
 		choose()
 	end,
 	onShow = function()
