@@ -1,7 +1,7 @@
 -- The companion hint and its weekly Nod on FakePagle (HNT-R161, HNT-R162, HNT-R170–R172, HNT-R176, HNT-R86, SET-R32,
--- SET-R33, ANN-R12, ANN-R20, PUSH-R15, PUSH-R16): with the hint switch off, as it ships at 1.0, nothing shows anywhere
--- whatever the companion state; turned on, each state's hint under the wager strip, as the dashed placeholder slip and
--- as the tracker's line with no run on, Get it's box, Dismiss, the Nod at login and the Settings row. The lines' pure
+-- SET-R33, ANN-R12, ANN-R20, PUSH-R15, PUSH-R16): with the hint switch on, as it ships at 1.0, each state's hint under
+-- the wager strip, as the dashed placeholder slip and as the tracker's line with no run on, Get it's box, Dismiss, the
+-- Nod at login and the Settings row; turned off, nothing shows anywhere whatever the companion state. The lines' pure
 -- parts are in spec/Pagle_Hunts/logic/Companion_spec.lua.
 --
 -- Each companion state comes from ticket #293's fake.setPushedContent, set before login: its check ends on the frame
@@ -26,7 +26,7 @@ local NOT_RUNNING = { "The Pagle companion isn't running. Start it to get this w
 local SETTING = "Remind me about the Pagle companion"
 local TOOLTIP = "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you new "
 	.. "wagers."
-local URL = "https://github.com/timemir/pagle-companion"
+local URL = "https://pagle.app/download"
 
 -- The saved PagleHuntsDB with `profile` as its one profile's fields.
 local function saved(profile)
@@ -34,9 +34,9 @@ local function saved(profile)
 end
 
 --- Hunts logged in at NOW, the companion state from `options.state` (nil: none set, so "missing" at login), the hint
---- switch on with `options.on`, fixture_shore on with `options.runOn`, `options.saved` as PagleHuntsDB; then the frame
---- where the pushed content's check ends and the run log's step runs.
----@param options { state: string?, on: boolean?, runOn: boolean?, saved: table? }?
+--- switch as it ships (on) or turned off with `options.off`, fixture_shore on with `options.runOn`, `options.saved` as
+--- PagleHuntsDB; then the frame where the pushed content's check ends and the run log's step runs.
+---@param options { state: string?, off: boolean?, runOn: boolean?, saved: table? }?
 ---@return HuntsRun
 local function start(options)
 	options = options or {}
@@ -45,8 +45,8 @@ local function start(options)
 		saved = options.saved,
 		prepare = function(loaded)
 			loaded.ns.ROTATION_ORIGIN = NOW + 365 * DAY
-			if options.on then
-				loaded.ns.COMPANION_HINT_ON = true
+			if options.off then
+				loaded.ns.COMPANION_HINT_ON = false
 			end
 		end,
 		history = function(fake)
@@ -166,17 +166,17 @@ end
 
 local STATES = { "missing", "notRunning", "connected", "checking" }
 
-describe("with the hint switch off, as at 1.0 (HNT-R172)", function()
-	it("ships off", function()
-		local r = start({ runOn = true })
+it("ships with the hint switch on at 1.0 (HNT-R172)", function()
+	local r = start({ runOn = true })
 
-		assert.is_false(r.ns.COMPANION_HINT_ON)
-	end)
+	assert.is_true(r.ns.COMPANION_HINT_ON)
+end)
 
+describe("with the hint switch turned off (HNT-R172)", function()
 	for _, state in ipairs(STATES) do
 		describe(("and the companion %s"):format(state), function()
 			it("shows no hint under the wager strip, no Get it or Dismiss", function()
-				local r = start({ state = state, runOn = true })
+				local r = start({ off = true, state = state, runOn = true })
 
 				local page = boardPage(r)
 
@@ -186,7 +186,7 @@ describe("with the hint switch off, as at 1.0 (HNT-R172)", function()
 			end)
 
 			it("shows no placeholder slip on the Pagle Wagers spread", function()
-				local r = start({ state = state, runOn = true })
+				local r = start({ off = true, state = state, runOn = true })
 
 				local page = spreadPage(r)
 
@@ -196,14 +196,14 @@ describe("with the hint switch off, as at 1.0 (HNT-R172)", function()
 			end)
 
 			it("shows no tracker line with no run on: no Pagle Wagers block at all", function()
-				local r = start({ state = state })
+				local r = start({ off = true, state = state })
 
 				assert.is_nil(trackerHint(r))
 				assert.is_false(r.ns.tracker.wagers.header:IsShown())
 			end)
 
 			it("raises no Nod at login, and stores none", function()
-				local r = start({ state = state })
+				local r = start({ off = true, state = state })
 				r.fake.nextFrame()
 
 				assert.are.same({}, nods(r))
@@ -211,7 +211,7 @@ describe("with the hint switch off, as at 1.0 (HNT-R172)", function()
 			end)
 
 			it("adds no Settings row: Announcements ends at the window moments' row", function()
-				local r = start({ state = state })
+				local r = start({ off = true, state = state })
 
 				assert.is_nil(announcementRow(r, SETTING))
 				local labels = announcementLabels(r)
@@ -224,7 +224,7 @@ end)
 describe("with the hint switch on (HNT-R170)", function()
 	describe("and the companion missing", function()
 		it("shows both lines under the wager strip, with Get it and Dismiss (HNT-R161)", function()
-			local r = start({ on = true, state = "missing", runOn = true })
+			local r = start({ state = "missing", runOn = true })
 
 			local page = boardPage(r)
 
@@ -235,8 +235,8 @@ describe("with the hint switch on (HNT-R170)", function()
 		end)
 
 		it("pushes the ruler down by the hint's lines (HNT-R161)", function()
-			local off = start({ state = "missing", runOn = true })
-			local on = start({ on = true, state = "missing", runOn = true })
+			local off = start({ off = true, state = "missing", runOn = true })
+			local on = start({ state = "missing", runOn = true })
 			local function shift(r)
 				local page = boardPage(r)
 				return r.ns.DrawWagerStrip(page, r.ns.BuildWagerStrip(r.ns.BoardWagersInput()))
@@ -247,7 +247,7 @@ describe("with the hint switch on (HNT-R170)", function()
 		end)
 
 		it("shows both lines as a dashed placeholder slip on the spread, with Get it and Dismiss (HNT-R162)", function()
-			local r = start({ on = true, state = "missing", runOn = true })
+			local r = start({ state = "missing", runOn = true })
 
 			local page = spreadPage(r)
 
@@ -261,7 +261,7 @@ describe("with the hint switch on (HNT-R170)", function()
 		end)
 
 		it("shows the placeholder slip with no run on too, under the empty line (HNT-R162, HNT-R204)", function()
-			local r = start({ on = true, state = "missing" })
+			local r = start({ state = "missing" })
 
 			local texts = shownTexts(spreadPage(r))
 
@@ -272,7 +272,7 @@ describe("with the hint switch on (HNT-R170)", function()
 		it(
 			'reads "New wagers with the Pagle companion" on the tracker with no run on, with "why?" (HNT-R176)',
 			function()
-				local r = start({ on = true, state = "missing" })
+				local r = start({ state = "missing" })
 
 				assert.are.equal("New wagers with the Pagle companion · why?", trackerHint(r))
 				assert.are.equal("Pagle Wagers", r.ns.tracker.wagers.title:GetText())
@@ -283,7 +283,7 @@ describe("with the hint switch on (HNT-R170)", function()
 		)
 
 		it('opens the Pagle Wagers spread from the tracker\'s "why?" (HNT-R176)', function()
-			local r = start({ on = true, state = "missing" })
+			local r = start({ state = "missing" })
 
 			r.ns.tracker.wagers.hint.why:Click()
 
@@ -292,14 +292,14 @@ describe("with the hint switch on (HNT-R170)", function()
 		end)
 
 		it("shows the runs, not the hint line, on the tracker while a run is on (HNT-R175, HNT-R176)", function()
-			local r = start({ on = true, state = "missing", runOn = true })
+			local r = start({ state = "missing", runOn = true })
 
 			assert.is_nil(trackerHint(r))
 			assert.is_true(r.ns.tracker.wagers.lines[1]:IsShown())
 		end)
 
 		it("folds the tracker's hint line away with the block's header (HNT-R177)", function()
-			local r = start({ on = true, state = "missing" })
+			local r = start({ state = "missing" })
 
 			r.ns.tracker.wagers.header:Click()
 
@@ -312,7 +312,7 @@ describe("with the hint switch on (HNT-R170)", function()
 
 	describe("and the companion not running", function()
 		it("shows its own line on the strip and the placeholder slip, with Get it and Dismiss", function()
-			local r = start({ on = true, state = "notRunning", runOn = true })
+			local r = start({ state = "notRunning", runOn = true })
 
 			local board = boardPage(r)
 			assert.is_true(holdsAll(shownTexts(board), NOT_RUNNING))
@@ -326,7 +326,7 @@ describe("with the hint switch on (HNT-R170)", function()
 		end)
 
 		it('reads "Pagle companion not running" on the tracker with no run on (HNT-R176)', function()
-			local r = start({ on = true, state = "notRunning" })
+			local r = start({ state = "notRunning" })
 
 			assert.are.equal("Pagle companion not running · why?", trackerHint(r))
 		end)
@@ -334,14 +334,14 @@ describe("with the hint switch on (HNT-R170)", function()
 
 	for _, state in ipairs({ "connected", "checking" }) do
 		it(("shows nothing while the companion is %s"):format(state), function()
-			local r = start({ on = true, state = state, runOn = true })
+			local r = start({ state = state, runOn = true })
 
 			local board = boardPage(r)
 			assert.are.same({}, hintButtons(board))
 			assert.is_false(holdsAny(shownTexts(board), MISSING) or holdsAny(shownTexts(board), NOT_RUNNING))
 			spreadPage(r)
 			assert.is_nil(r.ns.BoardWagersSpread().hint)
-			local quiet = start({ on = true, state = state })
+			local quiet = start({ state = state })
 			assert.is_nil(trackerHint(quiet))
 			assert.is_false(quiet.ns.tracker.wagers.header:IsShown())
 		end)
@@ -352,7 +352,6 @@ describe("with the hint switch on (HNT-R170)", function()
 			names = true,
 			prepare = function(loaded)
 				loaded.ns.ROTATION_ORIGIN = NOW + 365 * DAY
-				loaded.ns.COMPANION_HINT_ON = true
 			end,
 			beforeLogin = function(run)
 				run.fake.setPushedContent({ state = "notRunning", items = {} })
@@ -368,7 +367,7 @@ end)
 
 describe("the hint's words stay on the board's pages (HNT-R60)", function()
 	it("under the strip and on the placeholder slip, with Get it and Dismiss, and in Get it's box", function()
-		local r = start({ on = true, state = "missing", runOn = true })
+		local r = start({ state = "missing", runOn = true })
 
 		local board = boardPage(r)
 		assert.are.same({}, bounds.overflows(board))
@@ -380,7 +379,7 @@ end)
 
 describe("Get it (HNT-R170)", function()
 	it("shows the companion's address selected in a copyable box, focused for Ctrl+C (REP-R40)", function()
-		local r = start({ on = true, state = "missing", runOn = true })
+		local r = start({ state = "missing", runOn = true })
 
 		hintButtons(boardPage(r)).getIt:Click()
 
@@ -394,7 +393,7 @@ describe("Get it (HNT-R170)", function()
 	end)
 
 	it("puts the address back, selected, whatever is typed in it", function()
-		local r = start({ on = true, state = "missing", runOn = true })
+		local r = start({ state = "missing", runOn = true })
 		hintButtons(spreadPage(r)).getIt:Click()
 		local box = r.ns.CompanionAddressBox()
 
@@ -405,7 +404,7 @@ describe("Get it (HNT-R170)", function()
 	end)
 
 	it("closes with Esc in the box, and with Close", function()
-		local r = start({ on = true, state = "notRunning", runOn = true })
+		local r = start({ state = "notRunning", runOn = true })
 		hintButtons(boardPage(r)).getIt:Click()
 		local box = r.ns.CompanionAddressBox()
 
@@ -421,7 +420,7 @@ end)
 
 describe("Dismiss (HNT-R170)", function()
 	it("hides the hint on the strip, the placeholder slip and the tracker, and saves it", function()
-		local r = start({ on = true, state = "missing", runOn = true })
+		local r = start({ state = "missing", runOn = true })
 		local page = boardPage(r)
 
 		hintButtons(page).dismiss:Click()
@@ -435,7 +434,7 @@ describe("Dismiss (HNT-R170)", function()
 	end)
 
 	it("takes the tracker's line away with no run on", function()
-		local r = start({ on = true, state = "missing" })
+		local r = start({ state = "missing" })
 		hintButtons(spreadPage(r)).dismiss:Click()
 
 		assert.is_nil(trackerHint(r))
@@ -443,14 +442,14 @@ describe("Dismiss (HNT-R170)", function()
 	end)
 
 	it("stops the Nod at the next login", function()
-		local r = start({ on = true, state = "missing", saved = saved({ companionHint = false }) })
+		local r = start({ state = "missing", saved = saved({ companionHint = false }) })
 
 		assert.are.same({}, nods(r))
 		assert.are.equal(0, r.ns.db.profile.lastHintNod)
 	end)
 
 	it("is undone by the Settings row: the hint shows again everywhere (SET-R32)", function()
-		local r = start({ on = true, state = "missing", runOn = true })
+		local r = start({ state = "missing", runOn = true })
 		local page = boardPage(r)
 		hintButtons(page).dismiss:Click()
 
@@ -462,9 +461,9 @@ describe("Dismiss (HNT-R170)", function()
 	end)
 
 	it("is undone for the Nod too: turned back on, the next login raises it again", function()
-		local r = start({ on = true, state = "missing", saved = saved({ companionHint = false }) })
+		local r = start({ state = "missing", saved = saved({ companionHint = false }) })
 		announcementRow(r, SETTING).setting.set(true)
-		local again = start({ on = true, state = "missing", saved = saved({ companionHint = true }) })
+		local again = start({ state = "missing", saved = saved({ companionHint = true }) })
 
 		assert.are.equal(1, #nods(again))
 	end)
@@ -472,7 +471,7 @@ end)
 
 describe("the weekly Nod (HNT-R171, HNT-R86)", function()
 	it("is raised once at login, after PushedContentReady, as HNT-R86's companionHint nod", function()
-		local r = start({ on = true, state = "missing" })
+		local r = start({ state = "missing" })
 
 		local raised = nods(r)
 		assert.are.equal(1, #raised)
@@ -494,7 +493,6 @@ describe("the weekly Nod (HNT-R171, HNT-R86)", function()
 			names = true,
 			prepare = function(loaded)
 				loaded.ns.ROTATION_ORIGIN = NOW + 365 * DAY
-				loaded.ns.COMPANION_HINT_ON = true
 			end,
 			world = false,
 		})
@@ -513,7 +511,6 @@ describe("the weekly Nod (HNT-R171, HNT-R86)", function()
 			names = true,
 			prepare = function(loaded)
 				loaded.ns.ROTATION_ORIGIN = NOW + 365 * DAY
-				loaded.ns.COMPANION_HINT_ON = true
 			end,
 			beforeLogin = function(run)
 				run.fake.setPushedContent({ state = "notRunning", items = {} })
@@ -530,8 +527,8 @@ describe("the weekly Nod (HNT-R171, HNT-R86)", function()
 	end)
 
 	it("is not raised again within 7 days, and is at 7 days (Tunables)", function()
-		local within = start({ on = true, state = "missing", saved = saved({ lastHintNod = NOW - 7 * DAY + 60 }) })
-		local after = start({ on = true, state = "missing", saved = saved({ lastHintNod = NOW - 7 * DAY }) })
+		local within = start({ state = "missing", saved = saved({ lastHintNod = NOW - 7 * DAY + 60 }) })
+		local after = start({ state = "missing", saved = saved({ lastHintNod = NOW - 7 * DAY }) })
 
 		assert.are.same({}, nods(within))
 		assert.are.equal(NOW - 7 * DAY + 60, within.ns.db.profile.lastHintNod)
@@ -541,7 +538,7 @@ describe("the weekly Nod (HNT-R171, HNT-R86)", function()
 
 	it("is not raised while the companion is connected or the check never ends", function()
 		for _, state in ipairs({ "connected", "checking" }) do
-			local r = start({ on = true, state = state })
+			local r = start({ state = state })
 			r.fake.nextFrame()
 
 			assert.are.same({}, nods(r))
@@ -550,7 +547,7 @@ describe("the weekly Nod (HNT-R171, HNT-R86)", function()
 	end)
 
 	it("opens the board on the Pagle Wagers spread when clicked", function()
-		local r = start({ on = true, state = "notRunning" })
+		local r = start({ state = "notRunning" })
 
 		nods(r)[1].headline.onClick()
 
@@ -561,7 +558,7 @@ end)
 
 describe('the Settings row "Remind me about the Pagle companion" (SET-R32, SET-R33)', function()
 	it("sits on Announcements under Hunts' header, after the window moments' row, on by default", function()
-		local r = start({ on = true, state = "missing" })
+		local r = start({ state = "missing" })
 
 		local rows = r.fake.settingsPage("announcements")
 		local labels = announcementLabels(r)
@@ -577,7 +574,7 @@ describe('the Settings row "Remind me about the Pagle companion" (SET-R32, SET-R
 	end)
 
 	it("reads and writes profile.companionHint (hunts.md › Data)", function()
-		local r = start({ on = true, state = "missing" })
+		local r = start({ state = "missing" })
 		local row = assert(announcementRow(r, SETTING))
 
 		row.setting.set(false)

@@ -103,7 +103,7 @@ local readToc = dofile("spec/support/toc.lua")
 --- order, into the same globals and client, each after its dependencies and with its own ADDON_LOADED, as the client
 --- loads every enabled addon (`{ "Pagle_Hunts", "Pagle_QoL" }`): a spec of the whole package, every Module loaded.
 --- beforeLoaded: by addon name, a function given that addon's ns once its files have run and before its ADDON_LOADED,
---- e.g. to turn on a Tunable its OnInitialize reads (`{ Pagle_Hunts = function(ns) ns.COMPANION_HINT_ON = true end }`).
+--- e.g. to turn off a Tunable its OnInitialize reads (`{ Pagle_Hunts = function(ns) ns.COMPANION_HINT_ON = false end }`).
 ---@return LoadedAddon
 function loadAddon(name, globals, options)
 	options = options or {}

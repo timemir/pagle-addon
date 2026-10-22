@@ -268,7 +268,7 @@ ANN-R51.
 | Hunts | Pagle Wagers: further mark | `toast.low` |
 | Hunts | Pagle Wagers: settled run | `toast.high` |
 | Hunts | Pagle Wagers: ladder title | `banner` |
-| Hunts | Pagle Wagers: companion hint (behind its off switch) | `nod`, no `cast` |
+| Hunts | Pagle Wagers: companion hint (behind its switch, on at 1.0) | `nod`, no `cast` |
 | Tackle Board | Notice completed | `toast.low` |
 | Tackle Board | Expedition completed | `toast` |
 | Tackle Board | Campfire milestone, title, Fly Box complete | `banner` |

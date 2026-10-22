@@ -171,6 +171,8 @@ describe("ns.NewPushedContent", function()
 	describe("an absent file (PUSH-R13, PUSH-R14)", function()
 		-- Each failure, the file that makes it, and the first line /pagle dev content prints for it.
 		local good, bigBytes = fixtures.good, nil
+		local BAD_KEY_ID = "a keyId that isn't 1 to 32 of A-Z, a-z, 0-9, _ and -"
+		local KEY_32 = "AZaz09_-" .. ("k"):rep(24)
 		local function cases()
 			bigBytes = bigBytes or payloadOf(fixtures.big)
 			local goodBytes = payloadOf(good)
@@ -180,6 +182,14 @@ describe("ns.NewPushedContent", function()
 				{ "a seq that isn't a whole number", with(good, { seq = 42.5 }), "seq isn't a whole number" },
 				{ "a seq written as a string", with(good, { seq = "42" }), "seq isn't a whole number" },
 				{ "a keyId that isn't a string", with(good, { keyId = 1 }), "keyId isn't a string" },
+				-- PUSH-R2's form: a "|" would make the canonical header (PUSH-R11) read two ways.
+				{ "a keyId with a |", with(good, { keyId = "test|Key" }), BAD_KEY_ID },
+				{ "an empty keyId", with(good, { keyId = "" }), BAD_KEY_ID },
+				{ "a keyId of 33 characters", with(good, { keyId = ("k"):rep(33) }), BAD_KEY_ID },
+				{ "a keyId with a dot", with(good, { keyId = "test.Key" }), BAD_KEY_ID },
+				{ "a keyId with a space", with(good, { keyId = "test Key" }), BAD_KEY_ID },
+				{ "a keyId with a letter outside A-Z", with(good, { keyId = "testK\195\169y" }), BAD_KEY_ID },
+				{ "a keyId of 32 characters, unknown", with(good, { keyId = KEY_32 }), "an unknown keyId, " .. KEY_32 },
 				{ "an unknown v", with(good, { v = 2 }), "an unknown file format, v 2" },
 				{ "an unknown keyId", with(good, { keyId = "otherKey" }), "an unknown keyId, otherKey" },
 				{
@@ -283,6 +293,10 @@ describe("ns.NewPushedContent", function()
 
 		it("names only the first failure, in the check's order", function()
 			local files = {
+				{
+					with(fixtures.good, { keyId = "a|b", v = 2 }),
+					"a keyId that isn't 1 to 32 of A-Z, a-z, 0-9, _ and -",
+				},
 				{ with(fixtures.good, { v = 2, keyId = "otherKey", sig = "abc" }), "an unknown file format, v 2" },
 				{ with(fixtures.good, { keyId = "otherKey", payload = "*" }), "an unknown keyId, otherKey" },
 				{

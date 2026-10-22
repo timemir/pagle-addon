@@ -148,6 +148,7 @@ local EXPECTED = {
 			{ "slot", "Sound set" },
 			{ "header", "Hunts", of = "Hunts" },
 			{ "checkbox", "Tell me when a pinned Hunt's window opens", tip = TIPS.windowMoments, of = "Hunts" },
+			{ "checkbox", "Remind me about the Pagle companion", tip = TIPS.companionHint, of = "Hunts" },
 		},
 	},
 	{
@@ -249,9 +250,9 @@ end
 
 -- The whole package on the fake client: Core, then every roster Module but those in `options.off`, each of which is
 -- installed but disabled in the AddOns list (CORE-R41's Off). `options.globals` adds to the Forever globals.
--- `options.hintOn` turns Hunts' companion hint switch on before its OnInitialize, as the release that turns it on
--- will (HNT-R172): shipped, it is off.
----@param options { off: string[]?, globals: table?, hintOn: boolean? }?
+-- `options.hintOff` turns Hunts' companion hint switch off before its OnInitialize, as a release could (HNT-R172):
+-- shipped, it is on.
+---@param options { off: string[]?, globals: table?, hintOff: boolean? }?
 ---@return LoadedAddon
 local function loadPackage(options)
 	options = options or {}
@@ -265,10 +266,10 @@ local function loadPackage(options)
 			also[#also + 1] = module.addon
 		end
 	end
-	local beforeLoaded = options.hintOn
+	local beforeLoaded = options.hintOff
 			and {
 				Pagle_Hunts = function(ns)
-					ns.COMPANION_HINT_ON = true
+					ns.COMPANION_HINT_ON = false
 				end,
 			}
 		or nil
@@ -286,7 +287,7 @@ local function loadPackage(options)
 end
 
 -- The package logged in and in the world, its projections' first builds done: the tree is registered.
----@param options { off: string[]?, globals: table?, hintOn: boolean? }?
+---@param options { off: string[]?, globals: table?, hintOff: boolean? }?
 ---@return LoadedAddon
 local function ready(options)
 	return enterWorld(loadPackage(options), 3)
@@ -432,30 +433,34 @@ describe("The Settings tree, every Module loaded", function()
 		)
 	end
 
-	it("is unchanged by the companion hint while its switch is off, as at 1.0 (HNT-R172)", function()
-		local loaded = ready()
-
-		assert.is_false(loaded.namespaces.Pagle_Hunts.COMPANION_HINT_ON)
-		assert.are.same(expectedTree(), drawnTree(loaded))
-		local rows = pageAsWritten(loaded, loaded.client.settings.page("Announcements"))
-		assert.are.same({ "checkbox", "Tell me when a pinned Hunt's window opens" }, { rows[#rows][1], rows[#rows][2] })
-	end)
-
 	it(
-		"adds Remind me about the Pagle companion after Hunts' window row once the hint switch is on (SET-R32, HNT-R172)",
+		"adds Remind me about the Pagle companion after Hunts' window row, its switch on at 1.0 (SET-R32, HNT-R172)",
 		function()
-			local loaded = ready({ hintOn = true })
+			local loaded = ready()
 
-			local expected = expectedTree()
-			for _, page in ipairs(expected) do
-				if page.name == "Announcements" then
-					page.rows[#page.rows + 1] =
-						{ "checkbox", "Remind me about the Pagle companion", tip = TIPS.companionHint }
-				end
-			end
-			assert.are.same(expected, drawnTree(loaded))
+			assert.is_true(loaded.namespaces.Pagle_Hunts.COMPANION_HINT_ON)
+			assert.are.same(expectedTree(), drawnTree(loaded))
+			local rows = pageAsWritten(loaded, loaded.client.settings.page("Announcements"))
+			assert.are.same(
+				{ "checkbox", "Tell me when a pinned Hunt's window opens" },
+				{ rows[#rows - 1][1], rows[#rows - 1][2] }
+			)
+			assert.are.same({ "checkbox", "Remind me about the Pagle companion" }, { rows[#rows][1], rows[#rows][2] })
 		end
 	)
+
+	it("drops Remind me about the Pagle companion while the hint switch is off (SET-R32, HNT-R172)", function()
+		local loaded = ready({ hintOff = true })
+
+		local expected = expectedTree()
+		for _, page in ipairs(expected) do
+			if page.name == "Announcements" then
+				assert.are.equal("Remind me about the Pagle companion", page.rows[#page.rows][2])
+				page.rows[#page.rows] = nil
+			end
+		end
+		assert.are.same(expected, drawnTree(loaded))
+	end)
 
 	it("registers no Trackers page while no tracker Module is On (SET-R1, SET-R40)", function()
 		local loaded = ready({ off = TRACKER_MODULES })
@@ -782,6 +787,7 @@ describe("Each page's Defaults button", function()
 				"Interruption budget",
 				"Interruptions",
 				"Per",
+				"Remind me about the Pagle companion",
 				"Show every catch",
 				"Sound set",
 				"Tell me when a pinned Hunt's window opens",
@@ -878,8 +884,8 @@ describe("Each page's Defaults button", function()
 		end
 	)
 
-	it("on Announcements restores the companion row to on once the hint switch is on (SET-R33, HNT-R170)", function()
-		local loaded = ready({ hintOn = true })
+	it("on Announcements restores the companion row to on, its switch on at 1.0 (SET-R33, HNT-R170)", function()
+		local loaded = ready()
 		setRow(loaded, "Announcements", "Remind me about the Pagle companion", false)
 		assert.is_false(loaded.namespaces.Pagle_Hunts.db.profile.companionHint)
 
@@ -899,6 +905,7 @@ describe("Each page's Defaults button", function()
 			["Show every catch"] = false,
 			["Animations"] = false,
 			["Tell me when a pinned Hunt's window opens"] = true,
+			["Remind me about the Pagle companion"] = false,
 		}) do
 			setRow(loaded, "Announcements", label, value)
 		end
@@ -915,6 +922,7 @@ describe("Each page's Defaults button", function()
 			["Show every catch"] = true,
 			["Animations"] = true,
 			["Tell me when a pinned Hunt's window opens"] = false,
+			["Remind me about the Pagle companion"] = true,
 		}, valuesOn(loaded, "Announcements"))
 		assert.are.equal(300, loaded.namespaces.Pagle.db.profile.announcements.budget.window) -- stored in seconds
 		assert.are.same({
@@ -1077,10 +1085,7 @@ local function everyString()
 	collectStrings(loaded, strings, seen)
 	local none = ready({ off = { "Ledger", "Hunts", "Stats", "TackleBoard", "QoL" } })
 	collectStrings(none, strings, seen)
-	-- the companion hint's row, only once its switch is on (HNT-R172)
-	local hint = ready({ hintOn = true })
-	collectStrings(hint, strings, seen)
-	return strings, { loaded, none, hint }
+	return strings, { loaded, none }
 end
 
 -- A Lua pattern matching what `format` draws once filled, capturing each filled part, and each part's specifier

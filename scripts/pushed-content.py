@@ -4,7 +4,7 @@
         [--sign <private.pem>] (--out <AddOns folder> | --table)
 
 <payload> is a file holding the payload's bytes exactly, in the grammar of docs/spec/core/pushed-content.md › The
-payload. The header fields are integers but keyId; --generated-at defaults to now and --expires to a week after it,
+payload. The header fields are integers but keyId, 1 to 32 of A-Z, a-z, 0-9, _ and - (PUSH-R2); --generated-at defaults to now and --expires to a week after it,
 both Unix seconds.
 
 --sign signs `v|generatedAt|keyId|seq|expires|` followed by the payload's bytes (PUSH-R11) with the openssl command
@@ -20,6 +20,7 @@ PagleContentData table alone, for scripts/make-content-fixtures.sh.
 import argparse
 import base64
 import pathlib
+import re
 import subprocess
 import sys
 import time
@@ -27,6 +28,8 @@ import time
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PAGLE_TOC = ROOT / "addons" / "Pagle" / "Pagle.toc"
 WEEK = 7 * 24 * 3600
+# keyId's form (PUSH-R2), the backend's: no "|", so the canonical header (PUSH-R11) reads one way.
+KEY_ID = re.compile(r"[A-Za-z0-9_-]{1,32}")
 
 
 def header(v: int, generated_at: int, key_id: str, seq: int, expires: int) -> bytes:
@@ -74,8 +77,8 @@ def main(argv: list[str]) -> int:
     where.add_argument("--out", metavar="ADDONS")
     where.add_argument("--table", action="store_true")
     args = parser.parse_args(argv[1:])
-    if '"' in args.key_id or "\\" in args.key_id or "\n" in args.key_id:
-        print(f"keyId {args.key_id!r}: no quotes, backslashes or line ends", file=sys.stderr)
+    if not KEY_ID.fullmatch(args.key_id):
+        print(f"keyId {args.key_id!r}: use 1 to 32 letters A-Z or a-z, digits, '_' and '-' (PUSH-R2)", file=sys.stderr)
         return 2
 
     payload = pathlib.Path(args.payload).read_bytes()

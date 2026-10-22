@@ -343,7 +343,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## M8 Hunt Events
 
-**Goal:** Hunts redesigned around **Hunt Events** (shown as Pagle Wagers), with **Activity XP** from any Module and Core's **pushed-content** reader, as the map [Hunts redesigned around Hunt Events](https://github.com/timemir/wow-fish/issues/277) decided (ADR 0011–0013). 1.0 waits for it, with no hard date, and ships with the fallback rotation only: the companion hint stays switched off until `Pagle_Content` works end to end (pagle-backend #2, pagle-companion #36) ([#288](https://github.com/timemir/wow-fish/issues/288)).
+**Goal:** Hunts redesigned around **Hunt Events** (shown as Pagle Wagers), with **Activity XP** from any Module and Core's **pushed-content** reader, as the map [Hunts redesigned around Hunt Events](https://github.com/timemir/wow-fish/issues/277) decided (ADR 0011–0013). 1.0 waits for it, with no hard date. It ships with the fallback rotation, pushed Hunt Events whenever the companion's `Pagle_Content` passes Core's check (pagle-backend #2, pagle-companion #36), and the companion hint switched on (HNT-R172). *[#288](https://github.com/timemir/wow-fish/issues/288) kept the hint off until `Pagle_Content` worked end to end; with the reader built and M8's tickets closed, the dev turned it on for 1.0.*
 
 **Before it starts:** finish review fix A (one Core motion and fit API, `fix/review-a-motion-api`); land fixes A, B and C and the 1.0 changelog through `integ/review-fixes` onto `main` with one full gate; land the CI fix (test-check in its own job). The redesign rewrites the Hunts board, which A and B both touch.
 
@@ -354,7 +354,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 4. Content data: `data/hunts/events/`, `tags.toml`, `EventList.lua`, the event checks, `propose-events.py`, `check-event.py`.
 5. The Hunts fold: runs and their records, the banded rotation, Coins and XP for events, the ladder.
 6. The board: the wager strip and the WAGERS group on the Board, the Pagle Wagers ribbon and spread, the run entry.
-7. The tracker's Pagle Wagers block, the companion hint and its Nod (behind the off switch).
+7. The tracker's Pagle Wagers block, the companion hint and its Nod (behind the hint switch, on at 1.0).
 8. The 24-event pool and its lore batch (with the ladder titles at 50 and 100).
 9. The exit check.
 
@@ -377,7 +377,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 - HNT-R130 for the `event` and `ladder` keys, HNT-R136–R138 for runs and the rules version 2
 - HNT-R140–R156, HNT-R160–R165, HNT-R170–R172, HNT-R175–R177
 - HNT-R199–R204
-- Settings: "Remind me about the Pagle companion" on Announcements, under Hunts' header (SET-R32), only once the hint switch is on (HNT-R172)
+- Settings: "Remind me about the Pagle companion" on Announcements, under Hunts' header (SET-R32), while the hint switch is on, as at 1.0 (HNT-R172)
 
 **Exit check:**
 1. With the rotation's starting point in the past: `/pagle hunts` shows the wager strip above "What's biting", a WAGERS row whose bar spans the ruler with ▸ at its end, and the Pagle Wagers ribbon reading "1 on". The ribbon's spread lists the slip with its countdown and the ladder at 0 of 25.
@@ -385,7 +385,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 3. Reach every Hunt's tier 1: a "Wager settled" toast; the slip and the entry's seal read settled; the ladder reads 1 of 25.
 4. Complete a Tackle Board Notice: its XP shows under Tackle Board on the Angler page, and a level it brings raises the Ledger's level-up with the Notice's toast.
 5. Prestige with a test log at level 60 (#262's tooling): the confirm card reads "climbs again from 1"; after `/reload` the `P1` entry carries `activityXP`.
-6. Without `Pagle_Content`: no hint, no Nod and no Settings row (the switch is off). With a hand-made, unsigned `Pagle_Content`: `/pagle dev content` reports it absent and why.
+6. Without `Pagle_Content` (the switch on, HNT-R172): the hint's line shows under the wager strip and in the tracker, a Nod comes at most once a week, Get it shows `https://pagle.app/download`, and Announcements has "Remind me about the Pagle companion" under Hunts' header. With a hand-made, unsigned `Pagle_Content`: `/pagle dev content` reports it absent and why.
 7. Wait past the run's end (or use a test log): the run leaves the board and tracker, the next slot's event is on, and nothing lists the old one.
 8. `scripts/check.sh` passes with the pool's 24 events and the `hunts` lore check on.
 
@@ -491,7 +491,7 @@ Run on the live Forever build before tagging 1.0. Beta facts may change at launc
 
 ### Before the tag
 
-1. Set every Standing Hunt's `since` to the release day (DATA-R87), and the fallback rotation's starting point to the release day at 15:00 UTC (HNT-R152). The companion hint switch stays off (HNT-R172).
+1. Set every Standing Hunt's `since` to the release day (DATA-R87), and the fallback rotation's starting point to the release day at 15:00 UTC (HNT-R152). The companion hint switch is on, and Get it's address is `https://pagle.app/download` (HNT-R170, HNT-R172).
 2. Run `scripts/generate-data.py --lock` for the first `released.lock`, in the release commit (DATA-R73, DATA-R95).
 3. From the tag on, the entry formats (LOG-R17), the `Pagle` API (CORE-R15: Activity XP, pushed content and fix A's motion API included) and each DB's first `schemaVersion` are frozen.
 

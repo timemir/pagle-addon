@@ -324,7 +324,7 @@ The board shows Hunt Events under the players' name, **Pagle Wagers**, in two pl
 
   *Defaults chosen while building (#305):* the address is a placeholder Tunable until it is decided (#289). Get it opens a small slip over the board, "The Pagle companion", with the address selected in a read-only edit box and "Ctrl+C to copy"; whatever is typed is put back, and Esc, Enter or Close shuts it, as does closing the board. On the strip, Get it and Dismiss sit at the right of the hint's first line and its lines wrap beside them; on the placeholder slip, they sit at its foot.
 - **HNT-R171** **The weekly Nod:** while the hint applies, at most once every 7 days (Tunables, `PagleHuntsDB.profile.lastHintNod`), at the first `PLAYER_ENTERING_WORLD` of a login once `PushedContentReady` has fired, Hunts raises a `nod` (`kind = "companionHint"`) with the hint's first line as `text`, no `cast` and no Coins. Clicking it opens the board on the Pagle Wagers spread (the moment's `onClick`, ANN-R20). Its `pastText` is the same line.
-- **HNT-R172** At 1.0 the hint switch is **off** ([#288](https://github.com/timemir/wow-fish/issues/288)): no hint, no Nod, no placeholder slip and no Settings row, until a release turns it on once `Pagle_Content` works end to end. The state is still read, and pushed runs are still used if a file passes its check.
+- **HNT-R172** At 1.0 the hint switch is **on**: the hint, its Nod, the placeholder slip, the tracker's line and the Settings row (SET-R32) all show while the hint applies (HNT-R170). With the switch off there is no hint, no Nod, no placeholder slip, no tracker line and no Settings row; the state is still read, and pushed runs are still used if a file passes its check. *Decided for 1.0, once Core's reader was built and M8's tickets closed: [#288](https://github.com/timemir/wow-fish/issues/288) had it off until `Pagle_Content` worked end to end. The switch stays a Tunable, so a release can turn it off again.*
 
 ### The Pagle Wagers tracker block
 
@@ -606,7 +606,7 @@ A `huntRun` whose event is neither pooled nor delivered as a `huntEvent` in the 
 | Show the Hunts tracker | Trackers | on/off | on |
 | Hunts tracker frame | Trackers (Core adds it from the slot, CORE-R42) | owned frames | `hunts.trackerframe.none` |
 | Tell me when a pinned Hunt's window opens | Announcements | on/off | off |
-| Remind me about the Pagle companion | Announcements, after the window row (only while the hint switch is on, HNT-R172; SET-R32) | on/off | on |
+| Remind me about the Pagle companion | Announcements, after the window row (while the hint switch is on, as at 1.0, HNT-R172; SET-R32) | on/off | on |
 | Notebook cover | Look and Feel (Core, from the slot) | owned covers | `hunts.notebookcover.leather` |
 
 "Show completed", pins and the tracker's collapsed state are set on the board and tracker themselves, not in Settings.
@@ -633,8 +633,8 @@ A `huntRun` whose event is neither pooled nor delivered as a `huntEvent` in the 
 | Ladder steps | 25 / 50 / 100 completed runs | HNT-R148 |
 | Hour index for late run records | 14 days back from the latest Cast | HNT-R149 |
 | Celebrated run entries kept | 30 days after a run ends | HNT-R92 |
-| Companion hint switch | off at 1.0 (`ns.COMPANION_HINT_ON`) | HNT-R170–R172 |
-| Companion address (Get it) | a placeholder, `https://github.com/timemir/pagle-companion` (`ns.COMPANION_URL`); the release that turns the switch on sets the real one | HNT-R170 |
+| Companion hint switch | on at 1.0 (`ns.COMPANION_HINT_ON`) | HNT-R170–R172 |
+| Companion address (Get it) | `https://pagle.app/download` (`ns.COMPANION_URL`) | HNT-R170 |
 | Companion Nod interval | 7 days | HNT-R171 |
 | Tracker runs shown | 3 | HNT-R175 |
 | Pool authoring tier times: tier 1 / 2 / 3 | about 45 min / 2 h / 4 h fishing in the zone | Data, DATA-R99 |

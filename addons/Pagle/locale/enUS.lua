@@ -348,6 +348,7 @@ ns.L = {
 	PUSHED_MISSING_FIELD = "a missing field, %s",
 	PUSHED_NOT_INTEGER = "%s isn't a whole number",
 	PUSHED_NOT_STRING = "%s isn't a string",
+	PUSHED_BAD_KEY_ID = "a keyId that isn't 1 to 32 of A-Z, a-z, 0-9, _ and -",
 	PUSHED_UNKNOWN_VERSION = "an unknown file format, v %s",
 	PUSHED_UNKNOWN_KEY = "an unknown keyId, %s",
 	PUSHED_NOT_BASE64 = "%s isn't Base64 (%s)",
