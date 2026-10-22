@@ -128,7 +128,7 @@ describe("its header (TKB-R122)", function()
 		local state = started(ns, {
 			goal("a", "n", "lure", { need = 25 }),
 			goal("b", "n", "haul", { target = DUROTAR }),
-			goal("c", "e", "size", { need = 1, target = 4 }),
+			goal("c", "e", "quality", { need = 3, target = 3 }),
 		}, 5)
 
 		local lines = view(ns, state).lines
@@ -155,7 +155,7 @@ describe("its goal lines (TKB-R121, TKB-R122, TKB-R104)", function()
 				goal("lure", "n", "lure", { need = 25, progress = 4 }),
 				goal("durotar", "n", "haul", { target = DUROTAR }),
 				goal("darkshore", "n", "haul", { target = DARKSHORE, progress = 12 }),
-				goal("size", "e", "size", { need = 1, target = 4 }),
+				goal("quality", "e", "quality", { need = 3, target = 3 }),
 				goal("strip", "n", "quality", { need = 3, target = 2, pin = false }),
 			})
 
@@ -164,14 +164,14 @@ describe("its goal lines (TKB-R121, TKB-R122, TKB-R104)", function()
 			-- Board order: the Expedition pin, the Notice pins, then the strip (TKB-R101). Durotar's Haul isn't here.
 			assert.are.same({
 				"Tackle Board | 5 open",
-				"Expedition: A Whopper-or-better Catch | 0/1 | anywhere",
+				"Expedition: 3 rare-or-better Catches | 0/3 | anywhere",
 				"25 Catches with a lure on | 4/25 | anywhere",
 				"30 Catches in Darkshore | 12/30 | Darkshore · here",
 				"3 uncommon-or-better Catches | 0/3 | anywhere",
 				"+1 more on the board (elsewhere)",
 			}, read(shown))
 			assert.is_true(shown.lines[2].expedition)
-			assert.are.equal("size", shown.lines[2].goalID)
+			assert.are.equal("quality", shown.lines[2].goalID)
 			assert.is_falsy(shown.lines[3].expedition)
 			assert.are.equal("darkshore", shown.lines[4].goalID)
 		end
@@ -277,7 +277,7 @@ describe('the "Complete" flash (TKB-R123)', function()
 		local ns = loadNamed()
 		local state = started(ns, {
 			goal("done", "n", "haul", { target = DARKSHORE, progress = 30, doneDay = 0 }),
-			goal("expedition", "e", "size", { need = 1, target = 4, progress = 1, doneDay = 0 }),
+			goal("expedition", "e", "quality", { need = 3, target = 3, progress = 3, doneDay = 0 }),
 			goal("lure", "n", "lure", { need = 25 }),
 		})
 
@@ -286,7 +286,7 @@ describe('the "Complete" flash (TKB-R123)', function()
 		assert.are.same({
 			"Tackle Board | 1 open",
 			"30 Catches in Darkshore | Complete",
-			"Expedition: A Whopper-or-better Catch | Complete",
+			"Expedition: 3 rare-or-better Catches | Complete",
 			"25 Catches with a lure on | 0/25 | anywhere",
 		}, read(shown))
 		assert.is_true(shown.lines[2].complete)

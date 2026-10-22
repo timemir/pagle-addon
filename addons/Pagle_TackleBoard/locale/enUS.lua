@@ -39,7 +39,6 @@ ns.L = {
 			variety = { one = "{n} Species in {zone}", other = "{n} different Species in {zone}" },
 			wanderer = { one = "Catches in {n} zone today", other = "Catches in {n} zones today" },
 			quality = { one = "A {quality}-or-better Catch", other = "{n} {quality}-or-better Catches" },
-			size = { one = "A {band}-or-better Catch", other = "{n} {band}-or-better Catches" },
 			collector = "A junk item and a container today",
 			lure = { one = "A Catch with a lure on", other = "{n} Catches with a lure on" },
 			species = "{n} {species}",
@@ -49,7 +48,6 @@ ns.L = {
 			variety = "Every Species of {zone}",
 			wanderer = { one = "Catches in {n} zone of {continent}", other = "Catches in {n} zones of {continent}" },
 			quality = { one = "A {quality}-or-better Catch", other = "{n} {quality}-or-better Catches" },
-			size = { one = "A {band}-or-better Catch", other = "{n} {band}-or-better Catches" },
 			collector = {
 				one = "A Sub-collection item you don't have",
 				other = "{n} Sub-collection items you don't have",
@@ -64,7 +62,6 @@ ns.L = {
 		variety = "Variety",
 		wanderer = "Wanderer",
 		quality = "Quality",
-		size = "Size",
 		collector = "Collector",
 		lure = "Lure",
 		species = "Species",

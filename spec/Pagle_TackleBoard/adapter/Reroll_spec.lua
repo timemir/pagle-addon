@@ -19,7 +19,7 @@ local SEED = 11
 local EXPEDITION, HAUL, QUALITY, WANDERER = idAt(D0 + 3601), idAt(D0 + 3602), idAt(D0 + 3603), idAt(D0 + 3604)
 local STARTED = {
 	record("start", D0 + 3600, D0 .. ";" .. W),
-	record("issue", D0 + 3601, "e;size;0;60;1;4"),
+	record("issue", D0 + 3601, "e;quality;0;60;3;3"),
 	record("issue", D0 + 3602, "n;haul;2;15;30;14"),
 	record("issue", D0 + 3603, "n;quality;1;10;3;2"),
 	record("issue", D0 + 3604, "n;wanderer;3;20;3;"),
@@ -96,7 +96,7 @@ describe("taking a goal down", function()
 			local ns, _, fake = started()
 			-- the same draws the reroll will make: a source of the same seed, nothing drawn from it yet
 			local expected =
-				ns.GenerateGoal(ns.GenerationContext(ns.State(), fake.serverTime(), board.random(SEED)), "e", "size")
+				ns.GenerateGoal(ns.GenerationContext(ns.State(), fake.serverTime(), board.random(SEED)), "e", "quality")
 
 			ns.TakeDown(EXPEDITION)
 
@@ -112,10 +112,9 @@ describe("taking a goal down", function()
 			-- lowest value picks the first kind by weight, haul, unless the old kind is dropped.
 			local everyKind = {
 				record("issue", D0 + 3605, "n;variety;1;10;3;17"),
-				record("issue", D0 + 3606, "n;size;1;10;3;3"),
-				record("issue", D0 + 3607, "n;collector;2;15;2;"),
-				record("issue", D0 + 3608, "n;lure;3;20;25;"),
-				record("issue", D0 + 3609, "n;species;2;15;10;6358"),
+				record("issue", D0 + 3606, "n;collector;2;15;2;"),
+				record("issue", D0 + 3607, "n;lure;3;20;25;"),
+				record("issue", D0 + 3608, "n;species;2;15;10;6358"),
 			}
 			local ns = started(everyKind, function(m)
 				return m or 0
@@ -232,12 +231,12 @@ describe("taking a goal down", function()
 
 		it('says "Expedition" for an Expedition', function()
 			local ns = started()
-			ns.State().goals[EXPEDITION].progress = 1 -- of 1: not yet completed in the fold
+			ns.State().goals[EXPEDITION].progress = 1 -- of 3: not yet completed in the fold
 
 			ns.TakeDown(EXPEDITION)
 
 			assert.are.equal(
-				"Take down this Expedition? Its progress (1/1) is lost, and the new one can't be taken down.",
+				"Take down this Expedition? Its progress (1/3) is lost, and the new one can't be taken down.",
 				asked(ns)
 			)
 		end)
@@ -303,7 +302,7 @@ describe("taking a goal down", function()
 
 		it("isn't allowed for a re-posted goal, unless it is stranded (TKB-R44)", function()
 			local rerolled = {
-				record("reroll", D0 + 3700, HAUL .. ";n;size;1;10;3;3"),
+				record("reroll", D0 + 3700, HAUL .. ";n;lure;1;10;15;"),
 				record("reroll", D0 + 3701, QUALITY .. ";n;haul;1;10;20;" .. UNKNOWN_AREA), -- its zone is gone
 			}
 			local ns = started(rerolled)

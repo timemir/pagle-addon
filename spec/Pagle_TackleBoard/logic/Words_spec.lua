@@ -43,8 +43,6 @@ describe("the goal text", function()
 			{ "Catches in 5 zones of Kalimdor", goal("e", "wanderer", 5, 1) },
 			{ "5 uncommon-or-better Catches", goal("n", "quality", 5, 2) },
 			{ "3 rare-or-better Catches", goal("e", "quality", 3, 3) },
-			{ "3 Hefty-or-better Catches", goal("n", "size", 3, 3) },
-			{ "A Whopper-or-better Catch", goal("e", "size", 1, 4) },
 			{ "A junk item and a container today", goal("n", "collector", 2) },
 			{ "3 Sub-collection items you don't have", goal("e", "collector", 3) },
 			{ "20 Catches with a lure on", goal("n", "lure", 20) },
@@ -123,10 +121,13 @@ describe("the goal text", function()
 		end)
 	end)
 
-	it("names Size bands from Pagle.SIZE_BANDS (TKB-R36, LOG-R67)", function()
+	it("has no text, label or icon for a size goal, a kind no longer drawn (TKB-R36, ADR 0014)", function()
 		local ns = board.load().ns
 
-		assert.are.equal("6 Monster-or-better Catches", ns.GoalText(goal("n", "size", 6, 5)))
+		assert.is_nil(ns.L.GOAL_TEXT.n.size)
+		assert.is_nil(ns.L.GOAL_TEXT.e.size)
+		assert.is_nil(ns.L.KINDS.size)
+		assert.is_nil(ns.KIND_ICONS.size)
 	end)
 end)
 
@@ -135,7 +136,7 @@ describe("the kind's label", function()
 		local ns = board.load().ns
 		local labels, icons, notIcons = {}, {}, {}
 
-		for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "size", "collector", "lure", "species" }) do
+		for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "collector", "lure", "species" }) do
 			labels[#labels + 1] = ns.KindLabel(kind)
 			local icon = ns.KIND_ICONS[kind]
 			icons[icon] = true
@@ -144,14 +145,14 @@ describe("the kind's label", function()
 			end
 		end
 
-		local kinds = { "Haul", "Variety", "Wanderer", "Quality", "Size", "Collector", "Lure", "Species" }
+		local kinds = { "Haul", "Variety", "Wanderer", "Quality", "Collector", "Lure", "Species" }
 		assert.are.same(kinds, labels)
 		assert.are.same({}, notIcons, "every kind's icon is an in-client icon")
 		local distinct = 0
 		for _ in pairs(icons) do
 			distinct = distinct + 1
 		end
-		assert.are.equal(8, distinct, "each kind has its own icon")
+		assert.are.equal(7, distinct, "each kind has its own icon")
 	end)
 end)
 
@@ -187,8 +188,6 @@ describe("where a goal is worked", function()
 			wandererExpedition = goal("e", "wanderer", 5, 1),
 			quality = goal("n", "quality", 5, 2),
 			qualityExpedition = goal("e", "quality", 3, 3),
-			size = goal("n", "size", 3, 3),
-			sizeExpedition = goal("e", "size", 1, 4),
 			collector = goal("n", "collector", 2),
 			collectorExpedition = goal("e", "collector", 3),
 			lure = goal("n", "lure", 20),
@@ -224,8 +223,6 @@ describe("where a goal is worked", function()
 			wandererExpedition = "Kalimdor",
 			quality = "anywhere",
 			qualityExpedition = "anywhere",
-			size = "anywhere",
-			sizeExpedition = "anywhere",
 			collector = "anywhere",
 			collectorExpedition = "anywhere",
 			lure = "anywhere",
@@ -244,8 +241,6 @@ describe("where a goal is worked", function()
 			wandererExpedition = true,
 			quality = false,
 			qualityExpedition = false,
-			size = false,
-			sizeExpedition = false,
 			collector = false,
 			collectorExpedition = false,
 			lure = false,
@@ -366,8 +361,6 @@ describe("where a goal is worked", function()
 				wandererExpedition = never,
 				quality = always,
 				qualityExpedition = always,
-				size = always,
-				sizeExpedition = always,
 				collector = always,
 				collectorExpedition = always,
 				lure = always,
