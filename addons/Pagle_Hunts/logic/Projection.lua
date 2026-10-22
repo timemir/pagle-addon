@@ -41,6 +41,9 @@ ns.COINS_COMPLETED, ns.COINS_TIER, ns.COINS_TITLE = 30, 15, 100
 ---                           nothing; Core has no dev-line call for Modules yet.
 ---   StepDue()               from `done`, last: the run log's live step is due, on a later frame (HNT-R151, HNT-R155,
 ---                           LOG-R40). Stand-in: nothing; adapter/RunLog.lua replaces it.
+---   RefreshGoods()          after a `"live"` entry that earned a set title or completed a run, and from `done`, after
+---                           Done marks what it celebrates: `M:RefreshGoods()` for the earned goods (HNT-R122,
+---                           SHOP-R31). Stand-in: nothing; adapter/Goods.lua replaces it.
 ns.outlets = {
 	---@param cast PagleCast
 	---@param reached HuntsReached
@@ -51,6 +54,7 @@ ns.outlets = {
 	---@param line string
 	Diagnostic = function(line) end, -- luacheck: no unused args
 	StepDue = function() end,
+	RefreshGoods = function() end,
 	---@param state HuntsState
 	---@param info PagleProjectionInfo
 	Done = function(state, info) end, -- luacheck: no unused args
@@ -327,6 +331,10 @@ function ns.ProjectionDef(global, lookups, client)
 			if state.xp ~= xp then
 				client.ReportXPEarned(state.xp)
 			end
+			-- A set title or a completed run may earn a good (HNT-R122).
+			if #reached.sets + #reached.settled > 0 then
+				ns.outlets.RefreshGoods()
+			end
 			-- A Cast always changes the state (its count of Casts at least), and so does a record folded.
 			ns.Redraw("projection")
 		end,
@@ -340,6 +348,7 @@ function ns.ProjectionDef(global, lookups, client)
 			client.ReportCoinsEarned(state.coins) -- after every catch-up or rebuild (HNT-R110, SHOP-R2)
 			client.ReportXPEarned(state.xp) -- on the same timing (HNT-R115, AXP-R2)
 			ns.outlets.Done(state, info)
+			ns.outlets.RefreshGoods() -- the earned goods, never mid-catch-up or mid-rebuild (HNT-R122, SHOP-R31)
 			ns.Redraw("projection")
 			-- The run log's step, never from here (LOG-R40): what this catch-up or rebuild leaves to log (HNT-R151).
 			ns.outlets.StepDue()

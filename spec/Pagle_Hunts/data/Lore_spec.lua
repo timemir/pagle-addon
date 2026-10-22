@@ -7,7 +7,7 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
--- HNT-R121: Hunts' seven goods (support.lua's GOODS, both slots).
+-- HNT-R121: Hunts' goods (support.lua's GOODS, both slots): the seven first goods and the expansion's twenty.
 local GOODS = {}
 for _, slot in ipairs({ "hunts.notebookcover", "hunts.trackerframe" }) do
 	for _, row in ipairs(hunts.GOODS[slot]) do
@@ -51,7 +51,8 @@ describe("Hunts' committed lore (DATA-R111, its M5 and M8 batches)", function()
 		assert.is_truthy(note and note:find("level 60", 1, true))
 	end)
 
-	it("has a name and a description for each of Hunts' seven goods (HNT-R121, HNT-R130)", function()
+	it("has a name and a description for each of Hunts' goods (HNT-R121, HNT-R130)", function()
+		assert.are.equal(27, #GOODS)
 		for _, good in ipairs(GOODS) do
 			text(("huntgood.%s.name"):format(good))
 			text(("huntgood.%s.description"):format(good))
