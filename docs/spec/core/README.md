@@ -10,6 +10,7 @@ Core is the `Pagle` addon. This file covers how Modules attach to it, the whole 
 | [announcements.md](announcements.md) | `ANN` | Moments, the Announcement policy, toasts, sounds, the Session summary, the Write-up |
 | [wallet-and-shop.md](wallet-and-shop.md) | `SHOP` | Pagle Coins and the Curio Shop |
 | [field-report.md](field-report.md) | `REP` | `/pagle report` and the diagnostics it reads |
+| [varieties.md](varieties.md) | `VAR` | Fish varieties, their rarity, Core's variety projection and the fish crests |
 
 Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunables table.
 
@@ -182,6 +183,8 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.CONTENT_FINGERPRINT` | string | catch-log.md |
 | `Pagle.GetItem(itemID)`, `GetArea(areaID)`, `GetZones()`, `GetZoneOf(areaID)`, `GetZoneCatches(zoneAreaID)`, `GetWindowSpec(windowID)` | catalogue records | catch-log.md |
 | `Pagle.SIZE_BANDS`, `Pagle.SIZE_RULES_VERSION`, `Pagle.FormatLength(mm)` | band list, integer, string | catch-log.md |
+| `Pagle.GetVarieties(speciesID)`, `Pagle.VARIETY_RARITIES` | a Species' ten or `nil`, rarity list | [varieties.md](varieties.md) |
+| `Pagle.GetVarietiesCaught(speciesID)` | a fresh set `{ [index] = true }` of the positions caught | [varieties.md](varieties.md) |
 | `Pagle.GetBalance()` | `Balance` | [wallet-and-shop.md](wallet-and-shop.md#contracts) |
 | `Pagle.IsOwned(goodID)`, `GetEquipped(slotID)`, `SetEquipped(slotID, goodID)`, `GetGood(goodID)`, `OpenShop(goodID?)` | | wallet-and-shop.md |
 | `Pagle.OpenFieldReport()`, `GetFieldReportCount()` | | [field-report.md](field-report.md#contracts) |

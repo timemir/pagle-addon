@@ -98,14 +98,14 @@ describe("the Journal's Angler page", function()
 	end)
 
 	it(
-		"shows the bookplate: the crest, kept since, the shown level, the active title, the ink XP bar, the Prestige seals, completion and its five parts, and the lifetime Catches with the next milestone (LED-R146, LED-R112, LED-R77, LED-R34, LED-R42, LED-R71)",
+		"shows the bookplate: the crest, kept since, the shown level, the active title, the ink XP bar, the Prestige seals, completion and its six parts, and the lifetime Catches with the next milestone (LED-R146, LED-R112, LED-R77, LED-R34, LED-R42, LED-R71)",
 		function()
 			local _, loaded = anglerPage()
 
 			-- XP: Mackerel's first Catch 500 + in Elwynn 100 + Elwynn's first Catch 200; the boot, a curio, 150; two
 			-- Skill Milestones 2,000; Local in Elwynn at once 250 + 500 + 750; three Catches in Fresh Water 60.
 			-- 4,510 XP is level 4 (steps 1,080 + 1,160 + 1,240 = 3,480), 1,030 into its 1,320 step (LED-R30).
-			-- Completion: 1 of 2 Species, 1 of 1 junk, 0 of 1 treasure, 0 of 1 weight, 0 of 1 zone mastered, so
+			-- Completion: 1 of 2 Species, no Species with varieties (VAR-R21), 1 of 1 junk, 0 of 1 treasure, 0 of 1 weight, 0 of 1 zone mastered, so
 			-- 2 of 6 is 33% (LED-R70).
 			-- No crest: Core's default, Plain, is "No emblem, only the owner's name" (LED-R112, SHOP-R25); the active
 			-- title under the level, automatic: the highest level title, level 1's Minnow (LED-R77); no Prestige yet
@@ -119,6 +119,7 @@ describe("the Journal's Angler page", function()
 				"[xpBar]",
 				"The Ledger",
 				"Species",
+				"Varieties",
 				"Junk Museum",
 				"Treasures",
 				"Trophy Room weights",
@@ -138,10 +139,10 @@ describe("the Journal's Angler page", function()
 			assert.are.equal("1,030 of 1,320.", left[6].bar.text)
 			assert.are.equal("33% of the Ledger complete (2 of 6)", left[7].value)
 			local parts = {}
-			for i = 8, 12 do
+			for i = 8, 13 do
 				parts[#parts + 1] = left[i].value
 			end
-			assert.are.same({ "1 of 2", "1 of 1", "0 of 1", "0 of 1", "0 of 1" }, parts)
+			assert.are.same({ "1 of 2", "0 of 0", "1 of 1", "0 of 1", "0 of 1", "0 of 1" }, parts)
 			-- the likeness is the player's portrait
 			local crest = loaded.ns.journal.frame.left.drawn.crest[1]
 			assert.are.equal("player", crest.portrait.portrait)

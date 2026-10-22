@@ -31,7 +31,8 @@ describe("Core's slots and goods", function()
 	end)
 
 	it(
-		"register the three slots first, in the Curio Shop's categories, with every good's tier, the crest slot holding Plain alone (SHOP-R25)",
+		"register the three slots first, in the Curio Shop's categories, with every good's tier, the crest slot holding"
+			.. " Plain then the fish crests, earned, by Species ID (SHOP-R25, VAR-R12)",
 		function()
 			local loaded = loadCore()
 			loaded.client.fire("PLAYER_LOGIN")
@@ -42,9 +43,16 @@ describe("Core's slots and goods", function()
 			for _, slot in ipairs(goods:Slots()) do
 				local list = {}
 				for _, good in ipairs(goods:GoodsOf(slot.id)) do
-					list[#list + 1] = good.id .. " " .. (good.default and "default" or "tier " .. tostring(good.tier))
+					local kind = good.default and "default"
+						or good.isEarned and "earned " .. tostring(good.group)
+						or "tier " .. tostring(good.tier)
+					list[#list + 1] = good.id .. " " .. kind
 				end
 				slots[#slots + 1] = { slot.id, slot.label, slot.category, slot.module, list }
+			end
+			local crests = { "core.crest.plain default" }
+			for _, speciesID in ipairs(FISH_CREST_SPECIES) do
+				crests[#crests + 1] = "core.crest.fish." .. speciesID .. " earned fish"
 			end
 
 			assert.are.same({
@@ -71,7 +79,7 @@ describe("Core's slots and goods", function()
 					"Bookplate crest",
 					"Bookplate",
 					"Core",
-					{ "core.crest.plain default" },
+					crests,
 				},
 			}, slots)
 			assert.are.same({ false, false }, {
@@ -110,7 +118,8 @@ describe("Core's slots and goods", function()
 	)
 
 	it(
-		"each have an icon, the Curio Shop's swatch: Plain's is Core's own texture, the rest in-client (SHOP-R25, wallet-and-shop.md › UI)",
+		"each have an icon, the Curio Shop's swatch: Plain's and the fish crests' are Core's own textures, the rest"
+			.. " in-client (SHOP-R25, VAR-R12, wallet-and-shop.md › UI)",
 		function()
 			local loaded = loadCore()
 			loaded.client.fire("PLAYER_LOGIN")
@@ -123,7 +132,9 @@ describe("Core's slots and goods", function()
 					count = count + 1
 					local icon = Pagle.GetGood(good.id).icon
 					local key = good.id:match("^core%.crest%.(%a+)$")
+					local fish = good.id:match("^core%.crest%.fish%.(%d+)$")
 					local expected = key and "^Interface\\AddOns\\Pagle\\media\\crests\\" .. key .. "$"
+						or fish and "^Interface\\AddOns\\Pagle\\media\\crests\\fish\\" .. fish .. "$"
 						or "^Interface\\Icons\\%S+$"
 					if type(icon) ~= "string" or not icon:find(expected) then
 						without[#without + 1] = good.id
@@ -131,7 +142,92 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 6, {} }, { count, without })
+			assert.are.same({ 6 + #FISH_CREST_SPECIES, {} }, { count, without })
+		end
+	)
+end)
+
+describe("Core's fish crests on the client (VAR-R12, VAR-R13)", function()
+	-- Core held at ADDON_LOADED over `saved` (a PagleDB), with the client's locale `locale` (enUS by default), so a
+	-- spec caches item names before login step 1 registers the crests.
+	---@param locale string?
+	---@param saved table?
+	---@return LoadedAddon
+	local function held(locale, saved)
+		return loadAddon(
+			"Pagle",
+			foreverWith({
+				PagleLog = savedLog(),
+				PagleDB = saved,
+				GetLocale = function()
+					return locale or "enUS"
+				end,
+			}),
+			{ holdAddonLoaded = true }
+		)
+	end
+
+	it(
+		"are named {fish} Crest from the item names the client has, less an enUS client's Raw, Item {itemID} until"
+			.. " then, and renamed when the item arrives (SHOP-R26)",
+		function()
+			local loaded = held()
+			loaded.client.itemNames[4603] = "Raw Spotted Yellowtail"
+			loaded.client.itemNames[1467] = "Spotted Sunfish"
+			loaded.client.fire("ADDON_LOADED", "Pagle")
+			local Pagle = loaded.env.Pagle
+
+			assert.are.same({ "Spotted Yellowtail Crest", "Spotted Sunfish Crest", "Item 6289 Crest" }, {
+				Pagle.GetGood("core.crest.fish.4603").name,
+				Pagle.GetGood("core.crest.fish.1467").name,
+				Pagle.GetGood("core.crest.fish.6289").name,
+			})
+			-- Each fish not cached is asked for, once; the named ones aren't.
+			local asked = {}
+			for _, itemID in ipairs(loaded.client.itemRequests) do
+				asked[itemID] = (asked[itemID] or 0) + 1
+			end
+			assert.are.same({ 1, nil, nil }, { asked[6289], asked[4603], asked[1467] })
+
+			loaded.client.itemNames[6289] = "Raw Longjaw Mud Snapper"
+			loaded.client.fire("GET_ITEM_INFO_RECEIVED", 6289, true)
+
+			assert.are.equal("Longjaw Mud Snapper Crest", Pagle.GetGood("core.crest.fish.6289").name)
+			assert.are.equal("Longjaw Mud Snapper Crest", loaded.env.PagleDB.global.goods["core.crest.fish.6289"].name)
+		end
+	)
+
+	it("leave another locale's item names as the client gives them (VAR-R12)", function()
+		local loaded = held("deDE")
+		loaded.client.itemNames[4603] = "Raw Spotted Yellowtail"
+		loaded.client.fire("ADDON_LOADED", "Pagle")
+
+		assert.are.equal("Raw Spotted Yellowtail Crest", loaded.env.Pagle.GetGood("core.crest.fish.4603").name)
+	end)
+
+	it(
+		"are owned once all ten of a Species are in Core's variety projection, at its done (VAR-R12, VAR-R13)",
+		function()
+			local all = {}
+			for index = 1, 10 do
+				all[index] = true
+			end
+			local loaded = held()
+			loaded.client.fire("ADDON_LOADED", "Pagle")
+			local Pagle = loaded.env.Pagle
+			assert.is_false(Pagle.IsOwned("core.crest.fish.6358"))
+
+			-- Ten caught in the stored state, then Core's goods asked again, as its variety hook asks them (VAR-R13).
+			local stored = loaded.env.PagleDB.global.projections.varieties
+			enterWorld(loaded)
+			loaded.client.runTimers()
+			stored.projection.bySpecies[6358] = all
+			loaded.ns.goods:Refresh("Core")
+
+			assert.are.same({ true, false }, {
+				Pagle.IsOwned("core.crest.fish.6358"),
+				Pagle.IsOwned("core.crest.fish.6359"),
+			})
 		end
 	)
 end)
@@ -217,7 +313,7 @@ end
 
 describe("Core's goods' previews", function()
 	it(
-		"give Plain, Core's one crest, its own shipped texture, the look the Ledger draws (SHOP-R25, LED-R112)",
+		"give Plain and each fish crest its own shipped texture, the look the Ledger draws (SHOP-R25, VAR-R12, LED-R112)",
 		function()
 			local loaded = loadCore()
 			loaded.client.fire("PLAYER_LOGIN")
@@ -225,7 +321,7 @@ describe("Core's goods' previews", function()
 			local missing = {}
 			for _, good in ipairs(loaded.ns.goods:GoodsOf("core.crest")) do
 				local file =
-					loaded.env.Pagle.GetGood(good.id).icon:match("^Interface\\AddOns\\Pagle\\(media\\crests\\%a+)$")
+					loaded.env.Pagle.GetGood(good.id).icon:match("^Interface\\AddOns\\Pagle\\(media\\crests\\[%w\\]+)$")
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 				local handle = file and io.open("addons/Pagle/" .. file:gsub("\\", "/") .. ".blp", "rb")
 				if handle then
@@ -236,7 +332,7 @@ describe("Core's goods' previews", function()
 			end
 
 			assert.are.same({}, missing)
-			assert.are.equal(1, #loaded.ns.goods:GoodsOf("core.crest"))
+			assert.are.equal(1 + #FISH_CREST_SPECIES, #loaded.ns.goods:GoodsOf("core.crest"))
 		end
 	)
 

@@ -348,6 +348,25 @@ function Goods:RegisterGood(module, good)
 	return nil
 end
 
+--- Renames a good registered this session, and its cache entry (SHOP-R26): for a name the client resolves later than
+--- registration, a fish crest's (VAR-R12). Returns whether the good is registered; renaming changes no ownership or
+--- look, so nothing fires.
+---@param goodID string
+---@param name string
+---@return boolean
+function Goods:Rename(goodID, name)
+	local good = self.goods[goodID]
+	if not good then
+		return false
+	end
+	good.name = name
+	local cached = self:Cache()[goodID]
+	if cached then
+		cached.name = name
+	end
+	return true
+end
+
 -- Calls an earned good's isEarned() and caches its result (SHOP-R26, SHOP-R31). When it raises, the cache keeps
 -- what it had (false for a good never cached), so a broken check takes no look away.
 ---@private

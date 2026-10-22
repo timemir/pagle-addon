@@ -42,6 +42,7 @@ local ns = select(2, ...)
 ---@field dock PagleDockWiring Core's tracker dock (ns.WireDock).
 ---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
 ---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
+---@field varietyProjection PagleProjection? Core's variety projection, from login step 1 (ns.WireVarietyProjection).
 ---@field LengthUnit fun(): PagleLengthUnit The Angler's length unit now (ns.WireLength).
 ---@field fishing PagleFishing Core's Cast state machine, which Core's adapter and FakePagle each build.
 ---@field dev PagleDevCommands Core's `/pagle dev` commands (ns.WireDev).
@@ -191,6 +192,31 @@ function ns.PublishSize(Pagle, host, wrap)
 	api.FormatLength = ns.WireLength(host)
 end
 
+--- Publishes the variety rarities on `Pagle` (VAR-R11): `Pagle.VARIETY_RARITIES`, Common to Epic, each
+--- `{ key, name, weight, color, ink }`, a copy of Core's own so a Module can't change Core's. `wrap` turns the list
+--- into what Modules get: Core's adapter passes none, FakePagle its read-only proxy (CORE-R18). Pagle.GetVarieties
+--- comes with the catalogue (adapter/Catalogue.lua).
+---@param Pagle table
+---@param wrap (fun(value: any): any)?
+function ns.PublishVarieties(Pagle, wrap)
+	---@class Pagle
+	local api = Pagle
+	local rarities = {}
+	for rarity, entry in ipairs(ns.VARIETY_RARITIES) do
+		rarities[rarity] = {
+			key = entry.key,
+			name = entry.name,
+			weight = entry.weight,
+			color = { unpack(entry.color) },
+			ink = { unpack(entry.ink) },
+		}
+	end
+	--- The variety rarities in order, Common to Epic: `{ key, name, weight, color, ink }`, `weight` one variety's
+	--- Catches per 10,000 of its Species and the colours { r, g, b } (VAR-R2, VAR-R3, VAR-R11).
+	---@type PagleVarietyRarity[]
+	api.VARIETY_RARITIES = wrap and wrap(rarities) or rarities
+end
+
 --- Core's moment collector as ns.moments (ANN-R1–R4, ANN-R10–R12), and `M:RaiseMoment` on every Module handle. Each
 --- Announcement goes to `show`, the display; every moment Core keeps goes to ns.summary (ANN-R25).
 ---@param host PagleHost
@@ -222,9 +248,26 @@ function ns.WireMoments(host, show)
 	ModuleHandle.RaiseMoment = ns.RaiseMomentMethod(host.registry, ns.moments)
 end
 
+-- A Species' ten from the catalogue in ns.Catalogue (VAR-R11), nil before it's built or for a Species without any.
+---@param speciesID integer
+---@return PagleVarietyEntry[]?
+local function varietiesOf(speciesID)
+	return ns.Catalogue and ns.Catalogue.GetVarieties(speciesID)
+end
+
+-- Whether a Catch's variety was caught before its Cast (VAR-R27), from Core's variety projection; false before it is
+-- wired.
+---@param variety PagleVariety
+---@param castId string
+---@return boolean
+local function caughtBefore(variety, castId)
+	return ns.VarietyCaughtBefore ~= nil and ns.VarietyCaughtBefore(variety, castId)
+end
+
 --- Core's catch Nod (ANN-R13) on ns.moments: at each live `CastEnded("caught", cast)` (LOG-R9), while
 --- PagleDB.profile.announcements.everyCatch ("Show every catch") is on, the Cast's catch Nod (ns.CatchNodMoment) in
---- the Angler's length unit. Replays and rebuilds fire no CastEnded, so only live Casts get one (ANN-R4).
+--- the Angler's length unit, naming its Catch's variety from the catalogue (VAR-R26) once it was caught before this
+--- Cast (VAR-R27). Replays and rebuilds fire no CastEnded, so only live Casts get one (ANN-R4).
 ---@param host PagleHost
 ---@param itemName fun(itemID: integer): string? the client's name for an item, nil until it has cached it
 function ns.WireCatchNods(host, itemName)
@@ -233,7 +276,7 @@ function ns.WireCatchNods(host, itemName)
 		if outcome ~= "caught" or not cast or not host.db().profile.announcements.everyCatch then
 			return
 		end
-		local moment = ns.CatchNodMoment(cast, itemName, ns.LengthUnit())
+		local moment = ns.CatchNodMoment(cast, itemName, ns.LengthUnit(), varietiesOf, caughtBefore)
 		if moment then
 			ns.moments:RaiseCatchNod(moment)
 		end
@@ -536,6 +579,16 @@ function ns.WireGoods(host)
 	---@param good PagleGood
 	function ns.RegisterCoreGood(good)
 		raise(goods:RegisterGood(ns.CORE_OWNER, good))
+	end
+	--- Renames one of Core's goods and its cache entry (SHOP-R26), for a fish crest whose fish the client names later
+	--- (VAR-R12). Nothing for a good Core hasn't registered.
+	---@param goodID string
+	---@param name string
+	function ns.RenameCoreGood(goodID, name)
+		local good = goods:Good(goodID)
+		if good and good.module == ns.CORE_OWNER then
+			goods:Rename(goodID, name)
+		end
 	end
 end
 
@@ -888,6 +941,75 @@ function ns.WireWalletProjection(host)
 			wallet = ns.wallet,
 			goods = ns.goods,
 		})
+	end
+end
+
+--- Core's variety projection (VAR-R10, VAR-R13, LOG-R78): `ns.StartVarietyProjection()` binds it at login step 1,
+--- after the wallet's and ahead of every Module's, to PagleDB.global.projections.varieties (ns.PAGLEDB_DEFAULTS), over
+--- the log's records. `Pagle.GetVarietiesCaught(speciesID)` reads what it stored (VAR-R11). `ns.OnVarietiesCaught(fn)`
+--- adds a hook of Core's own earned goods (the fish crests, VAR-R12): each hook runs, in the order added, after the
+--- projection's done and after each live Catch that adds a variety, never mid-catch-up or mid-rebuild (VAR-R13), so
+--- a hook that refreshes Core's goods asks their isEarned() only then (SHOP-R31). An error in one is reported, and the
+--- next still runs.
+---@param host PagleHost
+---@param Pagle table where `GetVarietiesCaught` is published
+function ns.WireVarietyProjection(host, Pagle)
+	---@type fun()[]
+	local hooks = {}
+
+	--- Adds a hook run whenever Core's varieties caught may have changed (VAR-R13).
+	---@param fn fun()
+	function ns.OnVarietiesCaught(fn)
+		hooks[#hooks + 1] = fn
+	end
+
+	-- The last live Cast that caught a variety for the first time, and those varieties (VAR-R27): what
+	-- ns.VarietyCaughtBefore leaves out, whether the projection folded that Cast before its Nod or will after.
+	---@type { castId: string, ids: table<string, true> }?
+	local lastFirsts
+
+	--- Login step 1, once PagleDB is open.
+	function ns.StartVarietyProjection()
+		ns.varietyProjection = ns.AddVarietyProjection({
+			projections = ns.projections,
+			db = host.db().global.projections.varieties,
+			iterate = host.iterate,
+			changed = function()
+				for _, fn in ipairs(hooks) do
+					host.call(fn)
+				end
+			end,
+			added = function(castId, ids)
+				lastFirsts = { castId = castId, ids = ids }
+			end,
+		})
+	end
+
+	--- Whether `variety` was caught before the Cast `castId` (VAR-R26, VAR-R27), in Core's projection as stored: the
+	--- catch Nod names only such a variety, so a Nod is never the first to show one. A position that Cast itself
+	--- caught first doesn't count, whether the projection has folded the Cast already (it is live before CastEnded,
+	--- LOG-R73) or folds it later (it was updating). Mid-rebuild it reads the last stored state (LOG-R72).
+	---@param variety PagleVariety
+	---@param castId string
+	---@return boolean
+	function ns.VarietyCaughtBefore(variety, castId)
+		local speciesID = tonumber(variety.id:match("^(%d+)%."))
+		if not speciesID or not Pagle.GetVarietiesCaught(speciesID)[variety.index] then
+			return false
+		end
+		return not (lastFirsts and lastFirsts.castId == castId and lastFirsts.ids[variety.id])
+	end
+
+	---@class Pagle
+	local api = Pagle
+	--- The positions of a Species' ten caught, as a fresh set `{ [index] = true }` (VAR-R11): Core's own record
+	--- (VAR-R10), empty for a Species with none caught or without varieties, and before the first build has finished.
+	--- While the projection rebuilds it answers from the last stored state (LOG-R72).
+	---@param speciesID integer
+	---@return table<integer, true>
+	function api.GetVarietiesCaught(speciesID)
+		local db = host.db()
+		return ns.VarietiesCaughtIn(db and db.global.projections.varieties, speciesID)
 	end
 end
 

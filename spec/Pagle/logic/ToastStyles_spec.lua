@@ -141,6 +141,7 @@ describe("a banner's seal", function()
 			assert.are.same({
 				{ number = 12 },
 				{ crest = true },
+				{ crest = true, icon = "crests\\fish\\6359" },
 				{ mark = "book" },
 				{ mark = "quill" },
 				{ mark = "waves" },
@@ -148,6 +149,7 @@ describe("a banner's seal", function()
 			}, {
 				ns.BannerSeal({ seal = 12 }),
 				ns.BannerSeal({ seal = "crest" }),
+				ns.BannerSeal({ seal = "crest", crest = "crests\\fish\\6359" }),
 				ns.BannerSeal({ seal = "book" }),
 				ns.BannerSeal({ seal = "quill" }),
 				ns.BannerSeal({}),
@@ -155,6 +157,71 @@ describe("a banner's seal", function()
 			})
 		end
 	)
+end)
+
+describe("a moment's art in a medallion", function()
+	it(
+		"is cropped to the fish's head: a square at the left of the art, inset from its snout (VAR-R25, VAR-R26)",
+		function()
+			-- A 192 × 96 variety at (384, 192) on a 2048 atlas.
+			local art = { texture = 1, left = 384 / 2048, right = 576 / 2048, top = 192 / 2048, bottom = 288 / 2048 }
+			local left, right, top, bottom = ns.HeadCrop(art)
+
+			-- 72 texels square: 5.76 to 77.76 across, 12 to 84 down.
+			assert.are.same({ 389.76, 461.76, 204, 276 }, {
+				math.floor(left * 2048 * 100 + 0.5) / 100,
+				math.floor(right * 2048 * 100 + 0.5) / 100,
+				math.floor(top * 2048 * 100 + 0.5) / 100,
+				math.floor(bottom * 2048 * 100 + 0.5) / 100,
+			})
+		end
+	)
+end)
+
+describe("a catch Nod's variety", function()
+	-- A catch Nod's headline naming a variety of `rarity` (VAR-R26), as Core raises it.
+	local function nod(rarity)
+		return {
+			catchNod = true,
+			title = "Firefin Snapper · Coral · Decent · 34.2 cm",
+			variety = { name = "Coral", rarity = rarity, before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
+		}
+	end
+
+	it(
+		"draws the name in the rarity's ink after a gem in its colour, the ring in its colour but Common's the"
+			.. " style's own, and a gleam for Rare and Epic (VAR-R26, ANN-R80)",
+		function()
+			local looks = {}
+			for _, rarity in ipairs(ns.VARIETY_RARITIES) do
+				local look = ns.CatchNodVarietyLook(nod(rarity.key)) --[[@as PagleNodVarietyLook]]
+				assert.are.same({ "Coral", "Firefin Snapper ·", "· Decent · 34.2 cm", rarity.color, rarity.ink }, {
+					look.name,
+					look.before,
+					look.after,
+					look.color,
+					look.ink,
+				})
+				looks[#looks + 1] = { look.ring ~= nil, look.gleam }
+			end
+			assert.are.same({ { false, false }, { true, false }, { true, true }, { true, true } }, looks)
+			-- Common's ink is the parchment's own brown, so most catches stay calm (core/varieties.md › UI).
+			local common = ns.CatchNodVarietyLook(nod("common")) --[[@as PagleNodVarietyLook]]
+			assert.are.same(ns.Rgb("6a5a44"), common.ink)
+		end
+	)
+
+	it("is nil for a headline that isn't a catch Nod naming a variety, or names an unknown rarity", function()
+		local module = nod("rare")
+		module.catchNod = nil
+		local plain = nod("rare")
+		plain.variety = nil
+		assert.are.same({}, {
+			ns.CatchNodVarietyLook(module),
+			ns.CatchNodVarietyLook(plain),
+			ns.CatchNodVarietyLook(nod("mythic")),
+		})
+	end)
 end)
 
 describe("the art's capitals", function()

@@ -15,9 +15,40 @@ local function coreWithModules(off)
 	return fake, handles
 end
 
+-- Core's fish crests (VAR-R12) as the list outlines them under their group (SHOP-R27), none of their varieties
+-- caught: named by their IDs, as their lore isn't loaded here, each with its row's tag (VAR-R13).
+---@return string[]
+local function fishCrestLines()
+	local lines = { "  -- Fish crests" }
+	for _, speciesID in ipairs(FISH_CREST_SPECIES) do
+		lines[#lines + 1] = ("  core.crest.fish.%d 0 of 10 varieties"):format(speciesID)
+	end
+	return lines
+end
+
+-- `lines`, then `more`, as one new list.
+---@param lines string[]
+---@param more string[]
+---@return string[]
+local function joined(lines, more)
+	local all = { unpack(lines) }
+	for _, line in ipairs(more) do
+		all[#all + 1] = line
+	end
+	return all
+end
+
+-- The crest slot's heading with its fish crests counted (VAR-R12): `owned` of Plain, `others` and the fish crests.
+---@param owned integer
+---@param others integer? the crests besides Plain and the fish crests
+---@return string
+local function crestHeading(owned, others)
+	return ("Bookplate crest (%d of %d)"):format(owned, 1 + (others or 0) + #FISH_CREST_SPECIES)
+end
+
 -- Core's own slots (SHOP-R25) as the list outlines them while nothing of Core's is bought and the balance is under
 -- 150: each default in use, everything else priced in red.
-local CORE_UNBOUGHT = {
+local CORE_UNBOUGHT = joined({
 	"Toast style (1 of 3)",
 	"  core.toaststyle.page In use",
 	"  core.toaststyle.ripple 150" .. " [red]",
@@ -25,9 +56,9 @@ local CORE_UNBOUGHT = {
 	"Sound set (1 of 2)",
 	"  core.soundset.driftwood In use",
 	"  core.soundset.gilded 400" .. " [red]",
-	"Bookplate crest (1 of 1)",
+	crestHeading(1),
 	"  core.crest.plain In use",
-}
+}, fishCrestLines())
 
 -- CORE_UNBOUGHT, then `lines`.
 local function afterCore(lines)
@@ -248,24 +279,31 @@ describe("The Curio Shop's list", function()
 		function()
 			local fake = shopping()
 
-			assert.are.same({
-				"Toast style (2 of 3)",
-				"  core.toaststyle.page default",
-				"  core.toaststyle.ripple In use",
-				"  core.toaststyle.lanternglow 400" .. " [red]",
-				"Sound set (1 of 2)",
-				"  core.soundset.driftwood In use",
-				"  core.soundset.gilded 400" .. " [red]",
-				"Bookplate crest (1 of 1)",
-				"  core.crest.plain In use",
-				"Journal binding (1 of 2)",
-				"  ledger.binding.oak In use",
-				"  ledger.binding.lapis 900" .. " [red]",
-				"Notebook cover (1 of 3)",
-				"  hunts.cover.plain In use",
-				"  hunts.cover.velvet 400" .. " [red]",
-				"  hunts.cover.gold Every Hunt done",
-			}, outline(model(fake):List({})))
+			assert.are.same(
+				joined(
+					joined({
+						"Toast style (2 of 3)",
+						"  core.toaststyle.page default",
+						"  core.toaststyle.ripple In use",
+						"  core.toaststyle.lanternglow 400" .. " [red]",
+						"Sound set (1 of 2)",
+						"  core.soundset.driftwood In use",
+						"  core.soundset.gilded 400" .. " [red]",
+						crestHeading(1),
+						"  core.crest.plain In use",
+					}, fishCrestLines()),
+					{
+						"Journal binding (1 of 2)",
+						"  ledger.binding.oak In use",
+						"  ledger.binding.lapis 900" .. " [red]",
+						"Notebook cover (1 of 3)",
+						"  hunts.cover.plain In use",
+						"  hunts.cover.velvet 400" .. " [red]",
+						"  hunts.cover.gold Every Hunt done",
+					}
+				),
+				outline(model(fake):List({}))
+			)
 		end
 	)
 
@@ -312,7 +350,7 @@ describe("The Curio Shop's list", function()
 			"  ledger.binding.lapis 900" .. " [red]",
 		}, outline(model(fake):List({ search = "LaPi" })))
 		assert.are.same({
-			"Bookplate crest (1 of 1)",
+			crestHeading(1),
 			"  core.crest.plain In use",
 			"Notebook cover (1 of 3)",
 			"  hunts.cover.plain In use",
@@ -334,7 +372,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11, #ids("all"))
+		assert.are.equal(11 + #FISH_CREST_SPECIES, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",
@@ -343,13 +381,14 @@ describe("The Curio Shop's list", function()
 			"ledger.binding.oak",
 			"hunts.cover.plain",
 		}, ids("owned"))
-		assert.are.same({
-			"core.toaststyle.lanternglow",
-			"core.soundset.gilded",
-			"ledger.binding.lapis",
-			"hunts.cover.velvet",
-			"hunts.cover.gold",
-		}, ids("notOwned"))
+		local notOwned = { "core.toaststyle.lanternglow", "core.soundset.gilded" }
+		for _, speciesID in ipairs(FISH_CREST_SPECIES) do
+			notOwned[#notOwned + 1] = "core.crest.fish." .. speciesID
+		end
+		assert.are.same(
+			joined(notOwned, { "ledger.binding.lapis", "hunts.cover.velvet", "hunts.cover.gold" }),
+			ids("notOwned")
+		)
 		assert.are.same({
 			"core.toaststyle.lanternglow",
 			"core.soundset.gilded",
@@ -1079,12 +1118,15 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 		function()
 			local fake = crested({ value = true })
 
-			assert.are.same({
-				"Bookplate crest (2 of 3)",
-				"  core.crest.plain In use",
-				"  ledger.crest.elwynn Owned",
-				"  ledger.crest.tanaris Unfished",
-			}, outline(model(fake):List({ category = "Bookplate" })))
+			assert.are.same(
+				joined({
+					crestHeading(2, 2),
+					"  core.crest.plain In use",
+					"  ledger.crest.elwynn Owned",
+					"  ledger.crest.tanaris Unfished",
+				}, fishCrestLines()),
+				outline(model(fake):List({ category = "Bookplate" }))
+			)
 		end
 	)
 
@@ -1216,12 +1258,13 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 
 		local groups = shop:List({ category = "Bookplate" })
 
-		assert.are.same({
-			"Bookplate crest (1 of 1)",
-			"  core.crest.plain In use",
-			"Put away: Module off (Yours to keep)",
-			"  ledger.crest.elwynn Ledger is off",
-		}, outline(groups))
+		assert.are.same(
+			joined(joined({ crestHeading(1), "  core.crest.plain In use" }, fishCrestLines()), {
+				"Put away: Module off (Yours to keep)",
+				"  ledger.crest.elwynn Ledger is off",
+			}),
+			outline(groups)
+		)
 		assert.is_true(groups[2].rows[1].shield)
 		assert.is_nil(shop:Select("ledger.crest.tanaris"))
 	end)

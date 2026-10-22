@@ -332,15 +332,19 @@ describe("each Cast", function()
 				{ record.items[1].itemID, record.items[1].quantity },
 				{ record.items[2].itemID, record.items[2].quantity },
 			})
-			-- Both are Species with a typical length in the generated catalogue, so each Catch has a size (LOG-R65).
+			-- Both are Species with a typical length in the generated catalogue, so each Catch has a size (LOG-R65) and a
+			-- variety (VAR-R1, VAR-R4).
 			assert.is_table(record.items[1].size)
 			assert.is_table(record.items[2].size)
+			assert.is_table(record.items[1].variety)
+			assert.is_table(record.items[2].variety)
 			assert.are.same({
 				catchId = PLAYER_GUID .. "-" .. T .. "-0:1",
 				itemID = 6358,
 				quantity = 1,
 				n = 1,
 				size = record.items[1].size,
+				variety = record.items[1].variety,
 				cast = record,
 			}, fired[3][2])
 			assert.are.same({
@@ -349,6 +353,7 @@ describe("each Cast", function()
 				quantity = 3,
 				n = 2,
 				size = record.items[2].size,
+				variety = record.items[2].variety,
 				cast = record,
 			}, fired[4][2])
 			assert.are.same({ "CastEnded", "caught", record }, { fired[5][1], fired[5][2], fired[5][3] })

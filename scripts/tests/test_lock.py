@@ -12,6 +12,7 @@ from pagle_data.hunts import HUNT_LIST_LUA
 from test_hunts import write_tree
 
 LOCK = "data/hunts/released.lock"
+VARIETIES_LOCK = "data/forever/varieties.lock"
 
 # The fixture list plus an imposed Hunt on the generated class quality.uncommon, so the lock records a generated class
 # beside the fixed one. Its hash, by hand: printf '%s' '{"class":"quality.uncommon","conditions":{"areas":[148]},
@@ -73,8 +74,9 @@ def test_lock_writes_each_hunt_s_hash_retired_date_and_targeted_class_and_nothin
     code, output = run(tmp_path, capsys, "--lock")
     assert code == 0, output
     after = _files(tmp_path)
-    assert set(after) - set(before) == {LOCK}
-    assert {path: content for path, content in after.items() if path != LOCK} == before
+    # DATA-R133: --lock writes the varieties lock beside it (test_varieties.py covers it).
+    assert set(after) - set(before) == {LOCK, VARIETIES_LOCK}
+    assert {path: content for path, content in after.items() if path not in (LOCK, VARIETIES_LOCK)} == before
     assert _entries((tmp_path / LOCK).read_text(encoding="utf-8")) == LOCKED
 
 

@@ -32,6 +32,33 @@ PagleDB = {
 },
 },
 ["projections"] = {
+["varieties"] = {
+["lastSeq"] = 9,
+["logId"] = "8e1d4b7a2c6f0935",
+["fingerprint"] = "0123456789abcdef",
+["rulesVersion"] = 1,
+["projection"] = {
+["bySpecies"] = {
+[6358] = {
+[1] = true,
+[2] = true,
+[3] = true,
+[4] = true,
+[5] = true,
+[6] = true,
+[7] = true,
+[8] = true,
+[9] = true,
+[10] = true,
+},
+[6359] = {
+[10] = true,
+[1] = true,
+[3] = true,
+},
+},
+},
+},
 ["wallet"] = {
 ["lastSeq"] = 9,
 ["logId"] = "8e1d4b7a2c6f0935",

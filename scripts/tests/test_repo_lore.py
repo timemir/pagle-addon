@@ -48,6 +48,7 @@ TITLES = [
     "complete.junk",
     "complete.treasure",
     "complete.trophy",
+    "complete.varieties",
 ]
 # DATA-R107: every lore check, built and on by M7.
 ALL_CHECKS = ["ledger", "core", "hunts", "stats", "tackleboard"]
@@ -178,13 +179,17 @@ def _without(lore_id: str, key: str, checks: tuple[str, ...] = tuple(ALL_CHECKS)
     return _problems_with(lore_id, lambda texts: {name: text for name, text in texts.items() if name != key}, checks)
 
 
-def test_the_manifest_lists_core_s_six_goods() -> None:
-    # DATA-R106, SHOP-R25: [core.good] with fields name and description and the six good IDs, none with a placeholder.
+def test_the_manifest_lists_core_s_goods_then_its_fish_crests() -> None:
+    # DATA-R106, SHOP-R25: [core.good] with fields name and description and Core's sixteen good IDs, none with a
+    # placeholder, then the fish crests (VAR-R12), each allowing {fish} (DATA-R108); [core.variety] is the varieties'
+    # (test_repo_varieties.py).
     manifest = _layers().lore.manifest["core"]
-    assert sorted(manifest) == ["good"]
+    assert sorted(manifest) == ["good", "variety"]
     assert manifest["good"].fields == ("name", "description")
-    assert list(manifest["good"].ids) == CORE_GOODS
-    assert all(not allowed for allowed in manifest["good"].ids.values())
+    ids = list(manifest["good"].ids)
+    assert ids[: len(CORE_GOODS)] == CORE_GOODS
+    assert all(id_.startswith("core.crest.fish.") for id_ in ids[len(CORE_GOODS) :])
+    assert all(not manifest["good"].ids[good] for good in CORE_GOODS)
 
 
 def test_core_s_lore_has_a_name_and_a_description_for_every_good() -> None:
@@ -288,7 +293,7 @@ def _ledger_text(key: str) -> str:
 
 
 def test_the_ledger_s_lore_has_every_title_and_binding() -> None:
-    # DATA-R107 passes (read_layers raises on any problem); LED-R160: a text for each of the 15 titles, a name and a
+    # DATA-R107 passes (read_layers raises on any problem); LED-R160: a text for each of the 16 titles, a name and a
     # description for each of the 10 bindings.
     for title in TITLES:
         assert _ledger_text(f"title.{title}.text").strip()

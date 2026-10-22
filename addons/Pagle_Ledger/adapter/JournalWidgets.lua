@@ -148,12 +148,16 @@ local function textStyle(block)
 		return "print", 15, INK.red
 	elseif block.color == "blue" then
 		return "print", 15, INK.hand
+	elseif block.style == "italic" then
+		-- a variety's words (VAR-R24)
+		return "italic", 16, INK.body
 	end
 	return "print", 15, INK.body
 end
 
--- A kicker: the small capitals over a page's title; or, heading a group, larger small capitals over a rule with an
--- italic note at the right (`value`: a group's "x / N").
+-- A kicker: the small capitals over a page's title, in the kicker's ink or the block's own (`ink`: a variety's rarity,
+-- VAR-R24); or, heading a group, larger small capitals over a rule with an italic note at the right (`value`: a
+-- group's "x / N").
 ---@class LedgerKickerWidget: LedgerJournalWidget
 ---@field note FontString
 ---@field rule Texture
@@ -171,6 +175,9 @@ makers.kicker = function(parent)
 	function widget.Fill(self, block, width, _, draw)
 		local group = draw.group == true
 		ns.JournalRestyle(self.label, "sc", group and 15 or 14, INK.kicker)
+		if block.ink then
+			self.label:SetTextColor(unpack(block.ink))
+		end
 		self.label:SetText(block.text)
 		self.note:SetText(block.value or "")
 		self.note:SetShown(group and block.value ~= nil)
@@ -1141,7 +1148,7 @@ local function spaceBefore(before, block, group)
 		return group and 16 or 8
 	elseif kind == "title" then
 		return prior == "kicker" and 1 or 10
-	elseif (kind == "row" or kind == "leader" or kind == "plinth") and prior == kind then
+	elseif (kind == "row" or kind == "leader" or kind == "plinth" or kind == "variety") and prior == kind then
 		return 0
 	elseif kind == "row" or kind == "leader" then
 		return prior == "kicker" and 6 or 8
@@ -1155,6 +1162,8 @@ local function spaceBefore(before, block, group)
 	return 8
 end
 
+-- The room left under a page's last block.
+local PAGE_END = 8
 -- Kinds a float (an entry's medallion) leaves room beside; any other kind starts under it.
 local BESIDE = { kicker = true, title = true }
 -- Kinds drawn two to a row (the Junk Museum's plinths, Signed As' radios), and the gap between the two.
@@ -1236,7 +1245,8 @@ function ns.NewJournalPage(parent, width, height)
 	return page
 end
 
---- Draws `blocks` down `page`, top to bottom, reusing its widgets and hiding the ones left over. `open` opens a
+--- Draws `blocks` down `page`, top to bottom, reusing its widgets and hiding the ones left over; a block with `foot`
+--- drops to the page's foot when there is room above it (the varieties spread's fish crest, VAR-R24). `open` opens a
 --- place in the Journal; `resetScroll` scrolls back to the top (the page's subject changed, LED-R129), and only a page
 --- drawn again on its own subject plays its widgets' moments of change.
 ---@param page LedgerJournalPage
@@ -1308,6 +1318,12 @@ function ns.DrawJournalPage(page, blocks, open, resetScroll)
 		end
 		widget:SetWidth(width)
 		local height = widget:Fill(block, width, open, draw)
+		if block.foot and not paired and y + height + PAGE_END < page.height then
+			-- at the foot, where there is room for it
+			y = page.height - PAGE_END - height
+			widget:ClearAllPoints()
+			widget:SetPoint("TOPLEFT", x, -y)
+		end
 		widget:SetHeight(math.max(1, height))
 		widget:Show()
 		if widget.floatW then
@@ -1335,7 +1351,7 @@ function ns.DrawJournalPage(page, blocks, open, resetScroll)
 		end
 	end
 	page.drawn = drawn
-	page.contentH = y + 8
+	page.contentH = y + PAGE_END
 	page.content:SetHeight(math.max(1, page.contentH))
 	if resetScroll then
 		Pagle.StopMotion(page.content)

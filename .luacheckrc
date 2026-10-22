@@ -81,8 +81,8 @@ stds.wow = {
 		-- GetWeaponEnchantInfo is in stds.wow_variables. Its clams (QOL-R55, QOL-R57) use the same click, bag and
 		-- name calls.
 		"SetOverrideBindingClick",
-		-- GetItemNameByID is also the Ledger's item names (LED-R97, LED-R126), and RequestLoadItemDataByID the
-		-- Journal's uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID is
+		-- GetItemNameByID is also the Ledger's item names (LED-R97, LED-R126) and Core's fish crests' fish (VAR-R12),
+		-- and RequestLoadItemDataByID the Journal's uncached ones (LED-R126) and those fish (VAR-R12). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID is
 		-- also Stats' item icons (STA-R59). GetItemQualityByID: Stats' Catches by quality for an item Core has no
 		-- quality for (STA-R33).
 		C_Item = {
@@ -165,7 +165,8 @@ stds.wow = {
 		"GetLocale",
 		-- The projections' time budget per frame (LOG-R71, LOG-R72); their frames go through C_Timer.After.
 		"debugprofilestop",
-		-- LuaBitOp, which the client ships: the Simulated Size hash (LOG-R66), in Core's logic/Size.lua (files[] below).
+		-- LuaBitOp, which the client ships: the Simulated Size hash (LOG-R66) and the variety hash (VAR-R3), in Core's
+		-- logic/Size.lua and logic/Variety.lua (files[] below).
 		bit = { fields = { "bxor", "rshift" } },
 		-- The default length unit (LOG-R69): read only through adapter/Host.lua's region, which allows for it missing.
 		-- On the launch re-verification list (roadmap.md › Launch re-verification checklist, item 19).
@@ -345,9 +346,10 @@ exclude_files = {
 -- CORE-R7: adapter/ is the one place an addon talks to the client. logic/ (everything passed in as arguments),
 -- locale/ (string tables) and anything else keep the plain Lua 5.1 default.
 files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
--- LOG-R66 puts the Simulated Size hash in Core's logic/, on the client's `bit` library: the one client name a logic/
--- file reads, as stds.wow inventories it.
+-- LOG-R66 puts the Simulated Size hash in Core's logic/, on the client's `bit` library, and VAR-R5 the variety hash,
+-- its own copy: the one client name a logic/ file reads, as stds.wow inventories it.
 files["addons/Pagle/logic/Size.lua"] = { read_globals = { bit = stds.wow.read_globals.bit } }
+files["addons/Pagle/logic/Variety.lua"] = { read_globals = { bit = stds.wow.read_globals.bit } }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 -- /pagle's name (CORE-R60).
@@ -392,6 +394,8 @@ local helperGlobals = {
 	"breakUpLargeNumbers",
 	"OILY_BLACKMOUTH",
 	"FISHING",
+	"FISH_CREST_SPECIES",
+	"fishCrestRows",
 	"BUILD_ENTRY",
 	"castEntry",
 	"prestigeEntry",

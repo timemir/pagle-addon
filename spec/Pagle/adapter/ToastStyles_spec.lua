@@ -149,6 +149,61 @@ describe("the toast's and Nod's toast style", function()
 		)
 	end)
 
+	it(
+		"lays a catch Nod naming a variety out on each style's strip, sized to its longer line, the variety in its"
+			.. " rarity's ink in every style and the rest in the style's (VAR-R26, ANN-R80)",
+		function()
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+			local bounds = dofile("spec/support/bounds.lua")
+			local loaded = styledCore()
+			local epic = loaded.ns.VARIETY_RARITIES[4]
+			loaded.ns.moments:RaiseCatchNod({
+				rung = "nod",
+				kind = "catch",
+				title = "Firefin Snapper · Phoenix-fin · Monster · 61.4 cm",
+				icon = 6359,
+				cast = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME),
+				sound = false,
+				variety = {
+					name = "Phoenix-fin",
+					rarity = "epic",
+					before = "Firefin Snapper ·",
+					after = "· Monster · 61.4 cm",
+				},
+			})
+			loaded.client.advance(0)
+			local nod = loaded.ns.announcementFrames.nod
+
+			for _, case in ipairs({
+				{ TORN_PAGE, "ToastsLedger", "ink" },
+				{ RIPPLE, "ToastsRipple", "rippleInk" },
+				{ LANTERN, "ToastsLantern", "lanternInk" },
+			}) do
+				equip(loaded, case[1])
+
+				assert.are.same({
+					case[2] .. " nod-strip",
+					ink(loaded, case[3]),
+					{ epic.ink[1], epic.ink[2], epic.ink[3] },
+					ink(loaded, case[3]),
+				}, {
+					lookOf(loaded, nod).page,
+					nod.title.textColor,
+					nod.variety.textColor,
+					nod.tail.textColor,
+				})
+				assert.are.same({}, bounds.overflows(nod))
+				-- The strip holds the whole line: the medallion's 72, the halves, the gem and the name.
+				local line = 72
+				for _, part in ipairs({ nod.title, nod.variety, nod.tail }) do
+					line = line + part:GetStringWidth()
+				end
+				assert.is_true(nod.strip:GetWidth() + 22 >= line)
+				assert.are.equal(nod:GetWidth() - 22, nod.strip:GetWidth())
+			end
+		end
+	)
+
 	it("redraws a toast on screen at once when the style changes, keeping it on screen (ANN-R80, SHOP-R33)", function()
 		local loaded, M = styledCore()
 		raiseStamped(loaded, M)
