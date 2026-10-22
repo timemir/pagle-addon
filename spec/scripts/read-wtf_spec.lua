@@ -181,7 +181,7 @@ describe("scripts/read-wtf.lua", function()
 				"state zones: 2",
 				"  148: rank none, not charted, shown 0",
 				"  1519: rank none, not charted, shown 0",
-				"completion: 18% (2 of 11): Species 2 of 5, junk 0 of 1, treasure 0 of 1, trophy 0 of 2, zones 0 of 2;"
+				"completion: 18% (2 of 11): Species 2 of 5, varieties 0 of 0, junk 0 of 1, treasure 0 of 1, trophy 0 of 2, zones 0 of 2;"
 					.. " Legends 0 of 1",
 				"celebrated: highest level 3, 30 Coins",
 				"celebrated Species: 2 (6303, 6358)",
@@ -205,6 +205,12 @@ describe("scripts/read-wtf.lua", function()
 				"Ledger: 30",
 				"wallet projection: none stored (no build has finished, LOG-R72)",
 			}, section(out, "== Wallet"))
+		end)
+
+		it("says in one line that no variety projection is stored yet (VAR-R10)", function()
+			assert.are.same({
+				"== Varieties (PagleDB.global.projections.varieties): none stored (no build has finished, LOG-R72)",
+			}, section(out, "== Varieties"))
 		end)
 
 		it("prints the waiting Write-up, the cards, and the open summary and pending moments", function()
@@ -250,7 +256,7 @@ describe("scripts/read-wtf.lua", function()
 				"state trophy items: none",
 				"state Uncharted: none",
 				"state zones: none",
-				"completion: 0% (0 of 10): Species 0 of 4, junk 0 of 1, treasure 0 of 1, trophy 0 of 2, zones 0 of 2;"
+				"completion: 0% (0 of 10): Species 0 of 4, varieties 0 of 0, junk 0 of 1, treasure 0 of 1, trophy 0 of 2, zones 0 of 2;"
 					.. " Legends 0 of 1",
 				"celebrated: highest level none, 0 Coins",
 				"celebrated Species: none",
@@ -332,7 +338,7 @@ describe("scripts/read-wtf.lua", function()
 					"  10: rank 0, not charted, shown 0",
 					"  12: rank 3, charted, shown 4",
 					"  40: rank 1, charted, shown 1",
-					"completion: 40% (4 of 10): Species 2 of 4, junk 1 of 1, treasure 0 of 1, trophy 1 of 2, zones 0 of 2;"
+					"completion: 40% (4 of 10): Species 2 of 4, varieties 0 of 0, junk 1 of 1, treasure 0 of 1, trophy 1 of 2, zones 0 of 2;"
 						.. " Legends 0 of 1",
 					"celebrated: highest level 4, 44 Coins",
 					"celebrated Species: 2 (6291, 6303)",
@@ -444,7 +450,7 @@ describe("scripts/read-wtf.lua", function()
 					"state zones: 2",
 					"  12: rank 3, charted, shown 3",
 					"  40: rank 1, charted, shown 1",
-					"completion: 40% (4 of 10): Species 2 of 4, junk 1 of 1, treasure 0 of 1, trophy 1 of 2, zones 0 of 2;"
+					"completion: 40% (4 of 10): Species 2 of 4, varieties 0 of 0, junk 1 of 1, treasure 0 of 1, trophy 1 of 2, zones 0 of 2;"
 						.. " Legends 1 of 1",
 				}, { unpack(ledger, 1, 14) })
 			end
@@ -492,6 +498,23 @@ describe("scripts/read-wtf.lua", function()
 				"purchased: 2 (core.soundset.gilded, core.toaststyle.ripple)",
 			}, section(out, "== Wallet"))
 		end)
+
+		it(
+			"prints Core's variety projection: the Species with all ten and each one's positions caught (VAR-R10)",
+			function()
+				-- The Oily Blackmouth (6358) in all ten, the Firefin Snapper (6359) in positions 1, 3 and 10: 13
+				-- varieties, one Species with all ten (its fish crest's, VAR-R12). The variety rules version 1 is
+				-- Core's (varieties.md › Data), and the projection is current (LOG-R72).
+				assert.are.same({
+					"== Varieties (PagleDB.global.projections.varieties): 1 Species with all ten, 13 varieties caught",
+					"projection: lastSeq 9, logId 8e1d4b7a2c6f0935, fingerprint 0123456789abcdef, rulesVersion 1",
+					"logId: matches PagleLog's",
+					"lastSeq: equals PagleLog's length (9 entries)",
+					"rulesVersion: Core's variety rules, 1",
+					"caught: 2 (6358 10 of 10 (1 2 3 4 5 6 7 8 9 10), 6359 3 of 10 (1 3 10))",
+				}, section(out, "== Varieties"))
+			end
+		)
 
 		it("prints each slot's look, the goods cache and the length unit (SHOP-R26, SHOP-R32, LOG-R69)", function()
 			-- SHOP-R32: a slot with no stored pick shows its default; the slots are the cached goods' and the stored

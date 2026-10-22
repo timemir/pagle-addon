@@ -207,7 +207,7 @@ Core runs every Module's stored projection the same way (ADR 0004).
   
   In `done`, a Module may only raise a Write-up and `summaryOnly` moments ([announcements.md](announcements.md#write-up)).
 - **LOG-R77** The Module's **celebrated set** (the high-water mark of what was already shown) lives in its DB outside `projection`, so a rebuild never clears it. Core never touches it. If the whole Module DB is lost, the celebrated set is lost with it, and the next build counts as a first build (LOG-R76).
-- **LOG-R78** Core runs its own projections (the Field report's, the wallet's spent total and owned goods) with the same machinery.
+- **LOG-R78** Core runs its own projections (the Field report's, the wallet's spent total and owned goods, the varieties caught of [varieties.md](varieties.md) VAR-R10) with the same machinery.
 - **LOG-R79** Pagle's backend folds the Catch log through `logic/` alone ([#223](https://github.com/timemir/wow-fish/issues/223), [#76](https://github.com/timemir/wow-fish/issues/76) item 5). Its projection driver loads each addon's `logic/` files, Core's `data/Catalogue.lua` and Hunts' `data/HuntList.lua`, never `adapter/` or `locale/`, and computes no value itself. So every `logic/` file loads without `ns.L`, each projection can be bound from `logic/`, and every value the backend shows is a function of projection state in `logic/`. The driver reads the log with Core's `ns.OpenCatchLog(log, global, now, getItem)`, `getItem` being the catalogue's `GetItem`: without that fourth argument no Catch has a Simulated Size (LOG-R65). The functions it calls are in [Contracts › The backend's hooks](#the-backends-hooks); a binding hook folds to the same state as the client's projection, with none of its moments, Coins reports or other effects.
 
 ### The diagnostics buffer
@@ -276,7 +276,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.activityXP` | the Activity XP totals ([activity-xp.md](activity-xp.md#data)) |
 | `global.pushed` | `seq`, the last pushed file's `seq` Core accepted ([pushed-content.md](pushed-content.md#data), PUSH-R13); no default |
 | `global.onboarding` | the onboarding state ([onboarding.md](onboarding.md#data)), added by migration step 2 (ONB-R1) |
-| `global.projections.*` | Core's own projections (LOG-R78) |
+| `global.projections.*` | Core's own projections (LOG-R78): `fieldReport` ([field-report.md](field-report.md#data)), `wallet` ([wallet-and-shop.md](wallet-and-shop.md#data)), `varieties` ([varieties.md](varieties.md#data)) |
 | `global.minimap` | the minimap icon's place and shown state (CORE-R53, CORE-R56): `angle`, degrees round the minimap counterclockwise from its right, to 0.1, default `225` (its bottom left); `hide`, default `false` |
 | `profile.reloadReminder` | boolean, the `/reload` reminder (LOG-R86); default `false` |
 | `profile.lengthUnit` | `"cm"`, `"in"`, or `nil` for the region default (LOG-R69); default `nil`. The Defaults button sets it back to `nil` (SET-R13). |
@@ -418,7 +418,7 @@ What the backend's projection driver calls in `logic/` (LOG-R79), by the names a
 
 | Where (`ns` of) | Function | Returns |
 |---|---|---|
-| `Pagle` | `BindCoreProjections(newProjection)` | nothing: calls `newProjection(name, def)` for each of Core's projections by its `PagleDB.global.projections` key: `"wallet"`, whose state has `spent` (SHOP-R11). The Field report's is left out, as its input never leaves the client (LOG-R82). |
+| `Pagle` | `BindCoreProjections(newProjection)` | nothing: calls `newProjection(name, def)` for each of Core's projections by its `PagleDB.global.projections` key: `"wallet"`, whose state has `spent` (SHOP-R11), and `"varieties"`, whose state has `bySpecies` (VAR-R10). The Field report's is left out, as its input never leaves the client (LOG-R82). |
 | `Pagle_Ledger`, `Pagle_Hunts`, `Pagle_Stats`, `Pagle_TackleBoard` | `BindProjections(M)` | the projection `M:NewProjection(def)` bound over a table of the hook's own making. QoL has no projection, so it has no hook. |
 | `Pagle_Ledger`, `Pagle_Hunts`, `Pagle_TackleBoard` | `CoinsEarned(state)` | the lifetime Coins earned, as the Module reports them (SHOP-R2) |
 | `Pagle_Ledger` | `Measures(state)` | `{ anglerLevel = { prestige, level, xp }, ledgerCompletion = { percent, done, total }, speciesCaught, legendsCaught }`: the climb's level and XP (LED-R30–R32), LED-R70's completion, and the Species and distinct Legends caught, removed ones left out (LED-R71, LED-R63) |

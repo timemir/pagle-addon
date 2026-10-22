@@ -244,13 +244,13 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 		end)
 	end)
 
-	it("binds Core's wallet projection and every Module's but QoL's, which has none", function()
+	it("binds Core's wallet and variety projections and every Module's but QoL's, which has none", function()
 		local keys = {}
 		for _, projection in ipairs(host(SERVER_TIME, {}).projections) do
 			keys[#keys + 1] = projection.key
 		end
 
-		assert.are.same({ "Core.wallet", "Ledger", "Hunts", "Stats", "TackleBoard" }, keys)
+		assert.are.same({ "Core.wallet", "Core.varieties", "Ledger", "Hunts", "Stats", "TackleBoard" }, keys)
 	end)
 
 	it("binds each projection with the rules version the client binds it with", function()
@@ -261,6 +261,7 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 			assert.are.equal(module.ns.projection.def.rulesVersion, hosted.byKey[name].def.rulesVersion, name)
 		end
 		assert.are.equal(fake.ns.WALLET_RULES_VERSION, hosted.byKey["Core.wallet"].def.rulesVersion)
+		assert.are.equal(fake.ns.VARIETY_RULES_VERSION, hosted.byKey["Core.varieties"].def.rulesVersion)
 	end)
 
 	describe("folding a log", function()
@@ -273,6 +274,13 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 
 		it("gives the wallet the Coins spent (SHOP-R11)", function()
 			assert.are.equal(120, hosted.byKey["Core.wallet"].state.spent)
+		end)
+
+		it("gives Core's varieties caught as the client's variety projection holds them (VAR-R10)", function()
+			local state = hosted.byKey["Core.varieties"].state
+
+			assert.are.same(fake.global.projections.varieties.projection, state)
+			assert(next(state.bySpecies[FIREFIN]) ~= nil, "the comparison isn't of empty sets")
 		end)
 
 		for _, name in ipairs(PAYING) do

@@ -27,6 +27,8 @@
 --     logic/), the celebrated set checked against the completed goals and titles, and the tracker settings;
 --   - the wallet: each Module's reported Coins (PagleDB.global.coins.earned), the balance (held while negative) and
 --     the wallet projection (PagleDB.global.projections.wallet): spent and purchased;
+--   - Core's variety projection (PagleDB.global.projections.varieties): the Species with all ten caught, the
+--     varieties caught, and each Species' positions;
 --   - Activity XP: each Module's reported total (PagleDB.global.activityXP.earned) and their sum, and whether these
 --     totals and the Coins totals belong to PagleLog's logId;
 --   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
@@ -567,7 +569,7 @@ end
 local function printCompletion(ledger, view, world, getItem)
 	local completion = ledger.LedgerCompletion(world, view, getItem)
 	local parts = {}
-	for i, part in ipairs({ "species", "junk", "treasure", "trophy", "zones" }) do
+	for i, part in ipairs({ "species", "varieties", "junk", "treasure", "trophy", "zones" }) do
 		local name = part == "species" and "Species" or part
 		parts[i] = ("%s %d of %d"):format(name, completion[part].done, completion[part].total)
 	end
@@ -584,7 +586,8 @@ local function printCompletion(ledger, view, world, getItem)
 end
 
 -- The state's lines (ledger.md › Data): its counts with the level from the Ledger's own logic/Progress.lua
--- (LED-R30), its items and Uncharted list, its zones, and, with a world, Ledger completion.
+-- (LED-R30), its items and Uncharted list, its zones, and, with a world, Ledger completion (its varieties part from the
+-- state's varieties, VAR-R20).
 local function printLedgerState(ledger, state, world, getItem, celebrated)
 	local level, into, cost = ledger.ClimbOf(tonumber(state.xp) or 0, tonumber(state.prestige) or 0)
 	local climb = cost and ("Angler Level %d, %d into it, next step %d"):format(level, into, cost)
@@ -595,6 +598,7 @@ local function printLedgerState(ledger, state, world, getItem, celebrated)
 		items = tableOr(state.items),
 		uncharted = tableOr(state.uncharted),
 		zones = tableOr(state.zones),
+		varieties = tableOr(state.varieties),
 	}
 	print(
 		("state: %s, %s, %s XP (%s), %s, %s"):format(
@@ -679,10 +683,17 @@ local function printStored(stored, log)
 end
 
 -- Core's namespace with what M4's lines read of it: its strings (locale/enUS.lua), the size rules and bands
--- (logic/Size.lua, LOG-R65–R68), the wallet (logic/Wallet.lua, SHOP-R12) and the wallet projection's rules version
--- (logic/WalletProjection.lua). Nothing here hashes a Catch ID, so it reads the same without LuaBitOp.
+-- (logic/Size.lua, LOG-R65–R68), the wallet (logic/Wallet.lua, SHOP-R12) and the wallet and variety projections'
+-- rules versions (logic/WalletProjection.lua, logic/VarietyProjection.lua). Nothing here hashes a Catch ID, so it
+-- reads the same without LuaBitOp.
 local function loadCoreRules()
-	return wtf.loadCore({ "locale/enUS.lua", "logic/Size.lua", "logic/Wallet.lua", "logic/WalletProjection.lua" })
+	return wtf.loadCore({
+		"locale/enUS.lua",
+		"logic/Size.lua",
+		"logic/Wallet.lua",
+		"logic/WalletProjection.lua",
+		"logic/VarietyProjection.lua",
+	})
 end
 
 -- The Ledger M4 section's lines (#173): what M4 adds to the Ledger (ledger.md › Data), with the climb, the earned
@@ -2279,6 +2290,53 @@ local function printWallet(pagle, log)
 	printWalletProjection(stored, log, core.WALLET_RULES_VERSION)
 end
 
+-- The varieties of a Species (VAR-R2): ten, in a frozen order.
+local VARIETIES_PER_SPECIES = 10
+
+-- Prints Core's variety projection (varieties.md › Data, VAR-R10), PagleDB.global.projections.varieties: the Species
+-- with all ten caught (what its fish crests read, VAR-R12) and the varieties caught on the heading line, then its
+-- bookkeeping, checked against PagleLog (LOG-R72) and Core's variety rules version, and each Species' positions
+-- caught. One line while none is stored.
+local function printVarieties(pagle, log)
+	local global, why = pagleGlobal(pagle)
+	if not global then
+		print("== Varieties: " .. why)
+		return
+	end
+	local heading = "== Varieties (PagleDB.global.projections.varieties)"
+	local stored = tableOr(global.projections).varieties
+	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
+		print(heading .. ": none stored (no build has finished, LOG-R72)")
+		return
+	end
+	local bySpecies = tableOr(stored.projection.bySpecies)
+	local caught, complete, positions = 0, 0, {}
+	for species, set in pairs(bySpecies) do
+		local list = sortedKeys(tableOr(set))
+		caught = caught + #list
+		complete = complete + (#list >= VARIETIES_PER_SPECIES and 1 or 0)
+		positions[species] = list
+	end
+	print(
+		("%s: %s with all ten, %s caught"):format(
+			heading,
+			count(complete, "Species", "Species"),
+			count(caught, "variety", "varieties")
+		)
+	)
+	printStored(stored, log)
+	local rulesVersion = loadCoreRules().VARIETY_RULES_VERSION
+	if stored.rulesVersion == rulesVersion then
+		print(("rulesVersion: Core's variety rules, %d"):format(rulesVersion))
+	else
+		local text = "rulesVersion: %s DIFFERS from Core's variety rules %d, so Core rebuilds it at login (LOG-R72)"
+		print(text:format(tostring(stored.rulesVersion), rulesVersion))
+	end
+	print("caught: " .. listed(positions, function(species, list)
+		return ("%s %d of %d (%s)"):format(tostring(species), #list, VARIETIES_PER_SPECIES, table.concat(list, " "))
+	end))
+end
+
 -- The line for a store of totals' logId (SHOP-R3, AXP-R3): whether it is PagleLog's, else what login does with it.
 ---@param logId any
 ---@param log table?
@@ -3122,6 +3180,7 @@ local function main(args)
 	printStats(options.account, pagleLog(pagle.saved), facts, options)
 	printBoard(options.account, pagleLog(pagle.saved), facts, options)
 	printWallet(pagle, pagleLog(pagle.saved))
+	printVarieties(pagle, pagleLog(pagle.saved))
 	printActivityXP(pagle, pagleLog(pagle.saved))
 	printLooks(pagle)
 	printDock(pagle)

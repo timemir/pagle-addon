@@ -99,7 +99,7 @@ describe("load timings (#262)", function()
 					-- Each frame's chunk stops within the budget (LOG-R71), so no projection's share of one is over it.
 					assert.is_true(timing.longest <= timings.budget)
 				end
-				assert.are.same({ "fieldReport", "wallet", "Ledger" }, names)
+				assert.are.same({ "fieldReport", "wallet", "varieties", "Ledger" }, names)
 			end
 		)
 	end)

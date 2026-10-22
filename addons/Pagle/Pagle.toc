@@ -65,6 +65,7 @@ logic\Shop.lua
 logic\LookAndFeel.lua
 logic\CoreGoods.lua
 logic\WalletProjection.lua
+logic\VarietyProjection.lua
 logic\Moments.lua
 logic\Summary.lua
 logic\Cards.lua
@@ -119,6 +120,7 @@ adapter\ActivityXP.lua
 adapter\PushedContent.lua
 adapter\Goods.lua
 adapter\WalletProjection.lua
+adapter\VarietyProjection.lua
 adapter\Moments.lua
 adapter\Summary.lua
 adapter\Skins.lua

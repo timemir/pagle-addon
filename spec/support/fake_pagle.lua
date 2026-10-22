@@ -112,6 +112,8 @@
 --- hands over the log's own set at enterWorld's done and on each live purchase (SHOP-R11), replacing it; a spec that
 --- wants its set kept hands it over after enterWorld. A U1 in fake.catchLog's history (helpers.lua's purchaseEntry, or
 --- fake.catchLog:Append) gives the spent total, the purchased set and the balance the way Core's log does.
+---@field varietyRefreshes integer How many times Core's variety projection ran its earned-goods hooks (VAR-R13):
+--- once after enterWorld's done, then once for each live Catch that adds a variety not caught before.
 ---@field shopsOpened { goodID: string?, selected: string? }[] Each time the Curio Shop opened (or Pagle.OpenShop
 --- reached it open), in order: the good Pagle.OpenShop asked for, and the one Core selected (SHOP-R40: a good the
 --- shop shows, a Module off's under Put away; nil for an unknown ID or none asked). While restricted nothing opens and
@@ -1000,6 +1002,20 @@ end)
 part(function(_, _, ns, host)
 	ns.WireWalletProjection(host)
 	ns.StartWalletProjection()
+end)
+
+-- The variety projection (VAR-R10, VAR-R13, LOG-R78), on Core's wiring over fake.catchLog, bound in
+-- fake.global.projections.varieties after the wallet's and ahead of every Module's: Pagle.GetVarietiesCaught reads
+-- what it stored, a fresh set each call (VAR-R11). Each time Core would refresh its earned goods (after enterWorld's
+-- done, and after a live Catch that adds a variety) adds one to fake.varietyRefreshes, through Core's own hook
+-- (ns.OnVarietiesCaught).
+part(function(fake, Pagle, ns, host)
+	fake.varietyRefreshes = 0
+	ns.WireVarietyProjection(host, Pagle)
+	ns.OnVarietiesCaught(function()
+		fake.varietyRefreshes = fake.varietyRefreshes + 1
+	end)
+	ns.StartVarietyProjection()
 end)
 
 -- The live conditions (LOG-R45, LOG-R47). Pagle.GetConditions hands out fake.conditions, read-only, with the
