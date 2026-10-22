@@ -26,6 +26,7 @@ logic\Gear.lua
 logic\Input.lua
 logic\DoubleClick.lua
 logic\NextActionButton.lua
+logic\Guide.lua
 adapter\FieldArt.lua
 adapter\Bindings.lua
 adapter\Items.lua
@@ -41,4 +42,5 @@ adapter\Clams.lua
 adapter\Gear.lua
 adapter\NextActionButton.lua
 adapter\Tour.lua
+adapter\Guide.lua
 adapter\QoL.lua

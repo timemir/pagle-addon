@@ -260,6 +260,9 @@ QoL writes nothing to `PagleLog` or `PagleDB`. It has no projection, so a conten
 | `CastStarted`, `CastEnded`, `FishingStateChanged` | QOL-R22, R25, R61 |
 | `Pagle.RegisterEvent`, `Pagle.RegisterUnitEvent` | every WoW event in QOL-R13, R22, R25, R31, R61, R80 (CORE-R23) |
 | `Pagle.IsAnimationsOn()` | the pinned notes' motion ([UI](#ui)) |
+| `M:RegisterGuideStep(step)` and the step's `nav` (`ChoiceCard`, `BindingField`, `Note`, `Part`, `Panel`) | the Field guide's Casting and Fishing clothes steps (ONB-R21, ONB-R32, ONB-R33), only `if M.RegisterGuideStep then` (ONB-R90) |
+| `M:ShowMarginNote(note)` | `qol.lure`, the first time the next-action button shows Lure (ONB-R52), only `if M.ShowMarginNote then` |
+| `def.guideBlurb` | QoL's line on the guide's What's in the box step (ONB-R91) |
 
 ### Exposed
 

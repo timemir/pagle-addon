@@ -193,7 +193,8 @@
 ---@field guidePages table<string, { left: table, right: table, nav: PagleGuideNav }> Each step's two pages, 442 x
 --- 546 frames on the client fake.load gave the Module, as its build drew them at the step's first showing, and the nav
 --- it got: its moves are Core's, its widgets plain frames that keep what they were made with (a binding field also
---- keeps `greyed` from SetGreyed and counts its Refresh calls in `refreshed`). No client, no pages.
+--- keeps `greyed` from SetGreyed and counts its Refresh calls in `refreshed`; a choice card keeps `chosen` from
+--- SetChosen; a panel marks the frame it's drawn on with `panel` and `panelCap`). No client, no pages.
 ---@field guideHeld boolean Whether Announcements are held for the guide now (ONB-R70).
 ---@field letter PagleLetter The Letter (core/onboarding.md › The Letter), Core's own on its wiring (ns.WireLetter):
 --- M:SetDialogOpen on the handle tells it a Module's dialog is open (ONB-R100), letter:IsDialogOpen() reads it.
@@ -1200,8 +1201,13 @@ part(function(fake, _, ns, host)
 			end
 			return field
 		end,
+		-- SetChosen keeps `chosen` (ONB-R32's current Input, ONB-R35's preset).
 		ChoiceCard = function(parent, title, line, tag)
-			return made("Button", parent, { title = title, line = line, tag = tag })
+			local card = made("Button", parent, { title = title, line = line, tag = tag, chosen = false })
+			function card.SetChosen(self, chosen)
+				self.chosen = chosen
+			end
+			return card
 		end,
 		Note = function(parent, text, x, y, w, target, n)
 			return made("Frame", parent, { text = text, x = x, y = y, w = w, target = target, n = n })
@@ -1210,6 +1216,15 @@ part(function(fake, _, ns, host)
 			local texture = parent:CreateTexture(nil, "ARTWORK")
 			texture.sprite = sprite
 			return texture
+		end,
+		-- The frame it was drawn on keeps `panel` and `panelCap`.
+		Panel = function(frame, sprite, cap)
+			frame.panel, frame.panelCap = sprite, cap
+			return {
+				SetShown = function() end,
+				Hide = function() end,
+				SetVertexColor = function() end,
+			}
 		end,
 	}
 	ns.WireGuide(host, {
