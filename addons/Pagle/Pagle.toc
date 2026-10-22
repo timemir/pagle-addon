@@ -34,6 +34,7 @@ logic\Rsa.lua
 logic\PushedKeys.lua
 logic\PushedPayload.lua
 logic\PushedContent.lua
+logic\AnglersInGame.lua
 logic\Conditions.lua
 logic\NextWindow.lua
 logic\LiveConditions.lua

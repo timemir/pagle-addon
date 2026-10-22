@@ -819,3 +819,19 @@ function pushedContentFixtures()
 	fixtures.testKey = signingFixtures().testKey
 	return fixtures
 end
+
+--- The Companion's two data files as pagle-backend's IGV Contracts gives their examples, byte for byte in
+--- spec/Pagle/fixtures/views/ (core/anglers-in-game.md): `following`, the PagleFollowingData that Following.txt sets
+--- (Ada, one Followed Angler with two GUIDs), and `anglers`, the PagleAnglersData that Anglers.txt sets (one block of
+--- two Anglers and three keys). Each call runs the files afresh, so a spec may change what it gets.
+---@return { following: table, anglers: table }
+function anglerFileExamples()
+	local env = {}
+	for _, file in ipairs({ "Following.txt", "Anglers.txt" }) do
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadstring
+		local chunk = assert(loadstring(readFile("spec/Pagle/fixtures/views/" .. file), "=" .. file))
+		setfenv(chunk, env)
+		chunk()
+	end
+	return { following = env.PagleFollowingData, anglers = env.PagleAnglersData }
+end

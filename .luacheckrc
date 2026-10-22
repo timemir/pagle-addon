@@ -435,6 +435,7 @@ local helperGlobals = {
 	"signingFixtures",
 	"pushedContentFixtures",
 	"toBase64",
+	"anglerFileExamples",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }
