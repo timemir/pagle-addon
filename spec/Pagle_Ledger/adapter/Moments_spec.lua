@@ -98,7 +98,7 @@ end
 
 describe("the Ledger's live moments", function()
 	it(
-		"raise one Announcement for a new Species in a new zone: New Species, +10, no New here (LED-R96, LED-R97)",
+		"raise one Announcement for a new Species in a new zone: New Species, +10, its new variety as a stamp, no New here (LED-R96, LED-R97, VAR-R25)",
 		function()
 			local fake = session()
 
@@ -107,10 +107,12 @@ describe("the Ledger's live moments", function()
 			local announcements = shown(fake)
 			assert.are.equal(1, #announcements)
 			local announcement = announcements[1]
-			assert.are.same(
-				{ "newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10" },
-				momentsOf(announcement)
-			)
+			-- Its Catch is the Yellowtail's Spotted, a Common variety (VAR-R3), caught for the first time.
+			assert.are.same({
+				"newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10",
+				"newVariety New variety · Spotted / nil nil",
+			}, momentsOf(announcement))
+			assert.are.same({ "New variety" }, announcement.stamps)
 			assert.are.same(
 				{ "New Species", "toast", 10 },
 				{ announcement.headline.title, announcement.rung, announcement.coins }
@@ -133,18 +135,20 @@ describe("the Ledger's live moments", function()
 
 		local announcements = shown(fake)
 		assert.are.equal(1, #announcements)
-		-- Its text carries the Catch's size, as a real Catch's does (LED-R81).
-		assert.are.same(
-			{ "newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10" },
-			momentsOf(announcements[1])
-		)
+		-- Its text carries the Catch's size, as a real Catch's does (LED-R81), and its variety rides on it (VAR-R25).
+		assert.are.same({
+			"newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10",
+			"newVariety New variety · Spotted / nil nil",
+		}, momentsOf(announcements[1]))
 	end)
 
 	it(
 		"raise a New here Nod for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",
 		function()
-			-- Caught before with no zone (0), so the two stay below level 2: 520 + 320 XP.
-			local fake, loaded = session({ cast(T0, 0, { MACKEREL }) })
+			-- Caught before with no zone (0), so the two stay below level 2: 520 + 320 XP. That Catch was as long or
+			-- longer, and of the variety the live one is, Spotted (VAR-R3: both Catch IDs' position is 3), so neither a
+			-- size record nor a variety is new.
+			local fake, loaded = session({ cast(T0 + 130, 0, { MACKEREL }) })
 
 			local record = assert(fake.playCast("caught", loot(MACKEREL)))
 
@@ -171,11 +175,18 @@ describe("the Ledger's live moments", function()
 
 		fake.playCast("caught", loot(TROUT))
 
-		assert.are.same({ "newInZone New here / Item 6308 in ... nil" }, momentsOf(shown(fake)[1]))
+		-- Its variety is new, and headlines over the Nod (VAR-R25, ANN-R11).
+		assert.are.same(
+			{ "newVariety New variety · Slate / nil nil", "newInZone New here / Item 6308 in ... nil" },
+			momentsOf(shown(fake)[1])
+		)
 	end)
 
 	it("raise nothing and report no Coins for an ordinary Catch or a got-away Cast (LED-R89, LED-R96)", function()
-		local fake = session()
+		-- The third Catch is the Yellowtail's Tiger-backed (VAR-R3), its first variety, celebrated already (LED-R91),
+		-- so that Catch earns nothing new.
+		local celebrated = { coins = 0, varieties = { [MACKEREL] = { [1] = true } }, logId = LOG_ID }
+		local fake = session(nil, { global = { celebrated = celebrated } })
 		fake.playCast("caught", loot(MACKEREL))
 		-- Its second Catch is longer, a size record (LED-R82); the third, Core's size says, is not.
 		fake.playCast("caught", loot(MACKEREL))
@@ -200,6 +211,7 @@ describe("the Ledger's live moments", function()
 			assert.are.same({
 				"newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10",
 				"zoneRank Zone rank: Visitor / Darkshore 2",
+				"newVariety New variety · Spotted / nil nil",
 			}, momentsOf(shown(fake)[1]))
 			assert.are.same(
 				{ { module = "Ledger", total = 0 }, { module = "Ledger", total = 10 + 2 } },
@@ -235,12 +247,13 @@ describe("the Ledger's live moments", function()
 
 			local record = assert(fake.playCast("caught", loot(unpack(FOUR))))
 
-			-- The level banner, then the four New Species as the Cast's catch Announcement (ANN-R11).
+			-- The level banner, then the four New Species and their four new varieties, none Rare or Epic, as the
+			-- Cast's catch Announcement (ANN-R11, VAR-R25).
 			local announcements = shown(fake)
 			assert.are.equal(2, #announcements)
 			local announcement = announcements[1]
 			assert.are.same({ "levelUp Angler Level 3 / +2 levels 40" }, momentsOf(announcement))
-			assert.are.equal(4, #announcements[2].moments)
+			assert.are.equal(8, #announcements[2].moments)
 			local headline = announcement.headline
 			assert.are.same(
 				{ "banner", 100, "Level 3", record.id },
@@ -278,12 +291,14 @@ describe("the Ledger's live moments", function()
 	it(
 		"raise nothing for an achievement celebrated earlier and earned again after a rebuild dropped it (LED-R91)",
 		function()
-			-- The celebrated set holds what the log no longer earns before login: Skill Milestone 75, the Species and
-			-- level 2, which the two reach again (1,000 + 820 XP).
+			-- The celebrated set holds what the log no longer earns before login: Skill Milestone 75, the Species, its
+			-- Plainback (the variety of the Catch here, VAR-R3) and level 2, which the two reach again (1,000 + 820
+			-- XP).
 			local celebrated = {
 				coins = 30,
 				skill = { [75] = true },
 				species = { [MACKEREL] = true },
+				varieties = { [MACKEREL] = { [7] = true } },
 				levels = { [0] = 2 },
 				logId = LOG_ID,
 			}
@@ -363,7 +378,10 @@ describe("the Ledger's live moments", function()
 		local celebrated = { momentsOf(announcements[1]), momentsOf(announcements[2]) }
 		assert.are.same({
 			{ "levelUp Angler Level 2 / nil 20" },
-			{ "newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10" },
+			{
+				"newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10",
+				"newVariety New variety · Spotted / nil nil",
+			},
 		}, celebrated)
 
 		-- The crash: neither that Cast nor the celebrated set's growth was saved.
