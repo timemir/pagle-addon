@@ -38,6 +38,7 @@ ns.SHOP_INKS = {
 	note = rgb("5A4028"), -- notes on paper
 	cancel = rgb("5A3A1C"), -- Cancel on the bill
 	strike = rgb("C7503A"), -- the red line through a Module off's legend
+	paper = rgb("EADDBE"), -- the description card's paper, inside a ringed progress dot
 }
 
 local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"

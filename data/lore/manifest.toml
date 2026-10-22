@@ -46,6 +46,66 @@ ids = [
 fields = ["name", "description"]
 ids = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
 
+# The Ledger's zone crests (LED-R113), each good ledger.crest.<key> in Core's crest slot, with a name and a
+# description, from the zone crest batch (LED-R162).
+[ledger.crest]
+fields = ["name", "description"]
+ids = [
+	"alterac",
+	"arathi",
+	"badlands",
+	"blackrock",
+	"blastedlands",
+	"burningsteppes",
+	"deadwind",
+	"dunmorogh",
+	"duskwood",
+	"easternplague",
+	"elwynn",
+	"hillsbrad",
+	"hinterlands",
+	"ironforge",
+	"lochmodan",
+	"lordamere",
+	"redridge",
+	"riverglades",
+	"searinggorge",
+	"silverpine",
+	"stormwind",
+	"stranglethorn",
+	"swampofsorrows",
+	"tirisfal",
+	"undercity",
+	"westernplague",
+	"westfall",
+	"wetlands",
+	"ashenvale",
+	"azshara",
+	"barrens",
+	"darkshore",
+	"darnassus",
+	"desolace",
+	"durotar",
+	"dustwallow",
+	"felwood",
+	"feralas",
+	"moonglade",
+	"hyjal",
+	"mulgore",
+	"orgrimmar",
+	"shendralas",
+	"silithus",
+	"stonetalon",
+	"tanaris",
+	"teldrassil",
+	"thousandneedles",
+	"thunderbluff",
+	"ungoro",
+	"veiledsea",
+	"winterspring",
+	"zephras",
+]
+
 # Core's goods (SHOP-R25), each with a name and a description (wallet-and-shop.md › UI), from M4 with Core's lore
 # check (DATA-R107).
 [core.good]
@@ -57,16 +117,6 @@ ids = [
 	"core.soundset.driftwood",
 	"core.soundset.gilded",
 	"core.crest.plain",
-	"core.crest.elwynn",
-	"core.crest.westfall",
-	"core.crest.darkshore",
-	"core.crest.redridge",
-	"core.crest.wetlands",
-	"core.crest.stranglethorn",
-	"core.crest.dustwallow",
-	"core.crest.feralas",
-	"core.crest.tanaris",
-	"core.crest.winterspring",
 ]
 
 # Hunts' goods (HNT-R121), each with a name and a description, from M5 with Hunts' lore check (HNT-R130, DATA-R107).

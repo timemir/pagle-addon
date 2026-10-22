@@ -593,6 +593,9 @@ ns.L = {
 	SLOT_TOAST_STYLE = "Toast style",
 	SLOT_SOUND_SET = "Sound set",
 	SLOT_CREST = "Bookplate crest",
+	-- The crest slot's groups on the Curio Shop's list (SHOP-R27): the zones' crests, then the fishes'.
+	SLOT_CREST_ZONES = "Zone crests",
+	SLOT_CREST_FISH = "Fish crests",
 	-- A sound set's preview on the Curio Shop's stage (wallet-and-shop.md › UI): a button per sound, and a note. » is
 	-- Latin-1: the client's fonts have no ▶ (CORE-R9, #248).
 	PREVIEW_TOAST = "» Toast",

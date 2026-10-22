@@ -21,10 +21,13 @@ local ns = select(2, ...)
 ---@field id string
 ---@field label string
 ---@field category "Announcements"|"Bookplate"
+---@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): the crest slot
+---@field groups? PagleSlotGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
 local ICONS = "Interface\\Icons\\"
--- The crests' own textures (SHOP-R25): each 256 x 256, the shield 120:140 at its full height, centred.
+-- Plain's own texture (SHOP-R25): 256 x 256, the dashed shield 120:140 at its full height, centred. The zone crests'
+-- are the Ledger's (LED-R113).
 local CRESTS = "Interface\\AddOns\\Pagle\\media\\crests\\"
 -- The slots' labels. logic/ also loads without locale/, in the backend's driver (#223), and then they have none.
 local L = ns.L or {}
@@ -41,8 +44,10 @@ ns.CREST_SLOT = "core.crest"
 --- Core's slots and goods at M4 (SHOP-R25), in the order they register and the shop lists them. A toast style's
 --- look is the toast styles' (ANN-R80); a sound set's sounds are ns.SOUND_SETS[soundSet]; a crest's look is its
 --- icon, which the Ledger draws on the Journal's bookplate through Pagle.GetGood (LED-R112). Every good has an icon,
---- the shop's swatch (wallet-and-shop.md › UI). A crest's is Core's own texture, drawn as the shield (SHOP-R25); every
+--- the shop's swatch (wallet-and-shop.md › UI). Plain's is Core's own texture, drawn as the shield (SHOP-R25); every
 --- other is an in-client texture listed in build 70338's ManifestInterfaceData, standing in until Pagle has its own art.
+--- The crest slot holds Plain alone: it is open to earned goods (SHOP-R23), and its zone crests are the Ledger's
+--- (LED-R113), drawn on the stage by the slot's preview.
 ---@type PagleCoreSlot[]
 ns.CORE_GOODS = {
 	{
@@ -73,18 +78,14 @@ ns.CORE_GOODS = {
 		id = ns.CREST_SLOT,
 		label = L.SLOT_CREST,
 		category = "Bookplate",
+		openToEarned = true,
+		-- The Ledger's zone crests and Core's fish crests name these; Plain names none, so it lists first (SHOP-R27).
+		groups = {
+			{ key = "zone", name = L.SLOT_CREST_ZONES },
+			{ key = "fish", name = L.SLOT_CREST_FISH },
+		},
 		goods = {
 			{ id = "core.crest.plain", default = true, icon = CRESTS .. "plain" },
-			{ id = "core.crest.elwynn", tier = 1, icon = CRESTS .. "elwynn" },
-			{ id = "core.crest.westfall", tier = 1, icon = CRESTS .. "westfall" },
-			{ id = "core.crest.darkshore", tier = 1, icon = CRESTS .. "darkshore" },
-			{ id = "core.crest.redridge", tier = 2, icon = CRESTS .. "redridge" },
-			{ id = "core.crest.wetlands", tier = 2, icon = CRESTS .. "wetlands" },
-			{ id = "core.crest.stranglethorn", tier = 2, icon = CRESTS .. "stranglethorn" },
-			{ id = "core.crest.dustwallow", tier = 2, icon = CRESTS .. "dustwallow" },
-			{ id = "core.crest.feralas", tier = 3, icon = CRESTS .. "feralas" },
-			{ id = "core.crest.tanaris", tier = 3, icon = CRESTS .. "tanaris" },
-			{ id = "core.crest.winterspring", tier = 3, icon = CRESTS .. "winterspring" },
 		},
 	},
 }
@@ -116,17 +117,31 @@ local function lore(goodID, field)
 	return nil
 end
 
---- Draws a good's look on the Curio Shop's stage (wallet-and-shop.md › UI): one per slot, by slot ID.
----@alias PagleCorePreview fun(stage: Frame, good: PagleCoreGood)
+--- Draws a good's look on the Curio Shop's stage (wallet-and-shop.md › UI): one per slot, by slot ID. In an open slot
+--- it draws other Modules' goods too, from what they registered (their id and icon).
+---@alias PagleCorePreview fun(stage: Frame, good: PagleCoreGood|PagleRegisteredGood)
 
 --- Registers Core's slots and goods (SHOP-R25), each good named from lore, or by its ID while its key has no text
 --- (graph.md open question 3), with its lore description if any. Login step 1 calls it, once PagleDB is open and
 --- before any Module registers. Each good's `preview` draws with `previews[slotID]`, looked up when the shop draws
---- it, so a slot's drawer may be added after this (the toast styles'); with no `previews`, goods have none.
+--- it, so a slot's drawer may be added after this (the toast styles'); with no `previews`, goods have none. A slot
+--- open to earned goods takes the same drawer as its `preview`, for the goods other Modules add without one (SHOP-R25).
 ---@param previews table<string, PagleCorePreview>?
 function ns.RegisterCoreGoods(previews)
 	for _, slot in ipairs(ns.CORE_GOODS) do
-		ns.RegisterCoreSlot({ id = slot.id, label = slot.label, category = slot.category })
+		ns.RegisterCoreSlot({
+			id = slot.id,
+			label = slot.label,
+			category = slot.category,
+			groups = slot.groups,
+			openToEarned = slot.openToEarned,
+			preview = slot.openToEarned and previews and function(stage, good)
+				local draw = previews[slot.id]
+				if draw then
+					draw(stage, good)
+				end
+			end or nil,
+		})
 		for _, good in ipairs(slot.goods) do
 			ns.RegisterCoreGood({
 				id = good.id,

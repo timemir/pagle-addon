@@ -100,8 +100,8 @@ function ns.ClientSizeText(size)
 end
 
 --- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
---- and numbers, the Angler's logId, the goods' refresh and Core's size text (LED-R81, LED-R89, LED-R90, LED-R93–R95,
---- LED-R97, LED-R111).
+--- and numbers, the Angler's logId, the goods' refresh, Core's size text and a zone's crest (LED-R81, LED-R89, LED-R90,
+--- LED-R93–R95, LED-R97, LED-R111).
 ---@param module PagleModuleHandle
 ---@return LedgerOutlets
 function ns.Outlets(module)
@@ -130,5 +130,9 @@ function ns.Outlets(module)
 			module:RefreshGoods()
 		end,
 		SizeText = ns.ClientSizeText,
+		-- logic/ZoneCrests.lua's, read at each call (LED-R97, LED-R113).
+		ZoneCrest = function(areaID)
+			return ns.ZoneCrestOf(areaID)
+		end,
 	}
 end
