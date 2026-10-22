@@ -255,6 +255,30 @@ describe("the Ledger's M3 live moments", function()
 		end
 	)
 
+	it("add the zone's crest's Earned line to its Zone Master banner, after the title (LED-R97)", function()
+		local fake, loaded = session({ history = EXPERT })
+		local asked = {}
+		loaded.ns.ZoneCrestOf = function(areaID)
+			asked[#asked + 1] = areaID
+			return areaID == COVE and { id = "ledger.crest.cove", name = "The Old Oak" } or nil
+		end
+
+		fake.playCast("caught", loot(LIGHT))
+
+		local master = byKind(shown(fake)[1]).zoneMaster
+		assert.are.equal("Cove. Title: Warden of Cove Waters. Earned: The Old Oak", master.text)
+		assert.are.same({ COVE }, asked)
+	end)
+
+	it("show no Earned line on a Zone Master banner whose zone has no crest (LED-R97)", function()
+		local fake, loaded = session({ history = EXPERT })
+		loaded.ns.ZoneCrestOf = function() end
+
+		fake.playCast("caught", loot(LIGHT))
+
+		assert.are.equal("Cove. Title: Warden of Cove Waters", byKind(shown(fake)[1]).zoneMaster.text)
+	end)
+
 	it(
 		"raise Trophy weight with the 40 to 60 lb ruler for a heavier weight, and ★★★ for the family's heaviest (LED-R61, LED-R97)",
 		function()

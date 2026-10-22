@@ -123,8 +123,8 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 		if after ~= coins then
 			outlets.ReportCoinsEarned(after)
 		end
-		-- A level binding may be earned now (LED-R111, SHOP-R31).
-		if ns.LevelBindingCrossed(peak, ns.PeakLevel(state, total)) then
+		-- A level binding (LED-R111) or a zone crest (LED-R114) may be earned now (SHOP-R31).
+		if ns.LevelBindingCrossed(peak, ns.PeakLevel(state, total)) or ns.ZoneMasterReached(earned) then
 			outlets.RefreshGoods()
 		end
 		-- The shown level and completion change only with an achievement (a level-up, a first Catch, a rank), so an
@@ -191,7 +191,7 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 		done = function(state, info)
 			local celebrated = ns.CelebrateDone(global, state, scratch, info, outlets, lookups)
 			scratch = {}
-			outlets.RefreshGoods() -- the level bindings, never mid-rebuild (LED-R111, SHOP-R31)
+			outlets.RefreshGoods() -- the level bindings and zone crests, never mid-rebuild (LED-R111, LED-R114, SHOP-R31)
 			setSummaryLine(state, celebrated)
 		end,
 	},

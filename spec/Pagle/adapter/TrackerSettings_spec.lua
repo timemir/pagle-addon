@@ -184,8 +184,8 @@ describe("The Trackers page's Defaults", function()
 		hunts:RegisterTracker({ id = "hunts", order = 20, frame = frame })
 		state.shown = false
 		enterWorld(loaded)
-		loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true, ["core.crest.elwynn"] = true })
-		loaded.env.Pagle.SetEquipped("core.crest", "core.crest.elwynn")
+		loaded.ns.goods:SetPurchased({ ["hunts.trackerframe.inkwash"] = true, ["core.soundset.gilded"] = true })
+		loaded.env.Pagle.SetEquipped("core.soundset", "core.soundset.gilded")
 		loaded.client.keysDown.SHIFT = true
 		frame:GetScript("OnDragStart")(frame, "LeftButton")
 		loaded.ns.dockFrame.screenRight, loaded.ns.dockFrame.screenTop = 812, 640
@@ -216,6 +216,6 @@ describe("The Trackers page's Defaults", function()
 
 		loaded.client.settings.defaults(loaded.client.settings.page("Trackers"))
 
-		assert.are.equal("core.crest.elwynn", loaded.env.Pagle.GetEquipped("core.crest"))
+		assert.are.equal("core.soundset.gilded", loaded.env.Pagle.GetEquipped("core.soundset"))
 	end)
 end)

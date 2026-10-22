@@ -394,12 +394,12 @@ describe("the Angler page's bookplate in M4", function()
 
 	it("draws the equipped crest, and none again for the default (LED-R112, SHOP-R25, SHOP-R33)", function()
 		local fake, loaded = anglerPage()
-		fake.setPurchased({ ["core.crest.elwynn"] = true })
+		fake.setPurchased({ ["ledger.crest.elwynn"] = true }) -- owned: a purchased ID is (SHOP-R30)
 
-		assert.is_true(fake.Pagle.SetEquipped("core.crest", "core.crest.elwynn"))
+		assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.elwynn"))
 
 		assert.are.same(
-			{ kind = "crest", rank = 0, icon = "Interface\\AddOns\\Pagle\\media\\crests\\elwynn" },
+			{ kind = "crest", rank = 0, icon = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn" },
 			loaded.ns.journal.pages.left[1]
 		)
 		local crest = loaded.ns.journal.frame.left.drawn.crest[1]
@@ -426,15 +426,15 @@ describe("the Angler page's bookplate in M4", function()
 		"pins the equipped crest's whole shield at the plain frame's lower right, turned 6° clockwise, with its shadow and pin (LED-R146, LED-R112)",
 		function()
 			local fake, loaded = anglerPage()
-			fake.setPurchased({ ["core.crest.westfall"] = true })
-			assert.is_true(fake.Pagle.SetEquipped("core.crest", "core.crest.westfall"))
+			fake.setPurchased({ ["ledger.crest.westfall"] = true }) -- owned: a purchased ID is (SHOP-R30)
+			assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.westfall"))
 
 			local crest = loaded.ns.journal.frame.left.drawn.crest[1]
 			local pin = crest.pin
 			local side, x, y = pinCentre(132, 0.04, 0.02)
 			assert.are.same({ side, side }, { pin:GetSize() })
 			assert.are.same({ "CENTER", crest, "TOPLEFT", x, -y }, anchorOf(pin))
-			local icon = "Interface\\AddOns\\Pagle\\media\\crests\\westfall"
+			local icon = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\westfall"
 			assert.are.same({ icon, nil, nil }, { pin.shield.texture, pin.shield.texCoord, pin.shield.masks })
 			assert.are.equal(-math.rad(6), pin.shield.rotation)
 			-- the shadow: the same texture, half black, offset (1, -2.5), turned with it
@@ -450,8 +450,8 @@ describe("the Angler page's bookplate in M4", function()
 
 	it("pins it 12% past a Prestige frame and 16% up, clear of the wreath and ribbon (LED-R146)", function()
 		local fake, loaded = anglerPage(fixturePlus({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
-		fake.setPurchased({ ["core.crest.winterspring"] = true })
-		assert.is_true(fake.Pagle.SetEquipped("core.crest", "core.crest.winterspring"))
+		fake.setPurchased({ ["ledger.crest.winterspring"] = true }) -- owned: a purchased ID is (SHOP-R30)
+		assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.winterspring"))
 
 		local crest = loaded.ns.journal.frame.left.drawn.crest[1]
 		local side, x, y = pinCentre(150, 0.12, 0.16)
