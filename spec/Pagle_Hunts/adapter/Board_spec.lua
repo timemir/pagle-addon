@@ -19,6 +19,18 @@ local function loggedIn()
 	return loaded, fake, board
 end
 
+-- The texts shown on the board's two papers, the left page's then the right's: what the renderers wrote, without the
+-- leather's (the "?" beside the close, ONB-R59).
+local function pageTexts(board)
+	local texts = {}
+	for _, side in ipairs({ "left", "right" }) do
+		for _, text in ipairs(shownTexts(board.frame.paperFrames[side])) do
+			texts[#texts + 1] = text
+		end
+	end
+	return texts
+end
+
 -- A renderer that writes `label` and the place it was given on its page, once per page frame, and counts its draws.
 local function writer(label, draws)
 	return function(page, place)
@@ -118,7 +130,7 @@ describe("the Hunts board's pages, by the page router (HNT-R61, HNT-R66, HNT-R67
 
 		assert.are.same({ "timeline", "entry" }, { draws[1].label, draws[2].label })
 		assert.are_not.equal(draws[1].page, draws[2].page)
-		assert.are.same({ "timeline board - -", "entry board - -" }, shownTexts(board.frame))
+		assert.are.same({ "timeline board - -", "entry board - -" }, pageTexts(board))
 	end)
 
 	it("leaves a page blank in a mode with no renderer for it", function()
@@ -130,9 +142,9 @@ describe("the Hunts board's pages, by the page router (HNT-R61, HNT-R66, HNT-R67
 
 		board:Open({ mode = "set", set = "fixture_dusk" })
 
-		assert.are.same({ "set page set fixture_dusk -" }, shownTexts(board.frame))
+		assert.are.same({ "set page set fixture_dusk -" }, pageTexts(board))
 		board:Open({ mode = "retired", set = "fixture_dusk", hunt = "fixture_sunscale" })
-		assert.are.same({}, shownTexts(board.frame))
+		assert.are.same({}, pageTexts(board))
 	end)
 
 	it("gives each set's page its own frames, so a page can turn from one to the next", function()
@@ -146,7 +158,7 @@ describe("the Hunts board's pages, by the page router (HNT-R61, HNT-R66, HNT-R67
 
 		assert.are_not.equal(draws[1].page, draws[2].page)
 		assert.are.equal(draws[1].page, draws[3].page)
-		assert.are.same({ "set page set fixture_dusk -" }, shownTexts(board.frame))
+		assert.are.same({ "set page set fixture_dusk -" }, pageTexts(board))
 	end)
 
 	it("gives a renderer registered on two modes a frame for each", function()
@@ -160,7 +172,7 @@ describe("the Hunts board's pages, by the page router (HNT-R61, HNT-R66, HNT-R67
 		board:Open({ mode = "set", set = "fixture_wagers" })
 
 		assert.are_not.equal(draws[1].page, draws[2].page)
-		assert.are.same({ "timeline set fixture_wagers -" }, shownTexts(board.frame))
+		assert.are.same({ "timeline set fixture_wagers -" }, pageTexts(board))
 	end)
 
 	it("opens on the Board mode each time, whatever mode it closed on (HNT-R67)", function()

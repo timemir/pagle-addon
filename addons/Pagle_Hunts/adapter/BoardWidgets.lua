@@ -628,6 +628,47 @@ function ns.NewBoardClose(parent)
 	return close
 end
 
+--- The "?" beside the close (ONB-R59), in the board's own wax: the plain seal of red wax at the close's size with a
+--- gilt "?" pressed into it, the close's glow under the mouse, the wax darker while pressed, and its tooltip in the
+--- board's GameTooltip. Its click is adapter/Look.lua's.
+---@class BoardHelpButton: Button
+---@field wax Texture
+---@field glow Texture
+---@field label FontString
+
+-- The "?"'s size (the close's) and the wax's shade while pressed.
+local HELP_SIZE, HELP_PRESSED = 26, 0.78
+
+---@param parent Frame
+---@param tooltip string the tooltip's words
+---@return BoardHelpButton
+function ns.NewBoardHelp(parent, tooltip)
+	local help = CreateFrame("Button", nil, parent) --[[@as BoardHelpButton]]
+	help:SetSize(HELP_SIZE, HELP_SIZE)
+	help.wax = ns.ArtSprite(help, "Book", "seal", "ARTWORK", 0, HELP_SIZE)
+	help.wax:SetAllPoints()
+	help.label = ns.BoardText(help, ns.ArtFont("gilt", 17, true), LOOK.sealText)
+	help.label:SetJustifyH("CENTER")
+	help.label:SetPoint("CENTER", 0, 1)
+	help.label:SetText(ns.L.LOOK_HELP)
+	help.glow = ns.ArtSprite(help, "Book", "close-highlight", "HIGHLIGHT", 0, HELP_SIZE)
+	help.glow:SetAllPoints()
+	help.glow:SetBlendMode("ADD")
+	help:SetScript("OnMouseDown", function(self)
+		self.wax:SetVertexColor(HELP_PRESSED, HELP_PRESSED, HELP_PRESSED)
+	end)
+	help:SetScript("OnMouseUp", function(self)
+		self.wax:SetVertexColor(1, 1, 1)
+	end)
+	help:SetScript("OnEnter", function(self)
+		ns.BoardTooltip(self, { tooltip })
+	end)
+	help:SetScript("OnLeave", function()
+		GameTooltip:Hide()
+	end)
+	return help
+end
+
 --- A grosgrain set ribbon (HNT-R61): one white ribbon tinted to its colour, with a gold running stitch over it, hanging
 --- from under the leather's foot, its words in gilt near its swallowtail end. The chosen one hangs longer and brighter;
 --- one under the mouse brightens. adapter/Sets.lua lays them along the leather's ribbons anchor.
