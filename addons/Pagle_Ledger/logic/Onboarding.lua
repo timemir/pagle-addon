@@ -6,8 +6,8 @@ end
 local ns = select(2, ...)
 
 -- The Ledger's parts of onboarding (core/onboarding.md) as data: the Field guide's Your Ledger step's live parts
--- (ONB-R36) and the red pencil of a Margin note's term (Contracts). Pure logic, everything passed in (CORE-R7);
--- adapter/Onboarding.lua draws them and makes Core's calls.
+-- (ONB-R36), the Fish Journal's First look (ONB-R57) and the red pencil of a Margin note's term (Contracts). Pure
+-- logic, everything passed in (CORE-R7); adapter/Onboarding.lua draws them and makes Core's calls.
 
 --- `text` with each *term* in the red pencil, as a Margin note's text marks it (Contracts: |cff9a2a1a…|r).
 ---@param text string
@@ -119,3 +119,30 @@ function ns.GuideLedgerPage(view)
 	end
 	return page
 end
+
+--- One note of a First look (Contracts' PagleFirstLook): its text's key in ns.L, with *terms* for Core's red pencil,
+--- the part of the Journal it points at (adapter/Onboarding.lua finds it on the pages shown), where it sits from the
+--- book's top left, and how wide.
+---@class LedgerFirstLookNote
+---@field text string
+---@field target "tile"|"xpBar"|"notes"|"search"|"unfished"
+---@field x number
+---@field y number
+---@field w number
+
+--- The Fish Journal's First look (ONB-R57; board "First look · the Fish Journal", the probe's World.lua): five notes,
+--- verbatim, in the margins beside the 920-unit book (ONB-R58), at the canvas's places from the book's top left. Its
+--- title and texts are keys of ns.L, read as it registers, as logic/ loads without locale/ (#223).
+---@type { id: string, title: string, width: number, notes: LedgerFirstLookNote[] }
+ns.JOURNAL_FIRST_LOOK = {
+	id = "ledger.journal",
+	title = "FIRST_LOOK_TITLE",
+	width = 920,
+	notes = {
+		{ text = "FIRST_LOOK_TILE", target = "tile", x = -244, y = 146, w = 176 },
+		{ text = "FIRST_LOOK_XP_BAR", target = "xpBar", x = 994, y = 66, w = 176 },
+		{ text = "FIRST_LOOK_NOTES", target = "notes", x = 994, y = 246, w = 176 },
+		{ text = "FIRST_LOOK_SEARCH", target = "search", x = 994, y = -72, w = 176 },
+		{ text = "FIRST_LOOK_UNFISHED", target = "unfished", x = -244, y = 416, w = 176 },
+	},
+}

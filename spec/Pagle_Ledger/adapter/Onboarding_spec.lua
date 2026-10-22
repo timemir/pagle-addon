@@ -226,6 +226,127 @@ describe("the Ledger's onboarding", function()
 		end)
 	end)
 
+	describe("the Fish Journal's First look (ONB-R55–R59)", function()
+		-- The fixture with a Catch in Elwynn, so Home has a fished tile, unfished (dashed) ones and Notes to self.
+		local function fished()
+			return ledger({ castRecord({ time = T0, zone = ELWYNN, items = { MACKEREL } }) })
+		end
+
+		-- Each set shown, as "<id> <title>" and its notes' texts.
+		local function looks(fake)
+			local list = {}
+			for i, look in ipairs(fake.looksShown) do
+				local texts = {}
+				for j, note in ipairs(look.notes) do
+					texts[j] = note.n .. " " .. note.text
+				end
+				list[i] = { look.id .. " " .. look.title, texts }
+			end
+			return list
+		end
+
+		local ALL = {
+			"1 Every water you fish gets a tile. Its rank climbs from *Visitor* to *Master*.",
+			"2 Your Angler Level. The *blue* stretch is Fresh Water: bonus XP after a break.",
+			"3 Notes to self: what’s closest to done. They rewrite themselves as you fish.",
+			"4 Find a water or a fish. A fish you haven’t caught is *never named*.",
+			"5 Dashed tiles are waters you haven’t fished yet, with the skill they ask.",
+		}
+
+		it("is registered before the book first shows, its window the book once made (ONB-R56)", function()
+			local fake, loaded = fished()
+
+			assert.is_nil(fake.firstLooks:Window("ledger.journal"))
+			loaded.ns.journal:Toggle()
+			assert.are.equal(loaded.ns.journal.frame, fake.firstLooks:Window("ledger.journal"))
+		end)
+
+		it("shows its five notes the first time the Journal opens, and not again (ONB-R55, ONB-R57)", function()
+			local fake, loaded = fished()
+			local journal = loaded.ns.journal
+
+			journal:Toggle()
+
+			assert.are.same({ { "ledger.journal the Fish Journal", ALL } }, looks(fake))
+			-- each note points at its part of Home: the fished tile's rank, the ink bar's blue part, the first Note
+			-- to self, the search slip and an unfished tile's line
+			local frame = journal.frame
+			local set = loaded.ns.JournalFirstLook(journal)
+			local tile = set.notes[1].target().parent
+			assert.are.same({ false, tile.line }, { tile.dashed, set.notes[1].target() })
+			assert.are.equal(frame.left.drawn.tiles[1], tile.parent)
+			assert.are.equal(frame.right.drawn.xpBar[1].bar.fresh, set.notes[2].target())
+			assert.are.equal(frame.right.drawn.link[1].label, set.notes[3].target())
+			assert.are.equal(frame.search, set.notes[4].target())
+			assert.is_true(set.notes[5].target().parent.dashed)
+
+			journal:Close()
+			journal:Toggle()
+			assert.are.equal(1, #fake.looksShown)
+		end)
+
+		it(
+			'has a "?" in the Journal\'s wax beside the close that shows the set again, and hides it while it shows '
+				.. "(ONB-R59)",
+			function()
+				local fake, loaded = fished()
+				local journal = loaded.ns.journal
+				journal:Toggle()
+				fake.firstLooks:Hide()
+				local look = journal.frame.look
+
+				assert.is_true(look:IsShown())
+				assert.are.equal("?", look.label:GetText())
+				look.scripts.OnEnter(look)
+				assert.are.equal("Show the notes for this page again", loaded.env.GameTooltip.text)
+
+				look:Click()
+				assert.are.equal(2, #fake.looksShown)
+				assert.are.equal("ledger.journal", fake.firstLooks:Showing().id)
+
+				look:Click()
+				assert.is_nil(fake.firstLooks:Showing())
+			end
+		)
+
+		it("shows again even with Margin notes off (ONB-R59)", function()
+			local fake, loaded = fished()
+			fake.global.onboarding.notesOn = false
+			local journal = loaded.ns.journal
+
+			journal:Toggle()
+			assert.are.same({}, fake.looksShown)
+
+			journal.frame.look:Click()
+			assert.are.equal(1, #fake.looksShown)
+		end)
+
+		it('off Home, the "?" shows only the search slip\'s note; the rest drop (ONB-R56)', function()
+			local fake, loaded = fished()
+			local journal = loaded.ns.journal
+			journal:Open("zone", { zone = ELWYNN })
+			fake.firstLooks:Hide()
+
+			journal.frame.look:Click()
+
+			assert.are.same({ "1 " .. ALL[4]:sub(3) }, looks(fake)[#fake.looksShown][2])
+		end)
+
+		it('has no "?" and no set on a Core without First looks (ONB-R90)', function()
+			local fake = newFakePagle()
+			fake.ns.ModuleHandle.RegisterFirstLook = nil
+			fake.profile.announcements.motion = false
+			local loaded = fake.load("Pagle_Ledger")
+			fake.login()
+			fake.enterWorld()
+
+			loaded.ns.journal:Toggle()
+
+			assert.is_false(loaded.ns.journal.frame.look:IsShown())
+			assert.are.same({}, fake.looksShown)
+		end)
+	end)
+
 	it(
 		'carries "A new Species for your Ledger." on New Species, so the first toast\'s coin note reads "A new '
 			.. 'Species for your Ledger. The coin is…" (ONB-R53, ONB-R52)',

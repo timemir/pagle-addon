@@ -7,12 +7,14 @@ local ns = select(2, ...)
 
 -- The Ledger's parts of onboarding on the client (core/onboarding.md): the Field guide's Your Ledger step (ONB-R36),
 -- drawn with the Ledger's own art (the Angler page's crest holding the likeness, its fonts and inks) and the guide's
--- parts through `nav.Part`; and, as the Fish Journal opens, the First evening list's `journal` item (ONB-R61) and the
--- `ledger.fresh` Margin note (ONB-R52). Margin notes are Core's frames (ONB-R92); every call is made only when Core
--- has it (ONB-R90), so the Ledger runs on a Core without them.
+-- parts through `nav.Part`; and, as the Fish Journal opens, the First evening list's `journal` item (ONB-R61), the
+-- `ledger.fresh` Margin note (ONB-R52) and the Journal's First look (ONB-R57), with its "?" (ONB-R59). Margin notes,
+-- First looks and the coach bar are Core's frames (ONB-R92); every call is made only when Core has it (ONB-R90), so
+-- the Ledger runs on a Core without them.
 
 local L = ns.L
 local INK = ns.JOURNAL_INK
+local LOOK = ns.JOURNAL_FIRST_LOOK
 
 -- The guide's page: its text column (30 to 412) and the kit's inks the Journal has no name for.
 local W = 382
@@ -305,9 +307,117 @@ function ns.JournalFreshPart(journal)
 	return nil
 end
 
+-- Home's first tile, on its left page now, that is fished (`dashed` false) or not (`dashed` true): its rank line.
+---@param journal LedgerJournal
+---@param dashed boolean
+---@return Region?
+local function tileLine(journal, dashed)
+	local tiles = drawnOf(journal, "left", "tiles")[1] --[[@as LedgerTilesWidget?]]
+	for _, tile in ipairs(tiles and tiles.tiles or {}) do
+		if tile:IsShown() and (tile.dashed == true) == dashed then
+			return tile.line
+		end
+	end
+	return nil
+end
+
+-- What each First look note points at on the Journal's pages now (ONB-R57). Nil for a part not shown, so its note
+-- drops (ONB-R56).
+---@type table<string, fun(journal: LedgerJournal): Region?>
+local TARGETS = {
+	tile = function(journal)
+		return tileLine(journal, false)
+	end,
+	xpBar = function(journal)
+		local widget = xpBarOf(journal)
+		return ns.JournalFreshPart(journal) or widget and widget.bar
+	end,
+	notes = function(journal)
+		-- Notes to self are Home's right page's only links, or its one hand-written "Go fishing!" (LED-R133)
+		local note = drawnOf(journal, "right", "link")[1] or drawnOf(journal, "right", "text")[1]
+		return note and (note.label or note)
+	end,
+	search = function(journal)
+		local search = journal.frame and journal.frame.search
+		return search and search:IsShown() and search or nil
+	end,
+	unfished = function(journal)
+		return tileLine(journal, true)
+	end,
+}
+
+-- Whether the Journal is on Home with its pages written (not updating, LED-R122).
+---@param journal LedgerJournal
+---@return boolean
+local function onHome(journal)
+	return journal.pages ~= nil and not journal.pages.updating and journal.router:Place().id == ns.JOURNAL_HOME
+end
+
+--- The Fish Journal's First look (ONB-R56, ONB-R57) as Core takes it: its window the book (nil until first made),
+--- its five notes, each pointing at its part of the pages shown when the set shows (on Home only, but the search
+--- slip, which every spread has), and how a tour opens it: on Home.
+---@param journal LedgerJournal
+---@return table
+function ns.JournalFirstLook(journal)
+	local notes = {}
+	for i, note in ipairs(LOOK.notes) do
+		local find = TARGETS[note.target]
+		notes[i] = {
+			text = L[note.text],
+			target = function()
+				if note.target ~= "search" and not onHome(journal) then
+					return nil
+				end
+				return find(journal)
+			end,
+			x = note.x,
+			y = note.y,
+			w = note.w,
+		}
+	end
+	return {
+		id = LOOK.id,
+		window = function()
+			return journal.frame
+		end,
+		title = L[LOOK.title],
+		notes = notes,
+		open = function()
+			journal:OpenPlace(ns.JournalPlace.home())
+		end,
+	}
+end
+
+--- Whether the Fish Journal's First look is registered with Core (ns.RegisterJournalFirstLook).
+---@type boolean
+ns.journalLook = false
+
+--- Registers the Fish Journal's First look (ONB-R56, ONB-R57), from OnInitialize, before the book first shows. Called
+--- only when `M.RegisterFirstLook` exists (ONB-R90).
+---@param M PagleModuleHandle
+function ns.RegisterJournalFirstLook(M)
+	M:RegisterFirstLook(ns.JournalFirstLook(ns.journal))
+	ns.journalLook = true
+end
+
+--- The book was made (adapter/Journal.lua): its "?" shows beside the wax close while its First look is registered
+--- with a Core that shows it; pressing it shows the set again, seen or not, or hides it while it shows (ONB-R59).
+---@param frame LedgerJournalFrame
+function ns.AttachJournalLook(frame)
+	local M = ns.Module
+	if not (ns.journalLook and M and M.ShowFirstLook) then
+		return
+	end
+	frame.look.action = function()
+		M:ShowFirstLook(LOOK.id, true)
+	end
+	frame.look:Show()
+end
+
 --- The Fish Journal has opened, drawn (adapter/Journal.lua): the First evening list's `journal` item (ONB-R61); with
 --- its pages written, the `ledger.fresh` note on the ink bar's blue part while it shows (ONB-R52, once per account,
---- Core's). Each only on a Core that has it (ONB-R90).
+--- Core's); then its First look (ONB-R55: Core shows it once, and only with a part to point at). Each only on a Core
+--- that has it (ONB-R90).
 ---@param journal LedgerJournal
 function ns.JournalOpened(journal)
 	local M = ns.Module
@@ -323,5 +433,8 @@ function ns.JournalOpened(journal)
 	local fresh = ns.JournalFreshPart(journal)
 	if fresh and M.ShowMarginNote then
 		M:ShowMarginNote({ id = "ledger.fresh", text = ns.RedPencilTerms(L.NOTE_FRESH), target = fresh })
+	end
+	if ns.journalLook and M.ShowFirstLook then
+		M:ShowFirstLook(LOOK.id)
 	end
 end

@@ -1,5 +1,6 @@
 -- The Ledger's onboarding as data, with no Core (core/onboarding.md): the Your Ledger step's live parts (ONB-R36,
--- LED-R40, LED-R146) through ns.GuideLedgerPage, and the red pencil a Margin note's term is written in (Contracts).
+-- LED-R40, LED-R146) through ns.GuideLedgerPage, the Fish Journal's First look (ONB-R57) as ns.JOURNAL_FIRST_LOOK,
+-- and the red pencil a Margin note's term is written in (Contracts).
 
 describe("the Ledger's onboarding", function()
 	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
@@ -151,6 +152,33 @@ describe("the Ledger's onboarding", function()
 
 		it("holds the crest's prestige rank (LED-R146, LED-R34)", function()
 			assert.are.equal(3, page(stateWith({}, { prestige = 3 }), 1).prestige)
+		end)
+	end)
+
+	describe("the Fish Journal's First look (ONB-R57)", function()
+		it("is five notes, verbatim from the canvas, each with the part it points at", function()
+			local look = ns.JOURNAL_FIRST_LOOK
+
+			assert.are.equal("ledger.journal", look.id)
+			assert.are.equal("the Fish Journal", ns.L[look.title])
+			local notes = {}
+			for i, note in ipairs(look.notes) do
+				notes[i] = { note.target, ns.L[note.text] }
+			end
+			assert.are.same({
+				{ "tile", "Every water you fish gets a tile. Its rank climbs from *Visitor* to *Master*." },
+				{ "xpBar", "Your Angler Level. The *blue* stretch is Fresh Water: bonus XP after a break." },
+				{ "notes", "Notes to self: what’s closest to done. They rewrite themselves as you fish." },
+				{ "search", "Find a water or a fish. A fish you haven’t caught is *never named*." },
+				{ "unfished", "Dashed tiles are waters you haven’t fished yet, with the skill they ask." },
+			}, notes)
+		end)
+
+		it("sits its notes in the margins beside the book, from its top left, 176 wide (ONB-R58)", function()
+			for _, note in ipairs(ns.JOURNAL_FIRST_LOOK.notes) do
+				assert.are.equal(176, note.w)
+				assert.is_true(note.x < 0 or note.x > ns.JOURNAL_FIRST_LOOK.width)
+			end
 		end)
 	end)
 

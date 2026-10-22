@@ -319,6 +319,8 @@ local function build(journal)
 	frame.close:SetScript("OnClick", function()
 		journal:Close()
 	end)
+	-- its "?", beside the close, while it has a First look (adapter/Onboarding.lua, ONB-R59)
+	ns.AttachJournalLook(frame)
 	table.insert(UISpecialFrames, FRAME_NAME)
 	-- Opening: the book's sound, and it fades in (0.16 s). Closing however it closes (Esc, the close button, a
 	-- toggle) hides the Prestige confirm (LED-R33, adapter/Prestige.lua), with the closing sound unless Close played

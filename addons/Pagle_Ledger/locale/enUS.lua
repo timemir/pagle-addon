@@ -455,6 +455,16 @@ ns.L = {
 	-- The Margin note the first time the Journal opens with Fresh Water (ONB-R52), verbatim; *term* in red.
 	NOTE_FRESH = "You’ve been away, so your next Catches earn bonus XP. That’s *Fresh Water*, the blue in your bar. A "
 		.. "rest is never a penalty.",
+	-- The Fish Journal's First look (ONB-R57), verbatim from the kit (board 12): the coach bar's window, its five
+	-- notes, *terms* in red; and the "?" beside the wax close that shows them again (ONB-R59).
+	FIRST_LOOK_TITLE = "the Fish Journal",
+	FIRST_LOOK_TILE = "Every water you fish gets a tile. Its rank climbs from *Visitor* to *Master*.",
+	FIRST_LOOK_XP_BAR = "Your Angler Level. The *blue* stretch is Fresh Water: bonus XP after a break.",
+	FIRST_LOOK_NOTES = "Notes to self: what’s closest to done. They rewrite themselves as you fish.",
+	FIRST_LOOK_SEARCH = "Find a water or a fish. A fish you haven’t caught is *never named*.",
+	FIRST_LOOK_UNFISHED = "Dashed tiles are waters you haven’t fished yet, with the skill they ask.",
+	FIRST_LOOK_BUTTON = "?",
+	FIRST_LOOK_AGAIN = "Show the notes for this page again",
 	-- The Journal's tour stops' labels, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.
 	TOUR_HOME = "the Fish Journal: Home",
 	TOUR_ZONE = "the Fish Journal: the most-fished zone, its most-caught Species open",

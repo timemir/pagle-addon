@@ -42,6 +42,10 @@ function ns.Ledger.OnInitialize()
 	if ns.Module.RegisterGuideStep then
 		ns.RegisterGuideLedgerStep(ns.Module)
 	end
+	-- The Fish Journal's First look (ONB-R56, ONB-R57), before the book first shows, on a Core that has it.
+	if ns.Module.RegisterFirstLook then
+		ns.RegisterJournalFirstLook(ns.Module)
+	end
 	-- The Journal's stops for `/pagle dev tour` (CORE-R65), on a Core that has the call.
 	if ns.Module.RegisterTourStop then
 		ns.RegisterTourStops(ns.Module)
