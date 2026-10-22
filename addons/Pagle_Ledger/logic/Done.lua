@@ -236,7 +236,7 @@ local function firstBuild(celebrated, state, coinsBefore, outlets, lookups)
 	local L = ns.L
 	local lines = { withPrestige(L.WRITE_UP_LEVEL:format(ns.ShownLevel(state, celebrated)), state.prestige) }
 	addLines(lines, stateCounts(celebrated, state, lookups), outlets)
-	addCoinsLine(lines, state.coins - coinsBefore, outlets)
+	addCoinsLine(lines, ns.CoinsEarned(state) - coinsBefore, outlets)
 	local heading = state.casts == 1 and L.WRITE_UP_FIRST_BUILD_ONE or L.WRITE_UP_FIRST_BUILD_OTHER
 	outlets.RaiseWriteUp({ heading = heading:format(outlets.FormatNumber(state.casts)), lines = lines })
 end
@@ -385,14 +385,16 @@ local function catchUp(celebrated, state, scratch, coinsBefore, outlets, lookups
 		lines[1] = withPrestige(L.WRITE_UP_LEVEL:format(shown), rank)
 	end
 	addLines(lines, counts, outlets)
-	addCoinsLine(lines, state.coins - coinsBefore, outlets)
+	addCoinsLine(lines, ns.CoinsEarned(state) - coinsBefore, outlets)
 	if #lines > 0 then
 		outlets.RaiseWriteUp({ heading = L.WRITE_UP_WHILE_OFF, lines = lines })
 	end
 end
 
 --- The projection's done (LED-R93), up to the summary line, which the def sets: the celebrated set emptied for a new
---- log, then the first build's, rebuild's or catch-up's celebration, then the Coins total kept and reported (LED-R89).
+--- log, then the first build's, rebuild's or catch-up's celebration, with the levels the climb's Activity XP brings
+--- (LED-R39: a catch-up's Write-up counts them, else they are summary-only, even when no entry was applied), then the
+--- Coins total, its Activity XP levels' included, kept and reported (LED-R89, LED-R38).
 ---@param global table PagleLedgerDB's global section
 ---@param state LedgerState
 ---@param scratch LedgerAchievement[] what the replayed or rebuilt entries earned (LED-R98)
@@ -413,16 +415,24 @@ function ns.CelebrateDone(global, state, scratch, info, outlets, lookups)
 	local coinsBefore = celebrated.coins
 	if first then
 		firstBuild(celebrated, state, coinsBefore, outlets, lookups)
-	elseif info.rebuilt then
-		-- Raised as live, but summary-only: no pop-up (LED-R191, ANN-R63).
-		for _, moment in ipairs((celebrateScratch(celebrated, state, scratch, outlets, lookups))) do
-			moment.summaryOnly = true
-			outlets.RaiseMoment(moment)
+	else
+		-- The levels the climb's Activity XP brings above its own, which the entries applied here never counted
+		-- (LED-R39): with the rebuild's or catch-up's, or alone when only a total changed while it updated.
+		for _, achievement in ipairs(ns.ActivityLevelUps(state)) do
+			scratch[#scratch + 1] = achievement
 		end
-	elseif info.replayed > 0 then
-		catchUp(celebrated, state, scratch, coinsBefore, outlets, lookups)
+		if info.replayed > 0 and not info.rebuilt then
+			catchUp(celebrated, state, scratch, coinsBefore, outlets, lookups)
+		else
+			-- Raised as live, but summary-only: no pop-up (LED-R191, ANN-R63).
+			for _, moment in ipairs((celebrateScratch(celebrated, state, scratch, outlets, lookups))) do
+				moment.summaryOnly = true
+				outlets.RaiseMoment(moment)
+			end
+		end
 	end
-	celebrated.coins = state.coins
-	outlets.ReportCoinsEarned(state.coins)
+	local coins = ns.CoinsEarned(state)
+	celebrated.coins = coins
+	outlets.ReportCoinsEarned(coins)
 	return celebrated
 end

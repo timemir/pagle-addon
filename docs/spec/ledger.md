@@ -349,7 +349,9 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 ---@class LedgerState
 ---@field casts integer                 -- caught and got-away Casts applied (LED-R93)
 ---@field catches integer               -- lifetime Catches (LED-R42)
----@field xp integer                    -- the climb's XP (LED-R31)
+---@field xp integer                    -- the climb's own XP: the Ledger's own since the latest Prestige, plus the carried XP (LED-R31)
+---@field lifetimeXP integer            -- the Ledger's own XP, all told (LED-R150)
+---@field prestigeActivityXP integer    -- the latest Prestige entry's `activityXP`, 0 before the first (LED-R37)
 ---@field prestige integer              -- prestige rank
 ---@field fresh number                  -- Fresh Water F after the last Catch (LED-R22)
 ---@field lastCatch? integer            -- time of the last Catch
@@ -487,7 +489,7 @@ The Ledger adds no rows to any Settings page.
 | Fresh Water: multiplier / rate / cap (also its value before the first Catch) | ×2 / 10 per hour / 300 | LED-R22 |
 | Level cap | 60 | LED-R30 |
 | Level step cost | 1,000 + 80 × L | LED-R30 |
-| Prestige climb cost factor | 1 (0.5 before #279) | LED-R30 |
+| Prestige climb cost factor | 1 in every climb (0.5 after any Prestige before #279, `LEDGER_RULES_VERSION` 5) | LED-R30 |
 | Prestiges with an emblem | 10 | LED-R34 |
 | Skill Milestones | 75 / 150 / 225 / 300 | LED-R40 |
 | Catch Milestones | 1,000 / 5,000 / 10,000 / 25,000 / 50,000 | LED-R42 |
@@ -507,7 +509,7 @@ The Ledger adds no rows to any Settings page.
 | Forecast in hours up to | 48 h | LED-R127 |
 | Write-up title lines | 3 | LED-R94 |
 | Continent name map (continent ID → uiMapID) | 0 → 1415 (Eastern Kingdoms), 1 → 1414 (Kalimdor); every other ContinentID is "Other waters" | LED-R126, LED-R130 |
-| `LEDGER_RULES_VERSION` | 4 (1 in M2, 2 in M3, 3 in M4, then +1 per change) | LED-R2, LED-R4 |
+| `LEDGER_RULES_VERSION` | 5 (1 in M2, 2 in M3, 3 in M4, then +1 per change) | LED-R2, LED-R4 |
 
 ## Edge cases
 

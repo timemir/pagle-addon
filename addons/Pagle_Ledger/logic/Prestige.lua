@@ -44,23 +44,30 @@ function ns.PrestigeName(rank)
 	return mark.stars > 0 and L.MASTER_PRESTIGE_TITLE:format(mark.stars) or L.PRESTIGE_TITLE:format(mark.emblem)
 end
 
---- Applies a Prestige entry (LED-R32), in any mode: the climb's XP becomes the carried XP (0 if the climb hadn't
---- reached 60), the prestige rank the entry's, and it earns a `prestige` achievement with its 100 Coins (LED-R88),
---- no `cast`. Nothing else in the state changes: nothing unlocked is taken away (LED-R92). The fold adds the new
---- climb's level-ups after it, as the entry's (LED-R97).
+--- Applies a Prestige entry (LED-R32, LED-R37), in any mode. The ending climb's XP is its own and its Activity XP, the
+--- gap between the entry's `activityXP` and the previous Prestige entry's (0 before the first; an old P1 without one
+--- counts as 0, AXP-R5), never below 0: the Coins of the levels that gap adds above its own level go into the state,
+--- which the snapshots fix now (LED-R88). The climb's XP becomes the carried XP (0 if the climb hadn't reached 60),
+--- the latest snapshot the entry's, the prestige rank the entry's, and it earns a `prestige` achievement with its 100
+--- Coins, no `cast`. Nothing else in the state changes: nothing unlocked is taken away (LED-R92). The fold adds the
+--- new climb's level-ups after it, as the entry's (LED-R97).
 ---@param state LedgerState
 ---@param record PaglePrestige
 ---@param earned LedgerAchievement[]
 function ns.ApplyPrestige(state, record, earned)
-	local level, into = ns.ClimbOf(state.xp, state.prestige)
+	local snapshot = record.activityXP or 0
+	local gap = math.max(0, snapshot - (state.prestigeActivityXP or 0))
+	local level, into = ns.ClimbOf(state.xp + gap)
+	state.coins = state.coins + ns.LEVEL_UP_COINS * (level - ns.OwnLevel(state))
 	state.xp = level >= ns.LEVEL_CAP and into or 0
+	state.prestigeActivityXP = snapshot
 	state.prestige = record.rank
 	state.coins = state.coins + ns.PRESTIGE_COINS
 	earned[#earned + 1] = { kind = "prestige", coins = ns.PRESTIGE_COINS, rank = record.rank }
 end
 
---- Whether the Angler may Prestige (LED-R33): only while the computed level of the climb is 60 and the projection
---- isn't updating (no state while it is).
+--- Whether the Angler may Prestige (LED-R33): only while the computed level of the climb, its Activity XP included
+--- (LED-R38), is 60 and the projection isn't updating (no state while it is).
 ---@param state LedgerState?
 ---@param updating boolean
 ---@return boolean

@@ -27,14 +27,40 @@ function ns.Ledger.OnInitialize()
 	--- The world index (LED-R10): built here, where the catalogue is ready (CORE-R10), held in memory, never stored.
 	ns.world = lookups.world
 
+	-- The climb's Activity XP comes from Core's total, read whenever the level is worked out (LED-R37, AXP-R6).
+	ns.SetActivityXPSource(function()
+		return Pagle.GetActivityXP().total
+	end)
+
 	local sizeRulesVersion = Pagle.SIZE_RULES_VERSION -- the Ledger stores lengths (LED-R2, LOG-R68)
 	--- The Ledger's projection (LED-R2): Core catches it up or rebuilds it after login and hands it each new entry
 	--- live (LOG-R71–R74). While `:IsUpdating()`, the Ledger shows nothing (LOG-R74). The Fish Journal redraws after
 	--- its live entries and its done (LED-R122, LED-R123).
 	--- The fold reads the world index and Core's MatchesConditions as lookups (LED-R3, LED-R45).
-	ns.projection = ns.Module:NewProjection(
-		ns.WithJournalRedraws(ns.ProjectionDef(ns.db.global, lookups, ns.Outlets(ns.Module), sizeRulesVersion))
-	)
+	local def, activityXPChanged = ns.ProjectionDef(ns.db.global, lookups, ns.Outlets(ns.Module), sizeRulesVersion)
+	ns.projection = ns.Module:NewProjection(ns.WithJournalRedraws(def))
+	-- Another Module's Activity XP changed the climb (LED-R39): the shown level is worked out again, then the Journal
+	-- redraws. While the projection updates, its done does it instead; one that already ran (the entries appended
+	-- meanwhile still applying) leaves it to the next frame's try, which finds nothing new when done did it.
+	local retrying = false
+	local function workOutLevel(entry)
+		local projection = ns.projection
+		if projection:IsUpdating() then
+			if not retrying then
+				retrying = true
+				C_Timer.After(0, function()
+					retrying = false
+					workOutLevel(nil)
+				end)
+			end
+			return
+		end
+		activityXPChanged(projection:GetState() --[[@as LedgerState]], entry)
+		ns.journal:QueueDraw()
+	end
+	Pagle.RegisterCallback(ns.Ledger, "ActivityXPChanged", function(_, entry)
+		workOutLevel(entry)
+	end)
 	-- The Journal bindings (LED-R110): after the projection, which their isEarned reads (LED-R111).
 	ns.RegisterBindings(ns.Module)
 	-- The Field guide's Your Ledger step (ONB-R21, ONB-R36), before ModulesChanged, on a Core that has the call

@@ -18,11 +18,15 @@ local ns = select(2, ...)
 ---@alias LedgerDate { year: integer, month: integer, day: integer }
 
 --- The Ledger's projection state (ledger.md › Data, LedgerState), holding what M2, M3 and M4's catches fill. Levels,
---- XP into the level and Fresh Water shown are computed from it (logic/Progress.lua), never stored.
+--- XP into the level and Fresh Water shown are computed from it (logic/Progress.lua), never stored, and so is the
+--- current climb's Activity XP, read from Core (LED-R37).
 ---@class LedgerState
 ---@field casts integer                       -- caught and got-away Casts applied (LED-R93)
 ---@field catches integer                     -- lifetime Catches (LED-R42)
----@field xp integer                          -- the climb's XP (LED-R31)
+---@field xp integer                          -- the climb's own XP: the Ledger's own since the latest Prestige
+--- and the carried XP (LED-R31); the climb's Activity XP adds to it (logic/Progress.lua)
+---@field lifetimeXP integer                  -- the Ledger's own XP, all told (LED-R20, LED-R150)
+---@field prestigeActivityXP integer          -- the latest Prestige entry's `activityXP`, 0 before the first (LED-R37)
 ---@field prestige integer                    -- prestige rank: 0 until the first Prestige (LED-R32)
 ---@field fresh number                        -- Fresh Water F after the last Catch (LED-R22)
 ---@field lastCatch? integer                  -- server time of the last Catch's Cast
@@ -98,11 +102,12 @@ local ns = select(2, ...)
 --- The Ledger's fold (LED-R3).
 ---@class LedgerFold
 ---@field reset fun(): LedgerState
----@field apply fun(state: LedgerState, record: PagleRecord, mode: PagleApplyMode, earned: LedgerAchievement[]?): LedgerAchievement[]
+---@field apply fun(state: LedgerState, record: PagleRecord, mode: PagleApplyMode, earned: LedgerAchievement[]?, activity: integer?): LedgerAchievement[]
 
 --- The Ledger's rules version (LED-R2, LED-R4, Tunables): 1 in M2, 2 in M3, 3 in M4, then +1 per change: 4 when ★
---- moved to a Species' 5th Catch (LED-R45).
-ns.LEDGER_RULES_VERSION = 4
+--- moved to a Species' 5th Catch (LED-R45), 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32,
+--- LED-R37).
+ns.LEDGER_RULES_VERSION = 5
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
 --- Catch XP, before Fresh Water (LED-R20); one Fresh Water doubles it (LED-R22), as the ink XP bar shows (LED-R145).
@@ -220,6 +225,8 @@ local function reset()
 		casts = 0,
 		catches = 0,
 		xp = 0,
+		lifetimeXP = 0,
+		prestigeActivityXP = 0,
 		prestige = 0,
 		fresh = ns.FRESH_WATER_CAP,
 		coins = 0,
@@ -389,18 +396,23 @@ function ns.NewLedgerFold(lookups)
 		end
 	end
 
+	-- `activity` is Core's Activity XP total when a live entry is applied (LED-R37), so its levelUp counts the climb's
+	-- Activity XP (LED-R38); nil (0) in a replay or rebuild, whose done adds the levels it brings (logic/Done.lua). The
+	-- state never reads it: it holds the Coins of the climb's own levels only (LED-R88), the same in every mode.
 	---@param state LedgerState
 	---@param record PagleRecord
 	---@param mode PagleApplyMode
 	---@param earned LedgerAchievement[]?
+	---@param activity integer? Core's Activity XP total
 	---@return LedgerAchievement[]
-	local function apply(state, record, mode, earned) -- luacheck: no unused args (mode: the same in every mode, LED-R3)
+	local function apply(state, record, mode, earned, activity) -- luacheck: no unused args (mode: the same in every mode, LED-R3)
 		earned = earned or {}
 		local kind = record.kind
 		if kind ~= "cast" and kind ~= "skill" and kind ~= "prestige" then
 			return earned
 		end
-		local before = ns.Level(state)
+		activity = activity or 0
+		local before, own, xp = ns.Level(state, activity), ns.OwnLevel(state), state.xp
 		if kind == "cast" then
 			applyCast(state, record --[[@as PagleCast]], earned)
 		elseif kind == "skill" then
@@ -408,17 +420,20 @@ function ns.NewLedgerFold(lookups)
 		else
 			-- A new climb from level 1: its levels from the carried XP are the Prestige's (LED-R32).
 			ns.ApplyPrestige(state, record --[[@as PaglePrestige]], earned)
-			before = 1
+			before, own, xp = 1, 1, state.xp
 		end
-		-- One levelUp per entry, however many levels it raised (LED-R97), with 20 Coins each (LED-R88).
-		local after = ns.Level(state)
+		-- The Ledger's own XP, all told (LED-R150): a Prestige's carried XP is no new XP.
+		state.lifetimeXP = state.lifetimeXP + state.xp - xp
+		-- 20 Coins for each level the climb's own XP reaches (LED-R88); those its Activity XP adds are worked out.
+		state.coins = state.coins + ns.LEVEL_UP_COINS * (ns.OwnLevel(state) - own)
+		-- One levelUp per entry, however many levels it raised (LED-R97), with 20 Coins each for its moment.
+		local after = ns.Level(state, activity)
 		if after > before then
 			local levels = {}
 			for level = before + 1, after do
 				levels[#levels + 1] = level
 			end
 			local coins = ns.LEVEL_UP_COINS * #levels
-			state.coins = state.coins + coins
 			earned[#earned + 1] =
 				{ kind = "levelUp", cast = kind == "cast" and record.id or nil, coins = coins, levels = levels }
 			-- The climb reaching 60 makes Prestige ready, once per climb, with that climb's rank (LED-R97).
