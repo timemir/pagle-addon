@@ -193,6 +193,8 @@ end
 
 --- "Prestige" on the card (LED-R33): checks again and, while Prestige is still allowed, closes the card, plays the
 --- banner and calls `M:RecordPrestige()`; the Angler page then turns forward to the new rank. Otherwise only closes it.
+--- With the Prestige it saves each source's Activity XP total as it stood, in `PagleLedgerDB.global.prestigeSources`,
+--- for "Where your XP came from"'s split of the new climb (LED-R150); display only, never rebuilt.
 function ns.ConfirmPrestige()
 	local allowed = ns.CanPrestige()
 	ns.HidePrestigeConfirm()
@@ -201,5 +203,7 @@ function ns.ConfirmPrestige()
 	end
 	ns.JournalSound("banner")
 	ns.journal:TurnNext("fwd")
-	ns.Module:RecordPrestige()
+	local sources = Pagle.GetActivityXP().bySource
+	local record = ns.Module:RecordPrestige()
+	ns.db.global.prestigeSources = ns.PrestigeSources(sources, record)
 end

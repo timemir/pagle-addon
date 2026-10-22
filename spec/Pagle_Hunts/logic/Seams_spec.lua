@@ -8,11 +8,22 @@ describe("Hunts' seams", function()
 	-- The projection (logic/Projection.lua) binds both; adapter/Projection_spec.lua follows them through its builds.
 	describe("the projection's state before its first build (HNT-R136, LOG-R74)", function()
 		it(
-			"is an empty HuntsState: no Casts, no Coins, no Hunt progress and no set titles (hunts.md › Data)",
+			"is an empty HuntsState: no Casts, Coins, XP, runs, Hunt progress or set titles (hunts.md › Data)",
 			function()
 				local ns = hunts.load().ns
 
-				assert.are.same({ casts = 0, coins = 0, hunts = {}, sets = {} }, ns.State())
+				assert.are.same({
+					casts = 0,
+					coins = 0,
+					xp = 0,
+					runs = {},
+					defs = {},
+					settled = 0,
+					ladder = {},
+					hunts = {},
+					sets = {},
+					hours = {},
+				}, ns.State())
 			end
 		)
 

@@ -1,0 +1,31 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 139: 139 (Eastern Plaguelands), high band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   eastern_plaguelands_redgill_haul: Haul, species.any, 85.7% of Catches: tiers 115 / 310 / 615, 45 / 121 / 239 min
+#   eastern_plaguelands_redgill_salmon: Named fish, species 13889 (Raw Whitescale Salmon), 32.7% of Catches: tiers 45 / 120 / 235, 46 / 122 / 239 min
+#   eastern_plaguelands_redgill_redgill: Named fish, species 13758 (Raw Redgill), 10.1% of Catches: tiers 14 / 35 / 75, 46 / 115 / 247 min
+
+[event]
+id = "eastern_plaguelands_redgill"
+zones = [139]
+tags = ["lake"]
+name = "Plagued Lakes"
+note = "The lakes of the dead east are grim to look at and generous underneath."
+
+[[hunt]]
+id = "eastern_plaguelands_redgill_haul"
+class = "species.any"
+tiers = [115, 310, 615]
+name = "An Eastern Basket"
+
+[[hunt]]
+id = "eastern_plaguelands_redgill_salmon"
+species = 13889
+tiers = [45, 120, 235]
+name = "Whitescale Run"
+
+[[hunt]]
+id = "eastern_plaguelands_redgill_redgill"
+species = 13758
+tiers = [14, 35, 75]
+name = "Redgill Run"

@@ -1,8 +1,8 @@
 -- The Journal's Angler page on FakePagle (LED-R146, LED-R40, LED-R41, LED-R71): the bookplate over a fixture log of
 -- two characters' Catches on a hand-made catalogue, with the crest (LED-R112), the active title (LED-R77), the
 -- Prestige emblem and button (LED-R33, LED-R34) and the next Catch Milestone (LED-R42); Hands on the Rod from
--- Pagle.GetAngler().skill, the Skill Milestones, Signed As (LED-R75–R77, SET-R70) and the Bindings (LED-R110,
--- SHOP-R32, SHOP-R40).
+-- Pagle.GetAngler().skill, the Skill Milestones, Signed As (LED-R75–R77, SET-R70), the Bindings (LED-R110,
+-- SHOP-R32, SHOP-R40) and Where your XP came from (LED-R150), with the ink XP bar's tooltip (LED-R145).
 
 local MACKEREL, NIGHTFISH, BOOT, CHEST, TROPHY = 6303, 13759, 2, 3, 13901
 local ELWYNN, DUSKWOOD = 12, 10
@@ -67,9 +67,10 @@ local FIXTURE = {
 
 -- A Ledger on a fake over a catalogue (the one above by default) and `log` (the fixture by default), with
 -- PagleLedgerDB `saved` if given (its celebrated set kept: the log's logId is "log"), logged in, in the world (unless
--- `updating`: the projection still building) and on the Angler page.
+-- `updating`: the projection still building) and on the Angler page. `modules` registers other Modules before the
+-- Ledger loads (openJournal's).
 ---@param log table[]?
----@param options { catalogue: table?, saved: table?, updating: boolean? }?
+---@param options { catalogue: table?, saved: table?, updating: boolean?, modules: fun(fake: FakePagle)? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function anglerPage(log, options)
@@ -82,6 +83,7 @@ local function anglerPage(log, options)
 		globals = { PagleLedgerDB = options.saved },
 		building = options.updating,
 		place = { "angler" },
+		modules = options.modules,
 	})
 end
 
@@ -528,7 +530,7 @@ describe("the Angler page's Signed As", function()
 		end
 	)
 
-	it("comes after Hands on the Rod and Milestones, and before Bindings (LED-R146)", function()
+	it("comes after Hands on the Rod and Milestones, and before Bindings (LED-R146, LED-R150)", function()
 		local _, loaded = anglerPage()
 		local titles = {}
 		for _, block in ipairs(loaded.ns.journal.pages.right) do
@@ -537,7 +539,10 @@ describe("the Angler page's Signed As", function()
 			end
 		end
 
-		assert.are.same({ "Hands on the Rod", "Milestones", "Signed As", "Bindings" }, titles)
+		assert.are.same(
+			{ "Hands on the Rod", "Milestones", "Signed As", "Bindings", "Where your XP came from" },
+			titles
+		)
 	end)
 end)
 
@@ -621,5 +626,209 @@ describe("the Angler page's Bindings", function()
 		assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
 
 		assert.are.same({ "Tanned Hide", "In use" }, lines(loaded)[2])
+	end)
+end)
+
+-- The roster's Module order (CORE-R41), for the stub paying Modules.
+local ORDER = { Hunts = 20, TackleBoard = 40 }
+
+-- Registers stub paying Modules on `fake` (AXP-R2), as Hunts and the Tackle Board are, each reporting its lifetime
+-- Activity XP in `totals` from its projection's done, in the order of `names`. Returns their handles by name, whose
+-- ReportXPEarned reports a new total.
+---@param fake FakePagle
+---@param names string[]
+---@param totals table<string, integer>
+---@return table<string, table>
+local function payingModules(fake, names, totals)
+	local handles = {}
+	for _, name in ipairs(names) do
+		local handle = fake.Pagle.RegisterModule({ name = name, title = name, order = ORDER[name] })
+		handle:NewProjection({
+			db = {},
+			rulesVersion = 1,
+			reset = function()
+				return {}
+			end,
+			apply = function() end,
+			done = function()
+				handle:ReportXPEarned(totals[name])
+			end,
+		})
+		handles[name] = handle
+	end
+	return handles
+end
+
+-- "Where your XP came from"'s lines: each as { name, this climb, all told, struck through }.
+---@param loaded LoadedAddon
+---@return table[]
+local function sourceLines(loaded)
+	local list = {}
+	for _, block in ipairs(section(loaded, "Where your XP came from")) do
+		list[#list + 1] = { block.text or "", block.value, block.total, block.off == true }
+	end
+	return list
+end
+
+-- The ink XP bar widget drawn on page `side`.
+---@param loaded LoadedAddon
+---@param side "left"|"right"
+---@return table
+local function xpBarWidget(loaded, side)
+	return assert(loaded.ns.journal.frame[side].drawn.xpBar[1], "no XP bar drawn")
+end
+
+describe("the Angler page's Where your XP came from", function()
+	-- The fixture's own XP: 4,510, all in this first climb (the bookplate spec above works it out).
+	it(
+		"lists This climb and All told after Bindings: the Ledger's own XP, then Hunts and the Tackle Board in Core's Module order (LED-R150)",
+		function()
+			local _, loaded = anglerPage(nil, {
+				modules = function(fake)
+					-- the Tackle Board registered first: the page still lists Hunts before it
+					payingModules(fake, { "TackleBoard", "Hunts" }, { Hunts = 1500, TackleBoard = 900 })
+				end,
+			})
+
+			assert.are.same({
+				{ "", "This climb", "All told", false },
+				{ "Catches and discoveries", "4,510", "4,510", false },
+				{ "Hunts", "1,500", "1,500", false },
+				{ "Tackle Board", "900", "900", false },
+			}, sourceLines(loaded))
+			local right = loaded.ns.journal.pages.right
+			assert.are.equal("Where your XP came from", right[#right - 4].text)
+			-- drawn: the line's name and both figures, not struck through
+			local drawn = loaded.ns.journal.frame.right.drawn.xpSource
+			assert.are.same({ "Hunts", "1,500", "1,500" }, shownTexts(drawn[3]))
+			assert.is_false(drawn[3].strikes[1]:IsShown())
+		end
+	)
+
+	it("shows only the Ledger's own line with no source reported yet (LED-R150)", function()
+		local _, loaded = anglerPage()
+
+		assert.are.same({
+			{ "", "This climb", "All told", false },
+			{ "Catches and discoveries", "4,510", "4,510", false },
+		}, sourceLines(loaded))
+	end)
+
+	it(
+		"greys a disabled Tackle Board's line and strikes it through in red ink, and still counts it in the climb (LED-R150, AXP-R90)",
+		function()
+			local fake, loaded = anglerPage(nil, {
+				modules = function(fake)
+					payingModules(fake, { "Hunts" }, { Hunts = 1500 })
+				end,
+			})
+			-- The Tackle Board is off this session: its last total stays (AXP-R3).
+			fake.setActivityXP("TackleBoard", 900)
+			loaded.ns.journal:Draw()
+
+			assert.are.same({ "Tackle Board", "900", "900", true }, sourceLines(loaded)[4])
+			local drawn = loaded.ns.journal.frame.right.drawn.xpSource[4]
+			for _, strike in ipairs(drawn.strikes) do
+				assert.is_true(strike:IsShown())
+			end
+			-- it still counts: 4,510 + 1,500 + 900 = 6,910 XP is level 6, 710 into its 1,480 step (LED-R30, LED-R37)
+			assert.are.equal("710 of 1,480.", blockOfKind(loaded.ns.journal.pages.left, "xpBar").bar.text)
+		end
+	)
+
+	it("redraws when another Module's Activity XP changes while the Journal is open (LED-R150, LED-R39)", function()
+		local handles
+		local _, loaded = anglerPage(nil, {
+			modules = function(fake)
+				handles = payingModules(fake, { "Hunts" }, { Hunts = 1500 })
+			end,
+		})
+
+		handles.Hunts:ReportXPEarned(1650)
+		loaded.client.runTimers()
+
+		assert.are.same({ "Hunts", "1,650", "1,650", false }, sourceLines(loaded)[3])
+	end)
+
+	it("shows this climb's lines in the ink XP bar's tooltip, by source, roughly (LED-R145, LED-R150)", function()
+		local _, loaded = anglerPage(nil, {
+			modules = function(fake)
+				payingModules(fake, { "Hunts", "TackleBoard" }, { Hunts = 1500, TackleBoard = 900 })
+			end,
+		})
+		local bar = xpBarWidget(loaded, "left")
+
+		bar.scripts.OnEnter(bar)
+
+		assert.are.same({
+			"Where this climb's XP came from",
+			"Catches and discoveries",
+			"4,510",
+			"Hunts",
+			"1,500",
+			"Tackle Board",
+			"900",
+			"by source, roughly",
+		}, loaded.client.tooltipLines())
+		bar.scripts.OnLeave(bar)
+		assert.are.same({}, loaded.client.tooltipLines())
+	end)
+
+	it("shows the tooltip on Home's ink XP bar too (LED-R145, LED-R132)", function()
+		local _, loaded = openJournal({
+			catalogue = catalogue(),
+			characters = characters(),
+			log = FIXTURE,
+			modules = function(fake)
+				payingModules(fake, { "Hunts" }, { Hunts = 1500 })
+			end,
+		})
+		local bar = xpBarWidget(loaded, "right")
+
+		bar.scripts.OnEnter(bar)
+
+		assert.are.same({
+			"Where this climb's XP came from",
+			"Catches and discoveries",
+			"4,510",
+			"Hunts",
+			"1,500",
+			"by source, roughly",
+		}, loaded.client.tooltipLines())
+	end)
+
+	it("reads Updating while the projection updates, and the section once it is built (LED-R150, LED-R122)", function()
+		local fake, loaded = anglerPage(nil, {
+			updating = true,
+			modules = function(fake)
+				payingModules(fake, { "Hunts" }, { Hunts = 1500 })
+			end,
+		})
+
+		assert.is_true(loaded.ns.journal.pages.updating)
+		assert.is_true(loaded.ns.journal.frame.updatingView:IsShown())
+
+		fake.enterWorld()
+
+		assert.are.same({ "Hunts", "1,500", "1,500", false }, sourceLines(loaded)[3])
+	end)
+
+	it("keeps its words on the parchment at the default size, large totals too (LED-R150, CORE-R65)", function()
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+		local bounds = dofile("spec/support/bounds.lua")
+		local fake, loaded = anglerPage(nil, {
+			modules = function(host)
+				payingModules(host, { "Hunts" }, { Hunts = 1234567 })
+			end,
+		})
+		fake.setActivityXP("TackleBoard", 7654321)
+		loaded.ns.journal:Draw()
+		local frame = loaded.ns.journal.frame
+
+		local overflows = bounds.overflows(frame.leaves.right[frame.shownLeaf.right].body)
+
+		assert.are.same({}, overflows)
+		assert.is_true(bounds.measured > 0)
+		assert.are.same({ "Tackle Board", "7,654,321", "7,654,321" }, shownTexts(frame.right.drawn.xpSource[4]))
 	end)
 end)

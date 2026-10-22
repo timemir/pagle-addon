@@ -23,3 +23,8 @@ L["huntgood.hunts.notebookcover.oilcloth.description"] = "Black-green oilcloth t
 L["huntgood.hunts.notebookcover.oilcloth.name"] = "Oilcloth"
 L["huntgood.hunts.trackerframe.inkwash.description"] = "A wash of thinned ink behind your pinned Hunts."
 L["huntgood.hunts.trackerframe.inkwash.name"] = "Ink Wash"
+-- The fixture event pool's lore (fixtures/EventList.lua, DATA-R97): fixture_shore and one of its Hunts have names and
+-- a note; fixture_vale and the other Hunts have none, so they read their IDs (HNT-R140).
+L["event.fixture_shore.name"] = "Shore Wager"
+L["event.fixture_shore.note"] = "Darkshore's tide, three days long."
+L["hunt.fixture_shore_snapper.name"] = "Shore Snapper"

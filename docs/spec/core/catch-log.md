@@ -274,6 +274,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.summary`, `global.pending`, `global.cards`, `global.writeUp` | Announcement data ([announcements.md](announcements.md#data)) |
 | `global.coins`, `global.goods` | the wallet ([wallet-and-shop.md](wallet-and-shop.md#data)); `coins.logId` given the log's by migration step 3 (SHOP-R3) |
 | `global.activityXP` | the Activity XP totals ([activity-xp.md](activity-xp.md#data)) |
+| `global.pushed` | `seq`, the last pushed file's `seq` Core accepted ([pushed-content.md](pushed-content.md#data), PUSH-R13); no default |
 | `global.onboarding` | the onboarding state ([onboarding.md](onboarding.md#data)), added by migration step 2 (ONB-R1) |
 | `global.projections.*` | Core's own projections (LOG-R78) |
 | `global.minimap` | the minimap icon's place and shown state (CORE-R53, CORE-R56): `angle`, degrees round the minimap counterclockwise from its right, to 0.1, default `225` (its bottom left); `hide`, default `false` |

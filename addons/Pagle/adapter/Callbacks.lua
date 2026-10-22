@@ -19,6 +19,7 @@ local Pagle = Pagle
 ---| "FishingStateChanged" # PagleFishingStateChangedHandler
 ---| "BalanceChanged" # PagleBalanceChangedHandler
 ---| "ActivityXPChanged" # PagleActivityXPChangedHandler
+---| "PushedContentReady" # PaglePushedContentReadyHandler
 ---| "AppearanceChanged" # PagleAppearanceChangedHandler
 ---| "SessionStarted" # PagleSessionStartedHandler
 ---| "SessionEnded" # PagleSessionEndedHandler

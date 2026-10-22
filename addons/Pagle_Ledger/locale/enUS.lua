@@ -259,6 +259,15 @@ ns.L = {
 	XP_BAR_FRESH_ONE = " Fresh Water for %d more Catch.",
 	XP_BAR_FRESH_OTHER = " Fresh Water for %d more Catches.",
 	XP_BAR_SET_ASIDE = "%s XP set aside for the next Prestige",
+	-- Hovering the bar (LED-R145): this climb's lines of "Where your XP came from" (LED-R150), split approximately.
+	XP_BAR_TIP_TITLE = "Where this climb's XP came from",
+	XP_BAR_TIP_NOTE = "by source, roughly",
+	-- "Where your XP came from" (LED-R150): the Ledger's own XP, then each source by def.name, as its Module's title.
+	XP_SOURCE_OWN = "Catches and discoveries",
+	XP_SOURCE_NAMES = {
+		Hunts = "Hunts",
+		TackleBoard = "Tackle Board",
+	},
 
 	-- The plain hint (LED-R141, DATA-R112): "night · pools · Ashenvale · Darkshore +1 · skill ~150".
 	HINT_ANY_TIME = "Any time",
@@ -345,6 +354,10 @@ ns.L = {
 	ANGLER_BINDING_IN_USE = "In use",
 	ANGLER_BINDING_USE = "Use",
 	ANGLER_BINDING_SHOP = "In the Curio Shop",
+	-- "Where your XP came from" (LED-R150): its heading and its two columns.
+	ANGLER_XP_SOURCES = "Where your XP came from",
+	ANGLER_XP_CLIMB = "This climb",
+	ANGLER_XP_ALL = "All told",
 
 	-- The zone spread (LED-R135–R138), M3's part (LED-R4): its seal and ladder read ZONE_RANKS; UNFISHED on the
 	-- seal with no rank.
@@ -438,8 +451,7 @@ ns.L = {
 	-- The Prestige confirm (LED-R33); a Master Prestige's stars beside emblem X are STAR stamps (LED-R34).
 	PRESTIGE_CONFIRM_KICKER = "Prestige",
 	PRESTIGE_CONFIRM_TITLE = BEGIN_A_NEW_LEDGER .. "?",
-	PRESTIGE_CONFIRM_TEXT = "Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is "
-		.. "taken away.",
+	PRESTIGE_CONFIRM_TEXT = "Your Angler Level climbs again from 1. Nothing you've earned is taken away.",
 	PRESTIGE_CONFIRM_YES = "Prestige",
 	PRESTIGE_CONFIRM_NO = "Not yet",
 	-- The Ledger's line on the Field guide's What's in the box step (ONB-R91).

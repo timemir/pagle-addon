@@ -1,0 +1,32 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 41: 41 (Deadwind Pass), high band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   deadwind_pass_night_haul: Haul, species.any, 87.2% of Catches: tiers 120 / 315 / 630, 46 / 120 / 241 min
+#   deadwind_pass_night_salmon: Named fish, species 13889 (Raw Whitescale Salmon), 52.0% of Catches: tiers 70 / 185 / 375, 45 / 119 / 241 min
+#   deadwind_pass_night_tower: Timed, species.any, 87.2% of Catches, 22:00-02:00, open 12 h a run: tiers 20 / 50 / 105, 46 / 115 / 241 min
+
+[event]
+id = "deadwind_pass_night"
+zones = [41]
+tags = ["river", "night"]
+name = "Tower Nights"
+note = "The pass is cold, the old tower is watching, and the salmon don't care."
+
+[[hunt]]
+id = "deadwind_pass_night_haul"
+class = "species.any"
+tiers = [120, 315, 630]
+name = "A Cold Pass Basket"
+
+[[hunt]]
+id = "deadwind_pass_night_salmon"
+species = 13889
+tiers = [70, 185, 375]
+name = "Whitescale Run"
+
+[[hunt]]
+id = "deadwind_pass_night_tower"
+class = "species.any"
+conditions = { time = [[1320, 120]] }
+tiers = [20, 50, 105]
+name = "Under the Tower"
