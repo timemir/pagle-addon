@@ -20,6 +20,7 @@ local function newHost()
 	})
 	host.bindings = ns.NewBookBindings({
 		lookOf = function(goodID)
+			---@diagnostic disable-next-line: missing-fields -- a stand-in look, named by its good
 			return { id = goodID or "core.binding.field" } --[[@as PagleBindingLook]]
 		end,
 		equipped = function()
@@ -80,9 +81,27 @@ local function book(host, hidden, options)
 	return binding, looks
 end
 
+---@class BookBindingSpecSkin: PagleBookBindingSkin
+---@field dim number          -- the dip's alpha, 1 at rest
+---@field look { id: string } -- the look on it
+
+-- A book's recording skin.
+---@param binding PagleBookBinding
+---@return BookBindingSpecSkin
+local function skinOf(binding)
+	return binding.skin --[[@as BookBindingSpecSkin]]
+end
+
+-- The good a stand-in look is named by.
+---@param look PagleBindingLook
+---@return string
+local function idOf(look)
+	return (look --[[@as { id: string }]]).id
+end
+
 -- The ID of the look a book wears, and of the one on its skin.
 local function worn(binding)
-	return { binding:Look().id, binding.skin.look.id }
+	return { idOf(binding:Look()), skinOf(binding).look.id }
 end
 
 local saved
@@ -132,7 +151,7 @@ describe("the binding a book wears", function()
 		assert.are.same(pinned, kept)
 		assert.are.same({ "core.binding.tooled", "core.binding.tooled" }, worn(binding))
 		assert.are.same({ "core.binding.field", "core.binding.verdigris", "core.binding.tooled" }, looks)
-		assert.are.same({ 1, 0 }, { binding.skin.dim, host.sounds })
+		assert.are.same({ 1, 0 }, { skinOf(binding).dim, host.sounds })
 	end)
 end)
 
@@ -144,18 +163,18 @@ describe("a change of binding", function()
 			local binding, looks = book(host)
 
 			host.pick("core.binding.tooled")
-			local start = { binding:Look().id, binding.skin.dim }
+			local start = { idOf(binding:Look()), skinOf(binding).dim }
 			host.step(0.1)
-			local falling = binding.skin.dim
+			local falling = skinOf(binding).dim
 			host.step(0.1)
-			local deepest = { binding:Look().id, binding.skin.dim }
+			local deepest = { idOf(binding:Look()), skinOf(binding).dim }
 			host.step(0.2)
 
 			assert.are.same({ "core.binding.field", 1 }, start)
 			assert.is_true(falling < 1 and falling > 0.25)
 			assert.are.same("core.binding.tooled", deepest[1])
 			assert.is_true(math.abs(deepest[2] - 0.25) < 1e-6)
-			assert.are.same({ 1, "core.binding.tooled" }, { binding.skin.dim, binding.skin.look.id })
+			assert.are.same({ 1, "core.binding.tooled" }, { skinOf(binding).dim, skinOf(binding).look.id })
 			assert.are.same({ "core.binding.field", "core.binding.tooled" }, looks)
 		end
 	)
@@ -170,7 +189,7 @@ describe("a change of binding", function()
 
 		assert.are.same({ "core.binding.tooled", "core.binding.tooled" }, worn(hidden))
 		assert.are.same({ "core.binding.tooled", "core.binding.tooled" }, worn(shown))
-		assert.are.same({ 1, 1 }, { hidden.skin.dim, shown.skin.dim })
+		assert.are.same({ 1, 1 }, { skinOf(hidden).dim, skinOf(shown).dim })
 	end)
 
 	it(
@@ -182,7 +201,7 @@ describe("a change of binding", function()
 			host.pick("core.binding.tooled")
 			host.step(0.1)
 			host.pick("core.binding.verdigris")
-			local restarted = binding.skin.dim
+			local restarted = skinOf(binding).dim
 			host.step(0.4)
 
 			assert.are.equal(1, restarted)
@@ -221,6 +240,6 @@ describe("a change of binding", function()
 		host.bindings.Changed("core.crest", "core.crest.plain")
 		host.pick("core.binding.field")
 
-		assert.are.same({ "core.binding.field", 1, 0 }, { binding:Look().id, binding.skin.dim, host.sounds })
+		assert.are.same({ "core.binding.field", 1, 0 }, { idOf(binding:Look()), skinOf(binding).dim, host.sounds })
 	end)
 end)

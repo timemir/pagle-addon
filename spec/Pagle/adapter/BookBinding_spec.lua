@@ -222,15 +222,12 @@ describe("Pagle.NewBookBinding's drawing", function()
 				{ true, atlas.file, { l, r, b, t } },
 				{ true, atlas.file, { r, l, b, t } },
 			}, drawn)
-			assert.are.same(
-				{ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" },
-				{
-					regions.corners[1]:GetPoint(1),
-					regions.corners[2]:GetPoint(1),
-					regions.corners[3]:GetPoint(1),
-					regions.corners[4]:GetPoint(1),
-				}
-			)
+			assert.are.same({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }, {
+				regions.corners[1]:GetPoint(1),
+				regions.corners[2]:GetPoint(1),
+				regions.corners[3]:GetPoint(1),
+				regions.corners[4]:GetPoint(1),
+			})
 		end
 	)
 
@@ -281,7 +278,7 @@ describe("Pagle.NewBookBinding's drawing", function()
 				assert(#readFile(path) > 0, path)
 			end
 			for _, metal in ipairs({ "brass", "gold", "silver", "iron", "bone", "pearl", "silverfiligree" }) do
-				assert.is_table(atlases.BindingCorners.sprites["corner-" .. metal], metal)
+				assert(atlases.BindingCorners.sprites["corner-" .. metal], metal)
 			end
 			assert.is_table(atlases.BindingGilt.sprites.corner)
 		end
@@ -302,9 +299,8 @@ describe("Pagle.NewBookBinding through a change of binding", function()
 			pick(loaded, "test.tooled")
 			local hiddenLook = hidden:Look()
 			loaded.client.update(0.2)
-			local fill, band =
-				regionsOf(first).fill, --[[@as table]]
-				regionsOf(first).band --[[@as table]]
+			local fill = regionsOf(first).fill --[[@as table]]
+			local band = regionsOf(first).band --[[@as table]]
 			local deepest = { fill.alpha, band.alpha, first:Look(), second:Look() }
 			loaded.client.update(0.25)
 

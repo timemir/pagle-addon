@@ -86,7 +86,7 @@ describe("Hunts' goods", function()
 			for _, good in ipairs(goods:GoodsOf(BINDING)) do
 				if good.module == "Hunts" then
 					bindings[#bindings + 1] = { good.id, kindOf(good) }
-					assert.is_nil(good.preview, good.id) -- Core's slot previews it
+					assert(good.preview == nil, good.id) -- Core's slot previews it
 				else
 					assert.are.same({ "Core", 0 }, { good.module, #bindings }, good.id) -- Core's all come first
 				end

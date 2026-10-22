@@ -146,7 +146,7 @@ describe("the bindings", function()
 				local look = ns.BindingLook("ledger.binding.level20") -- Tidewater Blue, the kit's measured tint
 
 				assert.are.same(
-					{ BOOKS .. "LeatherGrey", 128, 128, 1 },
+					{ BOOKS .. "LeatherGrey", 128, 128, 0.8 },
 					{ look.texture, look.tileW, look.tileH, look.foot }
 				)
 				assert.are.same({ 0.188, 0.363, 0.563 }, look.tint)
@@ -206,7 +206,7 @@ describe("the bindings", function()
 					texture = BOOKS .. "bindings\\driftwood",
 					tileW = 150,
 					tileH = 196,
-					foot = 1,
+					foot = 0.8,
 					band = gained("5a5448"),
 					gilt = rgb("d8d0c0"),
 					giltShadow = { 0, 0, 0, 0.95, 0, -1 },
@@ -255,17 +255,14 @@ describe("the bindings", function()
 					swatch = "swatch-lacquer",
 				}, ns.BindingLook("core.binding.lacquer"))
 				local wagersilk = ns.BindingLook("hunts.binding.wagersilk")
-				assert.are.same(
-					{ BOOKS .. "bindings\\wagersilk", 56, 56, "gold", "Covers2", "swatch-wagersilk" },
-					{
-						wagersilk.texture,
-						wagersilk.tileW,
-						wagersilk.tileH,
-						wagersilk.corners,
-						wagersilk.swatchAtlas,
-						wagersilk.swatch,
-					}
-				)
+				assert.are.same({ BOOKS .. "bindings\\wagersilk", 56, 56, "gold", "Covers2", "swatch-wagersilk" }, {
+					wagersilk.texture,
+					wagersilk.tileW,
+					wagersilk.tileH,
+					wagersilk.corners,
+					wagersilk.swatchAtlas,
+					wagersilk.swatch,
+				})
 			end
 		)
 
@@ -317,6 +314,7 @@ describe("the bindings", function()
 			for file in pairs(files) do
 				assert.are.equal("Interface\\AddOns\\Pagle\\", file:sub(1, 23))
 				local path = file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 				local handle = io.open(path, "rb")
 				assert(handle, path)
 				handle:close()

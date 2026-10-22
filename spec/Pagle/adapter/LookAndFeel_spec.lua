@@ -91,7 +91,7 @@ describe("The Look and Feel page", function()
 	end)
 
 	it(
-		"shows the paragraph, Announcements, Bookplate and Fish Journal with their dropdowns, then the Curio Shop (SET-R50)",
+		"shows the paragraph, Announcements, Bookplate and Books with their dropdowns, then the Curio Shop (SET-R50)",
 		function()
 			local loaded = coreWithModules()
 
@@ -104,7 +104,9 @@ describe("The Look and Feel page", function()
 				"  13 more in the Curio Shop",
 				"# Bookplate",
 				"Bookplate crest = core.crest.plain",
-				"# Fish Journal",
+				"# Books",
+				"Book binding = core.binding.field",
+				"  33 more in the Curio Shop",
 				"Journal binding = ledger.binding.oak",
 				"  2 more in the Curio Shop",
 				"# Curio Shop",
@@ -123,7 +125,7 @@ describe("The Look and Feel page", function()
 			assert.is_false(table.concat(shown, "\n"):find("Journal binding", 1, true) ~= nil)
 			assert.are.same(
 				{ "# Trackers", "Hunts tracker frame = hunts.trackerframe.none", "# Curio Shop" },
-				{ shown[9], shown[10], shown[11] }
+				{ shown[12], shown[13], shown[14] }
 			)
 		end
 	)

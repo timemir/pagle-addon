@@ -147,7 +147,7 @@ describe("the Field guide's book (ONB-R20, ONB-R27)", function()
 		local field = loaded.ns.BindingLook(loaded.ns.DEFAULT_BINDING)
 
 		assert.are.equal("core.binding.field", binding.pinned)
-		assert.are.equal(field, binding:Look())
+		assert.are.same(field, binding:Look()) -- Core's look, a fresh table each time
 		local skin = binding.skin
 		assert.are.equal(field.texture, skin.fill.texture) -- the tiled grain, as before
 		assert.is_false(skin.bandPieces[1].desaturated) -- the band untoned
@@ -157,7 +157,7 @@ describe("the Field guide's book (ONB-R20, ONB-R27)", function()
 
 		loaded.ns.Fire("AppearanceChanged", "core.binding", "core.binding.other")
 		assert.are.equal("core.binding.field", binding.goodID)
-		assert.are.equal(field, binding:Look())
+		assert.are.same(field, binding:Look())
 	end)
 
 	it("reads 'Pagle · A field guide' on its strip, with '{n} of {m}' at its right (ONB-R20)", function()

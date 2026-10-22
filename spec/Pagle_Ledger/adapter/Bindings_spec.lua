@@ -104,7 +104,7 @@ describe("the Ledger's earned bindings", function()
 			for _, good in ipairs(goods:GoodsOf(SLOT)) do
 				if good.module == "Ledger" then
 					registered[#registered + 1] = { good.id, kindOf(good), good.earnedText }
-					assert.is_nil(good.preview, good.id)
+					assert(good.preview == nil, good.id)
 				else
 					assert.are.same({ "Core", 0 }, { good.module, #registered }, good.id) -- Core's all come first
 				end

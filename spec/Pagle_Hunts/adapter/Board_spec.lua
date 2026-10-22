@@ -283,30 +283,31 @@ describe("the Hunts board's binding (HNT-R70)", function()
 	end)
 
 	it("inks its crumbs and nameplate again from each new look while open (BIND-R3)", function()
-		local _, _, board = loggedIn()
+		local _, fake, board = loggedIn()
 		local inked = {}
 		board:RegisterLeather("crumbs", function()
-			inked[#inked + 1] = { "crumbs", board:Look().id }
+			inked[#inked + 1] = { "crumbs", board:Look() }
 		end)
 		board:RegisterLeather("nameplate", function()
-			inked[#inked + 1] = { "nameplate", board:Look().id }
+			inked[#inked + 1] = { "nameplate", board:Look() }
 		end)
 		board:Toggle()
 		inked = {}
 
 		board.frame.binding:SetLook("hunts.binding.fiveseal")
 
-		assert.are.same({ { "crumbs", "hunts.binding.fiveseal" }, { "nameplate", "hunts.binding.fiveseal" } }, inked)
-		assert.are.same({ 0.95, 0.97, 1 }, board.frame.papers.left.paper.vertexColor)
+		local fiveseal = fake.Pagle.GetBindingLook("hunts.binding.fiveseal")
+		assert.are.same({ { "crumbs", fiveseal }, { "nameplate", fiveseal } }, inked)
+		assert.are.same(fiveseal.paperTint, board.frame.papers.left.paper.vertexColor)
 	end)
 
 	it("keeps a binding pinned before the board was first opened, and follows the equipped one again after", function()
-		local _, _, board = loggedIn()
+		local _, fake, board = loggedIn()
 
 		board:SetBinding("hunts.binding.pathfinder")
 		board:Toggle()
 		assert.are.equal("hunts.binding.pathfinder", board.frame.binding.pinned)
-		assert.are.equal("hunts.binding.pathfinder", board:Look().id)
+		assert.are.same(fake.Pagle.GetBindingLook("hunts.binding.pathfinder"), board:Look())
 
 		board:SetBinding(nil)
 		assert.is_nil(board.frame.binding.pinned)

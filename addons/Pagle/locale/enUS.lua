@@ -195,6 +195,7 @@ ns.L = {
 	-- The status list (CORE-R41): each roster Module's name, by def.name, and each state.
 	MODULE_NAMES = {
 		Ledger = "Ledger",
+		Hunts = "Hunts",
 		Stats = "Stats",
 		TackleBoard = "Tackle Board",
 		QoL = "QoL",

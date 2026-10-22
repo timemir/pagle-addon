@@ -84,7 +84,7 @@ describe("Look and Feel's logic", function()
 			assert.are.same({
 				"Announcements: core.toaststyle, core.soundset",
 				"Bookplate: core.crest",
-				"Fish Journal: ledger.binding",
+				"Books: ledger.binding",
 				"Trackers: hunts.frame",
 			}, sectionLines(env.goods))
 		end)
@@ -191,10 +191,7 @@ describe("Look and Feel's logic", function()
 		it("lists an earned good once its cached isEarned() is true (SET-R51, SHOP-R30)", function()
 			local env = newGoods()
 			local earned = false
-			env.goods:RegisterSlot(
-				"Ledger",
-				{ id = "ledger.binding", label = "Journal binding", category = "Books" }
-			)
+			env.goods:RegisterSlot("Ledger", { id = "ledger.binding", label = "Journal binding", category = "Books" })
 			env.goods:RegisterGood(
 				"Ledger",
 				{ id = "ledger.binding.calf", slot = "ledger.binding", name = "Field", default = true }
@@ -233,10 +230,7 @@ describe("Look and Feel's logic", function()
 
 		it("doesn't count an earned good, which isn't for sale (SET-R51, SHOP-R22)", function()
 			local env = newGoods()
-			env.goods:RegisterSlot(
-				"Ledger",
-				{ id = "ledger.binding", label = "Journal binding", category = "Books" }
-			)
+			env.goods:RegisterSlot("Ledger", { id = "ledger.binding", label = "Journal binding", category = "Books" })
 			env.goods:RegisterGood(
 				"Ledger",
 				{ id = "ledger.binding.calf", slot = "ledger.binding", name = "Field", default = true }

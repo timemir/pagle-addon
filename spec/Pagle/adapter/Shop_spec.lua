@@ -87,6 +87,61 @@ end
 for _, row in ipairs(fishCrestRows()) do
 	CORE_UNBOUGHT[#CORE_UNBOUGHT + 1] = row
 end
+-- Core's book binding (ADR 0015) as the list shows it: Field Leather and every binding for sale, in the shop's order.
+local BOOK_BINDING = {
+	"BOOK BINDING 1 of 34",
+	"Field Leather | IN USE",
+	"Birch Bark | 150",
+	"Tide-Chart Linen | 150",
+	"Tarred Sailcloth | 150",
+	"Oilskin Yellow | 150",
+	"Oilcloth | 150",
+	"Canvas Field Pad | 150",
+	"Waxed Kraft | 150",
+	"Tartan Wool | 150",
+	"Sea-Green Buckram | 400",
+	"Mossbound | 400",
+	"Driftwood Boards | 400",
+	"Eelskin | 400",
+	"Kodo Hide | 400",
+	"Frost-Tanned Hide | 400",
+	"Net over Cork | 400",
+	"Tooled Leather | 400",
+	"Map Linen | 400",
+	"Bound Planks | 400",
+	"Sharkskin | 900",
+	"Riveted Copper | 900",
+	"Night Velvet | 900",
+	"Turtle Shell | 900",
+	"Gilded Morocco | 900",
+	"Verdigris | 900",
+	"Snakeskin | 900",
+	"Stingray Shagreen | 900",
+	"Lacquered Red | 900",
+	"Bone & Rawhide | 900",
+	"Brass Hunter's Case | 900",
+	"Coral Inlay | 2,000",
+	"Scrimshaw Panel | 2,000",
+	"Mother-of-Pearl | 5,000",
+	"Gilded Trophy Case | 5,000",
+}
+for _, line in ipairs(BOOK_BINDING) do
+	CORE_UNBOUGHT[#CORE_UNBOUGHT + 1] = line
+end
+
+-- The book binding's header and its bindings for sale priced at most `most`, as the list shows them.
+---@param most number
+---@return string[]
+local function bindingsAtMost(most)
+	local all = { BOOK_BINDING[1] }
+	for i = 3, #BOOK_BINDING do
+		local price = tonumber((BOOK_BINDING[i]:match("| ([%d,]+)$"):gsub(",", ""))) or math.huge
+		if price <= most then
+			all[#all + 1] = BOOK_BINDING[i]
+		end
+	end
+	return all
+end
 
 -- Core with the Ledger and Hunts registered, Core's own goods, Hunts' covers and the Ledger's bindings and two zone
 -- crests in Core's crest slot (earned goods, their earnedText functions, SHOP-R22, SHOP-R23), logged in and in the
@@ -602,6 +657,7 @@ describe("The Curio Shop's list", function()
 			concat({
 				withExpansion({ "TOAST STYLE 1 of 15", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle", 500),
 				withExpansion({ "SOUND SET 1 of 14", "Gilded | 400" }, "soundset", 500),
+				bindingsAtMost(500),
 				{ "NOTEBOOK COVER 1 of 2", "Velvet | 400" },
 			}),
 			listed(loaded)
@@ -618,15 +674,17 @@ describe("The Curio Shop's list", function()
 			"Driftwood | IN USE",
 			"BOOKPLATE CREST 1 of 40",
 			"Plain | IN USE",
+			"BOOK BINDING 1 of 34",
+			"Field Leather | IN USE",
 			"JOURNAL BINDING 1 of 2",
 			"Oak | IN USE",
 			"NOTEBOOK COVER 1 of 2",
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(12 + 24 + #fishCrestRows(), #listed(loaded))
+		assert.are.equal(12 + 24 + 34 + #fishCrestRows(), #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(17 + 24 + #fishCrestRows(), #listed(loaded))
+		assert.are.equal(17 + 24 + 35 + #fishCrestRows(), #listed(loaded))
 	end)
 
 	it(
@@ -636,15 +694,18 @@ describe("The Curio Shop's list", function()
 			loaded.env.Pagle.OpenShop()
 			local frame = shopFrame(loaded)
 
-			assert.are.same({ "ALL", "ANNOUNCEMENTS", "BOOKPLATE", "FISH JOURNAL", "HUNTS" }, pillLabels(frame.chips))
+			assert.are.same({ "ALL", "ANNOUNCEMENTS", "BOOKPLATE", "BOOKS", "TRACKERS" }, pillLabels(frame.chips))
 			assert.is_true(frame.chips[1].pressed)
 
 			frame.chips[4]:Click()
-			assert.are.same({ "JOURNAL BINDING 1 of 2", "Oak | IN USE", "Lapis | 900" }, listed(loaded))
+			assert.are.same(
+				concat({ BOOK_BINDING, { "JOURNAL BINDING 1 of 2", "Oak | IN USE", "Lapis | 900" } }),
+				listed(loaded)
+			)
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
-			assert.are.equal(17 + 24 + #fishCrestRows(), #listed(loaded))
+			assert.are.equal(17 + 24 + 35 + #fishCrestRows(), #listed(loaded))
 		end
 	)
 

@@ -146,7 +146,7 @@ ns.CORE_GOODS = {
 ---@param key string? its lore keys' `<kind>.<id>`
 ---@return string?
 local function lore(goodID, field, key)
-	local text = rawget(ns.L, ("%s.%s"):format(key or "good." .. goodID, field))
+	local text = rawget(ns.L, ("%s.%s"):format(key or ("good." .. goodID), field))
 	if type(text) == "string" and text ~= "" then
 		return text
 	end

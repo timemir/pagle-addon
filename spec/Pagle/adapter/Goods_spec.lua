@@ -273,7 +273,7 @@ describe("Core's own goods", function()
 		local loaded = huntsCore()
 		local ns = loaded.ns
 
-		-- Core's three slots (SHOP-R25) are in already, from login step 1 (spec/Pagle/adapter/CoreGoods_spec.lua).
+		-- Core's four slots (SHOP-R25) are in already, from login step 1 (spec/Pagle/adapter/CoreGoods_spec.lua).
 		ns.RegisterCoreSlot({ id = "core.frame", label = "Tracker frame", category = "Trackers" })
 		ns.RegisterCoreGood({ id = "core.frame.plain", slot = "core.frame", name = "Plain", default = true })
 		local ok, err = pcall(function()
@@ -284,8 +284,8 @@ describe("Core's own goods", function()
 		assert.is_false(ok)
 		assert.matches("Goods_spec.lua:%d+: M:RegisterGood: hunts.frame doesn't start with core.", tostring(err))
 		assert.are.same({ "core.frame", "hunts.cover" }, {
-			ns.goods:Slots()[4].id,
 			ns.goods:Slots()[5].id,
+			ns.goods:Slots()[6].id,
 		})
 		assert.are.equal("Core", loaded.env.Pagle.GetGood("core.frame.plain").module)
 		assert.are.equal("core.frame.plain", loaded.env.Pagle.GetEquipped("core.frame"))
