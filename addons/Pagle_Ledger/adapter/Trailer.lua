@@ -110,11 +110,11 @@ Pagle.RegisterTrailerPart("Ledger", function(ctx)
 		angler = function()
 			open(ns.JournalPlace.angler())
 		end,
+		-- The home water's zone crest, earned in the sample, pinned on the Angler page's bookplate (LED-R112): the shop
+		-- lists no earned crest (SHOP-R25), and equipping it here is the disposable copy's, restored with it.
 		crest = function()
-			Pagle.OpenShop(assert(crestOf(true), "No zone crest is earned in the trailer sample"))
-		end,
-		crestProgress = function()
-			Pagle.OpenShop(crestOf(false) or crestOf(true))
+			Pagle.SetEquipped("core.crest", assert(crestOf(true), "No zone crest is earned in the trailer sample"))
+			open(ns.JournalPlace.angler())
 		end,
 		title = function()
 			local pages = ns.journal.router:Pages(ns.journal:Context())

@@ -20,8 +20,9 @@ local ns = select(2, ...)
 ---@class PagleCoreSlot
 ---@field id string
 ---@field label string
----@field category "Announcements"|"Bookplate"
+---@field category "Announcements"|"Crests"
 ---@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): all three
+---@field hideEarned? true          -- the shop lists none of its earned goods; Look and Feel equips them (SHOP-R25)
 ---@field groups? PagleSlotGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
@@ -50,7 +51,8 @@ ns.CREST_SLOT = "core.crest"
 --- every other is an in-client texture listed in build 70338's ManifestInterfaceData, standing in until Pagle has its
 --- own art. All three slots are open to earned goods (SHOP-R23): the toast styles and sound sets the Ledger, Hunts and
 --- the Tackle Board earn, and the Ledger's zone crests (LED-R113), each drawn on the stage by its slot's preview. The
---- crest slot holds Plain alone.
+--- crest slot holds Plain alone, and hides its earned crests, the zone crests and Core's fish crests (VAR-R12), from
+--- the shop: Look and Feel equips them (SHOP-R25).
 ---@type PagleCoreSlot[]
 ns.CORE_GOODS = {
 	{
@@ -103,9 +105,10 @@ ns.CORE_GOODS = {
 	{
 		id = ns.CREST_SLOT,
 		label = L.SLOT_CREST,
-		category = "Bookplate",
+		category = "Crests",
 		openToEarned = true,
-		-- The Ledger's zone crests and Core's fish crests name these; Plain names none, so it lists first (SHOP-R27).
+		hideEarned = true,
+		-- The Ledger's zone crests and Core's fish crests name these (SHOP-R27); the shop lists neither (hideEarned).
 		groups = {
 			{ key = "zone", name = L.SLOT_CREST_ZONES },
 			{ key = "fish", name = L.SLOT_CREST_FISH },
@@ -146,6 +149,7 @@ function ns.RegisterCoreGoods(previews)
 			category = slot.category,
 			groups = slot.groups,
 			openToEarned = slot.openToEarned,
+			hideEarned = slot.hideEarned,
 			preview = slot.openToEarned and previews and function(stage, good)
 				local draw = previews[slot.id]
 				if draw then

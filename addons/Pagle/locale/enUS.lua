@@ -256,7 +256,7 @@ ns.L = {
 	SHOP_ALL_CATEGORIES = "All",
 	SHOP_CATEGORIES = {
 		Announcements = "Announcements",
-		Bookplate = "Bookplate",
+		Crests = "Crests",
 		["Fish Journal"] = "Fish Journal",
 		Hunts = "Hunts",
 		Trackers = "Trackers",
@@ -683,8 +683,9 @@ ns.L = {
 	-- data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`.
 	SLOT_TOAST_STYLE = "Toast style",
 	SLOT_SOUND_SET = "Sound set",
-	SLOT_CREST = "Bookplate crest",
-	-- The crest slot's groups on the Curio Shop's list (SHOP-R27): the zones' crests, then the fishes'.
+	SLOT_CREST = "Crests",
+	-- The crest slot's groups (SHOP-R27): the zones' crests, then the fishes', which name them; the Curio Shop lists
+	-- neither, as it lists no earned crest (SHOP-R25).
 	SLOT_CREST_ZONES = "Zone crests",
 	SLOT_CREST_FISH = "Fish crests",
 	-- A fish crest (VAR-R12): its fish, the Species' item name as the client has it, "Item {itemID}" until it has;

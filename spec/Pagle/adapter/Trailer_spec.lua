@@ -52,10 +52,15 @@ describe("the continuous Pagle trailer", function()
 		assert.is_true(staged.bySource.TackleBoard.total > 0)
 		assert.is_true(loaded.env.Pagle.IsOwned(crest))
 
+		local crestBefore = loaded.env.Pagle.GetEquipped("core.crest")
 		loaded.client.advance(205)
 		assert.are.same({}, loaded.client.errors)
 		assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
 		assert.are.equal("core.toaststyle.ripple", loaded.env.Pagle.GetEquipped("core.toaststyle"))
+		-- The home water's crest on the Angler page's bookplate, not in the shop, which lists no earned crest (SHOP-R25).
+		assert.are.equal(crest, loaded.env.Pagle.GetEquipped("core.crest"))
+		assert.is_true(ledger.journal:IsShown())
+		assert.is_false(core.shopFrame:IsShown())
 		assert.are.equal(before + 1, #log.entries)
 		loaded.client.advance(60)
 
@@ -68,6 +73,7 @@ describe("the continuous Pagle trailer", function()
 		assert.are.same(savedAfterCatch, loaded.env.PagleDB)
 		assert.are.same(realXP, loaded.env.Pagle.GetActivityXP())
 		assert.are.equal(crestOwned, loaded.env.Pagle.IsOwned(crest))
+		assert.are.equal(crestBefore, loaded.env.Pagle.GetEquipped("core.crest"))
 		assert.matches("trailer complete", loaded.printed[#loaded.printed])
 	end)
 

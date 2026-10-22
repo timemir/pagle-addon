@@ -25,7 +25,7 @@ After the record toast, leave the addon to perform its sequence. It navigates th
 Fish Journal, a fish's varieties and the Angler page with where its XP came from,
 then Stats, watches an item, pins a Hunt, opens a Pagle Wagers run and the Wagers
 spread, replaces a Notice, opens the Fly Box and Campfire, previews and buys a
-Curio Shop look, shows an earned zone crest and one still in progress, switches
+Curio Shop look, pins an earned zone crest on the Angler page's bookplate, switches
 to Cozy mode, shows a Session summary, and opens a Field report. The final
 wordmark and tagline hold before the demo ends at about 4:19 after the record
 moment.

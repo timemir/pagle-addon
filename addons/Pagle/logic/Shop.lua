@@ -174,11 +174,21 @@ local FILTERS = {
 --- The filters, in the order the list shows them.
 ns.SHOP_FILTERS = { "all", "owned", "notOwned", "canAfford" }
 
+-- Whether the shop leaves out a good of `slot` that is earned (`earned`): the earned goods of a Core slot that hides
+-- them, the crest slot's zone and fish crests, which Look and Feel equips instead (SHOP-R25).
+---@param slot PagleRegisteredSlot?
+---@param earned boolean
+---@return boolean
+local function hidden(slot, earned)
+	return earned and slot ~= nil and slot.hideEarned == true
+end
+
 --- A good the shop can show, or nil: a good of a live slot (Core's or a Module On's) whose Module is On, or an owned
 --- good of a Module that isn't On, from the cache (SHOP-R35). A default of a Module that isn't On is neither
---- (SHOP-R35). Its owner is the good's Module, which in a Core slot open to earned goods may be another's (SHOP-R23);
---- an earnedText function is called here, for a good not owned (SHOP-R22). A good with no preview of its own takes
---- its slot's, if Core gave the slot one (the crest's bookplate, SHOP-R25).
+--- (SHOP-R35), nor an earned good in a Core slot that hides them, its Module On or not (SHOP-R25). Its owner is the
+--- good's Module, which in a Core slot open to earned goods may be another's (SHOP-R23); an earnedText function is
+--- called here, for a good not owned (SHOP-R22). A good with no preview of its own takes its slot's, if Core gave the
+--- slot one (the crest's bookplate, SHOP-R25).
 ---@param goodID any
 ---@return PagleShopEntry?
 function Model:Entry(goodID)
@@ -187,6 +197,9 @@ function Model:Entry(goodID)
 	end
 	local goods = self.sources.goods
 	local good = goods:Good(goodID)
+	if good and hidden(self.slots[good.slot], good.isEarned ~= nil) then
+		return nil
+	end
 	local slot = good and self.on[good.module] and self.slots[good.slot]
 	if good and slot then
 		local price = good.tier and ns.TIER_PRICES[good.tier]
@@ -224,8 +237,15 @@ function Model:Entry(goodID)
 		}
 		return entry
 	end
+	-- A cached good that is neither a default nor for sale is earned (SHOP-R22, SHOP-R26).
 	local cached = self.sources.cache[goodID]
-	if type(cached) ~= "table" or self.on[cached.module] or cached.default or not goods:IsOwned(goodID) then
+	if
+		type(cached) ~= "table"
+		or self.on[cached.module]
+		or cached.default
+		or hidden(self.slots[cached.slot], cached.tier == nil)
+		or not goods:IsOwned(goodID)
+	then
 		return nil
 	end
 	return {
@@ -373,10 +393,11 @@ local function inGroups(slot, slotGoods)
 	return ordered, opens
 end
 
---- The list (wallet-and-shop.md › UI, SHOP-R27, SHOP-R35): the goods `query` keeps, grouped by live slot (Core's
---- first, then by Module order), each with its owned count, a grouped slot's goods under their groups' names; then
---- the owned goods of Modules that aren't On, from the cache, as the last group, "Put away: Module off". A group with
---- no row left isn't listed, nor a slot's group's name with none of its rows left.
+--- The list (wallet-and-shop.md › UI, SHOP-R25, SHOP-R27, SHOP-R35): the goods `query` keeps, grouped by live slot
+--- (Core's first, then by Module order), each with its owned count over the goods the shop shows (not a hidden earned
+--- one, SHOP-R25), a grouped slot's goods under their groups' names; then the owned goods of Modules that aren't On,
+--- from the cache, as the last group, "Put away: Module off". A group with no row left isn't listed, nor a slot's
+--- group's name with none of its rows left.
 ---@param query PagleShopQuery
 ---@return PagleShopGroup[]
 function Model:List(query)
@@ -384,7 +405,12 @@ function Model:List(query)
 	local goods = self.sources.goods
 	local groups = {}
 	for _, slot in ipairs(self.slotList) do
-		local rows, owned, slotGoods = {}, 0, goods:GoodsOf(slot.id)
+		local rows, owned, slotGoods = {}, 0, {}
+		for _, good in ipairs(goods:GoodsOf(slot.id)) do
+			if not hidden(slot, good.isEarned ~= nil) then
+				slotGoods[#slotGoods + 1] = good
+			end
+		end
 		local ordered, opens = inGroups(slot, slotGoods)
 		local headings, heading
 		for _, good in ipairs(ordered) do
@@ -569,7 +595,7 @@ end
 ---@field category string
 ---@field label string
 
---- The category chips (wallet-and-shop.md › UI): Announcements, Bookplate, Fish Journal, Hunts and Trackers, each
+--- The category chips (wallet-and-shop.md › UI): Announcements, Crests, Fish Journal, Hunts and Trackers, each
 --- only if a live slot uses it.
 ---@return PagleShopChip[]
 function Model:Chips()

@@ -51,7 +51,7 @@ describe("Look and Feel's logic", function()
 			"Core",
 			{ id = "core.soundset.driftwood", slot = "core.soundset", name = "Driftwood", default = true }
 		)
-		goods:RegisterSlot("Core", { id = "core.crest", label = "Bookplate crest", category = "Bookplate" })
+		goods:RegisterSlot("Core", { id = "core.crest", label = "Crests", category = "Crests" })
 		goods:RegisterGood("Core", { id = "core.crest.plain", slot = "core.crest", name = "Plain", default = true })
 		return env
 	end
@@ -83,7 +83,7 @@ describe("Look and Feel's logic", function()
 
 			assert.are.same({
 				"Announcements: core.toaststyle, core.soundset",
-				"Bookplate: core.crest",
+				"Crests: core.crest",
 				"Fish Journal: ledger.binding",
 				"Trackers: hunts.frame",
 			}, sectionLines(env.goods))
@@ -111,7 +111,7 @@ describe("Look and Feel's logic", function()
 			env.on.Ledger = nil
 
 			assert.are.same(
-				{ "Announcements: core.toaststyle, core.soundset", "Bookplate: core.crest" },
+				{ "Announcements: core.toaststyle, core.soundset", "Crests: core.crest" },
 				sectionLines(env.goods)
 			)
 		end)
