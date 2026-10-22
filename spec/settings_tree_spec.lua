@@ -65,7 +65,8 @@ local TRACKER_MODULES = { "Hunts", "Stats", "TackleBoard" }
 -- settings.md's tree with every Module On and the board unstarted (SET-R1, SET-R10–R11, SET-R20, SET-R30, SET-R32,
 -- SET-R40–R44, SET-R50), page by page in the panel's order. A row is { kind, label }, with `under` when it is
 -- indented under the nearest row before it without `under` (↳), `caption` for a button's caption, `tip` for its
--- tooltip, and for a status line its `state` and `button`. A button given one quoted string has only a caption
+-- tooltip, `range` for a slider's { min, max, step } as shown (settings.md › Tunables), and for a status line its
+-- `state` and `button`. A button given one quoted string has only a caption
 -- (SET-R2). `of` names the Module (or Modules, all of which must be off) whose row it is: it vanishes while that
 -- Module isn't On (SET-R4), and a status line reads Off with no button instead (SET-R90).
 local EXPECTED = {
@@ -114,8 +115,8 @@ local EXPECTED = {
 		rows = {
 			{ "checkbox", "Cozy mode", tip = TIPS.cozy },
 			{ "checkbox", "Interruption budget", tip = TIPS.budget },
-			{ "slider", "Interruptions", under = true },
-			{ "slider", "Per", under = true },
+			{ "slider", "Interruptions", under = true, range = { 1, 30, 1 } },
+			{ "slider", "Per", under = true, range = { 1, 15, 1 } },
 			{ "checkbox", "Show every catch", tip = TIPS.everyCatch },
 			{ "checkbox", "Animations", tip = TIPS.motion },
 			{ "slot", "Toast style" },
@@ -292,6 +293,11 @@ local function asWritten(loaded, row, top)
 		out = { "button", label ~= "" and label or nil, caption = frame.Button.text }
 	else
 		out = { KINDS[template] or template, initializer:GetName() }
+	end
+	if out[1] == "slider" then
+		local options = initializer:GetData().options
+		local min, max = options.minValue, options.maxValue
+		out.range = { min, max, (max - min) / options.steps }
 	end
 	out.tip = tooltipOf(loaded, row)
 	local parent = initializer:GetParentInitializer()
@@ -775,7 +781,7 @@ describe("Each page's Defaults button", function()
 		assert.are.same({
 			["Cozy mode"] = false,
 			["Interruption budget"] = true,
-			["Interruptions"] = 4,
+			["Interruptions"] = 20,
 			["Per"] = 5,
 			["Show every catch"] = true,
 			["Animations"] = true,

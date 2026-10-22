@@ -13,7 +13,7 @@ end
 local L = ns.L
 
 -- The sliders' ranges (settings.md › Tunables). Per is in minutes; the budget's window is stored in seconds.
-local COUNT_MIN, COUNT_MAX = 1, 10
+local COUNT_MIN, COUNT_MAX = 1, 30
 local WINDOW_MIN, WINDOW_MAX = 1, 15
 local STEP = 1
 local SECONDS_PER_MINUTE = 60
@@ -83,7 +83,7 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	local budget = Settings.CreateCheckbox(page, budgetOn, L.SETTINGS_BUDGET_TOOLTIP)
 	greys(budget, notCozy)
 
-	local countSetting = Settings.RegisterProxySetting(page, COUNT, Number, L.SETTINGS_BUDGET_COUNT, 4, function()
+	local countSetting = Settings.RegisterProxySetting(page, COUNT, Number, L.SETTINGS_BUDGET_COUNT, 20, function()
 		return stored().budget.count
 	end, function(value)
 		stored().budget.count = value
