@@ -1,7 +1,7 @@
 # Core's lore (DATA-R100), emitted into addons/Pagle/data/Lore.lua as ns.L entries (DATA-R104): the names and
 # descriptions of Core's own goods (SHOP-R25), one table per [good."<goodID>"] with its name and description
-# (DATA-R101), every good manifest.toml lists under [core.good] (DATA-R106). Lore is never part of the catalogue and
-# changes no count (DATA-R109).
+# (DATA-R101), every good manifest.toml lists under [core.good] (DATA-R106), and of its book bindings, one per
+# [binding.<key>], under [core.binding]. Lore is never part of the catalogue and changes no count (DATA-R109).
 # The M4 batch, drafted from VOICE.md, came with Core's lore check (DATA-R111, #161). The comment after each table
 # is the good's slot, for review only.
 #
@@ -131,6 +131,149 @@ description = "Clockwork ticking, a spring letting go and two cheerful bleeps. I
 [good."core.soundset.wardrums"] # core.soundset, tier 4
 name = "War Drums"
 description = "Deep drums and a low horn from the hills: a catch announced like the start of a march."
+
+# Book bindings (SHOP-R25, ADR 0015), Core's kind binding (DATA-R102), each [binding.<key>] the good
+# core.binding.<key>'s name and the description the Curio Shop shows beside its closed book. Field Leather
+# and the Ledger art kit's and the shop expansion's bindings were the Ledger's (#161), the covers Hunts' (#183):
+# every book wears the one binding now. A binding is a look only, so its description is about the book's
+# leather or cloth. The comment is the good's tier, for review only. The Ledger's and Hunts' earned bindings'
+# lore is theirs.
+
+[binding.field] # core.binding, the default
+name = "Field Leather"
+description = "Plain brown leather, made to be rained on, and it usually is."
+
+[binding.birch] # core.binding, tier 1
+name = "Birch Bark"
+description = "Pale and papery, with dark flecks. Likely the only book here that would float."
+
+[binding.chartlinen] # core.binding, tier 1
+name = "Tide-Chart Linen"
+description = "Pale linen printed with an old chart, its depth lines worn soft at the corners by a few seasons of thumbs."
+
+[binding.sailcloth] # core.binding, tier 1
+name = "Tarred Sailcloth"
+description = "Old sail, tarred black against the weather and whipped round the edges with twine."
+
+[binding.oilskin] # core.binding, tier 1
+name = "Oilskin Yellow"
+description = "Waxed yellow cloth that sheds rain and spray. You can find it at the bottom of the boat, which is the point."
+
+[binding.oilcloth] # core.binding, tier 1
+name = "Oilcloth"
+description = "Stiff oiled canvas that sheds the rain, and most of the fish slime."
+
+[binding.canvas] # core.binding, tier 1
+name = "Canvas Field Pad"
+description = "Plain khaki canvas, stencilled with a number nobody remembers assigning. Fits a coat pocket, just."
+
+[binding.kraft] # core.binding, tier 1
+name = "Waxed Kraft"
+description = "Brown paper rubbed with beeswax until it shrugs off rain. Tied with twine, because buttons fall off."
+
+[binding.tartan] # core.binding, tier 1
+name = "Tartan Wool"
+description = "Thick green-and-navy wool with a red line through it. Warm hands, damp pages, no regrets."
+
+[binding.buckram] # core.binding, tier 2
+name = "Sea-Green Buckram"
+description = "Stiff sea-green cloth with cream rules. Spray beads up and rolls straight off."
+
+[binding.moss] # core.binding, tier 2
+name = "Mossbound"
+description = "Leather left too long on a damp bank. The moss took hold, and the book seems happier for it."
+
+[binding.driftwood] # core.binding, tier 2
+name = "Driftwood Boards"
+description = "Three boards of grey driftwood, nailed to a leather spine. Heavy, honest and faintly salty."
+
+[binding.eelskin] # core.binding, tier 2
+name = "Eelskin"
+description = "Strips of eelskin sewn side by side, dark and slick, with a shine that moves when the light does."
+
+[binding.kodo] # core.binding, tier 2
+name = "Kodo Hide"
+description = "A thick plains hide with the hair worn off in patches, laced shut with rawhide. It will outlast the angler."
+
+[binding.frosthide] # core.binding, tier 2
+name = "Frost-Tanned Hide"
+description = "Hide cured in the cold until it went white, trimmed with fur along the spine for gloveless hands."
+
+[binding.netcork] # core.binding, tier 2
+name = "Net over Cork"
+description = "Cork boards under a knotted net, with a float tied on. It will not sink, which is more than most books can say."
+
+[binding.tooled] # core.binding, tier 2
+name = "Tooled Leather"
+description = "Dark leather tooled with reeds and leaping fish, by someone with a sharp knife and a long winter."
+
+[binding.maplinen] # core.binding, tier 2
+name = "Map Linen"
+description = "A hand-drawn map on linen, the trail dotted in red and an X where somebody swears the big one lives."
+
+[binding.planks] # core.binding, tier 2
+name = "Bound Planks"
+description = "Thin planks strapped together with leather and brass buckles. Doubles as a cutting board in a pinch."
+
+[binding.sharkskin] # core.binding, tier 3
+name = "Sharkskin"
+description = "Rough grey hide with silver tooling. It won't slip out of a wet hand."
+
+[binding.copper] # core.binding, tier 3
+name = "Riveted Copper"
+description = "Copper plates riveted over boards, gone green at the seams. Loud to close, impossible to dent."
+
+[binding.velvet] # core.binding, tier 3
+name = "Night Velvet"
+description = "Midnight velvet embroidered with silver stars and a moon. Best read by lantern, which is when it gets read."
+
+[binding.turtle] # core.binding, tier 3
+name = "Turtle Shell"
+description = "Polished shell plates, amber and smoke, set into a dark frame. Older than the book, and likely to outlive it."
+
+[binding.morocco] # core.binding, tier 3
+name = "Gilded Morocco"
+description = "Red goatskin tooled all over in gold lattice, the kind of binding usually kept behind glass."
+
+[binding.verdigris] # core.binding, tier 3
+name = "Verdigris"
+description = "Copper corners and a copper clasp, gone green in the sea air. It was bright once, briefly."
+
+[binding.snakeskin] # core.binding, tier 3
+name = "Snakeskin"
+description = "A long swamp snake’s skin, still patterned with the diamonds it hunted by. Cool to the touch, always."
+
+[binding.shagreen] # core.binding, tier 3
+name = "Stingray Shagreen"
+description = "Ray skin, pebbled like frost, with the pale star at its centre the old makers always kept."
+
+[binding.lacquer] # core.binding, tier 3
+name = "Lacquered Red"
+description = "Layer upon layer of red lacquer, polished until it holds a reflection, with a gilt carp swimming in it."
+
+[binding.bone] # core.binding, tier 3
+name = "Bone & Rawhide"
+description = "Rawhide stretched taut over a frame and shut with two carved bone toggles. Creaks in the cold."
+
+[binding.brasscase] # core.binding, tier 3
+name = "Brass Hunter's Case"
+description = "A brass case engraved with a leaping fish over the reeds, with a latch that clicks like it means it."
+
+[binding.coral] # core.binding, tier 4
+name = "Coral Inlay"
+description = "Branches of red coral set into sea-green leather, with pearls where the branches end."
+
+[binding.scrimshaw] # core.binding, tier 4
+name = "Scrimshaw Panel"
+description = "An old ivory panel scratched with a ship and a fish by some sailor with a long voyage and a sharp knife."
+
+[binding.pearl] # core.binding, tier 5
+name = "Mother-of-Pearl"
+description = "A cover of shell, cut piece by piece and fitted like tiles. It shifts colour every time the book is turned."
+
+[binding.trophycase] # core.binding, tier 5
+name = "Gilded Trophy Case"
+description = "A dark wood case with a glass front, and behind the glass a fish cast in gold. Opens like a cabinet."
 
 [good."core.crest.fish.1467"] # Bookplate crest, earned: all ten varieties of Spotted Sunfish
 name = "{fish} Crest"

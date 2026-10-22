@@ -360,50 +360,6 @@ text = "Tipper of Scales"
 [title."complete.varieties"] # every variety of every fish, the rarest title (VAR-R22), from the varieties release
 text = "Keeper of Every Colour"
 
-# Journal bindings (LED-R110, manifest.toml's [ledger.binding]), from the M4 batch (#161): the good
-# ledger.binding.<id>'s name, and the description the Curio Shop shows beside its closed-book preview. A binding is
-# a look only, so its description is about the book's leather or cloth. The comment says how it's had.
-
-[binding.field] # the default
-name = "Field Leather"
-description = "Plain brown leather, made to be rained on, and it usually is."
-
-[binding.level10] # earned at Angler Level 10
-name = "Tanned Hide"
-description = "Lighter, softer hide, worn smooth at the corners by a few seasons of wet thumbs."
-
-[binding.level20] # earned at Angler Level 20
-name = "Tidewater Blue"
-description = "Deep blue leather with silver rules, the colour of a harbour at dusk."
-
-[binding.level30] # earned at Angler Level 30
-name = "Reed Green"
-description = "Dark green leather, gilt the colour of dry reeds, and a faint smell of riverbank."
-
-[binding.level40] # earned at Angler Level 40
-name = "Oxblood"
-description = "Deep red leather and heavy gilt. Fish blood barely shows on it."
-
-[binding.level50] # earned at Angler Level 50
-name = "Storm Grey"
-description = "Slate-grey leather with silver tooling, for the days nobody else goes out."
-
-[binding.level60] # earned at Angler Level 60
-name = "Nat's Own"
-description = "Near-black leather and bright gold. About as fine as an angler's book gets."
-
-[binding.birch] # Curio Shop, tier 1
-name = "Birch Bark"
-description = "Pale and papery, with dark flecks. Likely the only book here that would float."
-
-[binding.buckram] # Curio Shop, tier 2
-name = "Sea-Green Buckram"
-description = "Stiff sea-green cloth with cream rules. Spray beads up and rolls straight off."
-
-[binding.sharkskin] # Curio Shop, tier 3
-name = "Sharkskin"
-description = "Rough grey hide with silver tooling. It won't slip out of a wet hand."
-
 # Zone crests (LED-R113, manifest.toml's [ledger.crest]): the good ledger.crest.<key>'s name, the landmark on its
 # shield, and the description the Curio Shop shows beside it, a word on the water there. Neither names a place from
 # the game (DATA-R3). Each is earned when its zone reaches Master (LED-R114); the comment names the zone, for review
@@ -621,85 +577,51 @@ description = "A snowflake over still water, where ice fishing is real fishing."
 name = "The Floating Isle"
 description = "An island floating on cloud, its ship tied to the stone. The water is a long way down."
 
-# The Curio Shop expansion's bindings (LED-R110, LED-R116): the good ledger.binding.<id>'s name and description.
+# The Ledger's earned bindings in Core's binding slot (LED-R110, LED-R111, LED-R116; ADR 0015), each
+# ledgergood.<goodID>: the name and the description the Curio Shop shows beside its closed book. A binding
+# is a look only, so its description is about the book's leather or cloth. The comment says how it's had.
 
-[binding.chartlinen] # ledger.binding, tier 1
-name = "Tide-Chart Linen"
-description = "Pale linen printed with an old chart, its depth lines worn soft at the corners by a few seasons of thumbs."
+[ledgergood."ledger.binding.level10"] # core.binding, earned at Angler Level 10
+name = "Tanned Hide"
+description = "Lighter, softer hide, worn smooth at the corners by a few seasons of wet thumbs."
 
-[binding.sailcloth] # ledger.binding, tier 1
-name = "Tarred Sailcloth"
-description = "Old sail, tarred black against the weather and whipped round the edges with twine."
+[ledgergood."ledger.binding.level20"] # core.binding, earned at Angler Level 20
+name = "Tidewater Blue"
+description = "Deep blue leather with silver rules, the colour of a harbour at dusk."
 
-[binding.oilskin] # ledger.binding, tier 1
-name = "Oilskin Yellow"
-description = "Waxed yellow cloth that sheds rain and spray. You can find it at the bottom of the boat, which is the point."
+[ledgergood."ledger.binding.level30"] # core.binding, earned at Angler Level 30
+name = "Reed Green"
+description = "Dark green leather, gilt the colour of dry reeds, and a faint smell of riverbank."
 
-[binding.moss] # ledger.binding, tier 2
-name = "Mossbound"
-description = "Leather left too long on a damp bank. The moss took hold, and the book seems happier for it."
+[ledgergood."ledger.binding.level40"] # core.binding, earned at Angler Level 40
+name = "Oxblood"
+description = "Deep red leather and heavy gilt. Fish blood barely shows on it."
 
-[binding.driftwood] # ledger.binding, tier 2
-name = "Driftwood Boards"
-description = "Three boards of grey driftwood, nailed to a leather spine. Heavy, honest and faintly salty."
+[ledgergood."ledger.binding.level50"] # core.binding, earned at Angler Level 50
+name = "Storm Grey"
+description = "Slate-grey leather with silver tooling, for the days nobody else goes out."
 
-[binding.eelskin] # ledger.binding, tier 2
-name = "Eelskin"
-description = "Strips of eelskin sewn side by side, dark and slick, with a shine that moves when the light does."
+[ledgergood."ledger.binding.level60"] # core.binding, earned at Angler Level 60
+name = "Nat's Own"
+description = "Near-black leather and bright gold. About as fine as an angler's book gets."
 
-[binding.kodo] # ledger.binding, tier 2
-name = "Kodo Hide"
-description = "A thick plains hide with the hair worn off in patches, laced shut with rawhide. It will outlast the angler."
-
-[binding.frosthide] # ledger.binding, tier 2
-name = "Frost-Tanned Hide"
-description = "Hide cured in the cold until it went white, trimmed with fur along the spine for gloveless hands."
-
-[binding.netcork] # ledger.binding, tier 2
-name = "Net over Cork"
-description = "Cork boards under a knotted net, with a float tied on. It will not sink, which is more than most books can say."
-
-[binding.copper] # ledger.binding, tier 3
-name = "Riveted Copper"
-description = "Copper plates riveted over boards, gone green at the seams. Loud to close, impossible to dent."
-
-[binding.velvet] # ledger.binding, tier 3
-name = "Night Velvet"
-description = "Midnight velvet embroidered with silver stars and a moon. Best read by lantern, which is when it gets read."
-
-[binding.turtle] # ledger.binding, tier 3
-name = "Turtle Shell"
-description = "Polished shell plates, amber and smoke, set into a dark frame. Older than the book, and likely to outlive it."
-
-[binding.morocco] # ledger.binding, tier 3
-name = "Gilded Morocco"
-description = "Red goatskin tooled all over in gold lattice, the kind of binding usually kept behind glass."
-
-[binding.coral] # ledger.binding, tier 4
-name = "Coral Inlay"
-description = "Branches of red coral set into sea-green leather, with pearls where the branches end."
-
-[binding.pearl] # ledger.binding, tier 5
-name = "Mother-of-Pearl"
-description = "A cover of shell, cut piece by piece and fitted like tiles. It shifts colour every time the book is turned."
-
-[binding.legend] # ledger.binding, earned: Land all three Legends
+[ledgergood."ledger.binding.legend"] # core.binding, earned: Land all three Legends
 name = "Three Gilt Fish"
 description = "Blue leather embossed with scales, and on the cover three gilt fish chasing one another round the same circle."
 
-[binding.monster] # ledger.binding, earned: Land a Monster
+[ledgergood."ledger.binding.monster"] # core.binding, earned: Land a Monster
 name = "Monster Hide"
 description = "Scaled hide from something that did not want to be landed, shut with one of its own teeth."
 
-[binding.abyssal] # ledger.binding, earned: Prestige X
+[ledgergood."ledger.binding.abyssal"] # core.binding, earned: Prestige X
 name = "Abyssal Black"
 description = "Black as deep water, with a pale glow coiling under the surface. For anglers who have been to the bottom ten times and back."
 
-[binding.keeper] # ledger.binding, earned: Ledger 100%
+[ledgergood."ledger.binding.keeper"] # core.binding, earned: Ledger 100%
 name = "Keeper's Gold"
 description = "Cream vellum all but buried in gold. Kept for the angler whose book has nothing left to find."
 
-[binding.iridescent] # ledger.binding, earned: Every fish in every colour
+[ledgergood."ledger.binding.iridescent"] # core.binding, earned: Every fish in every colour
 name = "Iridescent Scale"
 description = "Scales in every colour the water ever gave up, laid one over the next. It never looks the same twice."
 

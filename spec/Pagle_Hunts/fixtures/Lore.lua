@@ -18,14 +18,13 @@ L["set.fixture_dusk.name"] = "Dusk"
 L["set.fixture_dusk.note"] = "After the lamps are lit."
 L["set.fixture_dusk.title"] = "the Duskwatcher"
 L["set.fixture_wagers.name"] = "Wagers"
--- Two of Hunts' goods (HNT-R121, from #192); the other five have no keys, so they read their IDs.
-L["huntgood.hunts.notebookcover.oilcloth.description"] = "Black-green oilcloth that keeps the rain off the pages."
-L["huntgood.hunts.notebookcover.oilcloth.name"] = "Oilcloth"
+-- One of Hunts' tracker frames (HNT-R121, from #192); the others have no keys, so they read their IDs.
 L["huntgood.hunts.trackerframe.inkwash.description"] = "A wash of thinned ink behind your pinned Hunts."
 L["huntgood.hunts.trackerframe.inkwash.name"] = "Ink Wash"
--- One of the Curio Shop expansion's earned covers (HNT-R122, from #346), its description shorter than the shipped one.
-L["huntgood.hunts.notebookcover.pathfinder.description"] = "Calfskin pressed with a compass rose."
-L["huntgood.hunts.notebookcover.pathfinder.name"] = "Pathfinder's Calf"
+-- One of Hunts' earned bindings in Core's slot (HNT-R122, from #346, renamed in #351), its description shorter than
+-- the shipped one.
+L["huntgood.hunts.binding.pathfinder.description"] = "Calfskin pressed with a compass rose."
+L["huntgood.hunts.binding.pathfinder.name"] = "Pathfinder's Calf"
 -- The fixture event pool's lore (fixtures/EventList.lua, DATA-R97): fixture_shore and one of its Hunts have names and
 -- a note; fixture_vale and the other Hunts have none, so they read their IDs (HNT-R140).
 L["event.fixture_shore.name"] = "Shore Wager"

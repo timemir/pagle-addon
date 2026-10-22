@@ -97,7 +97,7 @@ local function shopCore(saved, options)
 	local loaded = loadCore(options.entries, saved)
 	local Pagle = loaded.env.Pagle
 	local ledger = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
-	ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" })
+	ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Books" })
 	ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
 	ledger:RegisterGood({ id = "ledger.binding.lapis", slot = "ledger.binding", name = "Lapis", tier = 3 })
 	for _, crest in ipairs({
@@ -120,7 +120,7 @@ local function shopCore(saved, options)
 	local hunts
 	if not options.noHunts then
 		hunts = Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
-		hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+		hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
 		hunts:RegisterGood({ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true })
 		hunts:RegisterGood({
 			id = "hunts.cover.velvet",
@@ -177,7 +177,7 @@ local function huntsFrames(hunts, progress)
 	hunts:RegisterSlot({
 		id = "hunts.frame",
 		label = "Frame",
-		category = "Hunts",
+		category = "Trackers",
 		groups = { { key = "gilt", name = "Gilt frames" }, { key = "wood", name = "Wooden frames" } },
 	})
 	hunts:RegisterGood({ id = "hunts.frame.plain", slot = "hunts.frame", name = "Plain", default = true })
@@ -809,7 +809,7 @@ describe("The Curio Shop's stage", function()
 	it("shows an earned good's earnedText and that it isn't for sale (wallet-and-shop.md › UI)", function()
 		local loaded = loadCore()
 		local ledger = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
-		ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" })
+		ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Books" })
 		ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
 		ledger:RegisterGood({
 			id = "ledger.binding.level30",

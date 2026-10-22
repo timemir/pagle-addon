@@ -37,22 +37,26 @@ end
 
 describe("the Fish Journal's art (ledger.md › UI)", function()
 	it(
-		"draws its own parts, crests, binding swatches and every binding's material from its media, as BLP files that ship (LED-R110)",
+		"draws its own parts and crests from its media, the bindings' swatches from Core's, as BLP files that ship (LED-R110, ADR 0015)",
 		function()
-			local _, loaded = openJournal()
+			local fake, loaded = openJournal()
 			local atlases = loaded.ns.JOURNAL_ATLASES
 			local function path(file)
 				return file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
 			end
 
-			for _, name in ipairs({ "Parts", "Crests", "Bindings", "Bindings2" }) do
+			for _, name in ipairs({ "Parts", "Crests" }) do
 				local file = atlases[name].file
 				assert.matches("^Interface\\AddOns\\Pagle_Ledger\\media\\journal\\", file)
 				assert(#readFile(path(file)) > 0, path(file))
 			end
+			for _, name in ipairs({ "Bindings", "Bindings2" }) do
+				local file = atlases[name].file
+				assert.matches("^Interface\\AddOns\\Pagle\\media\\books\\", file)
+				assert(#readFile(path(file)) > 0, path(file))
+			end
 			for _, binding in ipairs(loaded.ns.BINDINGS) do
-				local look = loaded.ns.BindingLook(loaded.ns.BindingID(binding))
-				assert(#readFile(path(look.texture)) > 0, path(look.texture))
+				local look = fake.Pagle.GetBindingLook(loaded.ns.BindingID(binding))
 				assert(atlases[look.swatchAtlas].sprites[look.swatch], look.swatch)
 			end
 		end

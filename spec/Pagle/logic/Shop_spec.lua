@@ -154,7 +154,7 @@ end
 -- Hunts' notebook covers on its handle: Plain (default), Velvet (tier 2, icon 134939, a description) and Gold (earned
 -- while `earned.value`, "Every Hunt done").
 local function huntsCovers(hunts, earned)
-	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
 	hunts:RegisterGood({ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true })
 	hunts:RegisterGood({
 		id = "hunts.cover.velvet",
@@ -177,7 +177,7 @@ end
 
 -- The Ledger's binding slot: Oak (default) and Lapis (tier 3).
 local function ledgerBindings(ledger)
-	ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" })
+	ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Books" })
 	ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
 	ledger:RegisterGood({ id = "ledger.binding.lapis", slot = "ledger.binding", name = "Lapis", tier = 3 })
 end
@@ -316,7 +316,7 @@ local function huntsFrames(hunts, earned)
 	hunts:RegisterSlot({
 		id = "hunts.frame",
 		label = "Frame",
-		category = "Hunts",
+		category = "Trackers",
 		groups = { { key = "gilt", name = "Gilt frames" }, { key = "wood", name = "Wooden frames" } },
 	})
 	hunts:RegisterGood({ id = "hunts.frame.plain", slot = "hunts.frame", name = "Plain", default = true })
@@ -397,7 +397,7 @@ describe("The Curio Shop's list", function()
 			local fake, handles = shopping()
 			handles.Ledger:ReportCoinsEarned(1000)
 
-			local rows = model(fake):List({ category = "Hunts" })[1].rows
+			local rows = model(fake):List({ category = "Trackers" })[1].rows
 
 			assert.are.same(
 				{ id = "hunts.cover.velvet", name = "Velvet", icon = 134939, state = "forSale", price = "400" },
@@ -416,7 +416,7 @@ describe("The Curio Shop's list", function()
 			local shop = model(fake)
 
 			local rows = shop:List({ category = "Bookplate" })[1].rows
-			local velvet = shop:List({ category = "Hunts" })[1].rows[2]
+			local velvet = shop:List({ category = "Trackers" })[1].rows[2]
 
 			assert.are.same({ true, true, true }, { rows[1].shield, rows[2].shield, rows[3].shield })
 			assert.is_nil(velvet.shield)
@@ -497,14 +497,14 @@ describe("The Curio Shop's list", function()
 			assert.are.same({
 				{ category = "Announcements", label = "Announcements" },
 				{ category = "Bookplate", label = "Bookplate" },
-				{ category = "Fish Journal", label = "Fish Journal" },
-				{ category = "Hunts", label = "Hunts" },
+				{ category = "Books", label = "Books" },
+				{ category = "Trackers", label = "Hunts" },
 			}, shop:Chips())
 			assert.are.same({
 				"Journal binding (1 of 2)",
 				"  ledger.binding.oak In use",
 				"  ledger.binding.lapis 900" .. " [red]",
-			}, outline(shop:List({ category = "Fish Journal" })))
+			}, outline(shop:List({ category = "Books" })))
 		end
 	)
 
@@ -550,7 +550,7 @@ describe("A grouped slot on the Curio Shop's list", function()
 				"  -- Wooden frames",
 				"  hunts.frame.oak 150",
 				"  hunts.frame.birch 400" .. " [red]",
-			}, outline(model(fake):List({ category = "Hunts" })))
+			}, outline(model(fake):List({ category = "Trackers" })))
 		end
 	)
 
@@ -562,16 +562,16 @@ describe("A grouped slot on the Curio Shop's list", function()
 			"Frame (1 of 5)",
 			"  -- Wooden frames",
 			"  hunts.frame.birch 400" .. " [red]",
-		}, outline(shop:List({ search = "birch", category = "Hunts" }))) -- Core's Birch Scroll is no Frame
+		}, outline(shop:List({ search = "birch", category = "Trackers" }))) -- Core's Birch Scroll is no Frame
 		assert.are.same({
 			"Frame (1 of 5)",
 			"  hunts.frame.velvet 150",
 			"  -- Wooden frames",
 			"  hunts.frame.oak 150",
-		}, outline(shop:List({ category = "Hunts", filter = "canAfford" })))
+		}, outline(shop:List({ category = "Trackers", filter = "canAfford" })))
 		assert.are.same(
 			{ "Frame (1 of 5)", "  hunts.frame.plain In use" },
-			outline(shop:List({ search = "plain", category = "Hunts" }))
+			outline(shop:List({ search = "plain", category = "Trackers" }))
 		)
 	end)
 
@@ -580,7 +580,7 @@ describe("A grouped slot on the Curio Shop's list", function()
 		huntsCovers(handles.Hunts, { value = false })
 		fake.login()
 
-		local group = model(fake):List({ category = "Hunts" })[1]
+		local group = model(fake):List({ category = "Trackers" })[1]
 
 		assert.is_nil(group.headings)
 		assert.are.same({ "hunts.cover.plain", "hunts.cover.velvet", "hunts.cover.gold" }, {
@@ -612,7 +612,7 @@ describe("An earned good's texts and progress in the Curio Shop", function()
 	-- Hunts' frames (Gold leaf earned while `earned.value`, with `progress` as its progress if given), logged in.
 	local function earning(earned, progress)
 		local fake, handles = coreWithModules()
-		handles.Hunts:RegisterSlot({ id = "hunts.frame", label = "Frame", category = "Hunts" })
+		handles.Hunts:RegisterSlot({ id = "hunts.frame", label = "Frame", category = "Trackers" })
 		handles.Hunts:RegisterGood({ id = "hunts.frame.plain", slot = "hunts.frame", name = "Plain", default = true })
 		handles.Hunts:RegisterGood({
 			id = "hunts.frame.leaf",
@@ -718,7 +718,7 @@ describe("The Curio Shop's Put away group", function()
 				name = name,
 				slot = "hunts.cover",
 				slotLabel = "Notebook cover",
-				category = "Hunts",
+				category = "Trackers",
 				module = "Hunts",
 			}
 			for key, value in pairs(fields) do
@@ -763,7 +763,7 @@ describe("The Curio Shop's Put away group", function()
 			assert.are.same({
 				{ category = "Announcements", label = "Announcements" },
 				{ category = "Bookplate", label = "Bookplate" },
-				{ category = "Fish Journal", label = "Fish Journal" },
+				{ category = "Books", label = "Books" },
 			}, model(fake):Chips(), "no chip for a slot that isn't live")
 		end
 	)
@@ -782,8 +782,8 @@ describe("The Curio Shop's Put away group", function()
 		assert.are.equal(2, putAway({ filter = "owned" }))
 		assert.are.equal(0, putAway({ filter = "notOwned" }))
 		assert.are.equal(0, putAway({ filter = "canAfford" }))
-		assert.are.equal(2, putAway({ category = "Hunts" }))
-		assert.are.equal(0, putAway({ category = "Fish Journal" }))
+		assert.are.equal(2, putAway({ category = "Trackers" }))
+		assert.are.equal(0, putAway({ category = "Books" }))
 	end)
 end)
 
@@ -922,7 +922,7 @@ describe("The Curio Shop's stage", function()
 	it("hands over the good's preview and icon (wallet-and-shop.md › UI)", function()
 		local fake, handles = coreWithModules()
 		local function preview() end
-		handles.Hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+		handles.Hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
 		handles.Hunts:RegisterGood({
 			id = "hunts.cover.plain",
 			slot = "hunts.cover",

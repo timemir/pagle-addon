@@ -31,44 +31,6 @@ local function runAsHunts(path, loaded)
 	chunk("Pagle_Hunts", loaded.ns)
 end
 
---- A binding's look as the stand-in renderer below hands it out (core/book-binding.md, `PagleBindingLook`'s inks): Field
---- Leather's by default, and a cold silver one for any good whose ID says "silver" or "fiveseal".
----@param goodID string?
----@return table
-function support.bindingLook(goodID)
-	local cold = goodID ~= nil and (goodID:find("silver") ~= nil or goodID:find("fiveseal") ~= nil)
-	return {
-		id = goodID or "core.binding.fieldleather",
-		gilt = cold and { 0.8, 0.82, 0.86 } or { 0.91, 0.79, 0.42 },
-		giltShadow = { 0, 0, 0, 0.95, 0, -1 },
-		silver = cold,
-		paperTint = cold and { 0.95, 0.97, 1 } or { 1, 1, 1 },
-	}
-end
-
--- A stand-in for Core's book binding (core/book-binding.md, BIND-R1–R3), for a FakePagle that has none of its own: it
--- draws nothing, wears the pinned good's look or Field Leather's, and calls `onLook` as it is made and at each
--- SetLook. Its `skin` records the look it wears, as FakePagle's own does.
----@param frame table
----@param options { pinned: string?, onLook: fun(look: table)? }?
----@return table
-local function newBookBinding(frame, options)
-	options = options or {}
-	local binding = { frame = frame, skin = { dim = 1 } }
-	function binding.SetLook(self, goodID)
-		self.pinned = goodID
-		self.skin.look = support.bindingLook(goodID)
-		if options.onLook then
-			options.onLook(self.skin.look)
-		end
-	end
-	function binding.Look(self)
-		return self.skin.look
-	end
-	binding:SetLook(options.pinned)
-	return binding
-end
-
 --- support.load's options.
 ---@class HuntsLoadOptions
 ---@field lore boolean?   -- false loads no fixture lore, so names fall back to IDs (HNT-R1)
@@ -90,10 +52,6 @@ end
 function support.load(fake, options)
 	fake = fake or newFakePagle()
 	options = options or {}
-	-- Core's book binding, until FakePagle has its own (#351)
-	if not fake.Pagle.NewBookBinding then
-		fake.Pagle.NewBookBinding = newBookBinding
-	end
 	if not options.motion then
 		fake.profile.announcements.motion = false
 	end
@@ -163,27 +121,6 @@ end
 --- HNT-R121's goods by slot, in its order, each with its kind as the table writes it: the specs' oracle, kept apart
 --- from the addon's own list (logic/Goods.lua).
 support.GOODS = {
-	["hunts.notebookcover"] = {
-		{ "hunts.notebookcover.leather", "default" },
-		{ "hunts.notebookcover.oilcloth", "tier 1" },
-		{ "hunts.notebookcover.tooled", "tier 2" },
-		{ "hunts.notebookcover.verdigris", "tier 3" },
-		{ "hunts.notebookcover.canvas", "tier 1" },
-		{ "hunts.notebookcover.kraft", "tier 1" },
-		{ "hunts.notebookcover.tartan", "tier 1" },
-		{ "hunts.notebookcover.maplinen", "tier 2" },
-		{ "hunts.notebookcover.planks", "tier 2" },
-		{ "hunts.notebookcover.snakeskin", "tier 3" },
-		{ "hunts.notebookcover.shagreen", "tier 3" },
-		{ "hunts.notebookcover.lacquer", "tier 3" },
-		{ "hunts.notebookcover.bone", "tier 3" },
-		{ "hunts.notebookcover.brasscase", "tier 3" },
-		{ "hunts.notebookcover.scrimshaw", "tier 4" },
-		{ "hunts.notebookcover.trophycase", "tier 5" },
-		{ "hunts.notebookcover.pathfinder", "earned" },
-		{ "hunts.notebookcover.fiveseal", "earned" },
-		{ "hunts.notebookcover.wagersilk", "earned" },
-	},
 	["hunts.trackerframe"] = {
 		{ "hunts.trackerframe.none", "default" },
 		{ "hunts.trackerframe.inkwash", "tier 1" },
@@ -194,6 +131,13 @@ support.GOODS = {
 		{ "hunts.trackerframe.spyglass", "tier 3" },
 		{ "hunts.trackerframe.wagerribbon", "earned" },
 	},
+}
+
+--- Hunts' earned bindings in Core's binding slot (HNT-R122, ADR 0015), in their order.
+support.BINDINGS = {
+	{ "hunts.binding.pathfinder", "earned" },
+	{ "hunts.binding.fiveseal", "earned" },
+	{ "hunts.binding.wagersilk", "earned" },
 }
 
 --- A Hunts run on FakePagle: what support.start returns.

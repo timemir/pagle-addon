@@ -16,8 +16,7 @@ ns.L = {
 	BOARD = "Hunts",
 	BOARD_SLASH_HELP = "Open or close the Hunts board",
 
-	-- Hunts' slots (HNT-R120) and the sample tracker a tracker frame's preview draws (HNT-R121).
-	SLOT_NOTEBOOK_COVER = "Notebook cover",
+	-- Hunts' slot (HNT-R120) and the sample tracker a tracker frame's preview draws (HNT-R121).
 	SLOT_TRACKER_FRAME = "Hunts tracker frame",
 	-- Its two Hunts ("Night Run · in 37m", "Rack Hour · on demand"), the name at the left and the label at the right.
 	PREVIEW_TRACKER_HUNTS = { { "Night Run", "in 37m" }, { "Rack Hour", "on demand" } },

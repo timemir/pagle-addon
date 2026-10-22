@@ -50,7 +50,6 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		end
 		assert.are.same({}, stray)
 		assert.is_true(#drawn >= 4)
-		assert.is_nil(ns.NewBookLeather) -- the leather is Core's binding (STA-R70, ADR 0015)
 		assert.is_nil(ns.NewBookCorners)
 	end)
 

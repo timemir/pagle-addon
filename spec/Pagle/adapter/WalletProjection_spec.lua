@@ -20,7 +20,7 @@ end
 local function huntsCore(entries, saved)
 	local loaded = loadCore(entries, saved)
 	local hunts = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
-	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
 	hunts:RegisterGood({ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true })
 	hunts:RegisterGood({ id = VELVET, slot = "hunts.cover", name = "Velvet", tier = 1 })
 	hunts:RegisterGood({ id = SILK, slot = "hunts.cover", name = "Silk", tier = 2 })

@@ -3,6 +3,8 @@
 
 local L = select(2, ...).L
 
+L["binding.birch.description"] = "Pale bark with dark flecks."
+L["binding.birch.name"] = "Birch Bark"
 L["good.core.soundset.gilded.name"] = "Gilded"
 L["good.core.toaststyle.bottle.description"] =
 	"Rolled up, corked and given to the tide. It washed back with a better catch than it left with."

@@ -560,36 +560,51 @@ describe("the Angler page's Bindings", function()
 	local LEVEL_10 = { global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } }
 
 	it(
-		"lists the bindings in LED-R110's order: Field Leather in use, the level and expansion's earned ones by how they are earned, those for sale in the Curio Shop (LED-R146, LED-R110, LED-R116)",
+		"lists every binding in Core's slot in the shop's order: Field Leather in use, those for sale in the Curio Shop, then the Ledger's earned ones by how they are earned (LED-R146, SHOP-R25, LED-R110, LED-R116)",
 		function()
 			local _, loaded = anglerPage()
 
 			assert.are.same({
 				{ "Field Leather", "In use" },
-				{ "Tanned Hide", "Angler Level 10" },
-				{ "Tidewater Blue", "Angler Level 20" },
-				{ "Reed Green", "Angler Level 30" },
-				{ "Oxblood", "Angler Level 40" },
-				{ "Storm Grey", "Angler Level 50" },
-				{ "Nat's Own", "Angler Level 60" },
 				{ "Birch Bark", "In the Curio Shop" },
-				{ "Sea-Green Buckram", "In the Curio Shop" },
-				{ "Sharkskin", "In the Curio Shop" },
 				{ "Tide-Chart Linen", "In the Curio Shop" },
 				{ "Tarred Sailcloth", "In the Curio Shop" },
 				{ "Oilskin Yellow", "In the Curio Shop" },
+				{ "Oilcloth", "In the Curio Shop" },
+				{ "Canvas Field Pad", "In the Curio Shop" },
+				{ "Waxed Kraft", "In the Curio Shop" },
+				{ "Tartan Wool", "In the Curio Shop" },
+				{ "Sea-Green Buckram", "In the Curio Shop" },
 				{ "Mossbound", "In the Curio Shop" },
 				{ "Driftwood Boards", "In the Curio Shop" },
 				{ "Eelskin", "In the Curio Shop" },
 				{ "Kodo Hide", "In the Curio Shop" },
 				{ "Frost-Tanned Hide", "In the Curio Shop" },
 				{ "Net over Cork", "In the Curio Shop" },
+				{ "Tooled Leather", "In the Curio Shop" },
+				{ "Map Linen", "In the Curio Shop" },
+				{ "Bound Planks", "In the Curio Shop" },
+				{ "Sharkskin", "In the Curio Shop" },
 				{ "Riveted Copper", "In the Curio Shop" },
 				{ "Night Velvet", "In the Curio Shop" },
 				{ "Turtle Shell", "In the Curio Shop" },
 				{ "Gilded Morocco", "In the Curio Shop" },
+				{ "Verdigris", "In the Curio Shop" },
+				{ "Snakeskin", "In the Curio Shop" },
+				{ "Stingray Shagreen", "In the Curio Shop" },
+				{ "Lacquered Red", "In the Curio Shop" },
+				{ "Bone & Rawhide", "In the Curio Shop" },
+				{ "Brass Hunter's Case", "In the Curio Shop" },
 				{ "Coral Inlay", "In the Curio Shop" },
+				{ "Scrimshaw Panel", "In the Curio Shop" },
 				{ "Mother-of-Pearl", "In the Curio Shop" },
+				{ "Gilded Trophy Case", "In the Curio Shop" },
+				{ "Tanned Hide", "Angler Level 10" },
+				{ "Tidewater Blue", "Angler Level 20" },
+				{ "Reed Green", "Angler Level 30" },
+				{ "Oxblood", "Angler Level 40" },
+				{ "Storm Grey", "Angler Level 50" },
+				{ "Nat's Own", "Angler Level 60" },
 				{ "Three Gilt Fish", "Land all three Legends" },
 				{ "Monster Hide", "Land a Monster" },
 				{ "Abyssal Black", "Prestige X" },
@@ -600,7 +615,7 @@ describe("the Angler page's Bindings", function()
 	)
 
 	it(
-		"draws each line's closed book from its binding's atlas, an expansion one's from Bindings2, 11 wide (LED-R146, LED-R110)",
+		"draws each line's closed book from its binding's atlas, an expansion one's from Bindings2, 11 wide, and none for a cover with no book of the Journal's (LED-R146, LED-R110)",
 		function()
 			local _, loaded = anglerPage()
 			local ns = loaded.ns
@@ -612,6 +627,9 @@ describe("the Angler page's Bindings", function()
 			end
 
 			local field, coral = books["Field Leather"], books["Coral Inlay"]
+			assert.is_nil(books["Oilcloth"])
+			assert.is_nil(books["Lacquered Red"])
+			assert.is_truthy(books["Monster Hide"])
 			assert.are.equal(ns.JOURNAL_ATLASES.Bindings.file, field.texture)
 			assert.are.equal(ns.JOURNAL_ATLASES.Bindings2.file, coral.texture)
 			assert.are.same({ ns.JournalCoords("Bindings2", "swatch-coral") }, coral.texCoord)
@@ -636,36 +654,36 @@ describe("the Angler page's Bindings", function()
 			})
 
 			local list = lines(loaded)
-			assert.are.same({ "Monster Hide", "Use" }, list[27])
-			assert.are.same({ "Abyssal Black", "Use" }, list[28])
-			assert.are.same({ "Keeper's Gold", "Complete the Ledger" }, list[29])
+			assert.are.same({ "Monster Hide", "Use" }, list[42])
+			assert.are.same({ "Abyssal Black", "Use" }, list[43])
+			assert.are.same({ "Keeper's Gold", "Complete the Ledger" }, list[44])
 		end
 	)
 
 	it("offers Use for a level binding once its level is reached, and for one bought (LED-R146, LED-R111)", function()
 		local fake, loaded = anglerPage(nil, { saved = LEVEL_10 })
-		fake.setPurchased({ ["ledger.binding.birch"] = true })
+		fake.setPurchased({ ["core.binding.birch"] = true })
 		loaded.ns.journal:Draw()
 
 		local list = lines(loaded)
-		assert.are.same({ "Tanned Hide", "Use" }, list[2])
-		assert.are.same({ "Tidewater Blue", "Angler Level 20" }, list[3])
-		assert.are.same({ "Birch Bark", "Use" }, list[8])
+		assert.are.same({ "Tanned Hide", "Use" }, list[35])
+		assert.are.same({ "Tidewater Blue", "Angler Level 20" }, list[36])
+		assert.are.same({ "Birch Bark", "Use" }, list[2])
 	end)
 
 	it("opens the Curio Shop at a binding for sale (LED-R146, SHOP-R40)", function()
 		local fake, loaded = anglerPage()
 
-		-- The second of the three lines reading so: Sea-Green Buckram's.
+		-- The tenth of the lines reading so: Sea-Green Buckram's.
 		local widgets = {}
 		for _, widget in ipairs(loaded.ns.journal.frame.right.drawn.leader) do
 			if widget.value.text == "In the Curio Shop" then
 				widgets[#widgets + 1] = widget
 			end
 		end
-		widgets[2].scripts.OnClick(widgets[2])
+		widgets[9].scripts.OnClick(widgets[9])
 
-		assert.are.equal("ledger.binding.buckram", fake.shopsOpened[#fake.shopsOpened].goodID)
+		assert.are.equal("core.binding.buckram", fake.shopsOpened[#fake.shopsOpened].goodID)
 	end)
 
 	it(
@@ -678,7 +696,7 @@ describe("the Angler page's Bindings", function()
 			assert.are.equal("ledger.binding.level10", fake.Pagle.GetEquipped("core.binding"))
 			assert.are.same(fake.ns.BindingLook("ledger.binding.level10"), loaded.ns.journal.frame.binding:Look())
 			local list = lines(loaded)
-			assert.are.same({ { "Field Leather", "Use" }, { "Tanned Hide", "In use" } }, { list[1], list[2] })
+			assert.are.same({ { "Field Leather", "Use" }, { "Tanned Hide", "In use" } }, { list[1], list[35] })
 		end
 	)
 
@@ -687,7 +705,7 @@ describe("the Angler page's Bindings", function()
 
 		assert.is_true(fake.Pagle.SetEquipped("core.binding", "ledger.binding.level10"))
 
-		assert.are.same({ "Tanned Hide", "In use" }, lines(loaded)[2])
+		assert.are.same({ "Tanned Hide", "In use" }, lines(loaded)[35])
 	end)
 end)
 

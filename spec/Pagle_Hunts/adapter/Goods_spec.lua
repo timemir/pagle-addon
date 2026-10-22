@@ -1,14 +1,14 @@
--- Hunts' goods on FakePagle (HNT-R120–R123, HNT-R70; SHOP-R21–R23, SHOP-R26, SHOP-R30–R33, SHOP-R90): the two slots
--- and their goods in Core's goods registry, their names from lore, the earned ones owned as the projection and the
--- celebrated set say, their previews on the shop's stage, and the board's leather in the equipped cover.
+-- Hunts' goods on FakePagle (HNT-R120–R123; SHOP-R21–R23, SHOP-R26, SHOP-R30–R33, SHOP-R90; ADR 0015): its slot and
+-- its goods in Core's goods registry, its earned bindings in Core's binding slot, their names from lore, the earned
+-- ones owned as the projection and the celebrated set say, and the tracker frames' previews on the shop's stage.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
-local COVER, FRAME = "hunts.notebookcover", "hunts.trackerframe"
+local BINDING, FRAME = "core.binding", "hunts.trackerframe"
 
--- HNT-R121's goods, in its order, with their kinds.
-local GOODS = hunts.GOODS
+-- HNT-R121's goods, in its order, with their kinds, and Hunts' earned bindings (HNT-R122).
+local GOODS, BINDINGS = hunts.GOODS, hunts.BINDINGS
 
 -- A good's kind as HNT-R121's table writes it; "earned" for one with isEarned (HNT-R122).
 ---@param good PagleRegisteredGood
@@ -65,7 +65,7 @@ end
 
 describe("Hunts' goods", function()
 	it(
-		"register the slots hunts.notebookcover (Hunts) and hunts.trackerframe (Trackers), with HNT-R121's goods, defaults, tiers and earned goods (HNT-R120, HNT-R121, HNT-R122, SHOP-R21, SHOP-R22)",
+		"register the slot hunts.trackerframe (Trackers) with HNT-R121's goods, defaults and tiers, and the three earned bindings in Core's binding slot after Core's own, with no preview (HNT-R120, HNT-R121, HNT-R122, SHOP-R21, SHOP-R22, SHOP-R23)",
 		function()
 			local _, fake = loggedIn()
 			local goods = fake.ns.goods
@@ -76,56 +76,51 @@ describe("Hunts' goods", function()
 					slots[#slots + 1] = { slot.id, slot.label, slot.category }
 				end
 			end
-			assert.are.same({
-				{ COVER, "Notebook cover", "Hunts" },
-				{ FRAME, "Hunts tracker frame", "Trackers" },
-			}, slots)
-			for slot, expected in pairs(GOODS) do
-				local registered = {}
-				for i, good in ipairs(goods:GoodsOf(slot)) do
-					registered[i] = { good.id, kindOf(good) }
-				end
-				assert.are.same(expected, registered)
+			assert.are.same({ { FRAME, "Hunts tracker frame", "Trackers" } }, slots)
+			local registered = {}
+			for i, good in ipairs(goods:GoodsOf(FRAME)) do
+				registered[i] = { good.id, kindOf(good) }
 			end
-			assert.are.same({ "hunts.notebookcover.leather", "hunts.trackerframe.none" }, {
-				fake.Pagle.GetEquipped(COVER),
+			assert.are.same(GOODS[FRAME], registered)
+			local bindings = {}
+			for _, good in ipairs(goods:GoodsOf(BINDING)) do
+				if good.module == "Hunts" then
+					bindings[#bindings + 1] = { good.id, kindOf(good) }
+					assert.is_nil(good.preview, good.id) -- Core's slot previews it
+				else
+					assert.are.same({ "Core", 0 }, { good.module, #bindings }, good.id) -- Core's all come first
+				end
+			end
+			assert.are.same(BINDINGS, bindings)
+			assert.are.same({ "core.binding.field", "hunts.trackerframe.none" }, {
+				fake.Pagle.GetEquipped(BINDING),
 				fake.Pagle.GetEquipped(FRAME),
 			})
+			assert.are.same({}, fake.reported)
 		end
 	)
 
-	it(
-		"sell for 150, 400, 900, 2,000 and 5,000 Coins at tiers 1 to 5, in the Curio Shop (HNT-R121, SHOP-R22)",
-		function()
-			local _, fake = loggedIn()
-			local shop = fake.ns.ShopModel(tostring)
+	it("sell for 150, 400 and 900 Coins at tiers 1 to 3, in the Curio Shop (HNT-R121, SHOP-R22)", function()
+		local _, fake = loggedIn()
+		local shop = fake.ns.ShopModel(tostring)
 
-			local prices = {}
-			for _, id in ipairs({
-				"hunts.notebookcover.oilcloth",
-				"hunts.notebookcover.tooled",
-				"hunts.notebookcover.verdigris",
-				"hunts.notebookcover.canvas",
-				"hunts.notebookcover.maplinen",
-				"hunts.notebookcover.bone",
-				"hunts.notebookcover.scrimshaw",
-				"hunts.notebookcover.trophycase",
-				"hunts.trackerframe.inkwash",
-				"hunts.trackerframe.waxseal",
-				"hunts.trackerframe.slate",
-				"hunts.trackerframe.mapscrap",
-				"hunts.trackerframe.bounty",
-				"hunts.trackerframe.spyglass",
-			}) do
-				prices[#prices + 1] = shop:Entry(id).price
-			end
-			assert.are.same({ 150, 400, 900, 150, 400, 900, 2000, 5000, 150, 400, 150, 150, 400, 900 }, prices)
-			assert.are.same({ "Hunts", "Hunts" }, {
-				fake.Pagle.GetGood("hunts.notebookcover.oilcloth").module,
-				fake.Pagle.GetGood("hunts.trackerframe.none").module,
-			})
+		local prices = {}
+		for _, id in ipairs({
+			"hunts.trackerframe.inkwash",
+			"hunts.trackerframe.waxseal",
+			"hunts.trackerframe.slate",
+			"hunts.trackerframe.mapscrap",
+			"hunts.trackerframe.bounty",
+			"hunts.trackerframe.spyglass",
+		}) do
+			prices[#prices + 1] = shop:Entry(id).price
 		end
-	)
+		assert.are.same({ 150, 400, 150, 150, 400, 900 }, prices)
+		assert.are.same({ "Hunts", "Hunts" }, {
+			fake.Pagle.GetGood("hunts.trackerframe.inkwash").module,
+			fake.Pagle.GetGood("hunts.trackerframe.none").module,
+		})
+	end)
 
 	it(
 		"are named by their IDs, with no description, while their lore keys have no text (HNT-R121, HNT-R130)",
@@ -142,8 +137,8 @@ describe("Hunts' goods", function()
 				end,
 			})
 
-			for _, slot in ipairs({ COVER, FRAME }) do
-				for _, row in ipairs(GOODS[slot]) do
+			for _, list in ipairs({ GOODS[FRAME], BINDINGS }) do
+				for _, row in ipairs(list) do
 					local good = fake.Pagle.GetGood(row[1])
 					assert.are.same({ row[1] }, { good.name, good.description })
 				end
@@ -155,37 +150,32 @@ describe("Hunts' goods", function()
 		local _, fake = loggedIn()
 
 		assert.are.same({
-			{ "Oilcloth", "Black-green oilcloth that keeps the rain off the pages." },
 			{ "Ink Wash", "A wash of thinned ink behind your pinned Hunts." },
 			{ "Pathfinder's Calf", "Calfskin pressed with a compass rose." },
 		}, {
-			{
-				fake.Pagle.GetGood("hunts.notebookcover.oilcloth").name,
-				fake.Pagle.GetGood("hunts.notebookcover.oilcloth").description,
-			},
 			{
 				fake.Pagle.GetGood("hunts.trackerframe.inkwash").name,
 				fake.Pagle.GetGood("hunts.trackerframe.inkwash").description,
 			},
 			{
-				fake.Pagle.GetGood("hunts.notebookcover.pathfinder").name,
-				fake.Pagle.GetGood("hunts.notebookcover.pathfinder").description,
+				fake.Pagle.GetGood("hunts.binding.pathfinder").name,
+				fake.Pagle.GetGood("hunts.binding.pathfinder").description,
 			},
 		})
 	end)
 
 	it(
-		"show each good's icon as its swatch in the Curio Shop's list: an expansion cover's its material, Hunts' own (HNT-R121, HNT-R123, SHOP-R26)",
+		"show each good's icon as its swatch in the Curio Shop's list: an earned binding's its material, Core's (HNT-R121, HNT-R123, SHOP-R26, ADR 0015)",
 		function()
-			local loaded, fake = loggedIn()
+			local _, fake = loggedIn()
 
 			local icons, count = {}, 0
-			for _, slot in ipairs({ COVER, FRAME }) do
-				for _, row in ipairs(GOODS[slot]) do
+			for _, list in ipairs({ GOODS[FRAME], BINDINGS }) do
+				for _, row in ipairs(list) do
 					local icon = fake.Pagle.GetGood(row[1]).icon
-					local look = loaded.ns.COVERS[row[1]]
-					if look and look.tile then
-						assert.are.equal(look.tile, icon, row[1])
+					local look = fake.Pagle.GetBindingLook(row[1])
+					if row[1]:find("^hunts%.binding%.") then
+						assert.are.equal(look.texture, icon, row[1])
 					else
 						assert.matches("^Interface\\Icons\\", icon)
 					end
@@ -219,9 +209,9 @@ describe("Hunts' goods", function()
 
 		local texts = {}
 		for _, id in ipairs({
-			"hunts.notebookcover.pathfinder",
-			"hunts.notebookcover.fiveseal",
-			"hunts.notebookcover.wagersilk",
+			"hunts.binding.pathfinder",
+			"hunts.binding.fiveseal",
+			"hunts.binding.wagersilk",
 			"hunts.trackerframe.wagerribbon",
 		}) do
 			texts[#texts + 1] = fake.ns.goods:Good(id).earnedText
@@ -234,173 +224,25 @@ describe("Hunts' goods", function()
 		}, texts)
 	end)
 
-	it("ship the expansion's covers, swatches and frames as Hunts' own media (HNT-R123)", function()
-		local loaded = loggedIn()
-		local ns = loaded.ns
-
-		local files = { ns.ATLASES.Covers2.file, ns.ATLASES.TrackerFrames2.file }
-		for _, row in ipairs(GOODS[COVER]) do
-			local look = ns.COVERS[row[1]]
-			if look.tile then
-				files[#files + 1] = look.tile
-				assert(ns.ATLASES.Covers2.sprites[look.swatch], row[1])
-			end
-		end
-		assert.are.equal(2 + 15, #files)
-		for _, file in ipairs(files) do
-			assert.matches("^Interface\\AddOns\\Pagle_Hunts\\media\\books\\", file)
-			local path = file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
-			assert.are.equal("BLP2", readFile(path):sub(1, 4), path)
-		end
-	end)
-end)
-
--- A leather view's look (adapter/BoardWidgets.lua's NewBoardLeather): its fill's file, then "tooled" and "corner" when
--- Tooled Leather's gilt rule and Verdigris's corner show, "band" when the band is toned and "corners" when an
--- expansion cover's four corners show, joined by "+".
----@param view table a BoardLeatherView on the fake client, read by the fields it keeps
----@return string
-local function lookOf(view)
-	local parts = { tostring(view.fill.texture) }
-	if view.tooling[1].edges[1]:IsShown() then
-		parts[#parts + 1] = "tooled"
-	end
-	if view.corner:IsShown() then
-		parts[#parts + 1] = "corner"
-	end
-	if view.bandPieces.TL:IsDesaturated() then
-		parts[#parts + 1] = "band"
-	end
-	if view.corners[1]:IsShown() then
-		parts[#parts + 1] = "corners"
-	end
-	return table.concat(parts, "+")
-end
-
--- The expansion's covers with metal corners (HNT-R123, the expansion kit's goods.json).
-local CORNERED = { snakeskin = true, shagreen = true, lacquer = true, scrimshaw = true, trophycase = true }
-CORNERED.pathfinder, CORNERED.wagersilk = true, true
-
--- Each cover's look, as lookOf reads it: the books kit v2's covers (HNT-R121), then the expansion's, each its material
--- under a toned band (HNT-R123).
-local function coverLooks(ns)
-	local leather = ns.BOOK_FILES.leather
-	local looks = {
-		["hunts.notebookcover.leather"] = leather,
-		["hunts.notebookcover.oilcloth"] = ns.COVER_FILES.oilcloth,
-		["hunts.notebookcover.tooled"] = leather .. "+tooled",
-		["hunts.notebookcover.verdigris"] = ns.COVER_FILES.verdigris .. "+corner",
-	}
-	for i = 5, #GOODS[COVER] do
-		local id = GOODS[COVER][i][1]
-		local key = id:match("[^.]+$")
-		looks[id] = ns.COVER_TILES .. key .. "+band" .. (CORNERED[key] and "+corners" or "")
-	end
-	return looks
-end
-
-describe("the board's cover", function()
-	-- The open board's leather, as lookOf reads it.
-	local function leatherOf(board)
-		return lookOf(board.frame.cover)
-	end
-
-	it("redraws the open board's leather in Oilcloth's look when Oilcloth is equipped (HNT-R70, SHOP-R33)", function()
-		local loaded, fake = loggedIn()
-		local ns = loaded.ns
-		local looks = coverLooks(ns)
-		ns.ToggleBoard()
-		assert.are.equal(looks["hunts.notebookcover.leather"], leatherOf(ns.board)) -- the kit's leather by default
-
-		fake.setPurchased({ ["hunts.notebookcover.oilcloth"] = true }) -- bought (SHOP-R11)
-		assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.oilcloth"))
-
-		assert.are.equal(looks["hunts.notebookcover.oilcloth"], leatherOf(ns.board))
-		assert.is_true(ns.board.frame.cover.band:IsShown()) -- the kit's band on every cover
-
-		assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.leather"))
-		assert.are.equal(looks["hunts.notebookcover.leather"], leatherOf(ns.board))
-	end)
-
 	it(
-		"dresses the open board in an expansion cover: its material tiled at its repeat, the band in its tone, its corners (HNT-R70, HNT-R123)",
+		"ship the expansion's frames as Hunts' own media, and no binding's art: Core ships it (HNT-R123, ADR 0015)",
 		function()
-			local loaded, fake = loggedIn()
+			local loaded = loggedIn()
 			local ns = loaded.ns
-			ns.ToggleBoard()
-			fake.setPurchased({ ["hunts.notebookcover.lacquer"] = true, ["hunts.notebookcover.canvas"] = true })
 
-			assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.lacquer"))
-
-			local view, frame = ns.board.frame.cover, ns.board.frame
-			assert.are.equal(coverLooks(ns)["hunts.notebookcover.lacquer"], leatherOf(ns.board))
-			-- 150 x 196 units a repeat, inside the band's 7-unit inset
-			local coords = view.fill.texCoord
-			assert.are.same({ 0, (frame.width - 14) / 150, 0, (frame.height - 14) / 196 }, coords)
-			-- the band's art desaturated and tinted #8a1410, brightened 1.9 times, each channel at most 1
-			local tone = view.bandPieces.T.vertexColor
-			assert.are.same({ 1, 0x14 / 255 * 1.9, 0x10 / 255 * 1.9 }, { tone[1], tone[2], tone[3] })
-			for _, corner in ipairs(view.corners) do
-				assert.is_true(corner:IsShown())
-				assert.is_true(corner:IsDesaturated()) -- gold: the brass corner tinted
+			assert.is_nil(ns.ATLASES.Covers2)
+			local files = { ns.ATLASES.TrackerFrames2.file }
+			for _, file in ipairs(files) do
+				assert.matches("^Interface\\AddOns\\Pagle_Hunts\\media\\books\\", file)
+				local path = file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
+				assert.are.equal("BLP2", readFile(path):sub(1, 4), path)
 			end
-
-			-- Canvas has no corners; the kit's own leather after it, its band untoned.
-			assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.canvas"))
-			assert.are.equal(coverLooks(ns)["hunts.notebookcover.canvas"], leatherOf(ns.board))
-			assert.is_true(fake.Pagle.SetEquipped(COVER, "hunts.notebookcover.leather"))
-			assert.are.equal(coverLooks(ns)["hunts.notebookcover.leather"], leatherOf(ns.board))
-			assert.are.same({ 1, 1, 1, 1 }, view.bandPieces.T.vertexColor)
-		end
-	)
-
-	it("opens in the cover equipped at an earlier login, bought then (HNT-R70, SHOP-R32)", function()
-		local fake = newFakePagle()
-		fake.setPurchased({ ["hunts.notebookcover.tooled"] = true })
-		fake.profile.appearance[COVER] = "hunts.notebookcover.tooled"
-		local loaded = hunts.load(fake)
-		fake.login()
-		local ns = loaded.ns
-
-		ns.ToggleBoard()
-
-		assert.are.equal(coverLooks(ns)["hunts.notebookcover.tooled"], leatherOf(ns.board))
-	end)
-
-	it(
-		"falls back to Leather while Hunts is disabled, keeping the pick, which comes back with Hunts (HNT-R70, SHOP-R32, SHOP-R90)",
-		function()
-			local _, first = loggedIn()
-			first.setPurchased({ ["hunts.notebookcover.oilcloth"] = true })
-			assert.is_true(first.Pagle.SetEquipped(COVER, "hunts.notebookcover.oilcloth"))
-
-			-- The next session, Hunts disabled: it runs no code, so it registers nothing (CORE-R17).
-			local off = newFakePagle()
-			off.global.goods = first.global.goods
-			off.profile.appearance = first.profile.appearance
-			off.setPurchased({ ["hunts.notebookcover.oilcloth"] = true })
-			off.login()
-
-			assert.are.equal("hunts.notebookcover.leather", off.Pagle.GetEquipped(COVER))
-			assert.are.equal("hunts.notebookcover.oilcloth", off.profile.appearance[COVER])
-
-			-- Enabled again: Oilcloth is back on the board with no SetEquipped.
-			local on = newFakePagle()
-			on.global.goods = first.global.goods
-			on.profile.appearance = off.profile.appearance
-			on.setPurchased({ ["hunts.notebookcover.oilcloth"] = true })
-			local loaded = hunts.load(on)
-			on.login()
-			loaded.ns.ToggleBoard()
-
-			assert.are.equal("hunts.notebookcover.oilcloth", on.Pagle.GetEquipped(COVER))
-			assert.are.equal(coverLooks(loaded.ns)["hunts.notebookcover.oilcloth"], leatherOf(loaded.ns.board))
 		end
 	)
 end)
 
 describe("Look and Feel", function()
-	it("lists the notebook cover under Hunts and the tracker frame under Trackers (SET-R50, HNT-R120)", function()
+	it("lists the tracker frame under Trackers, and no slot of Hunts' under Books (SET-R50, HNT-R120)", function()
 		local _, fake = loggedIn()
 
 		local listed = {}
@@ -411,12 +253,7 @@ describe("Look and Feel", function()
 				end
 			end
 		end
-		assert.are.same({ { "Hunts", COVER }, { "Trackers", FRAME } }, listed)
-		local choices = {}
-		for _, choice in ipairs(fake.ns.SlotChoices(fake.ns.goods, COVER)) do
-			choices[#choices + 1] = choice.value
-		end
-		assert.are.same({ "hunts.notebookcover.leather" }, choices) -- only what is owned (SET-R51)
+		assert.are.same({ { "Trackers", FRAME } }, listed)
 	end)
 
 	it("puts the tracker frame's dropdown in Hunts' section of the Trackers page (SET-R44, HNT-R120)", function()
@@ -425,80 +262,6 @@ describe("Look and Feel", function()
 		local slots = fake.ns.SectionSlots(fake.ns.goods, "trackers").Hunts
 		assert.are.same({ FRAME }, { slots[1].id, slots[2] })
 	end)
-end)
-
-describe("a notebook cover's preview", function()
-	it(
-		"draws the closed notebook in the books kit's covers on the good's stage: its leather, no pages (HNT-R121)",
-		function()
-			local loaded, fake = loggedIn()
-			local ns = loaded.ns
-			local looks = coverLooks(ns)
-
-			local leathers = {}
-			for i = 1, 4 do
-				local id = GOODS[COVER][i][1]
-				local stage = loaded.env.CreateFrame("Frame") -- each good's own stage frame (#157)
-
-				fake.ns.goods:Good(id).preview(stage)
-				fake.ns.goods:Good(id).preview(stage) -- the shop draws it again at each selection
-
-				assert.are.equal(1, #stage.children, id) -- one notebook, drawn afresh
-				local notebook = stage.children[1]
-				assert.is_true(notebook:IsShown())
-				assert.are.equal(false, notebook.swatch:IsShown(), id)
-				-- the board's own leather in that cover, in the kit's band
-				assert.are.equal(looks[id], lookOf(notebook.cover), id)
-				assert.is_true(notebook.cover.band:IsShown())
-				leathers[#leathers + 1] = lookOf(notebook.cover)
-				for _, widget in ipairs(descendants(notebook)) do
-					assert.are_not.equal(ns.BOOK_FILES.parchment, widget.texture, id) -- closed: no parchment
-				end
-			end
-			table.sort(leathers)
-			for i = 2, #leathers do
-				assert.are_not.equal(leathers[i - 1], leathers[i]) -- four different leathers
-			end
-		end
-	)
-
-	it(
-		"draws an expansion cover's closed notebook as its swatch in the Covers2 atlas, at the notebook's height (HNT-R121, HNT-R123)",
-		function()
-			local loaded, fake = loggedIn()
-			local ns = loaded.ns
-			local atlas = ns.ATLASES.Covers2
-
-			local seen = {}
-			-- One stage for every cover in turn: a books kit cover after a swatch shows its leather again.
-			local stage = loaded.env.CreateFrame("Frame")
-			for i = 5, #GOODS[COVER] do
-				local id = GOODS[COVER][i][1]
-				fake.ns.goods:Good(id).preview(stage)
-
-				local notebook = stage.children[1]
-				assert.are.equal(1, #stage.children, id)
-				assert.are.equal(false, notebook.leather:IsShown(), id)
-				local swatch = notebook.swatch
-				assert.are.equal(true, swatch:IsShown(), id)
-				assert.are.equal(atlas.file, swatch.texture, id)
-				local sprite = atlas.sprites[ns.COVERS[id].swatch]
-				assert.are.same({
-					sprite.x / atlas.width,
-					(sprite.x + sprite.w) / atlas.width,
-					sprite.y / atlas.height,
-					(sprite.y + sprite.h) / atlas.height,
-				}, swatch.texCoord, id)
-				assert.are.equal(140, swatch.box[4], id) -- the notebook's height
-				local key = table.concat(swatch.texCoord, ",")
-				assert.are.equal(nil, seen[key], id) -- a swatch of its own
-				seen[key] = true
-			end
-			fake.ns.goods:Good("hunts.notebookcover.oilcloth").preview(stage)
-			assert.is_true(stage.children[1].leather:IsShown())
-			assert.is_false(stage.children[1].swatch:IsShown())
-		end
-	)
 end)
 
 describe("a tracker frame's preview", function()
@@ -622,8 +385,8 @@ describe("Hunts' earned goods, through the projection", function()
 	local cast, append, record, runPayload, fishAt =
 		hunts.cast, hunts.append, hunts.record, hunts.runPayload, hunts.fishAt
 	local DARKSHORE, WESTFALL, ELWYNN = { zone = C.DARKSHORE }, { zone = C.WESTFALL }, { zone = C.ELWYNN }
-	local PATHFINDER, FIVESEAL = "hunts.notebookcover.pathfinder", "hunts.notebookcover.fiveseal"
-	local WAGERSILK, RIBBON = "hunts.notebookcover.wagersilk", "hunts.trackerframe.wagerribbon"
+	local PATHFINDER, FIVESEAL = "hunts.binding.pathfinder", "hunts.binding.fiveseal"
+	local WAGERSILK, RIBBON = "hunts.binding.wagersilk", "hunts.trackerframe.wagerribbon"
 	local NIGHT_WATCH = "hunts.soundset.nightwatch"
 
 	-- fixture_oddity done at dusk in Darkshore: fixture_wagers' first Hunt (fixture_grouper doesn't exist yet).

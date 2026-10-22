@@ -9,7 +9,8 @@ end
 -- The previews of Core's own goods on the Curio Shop's stage (wallet-and-shop.md › UI, the preview stage), by slot:
 -- logic/CoreGoods.lua's goods draw with these, looked up when the shop draws one. A sound set shows its swatch and
 -- » Toast / » Banner / » Legend buttons playing its sounds on the SFX channel (ANN-R73); a crest, a small bookplate
--- with the crest on it, as prototypes/curio-shop/ (variant B) draws them. The toast styles add the toast style's.
+-- with the crest on it, as prototypes/curio-shop/ (variant B) draws them; a binding, its closed book. The toast styles
+-- add the toast style's.
 local L = ns.L
 
 -- Each stage's panels, one per slot drawn on it, reused at the next drawing. Weak, so a stage the shop drops goes.
@@ -113,10 +114,65 @@ local function buildCrest(panel)
 	note:SetText(L.PREVIEW_CREST_NOTE)
 end
 
+---@class PagleBindingPanel: Frame
+---@field book PagleSprite  -- the closed book, the binding's swatch
+---@field icon Texture      -- the binding's icon, where no kit drew a closed book of it
+---@field note FontString
+
+-- The closed book's top on the stage, as the crest's bookplate sits, and the width its drawn book is drawn at: the
+-- Ledger art kit's books', which the shop expansion's larger ones are drawn down to, so every binding shows the same
+-- size and, with the note under it, fits the stage's 190. A binding with no closed book shows its icon, as large as a
+-- sound set's swatch.
+local BOOK_TOP, BOOK_WIDTH, ICON_TOP, ICON_SIZE = 16, 104, 24, 72
+
+-- A binding's panel: its closed book, or its icon, then that every book wears it (ADR 0015).
+---@param panel PagleBindingPanel
+local function buildBinding(panel)
+	panel.book = ns.ArtSprite(panel, "Bindings", "binding-field-leather")
+	panel.icon = panel:CreateTexture(nil, "ARTWORK")
+	panel.icon:SetSize(ICON_SIZE, ICON_SIZE)
+	panel.icon:SetPoint("TOP", 0, -ICON_TOP)
+	panel.note = ns.Text(panel, "GameFontDisableSmall")
+	panel.note:SetText(L.PREVIEW_BINDING_NOTE)
+end
+
+-- Draws `look`'s closed book from its swatch, its drawn book BOOK_WIDTH wide, its top BOOK_TOP down the panel and
+-- centred across it. Returns how far down its foot is.
+---@param panel PagleBindingPanel
+---@param look PagleBindingLook
+---@return number
+local function drawClosedBook(panel, look)
+	local book = ns.SetSprite(panel.book, look.swatchAtlas --[[@as string]], look.swatch --[[@as string]])
+	local box = book.box
+	local scale = BOOK_WIDTH / box[3]
+	local width, height = book:GetSize()
+	book:SetSize(width * scale, height * scale)
+	book.box = { box[1] * scale, box[2] * scale, BOOK_WIDTH, box[4] * scale }
+	book:ClearAllPoints()
+	book:SetPoint("TOP", panel, "TOP", width * scale / 2 - (book.box[1] + BOOK_WIDTH / 2), book.box[2] - BOOK_TOP)
+	return BOOK_TOP + book.box[4]
+end
+
 --- Each of Core's slots' preview drawer, by slot ID (logic/CoreGoods.lua). The toast styles add theirs for
 --- "core.toaststyle" (ANN-R80).
 ---@type table<string, PagleCorePreview>
 ns.CORE_PREVIEWS = {
+	-- A binding's closed book (ADR 0015), the kits' swatch of it, Core's art for a Module's earned one too (SHOP-R25);
+	-- its icon for the three no kit drew closed (Oilcloth, Tooled Leather, Verdigris).
+	[ns.BINDING_SLOT] = function(stage, good)
+		local panel = ns.CorePreviewPanel(stage, ns.BINDING_SLOT, buildBinding) --[[@as PagleBindingPanel]]
+		local look = ns.BindingLook(good.id)
+		local foot = ICON_TOP + ICON_SIZE
+		panel.book:SetShown(look.swatch ~= nil)
+		panel.icon:SetShown(look.swatch == nil)
+		if look.swatch then
+			foot = drawClosedBook(panel, look)
+		else
+			panel.icon:SetTexture(good.icon)
+		end
+		panel.note:ClearAllPoints()
+		panel.note:SetPoint("TOP", panel, "TOP", 0, -(foot + 10))
+	end,
 	[ns.SOUND_SET_SLOT] = function(stage, good)
 		local panel = ns.CorePreviewPanel(stage, ns.SOUND_SET_SLOT, buildSoundSet) --[[@as PagleSoundSetPanel]]
 		panel.swatch:SetTexture(good.icon)

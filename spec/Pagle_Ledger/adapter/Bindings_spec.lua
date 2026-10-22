@@ -1,38 +1,20 @@
--- The Ledger's Journal bindings on FakePagle (LED-R110–R116, LED-R35, LED-R92, LED-R93; SHOP-R21–R23, SHOP-R30–R33):
--- the slot and its goods, the level bindings earned by the peak or celebrated level, the expansion's earned bindings
--- by their rules, M:RefreshGoods only from a live entry or done, the Journal redrawn for a new crest, the closed-book
--- swatch on the shop's stage, and the zone crests in Core's crest slot. The Journal wearing the binding is
+-- The Ledger's earned bindings on FakePagle (LED-R110–R116, LED-R35, LED-R92, LED-R93; SHOP-R21–R23, SHOP-R30–R33;
+-- ADR 0015): its goods in Core's binding slot, the level bindings earned by the peak or celebrated level, the
+-- expansion's earned bindings by their rules, M:RefreshGoods only from a live entry or done, the Journal redrawn for a
+-- new binding or crest, and the zone crests in Core's crest slot. The Journal wearing the binding is
 -- JournalBinding_spec.lua's.
 
-local SLOT = "ledger.binding"
+-- Core's binding slot (SHOP-R25), where the Ledger registers its earned bindings (SHOP-R23).
+local SLOT = "core.binding"
 
--- LED-R110's goods, in its order, with their kinds.
+-- LED-R110's earned bindings, in its order, with their earnedText.
 local GOODS = {
-	{ "ledger.binding.field", "default" },
 	{ "ledger.binding.level10", "earned", "Angler Level 10" },
 	{ "ledger.binding.level20", "earned", "Angler Level 20" },
 	{ "ledger.binding.level30", "earned", "Angler Level 30" },
 	{ "ledger.binding.level40", "earned", "Angler Level 40" },
 	{ "ledger.binding.level50", "earned", "Angler Level 50" },
 	{ "ledger.binding.level60", "earned", "Angler Level 60" },
-	{ "ledger.binding.birch", "tier 1" },
-	{ "ledger.binding.buckram", "tier 2" },
-	{ "ledger.binding.sharkskin", "tier 3" },
-	{ "ledger.binding.chartlinen", "tier 1" },
-	{ "ledger.binding.sailcloth", "tier 1" },
-	{ "ledger.binding.oilskin", "tier 1" },
-	{ "ledger.binding.moss", "tier 2" },
-	{ "ledger.binding.driftwood", "tier 2" },
-	{ "ledger.binding.eelskin", "tier 2" },
-	{ "ledger.binding.kodo", "tier 2" },
-	{ "ledger.binding.frosthide", "tier 2" },
-	{ "ledger.binding.netcork", "tier 2" },
-	{ "ledger.binding.copper", "tier 3" },
-	{ "ledger.binding.velvet", "tier 3" },
-	{ "ledger.binding.turtle", "tier 3" },
-	{ "ledger.binding.morocco", "tier 3" },
-	{ "ledger.binding.coral", "tier 4" },
-	{ "ledger.binding.pearl", "tier 5" },
 	{ "ledger.binding.legend", "earned", "Land all three Legends" },
 	{ "ledger.binding.monster", "earned", "Land a Monster" },
 	{ "ledger.binding.abyssal", "earned", "Prestige X" },
@@ -108,26 +90,28 @@ local function ledger()
 	return openJournal({ id = false })
 end
 
-describe("the Ledger's Journal bindings", function()
+describe("the Ledger's earned bindings", function()
 	it(
-		"register the slot ledger.binding and its goods in LED-R110's order, with their kinds, and Field Leather equipped (LED-R110, LED-R116, SHOP-R21, SHOP-R22, SHOP-R32)",
+		"register in Core's binding slot after Core's own, in LED-R110's order, earned, with no slot and no preview of their own, and Field Leather equipped (LED-R110, LED-R116, SHOP-R21, SHOP-R23, SHOP-R32)",
 		function()
 			local fake = ledger()
 			local goods = fake.ns.goods
 
-			local ledgerSlots = {}
 			for _, slot in ipairs(goods:Slots()) do
-				if slot.module == "Ledger" then
-					ledgerSlots[#ledgerSlots + 1] = { slot.id, slot.label, slot.category }
+				assert.are_not.equal("Ledger", slot.module, slot.id)
+			end
+			local registered = {}
+			for _, good in ipairs(goods:GoodsOf(SLOT)) do
+				if good.module == "Ledger" then
+					registered[#registered + 1] = { good.id, kindOf(good), good.earnedText }
+					assert.is_nil(good.preview, good.id)
+				else
+					assert.are.same({ "Core", 0 }, { good.module, #registered }, good.id) -- Core's all come first
 				end
 			end
-			assert.are.same({ { SLOT, "Journal binding", "Fish Journal" } }, ledgerSlots)
-			local registered = {}
-			for i, good in ipairs(goods:GoodsOf(SLOT)) do
-				registered[i] = { good.id, kindOf(good), good.earnedText }
-			end
 			assert.are.same(GOODS, registered)
-			assert.are.equal("ledger.binding.field", fake.Pagle.GetEquipped(SLOT))
+			assert.are.equal("core.binding.field", fake.Pagle.GetEquipped(SLOT))
+			assert.are.same({}, fake.reported)
 		end
 	)
 
@@ -136,16 +120,16 @@ describe("the Ledger's Journal bindings", function()
 		function()
 			local fake = newFakePagle()
 			local loaded = fake.load("Pagle_Ledger", { holdAddonLoaded = true })
-			loaded.ns.L["binding.birch.name"] = "Birch Bark"
-			loaded.ns.L["binding.birch.description"] = "Pale bark with dark flecks."
+			loaded.ns.L["ledgergood.ledger.binding.monster.name"] = "Monster Hide"
+			loaded.ns.L["ledgergood.ledger.binding.monster.description"] = "Scaled hide."
 			-- As before the committed Lore.lua had them (LED-R161): level10's keys with no text.
-			loaded.ns.L["binding.level10.name"] = nil
-			loaded.ns.L["binding.level10.description"] = nil
+			loaded.ns.L["ledgergood.ledger.binding.level10.name"] = nil
+			loaded.ns.L["ledgergood.ledger.binding.level10.description"] = nil
 			loaded.client.fire("ADDON_LOADED", "Pagle_Ledger")
 
-			assert.are.same({ "Birch Bark", "Pale bark with dark flecks." }, {
-				fake.Pagle.GetGood("ledger.binding.birch").name,
-				fake.Pagle.GetGood("ledger.binding.birch").description,
+			assert.are.same({ "Monster Hide", "Scaled hide." }, {
+				fake.Pagle.GetGood("ledger.binding.monster").name,
+				fake.Pagle.GetGood("ledger.binding.monster").description,
 			})
 			assert.are.equal("ledger.binding.level10", fake.Pagle.GetGood("ledger.binding.level10").name)
 			assert.is_nil(fake.Pagle.GetGood("ledger.binding.level10").description)
@@ -196,14 +180,16 @@ describe("the Ledger's Journal bindings", function()
 	)
 
 	it(
-		"redraw the open Journal when the crest changes, its bookplate's emblem the crest's icon (LED-R112, SHOP-R33)",
+		"redraw the open Journal when the binding or the crest changes: the Angler page's \"In use\", the bookplate's emblem the crest's icon (LED-R112, LED-R146, SHOP-R33)",
 		function()
 			local fake = newFakePagle()
 			fake.profile.announcements.motion = false
 			fake.catchLog.data.logId = "log"
-			-- zone 12 celebrated at Master, so its crest is earned (LED-R114)
-			fake.globals.PagleLedgerDB =
-				{ global = { celebrated = { coins = 0, zones = { [12] = 5 }, logId = "log" } } }
+			-- Celebrated at level 10 before (LED-R90): Tanned Hide is earned (LED-R111); and zone 12 at Master, so its
+			-- crest is too (LED-R114).
+			fake.globals.PagleLedgerDB = {
+				global = { celebrated = { coins = 0, levels = { [0] = 10 }, zones = { [12] = 5 }, logId = "log" } },
+			}
 			local loaded = fake.load("Pagle_Ledger")
 			fake.login()
 			fake.enterWorld()
@@ -212,34 +198,15 @@ describe("the Ledger's Journal bindings", function()
 			assert.is_nil(ns.CrestIcon()) -- Plain, the default: no emblem (LED-R112, SHOP-R25)
 			local drawn = ns.journal.pages
 
+			assert.is_true(fake.Pagle.SetEquipped(SLOT, "ledger.binding.level10"))
+
+			assert.are_not.equal(drawn, ns.journal.pages)
+			drawn = ns.journal.pages
+
 			assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.elwynn"))
 
 			assert.are_not.equal(drawn, ns.journal.pages)
 			assert.are.equal("Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn", ns.CrestIcon())
-		end
-	)
-
-	it(
-		"preview each binding as the kit's closed book of it on the shop's stage, from its atlas, 104 wide, no pages (LED-R110)",
-		function()
-			local fake, loaded = ledger()
-			local ns = loaded.ns
-			local stage = loaded.env.CreateFrame("Frame")
-
-			for _, row in ipairs(GOODS) do
-				local id = row[1]
-				local look = ns.BindingLook(id)
-
-				fake.ns.goods:Good(id).preview(stage)
-
-				assert.are.equal(1, #stage.children) -- one swatch, drawn afresh for each good
-				local swatch = stage.children[1]
-				assert.is_true(swatch:IsShown())
-				assert.are.equal(ns.JOURNAL_ATLASES[look.swatchAtlas].file, swatch.book.texture, id)
-				assert.are.same({ ns.JournalCoords(look.swatchAtlas, look.swatch) }, swatch.book.texCoord, id)
-				assert.are.same({ 104, 104 }, { swatch:GetWidth(), swatch.book.box[3] }, id)
-			end
-			assert.are.equal("Bindings2", ns.BindingLook("ledger.binding.pearl").swatchAtlas)
 		end
 	)
 end)

@@ -8,7 +8,7 @@
 ---@param hunts table the Hunts handle
 ---@param earned { value: boolean }
 local function registerCovers(hunts, earned)
-	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
 	hunts:RegisterGood({ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true })
 	hunts:RegisterGood({ id = "hunts.cover.velvet", slot = "hunts.cover", name = "Velvet", tier = 2, icon = 134939 })
 	hunts:RegisterGood({
@@ -63,7 +63,7 @@ describe("M:RegisterSlot and M:RegisterGood", function()
 			name = "Velvet",
 			slot = "hunts.cover",
 			slotLabel = "Notebook cover",
-			category = "Hunts",
+			category = "Trackers",
 			module = "Hunts",
 			icon = 134939,
 			tier = 2,
@@ -72,8 +72,8 @@ describe("M:RegisterSlot and M:RegisterGood", function()
 	end)
 
 	for _, case in ipairs({
-		{ "a duplicate slot", "RegisterSlot", { id = "hunts.cover", label = "Cover", category = "Hunts" } },
-		{ "a slot without the prefix", "RegisterSlot", { id = "cover", label = "Cover", category = "Hunts" } },
+		{ "a duplicate slot", "RegisterSlot", { id = "hunts.cover", label = "Cover", category = "Trackers" } },
+		{ "a slot without the prefix", "RegisterSlot", { id = "cover", label = "Cover", category = "Trackers" } },
 		{
 			"a good in an unknown slot",
 			"RegisterGood",

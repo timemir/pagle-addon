@@ -1,10 +1,10 @@
 -- The Look and Feel page and the slot dropdowns, driven through the fake client's Settings panel over Core's own slots
--- and a fixture Ledger's "Fish Journal" slot (settings.md SET-R1, SET-R5, SET-R12, SET-R30, SET-R50–R53, SET-R60–R62;
+-- and a fixture Ledger's "Books" slot (settings.md SET-R1, SET-R5, SET-R12, SET-R30, SET-R50–R53, SET-R60–R62;
 -- CORE-R40, CORE-R42, CORE-R43; wallet-and-shop.md › UI, SHOP-R32, SHOP-R35, SHOP-R40, SHOP-R41).
 
 local PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing."
 
--- Core logged in and in the world with its own goods and a fixture Ledger (order 10) whose "Fish Journal" slot has
+-- Core logged in and in the world with its own goods and a fixture Ledger (order 10) whose "Books" slot has
 -- Oak (default), Lapis (tier 3) and Ivy (tier 1), and with two zone crests in Core's crest slot, earned goods
 -- (SHOP-R23): The Old Oak, earned, and The Desert Sun, not. `options.saved` is a PagleDB; `options.noLedger` leaves the Ledger
 -- unregistered (off); `options.hunts` registers Hunts (order 20) with a Trackers slot. Returns the loaded addon.
@@ -14,7 +14,7 @@ local function coreWithModules(options)
 	local Pagle = loaded.env.Pagle
 	if not options.noLedger then
 		local ledger = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
-		ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" })
+		ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Books" })
 		ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
 		ledger:RegisterGood({ id = "ledger.binding.lapis", slot = "ledger.binding", name = "Lapis", tier = 3 })
 		ledger:RegisterGood({ id = "ledger.binding.ivy", slot = "ledger.binding", name = "Ivy", tier = 1 })
@@ -120,7 +120,7 @@ describe("The Look and Feel page", function()
 
 			local shown = lines(showLook(loaded), loaded.client.settings)
 
-			assert.is_false(table.concat(shown, "\n"):find("Fish Journal", 1, true) ~= nil)
+			assert.is_false(table.concat(shown, "\n"):find("Journal binding", 1, true) ~= nil)
 			assert.are.same(
 				{ "# Trackers", "Hunts tracker frame = hunts.trackerframe.none", "# Curio Shop" },
 				{ shown[9], shown[10], shown[11] }

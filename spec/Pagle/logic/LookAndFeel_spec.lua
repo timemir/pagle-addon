@@ -79,7 +79,7 @@ describe("Look and Feel's logic", function()
 		it("groups the live slots by category in SET-R50's order, skipping a category with none (SET-R50)", function()
 			local env = newGoods()
 			slotWithDefault(env, "Hunts", "hunts.frame", "Trackers")
-			slotWithDefault(env, "Ledger", "ledger.binding", "Fish Journal")
+			slotWithDefault(env, "Ledger", "ledger.binding", "Books")
 
 			assert.are.same({
 				"Announcements: core.toaststyle, core.soundset",
@@ -100,14 +100,14 @@ describe("Look and Feel's logic", function()
 
 		it("leaves out a slot with no goods yet, which has nothing to pick (SET-R51)", function()
 			local env = newGoods()
-			env.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+			env.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
 
 			assert.are.equal(2, #ns.LookAndFeelSections(env.goods))
 		end)
 
 		it("leaves out the slots of a Module that isn't On (SET-R4, SHOP-R35)", function()
 			local env = newGoods()
-			slotWithDefault(env, "Ledger", "ledger.binding", "Fish Journal")
+			slotWithDefault(env, "Ledger", "ledger.binding", "Books")
 			env.on.Ledger = nil
 
 			assert.are.same(
@@ -156,7 +156,7 @@ describe("Look and Feel's logic", function()
 				slotWithDefault(env, "Hunts", "hunts.trackerframe", "Trackers")
 				slotWithDefault(env, "Hunts", "hunts.cover", "Hunts")
 				slotWithDefault(env, "Hunts", "hunts.second", "Trackers")
-				slotWithDefault(env, "Ledger", "ledger.binding", "Fish Journal")
+				slotWithDefault(env, "Ledger", "ledger.binding", "Books")
 				slotWithDefault(env, "Core", "core.frame", "Trackers")
 				env.goods:RegisterSlot("Ledger", { id = "ledger.empty", label = "Empty", category = "Trackers" })
 
@@ -193,11 +193,11 @@ describe("Look and Feel's logic", function()
 			local earned = false
 			env.goods:RegisterSlot(
 				"Ledger",
-				{ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" }
+				{ id = "ledger.binding", label = "Journal binding", category = "Books" }
 			)
 			env.goods:RegisterGood(
 				"Ledger",
-				{ id = "ledger.binding.field", slot = "ledger.binding", name = "Field", default = true }
+				{ id = "ledger.binding.calf", slot = "ledger.binding", name = "Field", default = true }
 			)
 			env.goods:RegisterGood("Ledger", {
 				id = "ledger.binding.hide",
@@ -214,7 +214,7 @@ describe("Look and Feel's logic", function()
 			env.goods:Refresh("Ledger")
 
 			assert.are.same({
-				{ value = "ledger.binding.field", label = "Field" },
+				{ value = "ledger.binding.calf", label = "Field" },
 				{ value = "ledger.binding.hide", label = "Tanned Hide" },
 			}, ns.SlotChoices(env.goods, "ledger.binding"))
 		end)
@@ -235,11 +235,11 @@ describe("Look and Feel's logic", function()
 			local env = newGoods()
 			env.goods:RegisterSlot(
 				"Ledger",
-				{ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" }
+				{ id = "ledger.binding", label = "Journal binding", category = "Books" }
 			)
 			env.goods:RegisterGood(
 				"Ledger",
-				{ id = "ledger.binding.field", slot = "ledger.binding", name = "Field", default = true }
+				{ id = "ledger.binding.calf", slot = "ledger.binding", name = "Field", default = true }
 			)
 			env.goods:RegisterGood("Ledger", {
 				id = "ledger.binding.hide",
