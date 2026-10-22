@@ -12,6 +12,16 @@ from pagle_data.checks import read_checks
 from pagle_data.confirmed import Confirmation, UngatedPair, check_removed, confirm, required_reporters
 from pagle_data.db2 import DB2, Db2Layer, read_db2
 from pagle_data.errors import At, DataError, Problems
+from pagle_data.events import (
+    EVENT_LIST_LUA,
+    EventLayer,
+    EventList,
+    build_event_list,
+    check_event_hunts,
+    check_events,
+    event_list_lua,
+    read_events,
+)
 from pagle_data.forever import ForeverLayer, read_forever
 from pagle_data.hunts import (
     HUNT_LIST_LUA,
@@ -19,6 +29,7 @@ from pagle_data.hunts import (
     HuntList,
     build_hunt_list,
     check_hunts,
+    hunt_classes,
     hunt_list_lua,
     read_hunts,
 )
@@ -37,7 +48,7 @@ from pagle_data.observed import (
     read_observed,
 )
 from pagle_data.pools import POOLS_TOML, PoolType, build_pools, pool_items, read_pools_toml, ungrouped, with_pool_flags
-from pagle_data.universe import AREAS_TOML, HUNTS_TOML, item_universe
+from pagle_data.universe import AREAS_TOML, EVENTS_DIR, HUNTS_TOML, item_universe
 from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
@@ -126,6 +137,7 @@ class Layers:
     lore: LoreLayer  # data/lore/ as read (DATA-R100); never part of the catalogue (DATA-R109)
     hunts: HuntLayer  # data/hunts/hunts.toml as read and checked (DATA-R85-R92)
     lock: Lock  # data/hunts/released.lock as read; the Hunt list is checked against it (DATA-R95, DATA-R96)
+    events: EventLayer  # data/hunts/tags.toml and data/hunts/events/ as read and checked (DATA-R97-R99)
 
     def fishing_areas(self) -> set[int]:
         """The areas with a catch list (DATA-R32)."""
@@ -181,10 +193,13 @@ def read_layers(
     lore = read_lore(root, problems)
     before_hunts = len(problems.found)
     hunts = read_hunts(root, problems)
-    lore = replace(lore, hunts=hunts.texts())  # DATA-R105: Pagle_Hunts' lore kept beside the Hunt definitions
+    events = read_events(root, problems)
+    check_event_hunts(events, hunts, problems)  # DATA-R99: Hunt IDs across both, and the classes hunts.toml defines
+    # DATA-R105, DATA-R97: Pagle_Hunts' lore kept beside the Hunt and event definitions.
+    lore = replace(lore, hunts=hunts.texts(), events=events.texts())
     lock = read_lock(root, problems)
-    if len(problems.found) == before_hunts:  # DATA-R96: the lock judges a Hunt list that read cleanly
-        check_lock(lock, hunts, problems)
+    if len(problems.found) == before_hunts:  # DATA-R96: the lock judges a Hunt list and a pool that read cleanly
+        check_lock(lock, hunts, events, problems)
     check_glyphs(lore, problems)  # CORE-R9, DATA-R107's glyph: every lore file, its check on or off
     items: dict[int, Record] = {}
     catch_lists = CatchLists()
@@ -221,6 +236,12 @@ def read_layers(
         )
         # DATA-R92: admission reads these catch lists' gates, and the rarity cap each Hunt's time.
         check_hunt_windows(hunts, items, catch_lists, windows, forever.events, problems)
+        # DATA-R97, DATA-R99: the event checks that read the catalogue: zones and their skill bases, each Hunt's
+        # target and conditions, whether it can complete in its zones, and the pool minimum once it is switched on.
+        classes = hunt_classes(hunts, items, lock.classes)
+        check_events(
+            events, classes, items, catch_lists, db2.areas, forever.auras, forever.events, checks.event_pool, problems
+        )
         # DATA-R32: an alias's target and source are judged by these catch lists.
         check_aliases(forever.aliases, catch_lists.fishing_areas(), problems)
         confirmation = confirm(
@@ -252,6 +273,7 @@ def read_layers(
         lore,
         hunts,
         lock,
+        events,
     )
 
 
@@ -274,13 +296,21 @@ def hunt_list_of(layers: Layers) -> HuntList:
     return build_hunt_list(layers.hunts, layers.items, layers.lock.classes)
 
 
+def event_list_of(layers: Layers) -> EventList:
+    """The event list the layers give (DATA-R98), each skill left out worked out from its zones' skill bases."""
+    return build_event_list(layers.events, layers.catch_lists.skill_bases)
+
+
 def outputs(layers: Layers) -> dict[str, str]:
     """Every generated file's path (relative to the repo root) and content."""
-    # HuntList.lua's generated classes come from the item records, so it names the layers too (DATA-R6).
+    # HuntList.lua's generated classes come from the item records, and EventList.lua's skills from the skill bases,
+    # so each names the layers too (DATA-R6).
     hunt_sources = ", ".join((HUNTS_TOML, *LAYERS))
+    event_sources = ", ".join((f"{EVENTS_DIR}/", *LAYERS))
     return {
         CATALOGUE_LUA: catalogue_lua(catalogue_of(layers)),
         HUNT_LIST_LUA: hunt_list_lua(hunt_list_of(layers), header(hunt_sources)),
+        EVENT_LIST_LUA: event_list_lua(event_list_of(layers), header(event_sources)),
     } | lore_outputs(layers.lore, header)
 
 

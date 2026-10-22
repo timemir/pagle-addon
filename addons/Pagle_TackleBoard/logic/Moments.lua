@@ -163,6 +163,7 @@ end
 ---@field notices integer
 ---@field expeditions integer
 ---@field coins integer
+---@field xp integer                  -- Activity XP (TKB-R65)
 ---@field flies integer
 ---@field titles string[]             -- titles earned, by ID, in order
 ---@field burned integer              -- Kindling burned
@@ -178,6 +179,7 @@ local function newScratch()
 		notices = 0,
 		expeditions = 0,
 		coins = 0,
+		xp = 0,
 		flies = 0,
 		titles = {},
 		burned = 0,
@@ -221,6 +223,9 @@ local function writeUpLines(state)
 	end
 	if scratch.coins > 0 then
 		lines[#lines + 1] = say("COINS_LINE", { coins = ns.api.FormatNumber(scratch.coins) })
+	end
+	if scratch.xp > 0 then
+		lines[#lines + 1] = say("XP_LINE", { xp = ns.api.FormatNumber(scratch.xp) })
 	end
 	if scratch.flies > 0 then
 		lines[#lines + 1] = ns.Plural(scratch.flies, "FLIES_TIED")
@@ -268,6 +273,7 @@ function ns.outlets.Completed(goal, cast, earned, mode)
 			scratch.notices = scratch.notices + 1
 		end
 		scratch.coins = scratch.coins + earned.coins
+		scratch.xp = scratch.xp + earned.xp
 		if earned.fly then
 			scratch.flies = scratch.flies + 1
 		end

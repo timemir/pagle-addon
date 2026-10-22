@@ -1,0 +1,75 @@
+# The Hunt Event tags (DATA-R97): a closed list, one [[tag]] per tag with its id and kind (holiday, time, water or
+# band). An event's tags in data/hunts/events/ come from here; the generator adds each event's band (low, mid or high,
+# from its skill range's lower end) itself. Edit this, then run scripts/generate-data.py (DATA-R61).
+
+# Holidays.
+[[tag]]
+id = "hallows_end"
+kind = "holiday"
+
+[[tag]]
+id = "winter_veil"
+kind = "holiday"
+
+[[tag]]
+id = "lunar_festival"
+kind = "holiday"
+
+[[tag]]
+id = "noblegarden"
+kind = "holiday"
+
+[[tag]]
+id = "midsummer"
+kind = "holiday"
+
+[[tag]]
+id = "harvest_festival"
+kind = "holiday"
+
+[[tag]]
+id = "stv_extravaganza"
+kind = "holiday"
+
+# Time of day.
+[[tag]]
+id = "night"
+kind = "time"
+
+[[tag]]
+id = "day"
+kind = "time"
+
+[[tag]]
+id = "dusk"
+kind = "time"
+
+# Water.
+[[tag]]
+id = "coast"
+kind = "water"
+
+[[tag]]
+id = "lake"
+kind = "water"
+
+[[tag]]
+id = "river"
+kind = "water"
+
+[[tag]]
+id = "pool"
+kind = "water"
+
+# Skill bands (HNT-R156): low up to 150, mid 151-275, high above 275.
+[[tag]]
+id = "low"
+kind = "band"
+
+[[tag]]
+id = "mid"
+kind = "band"
+
+[[tag]]
+id = "high"
+kind = "band"
