@@ -31,7 +31,7 @@ end
 function ns.Measures(state)
 	local completion = ns.LedgerCompletion(ns.world, state)
 	return {
-		anglerLevel = { prestige = state.prestige, level = ns.Level(state), xp = state.xp },
+		anglerLevel = { prestige = state.prestige, level = ns.Level(state), xp = ns.ClimbXP(state) },
 		ledgerCompletion = { percent = completion.percent, done = completion.done, total = completion.total },
 		speciesCaught = completion.species.done,
 		legendsCaught = completion.legends.done,
@@ -112,7 +112,7 @@ function ns.JournalValues(state, sessionRows) -- luacheck: no unused args (the d
 	local world = ns.world
 	local completion = ns.LedgerCompletion(world, state)
 
-	local level, into, cost = ns.ClimbOf(state.xp, state.prestige)
+	local level, into, cost = ns.Climb(state)
 	local parts = {}
 	for _, part in ipairs(ns.COMPLETION_PARTS) do
 		parts[part] = { completion[part].done, completion[part].total }

@@ -886,6 +886,8 @@ describe("The Ledger's fold", function()
 				casts = 0,
 				catches = 0,
 				xp = 0,
+				lifetimeXP = 0,
+				prestigeActivityXP = 0,
 				prestige = 0,
 				fresh = 300,
 				coins = 0,
@@ -899,9 +901,9 @@ describe("The Ledger's fold", function()
 		end)
 
 		it(
-			"is LEDGER_RULES_VERSION 4: M4's 3, raised when ★ moved to the 5th Catch (LED-R4, LED-R45, Tunables)",
+			"is LEDGER_RULES_VERSION 5: 4 when ★ moved to the 5th Catch, 5 for the full Prestige cost and Activity XP in the climb (LED-R4, LED-R30, LED-R37, Tunables)",
 			function()
-				assert.are.equal(4, ns.LEDGER_RULES_VERSION)
+				assert.are.equal(5, ns.LEDGER_RULES_VERSION)
 			end
 		)
 	end)

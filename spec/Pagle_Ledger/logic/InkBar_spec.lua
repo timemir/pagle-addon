@@ -45,17 +45,34 @@ describe("the ink XP bar", function()
 		end
 	)
 
-	it("reads the climb's half-cost steps after a Prestige (LED-R145, LED-R30)", function()
-		-- At rank 1, level 1 costs 540 and level 2 580: 600 XP is 60 into level 2. A shown level above it reads 0 of
-		-- that level's half-cost step (LED-R36).
+	it("reads the climb's full-cost steps after a Prestige (LED-R145, LED-R30)", function()
+		-- At rank 1, as at rank 0, level 1 costs 1,080. A shown level above it reads 0 of that level's step (LED-R36).
 		local state = stateAt(600, 0)
 		state.prestige = 1
 		local celebrated = celebratedAt(nil)
-		assert.are.equal("60 of 580.", ns.InkXpBar(state, celebrated, NOW, breakUpLargeNumbers).text)
+		assert.are.equal("600 of 1,080.", ns.InkXpBar(state, celebrated, NOW, breakUpLargeNumbers).text)
 
 		celebrated.levels[1] = 4
-		assert.are.equal("0 of 660.", ns.InkXpBar(state, celebrated, NOW, breakUpLargeNumbers).text)
+		assert.are.equal("0 of 1,320.", ns.InkXpBar(state, celebrated, NOW, breakUpLargeNumbers).text)
 	end)
+
+	it(
+		"counts the climb's Activity XP, and waits at 0 of the shown level's step after a lower recount (LED-R38)",
+		function()
+			local total = 2000
+			ns.SetActivityXPSource(function()
+				return total
+			end)
+			-- 500 own XP and 2,000 Activity XP: 1,420 into level 2's 1,160 step is level 3, 260 into 1,240 (LED-R30).
+			local state, celebrated = stateAt(500, 0), celebratedAt(3)
+			local before = ns.InkXpBar(state, celebrated, NOW, breakUpLargeNumbers).text
+			total = 0
+			local after = ns.InkXpBar(state, celebrated, NOW, breakUpLargeNumbers).text
+			ns.SetActivityXPSource(nil)
+
+			assert.are.same({ "260 of 1,240.", "0 of 1,240." }, { before, after })
+		end
+	)
 
 	it("clips Fresh Water at the bar's end (LED-R23)", function()
 		local bar = ns.InkXpBar(stateAt(1580, 300), celebratedAt(2), NOW, breakUpLargeNumbers)
