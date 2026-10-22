@@ -19,8 +19,8 @@ ns.CRATE_TIER = 4
 --- then on (SHOP-R53); nil for the pool's first goods
 
 --- The crate pool (SHOP-R50, Tunables), in its frozen order (SHOP-R53): a good joins only at its end, with `since`.
---- A good in it need not be registered yet (Shagreen and Bone waits for ADR 0015's binding slot): the draw reads the
---- log alone, so a crate can still give it, and the shop shows it once it registers.
+--- A good in it need not be registered yet (today's three are, Shagreen and Bone in Core's binding slot): the draw
+--- reads the log alone, so a crate can still give it, and the shop shows it once it registers.
 ---@type PagleCratePoolGood[]
 ns.CRATE_POOL = {
 	{ id = "core.toaststyle.foil", crateOnly = true },

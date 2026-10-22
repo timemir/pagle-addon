@@ -1706,13 +1706,20 @@ describe("The Curio crate", function()
 		"says on its stage that a good no slot has registered is the Angler's, and shows it once registered"
 			.. " (SHOP-R50)",
 		function()
-			local fake = crated(2500, { FOIL, STORM })
+			-- Shagreen and Bone registers in Core's binding slot now (ADR 0015), so a stand-in pool good no slot
+			-- registers, with its lore name, joins the pool after the three, all owned.
+			local LATER = "core.binding.later"
+			local fake = crated(2500, { FOIL, STORM, SHAGREEN })
+			local pool = fake.ns.CRATE_POOL
+			fake.ns.CRATE_POOL = { pool[1], pool[2], pool[3], { id = LATER } }
+			rawset(fake.ns.L, "good." .. LATER .. ".name", "Later Binding")
 			fake.ns.shop.Buy(CRATE, true)
 
 			local stage = model(fake):Stage(CRATE)
+			fake.ns.CRATE_POOL = pool
 
-			assert.are.equal("Shagreen and Bone is yours: it shows here once its slot arrives.", stage.caption)
-			assert.is_nil(model(fake):Select(SHAGREEN))
+			assert.are.equal("Later Binding is yours: it shows here once its slot arrives.", stage.caption)
+			assert.is_nil(model(fake):Select(LATER))
 		end
 	)
 

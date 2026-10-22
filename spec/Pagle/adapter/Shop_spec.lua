@@ -1706,7 +1706,7 @@ describe("The Curio crate in the window", function()
 			assert.is_false(bill:IsShown())
 			assert.are.equal("500", shopFrame(loaded).purse.balance:GetText())
 			local stage = shopFrame(loaded).stage
-			if given == "core.binding.shagreenbone" then
+			if not loaded.ns.goods:Good(given) then -- a pool good no slot registers yet (SHOP-R50)
 				assert.are.equal("Curio crate", stage.name:GetText())
 				assert.is_true(stage.caption:IsShown())
 			else
