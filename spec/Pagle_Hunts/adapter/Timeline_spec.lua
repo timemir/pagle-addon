@@ -654,3 +654,25 @@ describe("a set's page, drawn (HNT-R66)", function()
 		assert.are.same({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }, place(run))
 	end)
 end)
+
+describe("the timeline's mouse wheel (hunts.md › UI)", function()
+	it("scrolls the rows a third of their 368-high list a notch, the thumb following, stopping at the foot", function()
+		local run = start()
+		run.ns.ToggleBoard()
+		local timeline = run.ns.TimelinePageView(run.ns.board:Page({ mode = "board" }, "left"))
+		local scroll = timeline.scroll
+		-- The client lays the rows out 300 taller than the list shows.
+		scroll.GetVerticalScrollRange = function()
+			return 300
+		end
+		local wheel = scroll:GetScript("OnMouseWheel")
+
+		wheel(scroll, -1)
+		run.loaded.client.update(0.2)
+		assert.are.equal(122.667, math.floor(scroll:GetVerticalScroll() * 1000 + 0.5) / 1000)
+		assert.is_true(timeline.thumb:IsShown())
+		wheel(scroll, -2)
+		run.loaded.client.update(0.2)
+		assert.are.equal(300, scroll:GetVerticalScroll(), "it stops at the list's foot")
+	end)
+end)

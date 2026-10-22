@@ -403,7 +403,6 @@ local helperGlobals = {
 	"OILY_BLACKMOUTH",
 	"FISHING",
 	"FISH_CREST_SPECIES",
-	"fishCrestRows",
 	"BUILD_ENTRY",
 	"castEntry",
 	"prestigeEntry",

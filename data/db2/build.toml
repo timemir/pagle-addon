@@ -1,4 +1,4 @@
 # Written by scripts/update-db2.py (DATA-R11, DATA-R12): the Forever build data/db2/ describes.
-build = 70338
+build = 70450
 version = "1.60.1"
 products = ["wow_classic_beta"]

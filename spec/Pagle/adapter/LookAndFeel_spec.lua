@@ -91,7 +91,7 @@ describe("The Look and Feel page", function()
 	end)
 
 	it(
-		"shows the paragraph, Announcements, Bookplate and Books with their dropdowns, then the Curio Shop (SET-R50)",
+		"shows the paragraph, Announcements, Crests and Books with their dropdowns, then the Curio Shop (SET-R50)",
 		function()
 			local loaded = coreWithModules()
 
@@ -102,8 +102,8 @@ describe("The Look and Feel page", function()
 				"  14 more in the Curio Shop",
 				"Sound set = core.soundset.driftwood",
 				"  13 more in the Curio Shop",
-				"# Bookplate",
-				"Bookplate crest = core.crest.plain",
+				"# Crests",
+				"Crests = core.crest.plain",
 				"# Books",
 				"Book binding = core.binding.field",
 				"  33 more in the Curio Shop",
@@ -204,7 +204,14 @@ describe("A slot dropdown", function()
 		function()
 			local loaded = coreWithModules()
 
-			local row = loaded.client.settings.rowNamed(showLook(loaded), "Bookplate crest")
+			-- The slot's row, the last named Crests: its category's header, of the same name, comes first (SET-R50).
+			local row
+			for _, candidate in ipairs(showLook(loaded)) do
+				if candidate.initializer:GetName() == "Crests" then
+					row = candidate
+				end
+			end
+			row = assert(row, "no Crests row")
 
 			assert.are.same(
 				{ "core.crest.plain=Plain", "ledger.crest.elwynn=The Old Oak" },

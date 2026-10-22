@@ -458,6 +458,45 @@ describe("The status list with a Module On", function()
 		}, list)
 	end)
 
+	it(
+		'shows "dev" for a checkout whose TOC still says @project-version@, never the token (SET-R11, CORE-R41)',
+		function()
+			local loaded = loadWith({ QoL = { metadata = { ["X-Pagle-API"] = "1", Version = "@project-version@" } } })
+			registerQoL(loaded, { settingsAction = { label = "Fishing settings »", onClick = function() end } })
+			loaded.client.fire("PLAYER_LOGIN")
+
+			local list = statusTexts(loaded)
+
+			assert.are.same({ "QoL", "dev", "On", "Fishing settings »" }, { unpack(list, 13, 16) })
+		end
+	)
+
+	it("cuts a long version to one line that ends before the state, so the two never overlap (SET-R11)", function()
+		local version = "1.60.1-alpha-12-gabcdef1-with-a-long-tail"
+		local loaded = loadWith({ QoL = { metadata = { ["X-Pagle-API"] = "1", Version = version } } })
+		registerQoL(loaded, { settingsAction = { label = "Fishing settings »", onClick = function() end } })
+		loaded.client.fire("PLAYER_LOGIN")
+
+		local frames = showStatusList(loaded)
+		local shown = {}
+		for _, child in ipairs(frames[5].children) do
+			if child.shown and child.text then
+				shown[child.text] = child
+			end
+		end
+		-- Where a font string's left edge sits on the row: SetPoint("TOPLEFT", x, y) or with a relative frame.
+		local function left(widget)
+			local point = widget.points[1]
+			return type(point[2]) == "number" and point[2] or point[4]
+		end
+		local versionText, state = assert(shown[version]), assert(shown.On)
+
+		assert.is_false(versionText:CanWordWrap())
+		assert.is_true(versionText:GetWidth() > 0)
+		assert.is_true(versionText:GetStringWidth() > versionText:GetWidth())
+		assert.is_true(left(versionText) + versionText:GetWidth() < left(state))
+	end)
+
 	it("reads a button's label each time the root is shown (CORE-R44, SET-R12)", function()
 		local loaded = loadWithQoL()
 		local shown = 0

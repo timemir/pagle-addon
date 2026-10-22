@@ -38,7 +38,7 @@ Terms are used as `CONTEXT.md` defines them. "The Hunt list" is `ns.huntList`, w
 - the wallet: `M:ReportCoinsEarned`, `M:RegisterSlot`, `M:RegisterGood`, `Pagle.GetEquipped`
 - Activity XP: `M:ReportXPEarned` ([core/activity-xp.md](core/activity-xp.md))
 - pushed content: `Pagle.GetCompanionState`, `Pagle.GetPushedContent`, event `PushedContentReady` ([core/pushed-content.md](core/pushed-content.md))
-- the board's look: `Pagle.IsAnimationsOn`, Core's motion driver `Pagle.Animate`, `Cue`, `StopMotion`, `EASE`, `Bezier` ([core/announcements.md](core/announcements.md#contracts)), and `Pagle.FitToScreen` ([core/README.md](core/README.md#contracts))
+- the board's look: `Pagle.IsAnimationsOn`, Core's motion driver `Pagle.Animate`, `Cue`, `StopMotion`, `EASE`, `Bezier` ([core/announcements.md](core/announcements.md#contracts)), the timeline's wheel notch `Pagle.WheelScroll` (a third of the rows' height, gliding; same contracts), and `Pagle.FitToScreen` ([core/README.md](core/README.md#contracts))
 - Module records: `M:AppendRecord`, and its own records through `M:IterateCatches` (LOG-R40, ADR 0008)
 - surfaces: `M:RegisterTracker`, `M:AddSetting`
 

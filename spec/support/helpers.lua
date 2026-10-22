@@ -161,17 +161,6 @@ FISH_CREST_SPECIES = {
 	251524,
 }
 
---- The Curio Shop's list rows of Core's fish crests (VAR-R12, VAR-R13) as a spec reads them, "{name} | {tag}": their
---- group's header, then each crest with none of its varieties caught and its fish not cached ("Item {itemID} Crest").
----@return string[]
-function fishCrestRows()
-	local rows = { "FISH CRESTS" }
-	for _, speciesID in ipairs(FISH_CREST_SPECIES) do
-		rows[#rows + 1] = ("Item %d Crest | 0 of 10 varieties"):format(speciesID)
-	end
-	return rows
-end
-
 --- The build entry the fake client's build matches, so login appends no B1.
 BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1"):format(SERVER_TIME - 5000)
 

@@ -21,8 +21,9 @@ local ns = select(2, ...)
 ---@class PagleCoreSlot
 ---@field id string
 ---@field label string
----@field category "Announcements"|"Bookplate"|"Books"
+---@field category "Announcements"|"Crests"|"Books"
 ---@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): all four
+---@field hideEarned? true          -- the shop lists none of its earned goods; Look and Feel equips them (SHOP-R25)
 ---@field groups? PagleSlotGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
@@ -66,7 +67,8 @@ end
 --- own art. A binding's look is its ns.BindingLook (logic/Bindings.lua), which every book wears (ADR 0015). All four
 --- slots are open to earned goods (SHOP-R23): the toast styles and sound sets the Ledger, Hunts and the Tackle Board
 --- earn, the Ledger's zone crests (LED-R113), and the bindings the Ledger and Hunts earn (LED-R110, HNT-R122), each
---- drawn on the stage by its slot's preview. The crest slot holds Plain alone.
+--- drawn on the stage by its slot's preview. The crest slot holds Plain alone, and hides its earned crests, the zone
+--- crests and Core's fish crests (VAR-R12), from the shop: Look and Feel equips them (SHOP-R25).
 ---@type PagleCoreSlot[]
 ns.CORE_GOODS = {
 	{
@@ -119,9 +121,10 @@ ns.CORE_GOODS = {
 	{
 		id = ns.CREST_SLOT,
 		label = L.SLOT_CREST,
-		category = "Bookplate",
+		category = "Crests",
 		openToEarned = true,
-		-- The Ledger's zone crests and Core's fish crests name these; Plain names none, so it lists first (SHOP-R27).
+		hideEarned = true,
+		-- The Ledger's zone crests and Core's fish crests name these (SHOP-R27); the shop lists neither (hideEarned).
 		groups = {
 			{ key = "zone", name = L.SLOT_CREST_ZONES },
 			{ key = "fish", name = L.SLOT_CREST_FISH },
@@ -171,6 +174,7 @@ function ns.RegisterCoreGoods(previews)
 			category = slot.category,
 			groups = slot.groups,
 			openToEarned = slot.openToEarned,
+			hideEarned = slot.hideEarned,
 			preview = slot.openToEarned and previews and function(stage, good)
 				local draw = previews[slot.id]
 				if draw then

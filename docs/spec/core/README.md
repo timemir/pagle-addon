@@ -93,7 +93,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   - Core's options: the Saving section (the `/reload` reminder, LOG-R86), the Units section (the length unit, LOG-R69) and, from M8.5, the Pagle menu section (Show the minimap icon, CORE-R56); the first two are in [catch-log.md](catch-log.md#settings), and all their rows in `docs/spec/settings.md` (SET-R10)
 
   Under the root, Core registers four **topic pages**, in this order: **Fishing**, **Announcements**, **Trackers** and **Look and Feel**. Pages are grouped by what the player is doing, not by owner. The list is fixed: Modules add rows to it (CORE-R42) and never register pages of their own. The layout and order of rows belong to `docs/spec/settings.md`.
-- **CORE-R41** The status list shows the roster in CORE-R1 order, each with its TOC version and one state:
+- **CORE-R41** The status list shows the roster in CORE-R1 order, each with its TOC version and one state. The version is never the packager's raw token: while the TOC still says `@project-version@` (any whole `@…@`, a checkout the packager never filled in, CORE-R2), it reads "dev"; a Module that isn't installed shows none (`ns.ShownVersion`). The states:
   - **On**: enabled and registered
   - **Needs a newer Pagle**: inert (CORE-R13)
   - **Failed to start**: enabled, loaded, but never registered (it errored)
@@ -194,6 +194,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.GetCompanionState()`, `Pagle.GetPushedContent(kind)` | state string, items | [pushed-content.md](pushed-content.md#contracts) |
 | `Pagle.GetFollowedAnglers()` | `{ state, anglers }` | [anglers-in-game.md](anglers-in-game.md#contracts) |
 | `Pagle.Animate(owner, animations, onDone?)`, `Cue(owner, seconds, fn)`, `StopMotion(owner)`, `EASE`, `Bezier(x1, y1, x2, y2)` | Core's one motion driver | announcements.md |
+| `Pagle.WheelScroll(scroll, delta, options?)` | a mouse wheel notch: a third of the view, gliding | [announcements.md](announcements.md#paglewheelscrollscroll-delta-options) |
 | `Pagle.FitToScreen(frame, options)` | number, the scale used | [here](#paglefittoscreenframe-options) |
 | `Pagle.NewBookBinding(frame, options?)` | `PagleBookBinding`: `Look()`, `SetLook(goodID?)` | [book-binding.md](book-binding.md#contracts) |
 

@@ -34,9 +34,29 @@ local MODULES = {
 	{ name = "QoL", title = "QoL", order = 50, guideBlurb = "One press, one action." },
 }
 
+-- Has the kit's font strings measure as the client wraps them (the fake's GetStringHeight is one 14-unit line whatever
+-- the text): a text `size` tall that wraps to `lines[text]` lines (1 when unlisted) is that many lines tall with the
+-- spacing ns.GuideText was given between them.
+---@param loaded table
+---@param linesOf fun(ns: table): table<string, integer> the lines each text wraps to, from the load's words
+local function measure(loaded, linesOf)
+	local lines = linesOf(loaded.ns)
+	local GuideText = loaded.ns.GuideText
+	loaded.ns.GuideText = function(parent, face, size, ink, words, options)
+		local fontString = GuideText(parent, face, size, ink, words, options)
+		local spacing = options and options.spacing or 0
+		fontString.GetStringHeight = function(self)
+			local n = self.wordWrap and lines[self.text] or 1
+			return n * size + (n - 1) * spacing
+		end
+		return fontString
+	end
+end
+
 -- Core logged in on Forever with the Modules named in `names` registered (every one when nil), Animations off, and the
--- guide open at step `id`. Returns the client load.
-local function guideAt(id, names)
+-- guide open at step `id`, its texts wrapping as `linesOf` says (see measure) when given, and a Module named in
+-- `blurbs` registering that guideBlurb in place of its own. Returns the client load.
+local function guideAt(id, names, linesOf, blurbs)
 	local loaded = loadCore({ BUILD_ENTRY })
 	for _, module in ipairs(MODULES) do
 		local wanted = names == nil
@@ -45,8 +65,8 @@ local function guideAt(id, names)
 		end
 		if wanted then
 			loaded.client.addons["Pagle_" .. module.name] = { metadata = { ["X-Pagle-API"] = "1" } }
-			local def =
-				{ name = module.name, title = module.title, order = module.order, guideBlurb = module.guideBlurb }
+			local blurb = (blurbs or {})[module.name] or module.guideBlurb
+			local def = { name = module.name, title = module.title, order = module.order, guideBlurb = blurb }
 			if module.view then
 				def.views = { { id = "main", label = module.view, open = function() end } }
 			end
@@ -74,6 +94,9 @@ local function guideAt(id, names)
 	end
 	enterWorld(loaded, 3)
 	loaded.ns.db.profile.announcements.motion = false
+	if linesOf then
+		measure(loaded, linesOf)
+	end
 	loaded.ns.guide:Open(id)
 	return loaded
 end
@@ -105,6 +128,42 @@ local function reads(widget, text)
 		end
 	end
 	return false
+end
+
+-- The font string under `widget` reading `text`, depth first.
+local function find(widget, text)
+	for _, child in ipairs(widget.children) do
+		if child.kind == "FontString" and child.text == text then
+			return child
+		end
+		local found = find(child, text)
+		if found then
+			return found
+		end
+	end
+	return nil
+end
+
+-- A region's top, in units down from the top left it is anchored to (its one anchor's y, as ns.GuideAt and the
+-- pages' texts set it).
+local function top(region)
+	return -region.points[1][5]
+end
+
+-- A font string's bottom, as it measures.
+local function bottom(fontString)
+	return top(fontString) + fontString:GetStringHeight()
+end
+
+-- The tops of the drawn wax discs on `side` (the GuideParts sprites among its children), in order.
+local function discTops(side)
+	local tops = {}
+	for _, child in ipairs(side.children) do
+		if child.kind == "Texture" and (child.texture or ""):find("GuideParts") then
+			tops[#tops + 1] = top(child) + child.box[2]
+		end
+	end
+	return tops
 end
 
 -- The menu drawing's rows on show, top to bottom.
@@ -164,6 +223,78 @@ describe("the Welcome step (ONB-R30)", function()
 		assert.are.equal(3, discs)
 	end)
 
+	-- The Letter's paragraphs wrapping to `letter`'s lines and the promises' lines to `promises`'.
+	local function welcomeLines(letter, promises)
+		return function(ns)
+			local lines = {}
+			for i, words in ipairs(ns.L.GUIDE_WELCOME_LETTER) do
+				lines[words] = letter[i]
+			end
+			for i, promise in ipairs(ns.L.GUIDE_WELCOME_PROMISES) do
+				lines[promise[3] or ns.GuidePartsLine(5)] = promises[i]
+			end
+			return lines
+		end
+	end
+
+	it("signs the letter under its last line, and starts each paragraph under the last, however they wrap", function()
+		local loaded = guideAt("welcome", nil, welcomeLines({ 3, 4, 3 }, { 2, 2, 2 }))
+		local left = page(loaded, "welcome", "left")
+		local L = loaded.ns.L
+
+		local paragraphs = {}
+		for i, words in ipairs(L.GUIDE_WELCOME_LETTER) do
+			paragraphs[i] = find(left, words)
+		end
+		local signed = find(left, L.GUIDE_WELCOME_SIGNED)
+		assert.is_true(top(paragraphs[2]) > bottom(paragraphs[1]) + 10)
+		assert.is_true(top(paragraphs[3]) > bottom(paragraphs[2]) + 10)
+		assert.is_true(top(signed) > bottom(paragraphs[3]) + 5)
+		-- the paragraphs are as far apart as the art has them, whatever their lines
+		assert.is.near(top(paragraphs[2]) - bottom(paragraphs[1]), top(paragraphs[3]) - bottom(paragraphs[2]), 0.01)
+	end)
+
+	it("puts the letter where the art does when it wraps as the art's, three, three and two lines", function()
+		local loaded = guideAt("welcome", nil, welcomeLines({ 3, 3, 2 }, { 2, 2, 2 }))
+		local left = page(loaded, "welcome", "left")
+		local L = loaded.ns.L
+
+		-- each paragraph's line box (28.06 at 23) at the art's place, the signature's (30 at 30) at 345.8
+		for i, y in ipairs({ 87.4, 183.6, 279.7 }) do
+			assert.is.near(y + 2.53, top(find(left, L.GUIDE_WELCOME_LETTER[i])), 0.06)
+		end
+		assert.is.near(345.8, top(find(left, L.GUIDE_WELCOME_SIGNED)), 0.06)
+	end)
+
+	it("starts each promise under the last one's line, evenly, each disc beside its heading", function()
+		local loaded = guideAt("welcome", nil, welcomeLines({ 3, 3, 2 }, { 3, 2, 1 }))
+		local right = page(loaded, "welcome", "right")
+		local promises = loaded.ns.L.GUIDE_WELCOME_PROMISES
+
+		local headings, lines = {}, {}
+		for i, promise in ipairs(promises) do
+			headings[i] = find(right, promise[2])
+			lines[i] = find(right, promise[3] or loaded.ns.GuidePartsLine(5))
+		end
+		local discs = discTops(right)
+		for i = 1, 3 do
+			assert.is_true(top(lines[i]) > bottom(headings[i]))
+			assert.is.near(top(headings[i]) - discs[i], top(headings[1]) - discs[1], 0.01)
+		end
+		assert.is_true(top(headings[2]) > bottom(lines[1]) + 10)
+		assert.is_true(top(headings[3]) > bottom(lines[2]) + 10)
+		assert.is.near(top(headings[2]) - bottom(lines[1]), top(headings[3]) - bottom(lines[2]), 0.01)
+	end)
+
+	it("puts the promises where the art does when each line wraps to two", function()
+		local loaded = guideAt("welcome", nil, welcomeLines({ 3, 3, 2 }, { 2, 2, 2 }))
+
+		local discs = discTops(page(loaded, "welcome", "right"))
+		for i, y in ipairs({ 89.3, 175.1, 260.9 }) do
+			assert.is.near(y, discs[i], 0.06)
+		end
+	end)
+
 	it("counts the roster, not what is on: five parts with every Module off too (ONB-R30)", function()
 		local loaded = guideAt("welcome", {})
 
@@ -210,6 +341,108 @@ describe("the What's in the box step (ONB-R31, ONB-R91)", function()
 			icons[#icons + 1] = row.icon.texture and row.sprite
 		end
 		assert.are.same({ "ic-journal", "ic-hunts", "ic-stats", "ic-board", "ic-qol", "ic-shop" }, icons)
+	end)
+
+	-- The rows' blurbs wrapping to `lines`' lines, in the rows' order, the Curio Shop's last.
+	local function boxLines(lines)
+		return function(ns)
+			local out = {}
+			for i, row in ipairs(ns.GuideBoxRows(ns.Modules:Modules())) do
+				if row.blurb then
+					out[row.blurb] = lines[i]
+				end
+			end
+			return out
+		end
+	end
+
+	-- Stats with a blurb too, so each of the six rows has one, as on the board.
+	local SIX = { Stats = "Your own numbers." }
+
+	-- A row's icon's drawn top (it is 36 tall).
+	local function iconTop(row)
+		return top(row.icon) + row.icon.box[2]
+	end
+
+	-- Where a row ends: under the lower of its icon and its words' line box (the blurb's 18.225 at 13.5, or the
+	-- title's 19.55 at 17 when it has none).
+	local function rowEnd(row)
+		local words = row.blurb and bottom(row.blurb) + (18.225 - 13.5) / 2 or bottom(row.title) + (19.55 - 17) / 2
+		return math.max(iconTop(row) + 36, words)
+	end
+
+	it("puts the rows where the board does when every blurb wraps to two lines", function()
+		local loaded = guideAt("box", nil, boxLines({ 2, 2, 2, 2, 2, 2 }), SIX)
+		local rows = loaded.ns.guidePages.rows
+
+		assert.are.equal(6, #rows)
+		-- each row 73.98 under the last from 55: its title's line box (19.55 at 17) level with the icon, the blurb's
+		-- (18.225 at 13.5) 21.5 under it, the rule 66 under the row's top, and none under the last
+		for i, row in ipairs(rows) do
+			local y = 55 + (i - 1) * 73.98
+			assert.is.near(y, iconTop(row), 0.05)
+			assert.is.near(y + 1.275, top(row.title), 0.05)
+			assert.is.near(y + 21.5 + 2.3625, top(row.blurb), 0.05)
+			if i < #rows then
+				assert.is.near(y + 66, top(row.rule), 0.05)
+			else
+				assert.is_nil(row.rule)
+			end
+		end
+	end)
+
+	it("starts each row under the last one's rule, a blurb on three lines pushing the rows under it down", function()
+		-- Stats without a blurb, its row as tall as its icon
+		local loaded = guideAt("box", nil, boxLines({ 3, 2, 2, 2, 2, 2 }))
+		local rows = loaded.ns.guidePages.rows
+
+		for i, row in ipairs(rows) do
+			assert.is.near(iconTop(row) + 1.275, top(row.title), 0.01)
+			if i < #rows then
+				assert.is_true(top(row.rule) > rowEnd(row))
+				assert.is_true(iconTop(rows[i + 1]) > top(row.rule))
+				assert.is_true(top(rows[i + 1].title) > top(row.rule))
+			end
+		end
+		-- Ledger's third line takes Hunts 18.225 lower than the board has it, the rows the board's 16.03 apart
+		assert.is.near(55 + 73.98 + 18.225, iconTop(rows[2]), 0.05)
+		for i = 1, #rows - 1 do
+			assert.is.near(16.03, iconTop(rows[i + 1]) - rowEnd(rows[i]), 0.01)
+		end
+	end)
+
+	it("tightens the gaps between the rows evenly to keep them off the foot when blurbs wrap longer", function()
+		local loaded = guideAt("box", nil, boxLines({ 3, 2, 3, 2, 2, 2 }), SIX)
+		local rows = loaded.ns.guidePages.rows
+
+		local gap = iconTop(rows[2]) - rowEnd(rows[1])
+		assert.is_true(gap < 16.03 - 5)
+		for i = 1, #rows - 1 do
+			assert.is.near(gap, iconTop(rows[i + 1]) - rowEnd(rows[i]), 0.01)
+			assert.is_true(top(rows[i].rule) > rowEnd(rows[i]))
+			assert.is_true(iconTop(rows[i + 1]) > top(rows[i].rule))
+		end
+		-- the last row ends no lower than 483, 7 over the foot's Next at 490
+		assert.is_true(rowEnd(rows[#rows]) <= 483.01)
+	end)
+
+	it("keeps the rows at least 8 apart, the rule between, however long their blurbs", function()
+		local loaded = guideAt("box", nil, boxLines({ 4, 4, 4, 2, 2, 2 }), SIX)
+		local rows = loaded.ns.guidePages.rows
+
+		for i = 1, #rows - 1 do
+			assert.is.near(8, iconTop(rows[i + 1]) - rowEnd(rows[i]), 0.01)
+			assert.is_true(top(rows[i].rule) > rowEnd(rows[i]))
+			assert.is_true(iconTop(rows[i + 1]) > top(rows[i].rule))
+		end
+	end)
+
+	it("puts 'Turn parts on in the AddOns list.' a row under the Curio Shop's with every Module off", function()
+		local loaded = guideAt("box", {}, boxLines({ 2 }))
+		local none = find(page(loaded, "box", "right"), "Turn parts on in the AddOns list.")
+
+		-- its line box (17.55 at 13) where the board's second row would be
+		assert.is.near(55 + 73.98 + 2.275, top(none), 0.05)
 	end)
 
 	it("draws the Pagle menu from the real menu's labels as it shows, with the balance and a coin", function()
@@ -328,6 +561,61 @@ describe("the Moments step (ONB-R34, ONB-R35)", function()
 				"Each one only sets the switches in Settings » Announcements, where you can fine-tune them later."
 			)
 		)
+	end)
+
+	-- The preset cards' lines wrapping to `cards`' lines (Lively, Quieter, Cozy) and the note to `note`'s.
+	local function presetLines(cards, note)
+		return function(ns)
+			local lines = { [ns.L.GUIDE_MOMENTS_NOTE] = note }
+			for i, preset in ipairs(ns.GUIDE_PRESETS) do
+				lines[ns.L.GUIDE_PRESETS[preset.id][2]] = cards[i]
+			end
+			return lines
+		end
+	end
+
+	it("pencils each card's line under its wrapped line, the card grown to fit, the cards evenly apart", function()
+		local loaded = guideAt("moments", nil, presetLines({ 2, 3, 2 }, 2))
+		local pages = loaded.ns.guidePages
+		local cards = pages.cards
+
+		for _, card in ipairs(cards) do
+			assert.is_true(top(card.what) > bottom(card.line))
+			assert.is_true(card:GetHeight() > top(card.what) + 17.6)
+		end
+		-- "as it comes" stays at Lively's top right
+		local tag = cards[1].tag.points[1]
+		assert.are.same({ "TOPRIGHT", cards[1], "TOPLEFT", 382 - 9 }, { tag[1], tag[2], tag[3], tag[4] })
+		local gaps = {}
+		for i = 2, 3 do
+			gaps[i] = top(cards[i]) - (top(cards[i - 1]) + cards[i - 1]:GetHeight())
+			assert.is_true(gaps[i] > 5)
+		end
+		assert.is.near(gaps[2], gaps[3], 0.01)
+		local last = top(cards[3]) + cards[3]:GetHeight()
+		assert.is_true(top(pages.presetNote) > last + 10)
+
+		loaded.ns.db.profile.announcements.budget.count = 12
+		loaded.ns.guide:GoTo("box")
+		loaded.ns.guide:GoTo("moments")
+		assert.is_true(top(pages.ownMix) > last)
+		assert.is_true(top(pages.presetNote) > top(pages.ownMix) + 17)
+	end)
+
+	it("puts the cards where the art does when Lively's line takes one line and the others two", function()
+		local loaded = guideAt("moments", nil, presetLines({ 1, 2, 2 }, 2))
+		local pages = loaded.ns.guidePages
+
+		for i, at in ipairs({ { 81.3, 83.4 }, { 172.6, 101.6 }, { 282.2, 101.6 } }) do
+			local card = pages.cards[i]
+			assert.are.same({ true, true }, {
+				math.abs(top(card) - at[1]) < 0.06,
+				math.abs(card:GetHeight() - at[2]) < 0.06,
+			})
+			-- the pencilled line's box (17.6 at 16) 4 under the italic line's (18.2 a line at 13.5)
+			assert.is.near(32.5 + (i == 1 and 1 or 2) * 18.2 + 4 + 0.8, top(card.what), 0.06)
+		end
+		assert.is.near(397.8 + 2.275, top(pages.presetNote), 0.06)
 	end)
 
 	it("writes ONB-R35's values exactly as Quieter, Lively and Cozy are chosen, choosing that card", function()

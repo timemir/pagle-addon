@@ -282,6 +282,7 @@ Sides in keys are `hi`, `lo` and `na` (STA-R13). Odds, ranges, the Cast threshol
 | `Pagle.CONTENT_FINGERPRINT` | the place tables built from the catalogue, dropped when it changes (DATA-R70, LOG-R72) |
 | `Pagle.GetAngler()` | character names (Lifetime, Session entries) |
 | `Pagle.IsAnimationsOn()`, `Pagle.Animate`, `Cue`, `StopMotion`, `EASE`, `Bezier` (Core's one motion driver, announcements.md › Contracts) | UI › Motion and sound |
+| `Pagle.WheelScroll` (a wheel notch, a third of a page body, gliding; announcements.md › Contracts) | STA-R70's page bodies |
 | `Pagle.FitToScreen(frame, { keepPlace = true })` (core/README.md › Contracts) | the book's fit (UI), STA-R71 |
 | event `CastEnded` | STA-R73 |
 | event `ModulesChanged` | the tracker's first draw (CORE-R19, STA-R86) |

@@ -44,21 +44,28 @@ describe("ns.FieldReportText (REP-R30, REP-R35, REP-R36)", function()
 		function()
 			local loaded = load()
 			local fingerprint = loaded.env.Pagle.CONTENT_FINGERPRINT
+			loaded.client.addons.Pagle.metadata.Version = "1.60.1"
 
 			local parts = loaded.ns.FieldReportText(ROWS)
 
 			assert.are.equal(1, #parts)
-			local version = loaded.client.addons.Pagle.metadata.Version
 			assert.are.equal(
-				"PAGLE-REPORT 1\naddon "
-					.. version
-					.. " data "
+				"PAGLE-REPORT 1\naddon 1.60.1 data "
 					.. fingerprint:sub(1, 8)
 					.. " locale enUS reporter f38e76b0 part 1/1\n",
 				parts[1]:match("^[^\n]*\n[^\n]*\n")
 			)
 		end
 	)
+
+	it("writes addon dev for a checkout whose TOC still says @project-version@, never the token (REP-R30)", function()
+		local loaded = load()
+		assert.are.equal("@project-version@", loaded.client.addons.Pagle.metadata.Version)
+
+		local parts = loaded.ns.FieldReportText(ROWS)
+
+		assert.truthy(parts[1]:find("^PAGLE%-REPORT 1\naddon dev data %x+ locale enUS reporter f38e76b0 part 1/1\n"))
+	end)
 
 	it(
 		"names the item from C_Item.GetItemInfo and the area from C_Map.GetAreaInfo, leaving out an uncached one (REP-R30)",

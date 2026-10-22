@@ -62,6 +62,9 @@ end
 -- Where Getting started's checkbox sits on a row, and its line after it (SET-R10 rows 4–6).
 local CHECK_X, LINE_X = 150, 180
 
+-- The status list's version and state columns (SET-R11).
+local VERSION_X, STATE_X = 180, 250
+
 -- Core's widgets on `frame`, all hidden, made the first time Core draws on it.
 ---@param frame Frame
 local function widgets(frame)
@@ -72,8 +75,12 @@ local function widgets(frame)
 		text:SetPoint("RIGHT", -20, 0)
 		text:SetJustifyH("LEFT")
 		text:SetWordWrap(true)
-		own = { text = text, name = fontString(frame, 37), version = fontString(frame, 180) }
-		own.state = fontString(frame, 250)
+		own = { text = text, name = fontString(frame, 37), version = fontString(frame, VERSION_X) }
+		-- One line that ends 6 pixels short of the state, cut with "..." by the client: unbounded, a long version
+		-- ran under the state ("On" drawn over "@project-version@", SET-R11).
+		own.version:SetWidth(STATE_X - VERSION_X - 6)
+		own.version:SetWordWrap(false)
+		own.state = fontString(frame, STATE_X)
 		own.button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate") --[[@as Button]]
 		own.button:SetPoint("TOPLEFT", 380, 3)
 		own.button:SetSize(160, 22)
@@ -153,9 +160,11 @@ local function statusLine(index)
 			module = registered
 		end
 	end
+	-- "dev" for the packager's unfilled token, none when not installed (CORE-R41).
+	local version = C_AddOns.GetAddOnMetadata(ns.ModuleAddOn(entry.name), "Version")
 	return {
 		name = L.MODULE_NAMES[entry.name],
-		version = C_AddOns.GetAddOnMetadata(ns.ModuleAddOn(entry.name), "Version") or "",
+		version = ns.ShownVersion(version, L.MODULE_VERSION_DEV) or "",
 		state = L.MODULE_STATES[entry.state],
 		button = module and ns.StatusButton(module.def, securecallfunction),
 	}

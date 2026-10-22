@@ -9,8 +9,10 @@ local ns = select(2, ...)
 ---@class PagleSlot
 ---@field id string              -- "core.toaststyle", "core.binding", "stats.trackerframe"
 ---@field label string           -- "Toast style"
----@field category "Announcements"|"Bookplate"|"Books"|"Trackers" -- ns.SLOT_CATEGORY_ORDER
+---@field category "Announcements"|"Crests"|"Books"|"Trackers" -- ns.SLOT_CATEGORY_ORDER
 ---@field openToEarned? boolean  -- Core's slots only: any Module may add earned goods to it (SHOP-R23)
+---@field hideEarned? boolean    -- Core's slots only: the shop lists none of its earned goods, which Look and Feel
+--- equips (SHOP-R25, SHOP-R27)
 ---@field preview? fun(stage: Frame, good: PagleRegisteredGood) -- Core's slots only: draws a good of the slot that
 --- has no preview of its own on the shop's stage (an open slot's goods from other Modules, SHOP-R25)
 ---@field groups? PagleSlotGroup[] -- the slot's groups, in the order the shop lists them (SHOP-R27)
@@ -42,7 +44,7 @@ local ns = select(2, ...)
 ---@field group? string           -- the key of one of its slot's groups (SHOP-R27)
 ---@field preview? fun(stage: Frame)   -- draws the look on the shop's preview stage
 
---- A registered slot, with who registered it. `openToEarned` and `preview` are kept for Core's slots only.
+--- A registered slot, with who registered it. `openToEarned`, `hideEarned` and `preview` are kept for Core's slots only.
 ---@class PagleRegisteredSlot: PagleSlot
 ---@field module string           -- def.name, or "Core"
 ---@field goods PagleRegisteredGood[] -- its goods, in registration order, another Module's in an open slot included
@@ -175,7 +177,7 @@ end
 ns.CORE_OWNER = "Core"
 
 --- The slot categories (wallet-and-shop.md › Contracts), in the order the shop's chips and Look and Feel list them.
-ns.SLOT_CATEGORY_ORDER = { "Announcements", "Bookplate", "Books", "Trackers" }
+ns.SLOT_CATEGORY_ORDER = { "Announcements", "Crests", "Books", "Trackers" }
 
 --- Each slot category, as a set.
 ---@type table<string, true>
@@ -233,6 +235,7 @@ function Goods:RegisterSlot(module, slot)
 		label = slot.label,
 		category = slot.category,
 		openToEarned = core and slot.openToEarned == true or nil,
+		hideEarned = core and slot.hideEarned == true or nil,
 		preview = core and type(slot.preview) == "function" and slot.preview or nil,
 		groups = groups,
 		module = module,

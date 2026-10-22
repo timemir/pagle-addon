@@ -44,8 +44,8 @@ local SLIDE, FLASH, FLASH_PEAK = 0.4, 1.4, 0.22
 local ICON_SIZE, RING_SIZE = 19, 22
 -- The mark at the end of a run's bar that outlasts the ruler (HNT-R161's ▸): its size, centred on the bar's end.
 local MORE_SIZE = 12
--- The scroll rail, this far right of the list's edge, and how far a wheel notch scrolls.
-local RAIL_GAP, RAIL_WIDTH, WHEEL_STEP = 10, 4, 40
+-- The scroll rail, this far right of the list's edge.
+local RAIL_GAP, RAIL_WIDTH = 10, 4
 -- The legend's bars and the gaps after each bar and each item.
 local LEGEND_BAR, LEGEND_GAP, LEGEND_ITEM_GAP = 18, 5, 14
 
@@ -368,10 +368,11 @@ local function build(page)
 		end
 	end
 	view.placeThumb = placeThumb
+	-- A notch glides a third of the list as it shows now (Core's Pagle.WheelScroll), the thumb following.
+	local wheel = { onScroll = placeThumb }
 	scroll:SetScript("OnMouseWheel", function(self, delta)
-		local offset = self:GetVerticalScroll() - delta * WHEEL_STEP
-		self:SetVerticalScroll(math.max(0, math.min(offset, self:GetVerticalScrollRange())))
-		placeThumb()
+		wheel.height = view.listHeight
+		Pagle.WheelScroll(self, delta, wheel)
 	end)
 	return view
 end

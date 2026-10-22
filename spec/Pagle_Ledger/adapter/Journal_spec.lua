@@ -444,3 +444,27 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		assert.is_false(has(texts, "Expert"))
 	end)
 end)
+
+describe("a Journal page's mouse wheel (ledger.md › UI › Motion)", function()
+	it("glides a third of the page a notch, quick notches adding up, to the content's foot", function()
+		local _, loaded = openJournal({ id = false, motion = true })
+		local page = loaded.ns.NewJournalPage(loaded.env.UIParent, 200, 300)
+		page.contentH = 1000
+		local wheel = page.scroll:GetScript("OnMouseWheel")
+
+		wheel(page.scroll, -1)
+		loaded.client.update(0.03)
+		wheel(page.scroll, -1)
+		loaded.client.update(0.2)
+
+		-- Two notches of 300 / 3, the second while the first still glided (26 a notch, each restarted from where the
+		-- glide had got to, went some 40).
+		assert.are.equal(200, math.floor(page.scroll:GetVerticalScroll() + 0.5))
+		assert.is_true(page.thumb:IsShown())
+		for _ = 1, 10 do
+			wheel(page.scroll, -1)
+		end
+		loaded.client.update(0.2)
+		assert.are.equal(700, math.floor(page.scroll:GetVerticalScroll() + 0.5), "it stops at the content's foot")
+	end)
+end)

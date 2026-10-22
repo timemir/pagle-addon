@@ -227,6 +227,17 @@ Pagle.Animate(frame, {
 - An owner that is no longer visible while it moves (closed, or the whole UI hidden) settles there: each animation jumps to where it settles (a loop to where it starts), each cue still to come runs, then `onDone`. Nothing it ends with, such as hiding a card or closing a note, is lost. A loop starts again only when its Module starts it, as its frame shows.
 - The driver ticks only while something moves (QOL-R25).
 
+### `Pagle.WheelScroll(scroll, delta, options?)`
+
+What a scroll frame's `OnMouseWheel` calls, so every book and list scrolls alike: `delta` notches (the client's +1 a notch up, −1 down) of **a third of the view** each, so two thirds of what showed stay in sight. The step is in the view's own units, so a window `Pagle.FitToScreen` shrinks still moves the same share of what it shows. It glides there on the motion driver (0.12 s, `EASE.out`, the scroll frame its owner); a notch while a glide runs adds to where that glide was going, not to where it has got to, so a quick spin goes as far as its notches, and each glide starts where the last one is, so nothing jumps. It never passes the top or the foot, and gives way to anything else that scrolls the frame while it glides (a page sent back to its top, a dragged scroll bar). With Animations off it jumps there.
+
+```lua
+---@class PagleWheelOptions
+---@field height number?            -- the view's height in the scroll frame's units (default its GetHeight)
+---@field range (fun(): number)?    -- how far it scrolls (default its GetVerticalScrollRange)
+---@field onScroll fun(offset)?     -- runs at each step of the glide: a scroll bar or thumb that follows it
+```
+
 ### `M:RaiseWriteUp(section)`
 
 ```lua
@@ -275,7 +286,7 @@ Every frame is drawn from the announcements art kit: a toast is a fresh entry in
 - **Banner:** centre screen over the world with no frame: a dark glow and faint gilt rays, the title in spaced gilt capitals, gilt tooling either side of a red wax seal (the headline's `seal`, under Contracts), the text in gilt handwriting, then the stamps as leather labels and the Coins.
 - **Splash:** full screen for a Legend, until clicked: the screen darkens behind slow rays, the item's icon sits in the Legend crest's window, and a torn page carries the title, the name in large handwriting, the labels and the Coins. "Click anywhere to continue" under it.
 - **"While you were fighting":** a toast on a taller page listing the held headlines, a row each with a small medallion, up to 3, and "+N more" under them for the rest.
-- **Session summary and Write-up cards:** a page torn from the ledger centre-screen, the same in every toast style: a leather head with the gilt title and a close mark, Core's numbers in the hand, the sections in ANN-R53 and ANN-R61 on the page's ruled lines, scrolling past 12 rows, and a gilt close button at the page's foot. Closed with either button or Esc.
+- **Session summary and Write-up cards:** a page torn from the ledger centre-screen, the same in every toast style: a leather head with the gilt title and a close mark, Core's numbers in the hand, the sections in ANN-R53 and ANN-R61 on the page's ruled lines (a moment's text in the hand at the right of its title's line, or, when the two don't fit there side by side, on the lines under the title, wrapped), scrolling past 12 lines, and a gilt close button at the page's foot. Closed with either button or Esc.
 
 Look reference: the announcements art kit (`pagle-announce-kit`, its previews and its probe addon). The text above wins where they differ.
 

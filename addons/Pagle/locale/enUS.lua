@@ -207,6 +207,9 @@ ns.L = {
 		off = "Off",
 		notInstalled = "Not installed",
 	},
+	-- A Module's version in the status list while its TOC still holds the packager's token: a checkout, never
+	-- packaged (CORE-R2, CORE-R41, ns.ShownVersion). Short: the version column is 64 pixels.
+	MODULE_VERSION_DEV = "dev",
 	-- A status button for a Module's first view (CORE-R44): its label.
 	OPEN_VIEW = "Open %s",
 
@@ -253,7 +256,7 @@ ns.L = {
 	SHOP_ALL_CATEGORIES = "All",
 	SHOP_CATEGORIES = {
 		Announcements = "Announcements",
-		Bookplate = "Bookplate",
+		Crests = "Crests",
 		Books = "Books",
 		Trackers = "Trackers",
 	},
@@ -680,9 +683,10 @@ ns.L = {
 	-- `binding.<key>.description`.
 	SLOT_TOAST_STYLE = "Toast style",
 	SLOT_SOUND_SET = "Sound set",
-	SLOT_CREST = "Bookplate crest",
+	SLOT_CREST = "Crests",
 	SLOT_BOOK_BINDING = "Book binding",
-	-- The crest slot's groups on the Curio Shop's list (SHOP-R27): the zones' crests, then the fishes'.
+	-- The crest slot's groups (SHOP-R27): the zones' crests, then the fishes', which name them; the Curio Shop lists
+	-- neither, as it lists no earned crest (SHOP-R25).
 	SLOT_CREST_ZONES = "Zone crests",
 	SLOT_CREST_FISH = "Fish crests",
 	-- A fish crest (VAR-R12): its fish, the Species' item name as the client has it, "Item {itemID}" until it has;

@@ -639,42 +639,230 @@ describe("The Fishing clothes step (ONB-R33)", function()
 		end
 	)
 
-	it("disables Save and the Fishing set field while restricted (QOL-R41, ONB-R25)", function()
+	-- The Fishing set field: the button on the field's paper.
+	local function setField(right)
+		return assert(
+			all(right, function(region)
+				return region.panel == "field" and region.kind == "Button"
+			end)[1],
+			"no Fishing set field"
+		)
+	end
+
+	-- The field's list: the frame on the field's paper.
+	local function setList(right)
+		return assert(
+			all(right, function(region)
+				return region.panel == "field" and region.kind == "Frame"
+			end)[1],
+			"no list"
+		)
+	end
+
+	-- The list's rows that show, top to bottom.
+	local function rowsOf(list)
+		local rows = {}
+		for _, child in ipairs(list.children) do
+			if child.kind == "Button" and child.shown then
+				rows[#rows + 1] = child
+			end
+		end
+		table.sort(rows, function(a, b)
+			return -a.points[1][5] < -b.points[1][5]
+		end)
+		return rows
+	end
+
+	-- A row's words: its one font string.
+	local function labelOf(row)
+		return assert(all(row, function(region)
+			return region.kind == "FontString"
+		end)[1])
+	end
+
+	-- What the open list shows, row by row: { its words, whether its radio is the filled one }.
+	local function listed(list)
+		local found = {}
+		for i, row in ipairs(rowsOf(list)) do
+			local on = all(row, function(region)
+				return region.sprite == "radio-on"
+			end)[1]
+			local off = all(row, function(region)
+				return region.sprite == "radio"
+			end)[1]
+			assert(on.shown ~= off.shown, "a row shows both radios")
+			found[i] = { labelOf(row).text, on.shown }
+		end
+		return found
+	end
+
+	-- QoL logged in with the set Fishing and Pagle Previous, the guide open at Fishing clothes.
+	local function withSets(names)
+		local fake, client, loaded = start(function(_, client)
+			client.equipmentSets[FISHING] = { name = names and names[1] or "Fishing", items = { [16] = FISHING_POLE } }
+			client.equipmentSets[PREVIOUS] = { name = "Pagle Previous", items = { [16] = SWORD } }
+		end)
+		local _, right = open(fake, "clothes")
+		return fake, client, loaded, right
+	end
+
+	it("disables Save and the Fishing set field while restricted, and shuts its list (QOL-R41, ONB-R25)", function()
 		local fake, client = start()
 		local _, right = open(fake, "clothes")
 		local save = textReading(right, "Save what I’m wearing as my fishing set").parent.parent
 		local dropdown = textReading(right, "None (gear stays as it is)").parent
+		dropdown:Click()
+		assert.is_true(showing(setList(right)))
 
 		fake.setRestricted(true)
+		assert.is_false(showing(setList(right)))
 		save:Click()
 		dropdown:Click()
 
 		assert.is_false(save:IsEnabled())
 		assert.is_false(dropdown:IsEnabled())
+		assert.is_false(showing(setList(right)))
 		assert.are.same({}, client.equipmentSetCalls)
-		assert.are.same({}, client.menus)
 
 		fake.setRestricted(false)
 		assert.is_true(save:IsEnabled())
 		assert.is_true(dropdown:IsEnabled())
 	end)
 
-	it("chooses the fishing set from its field as the Fishing page's dropdown does (QOL-R40)", function()
-		local fake, client, loaded = start(function(_, client)
-			client.equipmentSets[FISHING] = { name = "Fishing", items = { [16] = FISHING_POLE } }
-			client.equipmentSets[PREVIOUS] = { name = "Pagle Previous", items = { [16] = SWORD } }
-		end)
-		local _, right = open(fake, "clothes")
-		local dropdown = textReading(right, "None (gear stays as it is)").parent
-		assert.are.equal("field", dropdown.panel)
+	it(
+		"opens the field's list right under it, as wide, on the field's paper in the field's type, over the page (QOL-R40)",
+		function()
+			local _, client, _, right = withSets()
+			local dropdown = setField(right)
+			local list = setList(right)
+			assert.is_false(showing(list))
+
+			dropdown:Click()
+
+			-- The page's own list, not the game's context menu, a dark tooltip box off the field's side.
+			assert.are.same({}, client.menus)
+			assert.is_true(showing(list))
+			assert.are.same({ "TOPLEFT", dropdown, "BOTTOMLEFT", 0, -2 }, list.points[1])
+			assert.are.equal(dropdown.width, list.width)
+			assert.is_true(list:GetFrameLevel() > field(right, "PAGLE_SWAP_GEAR"):GetFrameLevel())
+			-- None and the character's sets but Pagle Previous, the chosen one's radio filled, each in the field's type.
+			assert.are.same({ { "None (gear stays as it is)", true }, { "Fishing", false } }, listed(list))
+			local choice = textReading(dropdown, "None (gear stays as it is)")
+			for _, row in ipairs(rowsOf(list)) do
+				assert.are.equal(choice.fontObject, labelOf(row).fontObject)
+				assert.are.equal("Interface\\AddOns\\Pagle\\media\\fonts\\IMFeENrm28P.ttf", choice.fontObject.font[1])
+			end
+			-- The rows stacked inside it, top to bottom, the list as tall as they are.
+			local rows = rowsOf(list)
+			assert.are.same({ 3, 3 }, { rows[1].points[1][4], -rows[1].points[1][5] })
+			assert.are.same({ 3, 29 }, { rows[2].points[1][4], -rows[2].points[1][5] })
+			assert.are.equal(2 * 26 + 6, list.height)
+
+			-- A second click on the field shuts it.
+			dropdown:Click()
+			assert.is_false(showing(list))
+		end
+	)
+
+	it("washes a row under the mouse and inks its words in the red pencil, as the guide's links (QOL-R40)", function()
+		local _, _, _, right = withSets()
+		setField(right):Click()
+		local row = rowsOf(setList(right))[2]
+		local wash = all(row, function(region)
+			return region.kind == "Texture" and region.color ~= nil
+		end)[1]
+		local label = labelOf(row)
+		assert.is_false(wash.shown)
+
+		row.scripts.OnEnter(row)
+		assert.is_true(wash.shown)
+		assert.are.same({ 0x9a / 255, 0x2a / 255, 0x1a / 255 }, { unpack(label.textColor, 1, 3) })
+
+		row.scripts.OnLeave(row)
+		assert.is_false(wash.shown)
+		assert.are.same({ 0x3e / 255, 0x22 / 255, 0x0c / 255 }, { unpack(label.textColor, 1, 3) })
+	end)
+
+	it("widens the list to the left for a long name, up to the column, never off the page (QOL-R40)", function()
+		local name = ("Long set name "):rep(5) -- 70 characters: 420 px in the fake's type
+		local _, _, _, right = withSets({ name })
+		local dropdown = setField(right)
 
 		dropdown:Click()
-		local menu = client.menus[#client.menus]
-		assert.are.same({ "None (gear stays as it is)", "Fishing" }, menu.texts())
-		menu.click("Fishing")
+
+		local list = setList(right)
+		-- The column's width, its left end on the column's: the field is 272.8 wide at 139.2, the column 382 at 30.
+		assert.are.equal(382, list.width)
+		assert.are.equal("TOPLEFT", list.points[1][1])
+		assert.are.equal("BOTTOMLEFT", list.points[1][3])
+		assert.is_true(math.abs(139.2 + list.points[1][4] - 30) < 1e-9)
+		-- The name is cut to the room its row has.
+		assert.are.equal(382 - 6 - 32 - 12, labelOf(rowsOf(list)[2]).width)
+	end)
+
+	it("chooses the fishing set from its list as the Fishing page's dropdown does, and shuts it (QOL-R40)", function()
+		local _, client, loaded, right = withSets()
+		local dropdown = setField(right)
+
+		dropdown:Click()
+		rowsOf(setList(right))[2]:Click()
 
 		assert.are.same({ setID = FISHING, name = "Fishing" }, loaded.env.PagleQoLDB.global.gear[PLAYER_GUID])
+		assert.is_false(showing(setList(right)))
 		assertSays(dropdown, "Fishing")
+		assert.are.same({}, client.menus)
+
+		dropdown:Click()
+		assert.are.same({ { "None (gear stays as it is)", false }, { "Fishing", true } }, listed(setList(right)))
+	end)
+
+	it("shuts the list on Esc, letting every other key through to the game (QOL-R40)", function()
+		local _, client, loaded, right = withSets()
+		setField(right):Click()
+		local list = setList(right)
+		assert.is_true(list.keyboardEnabled)
+		assert.is_true(list.propagatesKeys)
+
+		client.pressKey("ESCAPE")
+
+		assert.is_false(showing(list))
+		assert.is_false(list.propagatesKeys)
+		assert.are.equal(loaded.ns.NO_FISHING_SET, loaded.ns.FishingSetChoice())
+	end)
+
+	it("shuts the list on a click anywhere but on it or its field, choosing nothing (QOL-R40)", function()
+		local _, client, loaded, right = withSets()
+		local dropdown = setField(right)
+		dropdown:Click()
+		local list = setList(right)
+
+		-- A press on a row, or on the field (whose click then shuts it), leaves it open.
+		client.mouseFoci = { rowsOf(list)[2] }
+		client.fireGameEvent("GLOBAL_MOUSE_DOWN", "LeftButton")
+		assert.is_true(showing(list))
+		client.mouseFoci = { dropdown }
+		client.fireGameEvent("GLOBAL_MOUSE_DOWN", "LeftButton")
+		assert.is_true(showing(list))
+
+		-- A press on the page, or off the book.
+		client.mouseFoci = { right }
+		client.fireGameEvent("GLOBAL_MOUSE_DOWN", "LeftButton")
+		assert.is_false(showing(list))
+		dropdown:Click()
+		client.mouseFoci = { loaded.env.WorldFrame }
+		client.click("LeftButton")
+		assert.is_false(showing(list))
+		assert.are.equal(loaded.ns.NO_FISHING_SET, loaded.ns.FishingSetChoice())
+	end)
+
+	it("shows the step with the list shut after it was left open (QOL-R40, ONB-R44)", function()
+		local fake, _, _, right = withSets()
+		setField(right):Click()
+
+		fake.guide:Next()
+		fake.guide:Back()
+
+		assert.is_false(showing(setList(right)))
 	end)
 
 	it("binds Swap gear through Core's field (ONB-R33, ONB-R40)", function()
@@ -687,21 +875,35 @@ describe("The Fishing clothes step (ONB-R33)", function()
 		assert.are.same({ 30, 231.7 }, placeOf(swap))
 	end)
 
-	-- What a Nudge strip says, its pieces left to right.
-	local function lineOf(strip)
-		local pieces = {}
+	-- A Nudge strip's pieces that show, left to right: the first anchored to the strip, each after it to the one before.
+	local function piecesOf(strip)
+		local shown = {}
 		for _, child in ipairs(strip.children) do
-			local text = child.kind == "FontString" and child or child.Text
-			if child.shown and text and child.points[1] then
-				pieces[#pieces + 1] = { x = child.points[1][4], text = text.text }
+			if child.shown and child.points[1] and (child.kind == "FontString" or child.Text) then
+				shown[#shown + 1] = child
 			end
 		end
-		table.sort(pieces, function(a, b)
-			return a.x < b.x
-		end)
+		local found, after = {}, strip
+		while true do
+			local nextPiece
+			for _, piece in ipairs(shown) do
+				if piece.points[1][2] == after then
+					nextPiece = piece
+				end
+			end
+			if not nextPiece then
+				return found
+			end
+			found[#found + 1] = nextPiece
+			after = nextPiece
+		end
+	end
+
+	-- What a Nudge strip says, its pieces left to right.
+	local function lineOf(strip)
 		local line = {}
-		for i, piece in ipairs(pieces) do
-			line[i] = piece.text
+		for i, piece in ipairs(piecesOf(strip)) do
+			line[i] = (piece.Text or piece).text
 		end
 		return line
 	end
@@ -731,6 +933,27 @@ describe("The Fishing clothes step (ONB-R33)", function()
 				"Pagle: Swap gear",
 				"to swap back in one press.",
 			}, lineOf(strip))
+		end
+	)
+
+	it(
+		"sets the sample's binding name 8 px past Bind as it draws, in print on the hand's line, though drawn smaller (QOL-R77)",
+		function()
+			local fake, client = start()
+			client.boundKeys.PAGLE_SWAP_GEAR = nil
+
+			local _, right = open(fake, "clothes")
+
+			local strip = assert(all(right, function(region)
+				return region.pools ~= nil and region.middle.texture == FIELD
+			end)[1])
+			assert.is_true(strip.scale < 1)
+			-- Each piece hangs off the right end of the one before as it draws at the strip's smaller scale, so "Bind"
+			-- and the name keep their gap whatever width the smaller type comes to.
+			local bind, name, rest = unpack(piecesOf(strip))
+			assert.are.same({ "LEFT", bind, "RIGHT", 8, -1 }, name.points[1])
+			assert.are.same({ "LEFT", name, "RIGHT", 8, 1 }, rest.points[1])
+			assert.are.same({ "PagleQoLNudgeEm", 19 }, { name.fontObject.name, name.fontObject.font[2] })
 		end
 	)
 end)

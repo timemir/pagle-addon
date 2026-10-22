@@ -70,23 +70,28 @@ local function concat(lists)
 end
 
 -- Core's own slots (SHOP-R25) as the list shows them while nothing of Core's is bought and the balance is under 150,
--- the crest slot with the Ledger's two zone crests in it, neither earned yet (SHOP-R23).
+-- the crest slot with Plain alone: its earned crests, the Ledger's two zone crests and Core's fish crests, aren't
+-- listed or counted (SHOP-R25).
 local CORE_UNBOUGHT = concat({
 	withExpansion({ "TOAST STYLE 1 of 15", "Torn Page | IN USE", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle"),
 	withExpansion({ "SOUND SET 1 of 14", "Driftwood | IN USE", "Gilded | 400" }, "soundset"),
+	{ "CRESTS 1 of 1", "Plain | IN USE" },
 })
-for _, line in ipairs({
-	"BOOKPLATE CREST 1 of 40",
-	"Plain | IN USE",
-	"The Old Oak | Expert · 88%",
-	"The Desert Sun | Unfished",
-}) do
-	CORE_UNBOUGHT[#CORE_UNBOUGHT + 1] = line
+
+-- A crest's icon for Peaks, a crest for sale that only the specs register (no crest is for sale, SHOP-R25).
+local PEAKS_ICON = "Interface\\AddOns\\Pagle\\media\\crests\\peaks"
+
+-- Registers Peaks, Core's crest for sale at tier 2 with no preview of its own, in `loaded`'s crest slot.
+local function registerPeaks(loaded)
+	loaded.ns.RegisterCoreGood({
+		id = "core.crest.peaks",
+		slot = "core.crest",
+		name = "Peaks",
+		tier = 2,
+		icon = PEAKS_ICON,
+	})
 end
--- Core's fish crests follow under their group's header, none earned (VAR-R12, SHOP-R27).
-for _, row in ipairs(fishCrestRows()) do
-	CORE_UNBOUGHT[#CORE_UNBOUGHT + 1] = row
-end
+
 -- Core's book binding (ADR 0015) as the list shows it: Field Leather and every binding for sale, in the shop's order.
 local BOOK_BINDING = {
 	"BOOK BINDING 1 of 34",
@@ -144,9 +149,10 @@ local function bindingsAtMost(most)
 end
 
 -- Core with the Ledger and Hunts registered, Core's own goods, Hunts' covers and the Ledger's bindings and two zone
--- crests in Core's crest slot (earned goods, their earnedText functions, SHOP-R22, SHOP-R23), logged in and in the
--- world. `saved` is a PagleDB; `options.noHunts` leaves Hunts unregistered (off); `options.preview` is
--- Velvet's preview; `options.entries` is the saved log's entries. Returns the loaded addon and the handles.
+-- crests in Core's crest slot (earned goods, their earnedText functions, SHOP-R22, SHOP-R23; the shop lists neither,
+-- SHOP-R25), logged in and in the world. `saved` is a PagleDB; `options.noHunts` leaves Hunts unregistered (off);
+-- `options.preview` is Velvet's preview; `options.entries` is the saved log's entries. Returns the loaded addon and
+-- the handles.
 local function shopCore(saved, options)
 	options = options or {}
 	local loaded = loadCore(options.entries, saved)
@@ -589,10 +595,11 @@ describe("The Curio Shop's list", function()
 
 	it("draws a crest's row as its shield, 30 x 35, in place of the round medallion (SHOP-R25)", function()
 		local loaded = shopCore()
+		registerPeaks(loaded)
 
 		loaded.env.Pagle.OpenShop()
 
-		for _, id in ipairs({ "core.crest.plain", "ledger.crest.tanaris" }) do
+		for _, id in ipairs({ "core.crest.plain", "core.crest.peaks" }) do
 			local bezel = rowOf(loaded, id).bezel
 			assert.are.same(
 				{ false, false, false },
@@ -607,8 +614,8 @@ describe("The Curio Shop's list", function()
 		end
 		-- a row reused for a good that isn't a crest shows the medallion again
 		local frame = shopFrame(loaded)
-		frame.search:Type("old oak")
-		local line = rowOf(loaded, "ledger.crest.elwynn")
+		frame.search:Type("peaks")
+		local line = rowOf(loaded, "core.crest.peaks")
 		frame.search:Type("ripple")
 		assert.are.equal(line, rowOf(loaded, "core.toaststyle.ripple"))
 		local ripple = line.bezel
@@ -619,9 +626,9 @@ describe("The Curio Shop's list", function()
 	it("greys a crest's shield as it would a medallion's icon (SHOP-R25, SHOP-R35)", function()
 		local loaded = shopCore()
 		loaded.env.Pagle.OpenShop()
-		local bezel = rowOf(loaded, "ledger.crest.elwynn").bezel
+		local bezel = rowOf(loaded, "core.crest.plain").bezel
 
-		loaded.ns.SetShopBezel(bezel, loaded.env.Pagle.GetGood("ledger.crest.elwynn").icon, true, true)
+		loaded.ns.SetShopBezel(bezel, loaded.env.Pagle.GetGood("core.crest.plain").icon, true, true)
 
 		assert.is_true(bezel.Shield:IsDesaturated())
 	end)
@@ -672,7 +679,7 @@ describe("The Curio Shop's list", function()
 			"Torn Page | IN USE",
 			"SOUND SET 1 of 14",
 			"Driftwood | IN USE",
-			"BOOKPLATE CREST 1 of 40",
+			"CRESTS 1 of 1",
 			"Plain | IN USE",
 			"BOOK BINDING 1 of 34",
 			"Field Leather | IN USE",
@@ -682,9 +689,9 @@ describe("The Curio Shop's list", function()
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(12 + 24 + 34 + #fishCrestRows(), #listed(loaded))
+		assert.are.equal(9 + 24 + 34, #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(17 + 24 + 35 + #fishCrestRows(), #listed(loaded))
+		assert.are.equal(15 + 24 + 35, #listed(loaded))
 	end)
 
 	it(
@@ -694,7 +701,7 @@ describe("The Curio Shop's list", function()
 			loaded.env.Pagle.OpenShop()
 			local frame = shopFrame(loaded)
 
-			assert.are.same({ "ALL", "ANNOUNCEMENTS", "BOOKPLATE", "BOOKS", "TRACKERS" }, pillLabels(frame.chips))
+			assert.are.same({ "ALL", "ANNOUNCEMENTS", "CRESTS", "BOOKS", "TRACKERS" }, pillLabels(frame.chips))
 			assert.is_true(frame.chips[1].pressed)
 
 			frame.chips[4]:Click()
@@ -705,7 +712,7 @@ describe("The Curio Shop's list", function()
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
-			assert.are.equal(17 + 24 + 35 + #fishCrestRows(), #listed(loaded))
+			assert.are.equal(15 + 24 + 35, #listed(loaded))
 		end
 	)
 
@@ -815,11 +822,16 @@ describe("The Curio Shop's list", function()
 		scroll:GetScript("OnScrollRangeChanged")(scroll, 0, 200)
 		assert.is_true(bar:IsShown())
 		assert.are.same({ 0, 200 }, { bar:GetMinMaxValues() })
+		-- A notch glides a third of the list's height (Pagle.WheelScroll), the bar following it.
+		local notch = scroll:GetHeight() / 3
+		assert.is_true(notch > 100 and notch < 200) -- the tray shows a list some 400 tall
 		scroll:GetScript("OnMouseWheel")(scroll, -1)
-		assert.are.same({ 66, 66 }, { scroll:GetVerticalScroll(), bar:GetValue() })
+		loaded.client.update(0.2)
+		assert.are.same({ notch, notch }, { scroll:GetVerticalScroll(), bar:GetValue() })
 		bar:SetValue(200)
 		assert.are.equal(200, scroll:GetVerticalScroll())
 		scroll:GetScript("OnMouseWheel")(scroll, -1)
+		loaded.client.update(0.2)
 		assert.are.equal(200, scroll:GetVerticalScroll(), "it stops at the list's foot")
 	end)
 end)
@@ -923,33 +935,38 @@ describe("The Curio Shop's stage", function()
 		assert.are.equal("Angler Level 30", rowOf(loaded, "ledger.binding.level30").tag:GetText())
 	end)
 
+	it("draws a crest with no preview of its own on the crest slot's bookplate (SHOP-R25)", function()
+		local loaded = shopCore()
+		registerPeaks(loaded)
+
+		loaded.env.Pagle.OpenShop("core.crest.peaks")
+
+		local stage = shopFrame(loaded).stage
+		assert.is_true(stage.buy:IsShown())
+		assert.is_false(stage.swatch:IsShown()) -- the bookplate preview, not the medallion
+		local crest
+		for _, region in ipairs(loaded.client.frames) do
+			for _, child in ipairs(region.children) do
+				if child.texture == PEAKS_ICON and child:IsVisible() then
+					crest = child
+				end
+			end
+		end
+		assert.are.same({ 60, 70 }, { assert(crest, "the crest on the stage's bookplate"):GetSize() })
+	end)
+
 	it(
-		"shows another Module's crest in Core's slot with its earnedText function's texts and the crest slot's bookplate (SHOP-R22, SHOP-R23, SHOP-R25)",
+		"opens on nothing for an earned crest, which it doesn't list: Look and Feel equips it (SHOP-R25, SHOP-R40)",
 		function()
 			local loaded = shopCore()
 
 			loaded.env.Pagle.OpenShop("ledger.crest.elwynn")
 
-			local stage = shopFrame(loaded).stage
-			assert.are.equal(
-				"Earned when Elwynn Forest reaches Master in the Fish Journal.\nA Ledger reward, not for sale",
-				stage.notes:GetText()
-			)
-			assert.are.equal("Expert · 88%", rowOf(loaded, "ledger.crest.elwynn").tag:GetText())
-			assert.are.equal("Unfished", rowOf(loaded, "ledger.crest.tanaris").tag:GetText())
-			assert.is_false(stage.buy:IsShown())
-			assert.is_false(stage.swatch:IsShown()) -- the bookplate preview, not the medallion
-			local crest
-			for _, region in ipairs(loaded.client.frames) do
-				for _, child in ipairs(region.children) do
-					if
-						child.texture == "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn" and child:IsVisible()
-					then
-						crest = child
-					end
-				end
-			end
-			assert.are.same({ 60, 70 }, { assert(crest, "the crest on the stage's bookplate"):GetSize() })
+			local frame = shopFrame(loaded)
+			assert.is_true(frame:IsShown())
+			assert.is_true(frame.stage.hint:IsShown()) -- "Pick a look to see it here."
+			assert.is_false(frame.stage.name:IsShown())
+			assert.are.same(CORE_UNBOUGHT, { unpack(listed(loaded), 1, #CORE_UNBOUGHT) })
 		end
 	)
 

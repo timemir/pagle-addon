@@ -170,8 +170,8 @@ local EXPECTED = {
 			{ "header", "Announcements" },
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
-			{ "header", "Bookplate" },
-			{ "slot", "Bookplate crest" },
+			{ "header", "Crests" },
+			{ "slot", "Crests" },
 			{ "header", "Books" },
 			{ "slot", "Book binding" },
 			{ "header", "Trackers", of = TRACKER_MODULES },
@@ -791,7 +791,7 @@ describe("Each page's Defaults button", function()
 			}, restoredOn(loaded, "Trackers"))
 			assert.are.same({
 				"Book binding",
-				"Bookplate crest",
+				"Crests",
 				"Hunts tracker frame",
 				"Sound set",
 				"Stats tracker frame",

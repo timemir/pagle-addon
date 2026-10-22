@@ -53,7 +53,7 @@ describe("Pagle_Hunts with Core", function()
 		while texts[at] ~= "Hunts" do
 			at = assert(texts[at + 1] and at + 1, "no Hunts row in the status list")
 		end
-		assert.are.same({ "Hunts", "@project-version@", "On", "Open Hunts" }, { unpack(texts, at, at + 3) })
+		assert.are.same({ "Hunts", "dev", "On", "Open Hunts" }, { unpack(texts, at, at + 3) })
 		assert.are.equal(1, #buttons)
 		assert.are.equal("Open Hunts", buttons[1]:GetText())
 	end)

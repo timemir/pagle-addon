@@ -39,8 +39,8 @@ local RIBBONS_LEFT = 456
 local RIBBONS_LIFT = 40
 -- The nameplate's place on the foot band, and the live line's right end and foot.
 local PLATE_X, PLATE_Y, LIVE_RIGHT, LIVE_FOOT = 30, 605, 30, 9
--- How far a mouse wheel notch scrolls a page body.
-local WHEEL_STEP = 40
+-- How a mouse wheel notch scrolls a page body: a third of it, gliding (Core's Pagle.WheelScroll).
+local WHEEL = { height = BODY_HEIGHT }
 -- The book's whole extent in its own units, for fitting it to the screen (Pagle.FitToScreen): the wax close button
 -- reaches past its top right, the chosen ribbon hangs 84 under its foot.
 local EXTENT_WIDTH, EXTENT_HEIGHT = WIDTH + 30, HEIGHT + 100
@@ -619,8 +619,7 @@ local function pageOf(book, page, side)
 		scroll:SetScrollChild(content)
 		scroll:EnableMouseWheel(true)
 		scroll:SetScript("OnMouseWheel", function(self, delta)
-			local offset = self:GetVerticalScroll() - delta * WHEEL_STEP
-			self:SetVerticalScroll(math.max(0, math.min(offset, self:GetVerticalScrollRange())))
+			Pagle.WheelScroll(self, delta, WHEEL)
 		end)
 		view = { clip = clip, paper = paper, scroll = scroll, content = content }
 		book.pages[key] = view

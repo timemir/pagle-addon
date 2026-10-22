@@ -111,8 +111,8 @@ describe("Core's slots and goods", function()
 				},
 				{
 					"core.crest",
-					"Bookplate crest",
-					"Bookplate",
+					"Crests",
+					"Crests",
 					"Core",
 					crests,
 				},

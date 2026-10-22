@@ -575,23 +575,22 @@ describe("the Ledger's zone crests", function()
 	)
 
 	it(
-		"say on the shop's row and stage how a crest not yet earned is earned, its zone named by the client (LED-R115, SHOP-R22)",
+		"say how a crest not yet earned is earned, its zone named by the client, which the shop, listing no earned crest,"
+			.. " never shows (LED-R115, SHOP-R22, SHOP-R25)",
 		function()
 			local fake = crested()
-			local shop = fake.ns.ShopModel()
+			local goods = fake.ns.goods
 
 			-- The fake's catalogue charts zone 12, unfished over the empty log; the new zones aren't charted (LED-R54).
-			assert.are.equal("Unfished", shop:Row("ledger.crest.elwynn").tag)
 			assert.are.same({
+				"Unfished",
 				"Earned when nnywle reaches Master in the Fish Journal. Catch anything there to begin.",
-				"A Ledger reward, not for sale",
-			}, shop:Stage("ledger.crest.elwynn").notes)
-			assert.are.equal("Not yet charted", shop:Row("ledger.crest.riverglades").tag)
+			}, { goods:EarnedTexts("ledger.crest.elwynn") })
 			assert.are.same({
+				"Not yet charted",
 				"Earned when sedalgrevir reaches Master in the Fish Journal, once its waters are charted.",
-				"A Ledger reward, not for sale",
-			}, shop:Stage("ledger.crest.riverglades").notes)
-			assert.are.equal("Bookplate crest · Ledger", shop:Stage("ledger.crest.elwynn").slotLine)
+			}, { goods:EarnedTexts("ledger.crest.riverglades") })
+			assert.is_nil(fake.ns.ShopModel():Row("ledger.crest.elwynn"))
 		end
 	)
 end)
