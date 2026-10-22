@@ -5,14 +5,15 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The Curio Shop expansion's earned goods (LED-R116, LED-R117): the four earned bindings and the Ledger's four goods in
+-- The Curio Shop expansion's earned goods (LED-R116, LED-R117): the five earned bindings and the Ledger's four goods in
 -- Core's open slots, each owned by a rule over the projection's state and the celebrated set together (LED-R90), and
 -- kept once earned. Pure logic, everything passed in (CORE-R7); adapter/Bindings.lua registers them.
 
 --- A rule an expansion good is earned by (LED-R116, LED-R117): `legend` its first Legend caught, `legends` every
 --- Legend item caught (LED-R63), `monster` a sized Catch in the Monster band (LED-R80), `prestige<R>` Prestige rank R
---- or higher (LED-R34), `ledger` the `complete.ledger` title earned (LED-R75).
----@alias LedgerEarnedRule "legend"|"legends"|"monster"|"prestige1"|"prestige5"|"prestige10"|"ledger"
+--- or higher (LED-R34), `ledger` the `complete.ledger` title earned (LED-R75), `varieties` the `complete.varieties`
+--- title earned (VAR-R22).
+---@alias LedgerEarnedRule "legend"|"legends"|"monster"|"prestige1"|"prestige5"|"prestige10"|"ledger"|"varieties"
 
 --- What the rules read.
 ---@class LedgerEarnedView
@@ -138,6 +139,19 @@ local RULES = {
 			return true
 		end
 		return view.state ~= nil and ns.LedgerCompletion(view.world, view.state).percent == 100
+	end,
+	-- The `complete.varieties` title (VAR-R22): celebrated, or every Species with varieties complete now, at a total
+	-- above 0 (VAR-R20).
+	varieties = function(view)
+		local titles = view.celebrated.titles
+		if titles and titles["title:complete.varieties"] then
+			return true
+		end
+		if not view.state then
+			return false
+		end
+		local count = ns.LedgerCompletion(view.world, view.state).varieties
+		return count.total > 0 and count.done >= count.total
 	end,
 }
 

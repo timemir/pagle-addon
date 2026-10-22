@@ -36,6 +36,7 @@ local GOODS = {
 	{ "ledger.binding.monster", "earned", "Land a Monster" },
 	{ "ledger.binding.abyssal", "earned", "Prestige X" },
 	{ "ledger.binding.keeper", "earned", "Ledger 100%" },
+	{ "ledger.binding.iridescent", "earned", "Every fish in every colour" },
 }
 
 -- A good's kind as LED-R110's table writes it.
@@ -108,7 +109,7 @@ end
 
 describe("the Ledger's Journal bindings", function()
 	it(
-		"register the slot ledger.binding and its goods in LED-R110's order, with their kinds, Iridescent Scale not one, and Field Leather equipped (LED-R110, LED-R116, SHOP-R21, SHOP-R22, SHOP-R32)",
+		"register the slot ledger.binding and its goods in LED-R110's order, with their kinds, and Field Leather equipped (LED-R110, LED-R116, SHOP-R21, SHOP-R22, SHOP-R32)",
 		function()
 			local fake = ledger()
 			local goods = fake.ns.goods
@@ -125,7 +126,6 @@ describe("the Ledger's Journal bindings", function()
 				registered[i] = { good.id, kindOf(good), good.earnedText }
 			end
 			assert.are.same(GOODS, registered)
-			assert.is_nil(fake.Pagle.GetGood("ledger.binding.iridescent"))
 			assert.are.equal("ledger.binding.field", fake.Pagle.GetEquipped(SLOT))
 		end
 	)
@@ -488,6 +488,41 @@ describe("the Ledger's expansion earned bindings", function()
 			fake.enterWorld()
 			assert.is_true(fake.Pagle.IsOwned("ledger.binding.keeper"))
 			assert.is_false(fake.Pagle.IsOwned("ledger.binding.legend"))
+		end
+	)
+
+	it(
+		"own Iridescent Scale with the complete.varieties title celebrated, from registration on, and not before it (LED-R116, VAR-R22, LED-R90)",
+		function()
+			local function owned(titles)
+				local fake = newFakePagle()
+				fake.catchLog.data.logId = "log"
+				fake.globals.PagleLedgerDB = { global = { celebrated = { coins = 0, titles = titles, logId = "log" } } }
+				fake.load("Pagle_Ledger")
+				local registered = fake.Pagle.IsOwned("ledger.binding.iridescent")
+				fake.login()
+				fake.enterWorld()
+				return { registered, fake.Pagle.IsOwned("ledger.binding.iridescent") }
+			end
+
+			assert.are.same({ true, true }, owned({ ["title:complete.varieties"] = true }))
+			assert.are.same({ false, false }, owned({ ["title:complete.ledger"] = true }))
+		end
+	)
+
+	it(
+		"keep Iridescent Scale once noted in the celebrated set, its title not celebrated (LED-R116, LED-R90)",
+		function()
+			local fake = newFakePagle()
+			fake.catchLog.data.logId = "log"
+			fake.globals.PagleLedgerDB = {
+				global = { celebrated = { coins = 0, goods = { ["ledger.binding.iridescent"] = true }, logId = "log" } },
+			}
+			fake.load("Pagle_Ledger")
+			fake.login()
+			fake.enterWorld()
+
+			assert.is_true(fake.Pagle.IsOwned("ledger.binding.iridescent"))
 		end
 	)
 end)

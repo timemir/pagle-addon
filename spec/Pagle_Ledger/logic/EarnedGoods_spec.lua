@@ -1,10 +1,14 @@
--- The Curio Shop expansion's earned goods (LED-R116, LED-R117, LED-R34, LED-R63, LED-R75, LED-R80, LED-R90): each
--- rule over a hand-made state, a fixture world and the celebrated set, the goods kept once noted in the set, and
--- LED-R117's four goods as registered, through ns.EarnedGoodOwned, ns.NoteEarnedGoods and ns.CoreSlotGoods. No Core.
+-- The Curio Shop expansion's earned goods (LED-R116, LED-R117, LED-R34, LED-R63, LED-R75, LED-R80, LED-R90,
+-- VAR-R22): each rule over a hand-made state, a fixture world and the celebrated set, the goods kept once noted in the
+-- set, and LED-R117's four goods as registered, through ns.EarnedGoodOwned, ns.NoteEarnedGoods and ns.CoreSlotGoods.
+-- No Core.
 
--- Lake lists a Species, a trophy and two Legends; a third Legend is on no list, and a fourth is removed.
+-- Lake lists a Species, a trophy and two Legends; a third Legend is on no list, and a fourth is removed. A Species
+-- with ten varieties (VAR-R2) is on Lake's list only in the Iridescent Scale's world.
 local FISH, TROPHY = 6303, 13901
 local LEGEND, LEGEND_2, UNLISTED, REMOVED = 19807, 19803, 19805, 19806
+local COLOURED = 6359
+local KEYS = { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j" }
 local LAKE = 12
 
 local getItem = itemLookup({
@@ -14,14 +18,20 @@ local getItem = itemLookup({
 	[LEGEND_2] = fishRecord(LEGEND_2, { legend = true }),
 	[UNLISTED] = fishRecord(UNLISTED, { legend = true }),
 	[REMOVED] = fishRecord(REMOVED, { legend = true, removed = true }),
+	[COLOURED] = fishRecord(COLOURED, { varieties = KEYS }),
 })
 
--- Core's lookups (LOG-R55) over Lake, which `legends` lists the Legends of (both listed ones without it).
+-- Core's lookups (LOG-R55) over Lake, which `legends` lists the Legends of (both listed ones without it), and
+-- `coloured` the Species with varieties too.
 ---@param legends integer[]?
-local function lookups(legends)
+---@param coloured boolean?
+local function lookups(legends, coloured)
 	local catches = { catchEntry(FISH), catchEntry(TROPHY), catchEntry(REMOVED) }
 	for _, itemID in ipairs(legends or { LEGEND, LEGEND_2 }) do
 		catches[#catches + 1] = catchEntry(itemID)
+	end
+	if coloured then
+		catches[#catches + 1] = catchEntry(COLOURED)
 	end
 	return {
 		GetItem = getItem,
@@ -82,13 +92,15 @@ end
 describe("the expansion's earned goods", function()
 	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
 
-	-- What the rules read: the fixture world (Lake's Legends `legends`), `made` and `celebrated`.
+	-- What the rules read: the fixture world (Lake's Legends `legends`, and the Species with varieties when
+	-- `coloured`), `made` and `celebrated`.
 	---@param made LedgerState?
 	---@param celebrated table? a LedgerCelebrated, as hand-made as the state
 	---@param legends integer[]?
+	---@param coloured boolean?
 	---@return LedgerEarnedView
-	local function view(made, celebrated, legends)
-		return { world = ns.NewWorld(lookups(legends)), state = made, celebrated = celebrated or {} }
+	local function view(made, celebrated, legends, coloured)
+		return { world = ns.NewWorld(lookups(legends, coloured)), state = made, celebrated = celebrated or {} }
 	end
 
 	-- Whether `goodID`, by `rule`, is owned over `v`.
@@ -96,29 +108,24 @@ describe("the expansion's earned goods", function()
 		return ns.EarnedGoodOwned(goodID, rule, v)
 	end
 
-	it(
-		"are the four earned bindings and LED-R117's four, each by its rule, Iridescent Scale not one (LED-R116, LED-R117)",
-		function()
-			local rules = {}
-			for _, good in ipairs(ns.EarnedGoods()) do
-				rules[#rules + 1] = { good.id, good.earn }
-			end
-
-			assert.are.same({
-				{ "ledger.binding.legend", "legends" },
-				{ "ledger.binding.monster", "monster" },
-				{ "ledger.binding.abyssal", "prestige10" },
-				{ "ledger.binding.keeper", "ledger" },
-				{ "ledger.toaststyle.legend", "legend" },
-				{ "ledger.toaststyle.prestige", "prestige5" },
-				{ "ledger.soundset.concertina", "prestige1" },
-				{ "ledger.soundset.choir", "legends" },
-			}, rules)
-			for _, binding in ipairs(ns.BINDINGS) do
-				assert.are_not.equal("iridescent", binding.name)
-			end
+	it("are the five earned bindings and LED-R117's four, each by its rule (LED-R116, LED-R117)", function()
+		local rules = {}
+		for _, good in ipairs(ns.EarnedGoods()) do
+			rules[#rules + 1] = { good.id, good.earn }
 		end
-	)
+
+		assert.are.same({
+			{ "ledger.binding.legend", "legends" },
+			{ "ledger.binding.monster", "monster" },
+			{ "ledger.binding.abyssal", "prestige10" },
+			{ "ledger.binding.keeper", "ledger" },
+			{ "ledger.binding.iridescent", "varieties" },
+			{ "ledger.toaststyle.legend", "legend" },
+			{ "ledger.toaststyle.prestige", "prestige5" },
+			{ "ledger.soundset.concertina", "prestige1" },
+			{ "ledger.soundset.choir", "legends" },
+		}, rules)
+	end)
 
 	describe("Three Gilt Fish and Choir of the Deep", function()
 		it(
@@ -198,6 +205,60 @@ describe("the expansion's earned goods", function()
 		assert.is_true(owned("ledger.binding.keeper", "ledger", view(made)))
 		assert.is_true(
 			owned("ledger.binding.keeper", "ledger", view(nil, { titles = { ["title:complete.ledger"] = true } }))
+		)
+	end)
+
+	describe("Iridescent Scale", function()
+		-- A state holding the Species with varieties, its first `n` varieties caught (ledger.md › Data, VAR-R20).
+		---@param n integer
+		---@return LedgerState
+		local function colours(n)
+			local made = state({})
+			made.species[COLOURED] = first()
+			made.varieties = { [COLOURED] = {} }
+			for index = 1, n do
+				made.varieties[COLOURED][index] = {
+					count = 1,
+					first = { entryId = "c" .. index, zone = LAKE, char = 1 },
+				}
+			end
+			return made
+		end
+
+		it(
+			"is earned with the complete.varieties title: every variety of every Species with varieties caught, or the title celebrated (LED-R116, VAR-R22, LED-R90)",
+			function()
+				assert.is_false(owned("ledger.binding.iridescent", "varieties", view(colours(9), nil, nil, true)))
+				assert.is_true(owned("ledger.binding.iridescent", "varieties", view(colours(10), nil, nil, true)))
+				assert.is_true(
+					owned(
+						"ledger.binding.iridescent",
+						"varieties",
+						view(nil, { titles = { ["title:complete.varieties"] = true } }, nil, true)
+					)
+				)
+				assert.is_false(owned("ledger.binding.iridescent", "varieties", view(nil, nil, nil, true)))
+			end
+		)
+
+		it(
+			"isn't earned in a world with no Species with varieties, the title's total above 0 (LED-R116, VAR-R22)",
+			function()
+				assert.is_false(owned("ledger.binding.iridescent", "varieties", view(state({}))))
+			end
+		)
+
+		it(
+			"is kept once noted, through a rebuild that loses a variety and without the title celebrated (LED-R116, LED-R90, SHOP-R31)",
+			function()
+				local celebrated = {}
+				assert.is_true(ns.NoteEarnedGoods(celebrated, view(colours(10), celebrated, nil, true)))
+				assert.is_true(celebrated.goods["ledger.binding.iridescent"])
+
+				local rebuilt = view(colours(9), celebrated, nil, true)
+				assert.is_false(ns.EarnedRuleHolds("varieties", rebuilt))
+				assert.is_true(owned("ledger.binding.iridescent", "varieties", rebuilt))
+			end
 		)
 	end)
 

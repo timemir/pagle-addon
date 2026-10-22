@@ -594,6 +594,7 @@ describe("the Angler page's Bindings", function()
 				{ "Monster Hide", "Land a Monster" },
 				{ "Abyssal Black", "Prestige X" },
 				{ "Keeper's Gold", "Ledger 100%" },
+				{ "Iridescent Scale", "Every fish in every colour" },
 			}, lines(loaded))
 		end
 	)

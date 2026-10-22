@@ -73,8 +73,7 @@ local function expansion(binding)
 end
 
 --- LED-R110's bindings, in its order: the Ledger art kit's ten (its Bindings.lua, `bindings.json`), then the shop
---- expansion kit's fifteen for sale and its four earned (`goods.json`). The Iridescent Scale isn't one until the
---- varieties kit's `complete.varieties` title ships (LED-R116).
+--- expansion kit's fifteen for sale and its five earned (`goods.json`).
 ---@type LedgerBinding[]
 ns.BINDINGS = {
 	{ name = "field", default = true, texture = FIELD_LEATHER, gilt = "e8c96a", swatch = "binding-field-leather" },
@@ -309,6 +308,17 @@ ns.BINDINGS = {
 		gilt = "7a5410",
 		band = "c8a868",
 		corners = "gold",
+	}),
+	-- Iridescent Scale
+	expansion({
+		name = "iridescent",
+		earn = "varieties",
+		tileW = 150,
+		tileH = 196,
+		gilt = "f8f0ff",
+		band = "6a5a8a",
+		silver = true,
+		corners = "silver",
 	}),
 }
 

@@ -66,6 +66,7 @@ ns.L = {
 		prestige5 = "Prestige V",
 		prestige10 = "Prestige X",
 		ledger = "Ledger 100%",
+		varieties = "Every fish in every colour",
 	},
 
 	-- A zone crest not yet earned (LED-R115): the row's tag and the stage's note. The crests' names and descriptions

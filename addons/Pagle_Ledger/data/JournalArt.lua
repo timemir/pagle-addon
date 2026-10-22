@@ -167,7 +167,7 @@ ns.JOURNAL_ATLASES = {
 		},
 	},
 	-- The shop expansion's twenty bindings as closed books (LED-R110's swatches, the shop expansion kit's Bindings
-	-- board, `goods.json`). The Iridescent Scale's is there for when it is registered (LED-R116).
+	-- board, `goods.json`).
 	Bindings2 = {
 		file = OWN .. "Bindings2",
 		width = 1024,

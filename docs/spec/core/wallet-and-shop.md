@@ -133,7 +133,7 @@ What each Module pays and registers, as designed so far (each Module's spec is a
 | Hunts: a Standing Hunt completed / each further tier / set finished | 30 / 15 / 100 |
 | Hunts: a Hunt Event Hunt's tier 1 / each later tier / a completed run (paid again in every run) | 15 / 10 / 50 |
 
-Goods by Module: Ledger registers Journal bindings (eighteen for sale; the six level bindings and five more earned, the Iridescent Scale only once the varieties kit's `complete.varieties` title ships, LED-R110, LED-R116), the fifty-three zone crests (earned, in Core's crest slot) and two toast styles and two sound sets (earned, in Core's slots, LED-R117); Hunts registers notebook covers (three earned), frames for its tracker (one earned) and a sound set (earned, in Core's slot, HNT-R122, HNT-R123); Stats registers frames for its tracker; the Tackle Board registers frames for its tracker (one earned) and a toast style (earned, in Core's slot, TKB-R126).
+Goods by Module: Ledger registers Journal bindings (eighteen for sale; the six level bindings and five more earned, the Iridescent Scale with the `complete.varieties` title, LED-R110, LED-R116), the fifty-three zone crests (earned, in Core's crest slot) and two toast styles and two sound sets (earned, in Core's slots, LED-R117); Hunts registers notebook covers (three earned), frames for its tracker (one earned) and a sound set (earned, in Core's slot, HNT-R122, HNT-R123); Stats registers frames for its tracker; the Tackle Board registers frames for its tracker (one earned) and a toast style (earned, in Core's slot, TKB-R126).
 
 ## UI
 

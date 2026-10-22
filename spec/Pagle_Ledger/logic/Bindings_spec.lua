@@ -146,6 +146,7 @@ describe("the Journal bindings", function()
 					monster = false,
 					abyssal = false,
 					keeper = false,
+					iridescent = true,
 				}, silver)
 			end
 		)
