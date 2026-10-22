@@ -43,6 +43,13 @@ ns.EXPEDITION_PINS = 2
 --- Notice pins in the two rows below; the Notice cap matches it (TKB-R20, TKB-R101).
 ns.NOTICE_PINS = 6
 
+--- Activity XP a completed Notice pays, by tier 1–3 (TKB-R65, TKB-R34): read from here at completion, never from the
+--- goal, so a goal's record carries no XP.
+ns.NOTICE_XP = { 100, 150, 200 }
+
+--- Activity XP a completed Expedition pays (TKB-R65).
+ns.EXPEDITION_XP = 600
+
 --- Board days of history kept: the Campfire's four-week log and completed goals (TKB-R106, Data).
 ns.KEPT_DAYS = 28
 

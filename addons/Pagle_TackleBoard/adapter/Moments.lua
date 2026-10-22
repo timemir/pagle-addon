@@ -104,3 +104,13 @@ function ns.ReportCoins()
 		module:ReportCoinsEarned(ns.State().coins)
 	end
 end
+
+--- Reports lifetime Activity XP to Core (TKB-R65, AXP-R2): the projection's `xp` with M:ReportXPEarned, on
+--- ns.ReportCoins' timing, so a new dev log's unstarted board reports 0 too. No moment shows it; a level it brings is
+--- the Ledger's (LED-R39). Nothing without a Module handle (an inert Module, CORE-R13).
+function ns.ReportXP()
+	local module = ns.Module
+	if module then
+		module:ReportXPEarned(ns.State().xp)
+	end
+end

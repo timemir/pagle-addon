@@ -14,6 +14,10 @@ describe("the Tackle Board's data", function()
 		assert.are.equal(28, ns.KEPT_DAYS)
 	end)
 
+	it("pays a Notice 100, 150 or 200 Activity XP by tier and an Expedition 600 (TKB-R65, Tunables)", function()
+		assert.are.same({ { 100, 150, 200 }, 600 }, { ns.NOTICE_XP, ns.EXPEDITION_XP })
+	end)
+
 	it("maps continent 0 to the Eastern Kingdoms' uiMapID 1415 and 1 to Kalimdor's 1414 (TKB-R36)", function()
 		assert.are.same({ [0] = 1415, [1] = 1414 }, ns.CONTINENT_MAPS)
 	end)

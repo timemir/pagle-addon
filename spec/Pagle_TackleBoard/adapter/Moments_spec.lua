@@ -379,6 +379,7 @@ describe("the Tackle Board's moments", function()
 					"Your Tackle Board was written up from 3 Casts",
 					"2 Notices done",
 					"Pagle Coins +20",
+					"Angler XP +200", -- 2 x 100 (TKB-R65)
 					"2 flies tied for your Fly Box",
 					"Campfire 2 days",
 				},
@@ -406,6 +407,7 @@ describe("the Tackle Board's moments", function()
 					"Your Tackle Board was written up from 7 Casts",
 					"6 Notices and 1 Expedition done",
 					"Pagle Coins +145", -- 6 x 10 + 60 + the 7-day milestone's 25
+					"Angler XP +1,200", -- 6 x 100 + 600, the milestone none (TKB-R65), with BreakUpLargeNumbers
 					"7 flies tied for your Fly Box",
 					"Title: campfire_7",
 					"Campfire 7 days",
@@ -462,6 +464,7 @@ describe("the Tackle Board's moments", function()
 						"While Tackle Board was off",
 						"1 Notice done",
 						"Pagle Coins +10",
+						"Angler XP +100",
 						"1 fly tied for your Fly Box",
 						"Campfire 1 day · 1 Kindling burned",
 					},
@@ -471,6 +474,39 @@ describe("the Tackle Board's moments", function()
 				assert.is_true(ns.db.global.celebrated.goals[goal])
 			end
 		)
+
+		it("adds the Activity XP the replayed Casts earned after the Coins (TKB-R85, TKB-R65)", function()
+			local first = withHistory(join(started(TODAY, TODAY + 60), {
+				record("issue", TODAY + 120, ONE),
+				record("issue", TODAY + 121, "n;haul;3;20;1;14"), -- a tier-3 Notice one Catch in Durotar completes
+			}))
+			local _, loaded = ready(first)
+
+			-- off: one Catch completes both
+			local fake = secondLogin(first, loaded, { catch(NOW + 100) }, 200)
+
+			assert.are.same({
+				{
+					"While Tackle Board was off",
+					"2 Notices done",
+					"Pagle Coins +30",
+					"Angler XP +300", -- 100 + 200
+					"2 flies tied for your Fly Box",
+					"Campfire 1 day",
+				},
+			}, writeUps(fake))
+		end)
+
+		it("writes no Activity XP line when the replayed entries completed nothing (TKB-R85)", function()
+			-- the Notice done today before the board went off; off, a Cast that got away two days later
+			local first =
+				withHistory(join(started(TODAY, TODAY + 60), { record("issue", TODAY + 120, ONE), catch(TODAY + 130) }))
+			local _, loaded = ready(first)
+
+			local fake = secondLogin(first, loaded, { cast(NOW + 2 * DAY) }, 2 * DAY + 200)
+
+			assert.are.same({ { "While Tackle Board was off", "Campfire 1 day · 1 Kindling burned" } }, writeUps(fake))
+		end)
 
 		it("writes up nothing when the replayed entries earned nothing", function()
 			local first = withHistory(join(started(TODAY, TODAY + 60), { record("issue", TODAY + 120, ONE) }))

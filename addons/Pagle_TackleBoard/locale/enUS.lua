@@ -229,6 +229,7 @@ ns.L = {
 	GOALS_AND = "{notices} and {expeditions}",
 	GOALS_DONE = "{goals} done",
 	COINS_LINE = "Pagle Coins +{coins}",
+	XP_LINE = "Angler XP +{xp}",
 	FLIES_TIED = { one = "{n} fly tied for your Fly Box", other = "{n} flies tied for your Fly Box" },
 	CAMPFIRE_DAYS = { one = "Campfire {n} day", other = "Campfire {n} days" },
 	CAMPFIRE_BURNED = "{campfire} · {k} Kindling burned",
