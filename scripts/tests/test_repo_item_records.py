@@ -8,6 +8,7 @@ from functools import cache
 from pathlib import Path
 from types import MappingProxyType
 
+from item_fixture import item_records_lua
 from pagle_data.baseline import read_baseline
 from pagle_data.db2 import read_db2
 from pagle_data.errors import Problems
@@ -24,12 +25,7 @@ EXTRAVAGANZA_RARES = {19803, 19805, 19806}
 @cache
 def _committed_items() -> Mapping[int, str]:
     """Each item record's Lua in the committed Catalogue.lua, by item ID."""
-    text = (REPO / CATALOGUE_LUA).read_text(encoding="utf-8")
-    block = re.search(r"^\titems = \{\n(.*?)^\t\},$", text, flags=re.MULTILINE | re.DOTALL)
-    assert block is not None
-    return MappingProxyType(
-        {int(i): record for i, record in re.findall(r"^\t\t\[(\d+)\] = (\{.*\}),$", block.group(1), re.M)}
-    )
+    return MappingProxyType(item_records_lua((REPO / CATALOGUE_LUA).read_text(encoding="utf-8")))
 
 
 def _items_toml() -> dict[int, dict[str, object]]:

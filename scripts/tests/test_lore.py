@@ -559,7 +559,7 @@ def test_the_glyph_check_covers_every_lore_file(tmp_path: Path, capsys: pytest.C
         (
             LEDGER,
             '[ledger.line]\nfields = ["text"]\nids = [{ id = "a", placeholders = ["map"] }]\n',
-            "manifest.toml: ledger.line.ids[0].placeholders: {zone} is the only placeholder (DATA-R108), got 'map'",
+            "manifest.toml: ledger.line.ids[0].placeholders: {zone} and {fish} are the only placeholders (DATA-R108), got 'map'",
         ),
         (
             LEDGER,

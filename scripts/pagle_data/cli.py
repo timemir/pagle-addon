@@ -3,7 +3,8 @@ removes a Lore.lua whose lore file is gone; --check writes nothing and fails if 
 read-only modes write nothing and print no warning: --propose-aliases prints the alias candidates not yet committed
 (DATA-R32), --min-build <n> the facts that would lose confirmation if only builds >= n counted (DATA-R57), and
 --explain <id> every layer's value for an item or an area and which won. --lock rewrites data/hunts/released.lock
-from the Hunt list and writes nothing else (DATA-R95); it is run when a release is tagged, from 1.0 on, and never
+from the Hunt list and data/forever/varieties.lock from varieties.toml, and writes nothing else (DATA-R95,
+DATA-R133); it is run when a release is tagged, from 1.0 on, and never
 before (DATA-R73).
 """
 
@@ -25,6 +26,7 @@ from pagle_data.lore import retired_lore
 from pagle_data.min_build import lost
 from pagle_data.observed import OBSERVED
 from pagle_data.pools import POOLS_TOML
+from pagle_data.varieties import VARIETIES_LOCK, varieties_lock_toml
 
 PROG = "generate-data"
 
@@ -60,8 +62,9 @@ def _parser() -> argparse.ArgumentParser:
     modes.add_argument(
         "--lock",
         action="store_true",
-        help=f"rewrite {LOCK} from the Hunt list and the event pool, every Hunt counting as released, and write"
-        " nothing else (DATA-R95, DATA-R98); run it only when a release is tagged, from 1.0 on, and never before (DATA-R73)",
+        help=f"rewrite {LOCK} from the Hunt list and the event pool, every Hunt counting as released, and"
+        f" {VARIETIES_LOCK} from the varieties, and write nothing else (DATA-R95, DATA-R98, DATA-R133); run it"
+        " only when a release is tagged, from 1.0 on, and never before (DATA-R73)",
     )
     return parser
 
@@ -164,6 +167,8 @@ def main(argv: Sequence[str], root: Path) -> int:
     if args.lock:
         write_atomic(root / LOCK, lock_toml(hunt_list_of(layers), event_list_of(layers)).encode("utf-8"))
         print(f"{PROG}: wrote {LOCK}")
+        write_atomic(root / VARIETIES_LOCK, varieties_lock_toml(layers.varieties).encode("utf-8"))
+        print(f"{PROG}: wrote {VARIETIES_LOCK}")
         return 0
     _warn(layers)
 
