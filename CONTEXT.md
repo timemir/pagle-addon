@@ -135,7 +135,7 @@ The Sub-collection of trophy "pound" fish families, recording the real weights t
 _Avoid_: trophy collection, size records (when meaning real weights)
 
 **Legend**:
-A real, named catch that can't be farmed on an ordinary day, recognised with a splash, the Legend sting every Legend shares, and its own title. It is never an invented item or a combination of conditions.
+A real, named catch that can't be farmed on an ordinary day, recognised with a splash, a Legend sting of its own, and its own title. It is never an invented item or a combination of conditions.
 _Avoid_: rare, legendary, addon legend
 
 **Uncharted**:
