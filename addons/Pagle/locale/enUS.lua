@@ -148,6 +148,9 @@ ns.L = {
 	ANNOUNCEMENT_COINS = "+%s",
 	ANNOUNCEMENT_NEW_RECORD = "New record",
 	ANNOUNCEMENT_SPLASH_HINT = "Click anywhere to continue",
+	-- A Legend crest's plaque (LED-R153): a Legend's own crest's, and the Unwritten crest's.
+	LEGEND_CREST_LEGEND = "Legend",
+	LEGEND_CREST_UNWRITTEN = "Unwritten",
 	-- The toast listing the toast headlines held through combat (ANN-R36).
 	ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting",
 	-- The catch Nod (ANN-R13): a Catch's name, its Size band and its length; an item the client hasn't named yet.

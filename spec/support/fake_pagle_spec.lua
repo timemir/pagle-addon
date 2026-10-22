@@ -216,6 +216,37 @@ describe("FakePagle", function()
 		end
 	)
 
+	it(
+		"hands out a Legend's crest with Pagle.NewLegendCrest, its look, plaque and motion as Core's (LED-R153,"
+			.. " core/README.md › Contracts)",
+		function()
+			local fake = newFakePagle()
+			local loaded = fake.load("Pagle_QoL")
+			local parent = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
+			local crest = fake.Pagle.NewLegendCrest(parent, 150)
+
+			crest:SetLegend(19803, true)
+			local racer = { crest.look.key, crest.look.icon, crest.label:GetText(), crest:GetWidth() }
+			-- the Racer's streamers (its second layer) at rest, then moving while it plays, then at rest once hidden
+			local rest = crest.layers[2].state.transform[3]
+			crest:Play()
+			loaded.client.update(0.225)
+			local moved = crest.layers[2].state.transform[3]
+			parent:Hide()
+			loaded.client.update(0.1)
+			local settled = crest.layers[2].state.transform[3]
+			crest:SetLegend(19806, false)
+
+			assert.are.same({ "racer", 19803, "LEGEND", 150 }, racer)
+			assert.are.same({ -2.5, true, -2.5 }, { rest, moved > rest, settled })
+			assert.are.same(
+				{ "unwritten", nil, "UNWRITTEN" },
+				{ crest.look.key, crest.look.icon, crest.label:GetText() }
+			)
+			assert.are.same({ "well", true }, { crest.layers[2].name, crest.layers[2].shown })
+		end
+	)
+
 	it("fits a window to the loaded Module's screen with Pagle.FitToScreen, again on a UI scale change", function()
 		local fake = newFakePagle()
 		local loaded = fake.load("Pagle_QoL")

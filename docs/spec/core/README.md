@@ -205,6 +205,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.WheelScroll(scroll, delta, options?)` | a mouse wheel notch: a third of the view, gliding | [announcements.md](announcements.md#paglewheelscrollscroll-delta-options) |
 | `Pagle.FitToScreen(frame, options)` | number, the scale used | [here](#paglefittoscreenframe-options) |
 | `Pagle.NewBookBinding(frame, options?)` | `PagleBookBinding`: `Look()`, `SetLook(goodID?)` | [book-binding.md](book-binding.md#contracts) |
+| `Pagle.NewLegendCrest(parent, width)` | a Legend's crest, with `SetLegend`, `Play` and `Stop` | [here](#paglenewlegendcrestparent-width) |
 
 ### Module handle (returned by `RegisterModule`)
 
@@ -285,6 +286,14 @@ end
 ```
 
 The big windows (the Curio Shop, the books, the Hunts and Tackle boards) are drawn at 1 UI unit per canvas px, and at a large UI scale UIParent is only 668 units tall, so each fits itself to the screen with this one call. Its scale is the largest that leaves 24 units clear round the extent, never above 1, and 1 while the screen has no size yet. It then centres the window on UIParent, `lift` up; a window that keeps its place instead keeps its first anchor where it is on the screen, its offsets rescaled for the new scale, as a scaled frame reads them in its own units. Every window fitted is fitted again when the UI scale or the window's size changes (`UI_SCALE_CHANGED`, `DISPLAY_SIZE_CHANGED`), through Core's one pair of registrations (CORE-R23), made at the first fit, so nothing listens before a window is fitted (CORE-R13).
+
+### `Pagle.NewLegendCrest(parent, width)`
+
+A Legend's crest (ledger.md LED-R153) as a frame on `parent`, `width` units wide and the crest box's height at that width (280 × `width` / 260), for the Module to place; it shows nothing until `crest:SetLegend(itemID, caught)`. The crests' art is Core's (`media/legends/Legend<Key>`, keyed by item ID in Core's legend crest table), since the Legend splash draws them too.
+
+- `crest:SetLegend(itemID, caught)`: a caught Legend's own crest with its icon in sepia in the well; a caught Legend with no crest of its own, the Unwritten crest with its icon; one not caught, the Unwritten crest with its own plain fish and nothing of the Legend (LED-R124; the Module may pass `nil` for its ID). The plaque reads "Legend", or "Unwritten" on the Unwritten crest. It shows in its resting frame; drawn again with the same crest and icon it changes nothing, so a moving crest carries on.
+- `crest:Play()`: its sprites move as the kit has them, looping, on Core's motion driver; played again while it moves, it carries on. With Animations off it keeps its resting frame (each motion's first frame; a glint that only flashes is unseen). Once it is no longer visible (its window closed, its page turned) the driver settles it, and it moves again only when played again.
+- `crest:Stop()`: it stops, back in its resting frame.
 
 ### Events Core fires (owned here)
 

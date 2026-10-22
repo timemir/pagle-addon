@@ -125,6 +125,7 @@ local TICKS = 20
 ---@field extras Frame? a banner's or the splash's row of labels and Coins
 ---@field composed boolean? drawn last in a composed toast style (ANN-R82)
 ---@field toastLayers PagleToastLayers? a composed style's layers (adapter/ToastLayers.lua)
+---@field legendCrest PagleLegendCrestFrame? the splash's Legend crest (LED-R153, adapter/LegendCrests.lua)
 
 -- The motion's timeline: the canvas loops each animation over 7 s; in game each plays once.
 local TIMELINE = 7
@@ -1120,14 +1121,16 @@ local function drawBanner(frame, display)
 	drawExtras(frame, announcement, 38)
 end
 
--- Draws the splash: the Legend's icon in the crest's window, its title printed over its name on the torn page, the
--- labels and Coins under them.
+-- Draws the splash: the Legend's own crest (the Unwritten crest for one with none) with its icon in the well, by the
+-- headline's `icon`, the Legend's item ID (LED-R153); its title printed over its name on the torn page, the labels and
+-- Coins under them.
 ---@param frame PagleAnnouncementFrame
 ---@param display PagleDisplay
 local function drawSplash(frame, display)
 	local announcement = display.announcement
 	local headline = announcement.headline
-	frame.icon:SetTexture(textureOf(headline.icon))
+	local crest = frame.legendCrest --[[@as PagleLegendCrestFrame]]
+	crest:SetLegend(headline.icon, true)
 	frame.title:SetText(ns.Capitals(headline.title))
 	ns.SetArtFont(frame.text, "SplashName")
 	frame.text:SetText(headline.text or "")
@@ -1270,8 +1273,8 @@ local BUILD = {
 		frame.coins = newCoins(frame.extras, "BanAmt")
 		return frame
 	end,
-	-- Full screen for a Legend, until clicked: the screen darkens behind slow rays, the Legend crest holds the item's
-	-- icon, and a torn page carries its title and name.
+	-- Full screen for a Legend, until clicked: the screen darkens behind slow rays, the Legend's crest at its full size
+	-- holds the item's icon (LED-R153), and a torn page carries its title and name, the crest's plaque over its top.
 	splash = function()
 		local frame = CreateFrame("Button", nil, UIParent) --[[@as PagleAnnouncementFrame]]
 		frame:SetAllPoints(UIParent)
@@ -1286,22 +1289,11 @@ local BUILD = {
 		frame.rays:SetPoint("CENTER", frame, "TOP", 0, -205)
 		local crest = layer(frame, 3)
 		crest:ClearAllPoints()
-		crest:SetSize(250, 275)
+		crest:SetSize(ns.LEGEND_CREST_BOX.w, ns.LEGEND_CREST_BOX.h)
 		crest:SetPoint("TOP", frame, "TOP", 0, -70)
-		ns.PlaceSprite(ns.ArtSprite(crest, "Splash", "crest-legend", "ARTWORK", 0), crest, 0, 0)
-		frame.icon = crest:CreateTexture(nil, "ARTWORK", nil, 1)
-		-- A little over the crest's window, centred on it, so the ring covers the icon's edge; its own border cut off.
-		frame.icon:SetSize(160, 160)
-		frame.icon:SetPoint("TOP", crest, "TOP", 0, -45)
-		frame.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-		local mask = crest:CreateMaskTexture()
-		mask:SetTexture(
-			"Interface\\CharacterFrame\\TempPortraitAlphaMask",
-			"CLAMPTOBLACKADDITIVE",
-			"CLAMPTOBLACKADDITIVE"
-		)
-		mask:SetAllPoints(frame.icon)
-		frame.icon:AddMaskTexture(mask)
+		local legendCrest = ns.NewLegendCrest(crest, ns.LEGEND_CREST_BOX.w)
+		legendCrest:SetPoint("TOPLEFT")
+		frame.legendCrest = legendCrest
 		local page = layer(frame, 1)
 		page:ClearAllPoints()
 		page:SetSize(880, 250)
@@ -1504,9 +1496,11 @@ local MOTION = {
 		end
 		ns.Animate(frame, animations)
 	end,
-	-- The rays turn clockwise once a minute for as long as it shows.
+	-- The rays turn clockwise once a minute for as long as it shows, and the Legend's crest moves (LED-R153).
 	splash = function(frame)
 		local rays = frame.rays --[[@as PagleSprite]]
+		local crest = frame.legendCrest --[[@as PagleLegendCrestFrame]]
+		crest:Play()
 		ns.Animate(frame, {
 			{
 				dur = 60,
@@ -1812,8 +1806,11 @@ local function hide(display, atOnce)
 	end
 	frame.display, frame.drawnRuler, frame.moved = nil, nil, nil
 	ns.StopMotion(frame)
-	-- A composed style's layers stop looping as their toast goes (ANN-R82).
+	-- A composed style's layers stop looping as their toast goes (ANN-R82), and the splash's crest as it goes (LED-R153).
 	ns.StopToastLayers(frame)
+	if frame.legendCrest then
+		frame.legendCrest:Stop()
+	end
 	if frame.ruler then
 		frame.ruler:SetScript("OnUpdate", nil)
 	end

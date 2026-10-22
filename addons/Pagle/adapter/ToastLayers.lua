@@ -459,3 +459,68 @@ function ns.PlayToastLayers(frame, display, style, page, form)
 		ns.Animate(layers.over, animations)
 	end
 end
+
+--- One sprite of a layered piece that isn't a toast: its sprite in the piece's atlas, its box in the piece's own
+--- units, its z (the order it draws in: z 4 at sublevel 0 of the ARTWORK layer), and any blend and motion, as a toast
+--- style's layer has them.
+---@class PagleLayeredPieceLayer: PagleToastBox
+---@field name string
+---@field sprite string
+---@field z number
+---@field blend? "ADD"|"MOD"
+---@field motion? PagleToastLayerMotion
+
+--- A frame a layered piece is drawn on (a Legend crest's box, LED-R153), and the piece's sprites as drawn.
+---@class PagleLayeredHost: Frame
+---@field layeredPiece { slots: PagleLayerSlot[] }?
+
+--- Draws `layers` of atlas `atlasName` on `host` in their resting frame (unmoved, opaque), as a toast's layers are
+--- drawn (`commit`): each sprite at its box, in its blend, about its motion's origin; one `shown` refuses hidden, and
+--- any left over from what `host` drew before. Its owner plays its motion (ns.MoveLayeredPiece).
+---@param host PagleLayeredHost
+---@param atlasName string
+---@param layers PagleLayeredPieceLayer[]
+---@param shown (fun(layer: PagleLayeredPieceLayer): boolean)?
+function ns.DrawLayeredPiece(host, atlasName, layers, shown)
+	local piece = host.layeredPiece
+	if not piece then
+		piece = { slots = {} }
+		host.layeredPiece = piece
+	end
+	local atlas = ns.ATLASES[atlasName]
+	for i, layer in ipairs(layers) do
+		local slot = piece.slots[i]
+		if not slot then
+			slot = { texture = ns.ArtCrisp(host:CreateTexture(nil, "ARTWORK")) } --[[@as PagleLayerSlot]]
+			piece.slots[i] = slot
+		end
+		local texture = slot.texture
+		texture:SetDrawLayer("ARTWORK", math.max(-8, math.min(7, layer.z - 4)))
+		slot.layer = layer --[[@as PagleToastLayer]]
+		slot.tc = coordsOf(atlas, layer.sprite)
+		slot.box = { x = layer.x, y = layer.y, w = layer.w, h = layer.h }
+		local origin = layer.motion and layer.motion.origin or { x = layer.x + layer.w / 2, y = layer.y + layer.h / 2 }
+		slot.origin = { x = origin.x, y = origin.y }
+		slot.window = nil
+		slot.state = {}
+		texture:SetTexture(atlas.file)
+		texture:SetBlendMode(layer.blend or "BLEND")
+		commit(slot, host)
+		texture:SetShown(shown == nil or shown(layer))
+	end
+	for i = #layers + 1, #piece.slots do
+		piece.slots[i].texture:Hide()
+	end
+end
+
+--- Moves layer `i` of the piece ns.DrawLayeredPiece drew on `host` to where its motion has it now: its "alpha"
+--- ({ alpha }) or "transform" ({ x, y, rotate, sx, sy }) at `values`.
+---@param host PagleLayeredHost
+---@param i integer
+---@param kind string
+---@param values number[]
+function ns.MoveLayeredPiece(host, i, kind, values)
+	local slot = (host.layeredPiece --[[@as { slots: PagleLayerSlot[] }]]).slots[i]
+	slot.state[kind] = values
+	commit(slot, host)
+end

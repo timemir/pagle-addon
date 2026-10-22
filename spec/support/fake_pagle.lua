@@ -491,6 +491,38 @@ part(function(fake, Pagle, ns)
 	Pagle.EASE = ns.EASE
 end)
 
+-- A Legend's crest (LED-R153, core/README.md › Contracts): a frame of the client fake.load gave the Module, on
+-- `parent`, `width` wide and the crest box's height at that width, with Core's real SetLegend, Play and Stop
+-- (logic/LegendCrests.lua) over a host that keeps what Core's adapter would draw: `look` (its crest's key and the icon
+-- in its well, nil for none), `label` (a font string with the plaque's word in capitals), and `layers`, each of its
+-- crest's layers as { name, shown, state }, `state[kind]` where its motion has it now (its resting frame until it
+-- plays), on the fake's motion driver as Core's moves.
+part(function(fake, Pagle, ns)
+	function Pagle.NewLegendCrest(parent, width)
+		local box = ns.LEGEND_CREST_BOX
+		local crest = fake.clientEnv.CreateFrame("Frame", nil, parent)
+		crest:SetSize(width, box.h * width / box.w)
+		crest.label = crest:CreateFontString(nil, "OVERLAY")
+		crest.label:SetFont("Fonts\\FRIZQT__.TTF", 13, "")
+		crest.layers = {}
+		ns.AttachLegendCrest(crest, {
+			draw = function(look)
+				crest.layers = {}
+				for i, layer in ipairs(look.art.layers) do
+					crest.layers[i] = { name = layer.name, shown = ns.LegendCrestLayerShown(look, layer), state = {} }
+				end
+				crest.label:SetText(ns.Capitals(ns.LegendCrestLabel(look.art.label.word)))
+			end,
+			move = function(i, kind, values)
+				crest.layers[i].state[kind] = values
+			end,
+			animate = Pagle.Animate,
+			stop = Pagle.StopMotion,
+		})
+		return crest
+	end
+end)
+
 -- Fitting a big window to the screen (core/README.md › Contracts), on Core's real logic/Fit.lua and the UIParent of
 -- the client fake.load gave the Module. It fits again on UI_SCALE_CHANGED and DISPLAY_SIZE_CHANGED, registered
 -- through Pagle.RegisterEvent at the first fit as Core's are, so the Module's client.fireGameEvent reaches them.

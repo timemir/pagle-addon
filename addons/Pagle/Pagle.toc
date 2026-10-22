@@ -23,6 +23,7 @@ data\GuideArt.lua
 data\BookBindingArt.lua
 data\FieldArt.lua
 data\VarietyArt.lua
+data\LegendCrestArt.lua
 data\ApiInventory.lua
 
 locale\enUS.lua
@@ -82,6 +83,7 @@ logic\Announcements.lua
 logic\ToastStyles.lua
 logic\Motion.lua
 logic\BookBinding.lua
+logic\LegendCrests.lua
 logic\Fit.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
@@ -145,6 +147,7 @@ adapter\Announcements.lua
 adapter\CoreGoods.lua
 adapter\Cards.lua
 adapter\ToastStyles.lua
+adapter\LegendCrests.lua
 adapter\Menu.lua
 adapter\MinimapIcon.lua
 adapter\ReloadReminder.lua
