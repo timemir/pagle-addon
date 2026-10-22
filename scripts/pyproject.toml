@@ -21,6 +21,8 @@ files = [
     "scripts/import-field-report.py",
     "scripts/triage-field-report.py",
     "scripts/pushed-key.py",
+    "scripts/propose-events.py",
+    "scripts/check-event.py",
 ]
 python_version = "3.12"
 strict = true

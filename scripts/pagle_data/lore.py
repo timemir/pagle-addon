@@ -448,8 +448,15 @@ def check_lore(layer: LoreLayer, lore_ids: Collection[str], ids: CatalogueIds, p
                 problems.add(At(file, key), f"missing: {why}")
         if lore_id == HUNTS_OWNER:
             for source, hunt_texts in layer.hunts_sources():
-                for key in sorted(hunt_texts, key=lambda key: key.encode("utf-8")):
-                    _check_hunt_text(source, hunt_texts[key], problems)
+                check_hunts_texts(source, hunt_texts, problems)
+
+
+def check_hunts_texts(file: str, texts: Mapping[str, Text], problems: Problems) -> None:
+    """The Hunts lore check (DATA-R105, DATA-R107) on the text kept beside one source of definitions, by key: what
+    check_lore runs on hunts.toml and each event file once the hunts check is on, and scripts/check-event.py on the
+    event it checks (DATA-R99)."""
+    for key in sorted(texts, key=lambda key: key.encode("utf-8")):
+        _check_hunt_text(file, texts[key], problems)
 
 
 # CORE-R9's punctuation outside Latin-1, which every font Pagle uses drew in game on 2026-10-15 (#248): the en and em
