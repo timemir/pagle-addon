@@ -27,14 +27,46 @@ local ns = select(2, ...)
 --                             A view that is hidden may ignore it.
 --   ns.SetViewShown(view, shown) A view tells the grouping it showed or hid (HNT-R42's refresh): the board
 --                             ("board") and the tracker ("tracker"). Defined in adapter/Groups.lua.
+--
+-- Hunt Events' seams, defined in logic/Runs.lua over a HuntsState (ns.State() for views), for the run log (#300), the
+-- moments (#301), the board and the tracker (#302–#304):
+--
+--   ns.RunsKnown(state)       Every known run as `{ key, run }` (HuntRun), by end, then start, then event ID
+--                             (HNT-R150): which slots logged runs cover, and whether a run is logged yet.
+--   ns.RunOn(state, t)        The known runs on at server time `t` (`start <= t < end`, HNT-R143), as `{ key, run }`,
+--                             by end, then start, then event ID (HNT-R160).
+--   ns.RunProgress(run, state?) A run's `done` of `total` first marks and its closest unfinished Hunt (`closest`, with
+--                             `count` of `of`), and its `event` (HNT-R146, HNT-R161).
+--   ns.KnownEvent(state, id)  The Hunt Event with this ID: the pool's, or a logged pushed definition's (HNT-R140,
+--                             HNT-R154); nil for one unknown, incomplete or failing its checks.
+--   ns.events                 The event pool at runtime (logic/Events.lua: names, notes, Hunts' names), made in
+--                             OnInitialize.
+--   ns.outlets.Credited(record, reached) and the `marks`, `settled` and `ladder` of each HuntsReached
+--                             (logic/Projection.lua): what a live entry newly reached in runs, for the moments.
+--   ns.ReadContentItem, ns.WriteContentItem, ns.HuntEventProblem (logic/Content.lua), ns.EncodeRun and
+--                             ns.EncodeDefParts (logic/Records.lua): reading, checking and logging pushed definitions.
 
 -- The projection's state, as hunts.md › Projection state gives it; logic/Projection.lua fills it in.
 
 ---@class HuntsState
 ---@field casts integer       -- Casts applied, for the Write-up heading
 ---@field coins integer       -- lifetime Pagle Coins earned (HNT-R110)
+---@field xp integer          -- lifetime Activity XP earned (HNT-R115)
+---@field runs table<string, HuntRun>   -- by run key, every known run (HNT-R150; logic/Runs.lua)
+---@field defs table<string, { parts: integer, texts: table<integer, string> }>   -- pushed definitions' parts by event ID (HNT-R154)
+---@field settled integer     -- the completed-run count (HNT-R148)
+---@field ladder table<integer, integer>   -- ladder step (25, 50, 100) to the server time it was earned (HNT-R148)
 ---@field hunts table<string, HuntProgress>   -- by Hunt ID; absent until the Hunt has effort or a Catch
 ---@field sets table<string, HuntsSetTitle>   -- by set ID, only once earned (HNT-R23, HNT-R87; logic/Titles.lua)
+---@field hours table<integer, integer>   -- server hour to the first seq of a Cast in it, the last 14 days (HNT-R149)
+
+---@class HuntRun
+---@field event string
+---@field start integer       -- server time
+---@field end_ integer        -- server time (`end` in the record)
+---@field source "r"|"p"
+---@field hunts table<string, HuntProgress>   -- by the event's Hunt IDs, progress within this run (HNT-R145)
+---@field completedAt integer?  -- server time of completion (HNT-R146)
 
 ---@class HuntProgress
 ---@field count integer       -- qualifying Catches (HNT-R11)

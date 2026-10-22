@@ -46,8 +46,8 @@
 --
 --   lua scripts/read-wtf.lua <WTF/Account/<ACCT> folder> [--character <realm folder>/<Name-Surname>]
 --       [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] [--item <id>]...
---       [--huntlist <HuntList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>] [--skill N] [--now T]
---       [--expect-casts N] [--since T]
+--       [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>]
+--       [--skill N] [--now T] [--expect-casts N] [--since T]
 --
 -- --cvar defaults to SoftTargetInteract and --addon to Pagle, Pagle_Ledger, Pagle_QoL, Pagle_Hunts, Pagle_Stats and
 -- Pagle_TackleBoard; naming one replaces its defaults.
@@ -57,7 +57,9 @@
 -- too, Stats' readings its lines and windows, and the Tackle Board its goals' need and stranded ones.
 -- --item <id> prints the Simulated Size record (LED-R80) the Ledger keeps for that Species or Legend item ID.
 -- --huntlist reads the Hunt list from another HuntList.lua than the repo's addons/Pagle_Hunts/data/HuntList.lua, such
--- as a local-only build's. --hunt <id> prints that Hunt's full progress. --now T computes what depends on the time
+-- as a local-only build's, and --eventlist the event pool from another EventList.lua than the repo's
+-- addons/Pagle_Hunts/data/EventList.lua (both go into the fingerprint Hunts hands Core, HNT-R136). --hunt <id>
+-- prints that Hunt's full progress. --now T computes what depends on the time
 -- (current and retired Hunts, the summary line, the pins Hunts drops, how long ago a Dry spell's last Catch was) at
 -- server time T instead of the reader's clock, and the Tackle Board's today at T instead of Pagle_TackleBoard.lua's
 -- write time.
@@ -74,8 +76,8 @@
 
 local USAGE = "usage: lua scripts/read-wtf.lua <WTF/Account/<ACCT> folder> [--character <realm>/<Name-Surname>]"
 	.. " [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] [--item <id>]..."
-	.. " [--huntlist <HuntList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>] [--skill N] [--now T]"
-	.. " [--expect-casts N] [--since T]\n"
+	.. " [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>]"
+	.. " [--skill N] [--now T] [--expect-casts N] [--since T]\n"
 
 -- The repo root, from this script's path: Core's and the Modules' logic/ and the catalogue are read from addons/.
 local ROOT = ((arg and arg[0] or ""):match("^(.*)[/\\]") or ".") .. "/.."
@@ -93,14 +95,15 @@ local function parseArgs(args)
 	local i = 1
 	while args[i] do
 		local word, value = args[i], args[i + 1]
-		if word == "--character" or word == "--catalogue" or word == "--huntlist" or lists[word] then
+		local path = { ["--catalogue"] = "catalogue", ["--huntlist"] = "huntList", ["--eventlist"] = "eventList" }
+		if word == "--character" or path[word] or lists[word] then
 			if not value then
 				return nil, word .. " needs a value"
 			end
 			if word == "--character" then
 				options.character = value:gsub("[/\\]+$", "")
-			elseif word == "--catalogue" or word == "--huntlist" then
-				options[word == "--catalogue" and "catalogue" or "huntList"] = value
+			elseif path[word] then
+				options[path[word]] = value
 			else
 				local list = lists[word]
 				list[#list + 1] = value
@@ -1030,11 +1033,12 @@ end
 
 -- Hunts' namespace with its strings, its Hunt list and its logic: each locale/, data/ and logic/ file Pagle_Hunts.toc
 -- lists, in TOC order, called with ("Pagle_Hunts", ns) as the client calls an addon's files (spec/Pagle_Hunts/
--- support.lua loads them the same way), with `huntListPath` (--huntlist) standing in for data/HuntList.lua. Their
+-- support.lua loads them the same way), with `huntListPath` (--huntlist) standing in for data/HuntList.lua and
+-- `eventListPath` (--eventlist) for data/EventList.lua. Their
 -- CORE-R11 guard reads the Pagle global, so it's a table here; logic/ is plain Lua 5.1 (CORE-R7) and reads nothing of
 -- Core's at load. Returns ns with `ns.hunts` (the Hunt list at runtime, which the logic reads at call time), or ns
 -- and why the Hunt list can't be loaded.
-local function loadHuntsLogic(huntListPath)
+local function loadHuntsLogic(huntListPath, eventListPath)
 	local ns = {}
 	local env = setmetatable({ Pagle = {} }, { __index = _G })
 	local dir = ROOT .. "/addons/Pagle_Hunts/"
@@ -1043,6 +1047,9 @@ local function loadHuntsLogic(huntListPath)
 		if file == "data/HuntList.lua" then
 			local _, err = wtf.loadInto(ns, env, huntListPath or dir .. file, "Pagle_Hunts")
 			listErr = err
+		elseif file == "data/EventList.lua" then
+			-- An event pool that can't load reads as none: its fingerprint then can't match (HNT-R136).
+			wtf.loadInto(ns, env, eventListPath or dir .. file, "Pagle_Hunts")
 		elseif
 			file:match("^locale/[^/]+%.lua$")
 			or file:match("^data/[^/]+%.lua$")
@@ -1093,7 +1100,8 @@ local function huntStatus(hunts, hunt, now, long)
 end
 
 -- The projection Core stores for Hunts (LOG-R70), checked against PagleLog (LOG-R72), Hunts' rules version
--- (HNT-R136, HNT-R138) and the fingerprint Core would store now: the catalogue's plus the Hunt list's (DATA-R72).
+-- (HNT-R136, HNT-R138) and the fingerprint Core would store now: the catalogue's plus the Hunt list's and the event
+-- pool's (DATA-R72, DATA-R98).
 -- Prints the Hunt list read, and returns it (nil when it can't be loaded).
 local function printHuntsStored(hunts, listErr, stored, log, options)
 	printStored(stored, log)
@@ -1119,12 +1127,14 @@ local function printHuntsStored(hunts, listErr, stored, log, options)
 		return list
 	end
 	-- What Hunts hands Core (its def's extraFingerprint), after the content fingerprint as Core stores it (LOG-R70).
-	local expected = tostring(catalogue.CONTENT_FINGERPRINT) .. "+" .. tostring(hunts.HuntsExtraFingerprint(list))
+	local extra = hunts.HuntsExtraFingerprint(list, hunts.eventList)
+	local expected = tostring(catalogue.CONTENT_FINGERPRINT) .. "+" .. extra
 	if stored.fingerprint == expected then
-		print("fingerprint: the catalogue's plus the Hunt list's (DATA-R72)")
+		print("fingerprint: the catalogue's plus the Hunt list's and the event pool's (DATA-R72, DATA-R98)")
 	else
-		local text = "fingerprint: DIFFERS from the catalogue's plus the Hunt list's, %s, so Core rebuilds it at login"
-		print(text:format(expected) .. " (DATA-R72, LOG-R72)")
+		local text = "fingerprint: DIFFERS from the catalogue's plus the Hunt list's and the event pool's, %s, so Core"
+			.. " rebuilds it at login"
+		print(text:format(expected) .. " (DATA-R72, DATA-R98, LOG-R72)")
 	end
 	return list
 end
@@ -1331,7 +1341,7 @@ local function printHunts(account, log, options)
 		return
 	end
 	print("== Hunts (PagleHuntsDB)")
-	local hunts, listErr = loadHuntsLogic(options.huntList)
+	local hunts, listErr = loadHuntsLogic(options.huntList, options.eventList)
 	local now = options.now or os.time()
 	local global = tableOr(db.global)
 	local stored = global.projection

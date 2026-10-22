@@ -5,8 +5,9 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- PagleHuntsDB's schema (hunts.md › Data): pure logic, everything passed in (CORE-R7). Every key hunts.md › Data
--- lists has its default here from the start; a ticket that changes one that has shipped adds a migration step.
+-- PagleHuntsDB's schema (hunts.md › Data), and the Tunables of what Hunt Events and runs pay and keep (hunts.md ›
+-- Tunables): pure logic, everything passed in (CORE-R7). Every key hunts.md › Data lists has its default here from
+-- the start; a ticket that changes one that has shipped adds a migration step.
 
 --- The schema PagleHuntsDB is at once Hunts has loaded.
 ns.SCHEMA_VERSION = 1
@@ -33,4 +34,32 @@ function ns.MigrateDB(global)
 	if global.schemaVersion == nil then
 		global.schemaVersion = ns.SCHEMA_VERSION
 	end
+end
+
+--- Tunables (hunts.md): the Activity XP a Standing Hunt pays by tier position, `{ tier 1, each further tier }`, once
+--- each (HNT-R113).
+ns.XP_STANDING = { 500, 250 }
+
+--- Tunables (hunts.md): the Activity XP an event Hunt pays by tier position, `{ tier 1, each further tier }`, and a
+--- completed run, all paid again in every run (HNT-R114).
+ns.XP_EVENT, ns.XP_RUN = { 150, 100 }, 250
+
+--- Tunables (hunts.md): the Coins an event Hunt pays by tier position, `{ tier 1, each further tier }`, and a completed
+--- run, all paid again in every run (HNT-R110).
+ns.COINS_EVENT, ns.COINS_RUN = { 15, 10 }, 50
+
+--- Tunables (hunts.md): the completed-run counts that earn a ladder title, ascending (HNT-R148).
+ns.LADDER_STEPS = { 25, 50, 100 }
+
+--- Tunables (hunts.md): how many hours back the projection's hour index reaches from its latest Cast (hunts.md ›
+--- Projection state, `hours`): 14 days. A run record credits its earlier Casts from it (HNT-R149).
+ns.HOUR_INDEX_HOURS = 14 * 24
+
+--- What `amounts` (`{ tier 1, each further tier }`, the Tunables above) pays for reaching tier `k` (HNT-R110,
+--- HNT-R113, HNT-R114): amounts go by tier position, never per Hunt or per event.
+---@param amounts integer[]
+---@param k integer
+---@return integer
+function ns.TierAmount(amounts, k)
+	return k == 1 and amounts[1] or amounts[2]
 end
