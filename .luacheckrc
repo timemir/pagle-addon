@@ -429,6 +429,8 @@ local helperGlobals = {
 	"fromHex",
 	"toHex",
 	"signingFixtures",
+	"pushedContentFixtures",
+	"toBase64",
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }

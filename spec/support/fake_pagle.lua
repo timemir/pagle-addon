@@ -95,6 +95,15 @@
 --- holds it (fake.global.activityXP.earned), firing nothing: how a spec has a disabled or uninstalled Module's last
 --- total count (AXP-R3, AXP-R90), listed by Pagle.GetActivityXP with `enabled` false unless that Module registers.
 --- Raises an error for a total M:ReportXPEarned would refuse.
+---@field setPushedContent fun(content: { state: PagleCompanionState?, items: table[]?, data: any }) What the
+--- companion's data addon gives this login (core/pushed-content.md), before fake.login: `{ state, items }` is how
+--- the check ends, `items` in payload order (the kinds and versions Core passes on are kept, PUSH-R21); `{ data }` is a
+--- raw PagleContentData that Core's real check reads at login and checks (a spec registers the test key in
+--- fake.ns.PUSHED_KEYS, as helpers.lua's pushedContentFixtures says). Either way Pagle.GetCompanionState reads
+--- "checking" from login until the check ends on the frame after it (fake.nextFrame), when PushedContentReady(state)
+--- fires once; a `{ state = "checking" }` never ends. With none set, as with no Pagle_Content installed, the check
+--- ends "missing" at login itself. Pagle.GetPushedContent hands out fresh copies, never read-only. Raises an error
+--- after login.
 ---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
 --- fires if the balance or held changes (SHOP-R12). The wallet projection sets the log's own at enterWorld's done and
 --- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
@@ -859,6 +868,51 @@ part(function(fake, Pagle, ns, host)
 			error(problem, 2)
 		end
 		fake.global.activityXP.earned[name] = total
+	end
+end)
+
+-- Pushed content (core/pushed-content.md), on Core's wiring over fake.global.pushed: Pagle.GetCompanionState,
+-- Pagle.GetPushedContent and PushedContentReady. fake.login starts the check after ModulesChanged, as Core's login
+-- step 2 does (PUSH-R10): over a raw PagleContentData Core's real check runs on the fake's frames, and for a set
+-- `{ state, items }` the check ends with them on the frame after login, through Core's own end of a check.
+part(function(fake, Pagle, ns, host)
+	local content ---@type { state: PagleCompanionState?, items: table[]?, data: any }?
+	local loggedIn = false
+	ns.WirePushedContent(host, {
+		data = function()
+			return content and content.data
+		end,
+		presence = function()
+			return { installed = content ~= nil, loaded = content ~= nil }
+		end,
+	})
+	local pushed = ns.pushedContent
+	function Pagle.GetCompanionState()
+		return pushed:State()
+	end
+	function Pagle.GetPushedContent(kind)
+		return pushed:Items(kind)
+	end
+
+	function fake.setPushedContent(set)
+		assert(not loggedIn, "FakePagle: Core reads Pagle_Content once, at PLAYER_LOGIN; set it before fake.login()")
+		content = set
+	end
+
+	local login = fake.login
+	function fake.login()
+		login()
+		loggedIn = true
+		if content and content.data == nil then
+			local state = content.state
+			if state ~= "checking" then
+				fake.queueFrame(function()
+					pushed:Finish({ state = state or "missing", items = content.items })
+				end)
+			end
+		else
+			ns.StartPushedContent()
+		end
 	end
 end)
 

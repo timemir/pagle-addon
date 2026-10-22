@@ -130,7 +130,7 @@ Set titles are Standing Hunts' only. Hunt Events have the completed-run titles i
 - **HNT-R146** A run is **completed** when every Hunt of its event has reached tier 1 within the run; later tiers aren't needed. Its completion time is the tier-1 time of the last of its Hunts to reach it.
 - **HNT-R147** A run that ends uncompleted is simply over. Its progress stays in the projection (it counted, and paid for every tier it reached) but is never shown again.
 - **HNT-R148** The **completed-run count** is the number of completed runs, across all events and repeats. Titles are earned when it reaches 25, 50 and 100 (Tunables): Bookmaker's Bane at 25, and the titles at 50 and 100 named in the lore pass (`ladder.<n>.title`, HNT-R130). A ladder title, once earned, is never lost. One completed run earns no title of its own.
-- **HNT-R149** Casts folded after a run has ended still count for it. A catch-up, a rebuild or a re-enabled Module credits every Cast inside a known run; tiers, completions and ladder titles reached that way pay Coins and Activity XP, but arrive only as summary-only moments or Write-up lines (HNT-R111, HNT-R112).
+- **HNT-R149** Casts folded after a run has ended still count for it. A catch-up, a rebuild or a re-enabled Module credits every Cast inside a known run; tiers, completions and ladder titles reached that way pay Coins and Activity XP, but arrive only as summary-only moments or Write-up lines (HNT-R111, HNT-R112). A run's record can come after Casts it must credit (a pushed run logged mid-run with its real `start`, HNT-R151; the slots a catch-up logs, HNT-R155): folding a `run` record walks the run's earlier Casts again with `M:IterateCatches`, from the first Cast at or after its `start` up to the record, and credits them in order as `apply` would, with no moments. The projection keeps an hour index (`hours`, [Projection state](#projection-state)) to find where to start, for the last 14 days of Casts (Tunables); a run older than that is credited from the index's start. A rebuild reads the log in the same order, so it folds to the same state as the live entries did. *Decided while building (#299): how a late record finds its Casts, which the spec didn't say.*
 
 ### Which runs Hunts knows: the run records
 
@@ -483,18 +483,19 @@ All four fall in the low band, so the other 20 are 4 low, 8 mid and 8 high. Thei
 ---@field coins integer       -- lifetime Pagle Coins earned (HNT-R110)
 ---@field xp integer          -- lifetime Activity XP earned (HNT-R115)
 ---@field runs table<string, HuntRun>   -- by run key, every known run (HNT-R150)
----@field defs table<string, string[]>  -- pushed definitions' parts by event ID (HNT-R154)
+---@field defs table<string, { parts: integer, texts: table<integer, string> }>  -- pushed definitions' parts by event ID: the count of parts the first record named, and each part's text, the first record of a part winning (HNT-R154)
 ---@field settled integer     -- the completed-run count (HNT-R148)
 ---@field ladder table<integer, integer>   -- ladder step (25, 50, 100) to the server time it was earned
 ---@field hunts table<string, HuntProgress>   -- by Hunt ID; absent until the Hunt has effort or a Catch
 ---@field sets table<string, { earnedAt: integer, date: { year: integer, month: integer, day: integer }, fromRetirement: boolean }>   -- by set ID, only once earned; date as HuntTier.date, or the retired date's UTC day (HNT-R23, HNT-R87)
+---@field hours table<integer, integer>   -- server hour (time / 3600, rounded down) to the seq of the first Cast in it, for the last 14 days of Casts (HNT-R149)
 
 ---@class HuntRun
 ---@field event string
 ---@field start integer       -- server time
 ---@field end_ integer        -- server time (`end` in the record)
 ---@field source "r"|"p"
----@field hunts table<string, HuntProgress>   -- by the event's Hunt IDs, progress within this run (HNT-R145)
+---@field hunts table<string, HuntProgress>   -- by the event's Hunt IDs, progress within this run, absent until the Hunt has effort or a Catch (HNT-R145)
 ---@field completedAt integer?  -- server time of completion (HNT-R146)
 
 ---@class HuntProgress
@@ -610,6 +611,7 @@ A `huntRun` whose event is neither pooled nor delivered as a `huntEvent` in the 
 | Rotation starting point | 1.0's release day 15:00 UTC; before 1.0 a placeholder in the past (set by #275's checklist) | HNT-R152 |
 | Skill bands: low / mid / high | up to 150 / 151–275 / above 275 | HNT-R156 |
 | Ladder steps | 25 / 50 / 100 completed runs | HNT-R148 |
+| Hour index for late run records | 14 days back from the latest Cast | HNT-R149 |
 | Celebrated run entries kept | 30 days after a run ends | HNT-R92 |
 | Companion hint switch | off at 1.0 | HNT-R170–R172 |
 | Companion Nod interval | 7 days | HNT-R171 |

@@ -99,6 +99,10 @@ describe("Hunts' boundary (ADR 0001, HNT-R12)", function()
 			)
 		end)
 
+		it("nor reporting Activity XP, which Hunts pays (AXP-R2, HNT-R115)", function()
+			assert.are.same({}, offences("ns.Module:ReportXPEarned(total)\nclient.ReportXPEarned(state.xp)"))
+		end)
+
 		it("nor the item calls Hunts needs for names and icons (HNT-R54)", function()
 			assert.are.same(
 				{},

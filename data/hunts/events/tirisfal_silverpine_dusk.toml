@@ -1,0 +1,39 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 85 --zone 130: 85 (Tirisfal Glades) + 130 (Silverpine Forest), low band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   tirisfal_silverpine_dusk_haul: Haul, species.any, 95.0% of Catches: tiers 130 / 340 / 685, 46 / 119 / 240 min
+#   tirisfal_silverpine_dusk_mackerel: Named fish, species 6303 (Raw Slitherskin Mackerel), 22.2% of Catches: tiers 30 / 80 / 160, 45 / 120 / 240 min
+#   tirisfal_silverpine_dusk_smallfish: Named fish, species 6291 (Raw Brilliant Smallfish), 16.7% of Catches: tiers 25 / 60 / 120, 50 / 120 / 239 min
+#   tirisfal_silverpine_dusk_snapper: Timed, species 6289 (Raw Longjaw Mud Snapper), 23.8% of Catches, 18:00-21:00, open 9 h a run: tiers 4 / 11 / 20, 45 / 123 / 224 min
+
+[event]
+id = "tirisfal_silverpine_dusk"
+zones = [85, 130]
+tags = ["lake", "dusk"]
+name = "Grey Waters at Dusk"
+note = "The lakes of the grey northern woods are quiet, cold and full of mackerel."
+
+[[hunt]]
+id = "tirisfal_silverpine_dusk_haul"
+class = "species.any"
+tiers = [130, 340, 685]
+name = "A Grey Water Basket"
+
+[[hunt]]
+id = "tirisfal_silverpine_dusk_mackerel"
+species = 6303
+tiers = [30, 80, 160]
+name = "Mackerel Run"
+
+[[hunt]]
+id = "tirisfal_silverpine_dusk_smallfish"
+species = 6291
+tiers = [25, 60, 120]
+name = "Smallfish by the Handful"
+
+[[hunt]]
+id = "tirisfal_silverpine_dusk_snapper"
+species = 6289
+conditions = { time = [[1080, 1260]] }
+tiers = [4, 11, 20]
+name = "Snapper at Dusk"

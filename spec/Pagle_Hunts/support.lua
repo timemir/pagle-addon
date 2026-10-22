@@ -1,6 +1,6 @@
 -- Loading Pagle_Hunts for its specs: over FakePagle (its catalogue, clock and Module registry) with the fixture Hunt
--- list in place of the shipped one, and the fixture lore unless a spec asks for none (hunts.md › Data: "Tests inject
--- their own Hunt list and `since` dates"). Specs load this file with dofile (and the undefined-global suppression
+-- list and event pool in place of the shipped ones, and the fixture lore unless a spec asks for none (hunts.md › Data:
+-- "Tests inject their own Hunt list and `since` dates"). Specs load this file with dofile (and the undefined-global suppression
 -- every dofile in spec/ carries), then call it:
 --
 --   local hunts = dofile("spec/Pagle_Hunts/support.lua")
@@ -12,6 +12,7 @@
 
 local FIXTURE_LIST = "spec/Pagle_Hunts/fixtures/HuntList.lua"
 local FIXTURE_LORE = "spec/Pagle_Hunts/fixtures/Lore.lua"
+local FIXTURE_EVENTS = "spec/Pagle_Hunts/fixtures/EventList.lua"
 
 local support = {}
 
@@ -35,13 +36,15 @@ end
 ---@field lore boolean?   -- false loads no fixture lore, so names fall back to IDs (HNT-R1)
 ---@field list (HuntListData|fun(fixture: HuntListData): HuntListData)?   -- the Hunt list OnInitialize reads in place
 --- of the fixture's (or what it makes of the fixture's), as data\HuntList.lua sets it
+---@field events (EventListData|fun(fixture: EventListData): EventListData)?   -- the event pool OnInitialize reads in
+--- place of the fixture's (or what it makes of the fixture's), as data\EventList.lua sets it
 ---@field prepare fun(loaded: LoadedAddon)?   -- runs after the fixtures, before ADDON_LOADED, e.g. to change the rules
 --- version OnInitialize reads
 ---@field motion boolean?   -- true leaves Core's Animations setting on; by default it is off, so the board draws settled
 --- at once and the specs of what it shows need not wait for its fades, turns and slides (BoardMotion_spec turns it on)
 
---- Loads Pagle_Hunts on `fake` (a new FakePagle if nil) with the fixture Hunt list, which replaces a shipped
---- data/HuntList.lua if the TOC lists one, then fires its ADDON_LOADED, so OnInitialize reads the fixture.
+--- Loads Pagle_Hunts on `fake` (a new FakePagle if nil) with the fixture Hunt list and event pool, which replace the
+--- shipped data/HuntList.lua and data/EventList.lua, then fires its ADDON_LOADED, so OnInitialize reads the fixtures.
 ---@param fake table? a FakePagle (newFakePagle()), for a spec that set it up first
 ---@param options HuntsLoadOptions?
 ---@return LoadedAddon loaded
@@ -56,6 +59,7 @@ function support.load(fake, options)
 	fake.globals.BreakUpLargeNumbers = fake.globals.BreakUpLargeNumbers or breakUpLargeNumbers
 	local loaded = fake.load("Pagle_Hunts", { holdAddonLoaded = true })
 	runAsHunts(FIXTURE_LIST, loaded)
+	runAsHunts(FIXTURE_EVENTS, loaded)
 	if options.lore ~= false then
 		runAsHunts(FIXTURE_LORE, loaded)
 	end
@@ -64,6 +68,12 @@ function support.load(fake, options)
 		loaded.ns.huntList = list(loaded.ns.huntList)
 	elseif list then
 		loaded.ns.huntList = list
+	end
+	local events = options.events
+	if type(events) == "function" then
+		loaded.ns.eventList = events(loaded.ns.eventList)
+	elseif events then
+		loaded.ns.eventList = events
 	end
 	if options.prepare then
 		options.prepare(loaded)
@@ -408,7 +418,7 @@ end
 --- `history(fake)` appended before login, then logged in and caught up. `options.prepare(loaded)` runs before Hunts'
 --- ADDON_LOADED; `options.fake` is a FakePagle already set up (a next login's).
 ---@param history (fun(fake: table): any)?
----@param options { data: table?, prepare: fun(loaded: LoadedAddon)?, fake: table? }?
+---@param options { data: table?, prepare: fun(loaded: LoadedAddon)?, fake: table?, events: any }?
 ---@return LoadedAddon loaded
 ---@return table fake
 ---@return any appended what `history` returned
@@ -417,7 +427,7 @@ function support.login(history, options)
 	local fake = options.fake or newFakePagle()
 	fake.setCatalogue(options.data or catalogue.base())
 	local appended = history and history(fake)
-	local loaded = support.load(fake, { prepare = options.prepare })
+	local loaded = support.load(fake, { prepare = options.prepare, events = options.events })
 	fake.login()
 	fake.enterWorld()
 	return loaded, fake, appended
@@ -433,6 +443,26 @@ function support.nextLogin(last, lastLoaded)
 	fake.catchLog.data = last.catchLog.data
 	fake.globals.PagleHuntsDB = { global = lastLoaded.env.PagleHuntsDB.global }
 	return fake
+end
+
+--- One of Hunts' own Module records (LOG-R40, ADR 0008) for fake.catchLog:Append, by the player's character at
+--- server time `time`: kind `run` or `def` with `payload` (hunts.md › Contracts). support.append appends it.
+---@param kind string
+---@param payload string
+---@param time integer
+---@return table
+function support.record(kind, payload, time)
+	return { kind = "module", char = 1, time = time, module = "Hunts", recordKind = kind, payload = payload }
+end
+
+--- A `run` record's payload (HNT-R150), written here apart from logic/Records.lua: `<eventID>|<start>|<end>|<source>`.
+---@param event string
+---@param start integer
+---@param end_ integer
+---@param source string? "r" by default
+---@return string
+function support.runPayload(event, start, end_, source)
+	return ("%s|%d|%d|%s"):format(event, start, end_, source or "r")
 end
 
 --- Moves the live conditions to realm `minute` in `where`, with `auras` up (none by default).

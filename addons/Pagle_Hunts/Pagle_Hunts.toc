@@ -16,10 +16,14 @@ data\EventList.lua
 logic\Data.lua
 logic\Module.lua
 logic\HuntList.lua
+logic\Events.lua
+logic\Records.lua
+logic\Content.lua
 logic\Seams.lua
 logic\Qualify.lua
 logic\Waters.lua
 logic\Titles.lua
+logic\Runs.lua
 logic\Projection.lua
 logic\Moments.lua
 logic\Groups.lua

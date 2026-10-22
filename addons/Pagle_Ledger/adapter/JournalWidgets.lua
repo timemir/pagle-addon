@@ -425,6 +425,67 @@ makers.leader = function(parent)
 	return widget
 end
 
+---@class LedgerXpSourceWidget: LedgerJournalWidget
+---@field climb FontString
+---@field total FontString
+---@field strikes Texture[]
+
+-- The width of each of "Where your XP came from"'s two figure columns, at the line's right.
+local XP_COLUMN_W = 84
+
+-- A line of "Where your XP came from" (LED-R150): its source's name, then this climb's XP and all told's in two
+-- columns at the right; with `header`, the columns' heads in small capitals; with `off` (its Module is off, AXP-R90),
+-- greyed and struck through in red ink, as the Curio Shop's purse strikes a Module that is off.
+makers.xpSource = function(parent)
+	local widget = newWidget(parent) --[[@as LedgerXpSourceWidget]]
+	widget.label = ns.JournalLabel(widget, "print", 14.5, INK.body)
+	widget.label:SetPoint("TOPLEFT", 0, -3)
+	widget.climb = ns.JournalLabel(widget, "print", 14.5, INK.small, "", { justify = "RIGHT" })
+	widget.total = ns.JournalLabel(widget, "print", 14.5, INK.small, "", { justify = "RIGHT" })
+	widget.strikes = {}
+	for i, region in ipairs({ widget.label, widget.climb, widget.total }) do
+		local strike = ns.JournalTint(widget, INK.red, 0.8, "OVERLAY")
+		strike:SetHeight(1.5)
+		strike:SetPoint("LEFT", region, "LEFT", 0, -1)
+		strike:SetPoint("RIGHT", region, "RIGHT", 0, -1)
+		widget.strikes[i] = strike
+	end
+	function widget.Fill(self, block, width, _, draw)
+		local header = block.header == true
+		local off = block.off == true
+		local face, size = "print", 14.5
+		if header then
+			face, size = "sc", 12.5
+		end
+		local name = off and INK.faded or INK.body
+		local figure = header and INK.kicker or (off and INK.faded or INK.small)
+		ns.JournalRestyle(self.label, "print", 14.5, name)
+		ns.JournalRestyle(self.climb, face, size, figure)
+		ns.JournalRestyle(self.total, face, size, figure)
+		self.label:SetText(block.text or "")
+		self.climb:SetText(block.value or "")
+		self.total:SetText(block.total or "")
+		-- the columns from the right: all told at the edge, this climb before it, the name in what is left
+		local column = math.min(XP_COLUMN_W, width / 4)
+		self.total:ClearAllPoints()
+		self.total:SetPoint("TOPRIGHT", self, "TOPLEFT", width, header and -4 or -3)
+		self.climb:ClearAllPoints()
+		self.climb:SetPoint("TOPRIGHT", self, "TOPLEFT", width - column, header and -4 or -3)
+		bound(self.total, column - 6)
+		bound(self.climb, column - 6)
+		bound(self.label, math.max(1, width - 2 * column - 6))
+		for _, strike in ipairs(self.strikes) do
+			strike:SetShown(off)
+		end
+		local same, before = remember(self, draw, "xpSource:" .. (block.text or ""), block.value)
+		if same and before and before ~= block.value then
+			ns.JournalInk(self.climb)
+		end
+		return header and 20 or 22
+	end
+	return widget
+end
+
 -- ---------------------------------------------------------------- the bookplate summary
 
 ---@class LedgerBookplateWidget: LedgerJournalWidget
@@ -519,9 +580,37 @@ end
 ---@class LedgerXpBarWidget: LedgerJournalWidget
 ---@field bar LedgerInkBar
 ---@field fresh FontString
+---@field tip LedgerXpTip?
+
+-- The bar's tooltip (LED-R145): "Where this climb's XP came from", each source's line with this climb's XP at the
+-- right (greyed for a Module that is off), and "by source, roughly" under them.
+---@param widget LedgerXpBarWidget
+local function showXpTip(widget)
+	local tip = widget.tip
+	if not tip then
+		return
+	end
+	GameTooltip:SetOwner(widget, "ANCHOR_RIGHT")
+	GameTooltip:SetText(tip.title)
+	for _, line in ipairs(tip.lines) do
+		local r, g, b = 1, 1, 1
+		if line.off then
+			r, g, b = 0.5, 0.5, 0.5
+		end
+		GameTooltip:AddDoubleLine(line.text, line.value, r, g, b, r, g, b)
+	end
+	GameTooltip:AddLine(tip.note, 0.6, 0.6, 0.6)
+	GameTooltip:Show()
+end
 
 makers.xpBar = function(parent)
 	local widget = newWidget(parent) --[[@as LedgerXpBarWidget]]
+	widget:SetScript("OnEnter", showXpTip)
+	widget:SetScript("OnLeave", function(self)
+		if GameTooltip:IsOwned(self) then
+			GameTooltip:Hide()
+		end
+	end)
 	widget.bar = ns.JournalInkBar(widget, 382)
 	widget.bar:SetPoint("TOPLEFT")
 	widget.label = ns.JournalLabel(widget, "print", 13.5, INK.small)
@@ -556,6 +645,15 @@ makers.xpBar = function(parent)
 		self.fresh:SetText(data.freshText or "")
 		bound(self.label, width)
 		bound(self.fresh, math.max(1, width - self.label:GetWidth()))
+		-- the tooltip, shown again with the new figures while the mouse is over the bar as it redraws
+		self.tip = block.tip
+		if GameTooltip:IsOwned(self) then
+			if self.tip then
+				showXpTip(self)
+			else
+				GameTooltip:Hide()
+			end
+		end
 		return 36
 	end
 	return widget

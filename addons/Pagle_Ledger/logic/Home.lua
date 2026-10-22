@@ -207,7 +207,15 @@ local function rightPage(context)
 			mark = ns.PrestigeMark(state.prestige),
 			signature = title,
 		},
-		{ kind = "xpBar", bar = ns.InkXpBar(state, celebrated, context.now, context.formatNumber) },
+		{
+			kind = "xpBar",
+			bar = ns.InkXpBar(state, celebrated, context.now, context.formatNumber),
+			-- hovering it: this climb's XP by source (LED-R145, LED-R150)
+			tip = ns.XPBarTip(
+				ns.XPSourceLines(state, context.activityXP, context.prestigeSources),
+				context.formatNumber
+			),
+		},
 		{ kind = "rule" },
 		{ kind = "kicker", text = L.HOME_NOTES },
 	}

@@ -73,10 +73,26 @@ describe("Hunts' projection", function()
 	it("builds the HuntsState of a history: Casts, counts, tiers, effort and a set title (HNT-R137)", function()
 		local loaded, _, records = login(withHistory)
 
+		local state = copy(loaded.ns.State())
+		-- The hour index: each server hour's first Cast (logic/Runs.lua), so a late run record finds its Casts.
+		local hours = {}
+		for _, record in ipairs(records) do
+			local hour = math.floor(record.time / 3600)
+			hours[hour] = hours[hour] or record.seq
+		end
+		assert.are.same(hours, state.hours)
+		state.hours = nil
 		assert.are.same({
 			casts = 6,
 			-- fixture_snapper, fixture_oddity and fixture_rack completed, and fixture_wagers' title (HNT-R110).
 			coins = 30 + 30 + 30 + 100,
+			-- 500 for each of the three completed (HNT-R113); a set title pays none.
+			xp = 3 * 500,
+			-- No run is known: the log holds no run record (HNT-R150).
+			runs = {},
+			defs = {},
+			settled = 0,
+			ladder = {},
 			-- No entry for a Hunt with neither effort nor a Catch, such as fixture_tide_late, whose since (2026-04-01)
 			-- is after these Nightfin (HNT-R13), or fixture_sunscale, fished for nowhere by day.
 			hunts = {
@@ -112,7 +128,7 @@ describe("Hunts' projection", function()
 					fromRetirement = false,
 				},
 			},
-		}, loaded.ns.State())
+		}, state)
 	end)
 
 	it("reads only Casts: a Skill Reading and a build entry change nothing (HNT-R136)", function()
@@ -288,6 +304,9 @@ describe("Hunts' projection", function()
 					{
 						tiers = { { hunt = "fixture_rack", tier = 2 }, { hunt = "fixture_tide_late", tier = 1 } },
 						sets = {},
+						marks = {},
+						settled = {},
+						ladder = {},
 					},
 				},
 			}, calls)
@@ -308,7 +327,13 @@ describe("Hunts' projection", function()
 			assert.are.same({
 				"Reached",
 				live.seq,
-				{ tiers = { { hunt = "fixture_rack", tier = 1 } }, sets = { "fixture_wagers" } },
+				{
+					tiers = { { hunt = "fixture_rack", tier = 1 } },
+					sets = { "fixture_wagers" },
+					marks = {},
+					settled = {},
+					ladder = {},
+				},
 			}, calls[2])
 			assert.are.same({ 30, 30 + 30 + 100 }, huntsReports(fake))
 		end)
@@ -366,30 +391,36 @@ describe("Hunts' projection", function()
 
 			assert.are.same({ firstBuild = false, rebuilt = true, replayed = 0 }, info)
 			assert.are.same(before, state)
-			assert.matches("%+f1c7f1c7f1c70002$", loaded.env.PagleHuntsDB.global.projection.fingerprint)
+			assert.matches(
+				"%+f1c7f1c7f1c70002%+e1e1e1e1e1e1e1e1$",
+				loaded.env.PagleHuntsDB.global.projection.fingerprint
+			)
 		end)
 
 		it("rebuild from seq 0 to the same state when the rules version changes (HNT-R138)", function()
 			local info, state, before, loaded = rebuildOf(function(loaded)
-				loaded.ns.HUNTS_RULES_VERSION = 2
+				loaded.ns.HUNTS_RULES_VERSION = 3
 			end)
 
 			assert.are.same({ firstBuild = false, rebuilt = true, replayed = 0 }, info)
 			assert.are.same(before, state)
-			assert.are.equal(2, loaded.env.PagleHuntsDB.global.projection.rulesVersion)
+			assert.are.equal(3, loaded.env.PagleHuntsDB.global.projection.rulesVersion)
 		end)
 
-		it("store the rules version 1 and the Hunt list's fingerprint after the content's (HNT-R136)", function()
-			local loaded, fake = login(withHistory)
+		it(
+			"store the rules version 2, and the Hunt list's and event pool's fingerprints after the content's (HNT-R136)",
+			function()
+				local loaded, fake = login(withHistory)
 
-			local db = loaded.env.PagleHuntsDB.global.projection
-			assert.are.equal(1, loaded.ns.HUNTS_RULES_VERSION)
-			assert.are.same(
-				{ 1, fake.Pagle.CONTENT_FINGERPRINT .. "+f1c7f1c7f1c7f1c7", 6 },
-				{ db.rulesVersion, db.fingerprint, db.lastSeq }
-			)
-			assert.are.equal(loaded.ns.State(), db.projection)
-		end)
+				local db = loaded.env.PagleHuntsDB.global.projection
+				assert.are.equal(2, loaded.ns.HUNTS_RULES_VERSION)
+				assert.are.same(
+					{ 2, fake.Pagle.CONTENT_FINGERPRINT .. "+f1c7f1c7f1c7f1c7+e1e1e1e1e1e1e1e1", 6 },
+					{ db.rulesVersion, db.fingerprint, db.lastSeq }
+				)
+				assert.are.equal(loaded.ns.State(), db.projection)
+			end
+		)
 
 		it("count Casts recorded while Hunts was off, in the catch-up (HNT-R13, LOG-R90)", function()
 			local first, firstFake = login(withHistory)

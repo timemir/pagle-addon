@@ -1,0 +1,39 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 440: 440 (Tanaris), mid band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   tanaris_yellowtail_haul: Haul, species.any, 80.4% of Catches: tiers 110 / 290 / 580, 46 / 120 / 240 min
+#   tanaris_yellowtail_cod: Named fish, species 6362 (Raw Rockscale Cod), 11.0% of Catches: tiers 15 / 40 / 80, 45 / 121 / 242 min
+#   tanaris_yellowtail_yellowtail: Named fish, species 4603 (Raw Spotted Yellowtail), 25.0% of Catches: tiers 35 / 90 / 180, 47 / 120 / 240 min
+#   tanaris_yellowtail_noon: Timed, species 4603 (Raw Spotted Yellowtail), 25.0% of Catches, 12:00-16:00, open 12 h a run: tiers 6 / 15 / 30, 48 / 120 / 240 min
+
+[event]
+id = "tanaris_yellowtail"
+zones = [440]
+tags = ["coast", "day"]
+name = "Desert Noon"
+note = "The yellowtail off the desert coast don't mind the heat. The angler might."
+
+[[hunt]]
+id = "tanaris_yellowtail_haul"
+class = "species.any"
+tiers = [110, 290, 580]
+name = "A Desert Coast Basket"
+
+[[hunt]]
+id = "tanaris_yellowtail_cod"
+species = 6362
+tiers = [15, 40, 80]
+name = "Rock Cod Run"
+
+[[hunt]]
+id = "tanaris_yellowtail_yellowtail"
+species = 4603
+tiers = [35, 90, 180]
+name = "Yellowtail Run"
+
+[[hunt]]
+id = "tanaris_yellowtail_noon"
+species = 4603
+conditions = { time = [[720, 960]] }
+tiers = [6, 15, 30]
+name = "Yellowtail at Noon"

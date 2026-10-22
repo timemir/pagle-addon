@@ -68,7 +68,7 @@ field     = name "=" value
 value     = str | int | bool | "{" *(value ",") "}" | "{" *(field ",") "}"
 ```
 
-`str` is a double-quoted Lua string with only `\\`, `\"` and `\n` escapes, `int` a decimal integer, `bool` `true` or `false`, `name` `[%a_][%w_]*`. No other syntax is accepted. The fields of each kind are its Module's: `huntEvent` and `huntRun` are under [hunts.md › Contracts](../hunts.md#pushed-hunt-events-and-runs).
+`str` is a double-quoted Lua string with only `\\`, `\"` and `\n` escapes, `int` a decimal integer, `bool` `true` or `false`, `name` `[%a_][%w_]*`. No other syntax is accepted, but for two forms Core's reader also takes, both still plain Lua data: a field name written `["name"]`, as hunts.md writes `huntRun`'s `["end"]` (`end` is a Lua keyword), and a table's last element without its `,`, as hunts.md's examples write it. *Decided while building the reader (#293).* An integer has at most 15 digits, and tables nest at most 16 deep (Tunables). The fields of each kind are its Module's: `huntEvent` and `huntRun` are under [hunts.md › Contracts](../hunts.md#pushed-hunt-events-and-runs).
 
 ## Tunables
 
@@ -78,7 +78,8 @@ value     = str | int | bool | "{" *(value ",") "}" | "{" *(field ",") "}"
 | Payload size cap | 64 KiB decoded | PUSH-R13 |
 | Kinds and versions passed on | `huntEvent` 1, `huntRun` 1 | PUSH-R21 |
 | File format versions read | 1 | PUSH-R13 |
-| Check budget per frame | about 4 ms | PUSH-R10 |
+| Check budget per frame | about 4 ms (`ns.PUSHED_CHECK_BUDGET`); each frame's steps are planned to 3.5 ms of it, leaving 0.5 ms for a step that runs longer than its kind has yet | PUSH-R10 |
+| Payload nesting limit | 16 tables deep, the payload's own table counting 1 (`ns.PAYLOAD_DEPTH_LIMIT`) | PUSH-R20 |
 | Public keys shipped | none yet: `ns.PUSHED_KEYS` in `logic/PushedKeys.lua` ships empty, and the first keys come with the backend (pagle-backend #2); `scripts/pushed-key.py` prints each key's entry | PUSH-R12 |
 
 *Decided while writing the spec (#289): the 64 KiB cap and the per-frame budget are first values; the backend's requirement on pagle-backend #2 names "a size cap agreed with the addon's Tunable".*

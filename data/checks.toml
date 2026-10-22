@@ -5,5 +5,5 @@
 # non-Legend Species having its ten varieties (DATA-R132, VAR-R2), is on from the varieties release (#338).
 typicalLength = true
 lore = ["ledger", "core", "hunts", "stats", "tackleboard"]
-eventPool = false
+eventPool = true
 varieties = true

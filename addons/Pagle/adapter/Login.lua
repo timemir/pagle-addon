@@ -59,6 +59,9 @@ Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()
 	ns.BuildAreaIndex() -- LOG-R23
 	ns.StartConditions() -- LOG-R47: its baseline has real areas, and a Module meets a running service
 	ns.Fire("ModulesChanged") -- CORE-R19
+	-- PUSH-R1, PUSH-R10: PagleContentData, read once, its check from the next frame on; with no file it ends here,
+	-- "missing", after ModulesChanged so each Module has met Core first.
+	ns.StartPushedContent()
 	-- ONB-R1–R3: the character joins the onboarding state, after ModulesChanged, so whatever a hook shows (#325)
 	-- meets Core's menu and every Module registered.
 	ns.StartOnboarding()

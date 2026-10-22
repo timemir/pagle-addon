@@ -1,0 +1,39 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 15: 15 (Dustwallow Marsh), low band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   dustwallow_marsh_night_haul: Haul, species.any, 97.8% of Catches: tiers 130 / 350 / 705, 44 / 119 / 240 min
+#   dustwallow_marsh_night_trout: Named fish, species 8365 (Raw Mithril Head Trout), 37.5% of Catches: tiers 50 / 135 / 270, 44 / 120 / 240 min
+#   dustwallow_marsh_night_yellowtail: Named fish, species 4603 (Raw Spotted Yellowtail), 12.2% of Catches: tiers 16 / 45 / 90, 44 / 123 / 247 min
+#   dustwallow_marsh_night_small_hours: Timed, species.any, 97.8% of Catches, 00:00-04:00, open 12 h a run: tiers 20 / 60 / 115, 41 / 123 / 235 min
+
+[event]
+id = "dustwallow_marsh_night"
+zones = [15]
+tags = ["coast", "night"]
+name = "Marsh Nights"
+note = "The marsh coast after dark: warm, wet and busy with trout."
+
+[[hunt]]
+id = "dustwallow_marsh_night_haul"
+class = "species.any"
+tiers = [130, 350, 705]
+name = "A Marsh Basket"
+
+[[hunt]]
+id = "dustwallow_marsh_night_trout"
+species = 8365
+tiers = [50, 135, 270]
+name = "Marsh Trout"
+
+[[hunt]]
+id = "dustwallow_marsh_night_yellowtail"
+species = 4603
+tiers = [16, 45, 90]
+name = "Yellowtail off the Marsh"
+
+[[hunt]]
+id = "dustwallow_marsh_night_small_hours"
+class = "species.any"
+conditions = { time = [[0, 240]] }
+tiers = [20, 60, 115]
+name = "Small Hours"

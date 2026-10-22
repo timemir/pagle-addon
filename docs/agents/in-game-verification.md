@@ -32,8 +32,8 @@ Run it in WSL, with the Lua 5.1 from `scripts/setup.sh`. `scripts/read-wtf.sh` r
 ```sh
 scripts/read-wtf.sh "/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>" \
     --character 70/<Name-Surname> [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] \
-    [--item <id>]... [--huntlist <HuntList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>] [--skill N] \
-    [--now T] [--expect-casts N] [--since T]
+    [--item <id>]... [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>] [--hunt <id>]... \
+    [--stats-item <id> --area <areaID>] [--skill N] [--now T] [--expect-casts N] [--since T]
 ```
 
 It prints eighteen sections, one more per `--hunt` and one more with `--stats-item`, and the exit check last with `--expect-casts`:
@@ -72,7 +72,7 @@ It prints eighteen sections, one more per `--hunt` and one more with `--stats-it
   - `pins:` the pinned Hunt IDs, and those Hunts drops at its next load because they aren't current (HNT-R81).
   - `tracker.shown:`, `tracker.collapsed:`, `windowMoments:` and `showCompleted:`, each marked `(not saved: the default)` when AceDB left it out.
 
-  Everything computed (where a Hunt stands, done, the summary line, the stale pins, the trims, the fingerprint Hunts hands Core) comes from Hunts' own `locale/`, `data/` and `logic/` files, loaded in `Pagle_Hunts.toc`'s order over the repo's `addons/Pagle_Hunts/data/HuntList.lua`. `--huntlist <file>` reads another, such as a local-only build's or the installed addon's `Interface/AddOns/Pagle_Hunts/data/HuntList.lua`; `--catalogue` gives the content fingerprint. `--now T` (server time, Unix seconds) reads everything that depends on the time at T.
+  Everything computed (where a Hunt stands, done, the summary line, the stale pins, the trims, the fingerprint Hunts hands Core) comes from Hunts' own `locale/`, `data/` and `logic/` files, loaded in `Pagle_Hunts.toc`'s order over the repo's `addons/Pagle_Hunts/data/HuntList.lua`. `--huntlist <file>` reads another, such as a local-only build's or the installed addon's `Interface/AddOns/Pagle_Hunts/data/HuntList.lua`, and `--eventlist <file>` another event pool than `data/EventList.lua` (its fingerprint joins the Hunt list's, HNT-R136); `--catalogue` gives the content fingerprint. `--now T` (server time, Unix seconds) reads everything that depends on the time at T.
 - **Hunt <id>:** one section per `--hunt <id>` (repeatable), right after Hunts: the Hunt's set, kind, target, window or the keys of its conditions, tiers, `since` and `retired`; whether it is current, retired or not out yet, pinned, and its celebrated tier; `progress:` its `count`, `effort`, `sinceLast`, `caught`, done and finished (HNT-R17); each reached tier with its threshold, trim, Catch ID, item ID, zone, realm date and time; and `next:` the next threshold and how many Catches it is away. One line when the ID is neither in the Hunt list nor in the state.
 - **Stats:** `PagleStatsDB` from `Pagle_Stats.lua`. One line when the file or `PagleStatsDB` is missing. Otherwise, in order:
   - `projection:` the stored `lastSeq`, `logId`, `fingerprint` and `rulesVersion`, with the same `logId:` and `lastSeq:` checks as the Ledger's. `rulesVersion:` whether it is Stats' own (100 × `STATS_RULES_VERSION` + Core's `SESSION_RULES_VERSION`, so 102 in M6; any other is flagged `DIFFERS`: Core rebuilds at login). `fingerprint:` whether it is the content fingerprint of the catalogue read (the repo's `addons/Pagle/data/Catalogue.lua` or `--catalogue`'s; any other is flagged `DIFFERS`: Core rebuilds at login). `projection: none stored` instead before the first build, and then no state lines.
@@ -138,8 +138,21 @@ Exit codes: 2 on a usage error, 1 when an `--expect-casts` check fails (a missin
 | `/pagle dev onboarding evening` | Docks the First evening list now (ONB-R83), whoever the Angler is: it clears `evening.closed`, sets `evening.shown` and shows the list at the top of the tracker dock with the items done so far ticked; a finished list shows ticked, plays its done sound and folds away again 2.5 s later. `/pagle dev tour core` shows the list too, as `core.onboarding.evening`, with two items done and nothing written (ONB-R84). |
 | `/pagle dev onboarding note <id>` | Shows one Margin note now on its target (ONB-R83), whether or not it was seen and whether or not Margin notes is on, marking nothing: Core's (`core.nod`, `core.toast`, `core.summary`, `core.uncharted`, `core.welcome`, `core.character`) on what shows now (the newest Nod, the newest toast's coin, the card, Pagle's menu button), or a Module's shown this login on its target. A target that isn't on screen prints "has nothing on screen to point at now"; an unknown id prints the ids it knows. It leaves after 12 s, on a click, or with its target. |
 | `/pagle dev onboarding look <id>` | Shows one First look now on its open window (ONB-R83), whether or not it was seen and whether or not Margin notes is on, marking nothing: `core.shop` (the Curio Shop's) or a Module's (`ledger.journal`, …). A window that isn't open prints "isn't open; open it first"; a set none of whose targets is on screen prints "has nothing on screen to point at now"; an unknown id prints the registered ones. The coach bar's link, closing the window or Esc takes it away. `/pagle dev tour core` shows each set too, as `core.onboarding.look.<id>`, opening its window and closing it after, writing nothing (ONB-R84). |
+| `/pagle dev content` | Prints this login's pushed-content check of `Pagle_Content` (PUSH-R14, [core/pushed-content.md](../spec/core/pushed-content.md)): the companion state (`checking`, `missing`, `notRunning` or `connected`), and for an absent file the first reason PUSH-R13 found (no file, and whether `Pagle_Content` isn't installed, didn't load or set no `PagleContentData`; a missing field or one of the wrong type; an unknown `v` or `keyId`; Base64; over the size cap; a bad signature; a lower `seq`; expired; or a parse error with its byte); then `generatedAt`, `keyId`, `seq` and `expires` as the file holds them, the kinds handed out and those dropped with their item counts, and the frames the check took with its longest frame against the 4 ms budget (PUSH-R10). Nothing else ever names a reason. It changes nothing; the file is read once per login, so `/reload` after changing it. |
 
 They're ordinary `/pagle` subcommands, so they follow the restriction rules: in combat the lanes and cards hold what the commands raise (ANN-R35).
+
+### A hand-made Pagle_Content
+
+`scripts/pushed-content.py` writes a `Pagle_Content` folder (its TOC, with `## Interface:` and `## AllowLoadGameType:` copied from `Pagle.toc` and `## Dependencies: Pagle`, and its one data file setting `PagleContentData`) from a payload file in the grammar of [pushed-content.md › The payload](../spec/core/pushed-content.md#the-payload), such as `spec/Pagle/fixtures/content/good.txt`. Run it in WSL or macOS with the pinned Python, into the client's AddOns folder; then log out to character select once, since a brand-new folder appears in the game only there (PUSH-R90):
+
+```sh
+.tools/bin/python scripts/pushed-content.py spec/Pagle/fixtures/content/good.txt --key-id devKey --seq 1 \
+    --out "/mnt/g/World of Warcraft/_classic_beta_/Interface/AddOns"
+```
+
+- **Unsigned,** as above, for the M8 exit check's step 6: the file has no `sig`, and Core ships no key anyway, so `/pagle dev content` reads `pushed content is missing: a missing field, sig.` Delete the `Pagle_Content` folder afterwards.
+- **Signed with the spec's test key,** for a local-only build that adds it: add `--sign spec/Pagle/fixtures/signing/test-only-private-key.pem --key-id testKey` (and `--generated-at`, `--expires` as wanted; they default to now and a week on), and paste the entry `scripts/pushed-key.py spec/Pagle/fixtures/signing/test-key-public.pem testKey` prints into `ns.PUSHED_KEYS` in the installed `Pagle/logic/PushedKeys.lua`. `/pagle dev content` then reads `connected`, with the kinds and their counts. The test key is TEST ONLY: never commit it to `PushedKeys.lua` or ship a build holding it. A second file with a lower `--seq` than one accepted reads `a lower seq` (PUSH-R92), and one with `--generated-at` 25 hours ago reads `notRunning`.
 
 ## Protocol
 

@@ -23,6 +23,7 @@ files = [
     "scripts/pushed-key.py",
     "scripts/propose-events.py",
     "scripts/check-event.py",
+    "scripts/pushed-content.py",
 ]
 python_version = "3.12"
 strict = true

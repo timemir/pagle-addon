@@ -1,0 +1,39 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 17: 17 (The Barrens), low band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   barrens_oddities_haul: Haul, species.any, 98.2% of Catches: tiers 135 / 355 / 705, 46 / 121 / 239 min
+#   barrens_oddities_snapper: Named fish, species 6289 (Raw Longjaw Mud Snapper), 34.0% of Catches: tiers 45 / 120 / 245, 44 / 118 / 240 min
+#   barrens_oddities_albacore: Named fish, species 6361 (Raw Rainbow Fin Albacore), 25.9% of Catches: tiers 35 / 95 / 185, 45 / 122 / 238 min
+#   barrens_oddities_oddity: Timed, fixed.oddity, 8.1% of Catches, 18:00-21:00, open 9 h a run: tiers 1 / 4 / 7, 33 / 132 / 231 min
+
+[event]
+id = "barrens_oddities"
+zones = [17]
+tags = ["lake", "dusk"]
+name = "Oddity at Dusk"
+note = "Something in the pools of the dry plains turns fish strange. Best looked into as the light goes."
+
+[[hunt]]
+id = "barrens_oddities_haul"
+class = "species.any"
+tiers = [135, 355, 705]
+name = "A Dry Plains Basket"
+
+[[hunt]]
+id = "barrens_oddities_snapper"
+species = 6289
+tiers = [45, 120, 245]
+name = "Mud Snapper Run"
+
+[[hunt]]
+id = "barrens_oddities_albacore"
+species = 6361
+tiers = [35, 95, 185]
+name = "Albacore by the Docks"
+
+[[hunt]]
+id = "barrens_oddities_oddity"
+class = "fixed.oddity"
+conditions = { time = [[1080, 1260]] }
+tiers = [1, 4, 7]
+name = "Oddity at Dusk"

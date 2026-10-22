@@ -32,6 +32,8 @@ logic\Base64.lua
 logic\Sha256.lua
 logic\Rsa.lua
 logic\PushedKeys.lua
+logic\PushedPayload.lua
+logic\PushedContent.lua
 logic\Conditions.lua
 logic\NextWindow.lua
 logic\LiveConditions.lua
@@ -112,6 +114,7 @@ adapter\DevGlyphs.lua
 adapter\Slash.lua
 adapter\Wallet.lua
 adapter\ActivityXP.lua
+adapter\PushedContent.lua
 adapter\Goods.lua
 adapter\WalletProjection.lua
 adapter\Moments.lua

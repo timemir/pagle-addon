@@ -267,7 +267,57 @@ ns.L = {
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
 	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs"
-		.. " | tour [module | list | stop] | probe | onboarding <command>",
+		.. " | tour [module | list | stop] | probe | onboarding <command> | content",
+	-- /pagle dev content (PUSH-R14): the companion state, or for an absent file the first reason PUSH-R13 found; the
+	-- header fields as read (generatedAt, keyId, seq, expires; each "none" when missing); the kinds handed out and
+	-- those dropped, each "kind count", comma-separated; and the frames the check took, its longest frame in ms and
+	-- the budget.
+	DEV_CONTENT_STATE = "Pagle dev: pushed content is %s.",
+	DEV_CONTENT_ABSENT = "Pagle dev: pushed content is missing: %s.",
+	DEV_CONTENT_HEADER = "Pagle dev: generatedAt %s, keyId %s, seq %s, expires %s.",
+	DEV_CONTENT_KINDS = "Pagle dev: kinds handed out: %s.",
+	DEV_CONTENT_DROPPED = "Pagle dev: kinds dropped as unknown: %s.",
+	DEV_CONTENT_KIND = "%s %d",
+	DEV_CONTENT_NONE = "none",
+	DEV_CONTENT_FRAMES = "Pagle dev: frames the check ran in: %d, the longest %.2f ms (budget %d ms).",
+	-- Why Pagle_Content is absent (PUSH-R13), the first that holds, as /pagle dev content names it: no file, then the
+	-- check's steps in order. A field's name; Base64's reason after the field; the decoded size and the cap; the
+	-- signature check's reason; the file's seq and the last accepted; expires and the server time; the byte a parse
+	-- error is at and what it is (a PAYLOAD_* line).
+	PUSHED_NOT_INSTALLED = "no file (Pagle_Content isn't installed)",
+	PUSHED_NOT_LOADED = "no file (Pagle_Content didn't load: %s)",
+	PUSHED_NO_DATA = "no file (Pagle_Content loaded but set no PagleContentData)",
+	PUSHED_NOT_TABLE = "PagleContentData isn't a table",
+	PUSHED_MISSING_FIELD = "a missing field, %s",
+	PUSHED_NOT_INTEGER = "%s isn't a whole number",
+	PUSHED_NOT_STRING = "%s isn't a string",
+	PUSHED_UNKNOWN_VERSION = "an unknown file format, v %s",
+	PUSHED_UNKNOWN_KEY = "an unknown keyId, %s",
+	PUSHED_NOT_BASE64 = "%s isn't Base64 (%s)",
+	PUSHED_OVER_CAP = "over the size cap, %d bytes decoded of %d at most",
+	PUSHED_BAD_SIGNATURE = "a bad signature (%s)",
+	PUSHED_LOWER_SEQ = "a lower seq, %s, below the last accepted %s",
+	PUSHED_EXPIRED = "expired at %s, and the server time is %s",
+	PUSHED_PARSE_ERROR = "a parse error at byte %d: %s",
+	PUSHED_CHECK_FAILED = "the check itself failed (see the Lua error)",
+	-- A payload parse error (PUSH-R20), after PUSHED_PARSE_ERROR's byte. Some name what was found or expected.
+	PAYLOAD_EXPECTED = "expected %s",
+	PAYLOAD_EXPECTED_FIELD = "expected a field name",
+	PAYLOAD_EXPECTED_ITEM = "expected an item, a table",
+	PAYLOAD_BAD_ITEM = 'an item that doesn\'t start kind = "…", v = <integer>',
+	PAYLOAD_BAD_NAME = "a field name that isn't a name",
+	PAYLOAD_UNEXPECTED = "an unexpected character, %s",
+	PAYLOAD_NAME_AS_VALUE = "a name, %s, where a value goes",
+	PAYLOAD_NOT_INTEGER = "a number that isn't a decimal integer",
+	PAYLOAD_TOO_LARGE = "an integer of more than %s digits",
+	PAYLOAD_UNENDED_STRING = "a string that doesn't end",
+	PAYLOAD_LINE_IN_STRING = "a line end inside a string",
+	PAYLOAD_BAD_ESCAPE = 'an escape other than \\\\, \\" or \\n',
+	PAYLOAD_DUPLICATE = "a field given twice, %s",
+	PAYLOAD_MIXED = "a field in a list of values",
+	PAYLOAD_TOO_DEEP = "tables nested more than %s deep",
+	PAYLOAD_ENDED = "the payload ends too soon",
+	PAYLOAD_AFTER_TABLE = "more after the payload's table",
 	-- /pagle dev onboarding (ONB-R83): its subcommands' usages, " | " between them, in the order added.
 	DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding %s",
 	DEV_ONBOARDING_RESET = "Pagle dev: onboarding is back as a new Angler's, with the Letter waiting; /reload to"

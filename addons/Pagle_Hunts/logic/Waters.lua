@@ -179,6 +179,25 @@ function ns.NewWhere(list, lookups)
 	return where
 end
 
+--- Where one event Hunt bites (HNT-R30, HNT-R31, HNT-R141), as ns.NewWhere would find it: its condition spec always
+--- has `areas` (its event's zones), so it has no waters; its places are those zones, its board spec its condition spec.
+--- Worked out once per load, with the event (logic/Events.lua), never per Cast.
+---@param hunt HuntEventHunt
+---@param lookups HuntsWaterLookups
+---@return HuntWhere
+function ns.EventHuntWhere(hunt, lookups)
+	local conditions = hunt.conditions
+	local places = { unpack(conditions.areas) }
+	return {
+		boardSpec = conditions,
+		waters = {},
+		isWater = {},
+		places = places,
+		zones = zonesOf(places, lookups.GetZoneOf),
+		skillNeed = skillNeedOf(places, conditions.skill, lookups),
+	}
+end
+
 --- Why the Hunt is unconfirmed (HNT-R34), or nil when it isn't: "window" when its window or a weekly rule its
 --- forecast read is unconfirmed (the window is an estimate), "gating" when only its gating is (a natural Hunt none of
 --- whose waters' entries has gateConfirmed). `window` is the Hunt's NextWindow result now, nil when there is none.
