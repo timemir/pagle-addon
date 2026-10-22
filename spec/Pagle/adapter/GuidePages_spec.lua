@@ -54,8 +54,9 @@ local function measure(loaded, linesOf)
 end
 
 -- Core logged in on Forever with the Modules named in `names` registered (every one when nil), Animations off, and the
--- guide open at step `id`, its texts wrapping as `linesOf` says (see measure) when given. Returns the client load.
-local function guideAt(id, names, linesOf)
+-- guide open at step `id`, its texts wrapping as `linesOf` says (see measure) when given, and a Module named in
+-- `blurbs` registering that guideBlurb in place of its own. Returns the client load.
+local function guideAt(id, names, linesOf, blurbs)
 	local loaded = loadCore({ BUILD_ENTRY })
 	for _, module in ipairs(MODULES) do
 		local wanted = names == nil
@@ -64,8 +65,8 @@ local function guideAt(id, names, linesOf)
 		end
 		if wanted then
 			loaded.client.addons["Pagle_" .. module.name] = { metadata = { ["X-Pagle-API"] = "1" } }
-			local def =
-				{ name = module.name, title = module.title, order = module.order, guideBlurb = module.guideBlurb }
+			local blurb = (blurbs or {})[module.name] or module.guideBlurb
+			local def = { name = module.name, title = module.title, order = module.order, guideBlurb = blurb }
 			if module.view then
 				def.views = { { id = "main", label = module.view, open = function() end } }
 			end
@@ -340,6 +341,108 @@ describe("the What's in the box step (ONB-R31, ONB-R91)", function()
 			icons[#icons + 1] = row.icon.texture and row.sprite
 		end
 		assert.are.same({ "ic-journal", "ic-hunts", "ic-stats", "ic-board", "ic-qol", "ic-shop" }, icons)
+	end)
+
+	-- The rows' blurbs wrapping to `lines`' lines, in the rows' order, the Curio Shop's last.
+	local function boxLines(lines)
+		return function(ns)
+			local out = {}
+			for i, row in ipairs(ns.GuideBoxRows(ns.Modules:Modules())) do
+				if row.blurb then
+					out[row.blurb] = lines[i]
+				end
+			end
+			return out
+		end
+	end
+
+	-- Stats with a blurb too, so each of the six rows has one, as on the board.
+	local SIX = { Stats = "Your own numbers." }
+
+	-- A row's icon's drawn top (it is 36 tall).
+	local function iconTop(row)
+		return top(row.icon) + row.icon.box[2]
+	end
+
+	-- Where a row ends: under the lower of its icon and its words' line box (the blurb's 18.225 at 13.5, or the
+	-- title's 19.55 at 17 when it has none).
+	local function rowEnd(row)
+		local words = row.blurb and bottom(row.blurb) + (18.225 - 13.5) / 2 or bottom(row.title) + (19.55 - 17) / 2
+		return math.max(iconTop(row) + 36, words)
+	end
+
+	it("puts the rows where the board does when every blurb wraps to two lines", function()
+		local loaded = guideAt("box", nil, boxLines({ 2, 2, 2, 2, 2, 2 }), SIX)
+		local rows = loaded.ns.guidePages.rows
+
+		assert.are.equal(6, #rows)
+		-- each row 73.98 under the last from 55: its title's line box (19.55 at 17) level with the icon, the blurb's
+		-- (18.225 at 13.5) 21.5 under it, the rule 66 under the row's top, and none under the last
+		for i, row in ipairs(rows) do
+			local y = 55 + (i - 1) * 73.98
+			assert.is.near(y, iconTop(row), 0.05)
+			assert.is.near(y + 1.275, top(row.title), 0.05)
+			assert.is.near(y + 21.5 + 2.3625, top(row.blurb), 0.05)
+			if i < #rows then
+				assert.is.near(y + 66, top(row.rule), 0.05)
+			else
+				assert.is_nil(row.rule)
+			end
+		end
+	end)
+
+	it("starts each row under the last one's rule, a blurb on three lines pushing the rows under it down", function()
+		-- Stats without a blurb, its row as tall as its icon
+		local loaded = guideAt("box", nil, boxLines({ 3, 2, 2, 2, 2, 2 }))
+		local rows = loaded.ns.guidePages.rows
+
+		for i, row in ipairs(rows) do
+			assert.is.near(iconTop(row) + 1.275, top(row.title), 0.01)
+			if i < #rows then
+				assert.is_true(top(row.rule) > rowEnd(row))
+				assert.is_true(iconTop(rows[i + 1]) > top(row.rule))
+				assert.is_true(top(rows[i + 1].title) > top(row.rule))
+			end
+		end
+		-- Ledger's third line takes Hunts 18.225 lower than the board has it, the rows the board's 16.03 apart
+		assert.is.near(55 + 73.98 + 18.225, iconTop(rows[2]), 0.05)
+		for i = 1, #rows - 1 do
+			assert.is.near(16.03, iconTop(rows[i + 1]) - rowEnd(rows[i]), 0.01)
+		end
+	end)
+
+	it("tightens the gaps between the rows evenly to keep them off the foot when blurbs wrap longer", function()
+		local loaded = guideAt("box", nil, boxLines({ 3, 2, 3, 2, 2, 2 }), SIX)
+		local rows = loaded.ns.guidePages.rows
+
+		local gap = iconTop(rows[2]) - rowEnd(rows[1])
+		assert.is_true(gap < 16.03 - 5)
+		for i = 1, #rows - 1 do
+			assert.is.near(gap, iconTop(rows[i + 1]) - rowEnd(rows[i]), 0.01)
+			assert.is_true(top(rows[i].rule) > rowEnd(rows[i]))
+			assert.is_true(iconTop(rows[i + 1]) > top(rows[i].rule))
+		end
+		-- the last row ends no lower than 483, 7 over the foot's Next at 490
+		assert.is_true(rowEnd(rows[#rows]) <= 483.01)
+	end)
+
+	it("keeps the rows at least 8 apart, the rule between, however long their blurbs", function()
+		local loaded = guideAt("box", nil, boxLines({ 4, 4, 4, 2, 2, 2 }), SIX)
+		local rows = loaded.ns.guidePages.rows
+
+		for i = 1, #rows - 1 do
+			assert.is.near(8, iconTop(rows[i + 1]) - rowEnd(rows[i]), 0.01)
+			assert.is_true(top(rows[i].rule) > rowEnd(rows[i]))
+			assert.is_true(iconTop(rows[i + 1]) > top(rows[i].rule))
+		end
+	end)
+
+	it("puts 'Turn parts on in the AddOns list.' a row under the Curio Shop's with every Module off", function()
+		local loaded = guideAt("box", {}, boxLines({ 2 }))
+		local none = find(page(loaded, "box", "right"), "Turn parts on in the AddOns list.")
+
+		-- its line box (17.55 at 13) where the board's second row would be
+		assert.is.near(55 + 73.98 + 2.275, top(none), 0.05)
 	end)
 
 	it("draws the Pagle menu from the real menu's labels as it shows, with the balance and a coin", function()
