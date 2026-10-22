@@ -84,6 +84,7 @@ local HELP = {
 	"/pagle settings: open Pagle's settings (also /pagle on its own)",
 	"/pagle shop: open or close the Curio Shop",
 	"/pagle report: open the Field report, to help chart the waters",
+	"/pagle guide: open the Field guide; /pagle guide notes shows the margin notes again",
 	"/pagle help: list these commands",
 	"/pagle hunts: open the Hunts board",
 	"/pagle qol: cycle Input",
@@ -225,7 +226,7 @@ describe("A Module's /pagle subcommand", function()
 
 		pagle(loaded, "qol")
 
-		assert.are.same({ HELP[1], HELP[2], HELP[3], HELP[4], HELP[5] }, loaded.printed)
+		assert.are.same({ HELP[1], HELP[2], HELP[3], HELP[4], HELP[5], HELP[6] }, loaded.printed)
 	end)
 end)
 

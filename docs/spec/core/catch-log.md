@@ -273,6 +273,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.probe` | what `/pagle dev probe` saved for launch re-verification (#261): `time`, `build`, `locale`, `checks`; and `timings`, the load timings of the last login made with dev mode on (#262): `time`, `entries`, `budget`, `syncLimit`, `marks` (debugprofilestop ms at each login step) and `projections` (each catch-up or rebuild: `name`, `mode`, `started`, `finished`, `applied`, `frames`, `longest`). Absent until either is first saved; tooling only, never shown to players. |
 | `global.summary`, `global.pending`, `global.cards`, `global.writeUp` | Announcement data ([announcements.md](announcements.md#data)) |
 | `global.coins`, `global.goods` | the wallet ([wallet-and-shop.md](wallet-and-shop.md#data)) |
+| `global.onboarding` | the onboarding state ([onboarding.md](onboarding.md#data)), added by migration step 2 (ONB-R1) |
 | `global.projections.*` | Core's own projections (LOG-R78) |
 | `profile.reloadReminder` | boolean, the `/reload` reminder (LOG-R86); default `false` |
 | `profile.lengthUnit` | `"cm"`, `"in"`, or `nil` for the region default (LOG-R69); default `nil`. The Defaults button sets it back to `nil` (SET-R13). |

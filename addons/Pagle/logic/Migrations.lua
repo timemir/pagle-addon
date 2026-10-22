@@ -39,21 +39,30 @@ ns.PAGLEDB_DEFAULTS = {
 	},
 }
 
---- PagleDB's migration steps, in order: step n brings a DB below schemaVersion n up to n. Step 1 is the first
---- schema, so there is nothing to migrate yet.
----@type fun(db: table)[]
+--- What a migration step may read besides the DB: login step 1 opens the Catch log before it migrates (LOG-R1).
+---@class PagleMigrationContext
+---@field catchLog PagleCatchLog
+
+--- PagleDB's migration steps, in order: step n brings a DB below schemaVersion n up to n.
+---@type fun(db: table, context: PagleMigrationContext)[]
 ns.PAGLEDB_MIGRATIONS = {
+	-- 1: the first schema, so nothing to migrate.
 	function() end,
+	-- 2 (M8.5): the onboarding state, new or returning by the Catch log (ONB-R1, ONB-R2, logic/Onboarding.lua).
+	function(db, context)
+		ns.AddOnboarding(db.global, context.catchLog)
+	end,
 }
 
---- Runs every step above `db.global.schemaVersion`, in order, and records the last one run. A DB already at or past
---- the last step is left as it is.
+--- Runs every step above `db.global.schemaVersion`, in order, each with `context`, and records the last one run. A DB
+--- already at or past the last step is left as it is.
 ---@param db { global: table }
----@param steps fun(db: table)[]
-function ns.Migrate(db, steps)
+---@param steps fun(db: table, context: table?)[]
+---@param context table? what the steps read besides the DB (PagleMigrationContext for PAGLEDB_MIGRATIONS)
+function ns.Migrate(db, steps, context)
 	local version = db.global.schemaVersion or 0
 	for n = version + 1, #steps do
-		steps[n](db)
+		steps[n](db, context)
 		db.global.schemaVersion = n
 	end
 end

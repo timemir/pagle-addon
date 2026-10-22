@@ -17,6 +17,7 @@ local ns = select(2, ...)
 ---@field showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) -- shows `probe` once in each of `fonts`
 ---@field tour fun(args: string)        -- runs `/pagle dev tour <args>` (CORE-R66–R68, logic/Tour.lua)
 ---@field probe fun()                   -- runs `/pagle dev probe` (#261, logic/Probe.lua)
+---@field onboarding fun(args: string)  -- runs `/pagle dev onboarding <args>` (ONB-R83, logic/Onboarding.lua)
 ---@field print fun(line: string)      -- prints a chat line
 
 --- The dev commands.
@@ -266,6 +267,8 @@ function Dev:Run(args)
 		options.tour(rest)
 	elseif name == "probe" then
 		options.probe()
+	elseif name == "onboarding" then
+		options.onboarding(rest)
 	else
 		options.print(L.DEV_USAGE)
 	end

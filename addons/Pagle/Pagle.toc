@@ -66,6 +66,7 @@ logic\ReloadReminder.lua
 logic\FieldReportText.lua
 logic\FieldReportBox.lua
 logic\Dock.lua
+logic\Onboarding.lua
 logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
@@ -85,6 +86,7 @@ adapter\Fishing.lua
 adapter\Diagnostics.lua
 adapter\FieldReport.lua
 adapter\Sessions.lua
+adapter\Onboarding.lua
 adapter\Settings.lua
 adapter\Settings.xml
 adapter\KeyBindingRow.lua
