@@ -108,14 +108,15 @@ local function layPaper(slip, lean)
 	ns.LeanSprite(slip.paper, slip, 0, 0, lean)
 end
 
--- A goal's paper, or an Expedition's poster, on `slot` (TKB-R102), as the kit draws P.Notice and P.Poster: its kind's
--- icon and kicker, its text, its progress by hand over a bar, where it is worked or "I'm here" or "no longer
--- catchable", its pay (a coin on a Notice, a wax seal and words on a poster) and "take it down", or the RE-POSTED
--- stamp. Hovering lifts it above its neighbours, straightens it and shows its hover.
+--- A goal's paper, or an Expedition's poster, on `slot` (TKB-R102), as the kit draws P.Notice and P.Poster: its kind's
+--- icon and kicker, its text, its progress by hand over a bar, where it is worked or "I'm here" or "no longer
+--- catchable", its pay (a coin on a Notice, a wax seal and words on a poster) and "take it down", or the RE-POSTED
+--- stamp. Hovering lifts it above its neighbours, straightens it and shows its hover. The pins make theirs on their
+--- slots; the Field guide's sample strip makes two Notices that take no mouse (adapter/GuidePage.lua).
 ---@param slot Frame
 ---@param poster boolean
 ---@return TackleGoalSlipView
-local function newGoalSlip(slot, poster)
+function ns.NewGoalSlip(slot, poster)
 	local L = ns.L
 	local box = poster and POSTER or NOTICE
 	local slip = CreateFrame("Frame", nil, slot) --[[@as TackleGoalSlipView]]
@@ -222,7 +223,7 @@ end
 ---@param slot TacklePinSlot
 ---@param poster boolean
 local function buildSlot(slot, poster)
-	slot.goal = newGoalSlip(slot, poster)
+	slot.goal = ns.NewGoalSlip(slot, poster)
 	local size = poster and EMPTY_EXPEDITION or EMPTY_NOTICE
 	slot.empty = ns.NewBoardEmptyPin(slot, size[1], size[2])
 	slot.empty:SetPoint("CENTER")
@@ -230,12 +231,13 @@ local function buildSlot(slot, poster)
 	slot.highlight:SetFrameLevel(slot:GetFrameLevel())
 end
 
--- Draws one goal's lines on its paper (TKB-R102), and lays it on its pin at `lean`.
+--- Draws one goal's lines on its paper (TKB-R102), and lays it on its pin at `lean`: the board's pins, and the Field
+--- guide's sample Notices, whose goal has no ID (adapter/GuidePage.lua).
 ---@param slip TackleGoalSlipView
----@param goal TackleGoal
+---@param goal TackleSlipGoal
 ---@param view TacklePinView
 ---@param lean number
-local function drawGoal(slip, goal, view, lean)
+function ns.DrawGoalSlip(slip, goal, view, lean)
 	local box = slip.poster and POSTER or NOTICE
 	slip.view = view
 	slip.lean = lean
@@ -381,7 +383,7 @@ local function drawPins(frame, draw)
 			end
 			slot.empty:SetShown(goal == nil)
 			if goal then
-				drawGoal(slot.goal, goal, view(goal), place.lean)
+				ns.DrawGoalSlip(slot.goal, goal, view(goal), place.lean)
 			else
 				slot.empty:SetEmpty(pin.empty)
 			end

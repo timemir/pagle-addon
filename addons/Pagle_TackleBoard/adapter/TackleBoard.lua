@@ -25,6 +25,8 @@ function ns.TackleBoard.OnInitialize()
 	ns.MigrateDB(ns.db.global)
 	-- Its section on the Trackers page (SET-R43), before ModulesChanged (CORE-R42).
 	ns.AddSettings(ns.Module)
+	-- Its step in the Field guide, before ModulesChanged too (ONB-R21, ONB-R37).
+	ns.RegisterGuidePage(ns.Module)
 
 	--- The Tackle Board's one projection (TKB-R81): Core catches it up or rebuilds it after login and hands it each new
 	--- entry (LOG-R71–R73). ns.State, ns.IsUpdating and ns.IsStarted follow it from here on.

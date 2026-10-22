@@ -260,4 +260,35 @@ ns.L = {
 	SETTINGS_TRACKER = "Show goals workable here",
 	SETTINGS_TRACKER_TOOLTIP = "Lists the goals you can work on where you are. Before your board is started, use "
 		.. "Start my board on the Pagle page.",
+
+	-- Onboarding (core/onboarding.md; logic/Onboarding.lua, adapter/GuidePage.lua). The Module's line on the Field
+	-- guide's What's in the box step (ONB-R91).
+	GUIDE_BLURB = "Small goals pinned to a cork board, if you want them. They wait while you’re away.",
+	-- Its step (ONB-R37): the ribbon and the foot's skip link, then the left page: its kicker, title and paragraph,
+	-- and the lines by the Campfire and the Fly Box samples ({campfire}, {kindling} and {flybox} the terms after them,
+	-- printed in the title's ink).
+	GUIDE_RIBBON = "Tackle Board",
+	GUIDE_SKIP = "Not now",
+	GUIDE_KICKER = "The Tackle Board",
+	GUIDE_TITLE = "Goals that wait for you",
+	GUIDE_BODY = "Small Notices pinned to a cork board: a fish to find, a water to visit. Fish when you like; "
+		.. "they’ll still be there.",
+	GUIDE_CAMPFIRE = "{campfire} grows with each day you finish a Notice. Miss a day and {kindling} burns instead; "
+		.. "it isn’t put out.",
+	GUIDE_CAMPFIRE_TERM = "Your Campfire",
+	GUIDE_KINDLING_TERM = "Kindling",
+	GUIDE_FLY_BOX = "Each Notice you finish ties one fly for your {flybox}.",
+	-- The right page: its kicker and title, the four facts ({shop} the last one's aside, in a lighter ink), Start my
+	-- board (START_MY_BOARD) and what it reads once the board is up, and the line under it.
+	GUIDE_ASK_KICKER = "Only if you want one",
+	GUIDE_ASK_TITLE = "Shall I put up a board?",
+	GUIDE_FACTS = {
+		"Three Notices a day, and one bigger Expedition a week.",
+		"None of them expire. Away a while? Up to six Notices and two Expeditions wait for you.",
+		"Don’t fancy one? Take it down and another goes up, once each.",
+		"They pay Pagle Coins, {shop}",
+	},
+	GUIDE_FACT_SHOP = "which buy looks in the Curio Shop.",
+	BOARD_IS_UP = "Your board is up",
+	GUIDE_LEAVE = "Or leave it for now. The board waits under Tackle Board in the Pagle menu, and in Settings.",
 }

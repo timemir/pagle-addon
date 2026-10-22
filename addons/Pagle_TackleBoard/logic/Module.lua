@@ -11,7 +11,8 @@ local ns = select(2, ...)
 --- The Tackle Board's def for `Pagle.RegisterModule` (TKB-R1): its one view and `/pagle board`, both toggling the
 --- board (any text after the command is ignored), and its Settings status button (CORE-R44, SET-R11), "Start my
 --- board" until the board is started, then "Open Tackle Board", read afresh at each showing (SET-R12). Its compartment
---- entry is the view, "Tackle Board" (CORE-R50). Nothing in it stops or resets a started board (TKB-R3).
+--- entry is the view, "Tackle Board" (CORE-R50), and its line on the Field guide's What's in the box step is its
+--- guideBlurb (ONB-R91). Nothing in it stops or resets a started board (TKB-R3).
 ---@return PagleModuleDef
 function ns.ModuleDef()
 	local function toggleBoard()
@@ -21,6 +22,7 @@ function ns.ModuleDef()
 		name = "TackleBoard",
 		title = ns.L.TITLE,
 		order = 40,
+		guideBlurb = ns.L.GUIDE_BLURB,
 		settingsAction = {
 			label = function()
 				return ns.KnownStarted() and ns.L.OPEN_BOARD or ns.L.START_MY_BOARD
