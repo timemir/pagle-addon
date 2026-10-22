@@ -258,6 +258,119 @@ describe("A tracker frame's preview", function()
 	)
 end)
 
+-- The Curio Shop expansion's five frames as the shop expansion kit's goods.json draws them (STA-R88): the sprite in
+-- TrackerFrames2 and its texel rectangle, the width, the text insets (left, right, top, foot), the three-slice's fixed
+-- top and foot with its tiled middle's period (nil: stretched), and the inks (header, text, dim, accent).
+local KIT = {
+	["stats.trackerframe.greenbar"] = {
+		sprite = "frame-greenbar",
+		rect = { 2, 2 },
+		insets = { 22, 22, 14, 14 },
+		slice = { 14, 14, 36 },
+		inks = { "2a4a1a", "14240e", "4a5a3a", "2a6a2a" },
+	},
+	["stats.trackerframe.chalkboard"] = {
+		sprite = "frame-chalkboard",
+		rect = { 2, 446 },
+		insets = { 16, 16, 14, 14 },
+		slice = { 20, 36 },
+		inks = { "ffffff", "f4f4e8", "b8d0c0", "f0e080" },
+	},
+	["stats.trackerframe.tidegauge"] = {
+		sprite = "frame-tidegauge",
+		rect = { 562, 2 },
+		insets = { 32, 16, 14, 14 },
+		slice = { 16, 40 },
+		inks = { "f0d080", "e8f6ff", "a8c8d8", "7ae0ff" },
+	},
+	["stats.trackerframe.abacus"] = {
+		sprite = "frame-abacus",
+		rect = { 562, 446 },
+		insets = { 16, 16, 22, 22 },
+		slice = { 20, 20 },
+		inks = { "5a2a0a", "2a1a0a", "6a5030", "a8501a" },
+	},
+	["stats.trackerframe.astrolabe"] = {
+		sprite = "frame-astrolabe",
+		rect = { 1122, 2 },
+		insets = { 16, 60, 16, 16 },
+		slice = { 68, 20 },
+		inks = { "f0cd6a", "eef0ff", "a8b0d8", "f0cd6a" },
+	},
+}
+
+describe("The Curio Shop expansion's tracker frames", function()
+	it(
+		"are each a look drawn as a three-slice of TrackerFrames2, with goods.json's width, text insets, slice and inks (STA-R88)",
+		function()
+			local ns = loggedIn().ns
+			local atlas = ns.ATLASES.TrackerFrames2
+			assert.are.same(
+				{ "Interface\\AddOns\\Pagle_Stats\\media\\books\\TrackerFrames2", 2048, 1024, 2 },
+				{ atlas.file, atlas.width, atlas.height, atlas.scale }
+			)
+			-- Stats ships the sheet: a BLP2 the atlas's size (its header's little-endian width and height)
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+			local handle = assert(io.open("addons/Pagle_Stats/media/books/TrackerFrames2.blp", "rb"))
+			local head = handle:read(20)
+			handle:close()
+			local function word(at)
+				local a, b, c, d = head:byte(at, at + 3)
+				return a + b * 256 + c * 65536 + d * 16777216
+			end
+			assert.are.same({ "BLP2", 2048, 1024 }, { head:sub(1, 4), word(13), word(17) })
+
+			for id, kit in pairs(KIT) do
+				local look = ns.TRACKER_FRAMES[id]
+				assert.are.same({ "TrackerFrames2", kit.sprite }, { look.frame, look.sprite }, id)
+				local sprite = atlas.sprites[kit.sprite]
+				assert.are.same(
+					{ kit.rect[1], kit.rect[2], 556, 440, { 8, 6, 262, 200 } },
+					{ sprite.x, sprite.y, sprite.w, sprite.h, sprite.box },
+					id
+				)
+				local left, right, top, foot = unpack(kit.insets)
+				assert.are.same({ 262, left, 262 - right, top, foot }, {
+					look.width,
+					look.x,
+					look.right,
+					look.top,
+					look.foot,
+				}, id)
+				assert.are.same(kit.slice, { look.sliceTop, look.sliceFoot, look.period }, id)
+				local header, text, dim, accent = unpack(kit.inks)
+				assert.are.same({
+					header = ns.BookTint(header),
+					text = ns.BookTint(text),
+					dim = ns.BookTint(dim),
+					right = ns.BookTint(accent),
+					count = ns.BookTint(accent),
+				}, look.ink, id)
+			end
+		end
+	)
+
+	it(
+		"put dark words and inked band dots on the pale papers, Green-Bar and Abacus, and bright words over the dark ones (STA-R88)",
+		function()
+			local ns = loggedIn().ns
+			local frames = ns.TRACKER_FRAMES
+
+			for _, id in ipairs({ "stats.trackerframe.greenbar", "stats.trackerframe.abacus" }) do
+				assert.are.equal(true, frames[id].paper, id)
+			end
+			for _, id in ipairs({
+				"stats.trackerframe.chalkboard",
+				"stats.trackerframe.tidegauge",
+				"stats.trackerframe.astrolabe",
+			}) do
+				assert.are.equal(false, frames[id].paper, id)
+				assert.are.equal(true, frames[id].text[3], id) -- a shadow under bright words, as on the Brass plate
+			end
+		end
+	)
+end)
+
 describe("Settings", function()
 	it("Look and Feel lists the tracker frame under Trackers, offering only owned frames (SET-R50, SET-R51)", function()
 		local _, fake = loggedIn()

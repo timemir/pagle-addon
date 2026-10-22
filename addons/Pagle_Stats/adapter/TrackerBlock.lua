@@ -7,9 +7,10 @@ local ns = select(2, ...)
 
 -- The tracker block maker (STA-R82, STA-R84; stats.md › UI › Live tracker): an objective-tracker-style block, about
 -- 250 px wide, drawn from a list of line descriptions in a look. The Curio Shop's previews draw a sample with it
--- (STA-R88, adapter/Goods.lua); the live tracker (adapter/Tracker.lua) fills it with live lines and docks it. The three
--- looks are the books art kit's: the native block in the kit's type over the world, the Logbook's ruled paper and the
--- Brass plate (adapter/BookAtlas.lua's TrackerLogbook and TrackerBrass), each sliced down so it grows with its lines.
+-- (STA-R88, adapter/Goods.lua); the live tracker (adapter/Tracker.lua) fills it with live lines and docks it. The first
+-- three looks are the books art kit's: the native block in the kit's type over the world, the Logbook's ruled paper and
+-- the Brass plate (adapter/BookAtlas.lua's TrackerLogbook and TrackerBrass). The Curio Shop expansion's five are the
+-- shop expansion kit's (TrackerFrames2, goods.json's metrics). Each paper is sliced down so it grows with its lines.
 
 -- A tint from its hex code (adapter/BookWidgets.lua).
 local tint = ns.BookTint
@@ -60,11 +61,15 @@ ns.TRACKER_INKS = {
 ---@field [2] number
 ---@field [3] boolean?
 
---- A tracker look (STA-R84): the books kit's geometry and type for one of the three. The block is `width` wide; the
---- words sit from `x` to `right`, the header `top` down; `frame` is its paper's atlas, sliced down to the block's
---- height, its middle repeated every `period` units when it keeps a ruling's pitch.
+--- A tracker look (STA-R84, STA-R88): a frame's geometry and type. The block is `width` wide; the words sit from `x` to
+--- `right`, the header `top` down; `frame` is its paper's atlas and `sprite` the paper in it, sliced down to the block's
+--- height (ns.SliceDown): `sliceTop` and `sliceFoot` kept, its middle stretched, or repeated every `period` units when
+--- it keeps a ruling's pitch.
 ---@class StatsTrackerFrameLook
 ---@field frame string?        -- nil: no frame, the native look
+---@field sprite string?
+---@field sliceTop number?
+---@field sliceFoot number?
 ---@field period number?
 ---@field width number
 ---@field x number
@@ -95,7 +100,52 @@ local BRASS_INKS = {
 	count = tint("ffd100"),
 }
 
---- The tracker's looks: "native" for No frame, and the two frames for sale.
+-- A Curio Shop expansion frame's inks from the kit's four (header, text, dim, accent): the accent is the header's right
+-- text and a watch's count both.
+---@param header string
+---@param text string
+---@param dim string
+---@param accent string
+---@return StatsTrackerInks
+local function kitInks(header, text, dim, accent)
+	return { header = tint(header), text = tint(text), dim = tint(dim), right = tint(accent), count = tint(accent) }
+end
+
+-- A Curio Shop expansion frame (goods.json): its sprite in TrackerFrames2, 262 wide; the words `insets` (left, right,
+-- top, foot) in from its edges; its three-slice's fixed top and foot, and its tiled middle's period (nil: stretched);
+-- its inks; and the type of the papers like it, `pale` (the Logbook's, dark ink with band dots in ink) or dark (the
+-- Brass plate's, bright words with a shadow).
+---@param sprite string
+---@param insets number[]
+---@param slice number[]
+---@param ink StatsTrackerInks
+---@param pale boolean
+---@return StatsTrackerFrameLook
+local function kitLook(sprite, insets, slice, ink, pale)
+	local width = 262
+	return {
+		frame = "TrackerFrames2",
+		sprite = sprite,
+		sliceTop = slice[1],
+		sliceFoot = slice[2],
+		period = slice[3],
+		width = width,
+		x = insets[1],
+		right = width - insets[2],
+		top = insets[3],
+		foot = insets[4],
+		caps = pale,
+		shade = false,
+		paper = pale,
+		ink = ink,
+		header = pale and { "print", 12 } or { "gilt", 14 },
+		em = { "italic", 12.5 },
+		text = { "print", 13, not pale },
+		count = pale and { "hand", 17 } or { "print", 13, true },
+	}
+end
+
+--- The tracker's looks: "native" for No frame, and the seven frames for sale.
 ---@type table<string, StatsTrackerFrameLook>
 ns.TRACKER_LOOKS = {
 	native = {
@@ -115,6 +165,9 @@ ns.TRACKER_LOOKS = {
 	},
 	logbook = {
 		frame = "TrackerLogbook",
+		sprite = "frame",
+		sliceTop = 30,
+		sliceFoot = 20,
 		period = 40,
 		width = 274,
 		x = 28,
@@ -132,6 +185,9 @@ ns.TRACKER_LOOKS = {
 	},
 	brass = {
 		frame = "TrackerBrass",
+		sprite = "frame",
+		sliceTop = 30,
+		sliceFoot = 20,
 		width = 262,
 		x = 14,
 		right = 248,
@@ -146,6 +202,46 @@ ns.TRACKER_LOOKS = {
 		text = { "print", 13, true },
 		count = { "print", 13, true },
 	},
+	-- Tally paper banded in pale green, its bands repeated as it grows.
+	greenbar = kitLook(
+		"frame-greenbar",
+		{ 22, 22, 14, 14 },
+		{ 14, 14, 36 },
+		kitInks("2a4a1a", "14240e", "4a5a3a", "2a6a2a"),
+		true
+	),
+	-- A green board in a pine frame, somebody's tally marks in its corner.
+	chalkboard = kitLook(
+		"frame-chalkboard",
+		{ 16, 16, 14, 14 },
+		{ 20, 36 },
+		kitInks("ffffff", "f4f4e8", "b8d0c0", "f0e080"),
+		false
+	),
+	-- Sea-blue glass behind the tide staff down its left.
+	tidegauge = kitLook(
+		"frame-tidegauge",
+		{ 32, 16, 14, 14 },
+		{ 16, 40 },
+		kitInks("f0d080", "e8f6ff", "a8c8d8", "7ae0ff"),
+		false
+	),
+	-- A counting frame, its beads pushed to the ends.
+	abacus = kitLook(
+		"frame-abacus",
+		{ 16, 16, 22, 22 },
+		{ 20, 20 },
+		kitInks("5a2a0a", "2a1a0a", "6a5030", "a8501a"),
+		true
+	),
+	-- A star map under brass rings, the rings over its top right.
+	astrolabe = kitLook(
+		"frame-astrolabe",
+		{ 16, 60, 16, 16 },
+		{ 68, 20 },
+		kitInks("f0cd6a", "eef0ff", "a8b0d8", "f0cd6a"),
+		false
+	),
 }
 local LOOKS = ns.TRACKER_LOOKS
 
@@ -168,8 +264,6 @@ local LOOKS = ns.TRACKER_LOOKS
 -- Heights in pixels: the header, a plain line, a watch; where a watch's sub-line sits; the name's indent after its dot;
 -- a dot's size.
 local HEADER_HEIGHT, LINE_HEIGHT, WATCH_HEIGHT, SUB_Y, NAME_INDENT, DOT_SIZE = 26, 20, 42, 24, 14, 8
--- The paper keeps this much of its top and its foot when it slices down.
-local FRAME_TOP, FRAME_FOOT = 30, 20
 
 --- One row of the block: every widget a line kind may use, shown as its line needs. A button, so the live tracker can
 --- give it clicks and hovers (STA-R83).
@@ -309,10 +403,14 @@ function ns.NewTrackerBlock(parent)
 			block.rows[i]:Hide()
 		end
 		local height = math.max(top + look.foot, 1)
+		if look.frame then
+			-- never shorter than the paper's fixed top and foot
+			height = ns.SliceDown(height, look.sliceTop, look.sliceFoot, look.period)
+		end
 		block:SetSize(look.width, height)
 		block.paper:SetShown(look.frame ~= nil)
 		if look.frame then
-			ns.SetVSlice(block.paper, look.frame, "frame", height, FRAME_TOP, FRAME_FOOT, look.period)
+			ns.SetVSlice(block.paper, look.frame, look.sprite, height, look.sliceTop, look.sliceFoot, look.period)
 		end
 		return height
 	end
