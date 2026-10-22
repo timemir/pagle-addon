@@ -306,6 +306,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.minimap` | the minimap icon's place and shown state (CORE-R53, CORE-R56): `angle`, degrees round the minimap counterclockwise from its right, to 0.1, default `225` (its bottom left); `hide`, default `false` |
 | `profile.reloadReminder` | boolean, the `/reload` reminder (LOG-R86); default `false` |
 | `profile.lengthUnit` | `"cm"`, `"in"`, or `nil` for the region default (LOG-R69); default `nil`. The Defaults button sets it back to `nil` (SET-R13). |
+| `profile.anglerTooltips` | the "Show other Anglers on player tooltips" setting ([anglers-in-game.md](anglers-in-game.md#data), VIEW-R30); default `true` |
 | `profile.*` (other keys) | Core settings in the other topic files: `profile.announcements`, `profile.appearance`, `profile.dock` |
 
 ### Module SavedVariables

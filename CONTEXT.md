@@ -299,3 +299,17 @@ _Avoid_: drop rate, loot chance (which are the game's own numbers), catch rate
 **Dry spell**:
 The Casts an Angler has made, in the scope where an item can be caught, since they last caught it. It is shown with how unusual that wait is, never as a promise that the item is due.
 _Avoid_: pity, overdue, bad-luck streak
+
+### The website
+
+**Companion**:
+The desktop app, outside the game, that uploads the Angler's Catch log to the Pagle website and writes the website's data into data addons Pagle reads. Pagle works fully without it; what it brings in shows nothing once it is a day old.
+_Avoid_: companion app, client, uploader, sync tool
+
+**Published Angler**:
+An Angler shown on the Pagle website and, through other players' Companions, in their games: on player tooltips and, when followed, in the Fish Journal. Only its visible characters are ever matched, and only the website's values are shown, never the in-game ones.
+_Avoid_: public profile, registered player, member
+
+**Followed Angler**:
+A Published Angler the player follows on the Pagle website, who gets a full card in the Fish Journal's Following spread and a "Following" mark on their tooltip.
+_Avoid_: friend, contact, watched Angler
