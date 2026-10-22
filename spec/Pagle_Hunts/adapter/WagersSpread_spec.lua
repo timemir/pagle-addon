@@ -151,16 +151,11 @@ end
 
 --- The shown crumb button reading `text`.
 local function crumbButton(r, text)
-	for _, crumb in ipairs(r.ns.board.frame.anchors.crumbs.crumbs) do
-		if crumb.shown and crumb.label.text == text then
+	for _, crumb in ipairs(r.ns.board.frame.crumbButtons) do
+		if crumb:IsShown() and crumb.label:GetText() == text then
 			return crumb
 		end
 	end
-end
-
---- Asserts `actual` is within `slack` of `expected`.
-local function near(expected, actual, slack)
-	assert(math.abs(expected - actual) <= slack, ("%s, not about %s"):format(actual, expected))
 end
 
 --- Serves `state` as the projection's, not updating, or updating with `updating`.
@@ -197,7 +192,7 @@ describe("the Pagle Wagers ribbon (HNT-R61, HNT-R162)", function()
 
 		local ribbon = r.ns.BoardWagersRibbon()
 
-		assert.are.equal(r.ns.board.frame.anchors.ribbons.ribbons[2], ribbon)
+		assert.are.equal(r.ns.board.frame.ribbons[2], ribbon)
 		assert.are.same({ "Pagle Wagers", "1 on" }, shownTexts(ribbon))
 		assert.are.same(r.ns.BOARD_LOOK.oxblood, ribbon.color)
 	end)
@@ -295,7 +290,7 @@ describe("the Pagle Wagers spread (HNT-R162)", function()
 		assert.is_false(slipOf(r, VALE_PUSHED).selected)
 		assert.is_true(has(pageTexts(r, "right"), "Shore Wager"))
 		assert.are.same({ "Hunts", "Pagle Wagers", "Shore Wager" }, crumbWords(r))
-		assert.are.same({ "Hunts", "Pagle Wagers", "Shore Wager" }, shownTexts(r.ns.board.frame.anchors.crumbs))
+		assert.are.same({ "Hunts", "Pagle Wagers", "Shore Wager" }, shownTexts(r.ns.board.frame.crumbs))
 	end)
 
 	it('goes back to the slips from the "Pagle Wagers" crumb, and to the Board from "Hunts"', function()
@@ -456,7 +451,7 @@ describe("the nameplate with the ladder's titles (HNT-R165)", function()
 		assert.are.same({ "Bookmaker's Bane, earned 14 Oct 2026" }, r.ns.BoardNameplate().titles)
 		local ruin = r.ns.LadderTitle(50)
 		assert.is_true(has(pageTexts(r, "left"), "25 wagers settled · 25 more for " .. ruin))
-		assert.are.same({ "1 title · 2 Hunts done" }, shownTexts(r.ns.board.frame.anchors.nameplate))
+		assert.are.same({ "1 title · 2 Hunts done" }, shownTexts(r.ns.board.frame.plate))
 	end)
 end)
 
@@ -474,13 +469,13 @@ describe("the spread's motion and fit (HNT-R60)", function()
 
 		r.ns.OpenWagers()
 
-		assert.is_true(r.ns.board.turning)
-		assert.are.same({ r.ns.BOARD_SOUNDS.pageTurn .. " SFX" }, { unpack(sounds) })
+		assert.is_true(r.ns.board.book.motion.turn.forward)
+		assert.are.same({ "836 SFX" }, { unpack(sounds) }) -- IG_ABILITY_PAGE_TURN, the shell's (BOOK-R31)
 	end)
 
-	it("shrinks the board to fit the screen with the Pagle Wagers ribbon and five set ribbons hanging", function()
-		-- A fifth set with a current Hunt: Board, Pagle Wagers and five set ribbons run 964 units from the board's left,
-		-- 44 past its right edge, so its centred extent is 2 × 504 wide.
+	it("keeps its size with the Pagle Wagers ribbon and five set ribbons hanging, all under the board", function()
+		-- A fifth set with a current Hunt: Board, Pagle Wagers and five set ribbons run 176 + 7 × 108 - 12 = 920 units
+		-- from the board's left, in the shell's one geometry (BOOK-R17): no further than its right edge.
 		local r = oneOn({
 			list = function(fixture)
 				return hunts.withExtra(fixture, { { id = "fixture_more" } }, {
@@ -502,7 +497,9 @@ describe("the spread's motion and fit (HNT-R60)", function()
 		r.ns.ToggleBoard()
 
 		assert.are.equal(7, #r.ns.BoardRibbons({ mode = "board" }))
-		near((1000 - 48) / 1008, r.ns.board.frame:GetScale(), 0.001)
+		local last = r.ns.board.frame.ribbons[7]
+		assert.are.equal(920, last.points[1][4] + last.width)
+		assert.are.equal(1, r.ns.board.frame:GetScale())
 	end)
 
 	it("keeps its size on the same screen with the fixture's four set ribbons", function()

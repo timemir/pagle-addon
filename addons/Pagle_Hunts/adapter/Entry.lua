@@ -218,7 +218,7 @@ local function newView(page)
 	local view = { page = page, chips = {}, diamonds = {}, thresholds = {}, whens = {} }
 	view.back = CreateFrame("Button", nil, page) --[[@as EntryBackView]]
 	view.back:SetSize(200, HAND_SIZE + 4)
-	view.hand = ns.NewBoardMark(view.back, "hand", HAND_SIZE)
+	view.hand = ns.NewBoardHand(view.back, HAND_SIZE)
 	view.hand:SetPoint("LEFT")
 	view.back.label = ns.BoardText(view.back, fonts.pin, LOOK.red)
 	view.back.label:SetPoint("LEFT", view.hand, "RIGHT", 4, 0)

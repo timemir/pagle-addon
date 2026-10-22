@@ -6,11 +6,10 @@ end
 local ns = select(2, ...)
 
 -- Sets on the Hunts board (HNT-R61, HNT-R66, HNT-R69): gathers logic/Sets.lua's inputs from the Hunt list, the
--- projection and the grouping, and draws its results on the board: the set ribbons, the breadcrumbs and the nameplate
--- on the leather's anchors, and the right side of a set's page (the set mode's right page). The look is the books art
--- kit's (adapter/BoardWidgets.lua): grosgrain ribbons hanging from under the leather, gilt crumbs with the kit's
--- fleuron, the brass nameplate; the kit lays out no set page, so it is set in the entry's parts (the wax seal, the
--- ink bar, the tier marks, the kit's faces).
+-- projection and the grouping, and gives the board its results: the set ribbons, the breadcrumbs and the nameplate
+-- as data, which adapter/Board.lua hands Core's book shell to draw (BOOK-R14, BOOK-R17, BOOK-R24); and it draws the
+-- right side of a set's page (the set mode's right page). The books art kit lays out no set page, so it is set in the
+-- entry's parts (the wax seal, the ink bar, the tier marks, the kit's faces).
 
 -- The time the sets' views judge "current" and count the checklist's labels down at: now, or the grouping's while it
 -- is paused, so they freeze with it (HNT-R43).
@@ -67,183 +66,17 @@ function ns.BoardNameplate()
 	return ns.BuildNameplate(inputs())
 end
 
--- Drawing. Each anchor and page keeps the widgets it made, and a redraw reuses them, hiding what it doesn't need.
+-- Drawing. Each page keeps the widgets it made, and a redraw reuses them, hiding what it doesn't need.
 
 local LOOK = ns.BOARD_LOOK
 
--- The fleuron's size and the room round it.
-local FLEURON, FLEURON_ROOM = 16, 8
-
-local function hideTooltip()
-	GameTooltip:Hide()
-end
-
----@class SetsRibbonsAnchor: Frame
----@field ribbons BoardRibbonView[]
----@field wagersRibbon BoardRibbonView?  -- the Pagle Wagers ribbon (HNT-R162), once drawn
----@field rowWidth number                -- how wide the row of ribbons hangs, for fitting the board (HNT-R60)
-
--- The set ribbons hanging from under the leather's foot (HNT-R61): Board, then Pagle Wagers in oxblood with "{n} on"
--- under its name (HNT-R162), then each set's with its full name, in its colour, the one of the mode shown hanging
--- longer. Clicking one opens its place; each shows its full name on hover.
----@param anchor SetsRibbonsAnchor
----@param place BoardPlace
-local function drawRibbons(anchor, place)
-	anchor.ribbons = anchor.ribbons or {}
-	local sizes = ns.BOARD_RIBBON
-	local ribbons = ns.BoardRibbons(place)
-	anchor.wagersRibbon = nil
-	for i, data in ipairs(ribbons) do
-		local ribbon = ns.BoardPooled(anchor.ribbons, i, function()
-			return ns.NewBoardRibbon(anchor)
-		end)
-		local color = data.set and ns.BoardRibbonColor(data.index) or data.wagers and LOOK.oxblood or LOOK.boardRibbon
-		ribbon:SetRibbon(data.name or data.text, color, data.chosen, true)
-		ribbon:SetCount(data.count)
-		ribbon.wagers = data.wagers == true
-		if data.wagers then
-			anchor.wagersRibbon = ribbon
-		end
-		ribbon.tooltip = { data.name or data.text }
-		ribbon:ClearAllPoints()
-		ribbon:SetPoint("TOPLEFT", (i - 1) * (sizes.width + sizes.gap), 0)
-		ribbon:SetScript("OnClick", function()
-			ns.board:Open(data.place)
-		end)
-	end
-	ns.BoardHideFrom(anchor.ribbons, #ribbons)
-	anchor.rowWidth = #ribbons * (sizes.width + sizes.gap) - sizes.gap
-end
-
---- The Pagle Wagers ribbon's frame (HNT-R162) hanging under the board, a Button; nil before the board first draws.
---- The onboarding's Hunts First look (#333) points its note at it.
----@return BoardRibbonView?
+--- The Pagle Wagers ribbon's frame (HNT-R162) hanging under the board, a Button: the shell's (BOOK-R17); nil before
+--- the board first draws. The onboarding's Hunts First look (#333) points its note at it.
+---@return Button?
 function ns.BoardWagersRibbon()
-	local frame = ns.board.frame
-	local anchor = frame and frame.anchors.ribbons --[[@as SetsRibbonsAnchor?]]
-	return anchor and anchor.wagersRibbon
+	local book = ns.board.book
+	return book and book:RibbonFrame("wagers")
 end
-
----@class SetsCrumb: Button
----@field label FontString
----@field gilt number[]        -- its words' gilt: the binding's
----@field giltBright number[]  -- under the mouse
-
----@class SetsCrumbsAnchor: Frame
----@field crumbs SetsCrumb[]
----@field fleurons Texture[]
-
--- The kit's gilt, which the fleuron's art is drawn in: a binding's gilt tints it toward its own.
-local KIT_GILT = LOOK.gilt
--- How far a crumb under the mouse brightens toward white (the kit's #e8c96a to its #fff4c8).
-local BRIGHTEN = 0.65
-
--- `gilt` brightened toward white, for a crumb under the mouse.
----@param gilt number[]
----@return number[]
-local function brighter(gilt)
-	return {
-		gilt[1] + (1 - gilt[1]) * BRIGHTEN,
-		gilt[2] + (1 - gilt[2]) * BRIGHTEN,
-		gilt[3] + (1 - gilt[3]) * BRIGHTEN,
-	}
-end
-
--- The gilt breadcrumbs (HNT-R61): "Hunts", the set, the Hunt (or "Pagle Wagers" and the run's event, HNT-R164), the
--- kit's fleuron between each, each going back up; all in the binding's gilt and its shadow (HNT-R70), the kit's before
--- the board wears one.
----@param anchor SetsCrumbsAnchor
-local function drawCrumbs(anchor)
-	anchor.crumbs, anchor.fleurons = anchor.crumbs or {}, anchor.fleurons or {}
-	local look = ns.board:Look()
-	local gilt, shadow = look and look.gilt or KIT_GILT, look and look.giltShadow
-	local bright = look and brighter(gilt) or LOOK.giltBright
-	local x = 0
-	local crumbs = ns.BoardCrumbs()
-	for i, data in ipairs(crumbs) do
-		if i > 1 then
-			local fleuron = ns.BoardPooled(anchor.fleurons, i - 1, function()
-				return ns.NewBoardMark(anchor, "fleuron", FLEURON)
-			end)
-			fleuron:SetVertexColor(
-				math.min(1, gilt[1] / KIT_GILT[1]),
-				math.min(1, gilt[2] / KIT_GILT[2]),
-				math.min(1, gilt[3] / KIT_GILT[3])
-			)
-			fleuron:ClearAllPoints()
-			fleuron:SetPoint("LEFT", x + FLEURON_ROOM, 0)
-			x = x + FLEURON + 2 * FLEURON_ROOM
-		end
-		local crumb = ns.BoardPooled(anchor.crumbs, i, function()
-			local made = CreateFrame("Button", nil, anchor) --[[@as SetsCrumb]]
-			made.label = ns.BoardText(made, ns.BoardFonts().crumb, LOOK.gilt)
-			made.label:SetWordWrap(false)
-			made.label:SetPoint("LEFT")
-			made:SetScript("OnEnter", function(self)
-				self.label:SetTextColor(self.giltBright[1], self.giltBright[2], self.giltBright[3])
-			end)
-			made:SetScript("OnLeave", function(self)
-				self.label:SetTextColor(self.gilt[1], self.gilt[2], self.gilt[3])
-			end)
-			return made
-		end)
-		crumb.gilt, crumb.giltBright = gilt, bright
-		crumb.label:SetTextColor(gilt[1], gilt[2], gilt[3])
-		if shadow then
-			crumb.label:SetShadowColor(shadow[1], shadow[2], shadow[3], shadow[4])
-			crumb.label:SetShadowOffset(shadow[5], shadow[6])
-		end
-		crumb.label:SetText(data.text)
-		-- the last crumbs are cut short, never past the strip's room before the clock
-		crumb.label:SetWidth(0)
-		local width = math.max(1, math.min(crumb.label:GetStringWidth(), anchor:GetWidth() - x))
-		crumb.label:SetWidth(width)
-		crumb:SetSize(width, anchor:GetHeight())
-		crumb:ClearAllPoints()
-		crumb:SetPoint("LEFT", x, 0)
-		x = x + width
-		crumb:SetScript("OnClick", function()
-			if data.place then
-				ns.board:Open(data.place)
-			end
-		end)
-	end
-	ns.BoardHideFrom(anchor.crumbs, #crumbs)
-	ns.BoardHideFrom(anchor.fleurons, #crumbs - 1)
-end
-
----@class SetsPlate: BoardPlateView
----@field lines string[]   -- its tooltip's lines: its words, then each earned title
-
----@class SetsNameplateAnchor: Frame
----@field plate SetsPlate
-
--- The brass nameplate on the cover's corner (HNT-R61), with each earned title and its full date in its tooltip; silver
--- under a binding that asks for it (HNT-R70).
----@param anchor SetsNameplateAnchor
-local function drawNameplate(anchor)
-	if not anchor.plate then
-		local plate = ns.NewBoardPlate(anchor) --[[@as SetsPlate]]
-		plate:SetPoint("BOTTOMLEFT")
-		plate:EnableMouse(true)
-		plate:SetScript("OnEnter", function(self)
-			if #self.lines > 1 then
-				ns.BoardTooltip(self, self.lines)
-			end
-		end)
-		plate:SetScript("OnLeave", hideTooltip)
-		anchor.plate = plate
-	end
-	local data = ns.BoardNameplate()
-	anchor.plate:SetPlate(data.text)
-	local look = ns.board:Look()
-	anchor.plate:SetSilver(look ~= nil and look.silver)
-	anchor.plate.lines = { data.text, unpack(data.titles) }
-end
-
-ns.board:RegisterLeather("ribbons", drawRibbons)
-ns.board:RegisterLeather("crumbs", drawCrumbs)
-ns.board:RegisterLeather("nameplate", drawNameplate)
 
 -- The set page's layout, the books kit v2's "Set" board (UI units down the page's body): the kicker and the name, the
 -- seal's size and where its centre sits from the page's top right, the title line's width beside it, the ink bar's

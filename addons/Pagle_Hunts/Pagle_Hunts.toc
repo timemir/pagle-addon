@@ -43,7 +43,6 @@ logic\Companion.lua
 logic\Tour.lua
 adapter\BookAtlas.lua
 adapter\BookArt.lua
-adapter\BoardMotion.lua
 adapter\BoardWidgets.lua
 adapter\Board.lua
 adapter\Sets.lua

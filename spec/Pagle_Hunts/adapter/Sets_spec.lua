@@ -356,32 +356,52 @@ local function opened(run, place)
 	return run.ns.board.frame
 end
 
+--- The words of the shell's shown ribbons or crumbs (BOOK-R17, BOOK-R24) on `frame`, in order.
+local function wordsOf(buttons)
+	local words = {}
+	for _, button in ipairs(buttons) do
+		if button:IsShown() then
+			words[#words + 1] = button.label:GetText()
+		end
+	end
+	return words
+end
+
+--- The shown ribbon or crumb whose words are `text`.
+local function withWords(buttons, text)
+	for _, button in ipairs(buttons) do
+		if button:IsShown() and button.label:GetText() == text then
+			return button
+		end
+	end
+end
+
 describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function()
 	it(
 		"hang Board, Pagle Wagers and each set's ribbon, Board chosen when the board opens (HNT-R67, HNT-R162)",
 		function()
 			local run = start()
 
-			local ribbons = opened(run).anchors.ribbons
+			local ribbons = opened(run).ribbons
 
 			assert.are.same(
 				{ "Board", "Pagle Wagers", "Dusk", "Wagers", "fixture_pair", "fixture_tide" },
-				shownTexts(ribbons)
+				wordsOf(ribbons)
 			)
-			assert.is_true(buttonWith(ribbons, "Board").chosen)
-			assert.is_false(buttonWith(ribbons, "Dusk").chosen)
+			assert.is_true(withWords(ribbons, "Board").chosen)
+			assert.is_false(withWords(ribbons, "Dusk").chosen)
 		end
 	)
 
 	it("open a set's page from its ribbon, and the Board from the Board ribbon (HNT-R66)", function()
 		local run = start()
-		local ribbons = opened(run).anchors.ribbons
+		local ribbons = opened(run).ribbons
 
-		buttonWith(ribbons, "Wagers"):Click()
+		withWords(ribbons, "Wagers"):Click()
 		assert.are.same({ mode = "set", set = "fixture_wagers" }, run.ns.board.router:Place())
-		assert.is_true(buttonWith(ribbons, "Wagers").chosen)
+		assert.is_true(withWords(ribbons, "Wagers").chosen)
 
-		buttonWith(ribbons, "Board"):Click()
+		withWords(ribbons, "Board"):Click()
 		-- the timeline then selects its Hunt on the Board (HNT-R67)
 		assert.are.equal("board", run.ns.board.router:Place().mode)
 	end)
@@ -391,14 +411,14 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 		opened(run, { mode = "set", set = "fixture_dusk" })
 		run.ns.ToggleBoard()
 
-		local ribbons = opened(run).anchors.ribbons
+		local ribbons = opened(run).ribbons
 
-		assert.is_true(buttonWith(ribbons, "Board").chosen)
+		assert.is_true(withWords(ribbons, "Board").chosen)
 	end)
 
 	it("show the set's full name in a ribbon's tooltip", function()
 		local run = start()
-		local ribbon = buttonWith(opened(run).anchors.ribbons, "Dusk")
+		local ribbon = withWords(opened(run).ribbons, "Dusk")
 
 		ribbon:GetScript("OnEnter")(ribbon)
 
@@ -407,22 +427,17 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 
 	it("write the crumbs Hunts › {set} › {Hunt} with a fleuron between, each going back up", function()
 		local run = start()
-		local crumbs = opened(run, { mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }).anchors.crumbs
+		local crumbs = opened(run, { mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }).crumbButtons
 
-		assert.are.same({ "Hunts", "Dusk", "Snapper Run" }, shownTexts(crumbs))
-		local marks = 0
-		for _, child in ipairs(crumbs.children) do
-			if child.kind == "Texture" and child.shown and child.texture == run.ns.ATLASES.Book.file then
-				marks = marks + 1
-			end
-		end
-		assert.are.equal(2, marks)
+		assert.are.same({ "Hunts", "Dusk", "Snapper Run" }, wordsOf(crumbs))
+		assert.is_nil(crumbs[1].fleuron)
+		assert.is_true(crumbs[2].fleuron:IsShown() and crumbs[3].fleuron:IsShown())
 
-		buttonWith(crumbs, "Dusk"):Click()
+		withWords(crumbs, "Dusk"):Click()
 		assert.are.same({ mode = "set", set = "fixture_dusk" }, run.ns.board.router:Place())
-		assert.are.same({ "Hunts", "Dusk" }, shownTexts(crumbs))
+		assert.are.same({ "Hunts", "Dusk" }, wordsOf(crumbs))
 
-		buttonWith(crumbs, "Hunts"):Click()
+		withWords(crumbs, "Hunts"):Click()
 		-- the timeline then selects its Hunt on the Board (HNT-R67)
 		assert.are.equal("board", run.ns.board.router:Place().mode)
 	end)
@@ -430,10 +445,9 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 	it("write the nameplate, with each earned title and its full date in its tooltip", function()
 		local run = start()
 		useState(run, { fixture_snapper = reached(1) }, { fixture_dusk = title(2026, 2, 14) })
-		local nameplate = opened(run).anchors.nameplate
+		local plate = opened(run).plate
 
-		assert.are.same({ "1 title · 1 Hunt done" }, shownTexts(nameplate))
-		local plate = nameplate.children[1]
+		assert.are.same({ "1 title · 1 Hunt done" }, shownTexts(plate))
 		plate:GetScript("OnEnter")(plate)
 
 		assert.are.same(
@@ -448,13 +462,13 @@ describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function(
 	it("write the updating line on the nameplate while the projection updates, and redraw when it is done", function()
 		local run = start()
 		useState(run, { fixture_snapper = reached(1) }, {}, true)
-		local nameplate = opened(run).anchors.nameplate
-		assert.are.same({ "Updating from your Catch log…" }, shownTexts(nameplate))
+		local plate = opened(run).plate
+		assert.are.same({ "Updating from your Catch log…" }, shownTexts(plate))
 
 		useState(run, { fixture_snapper = reached(1) }, {}, false)
 		run.ns.Redraw("projection")
 
-		assert.are.same({ "0 titles · 1 Hunt done" }, shownTexts(nameplate))
+		assert.are.same({ "0 titles · 1 Hunt done" }, shownTexts(plate))
 	end)
 end)
 

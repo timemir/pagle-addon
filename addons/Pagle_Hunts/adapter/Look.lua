@@ -192,7 +192,7 @@ function ns.HasBoardLook()
 	return registered and M ~= nil and M.ShowFirstLook ~= nil
 end
 
---- The board has opened, drawn and fitted to the screen (adapter/Board.lua's Board:Open): the First evening list's
+--- The board has opened, drawn and fitted to the screen (the book's onShow, adapter/Board.lua): the First evening list's
 --- `hunts` item, on any spread (ONB-R61); then, on the Board spread with a Now, Soon or Later group to point at, its
 --- First look, the first time (ONB-R55: Core shows it once). Each only on a Core that has it (ONB-R90).
 function ns.BoardOpened()
@@ -215,8 +215,7 @@ function ns.ShowBoardLookAgain()
 		return
 	end
 	if not onBoard() then
-		ns.board:Open({ mode = "board" })
-		ns.board:SettleTurn()
+		ns.board:Open({ mode = "board" }, "still")
 	end
 	ns.Module:ShowFirstLook(ns.BOARD_LOOK_ID, true)
 end
