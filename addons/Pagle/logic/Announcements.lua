@@ -32,28 +32,51 @@ local LONGEST_WINDOW = 15 * 60
 local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 
 --- A sound set's files (ANN-R70, ANN-R72), as in-game paths: the toast sound's variants, played in turn, and the
---- banner sound. Every set shares the Legend sting.
+--- banner sound. Every set plays the same Legend stings.
 ---@class PagleSoundSet
 ---@field toast string[]
 ---@field banner string
 
---- The sound sets Core plays, keyed by their sound set good's ID (ANN-R72, ANN-R74): Driftwood, the free default, and
---- Gilded, a Curio Shop good (logic/CoreGoods.lua's sound set slot).
+-- A sound set whose files are in media/sounds/<folder>: toast_1 to toast_<variants>, played in turn, and banner
+-- (ANN-R74).
+---@param folder string
+---@param variants integer
+---@return PagleSoundSet
+local function soundSet(folder, variants)
+	local toast = {}
+	for i = 1, variants do
+		toast[i] = ("%s%s\\toast_%d.ogg"):format(SOUNDS, folder, i)
+	end
+	return { toast = toast, banner = ("%s%s\\banner.ogg"):format(SOUNDS, folder) }
+end
+
+--- The sound sets Core plays, keyed by their sound set good's ID (ANN-R72, ANN-R74), each in the folder its ID's last
+--- segment names: Driftwood, the free default; Gilded and the Curio Shop expansion's twelve, Curio Shop goods
+--- (logic/CoreGoods.lua's sound set slot); and the three earned goods the Ledger and Hunts register in Core's slot,
+--- which Core plays like its own (SHOP-R25). Every set has three toast variants but Gilded, which has one (Tunables).
 ---@type table<string, PagleSoundSet>
-ns.SOUND_SETS = {
-	[ns.SOUND_SET_DEFAULT] = {
-		toast = {
-			SOUNDS .. "driftwood\\toast_1.ogg",
-			SOUNDS .. "driftwood\\toast_2.ogg",
-			SOUNDS .. "driftwood\\toast_3.ogg",
-		},
-		banner = SOUNDS .. "driftwood\\banner.ogg",
-	},
-	["core.soundset.gilded"] = {
-		toast = { SOUNDS .. "gilded\\toast_1.ogg" },
-		banner = SOUNDS .. "gilded\\banner.ogg",
-	},
-}
+ns.SOUND_SETS = {}
+for _, goodID in ipairs({
+	ns.SOUND_SET_DEFAULT,
+	"core.soundset.gilded",
+	"core.soundset.rain",
+	"core.soundset.marimba",
+	"core.soundset.shipbell",
+	"core.soundset.kalimba",
+	"core.soundset.musicbox",
+	"core.soundset.glass",
+	"core.soundset.steelpan",
+	"core.soundset.dulcimer",
+	"core.soundset.frost",
+	"core.soundset.harp",
+	"core.soundset.gizmo",
+	"core.soundset.wardrums",
+	"ledger.soundset.concertina",
+	"ledger.soundset.choir",
+	"hunts.soundset.nightwatch",
+}) do
+	ns.SOUND_SETS[goodID] = soundSet(goodID:match("[^.]+$"), goodID == "core.soundset.gilded" and 1 or 3)
+end
 
 --- The sound set a sound set good plays (ANN-R70, ANN-R72): its own, or Driftwood for any other ID or none, as before
 --- Core's slot is registered.
