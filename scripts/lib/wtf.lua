@@ -1,7 +1,7 @@
--- What scripts/read-wtf.lua and scripts/make-test-log.lua share, written once: reading files, loading a
--- SavedVariables file as data, and loading Core's and the Ledger's own files (CORE-R7's plain-Lua logic/, the
--- catalogue) the way the client calls an addon's files. A script loads it in its own environment and calls it with
--- the repo root:
+-- What scripts/read-wtf.lua, scripts/make-test-log.lua and scripts/rewrite-bindings.lua share, written once:
+-- reading files, loading a SavedVariables file as data, rewriting one global in it, and loading Core's and the
+-- Ledger's own files (CORE-R7's plain-Lua logic/, the catalogue) the way the client calls an addon's files. A script
+-- loads it in its own environment and calls it with the repo root:
 --
 --   local wtf = setfenv(assert(loadfile(ROOT .. "/scripts/lib/wtf.lua")), getfenv(1))(ROOT)
 --
@@ -276,6 +276,47 @@ function wtf.serialize(value, lines, prefix, suffix)
 	else
 		lines[#lines + 1] = prefix .. tostring(value) .. suffix
 	end
+end
+
+-- `text`, a SavedVariables file in the client's layout, with the global `name` assigned `value` instead
+-- (wtf.serialize), every other line as it was and the file's line ends kept. Nil and why when the file doesn't
+-- assign `name` once at the top level.
+function wtf.replaceGlobal(text, name, value)
+	local eol = text:find("\r\n", 1, true) and "\r\n" or "\n"
+	local trailing = text:sub(-#eol) == eol
+	local lines = {}
+	for line in (trailing and text or text .. eol):gmatch("(.-)" .. eol) do
+		lines[#lines + 1] = line
+	end
+	local first, last
+	for i, line in ipairs(lines) do
+		local global = line:match("^([%a_][%w_]*) = ")
+		if global and first and not last then
+			last = i - 1
+		end
+		if global == name then
+			if first then
+				return nil, "it assigns " .. name .. " twice"
+			end
+			first = i
+		end
+	end
+	if not first then
+		return nil, "it has no " .. name .. " = line, so it isn't in the client's layout"
+	end
+	last = last or #lines
+	while last > first and lines[last] == "" do
+		last = last - 1
+	end
+	local replaced = {}
+	for i = 1, first - 1 do
+		replaced[#replaced + 1] = lines[i]
+	end
+	wtf.serialize(value, replaced, name .. " = ", "")
+	for i = last + 1, #lines do
+		replaced[#replaced + 1] = lines[i]
+	end
+	return table.concat(replaced, eol) .. (trailing and eol or "")
 end
 
 -- "1 Cast", "2 Casts"; plural defaults to noun .. "s".
