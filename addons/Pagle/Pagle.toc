@@ -18,6 +18,7 @@ data\AnnounceArt.lua
 data\ShopArt.lua
 data\GuideArt.lua
 data\FieldArt.lua
+data\VarietyArt.lua
 data\ApiInventory.lua
 
 locale\enUS.lua
@@ -39,6 +40,7 @@ logic\LiveConditions.lua
 logic\Modules.lua
 logic\Sessions.lua
 logic\Size.lua
+logic\Variety.lua
 logic\Length.lua
 logic\CatchLog.lua
 logic\Projections.lua
@@ -63,6 +65,7 @@ logic\Shop.lua
 logic\LookAndFeel.lua
 logic\CoreGoods.lua
 logic\WalletProjection.lua
+logic\VarietyProjection.lua
 logic\Moments.lua
 logic\Summary.lua
 logic\Cards.lua
@@ -95,6 +98,7 @@ adapter\Modules.lua
 adapter\Host.lua
 adapter\CatchLog.lua
 adapter\Size.lua
+adapter\Variety.lua
 adapter\Projections.lua
 adapter\Angler.lua
 adapter\Fishing.lua
@@ -116,6 +120,7 @@ adapter\ActivityXP.lua
 adapter\PushedContent.lua
 adapter\Goods.lua
 adapter\WalletProjection.lua
+adapter\VarietyProjection.lua
 adapter\Moments.lua
 adapter\Summary.lua
 adapter\Skins.lua

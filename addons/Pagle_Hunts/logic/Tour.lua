@@ -7,9 +7,10 @@ local ns = select(2, ...)
 
 -- Hunts' tour stops for `/pagle dev tour` (CORE-R65, CORE-R68), and the sample they show. Real data shows little
 -- before the first Hunts are out (2026-11-04), so each stop shows a sample instead, in memory only: the Hunt list with
--- every Hunt out, one Retired Hunt done, a HuntsState with Hunts at each stage and a set's title earned, and three
--- pins. Pure logic over the Hunt list's data (CORE-R7); adapter/Tour.lua swaps the sample in at each stop's show and
--- back out at its hide, so nothing is saved.
+-- every Hunt out, one Retired Hunt done, a HuntsState with Hunts at each stage and a set's title earned, two Pagle
+-- Wagers runs on (from the event pool when no real run is on, one settled), and three pins. Pure logic over the Hunt
+-- list's data and the event pool (CORE-R7); adapter/Tour.lua swaps the sample in at each stop's show and back out at
+-- its hide, so nothing is saved.
 
 --- One of Hunts' tour stops: the board on a place, or the tracker; either in one of Hunts' goods.
 ---@class HuntsTourStop
@@ -22,6 +23,7 @@ local ns = select(2, ...)
 ---@class HuntsTourContext
 ---@field sample HuntsTourSample
 ---@field rows HuntRow[]  -- the board's rows, as its groups show them: ns.groups:Rows({ filtered = true })
+---@field runs HuntsShownRun[]  -- the runs the board shows (HNT-R160): ns.RunsShown over the sample's state
 ---@field list HuntList   -- the sample's Hunt list
 ---@field now integer
 
@@ -125,14 +127,73 @@ local function between(hunt, k)
 	return after and math.floor((hunt.tiers[k] + after) / 2) or hunt.tiers[k]
 end
 
+-- The sample's completed-run count (HNT-R148): part way to the first ladder title.
+local SAMPLE_SETTLED = 7
+
+-- A run's progress for the sample: each of `event`'s Hunts at its first mark when `settled`, else the first at tier 1
+-- and the next part way; the tiers reached at `t`.
+---@param event HuntEvent
+---@param settled boolean
+---@param t integer
+---@param classes table<string, table<integer, true>>
+---@return table<string, HuntProgress>
+local function runProgress(event, settled, t, classes)
+	local out = {}
+	for i, hunt in ipairs(event.hunts) do
+		local tiers = (settled or i == 1) and 1 or 0
+		local count = tiers == 1 and hunt.tiers[1] or (i == 2 and math.floor(hunt.tiers[1] / 2) or 0)
+		local made = progress(hunt --[[@as HuntDef]], 0, tiers, count, classes, t + 2 * DAY - 3600)
+		for _, reached in ipairs(made.reached) do
+			reached.time = t
+		end
+		out[hunt.id] = made
+	end
+	return out
+end
+
+--- The sample's runs at `now` (HNT-R160): the real runs, ladder and definitions when `real` has a run on; else two
+--- runs of the pool's first two events, both on, the first closing sooner, part way, the second completed, with a
+--- completed-run count part way to the first ladder title. None with an empty pool.
+---@param state table the sample's HuntsState, to fill
+---@param pool HuntEvent[]
+---@param real HuntsState?
+---@param now integer
+---@param classes table<string, table<integer, true>>
+local function sampleRuns(state, pool, real, now, classes)
+	state.runs, state.defs, state.settled, state.ladder = {}, {}, 0, {}
+	if real and #ns.RunOn(real, now) > 0 then
+		state.runs, state.defs = real.runs, real.defs or {}
+		state.settled, state.ladder = real.settled or 0, real.ladder or {}
+		return
+	end
+	local spans = { { now - DAY - 4 * 3600, now + 2 * DAY - 4 * 3600 }, { now - 12 * 3600, now + 2 * DAY + 12 * 3600 } }
+	for i = 1, math.min(2, #pool) do
+		local event, span = pool[i], spans[i]
+		local settled = i == 2
+		local run = {
+			event = event.id,
+			start = span[1],
+			end_ = span[2],
+			source = "r",
+			hunts = runProgress(event, settled, now - 3 * 3600, classes),
+			completedAt = settled and now - 3 * 3600 or nil,
+		}
+		state.runs[ns.RunKey(event.id, span[1])] = run
+	end
+	state.settled = SAMPLE_SETTLED
+end
+
 --- The tour's sample at server time `now` (CORE-R65), over the Hunt list's data (ns.huntList; nil reads as none):
 --- every Hunt out; the first set's title earned, each of its Hunts at tier 1 (its first Hunt at tier 2 when it has
 --- three); one Retired Hunt, done; and the other Hunts in turn part way past tier 1, with effort only, and untouched.
---- The three first current Hunts with tiers left are pinned.
+--- The three first current Hunts with tiers left are pinned. Its runs (HNT-R160) are `real`'s when a run is on, else
+--- two sample runs of the event pool's (`pool`, ns.events:Events()) first two events.
 ---@param data HuntListData?
 ---@param now integer
+---@param pool HuntEvent[]?
+---@param real HuntsState? the projection's state
 ---@return HuntsTourSample
-function ns.HuntsTourSample(data, now)
+function ns.HuntsTourSample(data, now, pool, real)
 	data = data or EMPTY
 	local hunts = {}
 	for i, hunt in ipairs(data.hunts) do
@@ -175,6 +236,7 @@ function ns.HuntsTourSample(data, now)
 	else
 		earnedSet = nil
 	end
+	sampleRuns(state, pool or {}, real, now, data.classes)
 
 	local pins, pinned = {}, 0
 	for _, hunt in ipairs(hunts) do
@@ -211,6 +273,21 @@ local function inGroup(group)
 	end
 end
 
+-- The Board on the first run shown, its entry on the right page under the wager strip and the WAGERS group (HNT-R161),
+-- or the Board's own pick with none.
+---@param context HuntsTourContext
+---@return BoardPlace
+local function onRun(context)
+	local first = context.runs[1]
+	return first and { mode = "board", run = first.key } or home()
+end
+
+-- The Pagle Wagers spread (HNT-R162), on its first slip.
+---@return BoardPlace
+local function wagers()
+	return { mode = "wagers" }
+end
+
 -- The earned set's page (HNT-R66), or the Board without one.
 ---@param context HuntsTourContext
 ---@return BoardPlace
@@ -240,9 +317,10 @@ local function retiredEntry(context)
 	return hunt and { mode = "retired", set = hunt.set, hunt = hunt.id } or home()
 end
 
---- Hunts' tour stops, in tour order (CORE-R68): the Board, on a Hunt of each group; a set's page, an entry from it
---- and a retired entry; the tracker in the dock; then the board in each notebook cover and the tracker in each tracker
---- frame Hunts sells (HNT-R121), the defaults being the stops before.
+--- Hunts' tour stops, in tour order (CORE-R68): the Board, on a Hunt of each group; the Board on a run, with the wager
+--- strip and the WAGERS group, and the Pagle Wagers spread; a set's page, an entry from it and a retired entry; the
+--- tracker in the dock; then the board in each notebook cover and the tracker in each tracker frame Hunts sells
+--- (HNT-R121), the defaults being the stops before.
 ---@type HuntsTourStop[]
 ns.HUNTS_TOUR = {
 	{ id = "board.home", label = "TOUR_BOARD", place = home },
@@ -250,6 +328,8 @@ ns.HUNTS_TOUR = {
 	{ id = "board.soon", label = "TOUR_BOARD_SOON", place = inGroup("soon") },
 	{ id = "board.later", label = "TOUR_BOARD_LATER", place = inGroup("later") },
 	{ id = "board.ondemand", label = "TOUR_BOARD_ON_DEMAND", place = inGroup("onDemand") },
+	{ id = "board.wagers", label = "TOUR_BOARD_WAGERS", place = onRun },
+	{ id = "wagers", label = "TOUR_WAGERS", place = wagers },
 	{ id = "set.page", label = "TOUR_SET", place = setPage },
 	{ id = "set.entry", label = "TOUR_SET_ENTRY", place = setEntry },
 	{ id = "set.retired", label = "TOUR_RETIRED", place = retiredEntry },

@@ -1,5 +1,7 @@
--- The Hunts tracker's lines as data (HNT-R76, HNT-R78): a Hunt's tier progress, and the short-of-skill label and the
--- "+N more" count over hand-made rows. The block on FakePagle is spec/Pagle_Hunts/adapter/Tracker_spec.lua.
+-- The Hunts tracker's lines as data (HNT-R76, HNT-R78, HNT-R175): a Hunt's tier progress, and the short-of-skill label
+-- and the "+N more" count over hand-made rows; the Pagle Wagers block's runs over hand-made runs of the fixture event
+-- pool's fixture_shore. The block on FakePagle is spec/Pagle_Hunts/adapter/Tracker_spec.lua, and the Pagle Wagers
+-- block's spec/Pagle_Hunts/adapter/TrackerWagers_spec.lua.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
@@ -105,6 +107,124 @@ describe("the Hunts tracker's lines", function()
 			local lines = ns.TrackerLines(input({ onDemand }, { fixture_rack = { zones = {} } }))
 
 			assert.are.same({ "onDemand", "fixture_rack · on demand" }, { lines.hunts[1].dot, lines.hunts[1].first })
+		end)
+	end)
+
+	describe("the Pagle Wagers block's runs (HNT-R175, HNT-R51, HNT-R78)", function()
+		-- fixture_shore ("Shore Wager"): a Haul of any fish (tiers 2 / 4), Shore Snapper (1) and a Timed oddity (1).
+		local NOW, HOUR = SERVER_TIME, hunts.HOUR
+		local state = ns.NewHuntsState()
+
+		-- The `n`th HuntsShownRun of fixture_shore, ending `left` seconds after NOW, on unless `on` is false, its Hunts'
+		-- progress `progresses`.
+		local function shown(n, left, progresses, on)
+			local start = NOW - 2 * 86400 + n
+			return {
+				key = "fixture_shore@" .. start,
+				run = {
+					event = "fixture_shore",
+					start = start,
+					end_ = NOW + left,
+					source = "r",
+					hunts = progresses or {},
+				},
+				event = ns.events:Event("fixture_shore"),
+				on = on ~= false,
+			}
+		end
+		local function input(runs, updating)
+			return { runs = runs, now = NOW, updating = updating or false }
+		end
+
+		it("are none with no run on, a run ahead or not: the block is gone (HNT-R175)", function()
+			assert.is_nil(ns.TrackerWagerLines(input({}), state))
+			assert.is_nil(ns.TrackerWagerLines(input({ shown(1, 30 * HOUR, nil, false) }), state))
+		end)
+
+		it('read each run on as its name, "ends in 1d 4h", its first marks and its closest Hunt, in order', function()
+			local first =
+				shown(1, 28 * HOUR, { fixture_shore_snapper = progress(1, 1), fixture_shore_haul = progress(1, 0) })
+			local second = shown(2, 50 * HOUR)
+
+			local lines = ns.TrackerWagerLines(input({ first, second, shown(3, 70 * HOUR, nil, false) }), state)
+
+			assert.are.same({
+				runs = {
+					{
+						key = first.key,
+						name = "Shore Wager",
+						label = "ends in 1d 4h",
+						second = "1 of 3 first marks · fixture_shore_haul: 1 / 2",
+					},
+					{
+						key = second.key,
+						name = "Shore Wager",
+						label = "ends in 2d 2h",
+						second = "0 of 3 first marks · fixture_shore_haul: 0 / 2", -- a tie: the first in file order
+					},
+				},
+				more = 0,
+			}, lines)
+		end)
+
+		it(
+			'shows 3 of 4 runs on, then counts the one past them for "+1 more wagers on the table" (Tunables)',
+			function()
+				local runs = {}
+				for i = 1, 4 do
+					runs[i] = shown(i, i * HOUR)
+				end
+				runs[5] = shown(5, 90 * HOUR, nil, false) -- a run ahead isn't counted
+
+				local lines = ns.TrackerWagerLines(input(runs), state)
+
+				assert.are.equal(3, ns.TRACKER_RUNS)
+				assert.are.same(
+					{ runs[1].key, runs[2].key, runs[3].key, 1 },
+					{ lines.runs[1].key, lines.runs[2].key, lines.runs[3].key, lines.more }
+				)
+				assert.are.equal("+1 more wagers on the table", ns.TrackerWagersMore(lines.more))
+			end
+		)
+
+		it('reads "settled" for a completed run, every first mark landed and no closest Hunt (HNT-R146)', function()
+			local done = shown(1, 28 * HOUR, {
+				fixture_shore_haul = progress(2, 1),
+				fixture_shore_snapper = progress(1, 1),
+				fixture_shore_oddity = progress(1, 1),
+			})
+			done.run.completedAt = NOW - HOUR
+
+			local line = ns.TrackerWagerLines(input({ done }), state).runs[1]
+
+			assert.are.same({ "settled", "3 of 3 first marks" }, { line.label, line.second })
+		end)
+
+		it('reads "updating…" for progress while the projection updates, its countdown still running', function()
+			local done = shown(1, 37 * 60, { fixture_shore_snapper = progress(1, 1) })
+			done.run.completedAt = NOW - HOUR
+
+			local line = ns.TrackerWagerLines(input({ done }, true), state).runs[1]
+
+			assert.are.same({ "ends in 37m", "updating…" }, { line.label, line.second })
+		end)
+
+		it("claim no odds, chance or due fish (HNT-R27)", function()
+			local settled = shown(3, HOUR)
+			settled.run.completedAt = NOW
+			local runs = { shown(1, 28 * HOUR), shown(2, HOUR), settled, shown(4, HOUR) }
+			local lines = ns.TrackerWagerLines(input(runs), state)
+			local texts = { ns.L.WAGERS_KICKER, ns.TrackerWagersMore(lines.more) }
+			for _, line in ipairs(lines.runs) do
+				texts[#texts + 1] = line.label
+				texts[#texts + 1] = line.second
+			end
+
+			for _, text in ipairs(texts) do
+				for _, word in ipairs({ "odds", "chance", "due", "likely", "%%" }) do
+					assert.is_nil(text:lower():find(word))
+				end
+			end
 		end)
 	end)
 end)

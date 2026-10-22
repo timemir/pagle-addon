@@ -43,6 +43,8 @@ function ns.BuildCatalogue()
 	Pagle.CONTENT_FINGERPRINT = catalogue.CONTENT_FINGERPRINT
 	--- An item's catalogue record, or nil for an Uncharted item (LOG-R55).
 	Pagle.GetItem = catalogue.GetItem
+	--- A Species' ten varieties in order, `{ id, key, index, rarity, name, description, art }`, or nil (VAR-R11).
+	Pagle.GetVarieties = catalogue.GetVarieties
 	--- Every zone areaID in the AreaTable slice, ascending (LOG-R55).
 	Pagle.GetZones = catalogue.GetZones
 	--- An area's catalogue record, or nil for an unknown area (LOG-R55).

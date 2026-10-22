@@ -145,3 +145,177 @@ function ns.RegisterCoreGoods(previews)
 		end
 	end
 end
+
+--- The fish crests' group in the crest slot's list (SHOP-R27, VAR-R12).
+ns.FISH_CREST_GROUP = "fish"
+
+-- The fish crests' textures, Core's own (VAR-R12, UI): 256 x 256 as the zone crests, by Species ID.
+local FISH_CRESTS = CRESTS .. "fish\\"
+-- A Species' varieties (VAR-R2).
+local VARIETIES = 10
+
+--- A Species' fish crest's good ID (VAR-R12).
+---@param speciesID integer
+---@return string
+function ns.FishCrestID(speciesID)
+	return "core.crest.fish." .. speciesID
+end
+
+--- What the fish crests read from the client and from Core, each when asked.
+---@class PagleFishCrestHooks
+---@field species integer[]                            -- the Species with varieties, in the crests' order
+---@field caught fun(speciesID: integer): table<integer, true> -- Pagle.GetVarietiesCaught (VAR-R11)
+---@field itemName fun(itemID: integer): string?      -- the client's cached name, nil until it has it
+---@field dropPrefix string?                           -- the prefix a crest's fish drops: "Raw " on an enUS client
+---@field owned fun(goodID: string): boolean           -- Pagle.IsOwned: the cached isEarned() (SHOP-R26)
+
+--- A fish crest's fish (VAR-R12): the Species' item name as the client has it, less `dropPrefix` when it starts with
+--- it ("Raw Spotted Yellowtail" is "Spotted Yellowtail"), or nil while the client hasn't cached it.
+---@param hooks PagleFishCrestHooks
+---@param speciesID integer
+---@return string?
+function ns.FishCrestFish(hooks, speciesID)
+	local name = hooks.itemName(speciesID)
+	if type(name) ~= "string" or name == "" then
+		return nil
+	end
+	local prefix = hooks.dropPrefix
+	if prefix and prefix ~= "" and #name > #prefix and name:sub(1, #prefix) == prefix then
+		return name:sub(#prefix + 1)
+	end
+	return name
+end
+
+--- A fish crest's name (VAR-R12): lore's "{fish} Crest" with `fish`, else "Item {itemID}" (the fish not cached yet),
+--- or the good's ID while lore has no name for it.
+---@param speciesID integer
+---@param fish string?
+---@return string
+function ns.FishCrestName(speciesID, fish)
+	local id = ns.FishCrestID(speciesID)
+	local pattern = ns.L and lore(id, "name")
+	if not pattern then
+		return id
+	end
+	fish = fish or L.FISH_CREST_ITEM:format(speciesID)
+	return (pattern:gsub("{fish}", function()
+		return fish
+	end))
+end
+
+--- How many of a Species' ten are caught, in a set `{ [index] = true }`.
+---@param caught table<integer, true>
+---@return integer
+local function countCaught(caught)
+	local n = 0
+	for index = 1, VARIETIES do
+		if caught[index] then
+			n = n + 1
+		end
+	end
+	return n
+end
+
+--- A fish crest's texts while it isn't earned (VAR-R13, VAR-R14): the row's tag, "{n} of 10 varieties", and the
+--- stage's note, "{n} of 10 {fish} varieties. Still out there: {the count of each rarity uncaught, Common first}.".
+--- It counts the uncaught by rarity only, never naming one (VAR-R27).
+---@param caught table<integer, true>
+---@param fish string the Species' name, or "Item {itemID}"
+---@return string row
+---@return string note
+function ns.FishCrestTexts(caught, fish)
+	local n = countCaught(caught)
+	local counts, order = {}, {}
+	for index = 1, VARIETIES do
+		local rarity = ns.VarietyRarity(index)
+		if rarity and not caught[index] then
+			if not counts[rarity.key] then
+				order[#order + 1] = rarity
+			end
+			counts[rarity.key] = (counts[rarity.key] or 0) + 1
+		end
+	end
+	local parts = {}
+	for i, rarity in ipairs(order) do
+		parts[i] = L.FISH_CREST_UNCAUGHT:format(counts[rarity.key], rarity.name or rarity.key)
+	end
+	local row = L.FISH_CREST_ROW:format(n)
+	if #parts == 0 then
+		return row, L.FISH_CREST_NOTE_ALL:format(n, fish)
+	end
+	return row, L.FISH_CREST_NOTE:format(n, fish, table.concat(parts, L.FISH_CREST_UNCAUGHT_JOIN))
+end
+
+--- A fish crest's progress (VAR-R14, SHOP-R22): ten dots in variety order, each in its rarity's colour, filled when
+--- caught.
+---@param caught table<integer, true>
+---@return PagleProgressDot[]
+function ns.FishCrestDots(caught)
+	local dots = {}
+	for index = 1, VARIETIES do
+		local rarity = ns.VarietyRarity(index) --[[@as PagleVarietyRarity]]
+		dots[index] = { color = { unpack(rarity.color) }, filled = caught[index] == true }
+	end
+	return dots
+end
+
+--- Core's fish crests (VAR-R12), one per Species with varieties in `hooks.species`'s order: `core.crest.fish.<id>` in
+--- the crest slot's fish group, earned once all ten of its Species are caught in Core's variety projection, and kept
+--- once earned (VAR-R90: the cached result stands), with the crest's own texture as its icon and lore's description.
+--- Its name is ns.FishCrestName over the fish as the client has it now; its texts and dots are worked out each time
+--- the shop draws it (SHOP-R22). No preview: the crest slot's draws it on the stage's bookplate (SHOP-R25).
+---@param hooks PagleFishCrestHooks
+---@return PagleGood[]
+function ns.FishCrestGoods(hooks)
+	local goods = {}
+	for i, speciesID in ipairs(hooks.species) do
+		local id = ns.FishCrestID(speciesID)
+		goods[i] = {
+			id = id,
+			slot = ns.CREST_SLOT,
+			group = ns.FISH_CREST_GROUP,
+			name = ns.FishCrestName(speciesID, ns.FishCrestFish(hooks, speciesID)),
+			description = lore(id, "description"),
+			icon = FISH_CRESTS .. speciesID,
+			isEarned = function()
+				return hooks.owned(id) or countCaught(hooks.caught(speciesID)) >= VARIETIES
+			end,
+			earnedText = function()
+				local fish = ns.FishCrestFish(hooks, speciesID) or L.FISH_CREST_ITEM:format(speciesID)
+				return ns.FishCrestTexts(hooks.caught(speciesID), fish)
+			end,
+			progress = function()
+				return ns.FishCrestDots(hooks.caught(speciesID))
+			end,
+		}
+	end
+	return goods
+end
+
+--- Registers Core's fish crests (VAR-R12) in its crest slot, after ns.RegisterCoreGoods, and refreshes Core's goods
+--- from ns.OnVarietiesCaught's hook, so their isEarned() runs only at registration, after the variety projection's
+--- done and after a live Catch adding a variety (VAR-R13, SHOP-R31). Returns the function that renames each crest
+--- whose fish the client has named since (SHOP-R26): call it when an item's data arrives.
+---@param hooks PagleFishCrestHooks
+---@return fun(itemID: integer)
+function ns.RegisterFishCrests(hooks)
+	local named = {}
+	for _, good in ipairs(ns.FishCrestGoods(hooks)) do
+		ns.RegisterCoreGood(good)
+	end
+	for _, speciesID in ipairs(hooks.species) do
+		named[speciesID] = ns.FishCrestFish(hooks, speciesID) ~= nil
+	end
+	ns.OnVarietiesCaught(function()
+		ns.goods:Refresh(ns.CORE_OWNER)
+	end)
+	return function(itemID)
+		if named[itemID] == false then
+			local fish = ns.FishCrestFish(hooks, itemID)
+			if fish then
+				named[itemID] = true
+				ns.RenameCoreGood(ns.FishCrestID(itemID), ns.FishCrestName(itemID, fish))
+			end
+		end
+	end
+end

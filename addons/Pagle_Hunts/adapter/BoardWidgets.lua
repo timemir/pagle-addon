@@ -628,6 +628,47 @@ function ns.NewBoardClose(parent)
 	return close
 end
 
+--- The "?" beside the close (ONB-R59), in the board's own wax: the plain seal of red wax at the close's size with a
+--- gilt "?" pressed into it, the close's glow under the mouse, the wax darker while pressed, and its tooltip in the
+--- board's GameTooltip. Its click is adapter/Look.lua's.
+---@class BoardHelpButton: Button
+---@field wax Texture
+---@field glow Texture
+---@field label FontString
+
+-- The "?"'s size (the close's) and the wax's shade while pressed.
+local HELP_SIZE, HELP_PRESSED = 26, 0.78
+
+---@param parent Frame
+---@param tooltip string the tooltip's words
+---@return BoardHelpButton
+function ns.NewBoardHelp(parent, tooltip)
+	local help = CreateFrame("Button", nil, parent) --[[@as BoardHelpButton]]
+	help:SetSize(HELP_SIZE, HELP_SIZE)
+	help.wax = ns.ArtSprite(help, "Book", "seal", "ARTWORK", 0, HELP_SIZE)
+	help.wax:SetAllPoints()
+	help.label = ns.BoardText(help, ns.ArtFont("gilt", 17, true), LOOK.sealText)
+	help.label:SetJustifyH("CENTER")
+	help.label:SetPoint("CENTER", 0, 1)
+	help.label:SetText(ns.L.LOOK_HELP)
+	help.glow = ns.ArtSprite(help, "Book", "close-highlight", "HIGHLIGHT", 0, HELP_SIZE)
+	help.glow:SetAllPoints()
+	help.glow:SetBlendMode("ADD")
+	help:SetScript("OnMouseDown", function(self)
+		self.wax:SetVertexColor(HELP_PRESSED, HELP_PRESSED, HELP_PRESSED)
+	end)
+	help:SetScript("OnMouseUp", function(self)
+		self.wax:SetVertexColor(1, 1, 1)
+	end)
+	help:SetScript("OnEnter", function(self)
+		ns.BoardTooltip(self, { tooltip })
+	end)
+	help:SetScript("OnLeave", function()
+		GameTooltip:Hide()
+	end)
+	return help
+end
+
 --- A grosgrain set ribbon (HNT-R61): one white ribbon tinted to its colour, with a gold running stitch over it, hanging
 --- from under the leather's foot, its words in gilt near its swallowtail end. The chosen one hangs longer and brighter;
 --- one under the mouse brightens. adapter/Sets.lua lays them along the leather's ribbons anchor.
@@ -635,19 +676,25 @@ end
 ---@field body Texture
 ---@field stitch Texture
 ---@field label FontString
+---@field count FontString      -- the Pagle Wagers ribbon's "{n} on" under its name (HNT-R162), in the hand
 ---@field chosen boolean
 ---@field hover boolean
+---@field wagers boolean?       -- the Pagle Wagers ribbon (adapter/Sets.lua)
 ---@field color number[]
 ---@field tooltip string[]?
 ---@field length number?        -- how long it hangs now
 ---@field SetRibbon fun(self: BoardRibbonView, text: string, color: number[], chosen: boolean, animate: boolean?) -- with
 --- `animate`, a change of length eases (the kit's Ribbons.lua)
+---@field SetCount fun(self: BoardRibbonView, count: string?) -- the words under its name, or none; the name rises
+--- over them
 
 --- The ribbons' measures (the kit's Hunts board, hanging a fifth shorter, as the dev asked): each one's width and the
 --- gap between, how long it hangs (longer chosen), how much of its top tucks under the leather's band, its words'
 --- inset, and how much brighter it turns.
 ns.BOARD_RIBBON = { width = 104, gap = 10, length = 83, lengthChosen = 96, tuck = 10, pad = 13, lift = 1.13 }
 local RIBBON = ns.BOARD_RIBBON
+-- Where a ribbon's words sit above its swallowtail end: its name, its name over a count, and the count.
+local RIBBON_LABEL_Y, RIBBON_LABEL_OVER_Y, RIBBON_COUNT_Y = 31, 38, 17
 
 -- Shows the bottom `length` units of ribbon sprite `name` (its swallowtail end always shows) in `texture`, the
 -- ribbon's width across, from `ribbon`'s top left.
@@ -695,7 +742,13 @@ function ns.NewBoardRibbon(parent)
 	ribbon.label = ns.BoardText(ribbon, ns.BoardFonts().ribbon, LOOK.ribbonLabel)
 	ribbon.label:SetJustifyH("CENTER")
 	ns.BoardWrap(ribbon.label, RIBBON.width - 2 * RIBBON.pad, 1)
-	ribbon.label:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, 31)
+	ribbon.label:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, RIBBON_LABEL_Y)
+	-- "{n} on" in the hand under the name (the variant A prototype's `.ribbon .count`), over the swallowtail's notch
+	ribbon.count = ns.BoardText(ribbon, ns.ArtFont("hand", 15, true), LOOK.gilt)
+	ribbon.count:SetJustifyH("CENTER")
+	ribbon.count:SetWordWrap(false)
+	ribbon.count:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, RIBBON_COUNT_Y)
+	ribbon.count:Hide()
 	ribbon.chosen, ribbon.hover, ribbon.color = false, false, LOOK.boardRibbon
 	ribbon:SetScript("OnEnter", function(self)
 		self.hover = true
@@ -730,6 +783,12 @@ function ns.NewBoardRibbon(parent)
 		else
 			lengthen(self, length)
 		end
+	end
+	function ribbon.SetCount(self, count)
+		self.count:SetText(count or "")
+		self.count:SetShown(count ~= nil)
+		self.label:ClearAllPoints()
+		self.label:SetPoint("BOTTOM", self, "BOTTOM", 0, count and RIBBON_LABEL_OVER_Y or RIBBON_LABEL_Y)
 	end
 	return ribbon
 end

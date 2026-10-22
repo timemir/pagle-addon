@@ -174,15 +174,16 @@ function ns.ToastPage(announcement)
 end
 
 --- What a banner's wax seal shows (announcements.md › Contracts, `seal`): a number pressed into it, the Prestige crest,
---- or one of the pressed marks, the waves when the headline names none.
+--- or one of the pressed marks, the waves when the headline names none. With `crest`, a crest good's icon (a fish
+--- crest, VAR-R25) shows in the Prestige crest's place, without the Angler's portrait: `icon`.
 ---@param headline PagleMoment
----@return { number: integer?, crest: boolean?, mark: string? }
+---@return { number: integer?, crest: boolean?, icon: (integer|string)?, mark: string? }
 function ns.BannerSeal(headline)
 	local seal = headline.seal
 	if type(seal) == "number" then
 		return { number = seal }
 	elseif seal == "crest" then
-		return { crest = true }
+		return { crest = true, icon = headline.crest }
 	elseif seal == "book" or seal == "quill" or seal == "waves" then
 		return { mark = seal }
 	end
@@ -255,4 +256,64 @@ function ns.SampleAnnouncement(styleID)
 	}) --[[@as PagleAnnouncement]]
 	announcement.style = styleID
 	return announcement
+end
+
+-- A variety's art cropped to the fish's head (core/varieties.md › UI): the art faces left, 192 × 96 texels, so the
+-- head is a square at its left, inset from its snout (VAR-R26 crops the catch Nod's medallion the same way). As
+-- shares of the art's width and height.
+local HEAD_LEFT, HEAD_RIGHT = 0.03, 0.405
+local HEAD_TOP, HEAD_BOTTOM = 0.125, 0.875
+
+--- A moment's art (announcements.md › Contracts, `art`) cropped to the fish's head, as texture coordinates for a
+--- medallion's round icon: the square at the left of the art's rectangle.
+---@param art { left: number, right: number, top: number, bottom: number }
+---@return number left
+---@return number right
+---@return number top
+---@return number bottom
+function ns.HeadCrop(art)
+	local w, h = art.right - art.left, art.bottom - art.top
+	return art.left + w * HEAD_LEFT, art.left + w * HEAD_RIGHT, art.top + h * HEAD_TOP, art.top + h * HEAD_BOTTOM
+end
+
+--- How a catch Nod draws the variety its line names (VAR-R26): the name and the line either side of it, the rarity's
+--- colour for the gem before the name and its ink for the name (these two alone leave the style's ink, ANN-R80), the
+--- colour for the medallion's ring, none for Common, whose ring stays the style's, and whether its strip gleams as it
+--- enters.
+---@class PagleNodVarietyLook
+---@field name string
+---@field before string
+---@field after string
+---@field color number[]
+---@field ink number[]
+---@field ring number[]?
+---@field gleam boolean
+
+-- The rarities whose catch Nod gleams as it enters (VAR-R26), and the one whose ring stays the style's.
+local GLEAMS = { rare = true, epic = true }
+local PLAIN_RING = "common"
+
+--- A catch Nod's variety as it is drawn (VAR-R26), or nil for a headline that isn't Core's catch Nod naming one, or
+--- one of a rarity Core doesn't know.
+---@param headline { catchNod: true?, variety: PagleNodVariety? }
+---@return PagleNodVarietyLook?
+function ns.CatchNodVarietyLook(headline)
+	local variety = headline.catchNod and headline.variety
+	if not variety then
+		return nil
+	end
+	for _, rarity in ipairs(ns.VARIETY_RARITIES) do
+		if rarity.key == variety.rarity then
+			return {
+				name = variety.name,
+				before = variety.before,
+				after = variety.after,
+				color = rarity.color,
+				ink = rarity.ink,
+				ring = rarity.key ~= PLAIN_RING and rarity.color or nil,
+				gleam = GLEAMS[rarity.key] == true,
+			}
+		end
+	end
+	return nil
 end

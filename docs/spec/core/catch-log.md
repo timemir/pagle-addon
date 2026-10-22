@@ -172,7 +172,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
   - the **skill rank**: the Cast's `skillRank`, its modifier (lures, gear) never counting; without one, the `rank` of that character's latest Skill Reading before the Cast in the log; without one, 1.
   - the **earlier Catches** `n`: the Angler's Catches of the same item ID earlier in the log, on any character, one per slot whatever its quantity, the earlier slots of the same Cast included. Item `0` is never counted. They are counted from the log alone (LOG-R100), never through the catalogue, so a release that classifies an Uncharted item, moves an item between Species or retunes a typical length changes no item's count. Pagle's experience starts at install: nothing before the log is credited.
 
-  An Uncharted Catch gains its size when a release classifies it as a Species (LOG-R96), the one it would have had live.
+  An Uncharted Catch gains its size when a release classifies it as a Species (LOG-R96), the one it would have had live. Beside `size`, a decoded item of a Species with varieties carries its `variety` (VAR-R4), from the Catch ID and the catalogue alone.
 - **LOG-R66** The **percentile** `u` of a Catch is a frozen hash of its Catch ID string (LOG-R13), computed in Core `logic/` with the `bit` library (LuaBitOp, which WoW ships; tests install the same library) and all arithmetic kept exact below 2^53:
   1. FNV-1a 32-bit over the ID's bytes: `h = 2166136261`; for each byte `c`, `h = bxor(h, c) % 2^32`, then `h = ((h % 256) * 16777216 + h * 403) % 2^32` (that is, `h * 16777619 mod 2^32`).
   2. Murmur3's `fmix32` finaliser: `h = h xor (h >> 16)`, `h = mul32(h, 0x85ebca6b)`, `h = h xor (h >> 13)`, `h = mul32(h, 0xc2b2ae35)`, `h = h xor (h >> 16)`, with `mul32(a, b) = (a * (b % 65536) + ((a * floor(b / 65536)) % 65536) * 65536) % 2^32` and every `bit` result taken `% 2^32`.
@@ -232,7 +232,7 @@ Core runs every Module's stored projection the same way (ADR 0004).
   
   In `done`, a Module may only raise a Write-up and `summaryOnly` moments ([announcements.md](announcements.md#write-up)).
 - **LOG-R77** The Module's **celebrated set** (the high-water mark of what was already shown) lives in its DB outside `projection`, so a rebuild never clears it. Core never touches it. If the whole Module DB is lost, the celebrated set is lost with it, and the next build counts as a first build (LOG-R76).
-- **LOG-R78** Core runs its own projections (the Field report's, the wallet's spent total and owned goods) with the same machinery.
+- **LOG-R78** Core runs its own projections (the Field report's, the wallet's spent total and owned goods, the varieties caught of [varieties.md](varieties.md) VAR-R10) with the same machinery.
 - **LOG-R79** Pagle's backend folds the Catch log through `logic/` alone ([#223](https://github.com/timemir/wow-fish/issues/223), [#76](https://github.com/timemir/wow-fish/issues/76) item 5). Its projection driver loads each addon's `logic/` files, Core's `data/Catalogue.lua` and Hunts' `data/HuntList.lua`, never `adapter/` or `locale/`, and computes no value itself. So every `logic/` file loads without `ns.L`, each projection can be bound from `logic/`, and every value the backend shows is a function of projection state in `logic/`. The driver reads the log with Core's `ns.OpenCatchLog(log, global, now, getItem)`, `getItem` being the catalogue's `GetItem`: without that fourth argument no Catch has a Simulated Size (LOG-R65). Its Casts carry the client's sizes, as the earlier Catches and skill come from the log alone (LOG-R100). The functions it calls are in [Contracts › The backend's hooks](#the-backends-hooks); a binding hook folds to the same state as the client's projection, with none of its moments, Coins reports or other effects.
 
 ### The diagnostics buffer
@@ -302,7 +302,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.activityXP` | the Activity XP totals ([activity-xp.md](activity-xp.md#data)) |
 | `global.pushed` | `seq`, the last pushed file's `seq` Core accepted ([pushed-content.md](pushed-content.md#data), PUSH-R13); no default |
 | `global.onboarding` | the onboarding state ([onboarding.md](onboarding.md#data)), added by migration step 2 (ONB-R1) |
-| `global.projections.*` | Core's own projections (LOG-R78) |
+| `global.projections.*` | Core's own projections (LOG-R78): `fieldReport` ([field-report.md](field-report.md#data)), `wallet` ([wallet-and-shop.md](wallet-and-shop.md#data)), `varieties` ([varieties.md](varieties.md#data)) |
 | `global.minimap` | the minimap icon's place and shown state (CORE-R53, CORE-R56): `angle`, degrees round the minimap counterclockwise from its right, to 0.1, default `225` (its bottom left); `hide`, default `false` |
 | `profile.reloadReminder` | boolean, the `/reload` reminder (LOG-R86); default `false` |
 | `profile.lengthUnit` | `"cm"`, `"in"`, or `nil` for the region default (LOG-R69); default `nil`. The Defaults button sets it back to `nil` (SET-R13). |
@@ -329,7 +329,7 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@field outcome "caught"|"gotAway"
 ---@field session string        -- its Session's ID (LOG-R98)
 ---@field conditions ConditionsSnapshot
----@field items { n: integer, itemID: integer, quantity: integer, catchId: string, size?: PagleSize }[]
+---@field items { n: integer, itemID: integer, quantity: integer, catchId: string, size?: PagleSize, variety?: PagleVariety }[]
 
 ---@class PagleCatch            -- payload of the Catch event, one per item
 ---@field catchId string
@@ -337,11 +337,17 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@field quantity integer
 ---@field n integer              -- position in the Cast's items
 ---@field size? PagleSize        -- LOG-R65
+---@field variety? PagleVariety  -- VAR-R4
 ---@field cast PagleCast
 
 ---@class PagleSize             -- a Simulated Size (LOG-R65–R67, LOG-R100)
 ---@field length integer         -- millimetres
 ---@field band integer           -- 1 Tiddler … 5 Monster
+
+---@class PagleVariety          -- a Catch's variety (VAR-R4, varieties.md)
+---@field id string              -- "<speciesID>.<key>"
+---@field index integer          -- position 1–10
+---@field rarity "common"|"uncommon"|"rare"|"epic"
 
 ---@class ConditionsSnapshot
 ---@field time integer           -- server time
@@ -439,7 +445,7 @@ What the backend's projection driver calls in `logic/` (LOG-R79), by the names a
 
 | Where (`ns` of) | Function | Returns |
 |---|---|---|
-| `Pagle` | `BindCoreProjections(newProjection)` | nothing: calls `newProjection(name, def)` for each of Core's projections by its `PagleDB.global.projections` key: `"wallet"`, whose state has `spent` (SHOP-R11). The Field report's is left out, as its input never leaves the client (LOG-R82). |
+| `Pagle` | `BindCoreProjections(newProjection)` | nothing: calls `newProjection(name, def)` for each of Core's projections by its `PagleDB.global.projections` key: `"wallet"`, whose state has `spent` (SHOP-R11), and `"varieties"`, whose state has `bySpecies` (VAR-R10). The Field report's is left out, as its input never leaves the client (LOG-R82). |
 | `Pagle_Ledger`, `Pagle_Hunts`, `Pagle_Stats`, `Pagle_TackleBoard` | `BindProjections(M)` | the projection `M:NewProjection(def)` bound over a table of the hook's own making. QoL has no projection, so it has no hook. |
 | `Pagle_Ledger`, `Pagle_Hunts`, `Pagle_TackleBoard` | `CoinsEarned(state)` | the lifetime Coins earned, as the Module reports them (SHOP-R2) |
 | `Pagle_Ledger` | `Measures(state)` | `{ anglerLevel = { prestige, level, xp }, ledgerCompletion = { percent, done, total }, speciesCaught, legendsCaught }`: the climb's level and XP (LED-R30–R32), LED-R70's completion, and the Species and distinct Legends caught, removed ones left out (LED-R71, LED-R63) |
