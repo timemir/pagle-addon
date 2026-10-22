@@ -74,8 +74,8 @@ end
 -- The Pagle block (VIEW-R20, VIEW-R21), after the game's own lines, on the tooltip of any player unit with a card,
 -- the player's own characters too; Core's, so it shows with every Module off. In combat and while restricted too
 -- (VIEW-R22): it is only text added to the game's tooltip, and ns.anglerViews:HoverPlayer then finds Followed Anglers
--- alone. With the setting off nothing is looked up, so Pagle_Anglers never loads (VIEW-R30, VIEW-R3). The tooltip is
--- shown again so it fits the lines added.
+-- alone. With the setting off nothing is looked up, so Pagle_Anglers never loads (VIEW-R30, VIEW-R3). A shown tooltip
+-- is shown again so it fits the lines added; a hidden one, such as another addon's scanning tooltip, stays hidden.
 TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip, data)
 	local guid = playerGuid(data)
 	if not guid or ns.db.profile.anglerTooltips ~= true then
@@ -95,7 +95,9 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tool
 			tooltip:AddLine(line.left, left[1], left[2], left[3])
 		end
 	end
-	tooltip:Show()
+	if tooltip:IsShown() then
+		tooltip:Show()
+	end
 end)
 
 --- The Followed Anglers (VIEW-R11): `{ state, anglers }`, state "ok", "none" (Pagle_Following is live with no
