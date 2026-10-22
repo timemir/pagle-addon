@@ -180,6 +180,36 @@ describe("Pagle.NewBook (core/book.md)", function()
 		assert.is_false(book.frame.dim:IsShown())
 	end)
 
+	it("fades its dim with it, whole again once settled (BOOK-R6, BOOK-R35)", function()
+		local book = newBook({ fixed = true, dim = 0.58 })
+		book:Open()
+		client.update(0.08)
+		local dim = book.frame.dim
+		assert.is_true(dim:GetAlpha() > 0 and dim:GetAlpha() < 1)
+		assert.are.equal(book.frame:GetAlpha(), dim:GetAlpha())
+		book:Settle()
+		assert.are.equal(1, dim:GetAlpha())
+	end)
+
+	it("wraps a ribbon's name to two lines inside the ribbon (BOOK-R17)", function()
+		local book = newBook()
+		book:Open()
+		local label = book.frame.ribbons[1].label
+		assert.is_true(label:CanWordWrap())
+		assert.are.equal(82, label.width)
+		assert.are.equal(2, label:GetMaxLines())
+	end)
+
+	it("reads as closed while it fades out after a close (BOOK-R23)", function()
+		local book = newBook()
+		book:Open()
+		book:Close()
+		assert.is_true(book.frame:IsShown())
+		assert.is_false(book:IsShown())
+		book:Toggle()
+		assert.is_true(book:IsShown())
+	end)
+
 	it("fades out, closes with its sound and calls onHide once (BOOK-R4, BOOK-R40)", function()
 		local hidden = 0
 		local book = newBook({

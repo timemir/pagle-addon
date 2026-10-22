@@ -55,8 +55,10 @@ local PLATE_CAP, PLATE_ROOM, SILVER_LIFT, SILVER_BLUE = 8, 22, 1.1, 1.15
 -- its levels above the book's.
 local SHADE, CAST_WIDTH, CAST_DARK, EDGE_WIDTH, EDGE_LIGHT, FOLD_LEVELS = 0.28, 26, 0.32, 1.5, 0.55, 40
 local TURN_LIFT, TURN_LAND = 0.22, 0.28
--- Where a ribbon's words sit above its swallowtail end: its name, its name over a count, and the count (BOOK-R19).
+-- Where a ribbon's words sit above its swallowtail end: its name, its name over a count, and the count (BOOK-R19);
+-- the name's room across and its most lines (BOOK-R17).
 local RIBBON_LABEL_Y, RIBBON_LABEL_OVER_Y, RIBBON_COUNT_Y = 31, 38, 17
+local RIBBON_LABEL_WIDTH, RIBBON_LABEL_LINES = 82, 2
 
 -- The ids books have taken (BOOK-R1).
 local taken = {}
@@ -64,6 +66,17 @@ local taken = {}
 ---@param id integer
 local function sound(id)
 	PlaySound(id, "SFX")
+end
+
+-- Sets the book frame's alpha, and its dim's with it: the dim fades with the book (BOOK-R6).
+---@param frame Frame
+---@param alpha number
+local function fade(frame, alpha)
+	frame:SetAlpha(alpha)
+	local dim = frame.dim
+	if dim then
+		dim:SetAlpha(alpha)
+	end
 end
 
 ---@return boolean
@@ -363,7 +376,10 @@ local function newRibbon(parent)
 	ribbon.stitch = ns.ArtCrisp(ribbon:CreateTexture(nil, "ARTWORK", nil, 1))
 	ribbon.label = text(ribbon, "gilt", 12, INKS.ribbon, true)
 	ribbon.label:SetJustifyH("CENTER")
-	ribbon.label:SetWordWrap(false)
+	-- up to two lines inside the ribbon, growing upward from its foot
+	ribbon.label:SetWordWrap(true)
+	ribbon.label:SetWidth(RIBBON_LABEL_WIDTH)
+	ribbon.label:SetMaxLines(RIBBON_LABEL_LINES)
 	ribbon.label:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, RIBBON_LABEL_Y)
 	ribbon.count = text(ribbon, "hand", 15, INKS.count, true)
 	ribbon.count:SetJustifyH("CENTER")
@@ -923,7 +939,7 @@ function Book:RegisterLeather(name, renderer)
 end
 
 function Book:IsShown()
-	return self.frame ~= nil and self.frame:IsShown()
+	return self.frame ~= nil and self.frame:IsShown() and not self.closing
 end
 
 function Book:Showing()
@@ -1001,7 +1017,7 @@ function Book:Open(place, how)
 		-- opened again while fading out: it stays, whole
 		Pagle.StopMotion(self.closing)
 		self.closing = nil
-		frame:SetAlpha(1)
+		fade(frame, 1)
 	end
 	local opening = not frame:IsShown()
 	if opening then
@@ -1023,7 +1039,7 @@ function Book:Open(place, how)
 				ease = Pagle.EASE.out,
 				keys = { { 0, { 0 } }, { 1, { 1 } } },
 				apply = function(v)
-					frame:SetAlpha(v[1])
+					fade(frame, v[1])
 				end,
 			},
 		})
@@ -1052,7 +1068,7 @@ function Book:Close()
 			Pagle.StopMotion(closing)
 			self.closing = nil
 			frame:Hide()
-			frame:SetAlpha(1)
+			fade(frame, 1)
 		end
 	end
 	Pagle.Animate(closing, {
@@ -1061,7 +1077,7 @@ function Book:Close()
 			ease = Pagle.Bezier(0.42, 0, 1, 1),
 			keys = { { 0, { 1 } }, { 1, { 0 } } },
 			apply = function(v)
-				frame:SetAlpha(v[1])
+				fade(frame, v[1])
 			end,
 		},
 	}, finish)
@@ -1105,7 +1121,7 @@ function Book:Settle()
 		frame:Hide()
 	end
 	Pagle.StopMotion(frame)
-	frame:SetAlpha(1)
+	fade(frame, 1)
 	settle(self)
 end
 
@@ -1119,7 +1135,7 @@ function Book:Hidden()
 	settle(self)
 	local frame = self.frame
 	if frame then
-		frame:SetAlpha(1)
+		fade(frame, 1)
 		if frame.dim then
 			frame.dim:Hide()
 		end
