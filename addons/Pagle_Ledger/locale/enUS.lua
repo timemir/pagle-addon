@@ -55,6 +55,17 @@ ns.L = {
 	-- descriptions are lore (LED-R160).
 	BINDING_SLOT_LABEL = "Journal binding",
 	BINDING_EARNED = "Angler Level %d",
+	-- How the expansion's earned goods are earned (LED-R116, LED-R117), by rule (logic/EarnedGoods.lua): interface
+	-- text, not lore.
+	EARNED_TEXT = {
+		legend = "Land a Legend",
+		legends = "Land all three Legends",
+		monster = "Land a Monster",
+		prestige1 = "Prestige I",
+		prestige5 = "Prestige V",
+		prestige10 = "Prestige X",
+		ledger = "Ledger 100%",
+	},
 
 	-- A zone crest not yet earned (LED-R115): the row's tag and the stage's note. The crests' names and descriptions
 	-- are lore (LED-R160).

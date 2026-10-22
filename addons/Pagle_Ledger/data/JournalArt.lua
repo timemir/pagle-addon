@@ -16,15 +16,11 @@ local ns = select(2, ...)
 local CORE = "Interface\\AddOns\\Pagle\\media\\books\\"
 local OWN = "Interface\\AddOns\\Pagle_Ledger\\media\\journal\\"
 
---- The book's whole textures: the leather's grain (tiled, 128 UI units a repeat; Bark and Cloth 256), the page paper,
---- and the binding leathers (LED-R110): Field Leather is Core's own leather, a leather binding a vertex tint over the
---- grey leather, Birch Bark and Sea-Green Buckram their own grain.
+--- The book's whole textures: the leather's grain (tiled, 128 UI units a repeat) and the page paper. The bindings'
+--- materials are logic/Bindings.lua's (LED-R110).
 ns.JOURNAL_FILES = {
 	leather = CORE .. "Leather",
 	parchment = CORE .. "Parchment",
-	leatherGrey = OWN .. "LeatherGrey",
-	bark = OWN .. "Bark",
-	cloth = OWN .. "Cloth",
 }
 
 --- A sprite's texel rectangle in its atlas, and its drawn element's box in UI units ({ x, y, w, h }).
@@ -168,6 +164,53 @@ ns.JOURNAL_ATLASES = {
 			["binding-storm-grey"] = { x = 662, y = 2, w = 216, h = 258, box = { 20, 6, 104, 134 } },
 			["binding-tanned-hide"] = { x = 2, y = 264, w = 216, h = 258, box = { 20, 6, 104, 134 } },
 			["binding-tidewater-blue"] = { x = 2, y = 526, w = 216, h = 258, box = { 20, 6, 104, 134 } },
+		},
+	},
+	-- The shop expansion's twenty bindings as closed books (LED-R110's swatches, the shop expansion kit's Bindings
+	-- board, `goods.json`). The Iridescent Scale's is there for when it is registered (LED-R116).
+	Bindings2 = {
+		file = OWN .. "Bindings2",
+		width = 1024,
+		height = 2048,
+		scale = 1.25,
+		sprites = {
+			["swatch-abyssal"] = { x = 704, y = 899, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-chartlinen"] = { x = 2, y = 2, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-copper"] = { x = 236, y = 600, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-coral"] = { x = 2, y = 1198, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-driftwood"] = { x = 2, y = 301, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-eelskin"] = { x = 236, y = 301, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-frosthide"] = { x = 704, y = 301, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-iridescent"] = { x = 236, y = 1497, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-keeper"] = { x = 236, y = 1198, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-kodo"] = { x = 470, y = 301, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-legend"] = { x = 236, y = 899, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-monster"] = { x = 470, y = 899, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-morocco"] = { x = 2, y = 899, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-moss"] = { x = 704, y = 2, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-netcork"] = { x = 2, y = 600, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-oilskin"] = { x = 470, y = 2, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-pearl"] = { x = 2, y = 1497, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-sailcloth"] = { x = 236, y = 2, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-turtle"] = { x = 704, y = 600, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+			["swatch-velvet"] = { x = 470, y = 600, w = 230, h = 295, box = { 12, 10, 150, 196 } },
+		},
+	},
+	-- The corner pieces of the open book in a binding that wears them (LED-R110), each the top-left corner, 44 UI units
+	-- square as the Bindings board draws them, mirrored for the other three. Drawn from the board's corner shapes.
+	BindingCorners = {
+		file = OWN .. "BindingCorners",
+		width = 1024,
+		height = 128,
+		scale = 128 / 44,
+		sprites = {
+			["corner-brass"] = { x = 0, y = 0, w = 128, h = 128, box = { 0, 0, 44, 44 } },
+			["corner-gold"] = { x = 128, y = 0, w = 128, h = 128, box = { 0, 0, 44, 44 } },
+			["corner-silver"] = { x = 256, y = 0, w = 128, h = 128, box = { 0, 0, 44, 44 } },
+			["corner-iron"] = { x = 384, y = 0, w = 128, h = 128, box = { 0, 0, 44, 44 } },
+			["corner-bone"] = { x = 512, y = 0, w = 128, h = 128, box = { 0, 0, 44, 44 } },
+			["corner-pearl"] = { x = 640, y = 0, w = 128, h = 128, box = { 0, 0, 44, 44 } },
+			["corner-silverfiligree"] = { x = 768, y = 0, w = 128, h = 128, box = { 0, 0, 44, 44 } },
 		},
 	},
 }

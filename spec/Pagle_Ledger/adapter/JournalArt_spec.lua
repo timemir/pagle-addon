@@ -36,21 +36,30 @@ local function has(list, text)
 end
 
 describe("the Fish Journal's art (ledger.md › UI)", function()
-	it("draws its own parts, crests and bindings from Pagle_Ledger/media/journal, as BLP files that ship", function()
-		local _, loaded = openJournal()
-		local atlases = loaded.ns.JOURNAL_ATLASES
+	it(
+		"draws its own parts, crests, binding swatches and corners and every binding's material from its media, as BLP files that ship (LED-R110)",
+		function()
+			local _, loaded = openJournal()
+			local atlases = loaded.ns.JOURNAL_ATLASES
+			local function path(file)
+				return file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
+			end
 
-		for _, name in ipairs({ "Parts", "Crests", "Bindings" }) do
-			local file = atlases[name].file
-			assert.matches("^Interface\\AddOns\\Pagle_Ledger\\media\\journal\\", file)
-			local path = file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
-			assert(#readFile(path) > 0, path)
+			for _, name in ipairs({ "Parts", "Crests", "Bindings", "Bindings2", "BindingCorners" }) do
+				local file = atlases[name].file
+				assert.matches("^Interface\\AddOns\\Pagle_Ledger\\media\\journal\\", file)
+				assert(#readFile(path(file)) > 0, path(file))
+			end
+			for _, binding in ipairs(loaded.ns.BINDINGS) do
+				local look = loaded.ns.BindingLook(loaded.ns.BindingID(binding))
+				assert(#readFile(path(look.texture)) > 0, path(look.texture))
+				assert(atlases[look.swatchAtlas].sprites[look.swatch], look.swatch)
+				if look.corners then
+					assert(atlases.BindingCorners.sprites["corner-" .. look.corners], look.corners)
+				end
+			end
 		end
-		for _, key in ipairs({ "leatherGrey", "bark", "cloth" }) do
-			local path = loaded.ns.JOURNAL_FILES[key]:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
-			assert(#readFile(path) > 0, path)
-		end
-	end)
+	)
 
 	it("wraps a seal's words, so Home's seal shows both \"Ledger\" and the completion under it", function()
 		local _, loaded = openJournal()

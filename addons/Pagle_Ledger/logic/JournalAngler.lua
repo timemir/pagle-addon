@@ -164,10 +164,11 @@ local function signedAs(context, blocks)
 	end
 end
 
--- "Bindings" (LED-R146, LED-R110): every binding in LED-R110's order, its name and its state: "In use" for the
--- equipped one, "Use" (equipping it, SHOP-R32) when owned, "Angler Level {L}" for a level binding not earned yet
--- (LED-R111), and "In the Curio Shop" (opening the shop at it, SHOP-R40) for one for sale and not owned. Look and
--- Feel picks the same setting, so the page reads Pagle.GetEquipped at each draw.
+-- "Bindings" (LED-R146, LED-R110): every binding in LED-R110's order, its closed book, its name and its state: "In use"
+-- for the equipped one, "Use" (equipping it, SHOP-R32) when owned, "Angler Level {L}" for a level binding not earned
+-- yet (LED-R111), an expansion one's earnedText ("Land a Monster", LED-R116) likewise, and "In the Curio Shop"
+-- (opening the shop at it, SHOP-R40) for one for sale and not owned. Look and Feel picks the same setting, so the page
+-- reads Pagle.GetEquipped at each draw.
 ---@param context LedgerSpreadContext
 ---@param blocks LedgerBlock[]
 local function bindings(context, blocks)
@@ -178,7 +179,12 @@ local function bindings(context, blocks)
 	for _, binding in ipairs(ns.BINDINGS) do
 		local id = ns.BindingID(binding)
 		---@type LedgerBlock
-		local line = { kind = "leader", text = ns.BindingName(binding), binding = binding.swatch }
+		local line = {
+			kind = "leader",
+			text = ns.BindingName(binding),
+			binding = binding.swatch,
+			bindingAtlas = binding.swatchAtlas,
+		}
 		if id == equipped then
 			line.value, line.state = L.ANGLER_BINDING_IN_USE, "inUse"
 		elseif goods.isOwned(id) then
@@ -188,6 +194,8 @@ local function bindings(context, blocks)
 			end
 		elseif binding.level then
 			line.value, line.state = L.BINDING_EARNED:format(binding.level), "level"
+		elseif binding.earn then
+			line.value, line.state = L.EARNED_TEXT[binding.earn], "level"
 		else
 			line.value, line.state = L.ANGLER_BINDING_SHOP, "shop"
 			line.action = function()
