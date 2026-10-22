@@ -314,7 +314,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   - **Breaking Wave** (`ledger.binding.wave`): 300 caught Casts at sea: zone or subzone in the open-sea list (Tunables).
   - **Captain's Logbook** (`ledger.binding.logbook`): 25 zones fished (LED-R6).
   - **Carved Heartwood** (`ledger.binding.heartwood`): a caught Cast right after 10 or more got-away Casts in a row, in log order on any character.
-  - **Stormglass Reliquary** (`ledger.binding.stormglass`): 10 zones whose shown rank is Master (LED-R52).
+  - **Stormglass Reliquary** (`ledger.binding.stormglass`): 10 zones at Master, the higher of the computed and the celebrated rank, as a zone crest is earned (LED-R52, LED-R114).
   - **Black Lacquer Koi** (`ledger.binding.lacquer`): 30 realm dates with a caught Cast (each Cast's realm date as LOG-R49 derives it).
   - **Cable Knit** (`ledger.binding.knit`): 10,000 Casts, caught and got away.
   - **Fly Wallet** (`ledger.binding.flywallet`): 5 different lures: distinct non-empty `lure` values on caught Casts.

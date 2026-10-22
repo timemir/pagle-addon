@@ -42,6 +42,23 @@ local ns = select(2, ...)
 ---@field zones { [integer]: LedgerZone }     -- every zone fished, never 0 (LED-R6)
 ---@field varieties { [integer]: { [integer]: LedgerVariety } } -- by Species ID, each variety caught by its position
 --- (VAR-R20, logic/Varieties.lua)
+---@field counts LedgerCounts                 -- the second round's counts (LED-R118, logic/EarnedCounts.lua)
+
+--- The second round's counts (ledger.md › Data, LedgerCounts; LED-R118, LED-R119).
+---@class LedgerCounts
+---@field shards integer                      -- glass shards (LED-R119)
+---@field lastDay { [integer]: integer }      -- zone -> day number of its latest caught Cast (LED-R119)
+---@field deep integer                        -- caught Casts at realm minute < 240
+---@field pairs integer                       -- caught Casts sharing a Species with the caught Cast before
+---@field lastSpecies { [integer]: true }     -- the Species among the last caught Cast's Catches
+---@field records integer                     -- size records beaten (LED-R82)
+---@field ice integer                         -- caught Casts in the ice zones
+---@field sea integer                         -- caught Casts at sea
+---@field gotAwayRun integer                  -- got-away Casts since the last caught one
+---@field afterRun boolean                    -- a caught Cast came after 10 or more got away
+---@field days { [integer]: true }            -- day numbers with a caught Cast
+---@field lures { [integer]: true }           -- lure IDs on caught Casts
+---@field clams integer                       -- Big-mouth Clam Catches
 
 --- An item's Catches and its first Catch (ledger.md › Data, LedgerFirst): that Cast's time, character, zone and realm
 --- date. Legend items also keep their Simulated Size record and `since` (LED-R80, logic/Records.lua).
@@ -114,8 +131,8 @@ local ns = select(2, ...)
 
 --- The Ledger's rules version (LED-R2, LED-R4, Tunables): 1 in M2, 2 in M3, 3 in M4, then +1 per change: 4 when ★
 --- moved to a Species' 5th Catch (LED-R45), 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32,
---- LED-R37), 6 for the varieties caught (VAR-R20).
-ns.LEDGER_RULES_VERSION = 6
+--- LED-R37), 6 for the varieties caught (VAR-R20), 7 for the second round's counts (LED-R118, LED-R119).
+ns.LEDGER_RULES_VERSION = 7
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
 --- Catch XP, before Fresh Water (LED-R20); one Fresh Water doubles it (LED-R22), as the ink XP bar shows (LED-R145).
@@ -247,6 +264,7 @@ local function reset()
 		uncharted = {},
 		zones = {},
 		varieties = {},
+		counts = ns.NewEarnedCounts(),
 	}
 end
 
@@ -319,8 +337,10 @@ function ns.NewLedgerFold(lookups)
 	local function applyCast(state, record, earned)
 		state.casts = state.casts + 1
 		if record.outcome ~= "caught" then
+			ns.CountCast(state.counts, record, getItem, 0)
 			return
 		end
+		local from = #earned
 		local zone = record.conditions.zone
 		for _, catch in ipairs(record.items) do
 			local itemID = catch.itemID
@@ -396,6 +416,14 @@ function ns.NewLedgerFold(lookups)
 			stars.credit(state, record, starsBefore, earned)
 		end
 		ns.CreditZoneRank(state, world, zone, record.id, earned)
+		-- The second round's counts (LED-R118), with the size records this Cast's Catches beat (LED-R82).
+		local beaten = 0
+		for i = from + 1, #earned do
+			if earned[i].kind == "sizeRecord" then
+				beaten = beaten + 1
+			end
+		end
+		ns.CountCast(state.counts, record, getItem, beaten)
 	end
 
 	-- A Skill Reading (LED-R40): each Skill Milestone not yet credited, at or below its rank, ascending.

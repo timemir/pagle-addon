@@ -153,10 +153,13 @@ describe("fish varieties in the Ledger", function()
 	end
 
 	describe("the projection (VAR-R20, core/varieties.md › Data)", function()
-		it("is rules version 6, for the varieties caught (LED-R2, LED-R4, Tunables)", function()
-			assert.are.equal(6, ns.LEDGER_RULES_VERSION)
-			assert.are.equal(602, ns.RulesVersion(2))
-		end)
+		it(
+			"is rules version 7: 6 for the varieties caught, 7 since the second round's counts (LED-R2, LED-R4, LED-R118, Tunables)",
+			function()
+				assert.are.equal(7, ns.LEDGER_RULES_VERSION)
+				assert.are.equal(702, ns.RulesVersion(2))
+			end
+		)
 
 		it("starts with no varieties caught", function()
 			assert.are.same({}, fold.reset().varieties)
