@@ -16,6 +16,17 @@ function ns.RedPencilTerms(text)
 	return (text:gsub("%*(.-)%*", "|cff9a2a1a%1|r"))
 end
 
+--- Whether the Angler has had a Session end, as `ledger.fresh` waits for (ONB-R52): the Catch log's first Cast
+--- belongs to a Session that isn't open now. `firstSession` is that Cast's Session ID, Core's tag (LOG-R98), nil with
+--- no Cast yet; `open` the ID of the Session open now (Pagle.GetSession, LOG-R64), nil with none. Sessions are Core's,
+--- so nothing here cuts them.
+---@param firstSession string?
+---@param open string?
+---@return boolean
+function ns.SessionHasEnded(firstSession, open)
+	return firstSession ~= nil and firstSession ~= open
+end
+
 --- One line of the Your Ledger step's box of Skill Milestones (ONB-R36).
 ---@class LedgerGuideMilestone
 ---@field credited boolean -- ticked in red
