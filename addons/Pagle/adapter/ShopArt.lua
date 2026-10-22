@@ -107,6 +107,8 @@ local FONTS = {
 	-- the income tooltip
 	TipHead = { "gilt", 15, "gilt" },
 	Tip = { "print", 14, "creamText" },
+	-- the "?" beside the close button (ONB-R59)
+	Help = { "gilt", 20, "gilt", shadow = true },
 }
 
 --- The shop's font object names, by key: PagleShop<key>.

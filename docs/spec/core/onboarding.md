@@ -189,11 +189,12 @@ M:ShowMarginNote(note)          -- ONB-R50–R52; no-op if seen or notes are off
 
 ---@class PagleFirstLook
 ---@field id string             -- "<module>.<window>"
----@field window Frame          -- the window the set belongs to
+---@field window Frame|fun(): Frame?  -- the window the set belongs to, or a function returning it (nil until it's made)
 ---@field title string          -- "the Fish Journal" (the bar reads "First look · {title}")
----@field notes { text: string, target: fun(): Region?, x: number, y: number, w: number }[]  -- x, y from the window's top left
-M:RegisterFirstLook(set)        -- ONB-R56
-M:ShowFirstLook(id, again?)     -- from the window's OnShow; no-op if seen or notes are off, unless `again` (the "?", ONB-R59)
+---@field notes { text: string, target: fun(): Region?, x: number, y: number, w: number }[]  -- x, y from the window's top left; *term* or |cff9a2a1a…|r marks the red term
+---@field open? fun()           -- the tour's way to open the window (ONB-R84); without it the tour calls window:Show()
+M:RegisterFirstLook(set)        -- ONB-R56; once, before the window first shows (at OnInitialize or OnEnable to join Off you go's list and the tour)
+M:ShowFirstLook(id, again?)     -- from the window's OnShow; no-op if seen or notes are off, unless `again` (the "?", ONB-R59); returns whether it shows
 
 M:CompleteEveningItem(id)       -- ONB-R61 ("journal" for the Ledger, "hunts" for Hunts)
 

@@ -3023,6 +3023,150 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("First looks", function()
+		-- A stand-in region, shown until `hidden` is set.
+		local function region()
+			local made = { hidden = false }
+			function made:IsVisible()
+				return not self.hidden
+			end
+			return made
+		end
+
+		-- A stand-in window as a client frame behaves: Show and Hide, and OnHide's hooks run as it hides.
+		local function window()
+			local made = { shown = false, hooks = {} }
+			function made:IsShown()
+				return self.shown
+			end
+			function made:Show()
+				self.shown = true
+			end
+			function made:Hide()
+				self.shown = false
+				for _, hook in ipairs(self.hooks.OnHide or {}) do
+					hook(self)
+				end
+			end
+			function made:HookScript(script, fn)
+				self.hooks[script] = self.hooks[script] or {}
+				table.insert(self.hooks[script], fn)
+			end
+			return made
+		end
+
+		-- The Ledger registered and logged in; returns its handle.
+		local function withLedger(fake)
+			local M = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			fake.login()
+			return M
+		end
+
+		-- The Fish Journal's set: three notes on `targets`, the second's text with its red term.
+		local function journal(frame, targets)
+			local notes = {}
+			for i, target in ipairs(targets) do
+				notes[i] = {
+					text = i == 2 and "The *blue* stretch is Fresh Water." or "Note " .. i .. ".",
+					target = function()
+						return target
+					end,
+					x = -214,
+					y = 100 * i,
+					w = 200,
+				}
+			end
+			return { id = "ledger.journal", window = frame, title = "the Fish Journal", notes = notes }
+		end
+
+		-- Each note fake.looksShown[i] holds, as "n. text".
+		local function notesOf(fake, i)
+			local read = {}
+			for j, note in ipairs(fake.looksShown[i].notes) do
+				read[j] = note.n .. ". " .. note.text
+			end
+			return read
+		end
+
+		it(
+			"shows a Module's set the first time its window opens, marking looksSeen, and never again (ONB-R55)",
+			function()
+				local fake = newFakePagle()
+				local M = withLedger(fake)
+				local frame = window()
+				M:RegisterFirstLook(journal(frame, { region(), region(), region() }))
+
+				frame:Show()
+				assert.is_true(M:ShowFirstLook("ledger.journal"))
+				frame:Hide()
+				frame:Show()
+				assert.is_false(M:ShowFirstLook("ledger.journal"))
+
+				assert.are.equal(1, #fake.looksShown)
+				assert.are.equal("the Fish Journal", fake.looksShown[1].title)
+				assert.are.same(
+					{ "1. Note 1.", "2. The *blue* stretch is Fresh Water.", "3. Note 3." },
+					notesOf(fake, 1)
+				)
+				assert.is_true(fake.global.onboarding.looksSeen["ledger.journal"])
+				assert.is_nil(fake.firstLooks:Showing())
+			end
+		)
+
+		it("drops a note whose target is hidden, numbering the rest 1 to n (ONB-R56)", function()
+			local fake = newFakePagle()
+			local M = withLedger(fake)
+			local hidden = region()
+			hidden.hidden = true
+			M:RegisterFirstLook(journal(window(), { region(), hidden, region() }))
+
+			M:ShowFirstLook("ledger.journal")
+
+			assert.are.same({ "1. Note 1.", "2. Note 3." }, notesOf(fake, 1))
+		end)
+
+		it('shows it again on the "?", with Margin notes off too, and hides it on a second press (ONB-R59)', function()
+			local fake = newFakePagle()
+			local M = withLedger(fake)
+			fake.global.onboarding.notesOn = false
+			M:RegisterFirstLook(journal(window(), { region() }))
+
+			assert.is_false(M:ShowFirstLook("ledger.journal"))
+			assert.is_true(M:ShowFirstLook("ledger.journal", true))
+			assert.is_true(fake.global.onboarding.looksSeen["ledger.journal"])
+			assert.is_false(M:ShowFirstLook("ledger.journal", true))
+
+			assert.are.equal(1, #fake.looksShown)
+			assert.is_nil(fake.firstLooks:Showing())
+		end)
+
+		it("raises an error at the Module's call for a missing or mistyped field, adding nothing (ONB-R90)", function()
+			local fake = newFakePagle()
+			local M = withLedger(fake)
+			local set = journal(window(), { region() })
+			set.title = nil
+
+			local ok, err = pcall(function()
+				M:RegisterFirstLook(set)
+			end)
+			assert.is_false(ok)
+			assert.matches(
+				"fake_pagle_spec%.lua:%d+: RegisterFirstLook: set ledger%.journal needs a title",
+				tostring(err)
+			)
+			assert.are.same({}, fake.firstLooks:List())
+
+			ok, err = pcall(function()
+				M:ShowFirstLook("hunts.board")
+			end)
+			assert.is_false(ok)
+			assert.matches(
+				"fake_pagle_spec%.lua:%d+: ShowFirstLook: hunts%.board is not one of Ledger's",
+				tostring(err)
+			)
+		end)
+	end)
+
 	describe("the Field guide", function()
 		-- The fixture Modules' steps at their orders (ONB-R21), each Module but `without` registered: QoL's two, the
 		-- Ledger's and the Tackle Board's, with Core's four at 10, 20, 50 and 90. Returns the handles by name.

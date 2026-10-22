@@ -266,7 +266,7 @@ describe("/pagle dev onboarding (ONB-R83)", function()
 		pagle(loaded, "dev onboarding")
 		pagle(loaded, "dev onboarding letters")
 
-		local usage = "Pagle dev: /pagle dev onboarding reset | step <id> | letter | evening | note <id>"
+		local usage = "Pagle dev: /pagle dev onboarding reset | step <id> | letter | evening | note <id> | look <id>"
 		assert.are.same({ "Pagle dev: dev commands are on.", usage, usage }, loaded.printed)
 	end)
 end)
