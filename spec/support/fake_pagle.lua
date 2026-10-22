@@ -154,7 +154,12 @@
 --- `announcements.everyCatch` is "Show every catch" (ANN-R13), on, and `announcements.motion` is Animations, on, which
 --- Pagle.IsAnimationsOn reads; a spec may set any of them. `appearance` holds each slot's pick, `{ [slot] = goodID }` (SHOP-R32), which Pagle.SetEquipped
 --- writes and a spec may seed. `lengthUnit` is the Angler's length unit Pagle.FormatLength reads in, "cm" or "in"
---- (LOG-R69); nil, the default, follows `region`.
+--- (LOG-R69); nil, the default, follows `region`. `clockFormat` is the clock format Pagle.FormatClock writes in,
+--- "24h" or "12h" (CORE-R87); nil, the default, follows `militaryTime`.
+---@field militaryTime string? The game's clock CVar timeMgrUseMilitaryTime as the fake's client answers it: nil, a
+--- client without it, so with no clockFormat times read 24-hour; a spec may set "0" (12-hour) or "1".
+---@field noteClockFormat fun() Core notes the clock format, as the Clock row and CVAR_UPDATE do: ClockFormatChanged
+--- fires if it differs from the one Pagle.FormatClock last wrote in (CORE-R87).
 ---@field region integer? GetCurrentRegion() as the fake's client answers it: 1 (Americas), so with no lengthUnit
 --- lengths read in inches; a spec may set another region, or nil for a client without the call (centimetres).
 ---@field writeUps PagleWriteUpStored[] Each Write-up section Core kept from a Module's M:RaiseWriteUp, in order, as
@@ -758,6 +763,16 @@ end)
 part(function(fake, Pagle, ns, host)
 	fake.region = 1
 	ns.PublishSize(Pagle, host, readOnly)
+end)
+
+-- The clock format as Core publishes it (CORE-R87): Pagle.FormatClock, in fake.profile.clockFormat or the game's
+-- clock, fake.militaryTime. A spec changes either and calls fake.noteClockFormat() for ClockFormatChanged, as the
+-- Clock row and CVAR_UPDATE do on the client.
+part(function(fake, Pagle, ns, host)
+	ns.PublishClock(Pagle, host)
+	function fake.noteClockFormat()
+		ns.NoteClockFormat()
+	end
 end)
 
 -- The variety rarities as Core publishes them (VAR-R11): Pagle.VARIETY_RARITIES, read-only here (CORE-R18).
@@ -1655,6 +1670,9 @@ function newFakePagle()
 		report = fake.report,
 		region = function()
 			return fake.region
+		end,
+		militaryTime = function()
+			return fake.militaryTime
 		end,
 		print = fake.print,
 		isRestricted = function()

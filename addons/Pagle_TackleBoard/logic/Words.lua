@@ -359,7 +359,8 @@ function ns.WeekdayName(serverTime)
 	return ns.L.WEEKDAYS[ns.RealmDate(serverTime).weekday]
 end
 
---- When a goal was posted, in realm time (TKB-R102): "Posted {weekday} {day} {month}, {hh:mm}", 24-hour.
+--- When a goal was posted, in realm time (TKB-R102): "Posted {weekday} {day} {month}, {time}", the time in Core's
+--- clock format, "14:05" or "2:05 pm" (`Pagle.FormatClock`, CORE-R87).
 ---@param serverTime integer its record's `time`
 ---@return string
 function ns.PostedTime(serverTime)
@@ -368,7 +369,7 @@ function ns.PostedTime(serverTime)
 		weekday = ns.L.WEEKDAYS[date.weekday],
 		day = date.day,
 		month = ns.L.MONTHS[date.month],
-		time = string.format("%02d:%02d", date.hour, date.minute),
+		time = ns.api.pagle.FormatClock(date.hour, date.minute),
 	})
 end
 

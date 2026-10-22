@@ -103,9 +103,9 @@ describe("The Settings root with no Module On", function()
 			assert.are.equal("Modules", texts[2])
 			-- The note, Getting started (spec/Pagle/adapter/GettingStarted_spec.lua), the Field report section
 			-- (spec/Pagle/adapter/FieldReportBox_spec.lua), Saving's header and row
-			-- (spec/Pagle/adapter/ReloadReminder_spec.lua), then Units' (spec/Pagle/adapter/Length_spec.lua), the
-			-- Pagle menu's (spec/Pagle/adapter/MinimapIcon_spec.lua) and the Pagle website's
-			-- (spec/Pagle/adapter/AnglersInGame_spec.lua).
+			-- (spec/Pagle/adapter/ReloadReminder_spec.lua), then Units' (spec/Pagle/adapter/Length_spec.lua,
+			-- spec/Pagle/adapter/Clock_spec.lua), the Pagle menu's (spec/Pagle/adapter/MinimapIcon_spec.lua) and the
+			-- Pagle website's (spec/Pagle/adapter/AnglersInGame_spec.lua).
 			assert.are.same({
 				"Turn Modules on or off in the AddOns list.",
 				"Getting started",
@@ -123,11 +123,12 @@ describe("The Settings root with no Module On", function()
 				"Remind me to /reload when Casts are unsaved",
 				"Units",
 				"Length unit",
+				"Clock",
 				"Pagle menu",
 				"Show the minimap icon",
 				"Pagle website",
 				"Show other Anglers on player tooltips",
-			}, { unpack(texts, #texts - 19) })
+			}, { unpack(texts, #texts - 20) })
 			for _, name in ipairs({ "Ledger", "Hunts", "Stats", "Tackle Board", "QoL" }) do
 				assert.is_true(contains(texts, name))
 			end

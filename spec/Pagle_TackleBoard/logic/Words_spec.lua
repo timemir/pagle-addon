@@ -496,6 +496,16 @@ describe("realm dates and times", function()
 		end)
 	end)
 
+	it("writes the posted time in Core's clock format, 12-hour when it is set so (TKB-R102, CORE-R87)", function()
+		local loaded, fake = board.load()
+		fake.profile.clockFormat = "12h"
+
+		assert.are.same({ "Posted Sun 11 Oct, 8:15 am", "Posted Sat 10 Oct, 11:15 pm" }, {
+			loaded.ns.PostedTime(SERVER_TIME),
+			loaded.ns.PostedTime(SERVER_TIME - 9 * HOUR),
+		})
+	end)
+
 	it('posts a goal at "Posted {weekday} {day} {month}, {hh:mm}", realm-local and 24-hour (TKB-R102)', function()
 		local ns = board.load().ns
 

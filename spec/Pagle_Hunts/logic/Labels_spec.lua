@@ -486,3 +486,63 @@ describe("Labels in realm time", function()
 		end)
 	end)
 end)
+
+describe("Labels in Core's clock format (HNT-R50, CORE-R87)", function()
+	-- Hunts over a FakePagle set to 12-hour: every clock time goes through Pagle.FormatClock (ns.ClockTime).
+	local function twelveHour()
+		local loaded, fake = hunts.load()
+		fake.profile.clockFormat = "12h"
+		return loaded.ns, fake
+	end
+
+	it("writes 24-hour by default: midnight 00:00, 00:05, noon 12:00, 23:59, and a day's end as 00:00", function()
+		local ns = hunts.load().ns
+
+		assert.are.same(
+			{ "00:00", "00:05", "12:00", "23:59", "00:00" },
+			{ ns.FormatClock(0), ns.FormatClock(5), ns.FormatClock(720), ns.FormatClock(1439), ns.FormatClock(1440) }
+		)
+	end)
+
+	it("writes 12-hour: midnight 12:00 am, 12:05 am, noon 12:00 pm, 11:59 pm, and a day's end as 12:00 am", function()
+		local ns = twelveHour()
+
+		assert.are.same(
+			{ "12:00 am", "12:05 am", "12:00 pm", "11:59 pm", "12:00 am" },
+			{ ns.FormatClock(0), ns.FormatClock(5), ns.FormatClock(720), ns.FormatClock(1439), ns.FormatClock(1440) }
+		)
+	end)
+
+	it("writes the board's clock, the window line and a later day's time in it", function()
+		local ns = twelveHour()
+		local c = { group = "later", window = { opensAt = NOW + 37 * MINUTE }, now = NOW, snapshot = SUNDAY }
+
+		assert.are.same({
+			"8:15 am · Sun 11 Oct",
+			"Opens at 8:52 am.",
+			"Mon 12:00 am",
+		}, {
+			ns.TimelineClock(NOW, SUNDAY, nil, false),
+			ns.HuntWindowLine(c, {}),
+			ns.FormatRealmWhen(NOW + (15 * 60 + 45) * MINUTE, NOW, SUNDAY),
+		})
+	end)
+
+	it("writes the conditions line's times and an event's weekly time in it, its duration as before", function()
+		local ns, fake = twelveHour()
+		local names = {
+			EventName = function()
+				return "Stranglethorn Fishing Extravaganza"
+			end,
+			NextWindow = fake.Pagle.NextWindow,
+		}
+
+		assert.are.same({
+			"Realm time 10:00 pm–4:00 am",
+			"Stranglethorn Fishing Extravaganza, Sundays 2:00 pm for 2h",
+		}, {
+			ns.HuntConditionsLine({ time = { { 1320, 240 } } }, nil, NOW, SUNDAY, names),
+			ns.HuntConditionsLine({ events = { 301 } }, "event.301", NOW, SUNDAY, names),
+		})
+	end)
+end)

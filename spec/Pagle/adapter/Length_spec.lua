@@ -13,12 +13,13 @@ local function core(region)
 end
 
 -- The Saving section's reminder, then the Units section's header and Length unit row: the root's last rows but the
--- Pagle menu section's two (spec/Pagle/adapter/MinimapIcon_spec.lua) and the Pagle website section's two
+-- Units section's Clock row (spec/Pagle/adapter/Clock_spec.lua), the Pagle menu section's two
+-- (spec/Pagle/adapter/MinimapIcon_spec.lua) and the Pagle website section's two
 -- (spec/Pagle/adapter/AnglersInGame_spec.lua).
 local function lastRows(loaded)
 	local root = loaded.client.settings.category("Pagle")
 	local initializers = root.layout.initializers
-	local n = #initializers - 4
+	local n = #initializers - 5
 	return initializers[n - 2], initializers[n - 1], initializers[n], root
 end
 
@@ -84,7 +85,7 @@ describe("The root's Units section", function()
 		local loaded = core(1)
 		local _, _, row, root = lastRows(loaded)
 		local rows = loaded.client.settings.show(root)
-		local frame = rows[#rows - 4].frame -- before the Pagle menu and Pagle website sections' two rows each
+		local frame = rows[#rows - 5].frame -- before the Clock row and the Pagle menu and Pagle website sections' two rows each
 		assert.are.equal("Inches", frame.valueLabel)
 
 		row:GetSetting():SetValue("cm")

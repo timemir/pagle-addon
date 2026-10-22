@@ -28,7 +28,7 @@ Pagle (the root)
                             "Turn Modules on or off in the AddOns list."
   [Help chart the waters]   Field report  [Open Field report (N)]
   [Saving]                  Remind me to /reload when Casts are unsaved
-  [Units]                   Length unit
+  [Units]                   Length unit;  Clock
 Fishing                                                    (QoL only)
   [Casting]                 Cast with  ↳ Fishing key
   [Gear]                    Fishing set  ↳ Save what I'm wearing as my fishing set  ↳ Swap gear
@@ -95,10 +95,11 @@ The rules below are authoritative; this sketch only summarises them.
   | 7 | Help chart the waters | Field report | button | "Open Field report", or "Open Field report ({N})" while `Pagle.GetFieldReportCount()` is above 0, read each time the root is shown; it calls `Pagle.OpenFieldReport()` (REP-R43). Tooltip: "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form." From M3. |
   | 8 | Saving | Remind me to `/reload` when Casts are unsaved | checkbox | LOG-R86; default off. Tooltip: "A chat line every {step} Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them.", with {step} filled from LOG-R86's tunable (50). From M1. |
   | 9 | Units | Length unit | dropdown | "Centimetres" / "Inches"; LOG-R69, whose default (inches or centimetres by `GetCurrentRegion()`) is Core's. Tooltip: "How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes only what you see." From M4. |
+  | 9a | | Clock | dropdown | "Follow the game's clock" / "24-hour (18:30)" / "12-hour (6:30 pm)"; CORE-R87, default following the game's clock, which stores nothing (`PagleDB.profile.clockFormat` `nil`). Tooltip: "How Pagle writes a time of day, such as the realm time at the top of the Hunts board. Following the game uses the minimap clock's 24-hour mode." Every time of day the books, trackers and tooltips write follows it: the Hunts board's realm clock and its labels (HNT-R50), Stats' times and window bounds (STA-R59), the Tackle Board's posted time (TKB-R102). Added before 1.0, after M8.5. |
   | 10 | Pagle menu | Show the minimap icon | checkbox | on (CORE-R56, `PagleDB.global.minimap`). Tooltip: "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button by the minimap." From M8.5. |
   | 11 | Pagle website | Show other Anglers on player tooltips | checkbox | on (VIEW-R30, `PagleDB.profile.anglerTooltips`). Tooltip: "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle Companion." It sits beside the Companion hint's row once that switch is on (#305). From Track V. |
 
-  The length unit sits on the root because it is a Core option that three Modules display ([Write the Settings spec](https://github.com/timemir/wow-fish/issues/44#issuecomment-6129738678)). Saving, Units and Pagle menu are the sections of Core's options that CORE-R40 lists; their keys are `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)) and `PagleDB.global.minimap` (CORE-R53); Pagle website's is `PagleDB.profile.anglerTooltips` ([anglers-in-game.md](core/anglers-in-game.md), VIEW-R30). Getting started is onboarding's ([onboarding.md](core/onboarding.md), ONB-R81).
+  The length unit sits on the root because it is a Core option that three Modules display ([Write the Settings spec](https://github.com/timemir/wow-fish/issues/44#issuecomment-6129738678)). The Clock sits beside it for the same reason: Hunts, Stats and the Tackle Board all write times of day, and how a time reads is a unit of display like a length's, not a look (Look and Feel holds only the goods registry's slots, SET-R50) nor an announcement. Saving, Units and Pagle menu are the sections of Core's options that CORE-R40 lists; their keys are `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)), `PagleDB.profile.clockFormat` ([core/README.md](core/README.md#data), CORE-R87) and `PagleDB.global.minimap` (CORE-R53); Pagle website's is `PagleDB.profile.anglerTooltips` ([anglers-in-game.md](core/anglers-in-game.md), VIEW-R30). Getting started is onboarding's ([onboarding.md](core/onboarding.md), ONB-R81).
 - **SET-R11** The status list is a table of the roster in CORE-R1 order: its name, its TOC version and its state, as CORE-R41 gives them. Each On Module's row ends with one button (CORE-R44):
 
   | Module | Button | Source |
@@ -113,7 +114,7 @@ The rules below are authoritative; this sketch only summarises them.
 
   Every root row without a "From" note (the paragraph, the status list, the note) is there from M1.
 - **SET-R12** Core reads each status button's label (a string, or the function's result) every time the root is shown. Pressing a button runs its action (`def.settingsAction.onClick`, or the first view's `open`). For a Module that has a view (every Module but QoL), and for "Open Field report" and "Open the Curio Shop" (SET-R50), Core first closes the Settings panel (`HideUIPanel(SettingsPanel)`), since what opens would sit behind it. QoL's "Fishing settings »" doesn't close the panel: it moves it to Fishing. While restricted, each action behaves as its own spec says, after the panel has closed: a Module view follows its Module's rules, the Field report prints REP-R44's line and the Curio Shop SHOP-R41's. QoL's button then prints CORE-R33's line, and the panel stays on the root.
-- **SET-R13** The root's Defaults button restores the two value rows: the reminder to off and the length unit to its region default (LOG-R69).
+- **SET-R13** The root's Defaults button restores the three value rows: the reminder to off, the length unit to its region default (LOG-R69) and the Clock to following the game's clock (CORE-R87).
 
 ### Fishing
 
@@ -251,7 +252,7 @@ This file adds no data. Each row's value lives with its owner:
 
 | Rows | Stored in |
 |---|---|
-| Saving, Units | `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)) |
+| Saving, Units | `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)), `PagleDB.profile.clockFormat` ([core/README.md](core/README.md#data)) |
 | Cozy mode, the budget, Show every catch, Animations | `PagleDB.profile.announcements` |
 | Every slot dropdown | `PagleDB.profile.appearance[slot]` (SHOP-R32) |
 | Tracker position | `PagleDB.profile.dock.point` (Core README Data) |

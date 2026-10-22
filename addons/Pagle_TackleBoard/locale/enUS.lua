@@ -71,7 +71,7 @@ ns.L = {
 	ANYWHERE = "anywhere",
 	WHERE_TODAY = "today · {where}",
 	WHERE_HERE = "{where} · here",
-	-- Realm dates and times (TKB-R102, TKB-R105): the posted time, 24-hour; weekdays from Sunday, as the client's
+	-- Realm dates and times (TKB-R102, TKB-R105): the posted time, in Core's clock format; weekdays from Sunday, as the client's
 	-- calendar counts them; months from January.
 	POSTED = "Posted {weekday} {day} {month}, {time}",
 	WEEKDAYS = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" },

@@ -208,6 +208,21 @@ describe("Stats' words", function()
 			assert.are.equal("18:05", ns.WindowTime(1085))
 			assert.are.equal("00:00", ns.WindowTime(1440))
 		end)
+
+		it("write times and window bounds in Core's clock format, 12-hour when it is set so (CORE-R87)", function()
+			local loaded, fake = stats.load()
+			fake.profile.clockFormat = "12h"
+			local ns = loaded.ns
+
+			assert.are.same({ "9:07 am", "11:59 pm", "12:00 am", "6:00 am", "6:05 pm", "12:00 am" }, {
+				ns.Time(MONDAY_5_OCTOBER + 9 * 3600 + 7 * 60),
+				ns.Time(MONDAY_5_OCTOBER + 23 * 3600 + 59 * 60),
+				ns.WindowTime(0),
+				ns.WindowTime(360),
+				ns.WindowTime(1085),
+				ns.WindowTime(1440),
+			})
+		end)
 	end)
 
 	describe("names (STA-R59)", function()

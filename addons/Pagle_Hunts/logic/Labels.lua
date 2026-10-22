@@ -90,11 +90,12 @@ function ns.CountText(n, key, format)
 	return ns.L[key .. (n == 1 and "_ONE" or "_OTHER")]:format((format or tostring)(n))
 end
 
---- A minute of day as a 24-hour clock time, "06:00" (HNT-R50).
----@param minute integer
+--- A minute of day as a clock time in Core's clock format (HNT-R50, CORE-R87): "06:00" 24-hour, "6:00 am" 12-hour.
+--- Every clock time Hunts shows is written here, through ns.ClockTime (logic/Seams.lua).
+---@param minute integer 0–1440; 1440, a day's end, reads as midnight
 ---@return string
 function ns.FormatClock(minute)
-	return ns.L.CLOCK:format(math.floor(minute / 60), minute % 60)
+	return ns.ClockTime(math.floor(minute / 60) % 24, minute % 60)
 end
 
 --- A date's weekday, "Sun" (HNT-R50).

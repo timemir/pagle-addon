@@ -33,7 +33,8 @@ Terms are used as `CONTEXT.md` defines them. "The Hunt list" is `ns.huntList`, w
 - the typed Cast records with `conditions` and per-item `size` (LOG-R65)
 - the catalogue: `Pagle.GetItem`, `GetArea`, `GetZones`, `GetZoneOf`, `GetZoneCatches` (with each catch entry's `window`, LOG-R55), `GetWindowSpec`
 - conditions and the Angler: `MatchesConditions`, `NextWindow`, `GetConditions`, `GetAngler`, `SIZE_BANDS`
-- events through `Pagle.RegisterCallback`: `ConditionsChanged`, `SkillChanged`, `RestrictionChanged`, `AppearanceChanged`, `ModulesChanged`; game events through `Pagle.RegisterEvent` and `Pagle.UnregisterEvent` (`PLAYER_ENTERING_WORLD`, `CALENDAR_UPDATE_EVENT_LIST`); and `Pagle.IsRestricted`
+- clock times: `Pagle.FormatClock` (CORE-R87, HNT-R50)
+- events through `Pagle.RegisterCallback`: `ConditionsChanged`, `SkillChanged`, `RestrictionChanged`, `AppearanceChanged`, `ModulesChanged`, `ClockFormatChanged`; game events through `Pagle.RegisterEvent` and `Pagle.UnregisterEvent` (`PLAYER_ENTERING_WORLD`, `CALENDAR_UPDATE_EVENT_LIST`); and `Pagle.IsRestricted`
 - moments: `M:RaiseMoment`, `M:RaiseWriteUp`, `M:SetSummaryLine`
 - the wallet: `M:ReportCoinsEarned`, `M:RegisterSlot`, `M:RegisterGood`, `Pagle.GetEquipped`
 - Activity XP: `M:ReportXPEarned` ([core/activity-xp.md](core/activity-xp.md))
@@ -182,7 +183,7 @@ Set titles are Standing Hunts' only. Hunt Events have the completed-run titles i
 
 - **HNT-R50** Every time a label shows is realm time. A server time `T` becomes a realm clock from one live `Pagle.GetConditions()`: realm minute of day = `(minute + floor((T - time) / 60)) mod 1440`, and the realm date is the snapshot's `date` moved by the whole days that adds.
   - **Durations**, rounded down to the minute: under an hour "37m"; under a day "2h" or "2h 10m"; a day or more "1d" or "1d 4h" (minutes dropped).
-  - **Clock times**: 24-hour "06:00".
+  - **Clock times**: in Core's clock format, `Pagle.FormatClock` (CORE-R87): 24-hour "06:00", or 12-hour "6:00 am" when the Settings root's Clock row picks it or follows a game clock set to 12-hour. Every one Hunts shows goes through it: the board's realm clock ("11:41 · Thu 22 Oct · Winter", or "11:41 am · …"), the labels and window lines (HNT-R51, HNT-R52), the conditions line's ranges and an event's weekly time ("Sundays 2:00 pm for 2h", HNT-R53), the Wagers slips and the window moments. Durations ("2h", "ends in 3h") and the timeline ruler's hour ticks ("06", "18", HNT-R62) aren't clock times and don't change. When the format changes (`ClockFormatChanged`), every shown view redraws at once.
   - **Days and dates**: a weekday "Sun", a short date "12 Oct", a full date "12 Oct 2026" (seals, nameplate tooltip, retired entry), a month "March". Weekday and month names are interface strings in `ns.L`.
   - A label is **same realm day** when the target's realm date equals today's.
 - **HNT-R51** Each current Hunt has a **margin label** (board, red handwriting) and a **tracker label**:
@@ -540,7 +541,7 @@ Seal and ladder dates are the stored realm `date`, never a conversion through to
 
 **Core API used:** listed under Purpose and boundary.
 
-**Events consumed:** `ConditionsChanged`, `SkillChanged`, `RestrictionChanged` (HNT-R42, HNT-R43), `AppearanceChanged` (HNT-R70, HNT-R79), `ModulesChanged` (the equipped cover and tracker frame are Core's by then, SHOP-R33); and, through `Pagle.RegisterEvent`, the first `PLAYER_ENTERING_WORLD` (HNT-R42, HNT-R53) and `CALENDAR_UPDATE_EVENT_LIST` (HNT-R53).
+**Events consumed:** `ConditionsChanged`, `SkillChanged`, `RestrictionChanged` (HNT-R42, HNT-R43), `AppearanceChanged` (HNT-R70, HNT-R79), `ClockFormatChanged` (HNT-R50), `ModulesChanged` (the equipped cover and tracker frame are Core's by then, SHOP-R33); and, through `Pagle.RegisterEvent`, the first `PLAYER_ENTERING_WORLD` (HNT-R42, HNT-R53) and `CALENDAR_UPDATE_EVENT_LIST` (HNT-R53).
 
 WoW APIs for its own presentation: `C_Calendar.OpenCalendar`, `C_Calendar.GetMonthInfo`, `C_Calendar.GetNumDayEvents`, `C_Calendar.GetDayEvent` and `C_DateAndTime.GetCurrentCalendarTime` (event names, HNT-R53), `C_UnitAuras.GetPlayerAuraBySpellID` with `GetTime` (the camp bar's expiry, read for display only, HNT-R63; ADR 0001's live game state for a Module's own presentation), `C_Item.GetItemNameByID`, `C_Item.GetItemIconByID` and `Item:CreateFromItemID` (HNT-R54, HNT-R55), `C_Map.GetAreaInfo` (HNT-R53), `C_Spell.GetSpellName` (HNT-R52, HNT-R53), `ITEM_QUALITY_COLORS` (HNT-R55), `issecretvalue`, `GetServerTime`, `C_Timer` (HNT-R42), `BreakUpLargeNumbers` (HNT-R111), `GameTooltip`, `UISpecialFrames` (Esc, HNT-R60), `CreateFrame` and `CreateFont`.
 

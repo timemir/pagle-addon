@@ -20,6 +20,7 @@ local MINUTE, HOUR, DAY = 60, 3600, 86400
 ---@class StatsTextClient
 ---@field BreakUpLargeNumbers fun(n: number): string   -- the client's thousands separators
 ---@field Date fun(format: string, time: integer): string   -- `date`, the player's local clock
+---@field FormatClock fun(hour: integer, minute: integer): string   -- Pagle.FormatClock, Core's clock format (CORE-R87)
 ---@field ServerTime fun(): integer                    -- GetServerTime()
 ---@field ItemName fun(itemID: integer): string?       -- C_Item.GetItemNameByID
 ---@field ItemIcon fun(itemID: integer): integer?        -- C_Item.GetItemIconByID, a file ID
@@ -136,11 +137,15 @@ local function dayOf(time)
 	return tonumber(client.Date("%d", time)) --[[@as integer]]
 end
 
---- A time of day in the player's local clock, as the game's timestamps (STA-R59): `date("%H:%M")`, "09:07".
+--- A time of day in the player's local clock, as the game's timestamps (STA-R59): `date`'s hour and minute in
+--- Core's clock format (CORE-R87), "09:07" or "9:07 am".
 ---@param time integer server time
 ---@return string
 function ns.Time(time)
-	return client.Date("%H:%M", time)
+	return client.FormatClock(
+		tonumber(client.Date("%H", time)) --[[@as integer]],
+		tonumber(client.Date("%M", time)) --[[@as integer]]
+	)
 end
 
 --- A date in the player's local clock (STA-R59): "{day} {%b} {%Y}", "5 Oct 2026".
@@ -157,11 +162,12 @@ function ns.SessionHeading(time)
 	return ns.L.SESSION_HEADING:format(client.Date("%A", time), dayOf(time), client.Date("%B", time))
 end
 
---- A window's bound, in realm time (STA-R59): a minute of the realm's day as "HH:MM"; 1440, the day's end, as "00:00".
+--- A window's bound, in realm time (STA-R59): a minute of the realm's day in Core's clock format (CORE-R87), "18:00"
+--- or "6:00 pm"; 1440, the day's end, as midnight, "00:00" or "12:00 am".
 ---@param minute integer 0–1440
 ---@return string
 function ns.WindowTime(minute)
-	return ns.L.WINDOW_TIME:format(math.floor(minute / 60) % 24, minute % 60)
+	return client.FormatClock(math.floor(minute / 60) % 24, minute % 60)
 end
 
 --- An item's name and icon (STA-R59): its C_Item name and icon, or "Item {id}" and the question-mark icon until the

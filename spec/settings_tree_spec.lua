@@ -32,6 +32,8 @@ local TIPS = {
 	reminder = "A chat line every 50 Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them.",
 	lengthUnit = "How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes "
 		.. "only what you see.",
+	clock = "How Pagle writes a time of day, such as the realm time at the top of the Hunts board. Following the game "
+		.. "uses the minimap clock's 24-hour mode.",
 	castWith = "Also on the compartment menu and /pagle qol input.",
 	fishingKey = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
 	fishingSet = "The Fishing key puts it on when no pole is in hand. Double-click skips this.",
@@ -104,6 +106,7 @@ local EXPECTED = {
 			{ "checkbox", "Remind me to /reload when Casts are unsaved", tip = TIPS.reminder },
 			{ "header", "Units" },
 			{ "dropdown", "Length unit", tip = TIPS.lengthUnit },
+			{ "dropdown", "Clock", tip = TIPS.clock },
 			{ "header", "Pagle menu" },
 			{ "checkbox", "Show the minimap icon", tip = TIPS.minimapIcon },
 			{ "header", "Pagle website" },
@@ -760,7 +763,7 @@ describe("Each page's Defaults button", function()
 			local loaded = ready()
 
 			assert.are.same(
-				{ "Length unit", "Remind me to /reload when Casts are unsaved" },
+				{ "Clock", "Length unit", "Remind me to /reload when Casts are unsaved" },
 				restoredOn(loaded, "Pagle")
 			)
 			assert.are.same({
@@ -806,12 +809,14 @@ describe("Each page's Defaults button", function()
 	)
 
 	it(
-		"on the root restores the reminder to off and the length unit to the region's, leaving Show the minimap icon"
-			.. " and Show other Anglers on player tooltips (SET-R13, LOG-R69, CORE-R56, VIEW-R30)",
+		"on the root restores the reminder to off, the length unit to the region's and the Clock to the game's,"
+			.. " leaving Show the minimap icon and Show other Anglers on player tooltips (SET-R13, LOG-R69, CORE-R87,"
+			.. " CORE-R56, VIEW-R30)",
 		function()
 			local loaded = ready()
 			setRow(loaded, "Pagle", "Remind me to /reload when Casts are unsaved", true)
 			setRow(loaded, "Pagle", "Length unit", "cm")
+			setRow(loaded, "Pagle", "Clock", "12h")
 			setRow(loaded, "Pagle", "Show the minimap icon", false)
 			setRow(loaded, "Pagle", "Show other Anglers on player tooltips", false)
 
@@ -820,10 +825,12 @@ describe("Each page's Defaults button", function()
 			assert.are.same({
 				["Remind me to /reload when Casts are unsaved"] = false,
 				["Length unit"] = "in", -- the fake client's realm is a US one
+				["Clock"] = "game",
 				["Show the minimap icon"] = false,
 				["Show other Anglers on player tooltips"] = false,
 			}, valuesOn(loaded, "Pagle"))
 			assert.is_nil(loaded.namespaces.Pagle.db.profile.lengthUnit) -- following the region (SET-R13)
+			assert.is_nil(loaded.namespaces.Pagle.db.profile.clockFormat) -- following the game's clock (SET-R13)
 		end
 	)
 

@@ -586,6 +586,27 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 		assert.are.same({ "08:15 · Sun 11 Oct · Autumn" }, shownTexts(run.ns.board.frame.anchors.clock))
 	end)
 
+	it("writes the realm time in Core's clock format, redrawn at once when it changes (HNT-R50, CORE-R87)", function()
+		local run = start({ catalogue = withSeasons() })
+		run.ns.ToggleBoard()
+
+		run.fake.profile.clockFormat = "12h"
+		run.fake.noteClockFormat() -- ClockFormatChanged, as the Settings root's Clock row fires it
+		local picked = shownTexts(run.ns.board.frame.anchors.clock)
+		run.fake.profile.clockFormat = nil -- following the game's clock, set to 24-hour
+		run.fake.militaryTime = "1"
+		run.fake.noteClockFormat()
+		local game24 = shownTexts(run.ns.board.frame.anchors.clock)
+		run.fake.militaryTime = "0" -- the minimap clock's 24-hour mode turned off: CVAR_UPDATE
+		run.fake.noteClockFormat()
+
+		assert.are.same({
+			{ "8:15 am · Sun 11 Oct · Autumn" },
+			{ "08:15 · Sun 11 Oct · Autumn" },
+			{ "8:15 am · Sun 11 Oct · Autumn" },
+		}, { picked, game24, shownTexts(run.ns.board.frame.anchors.clock) })
+	end)
+
 	it("shows no season when no season window matches", function()
 		local run = start()
 		wait(run, untilRealm(14, 5))

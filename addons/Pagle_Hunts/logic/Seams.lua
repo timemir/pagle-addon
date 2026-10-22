@@ -29,8 +29,12 @@ local ns = select(2, ...)
 --                             reasons: "groups" after each regroup, pause, pin and filter change
 --                             (adapter/Groups.lua), "projection" after each live apply that changes the state and
 --                             after each done (logic/Projection.lua), "names" when item names load (adapter/Names.lua),
---                             "companion" when the companion hint may have changed (adapter/Companion.lua).
+--                             "companion" when the companion hint may have changed (adapter/Companion.lua), "clock"
+--                             when Core's clock format changes (ClockFormatChanged, adapter/Names.lua).
 --                             A view that is hidden may ignore it.
+--   ns.ClockTime(hour, minute) A time of day as Core writes it, `Pagle.FormatClock` (HNT-R50, CORE-R87): "18:05" or
+--                             "6:05 pm". ns.FormatClock (logic/Labels.lua) writes every clock time Hunts shows through
+--                             it. The stand-in here writes 24-hour; adapter/Names.lua replaces it with Core's.
 --   ns.SetViewShown(view, shown) A view tells the grouping it showed or hid (HNT-R42's refresh): the board
 --                             ("board") and the tracker ("tracker"). Defined in adapter/Groups.lua.
 --
@@ -108,6 +112,15 @@ end
 function ns.IsUpdating()
 	local projection = ns.projection
 	return projection ~= nil and projection:IsUpdating()
+end
+
+--- A time of day as Core writes it (HNT-R50): this stand-in's 24-hour "18:05" until adapter/Names.lua puts
+--- `Pagle.FormatClock` here, which follows the clock format (CORE-R87).
+---@param hour integer 0–23
+---@param minute integer 0–59
+---@return string
+function ns.ClockTime(hour, minute)
+	return ns.L.CLOCK:format(hour, minute)
 end
 
 local redrawn = {} -- the subscribed views' redraws, in subscription order
