@@ -19,6 +19,11 @@ local ns = select(2, ...)
 -- a regroup moves a Hunt to another group, the groups restack and each row slides to its new place (0.4 s); a Hunt that
 -- has just opened flashes green under its row and the board plays its sound.
 --
+-- On the Board it shows Pagle Wagers too (HNT-R161): the wager strip between the title and the ruler
+-- (adapter/Wagers.lua draws it), pushing the ruler and the list down while it shows, and the WAGERS group first, its
+-- rows runs, each with its bar across the ruler, its timed Hunts' windows hatched in red, and a mark at the ruler's end
+-- when it outlasts it. Clicking a run's row selects the run, whose entry the right page shows (HNT-R163).
+--
 -- An aura's expiry is C_UnitAuras.GetPlayerAuraBySpellID's `expirationTime`, on GetTime's clock (HNT-R63).
 
 local LOOK = ns.BOARD_LOOK
@@ -37,6 +42,8 @@ local ROW_HEIGHT, HEADING_GAP, HEADING_HEIGHT = 26, 10, 24
 -- A row's slide to its new place, and a Hunt just opened's flash under its row: up to 22% by 0.35 s, gone by 1.4 s.
 local SLIDE, FLASH, FLASH_PEAK = 0.4, 1.4, 0.22
 local ICON_SIZE, RING_SIZE = 19, 22
+-- The mark at the end of a run's bar that outlasts the ruler (HNT-R161's ▸): its size, centred on the bar's end.
+local MORE_SIZE = 12
 -- The scroll rail, this far right of the list's edge, and how far a wheel notch scrolls.
 local RAIL_GAP, RAIL_WIDTH, WHEEL_STEP = 10, 4, 40
 -- The legend's bars and the gaps after each bar and each item.
@@ -78,6 +85,7 @@ function ns.BoardTimeline(place)
 	for _, hunt in ipairs(ns.hunts:Current(now)) do
 		current[hunt.id] = true
 	end
+	local board = place.mode == "board"
 	return ns.BuildTimeline({
 		rows = ns.groups:Rows({ filtered = true, set = setID }),
 		current = current,
@@ -92,16 +100,23 @@ function ns.BoardTimeline(place)
 		auraExpiry = auraExpiry,
 		set = set,
 		selected = place.hunt,
-		pick = place.mode == "board",
+		pick = board,
+		-- Pagle Wagers on the Board (HNT-R160, HNT-R161): the runs on and ahead, and the run asked for (HNT-R164)
+		runs = board and ns.RunsShown(state, now) or nil,
+		run = board and place.run or nil,
 	})
 end
 
--- A row is clicked (HNT-R67): on the Board it selects that Hunt, whose entry the right page shows; on a set's page or
--- an entry opened from it, it opens that Hunt's entry with "back to {set}".
+-- A row is clicked (HNT-R67): on the Board it selects that Hunt, or that run (HNT-R161), whose entry the right page
+-- shows; on a set's page or an entry opened from it, it opens that Hunt's entry with "back to {set}".
 ---@param place BoardPlace
----@param huntID string
-local function clicked(place, huntID)
-	if place.mode == "board" or not place.set then
+---@param huntID string?
+---@param runKey string?
+local function clicked(place, huntID, runKey)
+	if runKey then
+		ns.board:Select(nil, runKey)
+		ns.board:Draw()
+	elseif place.mode == "board" or not place.set then
 		ns.board:Select(huntID)
 		ns.board:Draw()
 	else
@@ -121,7 +136,9 @@ end
 ---@field bars BoardTimelineBarView[]
 ---@field note FontString
 ---@field margin FontString
----@field huntID string
+---@field more Texture     -- a run's mark at the ruler's end (HNT-R161)
+---@field huntID string?
+---@field runKey string?   -- a run's row: its run key
 
 ---@class TimelineHeadingView: Frame
 ---@field y number?
@@ -133,6 +150,8 @@ end
 ---@class TimelinePageView
 ---@field kicker FontString
 ---@field title FontString
+---@field top Frame               -- where the ruler starts down the page: the wager strip pushes it down (HNT-R161)
+---@field listHeight number       -- the list's height, less what the strip takes
 ---@field ruler Frame             -- the ruler's labels, ticks and rule
 ---@field ticks { mark: Texture, label: FontString }[]
 ---@field nowLine Texture
@@ -180,6 +199,12 @@ local function newRow(view)
 	row.track:SetSize(TRACK_WIDTH, ROW_HEIGHT)
 	row.track:SetPoint("TOPLEFT", TRACK_X, 0)
 	row.bars = {}
+	row.more = row.track:CreateTexture(nil, "OVERLAY")
+	row.more:SetTexture(ns.BOARD_TEXTURES.more)
+	row.more:SetSize(MORE_SIZE, MORE_SIZE)
+	row.more:SetDesaturated(true)
+	row.more:SetVertexColor(LOOK.oxblood[1], LOOK.oxblood[2], LOOK.oxblood[3])
+	row.more:SetPoint("CENTER", row.track, "TOPLEFT", TRACK_WIDTH, -13)
 	row.note = ns.BoardText(row.track, fonts.note, LOOK.note)
 	row.note:SetPoint("TOPLEFT", 4, -4)
 	row.margin = ns.BoardText(row, fonts.margin, LOOK.red)
@@ -188,7 +213,7 @@ local function newRow(view)
 	row.margin:SetWordWrap(false)
 	row.margin:SetJustifyH("RIGHT")
 	row:SetScript("OnClick", function(self)
-		clicked(view.place, self.huntID)
+		clicked(view.place, self.huntID, self.runKey)
 	end)
 	return row
 end
@@ -224,7 +249,7 @@ local function at(region, page, x, y)
 end
 
 -- The ruler's fixed parts: "Realm time" at its left, "next 22h" in the hand at its right, its minor ticks each hour
--- and its rule; the hours' labels and ticks come with each draw.
+-- and its rule; the hours' labels and ticks come with each draw. `page` is the ruler's top (TimelinePageView.top).
 ---@param page Frame
 ---@param width number
 ---@return Frame
@@ -261,14 +286,18 @@ local function build(page)
 	title:SetWidth(width)
 	title:SetWordWrap(false)
 
-	local ruler = buildRuler(page, width)
+	-- The ruler's top, a page's height below which everything from the ruler down sits: the wager strip moves it.
+	local top = CreateFrame("Frame", nil, page)
+	top:SetSize(width, 1)
+	at(top, page, 0, 0)
+	local ruler = buildRuler(top, width)
 
 	local column = CreateFrame("Frame", nil, page)
-	at(column, page, TRACK_X, LIST_Y)
+	at(column, top, TRACK_X, LIST_Y)
 	column:SetSize(TRACK_WIDTH, LIST_HEIGHT)
 
 	local scroll = CreateFrame("ScrollFrame", nil, page) --[[@as ScrollFrame]]
-	at(scroll, page, 0, LIST_Y)
+	at(scroll, top, 0, LIST_Y)
 	scroll:SetSize(width, LIST_HEIGHT)
 	local content = CreateFrame("Frame", nil, scroll)
 	content:SetSize(width, 1)
@@ -278,7 +307,7 @@ local function build(page)
 	local rail = ns.BoardSolid(page, LOOK.rail, "ARTWORK", 0.15)
 	rail:ClearAllPoints()
 	rail:SetSize(RAIL_WIDTH, LIST_HEIGHT)
-	at(rail, page, width + RAIL_GAP, LIST_Y)
+	at(rail, top, width + RAIL_GAP, LIST_Y)
 	local thumb = ns.BoardSolid(page, LOOK.thumb, "ARTWORK", 1)
 	thumb:ClearAllPoints()
 	thumb:SetWidth(RAIL_WIDTH)
@@ -295,13 +324,15 @@ local function build(page)
 	legend:SetAllPoints()
 
 	local empty = ns.BoardText(page, fonts.hand, LOOK.hand)
-	at(empty, page, 0, NOW_Y)
+	at(empty, top, 0, NOW_Y)
 	empty:SetWidth(width)
 
 	---@type TimelinePageView
 	local view = {
 		kicker = kicker,
 		title = title,
+		top = top,
+		listHeight = LIST_HEIGHT,
 		ruler = ruler,
 		ticks = {},
 		nowLine = nowLine,
@@ -328,10 +359,11 @@ local function build(page)
 		rail:SetShown(shown)
 		thumb:SetShown(shown)
 		if shown then
-			local share = LIST_HEIGHT / (LIST_HEIGHT + range)
-			local height = math.max(12, LIST_HEIGHT * share)
+			local listHeight = view.listHeight
+			local share = listHeight / (listHeight + range)
+			local height = math.max(12, listHeight * share)
 			thumb:SetHeight(height)
-			at(thumb, page, width + RAIL_GAP, LIST_Y + (LIST_HEIGHT - height) * scroll:GetVerticalScroll() / range)
+			at(thumb, top, width + RAIL_GAP, LIST_Y + (listHeight - height) * scroll:GetVerticalScroll() / range)
 		end
 	end
 	view.placeThumb = placeThumb
@@ -345,9 +377,8 @@ end
 
 -- Draws the ruler (HNT-R62): its hours' labels and ticks, a minor tick each hour, and the now line.
 ---@param view TimelinePageView
----@param page Frame
 ---@param ruler TimelineRuler
-local function drawRuler(view, page, ruler)
+local function drawRuler(view, ruler)
 	local fonts = ns.BoardFonts()
 	for i, tick in ipairs(ruler.ticks) do
 		local drawn = view.ticks[i]
@@ -363,18 +394,18 @@ local function drawRuler(view, page, ruler)
 		local labelled = tick.label ~= nil
 		drawn.mark:SetColorTexture(LOOK.group[1], LOOK.group[2], LOOK.group[3], labelled and 0.85 or 0.55)
 		drawn.mark:SetSize(1, labelled and 11 or 6)
-		at(drawn.mark, page, x - 0.5, labelled and TICK_Y or MINOR_Y)
+		at(drawn.mark, view.top, x - 0.5, labelled and TICK_Y or MINOR_Y)
 		drawn.mark:Show()
 		drawn.label:SetText(tick.label or "")
 		drawn.label:ClearAllPoints()
-		drawn.label:SetPoint("TOP", page, "TOPLEFT", x, -HOUR_Y)
+		drawn.label:SetPoint("TOP", view.top, "TOPLEFT", x, -HOUR_Y)
 		drawn.label:SetShown(labelled)
 	end
 	for i = #ruler.ticks + 1, #view.ticks do
 		view.ticks[i].mark:Hide()
 		view.ticks[i].label:Hide()
 	end
-	at(view.nowLine, page, TRACK_X + ruler.now * TRACK_WIDTH - 1, NOW_Y)
+	at(view.nowLine, view.top, TRACK_X + ruler.now * TRACK_WIDTH - 1, NOW_Y)
 end
 
 -- Draws the washes behind the list (HNT-R62): the next 3 hours (Soon) faintly amber, the night faintly blue.
@@ -397,7 +428,8 @@ local function drawWashes(view, washes)
 end
 
 -- The margin label's ink by its case: red for Now, Soon and short of skill, faded for Later, blue for On demand.
-local MARGIN_INK = { now = LOOK.red, soon = LOOK.red, short = LOOK.red, later = LOOK.faded, onDemand = LOOK.hand }
+local MARGIN_INK =
+	{ now = LOOK.red, soon = LOOK.red, short = LOOK.red, later = LOOK.faded, onDemand = LOOK.hand, wagers = LOOK.red }
 
 -- Places a row or a heading `y` down the list: it slides there (0.4 s, ease-in-out) from where it showed with
 -- `slide`, else it is put there.
@@ -451,7 +483,9 @@ end
 ---@param y number
 ---@param slide boolean
 local function drawRow(view, drawn, row, y, slide)
-	drawn.huntID = row.id
+	drawn.huntID = not row.run and row.id or nil
+	drawn.runKey = row.run
+	drawn.more:SetShown(row.more == true)
 	moveTo(drawn, y, slide)
 	drawn.shade:SetShown(row.selected)
 	if row.selected then
@@ -563,6 +597,21 @@ local function drawLegend(view, page, items)
 	ns.BoardHideFrom(view.legendTexts, #items)
 end
 
+-- Moves the ruler, the list and what hangs from them `shift` down the page, under the wager strip (HNT-R161), the
+-- list's foot staying put over the legend.
+---@param view TimelinePageView
+---@param page Frame
+---@param shift number
+local function placeTop(view, page, shift)
+	at(view.top, page, 0, shift)
+	local height = LIST_HEIGHT - shift
+	view.listHeight = height
+	view.scroll:SetSize(view.width, height)
+	view.column:SetSize(TRACK_WIDTH, height)
+	view.rail:SetSize(RAIL_WIDTH, height)
+	view.nowLine:SetSize(2, LIST_Y + height - NOW_Y)
+end
+
 -- Each left page's view, by its page frame: each mode has its own page (adapter/Board.lua).
 ---@type table<Frame, TimelinePageView>
 local views = {}
@@ -580,8 +629,9 @@ local function drawPage(page, place)
 	view.place = place
 	local timeline = ns.BoardTimeline(place)
 	if place.mode == "board" then
-		ns.board:Select(timeline.selected)
+		ns.board:Select(timeline.selected, timeline.selectedRun)
 	end
+	placeTop(view, page, ns.DrawWagerStrip(page, timeline.strip))
 	local none = timeline.empty == "noHunts"
 	view.title:SetText(timeline.title)
 	view.kicker:SetText(
@@ -599,7 +649,7 @@ local function drawPage(page, place)
 		view.groupOf = {}
 		return
 	end
-	drawRuler(view, page, timeline.ruler)
+	drawRuler(view, timeline.ruler)
 	drawWashes(view, timeline.washes)
 	drawList(view, timeline)
 	drawLegend(view, page, timeline.legendItems)

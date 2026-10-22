@@ -37,6 +37,7 @@ logic\Board.lua
 logic\Sets.lua
 logic\Goods.lua
 logic\Entry.lua
+logic\Wagers.lua
 logic\Tracker.lua
 logic\Tour.lua
 adapter\BookAtlas.lua
@@ -53,5 +54,6 @@ adapter\Names.lua
 adapter\Timeline.lua
 adapter\WindowMoments.lua
 adapter\Entry.lua
+adapter\Wagers.lua
 adapter\Tracker.lua
 adapter\Tour.lua

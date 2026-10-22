@@ -207,6 +207,25 @@ describe("the board's art kit", function()
 			end
 		end)
 
+		it(
+			"draws a run's bar and a timed Hunt's window in oxblood, over the pencil and hatched strokes (HNT-R161)",
+			function()
+				local ns, parent = kit()
+				local bar = ns.NewBoardTimelineBar(parent)
+				local inks = ns.BOARD_BAR_INKS
+
+				bar:SetBar("run", 120)
+				assert.are.equal(874 / 1024, bar.body.texCoord[3]) -- the pencil outline, inked oxblood, over a faint wash
+				assert.is_true(bar.wash:IsShown())
+				assert.are.same({ inks.run[1], inks.run[2], inks.run[3], 1 }, bar.body.vertexColor)
+				bar:SetBar("wager", 40)
+				assert.are.equal(818 / 1024, bar.body.texCoord[3]) -- the hatch, inked red
+				assert.is_false(bar.wash:IsShown())
+				bar:SetBar("hatched", 40) -- the plain styles keep their own ink
+				assert.are.same({ 1, 1, 1, 1 }, bar.body.vertexColor)
+			end
+		)
+
 		it("cuts a bar to length and keeps its own right end, so both ends stay square-on", function()
 			local ns, parent = kit()
 			local bar = ns.NewBoardTimelineBar(parent)
