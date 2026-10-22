@@ -109,6 +109,48 @@ local function rows(loaded)
 	return list
 end
 
+describe("the fish spread's varieties (VAR-R23)", function()
+	it('shows "Varieties", "{n} of 10" and "See all ten »" under the checklist', function()
+		local _, loaded = loggedIn({ "fish", MACKEREL })
+
+		local right = loaded.ns.journal.pages.right
+
+		assert.are.same({
+			{ kind = "kicker", text = "Varieties", value = "3 of 10" },
+			{
+				kind = "link",
+				text = "See all ten »",
+				place = { id = "varieties", args = { species = MACKEREL, variety = 1 } },
+			},
+		}, { right[#right - 1], right[#right] })
+	end)
+
+	it("shows neither for a Species without varieties", function()
+		local _, loaded = loggedIn({ "fish", NIGHTFISH })
+
+		assert.is_nil(blockOfKind(loaded.ns.journal.pages.right, "link"))
+		for _, block in ipairs(loaded.ns.journal.pages.right) do
+			assert.are_not.equal("Varieties", block.text)
+		end
+	end)
+
+	it("turns to the varieties spread from the link, and back to the fish spread (LED-R125)", function()
+		local _, loaded = loggedIn({ "fish", MACKEREL })
+		local journal = loaded.ns.journal
+
+		local links = journal.frame.right.drawn.link
+		links[#links]:Click()
+
+		assert.are.equal("varieties", journal.router:Place().id)
+		assert.are.same(
+			{ "Home", "Raw Slitherskin Mackerel", "Its colours" },
+			{ journal.pages.crumbs[1].label, journal.pages.crumbs[2].label, journal.pages.crumbs[3].label }
+		)
+		journal.frame.back:Click()
+		assert.are.same({ id = "fish", args = { species = MACKEREL } }, journal.router:Place())
+	end)
+end)
+
 describe("the varieties spread (VAR-R24)", function()
 	it("lists the ten from Core's lore: names caught, the rest Undiscovered, counts in the hand", function()
 		local _, loaded = loggedIn({ "varieties", MACKEREL })

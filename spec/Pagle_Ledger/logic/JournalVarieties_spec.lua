@@ -113,6 +113,26 @@ describe("the Journal's fish varieties", function()
 		return found
 	end
 
+	describe("on the fish spread (VAR-R23)", function()
+		it('adds "Varieties" with "{n} of 10" and the link to the varieties spread, on the first caught', function()
+			assert.are.same({
+				{ kind = "kicker", text = "Varieties", value = "3 of 10" },
+				{ kind = "link", text = "See all ten »", place = ns.JournalPlace.varieties(FISH, 1) },
+			}, ns.JournalFishVarieties(FISH, contextWith()))
+		end)
+
+		it("opens the varieties spread on the first caught variety, in order", function()
+			local lines = ns.JournalFishVarieties(FISH, contextWith({ [9] = 1, [5] = 2 }))
+
+			assert.are.same(ns.JournalPlace.varieties(FISH, 5), lines[2].place)
+		end)
+
+		it("shows nothing for a Species without varieties, nor for one never caught", function()
+			assert.are.same({}, ns.JournalFishVarieties(PLAIN, contextWith()))
+			assert.are.same({}, ns.JournalFishVarieties(UNCAUGHT, contextWith()))
+		end)
+	end)
+
 	describe("the varieties spread (VAR-R24)", function()
 		it("reads Home ❧ {fish} ❧ Its colours, back to the fish spread (LED-R125)", function()
 			local crumbs = ns.journalSpreads[ns.JOURNAL_VARIETIES].crumbs({ species = FISH }, contextWith())

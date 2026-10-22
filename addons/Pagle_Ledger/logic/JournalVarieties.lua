@@ -89,6 +89,32 @@ local function caughtCount(list, caught)
 	return n
 end
 
+--- The fish spread's Varieties lines (VAR-R23, LED-R142), under its checklist: "Varieties" with "{n} of 10" at its
+--- right and "See all ten »", opening the varieties spread on its first caught variety. Only for a caught Species
+--- with varieties: none for a Species without, and none for one never caught (LED-R124), whose checklist isn't shown.
+---@param id integer the Species ID
+---@param context LedgerSpreadContext
+---@return LedgerBlock[]
+function ns.JournalFishVarieties(id, context)
+	local L = ns.L
+	local list, caught = varietiesOf(id, context)
+	if not list or not context.state.species[id] then
+		return {}
+	end
+	return {
+		{
+			kind = "kicker",
+			text = L.FISH_VARIETIES,
+			value = L.FISH_VARIETIES_COUNT:format(caughtCount(list, caught), sizeOf(list)),
+		},
+		{
+			kind = "link",
+			text = L.FISH_VARIETIES_LINK,
+			place = ns.JournalPlace.varieties(id, selectedOf(list, caught, nil)),
+		},
+	}
+end
+
 -- A variety's rarity as its pill shows it (VAR-R24): its name, colour and ink.
 ---@param rarity PagleVarietyRarity?
 ---@return LedgerVarietyRarity
