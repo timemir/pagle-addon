@@ -7,13 +7,15 @@ local ns = select(2, ...)
 
 -- The Curio Shop expansion's earned goods (LED-R116, LED-R117): the five earned bindings and the Ledger's four goods in
 -- Core's open slots, each owned by a rule over the projection's state and the celebrated set together (LED-R90), and
--- kept once earned. Pure logic, everything passed in (CORE-R7); adapter/Bindings.lua registers them.
+-- kept once earned; and the second round's, by their counts (LED-R118, logic/EarnedCounts.lua). Pure logic, everything
+-- passed in (CORE-R7); adapter/Bindings.lua registers them.
 
 --- A rule an expansion good is earned by (LED-R116, LED-R117): `legend` its first Legend caught, `legends` every
 --- Legend item caught (LED-R63), `monster` a sized Catch in the Monster band (LED-R80), `prestige<R>` Prestige rank R
 --- or higher (LED-R34), `ledger` the `complete.ledger` title earned (LED-R75), `varieties` the `complete.varieties`
---- title earned (VAR-R22).
----@alias LedgerEarnedRule "legend"|"legends"|"monster"|"prestige1"|"prestige5"|"prestige10"|"ledger"|"varieties"
+--- title earned (VAR-R22). The second round's goods are each earned by a rule of their own, named by the good's key: its
+--- count at its mark (LED-R118, logic/EarnedCounts.lua).
+---@alias LedgerEarnedRule "legend"|"legends"|"monster"|"prestige1"|"prestige5"|"prestige10"|"ledger"|"varieties"|string
 
 --- What the rules read.
 ---@class LedgerEarnedView
@@ -169,6 +171,13 @@ local RULES = {
 	end,
 }
 
+-- The second round's (LED-R118): each good's count at its mark.
+for _, good in ipairs(ns.COUNTED_GOODS) do
+	RULES[good.earn] = function(view)
+		return ns.EarnedCount(good, view) >= good.mark
+	end
+end
+
 --- Whether rule `rule` holds now (LED-R116, LED-R117), over the state and the celebrated set together.
 ---@param rule LedgerEarnedRule
 ---@param view LedgerEarnedView
@@ -188,8 +197,8 @@ function ns.EarnedGoodOwned(goodID, rule, view)
 	return (goods ~= nil and goods[goodID] == true) or RULES[rule](view)
 end
 
---- Every expansion good earned by a rule (LED-R116, LED-R117), as `{ id, earn }`: the earned bindings in LED-R110's
---- order, then LED-R117's goods.
+--- Every expansion and second-round good earned by a rule (LED-R116–R118), as `{ id, earn }`: the earned bindings in
+--- LED-R110's order, then LED-R117's goods, then LED-R118's, its nine bindings among them.
 ---@return { id: string, earn: LedgerEarnedRule }[]
 function ns.EarnedGoods()
 	local list = {}
@@ -201,11 +210,14 @@ function ns.EarnedGoods()
 	for _, good in ipairs(ns.LEDGER_CORE_SLOT_GOODS) do
 		list[#list + 1] = { id = good.id, earn = good.earn }
 	end
+	for _, good in ipairs(ns.COUNTED_GOODS) do
+		list[#list + 1] = { id = good.id, earn = good.earn }
+	end
 	return list
 end
 
---- Adds to the celebrated set (LED-R90) each expansion good whose rule now holds and that it doesn't have yet, so a
---- good once earned is never lost (LED-R116): after a live entry and in a done, before the Ledger calls
+--- Adds to the celebrated set (LED-R90) each good of ns.EarnedGoods whose rule now holds and that it doesn't have yet,
+--- so a good once earned is never lost (LED-R116, LED-R118): after a live entry and in a done, before the Ledger calls
 --- `M:RefreshGoods()` (SHOP-R31). True when it added one, a live entry's moment to refresh.
 ---@param celebrated LedgerCelebrated its `goods` made with the first good noted
 ---@param view LedgerEarnedView over the same set

@@ -123,6 +123,8 @@ local TICKS = 20
 ---@field crestIcon Texture? a banner's crest good's icon, in the Prestige crest's place (VAR-R25)
 ---@field ribbonArt Texture? a banner's headline art on its seal's ribbon (VAR-R25)
 ---@field extras Frame? a banner's or the splash's row of labels and Coins
+---@field composed boolean? drawn last in a composed toast style (ANN-R82)
+---@field toastLayers PagleToastLayers? a composed style's layers (adapter/ToastLayers.lua)
 
 -- The motion's timeline: the canvas loops each animation over 7 s; in game each plays once.
 local TIMELINE = 7
@@ -406,31 +408,76 @@ local function startRuler(view, ruler)
 	end)
 end
 
+-- A toast's or Nod's font: the art's font key, or a composed style's ink (ANN-R82: its face, size and shadow).
+---@alias PagleWordsFont string|PagleToastInk
+
+---@param fontString FontString
+---@param font PagleWordsFont
+local function setFont(fontString, font)
+	if type(font) == "table" then
+		ns.SetInkFont(fontString, font)
+	else
+		ns.SetArtFont(fontString, font)
+	end
+end
+
+---@param font PagleWordsFont
+---@return number
+local function fontSize(font)
+	return type(font) == "table" and font.size or ns.ArtFontSize(font --[[@as string]])
+end
+
+-- A printed title as a font sets it: in capitals, as the art prints them, unless a composed style's ink sets it as
+-- written (its small caps are the face's own).
+---@param font PagleWordsFont
+---@param text string
+---@return string
+local function printed(font, text)
+	return (type(font) ~= "table" or font.caps) and ns.Capitals(text) or text
+end
+
+-- ns.ShrinkToFit for either kind of font.
+---@param fontString FontString
+---@param font PagleWordsFont
+---@param width number
+local function shrink(fontString, font, width)
+	if type(font) ~= "table" then
+		ns.ShrinkToFit(fontString, font, width)
+		return
+	end
+	fontString:SetWidth(0)
+	local natural = fontString:GetStringWidth()
+	if natural > width then
+		ns.SetInkFont(fontString, font, math.max(math.ceil(font.size * 0.7), math.floor(font.size * width / natural)))
+	end
+	fontString:SetWidth(math.min(fontString:GetStringWidth(), width))
+end
+
 -- The headline's words at `x`, `y` from the frame's top left: its title printed in capitals, its text under it in the
 -- Angler's hand; or, with no text, the title alone in the hand. Each is held to `width`, the hand shrinking to fit
 -- first. `fonts` and `inks` give the printed and handwritten fonts and inks.
 ---@param frame PagleAnnouncementFrame
 ---@param headline { title: string, text: string? }
----@param fonts { what: string, name: string }
+---@param fonts { what: PagleWordsFont, name: PagleWordsFont }
 ---@param inks { what: string, name: string }
 ---@param width number
 local function writeHeadline(frame, headline, fonts, inks, width)
 	local title, text = frame.title, frame.text
 	if headline.text then
-		ns.SetArtFont(title, fonts.what)
+		setFont(title, fonts.what)
 		ns.Ink(title, inks.what)
-		title:SetText(ns.Capitals(headline.title))
+		title:SetText(printed(fonts.what, headline.title))
 		fit(title, width)
-		ns.SetArtFont(text, fonts.name)
+		setFont(text, fonts.name)
 		ns.Ink(text, inks.name)
 		text:SetText(headline.text)
-		ns.ShrinkToFit(text, fonts.name, width)
+		shrink(text, fonts.name, width)
 		text:Show()
 	else
-		ns.SetArtFont(title, fonts.name)
+		setFont(title, fonts.name)
 		ns.Ink(title, inks.name)
 		title:SetText(headline.title)
-		ns.ShrinkToFit(title, fonts.name, width)
+		shrink(title, fonts.name, width)
 		text:SetText("")
 		text:Hide()
 	end
@@ -542,12 +589,186 @@ local function tintWax(wax, style)
 	wax:SetVertexColor(tint[1], tint[2], tint[3])
 end
 
+-- A composed style's medallion (ANN-R82): its ring and gloss are the style's layers, so only the icon shows here,
+-- `size` across, a headline's art cropped to the fish's head or its icon, or `icon`.
+---@param bezel PagleBezel
+---@param size number
+---@param headline PagleRaisedMoment?
+---@param icon (integer|string)?
+local function setComposedMedallion(bezel, size, headline, icon)
+	bezel:SetSize(size, size)
+	bezel.Ring:Hide()
+	bezel.Gloss:Hide()
+	bezel.Icon:SetSize(size, size)
+	local art = headline and headline.art
+	if art then
+		bezel.Icon:SetTexture(art.texture)
+		bezel.Icon:SetTexCoord(ns.HeadCrop(art))
+	else
+		bezel.Icon:SetTexture(icon or textureOf((headline --[[@as PagleRaisedMoment]]).icon))
+		bezel.Icon:SetTexCoord(0, 1, 0, 1)
+	end
+end
+
+-- A font string a composed style inked, back in its art font (the Coins' label is set only when its frame is made).
+---@param fontString FontString
+local function restoreFont(fontString)
+	if fontString.inked then
+		ns.SetArtFont(fontString, fontString.artKey)
+	end
+end
+
+-- The brass coin's side inside its box on a composed rung: the canvas turns it 8°, so its box is its side times
+-- cos 8° + sin 8°.
+local COIN_TURN = math.cos(math.rad(8)) + math.sin(math.rad(8))
+
+-- Draws a toast in a composed style (ANN-R82): its rung's layers (adapter/ToastLayers.lua) for the page, laid as
+-- drawToast lays a page but from the rung's boxes fitted to the page (logic/ToastStyles.lua's ns.FitToastBox): the
+-- medallion's icon in its box, the words in the text box in the rung's inks, the ruler or held headlines under them,
+-- the style's own stamp plates right to left from its stamp's place, and the Coins at the coin's and amount's. No wax:
+-- toast.high's seal is the style's art.
+---@param frame PagleAnnouncementFrame
+---@param display PagleDisplay
+---@param style PagleToastStyle
+local function drawComposedToast(frame, display, style)
+	local announcement = display.announcement
+	local headline = announcement.headline
+	local page = ns.ToastPage(announcement)
+	local rung = ns.ToastRungArt(style, page) --[[@as PagleToastRung]]
+	local body = frame.body --[[@as Frame]]
+	local function place(box, centred)
+		return ns.FitToastBox(box, rung, page.w, page.h, centred)
+	end
+	frame.composed = true
+	frame:SetSize(page.w, page.h)
+	body:SetSize(page.w, page.h)
+	frame.page:Hide()
+	frame.wax:Hide()
+	ns.DrawToastLayers(frame, body, style, page)
+
+	local bezel = frame.bezel --[[@as PagleBezel]]
+	local icon = place(rung.icon, true)
+	if announcement.fighting then
+		setComposedMedallion(bezel, icon.w, nil, FIGHTING_ICON)
+	else
+		setComposedMedallion(bezel, icon.w, headline)
+	end
+	bezel:ClearAllPoints()
+	bezel:SetPoint("TOPLEFT", body, "TOPLEFT", icon.x, -icon.y)
+
+	local box = place(rung.text)
+	local amt = rung.amt and place(rung.amt)
+	local width = box.w
+	if announcement.coins > 0 and amt then
+		width = math.min(width, amt.x - box.x - 4)
+	end
+	local inks = ns.ToastInks(style, page)
+	local fonts = {
+		what = ns.ToastInk(style, page, "what") or "What",
+		name = ns.ToastInk(style, page, "name") or "Name",
+	}
+	frame.title:ClearAllPoints()
+	frame.title:SetPoint("TOPLEFT", body, "TOPLEFT", box.x, -box.y)
+	frame.text:ClearAllPoints()
+	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -5)
+	if announcement.fighting then
+		writeHeadline(frame, { title = headline.title, text = "" }, fonts, inks, width)
+		frame.text:Hide()
+		drawDigest(frame, announcement.fighting, style, page.w - box.x - 34)
+	else
+		writeHeadline(frame, headline, fonts, inks, width)
+		drawDigest(frame, {}, style, 0)
+	end
+	local clip = frame.nameClip --[[@as Frame]]
+	clip:ClearAllPoints()
+	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
+	clip:SetSize(frame.text:GetWidth() + 8, fontSize(fonts.name) + 22)
+	clip:SetShown(frame.text:IsShown())
+
+	local ruler = frame.ruler --[[@as PagleRulerView]]
+	ruler.style = style
+	ns.Ink(ruler.label, inks.label)
+	ns.Ink(ruler.value, inks.value)
+	ruler:ClearAllPoints()
+	if page.ruled then
+		local top = box.y + (frame.text:IsShown() and 18 or 0) + fontSize(fonts.name) + 4
+		ruler:SetPoint("TOPLEFT", body, "TOPLEFT", box.x, -top)
+		layRuler(ruler, width - 6, headline.ruler.label)
+	end
+
+	local more = frame.more --[[@as FontString]]
+	local beyond = announcement.fighting and #announcement.fighting - DIGEST_ROWS or 0
+	more:SetText(L.ANNOUNCEMENT_MORE:format(beyond))
+	more:SetShown(beyond > 0)
+	more:ClearAllPoints()
+	if page.ruled or announcement.fighting then
+		more:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", box.x, 6)
+	else
+		more:SetPoint("TOPLEFT", nameLine(frame), "BOTTOMLEFT", 2, 2)
+	end
+
+	-- The stamps hang right to left from the style's stamp's top right, each by its centre from a pivot.
+	local spot = place(ns.ToastStampArt(style, page))
+	local x, y = spot.x + spot.w, spot.y + spot.h / 2
+	local stamps = fillStamps(frame, announcement, function(stamp, text)
+		ns.SetStamp(stamp, text, style, page)
+	end)
+	local pivots = frame.pivots --[[@as Frame[] ]]
+	for i, stamp in ipairs(stamps) do
+		local stampWidth = stamp:GetWidth()
+		pivots[i]:SetPoint("CENTER", body, "TOPLEFT", x - stampWidth / 2, -y)
+		stamp:SetPoint("CENTER", pivots[i], "CENTER")
+		x = x - stampWidth - 2
+	end
+	ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, page)
+	local record = ruler.record:GetWidth()
+	ruler.record:Hide()
+	frame.recordPivot:SetPoint("CENTER", body, "TOPLEFT", x - record / 2, -y)
+	ruler.record:ClearAllPoints()
+	ruler.record:SetPoint("CENTER", frame.recordPivot, "CENTER")
+
+	-- The Coins: the brass coin centred in the coin's box, the amount ending at the amount's right.
+	local coins = frame.coins
+	local label = coins.label
+	local amtInk = ns.ToastInk(style, page, "amt")
+	if amtInk then
+		ns.SetInkFont(label, amtInk)
+	end
+	coins:ClearAllPoints()
+	local coin = rung.coin and place(rung.coin)
+	local size = coin and coin.w / COIN_TURN or page.coin
+	if setCoins(coins, announcement.coins, size, false) > 0 then
+		ns.Ink(label, inks.amt)
+		if coin then
+			coins:SetPoint("RIGHT", body, "TOPLEFT", coin.x + coin.w / 2 + size / 2, -(coin.y + coin.h / 2))
+		else
+			coins:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -2, page.low and 4 or -2)
+		end
+		if amt then
+			label:ClearAllPoints()
+			label:SetPoint("RIGHT", body, "TOPLEFT", amt.x + amt.w, -(amt.y + amt.h / 2))
+		end
+	end
+end
+
 -- Draws a toast: its page by rung (logic/ToastStyles.lua's ns.ToastPage), the medallion, the words, the ruler or the
--- held headlines, the stamps right to left from the top right corner, "+N more" and the Coins at the bottom right.
+-- held headlines, the stamps right to left from the top right corner, "+N more" and the Coins at the bottom right. A
+-- composed style draws its own way (drawComposedToast).
 ---@param frame PagleAnnouncementFrame
 ---@param display PagleDisplay
 ---@param style PagleToastStyle
 local function drawToast(frame, display, style)
+	if style.layered then
+		drawComposedToast(frame, display, style)
+		return
+	end
+	-- After a composed style: its layers off, the page back, the Coins' label in its own font.
+	if frame.composed then
+		frame.composed = nil
+		ns.ClearToastLayers(frame)
+		frame.page:Show()
+		restoreFont(frame.coins.label)
+	end
 	local announcement = display.announcement
 	local headline = announcement.headline
 	local page = ns.ToastPage(announcement)
@@ -659,13 +880,16 @@ end
 -- Writes a catch Nod's line naming its variety (VAR-R26) in the hand: the line's first half in the style's ink, a gem
 -- in the rarity's colour rimmed in its ink, the name in the rarity's ink (the rarity replaces the style's ink there
 -- alone, ANN-R80), then the second half in the style's ink. The first half is cut short with "..." when the whole
--- line would pass NOD_VARIETY_LINE. Returns the line's right edge from the frame's left, and its last part.
+-- line would pass NOD_VARIETY_LINE. The line starts `left` from the frame's left, in `font` and the ink role `ink`.
+-- Returns the line's right edge from the frame's left, and its last part.
 ---@param frame PagleAnnouncementFrame
 ---@param look PagleNodVarietyLook
----@param style PagleToastStyle
+---@param ink string
+---@param left number
+---@param font PagleWordsFont
 ---@return number
 ---@return Region
-local function writeVariety(frame, look, style)
+local function writeVariety(frame, look, ink, left, font)
 	local title = frame.title
 	local name = frame.variety --[[@as FontString]]
 	local tail = frame.tail --[[@as FontString]]
@@ -673,10 +897,10 @@ local function writeVariety(frame, look, style)
 	frame.text:SetText("")
 	frame.text:Hide()
 	for _, part in ipairs({ title, name, tail }) do
-		ns.SetArtFont(part, "NodName")
+		setFont(part, font)
 	end
-	ns.Ink(title, style.name)
-	ns.Ink(tail, style.name)
+	ns.Ink(title, ink)
+	ns.Ink(tail, ink)
 	name:SetTextColor(look.ink[1], look.ink[2], look.ink[3])
 	title:SetText(look.before)
 	name:SetText(look.name)
@@ -696,12 +920,14 @@ local function writeVariety(frame, look, style)
 	gem:Show()
 	name:Show()
 	tail:Show()
-	return 72 + title:GetWidth() + rest, tail
+	return left + title:GetWidth() + rest, tail
 end
 
 -- Draws a Nod: the medallion, then on a torn strip its words, a compact ruler, its stamps and its Coins, in a line
 -- the strip is three-sliced to fit. A catch Nod naming a variety writes its line in parts, with the variety's art in
--- the medallion, its ring in the rarity's colour, and for a Rare or Epic one a gleam ready to sweep it (VAR-R26).
+-- the medallion, its ring in the rarity's colour, and for a Rare or Epic one a gleam ready to sweep it (VAR-R26). A
+-- composed style (ANN-R82) draws its Nod rung's layers instead of the strip, its body three-sliced to the line, the
+-- icon in its icon box, the words from its text box in its inks, and its medallion tinted for a rarity.
 ---@param frame PagleAnnouncementFrame
 ---@param display PagleDisplay
 ---@param style PagleToastStyle
@@ -710,8 +936,39 @@ local function drawNod(frame, display, style)
 	local headline = announcement.headline
 	local look = ns.CatchNodVarietyLook(headline)
 	local bezel = frame.bezel --[[@as PagleBezel]]
-	setMedallion(bezel, 34, ns.BezelRing(style, 34), headline)
-	tintRing(bezel, look and look.ring)
+	local strip = frame.strip --[[@as PagleThreeSlice]]
+	local rung = style.layered and ns.ToastRungArt(style, nil)
+	-- Where the line starts, and its fonts.
+	local left, fonts = 72, { what = "NodWhat", name = "NodName" }
+	if rung then
+		frame.composed = true
+		for _, slice in ipairs({ strip.left, strip.middle, strip.right }) do
+			slice:Hide()
+		end
+		setComposedMedallion(bezel, rung.icon.w, headline)
+		bezel:ClearAllPoints()
+		bezel:SetPoint("TOPLEFT", frame, "TOPLEFT", rung.icon.x, -rung.icon.y)
+		left = rung.text.x
+		fonts = {
+			what = ns.ToastInk(style, nil, "what") or fonts.what,
+			name = ns.ToastInk(style, nil, "name") or fonts.name,
+		}
+		frame.title:SetPoint("LEFT", frame, "LEFT", left, 0)
+	else
+		-- After a composed style: its layers off, the strip, the medallion and the line back where they were.
+		if frame.composed then
+			frame.composed = nil
+			ns.ClearToastLayers(frame)
+			for _, slice in ipairs({ strip.left, strip.middle, strip.right }) do
+				slice:Show()
+			end
+			bezel:ClearAllPoints()
+			bezel:SetPoint("LEFT")
+			frame.title:SetPoint("LEFT", frame, "LEFT", left, 0)
+		end
+		setMedallion(bezel, 34, ns.BezelRing(style, 34), headline)
+		tintRing(bezel, look and look.ring)
+	end
 	local gleam = frame.gleam --[[@as PagleSprite]]
 	gleam:SetAlpha(0)
 	frame.gleams = false
@@ -724,14 +981,13 @@ local function drawNod(frame, display, style)
 	local last
 	frame.text:ClearAllPoints()
 	if look then
-		x, last = writeVariety(frame, look, style)
+		x, last = writeVariety(frame, look, ns.ToastInks(style).name, left, fonts.name)
 	else
 		for _, part in ipairs({ frame.gem, frame.variety, frame.tail }) do
 			part:Hide()
 		end
-		local fonts, inks = { what = "NodWhat", name = "NodName" }, ns.ToastInks(style)
-		writeHeadline(frame, headline, fonts, inks, NOD_TITLE)
-		x = 72 + frame.title:GetWidth()
+		writeHeadline(frame, headline, fonts, ns.ToastInks(style), NOD_TITLE)
+		x = left + frame.title:GetWidth()
 		last = frame.title
 		if frame.text:IsShown() then
 			frame.text:SetPoint("LEFT", frame.title, "RIGHT", 9, 1)
@@ -769,9 +1025,18 @@ local function drawNod(frame, display, style)
 		frame.coins:SetPoint("LEFT", last, "RIGHT", 9, 0)
 		x = x + 9 + coins
 	end
-	local strip = math.min(x, NOD_WIDTH)
-	ns.SetThreeSlice(frame.strip --[[@as PagleThreeSlice]], style.atlas, "nod-strip", strip, 26, "BACKGROUND")
-	frame:SetWidth(22 + strip)
+	if rung then
+		-- The body as long as the line, with the rung's margin after its words.
+		local width = math.min(x + rung.w - rung.text.x - rung.text.w, 22 + NOD_WIDTH)
+		ns.DrawToastLayers(frame, frame, style, nil, width)
+		ns.TintToastMedallion(frame, look and look.ring)
+		strip:SetSize(width - 22, 26)
+		frame:SetWidth(width)
+		return
+	end
+	local length = math.min(x, NOD_WIDTH)
+	ns.SetThreeSlice(strip, style.atlas, "nod-strip", length, 26, "BACKGROUND")
+	frame:SetWidth(22 + length)
 end
 
 -- Lays a banner's or the splash's labels and Coins in one centred row on `extras`; hides it with neither.
@@ -1264,12 +1529,18 @@ local MOTION = {
 ---@param display PagleDisplay
 function ns.DrawAnnouncement(frame, display)
 	local style = ns.DisplayStyle(display)
-	DRAW[display.form](frame, display, style)
-	local motion = MOTION[display.form]
+	local form = display.form
+	DRAW[form](frame, display, style)
+	local motion = MOTION[form]
 	if motion and frame.moved ~= display and frame.lanes then
 		frame.moved = display
 		ns.StopMotion(frame)
 		motion(frame)
+	end
+	-- A composed style's own motion (ANN-R82), beside the form's.
+	if style.layered and (form == "toast" or form == "nod") then
+		local page = form == "toast" and ns.ToastPage(display.announcement) or nil
+		ns.PlayToastLayers(frame, display, style, page, form)
 	end
 	local ruler = frame.ruler
 	if not ruler then
@@ -1541,6 +1812,8 @@ local function hide(display, atOnce)
 	end
 	frame.display, frame.drawnRuler, frame.moved = nil, nil, nil
 	ns.StopMotion(frame)
+	-- A composed style's layers stop looping as their toast goes (ANN-R82).
+	ns.StopToastLayers(frame)
 	if frame.ruler then
 		frame.ruler:SetScript("OnUpdate", nil)
 	end

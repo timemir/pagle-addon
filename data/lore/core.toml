@@ -267,6 +267,10 @@ description = "Branches of red coral set into sea-green leather, with pearls whe
 name = "Scrimshaw Panel"
 description = "An old ivory panel scratched with a ship and a fish by some sailor with a long voyage and a sharp knife."
 
+[binding.shagreenbone] # core.binding, tier 4, also in the Curio crate
+name = "Shagreen and Bone"
+description = "Green ray-skin, every pebble of it, with bone laid in like a sunrise. Made for a captain who liked his books to match the saloon."
+
 [binding.pearl] # core.binding, tier 5
 name = "Mother-of-Pearl"
 description = "A cover of shell, cut piece by piece and fitted like tiles. It shifts colour every time the book is turned."
@@ -274,6 +278,21 @@ description = "A cover of shell, cut piece by piece and fitted like tiles. It sh
 [binding.trophycase] # core.binding, tier 5
 name = "Gilded Trophy Case"
 description = "A dark wood case with a glass front, and behind the glass a fish cast in gold. Opens like a cabinet."
+
+# The Curio Shop's second round: Core's composed toast styles (ANN-R82, SHOP-R25, SHOP-R29, SHOP-R50). Its binding
+# for sale, Shagreen and Bone, is with the bindings above.
+
+[good."core.toaststyle.sonar"] # core.toaststyle, earned: Link the companion
+name = "Sonar Scope"
+description = "Built by an engineer who wanted to see the fish before they saw him. It hums, it pings, and it has never once been wrong about a ping."
+
+[good."core.toaststyle.foil"] # core.toaststyle, Curio crate only
+name = "Prize Foil"
+description = "The rare one, pulled from the pack on the first try. Hold it to the light and the whole lake runs through it."
+
+[good."core.toaststyle.storm"] # core.toaststyle, tier 5
+name = "Storm Front"
+description = "The catch you made when everyone sensible had gone in. The pennant says gale; the angler says one more cast."
 
 [good."core.crest.fish.1467"] # Bookplate crest, earned: all ten varieties of Spotted Sunfish
 name = "{fish} Crest"

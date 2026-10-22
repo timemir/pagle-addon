@@ -46,6 +46,23 @@ local LOOKS = {
 		giltCorner = true,
 		paperTint = { 0.98, 1, 1 },
 	},
+	-- a round two's whole book: its own corner art, a clasp on the fore-edge, a silk ribbon and a fillet
+	["test.whole"] = {
+		texture = "Interface\\AddOns\\Pagle\\media\\books\\bindings3\\wave",
+		tileW = 96,
+		tileH = 48,
+		foot = 0.8,
+		band = { 0.2, 0.4, 0.8 },
+		gilt = { 0.94, 0.8, 0.42 },
+		giltShadow = { 0, 0, 0, 0.95, 0, -1 },
+		silver = false,
+		cornerArt = "corner-wave",
+		clasp = "clasp-wave",
+		claspX = -40,
+		ribbon = "ribbon-wave",
+		fillet = { 0.9, 0.7, 0.3 },
+		paperTint = { 1, 1, 1 },
+	},
 }
 
 -- Core logged in on Forever, its looks the spec's, with Field Leather's shape equipped.
@@ -266,12 +283,131 @@ describe("Pagle.NewBookBinding's drawing", function()
 		end
 	)
 
+	-- The texcoords of `name` in `atlas`, mirrored across with `flipX` and down with `flipY`.
+	local function coords(atlas, name, flipX, flipY)
+		local sprite = atlas.sprites[name]
+		local l, r = sprite.x / atlas.width, (sprite.x + sprite.w) / atlas.width
+		local t, b = sprite.y / atlas.height, (sprite.y + sprite.h) / atlas.height
+		if flipX then
+			l, r = r, l
+		end
+		if flipY then
+			t, b = b, t
+		end
+		return { l, r, t, b }
+	end
+
+	it(
+		"draws a look's own corner art 76 square, 4 units out past each corner and mirrored, and the metal pieces back at 44 after it (BIND-R17)",
+		function()
+			local loaded = core()
+			local frame = bookFrame(loaded)
+			local binding = loaded.env.Pagle.NewBookBinding(frame, { pinned = "test.whole" })
+			local regions = regionsOf(binding)
+			local parts = loaded.ns.ATLASES.BindingParts2
+
+			local drawn = {}
+			for i, piece in ipairs(regions.corners) do
+				drawn[i] = {
+					piece:IsShown(),
+					(piece --[[@as table]]).texture,
+					(piece --[[@as table]]).texCoord,
+					{ piece:GetSize() },
+					{ piece:GetPoint(1) },
+				}
+			end
+			assert.are.same({
+				{ true, parts.file, coords(parts, "corner-wave"), { 76, 76 }, { "TOPLEFT", -4, 4 } },
+				{ true, parts.file, coords(parts, "corner-wave", true), { 76, 76 }, { "TOPRIGHT", 4, 4 } },
+				{ true, parts.file, coords(parts, "corner-wave", false, true), { 76, 76 }, { "BOTTOMLEFT", -4, -4 } },
+				{ true, parts.file, coords(parts, "corner-wave", true, true), { 76, 76 }, { "BOTTOMRIGHT", 4, -4 } },
+			}, drawn)
+
+			binding:SetLook("test.tooled")
+
+			local corners = loaded.ns.ATLASES.BindingCorners
+			assert.are.same({ 44, 44 }, { regions.corners[4]:GetSize() })
+			assert.are.same({ "BOTTOMRIGHT" }, { regions.corners[4]:GetPoint(1) })
+			assert.are.same({ corners.file, coords(corners, "corner-gold", true, true) }, {
+				(regions.corners[4] --[[@as table]]).texture,
+				(regions.corners[4] --[[@as table]]).texCoord,
+			})
+		end
+	)
+
+	it(
+		"hangs a look's clasp on the fore-edge, centred down it, its silk ribbon from the pages' foot, and rules its fillet 5 in, only in a look with them (BIND-R14–R16)",
+		function()
+			local loaded = core()
+			local frame = bookFrame(loaded)
+			local binding = loaded.env.Pagle.NewBookBinding(frame)
+			local regions = regionsOf(binding)
+			local parts = loaded.ns.ATLASES.BindingParts2
+			local function fillets()
+				local count = 0
+				for _, edge in ipairs(regions.fillets) do
+					count = count + (edge:IsShown() and 1 or 0)
+				end
+				return count
+			end
+			local plain = { regions.clasp:IsShown(), regions.ribbon:IsShown(), fillets() }
+
+			binding:SetLook("test.whole")
+
+			assert.are.same({ false, false, 0 }, plain)
+			local clasp = regions.clasp --[[@as table]]
+			local ribbon = regions.ribbon --[[@as table]]
+			assert.are.same({ true, parts.file, coords(parts, "clasp-wave"), { 72, 110 } }, {
+				clasp:IsShown(),
+				clasp.texture,
+				clasp.texCoord,
+				{ clasp:GetSize() },
+			})
+			assert.are.same({ "LEFT", frame, "RIGHT", -40, 0 }, { clasp:GetPoint(1) })
+			assert.are.same({ true, parts.file, coords(parts, "ribbon-wave"), { 32, 136 } }, {
+				ribbon:IsShown(),
+				ribbon.texture,
+				ribbon.texCoord,
+				{ ribbon:GetSize() },
+			})
+			assert.are.same({ "TOPLEFT", frame, "BOTTOM", 60, 40 }, { ribbon:GetPoint(1) })
+			-- on the features' frame: the ribbon under the corners, the clasp over them
+			assert.are.same({ regions.gilt, regions.gilt }, { clasp.parent, ribbon.parent })
+			assert.are.same({ "ARTWORK", 0 }, { ribbon.layer, ribbon.sublevel })
+			assert.are.same({ "ARTWORK", 3 }, { clasp.layer, clasp.sublevel })
+			assert.are.equal(4, fillets())
+			assert.are.same({ 0.9, 0.7, 0.3, 0.75 }, (regions.fillets[1] --[[@as table]]).color)
+			assert.are.same({ "TOPLEFT", 5, -5 }, { regions.fillets[1]:GetPoint(1) })
+			assert.are.same({ "BOTTOMRIGHT", -5, 5 }, { regions.fillets[4]:GetPoint(2) })
+			assert.are.equal(1.6, regions.fillets[1]:GetHeight())
+
+			binding:SetLook("test.cloth")
+
+			assert.are.same({ false, false, 0 }, { regions.clasp:IsShown(), regions.ribbon:IsShown(), fillets() })
+		end
+	)
+
+	it(
+		"hangs the ribbon from the page block's foot when the book says where its pages are, 60 right of their centre and 24 up into them (BIND-R15)",
+		function()
+			local loaded = core()
+			local frame = bookFrame(loaded)
+			local binding = loaded.env.Pagle.NewBookBinding(
+				frame,
+				{ pinned = "test.whole", pages = { x = 18, y = 38, w = 884, h = 546 } }
+			)
+
+			-- the kit's own place on its 920 × 600 Journal: 520, 560 from the frame's top left
+			assert.are.same({ "TOPLEFT", frame, "TOPLEFT", 520, -560 }, { regionsOf(binding).ribbon:GetPoint(1) })
+		end
+	)
+
 	it(
 		"draws only on Core's art that ships: the Book atlas, the corner pieces of every metal and the gilt corner (BIND-R13)",
 		function()
 			local loaded = core()
 			local atlases = loaded.ns.ATLASES
-			for _, name in ipairs({ "Book", "BindingCorners", "BindingGilt" }) do
+			for _, name in ipairs({ "Book", "BindingCorners", "BindingGilt", "BindingParts2" }) do
 				local file = atlases[name].file
 				assert.matches("^Interface\\AddOns\\Pagle\\media\\books\\", file)
 				local path = file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"

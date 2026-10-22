@@ -48,7 +48,8 @@ function ns.EarnedGoodNow(goodID, rule)
 end
 
 --- Registers the Ledger's earned bindings in Core's binding slot (LED-R110, SHOP-R23), then the zone crests in Core's
---- crest slot (LED-R113) and its four goods in Core's toast style and sound set slots (LED-R117), from OnInitialize
+--- crest slot (LED-R113), its four goods in Core's toast style and sound set slots (LED-R117), and the second round's
+--- seven toast styles and nine bindings (LED-R118), from OnInitialize
 --- after RegisterModule, and redraws the open Journal whenever the equipped binding or crest changes (LED-R112,
 --- SHOP-R33).
 --- A level binding, a zone crest and an expansion good are earned from the projection's state and the celebrated set
@@ -90,6 +91,26 @@ function ns.RegisterBindings(module)
 	-- LED-R117's four in Core's toast style and sound set slots, which Core opens to earned goods (SHOP-R23, SHOP-R25)
 	-- and draws and plays.
 	for _, good in ipairs(ns.CoreSlotGoods(ns.EarnedGoodNow)) do
+		module:RegisterGood(good)
+	end
+	-- LED-R118's seven toast styles in Core's toast style slot and its nine bindings in Core's binding slot, which Core
+	-- draws (ANN-R82, ADR 0015); each tag counts from the projection's last finished state.
+	local countedGoods = ns.CountedGoods({
+		earnedBy = ns.EarnedGoodNow,
+		count = function(good)
+			local projection = ns.projection
+			if projection == nil or projection:IsUpdating() then
+				return nil
+			end
+			return ns.EarnedCount(good, {
+				state = projection:GetState() --[[@as LedgerState?]],
+				celebrated = ns.SavedCelebrated(),
+				world = ns.world,
+			})
+		end,
+		formatNumber = BreakUpLargeNumbers,
+	})
+	for _, good in ipairs(countedGoods) do
 		module:RegisterGood(good)
 	end
 	Pagle.RegisterCallback(OWNER, "AppearanceChanged", function(_, slot)

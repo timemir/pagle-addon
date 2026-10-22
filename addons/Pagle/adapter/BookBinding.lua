@@ -12,8 +12,9 @@ local Pagle = Pagle
 -- bindings over Core's goods, motion driver and sound, each book's binding drawn on its own frame here. It is the one
 -- renderer of the four leathers the books drew for themselves (the Field guide's, the Stats book's, the Hunts board's
 -- and the Fish Journal's): the material tiled or stretched and shaded toward its foot, the vignette, the band
--- nine-sliced and toned, the corner pieces, Tooled Leather's double gilt rule and Verdigris's gilt corner, all on
--- Core's art (data/GuideArt.lua's Book atlas, data/BookBindingArt.lua's).
+-- nine-sliced and toned, the corner pieces, Tooled Leather's double gilt rule and Verdigris's gilt corner, and a whole
+-- book's own corner art, clasp, ribbon and fillet (the Curio Shop's second round's), all on Core's art
+-- (data/GuideArt.lua's Book atlas, data/BookBindingArt.lua's).
 
 -- The owner of its AppearanceChanged listener on Core's bus (CORE-R23): its own, so no other Core file's registration
 -- replaces it.
@@ -25,6 +26,13 @@ local INSET, BAND = 7, 16
 local CORNER_SIZE, GILT_CORNER_SIZE = 44, 40
 local RULE_INSETS, RULE_WIDTH = { 9, 12 }, 1.5
 local RULE_GILT = { 0xd8 / 255, 0xb6 / 255, 0x60 / 255 }
+-- A whole book's parts (BIND-R14–R17), at the corner pieces' 44: its own corner art's size and how far it stands out
+-- past each corner; the ribbon's top left across from the centre of the pages (or the frame), and how far up into the
+-- pages' foot it starts (or up from the frame's foot, without pages); and the fillet's inset, width and alpha. All from
+-- the round-two kit's 920 × 600 Journal, its pages 884 × 546 at 18, 38.
+local CORNER_ART, CORNER_OUT = 76, 4
+local RIBBON_X, RIBBON_IN, RIBBON_UP = 60, 24, 40
+local FILLET_INSET, FILLET_WIDTH, FILLET_ALPHA = 5, 1.6, 0.75
 -- The band's and the features' alpha through a dip, at the material's `alpha`: never below 0.4 (BIND-R20).
 local BAND_FLOOR = 0.4
 -- An untinted material: white.
@@ -49,8 +57,12 @@ local EDGES = {
 ---@field bandPieces Texture[]   -- its nine slices' eight pieces
 ---@field gilt Frame             -- one level over the band: the features
 ---@field rules Texture[]        -- the tooled rule's edges, both lines'
+---@field fillets Texture[]      -- a whole book's fillet's four edges
 ---@field giltCorner Texture
 ---@field corners Texture[]      -- top left, top right, bottom left, bottom right
+---@field cornerSize number      -- the metal corner pieces' size (options.cornerSize)
+---@field clasp Texture          -- a whole book's clasp on the fore-edge
+---@field ribbon Texture         -- a whole book's silk ribbon
 ---@field look PagleBindingLook? -- the look drawn
 local Regions = {}
 Regions.__index = Regions
@@ -112,29 +124,88 @@ local function bandPieces(band)
 	return { tl, tr, bl, br, top, bottom, left, right }
 end
 
--- Tooled Leather's double rule on `gilt` (BIND-R12): for each inset, four gilt edges that far in from its own; hidden
--- until a tooled look is drawn.
+-- Ruled lines on `gilt`: for each of `insets`, four edges `width` wide that far in from its own, hidden until a look
+-- with them is drawn.
 ---@param gilt Frame
+---@param insets number[]
+---@param width number
 ---@return Texture[]
-local function tooledRules(gilt)
+local function ruledEdges(gilt, insets, width)
 	local edges = {}
-	for _, inset in ipairs(RULE_INSETS) do
+	for _, inset in ipairs(insets) do
 		for i, points in ipairs(EDGES) do
 			local edge = gilt:CreateTexture(nil, "ARTWORK", nil, 0)
-			edge:SetColorTexture(RULE_GILT[1], RULE_GILT[2], RULE_GILT[3], 1)
 			for _, point in ipairs(points) do
 				edge:SetPoint(point, point:find("RIGHT") and -inset or inset, point:find("TOP") and -inset or inset)
 			end
 			if i <= 2 then
-				edge:SetHeight(RULE_WIDTH)
+				edge:SetHeight(width)
 			else
-				edge:SetWidth(RULE_WIDTH)
+				edge:SetWidth(width)
 			end
 			edge:Hide()
 			edges[#edges + 1] = edge
 		end
 	end
 	return edges
+end
+
+-- Tooled Leather's double rule on `gilt` (BIND-R12): two gilt lines, 9 and 12 in.
+---@param gilt Frame
+---@return Texture[]
+local function tooledRules(gilt)
+	local edges = ruledEdges(gilt, RULE_INSETS, RULE_WIDTH)
+	for _, edge in ipairs(edges) do
+		edge:SetColorTexture(RULE_GILT[1], RULE_GILT[2], RULE_GILT[3], 1)
+	end
+	return edges
+end
+
+-- Shows `texture` as `name` of `atlas` at its drawn size, or hides it for no name (BIND-R14, BIND-R15).
+---@param texture Texture
+---@param atlas PagleAtlas
+---@param name string?
+local function part(texture, atlas, name)
+	local sprite = name and atlas.sprites[name]
+	if sprite then
+		cut(texture, atlas, sprite.x, sprite.y, sprite.w, sprite.h)
+		texture:SetSize(sprite.box[3], sprite.box[4])
+	end
+	texture:SetShown(sprite ~= nil)
+end
+
+-- Draws `look`'s corner pieces on `regions` (BIND-R12, BIND-R17): its own corner art, 76 square standing 4 out past
+-- each corner (both at the corner pieces' 44, scaled with them), or its metal's piece at the corners; each the top-left
+-- one mirrored across for the even corners and down for the last two; none in a look with neither.
+---@param regions PagleBookBindingRegions
+---@param look PagleBindingLook
+local function dressCorners(regions, look)
+	local art, metal = look.cornerArt, look.corners
+	local atlas, sprite, size, out
+	if art then
+		atlas = ns.ATLASES.BindingParts2
+		sprite = atlas.sprites[art]
+		local scale = regions.cornerSize / CORNER_SIZE
+		size, out = CORNER_ART * scale, CORNER_OUT * scale
+	elseif metal then
+		atlas = ns.ATLASES.BindingCorners
+		sprite = atlas.sprites["corner-" .. metal]
+		size, out = regions.cornerSize, 0
+	end
+	for i, piece in ipairs(regions.corners) do
+		if sprite then
+			local point = CORNERS[i]
+			cut(piece, atlas, sprite.x, sprite.y, sprite.w, sprite.h, i % 2 == 0, i > 2)
+			piece:SetSize(size, size)
+			piece:ClearAllPoints()
+			if art then
+				piece:SetPoint(point, point:find("RIGHT") and out or -out, point:find("TOP") and out or -out)
+			else
+				piece:SetPoint(point)
+			end
+		end
+		piece:SetShown(sprite ~= nil)
+	end
 end
 
 --- Draws `look` at once (BIND-R10–R12).
@@ -169,14 +240,21 @@ function Regions:Dress(look)
 		edge:SetShown(look.tooled == true)
 	end
 	self.giltCorner:SetShown(look.giltCorner == true)
-	local metal = look.corners
-	local atlas = ns.ATLASES.BindingCorners
-	for i, piece in ipairs(self.corners) do
-		if metal then
-			local sprite = atlas.sprites["corner-" .. metal]
-			cut(piece, atlas, sprite.x, sprite.y, sprite.w, sprite.h, i % 2 == 0, i > 2)
+	dressCorners(self, look)
+	-- a whole book's parts (BIND-R14–R16)
+	local parts = ns.ATLASES.BindingParts2
+	part(self.clasp, parts, look.clasp)
+	if look.clasp then
+		self.clasp:ClearAllPoints()
+		self.clasp:SetPoint("LEFT", self.frame, "RIGHT", look.claspX or 0, 0)
+	end
+	part(self.ribbon, parts, look.ribbon)
+	local fillet = look.fillet
+	for _, edge in ipairs(self.fillets) do
+		if fillet then
+			edge:SetColorTexture(fillet[1], fillet[2], fillet[3], FILLET_ALPHA)
 		end
-		piece:SetShown(metal ~= nil)
+		edge:SetShown(fillet ~= nil)
 	end
 end
 
@@ -243,6 +321,18 @@ local function newRegions(frame, options)
 		piece:Hide()
 		corners[i] = piece
 	end
+	-- a whole book's ribbon under the corners, hanging from the pages' foot (options.pages, else the frame's), and its
+	-- clasp over them on the fore-edge
+	local ribbon = ns.ArtCrisp(gilt:CreateTexture(nil, "ARTWORK", nil, 0))
+	local pages = options.pages
+	if pages then
+		ribbon:SetPoint("TOPLEFT", frame, "TOPLEFT", pages.x + pages.w / 2 + RIBBON_X, -(pages.y + pages.h - RIBBON_IN))
+	else
+		ribbon:SetPoint("TOPLEFT", frame, "BOTTOM", RIBBON_X, RIBBON_UP)
+	end
+	ribbon:Hide()
+	local clasp = ns.ArtCrisp(gilt:CreateTexture(nil, "ARTWORK", nil, 3))
+	clasp:Hide()
 	local regions = setmetatable({
 		frame = frame,
 		fill = fill,
@@ -251,8 +341,12 @@ local function newRegions(frame, options)
 		bandPieces = bandPieces(band),
 		gilt = gilt,
 		rules = tooledRules(gilt),
+		fillets = ruledEdges(gilt, { FILLET_INSET }, FILLET_WIDTH),
 		giltCorner = giltCorner,
 		corners = corners,
+		cornerSize = cornerSize,
+		clasp = clasp,
+		ribbon = ribbon,
 	}, Regions) --[[@as PagleBookBindingRegions]]
 	-- tiled again as the book's size changes
 	frame:HookScript("OnSizeChanged", function()

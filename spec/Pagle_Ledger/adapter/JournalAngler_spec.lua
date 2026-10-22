@@ -560,7 +560,7 @@ describe("the Angler page's Bindings", function()
 	local LEVEL_10 = { global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } }
 
 	it(
-		"lists every binding in Core's slot in the shop's order: Field Leather in use, those for sale in the Curio Shop, then the Ledger's earned ones by how they are earned (LED-R146, SHOP-R25, LED-R110, LED-R116)",
+		"lists every binding in Core's slot in the shop's order: Field Leather in use, those for sale in the Curio Shop, then the Ledger's earned ones by how they are earned, the second round's last (LED-R146, SHOP-R25, LED-R110, LED-R116, LED-R118)",
 		function()
 			local _, loaded = anglerPage()
 
@@ -597,6 +597,7 @@ describe("the Angler page's Bindings", function()
 				{ "Brass Hunter's Case", "In the Curio Shop" },
 				{ "Coral Inlay", "In the Curio Shop" },
 				{ "Scrimshaw Panel", "In the Curio Shop" },
+				{ "Shagreen and Bone", "In the Curio Shop" },
 				{ "Mother-of-Pearl", "In the Curio Shop" },
 				{ "Gilded Trophy Case", "In the Curio Shop" },
 				{ "Tanned Hide", "Angler Level 10" },
@@ -610,6 +611,15 @@ describe("the Angler page's Bindings", function()
 				{ "Abyssal Black", "Prestige X" },
 				{ "Keeper's Gold", "Complete the Ledger" },
 				{ "Iridescent Scale", "Every fish in every colour" },
+				{ "Breaking Wave", "300 catches at sea" },
+				{ "Captain's Logbook", "25 zones fished" },
+				{ "Carved Heartwood", "A catch after 10 got away" },
+				{ "Stormglass Reliquary", "Master in 10 zones" },
+				{ "Black Lacquer Koi", "30 days fished" },
+				{ "Cable Knit", "10,000 Casts" },
+				{ "Fly Wallet", "5 different lures" },
+				{ "Crab Carapace", "50 Big-mouth Clams" },
+				{ "Ember Scale", "Prestige VII" },
 			}, lines(loaded))
 		end
 	)
@@ -654,9 +664,9 @@ describe("the Angler page's Bindings", function()
 			})
 
 			local list = lines(loaded)
-			assert.are.same({ "Monster Hide", "Use" }, list[42])
-			assert.are.same({ "Abyssal Black", "Use" }, list[43])
-			assert.are.same({ "Keeper's Gold", "Complete the Ledger" }, list[44])
+			assert.are.same({ "Monster Hide", "Use" }, list[43])
+			assert.are.same({ "Abyssal Black", "Use" }, list[44])
+			assert.are.same({ "Keeper's Gold", "Complete the Ledger" }, list[45])
 		end
 	)
 
@@ -666,8 +676,8 @@ describe("the Angler page's Bindings", function()
 		loaded.ns.journal:Draw()
 
 		local list = lines(loaded)
-		assert.are.same({ "Tanned Hide", "Use" }, list[35])
-		assert.are.same({ "Tidewater Blue", "Angler Level 20" }, list[36])
+		assert.are.same({ "Tanned Hide", "Use" }, list[36])
+		assert.are.same({ "Tidewater Blue", "Angler Level 20" }, list[37])
 		assert.are.same({ "Birch Bark", "Use" }, list[2])
 	end)
 
@@ -696,7 +706,7 @@ describe("the Angler page's Bindings", function()
 			assert.are.equal("ledger.binding.level10", fake.Pagle.GetEquipped("core.binding"))
 			assert.are.same(fake.ns.BindingLook("ledger.binding.level10"), loaded.ns.journal.frame.binding:Look())
 			local list = lines(loaded)
-			assert.are.same({ { "Field Leather", "Use" }, { "Tanned Hide", "In use" } }, { list[1], list[35] })
+			assert.are.same({ { "Field Leather", "Use" }, { "Tanned Hide", "In use" } }, { list[1], list[36] })
 		end
 	)
 
@@ -705,7 +715,7 @@ describe("the Angler page's Bindings", function()
 
 		assert.is_true(fake.Pagle.SetEquipped("core.binding", "ledger.binding.level10"))
 
-		assert.are.same({ "Tanned Hide", "In use" }, lines(loaded)[35])
+		assert.are.same({ "Tanned Hide", "In use" }, lines(loaded)[36])
 	end)
 end)
 

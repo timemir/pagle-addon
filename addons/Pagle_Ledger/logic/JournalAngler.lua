@@ -171,7 +171,8 @@ local JOURNAL_SWATCHES = { Bindings = true, Bindings2 = true }
 -- "Bindings" (LED-R146, ADR 0015): every binding in Core's binding slot as the Curio Shop lists it
 -- (Pagle.GetSlotGoods), its closed book, its name and its state: "In use" for the equipped one, "Use" (equipping it,
 -- SHOP-R32) when owned, the Ledger's own earned one's earnedText ("Angler Level {L}", LED-R111; "Land a Monster",
--- LED-R116) when it isn't earned yet, and "In the Curio Shop" (opening the shop at it, SHOP-R40) for any other not
+-- LED-R116; the second round's plain earned text, "25 zones fished", LED-R118) when it isn't earned yet, and "In the
+-- Curio Shop" (opening the shop at it, SHOP-R40) for any other not
 -- owned. Look and Feel picks the same setting, and every book wears it, so the page reads Pagle.GetEquipped at each
 -- draw.
 ---@param context LedgerSpreadContext
@@ -183,7 +184,7 @@ local function bindings(context, blocks)
 	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_BINDINGS }
 	for _, id in ipairs(goods.slotGoods(ns.BINDING_SLOT)) do
 		local good, look = goods.getGood(id), goods.bindingLook(id)
-		local own = ns.LedgerBinding(id)
+		local own, counted = ns.LedgerBinding(id), ns.CountedGood(id)
 		local atlas = look.swatchAtlas
 		---@type LedgerBlock
 		local line = {
@@ -201,6 +202,8 @@ local function bindings(context, blocks)
 			end
 		elseif own then
 			line.value, line.state = ns.BindingEarnedText(own), "level"
+		elseif counted then
+			line.value, line.state = L.EARNED_TEXT[counted.earn], "level"
 		else
 			line.value, line.state = L.ANGLER_BINDING_SHOP, "shop"
 			line.action = function()

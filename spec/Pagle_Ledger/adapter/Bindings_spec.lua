@@ -7,7 +7,8 @@
 -- Core's binding slot (SHOP-R25), where the Ledger registers its earned bindings (SHOP-R23).
 local SLOT = "core.binding"
 
--- LED-R110's earned bindings, in its order, with their earnedText.
+-- LED-R110's earned bindings, in its order, with their earnedText (the row's tag, for the second round's nine with no
+-- Casts yet, LED-R118).
 local GOODS = {
 	{ "ledger.binding.level10", "earned", "Angler Level 10" },
 	{ "ledger.binding.level20", "earned", "Angler Level 20" },
@@ -20,6 +21,15 @@ local GOODS = {
 	{ "ledger.binding.abyssal", "earned", "Prestige X" },
 	{ "ledger.binding.keeper", "earned", "Complete the Ledger" },
 	{ "ledger.binding.iridescent", "earned", "Every fish in every colour" },
+	{ "ledger.binding.wave", "earned", "0 of 300 catches" },
+	{ "ledger.binding.logbook", "earned", "0 of 25 zones" },
+	{ "ledger.binding.heartwood", "earned", "A catch after 10 got away" },
+	{ "ledger.binding.stormglass", "earned", "0 of 10 zones" },
+	{ "ledger.binding.lacquer", "earned", "0 of 30 days" },
+	{ "ledger.binding.knit", "earned", "0 of 10,000 Casts" },
+	{ "ledger.binding.flywallet", "earned", "0 of 5 lures" },
+	{ "ledger.binding.carapace", "earned", "0 of 50 clams" },
+	{ "ledger.binding.ember", "earned", "Prestige VII" },
 }
 
 -- A good's kind as LED-R110's table writes it.
@@ -92,7 +102,7 @@ end
 
 describe("the Ledger's earned bindings", function()
 	it(
-		"register in Core's binding slot after Core's own, in LED-R110's order, earned, with no slot and no preview of their own, and Field Leather equipped (LED-R110, LED-R116, SHOP-R21, SHOP-R23, SHOP-R32)",
+		"register in Core's binding slot after Core's own, in LED-R110's order, the second round's nine last, earned, with no slot and no preview of their own, and Field Leather equipped (LED-R110, LED-R116, LED-R118, SHOP-R21, SHOP-R23, SHOP-R32)",
 		function()
 			local fake = ledger()
 			local goods = fake.ns.goods
@@ -103,7 +113,11 @@ describe("the Ledger's earned bindings", function()
 			local registered = {}
 			for _, good in ipairs(goods:GoodsOf(SLOT)) do
 				if good.module == "Ledger" then
-					registered[#registered + 1] = { good.id, kindOf(good), good.earnedText }
+					local tag = good.earnedText
+					if type(tag) == "function" then
+						tag = tag()
+					end
+					registered[#registered + 1] = { good.id, kindOf(good), tag }
 					assert(good.preview == nil, good.id)
 				else
 					assert.are.same({ "Core", 0 }, { good.module, #registered }, good.id) -- Core's all come first
@@ -397,6 +411,57 @@ describe("the Ledger's expansion earned bindings", function()
 			assert.is_true(fake.Pagle.IsOwned("ledger.binding.iridescent"))
 		end
 	)
+
+	describe("the second round's (LED-R118)", function()
+		-- `n` caught Casts, each the first in a zone of its own on 1 October 2026: `n` glass shards (LED-R119), and
+		-- with them `n` zones fished.
+		---@param n integer
+		local function firstWaters(n)
+			local log = {}
+			for i = 1, n do
+				log[i] = castRecord({
+					time = T0 + i,
+					zone = 1000 + i,
+					date = { year = 2026, month = 10, day = 1, weekday = 5 },
+					items = { MACKEREL },
+				})
+			end
+			return log
+		end
+
+		it(
+			"own Chapel Glass after the done that counts its twelfth shard, noted in the celebrated set, and count toward it before (LED-R118, LED-R119, SHOP-R31)",
+			function()
+				local fake, loaded = ledgerOver(release("first release"), nil, firstWaters(11))
+				assert.is_false(fake.Pagle.IsOwned("ledger.toaststyle.glass"))
+				local toastStyles = fake.ns.goods:GoodsOf("core.toaststyle")
+				local glass
+				for _, registered in ipairs(toastStyles) do
+					if registered.id == "ledger.toaststyle.glass" then
+						glass = registered
+					end
+				end
+				assert.are.same({ "11 of 12 shards", "12 glass shards" }, { glass.earnedText() })
+
+				local later, reloaded = ledgerOver(release("first release"), nil, firstWaters(12))
+				assert.is_true(later.Pagle.IsOwned("ledger.toaststyle.glass"))
+				assert.is_true(reloaded.env.PagleLedgerDB.global.celebrated.goods["ledger.toaststyle.glass"])
+				assert.is_nil(loaded.env.PagleLedgerDB.global.celebrated.goods)
+			end
+		)
+
+		it(
+			"own Captain's Logbook in Core's binding slot after 25 zones fished, noted in the celebrated set, and equip it (LED-R118, LED-R90, SHOP-R32)",
+			function()
+				local fake, loaded = ledgerOver(release("first release"), nil, firstWaters(25))
+				assert.is_true(fake.Pagle.IsOwned("ledger.binding.logbook"))
+				assert.is_true(loaded.env.PagleLedgerDB.global.celebrated.goods["ledger.binding.logbook"])
+				assert.is_false(fake.Pagle.IsOwned("ledger.binding.wave"))
+				assert.is_true(fake.Pagle.SetEquipped(SLOT, "ledger.binding.logbook"))
+				assert.are.equal("ledger.binding.logbook", fake.Pagle.GetEquipped(SLOT))
+			end
+		)
+	end)
 end)
 
 describe("the Ledger's goods in Core's open slots", function()
@@ -437,16 +502,21 @@ describe("the Ledger's goods in Core's open slots", function()
 	end
 
 	it(
-		"register LED-R117's four in Core's toast style and sound set slots, the Ledger's, after Core's own (LED-R117, SHOP-R23, SHOP-R25)",
+		"register LED-R117's four and LED-R118's seven toast styles in Core's toast style and sound set slots, the Ledger's, after Core's own (LED-R117, LED-R118, SHOP-R23, SHOP-R25)",
 		function()
 			local fake = ledger()
 			local goods = fake.ns.goods
 
+			-- Each of the Ledger's goods in `slot`: its ID, name and row tag (an earnedText function's first text).
 			local function ledgerGoods(slot)
 				local list = {}
 				for _, good in ipairs(goods:GoodsOf(slot)) do
 					if good.module == "Ledger" then
-						list[#list + 1] = { good.id, good.name, good.earnedText }
+						local tag = good.earnedText
+						if type(tag) == "function" then
+							tag = tag()
+						end
+						list[#list + 1] = { good.id, good.name, tag }
 					end
 				end
 				return list
@@ -454,6 +524,13 @@ describe("the Ledger's goods in Core's open slots", function()
 			assert.are.same({
 				{ "ledger.toaststyle.legend", "The Tall Tale", "Land a Legend" },
 				{ "ledger.toaststyle.prestige", "Oxblood Vellum", "Prestige V" },
+				{ "ledger.toaststyle.glass", "Chapel Glass", "0 of 12 shards" },
+				{ "ledger.toaststyle.deep", "The Deep Lure", "0 of 100 catches" },
+				{ "ledger.toaststyle.koi", "Ink and Koi", "0 of 25 pairs" },
+				{ "ledger.toaststyle.trophy", "Mounted Trophy", "0 of 25 records" },
+				{ "ledger.toaststyle.slate", "Fishmonger's Slate", "0 of 30 Species" },
+				{ "ledger.toaststyle.ice", "Through the Ice", "0 of 100 catches" },
+				{ "ledger.toaststyle.stitch", "Cross-Stitch Sampler", "0 of 20 fish" },
 			}, ledgerGoods("core.toaststyle"))
 			assert.are.same({
 				{ "ledger.soundset.concertina", "Old Salt's Concertina", "Prestige I" },
