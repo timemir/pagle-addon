@@ -17,6 +17,8 @@ ns.L = {
 	NOT_FOREVER = "Pagle: this isn't World of Warcraft: Forever, so Pagle stays off.",
 	-- LOG-R67: the Size band names, Tiddler to Monster, in band order (Pagle.SIZE_BANDS), signed off for 1.0 (#264).
 	SIZE_BANDS = { "Tiddler", "Decent", "Hefty", "Whopper", "Monster" },
+	-- VAR-R2: the variety rarity names, Common to Epic, in rarity order (Pagle.VARIETY_RARITIES).
+	VARIETY_RARITIES = { "Common", "Uncommon", "Rare", "Epic" },
 	-- LOG-R69: a length in each length unit, to 0.1 of it; ANN-R22: a size record's margin that rounds to zero.
 	LENGTH = { cm = "%.1f cm", ["in"] = "%.1f in" },
 	LENGTH_MARGIN_UNDER = { cm = "+<0.1 cm", ["in"] = "+<0.1 in" },
@@ -100,6 +102,8 @@ ns.L = {
 	ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting",
 	-- The catch Nod (ANN-R13): a Catch's name, its Size band and its length; an item the client hasn't named yet.
 	CATCH_NOD = "%s · %s · %s",
+	-- A catch Nod naming its Catch's variety (VAR-R26): the Catch's name, the variety's name, the band and the length.
+	CATCH_NOD_VARIETY = "%s · %s · %s · %s",
 	CATCH_NOD_ITEM = "Item %d",
 	-- The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
 	-- (ANN-R54), and the Write-up's (ANN-R61); Core's numbers (ANN-R53), time fished in MINUTES or hours and minutes;
@@ -596,6 +600,17 @@ ns.L = {
 	-- The crest slot's groups on the Curio Shop's list (SHOP-R27): the zones' crests, then the fishes'.
 	SLOT_CREST_ZONES = "Zone crests",
 	SLOT_CREST_FISH = "Fish crests",
+	-- A fish crest (VAR-R12): its fish, the Species' item name as the client has it, "Item {itemID}" until it has;
+	-- the prefix an enUS client's fish names carry ("Raw Spotted Yellowtail") that the crest's name drops, read on an
+	-- enUS client only; and, while it isn't earned, the row's tag and the stage's note (VAR-R13, VAR-R14), the count
+	-- still out there of each rarity, rarest last, joined with ", ".
+	FISH_CREST_ITEM = "Item %d",
+	FISH_CREST_DROP_PREFIX = "Raw ",
+	FISH_CREST_ROW = "%d of 10 varieties",
+	FISH_CREST_NOTE = "%d of 10 %s varieties. Still out there: %s.",
+	FISH_CREST_NOTE_ALL = "%d of 10 %s varieties.",
+	FISH_CREST_UNCAUGHT = "%d %s",
+	FISH_CREST_UNCAUGHT_JOIN = ", ",
 	-- A sound set's preview on the Curio Shop's stage (wallet-and-shop.md › UI): a button per sound, and a note. » is
 	-- Latin-1: the client's fonts have no ▶ (CORE-R9, #248).
 	PREVIEW_TOAST = "» Toast",

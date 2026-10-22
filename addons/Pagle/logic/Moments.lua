@@ -23,6 +23,28 @@ local ns = select(2, ...)
 ---@field summaryOnly? boolean   -- ANN-R63
 ---@field firstNote? string      -- the Margin note shown the first time a moment of this Module and kind shows (ONB-R53)
 ---@field seal? integer|"waves"|"book"|"quill"|"crest" -- a banner's wax seal: a number, a mark or the Prestige crest
+---@field crest? integer|string  -- with seal "crest": a crest good's icon shown in the Prestige crest's place (VAR-R25)
+---@field art? PagleMomentArt    -- a texture rectangle drawn instead of `icon` where the headline shows (VAR-R25)
+---@field variety? PagleNodVariety -- Core's catch Nod only: the variety its line names (VAR-R26)
+
+--- A moment's art (announcements.md › Contracts): a texture and its texel rectangle as texture coordinates, a
+--- variety's art (VAR-R11). A toast's or Nod's medallion shows it cropped to the fish's head (ns.HeadCrop), a banner on
+--- its seal's ribbon. Never stored: the Session summary shows `icon`.
+---@class PagleMomentArt
+---@field texture integer|string
+---@field left number
+---@field right number
+---@field top number
+---@field bottom number
+
+--- The variety a catch Nod's line names (VAR-R26): its name and rarity, and the line cut either side of the name, so
+--- the display draws the name as a segment of its own, in the rarity's ink after a gem in its colour. `title` keeps
+--- the whole line as plain text.
+---@class PagleNodVariety
+---@field name string
+---@field rarity "common"|"uncommon"|"rare"|"epic"
+---@field before string          -- the line up to the name, trimmed ("Firefin Snapper ·")
+---@field after string           -- the line after it, trimmed ("· Decent · 34.2 cm")
 
 ---@alias PagleRung "nod"|"toast.low"|"toast"|"toast.high"|"banner"|"splash"
 
@@ -86,6 +108,18 @@ function ns.MomentProblem(moment)
 	end
 	if moment.firstNote ~= nil and (type(moment.firstNote) ~= "string" or moment.firstNote == "") then
 		return "RaiseMoment: a moment's firstNote is a text (ONB-R93)"
+	end
+	local art = moment.art
+	if art ~= nil then
+		local rectangle = type(art) == "table"
+			and (type(art.texture) == "string" or type(art.texture) == "number")
+			and type(art.left) == "number"
+			and type(art.right) == "number"
+			and type(art.top) == "number"
+			and type(art.bottom) == "number"
+		if not rectangle then
+			return "RaiseMoment: a moment's art is { texture, left, right, top, bottom }"
+		end
 	end
 	return nil
 end
@@ -176,15 +210,36 @@ function ns.MakeCastAnnouncements(moments)
 	return announcements
 end
 
+-- The variety a Catch's `variety` names (VAR-R4, VAR-R11), as `varieties` (Pagle.GetVarieties) lists it, or nil
+-- when Core can't name it: no list for its Species, no entry at its position, or no name in lore.
+---@param variety PagleVariety
+---@param varieties fun(speciesID: integer): PagleVarietyEntry[]?
+---@return PagleVarietyEntry?
+local function lookOf(variety, varieties)
+	local speciesID = tonumber(variety.id:match("^(%d+)%."))
+	local list = speciesID and varieties(speciesID)
+	local entry = list and list[variety.index]
+	if entry and entry.id == variety.id and entry.name then
+		return entry
+	end
+	return nil
+end
+
 --- The catch Nod of a Cast (ANN-R13), or nil for a got-away Cast or one whose every item is item 0: a silent `nod` of
 --- the Cast naming its first Catch with a Simulated Size, else its first that isn't item 0, as "{item name} · {band} ·
 --- {length}" in `lengthUnit`, or by name alone for an item with no size. `itemName` is the client's name, nil until it
 --- has cached it ("Item {itemID}" then). `cast` may be a read-only proxy, so its items are read by index.
+--- A Catch with a variety that `varieties` (Pagle.GetVarieties) names reads "{item name} · {variety name} · {band} ·
+--- {length}" (VAR-R26): the moment's `variety` cuts the line about the name, and its `art` is a copy of the variety's,
+--- for the medallion. Only a Catch with a size has a variety (VAR-R1). With `caughtBefore`, it names only a variety
+--- caught before this Cast (VAR-R27): a first one reads as a Catch without a variety, its moment the Ledger's.
 ---@param cast PagleCast
 ---@param itemName fun(itemID: integer): string?
 ---@param lengthUnit PagleLengthUnit
+---@param varieties (fun(speciesID: integer): PagleVarietyEntry[]?)?
+---@param caughtBefore (fun(variety: PagleVariety, castId: string): boolean)?
 ---@return PagleMoment?
-function ns.CatchNodMoment(cast, itemName, lengthUnit)
+function ns.CatchNodMoment(cast, itemName, lengthUnit, varieties, caughtBefore)
 	if cast.outcome ~= "caught" then
 		return nil
 	end
@@ -206,11 +261,32 @@ function ns.CatchNodMoment(cast, itemName, lengthUnit)
 	end
 	local L = ns.L
 	local itemID, size = named.itemID, named.size
-	local title = itemName(itemID) or L.CATCH_NOD_ITEM:format(itemID)
-	if size then
-		title = L.CATCH_NOD:format(title, ns.SIZE_BANDS[size.band].name, ns.FormatLength(size.length, lengthUnit))
+	local name = itemName(itemID) or L.CATCH_NOD_ITEM:format(itemID)
+	local moment = { rung = "nod", kind = "catch", title = name, icon = itemID, cast = cast.id, sound = false }
+	if not size then
+		return moment
 	end
-	return { rung = "nod", kind = "catch", title = title, icon = itemID, cast = cast.id, sound = false }
+	local band, length = ns.SIZE_BANDS[size.band].name, ns.FormatLength(size.length, lengthUnit)
+	local variety = named.variety
+	local look = variety
+		and varieties
+		and (not caughtBefore or caughtBefore(variety, cast.id))
+		and lookOf(variety, varieties)
+	if not look then
+		moment.title = L.CATCH_NOD:format(name, band, length)
+		return moment
+	end
+	-- A look is found only for a variety.
+	---@cast variety PagleVariety
+	moment.title = L.CATCH_NOD_VARIETY:format(name, look.name, band, length)
+	-- The line with a mark in the name's place, cut there: "\001" is in no name.
+	local before, after = L.CATCH_NOD_VARIETY:format(name, "\001", band, length):match("^(.-)%s*\001%s*(.*)$")
+	moment.variety = { name = look.name, rarity = variety.rarity, before = before, after = after }
+	local art = look.art
+	if art then
+		moment.art = { texture = art.texture, left = art.left, right = art.right, top = art.top, bottom = art.bottom }
+	end
+	return moment
 end
 
 --- What the collector is fed. Every function is called when needed, never stored.
@@ -259,10 +335,12 @@ local function copyOf(def, moment, raised)
 	for key, value in pairs(moment) do
 		copy[key] = value
 	end
-	if type(moment.ruler) == "table" then
-		copy.ruler = {}
-		for key, value in pairs(moment.ruler) do
-			copy.ruler[key] = value
+	for _, key in ipairs({ "ruler", "art" }) do
+		if type(moment[key]) == "table" then
+			copy[key] = {}
+			for field, value in pairs(moment[key]) do
+				copy[key][field] = value
+			end
 		end
 	end
 	copy.module, copy.moduleTitle, copy.moduleOrder = def.name, def.title, def.order

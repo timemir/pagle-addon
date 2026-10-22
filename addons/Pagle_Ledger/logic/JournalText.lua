@@ -233,9 +233,10 @@ function Text:Date(date)
 	return ns.FormatJournalDate(date, ns.RealmDateAt(now, offsetAt(self.client, now)).year)
 end
 
---- A first Catch's line (LED-R140, LED-R147): `withZone` filled with its date, zone and character, then `...`; at
---- zone 0, `withoutZone` with the zone left out (LED-R6).
----@param entry LedgerFirst
+--- A first Catch's line (LED-R140, LED-R147, VAR-R24): `withZone` filled with its date, zone and character, then
+--- `...`; at zone 0, `withoutZone` with the zone left out (LED-R6). `entry` is an item's first Catch (LedgerFirst) or a
+--- variety's (LedgerVarietyFirst).
+---@param entry { date: LedgerDate?, zone: integer, char: integer }
 ---@param withZone string
 ---@param withoutZone string
 ---@param ... any

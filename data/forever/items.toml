@@ -417,13 +417,13 @@ category = "container"
 [item.6647]
 category = "container"
 
-# Gaffer Jack
+# Gaffer Jack: a lost gadget fished up for a quest, not a fish, so junk (varieties.md, Data)
 [item.6717]
-category = "questFish"
+category = "junk"
 
-# Electropeller
+# Electropeller: a lost gadget fished up for a quest, not a fish, so junk (varieties.md, Data)
 [item.6718]
-category = "questFish"
+category = "junk"
 
 # Spotted Yellowtail
 [item.6887]

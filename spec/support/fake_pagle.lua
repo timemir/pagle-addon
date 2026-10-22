@@ -112,6 +112,8 @@
 --- hands over the log's own set at enterWorld's done and on each live purchase (SHOP-R11), replacing it; a spec that
 --- wants its set kept hands it over after enterWorld. A U1 in fake.catchLog's history (helpers.lua's purchaseEntry, or
 --- fake.catchLog:Append) gives the spent total, the purchased set and the balance the way Core's log does.
+---@field varietyRefreshes integer How many times Core's variety projection ran its earned-goods hooks (VAR-R13):
+--- once after enterWorld's done, then once for each live Catch that adds a variety not caught before.
 ---@field shopsOpened { goodID: string?, selected: string? }[] Each time the Curio Shop opened (or Pagle.OpenShop
 --- reached it open), in order: the good Pagle.OpenShop asked for, and the one Core selected (SHOP-R40: a good the
 --- shop shows, a Module off's under Put away; nil for an unknown ID or none asked). While restricted nothing opens and
@@ -124,9 +126,12 @@
 --- Core's catch Nod is never here: it is in catchNods.
 ---@field catchNods PagleAnnouncement[] Each catch Nod Core would hand the display (ANN-R13): one per played caught
 --- Cast for which no Module raised a moment, while `profile.announcements.everyCatch` is on, on the frame after.
---- Its headline's title is "{item name} · {band} · {length}", the name from `itemNames`.
----@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch Nod; a
---- spec sets them. An item without one reads "Item {itemID}".
+--- Its headline's title is "{item name} · {band} · {length}", the name from `itemNames`, naming a variety only once
+--- caught before its Cast (VAR-R27).
+---@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch Nod and
+--- the fish crests' fish (VAR-R12); a spec sets them. An item without one reads "Item {itemID}".
+---@field itemArrived fun(itemID: integer) The client's GET_ITEM_INFO_RECEIVED for an item: renames its Species' fish
+--- crest from `itemNames` (SHOP-R26) when it had none at login.
 ---@field summarized PagleRaisedMoment[] Each moment Core kept, as it was raised, shown or not (ANN-R25): a
 --- summaryOnly one is here and never in announcements. A moment Core dropped (ANN-R4) is in neither.
 ---@field global table PagleDB.global, the one the fake's Core keeps all its keys in, from Core's defaults
@@ -743,6 +748,11 @@ part(function(fake, Pagle, ns, host)
 	ns.PublishSize(Pagle, host, readOnly)
 end)
 
+-- The variety rarities as Core publishes them (VAR-R11): Pagle.VARIETY_RARITIES, read-only here (CORE-R18).
+part(function(_, Pagle, ns)
+	ns.PublishVarieties(Pagle, readOnly)
+end)
+
 -- Projections (LOG-R70–R77), on Core's wiring over fake.catchLog: M:NewProjection and M:IterateCatches on the
 -- handle. login notes loginSeq (the log's length then); enterWorld is login step 3, running every catch-up and
 -- rebuild at once; each entry the fake appends afterwards (playCast, readSkill) is handed over live, before its events.
@@ -924,7 +934,15 @@ part(function(fake, Pagle, ns)
 		ns.Catalogue = ns.NewCatalogue(data)
 		Pagle.CONTENT_FINGERPRINT = ns.Catalogue.CONTENT_FINGERPRINT
 	end
-	for _, name in ipairs({ "GetItem", "GetZones", "GetArea", "GetZoneOf", "GetZoneCatches", "GetWindowSpec" }) do
+	for _, name in ipairs({
+		"GetItem",
+		"GetVarieties",
+		"GetZones",
+		"GetArea",
+		"GetZoneOf",
+		"GetZoneCatches",
+		"GetWindowSpec",
+	}) do
 		Pagle[name] = function(...)
 			return readOnly(ns.Catalogue[name](...))
 		end
@@ -987,6 +1005,31 @@ end)
 part(function(_, _, ns, host)
 	ns.WireWalletProjection(host)
 	ns.StartWalletProjection()
+end)
+
+-- The variety projection (VAR-R10, VAR-R13, LOG-R78), on Core's wiring over fake.catchLog, bound in
+-- fake.global.projections.varieties after the wallet's and ahead of every Module's: Pagle.GetVarietiesCaught reads
+-- what it stored, a fresh set each call (VAR-R11). Each time Core would refresh its earned goods (after enterWorld's
+-- done, and after a live Catch that adds a variety) adds one to fake.varietyRefreshes, through Core's own hook
+-- (ns.OnVarietiesCaught). Core's fish crests (VAR-R12) are registered first, as login step 1 does, one per Species with
+-- varieties in the fixture catalogue, their fish named from fake.itemNames as an enUS client names them (less "Raw ");
+-- fake.itemArrived(itemID) is that item's GET_ITEM_INFO_RECEIVED, renaming its crest once fake.itemNames has it.
+part(function(fake, Pagle, ns, host)
+	fake.varietyRefreshes = 0
+	ns.WireVarietyProjection(host, Pagle)
+	ns.OnVarietiesCaught(function()
+		fake.varietyRefreshes = fake.varietyRefreshes + 1
+	end)
+	fake.itemArrived = ns.RegisterFishCrests({
+		species = ns.Catalogue.GetVarietySpecies(),
+		caught = Pagle.GetVarietiesCaught,
+		itemName = function(itemID)
+			return fake.itemNames[itemID]
+		end,
+		dropPrefix = ns.L.FISH_CREST_DROP_PREFIX,
+		owned = Pagle.IsOwned,
+	})
+	ns.StartVarietyProjection()
 end)
 
 -- The live conditions (LOG-R45, LOG-R47). Pagle.GetConditions hands out fake.conditions, read-only, with the

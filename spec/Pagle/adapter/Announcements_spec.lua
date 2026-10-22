@@ -3,6 +3,8 @@
 -- through the lanes in the announcements art's frames, playing their sounds with PlaySoundFile. A headline with text
 -- prints its title in capitals over the text, one without shows its title as it is, and stamps are in capitals.
 
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local bounds = dofile("spec/support/bounds.lua")
 local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 local DRIFTWOOD = SOUNDS .. "driftwood\\"
 local CAST = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
@@ -29,6 +31,11 @@ local function loadCore()
 	loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 	loaded.client.runTimers()
 	return loaded, M, summarized
+end
+
+-- Core's crop of a moment's art to the fish's head (ns.HeadCrop), as texture coordinates.
+local function headCrop(loaded, art)
+	return loaded.ns.HeadCrop(art)
 end
 
 -- A moment on `rung` titled `title`, with other fields from `fields`.
@@ -535,6 +542,72 @@ describe("the announcements art", function()
 	)
 end)
 
+describe("a variety's art and a fish crest on the client (VAR-R25)", function()
+	-- A variety's art: a 192 × 96 rectangle at (0, 0) of a 2048 atlas (VAR-R11).
+	local ART = {
+		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
+		left = 0,
+		right = 0.09375,
+		top = 0,
+		bottom = 0.046875,
+	}
+
+	-- Rounded to 6 places, for texture coordinates worked out in floating point.
+	local function rounded(coords)
+		local out = {}
+		for i, v in ipairs(coords) do
+			out[i] = math.floor(v * 1e6 + 0.5) / 1e6
+		end
+		return out
+	end
+
+	it(
+		"draws a toast's and a Nod's medallion with the art cropped to the fish's head, and the icon again after",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, moment("toast", "Rare variety", { text = "Coral", icon = 6359, art = ART }))
+			local toast = frameOf(loaded, "toast")
+
+			assert.are.equal(ART.texture, toast.icon.texture)
+			assert.are.same(rounded({ headCrop(loaded, ART) }), rounded(toast.icon.texCoord))
+
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+			raise(loaded, M, moment("toast", "New Species", { icon = 136245 }))
+			assert.are.same({ 136245, { 0, 1, 0, 1 } }, { toast.icon.texture, toast.icon.texCoord })
+
+			raise(loaded, M, moment("nod", "New variety · Coral", { art = ART }))
+			local nod = frameOf(loaded, "nod")
+			assert.are.same({ ART.texture }, { nod.icon.texture })
+			assert.are.same(rounded({ headCrop(loaded, ART) }), rounded(nod.icon.texCoord))
+		end
+	)
+
+	it("draws a banner's art on its seal's ribbon, and a crest good's icon in the Prestige crest's place", function()
+		local loaded, M = loadCore()
+		raise(loaded, M, moment("banner", "Epic variety", { text = "Phoenix-fin", art = ART }))
+		local banner = frameOf(loaded, "banner")
+		assert.are.same({ true, true, ART.texture, { ART.left, ART.right, ART.top, ART.bottom }, false }, {
+			banner.seal.shown,
+			banner.ribbonArt.shown,
+			banner.ribbonArt.texture,
+			banner.ribbonArt.texCoord,
+			banner.crestIcon.shown,
+		})
+		loaded.client.advance(BANNER + LEAVE_BANNER)
+
+		raise(loaded, M, moment("banner", "Every colour of Firefin Snapper", { seal = "crest", crest = "fish6359" }))
+		assert.are.same({ false, false, false, false, true, "fish6359", false }, {
+			banner.seal.shown,
+			banner.crest.shown,
+			banner.portrait.shown,
+			banner.crestLabel.shown,
+			banner.crestIcon.shown,
+			banner.crestIcon.texture,
+			banner.ribbonArt.shown,
+		})
+	end)
+end)
+
 describe("the column on the client", function()
 	-- A column frame's bottom above the screen's: its BOTTOM anchor's y.
 	local function bottomOf(frame)
@@ -813,11 +886,20 @@ describe("Announcement sounds on the client", function()
 end)
 
 describe("The catch Nod on the client", function()
-	-- Core as loadCore makes it, with Oily Blackmouth's name cached and the Angler's unit in cm.
-	local function catching()
+	-- Core as loadCore makes it, with Oily Blackmouth's name cached, the Angler's unit in cm and, unless `firstTime`,
+	-- every one of its varieties caught before in Core's projection (VAR-R10), so its Nod may name any (VAR-R27).
+	---@param firstTime boolean?
+	local function catching(firstTime)
 		local loaded, M, summarized = loadCore()
 		loaded.client.itemNames[6358] = "Oily Blackmouth"
 		loaded.ns.db.profile.lengthUnit = "cm"
+		if not firstTime then
+			local all = {}
+			for index = 1, 10 do
+				all[index] = true
+			end
+			loaded.ns.db.global.projections.varieties.projection.bySpecies[6358] = all
+		end
 		return loaded, M, summarized
 	end
 
@@ -831,7 +913,14 @@ describe("The catch Nod on the client", function()
 
 			assert.is_true(showing(loaded, "nod"))
 			local frame = frameOf(loaded, "nod") --[[@as table]]
-			assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", frame.title:GetText())
+			-- Oily Blackmouth has varieties: its line names the Catch's, the name a segment of its own (VAR-R26).
+			assert.matches(
+				"^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d cm$",
+				frame.display.announcement.headline.title
+			)
+			assert.are.equal("Oily Blackmouth ·", frame.title:GetText())
+			assert.matches("^[%a%- ]+$", frame.variety:GetText())
+			assert.matches("^· %a+ · %d+%.%d cm$", frame.tail:GetText())
 			assert.are.same({}, stampsOf(frame))
 			assert.are.same({}, loaded.client.sounds)
 			assert.are.same({}, summarized)
@@ -839,6 +928,16 @@ describe("The catch Nod on the client", function()
 			assert.is_false(showing(loaded, "nod"))
 		end
 	)
+
+	it("names no variety caught for the first time: that Catch reads as one without (VAR-R27)", function()
+		local loaded = catching(true)
+
+		catchAndFlush(loaded)
+
+		local frame = frameOf(loaded, "nod") --[[@as table]]
+		assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", frame.display.announcement.headline.title)
+		assert.is_nil(frame.display.announcement.headline.variety)
+	end)
 
 	it("never counts toward the Interruption budget (ANN-R13, ANN-R30, ANN-R31)", function()
 		local loaded, M = catching()
@@ -873,4 +972,159 @@ describe("The catch Nod on the client", function()
 
 		assert.is_nil(frameOf(loaded, "nod"))
 	end)
+end)
+
+describe("a catch Nod naming a variety on the client (VAR-R26)", function()
+	-- Firefin Snapper's Coral: a 192 × 96 rectangle at (192, 0) of a 2048 atlas (VAR-R11).
+	local ART = {
+		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
+		left = 0.09375,
+		right = 0.1875,
+		top = 0,
+		bottom = 0.046875,
+	}
+
+	-- The rarity of `key`, as Core has it.
+	local function rarityOf(loaded, key)
+		for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+			if rarity.key == key then
+				return rarity
+			end
+		end
+		error("no rarity " .. key)
+	end
+
+	-- Raises Core's catch Nod naming Coral as a variety of `rarity`, as ns.CatchNodMoment makes it, and runs the frame
+	-- it shows on. Returns the Nod's frame.
+	local function raiseVarietyNod(loaded, rarity)
+		loaded.ns.moments:RaiseCatchNod({
+			rung = "nod",
+			kind = "catch",
+			title = "Firefin Snapper · Coral · Decent · 34.2 cm",
+			icon = 6359,
+			cast = CAST,
+			sound = false,
+			variety = { name = "Coral", rarity = rarity, before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
+			art = ART,
+		})
+		loaded.client.advance(0)
+		return frameOf(loaded, "nod") --[[@as table]]
+	end
+
+	-- A text colour as it reads back, from an { r, g, b }.
+	local function rgb(color)
+		return { color[1], color[2], color[3] }
+	end
+
+	it(
+		"writes the variety's name between the line's halves in its rarity's ink, after a gem in its colour; the rest"
+			.. " stays in the style's ink, on a strip sized to it (VAR-R26, ANN-R80)",
+		function()
+			local loaded = loadCore()
+			local rare = rarityOf(loaded, "rare")
+
+			local nod = raiseVarietyNod(loaded, "rare")
+
+			local ink = rgb(loaded.ns.ANNOUNCE_COLORS.ink)
+			assert.are.same({
+				{ "Firefin Snapper ·", ink },
+				{ "Coral", rgb(rare.ink) },
+				{ "· Decent · 34.2 cm", ink },
+			}, {
+				{ nod.title:GetText(), nod.title.textColor },
+				{ nod.variety:GetText(), nod.variety.textColor },
+				{ nod.tail:GetText(), nod.tail.textColor },
+			})
+			-- The gem: a small square turned to a diamond, rimmed in the ink and filled with the colour.
+			assert.are.same({ true, rgb(rare.color), rgb(rare.ink), math.rad(45), math.rad(45) }, {
+				nod.gem.shown,
+				rgb(nod.gem.fill.color),
+				rgb(nod.gem.rim.color),
+				nod.gem.fill.rotation,
+				nod.gem.rim.rotation,
+			})
+			-- In a row: the first half, the gem, the name, the second half.
+			assert.are.same(
+				{ nod.title, nod.gem, nod.variety },
+				{ nod.gem.points[1][2], nod.variety.points[1][2], nod.tail.points[1][2] }
+			)
+			assert.is_false(nod.text.shown)
+			assert.are.same({}, bounds.overflows(nod))
+			assert.are.equal(3, bounds.measured)
+			assert.are.equal(nod:GetWidth() - 22, nod.strip:GetWidth())
+		end
+	)
+
+	it(
+		"shows the variety's art cropped to the fish's head in the medallion, its ring in the rarity's colour but"
+			.. " Common's the style's own, and a plain Nod after as before (VAR-R26)",
+		function()
+			local loaded, M = loadCore()
+			local rings = {}
+			for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+				local nod = raiseVarietyNod(loaded, rarity.key)
+				rings[#rings + 1] = { nod.bezel.Ring.desaturated == true, nod.bezel.Ring.vertexColor }
+				assert.are.same({ ART.texture, { loaded.ns.HeadCrop(ART) } }, { nod.icon.texture, nod.icon.texCoord })
+				loaded.client.advance(NOD + LEAVE_NOD)
+			end
+			local colors = {}
+			for i, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+				colors[i] = { i > 1, i > 1 and rgb(rarity.color) or { 1, 1, 1 } }
+			end
+			for _, ring in ipairs(rings) do
+				ring[2] = rgb(ring[2])
+			end
+			assert.are.same(colors, rings)
+
+			raise(loaded, M, moment("nod", "New here", { icon = 136245 }))
+
+			local nod = frameOf(loaded, "nod") --[[@as table]]
+			assert.are.same({ "New here", false, false, false, false, { 1, 1, 1 }, 136245 }, {
+				nod.title:GetText(),
+				nod.gem.shown,
+				nod.variety.shown,
+				nod.tail.shown,
+				nod.bezel.Ring.desaturated == true,
+				rgb(nod.bezel.Ring.vertexColor),
+				nod.icon.texture,
+			})
+		end
+	)
+
+	it(
+		"sweeps one gleam across a Rare or Epic Nod's strip as it enters, in the rarity's colour, added on, then gone;"
+			.. " none for Common or Uncommon, nor with Animations off, and silent (VAR-R26, ANN-R13)",
+		function()
+			-- The gleam's brightest and where it went over the Nod's first second, and the gleam after.
+			local function sweep(rarity, motion)
+				local loaded = loadCore()
+				loaded.ns.db.profile.announcements.motion = motion
+				local nod = raiseVarietyNod(loaded, rarity)
+				local peak, xs = nod.gleam.alpha or 0, {}
+				for _ = 1, 60 do
+					loaded.client.update(1 / 60)
+					peak = math.max(peak, nod.gleam.alpha or 0)
+					xs[#xs + 1] = nod.gleam.points[1] and nod.gleam.points[1][4]
+				end
+				return { peak = peak, xs = xs, gleam = nod.gleam, sounds = loaded.client.sounds, loaded = loaded }
+			end
+
+			for _, key in ipairs({ "rare", "epic" }) do
+				local seen = sweep(key, true)
+				assert.is_true(seen.peak > 0.5)
+				assert.are.same({ 0, "ADD", true, rgb(rarityOf(seen.loaded, key).color), {} }, {
+					seen.gleam.alpha,
+					seen.gleam.blendMode,
+					seen.gleam.desaturated,
+					rgb(seen.gleam.vertexColor),
+					seen.sounds,
+				})
+				-- Left to right, once.
+				assert.is_true(seen.xs[5] < seen.xs[30])
+			end
+			for _, case in ipairs({ { "common", true }, { "uncommon", true }, { "rare", false } }) do
+				assert.are.equal(0, sweep(case[1], case[2]).peak)
+			end
+		end
+	)
 end)

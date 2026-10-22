@@ -38,12 +38,29 @@ describe("Core's committed lore (DATA-R111, its M4 batch)", function()
 				type(key) == "string"
 				and key:find("^good%.core%.crest%.")
 				and not key:find("^good%.core%.crest%.plain%.")
+				and not key:find("^good%.core%.crest%.fish%.")
 			then
 				found[#found + 1] = key
 			end
 		end
 		assert.are.same({}, found)
 	end)
+
+	it(
+		"names every fish crest {fish} Crest, the fish filled in at runtime, with its own description (VAR-R12)",
+		function()
+			local names, described = 0, 0
+			for key, text in pairs(L) do
+				if type(key) == "string" and key:find("^good%.core%.crest%.fish%.%d+%.name$") then
+					names = names + 1
+					assert.are.equal("{fish} Crest", text)
+					hasText((key:gsub("%.name$", ".description")))
+					described = described + 1
+				end
+			end
+			assert.are.same({ 37, 37 }, { names, described })
+		end
+	)
 
 	it("keeps the hand-written interface strings beside the lore (CORE-R8)", function()
 		assert.are.equal("Pagle", L.SETTINGS_CATEGORY)

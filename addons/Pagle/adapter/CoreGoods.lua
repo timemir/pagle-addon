@@ -128,3 +128,45 @@ ns.CORE_PREVIEWS = {
 		panel.name:SetText((UnitName("player")))
 	end,
 }
+
+-- The owner of the GET_ITEM_INFO_RECEIVED registration: a fish crest's fish arriving (VAR-R12).
+local OWNER = "Pagle fish crests"
+
+--- Login step 1, once the catalogue is built and before the variety projection starts: registers Core's fish crests
+--- (VAR-R12) over the client's item names. A fish an enUS client names "Raw …" is named without it (the locale's
+--- FISH_CREST_DROP_PREFIX, never another locale's names). Each fish the client hasn't cached is requested, and its
+--- GET_ITEM_INFO_RECEIVED renames its crest (SHOP-R26); the registration is dropped once every fish is named.
+function ns.StartFishCrests()
+	local hooks = {
+		species = ns.Catalogue.GetVarietySpecies(),
+		caught = Pagle.GetVarietiesCaught,
+		itemName = function(itemID)
+			return ns.UnlessSecret(issecretvalue, (C_Item.GetItemNameByID(itemID)))
+		end,
+		dropPrefix = GetLocale() == "enUS" and L.FISH_CREST_DROP_PREFIX or nil,
+		owned = Pagle.IsOwned,
+	}
+	local renamed = ns.RegisterFishCrests(hooks)
+	---@type table<integer, true>
+	local pending, waiting = {}, 0
+	for _, speciesID in ipairs(hooks.species) do
+		if not ns.FishCrestFish(hooks, speciesID) then
+			pending[speciesID], waiting = true, waiting + 1
+		end
+	end
+	if waiting == 0 then
+		return
+	end
+	Pagle.RegisterEvent(OWNER, "GET_ITEM_INFO_RECEIVED", function(_, itemID, success)
+		if success and pending[itemID] and ns.FishCrestFish(hooks, itemID) then
+			pending[itemID], waiting = nil, waiting - 1
+			renamed(itemID)
+			if waiting == 0 then
+				Pagle.UnregisterEvent(OWNER, "GET_ITEM_INFO_RECEIVED")
+			end
+		end
+	end)
+	for speciesID in pairs(pending) do
+		C_Item.RequestLoadItemDataByID(speciesID)
+	end
+end

@@ -124,6 +124,10 @@ function Journal:Context() -- luacheck: no self
 			setEquipped = Pagle.SetEquipped,
 			openShop = Pagle.OpenShop,
 		},
+		-- The varieties (VAR-R23, VAR-R24): a Species' ten, the rarities and its fish crest.
+		getVarieties = Pagle.GetVarieties,
+		rarities = Pagle.VARIETY_RARITIES,
+		fishCrest = ns.FishCrest,
 		-- "Where your XP came from" and the XP bar's tooltip (LED-R150, LED-R145): Core's totals now, and each source's
 		-- at the latest Prestige
 		activityXP = Pagle.GetActivityXP(),

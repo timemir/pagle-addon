@@ -57,6 +57,18 @@ describe("the generated catalogue", function()
 			)
 		end)
 
+		it("returns a Species item's ten variety keys in order, and none for a Legend or junk (VAR-R4)", function()
+			-- 6359, Firefin Snapper: a sized Species; 6887, Spotted Yellowtail, folds into 4603 and carries its ten.
+			-- 19803 is a Legend; 6717, Gaffer Jack, is junk (core/varieties.md › Data).
+			local firefin = GetItem(6359).varieties
+			assert.are.equal(10, #firefin)
+			assert.are.equal("coral", firefin[2])
+			assert.are.same(GetItem(4603).varieties, GetItem(6887).varieties)
+			assert.is_nil(GetItem(19803).varieties)
+			assert.are.equal("junk", GetItem(6717).category)
+			assert.is_nil(GetItem(6717).varieties)
+		end)
+
 		it("returns nil for an item outside the universe, which is Uncharted (DATA-R15)", function()
 			assert.is_nil(GetItem(25))
 			assert.is_nil(GetItem(999999))

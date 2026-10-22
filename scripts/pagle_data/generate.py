@@ -49,6 +49,15 @@ from pagle_data.observed import (
 )
 from pagle_data.pools import POOLS_TOML, PoolType, build_pools, pool_items, read_pools_toml, ungrouped, with_pool_flags
 from pagle_data.universe import AREAS_TOML, EVENTS_DIR, HUNTS_TOML, item_universe
+from pagle_data.varieties import (
+    VarietyLayer,
+    check_game_names,
+    check_varieties,
+    check_variety_lore,
+    game_names,
+    read_varieties,
+    with_varieties,
+)
 from pagle_data.windows import Spec, build_windows, catalogue_windows, local_lua, read_windows_toml
 
 CATALOGUE_LUA = "addons/Pagle/data/Catalogue.lua"
@@ -138,6 +147,7 @@ class Layers:
     hunts: HuntLayer  # data/hunts/hunts.toml as read and checked (DATA-R85-R92)
     lock: Lock  # data/hunts/released.lock as read; the Hunt list is checked against it (DATA-R95, DATA-R96)
     events: EventLayer  # data/hunts/tags.toml and data/hunts/events/ as read and checked (DATA-R97-R99)
+    varieties: VarietyLayer  # data/forever/varieties.toml and varieties.lock as read and checked (DATA-R131-R133)
 
     def fishing_areas(self) -> set[int]:
         """The areas with a catch list (DATA-R32)."""
@@ -200,6 +210,7 @@ def read_layers(
     lock = read_lock(root, problems)
     if len(problems.found) == before_hunts:  # DATA-R96: the lock judges a Hunt list and a pool that read cleanly
         check_lock(lock, hunts, events, problems)
+    varieties = read_varieties(root, problems)
     check_glyphs(lore, problems)  # CORE-R9, DATA-R107's glyph: every lore file, its check on or off
     items: dict[int, Record] = {}
     catch_lists = CatchLists()
@@ -220,6 +231,14 @@ def read_layers(
         # DATA-R43: the catches leave out what doesn't ship; DATA-R77: pool is true for an item in any of them.
         pools = build_pools(pool_types, baseline, items)
         items = with_pool_flags(items, pools)
+        # DATA-R131-R133, VAR-R2, VAR-R5: each sized, non-Legend Species' ten keys, checked and against the lock,
+        # then emitted on each item of the Species (VAR-R4).
+        check_varieties(varieties, items, checks.varieties, problems)
+        items = with_varieties(items, varieties)
+        # DATA-R135 (DATA-R3): no variety or fish crest lore names a game place or fish, its check on or off.
+        check_game_names(lore, game_names(db2, items), problems)
+        if "core" in checks.lore:
+            check_variety_lore(varieties, lore, problems)  # DATA-R134: the lore covers exactly these varieties
         # DATA-R107: each lore check switched on reads the records; lore never feeds the catalogue (DATA-R109).
         check_lore(lore, checks.lore, catalogue_ids(items, item_layer.families), problems)
         # DATA-R92: the Hunt checks that need the catalogue's items, windows, auras and events.
@@ -274,6 +293,7 @@ def read_layers(
         hunts,
         lock,
         events,
+        varieties,
     )
 
 

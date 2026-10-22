@@ -318,6 +318,7 @@ end
 ---@field done integer
 ---@field total integer
 ---@field species LedgerCount  -- Species caught
+---@field varieties LedgerCount -- Species with varieties whose every variety is caught (VAR-R20)
 ---@field junk LedgerCount     -- Junk Museum items caught
 ---@field treasure LedgerCount -- Treasures caught
 ---@field trophy LedgerCount   -- Trophy Room weights landed
@@ -326,7 +327,7 @@ end
 
 --- The parts that make up Ledger completion (LED-R70), in the Angler page's order (LED-R71, LED-R146): each a field of
 --- LedgerCompletion.
-ns.COMPLETION_PARTS = { "species", "junk", "treasure", "trophy", "zones" }
+ns.COMPLETION_PARTS = { "species", "varieties", "junk", "treasure", "trophy", "zones" }
 
 -- An "x of N" over `ids`, removed ones left out of both sides (LED-R12). A Species' ID is its representative item's,
 -- so a Species counts as removed when that item is (LED-R5).
@@ -349,11 +350,12 @@ local function countOf(ids, caught, getItem)
 end
 
 --- Ledger completion (LED-R70) and each of its parts (LED-R71), over each collection's world minus removed items:
---- every Species (done: caught), every Junk Museum, Treasures and Trophy Room item (done: caught) and every charted
---- zone (done: computed rank Master, `state.zones[zone].rank`, LED-R50). Legends, Noise, `other`, Uncharted and item 0
---- are outside it; the Legends' own count (LED-R63) is returned beside it.
+--- every Species (done: caught), every Species with varieties (done: all its varieties caught, VAR-R20), every Junk
+--- Museum, Treasures and Trophy Room item (done: caught) and every charted zone (done: computed rank Master,
+--- `state.zones[zone].rank`, LED-R50). Legends, Noise, `other`, Uncharted and item 0 are outside it; the Legends' own
+--- count (LED-R63) is returned beside it.
 ---@param world LedgerWorld
----@param state LedgerState its `species`, `items` and `zones`
+---@param state LedgerState its `species`, `items`, `zones` and `varieties`
 ---@return LedgerCompletion
 function ns.LedgerCompletion(world, state)
 	local getItem = world.getItem
@@ -372,6 +374,7 @@ function ns.LedgerCompletion(world, state)
 		done = 0,
 		total = 0,
 		species = countOf(worlds.species, state.species or {}, getItem),
+		varieties = ns.VarietiesCount(worlds.species, state, getItem),
 		junk = countOf(worlds.junk, caughtItems, getItem),
 		treasure = countOf(worlds.treasure, caughtItems, getItem),
 		trophy = countOf(worlds.trophy, caughtItems, getItem),
