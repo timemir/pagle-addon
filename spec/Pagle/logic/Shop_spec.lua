@@ -31,7 +31,8 @@ end
 -- Core's fish crests (VAR-R12) among them, are neither listed nor counted (SHOP-R25).
 local CREST_LINES = { "Crests (1 of 1)", "  core.crest.plain In use" }
 
--- The Curio Shop expansion's toast styles and sound sets (SHOP-R25), each slot's in its order, with their tiers.
+-- The Curio Shop expansion's toast styles and sound sets (SHOP-R25), each slot's in its order, with their tiers; the
+-- round two's Storm Front (ANN-R82) after its toast styles.
 local EXPANSION = {
 	toaststyle = {
 		{ "ship", 1 },
@@ -46,6 +47,7 @@ local EXPANSION = {
 		{ "bottle", 3 },
 		{ "rune", 4 },
 		{ "folio", 5 },
+		{ "storm", 5 },
 	},
 	soundset = {
 		{ "rain", 1 },
@@ -105,7 +107,7 @@ local CORE_UNBOUGHT = joined(
 	joined(
 		joined(
 			joined({
-				"Toast style (1 of 15)",
+				"Toast style (1 of 16)",
 				"  core.toaststyle.page In use",
 				"  core.toaststyle.ripple 150" .. " [red]",
 				"  core.toaststyle.lanternglow 400" .. " [red]",
@@ -360,7 +362,7 @@ describe("The Curio Shop's list", function()
 					joined(
 						joined(
 							joined({
-								"Toast style (2 of 15)",
+								"Toast style (2 of 16)",
 								"  core.toaststyle.page default",
 								"  core.toaststyle.ripple In use",
 								"  core.toaststyle.lanternglow 400" .. " [red]",
@@ -452,7 +454,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11 + 24, #ids("all"))
+		assert.are.equal(11 + 25, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",
@@ -1238,7 +1240,7 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 			assert.are.same(
 				joined(
 					joined({
-						"Toast style (2 of 17)",
+						"Toast style (2 of 18)",
 						"  core.toaststyle.page In use",
 						"  core.toaststyle.ripple 150" .. " [red]",
 						"  core.toaststyle.lanternglow 400" .. " [red]",

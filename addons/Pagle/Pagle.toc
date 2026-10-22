@@ -16,6 +16,7 @@ libs\AceDB-3.0\AceDB-3.0.lua
 data\Catalogue.lua
 data\AnnounceArt.lua
 data\ToastStyleArt.lua
+data\ToastStyleArt2.lua
 data\ShopArt.lua
 data\GuideArt.lua
 data\FieldArt.lua
@@ -131,6 +132,7 @@ adapter\Skins.lua
 adapter\Art.lua
 adapter\Motion.lua
 adapter\Fit.lua
+adapter\ToastLayers.lua
 adapter\Announcements.lua
 adapter\CoreGoods.lua
 adapter\Cards.lua

@@ -7,8 +7,13 @@ local AFTER_COMBAT = "Pagle: the Curio Shop opens after combat."
 -- Where the shop's textures are.
 local SHOP_ART = "Interface\\AddOns\\Pagle\\media\\shop\\"
 
+-- Storm Front's name in the list (ANN-R82): its lore's once the round two's lore is in data/Lore.lua, its ID till then.
+local STORM_NAME = readFile("addons/Pagle/data/Lore.lua"):match(
+	'L%["good%.core%.toaststyle%.storm%.name"%] = "([^"]*)"'
+) or "core.toaststyle.storm"
+
 -- The Curio Shop expansion's toast styles and sound sets (SHOP-R25), each slot's in its order, by their lore names,
--- with their tiers' prices (SHOP-R22).
+-- with their tiers' prices (SHOP-R22); the round two's Storm Front after the toast styles.
 local EXPANSION = {
 	toaststyle = {
 		{ "Ship's Log", 150 },
@@ -23,6 +28,7 @@ local EXPANSION = {
 		{ "Driftglass Bottle", 900 },
 		{ "Rune-Plate", 2000 },
 		{ "Illuminated Folio", 5000 },
+		{ STORM_NAME, 5000 },
 	},
 	soundset = {
 		{ "Rain on the Lake", 150 },
@@ -73,7 +79,7 @@ end
 -- the crest slot with Plain alone: its earned crests, the Ledger's two zone crests and Core's fish crests, aren't
 -- listed or counted (SHOP-R25).
 local CORE_UNBOUGHT = concat({
-	withExpansion({ "TOAST STYLE 1 of 15", "Torn Page | IN USE", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle"),
+	withExpansion({ "TOAST STYLE 1 of 16", "Torn Page | IN USE", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle"),
 	withExpansion({ "SOUND SET 1 of 14", "Driftwood | IN USE", "Gilded | 400" }, "soundset"),
 	{ "CRESTS 1 of 1", "Plain | IN USE" },
 })
@@ -586,7 +592,7 @@ describe("The Curio Shop's list", function()
 		search:Type("RIP")
 
 		assert.is_false(search.Instructions:IsShown())
-		assert.are.same({ "TOAST STYLE 1 of 15", "Ripple | 150" }, listed(loaded))
+		assert.are.same({ "TOAST STYLE 1 of 16", "Ripple | 150" }, listed(loaded))
 		search:Type("nothing like it")
 		assert.are.same({}, listed(loaded))
 		assert.is_true(shopFrame(loaded).empty:IsShown())
@@ -606,7 +612,7 @@ describe("The Curio Shop's list", function()
 		filters.canAfford:Click()
 		assert.are.same(
 			concat({
-				withExpansion({ "TOAST STYLE 1 of 15", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle", 500),
+				withExpansion({ "TOAST STYLE 1 of 16", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle", 500),
 				withExpansion({ "SOUND SET 1 of 14", "Gilded | 400" }, "soundset", 500),
 				{ "NOTEBOOK COVER 1 of 2", "Velvet | 400" },
 			}),
@@ -618,7 +624,7 @@ describe("The Curio Shop's list", function()
 		assert.are.equal("PagleShopPill", filters.all.label.fontObject)
 		filters.owned:Click()
 		assert.are.same({
-			"TOAST STYLE 1 of 15",
+			"TOAST STYLE 1 of 16",
 			"Torn Page | IN USE",
 			"SOUND SET 1 of 14",
 			"Driftwood | IN USE",
@@ -630,9 +636,9 @@ describe("The Curio Shop's list", function()
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(9 + 24, #listed(loaded))
+		assert.are.equal(9 + 25, #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(15 + 24, #listed(loaded))
+		assert.are.equal(15 + 25, #listed(loaded))
 	end)
 
 	it(
@@ -650,7 +656,7 @@ describe("The Curio Shop's list", function()
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
-			assert.are.equal(15 + 24, #listed(loaded))
+			assert.are.equal(15 + 25, #listed(loaded))
 		end
 	)
 
@@ -830,7 +836,7 @@ describe("The Curio Shop's stage", function()
 			assert.are.equal("IN USE", stage.tags:GetText())
 			assert.is_false(stage.use:IsShown())
 			assert.are.same(
-				{ "TOAST STYLE 2 of 15", "Torn Page | default", "Ripple | IN USE" },
+				{ "TOAST STYLE 2 of 16", "Torn Page | default", "Ripple | IN USE" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
 		end
@@ -1382,7 +1388,7 @@ describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion 
 
 			assert.are.equal("50", purse.balance:GetText())
 			assert.are.same(
-				{ "TOAST STYLE 2 of 15", "Torn Page | default", "Ripple | IN USE" },
+				{ "TOAST STYLE 2 of 16", "Torn Page | default", "Ripple | IN USE" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
 			assert.is_false(rowOf(loaded, "core.toaststyle.page").stepDown:IsShown())
