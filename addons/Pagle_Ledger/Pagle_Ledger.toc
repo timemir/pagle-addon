@@ -37,6 +37,7 @@ logic\Journal.lua
 logic\JournalParts.lua
 logic\JournalTile.lua
 logic\JournalSpecies.lua
+logic\JournalVarieties.lua
 logic\Home.lua
 logic\JournalAngler.lua
 logic\JournalCollections.lua
@@ -52,6 +53,7 @@ adapter\JournalCollections.lua
 adapter\JournalLegends.lua
 adapter\JournalAngler.lua
 adapter\JournalZone.lua
+adapter\JournalVarieties.lua
 adapter\JournalSearch.lua
 adapter\Journal.lua
 adapter\Prestige.lua

@@ -309,6 +309,23 @@ ns.L = {
 	FISH_REGULAR = "%s " .. REGULAR .. " (%d/%d)",
 	CHECK_ON = CHECK_ON,
 	CHECK_OFF = CHECK_OFF,
+	-- The varieties spread (VAR-R24, VAR-R27): its title, which is its crumb too, "7 of 10 caught", a row's "6 caught",
+	-- an uncaught variety's words in place of its name, the right page's kicker by rarity key, an uncaught one's title
+	-- and its odds ("About one Catch in 29."), and the foot's words under the fish crest.
+	VARIETIES_TITLE = "Its colours",
+	VARIETIES_CAUGHT = "%d of %d caught",
+	VARIETY_COUNT = "%s caught",
+	VARIETY_UNDISCOVERED = "Undiscovered",
+	VARIETY_KICKER = {
+		common = "A common colour",
+		uncommon = "An uncommon colour",
+		rare = "A rare colour",
+		epic = "An epic colour",
+	},
+	VARIETY_NOT_DISCOVERED = "Not yet discovered",
+	VARIETY_ODDS = "Not landed yet. About one Catch in %s.",
+	VARIETY_ALL_TEN = "All ten.",
+	VARIETY_TO_GO = "%d to go.",
 	-- Search with no match (LED-R148).
 	SEARCH_NONE = "Nothing by that name in the Ledger yet.",
 	-- The search drop-down's two parts (LED-R148).
