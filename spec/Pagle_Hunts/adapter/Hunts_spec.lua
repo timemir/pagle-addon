@@ -193,7 +193,8 @@ describe("Pagle_Hunts with Core", function()
 	it("starts with hunts.md › Data's defaults: tracker shown, nothing pinned, nothing celebrated", function()
 		local db = loadAddon("Pagle_Hunts", FOREVER_GLOBALS).ns.db
 
-		assert.are.same({ shown = true, collapsed = false }, db.profile.tracker) -- HNT-R75–R79
+		-- HNT-R75–R79, HNT-R177
+		assert.are.same({ shown = true, collapsed = false, wagersCollapsed = false }, db.profile.tracker)
 		assert.is_false(db.profile.windowMoments) -- HNT-R88
 		assert.is_false(db.profile.showCompleted) -- HNT-R82
 		assert.are.same({}, db.profile.pins) -- HNT-R81
@@ -221,7 +222,8 @@ describe("Pagle_Hunts with Core", function()
 			{ tiers = { night_run = 2 }, sets = { camp_hours = true }, runs = {}, ladder = {} },
 			db.global.celebrated
 		)
-		assert.are.same({ shown = false, collapsed = true }, db.profile.tracker)
+		-- A tracker saved before Hunt Events gains the Pagle Wagers block's collapsed state, expanded (HNT-R177).
+		assert.are.same({ shown = false, collapsed = true, wagersCollapsed = false }, db.profile.tracker)
 		assert.is_true(db.profile.windowMoments)
 		assert.is_true(db.profile.showCompleted)
 		-- dawn_trout isn't a current Hunt at SERVER_TIME, so its pin is dropped at load (HNT-R81, adapter/Groups_spec).
