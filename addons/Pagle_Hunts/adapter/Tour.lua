@@ -7,8 +7,8 @@ local ns = select(2, ...)
 
 -- Hunts' tour stops on the client (CORE-R65, CORE-R68): each of logic/Tour.lua's stops swaps the tour's sample in at
 -- its show (the Hunt list with every Hunt out, a HuntsState, three pins and a sample grouping) and shows the board on
--- its place or the tracker in the dock, in a good's look if it has one; its hide swaps the sample out and puts the
--- board, the tracker and their looks back as they were. Nothing is saved: the pins swap whole tables, and the
+-- its place, in a binding if it has one (Core's renderer, BIND-R2), or the tracker in the dock, in a tracker frame if
+-- it has one; its hide swaps the sample out and puts the board, the tracker and their looks back as they were. Nothing is saved: the pins swap whole tables, and the
 -- tracker's collapse is put back. Hunts makes no secure frames (HNT-R193).
 
 -- Packs a call's results with their count, nils included.
@@ -98,21 +98,22 @@ local function swapIn()
 	return sample, out
 end
 
--- A stop on the board: its show opens the board on the stop's place, in the stop's cover if it has one; its hide puts
--- the board back on the place it was on, in the cover it wore, closed if it was closed.
+-- A stop on the board: its show opens the board on the stop's place, wearing the stop's binding if it has one; its hide
+-- puts the board back on the place it was on, in the binding it wore (the equipped one, unless pinned), closed if it was
+-- closed.
 ---@param M PagleModuleHandle
 ---@param stop HuntsTourStop
 ---@param label string
 local function boardStop(M, stop, label)
 	local board = ns.board
-	---@type { shown: boolean, place: BoardPlace, cover: BoardCoverLook?, out: fun() }?
+	---@type { shown: boolean, place: BoardPlace, pinned: string?, out: fun() }?
 	local saved
 	M:RegisterTourStop(stop.id, label, function()
-		local shown, place, cover = board:IsShown(), board.router:Place(), board.cover
+		local shown, place, pinned = board:IsShown(), board.router:Place(), board.pinned
 		local sample, out = swapIn()
-		saved = { shown = shown, place = place, cover = cover, out = out }
+		saved = { shown = shown, place = place, pinned = pinned, out = out }
 		if stop.good then
-			board:SetCover(ns.CoverLook(stop.good))
+			board:SetBinding(stop.good)
 		end
 		ns.Redraw("tour")
 		local now = GetServerTime()
@@ -124,7 +125,7 @@ local function boardStop(M, stop, label)
 			return
 		end
 		saved.out()
-		board:SetCover(saved.cover)
+		board:SetBinding(saved.pinned)
 		board.router:Open(saved.place)
 		if saved.shown then
 			board:Draw()

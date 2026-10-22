@@ -6,13 +6,14 @@ end
 local ns = select(2, ...)
 
 -- The Hunts board's art (HNT-R60's second paragraph): its tints and fonts, and a widget maker for each piece the board,
--- its pages, the covers and the tracker draw, in the books art kit (the dev's PagleArtBooks probe, a fork of the Fish
--- Journal's book shell): the leather binding with its band, parchment pages with their gutter, the wax close button,
--- the brass nameplate, grosgrain set ribbons, the wax seal (pressed, or the dashed "not yet"), the ink bar, the
+-- its pages and the tracker draw, in the books art kit (the dev's PagleArtBooks probe, a fork of the Fish Journal's
+-- book shell): parchment pages with their gutter, the wax close button, the brass nameplate (silver under a binding
+-- that asks for it), grosgrain set ribbons, the wax seal (pressed, or the dashed "not yet"), the ink bar, the
 -- timeline's bars, item medallions in their tier's ring (HNT-R18), tier marks, group dots, and the fleuron and
 -- pointing-hand marks, drawn as textures, never as font glyphs. The sprites are adapter/BookAtlas.lua's, drawn with
 -- adapter/BookArt.lua's helpers. Hunts shares no code with the Fish Journal or Stats (ADR 0001); the shell's textures
--- are Core's media, which both books read.
+-- are Core's media, which both books read. The leather round the pages is Core's binding (Pagle.NewBookBinding, ADR
+-- 0015), which adapter/Board.lua puts on the board.
 --
 -- The kit's shared pieces every board adapter uses: ns.BoardTint, ns.BoardOutline, ns.BoardTooltip and the pools
 -- (ns.BoardPooled, ns.BoardHideFrom).
@@ -111,30 +112,6 @@ ns.BOARD_TEXTURES = {
 	more = "Interface\\ChatFrame\\ChatFrameExpandArrow",
 }
 local TEXTURES = ns.BOARD_TEXTURES
-
---- A cover's look (HNT-R70, the books kit v2's Covers.lua): every cover keeps the kit's binding band and vignette; under
---- them the kit's leather tiled (Leather, Tooled Leather) or a cloth drawn at the board's size (Oilcloth, Verdigris),
---- with Tooled Leather's gilt double rule inside the band and Verdigris's gilt corner. A cover look
---- (`ns.board:SetCover`) gives any of these fields; the rest come from ns.BOARD_COVER.
----@class BoardCoverLook
----@field fill string?        -- a cloth drawn at the board's size (ns.COVER_FILES), in place of the tiled leather
----@field tile string?        -- an expansion cover's material (ns.COVER_TILES, HNT-R123), tiled in place of the leather
----@field tileW number?       -- the material's repeat, in UI units
----@field tileH number?
----@field foot number?        -- how dark the tiled leather turns toward its foot: 1 none, 0.8 the leather's
----@field band number[]?      -- the band's tone: the kit's band desaturated, then tinted (nil: the kit's own)
----@field tooled boolean?     -- the gilt double rule inside the band
----@field corner boolean?     -- the gilt corner at the top left
----@field corners BoardCornerKind? -- metal corners at all four corners (nil: none)
-
---- An expansion cover's corners (HNT-R123): the kit's brass corner, or tinted as gold, silver or bone.
----@alias BoardCornerKind "brass"|"gold"|"silver"|"bone"
-
----@class BoardCover: BoardCoverLook -- a cover look with its leather's foot
----@field foot number
-
----@type BoardCover
-ns.BOARD_COVER = { foot = 0.8 }
 
 --- The board's font objects (adapter/BookArt.lua's faces), made on first use.
 ---@class BoardFonts
@@ -274,8 +251,8 @@ local function insetAt(point, inset)
 end
 
 --- The outline round `frame`, `inset` pixels inside its edges (outside, when negative; on them by default), its
---- edges on `layer` (BORDER by default) at `sublevel`. The selected row's dashes, the old covers' gilt rule and the
---- old covers' notebook each draw one.
+--- edges on `layer` (BORDER by default) at `sublevel`. The selected row's dashes, the wager slips and the companion's
+--- card each draw one.
 ---@param frame Frame
 ---@param inset number?
 ---@param layer DrawLayer?
@@ -374,7 +351,6 @@ function ns.BoardOutline(frame, inset, layer, sublevel)
 	end
 	return view
 end
-local outline = ns.BoardOutline
 
 --- Shows `lines` in GameTooltip, owned by `owner`: the first as its heading, one line each.
 ---@param owner Frame
@@ -410,220 +386,6 @@ function ns.BoardHideFrom(pool, used)
 	for i = used + 1, #pool do
 		pool[i]:Hide()
 	end
-end
-
--- The leather's measures: the band's corner (16 units, 32 texels), how far in the tiled grain starts (under the
--- band's opaque lines), and one repeat of the grain (Leather.blp is 256 texels, 128 units).
-local BAND, FILL_INSET, LEATHER_TILE = 16, 7, 128
-
---- The leather on `frame`, filling it, in a cover (HNT-R70): the kit's leather tiled, or a cloth drawn at the frame's
---- size, under a vignette, with the binding band round it on its own frame, above the ribbons so their tucked tops
---- hide under it; over the band, Tooled Leather's gilt double rule and Verdigris's gilt corner.
----@class BoardLeatherView
----@field fill Texture         -- the tiled leather, or the cloth
----@field vignette Texture
----@field band Frame           -- the kit's band, 6 levels over the frame
----@field bandPieces table<string, Texture>
----@field gilt Frame           -- over the band: the tooled rule and the corner
----@field tooling BoardOutline[]
----@field corner HuntsSpriteTexture
----@field corners Texture[]    -- an expansion cover's four corners (HNT-R123)
----@field cover BoardCover?    -- the cover it wears
----@field owner table          -- the cover change's crossfade runs on it
----@field SetCover fun(self: BoardLeatherView, look: BoardCover, animate: boolean?) -- every field given (adapter/Board.lua
---- merges a look); with `animate` while it shows and things move, the binding dips and the cover changes underneath
-
--- The band's nine slices from the 96-texel binding sprite: 32-texel corners, the edges stretched from a 2-texel slice.
----@param bandFrame Frame
----@return table<string, Texture>
-local function bandOf(bandFrame)
-	local atlas, sprite = ns.ArtSpriteOf("Book", "binding")
-	local pieces = {}
-	local function piece(key, sx, sy, sw, sh)
-		local texture = ns.ArtCrisp(bandFrame:CreateTexture(nil, "BORDER"))
-		ns.ArtCut(texture, atlas, sprite.x + sx, sprite.y + sy, sw, sh)
-		pieces[key] = texture
-		return texture
-	end
-	local tl, tr = piece("TL", 0, 0, 32, 32), piece("TR", 64, 0, 32, 32)
-	local bl, br = piece("BL", 0, 64, 32, 32), piece("BR", 64, 64, 32, 32)
-	for _, corner in ipairs({ tl, tr, bl, br }) do
-		corner:SetSize(BAND, BAND)
-	end
-	tl:SetPoint("TOPLEFT")
-	tr:SetPoint("TOPRIGHT")
-	bl:SetPoint("BOTTOMLEFT")
-	br:SetPoint("BOTTOMRIGHT")
-	local top, bottom = piece("T", 47, 0, 2, 32), piece("B", 47, 64, 2, 32)
-	local left, right = piece("L", 0, 47, 32, 2), piece("R", 64, 47, 32, 2)
-	top:SetPoint("TOPLEFT", tl, "TOPRIGHT")
-	top:SetPoint("BOTTOMRIGHT", tr, "BOTTOMLEFT")
-	bottom:SetPoint("TOPLEFT", bl, "TOPRIGHT")
-	bottom:SetPoint("BOTTOMRIGHT", br, "BOTTOMLEFT")
-	left:SetPoint("TOPLEFT", tl, "BOTTOMLEFT")
-	left:SetPoint("BOTTOMRIGHT", bl, "TOPRIGHT")
-	right:SetPoint("TOPLEFT", tr, "BOTTOMLEFT")
-	right:SetPoint("BOTTOMRIGHT", br, "TOPRIGHT")
-	return pieces
-end
-
--- The tooled cover's gilt double rule (the kit's canvas: 1.5-unit lines, 9 and 12 units in) and the gilt.
-local TOOLED_INSETS, TOOLED_LINE, TOOLED_GILT = { 9, 12 }, 1.5, tint("d8b660")
-
--- An expansion cover's band tone and corners (HNT-R123), as the expansion kit's canvas filters them: the art's
--- luminance times the tone, brightened (the client's tint can only darken, so each channel stops at 1). The corners
--- are the kit's brass corner, 44 units on the board, mirrored into each corner; the other metals tint it.
-local BAND_GAIN, CORNER_GAIN, CORNER_SIZE = 1.9, 1.6, 44
----@type table<BoardCornerKind, number[]?>
-local CORNER_TINTS = { brass = nil, gold = tint("e8b830"), silver = tint("b8c0c8"), bone = tint("e0d0b0") }
-
--- Tints `texture` with `color` times `gain` on its desaturated art, or shows its own colours for no `color`.
----@param texture Texture
----@param color number[]?
----@param gain number
-local function tone(texture, color, gain)
-	texture:SetDesaturated(color ~= nil)
-	if color then
-		texture:SetVertexColor(
-			math.min(1, color[1] * gain),
-			math.min(1, color[2] * gain),
-			math.min(1, color[3] * gain),
-			1
-		)
-	else
-		texture:SetVertexColor(1, 1, 1, 1)
-	end
-end
-
--- The four corners on `gilt`, the kit's brass corner mirrored into each, hidden until a cover has corners.
----@param gilt Frame
----@return Texture[]
-local function cornersOf(gilt)
-	local atlas, sprite = ns.ArtSpriteOf("Parts", "corner")
-	local k = CORNER_SIZE / sprite.box[3]
-	local left, right = sprite.x / atlas.width, (sprite.x + sprite.w) / atlas.width
-	local top, bottom = sprite.y / atlas.height, (sprite.y + sprite.h) / atlas.height
-	local corners = {}
-	for i, point in ipairs({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }) do
-		local corner = ns.ArtCrisp(gilt:CreateTexture(nil, "ARTWORK", nil, 2))
-		corner:SetTexture(atlas.file)
-		local flipX, flipY = point:find("RIGHT") ~= nil, point:find("BOTTOM") ~= nil
-		corner:SetTexCoord(
-			flipX and right or left,
-			flipX and left or right,
-			flipY and bottom or top,
-			flipY and top or bottom
-		)
-		local width, height = sprite.w / atlas.scale * k, sprite.h / atlas.scale * k
-		corner:SetSize(width, height)
-		-- the drawn corner meets the board's edges; mirrored, its sprite's margin mirrors with it
-		local dx, dy = sprite.box[1] * k, sprite.box[2] * k
-		corner:SetPoint(point, flipX and dx or -dx, flipY and -dy or dy)
-		corner:Hide()
-		corners[i] = corner
-	end
-	return corners
-end
-
----@param frame Frame
----@param cornerSize number? Verdigris's corner's size (the kit's 40 by default; smaller on the shop's notebook)
----@return BoardLeatherView
-function ns.NewBoardLeather(frame, cornerSize)
-	local fill = ns.ArtCrisp(frame:CreateTexture(nil, "BACKGROUND", nil, 2))
-	fill:SetPoint("TOPLEFT", FILL_INSET, -FILL_INSET)
-	fill:SetPoint("BOTTOMRIGHT", -FILL_INSET, FILL_INSET)
-	local vignette = ns.ArtCrisp(frame:CreateTexture(nil, "BACKGROUND", nil, 3))
-	local atlas, sprite = ns.ArtSpriteOf("Book", "vignette")
-	ns.ArtCut(vignette, atlas, sprite.x + 1, sprite.y + 1, sprite.w - 2, sprite.h - 2)
-	vignette:SetAllPoints(fill)
-	local band = CreateFrame("Frame", nil, frame)
-	band:SetAllPoints()
-	band:SetFrameLevel(frame:GetFrameLevel() + 6)
-	local gilt = CreateFrame("Frame", nil, band)
-	gilt:SetAllPoints()
-	gilt:SetFrameLevel(band:GetFrameLevel() + 1)
-	local tooling = {}
-	for i, inset in ipairs(TOOLED_INSETS) do
-		tooling[i] = outline(gilt, inset, "ARTWORK")
-		tooling[i]:Solid(TOOLED_GILT, 1, TOOLED_LINE)
-	end
-	local corner = ns.ArtSprite(gilt, "Hunts", "verd-corner", "ARTWORK", 1, cornerSize)
-	ns.PlaceSprite(corner, gilt, 0, 0)
-	---@type BoardLeatherView
-	local view = {
-		fill = fill,
-		vignette = vignette,
-		band = band,
-		bandPieces = bandOf(band),
-		gilt = gilt,
-		tooling = tooling,
-		corner = corner,
-		corners = cornersOf(gilt),
-		owner = {},
-		SetCover = function() end, -- below
-	}
-	-- Dresses the leather in `look` at once.
-	---@param look BoardCover
-	local function apply(look)
-		view.cover = look
-		if look.fill then
-			view.fill:SetTexture(look.fill)
-			view.fill:SetTexCoord(0, 1, 0, 1)
-			view.fill:SetGradient("VERTICAL", CreateColor(1, 1, 1, 1), CreateColor(1, 1, 1, 1))
-		else
-			-- the kit's leather, or an expansion cover's material, each tiled at its authored density
-			view.fill:SetTexture(look.tile or ns.BOOK_FILES.leather, "REPEAT", "REPEAT")
-			local width, height = frame:GetSize()
-			local across = math.max(1, width - 2 * FILL_INSET) / (look.tile and look.tileW or LEATHER_TILE)
-			local down = math.max(1, height - 2 * FILL_INSET) / (look.tile and look.tileH or LEATHER_TILE)
-			view.fill:SetTexCoord(0, across, 0, down)
-			-- darker toward the foot, as the canvas shades it (the gradient's first colour is the bottom's)
-			local foot = look.foot
-			view.fill:SetGradient("VERTICAL", CreateColor(foot, foot, foot, 1), CreateColor(1, 1, 1, 1))
-		end
-		for _, rule in ipairs(view.tooling) do
-			if look.tooled then
-				rule:Solid(TOOLED_GILT, 1, TOOLED_LINE)
-			else
-				rule:Hide()
-			end
-		end
-		view.corner:SetShown(look.corner == true)
-		for _, piece in pairs(view.bandPieces) do
-			tone(piece, look.band, BAND_GAIN)
-		end
-		for _, metal in ipairs(view.corners) do
-			metal:SetShown(look.corners ~= nil)
-			tone(metal, look.corners and CORNER_TINTS[look.corners], CORNER_GAIN)
-		end
-	end
-	function view.SetCover(_, look, animate)
-		Pagle.StopMotion(view.owner)
-		if not (animate and frame:IsVisible() and ns.MotionOn()) then
-			view.fill:SetAlpha(1)
-			view.gilt:SetAlpha(1)
-			apply(look)
-			return
-		end
-		-- the binding dips to 25% and back (0.4 s) while the cover changes underneath, at the dip's deepest
-		ns.BoardSound("pageTurn")
-		Pagle.Animate(view.owner, {
-			{
-				dur = 0.4,
-				ease = Pagle.EASE.inOut,
-				keys = { { 0, { 1 } }, { 0.5, { 0.25 } }, { 1, { 1 } } },
-				apply = function(v)
-					view.fill:SetAlpha(v[1])
-					view.gilt:SetAlpha(v[1])
-				end,
-			},
-		})
-		Pagle.Cue(view.owner, 0.2, function()
-			apply(look)
-		end)
-	end
-	apply(ns.BOARD_COVER)
-	return view
 end
 
 --- A parchment page on `frame`, filling it: the kit's parchment (mirrored on a right page, so the two don't match) and
@@ -1187,9 +949,11 @@ end
 ---@field brass HuntsThreeSlice
 ---@field label FontString
 ---@field SetPlate fun(self: BoardPlateView, text: string?)
+---@field SetSilver fun(self: BoardPlateView, silver: boolean?) -- the brass toned silver, as a binding asks (HNT-R70)
 
--- The plate's end caps, and the room its words leave.
+-- The plate's end caps, and the room its words leave; a silver plate's lift, and its blue's.
 local PLATE_CAP, PLATE_ROOM = 8, 22
+local SILVER_LIFT, SILVER_BLUE = 1.1, 1.15
 
 ---@param parent Frame
 ---@return BoardPlateView
@@ -1206,6 +970,19 @@ function ns.NewBoardPlate(parent)
 		ns.SetThreeSlice(self.brass, "Book", "plate", width, PLATE_CAP, "ARTWORK")
 		self:SetSize(width, self.brass:GetHeight())
 		self:SetShown(text ~= nil)
+	end
+	-- the brass desaturated and lifted a little toward blue, as the Fish Journal tones its plate; its slices are made
+	-- by its first SetPlate
+	function plate.SetSilver(self, silver)
+		local brass = self.brass
+		for _, slice in ipairs({ brass.left, brass.middle, brass.right }) do
+			slice:SetDesaturated(silver == true)
+			if silver then
+				slice:SetVertexColor(SILVER_LIFT, SILVER_LIFT, SILVER_BLUE)
+			else
+				slice:SetVertexColor(1, 1, 1)
+			end
+		end
 	end
 	return plate
 end
