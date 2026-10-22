@@ -21,6 +21,13 @@ ns.L = {
 	SLOT_TRACKER_FRAME = "Hunts tracker frame",
 	-- Its two Hunts ("Night Run · in 37m", "Rack Hour · on demand"), the name at the left and the label at the right.
 	PREVIEW_TRACKER_HUNTS = { { "Night Run", "in 37m" }, { "Rack Hour", "on demand" } },
+	-- What earns each earned good, its `earnedText` in the Curio Shop, by its rule (HNT-R122): a set title, every set
+	-- title, and ns.WAGER_GOODS_RUNS completed runs.
+	EARNED_TEXT = {
+		anySetTitle = "Finish a Hunt set",
+		everySetTitle = "Finish every Hunt set",
+		wagerRuns = "%d Wager runs completed",
+	},
 	-- Window moments (HNT-R88) and their row on the Announcements page (SET-R32): logic/WindowMoments.lua.
 	WINDOW_MOMENTS_SETTING = "Tell me when a pinned Hunt's window opens",
 	WINDOW_MOMENTS_TOOLTIP = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",

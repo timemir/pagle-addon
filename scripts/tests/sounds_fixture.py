@@ -1,26 +1,49 @@
 """Checks one sound file against ANN-R74, for the render's tests and the committed files' tests alike."""
 
 from pathlib import Path
+from typing import BinaryIO
 
 import numpy as np
 import soundfile as sf
 
 from pagle_data.sounds import Signal, loudness
 
-# ANN-R74's layout, written out here as the spec gives it: Driftwood's three toast variants (Tunables: Driftwood
-# toast variants = 3) and its banner, Gilded's one toast and banner (ANN-R72), and the shared Legend sting.
-ANN_R74_FILES = [
-    "driftwood/banner.ogg",
-    "driftwood/toast_1.ogg",
-    "driftwood/toast_2.ogg",
-    "driftwood/toast_3.ogg",
-    "gilded/banner.ogg",
-    "gilded/toast_1.ogg",
-    "legend.ogg",
+# ANN-R74's layout, written out here as the spec gives it: "<set>/toast_<n>.ogg and banner.ogg, <set> being the sound
+# set good's last ID segment", and "legend/<itemID>.ogg". Driftwood has three toast variants (Tunables: Driftwood toast
+# variants = 3), Gilded one, and each of the expansion's fifteen sets three (ANN-R72); each Legend has its own sting.
+EXPANSION_SETS = [
+    "rain",
+    "marimba",
+    "shipbell",
+    "kalimba",
+    "musicbox",
+    "glass",
+    "steelpan",
+    "dulcimer",
+    "frost",
+    "harp",
+    "gizmo",
+    "wardrums",
+    "concertina",
+    "choir",
+    "nightwatch",
 ]
+LEGEND_ITEMS = [19803, 19805, 19806]
+ANN_R74_FILES = sorted(
+    [
+        "driftwood/banner.ogg",
+        "driftwood/toast_1.ogg",
+        "driftwood/toast_2.ogg",
+        "driftwood/toast_3.ogg",
+        "gilded/banner.ogg",
+        "gilded/toast_1.ogg",
+        *(f"{folder}/{name}.ogg" for folder in EXPANSION_SETS for name in ("banner", "toast_1", "toast_2", "toast_3")),
+        *(f"legend/{item}.ogg" for item in LEGEND_ITEMS),
+    ]
+)
 
 
-def read_sound(path: Path) -> Signal:
+def read_sound(path: Path | BinaryIO) -> Signal:
     samples, _ = sf.read(path, dtype="float64")
     return np.asarray(samples, dtype=np.float64)
 

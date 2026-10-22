@@ -60,7 +60,7 @@ local function equip(loaded, goodID)
 	assert.is_true(loaded.env.Pagle.SetEquipped("core.toaststyle", goodID))
 end
 
--- The "<atlas> <sprite>" a texture shows, found by its file and texture coordinates in data/AnnounceArt.lua.
+-- The "<atlas> <sprite>" a texture shows, found by its file and texture coordinates in ns.ATLASES (data/AnnounceArt.lua, data/ToastStyleArt.lua).
 local function spriteOf(loaded, texture)
 	for atlasName, atlas in pairs(loaded.ns.ATLASES) do
 		if texture.texture == atlas.file and texture.texCoord then
@@ -135,6 +135,115 @@ describe("the toast's and Nod's toast style", function()
 		}, lookOf(loaded, toast))
 		assert.are.same(ink(loaded, "rippleStamp"), toast.stamps[1].label.textColor)
 	end)
+
+	it(
+		"draws Moonlit Vellum once bought and equipped: its night-blue page, its own ring and its silver inks, toast.low's"
+			.. " too (ANN-R81, SHOP-R25)",
+		function()
+			local MOON = "core.toaststyle.moon"
+			local loaded, M = styledCore()
+			loaded.ns.RecordPurchase(MOON, 900) -- the Curio Shop's buy (SHOP-R10, SHOP-R11)
+			equip(loaded, MOON)
+
+			raise(loaded, M, "toast.low", "Caught")
+
+			local toast = loaded.ns.announcementFrames.toast
+			assert.are.same({
+				page = "ToastsMoon toast-low",
+				trim = "ToastsMoon bezel-64",
+				stamp = false,
+				title = ink(loaded, MOON .. ".lowWhat"),
+				text = ink(loaded, MOON .. ".lowName"),
+			}, lookOf(loaded, toast))
+			assert.are.same(ink(loaded, MOON .. ".lowAmt"), toast.coins.label.textColor)
+		end
+	)
+
+	-- The Ledger's earned toast style in Core's slot, The Tall Tale, registered by `M` and earned (LED-R117).
+	local TALL_TALE = "ledger.toaststyle.legend"
+	local function earnTallTale(M)
+		M:RegisterGood({
+			id = TALL_TALE,
+			slot = "core.toaststyle",
+			name = "The Tall Tale",
+			isEarned = function()
+				return true
+			end,
+			earnedText = "Land a Legend",
+		})
+	end
+
+	it(
+		"draws the Ledger's earned The Tall Tale like Core's own, from art keyed by its ID: its page, its own ring,"
+			.. " blue stamps, its inks and toast.high's tinted wax (ANN-R81, SHOP-R25)",
+		function()
+			local loaded, M = styledCore()
+			earnTallTale(M)
+			equip(loaded, TALL_TALE)
+
+			raiseStamped(loaded, M)
+
+			local toast = loaded.ns.announcementFrames.toast
+			assert.are.same({
+				page = "ToastsLegend toast-toast",
+				trim = "ToastsLegend bezel-84",
+				stamp = "Announce stamp-blue",
+				title = ink(loaded, TALL_TALE .. ".what"),
+				text = ink(loaded, TALL_TALE .. ".name"),
+			}, lookOf(loaded, toast))
+			assert.are.same(ink(loaded, TALL_TALE .. ".stampInk"), toast.stamps[1].label.textColor)
+			assert.are.same(ink(loaded, TALL_TALE .. ".amt"), toast.coins.label.textColor)
+			loaded.client.advance(30)
+			raise(loaded, M, "nod")
+			local nod = loaded.ns.announcementFrames.nod
+			assert.are.same(
+				{ "ToastsLegend nod-strip", "ToastsLegend bezel-34", ink(loaded, TALL_TALE .. ".amt") },
+				{ lookOf(loaded, nod).page, lookOf(loaded, nod).trim, nod.coins.label.textColor }
+			)
+			loaded.client.advance(30)
+			raise(loaded, M, "toast.high", "Size record")
+			assert.are.same(
+				{ "ToastsLegend toast-high", "ToastsLegend bezel-84", ink(loaded, TALL_TALE .. ".highWhat") },
+				{ lookOf(loaded, toast).page, lookOf(loaded, toast).trim, toast.title.textColor }
+			)
+			local tint = ink(loaded, TALL_TALE .. ".wax")
+			assert.are.same(
+				{ true, true, { tint[1], tint[2], tint[3] } },
+				{ toast.wax.shown, toast.wax:IsDesaturated(), { unpack(toast.wax.vertexColor, 1, 3) } }
+			)
+		end
+	)
+
+	it(
+		"puts The Tall Tale away with the Ledger off: toasts fall back to Torn Page, and it stays owned and picked"
+			.. " (SHOP-R30, SHOP-R32, SHOP-R35)",
+		function()
+			local first, Ledger = styledCore()
+			earnTallTale(Ledger)
+			equip(first, TALL_TALE)
+
+			-- The next session, with the Ledger off: Hunts raises the toast.
+			local loaded = loadCore(first.env.PagleLog, first.env.PagleDB)
+			local M = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
+			enterWorld(loaded, 3)
+			loaded.client.runTimers()
+			raise(loaded, M, "toast.high", "Size record")
+
+			local toast = loaded.ns.announcementFrames.toast
+			assert.are.same({ "ToastsLedger toast-high", "Announce bezel-bronze-84", false, { 1, 1, 1 } }, {
+				lookOf(loaded, toast).page,
+				lookOf(loaded, toast).trim,
+				toast.wax:IsDesaturated(),
+				{ unpack(toast.wax.vertexColor, 1, 3) },
+			})
+			local Pagle = loaded.env.Pagle
+			assert.are.same({ TORN_PAGE, true, TALL_TALE }, {
+				Pagle.GetEquipped("core.toaststyle"),
+				Pagle.IsOwned(TALL_TALE),
+				loaded.env.PagleDB.profiles.Default.appearance["core.toaststyle"],
+			})
+		end
+	)
 
 	it("draws a Nod's strip from the equipped style's atlas (ANN-R80)", function()
 		local loaded, M = styledCore()
@@ -334,7 +443,7 @@ describe("a toast style change", function()
 				DRIFTWOOD .. "toast_2.ogg SFX",
 				DRIFTWOOD .. "toast_3.ogg SFX",
 				DRIFTWOOD .. "toast_1.ogg SFX",
-				"Interface\\AddOns\\Pagle\\media\\sounds\\legend.ogg SFX",
+				"Interface\\AddOns\\Pagle\\media\\sounds\\legend\\19803.ogg SFX",
 			}, tornPageSounds)
 			-- When each first shows: three toasts and the banner together; the Nod in the column; three more toasts,
 			-- the 7th once they leave; the toast.low stepped down to a Nod once the budget is spent; the splash once the

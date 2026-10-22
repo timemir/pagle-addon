@@ -185,7 +185,7 @@ describe("Announcement frames", function()
 			{ true, "LEGEND", "Old Ironjaw" },
 			{ splash.shown, splash.title:GetText(), splash.text:GetText() }
 		)
-		assert.are.same({ SOUNDS .. "legend.ogg SFX" }, loaded.client.sounds)
+		assert.are.same({ SOUNDS .. "legend\\19803.ogg SFX" }, loaded.client.sounds)
 		splash:Click()
 		assert.is_false(splash.shown)
 	end)
@@ -891,7 +891,38 @@ describe("Announcement sounds on the client", function()
 	)
 
 	it(
-		"play the equipped set: Gilded's one toast and its banner, the shared sting, then Driftwood's rotation where it"
+		"play the Ledger's earned Old Salt's Concertina like Core's own once equipped, from sounds keyed by its ID"
+			.. " (ANN-R72, SHOP-R25)",
+		function()
+			local CONCERTINA = SOUNDS .. "concertina\\"
+			local loaded, M = loadCore()
+			M:RegisterGood({
+				id = "ledger.soundset.concertina",
+				slot = "core.soundset",
+				name = "Old Salt's Concertina",
+				isEarned = function()
+					return true
+				end,
+				earnedText = "Prestige I",
+			})
+			assert.is_true(loaded.env.Pagle.SetEquipped("core.soundset", "ledger.soundset.concertina"))
+
+			raise(loaded, M, moment("toast", "Toast 1"))
+			loaded.client.advance(TOAST)
+			raise(loaded, M, moment("toast", "Toast 2"))
+			loaded.client.advance(TOAST)
+			raise(loaded, M, moment("banner", "Banner"))
+
+			assert.are.same({
+				CONCERTINA .. "toast_1.ogg SFX",
+				CONCERTINA .. "toast_2.ogg SFX",
+				CONCERTINA .. "banner.ogg SFX",
+			}, loaded.client.sounds)
+		end
+	)
+
+	it(
+		"play the equipped set: Gilded's one toast and its banner, the first Legend's sting, then Driftwood's rotation where it"
 			.. " left off (ANN-R70, ANN-R72, SHOP-R33)",
 		function()
 			local GILDED = SOUNDS .. "gilded\\"
@@ -916,7 +947,7 @@ describe("Announcement sounds on the client", function()
 				GILDED .. "toast_1.ogg SFX",
 				GILDED .. "toast_1.ogg SFX",
 				GILDED .. "banner.ogg SFX",
-				SOUNDS .. "legend.ogg SFX",
+				SOUNDS .. "legend\\19803.ogg SFX",
 				DRIFTWOOD .. "toast_2.ogg SFX",
 			}, loaded.client.sounds)
 		end

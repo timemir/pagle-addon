@@ -145,3 +145,29 @@ description = "A slab of cork, pocked with pinholes from jobs long finished. The
 [boardgood."tackleboard.trackerframe.driftwood"] # Tracker frame, tier 2, was "Driftwood Plank"
 name = "Tideworn Plank"
 description = "A sea-grey plank, worn smooth by the tide and nailed up by the dock. It has travelled further than most boats."
+
+# The Curio Shop expansion's tracker frames and toast style (TKB-R125, TKB-R126).
+
+[boardgood."tackleboard.toaststyle.ember"] # core.toaststyle, earned: Campfire: 100 days
+name = "Hearth Ember"
+description = "A page that was nearly kindling once. The edges still glow when a good fish comes in."
+
+[boardgood."tackleboard.trackerframe.net"] # tackleboard.trackerframe, tier 1
+name = "Fishing Net"
+description = "A square of old net hung over the lines, its cork floats still tied along the top."
+
+[boardgood."tackleboard.trackerframe.bamboo"] # tackleboard.trackerframe, tier 1
+name = "Bamboo Slats"
+description = "Bamboo slats lashed with cord, the sort of thing you roll up and stuff in the tackle bag."
+
+[boardgood."tackleboard.trackerframe.tin"] # tackleboard.trackerframe, tier 2
+name = "Tackle Tin"
+description = "A green enamel tackle tin, dented and chipped, its lid embossed and its hinge a little rusty."
+
+[boardgood."tackleboard.trackerframe.bobber"] # tackleboard.trackerframe, tier 2
+name = "Bobber"
+description = "Red over white like a good bobber, with one floating at the corner, line and all."
+
+[boardgood."tackleboard.trackerframe.embers"] # tackleboard.trackerframe, earned: Campfire: 365 days
+name = "Live Embers"
+description = "Charred driftwood with the fire still living in its cracks. A year of fires went into this one."

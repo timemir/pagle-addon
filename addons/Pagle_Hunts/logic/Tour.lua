@@ -319,8 +319,8 @@ end
 
 --- Hunts' tour stops, in tour order (CORE-R68): the Board, on a Hunt of each group; the Board on a run, with the wager
 --- strip and the WAGERS group, and the Pagle Wagers spread; a set's page, an entry from it and a retired entry; the
---- tracker in the dock; then the board in each notebook cover and the tracker in each tracker frame Hunts sells
---- (HNT-R121), the defaults being the stops before.
+--- tracker in the dock; then the board in each notebook cover and the tracker in each tracker frame Hunts sells or
+--- gives (HNT-R121, HNT-R122), the defaults being the stops before.
 ---@type HuntsTourStop[]
 ns.HUNTS_TOUR = {
 	{ id = "board.home", label = "TOUR_BOARD", place = home },

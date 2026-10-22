@@ -1,51 +1,108 @@
--- The toast styles and the announcement art's choices as data (announcements.md › Toast styles, › UI, ANN-R80;
--- wallet-and-shop.md › SHOP-R25): Torn Page, Ripple and Lantern Glow, keyed by Core's toast style good IDs, with
--- Torn Page for any other ID; the page a toast is drawn on; a banner's seal; and the art's capitals.
+-- The toast styles and the announcement art's choices as data (announcements.md › Toast styles, › UI, ANN-R80,
+-- ANN-R81; wallet-and-shop.md › SHOP-R25): Core's fifteen and the three the Ledger and the Tackle Board earn in Core's
+-- slot, keyed by their good IDs, with Torn Page for any other ID; their medallion rings and inks; the page a toast is
+-- drawn on; a banner's seal; and the art's capitals.
 
 local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
 local TORN_PAGE = "core.toaststyle.page"
 local RIPPLE = "core.toaststyle.ripple"
 local LANTERN = "core.toaststyle.lanternglow"
+-- The first three styles, at 2 texels a unit with the shared trims, then the expansion's, each with a ring of its own
+-- (ANN-R81), by atlas.
+local FIRST = { [TORN_PAGE] = "ToastsLedger", [RIPPLE] = "ToastsRipple", [LANTERN] = "ToastsLantern" }
+local RINGED = {
+	["core.toaststyle.ship"] = "ToastsShip",
+	["core.toaststyle.birch"] = "ToastsBirch",
+	["core.toaststyle.tidepool"] = "ToastsTidepool",
+	["core.toaststyle.chart"] = "ToastsChart",
+	["core.toaststyle.frost"] = "ToastsFrost",
+	["core.toaststyle.goblin"] = "ToastsGoblin",
+	["core.toaststyle.kelp"] = "ToastsKelp",
+	["core.toaststyle.moon"] = "ToastsMoon",
+	["core.toaststyle.leaf"] = "ToastsLeaf",
+	["core.toaststyle.bottle"] = "ToastsBottle",
+	["core.toaststyle.rune"] = "ToastsRune",
+	["core.toaststyle.folio"] = "ToastsFolio",
+	["ledger.toaststyle.legend"] = "ToastsLegend",
+	["ledger.toaststyle.prestige"] = "ToastsPrestige",
+	["tackleboard.toaststyle.ember"] = "ToastsEmber",
+}
+local PAGES = { "low", "low-ruled", "toast", "toast-ruled", "high", "digest" }
+
+-- The page `name` (logic/ToastStyles.lua's pages), from a headline on its rung.
+local function pageOf(name)
+	local rung = ({ low = "toast.low", toast = "toast", high = "toast.high" })[name]
+	return ns.ToastPage({ headline = { rung = rung, title = "T" } })
+end
+
+-- An ink of the palette, by role.
+local function ink(role)
+	local color = ns.ANNOUNCE_COLORS[role]
+	return color and { color[1], color[2], color[3] }
+end
 
 describe("the toast styles", function()
 	it(
-		"are Torn Page, Ripple and Lantern Glow, by SHOP-R25's good IDs in the core.toaststyle slot (ANN-R80)",
+		"are Core's fifteen and the three earned in Core's slot by the Ledger and the Tackle Board, by SHOP-R25's good"
+			.. " IDs (ANN-R80, ANN-R81, SHOP-R25)",
 		function()
-			local ids = {}
-			for id in pairs(ns.TOAST_STYLES) do
+			local ids, expected = {}, {}
+			for id, style in pairs(ns.TOAST_STYLES) do
 				ids[#ids + 1] = id
+				assert.are.equal(id, style.id)
+			end
+			for _, atlases in ipairs({ FIRST, RINGED }) do
+				for id in pairs(atlases) do
+					expected[#expected + 1] = id
+				end
 			end
 			table.sort(ids)
+			table.sort(expected)
 
-			assert.are.same({ LANTERN, TORN_PAGE, RIPPLE }, ids)
+			assert.are.same(expected, ids)
+			assert.are.equal(18, #ids)
 			assert.are.same({ "core.toaststyle", TORN_PAGE }, { ns.TOAST_STYLE_SLOT, ns.TOAST_STYLE_DEFAULT })
 		end
 	)
 
 	it(
-		"each draw the toasts and Nods from an atlas of their own, which has every page and the strip (ANN-R80)",
+		"each draw the toasts and Nods from an atlas of their own, which has every page and the strip, the expansion's"
+			.. " at 1.5 texels a unit with a medallion ring at each bezel size (ANN-R80, ANN-R81, Tunables)",
 		function()
-			local atlases = {}
-			for _, id in ipairs({ TORN_PAGE, RIPPLE, LANTERN }) do
-				local style = ns.ToastStyleOf(id)
-				atlases[#atlases + 1] = style.atlas
-				local sprites = ns.ATLASES[style.atlas].sprites
-				for _, name in ipairs({ "low", "low-ruled", "toast", "toast-ruled", "high", "digest" }) do
-					assert.is_table(sprites["toast-" .. name])
+			for _, atlases in ipairs({ FIRST, RINGED }) do
+				for id, atlasName in pairs(atlases) do
+					local style = ns.ToastStyleOf(id)
+					assert.are.equal(atlasName, style.atlas)
+					local atlas = ns.ATLASES[style.atlas]
+					for _, name in ipairs(PAGES) do
+						assert.is_table(atlas.sprites["toast-" .. name])
+					end
+					assert.is_table(atlas.sprites["nod-strip"])
+					assert.are.equal(atlases == RINGED and 1.5 or 2, atlas.scale, id)
+					assert.are.equal(atlases == RINGED, style.ring == true, id)
+					if style.ring then
+						for _, size in ipairs({ 22, 34, 64, 84 }) do
+							local ring = atlas.sprites["bezel-" .. size]
+							assert.are.same({ size, size }, { ring.box[3], ring.box[4] }, id)
+						end
+					end
 				end
-				assert.is_table(sprites["nod-strip"])
 			end
-
-			assert.are.same({ "ToastsLedger", "ToastsRipple", "ToastsLantern" }, atlases)
 		end
 	)
 
 	it(
 		"find each announcement atlas's texture in Pagle's media/announce as a BLP the package ships (announcements.md"
-			.. " › UI)",
+			.. " › UI, ANN-R81)",
 		function()
-			for _, name in ipairs({ "Announce", "Splash", "ToastsLedger", "ToastsRipple", "ToastsLantern" }) do
+			local names = { "Announce", "Splash" }
+			for _, atlases in ipairs({ FIRST, RINGED }) do
+				for _, name in pairs(atlases) do
+					names[#names + 1] = name
+				end
+			end
+			for _, name in ipairs(names) do
 				local atlas = ns.ATLASES[name]
 				assert.are.equal("Interface\\AddOns\\Pagle\\media\\announce\\" .. name, atlas.file)
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
@@ -54,21 +111,38 @@ describe("the toast styles", function()
 				assert.are.equal("BLP2", file:read(4))
 				file:close()
 			end
+			assert.are.equal(20, #names)
 		end
 	)
 
-	it("name medallions, a stamp and inks the shared atlas and the palette have (ANN-R80)", function()
-		for _, id in ipairs({ TORN_PAGE, RIPPLE, LANTERN }) do
-			local style = ns.ToastStyleOf(id)
-			for _, trim in ipairs({ style.trim, style.highTrim }) do
-				assert.is_table(ns.ATLASES.Announce.sprites["bezel-" .. trim .. "-84"])
-			end
-			assert.is_table(ns.ATLASES.Announce.sprites[style.stamp])
-			for _, ink in ipairs({ style.stampInk, style.what, style.name }) do
-				assert.are.equal(3, #ns.ANNOUNCE_COLORS[ink], ("%s's %s"):format(id, ink))
+	it(
+		"name medallions, a stamp and inks the atlases and the palette have, on every page (ANN-R80, ANN-R81)",
+		function()
+			for id, style in pairs(ns.TOAST_STYLES) do
+				for _, size in ipairs({ 22, 34, 64, 84 }) do
+					for _, high in ipairs({ false, true }) do
+						local ring = ns.BezelRing(style, size, high)
+						assert.is_table(ns.ATLASES[ring.atlas].sprites[ring.sprite])
+					end
+				end
+				assert.is_table(ns.ATLASES.Announce.sprites[style.stamp])
+				local roles = { style.stampInk }
+				for _, page in ipairs({ pageOf("low"), pageOf("toast"), pageOf("high"), nil }) do
+					local inks = ns.ToastInks(style, page)
+					for _, role in ipairs({ inks.what, inks.name, inks.amt, inks.label, inks.value }) do
+						roles[#roles + 1] = role
+					end
+				end
+				roles[#roles + 1] = ns.ToastInks(style).what
+				for _, role in ipairs(roles) do
+					assert.are.equal(3, #ns.ANNOUNCE_COLORS[role], ("%s's %s"):format(id, role))
+				end
+				if style.wax then
+					assert.are.equal(3, #ns.ANNOUNCE_COLORS[style.wax], id)
+				end
 			end
 		end
-	end)
+	)
 
 	it(
 		"give Ripple silver medallions and blue stamps, and Torn Page and Lantern Glow brass and red (ANN-R80)",
@@ -81,6 +155,108 @@ describe("the toast styles", function()
 				{ { tornPage.trim, tornPage.stamp }, { ripple.trim, ripple.stamp }, { lantern.trim, lantern.stamp } }
 			)
 			assert.are_not.same(tornPage.what, lantern.what)
+			assert.are.same(
+				{ { atlas = "Announce", sprite = "bezel-gold-84" }, { atlas = "Announce", sprite = "bezel-bronze-84" } },
+				{ ns.BezelRing(tornPage, 84, false), ns.BezelRing(tornPage, 84, true) }
+			)
+		end
+	)
+
+	it(
+		"give each of the expansion's styles its own ring at every size, toast.high's too, in place of the trims"
+			.. " (ANN-R81)",
+		function()
+			local legend = ns.ToastStyleOf("ledger.toaststyle.legend")
+
+			assert.are.same({
+				{ atlas = "ToastsLegend", sprite = "bezel-84" },
+				{ atlas = "ToastsLegend", sprite = "bezel-84" },
+				{ atlas = "ToastsLegend", sprite = "bezel-22" },
+			}, { ns.BezelRing(legend, 84, false), ns.BezelRing(legend, 84, true), ns.BezelRing(legend, 22) })
+		end
+	)
+
+	it(
+		"ink the expansion's styles as the kit's goods.json has them: kicker, name, stamp and Coins, and its own"
+			.. " toast.high and toast.low inks where it has them (ANN-R81)",
+		function()
+			local ship = ns.ToastStyleOf("core.toaststyle.ship")
+			local moon = ns.ToastStyleOf("core.toaststyle.moon")
+			local folio = ns.ToastStyleOf("core.toaststyle.folio")
+			local function inksOf(style, page)
+				local inks = ns.ToastInks(style, page)
+				return { ink(inks.what), ink(inks.name), ink(inks.amt) }
+			end
+
+			assert.are.same({ ns.Rgb("1F3A5A"), ns.Rgb("14202E"), ns.Rgb("7A5410") }, inksOf(ship, pageOf("toast")))
+			assert.are.same({ ns.Rgb("1F3A6A"), "stamp-blue" }, { ink(ship.stampInk), ship.stamp })
+			-- Ship's Log has no toast.high or toast.low inks of its own: the gilt kicker, and pencil.
+			assert.are.same({ ink("giltDeep"), ink("pencil"), ink("pencilName"), ink("amtLow") }, {
+				ink(ns.ToastInks(ship, pageOf("high")).what),
+				ink(ns.ToastInks(ship, pageOf("low")).what),
+				ink(ns.ToastInks(ship, pageOf("low")).name),
+				ink(ns.ToastInks(ship, pageOf("low")).amt),
+			})
+			-- Moonlit Vellum writes in silver on night-blue: its own inks on every page, the Nod's too.
+			assert.are.same({ ns.Rgb("C8D0E8"), ns.Rgb("E8ECF8"), ns.Rgb("C8D0E8") }, inksOf(moon, pageOf("low")))
+			assert.are.same({ ns.Rgb("E8EEFF"), ns.Rgb("F2F4FF"), ns.Rgb("E8D080") }, inksOf(moon, pageOf("high")))
+			assert.are.same({ ns.Rgb("B8C8F0"), ns.Rgb("F2F4FF"), ns.Rgb("E8D080") }, inksOf(moon))
+			assert.are.same(ns.Rgb("E8B830"), ink(ns.ToastInks(folio, pageOf("high")).what))
+			-- Torn Page keeps the ledger's own.
+			assert.are.same({ ink("red"), ink("ink"), ink("amt") }, inksOf(ns.ToastStyleOf(TORN_PAGE), pageOf("toast")))
+		end
+	)
+
+	it(
+		"write the size ruler's label and number in each expansion style's own `small` ink on every page and the Nod,"
+			.. " and in the ledger's inks for a style without one (ANN-R81)",
+		function()
+			local function rulerInks(id)
+				local style, out = ns.ToastStyleOf(id), {}
+				for _, page in ipairs({ pageOf("low"), pageOf("toast"), pageOf("high") }) do
+					local inks = ns.ToastInks(style, page)
+					out[#out + 1] = { ink(inks.label), ink(inks.value) }
+				end
+				local nod = ns.ToastInks(style)
+				out[#out + 1] = { ink(nod.label), ink(nod.value) }
+				return out
+			end
+			local function each(label, value)
+				return { { label, value }, { label, value }, { label, value }, { label, value } }
+			end
+
+			-- Moonlit Vellum and Oxblood Vellum: light ink on a dark page.
+			assert.are.same(each(ns.Rgb("B0BCD8"), ns.Rgb("B0BCD8")), rulerInks("core.toaststyle.moon"))
+			assert.are.same(each(ns.Rgb("E0C8A0"), ns.Rgb("E0C8A0")), rulerInks("ledger.toaststyle.prestige"))
+			-- Ship's Log, on a light page: its own dark navy, the kit's #14202e.
+			assert.are.same(each(ns.Rgb("14202E"), ns.Rgb("14202E")), rulerInks("core.toaststyle.ship"))
+			-- Torn Page, one of the first three, has none: the ledger's brown.
+			assert.are.same(each(ink("ink2"), ink("ink")), rulerInks(TORN_PAGE))
+		end
+	)
+
+	it(
+		"tint toast.high's wax close to the board's: shaded for a style that keeps its red, tinted over grey for one"
+			.. " that turns it, as is for Torn Page, Sea Chart and Illuminated Folio (ANN-R81)",
+		function()
+			local function wax(id)
+				local style = ns.ToastStyleOf(id)
+				return { style.wax and ink(style.wax) or false, style.waxDesaturated == true }
+			end
+
+			assert.are.same({
+				{ false, false },
+				{ false, false },
+				{ false, false },
+				{ ns.Rgb("47AEFF"), true },
+				{ ns.Rgb("D9D9D9"), false },
+			}, {
+				wax(TORN_PAGE),
+				wax("core.toaststyle.chart"),
+				wax("core.toaststyle.folio"),
+				wax("core.toaststyle.ship"),
+				wax("ledger.toaststyle.prestige"),
+			})
 		end
 	)
 

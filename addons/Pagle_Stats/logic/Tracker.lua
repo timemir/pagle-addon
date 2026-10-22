@@ -7,8 +7,9 @@ local ns = select(2, ...)
 
 -- The live tracker's lines (STA-R81–R83, STA-R85; stats.md › UI › Live tracker): whether it shows, its header, this
 -- Session's two lines and each watch's line, as data for the tracker block (adapter/TrackerBlock.lua), and each watch's
--- hover. Pure logic: the setting, the projection's state, Core's Session, the watches, the live skill and the server
--- time come in as arguments (CORE-R7); adapter/Tracker.lua docks the block and draws what these return.
+-- hover, and a tracker frame's three-slice (STA-R88). Pure logic: the setting, the projection's state, Core's Session,
+-- the watches, the live skill and the server time come in as arguments (CORE-R7); adapter/Tracker.lua docks the block
+-- and draws what these return.
 
 --- What the tracker is drawn from, read at each draw.
 ---@class StatsTrackerInput
@@ -139,4 +140,24 @@ function ns.TrackerLines(input)
 		ticking = current,
 		pending = pending,
 	}
+end
+
+--- A tracker frame's paper sliced down to `height` (STA-R88): its `top` and `foot` keep their size and its middle
+--- spans the rest, stretched in one piece, or repeated every `period` units with the last cut short (ruled paper keeps
+--- its pitch). A frame never draws shorter than its top and foot together: a shorter block grows to them.
+---@param height number
+---@param top number
+---@param foot number
+---@param period number?
+---@return number height -- the paper's height, the block's
+---@return number[] middles -- each middle's span, top to bottom
+function ns.SliceDown(height, top, foot, period)
+	height = math.max(height, top + foot)
+	local need, middles, at = height - top - foot, {}, 0
+	while need - at > 0.01 do
+		local span = period and math.min(period, need - at) or need
+		middles[#middles + 1] = span
+		at = at + span
+	end
+	return height, middles
 end

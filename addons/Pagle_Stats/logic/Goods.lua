@@ -5,7 +5,7 @@ end
 ---@class PagleStatsNS
 local ns = select(2, ...)
 
--- Stats' goods (STA-R88): its one slot and three goods as data, each good's name and description from lore, and the
+-- Stats' goods (STA-R88): its one slot and eight goods as data, each good's name and description from lore, and the
 -- goods to register made from them. Pure logic, everything passed in (CORE-R7): adapter/Goods.lua registers them,
 -- draws each preview and holds the frame looks the tracker wears (STA-R84).
 
@@ -19,7 +19,7 @@ local ICONS = "Interface\\Icons\\"
 ---@class StatsGoodData
 ---@field id string
 ---@field default? true
----@field tier? 1|2 -- Tunables: Tracker frame tiers
+---@field tier? 1|2|3 -- Tunables: Tracker frame tiers
 ---@field icon string
 
 --- STA-R88's slot and goods, in the order they register.
@@ -35,6 +35,16 @@ ns.STATS_GOODS = {
 		{ id = "stats.trackerframe.logbook", tier = 1, icon = ICONS .. "INV_Misc_Book_08" },
 		-- A bronze framework: a thin brass rim with riveted corners.
 		{ id = "stats.trackerframe.brass", tier = 2, icon = ICONS .. "INV_Gizmo_BronzeFramework_01" },
+		-- The Curio Shop expansion's five. A scroll: tally paper banded in pale green.
+		{ id = "stats.trackerframe.greenbar", tier = 1, icon = ICONS .. "INV_Scroll_03" },
+		-- A slate: a green board in a pine frame.
+		{ id = "stats.trackerframe.chalkboard", tier = 1, icon = ICONS .. "INV_Misc_StoneTablet_05" },
+		-- A spyglass: sea-blue glass behind a brass staff.
+		{ id = "stats.trackerframe.tidegauge", tier = 2, icon = ICONS .. "INV_Misc_Spyglass_02" },
+		-- Coins: a counting frame's sum.
+		{ id = "stats.trackerframe.abacus", tier = 2, icon = ICONS .. "INV_Misc_Coin_02" },
+		-- Starfire: a star map under brass rings.
+		{ id = "stats.trackerframe.astrolabe", tier = 3, icon = ICONS .. "Spell_Arcane_StarFire" },
 	},
 }
 

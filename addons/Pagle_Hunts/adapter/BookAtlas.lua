@@ -23,6 +23,21 @@ ns.BOOK_FILES = { leather = CORE .. "Leather", parchment = CORE .. "Parchment" }
 --- v2's Oilcloth and Verdigris, Hunts' own media, loaded only when worn.
 ns.COVER_FILES = { oilcloth = OWN .. "Cover-oil", verdigris = OWN .. "Cover-verd" }
 
+-- The expansion kit's sprites (goods.json): Covers2's closed-notebook swatches, each 230 x 295 texels at 1.25 to the UI
+-- unit, the notebook 150 x 196 in it; TrackerFrames2's frames, 556 x 440 texels at 2, the frame 262 x 200 in it.
+---@param at table<string, integer[]>
+---@param w integer
+---@param h integer
+---@param box number[]
+---@return table<string, HuntsArtSprite>
+local function grid(at, w, h, box)
+	local sprites = {}
+	for name, xy in pairs(at) do
+		sprites[name] = { x = xy[1], y = xy[2], w = w, h = h, box = box }
+	end
+	return sprites
+end
+
 ---@type table<string, HuntsArtAtlas>
 ns.ATLASES = {
 	-- The book shell: the binding band (a nine-slice), the leather's vignette, the wax seal and its "not yet" ring,
@@ -109,5 +124,43 @@ ns.ATLASES = {
 		height = 512,
 		scale = 2,
 		sprites = { ["frame"] = { x = 0, y = 0, w = 584, h = 468, box = { 4, 16, 272, 208 } } },
+	},
+	-- The Curio Shop expansion kit's (HNT-R123): each expansion cover's closed notebook, the shop's swatch and stage.
+	Covers2 = {
+		file = OWN .. "Covers2",
+		width = 1024,
+		height = 2048,
+		scale = 1.25,
+		sprites = grid({
+			["swatch-canvas"] = { 2, 2 },
+			["swatch-kraft"] = { 236, 2 },
+			["swatch-tartan"] = { 470, 2 },
+			["swatch-maplinen"] = { 704, 2 },
+			["swatch-planks"] = { 2, 301 },
+			["swatch-snakeskin"] = { 236, 301 },
+			["swatch-shagreen"] = { 470, 301 },
+			["swatch-lacquer"] = { 704, 301 },
+			["swatch-bone"] = { 2, 600 },
+			["swatch-brasscase"] = { 236, 600 },
+			["swatch-scrimshaw"] = { 470, 600 },
+			["swatch-trophycase"] = { 704, 600 },
+			["swatch-pathfinder"] = { 2, 899 },
+			["swatch-fiveseal"] = { 2, 1198 },
+			["swatch-wagersilk"] = { 2, 1497 },
+		}, 230, 295, { 12, 10, 150, 196 }),
+	},
+	-- The expansion's tracker frames (HNT-R123): one atlas, so a tracker in any of them loads the five.
+	TrackerFrames2 = {
+		file = OWN .. "TrackerFrames2",
+		width = 2048,
+		height = 1024,
+		scale = 2,
+		sprites = grid({
+			["frame-slate"] = { 2, 2 },
+			["frame-mapscrap"] = { 2, 446 },
+			["frame-bounty"] = { 562, 2 },
+			["frame-spyglass"] = { 562, 446 },
+			["frame-wagerribbon"] = { 1122, 2 },
+		}, 556, 440, { 8, 6, 262, 200 }),
 	},
 }

@@ -118,9 +118,17 @@ local TEXTURES = ns.BOARD_TEXTURES
 --- (`ns.board:SetCover`) gives any of these fields; the rest come from ns.BOARD_COVER.
 ---@class BoardCoverLook
 ---@field fill string?        -- a cloth drawn at the board's size (ns.COVER_FILES), in place of the tiled leather
+---@field tile string?        -- an expansion cover's material (ns.COVER_TILES, HNT-R123), tiled in place of the leather
+---@field tileW number?       -- the material's repeat, in UI units
+---@field tileH number?
 ---@field foot number?        -- how dark the tiled leather turns toward its foot: 1 none, 0.8 the leather's
+---@field band number[]?      -- the band's tone: the kit's band desaturated, then tinted (nil: the kit's own)
 ---@field tooled boolean?     -- the gilt double rule inside the band
 ---@field corner boolean?     -- the gilt corner at the top left
+---@field corners BoardCornerKind? -- metal corners at all four corners (nil: none)
+
+--- An expansion cover's corners (HNT-R123): the kit's brass corner, or tinted as gold, silver or bone.
+---@alias BoardCornerKind "brass"|"gold"|"silver"|"bone"
 
 ---@class BoardCover: BoardCoverLook -- a cover look with its leather's foot
 ---@field foot number
@@ -419,6 +427,7 @@ local BAND, FILL_INSET, LEATHER_TILE = 16, 7, 128
 ---@field gilt Frame           -- over the band: the tooled rule and the corner
 ---@field tooling BoardOutline[]
 ---@field corner HuntsSpriteTexture
+---@field corners Texture[]    -- an expansion cover's four corners (HNT-R123)
 ---@field cover BoardCover?    -- the cover it wears
 ---@field owner table          -- the cover change's crossfade runs on it
 ---@field SetCover fun(self: BoardLeatherView, look: BoardCover, animate: boolean?) -- every field given (adapter/Board.lua
@@ -461,6 +470,61 @@ end
 -- The tooled cover's gilt double rule (the kit's canvas: 1.5-unit lines, 9 and 12 units in) and the gilt.
 local TOOLED_INSETS, TOOLED_LINE, TOOLED_GILT = { 9, 12 }, 1.5, tint("d8b660")
 
+-- An expansion cover's band tone and corners (HNT-R123), as the expansion kit's canvas filters them: the art's
+-- luminance times the tone, brightened (the client's tint can only darken, so each channel stops at 1). The corners
+-- are the kit's brass corner, 44 units on the board, mirrored into each corner; the other metals tint it.
+local BAND_GAIN, CORNER_GAIN, CORNER_SIZE = 1.9, 1.6, 44
+---@type table<BoardCornerKind, number[]?>
+local CORNER_TINTS = { brass = nil, gold = tint("e8b830"), silver = tint("b8c0c8"), bone = tint("e0d0b0") }
+
+-- Tints `texture` with `color` times `gain` on its desaturated art, or shows its own colours for no `color`.
+---@param texture Texture
+---@param color number[]?
+---@param gain number
+local function tone(texture, color, gain)
+	texture:SetDesaturated(color ~= nil)
+	if color then
+		texture:SetVertexColor(
+			math.min(1, color[1] * gain),
+			math.min(1, color[2] * gain),
+			math.min(1, color[3] * gain),
+			1
+		)
+	else
+		texture:SetVertexColor(1, 1, 1, 1)
+	end
+end
+
+-- The four corners on `gilt`, the kit's brass corner mirrored into each, hidden until a cover has corners.
+---@param gilt Frame
+---@return Texture[]
+local function cornersOf(gilt)
+	local atlas, sprite = ns.ArtSpriteOf("Parts", "corner")
+	local k = CORNER_SIZE / sprite.box[3]
+	local left, right = sprite.x / atlas.width, (sprite.x + sprite.w) / atlas.width
+	local top, bottom = sprite.y / atlas.height, (sprite.y + sprite.h) / atlas.height
+	local corners = {}
+	for i, point in ipairs({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }) do
+		local corner = ns.ArtCrisp(gilt:CreateTexture(nil, "ARTWORK", nil, 2))
+		corner:SetTexture(atlas.file)
+		local flipX, flipY = point:find("RIGHT") ~= nil, point:find("BOTTOM") ~= nil
+		corner:SetTexCoord(
+			flipX and right or left,
+			flipX and left or right,
+			flipY and bottom or top,
+			flipY and top or bottom
+		)
+		local width, height = sprite.w / atlas.scale * k, sprite.h / atlas.scale * k
+		corner:SetSize(width, height)
+		-- the drawn corner meets the board's edges; mirrored, its sprite's margin mirrors with it
+		local dx, dy = sprite.box[1] * k, sprite.box[2] * k
+		corner:SetPoint(point, flipX and dx or -dx, flipY and -dy or dy)
+		corner:Hide()
+		corners[i] = corner
+	end
+	return corners
+end
+
 ---@param frame Frame
 ---@param cornerSize number? Verdigris's corner's size (the kit's 40 by default; smaller on the shop's notebook)
 ---@return BoardLeatherView
@@ -494,6 +558,7 @@ function ns.NewBoardLeather(frame, cornerSize)
 		gilt = gilt,
 		tooling = tooling,
 		corner = corner,
+		corners = cornersOf(gilt),
 		owner = {},
 		SetCover = function() end, -- below
 	}
@@ -506,11 +571,11 @@ function ns.NewBoardLeather(frame, cornerSize)
 			view.fill:SetTexCoord(0, 1, 0, 1)
 			view.fill:SetGradient("VERTICAL", CreateColor(1, 1, 1, 1), CreateColor(1, 1, 1, 1))
 		else
-			view.fill:SetTexture(ns.BOOK_FILES.leather, "REPEAT", "REPEAT")
-			-- the grain tiles at its authored density
+			-- the kit's leather, or an expansion cover's material, each tiled at its authored density
+			view.fill:SetTexture(look.tile or ns.BOOK_FILES.leather, "REPEAT", "REPEAT")
 			local width, height = frame:GetSize()
-			local across = math.max(1, width - 2 * FILL_INSET) / LEATHER_TILE
-			local down = math.max(1, height - 2 * FILL_INSET) / LEATHER_TILE
+			local across = math.max(1, width - 2 * FILL_INSET) / (look.tile and look.tileW or LEATHER_TILE)
+			local down = math.max(1, height - 2 * FILL_INSET) / (look.tile and look.tileH or LEATHER_TILE)
 			view.fill:SetTexCoord(0, across, 0, down)
 			-- darker toward the foot, as the canvas shades it (the gradient's first colour is the bottom's)
 			local foot = look.foot
@@ -524,6 +589,13 @@ function ns.NewBoardLeather(frame, cornerSize)
 			end
 		end
 		view.corner:SetShown(look.corner == true)
+		for _, piece in pairs(view.bandPieces) do
+			tone(piece, look.band, BAND_GAIN)
+		end
+		for _, metal in ipairs(view.corners) do
+			metal:SetShown(look.corners ~= nil)
+			tone(metal, look.corners and CORNER_TINTS[look.corners], CORNER_GAIN)
+		end
 	end
 	function view.SetCover(_, look, animate)
 		Pagle.StopMotion(view.owner)

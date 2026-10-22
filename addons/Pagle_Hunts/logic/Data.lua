@@ -27,7 +27,8 @@ ns.DB_DEFAULTS = {
 	},
 	global = {
 		-- { tiers = { [huntID] = highestTier }, sets = { [setID] = true }, runs = { [runKey] = { tiers = { [huntID] =
-		-- highestTier }, settled = true?, endsAt } }, ladder = { [n] = true } } (HNT-R90, HNT-R92)
+		-- highestTier }, settled = true?, endsAt } }, ladder = { [n] = true }, goods = { [goodID] = true } } (HNT-R90,
+		-- HNT-R92; `goods` made with the first earned good noted, HNT-R122)
 		celebrated = { tiers = {}, sets = {}, runs = {}, ladder = {} },
 	},
 }

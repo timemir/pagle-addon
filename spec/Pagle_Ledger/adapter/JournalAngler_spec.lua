@@ -560,7 +560,7 @@ describe("the Angler page's Bindings", function()
 	local LEVEL_10 = { global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } }
 
 	it(
-		"lists the ten bindings in LED-R110's order: Field Leather in use, the level bindings by level, the three for sale in the Curio Shop (LED-R146, LED-R110)",
+		"lists the bindings in LED-R110's order: Field Leather in use, the level and expansion's earned ones by how they are earned, those for sale in the Curio Shop (LED-R146, LED-R110, LED-R116)",
 		function()
 			local _, loaded = anglerPage()
 
@@ -575,7 +575,70 @@ describe("the Angler page's Bindings", function()
 				{ "Birch Bark", "In the Curio Shop" },
 				{ "Sea-Green Buckram", "In the Curio Shop" },
 				{ "Sharkskin", "In the Curio Shop" },
+				{ "Tide-Chart Linen", "In the Curio Shop" },
+				{ "Tarred Sailcloth", "In the Curio Shop" },
+				{ "Oilskin Yellow", "In the Curio Shop" },
+				{ "Mossbound", "In the Curio Shop" },
+				{ "Driftwood Boards", "In the Curio Shop" },
+				{ "Eelskin", "In the Curio Shop" },
+				{ "Kodo Hide", "In the Curio Shop" },
+				{ "Frost-Tanned Hide", "In the Curio Shop" },
+				{ "Net over Cork", "In the Curio Shop" },
+				{ "Riveted Copper", "In the Curio Shop" },
+				{ "Night Velvet", "In the Curio Shop" },
+				{ "Turtle Shell", "In the Curio Shop" },
+				{ "Gilded Morocco", "In the Curio Shop" },
+				{ "Coral Inlay", "In the Curio Shop" },
+				{ "Mother-of-Pearl", "In the Curio Shop" },
+				{ "Three Gilt Fish", "Land all three Legends" },
+				{ "Monster Hide", "Land a Monster" },
+				{ "Abyssal Black", "Prestige X" },
+				{ "Keeper's Gold", "Complete the Ledger" },
+				{ "Iridescent Scale", "Every fish in every colour" },
 			}, lines(loaded))
+		end
+	)
+
+	it(
+		"draws each line's closed book from its binding's atlas, an expansion one's from Bindings2, 11 wide (LED-R146, LED-R110)",
+		function()
+			local _, loaded = anglerPage()
+			local ns = loaded.ns
+			local books = {}
+			for _, widget in ipairs(ns.journal.frame.right.drawn.leader) do
+				if widget.swatch:IsShown() then
+					books[widget.label.text] = widget.swatch
+				end
+			end
+
+			local field, coral = books["Field Leather"], books["Coral Inlay"]
+			assert.are.equal(ns.JOURNAL_ATLASES.Bindings.file, field.texture)
+			assert.are.equal(ns.JOURNAL_ATLASES.Bindings2.file, coral.texture)
+			assert.are.same({ ns.JournalCoords("Bindings2", "swatch-coral") }, coral.texCoord)
+			assert.are.same({ 11, 11 }, { field.box[3], coral.box[3] })
+		end
+	)
+
+	it(
+		"offers Use for an expansion binding earned, its rule kept in the celebrated set (LED-R146, LED-R116)",
+		function()
+			local _, loaded = anglerPage(nil, {
+				saved = {
+					global = {
+						celebrated = {
+							coins = 0,
+							prestige = 10,
+							goods = { ["ledger.binding.monster"] = true },
+							logId = "log",
+						},
+					},
+				},
+			})
+
+			local list = lines(loaded)
+			assert.are.same({ "Monster Hide", "Use" }, list[27])
+			assert.are.same({ "Abyssal Black", "Use" }, list[28])
+			assert.are.same({ "Keeper's Gold", "Complete the Ledger" }, list[29])
 		end
 	)
 

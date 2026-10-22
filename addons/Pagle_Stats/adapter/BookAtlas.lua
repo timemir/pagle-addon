@@ -92,7 +92,6 @@ ns.ATLASES = {
 			["pen"] = { x = 480, y = 0, w = 30, h = 30, box = { 0, 0, 15, 15 } },
 		},
 	},
-	-- The tracker frames for sale (STA-R88): the Logbook's ruled paper, the Brass plate with its rivets.
 	-- The search slip: the Curio Shop's paper slip with its magnifier, from Core's shop atlas (Pagle/media/shop/Shop,
 	-- data/ShopArt.lua's "find"), so the book's search and the shop's match. Stats reads Core's file, not Core's table
 	-- (ADR 0001), so its rectangle is copied here.
@@ -103,6 +102,9 @@ ns.ATLASES = {
 		scale = 2,
 		sprites = { ["find"] = { x = 2, y = 102, w = 900, h = 96, box = { 6, 6, 438, 36 } } },
 	},
+	-- The tracker frames for sale (STA-R88): the Logbook's ruled paper, the Brass plate with its rivets, and the Curio
+	-- Shop expansion's five in one sheet, TrackerFrames2 (the shop expansion kit's goods.json): each 262 x 200 UI units
+	-- drawn, with its shadow below.
 	TrackerLogbook = {
 		file = OWN .. "TrackerLogbook",
 		width = 1024,
@@ -116,5 +118,18 @@ ns.ATLASES = {
 		height = 512,
 		scale = 2,
 		sprites = { ["frame"] = { x = 0, y = 0, w = 532, h = 432, box = { 2, 2, 262, 204 } } },
+	},
+	TrackerFrames2 = {
+		file = OWN .. "TrackerFrames2",
+		width = 2048,
+		height = 1024,
+		scale = 2,
+		sprites = {
+			["frame-greenbar"] = { x = 2, y = 2, w = 556, h = 440, box = { 8, 6, 262, 200 } },
+			["frame-chalkboard"] = { x = 2, y = 446, w = 556, h = 440, box = { 8, 6, 262, 200 } },
+			["frame-tidegauge"] = { x = 562, y = 2, w = 556, h = 440, box = { 8, 6, 262, 200 } },
+			["frame-abacus"] = { x = 562, y = 446, w = 556, h = 440, box = { 8, 6, 262, 200 } },
+			["frame-astrolabe"] = { x = 1122, y = 2, w = 556, h = 440, box = { 8, 6, 262, 200 } },
+		},
 	},
 }

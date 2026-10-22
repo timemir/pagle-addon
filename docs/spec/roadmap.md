@@ -440,6 +440,18 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 6. With the Companion closed for 24 h, the block goes and the spread shows the expired state.
 7. `scripts/check.sh` passes.
 
+## Track S: Curio Shop expansion
+
+**Goal:** the shop expansion kit's 80 goods and a sting per Legend: price tiers 4 and 5, Core's toast style and sound set slots open to earned goods, twelve toast styles and twelve sound sets for sale in Core, twenty bindings, fifteen covers and fifteen tracker frames in the Modules, sixteen earned goods, and every set and sting rendered by `render-sounds.py`. Built after the zone crests kit (#339), from the kit's media and `goods.json`; tiers 4–5 are a long-term chase (wallet-and-shop.md Tunables). 1.0 ships it if it is merged by the tag.
+
+**Build order:** Core and the sound pipeline first or alongside; the Ledger's, Hunts', Stats' and the Tackle Board's goods in parallel, each against Core's open slots.
+
+**Core rules:** SHOP-R20 for art text, SHOP-R22 for tiers 4 and 5, SHOP-R23 for `core.toaststyle` and `core.soundset`, SHOP-R25 for the new goods; ANN-R70, ANN-R72 and ANN-R74 for the sets and a sting per Legend; ANN-R80, ANN-R81
+
+**Module rules:** Ledger: LED-R110 for the new bindings, LED-R116, LED-R117, LED-R160 for `ledgergood`. Hunts: HNT-R121 for the new covers and frames, HNT-R122, HNT-R123. Stats: STA-R88 for the new frames. Tackle Board: TKB-R125 for the new frames, TKB-R126
+
+**Exit check:** the Curio Shop lists every new good at its tier's price, with the earned ones showing their `earnedText`; buying and equipping a tier 4 toast style, a sound set, a binding, a cover and a frame of each tracker shows each look; catching each Legend plays its own sting; an earned Module good in a Core slot equips and plays like Core's own, and is put away with its Module off; `scripts/render-sounds.py` reproduces every committed set and sting; `scripts/check.sh` passes.
+
 ## M9 Release
 
 Launch re-verification on the live build, the 1.0 gates (lore, Settings UX, Simulated Size), the CurseForge and Wago projects, then the 1.0 tag. Named M8 Release until the Hunts redesign took M8 ([#288](https://github.com/timemir/wow-fish/issues/288)). The Settings UX pass (#266), the store screenshots (#270), the tag's preparation (#275) and the exit check (#276) wait for M8 Hunt Events and M8.5 Onboarding; launch re-verification (#272–#274) and the store projects (#271) don't.

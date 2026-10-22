@@ -31,8 +31,8 @@ describe("Core's slots and goods", function()
 	end)
 
 	it(
-		"register the three slots first, in the Curio Shop's categories, with every good's tier, the crest slot holding"
-			.. " Plain then the fish crests, earned, by Species ID (SHOP-R25, VAR-R12)",
+		"register the three slots first, in the Curio Shop's categories, with every good's tier in SHOP-R25's order, the"
+			.. " crest slot holding Plain then the fish crests, earned, by Species ID (SHOP-R22, SHOP-R25, VAR-R12)",
 		function()
 			local loaded = loadCore()
 			loaded.client.fire("PLAYER_LOGIN")
@@ -65,6 +65,18 @@ describe("Core's slots and goods", function()
 						"core.toaststyle.page default",
 						"core.toaststyle.ripple tier 1",
 						"core.toaststyle.lanternglow tier 2",
+						"core.toaststyle.ship tier 1",
+						"core.toaststyle.birch tier 1",
+						"core.toaststyle.tidepool tier 1",
+						"core.toaststyle.chart tier 2",
+						"core.toaststyle.frost tier 2",
+						"core.toaststyle.goblin tier 2",
+						"core.toaststyle.kelp tier 3",
+						"core.toaststyle.moon tier 3",
+						"core.toaststyle.leaf tier 3",
+						"core.toaststyle.bottle tier 3",
+						"core.toaststyle.rune tier 4",
+						"core.toaststyle.folio tier 5",
 					},
 				},
 				{
@@ -72,7 +84,22 @@ describe("Core's slots and goods", function()
 					"Sound set",
 					"Announcements",
 					"Core",
-					{ "core.soundset.driftwood default", "core.soundset.gilded tier 2" },
+					{
+						"core.soundset.driftwood default",
+						"core.soundset.gilded tier 2",
+						"core.soundset.rain tier 1",
+						"core.soundset.marimba tier 1",
+						"core.soundset.shipbell tier 1",
+						"core.soundset.kalimba tier 2",
+						"core.soundset.musicbox tier 2",
+						"core.soundset.glass tier 2",
+						"core.soundset.steelpan tier 2",
+						"core.soundset.dulcimer tier 2",
+						"core.soundset.frost tier 3",
+						"core.soundset.harp tier 3",
+						"core.soundset.gizmo tier 3",
+						"core.soundset.wardrums tier 4",
+					},
 				},
 				{
 					"core.crest",
@@ -86,12 +113,45 @@ describe("Core's slots and goods", function()
 				Pagle.IsOwned("core.toaststyle.ripple"),
 				Pagle.IsOwned("core.soundset.gilded"),
 			})
-			-- Only the crest slot is open to other Modules' earned goods, the Ledger's zone crests (SHOP-R23, SHOP-R25).
+			-- All three are open to other Modules' earned goods: the earned toast styles and sound sets, and the Ledger's
+			-- zone crests (SHOP-R23, SHOP-R25).
 			local open = {}
 			for _, slot in ipairs(goods:Slots()) do
 				open[#open + 1] = slot.openToEarned == true
 			end
-			assert.are.same({ false, false, true }, open)
+			assert.are.same({ true, true, true }, open)
+		end
+	)
+
+	it(
+		"take another Module's earned toast style and sound set, owned and equipped like Core's own (SHOP-R23, SHOP-R25, SHOP-R32)",
+		function()
+			local loaded = loadCore()
+			loaded.client.fire("PLAYER_LOGIN")
+			local Pagle = loaded.env.Pagle
+			local M = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local function earned(id, slot)
+				return M:RegisterGood({
+					id = id,
+					slot = slot,
+					name = id,
+					isEarned = function()
+						return true
+					end,
+					earnedText = "Land a Legend",
+				})
+			end
+
+			assert.is_nil(earned("ledger.toaststyle.legend", "core.toaststyle"))
+			assert.is_nil(earned("ledger.soundset.concertina", "core.soundset"))
+			assert.are.same({ true, true }, {
+				Pagle.SetEquipped("core.toaststyle", "ledger.toaststyle.legend"),
+				Pagle.SetEquipped("core.soundset", "ledger.soundset.concertina"),
+			})
+			assert.are.same({ "ledger.toaststyle.legend", "ledger.soundset.concertina" }, {
+				Pagle.GetEquipped("core.toaststyle"),
+				Pagle.GetEquipped("core.soundset"),
+			})
 		end
 	)
 
@@ -142,7 +202,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 6 + #FISH_CREST_SPECIES, {} }, { count, without })
+			assert.are.same({ 30 + #FISH_CREST_SPECIES, {} }, { count, without })
 		end
 	)
 end)
@@ -256,6 +316,7 @@ describe("Core's goods' names", function()
 			{ ripple.name, ripple.description }
 		)
 		assert.are.same({ "Gilded", nil }, { gilded.name, gilded.description })
+		assert.are.equal("Driftglass Bottle", Pagle.GetGood("core.toaststyle.bottle").name) -- SHOP-R25
 		assert.are.equal("core.toaststyle.lanternglow", Pagle.GetGood("core.toaststyle.lanternglow").name)
 		assert.are.equal("Leaping Trout", loaded.env.PagleDB.global.goods["core.toaststyle.ripple"].name) -- SHOP-R26
 	end)
@@ -336,7 +397,7 @@ describe("Core's goods' previews", function()
 		end
 	)
 
-	it("play a sound set's toast, its banner and the shared Legend sting from its buttons (ANN-R72)", function()
+	it("play a sound set's toast, its banner and the first Legend's sting from its buttons (ANN-R72)", function()
 		local loaded, stage = stageOf()
 		local GILDED = "Interface\\AddOns\\Pagle\\media\\sounds\\gilded\\"
 
@@ -348,7 +409,7 @@ describe("Core's goods' previews", function()
 		assert.are.same({
 			GILDED .. "toast_1.ogg SFX",
 			GILDED .. "banner.ogg SFX",
-			"Interface\\AddOns\\Pagle\\media\\sounds\\legend.ogg SFX",
+			"Interface\\AddOns\\Pagle\\media\\sounds\\legend\\19803.ogg SFX",
 		}, loaded.client.sounds)
 		assert.is_table(withText(stage, "The Legend sting is the same in every set."))
 	end)
@@ -407,6 +468,25 @@ describe("Core's goods' previews", function()
 			assert.are.same({ 60, 70 }, { crest:GetSize() })
 			assert.are.same({ 0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1 }, crest.texCoord)
 			assert.is_nil(crest.masks)
+		end
+	)
+
+	it(
+		"draw another Module's toast style as a sample toast and its sound set with the sound buttons, with each slot's preview (SHOP-R25)",
+		function()
+			local loaded, stage = stageOf()
+			local slots = loaded.ns.goods:Slots()
+			assert.are.same({ "core.toaststyle", "core.soundset" }, { slots[1].id, slots[2].id })
+			local ICON = "Interface\\Icons\\INV_Misc_Note_02"
+
+			slots[2].preview(stage, { id = "ledger.soundset.concertina", icon = ICON })
+			assert.are.same({ ICON }, texturesOn(stage))
+			assert.is_table(withText(stage, "» Toast"))
+			slots[1].preview(stage, { id = "ledger.toaststyle.legend", icon = ICON })
+			assert.are.same(
+				{ true, false },
+				{ withText(stage, "Show on screen") ~= nil, withText(stage, "» Toast") ~= nil }
+			)
 		end
 	)
 

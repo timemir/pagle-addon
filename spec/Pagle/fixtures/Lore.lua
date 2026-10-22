@@ -4,5 +4,8 @@
 local L = select(2, ...).L
 
 L["good.core.soundset.gilded.name"] = "Gilded"
+L["good.core.toaststyle.bottle.description"] =
+	"Rolled up, corked and given to the tide. It washed back with a better catch than it left with."
+L["good.core.toaststyle.bottle.name"] = "Driftglass Bottle"
 L["good.core.toaststyle.ripple.description"] = "A trout mid-leap, rings spreading under it."
 L["good.core.toaststyle.ripple.name"] = "Leaping Trout"

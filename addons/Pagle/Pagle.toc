@@ -15,6 +15,7 @@ libs\AceDB-3.0\AceDB-3.0.lua
 
 data\Catalogue.lua
 data\AnnounceArt.lua
+data\ToastStyleArt.lua
 data\ShopArt.lua
 data\GuideArt.lua
 data\FieldArt.lua

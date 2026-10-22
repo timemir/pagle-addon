@@ -7,9 +7,19 @@ end
 
 local L = select(2, ...).L
 
+L["statsgood.stats.trackerframe.abacus.description"] = "A counting frame with the beads pushed to the ends, and the sum written plainly between them."
+L["statsgood.stats.trackerframe.abacus.name"] = "Abacus"
+L["statsgood.stats.trackerframe.astrolabe.description"] = "A star map in deep blue under brass rings, for an angler who reckons the odds by the sky."
+L["statsgood.stats.trackerframe.astrolabe.name"] = "Astrolabe"
 L["statsgood.stats.trackerframe.brass.description"] = "A thin brass rim, riveted at each corner like a ship's compass. It keeps its shine in any weather."
 L["statsgood.stats.trackerframe.brass.name"] = "Ship's Brass"
+L["statsgood.stats.trackerframe.chalkboard.description"] = "A green schoolroom board in a pine frame, with somebody’s tally marks still in the corner."
+L["statsgood.stats.trackerframe.chalkboard.name"] = "Chalkboard"
+L["statsgood.stats.trackerframe.greenbar.description"] = "Tally paper banded in pale green, so a long column of numbers never loses its place."
+L["statsgood.stats.trackerframe.greenbar.name"] = "Green-Bar Paper"
 L["statsgood.stats.trackerframe.logbook.description"] = "Parchment ruled in faint columns, like a harbourmaster's log. Every figure keeps to its line."
 L["statsgood.stats.trackerframe.logbook.name"] = "Logbook"
 L["statsgood.stats.trackerframe.none.description"] = "The figures on their own, with no border. Nothing to polish, and nothing to get wet."
 L["statsgood.stats.trackerframe.none.name"] = "No Frame"
+L["statsgood.stats.trackerframe.tidegauge.description"] = "Sea-blue glass behind a brass tide staff, marked off so the numbers rise and fall like water."
+L["statsgood.stats.trackerframe.tidegauge.name"] = "Tide Gauge"

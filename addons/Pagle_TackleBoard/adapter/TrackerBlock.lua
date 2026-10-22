@@ -6,13 +6,15 @@ end
 local ns = select(2, ...)
 
 -- The tracker block maker (TKB-R122, TKB-R124, CORE-R73; tackle-board.md › UI, the tracker): the Tackle Board's block in
--- Core's dock, drawn from a list of line descriptions in one of its three frames, as the board art kit draws them
+-- Core's dock, drawn from a list of line descriptions in one of its frames. Three are the board art kit's
 -- (PagleArtBoard's Tracker.lua): No frame (the default, native look: each line on a fading shade), Corkboard (a cork
 -- panel in a brass rim, each goal a paper slip on a tack) and Tideworn Plank (a grey plank, its lines ruled apart).
--- The frames are sliced in three down, so they fit any number of lines. The Curio Shop's previews draw a sample with it
--- (TKB-R125, adapter/Goods.lua); the live tracker (adapter/Tracker.lua) fills it with live lines, gives its rows
--- clicks and docks it. The header's flame and chevron and a slip's tack come from the small Marks atlas, so the tracker
--- loads the frames' atlas (Tracker) only with a Corkboard or Tideworn Plank.
+-- Five are the Curio Shop expansion kit's (TKB-R125): Fishing Net, Bamboo Slats, Tackle Tin, Bobber and Live Embers,
+-- each a panel of its TrackerFrames2 atlas with its words in the kit's inks. The frames are sliced in three down, so
+-- they fit any number of lines. The Curio Shop's previews draw a sample with it (TKB-R125, adapter/Goods.lua); the
+-- live tracker (adapter/Tracker.lua) fills it with live lines, gives its rows clicks and docks it. The header's flame
+-- and chevron and a slip's tack come from the small Marks atlas, so the tracker loads a frames' atlas (Tracker,
+-- TrackerFrames2) only with a frame from it.
 
 --- The tracker's width in UI units, its words' width, so the dock's blocks line up (CORE-R70). A frame reaches out
 --- round it.
@@ -23,7 +25,9 @@ ns.TRACKER_WIDTH = 250
 --- its fonts, where the first goal line starts, each goal line's height, where its text and where line sit in it, the
 --- room under the last line, and its fonts and the green of " · here".
 ---@class TackleTrackerStyle
----@field frame string?        -- its sprite in the Tracker atlas; nil: no frame
+---@field frame string?        -- its sprite in its atlas; nil: no frame
+---@field atlas string?        -- that atlas: the board kit's Tracker when nil
+---@field slice TackleFrameSlice? -- a Curio Shop expansion frame's slice (logic/TrackerFrames.lua); nil: the board kit's
 ---@field left number          -- how far the frame reaches left of the words
 ---@field right number         -- and right of them
 ---@field header number        -- the header's top
@@ -47,6 +51,61 @@ ns.TRACKER_WIDTH = 250
 ---@field shade boolean?       -- each line on a fading shade (No frame)
 ---@field slips boolean?       -- each goal on a paper slip with a tack (Corkboard)
 ---@field rules boolean?       -- a faint rule between lines (Tideworn Plank)
+
+--- The Curio Shop expansion kit's tracker frames atlas (TKB-R125), from its goods.json (`art.rect`), for its BLP
+--- texture media/board/TrackerFrames2.blp (2048 × 1024, DXT5, with mipmaps), in the shape of the board's atlases
+--- (data/BoardArt.lua, which the board art kit regenerates): texels, the drawn element's box in UI units, 2 texels per
+--- UI unit. Each frame's element is 262 × 200 UI units, the kit's size, which the block slices to its own.
+ns.BOARD_ATLASES.TrackerFrames2 = {
+	file = "Interface\\AddOns\\Pagle_TackleBoard\\media\\board\\TrackerFrames2",
+	width = 2048,
+	height = 1024,
+	scale = 2,
+	sprites = {
+		["frame-net"] = { x = 2, y = 2, w = 556, h = 440, box = { 8, 6, 262, 200 } },
+		["frame-bamboo"] = { x = 2, y = 446, w = 556, h = 440, box = { 8, 6, 262, 200 } },
+		["frame-tin"] = { x = 562, y = 2, w = 556, h = 440, box = { 8, 6, 262, 200 } },
+		["frame-bobber"] = { x = 562, y = 446, w = 556, h = 440, box = { 8, 6, 262, 200 } },
+		["frame-embers"] = { x = 1122, y = 2, w = 556, h = 440, box = { 8, 6, 262, 200 } },
+	},
+}
+
+--- One of the Curio Shop expansion's frames (TKB-R125), from the kit's goods.json: its sprite in TrackerFrames2; its
+--- insets, how far its words sit in from its edges (`left`, `right`, the header's words `top` down, the room `foot`
+--- under the last line); its slice; and its accent ink ("RRGGBB") for " · here" and "Complete". Its words are in the
+--- board's fonts Kit<Key>Title … Kit<Key>More (adapter/BoardArt.lua's ns.BOARD_FONTS), which carry its other inks.
+---@param key string the style's key, its fonts' prefix
+---@param kit { sprite: string, insets: { left: number, right: number, top: number, foot: number }, slice: TackleFrameSlice, accent: string }
+---@return TackleTrackerStyle
+local function kitStyle(key, kit)
+	local prefix = "Kit" .. key:sub(1, 1):upper() .. key:sub(2)
+	-- The header's words sit 4 below the header's top, as No frame's do (layOut); the first goal line 22 under them.
+	local header = kit.insets.top - 4
+	return {
+		atlas = "TrackerFrames2",
+		frame = kit.sprite,
+		slice = kit.slice,
+		left = kit.insets.left,
+		right = kit.insets.right,
+		header = header,
+		title = prefix .. "Title",
+		headRight = prefix .. "HeadRight",
+		top = header + 26,
+		step = 41,
+		textY = 3,
+		whereY = 17,
+		whereX = 10,
+		goal = prefix .. "Goal",
+		count = prefix .. "Count",
+		where = prefix .. "Where",
+		more = prefix .. "More",
+		moreX = 0,
+		moreY = 4,
+		pad = kit.insets.foot,
+		here = kit.accent,
+		complete = kit.accent,
+	}
+end
 
 ---@type table<string, TackleTrackerStyle>
 ns.TRACKER_STYLES = {
@@ -119,6 +178,39 @@ ns.TRACKER_STYLES = {
 		complete = "9CF09C",
 		rules = true,
 	},
+	-- The Curio Shop expansion's (TKB-R125), from the kit's goods.json.
+	net = kitStyle("net", {
+		sprite = "frame-net",
+		insets = { left = 16, right = 16, top = 18, foot = 14 },
+		slice = { top = 24, foot = 12, mode = "stretch" },
+		accent = "8AE08A",
+	}),
+	bamboo = kitStyle("bamboo", {
+		sprite = "frame-bamboo",
+		insets = { left = 24, right = 24, top = 14, foot = 14 },
+		slice = { top = 10, foot = 10, mode = "tile", period = 34 },
+		accent = "8A2A0A",
+	}),
+	tin = kitStyle("tin", {
+		sprite = "frame-tin",
+		insets = { left = 16, right = 16, top = 16, foot = 30 },
+		slice = { top = 20, foot = 44, mode = "stretch" },
+		accent = "F0E080",
+	}),
+	bobber = kitStyle("bobber", {
+		sprite = "frame-bobber",
+		-- goods.json's top inset is 10, its padding under the bobber's red band, 14 deep: the words start under both,
+		-- as its board draws them
+		insets = { left = 16, right = 50, top = 24, foot = 14 },
+		slice = { top = 44, foot = 14, mode = "stretch" },
+		accent = "C8281A",
+	}),
+	embers = kitStyle("embers", {
+		sprite = "frame-embers",
+		insets = { left = 16, right = 16, top = 14, foot = 22 },
+		slice = { top = 16, foot = 30, mode = "stretch" },
+		accent = "FF9A40",
+	}),
 }
 
 --- One line of the tracker, top to bottom (TKB-R122):
@@ -364,7 +456,12 @@ function ns.NewTrackerBlock(parent)
 				block.frame:SetFrameLevel(block:GetFrameLevel())
 			end
 			local frame = block.frame --[[@as TackleVSlice]]
-			ns.SetVSlice(frame, "Tracker", style.frame, ns.TRACKER_WIDTH + style.left + style.right, height, 30, 20)
+			local width = ns.TRACKER_WIDTH + style.left + style.right
+			if style.slice then
+				ns.SetKitSlice(frame, style.atlas or "Tracker", style.frame, style.slice, width, height)
+			else
+				ns.SetVSlice(frame, style.atlas or "Tracker", style.frame, width, height, 30, 20)
+			end
 			frame:ClearAllPoints()
 			frame:SetPoint("TOPLEFT", -style.left, 0)
 			frame:Show()

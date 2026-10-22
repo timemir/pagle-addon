@@ -126,7 +126,7 @@ describe("ns.NewGoods", function()
 				},
 			},
 			{ "neither default, for sale nor earned", "Hunts", { good = cover({ tier = false }) } },
-			{ "tier 4", "Hunts", { good = cover({ tier = 4 }) } },
+			{ "tier 6", "Hunts", { good = cover({ tier = 6 }) } },
 			{ "an isEarned that isn't a function", "Hunts", { good = cover({ tier = false, isEarned = true }) } },
 			{ "a good without a name", "Hunts", { good = cover({ name = "" }) } },
 			{ "a preview that isn't a function", "Hunts", { good = cover({ preview = "stage" }) } },
@@ -315,6 +315,29 @@ describe("ns.NewGoods", function()
 			assert.are.same({ "hunts.cover.plain", "hunts.cover.velvet", "hunts.cover.gold" }, covers)
 		end)
 	end)
+
+	it(
+		"prices tiers 1 to 5 at 150, 400, 900, 2,000 and 5,000 Coins, and registers a tier 4 and a tier 5 good (SHOP-R22, Tunables)",
+		function()
+			local env = newGoods()
+			env.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Cover", category = "Hunts" })
+			env.goods:RegisterGood(
+				"Hunts",
+				{ id = "hunts.cover.calf", slot = "hunts.cover", name = "Calf", default = true }
+			)
+			env.goods:RegisterGood(
+				"Hunts",
+				{ id = "hunts.cover.scrim", slot = "hunts.cover", name = "Scrim", tier = 4 }
+			)
+			env.goods:RegisterGood(
+				"Hunts",
+				{ id = "hunts.cover.trophy", slot = "hunts.cover", name = "Trophy", tier = 5 }
+			)
+
+			assert.are.same({ 150, 400, 900, 2000, 5000 }, ns.TIER_PRICES)
+			assert.are.same({}, env.reported)
+		end
+	)
 
 	describe("owning", function()
 		it("lists a slot's owned goods, and which of its goods are still for sale (SHOP-R22, SHOP-R30)", function()
@@ -831,8 +854,8 @@ describe("ns.NewGoods", function()
 	end)
 
 	describe("a Core slot open to earned goods", function()
-		-- Core's crest slot, open to earned goods, with Plain its default (SHOP-R23, SHOP-R25), and Core's toast style
-		-- slot, which isn't open.
+		-- Core's crest slot, open to earned goods, with Plain its default (SHOP-R23, SHOP-R25), and a Core slot that
+		-- isn't open.
 		local function coreSlots(env)
 			assert.is_nil(
 				env.goods:RegisterSlot(
@@ -847,10 +870,7 @@ describe("ns.NewGoods", function()
 				)
 			)
 			assert.is_nil(
-				env.goods:RegisterSlot(
-					"Core",
-					{ id = "core.toaststyle", label = "Toast style", category = "Announcements" }
-				)
+				env.goods:RegisterSlot("Core", { id = "core.closed", label = "Closed", category = "Announcements" })
 			)
 		end
 
@@ -918,7 +938,7 @@ describe("ns.NewGoods", function()
 			{
 				"an earned good in a Core slot not open",
 				"Ledger",
-				crest({ value = true }, { slot = "core.toaststyle" }),
+				crest({ value = true }, { slot = "core.closed" }),
 			},
 			{
 				"an earned good without its Module's prefix",
@@ -959,11 +979,53 @@ describe("ns.NewGoods", function()
 				assert.is_nil(env.db.global.goods[case[3].id])
 				assert.are.same({ 1, 0, 0 }, {
 					#env.goods:GoodsOf("core.crest"),
-					#env.goods:GoodsOf("core.toaststyle"),
+					#env.goods:GoodsOf("core.closed"),
 					#env.goods:GoodsOf("ledger.open"),
 				})
 			end)
 		end
+
+		it(
+			"puts a Module's earned sound set in Core's slot away with its Module off, the slot falling back to its"
+				.. " default, and brings it back with it (SHOP-R23, SHOP-R32, SHOP-R35)",
+			function()
+				local env = newGoods()
+				local goods = env.goods
+				assert.is_nil(goods:RegisterSlot("Core", {
+					id = "core.soundset",
+					label = "Sound set",
+					category = "Announcements",
+					openToEarned = true,
+				}))
+				assert.is_nil(
+					goods:RegisterGood(
+						"Core",
+						{ id = "core.soundset.driftwood", slot = "core.soundset", name = "Driftwood", default = true }
+					)
+				)
+				assert.is_nil(goods:RegisterGood("Hunts", {
+					id = "hunts.soundset.nightwatch",
+					slot = "core.soundset",
+					name = "Night Watch",
+					isEarned = function()
+						return true
+					end,
+					earnedText = "Finish every Hunt set",
+				}))
+				assert.is_true(goods:SetEquipped("core.soundset", "hunts.soundset.nightwatch"))
+
+				env.on.Hunts = nil
+				local off = { goods:GetEquipped("core.soundset"), goods:IsOwned("hunts.soundset.nightwatch") }
+				env.on.Hunts = 20
+
+				assert.are.same({ "core.soundset.driftwood", true }, off)
+				assert.are.same({ "hunts.soundset.nightwatch", "hunts.soundset.nightwatch" }, {
+					goods:GetEquipped("core.soundset"),
+					env.db.profile.appearance["core.soundset"],
+				})
+				assert.are.equal(ns.SOUND_SETS["core.soundset.driftwood"], ns.SoundSetOf(off[1]))
+			end
+		)
 
 		it("says the slot is Core's when it refuses a Module's good for sale there (SHOP-R23)", function()
 			local env = newGoods()

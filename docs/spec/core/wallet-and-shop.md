@@ -29,23 +29,24 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 
 ### Goods
 
-- **SHOP-R20** A **good** is a look for one of Pagle's own views, in one **slot**. Goods never carry meaning: titles, Fly Box flies, stars, Legends, Prestige and set emblems are never goods.
+- **SHOP-R20** A **good** is a look for one of Pagle's own views, in one **slot**. Goods never carry meaning: titles, Fly Box flies, stars, Legends, Prestige and set emblems are never goods. Words drawn into a good's art ("WANTED" on Bounty Poster, "No.7" on Canvas Field Pad, "FLIES · HOOKS" on Tackle Tin, "the Long Haul" on Scrimshaw Panel, "NO.0042 · PAID" on Goblin Ticker, the I–V on Five-Set Seal) are decoration, part of the texture, not strings: they are outside CORE-R8, never in `ns.L`, and stay English in every locale.
 - **SHOP-R21** Modules register their own slots and goods with `M:RegisterSlot` and `M:RegisterGood`, at any time after `RegisterModule`; Core registers its own. Slot and good IDs are `<def.name lowercased>.<name>` (`core.` for Core's), match `[%w_.]+`, and never change once shipped.
 - **SHOP-R22** Every good is exactly one of:
   - **default**: free and owned by everyone; each slot has exactly one
-  - **for sale**: price tier 1, 2 or 3 (150, 400 or 900 Coins)
+  - **for sale**: price tier 1 to 5 (150, 400, 900, 2,000 or 5,000 Coins)
   - **earned**: never for sale; owned when its Module says so (`isEarned()`), with an `earnedText` saying how: a string ("Angler Level 30"), or a function the shop calls each time it draws the good while it isn't owned, returning the row's tag and, optionally, the stage's note ("Expert · 88%", "Earned when … Next: …"). An earned good may also have `progress()`, which the shop calls each time it draws the good on the stage while it isn't owned: a list of dots `{ color = { r, g, b }, filled = boolean }`, drawn on the stage (UI). Neither function's result is ever cached, and Core never calls either to decide ownership (SHOP-R30); one that raises is reported and its texts or dots are left out, and so is a dot without a colour of three numbers.
-- **SHOP-R23** Registration raises a Lua error and ignores the call for: a duplicate ID, an ID without the Module's prefix, an unknown slot, a slot registered by a different Module (or by Core, for a Module, except an earned good in a Core slot registered with `openToEarned = true`: only `core.crest`, SHOP-R25), a second default in a slot, a good with more than one of `default` / `tier` / `isEarned`, or none of them, a `progress` on a good that isn't earned, a slot's `groups` that aren't a list of `{ key, name }` with distinct keys matching `[%w_]+` and non-empty names, and a good's `group` that isn't one of its slot's keys (SHOP-R27). At `ModulesChanged`, a slot with no default is reported through `geterrorhandler()`, and its first registered good acts as the default. Only `default = true` marks a default; `default` is `true` or `false`, and anything else is a mistake.
+- **SHOP-R23** Registration raises a Lua error and ignores the call for: a duplicate ID, an ID without the Module's prefix, an unknown slot, a slot registered by a different Module (or by Core, for a Module, except an earned good in a Core slot registered with `openToEarned = true`: `core.toaststyle`, `core.soundset` and `core.crest`, SHOP-R25), a second default in a slot, a good with more than one of `default` / `tier` / `isEarned`, or none of them, a `progress` on a good that isn't earned, a slot's `groups` that aren't a list of `{ key, name }` with distinct keys matching `[%w_]+` and non-empty names, and a good's `group` that isn't one of its slot's keys (SHOP-R27). At `ModulesChanged`, a slot with no default is reported through `geterrorhandler()`, and its first registered good acts as the default. Only `default = true` marks a default; `default` is `true` or `false`, and anything else is a mistake.
 - **SHOP-R24** Stock never rotates and nothing is limited-time: every good registered is always in the shop.
 - **SHOP-R25** Core's own slots and goods, at M4 (tiers are tunable):
 
   | Slot | Goods |
   |---|---|
-  | Toast style (`core.toaststyle`) | `core.toaststyle.page` (default), `core.toaststyle.ripple` (tier 1), `core.toaststyle.lanternglow` (tier 2) |
-  | Sound set (`core.soundset`) | `core.soundset.driftwood` (default), `core.soundset.gilded` (tier 2) |
+  | Toast style (`core.toaststyle`, `openToEarned`) | `core.toaststyle.page` (default), `core.toaststyle.ripple` (tier 1), `core.toaststyle.lanternglow` (tier 2); the Curio Shop expansion's: tier 1 `core.toaststyle.ship`, `core.toaststyle.birch`, `core.toaststyle.tidepool`; tier 2 `core.toaststyle.chart`, `core.toaststyle.frost`, `core.toaststyle.goblin`; tier 3 `core.toaststyle.kelp`, `core.toaststyle.moon`, `core.toaststyle.leaf`, `core.toaststyle.bottle`; tier 4 `core.toaststyle.rune`; tier 5 `core.toaststyle.folio`. Earned, registered by their Modules: `ledger.toaststyle.legend`, `ledger.toaststyle.prestige` (LED-R117), `tackleboard.toaststyle.ember` (TKB-R126) |
+  | Sound set (`core.soundset`, `openToEarned`) | `core.soundset.driftwood` (default), `core.soundset.gilded` (tier 2); the Curio Shop expansion's: tier 1 `core.soundset.rain`, `core.soundset.marimba`, `core.soundset.shipbell`; tier 2 `core.soundset.kalimba`, `core.soundset.musicbox`, `core.soundset.glass`, `core.soundset.steelpan`, `core.soundset.dulcimer`; tier 3 `core.soundset.frost`, `core.soundset.harp`, `core.soundset.gizmo`; tier 4 `core.soundset.wardrums`. Earned, registered by their Modules: `ledger.soundset.concertina`, `ledger.soundset.choir` (LED-R117), `hunts.soundset.nightwatch` (HNT-R123) |
   | Bookplate crest (`core.crest`, `openToEarned`) | `core.crest.plain` (default), then Core's 37 fish crests, `core.crest.fish.<speciesID>` (earned, by Species ID, [varieties.md](varieties.md) VAR-R12). The zone crests in it are the Ledger's earned goods, `ledger.crest.<key>` (LED-R113); no crest is for sale |
 
   Every good's name and description is lore, read from `data/lore/core.toml` through `ns.L`; the working names (Timber, Ripple, Lantern Glow, Driftwood, Gilded, Plain) were its first drafts, and the 1.0 sign-off ([#264](https://github.com/timemir/wow-fish/issues/264)) renamed Timber to Torn Page and its ID from `core.toaststyle.timber` to `core.toaststyle.page`.
+  Core registers its toast styles and sound sets in the table's order, which is the shop's (SHOP-R21); neither slot has groups (SHOP-R27), so the Modules' earned goods list after Core's, as they register. An earned toast style or sound set a Module registers is drawn and played by Core like Core's own (ANN-R70, ANN-R80, ANN-R81): Core ships its art and sounds, keyed by the good's ID, and the slot's `preview` draws it on the stage (a sample toast, or ▶ Toast / ▶ Banner / ▶ Legend); the Module decides only when it is earned, with `isEarned()` and a string `earnedText` (SHOP-R22), and has no `progress` or `group`. Its name and description are the Module's lore. With its Module off it is put away (SHOP-R35) and the slot falls back to its default (SHOP-R32).
   The crest is the Angler's emblem; the Ledger draws it on the Journal bookplate. Its slot is shown whatever Modules are enabled. It has two groups (SHOP-R27), "Zone crests" (`zone`) then "Fish crests" (`fish`), for the zone crests and the fish crests to name; a crest naming neither, Plain among them, lists first.
   Each crest but Plain is a zone's, earned when that zone reaches Master in the Fish Journal (LED-R113, LED-R114), or a fish's, earned when all ten of its varieties are caught (VAR-R12): a zone's a gilt-and-enamel heater shield with a landmark of that zone over the same barry-wavy water at its foot, a fish's the fish on its water with a silver rim and ten gilt stars, original art (no faction or game crest). Its icon is its owner's texture (the Ledger's, `Interface\AddOns\Pagle_Ledger\media\crests\{key}`; Plain's and the fish crests' are Core's, `Interface\AddOns\Pagle\media\crests\plain` and `…\crests\fish\{speciesID}`), each 256 × 256, the shield 120:140 at its full height, centred, transparent around it, and every good in the slot is drawn as the shield wherever a crest's icon shows: the shop's row and bill (in place of the medallion, UI), the stage's bookplate (the slot's `preview`, which draws any crest in it that has no preview of its own, the Ledger's included) and the Journal bookplate (LED-R146); Core's slot dropdown lists crests by name only (SET-R51). Plain's icon is the same shield as a dashed gilt outline, for the shop; the Journal draws nothing for Plain (LED-R112).
 - **SHOP-R26** Core caches every registered good in `PagleDB.global.goods`: name, slot, slot label and category, Module, icon, `default`, tier, description and, for earned goods, the `isEarned()` result as of the last registration or `RefreshGoods` (SHOP-R31). The cache is never pruned for a good that is owned.
@@ -94,7 +95,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 ---@field description? string
 ---@field icon? integer|string
 ---@field default? boolean        -- SHOP-R22
----@field tier? 1|2|3             -- for sale
+---@field tier? 1|2|3|4|5         -- for sale
 ---@field isEarned? fun(): boolean -- earned
 ---@field earnedText? string|fun(): string?, string? -- earned: "Angler Level 30", or the row's tag and the stage's note
 ---@field progress? fun(): { color: number[], filled: boolean }[] -- earned: the stage's dots while not owned (SHOP-R22)
@@ -132,7 +133,7 @@ What each Module pays and registers, as designed so far (each Module's spec is a
 | Hunts: a Standing Hunt completed / each further tier / set finished | 30 / 15 / 100 |
 | Hunts: a Hunt Event Hunt's tier 1 / each later tier / a completed run (paid again in every run) | 15 / 10 / 50 |
 
-Goods by Module: Ledger registers extra Journal bindings (for sale), the six level bindings (earned) and the fifty-three zone crests (earned, in Core's crest slot); Hunts registers notebook covers; Hunts, Stats and the Tackle Board each register frames for their own tracker.
+Goods by Module: Ledger registers Journal bindings (eighteen for sale; the six level bindings and five more earned, the Iridescent Scale with the `complete.varieties` title, LED-R110, LED-R116), the fifty-three zone crests (earned, in Core's crest slot) and two toast styles and two sound sets (earned, in Core's slots, LED-R117); Hunts registers notebook covers (three earned), frames for its tracker (one earned) and a sound set (earned, in Core's slot, HNT-R122, HNT-R123); Stats registers frames for its tracker; the Tackle Board registers frames for its tracker (one earned) and a toast style (earned, in Core's slot, TKB-R126).
 
 ## UI
 
@@ -147,7 +148,7 @@ One window, "Curio Shop" (the layout of the prototype's variant B), drawn with t
   - owned: "Owned" on the row; "OWNED" and a **Use** button on the stage
   - equipped: "IN USE" after a wax dot on the row, and on the stage
   - default: "default"
-  - earned and not yet earned: its `earnedText` on the row (a function's first text); on the stage, a function's second text, or the string, then "a Ledger reward, not for sale"
+  - earned and not yet earned: its `earnedText` on the row (a function's first text); on the stage, a function's second text, or the string, then "a {Module} reward, not for sale" ("a Ledger reward, not for sale")
 - **Buy:** a bill of sale over the case, which dims: a sheet of paper with a torn top, "CURIO SHOP", "Buy {name}?" in handwriting, the good's medallion, a dashed rule, "Price" with the price and a coin, "Pagle Coins left after" with N, "Looks are yours for good.", a hand-ticked **"Use it now"** checkbox (on by default), and Buy / Cancel. Esc is Cancel there and leaves the shop open; any other key goes on to the game. No Announcement follows.
 
 ### Motion and sound
@@ -173,9 +174,9 @@ The Look and Feel page holds one option per slot (equipped good; default: the sl
 
 | Name | Value | Rules |
 |---|---|---|
-| Price tiers | 150 / 400 / 900 | SHOP-R22 |
+| Price tiers | 150 / 400 / 900 / 2,000 / 5,000 | SHOP-R22 |
 | Core goods' tiers | as SHOP-R25 | SHOP-R25 |
-| Pacing target | first purchase in week 1; whole 1.0 catalogue in 6–12 months | SHOP-R22 |
+| Pacing target | first purchase in week 1; the base catalogue (tiers 1–3) in 6–12 months for a daily player; tiers 4–5 a long-term chase, 18 months or more | SHOP-R22 |
 | Income mix target (committed Angler, first 3 months) | Tackle Board ~55% / Ledger ~35% / Hunts ~10% | payout table |
 
 ## Edge cases

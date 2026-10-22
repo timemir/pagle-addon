@@ -40,6 +40,92 @@ description = "A sheet of paper written in blue ink, the wash run a little, like
 name = "Wax Seal"
 description = "Parchment with a red rule down its margin and a wax seal pressed in the corner, as if the list were official."
 
+# The Curio Shop expansion's covers, tracker frames and sound set (HNT-R121–R123).
+
+[huntgood."hunts.soundset.nightwatch"] # core.soundset, earned: Finish every Hunt set
+name = "Night Watch"
+description = "A low bell for the night watch, a lantern humming and an owl who has seen every catch you ever made."
+
+[huntgood."hunts.notebookcover.canvas"] # hunts.notebookcover, tier 1
+name = "Canvas Field Pad"
+description = "Plain khaki canvas, stencilled with a number nobody remembers assigning. Fits a coat pocket, just."
+
+[huntgood."hunts.notebookcover.kraft"] # hunts.notebookcover, tier 1
+name = "Waxed Kraft"
+description = "Brown paper rubbed with beeswax until it shrugs off rain. Tied with twine, because buttons fall off."
+
+[huntgood."hunts.notebookcover.tartan"] # hunts.notebookcover, tier 1
+name = "Tartan Wool"
+description = "Thick green-and-navy wool with a red line through it. Warm hands, damp pages, no regrets."
+
+[huntgood."hunts.notebookcover.maplinen"] # hunts.notebookcover, tier 2
+name = "Map Linen"
+description = "A hand-drawn map on linen, the trail dotted in red and an X where somebody swears the big one lives."
+
+[huntgood."hunts.notebookcover.planks"] # hunts.notebookcover, tier 2
+name = "Bound Planks"
+description = "Thin planks strapped together with leather and brass buckles. Doubles as a cutting board in a pinch."
+
+[huntgood."hunts.notebookcover.snakeskin"] # hunts.notebookcover, tier 3
+name = "Snakeskin"
+description = "A long swamp snake’s skin, still patterned with the diamonds it hunted by. Cool to the touch, always."
+
+[huntgood."hunts.notebookcover.shagreen"] # hunts.notebookcover, tier 3
+name = "Stingray Shagreen"
+description = "Ray skin, pebbled like frost, with the pale star at its centre the old makers always kept."
+
+[huntgood."hunts.notebookcover.lacquer"] # hunts.notebookcover, tier 3
+name = "Lacquered Red"
+description = "Layer upon layer of red lacquer, polished until it holds a reflection, with a gilt carp swimming in it."
+
+[huntgood."hunts.notebookcover.bone"] # hunts.notebookcover, tier 3
+name = "Bone & Rawhide"
+description = "Rawhide stretched taut over a frame and shut with two carved bone toggles. Creaks in the cold."
+
+[huntgood."hunts.notebookcover.brasscase"] # hunts.notebookcover, tier 3
+name = "Brass Hunter's Case"
+description = "A brass case engraved with a leaping fish over the reeds, with a latch that clicks like it means it."
+
+[huntgood."hunts.notebookcover.scrimshaw"] # hunts.notebookcover, tier 4
+name = "Scrimshaw Panel"
+description = "An old ivory panel scratched with a ship and a fish by some sailor with a long voyage and a sharp knife."
+
+[huntgood."hunts.notebookcover.trophycase"] # hunts.notebookcover, tier 5
+name = "Gilded Trophy Case"
+description = "A dark wood case with a glass front, and behind the glass a fish cast in gold. Opens like a cabinet."
+
+[huntgood."hunts.notebookcover.pathfinder"] # hunts.notebookcover, earned: Finish a Hunt set
+name = "Pathfinder's Calf"
+description = "Soft calfskin pressed with a compass rose. Handed to anglers who saw a whole set of hunts through to the end."
+
+[huntgood."hunts.notebookcover.fiveseal"] # hunts.notebookcover, earned: Finish every Hunt set
+name = "Five-Set Seal"
+description = "Black leather with five wax seals pressed into it, one for every set of hunts there is. Nobody fakes this one."
+
+[huntgood."hunts.notebookcover.wagersilk"] # hunts.notebookcover, earned: 10 Wager runs completed
+name = "Winner's Brocade"
+description = "Purple silk brocade woven with coins and fish, a red sash across it. Given to anglers who keep winning the house’s bets."
+
+[huntgood."hunts.trackerframe.slate"] # hunts.trackerframe, tier 1
+name = "Chalk Slate"
+description = "A slate in a rope-bound frame, chalked fresh each morning and smudged by noon."
+
+[huntgood."hunts.trackerframe.mapscrap"] # hunts.trackerframe, tier 1
+name = "Map Scrap"
+description = "A corner torn off a hunting map: a dotted trail, a compass, and somebody’s coffee ring."
+
+[huntgood."hunts.trackerframe.bounty"] # hunts.trackerframe, tier 2
+name = "Bounty Poster"
+description = "Nailed up at the dock house, edges curling. The fish on it has a price, and the price is going up."
+
+[huntgood."hunts.trackerframe.spyglass"] # hunts.trackerframe, tier 3
+name = "Spyglass Rim"
+description = "Navy enamel between two brass rails, the eyepiece at the corner turned toward the next hunt."
+
+[huntgood."hunts.trackerframe.wagerribbon"] # hunts.trackerframe, earned: 10 Wager runs completed
+name = "Winner's Ribbon"
+description = "A purple silk ribbon with a gold fringe, for anglers who keep beating the house at its own wagers."
+
 # The completed-run ladder (HNT-R148): a title at 25, 50 and 100 completed runs, listed in manifest.toml under
 # [hunts.ladder]. 25 is the spec's own; 50 and 100 are the event pool's lore batch (#307). Each is a bare epithet the
 # Angler signs with, like the set titles, and each is more of the same bet won.

@@ -46,19 +46,98 @@ local function crestHeading(owned, others)
 	return ("Bookplate crest (%d of %d)"):format(owned, 1 + (others or 0) + #FISH_CREST_SPECIES)
 end
 
+-- The Curio Shop expansion's toast styles and sound sets (SHOP-R25), each slot's in its order, with their tiers.
+local EXPANSION = {
+	toaststyle = {
+		{ "ship", 1 },
+		{ "birch", 1 },
+		{ "tidepool", 1 },
+		{ "chart", 2 },
+		{ "frost", 2 },
+		{ "goblin", 2 },
+		{ "kelp", 3 },
+		{ "moon", 3 },
+		{ "leaf", 3 },
+		{ "bottle", 3 },
+		{ "rune", 4 },
+		{ "folio", 5 },
+	},
+	soundset = {
+		{ "rain", 1 },
+		{ "marimba", 1 },
+		{ "shipbell", 1 },
+		{ "kalimba", 2 },
+		{ "musicbox", 2 },
+		{ "glass", 2 },
+		{ "steelpan", 2 },
+		{ "dulcimer", 2 },
+		{ "frost", 3 },
+		{ "harp", 3 },
+		{ "gizmo", 3 },
+		{ "wardrums", 4 },
+	},
+}
+-- Each tier's price (SHOP-R22), as the list prints it.
+local PRICES = { "150", "400", "900", "2,000", "5,000" }
+local PRICE_VALUES = { 150, 400, 900, 2000, 5000 }
+
+-- The expansion's goods of Core's slot `slot` ("toaststyle" or "soundset") as the list outlines them, none bought,
+-- with a balance of `balance`: each priced, in red where the balance falls short.
+---@param slot string
+---@param balance integer
+---@return string[]
+local function expansionLines(slot, balance)
+	local lines = {}
+	for _, good in ipairs(EXPANSION[slot]) do
+		local tier = good[2]
+		lines[#lines + 1] = ("  core.%s.%s %s%s"):format(
+			slot,
+			good[1],
+			PRICES[tier],
+			PRICE_VALUES[tier] > balance and " [red]" or ""
+		)
+	end
+	return lines
+end
+
+-- The expansion's goods of Core's slot `slot` the balance `balance` covers, by ID, in the list's order.
+---@param slot string
+---@param balance integer
+---@return string[]
+local function expansionAffordable(slot, balance)
+	local ids = {}
+	for _, good in ipairs(EXPANSION[slot]) do
+		if PRICE_VALUES[good[2]] <= balance then
+			ids[#ids + 1] = ("core.%s.%s"):format(slot, good[1])
+		end
+	end
+	return ids
+end
+
 -- Core's own slots (SHOP-R25) as the list outlines them while nothing of Core's is bought and the balance is under
 -- 150: each default in use, everything else priced in red.
-local CORE_UNBOUGHT = joined({
-	"Toast style (1 of 3)",
-	"  core.toaststyle.page In use",
-	"  core.toaststyle.ripple 150" .. " [red]",
-	"  core.toaststyle.lanternglow 400" .. " [red]",
-	"Sound set (1 of 2)",
-	"  core.soundset.driftwood In use",
-	"  core.soundset.gilded 400" .. " [red]",
-	crestHeading(1),
-	"  core.crest.plain In use",
-}, fishCrestLines())
+local CORE_UNBOUGHT = joined(
+	joined(
+		joined(
+			joined({
+				"Toast style (1 of 15)",
+				"  core.toaststyle.page In use",
+				"  core.toaststyle.ripple 150" .. " [red]",
+				"  core.toaststyle.lanternglow 400" .. " [red]",
+			}, expansionLines("toaststyle", 0)),
+			{
+				"Sound set (1 of 14)",
+				"  core.soundset.driftwood In use",
+				"  core.soundset.gilded 400" .. " [red]",
+			}
+		),
+		expansionLines("soundset", 0)
+	),
+	joined({
+		crestHeading(1),
+		"  core.crest.plain In use",
+	}, fishCrestLines())
+)
 
 -- CORE_UNBOUGHT, then `lines`.
 local function afterCore(lines)
@@ -281,17 +360,22 @@ describe("The Curio Shop's list", function()
 
 			assert.are.same(
 				joined(
-					joined({
-						"Toast style (2 of 3)",
-						"  core.toaststyle.page default",
-						"  core.toaststyle.ripple In use",
-						"  core.toaststyle.lanternglow 400" .. " [red]",
-						"Sound set (1 of 2)",
-						"  core.soundset.driftwood In use",
-						"  core.soundset.gilded 400" .. " [red]",
-						crestHeading(1),
-						"  core.crest.plain In use",
-					}, fishCrestLines()),
+					joined(
+						joined(
+							joined({
+								"Toast style (2 of 15)",
+								"  core.toaststyle.page default",
+								"  core.toaststyle.ripple In use",
+								"  core.toaststyle.lanternglow 400" .. " [red]",
+							}, expansionLines("toaststyle", 300)),
+							joined({
+								"Sound set (1 of 14)",
+								"  core.soundset.driftwood In use",
+								"  core.soundset.gilded 400" .. " [red]",
+							}, expansionLines("soundset", 300))
+						),
+						joined({ crestHeading(1), "  core.crest.plain In use" }, fishCrestLines())
+					),
 					{
 						"Journal binding (1 of 2)",
 						"  ledger.binding.oak In use",
@@ -372,7 +456,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11 + #FISH_CREST_SPECIES, #ids("all"))
+		assert.are.equal(11 + 24 + #FISH_CREST_SPECIES, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",
@@ -381,7 +465,10 @@ describe("The Curio Shop's list", function()
 			"ledger.binding.oak",
 			"hunts.cover.plain",
 		}, ids("owned"))
-		local notOwned = { "core.toaststyle.lanternglow", "core.soundset.gilded" }
+		local notOwned = joined(
+			joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", math.huge)),
+			joined({ "core.soundset.gilded" }, expansionAffordable("soundset", math.huge))
+		)
 		for _, speciesID in ipairs(FISH_CREST_SPECIES) do
 			notOwned[#notOwned + 1] = "core.crest.fish." .. speciesID
 		end
@@ -389,11 +476,16 @@ describe("The Curio Shop's list", function()
 			joined(notOwned, { "ledger.binding.lapis", "hunts.cover.velvet", "hunts.cover.gold" }),
 			ids("notOwned")
 		)
-		assert.are.same({
-			"core.toaststyle.lanternglow",
-			"core.soundset.gilded",
-			"hunts.cover.velvet",
-		}, ids("canAfford"))
+		assert.are.same(
+			joined(
+				joined(
+					joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", 550)),
+					joined({ "core.soundset.gilded" }, expansionAffordable("soundset", 550))
+				),
+				{ "hunts.cover.velvet" }
+			),
+			ids("canAfford")
+		)
 	end)
 
 	it(
@@ -470,7 +562,7 @@ describe("A grouped slot on the Curio Shop's list", function()
 			"Frame (1 of 5)",
 			"  -- Wooden frames",
 			"  hunts.frame.birch 400" .. " [red]",
-		}, outline(shop:List({ search = "birch" })))
+		}, outline(shop:List({ search = "birch", category = "Hunts" }))) -- Core's Birch Scroll is no Frame
 		assert.are.same({
 			"Frame (1 of 5)",
 			"  hunts.frame.velvet 150",

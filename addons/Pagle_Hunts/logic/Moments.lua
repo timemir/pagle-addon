@@ -21,12 +21,14 @@ local ns = select(2, ...)
 ---@field ServerTime fun(): integer
 
 --- The celebrated set (HNT-R90): each Standing Hunt's highest tier already shown and each set title already shown;
---- each run's entry by run key (HuntsCelebratedRun, logic/WagerMoments.lua) and each ladder title already shown.
+--- each run's entry by run key (HuntsCelebratedRun, logic/WagerMoments.lua) and each ladder title already shown; and
+--- each earned good once its rule held (HNT-R122, logic/Goods.lua), made with the first good noted.
 ---@class HuntsCelebrated
 ---@field tiers table<string, integer>
 ---@field sets table<string, true>
 ---@field runs table<string, HuntsCelebratedRun>
 ---@field ladder table<integer, true>
+---@field goods? table<string, true>
 
 --- PagleHuntsDB.global.celebrated (HNT-R90, LOG-R77), its default from ns.DB_DEFAULTS (logic/Data.lua, the one place
 --- each key gets one); a set saved before Hunt Events gains its empty `runs` and `ladder` here. Core never touches

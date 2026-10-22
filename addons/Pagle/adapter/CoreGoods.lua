@@ -56,7 +56,8 @@ local function soundButton(panel, label, onClick)
 	return ns.PanelButton(panel, label, 90, nil, onClick)
 end
 
--- A sound set's panel: its swatch, a button per sound, and a note that the Legend sting is shared (ANN-R72).
+-- A sound set's panel: its swatch, a button per sound, the first Legend's sting for » Legend, and a note that the
+-- Legend stings are the same in every set (ANN-R72).
 ---@param panel PagleSoundSetPanel
 local function buildSoundSet(panel)
 	panel.swatch = panel:CreateTexture(nil, "ARTWORK")
@@ -71,7 +72,7 @@ local function buildSoundSet(panel)
 		PlaySoundFile(panel.set.banner, "SFX")
 	end)
 	local legend = soundButton(panel, L.PREVIEW_LEGEND, function()
-		PlaySoundFile(ns.LEGEND_STING, "SFX")
+		PlaySoundFile(ns.LegendSting(), "SFX")
 	end)
 	banner:SetPoint("TOP", panel.swatch, "BOTTOM", 0, -14)
 	toast:SetPoint("RIGHT", banner, "LEFT", -6, 0)

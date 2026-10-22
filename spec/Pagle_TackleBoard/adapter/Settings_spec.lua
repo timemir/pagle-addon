@@ -173,7 +173,7 @@ describe("The Tackle Board's section on the Trackers page, in the panel", functi
 	)
 
 	it(
-		"lists only the owned frames in its frame dropdown, No frame to start with (SET-R44, SET-R51, SHOP-R30)",
+		"lists only the owned frames in its frame dropdown, No frame to start with (SET-R44, SET-R51, SHOP-R30, TKB-R125)",
 		function()
 			local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)
 			enterWorld(loaded, 1)
@@ -181,7 +181,8 @@ describe("The Tackle Board's section on the Trackers page, in the panel", functi
 			local frame = rowNamed(showTrackers(loaded), FRAME)
 
 			assert.are.same({ "tackleboard.trackerframe.none=No Frame" }, loaded.client.settings.optionValues(frame))
-			assert.are.same({ "2 more in the Curio Shop" }, loaded.client.settings.notesOf(frame))
+			-- the six for sale (TKB-R125); Live Embers is earned, never bought (TKB-R126)
+			assert.are.same({ "6 more in the Curio Shop" }, loaded.client.settings.notesOf(frame))
 		end
 	)
 

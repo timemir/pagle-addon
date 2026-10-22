@@ -27,7 +27,7 @@ REPO = Path(__file__).resolve().parents[2]
 LEDGER_TOML = REPO / "data" / "lore" / "ledger.toml"
 
 
-# SHOP-R25: Core's six goods, by slot; its crest slot's zone crests are the Ledger's (LED-R113).
+# SHOP-R25: Core's goods, by slot, the Curio Shop expansion's after the first six; its crest slot's zone crests are the Ledger's (LED-R113).
 CORE_GOODS = [
     "core.toaststyle.page",
     "core.toaststyle.ripple",
@@ -35,6 +35,30 @@ CORE_GOODS = [
     "core.soundset.driftwood",
     "core.soundset.gilded",
     "core.crest.plain",
+    "core.toaststyle.ship",
+    "core.toaststyle.birch",
+    "core.toaststyle.tidepool",
+    "core.toaststyle.chart",
+    "core.toaststyle.frost",
+    "core.toaststyle.goblin",
+    "core.toaststyle.kelp",
+    "core.toaststyle.moon",
+    "core.toaststyle.leaf",
+    "core.toaststyle.bottle",
+    "core.toaststyle.rune",
+    "core.toaststyle.folio",
+    "core.soundset.rain",
+    "core.soundset.marimba",
+    "core.soundset.shipbell",
+    "core.soundset.kalimba",
+    "core.soundset.musicbox",
+    "core.soundset.glass",
+    "core.soundset.steelpan",
+    "core.soundset.dulcimer",
+    "core.soundset.frost",
+    "core.soundset.harp",
+    "core.soundset.gizmo",
+    "core.soundset.wardrums",
 ]
 # LED-R75: the title IDs, in its table's order; LED-R110: the bindings without their ledger.binding. prefix.
 LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]
@@ -108,7 +132,38 @@ ZONE_CRESTS = [
     "winterspring",
     "zephras",
 ]
-BINDINGS = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
+BINDINGS = [
+    "field",
+    "level10",
+    "level20",
+    "level30",
+    "level40",
+    "level50",
+    "level60",
+    "birch",
+    "buckram",
+    "sharkskin",
+    "chartlinen",
+    "sailcloth",
+    "oilskin",
+    "moss",
+    "driftwood",
+    "eelskin",
+    "kodo",
+    "frosthide",
+    "netcork",
+    "copper",
+    "velvet",
+    "turtle",
+    "morocco",
+    "coral",
+    "pearl",
+    "legend",
+    "monster",
+    "abyssal",
+    "keeper",
+    "iridescent",
+]
 
 
 def _replacing(old: str, new: str) -> Callable[[str], str]:
@@ -180,7 +235,7 @@ def _without(lore_id: str, key: str, checks: tuple[str, ...] = tuple(ALL_CHECKS)
 
 
 def test_the_manifest_lists_core_s_goods_then_its_fish_crests() -> None:
-    # DATA-R106, SHOP-R25: [core.good] with fields name and description and Core's sixteen good IDs, none with a
+    # DATA-R106, SHOP-R25: [core.good] with fields name and description and Core's thirty good IDs, none with a
     # placeholder, then the fish crests (VAR-R12), each allowing {fish} (DATA-R108); [core.variety] is the varieties'
     # (test_repo_varieties.py).
     manifest = _layers().lore.manifest["core"]
@@ -224,7 +279,7 @@ def test_the_ledger_s_lore_passes_its_check() -> None:
 def test_the_manifest_lists_the_ledger_s_four_shared_lines() -> None:
     # LED-R160, LED-R162 (its M3 part): [ledger.line] with fields ["text"] and the four line IDs.
     manifest = _layers().lore.manifest["ledger"]
-    assert sorted(manifest) == ["binding", "crest", "line", "title"]
+    assert sorted(manifest) == ["binding", "crest", "ledgergood", "line", "title"]
     assert manifest["line"].fields == ("text",)
     assert sorted(manifest["line"].ids) == ["uncaughtjunk", "uncaughtlegend", "uncaughttreasure", "unchartedwaters"]
     assert all(not allowed for allowed in manifest["line"].ids.values())  # no placeholder (DATA-R108)
@@ -368,6 +423,27 @@ HUNT_GOODS = [
     "hunts.trackerframe.none",
     "hunts.trackerframe.inkwash",
     "hunts.trackerframe.waxseal",
+    "hunts.soundset.nightwatch",
+    "hunts.notebookcover.canvas",
+    "hunts.notebookcover.kraft",
+    "hunts.notebookcover.tartan",
+    "hunts.notebookcover.maplinen",
+    "hunts.notebookcover.planks",
+    "hunts.notebookcover.snakeskin",
+    "hunts.notebookcover.shagreen",
+    "hunts.notebookcover.lacquer",
+    "hunts.notebookcover.bone",
+    "hunts.notebookcover.brasscase",
+    "hunts.notebookcover.scrimshaw",
+    "hunts.notebookcover.trophycase",
+    "hunts.notebookcover.pathfinder",
+    "hunts.notebookcover.fiveseal",
+    "hunts.notebookcover.wagersilk",
+    "hunts.trackerframe.slate",
+    "hunts.trackerframe.mapscrap",
+    "hunts.trackerframe.bounty",
+    "hunts.trackerframe.spyglass",
+    "hunts.trackerframe.wagerribbon",
 ]
 
 
@@ -682,7 +758,16 @@ def test_renaming_a_hunt_changes_neither_its_hash_nor_the_hunt_list_fingerprint(
 
 
 # STA-R88: Stats' three goods, in its table's order: its tracker frames.
-STATS_GOODS = ["stats.trackerframe.none", "stats.trackerframe.logbook", "stats.trackerframe.brass"]
+STATS_GOODS = [
+    "stats.trackerframe.none",
+    "stats.trackerframe.logbook",
+    "stats.trackerframe.brass",
+    "stats.trackerframe.greenbar",
+    "stats.trackerframe.chalkboard",
+    "stats.trackerframe.tidegauge",
+    "stats.trackerframe.abacus",
+    "stats.trackerframe.astrolabe",
+]
 
 
 def _stats_text() -> dict[str, str]:
@@ -862,6 +947,12 @@ BOARD_GOODS = [
     "tackleboard.trackerframe.none",
     "tackleboard.trackerframe.corkboard",
     "tackleboard.trackerframe.driftwood",
+    "tackleboard.toaststyle.ember",
+    "tackleboard.trackerframe.net",
+    "tackleboard.trackerframe.bamboo",
+    "tackleboard.trackerframe.tin",
+    "tackleboard.trackerframe.bobber",
+    "tackleboard.trackerframe.embers",
 ]
 BOARD_KEYS = (
     [f"fly.{pattern}.name" for pattern in FLY_PATTERNS]
@@ -889,11 +980,11 @@ def test_the_manifest_lists_the_tackle_board_s_patterns_titles_and_goods() -> No
     assert all(not allowed for kind in manifest.values() for allowed in kind.ids.values())
 
 
-def test_the_tackle_board_s_lore_is_its_44_lines_and_nothing_else() -> None:
+def test_the_tackle_board_s_lore_is_its_56_lines_and_nothing_else() -> None:
     # DATA-R107 passes (read_layers raises on any problem), and TKB-R130: every pattern's name, title's text and good's
-    # name and description, the M7 batch's 44 lines (DATA-R111).
+    # name and description, the M7 batch's 44 lines and the Curio Shop expansion's 12 (DATA-R111).
     text = _board_text()
-    assert len(BOARD_KEYS) == 44
+    assert len(BOARD_KEYS) == 56
     assert set(text) == set(BOARD_KEYS)
     assert all(text[key].strip() for key in BOARD_KEYS)
 
@@ -955,3 +1046,22 @@ def test_the_generator_fails_on_a_29_code_point_fly_name_and_names_the_key(
         _replacing(f'name = "{name}"\n', f'name = "{"M" * 29}"\n'),
         "data/lore/tackleboard.toml: fly.murloc_nymph.name: length: 29 code points",
     )
+
+
+LEDGER_GOODS = [
+    "ledger.toaststyle.legend",
+    "ledger.toaststyle.prestige",
+    "ledger.soundset.concertina",
+    "ledger.soundset.choir",
+]
+
+
+def test_the_manifest_lists_the_ledger_s_earned_goods_in_core_s_slots() -> None:
+    # DATA-R106, LED-R117: [ledger.ledgergood] with a name and a description for each of the Ledger's earned toast
+    # styles and sound sets, and the lore has both (DATA-R107 passes: read_layers raises on any problem).
+    manifest = _layers().lore.manifest["ledger"]
+    assert manifest["ledgergood"].fields == ("name", "description")
+    assert list(manifest["ledgergood"].ids) == LEDGER_GOODS
+    for good in LEDGER_GOODS:
+        assert _ledger_text(f"ledgergood.{good}.name").strip()
+        assert _ledger_text(f"ledgergood.{good}.description").strip()

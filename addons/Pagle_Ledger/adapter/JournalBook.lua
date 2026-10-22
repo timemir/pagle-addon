@@ -59,11 +59,17 @@ local STRIP_MIDDLE = (FILL_INSET + BOOK.strip) / 2
 ---@field label FontString
 ---@field action fun()?
 
+--- One of a binding's corner pieces on the open book (LED-R110): the corner sprite, mirrored across or down.
+---@class LedgerCornerPiece: LedgerSpriteTexture
+---@field flipX boolean
+---@field flipY boolean
+
 ---@class LedgerJournalShell: Frame
 ---@field leatherFill Texture
 ---@field vignette Texture
 ---@field bandFrame Frame
 ---@field band Texture[]
+---@field corners LedgerCornerPiece[]  -- top left, top right, bottom left, bottom right (LED-R110)
 ---@field pagesFrame Frame
 ---@field papers table<"left"|"right", LedgerJournalPaper>
 ---@field strip Frame
@@ -114,6 +120,31 @@ local function buildLeather(frame)
 	right:SetPoint("TOPLEFT", tr, "BOTTOMLEFT")
 	right:SetPoint("BOTTOMRIGHT", br, "TOPRIGHT")
 	frame.band = { tl, tr, bl, br, top, bottom, left, right }
+	-- A binding's corner pieces over the band's corners (LED-R110), each the top-left piece mirrored to its corner;
+	-- hidden until a binding that wears them is drawn.
+	frame.corners = {}
+	for i, corner in ipairs({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }) do
+		local cornerPiece = ns.JournalSprite(bandFrame, "BindingCorners", "corner-brass", "OVERLAY", 0) --[[@as LedgerCornerPiece]]
+		cornerPiece:SetPoint(corner)
+		cornerPiece.flipX, cornerPiece.flipY = i % 2 == 0, i > 2
+		cornerPiece:Hide()
+		frame.corners[i] = cornerPiece
+	end
+end
+
+-- Points corner piece `piece` at the corner sprite of `kind`, mirrored to its corner, and shows it.
+---@param piece LedgerCornerPiece
+---@param kind LedgerBindingCorners
+local function setCorner(piece, kind)
+	local l, r, t, b = ns.JournalCoords("BindingCorners", "corner-" .. kind)
+	if piece.flipX then
+		l, r = r, l
+	end
+	if piece.flipY then
+		t, b = b, t
+	end
+	piece:SetTexCoord(l, r, t, b)
+	piece:Show()
 end
 
 -- One page's paper: the parchment (the right page's mirrored, so the two don't match), its outer corners slightly
@@ -327,18 +358,24 @@ end
 
 -- ---------------------------------------------------------------- a binding's look (LED-R110, LED-R112)
 
---- Draws the book in binding `look` (logic/Bindings.lua's ns.BindingLook): the leather's texture and tint (a vertex
---- tint over the grey leather, or Birch Bark's and Buckram's own grain), the band toward the binding's hue, the gilt
---- of the crumbs and fleurons, a silver plate for a silver gilt, and the page paper cooled by a tenth of the
---- binding's hue (the kit's Bindings.lua).
+--- Draws the book in binding `look` (logic/Bindings.lua's ns.BindingLook): the material tiled at its repeat and under
+--- its tint (a vertex tint over the grey leather, or a material's own grain), the band toward the binding's hue, the
+--- gilt of the crumbs and fleurons, a silver plate, its corner pieces, and the page paper cooled by a tenth of the
+--- binding's hue (the kits' Bindings).
 ---@param frame LedgerJournalShell
 ---@param look LedgerBindingLook
 function ns.TintJournalShell(frame, look)
 	local fill = frame.leatherFill
-	fill:SetTexture(ns.JOURNAL_FILES[look.texture], "REPEAT", "REPEAT")
-	local tile = look.tile or LEATHER_TILE
+	fill:SetTexture(look.texture, "REPEAT", "REPEAT")
 	local w, h = BOOK.width - 2 * FILL_INSET, BOOK.height - 2 * FILL_INSET
-	fill:SetTexCoord(0, w / tile, 0, h / tile)
+	fill:SetTexCoord(0, w / (look.tileW or LEATHER_TILE), 0, h / (look.tileH or LEATHER_TILE))
+	for _, piece in ipairs(frame.corners) do
+		if look.corners then
+			setCorner(piece, look.corners)
+		else
+			piece:Hide()
+		end
+	end
 	local t = look.tint or { 1, 1, 1 }
 	fill:SetGradient("VERTICAL", CreateColor(t[1] * 0.8, t[2] * 0.8, t[3] * 0.8, 1), CreateColor(t[1], t[2], t[3], 1))
 	frame.leatherTint = t

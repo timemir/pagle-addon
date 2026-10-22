@@ -247,9 +247,10 @@ end
 ---@field bottom Texture
 ---@field middles Texture[]
 
---- Draws sprite `name` sliced down on `frame`, its drawn element `height` high: `capTop` and `capBottom` UI units of the
---- element are kept at the top and bottom, with the sprite's margin outside them. The frame is the element's box; the
---- sprite's margin reaches outside it. Makes the slices the first time, and the middles as the height needs them.
+--- Draws sprite `name` sliced down on `frame`, its drawn element `height` high (no shorter than its caps, ns.SliceDown):
+--- `capTop` and `capBottom` UI units of the element are kept at the top and bottom, with the sprite's margin outside
+--- them. The frame is the element's box; the sprite's margin reaches outside it. Makes the slices the first time, and
+--- the middles as the height needs them.
 ---@param frame Frame
 ---@param atlasName string
 ---@param name string
@@ -257,6 +258,7 @@ end
 ---@param capTop number
 ---@param capBottom number
 ---@param period number?
+---@return number height -- the height it drew, `height` grown to its caps if shorter
 function ns.SetVSlice(frame, atlasName, name, height, capTop, capBottom, period)
 	local slice = frame --[[@as StatsVSlice]]
 	local atlas, sprite = spriteOf(atlasName, name)
@@ -270,6 +272,8 @@ function ns.SetVSlice(frame, atlasName, name, height, capTop, capBottom, period)
 		slice.top = crisp(frame:CreateTexture(nil, "BACKGROUND"))
 		slice.bottom = crisp(frame:CreateTexture(nil, "BACKGROUND"))
 	end
+	local middles
+	height, middles = ns.SliceDown(height, capTop, capBottom, period)
 	frame:SetSize(box[3], height)
 	local function piece(texture, from, span)
 		cut(texture, atlas, sprite.x, sprite.y + from * scale, sprite.w, span * scale)
@@ -281,16 +285,12 @@ function ns.SetVSlice(frame, atlasName, name, height, capTop, capBottom, period)
 	piece(slice.bottom, spriteHeight - bottomHeight, bottomHeight)
 	slice.bottom:ClearAllPoints()
 	slice.bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", -box[1], -marginBottom)
-	local need = math.max(0, height - capTop - capBottom)
-	local count = 0
 	local at = 0
-	while need - at > 0.01 do
-		local span = period and math.min(period, need - at) or need
-		count = count + 1
-		local middle = slice.middles[count]
+	for i, span in ipairs(middles) do
+		local middle = slice.middles[i]
 		if not middle then
 			middle = crisp(frame:CreateTexture(nil, "BACKGROUND"))
-			slice.middles[count] = middle
+			slice.middles[i] = middle
 		end
 		-- Stretched, the whole middle draws over its span; repeated, each step shows the middle's first `span`
 		piece(middle, topHeight, period and span or middleSpan)
@@ -300,9 +300,10 @@ function ns.SetVSlice(frame, atlasName, name, height, capTop, capBottom, period)
 		middle:Show()
 		at = at + span
 	end
-	for i = count + 1, #slice.middles do
+	for i = #middles + 1, #slice.middles do
 		slice.middles[i]:Hide()
 	end
+	return height
 end
 
 --- A round dot: a solid colour through the portrait mask's disc, with a thin dark edge, as the group and tracker

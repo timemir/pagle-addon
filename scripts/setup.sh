@@ -148,7 +148,7 @@ if stale wow-api "$key"; then
 	stamp wow-api "$key"
 fi
 
-# Python, pytest and mypy for the content generator (DATA-R60), and numpy and soundfile for render-sounds.py
+# Python, pytest and mypy for the content generator (DATA-R60), and numpy, soundfile and SciPy for render-sounds.py
 # (ANN-R74): one component, since the venv is built on that CPython. uv runs with no user config and its caches in $tmp, and leaves ~/.local/bin alone (--no-bin). The venv
 # hardcodes its paths, hence the prefix in the key.
 # shellcheck disable=SC2086
@@ -201,7 +201,8 @@ echo "lua-language-server $("$tools/bin/lua-language-server" --version)"
 "$tools/bin/python" --version
 "$tools/bin/pytest" --version
 "$tools/bin/mypy" --version
-"$tools/bin/python" -c 'import numpy, soundfile; print("numpy", numpy.__version__, "soundfile", soundfile.__version__)'
+"$tools/bin/python" -c 'import numpy, scipy.signal, soundfile
+print("numpy", numpy.__version__, "soundfile", soundfile.__version__, "scipy", scipy.__version__)'
 
 # The pins this prefix now holds; check.sh refuses to run while they differ from scripts/tools.env.
 cp "$root/scripts/tools.env" "$tools/tools.env"

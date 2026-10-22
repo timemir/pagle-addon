@@ -314,7 +314,6 @@ local function newRuler(parent, compact)
 	ruler.label:SetShown(not compact)
 	ruler.record = ns.NewStamp(parent)
 	if compact then
-		ns.Ink(ruler.value, "ink")
 		ruler:SetHeight(20)
 		bar:SetPoint("LEFT")
 		bar:SetSize(COMPACT_TRACK, 9)
@@ -477,7 +476,7 @@ local function drawDigest(frame, held, style, width)
 		local moment = held[i]
 		row:ClearAllPoints()
 		row:SetPoint("TOPLEFT", i == 1 and frame.title or frame.rows[i - 1], "BOTTOMLEFT", 0, i == 1 and -8 or -6)
-		ns.SetBezel(row.bezel, 22, style.trim, textureOf(moment.icon))
+		ns.SetBezel(row.bezel, 22, ns.BezelRing(style, 22), textureOf(moment.icon))
 		ns.Ink(row.what, style.what)
 		ns.SetArtFont(row.name, "DigestName")
 		ns.Ink(row.name, style.name)
@@ -523,15 +522,24 @@ end
 -- icon.
 ---@param bezel PagleBezel
 ---@param size integer
----@param trim string
+---@param ring PagleBezelRing
 ---@param headline PagleRaisedMoment
-local function setMedallion(bezel, size, trim, headline)
+local function setMedallion(bezel, size, ring, headline)
 	local art = headline.art
 	if art then
-		ns.SetBezel(bezel, size, trim, art.texture, { ns.HeadCrop(art) })
+		ns.SetBezel(bezel, size, ring, art.texture, { ns.HeadCrop(art) })
 	else
-		ns.SetBezel(bezel, size, trim, textureOf(headline.icon))
+		ns.SetBezel(bezel, size, ring, textureOf(headline.icon))
 	end
+end
+
+-- Tints toast.high's wax as its style has it (ANN-R81): over its grey, or shaded, or, with no tint, its own red.
+---@param wax PagleSprite
+---@param style PagleToastStyle
+local function tintWax(wax, style)
+	local tint = style.wax and ns.ANNOUNCE_COLORS[style.wax] or { 1, 1, 1 }
+	wax:SetDesaturated(style.waxDesaturated == true)
+	wax:SetVertexColor(tint[1], tint[2], tint[3])
 end
 
 -- Draws a toast: its page by rung (logic/ToastStyles.lua's ns.ToastPage), the medallion, the words, the ruler or the
@@ -549,20 +557,17 @@ local function drawToast(frame, display, style)
 	ns.SetSprite(frame.page, style.atlas, "toast-" .. page.page)
 	ns.PlaceSprite(frame.page, body, 0, 0)
 	local bezel = frame.bezel --[[@as PagleBezel]]
-	local trim = page.high and style.highTrim or style.trim
+	local ring = ns.BezelRing(style, page.bezel, page.high)
 	if announcement.fighting then
-		ns.SetBezel(bezel, page.bezel, trim, FIGHTING_ICON)
+		ns.SetBezel(bezel, page.bezel, ring, FIGHTING_ICON)
 	else
-		setMedallion(bezel, page.bezel, trim, headline)
+		setMedallion(bezel, page.bezel, ring, headline)
 	end
 	bezel:ClearAllPoints()
 	bezel:SetPoint("TOPLEFT", body, "TOPLEFT", page.bx, -(page.h - page.bezel) / 2)
 
 	local width = page.w - page.tx - 34 - (announcement.coins > 0 and 34 or 0)
-	local inks = {
-		what = page.low and "pencil" or page.high and "giltDeep" or style.what,
-		name = page.low and "pencilName" or style.name,
-	}
+	local inks = ns.ToastInks(style, page)
 	local fonts = { what = "What", name = page.low and "NameLow" or page.high and "NameHigh" or "Name" }
 	frame.title:ClearAllPoints()
 	frame.title:SetPoint("TOPLEFT", body, "TOPLEFT", page.tx, -page.ty)
@@ -585,6 +590,8 @@ local function drawToast(frame, display, style)
 
 	local ruler = frame.ruler --[[@as PagleRulerView]]
 	ruler.style = style
+	ns.Ink(ruler.label, inks.label)
+	ns.Ink(ruler.value, inks.value)
 	ruler:ClearAllPoints()
 	if page.ruled then
 		local nameSize = ns.ArtFontSize(fonts.name)
@@ -606,6 +613,7 @@ local function drawToast(frame, display, style)
 	end
 
 	frame.wax:SetShown(page.high == true)
+	tintWax(frame.wax --[[@as PagleSprite]], style)
 	local x = page.high and page.w - 96 or page.w - 30
 	local drops = { 2, 8, 4, 6, 3 }
 	local stamps = fillStamps(frame, announcement, function(stamp, text)
@@ -630,7 +638,7 @@ local function drawToast(frame, display, style)
 	frame.coins:ClearAllPoints()
 	if setCoins(frame.coins, announcement.coins, page.coin, false) > 0 then
 		frame.coins:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -2, page.low and 4 or -2)
-		ns.Ink(frame.coins.label, page.low and "amtLow" or "amt")
+		ns.Ink(frame.coins.label, inks.amt)
 	end
 end
 
@@ -702,7 +710,7 @@ local function drawNod(frame, display, style)
 	local headline = announcement.headline
 	local look = ns.CatchNodVarietyLook(headline)
 	local bezel = frame.bezel --[[@as PagleBezel]]
-	setMedallion(bezel, 34, style.trim, headline)
+	setMedallion(bezel, 34, ns.BezelRing(style, 34), headline)
 	tintRing(bezel, look and look.ring)
 	local gleam = frame.gleam --[[@as PagleSprite]]
 	gleam:SetAlpha(0)
@@ -721,7 +729,7 @@ local function drawNod(frame, display, style)
 		for _, part in ipairs({ frame.gem, frame.variety, frame.tail }) do
 			part:Hide()
 		end
-		local fonts, inks = { what = "NodWhat", name = "NodName" }, { what = style.what, name = style.name }
+		local fonts, inks = { what = "NodWhat", name = "NodName" }, ns.ToastInks(style)
 		writeHeadline(frame, headline, fonts, inks, NOD_TITLE)
 		x = 72 + frame.title:GetWidth()
 		last = frame.title
@@ -733,6 +741,7 @@ local function drawNod(frame, display, style)
 	end
 	local ruler = frame.ruler --[[@as PagleRulerView]]
 	ruler.style = style
+	ns.Ink(ruler.value, ns.ToastInks(style).value)
 	ruler:ClearAllPoints()
 	if headline.ruler then
 		-- As wide as it ends: the track, then the number and the margin once landed.
@@ -756,6 +765,7 @@ local function drawNod(frame, display, style)
 	frame.coins:ClearAllPoints()
 	local coins = setCoins(frame.coins, announcement.coins, 22, true)
 	if coins > 0 then
+		ns.Ink(frame.coins.label, ns.ToastInks(style).amt)
 		frame.coins:SetPoint("LEFT", last, "RIGHT", 9, 0)
 		x = x + 9 + coins
 	end

@@ -239,6 +239,24 @@ function ns.JournalSprite(parent, atlas, name, layer, sub, w, h)
 	return texture
 end
 
+--- Re-points a sprite texture at sprite `name` of any atlas, sized as ns.JournalSprite sizes one: its box `w` wide (and
+--- `h` tall, or in proportion) when given (a binding's swatch, from either Bindings atlas).
+---@param texture LedgerSpriteTexture
+---@param atlas string
+---@param name string
+---@param w number?
+---@param h number?
+function ns.JournalResprite(texture, atlas, name, w, h)
+	local found, sprite = spriteOf(atlas, name)
+	local box = sprite.box
+	local kx = w and w / box[3] or 1
+	local ky = h and h / box[4] or kx
+	texture:SetTexture(found.file)
+	texture:SetTexCoord(ns.JournalCoords(atlas, name))
+	texture:SetSize(sprite.w / found.scale * kx, sprite.h / found.scale * ky)
+	texture.box = { box[1] * kx, box[2] * ky, box[3] * kx, box[4] * ky }
+end
+
 --- Re-points a sprite texture at sprite `name` (same atlas, same box size: a stamp inked, a check ticked).
 ---@param texture LedgerSpriteTexture
 ---@param atlas string

@@ -126,6 +126,40 @@ ns.BOARD_FONTS = {
 	DriftCount = { "handSemi", 17, "FFE08A", true },
 	DriftWhere = { "italic", 13, "D8CCB2", true },
 	DriftMore = { "italic", 13, "C8C0A8", true },
+	-- the Curio Shop expansion's tracker frames (TKB-R125; adapter/TrackerBlock.lua's kit styles), in their goods.json
+	-- inks as the kit's board sets them: the title in gilt in the header ink, the header's right text and where lines
+	-- in italics a size down and the plain lines in italics, in the dim ink, the goal lines in print in the text ink;
+	-- with a shadow on a dark frame (Fishing Net, Tackle Tin, Live Embers)
+	KitNetTitle = { "gilt", 14, "F0CD6A", true },
+	KitNetHeadRight = { "italic", 12, "B8B4A0", true },
+	KitNetGoal = { "print", 13, "F0ECE0", true },
+	KitNetCount = { "print", 13, "F0ECE0", true },
+	KitNetWhere = { "italic", 12, "B8B4A0", true },
+	KitNetMore = { "italic", 13, "B8B4A0", true },
+	KitBambooTitle = { "gilt", 14, "4A1A04" },
+	KitBambooHeadRight = { "italic", 12, "4A3A14" },
+	KitBambooGoal = { "print", 13, "1E1404" },
+	KitBambooCount = { "print", 13, "1E1404" },
+	KitBambooWhere = { "italic", 12, "4A3A14" },
+	KitBambooMore = { "italic", 13, "4A3A14" },
+	KitTinTitle = { "gilt", 14, "F0E080", true },
+	KitTinHeadRight = { "italic", 12, "B8D0C0", true },
+	KitTinGoal = { "print", 13, "F2F6EE", true },
+	KitTinCount = { "print", 13, "F2F6EE", true },
+	KitTinWhere = { "italic", 12, "B8D0C0", true },
+	KitTinMore = { "italic", 13, "B8D0C0", true },
+	KitBobberTitle = { "gilt", 14, "A81A10" },
+	KitBobberHeadRight = { "italic", 12, "5A5448" },
+	KitBobberGoal = { "print", 13, "1E1A14" },
+	KitBobberCount = { "print", 13, "1E1A14" },
+	KitBobberWhere = { "italic", 12, "5A5448" },
+	KitBobberMore = { "italic", 13, "5A5448" },
+	KitEmbersTitle = { "gilt", 14, "FFC060", true },
+	KitEmbersHeadRight = { "italic", 12, "C8A888", true },
+	KitEmbersGoal = { "print", 13, "F6EAD8", true },
+	KitEmbersCount = { "print", 13, "F6EAD8", true },
+	KitEmbersWhere = { "italic", 12, "C8A888", true },
+	KitEmbersMore = { "italic", 13, "C8A888", true },
 	-- the Field guide's page (ONB-R37; the onboarding kit's Guide.lua): kickers, titles, print, the facts, the italic
 	-- line under Start my board and the button's gilt
 	GuideKicker = { "sc", 14, "8A5A2A" },
@@ -505,6 +539,60 @@ function ns.SetVSlice(frame, atlasName, name, width, height, capTop, capBottom, 
 	slice.middle:ClearAllPoints()
 	slice.middle:SetPoint("TOPLEFT", slice.top, "BOTTOMLEFT")
 	slice.middle:SetPoint("BOTTOMRIGHT", slice.bottom, "TOPRIGHT")
+	slice.top:Show()
+	slice.middle:Show()
+	slice.bottom:Show()
+	-- A Curio Shop expansion frame's pieces, from a kit frame drawn on this frame before (ns.SetKitSlice).
+	local kit = frame --[[@as TackleKitSlice]]
+	for _, piece in ipairs(kit.pieces or {}) do
+		piece:Hide()
+	end
+end
+
+--- A frame drawn as one of the Curio Shop expansion's tracker frames (TKB-R125): its pieces, top to bottom, as
+--- logic/TrackerFrames.lua cuts them. On a frame that has drawn the board kit's (ns.SetVSlice), those slices too.
+---@class TackleKitSlice: Frame
+---@field pieces Texture[]
+---@field top Texture?
+---@field middle Texture?
+---@field bottom Texture?
+
+--- Draws sprite `name` of atlas `atlasName` sliced in three down on `frame` as `slice` says, its drawn element `width`
+--- × `height` (a kit tracker frame, which grows with its lines): scaled evenly to `width`, its top and foot kept, its
+--- middle stretched or repeated (ns.FrameSlices). Makes the pieces as it needs them, and hides the ones it doesn't and
+--- any board kit slices drawn on `frame` before.
+---@param frame Frame
+---@param atlasName string
+---@param name string
+---@param slice TackleFrameSlice
+---@param width number
+---@param height number
+---@param layer DrawLayer?
+function ns.SetKitSlice(frame, atlasName, name, slice, width, height, layer)
+	local kit = frame --[[@as TackleKitSlice]]
+	kit.pieces = kit.pieces or {}
+	for _, texture in ipairs({ kit.top, kit.middle, kit.bottom }) do
+		texture:Hide()
+	end
+	local atlas, sprite = spriteOf(atlasName, name)
+	local cut = ns.FrameSlices(atlas, sprite, slice, width, height)
+	frame:SetSize(width, height)
+	for i, piece in ipairs(cut.pieces) do
+		local texture = kit.pieces[i]
+		if not texture then
+			texture = crisp(frame:CreateTexture(nil, layer or "BACKGROUND"))
+			kit.pieces[i] = texture
+		end
+		texture:SetTexture(atlas.file)
+		texture:SetTexCoord(cut.left, cut.right, piece.top, piece.bottom)
+		texture:SetSize(cut.width, piece.height)
+		texture:ClearAllPoints()
+		texture:SetPoint("TOPLEFT", frame, "TOPLEFT", cut.x, -piece.y)
+		texture:Show()
+	end
+	for i = #cut.pieces + 1, #kit.pieces do
+		kit.pieces[i]:Hide()
+	end
 end
 
 -- The papers' lean (TKB-R102: a Notice "at a slight tilt that straightens on hover").
