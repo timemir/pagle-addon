@@ -196,12 +196,13 @@ describe("Simulated Size records", function()
 			end
 			local state = applyAll(records)
 			assert.are.equal(49, state.species[MACKEREL].since)
-			local _, earned = applyAll({ log.cast(T0 + DAY, ELWYNN, { { MACKEREL, 400 } }) }, state)
+			local longer = log.cast(T0 + DAY, ELWYNN, { { MACKEREL, 400 } })
+			local _, earned = applyAll({ longer }, state)
 
 			assert.are.same({
 				{
 					kind = "sizeRecord",
-					cast = earned[1].cast,
+					cast = longer.id,
 					coins = 0,
 					itemID = MACKEREL,
 					old = 342,

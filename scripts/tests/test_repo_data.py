@@ -1,13 +1,14 @@
 """The repo's own data/: data/forever/ holds the seeded lists the spec names, and data/db2/ the committed slice."""
 
 import re
+from collections.abc import Mapping
 import tomllib
 from pathlib import Path
 
 from pagle_data.db2 import Db2Layer, read_db2
 from pagle_data.errors import Problems
 from pagle_data.forever import WeeklyRule, read_forever
-from pagle_data.generate import CATALOGUE_LUA, generate
+from pagle_data.generate import CATALOGUE_LUA
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -50,9 +51,7 @@ def test_the_db2_slice_is_from_wago_tools_for_a_named_forever_build() -> None:
 def test_the_committed_catalogue_holds_one_area_per_areas_csv_row() -> None:
     # DATA-R25: the catalogue's areas are every row of areas.csv; DATA-R61: the committed file is what data/ gives.
     layer = _slice()
-    outputs = generate(REPO)
     committed = (REPO / CATALOGUE_LUA).read_text(encoding="utf-8")
-    assert committed == outputs[CATALOGUE_LUA]
     # Each area record opens at the areas table's depth, on one line or with its catches below (DATA-R78).
     start = committed.index("\n\tareas = {\n")
     block = committed[start : committed.index("\n\t},\n", start)]
@@ -71,12 +70,12 @@ OWN_TEXT = {
 }
 
 
-def test_no_name_from_areas_csv_appears_in_any_generated_file() -> None:
+def test_no_name_from_areas_csv_appears_in_any_generated_file(repo_outputs: Mapping[str, str]) -> None:
     # DATA-R3: no area name from the game ships; the source layer keeps the enUS names, the generator never emits
     # them. Every generated file, as generated and as committed, apart from OWN_TEXT's reviewed coincidences.
     names = {area.name for area in _slice().areas.values() if area.name}
     assert len(names) > 1000
-    for path, text in generate(REPO).items():
+    for path, text in repo_outputs.items():
         allowed = OWN_TEXT.get(path, {})
         for content in (text, (REPO / path).read_text(encoding="utf-8")):
             leaked = sorted(name for name in names if name in content and name not in allowed)
@@ -104,3 +103,8 @@ def test_the_committed_catalogue_s_aliases_are_aliases_toml_s() -> None:
     emitted = {int(source): int(target) for source, target in re.findall(r"\[(\d+)\] = (\d+)", line.group(1))}
     assert emitted == table
     assert emitted[16521] == 18
+
+
+def test_every_committed_generated_file_matches_the_repository_data(repo_outputs: Mapping[str, str]) -> None:
+    for path, expected in repo_outputs.items():
+        assert (REPO / path).read_text(encoding="utf-8") == expected, path

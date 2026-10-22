@@ -1,11 +1,11 @@
 """The repo's own data/baseline/: the VMaNGOS snapshot #57 decided on, extracted once (DATA-R9)."""
 
 import tomllib
+from collections.abc import Mapping
 from pathlib import Path
 
 from pagle_data.baseline import SOURCE, read_baseline
 from pagle_data.errors import Problems
-from pagle_data.generate import generate
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -32,7 +32,7 @@ def test_the_committed_baseline_matches_its_hashes_and_the_research_counts() -> 
     assert [event.event for event in layer.events] == [14, 15, 40, 45, 46, 47, 48]
 
 
-def test_no_baseline_chance_reaches_a_generated_file() -> None:
+def test_no_baseline_chance_reaches_a_generated_file(repo_outputs: Mapping[str, str]) -> None:
     # DATA-R4: the baseline's chances stay in data/baseline/. A chance with a decimal point (the dump's own
     # spelling, e.g. 38.747) appears in no generated file, as generated or as committed.
     chances: set[str] = set()
@@ -41,7 +41,7 @@ def test_no_baseline_chance_reaches_a_generated_file() -> None:
         chances |= {line.split(",")[column] for line in lines}
     decimals = {chance for chance in chances if "." in chance}
     assert len(decimals) > 100
-    for path, text in generate(REPO).items():
+    for path, text in repo_outputs.items():
         for content in (text, (REPO / path).read_text(encoding="utf-8")):
             leaked = sorted(chance for chance in decimals if chance in content)
             assert leaked == [], f"{path} holds baseline chances {leaked}"

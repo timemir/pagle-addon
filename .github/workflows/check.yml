@@ -1,13 +1,19 @@
-# Runs the check gate, scripts/check.sh, and the release zip check, scripts/package.sh, on every push and pull
-# request: the same scripts, setup and pins as local WSL. Tool versions come only from scripts/tools.env; this
-# file names none. Every stage check.sh grows runs here without touching this file. The gate's own regression test,
-# scripts/test-check.sh, runs in a job of its own, test-check, when the gate's machinery changes, or on a manual run.
 name: Check
 
 on:
   push:
+    branches: [main]
   pull_request:
-  workflow_dispatch: # runs test-check whatever changed
+  workflow_dispatch:
+    inputs:
+      coverage:
+        description: Run the optional coverage report
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -27,7 +33,7 @@ jobs:
         run: |
           source scripts/tools.env
           missing=()
-          for pkg in $SETUP_APT_PACKAGES; do
+          for pkg in $SETUP_APT_PACKAGES time; do
             dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
           done
           if ((${#missing[@]})); then
@@ -35,28 +41,44 @@ jobs:
             sudo apt-get install -y --no-install-recommends "${missing[@]}"
           fi
 
-      # .tools/ is where setup.sh installs (the repo root's .tools). A changed tools.env restores the last
-      # .tools/ built by the same setup.sh, and setup.sh's stamps reinstall just the components whose pins
-      # changed; a changed setup.sh starts from nothing.
       - uses: actions/cache/restore@v6
         id: tools
         with:
-          path: .tools
+          path: |
+            .tools
+            !.tools/cache
           key: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-${{ hashFiles('scripts/tools.env') }}
           restore-keys: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-
 
       - name: Set up the pinned tools
         run: bash scripts/setup.sh
 
-      # Saved right after setup, so a failing check still leaves the tools cached.
       - uses: actions/cache/save@v6
         if: steps.tools.outputs.cache-hit != 'true'
         with:
-          path: .tools
+          path: |
+            .tools
+            !.tools/cache
           key: ${{ steps.tools.outputs.cache-primary-key }}
 
+      - uses: actions/cache/restore@v6
+        id: mypy
+        with:
+          path: .tools/cache/mypy
+          key: mypy-${{ runner.os }}-${{ hashFiles('scripts/setup.sh', 'scripts/tools.env', 'scripts/pyproject.toml') }}-${{ github.sha }}
+          restore-keys: mypy-${{ runner.os }}-${{ hashFiles('scripts/setup.sh', 'scripts/tools.env', 'scripts/pyproject.toml') }}-
+
       - name: Run the check gate
-        run: bash scripts/check.sh
+        env:
+          PAGLE_NO_COVERAGE: "1"
+          GATE_JOBS: "2"
+        run: /usr/bin/time -v bash scripts/check.sh
+
+      - uses: actions/cache/save@v6
+        if: steps.mypy.outputs.cache-hit != 'true'
+        with:
+          path: .tools/cache/mypy
+          key: ${{ steps.mypy.outputs.cache-primary-key }}
 
       # Builds the release zip as the release workflow would, uploads off, and fails if anything but addon code
       # gets in (fix .pkgmeta). package.sh needs zip and jq on top of setup's prerequisites; ubuntu-latest ships both.
@@ -72,10 +94,6 @@ jobs:
           fi
           bash scripts/package.sh
 
-  # The gate's own regression test, scripts/test-check.sh: each planted mistake must fail at the stage meant to catch
-  # it. It runs the gate some fifty times, so only when what it tests changes: the gate's scripts, this workflow, the
-  # tool configs, the type stubs and spec/support/. The job runs and passes either way, so a required check never
-  # waits on it; with none of those changed it stops after its first step.
   test-check:
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -92,7 +110,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
           PR_BASE: ${{ github.event.pull_request.base.sha }}
         run: |
-          machinery='^(scripts/|\.github/|spec/support/|types/|\.luacheckrc$|\.luarc\.json$|\.stylua\.toml$|\.styluaignore$|\.luacov$|\.busted$)'
+          machinery='^(scripts/(check\.sh|test-check\.sh|setup\.sh|tools\.env|pyproject\.toml|generate-data\.py|ace3\.sha256|api-presence\.lua|api-inventory\.lua)$|scripts/pagle_data/|\.github/workflows/(check|release)\.yml$|spec/(support/|Pagle/adapter/Core_spec\.lua$|Pagle/Pagle_toc_spec\.lua$|Pagle_QoL/Pagle_QoL_toc_spec\.lua$)|types/|\.luacheckrc$|\.luarc\.json$|\.stylua\.toml$|\.styluaignore$|\.luacov$|\.busted$)'
           base=
           case $EVENT in
           pull_request) base=$PR_BASE ;;
@@ -122,7 +140,7 @@ jobs:
         run: |
           source scripts/tools.env
           missing=()
-          for pkg in $SETUP_APT_PACKAGES; do
+          for pkg in $SETUP_APT_PACKAGES time; do
             dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
           done
           if ((${#missing[@]})); then
@@ -134,7 +152,9 @@ jobs:
       - uses: actions/cache/restore@v6
         if: steps.changes.outputs.run == 'true'
         with:
-          path: .tools
+          path: |
+            .tools
+            !.tools/cache
           key: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-${{ hashFiles('scripts/tools.env') }}
           restore-keys: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-
 
@@ -142,6 +162,57 @@ jobs:
         if: steps.changes.outputs.run == 'true'
         run: bash scripts/setup.sh
 
+      - uses: actions/cache/restore@v6
+        if: steps.changes.outputs.run == 'true'
+        id: mypy
+        with:
+          path: .tools/cache/mypy
+          key: mypy-${{ runner.os }}-${{ hashFiles('scripts/setup.sh', 'scripts/tools.env', 'scripts/pyproject.toml') }}-${{ github.sha }}
+          restore-keys: mypy-${{ runner.os }}-${{ hashFiles('scripts/setup.sh', 'scripts/tools.env', 'scripts/pyproject.toml') }}-
+
       - name: Test the check gate
         if: steps.changes.outputs.run == 'true'
-        run: bash scripts/test-check.sh
+        run: /usr/bin/time -v bash scripts/test-check.sh
+
+  coverage:
+    if: github.event_name == 'workflow_dispatch' && inputs.coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install setup prerequisites
+        run: |
+          source scripts/tools.env
+          missing=()
+          for pkg in $SETUP_APT_PACKAGES time; do
+            dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+          done
+          if ((${#missing[@]})); then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends "${missing[@]}"
+          fi
+
+      - uses: actions/cache/restore@v6
+        id: tools
+        with:
+          path: |
+            .tools
+            !.tools/cache
+          key: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-${{ hashFiles('scripts/tools.env') }}
+          restore-keys: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-
+
+      - name: Set up the pinned tools
+        run: bash scripts/setup.sh
+
+      - uses: actions/cache/save@v6
+        if: steps.tools.outputs.cache-hit != 'true'
+        with:
+          path: |
+            .tools
+            !.tools/cache
+          key: ${{ steps.tools.outputs.cache-primary-key }}
+
+      - name: Run the check gate with coverage reporting
+        run: /usr/bin/time -v bash scripts/check.sh

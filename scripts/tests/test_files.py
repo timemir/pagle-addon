@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from pagle_data.files import csv_text, write_atomic
 
 
@@ -19,3 +21,25 @@ def test_write_atomic_replaces_the_file_whole_and_leaves_nothing_beside_it(tmp_p
     write_atomic(path, b"new\n")
     assert path.read_bytes() == b"new\n"
     assert sorted(p.name for p in path.parent.iterdir()) == ["areas.csv"]
+
+
+@pytest.mark.parametrize("existing", [False, True])
+def test_interrupted_write_preserves_the_destination(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, existing: bool,
+) -> None:
+    path = tmp_path / "areas.csv"
+    if existing:
+        path.write_bytes(b"original\n")
+    write_bytes = Path.write_bytes
+
+    def interrupted_write(target: Path, content: bytes) -> int:
+        write_bytes(target, content[:2])
+        raise OSError("interrupted write")
+
+    monkeypatch.setattr(Path, "write_bytes", interrupted_write)
+    with pytest.raises(OSError, match="interrupted write"):
+        write_atomic(path, b"replacement\n")
+    if existing:
+        assert path.read_bytes() == b"original\n"
+    else:
+        assert not path.exists()

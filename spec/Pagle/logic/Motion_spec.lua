@@ -17,6 +17,14 @@ describe("the motion's easings", function()
 		assert.are.equal(0.5, round(ns.Bezier(0.5, 0.5, 0.5, 0.5)(0.5)))
 	end)
 
+	it("preserve time when both control points lie on y = x", function()
+		local identity = ns.Bezier(0.2, 0.2, 0.8, 0.8)
+
+		for _, t in ipairs({ 0.25, 0.5, 0.75 }) do
+			assert.is_true(math.abs(identity(t) - t) < 0.000001)
+		end
+	end)
+
 	it("ease out faster than they ease in", function()
 		assert.is_true(ns.EASE.out(0.25) > 0.25)
 		assert.are.equal(0.25, ns.EASE.linear(0.25))

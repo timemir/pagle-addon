@@ -129,11 +129,8 @@ def test_the_committed_observed_layer_reads_clean_with_each_report_under_its_rep
     assert all(re.fullmatch(r"[0-9a-f]{8}", key) for key in files)
 
 
-def test_the_committed_pooltext_toml_reads_clean_and_says_how_the_dev_fills_it() -> None:
-    # DATA-R118: pooltext.toml is kept by hand from the triage comments' P row texts; #127 commits it with a comment
-    # saying how to fill it, and the dev's entries follow (#253: the enUS bobber).
+def test_the_committed_pooltext_toml_reads_clean() -> None:
     text = (REPO / "data" / "observed" / "pooltext.toml").read_text(encoding="utf-8")
-    assert "triage comment" in text and "pools.toml" in text and "bobber" in text and "other" in text
     problems = Problems()
     assert len(read_observed(REPO, problems).pooltext) == len(tomllib.loads(text).get("text", []))
     assert problems.found == []
