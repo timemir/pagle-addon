@@ -85,8 +85,24 @@ end
 function ns.SoundSetOf(goodID)
 	return ns.SOUND_SETS[goodID] or ns.SOUND_SETS[ns.SOUND_SET_DEFAULT]
 end
---- The Legend sting every set shares (ANN-R72).
-ns.LEGEND_STING = SOUNDS .. "legend.ogg"
+
+--- Each Legend's sting, the same in every sound set, by the Legend's item ID (ANN-R72, ANN-R74): Brownell's Blue
+--- Striped Racer's, Keefer's Angelfish's and Dezian Queenfish's.
+---@type table<integer, string>
+ns.LEGEND_STINGS = {}
+for _, itemID in ipairs({ 19803, 19805, 19806 }) do
+	ns.LEGEND_STINGS[itemID] = ("%slegend\\%d.ogg"):format(SOUNDS, itemID)
+end
+--- The Legend whose sting plays for any other (ANN-R72): Brownell's Blue Striped Racer.
+local FIRST_LEGEND = 19803
+
+--- The sting a splash plays (ANN-R70, ANN-R72): its Legend's, by the headline's `icon`, the Legend's item ID (LED-R63),
+--- or the first Legend's for an item without a sting of its own, any other icon, or none, as the shop's ▶ Legend.
+---@param icon any
+---@return string
+function ns.LegendSting(icon)
+	return ns.LEGEND_STINGS[icon] or ns.LEGEND_STINGS[FIRST_LEGEND]
+end
 
 ---@alias PagleAnnouncementForm "toast"|"nod"|"banner"|"splash"
 
@@ -674,7 +690,7 @@ function Lanes:schedule(display, seconds)
 end
 
 -- The sound an Announcement shown as `form` at `now` plays as it appears (ANN-R70–R72): the equipped set's toast
--- variant next in turn, its banner sound, or the Legend sting. None for a Nod, for a headline with sound = false, in
+-- variant next in turn, its banner sound, or its Legend's sting. None for a Nod, for a headline with sound = false, in
 -- Cozy mode, where a splash shows silently (ANN-R41), or for a toast appearing in the same frame as a banner or splash
 -- that played its sound, so only the higher rung's plays and the next toast gets this one's variant (ANN-R24). Each
 -- set keeps its own turn, so a set equipped again goes on where it left off.
@@ -697,7 +713,7 @@ function Lanes:sound(announcement, form, now)
 		return set.toast[played % #set.toast + 1]
 	end
 	self.bigSoundAt = now
-	return form == "banner" and set.banner or ns.LEGEND_STING
+	return form == "banner" and set.banner or ns.LegendSting(announcement.headline.icon)
 end
 
 -- Takes `display` off screen if it's still there, and frees its place for what waits.

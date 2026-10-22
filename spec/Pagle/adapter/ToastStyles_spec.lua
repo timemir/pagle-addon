@@ -334,7 +334,7 @@ describe("a toast style change", function()
 				DRIFTWOOD .. "toast_2.ogg SFX",
 				DRIFTWOOD .. "toast_3.ogg SFX",
 				DRIFTWOOD .. "toast_1.ogg SFX",
-				"Interface\\AddOns\\Pagle\\media\\sounds\\legend.ogg SFX",
+				"Interface\\AddOns\\Pagle\\media\\sounds\\legend\\19803.ogg SFX",
 			}, tornPageSounds)
 			-- When each first shows: three toasts and the banner together; the Nod in the column; three more toasts,
 			-- the 7th once they leave; the toast.low stepped down to a Nod once the budget is spent; the splash once the

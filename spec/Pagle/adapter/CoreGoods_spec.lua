@@ -369,7 +369,7 @@ describe("Core's goods' previews", function()
 		end
 	)
 
-	it("play a sound set's toast, its banner and the shared Legend sting from its buttons (ANN-R72)", function()
+	it("play a sound set's toast, its banner and the first Legend's sting from its buttons (ANN-R72)", function()
 		local loaded, stage = stageOf()
 		local GILDED = "Interface\\AddOns\\Pagle\\media\\sounds\\gilded\\"
 
@@ -381,7 +381,7 @@ describe("Core's goods' previews", function()
 		assert.are.same({
 			GILDED .. "toast_1.ogg SFX",
 			GILDED .. "banner.ogg SFX",
-			"Interface\\AddOns\\Pagle\\media\\sounds\\legend.ogg SFX",
+			"Interface\\AddOns\\Pagle\\media\\sounds\\legend\\19803.ogg SFX",
 		}, loaded.client.sounds)
 		assert.is_table(withText(stage, "The Legend sting is the same in every set."))
 	end)

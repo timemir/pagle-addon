@@ -936,8 +936,34 @@ describe("Announcement sounds", function()
 
 		world.advance(BANNER + LEAVE)
 
-		assert.are.same({ DRIFTWOOD .. "banner.ogg", SOUNDS .. "legend.ogg" }, world.played)
+		assert.are.same({ DRIFTWOOD .. "banner.ogg", SOUNDS .. "legend\\19803.ogg" }, world.played)
 	end)
+
+	it(
+		"plays each Legend's own sting, picked by the splash's icon, the Legend's item ID, and 19803's for any other"
+			.. " (ANN-R70, ANN-R72)",
+		function()
+			local world = newWorld()
+			for _, icon in ipairs({ 19806, 19805, 19803, 6292, "Interface\\Icons\\INV_Misc_Fish_02" }) do
+				world.lanes:Push(announcement("splash", "Legend", { icon = icon }))
+			end
+			for _ = 1, 5 do
+				world.advance(ns.SPLASH_SECONDS + LEAVE)
+			end
+
+			assert.are.same({
+				SOUNDS .. "legend\\19806.ogg",
+				SOUNDS .. "legend\\19805.ogg",
+				SOUNDS .. "legend\\19803.ogg",
+				SOUNDS .. "legend\\19803.ogg",
+				SOUNDS .. "legend\\19803.ogg",
+			}, world.played)
+			assert.are.same(
+				{ SOUNDS .. "legend\\19803.ogg", SOUNDS .. "legend\\19803.ogg" },
+				{ ns.LegendSting(), ns.LegendSting(19804) }
+			)
+		end
+	)
 
 	it(
 		"plays only the banner's sound when toasts appear in the same frame, and the next toast plays the variant"
@@ -995,7 +1021,11 @@ describe("Announcement sounds", function()
 	)
 
 	it("plays only files Pagle ships under addons/Pagle/media/sounds/ (ANN-R72, ANN-R74)", function()
-		local paths = { ns.LEGEND_STING }
+		local paths = {}
+		for _, sting in pairs(ns.LEGEND_STINGS) do
+			paths[#paths + 1] = sting
+		end
+		assert.are.equal(3, #paths)
 		for _, set in pairs(ns.SOUND_SETS) do
 			paths[#paths + 1] = set.banner
 			for _, path in ipairs(set.toast) do
