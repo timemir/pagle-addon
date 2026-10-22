@@ -271,7 +271,7 @@ ns.L = {
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
 	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs"
-		.. " | tour [module | list | stop] | probe | onboarding <command> | content",
+		.. " | tour [module | list | stop] | probe | onboarding <command> | content | views",
 	-- /pagle dev content (PUSH-R14): the companion state, or for an absent file the first reason PUSH-R13 found; the
 	-- header fields as read (generatedAt, keyId, seq, expires; each "none" when missing); the kinds handed out and
 	-- those dropped, each "kind count", comma-separated; and the frames the check took, its longest frame in ms and

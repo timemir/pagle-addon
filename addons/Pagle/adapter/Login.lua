@@ -64,6 +64,8 @@ Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()
 	-- PUSH-R1, PUSH-R10: PagleContentData, read once, its check from the next frame on; with no file it ends here,
 	-- "missing", after ModulesChanged so each Module has met Core first.
 	ns.StartPushedContent()
+	-- VIEW-R1: PagleFollowingData, read once; Pagle_Following loaded after Pagle, before this.
+	ns.StartAnglerViews()
 	-- ONB-R1–R3: the character joins the onboarding state, after ModulesChanged, so whatever a hook shows (#325)
 	-- meets Core's menu and every Module registered.
 	ns.StartOnboarding()

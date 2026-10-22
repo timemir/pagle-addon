@@ -25,9 +25,17 @@ stds.wow = {
 				TooltipDataType = { fields = { "Object" } }, -- LOG-R80
 			},
 		},
-		-- Attaching a Module (CORE-R13, CORE-R16, CORE-R41); QoL's conflict check and its choices (QOL-R80, QOL-R83).
+		-- Attaching a Module (CORE-R13, CORE-R16, CORE-R41); QoL's conflict check and its choices (QOL-R80, QOL-R83);
+		-- loading the Companion's Pagle_Anglers on demand (VIEW-R3).
 		C_AddOns = {
-			fields = { "GetAddOnMetadata", "GetAddOnEnableState", "GetAddOnInfo", "IsAddOnLoaded", "DisableAddOn" },
+			fields = {
+				"GetAddOnMetadata",
+				"GetAddOnEnableState",
+				"GetAddOnInfo",
+				"IsAddOnLoaded",
+				"DisableAddOn",
+				"LoadAddOn",
+			},
 		},
 		"UnitGUID",
 		-- The Settings tree (CORE-R40–R44, settings.md); the Settings table itself is in stds.wow_variables.

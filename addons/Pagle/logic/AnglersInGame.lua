@@ -5,10 +5,11 @@ local ns = select(2, ...)
 -- PagleFollowingData, the Followed Anglers with their full cards, and Pagle_Anglers, load-on-demand, sets
 -- PagleAnglersData, every Published Angler in the player's regions with the tooltip card. Their formats, and what
 -- makes one absent or expired, are pagle-backend's (in-game-views.md: IGV-R40–R47, Contracts › The addon folders);
--- this file reads them as those say (VIEW-R1, VIEW-R2), looks a unit up in them (VIEW-R10) and hands out the Followed
--- Anglers (VIEW-R11). Pure logic over what it's handed (CORE-R7): logic/Wiring.lua's ns.WireAnglerViews hands it the
--- client's seams, or FakePagle's. Nothing flows back (VIEW-R4): Core never writes either file, and never logs, stores
--- or prints what they hold, but for `/pagle dev views`' states and counts (VIEW-R12).
+-- this file reads them as those say (VIEW-R1, VIEW-R2), says when Pagle_Anglers loads (VIEW-R3), looks a unit up in
+-- them (VIEW-R10) and hands out the Followed Anglers (VIEW-R11). Pure logic over what it's handed (CORE-R7):
+-- logic/Wiring.lua's ns.WireAnglerViews hands it the client's seams, or FakePagle's. Nothing flows back (VIEW-R4):
+-- Core never writes either file, and never logs, stores or prints what they hold, but for `/pagle dev views`' states
+-- and counts (VIEW-R12).
 
 local floor = math.floor
 
@@ -20,6 +21,10 @@ ns.VIEW_EXPIRY_AGE = 24 * 3600
 -- Pagle_Anglers' widths (IGV Contracts, Tunables): a key is a 13-character search key and a 6-digit card number; a card
 -- is 16 characters.
 local KEY_WIDTH, SEARCH_WIDTH, CARD_WIDTH = 19, 13, 16
+
+-- The data addons, by folder name, and their globals (IGV Contracts › The addon folders).
+local FOLLOWING_ADDON, ANGLERS_ADDON = "Pagle_Following", "Pagle_Anglers"
+local FOLLOWING_GLOBAL, ANGLERS_GLOBAL = "PagleFollowingData", "PagleAnglersData"
 
 ---@alias PagleViewFileState "live"|"absent"|"expired"
 
@@ -149,7 +154,7 @@ function ns.ReadFollowingFile(data, missing)
 	if data == nil and missing then
 		return { reason = missing }
 	end
-	local reason = absentReason(data, "PagleFollowingData", "anglers")
+	local reason = absentReason(data, FOLLOWING_GLOBAL, "anglers")
 	if reason then
 		return absentFile(reason, data)
 	end
@@ -202,7 +207,7 @@ function ns.ReadAnglersFile(data, missing)
 	if data == nil and missing then
 		return { reason = missing }
 	end
-	local reason = absentReason(data, "PagleAnglersData", "blocks")
+	local reason = absentReason(data, ANGLERS_GLOBAL, "blocks")
 	if not reason then
 		for i, block in ipairs(data.blocks) do
 			reason = blockReason(block, i)
@@ -399,4 +404,145 @@ function ns.FollowedAnglers(following, now)
 		anglers[i] = copyAngler(angler)
 	end
 	return { state = "ok", anglers = anglers }
+end
+
+--- What Core's reads are fed. Every function is called when needed, never stored.
+---@class PagleAnglerViewsOptions
+---@field following fun(): any                 -- PagleFollowingData, read once at Start (VIEW-R1)
+---@field presence fun(): PaglePushedPresence  -- Pagle_Following's install and load state, read only with no global
+---@field load fun(): boolean, string?         -- C_AddOns.LoadAddOn("Pagle_Anglers"): whether it loaded, and why not
+---@field anglers fun(): any                   -- PagleAnglersData, read once, right after a load that succeeded
+---@field serverTime fun(): integer            -- GetServerTime()
+---@field isRestricted fun(): boolean          -- Pagle.IsRestricted() (CORE-R30)
+---@field tooltips fun(): boolean              -- the tooltip setting is on (PagleDB.profile.anglerTooltips, VIEW-R30)
+---@field isSecret fun(value: any): boolean    -- issecretvalue (CORE-R31)
+
+--- Core's reads of the Companion's data files this login.
+---@class PagleAnglerViews
+---@field package options PagleAnglerViewsOptions
+---@field package following PagleViewFile Pagle_Following as read at Start
+---@field package anglers PagleViewFile Pagle_Anglers as read once it has loaded
+---@field package started boolean
+---@field package tried boolean Core tried to load Pagle_Anglers this login (VIEW-R3)
+---@field package loaded boolean and Pagle_Anglers loaded
+local AnglerViews = {}
+AnglerViews.__index = AnglerViews
+
+---@param options PagleAnglerViewsOptions
+---@return PagleAnglerViews
+function ns.NewAnglerViews(options)
+	return setmetatable({
+		options = options,
+		following = { reason = ns.L.VIEWS_NOT_READ },
+		anglers = { reason = ns.L.VIEWS_NOT_LOADED_YET },
+		started = false,
+		tried = false,
+		loaded = false,
+	}, AnglerViews)
+end
+
+-- Why there's no global from data addon `name`, as the client tells it (IGV-R44: a file that failed to load, or that
+-- the AddOns list has disabled, is absent).
+---@param name string
+---@param global string
+---@param presence PaglePushedPresence
+---@return string
+local function noFile(name, global, presence)
+	local L = ns.L
+	if not presence.installed then
+		return L.VIEWS_NOT_INSTALLED:format(name)
+	elseif presence.loaded then
+		return L.VIEWS_NO_DATA:format(name, global)
+	end
+	return L.VIEWS_DID_NOT_LOAD:format(name, presence.reason or "?")
+end
+
+--- Login step 2 (VIEW-R1): reads PagleFollowingData once; Pagle_Following loaded before Core's PLAYER_LOGIN, after
+--- Pagle (IGV-R42). Only the first call counts.
+function AnglerViews:Start()
+	if self.started then
+		return
+	end
+	self.started = true
+	local options = self.options
+	local data = options.following()
+	self.following =
+		ns.ReadFollowingFile(data, data == nil and noFile(FOLLOWING_ADDON, FOLLOWING_GLOBAL, options.presence()) or nil)
+end
+
+-- VIEW-R3: loads Pagle_Anglers once per login, at the first player hover outside restriction with the tooltip setting
+-- on, and reads PagleAnglersData then. A load that fails leaves the file absent for the login, never tried again.
+---@param views PagleAnglerViews
+local function loadAnglers(views)
+	local options = views.options
+	if views.tried or not options.tooltips() or options.isRestricted() then
+		return
+	end
+	views.tried = true
+	local loaded, why = options.load()
+	views.loaded = loaded == true
+	if views.loaded then
+		local data = options.anglers()
+		views.anglers = ns.ReadAnglersFile(
+			data,
+			data == nil and noFile(ANGLERS_ADDON, ANGLERS_GLOBAL, { installed = true, loaded = true }) or nil
+		)
+	else
+		local presence = { installed = why ~= "MISSING", loaded = false, reason = why }
+		views.anglers = { reason = noFile(ANGLERS_ADDON, ANGLERS_GLOBAL, presence) }
+	end
+end
+
+--- A player unit's tooltip is showing (VIEW-R3, VIEW-R10): what the tooltip block calls for each player unit it
+--- shows, with the unit's GUID (UnitGUID). The first such call outside restriction with the tooltip setting on loads
+--- Pagle_Anglers; while restricted the lookup uses Pagle_Following alone, and a later call loads it. Returns the unit's
+--- card, fresh (ns.LookUpAngler), or nil for none, or for a secret or nil GUID, which is never looked up (CORE-R31).
+---@param guid any
+---@return PagleAnglerCard?
+function AnglerViews:HoverPlayer(guid)
+	loadAnglers(self)
+	local options = self.options
+	if options.isSecret(guid) or guid == nil then
+		return nil
+	end
+	return ns.LookUpAngler(self.following, self.anglers, guid, options.serverTime())
+end
+
+--- Pagle.GetFollowedAnglers() (VIEW-R11): ns.FollowedAnglers over Pagle_Following at the server time now. Absent
+--- before Start.
+---@return PagleFollowedAnglers
+function AnglerViews:FollowedAnglers()
+	return ns.FollowedAnglers(self.following, self.options.serverTime())
+end
+
+-- A data file's state line for `/pagle dev views`: live, absent with its reason, or expired with its age.
+---@param name string
+---@param file PagleViewFile
+---@param now integer
+---@return string
+local function stateLine(name, file, now)
+	local L = ns.L
+	local state, age = ns.ViewFileState(file, now)
+	if state == "absent" then
+		return L.DEV_VIEWS_ABSENT:format(name, file.reason)
+	elseif state == "expired" then
+		return L.DEV_VIEWS_EXPIRED:format(name, shown(age), shown(ns.VIEW_EXPIRY_AGE))
+	end
+	return L.DEV_VIEWS_LIVE:format(name)
+end
+
+--- `/pagle dev views` (VIEW-R12): each file's state now (live, absent with the first reason IGV-R44 found, or expired
+--- with its age), its generatedAt and its Angler or block count as read, and whether Pagle_Anglers has loaded this
+--- login. No GUID, name or card (VIEW-R4).
+---@return string[]
+function AnglerViews:Report()
+	local L, now = ns.L, self.options.serverTime()
+	local following, anglers = self.following, self.anglers
+	return {
+		stateLine(FOLLOWING_ADDON, following, now),
+		L.DEV_VIEWS_FOLLOWING:format(shown(following.generatedAt), shown(following.count)),
+		stateLine(ANGLERS_ADDON, anglers, now),
+		L.DEV_VIEWS_ANGLERS:format(shown(anglers.generatedAt), shown(anglers.count)),
+		self.loaded and L.DEV_VIEWS_LOADED or L.DEV_VIEWS_NOT_LOADED,
+	}
 end

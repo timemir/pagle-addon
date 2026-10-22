@@ -17,6 +17,7 @@ ns.API_INVENTORY = {
 	"C_AddOns.GetAddOnInfo",
 	"C_AddOns.GetAddOnMetadata",
 	"C_AddOns.IsAddOnLoaded",
+	"C_AddOns.LoadAddOn",
 	"C_Calendar",
 	"C_Calendar.GetDayEvent",
 	"C_Calendar.GetMonthInfo",

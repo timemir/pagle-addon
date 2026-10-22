@@ -30,6 +30,7 @@
 --- CloseSpecialWindows (every shown frame named in UISpecialFrames hides, and its OnHide runs).
 ---@field cursor number[]? The cursor's position in screen pixels, { x, y } from the bottom left, as
 --- GetCursorPosition returns it; { 0, 0 } while nil.
+---@field loads string[] Each name C_AddOns.LoadAddOn was called with, in order.
 
 --- The loot window the loot API reads: whether it's fishing loot (`IsFishingLoot()`) and its slots, in order.
 --- Specs set both before firing LOOT_READY.
@@ -43,6 +44,8 @@
 ---@field enabled boolean? Enabled for the player's character in the AddOns list. Default true.
 ---@field loaded boolean? Loaded this session. Default: whether it's enabled.
 ---@field metadata table<string, string>? Its TOC fields, e.g. ["X-Pagle-API"] = "1".
+---@field load fun()? What its files do when C_AddOns.LoadAddOn loads it, e.g. set the global a data addon sets.
+---@field refuse string? Why C_AddOns.LoadAddOn refuses to load it, as the client's second return names it ("CORRUPT").
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local widgets = dofile("spec/support/widgets.lua")
@@ -70,6 +73,7 @@ local function newClient()
 		templates = {},
 		areaNames = {},
 		mapNames = {},
+		loads = {},
 	}
 	client.addError = watchErrors(client, "errors")
 
@@ -307,6 +311,26 @@ local function clientStubs(client)
 			GetAddOnMetadata = function(name, field)
 				local addon = client.addons[name]
 				return addon and addon.metadata and addon.metadata[field]
+			end,
+			-- Loads an installed, enabled addon: one not loaded yet runs its `load` and is loaded from then on. Returns
+			-- true, or false and why not: "MISSING" for one not listed, "DISABLED", or its `refuse`.
+			LoadAddOn = function(name)
+				client.loads[#client.loads + 1] = name
+				local addon = client.addons[name]
+				if not addon then
+					return false, "MISSING"
+				elseif addon.enabled == false then
+					return false, "DISABLED"
+				elseif addon.refuse then
+					return false, addon.refuse
+				end
+				if addon.loaded == false then
+					addon.loaded = true
+					if addon.load then
+						addon.load()
+					end
+				end
+				return true, nil
 			end,
 		},
 		UnitGUID = function(unit)

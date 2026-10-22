@@ -56,6 +56,7 @@ local ns = select(2, ...)
 ---@field marginNotes PagleMarginNotes Core's Margin notes (ns.WireMarginNotes, ONB-R50–R53).
 ---@field firstLooks PagleFirstLooks Core's First looks (ns.WireFirstLooks, ONB-R55–R59).
 ---@field pushedContent PaglePushedContent Core's pushed content this login (ns.WirePushedContent, PUSH-R10–R23).
+---@field anglerViews PagleAnglerViews Core's reads of the Companion's data files (ns.WireAnglerViews, VIEW-R1–R12).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. A Module's records are the ones Pagle.IterateCatches yields plus its own Module records (LOG-R42).
@@ -1108,6 +1109,9 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 		content = function()
 			return ns.pushedContent:Report()
 		end,
+		views = function()
+			return ns.anglerViews:Report()
+		end,
 		probe = function()
 			ns.RunProbe({
 				globals = globals,
@@ -1167,6 +1171,40 @@ function ns.WirePushedContent(host, client)
 	--- Login step 2, after ModulesChanged: reads PagleContentData once and starts its check (PUSH-R1, PUSH-R10).
 	function ns.StartPushedContent()
 		ns.pushedContent:Start()
+	end
+end
+
+--- What only the client knows about the Companion's two data addons: Core's adapter reads their globals and the AddOns
+--- list, and loads Pagle_Anglers, FakePagle its own (core/anglers-in-game.md).
+---@class PagleAnglerViewsClient
+---@field following fun(): any                -- PagleFollowingData, the global Pagle_Following sets (VIEW-R1)
+---@field presence fun(): PaglePushedPresence -- Pagle_Following's install and load state, for an absent file's reason
+---@field load fun(): boolean, string?        -- C_AddOns.LoadAddOn("Pagle_Anglers") (VIEW-R3)
+---@field anglers fun(): any                  -- PagleAnglersData, the global Pagle_Anglers sets once loaded (VIEW-R1)
+---@field isSecret fun(value: any): boolean   -- issecretvalue (CORE-R31)
+
+--- Core's reads of the Companion's data files as ns.anglerViews (core/anglers-in-game.md, ADR 0001), on the server
+--- time, the restriction state and PagleDB.profile.anglerTooltips (VIEW-R3, VIEW-R30), with ns.StartAnglerViews,
+--- login step 2's part (VIEW-R1). The tooltip block calls ns.anglerViews:HoverPlayer for each player unit it shows
+--- (VIEW-R3, VIEW-R10); `/pagle dev views` (VIEW-R12) prints its report (ns.WireDev).
+---@param host PagleHost
+---@param client PagleAnglerViewsClient
+function ns.WireAnglerViews(host, client)
+	ns.anglerViews = ns.NewAnglerViews({
+		following = client.following,
+		presence = client.presence,
+		load = client.load,
+		anglers = client.anglers,
+		serverTime = host.serverTime,
+		isRestricted = host.isRestricted,
+		tooltips = function()
+			return host.db().profile.anglerTooltips == true
+		end,
+		isSecret = client.isSecret,
+	})
+	--- Login step 2, after ModulesChanged: reads PagleFollowingData once (VIEW-R1).
+	function ns.StartAnglerViews()
+		ns.anglerViews:Start()
 	end
 end
 
