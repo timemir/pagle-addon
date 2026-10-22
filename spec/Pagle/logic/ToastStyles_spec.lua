@@ -28,6 +28,19 @@ local RINGED = {
 	["ledger.toaststyle.prestige"] = "ToastsPrestige",
 	["tackleboard.toaststyle.ember"] = "ToastsEmber",
 }
+-- The round two's ten composed styles (ANN-R82), by atlas: seven the Ledger earns in Core's slot, three Core's.
+local COMPOSED = {
+	["ledger.toaststyle.glass"] = "Toasts2Glass",
+	["ledger.toaststyle.deep"] = "Toasts2Deep",
+	["ledger.toaststyle.koi"] = "Toasts2Koi",
+	["ledger.toaststyle.trophy"] = "Toasts2Trophy",
+	["ledger.toaststyle.slate"] = "Toasts2Slate",
+	["ledger.toaststyle.ice"] = "Toasts2Ice",
+	["ledger.toaststyle.stitch"] = "Toasts2Stitch",
+	["core.toaststyle.sonar"] = "Toasts2Sonar",
+	["core.toaststyle.foil"] = "Toasts2Foil",
+	["core.toaststyle.storm"] = "Toasts2Storm",
+}
 local PAGES = { "low", "low-ruled", "toast", "toast-ruled", "high", "digest" }
 
 -- The page `name` (logic/ToastStyles.lua's pages), from a headline on its rung.
@@ -45,14 +58,14 @@ end
 describe("the toast styles", function()
 	it(
 		"are Core's fifteen and the three earned in Core's slot by the Ledger and the Tackle Board, by SHOP-R25's good"
-			.. " IDs (ANN-R80, ANN-R81, SHOP-R25)",
+			.. " IDs, and the round two's ten composed styles (ANN-R80, ANN-R81, ANN-R82, SHOP-R25)",
 		function()
 			local ids, expected = {}, {}
 			for id, style in pairs(ns.TOAST_STYLES) do
 				ids[#ids + 1] = id
 				assert.are.equal(id, style.id)
 			end
-			for _, atlases in ipairs({ FIRST, RINGED }) do
+			for _, atlases in ipairs({ FIRST, RINGED, COMPOSED }) do
 				for id in pairs(atlases) do
 					expected[#expected + 1] = id
 				end
@@ -61,7 +74,7 @@ describe("the toast styles", function()
 			table.sort(expected)
 
 			assert.are.same(expected, ids)
-			assert.are.equal(18, #ids)
+			assert.are.equal(28, #ids)
 			assert.are.same({ "core.toaststyle", TORN_PAGE }, { ns.TOAST_STYLE_SLOT, ns.TOAST_STYLE_DEFAULT })
 		end
 	)
@@ -444,4 +457,209 @@ describe("the sample toast", function()
 			assert.are.same({ 0, 5, sample.headline }, { sample.more, sample.coins, sample.moments[1] })
 		end
 	)
+end)
+
+describe("the round two's composed toast styles", function()
+	it(
+		"draw from layers of their own atlas, keyed by good ID, a rung each for toast, toast.high, toast.low and the"
+			.. " Nod, at 1.5 texels a unit, in a BLP the package ships (ANN-R82)",
+		function()
+			for id, atlasName in pairs(COMPOSED) do
+				local style = ns.ToastStyleOf(id)
+				assert.are.same({ id, true, atlasName }, { style.id, style.layered, style.atlas })
+				local atlas = ns.ATLASES[atlasName]
+				assert.are.equal(1.5, atlas.scale)
+				assert.are.equal("Interface\\AddOns\\Pagle\\media\\announce\\" .. atlasName, atlas.file)
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+				local file = io.open("addons/Pagle/media/announce/" .. atlasName .. ".blp", "rb")
+				assert.is_not_nil(file, atlasName)
+				assert.are.equal("BLP2", file:read(4))
+				file:close()
+				for _, rung in ipairs({ "toast", "high", "low", "nod" }) do
+					local art = style.art.rungs[rung]
+					assert.is_true(#art.layers > 0, id .. " " .. rung)
+					for _, layer in ipairs(art.layers) do
+						assert.is_table(atlas.sprites[layer.sprite], layer.sprite)
+						assert.is_truthy(({ under = true, front = true, over = true })[layer.host])
+					end
+					assert.is_table(art.icon)
+					assert.is_table(art.text)
+				end
+				assert.is_table(style.art.rungs.toast.stamp, id)
+				assert.is_table(style.art.rungs.nod.slice, id)
+			end
+		end
+	)
+
+	it("draw their layers back to front: the body under the medallion, its front over the icon (ANN-R82)", function()
+		local koi = ns.ToastStyleOf("ledger.toaststyle.koi").art.rungs.toast
+		local names, hosts = {}, {}
+		for i, layer in ipairs(koi.layers) do
+			names[i], hosts[i] = layer.name, layer.host
+		end
+
+		-- The canvas's z-index: body 1, the medallion's back with the medallion (4), the motion sprites 7.
+		assert.are.same({ "body", "mback", "fx1", "fx2" }, names)
+		assert.are.same({ "under", "under", "over", "over" }, hosts)
+		local storm = ns.ToastStyleOf("core.toaststyle.storm").art.rungs.toast.layers
+		assert.are.same({ "mfront", "front" }, { storm[#storm].name, storm[#storm].host })
+	end)
+
+	it(
+		"ink each rung in its own inks, the Nod's ruler and Coins in its toast rung's, as roles of the palette"
+			.. " (ANN-R82)",
+		function()
+			local STORM = "core.toaststyle.storm"
+			local storm = ns.ToastStyleOf(STORM)
+
+			assert.are.same({
+				what = STORM .. ".low.what",
+				name = STORM .. ".low.name",
+				amt = STORM .. ".low.amt",
+				label = STORM .. ".low.small",
+				value = STORM .. ".low.small",
+			}, ns.ToastInks(storm, pageOf("low")))
+			assert.are.same({
+				what = STORM .. ".nod.what",
+				name = STORM .. ".nod.name",
+				amt = STORM .. ".toast.amt",
+				label = STORM .. ".toast.small",
+				value = STORM .. ".toast.small",
+			}, ns.ToastInks(storm))
+			assert.are.same({ 200 / 255, 212 / 255, 1 }, ink(STORM .. ".toast.what"))
+			local what = ns.ToastInk(storm, pageOf("toast"), "what") --[[@as PagleToastInk]]
+			assert.are.same({ "sc", 14 }, { what.face, what.size })
+			assert.are.same({ STORM .. ".toast.what", STORM .. ".toast.name" }, { storm.what, storm.name })
+		end
+	)
+
+	it(
+		"draw toast.low's pages from the low rung, toast.high's from the high, the rest from the toast's (ANN-R82)",
+		function()
+			local ruled = ns.ToastPage({ headline = { rung = "toast.low", title = "T", ruler = {} } })
+			local digest = ns.ToastPage({ fighting = {}, headline = { rung = "toast", title = "T" } })
+
+			assert.are.same({ "low", "toast", "high", "nod", "low", "toast" }, {
+				ns.ToastRungKey(pageOf("low")),
+				ns.ToastRungKey(pageOf("toast")),
+				ns.ToastRungKey(pageOf("high")),
+				ns.ToastRungKey(nil),
+				ns.ToastRungKey(ruled),
+				ns.ToastRungKey(digest),
+			})
+		end
+	)
+
+	it("put a rung without a stamp of its own at its toast rung's, as far from the right edge (ANN-R82)", function()
+		local deep = ns.ToastStyleOf("ledger.toaststyle.deep")
+		local toast = deep.art.rungs.toast.stamp
+		local high = ns.ToastStampArt(deep, pageOf("high"))
+
+		assert.is_nil(deep.art.rungs.high.stamp)
+		assert.are.same({ toast.sprite, toast.y, toast.w }, { high.sprite, high.y, high.w })
+		assert.is_true(math.abs((464 - (toast.x + toast.w)) - (524 - (high.x + high.w))) < 1e-9)
+		local glass = ns.ToastStyleOf("ledger.toaststyle.glass")
+		assert.are.equal(glass.art.rungs.low.stamp, ns.ToastStampArt(glass, pageOf("low")))
+	end)
+
+	it(
+		"fit a rung's boxes to a bigger page: the body stretches, a small box keeps its size by the nearer edge, the"
+			.. " medallion stays centred down it (ANN-R82)",
+		function()
+			local rung = { w = 464, h = 92 }
+			local function fit(box, centred)
+				local out = ns.FitToastBox(box, rung, 464, 122, centred)
+				return { out.x, out.y, out.w, out.h }
+			end
+
+			assert.are.same({ 0, 0, 464, 122 }, fit({ x = 0, y = 0, w = 464, h = 92 }))
+			assert.are.same({ 338, -3, 94, 28 }, fit({ x = 338, y = -3, w = 94, h = 28 }))
+			assert.are.same({ 417, 79, 47, 47 }, fit({ x = 417, y = 49, w = 47, h = 47 }))
+			assert.are.same({ 8, 19, 88, 88 }, fit({ x = 8, y = 4, w = 88, h = 88 }, true))
+			assert.are.same(
+				{ x = 1, y = 2, w = 3, h = 4 },
+				ns.FitToastBox({ x = 1, y = 2, w = 3, h = 4 }, rung, 464, 92)
+			)
+		end
+	)
+
+	it(
+		"move a layer as CSS does: translated, then turned and scaled about its origin, mirrored when scaled by -1",
+		function()
+			local box = { x = 0, y = 0, w = 20, h = 10 }
+			local function round(placed)
+				local function r(v)
+					return math.floor(v * 1000 + 0.5) / 1000
+				end
+				return { r(placed.cx), r(placed.cy), r(placed.w), r(placed.h), r(placed.rotation), placed.mirrored }
+			end
+
+			assert.are.same({ 10, 5, 20, 10, 0, false }, round(ns.TransformToastBox(box, { x = 10, y = 5 })))
+			assert.are.same(
+				{ 13, 9, 20, 10, 0, false },
+				round(ns.TransformToastBox(box, { x = 10, y = 5 }, { 3, 4, 0, 1, 1 }))
+			)
+			-- 90° clockwise about the box's top left: its centre swings down and left, y growing downward; the client
+			-- turns anticlockwise.
+			assert.are.same(
+				{ -5, 10, 20, 10, -1.571, false },
+				round(ns.TransformToastBox(box, { x = 0, y = 0 }, { 0, 0, 90, 1, 1 }))
+			)
+			assert.are.same(
+				{ 10, 5, 40, 5, 0, true },
+				round(ns.TransformToastBox(box, { x = 10, y = 5 }, { 0, 0, 0, -2, 0.5 }))
+			)
+		end
+	)
+
+	it("scroll a sweep's strip through its window as CSS's background-position does (ANN-R82)", function()
+		-- A window a quarter of its strip: at 0 the strip's start, at 1 its end, halfway its middle.
+		assert.are.same({ 0, 0.25, 0, 1 }, { ns.ScrollWindow(0.25, 1, 0, 0) })
+		assert.are.same({ 0.75, 1, 0, 1 }, { ns.ScrollWindow(0.25, 1, 1, 0) })
+		assert.are.same({ 0.375, 0.625, 0, 1 }, { ns.ScrollWindow(0.25, 1, 0.5, 0) })
+		assert.are.same({ 0, 1, 0.5, 1 }, { ns.ScrollWindow(1, 0.5, 0, 1) })
+	end)
+
+	it(
+		"loop their motion from the toast's landing, but play Through the Ice's flag once: it springs up as the toast"
+			.. " lands and settles (ANN-R82)",
+		function()
+			local function motionOf(id, keyframes)
+				for _, layer in ipairs(ns.ToastStyleOf(id).art.rungs.toast.layers) do
+					if layer.motion and layer.motion.keyframes == keyframes then
+						return layer.motion
+					end
+				end
+			end
+			local applied = {}
+			local animations = ns.ToastLayerAnimations(
+				motionOf("ledger.toaststyle.deep", "deep-bob"),
+				0.98,
+				function(kind, values)
+					applied[#applied + 1] = { kind, values }
+				end
+			)
+
+			assert.are.equal(1, #animations)
+			assert.are.same({ 2.6, 0.98, "infinite" }, { animations[1].dur, animations[1].delay, animations[1].iter })
+			assert.are.same({ 0.5, { 0, 3, 0, 1, 1 } }, animations[1].keys[2])
+			animations[1].apply({ 0, 3, 0, 1, 1 })
+			assert.are.same({ { "transform", { 0, 3, 0, 1, 1 } } }, applied)
+			local flag = ns.ToastLayerAnimations(motionOf("ledger.toaststyle.ice", "ice-flag"), 0, function() end)
+			assert.are.same({ 1, { 80 } }, { flag[1].iter, { flag[1].keys[1][2][3] } })
+		end
+	)
+
+	it("rest as the kit drew them, but hide what only flashes and a sweep's band of light (ANN-R82)", function()
+		local function rests(id)
+			local out = {}
+			for _, layer in ipairs(ns.ToastStyleOf(id).art.rungs.toast.layers) do
+				out[layer.name] = ns.ToastLayerRests(layer)
+			end
+			return out
+		end
+
+		assert.are.same({ body = true, mfront = true, fx1 = false, fx2 = false }, rests("core.toaststyle.storm"))
+		assert.are.same({ body = true, fx1 = false }, rests("ledger.toaststyle.glass"))
+	end)
 end)
