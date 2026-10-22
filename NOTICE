@@ -40,3 +40,9 @@ Project Authors), which types the Field report.
 The Fish Journal uses them too, with IM Fell English's small capitals
 (IMFeENsc28P.ttf, Igino Marini), under the same licence in
 OFL-IMFellEnglishSC.txt.
+
+Wycheproof
+The source's RSA signature test vectors (spec/Pagle/fixtures/wycheproof/,
+which the release doesn't hold) are rsa_signature_2048_sha256_test.json from
+C2SP Wycheproof, https://github.com/C2SP/wycheproof, at commit 7a325932, under
+the Apache License 2.0 in LICENSE.txt beside them.

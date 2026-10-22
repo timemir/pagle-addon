@@ -14,3 +14,7 @@ spec/scripts/fixtures/** -text
 # The announcements art (ANN-R80): textures and bundled fonts.
 *.blp binary
 *.ttf binary
+
+# The signing fixtures (spec/Pagle/fixtures/): random bytes, and the Wycheproof vectors exactly as upstream has them.
+spec/Pagle/fixtures/signing/*.bin binary
+spec/Pagle/fixtures/wycheproof/** -text
