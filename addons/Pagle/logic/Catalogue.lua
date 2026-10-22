@@ -12,6 +12,7 @@ local ns = select(2, ...)
 ---@field family? integer        -- trophy family ID
 ---@field weight? number         -- a trophy's real weight, in pounds
 ---@field typicalLength? integer -- fish and quest fish: the Species' typical length in mm (LOG-R67)
+---@field varieties? string[]    -- a sized, non-Legend Species' ten variety keys, in frozen order (VAR-R4)
 ---@field quality? integer       -- DB2 item quality, 0 poor ... 5 legendary; nil when unknown (LOG-R55)
 ---@field legend boolean         -- a Legend (CONTEXT.md)
 ---@field noise boolean          -- Noise (CONTEXT.md)

@@ -357,6 +357,9 @@ text = "Keeper of Lost Cargo"
 [title."complete.trophy"] # the Trophy Room's weights reach their total
 text = "Tipper of Scales"
 
+[title."complete.varieties"] # every variety of every fish, the rarest title (VAR-R22), from the varieties release
+text = "Keeper of Every Colour"
+
 # Journal bindings (LED-R110, manifest.toml's [ledger.binding]), from the M4 batch (#161): the good
 # ledger.binding.<id>'s name, and the description the Curio Shop shows beside its closed-book preview. A binding is
 # a look only, so its description is about the book's leather or cloth. The comment says how it's had.

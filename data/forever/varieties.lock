@@ -1,0 +1,4 @@
+# The varieties lock (VAR-R5, DATA-R133): each shipped Species' ten variety keys, in their frozen order. Written by
+# scripts/generate-data.py --lock beside data/hunts/released.lock; don't edit it by hand.
+# Run --lock only when a release is tagged, from 1.0 on, and never before: this file stays empty until the 1.0 tag
+# (DATA-R73). The generator fails when data/forever/varieties.toml changes, moves or drops a key it holds.

@@ -1,7 +1,9 @@
 # Milestone-gated checks (DATA-R66). Before a switch is on, its check is skipped and the data is still emitted.
 # typicalLength is on from M4 (DATA-R20); lore lists the lore IDs whose check is on: the Ledger's from M3, Core's from
 # M4, Hunts' from M5, Stats' from M6, the Tackle Board's from M7 (DATA-R107); eventPool, the event pool's minimum of
-# rotating events per band (DATA-R99), turns on with the 1.0 pool's 24 events (#306).
+# rotating events per band (DATA-R99), turns on with the 1.0 pool's 24 events (#306); varieties, every sized,
+# non-Legend Species having its ten varieties (DATA-R132, VAR-R2), is on from the varieties release (#338).
 typicalLength = true
 lore = ["ledger", "core", "hunts", "stats", "tackleboard"]
 eventPool = false
+varieties = true
