@@ -106,7 +106,7 @@ local function followingLine(loaded)
 			leaders[#leaders + 1] = block
 		end
 	end
-	return leaders[#leaders], journal.frame.right.drawn.leader[#leaders]
+	return leaders[#leaders], journal.shown.right.drawn.leader[#leaders]
 end
 
 describe("Home's Following line (LED-R132, LED-R151)", function()
@@ -266,7 +266,7 @@ describe("the Following spread's left page (LED-R151)", function()
 		assert.are.same({ true, false, false, false }, selected())
 		assert.are.same({ id = "following", args = { angler = 3 } }, journal.pages.left[6].place)
 
-		journal.frame.left.drawn.row[3]:Click()
+		journal.shown.left.drawn.row[3]:Click()
 
 		assert.are.same({ id = "following", args = { angler = 3 } }, journal.router:Place())
 		assert.are.same({ false, false, true, false }, selected())
@@ -282,7 +282,7 @@ describe("the Following spread's left page (LED-R151)", function()
 
 	it("draws each row's name, the HC stamp for a Hardcore Angler only, and its value (LED-R151)", function()
 		local _, loaded = journalWith(file(), "following")
-		local rows = loaded.ns.journal.frame.left.drawn.row
+		local rows = loaded.ns.journal.shown.left.drawn.row
 
 		assert.are.same({ "Ada", "Lv 23 · I · 37%" }, shownTexts(rows[1]))
 		assert.are.same({ "Bram Ashcombe", "HC", "Lv 31 · 24%" }, shownTexts(rows[2]))
@@ -298,7 +298,7 @@ describe("the Following spread's left page (LED-R151)", function()
 			scrollPage(loaded, "left", 120)
 			scrollPage(loaded, "right", 80)
 
-			journal.frame.left.drawn.row[4]:Click()
+			journal.shown.left.drawn.row[4]:Click()
 
 			assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
 			scrollPage(loaded, "right", 40)
@@ -325,12 +325,12 @@ describe("the Following spread's left page (LED-R151)", function()
 				waters = 120,
 			})
 			local _, loaded = journalWith(file({ long, angler() }), "following")
-			local frame = loaded.ns.journal.frame
+			local frame = loaded.ns.journal
 
-			assert.are.same({}, bounds.overflows(frame.leaves.left[frame.shownLeaf.left].body))
-			assert.are.same({}, bounds.overflows(frame.leaves.right[frame.shownLeaf.right].body))
+			assert.are.same({}, bounds.overflows(frame.shown.left))
+			assert.are.same({}, bounds.overflows(frame.shown.right))
 			assert.is_true(bounds.measured > 0)
-			assert.are.same({ "Lv 60 · VIII · 100%" }, { frame.left.drawn.row[1].value:GetText() })
+			assert.are.same({ "Lv 60 · VIII · 100%" }, { frame.shown.left.drawn.row[1].value:GetText() })
 		end
 	)
 end)
@@ -417,7 +417,7 @@ describe("the Following spread's right page, the selected Angler's card (LED-R15
 		"draws the card: the level in large numerals, the Prestige under it, the seal and the ruled rows (LED-R151)",
 		function()
 			local _, loaded = journalWith(file(), "following")
-			local drawn = loaded.ns.journal.frame.right.drawn
+			local drawn = loaded.ns.journal.shown.right.drawn
 
 			assert.are.same({
 				"Ada",
@@ -434,7 +434,7 @@ describe("the Following spread's right page, the selected Angler's card (LED-R15
 				"Lifetime Catches",
 				"5,120",
 				"As of 12 Oct",
-			}, shownTexts(loaded.ns.journal.frame.right))
+			}, shownTexts(loaded.ns.journal.shown.right))
 			local level = drawn.level[1]
 			assert.is_true(level.seal.wax:IsShown())
 			assert.is_true(drawn.leader[1].rule:IsShown())
@@ -487,7 +487,7 @@ describe("the Following spread's empty states (LED-R151)", function()
 			}, left)
 			assert.are.same(
 				{ "In this Ledger", "Following", lines[1], lines[2], lines[3] },
-				shownTexts(loaded.ns.journal.frame.left)
+				shownTexts(loaded.ns.journal.shown.left)
 			)
 		end)
 
@@ -495,7 +495,7 @@ describe("the Following spread's empty states (LED-R151)", function()
 			local _, loaded = journalWith(following, "following", { angler = 1 })
 
 			assert.are.same({}, loaded.ns.journal.pages.right)
-			assert.are.same({}, shownTexts(loaded.ns.journal.frame.right))
+			assert.are.same({}, shownTexts(loaded.ns.journal.shown.right))
 		end)
 	end
 

@@ -66,39 +66,36 @@ describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 		assert.is_false(journal:IsShown())
 	end)
 
-	it("moves by dragging its leather, and the client saves no position (LED-R120)", function()
-		local _, loaded = loggedIn()
+	it("moves by dragging its leather, saved by Core and never by the client (LED-R120, BOOK-R5)", function()
+		local fake, loaded = loggedIn()
 		local journal = loaded.ns.journal
 		journal:Toggle()
 		local frame = journal.frame
 
 		assert.is_true(frame:IsMovable())
-		frame:GetScript("OnDragStart")(frame)
-		assert.is_true(frame:IsUserPlaced())
-		frame:GetScript("OnDragStop")(frame)
+		frame:Drag({ "TOPLEFT", loaded.env.UIParent, "TOPLEFT", 40, -60 })
 
 		assert.is_false(frame:IsUserPlaced())
+		assert.are.same({ "TOPLEFT", "TOPLEFT", 40, -60 }, fake.profile.books["ledger.journal"])
 	end)
 
-	it("opens centred each time, wherever it was dragged to, and stays put while open (LED-R120)", function()
+	it("opens where it was left, and stays put while open (LED-R120)", function()
 		local _, loaded = loggedIn()
 		local journal = loaded.ns.journal
 		journal:Toggle()
 		local frame = journal.frame
-		local centred = frame.points
 
-		-- Where a drag leaves it: the client re-anchors a moved frame by its top left.
-		frame:GetScript("OnDragStart")(frame)
-		frame:ClearAllPoints()
-		frame:SetPoint("TOPLEFT", 40, -60)
-		frame:GetScript("OnDragStop")(frame)
+		frame:Drag({ "TOPLEFT", loaded.env.UIParent, "TOPLEFT", 40, -60 })
 		local dragged = frame.points
 		journal:Show()
 		assert.are.same(dragged, frame.points)
 
 		journal:Toggle()
 		journal:Toggle()
-		assert.are.same(centred, frame.points)
+		assert.are.same(
+			{ "TOPLEFT", "TOPLEFT", 40, -60 },
+			{ frame.points[1][1], frame.points[1][3], frame.points[1][4], frame.points[1][5] }
+		)
 	end)
 
 	it("closes with its close button, and each toggle opens or closes it (LED-R120)", function()
@@ -128,6 +125,7 @@ describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 		frame.scripts.OnHide(frame)
 		loaded.client.update(0.05)
 		loaded.env.UIParent:Show()
+		loaded.client.update(0.05)
 
 		assert.are.same({ false, false, 1 }, { frame:IsShown(), journal:IsShown(), frame.alpha })
 		journal:Toggle()
@@ -177,7 +175,7 @@ describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 end)
 
 describe("the Fish Journal while the projection updates (LED-R122)", function()
-	it("shows only LED-R122's line under the swaying quill, with the crumbs and search hidden (LED-R122)", function()
+	it("shows only LED-R122's line on both pages, with the crumbs and search hidden (LED-R122, BOOK-R22)", function()
 		local _, loaded = loggedIn(true)
 		local journal = loaded.ns.journal
 
@@ -188,10 +186,10 @@ describe("the Fish Journal while the projection updates (LED-R122)", function()
 		assert.are.same({ { kind = "text", text = line } }, journal.pages.left)
 		assert.are.same({ { kind = "text", text = line } }, journal.pages.right)
 		-- and the First look's "?" beside the wax close, on the leather like the close (ONB-R59)
-		assert.are.same({ line, "?" }, shownTexts(journal.frame))
-		assert.is_true(journal.frame.updatingView:IsShown())
-		assert.is_false(journal.frame.crumbs:IsShown())
-		assert.is_false(journal.frame.search:IsShown())
+		assert.are.same({ line, line, "?" }, shownTexts(journal.frame))
+		assert.is_true(journal.frame.notices.left:IsShown())
+		assert.are.same({}, shownTexts(journal.frame.crumbs))
+		assert.is_false(journal.search:IsShown())
 		assert.is_false(journal.frame.back:IsShown())
 	end)
 
@@ -203,8 +201,8 @@ describe("the Fish Journal while the projection updates (LED-R122)", function()
 		fake.enterWorld()
 
 		assert.is_false(journal.pages.updating)
-		assert.is_true(journal.frame.crumbs:IsShown())
-		assert.is_true(journal.frame.search:IsShown())
+		assert.are.same({ "Home" }, shownTexts(journal.frame.crumbs))
+		assert.is_true(journal.search:IsShown())
 		assert.is_true(has(shownTexts(journal.frame), "Where I've Fished"))
 	end)
 
@@ -343,7 +341,7 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 			end,
 		})
 		loaded.ns.journal:Open("widgets")
-		return loaded, shownTexts(loaded.ns.journal.frame.left)
+		return loaded, shownTexts(loaded.ns.journal.shown.left)
 	end
 
 	it("draws the ink XP bar's words, Fresh Water's in blue (LED-R145)", function()
@@ -352,7 +350,7 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		local loaded, texts = drawn({ { kind = "xpBar", bar = bar } })
 
 		assert.are.same({ "500 of 1,160.", " Fresh." }, texts)
-		local widget = loaded.ns.journal.frame.left.drawn.xpBar[1]
+		local widget = loaded.ns.journal.shown.left.drawn.xpBar[1]
 		assert.are.same({ 0x23 / 255, 0x40 / 255, 0x7a / 255 }, { unpack(widget.fresh.textColor, 1, 3) })
 	end)
 
@@ -390,14 +388,14 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 			"unfished · skill ~150",
 		}, texts)
 		-- the stamps are the kit's, inked or in ghost ink
-		local stamps = loaded.ns.journal.frame.left.drawn.stamps[1].stamps
+		local stamps = loaded.ns.journal.shown.left.drawn.stamps[1].stamps
 		assert.are.same({ "stamp-caught", "stamp-regular-off" }, { stamps[1].sprite, stamps[2].sprite })
 	end)
 
 	it("draws a sepia icon round in its ring, warmed toward sepia (ledger.md › UI)", function()
 		local loaded = drawn({ { kind = "icon", icon = 136245, look = "sepia" } })
 
-		local medal = loaded.ns.journal.frame.left.drawn.icon[1].medal
+		local medal = loaded.ns.journal.shown.left.drawn.icon[1].medal
 		assert.is_true(medal.icon:IsShown())
 		assert.are.equal(136245, medal.icon.texture)
 		assert.are.same({ 1, 0.94, 0.82 }, medal.icon.vertexColor)
@@ -413,7 +411,7 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 				{ kind = "plinth", icon = MACKEREL, look = "silhouette", text = "An empty plinth" },
 			})
 
-			local drawnWidgets = loaded.ns.journal.frame.left.drawn
+			local drawnWidgets = loaded.ns.journal.shown.left.drawn
 			for _, medal in ipairs({
 				drawnWidgets.icon[1].medalLarge,
 				drawnWidgets.row[1].medal,
@@ -428,7 +426,7 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 	it("opens a link's place when it is clicked (LED-R125)", function()
 		local loaded = drawn({ { kind = "link", text = "Home", place = { id = "home" } } })
 
-		loaded.ns.journal.frame.left.drawn.link[1]:Click()
+		loaded.ns.journal.shown.left.drawn.link[1]:Click()
 
 		assert.are.same({ "Home" }, crumbLabels(loaded))
 	end)
@@ -438,7 +436,7 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 
 		loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.home())
 
-		local texts = shownTexts(loaded.ns.journal.frame.left)
+		local texts = shownTexts(loaded.ns.journal.shown.left)
 		assert.are.same({ "The Waters", "Where I've Fished" }, { texts[1], texts[2] })
 		assert.is_false(has(texts, "Local"))
 		assert.is_false(has(texts, "Expert"))

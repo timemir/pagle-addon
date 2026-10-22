@@ -66,7 +66,7 @@ local function journal(motion)
 end
 
 -- What the Journal inked from a look: the crumbs' gilt, the fleuron's tint, the plate's silver and the pages' paper.
----@param frame LedgerJournalFrame
+---@param frame PagleBookFrame
 local function inked(frame)
 	local function rgb(region)
 		local color = (region --[[@as table]]).vertexColor or { 1, 1, 1 }
@@ -79,8 +79,8 @@ local function inked(frame)
 			(crumbs[2].label --[[@as table]]).textColor,
 		},
 		fleuron = rgb(crumbs[2].fleuron),
-		silver = (frame.plate.slices[1] --[[@as table]]).desaturated == true,
-		paper = { rgb(frame.papers.left.parchment), rgb(frame.papers.right.parchment) },
+		silver = (frame.plate.brass.left --[[@as table]]).desaturated == true,
+		paper = { rgb(frame.parchments.left.paper), rgb(frame.parchments.right.paper) },
 	}
 end
 

@@ -113,7 +113,7 @@ function ns.AttachJournalSearch(journal, box, frame)
 
 	box:SetScript("OnTextChanged", function(self)
 		local text = self:GetText() or ""
-		local hint = journal.frame and journal.frame.searchHint
+		local hint = journal.searchHint
 		if hint then
 			hint:SetShown(text == "")
 		end

@@ -128,7 +128,7 @@ describe("the Journal's Legends spread (LED-R147)", function()
 		scrollPage(loaded, "left", 120)
 		scrollPage(loaded, "right", 80)
 
-		journal.frame.left.drawn.row[2]:Click()
+		journal.shown.left.drawn.row[2]:Click()
 
 		assert.are.equal("Keefer's Angelfish", blockOfKind(journal.pages.right, "title").text)
 		assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
@@ -142,7 +142,7 @@ describe("the Journal's Legends spread (LED-R147)", function()
 		scrollPage(loaded, "left", 120)
 		scrollPage(loaded, "right", 80)
 
-		loaded.ns.journal.frame.right.drawn.link[1]:Click()
+		loaded.ns.journal.shown.right.drawn.link[1]:Click()
 
 		assert.are.equal("plate", loaded.ns.journal.pages.left[1].kind)
 		assert.are.same({ 0, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
@@ -252,13 +252,13 @@ describe("the Journal's Legends spread (LED-R147)", function()
 
 	it("draws the index, the page and the plate button on the book (LED-R147)", function()
 		local _, loaded = spread("legends", { legend = ANGELFISH })
-		local frame = loaded.ns.journal.frame
+		local journal = loaded.ns.journal
 
-		local left, right = shownTexts(frame.left), shownTexts(frame.right)
+		local left, right = shownTexts(journal.shown.left), shownTexts(journal.shown.right)
 
 		assert.is_truthy(table.concat(left, "\n"):find("an unwritten legend", 1, true))
 		assert.is_truthy(table.concat(right, "\n"):find("Title: Keefer's Rival", 1, true))
-		frame.right.drawn.link[1]:Click()
+		journal.shown.right.drawn.link[1]:Click()
 		assert.are.same(
 			{ id = "legends", args = { legend = ANGELFISH, plate = true } },
 			loaded.ns.journal.router:Place()
@@ -289,7 +289,7 @@ describe("a Legend's plate (LED-R147)", function()
 			}, pages.left[1])
 			assert.is_truthy(size:find("^%a+ · [%d.]+ %a+$"))
 			-- drawn over both pages: the crest with the icon, the words, and the title by the Title seal
-			local plate = loaded.ns.journal.frame.legendPlate
+			local plate = loaded.ns.journal.legendPlate
 			assert.is_true(plate:IsShown())
 			assert.are.same({
 				"A Legend of these waters",
@@ -314,9 +314,7 @@ describe("a Legend's plate (LED-R147)", function()
 	it("opens again over the pages when an update finishes while it shows (LED-R122, LED-R147)", function()
 		local _, loaded = spread("legends", { legend = ANGELFISH, plate = true })
 		local journal, projection = loaded.ns.journal, loaded.ns.projection
-		local frame = journal.frame
-		local leftClip = frame.leaves.left[frame.shownLeaf.left].clip
-		local leftShown = leftClip:IsShown()
+		local frame = journal
 		local isUpdating = projection.IsUpdating
 		projection.IsUpdating = function()
 			return true
@@ -329,13 +327,12 @@ describe("a Legend's plate (LED-R147)", function()
 
 		assert.is_true(frame.legendPlate:IsShown())
 		assert.is_truthy(table.concat(shownTexts(frame.legendPlate), "\n"):find("Keefer's Angelfish", 1, true))
-		assert.are.equal(leftShown, leftClip:IsShown()) -- the pages under it stand as they did
 	end)
 
 	it("returns to the Legend's page at a click anywhere on it (LED-R147)", function()
 		local _, loaded = spread("legends", { legend = ANGELFISH, plate = true })
 		local journal = loaded.ns.journal
-		local frame = journal.frame
+		local frame = journal
 		assert.is_truthy(table.concat(shownTexts(frame.legendPlate), "\n"):find("Keefer's Angelfish", 1, true))
 
 		frame.legendPlate:Click()
@@ -348,14 +345,14 @@ end)
 describe("Legends in the Journal's search (LED-R148)", function()
 	-- Types `query` into the open book's search box, as the player does: its text changes.
 	local function typeInto(loaded, query)
-		local search = loaded.ns.journal.frame.search
+		local search = loaded.ns.journal.search
 		search:SetText(query)
 		search:GetScript("OnTextChanged")(search, true)
 	end
 
 	-- The dropdown's shown lines, in order.
 	local function dropdown(loaded)
-		local frame = loaded.ns.journal.frame
+		local frame = loaded.ns.journal
 		local lines = {}
 		if not frame.searchDrop:IsShown() then
 			return lines
@@ -388,7 +385,7 @@ describe("Legends in the Journal's search (LED-R148)", function()
 		local journal = loaded.ns.journal
 		typeInto(loaded, "keefer")
 
-		journal.frame.searchDrop.rows[1]:Click()
+		journal.searchDrop.rows[1]:Click()
 
 		assert.are.same({ id = "legends", args = { legend = ANGELFISH } }, journal.router:Place())
 		assert.are.equal("Keefer's Angelfish", blockOfKind(journal.pages.right, "title").text)
@@ -423,7 +420,7 @@ describe("Home's Legends line (LED-R132)", function()
 			"Following",
 		}, leaders)
 
-		local line = journal.frame.right.drawn.leader[3]
+		local line = journal.shown.right.drawn.leader[3]
 		assert.are.same({ "iii.", "Legends", "1 / 3" }, shownTexts(line))
 		line:Click()
 

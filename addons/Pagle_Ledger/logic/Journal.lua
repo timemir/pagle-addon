@@ -375,6 +375,22 @@ local function subject(id, args, names)
 	return table.concat(parts, " ")
 end
 
+--- Each page's subject (LED-R129) at spread `id` with `args`, as `spreads` names them: equal for two places exactly
+--- when that page is about the same thing. Nil for a spread not registered.
+---@param spreads table<string, LedgerSpread>
+---@param id string
+---@param args table?
+---@return { left: string, right: string }?
+function ns.JournalSubjects(spreads, id, args)
+	local spread = spreads[id]
+	if not spread then
+		return nil
+	end
+	args = args or {}
+	local names = spread.subjects or { left = allArgs(args), right = allArgs(args) }
+	return { left = subject(id, args, names.left), right = subject(id, args, names.right) }
+end
+
 ---@class LedgerJournalRouter
 ---@field private spreads table<string, LedgerSpread>
 ---@field private place LedgerJournalPlace
@@ -434,14 +450,12 @@ function Router:Pages(context)
 	if not back and self.place.id ~= ns.JOURNAL_HOME then
 		back = crumbs[1].place
 	end
-	local id = self.place.id
-	local names = spread.subjects or { left = allArgs(args), right = allArgs(args) }
 	return {
 		updating = false,
 		crumbs = crumbs,
 		back = back,
 		left = pages.left,
 		right = pages.right,
-		subjects = { left = subject(id, args, names.left), right = subject(id, args, names.right) },
+		subjects = ns.JournalSubjects(self.spreads, self.place.id, args),
 	}
 end
