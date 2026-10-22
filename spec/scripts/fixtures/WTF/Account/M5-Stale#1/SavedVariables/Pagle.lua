@@ -23,6 +23,12 @@ PagleLog = {
 PagleDB = {
 ["global"] = {
 ["schemaVersion"] = 1,
+["activityXP"] = {
+["earned"] = {
+["Hunts"] = 150,
+},
+["logId"] = "6c2f9e0a1b3d5e77",
+},
 },
 ["profileKeys"] = {
 ["Ada - Brook"] = "Default",

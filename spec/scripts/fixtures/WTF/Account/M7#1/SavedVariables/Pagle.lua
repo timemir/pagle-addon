@@ -71,6 +71,12 @@ PagleLog = {
 PagleDB = {
 ["global"] = {
 ["schemaVersion"] = 1,
+["activityXP"] = {
+["earned"] = {
+["TackleBoard"] = 1550,
+},
+["logId"] = "3c9e1a7f5b2d8046",
+},
 ["coins"] = {
 ["earned"] = {
 ["TackleBoard"] = 180,

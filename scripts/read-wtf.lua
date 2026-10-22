@@ -9,13 +9,17 @@
 --   - the Ledger (PagleLedgerDB in Pagle_Ledger.lua): the projection Core stores and whether its logId, lastSeq and
 --     rulesVersion are current, its state (items, the Uncharted list, zone ranks) with what the Ledger's own logic/
 --     computes from it over the world index (the level, charted zones, shown ranks, Ledger completion), and the
---     celebrated set; then, in a Ledger M4 section, the climb with Prestige, the Catch Milestones, the Legends, the
+--     celebrated set; then, in a Ledger M4 section, the climb with Prestige and the climb's Activity XP (from Core's
+--     stored totals and the latest Prestige snapshot), the Catch Milestones, the Legends, the
 --     Simulated Size records, the earned and active titles, the celebrated set's M4 keys, and the log's sized Catches
 --     by band and per Species (#267);
---   - Hunts (PagleHuntsDB in Pagle_Hunts.lua): the projection Core stores and whether its logId, lastSeq,
---     rulesVersion and fingerprint are current, its state (Casts, Coins, each Hunt's progress and tiers, the earned
---     set titles) with the Session summary line Hunts' own logic/ computes from it over the Hunt list, the
---     celebrated set, the pins and the profile settings; with --hunt, one Hunt in full;
+--   - Hunts (PagleHuntsDB in Pagle_Hunts.lua): its Module records in PagleLog (A1, by kind, and those its codec
+--     skips), the projection Core stores and whether its logId, lastSeq, rulesVersion and fingerprint are current,
+--     its state (Casts, Coins, each Hunt's progress and tiers, the earned set titles, the settled runs and the
+--     ladder, its Activity XP against Core's stored total, every known run with its Hunts' progress) with the
+--     Session summary line Hunts' own logic/ computes from it over the Hunt list, the fallback slot and its pick
+--     from its own logic/Rotation.lua over the event pool, the celebrated set checked against the reached marks,
+--     settled runs and ladder steps, the pins and the profile settings; with --hunt, one Hunt in full;
 --   - Stats (PagleStatsDB in Pagle_Stats.lua): the projection Core stores and whether its logId, lastSeq,
 --     rulesVersion and fingerprint are current, its totals, places, scopes, hits, skill margins and characters, its
 --     last Sessions checked against the log's Session IDs, the live tracker setting, the watches with their readings
@@ -23,12 +27,14 @@
 --   - the Tackle Board: its Module records in PagleLog (A1, by kind, the last 10 decoded with its own codec), and from
 --     PagleTackleBoardDB in Pagle_TackleBoard.lua the projection Core stores and whether its logId, lastSeq,
 --     rulesVersion and fingerprint are current, its state (started, the days, today, owed, the pins and overflow strip
---     with each goal's text and progress, the completed goals, tally, Coins, flies, titles and Campfire, from its own
---     logic/), the celebrated set checked against the completed goals and titles, and the tracker settings;
+--     with each goal's text and progress, the completed goals, tally, Coins, Activity XP against Core's stored total,
+--     flies, titles and Campfire, from its own logic/), the celebrated set checked against the completed goals and
+--     titles, and the tracker settings;
 --   - the wallet: each Module's reported Coins (PagleDB.global.coins.earned), the balance (held while negative) and
---     the wallet projection (PagleDB.global.projections.wallet): spent and purchased;
---   - Activity XP: each Module's reported total (PagleDB.global.activityXP.earned) and their sum, and whether these
---     totals and the Coins totals belong to PagleLog's logId;
+--     whether those totals belong to PagleLog's logId, and the wallet projection (PagleDB.global.projections.wallet):
+--     spent and purchased;
+--   - Activity XP: each Module's reported total (PagleDB.global.activityXP.earned) and their sum, whether these
+--     totals belong to PagleLog's logId, and the last pushed-content seq Core accepted (PagleDB.global.pushed.seq);
 --   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
 --   - the tracker dock's saved place (PagleDB.profile.dock.point);
 --   - the cards: the Write-up waiting, the Session summary cards, the open summary and the pending moments;
@@ -60,7 +66,8 @@
 -- as a local-only build's, and --eventlist the event pool from another EventList.lua than the repo's
 -- addons/Pagle_Hunts/data/EventList.lua (both go into the fingerprint Hunts hands Core, HNT-R136). --hunt <id>
 -- prints that Hunt's full progress. --now T computes what depends on the time
--- (current and retired Hunts, the summary line, the pins Hunts drops, how long ago a Dry spell's last Catch was) at
+-- (current and retired Hunts, the summary line, the pins Hunts drops, whether each run is on, ahead or ended, the
+-- fallback slot, which runs ended more than 30 days ago, how long ago a Dry spell's last Catch was) at
 -- server time T instead of the reader's clock, and the Tackle Board's today at T instead of Pagle_TackleBoard.lua's
 -- write time.
 -- --stats-item <id> --area <areaID> prints Stats' reading of that item in that place (STA-R40–R54): its side, scope,
@@ -151,6 +158,25 @@ end
 local function utcOffset(minutes)
 	local size = math.abs(minutes)
 	return ("UTC%s%02d:%02d"):format(minutes < 0 and "-" or "+", math.floor(size / 60), size % 60)
+end
+
+-- A server time as "realm 2026-10-14 08:10, server 2026-10-14 15:10:00 UTC", at the realm's UTC offset in minutes
+-- (LOG-R49), or "realm unknown" without one.
+local function realmAndServer(time, offset)
+	local realm = offset and os.date("!%Y-%m-%d %H:%M", time + offset * 60) or "unknown"
+	return ("realm %s, server %s"):format(realm, utc(time))
+end
+
+-- A span of seconds as "2 d 5 h 13 min", leaving out the leading units at 0 and the seconds.
+local function durationText(seconds)
+	local days, hours = math.floor(seconds / 86400), math.floor(seconds % 86400 / 3600)
+	local minutes = math.floor(seconds % 3600 / 60)
+	if days > 0 then
+		return ("%d d %d h %d min"):format(days, hours, minutes)
+	elseif hours > 0 then
+		return ("%d h %d min"):format(hours, minutes)
+	end
+	return ("%d min"):format(minutes)
 end
 
 local function printErrors(account)
@@ -678,6 +704,66 @@ local function printStored(stored, log)
 	end
 end
 
+-- A Module's records in PagleLog (LOG-R40, LOG-R41), in seq order, read as M:IterateCatches reads them with Core's
+-- codec (`core`, loadCoreLogic's); or nil and the line saying why there are none to read.
+local function moduleRecords(core, log, module)
+	if not log then
+		return nil, "records: no PagleLog to read"
+	elseif log.format ~= core.LOG_FORMAT then
+		return nil,
+			("records: PagleLog is format %s, the codec reads format %d"):format(tostring(log.format), core.LOG_FORMAT)
+	end
+	local records = {}
+	for record in core.OpenCatchLog(log, { decodeErrors = 0 }, 0):Iterate(0, module) do
+		if record.kind == "module" then
+			records[#records + 1] = record
+		end
+	end
+	return records
+end
+
+-- How many records a Module kept, by kind (`kinds`, the ones it appends, first, then any other), as
+-- "start 1, day 7, issue2 1".
+local function recordKindCounts(counts, kinds)
+	local parts, known = {}, {}
+	for _, kind in ipairs(kinds) do
+		known[kind] = true
+		if counts[kind] then
+			parts[#parts + 1] = kind .. " " .. counts[kind]
+		end
+	end
+	for _, kind in ipairs(sortedKeys(counts)) do
+		if not known[kind] then
+			parts[#parts + 1] = kind .. " " .. counts[kind]
+		end
+	end
+	return table.concat(parts, ", ")
+end
+
+-- Core's Activity XP total (AXP-R6): the sum of the stored totals (`earned`, PagleDB.global.activityXP.earned).
+local function activityXPTotal(earned)
+	local sum = 0
+	for _, total in pairs(earned) do
+		sum = sum + (tonumber(total) or 0)
+	end
+	return sum
+end
+
+-- Whether a Module's lifetime Activity XP, as its projection holds it, is the total Core stores for it
+-- (PagleDB.global.activityXP.earned, AXP-R3): `earned` is that table, nil without a PagleDB to read.
+local function xpAgainstCore(xp, name, earned)
+	if not earned then
+		return "no PagleDB to compare with"
+	end
+	local stored = earned[name]
+	if stored == nil then
+		return ("Core stores no %s total (AXP-R3)"):format(name)
+	elseif stored == xp then
+		return ("equals Core's stored %s total (AXP-R3)"):format(name)
+	end
+	return ("DIFFERS from Core's stored %s total %s: the next report sets it (AXP-R3)"):format(name, tostring(stored))
+end
+
 -- Core's namespace with what M4's lines read of it: its strings (locale/enUS.lua), the size rules and bands
 -- (logic/Size.lua, LOG-R65–R68), the wallet (logic/Wallet.lua, SHOP-R12) and the wallet projection's rules version
 -- (logic/WalletProjection.lua). Nothing here hashes a Catch ID, so it reads the same without LuaBitOp.
@@ -694,6 +780,7 @@ local function m4State(state)
 	return {
 		xp = tonumber(state.xp) or 0,
 		prestige = tonumber(state.prestige) or 0,
+		prestigeActivityXP = tonumber(state.prestigeActivityXP) or 0,
 		catches = tonumber(state.catches) or 0,
 		milestones = tableOr(state.milestones),
 		species = tableOr(state.species),
@@ -921,12 +1008,23 @@ local function printLedgerM4(ledger, db, state, context)
 	local celebrated = tableOr(tableOr(db.global).celebrated)
 	local made = state and m4State(state)
 	if made then
+		-- The climb's Activity XP (LED-R37): Core's total now, the sum of its stored totals (AXP-R6), less the latest
+		-- Prestige snapshot the state applied, never below 0; read here from the file as the Ledger reads it from Core.
+		local total = context.xpTotal or 0
+		local from = context.xpTotal and "Core's stored total " .. total or "no PagleDB, so " .. total
 		print(
-			("climb: prestige rank %d, %d XP, computed level %d, peak level %d"):format(
+			(
+				"climb: prestige rank %d, %d XP of its own, Prestige snapshot %d, the climb's Activity XP %d (%s − %d,"
+				.. " LED-R37), computed level %d, peak level %d"
+			):format(
 				made.prestige,
 				made.xp,
-				ledger.Level(made),
-				ledger.PeakLevel(made)
+				made.prestigeActivityXP,
+				ledger.ClimbActivityXP(made, total),
+				from,
+				made.prestigeActivityXP,
+				ledger.Level(made, total),
+				ledger.PeakLevel(made, total)
 			)
 		)
 		printMilestones(made)
@@ -949,8 +1047,10 @@ end
 -- Prints the Ledger section from SavedVariables/Pagle_Ledger.lua (ledger.md › Data): the projection Core stores
 -- (LOG-R70), checked against PagleLog (LOG-R72) and the Ledger's rules version (LED-R2), the state with what the
 -- Ledger's own logic/ computes from it over the world index, and the celebrated set (LED-R90). `catalogue` is the
--- --catalogue path, or nil for the repo's; `items` the --item IDs. The Ledger M4 section follows it.
-local function printLedger(account, log, catalogue, items)
+-- --catalogue path, or nil for the repo's; `items` the --item IDs; `xpEarned` Core's stored Activity XP totals
+-- (PagleDB.global.activityXP.earned, nil without a PagleDB), which the Ledger reads as Core's total when it works out
+-- the level (LED-R37, AXP-R6). The Ledger M4 section follows it.
+local function printLedger(account, log, catalogue, items, xpEarned)
 	local path = account .. "/SavedVariables/Pagle_Ledger.lua"
 	local saved, err = loadSavedVariables(path)
 	if not saved then
@@ -966,6 +1066,12 @@ local function printLedger(account, log, catalogue, items)
 	local global = tableOr(db.global)
 	local stored = global.projection
 	local ledger, state, world, getItem = wtf.loadLedgerLogic(), nil, nil, nil
+	-- Core's Activity XP total as Pagle.GetActivityXP() gives it (AXP-R6), as adapter/Ledger.lua passes it, so the
+	-- titles below count the climb's Activity XP too (LED-R38).
+	local xpTotal = xpEarned and activityXPTotal(xpEarned)
+	ledger.SetActivityXPSource(function()
+		return xpTotal or 0
+	end)
 	if type(stored) ~= "table" or type(stored.projection) ~= "table" then
 		print("projection: none stored (no build has finished, LOG-R72)")
 	else
@@ -992,7 +1098,7 @@ local function printLedger(account, log, catalogue, items)
 		ledger,
 		db,
 		state,
-		{ world = world, getItem = getItem, items = items, log = log, catalogue = catalogue }
+		{ world = world, getItem = getItem, items = items, log = log, catalogue = catalogue, xpTotal = xpTotal }
 	)
 end
 
@@ -1027,6 +1133,14 @@ local function loadHuntsLogic(huntListPath, eventListPath)
 			assert(wtf.loadInto(ns, env, dir .. file, "Pagle_Hunts"))
 		end
 	end
+	-- The event pool at runtime (logic/Events.lua), as OnInitialize makes it: the runs read their events' Hunts from it
+	-- and the rotation picks from it (HNT-R140, HNT-R152). Where each event Hunt bites isn't read here, so the lookups
+	-- know no area.
+	local lookups = {
+		GetArea = function() end,
+		GetZoneOf = function() end,
+	}
+	ns.events = ns.NewEventList(type(ns.eventList) == "table" and ns.eventList or nil, ns.L, lookups)
 	if not listErr and type(ns.huntList) ~= "table" then
 		listErr = "it sets no Hunt list"
 	end
@@ -1135,10 +1249,247 @@ local function printHuntProgress(hunts, id, hunt, progress, now)
 	end
 end
 
+-- Hunts' Module records in PagleLog (LOG-R40, HNT-R150, HNT-R154), read as M:IterateCatches reads them with Core's
+-- codec: the count by kind (`run`, `def`, then any other), and those Hunts' own codec (logic/Records.lua) skips, by
+-- seq: a payload it can't decode, or a kind Hunts doesn't append, which logic/Runs.lua's ApplyRunRecord passes over.
+local function printHuntsRecords(hunts, log)
+	local records, why = moduleRecords(loadCoreLogic(), log, "Hunts")
+	if not records then
+		print(why)
+		return
+	elseif #records == 0 then
+		print("records: no Hunts A1 entries in PagleLog")
+		return
+	end
+	local counts, skipped = {}, {}
+	for _, record in ipairs(records) do
+		local kind = record.recordKind
+		counts[kind] = (counts[kind] or 0) + 1
+		local decoded = kind == hunts.RUN_RECORD and hunts.DecodeRun(record.payload)
+			or kind == hunts.DEF_RECORD and hunts.DecodeDef(record.payload)
+		if not decoded then
+			skipped[#skipped + 1] = record.seq
+		end
+	end
+	local kinds = recordKindCounts(counts, { hunts.RUN_RECORD, hunts.DEF_RECORD })
+	print(("records: %d Hunts A1 entries in PagleLog: %s"):format(#records, kinds))
+	local skips = #skipped > 0 and ("%d (seq %s)"):format(#skipped, table.concat(skipped, ", ")) or "none"
+	print("records Hunts skips: " .. skips .. " (HNT-R150, HNT-R154)")
+end
+
+-- The completed-run count, the ladder steps reached with their times (HNT-R148), and the lifetime Coins and Activity
+-- XP (HNT-R110, HNT-R115) beside Core's stored total for Hunts (AXP-R3). `offset` is the realm's UTC offset in minutes.
+local function printHuntsTotals(hunts, state, offset, xpEarned)
+	print(("settled: %d (HNT-R148)"):format(tonumber(state.settled) or 0))
+	local ladder, steps, reached = tableOr(state.ladder), hunts.LADDER_STEPS, 0
+	for _, step in ipairs(steps) do
+		reached = reached + (ladder[step] and 1 or 0)
+	end
+	print(("ladder: %d of %d steps (%s) (HNT-R148)"):format(reached, #steps, table.concat(steps, " / ")))
+	for _, step in ipairs(steps) do
+		if ladder[step] then
+			print(("  %d: %s"):format(step, realmAndServer(tonumber(ladder[step]) or 0, offset)))
+		end
+	end
+	local coins, xp = tonumber(state.coins) or 0, tonumber(state.xp) or 0
+	print(("coins: %d (HNT-R110), xp: %d (HNT-R115), %s"):format(coins, xp, xpAgainstCore(xp, "Hunts", xpEarned)))
+end
+
+-- What the runs line names a run's source by (HNT-R150).
+local RUN_SOURCES = { r = "the rotation", p = "pushed" }
+
+-- Where a run stands at `now` (HNT-R143): on while `start <= now < end`, ahead before, ended after.
+local function runStatus(run, now)
+	if now < run.start then
+		return "ahead"
+	elseif now < run.end_ then
+		return "on"
+	end
+	return "ended"
+end
+
+-- The state's known runs (HNT-R150) as { key, run }, by start, then end, then run key.
+local function runsByStart(state)
+	local runs = {}
+	for key, run in pairs(tableOr(state.runs)) do
+		if type(run) == "table" and type(run.start) == "number" and type(run.end_) == "number" then
+			runs[#runs + 1] = { key = key, run = run }
+		end
+	end
+	table.sort(runs, function(a, b)
+		if a.run.start ~= b.run.start then
+			return a.run.start < b.run.start
+		elseif a.run.end_ ~= b.run.end_ then
+			return a.run.end_ < b.run.end_
+		end
+		return a.key < b.key
+	end)
+	return runs
+end
+
+-- A run's Hunt IDs: its event's, in file order, when the pool has the event, else those it has progress for, by ID.
+local function runHuntIDs(hunts, run)
+	local event, ids = hunts.events:Event(run.event), {}
+	if not event then
+		return sortedKeys(tableOr(run.hunts)), nil
+	end
+	for i, hunt in ipairs(event.hunts) do
+		ids[i] = hunt.id
+	end
+	return ids, event
+end
+
+-- Every known run (HNT-R142, HNT-R143, HNT-R150), by start: its run key, event and source, whether it is on, ahead or
+-- ended at `now`, when it was settled (HNT-R146), its bounds in realm-local (at `offset`, LOG-R49) and server time, and
+-- each of its event's Hunts' count and tiers reached within the run (HNT-R145), from the pool (logic/Events.lua). A
+-- run whose event the pool doesn't have (a pushed definition's) lists the Hunts it has progress for.
+local function printRuns(hunts, state, now, options, offset)
+	local runs = runsByStart(state)
+	if #runs == 0 then
+		print("runs: none known (HNT-R150)")
+		return
+	end
+	local clock = offset and ("realm time at the log's realm clock (%s)"):format(utcOffset(offset))
+		or "realm time unknown (no Cast read the realm minute)"
+	local when = ("%s (%s)"):format(utc(now), options.now and "--now" or "the reader's clock")
+	print(("runs: %d known, by start, at %s, %s (HNT-R150)"):format(#runs, when, clock))
+	for _, entry in ipairs(runs) do
+		local run = entry.run
+		local source = RUN_SOURCES[run.source] or "unknown"
+		local line = ("  %s: %s, source %s (%s), %s (HNT-R143)"):format(
+			entry.key,
+			tostring(run.event),
+			tostring(run.source),
+			source,
+			runStatus(run, now)
+		)
+		if tonumber(run.completedAt) then
+			line = line .. (", settled %s (HNT-R146)"):format(realmAndServer(run.completedAt, offset))
+		end
+		print(line)
+		print(("    start %s; end %s"):format(realmAndServer(run.start, offset), realmAndServer(run.end_, offset)))
+		local ids, event = runHuntIDs(hunts, run)
+		if not event then
+			print(
+				"    its event isn't in the event pool read (a pushed definition's), so its Hunts' tiers aren't known"
+			)
+		end
+		local progressOf = tableOr(run.hunts)
+		for k, id in ipairs(ids) do
+			local progress = tableOr(progressOf[id])
+			local reached = #tableOr(progress.reached)
+			local hunt = event and event.hunts[k]
+			local tiers = hunt and ("tiers %d of %d (%s)"):format(reached, #hunt.tiers, tiersText(hunt))
+				or count(reached, "tier") .. " reached"
+			print(("    %s: count %d, %s"):format(id, tonumber(progress.count) or 0, tiers))
+		end
+	end
+end
+
+-- The fallback slot holding `now` (HNT-R152), from Hunts' own logic/Rotation.lua over the event pool read: its index,
+-- band, bounds and pick, whether a logged run covers it (then the run log logs nothing for it, HNT-R153), and how
+-- long until it ends, when the next slot's pick comes on.
+local function printRotation(hunts, state, now)
+	local k = hunts.RotationSlotAt(now)
+	if not k then
+		local text = "rotation: no slot before its starting point, %s (HNT-R152, HNT-R204)"
+		print(text:format(utc(hunts.ROTATION_ORIGIN)))
+		return
+	end
+	local slot = hunts.RotationSlot(k)
+	local pick = hunts.RotationPick(hunts.events:Events(), k)
+	local picked = pick and "pick " .. pick.id or ("pick none (no %s event in the pool)"):format(slot.band)
+	local covering = {}
+	for _, entry in ipairs(runsByStart(state)) do
+		if entry.run.start < slot.end_ and slot.start < entry.run.end_ then
+			covering[#covering + 1] = entry.key
+		end
+	end
+	local covered = #covering > 0 and "covered by " .. table.concat(covering, ", ") or "no logged run covers it"
+	print(
+		("rotation: slot %d (%s), %s to %s, %s, %s, ends in %s (HNT-R152, HNT-R153)"):format(
+			k,
+			slot.band,
+			utc(slot.start),
+			utc(slot.end_),
+			picked,
+			covered,
+			durationText(slot.end_ - now)
+		)
+	)
+end
+
+-- The celebrated set's run and ladder entries (HNT-R90, HNT-R92): each run key with its event Hunts' highest tiers
+-- shown, whether its completion was, and its end; the ladder steps shown. Then, with a state, each reached mark,
+-- settled run and ladder step that isn't in it (never shown, HNT-R91), except in runs that ended more than 30 days
+-- before `now`, which `done` drops from the set and whose moments a rebuild never raises (HNT-R92).
+local function printHuntsCelebratedRuns(hunts, celebrated, state, now)
+	local runs = tableOr(celebrated.runs)
+	local keys = sortedKeys(runs)
+	print("celebrated runs: " .. (#keys > 0 and #keys or "none"))
+	for _, key in ipairs(keys) do
+		local entry = tableOr(runs[key])
+		local tiers = tableOr(entry.tiers)
+		local parts = {}
+		for _, id in ipairs(sortedKeys(tiers)) do
+			parts[#parts + 1] = id .. " " .. tostring(tiers[id])
+		end
+		print(
+			("  %s: tiers %s, %s, endsAt %s"):format(
+				key,
+				#parts > 0 and table.concat(parts, ", ") or "none",
+				entry.settled and "settled" or "not settled",
+				utc(tonumber(entry.endsAt) or 0)
+			)
+		)
+	end
+	local ladder = tableOr(celebrated.ladder)
+	print("celebrated ladder: " .. listed(ladder))
+	if not state then
+		return
+	end
+	local missing, old = {}, {}
+	for _, entry in ipairs(runsByStart(state)) do
+		local run = entry.run
+		if hunts.RunLongEnded(run, now) then
+			old[#old + 1] = entry.key
+		else
+			local shown = tableOr(runs[entry.key])
+			local tiers = tableOr(shown.tiers)
+			for _, id in ipairs((runHuntIDs(hunts, run))) do
+				local reached = #tableOr(tableOr(tableOr(run.hunts)[id]).reached)
+				for tier = (tonumber(tiers[id]) or 0) + 1, reached do
+					missing[#missing + 1] = ("%s %s tier %d"):format(entry.key, id, tier)
+				end
+			end
+			if tonumber(run.completedAt) and not shown.settled then
+				missing[#missing + 1] = entry.key .. " settled"
+			end
+		end
+	end
+	for _, step in ipairs(hunts.LADDER_STEPS) do
+		if tableOr(state.ladder)[step] and not ladder[step] then
+			missing[#missing + 1] = "ladder step " .. step
+		end
+	end
+	for _, what in ipairs(missing) do
+		print(("celebrated: MISSING %s (HNT-R90, HNT-R91)"):format(what))
+	end
+	if #missing == 0 then
+		print("celebrated: every reached mark, settled run and ladder step is in it (HNT-R90)")
+	end
+	if #old > 0 then
+		local text = "celebrated: %s ended more than 30 days ago left out (HNT-R92): %s"
+		print(text:format(count(#old, "run"), table.concat(old, ", ")))
+	end
+end
+
 -- The state's lines (hunts.md › Projection state): the Session summary line Hunts would set at `now` (HNT-R89), from
 -- its own ns.HuntsSummaryLine and wording, the state's counts, each Hunt with progress in Hunt-list order (then any the list
--- doesn't have, by ID), and the earned set titles (HNT-R23).
-local function printHuntsState(hunts, list, state, now, options)
+-- doesn't have, by ID), and the earned set titles (HNT-R23); then Hunt Events' (#309): the completed runs and the
+-- ladder, the Coins and Activity XP, the known runs and the fallback slot at `now`. `context` holds the realm's UTC
+-- offset (the Catch log's) and Core's stored Activity XP totals.
+local function printHuntsState(hunts, list, state, now, options, context)
 	local progressOf, sets = tableOr(state.hunts), tableOr(state.sets)
 	local ids, titles = sortedKeys(progressOf), sortedKeys(sets)
 	if list then
@@ -1192,10 +1543,26 @@ local function printHuntsState(hunts, list, state, now, options)
 			)
 		)
 	end
+	printHuntsTotals(hunts, state, context.offset, context.xpEarned)
+	printRuns(hunts, state, now, options, context.offset)
+	printRotation(hunts, state, now)
+end
+
+-- The settings Hunt Events adds to the profile (hunts.md › PagleHuntsDB) and their defaults, for as long as
+-- ns.DB_DEFAULTS doesn't list them yet (the tracker's block and the companion hint, #303, #304, set them there).
+local WAGER_DEFAULTS = { wagersCollapsed = false, companionHint = true, lastHintNod = 0 }
+
+-- A setting's default from ns.DB_DEFAULTS' profile, else WAGER_DEFAULTS'.
+local function wagerDefault(value, name)
+	if value == nil then
+		return WAGER_DEFAULTS[name]
+	end
+	return value
 end
 
 -- The profile (hunts.md › PagleHuntsDB, one shared "Default" profile): the pins, with those Hunts drops at load
--- from its own StalePins (HNT-R81), and the four settings, each marked when AceDB left its default out of the file.
+-- from its own StalePins (HNT-R81), and the seven settings, each marked when AceDB left its default out of the file;
+-- lastHintNod, a server time, with its time (HNT-R171).
 local function printHuntsProfile(hunts, list, profile, now)
 	local pins = tableOr(profile.pins)
 	local line = "pins: " .. listed(pins)
@@ -1211,10 +1578,19 @@ local function printHuntsProfile(hunts, list, profile, now)
 		{ "tracker.collapsed", tracker.collapsed, defaults.tracker.collapsed },
 		{ "windowMoments", profile.windowMoments, defaults.windowMoments },
 		{ "showCompleted", profile.showCompleted, defaults.showCompleted },
+		{
+			"tracker.wagersCollapsed",
+			tracker.wagersCollapsed,
+			wagerDefault(defaults.tracker.wagersCollapsed, "wagersCollapsed"),
+		},
+		{ "companionHint", profile.companionHint, wagerDefault(defaults.companionHint, "companionHint") },
+		{ "lastHintNod", profile.lastHintNod, wagerDefault(defaults.lastHintNod, "lastHintNod") },
 	}) do
 		local name, value, default = setting[1], setting[2], setting[3]
 		if value == nil then
 			print(("%s: %s (not saved: the default)"):format(name, tostring(default)))
+		elseif name == "lastHintNod" and tonumber(value) then
+			print(("%s: %s (%s)"):format(name, tostring(value), utc(tonumber(value))))
 		else
 			print(("%s: %s"):format(name, tostring(value)))
 		end
@@ -1300,10 +1676,12 @@ local function printHuntDetail(hunts, list, id, state, db, now)
 	end
 end
 
--- Prints the Hunts section from SavedVariables/Pagle_Hunts.lua (hunts.md › Data): the projection Core stores
--- (LOG-R70) with its checks, the state with what Hunts' own logic/ computes from it at `options.now` (or the
--- reader's clock), the celebrated set (HNT-R90) and the profile; then one section per --hunt.
-local function printHunts(account, log, options)
+-- Prints the Hunts section from SavedVariables/Pagle_Hunts.lua (hunts.md › Data): Hunts' records in PagleLog, the
+-- projection Core stores (LOG-R70) with its checks, the state with what Hunts' own logic/ computes from it at
+-- `options.now` (or the reader's clock), the celebrated set (HNT-R90) and the profile; then one section per --hunt.
+-- `facts` is the Catch log section's (its realm offset, nil without a log), `xpEarned` Core's stored Activity XP
+-- totals (nil without a PagleDB).
+local function printHunts(account, log, options, facts, xpEarned)
 	local path = account .. "/SavedVariables/Pagle_Hunts.lua"
 	local saved, err = loadSavedVariables(path)
 	if not saved then
@@ -1317,6 +1695,7 @@ local function printHunts(account, log, options)
 	end
 	print("== Hunts (PagleHuntsDB)")
 	local hunts, listErr = loadHuntsLogic(options.huntList, options.eventList)
+	printHuntsRecords(hunts, log)
 	local now = options.now or os.time()
 	local global = tableOr(db.global)
 	local stored = global.projection
@@ -1327,13 +1706,15 @@ local function printHunts(account, log, options)
 	else
 		list = printHuntsStored(hunts, listErr, stored, log, options)
 		state = stored.projection
-		printHuntsState(hunts, list, state, now, options)
+		local context = { offset = facts and facts.realmOffset, xpEarned = xpEarned }
+		printHuntsState(hunts, list, state, now, options, context)
 	end
 	local celebrated = tableOr(global.celebrated)
 	print("celebrated tiers: " .. listed(tableOr(celebrated.tiers), function(id, tier)
 		return id .. " " .. tostring(tier)
 	end))
 	print("celebrated titles: " .. listed(tableOr(celebrated.sets)))
+	printHuntsCelebratedRuns(hunts, celebrated, state, now)
 	printHuntsProfile(hunts, list, tableOr(tableOr(db.profiles).Default), now)
 	for _, id in ipairs(options.hunts) do
 		printHuntDetail(hunts, list, id, tableOr(state), db, now)
@@ -1745,13 +2126,6 @@ local function loadBoardLogic(catalogue)
 	return ns
 end
 
--- A server time as "realm 2026-10-14 08:10, server 2026-10-14 15:10:00 UTC", at the realm's UTC offset in minutes
--- (LOG-R49), or "realm unknown" without one.
-local function realmAndServer(time, offset)
-	local realm = offset and os.date("!%Y-%m-%d %H:%M", time + offset * 60) or "unknown"
-	return ("realm %s, server %s"):format(realm, utc(time))
-end
-
 -- A goal definition (tackle-board.md › Data) as "Notice haul tier 1, pays 10, need 3, target 12 ("3 Catches in
 -- Area 12")", its text from the board's own GoalText (TKB-R36).
 local function goalDefinition(board, def)
@@ -1783,51 +2157,32 @@ local function boardRecordLine(board, record, offset)
 	return head .. (", dayStart %s, weekStart %s"):format(utc(decoded.dayStart), utc(decoded.weekStart))
 end
 
--- How many records the board kept, by kind (TKB-R80's four first, then any other), as "start 1, day 7, issue2 1".
-local function recordKindCounts(counts)
-	local parts, known = {}, {}
-	for _, kind in ipairs(BOARD_RECORD_KINDS) do
-		known[kind] = true
-		if counts[kind] then
-			parts[#parts + 1] = kind .. " " .. counts[kind]
-		end
-	end
-	for _, kind in ipairs(sortedKeys(counts)) do
-		if not known[kind] then
-			parts[#parts + 1] = kind .. " " .. counts[kind]
-		end
-	end
-	return table.concat(parts, ", ")
-end
-
 -- The board's Module records in PagleLog (LOG-R40, TKB-R80), read as M:IterateCatches reads them with Core's codec:
 -- the count by kind, those the board's codec skips, and the last 10 decoded, at the realm's UTC offset (`offset`,
 -- minutes, from the log's latest Cast; nil when none read the realm minute).
 local function printBoardRecords(board, core, log, offset)
-	if not log then
-		print("records: no PagleLog to read")
-		return
-	elseif log.format ~= core.LOG_FORMAT then
-		print(
-			("records: PagleLog is format %s, the codec reads format %d"):format(tostring(log.format), core.LOG_FORMAT)
-		)
+	local records, why = moduleRecords(core, log, BOARD_MODULE)
+	if not records then
+		print(why)
 		return
 	end
-	local records, counts, skipped = {}, {}, {}
-	for record in core.OpenCatchLog(log, { decodeErrors = 0 }, 0):Iterate(0, BOARD_MODULE) do
-		if record.kind == "module" then
-			records[#records + 1] = record
-			counts[record.recordKind] = (counts[record.recordKind] or 0) + 1
-			if not board.DecodeRecord(record.recordKind, record.payload) then
-				skipped[#skipped + 1] = record.seq
-			end
+	local counts, skipped = {}, {}
+	for _, record in ipairs(records) do
+		counts[record.recordKind] = (counts[record.recordKind] or 0) + 1
+		if not board.DecodeRecord(record.recordKind, record.payload) then
+			skipped[#skipped + 1] = record.seq
 		end
 	end
 	if #records == 0 then
 		print("records: no TackleBoard A1 entries in PagleLog")
 		return
 	end
-	print(("records: %d TackleBoard A1 entries in PagleLog: %s"):format(#records, recordKindCounts(counts)))
+	print(
+		("records: %d TackleBoard A1 entries in PagleLog: %s"):format(
+			#records,
+			recordKindCounts(counts, BOARD_RECORD_KINDS)
+		)
+	)
 	local skips = #skipped > 0 and ("%d (seq %s) (TKB-R80)"):format(#skipped, table.concat(skipped, ", ")) or "none"
 	print("records the board skips: " .. skips)
 	local first = math.max(1, #records - 9)
@@ -2018,8 +2373,8 @@ end
 -- The state's lines (tackle-board.md › Projection): started, the latest boundary, the processed day and week, today at
 -- `now` (TKB-R12, the board's own DayOf from the latest boundary), the goals owed, the pins and the overflow strip, the
 -- completed goals, tally, Coins, flies, titles and Campfire; and, started or not, the zones fished and items caught
--- (TKB-R81). `context` holds Core's catalogue calls (nil without the catalogue), the realm offset, and now and its
--- source.
+-- (TKB-R81). `context` holds Core's catalogue calls (nil without the catalogue), the realm offset, now and its
+-- source, and Core's stored Activity XP totals (nil without a PagleDB), for the board's xp (TKB-R65, AXP-R3).
 local function printBoardState(board, state, context)
 	local started = state.started
 	if type(started) ~= "table" then
@@ -2074,7 +2429,9 @@ local function printBoardState(board, state, context)
 				count(tonumber(tally.expeditions) or 0, "Expedition")
 			)
 		)
-		print(("coins: %s (TKB-R63)"):format(tostring(state.coins)))
+		local xp = tonumber(state.xp) or 0
+		local againstCore = xpAgainstCore(xp, BOARD_MODULE, context.xpEarned)
+		print(("coins: %s (TKB-R63), xp: %d (TKB-R65), %s"):format(tostring(state.coins), xp, againstCore))
 		printFliesAndTitles(board, tableOr(state.flies), tableOr(state.titles))
 		printFire(tableOr(state.fire))
 	end
@@ -2143,8 +2500,8 @@ end
 -- Prints the Tackle Board section (tackle-board.md › Data): the board's records in PagleLog (`facts`, the Catch log
 -- section's, give the realm offset), then from SavedVariables/Pagle_TackleBoard.lua the projection Core stores
 -- (LOG-R70) with its checks, its state, the celebrated set and the profile. Today is read at --now, else at the file's
--- write time, else at the reader's clock.
-local function printBoard(account, log, facts, options)
+-- write time, else at the reader's clock. `xpEarned` is Core's stored Activity XP totals (nil without a PagleDB).
+local function printBoard(account, log, facts, options, xpEarned)
 	local path = account .. "/SavedVariables/Pagle_TackleBoard.lua"
 	local saved, err = loadSavedVariables(path)
 	if not saved then
@@ -2179,7 +2536,8 @@ local function printBoard(account, log, facts, options)
 			now, source = os.time(), "the reader's clock"
 		end
 		local pagle = context.catalogue and board.api.pagle or nil
-		printBoardState(board, state, { pagle = pagle, offset = offset, now = now, source = source })
+		local reading = { pagle = pagle, offset = offset, now = now, source = source, xpEarned = xpEarned }
+		printBoardState(board, state, reading)
 	end
 	printBoardCelebrated(tableOr(global.celebrated), state)
 	printBoardProfile(board, tableOr(tableOr(db.profiles).Default))
@@ -2216,9 +2574,31 @@ local function printWalletProjection(stored, log, rulesVersion)
 	print("purchased: " .. listed(tableOr(stored.projection.purchased)))
 end
 
+-- The line for a store of totals' logId (SHOP-R3, AXP-R3): whether it is PagleLog's, else what login does with it,
+-- citing `rule`.
+---@param logId any
+---@param log table?
+---@param rule string
+---@return string
+local function totalsLogId(logId, log, rule)
+	if logId == nil then
+		return "none stored (a fresh log's, or no Module has reported since PagleLog had one)"
+	elseif not log then
+		return tostring(logId) .. ", no PagleLog to compare with"
+	elseif logId == log.logId then
+		return tostring(logId) .. ", PagleLog's"
+	end
+	return ("%s, DIFFERS from PagleLog's %s, so Core empties these totals at login (%s)"):format(
+		tostring(logId),
+		tostring(log.logId),
+		rule
+	)
+end
+
 -- Prints the Wallet section (wallet-and-shop.md › Data): each Module's last reported total (SHOP-R3) and the balance,
--- Σ earned − spent, 0 and held while that is negative (SHOP-R12), from Core's own logic/Wallet.lua; `spent` is the
--- wallet projection's (SHOP-R11), which the section prints last.
+-- Σ earned − spent, 0 and held while that is negative (SHOP-R12), from Core's own logic/Wallet.lua, and whether these
+-- totals belong to PagleLog's logId (SHOP-R3); `spent` is the wallet projection's (SHOP-R11), which the section
+-- prints last.
 local function printWallet(pagle, log)
 	local global, why = pagleGlobal(pagle)
 	if not global then
@@ -2250,30 +2630,13 @@ local function printWallet(pagle, log)
 	for _, name in ipairs(names) do
 		print(name .. ": " .. tostring(earned[name]))
 	end
+	print("logId: " .. totalsLogId(tableOr(global.coins).logId, log, "SHOP-R3"))
 	printWalletProjection(stored, log, core.WALLET_RULES_VERSION)
 end
 
--- The line for a store of totals' logId (SHOP-R3, AXP-R3): whether it is PagleLog's, else what login does with it.
----@param logId any
----@param log table?
----@return string
-local function totalsLogId(logId, log)
-	if logId == nil then
-		return "none stored (a fresh log's, or no Module has reported since PagleLog had one)"
-	elseif not log then
-		return tostring(logId) .. ", no PagleLog to compare with"
-	elseif logId == log.logId then
-		return tostring(logId) .. ", PagleLog's"
-	end
-	return ("%s, DIFFERS from PagleLog's %s, so Core empties these totals at login"):format(
-		tostring(logId),
-		tostring(log.logId)
-	)
-end
-
 -- Prints the Activity XP section (activity-xp.md › Data): each Module's last reported total (AXP-R3) and their sum,
--- the snapshot the next Prestige would write (AXP-R5), then whether these totals and the Coins totals belong to
--- PagleLog's logId (AXP-R3, SHOP-R3).
+-- the snapshot the next Prestige would write (AXP-R5), then whether these totals belong to PagleLog's logId (AXP-R3),
+-- and the last pushed file's seq Core accepted (PagleDB.global.pushed.seq, PUSH-R13).
 local function printActivityXP(pagle, log)
 	local global, why = pagleGlobal(pagle)
 	if not global then
@@ -2296,8 +2659,9 @@ local function printActivityXP(pagle, log)
 	for _, name in ipairs(names) do
 		print(name .. ": " .. tostring(earned[name]))
 	end
-	print("logId: " .. totalsLogId(store.logId, log))
-	print("Coins logId: " .. totalsLogId(tableOr(global.coins).logId, log))
+	print("logId: " .. totalsLogId(store.logId, log, "AXP-R3"))
+	local seq = tableOr(global.pushed).seq
+	print(("pushed seq: %s (PUSH-R13)"):format(seq ~= nil and tostring(seq) or "none accepted"))
 end
 
 -- Prints the Looks section (wallet-and-shop.md › Data, catch-log.md › Data, #173): each slot's stored pick from
@@ -3091,10 +3455,14 @@ local function main(args)
 	local pagle = { path = options.account .. "/SavedVariables/Pagle.lua" }
 	pagle.saved, pagle.err = loadSavedVariables(pagle.path)
 	local checks, facts = printCatchLog(pagle, options.expectCasts, options.since)
-	printLedger(options.account, pagleLog(pagle.saved), options.catalogue, options.items)
-	printHunts(options.account, pagleLog(pagle.saved), options)
+	-- Core's stored Activity XP totals (AXP-R3), which the Ledger's level and the Modules' xp lines read; nil without
+	-- a PagleDB.
+	local global = pagleGlobal(pagle)
+	local xpEarned = global and tableOr(tableOr(global.activityXP).earned)
+	printLedger(options.account, pagleLog(pagle.saved), options.catalogue, options.items, xpEarned)
+	printHunts(options.account, pagleLog(pagle.saved), options, facts, xpEarned)
 	printStats(options.account, pagleLog(pagle.saved), facts, options)
-	printBoard(options.account, pagleLog(pagle.saved), facts, options)
+	printBoard(options.account, pagleLog(pagle.saved), facts, options, xpEarned)
 	printWallet(pagle, pagleLog(pagle.saved))
 	printActivityXP(pagle, pagleLog(pagle.saved))
 	printLooks(pagle)
