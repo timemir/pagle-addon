@@ -6,7 +6,7 @@
 -- #146). M4#1 holds what the M4 exit check reads (#173, #174). M5#1 and M5-Stale#1 hold a Pagle_Hunts.lua, for what
 -- the M5 exit check reads (#199, #200). M6#1, M6-Stale#1 and M6-New#1 hold a Pagle_Stats.lua, for what the M6 exit
 -- check reads (#219, #221), and M6-Break#1 a Session break (#258). M7#1, M7-Stale#1 and M7-New#1 hold a Pagle_TackleBoard.lua, for what the M7 exit check
--- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261), and M8-Reverify#1 what the Re-verification section reads (#262), and M8.5#1 an onboarding state for the Onboarding section (#320). The Ledger, Stats and Tackle Board runs read their catalogue from
+-- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261), and M8-Reverify#1 what the Re-verification section reads (#262), and M8.5#1 an onboarding state for the Onboarding section (#320), and M8-XP#1 Activity XP totals and a P1 with its snapshot, for the Activity XP section (#291). The Ledger, Stats and Tackle Board runs read their catalogue from
 -- spec/scripts/fixtures/Catalogue.lua (--catalogue) and the Hunts runs their Hunt list from
 -- spec/scripts/fixtures/HuntList.lua (--huntlist), so the lines the Modules' logic computes are counted by hand, and
 -- don't move with the generated data.
@@ -404,11 +404,12 @@ describe("scripts/read-wtf.lua", function()
 		end)
 
 		it("counts and lists the Prestige and purchase entries (LOG-R38, LOG-R39)", function()
-			-- catch-log.md › Entry formats: P1 carries the new rank, U1 the good and the price paid. Two U1s, each listed.
+			-- catch-log.md › Entry formats: P1 carries the new rank and Activity XP (none in this pre-1.0 P1, so 0,
+			-- AXP-R5), U1 the good and the price paid. Two U1s, each listed.
 			local log = section(out, "== Catch log")
 			assert.are.same({
 				"P1: 1 entry",
-				"  rank 1, 1 Ada Brook (Player-4618-0A1B2C3D), 2026-10-12 10:20:00 UTC",
+				"  rank 1, 0 Activity XP, 1 Ada Brook (Player-4618-0A1B2C3D), 2026-10-12 10:20:00 UTC",
 				"U1: 2 entries",
 				"  core.toaststyle.ripple for 150 Coins, 1 Ada Brook (Player-4618-0A1B2C3D), 2026-10-12 10:21:40 UTC",
 				"  core.soundset.gilded for 400 Coins, 1 Ada Brook (Player-4618-0A1B2C3D), 2026-10-12 10:23:20 UTC",
@@ -1530,6 +1531,46 @@ describe("scripts/read-wtf.lua", function()
 			section(run(ACCOUNTS .. "M1#1"), "== Probe")
 		)
 		assert.are.same({ "== Probe: can't read Pagle.lua: missing" }, section(run(ACCOUNTS .. "M0#1"), "== Probe"))
+	end)
+
+	-- M8-XP#1 holds Activity XP totals of PagleLog's logId, a Prestige whose P1 carries their sum, and Coins totals of
+	-- another log's logId, as a PagleDB carried over to a new log holds them before its first login (#291).
+	describe("on an account with Activity XP (#291, core/activity-xp.md › Data)", function()
+		local out, err, code = run(ACCOUNTS .. "M8-XP#1")
+
+		it("exits 0 and writes nothing to stderr", function()
+			assert.are.equal(0, code)
+			assert.are.equal("", err)
+		end)
+
+		it(
+			"prints each Module's total, their sum and whose logId each store of totals has (AXP-R3, SHOP-R3)",
+			function()
+				assert.are.same({
+					"== Activity XP (PagleDB.global.activityXP.earned): total 850",
+					"Hunts: 600",
+					"TackleBoard: 250",
+					"logId: 5c2e9a7b1d3f4068, PagleLog's",
+					"Coins logId: 0000000000000001, DIFFERS from PagleLog's 5c2e9a7b1d3f4068, so Core empties these totals at"
+						.. " login",
+				}, section(out, "== Activity XP"))
+			end
+		)
+
+		it("lists the P1 entry with its Activity XP snapshot (AXP-R5, LOG-R38)", function()
+			assert.are.equal(
+				"  rank 1, 850 Activity XP, 1 Ada Brook (Player-4618-0A1B2C3D), 2026-11-03 10:06:40 UTC",
+				lineStarting(section(out, "== Catch log"), "  rank 1,")
+			)
+		end)
+
+		it("reads a PagleDB from before M8, with no Activity XP or logIds, as none stored", function()
+			assert.are.same({
+				"== Activity XP (PagleDB.global.activityXP.earned): total 0, no Module has reported Activity XP",
+				"logId: none stored (a fresh log's, or no Module has reported since PagleLog had one)",
+				"Coins logId: none stored (a fresh log's, or no Module has reported since PagleLog had one)",
+			}, section(run(ACCOUNTS .. "M4#1", "--catalogue", CATALOGUE), "== Activity XP"))
+		end)
 	end)
 
 	-- M8.5#1 holds an onboarding state partway through (core/onboarding.md › Data): the Letter put off once, the guide
