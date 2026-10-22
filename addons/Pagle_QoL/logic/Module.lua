@@ -18,6 +18,8 @@ function ns.ModuleDef(openSettings, print, store)
 		name = "QoL",
 		title = ns.L.TITLE,
 		order = 50,
+		-- QoL's line on the Field guide's What's in the box step (ONB-R91).
+		guideBlurb = ns.L.GUIDE_BLURB,
 		settingsAction = {
 			label = ns.L.SETTINGS_ACTION,
 			onClick = function()

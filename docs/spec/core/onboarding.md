@@ -179,6 +179,7 @@ M:RegisterGuideStep(step)       -- ONB-R21; before ModulesChanged
 ---@field ChoiceCard fun(parent: Frame, title: string, line: string, tag?: string): Button
 ---@field Note fun(parent: Frame, text: string, x: number, y: number, w: number, target?: Region)  -- an illustrative note, part of the page
 ---@field Part fun(parent: Frame, sprite: string): Texture  -- a sprite of the guide's atlas (GuideParts), for pages a Module draws
+---@field Panel fun(frame: Frame, sprite: string, cap: number): PagleNineSlice  -- a GuideParts sprite nine-sliced on `frame`, `cap` units kept at each corner, following its size (QoL's set cards, ONB-R33)
 
 ---@class PagleMarginNote
 ---@field id string             -- "<module>.<name>"

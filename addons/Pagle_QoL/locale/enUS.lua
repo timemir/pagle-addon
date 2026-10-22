@@ -100,6 +100,53 @@ ns.L = {
 	SETTINGS_SHOW_BUTTON_TOOLTIP = "Shows what your next press will do. Shift-drag to move.",
 	SETTINGS_BUTTON_POSITION = "Button position",
 	SETTINGS_BUTTON_RESET = "Reset",
+	-- QoL's line on the Field guide's What's in the box step (ONB-R91).
+	GUIDE_BLURB = "The Fishing key, your fishing clothes, lures and clams: one press, one action.",
+	-- The Field guide's Casting step (ONB-R32, board 4): its ribbon, its left page with the next-action sequence's
+	-- captions (the labels are the button's own, BUTTON_*) and its note, its right page with the Input cards, and the
+	-- resting line while QoL stands down (ONB-R100). The note's *term* is in the red pencil.
+	GUIDE_CASTING_RIBBON = "Casting",
+	GUIDE_CASTING_KICKER = "Casting",
+	GUIDE_CASTING_TITLE = "One key for the whole cast",
+	GUIDE_CASTING_BODY = "Press the Fishing key and Pagle does the one next thing, then waits for your next press. It never does two things at once, and it never does anything on its own.",
+	GUIDE_CASTING_GEAR = "your fishing clothes go on",
+	GUIDE_CASTING_LURE = "the best lure you have",
+	GUIDE_CASTING_CAST = "out it goes",
+	GUIDE_CASTING_REEL = "when the bobber dips",
+	GUIDE_CASTING_THEN = "»",
+	GUIDE_CASTING_SMALL = "Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do.",
+	GUIDE_CASTING_NOTE = "A *double right-click* on the water casts and reels too, but never changes your clothes.",
+	GUIDE_CHOICE_KICKER = "Your choice",
+	GUIDE_CHOICE_TITLE = "How would you like to cast?",
+	GUIDE_CARD_KEY = "The Fishing key",
+	GUIDE_CARD_KEY_LINE = "One key does the next thing, clothes and lures included.",
+	GUIDE_CARD_CLICK = "Double right-click",
+	GUIDE_CARD_CLICK_LINE = "Right-click twice, as you would anyway. No key to give up.",
+	GUIDE_CARD_BOTH = "Both",
+	GUIDE_CARD_BOTH_LINE = "The key when you want it, the mouse when you don’t.",
+	GUIDE_CARD_BOTH_TAG = "the usual",
+	-- Filled with the other fishing-key addons' titles, joined by ", " (QOL-R82).
+	GUIDE_RESTING = "Pagle’s Fishing key is resting while %s has it. You can still cast with a double right-click.",
+	-- The Field guide's Fishing clothes step (ONB-R33, board 5): its ribbon and skip link, the two set cards' lines
+	-- (their names are the sets', never translated, QOL-R42), the right page, and the swap-back Nudge's heading.
+	GUIDE_CLOTHES_RIBBON = "Fishing clothes",
+	GUIDE_CLOTHES_SKIP = "I don’t keep fishing clothes",
+	GUIDE_CLOTHES_KICKER = "Fishing clothes",
+	GUIDE_CLOTHES_TITLE = "Your hat, your pole",
+	GUIDE_CLOTHES_BODY = "If you keep a fishing outfit, Pagle can put it on for you: the Fishing key’s first press at the water changes your clothes, and what you were wearing is kept, ready to put back.",
+	GUIDE_CLOTHES_PREVIOUS = "what you wore before",
+	GUIDE_CLOTHES_FISHING = "your fishing clothes",
+	GUIDE_CLOTHES_ONE_KEY = "one key",
+	GUIDE_CLOTHES_SMALL = "Both are ordinary equipment sets, so you’ll see them in your character sheet too. When you walk away with your pole still in hand, a small note reminds you how to change back. Pagle never changes your clothes without a press.",
+	GUIDE_SAVE_KICKER = "If you have a fishing outfit",
+	GUIDE_SAVE_TITLE = "Put it on, then save it",
+	GUIDE_SAVE_SMALL = "Wear your fishing hat, gloves and pole now, then press the button. You can do this later from Settings » Fishing.",
+	GUIDE_SAVE = "Save what I’m wearing as my fishing set",
+	GUIDE_SAVE_OR = "or use a set you made",
+	GUIDE_SAVE_SLOTS = "Needs two free equipment set slots: one for your fishing clothes and one for Pagle Previous.",
+	GUIDE_NUDGE_KICKER = "If you walk off still dressed for it",
+	-- The Margin note the first Lure on the next-action button shows (ONB-R52's qol.lure), its term in the red pencil.
+	NOTE_LURE = "Your pole has no lure on. Your next press puts the best one in your bags on. |cff9a2a1aOnly that|r; then you cast.",
 	-- QoL's tour stops' labels, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.
 	TOUR_SETTINGS = "QoL's rows on the Fishing page",
 	TOUR_NUDGE = "a sample swap-back Nudge",
