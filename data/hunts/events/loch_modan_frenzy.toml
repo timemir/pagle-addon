@@ -1,0 +1,38 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 38: 38 (Loch Modan), low band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   loch_modan_frenzy_haul: Haul, species.any, 98.0% of Catches: tiers 130 / 355 / 705, 44 / 121 / 240 min
+#   loch_modan_frenzy_frenzy: Named fish, species 6317 (Raw Loch Frenzy), 20.7% of Catches: tiers 30 / 75 / 150, 48 / 121 / 242 min
+#   loch_modan_frenzy_snapper: Named fish, species 6289 (Raw Longjaw Mud Snapper), 54.4% of Catches: tiers 75 / 195 / 390, 46 / 120 / 239 min
+#   loch_modan_frenzy_quality: Quality, quality.uncommon, 0.8% of Catches: tiers 1 / 3 / 5, 44 / 133 / 222 min
+
+[event]
+id = "loch_modan_frenzy"
+zones = [38]
+tags = ["lake"]
+name = "Frenzy Water"
+note = "Frenzy in dwarf country bite at anything, and now and then something better comes up with them."
+
+[[hunt]]
+id = "loch_modan_frenzy_haul"
+class = "species.any"
+tiers = [130, 355, 705]
+name = "A Lakeside Basket"
+
+[[hunt]]
+id = "loch_modan_frenzy_frenzy"
+species = 6317
+tiers = [30, 75, 150]
+name = "Frenzy Run"
+
+[[hunt]]
+id = "loch_modan_frenzy_snapper"
+species = 6289
+tiers = [75, 195, 390]
+name = "Mud Snapper Run"
+
+[[hunt]]
+id = "loch_modan_frenzy_quality"
+class = "quality.uncommon"
+tiers = [1, 3, 5]
+name = "Something Better"

@@ -1,0 +1,38 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 357: 357 (Feralas), mid band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   feralas_redgill_haul: Haul, species.any, 89.0% of Catches: tiers 120 / 320 / 640, 45 / 120 / 240 min
+#   feralas_redgill_redgill: Named fish, species 13758 (Raw Redgill), 34.9% of Catches: tiers 45 / 125 / 250, 43 / 119 / 239 min
+#   feralas_redgill_yellowtail: Named fish, species 4603 (Raw Spotted Yellowtail), 16.3% of Catches: tiers 20 / 60 / 120, 41 / 123 / 245 min
+#   feralas_redgill_trout: Named fish, species 8365 (Raw Mithril Head Trout), 5.3% of Catches: tiers 7 / 19 / 40, 44 / 120 / 253 min
+
+[event]
+id = "feralas_redgill"
+zones = [357]
+tags = ["coast"]
+name = "Redgill in the Rain"
+note = "Redgill in the rivers, yellowtail off the coast, and rain over both."
+
+[[hunt]]
+id = "feralas_redgill_haul"
+class = "species.any"
+tiers = [120, 320, 640]
+name = "A Wet Forest Basket"
+
+[[hunt]]
+id = "feralas_redgill_redgill"
+species = 13758
+tiers = [45, 125, 250]
+name = "Redgill Run"
+
+[[hunt]]
+id = "feralas_redgill_yellowtail"
+species = 4603
+tiers = [20, 60, 120]
+name = "Yellowtail off the Coast"
+
+[[hunt]]
+id = "feralas_redgill_trout"
+species = 8365
+tiers = [7, 19, 40]
+name = "Forest Trout"

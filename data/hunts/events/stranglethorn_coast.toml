@@ -1,0 +1,38 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 33: 33 (Stranglethorn Vale), low band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   stranglethorn_coast_haul: Haul, species.any, 101.8% of Catches: tiers 135 / 365 / 735, 44 / 119 / 241 min
+#   stranglethorn_coast_cod: Named fish, species 6362 (Raw Rockscale Cod), 25.6% of Catches: tiers 35 / 90 / 185, 46 / 117 / 241 min
+#   stranglethorn_coast_yellowtail: Named fish, species 4603 (Raw Spotted Yellowtail), 9.2% of Catches: tiers 12 / 35 / 65, 43 / 127 / 235 min
+#   stranglethorn_coast_trout: Named fish, species 8365 (Raw Mithril Head Trout), 37.3% of Catches: tiers 50 / 135 / 270, 45 / 121 / 241 min
+
+[event]
+id = "stranglethorn_coast"
+zones = [33]
+tags = ["coast"]
+name = "Jungle Shore"
+note = "Warm water, long beaches and a cod for every rock."
+
+[[hunt]]
+id = "stranglethorn_coast_haul"
+class = "species.any"
+tiers = [135, 365, 735]
+name = "A Jungle Basket"
+
+[[hunt]]
+id = "stranglethorn_coast_cod"
+species = 6362
+tiers = [35, 90, 185]
+name = "Rock Cod Run"
+
+[[hunt]]
+id = "stranglethorn_coast_yellowtail"
+species = 4603
+tiers = [12, 35, 65]
+name = "Yellowtail in the Shallows"
+
+[[hunt]]
+id = "stranglethorn_coast_trout"
+species = 8365
+tiers = [50, 135, 270]
+name = "Jungle Trout"

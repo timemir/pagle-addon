@@ -1,0 +1,39 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 1377: 1377 (Silithus), high band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   silithus_salmon_haul: Haul, species.any, 91.2% of Catches: tiers 125 / 330 / 655, 46 / 121 / 239 min
+#   silithus_salmon_salmon: Named fish, species 13889 (Raw Whitescale Salmon), 20.4% of Catches: tiers 30 / 75 / 145, 49 / 122 / 237 min
+#   silithus_salmon_blackmouth: Named fish, species 6358 (Oily Blackmouth), 6.0% of Catches: tiers 8 / 20 / 45, 45 / 112 / 251 min
+#   silithus_salmon_dusk: Timed, species.any, 91.2% of Catches, 18:00-21:00, open 9 h a run: tiers 15 / 40 / 80, 44 / 117 / 234 min
+
+[event]
+id = "silithus_salmon"
+zones = [1377]
+tags = ["coast", "dusk"]
+name = "Salmon in the Sand"
+note = "Whitescale this far south is a surprise. Take it while the light lasts."
+
+[[hunt]]
+id = "silithus_salmon_haul"
+class = "species.any"
+tiers = [125, 330, 655]
+name = "A Hive Country Basket"
+
+[[hunt]]
+id = "silithus_salmon_salmon"
+species = 13889
+tiers = [30, 75, 145]
+name = "Whitescale Run"
+
+[[hunt]]
+id = "silithus_salmon_blackmouth"
+species = 6358
+tiers = [8, 20, 45]
+name = "Blackmouth Run"
+
+[[hunt]]
+id = "silithus_salmon_dusk"
+class = "species.any"
+conditions = { time = [[1080, 1260]] }
+tiers = [15, 40, 80]
+name = "Last Light"

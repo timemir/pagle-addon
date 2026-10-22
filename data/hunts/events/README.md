@@ -7,4 +7,6 @@ ADR 0012). `scripts/generate-data.py` reads every `*.toml` here, checks it (DATA
 `data/hunts/tags.toml`.
 
 An event leaves the pool by `rotation = false` and a `retired` date, never by deleting its file (DATA-R98). The 1.0
-pool is ticket #306; until it is in, `eventPool` in `data/checks.toml` stays off (DATA-R66).
+pool is ticket #306's 24 rotating events, 8 per band, so `eventPool` in `data/checks.toml` is on (DATA-R66):
+a band short of 8 rotating events fails the generator. Their names and notes are working text until the lore
+batch (#307).

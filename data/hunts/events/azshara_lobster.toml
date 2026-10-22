@@ -1,0 +1,39 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 16: 16 (Azshara), mid band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   azshara_lobster_haul: Haul, species.any, 76.2% of Catches: tiers 105 / 275 / 550, 46 / 120 / 241 min
+#   azshara_lobster_lobster: Named fish, species 13888 (Darkclaw Lobster), 9.8% of Catches: tiers 13 / 35 / 70, 44 / 119 / 238 min
+#   azshara_lobster_yellowtail: Named fish, species 4603 (Raw Spotted Yellowtail), 21.1% of Catches: tiers 30 / 75 / 150, 47 / 118 / 236 min
+#   azshara_lobster_night: Timed, species.any, 76.2% of Catches, 21:00-01:00, open 12 h a run: tiers 17 / 45 / 90, 45 / 118 / 236 min
+
+[event]
+id = "azshara_lobster"
+zones = [16]
+tags = ["coast", "night"]
+name = "Old Coast Lobster"
+note = "The old ruined coast keeps its lobster close to the rocks, and its yellowtail further out."
+
+[[hunt]]
+id = "azshara_lobster_haul"
+class = "species.any"
+tiers = [105, 275, 550]
+name = "A Ruined Coast Basket"
+
+[[hunt]]
+id = "azshara_lobster_lobster"
+species = 13888
+tiers = [13, 35, 70]
+name = "Lobster by the Rocks"
+
+[[hunt]]
+id = "azshara_lobster_yellowtail"
+species = 4603
+tiers = [30, 75, 150]
+name = "Yellowtail Run"
+
+[[hunt]]
+id = "azshara_lobster_night"
+class = "species.any"
+conditions = { time = [[1260, 60]] }
+tiers = [17, 45, 90]
+name = "Late on the Coast"

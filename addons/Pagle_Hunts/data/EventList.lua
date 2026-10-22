@@ -8,4 +8,788 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
-ns.eventList = { events = {}, fingerprint = "24de1c4a19c43ad4" }
+ns.eventList = {
+	events = {
+		{
+			band = "low",
+			hunts = {
+				{
+					class = "species.any",
+					id = "alterac_dawn_trout_haul",
+					tiers = { 130, 350, 700 },
+				},
+				{
+					id = "alterac_dawn_trout_smallfish",
+					species = 6291,
+					tiers = { 30, 85, 170 },
+				},
+				{
+					id = "alterac_dawn_trout_catfish",
+					species = 6308,
+					tiers = { 25, 65, 130 },
+				},
+				{
+					conditions = {
+						time = {
+							{ 300, 480 },
+						},
+					},
+					id = "alterac_dawn_trout_trout",
+					species = 8365,
+					tiers = { 6, 15, 30 },
+				},
+			},
+			id = "alterac_dawn_trout",
+			rotation = true,
+			skill = { 130, 130 },
+			tags = { "lake", "day", "low" },
+			zones = { 36 },
+		},
+		{
+			band = "mid",
+			hunts = {
+				{
+					class = "species.any",
+					id = "azshara_lobster_haul",
+					tiers = { 105, 275, 550 },
+				},
+				{
+					id = "azshara_lobster_lobster",
+					species = 13888,
+					tiers = { 13, 35, 70 },
+				},
+				{
+					id = "azshara_lobster_yellowtail",
+					species = 4603,
+					tiers = { 30, 75, 150 },
+				},
+				{
+					class = "species.any",
+					conditions = {
+						time = {
+							{ 1260, 60 },
+						},
+					},
+					id = "azshara_lobster_night",
+					tiers = { 17, 45, 90 },
+				},
+			},
+			id = "azshara_lobster",
+			rotation = true,
+			skill = { 205, 205 },
+			tags = { "coast", "night", "mid" },
+			zones = { 16 },
+		},
+		{
+			band = "low",
+			hunts = {
+				{
+					class = "species.any",
+					id = "barrens_oddities_haul",
+					tiers = { 135, 355, 705 },
+				},
+				{
+					id = "barrens_oddities_snapper",
+					species = 6289,
+					tiers = { 45, 120, 245 },
+				},
+				{
+					id = "barrens_oddities_albacore",
+					species = 6361,
+					tiers = { 35, 95, 185 },
+				},
+				{
+					class = "fixed.oddity",
+					conditions = {
+						time = {
+							{ 1080, 1260 },
+						},
+					},
+					id = "barrens_oddities_oddity",
+					tiers = { 1, 4, 7 },
+				},
+			},
+			id = "barrens_oddities",
+			rotation = true,
+			skill = { -20, -20 },
+			tags = { "lake", "dusk", "low" },
+			zones = { 17 },
+		},
+		{
+			band = "high",
+			hunts = {
+				{
+					class = "species.any",
+					id = "burning_steppes_salmon_haul",
+					tiers = { 115, 300, 600 },
+				},
+				{
+					id = "burning_steppes_salmon_salmon",
+					species = 13889,
+					tiers = { 40, 105, 215 },
+				},
+				{
+					id = "burning_steppes_salmon_redgill",
+					species = 13758,
+					tiers = { 25, 70, 140 },
+				},
+				{
+					class = "species.any",
+					conditions = {
+						time = {
+							{ 720, 960 },
+						},
+					},
+					id = "burning_steppes_salmon_noon",
+					tiers = { 19, 50, 100 },
+				},
+			},
+			id = "burning_steppes_salmon",
+			rotation = true,
+			skill = { 330, 330 },
+			tags = { "lake", "day", "high" },
+			zones = { 46 },
+		},
+		{
+			band = "low",
+			hunts = {
+				{
+					class = "species.any",
+					id = "darkshore_moonlight_haul",
+					tiers = { 135, 355, 710 },
+				},
+				{
+					id = "darkshore_moonlight_snapper",
+					species = 6289,
+					tiers = { 30, 80, 165 },
+				},
+				{
+					id = "darkshore_moonlight_albacore",
+					species = 6361,
+					tiers = { 12, 30, 65 },
+				},
+				{
+					conditions = {
+						time = {
+							{ 1320, 240 },
+						},
+					},
+					id = "darkshore_moonlight_grouper",
+					species = 12238,
+					tiers = { 11, 30, 60 },
+				},
+			},
+			id = "darkshore_moonlight",
+			rotation = true,
+			skill = { -20, -20 },
+			tags = { "coast", "night", "low" },
+			zones = { 148 },
+		},
+		{
+			band = "high",
+			hunts = {
+				{
+					class = "species.any",
+					id = "deadwind_pass_night_haul",
+					tiers = { 120, 315, 630 },
+				},
+				{
+					id = "deadwind_pass_night_salmon",
+					species = 13889,
+					tiers = { 70, 185, 375 },
+				},
+				{
+					class = "species.any",
+					conditions = {
+						time = {
+							{ 1320, 120 },
+						},
+					},
+					id = "deadwind_pass_night_tower",
+					tiers = { 20, 50, 105 },
+				},
+			},
+			id = "deadwind_pass_night",
+			rotation = true,
+			skill = { 330, 330 },
+			tags = { "river", "night", "high" },
+			zones = { 41 },
+		},
+		{
+			band = "low",
+			hunts = {
+				{
+					class = "species.any",
+					id = "duskwood_witching_haul",
+					tiers = { 135, 360, 720 },
+				},
+				{
+					id = "duskwood_witching_catfish",
+					species = 6308,
+					tiers = { 80, 220, 435 },
+				},
+				{
+					id = "duskwood_witching_snapper",
+					species = 6289,
+					tiers = { 45, 125, 255 },
+				},
+				{
+					class = "species.any",
+					conditions = {
+						time = {
+							{ 0, 180 },
+						},
+					},
+					id = "duskwood_witching_midnight",
+					tiers = { 17, 45, 90 },
+				},
+			},
+			id = "duskwood_witching",
+			rotation = true,
+			skill = { 55, 55 },
+			tags = { "river", "night", "low" },
+			zones = { 10 },
+		},
+		{
+			band = "low",
+			hunts = {
+				{
+					class = "species.any",
+					id = "dustwallow_marsh_night_haul",
+					tiers = { 130, 350, 705 },
+				},
+				{
+					id = "dustwallow_marsh_night_trout",
+					species = 8365,
+					tiers = { 50, 135, 270 },
+				},
+				{
+					id = "dustwallow_marsh_night_yellowtail",
+					species = 4603,
+					tiers = { 16, 45, 90 },
+				},
+				{
+					class = "species.any",
+					conditions = {
+						time = {
+							{ 0, 240 },
+						},
+					},
+					id = "dustwallow_marsh_night_small_hours",
+					tiers = { 20, 60, 115 },
+				},
+			},
+			id = "dustwallow_marsh_night",
+			rotation = true,
+			skill = { 130, 130 },
+			tags = { "coast", "night", "low" },
+			zones = { 15 },
+		},
+		{
+			band = "high",
+			hunts = {
+				{
+					class = "species.any",
+					id = "eastern_plaguelands_night_haul",
+					tiers = { 115, 310, 615 },
+				},
+				{
+					id = "eastern_plaguelands_night_salmon",
+					species = 13889,
+					tiers = { 45, 120, 235 },
+				},
+				{
+					conditions = {
+						time = {
+							{ 0, 240 },
+						},
+					},
+					id = "eastern_plaguelands_night_midnight",
+					species = 13889,
+					tiers = { 7, 20, 40 },
+				},
+			},
+			id = "eastern_plaguelands_night",
+			rotation = true,
+			skill = { 330, 330 },
+			tags = { "river", "night", "high" },
+			zones = { 139 },
+		},
+		{
+			band = "high",
+			hunts = {
+				{
+					class = "species.any",
+					id = "eastern_plaguelands_redgill_haul",
+					tiers = { 115, 310, 615 },
+				},
+				{
+					id = "eastern_plaguelands_redgill_salmon",
+					species = 13889,
+					tiers = { 45, 120, 235 },
+				},
+				{
+					id = "eastern_plaguelands_redgill_redgill",
+					species = 13758,
+					tiers = { 14, 35, 75 },
+				},
+			},
+			id = "eastern_plaguelands_redgill",
+			rotation = true,
+			skill = { 330, 330 },
+			tags = { "lake", "high" },
+			zones = { 139 },
+		},
+		{
+			band = "mid",
+			hunts = {
+				{
+					class = "species.any",
+					id = "felwood_moonglade_haul",
+					tiers = { 125, 335, 670 },
+				},
+				{
+					id = "felwood_moonglade_redgill",
+					species = 13758,
+					tiers = { 80, 210, 425 },
+				},
+				{
+					id = "felwood_moonglade_trout",
+					species = 8365,
+					tiers = { 20, 55, 110 },
+				},
+			},
+			id = "felwood_moonglade",
+			rotation = true,
+			skill = { 205, 205 },
+			tags = { "lake", "mid" },
+			zones = { 361, 493 },
+		},
+		{
+			band = "mid",
+			hunts = {
+				{
+					class = "species.any",
+					id = "feralas_redgill_haul",
+					tiers = { 120, 320, 640 },
+				},
+				{
+					id = "feralas_redgill_redgill",
+					species = 13758,
+					tiers = { 45, 125, 250 },
+				},
+				{
+					id = "feralas_redgill_yellowtail",
+					species = 4603,
+					tiers = { 20, 60, 120 },
+				},
+				{
+					id = "feralas_redgill_trout",
+					species = 8365,
+					tiers = { 7, 19, 40 },
+				},
+			},
+			id = "feralas_redgill",
+			rotation = true,
+			skill = { 205, 205 },
+			tags = { "coast", "mid" },
+			zones = { 357 },
+		},
+		{
+			band = "mid",
+			hunts = {
+				{
+					class = "species.any",
+					id = "hinterlands_coast_haul",
+					tiers = { 120, 320, 640 },
+				},
+				{
+					id = "hinterlands_coast_yellowtail",
+					species = 4603,
+					tiers = { 15, 40, 75 },
+				},
+				{
+					id = "hinterlands_coast_mightfish",
+					species = 13754,
+					tiers = { 4, 11, 20 },
+				},
+				{
+					class = "species.any",
+					conditions = {
+						time = {
+							{ 540, 780 },
+						},
+					},
+					id = "hinterlands_coast_morning",
+					tiers = { 20, 55, 105 },
+				},
+			},
+			id = "hinterlands_coast",
+			rotation = true,
+			skill = { 205, 205 },
+			tags = { "coast", "day", "mid" },
+			zones = { 47 },
+		},
+		{
+			band = "mid",
+			hunts = {
+				{
+					class = "species.any",
+					id = "hinterlands_redgill_haul",
+					tiers = { 120, 320, 640 },
+				},
+				{
+					id = "hinterlands_redgill_redgill",
+					species = 13758,
+					tiers = { 60, 160, 320 },
+				},
+				{
+					id = "hinterlands_redgill_trout",
+					species = 8365,
+					tiers = { 9, 25, 45 },
+				},
+				{
+					conditions = {
+						time = {
+							{ 1380, 180 },
+						},
+					},
+					id = "hinterlands_redgill_night",
+					species = 13758,
+					tiers = { 10, 25, 55 },
+				},
+			},
+			id = "hinterlands_redgill",
+			rotation = true,
+			skill = { 205, 205 },
+			tags = { "river", "night", "mid" },
+			zones = { 47 },
+		},
+		{
+			band = "low",
+			hunts = {
+				{
+					class = "species.any",
+					id = "loch_modan_frenzy_haul",
+					tiers = { 130, 355, 705 },
+				},
+				{
+					id = "loch_modan_frenzy_frenzy",
+					species = 6317,
+					tiers = { 30, 75, 150 },
+				},
+				{
+					id = "loch_modan_frenzy_snapper",
+					species = 6289,
+					tiers = { 75, 195, 390 },
+				},
+				{
+					class = "quality.uncommon",
+					id = "loch_modan_frenzy_quality",
+					tiers = { 1, 3, 5 },
+				},
+			},
+			id = "loch_modan_frenzy",
+			rotation = true,
+			skill = { -20, -20 },
+			tags = { "lake", "low" },
+			zones = { 38 },
+		},
+		{
+			band = "high",
+			hunts = {
+				{
+					class = "species.any",
+					id = "silithus_coast_haul",
+					tiers = { 125, 330, 655 },
+				},
+				{
+					id = "silithus_coast_grouper",
+					species = 12238,
+					tiers = { 16, 40, 85 },
+				},
+				{
+					id = "silithus_coast_albacore",
+					species = 6361,
+					tiers = { 16, 45, 85 },
+				},
+				{
+					id = "silithus_coast_mackerel",
+					species = 6303,
+					tiers = { 11, 30, 60 },
+				},
+			},
+			id = "silithus_coast",
+			rotation = true,
+			skill = { 330, 330 },
+			tags = { "coast", "high" },
+			zones = { 1377 },
+		},
+		{
+			band = "high",
+			hunts = {
+				{
+					class = "species.any",
+					id = "silithus_salmon_haul",
+					tiers = { 125, 330, 655 },
+				},
+				{
+					id = "silithus_salmon_salmon",
+					species = 13889,
+					tiers = { 30, 75, 145 },
+				},
+				{
+					id = "silithus_salmon_blackmouth",
+					species = 6358,
+					tiers = { 8, 20, 45 },
+				},
+				{
+					class = "species.any",
+					conditions = {
+						time = {
+							{ 1080, 1260 },
+						},
+					},
+					id = "silithus_salmon_dusk",
+					tiers = { 15, 40, 80 },
+				},
+			},
+			id = "silithus_salmon",
+			rotation = true,
+			skill = { 330, 330 },
+			tags = { "coast", "dusk", "high" },
+			zones = { 1377 },
+		},
+		{
+			band = "low",
+			hunts = {
+				{
+					class = "species.any",
+					id = "stranglethorn_coast_haul",
+					tiers = { 135, 365, 735 },
+				},
+				{
+					id = "stranglethorn_coast_cod",
+					species = 6362,
+					tiers = { 35, 90, 185 },
+				},
+				{
+					id = "stranglethorn_coast_yellowtail",
+					species = 4603,
+					tiers = { 12, 35, 65 },
+				},
+				{
+					id = "stranglethorn_coast_trout",
+					species = 8365,
+					tiers = { 50, 135, 270 },
+				},
+			},
+			id = "stranglethorn_coast",
+			rotation = true,
+			skill = { 130, 130 },
+			tags = { "coast", "low" },
+			zones = { 33 },
+		},
+		{
+			band = "mid",
+			hunts = {
+				{
+					class = "species.any",
+					id = "tanaris_yellowtail_haul",
+					tiers = { 110, 290, 580 },
+				},
+				{
+					id = "tanaris_yellowtail_cod",
+					species = 6362,
+					tiers = { 15, 40, 80 },
+				},
+				{
+					id = "tanaris_yellowtail_yellowtail",
+					species = 4603,
+					tiers = { 35, 90, 180 },
+				},
+				{
+					conditions = {
+						time = {
+							{ 720, 960 },
+						},
+					},
+					id = "tanaris_yellowtail_noon",
+					species = 4603,
+					tiers = { 6, 15, 30 },
+				},
+			},
+			id = "tanaris_yellowtail",
+			rotation = true,
+			skill = { 205, 205 },
+			tags = { "coast", "day", "mid" },
+			zones = { 440 },
+		},
+		{
+			band = "low",
+			hunts = {
+				{
+					class = "species.any",
+					id = "tirisfal_silverpine_dusk_haul",
+					tiers = { 130, 340, 685 },
+				},
+				{
+					id = "tirisfal_silverpine_dusk_mackerel",
+					species = 6303,
+					tiers = { 30, 80, 160 },
+				},
+				{
+					id = "tirisfal_silverpine_dusk_smallfish",
+					species = 6291,
+					tiers = { 25, 60, 120 },
+				},
+				{
+					conditions = {
+						time = {
+							{ 1080, 1260 },
+						},
+					},
+					id = "tirisfal_silverpine_dusk_snapper",
+					species = 6289,
+					tiers = { 4, 11, 20 },
+				},
+			},
+			id = "tirisfal_silverpine_dusk",
+			rotation = true,
+			skill = { -70, -20 },
+			tags = { "lake", "dusk", "low" },
+			zones = { 85, 130 },
+		},
+		{
+			band = "mid",
+			hunts = {
+				{
+					class = "species.any",
+					id = "ungoro_redgill_haul",
+					tiers = { 125, 330, 665 },
+				},
+				{
+					id = "ungoro_redgill_redgill",
+					species = 13758,
+					tiers = { 80, 215, 435 },
+				},
+				{
+					id = "ungoro_redgill_trout",
+					species = 8365,
+					tiers = { 11, 30, 60 },
+				},
+				{
+					conditions = {
+						time = {
+							{ 1080, 1260 },
+						},
+					},
+					id = "ungoro_redgill_dusk",
+					species = 13758,
+					tiers = { 10, 25, 55 },
+				},
+			},
+			id = "ungoro_redgill",
+			rotation = true,
+			skill = { 205, 205 },
+			tags = { "lake", "dusk", "mid" },
+			zones = { 490 },
+		},
+		{
+			band = "mid",
+			hunts = {
+				{
+					class = "species.any",
+					id = "western_plaguelands_lake_haul",
+					tiers = { 125, 330, 665 },
+				},
+				{
+					id = "western_plaguelands_lake_redgill",
+					species = 13758,
+					tiers = { 80, 215, 430 },
+				},
+				{
+					id = "western_plaguelands_lake_trout",
+					species = 8365,
+					tiers = { 13, 35, 70 },
+				},
+				{
+					class = "species.any",
+					conditions = {
+						time = {
+							{ 780, 1020 },
+						},
+					},
+					id = "western_plaguelands_lake_afternoon",
+					tiers = { 20, 55, 110 },
+				},
+			},
+			id = "western_plaguelands_lake",
+			rotation = true,
+			skill = { 205, 205 },
+			tags = { "lake", "day", "mid" },
+			zones = { 28 },
+		},
+		{
+			band = "high",
+			hunts = {
+				{
+					class = "species.any",
+					id = "winterspring_daylight_haul",
+					tiers = { 115, 310, 620 },
+				},
+				{
+					id = "winterspring_daylight_redgill",
+					species = 13758,
+					tiers = { 7, 18, 35 },
+				},
+				{
+					class = "species.any",
+					conditions = {
+						time = {
+							{ 540, 780 },
+						},
+					},
+					id = "winterspring_daylight_morning",
+					tiers = { 19, 50, 105 },
+				},
+			},
+			id = "winterspring_daylight",
+			rotation = true,
+			skill = { 330, 330 },
+			tags = { "lake", "day", "high" },
+			zones = { 618 },
+		},
+		{
+			band = "high",
+			hunts = {
+				{
+					class = "species.any",
+					id = "winterspring_salmon_haul",
+					tiers = { 115, 310, 620 },
+				},
+				{
+					id = "winterspring_salmon_salmon",
+					species = 13889,
+					tiers = { 60, 155, 310 },
+				},
+				{
+					conditions = {
+						time = {
+							{ 1200, 0 },
+						},
+					},
+					id = "winterspring_salmon_evening",
+					species = 13889,
+					tiers = { 10, 25, 50 },
+				},
+			},
+			id = "winterspring_salmon",
+			rotation = true,
+			skill = { 330, 330 },
+			tags = { "lake", "night", "high" },
+			zones = { 618 },
+		},
+	},
+	fingerprint = "b6263c6623667aec",
+}

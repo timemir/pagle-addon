@@ -1,0 +1,39 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 490: 490 (Un'Goro Crater), mid band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   ungoro_redgill_haul: Haul, species.any, 92.1% of Catches: tiers 125 / 330 / 665, 45 / 119 / 241 min
+#   ungoro_redgill_redgill: Named fish, species 13758 (Raw Redgill), 60.4% of Catches: tiers 80 / 215 / 435, 44 / 119 / 240 min
+#   ungoro_redgill_trout: Named fish, species 8365 (Raw Mithril Head Trout), 8.4% of Catches: tiers 11 / 30 / 60, 44 / 119 / 239 min
+#   ungoro_redgill_dusk: Timed, species 13758 (Raw Redgill), 60.4% of Catches, 18:00-21:00, open 9 h a run: tiers 10 / 25 / 55, 44 / 110 / 243 min
+
+[event]
+id = "ungoro_redgill"
+zones = [490]
+tags = ["lake", "dusk"]
+name = "Crater Redgill"
+note = "The crater's water is warm, the redgill are many, and something larger is always watching."
+
+[[hunt]]
+id = "ungoro_redgill_haul"
+class = "species.any"
+tiers = [125, 330, 665]
+name = "A Crater Basket"
+
+[[hunt]]
+id = "ungoro_redgill_redgill"
+species = 13758
+tiers = [80, 215, 435]
+name = "Redgill Run"
+
+[[hunt]]
+id = "ungoro_redgill_trout"
+species = 8365
+tiers = [11, 30, 60]
+name = "Crater Trout"
+
+[[hunt]]
+id = "ungoro_redgill_dusk"
+species = 13758
+conditions = { time = [[1080, 1260]] }
+tiers = [10, 25, 55]
+name = "Redgill at Dusk"

@@ -1,0 +1,39 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 148: 148 (Darkshore), low band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   darkshore_moonlight_haul: Haul, species.any, 98.4% of Catches: tiers 135 / 355 / 710, 46 / 120 / 241 min
+#   darkshore_moonlight_snapper: Named fish, species 6289 (Raw Longjaw Mud Snapper), 22.7% of Catches: tiers 30 / 80 / 165, 44 / 118 / 243 min
+#   darkshore_moonlight_albacore: Named fish, species 6361 (Raw Rainbow Fin Albacore), 9.0% of Catches: tiers 12 / 30 / 65, 44 / 111 / 241 min
+#   darkshore_moonlight_grouper: Timed, species 12238 (Darkshore Grouper), 33.4% of Catches, 22:00-04:00, open 18 h a run: tiers 11 / 30 / 60, 44 / 120 / 239 min
+
+[event]
+id = "darkshore_moonlight"
+zones = [148]
+tags = ["coast", "night"]
+name = "Grouper by Moonlight"
+note = "On this coast the grouper come up into the shallows once the moon is over the water."
+
+[[hunt]]
+id = "darkshore_moonlight_haul"
+class = "species.any"
+tiers = [135, 355, 710]
+name = "A Moonlit Shore Basket"
+
+[[hunt]]
+id = "darkshore_moonlight_snapper"
+species = 6289
+tiers = [30, 80, 165]
+name = "Mud Snapper Run"
+
+[[hunt]]
+id = "darkshore_moonlight_albacore"
+species = 6361
+tiers = [12, 30, 65]
+name = "Albacore off the Coast"
+
+[[hunt]]
+id = "darkshore_moonlight_grouper"
+species = 12238
+conditions = { time = [[1320, 240]] }
+tiers = [11, 30, 60]
+name = "Grouper by Moonlight"
