@@ -85,6 +85,7 @@ describe("Core's slots and goods", function()
 						"core.toaststyle.bottle tier 3",
 						"core.toaststyle.rune tier 4",
 						"core.toaststyle.folio tier 5",
+						"core.toaststyle.storm tier 5",
 					},
 				},
 				{
@@ -216,7 +217,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 30 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
+			assert.are.same({ 31 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
 		end
 	)
 end)

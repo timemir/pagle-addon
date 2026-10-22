@@ -898,13 +898,29 @@ describe("The Ledger's fold", function()
 				uncharted = {},
 				zones = {},
 				varieties = {},
+				counts = {
+					shards = 0,
+					lastDay = {},
+					deep = 0,
+					pairs = 0,
+					lastSpecies = {},
+					records = 0,
+					ice = 0,
+					sea = 0,
+					gotAwayRun = 0,
+					afterRun = false,
+					days = {},
+					lures = {},
+					clams = 0,
+				},
 			}, a)
+			assert.are_not.equal(a.counts, b.counts)
 		end)
 
 		it(
-			"is LEDGER_RULES_VERSION 6: 4 when ★ moved to the 5th Catch, 5 for the full Prestige cost and Activity XP in the climb, 6 for the varieties caught (LED-R4, LED-R30, LED-R37, VAR-R20, Tunables)",
+			"is LEDGER_RULES_VERSION 7: 4 when ★ moved to the 5th Catch, 5 for the full Prestige cost and Activity XP in the climb, 6 for the varieties caught, 7 for the second round's counts (LED-R4, LED-R30, LED-R37, VAR-R20, LED-R118, Tunables)",
 			function()
-				assert.are.equal(6, ns.LEDGER_RULES_VERSION)
+				assert.are.equal(7, ns.LEDGER_RULES_VERSION)
 			end
 		)
 	end)

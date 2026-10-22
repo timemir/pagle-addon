@@ -59,6 +59,9 @@ CORE_GOODS = [
     "core.soundset.harp",
     "core.soundset.gizmo",
     "core.soundset.wardrums",
+    "core.toaststyle.sonar",
+    "core.toaststyle.foil",
+    "core.toaststyle.storm",
 ]
 # LED-R75: the title IDs, in its table's order.
 LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]
@@ -145,6 +148,15 @@ LEDGER_BINDINGS = [
     "ledger.binding.abyssal",
     "ledger.binding.keeper",
     "ledger.binding.iridescent",
+    "ledger.binding.wave",
+    "ledger.binding.logbook",
+    "ledger.binding.heartwood",
+    "ledger.binding.stormglass",
+    "ledger.binding.lacquer",
+    "ledger.binding.knit",
+    "ledger.binding.flywallet",
+    "ledger.binding.carapace",
+    "ledger.binding.ember",
 ]
 # SHOP-R25: Core's bindings, Field Leather and every binding for sale in the shop's order, by key.
 CORE_BINDINGS = [
@@ -180,6 +192,7 @@ CORE_BINDINGS = [
     "brasscase",
     "coral",
     "scrimshaw",
+    "shagreenbone",
     "pearl",
     "trophycase",
 ]
@@ -1070,6 +1083,13 @@ LEDGER_GOODS = [
     "ledger.toaststyle.prestige",
     "ledger.soundset.concertina",
     "ledger.soundset.choir",
+    "ledger.toaststyle.glass",
+    "ledger.toaststyle.deep",
+    "ledger.toaststyle.koi",
+    "ledger.toaststyle.trophy",
+    "ledger.toaststyle.slate",
+    "ledger.toaststyle.ice",
+    "ledger.toaststyle.stitch",
 ]
 
 

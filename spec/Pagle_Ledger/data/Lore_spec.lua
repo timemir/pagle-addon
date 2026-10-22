@@ -166,3 +166,54 @@ describe("the Ledger's committed lore (DATA-R111, its M4 batch)", function()
 		end
 	)
 end)
+
+describe("the Ledger's committed lore for the Curio Shop's second round (LED-R118, LED-R160)", function()
+	-- LED-R118's nine earned bindings in Core's binding slot (ADR 0015), and its seven toast styles, by good ID.
+	local BINDINGS = {
+		"ledger.binding.wave",
+		"ledger.binding.logbook",
+		"ledger.binding.heartwood",
+		"ledger.binding.stormglass",
+		"ledger.binding.lacquer",
+		"ledger.binding.knit",
+		"ledger.binding.flywallet",
+		"ledger.binding.carapace",
+		"ledger.binding.ember",
+	}
+	local TOAST_STYLES = {
+		"ledger.toaststyle.glass",
+		"ledger.toaststyle.deep",
+		"ledger.toaststyle.koi",
+		"ledger.toaststyle.trophy",
+		"ledger.toaststyle.slate",
+		"ledger.toaststyle.ice",
+		"ledger.toaststyle.stitch",
+	}
+	local L
+
+	setup(function()
+		L = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns.L
+	end)
+
+	---@param key string
+	local function hasText(key)
+		local text = L[key]
+		assert(type(text) == "string" and text:find("%S"), key .. " has no text")
+	end
+
+	it("has a name and a description for each of the nine bindings and seven toast styles", function()
+		for _, binding in ipairs(BINDINGS) do
+			hasText(("ledgergood.%s.name"):format(binding))
+			hasText(("ledgergood.%s.description"):format(binding))
+		end
+		for _, good in ipairs(TOAST_STYLES) do
+			hasText(("ledgergood.%s.name"):format(good))
+			hasText(("ledgergood.%s.description"):format(good))
+		end
+	end)
+
+	it("leaves Shagreen and Bone to Core's lore, as Core's binding (SHOP-R25)", function()
+		assert.is_nil(rawget(L, "binding.shagreen.name"))
+		assert.is_nil(rawget(L, "binding.shagreenbone.name"))
+	end)
+end)

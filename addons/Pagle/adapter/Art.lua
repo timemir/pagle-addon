@@ -14,7 +14,8 @@ end
 
 local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 -- The faces (media/fonts/OFL-*.txt): IM Fell English for print, its italic for notes and its small caps (IM Fell
--- English SC) for kickers, Caveat for the Angler's handwriting, Marcellus for gilt, stamps and labels.
+-- English SC) for kickers, Caveat for the Angler's handwriting, Marcellus for gilt, stamps and labels; Cutive Mono for
+-- a composed toast style's typewriter (ANN-R82: Sonar Scope).
 local FACES = {
 	print = "IMFeENrm28P.ttf",
 	italic = "IMFeENit28P.ttf",
@@ -23,6 +24,7 @@ local FACES = {
 	hand = "Caveat-Medium.ttf",
 	handSemi = "Caveat-SemiBold.ttf",
 	handBold = "Caveat-Bold.ttf",
+	mono = "CutiveMono-Regular.ttf",
 }
 -- What draws if a bundled face won't load: the client's own.
 local FALLBACK = "Fonts\\FRIZQT__.TTF"
@@ -95,19 +97,49 @@ for key, def in pairs(FONTS) do
 	ns.ART_FONTS[key] = name
 end
 
---- Puts a font string in the art's font `key`, in that font's ink.
+--- Puts a font string in the art's font `key`, in that font's ink, and its shadow back where a composed style's ink
+--- (ns.SetInkFont) gave it another.
 ---@param fontString FontString
 ---@param key string
 function ns.SetArtFont(fontString, key)
 	fontString:SetFontObject(ns.ART_FONTS[key])
 	ns.Ink(fontString, FONTS[key][3])
+	if fontString.inked then
+		fontString.inked = nil
+		if FONTS[key][4] then
+			fontString:SetShadowColor(0, 0, 0, 0.9)
+			fontString:SetShadowOffset(0, -1.5)
+		else
+			fontString:SetShadowOffset(0, 0)
+		end
+	end
+end
+
+--- Puts a font string in a composed toast style's ink (ANN-R82): its face at its size (or `size`), its colour and
+--- its shadow, the first the kit gives with an offset (the client draws no blur).
+---@param fontString FontString
+---@param ink PagleToastInk
+---@param size number?
+function ns.SetInkFont(fontString, ink, size)
+	fontString:SetFontObject(ns.ArtFaceFont(ink.face, size or ink.size))
+	local color = ns.Rgb(ink.color)
+	fontString:SetTextColor(color[1], color[2], color[3])
+	local shadow = ink.shadow
+	if shadow then
+		local tint = ns.Rgb(shadow.color)
+		fontString:SetShadowColor(tint[1], tint[2], tint[3], shadow.alpha)
+		fontString:SetShadowOffset(shadow.x, -shadow.y)
+	else
+		fontString:SetShadowOffset(0, 0)
+	end
+	fontString.inked = true
 end
 
 --- The art's font object name for the small-caps kicker (IM Fell English SC, 14), in the books' kicker ink.
 ns.ART_SMALL_CAPS = ns.ART_FONTS.SmallCaps
 
 --- A face the art bundles, for a font made at any size (ns.ArtFaceFont).
----@alias PagleArtFace "print"|"italic"|"sc"|"gilt"|"hand"|"handSemi"|"handBold"
+---@alias PagleArtFace "print"|"italic"|"sc"|"gilt"|"hand"|"handSemi"|"handBold"|"mono"
 
 -- Each font object ns.ArtFaceFont has made, by face, size and shadow.
 ---@type table<string, Font>
@@ -163,6 +195,7 @@ end
 function ns.ArtText(frame, key, layer)
 	local fontString = frame:CreateFontString(nil, layer or "OVERLAY")
 	ns.SetArtFont(fontString, key)
+	fontString.artKey = key
 	fontString:SetWordWrap(false)
 	fontString:SetJustifyH("LEFT")
 	return fontString
@@ -513,6 +546,9 @@ end
 ---@param coords number[]?
 function ns.SetBezel(bezel, size, ring, icon, coords)
 	bezel:SetSize(size, size)
+	-- A composed style's medallion hides them (adapter/ToastLayers.lua).
+	bezel.Ring:Show()
+	bezel.Gloss:Show()
 	ns.SetSprite(bezel.Ring, ring.atlas, ring.sprite)
 	ns.CenterSprite(bezel.Ring, bezel)
 	bezel.Icon:SetSize(INNER[size] - 2, INNER[size] - 2)
@@ -552,6 +588,8 @@ end
 ---@class PagleStamp: Frame
 ---@field border PagleThreeSlice
 ---@field label FontString
+---@field plate Texture[]? a composed style's plate in three slices (ANN-R82, adapter/ToastLayers.lua)
+---@field layered PagleLayeredStamp? the composed plate drawn now
 
 --- A rubber stamp on `parent`, hidden until ns.SetStamp.
 ---@param parent Frame
@@ -568,11 +606,20 @@ function ns.NewStamp(parent)
 	return stamp
 end
 
---- Inks a rubber stamp with `text` in a toast style's stamp and ink, and shows it.
+--- Inks a rubber stamp with `text` in a toast style's stamp and ink, and shows it: a composed style's own plate on
+--- `page`'s rung, a Nod's with none (ANN-R82, adapter/ToastLayers.lua).
 ---@param stamp PagleStamp
 ---@param text string
 ---@param style PagleToastStyle
-function ns.SetStamp(stamp, text, style)
+---@param page PagleToastPage?
+function ns.SetStamp(stamp, text, style, page)
+	if style.layered then
+		ns.SetLayeredStamp(stamp, text, style, page)
+		return
+	end
+	if stamp.plate then
+		ns.ClearLayeredStamp(stamp)
+	end
 	stamp.label:SetText(ns.Capitals(text))
 	ns.Ink(stamp.label, style.stampInk)
 	local width = stamp.label:GetStringWidth() + 18

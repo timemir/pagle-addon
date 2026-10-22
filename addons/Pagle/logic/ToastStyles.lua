@@ -60,6 +60,8 @@ ns.ANNOUNCE_COLORS = {
 ---@class PagleToastStyle
 ---@field id string
 ---@field atlas string
+---@field layered? true                    -- a composed style, drawn from its `art` (ANN-R82)
+---@field art? PagleToastArt2
 ---@field ring? true                       -- its own ring, `bezel-<size>` in its atlas (ANN-R81), for the trims
 ---@field trim? "gold"|"silver"|"bronze"   -- the shared trims, for a style without a ring
 ---@field highTrim? "gold"|"silver"|"bronze"
@@ -364,6 +366,282 @@ for _, entry in ipairs(RINGED) do
 	ns.TOAST_STYLES[entry.id] = style
 end
 
+-- The Curio Shop round two's ten composed styles (ANN-R82): seven the Ledger earns in Core's slot, Sonar Scope Core
+-- earns, Prize Foil from the Curio crate and Storm Front for sale. Each draws its own layers on each rung instead of a
+-- page (adapter/ToastLayers.lua), from its art in data/ToastStyleArt2.lua, keyed by its good ID. Its inks are its
+-- rungs', each added to ns.ANNOUNCE_COLORS as the role "<goodID>.<rung>.<ink>"; the style's own fields name its toast
+-- rung's, for what reads a style without a page (the digest's rows). It has no ring and no wax: its medallion is its
+-- layers' and toast.high's seal its art's.
+
+---@class PagleToastInk
+---@field face PagleArtFace
+---@field size number
+---@field color string "RRGGBB"
+---@field caps? true                  -- set in capitals
+---@field shadow? { color: string, alpha: number, x: number, y: number }
+
+---@class PagleToastBox
+---@field x number
+---@field y number
+---@field w number
+---@field h number
+
+---@class PagleToastLayerMotion
+---@field keyframes string            -- the canvas's keyframes' name
+---@field dur number
+---@field ease string
+---@field delay? number
+---@field loop boolean                -- the canvas's; ns.TOAST_MOTION_ONCE plays some once in game
+---@field origin { x: number, y: number }
+---@field window? PagleToastBox       -- a sweep's: the part of the rung its strip scrolls through
+---@field alpha? number[][]           -- { at, alpha }
+---@field transform? number[][]       -- { at, x, y, rotate (degrees, clockwise), sx, sy }
+---@field scroll? number[][]          -- { at, u, v }: the strip's place in its window, as CSS's background-position
+
+---@class PagleToastLayer: PagleToastBox
+---@field name string
+---@field sprite string
+---@field host "under"|"front"|"over" -- under the medallion's icon, over it, or over the words
+---@field blend? "ADD"|"MOD"
+---@field mask? PagleToastBox|{ sprite: string }
+---@field motion? PagleToastLayerMotion
+---@field slice? { left: number, right: number } -- a stamp's caps
+---@field tilt? number                -- a stamp's, degrees clockwise
+
+---@class PagleToastRung
+---@field w number
+---@field h number
+---@field med PagleToastBox
+---@field icon PagleToastBox
+---@field text PagleToastBox
+---@field coin? PagleToastBox
+---@field amt? PagleToastBox
+---@field slice? { left: number, right: number } -- the Nod body's caps
+---@field inks table<string, PagleToastInk>
+---@field layers PagleToastLayer[]
+---@field stamp? PagleToastLayer
+
+---@class PagleToastArt2
+---@field atlas string
+---@field rungs table<"toast"|"high"|"low"|"nod", PagleToastRung>
+
+for id, art in pairs(ns.TOAST_STYLE_ART2 or {}) do
+	for rungName, rung in pairs(art.rungs) do
+		for field, ink in pairs(rung.inks) do
+			ns.ANNOUNCE_COLORS[("%s.%s.%s"):format(id, rungName, field)] = rgb(ink.color)
+		end
+	end
+	local function role(field)
+		return art.rungs.toast.inks[field] and ("%s.toast.%s"):format(id, field) or nil
+	end
+	ns.TOAST_STYLES[id] = {
+		id = id,
+		atlas = art.atlas,
+		layered = true,
+		art = art,
+		trim = "gold",
+		highTrim = "bronze",
+		stamp = "stamp",
+		stampInk = role("stamp") or "stamp",
+		what = role("what") or "red",
+		name = role("name") or "ink",
+		amt = role("amt"),
+		small = role("small"),
+	}
+end
+
+--- The kit's keyframes that play once in game, though the canvas loops them: a beat on the toast landing (Through the
+--- Ice's tip-up flag springs up and settles). Every other layer's motion is the style's own weather, and loops while
+--- its toast is on screen.
+ns.TOAST_MOTION_ONCE = { ["ice-flag"] = true }
+
+--- The rung of a composed style's art a page is drawn from (ANN-R82): toast.low's pages from its low rung, toast.high's
+--- from its high one, every other page from its toast rung; with no page, the Nod's.
+---@param page PagleToastPage?
+---@return "toast"|"high"|"low"|"nod"
+function ns.ToastRungKey(page)
+	if not page then
+		return "nod"
+	end
+	return page.low and "low" or page.high and "high" or "toast"
+end
+
+--- A composed style's rung for a page (ns.ToastRungKey), or nil for a style that isn't composed.
+---@param style PagleToastStyle
+---@param page PagleToastPage?
+---@return PagleToastRung?
+function ns.ToastRungArt(style, page)
+	return style.art and style.art.rungs[ns.ToastRungKey(page)]
+end
+
+--- A composed style's ink `field` ("what", "name", "small", "amt" or "stamp") on a page, and its role in
+--- ns.ANNOUNCE_COLORS: its rung's, else its toast rung's (the Nod has no Coins, ruler or stamp inks of its own), else
+--- none.
+---@param style PagleToastStyle
+---@param page PagleToastPage?
+---@param field string
+---@return PagleToastInk?
+---@return string?
+function ns.ToastInk(style, page, field)
+	local key = ns.ToastRungKey(page)
+	for _, rungName in ipairs({ key, "toast" }) do
+		local ink = style.art.rungs[rungName].inks[field]
+		if ink then
+			return ink, ("%s.%s.%s"):format(style.id, rungName, field)
+		end
+	end
+	return nil, nil
+end
+
+--- A composed style's stamp on a rung (ANN-R82): its own, or its toast rung's kept as far from the right edge (the kit
+--- gives only Chapel Glass a toast.low stamp of its own, and the Nod none).
+---@param style PagleToastStyle
+---@param page PagleToastPage?
+---@return PagleToastLayer
+function ns.ToastStampArt(style, page)
+	local rung = ns.ToastRungArt(style, page) --[[@as PagleToastRung]]
+	if rung.stamp then
+		return rung.stamp
+	end
+	local toast = style.art.rungs.toast
+	local stamp = {}
+	for key, value in pairs(toast.stamp) do
+		stamp[key] = value
+	end
+	stamp.x = toast.stamp.x + rung.w - toast.w
+	return stamp
+end
+
+-- A layer as wide or tall as this share of its rung stretches with the page; a smaller one keeps its size.
+local SPAN = 0.6
+
+-- One axis of ns.FitToastBox: a box at `at`, `size` long on a rung `from` long, on a page `to` long.
+local function fitAxis(at, size, from, to, centred)
+	local grow = to - from
+	if grow == 0 then
+		return at, size
+	elseif centred then
+		return at + grow / 2, size
+	elseif size >= from * SPAN then
+		return at, size + grow
+	elseif at + size / 2 > from / 2 then
+		return at + grow, size
+	end
+	return at, size
+end
+
+--- Where a box of a rung's art goes on a page of another size (ANN-R82): the kit draws four rungs, and a toast with a
+--- ruler or the digest is taller or wider than its rung, a Nod as long as its line. Across and down, a box spanning
+--- most of the rung (the body, a sweep) stretches with the page, keeping its edges' distance from the rung's; a smaller
+--- one keeps its size and its distance from the nearer edge, so a stamp stays at the top right and a lure at the
+--- medallion. A `centred` box (the medallion's) stays centred down the page instead.
+---@param box PagleToastBox
+---@param rung { w: number, h: number }
+---@param w number the page's width
+---@param h number its height
+---@param centred boolean?
+---@return PagleToastBox
+function ns.FitToastBox(box, rung, w, h, centred)
+	local x, width = fitAxis(box.x, box.w, rung.w, w, false)
+	local y, height = fitAxis(box.y, box.h, rung.h, h, centred)
+	return { x = x, y = y, w = width, h = height }
+end
+
+--- Where a layer's box is drawn under one moment of its transform (CSS's: translate, then rotate and scale about its
+--- origin, in UI units with y down): its centre, size, rotation for the client (radians, anticlockwise) and whether
+--- it is mirrored across.
+---@param box PagleToastBox
+---@param origin { x: number, y: number }
+---@param t number[]? { x, y, rotate (degrees clockwise), sx, sy }, none for none
+---@return { cx: number, cy: number, w: number, h: number, rotation: number, mirrored: boolean }
+function ns.TransformToastBox(box, origin, t)
+	local tx, ty, degrees, sx, sy = 0, 0, 0, 1, 1
+	if t then
+		tx, ty, degrees, sx, sy = t[1], t[2], t[3], t[4], t[5]
+	end
+	local dx, dy = (box.x + box.w / 2 - origin.x) * sx, (box.y + box.h / 2 - origin.y) * sy
+	local r = math.rad(degrees)
+	local c, s = math.cos(r), math.sin(r)
+	return {
+		cx = origin.x + tx + c * dx - s * dy,
+		cy = origin.y + ty + s * dx + c * dy,
+		w = box.w * math.abs(sx),
+		h = box.h * math.abs(sy),
+		rotation = -r,
+		mirrored = sx < 0,
+	}
+end
+
+--- The share of a sweep's strip seen through its window at a scroll (CSS's background-position: 0 shows the strip's
+--- start, 1 its end), as left, right, top and bottom from 0 to 1 across the strip: the window is `ku` of its width and
+--- `kv` of its height.
+---@param ku number
+---@param kv number
+---@param u number
+---@param v number
+---@return number left
+---@return number right
+---@return number top
+---@return number bottom
+function ns.ScrollWindow(ku, kv, u, v)
+	local left, top = u * (1 - ku), v * (1 - kv)
+	return left, left + ku, top, top + kv
+end
+
+-- The kit's easings by name (data/ToastStyleArt2.lua), looked up as a motion is built: logic/Motion.lua's.
+local function easing(name)
+	if name == "steps1" then
+		return ns.Steps(1)
+	end
+	return ns.EASE[name] or ns.EASE.ease
+end
+
+--- Whether a layer shows in its resting frame (ANN-R82: Animations off, or a preview standing still): as the kit
+--- drew it, unmoved and opaque, unless it only flashes (its motion starts unseen: lightning, a ripple, a puff) or is a
+--- sweep's band of light.
+---@param layer PagleToastLayer
+---@return boolean
+function ns.ToastLayerRests(layer)
+	local motion = layer.motion
+	if not motion then
+		return true
+	end
+	return motion.scroll == nil and not (motion.alpha and motion.alpha[1][2] == 0)
+end
+
+--- A layer's motion as animations for the motion player (logic/Motion.lua), one per property it moves, as CSS
+--- animates each on its own keyframes: "alpha" ({ alpha }), "transform" ({ x, y, rotate, sx, sy }) and "scroll"
+--- ({ u, v }), each `apply(kind, values)`. Each starts `landing` seconds in, once its toast has landed (ANN-R82),
+--- holding its first frame till then, and loops for as long as its owner plays, but one ns.TOAST_MOTION_ONCE names
+--- plays once and holds its end.
+---@param motion PagleToastLayerMotion
+---@param landing number
+---@param apply fun(kind: string, values: number[])
+---@return PagleAnimation[]
+function ns.ToastLayerAnimations(motion, landing, apply)
+	local animations = {}
+	for _, kind in ipairs({ "alpha", "transform", "scroll" }) do
+		local track = motion[kind]
+		if track then
+			local keys = {}
+			for i, key in ipairs(track) do
+				keys[i] = { key[1], { unpack(key, 2) } }
+			end
+			animations[#animations + 1] = {
+				dur = motion.dur,
+				delay = landing + (motion.delay or 0),
+				ease = easing(motion.ease),
+				iter = (motion.loop and not ns.TOAST_MOTION_ONCE[motion.keyframes]) and "infinite" or 1,
+				keys = keys,
+				apply = function(values)
+					apply(kind, values)
+				end,
+			}
+		end
+	end
+	return animations
+end
+
 --- The style a toast style good ID draws in: its own, or Torn Page for any other ID, or none (ANN-R80): before Core's
 --- slot is registered, GetEquipped has no good for it.
 ---@param goodID any
@@ -398,6 +676,20 @@ end
 ---@param page PagleToastPage?
 ---@return { what: string, name: string, amt: string, label: string, value: string }
 function ns.ToastInks(style, page)
+	if style.layered then
+		-- A composed style's rung's own (ANN-R82), else its toast rung's, else the ledger's.
+		local function role(field, fallback)
+			local _, found = ns.ToastInk(style, page, field)
+			return found or fallback
+		end
+		return {
+			what = role("what", "red"),
+			name = role("name", "ink"),
+			amt = role("amt", "amt"),
+			label = role("small", "ink2"),
+			value = role("small", "ink"),
+		}
+	end
 	local label, value = style.small or "ink2", style.small or "ink"
 	if page and page.low then
 		return {

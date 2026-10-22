@@ -93,6 +93,9 @@ ns.CORE_GOODS = {
 			{ id = "core.toaststyle.bottle", tier = 3, icon = ICONS .. "INV_Drink_07" },
 			{ id = "core.toaststyle.rune", tier = 4, icon = ICONS .. "INV_Misc_Rune_01" },
 			{ id = "core.toaststyle.folio", tier = 5, icon = ICONS .. "INV_Misc_Book_11" },
+			-- The round two's one for sale (ANN-R82); Sonar Scope (earned) and Prize Foil (the Curio crate's) register
+			-- with their unlocks.
+			{ id = "core.toaststyle.storm", tier = 5, icon = ICONS .. "Spell_Nature_Lightning" },
 		},
 	},
 	{
