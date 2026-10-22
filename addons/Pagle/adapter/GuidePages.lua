@@ -344,13 +344,24 @@ local function drawMenu(menu)
 	menu:SetHeight(y + 6)
 end
 
--- The right page's rows: from 55, 73.98 apart, a rule 66 under each but the last.
-local ROW_TOP, ROW_STEP = 55, 73.98
+-- The right page's rows (board 3), each laid under the one above as measured (ONB-R31), so a blurb that wraps a line
+-- more pushes the rows under it down instead of running into its rule. In a row: its icon (36 tall) at its top, its
+-- title's line box (19.55 at 17) level with it and its blurb's (18.225 at 13.5) 21.5 under that; the row ends under the
+-- lower of the icon and its words. Between two rows the board leaves 16.03, the rule 8.05 of it under the row above.
+-- The rows start at 55 and end by 483, 7 above the foot's Next at 490: when they would pass it, every gap tightens by
+-- as much (the rule keeping its share of it), down to 8, so the rows still read apart with a rule between them; past
+-- that they run on. Every blurb on two lines, they are the board's: 73.98 apart from 55, the rule 66 under each.
+local ROW_TOP, ROWS_END, ICON = 55, 483, 36
+local TITLE_SIZE, TITLE_LH, BLURB_Y, BLURB_SIZE, BLURB_LH = 17, 19.55, 21.5, 13.5, 18.225
+local ROW_GAP, ROW_GAP_MIN, RULE_SHARE = 16.03, 8, 8.05 / 16.03
 
---- One row as drawn: its icon, which sprite that is.
+--- One row as drawn: its icon, which sprite that is, its title and blurb, and the rule under it (none under the last).
 ---@class PagleGuideBoxRowView
 ---@field icon PagleSprite
 ---@field sprite string
+---@field title FontString
+---@field blurb FontString?
+---@field rule Texture?
 
 --- A preset's card as drawn: the kit's choice card with its pencilled line.
 ---@class PagleGuidePresetCard: PagleGuideChoiceCard
@@ -381,6 +392,21 @@ local ROW_TOP, ROW_STEP = 55, 73.98
 local pages = { samples = {}, windows = {} }
 ns.guidePages = pages
 
+-- The room between What's in the box's rows, each `heights` tall: the board's, or what is left above the foot shared
+-- evenly between them when the board's would take the rows past it, but never under ROW_GAP_MIN.
+---@param heights number[]
+---@return number
+local function rowGap(heights)
+	local room = ROWS_END - ROW_TOP
+	for _, height in ipairs(heights) do
+		room = room - height
+	end
+	if #heights < 2 then
+		return ROW_GAP
+	end
+	return math.max(ROW_GAP_MIN, math.min(ROW_GAP, room / (#heights - 1)))
+end
+
 --- What's in the box (ONB-R31, board 3): the paragraph and the drawing of the Pagle menu with its note on the left;
 --- on the right, a row per registered Module in def.order, then the Curio Shop's (ONB-R91), and ONB-R103's line when
 --- every Module is off. The menu is drawn again each time the step shows, so it reads as the real menu does then.
@@ -397,21 +423,35 @@ local BOX = {
 
 		local modules = ns.Modules:Modules()
 		ns.NewGuideKicker(right, ns.GuideBoxKicker(#modules))
-		local rows = ns.GuideBoxRows(modules)
-		pages.rows = {}
-		for i, row in ipairs(rows) do
-			local y = ROW_TOP + (i - 1) * ROW_STEP
-			pages.rows[i] = { icon = part(right, row.sprite, X, y), sprite = row.sprite }
-			text(right, "print", 17, "title", row.title, 79, y, 19.55)
+		-- each row's words first, at its own top, to measure how tall the row is; then the rows go in their places
+		local views, heights = {}, {}
+		for i, row in ipairs(ns.GuideBoxRows(modules)) do
+			local view = { sprite = row.sprite, icon = ns.GuidePart(right, row.sprite) }
+			view.title = text(right, "print", TITLE_SIZE, "title", row.title, 79, 0, TITLE_LH)
+			heights[i] = math.max(ICON, TITLE_LH)
 			if row.blurb then
-				text(right, "print", 13.5, "small", row.blurb, 79, y + 21.5, 18.225, { wrap = true, width = 333 })
+				local options = { wrap = true, width = 333 }
+				view.blurb = text(right, "print", BLURB_SIZE, "small", row.blurb, 79, BLURB_Y, BLURB_LH, options)
+				heights[i] = math.max(ICON, below(view.blurb, BLURB_Y, BLURB_SIZE, BLURB_LH))
 			end
-			if i < #rows then
-				rule(right, X, y + 66, W, "rule", 0.6)
-			end
+			views[i] = view
 		end
+		local gap, y = rowGap(heights), ROW_TOP
+		for i, view in ipairs(views) do
+			ns.PlaceSprite(view.icon, right, X, y)
+			ns.GuideAt(view.title, right, 79, y + (TITLE_LH - TITLE_SIZE) / 2)
+			if view.blurb then
+				ns.GuideAt(view.blurb, right, 79, y + BLURB_Y + (BLURB_LH - BLURB_SIZE) / 2)
+			end
+			y = y + heights[i]
+			if i < #views then
+				view.rule = rule(right, X, y + gap * RULE_SHARE, W, "rule", 0.6)
+			end
+			y = y + gap
+		end
+		pages.rows = views
 		if #modules == 0 then
-			note(right, L.GUIDE_BOX_NONE, ROW_TOP + ROW_STEP)
+			note(right, L.GUIDE_BOX_NONE, y)
 		end
 	end,
 	onShow = function()
