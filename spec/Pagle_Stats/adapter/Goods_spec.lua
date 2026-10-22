@@ -1,5 +1,5 @@
 -- Stats' goods on FakePagle (STA-R88, STA-R84; SHOP-R21–R23, SHOP-R26, SHOP-R30–R33, SHOP-R90; SET-R44, SET-R50,
--- SET-R51): the tracker-frame slot and its three goods in Core's goods registry, their names from lore, and their
+-- SET-R51): the tracker-frame slot and its eight goods in Core's goods registry, their names from lore, and their
 -- previews on the shop's stage.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -12,6 +12,11 @@ local GOODS = {
 	{ stats.GOODS[1], "default" },
 	{ stats.GOODS[2], "tier 1" },
 	{ stats.GOODS[3], "tier 2" },
+	{ stats.GOODS[4], "tier 1" },
+	{ stats.GOODS[5], "tier 1" },
+	{ stats.GOODS[6], "tier 2" },
+	{ stats.GOODS[7], "tier 2" },
+	{ stats.GOODS[8], "tier 3" },
 }
 
 -- A good's kind as STA-R88's table writes it; "earned" for one with isEarned (Stats has none).
@@ -41,7 +46,7 @@ end
 
 describe("Stats' goods", function()
 	it(
-		'register the slot stats.trackerframe ("Stats tracker frame", Trackers) with No frame the default, Logbook tier 1 and Brass tier 2, none earned (STA-R88, SHOP-R21, SHOP-R22)',
+		'register the slot stats.trackerframe ("Stats tracker frame", Trackers) with No frame the default, Logbook, Green-Bar Paper and Chalkboard tier 1, Brass, Tide Gauge and Abacus tier 2, Astrolabe tier 3, none earned (STA-R88, SHOP-R21, SHOP-R22)',
 		function()
 			local _, fake = loggedIn()
 			local goods = fake.ns.goods
@@ -62,14 +67,15 @@ describe("Stats' goods", function()
 		end
 	)
 
-	it("sell for 150 and 400 Coins in the Curio Shop, as Stats' (STA-R88, SHOP-R22)", function()
+	it("sell for 150, 400 and 900 Coins by their tiers in the Curio Shop, as Stats' (STA-R88, SHOP-R22)", function()
 		local _, fake = loggedIn()
 		local shop = fake.ns.ShopModel(tostring)
 
-		assert.are.same({ 150, 400 }, {
-			shop:Entry("stats.trackerframe.logbook").price,
-			shop:Entry("stats.trackerframe.brass").price,
-		})
+		local prices = {}
+		for i = 2, #GOODS do
+			prices[i - 1] = shop:Entry(GOODS[i][1]).price
+		end
+		assert.are.same({ 150, 400, 150, 150, 400, 400, 900 }, prices)
 		assert.are.equal("Stats", fake.Pagle.GetGood("stats.trackerframe.none").module)
 	end)
 
@@ -248,6 +254,119 @@ describe("A tracker frame's preview", function()
 			assert.is_true(logbook.paper) -- band dots in ink on the page
 			assert.are_not.same(ns.TRACKER_INKS.header, logbook.ink.header) -- dark words on the pale page
 			assert.are.same(ns.TRACKER_INKS.text, brass.ink.text) -- bright words on the dark plate
+		end
+	)
+end)
+
+-- The Curio Shop expansion's five frames as the shop expansion kit's goods.json draws them (STA-R88): the sprite in
+-- TrackerFrames2 and its texel rectangle, the width, the text insets (left, right, top, foot), the three-slice's fixed
+-- top and foot with its tiled middle's period (nil: stretched), and the inks (header, text, dim, accent).
+local KIT = {
+	["stats.trackerframe.greenbar"] = {
+		sprite = "frame-greenbar",
+		rect = { 2, 2 },
+		insets = { 22, 22, 14, 14 },
+		slice = { 14, 14, 36 },
+		inks = { "2a4a1a", "14240e", "4a5a3a", "2a6a2a" },
+	},
+	["stats.trackerframe.chalkboard"] = {
+		sprite = "frame-chalkboard",
+		rect = { 2, 446 },
+		insets = { 16, 16, 14, 14 },
+		slice = { 20, 36 },
+		inks = { "ffffff", "f4f4e8", "b8d0c0", "f0e080" },
+	},
+	["stats.trackerframe.tidegauge"] = {
+		sprite = "frame-tidegauge",
+		rect = { 562, 2 },
+		insets = { 32, 16, 14, 14 },
+		slice = { 16, 40 },
+		inks = { "f0d080", "e8f6ff", "a8c8d8", "7ae0ff" },
+	},
+	["stats.trackerframe.abacus"] = {
+		sprite = "frame-abacus",
+		rect = { 562, 446 },
+		insets = { 16, 16, 22, 22 },
+		slice = { 20, 20 },
+		inks = { "5a2a0a", "2a1a0a", "6a5030", "a8501a" },
+	},
+	["stats.trackerframe.astrolabe"] = {
+		sprite = "frame-astrolabe",
+		rect = { 1122, 2 },
+		insets = { 16, 60, 16, 16 },
+		slice = { 68, 20 },
+		inks = { "f0cd6a", "eef0ff", "a8b0d8", "f0cd6a" },
+	},
+}
+
+describe("The Curio Shop expansion's tracker frames", function()
+	it(
+		"are each a look drawn as a three-slice of TrackerFrames2, with goods.json's width, text insets, slice and inks (STA-R88)",
+		function()
+			local ns = loggedIn().ns
+			local atlas = ns.ATLASES.TrackerFrames2
+			assert.are.same(
+				{ "Interface\\AddOns\\Pagle_Stats\\media\\books\\TrackerFrames2", 2048, 1024, 2 },
+				{ atlas.file, atlas.width, atlas.height, atlas.scale }
+			)
+			-- Stats ships the sheet: a BLP2 the atlas's size (its header's little-endian width and height)
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+			local handle = assert(io.open("addons/Pagle_Stats/media/books/TrackerFrames2.blp", "rb"))
+			local head = handle:read(20)
+			handle:close()
+			local function word(at)
+				local a, b, c, d = head:byte(at, at + 3)
+				return a + b * 256 + c * 65536 + d * 16777216
+			end
+			assert.are.same({ "BLP2", 2048, 1024 }, { head:sub(1, 4), word(13), word(17) })
+
+			for id, kit in pairs(KIT) do
+				local look = ns.TRACKER_FRAMES[id]
+				assert.are.same({ "TrackerFrames2", kit.sprite }, { look.frame, look.sprite }, id)
+				local sprite = atlas.sprites[kit.sprite]
+				assert.are.same(
+					{ kit.rect[1], kit.rect[2], 556, 440, { 8, 6, 262, 200 } },
+					{ sprite.x, sprite.y, sprite.w, sprite.h, sprite.box },
+					id
+				)
+				local left, right, top, foot = unpack(kit.insets)
+				assert.are.same({ 262, left, 262 - right, top, foot }, {
+					look.width,
+					look.x,
+					look.right,
+					look.top,
+					look.foot,
+				}, id)
+				assert.are.same(kit.slice, { look.sliceTop, look.sliceFoot, look.period }, id)
+				local header, text, dim, accent = unpack(kit.inks)
+				assert.are.same({
+					header = ns.BookTint(header),
+					text = ns.BookTint(text),
+					dim = ns.BookTint(dim),
+					right = ns.BookTint(accent),
+					count = ns.BookTint(accent),
+				}, look.ink, id)
+			end
+		end
+	)
+
+	it(
+		"put dark words and inked band dots on the pale papers, Green-Bar and Abacus, and bright words over the dark ones (STA-R88)",
+		function()
+			local ns = loggedIn().ns
+			local frames = ns.TRACKER_FRAMES
+
+			for _, id in ipairs({ "stats.trackerframe.greenbar", "stats.trackerframe.abacus" }) do
+				assert.are.equal(true, frames[id].paper, id)
+			end
+			for _, id in ipairs({
+				"stats.trackerframe.chalkboard",
+				"stats.trackerframe.tidegauge",
+				"stats.trackerframe.astrolabe",
+			}) do
+				assert.are.equal(false, frames[id].paper, id)
+				assert.are.equal(true, frames[id].text[3], id) -- a shadow under bright words, as on the Brass plate
+			end
 		end
 	)
 end)

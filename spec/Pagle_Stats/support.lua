@@ -63,7 +63,16 @@ support.NAMES = {
 }
 
 --- Stats' goods (STA-R88), in its table's order: its tracker frames.
-support.GOODS = { "stats.trackerframe.none", "stats.trackerframe.logbook", "stats.trackerframe.brass" }
+support.GOODS = {
+	"stats.trackerframe.none",
+	"stats.trackerframe.logbook",
+	"stats.trackerframe.brass",
+	"stats.trackerframe.greenbar",
+	"stats.trackerframe.chalkboard",
+	"stats.trackerframe.tidegauge",
+	"stats.trackerframe.abacus",
+	"stats.trackerframe.astrolabe",
+}
 
 --- Another character in a spec's Catch log, beside the player's (PLAYER_GUID).
 support.OTHER_GUID = "Player-4618-0B0B0B0B"

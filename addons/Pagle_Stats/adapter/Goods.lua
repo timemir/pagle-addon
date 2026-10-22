@@ -8,7 +8,7 @@ local ns = select(2, ...)
 -- Stats' goods on the client (STA-R88, STA-R84): registered with Core, previewed on the Curio Shop's stage as a
 -- sample tracker drawn by the tracker block maker (adapter/TrackerBlock.lua), and the looks the live tracker wears:
 -- the books art kit's Logbook (ruled paper with its margin, the words in the book's inks) and Brass (a dark plate in a
--- brass rim with a rivet on each corner, the words bright over it).
+-- brass rim with a rivet on each corner, the words bright over it), and the Curio Shop expansion's five.
 
 --- Each tracker frame's look, by good ID (STA-R88, STA-R84). No frame (`stats.trackerframe.none`) has none: the native
 --- look.
@@ -16,6 +16,11 @@ local ns = select(2, ...)
 ns.TRACKER_FRAMES = {
 	["stats.trackerframe.logbook"] = ns.TRACKER_LOOKS.logbook,
 	["stats.trackerframe.brass"] = ns.TRACKER_LOOKS.brass,
+	["stats.trackerframe.greenbar"] = ns.TRACKER_LOOKS.greenbar,
+	["stats.trackerframe.chalkboard"] = ns.TRACKER_LOOKS.chalkboard,
+	["stats.trackerframe.tidegauge"] = ns.TRACKER_LOOKS.tidegauge,
+	["stats.trackerframe.abacus"] = ns.TRACKER_LOOKS.abacus,
+	["stats.trackerframe.astrolabe"] = ns.TRACKER_LOOKS.astrolabe,
 }
 
 -- Each stage's sample tracker, made at its first drawing: the Curio Shop gives every good its own stage, so one

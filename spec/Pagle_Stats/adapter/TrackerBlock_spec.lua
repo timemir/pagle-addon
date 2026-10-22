@@ -157,3 +157,91 @@ describe("A tracker block's frame", function()
 		assert.are.same(native.text, { watch.text.textColor[1], watch.text.textColor[2], watch.text.textColor[3] })
 	end)
 end)
+
+-- The Curio Shop expansion's five looks (STA-R88): the pale tiled Green-Bar, and four with a stretched middle.
+local EXPANSION = { "greenbar", "chalkboard", "tidegauge", "abacus", "astrolabe" }
+
+-- A tall tracker: the header, the Session's two lines and ten watches.
+local TALL = { LINES[1], LINES[2], LINES[3] }
+for i = 1, 10 do
+	TALL[#TALL + 1] = LINES[4 + (i % 2)]
+end
+
+-- The UI-unit heights of each middle `paper` shows, top to bottom.
+local function middlesOf(paper)
+	local heights = {}
+	for _, middle in ipairs(paper.middles or {}) do
+		if middle:IsShown() then
+			heights[#heights + 1] = middle.height
+		end
+	end
+	return heights
+end
+
+describe("A tracker block in the Curio Shop expansion's frames", function()
+	for _, name in ipairs(EXPANSION) do
+		it(
+			("draws %s as a three-slice of TrackerFrames2 at a short and a tall height (STA-R88)"):format(name),
+			function()
+				local block, ns = newBlock()
+				local look = ns.TRACKER_LOOKS[name]
+				local atlas = ns.ATLASES.TrackerFrames2
+				local sprite = atlas.sprites[look.sprite]
+				local box = sprite.box
+				block:SetFrame(look)
+
+				for _, lines in ipairs({ { LINES[1] }, TALL }) do
+					local drawn = block:SetLines(lines)
+
+					local height, middles = ns.SliceDown(drawn, look.sliceTop, look.sliceFoot, look.period)
+					assert.are.equal(height, drawn) -- never shorter than its top and foot
+					assert.are.same({ look.width, height }, { block:GetWidth(), block:GetHeight() })
+					local paper = block.paper
+					assert.is_true(paper:IsShown())
+					assert.are.equal(height, paper.height)
+					assert.are.equal(atlas.file, paper.top.texture)
+					-- the top and foot keep their size, the sprite's margin outside them
+					assert.are.equal(box[2] + look.sliceTop, paper.top.height)
+					assert.are.equal(look.sliceFoot + sprite.h / atlas.scale - box[2] - box[4], paper.bottom.height)
+					assert.are.same(middles, middlesOf(paper))
+				end
+				-- tall, the middle repeats at the period or stretches in one piece
+				local middles = middlesOf(block.paper)
+				if look.period then
+					assert.is_true(#middles > 1)
+					for _, span in ipairs(middles) do
+						assert.is_true(span <= look.period)
+					end
+				else
+					assert.are.equal(1, #middles)
+				end
+				-- the header sits within the frame's text insets
+				local header = block.rows[1]
+				assert.are.equal(-look.top, select(3, header:GetPoint(1)))
+				assert.are.equal(look.x, select(2, header.text:GetPoint(1)))
+			end
+		)
+	end
+
+	it("cuts each tile of a tiled middle from the middle's top, at its own span (STA-R88)", function()
+		local block, ns = newBlock()
+		local look = ns.TRACKER_LOOKS.greenbar
+		local atlas = ns.ATLASES.TrackerFrames2
+		local sprite = atlas.sprites[look.sprite]
+		block:SetFrame(look)
+		block:SetLines(TALL)
+
+		local shown = {}
+		for _, middle in ipairs(block.paper.middles) do
+			if middle:IsShown() then
+				shown[#shown + 1] = middle
+			end
+		end
+		local from = (sprite.y + (sprite.box[2] + look.sliceTop) * atlas.scale) / atlas.height
+		for _, middle in ipairs(shown) do
+			local coords = middle.texCoord
+			assert.are.equal(from, coords[3])
+			assert.is_true(math.abs(coords[4] - coords[3] - middle.height * atlas.scale / atlas.height) < 1e-9)
+		end
+	end)
+end)
