@@ -1,13 +1,38 @@
 -- Core's generated lore (DATA-R104): addons/Pagle/data/Lore.lua adds each of Core's goods' names and descriptions to
 -- ns.L (SHOP-R25), from data/lore/core.toml, Core's M4 batch (DATA-R111).
 
--- SHOP-R25: Core's six goods; the crest slot's zone crests are the Ledger's (LED-R113).
+-- SHOP-R25: Core's thirty goods, the Curio Shop expansion's among them, and Plain; the crest slot's zone crests are the
+-- Ledger's (LED-R113).
 local GOODS = {
 	"core.toaststyle.page",
 	"core.toaststyle.ripple",
 	"core.toaststyle.lanternglow",
+	"core.toaststyle.ship",
+	"core.toaststyle.birch",
+	"core.toaststyle.tidepool",
+	"core.toaststyle.chart",
+	"core.toaststyle.frost",
+	"core.toaststyle.goblin",
+	"core.toaststyle.kelp",
+	"core.toaststyle.moon",
+	"core.toaststyle.leaf",
+	"core.toaststyle.bottle",
+	"core.toaststyle.rune",
+	"core.toaststyle.folio",
 	"core.soundset.driftwood",
 	"core.soundset.gilded",
+	"core.soundset.rain",
+	"core.soundset.marimba",
+	"core.soundset.shipbell",
+	"core.soundset.kalimba",
+	"core.soundset.musicbox",
+	"core.soundset.glass",
+	"core.soundset.steelpan",
+	"core.soundset.dulcimer",
+	"core.soundset.frost",
+	"core.soundset.harp",
+	"core.soundset.gizmo",
+	"core.soundset.wardrums",
 	"core.crest.plain",
 }
 
@@ -24,7 +49,7 @@ describe("Core's committed lore (DATA-R111, its M4 batch)", function()
 		assert(type(text) == "string" and text:find("%S"), key .. " has no text")
 	end
 
-	it("has a name and a description for each of Core's six goods once Pagle loads (SHOP-R25, DATA-R104)", function()
+	it("has a name and a description for each of Core's thirty goods once Pagle loads (SHOP-R25, DATA-R104)", function()
 		for _, good in ipairs(GOODS) do
 			hasText(("good.%s.name"):format(good))
 			hasText(("good.%s.description"):format(good))

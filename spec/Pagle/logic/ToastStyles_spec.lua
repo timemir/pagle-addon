@@ -76,7 +76,7 @@ describe("the toast styles", function()
 					assert.are.equal(atlasName, style.atlas)
 					local atlas = ns.ATLASES[style.atlas]
 					for _, name in ipairs(PAGES) do
-						assert.is_table(atlas.sprites["toast-" .. name], id)
+						assert.is_table(atlas.sprites["toast-" .. name])
 					end
 					assert.is_table(atlas.sprites["nod-strip"])
 					assert.are.equal(atlases == RINGED and 1.5 or 2, atlas.scale, id)
@@ -107,7 +107,7 @@ describe("the toast styles", function()
 				assert.are.equal("Interface\\AddOns\\Pagle\\media\\announce\\" .. name, atlas.file)
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 				local file = io.open("addons/Pagle/media/announce/" .. name .. ".blp", "rb")
-				assert.is_not_nil(file, name)
+				assert.is_not_nil(file)
 				assert.are.equal("BLP2", file:read(4))
 				file:close()
 			end
@@ -122,7 +122,7 @@ describe("the toast styles", function()
 				for _, size in ipairs({ 22, 34, 64, 84 }) do
 					for _, high in ipairs({ false, true }) do
 						local ring = ns.BezelRing(style, size, high)
-						assert.is_table(ns.ATLASES[ring.atlas].sprites[ring.sprite], id)
+						assert.is_table(ns.ATLASES[ring.atlas].sprites[ring.sprite])
 					end
 				end
 				assert.is_table(ns.ATLASES.Announce.sprites[style.stamp])

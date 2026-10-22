@@ -985,6 +985,48 @@ describe("ns.NewGoods", function()
 			end)
 		end
 
+		it(
+			"puts a Module's earned sound set in Core's slot away with its Module off, the slot falling back to its"
+				.. " default, and brings it back with it (SHOP-R23, SHOP-R32, SHOP-R35)",
+			function()
+				local env = newGoods()
+				local goods = env.goods
+				assert.is_nil(goods:RegisterSlot("Core", {
+					id = "core.soundset",
+					label = "Sound set",
+					category = "Announcements",
+					openToEarned = true,
+				}))
+				assert.is_nil(
+					goods:RegisterGood(
+						"Core",
+						{ id = "core.soundset.driftwood", slot = "core.soundset", name = "Driftwood", default = true }
+					)
+				)
+				assert.is_nil(goods:RegisterGood("Hunts", {
+					id = "hunts.soundset.nightwatch",
+					slot = "core.soundset",
+					name = "Night Watch",
+					isEarned = function()
+						return true
+					end,
+					earnedText = "Finish every Hunt set",
+				}))
+				assert.is_true(goods:SetEquipped("core.soundset", "hunts.soundset.nightwatch"))
+
+				env.on.Hunts = nil
+				local off = { goods:GetEquipped("core.soundset"), goods:IsOwned("hunts.soundset.nightwatch") }
+				env.on.Hunts = 20
+
+				assert.are.same({ "core.soundset.driftwood", true }, off)
+				assert.are.same({ "hunts.soundset.nightwatch", "hunts.soundset.nightwatch" }, {
+					goods:GetEquipped("core.soundset"),
+					env.db.profile.appearance["core.soundset"],
+				})
+				assert.are.equal(ns.SOUND_SETS["core.soundset.driftwood"], ns.SoundSetOf(off[1]))
+			end
+		)
+
 		it("says the slot is Core's when it refuses a Module's good for sale there (SHOP-R23)", function()
 			local env = newGoods()
 			coreSlots(env)

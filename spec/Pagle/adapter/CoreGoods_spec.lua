@@ -31,8 +31,8 @@ describe("Core's slots and goods", function()
 	end)
 
 	it(
-		"register the three slots first, in the Curio Shop's categories, with every good's tier, the crest slot holding"
-			.. " Plain then the fish crests, earned, by Species ID (SHOP-R25, VAR-R12)",
+		"register the three slots first, in the Curio Shop's categories, with every good's tier in SHOP-R25's order, the"
+			.. " crest slot holding Plain then the fish crests, earned, by Species ID (SHOP-R22, SHOP-R25, VAR-R12)",
 		function()
 			local loaded = loadCore()
 			loaded.client.fire("PLAYER_LOGIN")
@@ -65,6 +65,18 @@ describe("Core's slots and goods", function()
 						"core.toaststyle.page default",
 						"core.toaststyle.ripple tier 1",
 						"core.toaststyle.lanternglow tier 2",
+						"core.toaststyle.ship tier 1",
+						"core.toaststyle.birch tier 1",
+						"core.toaststyle.tidepool tier 1",
+						"core.toaststyle.chart tier 2",
+						"core.toaststyle.frost tier 2",
+						"core.toaststyle.goblin tier 2",
+						"core.toaststyle.kelp tier 3",
+						"core.toaststyle.moon tier 3",
+						"core.toaststyle.leaf tier 3",
+						"core.toaststyle.bottle tier 3",
+						"core.toaststyle.rune tier 4",
+						"core.toaststyle.folio tier 5",
 					},
 				},
 				{
@@ -72,7 +84,22 @@ describe("Core's slots and goods", function()
 					"Sound set",
 					"Announcements",
 					"Core",
-					{ "core.soundset.driftwood default", "core.soundset.gilded tier 2" },
+					{
+						"core.soundset.driftwood default",
+						"core.soundset.gilded tier 2",
+						"core.soundset.rain tier 1",
+						"core.soundset.marimba tier 1",
+						"core.soundset.shipbell tier 1",
+						"core.soundset.kalimba tier 2",
+						"core.soundset.musicbox tier 2",
+						"core.soundset.glass tier 2",
+						"core.soundset.steelpan tier 2",
+						"core.soundset.dulcimer tier 2",
+						"core.soundset.frost tier 3",
+						"core.soundset.harp tier 3",
+						"core.soundset.gizmo tier 3",
+						"core.soundset.wardrums tier 4",
+					},
 				},
 				{
 					"core.crest",
@@ -175,7 +202,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 6 + #FISH_CREST_SPECIES, {} }, { count, without })
+			assert.are.same({ 30 + #FISH_CREST_SPECIES, {} }, { count, without })
 		end
 	)
 end)
@@ -289,6 +316,7 @@ describe("Core's goods' names", function()
 			{ ripple.name, ripple.description }
 		)
 		assert.are.same({ "Gilded", nil }, { gilded.name, gilded.description })
+		assert.are.equal("Driftglass Bottle", Pagle.GetGood("core.toaststyle.bottle").name) -- SHOP-R25
 		assert.are.equal("core.toaststyle.lanternglow", Pagle.GetGood("core.toaststyle.lanternglow").name)
 		assert.are.equal("Leaping Trout", loaded.env.PagleDB.global.goods["core.toaststyle.ripple"].name) -- SHOP-R26
 	end)

@@ -136,6 +136,29 @@ describe("the toast's and Nod's toast style", function()
 		assert.are.same(ink(loaded, "rippleStamp"), toast.stamps[1].label.textColor)
 	end)
 
+	it(
+		"draws Moonlit Vellum once bought and equipped: its night-blue page, its own ring and its silver inks, toast.low's"
+			.. " too (ANN-R81, SHOP-R25)",
+		function()
+			local MOON = "core.toaststyle.moon"
+			local loaded, M = styledCore()
+			loaded.ns.RecordPurchase(MOON, 900) -- the Curio Shop's buy (SHOP-R10, SHOP-R11)
+			equip(loaded, MOON)
+
+			raise(loaded, M, "toast.low", "Caught")
+
+			local toast = loaded.ns.announcementFrames.toast
+			assert.are.same({
+				page = "ToastsMoon toast-low",
+				trim = "ToastsMoon bezel-64",
+				stamp = false,
+				title = ink(loaded, MOON .. ".lowWhat"),
+				text = ink(loaded, MOON .. ".lowName"),
+			}, lookOf(loaded, toast))
+			assert.are.same(ink(loaded, MOON .. ".lowAmt"), toast.coins.label.textColor)
+		end
+	)
+
 	-- The Ledger's earned toast style in Core's slot, The Tall Tale, registered by `M` and earned (LED-R117).
 	local TALL_TALE = "ledger.toaststyle.legend"
 	local function earnTallTale(M)
