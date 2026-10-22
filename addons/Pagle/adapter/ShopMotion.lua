@@ -9,8 +9,8 @@ end
 -- The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion and sound), copied from the shop art kit's
 -- Purchase.lua and MOTION.md: the bill of sale dropping in and lifting away, a purchase (the Buy pressed, the wax seal
 -- pressed onto the bill, the medallion flying to its row, the purse counting down while its coin turns, the price tag
--- lifting off, IN USE coming in, the row glowing once, the lid's Buy giving way), and the "N more Coins" note shaking
--- its head. Played by Core's driver (adapter/Motion.lua), so with the Animations setting off each jumps to where it
+-- lifting off, IN USE coming in, the row glowing once, the lid's Buy giving way), a Curio crate opening on the stage
+-- (SHOP-R55; the kit has none, so it follows the spec's row), and the "N more Coins" note shaking its head. Played by Core's driver (adapter/Motion.lua), so with the Animations setting off each jumps to where it
 -- settles. adapter/Shop.lua says what moves: these only move it. Positions are the case's, in UI units from its top
 -- left, y growing downward.
 
@@ -121,7 +121,7 @@ local function fade(regions, from, to)
 end
 
 --- What a purchase moves, from adapter/Shop.lua.
----@class PagleShopPurchaseMotion
+---@class PagleShopPurchaseMotion: PagleShopPayMotion
 ---@field press Frame              the bill's Buy, which gives under the press
 ---@field seal PagleSprite         the wax seal, hidden, anchored by ns.CenterSpriteAt where it lands on the bill
 ---@field bezel Frame              the bill's medallion, which lifts off
@@ -129,10 +129,6 @@ end
 ---@field from number[]            the bill's medallion's top left on the case
 ---@field to number[]?             the row's medallion's top left on the case; nil with no row to fly to
 ---@field closeBill fun(owner: Frame) lifts the bill away on `owner`'s clock (ns.CloseShopBill)
----@field balance fun(coins: number) writes the purse's balance
----@field balanceFrom number
----@field balanceTo number
----@field coin PagleSprite         the purse's coin, anchored by ns.CenterSpriteAt so it turns about its centre
 ---@field row fun(): PagleShopRowMotion? draws the row's new state, faded out; nil with no row
 ---@field lid fun(): Region[], Region[] draws the lid's new foot, faded out: what goes, and what comes
 
@@ -159,6 +155,87 @@ local function timeline(owner, steps, onDone)
 			ns.Cue(owner, step[1], step[2])
 		end
 	end
+end
+
+--- What pays out of the purse as a purchase or a crate is shown: its balance, from and to, and its coin.
+---@class PagleShopPayMotion
+---@field balance fun(coins: number) writes the purse's balance
+---@field balanceFrom number
+---@field balanceTo number
+---@field coin PagleSprite         the purse's coin, anchored by ns.CenterSpriteAt so it turns about its centre
+
+-- The purse pays out on `owner`'s clock: its coin sound, the balance counting down a Coin at a time (0.9 s) as its coin
+-- turns once (0.5 s).
+---@param owner Frame
+---@param m PagleShopPayMotion
+local function payOut(owner, m)
+	ns.ShopSound("coin")
+	local coin = m.coin
+	local coinWidth = coin.w0 or coin:GetWidth()
+	ns.Animate(owner, {
+		-- the purse counts down, a Coin at a time
+		{
+			dur = 0.9,
+			ease = ns.EASE.out,
+			keys = { { 0, { m.balanceFrom } }, { 1, { m.balanceTo } } },
+			apply = function(v)
+				m.balance(math.floor(v[1] + 0.5))
+			end,
+		},
+		-- and its coin turns once as it pays out
+		{
+			dur = 0.5,
+			ease = ns.EASE.inOut,
+			keys = { { 0, { 0 } }, { 1, { 180 } } },
+			apply = function(v)
+				coin:SetWidth(math.max(0.5, coinWidth * math.abs(math.cos(math.rad(v[1])))))
+			end,
+		},
+	})
+end
+
+-- A row takes its new good on `owner`'s clock: its price tag lifts away (0.25 s), IN USE (or Owned) comes in with its
+-- wax (0.4 s), the row glows warm once (0.8 s), and the slot's old good steps down (0.4 s). Nothing with no row.
+---@param owner Frame
+---@param row PagleShopRowMotion?
+local function deliverRow(owner, row)
+	if not row then
+		return
+	end
+	local animations = {
+		-- the price tag lifts away
+		{ dur = 0.25, ease = EASE_IN, keys = { { 0, { 0 } }, { 1, { 1 } } }, apply = fade(row.out, 1, 0) },
+		-- IN USE (or Owned) comes in, with its wax
+		{
+			dur = 0.4,
+			ease = ns.EASE.out,
+			keys = { { 0, { 0 } }, { 0.4, { 0 } }, { 1, { 1 } } },
+			apply = fade(row.into, 0, 1),
+		},
+		-- the row glows warm once
+		{
+			dur = 0.8,
+			ease = ns.EASE.inOut,
+			keys = { { 0, { 0 } }, { 0.35, { 0.14 } }, { 1, { 0 } } },
+			apply = function(v)
+				row.glow:SetAlpha(v[1])
+			end,
+		},
+	}
+	if row.stepOut then
+		-- the good that was in use in that slot steps down
+		local out, into = fade(row.stepOut, 1, 0), fade(row.stepIn, 0, 1)
+		animations[#animations + 1] = {
+			dur = 0.4,
+			ease = ns.EASE.inOut,
+			keys = { { 0, { 0 } }, { 1, { 1 } } },
+			apply = function(v)
+				out(v)
+				into(v)
+			end,
+		}
+	end
+	ns.Animate(owner, animations)
 end
 
 --- Plays a purchase on `owner` (the case), whose clock every part joins, as the kit's MOTION.md times it; `onDone`
@@ -247,72 +324,13 @@ function ns.PlayShopPurchase(owner, m, onDone)
 		{
 			0.8,
 			function()
-				ns.ShopSound("coin")
-				local coin = m.coin
-				local coinWidth = coin.w0 or coin:GetWidth()
-				ns.Animate(owner, {
-					-- the purse counts down, a Coin at a time
-					{
-						dur = 0.9,
-						ease = ns.EASE.out,
-						keys = { { 0, { m.balanceFrom } }, { 1, { m.balanceTo } } },
-						apply = function(v)
-							m.balance(math.floor(v[1] + 0.5))
-						end,
-					},
-					-- and its coin turns once as it pays out
-					{
-						dur = 0.5,
-						ease = ns.EASE.inOut,
-						keys = { { 0, { 0 } }, { 1, { 180 } } },
-						apply = function(v)
-							coin:SetWidth(math.max(0.5, coinWidth * math.abs(math.cos(math.rad(v[1])))))
-						end,
-					},
-				})
+				payOut(owner, m)
 			end,
 		},
 		{
 			1.4,
 			function()
-				local row = m.row()
-				if not row then
-					return
-				end
-				local animations = {
-					-- the price tag lifts away
-					{ dur = 0.25, ease = EASE_IN, keys = { { 0, { 0 } }, { 1, { 1 } } }, apply = fade(row.out, 1, 0) },
-					-- IN USE (or Owned) comes in, with its wax
-					{
-						dur = 0.4,
-						ease = ns.EASE.out,
-						keys = { { 0, { 0 } }, { 0.4, { 0 } }, { 1, { 1 } } },
-						apply = fade(row.into, 0, 1),
-					},
-					-- the row glows warm once
-					{
-						dur = 0.8,
-						ease = ns.EASE.inOut,
-						keys = { { 0, { 0 } }, { 0.35, { 0.14 } }, { 1, { 0 } } },
-						apply = function(v)
-							row.glow:SetAlpha(v[1])
-						end,
-					},
-				}
-				if row.stepOut then
-					-- the good that was in use in that slot steps down
-					local out, into = fade(row.stepOut, 1, 0), fade(row.stepIn, 0, 1)
-					animations[#animations + 1] = {
-						dur = 0.4,
-						ease = ns.EASE.inOut,
-						keys = { { 0, { 0 } }, { 1, { 1 } } },
-						apply = function(v)
-							out(v)
-							into(v)
-						end,
-					}
-				end
-				ns.Animate(owner, animations)
+				deliverRow(owner, m.row())
 			end,
 		},
 		{
@@ -332,6 +350,180 @@ function ns.PlayShopPurchase(owner, m, onDone)
 						end,
 					},
 				})
+			end,
+		},
+	}, onDone)
+end
+
+-- A crate's opening (SHOP-R55): how far the crate settles into the well as the bill goes, and how far its lid lifts
+-- off it; the lid's height as it tips back, from LID_H; the lift's ease, overshooting.
+local CRATE_SINK, LID_LIFT, LID_H, LID_TIPPED = 28, 34, 44, 22
+local LIFT = ns.Bezier(0.3, 1.4, 0.5, 1)
+-- Each wisp of straw that puffs out of the open crate: the way it flies (degrees, 0 to the right, -90 straight up),
+-- how far, and how it lies, over its arc and the pull of its fall (FALL units by its end).
+local STRAW = {
+	{ -158, 40, 20 },
+	{ -146, 50, 75 },
+	{ -133, 36, 140 },
+	{ -121, 52, 35 },
+	{ -108, 44, 110 },
+	{ -96, 56, 165 },
+	{ -84, 46, 60 },
+	{ -72, 54, 125 },
+	{ -59, 38, 10 },
+	{ -47, 50, 95 },
+	{ -34, 42, 150 },
+	{ -22, 36, 50 },
+}
+local FALL = 18
+
+--- How many wisps of straw a crate's opening throws (adapter/Shop.lua makes them).
+ns.SHOP_STRAW = #STRAW
+
+--- What a Curio crate's opening moves (SHOP-R55), from adapter/Shop.lua: the crate drawn from its medallion on the
+--- stage's well, the straw, the good's medallion, and what follows as for a purchase.
+---@class PagleShopCrateMotion: PagleShopPayMotion
+---@field place fun(region: Region, x: number, y: number, scale: number?) puts `region`'s centre `x`, `y` units from the
+--- well's middle (y growing downward), drawn at `scale`
+---@field crate Frame               the crate: the medallion's brass rim round its dark inside
+---@field lid Frame                 the crate's lid: the medallion's face, LID_H across, its height squashed as it tips
+---@field straw Texture[]           the wisps of straw, hidden in the crate
+---@field medal Frame               the good's medallion, 64 across, its icon set, hidden
+---@field closeBill fun(owner: Frame) lifts the bill away on `owner`'s clock (ns.CloseShopBill)
+---@field land fun(): Region[]      draws the good on the stage, what it shows faded out: what fades in
+---@field row fun(): PagleShopRowMotion? draws the good's row's new state, faded out; nil with no row
+
+--- Plays a Curio crate's opening on `owner` (the case), every part on its clock (SHOP-R55), the good already bought: the
+--- bill lifts away (0.25 s) as the crate settles into the well (0.15 s); the lid lifts off it, tipping back and
+--- overshooting (0.15–0.5 s), and fades (0.4–0.6 s); the purse pays out (from 0.25 s); straw puffs out of the open
+--- crate and falls away (0.3–0.96 s); the good's medallion rises from the crate to the middle of the well, growing from
+--- 34 to 64 units (0.5–1.1 s), as the crate fades (0.8–1.1 s); then the good lands on the stage, its look and words
+--- coming in as the medallion gives way to them (1.1 s, 0.35 s), and its row comes in as a purchase's does (1.1 s, its
+--- glow last). `onDone` runs once it has all settled (1.9 s). Only with motion on.
+---@param owner Frame
+---@param m PagleShopCrateMotion
+---@param onDone fun()
+function ns.PlayShopCrate(owner, m, onDone)
+	ns.StopMotion(owner)
+	local place, crate, lid, medal = m.place, m.crate, m.lid, m.medal
+	timeline(owner, {
+		{
+			0,
+			function()
+				m.closeBill(owner)
+				ns.Animate(owner, {
+					-- the crate settles into the well, and fades once the medallion is out of it
+					{
+						dur = 1.1,
+						keys = {
+							{ 0, { 0, 1 }, ease = ns.EASE.out },
+							{ 0.15 / 1.1, { CRATE_SINK, 1 } },
+							{ 0.8 / 1.1, { CRATE_SINK, 1 }, ease = ns.EASE.inOut },
+							{ 1, { CRATE_SINK, 0 } },
+						},
+						apply = function(v)
+							place(crate, 0, v[1])
+							crate:SetAlpha(v[2])
+						end,
+					},
+					-- its lid rides down with it, then lifts off, tipping back
+					{
+						dur = 0.5,
+						keys = {
+							{ 0, { 0, LID_H }, ease = ns.EASE.out },
+							{ 0.3, { CRATE_SINK, LID_H }, ease = LIFT },
+							{ 1, { CRATE_SINK - LID_LIFT, LID_TIPPED } },
+						},
+						apply = function(v)
+							place(lid, 0, v[1])
+							lid:SetHeight(v[2])
+						end,
+					},
+					-- and fades as it goes
+					{
+						dur = 0.2,
+						delay = 0.4,
+						ease = EASE_IN,
+						keys = { { 0, { 1 } }, { 1, { 0 } } },
+						apply = function(v)
+							lid:SetAlpha(v[1])
+						end,
+					},
+				})
+			end,
+		},
+		{
+			0.25,
+			function()
+				payOut(owner, m)
+			end,
+		},
+		{
+			0.3,
+			function()
+				local animations = {}
+				for i, wisp in ipairs(STRAW) do
+					local straw = m.straw[i]
+					straw:SetRotation(math.rad(wisp[3]))
+					straw:Show()
+					local dx, dy = math.cos(math.rad(wisp[1])) * wisp[2], math.sin(math.rad(wisp[1])) * wisp[2]
+					animations[i] = {
+						dur = 0.6,
+						delay = (i % 3) * 0.03,
+						ease = ns.EASE.linear,
+						keys = {
+							{ 0, { 0, 0 }, ease = ns.EASE.out },
+							{ 0.15, { 0.4, 1 }, ease = ns.EASE.out },
+							{ 0.65, { 0.85, 1 } },
+							{ 1, { 1, 0 } },
+						},
+						apply = function(v)
+							local p = v[1]
+							place(straw, dx * p, CRATE_SINK - 8 + dy * p + FALL * p * p)
+							straw:SetAlpha(v[2])
+						end,
+					}
+				end
+				ns.Animate(owner, animations)
+			end,
+		},
+		{
+			0.5,
+			function()
+				medal:SetAlpha(1)
+				medal:Show()
+				ns.Animate(owner, {
+					-- the good's medallion rises out of the crate to the middle of the well, growing from 34 to 64
+					{
+						dur = 0.6,
+						ease = ns.Bezier(0.2, 0.8, 0.4, 1),
+						keys = { { 0, { CRATE_SINK, 34 / 64 } }, { 1, { 0, 1 } } },
+						apply = function(v)
+							medal:SetScale(v[2])
+							place(medal, 0, v[1], v[2])
+						end,
+					},
+				})
+			end,
+		},
+		{
+			1.1,
+			function()
+				ns.ShopSound("stamp")
+				local into = fade(m.land(), 0, 1)
+				ns.Animate(owner, {
+					-- the good lands on the stage, its look taking the medallion's place
+					{
+						dur = 0.35,
+						ease = ns.EASE.out,
+						keys = { { 0, { 0 } }, { 1, { 1 } } },
+						apply = function(v)
+							into(v)
+							medal:SetAlpha(1 - v[1])
+						end,
+					},
+				})
+				deliverRow(owner, m.row())
 			end,
 		},
 	}, onDone)
