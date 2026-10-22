@@ -725,3 +725,41 @@ function signingFixtures()
 	fixtures.data = readFile("spec/Pagle/fixtures/signing/random-64k.bin")
 	return fixtures
 end
+
+local BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+--- `bytes` in Base64 (RFC 4648 §4), padded: the spec's own encoder, for pushed files made in a spec (PUSH-R2).
+---@param bytes string
+---@return string
+function toBase64(bytes)
+	local out = {}
+	for i = 1, #bytes, 3 do
+		local a, b, c = bytes:byte(i, i + 2)
+		local n = a * 65536 + (b or 0) * 256 + (c or 0)
+		local quad = {}
+		for k = 1, 4 do
+			local sextet = math.floor(n / 2 ^ (6 * (4 - k))) % 64
+			quad[k] = BASE64:sub(sextet + 1, sextet + 1)
+		end
+		if not b then
+			quad[3], quad[4] = "=", "="
+		elseif not c then
+			quad[4] = "="
+		end
+		out[#out + 1] = table.concat(quad)
+	end
+	return table.concat(out)
+end
+
+--- The signed Pagle_Content files in spec/Pagle/fixtures/Content.lua, which scripts/make-content-fixtures.sh writes
+--- with openssl and the TEST ONLY key (PUSH-R2, PUSH-R11): `good`, `functionCall`, `singleQuote` and `big`, each a
+--- fresh PagleContentData table a spec may change, with their `generatedAt`, `expires` and `seq`, and `testKey`, the
+--- test key's ns.PUSHED_KEYS entry. A spec registers it itself (`ns.PUSHED_KEYS.testKey = fixtures.testKey`): Core's
+--- shipped keys never hold it.
+---@return table
+function pushedContentFixtures()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+	local fixtures = dofile("spec/Pagle/fixtures/Content.lua")
+	fixtures.testKey = signingFixtures().testKey
+	return fixtures
+end
