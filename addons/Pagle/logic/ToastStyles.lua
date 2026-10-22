@@ -7,9 +7,9 @@ local ns = select(2, ...)
 -- the free default and the kit's Ledger style; Ripple and Lantern Glow are Curio Shop goods, the kit's Ripple and
 -- Lantern styles; the Curio Shop expansion's twelve are Curio Shop goods too, and three more are earned goods the
 -- Ledger and the Tackle Board register in Core's slot (ANN-R81, SHOP-R25). A style picks the toast and Nod art (its
--- own atlas, data/AnnounceArt.lua), the medallions' trim or its own ring, the rubber stamps' ink, the page's inks and
--- toast.high's wax; the banner, the splash and the cards look the same in every style. A style changes only the
--- look, never timing, lanes, the Interruption budget, sounds or which moments show.
+-- own atlas, data/AnnounceArt.lua or data/ToastStyleArt.lua), the medallions' trim or its own ring, the rubber stamps'
+-- ink, the page's inks and toast.high's wax; the banner, the splash and the cards look the same in every style. A
+-- style changes only the look, never timing, lanes, the Interruption budget, sounds or which moments show.
 -- adapter/Art.lua draws the art, and adapter/Announcements.lua and adapter/Cards.lua the frames.
 
 --- An { r, g, b } from a "RRGGBB" hex string: Core's one, for the announcements' inks and the Curio Shop's
@@ -113,7 +113,7 @@ ns.TOAST_STYLES = {
 }
 
 -- The Curio Shop expansion's twelve styles and the three the Ledger and the Tackle Board earn in Core's slot, which
--- Core draws like its own (ANN-R81, SHOP-R25), each with its own ring in its own atlas (data/AnnounceArt.lua). Their
+-- Core draws like its own (ANN-R81, SHOP-R25), each with its own ring in its own atlas (data/ToastStyleArt.lua). Their
 -- inks are the shop expansion kit's goods.json's, as "RRGGBB", each added to ns.ANNOUNCE_COLORS as the role
 -- "<goodID>.<field>". Its blue, green and silver stamps take the blue stamp, the rest the red. `wax` is close to the
 -- board's filter on the red wax: a tint over its grey for a style that turns it, a shade for one that keeps it.

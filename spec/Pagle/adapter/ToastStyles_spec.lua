@@ -60,7 +60,7 @@ local function equip(loaded, goodID)
 	assert.is_true(loaded.env.Pagle.SetEquipped("core.toaststyle", goodID))
 end
 
--- The "<atlas> <sprite>" a texture shows, found by its file and texture coordinates in data/AnnounceArt.lua.
+-- The "<atlas> <sprite>" a texture shows, found by its file and texture coordinates in ns.ATLASES (data/AnnounceArt.lua, data/ToastStyleArt.lua).
 local function spriteOf(loaded, texture)
 	for atlasName, atlas in pairs(loaded.ns.ATLASES) do
 		if texture.texture == atlas.file and texture.texCoord then
