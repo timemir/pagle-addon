@@ -663,7 +663,7 @@ local function drawList(frame, groups)
 			row:SetHeight(ROW_H)
 			at(row, frame.content, LIST_X, y)
 			ns.SetShopText(row.label, data.name)
-			ns.SetShopBezel(row.bezel, data.icon, data.state == "putAway")
+			ns.SetShopBezel(row.bezel, data.icon, data.state == "putAway", data.shield)
 			drawRowEnd(row, data)
 			row.selectedMark:SetShown(data.id == selected)
 			row:SetAlpha(data.state == "putAway" and GREYED_ALPHA or 1)
@@ -850,7 +850,7 @@ end
 local function drawLook(stage, data, fresh)
 	local preview = data.preview
 	if not preview then
-		ns.SetShopBezel(stage.swatch, data.icon, data.greyed)
+		ns.SetShopBezel(stage.swatch, data.icon, data.greyed, data.shield)
 		stage.swatch:Show()
 		return
 	end
@@ -1071,7 +1071,7 @@ function askToBuy(frame, goodID)
 	frame.purse.tip:Hide()
 	bill.goodID = purchase.id
 	ns.SetShopText(bill.question, L.SHOP_BUY_CONFIRM:format(purchase.name))
-	ns.SetShopBezel(bill.bezel, purchase.icon)
+	ns.SetShopBezel(bill.bezel, purchase.icon, false, purchase.shield)
 	ns.SetShopText(bill.price, purchase.amount)
 	ns.SetShopText(bill.left, purchase.left)
 	setChecked(bill.useNow, true)
@@ -1176,7 +1176,8 @@ local function playPurchase(frame, goodID, was)
 	local seal = ns.SetSprite(bill.seal, "Shop", "seal")
 	ns.CenterSpriteAt(seal, bill.slip, SEAL_X, SEAL_Y)
 	seal:SetAlpha(0)
-	ns.SetShopBezel(frame.flyer, bill.bezel.Icon:GetTexture())
+	local shown = bill.bezel.shield and bill.bezel.Shield or bill.bezel.Icon
+	ns.SetShopBezel(frame.flyer, shown:GetTexture(), false, bill.bezel.shield)
 	frame.flyer:Hide()
 	ns.PlayShopPurchase(frame, {
 		press = bill.buy,

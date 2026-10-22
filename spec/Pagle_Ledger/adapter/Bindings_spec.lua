@@ -214,7 +214,7 @@ describe("the Ledger's Journal bindings", function()
 			local loaded = fake.load("Pagle_Ledger")
 			fake.login()
 			fake.enterWorld()
-			fake.setPurchased({ ["core.crest.crest1"] = true }) -- one of Core's crests bought (SHOP-R25, SHOP-R11)
+			fake.setPurchased({ ["core.crest.elwynn"] = true }) -- one of Core's crests bought (SHOP-R25, SHOP-R11)
 			local ns = loaded.ns
 			ns.ToggleJournal()
 			local journal = ns.journal
@@ -228,10 +228,10 @@ describe("the Ledger's Journal bindings", function()
 			assert.are_not.same(lookOf(ns, "ledger.binding.field"), lookOf(ns, "ledger.binding.level10"))
 
 			local drawn = journal.pages
-			assert.is_true(fake.Pagle.SetEquipped("core.crest", "core.crest.crest1"))
+			assert.is_true(fake.Pagle.SetEquipped("core.crest", "core.crest.elwynn"))
 
 			assert.are_not.equal(drawn, journal.pages)
-			assert.are.equal("Interface\\Icons\\INV_Fishingpole_02", ns.CrestIcon())
+			assert.are.equal("Interface\\AddOns\\Pagle\\media\\crests\\elwynn", ns.CrestIcon())
 		end
 	)
 

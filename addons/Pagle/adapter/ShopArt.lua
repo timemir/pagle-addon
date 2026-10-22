@@ -183,6 +183,8 @@ end
 ---@field Ring PagleSprite
 ---@field Icon Texture
 ---@field Gloss PagleSprite
+---@field Shield Texture? a crest's shield, in place of the rest (made at its first)
+---@field shield boolean whether it shows a crest's shield
 
 -- The icon's width inside each medallion size.
 local INNER = { [64] = 46, [34] = 26 }
@@ -203,13 +205,37 @@ end
 -- The icon a good with none shows.
 local NO_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 
---- Sets a medallion's icon, greyed for a good put away.
+--- Crops a crest's texture to its shield (SHOP-R25): the shield, 120:140, fills the square texture's height.
+---@param texture Texture
+function ns.CropShield(texture)
+	texture:SetTexCoord(0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1)
+end
+
+--- Sets a medallion's icon, greyed for a good put away. A crest's (`shield`, SHOP-R25) is its shield instead, square
+--- with no ring, gloss or mask: 30 x 35 in a row's medallion, and as tall in proportion in a larger one.
 ---@param bezel PagleShopBezel
 ---@param icon integer|string|nil
 ---@param greyed boolean?
-function ns.SetShopBezel(bezel, icon, greyed)
-	bezel.Icon:SetTexture(icon or NO_ICON)
-	bezel.Icon:SetDesaturated(greyed == true)
+---@param shield boolean?
+function ns.SetShopBezel(bezel, icon, greyed, shield)
+	shield = shield == true
+	bezel.shield = shield
+	bezel.Ring:SetShown(not shield)
+	bezel.Gloss:SetShown(not shield)
+	bezel.Icon:SetShown(not shield)
+	if shield and not bezel.Shield then
+		bezel.Shield = bezel:CreateTexture(nil, "ARTWORK", nil, 1)
+		local h = bezel:GetHeight() * 35 / 34
+		bezel.Shield:SetSize(h * 120 / 140, h)
+		bezel.Shield:SetPoint("CENTER")
+		ns.CropShield(bezel.Shield)
+	end
+	if bezel.Shield then
+		bezel.Shield:SetShown(shield)
+	end
+	local texture = shield and bezel.Shield or bezel.Icon
+	texture:SetTexture(icon or NO_ICON)
+	texture:SetDesaturated(greyed == true)
 end
 
 --- A pill, a chip or a leather button: a three-sliced sprite with its words on it.

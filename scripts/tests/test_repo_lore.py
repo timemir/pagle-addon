@@ -25,7 +25,7 @@ REPO = Path(__file__).resolve().parents[2]
 LEDGER_TOML = REPO / "data" / "lore" / "ledger.toml"
 
 
-# SHOP-R25: Core's nine goods at M4, by slot.
+# SHOP-R25: Core's sixteen goods at M4, by slot.
 CORE_GOODS = [
     "core.toaststyle.page",
     "core.toaststyle.ripple",
@@ -33,9 +33,16 @@ CORE_GOODS = [
     "core.soundset.driftwood",
     "core.soundset.gilded",
     "core.crest.plain",
-    "core.crest.crest1",
-    "core.crest.crest2",
-    "core.crest.crest3",
+    "core.crest.elwynn",
+    "core.crest.westfall",
+    "core.crest.darkshore",
+    "core.crest.redridge",
+    "core.crest.wetlands",
+    "core.crest.stranglethorn",
+    "core.crest.dustwallow",
+    "core.crest.feralas",
+    "core.crest.tanaris",
+    "core.crest.winterspring",
 ]
 # LED-R75: the title IDs, in its table's order; LED-R110: the bindings without their ledger.binding. prefix.
 LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]

@@ -3,6 +3,6 @@
 
 local L = select(2, ...).L
 
-L["good.core.crest.crest1.description"] = "A trout mid-leap, on the bookplate of your Journal."
-L["good.core.crest.crest1.name"] = "Leaping Trout"
+L["good.core.crest.elwynn.description"] = "A trout mid-leap, on the bookplate of your Journal."
+L["good.core.crest.elwynn.name"] = "Leaping Trout"
 L["good.core.soundset.gilded.name"] = "Gilded"

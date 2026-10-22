@@ -57,9 +57,16 @@ ids = [
 	"core.soundset.driftwood",
 	"core.soundset.gilded",
 	"core.crest.plain",
-	"core.crest.crest1",
-	"core.crest.crest2",
-	"core.crest.crest3",
+	"core.crest.elwynn",
+	"core.crest.westfall",
+	"core.crest.darkshore",
+	"core.crest.redridge",
+	"core.crest.wetlands",
+	"core.crest.stranglethorn",
+	"core.crest.dustwallow",
+	"core.crest.feralas",
+	"core.crest.tanaris",
+	"core.crest.winterspring",
 ]
 
 # Hunts' goods (HNT-R121), each with a name and a description, from M5 with Hunts' lore check (HNT-R130, DATA-R107).

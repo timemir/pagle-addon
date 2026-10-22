@@ -25,11 +25,18 @@ local CORE_UNBOUGHT = {
 	"Sound set (1 of 2)",
 	"  core.soundset.driftwood In use",
 	"  core.soundset.gilded 400" .. " [red]",
-	"Bookplate crest (1 of 4)",
+	"Bookplate crest (1 of 11)",
 	"  core.crest.plain In use",
-	"  core.crest.crest1 150" .. " [red]",
-	"  core.crest.crest2 400" .. " [red]",
-	"  core.crest.crest3 900" .. " [red]",
+	"  core.crest.elwynn 150" .. " [red]",
+	"  core.crest.westfall 150" .. " [red]",
+	"  core.crest.darkshore 150" .. " [red]",
+	"  core.crest.redridge 400" .. " [red]",
+	"  core.crest.wetlands 400" .. " [red]",
+	"  core.crest.stranglethorn 400" .. " [red]",
+	"  core.crest.dustwallow 400" .. " [red]",
+	"  core.crest.feralas 900" .. " [red]",
+	"  core.crest.tanaris 900" .. " [red]",
+	"  core.crest.winterspring 900" .. " [red]",
 }
 
 -- CORE_UNBOUGHT, then `lines`.
@@ -193,11 +200,18 @@ describe("The Curio Shop's list", function()
 				"Sound set (1 of 2)",
 				"  core.soundset.driftwood In use",
 				"  core.soundset.gilded 400" .. " [red]",
-				"Bookplate crest (1 of 4)",
+				"Bookplate crest (1 of 11)",
 				"  core.crest.plain In use",
-				"  core.crest.crest1 150",
-				"  core.crest.crest2 400" .. " [red]",
-				"  core.crest.crest3 900" .. " [red]",
+				"  core.crest.elwynn 150",
+				"  core.crest.westfall 150",
+				"  core.crest.darkshore 150",
+				"  core.crest.redridge 400" .. " [red]",
+				"  core.crest.wetlands 400" .. " [red]",
+				"  core.crest.stranglethorn 400" .. " [red]",
+				"  core.crest.dustwallow 400" .. " [red]",
+				"  core.crest.feralas 900" .. " [red]",
+				"  core.crest.tanaris 900" .. " [red]",
+				"  core.crest.winterspring 900" .. " [red]",
 				"Journal binding (1 of 2)",
 				"  ledger.binding.oak In use",
 				"  ledger.binding.lapis 900" .. " [red]",
@@ -224,6 +238,22 @@ describe("The Curio Shop's list", function()
 		end
 	)
 
+	it("marks a crest's row, stage and purchase to draw its shield, and no other good's (SHOP-R25)", function()
+		local fake, handles = shopping()
+		fake.enterWorld()
+		handles.Ledger:ReportCoinsEarned(1000)
+		local shop = model(fake)
+
+		local rows = shop:List({ category = "Bookplate" })[1].rows
+		local velvet = shop:List({ category = "Hunts" })[1].rows[2]
+
+		assert.are.same({ true, true }, { rows[1].shield, rows[11].shield })
+		assert.is_nil(velvet.shield)
+		assert.is_true(shop:Stage("core.crest.tanaris").shield)
+		assert.is_true(shop:Purchase("core.crest.stranglethorn").shield)
+		assert.is_nil(shop:Purchase("core.toaststyle.lanternglow").shield)
+	end)
+
 	it("matches the search against names, ignoring case (wallet-and-shop.md › UI)", function()
 		local fake = shopping()
 
@@ -232,7 +262,7 @@ describe("The Curio Shop's list", function()
 			"  ledger.binding.lapis 900" .. " [red]",
 		}, outline(model(fake):List({ search = "LaPi" })))
 		assert.are.same({
-			"Bookplate crest (1 of 4)",
+			"Bookplate crest (1 of 11)",
 			"  core.crest.plain In use",
 			"Notebook cover (1 of 3)",
 			"  hunts.cover.plain In use",
@@ -254,7 +284,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(14, #ids("all"))
+		assert.are.equal(21, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",
@@ -266,9 +296,16 @@ describe("The Curio Shop's list", function()
 		assert.are.same({
 			"core.toaststyle.lanternglow",
 			"core.soundset.gilded",
-			"core.crest.crest1",
-			"core.crest.crest2",
-			"core.crest.crest3",
+			"core.crest.elwynn",
+			"core.crest.westfall",
+			"core.crest.darkshore",
+			"core.crest.redridge",
+			"core.crest.wetlands",
+			"core.crest.stranglethorn",
+			"core.crest.dustwallow",
+			"core.crest.feralas",
+			"core.crest.tanaris",
+			"core.crest.winterspring",
 			"ledger.binding.lapis",
 			"hunts.cover.velvet",
 			"hunts.cover.gold",
@@ -276,8 +313,13 @@ describe("The Curio Shop's list", function()
 		assert.are.same({
 			"core.toaststyle.lanternglow",
 			"core.soundset.gilded",
-			"core.crest.crest1",
-			"core.crest.crest2",
+			"core.crest.elwynn",
+			"core.crest.westfall",
+			"core.crest.darkshore",
+			"core.crest.redridge",
+			"core.crest.wetlands",
+			"core.crest.stranglethorn",
+			"core.crest.dustwallow",
 			"hunts.cover.velvet",
 		}, ids("canAfford"))
 	end)
@@ -787,8 +829,8 @@ describe("Buying", function()
 			local before = #fake.catchLog.data.entries
 
 			assert.is_false(fake.ns.shop.Buy("hunts.cover.velvet", true)) -- 400, with 200
-			assert.is_true(fake.ns.shop.Buy("core.crest.crest1", false))
-			assert.is_false(fake.ns.shop.Buy("core.crest.crest1", false)) -- owned now
+			assert.is_true(fake.ns.shop.Buy("core.crest.elwynn", false))
+			assert.is_false(fake.ns.shop.Buy("core.crest.elwynn", false)) -- owned now
 			local during
 			handles.Hunts:NewProjection({
 				db = {},

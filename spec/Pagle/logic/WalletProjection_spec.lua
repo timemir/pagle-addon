@@ -5,7 +5,7 @@ local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
 local LOG_ID = "3f9a2c1e7b0d4a65" -- savedLog's logId
 local FINGERPRINT = "0123456789abcdef"
-local CRIMSON, SILVER = "core.crest.crest1", "core.crest.crest2"
+local CRIMSON, SILVER = "core.crest.elwynn", "core.crest.redridge"
 
 -- A world over a saved log holding `entries` and a stored wallet projection `db` (empty by default): the machinery
 -- (frames the spec runs, chunked from more than `syncLimit` pending entries), a wallet with each BalanceChanged in

@@ -833,14 +833,14 @@ describe("FakePagle", function()
 				Pagle.GetEquipped("core.crest"),
 			})
 			-- Named from Core's committed lore, as Core names it (DATA-R104, SHOP-R25).
-			assert.are.same({ "Water Spirit", "Interface\\Icons\\Spell_Frost_SummonWaterElemental", "Core" }, {
-				Pagle.GetGood("core.crest.crest3").name,
-				Pagle.GetGood("core.crest.crest3").icon,
-				fake.global.goods["core.crest.crest3"].module,
+			assert.are.same({ "The Falls", "Interface\\AddOns\\Pagle\\media\\crests\\feralas", "Core" }, {
+				Pagle.GetGood("core.crest.feralas").name,
+				Pagle.GetGood("core.crest.feralas").icon,
+				fake.global.goods["core.crest.feralas"].module,
 			})
 			assert.is_nil(fake.ns.goods:Good("core.crest.plain").preview)
-			fake.setPurchased({ ["core.crest.crest3"] = true })
-			assert.is_true(Pagle.SetEquipped("core.crest", "core.crest.crest3"))
+			fake.setPurchased({ ["core.crest.feralas"] = true })
+			assert.is_true(Pagle.SetEquipped("core.crest", "core.crest.feralas"))
 		end)
 
 		it("selects an owned good of a Module off under Put away, from the cache (SHOP-R40, SHOP-R35)", function()

@@ -24,6 +24,8 @@ local ns = select(2, ...)
 ---@field goods PagleCoreGood[]
 
 local ICONS = "Interface\\Icons\\"
+-- The crests' own textures (SHOP-R25): each 256 x 256, the shield 120:140 at its full height, centred.
+local CRESTS = "Interface\\AddOns\\Pagle\\media\\crests\\"
 -- The slots' labels. logic/ also loads without locale/, in the backend's driver (#223), and then they have none.
 local L = ns.L or {}
 
@@ -39,8 +41,8 @@ ns.CREST_SLOT = "core.crest"
 --- Core's slots and goods at M4 (SHOP-R25), in the order they register and the shop lists them. A toast style's
 --- look is the toast styles' (ANN-R80); a sound set's sounds are ns.SOUND_SETS[soundSet]; a crest's look is its
 --- icon, which the Ledger draws on the Journal's bookplate through Pagle.GetGood (LED-R112). Every good has an icon,
---- the shop's swatch (wallet-and-shop.md › UI). Each is an in-client texture listed in build 70338's
---- ManifestInterfaceData, standing in until Pagle has its own art.
+--- the shop's swatch (wallet-and-shop.md › UI). A crest's is Core's own texture, drawn as the shield (SHOP-R25); every
+--- other is an in-client texture listed in build 70338's ManifestInterfaceData, standing in until Pagle has its own art.
 ---@type PagleCoreSlot[]
 ns.CORE_GOODS = {
 	{
@@ -72,10 +74,17 @@ ns.CORE_GOODS = {
 		label = L.SLOT_CREST,
 		category = "Bookplate",
 		goods = {
-			{ id = "core.crest.plain", default = true, icon = ICONS .. "INV_Misc_Note_01" },
-			{ id = "core.crest.crest1", tier = 1, icon = ICONS .. "INV_Fishingpole_02" },
-			{ id = "core.crest.crest2", tier = 2, icon = ICONS .. "INV_Misc_Gem_Pearl_04" },
-			{ id = "core.crest.crest3", tier = 3, icon = ICONS .. "Spell_Frost_SummonWaterElemental" },
+			{ id = "core.crest.plain", default = true, icon = CRESTS .. "plain" },
+			{ id = "core.crest.elwynn", tier = 1, icon = CRESTS .. "elwynn" },
+			{ id = "core.crest.westfall", tier = 1, icon = CRESTS .. "westfall" },
+			{ id = "core.crest.darkshore", tier = 1, icon = CRESTS .. "darkshore" },
+			{ id = "core.crest.redridge", tier = 2, icon = CRESTS .. "redridge" },
+			{ id = "core.crest.wetlands", tier = 2, icon = CRESTS .. "wetlands" },
+			{ id = "core.crest.stranglethorn", tier = 2, icon = CRESTS .. "stranglethorn" },
+			{ id = "core.crest.dustwallow", tier = 2, icon = CRESTS .. "dustwallow" },
+			{ id = "core.crest.feralas", tier = 3, icon = CRESTS .. "feralas" },
+			{ id = "core.crest.tanaris", tier = 3, icon = CRESTS .. "tanaris" },
+			{ id = "core.crest.winterspring", tier = 3, icon = CRESTS .. "winterspring" },
 		},
 	},
 }

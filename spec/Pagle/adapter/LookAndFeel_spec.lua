@@ -87,7 +87,7 @@ describe("The Look and Feel page", function()
 				"  1 more in the Curio Shop",
 				"# Bookplate",
 				"Bookplate crest = core.crest.plain",
-				"  3 more in the Curio Shop",
+				"  10 more in the Curio Shop",
 				"# Fish Journal",
 				"Journal binding = ledger.binding.oak",
 				"  2 more in the Curio Shop",
@@ -240,7 +240,7 @@ describe("Defaults", function()
 						["ledger.binding"] = "ledger.binding.lapis",
 						["core.toaststyle"] = "core.toaststyle.ripple",
 						["core.soundset"] = "core.soundset.gilded",
-						["core.crest"] = "core.crest.crest1",
+						["core.crest"] = "core.crest.elwynn",
 						["hunts.cover"] = "hunts.cover.velvet",
 					},
 				},
@@ -251,7 +251,7 @@ describe("Defaults", function()
 		["ledger.binding.lapis"] = true,
 		["core.toaststyle.ripple"] = true,
 		["core.soundset.gilded"] = true,
-		["core.crest.crest1"] = true,
+		["core.crest.elwynn"] = true,
 		["hunts.cover.velvet"] = true,
 	}
 
@@ -301,7 +301,7 @@ describe("Defaults", function()
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.soundset.driftwood",
-			"core.crest.crest1",
+			"core.crest.elwynn",
 			"ledger.binding.lapis",
 		}, {
 			Pagle.GetEquipped("core.toaststyle"),

@@ -432,7 +432,7 @@ describe("the sample toast", function()
 			loaded.ns.goods:Good(TORN_PAGE).preview(stage)
 			local panel = stage.children[1]
 
-			loaded.ns.goods:Good("core.crest.crest1").preview(stage)
+			loaded.ns.goods:Good("core.crest.elwynn").preview(stage)
 			assert.is_false(panel.shown)
 			loaded.ns.goods:Good(RIPPLE).preview(stage)
 

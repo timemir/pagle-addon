@@ -600,7 +600,7 @@ end
 local LOOKS = {
 	"core.toaststyle.ripple",
 	"core.soundset.gilded",
-	"core.crest.crest1",
+	"core.crest.elwynn",
 	"ledger.binding.birch",
 	"hunts.notebookcover.oilcloth",
 	"hunts.trackerframe.inkwash",
@@ -785,7 +785,7 @@ describe("Each page's Defaults button", function()
 		assert.are.same({
 			["core.toaststyle"] = "core.toaststyle.page",
 			["core.soundset"] = "core.soundset.driftwood",
-			["core.crest"] = "core.crest.crest1",
+			["core.crest"] = "core.crest.elwynn",
 			["ledger.binding"] = "ledger.binding.birch",
 			["hunts.notebookcover"] = "hunts.notebookcover.oilcloth",
 			["hunts.trackerframe"] = "hunts.trackerframe.inkwash",
@@ -819,7 +819,7 @@ describe("Each page's Defaults button", function()
 		assert.are.same({
 			["core.toaststyle"] = "core.toaststyle.ripple",
 			["core.soundset"] = "core.soundset.gilded",
-			["core.crest"] = "core.crest.crest1",
+			["core.crest"] = "core.crest.elwynn",
 			["ledger.binding"] = "ledger.binding.birch",
 			["hunts.notebookcover"] = "hunts.notebookcover.oilcloth",
 			["hunts.trackerframe"] = "hunts.trackerframe.none",

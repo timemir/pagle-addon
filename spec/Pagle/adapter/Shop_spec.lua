@@ -17,11 +17,18 @@ local CORE_UNBOUGHT = {
 	"SOUND SET 1 of 2",
 	"Driftwood | IN USE",
 	"Gilded | 400",
-	"BOOKPLATE CREST 1 of 4",
+	"BOOKPLATE CREST 1 of 11",
 	"Plain | IN USE",
-	"Rod and Line | 150",
-	"Pearl | 400",
-	"Water Spirit | 900",
+	"The Old Oak | 150",
+	"The Windmill | 150",
+	"The Crescent | 150",
+	"Three Peaks | 400",
+	"The Anchor | 400",
+	"The Leap | 400",
+	"The Lantern | 400",
+	"The Falls | 900",
+	"The Desert Sun | 900",
+	"The Frost | 900",
 }
 
 -- Core with the Ledger and Hunts registered, Core's own goods, Hunts' covers and the Ledger's bindings, logged in and
@@ -421,6 +428,45 @@ describe("The Curio Shop's list", function()
 		end
 	)
 
+	it("draws a crest's row as its shield, 30 x 35, in place of the round medallion (SHOP-R25)", function()
+		local loaded = shopCore()
+
+		loaded.env.Pagle.OpenShop()
+
+		for _, id in ipairs({ "core.crest.plain", "core.crest.tanaris" }) do
+			local bezel = rowOf(loaded, id).bezel
+			assert.are.same(
+				{ false, false, false },
+				{ bezel.Ring:IsShown(), bezel.Icon:IsShown(), bezel.Gloss:IsShown() }
+			)
+			assert.is_true(bezel.Shield:IsShown())
+			assert.are.equal(loaded.env.Pagle.GetGood(id).icon, bezel.Shield.texture)
+			assert.are.same({ 30, 35 }, { bezel.Shield:GetSize() })
+			assert.are.same({ 0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1 }, bezel.Shield.texCoord)
+			assert.is_nil(bezel.Shield.masks, "the shield is drawn whole, not masked round")
+			assert.is_false(bezel.Shield:IsDesaturated())
+		end
+		-- a row reused for a good that isn't a crest shows the medallion again
+		local frame = shopFrame(loaded)
+		frame.search:Type("old oak")
+		local line = rowOf(loaded, "core.crest.elwynn")
+		frame.search:Type("ripple")
+		assert.are.equal(line, rowOf(loaded, "core.toaststyle.ripple"))
+		local ripple = line.bezel
+		assert.are.same({ true, true, true }, { ripple.Ring:IsShown(), ripple.Icon:IsShown(), ripple.Gloss:IsShown() })
+		assert.is_false(ripple.Shield:IsShown())
+	end)
+
+	it("greys a crest's shield as it would a medallion's icon (SHOP-R25, SHOP-R35)", function()
+		local loaded = shopCore()
+		loaded.env.Pagle.OpenShop()
+		local bezel = rowOf(loaded, "core.crest.elwynn").bezel
+
+		loaded.ns.SetShopBezel(bezel, loaded.env.Pagle.GetGood("core.crest.elwynn").icon, true, true)
+
+		assert.is_true(bezel.Shield:IsDesaturated())
+	end)
+
 	it("narrows with the search slip (wallet-and-shop.md › UI)", function()
 		local loaded = shopCore()
 		loaded.env.Pagle.OpenShop()
@@ -454,9 +500,14 @@ describe("The Curio Shop's list", function()
 			"Lantern Glow | 400",
 			"SOUND SET 1 of 2",
 			"Gilded | 400",
-			"BOOKPLATE CREST 1 of 4",
-			"Rod and Line | 150",
-			"Pearl | 400",
+			"BOOKPLATE CREST 1 of 11",
+			"The Old Oak | 150",
+			"The Windmill | 150",
+			"The Crescent | 150",
+			"Three Peaks | 400",
+			"The Anchor | 400",
+			"The Leap | 400",
+			"The Lantern | 400",
 			"NOTEBOOK COVER 1 of 2",
 			"Velvet | 400",
 		}, listed(loaded))
@@ -470,7 +521,7 @@ describe("The Curio Shop's list", function()
 			"Torn Page | IN USE",
 			"SOUND SET 1 of 2",
 			"Driftwood | IN USE",
-			"BOOKPLATE CREST 1 of 4",
+			"BOOKPLATE CREST 1 of 11",
 			"Plain | IN USE",
 			"JOURNAL BINDING 1 of 2",
 			"Oak | IN USE",
@@ -478,9 +529,9 @@ describe("The Curio Shop's list", function()
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(13, #listed(loaded))
+		assert.are.equal(20, #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(18, #listed(loaded))
+		assert.are.equal(25, #listed(loaded))
 	end)
 
 	it(
@@ -498,7 +549,7 @@ describe("The Curio Shop's list", function()
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
-			assert.are.equal(18, #listed(loaded))
+			assert.are.equal(25, #listed(loaded))
 		end
 	)
 
@@ -705,7 +756,7 @@ local function billShown(bill)
 	return {
 		head = bill.head:GetText(),
 		question = bill.question:GetText(),
-		icon = bill.bezel.Icon.texture,
+		icon = (bill.bezel.shield and bill.bezel.Shield or bill.bezel.Icon).texture,
 		price = { bill.priceLabel:GetText(), bill.price:GetText(), bill.coin:IsShown() },
 		left = { bill.leftLabel:GetText(), bill.left:GetText() },
 		fine = bill.fine:GetText(),
@@ -830,8 +881,27 @@ describe("The bill of sale", function()
 		assert.are.equal("OWNED", stage.tags:GetText())
 		assert.is_true(stage.use:IsShown())
 		-- The next Buy asks with Use it now ticked again.
-		askToBuy(loaded, "core.crest.crest1")
+		askToBuy(loaded, "core.crest.elwynn")
 		assert.are.same({ "Use it now", true, true }, billShown(bill).useNow)
+	end)
+
+	it("shows a crest as its shield on the bill and the flyer, and a medallion again after (SHOP-R25)", function()
+		local loaded, handles = shopCore()
+		handles.Ledger:ReportCoinsEarned(600)
+
+		local bill = askToBuy(loaded, "core.crest.redridge")
+		local frame = shopFrame(loaded)
+		assert.is_true(bill.bezel.Shield:IsShown())
+		assert.is_false(bill.bezel.Icon:IsShown())
+		assert.are.equal("Interface\\AddOns\\Pagle\\media\\crests\\redridge", billShown(bill).icon)
+		bill.buy:Click()
+		assert.is_true(frame.flyer.Shield:IsShown())
+		assert.are.equal("Interface\\AddOns\\Pagle\\media\\crests\\redridge", frame.flyer.Shield.texture)
+		play(loaded)
+
+		askToBuy(loaded, "core.toaststyle.ripple")
+		assert.is_false(bill.bezel.Shield:IsShown())
+		assert.is_true(bill.bezel.Icon:IsShown())
 	end)
 
 	it("buys nothing on Cancel or Esc; Esc closes only the bill, and other keys go on to the game", function()
@@ -911,7 +981,7 @@ describe("The purse's held line", function()
 		"shows while earned is below spent, the balance reading 0, never a negative number or debt (SHOP-R12)",
 		function()
 			local entries = history(2)
-			entries[#entries + 1] = purchaseEntry(SERVER_TIME - 1000, "core.crest.crest3", 900)
+			entries[#entries + 1] = purchaseEntry(SERVER_TIME - 1000, "core.crest.feralas", 900)
 			local loaded = shopCore({ global = { coins = { earned = { Ledger = 600 } } } }, { entries = entries })
 
 			loaded.env.Pagle.OpenShop()
@@ -934,7 +1004,7 @@ describe("The purse's held line", function()
 
 	it("hides once new Coins fill it in (SHOP-R12)", function()
 		local entries = history(2)
-		entries[#entries + 1] = purchaseEntry(SERVER_TIME - 1000, "core.crest.crest3", 900)
+		entries[#entries + 1] = purchaseEntry(SERVER_TIME - 1000, "core.crest.feralas", 900)
 		local loaded, handles = shopCore({ global = { coins = { earned = { Ledger = 600 } } } }, { entries = entries })
 		loaded.env.Pagle.OpenShop()
 

@@ -227,7 +227,7 @@ local function clientSide()
 	fake.catchLog:Append(cast(T0 + 70, ELWYNN))
 	fake.catchLog:Append(cast(T0 + 130, WESTFALL, { MACKEREL, OILY }))
 	fake.catchLog:Append(cast(T0 + 190, DARKSHORE, { OILY, FIREFIN }))
-	fake.catchLog:Append({ kind = "purchase", char = 1, time = T0 + 250, good = "core.crest.crest1", price = 120 })
+	fake.catchLog:Append({ kind = "purchase", char = 1, time = T0 + 250, good = "core.crest.elwynn", price = 120 })
 	local loaded = {}
 	for _, name in ipairs({ "Ledger", "Hunts", "Stats", "TackleBoard" }) do
 		loaded[name] = fake.load("Pagle_" .. name)

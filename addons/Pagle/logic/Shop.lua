@@ -136,6 +136,7 @@ end
 ---@field id string
 ---@field name string
 ---@field icon? integer|string
+---@field shield? true              -- a crest's icon: drawn as its shield, not round in a medallion (SHOP-R25)
 ---@field description? string
 ---@field slotLabel string
 ---@field category string
@@ -194,6 +195,7 @@ function Model:Entry(goodID)
 			id = goodID,
 			name = good.name,
 			icon = good.icon,
+			shield = slot.id == ns.CREST_SLOT or nil,
 			description = good.description,
 			slotLabel = slot.label,
 			category = slot.category,
@@ -229,6 +231,7 @@ end
 ---@field id string
 ---@field name string
 ---@field icon? integer|string
+---@field shield? true   -- a crest's: its icon is drawn as its shield (SHOP-R25)
 ---@field state PagleShopState
 ---@field price? string   -- a good for sale's price, written: the window draws the coin after it
 ---@field short? true     -- the balance doesn't cover the price: it shows in red
@@ -240,7 +243,7 @@ end
 ---@return PagleShopRow
 function Model:RowOf(entry)
 	local L = ns.L
-	local row = { id = entry.id, name = entry.name, icon = entry.icon, state = entry.state }
+	local row = { id = entry.id, name = entry.name, icon = entry.icon, shield = entry.shield, state = entry.state }
 	local state = entry.state
 	if state == "forSale" or state == "short" then
 		row.price = self.format(entry.price)
@@ -361,6 +364,7 @@ end
 ---@field id string
 ---@field name string
 ---@field icon? integer|string     -- the swatch: a good put away shows its cached icon
+---@field shield? true              -- a crest's: its swatch is its shield (SHOP-R25)
 ---@field preview? fun(stage: Frame) -- draws the look (PagleGood.preview); nil for a good put away
 ---@field slotLine string           -- "Toast style · Pagle": the slot's label and its owner
 ---@field description? string
@@ -390,6 +394,7 @@ function Model:Stage(goodID)
 		id = entry.id,
 		name = entry.name,
 		icon = entry.icon,
+		shield = entry.shield,
 		preview = entry.preview,
 		slotLine = L.SHOP_SLOT_LINE:format(entry.slotLabel, owner),
 		description = entry.description,
@@ -442,6 +447,7 @@ end
 ---@field slot string        -- the good's slot, for "Use it now"
 ---@field name string
 ---@field icon? integer|string -- the swatch
+---@field shield? true        -- a crest's: its swatch is its shield (SHOP-R25)
 ---@field price integer      -- the price now, which the purchase entry records (SHOP-R10)
 ---@field amount string      -- the price, written: the bill of sale draws the coin after it
 ---@field left string        -- the Pagle Coins left after, written
@@ -461,6 +467,7 @@ function Model:Purchase(goodID)
 		slot = assert(self.sources.goods:Good(entry.id)).slot,
 		name = entry.name,
 		icon = entry.icon,
+		shield = entry.shield,
 		price = price,
 		amount = self.format(price),
 		left = self.format(self.sources.balance.balance - price),

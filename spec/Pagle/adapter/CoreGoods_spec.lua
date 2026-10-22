@@ -71,16 +71,23 @@ describe("Core's slots and goods", function()
 				"Core",
 				{
 					"core.crest.plain default",
-					"core.crest.crest1 tier 1",
-					"core.crest.crest2 tier 2",
-					"core.crest.crest3 tier 3",
+					"core.crest.elwynn tier 1",
+					"core.crest.westfall tier 1",
+					"core.crest.darkshore tier 1",
+					"core.crest.redridge tier 2",
+					"core.crest.wetlands tier 2",
+					"core.crest.stranglethorn tier 2",
+					"core.crest.dustwallow tier 2",
+					"core.crest.feralas tier 3",
+					"core.crest.tanaris tier 3",
+					"core.crest.winterspring tier 3",
 				},
 			},
 		}, slots)
 		assert.are.same({ false, false, false }, {
 			Pagle.IsOwned("core.toaststyle.ripple"),
 			Pagle.IsOwned("core.soundset.gilded"),
-			Pagle.IsOwned("core.crest.crest3"),
+			Pagle.IsOwned("core.crest.feralas"),
 		})
 	end)
 
@@ -93,58 +100,64 @@ describe("Core's slots and goods", function()
 
 			assert.are.same({ true, false }, {
 				Pagle.GetGood(Pagle.GetEquipped("core.crest")).isDefault,
-				Pagle.GetGood("core.crest.crest1").isDefault,
+				Pagle.GetGood("core.crest.elwynn").isDefault,
 			})
 		end
 	)
 
-	it("each have an in-client icon, the Curio Shop's swatch (SHOP-R25, wallet-and-shop.md › UI)", function()
-		local loaded = loadCore()
-		loaded.client.fire("PLAYER_LOGIN")
-		local Pagle = loaded.env.Pagle
+	it(
+		"each have an icon, the Curio Shop's swatch: a crest's is Core's own texture, the rest in-client (SHOP-R25, wallet-and-shop.md › UI)",
+		function()
+			local loaded = loadCore()
+			loaded.client.fire("PLAYER_LOGIN")
+			local Pagle = loaded.env.Pagle
 
-		local without = {}
-		local count = 0
-		for _, slot in ipairs(loaded.ns.goods:Slots()) do
-			for _, good in ipairs(loaded.ns.goods:GoodsOf(slot.id)) do
-				count = count + 1
-				local icon = Pagle.GetGood(good.id).icon
-				if type(icon) ~= "string" or not icon:find("^Interface\\Icons\\%S+$") then
-					without[#without + 1] = good.id
+			local without = {}
+			local count = 0
+			for _, slot in ipairs(loaded.ns.goods:Slots()) do
+				for _, good in ipairs(loaded.ns.goods:GoodsOf(slot.id)) do
+					count = count + 1
+					local icon = Pagle.GetGood(good.id).icon
+					local key = good.id:match("^core%.crest%.(%a+)$")
+					local expected = key and "^Interface\\AddOns\\Pagle\\media\\crests\\" .. key .. "$"
+						or "^Interface\\Icons\\%S+$"
+					if type(icon) ~= "string" or not icon:find(expected) then
+						without[#without + 1] = good.id
+					end
 				end
 			end
-		end
 
-		assert.are.same({ 9, {} }, { count, without })
-	end)
+			assert.are.same({ 16, {} }, { count, without })
+		end
+	)
 end)
 
 describe("Core's goods' names", function()
 	it("are each good's ID, with no description, while its lore key has no text (SHOP-R25, DATA-R104)", function()
-		local loaded = loadCoreWithLore() -- the fixture has no key for crest2
+		local loaded = loadCoreWithLore() -- the fixture has no key for redridge
 
 		assert.are.same({
-			name = "core.crest.crest2",
+			name = "core.crest.redridge",
 			slot = "core.crest",
-			icon = "Interface\\Icons\\INV_Misc_Gem_Pearl_04",
+			icon = "Interface\\AddOns\\Pagle\\media\\crests\\redridge",
 			module = "Core",
 			isDefault = false,
-		}, loaded.env.Pagle.GetGood("core.crest.crest2"))
+		}, loaded.env.Pagle.GetGood("core.crest.redridge"))
 	end)
 
 	it("are read from lore, good.<goodID>.name and .description, once Lore.lua has them (DATA-R101)", function()
 		local loaded = loadCoreWithLore()
 		local Pagle = loaded.env.Pagle
 
-		local crest = Pagle.GetGood("core.crest.crest1")
+		local crest = Pagle.GetGood("core.crest.elwynn")
 		local gilded = Pagle.GetGood("core.soundset.gilded")
 		assert.are.same(
 			{ "Leaping Trout", "A trout mid-leap, on the bookplate of your Journal." },
 			{ crest.name, crest.description }
 		)
 		assert.are.same({ "Gilded", nil }, { gilded.name, gilded.description })
-		assert.are.equal("core.crest.crest2", Pagle.GetGood("core.crest.crest2").name)
-		assert.are.equal("Leaping Trout", loaded.env.PagleDB.global.goods["core.crest.crest1"].name) -- SHOP-R26
+		assert.are.equal("core.crest.redridge", Pagle.GetGood("core.crest.redridge").name)
+		assert.are.equal("Leaping Trout", loaded.env.PagleDB.global.goods["core.crest.elwynn"].name) -- SHOP-R26
 	end)
 end)
 
@@ -199,20 +212,25 @@ local function stageOf()
 end
 
 describe("Core's goods' previews", function()
-	it("give each crest an in-client icon, the look the Ledger draws (SHOP-R25, LED-R112)", function()
+	it("give each crest its own shipped texture, the look the Ledger draws (SHOP-R25, LED-R112)", function()
 		local loaded = loadCore()
+		loaded.client.fire("PLAYER_LOGIN")
 
-		local icons = {}
-		for _, id in ipairs({ "core.crest.plain", "core.crest.crest1", "core.crest.crest2", "core.crest.crest3" }) do
-			icons[#icons + 1] = loaded.env.Pagle.GetGood(id).icon
+		local missing = {}
+		for _, good in ipairs(loaded.ns.goods:GoodsOf("core.crest")) do
+			local file =
+				loaded.env.Pagle.GetGood(good.id).icon:match("^Interface\\AddOns\\Pagle\\(media\\crests\\%a+)$")
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+			local handle = file and io.open("addons/Pagle/" .. file:gsub("\\", "/") .. ".blp", "rb")
+			if handle then
+				handle:close()
+			else
+				missing[#missing + 1] = good.id
+			end
 		end
 
-		assert.are.same({
-			"Interface\\Icons\\INV_Misc_Note_01",
-			"Interface\\Icons\\INV_Fishingpole_02",
-			"Interface\\Icons\\INV_Misc_Gem_Pearl_04",
-			"Interface\\Icons\\Spell_Frost_SummonWaterElemental",
-		}, icons)
+		assert.are.same({}, missing)
+		assert.are.equal(11, #loaded.ns.goods:GoodsOf("core.crest"))
 	end)
 
 	it("play a sound set's toast, its banner and the shared Legend sting from its buttons (ANN-R72)", function()
@@ -257,9 +275,9 @@ describe("Core's goods' previews", function()
 		local goods = loaded.ns.goods
 
 		goods:Good("core.soundset.gilded").preview(stage)
-		goods:Good("core.crest.crest2").preview(stage)
+		goods:Good("core.crest.redridge").preview(stage)
 
-		assert.are.same({ "Interface\\Icons\\INV_Misc_Gem_Pearl_04" }, texturesOn(stage))
+		assert.are.same({ "Interface\\AddOns\\Pagle\\media\\crests\\redridge" }, texturesOn(stage))
 		local shown = {}
 		for _, text in ipairs({ "Ex Libris", "Angler", "On the Fish Journal's bookplate.", "» Toast" }) do
 			shown[#shown + 1] = withText(stage, text) ~= nil
@@ -270,6 +288,16 @@ describe("Core's goods' previews", function()
 		local plate = withText(stage, "Ex Libris").parent
 		assert.are.equal(0.85, plate:GetScale())
 		assert.is_true((16 + 170) * plate:GetScale() + 10 + 14 <= 190)
+		-- the crest's shield, 60 x 70 where the icon stood, cropped to the shield and drawn square, not masked round
+		local crest
+		for _, widget in ipairs(shownOn(stage)) do
+			if widget.texture == "Interface\\AddOns\\Pagle\\media\\crests\\redridge" then
+				crest = widget
+			end
+		end
+		assert.are.same({ 60, 70 }, { crest:GetSize() })
+		assert.are.same({ 0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1 }, crest.texCoord)
+		assert.is_nil(crest.masks)
 	end)
 
 	it("draw a toast style with the drawer its slot has when it is drawn, added after login (ANN-R80)", function()
