@@ -97,8 +97,8 @@ describe("the generated catalogue's areas on Pagle", function()
 	end)
 
 	it("give the new Forever zones no data (DATA-R31)", function()
-		-- Riverglades, Shen'dralas, Gilneas, Mount Hyjal
-		for _, areaID in ipairs({ 16591, 16651, 17065, 616 }) do
+		-- Riverglades, Shen'dralas, Gilneas, Mount Hyjal, Hyjal Crater
+		for _, areaID in ipairs({ 16591, 16651, 17065, 616, 17852 }) do
 			assert(Pagle.GetArea(areaID).hasData == false, ("area %d"):format(areaID))
 		end
 	end)
