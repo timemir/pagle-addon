@@ -7,11 +7,12 @@ if not Pagle then
 end
 
 -- The Field guide's book (ONB-R20, ONB-R24, ONB-R27): Core's own fork of the Stats book's shell
--- (Pagle_Stats/adapter/BookWidgets.lua's leather, parchment and wax close, adapter/Book.lua's build and ribbons,
+-- (Pagle_Stats/adapter/BookWidgets.lua's parchment and wax close, adapter/Book.lua's build and ribbons,
 -- adapter/BookMotion.lua's page turn), trimmed to what the guide draws and drawn on Core's media/books
--- (data/GuideArt.lua's Book atlas): a leather binding with two parchment pages, the gilt strip above them with the
--- crumbs "Pagle · A field guide" and "{n} of {m}" at its right, the wax close past its top right, and the step
--- ribbons hanging under its bottom edge (adapter/GuideKit.lua's), over a dim of the world. Core can't call into a
+-- (data/GuideArt.lua's Book atlas): Field Leather, drawn by Core's binding renderer (Pagle.NewBookBinding, ADR 0015)
+-- and pinned there, since the guide is read before the Angler owns anything; two parchment pages; the gilt strip
+-- above them with the crumbs "Pagle · A field guide" and "{n} of {m}" at its right; the wax close past its top right;
+-- and the step ribbons hanging under its bottom edge (adapter/GuideKit.lua's), over a dim of the world. Core can't call into a
 -- Module (ADR 0001), so the shell is copied, not shared; a shared book API is #319. The Stats book's brass corners,
 -- nameplate, live line and search slip aren't drawn: the guide's canvas boards (prototypes/onboarding-kit, boards 2–9)
 -- have none. adapter/Guide.lua drives it.
@@ -37,8 +38,9 @@ ns.GUIDE_BOOK = {
 }
 local BOOK = ns.GUIDE_BOOK
 
--- The binding: the band's width, where the tiled grain starts under it, and the grain's repeat.
-local BAND, FILL_INSET, LEATHER_TILE = 16, 7, 128
+-- Where the binding's tiled grain starts, under its band (the renderer's inset): the strip's crumbs sit midway
+-- between it and the pages.
+local FILL_INSET = 7
 -- The gutter's shade at the spine.
 local GUTTER_WIDTH = 40
 -- A page's rounded outer corners (Core's media/books corner masks).
@@ -51,76 +53,6 @@ local CORNER_MASKS = {
 }
 -- The first ribbon's place from the book's left, the ribbons' gap, and where they hang from (the kit's 40 and 586).
 local RIBBONS_LEFT = 40
-
--- Shows `texture` the texels `x0`..`x0 + w`, `y0`..`y0 + h` of `atlas`.
----@param texture Texture
----@param atlas PagleAtlas
----@param x0 number
----@param y0 number
----@param w number
----@param h number
-local function cut(texture, atlas, x0, y0, w, h)
-	texture:SetTexture(atlas.file)
-	texture:SetTexCoord(x0 / atlas.width, (x0 + w) / atlas.width, y0 / atlas.height, (y0 + h) / atlas.height)
-end
-
---- The leather binding on a book's frame (the Stats book's NewBookLeather): the tiled grain, darker toward the foot,
---- under the leather's vignette, and the binding band, nine-sliced on its own frame six levels up, so a ribbon's
---- tucked top hides under it.
----@class PagleGuideLeather
----@field fill Texture
----@field vignette Texture
----@field band Frame
-
----@param frame Frame
----@return PagleGuideLeather
-function ns.NewGuideLeather(frame)
-	local crisp = ns.ArtCrisp
-	local fill = crisp(frame:CreateTexture(nil, "BACKGROUND", nil, 0))
-	fill:SetTexture(ns.BOOK_FILES.leather, "REPEAT", "REPEAT")
-	fill:SetPoint("TOPLEFT", FILL_INSET, -FILL_INSET)
-	fill:SetPoint("BOTTOMRIGHT", -FILL_INSET, FILL_INSET)
-	-- darker toward the foot, as the canvas shades it (the gradient's first colour is the bottom's)
-	fill:SetGradient("VERTICAL", CreateColor(0.8, 0.8, 0.8, 1), CreateColor(1, 1, 1, 1))
-	local width, height = frame:GetSize()
-	fill:SetTexCoord(0, (width - 2 * FILL_INSET) / LEATHER_TILE, 0, (height - 2 * FILL_INSET) / LEATHER_TILE)
-	local book = ns.ATLASES.Book
-	local vignette = crisp(frame:CreateTexture(nil, "BACKGROUND", nil, 1))
-	local sprite = book.sprites.vignette
-	cut(vignette, book, sprite.x + 1, sprite.y + 1, sprite.w - 2, sprite.h - 2)
-	vignette:SetAllPoints(fill)
-	local band = CreateFrame("Frame", nil, frame)
-	band:SetAllPoints()
-	band:SetFrameLevel(frame:GetFrameLevel() + 6)
-	-- The band's nine slices from the 96-texel binding sprite: 32-texel corners, the edges stretched from a 2-texel
-	-- slice.
-	local binding = book.sprites.binding
-	local function piece(sx, sy, sw, sh)
-		local texture = crisp(band:CreateTexture(nil, "BORDER"))
-		cut(texture, book, binding.x + sx, binding.y + sy, sw, sh)
-		return texture
-	end
-	local tl, tr = piece(0, 0, 32, 32), piece(64, 0, 32, 32)
-	local bl, br = piece(0, 64, 32, 32), piece(64, 64, 32, 32)
-	for _, corner in ipairs({ tl, tr, bl, br }) do
-		corner:SetSize(BAND, BAND)
-	end
-	tl:SetPoint("TOPLEFT")
-	tr:SetPoint("TOPRIGHT")
-	bl:SetPoint("BOTTOMLEFT")
-	br:SetPoint("BOTTOMRIGHT")
-	local top, bottom = piece(47, 0, 2, 32), piece(47, 64, 2, 32)
-	local left, right = piece(0, 47, 32, 2), piece(64, 47, 32, 2)
-	top:SetPoint("TOPLEFT", tl, "TOPRIGHT")
-	top:SetPoint("BOTTOMRIGHT", tr, "BOTTOMLEFT")
-	bottom:SetPoint("TOPLEFT", bl, "TOPRIGHT")
-	bottom:SetPoint("BOTTOMRIGHT", br, "BOTTOMLEFT")
-	left:SetPoint("TOPLEFT", tl, "BOTTOMLEFT")
-	left:SetPoint("BOTTOMRIGHT", bl, "TOPRIGHT")
-	right:SetPoint("TOPLEFT", tr, "BOTTOMLEFT")
-	right:SetPoint("BOTTOMRIGHT", br, "TOPRIGHT")
-	return { fill = fill, vignette = vignette, band = band }
-end
 
 --- A parchment page on `frame`, filling it (the Stats book's NewBookParchment): the books' parchment, mirrored on a
 --- right page so the two don't match, its outer corners slightly rounded, and the gutter's shade along the spine.
@@ -387,7 +319,7 @@ end
 --- The guide's book frame (PagleGuide, in UISpecialFrames so Esc closes it, ONB-R20).
 ---@class PagleGuideBookFrame: Frame
 ---@field dim Frame                                   -- the world's dim behind it, at 0.58
----@field leather PagleGuideLeather
+---@field binding PagleBookBinding                  -- Core's renderer, pinned to Field Leather
 ---@field papers table<"left"|"right", Frame>         -- each page's paper, which the turn's wipes measure
 ---@field parchments table<"left"|"right", PagleGuideParchment>
 ---@field crumbs FontString[]                         -- "Pagle", "A field guide"
@@ -430,7 +362,7 @@ local function buildStrip(frame)
 end
 
 --- Builds the guide's book, hidden, with a ribbon for each of `count` steps (more are added as asked for, ns.
---- GuideRibbonAt): the dim, the leather, two pages, the strip, the ribbons and the wax close. `onClose` is the wax
+--- GuideRibbonAt): the dim, the binding, two pages, the strip, the ribbons and the wax close. `onClose` is the wax
 --- close's click, `onHidden` runs as the frame hides however it hides (Esc through UISpecialFrames, the close's fade),
 --- and `onRibbon(i)` is ribbon i's click.
 ---@param count integer
@@ -455,7 +387,8 @@ function ns.NewGuideBook(count, onClose, onHidden, onRibbon)
 	frame:SetClampedToScreen(true)
 	frame:EnableMouse(true)
 	frame.dim = dim
-	frame.leather = ns.NewGuideLeather(frame)
+	-- Field Leather, never the equipped binding: the guide is read before the Angler owns anything (ADR 0015)
+	frame.binding = Pagle.NewBookBinding(frame, { pinned = ns.DEFAULT_BINDING })
 	frame.papers, frame.parchments = {}, {}
 	buildPage(frame, "left")
 	buildPage(frame, "right")

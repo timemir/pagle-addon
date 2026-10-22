@@ -7,8 +7,8 @@ local ns = select(2, ...)
 
 -- The Stats book's art (STA-R70, stats.md › UI), in the books art kit (the dev's PagleArtBooks probe, a fork of the
 -- Fish Journal's book shell): the book language's tints and fonts, and a widget maker for each piece the book and its
--- pages draw: for the shell (adapter/Book.lua), the leather binding with its band and brass corners, parchment pages
--- with their gutter, the wax close button, grosgrain ribbons and the brass nameplate; for the pages, a kicker, a
+-- pages draw: for the shell (adapter/Book.lua), parchment pages with their gutter, the wax close button, grosgrain
+-- ribbons and the brass nameplate (the leather is Core's binding, Pagle.NewBookBinding); for the pages, a kicker, a
 -- title, a handwriting line, a heading with its small note, a "☛" link, item medallions, an item's icon and name, the
 -- ink bar, the luck ruler, a ruled ledger, a tile and the tile grid, a place's row, a short list's line, a figure line
 -- with its leader and "No Sessions yet."; and the fleuron, pointing hands, pencil and star, drawn as textures, never
@@ -32,7 +32,7 @@ local tint = ns.BookTint
 
 --- The book's tints, the books kit's design-system colours.
 ns.BOOK_LOOK = {
-	gilt = tint("e8c96a"), -- the breadcrumbs on the leather
+	gilt = tint("e8c96a"), -- the search slip's gilt edge (the breadcrumbs take the binding's gilt)
 	giltBright = tint("fff4c8"), -- a crumb under the mouse
 	live = tint("f6e3a8"), -- the live line
 	liveDot = tint("5ac85a"), -- its dot, glowing
@@ -1182,95 +1182,6 @@ function ns.NewBookNoSessions(parent)
 	return text
 end
 
--- The leather's measures: the band's corner (16 units, 32 texels), how far in the tiled grain starts (under the
--- band's opaque lines), and one repeat of the grain (Leather.blp is 256 texels, 128 units).
-local BAND, FILL_INSET, LEATHER_TILE = 16, 7, 128
-
---- The leather on `frame`, filling it: the kit's grain tiled under a vignette, darker toward the foot, and the binding
---- band round it on its own frame, above the ribbons so their tucked tops hide under it.
----@class StatsBookLeatherView
----@field fill Texture
----@field vignette Texture
----@field band Frame
----@field bandPieces table<string, Texture>
-
----@param frame Frame
----@return StatsBookLeatherView
-function ns.NewBookLeather(frame)
-	local fill = ns.ArtCrisp(frame:CreateTexture(nil, "BACKGROUND", nil, 0))
-	fill:SetTexture(ns.BOOK_FILES.leather, "REPEAT", "REPEAT")
-	fill:SetPoint("TOPLEFT", FILL_INSET, -FILL_INSET)
-	fill:SetPoint("BOTTOMRIGHT", -FILL_INSET, FILL_INSET)
-	-- darker toward the foot, as the canvas shades it (the gradient's first colour is the bottom's)
-	fill:SetGradient("VERTICAL", CreateColor(0.8, 0.8, 0.8, 1), CreateColor(1, 1, 1, 1))
-	local width, height = frame:GetSize()
-	fill:SetTexCoord(0, (width - 2 * FILL_INSET) / LEATHER_TILE, 0, (height - 2 * FILL_INSET) / LEATHER_TILE)
-	local vignette = ns.ArtCrisp(frame:CreateTexture(nil, "BACKGROUND", nil, 1))
-	local atlas, sprite = ns.ArtSpriteOf("Book", "vignette")
-	ns.ArtCut(vignette, atlas, sprite.x + 1, sprite.y + 1, sprite.w - 2, sprite.h - 2)
-	vignette:SetAllPoints(fill)
-	local band = CreateFrame("Frame", nil, frame)
-	band:SetAllPoints()
-	band:SetFrameLevel(frame:GetFrameLevel() + 6)
-	-- The band's nine slices from the 96-texel binding sprite: 32-texel corners, the edges stretched from a 2-texel
-	-- slice.
-	local binding, bindingSprite = ns.ArtSpriteOf("Book", "binding")
-	local pieces = {}
-	local function piece(key, sx, sy, sw, sh)
-		local texture = ns.ArtCrisp(band:CreateTexture(nil, "BORDER"))
-		ns.ArtCut(texture, binding, bindingSprite.x + sx, bindingSprite.y + sy, sw, sh)
-		pieces[key] = texture
-		return texture
-	end
-	local tl, tr = piece("TL", 0, 0, 32, 32), piece("TR", 64, 0, 32, 32)
-	local bl, br = piece("BL", 0, 64, 32, 32), piece("BR", 64, 64, 32, 32)
-	for _, corner in ipairs({ tl, tr, bl, br }) do
-		corner:SetSize(BAND, BAND)
-	end
-	tl:SetPoint("TOPLEFT")
-	tr:SetPoint("TOPRIGHT")
-	bl:SetPoint("BOTTOMLEFT")
-	br:SetPoint("BOTTOMRIGHT")
-	local top, bottom = piece("T", 47, 0, 2, 32), piece("B", 47, 64, 2, 32)
-	local left, right = piece("L", 0, 47, 32, 2), piece("R", 64, 47, 32, 2)
-	top:SetPoint("TOPLEFT", tl, "TOPRIGHT")
-	top:SetPoint("BOTTOMRIGHT", tr, "BOTTOMLEFT")
-	bottom:SetPoint("TOPLEFT", bl, "TOPRIGHT")
-	bottom:SetPoint("BOTTOMRIGHT", br, "BOTTOMLEFT")
-	left:SetPoint("TOPLEFT", tl, "BOTTOMLEFT")
-	left:SetPoint("BOTTOMRIGHT", bl, "TOPRIGHT")
-	right:SetPoint("TOPLEFT", tr, "BOTTOMLEFT")
-	right:SetPoint("BOTTOMRIGHT", br, "TOPRIGHT")
-	return { fill = fill, vignette = vignette, band = band, bandPieces = pieces }
-end
-
---- The brass corners on the book's four corners, over the band: one sprite, mirrored by its texture coordinates.
----@param frame Frame
----@return Texture[] corners top left, top right, bottom left, bottom right
-function ns.NewBookCorners(frame)
-	local over = CreateFrame("Frame", nil, frame)
-	over:SetAllPoints()
-	over:SetFrameLevel(frame:GetFrameLevel() + 8)
-	local atlas, sprite = ns.ArtSpriteOf("Parts", "corner")
-	local left, right = sprite.x / atlas.width, (sprite.x + sprite.w) / atlas.width
-	local top, bottom = sprite.y / atlas.height, (sprite.y + sprite.h) / atlas.height
-	local corners = {}
-	for i, spot in ipairs({
-		{ "TOPLEFT", -3, 3, left, right, top, bottom },
-		{ "TOPRIGHT", 3, 3, right, left, top, bottom },
-		{ "BOTTOMLEFT", -3, -3, left, right, bottom, top },
-		{ "BOTTOMRIGHT", 3, -3, right, left, bottom, top },
-	}) do
-		local corner = ns.ArtCrisp(over:CreateTexture(nil, "OVERLAY"))
-		corner:SetTexture(atlas.file)
-		corner:SetTexCoord(spot[4], spot[5], spot[6], spot[7])
-		corner:SetSize(sprite.w / atlas.scale, sprite.h / atlas.scale)
-		corner:SetPoint(spot[1], frame, spot[1], spot[2], spot[3])
-		corners[i] = corner
-	end
-	return corners
-end
-
 --- A parchment page on `frame`, filling it: the kit's parchment (mirrored on a right page, so the two don't match) and
 --- the gutter's shade along the side `spine` names.
 ---@class StatsBookParchmentView
@@ -1519,9 +1430,27 @@ end
 ---@field brass StatsThreeSlice
 ---@field label FontString
 ---@field SetPlate fun(self: StatsBookPlateView, text: string)
+---@field SetSilver fun(self: StatsBookPlateView, silver: boolean) -- toned silver for a binding that says so
+---@field silver boolean
 
 -- The plate's end caps, and the room its words leave.
 local PLATE_CAP, PLATE_ROOM = 8, 22
+-- A silver plate: the brass desaturated and lifted a little, a touch cooler (as the Fish Journal's).
+local SILVER_LIFT, SILVER_BLUE = 1.1, 1.15
+
+-- Tones `plate`'s slices, once they are made, silver or brass.
+---@param plate StatsBookPlateView
+local function tonePlate(plate)
+	local silver = plate.silver
+	for _, slice in ipairs({ plate.brass.left, plate.brass.middle, plate.brass.right }) do
+		slice:SetDesaturated(silver)
+		if silver then
+			slice:SetVertexColor(SILVER_LIFT, SILVER_LIFT, SILVER_BLUE)
+		else
+			slice:SetVertexColor(1, 1, 1)
+		end
+	end
+end
 
 ---@param parent Frame
 ---@return StatsBookPlateView
@@ -1532,11 +1461,19 @@ function ns.NewBookPlate(parent)
 	-- on the brass's own frame, which draws over the plate's: its words over its slices
 	plate.label = ns.BookText(plate.brass, ns.BookFonts().plate, LOOK.plateText)
 	plate.label:SetPoint("CENTER", plate, "CENTER", 0, 1)
+	plate.silver = false
 	function plate.SetPlate(self, text)
 		self.label:SetText(text)
 		local width = math.ceil(self.label:GetStringWidth()) + PLATE_ROOM
 		ns.SetThreeSlice(self.brass, "Book", "plate", width, PLATE_CAP, "ARTWORK")
 		self:SetSize(width, self.brass:GetHeight())
+		tonePlate(self)
+	end
+	function plate.SetSilver(self, silver)
+		self.silver = silver == true
+		if self.brass.left then
+			tonePlate(self)
+		end
 	end
 	return plate
 end

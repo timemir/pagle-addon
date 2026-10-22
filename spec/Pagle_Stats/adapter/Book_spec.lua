@@ -291,6 +291,54 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 	end)
 end)
 
+describe("the Stats book's binding (STA-R70, ADR 0015)", function()
+	it(
+		"wears the equipped binding through Core's renderer, inking its crumbs, nameplate and paper in each look",
+		function()
+			local loaded, _, book = ready()
+			stats.nameAll(loaded, { NIGHTFIN })
+			loaded.ns.OpenBook({ page = "place", area = AUBERDINE, item = NIGHTFIN })
+			local frame = book.frame
+			local binding = frame.binding
+
+			assert.is_nil(binding.pinned) -- it follows the equipped binding
+			local look = binding:Look()
+			for _, crumb in ipairs(frame.crumbButtons) do
+				assert.are.same(look.gilt, { unpack(crumb.label.textColor, 1, 3) })
+			end
+			for _, side in ipairs({ "left", "right" }) do
+				assert.are.same(look.paperTint, { unpack(frame.papers[side].paper.vertexColor, 1, 3) })
+			end
+
+			-- another binding: silver plate, its own gilt, a warmer paper
+			binding.onLook({
+				gilt = { 0.8, 0.82, 0.86 },
+				giltShadow = { 0, 0, 0, 0.9, 1, -1 },
+				silver = true,
+				paperTint = { 1, 0.97, 0.93 },
+			})
+			for _, crumb in ipairs(frame.crumbButtons) do
+				if crumb.shown then
+					assert.are.same({ 0.8, 0.82, 0.86 }, { unpack(crumb.label.textColor, 1, 3) })
+					if crumb.fleuron then
+						assert.are.same({ 0.8 / 0.91, 1, 1 }, { unpack(crumb.fleuron.vertexColor, 1, 3) })
+					end
+				end
+			end
+			assert.is_true(frame.plate.brass.left.desaturated)
+			for _, side in ipairs({ "left", "right" }) do
+				assert.are.same({ 1, 0.97, 0.93 }, { unpack(frame.papers[side].paper.vertexColor, 1, 3) })
+			end
+			loaded.ns.OpenBook({ page = "lifetime" }) -- crumbs drawn later take the binding's gilt too
+			for _, crumb in ipairs(frame.crumbButtons) do
+				if crumb.shown then
+					assert.are.same({ 0.8, 0.82, 0.86 }, { unpack(crumb.label.textColor, 1, 3) })
+				end
+			end
+		end
+	)
+end)
+
 describe("the Stats book's breadcrumbs (STA-R74)", function()
 	it('read "Stats" on the home spread, and "Stats ❧ {zone} ❧ {subzone} ❧ {item}" on a place page', function()
 		local loaded, _, book = ready()
