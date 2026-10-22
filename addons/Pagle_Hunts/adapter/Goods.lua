@@ -751,13 +751,8 @@ function ns.DrawTrackerBlock(view, look, content)
 		view.empty:SetPoint("TOPLEFT", look.x + 14, -(y + 2))
 		y = y + EXTRA_LINE
 	end
-	local headerOnly = top + look.first
-	local height = y == headerOnly and (look.frame and headerOnly + look.foot or headerOnly) or y + look.foot
+	local height = ns.TrackerBlockHeight(look, top + look.first, y)
 	local slice = look.slice
-	if slice then
-		-- never shorter than its paper's top and foot, so they never overlap
-		height = math.max(height, slice.top + slice.foot)
-	end
 	block:SetSize(look.width, height)
 	view.paper:SetShown(look.frame ~= nil)
 	if look.frame and slice then

@@ -227,4 +227,26 @@ describe("the Hunts tracker's lines", function()
 			end
 		end)
 	end)
+
+	describe("the block's height (HNT-R76, HNT-R79, HNT-R123)", function()
+		-- The native look, a frame's paper, and an expansion frame's paper with its top and foot.
+		local NATIVE = { foot = 6 }
+		local PAPER = { frame = "paper", foot = 10 }
+		local SLICED = { frame = "slate", foot = 10, slice = { top = 60, foot = 50 } }
+
+		it("ends its look's foot under the last line (HNT-R76)", function()
+			assert.are.equal(86, ns.TrackerBlockHeight(NATIVE, 30, 80))
+			assert.are.equal(90, ns.TrackerBlockHeight(PAPER, 30, 80))
+		end)
+
+		it("gives a header alone the foot only in a frame (HNT-R79)", function()
+			assert.are.equal(30, ns.TrackerBlockHeight(NATIVE, 30, 30))
+			assert.are.equal(40, ns.TrackerBlockHeight(PAPER, 30, 30))
+		end)
+
+		it("keeps an expansion frame no shorter than its paper's top and foot (HNT-R123, HNT-R77)", function()
+			assert.are.equal(110, ns.TrackerBlockHeight(SLICED, 30, 30))
+			assert.are.equal(130, ns.TrackerBlockHeight(SLICED, 30, 120))
+		end)
+	end)
 end)

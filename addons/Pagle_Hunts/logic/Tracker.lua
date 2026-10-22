@@ -197,6 +197,19 @@ function ns.TrackerWagerLines(input, state)
 	return lines
 end
 
+--- The tracker block's height (HNT-R76, HNT-R79, HNT-R123) in a look whose lines end at `y`, below the header's end at
+--- `headerOnly`: the look's `foot` under the last line; a header with no line under it takes the foot only in a frame;
+--- and a frame's paper is never shorter than its top and foot (`slice`), so they never overlap.
+---@param look { frame: string?, foot: number, slice: { top: number, foot: number }? }
+---@param headerOnly number
+---@param y number
+---@return number
+function ns.TrackerBlockHeight(look, headerOnly, y)
+	local height = y == headerOnly and (look.frame and headerOnly + look.foot or headerOnly) or y + look.foot
+	local slice = look.slice
+	return slice and math.max(height, slice.top + slice.foot) or height
+end
+
 --- The block's "+{n} more wagers on the table" line (HNT-R175).
 ---@param more integer
 ---@return string

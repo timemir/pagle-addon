@@ -18,8 +18,10 @@ ns.TRACKER_FRAME_SLOT = "hunts.trackerframe"
 ns.CORE_SOUND_SET_SLOT = "core.soundset"
 
 local ICONS = "Interface\\Icons\\"
--- The expansion's covers' material textures (HNT-R123), each also its good's icon.
-local COVER_TILES = "Interface\\AddOns\\Pagle_Hunts\\media\\books\\covers\\"
+
+--- Where the Curio Shop expansion's covers keep their materials (HNT-R123): `media/books/covers/<key>`, each a
+--- power-of-two square tiled at its cover's repeat and also its good's icon, Hunts' own media, loaded only when worn.
+ns.COVER_TILES = "Interface\\AddOns\\Pagle_Hunts\\media\\books\\covers\\"
 
 --- What earns an earned good (HNT-R122): any set's title, every set's title (HNT-R20), or ns.WAGER_GOODS_RUNS
 --- completed runs (HNT-R148).
@@ -54,7 +56,7 @@ ns.WAGER_GOODS_RUNS = 10
 ---@param earned HuntsEarnedRule?
 ---@return HuntsGoodData
 local function cover(key, tier, earned)
-	return { id = ns.COVER_SLOT .. "." .. key, tier = tier, earned = earned, icon = COVER_TILES .. key }
+	return { id = ns.COVER_SLOT .. "." .. key, tier = tier, earned = earned, icon = ns.COVER_TILES .. key }
 end
 
 --- HNT-R120's slots and HNT-R121's goods, in the order they register.
@@ -161,6 +163,28 @@ function ns.CompletedRunCount(state, celebrated)
 	return count
 end
 
+-- Each rule (HNT-R122) over the projection's state and the celebrated set together, and the Hunt list's sets.
+---@type table<HuntsEarnedRule, fun(state: HuntsState?, celebrated: HuntsCelebrated, sets: { id: string }[]): boolean>
+local RULES = {
+	-- Any set's title (HNT-R20).
+	anySetTitle = function(state, celebrated)
+		return (state ~= nil and next(state.sets) ~= nil) or next(celebrated.sets or {}) ~= nil
+	end,
+	-- Every one of the Hunt list's sets' titles (HNT-R20), and at least one set.
+	everySetTitle = function(state, celebrated, sets)
+		for _, set in ipairs(sets) do
+			if not hasTitle(state, celebrated, set.id) then
+				return false
+			end
+		end
+		return #sets > 0
+	end,
+	-- ns.WAGER_GOODS_RUNS completed runs (HNT-R148).
+	wagerRuns = function(state, celebrated)
+		return ns.CompletedRunCount(state, celebrated) >= ns.WAGER_GOODS_RUNS
+	end,
+}
+
 --- Whether `rule` holds (HNT-R122) over the projection's `state` (nil before it is built, or while it updates) and
 --- the celebrated set together: any set's title, every one of `sets`' titles, or ns.WAGER_GOODS_RUNS completed runs.
 ---@param rule HuntsEarnedRule
@@ -169,17 +193,7 @@ end
 ---@param sets { id: string }[] the Hunt list's sets (HNT-R1)
 ---@return boolean
 function ns.HuntsGoodEarned(rule, state, celebrated, sets)
-	if rule == "wagerRuns" then
-		return ns.CompletedRunCount(state, celebrated) >= ns.WAGER_GOODS_RUNS
-	elseif rule == "anySetTitle" then
-		return (state ~= nil and next(state.sets) ~= nil) or next(celebrated.sets or {}) ~= nil
-	end
-	for _, set in ipairs(sets) do
-		if not hasTitle(state, celebrated, set.id) then
-			return false
-		end
-	end
-	return #sets > 0
+	return RULES[rule](state, celebrated, sets)
 end
 
 --- Whether earned good `goodID`, earned by `rule`, is owned (HNT-R122): the celebrated set's goods have it, or the
@@ -239,11 +253,8 @@ end
 ---@param rule HuntsEarnedRule
 ---@return string
 function ns.HuntsEarnedText(rule)
-	local L = ns.L
-	if rule == "wagerRuns" then
-		return L.EARNED_WAGER_RUNS:format(ns.WAGER_GOODS_RUNS)
-	end
-	return rule == "anySetTitle" and L.EARNED_ANY_SET_TITLE or L.EARNED_EVERY_SET_TITLE
+	-- Only wagerRuns' text has a number in it: the completed runs it takes.
+	return ns.L.EARNED_TEXT[rule]:format(ns.WAGER_GOODS_RUNS)
 end
 
 --- A good's name (HNT-R121): its lore, `huntgood.<goodID>.name` (HNT-R130), or its ID while the key has no text.
