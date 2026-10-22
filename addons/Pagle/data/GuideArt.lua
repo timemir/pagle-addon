@@ -10,7 +10,8 @@ local ns = select(2, ...)
 --     moved to Pagle's. Rectangles are in texels, `scale` texels per UI unit; `box` is the drawn element inside its
 --     sprite in UI units (x, y from the sprite's top left, then w, h), the rest being its shadow or glow.
 --   Book (media/books/BookAtlas, 512 x 256, 2 texels a unit): the books' shell, which the guide's book is drawn on
---     (ONB-R20): the binding band, the leather's vignette, the wax close button, the fleuron and the spine's gutter.
+--     (ONB-R20): the binding band, the leather's vignette, the wax seal and close button, the brass nameplate, the
+--     fleuron and the spine's gutter.
 --     The rectangles are the Stats book's (Pagle_Stats/adapter/BookAtlas.lua), copied: Core reads no Module (ADR 0001).
 
 ns.ATLASES = ns.ATLASES or {}
@@ -29,11 +30,26 @@ ns.ATLASES.Book = {
 	sprites = {
 		["binding"] = { x = 2, y = 2, w = 96, h = 96, box = { 0, 0, 48, 48 } },
 		["vignette"] = { x = 102, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
+		["seal"] = { x = 234, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
 		["close"] = { x = 2, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
 		["close-pushed"] = { x = 70, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
 		["close-highlight"] = { x = 138, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
+		["plate"] = { x = 274, y = 136, w = 128, h = 64, box = { 0, 0, 64, 32 } },
 		["fleuron"] = { x = 406, y = 136, w = 32, h = 32, box = { 0, 0, 16, 16 } },
 		["gutter"] = { x = 442, y = 136, w = 64, h = 8, box = { 0, 0, 32, 4 } },
+	},
+}
+
+--- The books' parts the shell draws (core/book.md, BOOK-R17): the grosgrain ribbon and its stitch, from
+--- media/books/BookParts (512 x 1024, 2 texels a unit), the Stats book's rectangles (Pagle_Stats/adapter/BookAtlas.lua).
+ns.ATLASES.BookParts = {
+	file = "Interface\\AddOns\\Pagle\\media\\books\\BookParts",
+	width = 512,
+	height = 1024,
+	scale = 2,
+	sprites = {
+		["ribbon"] = { x = 6, y = 474, w = 208, h = 284, box = { 2, 0, 100, 140 } },
+		["ribbon-stitch"] = { x = 218, y = 2, w = 208, h = 284, box = { 2, 0, 100, 140 } },
 	},
 }
 

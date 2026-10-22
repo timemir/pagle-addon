@@ -79,6 +79,7 @@ logic\Announcements.lua
 logic\ToastStyles.lua
 logic\Motion.lua
 logic\BookBinding.lua
+logic\Book.lua
 logic\Fit.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
@@ -136,6 +137,7 @@ adapter\Art.lua
 adapter\Motion.lua
 adapter\Fit.lua
 adapter\BookBinding.lua
+adapter\Book.lua
 adapter\Announcements.lua
 adapter\CoreGoods.lua
 adapter\Cards.lua

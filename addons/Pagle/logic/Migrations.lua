@@ -29,6 +29,7 @@ ns.PAGLEDB_DEFAULTS = {
 		minimap = { angle = ns.MINIMAP_ICON_ANGLE, hide = false },
 	},
 	profile = {
+		books = {}, -- core/book.md › Data: each movable book's saved position by its id (BOOK-R5)
 		reloadReminder = false, -- LOG-R86
 		lengthUnit = nil, -- LOG-R69: "cm", "in", or nil (no default key) for the region default
 		anglerTooltips = true, -- VIEW-R30: "Show other Anglers on player tooltips"

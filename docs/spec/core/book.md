@@ -26,11 +26,11 @@ Part of [Core](README.md). The Fish Journal, the Stats book, the Hunts board and
 
 ### The leather and the pages
 
-- **BOOK-R10** The binding is Core's renderer: `Pagle.NewBookBinding(frame, { pinned = options.pinned, onLook = … })`, the handle's `binding`, which a book may `SetLook` (the Hunts board's `Board:SetBinding`). With each look it wears, the shell inks its own parts (BIND-R3): the crumbs and the back link in the look's `gilt` and `giltShadow`, the fleurons toned toward that gilt, the nameplate silver when `silver`, and the paper under `paperTint`; then it calls `options.onLook(look)` so the book inks its own.
+- **BOOK-R10** The binding is Core's renderer: `Pagle.NewBookBinding(frame, { pinned = options.pinned, onLook = … })`, the handle's `binding`, which a book may `SetLook` (the Hunts board's `Board:SetBinding`). With each look it wears, the shell inks its own parts (BIND-R3): the crumbs in the look's `gilt` and `giltShadow`, the fleurons toned toward that gilt, the nameplate silver when `silver`, and the paper under `paperTint`; then it calls `options.onLook(look)` so the book inks its own.
 - **BOOK-R11** The **pages** are two parchments side by side, between the leather's sides (`options.side`, 18 units), the strip above them (`options.strip`, 38) and the foot band below them (`options.foot`, 16; the Stats book's 36). The left page takes `split / (split + 1)` of the room across (`options.split`, 1 by default; the Hunts board's 1.45). Each is the books' parchment (mirrored on the right page, so the two don't match), its outer corners rounded 6 units (Core's corner masks), with the spine's 40-unit gutter shade on its inner edge. The paper takes the mouse. Each page has a **body** inside its padding (`options.pad`, 28 across, 22 at the top, 20 at the foot).
 - **BOOK-R12** The **strip** above the pages carries the **crumbs** (BOOK-R24) at its left, midway between the leather's band (7 units in) and the pages, in the gilt font (Marcellus, 14, shadowed), each after the first behind a fleuron. Each crumb with a target opens it, and brightens to `#fff4c8` under the mouse; the trail is cut short before `options.stripRoom` units at the strip's right (0 by default), which the book keeps for its anchors. `book:SetStripText(text)` writes words at the strip's right in the gilt, `#c9b27a` (the Field guide's "{n} of {m}"); nil clears them.
 - **BOOK-R13** `options.back` adds a **back link** at the left page's foot, in its words (the Journal's "« back"), in the hand (`#7a3a10`, turning `#9a2a1a` under the mouse). It shows while `options.back.target(place)` gives a target, and opens it.
-- **BOOK-R14** `options.plate` adds the brass **nameplate** on the leather, its top left at `plate.x`, `plate.y` units from the frame's (the Stats book's 30, 605), ten levels up: the books' brass plate three-sliced to its words (Marcellus, 12, `#2a1a04`), which `book:SetPlate(text)` writes. It turns silver with a look's `silver` (BOOK-R10).
+- **BOOK-R14** `options.plate` adds the brass **nameplate** on the leather, its top left at `plate.x`, `plate.y` units from the frame's (the Stats book's 30, 605), ten levels up: the books' brass plate three-sliced to its words (Marcellus, 12, `#2a1a04`), which `book:SetPlate(text, tooltip?)` writes. It turns silver with a look's `silver` (BOOK-R10). With `tooltip` (lines, the first its heading), the plate shows them in GameTooltip while the mouse is over it (the Hunts board's earned titles, HNT-R61); without, it takes no mouse.
 - **BOOK-R15** The **wax close** is 26 units square, centred on the frame's top right corner 3 units in (`CENTER`, `TOPRIGHT`, -3, -3), ten levels up, pressed while clicked and glowing under the mouse; a click closes the book (BOOK-R4). `options.help` adds the **"?"** in the same wax, 4 units left of the close, the same size and level, a gilt "?" (`#f4dfa8`) pressed into the seal, darker while pressed; its tooltip (`help.tooltip`) shows under it while the mouse is over it, and a click calls `help.onClick`. `book:SetHelpShown(shown)` shows or hides it (hidden on a Core without First looks, ONB-R90).
 - **BOOK-R16** **Leather anchors**: `options.anchors` names frames the shell makes on the leather, each placed by its `point`, `x`, `y` (from the frame's same point) and sized `width` × `height`, ten levels up, taking the mouse: the Stats book's search slip and live line, the Journal's search slip, the Hunts board's clock and checkbox. `book.anchors[name]` is each one; `book:RegisterLeather(name, renderer)` draws one at each draw, after the pages (BOOK-R21).
 
@@ -38,6 +38,7 @@ Part of [Core](README.md). The Fish Journal, the Stats book, the Hunts board and
 
 - **BOOK-R17** **Ribbons** hang from under the leather's foot, left to right from `options.ribbonsLeft` units (40 by default; the Stats book's 456), one geometry for every book: 96 units wide with a 12-unit gap, their tops tucked 2 units under the band (a level under it), hanging 75 units, the chosen one 86. Each is the books' grosgrain ribbon tinted to its `color`, with a gold stitch over it and its words in gilt (Marcellus, 12, shadowed; `#efd286`, the chosen one's `#fff0bc`) 31 units above its swallowtail end; the chosen one and one under the mouse brighten (×1.13). A change of the chosen ribbon while the book is open runs the lengths over 0.2 s (ease-out); at once with Animations off.
 - **BOOK-R18** The ribbons are `options.ribbons`, and `book:SetRibbons(list)` replaces them at any time, open or not (the Hunts board's ribbon per set): ribbons past the new list's end hide. A ribbon's click opens its `target`, a place or a function giving one when clicked (the Stats book's *Where I am*). The chosen ribbon is the one `options.chosenRibbon(place)` names, or by default the first whose target's page is the page shown.
+- **BOOK-R19** A ribbon's `count` is written under its name in the hand (Caveat, 15, shadowed, `#e8c96a`), 17 units above its swallowtail end, its name rising from 31 to 38 (the Hunts board's "{n} on", HNT-R162). A ribbon's `tooltip` (lines, the first its heading) shows in GameTooltip above it while the mouse is over it. `book:RibbonFrame(id)` is the shown ribbon with that id, nil for none or before the first opening (a First look's arrow points at it, ONB-R58).
 
 ### The router
 
@@ -53,6 +54,8 @@ Part of [Core](README.md). The Fish Journal, the Stats book, the Hunts board and
 - **BOOK-R31** The **turn** is the kit's: forward, the right page lifts away toward the spine (0.22 s, `Bezier(0.5, 0, 0.9, 0.6)`), uncovering the new right page, then lands on the left from the spine outward (0.28 s, `Bezier(0.1, 0.4, 0.4, 1)`), covering the old left page; backward is its mirror image. A fold shade darkens the lifting page (up to 28%), a 26-unit shadow (up to 32%) falls beside the moving edge, with a 1.5-unit light line (55%) on the edge itself; both fade as the page lands. The fold is a frame 40 levels above the book's. The crumbs change as the page passes the spine. It plays the page turn (IG_ABILITY_PAGE_TURN, 836, SFX). Its direction is forward when the new page's `order` is above the old one's (`how.forward` overrides it).
 - **BOOK-R32** With Animations off a turn or a crossfade settles at once and silently. A new turn, a close, or a draw that can't turn (BOOK-R22) settles the one under way at once: its new spread whole, its old one gone.
 - **BOOK-R33** `options.onTurn(turn, phase, k)` is the turn's hook, for a book's own effect (the Hunts board's fold, the Stats book's ink reveal): `phase` `"start"` as it begins, `"lift"` and `"land"` at each step of its halves with `k` from 0 to 1, `"midway"` at the spine and `"done"` when it has settled, however (with Animations off, `"start"`, `"midway"` and `"done"` at once). `turn` is `{ from, to, forward, papers }`: the sides turned from and to (each `{ clip, scroll, content, paper }`, nil for a blank side) and the pages' paper frames.
+- **BOOK-R34** `options.how(from, to)` is asked for every `Open` made without a `how` (a crumb, the back link, a ribbon, the book's own calls), with the place the book was at and the place it goes to, and its answer is used as that `how`; nil is `"auto"` (the Journal turns by its crumbs' depth and crossfades within one page).
+- **BOOK-R35** `book:Settle()` ends every motion of the book at once, as settled: an opening fade (the book whole), a closing fade (the book closed) and a turn or crossfade (its new spread whole), for a tour stop's screenshot.
 
 ### Callbacks
 
@@ -90,6 +93,8 @@ Part of [Core](README.md). The Fish Journal, the Stats book, the Hunts board and
 ---@field text string
 ---@field color number[]                                  -- { r, g, b }, 0 to 1
 ---@field target PagleBookPlace|fun(): PagleBookPlace
+---@field count? string                                   -- words under its name, in the hand (BOOK-R19)
+---@field tooltip? string[]                               -- tooltip lines on hover (BOOK-R19)
 
 --- A leather anchor's place (BOOK-R16): its `point` on the frame, `x`, `y` from that point, and its size.
 ---@class PagleBookAnchorDef
@@ -147,6 +152,7 @@ Part of [Core](README.md). The Fish Journal, the Stats book, the Hunts board and
 ---@field onLook? fun(look: PagleBindingLook)  -- after the shell inks its own parts (BOOK-R10)
 ---@field onDraw? fun(place: PagleBookPlace, notice: string?) -- last at each draw (BOOK-R21)
 ---@field onTurn? fun(turn: PagleBookTurn, phase: PagleBookTurnPhase, k: number?) -- the turn's hook (BOOK-R33)
+---@field how? fun(from: PagleBookPlace, to: PagleBookPlace): PagleBookOpenHow? -- an Open's how when it gives none (BOOK-R34)
 ---@field onShow? fun()
 ---@field onHide? fun()
 
@@ -162,6 +168,7 @@ Part of [Core](README.md). The Fish Journal, the Stats book, the Hunts board and
 ---@field RegisterLeather fun(self, name: string, renderer: fun(anchor: Frame, place: PagleBookPlace, notice: string?))
 ---@field Open fun(self, place: PagleBookPlace?, how: PagleBookOpenHow?)
 ---@field Close fun(self)
+---@field Settle fun(self)                            -- ends every motion at once (BOOK-R35)
 ---@field Toggle fun(self)
 ---@field IsShown fun(self): boolean
 ---@field Showing fun(self): integer
@@ -169,7 +176,8 @@ Part of [Core](README.md). The Fish Journal, the Stats book, the Hunts board and
 ---@field Draw fun(self)
 ---@field QueueDraw fun(self)
 ---@field SetRibbons fun(self, ribbons: PagleBookRibbon[])
----@field SetPlate fun(self, text: string)
+---@field SetPlate fun(self, text: string, tooltip: string[]?)
+---@field RibbonFrame fun(self, id: string): Button?
 ---@field SetStripText fun(self, text: string?)
 ---@field SetHelpShown fun(self, shown: boolean)
 ---@field Look fun(self): PagleBindingLook?           -- the look it wears now, nil before the first opening
@@ -196,5 +204,6 @@ In Module specs, FakePagle's `Pagle.NewBook` is Core's real shell, built on the 
 | The pages' corners, the gutter | 6, 40 units | BOOK-R11 |
 | The wax close, the "?" | 26 units, 4 apart, ten levels up | BOOK-R15 |
 | The ribbons | 96 wide, 12 apart, 75 and 86 long, 2 tucked, ×1.13 brighter, 0.2 s | BOOK-R17 |
+| A ribbon's words | its name 31 above its end, 38 over a count; the count 17 | BOOK-R17, BOOK-R19 |
 | The turn | 0.22 s lift, 0.28 s land, fold 28%, cast 26 units at 32%, edge 1.5 units at 55%, 40 levels up | BOOK-R31 |
 | The crossfade | 0.2 s | BOOK-R30 |

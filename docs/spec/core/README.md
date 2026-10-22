@@ -198,7 +198,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.WheelScroll(scroll, delta, options?)` | a mouse wheel notch: a third of the view, gliding | [announcements.md](announcements.md#paglewheelscrollscroll-delta-options) |
 | `Pagle.FitToScreen(frame, options)` | number, the scale used | [here](#paglefittoscreenframe-options) |
 | `Pagle.NewBookBinding(frame, options?)` | `PagleBookBinding`: `Look()`, `SetLook(goodID?)` | [book-binding.md](book-binding.md#contracts) |
-| `Pagle.NewBook(options)` | `PagleBook`: `RegisterPage`, `RegisterLeather`, `Open(place?, how?)`, `Close`, `Toggle`, `IsShown`, `Showing`, `Place`, `Draw`, `QueueDraw`, `SetRibbons`, `SetPlate`, `SetStripText`, `SetHelpShown`, `Look` | [book.md](book.md#contracts) |
+| `Pagle.NewBook(options)` | `PagleBook`: `RegisterPage`, `RegisterLeather`, `Open(place?, how?)`, `Close`, `Settle`, `Toggle`, `IsShown`, `Showing`, `Place`, `Draw`, `QueueDraw`, `SetRibbons`, `SetPlate(text, tooltip?)`, `RibbonFrame(id)`, `SetStripText`, `SetHelpShown`, `Look` | [book.md](book.md#contracts) |
 
 ### Module handle (returned by `RegisterModule`)
 
