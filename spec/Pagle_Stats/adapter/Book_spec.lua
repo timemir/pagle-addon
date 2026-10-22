@@ -289,6 +289,36 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 
 		assert.are.equal(0, scroll:GetVerticalScroll())
 	end)
+
+	it("glides a side a third of its 524-high body a wheel notch, stopping at its foot (STA-R70)", function()
+		local loaded, _, book = ready()
+		local draws = {}
+		book:RegisterPage("place", "left", writer("rows", draws, 1400))
+		loaded.ns.OpenBook({ page = "place", area = DARKSHORE })
+		local scroll = draws[1].content:GetParent()
+		-- The client lays the 1400 out under the body.
+		scroll.GetVerticalScrollRange = function()
+			return 1400 - 524
+		end
+		local wheel = scroll:GetScript("OnMouseWheel")
+		-- Where it has scrolled, to 3 places.
+		local function at()
+			return math.floor(scroll:GetVerticalScroll() * 1000 + 0.5) / 1000
+		end
+
+		wheel(scroll, -1)
+		wheel(scroll, -1)
+		loaded.client.update(0.2)
+		assert.are.equal(349.333, at())
+		for _ = 1, 6 do
+			wheel(scroll, -1)
+		end
+		loaded.client.update(0.2)
+		assert.are.equal(876, at(), "it stops at the body's foot")
+		wheel(scroll, 1)
+		loaded.client.update(0.2)
+		assert.are.equal(701.333, at())
+	end)
 end)
 
 describe("the Stats book's breadcrumbs (STA-R74)", function()

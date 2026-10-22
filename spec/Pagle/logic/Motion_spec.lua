@@ -208,4 +208,128 @@ describe("the motion player", function()
 
 		assert.are.same({ { 0, 0.5 }, false, false }, { seen, done, host.awake })
 	end)
+
+	-- A scroll frame `height` tall that scrolls 0..`range`, visible, recording each offset it is set to.
+	local function newScroll(height, range)
+		local scroll = newOwner()
+		scroll.offset, scroll.set = 0, {}
+		function scroll.GetHeight()
+			return height
+		end
+		function scroll.GetVerticalScrollRange()
+			return range
+		end
+		function scroll:GetVerticalScroll()
+			return self.offset
+		end
+		function scroll:SetVerticalScroll(offset)
+			self.offset = offset
+			self.set[#self.set + 1] = offset
+		end
+		return scroll
+	end
+
+	describe("a mouse wheel notch (Pagle.WheelScroll)", function()
+		it("glides a third of the view from where it is, eased out over 0.12 s, the follower told each step", function()
+			local host, scroll, followed = newPlayer(), newScroll(300, 1000), {}
+			scroll.offset = 50
+
+			host.player:Wheel(scroll, -1, {
+				onScroll = function(offset)
+					followed[#followed + 1] = offset
+				end,
+			})
+			local first = scroll.offset
+			host.player:Step(0.06)
+			local half = scroll.offset
+			host.player:Step(0.07)
+
+			assert.are.same({ 50, 150, false }, { first, scroll.offset, host.awake })
+			assert.is_true(half > 100 and half < 150) -- eased out: past halfway at half time
+			assert.are.same(scroll.set, followed)
+		end)
+
+		it("adds a notch during a glide to where that glide was going, not to where it has got to", function()
+			local host, scroll = newPlayer(), newScroll(300, 1000)
+			host.player:Wheel(scroll, -1)
+			host.player:Step(0.03)
+			local got = scroll.offset
+
+			host.player:Wheel(scroll, -1)
+			local restart = scroll.offset
+			host.player:Step(0.03)
+			host.player:Wheel(scroll, -2)
+			host.player:Step(0.2)
+
+			assert.is_true(got > 0 and got < 100)
+			assert.are.equal(got, restart, "each glide starts where the last one is, so nothing jumps")
+			assert.are.equal(400, round(scroll.offset), "four notches, four thirds of the view")
+			host.player:Wheel(scroll, 1)
+			host.player:Step(0.2)
+			assert.are.equal(300, round(scroll.offset), "a notch after the glide ends starts from where it stopped")
+		end)
+
+		it("never passes the top or the foot, however fast the notches come", function()
+			local host, scroll = newPlayer(), newScroll(300, 150)
+			for _ = 1, 3 do
+				host.player:Wheel(scroll, -1)
+				host.player:Step(0.01)
+			end
+			host.player:Step(0.2)
+			local foot = scroll.offset
+			host.player:Wheel(scroll, -1)
+			local held = scroll.offset
+			host.player:Step(0.2)
+			for _ = 1, 3 do
+				host.player:Wheel(scroll, 1)
+			end
+			host.player:Step(0.2)
+
+			assert.are.same({ 150, 150, 0 }, { round(foot), round(held), round(scroll.offset) })
+			for _, offset in ipairs(scroll.set) do
+				assert.is_true(offset >= 0 and offset <= 150)
+			end
+		end)
+
+		it("gives way to anything else that scrolls the frame mid-glide, the next notch starting there", function()
+			local host, scroll = newPlayer(), newScroll(300, 1000)
+			host.player:Wheel(scroll, -2)
+			host.player:Step(0.03)
+
+			scroll:SetVerticalScroll(0) -- a page sent back to its top
+			host.player:Step(0.2)
+			local after = scroll.offset
+			host.player:Wheel(scroll, -1)
+			host.player:Step(0.2)
+
+			assert.are.same({ 0, 100 }, { after, round(scroll.offset) })
+			assert.is_false(host.awake)
+		end)
+
+		it("reads the view's height and range from its options over the frame's own", function()
+			local host, scroll = newPlayer(), newScroll(300, 1000)
+
+			host.player:Wheel(scroll, -2, {
+				height = 60,
+				range = function()
+					return 30
+				end,
+			})
+			host.player:Step(0.2)
+
+			assert.are.equal(30, round(scroll.offset))
+			host.player:Wheel(scroll, 1, { height = 60 })
+			host.player:Step(0.2)
+			assert.are.equal(10, round(scroll.offset))
+		end)
+
+		it("with the Animations setting off, jumps a third of the view a notch, without a tick", function()
+			local host, scroll = newPlayer(false), newScroll(300, 1000)
+
+			host.player:Wheel(scroll, -1)
+			host.player:Wheel(scroll, -1)
+
+			assert.are.same({ { 100, 200 }, false }, { scroll.set, host.awake })
+		end)
+	end)
 end)

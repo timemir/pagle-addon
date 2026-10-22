@@ -478,6 +478,9 @@ part(function(fake, Pagle, ns)
 	function Pagle.Cue(owner, seconds, fn)
 		player:Cue(owner, seconds, fn)
 	end
+	function Pagle.WheelScroll(scroll, delta, options)
+		player:Wheel(scroll, delta, options)
+	end
 	Pagle.Bezier = ns.Bezier
 	Pagle.EASE = ns.EASE
 end)

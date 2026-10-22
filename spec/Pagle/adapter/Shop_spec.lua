@@ -722,11 +722,16 @@ describe("The Curio Shop's list", function()
 		scroll:GetScript("OnScrollRangeChanged")(scroll, 0, 200)
 		assert.is_true(bar:IsShown())
 		assert.are.same({ 0, 200 }, { bar:GetMinMaxValues() })
+		-- A notch glides a third of the list's height (Pagle.WheelScroll), the bar following it.
+		local notch = scroll:GetHeight() / 3
+		assert.is_true(notch > 100 and notch < 200) -- the tray shows a list some 400 tall
 		scroll:GetScript("OnMouseWheel")(scroll, -1)
-		assert.are.same({ 66, 66 }, { scroll:GetVerticalScroll(), bar:GetValue() })
+		loaded.client.update(0.2)
+		assert.are.same({ notch, notch }, { scroll:GetVerticalScroll(), bar:GetValue() })
 		bar:SetValue(200)
 		assert.are.equal(200, scroll:GetVerticalScroll())
 		scroll:GetScript("OnMouseWheel")(scroll, -1)
+		loaded.client.update(0.2)
 		assert.are.equal(200, scroll:GetVerticalScroll(), "it stops at the list's foot")
 	end)
 end)

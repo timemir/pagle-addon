@@ -742,8 +742,8 @@ local function fitScrollBar(frame)
 	bar:SetValue(math.min(scroll:GetVerticalScroll(), range))
 end
 
--- The list's scroll frame in the tray, its scroll child, and the slim brass scroll bar at its right; the wheel
--- scrolls it a row and a half at a time.
+-- The list's scroll frame in the tray, its scroll child, and the slim brass scroll bar at its right; a wheel notch
+-- glides it a third of the list's height (ns.WheelScroll), the bar following.
 ---@param frame PagleShopFrame
 local function buildList(frame)
 	frame.scroll = CreateFrame("ScrollFrame", nil, frame) --[[@as ScrollFrame]]
@@ -771,13 +771,15 @@ local function buildList(frame)
 	end)
 	bar:Hide()
 	frame.scroll:EnableMouseWheel(true)
+	local wheel = {
+		onScroll = function(offset)
+			if bar:IsShown() then
+				bar:SetValue(offset)
+			end
+		end,
+	}
 	frame.scroll:SetScript("OnMouseWheel", function(self, delta)
-		local range = self:GetVerticalScrollRange()
-		local offset = math.max(0, math.min(range, self:GetVerticalScroll() - delta * ROW_H * 1.5))
-		self:SetVerticalScroll(offset)
-		if bar:IsShown() then
-			bar:SetValue(offset)
-		end
+		ns.WheelScroll(self, delta, wheel)
 	end)
 	frame.scroll:SetScript("OnScrollRangeChanged", function()
 		fitScrollBar(frame)

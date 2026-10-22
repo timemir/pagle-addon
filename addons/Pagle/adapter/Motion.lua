@@ -62,6 +62,15 @@ function ns.Cue(owner, seconds, fn)
 	player:Cue(owner, seconds, fn)
 end
 
+--- Scrolls `scroll` by `delta` mouse wheel notches, a third of its view each, gliding there (logic/Motion.lua's
+--- PagleMotionPlayer:Wheel).
+---@param scroll ScrollFrame
+---@param delta number
+---@param options PagleWheelOptions?
+function ns.WheelScroll(scroll, delta, options)
+	player:Wheel(scroll, delta, options)
+end
+
 -- What a Module moves its own frames with (announcements.md › Contracts).
 
 --- The Animations setting: true unless the player turned it off.
@@ -73,5 +82,6 @@ end
 Pagle.Animate = ns.Animate
 Pagle.StopMotion = ns.StopMotion
 Pagle.Cue = ns.Cue
+Pagle.WheelScroll = ns.WheelScroll
 Pagle.Bezier = ns.Bezier
 Pagle.EASE = ns.EASE
