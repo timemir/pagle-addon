@@ -85,13 +85,16 @@ describe("when the Letter shows (ONB-R10)", function()
 		assert.is_true(letter:IsShowing())
 	end)
 
-	it("shows while letter is waiting or later, and never once declined, opened or returning (ONB-R10, ONB-R12)", function()
-		for state, shows in pairs({ waiting = 1, later = 1, declined = 0, opened = 0, returning = 0 }) do
-			local _, seen = arrived(state)
+	it(
+		"shows while letter is waiting or later, and never once declined, opened or returning (ONB-R10, ONB-R12)",
+		function()
+			for state, shows in pairs({ waiting = 1, later = 1, declined = 0, opened = 0, returning = 0 }) do
+				local _, seen = arrived(state)
 
-			assert.are.equal(shows, seen.shown, state)
+				assert.are.equal(shows, seen.shown, state)
+			end
 		end
-	end)
+	)
 
 	it("shows once a login: a later check while it shows draws nothing again (ONB-R10)", function()
 		local letter, seen = arrived()
@@ -288,19 +291,22 @@ describe("/pagle dev onboarding letter and the Letter's tour stop (ONB-R83, ONB-
 		assert.are.equal("waiting", seen.global.onboarding.letter)
 	end)
 
-	it("makes the tour's sample inert: its buttons only hide it, writing nothing and opening nothing (CORE-R68)", function()
-		local letter, seen = letterWith()
+	it(
+		"makes the tour's sample inert: its buttons only hide it, writing nothing and opening nothing (CORE-R68)",
+		function()
+			local letter, seen = letterWith()
 
-		letter:TourShow()
-		letter:Later()
-		letter:TourShow()
-		letter:Open()
-		letter:TourHide()
+			letter:TourShow()
+			letter:Later()
+			letter:TourShow()
+			letter:Open()
+			letter:TourHide()
 
-		assert.are.equal("waiting", seen.global.onboarding.letter)
-		assert.are.equal(0, seen.guides)
-		assert.are.same({ 2, 2 }, { seen.shown, seen.hidden })
-	end)
+			assert.are.equal("waiting", seen.global.onboarding.letter)
+			assert.are.equal(0, seen.guides)
+			assert.are.same({ 2, 2 }, { seen.shown, seen.hidden })
+		end
+	)
 
 	it("leaves the real Letter as it was when the tour stops on it (CORE-R68)", function()
 		local letter, seen = arrived()

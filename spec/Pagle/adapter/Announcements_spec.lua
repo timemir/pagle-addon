@@ -12,7 +12,8 @@ local LEVEL_12 = "L E V E L    1 2"
 local TOAST, NOD, BANNER = 8.7, 3.3, 5.9
 local LEAVE_TOAST, LEAVE_NOD, LEAVE_BANNER = 0.4, 0.3, 0.5
 
--- Core logged in on Forever with the Ledger registered. Each moment Core hands the summary is in `summarized`.
+-- Core logged in on Forever with the Ledger registered. Each moment Core hands the summary is in `summarized`. Its
+-- Angler has answered the Letter already, so no Letter arrives with its sound 4 s in (ONB-R10, ONB-R12).
 local function loadCore()
 	local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog() }))
 	loaded.client.addons.Pagle_Ledger = { metadata = { ["X-Pagle-API"] = "1" } }
@@ -22,6 +23,7 @@ local function loadCore()
 	end
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 	loaded.client.fire("PLAYER_LOGIN")
+	loaded.ns.onboarding:State().letter = "declined"
 	loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 	loaded.client.runTimers()
 	return loaded, M, summarized

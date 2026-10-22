@@ -196,6 +196,9 @@ M:RegisterFirstLook(set)        -- ONB-R56
 M:ShowFirstLook(id, again?)     -- from the window's OnShow; no-op if seen or notes are off, unless `again` (the "?", ONB-R59)
 
 M:CompleteEveningItem(id)       -- ONB-R61 ("journal" for the Ledger, "hunts" for Hunts)
+
+M:SetDialogOpen(open)           -- ONB-R100: a dialog of the Module's own that asks the player something opened (true)
+                                -- or closed (false); the Letter waits while any is open (QoL's conflict note)
 ```
 
 - **ONB-R90** Each call raises a Lua error at the caller, adding nothing, for a missing or mistyped field (CORE-R14's sense). A Module calls them only `if M.RegisterGuideStep then` (and likewise for each), so the same code runs on a Core without them.
@@ -247,7 +250,7 @@ See the kit's `SOUND.md`. New events: `letter` (TUTORIAL_POPUP), `noteIn` (IG_CH
 
 ## Edge cases
 
-- **ONB-R100 Angleur or Fishing Buddy loaded.** QoL's conflict note (QOL-R81) comes first; the Letter waits until it's answered or dismissed (ONB-R10). While QoL stands down (QOL-R82), the Casting step reads, under its title, "Pagle’s Fishing key is resting while {other} has it. You can still cast with a double right-click." and its binding field is disabled.
+- **ONB-R100 Angleur or Fishing Buddy loaded.** QoL's conflict note (QOL-R81) comes first; the Letter waits until it's answered or dismissed (ONB-R10). Core knows it is open without reading QoL (ADR 0001): QoL calls `M:SetDialogOpen(true)` as the note shows and `M:SetDialogOpen(false)` once it, and the Reload now note that follows a choice (QOL-R83), have both gone. While QoL stands down (QOL-R82), the Casting step reads, under its title, "Pagle’s Fishing key is resting while {other} has it. You can still cast with a double right-click." and its binding field is disabled.
 - **ONB-R101 QoL off.** No Casting or Fishing clothes steps, no `qol.lure` or `core.character` note; the `cast` item's hint is the QoL-off one.
 - **ONB-R102 Ledger off.** No Your Ledger step, no `journal` item, no Journal First look; Welcome and What's in the box still read correctly (they name only registered parts).
 - **ONB-R103 Every Module off.** The guide has Core's four steps; What's in the box shows only the Curio Shop and the line "Turn parts on in the AddOns list."

@@ -359,6 +359,15 @@ ns.L = {
 	GUIDE_OFF_RIGHT_TITLE = "A short list, if you like",
 	GUIDE_OFF_AGAIN = "|cff3e220c/pagle guide|r opens this guide again.",
 
+	-- The Letter (ONB-R11, board "1 · The letter arrives"): its kicker, its line in the hand, its two buttons and the
+	-- monogram pressed in its seal; the tour stop's label (ONB-R84).
+	LETTER_KICKER = "A letter, left on the dock",
+	LETTER_LINE = "Pagle has arrived. Open it whenever you’re ready; it’ll keep.",
+	LETTER_OPEN = "Open the letter",
+	LETTER_LATER = "Later",
+	LETTER_SEAL = "P",
+	DEV_TOUR_LETTER = "the Letter",
+
 	-- Core's own slots (SHOP-R25): their labels. Their goods' names and descriptions are lore (DATA-R101), in
 	-- data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`.
 	SLOT_TOAST_STYLE = "Toast style",

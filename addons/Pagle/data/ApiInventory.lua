@@ -115,6 +115,7 @@ ns.API_INVENTORY = {
 	"ITEM_QUALITY_COLORS",
 	"InCombatLockdown",
 	"IsFishingLoot",
+	"IsInInstance",
 	"IsKeyDown",
 	"IsKeyPressIgnoredForBinding",
 	"IsMounted",

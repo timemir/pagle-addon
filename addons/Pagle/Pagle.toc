@@ -123,5 +123,6 @@ adapter\Shop.lua
 adapter\GuideKit.lua
 adapter\GuideBook.lua
 adapter\Guide.lua
+adapter\Letter.lua
 adapter\Tour.lua
 adapter\Login.lua
