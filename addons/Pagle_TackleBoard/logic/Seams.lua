@@ -48,6 +48,10 @@ local ns = select(2, ...)
 --                             timing: `done` calls it after ns.ReportCoins, and the projection's apply after a live
 --                             entry that changes the XP, so Core takes that entry as the one it came from (AXP-R7).
 --                             Reports ns.State().xp, 0 before Start. Defined in adapter/Moments.lua.
+--   ns.RefreshGoods()         Asks Core to read the earned goods again with M:RefreshGoods (TKB-R126, SHOP-R31): the
+--                             projection's apply after a live entry that reaches an earned good's Campfire milestone,
+--                             and its `done` after ns.ReportXP. Nothing without a Module handle. Defined in
+--                             adapter/Goods.lua.
 --   ns.RaiseMoment(moment, remake?), ns.RaiseWriteUp(section), ns.SetSummaryLine(line)
 --                             What logic/Moments.lua tells Core (TKB-R84–R87), through the Module handle; nothing while
 --                             the Module is inert (CORE-R13). A goal's moment still reading "…" for a Species name
