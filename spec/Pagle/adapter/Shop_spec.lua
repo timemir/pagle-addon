@@ -29,6 +29,9 @@ local EXPANSION = {
 		{ "Rune-Plate", 2000 },
 		{ "Illuminated Folio", 5000 },
 		{ STORM_NAME, 5000 },
+		-- The round two's not for sale (SHOP-R29, SHOP-R50): their row's tag, not a price.
+		{ "Sonar Scope", nil, "Link the companion" },
+		{ "Prize Foil", nil, "From a crate" },
 	},
 	soundset = {
 		{ "Rain on the Lake", 150 },
@@ -47,7 +50,7 @@ local EXPANSION = {
 }
 
 -- `lines` with the expansion's rows of Core's slot `slot` ("toaststyle" or "soundset") after them, those priced at
--- most `most` (all by default), as the list shows them: "<name> | <price>".
+-- most `most` (all by default, the ones not for sale with them), as the list shows them: "<name> | <price or tag>".
 ---@param lines string[]
 ---@param slot string
 ---@param most number?
@@ -55,7 +58,11 @@ local EXPANSION = {
 local function withExpansion(lines, slot, most)
 	local all = { unpack(lines) }
 	for _, good in ipairs(EXPANSION[slot]) do
-		if good[2] <= (most or math.huge) then
+		if good[3] then
+			if not most then
+				all[#all + 1] = ("%s | %s"):format(good[1], good[3])
+			end
+		elseif good[2] <= (most or math.huge) then
 			all[#all + 1] = ("%s | %s"):format(good[1], breakUpLargeNumbers(good[2]))
 		end
 	end
@@ -79,7 +86,7 @@ end
 -- the crest slot with Plain alone: its earned crests, the Ledger's two zone crests and Core's fish crests, aren't
 -- listed or counted (SHOP-R25).
 local CORE_UNBOUGHT = concat({
-	withExpansion({ "TOAST STYLE 1 of 16", "Torn Page | IN USE", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle"),
+	withExpansion({ "TOAST STYLE 1 of 18", "Torn Page | IN USE", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle"),
 	withExpansion({ "SOUND SET 1 of 14", "Driftwood | IN USE", "Gilded | 400" }, "soundset"),
 	{ "CRESTS 1 of 1", "Plain | IN USE" },
 })
@@ -649,7 +656,7 @@ describe("The Curio Shop's list", function()
 		search:Type("RIP")
 
 		assert.is_false(search.Instructions:IsShown())
-		assert.are.same({ "TOAST STYLE 1 of 16", "Ripple | 150" }, listed(loaded))
+		assert.are.same({ "TOAST STYLE 1 of 18", "Ripple | 150" }, listed(loaded))
 		search:Type("nothing like it")
 		assert.are.same({}, listed(loaded))
 		assert.is_true(shopFrame(loaded).empty:IsShown())
@@ -669,7 +676,7 @@ describe("The Curio Shop's list", function()
 		filters.canAfford:Click()
 		assert.are.same(
 			concat({
-				withExpansion({ "TOAST STYLE 1 of 16", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle", 500),
+				withExpansion({ "TOAST STYLE 1 of 18", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle", 500),
 				withExpansion({ "SOUND SET 1 of 14", "Gilded | 400" }, "soundset", 500),
 				bindingsAtMost(500),
 				{ "NOTEBOOK COVER 1 of 2", "Velvet | 400" },
@@ -682,7 +689,7 @@ describe("The Curio Shop's list", function()
 		assert.are.equal("PagleShopPill", filters.all.label.fontObject)
 		filters.owned:Click()
 		assert.are.same({
-			"TOAST STYLE 1 of 16",
+			"TOAST STYLE 1 of 18",
 			"Torn Page | IN USE",
 			"SOUND SET 1 of 14",
 			"Driftwood | IN USE",
@@ -696,9 +703,9 @@ describe("The Curio Shop's list", function()
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(9 + 25 + 35, #listed(loaded))
+		assert.are.equal(9 + 27 + 35, #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(15 + 25 + 36, #listed(loaded))
+		assert.are.equal(15 + 27 + 36, #listed(loaded))
 	end)
 
 	it(
@@ -719,7 +726,7 @@ describe("The Curio Shop's list", function()
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
-			assert.are.equal(15 + 25 + 36, #listed(loaded))
+			assert.are.equal(15 + 27 + 36, #listed(loaded))
 		end
 	)
 
@@ -899,7 +906,7 @@ describe("The Curio Shop's stage", function()
 			assert.are.equal("IN USE", stage.tags:GetText())
 			assert.is_false(stage.use:IsShown())
 			assert.are.same(
-				{ "TOAST STYLE 2 of 16", "Torn Page | default", "Ripple | IN USE" },
+				{ "TOAST STYLE 2 of 18", "Torn Page | default", "Ripple | IN USE" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
 		end
@@ -1451,7 +1458,7 @@ describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion 
 
 			assert.are.equal("50", purse.balance:GetText())
 			assert.are.same(
-				{ "TOAST STYLE 2 of 16", "Torn Page | default", "Ripple | IN USE" },
+				{ "TOAST STYLE 2 of 18", "Torn Page | default", "Ripple | IN USE" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
 			assert.is_false(rowOf(loaded, "core.toaststyle.page").stepDown:IsShown())
@@ -1591,4 +1598,125 @@ describe("The Curio Shop's art", function()
 			assert.are.equal(file, #readFile("addons/Pagle/media/fonts/" .. file) > 0 and file)
 		end
 	end)
+end)
+
+describe("The Curio crate in the window", function()
+	-- The crate's row, apart from the pooled lines.
+	local function crateLine(loaded)
+		return shopFrame(loaded).crateLine
+	end
+
+	-- How far down the scroll child `line` sits.
+	local function topOf(line)
+		local _, _, _, _, y = line:GetPoint(1)
+		return -y
+	end
+
+	-- The crate's odds on the stage as shown: "<name> <chance>", with " (struck)" for one struck through.
+	local function oddsShown(stage)
+		local lines = {}
+		for _, line in ipairs(stage.odds.lines) do
+			if line:IsShown() then
+				lines[#lines + 1] = ("%s %s%s"):format(
+					line.label:GetText(),
+					line.chance:GetText(),
+					line.strike:IsShown() and " (struck)" or ""
+				)
+			end
+		end
+		return lines
+	end
+
+	it(
+		"draws its own row at the very top of the list, above the first slot, whichever chip is on (SHOP-R50,"
+			.. " wallet-and-shop.md › UI)",
+		function()
+			local loaded = shopCore()
+			loaded.env.Pagle.OpenShop()
+			local frame = shopFrame(loaded)
+
+			for i = 1, #frame.chips do
+				if frame.chips[i]:IsShown() then
+					frame.chips[i]:Click()
+					local line = crateLine(loaded)
+					assert.is_true(line:IsShown(), frame.chips[i].label:GetText())
+					assert.are.same({ "Curio crate", "2,000", 0 }, {
+						line.label:GetText(),
+						line.price.amount:GetText(),
+						topOf(line),
+					})
+					assert.are.equal(44 + 6, topOf(frame.lines[1]), "the first slot's header under it")
+				end
+			end
+			frame.chips[1]:Click()
+			frame.search:Type("ripple")
+			assert.is_false(crateLine(loaded):IsShown(), "a search its label doesn't match")
+			assert.are.same({ "TOAST STYLE 1 of 18", "Ripple | 150" }, listed(loaded))
+		end
+	)
+
+	it("shows its odds, struck through once owned, and its pity on the stage when picked (SHOP-R54)", function()
+		local loaded, handles = shopCore()
+		handles.Ledger:ReportCoinsEarned(2500)
+		loaded.env.Pagle.OpenShop()
+
+		crateLine(loaded):Click()
+
+		local stage = shopFrame(loaded).stage
+		assert.are.equal("Curio crate", stage.name:GetText())
+		assert.are.same({ "Prize Foil 20%", STORM_NAME .. " 40%", "Shagreen and Bone 40%" }, oddsShown(stage))
+		assert.are.same(
+			{ true, "A crate-only look within 8 more crates" },
+			{ stage.pity:IsShown(), stage.pity:GetText() }
+		)
+		assert.is_true(stage.buy:IsEnabled())
+		assert.is_true(crateLine(loaded).selectedMark:IsShown())
+
+		loaded.ns.RecordPurchase("core.toaststyle.storm", 0)
+		loaded.env.Pagle.OpenShop("core.crate")
+		assert.are.same(
+			{ "Prize Foil 33%", STORM_NAME .. "  (struck)", "Shagreen and Bone 67%" },
+			oddsShown(shopFrame(loaded).stage)
+		)
+	end)
+
+	it(
+		'opens one from its bill, "Open a Curio crate?", and shows the good it gave on the stage (SHOP-R54,'
+			.. " SHOP-R55)",
+		function()
+			local loaded, handles = shopCore()
+			handles.Ledger:ReportCoinsEarned(2500)
+
+			local bill = askToBuy(loaded, "core.crate")
+
+			local shown = billShown(bill)
+			assert.are.same({
+				"Open a Curio crate?",
+				"One look you don't own yet, by chance; the chances are on the crate.",
+				"2,000",
+				"500",
+				true,
+			}, { shown.question, shown.fine, shown.price[2], shown.left[2], shown.shown })
+
+			bill.buy:Click()
+
+			assert.is_false(bill:IsShown())
+			local given = loaded.ns.walletSnapshot.crates[1]
+			assert.is_true(loaded.env.Pagle.IsOwned(given))
+			assert.are.equal("500", shopFrame(loaded).purse.balance:GetText())
+			local stage = shopFrame(loaded).stage
+			if given == "core.binding.shagreenbone" then
+				assert.are.equal("Curio crate", stage.name:GetText())
+				assert.is_true(stage.caption:IsShown())
+			else
+				assert.are.equal(loaded.ns.goods:Good(given).name, stage.name:GetText())
+				assert.is_true(rowOf(loaded, given).selectedMark:IsShown())
+			end
+
+			-- The next bill for a good says what it always said.
+			handles.Ledger:ReportCoinsEarned(2650)
+			local again = billShown(askToBuy(loaded, "core.toaststyle.ripple"))
+			assert.are.same({ "Buy Ripple?", "Looks are yours for good." }, { again.question, again.fine })
+		end
+	)
 end)

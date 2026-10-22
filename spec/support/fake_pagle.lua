@@ -95,9 +95,10 @@
 --- holds it (fake.global.activityXP.earned), firing nothing: how a spec has a disabled or uninstalled Module's last
 --- total count (AXP-R3, AXP-R90), listed by Pagle.GetActivityXP with `enabled` false unless that Module registers.
 --- Raises an error for a total M:ReportXPEarned would refuse.
----@field setPushedContent fun(content: { state: PagleCompanionState?, items: table[]?, data: any }) What the
+---@field setPushedContent fun(content: { state: PagleCompanionState?, items: table[]?, keyId: string?, seq: integer?, data: any }) What the
 --- companion's data addon gives this login (core/pushed-content.md), before fake.login: `{ state, items }` is how
---- the check ends, `items` in payload order (the kinds and versions Core passes on are kept, PUSH-R21); `{ data }` is a
+--- the check ends, `items` in payload order (the kinds and versions Core passes on are kept, PUSH-R21), with the
+--- accepted file's `keyId` and `seq` if given (a "connected" end with them appends the Companion entry, LOG-R37); `{ data }` is a
 --- raw PagleContentData that Core's real check reads at login and checks (a spec registers the test key in
 --- fake.ns.PUSHED_KEYS, as helpers.lua's pushedContentFixtures says). Either way Pagle.GetCompanionState reads
 --- "checking" from login until the check ends on the frame after it (fake.nextFrame), when PushedContentReady(state)
@@ -965,7 +966,7 @@ end)
 -- step 2 does (PUSH-R10): over a raw PagleContentData Core's real check runs on the fake's frames, and for a set
 -- `{ state, items }` the check ends with them on the frame after login, through Core's own end of a check.
 part(function(fake, Pagle, ns, host)
-	local content ---@type { state: PagleCompanionState?, items: table[]?, data: any }?
+	local content ---@type { state: PagleCompanionState?, items: table[]?, keyId: string?, seq: integer?, data: any }?
 	local loggedIn = false
 	ns.WirePushedContent(host, {
 		data = function()
@@ -996,7 +997,12 @@ part(function(fake, Pagle, ns, host)
 			local state = content.state
 			if state ~= "checking" then
 				fake.queueFrame(function()
-					pushed:Finish({ state = state or "missing", items = content.items })
+					pushed:Finish({
+						state = state or "missing",
+						items = content.items,
+						keyId = content.keyId,
+						seq = content.seq,
+					})
 				end)
 			end
 		else

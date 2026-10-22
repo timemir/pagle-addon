@@ -145,6 +145,22 @@ describe("ns.NewGoods", function()
 			},
 			{ "a progress on a good that isn't earned", "Hunts", { good = cover({ progress = function() end }) } },
 			{ "a group its slot doesn't have", "Hunts", { good = cover({ group = "gilt" }) } },
+			{ "a crate-only good from a Module", "Hunts", { good = cover({ tier = false, crate = true }) } },
+			{
+				"a crate-only good for sale",
+				"Core",
+				{ good = { id = "core.x", slot = "core.toaststyle", name = "X", tier = 1, crate = true } },
+			},
+			{
+				"a crate-only good earned",
+				"Core",
+				{ good = { id = "core.x", slot = "core.toaststyle", name = "X", isEarned = isEarned, crate = true } },
+			},
+			{
+				"a crate that isn't true",
+				"Core",
+				{ good = { id = "core.x", slot = "core.toaststyle", name = "X", crate = "yes" } },
+			},
 			{
 				"groups that aren't a list",
 				"Hunts",
@@ -371,6 +387,41 @@ describe("ns.NewGoods", function()
 				env.goods:IsForSale("hunts.cover.none"),
 			})
 		end)
+
+		it(
+			"takes Core's crate-only good, cached as one, never for sale, owned once a crate's good is handed over"
+				.. " (SHOP-R22, SHOP-R26, SHOP-R50)",
+			function()
+				local env = newGoods()
+				assert.is_nil(
+					env.goods:RegisterSlot(
+						"Core",
+						{ id = "core.toaststyle", label = "Toast style", category = "Announcements" }
+					)
+				)
+				assert.is_nil(
+					env.goods:RegisterGood(
+						"Core",
+						{ id = "core.toaststyle.page", slot = "core.toaststyle", name = "Torn Page", default = true }
+					)
+				)
+
+				assert.is_nil(
+					env.goods:RegisterGood(
+						"Core",
+						{ id = "core.toaststyle.foil", slot = "core.toaststyle", name = "Prize Foil", crate = true }
+					)
+				)
+
+				assert.is_true(env.db.global.goods["core.toaststyle.foil"].crate)
+				assert.are.same({ false, false }, {
+					env.goods:IsForSale("core.toaststyle.foil"),
+					env.goods:IsOwned("core.toaststyle.foil"),
+				})
+				env.goods:SetPurchased({ ["core.toaststyle.foil"] = true }) -- the wallet's owned set, crates' goods in it
+				assert.is_true(env.goods:IsOwned("core.toaststyle.foil"))
+			end
+		)
 
 		it("owns a registered slot's default, not a good for sale (SHOP-R22, SHOP-R30)", function()
 			local env = newGoods()

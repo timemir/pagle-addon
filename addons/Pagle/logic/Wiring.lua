@@ -534,6 +534,21 @@ function ns.WireLogEntries(host)
 		return purchase
 	end
 
+	--- Appends Core's one Companion entry (`K1`) with the accepted file's `keyId` and `seq`, unless the log holds one
+	--- already, and hands it to the projections live (LOG-R37): the wallet's marks the companion linked (SHOP-R29).
+	--- Returns the record, or nil when the log had one. The pushed-content check's end is its only caller.
+	---@param keyId string
+	---@param seq integer
+	---@return PagleCompanion?
+	function ns.RecordCompanion(keyId, seq)
+		if host.catchLog():HasCompanion() then
+			return nil
+		end
+		local companion = append({ kind = "companion", keyId = keyId, pushedSeq = seq }, "ns.RecordCompanion")
+		---@cast companion PagleCompanion
+		return companion
+	end
+
 	---@class PagleModuleHandle
 	local ModuleHandle = ns.ModuleHandle
 	--- Appends a Prestige for the logged-in character, hands it to the projections live, then fires `Prestige`
@@ -613,7 +628,7 @@ function ns.WireGoods(host)
 	--- Registers one of the Module's goods in one of its slots (SHOP-R21, SHOP-R22), calling its isEarned() now if
 	--- it is earned (SHOP-R31). Raises an error at the Module's call, registering nothing, for each mistake SHOP-R23
 	--- lists: a duplicate ID or one without the Module's prefix, an unknown slot or another's, a second default, or
-	--- not exactly one of `default`, `tier` (1, 2 or 3) and `isEarned`.
+	--- not exactly one of `default`, `tier` (1 to 5) and `isEarned`, or a `crate` (Core's only, SHOP-R22).
 	---@param good PagleGood
 	function ModuleHandle:RegisterGood(good)
 		local module = host.registry:ModuleCalling(self, "RegisterGood", "good")
@@ -730,7 +745,8 @@ end
 ---@class PagleShop
 ---@field Open fun(goodID: string?) -- Pagle.OpenShop
 ---@field Toggle fun()              -- /pagle shop
----@field Buy fun(goodID: string, useNow: boolean): boolean -- the bill of sale's Buy: true if it bought
+---@field Buy fun(goodID: string, useNow: boolean): boolean, string? -- the bill of sale's Buy: true if it bought, and
+--- the good a Curio crate gave
 ---@field Use fun(goodID: string): boolean -- the stage's Use: true if it equipped the good
 ---@field OnOpen fun(fn: fun())     -- fn is called each time the shop opens (the First evening list's `shop`)
 
@@ -755,6 +771,8 @@ function ns.WireShop(host, seams)
 			balance = ns.wallet:Get(),
 			updating = ns.projections:IsUpdating(),
 			format = format,
+			wallet = ns.walletSnapshot,
+			now = host.serverTime(),
 		})
 	end
 
@@ -762,19 +780,34 @@ function ns.WireShop(host, seams)
 	--- with its ID and its price now, the purchase entry's only caller (LOG-R39, SHOP-R10), which the wallet projection
 	--- applies live, so the balance drops and the good is owned at once; then, with `useNow`, equips it (SHOP-R32). One
 	--- good, one confirmation; no Announcement and no summary line follow (ANN-R23). Returns whether it bought.
+	--- The Curio crate (`core.crate`) buys the same way, one crate a confirmation, and opens at once (SHOP-R50,
+	--- SHOP-R55): its purchase entry is its draw, which the wallet projection makes as it applies it; the good it gave
+	--- is returned second, and with `useNow` equipped if it is registered.
 	---@param goodID string
 	---@param useNow boolean
-	---@return boolean
+	---@return boolean bought
+	---@return string? given the good a crate gave
 	local function buy(goodID, useNow)
 		local purchase = ns.ShopModel():Purchase(goodID)
 		if not purchase then
 			return false
 		end
-		ns.RecordPurchase(purchase.id, purchase.price)
-		if useNow then
-			ns.goods:SetEquipped(purchase.slot, purchase.id)
+		if not purchase.crate then
+			ns.RecordPurchase(purchase.id, purchase.price)
+			if useNow then
+				ns.goods:SetEquipped(assert(purchase.slot), purchase.id)
+			end
+			return true
 		end
-		return true
+		local before = ns.walletSnapshot and #ns.walletSnapshot.crates or 0
+		ns.RecordPurchase(purchase.id, purchase.price)
+		local crates = ns.walletSnapshot and ns.walletSnapshot.crates or {}
+		local given = #crates > before and crates[#crates] or nil
+		local good = given and ns.goods:Good(given)
+		if useNow and good then
+			ns.goods:SetEquipped(good.slot, good.id)
+		end
+		return true, given
 	end
 
 	--- Equips `goodID` in its slot, if it is an owned good registered this session (SHOP-R32): the stage's Use.
@@ -1011,7 +1044,9 @@ end
 --- once, its new totals in its done, and each live purchase as it counts.
 ---@param host PagleHost
 function ns.WireWalletProjection(host)
-	--- Login step 1, once PagleDB is open and ns.wallet and ns.goods are wired.
+	--- Login step 1, once PagleDB is open and ns.wallet and ns.goods are wired. Each hand-over's crates and companion
+	--- land in ns.walletSnapshot; when the companion turns linked, Core's earned goods refresh, so Sonar Scope is owned
+	--- right after its Companion entry is applied live, or at the done that reads it (SHOP-R29, SHOP-R31).
 	function ns.StartWalletProjection()
 		ns.walletProjection = ns.AddWalletProjection({
 			projections = ns.projections,
@@ -1019,8 +1054,25 @@ function ns.WireWalletProjection(host)
 			iterate = host.iterate,
 			wallet = ns.wallet,
 			goods = ns.goods,
+			published = function(snapshot)
+				local linked = ns.CompanionLinked()
+				ns.walletSnapshot = snapshot
+				if snapshot.companion ~= linked then
+					ns.goods:Refresh(ns.CORE_OWNER)
+				end
+			end,
 		})
 	end
+end
+
+--- The wallet projection's last hand-over (PagleWalletSnapshot), or nil before its first.
+---@type PagleWalletSnapshot?
+ns.walletSnapshot = nil
+
+--- Whether the wallet projection has applied a Companion entry (SHOP-R29): Sonar Scope's isEarned().
+---@return boolean
+function ns.CompanionLinked()
+	return ns.walletSnapshot ~= nil and ns.walletSnapshot.companion == true
 end
 
 --- Core's variety projection (VAR-R10, VAR-R13, LOG-R78): `ns.StartVarietyProjection()` binds it at login step 1,
@@ -1242,6 +1294,12 @@ function ns.WirePushedContent(host, client)
 		clock = host.clock,
 		nextFrame = host.nextFrame,
 		fire = function(state)
+			-- LOG-R37: the first time the check ends "connected", the log gets its one Companion entry, before
+			-- PushedContentReady; an error appending it is reported, and the check's end stands.
+			local keyId, seq = ns.pushedContent:Accepted()
+			if state == "connected" and keyId and host.character() then
+				host.call(ns.RecordCompanion, keyId, seq)
+			end
 			host.fire("PushedContentReady", state)
 		end,
 		report = host.report,

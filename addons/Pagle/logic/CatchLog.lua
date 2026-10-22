@@ -12,7 +12,7 @@ ns.GOOD_ID_PATTERN = "^[%w_.]+$"
 ---@class PagleRecord
 ---@field seq integer            -- index in PagleLog.entries (LOG-R14)
 ---@field id string              -- entry ID: <character GUID>-<time>-<tie> (LOG-R13)
----@field kind "cast"|"skill"|"prestige"|"build"|"purchase"|"module"
+---@field kind "cast"|"skill"|"prestige"|"build"|"purchase"|"module"|"companion"
 ---@field char integer           -- index into Angler.characters
 ---@field time integer           -- server time
 
@@ -46,6 +46,16 @@ ns.GOOD_ID_PATTERN = "^[%w_.]+$"
 ---@class PaglePurchase : PagleRecord
 ---@field good string            -- the good's ID, [%w_.]+
 ---@field price integer          -- a whole number of Coins
+
+--- A Companion entry (`K1`, LOG-R37): the companion's data addon passed Core's check once, with that file's keyId and
+--- seq. Core's own: only Core's projections are handed it (the wallet's reads it, SHOP-R29), never Pagle.IterateCatches
+--- or a Module.
+---@class PagleCompanion : PagleRecord
+---@field keyId string           -- the accepted file's keyId, [%w_.-]+
+---@field pushedSeq integer      -- the accepted file's seq (PUSH-R13)
+
+--- Who reads a Companion entry (LOG-R37): Core's projections, which read the log as this reader (CatchLog:Iterate).
+ns.COMPANION_READER = "Core"
 
 --- A Module record (`A1`, LOG-R40, ADR 0008): opaque to Core, replayed only to the Module that wrote it (LOG-R41).
 ---@class PagleModuleRecord : PagleRecord
@@ -320,6 +330,22 @@ local kinds = {
 		end,
 	},
 
+	-- LOG-R37: an additive kind, so PagleLog.format stays (LOG-R18); a Core from before it skips it (LOG-R16).
+	K1 = {
+		kind = "companion",
+		count = 2,
+		encode = function(record)
+			if type(record.keyId) ~= "string" or not string.find(record.keyId, "^[%w_.%-]+$") then
+				error("not a keyId: " .. tostring(record.keyId))
+			end
+			return { record.keyId, integerField(record.pushedSeq) }
+		end,
+		decode = function(record, f)
+			record.keyId, record.pushedSeq = f[1], wholeNumber(f[2])
+			return string.find(f[1], "^[%w_.%-]+$") ~= nil and record.pushedSeq ~= nil
+		end,
+	},
+
 	A1 = {
 		kind = "module",
 		count = 3,
@@ -343,7 +369,28 @@ local kinds = {
 
 -- The tag each record kind is written with: the newest one for that kind.
 ---@type table<string, string>
-local TAGS = { cast = "C1", skill = "S1", build = "B1", prestige = "P1", purchase = "U1", module = "A1" }
+local TAGS = {
+	cast = "C1",
+	skill = "S1",
+	build = "B1",
+	prestige = "P1",
+	purchase = "U1",
+	module = "A1",
+	companion = "K1",
+}
+
+-- Who a record is for, when not every reader: a Module record's Module (LOG-R41), Core for a Companion entry
+-- (LOG-R37); nil for a record every reader gets.
+---@param record PagleRecord
+---@return string?
+function ns.RecordReader(record)
+	if record.kind == "module" then
+		return (record --[[@as PagleModuleRecord]]).module
+	elseif record.kind == "companion" then
+		return ns.COMPANION_READER
+	end
+	return nil
+end
 
 -- Decodes one entry string into a typed record, or nil if the codec can't read it (LOG-R16). Its Cast items carry no
 -- size or variety yet: a reader that sizes them does so with the counts at its seq (sizeCast).
@@ -685,7 +732,7 @@ end
 -- CatchLog:Reverse's walk; Casts carry their sizes when `sized` and the log has a catalogue. Walking back, the
 -- counts start at `fromSeq` and each entry passed is taken back out, so they always cover the entries before the next.
 ---@param catchLog PagleCatchLog
----@param kind "cast"|"skill"|"prestige"|"build"|"purchase"
+---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"
 ---@param fromSeq integer?
 ---@param sized boolean
 ---@return fun(): PagleRecord?
@@ -752,7 +799,8 @@ end
 --- log is read whole or from a later `afterSeq` (LOG-R98, LOG-R100). An entry the codec can't read is skipped and
 --- counted in `PagleDB.global.decodeErrors`, once per entry for this login however many readers meet it (LOG-R16). Module records are yielded only to the
 --- Module named by `module`, its own (LOG-R41, LOG-R42): without one, as Pagle.IterateCatches reads, none is; another
---- Module's are skipped, never counted as undecodable.
+--- Module's are skipped, never counted as undecodable. A Companion entry is yielded only to ns.COMPANION_READER, Core's
+--- projections (LOG-R37).
 ---@param afterSeq integer?
 ---@param module string? the reading Module's def.name (M:IterateCatches)
 ---@return fun(): PagleRecord?
@@ -773,7 +821,7 @@ function CatchLog:Iterate(afterSeq, module)
 			if not record then
 				countUndecodable(self, seq)
 			else
-				local owner = record.kind == "module" and (record --[[@as PagleModuleRecord]]).module or nil
+				local owner = ns.RecordReader(record)
 				if owner == nil or owner == module then
 					cutter:Add(record)
 					return record
@@ -797,7 +845,7 @@ end
 --- It starts at `fromSeq` when given, else at the log's end. Records it yields carry no session tag; Casts carry
 --- the Simulated Sizes every other read gives them (LOG-R100). An entry of that kind the codec can't read is skipped
 --- and counted as `Iterate` does (LOG-R16).
----@param kind "cast"|"skill"|"prestige"|"build"|"purchase"
+---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"
 ---@param fromSeq integer?
 ---@return fun(): PagleRecord?
 function CatchLog:Reverse(kind, fromSeq)
@@ -807,8 +855,8 @@ end
 --- Appends an entry for `record`, a typed record without `seq` and `id` (`{ kind = "cast", char, time, outcome,
 --- conditions, items = { { itemID, quantity } } }`, `{ kind = "skill", char, time, rank, max, mod }`,
 --- `{ kind = "build", char, time, build, version }`, `{ kind = "prestige", char, time, rank, activityXP }` (0 without
---- activityXP) or
---- `{ kind = "purchase", char, time, good, price }`), and returns the record as every reader will see it.
+--- activityXP), `{ kind = "purchase", char, time, good, price }` or
+--- `{ kind = "companion", char, time, keyId, pushedSeq }`), and returns the record as every reader will see it.
 --- A Cast or Skill Reading carries its Session's ID (LOG-R98), and a Cast its Simulated Sizes, counted over the log
 --- before it (LOG-R100). Raises an error in the caller, appending nothing, for a record the codec can't write and read
 --- back.
@@ -840,7 +888,20 @@ function CatchLog:Append(record)
 	if appended.kind == "prestige" and self.prestiges then
 		self.prestiges = self.prestiges + 1
 	end
+	if appended.kind == "companion" then
+		self.companion = true
+	end
 	return appended
+end
+
+--- Whether the log holds a Companion entry (LOG-R37), as every reader sees it: found once a login by walking the log
+--- for `K1` entries, decoding only those, then kept by Append.
+---@return boolean
+function CatchLog:HasCompanion()
+	if self.companion == nil then
+		self.companion = self:Reverse("companion")() ~= nil
+	end
+	return self.companion
 end
 
 --- The number of Prestiges in the log (LOG-R38): its `P1` entries the codec can read, as every reader sees them.

@@ -31,6 +31,10 @@ local FIND_Y, FILTER_Y, CHIP_Y, CONTROLS_W = 14, 59, 98, 438
 local LIST_X, ROW_W, ROW_H, HEADER_H, GROUP_H = 16, 432, 44, 31, 26
 -- A group header's inset, at the medallions', and its rule's opacity, fainter than a slot's.
 local GROUP_X, GROUP_RULE_ALPHA = 8, 0.5
+-- The room under the Curio crate's row, before the first slot's header (SHOP-R50).
+local CRATE_GAP = 6
+-- The crate's odds on the description card (SHOP-R54): each pool good's line height, and the room above them.
+local ODDS_H, ODDS_PAD = 16, 4
 -- An earned good's progress dots on the description card (SHOP-R22): each one's size and the room between them, and
 -- the room above and under their row.
 local DOT, DOT_GAP, DOT_PAD = 10, 8, 8
@@ -118,7 +122,20 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@class PagleShopDots: Frame
 ---@field dots PagleShopDot[]         pooled: the shown ones are the good's, in order
 
+--- One pool good's line in the Curio crate's odds (SHOP-R54).
+---@class PagleShopOddsLine: Frame
+---@field label PagleShopFontString  the good's name
+---@field chance PagleShopFontString "40%", none for one owned
+---@field strike Texture             strikes an owned one through
+
+--- The Curio crate's odds on the description card.
+---@class PagleShopOdds: Frame
+---@field lines PagleShopOddsLine[]  pooled: the shown ones are the pool's, in order
+
 ---@class PagleShopStageFrame
+---@field odds PagleShopOdds           the Curio crate's odds, where a good's description goes (SHOP-R54)
+---@field pity PagleShopFontString     the crate's pity line under them
+---@field caption PagleShopFontString  the crate's line on the paper under the well (SHOP-R50)
 ---@field card PagleSprite            the showcase card, its dark well at the top
 ---@field area Frame                  where previews draw, clipped to the card
 ---@field previews table<string, Frame> each good's own stage frame, made at its first preview
@@ -184,6 +201,7 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@field scrollBar PagleShopScrollBar
 ---@field content Frame               the list's scroll child
 ---@field lines PagleShopLine[]       pooled: the shown ones are the list, in order
+---@field crateLine PagleShopLine?    the Curio crate's row, at the list's top, apart from the pooled lines (SHOP-R50)
 ---@field empty PagleShopFontString   "No looks match."
 ---@field stage PagleShopStageFrame
 ---@field bill PagleShopBill
@@ -545,16 +563,11 @@ local function drawChips(frame, chips)
 	return y + 28 + 12
 end
 
--- The pooled list line `i`, made with what a header and a row show; a line is either for good.
+-- A list line in the scroll child, made with what a header and a row show; a line is either for good.
 ---@param frame PagleShopFrame
----@param i integer
 ---@return PagleShopLine
-local function lineAt(frame, i)
-	local line = frame.lines[i]
-	if line then
-		return line
-	end
-	line = CreateFrame("Button", nil, frame.content) --[[@as PagleShopLine]]
+local function newLine(frame)
+	local line = CreateFrame("Button", nil, frame.content) --[[@as PagleShopLine]]
 	line:SetWidth(ROW_W)
 	line.selectedMark = CreateFrame("Frame", nil, line) --[[@as PagleThreeSlice]]
 	line.selectedMark:SetFrameLevel(line:GetFrameLevel())
@@ -593,6 +606,15 @@ local function lineAt(frame, i)
 			redraw(true)
 		end
 	end)
+	return line
+end
+
+-- The pooled list line `i`.
+---@param frame PagleShopFrame
+---@param i integer
+---@return PagleShopLine
+local function lineAt(frame, i)
+	local line = frame.lines[i] or newLine(frame)
 	frame.lines[i] = line
 	return line
 end
@@ -672,12 +694,40 @@ local function drawRowEnd(line, data)
 	drawRowTag(line, data)
 end
 
--- Draws the list from `groups`: each group's header, then its rows, top to bottom in the scroll child, a grouped
--- slot's group header (SHOP-R27) over the first row of its group.
+-- Draws one good's row on `line` at `y` in the scroll child, from `data`.
+---@param line PagleShopLine
+---@param frame PagleShopFrame
+---@param data PagleShopRow
+---@param y number
+local function drawRow(line, frame, data, y)
+	shapeLine(line, "row")
+	line.goodID = data.id
+	line.listY = y
+	line:SetHeight(ROW_H)
+	at(line, frame.content, LIST_X, y)
+	ns.SetShopText(line.label, data.name)
+	ns.SetShopBezel(line.bezel, data.icon, data.state == "putAway", data.shield)
+	drawRowEnd(line, data)
+	line.selectedMark:SetShown(data.id == selected)
+	line:SetAlpha(data.state == "putAway" and GREYED_ALPHA or 1)
+	line:Show()
+end
+
+-- Draws the list from `groups`, under the Curio crate's row (`crate`, SHOP-R50) when the list shows it: each group's
+-- header, then its rows, top to bottom in the scroll child, a grouped slot's group header (SHOP-R27) over the first row
+-- of its group. The crate's row is its own line, apart from the pooled ones.
 ---@param frame PagleShopFrame
 ---@param groups PagleShopGroup[]
-local function drawList(frame, groups)
+---@param crate PagleShopRow?
+local function drawList(frame, groups, crate)
 	local i, y = 0, 0
+	frame.crateLine = frame.crateLine or newLine(frame)
+	if crate then
+		drawRow(frame.crateLine, frame, crate, y)
+		y = y + ROW_H + CRATE_GAP
+	else
+		frame.crateLine:Hide()
+	end
 	for _, group in ipairs(groups) do
 		i = i + 1
 		local header = lineAt(frame, i)
@@ -703,18 +753,7 @@ local function drawList(frame, groups)
 				y = y + GROUP_H
 			end
 			i = i + 1
-			local row = lineAt(frame, i)
-			shapeLine(row, "row")
-			row.goodID = data.id
-			row.listY = y
-			row:SetHeight(ROW_H)
-			at(row, frame.content, LIST_X, y)
-			ns.SetShopText(row.label, data.name)
-			ns.SetShopBezel(row.bezel, data.icon, data.state == "putAway", data.shield)
-			drawRowEnd(row, data)
-			row.selectedMark:SetShown(data.id == selected)
-			row:SetAlpha(data.state == "putAway" and GREYED_ALPHA or 1)
-			row:Show()
+			drawRow(lineAt(frame, i), frame, data, y)
 			y = y + ROW_H
 		end
 	end
@@ -722,7 +761,7 @@ local function drawList(frame, groups)
 		frame.lines[j]:Hide()
 	end
 	frame.content:SetHeight(math.max(y + 8, 1))
-	frame.empty:SetShown(i == 0)
+	frame.empty:SetShown(i == 0 and not crate)
 end
 
 -- Fits the scroll bar to the list: shown only when the list overflows the tray, its thumb as long as the share that
@@ -818,6 +857,11 @@ local function buildStage(frame)
 	stage.hint = ns.ShopText(stage.area, "Stage")
 	stage.hint:SetPoint("CENTER", stage.area, "TOP", 0, -WELL_H / 2)
 	ns.SetShopText(stage.hint, L.SHOP_PICK)
+	-- The Curio crate's caption on the paper under the well (SHOP-R50).
+	stage.caption = ns.ShopText(stage.area, "Notes")
+	stage.caption:SetWidth(STAGE_W - 40)
+	stage.caption:SetWordWrap(true)
+	stage.caption:SetPoint("TOP", stage.area, "TOP", 0, -(WELL_H + 10))
 
 	-- The description card, stretched from its designed 176 to INFO_H: it is plain paper.
 	local info = ns.ArtSprite(frame, "Papers", "info", "ARTWORK", 1)
@@ -843,6 +887,14 @@ local function buildStage(frame)
 	stage.dots:SetHeight(DOT)
 	stage.dots.dots = {}
 	stage.dots:Hide()
+	-- The Curio crate's odds, where a good's description goes, and its pity line under them (SHOP-R54).
+	stage.odds = CreateFrame("Frame", nil, frame) --[[@as PagleShopOdds]]
+	stage.odds:SetSize(width, ODDS_H)
+	at(stage.odds, frame, x, INFO_Y + 77)
+	stage.odds.lines = {}
+	stage.odds:Hide()
+	stage.pity = ns.ShopText(frame, "Notes")
+	stage.pity:SetWidth(width)
 
 	local footY = INFO_Y + INFO_H - 16 - 44
 	stage.buy = ns.NewShopButton(frame, function()
@@ -940,6 +992,61 @@ local function drawDots(stage, progress)
 	stage.notes:SetPoint("TOPLEFT", stage.description, "BOTTOMLEFT", 0, -(DOT_PAD + DOT + DOT_PAD))
 end
 
+-- The pooled odds line `i` (SHOP-R54): the pool good's name, its chance at the column's right, and the ink's line that
+-- strikes an owned one through.
+---@param odds PagleShopOdds
+---@param i integer
+---@return PagleShopOddsLine
+local function oddsLineAt(odds, i)
+	local line = odds.lines[i]
+	if line then
+		return line
+	end
+	line = CreateFrame("Frame", nil, odds) --[[@as PagleShopOddsLine]]
+	line:SetSize(odds:GetWidth(), ODDS_H)
+	line.label = ns.ShopText(line, "Notes")
+	line.label:SetPoint("LEFT", 0, 0)
+	line.chance = ns.ShopText(line, "Notes")
+	line.chance:SetJustifyH("RIGHT")
+	line.chance:SetPoint("RIGHT", 0, 0)
+	local ink = ns.SHOP_INKS.ink
+	line.strike = solid(line, ink[1], ink[2], ink[3], 0.8, "OVERLAY")
+	line.strike:SetHeight(1)
+	line.strike:SetPoint("LEFT", line.label, "LEFT", -2, 0)
+	line.strike:SetPoint("RIGHT", line.label, "RIGHT", 2, 0)
+	odds.lines[i] = line
+	return line
+end
+
+-- Draws the Curio crate's odds (SHOP-R54) where a good's description goes: each pool good's name and chance, an owned
+-- one struck through and faded; then the pity line, and the notes under it.
+---@param stage PagleShopStageFrame
+---@param data PagleShopStage
+local function drawOdds(stage, data)
+	local odds = stage.odds
+	for i, good in ipairs(data.odds) do
+		local line = oddsLineAt(odds, i)
+		line:ClearAllPoints()
+		line:SetPoint("TOPLEFT", odds, "TOPLEFT", 0, -(i - 1) * ODDS_H)
+		ns.SetShopText(line.label, good.name)
+		ns.SetShopText(line.chance, good.chance or "")
+		line.strike:SetShown(good.owned == true)
+		line:SetAlpha(good.owned and GREYED_ALPHA or 1)
+		line:Show()
+	end
+	for i = #data.odds + 1, #odds.lines do
+		odds.lines[i]:Hide()
+	end
+	odds:Show()
+	local below = #data.odds * ODDS_H + ODDS_PAD
+	stage.pity:ClearAllPoints()
+	stage.pity:SetPoint("TOPLEFT", odds, "TOPLEFT", 0, -below)
+	ns.SetShopText(stage.pity, data.pity or "")
+	stage.pity:SetShown(data.pity ~= nil)
+	stage.notes:ClearAllPoints()
+	stage.notes:SetPoint("TOPLEFT", odds, "TOPLEFT", 0, -(below + (data.pity and ODDS_H or 0)))
+end
+
 -- Hides what shows the selected good, for a stage with none.
 ---@param stage PagleShopStageFrame
 local function clearStage(stage)
@@ -950,6 +1057,9 @@ local function clearStage(stage)
 		stage.description,
 		stage.notes,
 		stage.dots,
+		stage.odds,
+		stage.pity,
+		stage.caption,
 		stage.tags,
 		stage.buy,
 		stage.needed,
@@ -1042,6 +1152,11 @@ local function drawStage(frame, data, fresh)
 		region:Show()
 	end
 	drawDots(stage, data.progress)
+	if data.odds then
+		drawOdds(stage, data)
+	end
+	ns.SetShopText(stage.caption, data.caption)
+	stage.caption:SetShown(data.caption ~= nil)
 	drawFoot(stage, data)
 end
 
@@ -1140,6 +1255,9 @@ local function buildBill(frame)
 	ns.SetShopText(bill.leftLabel, L.SHOP_LEFT_AFTER)
 	bill.fine = ns.ShopText(slip, "SlipFine")
 	bill.fine:SetPoint("TOP", 0, -(y + 58))
+	-- The Curio crate's fine print takes two lines (SHOP-R54).
+	bill.fine:SetWidth(BILL_W - 64)
+	bill.fine:SetWordWrap(true)
 	ns.SetShopText(bill.fine, L.SHOP_FOR_GOOD)
 	bill.useNow = newCheck(slip, L.SHOP_USE_NOW)
 	bill.useNow:SetPoint("TOP", bill.fine, "BOTTOM", 0, -6)
@@ -1193,7 +1311,9 @@ function askToBuy(frame, goodID)
 	frame.search:ClearFocus() -- Esc and the keys go to the bill, not the search slip
 	frame.purse.tip:Hide()
 	bill.goodID = purchase.id
-	ns.SetShopText(bill.question, L.SHOP_BUY_CONFIRM:format(purchase.name))
+	-- A Curio crate's bill asks to open one, with its own fine print (SHOP-R54).
+	ns.SetShopText(bill.question, purchase.question or L.SHOP_BUY_CONFIRM:format(purchase.name))
+	ns.SetShopText(bill.fine, purchase.fine or L.SHOP_FOR_GOOD)
 	ns.SetShopBezel(bill.bezel, purchase.icon, false, purchase.shield)
 	ns.SetShopText(bill.price, purchase.amount)
 	ns.SetShopText(bill.left, purchase.left)
@@ -1364,6 +1484,19 @@ end
 ---@param useNow boolean
 function buy(frame, goodID, useNow)
 	settlePurchase(frame)
+	if goodID == ns.CRATE_ID then
+		-- A Curio crate opens at once (SHOP-R55): the bill goes, and the good it gave is selected on the stage, with Use,
+		-- or in use with Use it now; a good the shop doesn't show yet leaves the crate selected, its note saying so.
+		frame.bill.goodID = nil
+		local bought, given = ns.shop.Buy(goodID, useNow)
+		closeBill(frame)
+		if bought then
+			ns.ShopSound("buy")
+			selected = given and ns.ShopModel(BreakUpLargeNumbers):Select(given) or ns.CRATE_ID
+			redraw(true)
+		end
+		return
+	end
 	local was = {
 		balance = Pagle.GetBalance().balance,
 		inUse = inUseBeside(ns.ShopModel(BreakUpLargeNumbers):List(query), goodID),
@@ -1499,7 +1632,7 @@ function redraw(fresh)
 	drawPurse(frame, model:Purse())
 	drawFilters(frame)
 	placeList(frame, drawChips(frame, model:Chips()))
-	drawList(frame, model:List(query))
+	drawList(frame, model:List(query), model:Crate(query))
 	fitScrollBar(frame)
 	selected = model:Select(selected)
 	drawStage(frame, model:Stage(selected), fresh)

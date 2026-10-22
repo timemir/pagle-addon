@@ -7,12 +7,14 @@ local ns = select(2, ...)
 -- (CORE-R7): adapter/CoreGoods.lua draws the previews, and login step 1 registers them (adapter/Login.lua); FakePagle
 -- registers them too, so a Module's specs meet Core's crests and bindings.
 
---- One of Core's goods, as data: exactly one of `default` or `tier` (SHOP-R22). Its name and description are lore
---- (DATA-R101).
+--- One of Core's goods, as data: exactly one of `default`, `tier`, `companion` or `crate` (SHOP-R22). Its name and
+--- description are lore (DATA-R101).
 ---@class PagleCoreGood
 ---@field id string
 ---@field default? true
 ---@field tier? 1|2|3|4|5           -- Tunables: Core goods' tiers
+---@field companion? true           -- earned once the companion is linked (Sonar Scope, SHOP-R29)
+---@field crate? true               -- crate only (Prize Foil, SHOP-R22, SHOP-R50)
 ---@field icon? string              -- a texture path in the client: the shop's swatch, and a crest's look (LED-R112)
 ---@field variants? integer         -- a sound set's toast variants, if not three (ANN-R74; Tunables): Gilded's one
 ---@field lore? string              -- its lore keys' `<kind>.<id>` (DATA-R101): `good.<goodID>` without one
@@ -93,9 +95,11 @@ ns.CORE_GOODS = {
 			{ id = "core.toaststyle.bottle", tier = 3, icon = ICONS .. "INV_Drink_07" },
 			{ id = "core.toaststyle.rune", tier = 4, icon = ICONS .. "INV_Misc_Rune_01" },
 			{ id = "core.toaststyle.folio", tier = 5, icon = ICONS .. "INV_Misc_Book_11" },
-			-- The round two's one for sale (ANN-R82); Sonar Scope (earned) and Prize Foil (the Curio crate's) register
-			-- with their unlocks.
+			-- The round two's (ANN-R82): Storm Front for sale (and in the Curio crate), Sonar Scope earned once the
+			-- companion is linked (SHOP-R29), Prize Foil the crate's alone (SHOP-R50).
 			{ id = "core.toaststyle.storm", tier = 5, icon = ICONS .. "Spell_Nature_Lightning" },
+			{ id = "core.toaststyle.sonar", companion = true, icon = ICONS .. "Spell_Holy_MindVision" },
+			{ id = "core.toaststyle.foil", crate = true, icon = ICONS .. "INV_Misc_Gem_Opal_01" },
 		},
 	},
 	{
@@ -194,6 +198,11 @@ function ns.RegisterCoreGoods(previews)
 				icon = good.icon,
 				default = good.default,
 				tier = good.tier,
+				crate = good.crate,
+				isEarned = good.companion and function()
+					return ns.CompanionLinked()
+				end or nil,
+				earnedText = good.companion and L.SHOP_SONAR_EARNED or nil,
 				preview = previews and function(stage)
 					local draw = previews[slot.id]
 					if draw then

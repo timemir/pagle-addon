@@ -271,6 +271,50 @@ describe("the Catch log codec", function()
 	end)
 
 	it(
+		"round-trips a Companion entry, to Core's projections alone (LOG-R11, LOG-R16, LOG-R37, Entry formats)",
+		function()
+			local catchLog = ns.OpenCatchLog(adaAndBramLog(), { decodeErrors = 0 })
+			assert.is_false(catchLog:HasCompanion())
+
+			catchLog:Append({ kind = "companion", char = 1, time = 1791731683, keyId = "pagle-2026-a", pushedSeq = 42 })
+
+			assert.are.same({ "K1|1|1791731683|0|pagle-2026-a|42" }, catchLog.data.entries)
+			assert.are.equal(1, ns.LOG_FORMAT, "an additive kind: PagleLog.format stays (LOG-R18)")
+			assert.are.same(
+				{
+					{
+						seq = 1,
+						id = ADA .. "-1791731683-0",
+						kind = "companion",
+						char = 1,
+						time = 1791731683,
+						keyId = "pagle-2026-a",
+						pushedSeq = 42,
+					},
+				},
+				(function()
+					local all = {}
+					for record in catchLog:Iterate(0, ns.COMPANION_READER) do
+						all[#all + 1] = record
+					end
+					return all
+				end)()
+			)
+			assert.are.same({}, records(catchLog, 0), "Pagle.IterateCatches never yields it")
+			assert.is_nil(catchLog:Iterate(0, "Ledger")(), "nor M:IterateCatches")
+			assert.are.equal(0, catchLog.global.decodeErrors)
+			assert.is_true(catchLog:HasCompanion())
+			assert.is_true(ns.OpenCatchLog(catchLog.data, {}):HasCompanion(), "found in a log opened afresh")
+			assert.has_error(function()
+				catchLog:Append({ kind = "companion", char = 1, time = 1791731690, keyId = "a|b", pushedSeq = 1 })
+			end)
+			assert.has_error(function()
+				catchLog:Append({ kind = "companion", char = 1, time = 1791731690, keyId = "k", pushedSeq = -1 })
+			end)
+		end
+	)
+
+	it(
 		"round-trips a Module record whose payload holds | and ; verbatim, to the Module that wrote it"
 			.. " (LOG-R11, LOG-R16, LOG-R40, LOG-R42, Entry formats)",
 		function()

@@ -47,6 +47,7 @@ describe("Core's slots and goods", function()
 				for _, good in ipairs(goods:GoodsOf(slot.id)) do
 					local kind = good.default and "default"
 						or good.isEarned and "earned " .. tostring(good.group)
+						or good.crate and "crate only"
 						or "tier " .. tostring(good.tier)
 					list[#list + 1] = good.id .. " " .. kind
 				end
@@ -87,6 +88,8 @@ describe("Core's slots and goods", function()
 						"core.toaststyle.rune tier 4",
 						"core.toaststyle.folio tier 5",
 						"core.toaststyle.storm tier 5",
+						"core.toaststyle.sonar earned nil", -- once the companion is linked (SHOP-R29)
+						"core.toaststyle.foil crate only", -- the Curio crate's alone (SHOP-R50)
 					},
 				},
 				{
@@ -218,7 +221,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 31 + #FISH_CREST_SPECIES + 35, {} }, { count, without })
+			assert.are.same({ 33 + #FISH_CREST_SPECIES + 35, {} }, { count, without })
 		end
 	)
 end)

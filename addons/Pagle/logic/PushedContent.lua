@@ -60,6 +60,8 @@ local ENDED = { [MISSING] = true, [NOT_RUNNING] = true, [CONNECTED] = true }
 ---@field state PagleCompanionState
 ---@field items table[]? the parsed items, in payload order, for "connected" and "notRunning"
 ---@field reason string? why the file is absent, for "missing" (PUSH-R13)
+---@field keyId string? the accepted file's keyId, for "connected" and "notRunning" (the Companion entry's, LOG-R37)
+---@field seq integer? the accepted file's seq, likewise
 
 --- Core's pushed content for this login.
 ---@class PaglePushedContent
@@ -70,6 +72,7 @@ local ENDED = { [MISSING] = true, [NOT_RUNNING] = true, [CONNECTED] = true }
 ---@field package reason string? the first reason PUSH-R13 found
 ---@field package kept table<string, table[]>? the items handed out, by kind
 ---@field package dropped table<string, integer>? the items dropped, by "kind v"
+---@field package accepted { keyId: string, seq: integer }? the accepted file's keyId and seq (LOG-R37)
 ---@field package frames integer frames the check ran in
 ---@field package longest number its longest frame, in ms
 local PushedContent = {}
@@ -248,7 +251,12 @@ local function check(self, pause)
 		global.pushed = {}
 	end
 	global.pushed.seq = file.seq
-	return { state = now - file.generatedAt >= ns.PUSHED_NOT_RUNNING_AGE and NOT_RUNNING or CONNECTED, items = items }
+	return {
+		state = now - file.generatedAt >= ns.PUSHED_NOT_RUNNING_AGE and NOT_RUNNING or CONNECTED,
+		items = items,
+		keyId = file.keyId,
+		seq = file.seq,
+	}
 end
 
 -- Why there's no file at all, from the client's word on Pagle_Content.
@@ -315,8 +323,23 @@ function PushedContent:Finish(outcome)
 		self.reason = outcome.reason
 	else
 		self.kept, self.dropped = ns.KeepPushedItems(outcome.items or {})
+		if type(outcome.keyId) == "string" and type(outcome.seq) == "number" then
+			self.accepted = { keyId = outcome.keyId, seq = outcome.seq }
+		end
 	end
 	self.options.fire(self.state)
+end
+
+--- The keyId and seq of the file this login's check accepted (PUSH-R13), for the Companion entry (LOG-R37); nil
+--- while checking, when the file is absent, or for an end that named none.
+---@return string? keyId
+---@return integer? seq
+function PushedContent:Accepted()
+	local accepted = self.accepted
+	if not accepted then
+		return nil, nil
+	end
+	return accepted.keyId, accepted.seq
 end
 
 --- The companion's state (PUSH-R15): "checking" until the check ends, then "missing", "notRunning" or "connected".

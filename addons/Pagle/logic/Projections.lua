@@ -457,8 +457,9 @@ end
 
 --- Hands a just-appended entry to every projection (LOG-R73, LOG-R74): one that is up to date applies it as
 --- `"live"` now and sets `lastSeq`; one that is updating, or still applying the entries appended during its update,
---- reads it back from the log as `"live"` when it gets there. A Module record goes only to its Module's projections;
---- every other one that is up to date just moves `lastSeq` past it (LOG-R41).
+--- reads it back from the log as `"live"` when it gets there. A Module record goes only to its Module's projections,
+--- and a Companion entry only to Core's own (LOG-R37); every other one that is up to date just moves `lastSeq` past it
+--- (LOG-R41).
 --- Called from inside an apply or a done, it is handed over when that returns (LOG-R40).
 ---@param record PagleRecord
 function Projections:Live(record)
@@ -466,10 +467,10 @@ function Projections:Live(record)
 		self.deferred[#self.deferred + 1] = record
 		return
 	end
-	local owner = record.kind == "module" and (record --[[@as PagleModuleRecord]]).module or nil
+	local owner = ns.RecordReader(record)
 	for _, projection in ipairs(self.list) do
 		if not projection.run and not projection.updating and record.seq > projection.def.db.lastSeq then
-			if owner and owner ~= projection.module then
+			if owner and owner ~= (projection.module or ns.COMPANION_READER) then
 				projection.def.db.lastSeq = record.seq
 			else
 				applyOne(projection, record, "live")
@@ -558,11 +559,14 @@ end
 --- refuses.
 ---@param projections PagleProjections
 ---@param def PagleProjectionDef
----@param iterate fun(afterSeq: integer?): fun(): PagleRecord? the log's records after a seq (Pagle.IterateCatches)
+---@param iterate fun(afterSeq: integer?, reader: string?): fun(): PagleRecord? the log's records after a seq
+--- (PagleHost.iterate): what Pagle.IterateCatches yields, plus the Companion entries for ns.COMPANION_READER (LOG-R37)
 ---@param name string what its load timings call it (#262), such as "fieldReport"
 ---@return PagleProjection
 function ns.AddCoreProjection(projections, def, iterate, name)
-	local projection, problem = projections:Add(def, iterate, nil, name)
+	local projection, problem = projections:Add(def, function(afterSeq)
+		return iterate(afterSeq, ns.COMPANION_READER)
+	end, nil, name)
 	if not projection then
 		error(problem, 2)
 	end

@@ -27,8 +27,8 @@ local ns = select(2, ...)
 ---@field color number[]         -- { r, g, b }, each 0 to 1
 ---@field filled boolean
 
---- A good a Module or Core registers (wallet-and-shop.md › Contracts): exactly one of default, for sale (tier) or
---- earned (isEarned).
+--- A good a Module or Core registers (wallet-and-shop.md › Contracts): exactly one of default, for sale (tier), earned
+--- (isEarned) or, Core's only, crate only (crate).
 ---@class PagleGood
 ---@field id string
 ---@field slot string
@@ -38,6 +38,7 @@ local ns = select(2, ...)
 ---@field default? boolean        -- SHOP-R22
 ---@field tier? 1|2|3|4|5         -- for sale
 ---@field isEarned? fun(): boolean -- earned
+---@field crate? true             -- Core's only: given by a Curio crate alone (SHOP-R22, SHOP-R50)
 ---@field earnedText? string|fun(): string?, string? -- earned: "Angler Level 30", or the row's tag and the stage's
 --- note, worked out each time the shop draws the good while it isn't owned (SHOP-R22)
 ---@field progress? fun(): PagleProgressDot[] -- earned: the dots the stage shows while it isn't owned (SHOP-R22)
@@ -299,9 +300,19 @@ function Goods:GoodProblem(module, good)
 	if good.default ~= nil and type(good.default) ~= "boolean" then
 		return ("M:RegisterGood: %s's default must be true or false"):format(id)
 	end
-	local kinds = (good.default and 1 or 0) + (good.tier ~= nil and 1 or 0) + (good.isEarned ~= nil and 1 or 0)
+	if good.crate ~= nil and good.crate ~= true then
+		return ("M:RegisterGood: %s's crate must be true or left out"):format(id)
+	elseif good.crate and module ~= ns.CORE_OWNER then
+		return ("M:RegisterGood: %s: only Core registers a crate-only good"):format(id)
+	end
+	local kinds = (good.default and 1 or 0)
+		+ (good.tier ~= nil and 1 or 0)
+		+ (good.isEarned ~= nil and 1 or 0)
+		+ (good.crate and 1 or 0)
 	if kinds ~= 1 then
-		return ("M:RegisterGood: %s must be exactly one of default, for sale (tier) or earned (isEarned)"):format(id)
+		return ("M:RegisterGood: %s must be exactly one of default, for sale (tier), earned (isEarned) or crate only"):format(
+			id
+		)
 	elseif good.tier ~= nil and not ns.TIER_PRICES[good.tier] then
 		return ("M:RegisterGood: %s's tier must be 1 to 5, got %s"):format(id, tostring(good.tier))
 	elseif good.isEarned ~= nil and type(good.isEarned) ~= "function" then
@@ -358,6 +369,7 @@ function Goods:RegisterGood(module, good)
 		icon = good.icon,
 		default = good.default or nil,
 		tier = good.tier,
+		crate = good.crate or nil,
 		description = good.description,
 		earned = before and before.earned,
 	}
@@ -465,8 +477,8 @@ function Goods:Refresh(module)
 	self:Settle()
 end
 
---- The purchased goods, from the wallet projection (SHOP-R11): `{ [goodID] = true }`, kept as handed over. Empty
---- until the projection hands one over.
+--- The purchased goods, from the wallet projection (SHOP-R11): `{ [goodID] = true }`, kept as handed over, a Curio
+--- crate's goods among them (SHOP-R50: owned as a purchase is). Empty until the projection hands one over.
 ---@param purchased table<string, true>
 function Goods:SetPurchased(purchased)
 	self.purchased = purchased

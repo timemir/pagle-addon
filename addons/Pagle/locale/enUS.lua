@@ -298,6 +298,22 @@ ns.L = {
 	SHOP_BUY_ACCEPT = "Buy",
 	SHOP_BUY_CANCEL = "Cancel",
 	SHOP_HELD = "Your balance is 0 while Pagle re-counts earlier Coins. New Coins fill that in first.",
+	-- The Curio crate (SHOP-R50–R55): its row's label and its tag once every pool good is owned; its stage's line under
+	-- the name; a pool good's chance as a percent, the pity count's line; the note for a crate's good the shop doesn't
+	-- show yet (its slot not registered); the bill's question and fine print. A crate-only good's row tag and stage
+	-- note, an owned good's note when a crate gave it, and Sonar Scope's earnedText (SHOP-R29).
+	SHOP_CRATE = "Curio crate",
+	SHOP_CRATE_EMPTY = "Empty: you have it all",
+	SHOP_CRATE_KIND = "A crate of looks",
+	SHOP_CRATE_CHANCE = "%d%%",
+	SHOP_CRATE_PITY = "A crate-only look within %d more crates",
+	SHOP_CRATE_PITY_ONE = "A crate-only look in the next crate",
+	SHOP_CRATE_UNSHOWN = "%s is yours: it shows here once its slot arrives.",
+	SHOP_CRATE_CONFIRM = "Open a Curio crate?",
+	SHOP_CRATE_FINE = "One look you don't own yet, by chance; the chances are on the crate.",
+	SHOP_CRATE_ONLY_NOTE = "Only in a Curio crate, never for sale",
+	SHOP_FROM_CRATE = "From a crate",
+	SHOP_SONAR_EARNED = "Link the companion",
 
 	-- The compartment entry's label (CORE-R51): Pagle, with the moments Cozy mode holds for a summary (ANN-R42).
 	COMPARTMENT = "Pagle",

@@ -19,7 +19,7 @@ describe("Pagle_Content", function()
 	---@return PushedContentCore
 	local function core(data, options)
 		options = options or {}
-		local loaded = loadCore(history(1), options.saved) --[[@as PushedContentCore]]
+		local loaded = loadCore(options.log or history(1), options.saved) --[[@as PushedContentCore]]
 		if data ~= nil then
 			loaded.client.addons.Pagle_Content = { metadata = {} }
 			loaded.env.PagleContentData = data
@@ -139,6 +139,66 @@ describe("Pagle_Content", function()
 			assert.are.same({ "missing" }, replayed.fired)
 		end
 	)
+
+	-- The log's Companion entries (LOG-R37), as entry strings.
+	local function companionEntries(loaded)
+		local found = {}
+		for _, entry in ipairs(loaded.env.PagleLog.entries) do
+			if entry:sub(1, 3) == "K1|" then
+				found[#found + 1] = entry
+			end
+		end
+		return found
+	end
+
+	it(
+		"appends one Companion entry the first time a file passes the check, and Sonar Scope is owned (LOG-R37,"
+			.. " SHOP-R29)",
+		function()
+			local loaded = core(fixtures.good, { testKey = true })
+			enterWorld(loaded)
+			assert.are.equal("checking", loaded.env.Pagle.GetCompanionState())
+			assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.sonar"), "before the check ends")
+
+			loaded.client.advance(0)
+
+			assert.are.equal("connected", loaded.env.Pagle.GetCompanionState())
+			-- For the logged-in character (the fake client's, character 2 beside the history's Ada), with the file's keyId
+			-- and seq.
+			assert.are.same({ ("K1|2|%d|1|testKey|42"):format(SERVER_TIME) }, companionEntries(loaded))
+			assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.sonar"))
+			assert.are.same(
+				{},
+				(function()
+					local kinds = {}
+					for record in loaded.env.Pagle.IterateCatches(0) do
+						if record.kind == "companion" then
+							kinds[#kinds + 1] = record.kind
+						end
+					end
+					return kinds
+				end)(),
+				"Pagle.IterateCatches never yields it"
+			)
+
+			-- A /reload: the file passes again, and the log already holds its one.
+			local again = core(fixtures.good, { testKey = true, log = loaded.env.PagleLog, saved = loaded.env.PagleDB })
+			enterWorld(again, 2)
+			assert.are.equal("connected", again.env.Pagle.GetCompanionState())
+			assert.are.equal(1, #companionEntries(again))
+			assert.is_true(again.env.Pagle.IsOwned("core.toaststyle.sonar"))
+		end
+	)
+
+	it("appends none for a file that fails the check, and Sonar Scope stays unearned (LOG-R37, SHOP-R29)", function()
+		local loaded = core(fixtures.good) -- a shipped build: the test key is unknown
+
+		enterWorld(loaded, 2)
+
+		assert.are.equal("missing", loaded.env.Pagle.GetCompanionState())
+		assert.are.same({}, companionEntries(loaded))
+		assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.sonar"))
+	end)
 
 	it("never writes PagleContentData, and Pagle's addons never hold Pagle_Content (PUSH-R1)", function()
 		local data = {}

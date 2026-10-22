@@ -101,6 +101,14 @@ local EXPANSION = {
 		{ "trophycase", 5 },
 	},
 }
+-- The round two's Core toast styles that aren't for sale, after Storm Front, as the list outlines them not owned:
+-- Sonar Scope, earned once the companion is linked (SHOP-R29), and Prize Foil, the Curio crate's alone (SHOP-R50).
+local ROUND_TWO_UNOWNED = {
+	"  core.toaststyle.sonar Link the companion",
+	"  core.toaststyle.foil From a crate",
+}
+local ROUND_TWO_IDS = { "core.toaststyle.sonar", "core.toaststyle.foil" }
+
 -- Each tier's price (SHOP-R22), as the list prints it.
 local PRICES = { "150", "400", "900", "2,000", "5,000" }
 local PRICE_VALUES = { 150, 400, 900, 2000, 5000 }
@@ -120,6 +128,11 @@ local function expansionLines(slot, balance)
 			PRICES[tier],
 			PRICE_VALUES[tier] > balance and " [red]" or ""
 		)
+	end
+	if slot == "toaststyle" then
+		for _, line in ipairs(ROUND_TWO_UNOWNED) do
+			lines[#lines + 1] = line
+		end
 	end
 	return lines
 end
@@ -152,7 +165,7 @@ local CORE_UNBOUGHT = joined(
 		joined(
 			joined(
 				joined({
-					"Toast style (1 of 16)",
+					"Toast style (1 of 18)",
 					"  core.toaststyle.page In use",
 					"  core.toaststyle.ripple 150" .. " [red]",
 					"  core.toaststyle.lanternglow 400" .. " [red]",
@@ -409,7 +422,7 @@ describe("The Curio Shop's list", function()
 					joined(
 						joined(
 							joined({
-								"Toast style (2 of 16)",
+								"Toast style (2 of 18)",
 								"  core.toaststyle.page default",
 								"  core.toaststyle.ripple In use",
 								"  core.toaststyle.lanternglow 400" .. " [red]",
@@ -501,7 +514,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11 + 25 + 35, #ids("all"))
+		assert.are.equal(11 + 27 + 35, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",
@@ -512,7 +525,10 @@ describe("The Curio Shop's list", function()
 			"hunts.cover.plain",
 		}, ids("owned"))
 		local notOwned = joined(
-			joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", math.huge)),
+			joined(
+				joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", math.huge)),
+				ROUND_TWO_IDS
+			),
 			joined({ "core.soundset.gilded" }, expansionAffordable("soundset", math.huge))
 		)
 		notOwned = joined(notOwned, expansionAffordable("binding", math.huge))
@@ -1295,7 +1311,7 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 			assert.are.same(
 				joined(
 					joined({
-						"Toast style (2 of 18)",
+						"Toast style (2 of 20)",
 						"  core.toaststyle.page In use",
 						"  core.toaststyle.ripple 150" .. " [red]",
 						"  core.toaststyle.lanternglow 400" .. " [red]",
@@ -1525,6 +1541,259 @@ describe("The earned crests, which Look and Feel equips and the Curio Shop doesn
 
 			assert.are.same({ FISH, "core.crest.plain", "ledger.crest.elwynn" }, values)
 			assert.are.equal(0, fake.ns.SlotMoreInShop(fake.ns.goods, "core.crest"))
+		end
+	)
+end)
+
+describe("The Curio crate", function()
+	local CRATE, FOIL, STORM, SHAGREEN =
+		"core.crate", "core.toaststyle.foil", "core.toaststyle.storm", "core.binding.shagreenbone"
+
+	-- Core with Hunts' covers and the Ledger's bindings, logged in and in the world, with the Ledger's `balance` Coins,
+	-- and a Session open (one Cast), so a moment or a summary line would land in it. `owned` goods are bought first,
+	-- each with a U1 at price 0 the projection applies live (SHOP-R10).
+	local function crated(balance, owned)
+		local fake, handles = coreWithModules()
+		huntsCovers(handles.Hunts, { value = false })
+		ledgerBindings(handles.Ledger)
+		fake.login()
+		fake.enterWorld()
+		for _, good in ipairs(owned or {}) do
+			fake.ns.RecordPurchase(good, 0)
+		end
+		handles.Ledger:ReportCoinsEarned(balance)
+		fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+		fake.nextFrame()
+		return fake, handles
+	end
+
+	it(
+		"has its own row, at the very top, whichever chip is on, never a slot's (SHOP-R50, wallet-and-shop.md › UI)",
+		function()
+			local fake = crated(300)
+			local shop = model(fake)
+			local row = {
+				id = CRATE,
+				name = "Curio crate",
+				icon = fake.ns.CRATE_ICON,
+				state = "short",
+				price = "2,000",
+				short = true,
+			}
+
+			assert.are.same(row, shop:Crate({}))
+			for _, chip in ipairs(shop:Chips()) do
+				assert.are.same(row, shop:Crate({ category = chip.category }), chip.category)
+			end
+			for _, filter in ipairs(fake.ns.SHOP_FILTERS) do
+				assert.are.same(row, shop:Crate({ filter = filter }), filter)
+			end
+			assert.are.same(row, shop:Crate({ search = "CRATE" }))
+			assert.is_nil(shop:Crate({ search = "binding" }), "a search its label doesn't match leaves it out")
+			for _, group in ipairs(shop:List({})) do
+				for _, listed in ipairs(group.rows) do
+					assert.are_not.equal(CRATE, listed.id, "not in a slot's group")
+				end
+			end
+			assert.are.equal(CRATE, shop:Select(CRATE))
+			assert.are.same(row, shop:Row(CRATE))
+		end
+	)
+
+	it("shows its price in white once the balance covers 2,000 (SHOP-R54)", function()
+		local fake = crated(2500)
+
+		local row = model(fake):Crate({})
+
+		assert.are.same({ "forSale", "2,000" }, { row.state, row.price })
+		assert.is_nil(row.short)
+	end)
+
+	it(
+		"shows on the stage each pool good's chance of coming next, the pity count and Buy (SHOP-R52, SHOP-R54)",
+		function()
+			local fake = crated(2500)
+
+			local stage = model(fake):Stage(CRATE)
+
+			assert.are.same({
+				id = CRATE,
+				name = "Curio crate",
+				icon = fake.ns.CRATE_ICON,
+				slotLine = "A crate of looks · Pagle",
+				state = "forSale",
+				crate = true,
+				tags = {},
+				notes = {},
+				odds = {
+					{ id = FOIL, name = fake.ns.goods:Good(FOIL).name, chance = "20%" },
+					{ id = STORM, name = fake.ns.goods:Good(STORM).name, chance = "40%" },
+					{ id = SHAGREEN, name = "Shagreen and Bone", chance = "40%" },
+				},
+				pity = "A crate-only look within 8 more crates",
+				buy = "Buy for 2,000",
+				canBuy = true,
+			}, stage)
+		end
+	)
+
+	it("strikes an owned pool good out of the odds, the others sharing its chance (SHOP-R54)", function()
+		local fake = crated(2500, { STORM })
+
+		local odds = model(fake):Stage(CRATE).odds
+
+		assert.are.same({ "33%", true, "67%" }, { odds[1].chance, odds[2].owned, odds[3].chance })
+		assert.is_nil(odds[2].chance)
+	end)
+
+	it(
+		'asks "Open a Curio crate?" on its bill, with the price, the Coins left and its fine print (SHOP-R54)',
+		function()
+			local fake = crated(2500)
+
+			assert.are.same({
+				id = CRATE,
+				crate = true,
+				name = "Curio crate",
+				icon = fake.ns.CRATE_ICON,
+				price = 2000,
+				amount = "2,000",
+				left = "500",
+				question = "Open a Curio crate?",
+				fine = "One look you don't own yet, by chance; the chances are on the crate.",
+			}, model(fake):Purchase(CRATE))
+			assert.is_nil(model(crated(1999)):Purchase(CRATE), "the balance short")
+		end
+	)
+
+	it(
+		"buys one crate with one U1 of core.crate at 2,000 and opens it at once: the good it gave is owned, and in"
+			.. " use with Use it now; no Announcement (SHOP-R10, SHOP-R50, SHOP-R51, SHOP-R55)",
+		function()
+			local fake = crated(2500)
+			local Pagle = fake.Pagle
+			local before, announced = #fake.catchLog.data.entries, #fake.announcements
+
+			local bought, given = fake.ns.shop.Buy(CRATE, true)
+
+			assert.is_true(bought)
+			local entries = fake.catchLog.data.entries
+			assert.are.equal(before + 1, #entries)
+			assert.are.equal(purchaseEntry(SERVER_TIME, CRATE, 2000, 1), entries[#entries])
+			local guid = fake.catchLog.data.characters[1].guid
+			assert.are.equal(fake.ns.CrateDraw(("%s-%d-1"):format(guid, SERVER_TIME), {}, 0, SERVER_TIME), given)
+			assert.is_true(Pagle.IsOwned(given))
+			assert.are.equal(500, Pagle.GetBalance().balance)
+			if given ~= SHAGREEN then
+				assert.are.equal(given, Pagle.GetEquipped(fake.ns.goods:Good(given).slot))
+			end
+			assert.are.same({ given }, fake.ns.walletSnapshot.crates)
+			fake.nextFrame()
+			assert.are.equal(announced, #fake.announcements)
+		end
+	)
+
+	it("never gives a good owned already: with two of three owned, it gives the third (SHOP-R50)", function()
+		local fake = crated(2500, { FOIL, STORM })
+
+		local bought, given = fake.ns.shop.Buy(CRATE, false)
+
+		assert.are.same({ true, SHAGREEN }, { bought, given })
+		assert.is_true(fake.Pagle.IsOwned(SHAGREEN))
+	end)
+
+	it(
+		"says on its stage that a good no slot has registered is the Angler's, and shows it once registered"
+			.. " (SHOP-R50)",
+		function()
+			local fake = crated(2500, { FOIL, STORM })
+			fake.ns.shop.Buy(CRATE, true)
+
+			local stage = model(fake):Stage(CRATE)
+
+			assert.are.equal("Shagreen and Bone is yours: it shows here once its slot arrives.", stage.caption)
+			assert.is_nil(model(fake):Select(SHAGREEN))
+		end
+	)
+
+	it(
+		'reads "Empty: you have it all" once every pool good is owned, with no Buy, and buys nothing (SHOP-R54)',
+		function()
+			local fake = crated(10000, { STORM })
+			assert.is_true(fake.ns.shop.Buy(CRATE, false))
+			assert.is_true(fake.ns.shop.Buy(CRATE, false))
+			local before = #fake.catchLog.data.entries
+			local shop = model(fake)
+
+			assert.are.same({
+				id = CRATE,
+				name = "Curio crate",
+				icon = fake.ns.CRATE_ICON,
+				state = "empty",
+				tag = "Empty: you have it all",
+			}, shop:Crate({}))
+			local stage = shop:Stage(CRATE)
+			assert.are.same({ "Empty: you have it all" }, stage.tags)
+			assert.is_nil(stage.buy)
+			assert.is_nil(stage.pity)
+			assert.are.same({ true, true, true }, { stage.odds[1].owned, stage.odds[2].owned, stage.odds[3].owned })
+			assert.is_nil(shop:Purchase(CRATE))
+			assert.is_false(fake.ns.shop.Buy(CRATE, false))
+			assert.are.equal(before, #fake.catchLog.data.entries)
+		end
+	)
+
+	it('lists Prize Foil as "From a crate", never for sale, until a crate gives it (SHOP-R22, SHOP-R50)', function()
+		local fake = crated(10000)
+		local shop = model(fake)
+
+		assert.are.same({
+			id = FOIL,
+			name = fake.ns.goods:Good(FOIL).name,
+			icon = fake.ns.goods:Good(FOIL).icon,
+			state = "crateOnly",
+			tag = "From a crate",
+		}, shop:Row(FOIL))
+		local stage = shop:Stage(FOIL)
+		assert.are.same({ { "Only in a Curio crate, never for sale" }, {} }, { stage.notes, stage.tags })
+		assert.is_nil(stage.buy)
+		assert.is_nil(shop:Purchase(FOIL))
+
+		fake.ns.RecordPurchase(STORM, 0)
+		fake.ns.RecordPurchase(SHAGREEN, 0)
+		fake.ns.shop.Buy(CRATE, false)
+
+		local owned = model(fake):Stage(FOIL)
+		assert.are.same({ "owned", { "From a crate" } }, { owned.state, owned.notes })
+		assert.is_true(owned.use)
+	end)
+
+	it('lists Sonar Scope as earned, "Link the companion", until the companion is linked (SHOP-R29)', function()
+		local fake = crated(0)
+
+		local stage = model(fake):Stage("core.toaststyle.sonar")
+
+		assert.are.equal("Link the companion", model(fake):Row("core.toaststyle.sonar").tag)
+		assert.are.same({ "unearned", { "Link the companion", "A Pagle reward, not for sale" } }, {
+			stage.state,
+			stage.notes,
+		})
+	end)
+
+	it(
+		"owns Sonar Scope once a check ends connected with the file's keyId and seq, through K1 (SHOP-R29, LOG-R37)",
+		function()
+			local fake = newFakePagle()
+			fake.setPushedContent({ state = "connected", items = {}, keyId = "testKey", seq = 42 })
+			fake.login()
+			fake.enterWorld()
+			assert.is_false(fake.Pagle.IsOwned("core.toaststyle.sonar"))
+
+			fake.nextFrame()
+
+			assert.is_true(fake.Pagle.IsOwned("core.toaststyle.sonar"))
+			local entries = fake.catchLog.data.entries
+			assert.is_truthy(entries[#entries]:find("^K1|%d+|%d+|%d+|testKey|42$"))
 		end
 	)
 end)
