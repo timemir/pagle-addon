@@ -57,6 +57,10 @@ ns.host = {
 	region = function()
 		return GetCurrentRegion and GetCurrentRegion()
 	end,
+	-- The minimap clock's 24-hour mode, "1" or "0" (CORE-R87); nil on a client without the CVar.
+	militaryTime = function()
+		return GetCVar("timeMgrUseMilitaryTime")
+	end,
 	print = function(line)
 		print(line)
 	end,

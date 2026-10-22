@@ -153,7 +153,6 @@ CORE_BINDINGS = [
     "chartlinen",
     "sailcloth",
     "oilskin",
-    "oilcloth",
     "canvas",
     "kraft",
     "tartan",
@@ -371,7 +370,6 @@ def test_the_manifest_lists_core_s_bindings_in_the_shop_s_order() -> None:
         assert core[f"binding.{binding}.name"].value.strip()
         assert core[f"binding.{binding}.description"].value.strip()
     assert core["binding.field.name"].value == "Field Leather"
-    assert core["binding.oilcloth.name"].value == "Oilcloth"
 
 
 def _ledger_text(key: str) -> str:
@@ -682,11 +680,11 @@ def test_deleting_any_one_good_s_description_fails_the_hunts_lore_check_naming_i
 
 
 def test_every_v1_hunt_and_set_has_its_text() -> None:
-    # HNT-R130, DATA-R105: a name for each of the 16 v1 Hunts, a name and a title for each of the 5 sets (hunts.md ›
-    # Data), all passing the Hunts lore check (read_layers raises on any problem).
+    # HNT-R130, DATA-R105: a name for each of the 12 Standing Hunts, a name and a title for each of the 4 sets
+    # (hunts.md › Data), all passing the Hunts lore check (read_layers raises on any problem).
     hunts = _layers().hunts
     text = _hunts_text()
-    assert len(hunts.hunts) == 16 and len(hunts.sets) == 5
+    assert len(hunts.hunts) == 12 and len(hunts.sets) == 4
     for hunt in hunts.hunts:
         assert text[f"hunt.{hunt.id}.name"].strip()
     for hunt_set in hunts.sets:
@@ -701,26 +699,17 @@ def test_sunday_showdown_s_note_says_it_is_the_extravaganza_and_needs_level_60()
     assert re.search(r"\blevel 60\b", note), note
 
 
-def test_the_wagers_set_s_note_calls_them_the_house_s_own_without_quoting_anyone() -> None:
-    # hunts.md › Data: the set note says these are the house's own wagers, the set being House Wagers (#264, which
-    # retired VOICE.md's one exception to choice 12, "Pagle's own wagers" from #184). Nothing is quoted (DATA-R110).
-    note = _hunts_text()["set.pagles_wagers.note"]
-    assert note.startswith("The house's own wagers"), note
-    assert '"' not in note, note
-
-
 @pytest.mark.parametrize("key", sorted(_hunts_text()))
 def test_no_line_of_hunts_lore_names_the_addon_its_terms_or_shouts(key: str) -> None:
     # VOICE.md: "Not the addon talking" (choice 12): no Pagle and none of its capitalised terms; no "I" (choice 3);
-    # no exclamation marks (choice 13); no | (WoW's escape codes). The wagers set's note, once the one exception
-    # (#184), holds to it too since #264.
+    # no exclamation marks (choice 13); no | (WoW's escape codes).
     text = _hunts_text()[key]
     terms = r"\b(Pagle|Pagle's|Hunts?|Ledger|Coins?|Sessions?|Notices?|Catch(es)?|Casts?|Angler|XP|I)\b"
     assert not re.search(terms, text), text
     assert "!" not in text and "|" not in text, text
 
 
-SETS = ["round_the_clock", "turn_of_the_year", "sunday_showdown", "camp_hours", "pagles_wagers"]  # hunts.md › Data
+SETS = ["round_the_clock", "turn_of_the_year", "sunday_showdown", "camp_hours"]  # hunts.md › Data
 
 
 @pytest.mark.parametrize("hunt_set", SETS)

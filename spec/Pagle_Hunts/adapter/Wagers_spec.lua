@@ -51,7 +51,8 @@ end
 
 --- Hunts logged in at `now` with the rotation's origin at `origin`, the live conditions at `clock` (a realm snapshot
 --- at `now`), names loaded, and `history` (records) in the Catch log before login; then the frames where the
---- pushed-content check ends and the run log's step runs (HNT-R151). `pushed` goes to fake.setPushedContent.
+--- pushed-content check ends and the run log's step runs (HNT-R151). `pushed` goes to fake.setPushedContent. The
+--- companion hint's switch is off unless `options.hint`, so the strip is the runs' alone (HNT-R172, HNT-R176).
 ---@return HuntsRun
 local function start(options)
 	local now, origin = options.now or THU_11, options.origin
@@ -61,6 +62,7 @@ local function start(options)
 		events = pool,
 		caughtUp = options.caughtUp,
 		prepare = function(loaded)
+			loaded.ns.COMPANION_HINT_ON = options.hint == true
 			if origin then
 				loaded.ns.ROTATION_ORIGIN = origin
 			end

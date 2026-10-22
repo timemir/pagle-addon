@@ -11,7 +11,7 @@ local ns = select(2, ...)
 -- logic/Companion.lua's. The wager strip (adapter/Wagers.lua), the placeholder slip (adapter/WagersSpread.lua) and the
 -- tracker's line (adapter/Tracker.lua, adapter/Goods.lua) draw it, with Get it and Dismiss made here.
 --
--- With the switch off (ns.COMPANION_HINT_ON, off at 1.0, HNT-R172) the hint never applies, so nothing draws it, and
+-- With the switch off (ns.COMPANION_HINT_ON, on at 1.0, HNT-R172) the hint never applies, so nothing draws it, and
 -- ns.StartCompanionHint adds no row and raises no Nod.
 
 local OWNER = "Pagle_Hunts companion hint"

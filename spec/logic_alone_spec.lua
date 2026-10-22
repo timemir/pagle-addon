@@ -1,6 +1,6 @@
 -- Pagle's backend folds the Catch log through logic/ alone (#223, #76 item 5). Its projection driver (pagle-backend's
--- src/main/lua/driver.lua) loads each addon's logic/ files, Core's data/Catalogue.lua and Hunts' data/HuntList.lua in
--- TOC order, never adapter/ or locale/, into globals that hold only Lua 5.1, `bit`, the Pagle API it builds over Core's
+-- src/main/lua/driver.lua) loads each addon's logic/ files, Core's data/Catalogue.lua and Hunts' data/HuntList.lua and
+-- data/EventList.lua in TOC order (LOG-R79), never adapter/ or locale/, into globals that hold only Lua 5.1, `bit`, the Pagle API it builds over Core's
 -- logic/, and GetServerTime. It then asks Core's logic/ for its projections (ns.BindCoreProjections) and each roster
 -- Module's for its own (ns.BindProjections), folds every record through them, and reads each paying Module's Coins
 -- (ns.CoinsEarned) from its state after done.
@@ -69,7 +69,7 @@ local function loadLogic(addon, globals, ns)
 		if
 			file:find("^logic/")
 			or (addon == "Pagle" and file == "data/Catalogue.lua")
-			or (addon == "Pagle_Hunts" and file == "data/HuntList.lua")
+			or (addon == "Pagle_Hunts" and (file == "data/HuntList.lua" or file == "data/EventList.lua"))
 		then
 			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
 			local chunk = assert(loadfile("addons/" .. addon .. "/" .. file))
@@ -91,6 +91,8 @@ end
 ---@field projections LogicAloneProjection[]  -- in the order they were bound
 ---@field byKey table<string, LogicAloneProjection>
 ---@field see fun(record: PagleRecord)          -- keeps each character's latest Skill Reading for Pagle.GetAngler
+---@field forget fun()                          -- forgets them, before a projection's pass
+---@field catchLog table?                       -- the log being folded, which IterateCatches reads
 
 -- Hosts the tree as the driver does, at server time `now`, with the log's `characters`, and binds every projection.
 ---@param now integer
@@ -128,6 +130,12 @@ local function host(now, characters)
 			skill[record.char] = record
 		end
 	end
+	-- Before each projection's pass over the log: no Skill Reading seen yet.
+	function hosted.forget()
+		for char in pairs(skill) do
+			skill[char] = nil
+		end
+	end
 	local function add(key, module, def)
 		assert(hosted.byKey[key] == nil, key .. " binds a second projection")
 		local projection = { key = key, module = module, def = def }
@@ -142,10 +150,14 @@ local function host(now, characters)
 		end)
 	end
 
-	-- The Module handle as the driver hosts it: projections bind; moments, Write-ups, summary lines and Coins reports
-	-- are dropped; appending raises.
+	-- The Module handle as the driver hosts it: projections bind; IterateCatches reads the log being folded back, with
+	-- the Module's own records, as Core's does (LOG-R42; Hunts' late `run` records, HNT-R149); moments, Write-ups,
+	-- summary lines and Coins reports are dropped; appending raises.
 	local Handle = {}
 	Handle.__index = Handle
+	function Handle:IterateCatches(afterSeq)
+		return hosted.catchLog:Iterate(afterSeq, self.name)
+	end
 	function Handle:NewProjection(def)
 		local projection = add(self.name, self.name, def)
 		return {
@@ -177,32 +189,28 @@ local function host(now, characters)
 end
 
 -- Folds the PagleLog `saved` through every projection `hosted` binds, as the driver does: each from reset, every
--- record (a Module record to its own Module only, LOG-R41), then done as a first build from seq 0.
+-- record as Core's M:IterateCatches reads it for its Module (a Module record to its own Module only, LOG-R41, LOG-R42;
+-- none to Core's), then done as a first build from seq 0. The handle's IterateCatches reads the same log meanwhile.
 ---@param hosted LogicAlone
 ---@param saved table
 ---@param now integer
 local function fold(hosted, saved, now)
 	local core = hosted.core
 	local catchLog = core.OpenCatchLog(saved, {}, now, core.Catalogue.GetItem)
-	local casts = {}
+	hosted.catchLog = catchLog
 	for _, projection in ipairs(hosted.projections) do
 		projection.state = projection.def.reset() or {}
-		casts[projection] = 0
-	end
-	for record in catchLog:Iterate(0) do
-		hosted.see(record)
-		for _, projection in ipairs(hosted.projections) do
-			if record.kind ~= "module" or record.module == projection.module then
-				projection.def.apply(projection.state, record, "rebuild")
-				if record.kind == "cast" then
-					casts[projection] = casts[projection] + 1
-				end
+		local casts = 0
+		hosted.forget()
+		for record in catchLog:Iterate(0, projection.module) do
+			hosted.see(record)
+			projection.def.apply(projection.state, record, "rebuild")
+			if record.kind == "cast" then
+				casts = casts + 1
 			end
 		end
-	end
-	for _, projection in ipairs(hosted.projections) do
 		if projection.def.done then
-			projection.def.done(projection.state, { firstBuild = casts[projection] > 0, rebuilt = true, replayed = 0 })
+			projection.def.done(projection.state, { firstBuild = casts > 0, rebuilt = true, replayed = 0 })
 		end
 	end
 end
@@ -215,14 +223,33 @@ local function cast(time, zone, itemIDs)
 	return castRecord({ time = time, zone = zone, items = itemIDs, outcome = itemIDs and "caught" or "gotAway" })
 end
 
--- A FakePagle whose log holds Casts in three zones, a Skill Reading and a purchase, and every paying Module loaded
--- whole on it and logged in: the client's side of the comparison.
+-- The first event of the shipped pool (data/EventList.lua, DATA-R98).
+---@return string
+local function firstPoolEvent()
+	local ns = {}
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
+	local chunk = assert(loadfile("addons/Pagle_Hunts/data/EventList.lua"))
+	setfenv(chunk, { Pagle = {}, select = select })
+	chunk("Pagle_Hunts", ns)
+	return ns.eventList.events[1].id
+end
+
+-- Its `run` record (HNT-R150) for the three days from T0, logged at T0 before the Casts, as the run log logs a slot.
+---@return table
+local function poolRun()
+	local payload = ("%s|%d|%d|r"):format(firstPoolEvent(), T0, T0 + 3 * 86400)
+	return { kind = "module", char = 1, time = T0, module = "Hunts", recordKind = "run", payload = payload }
+end
+
+-- A FakePagle whose log holds Casts in three zones, a Skill Reading, a purchase and a pool event's run, and every
+-- paying Module loaded whole on it and logged in: the client's side of the comparison.
 ---@return FakePagle fake
 ---@return table<string, LoadedAddon> loaded each Module by roster name
 local function clientSide()
 	local fake = newFakePagle()
 	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
 	fake.catchLog:Append({ kind = "skill", char = 1, time = T0, rank = 150, max = 225, mod = 0 })
+	fake.catchLog:Append(poolRun())
 	fake.catchLog:Append(cast(T0 + 10, ELWYNN, { MACKEREL, SMALLFISH }))
 	fake.catchLog:Append(cast(T0 + 70, ELWYNN))
 	fake.catchLog:Append(cast(T0 + 130, WESTFALL, { MACKEREL, OILY }))
@@ -342,6 +369,21 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 
 			assert.are.same(loaded.Ledger.ns.LegendList(), list)
 			assert.is_true(#list > 0)
+		end)
+
+		it("credits the pool event's run, as the client's Hunts does (LOG-R79, HNT-R150)", function()
+			local key = firstPoolEvent() .. "@" .. T0
+
+			assert.is_truthy(hosted.byKey.Hunts.state.runs[key])
+			assert.are.same(loaded.Hunts.ns.projection:GetState().runs[key], hosted.byKey.Hunts.state.runs[key])
+		end)
+
+		it("lists the release's event pool as the client's Hunts does, every event (LOG-R79, DATA-R98)", function()
+			local pool = hosted.modules.Hunts.EventPool()
+
+			assert.are.same(loaded.Hunts.ns.EventPool(), pool)
+			assert.are.equal(#loaded.Hunts.ns.events:Events(), #pool)
+			assert.is_true(#pool > 0)
 		end)
 
 		for _, name in ipairs({ "Ledger", "Hunts", "Stats", "TackleBoard" }) do

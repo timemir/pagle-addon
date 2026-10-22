@@ -46,6 +46,7 @@ logic\Sessions.lua
 logic\Size.lua
 logic\Variety.lua
 logic\Length.lua
+logic\Clock.lua
 logic\CatchLog.lua
 logic\Projections.lua
 logic\MinimapIcon.lua
@@ -106,6 +107,7 @@ adapter\Modules.lua
 adapter\Host.lua
 adapter\CatchLog.lua
 adapter\Size.lua
+adapter\Clock.lua
 adapter\Variety.lua
 adapter\Projections.lua
 adapter\Angler.lua

@@ -21,6 +21,7 @@ local Pagle = Pagle
 ---| "ActivityXPChanged" # PagleActivityXPChangedHandler
 ---| "PushedContentReady" # PaglePushedContentReadyHandler
 ---| "AppearanceChanged" # PagleAppearanceChangedHandler
+---| "ClockFormatChanged" # PagleClockFormatChangedHandler
 ---| "SessionStarted" # PagleSessionStartedHandler
 ---| "SessionEnded" # PagleSessionEndedHandler
 ---| "GuideOpened" # the Field guide opened (core/onboarding.md › Contracts): no payload

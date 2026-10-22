@@ -36,8 +36,8 @@ name = "Pathfinder's Calf"
 description = "Soft calfskin pressed with a compass rose. Handed to anglers who saw a whole set of hunts through to the end."
 
 [huntgood."hunts.binding.fiveseal"] # core.binding, earned: Finish every Hunt set
-name = "Five-Set Seal"
-description = "Black leather with five wax seals pressed into it, one for every set of hunts there is. Nobody fakes this one."
+name = "Four-Set Seal"
+description = "Black leather with four wax seals pressed into it, one for every set of hunts there is. Nobody fakes this one."
 
 [huntgood."hunts.binding.wagersilk"] # core.binding, earned: 10 Wager runs completed
 name = "Winner's Brocade"

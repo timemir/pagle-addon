@@ -41,7 +41,6 @@ describe("the bindings", function()
 				{ "core.binding.chartlinen", 1 },
 				{ "core.binding.sailcloth", 1 },
 				{ "core.binding.oilskin", 1 },
-				{ "core.binding.oilcloth", 1 },
 				{ "core.binding.canvas", 1 },
 				{ "core.binding.kraft", 1 },
 				{ "core.binding.tartan", 1 },
@@ -104,7 +103,7 @@ describe("the bindings", function()
 				"hunts.binding.fiveseal",
 				"hunts.binding.wagersilk",
 			}, earned)
-			assert.are.equal(48, #ns.BINDINGS)
+			assert.are.equal(47, #ns.BINDINGS)
 		end
 	)
 
@@ -267,21 +266,19 @@ describe("the bindings", function()
 		)
 
 		it(
-			"draws Oilcloth and Verdigris as fills at the book's size, Tooled Leather as Field Leather's with its double rule, none with a swatch (HNT-R121, ADR 0015)",
+			"draws Verdigris as a fill at the book's size, Tooled Leather as Field Leather's with its double rule, neither with a swatch (HNT-R121, ADR 0015)",
 			function()
-				local oilcloth = ns.BindingLook("core.binding.oilcloth")
 				local tooled = ns.BindingLook("core.binding.tooled")
 				local verdigris = ns.BindingLook("core.binding.verdigris")
 
-				assert.are.same({ BOOKS .. "fills\\oilcloth", 1 }, { oilcloth.fill, oilcloth.foot })
-				assert.is_nil(oilcloth.texture)
 				assert.are.same({ BOOKS .. "fills\\verdigris", 1, true }, {
 					verdigris.fill,
 					verdigris.foot,
 					verdigris.giltCorner,
 				})
+				assert.is_nil(verdigris.texture)
 				assert.are.same({ BOOKS .. "Leather", 0.75, true }, { tooled.texture, tooled.foot, tooled.tooled })
-				for _, look in ipairs({ oilcloth, tooled, verdigris }) do
+				for _, look in ipairs({ tooled, verdigris }) do
 					assert.are.same({ FIELD_GILT, false }, { look.gilt, look.silver })
 					assert.is_nil(look.swatch)
 					assert.is_nil(look.swatchAtlas)
@@ -299,7 +296,7 @@ describe("the bindings", function()
 					assert(ns.ATLASES[look.swatchAtlas].sprites[look.swatch], binding.id)
 				end
 			end
-			assert.are.equal(2, fills)
+			assert.are.equal(1, fills)
 		end)
 
 		it("ships every material, fill and swatch atlas in Core's media (ADR 0015)", function()

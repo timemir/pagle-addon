@@ -65,14 +65,13 @@ ns.CELEBRATED_RUN_KEEP = 30 * 86400
 --- Projection state, `hours`): 14 days. A run record credits its earlier Casts from it (HNT-R149).
 ns.HOUR_INDEX_HOURS = 14 * 24
 
---- Tunables (hunts.md): the companion hint switch (HNT-R170–R172), off at 1.0 (#288): while it is off there is no
---- hint, no Nod, no placeholder slip, no tracker line and no Settings row. The companion state is still read and pushed
---- runs still used (HNT-R153). The release that turns it on, once `Pagle_Content` works end to end, flips it here.
-ns.COMPANION_HINT_ON = false
+--- Tunables (hunts.md): the companion hint switch (HNT-R170–R172), on at 1.0. Were it off there would be no hint, no
+--- Nod, no placeholder slip, no tracker line and no Settings row; the companion state would still be read and pushed
+--- runs still used (HNT-R153).
+ns.COMPANION_HINT_ON = true
 
---- Tunables (hunts.md): the companion's address that Get it shows (HNT-R170). A placeholder until it is decided
---- (#289 left it to the build): the release that turns the hint switch on sets the real one.
-ns.COMPANION_URL = "https://github.com/timemir/pagle-companion"
+--- Tunables (hunts.md): the companion's address that Get it shows (HNT-R170).
+ns.COMPANION_URL = "https://pagle.app/download"
 
 --- Tunables (hunts.md): the least time between two companion Nods, in seconds: 7 days (HNT-R171).
 ns.HINT_NOD_INTERVAL = 7 * 86400

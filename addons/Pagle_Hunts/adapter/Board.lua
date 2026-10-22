@@ -385,9 +385,9 @@ end
 --- Whether the board is open: shown, and not fading out.
 ---@return boolean
 function Board:IsShown()
-	-- the shell's IsShown counts a book fading out as shown; its Toggle, as the board's, doesn't (BOOK-R23)
+	-- the shell's IsShown leaves out a book fading out, as the board's Toggle does (BOOK-R23)
 	local book = self.book --[[@as PagleBook?]]
-	return book ~= nil and book:IsShown() and not book.closing
+	return book ~= nil and book:IsShown()
 end
 
 --- How many times the board has drawn. A page whose last draw was the draw before this one has been on show since, so

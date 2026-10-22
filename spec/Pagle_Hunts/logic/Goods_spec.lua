@@ -7,7 +7,7 @@ local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
 local SETS = { "fixture_dusk", "fixture_wagers", "fixture_pair", "fixture_tide" }
 
--- The goods earned with every set's title (HNT-R122): Five-Set Seal, and Night Watch in Core's sound set slot (HNT-R123).
+-- The goods earned with every set's title (HNT-R122): Four-Set Seal, and Night Watch in Core's sound set slot (HNT-R123).
 local EVERY_SET = { "hunts.binding.fiveseal", "hunts.soundset.nightwatch" }
 
 -- A set title's record in state.sets (HuntsSetTitle).
@@ -94,7 +94,7 @@ describe("Hunts' earned goods", function()
 		end)
 	end)
 
-	describe("Five-Set Seal and Night Watch", function()
+	describe("Four-Set Seal and Night Watch", function()
 		it(
 			"are earned with every set's title, each in the projection or the celebrated set (HNT-R122, HNT-R123, HNT-R20)",
 			function()
@@ -229,7 +229,7 @@ describe("Hunts' earned goods", function()
 		end)
 
 		it(
-			"keep Five-Set Seal and Night Watch once noted when a release adds a set not yet titled (HNT-R122, HNT-R20)",
+			"keep Four-Set Seal and Night Watch once noted when a release adds a set not yet titled (HNT-R122, HNT-R20)",
 			function()
 				local more = { unpack(list) }
 				more[#more + 1] = { id = "fixture_later" }

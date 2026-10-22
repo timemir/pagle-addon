@@ -203,3 +203,30 @@ end
 function EventList:HuntName(hunt)
 	return hunt.name or ns.Lore(self.L, "hunt." .. hunt.id .. ".name") or hunt.id
 end
+
+---@class HuntPoolEvent           -- one event of ns.EventPool
+---@field id string
+---@field tags string[]
+---@field skill integer[]         -- { low, high }
+---@field band "low"|"mid"|"high"
+---@field rotation boolean
+---@field retired? integer
+
+--- The release's event pool for Pagle's backend (#223, LOG-R79): ns.events:Events() as plain copies of each event's
+--- id, tags, skill, band, rotation and retired, in event-ID order, retired ones included. The driver calls it after
+--- ns.BindProjections, which makes ns.events.
+---@return HuntPoolEvent[]
+function ns.EventPool()
+	local pool = {}
+	for i, event in ipairs(ns.events:Events()) do
+		pool[i] = {
+			id = event.id,
+			tags = copy(event.tags),
+			skill = copy(event.skill),
+			band = event.band,
+			rotation = event.rotation,
+			retired = event.retired,
+		}
+	end
+	return pool
+end

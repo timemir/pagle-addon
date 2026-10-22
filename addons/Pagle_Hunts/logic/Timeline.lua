@@ -165,7 +165,7 @@ local function rulerAt(now, snapshot)
 		local clock = ns.RealmClockAt(t, snapshot)
 		local label
 		if math.floor(clock.minute / 60) % LABEL_EVERY == 0 and math.abs(t - now) >= HOUR then
-			label = ns.L.RULER_HOUR:format(math.floor(clock.minute / 60))
+			label = ns.FormatRulerHour(math.floor(clock.minute / 60))
 		end
 		ruler.ticks[#ruler.ticks + 1] = { x = x(ruler, t), label = label }
 	end

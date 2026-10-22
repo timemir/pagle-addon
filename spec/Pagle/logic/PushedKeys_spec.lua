@@ -69,8 +69,38 @@ end
 describe("ns.PUSHED_KEYS", function()
 	local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
-	it("ships empty until pagle-backend publishes its keys (PUSH-R12)", function()
-		assert.are.same({}, ns.PUSHED_KEYS)
+	it("ships pagle-backend's current key, pagle-2026a, and its next, pagle-2026b, and no other (PUSH-R12)", function()
+		local keyIds = {}
+		for keyId in pairs(ns.PUSHED_KEYS) do
+			keyIds[#keyIds + 1] = keyId
+		end
+		table.sort(keyIds)
+
+		assert.are.same({ "pagle-2026a", "pagle-2026b" }, keyIds)
+		for _, keyId in ipairs(keyIds) do
+			local key = ns.PUSHED_KEYS[keyId]
+			assert.are.equal(512, #key.n, keyId)
+			assert(type(key.rr) == "string", keyId)
+			assert(type(key.n0inv) == "number", keyId)
+		end
+		assert.are_not.equal(ns.PUSHED_KEYS["pagle-2026a"].n, ns.PUSHED_KEYS["pagle-2026b"].n)
+	end)
+
+	it("never ships the TEST ONLY key: a spec hands it in itself (PUSH-R12)", function()
+		local testKey = pushedContentFixtures().testKey
+
+		assert.is_nil(ns.PUSHED_KEYS.testKey)
+		for keyId, key in pairs(ns.PUSHED_KEYS) do
+			assert.are_not.equal(testKey.n, key.n, keyId)
+		end
+	end)
+
+	it("names each key in its header, which is current and which next, and the backend commit (PUSH-R12)", function()
+		local header = readFile("addons/Pagle/logic/PushedKeys.lua"):match("^(.-)\n[^%-]")
+
+		assert.is_truthy(header:find("pagle-2026a, the current key", 1, true))
+		assert.is_truthy(header:find("pagle-2026b, the next key", 1, true))
+		assert.is_truthy(header:find("ede15a8", 1, true))
 	end)
 
 	it("holds only well-formed entries, by key ID, each n, rr and n0inv (PUSH-R11, PUSH-R12)", function()

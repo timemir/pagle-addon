@@ -26,6 +26,9 @@ local HASH_CHUNK = 512
 local HEADROOM = 0.5
 -- The largest integer a header field holds: exact in a double.
 local LARGEST = 2 ^ 53
+-- A keyId's form (PUSH-R2): 1 to 32 of A-Z, a-z, 0-9, _ and -, never the canonical header's "|" (PUSH-R11). Spelled
+-- out, not %w, which follows the C locale.
+local KEY_ID_FORM, KEY_ID_MAX = "^[A-Za-z0-9_%-]+$", 32
 
 ---@alias PagleCompanionState "checking"|"missing"|"notRunning"|"connected"
 ---@alias PaglePushedContentReadyHandler fun(event: "PushedContentReady", state: PagleCompanionState)
@@ -163,6 +166,9 @@ local function check(self, pause)
 			return absent(L.PUSHED_NOT_STRING:format(name))
 		end
 		file[name] = value
+	end
+	if #file.keyId > KEY_ID_MAX or not file.keyId:find(KEY_ID_FORM) then
+		return absent(L.PUSHED_BAD_KEY_ID)
 	end
 	if not ns.PUSHED_FILE_VERSIONS[file.v] then
 		return absent(L.PUSHED_UNKNOWN_VERSION:format(decimal(file.v)))

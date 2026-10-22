@@ -115,7 +115,7 @@ describe("Pagle_Content", function()
 			enterWorld(loaded, 1)
 
 			assert.are.equal("missing", loaded.env.Pagle.GetCompanionState())
-			assert.are.same({}, loaded.ns.PUSHED_KEYS)
+			assert.is_nil(loaded.ns.PUSHED_KEYS.testKey)
 			assert.are.equal("Pagle dev: pushed content is missing: an unknown keyId, testKey.", devContent(loaded)[1])
 		end
 	)

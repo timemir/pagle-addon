@@ -310,8 +310,9 @@ describe("Hunts' projection", function()
 					},
 				},
 			}, calls)
-			-- One redraw from done, then one for each live Cast (HNT-R42).
-			assert.are.same({ "projection", "projection", "projection" }, redraws)
+			-- The companion hint's redraw at PushedContentReady, its switch on at 1.0 (HNT-R172, PUSH-R16); then one
+			-- redraw from done, then one for each live Cast (HNT-R42).
+			assert.are.same({ "companion", "projection", "projection", "projection" }, redraws)
 			assert.are.same({ 190, 190 + 15 + 30 }, huntsReports(fake))
 		end)
 

@@ -147,7 +147,8 @@ ns.L = {
 	SET_HUNTS_HEADING = "Hunts in this set",
 	RULER_REALM_TIME = "Realm time", -- in small caps over the names, level with the ruler
 	RULER_NEXT = "next %dh", -- in the hand at the ruler's right: how far ahead it reaches
-	RULER_HOUR = "%02d", -- a labelled tick: the realm hour
+	RULER_HOUR = "%02d", -- a labelled tick: the realm hour, 24-hour
+	RULER_HOUR_12 = { am = "%da", pm = "%dp" }, -- a labelled tick in 12-hour (CORE-R87): "6a", "12p"
 	OUT_OF_SEASON = "out of season",
 	-- A set's page, its left side (HNT-R66): "{set name}: earns {title}", or "{set name}: {title}" once earned.
 	SET_HEADING_EARNS = "%s: earns %s",

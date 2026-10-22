@@ -106,7 +106,7 @@ describe("The Look and Feel page", function()
 				"Crests = core.crest.plain",
 				"# Books",
 				"Book binding = core.binding.field",
-				"  33 more in the Curio Shop",
+				"  32 more in the Curio Shop",
 				"Journal binding = ledger.binding.oak",
 				"  2 more in the Curio Shop",
 				"# Curio Shop",

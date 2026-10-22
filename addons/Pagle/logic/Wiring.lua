@@ -25,6 +25,7 @@ local ns = select(2, ...)
 ---@field call fun(fn: function, ...: any): ...  -- calls fn; an error is reported, not raised (securecallfunction)
 ---@field report fun(message: string)            -- reports an error and carries on (geterrorhandler())
 ---@field region fun(): integer?                 -- GetCurrentRegion(), nil where the call doesn't exist (LOG-R69)
+---@field militaryTime fun(): string?           -- GetCVar("timeMgrUseMilitaryTime"), nil where it doesn't exist (CORE-R87)
 ---@field print fun(line: string)                -- prints a chat line
 ---@field isRestricted fun(): boolean            -- Pagle.IsRestricted() (CORE-R33)
 ---@field syncLimit? integer                     -- the projections' sync limit; default PROJECTION_SYNC_LIMIT
@@ -44,6 +45,8 @@ local ns = select(2, ...)
 ---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
 ---@field varietyProjection PagleProjection? Core's variety projection, from login step 1 (ns.WireVarietyProjection).
 ---@field LengthUnit fun(): PagleLengthUnit The Angler's length unit now (ns.WireLength).
+---@field ClockFormat fun(): PagleClockFormat The clock format now (ns.WireClock).
+---@field NoteClockFormat fun() Fires ClockFormatChanged if the format differs from the last written (ns.WireClock).
 ---@field fishing PagleFishing Core's Cast state machine, which Core's adapter and FakePagle each build.
 ---@field dev PagleDevCommands Core's `/pagle dev` commands (ns.WireDev).
 ---@field tourStops PagleTourStops Core's one registry of tour stops (ns.WireDev, CORE-R65).
@@ -191,6 +194,54 @@ function ns.PublishSize(Pagle, host, wrap)
 	--- length reads: compare lengths in millimetres.
 	---@type fun(mm: number): string
 	api.FormatLength = ns.WireLength(host)
+end
+
+--- The clock format (CORE-R87) as ns.ClockFormat(): PagleDB.profile.clockFormat, or with none stored (or before
+--- PagleDB is open) the game's clock, read at each call. Returns Pagle.FormatClock, a time of day in it, and
+--- Pagle.GetClockFormat, the format itself, each of which notes the format a Module wrote in;
+--- ns.NoteClockFormat() fires `ClockFormatChanged(format)` when the format now differs from that one, so the event
+--- comes exactly when a time already written is in the old format, and never before any is.
+---@param host PagleHost
+---@return fun(hour: integer, minute: integer): string formatClock
+---@return fun(): PagleClockFormat getClockFormat
+function ns.WireClock(host)
+	function ns.ClockFormat()
+		local db = host.db()
+		return ns.ClockFormatOf(db and db.profile.clockFormat, host.militaryTime())
+	end
+	local written -- the format a Module last wrote in; nil before its first call
+	function ns.NoteClockFormat()
+		local format = ns.ClockFormat()
+		if written ~= nil and format ~= written then
+			written = format
+			host.fire("ClockFormatChanged", format)
+		end
+	end
+	local function getClockFormat()
+		written = ns.ClockFormat()
+		return written
+	end
+	return function(hour, minute)
+		return ns.FormatClock(hour, minute, getClockFormat())
+	end, getClockFormat
+end
+
+--- Publishes `Pagle.FormatClock(hour, minute)` and `Pagle.GetClockFormat()` on ns.WireClock (CORE-R87).
+---@param Pagle table
+---@param host PagleHost
+function ns.PublishClock(Pagle, host)
+	---@class Pagle
+	local api = Pagle
+	local formatClock, getClockFormat = ns.WireClock(host)
+	--- A time of day in the Angler's clock format: "18:05" or "6:05 PM" (CORE-R87). The format is
+	--- PagleDB.profile.clockFormat, or the game's clock (the CVar timeMgrUseMilitaryTime), 24-hour unless the game's
+	--- is set to 12-hour. `hour` is taken mod 24. A Module redraws what shows a clock on `ClockFormatChanged`.
+	---@type fun(hour: integer, minute: integer): string
+	api.FormatClock = formatClock
+	--- The Angler's clock format now, "24h" or "12h" (CORE-R87), for a Module that writes a time its own way, such as
+	--- the Hunts timeline's compact hour ticks ("18", "6p"). It counts as writing in it, for `ClockFormatChanged`.
+	---@type fun(): PagleClockFormat
+	api.GetClockFormat = getClockFormat
 end
 
 --- Publishes the variety rarities on `Pagle` (VAR-R11): `Pagle.VARIETY_RARITIES`, Common to Epic, each

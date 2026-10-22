@@ -17,8 +17,9 @@ local MISSING = {
 local NOT_RUNNING = { "The Pagle companion isn't running. Start it to get this week's wagers." }
 
 describe("the companion hint (HNT-R170)", function()
-	it("is off at 1.0: the switch ships off (HNT-R172)", function()
-		assert.is_false(ns.COMPANION_HINT_ON)
+	it("is on at 1.0: the switch ships on, with the companion's download address (HNT-R172, HNT-R170)", function()
+		assert.is_true(ns.COMPANION_HINT_ON)
+		assert.are.equal("https://pagle.app/download", ns.COMPANION_URL)
 	end)
 
 	it("applies to no companion state while the switch is off (HNT-R172)", function()

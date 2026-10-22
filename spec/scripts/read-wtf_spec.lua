@@ -936,8 +936,8 @@ describe("scripts/read-wtf.lua", function()
 	-- the last, three Casts from realm 08:00 with a Skill Reading (151) between them. Its PagleStatsDB.global.projection
 	-- is that log folded by Stats' own fold (STA-R21–R31) over spec/scripts/fixtures/Catalogue.lua: Elwynn's no-junk
 	-- line is 25 + 95 = 120 and Westfall's 55 + 95 = 150 (STA-R12), and Nightfin keeps the `night` window (21:00–06:00)
-	-- in Elwynn (STA-R14). Its profile has the tracker on, three watches and a moved book; PagleDB caches Stats' three
-	-- tracker frames with Logbook picked. Read at --now 1792000000, 2026-10-14 17:46:40 UTC.
+	-- in Elwynn (STA-R14). Its profile has the tracker on and three watches; PagleDB keeps the book moved (profile.books,
+	-- BOOK-R5) and caches Stats' three tracker frames with Logbook picked. Read at --now 1792000000, 2026-10-14 17:46:40 UTC.
 	describe("on an account after the M6 exit check's steps (#219, in-game-verification.md › Stats)", function()
 		local NOW = "1792000000"
 		local out, err, code = run(
@@ -1007,8 +1007,14 @@ describe("scripts/read-wtf.lua", function()
 				"  1. item 13759 in area 12: 1 in 41, Dry spell 119, normal (12:hi:night)",
 				"  2. item 6303 in area 12: 1 in 1, Dry spell 1, normal (12:hi)",
 				"  3. item 6291 in area 40: learning 2/100, Dry spell 2, no luck reading (40:hi)",
-				"window: TOPLEFT of UIParent's TOPLEFT, x 312, y -140 (moved by the player, STA-R71)",
 			}, section(out, "== Stats (PagleStatsDB)"))
+		end)
+
+		it("prints each movable book's saved place from Core's profile.books (BOOK-R5)", function()
+			assert.are.same({
+				"== Books (PagleDB.profile.books)",
+				"stats: TOPLEFT of UIParent's TOPLEFT, x 312, y -140 (moved by the player, BOOK-R5)",
+			}, section(out, "== Books"))
 		end)
 
 		it("prints --stats-item's reading in --area at --skill with Stats' own logic (STA-R41–R54)", function()
