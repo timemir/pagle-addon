@@ -17,9 +17,10 @@ local ICONS = "Interface\\Icons\\"
 
 --- One of the Tackle Board's goods, as data: exactly one of `default`, `tier` or `milestone` (SHOP-R22): an earned
 --- good is earned at that Campfire milestone (TKB-R126); and its icon, the shop's swatch for it (SHOP-R26): an
---- in-client texture.
+--- in-client texture. A good in one of Core's slots names it (`slot`; SHOP-R23, SHOP-R25): Core draws it there.
 ---@class TackleGoodData
 ---@field id string
+---@field slot? string        -- one of Core's slots open to earned goods; nil: the tracker frame slot
 ---@field default? true
 ---@field tier? 1|2
 ---@field milestone? integer  -- earned: the Campfire milestone's days (TKB-R73)
@@ -48,6 +49,14 @@ ns.BOARD_GOODS = {
 		{ id = "tackleboard.trackerframe.bobber", tier = 2, icon = ICONS .. "Trade_Fishing" },
 		-- A fire: Live Embers, earned at the Campfire's 365-day milestone (TKB-R126).
 		{ id = "tackleboard.trackerframe.embers", milestone = 365, icon = ICONS .. "Spell_Fire_Fire" },
+		-- A flame: Hearth Ember, a toast style in Core's slot, earned at the 100-day milestone (TKB-R126). Core ships
+		-- its art and draws it, keyed by this ID (ANN-R81).
+		{
+			id = "tackleboard.toaststyle.ember",
+			slot = "core.toaststyle",
+			milestone = 100,
+			icon = ICONS .. "Spell_Fire_FlameBolt",
+		},
 	},
 }
 
@@ -163,8 +172,9 @@ end
 ---@field reached fun(days: integer): boolean
 
 --- The Tackle Board's slot and its goods to register (TKB-R125, TKB-R126): each good named from lore, its icon its
---- swatch, and its preview drawn by `hooks.preview`; an earned one earned while its Campfire milestone is reached
---- (`hooks.reached`), its earnedText saying which ("Campfire: 365 days").
+--- swatch, and a tracker frame's preview drawn by `hooks.preview` (a good in Core's slot has none: the slot's preview
+--- draws it, SHOP-R25); an earned one earned while its Campfire milestone is reached (`hooks.reached`), its earnedText
+--- saying which ("Campfire: 365 days").
 ---@param hooks TackleGoodHooks
 ---@return PagleSlot slot
 ---@return PagleGood[] goods
@@ -175,7 +185,7 @@ function ns.BoardGoods(hooks)
 		local goodID, days = good.id, good.milestone
 		goods[i] = {
 			id = goodID,
-			slot = data.id,
+			slot = good.slot or data.id,
 			name = ns.BoardGoodName(goodID),
 			description = ns.BoardGoodDescription(goodID),
 			icon = good.icon,
@@ -185,9 +195,9 @@ function ns.BoardGoods(hooks)
 				return hooks.reached(days)
 			end,
 			earnedText = days and ns.Fill(ns.L.GOOD_EARNED_CAMPFIRE, { days = days }),
-			preview = function(stage)
+			preview = not good.slot and function(stage)
 				hooks.preview(stage, goodID)
-			end,
+			end or nil,
 		}
 	end
 	return { id = data.id, label = ns.L[data.label], category = data.category }, goods

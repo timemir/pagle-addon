@@ -75,6 +75,7 @@ describe("The Tackle Board's goods", function()
 		end
 		table.sort(ids)
 		assert.are.same({
+			"tackleboard.toaststyle.ember",
 			"tackleboard.trackerframe.bamboo",
 			"tackleboard.trackerframe.bobber",
 			"tackleboard.trackerframe.corkboard",
@@ -305,42 +306,44 @@ describe("A tracker frame's preview", function()
 	)
 end)
 
+-- The earned goods' Campfire (TKB-R126, TKB-R73): a board started on day 0 and lit day after day.
+local DAY, T = board.DAY, board.DAY0 + 3600 -- the start record's time, on board day 0
+local DUROTAR, BLACKMOUTH = 14, 6358 -- a Haul Notice counts a Catch of any item in its zone
+local NOTICE = "n;haul;1;10;1;14" -- a tier-1 Notice done by one Catch in Durotar
+
+-- A tier-1 Notice issued and done on board day `day`: it lights the day (TKB-R70).
+local function litDay(day)
+	local t = T + day * DAY
+	return { board.issue(t + 1, NOTICE), board.cast(t + 2, DUROTAR, { BLACKMOUTH }) }
+end
+
+-- The board started on day 0 and lit on each of its first `days` days.
+local function litDays(days)
+	local log = { board.start(T) }
+	for day = 0, days - 1 do
+		for _, entry in ipairs(litDay(day)) do
+			log[#log + 1] = entry
+		end
+	end
+	return log
+end
+
+-- Notes the projections' mode at each M:RefreshGoods (SHOP-R31): "live", a done's or "idle".
+local function noteRefreshes(fake)
+	local modes = {}
+	local goods = fake.ns.goods
+	local refresh = goods.Refresh
+	goods.Refresh = function(self, module)
+		if module == "TackleBoard" then
+			modes[#modes + 1] = fake.projections:Mode() or "idle"
+		end
+		return refresh(self, module)
+	end
+	return modes
+end
+
 describe("Live Embers, earned at the Campfire's 365-day milestone (TKB-R126, TKB-R73, SHOP-R31)", function()
 	local EMBERS = "tackleboard.trackerframe.embers"
-	local DAY, T = board.DAY, board.DAY0 + 3600 -- the start record's time, on board day 0
-	local DUROTAR, BLACKMOUTH = 14, 6358 -- a Haul Notice counts a Catch of any item in its zone
-	local NOTICE = "n;haul;1;10;1;14" -- a tier-1 Notice done by one Catch in Durotar
-
-	-- A tier-1 Notice issued and done on board day `day`: it lights the day (TKB-R70).
-	local function litDay(day)
-		local t = T + day * DAY
-		return { board.issue(t + 1, NOTICE), board.cast(t + 2, DUROTAR, { BLACKMOUTH }) }
-	end
-
-	-- The board started on day 0 and lit on each of its first `days` days.
-	local function litDays(days)
-		local log = { board.start(T) }
-		for day = 0, days - 1 do
-			for _, entry in ipairs(litDay(day)) do
-				log[#log + 1] = entry
-			end
-		end
-		return log
-	end
-
-	-- Notes the projections' mode at each M:RefreshGoods (SHOP-R31): "live", a done's or "idle".
-	local function noteRefreshes(fake)
-		local modes = {}
-		local goods = fake.ns.goods
-		local refresh = goods.Refresh
-		goods.Refresh = function(self, module)
-			if module == "TackleBoard" then
-				modes[#modes + 1] = fake.projections:Mode() or "idle"
-			end
-			return refresh(self, module)
-		end
-		return modes
-	end
 
 	it(
 		"isn't owned with 364 days lit, and is after the one M:RefreshGoods of the live entry lighting the 365th",
@@ -406,3 +409,62 @@ describe("Live Embers, earned at the Campfire's 365-day milestone (TKB-R126, TKB
 		end
 	)
 end)
+
+describe(
+	"Hearth Ember, earned at the Campfire's 100-day milestone, a toast style in Core's slot (TKB-R126, TKB-R73, SHOP-R23, SHOP-R31)",
+	function()
+		local EMBER = "tackleboard.toaststyle.ember"
+
+		it(
+			"is registered in core.toaststyle as the Tackle Board's, earned, with no preview of its own: Core draws it (SHOP-R25)",
+			function()
+				local _, fake = loggedIn()
+				local goods = fake.ns.goods
+
+				local good = goods:Good(EMBER)
+				assert.are.same(
+					{ "core.toaststyle", "TackleBoard", true, nil, nil },
+					{ good.slot, fake.Pagle.GetGood(EMBER).module, good.isEarned ~= nil, good.tier, good.preview }
+				)
+				assert.are.same({ "Campfire: 100 days", "Campfire: 100 days" }, { goods:EarnedTexts(EMBER) })
+				assert.is_false(fake.Pagle.IsOwned(EMBER))
+			end
+		)
+
+		it(
+			"isn't owned with 99 days lit, and is after the one M:RefreshGoods of the live entry lighting the 100th",
+			function()
+				local fake = board.withHistory(litDays(99))
+				local loaded = board.load(fake)
+				local modes = noteRefreshes(fake)
+				fake.login()
+				fake.enterWorld()
+				assert.is_false(fake.Pagle.IsOwned(EMBER))
+				local entries = litDay(99)
+
+				board.live(fake, entries[1])
+				board.live(fake, entries[2])
+
+				assert.is_not_nil(loaded.ns.State().fire.milestones[100])
+				assert.are.same({ "done", "live" }, modes)
+				assert.is_true(fake.Pagle.IsOwned(EMBER))
+				assert.is_false(fake.Pagle.IsOwned("tackleboard.trackerframe.embers")) -- that one waits for 365
+			end
+		)
+
+		it(
+			"is owned from a build over a 100-day fire, through its rebuild, and equips like Core's own (SHOP-R25, SHOP-R32)",
+			function()
+				local fake = board.withHistory(litDays(100))
+				local ns = board.built(fake)
+				assert.is_true(fake.Pagle.IsOwned(EMBER))
+
+				ns.projection:Rebuild()
+
+				assert.is_true(fake.Pagle.IsOwned(EMBER))
+				assert.is_true(fake.Pagle.SetEquipped("core.toaststyle", EMBER))
+				assert.are.equal(EMBER, fake.Pagle.GetEquipped("core.toaststyle"))
+			end
+		)
+	end
+)
