@@ -142,6 +142,14 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 ---@field card TackleCampfireCardFrame?
 ---@field drawer TackleDrawerFrame?
 
+--- The Campfire's stage for ns.SetBoardFire (adapter/BoardMotion.lua): its flame's step while it burns, else "out" or
+--- "none". The ledge's fire and the Field guide's sample (adapter/GuidePage.lua) draw by it.
+---@param view TackleCampfireView
+---@return string
+function ns.CampfireStage(view)
+	return view.state == "lit" and FIRE_STEPS[view.step] or FIRE_STATES[view.state]
+end
+
 -- The celebrated set's titles (TKB-R64, TKB-R83): those already shown, which the card keeps shown as earned.
 ---@return { [string]: true }
 local function celebratedTitles()
@@ -700,7 +708,7 @@ end
 local function drawFire(fire, view, count)
 	local lit = view.state == "lit"
 	fire.view = view
-	local stage = lit and FIRE_STEPS[view.step] or FIRE_STATES[view.state]
+	local stage = ns.CampfireStage(view)
 	if fire.burning.stage ~= stage then
 		ns.SetBoardFire(fire.burning, stage)
 	end

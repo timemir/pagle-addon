@@ -31,6 +31,7 @@ logic\BoardChanges.lua
 logic\Moments.lua
 logic\Goods.lua
 logic\Tracker.lua
+logic\Onboarding.lua
 adapter\Client.lua
 adapter\BoardArt.lua
 adapter\BoardMotion.lua
@@ -49,3 +50,5 @@ adapter\Generate.lua
 adapter\Reroll.lua
 adapter\Moments.lua
 adapter\LiveStep.lua
+adapter\GuidePage.lua
+adapter\FirstLook.lua

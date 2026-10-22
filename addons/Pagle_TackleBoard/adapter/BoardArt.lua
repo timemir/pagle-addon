@@ -13,11 +13,12 @@ local ns = select(2, ...)
 -- a required dependency, CORE-R3).
 
 local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
---- The faces (Pagle/media/fonts/OFL-*.txt): IM Fell English and its italic for print, Caveat for the Angler's
---- handwriting, Marcellus for gilt and brass.
+--- The faces (Pagle/media/fonts/OFL-*.txt): IM Fell English and its italic for print, its small caps for the Field
+--- guide page's kickers, Caveat for the Angler's handwriting, Marcellus for gilt and brass.
 ns.BOARD_FONT_FACES = {
 	print = FONT_DIR .. "IMFeENrm28P.ttf",
 	italic = FONT_DIR .. "IMFeENit28P.ttf",
+	sc = FONT_DIR .. "IMFeENsc28P.ttf",
 	gilt = FONT_DIR .. "Marcellus-Regular.ttf",
 	hand = FONT_DIR .. "Caveat-Medium.ttf",
 	handSemi = FONT_DIR .. "Caveat-SemiBold.ttf",
@@ -125,6 +126,18 @@ ns.BOARD_FONTS = {
 	DriftCount = { "handSemi", 17, "FFE08A", true },
 	DriftWhere = { "italic", 13, "D8CCB2", true },
 	DriftMore = { "italic", 13, "C8C0A8", true },
+	-- the Field guide's page (ONB-R37; the onboarding kit's Guide.lua): kickers, titles, print, the facts, the italic
+	-- line under Start my board and the button's gilt
+	GuideKicker = { "sc", 14, "8A5A2A" },
+	GuideTitle = { "print", 29, "3E220C" },
+	GuideAsk = { "print", 25, "3E220C" },
+	GuideBody = { "print", 15, "3A2614" },
+	GuideSide = { "print", 14, "4A3018" },
+	GuideFact = { "print", 14.5, "3E220C" },
+	GuideNote = { "italic", 13, "7A5A30" },
+	GuideButton = { "gilt", 18, "F4DFA8", true },
+	-- the "?" on its brass pin beside the close mark (ONB-R59)
+	HelpMark = { "gilt", 15, "3A2406" },
 	-- the board's tooltip
 	TipTitle = { "gilt", 15, "F6E3A8" },
 	TipLine = { "print", 13.5, "E8DABC" },
@@ -280,6 +293,32 @@ function ns.SetSprite(texture, atlasName, name)
 	shown:SetSize(sprite.w / atlas.scale, sprite.h / atlas.scale)
 	shown.box = { sprite.box[1], sprite.box[2], sprite.box[3], sprite.box[4] }
 	return shown
+end
+
+--- Shows the part of sprite `name`'s drawn element `width` × `height` from `x`, `y` of its top left (UI units) in
+--- `texture`, at that size: a cut of the board's art, as the Field guide's samples show the ledge (ONB-R37).
+---@param texture Texture
+---@param atlasName string
+---@param name string
+---@param x number
+---@param y number
+---@param width number
+---@param height number
+---@return Texture
+function ns.SetSpriteCut(texture, atlasName, name, x, y, width, height)
+	local atlas, sprite = spriteOf(atlasName, name)
+	local scale = atlas.scale
+	local x0, y0 = sprite.x + (sprite.box[1] + x) * scale, sprite.y + (sprite.box[2] + y) * scale
+	crisp(texture)
+	texture:SetTexture(atlas.file)
+	texture:SetTexCoord(
+		x0 / atlas.width,
+		(x0 + width * scale) / atlas.width,
+		y0 / atlas.height,
+		(y0 + height * scale) / atlas.height
+	)
+	texture:SetSize(width, height)
+	return texture
 end
 
 --- A texture on `frame` showing a sprite.
