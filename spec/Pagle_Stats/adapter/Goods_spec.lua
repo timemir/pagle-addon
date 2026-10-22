@@ -1,5 +1,5 @@
 -- Stats' goods on FakePagle (STA-R88, STA-R84; SHOP-R21–R23, SHOP-R26, SHOP-R30–R33, SHOP-R90; SET-R44, SET-R50,
--- SET-R51): the tracker-frame slot and its three goods in Core's goods registry, their names from lore, and their
+-- SET-R51): the tracker-frame slot and its eight goods in Core's goods registry, their names from lore, and their
 -- previews on the shop's stage.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -12,6 +12,11 @@ local GOODS = {
 	{ stats.GOODS[1], "default" },
 	{ stats.GOODS[2], "tier 1" },
 	{ stats.GOODS[3], "tier 2" },
+	{ stats.GOODS[4], "tier 1" },
+	{ stats.GOODS[5], "tier 1" },
+	{ stats.GOODS[6], "tier 2" },
+	{ stats.GOODS[7], "tier 2" },
+	{ stats.GOODS[8], "tier 3" },
 }
 
 -- A good's kind as STA-R88's table writes it; "earned" for one with isEarned (Stats has none).
@@ -41,7 +46,7 @@ end
 
 describe("Stats' goods", function()
 	it(
-		'register the slot stats.trackerframe ("Stats tracker frame", Trackers) with No frame the default, Logbook tier 1 and Brass tier 2, none earned (STA-R88, SHOP-R21, SHOP-R22)',
+		'register the slot stats.trackerframe ("Stats tracker frame", Trackers) with No frame the default, Logbook, Green-Bar Paper and Chalkboard tier 1, Brass, Tide Gauge and Abacus tier 2, Astrolabe tier 3, none earned (STA-R88, SHOP-R21, SHOP-R22)',
 		function()
 			local _, fake = loggedIn()
 			local goods = fake.ns.goods
@@ -62,14 +67,15 @@ describe("Stats' goods", function()
 		end
 	)
 
-	it("sell for 150 and 400 Coins in the Curio Shop, as Stats' (STA-R88, SHOP-R22)", function()
+	it("sell for 150, 400 and 900 Coins by their tiers in the Curio Shop, as Stats' (STA-R88, SHOP-R22)", function()
 		local _, fake = loggedIn()
 		local shop = fake.ns.ShopModel(tostring)
 
-		assert.are.same({ 150, 400 }, {
-			shop:Entry("stats.trackerframe.logbook").price,
-			shop:Entry("stats.trackerframe.brass").price,
-		})
+		local prices = {}
+		for i = 2, #GOODS do
+			prices[i - 1] = shop:Entry(GOODS[i][1]).price
+		end
+		assert.are.same({ 150, 400, 150, 150, 400, 400, 900 }, prices)
 		assert.are.equal("Stats", fake.Pagle.GetGood("stats.trackerframe.none").module)
 	end)
 
