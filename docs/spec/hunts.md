@@ -325,6 +325,8 @@ The board shows Hunt Events under the players' name, **Pagle Wagers**, in two pl
 ### The Pagle Wagers tracker block
 
 - **HNT-R175** The Hunts tracker (HNT-R75) shows, above its "Hunts" block, a **"Pagle Wagers"** block while any run is on: its collapsible header, then two lines per run on (at most 3, Tunables, then "+{n} more wagers on the table"): first the event's name and, at the right, "settled" or "ends in {duration}" (HNT-R51); second, its Hunts' progress as "{done} of {n} first marks" and the closest unfinished Hunt as "{Hunt}: {count} / {next threshold}". Clicking a run opens the board on it (HNT-R164).
+
+  *Default chosen while building (#304):* the closest unfinished Hunt is the one without its first mark that has the largest share of it, ties in definition order (`RunProgress`), so its next threshold is its first mark. A settled run's second line reads "{n} of {n} first marks" alone. While the projection updates, the second line reads "updating…" and the label counts down (HNT-R78). "+{n} more wagers on the table" opens the Pagle Wagers spread. Both blocks sit on the one tracker frame's paper, and each run has a dot in the wagers' oxblood.
 - **HNT-R176** While the hint applies (HNT-R170) and no run is on, the block shows one line, "Pagle companion not running" or "New wagers with the Pagle companion", with "why?" opening the Pagle Wagers spread.
 - **HNT-R177** The block has its own collapsed state (`profile.tracker.wagersCollapsed`); it follows the tracker frame (HNT-R79) and the "Show the Hunts tracker" setting.
 

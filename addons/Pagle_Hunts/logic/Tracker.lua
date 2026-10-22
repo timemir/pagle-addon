@@ -117,3 +117,86 @@ function ns.TrackerLines(input)
 	lines.empty = #rows == 0
 	return lines
 end
+
+-- The Pagle Wagers block (HNT-R175–R177) ----------------------------------------------------------------------------
+
+--- Tunables (hunts.md): the runs on the tracker's Pagle Wagers block lists before its "+{n} more wagers on the table"
+--- line (HNT-R175).
+ns.TRACKER_RUNS = 3
+
+--- What the Pagle Wagers block's lines are made from: logic/Wagers.lua's WagersInput (ns.BoardWagersInput(), the
+--- board's own), of which it reads these.
+---@class HuntsTrackerWagersInput
+---@field runs HuntsShownRun[]   -- ns.RunsShown at `now`: the runs on, then the runs ahead (HNT-R160)
+---@field now integer            -- ns.ViewNow(): countdowns freeze with the board's while restricted (HNT-R43)
+---@field updating boolean       -- ns.IsUpdating() (HNT-R78)
+
+--- One run's two lines on the block (HNT-R175).
+---@class HuntsTrackerRun
+---@field key string           -- its run key: clicking its lines opens the board on it (HNT-R164)
+---@field name string          -- the event's name, at the left of the first line…
+---@field label string         -- …and at the right "settled", or "ends in 1d 4h" (HNT-R51's tracker wording)
+---@field second string        -- "1 of 4 first marks · {Hunt}: 1 / 2", or "updating…" (HNT-R78)
+
+--- The Pagle Wagers block's lines.
+---@class HuntsTrackerWagers
+---@field runs HuntsTrackerRun[]   -- at most ns.TRACKER_RUNS
+---@field more integer             -- the runs on past those, for "+{n} more wagers on the table"; 0 for no such line
+
+--- One run on's two lines (HNT-R175): its event's name and "settled" once completed, else "ends in {duration}"
+--- counted from `now`; then "{done} of {n} first marks" and its closest unfinished Hunt as "{Hunt}: {count} / {next
+--- threshold}", ns.RunProgress's (the Hunt without its first mark nearest it, ties in definition order), none once
+--- every first mark is landed. While the projection updates, progress reads "updating…" and the label counts down.
+---@param shown HuntsShownRun
+---@param input HuntsTrackerWagersInput
+---@param state HuntsState
+---@return HuntsTrackerRun
+local function runLines(shown, input, state)
+	local L, run = ns.L, shown.run
+	local line = { key = shown.key, name = ns.events:EventName(shown.event) }
+	if run.completedAt and not input.updating then
+		line.label = L.TRACKER_SETTLED
+	else
+		line.label = L.TRACKER_ENDS_IN:format(ns.FormatDuration(run.end_ - input.now))
+	end
+	if input.updating then
+		line.second = L.TRACKER_UPDATING
+		return line
+	end
+	local progress = ns.RunProgress(run, state)
+	local second = { L.TRACKER_FIRST_MARKS:format(progress.done, progress.total) }
+	if progress.closest then
+		second[2] = L.TRACKER_CLOSEST:format(ns.events:HuntName(progress.closest), progress.count, progress.of)
+	end
+	line.second = table.concat(second, L.TRACKER_JOIN)
+	return line
+end
+
+--- The Pagle Wagers block's lines (HNT-R175): the runs on, as ns.RunsShown orders them, at most ns.TRACKER_RUNS, then
+--- how many more are on; nil with no run on, when the block is gone (the runs ahead show on the board alone).
+---@param input HuntsTrackerWagersInput
+---@param state HuntsState ns.State(), for each run's progress
+---@return HuntsTrackerWagers?
+function ns.TrackerWagerLines(input, state)
+	local lines, on = { runs = {}, more = 0 }, 0
+	for _, shown in ipairs(input.runs) do
+		if shown.on then
+			on = on + 1
+			if on <= ns.TRACKER_RUNS then
+				lines.runs[on] = runLines(shown, input, state)
+			end
+		end
+	end
+	if on == 0 then
+		return nil
+	end
+	lines.more = on - #lines.runs
+	return lines
+end
+
+--- The block's "+{n} more wagers on the table" line (HNT-R175).
+---@param more integer
+---@return string
+function ns.TrackerWagersMore(more)
+	return ns.L.TRACKER_WAGERS_MORE:format(more)
+end

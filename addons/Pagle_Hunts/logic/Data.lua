@@ -17,7 +17,8 @@ ns.SCHEMA_VERSION = 1
 --- version and a later version can tell an old DB from a new one.
 ns.DB_DEFAULTS = {
 	profile = {
-		tracker = { shown = true, collapsed = false }, -- the Hunts tracker (HNT-R75–R79)
+		-- the Hunts tracker (HNT-R75–R79) and its Pagle Wagers block's own collapsed state (HNT-R177)
+		tracker = { shown = true, collapsed = false, wagersCollapsed = false },
 		windowMoments = false, -- "Tell me when a pinned Hunt's window opens" (HNT-R88)
 		showCompleted = false, -- the board's "show completed" filter (HNT-R82)
 		pins = {}, -- { [huntID] = true } (HNT-R81)
