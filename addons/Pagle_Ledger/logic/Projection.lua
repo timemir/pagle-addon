@@ -18,7 +18,7 @@ function ns.RulesVersion(sizeRulesVersion)
 end
 
 --- Core's lookups the Ledger reads (LOG-R55, LOG-R49), from the Pagle API, with the world index built over them
---- (LED-R10) as `world`. Build it where the catalogue is ready (CORE-R10).
+--- (LED-R10) as `world` and how many Size bands Core has (LOG-R67) as `sizeBands`. Build it where the catalogue is ready (CORE-R10).
 ---@param pagle table the Pagle API
 ---@return LedgerLookups
 function ns.LedgerLookups(pagle)
@@ -28,6 +28,7 @@ function ns.LedgerLookups(pagle)
 		GetArea = pagle.GetArea,
 		GetZoneCatches = pagle.GetZoneCatches,
 		MatchesConditions = pagle.MatchesConditions,
+		sizeBands = ns.SizeBandCount(pagle.SIZE_BANDS),
 	}
 	lookups.world = ns.NewWorld(lookups)
 	return lookups
@@ -125,7 +126,12 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 		end
 		-- A level binding (LED-R111), a zone crest (LED-R114) or an expansion good (LED-R116, LED-R117) may be earned
 		-- now (SHOP-R31).
-		local noted = ns.NoteEarnedGoods(celebrated, { state = state, celebrated = celebrated, world = lookups.world })
+		local noted = ns.NoteEarnedGoods(celebrated, {
+			state = state,
+			celebrated = celebrated,
+			world = lookups.world,
+			sizeBands = lookups.sizeBands,
+		})
 		if noted or ns.LevelBindingCrossed(peak, ns.PeakLevel(state, total)) or ns.ZoneMasterReached(earned) then
 			outlets.RefreshGoods()
 		end
@@ -193,7 +199,12 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 		done = function(state, info)
 			local celebrated = ns.CelebrateDone(global, state, scratch, info, outlets, lookups)
 			scratch = {}
-			ns.NoteEarnedGoods(celebrated, { state = state, celebrated = celebrated, world = lookups.world })
+			ns.NoteEarnedGoods(celebrated, {
+				state = state,
+				celebrated = celebrated,
+				world = lookups.world,
+				sizeBands = lookups.sizeBands,
+			})
 			-- The level bindings, zone crests and expansion goods, never mid-rebuild (LED-R111, LED-R114, LED-R116,
 			-- LED-R117, SHOP-R31).
 			outlets.RefreshGoods()

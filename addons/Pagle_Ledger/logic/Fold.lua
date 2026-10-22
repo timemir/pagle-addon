@@ -99,11 +99,13 @@ local ns = select(2, ...)
 ---@field size? PagleSize                     -- newSpecies, legend, sizeRecord: the Catch's Simulated Size (LED-R81)
 
 --- The lookups the fold reads: Core's `Pagle.GetItem` (LOG-R55) and `Pagle.MatchesConditions` (LOG-R49), and the
---- world index, which changes only with the catalogue, whose new fingerprint rebuilds the projection (LED-R10).
+--- world index, which changes only with the catalogue, whose new fingerprint rebuilds the projection (LED-R10). The
+--- earned goods read how many Size bands Core has (LED-R116).
 ---@class LedgerLookups
 ---@field GetItem fun(itemID: integer): PagleItem?
 ---@field MatchesConditions fun(spec: table, snapshot: table): boolean
 ---@field world LedgerWorld
+---@field sizeBands? integer -- ns.SizeBandCount of Pagle.SIZE_BANDS (LOG-R67): the last is the Monster band (LED-R80)
 
 --- The Ledger's fold (LED-R3).
 ---@class LedgerFold

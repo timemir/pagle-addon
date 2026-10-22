@@ -35,7 +35,7 @@ local GOODS = {
 	{ "ledger.binding.legend", "earned", "Land all three Legends" },
 	{ "ledger.binding.monster", "earned", "Land a Monster" },
 	{ "ledger.binding.abyssal", "earned", "Prestige X" },
-	{ "ledger.binding.keeper", "earned", "Ledger 100%" },
+	{ "ledger.binding.keeper", "earned", "Complete the Ledger" },
 	{ "ledger.binding.iridescent", "earned", "Every fish in every colour" },
 }
 

@@ -276,7 +276,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   | `ledger.binding.legend` | earned, `earnedText` "Land all three Legends" | Three Gilt Fish |
   | `ledger.binding.monster` | earned, `earnedText` "Land a Monster" | Monster Hide |
   | `ledger.binding.abyssal` | earned, `earnedText` "Prestige X" | Abyssal Black |
-  | `ledger.binding.keeper` | earned, `earnedText` "Ledger 100%" | Keeper's Gold |
+  | `ledger.binding.keeper` | earned, `earnedText` "Complete the Ledger" | Keeper's Gold |
   | `ledger.binding.iridescent` | earned, `earnedText` "Every fish in every colour" | Iridescent Scale |
 
   The expansion's twenty (the Curio Shop expansion kit's Bindings board) each have a material texture of their own (`media/journal/bindings/<key>`, tiled at its own repeat), corner pieces where the board shows them, and their closed-book swatch in the `Bindings2` atlas; their band, gilt and plate are as the board draws them.

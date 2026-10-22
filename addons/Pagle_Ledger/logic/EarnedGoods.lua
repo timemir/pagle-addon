@@ -20,6 +20,7 @@ local ns = select(2, ...)
 ---@field state? LedgerState            -- the projection's state; nil before it is built
 ---@field celebrated LedgerCelebrated   -- the celebrated set (LED-R90), as saved
 ---@field world LedgerWorld             -- the world index (LED-R10)
+---@field sizeBands? integer           -- how many Size bands Core has (ns.SizeBandCount of Pagle.SIZE_BANDS, LOG-R67)
 
 --- The celebrated set's earned goods (LED-R116): each expansion good's ID once a rule earned it, so it is never lost.
 ---@class LedgerCelebrated
@@ -54,8 +55,20 @@ ns.LEDGER_CORE_SLOT_GOODS = {
 	{ id = "ledger.soundset.choir", slot = "core.soundset", earn = "legends", icon = ICONS .. "INV_Misc_Horn_01" },
 }
 
--- The Monster band, the last of `Pagle.SIZE_BANDS` (LOG-R67), as a record keeps it (LED-R80).
-local MONSTER_BAND = 5
+--- How many Size bands Core has (LOG-R67), from `Pagle.SIZE_BANDS` as it hands them over: the last is the Monster
+--- band (LED-R80). Counted by index, since a read-only copy (CORE-R18) has no length; nil without bands.
+---@param bands { key: string, name: string }[]? Pagle.SIZE_BANDS
+---@return integer?
+function ns.SizeBandCount(bands)
+	if not bands then
+		return nil
+	end
+	local count = 0
+	while bands[count + 1] ~= nil do
+		count = count + 1
+	end
+	return count > 0 and count or nil
+end
 
 -- A state with nothing in it, for the rules before the projection has one.
 local NO_STATE = { species = {}, items = {}, zones = {}, prestige = 0 }
@@ -114,15 +127,16 @@ local RULES = {
 		end
 		return total > 0
 	end,
-	-- A Species' or Legend item's record in the Monster band (LED-R80): its longest Catch, so any Catch of it there.
+	-- A Species' or Legend item's record in the Monster band, the last of Core's (LED-R80): its longest Catch, so any
+	-- Catch of it there.
 	monster = function(view)
-		local state = view.state
-		if not state then
+		local state, monsterBand = view.state, view.sizeBands
+		if not (state and monsterBand) then
 			return false
 		end
 		for _, entries in ipairs({ state.species, state.items }) do
 			for _, entry in pairs(entries) do
-				if entry.record and entry.record.band >= MONSTER_BAND then
+				if entry.record and entry.record.band >= monsterBand then
 					return true
 				end
 			end
