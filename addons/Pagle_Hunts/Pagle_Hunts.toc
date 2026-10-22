@@ -24,6 +24,8 @@ logic\Qualify.lua
 logic\Waters.lua
 logic\Titles.lua
 logic\Runs.lua
+logic\Rotation.lua
+logic\RunLog.lua
 logic\Projection.lua
 logic\WagerMoments.lua
 logic\Moments.lua
@@ -45,6 +47,7 @@ adapter\Board.lua
 adapter\Sets.lua
 adapter\Goods.lua
 adapter\Hunts.lua
+adapter\RunLog.lua
 adapter\Groups.lua
 adapter\Names.lua
 adapter\Timeline.lua
