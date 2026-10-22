@@ -15,9 +15,8 @@ local Pagle = Pagle
 -- PagleDB.global.minimap. Its own owner on the event frames, so no other Core file's registration replaces it.
 local OWNER = "Pagle minimap icon"
 
--- The favicon, a gilt "P" on parchment: pagle-backend's favicon.ico, its 48 px image at 64 x 64
--- (scripts/encode-blp.py --raw).
-local ICON = "Interface\\AddOns\\Pagle\\media\\minimap\\Pagle"
+-- The favicon (logic/MinimapIcon.lua).
+local ICON = ns.PAGLE_ICON
 -- The usual minimap-button look, from the client's own textures, each listed in build 70338's ManifestInterfaceData
 -- (CORE-R9): the round mask the icon is drawn through (130924, Interface\CHARACTERFRAME\TempPortraitAlphaMask.blp),
 -- the tracking-border ring round it (136430, Interface\MINIMAP\minimap-trackingborder.blp), the dark disc behind

@@ -4,6 +4,10 @@ local ns = select(2, ...)
 -- The minimap icon's place round the minimap's edge (CORE-R53), as angles: pure logic, everything passed in
 -- (CORE-R7). adapter/MinimapIcon.lua draws the button there and saves the angle in PagleDB.global.minimap.
 
+--- The favicon, a gilt "P" on parchment: pagle-backend's favicon.ico, its 48 px image at 64 x 64
+--- (scripts/encode-blp.py --raw). The minimap icon's, and the Pagle block's header on a player's tooltip (VIEW-R21).
+ns.PAGLE_ICON = "Interface\\AddOns\\Pagle\\media\\minimap\\Pagle"
+
 --- Where the icon starts, and sits until it is first dragged: 225 degrees, the minimap's bottom left, clear of the
 --- tracker dock under its right edge (CORE-R70).
 ns.MINIMAP_ICON_ANGLE = 225

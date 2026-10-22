@@ -431,11 +431,11 @@ local function levelText(level, rank)
 	return ("%d"):format(level)
 end
 
---- The Pagle block for a unit's card (VIEW-R21), in its order: a gap; the fish icon and "Pagle Angler", with
+--- The Pagle block for a unit's card (VIEW-R21), in its order: a gap; the Pagle favicon and "Pagle Angler", with
 --- "Following" at the right for a Followed Angler; the title, left out when there's none; Angler Level, Ledger and
 --- Legends; and "Hardcore Angler" for a Hardcore Angler. It names no region (IGV-R6). Nil for a card with a number
---- that isn't one, which a file only IGV-R44 checks can hold: no block, as for no card (VIEW-R20). The fish is
---- Trade_Fishing (ns.DEFAULT_ICON), at the line's height.
+--- that isn't one, which a file only IGV-R44 checks can hold: no block, as for no card (VIEW-R20). The favicon is
+--- the minimap icon's (ns.PAGLE_ICON), at the line's height.
 ---@param card PagleAnglerCard
 ---@return PagleTooltipLine[]?
 function ns.AnglerTooltipLines(card)
@@ -445,7 +445,7 @@ function ns.AnglerTooltipLines(card)
 		end
 	end
 	local L = ns.L
-	local header = { left = ("|T%d:0|t %s"):format(ns.DEFAULT_ICON, L.ANGLER_TIP_HEADER), leftColor = "teal" }
+	local header = { left = ("|T%s:0|t %s"):format(ns.PAGLE_ICON, L.ANGLER_TIP_HEADER), leftColor = "teal" }
 	if card.followed then
 		header.right, header.rightColor = L.ANGLER_TIP_FOLLOWING, "green"
 	end

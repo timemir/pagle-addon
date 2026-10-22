@@ -350,7 +350,7 @@ describe("the Companion's data addons", function()
 
 	describe("the Pagle block", function()
 		-- The fish and the header, as the block draws them (VIEW-R21).
-		local HEADER = "|T136245:0|t Pagle Angler"
+		local HEADER = "|TInterface\\AddOns\\Pagle\\media\\minimap\\Pagle:0|t Pagle Angler"
 
 		-- The mouse goes over a unit with `guid`: GameTooltip's texts then, the game's own line first.
 		local function tooltipOf(loaded, guid)

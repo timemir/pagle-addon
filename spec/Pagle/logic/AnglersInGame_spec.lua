@@ -551,7 +551,12 @@ describe("the Companion's data files", function()
 
 			assert.are.same({
 				{ left = " " },
-				{ left = "|T136245:0|t Pagle Angler", leftColor = "teal", right = "Following", rightColor = "green" },
+				{
+					left = "|TInterface\\AddOns\\Pagle\\media\\minimap\\Pagle:0|t Pagle Angler",
+					leftColor = "teal",
+					right = "Following",
+					rightColor = "green",
+				},
 				{ left = "Warden of Feralas Waters", leftColor = "gold" },
 				{ left = "Angler Level", leftColor = "parchment", right = "23 · Prestige I", rightColor = "white" },
 				{ left = "Ledger", leftColor = "parchment", right = "37%", rightColor = "white" },
@@ -569,7 +574,7 @@ describe("the Companion's data files", function()
 
 			assert.are.same({
 				{ left = " " },
-				{ left = "|T136245:0|t Pagle Angler", leftColor = "teal" },
+				{ left = "|TInterface\\AddOns\\Pagle\\media\\minimap\\Pagle:0|t Pagle Angler", leftColor = "teal" },
 				{ left = "Seeker of the Deep", leftColor = "gold" },
 				{
 					left = "Angler Level",
@@ -597,7 +602,13 @@ describe("the Companion's data files", function()
 		it("leaves the title line out when there's none (VIEW-R21, IGV-R14)", function()
 			local lines = ns.AnglerTooltipLines(tooltipCard({ title = "" }))
 
-			assert.are.same({ " ", "|T136245:0|t Pagle Angler", "Angler Level", "Ledger", "Legends" }, {
+			assert.are.same({
+				" ",
+				"|TInterface\\AddOns\\Pagle\\media\\minimap\\Pagle:0|t Pagle Angler",
+				"Angler Level",
+				"Ledger",
+				"Legends",
+			}, {
 				lines[1].left,
 				lines[2].left,
 				lines[3].left,
