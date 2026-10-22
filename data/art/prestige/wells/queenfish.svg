@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112">
+  <!-- The Queen's Crest's well: a Pagle-drawn sepia fish wearing a crown (the kit's f_legend.py stand-in, "crown"). -->
+  <path d="M12 60 C28 36 62 32 84 48 L102 34 L98 60 L102 86 L84 72 C62 88 28 84 12 60Z" fill="#c8a07a" stroke="#5a3a18" stroke-width="2"/>
+  <path d="M30 40 L32 28 L38 36 L44 24 L50 36 L56 28 L58 40Z" fill="#e0c070" stroke="#5a3a18" stroke-width="1.6"/>
+  <circle cx="24" cy="57" r="3" fill="#2a1a08"/>
+  <path d="M40 60 Q56 52 72 60" fill="none" stroke="#7a5a2a" stroke-width="2"/>
+</svg>

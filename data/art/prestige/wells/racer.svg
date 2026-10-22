@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112">
+  <!-- The Racer's Crest's well: a Pagle-drawn sepia striped fish (the kit's f_legend.py stand-in, "stripe"). -->
+  <path d="M14 56 C30 38 60 34 86 46 L100 36 L98 56 L100 76 L86 66 C60 78 30 74 14 56Z" fill="#c8a878" stroke="#5a3a18" stroke-width="2"/>
+  <path d="M34 44 L34 68 M48 41 L48 71 M62 41 L62 71" fill="none" stroke="#6a4a24" stroke-width="5"/>
+  <circle cx="24" cy="53" r="3" fill="#2a1a08"/>
+</svg>
