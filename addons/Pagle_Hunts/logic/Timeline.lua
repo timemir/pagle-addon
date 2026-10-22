@@ -8,7 +8,9 @@ local ns = select(2, ...)
 -- The board's left page, "What's biting, and when" (HNT-R62, HNT-R63, HNT-R66's left page, HNT-R67, HNT-R69), and the
 -- realm clock on the leather (HNT-R61): pure logic, everything passed in (CORE-R7). ns.BuildTimeline turns the rows
 -- ns.groups hands out into what the page draws: a realm-time ruler, its washes, the groups under their headings, each
--- row's icon, name, bars and margin label, and the Hunt the board selects. Positions on the ruler are fractions of
+-- row's icon, name, bars and margin label, and the Hunt the board selects. On the Board it adds Pagle Wagers
+-- (HNT-R161, logic/Wagers.lua): the wager strip above the ruler, and the WAGERS group first, above Now, whose rows
+-- are runs, one of which the board may select in place of a Hunt. Positions on the ruler are fractions of
 -- its width, 0 at its start and 1 at its end. adapter/Timeline.lua gathers the inputs and draws the result.
 
 --- Tunables (hunts.md): the ruler runs from 2 hours before now to 22 hours after (HNT-R62), in seconds.
@@ -26,27 +28,30 @@ local MAX_SPANS = 48
 ---@field from number
 ---@field to number
 
---- A bar on a row (HNT-R63): its stretch and its style.
+--- A bar on a row (HNT-R63): its stretch and its style. A run's row (HNT-R161) has its run's bar ("run") and its
+--- timed Hunts' windows hatched in red ("wager").
 ---@class TimelineBar: TimelineSpan
 ---@field style BoardBarStyle
 
---- One Hunt's row (HNT-R63).
+--- One Hunt's row (HNT-R63), or in the WAGERS group one run's (HNT-R161).
 ---@class TimelineRow
----@field id string
+---@field id string                  -- the Hunt's ID, or the run's key
+---@field run string?                -- a run's row: its run key (HNT-R142)
+---@field more boolean?              -- a run's row: the run outlasts the ruler, so a mark ends its bar
 ---@field name string
 ---@field icon integer|string|nil    -- HNT-R55's icon; nil while the client hasn't it
 ---@field tint number[]?             -- the icon's tint (a generated class's quality colour), nil for the sepia
 ---@field trim ("bronze"|"silver"|"gold")?   -- the highest tier's trim; nil before tier 1 and while updating (HNT-R69)
 ---@field pinned boolean
 ---@field margin string              -- the margin label (HNT-R51)
----@field tone HuntGroup|"short"     -- what the margin label's ink says: its group, or short of skill
+---@field tone HuntGroup|"short"|"wagers"   -- what the margin label's ink says: its group, short of skill, or a run
 ---@field bars TimelineBar[]
 ---@field note string?               -- "out of season" in place of bars
 ---@field selected boolean
 
 --- One group under its heading (HNT-R62).
 ---@class TimelineGroup
----@field group HuntGroup
+---@field group HuntGroup|"wagers"
 ---@field heading string
 ---@field name string                -- the heading's two parts, as the page sets them: "Now" in small caps…
 ---@field note string                -- …then "open right now" in italic
@@ -71,6 +76,8 @@ local MAX_SPANS = 48
 --- own stroke with its words
 ---@field empty "noHunts"|"allDone"|nil   -- no Hunt is current at all, or no row is shown (HNT-R67)
 ---@field selected string?           -- the Hunt selected (HNT-R67), nil for none
+---@field selectedRun string?        -- the run selected in place of a Hunt (HNT-R161), nil for none
+---@field strip WagerStrip?          -- the wager strip above the ruler, on the Board with a run on or ahead (HNT-R161)
 
 --- What ns.BuildTimeline reads: the rows to show and the sources the labels and bars need.
 ---@class HuntsTimelineInput
@@ -88,6 +95,8 @@ local MAX_SPANS = 48
 ---@field set { name: string, title: string, earned: boolean }?   -- a set's page (HNT-R66)
 ---@field selected string?           -- the Hunt asked for or selected before
 ---@field pick boolean               -- the Board picks a Hunt when none shown is asked for (HNT-R67)
+---@field runs HuntsShownRun[]?      -- on the Board, ns.RunsShown: the strip and the WAGERS group (HNT-R160, HNT-R161)
+---@field run string?                -- the run asked for or selected before (HNT-R164)
 
 -- Server time `t` on the ruler.
 ---@param ruler { from: integer, to: integer }
@@ -277,14 +286,54 @@ local function selectionOf(rows, input)
 	return rows[1].id
 end
 
+-- The WAGERS group (HNT-R161), first, with its rows selected as asked; nil when it has none (an empty group is left
+-- out), or off the Board.
+---@param input HuntsTimelineInput
+---@param ruler TimelineRuler
+---@param selectedRun string?
+---@return TimelineGroup?
+local function wagersGroup(input, ruler, selectedRun)
+	local rows = input.runs and ns.BuildWagerRows(input --[[@as WagersInput]], ruler) or {}
+	if #rows == 0 then
+		return nil
+	end
+	for _, row in ipairs(rows) do
+		row.selected = row.run == selectedRun
+	end
+	local L = ns.L
+	return {
+		group = "wagers",
+		heading = L.GROUP_HEADINGS.wagers,
+		name = L.GROUP_NAMES.wagers,
+		note = L.GROUP_NOTES.wagers,
+		count = #rows,
+		rows = rows,
+	}
+end
+
+-- The run selected in place of a Hunt (HNT-R161, HNT-R164): the one asked for, while the board shows it.
+---@param input HuntsTimelineInput
+---@return string?
+local function runSelectionOf(input)
+	for _, shown in ipairs(input.runs or {}) do
+		if shown.key == input.run then
+			return shown.key
+		end
+	end
+	return nil
+end
+
 --- The left page's timeline (HNT-R62, HNT-R63, HNT-R66, HNT-R67): the ruler at the grouping's time, its washes, the
 --- shown rows under their groups' headings in board order (an empty group left out), the legend, and the selection.
+--- On the Board with runs (HNT-R161): the wager strip, and the WAGERS group above Now; a run asked for and shown is
+--- selected in place of a Hunt, and opening the board never picks one (HNT-R67).
 ---@param input HuntsTimelineInput
 ---@return HuntsTimeline
 function ns.BuildTimeline(input)
 	local L = ns.L
 	local ruler = rulerAt(input.now, input.snapshot)
-	local selected = selectionOf(input.rows, input)
+	local selectedRun = runSelectionOf(input)
+	local selected = not selectedRun and selectionOf(input.rows, input) or nil
 	local byGroup = {}
 	for _, row in ipairs(input.rows) do
 		local drawn = rowOf(row, ruler, input)
@@ -292,7 +341,7 @@ function ns.BuildTimeline(input)
 		byGroup[row.group] = byGroup[row.group] or {}
 		table.insert(byGroup[row.group], drawn)
 	end
-	local groups = {}
+	local groups = { wagersGroup(input, ruler, selectedRun) }
 	for _, group in ipairs(ns.GROUP_ORDER) do
 		local rows = byGroup[group]
 		if rows then
@@ -331,6 +380,8 @@ function ns.BuildTimeline(input)
 		},
 		empty = empty,
 		selected = selected,
+		selectedRun = selectedRun,
+		strip = input.runs and ns.BuildWagerStrip(input --[[@as WagersInput]]) or nil,
 	}
 end
 

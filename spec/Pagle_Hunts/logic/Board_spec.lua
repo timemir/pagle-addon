@@ -110,7 +110,30 @@ describe("the board's page router (HNT-R61, HNT-R66)", function()
 		assert.are.same({ mode = "board" }, router:Place())
 	end)
 
+	it("selects a run on the Board in place of a Hunt, and a Hunt in place of a run (HNT-R161, HNT-R164)", function()
+		local router = newRouter()
+
+		router:Open({ mode = "board", run = "fixture_shore@100" })
+		assert.are.same({ mode = "board", run = "fixture_shore@100" }, router:Place())
+		router:Select("fixture_snapper")
+		assert.are.same({ mode = "board", hunt = "fixture_snapper" }, router:Place())
+		router:Select(nil, "fixture_shore@100")
+		assert.are.same({ mode = "board", run = "fixture_shore@100" }, router:Place())
+	end)
+
 	describe("the breadcrumb trail (HNT-R61)", function()
+		it('is "Hunts", "Pagle Wagers", then the run, with a run selected (HNT-R164)', function()
+			local router = newRouter()
+
+			router:Open({ mode = "board", run = "fixture_shore@100" })
+
+			assert.are.same({
+				{ kind = "hunts", place = { mode = "board" } },
+				{ kind = "wagers", id = "fixture_shore@100" },
+				{ kind = "run", id = "fixture_shore@100", place = { mode = "board", run = "fixture_shore@100" } },
+			}, router:Trail())
+		end)
+
 		it('is "Hunts" alone on the Board, and "Hunts", then the Hunt, once one is selected', function()
 			local router = newRouter()
 

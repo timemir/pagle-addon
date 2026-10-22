@@ -74,8 +74,24 @@ ns.BOARD_LOOK = {
 	tierInks = { bronze = tint("c0844a"), silver = tint("b8bec6"), gold = tint("d8a93a") },
 	--- Group dots (HNT-R76), by HuntGroup: Now green, Soon amber, Later grey, On demand blue; bright over the world, in
 	--- the tracker's native look, and in ink on paper.
-	groups = { now = tint("4aa84a"), soon = tint("e0a030"), later = tint("8a8a8a"), onDemand = tint("4a8ad0") },
-	paperGroups = { now = tint("3a8a3a"), soon = tint("c89030"), later = tint("8a8070"), onDemand = tint("3a6aa0") },
+	--- Pagle Wagers (HNT-R161) have the WAGERS group's oxblood, the Pagle Wagers ribbon's (variant B's `--oxblood`).
+	groups = {
+		now = tint("4aa84a"),
+		soon = tint("e0a030"),
+		later = tint("8a8a8a"),
+		onDemand = tint("4a8ad0"),
+		wagers = tint("c04a30"),
+	},
+	paperGroups = {
+		now = tint("3a8a3a"),
+		soon = tint("c89030"),
+		later = tint("8a8070"),
+		onDemand = tint("3a6aa0"),
+		wagers = tint("8a2a1a"),
+	},
+	oxblood = tint("8a2a1a"), -- Pagle Wagers: the run's bar, its mark, the strip's edge (HNT-R161)
+	stripPaper = tint("fbf4df"), -- the wager strip's paper, pinned over the page
+	runWashAlpha = 0.12, -- the run's bar's oxblood wash
 	--- Ribbons: the Board's, then set colours in turn, in Hunt list order.
 	boardRibbon = tint("2e4a3a"),
 	ribbons = { tint("2f5a8a"), tint("2f7a4a"), tint("8a5a1a"), tint("6a3a7a"), tint("8a2a1a") },
@@ -90,6 +106,9 @@ ns.BOARD_TEXTURES = {
 	disc = "Interface\\CharacterFrame\\TempPortraitAlphaMask",
 	-- The pointing hand (the gauntlet cursor).
 	hand = "Interface\\Cursor\\Point",
+	-- The mark at the ruler's end of a run that outlasts it (HNT-R161's ▸, which the client's fonts lack, CORE-R9): the
+	-- menus' submenu arrow, Blizzard_Menu/MenuVariants.lua's `arrow:SetTexture`.
+	more = "Interface\\ChatFrame\\ChatFrameExpandArrow",
 }
 local TEXTURES = ns.BOARD_TEXTURES
 
@@ -862,19 +881,34 @@ end
 ---   "dashed"   the window is unconfirmed: faint hatching in a dashed outline
 ---   "pencil"   short of skill: a pencil outline, nothing inside
 ---   "camp"     the camp is up: solid blue
+---   "run"      a Pagle Wagers run's days (HNT-R161): the pencil outline inked oxblood over a faint oxblood wash
+---   "wager"    a timed event Hunt's window over its run's bar (HNT-R161): the hatch inked red
 --- A bar is cut to length, never squeezed, and keeps its own right end, so both ends stay square-on. adapter/Timeline.lua
 --- anchors it on the ruler and gives each its width.
----@alias BoardBarStyle "hatched"|"dashed"|"pencil"|"camp"
+---@alias BoardBarStyle "hatched"|"dashed"|"pencil"|"camp"|"run"|"wager"
 
 ---@class BoardTimelineBarView: Frame
 ---@field body Texture
 ---@field tip Texture
+---@field wash Texture
 ---@field style BoardBarStyle
 ---@field SetBar fun(self: BoardTimelineBarView, style: BoardBarStyle, width: number)
 
 --- Each bar style's sprite.
 ---@type table<BoardBarStyle, string>
-ns.BOARD_BAR_SPRITES = { hatched = "bar-hatch", dashed = "bar-dash", pencil = "bar-pencil", camp = "bar-blue" }
+ns.BOARD_BAR_SPRITES = {
+	hatched = "bar-hatch",
+	dashed = "bar-dash",
+	pencil = "bar-pencil",
+	camp = "bar-blue",
+	run = "bar-pencil",
+	wager = "bar-hatch",
+}
+
+--- The inks Pagle Wagers' styles lay over their strokes, as vertex colours: the kit has no oxblood bar, so the pencil
+--- outline and the brown hatch are tinted towards the WAGERS group's oxblood. The other styles keep their own ink.
+---@type table<BoardBarStyle, number[]>
+ns.BOARD_BAR_INKS = { run = tint("e64d3a"), wager = tint("ff8c9e") }
 
 -- A bar's height, its right end's length, and the shortest bar that keeps it.
 local BAR_HEIGHT, BAR_TIP = 12, 4
@@ -888,8 +922,18 @@ function ns.NewBoardTimelineBar(parent)
 	bar.body:SetPoint("TOPLEFT")
 	bar.tip = ns.ArtCrisp(bar:CreateTexture(nil, "ARTWORK"))
 	bar.tip:SetPoint("TOPRIGHT")
+	-- a run's wash, inside the outline's box
+	bar.wash = ns.BoardSolid(bar, LOOK.oxblood, "BACKGROUND", LOOK.runWashAlpha)
+	bar.wash:ClearAllPoints()
+	bar.wash:SetPoint("TOPLEFT", 0, -1)
+	bar.wash:SetPoint("BOTTOMRIGHT", 0, 1)
 	function bar.SetBar(self, style, width)
 		local name = assert(ns.BOARD_BAR_SPRITES[style], "a timeline bar has no style " .. tostring(style))
+		local ink = ns.BOARD_BAR_INKS[style] or { 1, 1, 1 }
+		for _, texture in ipairs({ self.body, self.tip }) do
+			texture:SetVertexColor(ink[1], ink[2], ink[3], 1)
+		end
+		self.wash:SetShown(style == "run")
 		self:SetWidth(width)
 		local tipped = width > 2 * BAR_TIP
 		ns.SetCrop(self.body, "Parts", name, tipped and width - BAR_TIP or width)
@@ -970,8 +1014,8 @@ end
 
 --- A group's dot (HNT-R76): a round dot in the group's colour, bright over the world or in ink on paper.
 ---@class BoardDotView: HuntsArtDot
----@field group HuntGroup?
----@field SetGroup fun(self: BoardDotView, group: HuntGroup, paper: boolean?)
+---@field group (HuntGroup|"wagers")?
+---@field SetGroup fun(self: BoardDotView, group: HuntGroup|"wagers", paper: boolean?)
 
 ---@param parent Frame
 ---@param size number

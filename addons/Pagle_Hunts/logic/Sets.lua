@@ -78,17 +78,21 @@ function ns.BuildRibbons(input, place)
 	return ribbons
 end
 
---- One gilt breadcrumb (HNT-R61): its words and the place clicking it goes back to.
+--- One gilt breadcrumb (HNT-R61): its words and the place clicking it goes back to. "Pagle Wagers" has no place: it
+--- goes to the Pagle Wagers spread on its run (`run`, through ns.OpenWagers, #303).
 ---@class BoardCrumbView
 ---@field text string
----@field place BoardPlace
+---@field place BoardPlace?
+---@field run string?
 
 --- The breadcrumbs' words for the router's trail (logic/Board.lua's BoardCrumb): "Hunts", then the set's name, then
---- the Hunt's, each going back to its own level.
+--- the Hunt's, each going back to its own level; with a run selected, "Hunts", "Pagle Wagers", then the run's event's
+--- name (HNT-R164), from `runName`.
 ---@param trail BoardCrumb[]
 ---@param list HuntList
+---@param runName (fun(runKey: string): string)?
 ---@return BoardCrumbView[]
-function ns.BuildCrumbs(trail, list)
+function ns.BuildCrumbs(trail, list, runName)
 	local crumbs = {}
 	for i, crumb in ipairs(trail) do
 		local text = ns.L.CRUMB_HUNTS
@@ -96,8 +100,13 @@ function ns.BuildCrumbs(trail, list)
 			text = list:SetName(crumb.id)
 		elseif crumb.kind == "hunt" then
 			text = list:HuntName(crumb.id)
+		elseif crumb.kind == "wagers" then
+			text = ns.L.WAGERS_KICKER
+		elseif crumb.kind == "run" then
+			local id = crumb.id or ""
+			text = runName and runName(id) or id
 		end
-		crumbs[i] = { text = text, place = crumb.place }
+		crumbs[i] = { text = text, place = crumb.place, run = crumb.kind == "wagers" and crumb.id or nil }
 	end
 	return crumbs
 end
@@ -107,9 +116,24 @@ end
 ---@field text string
 ---@field titles string[]       -- each earned title and its full date, in Hunt list order
 
---- The nameplate (HNT-R61): "{n} titles · {m} Hunts done", counting the titles earned and the Hunts done, Retired
---- Hunts included, with each earned title and its full date for the tooltip. While the projection is updating it
---- reads the updating line and lists none (HNT-R69).
+-- The realm date a ladder step was earned on (HNT-R148): the settled date of the run whose completion earned it
+-- (its `completedAt` is the step's time), or the step's UTC day when no known run has it.
+---@param state HuntsState
+---@param t integer state.ladder[step]
+---@return { year: integer, month: integer, day: integer }
+local function ladderDate(state, t)
+	for _, run in pairs(state.runs or {}) do
+		if run.completedAt == t then
+			return ns.RunSettledDate(run) --[[@as table]]
+		end
+	end
+	return ns.UtcDate(t)
+end
+
+--- The nameplate (HNT-R61, HNT-R165): "{n} titles · {m} Hunts done", counting the titles earned, set titles and
+--- ladder titles together, and the Hunts done, Retired Hunts included, with each earned title and its full date for
+--- the tooltip: the set titles in Hunt list order, then the ladder's. While the projection is updating it reads the
+--- updating line and lists none (HNT-R69).
 ---@param input HuntsSetsInput
 ---@return BoardNameplate
 function ns.BuildNameplate(input)
@@ -124,13 +148,25 @@ function ns.BuildNameplate(input)
 				ns.L.NAMEPLATE_TITLE:format(input.list:SetTitle(set.id), ns.FormatFullDate(earned.date))
 		end
 	end
+	local ladder = input.state.ladder or {}
+	for _, step in ipairs(ns.LADDER_STEPS) do
+		if ladder[step] then
+			titles[#titles + 1] = ns.L.NAMEPLATE_TITLE:format(
+				ns.LadderTitle(step),
+				ns.FormatFullDate(ladderDate(input.state, ladder[step]))
+			)
+		end
+	end
 	local done = 0
 	for _, hunt in ipairs(input.list:Hunts()) do
 		if ns.HuntDone(input.state.hunts[hunt.id]) then
 			done = done + 1
 		end
 	end
-	local text = ns.L.NAMEPLATE:format(ns.CountText(#titles, "SUMMARY_TITLES"), ns.CountText(done, "NAMEPLATE_DONE"))
+	local text = ns.L.NAMEPLATE:format(
+		ns.CountText(ns.TitlesEarned(input.state), "SUMMARY_TITLES"),
+		ns.CountText(done, "NAMEPLATE_DONE")
+	)
 	return { text = text, titles = titles }
 end
 

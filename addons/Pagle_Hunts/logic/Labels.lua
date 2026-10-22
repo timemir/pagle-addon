@@ -471,7 +471,7 @@ local TRADE_FISHING = ns.TRADE_FISHING
 
 -- A fixed class's members in ascending item ID order: the list holds them as a set (DATA-R93), and the target line
 -- and the icon need one order ("first member", HNT-R55).
----@param hunt HuntDef
+---@param hunt HuntDef|HuntEventHunt
 ---@param list HuntList
 ---@return integer[]
 local function membersOf(hunt, list)
@@ -486,7 +486,7 @@ ns.HuntClassMembers = membersOf
 
 --- A Hunt's target line (HNT-R54): a `species` target's item name; a fixed class's member names joined with " or ";
 --- a generated class's words. A name not loaded yet reads "…". A `minBand` adds ", {band name} or better".
----@param hunt HuntDef
+---@param hunt HuntDef|HuntEventHunt a Standing Hunt or an event Hunt (HNT-R163)
 ---@param list HuntList for a fixed class's members
 ---@param sources HuntNameSources
 ---@return string
@@ -512,7 +512,7 @@ end
 --- A Hunt's icon and its tint (HNT-R55): a `species` target's item icon; a fixed class's first member's; a generated
 --- class's Trade_Fishing, tinted with ITEM_QUALITY_COLORS[2] for `quality.uncommon` and [3] for `quality.rare`.
 --- The board's sepia tint on item icons is the board's (adapter/BoardWidgets.lua).
----@param hunt HuntDef
+---@param hunt HuntDef|HuntEventHunt a Standing Hunt or an event Hunt (HNT-R161)
 ---@param list HuntList for a fixed class's members
 ---@param sources HuntNameSources
 ---@return integer|string? icon
