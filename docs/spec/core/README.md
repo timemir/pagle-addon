@@ -12,6 +12,7 @@ Core is the `Pagle` addon. This file covers how Modules attach to it, the whole 
 | [field-report.md](field-report.md) | `REP` | `/pagle report` and the diagnostics it reads |
 | [varieties.md](varieties.md) | `VAR` | Fish varieties, their rarity, Core's variety projection and the fish crests |
 | [book-binding.md](book-binding.md) | `BIND` | The book binding: `Pagle.NewBookBinding`, which draws the `core.binding` look on every book and changes it |
+| [book.md](book.md) | `BOOK` | The book shell: `Pagle.NewBook`, the window, pages, strip, buttons, ribbons, router and page turn every book is built on |
 
 Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunables table.
 
@@ -197,6 +198,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.WheelScroll(scroll, delta, options?)` | a mouse wheel notch: a third of the view, gliding | [announcements.md](announcements.md#paglewheelscrollscroll-delta-options) |
 | `Pagle.FitToScreen(frame, options)` | number, the scale used | [here](#paglefittoscreenframe-options) |
 | `Pagle.NewBookBinding(frame, options?)` | `PagleBookBinding`: `Look()`, `SetLook(goodID?)` | [book-binding.md](book-binding.md#contracts) |
+| `Pagle.NewBook(options)` | `PagleBook`: `RegisterPage`, `RegisterLeather`, `Open(place?, how?)`, `Close`, `Toggle`, `IsShown`, `Showing`, `Place`, `Draw`, `QueueDraw`, `SetRibbons`, `SetPlate`, `SetStripText`, `SetHelpShown`, `Look` | [book.md](book.md#contracts) |
 
 ### Module handle (returned by `RegisterModule`)
 
