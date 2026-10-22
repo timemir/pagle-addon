@@ -33,8 +33,10 @@
 --- A setting variable (despite the name, any registered setting's) whose change re-evaluates the shown row's state.
 ---@field AddEvaluateStateCVar fun(self: SettingsInitializer, variable: string)
 
---- A registered setting. Pagle only hands it to the panel: it calls none of its methods (SET-R6).
+--- A registered setting. The recording command changes Cozy mode through the native setting, so its checkbox
+--- and dependent controls update together (SettingMixin:SetValue in Blizzard_Settings.lua).
 ---@class SettingsProxySetting
+---@field SetValue fun(self: SettingsProxySetting, value: any)
 
 --- SettingsSliderOptionsMixin.
 ---@class SettingsSliderOptions

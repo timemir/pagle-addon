@@ -65,4 +65,5 @@ adapter\Bindings.lua
 adapter\Titles.lua
 adapter\Onboarding.lua
 adapter\Ledger.lua
+adapter\Trailer.lua
 adapter\Tour.lua

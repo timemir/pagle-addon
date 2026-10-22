@@ -1449,10 +1449,11 @@ end
 
 -- Whether `/pagle dev tour` runs now (CORE-R66): what its stops open isn't the Angler's doing, so it ticks no First
 -- evening item and shows no Margin note or First look, marking nothing (CORE-R68). The tour stops' own TourShow
--- samples write nothing anyway. False before ns.WireDev has built the tour.
+-- samples write nothing anyway. False before ns.WireDev has built the tour. A running `/pagle trailer` counts too: its
+-- scenes open the windows, not the Angler.
 ---@return boolean
 local function isTouring()
-	return ns.tour ~= nil and ns.tour:IsRunning()
+	return (ns.tour ~= nil and ns.tour:IsRunning()) or (ns.trailer ~= nil and ns.trailer.state == "running")
 end
 
 --- Where the First evening list is drawn: adapter/Evening.lua's tracker, FakePagle's record of it.

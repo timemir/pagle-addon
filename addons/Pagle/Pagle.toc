@@ -60,6 +60,7 @@ logic\Dev.lua
 logic\Probe.lua
 logic\LoadTimings.lua
 logic\Tour.lua
+logic\Trailer.lua
 logic\Wallet.lua
 logic\ActivityXP.lua
 logic\Goods.lua
@@ -152,4 +153,5 @@ adapter\Tour.lua
 adapter\Evening.lua
 adapter\MarginNotes.lua
 adapter\FirstLooks.lua
+adapter\Trailer.lua
 adapter\Login.lua

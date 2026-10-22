@@ -27,6 +27,11 @@ ns.coreSubcommands = ns.CoreSubcommands(Pagle)
 -- list.
 ---@param line string what the player typed after /pagle
 local function run(line)
+	local name, rest = ns.ParseSlash(line)
+	if name == "trailer" then
+		ns.RunTrailer(rest)
+		return
+	end
 	commands:Run(line, ns.coreSubcommands, securecallfunction, print)
 end
 

@@ -50,6 +50,7 @@ adapter\Sets.lua
 adapter\Goods.lua
 adapter\Hunts.lua
 adapter\RunLog.lua
+adapter\Trailer.lua
 adapter\Groups.lua
 adapter\Names.lua
 adapter\Timeline.lua
