@@ -17,7 +17,6 @@ local widgets = {}
 
 -- Widget methods that only lay out or colour: nothing for a spec to read back.
 local LAYOUT_METHODS = {
-	"SetJustifyV",
 	"SetClampedToScreen",
 	"SetClampRectInsets",
 	"EnableMouseWheel",
@@ -85,7 +84,7 @@ end
 --- ClearAllPoints, replaced by SetAllPoints), size (`width`, `height`, as SetSize, SetWidth and SetHeight set them;
 --- GetWidth, GetHeight and GetSize lay it out from its anchors as the client does), alpha, text colour (`textColor`,
 --- { r, g, b[, a] }), a font string's font object (`fontObject`, CreateFontString's template or SetFontObject's) or
---- SetFont's `font`, a texture's file (`texture`), whether it's desaturated (`desaturated`), its tint (`vertexColor`,
+--- SetFont's `font`, its `justifyV` and `maxLines`, a texture's file (`texture`), whether it's desaturated (`desaturated`), its tint (`vertexColor`,
 --- { r, g, b[, a] }), blend mode (`blendMode`) and coordinates (`texCoord`), a button's attributes (`attributes`),
 --- click registration (`clicks`, RegisterForClicks's arguments) and locked highlight (`highlightLocked`), and a
 --- frame's mouse and moving state: `mouseEnabled`, `movable`, `dragButtons` (RegisterForDrag's arguments) and
@@ -368,6 +367,25 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:CanWordWrap()
 		return self.wordWrap ~= false
+	end
+	-- A font string's justification down its height (`justifyV`, "MIDDLE" until set, as the client's) and the most
+	-- lines it wraps to (`maxLines`, 0 for any number until set, as the client's).
+	function widget:SetJustifyV(justify)
+		self.justifyV = justify
+	end
+	function widget:GetJustifyV()
+		return self.justifyV or "MIDDLE"
+	end
+	function widget:SetMaxLines(maxLines)
+		self.maxLines = maxLines
+	end
+	function widget:GetMaxLines()
+		return self.maxLines or 0
+	end
+	-- Whether the client cut its text with an ellipsis: never, as the fake measures no font; a spec that needs a cut
+	-- sets its own IsTruncated on the font string, as it may its GetStringHeight.
+	function widget.IsTruncated()
+		return false
 	end
 	-- A button's text width, 6 pixels a character as GetStringWidth; and whether its highlight is locked on.
 	function widget:GetTextWidth()
