@@ -1,4 +1,4 @@
-# Stats' lore (DATA-R100): its goods, the three tracker frames of the Curio Shop's stats.trackerframe slot (STA-R88),
+# Stats' lore (DATA-R100): its goods, the tracker frames of the Curio Shop's stats.trackerframe slot (STA-R88),
 # each with a name and a description. Core owns the kind good, so Stats' is statsgood (DATA-R102). The M6 batch
 # (DATA-R111), drafted from VOICE.md for the dev's review (#220).
 
@@ -13,3 +13,25 @@ description = "Parchment ruled in faint columns, like a harbourmaster's log. Eve
 [statsgood."stats.trackerframe.brass"]
 name = "Ship's Brass"
 description = "A thin brass rim, riveted at each corner like a ship's compass. It keeps its shine in any weather."
+
+# The Curio Shop expansion's tracker frames (STA-R88).
+
+[statsgood."stats.trackerframe.greenbar"] # stats.trackerframe, tier 1
+name = "Green-Bar Paper"
+description = "Tally paper banded in pale green, so a long column of numbers never loses its place."
+
+[statsgood."stats.trackerframe.chalkboard"] # stats.trackerframe, tier 1
+name = "Chalkboard"
+description = "A green schoolroom board in a pine frame, with somebody’s tally marks still in the corner."
+
+[statsgood."stats.trackerframe.tidegauge"] # stats.trackerframe, tier 2
+name = "Tide Gauge"
+description = "Sea-blue glass behind a brass tide staff, marked off so the numbers rise and fall like water."
+
+[statsgood."stats.trackerframe.abacus"] # stats.trackerframe, tier 2
+name = "Abacus"
+description = "A counting frame with the beads pushed to the ends, and the sum written plainly between them."
+
+[statsgood."stats.trackerframe.astrolabe"] # stats.trackerframe, tier 3
+name = "Astrolabe"
+description = "A star map in deep blue under brass rings, for an angler who reckons the odds by the sky."

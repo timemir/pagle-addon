@@ -208,7 +208,8 @@ Generation runs live only, so it may use `math.random`; tests inject the random 
 
 ### Curio Shop goods
 
-- **TKB-R125** The Module registers one slot, `tackleboard.trackerframe` (label "Tackle Board tracker frame", category "Trackers"), and three goods: `tackleboard.trackerframe.none` (default), `tackleboard.trackerframe.corkboard` (tier 1) and `tackleboard.trackerframe.driftwood` (tier 2). Each good's `preview` draws a sample tracker with two fixed goal lines ("30 Catches in Elwynn Forest 12/30", "5 uncommon-or-better Catches 2/5") in that frame. The frames are the board art kit's (see [UI](#ui)): No frame, each line on a fading shade; Corkboard, a cork panel in a brass rim, each goal a paper slip on a tack; Driftwood Plank, a grey plank, its lines ruled apart. It registers no other goods: titles and flies are never goods (SHOP-R20).
+- **TKB-R125** The Module registers one slot, `tackleboard.trackerframe` (label "Tackle Board tracker frame", category "Trackers"), and its goods, three at first: `tackleboard.trackerframe.none` (default), `tackleboard.trackerframe.corkboard` (tier 1) and `tackleboard.trackerframe.driftwood` (tier 2). Each good's `preview` draws a sample tracker with two fixed goal lines ("30 Catches in Elwynn Forest 12/30", "5 uncommon-or-better Catches 2/5") in that frame. The frames are the board art kit's (see [UI](#ui)): No frame, each line on a fading shade; Corkboard, a cork panel in a brass rim, each goal a paper slip on a tack; Driftwood Plank, a grey plank, its lines ruled apart. The expansion adds `tackleboard.trackerframe.net` (tier 1), `tackleboard.trackerframe.bamboo` (tier 1), `tackleboard.trackerframe.tin` (tier 2), `tackleboard.trackerframe.bobber` (tier 2), `tackleboard.trackerframe.embers` (earned), each a three-slice panel of the Curio Shop expansion kit's `TrackerFrames2` atlas. Titles and flies are never goods (SHOP-R20).
+- **TKB-R126** The Module's earned goods: Hearth Ember (`tackleboard.toaststyle.ember`), the Campfire’s 100-day milestone reached (TKB-R73), `earnedText` "Campfire: 100 days"; Live Embers (`tackleboard.trackerframe.embers`), the Campfire’s 365-day milestone reached (TKB-R73), `earnedText` "Campfire: 365 days". Hearth Ember is a toast style in Core's slot (SHOP-R23, SHOP-R25), drawn by Core (ANN-R81). A milestone once reached is never lost (TKB-R73); the Module calls `M:RefreshGoods()` after the live entry that reaches one, and from `done` (SHOP-R31).
 
 ### Lore
 
@@ -329,7 +330,7 @@ Each pattern's icon is an in-client icon texture picked in the M7 build ticket; 
 
 - `fly.<patternID>.name` for the 30 patterns (limit: `name`)
 - `boardtitle.<titleID>.text` for the 8 titles (limit: title `text`)
-- `boardgood.<goodID>.name` and `boardgood.<goodID>.description` for `tackleboard.trackerframe.none` (working name "No frame"), `.corkboard` ("Corkboard") and `.driftwood` ("Driftwood Plank")
+- `boardgood.<goodID>.name` and `boardgood.<goodID>.description` for `tackleboard.trackerframe.none` (working name "No frame"), `.corkboard` ("Corkboard") and `.driftwood` ("Driftwood Plank"), and the Curio Shop expansion's `.net`, `.bamboo`, `.tin`, `.bobber` and `.embers` (TKB-R125) and `tackleboard.toaststyle.ember` (TKB-R126)
 
 ## Contracts
 

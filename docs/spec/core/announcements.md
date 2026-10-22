@@ -114,20 +114,51 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 
 ### Sounds
 
-- **ANN-R70** Core ships and plays every Announcement sound. Each rung has one sound in the equipped **sound set**: `toast.low`, `toast` and `toast.high` play the toast sound, `banner` the banner sound, `splash` the **Legend sting**, and `nod` nothing.
+- **ANN-R70** Core ships and plays every Announcement sound. Each rung has one sound in the equipped **sound set**: `toast.low`, `toast` and `toast.high` play the toast sound, `banner` the banner sound, `splash` its Legend's **Legend sting** (ANN-R72), and `nod` nothing.
 - **ANN-R71** An Announcement plays its headline's sound once, when it appears (ANN-R24), unless it is a toast appearing with a banner or splash that played its own (ANN-R24). A headline moment with `sound = false` makes it silent.
 - **ANN-R72** Sound sets:
   - **Driftwood** (default, free): toast = two rising wooden notes, rotating through 3 variants in order so back-to-back toasts never sound the same; banner = a wooden run up the scale with a bell on top.
   - **Gilded** (a Curio Shop good from M4): toast = two bell notes, one variant; banner = three rising bells.
-  - Every set shares one Legend sting: a slow bell chord, a fast wooden run and a ringing top note, about 3 s.
+  - **Rain on the Lake** (`core.soundset.rain`, tier 1): drops landing on still water, one after another, and the faint hush of rain behind them. Three toast variants, rotated, and a banner.
+  - **Marimba Shore** (`core.soundset.marimba`, tier 1): warm wooden bars, rolled quickly up the scale like a wave coming in. Three toast variants, rotated, and a banner.
+  - **Ship's Bell** (`core.soundset.shipbell`, tier 1): the brass bell on the mast, rung for the catch, with the rope and timbers creaking under it. Three toast variants, rotated, and a banner.
+  - **Kalimba Creek** (`core.soundset.kalimba`, tier 2): a thumb piano by running water, two notes and a little buzz, as if the creek plucked them. Three toast variants, rotated, and a banner.
+  - **Music Box** (`core.soundset.musicbox`, tier 2): a tiny wind-up tune from a box with a fish painted on the lid. Two turns of the key, no more. Three toast variants, rotated, and a banner.
+  - **Glass Floats** (`core.soundset.glass`, tier 2): green glass floats knocking together on a net, with bubbles rising past them. Three toast variants, rotated, and a banner.
+  - **Steel Pan Lagoon** (`core.soundset.steelpan`, tier 2): bright steel drums from a warm lagoon, two notes that sound like the tide is on your side. Three toast variants, rotated, and a banner.
+  - **Tavern Dulcimer** (`core.soundset.dulcimer`, tier 2): a hammered dulcimer from the corner of a dockside tavern, struck quick and bright. Three toast variants, rotated, and a banner.
+  - **Frost Chimes** (`core.soundset.frost`, tier 3): icicles chiming against one another in a cold wind, ringing long after they stop moving. Three toast variants, rotated, and a banner.
+  - **Harp of the Glade** (`core.soundset.harp`, tier 3): a harp in a forest glade, a short sweep of strings and the leaves answering. Three toast variants, rotated, and a banner.
+  - **Gnomish Gizmo** (`core.soundset.gizmo`, tier 3): clockwork ticking, a spring letting go and two cheerful bleeps. It almost certainly works. Three toast variants, rotated, and a banner.
+  - **War Drums** (`core.soundset.wardrums`, tier 4): deep drums and a low horn from the hills: a catch announced like the start of a march. Three toast variants, rotated, and a banner.
+  - **Old Salt's Concertina** (`ledger.soundset.concertina`, earned, Ledger’s): a squeezebox phrase from a sea song everyone half-knows, played by somebody who knows all of it. Three toast variants, rotated, and a banner.
+  - **Choir of the Deep** (`ledger.soundset.choir`, earned, Ledger’s): low voices swelling up from deep water, and something very large singing along underneath. Three toast variants, rotated, and a banner.
+  - **Night Watch** (`hunts.soundset.nightwatch`, earned, Hunts'): a low bell for the night watch, a lantern humming and an owl who has seen every catch you ever made. Three toast variants, rotated, and a banner.
+  - Each Legend has its own **sting**, about 3 s, the same in every set: Brownell's Blue Striped Racer (19803): an accelerating run that never lets up, a roll of drums under it, and a bright finish; Keefer's Angelfish (19805): a harp sweep that shimmers up and drifts back, with glass and soft voices on top; Dezian Queenfish (19806): a fanfare in fifths over timpani, ending on a full chord and a ringing bell. Core picks the sting by the splash headline's `icon`, the Legend's item ID (LED-R63's moment); a Legend item without a sting of its own (one added after 1.0), or a splash whose `icon` isn't a Legend item with one, plays the first one's (19803's). The shop's ▶ Legend plays that first one in every set.
 - **ANN-R73** Sounds play on the SFX channel (`PlaySoundFile(path, "SFX")`), so they follow the player's SFX volume and mute. There is no Pagle volume setting; loudness is baked into the files.
-- **ANN-R74** Every sound file is Pagle's own: rendered by a script in the repo (wood and bell synthesis plus a small room, D major pentatonic), mono, 44.1 kHz, `.ogg`, loudness-matched. The script moves from `prototype/sounds` into the build tooling in M2 and renders both sets; its output is committed as `addons/Pagle/media/sounds/<set>/toast_<n>.ogg` and `banner.ogg` (`<set>` is `driftwood` or `gilded`), plus the shared `addons/Pagle/media/sounds/legend.ogg`.
+- **ANN-R74** Every sound file is Pagle's own: rendered by `scripts/render-sounds.py`, whose instruments and sets live in `scripts/pagle_data/sounds.py` (modal synthesis of wood, bells, glass, tines, pans and membranes, plucked and hammered strings, reeds, brass and voices, filtered noise for water and wind, plus a small room; nothing sampled), mono, 44.1 kHz, `.ogg`, loudness-matched. It renders every sound set and every Legend sting; nothing is rendered by hand or elsewhere. It runs on the pinned Python in `.tools/`, with numpy, soundfile and SciPy (its filters) among the exact pins in `scripts/tools.env` that `scripts/setup.sh` installs. Its output is committed as `addons/Pagle/media/sounds/<set>/toast_<n>.ogg` and `banner.ogg`, `<set>` being the sound set good's last ID segment (`driftwood`, `gilded`, `rain`, …), and the Legend stings as `addons/Pagle/media/sounds/legend/<itemID>.ogg`.
 - **ANN-R75** QoL's recast cue (a quiet wooden double knock) is a QoL sound, not an Announcement; QoL ships and plays it.
 - **ANN-R76** A toast that plays its sound also plays its **beats**, the client's own sound kits on the SFX channel (`PlaySound(id, "SFX")`), landing on its motion (UI › Motion): the pen as its name starts writing (`IG_WRITE_QUEST`, 3093, at 0.98 s), a stamp as its stamps land (`PUT_DOWN_GEMS`, 1204, at 2.17 s, if any show), and a coin as its Coins turn in (`LOOT_WINDOW_COIN_SOUND`, 120, at 2.66 s, if any show). They are the same in every sound set. A silent toast has silent beats, and with Animations off there are none. Nods, banners, splashes and cards have none.
 
 ### Toast styles
 
-- **ANN-R80** The toast and Nod follow the equipped **toast style**: its page and strip art, its medallion trim, its rubber stamps and its inks. **Torn Page** is the free default; other styles are Curio Shop goods Core registers ([wallet-and-shop.md](wallet-and-shop.md)). The banner, splash and cards look the same in every style. A style changes only the look, never timing or rules.
+- **ANN-R80** The toast and Nod follow the equipped **toast style**: its page and strip art, its medallion trim, its rubber stamps and its inks. **Torn Page** is the free default; other styles are Curio Shop goods Core registers, and three are earned goods a Module registers in Core's slot ([wallet-and-shop.md](wallet-and-shop.md), SHOP-R25). The banner, splash and cards look the same in every style. A style changes only the look, never timing or rules.
+- **ANN-R81** Each style is one atlas of its own (`media/announce/Toasts<Style>`): the page and spine of every rung, the Nod strip, and, for the expansion's styles, its own medallion ring at the four bezel sizes in place of the gold, bronze or silver trim. The expansion's atlases are at 1.5 texels per UI unit (`scale = 1.5` in `data/AnnounceArt.lua`; the first three styles' are at 2), about 2.8 MB each, and only the equipped style's atlas is loaded. Words drawn into a style's art are decoration, not strings (SHOP-R20). A style also sets the rubber stamps' ink, the kicker and name inks, the bookmark's silk and the wax seal's tint. The expansion's styles:
+  - **Ship's Log** (`core.toaststyle.ship`, tier 1): A page from the ship’s log, lashed to a sailcloth spine. Tide columns ruled in navy, an anchor in the margin.
+  - **Birch Scroll** (`core.toaststyle.birch`, tier 1): Written on a strip of peeled bark and tied with twine. The ink sinks in and stays.
+  - **Tidepool** (`core.toaststyle.tidepool`, tier 1): A page that went in the water and came back out. Sand in the fold, a shell left behind.
+  - **Sea Chart** (`core.toaststyle.chart`, tier 2): Torn from a chart nobody should have sold. Soundings, rhumb lines and a compass rose that still points north.
+  - **Frostbitten** (`core.toaststyle.frost`, tier 2): Left out overnight on the ice. The rime grew in from the corners while the ink was still wet.
+  - **Goblin Ticker** (`core.toaststyle.goblin`, tier 2): Printed on a ticker that never stops. The rivets are load-bearing. Nobody knows what the gear does.
+  - **Kelp & Pearl** (`core.toaststyle.kelp`, tier 3): A spine wrapped in kelp and studded with pearls, the page shining like the inside of a shell.
+  - **Moonlit Vellum** (`core.toaststyle.moon`, tier 3): Night-blue vellum written in silver, for the catches that come in after the lanterns.
+  - **Pressed Leaf** (`core.toaststyle.leaf`, tier 3): One great leaf, pressed flat between two heavy books and dried gold. The veins do the ruling.
+  - **Driftglass Bottle** (`core.toaststyle.bottle`, tier 3): Rolled up, corked and given to the tide. It washed back with a better catch than it left with.
+  - **Rune-Plate** (`core.toaststyle.rune`, tier 4): Not paper at all: a bronze plate, the catch hammered in and the runes cut round it to keep it honest.
+  - **Illuminated Folio** (`core.toaststyle.folio`, tier 5): Gold leaf, lapis and vermilion, laid on vellum by a scribe with too much time and not enough fish.
+  - **The Tall Tale** (`ledger.toaststyle.legend`, earned): Kept for the catches people argue about at the docks for years. Gilt border, blue silk, a proper seal.
+  - **Oxblood Vellum** (`ledger.toaststyle.prestige`, earned): Oxblood vellum and gilt laurels, for an angler who started over and did it all again.
+  - **Hearth Ember** (`tackleboard.toaststyle.ember`, earned): A page that was nearly kindling once. The edges still glow when a good fish comes in.
 
 ## Data
 
@@ -289,9 +320,10 @@ These sit on the Announcements page. Toast style and sound set also appear on Lo
 | Rare-record flair threshold (Ledger's rule) | 50 Catches of the Species since the last record | rung table |
 | Delay after combat | 2 s | ANN-R36 |
 | Cards kept | 3 | ANN-R54 |
-| Driftwood toast variants | 3 | ANN-R72 |
+| Toast variants per sound set | 3 (Gilded 1) | ANN-R72 |
 | Legend sting length | ~3 s | ANN-R72 |
 | Loudness target | −20 dBFS RMS, −1 dBFS peak | ANN-R74 |
+| Toast style atlas density | 1.5 texels per UI unit for the expansion's styles (2 for Torn Page, Ripple and Lantern Glow) | ANN-R81 |
 
 ## Edge cases
 

@@ -213,6 +213,11 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
   | `stats.trackerframe.none` | default: the plain native tracker look, no frame |
   | `stats.trackerframe.logbook` | tier 1 (150): ruled paper with a red margin line, its rulings repeated as it grows with its lines |
   | `stats.trackerframe.brass` | tier 2 (400): a dark plate in a thin brass rim with riveted corners |
+  | `stats.trackerframe.greenbar` | tier 1 (150): tally paper banded in pale green, so a long column of numbers never loses its place |
+  | `stats.trackerframe.chalkboard` | tier 1 (150): a green schoolroom board in a pine frame, with somebody’s tally marks still in the corner |
+  | `stats.trackerframe.tidegauge` | tier 2 (400): sea-blue glass behind a brass tide staff, marked off so the numbers rise and fall like water |
+  | `stats.trackerframe.abacus` | tier 2 (400): a counting frame with the beads pushed to the ends, and the sum written plainly between them |
+  | `stats.trackerframe.astrolabe` | tier 3 (900): a star map in deep blue under brass rings, for an angler who reckons the odds by the sky |
 
   This follows the Tackle Board's frames (a free "No frame" and two for sale at tiers 1 and 2). Each good's name and description are lore in `data/lore/stats.toml`, as `statsgood.<goodID>.name` and `.description`, Stats' own kind (working names: No frame, Logbook, Brass), listed under `stats` in `data/lore/manifest.toml` (DATA-R106) and drafted and reviewed through the lore pipeline (DATA-R100–R107), whose lore check turns on for Stats when it first registers a good, in M6 (DATA-R107). A good's icon is its frame's swatch; "No frame"'s swatch is the plain native tracker. Each `preview` draws a sample tracker with the good's frame: "Session · 21m", "38 Casts · 31 Catches · 7 got away", "62 per hour · skill +3", then a normal watch (item 4603, area 35, count 40) and an unlucky one (item 13759, area 357, by night, count 212). The item and area names resolve at runtime (STA-R59), so no game text ships.
 
@@ -298,7 +303,7 @@ Nothing. Stats fires no events and offers no calls (STA-R1).
 | Session summary lines | none |
 | Write-up sections | none |
 | Pagle Coins paid | none (SHOP-R1) |
-| Curio Shop goods | `stats.trackerframe` slot and its 3 goods (STA-R88) |
+| Curio Shop goods | `stats.trackerframe` slot and its 8 goods (STA-R88) |
 
 ## UI
 
@@ -427,7 +432,7 @@ The frame dropdown is added by Core after Stats' rows (CORE-R42) and also appear
 | Book size | about 980 × 640 px | UI |
 | Tracker width | about 250 px | UI |
 | Tracker order in the dock | 20 | STA-R80 |
-| Tracker frame tiers | logbook 1, brass 2 | STA-R88 |
+| Tracker frame tiers | logbook 1, brass 2; greenbar 1, chalkboard 1, tidegauge 2, abacus 2, astrolabe 3 | STA-R88 |
 
 ## Edge cases
 

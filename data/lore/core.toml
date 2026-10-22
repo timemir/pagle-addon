@@ -32,3 +32,101 @@ description = "Small, bright bells. A touch grand for a mackerel, and none the w
 [good."core.crest.plain"] # Bookplate crest, the default
 name = "Plain"
 description = "No emblem, only the owner's name. Plenty of fine anglers never wanted more."
+
+# The Curio Shop expansion: Core's toast styles and sound sets for sale (ANN-R72, ANN-R81).
+
+[good."core.toaststyle.ship"] # core.toaststyle, tier 1
+name = "Ship's Log"
+description = "A page from the ship’s log, lashed to a sailcloth spine. Tide columns ruled in navy, an anchor in the margin."
+
+[good."core.toaststyle.birch"] # core.toaststyle, tier 1
+name = "Birch Scroll"
+description = "Written on a strip of peeled bark and tied with twine. The ink sinks in and stays."
+
+[good."core.toaststyle.tidepool"] # core.toaststyle, tier 1
+name = "Tidepool"
+description = "A page that went in the water and came back out. Sand in the fold, a shell left behind."
+
+[good."core.toaststyle.chart"] # core.toaststyle, tier 2
+name = "Sea Chart"
+description = "Torn from a chart nobody should have sold. Soundings, rhumb lines and a compass rose that still points north."
+
+[good."core.toaststyle.frost"] # core.toaststyle, tier 2
+name = "Frostbitten"
+description = "Left out overnight on the ice. The rime grew in from the corners while the ink was still wet."
+
+[good."core.toaststyle.goblin"] # core.toaststyle, tier 2
+name = "Goblin Ticker"
+description = "Printed on a ticker that never stops. The rivets are load-bearing. Nobody knows what the gear does."
+
+[good."core.toaststyle.kelp"] # core.toaststyle, tier 3
+name = "Kelp & Pearl"
+description = "A spine wrapped in kelp and studded with pearls, the page shining like the inside of a shell."
+
+[good."core.toaststyle.moon"] # core.toaststyle, tier 3
+name = "Moonlit Vellum"
+description = "Night-blue vellum written in silver, for the catches that come in after the lanterns."
+
+[good."core.toaststyle.leaf"] # core.toaststyle, tier 3
+name = "Pressed Leaf"
+description = "One great leaf, pressed flat between two heavy books and dried gold. The veins do the ruling."
+
+[good."core.toaststyle.bottle"] # core.toaststyle, tier 3
+name = "Driftglass Bottle"
+description = "Rolled up, corked and given to the tide. It washed back with a better catch than it left with."
+
+[good."core.toaststyle.rune"] # core.toaststyle, tier 4
+name = "Rune-Plate"
+description = "Not paper at all: a bronze plate, the catch hammered in and the runes cut round it to keep it honest."
+
+[good."core.toaststyle.folio"] # core.toaststyle, tier 5
+name = "Illuminated Folio"
+description = "Gold leaf, lapis and vermilion, laid on vellum by a scribe with too much time and not enough fish."
+
+[good."core.soundset.rain"] # core.soundset, tier 1
+name = "Rain on the Lake"
+description = "Drops landing on still water, one after another, and the faint hush of rain behind them."
+
+[good."core.soundset.marimba"] # core.soundset, tier 1
+name = "Marimba Shore"
+description = "Warm wooden bars, rolled quickly up the scale like a wave coming in."
+
+[good."core.soundset.shipbell"] # core.soundset, tier 1
+name = "Ship's Bell"
+description = "The brass bell on the mast, rung for the catch, with the rope and timbers creaking under it."
+
+[good."core.soundset.kalimba"] # core.soundset, tier 2
+name = "Kalimba Creek"
+description = "A thumb piano by running water, two notes and a little buzz, as if the creek plucked them."
+
+[good."core.soundset.musicbox"] # core.soundset, tier 2
+name = "Music Box"
+description = "A tiny wind-up tune from a box with a fish painted on the lid. Two turns of the key, no more."
+
+[good."core.soundset.glass"] # core.soundset, tier 2
+name = "Glass Floats"
+description = "Green glass floats knocking together on a net, with bubbles rising past them."
+
+[good."core.soundset.steelpan"] # core.soundset, tier 2
+name = "Steel Pan Lagoon"
+description = "Bright steel drums from a warm lagoon, two notes that sound like the tide is on your side."
+
+[good."core.soundset.dulcimer"] # core.soundset, tier 2
+name = "Tavern Dulcimer"
+description = "A hammered dulcimer from the corner of a dockside tavern, struck quick and bright."
+
+[good."core.soundset.frost"] # core.soundset, tier 3
+name = "Frost Chimes"
+description = "Icicles chiming against one another in a cold wind, ringing long after they stop moving."
+
+[good."core.soundset.harp"] # core.soundset, tier 3
+name = "Harp of the Glade"
+description = "A harp in a forest glade, a short sweep of strings and the leaves answering."
+
+[good."core.soundset.gizmo"] # core.soundset, tier 3
+name = "Gnomish Gizmo"
+description = "Clockwork ticking, a spring letting go and two cheerful bleeps. It almost certainly works."
+
+[good."core.soundset.wardrums"] # core.soundset, tier 4
+name = "War Drums"
+description = "Deep drums and a low horn from the hills: a catch announced like the start of a march."

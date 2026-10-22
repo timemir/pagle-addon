@@ -619,3 +619,103 @@ description = "A snowflake over still water, where ice fishing is real fishing."
 [crest.zephras] # Zephras Isle
 name = "The Floating Isle"
 description = "An island floating on cloud, its ship tied to the stone. The water is a long way down."
+
+# The Curio Shop expansion's bindings (LED-R110, LED-R116): the good ledger.binding.<id>'s name and description.
+
+[binding.chartlinen] # ledger.binding, tier 1
+name = "Tide-Chart Linen"
+description = "Pale linen printed with an old chart, its depth lines worn soft at the corners by a few seasons of thumbs."
+
+[binding.sailcloth] # ledger.binding, tier 1
+name = "Tarred Sailcloth"
+description = "Old sail, tarred black against the weather and whipped round the edges with twine."
+
+[binding.oilskin] # ledger.binding, tier 1
+name = "Oilskin Yellow"
+description = "Waxed yellow cloth that sheds rain and spray. You can find it at the bottom of the boat, which is the point."
+
+[binding.moss] # ledger.binding, tier 2
+name = "Mossbound"
+description = "Leather left too long on a damp bank. The moss took hold, and the book seems happier for it."
+
+[binding.driftwood] # ledger.binding, tier 2
+name = "Driftwood Boards"
+description = "Three boards of grey driftwood, nailed to a leather spine. Heavy, honest and faintly salty."
+
+[binding.eelskin] # ledger.binding, tier 2
+name = "Eelskin"
+description = "Strips of eelskin sewn side by side, dark and slick, with a shine that moves when the light does."
+
+[binding.kodo] # ledger.binding, tier 2
+name = "Kodo Hide"
+description = "A thick plains hide with the hair worn off in patches, laced shut with rawhide. It will outlast the angler."
+
+[binding.frosthide] # ledger.binding, tier 2
+name = "Frost-Tanned Hide"
+description = "Hide cured in the cold until it went white, trimmed with fur along the spine for gloveless hands."
+
+[binding.netcork] # ledger.binding, tier 2
+name = "Net over Cork"
+description = "Cork boards under a knotted net, with a float tied on. It will not sink, which is more than most books can say."
+
+[binding.copper] # ledger.binding, tier 3
+name = "Riveted Copper"
+description = "Copper plates riveted over boards, gone green at the seams. Loud to close, impossible to dent."
+
+[binding.velvet] # ledger.binding, tier 3
+name = "Night Velvet"
+description = "Midnight velvet embroidered with silver stars and a moon. Best read by lantern, which is when it gets read."
+
+[binding.turtle] # ledger.binding, tier 3
+name = "Turtle Shell"
+description = "Polished shell plates, amber and smoke, set into a dark frame. Older than the book, and likely to outlive it."
+
+[binding.morocco] # ledger.binding, tier 3
+name = "Gilded Morocco"
+description = "Red goatskin tooled all over in gold lattice, the kind of binding usually kept behind glass."
+
+[binding.coral] # ledger.binding, tier 4
+name = "Coral Inlay"
+description = "Branches of red coral set into sea-green leather, with pearls where the branches end."
+
+[binding.pearl] # ledger.binding, tier 5
+name = "Mother-of-Pearl"
+description = "A cover of shell, cut piece by piece and fitted like tiles. It shifts colour every time the book is turned."
+
+[binding.legend] # ledger.binding, earned: Land all three Legends
+name = "Three Gilt Fish"
+description = "Blue leather embossed with scales, and on the cover three gilt fish chasing one another round the same circle."
+
+[binding.monster] # ledger.binding, earned: Land a Monster
+name = "Monster Hide"
+description = "Scaled hide from something that did not want to be landed, shut with one of its own teeth."
+
+[binding.abyssal] # ledger.binding, earned: Prestige X
+name = "Abyssal Black"
+description = "Black as deep water, with a pale glow coiling under the surface. For anglers who have been to the bottom ten times and back."
+
+[binding.keeper] # ledger.binding, earned: Ledger 100%
+name = "Keeper's Gold"
+description = "Cream vellum all but buried in gold. Kept for the angler whose book has nothing left to find."
+
+[binding.iridescent] # ledger.binding, earned: Every fish in every colour
+name = "Iridescent Scale"
+description = "Scales in every colour the water ever gave up, laid one over the next. It never looks the same twice."
+
+# The Ledger's earned toast styles and sound sets in Core's slots (LED-R117), each ledgergood.<goodID>.
+
+[ledgergood."ledger.toaststyle.legend"] # core.toaststyle, earned: Land a Legend
+name = "The Tall Tale"
+description = "Kept for the catches people argue about at the docks for years. Gilt border, blue silk, a proper seal."
+
+[ledgergood."ledger.toaststyle.prestige"] # core.toaststyle, earned: Prestige V
+name = "Oxblood Vellum"
+description = "Oxblood vellum and gilt laurels, for an angler who started over and did it all again."
+
+[ledgergood."ledger.soundset.concertina"] # core.soundset, earned: Prestige I
+name = "Old Salt's Concertina"
+description = "A squeezebox phrase from a sea song everyone half-knows, played by somebody who knows all of it."
+
+[ledgergood."ledger.soundset.choir"] # core.soundset, earned: Land all three Legends
+name = "Choir of the Deep"
+description = "Low voices swelling up from deep water, and something very large singing along underneath."

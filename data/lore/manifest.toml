@@ -9,7 +9,8 @@
 # catalogue-keyed kinds (species, legend, sub, family, DATA-R103) and Hunts' hunt and set (DATA-R105) are never listed.
 # The Ledger's line IDs came with its first batch (#131), its title and binding IDs with the M4 batch (#161,
 # LED-R162), Core's good IDs with Core's lore check (#161), Hunts' good IDs with Hunts' lore check (#183), Stats' good
-# IDs with Stats' lore check (#210), and the Tackle Board's pattern, title and good IDs with its lore check (#237).
+# IDs with Stats' lore check (#210), the Tackle Board's pattern, title and good IDs with its lore check (#237), and
+# the Curio Shop expansion's goods, the Ledger's ledgergood IDs among them, with the shop expansion kit.
 
 # The Ledger's shared lines (LED-R160), each shown in place of something not yet caught or charted: an uncaught
 # Legend's page (LED-R147), an empty Junk Museum plinth and an unopened Treasures row (LED-R144), and a zone with no
@@ -44,7 +45,38 @@ ids = [
 # (LED-R162).
 [ledger.binding]
 fields = ["name", "description"]
-ids = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
+ids = [
+	"field",
+	"level10",
+	"level20",
+	"level30",
+	"level40",
+	"level50",
+	"level60",
+	"birch",
+	"buckram",
+	"sharkskin",
+	"chartlinen",
+	"sailcloth",
+	"oilskin",
+	"moss",
+	"driftwood",
+	"eelskin",
+	"kodo",
+	"frosthide",
+	"netcork",
+	"copper",
+	"velvet",
+	"turtle",
+	"morocco",
+	"coral",
+	"pearl",
+	"legend",
+	"monster",
+	"abyssal",
+	"keeper",
+	"iridescent",
+]
 
 # The Ledger's zone crests (LED-R113), each good ledger.crest.<key> in Core's crest slot, with a name and a
 # description, from the zone crest batch (LED-R162).
@@ -106,6 +138,16 @@ ids = [
 	"zephras",
 ]
 
+# The Ledger's earned goods in Core's toast style and sound set slots (LED-R117), each with a name and a description.
+[ledger.ledgergood]
+fields = ["name", "description"]
+ids = [
+	"ledger.toaststyle.legend",
+	"ledger.toaststyle.prestige",
+	"ledger.soundset.concertina",
+	"ledger.soundset.choir",
+]
+
 # Core's goods (SHOP-R25), each with a name and a description (wallet-and-shop.md › UI), from M4 with Core's lore
 # check (DATA-R107).
 [core.good]
@@ -117,6 +159,30 @@ ids = [
 	"core.soundset.driftwood",
 	"core.soundset.gilded",
 	"core.crest.plain",
+	"core.toaststyle.ship",
+	"core.toaststyle.birch",
+	"core.toaststyle.tidepool",
+	"core.toaststyle.chart",
+	"core.toaststyle.frost",
+	"core.toaststyle.goblin",
+	"core.toaststyle.kelp",
+	"core.toaststyle.moon",
+	"core.toaststyle.leaf",
+	"core.toaststyle.bottle",
+	"core.toaststyle.rune",
+	"core.toaststyle.folio",
+	"core.soundset.rain",
+	"core.soundset.marimba",
+	"core.soundset.shipbell",
+	"core.soundset.kalimba",
+	"core.soundset.musicbox",
+	"core.soundset.glass",
+	"core.soundset.steelpan",
+	"core.soundset.dulcimer",
+	"core.soundset.frost",
+	"core.soundset.harp",
+	"core.soundset.gizmo",
+	"core.soundset.wardrums",
 ]
 
 # Hunts' goods (HNT-R121), each with a name and a description, from M5 with Hunts' lore check (HNT-R130, DATA-R107).
@@ -131,6 +197,27 @@ ids = [
 	"hunts.trackerframe.none",
 	"hunts.trackerframe.inkwash",
 	"hunts.trackerframe.waxseal",
+	"hunts.soundset.nightwatch",
+	"hunts.notebookcover.canvas",
+	"hunts.notebookcover.kraft",
+	"hunts.notebookcover.tartan",
+	"hunts.notebookcover.maplinen",
+	"hunts.notebookcover.planks",
+	"hunts.notebookcover.snakeskin",
+	"hunts.notebookcover.shagreen",
+	"hunts.notebookcover.lacquer",
+	"hunts.notebookcover.bone",
+	"hunts.notebookcover.brasscase",
+	"hunts.notebookcover.scrimshaw",
+	"hunts.notebookcover.trophycase",
+	"hunts.notebookcover.pathfinder",
+	"hunts.notebookcover.fiveseal",
+	"hunts.notebookcover.wagersilk",
+	"hunts.trackerframe.slate",
+	"hunts.trackerframe.mapscrap",
+	"hunts.trackerframe.bounty",
+	"hunts.trackerframe.spyglass",
+	"hunts.trackerframe.wagerribbon",
 ]
 
 # Hunts' ladder titles (HNT-R148, HNT-R130), each earned at a completed-run count: 25 with the event pool's content
@@ -139,11 +226,20 @@ ids = [
 fields = ["title"]
 ids = ["25", "50", "100"]
 
-# Stats' goods (STA-R88), its three tracker frames, each with a name and a description, from M6 with Stats' lore check
+# Stats' goods (STA-R88), its tracker frames, each with a name and a description, from M6 with Stats' lore check
 # (DATA-R107). Core owns the kind good, so Stats' is statsgood (DATA-R102).
 [stats.statsgood]
 fields = ["name", "description"]
-ids = ["stats.trackerframe.none", "stats.trackerframe.logbook", "stats.trackerframe.brass"]
+ids = [
+	"stats.trackerframe.none",
+	"stats.trackerframe.logbook",
+	"stats.trackerframe.brass",
+	"stats.trackerframe.greenbar",
+	"stats.trackerframe.chalkboard",
+	"stats.trackerframe.tidegauge",
+	"stats.trackerframe.abacus",
+	"stats.trackerframe.astrolabe",
+]
 
 # The Tackle Board's lore (TKB-R130), from M7 with its lore check (DATA-R107). The Ledger owns title and Core owns good
 # (DATA-R102), so the board's kinds are fly, boardtitle and boardgood. The Fly Box's 30 patterns in pattern order
@@ -188,7 +284,18 @@ ids = [
 fields = ["text"]
 ids = ["tally_25", "tally_100", "tally_500", "campfire_7", "campfire_30", "campfire_100", "campfire_365", "flybox"]
 
-# The board's goods (TKB-R125), its three tracker frames, each with a name and a description.
+# The board's goods (TKB-R125, TKB-R126), its tracker frames and its earned toast style in Core's slot, each with a name
+# and a description.
 [tackleboard.boardgood]
 fields = ["name", "description"]
-ids = ["tackleboard.trackerframe.none", "tackleboard.trackerframe.corkboard", "tackleboard.trackerframe.driftwood"]
+ids = [
+	"tackleboard.trackerframe.none",
+	"tackleboard.trackerframe.corkboard",
+	"tackleboard.trackerframe.driftwood",
+	"tackleboard.toaststyle.ember",
+	"tackleboard.trackerframe.net",
+	"tackleboard.trackerframe.bamboo",
+	"tackleboard.trackerframe.tin",
+	"tackleboard.trackerframe.bobber",
+	"tackleboard.trackerframe.embers",
+]
