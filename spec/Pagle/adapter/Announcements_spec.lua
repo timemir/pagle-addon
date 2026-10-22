@@ -3,6 +3,8 @@
 -- through the lanes in the announcements art's frames, playing their sounds with PlaySoundFile. A headline with text
 -- prints its title in capitals over the text, one without shows its title as it is, and stamps are in capitals.
 
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local bounds = dofile("spec/support/bounds.lua")
 local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 local DRIFTWOOD = SOUNDS .. "driftwood\\"
 local CAST = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
@@ -902,7 +904,14 @@ describe("The catch Nod on the client", function()
 
 			assert.is_true(showing(loaded, "nod"))
 			local frame = frameOf(loaded, "nod") --[[@as table]]
-			assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", frame.title:GetText())
+			-- Oily Blackmouth has varieties: its line names the Catch's, the name a segment of its own (VAR-R26).
+			assert.matches(
+				"^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d cm$",
+				frame.display.announcement.headline.title
+			)
+			assert.are.equal("Oily Blackmouth ·", frame.title:GetText())
+			assert.matches("^[%a%- ]+$", frame.variety:GetText())
+			assert.matches("^· %a+ · %d+%.%d cm$", frame.tail:GetText())
 			assert.are.same({}, stampsOf(frame))
 			assert.are.same({}, loaded.client.sounds)
 			assert.are.same({}, summarized)
@@ -944,4 +953,159 @@ describe("The catch Nod on the client", function()
 
 		assert.is_nil(frameOf(loaded, "nod"))
 	end)
+end)
+
+describe("a catch Nod naming a variety on the client (VAR-R26)", function()
+	-- Firefin Snapper's Coral: a 192 × 96 rectangle at (192, 0) of a 2048 atlas (VAR-R11).
+	local ART = {
+		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
+		left = 0.09375,
+		right = 0.1875,
+		top = 0,
+		bottom = 0.046875,
+	}
+
+	-- The rarity of `key`, as Core has it.
+	local function rarityOf(loaded, key)
+		for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+			if rarity.key == key then
+				return rarity
+			end
+		end
+		error("no rarity " .. key)
+	end
+
+	-- Raises Core's catch Nod naming Coral as a variety of `rarity`, as ns.CatchNodMoment makes it, and runs the frame
+	-- it shows on. Returns the Nod's frame.
+	local function raiseVarietyNod(loaded, rarity)
+		loaded.ns.moments:RaiseCatchNod({
+			rung = "nod",
+			kind = "catch",
+			title = "Firefin Snapper · Coral · Decent · 34.2 cm",
+			icon = 6359,
+			cast = CAST,
+			sound = false,
+			variety = { name = "Coral", rarity = rarity, before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
+			art = ART,
+		})
+		loaded.client.advance(0)
+		return frameOf(loaded, "nod") --[[@as table]]
+	end
+
+	-- A text colour as it reads back, from an { r, g, b }.
+	local function rgb(color)
+		return { color[1], color[2], color[3] }
+	end
+
+	it(
+		"writes the variety's name between the line's halves in its rarity's ink, after a gem in its colour; the rest"
+			.. " stays in the style's ink, on a strip sized to it (VAR-R26, ANN-R80)",
+		function()
+			local loaded = loadCore()
+			local rare = rarityOf(loaded, "rare")
+
+			local nod = raiseVarietyNod(loaded, "rare")
+
+			local ink = rgb(loaded.ns.ANNOUNCE_COLORS.ink)
+			assert.are.same({
+				{ "Firefin Snapper ·", ink },
+				{ "Coral", rgb(rare.ink) },
+				{ "· Decent · 34.2 cm", ink },
+			}, {
+				{ nod.title:GetText(), nod.title.textColor },
+				{ nod.variety:GetText(), nod.variety.textColor },
+				{ nod.tail:GetText(), nod.tail.textColor },
+			})
+			-- The gem: a small square turned to a diamond, rimmed in the ink and filled with the colour.
+			assert.are.same({ true, rgb(rare.color), rgb(rare.ink), math.rad(45), math.rad(45) }, {
+				nod.gem.shown,
+				rgb(nod.gem.fill.color),
+				rgb(nod.gem.rim.color),
+				nod.gem.fill.rotation,
+				nod.gem.rim.rotation,
+			})
+			-- In a row: the first half, the gem, the name, the second half.
+			assert.are.same(
+				{ nod.title, nod.gem, nod.variety },
+				{ nod.gem.points[1][2], nod.variety.points[1][2], nod.tail.points[1][2] }
+			)
+			assert.is_false(nod.text.shown)
+			assert.are.same({}, bounds.overflows(nod))
+			assert.are.equal(3, bounds.measured)
+			assert.are.equal(nod:GetWidth() - 22, nod.strip:GetWidth())
+		end
+	)
+
+	it(
+		"shows the variety's art cropped to the fish's head in the medallion, its ring in the rarity's colour but"
+			.. " Common's the style's own, and a plain Nod after as before (VAR-R26)",
+		function()
+			local loaded, M = loadCore()
+			local rings = {}
+			for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+				local nod = raiseVarietyNod(loaded, rarity.key)
+				rings[#rings + 1] = { nod.bezel.Ring.desaturated == true, nod.bezel.Ring.vertexColor }
+				assert.are.same({ ART.texture, { loaded.ns.HeadCrop(ART) } }, { nod.icon.texture, nod.icon.texCoord })
+				loaded.client.advance(NOD + LEAVE_NOD)
+			end
+			local colors = {}
+			for i, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+				colors[i] = { i > 1, i > 1 and rgb(rarity.color) or { 1, 1, 1 } }
+			end
+			for _, ring in ipairs(rings) do
+				ring[2] = rgb(ring[2])
+			end
+			assert.are.same(colors, rings)
+
+			raise(loaded, M, moment("nod", "New here", { icon = 136245 }))
+
+			local nod = frameOf(loaded, "nod") --[[@as table]]
+			assert.are.same({ "New here", false, false, false, false, { 1, 1, 1 }, 136245 }, {
+				nod.title:GetText(),
+				nod.gem.shown,
+				nod.variety.shown,
+				nod.tail.shown,
+				nod.bezel.Ring.desaturated == true,
+				rgb(nod.bezel.Ring.vertexColor),
+				nod.icon.texture,
+			})
+		end
+	)
+
+	it(
+		"sweeps one gleam across a Rare or Epic Nod's strip as it enters, in the rarity's colour, added on, then gone;"
+			.. " none for Common or Uncommon, nor with Animations off, and silent (VAR-R26, ANN-R13)",
+		function()
+			-- The gleam's brightest and where it went over the Nod's first second, and the gleam after.
+			local function sweep(rarity, motion)
+				local loaded = loadCore()
+				loaded.ns.db.profile.announcements.motion = motion
+				local nod = raiseVarietyNod(loaded, rarity)
+				local peak, xs = nod.gleam.alpha or 0, {}
+				for _ = 1, 60 do
+					loaded.client.update(1 / 60)
+					peak = math.max(peak, nod.gleam.alpha or 0)
+					xs[#xs + 1] = nod.gleam.points[1] and nod.gleam.points[1][4]
+				end
+				return { peak = peak, xs = xs, gleam = nod.gleam, sounds = loaded.client.sounds, loaded = loaded }
+			end
+
+			for _, key in ipairs({ "rare", "epic" }) do
+				local seen = sweep(key, true)
+				assert.is_true(seen.peak > 0.5)
+				assert.are.same({ 0, "ADD", true, rgb(rarityOf(seen.loaded, key).color), {} }, {
+					seen.gleam.alpha,
+					seen.gleam.blendMode,
+					seen.gleam.desaturated,
+					rgb(seen.gleam.vertexColor),
+					seen.sounds,
+				})
+				-- Left to right, once.
+				assert.is_true(seen.xs[5] < seen.xs[30])
+			end
+			for _, case in ipairs({ { "common", true }, { "uncommon", true }, { "rare", false } }) do
+				assert.are.equal(0, sweep(case[1], case[2]).peak)
+			end
+		end
+	)
 end)

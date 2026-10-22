@@ -368,17 +368,23 @@ describe("ns.MomentProblem", function()
 	end)
 end)
 
--- A caught Cast record (LOG-R65) holding `items`, each `{ itemID, size? }`, as the Catch log hands it out.
+-- A caught Cast record (LOG-R65) holding `items`, each `{ itemID, size?, variety? }`, as the Catch log hands it out.
 local function caughtCast(items, outcome)
 	local cast = { id = CAST, kind = "cast", outcome = outcome or "caught", items = {} }
 	for n, item in ipairs(items) do
-		cast.items[n] = { n = n, itemID = item[1], quantity = 1, catchId = CAST .. ":" .. n, size = item[2] }
+		cast.items[n] =
+			{ n = n, itemID = item[1], quantity = 1, catchId = CAST .. ":" .. n, size = item[2], variety = item[3] }
 	end
 	return cast
 end
 
 -- The client's names for the items these specs catch.
-local NAMES = { [6358] = "Oily Blackmouth", [6289] = "Raw Longjaw Mud Snapper", [6299] = "Sickly Looking Fish" }
+local NAMES = {
+	[6358] = "Oily Blackmouth",
+	[6289] = "Raw Longjaw Mud Snapper",
+	[6299] = "Sickly Looking Fish",
+	[6359] = "Firefin Snapper",
+}
 local function itemName(itemID)
 	return NAMES[itemID]
 end
@@ -430,6 +436,69 @@ describe("ns.CatchNodMoment", function()
 	it("is nil for a got-away Cast and for one whose every item is item 0 (ANN-R13, LOG-R8)", function()
 		assert.is_nil(ns.CatchNodMoment(caughtCast({}, "gotAway"), itemName, "cm"))
 		assert.is_nil(ns.CatchNodMoment(caughtCast({ { 0 }, { 0 } }), itemName, "cm"))
+	end)
+
+	-- Firefin Snapper's second variety, as Core lists it (VAR-R11), its art 192 × 96 at (192, 0) on a 2048 atlas.
+	local CORAL_ART = { texture = "Varieties1", left = 192 / 2048, right = 384 / 2048, top = 0, bottom = 96 / 2048 }
+	local FIREFIN = {
+		{ id = "6359.flame-finned", key = "flame-finned", index = 1, rarity = "common", name = "Flame-finned" },
+		{ id = "6359.coral", key = "coral", index = 2, rarity = "common", name = "Coral", art = CORAL_ART },
+	}
+	local function varieties(speciesID)
+		return speciesID == 6359 and FIREFIN or nil
+	end
+	local CORAL = { id = "6359.coral", index = 2, rarity = "common" }
+
+	it(
+		'names its Catch\'s variety, "{item name} · {variety name} · {band} · {length}", the name a segment of its'
+			.. " own with its rarity, and carries the variety's art (VAR-R26)",
+		function()
+			local cast = caughtCast({ { 6359, { length = 342, band = 2 }, CORAL } })
+
+			local nod = ns.CatchNodMoment(cast, itemName, "cm", varieties) --[[@as PagleMoment]]
+
+			assert.are.equal("Firefin Snapper · Coral · Decent · 34.2 cm", nod.title)
+			assert.are.same(
+				{ name = "Coral", rarity = "common", before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
+				nod.variety
+			)
+			assert.are.same(CORAL_ART, nod.art)
+			-- A copy: Core's lists are shared (CORE-R18).
+			assert.are_not.equal(CORAL_ART, nod.art)
+			assert.are.same({ 6359, "nod", false }, { nod.icon, nod.rung, nod.sound })
+			assert.is_nil(ns.MomentProblem(nod))
+		end
+	)
+
+	it("names a variety with no art by name alone, keeping the item's icon (VAR-R26)", function()
+		local cast = caughtCast({ { 6359, { length = 342, band = 2 }, { id = "6359.flame-finned", index = 1 } } })
+		cast.items[1].variety.rarity = "common"
+
+		local nod = ns.CatchNodMoment(cast, itemName, "cm", varieties) --[[@as PagleMoment]]
+
+		assert.are.same({ "Firefin Snapper · Flame-finned · Decent · 34.2 cm", "Flame-finned", nil }, {
+			nod.title,
+			nod.variety.name,
+			nod.art,
+		})
+	end)
+
+	it("reads as before when Core can't name the variety: no list, no entry or no name in lore (VAR-R26)", function()
+		local unnamed = {
+			{ id = "6359.flame-finned", index = 1, rarity = "common" },
+			{ id = "6359.coral", index = 2, rarity = "common", art = CORAL_ART },
+		}
+		for _, list in ipairs({ false, {}, unnamed }) do
+			local cast = caughtCast({ { 6359, { length = 342, band = 2 }, CORAL } })
+			local nod = ns.CatchNodMoment(cast, itemName, "cm", function()
+				return list or nil
+			end) --[[@as PagleMoment]]
+
+			assert.are.same({ "Firefin Snapper · Decent · 34.2 cm" }, { nod.title, nod.variety, nod.art })
+		end
+		local cast = caughtCast({ { 6359, { length = 342, band = 2 }, CORAL } })
+		local plain = ns.CatchNodMoment(cast, itemName, "cm") --[[@as PagleMoment]]
+		assert.are.same({ "Firefin Snapper · Decent · 34.2 cm" }, { plain.title, plain.variety, plain.art })
 	end)
 end)
 

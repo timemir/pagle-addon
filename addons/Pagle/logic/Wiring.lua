@@ -248,9 +248,17 @@ function ns.WireMoments(host, show)
 	ModuleHandle.RaiseMoment = ns.RaiseMomentMethod(host.registry, ns.moments)
 end
 
+-- A Species' ten from the catalogue in ns.Catalogue (VAR-R11), nil before it's built or for a Species without any.
+---@param speciesID integer
+---@return PagleVarietyEntry[]?
+local function varietiesOf(speciesID)
+	return ns.Catalogue and ns.Catalogue.GetVarieties(speciesID)
+end
+
 --- Core's catch Nod (ANN-R13) on ns.moments: at each live `CastEnded("caught", cast)` (LOG-R9), while
 --- PagleDB.profile.announcements.everyCatch ("Show every catch") is on, the Cast's catch Nod (ns.CatchNodMoment) in
---- the Angler's length unit. Replays and rebuilds fire no CastEnded, so only live Casts get one (ANN-R4).
+--- the Angler's length unit, naming its Catch's variety from the catalogue (VAR-R26). Replays and rebuilds fire no
+--- CastEnded, so only live Casts get one (ANN-R4).
 ---@param host PagleHost
 ---@param itemName fun(itemID: integer): string? the client's name for an item, nil until it has cached it
 function ns.WireCatchNods(host, itemName)
@@ -259,7 +267,7 @@ function ns.WireCatchNods(host, itemName)
 		if outcome ~= "caught" or not cast or not host.db().profile.announcements.everyCatch then
 			return
 		end
-		local moment = ns.CatchNodMoment(cast, itemName, ns.LengthUnit())
+		local moment = ns.CatchNodMoment(cast, itemName, ns.LengthUnit(), varietiesOf)
 		if moment then
 			ns.moments:RaiseCatchNod(moment)
 		end

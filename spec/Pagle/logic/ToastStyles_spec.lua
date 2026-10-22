@@ -178,6 +178,52 @@ describe("a moment's art in a medallion", function()
 	)
 end)
 
+describe("a catch Nod's variety", function()
+	-- A catch Nod's headline naming a variety of `rarity` (VAR-R26), as Core raises it.
+	local function nod(rarity)
+		return {
+			catchNod = true,
+			title = "Firefin Snapper · Coral · Decent · 34.2 cm",
+			variety = { name = "Coral", rarity = rarity, before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
+		}
+	end
+
+	it(
+		"draws the name in the rarity's ink after a gem in its colour, the ring in its colour but Common's the"
+			.. " style's own, and a gleam for Rare and Epic (VAR-R26, ANN-R80)",
+		function()
+			local looks = {}
+			for _, rarity in ipairs(ns.VARIETY_RARITIES) do
+				local look = ns.CatchNodVarietyLook(nod(rarity.key)) --[[@as PagleNodVarietyLook]]
+				assert.are.same({ "Coral", "Firefin Snapper ·", "· Decent · 34.2 cm", rarity.color, rarity.ink }, {
+					look.name,
+					look.before,
+					look.after,
+					look.color,
+					look.ink,
+				})
+				looks[#looks + 1] = { look.ring ~= nil, look.gleam }
+			end
+			assert.are.same({ { false, false }, { true, false }, { true, true }, { true, true } }, looks)
+			-- Common's ink is the parchment's own brown, so most catches stay calm (core/varieties.md › UI).
+			local common = ns.CatchNodVarietyLook(nod("common")) --[[@as PagleNodVarietyLook]]
+			assert.are.same(ns.Rgb("6a5a44"), common.ink)
+		end
+	)
+
+	it("is nil for a headline that isn't a catch Nod naming a variety, or names an unknown rarity", function()
+		local module = nod("rare")
+		module.catchNod = nil
+		local plain = nod("rare")
+		plain.variety = nil
+		assert.are.same({}, {
+			ns.CatchNodVarietyLook(module),
+			ns.CatchNodVarietyLook(plain),
+			ns.CatchNodVarietyLook(nod("mythic")),
+		})
+	end)
+end)
+
 describe("the art's capitals", function()
 	it("put a text in capitals, a link's words too, leaving texture, colour and link escapes as they are", function()
 		local star = "|TInterface\\Common\\ReputationStar:12:12:0:0:32:32:0:16:0:16|t"
