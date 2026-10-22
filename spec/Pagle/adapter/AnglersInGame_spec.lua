@@ -359,6 +359,21 @@ describe("the Companion's data addons", function()
 		end
 
 		it(
+			"never shows a hidden tooltip it adds a block to, such as another addon's scanning tooltip (VIEW-R20)",
+			function()
+				local loaded = core()
+				enterWorld(loaded)
+				local tooltip = loaded.env.GameTooltip
+				tooltip:Hide()
+				local Unit = loaded.env.Enum.TooltipDataType.Unit
+
+				loaded.client.showTooltip(Unit, { type = Unit, guid = ADA, lines = { { leftText = "Ada" } } })
+
+				assert.is_false(tooltip:IsShown())
+			end
+		)
+
+		it(
 			"adds a Followed Angler's block after the game's lines, on the player's own character too, with every Module off (VIEW-R20, VIEW-R21, VIEW-R93)",
 			function()
 				local loaded = core()
