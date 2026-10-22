@@ -97,6 +97,10 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
 - **LOG-R39** A purchase entry (`U1`) is appended only by the Curio Shop's buy flow ([wallet-and-shop.md](wallet-and-shop.md)). It stores the good's ID and the price paid.
 
+### Companion
+
+- **LOG-R37** A **Companion entry** (`K1`) records that the companion's data addon passed Core's check once ([pushed-content.md](pushed-content.md), PUSH-R13). When `Pagle.GetCompanionState()` first becomes `"connected"` and the log holds no `K1`, Core appends one for the current character with the file's `keyId` and `seq`; a log has at most one. It records the fact, never the content (PUSH-R23). Only Core's wallet projection reads it (Sonar Scope, SHOP-R29); `IterateCatches` never yields it. `K1` is an additive kind: no earlier entry changes shape, so it doesn't raise `PagleLog.format` (LOG-R18 is untouched) and no log is started over; a Core from before it skips a `K1` as an entry it can't decode (LOG-R16).
+
 ### Module records
 
 - **LOG-R40** `M:AppendRecord(kind, payload)` appends `A1|<header>|<module>|<kind>|<payload>` (ADR 0008), with `module` the Module's `def.name`. `kind` matches `[%w_.]+`. `payload` is any string without a newline, at most 200 bytes; a longer or invalid one raises a Lua error in the caller. Core never reads the payload. It returns the record and hands it to the Module's projections as a `"live"` entry under LOG-R73/R74: right away if they are up to date, after the current `apply` returns if called from inside one, or when the catch-up finishes if they are updating. Calling it during a `"replay"` or `"rebuild"` apply or from `done` raises a Lua error, so a rebuild never writes records twice.
@@ -277,7 +281,8 @@ Every entry starts with the header `<tag>|<char>|<time>|<tie>` (LOG-R11). Number
 | `S1` | Skill Reading | `rank` · `max` · `mod` |
 | `P1` | Prestige | `rank` (the new prestige rank), `activityXP` (Core's Activity XP total when it was recorded, AXP-R5; read as 0 when absent, as in pre-1.0 dev logs) |
 | `B1` | Build | `build` (the `GetBuildInfo()` build number) · `version` (e.g. `1.60.1`) |
-| `U1` | Purchase | `good` (good ID, `[%w_.]+`) · `price` |
+| `U1` | Purchase | `good` (good ID, `[%w_.]+`, or `core.crate` for a Curio crate) · `price` |
+| `K1` | Companion | `keyId` · `seq` (the accepted file's, LOG-R37) |
 | `A1` | Module record | `module` (`def.name`) · `kind` (`[%w_.]+`) · `payload` (everything after the 6th `\|`, verbatim) |
 
 Example, a caught Cast: `C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1`. That is character 1, caught at realm 08:14 in The Long Wash (148/453), skill 86+25 with lure 263, no listed event or aura, one Oily Blackmouth. About 60 bytes.

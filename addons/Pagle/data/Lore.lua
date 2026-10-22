@@ -3,6 +3,8 @@
 
 local L = select(2, ...).L
 
+L["good.core.binding.shagreenbone.description"] = "Green ray-skin, every pebble of it, with bone laid in like a sunrise. Made for a captain who liked his books to match the saloon."
+L["good.core.binding.shagreenbone.name"] = "Shagreen and Bone"
 L["good.core.crest.fish.12238.description"] = "A broad grey grouper on the grey sea it is named for, mouth open as ever."
 L["good.core.crest.fish.12238.name"] = "{fish} Crest"
 L["good.core.crest.fish.13422.description"] = "A stone-scaled eel coiled across blue water. Armourers covet the shield."
@@ -113,6 +115,8 @@ L["good.core.toaststyle.bottle.description"] = "Rolled up, corked and given to t
 L["good.core.toaststyle.bottle.name"] = "Driftglass Bottle"
 L["good.core.toaststyle.chart.description"] = "Torn from a chart nobody should have sold. Soundings, rhumb lines and a compass rose that still points north."
 L["good.core.toaststyle.chart.name"] = "Sea Chart"
+L["good.core.toaststyle.foil.description"] = "The rare one, pulled from the pack on the first try. Hold it to the light and the whole lake runs through it."
+L["good.core.toaststyle.foil.name"] = "Prize Foil"
 L["good.core.toaststyle.folio.description"] = "Gold leaf, lapis and vermilion, laid on vellum by a scribe with too much time and not enough fish."
 L["good.core.toaststyle.folio.name"] = "Illuminated Folio"
 L["good.core.toaststyle.frost.description"] = "Left out overnight on the ice. The rime grew in from the corners while the ink was still wet."
@@ -135,6 +139,10 @@ L["good.core.toaststyle.rune.description"] = "Not paper at all: a bronze plate, 
 L["good.core.toaststyle.rune.name"] = "Rune-Plate"
 L["good.core.toaststyle.ship.description"] = "A page from the ship’s log, lashed to a sailcloth spine. Tide columns ruled in navy, an anchor in the margin."
 L["good.core.toaststyle.ship.name"] = "Ship's Log"
+L["good.core.toaststyle.sonar.description"] = "Built by an engineer who wanted to see the fish before they saw him. It hums, it pings, and it has never once been wrong about a ping."
+L["good.core.toaststyle.sonar.name"] = "Sonar Scope"
+L["good.core.toaststyle.storm.description"] = "The catch you made when everyone sensible had gone in. The pennant says gale; the angler says one more cast."
+L["good.core.toaststyle.storm.name"] = "Storm Front"
 L["good.core.toaststyle.tidepool.description"] = "A page that went in the water and came back out. Sand in the fold, a shell left behind."
 L["good.core.toaststyle.tidepool.name"] = "Tidepool"
 L["variety.12238.barred.description"] = "Broad dark bars that fade when it rests. It rests a lot."

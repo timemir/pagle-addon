@@ -59,6 +59,10 @@ CORE_GOODS = [
     "core.soundset.harp",
     "core.soundset.gizmo",
     "core.soundset.wardrums",
+    "core.toaststyle.sonar",
+    "core.toaststyle.foil",
+    "core.toaststyle.storm",
+    "core.binding.shagreenbone",
 ]
 # LED-R75: the title IDs, in its table's order; LED-R110: the bindings without their ledger.binding. prefix.
 LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]
@@ -163,6 +167,15 @@ BINDINGS = [
     "abyssal",
     "keeper",
     "iridescent",
+    "wave",
+    "logbook",
+    "heartwood",
+    "stormglass",
+    "lacquer",
+    "knit",
+    "flywallet",
+    "carapace",
+    "ember",
 ]
 
 
@@ -1053,6 +1066,13 @@ LEDGER_GOODS = [
     "ledger.toaststyle.prestige",
     "ledger.soundset.concertina",
     "ledger.soundset.choir",
+    "ledger.toaststyle.glass",
+    "ledger.toaststyle.deep",
+    "ledger.toaststyle.koi",
+    "ledger.toaststyle.trophy",
+    "ledger.toaststyle.slate",
+    "ledger.toaststyle.ice",
+    "ledger.toaststyle.stitch",
 ]
 
 

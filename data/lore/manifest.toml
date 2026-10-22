@@ -77,6 +77,15 @@ ids = [
 	"abyssal",
 	"keeper",
 	"iridescent",
+	"wave",
+	"logbook",
+	"heartwood",
+	"stormglass",
+	"lacquer",
+	"knit",
+	"flywallet",
+	"carapace",
+	"ember",
 ]
 
 # The Ledger's zone crests (LED-R113), each good ledger.crest.<key> in Core's crest slot, with a name and a
@@ -147,6 +156,13 @@ ids = [
 	"ledger.toaststyle.prestige",
 	"ledger.soundset.concertina",
 	"ledger.soundset.choir",
+	"ledger.toaststyle.glass",
+	"ledger.toaststyle.deep",
+	"ledger.toaststyle.koi",
+	"ledger.toaststyle.trophy",
+	"ledger.toaststyle.slate",
+	"ledger.toaststyle.ice",
+	"ledger.toaststyle.stitch",
 ]
 
 # Core's goods (SHOP-R25), each with a name and a description (wallet-and-shop.md › UI), from M4 with Core's lore
@@ -185,6 +201,10 @@ ids = [
 	"core.soundset.harp",
 	"core.soundset.gizmo",
 	"core.soundset.wardrums",
+	"core.toaststyle.sonar",
+	"core.toaststyle.foil",
+	"core.toaststyle.storm",
+	"core.binding.shagreenbone",
 	{ id = "core.crest.fish.1467", placeholders = ["fish"] },
 	{ id = "core.crest.fish.4603", placeholders = ["fish"] },
 	{ id = "core.crest.fish.6289", placeholders = ["fish"] },

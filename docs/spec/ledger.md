@@ -35,7 +35,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   - **M3:** the world index, stars, Zone Mastery, the collections and the Uncharted list, completion, their XP, Coins and moments, and the Journal. The Journal leaves out every M4 element: Legends (contents line and spread), titles (the bookplate and brass plate show no title; "Lv {L} · Ledger {p}%"; the `zoneMaster` moment's text is just "{zone}"; no `completeTitle` moment), the zonemaster line of LED-R137, the Prestige emblems and button, "Signed As", "Bindings", the Catch Milestone part of LED-R146 (it reads "{lifetime} Catches"), and size text. It is drawn in the Field Leather look, whose tints the M3 Journal ticket picks, while no binding slot exists.
   - **M4:** Legends, titles, Simulated Size records (and size text), Catch Milestones, Prestige (with `prestigeReady`), the bindings, and every element M3 left out.
 
-  `LEDGER_RULES_VERSION` is 1 in M2, 2 in M3 and 3 in M4, then rises by 1 per change: 4 when ★ moved from a Species' first Catch to its 5th (LED-R45); 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32, LED-R37, M8 Hunt Events); 6 for the varieties caught (VAR-R20). In M2 the Settings root has no "Open Fish Journal" button, since the Ledger has no view yet (CORE-R44).
+  `LEDGER_RULES_VERSION` is 1 in M2, 2 in M3 and 3 in M4, then rises by 1 per change: 4 when ★ moved from a Species' first Catch to its 5th (LED-R45); 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32, LED-R37, M8 Hunt Events); 6 for the varieties caught (VAR-R20); 7 for the second round's counts (LED-R118, LED-R119). In M2 the Settings root has no "Open Fish Journal" button, since the Ledger has no view yet (CORE-R44).
 
 ### Classifying a Catch
 
@@ -205,7 +205,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 
 ### Celebrating
 
-- **LED-R90** The **celebrated set** (LOG-R77) in `PagleLedgerDB.global.celebrated` records what has already been shown or written up: the highest level per climb (by prestige rank; a climb's level 60 also stands for its `prestigeReady`), the highest prestige rank, Species caught (New Species), which stars per Species and per family, Species × zone pairs, zones fished, shown ranks per zone, curio, trophy and Legend items, Uncharted item IDs, Skill and Catch Milestones, each Species' varieties and the Species with all of them (VAR-R25), earned title keys, the expansion's earned goods once their rule held (LED-R116, LED-R117), and `coins`, the lifetime Coins total, set after every live entry and every `done`. It also stores `logId`, the `PagleLog.logId` it belongs to. It only grows, except `coins`, which follows the total. In `done`, if its `logId` isn't `Pagle.GetAngler().logId` (a new log, LOG-R18), the set is emptied, given the new `logId`, and that `done` is handled as a first build.
+- **LED-R90** The **celebrated set** (LOG-R77) in `PagleLedgerDB.global.celebrated` records what has already been shown or written up: the highest level per climb (by prestige rank; a climb's level 60 also stands for its `prestigeReady`), the highest prestige rank, Species caught (New Species), which stars per Species and per family, Species × zone pairs, zones fished, shown ranks per zone, curio, trophy and Legend items, Uncharted item IDs, Skill and Catch Milestones, each Species' varieties and the Species with all of them (VAR-R25), earned title keys, the expansion's and the second round's earned goods once their rule held (LED-R116–R118), and `coins`, the lifetime Coins total, set after every live entry and every `done`. It also stores `logId`, the `PagleLog.logId` it belongs to. It only grows, except `coins`, which follows the total. In `done`, if its `logId` isn't `Pagle.GetAngler().logId` (a new log, LOG-R18), the set is emptied, given the new `logId`, and that `done` is handled as a first build.
 - **LED-R91** While applying a `"live"` entry, every **achievement** (a row of the moments table, LED-R97) it earns that isn't in the celebrated set raises its moment and is added to the set. An achievement already celebrated raises nothing, even when a rebuild had dropped it and this entry earns it again.
 - **LED-R92** Shown values never fall below the celebrated ones: the level in the current climb (LED-R36), Species and family stars, zone ranks (LED-R52), titles (LED-R76) and level bindings (LED-R111).
 - **LED-R98** While applying entries in `"replay"` or `"rebuild"` mode, the fold also appends each achievement it earns, with the entry ID of the Cast that earned it (none for Skill Reading and Prestige entries) and its Coins, to a **scratch list** kept in memory outside the stored state, cleared by `reset` and after `done`. A rebuild cut short by a logout or `/reload` starts again from `seq` 0 (LOG-R72), so the list is rebuilt with it. `done` reads achievements from this list; the list never decides what the state holds.
@@ -279,6 +279,8 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
   | `ledger.binding.keeper` | earned, `earnedText` "Complete the Ledger" | Keeper's Gold |
   | `ledger.binding.iridescent` | earned, `earnedText` "Every fish in every colour" | Iridescent Scale |
 
+  *Lands with ADR 0015 (Core owns the one binding slot every book wears, `core.binding`).* The Curio Shop's second round adds ten bindings (the round-two kit's "Journal bindings · ten more" board), none of them in this slot or this table. Nine are the Ledger's earned goods, each by LED-R118's rule with fallback tier 5 (SHOP-R28): `ledger.binding.wave` (Breaking Wave), `ledger.binding.logbook` (Captain's Logbook), `ledger.binding.heartwood` (Carved Heartwood), `ledger.binding.stormglass` (Stormglass Reliquary), `ledger.binding.lacquer` (Black Lacquer Koi), `ledger.binding.knit` (Cable Knit), `ledger.binding.flywallet` (Fly Wallet), `ledger.binding.carapace` (Crab Carapace) and `ledger.binding.ember` (Ember Scale); they register into Core's `core.binding` slot per ADR 0015, and until it lands they aren't registered, though the Ledger already counts their rules and notes them in the celebrated set (LED-R118). The tenth, Shagreen and Bone, is Core's, `core.binding.shagreenbone`, for sale at tier 4 and in the Curio crate (SHOP-R25, SHOP-R50). Core ships all ten's art (ADR 0015): each a whole book, with a closed-book cover in the `Bindings3` atlas (300 × 392, drawn 200 × 261 on the shop's stage), a frame material tiled round the pages, a corner piece drawn 76 × 76 at each corner and mirrored to fit, a clasp on the fore-edge (none for one without), a silk bookmark of its own colours hanging from the pages' foot, and its own ink for the crumbs and colour for the fillet (`BindingParts2` atlas), all as the kit's goods data gives them. The nine's names and descriptions are the Ledger's lore, `binding.<key>.name` and `.description` (LED-R160); Shagreen and Bone's is Core's, `good.core.binding.shagreenbone`.
+
   The expansion's twenty (the Curio Shop expansion kit's Bindings board) each have a material texture of their own (`media/journal/bindings/<key>`, tiled at its own repeat), corner pieces where the board shows them, and their closed-book swatch in the `Bindings2` atlas; their band, gilt and plate are as the board draws them.
   A binding is a look only, the Ledger art kit's (its Bindings board, one to one with these goods): the leather (Core's leather for Field Leather; a grey leather under a vertex tint measured from the kit's swatches for the level bindings and Sharkskin; Birch Bark's bark and Sea-Green Buckram's cloth their own textures), the band toned to it, the gilt of the breadcrumbs and fleurons (a silver gilt turns the brass plate silver), and the page paper taking a tenth of its hue. Each good's `preview` draws the kit's closed-book swatch of it (no pages).
 - **LED-R111** A level binding's `isEarned()` is true when the higher of the peak level (LED-R35) and the highest level in the celebrated set is at least its level. The Ledger calls `M:RefreshGoods()` after a live entry that raises the peak level past a multiple of 10, and from `done` (SHOP-R31).
@@ -301,6 +303,26 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 
 - **LED-R116** The expansion's earned bindings are owned when: Three Gilt Fish, every Legend item caught (LED-R63); Monster Hide, a sized Catch in the Monster band (`Pagle.SIZE_BANDS`, LED-R80); Abyssal Black, Prestige rank 10 or higher (LED-R34); Keeper's Gold, the `complete.ledger` title earned (LED-R75); Iridescent Scale, the `complete.varieties` title earned (VAR-R22). Each is checked against the projection and the celebrated set together (LED-R90), and once its rule holds it is noted in the celebrated set's `goods` (after a live entry and in `done`), so a binding once earned is never lost: not when a rebuild no longer holds what earned it (a Monster's Catch turned Uncharted, LED-R64), and not when a release adds to what its rule counts (a Legend more for "every Legend", LED-R72). The Ledger calls `M:RefreshGoods()` after a live entry that could earn one and from `done` (SHOP-R31).
 - **LED-R117** The Ledger also registers four earned goods in Core's open slots (SHOP-R23, SHOP-R25), drawn and played by Core: `ledger.toaststyle.legend` (The Tall Tale), its first Legend caught (LED-R63), `earnedText` "Land a Legend"; `ledger.toaststyle.prestige` (Oxblood Vellum), Prestige rank 5 or higher (LED-R34), `earnedText` "Prestige V"; `ledger.soundset.concertina` (Old Salt's Concertina), Prestige rank 1 or higher (LED-R34), `earnedText` "Prestige I"; `ledger.soundset.choir` (Choir of the Deep), every Legend item caught (LED-R63), `earnedText` "Land all three Legends". Their names and descriptions are its lore, `ledgergood.<goodID>.name` and `.description` (LED-R160); each is kept once earned as LED-R116's bindings are, noted in the celebrated set's `goods`, and refreshing is as LED-R116.
+- **LED-R118** **The second round's earned goods.** The Ledger registers seven more toast styles in Core's `core.toaststyle` slot (SHOP-R23, SHOP-R25), drawn by Core (ANN-R82), named and described as LED-R117's are (`ledgergood.<goodID>`, LED-R160), and earns nine Journal bindings (registered with ADR 0015, LED-R110). Each has fallback tier 5 (SHOP-R28) and is owned when its count reaches its mark:
+  - **Chapel Glass** (`ledger.toaststyle.glass`): twelve glass shards (LED-R119).
+  - **The Deep Lure** (`ledger.toaststyle.deep`): 100 caught Casts between 00:00 and 03:59 realm time (the Cast's `minute` under 240; a Cast stored without one doesn't count).
+  - **Ink and Koi** (`ledger.toaststyle.koi`): 25 **pairs**: a caught Cast with a Species among its Catches that was also among the Catches of the caught Cast before it, in log order on any character (got-away Casts between them don't break a pair, a caught Cast with no Species does; a run of three is two pairs).
+  - **Mounted Trophy** (`ledger.toaststyle.trophy`): 25 size records beaten, a Species' or a Legend item's (LED-R82: a later Catch strictly longer than the record; the first sized Catch sets one and doesn't count).
+  - **Fishmonger's Slate** (`ledger.toaststyle.slate`): 30 Species with a Catch (LED-R5's Species, not Legends).
+  - **Through the Ice** (`ledger.toaststyle.ice`): 100 caught Casts in Dun Morogh, Alterac Mountains or Winterspring (zone 1, 36 or 618, Tunables).
+  - **Cross-Stitch Sampler** (`ledger.toaststyle.stitch`): a Catch of each of the sampler's twenty Species (Tunables).
+  - **Breaking Wave** (`ledger.binding.wave`): 300 caught Casts at sea: zone or subzone in the open-sea list (Tunables).
+  - **Captain's Logbook** (`ledger.binding.logbook`): 25 zones fished (LED-R6).
+  - **Carved Heartwood** (`ledger.binding.heartwood`): a caught Cast right after 10 or more got-away Casts in a row, in log order on any character.
+  - **Stormglass Reliquary** (`ledger.binding.stormglass`): 10 zones whose shown rank is Master (LED-R52).
+  - **Black Lacquer Koi** (`ledger.binding.lacquer`): 30 realm dates with a caught Cast (each Cast's realm date as LOG-R49 derives it).
+  - **Cable Knit** (`ledger.binding.knit`): 10,000 Casts, caught and got away.
+  - **Fly Wallet** (`ledger.binding.flywallet`): 5 different lures: distinct non-empty `lure` values on caught Casts.
+  - **Crab Carapace** (`ledger.binding.carapace`): 50 Catches of the Big-mouth Clam (item 7973).
+  - **Ember Scale** (`ledger.binding.ember`): Prestige rank 7 or higher (LED-R34), by the state or the highest celebrated rank.
+
+  The counts the projection doesn't already hold (it holds the Casts, the Species, the zones fished and their ranks, and the prestige rank) are kept in its `counts` (Data), by the fold for every Cast, live or not; "in log order" means `seq` order, across the Angler's characters. A toast style's `earnedText` is a function (SHOP-R22): the row's tag "{n} of {mark} {unit}" ("7 of 12 shards"; the plain earned text for Heartwood and Ember, whose mark is one step) from the projection's last finished state (while it updates, the tag it gave last), and the stage's note, the earned text in full ("12 glass shards"). Each is kept once earned as LED-R116's are: when its count reaches its mark it is noted in the celebrated set's `goods` (LED-R90) after the live entry or in `done`, and `isEarned()` is true when it is there or its count is at the mark, so a good once earned is never lost, not even when a rebuild counts lower (a newly classified Species, a retuned length); the nine bindings are noted so before they are registered. The Ledger calls `M:RefreshGoods()` after a live entry that notes one and from `done` (SHOP-R31). Reaching a mark raises no moment: the Curio Shop is where it shows.
+- **LED-R119** **Glass shards** (Chapel Glass). A caught Cast with a zone (≠ 0) and a realm date (LOG-R49) earns one shard when it is the first caught Cast of its realm date in that zone and the zone had no caught Cast on any of the six realm dates before: a new water, or one left a week. Twelve shards earn the style. The projection keeps each zone's latest realm date with a caught Cast (as a day number) and the shard count; shards are never spent.
 - **LED-R112** The Journal is drawn in `Pagle.GetEquipped("ledger.binding")`, and its bookplate shows `Pagle.GetEquipped("core.crest")`'s icon, pinned as the crest's shield (SHOP-R25, LED-R146), or no emblem while that is the slot's default, Plain ("No emblem, only the owner's name"). It redraws on `AppearanceChanged` for either slot.
 
 ### The Fish Journal
@@ -392,13 +414,13 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
   | `sub.<itemID>.plaque` | every junk, container and treasure item |
   | `family.<familyID>.name` | every trophy family |
   | `title.<titleID>.text` | `level1`, `level10`, `level20`, `level30`, `level40`, `level50`, `level60`, `prestige1`, `prestige5`, `prestige10`, `zonemaster` (allows `{zone}`), `complete.ledger`, `complete.junk`, `complete.treasure`, `complete.trophy` |
-  | `binding.<name>.name`, `.description` | each binding good `ledger.binding.<name>` (LED-R110) |
-  | `ledgergood.<goodID>.name`, `.description` | each of LED-R117's goods |
+  | `binding.<name>.name`, `.description` | each binding good `ledger.binding.<name>` (LED-R110), and the second round's nine (LED-R118) |
+  | `ledgergood.<goodID>.name`, `.description` | each of LED-R117's goods and LED-R118's toast styles |
   | `crest.<key>.name`, `.description` | each zone crest `ledger.crest.<key>` (LED-R113): its name is the landmark on it, its description a word on the water there; neither names a place from the game (DATA-R3) |
   | `line.<id>.text` | `uncaughtlegend`, `uncaughtjunk`, `uncaughttreasure`, `unchartedwaters` |
 
 - **LED-R161** `{zone}` in the `zonemaster` title is filled with the zone's name from `C_Map.GetAreaInfo` (DATA-R108). A key with no text (before the Ledger's lore check turns on) shows nothing: its line is left out.
-- **LED-R162** The Ledger's lore check turns on in M3 (`ledger` in `data/checks.toml`'s `lore`, DATA-R66, DATA-R107), with the `line` IDs in the manifest; the `title` and `binding` IDs enter the manifest in M4, with the title and binding batch (DATA-R111), and the `crest` IDs with the zone crests, and the `ledgergood` IDs with the Curio Shop expansion (LED-R117).
+- **LED-R162** The Ledger's lore check turns on in M3 (`ledger` in `data/checks.toml`'s `lore`, DATA-R66, DATA-R107), with the `line` IDs in the manifest; the `title` and `binding` IDs enter the manifest in M4, with the title and binding batch (DATA-R111), and the `crest` IDs with the zone crests, and the `ledgergood` IDs with the Curio Shop expansion (LED-R117); the second round's `binding` and `ledgergood` IDs enter with its goods (LED-R118).
 
 ## Data
 
@@ -424,6 +446,22 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 ---@field uncharted { [integer]: LedgerFirst }   -- Uncharted item IDs, with zones
 ---@field zones { [integer]: LedgerZone }        -- every zone with a Catch (zone ≠ 0)
 ---@field varieties { [integer]: { [integer]: LedgerVariety } }  -- by Species ID, each variety caught by its position (VAR-R20)
+---@field counts LedgerCounts            -- the second round's counts (LED-R118, LED-R119)
+
+---@class LedgerCounts                  -- LED-R118, LED-R119
+---@field shards integer                 -- glass shards (LED-R119)
+---@field lastDay { [integer]: integer } -- zone -> day number of its latest caught Cast (LED-R119)
+---@field deep integer                   -- caught Casts at realm minute < 240
+---@field pairs integer                  -- caught Casts sharing a Species with the caught Cast before
+---@field lastSpecies { [integer]: true } -- the Species among the last caught Cast's Catches (for pairs)
+---@field records integer                -- size records beaten (LED-R82)
+---@field ice integer                    -- caught Casts in the ice zones
+---@field sea integer                    -- caught Casts at sea
+---@field gotAwayRun integer             -- got-away Casts since the last caught one
+---@field afterRun boolean               -- a caught Cast came after 10 or more got away
+---@field days { [integer]: true }       -- day numbers with a caught Cast
+---@field lures { [integer]: true }      -- lure IDs on caught Casts
+---@field clams integer                  -- Big-mouth Clam Catches
 
 ---@class LedgerVariety                -- core/varieties.md › Data
 ---@field count integer                 -- Catches of the variety
@@ -508,7 +546,7 @@ Pagle.RegisterModule{
 | `Pagle.GetAngler` | LED-R41, LED-R126 |
 | `M:RaiseMoment`, `M:RaiseWriteUp`, `M:SetSummaryLine` | LED-R93–R97 |
 | `M:ReportCoinsEarned` | LED-R89 |
-| `M:RegisterSlot`, `M:RegisterGood`, `M:RefreshGoods`, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.IsOwned`, `Pagle.GetGood` (the crest's icon), `Pagle.OpenShop`, event `AppearanceChanged` | LED-R110–R117, LED-R146 |
+| `M:RegisterSlot`, `M:RegisterGood`, `M:RefreshGoods`, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.IsOwned`, `Pagle.GetGood` (the crest's icon), `Pagle.OpenShop`, event `AppearanceChanged` | LED-R110–R119, LED-R146 |
 | `Pagle.OpenFieldReport` | LED-R135, LED-R138, LED-R144 (REP-R43) |
 | `Pagle.RegisterEvent` (for `GET_ITEM_INFO_RECEIVED`) | LED-R126 |
 | `Pagle.IsAnimationsOn`, `Pagle.Animate`, `Pagle.Cue`, `Pagle.StopMotion`, `Pagle.EASE`, `Pagle.Bezier` ([announcements.md › Contracts](core/announcements.md#contracts)) | UI › Motion |
@@ -570,6 +608,15 @@ The Ledger adds no rows to any Settings page.
 | Level titles | levels 1, 10, 20, 30, 40, 50, 60 | LED-R75 |
 | Prestige titles | ranks 1, 5, 10 | LED-R75 |
 | Level bindings | levels 10, 20, 30, 40, 50, 60 | LED-R110 |
+| Second round's marks | Chapel Glass 12, The Deep Lure 100, Ink and Koi 25, Mounted Trophy 25, Fishmonger's Slate 30, Through the Ice 100, Cross-Stitch Sampler 20, Breaking Wave 300, Captain's Logbook 25, Carved Heartwood 1, Stormglass Reliquary 10, Black Lacquer Koi 30, Cable Knit 10,000, Fly Wallet 5, Crab Carapace 50, Ember Scale 7 | LED-R118, LED-R119 |
+| Ice zones | 1, 36, 618 (Dun Morogh, Alterac Mountains, Winterspring) | LED-R118 |
+| Open-sea list (zone or subzone) | 214, 308, 332, 457, 2317, 2318, 2319, 2320, 2321, 2322, 2323, 2324, 2325, 2326, 2338, 2339, 2364, 2365, 2397, 2398, 2399, 2400, 2401, 2402, 2403, 2477, 16361 (The Great Sea, The Veiled Sea, The Forbidding Sea, South Seas) | LED-R118 |
+| The sampler's Species | 6291, 6289, 6303, 6308, 6317, 6358, 6359, 6361, 6362, 4603, 8365, 21071, 21153, 13422, 13754, 13758, 13759, 13760, 13889, 13888 | LED-R118 |
+| Big-mouth Clam | item 7973 | LED-R118 |
+| Deep Lure hours | realm minute 0–239 | LED-R118 |
+| Heartwood run | 10 got away | LED-R118 |
+| Shard: realm dates a zone must rest | 6 | LED-R119 |
+| Second round's fallback: tier / days after release / release time | 5 / 90 / `nil` until the release that ships the goods sets it (`logic/EarnedCounts.lua`) | LED-R118, SHOP-R28 |
 | Binding tiers | Birch Bark 1, Sea-Green Buckram 2, Sharkskin 3; Tide-Chart Linen 1, Tarred Sailcloth 1, Oilskin Yellow 1, Mossbound 2, Driftwood Boards 2, Eelskin 2, Kodo Hide 2, Frost-Tanned Hide 2, Net over Cork 2, Riveted Copper 3, Night Velvet 3, Turtle Shell 3, Gilded Morocco 3, Coral Inlay 4, Mother-of-Pearl 5 | LED-R110 |
 | Notes to self | at most 3 | LED-R133 |
 | Search results | 4 zones, 6 fish | LED-R148 |
@@ -577,7 +624,7 @@ The Ledger adds no rows to any Settings page.
 | Forecast in hours up to | 48 h | LED-R127 |
 | Write-up title lines | 3 | LED-R94 |
 | Continent name map (continent ID → uiMapID) | 0 → 1415 (Eastern Kingdoms), 1 → 1414 (Kalimdor); every other ContinentID is "Other waters" | LED-R126, LED-R130 |
-| `LEDGER_RULES_VERSION` | 6 (1 in M2, 2 in M3, 3 in M4, then +1 per change) | LED-R2, LED-R4 |
+| `LEDGER_RULES_VERSION` | 7 (1 in M2, 2 in M3, 3 in M4, then +1 per change; 7 for the second round's counts, LED-R118) | LED-R2, LED-R4 |
 
 ## Edge cases
 

@@ -720,3 +720,72 @@ description = "A squeezebox phrase from a sea song everyone half-knows, played b
 [ledgergood."ledger.soundset.choir"] # core.soundset, earned: Land all three Legends
 name = "Choir of the Deep"
 description = "Low voices swelling up from deep water, and something very large singing along underneath."
+
+# The Curio Shop's second round: the nine whole-book bindings the Ledger earns (LED-R110, LED-R118), each
+# ledger.binding.<id>, registered into Core's binding slot with ADR 0015. Shagreen and Bone is Core's (core.toml).
+
+[binding.wave] # ledger.binding, earned: 300 catches at sea
+name = "Breaking Wave"
+description = "Blue morocco with one great wave pressed into it, its crest picked out in gold. Somewhere on its shoulder is a very small boat."
+
+[binding.logbook] # ledger.binding, earned: 25 zones fished
+name = "Captain's Logbook"
+description = "Canvas boards and calfskin corners, a compass let into the cover and a strap to keep the spray out. The water stain came free."
+
+[binding.heartwood] # ledger.binding, earned: a catch after 10 got away
+name = "Carved Heartwood"
+description = "Two boards of old oak, a fish carved deep into the front, and ivy that was never planted there and will not be talked out of it."
+
+[binding.stormglass] # ledger.binding, earned: Master in 10 zones
+name = "Stormglass Reliquary"
+description = "Iron boards, strap hinges and a window with a storm kept in it. Nobody remembers putting the fish in there."
+
+[binding.lacquer] # ledger.binding, earned: 30 days fished
+name = "Black Lacquer Koi"
+description = "Thirty coats of black lacquer, two koi laid in gold, and a spine sewn with red silk. It takes a year to make and a second to fingerprint."
+
+[binding.knit] # ledger.binding, earned: 10,000 Casts
+name = "Cable Knit"
+description = "A cover knitted from the same wool as the angler's jumper, toggles and all. It smells faintly of rain and is warmer than it has any right to be."
+
+[binding.flywallet] # ledger.binding, earned: 5 different lures
+name = "Fly Wallet"
+description = "Waxed canvas with a fleece in the front, and in the fleece the flies that worked. The ones that did not are at the bottom of the lake."
+
+[binding.carapace] # ledger.binding, earned: 50 Big-mouth Clams
+name = "Crab Carapace"
+description = "The shell of a crab that thought it was bigger than the boat, and very nearly was. It still pinches the pages shut."
+
+[binding.ember] # ledger.binding, earned: Prestige VII
+name = "Ember Scale"
+description = "Scales from something that lived too near the forge, still warm at the heart. Do not leave it on the bedside table."
+
+# The second round's toast styles the Ledger earns in Core's slot (LED-R118), each ledgergood.<goodID>.
+
+[ledgergood."ledger.toaststyle.glass"] # core.toaststyle, earned: 12 glass shards
+name = "Chapel Glass"
+description = "A window from a chapel by the water, leaded by hand. The words sit in the one clear pane; the rest is ruby, cobalt and the colour of late light."
+
+[ledgergood."ledger.toaststyle.deep"] # core.toaststyle, earned: 100 catches after midnight
+name = "The Deep Lure"
+description = "Written by the only light at the bottom of the lake. Something down there holds the catch in its teeth and is in no hurry to let go."
+
+[ledgergood."ledger.toaststyle.koi"] # core.toaststyle, earned: 25 pairs in a row
+name = "Ink and Koi"
+description = "A scroll from a painter who only ever painted fish, and painted them well. The circle round the catch took one breath."
+
+[ledgergood."ledger.toaststyle.trophy"] # core.toaststyle, earned: 25 size records
+name = "Mounted Trophy"
+description = "Walnut, brass and four good screws. The sort of thing that goes over the fireplace and gets pointed at for the rest of the evening."
+
+[ledgergood."ledger.toaststyle.slate"] # core.toaststyle, earned: 30 Species
+name = "Fishmonger's Slate"
+description = "Chalked up this morning, on ice by noon. The price is whatever the fishmonger thinks you can bear."
+
+[ledgergood."ledger.toaststyle.ice"] # core.toaststyle, earned: 100 catches on the ice
+name = "Through the Ice"
+description = "Six inches of good black ice, one hole and a lot of waiting. When the flag goes up you run, and you do not mind the cold."
+
+[ledgergood."ledger.toaststyle.stitch"] # core.toaststyle, earned: the sampler’s 20 fish
+name = "Cross-Stitch Sampler"
+description = "Stitched by someone patient on the long nights between seasons. Every fish in it took an evening; the needle is still in."

@@ -41,7 +41,7 @@ Part of [Core](README.md). The Pagle companion (`timemir/pagle-companion`, speci
 - **PUSH-R20** The decoded `payload` is a Lua-data-only text in the grammar under [Contracts](#the-payload), read by a strict parser in `logic/`: tables, strings, integers and booleans only, never `loadstring`. It is a **snapshot**: the whole current schedule and the definitions it needs, never a change to an earlier one.
 - **PUSH-R21** The payload holds a list of **items**, each with a `kind` (`[%w_]+`), a `v` (its own version, an integer) and its fields. Core passes on only items of kinds and versions it knows (Tunables: `huntEvent` 1, `huntRun` 1), and quietly ignores the rest, so a newer backend never breaks an older addon.
 - **PUSH-R22** `Pagle.GetPushedContent(kind)` returns a fresh array of the checked items of that kind, in payload order, each a copy the caller may keep; an empty array when the state isn't `"connected"` or `"notRunning"`, or the kind has no items. *Decided while writing the spec (#289): a `"notRunning"` file's content is still handed out, since it passed its signature and expiry checks; only the hint treats it as stale.*
-- **PUSH-R23** Core never logs pushed content and knows nothing of what a kind means. A Module that bases rebuildable state on pushed content logs what it used as its own Module records (ADR 0008, ADR 0013); Hunts does so for runs (HNT-R150).
+- **PUSH-R23** Core never logs pushed content and knows nothing of what a kind means; its one Companion entry records only that a check passed (LOG-R37). A Module that bases rebuildable state on pushed content logs what it used as its own Module records (ADR 0008, ADR 0013); Hunts does so for runs (HNT-R150).
 
 ## Data
 

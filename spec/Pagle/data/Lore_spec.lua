@@ -34,6 +34,12 @@ local GOODS = {
 	"core.soundset.gizmo",
 	"core.soundset.wardrums",
 	"core.crest.plain",
+	-- The Curio Shop's second round: Core's three composed toast styles (ANN-R82, SHOP-R29, SHOP-R50) and its binding
+	-- for sale, which lands in Core's binding slot with ADR 0015.
+	"core.toaststyle.sonar",
+	"core.toaststyle.foil",
+	"core.toaststyle.storm",
+	"core.binding.shagreenbone",
 }
 
 describe("Core's committed lore (DATA-R111, its M4 batch)", function()
@@ -49,7 +55,7 @@ describe("Core's committed lore (DATA-R111, its M4 batch)", function()
 		assert(type(text) == "string" and text:find("%S"), key .. " has no text")
 	end
 
-	it("has a name and a description for each of Core's thirty goods once Pagle loads (SHOP-R25, DATA-R104)", function()
+	it("has a name and a description for each of Core's goods once Pagle loads (SHOP-R25, DATA-R104)", function()
 		for _, good in ipairs(GOODS) do
 			hasText(("good.%s.name"):format(good))
 			hasText(("good.%s.description"):format(good))
