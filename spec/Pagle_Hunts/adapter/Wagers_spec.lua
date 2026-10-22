@@ -220,7 +220,7 @@ describe("the wager strip (HNT-R161)", function()
 		assert.are.same({}, shownWith(r.ns.board:Page(place(r), "left"), "runKey"))
 	end)
 
-	it("does nothing when clicked until the Pagle Wagers spread lands, but asks for it (#303's seam)", function()
+	it("asks for the Pagle Wagers spread on its run when clicked, through ns.OpenWagers (HNT-R161)", function()
 		local r = oneOn()
 		local asked = {}
 		r.ns.OpenWagers = function(key)

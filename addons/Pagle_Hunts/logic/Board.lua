@@ -21,8 +21,11 @@ local ns = select(2, ...)
 --              (adapter/Timeline.lua), the entry with "back to {set}" on the right (adapter/Entry.lua).
 --   "retired"  a done Retired Hunt's entry, opened from its set's page (HNT-R3): as "entry", the retired entry
 --              (adapter/Entry.lua).
+--   "wagers"   the Pagle Wagers spread (HNT-R162), from its ribbon, its breadcrumb or the wager strip: the wager slips
+--              and the ladder on the left, the chosen run's entry on the right (adapter/WagersSpread.lua). `run` is
+--              the slip chosen; with none, the first slip's run shows and the trail stops at "Pagle Wagers".
 
----@alias BoardMode "board"|"set"|"entry"|"retired"
+---@alias BoardMode "board"|"set"|"entry"|"retired"|"wagers"
 ---@alias BoardSide "left"|"right"
 
 --- Where the board is: its mode, and the set and Hunt it shows.
@@ -30,11 +33,11 @@ local ns = select(2, ...)
 ---@field mode BoardMode
 ---@field set string?   -- a set's ID: the set's page, or the set an entry was opened from
 ---@field hunt string?  -- a Hunt's ID: the Board's selection, or the entry shown
----@field run string?   -- a run key (HNT-R142): the Board's selection in place of a Hunt (HNT-R161, HNT-R164)
+---@field run string?   -- a run key (HNT-R142): the Board's selection in place of a Hunt (HNT-R161, HNT-R164), or
+--- the slip chosen on the Pagle Wagers spread (HNT-R162)
 
 --- One breadcrumb (HNT-R61, HNT-R164): what it names, and the place it goes back to. adapter/Sets.lua gives it
---- its words ("Hunts", the set's name, the Hunt's name, "Pagle Wagers", the run's event's name). "Pagle Wagers" has
---- no place on the board yet: it goes to the Pagle Wagers spread through ns.OpenWagers (#303).
+--- its words ("Hunts", the set's name, the Hunt's name, "Pagle Wagers", the run's event's name).
 ---@class BoardCrumb
 ---@field kind "hunts"|"set"|"hunt"|"wagers"|"run"
 ---@field id string?     -- the set's or the Hunt's ID, or the run key; nil for "hunts"
@@ -50,10 +53,11 @@ local NEEDS = {
 	set = { set = true, hunt = false },
 	entry = { set = false, hunt = true },
 	retired = { set = false, hunt = true },
+	wagers = { set = false, hunt = false },
 }
 
 --- The board's modes and page sides, in drawing order.
-ns.BOARD_MODES = { "board", "set", "entry", "retired" }
+ns.BOARD_MODES = { "board", "set", "entry", "retired", "wagers" }
 ns.BOARD_SIDES = { "left", "right" }
 
 ---@class BoardRouter
@@ -122,15 +126,19 @@ function Router:Place()
 end
 
 --- The breadcrumb trail (HNT-R61): "Hunts", then the set, then the Hunt, as far as the place goes, each going back to
---- its own level. On the Board the Hunt follows "Hunts" directly; a run selected there reads "Hunts", "Pagle Wagers",
---- then the run (HNT-R164).
+--- its own level. On the Board the Hunt follows "Hunts" directly. A run reads "Hunts", "Pagle Wagers", then the run
+--- (HNT-R164): "Pagle Wagers" goes to the Pagle Wagers spread, on that run from the Board and back to its slips on the
+--- spread, where the trail stops at it while no slip is chosen.
 ---@return BoardCrumb[]
 function Router:Trail()
 	local place = self.place
 	local trail = { { kind = "hunts", place = { mode = "board" } } }
-	if place.mode == "board" and place.run then
-		trail[2] = { kind = "wagers", id = place.run }
-		trail[3] = { kind = "run", id = place.run, place = copy(place) }
+	if place.mode == "wagers" or (place.mode == "board" and place.run) then
+		local fromBoard = place.mode == "board" and place.run or nil
+		trail[2] = { kind = "wagers", id = place.run, place = { mode = "wagers", run = fromBoard } }
+		if place.run then
+			trail[3] = { kind = "run", id = place.run, place = copy(place) }
+		end
 		return trail
 	end
 	if place.mode ~= "board" and place.set then

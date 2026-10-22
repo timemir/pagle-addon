@@ -635,19 +635,25 @@ end
 ---@field body Texture
 ---@field stitch Texture
 ---@field label FontString
+---@field count FontString      -- the Pagle Wagers ribbon's "{n} on" under its name (HNT-R162), in the hand
 ---@field chosen boolean
 ---@field hover boolean
+---@field wagers boolean?       -- the Pagle Wagers ribbon (adapter/Sets.lua)
 ---@field color number[]
 ---@field tooltip string[]?
 ---@field length number?        -- how long it hangs now
 ---@field SetRibbon fun(self: BoardRibbonView, text: string, color: number[], chosen: boolean, animate: boolean?) -- with
 --- `animate`, a change of length eases (the kit's Ribbons.lua)
+---@field SetCount fun(self: BoardRibbonView, count: string?) -- the words under its name, or none; the name rises
+--- over them
 
 --- The ribbons' measures (the kit's Hunts board, hanging a fifth shorter, as the dev asked): each one's width and the
 --- gap between, how long it hangs (longer chosen), how much of its top tucks under the leather's band, its words'
 --- inset, and how much brighter it turns.
 ns.BOARD_RIBBON = { width = 104, gap = 10, length = 83, lengthChosen = 96, tuck = 10, pad = 13, lift = 1.13 }
 local RIBBON = ns.BOARD_RIBBON
+-- Where a ribbon's words sit above its swallowtail end: its name, its name over a count, and the count.
+local RIBBON_LABEL_Y, RIBBON_LABEL_OVER_Y, RIBBON_COUNT_Y = 31, 38, 17
 
 -- Shows the bottom `length` units of ribbon sprite `name` (its swallowtail end always shows) in `texture`, the
 -- ribbon's width across, from `ribbon`'s top left.
@@ -695,7 +701,13 @@ function ns.NewBoardRibbon(parent)
 	ribbon.label = ns.BoardText(ribbon, ns.BoardFonts().ribbon, LOOK.ribbonLabel)
 	ribbon.label:SetJustifyH("CENTER")
 	ns.BoardWrap(ribbon.label, RIBBON.width - 2 * RIBBON.pad, 1)
-	ribbon.label:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, 31)
+	ribbon.label:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, RIBBON_LABEL_Y)
+	-- "{n} on" in the hand under the name (the variant A prototype's `.ribbon .count`), over the swallowtail's notch
+	ribbon.count = ns.BoardText(ribbon, ns.ArtFont("hand", 15, true), LOOK.gilt)
+	ribbon.count:SetJustifyH("CENTER")
+	ribbon.count:SetWordWrap(false)
+	ribbon.count:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, RIBBON_COUNT_Y)
+	ribbon.count:Hide()
 	ribbon.chosen, ribbon.hover, ribbon.color = false, false, LOOK.boardRibbon
 	ribbon:SetScript("OnEnter", function(self)
 		self.hover = true
@@ -730,6 +742,12 @@ function ns.NewBoardRibbon(parent)
 		else
 			lengthen(self, length)
 		end
+	end
+	function ribbon.SetCount(self, count)
+		self.count:SetText(count or "")
+		self.count:SetShown(count ~= nil)
+		self.label:ClearAllPoints()
+		self.label:SetPoint("BOTTOM", self, "BOTTOM", 0, count and RIBBON_LABEL_OVER_Y or RIBBON_LABEL_Y)
 	end
 	return ribbon
 end

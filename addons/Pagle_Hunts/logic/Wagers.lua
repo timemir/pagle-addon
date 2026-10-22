@@ -374,3 +374,187 @@ function ns.BuildRunEntry(input, shown)
 	entry.soFar = L.RUN_SO_FAR:format(xp, coins)
 	return entry
 end
+
+-- The Pagle Wagers spread --------------------------------------------------------------------------------------------
+
+--- One mark on the ladder (HNT-R148): its step, its title (`ladder.<n>.title`, lore) and whether it is earned.
+---@class WagersLadderMark
+---@field step integer
+---@field title string
+---@field reached boolean
+
+--- The ladder at the spread's foot (HNT-R162).
+---@class WagersLadder
+---@field marks WagersLadderMark[]  -- at 25, 50 and 100 (Tunables)
+---@field fill number               -- the ink bar: the completed-run count toward the next mark, full past the last
+---@field line string               -- "{count} wagers settled · {n} more for {title}", or the updating line
+
+--- The ladder (HNT-R148, HNT-R162) for `settled` completed runs, the steps earned in `ladder` (state.ladder, never
+--- lost). Past the last mark the line is only "{count} wagers settled", the bar full. *Default chosen in #303: HNT-R162
+--- doesn't say what the line reads past 100.* While the projection updates, nothing comes from its state (HNT-R69).
+---@param settled integer state.settled
+---@param ladder table<integer, integer> state.ladder
+---@param updating boolean?
+---@return WagersLadder
+function ns.BuildWagersLadder(settled, ladder, updating)
+	local L = ns.L
+	local marks, next = {}, nil
+	for i, step in ipairs(ns.LADDER_STEPS) do
+		marks[i] = { step = step, title = ns.LadderTitle(step), reached = not updating and ladder[step] ~= nil }
+		if not next and settled < step then
+			next = step
+		end
+	end
+	if updating then
+		return { marks = marks, fill = 0, line = L.UPDATING }
+	end
+	local count = ns.CountText(settled, "WAGERS_SETTLED")
+	if not next then
+		return { marks = marks, fill = 1, line = count }
+	end
+	return {
+		marks = marks,
+		fill = settled / next,
+		line = L.WAGERS_LADDER_LINE:format(count, next - settled, ns.LadderTitle(next)),
+	}
+end
+
+--- One wager slip on the spread's left page (HNT-R162).
+---@class WagerSlip
+---@field run string              -- its run key: clicking it chooses it, its entry on the right page
+---@field on boolean              -- on now, not ahead
+---@field closed boolean          -- ended while the board was open this showing: greyed, "closed", never chosen
+---@field selected boolean        -- the run the right page shows
+---@field name string
+---@field where string            -- "Darkshore · until Sat 17:00"
+---@field when string?            -- "closes in 2d 4h" on, "opens Sat 15:00" ahead, "closed"; nil once settled
+---@field tone "red"|"note"|"faded"  -- `when`'s ink: the countdown in red, a run ahead's in the note's, a closed one's faded
+---@field pips boolean[]?         -- one per Hunt, in definition order, inked at its first mark; nil while updating
+---@field marks string            -- "{done} of {n} first marks", or the updating line (HNT-R69)
+---@field settled string?         -- "settled", with its stamp, once completed (HNT-R146)
+---@field tag string?             -- a pushed run's holiday tag's name, in the margin ("Hallow's End")
+
+--- The Pagle Wagers spread's left page, top to bottom (HNT-R162).
+---@class WagersSpread
+---@field kicker string           -- "Pagle Wagers"
+---@field title string            -- "On the table"
+---@field note string
+---@field slips WagerSlip[]       -- the runs on, then ahead (HNT-R160), then those that closed this showing
+---@field empty string?           -- "No wagers on the table yet." with no slip (HNT-R204)
+---@field hint string[]?          -- the companion hint's lines on the dashed placeholder slip (HNT-R170), #305's
+---@field ladder WagersLadder
+---@field selected string?        -- the run the right page shows: the slip chosen, else the first open slip's
+
+--- What the spread reads besides WagersInput: the ladder's count and steps, the runs that ended while the board was
+--- open this showing, and the slip chosen.
+---@class WagersSpreadInput
+---@field settled integer         -- state.settled (HNT-R148)
+---@field ladder table<integer, integer>   -- state.ladder
+---@field ended HuntsShownRun[]   -- runs that were on this showing and have ended since (HNT-R143, HNT-R162)
+---@field run string?             -- the slip chosen (BoardPlace.run)
+---@field hint string[]?          -- the companion hint's lines (HNT-R170), #305's to fill
+
+-- A pushed run's holiday tag's name (DATA-R97's holiday tags, interface text in ns.L keyed by tag ID), nil for a run
+-- of the rotation or an event with none. *Default chosen in #303: HNT-R162 names the tag but not its words.*
+---@param shown HuntsShownRun
+---@return string?
+local function holidayOf(shown)
+	if shown.run.source ~= "p" then
+		return nil
+	end
+	for _, tag in ipairs(shown.event.tags or {}) do
+		local name = ns.L.HOLIDAYS[tag]
+		if name then
+			return name
+		end
+	end
+	return nil
+end
+
+-- One run's slip: on, ahead, or closed this showing.
+---@param shown HuntsShownRun
+---@param input WagersInput
+---@param closed boolean
+---@return WagerSlip
+local function slipOf(shown, input, closed)
+	local L, run, event = ns.L, shown.run, shown.event
+	local zones = table.concat(ns.EventZoneNames(event, input.sources), L.JOIN_ZONES)
+	local slip = {
+		run = shown.key,
+		on = shown.on and not closed,
+		closed = closed,
+		selected = false,
+		name = eventName(event),
+		where = L.SLIP_WHERE:format(zones, L.LABEL_UNTIL:format(ns.RealmWeekdayClock(run.end_, input.snapshot))),
+		tag = holidayOf(shown),
+	}
+	local settled = not input.updating and run.completedAt ~= nil
+	if closed then
+		slip.when, slip.tone = L.SLIP_CLOSED, "faded"
+	elseif not shown.on then
+		slip.when, slip.tone = L.SLIP_OPENS:format(ns.RealmWeekdayClock(run.start, input.snapshot)), "note"
+	elseif not settled then
+		slip.when, slip.tone = L.STRIP_CLOSES:format(ns.FormatDuration(run.end_ - input.now)), "red"
+	else
+		slip.tone = "red"
+	end
+	if input.updating then
+		slip.marks = L.UPDATING
+		return slip
+	end
+	slip.pips = {}
+	local done = 0
+	for i, hunt in ipairs(event.hunts) do
+		slip.pips[i] = ns.HuntDone(run.hunts[hunt.id])
+		done = done + (slip.pips[i] and 1 or 0)
+	end
+	slip.marks = L.SLIP_MARKS:format(done, #event.hunts)
+	slip.settled = settled and L.SLIP_SETTLED or nil
+	return slip
+end
+
+--- The Pagle Wagers spread's left page (HNT-R162): one slip per run on, then ahead, in HNT-R160's order, then a slip
+--- for each run that ended while the board was open this showing, greyed and "closed" (by end); the companion hint's
+--- placeholder slip when it applies (#305); and the ladder at the foot. With no slip it reads HNT-R204's line. The
+--- right page shows the slip chosen, else the first open slip's run; a closed slip is never chosen (its run is no
+--- longer shown, HNT-R143).
+---@param input WagersInput
+---@param spread WagersSpreadInput
+---@return WagersSpread
+function ns.BuildWagersSpread(input, spread)
+	local L = ns.L
+	local slips, shown = {}, {}
+	for _, run in ipairs(input.runs) do
+		slips[#slips + 1] = slipOf(run, input, false)
+		shown[run.key] = true
+	end
+	local ended = {}
+	for _, run in ipairs(spread.ended or {}) do
+		if not shown[run.key] then
+			ended[#ended + 1] = run
+		end
+	end
+	table.sort(ended, function(a, b)
+		if a.run.end_ ~= b.run.end_ then
+			return a.run.end_ < b.run.end_
+		end
+		return a.key < b.key
+	end)
+	for _, run in ipairs(ended) do
+		slips[#slips + 1] = slipOf(run, input, true)
+	end
+	local selected = spread.run and shown[spread.run] and spread.run or (input.runs[1] and input.runs[1].key)
+	for _, slip in ipairs(slips) do
+		slip.selected = not slip.closed and slip.run == selected
+	end
+	return {
+		kicker = L.WAGERS_KICKER,
+		title = L.SPREAD_TITLE,
+		note = L.SPREAD_NOTE,
+		slips = slips,
+		empty = #slips == 0 and L.SPREAD_EMPTY or nil,
+		hint = spread.hint,
+		ladder = ns.BuildWagersLadder(spread.settled or 0, spread.ladder or {}, input.updating),
+		selected = selected,
+	}
+end

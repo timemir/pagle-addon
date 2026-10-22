@@ -14,9 +14,10 @@ local ns = select(2, ...)
 --   ns.OpenBoard(target?)     Opens the board (never closes it), on the Board ribbon with that Hunt selected if
 --                             given (a Hunt's ID, or `{ hunt = id }`, HNT-R67, HNT-R77), or that run (`{ run = runKey
 --                             }`, HNT-R164): the tracker's lines call it. Defined by the board, adapter/Board.lua.
---   ns.OpenWagers(runKey?)    Opens the board on the Pagle Wagers spread (HNT-R162), on that run if given: the wager
---                             strip and the "Pagle Wagers" breadcrumb call it (HNT-R161, HNT-R164). The spread is
---                             #303's, which replaces this stand-in; until then it does nothing.
+--   ns.OpenWagers(runKey?)    Opens the board (never closes it) on the Pagle Wagers spread (HNT-R162), with that run's
+--                             slip chosen if given: the wager strip calls it (HNT-R161), as may the tracker's block
+--                             and the companion hint (HNT-R171, HNT-R175, HNT-R176). Defined by the spread,
+--                             adapter/WagersSpread.lua.
 --   ns.State()                The projection's HuntsState (hunts.md › Projection state). Read-only for views.
 --                             Reads `ns.projection` (logic/Projection.lua, made in OnInitialize) at call time: a
 --                             new empty state each call while it has none.
@@ -106,11 +107,6 @@ end
 function ns.IsUpdating()
 	local projection = ns.projection
 	return projection ~= nil and projection:IsUpdating()
-end
-
---- Opens the Pagle Wagers spread (HNT-R162): a stand-in that does nothing until #303's spread replaces it.
----@param runKey string?
-function ns.OpenWagers(runKey) -- luacheck: no unused args
 end
 
 local redrawn = {} -- the subscribed views' redraws, in subscription order
