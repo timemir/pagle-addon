@@ -37,7 +37,8 @@ describe("Pagle Wagers' moment parts", function()
 		end)
 
 		it("is its key while the lore has none (HNT-R1)", function()
-			assert.are.equal("ladder.50", ns.LadderTitle(50))
+			-- Step 75 isn't on the ladder, so no lore names it: 25, 50 and 100 all have titles (#307).
+			assert.are.equal("ladder.75", ns.LadderTitle(75))
 		end)
 	end)
 end)
