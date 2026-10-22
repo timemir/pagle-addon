@@ -1980,7 +1980,7 @@ describe("FakePagle", function()
 
 		it(
 			"puts Core's size on the played Cast, its Catch event and the records IterateCatches yields, over the"
-				.. " catalogue served now (LOG-R43, LOG-R65, LOG-R96)",
+				.. " catalogue served now (LOG-R43, LOG-R65, LOG-R96, LOG-R100)",
 			function()
 				local fake = newFakePagle()
 				fake.login()
@@ -1992,28 +1992,54 @@ describe("FakePagle", function()
 				local function plain(size)
 					return size and { length = size.length, band = size.band }
 				end
-				local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
 				-- Oily Blackmouth's typical length in the generated catalogue (DATA-R20, #160).
 				local shipped = assert(fake.ns.catalogue.items[6358].typicalLength)
 				local first = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
-				assert.are.same(core.SimulatedSize(first.items[1].catchId, shipped), plain(first.items[1].size))
-				assert.are.same(plain(first.items[1].size), plain(catches[1].size))
+				-- A first Catch: 0.55 × the typical length, a Tiddler (LOG-R67).
+				local smallest = { length = math.floor(shipped * 0.55 + 0.5), band = 1 }
+				assert.are.same(smallest, plain(first.items[1].size))
+				assert.are.same(smallest, plain(catches[1].size))
 
 				local retuned = shipped * 2 -- a release retunes the Species' typical length (LOG-R68)
 				fake.ns.catalogue.items[6358].typicalLength = retuned
-				local second = assert(fake.playCast("caught", { { itemID = 6358, quantity = 2 } }))
+				local second = assert(
+					fake.playCast("caught", { { itemID = 6358, quantity = 2 }, { itemID = 6358, quantity = 1 } })
+				)
+				assert.are.same(plain(second.items[2].size), plain(catches[3].size))
 
-				local expected = {
-					core.SimulatedSize(first.items[1].catchId, retuned),
-					core.SimulatedSize(second.items[1].catchId, retuned),
-				}
-				assert.are.same(expected[2], plain(second.items[1].size))
-				assert.are.same(expected[2], plain(catches[2].size))
-				local read = {}
-				for record in fake.Pagle.IterateCatches(0) do
-					read[#read + 1] = plain(record.items[1].size)
+				-- Core's own Catch log over the same entries and catalogue, opened afresh, sizes each Cast as the fake
+				-- does: by the earlier Catches and the skill in the log (LOG-R100).
+				local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
+				local entries = {}
+				for seq, entry in ipairs(fake.catchLog.data.entries) do
+					entries[seq] = entry
 				end
-				assert.are.same(expected, read) -- the first Cast too, re-sized over the catalogue served now
+				local data = { format = core.LOG_FORMAT, characters = fake.catchLog.data.characters, entries = entries }
+				local opened = core.OpenCatchLog(data, {}, nil, function(itemID)
+					return fake.ns.CatalogueItem(itemID)
+				end)
+				local expected, read = {}, {}
+				for record in opened:Iterate(0) do
+					if record.kind == "cast" then
+						for _, item in ipairs(record.items) do
+							expected[#expected + 1] = plain(item.size)
+						end
+					end
+				end
+				for record in fake.Pagle.IterateCatches(0) do
+					if record.kind == "cast" then
+						local n = 1 -- records are handed out read-only, so ipairs sees none of their items
+						while record.items[n] do
+							read[#read + 1] = plain(record.items[n].size)
+							n = n + 1
+						end
+					end
+				end
+				assert.are.same(expected, read)
+				-- The first Cast too, re-sized over the catalogue served now; the later ones longer, after 1 and 2.
+				assert.are.same({ length = math.floor(retuned * 0.55 + 0.5), band = 1 }, read[1])
+				assert.is_true(read[2].length > read[1].length and read[3].length > read[1].length)
+				assert.are.same(plain(second.items[1].size), read[2])
 			end
 		)
 	end)

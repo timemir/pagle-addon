@@ -140,9 +140,9 @@ local SHOWCASE_LIT, SHOWCASE_UNLIT, SHOWCASE_TODAY = 104, { 5, 13, 22, 47, 81 },
 -- all, several tier-3 goods (900 each, SHOP-R22).
 local SHOWCASE_FIRE, SHOWCASE_COINS = 100, 5000
 -- A lit day's play: at most SHOWCASE_NOTICES Notices completed and SHOWCASE_EXPEDITION_CASTS Casts toward each open
--- Expedition, a goal given up for the day after SHOWCASE_GOAL_CASTS Casts (a Size goal waits on its bands), then a
--- session of SHOWCASE_EXPLORE Casts in the next charted zone in turn, so every zone's list is fished in time. Today
--- completes one Notice only, its Casts ending SHOWCASE_TODAY_END before the run.
+-- Expedition, a goal given up for the day after SHOWCASE_GOAL_CASTS Casts, then a session of SHOWCASE_EXPLORE Casts
+-- in the next charted zone in turn, so every zone's list is fished in time. Today completes one Notice only, its
+-- Casts ending SHOWCASE_TODAY_END before the run.
 local SHOWCASE_NOTICES, SHOWCASE_EXPEDITION_CASTS, SHOWCASE_GOAL_CASTS = 3, 60, 300
 local SHOWCASE_EXPLORE, SHOWCASE_TODAY_END = 30, 600
 -- The generator is drawn again, at most SHOWCASE_DRAWS times, until it hands out a goal the test Casts can complete:
@@ -1119,10 +1119,6 @@ local function goalPairs(sim, goal, caught)
 		return pairsWhere(game, sim.pairs.all, function(item)
 			return not item.noise and item.quality ~= nil and item.quality >= target
 		end)
-	elseif kind == "size" then
-		return pairsWhere(game, sim.pairs.all, function(item)
-			return item.species ~= nil and item.typicalLength ~= nil
-		end)
 	elseif kind == "lure" then
 		return sim.pairs.all
 	elseif kind == "collector" and goal.type == "e" then
@@ -1143,7 +1139,7 @@ local function goalPairs(sim, goal, caught)
 end
 
 -- Whether the test Casts can complete a goal definition from nothing: enough distinct Species, zones or items for a
--- distinct-count kind, and some pair for the others (a Size goal's bands come as the Catches are sized, LOG-R65).
+-- distinct-count kind, and some pair for the others.
 local function completable(sim, def)
 	local list = goalPairs(sim, def, sim.board.caught)
 	if def.kind == "lure" and not sim.lure then
@@ -1280,11 +1276,10 @@ local function showcaseDay(sim, layout, k, isToday, now)
 		end
 	end
 	if isToday then
-		-- The Notice nearest done, a Size Notice last: its Catches move it on only in their bands (TKB-R42).
+		-- The Notice nearest done.
 		local day = sim.board.day
 		table.sort(notices, function(a, b)
-			local left = remaining(board, a, day) + (a.kind == "size" and SHOWCASE_GOAL_CASTS or 0)
-			local right = remaining(board, b, day) + (b.kind == "size" and SHOWCASE_GOAL_CASTS or 0)
+			local left, right = remaining(board, a, day), remaining(board, b, day)
 			return left < right or left == right and a.seq < b.seq
 		end)
 		work(sim, notices[1] or {}, SHOWCASE_GOAL_CASTS, before)

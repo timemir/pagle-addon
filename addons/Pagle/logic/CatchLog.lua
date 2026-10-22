@@ -344,15 +344,13 @@ local kinds = {
 ---@type table<string, string>
 local TAGS = { cast = "C1", skill = "S1", build = "B1", prestige = "P1", purchase = "U1", module = "A1" }
 
--- Decodes one entry string into a typed record, or nil if the codec can't read it (LOG-R16). With `getItem`, each
--- item of a Cast carries its Simulated Size, from its Catch ID and the catalogue now (LOG-R65); item 0 is never
--- looked up.
+-- Decodes one entry string into a typed record, or nil if the codec can't read it (LOG-R16). Its Cast items carry no
+-- size yet: a reader that sizes them does so with the counts at its seq (sizeCast).
 ---@param entry any
 ---@param seq integer
 ---@param characters table[]
----@param getItem (fun(itemID: integer): PagleItem?)?
 ---@return PagleRecord?
-local function decode(entry, seq, characters, getItem)
+local function decode(entry, seq, characters)
 	if type(entry) ~= "string" then
 		return nil
 	end
@@ -386,14 +384,113 @@ local function decode(entry, seq, characters, getItem)
 	if not codec.decode(record, { unpack(f, 5) }) then
 		return nil
 	end
-	if getItem and record.kind == "cast" then
-		for _, item in ipairs(record.items) do
-			if item.itemID ~= 0 then
-				item.size = ns.SizeOf(item.catchId, getItem(item.itemID))
-			end
-		end
-	end
 	return record
+end
+
+-- The earlier Catch counts (LOG-R100): read from the raw entries, never decoded, so counting stays cheap and owes
+-- nothing to the catalogue. A `C1` entry counts when its last field, the items, reads as decode reads it; its other
+-- fields aren't looked at.
+local find, match, byte, sub = string.find, string.match, string.byte, string.sub
+local COMMA = 44
+
+--- The Angler's Catches of each item ID in the entries up to some seq (LOG-R100): one per slot, whatever its
+--- quantity, on any character. Item 0 is never counted.
+---@alias PagleCatchCounts table<integer, integer>
+
+-- Counts each slot of an items field (`<itemID>x<quantity>`, comma-separated) into `counts`, `step` at a time, and
+-- returns true; or, for a field that doesn't read, counts nothing and returns false.
+---@param counts PagleCatchCounts
+---@param field string
+---@param step integer 1, or -1 to take the slots back out
+---@return boolean
+local function countItems(counts, field, step)
+	local at, length = 1, #field
+	while true do
+		local _, last, itemID = find(field, "^(%d+)x%d+", at)
+		if not last or (last < length and byte(field, last + 1) ~= COMMA) then
+			if at > 1 then
+				countItems(counts, sub(field, 1, at - 2), -step) -- the slots before, counted back out
+			end
+			return false
+		end
+		itemID = tonumber(itemID)
+		if itemID ~= 0 then
+			counts[itemID] = (counts[itemID] or 0) + step
+		end
+		if last == length then
+			return true
+		end
+		at = last + 2
+	end
+end
+
+-- Counts the slots of `entry`, if it is a `C1` entry whose items read, into `counts`, or (`step` -1) takes them back
+-- out.
+---@param counts PagleCatchCounts
+---@param entry any
+---@param step integer 1 or -1
+local function countEntry(counts, entry, step)
+	local field = type(entry) == "string" and match(entry, "^C1|.*|([^|]*)$")
+	if field and field ~= "" then
+		countItems(counts, field, step)
+	end
+end
+
+-- The earlier Catch counts PagleDB.global.catchCounts keeps from the last login (LOG-R100), and the seq they end at,
+-- if they are this log's: the same logId and size rules, ending at an entry this log holds at that seq. The log only
+-- grows, so they still count its entries up to there.
+---@param stored any PagleDB.global.catchCounts
+---@param data table PagleLog
+---@return integer? seq
+---@return PagleCatchCounts? counts
+local function storedCounts(stored, data)
+	if type(stored) ~= "table" or data.logId == nil or stored.logId ~= data.logId then
+		return nil
+	end
+	local seq = stored.seq
+	if stored.rulesVersion ~= ns.SIZE_RULES_VERSION or type(seq) ~= "number" or type(stored.counts) ~= "table" then
+		return nil
+	end
+	if seq < 1 or data.entries[seq] == nil or data.entries[seq] ~= stored.entry then
+		return nil
+	end
+	local counts = {}
+	for itemID, n in pairs(stored.counts) do
+		if type(itemID) ~= "number" or type(n) ~= "number" then
+			return nil
+		end
+		counts[itemID] = n
+	end
+	return seq, counts
+end
+
+-- Keeps `counts`, over the entries up to `seq`, in PagleDB.global.catchCounts for the next login, if `seq` is the
+-- log's end (LOG-R100). The tail's own table is kept as it is, so the counts Append feeds it go with it.
+---@param catchLog PagleCatchLog
+---@param seq integer
+---@param counts PagleCatchCounts
+local function storeCounts(catchLog, seq, counts)
+	local data = catchLog.data
+	if seq >= 1 and seq == #data.entries and data.logId ~= nil then
+		catchLog.global.catchCounts = {
+			logId = data.logId,
+			rulesVersion = ns.SIZE_RULES_VERSION,
+			seq = seq,
+			entry = data.entries[seq],
+			counts = counts,
+		}
+	end
+end
+
+-- A copy of `counts`.
+---@param counts PagleCatchCounts
+---@return PagleCatchCounts
+local function copyCounts(counts)
+	local copy = {}
+	for itemID, n in pairs(counts) do
+		copy[itemID] = n
+	end
+	return copy
 end
 
 -- The tie for a new entry (LOG-R12): 0, or one more than the highest tie of an entry with the same character and
@@ -456,6 +553,10 @@ end
 ---@field package tail PagleSessionCutter? fed every entry up to the log's end, once something needs it (Append)
 ---@field package prestiges integer? the Prestiges in the log, once something needs them (Prestiges)
 ---@field package getItem (fun(itemID: integer): PagleItem?)? the catalogue the Casts it hands out are sized by (LOG-R65)
+---@field package counts table<integer, PagleCatchCounts> the earlier Catch counts at each seq a read started or ended at
+---@field package tailCounts PagleCatchCounts? the counts up to the log's end, once something needs them (Append)
+---@field package skills { scanned: integer, [integer]: { seqs: integer[], ranks: integer[] } } each character's Skill
+--- Readings in the entries up to `scanned`, by seq, once a Cast without a skill rank needs them
 local CatchLog = {}
 CatchLog.__index = CatchLog
 
@@ -466,6 +567,153 @@ local function countUndecodable(catchLog, seq)
 	if not catchLog.undecodable[seq] then
 		catchLog.undecodable[seq] = true
 		catchLog.global.decodeErrors = (catchLog.global.decodeErrors or 0) + 1
+	end
+end
+
+-- The earlier Catch counts over the entries up to `seq` (LOG-R100), as the caller's own copy. Counted from the raw
+-- entries, on or back from the nearest seq with counts known: seq 0, the counts the last login kept, a seq a read
+-- started or ended at, or the tail at the log's end. The log only grows, so the counts at each seq are kept for the
+-- login.
+---@param catchLog PagleCatchLog
+---@param seq integer
+---@return PagleCatchCounts
+local function countsAt(catchLog, seq)
+	local entries, kept, tail = catchLog.data.entries, catchLog.counts, catchLog.tailCounts
+	if tail and seq == #entries then
+		return copyCounts(tail)
+	end
+	if kept[seq] then
+		return copyCounts(kept[seq])
+	end
+	local from, known = 0, kept[0]
+	for at, counts in pairs(kept) do
+		if math.abs(at - seq) < math.abs(from - seq) then
+			from, known = at, counts
+		end
+	end
+	if tail and #entries - seq < math.abs(from - seq) then
+		from, known = #entries, tail
+	end
+	local counts = copyCounts(known)
+	for at = from + 1, seq do
+		countEntry(counts, entries[at], 1)
+	end
+	for at = from, seq + 1, -1 do
+		countEntry(counts, entries[at], -1)
+	end
+	kept[seq] = copyCounts(counts)
+	return counts
+end
+
+-- The rank of `char`'s latest Skill Reading before `seq`, or nil if it has none (LOG-R65). The Skill Readings are
+-- found once a login, as far as a Cast needs them, by tag, decoding only those.
+---@param catchLog PagleCatchLog
+---@param char integer
+---@param seq integer
+---@return integer?
+local function skillBefore(catchLog, char, seq)
+	local skills, entries = catchLog.skills, catchLog.data.entries
+	for at = skills.scanned + 1, seq - 1 do
+		local entry = entries[at]
+		local reading = type(entry) == "string"
+			and sub(entry, 1, 3) == "S1|"
+			and decode(entry, at, catchLog.data.characters) --[[@as PagleSkillReading?]]
+		if reading then
+			local own = skills[reading.char] or { seqs = {}, ranks = {} }
+			own.seqs[#own.seqs + 1], own.ranks[#own.ranks + 1] = at, reading.rank
+			skills[reading.char] = own
+		end
+		skills.scanned = at
+	end
+	local own = skills[char]
+	if not own then
+		return nil
+	end
+	-- The last of its readings before `seq`: a binary search, as a Cast read back may be far from the log's end.
+	local low, high = 0, #own.seqs
+	while low < high do
+		local middle = math.ceil((low + high) / 2)
+		if own.seqs[middle] < seq then
+			low = middle
+		else
+			high = middle - 1
+		end
+	end
+	return own.ranks[low]
+end
+
+-- Puts its Simulated Size on each Species item of `cast` (LOG-R65, LOG-R67), `counts` being the earlier Catch counts
+-- over the entries before it: an item's earlier Catches are those plus its earlier slots in this Cast. The skill is
+-- the Cast's rank, else the character's latest Skill Reading's, else 1. Item 0 is never looked up.
+---@param catchLog PagleCatchLog
+---@param cast PagleCast
+---@param counts PagleCatchCounts
+local function sizeCast(catchLog, cast, counts)
+	local getItem = catchLog.getItem --[[@as fun(itemID: integer): PagleItem?]]
+	local skillRank = cast.conditions.skillRank
+	local inCast = {}
+	for _, item in ipairs(cast.items) do
+		local itemID = item.itemID
+		if itemID ~= 0 then
+			local before = inCast[itemID] or 0
+			inCast[itemID] = before + 1
+			local known = getItem(itemID)
+			if known then
+				skillRank = skillRank or skillBefore(catchLog, cast.char, cast.seq) or 1
+				item.size = ns.SizeOf(item.catchId, known, skillRank, (counts[itemID] or 0) + before)
+			end
+		end
+	end
+end
+
+-- Steps `counts` past one entry read forwards: sizes it by the counts before it when it is a Cast (LOG-R67), then
+-- counts its items in (LOG-R100).
+---@param catchLog PagleCatchLog
+---@param counts PagleCatchCounts
+---@param record PagleRecord?
+---@param entry any
+local function stepCounts(catchLog, counts, record, entry)
+	if record and record.kind == "cast" then
+		sizeCast(catchLog, record --[[@as PagleCast]], counts)
+	end
+	countEntry(counts, entry, 1)
+end
+
+-- CatchLog:Reverse's walk; Casts carry their sizes when `sized` and the log has a catalogue. Walking back, the
+-- counts start at `fromSeq` and each entry passed is taken back out, so they always cover the entries before the next.
+---@param catchLog PagleCatchLog
+---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"
+---@param fromSeq integer?
+---@param sized boolean
+---@return fun(): PagleRecord?
+local function reverse(catchLog, kind, fromSeq, sized)
+	local entries, characters = catchLog.data.entries, catchLog.data.characters
+	local seq = math.min(fromSeq or #entries, #entries) + 1 -- past the end there is nothing to walk, nor to count
+	local counts -- the earlier Catch counts over the entries before `seq`, once the first Cast is asked for
+	sized = sized and kind == "cast" and catchLog.getItem ~= nil
+	return function()
+		if sized and not counts then
+			counts = countsAt(catchLog, seq - 1)
+		end
+		while seq > 1 do
+			seq = seq - 1
+			local entry = entries[seq]
+			if counts then
+				countEntry(counts, entry, -1)
+			end
+			local codec = type(entry) == "string" and kinds[string.match(entry, "^[^|]*")]
+			if codec and codec.kind == kind then
+				local record = decode(entry, seq, characters)
+				if record then
+					if counts then
+						sizeCast(catchLog, record --[[@as PagleCast]], counts)
+					end
+					return record
+				end
+				countUndecodable(catchLog, seq)
+			end
+		end
+		return nil
 	end
 end
 
@@ -481,7 +729,8 @@ local function cutterAt(catchLog, afterSeq)
 		return known:Copy()
 	end
 	local cutter = ns.NewSessionCutter(catchLog.breaks)
-	local first = ns.SessionStartSeq(catchLog:Reverse("cast", afterSeq) --[[@as fun(): PagleCast?]], catchLog.breaks)
+	local first =
+		ns.SessionStartSeq(reverse(catchLog, "cast", afterSeq, false) --[[@as fun(): PagleCast?]], catchLog.breaks)
 	if first then
 		local entries, characters = catchLog.data.entries, catchLog.data.characters
 		for seq = first, afterSeq do
@@ -496,9 +745,9 @@ local function cutterAt(catchLog, afterSeq)
 end
 
 --- Walks the entries with `seq > afterSeq`, up to the log's length now, in order, decoding each as it goes
---- (LOG-R42). Casts and Skill Readings carry their Session's ID, the same whether the log is read whole or from a
---- later `afterSeq` (LOG-R98). An entry the codec can't read is skipped and counted in `PagleDB.global.decodeErrors`,
---- once per entry for this login however many readers meet it (LOG-R16). Module records are yielded only to the
+--- (LOG-R42). Casts and Skill Readings carry their Session's ID, and Casts their Simulated Sizes, the same whether the
+--- log is read whole or from a later `afterSeq` (LOG-R98, LOG-R100). An entry the codec can't read is skipped and
+--- counted in `PagleDB.global.decodeErrors`, once per entry for this login however many readers meet it (LOG-R16). Module records are yielded only to the
 --- Module named by `module`, its own (LOG-R41, LOG-R42): without one, as Pagle.IterateCatches reads, none is; another
 --- Module's are skipped, never counted as undecodable.
 ---@param afterSeq integer?
@@ -509,10 +758,15 @@ function CatchLog:Iterate(afterSeq, module)
 	local last = #entries
 	local seq = math.min(afterSeq or 0, last)
 	local cutter = cutterAt(self, seq)
+	local counts = self.getItem and countsAt(self, seq) -- over the entries before the next
 	return function()
 		while seq < last do
 			seq = seq + 1
-			local record = decode(entries[seq], seq, characters, self.getItem)
+			local entry = entries[seq]
+			local record = decode(entry, seq, characters)
+			if counts then
+				stepCounts(self, counts, record, entry)
+			end
 			if not record then
 				countUndecodable(self, seq)
 			else
@@ -527,35 +781,24 @@ function CatchLog:Iterate(afterSeq, module)
 		if not self.cutters[last] then
 			self.cutters[last] = cutter:Copy()
 		end
+		if counts and not self.counts[last] and not (self.tailCounts and last == #entries) then
+			self.counts[last] = copyCounts(counts)
+			storeCounts(self, last, self.counts[last])
+		end
 		return nil
 	end
 end
 
 --- Walks the entries of one record kind from the newest back to the oldest, decoding only those: how Core finds
 --- the last build entry (LOG-R36) and each character's last Skill Reading (LOG-R31) without decoding every Cast.
---- It starts at `fromSeq` when given, else at the log's end. Records it yields carry no session tag. An entry of
---- that kind the codec can't read is skipped and counted as `Iterate` does (LOG-R16).
+--- It starts at `fromSeq` when given, else at the log's end. Records it yields carry no session tag; Casts carry
+--- the Simulated Sizes every other read gives them (LOG-R100). An entry of that kind the codec can't read is skipped
+--- and counted as `Iterate` does (LOG-R16).
 ---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"
 ---@param fromSeq integer?
 ---@return fun(): PagleRecord?
 function CatchLog:Reverse(kind, fromSeq)
-	local entries, characters = self.data.entries, self.data.characters
-	local seq = (fromSeq or #entries) + 1
-	return function()
-		while seq > 1 do
-			seq = seq - 1
-			local entry = entries[seq]
-			local codec = type(entry) == "string" and kinds[string.match(entry, "^[^|]*")]
-			if codec and codec.kind == kind then
-				local record = decode(entry, seq, characters, self.getItem)
-				if record then
-					return record
-				end
-				countUndecodable(self, seq)
-			end
-		end
-		return nil
-	end
+	return reverse(self, kind, fromSeq, true)
 end
 
 --- Appends an entry for `record`, a typed record without `seq` and `id` (`{ kind = "cast", char, time, outcome,
@@ -563,14 +806,16 @@ end
 --- `{ kind = "build", char, time, build, version }`, `{ kind = "prestige", char, time, rank, activityXP }` (0 without
 --- activityXP) or
 --- `{ kind = "purchase", char, time, good, price }`), and returns the record as every reader will see it.
---- A Cast or Skill Reading carries its Session's ID (LOG-R98). Raises an error in the caller, appending nothing, for a
---- record the codec can't write and read back.
+--- A Cast or Skill Reading carries its Session's ID (LOG-R98), and a Cast its Simulated Sizes, counted over the log
+--- before it (LOG-R100). Raises an error in the caller, appending nothing, for a record the codec can't write and read
+--- back.
 ---@param record table
 ---@return PagleRecord
 function CatchLog:Append(record)
 	local entries = self.data.entries
 	local seq = #entries + 1
 	local tail = self:tailCutter()
+	local counts = self.getItem and self:tailCatchCounts()
 	local tag = TAGS[record.kind]
 	local ok, entry = pcall(function()
 		local fields = kinds[tag].encode(record)
@@ -578,12 +823,16 @@ function CatchLog:Append(record)
 		local header = { tag, integerField(record.char), integerField(record.time), integerField(tie) }
 		return table.concat(header, "|") .. "|" .. table.concat(fields, "|")
 	end)
-	local appended = ok and decode(entry, seq, self.data.characters, self.getItem)
+	local appended = ok and decode(entry, seq, self.data.characters)
 	if not appended then
 		error(("the Catch log can't write this %s record"):format(tostring(record.kind)), 2)
 	end
 	ensureLogId(self.data, record.time)
 	entries[seq] = entry
+	if counts then
+		stepCounts(self, counts, appended, entry)
+		storeCounts(self, seq, counts)
+	end
 	tail:Add(appended)
 	if appended.kind == "prestige" and self.prestiges then
 		self.prestiges = self.prestiges + 1
@@ -615,6 +864,18 @@ function CatchLog:tailCutter()
 		self.tail = cutterAt(self, #self.data.entries)
 	end
 	return self.tail
+end
+
+-- The earlier Catch counts over every entry up to the log's end, counted from the log the first time they're needed
+-- and fed each entry appended since (LOG-R100).
+---@package
+---@return PagleCatchCounts
+function CatchLog:tailCatchCounts()
+	if not self.tailCounts then
+		self.tailCounts = countsAt(self, #self.data.entries)
+		storeCounts(self, #self.data.entries, self.tailCounts)
+	end
+	return self.tailCounts
 end
 
 --- The log's latest Session (LOG-R60), open or ended, or nil before its first Cast: the cutter's own table, which
@@ -667,7 +928,19 @@ function ns.OpenCatchLog(saved, global, now, getItem)
 		started = true
 	end
 	ensureLogId(data, now)
-	local catchLog = { data = data, global = global, undecodable = {}, cutters = {}, getItem = getItem }
+	local catchLog = {
+		data = data,
+		global = global,
+		undecodable = {},
+		cutters = {},
+		getItem = getItem,
+		counts = { [0] = {} },
+		skills = { scanned = 0 },
+	}
+	local storedSeq, stored = storedCounts(global.catchCounts, data)
+	if storedSeq then
+		catchLog.counts[storedSeq] = stored
+	end
 	-- Asked as each Cast is fed, so the cutters kept for the login see a break noted after they were made.
 	function catchLog.breaks(castID)
 		local breaks = global.sessionBreaks

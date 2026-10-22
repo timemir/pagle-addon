@@ -317,7 +317,7 @@ describe("a started board while its projection rebuilds in chunks (TKB-R6, TKB-R
 		local fake = board.withHistory({
 			board.skill(SERVER_TIME - 3600),
 			board.start(SERVER_TIME - 600),
-			board.issue(SERVER_TIME - 599, "e;size;0;60;1;4"),
+			board.issue(SERVER_TIME - 599, "e;quality;0;60;3;3"),
 			board.issue(SERVER_TIME - 598, "n;haul;2;15;30;14"),
 		})
 		local ns, loaded = board.built(fake)

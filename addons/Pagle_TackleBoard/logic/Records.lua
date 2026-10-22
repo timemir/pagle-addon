@@ -24,13 +24,13 @@ local ns = select(2, ...)
 ---@field old? string                 -- reroll: the entry ID of the goal it takes down (TKB-R23)
 
 -- How each kind's target is written (Data): "zone" an integer, "none" empty, "items" a Variety Expedition's
--- `zoneAreaID:itemID,…`. Every kind but `variety` writes the same for both types.
+-- `zoneAreaID:itemID,…`. Every kind but `variety` writes the same for both types. A kind not listed is unknown, so
+-- a beta log's `size` goal, a kind dropped before 1.0 (ADR 0014), is skipped with its record.
 local TARGETS = {
 	haul = "integer",
 	variety = "integer", -- a Notice; an Expedition's is "items"
 	wanderer = "none", -- a Notice; an Expedition's is its continent, an integer
 	quality = "integer",
-	size = "integer",
 	collector = "none",
 	lure = "none",
 	species = "integer",

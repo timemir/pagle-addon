@@ -25,10 +25,10 @@ local DUROTAR, BARRENS = 14, 17
 
 -- Goal payloads (Data): three Notices and an Expedition, then spares.
 local N1, N2, N3 = "n;haul;2;15;30;14", "n;quality;1;10;3;2", "n;lure;3;20;25;"
-local N4, N5, N6 = "n;size;1;10;3;3", "n;haul;1;10;20;17", "n;species;2;15;10;6358"
+local N4, N5, N6 = "n;quality;2;15;5;2", "n;haul;1;10;20;17", "n;species;2;15;10;6358"
 local N7, N8 = "n;wanderer;3;20;3;", "n;collector;2;15;2;"
 local N3_DONE = "n;haul;3;20;1;14" -- a tier-3 Notice one Catch in Durotar completes
-local E1, E2 = "e;size;0;60;1;4", "e;haul;0;60;150;17"
+local E1, E2 = "e;quality;0;60;3;3", "e;haul;0;60;150;17"
 
 -- The board after day 0's start: three Notices and an Expedition issued.
 local STARTED = {
@@ -331,7 +331,7 @@ describe("the Tackle Board's projection", function()
 			local state = ns.State()
 			local new = state.goals[idAt(D0 + 7200)]
 			assert.is_nil(state.goals[idAt(D0 + 3603)])
-			assert.are.same({ true, 2, 6, "size" }, { new.reposted, new.pin, new.seq, new.kind })
+			assert.are.same({ true, 2, 6, "quality" }, { new.reposted, new.pin, new.seq, new.kind })
 			assert.are.equal(idAt(D0 + 7200), state.pins.notices[2])
 			assert.are.same({ notices = 0, expeditions = 0 }, state.owed)
 		end)
@@ -392,6 +392,29 @@ describe("the Tackle Board's projection", function()
 
 			assert.are.same(first, ns.State())
 		end)
+
+		it(
+			"skip a beta log's size goals: the Expedition stays owed, and the Notice taken down for one stays",
+			function()
+				-- the kind dropped before 1.0 (ADR 0014): a Whopper Expedition issued, a Hefty Notice in N1's place
+				local ns = built(withHistory({
+					start(D0 + 3600),
+					issue(D0 + 3601, "e;size;0;60;1;4"),
+					issue(D0 + 3602, N1),
+					issue(D0 + 3603, N2),
+					issue(D0 + 3604, N3),
+					reroll(D0 + 7200, idAt(D0 + 3602), "n;size;1;10;3;3"),
+				}))
+
+				local state = ns.State()
+				assert.are.same({ notices = 0, expeditions = 1 }, state.owed)
+				assert.are.same({ false, false }, state.pins.expeditions)
+				assert.is_nil(state.goals[idAt(D0 + 3601)])
+				assert.is_nil(state.goals[idAt(D0 + 7200)])
+				local kept = state.goals[idAt(D0 + 3602)]
+				assert.are.same({ "haul", false, 1 }, { kept.kind, kept.reposted, kept.pin })
+			end
+		)
 	end)
 
 	-- A history over three board weeks: Casts, a goal issued on day 1, a reroll on day 3, an Expedition on day 8.
@@ -463,7 +486,7 @@ describe("the Tackle Board's projection", function()
 			local ns = nextLogin(log, global)
 
 			assert.are.equal(999, ns.State().coins)
-			assert.are.equal(2002, global.board.rulesVersion) -- TKB_RULES_VERSION × 1000 + SESSION_RULES_VERSION
+			assert.are.equal(3002, global.board.rulesVersion) -- TKB_RULES_VERSION 3 (Tunables) × 1000 + SESSION_RULES_VERSION
 		end)
 
 		it("rebuilds to the same state when TKB_RULES_VERSION changes", function()
@@ -471,17 +494,20 @@ describe("the Tackle Board's projection", function()
 
 			local ns = nextLogin(log, global, {
 				prepare = function(loaded)
-					loaded.ns.TKB_RULES_VERSION = 3
+					loaded.ns.TKB_RULES_VERSION = 4
 				end,
 			})
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(3002, global.board.rulesVersion)
+			assert.are.equal(4002, global.board.rulesVersion)
 		end)
 
-		it("is at rules version 2, since completions pay Activity XP (TKB-R81, TKB-R65, Tunables)", function()
-			assert.are.equal(2, board.load().ns.TKB_RULES_VERSION)
-		end)
+		it(
+			"is at rules version 3, since the size goal kind was dropped (TKB-R81, TKB-R80, ADR 0014, Tunables)",
+			function()
+				assert.are.equal(3, board.load().ns.TKB_RULES_VERSION)
+			end
+		)
 
 		it(
 			"rebuilds a stored version-1 projection, which had no Activity XP, filling it in from the log (TKB-R81)",
@@ -499,7 +525,7 @@ describe("the Tackle Board's projection", function()
 
 				assert.are.equal(200, first.xp)
 				assert.are.same(first, again.State())
-				assert.are.equal(2002, global.board.rulesVersion)
+				assert.are.equal(3002, global.board.rulesVersion)
 			end
 		)
 
@@ -511,7 +537,7 @@ describe("the Tackle Board's projection", function()
 			local ns = nextLogin(log, global, { sessionRules = sessionRules })
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(2000 + sessionRules, global.board.rulesVersion)
+			assert.are.equal(3000 + sessionRules, global.board.rulesVersion)
 		end)
 
 		it(

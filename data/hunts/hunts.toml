@@ -8,6 +8,9 @@
 #              species? or class?, minBand? (2-4, species only), window? (natural) or conditions? (imposed),
 #              tiers (strictly ascending, the first is completion), name, note?
 #
+# A minBand Hunt must name a fish its players will have caught a lot of: the band needs the Reach, which grows with
+# skill and with Catches of that fish (ADR 0014, HNT-R14).
+#
 # The generated classes quality.uncommon, quality.rare and species.any need no [[class]] (DATA-R91). A Hunt's and a
 # set's name, title and note are lore (DATA-R105): never in a Hunt's hash or the list's fingerprint (DATA-R94). From
 # 1.0 a released Hunt never changes: a fix is a new Hunt plus a retired date on the old one (ADR 0005, DATA-R96).

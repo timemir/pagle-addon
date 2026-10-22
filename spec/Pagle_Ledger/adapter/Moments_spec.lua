@@ -108,7 +108,7 @@ describe("the Ledger's live moments", function()
 			assert.are.equal(1, #announcements)
 			local announcement = announcements[1]
 			assert.are.same(
-				{ "newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10" },
+				{ "newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10" },
 				momentsOf(announcement)
 			)
 			assert.are.same(
@@ -135,7 +135,7 @@ describe("the Ledger's live moments", function()
 		assert.are.equal(1, #announcements)
 		-- Its text carries the Catch's size, as a real Catch's does (LED-R81).
 		assert.are.same(
-			{ "newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10" },
+			{ "newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10" },
 			momentsOf(announcements[1])
 		)
 	end)
@@ -143,8 +143,9 @@ describe("the Ledger's live moments", function()
 	it(
 		"raise a New here Nod for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",
 		function()
-			-- Caught before with no zone (0), so the two stay below level 2: 520 + 320 XP.
-			local fake, loaded = session({ cast(T0, 0, { MACKEREL }) })
+			-- Caught twice before in one Cast, with no zone (0), so the Casts stay below level 2.
+			local fake, loaded = session({ cast(T0, 0, { MACKEREL, MACKEREL }) })
+			fake.conditions.skillRank = 1 -- a Reach of 1/300: shorter than the second of those Catches (LOG-R67)
 
 			local record = assert(fake.playCast("caught", loot(MACKEREL)))
 
@@ -166,8 +167,9 @@ describe("the Ledger's live moments", function()
 	)
 
 	it("name an item the client doesn't have yet Item {id}, and a zone with no name … (LED-R97, LED-R126)", function()
-		local fake = session({ cast(T0, 0, { TROUT }) })
+		local fake = session({ cast(T0, 0, { TROUT, TROUT }) })
 		fake.conditions.zone = 999 -- a zone C_Map.GetAreaInfo has no name for
+		fake.conditions.skillRank = 1 -- a Reach of 1/300: shorter than the second of those Catches (LOG-R67)
 
 		fake.playCast("caught", loot(TROUT))
 
@@ -177,10 +179,11 @@ describe("the Ledger's live moments", function()
 	it("raise nothing and report no Coins for an ordinary Catch or a got-away Cast (LED-R89, LED-R96)", function()
 		local fake = session()
 		fake.playCast("caught", loot(MACKEREL))
-		-- Its second Catch is longer, a size record (LED-R82); the third, Core's size says, is not.
+		-- Its second Catch is longer, a size record (LED-R82); the third, at skill 1, can't be (LOG-R67).
 		fake.playCast("caught", loot(MACKEREL))
 		local seen = #shown(fake)
 
+		fake.conditions.skillRank = 1
 		fake.playCast("caught", loot(MACKEREL))
 		fake.playCast("gotAway")
 
@@ -198,7 +201,7 @@ describe("the Ledger's live moments", function()
 			fake.playCast("caught", loot(MACKEREL))
 
 			assert.are.same({
-				"newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10",
+				"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
 				"zoneRank Zone rank: Visitor / Darkshore 2",
 			}, momentsOf(shown(fake)[1]))
 			assert.are.same(
@@ -363,7 +366,7 @@ describe("the Ledger's live moments", function()
 		local celebrated = { momentsOf(announcements[1]), momentsOf(announcements[2]) }
 		assert.are.same({
 			{ "levelUp Angler Level 2 / nil 20" },
-			{ "newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10" },
+			{ "newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10" },
 		}, celebrated)
 
 		-- The crash: neither that Cast nor the celebrated set's growth was saved.
