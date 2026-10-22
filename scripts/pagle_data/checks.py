@@ -1,6 +1,7 @@
 """data/checks.toml (DATA-R66): the switches that turn milestone-gated checks on. Before a switch is on its check is
 skipped and the data is still emitted."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -17,10 +18,21 @@ LORE_IDS = ("core", "ledger", "hunts", "stats", "tackleboard")
 @dataclass(frozen=True)
 class Checks:
     """typical_length: DATA-R20's check that every Species has a typical length. lore: the lore IDs whose lore check
-    is on (DATA-R107)."""
+    is on (DATA-R107). event_pool: DATA-R99's minimum of rotating events per band, on once the 1.0 pool is authored
+    (#306); left out, it is off."""
 
     typical_length: bool = False
     lore: tuple[str, ...] = field(default_factory=tuple)
+    event_pool: bool = False
+
+
+def _switch(document: Mapping[str, object], key: str, at: At, problems: Problems) -> bool:
+    """A boolean switch, off when left out (or, with a problem, of the wrong type)."""
+    value = document.get(key, False)
+    if isinstance(value, bool):
+        return value
+    problems.add(at / key, f"expected a boolean, got {describe(value)}")
+    return False
 
 
 def read_checks(root: Path, problems: Problems) -> Checks:
@@ -29,14 +41,9 @@ def read_checks(root: Path, problems: Problems) -> Checks:
     if document is None:
         return Checks()
     at = At(CHECKS)
-    check_keys(document, at, problems, required=("typicalLength", "lore"), optional=())
-    typical_length = False
-    if "typicalLength" in document:
-        value = document["typicalLength"]
-        if isinstance(value, bool):
-            typical_length = value
-        else:
-            problems.add(at / "typicalLength", f"expected a boolean, got {describe(value)}")
+    check_keys(document, at, problems, required=("typicalLength", "lore"), optional=("eventPool",))
+    typical_length = _switch(document, "typicalLength", at, problems)
+    event_pool = _switch(document, "eventPool", at, problems)
     lore: list[str] = []
     if "lore" in document:
         value = document["lore"]
@@ -52,4 +59,4 @@ def read_checks(root: Path, problems: Problems) -> Checks:
                 problems.add(item_at, f"'{item}' is listed twice")
             else:
                 lore.append(item)
-    return Checks(typical_length, tuple(lore))
+    return Checks(typical_length, tuple(lore), event_pool)

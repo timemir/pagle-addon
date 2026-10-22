@@ -33,7 +33,7 @@ from pagle_data.universe import HUNTS_TOML
 HUNT_LIST_LUA = "addons/Pagle_Hunts/data/HuntList.lua"
 
 # DATA-R92: a Hunt or set ID matches Lua's [%w_]+; DATA-R90: a fixed class ID is fixed.<name>, <name> the same.
-_ID = re.compile(r"[A-Za-z0-9_]+")
+HUNT_ID = re.compile(r"[A-Za-z0-9_]+")
 FIXED_CLASS = re.compile(r"fixed\.[A-Za-z0-9_]+")
 # DATA-R91: the generated classes, in DATA-R91's order.
 QUALITY_UNCOMMON = "quality.uncommon"
@@ -132,7 +132,7 @@ def _at(kind: str, table: Mapping[str, object], index: int) -> At:
     return At(HUNTS_TOML, f"{kind}.{entry_id}")
 
 
-def _string(table: Mapping[str, object], key: str, at: At, problems: Problems) -> str | None:
+def read_string(table: Mapping[str, object], key: str, at: At, problems: Problems) -> str | None:
     """table[key] as a string, or None: absent (check_keys' problem) or not a string (a problem here)."""
     if key not in table:
         return None
@@ -148,12 +148,12 @@ def class_key(class_id: str) -> str:
     return f'class."{class_id}"'
 
 
-def _date(table: Mapping[str, object], key: str, at: At, problems: Problems) -> int | None:
+def read_date(table: Mapping[str, object], key: str, at: At, problems: Problems) -> int | None:
     """DATA-R87: a TOML date (YYYY-MM-DD), meaning 00:00 UTC on that day, as a server time (Unix seconds)."""
     return expect_date(table[key], at / key, problems) if key in table else None
 
 
-def _integer(table: Mapping[str, object], key: str, at: At, problems: Problems) -> int | None:
+def read_integer(table: Mapping[str, object], key: str, at: At, problems: Problems) -> int | None:
     return expect_int(table[key], at / key, problems, minimum=None) if key in table else None
 
 
@@ -173,15 +173,17 @@ def _entries(document: Mapping[str, object], kind: str, problems: Problems) -> l
     return found
 
 
-def _id(table: Mapping[str, object], at: At, pattern: re.Pattern[str], shape: str, problems: Problems) -> str | None:
+def read_id(
+    table: Mapping[str, object], at: At, pattern: re.Pattern[str], shape: str, problems: Problems
+) -> str | None:
     """An entry's ID, checked against its pattern (DATA-R90, DATA-R92)."""
-    entry_id = _string(table, "id", at, problems)
+    entry_id = read_string(table, "id", at, problems)
     if entry_id is not None and not pattern.fullmatch(entry_id):
         problems.add(at / "id", f"'{entry_id}' doesn't match {shape} (DATA-R92)")
     return entry_id
 
 
-def _check_unique(kind: str, ids: list[tuple[str, At]], problems: Problems) -> None:
+def check_unique(kind: str, ids: list[tuple[str, At]], problems: Problems) -> None:
     """DATA-R92: an ID repeats among Hunts, among sets or among classes."""
     seen: set[str] = set()
     for entry_id, at in ids:
@@ -190,7 +192,7 @@ def _check_unique(kind: str, ids: list[tuple[str, At]], problems: Problems) -> N
         seen.add(entry_id)
 
 
-def _texts(
+def read_texts(
     kind: str, entry_id: str | None, table: Mapping[str, object], fields: tuple[str, ...], at: At, problems: Problems
 ) -> tuple[Text, ...]:
     """An entry's lore fields that are strings, as <kind>.<id>.<field> texts (DATA-R105). Each is required in its
@@ -198,7 +200,7 @@ def _texts(
     lore check's (DATA-R107)."""
     texts: list[Text] = []
     for key in fields:
-        value = _string(table, key, at, problems)
+        value = read_string(table, key, at, problems)
         if value is not None and entry_id is not None:
             texts.append(Text(kind, entry_id, key, value))
     return tuple(texts)
@@ -206,21 +208,21 @@ def _texts(
 
 def _read_set(table: Mapping[str, object], at: At, problems: Problems) -> HuntSet | None:
     check_keys(table, at, problems, required=_SET_REQUIRED, optional=_SET_OPTIONAL)
-    set_id = _id(table, at, _ID, "[%w_]+", problems)
-    texts = _texts("set", set_id, table, ("name", "title", "note"), at, problems)
+    set_id = read_id(table, at, HUNT_ID, "[%w_]+", problems)
+    texts = read_texts("set", set_id, table, ("name", "title", "note"), at, problems)
     return None if set_id is None else HuntSet(set_id, at, texts)
 
 
 def _read_class(table: Mapping[str, object], at: At, problems: Problems) -> FixedClass | None:
     check_keys(table, at, problems, required=_CLASS_REQUIRED, optional=())
-    class_id = _id(table, at, FIXED_CLASS, "fixed.<name>, <name> matching [%w_]+ (DATA-R90)", problems)
+    class_id = read_id(table, at, FIXED_CLASS, "fixed.<name>, <name> matching [%w_]+ (DATA-R90)", problems)
     members = expect_ids(table["members"], at / "members", problems) if "members" in table else None
     if class_id is None or members is None:
         return None
     return FixedClass(class_id, tuple(members), at)
 
 
-def _conditions(table: Mapping[str, object], at: At, problems: Problems) -> dict[str, object] | None:
+def read_conditions(table: Mapping[str, object], at: At, problems: Problems) -> dict[str, object] | None:
     """An imposed Hunt's conditions (DATA-R86): an inline table holding a condition spec (LOG-R48), checked as Core's
     MatchesConditions checks it (pagle_data.conditions)."""
     if "conditions" not in table:
@@ -241,7 +243,7 @@ def _conditions(table: Mapping[str, object], at: At, problems: Problems) -> dict
     return dict(spec)
 
 
-def _tiers(table: Mapping[str, object], at: At, problems: Problems) -> list[int] | None:
+def read_tiers(table: Mapping[str, object], at: At, problems: Problems) -> list[int] | None:
     """DATA-R88: tiers is a list of strictly ascending positive integers; the first is completion."""
     if "tiers" not in table:
         return None
@@ -257,38 +259,23 @@ def _tiers(table: Mapping[str, object], at: At, problems: Problems) -> list[int]
     return list(tiers)
 
 
-def _read_hunt(table: Mapping[str, object], at: At, problems: Problems) -> Hunt | None:
-    """A [[hunt]]'s record (DATA-R93), with every check that needs nothing but the file (DATA-R86-R89, DATA-R92)."""
-    check_keys(table, at, problems, required=_HUNT_REQUIRED, optional=_HUNT_OPTIONAL)
-    hunt_id = _id(table, at, _ID, "[%w_]+", problems)
-    texts = _texts("hunt", hunt_id, table, ("name", "note"), at, problems)
-    record: HuntRecord = {}
-    if hunt_id is not None:
-        record["id"] = hunt_id
-    for key in _RECORD_STRINGS:
-        value = _string(table, key, at, problems)
-        if value is not None:
-            record[key] = value
-    for key in ("since", "retired"):
-        server_time = _date(table, key, at, problems)
-        if server_time is not None:
-            record[key] = server_time
-    species = _integer(table, "species", at, problems)
+def read_target(table: Mapping[str, object], record: HuntRecord, at: At, problems: Problems) -> None:
+    """A Hunt's species, minBand, conditions and tiers into its record, with the checks on them that need nothing but
+    the file: one target, species or class (DATA-R86), minBand (DATA-R89), a valid condition spec (LOG-R48) and
+    tiers (DATA-R88). A Standing Hunt's and an event Hunt's alike (DATA-R92, DATA-R99); the class, read as a string
+    with the rest of the record, is the caller's."""
+    species = read_integer(table, "species", at, problems)
     if species is not None:
         record["species"] = species
-    min_band = _integer(table, "minBand", at, problems)
+    min_band = read_integer(table, "minBand", at, problems)
     if min_band is not None:
         record["minBand"] = min_band
-    conditions = _conditions(table, at, problems)
+    conditions = read_conditions(table, at, problems)
     if conditions is not None:
         record["conditions"] = conditions
-    tiers = _tiers(table, at, problems)
+    tiers = read_tiers(table, at, problems)
     if tiers is not None:
         record["tiers"] = tiers
-
-    kind = record.get("kind")
-    if "kind" in record and kind not in (NATURAL, IMPOSED):
-        problems.add(at / "kind", f"expected '{NATURAL}' or '{IMPOSED}', got '{kind}' (DATA-R86)")
     if "species" in table and "class" in table:
         problems.add(at, "has both a species and a class target; give one (DATA-R86)")
     elif "species" not in table and "class" not in table:
@@ -297,6 +284,29 @@ def _read_hunt(table: Mapping[str, object], at: At, problems: Problems) -> Hunt 
         problems.add(at / "minBand", f"expected {MIN_BAND} to {MAX_BAND}, got {min_band} (DATA-R89)")
     if "minBand" in table and "class" in table:
         problems.add(at / "minBand", "only a species target can have a minBand (DATA-R89)")
+
+
+def _read_hunt(table: Mapping[str, object], at: At, problems: Problems) -> Hunt | None:
+    """A [[hunt]]'s record (DATA-R93), with every check that needs nothing but the file (DATA-R86-R89, DATA-R92)."""
+    check_keys(table, at, problems, required=_HUNT_REQUIRED, optional=_HUNT_OPTIONAL)
+    hunt_id = read_id(table, at, HUNT_ID, "[%w_]+", problems)
+    texts = read_texts("hunt", hunt_id, table, ("name", "note"), at, problems)
+    record: HuntRecord = {}
+    if hunt_id is not None:
+        record["id"] = hunt_id
+    for key in _RECORD_STRINGS:
+        value = read_string(table, key, at, problems)
+        if value is not None:
+            record[key] = value
+    for key in ("since", "retired"):
+        server_time = read_date(table, key, at, problems)
+        if server_time is not None:
+            record[key] = server_time
+    read_target(table, record, at, problems)
+
+    kind = record.get("kind")
+    if "kind" in record and kind not in (NATURAL, IMPOSED):
+        problems.add(at / "kind", f"expected '{NATURAL}' or '{IMPOSED}', got '{kind}' (DATA-R86)")
     if kind == NATURAL:
         if "window" not in table:
             problems.add(at, "is natural and has no window (DATA-R86, DATA-R92)")
@@ -337,9 +347,9 @@ def read_hunts(root: Path, problems: Problems) -> HuntLayer:
         hunt = _read_hunt(table, at, problems)
         if hunt is not None:
             layer.hunts.append(hunt)
-    _check_unique("set", [(entry.id, entry.at) for entry in layer.sets], problems)
-    _check_unique("class", [(entry.id, entry.at) for entry in layer.classes], problems)
-    _check_unique("Hunt", [(entry.id, entry.at) for entry in layer.hunts], problems)
+    check_unique("set", [(entry.id, entry.at) for entry in layer.sets], problems)
+    check_unique("class", [(entry.id, entry.at) for entry in layer.classes], problems)
+    check_unique("Hunt", [(entry.id, entry.at) for entry in layer.hunts], problems)
     set_ids = {entry.id for entry in layer.sets}
     class_ids = {entry.id for entry in layer.classes} | set(GENERATED_CLASSES)
     for hunt in layer.hunts:
@@ -370,27 +380,39 @@ def check_hunts(
                 message = f"item {member} doesn't ship (it's uncharted or not in the catalogue), so no class can hold it"
                 problems.add(fixed.at / "members", f"{message} (DATA-R18, DATA-R90)")
     for hunt in layer.hunts:
-        species = hunt.get("species")
-        if isinstance(species, int):
-            record = items.get(species)
-            of = record.get("species") if record is not None else None
-            if of is None:
-                problems.add(hunt.at / "species", f"{species} isn't a Species item (DATA-R19, DATA-R92)")
-            elif of != species:
-                problems.add(
-                    hunt.at / "species", f"{species} is an item of Species {of}; target {of} (DATA-R19, DATA-R92)"
-                )
+        check_record(hunt.record, hunt.at, items, auras, events, problems)
         window = hunt.get("window")
         if isinstance(window, str) and window not in windows:
             problems.add(hunt.at / "window", f"'{window}' isn't a window ID (DATA-R35, DATA-R92)")
-        conditions = hunt.get("conditions")
-        if isinstance(conditions, Mapping):
-            for field_name, listed, rule in (("auras", auras, "DATA-R39"), ("events", events, "DATA-R38")):
-                values = conditions.get(field_name)
-                for value in values if isinstance(values, list) else []:
-                    if value not in listed:
-                        what = "aura list" if field_name == "auras" else "event list"
-                        problems.add(hunt.at / "conditions", f"{field_name}: {value} isn't on the {what} ({rule})")
+
+
+def check_record(
+    record: Mapping[str, object],
+    at: At,
+    items: Mapping[int, Record],
+    auras: Collection[int],
+    events: Collection[int],
+    problems: Problems,
+) -> None:
+    """DATA-R92's checks on a Hunt's record that need the catalogue, a Standing Hunt's or an event Hunt's (DATA-R99):
+    a species target that isn't a Species ID (DATA-R19), and conditions naming an aura or event not on the lists
+    (DATA-R38, DATA-R39)."""
+    species = record.get("species")
+    if isinstance(species, int):
+        item = items.get(species)
+        of = item.get("species") if item is not None else None
+        if of is None:
+            problems.add(at / "species", f"{species} isn't a Species item (DATA-R19, DATA-R92)")
+        elif of != species:
+            problems.add(at / "species", f"{species} is an item of Species {of}; target {of} (DATA-R19, DATA-R92)")
+    conditions = record.get("conditions")
+    if isinstance(conditions, Mapping):
+        for field_name, listed, rule in (("auras", auras, "DATA-R39"), ("events", events, "DATA-R38")):
+            values = conditions.get(field_name)
+            for value in values if isinstance(values, list) else []:
+                if value not in listed:
+                    what = "aura list" if field_name == "auras" else "event list"
+                    problems.add(at / "conditions", f"{field_name}: {value} isn't on the {what} ({rule})")
 
 
 def hunt_classes(

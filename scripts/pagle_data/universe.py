@@ -20,6 +20,10 @@ ITEMS_TOML = "data/forever/items.toml"
 AREAS_TOML = "data/forever/areas.toml"
 POOLS_TOML = "data/forever/pools.toml"
 HUNTS_TOML = "data/hunts/hunts.toml"
+# DATA-R97: the event pool, one <event-id>.toml per Hunt Event, and the closed tag list. Event Hunts target Species
+# or classes, never fixed members of their own, so neither adds to the universe.
+EVENTS_DIR = "data/hunts/events"
+TAGS_TOML = "data/hunts/tags.toml"
 
 
 def _items_toml(document: Mapping[str, object], at: At, problems: Problems) -> set[int]:

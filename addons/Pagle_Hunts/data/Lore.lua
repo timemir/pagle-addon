@@ -38,6 +38,7 @@ L["huntgood.hunts.trackerframe.none.description"] = "Only the lines themselves, 
 L["huntgood.hunts.trackerframe.none.name"] = "No Frame"
 L["huntgood.hunts.trackerframe.waxseal.description"] = "Parchment with a red rule down its margin and a wax seal pressed in the corner, as if the list were official."
 L["huntgood.hunts.trackerframe.waxseal.name"] = "Wax Seal"
+L["ladder.25.title"] = "Bookmaker's Bane"
 L["set.camp_hours.name"] = "Camp Hours"
 L["set.camp_hours.title"] = "Hut Keeper"
 L["set.pagles_wagers.name"] = "House Wagers"

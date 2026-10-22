@@ -19,7 +19,7 @@ from pagle_data.errors import DataError
 from pagle_data.explain import explain
 from pagle_data.files import write_atomic
 from pagle_data.forever import ALIASES
-from pagle_data.generate import Layers, hunt_list_of, outputs, read_layers
+from pagle_data.generate import Layers, event_list_of, hunt_list_of, outputs, read_layers
 from pagle_data.lock import LOCK, lock_toml
 from pagle_data.lore import retired_lore
 from pagle_data.min_build import lost
@@ -60,8 +60,8 @@ def _parser() -> argparse.ArgumentParser:
     modes.add_argument(
         "--lock",
         action="store_true",
-        help=f"rewrite {LOCK} from the Hunt list, every Hunt counting as released, and write nothing else"
-        " (DATA-R95); run it only when a release is tagged, from 1.0 on, and never before (DATA-R73)",
+        help=f"rewrite {LOCK} from the Hunt list and the event pool, every Hunt counting as released, and write"
+        " nothing else (DATA-R95, DATA-R98); run it only when a release is tagged, from 1.0 on, and never before (DATA-R73)",
     )
     return parser
 
@@ -162,7 +162,7 @@ def main(argv: Sequence[str], root: Path) -> int:
     if args.explain is not None:
         return _print_explain(layers, args.explain)
     if args.lock:
-        write_atomic(root / LOCK, lock_toml(hunt_list_of(layers)).encode("utf-8"))
+        write_atomic(root / LOCK, lock_toml(hunt_list_of(layers), event_list_of(layers)).encode("utf-8"))
         print(f"{PROG}: wrote {LOCK}")
         return 0
     _warn(layers)
