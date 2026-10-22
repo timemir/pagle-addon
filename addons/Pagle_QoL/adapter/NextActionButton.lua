@@ -30,9 +30,7 @@ local ns = select(2, ...)
 
 -- The button, made the first time it shows; a plain frame, so combat never stops it.
 local button ---@type PagleQoLNextActionButton?
-local icon ---@type Texture
-local hotKey ---@type FontString
-local label ---@type FontString
+local face ---@type PagleQoLButtonFace its face, made with it
 local tooltip ---@type PagleQoLButtonTooltip
 local lastIcon ---@type integer? the icon shown last, which *nothing* keeps (QOL-R71)
 -- What the button shows now: the action, and the lure, the clam or the fishing set it names (QOL-R74).
@@ -132,25 +130,26 @@ local function newTooltip(frame)
 	return made
 end
 
--- Makes the button the first time it shows (QOL-R70): the brass bezel with the icon round in it and the gloss over
--- it, the key cap at its top left, the paper label under it, and the tooltip. The frame is the bezel, 52 px; the key
--- cap and the label hang over its edges, in frames of their own above it. The mouse shows the tooltip (QOL-R74) and
--- Shift-drags it (QOL-R73); a click does nothing, as it has no click script. It has no name, so it adds no global
--- (QOL-R5) and the client's layout cache never keeps its place: QoL keeps that itself (QOL-R73).
-local function ensureButton()
-	if button then
-		return
-	end
-	local frame = CreateFrame("Frame", nil, UIParent) --[[@as PagleQoLNextActionButton]]
-	button = frame
+--- The button's face (QOL-R70, QOL-R71), as the next-action button and the Field guide's Casting step draw it: the
+--- brass bezel, the icon round in it, the paper label under it and the key cap over its top left.
+---@class PagleQoLButtonFace
+---@field Ring PagleSprite the brass bezel
+---@field Icon Texture the next action's icon, round inside it
+---@field Paper PagleThreeSlice the label's slip, under the bezel
+---@field Label FontString the one-word label
+---@field KeyCap PagleQoLKeyCap the Fishing key's brass cap
+---@field HotKey FontString the key on it
+
+--- Draws the button's face on `frame`, a bezel's size (52 px), the field art kit's look (QOL-R70): the brass bezel
+--- with the icon round in it and the gloss over it, the label's slip tucked 6 px under it and the key cap over its top
+--- left, each in a frame a level above the last, as they hang over its edges.
+---@param frame Frame
+---@return PagleQoLButtonFace
+function ns.DrawButtonFace(frame)
 	frame:SetSize(ns.BUTTON_BEZEL, ns.BUTTON_BEZEL)
-	frame:SetClampedToScreen(true)
-	frame:EnableMouse(true)
-	frame:SetMovable(true)
-	frame:RegisterForDrag("LeftButton")
-	frame.Ring = ns.ArtSprite(frame, "Field", "bezel-52", "ARTWORK", 0)
-	ns.CenterSprite(frame.Ring, frame)
-	icon = frame:CreateTexture(nil, "ARTWORK", nil, 1)
+	local ring = ns.ArtSprite(frame, "Field", "bezel-52", "ARTWORK", 0)
+	ns.CenterSprite(ring, frame)
+	local icon = frame:CreateTexture(nil, "ARTWORK", nil, 1)
 	icon:SetSize(ns.BUTTON_SIZE, ns.BUTTON_SIZE)
 	icon:SetPoint("CENTER")
 	local mask = frame:CreateMaskTexture()
@@ -159,20 +158,63 @@ local function ensureButton()
 	icon:AddMaskTexture(mask)
 	local gloss = ns.ArtSprite(frame, "Field", "gloss-52", "ARTWORK", 2)
 	ns.CenterSprite(gloss, frame)
-
-	-- The label's slip, tucked 6 px under the bezel, and the key cap over its top left, each a level above the last.
 	local paper = CreateFrame("Frame", nil, frame) --[[@as PagleThreeSlice]]
-	frame.Paper = paper
 	paper:SetFrameLevel(frame:GetFrameLevel() + 1)
 	paper:SetPoint("TOP", frame, "BOTTOM", 0, 6)
-	label = ns.ArtText(paper, "Label")
-	label:SetJustifyH("CENTER")
-	label:SetPoint("CENTER", paper, "CENTER", 0, 1)
-	frame.KeyCap = ns.NewKeyCap(frame, "Key")
-	frame.KeyCap:SetFrameLevel(frame:GetFrameLevel() + 2)
-	frame.KeyCap:SetPoint("TOPLEFT", frame, "TOPLEFT", -2, 4)
-	hotKey = frame.KeyCap.Text
-	frame.Icon, frame.HotKey, frame.Label = icon, hotKey, label
+	local words = ns.ArtText(paper, "Label")
+	words:SetJustifyH("CENTER")
+	words:SetPoint("CENTER", paper, "CENTER", 0, 1)
+	local keyCap = ns.NewKeyCap(frame, "Key")
+	keyCap:SetFrameLevel(frame:GetFrameLevel() + 2)
+	keyCap:SetPoint("TOPLEFT", frame, "TOPLEFT", -2, 4)
+	return { Ring = ring, Icon = icon, Paper = paper, Label = words, KeyCap = keyCap, HotKey = keyCap.Text }
+end
+
+--- Shows `look` on a face (QOL-R71): its icon, *nothing* greying the brass with the icon as the kit's idle button,
+--- the label on its slip or none, and `hotkey` on its key cap or no cap (QOL-R70).
+---@param drawn PagleQoLButtonFace
+---@param look PagleQoLButtonLook
+---@param hotkey string?
+function ns.SetButtonFace(drawn, look, hotkey)
+	drawn.Icon:SetTexture(look.icon)
+	local grey = look.desaturated and 0.75 or 1
+	for _, region in ipairs({ drawn.Icon, drawn.Ring }) do
+		region:SetDesaturated(look.desaturated)
+		region:SetVertexColor(grey, grey, grey)
+	end
+	drawn.Label:SetText(look.label or "")
+	drawn.Label:SetShown(look.label ~= nil)
+	drawn.Paper:SetShown(look.label ~= nil)
+	if look.label then
+		ns.SetThreeSlice(drawn.Paper, "Field", "label", ns.LabelWidth(drawn.Label:GetStringWidth()), 8, "ARTWORK")
+	end
+	drawn.HotKey:SetShown(hotkey ~= nil)
+	drawn.KeyCap:SetShown(hotkey ~= nil)
+	if hotkey then
+		drawn.HotKey:SetText(hotkey)
+		ns.SetKeyCap(drawn.KeyCap, hotkey, ns.KeyCapWidth(drawn.HotKey:GetStringWidth()), 18)
+	else
+		drawn.HotKey:SetText("")
+	end
+end
+
+-- Makes the button the first time it shows (QOL-R70): its face (ns.DrawButtonFace) and the tooltip. The mouse shows
+-- the tooltip (QOL-R74) and Shift-drags it (QOL-R73); a click does nothing, as it has no click script. It has no
+-- name, so it adds no global (QOL-R5) and the client's layout cache never keeps its place: QoL keeps that itself
+-- (QOL-R73).
+local function ensureButton()
+	if button then
+		return
+	end
+	local frame = CreateFrame("Frame", nil, UIParent) --[[@as PagleQoLNextActionButton]]
+	button = frame
+	frame:SetClampedToScreen(true)
+	frame:EnableMouse(true)
+	frame:SetMovable(true)
+	frame:RegisterForDrag("LeftButton")
+	face = ns.DrawButtonFace(frame)
+	frame.Ring, frame.Icon, frame.Paper, frame.KeyCap = face.Ring, face.Icon, face.Paper, face.KeyCap
+	frame.HotKey, frame.Label = face.HotKey, face.Label
 	tooltip = newTooltip(frame)
 	frame.Tooltip = tooltip
 
@@ -194,10 +236,11 @@ local function ensureButton()
 	place()
 end
 
--- The Fishing key's first bound key as action bars show it (QOL-R70).
+--- A bound key as action bars show it, in its short form (QOL-R70): the next-action button's key cap, and the Field
+--- guide's samples of it.
 ---@param key string
 ---@return string
-local function shortText(key)
+function ns.ShortKeyText(key)
 	-- The second argument asks for the short form, as the game's action buttons pass it (Gethe/wow-ui-source branch
 	-- forever, Blizzard_ActionBar/Shared/ActionButton.lua: `GetBindingText(key, 1)`).
 	---@diagnostic disable-next-line: param-type-mismatch -- the annotations name it a prefix string
@@ -257,30 +300,14 @@ function ns.ShowNextAction(state, keys)
 	end
 	local look = ns.ButtonLook(action, icons, lastIcon)
 	lastIcon = look.icon
-	icon:SetTexture(look.icon)
-	-- *Nothing* greys the brass with the icon, as the kit's idle button (QOL-R71).
-	local grey = look.desaturated and 0.75 or 1
-	for _, region in ipairs({ icon, button.Ring }) do
-		region:SetDesaturated(look.desaturated)
-		region:SetVertexColor(grey, grey, grey)
-	end
-	label:SetText(look.label or "")
-	label:SetShown(look.label ~= nil)
-	button.Paper:SetShown(look.label ~= nil)
-	if look.label then
-		ns.SetThreeSlice(button.Paper, "Field", "label", ns.LabelWidth(label:GetStringWidth()), 8, "ARTWORK")
-	end
-	local hotkey = ns.ButtonHotkey(ns.CurrentInput(), keys, shortText)
-	hotKey:SetShown(hotkey ~= nil)
-	button.KeyCap:SetShown(hotkey ~= nil)
-	if hotkey then
-		hotKey:SetText(hotkey)
-		ns.SetKeyCap(button.KeyCap, hotkey, ns.KeyCapWidth(hotKey:GetStringWidth()), 18)
-	else
-		hotKey:SetText("")
-	end
+	ns.SetButtonFace(face, look, ns.ButtonHotkey(ns.CurrentInput(), keys, ns.ShortKeyText))
 	button:Show()
 
+	-- The first Lure it shows explains itself with a Margin note, once per account (ONB-R52's qol.lure): asked at each
+	-- turn to Lure, as Core shows it only the first time.
+	if action == "lure" and current.action ~= "lure" then
+		ns.NoteFirstLure(button)
+	end
 	current = { action = action, lure = state.lure, clam = state.clam, setID = setID }
 	if hovering then
 		showTooltip()

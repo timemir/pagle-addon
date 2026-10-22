@@ -12,13 +12,16 @@ local ns = select(2, ...)
 -- field art kit's (adapter/FieldArt.lua): the words in the Angler's hand, a key on a brass cap, a binding's name in
 -- printed red.
 
---- The Nudge's frame: the strip, three-sliced on it, and what it says now as plain text (`message`).
----@class PagleQoLNudge: PagleThreeSlice
+--- A Nudge's strip: the paper, three-sliced on it, and the regions its pieces have used, by kind, reused in turn:
+--- words in the hand, words in red, key caps.
+---@class PagleQoLNudgeStrip: PagleThreeSlice
+---@field pools table<string, table[]>
+
+--- The Nudge's frame: a strip, and what it says now as plain text (`message`).
+---@class PagleQoLNudge: PagleQoLNudgeStrip
 ---@field message string
 
 local frame ---@type PagleQoLNudge? made at the first Nudge; a plain frame, so combat never stops it (QOL-R76)
--- The regions the strip's pieces have used, by kind, reused in turn: words in the hand, words in red, key caps.
-local pools = { words = {}, em = {}, key = {} } ---@type table<string, table[]>
 local elapsed = 0 -- seconds since the Nudge showing now showed
 
 -- Holds the Nudge for NUDGE_SHOW, fades it over NUDGE_FADE, then hides it and stops (QOL-R75). With Core's Animations
@@ -46,10 +49,14 @@ local function kindOf(part)
 	return part.key and "key" or "em"
 end
 
--- Lays the pieces on the strip and sizes it to them (ns.NudgeLayout).
----@param nudge PagleQoLNudge
+--- Draws a Nudge's line on `nudge`, a strip: lays the pieces on its paper and sizes it to them (ns.NudgeLayout). The
+--- Nudge itself and the Field guide's sample of it (ONB-R33) are drawn with it.
+---@param nudge Frame
 ---@param parts PagleQoLNudgePart[]
-local function draw(nudge, parts)
+function ns.DrawNudge(nudge, parts)
+	local strip = nudge --[[@as PagleQoLNudgeStrip]]
+	strip.pools = strip.pools or { words = {}, em = {}, key = {} }
+	local pools = strip.pools
 	local used = { words = 0, em = 0, key = 0 }
 	for _, pool in pairs(pools) do
 		for _, region in ipairs(pool) do
@@ -100,7 +107,7 @@ function ns.ShowNudge(line)
 		frame:SetPoint("TOP", UIErrorsFrame, "BOTTOM", 0, -ns.NUDGE_GAP)
 	end
 	frame.message = ns.NudgeText(parts)
-	draw(frame, parts)
+	ns.DrawNudge(frame, parts)
 	elapsed = 0
 	frame:SetAlpha(1)
 	frame:Show()

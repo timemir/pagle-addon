@@ -22,7 +22,8 @@ local ns = select(2, ...)
 ---@field chooseFishingSet fun(setID: integer) chooses a set, or None (QOL-R40, QOL-R41)
 ---@field fishingSetOptions fun(): { value: integer, label: string }[] None and the character's sets (QOL-R40)
 ---@field canEditGear fun(): boolean whether the Gear rows can change anything (QOL-R41)
----@field saveFishingSet fun() saves what's worn as the fishing set (QOL-R41, QOL-R42)
+---@field saveFishingSet fun(): string? saves what's worn as the fishing set, returning the line it printed if it
+--- couldn't (QOL-R41, QOL-R42)
 ---@field resetButton fun() puts the next-action button back in its default place (QOL-R73)
 
 --- Adds QoL's rows to Core's topic pages. Call it from OnInitialize, before ModulesChanged (CORE-R42).

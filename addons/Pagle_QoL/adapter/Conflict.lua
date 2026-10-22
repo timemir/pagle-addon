@@ -10,6 +10,7 @@ local ns = select(2, ...)
 -- rest of the session, whatever the answer (QOL-R82, QOL-R97). While it asks, Core's Letter waits (ONB-R100).
 
 local standingDown = false
+local standingFor = {} ---@type string[] the titles of the other fishing-key addons found, while QoL stands down
 
 --- Whether QoL stands down this session: a conflict was found at login (QOL-R82). While it does, QoL is disarmed,
 --- binds nothing, starts no Fishing stretch and leases no CVars; its settings and the leftover restore (QOL-R64)
@@ -17,6 +18,13 @@ local standingDown = false
 ---@return boolean
 function ns.IsStandingDown()
 	return standingDown
+end
+
+--- The titles of the other fishing-key addons QoL stands down for (QOL-R81, QOL-R82), in conflict-list order: empty
+--- while it doesn't. The Field guide's Casting step names them (ONB-R100).
+---@return string[]
+function ns.StandingDownFor()
+	return standingFor
 end
 
 -- The two notes' global names: UISpecialFrames takes names, and Esc hides the frames it lists.
@@ -266,6 +274,9 @@ function ns.CheckConflicts()
 		return
 	end
 	standingDown = true
+	for i, conflict in ipairs(found) do
+		standingFor[i] = conflict.title
+	end
 	-- Each choice runs only from a click on its own button; Esc hides the note and runs neither, so it chooses nothing
 	-- (QOL-R81, QOL-R84). Neither choice reloads the UI; each offers the Reload now note (QOL-R83).
 	ask(

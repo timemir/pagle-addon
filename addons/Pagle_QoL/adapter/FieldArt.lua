@@ -35,11 +35,14 @@ ns.FIELD_INKS = {
 }
 
 local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
--- The faces, which Core bundles (Pagle/media/fonts/OFL-*.txt): IM Fell English for print, Caveat for the Angler's
--- handwriting, Marcellus for gilt and keys.
+-- The faces, which Core bundles (Pagle/media/fonts/OFL-*.txt): IM Fell English for print, its italic for notes and
+-- its small caps (IM Fell English SC) for kickers, Caveat for the Angler's handwriting, Marcellus for gilt and keys.
 local FACES = {
 	print = "IMFeENrm28P.ttf",
+	italic = "IMFeENit28P.ttf",
+	sc = "IMFeENsc28P.ttf",
 	gilt = "Marcellus-Regular.ttf",
+	hand = "Caveat-Medium.ttf",
 	handSemi = "Caveat-SemiBold.ttf",
 }
 -- What draws if a bundled face won't load: the client's own.
@@ -88,6 +91,29 @@ function ns.ArtText(frame, key, layer)
 	fontString:SetWordWrap(false)
 	fontString:SetJustifyH("LEFT")
 	return fontString
+end
+
+-- Each font ns.FaceFont has made, by face and size.
+---@type table<string, Font>
+local faceFonts = {}
+
+--- A font object in the kit's `face` ("print", "italic", "sc", "gilt", "hand" or "handSemi") at `size` UI units,
+--- made once, without a shadow (words on paper): the Field guide's pages set type at many sizes. Its ink is the font
+--- string's to set.
+---@param face string
+---@param size number
+---@return Font
+function ns.FaceFont(face, size)
+	local key = face .. "_" .. (tostring(size):gsub("%.", "_"))
+	if not faceFonts[key] then
+		local font = CreateFont("PagleQoLFace_" .. key)
+		if font:SetFont(FONT_DIR .. assert(FACES[face], "no face " .. face), size, "") == false then
+			font:SetFont(FALLBACK, size, "")
+		end
+		font:SetShadowOffset(0, 0)
+		faceFonts[key] = font
+	end
+	return faceFonts[key]
 end
 
 -- Draws texels as they are, unsnapped, so a sprite scaled by the UI doesn't shimmer.
@@ -263,12 +289,13 @@ end
 ---@field Text FontString
 
 --- A button on `parent` reading `label`: the kit's leather `button` (`outlined` false) or its outlined `pbtn`, 44
---- high and as wide as its words with 26 either side.
+--- high and as wide as its words with 26 either side, or `width` wide.
 ---@param parent Frame
 ---@param label string
 ---@param outlined boolean
+---@param width number?
 ---@return PagleQoLNoteButton
-function ns.NewNoteButton(parent, label, outlined)
+function ns.NewNoteButton(parent, label, outlined, width)
 	local button = CreateFrame("Button", nil, parent) --[[@as PagleQoLNoteButton]]
 	local face = CreateFrame("Frame", nil, button)
 	face:SetPoint("TOPLEFT")
@@ -279,7 +306,7 @@ function ns.NewNoteButton(parent, label, outlined)
 	button.Text:SetJustifyH("CENTER")
 	button.Text:SetText(label)
 	button.Text:SetPoint("CENTER", button, "CENTER")
-	local width = math.floor(button.Text:GetStringWidth() + 52 + 0.5)
+	width = width or math.floor(button.Text:GetStringWidth() + 52 + 0.5)
 	ns.SetThreeSlice(face, "Field", outlined and "pbtn" or "button", width, outlined and 10 or 12, "ARTWORK")
 	button:SetSize(width, 44)
 	return button
