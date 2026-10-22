@@ -116,12 +116,12 @@ end)
 describe("the binding a book wears", function()
 	it("is the equipped binding, drawn at once and handed to the book before New returns (BIND-R1, BIND-R3)", function()
 		local host = newHost()
-		host.equipped = "core.binding.oilcloth"
+		host.equipped = "core.binding.verdigris"
 
 		local binding, looks = book(host)
 
-		assert.are.same({ "core.binding.oilcloth", "core.binding.oilcloth" }, worn(binding))
-		assert.are.same({ "core.binding.oilcloth" }, looks)
+		assert.are.same({ "core.binding.verdigris", "core.binding.verdigris" }, worn(binding))
+		assert.are.same({ "core.binding.verdigris" }, looks)
 	end)
 
 	it("is the pinned one, whatever is equipped, and stays through a change (BIND-R1, BIND-R22)", function()

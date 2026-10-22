@@ -153,7 +153,6 @@ CORE_BINDINGS = [
     "chartlinen",
     "sailcloth",
     "oilskin",
-    "oilcloth",
     "canvas",
     "kraft",
     "tartan",
@@ -371,7 +370,6 @@ def test_the_manifest_lists_core_s_bindings_in_the_shop_s_order() -> None:
         assert core[f"binding.{binding}.name"].value.strip()
         assert core[f"binding.{binding}.description"].value.strip()
     assert core["binding.field.name"].value == "Field Leather"
-    assert core["binding.oilcloth.name"].value == "Oilcloth"
 
 
 def _ledger_text(key: str) -> str:

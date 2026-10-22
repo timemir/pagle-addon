@@ -181,7 +181,7 @@ end
 ---@type table<string, PagleCorePreview>
 ns.CORE_PREVIEWS = {
 	-- A binding's closed book (ADR 0015), the kits' swatch of it, Core's art for a Module's earned one too (SHOP-R25);
-	-- for the three no kit drew closed (Oilcloth, Tooled Leather, Verdigris), a live one the renderer draws.
+	-- for the two no kit drew closed (Tooled Leather, Verdigris), a live one the renderer draws.
 	[ns.BINDING_SLOT] = function(stage, good)
 		local panel = ns.CorePreviewPanel(stage, ns.BINDING_SLOT, buildBinding) --[[@as PagleBindingPanel]]
 		local look = ns.BindingLook(good.id)

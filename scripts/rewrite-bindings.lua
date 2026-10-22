@@ -6,7 +6,8 @@
 --   - renames the purchase entries (U1) in PagleLog by the ID map below, read with Core's own codec
 --     (addons/Pagle/logic/CatchLog.lua) and each renamed entry read back with it. Only the good field changes: the
 --     header and price stay byte for byte, and so does every other entry and line. A purchase of
---     `hunts.notebookcover.leather`, the old free default, is removed. Two purchases renamed to the same good are both
+--     `hunts.notebookcover.leather`, the old free default, or of `hunts.notebookcover.oilcloth`, a binding no longer
+--     sold (#354), is removed. Two purchases renamed to the same good are both
 --     kept: only the first counts (SHOP-R11);
 --   - folds each profile's `ledger.binding` and `hunts.notebookcover` picks (PagleDB.profiles.*.appearance) into one
 --     `core.binding` pick, the Journal's winning (a `core.binding` pick already there wins over both), and removes the
@@ -19,8 +20,9 @@
 --     goods meanwhile (SHOP-R34). Clearing `purchased` alone wouldn't rebuild it: Core rebuilds a projection only when
 --     its stored projection, logId, lastSeq, fingerprint or rulesVersion says so, else it catches up from lastSeq;
 --   - drops PagleDB.global.catchCounts when the log changed (a cache, LOG-R100);
---   - when it removed an entry, every later seq moves down by one, so every projection that had read past it (Core's
---     in PagleDB, and each Module's in its Pagle_*.lua) loses its rulesVersion too and rebuilds from seq 0.
+--   - when it removed entries, every later seq moves down by one for each, so every projection that had read past
+--     one (Core's in PagleDB, and each Module's in its Pagle_*.lua) loses its rulesVersion too and rebuilds from
+--     seq 0.
 --
 -- It never changes a logId, so nothing counts as a first build and no Write-up comes of it.
 --
@@ -49,11 +51,20 @@ local BINDING_SLOT = "core.binding"
 local OLD_SLOTS = { "ledger.binding", "hunts.notebookcover" }
 --- The old free default cover: its purchases are removed, and a pick of it becomes the new default.
 local DEFAULT_COVER = "hunts.notebookcover.leather"
+--- A cover whose binding is no longer sold (#354): dropped as the old default is.
+local OILCLOTH = "hunts.notebookcover.oilcloth"
+
+--- DROPPED[old good ID] = why: the goods whose purchases are removed and whose picks become the new default.
+local DROPPED = {
+	[DEFAULT_COVER] = "the old default",
+	[OILCLOTH] = "no longer sold",
+}
 
 --- RENAMED[old good ID] = its new ID, for every good of the old slots; a good whose ID stays maps to itself.
 local RENAMED = {
 	["ledger.binding.field"] = BINDING_SLOT .. ".field",
 	[DEFAULT_COVER] = BINDING_SLOT .. ".field",
+	[OILCLOTH] = BINDING_SLOT .. ".field",
 }
 for _, key in ipairs({
 	"birch",
@@ -93,7 +104,6 @@ for _, key in ipairs({
 	RENAMED["ledger.binding." .. key] = "ledger.binding." .. key
 end
 for _, key in ipairs({
-	"oilcloth",
 	"tooled",
 	"verdigris",
 	"canvas",
@@ -261,7 +271,7 @@ local function planLog(core, log, problems, notes)
 					record.seq,
 					record.good
 				)
-			elseif record.good == DEFAULT_COVER then
+			elseif DROPPED[record.good] then
 				changes[#changes + 1] =
 					{ seq = record.seq, id = record.id, old = record.good, price = record.price, entry = entry }
 			elseif new ~= record.good then
@@ -469,7 +479,7 @@ local function renamePurchased(wallet, problems, notes)
 			local new = RENAMED[id]
 			if new == nil then
 				problems[#problems + 1] = ("the wallet projection owns %s, which the ID map doesn't name"):format(id)
-			elseif id == DEFAULT_COVER then
+			elseif DROPPED[id] then
 				purchased[id] = nil
 				renamed[#renamed + 1] = id .. " removed"
 			elseif new ~= id then
@@ -557,15 +567,18 @@ local function planAccount(core, account)
 			)
 		else
 			firstRemoved = firstRemoved or change.seq
-			notes[#notes + 1] = ("PagleLog seq %d: %s removed (price %d), the old default"):format(
+			notes[#notes + 1] = ("PagleLog seq %d: %s removed (price %d), %s"):format(
 				change.seq,
 				change.old,
-				change.price
+				change.price,
+				DROPPED[change.old]
 			)
 		end
 	end
 	if firstRemoved then
-		notes[#notes + 1] = ("PagleLog: every entry after seq %d moves down by one"):format(firstRemoved)
+		notes[#notes + 1] = ("PagleLog: every entry after seq %d moves down by one per entry removed before it"):format(
+			firstRemoved
+		)
 	end
 
 	local dbChanged = false

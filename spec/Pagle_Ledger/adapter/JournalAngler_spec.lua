@@ -570,7 +570,6 @@ describe("the Angler page's Bindings", function()
 				{ "Tide-Chart Linen", "In the Curio Shop" },
 				{ "Tarred Sailcloth", "In the Curio Shop" },
 				{ "Oilskin Yellow", "In the Curio Shop" },
-				{ "Oilcloth", "In the Curio Shop" },
 				{ "Canvas Field Pad", "In the Curio Shop" },
 				{ "Waxed Kraft", "In the Curio Shop" },
 				{ "Tartan Wool", "In the Curio Shop" },
@@ -627,7 +626,7 @@ describe("the Angler page's Bindings", function()
 			end
 
 			local field, coral = books["Field Leather"], books["Coral Inlay"]
-			assert.is_nil(books["Oilcloth"])
+			assert.is_nil(books["Verdigris"])
 			assert.is_nil(books["Lacquered Red"])
 			assert.is_truthy(books["Monster Hide"])
 			assert.are.equal(ns.JOURNAL_ATLASES.Bindings.file, field.texture)
@@ -654,9 +653,9 @@ describe("the Angler page's Bindings", function()
 			})
 
 			local list = lines(loaded)
-			assert.are.same({ "Monster Hide", "Use" }, list[42])
-			assert.are.same({ "Abyssal Black", "Use" }, list[43])
-			assert.are.same({ "Keeper's Gold", "Complete the Ledger" }, list[44])
+			assert.are.same({ "Monster Hide", "Use" }, list[41])
+			assert.are.same({ "Abyssal Black", "Use" }, list[42])
+			assert.are.same({ "Keeper's Gold", "Complete the Ledger" }, list[43])
 		end
 	)
 
@@ -666,22 +665,22 @@ describe("the Angler page's Bindings", function()
 		loaded.ns.journal:Draw()
 
 		local list = lines(loaded)
-		assert.are.same({ "Tanned Hide", "Use" }, list[35])
-		assert.are.same({ "Tidewater Blue", "Angler Level 20" }, list[36])
+		assert.are.same({ "Tanned Hide", "Use" }, list[34])
+		assert.are.same({ "Tidewater Blue", "Angler Level 20" }, list[35])
 		assert.are.same({ "Birch Bark", "Use" }, list[2])
 	end)
 
 	it("opens the Curio Shop at a binding for sale (LED-R146, SHOP-R40)", function()
 		local fake, loaded = anglerPage()
 
-		-- The tenth of the lines reading so: Sea-Green Buckram's.
+		-- The eighth of the lines reading so: Sea-Green Buckram's.
 		local widgets = {}
 		for _, widget in ipairs(loaded.ns.journal.frame.right.drawn.leader) do
 			if widget.value.text == "In the Curio Shop" then
 				widgets[#widgets + 1] = widget
 			end
 		end
-		widgets[9].scripts.OnClick(widgets[9])
+		widgets[8].scripts.OnClick(widgets[8])
 
 		assert.are.equal("core.binding.buckram", fake.shopsOpened[#fake.shopsOpened].goodID)
 	end)
@@ -696,7 +695,7 @@ describe("the Angler page's Bindings", function()
 			assert.are.equal("ledger.binding.level10", fake.Pagle.GetEquipped("core.binding"))
 			assert.are.same(fake.ns.BindingLook("ledger.binding.level10"), loaded.ns.journal.frame.binding:Look())
 			local list = lines(loaded)
-			assert.are.same({ { "Field Leather", "Use" }, { "Tanned Hide", "In use" } }, { list[1], list[35] })
+			assert.are.same({ { "Field Leather", "Use" }, { "Tanned Hide", "In use" } }, { list[1], list[34] })
 		end
 	)
 
@@ -705,7 +704,7 @@ describe("the Angler page's Bindings", function()
 
 		assert.is_true(fake.Pagle.SetEquipped("core.binding", "ledger.binding.level10"))
 
-		assert.are.same({ "Tanned Hide", "In use" }, lines(loaded)[35])
+		assert.are.same({ "Tanned Hide", "In use" }, lines(loaded)[34])
 	end)
 end)
 
