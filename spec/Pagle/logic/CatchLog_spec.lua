@@ -206,15 +206,49 @@ describe("the Catch log codec", function()
 		}, records(catchLog, 0))
 	end)
 
-	it("round-trips a Prestige (LOG-R11, LOG-R16, LOG-R38, Entry formats)", function()
+	it("round-trips a Prestige with its Activity XP (LOG-R11, LOG-R16, LOG-R38, AXP-R5, Entry formats)", function()
 		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
 
-		catchLog:Append({ kind = "prestige", char = 1, time = 1791731682, rank = 2 })
+		catchLog:Append({ kind = "prestige", char = 1, time = 1791731682, rank = 2, activityXP = 1850 })
 
-		assert.are.same({ "P1|1|1791731682|0|2" }, catchLog.data.entries)
+		assert.are.same({ "P1|1|1791731682|0|2|1850" }, catchLog.data.entries)
 		assert.are.same({
-			{ seq = 1, id = ADA .. "-1791731682-0", kind = "prestige", char = 1, time = 1791731682, rank = 2 },
+			{
+				seq = 1,
+				id = ADA .. "-1791731682-0",
+				kind = "prestige",
+				char = 1,
+				time = 1791731682,
+				rank = 2,
+				activityXP = 1850,
+			},
 		}, records(catchLog, 0))
+	end)
+
+	it("writes a Prestige appended without Activity XP with 0 (LOG-R38, AXP-R5, Entry formats)", function()
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
+
+		local appended = catchLog:Append({ kind = "prestige", char = 1, time = 1791731682, rank = 1 })
+
+		assert.are.same({ "P1|1|1791731682|0|1|0" }, catchLog.data.entries)
+		assert.are.equal(0, appended.activityXP)
+	end)
+
+	it("reads a pre-1.0 Prestige without the activityXP field as 0 (LOG-R38, AXP-R5, Entry formats)", function()
+		local catchLog = ns.OpenCatchLog(adaAndBramLog({ "P1|1|1791731682|0|2" }), {})
+
+		assert.are.same({
+			{
+				seq = 1,
+				id = ADA .. "-1791731682-0",
+				kind = "prestige",
+				char = 1,
+				time = 1791731682,
+				rank = 2,
+				activityXP = 0,
+			},
+		}, records(catchLog, 0))
+		assert.are.equal(1, catchLog:Prestiges())
 	end)
 
 	it("round-trips a purchase (LOG-R11, LOG-R16, LOG-R39, SHOP-R10, Entry formats)", function()
@@ -314,6 +348,7 @@ describe("the Catch log codec", function()
 			moduleRecord(nil, "day", "x"),
 			{ kind = "prestige", char = 1, time = 1791731680, rank = 0 }, -- ranks start at 1
 			{ kind = "prestige", char = 1, time = 1791731680, rank = 1.5 },
+			{ kind = "prestige", char = 1, time = 1791731680, rank = 1, activityXP = 12.5 }, -- AXP-R5
 			{ kind = "purchase", char = 1, time = 1791731680, good = "core.toast style", price = 150 },
 			{ kind = "purchase", char = 1, time = 1791731680, good = "core.crest|x", price = 150 },
 			{ kind = "purchase", char = 1, time = 1791731680, good = "", price = 150 },
@@ -353,7 +388,10 @@ describe("an entry the codec can't decode", function()
 		"P1|1|1791731700|0|", -- no rank
 		"P1|1|1791731700|0|0", -- ranks start at 1
 		"P1|1|1791731700|0|one",
-		"P1|1|1791731700|0|1|2",
+		"P1|1|1791731700|0|1|", -- an empty activityXP: absent is 0, empty is no number (AXP-R5)
+		"P1|1|1791731700|0|1|lots",
+		"P1|1|1791731700|0|1|-5",
+		"P1|1|1791731700|0|1|2|3", -- one field too many
 		"U1|1|1791731700|0|core.toast style|150", -- a good ID outside [%w_.]+
 		"U1|1|1791731700|0||150",
 		"U1|1|1791731700|0|core.crest.otter|lots", -- a price that isn't a number

@@ -1,8 +1,8 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards, wallet,
--- Prestige and purchase entries, goods, Field report and wallet projection are built and connected to each other, to
+-- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards, wallet, Activity
+-- XP, Prestige and purchase entries, goods, Field report and wallet projection are built and connected to each other, to
 -- PagleDB and to the Module handle. Pure logic over a host (CORE-R7): Core's adapter builds its host over the WoW
 -- client (adapter/Host.lua), and FakePagle builds one over its fakes, so both run this one wiring and the double can't
 -- drift from Core. What differs between them is only the host and the display each factory is handed.
@@ -36,6 +36,7 @@ local ns = select(2, ...)
 ---@field summary PagleSummary Core's one Session summary (ns.WireSummary).
 ---@field cards PagleCards Core's cards (ns.WireCards).
 ---@field wallet PagleWallet Core's one wallet (ns.WireWallet).
+---@field activityXP PagleActivityXP Core's Activity XP totals (ns.WireActivityXP).
 ---@field goods PagleGoods Core's one goods registry (ns.WireGoods).
 ---@field shop PagleShop The Curio Shop's entry points (ns.WireShop).
 ---@field dock PagleDockWiring Core's tracker dock (ns.WireDock).
@@ -329,7 +330,8 @@ function ns.WireCards(host, view)
 end
 
 --- Core's wallet as ns.wallet (SHOP-R2–R4, SHOP-R12), firing BalanceChanged on the bus, and `M:ReportCoinsEarned` on
---- every Module handle. It is empty until login step 1 opens the stored totals (ns.OpenWallet).
+--- every Module handle. It is empty until login step 1 opens the stored totals (ns.OpenWallet). The totals belong to
+--- the log's logId (PagleDB.global.coins.logId), which each report takes (SHOP-R3).
 ---@param host PagleHost
 function ns.WireWallet(host)
 	ns.wallet = ns.NewWallet(host.fire)
@@ -337,10 +339,42 @@ function ns.WireWallet(host)
 	local ModuleHandle = ns.ModuleHandle
 	--- Reports the Module's lifetime Coins earned (SHOP-R2): see ns.ReportCoinsEarnedMethod. Raises an error for
 	--- anything but a whole number, 0 or more.
-	ModuleHandle.ReportCoinsEarned = ns.ReportCoinsEarnedMethod(host.registry, ns.wallet)
-	--- Login step 1, once PagleDB is open: the wallet reads and writes the stored totals from now on (SHOP-R3).
+	ModuleHandle.ReportCoinsEarned = ns.ReportCoinsEarnedMethod(host.registry, ns.wallet, function()
+		-- A fresh log gets its logId at PLAYER_LOGIN (LOG-R15), after ADDON_LOADED tied the totals: they are its.
+		host.db().global.coins.logId = host.catchLog().data.logId
+	end)
+	--- Login step 1, once PagleDB is open: empties the stored totals if they belong to another log (SHOP-R3,
+	--- ns.TieTotalsToLog), then the wallet reads and writes them from now on.
 	function ns.OpenWallet()
-		ns.wallet:Open(host.db().global.coins.earned)
+		local coins = host.db().global.coins
+		ns.TieTotalsToLog(coins, host.catchLog().data.logId)
+		ns.wallet:Open(coins.earned)
+	end
+end
+
+--- Core's Activity XP as ns.activityXP (AXP-R2–R7), firing ActivityXPChanged on the bus, and `M:ReportXPEarned` on
+--- every Module handle. It is empty until login step 1 opens the stored totals (ns.OpenActivityXP). Wire it after the
+--- projections (ns.WireProjections): a report reads the apply in progress.
+---@param host PagleHost
+function ns.WireActivityXP(host)
+	ns.activityXP = ns.NewActivityXP({
+		fire = host.fire,
+		modules = function()
+			return host.registry:Modules()
+		end,
+		logId = function()
+			return host.catchLog().data.logId
+		end,
+	})
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Reports the Module's lifetime Activity XP (AXP-R2): see ns.ReportXPEarnedMethod. Raises an error for anything
+	--- but a whole number, 0 or more, and from a replay or rebuild apply.
+	ModuleHandle.ReportXPEarned = ns.ReportXPEarnedMethod(host.registry, ns.activityXP, ns.projections)
+	--- Login step 1, once PagleDB is open: empties the stored totals if they belong to another log (AXP-R3), then
+	--- Activity XP reads and writes them from now on.
+	function ns.OpenActivityXP()
+		ns.activityXP:Open(host.db().global.activityXP)
 	end
 end
 
@@ -373,12 +407,14 @@ function ns.WireLogEntries(host)
 		return appended
 	end
 
-	--- Appends a Prestige (`P1`) with the new prestige rank, one more than the Prestiges already in the log, hands
-	--- it to the projections live, then fires `Prestige(record)` (LOG-R38). Returns the record.
+	--- Appends a Prestige (`P1`) with the new prestige rank, one more than the Prestiges already in the log, and
+	--- Core's Activity XP total now, the stored totals as they stand (AXP-R5, AXP-R92), hands it to the projections
+	--- live, then fires `Prestige(record)` (LOG-R38). Returns the record.
 	---@return PaglePrestige
 	function ns.RecordPrestige()
 		local rank = host.catchLog():Prestiges() + 1
-		local prestige = append({ kind = "prestige", rank = rank }, "M:RecordPrestige()")
+		local record = { kind = "prestige", rank = rank, activityXP = ns.activityXP:Total() }
+		local prestige = append(record, "M:RecordPrestige()")
 		---@cast prestige PaglePrestige
 		host.fire("Prestige", prestige)
 		return prestige

@@ -51,6 +51,7 @@ logic\Probe.lua
 logic\LoadTimings.lua
 logic\Tour.lua
 logic\Wallet.lua
+logic\ActivityXP.lua
 logic\Goods.lua
 logic\Shop.lua
 logic\LookAndFeel.lua
@@ -105,6 +106,7 @@ adapter\LookAndFeel.lua
 adapter\DevGlyphs.lua
 adapter\Slash.lua
 adapter\Wallet.lua
+adapter\ActivityXP.lua
 adapter\Goods.lua
 adapter\WalletProjection.lua
 adapter\Moments.lua

@@ -35,9 +35,11 @@ ns.GOOD_ID_PATTERN = "^[%w_.]+$"
 ---@field build integer          -- the GetBuildInfo() build number
 ---@field version string         -- e.g. "1.60.1"
 
---- A Prestige (`P1`, LOG-R38): the Angler's new prestige rank, one more than the Prestiges before it.
+--- A Prestige (`P1`, LOG-R38): the Angler's new prestige rank, one more than the Prestiges before it, and Core's
+--- Activity XP total when it was recorded (AXP-R5), 0 for a pre-1.0 dev log's P1, which has none.
 ---@class PaglePrestige : PagleRecord
 ---@field rank integer
+---@field activityXP integer
 
 --- A purchase in the Curio Shop (`U1`, LOG-R39, SHOP-R10): the good bought and the price paid, in Coins.
 ---@class PaglePurchase : PagleRecord
@@ -186,6 +188,7 @@ local OUTCOME_FIELDS = { caught = "c", gotAway = "g" }
 ---@field kind string
 ---@field count integer
 ---@field rest? boolean
+---@field optional? integer how many of the last fields an older entry may leave out; decode gets them as nil
 ---@field encode fun(record: table): string[]
 ---@field decode fun(record: table, f: string[]): boolean
 
@@ -289,13 +292,15 @@ local kinds = {
 
 	P1 = {
 		kind = "prestige",
-		count = 1,
+		count = 2,
+		optional = 1, -- a pre-1.0 dev log's P1 has no activityXP, read as 0 (AXP-R5)
 		encode = function(record)
-			return { integerField(record.rank) }
+			return { integerField(record.rank), integerField(record.activityXP or 0) }
 		end,
 		decode = function(record, f)
 			record.rank = wholeNumber(f[1])
-			return record.rank ~= nil and record.rank >= 1
+			record.activityXP = f[2] == nil and 0 or wholeNumber(f[2])
+			return record.rank ~= nil and record.rank >= 1 and record.activityXP ~= nil
 		end,
 	},
 
@@ -364,7 +369,7 @@ local function decode(entry, seq, characters, getItem)
 			f[i] = nil
 		end
 	end
-	if #f ~= last then
+	if #f ~= last and not (codec.optional and #f < last and #f >= last - codec.optional) then
 		return nil
 	end
 	local character = characters[char]
@@ -555,7 +560,8 @@ end
 
 --- Appends an entry for `record`, a typed record without `seq` and `id` (`{ kind = "cast", char, time, outcome,
 --- conditions, items = { { itemID, quantity } } }`, `{ kind = "skill", char, time, rank, max, mod }`,
---- `{ kind = "build", char, time, build, version }`, `{ kind = "prestige", char, time, rank }` or
+--- `{ kind = "build", char, time, build, version }`, `{ kind = "prestige", char, time, rank, activityXP }` (0 without
+--- activityXP) or
 --- `{ kind = "purchase", char, time, good, price }`), and returns the record as every reader will see it.
 --- A Cast or Skill Reading carries its Session's ID (LOG-R98). Raises an error in the caller, appending nothing, for a
 --- record the codec can't write and read back.

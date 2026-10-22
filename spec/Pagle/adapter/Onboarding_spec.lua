@@ -48,7 +48,7 @@ describe("Core's onboarding state at login", function()
 	it("is added by PagleDB's migration at ADDON_LOADED, waiting for a new Angler (ONB-R1, ONB-R2)", function()
 		local loaded = loadCore({ BUILD_ENTRY })
 
-		assert.are.equal(2, loaded.env.PagleDB.global.schemaVersion)
+		assert.are.equal(#loaded.ns.PAGLEDB_MIGRATIONS, loaded.env.PagleDB.global.schemaVersion)
 		assert.are.same(stateWith(loaded.ns), state(loaded))
 	end)
 
@@ -79,7 +79,7 @@ describe("Core's onboarding state at login", function()
 
 		local loaded = enterWorld(loadCore({ BUILD_ENTRY }, db))
 
-		assert.are.equal(2, loaded.env.PagleDB.global.schemaVersion)
+		assert.are.equal(#loaded.ns.PAGLEDB_MIGRATIONS, loaded.env.PagleDB.global.schemaVersion)
 		assert.are.equal("opened", state(loaded).letter)
 		assert.is_true(state(loaded).notesSeen["core.nod"])
 	end)

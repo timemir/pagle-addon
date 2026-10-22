@@ -645,6 +645,33 @@ describe("the machinery's seams", function()
 		assert.is_nil(world.projections:Mode())
 	end)
 
+	it(
+		"tells the live entry being applied, and none in a replay, rebuild or done or outside an apply (AXP-R7)",
+		function()
+			local world = machinery(casts(2))
+			local entries = {}
+			local def = recorder(builtDb(1))
+			def.apply = function(_, record)
+				local entry = world.projections:LiveEntry()
+				entries[#entries + 1] = record.seq .. " " .. tostring(entry and entry.seq)
+			end
+			def.done = function()
+				entries[#entries + 1] = "done " .. tostring(world.projections:LiveEntry())
+			end
+			bind(world, def)
+			local rebuilt = recorder({})
+			rebuilt.apply = def.apply
+			bind(world, rebuilt)
+
+			world.projections:Start(2)
+			local live = world.append(1)
+
+			assert.are.same({ "2 nil", "done nil", "1 nil", "2 nil", "3 3", "3 3" }, entries)
+			assert.are.equal(3, live.seq)
+			assert.is_nil(world.projections:LiveEntry())
+		end
+	)
+
 	it("counts as updating before Start and while any projection updates (LOG-R74)", function()
 		local world = machinery(casts(600))
 		bind(world, (recorder(builtDb(600))))

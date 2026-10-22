@@ -6,8 +6,8 @@ local DIR = "addons/Pagle_QoL/"
 
 -- Each forbidden thing: a Lua pattern over code with comments removed, and the rule it breaks.
 local FORBIDDEN = {
-	-- QOL-R3, QOL-R91, QOL-R92: no projection, Module records, moments, summary line, Write-up, Coins, goods,
-	-- slots or tracker (the Module handle calls for them, core/README.md › Contracts).
+	-- QOL-R3, QOL-R91, QOL-R92: no projection, Module records, moments, summary line, Write-up, Coins, Activity XP
+	-- (AXP-R1), goods, slots or tracker (the Module handle calls for them, core/README.md › Contracts).
 	{ "%f[%w_]NewProjection%f[^%w_]", "QOL-R3, QOL-R91: QoL keeps no projection" },
 	{ "%f[%w_]AppendRecord%f[^%w_]", "QOL-R3: QoL appends no Module records" },
 	{ "%f[%w_]RecordPrestige%f[^%w_]", "QOL-R3: QoL appends no Module records" },
@@ -15,6 +15,7 @@ local FORBIDDEN = {
 	{ "%f[%w_]SetSummaryLine%f[^%w_]", "QOL-R3: QoL sets no summary line" },
 	{ "%f[%w_]RaiseWriteUp%f[^%w_]", "QOL-R92: QoL has no Write-up" },
 	{ "%f[%w_]ReportCoinsEarned%f[^%w_]", "QOL-R3: QoL pays no Coins" },
+	{ "%f[%w_]ReportXPEarned%f[^%w_]", "AXP-R1: QoL pays no Activity XP" },
 	{ "%f[%w_]RegisterGood%f[^%w_]", "QOL-R3: QoL registers no goods" },
 	{ "%f[%w_]RefreshGoods%f[^%w_]", "QOL-R3: QoL registers no goods" },
 	{ "%f[%w_]RegisterSlot%f[^%w_]", "QOL-R3: QoL registers no slots" },
@@ -121,6 +122,7 @@ describe("QoL's boundary", function()
 			{ "M:RaiseMoment(moment)", "QOL-R3: QoL raises no moments" },
 			{ "M:RaiseWriteUp(section)", "QOL-R92: QoL has no Write-up" },
 			{ "M:ReportCoinsEarned(1)", "QOL-R3: QoL pays no Coins" },
+			{ "M:ReportXPEarned(1)", "AXP-R1: QoL pays no Activity XP" },
 			{ "M:RegisterGood(good)", "QOL-R3: QoL registers no goods" },
 			{ "M:RegisterSlot(slot)", "QOL-R3: QoL registers no slots" },
 			{ "M:RegisterTracker({})", "QOL-R3: QoL docks no tracker" },

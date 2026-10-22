@@ -662,6 +662,182 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("Activity XP", function()
+		-- A Module's handle on `fake`, with the order the roster gives it.
+		local function register(fake, name)
+			local order = { Ledger = 10, Hunts = 20, TackleBoard = 40 }
+			return fake.Pagle.RegisterModule({ name = name, title = name, order = order[name] })
+		end
+
+		-- Each ActivityXPChanged from now on, as the entry it carried ("none" for nil) and the total then.
+		local function listen(fake)
+			local fired = {}
+			fake.Pagle.RegisterCallback("spec", "ActivityXPChanged", function(_, entry)
+				fired[#fired + 1] = { entry = entry or "none", total = fake.Pagle.GetActivityXP().total }
+			end)
+			return fired
+		end
+
+		it(
+			"stores 150 under def.name in fake.global.activityXP, fires once, nothing for 150 again, and takes a lower"
+				.. " 100 (AXP-R3, AXP-R4, AXP-R7)",
+			function()
+				local fake = newFakePagle()
+				local hunts = register(fake, "Hunts")
+				fake.login()
+				local fired = listen(fake)
+
+				hunts:ReportXPEarned(150)
+				hunts:ReportXPEarned(150)
+				hunts:ReportXPEarned(100)
+
+				assert.are.same({ { entry = "none", total = 150 }, { entry = "none", total = 100 } }, fired)
+				assert.are.same({ Hunts = 100 }, fake.global.activityXP.earned)
+				assert.are.equal(fake.catchLog.data.logId, fake.global.activityXP.logId)
+				assert.are.same({
+					{ module = "Hunts", total = 150 },
+					{ module = "Hunts", total = 150 },
+					{ module = "Hunts", total = 100 },
+				}, fake.xpReports)
+			end
+		)
+
+		it('raises an error at the Module\'s call for -1, 1.5 or "10", recording nothing (AXP-R2)', function()
+			local fake = newFakePagle()
+			local hunts = register(fake, "Hunts")
+			local fired = listen(fake)
+
+			for _, total in ipairs({ -1, 1.5, "10" }) do
+				local ok, err = pcall(function()
+					hunts:ReportXPEarned(total)
+				end)
+				assert.is_false(ok)
+				assert.matches("fake_pagle_spec.lua:%d+: M:ReportXPEarned takes a whole number", tostring(err))
+			end
+
+			assert.are.same({}, fake.xpReports)
+			assert.are.same({}, fake.global.activityXP.earned)
+			assert.are.same({}, fired)
+		end)
+
+		it("passes ActivityXPChanged the live entry from a live apply, and none from done (AXP-R7, LOG-R73)", function()
+			local fake = newFakePagle()
+			local board = register(fake, "TackleBoard")
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			fake.catchLog:Append({
+				kind = "module",
+				char = 1,
+				time = SERVER_TIME - 600,
+				module = "TackleBoard",
+				recordKind = "notice",
+				payload = "a",
+			})
+			board:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return { xp = 0 }
+				end,
+				apply = function(state, record, mode)
+					if record.kind == "module" then
+						state.xp = state.xp + 100
+						if mode == "live" then
+							board:ReportXPEarned(state.xp)
+						end
+					end
+				end,
+				done = function(state)
+					board:ReportXPEarned(state.xp)
+				end,
+			})
+			local fired = listen(fake)
+			fake.login()
+			fake.enterWorld()
+
+			local record = board:AppendRecord("notice", "b")
+
+			assert.are.same({ "none", record.id }, { fired[1].entry, fired[2].entry.id })
+			assert.are.same({ 100, 200 }, { fired[1].total, fired[2].total })
+			assert.are.equal(fake.xpReports[2].entry.seq, record.seq)
+		end)
+
+		it("raises an error from a rebuild apply, storing nothing (AXP-R2)", function()
+			local fake = newFakePagle()
+			local board = register(fake, "TackleBoard")
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			fake.catchLog:Append({ kind = "skill", char = 1, time = SERVER_TIME - 600, rank = 80, max = 150, mod = 0 })
+			local raised = {}
+			board:NewProjection({
+				db = {},
+				rulesVersion = 1,
+				reset = function()
+					return {}
+				end,
+				apply = function(_, _, mode)
+					raised[#raised + 1] = { mode, (pcall(board.ReportXPEarned, board, 50)) }
+				end,
+			})
+			fake.login()
+
+			fake.enterWorld()
+
+			assert.are.same({ { "rebuild", false } }, raised)
+			assert.are.same({}, fake.xpReports)
+		end)
+
+		it(
+			"lists a disabled Module's stored total, from fake.setActivityXP, with enabled false (AXP-R6, AXP-R90)",
+			function()
+				local fake = newFakePagle()
+				fake.addons.Pagle_Hunts.enabled = false
+				fake.setActivityXP("Hunts", 600)
+				local board = register(fake, "TackleBoard")
+				fake.login()
+
+				board:ReportXPEarned(250)
+
+				local xp = fake.Pagle.GetActivityXP()
+				assert.are.same({ 850, 600, false, 250, true }, {
+					xp.total,
+					xp.bySource.Hunts.total,
+					xp.bySource.Hunts.enabled,
+					xp.bySource.TackleBoard.total,
+					xp.bySource.TackleBoard.enabled,
+				})
+				assert.is_nil(xp.bySource.Ledger)
+				assert.has_error(function()
+					fake.setActivityXP("Hunts", -5)
+				end)
+			end
+		)
+
+		it("hands out a read-only ActivityXP (CORE-R18)", function()
+			local fake = newFakePagle()
+
+			assert.has_error(function()
+				fake.Pagle.GetActivityXP().total = 5
+			end)
+		end)
+
+		it("snapshots the sum into the P1 that M:RecordPrestige or fake.prestige appends (AXP-R5, LOG-R38)", function()
+			local fake = newFakePagle()
+			fake.setActivityXP("Hunts", 600)
+			local ledger, board = register(fake, "Ledger"), register(fake, "TackleBoard")
+			fake.login()
+			board:ReportXPEarned(250)
+
+			local first = ledger:RecordPrestige()
+			board:ReportXPEarned(400)
+			local second = fake.prestige()
+
+			assert.are.same({ 850, 1000 }, { first.activityXP, second.activityXP })
+			assert.are.same(
+				{ prestigeEntry(SERVER_TIME, 1, 0, 1, 850), prestigeEntry(SERVER_TIME, 2, 1, 1, 1000) },
+				fake.catchLog.data.entries
+			)
+		end)
+	end)
+
 	describe("goods", function()
 		-- Hunts registered on `fake`, with its notebook cover slot: a default, a tier-2 good and an earned good whose
 		-- isEarned() returns `earned.value`.

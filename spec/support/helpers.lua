@@ -136,14 +136,16 @@ function castEntry(time, itemID, subzone, char)
 end
 
 --- Ada's Prestige to `rank` at server time `time`, as a PagleLog entry (LOG-R38): tie `tie` (0) within its second
---- (LOG-R12), and `char` another index into the log's characters.
+--- (LOG-R12), `char` another index into the log's characters, and `activityXP` Core's Activity XP total then (AXP-R5),
+--- 0 by default, as M:RecordPrestige writes it with nothing reported.
 ---@param time integer
 ---@param rank integer
 ---@param tie integer?
 ---@param char integer?
+---@param activityXP integer?
 ---@return string
-function prestigeEntry(time, rank, tie, char)
-	return ("P1|%d|%d|%d|%d"):format(char or 1, time, tie or 0, rank)
+function prestigeEntry(time, rank, tie, char, activityXP)
+	return ("P1|%d|%d|%d|%d|%d"):format(char or 1, time, tie or 0, rank, activityXP or 0)
 end
 
 --- Ada's purchase of `good` for `price` Coins at server time `time`, as a PagleLog entry (LOG-R39): tie `tie` (0)
