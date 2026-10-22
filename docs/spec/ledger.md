@@ -321,7 +321,7 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 #### Home
 
 - **LED-R130** **Left page:** kicker "The Waters", title "Where I've Fished", then up to three **continent tabs**, in this order: Eastern Kingdoms (`GetArea(zone).continent` 0), Kalimdor (1), and "Other waters" (every tile on any other ContinentID, or whose zone `GetArea` doesn't know). A tab with no tile isn't shown. Below them, the chosen tab's tiles in a grid, scrolling when they overflow. The first tab shown is chosen at first opening. Forever's new zones are tiles like any other, under the tab their `continent` gives; there is no separate group for them.
-- **LED-R131** A **tile** stands for each charted zone and each zone the Angler has fished that isn't charted, sorted by `skillBase` (zones without one last), then by areaID. A tile shows the zone's name, then:
+- **LED-R131** A **tile** stands for each charted zone and each zone the Angler has fished that isn't charted, sorted by `skillBase` (zones without one last), then by areaID. Every tile is the kit's one size, so the grid's rows stay even. A tile shows the zone's name, in at most two lines (a size smaller where a word is wider than its room, as beside the seal, or the name runs past two lines; cut even so, it ends in an ellipsis), then, always under the name's last line:
   - fished and charted: its shown rank and completion ("Local · 63%"), a thin ink bar of the completion, a wax seal at Master, and a red "{N} new!" note when it has new to find (LED-R52)
   - charted, never fished: faded, "unfished · skill ~{skillBase}" ("unfished · any skill" when the skill base is 0 or below, DATA-R30; just "unfished" without a skill base)
   - not charted: "uncharted waters"

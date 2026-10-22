@@ -907,7 +907,14 @@ end
 ---@field tileW number
 ---@field dashed boolean?
 
+-- The tile is the kit's fixed 76 (its paper is a sprite of that height), so the grid's rows stay even. Its name starts
+-- at NAME_Y; the rank line sits at the kit's LINE_Y (LINE_Y_DASHED on a dashed tile, which has no bar), or lower by up
+-- to LINE_DROP when the name's two lines stand taller than the kit's; "caught ✓" sits 5 above the line (its hand is
+-- the larger face), the bar 20 under it.
 local TILE_H, TILE_GAP, TILE_ROW = 76, 8, 84
+local NAME_Y, LINE_Y, LINE_Y_DASHED, LINE_DROP = 8, 42, 49, 7
+-- The name's print, and the size it steps down to when it doesn't fit its room at the kit's (LED-R131).
+local NAME_SIZE, NAME_SIZE_SMALL = 15.5, 13.5
 
 ---@param parent Frame
 ---@param width number
@@ -922,17 +929,18 @@ local function newTile(parent, width)
 	tile.hover = ns.JournalThreeSlice(tile, "Parts", "tile-hover", width, 6, "BACKGROUND")
 	tile.hover:SetPoint("TOPLEFT")
 	tile.hover:Hide()
-	tile.name = ns.JournalLabel(tile, "print", 15.5, INK.title, "", { wrap = true, spacing = 0.8 })
-	tile.name:SetPoint("TOPLEFT", 10, -8)
+	tile.name = ns.JournalLabel(tile, "print", NAME_SIZE, INK.title, "", { wrap = true, spacing = 0.8 })
+	tile.name:SetPoint("TOPLEFT", 10, -NAME_Y)
+	-- two lines at most, written from the top: centred (the client's default) down the height the client gives a name
+	-- it has cut, "Redridge / Mountai…" was drawn half a line low, over the rank line
+	tile.name:SetJustifyV("TOP")
+	tile.name:SetMaxLines(2)
 	tile.line = ns.JournalLabel(tile, "italic", 13, INK.tileInk)
 	-- "caught ✓" sits at the right of the line's row, over the bar, so a long zone name never runs under it
 	tile.line2 = ns.JournalLabel(tile, "hand", 17, INK.green, "", { justify = "RIGHT" })
-	tile.line2:SetPoint("TOPRIGHT", -8, -37)
 	tile.barCase = ns.JournalThreeSlice(tile, "Parts", "tbar", width - 20, 3, "ARTWORK")
-	ns.JournalAt(tile.barCase, tile, 10, 62)
 	tile.barFill = ns.JournalTint(tile, "5a3a14", 1, "ARTWORK", 1)
 	tile.barFill:SetHeight(4)
-	ns.JournalAt(tile.barFill, tile, 11, 63)
 	tile.seal = ns.JournalPiece(tile, "Book", "seal", "ARTWORK", 2)
 	tile.seal:SetSize(32, 32)
 	tile.seal:SetPoint("CENTER", tile, "TOPLEFT", width - 20, -19)
@@ -971,14 +979,28 @@ local function fillTile(tile, data, open)
 	end
 	local mark = data.seal or data.note
 	local line2 = data.line2 ~= nil and mark == nil
-	ns.JournalRestyle(tile.name, "print", 15.5, dashed and INK.tileInk or INK.title)
+	-- the name in the kit's print, or a size smaller where it is cut there (a word wider than the room the seal leaves,
+	-- as "Mountains" beside it, or a name past two lines); cut even so, its second line ends in an ellipsis
+	local ink = dashed and INK.tileInk or INK.title
+	ns.JournalRestyle(tile.name, "print", NAME_SIZE, ink)
 	tile.name:SetWidth(w - 20 - (mark and 30 or 0))
 	tile.name:SetText(data.name)
+	if tile.name:IsTruncated() then
+		ns.JournalRestyle(tile.name, "print", NAME_SIZE_SMALL, ink)
+	end
+	-- the rank line under the name's real bottom (LED-R131): at the kit's place for any name of two lines in the kit's
+	-- measure, lower where the client stands them taller, so a name never runs into it
+	local base = dashed and LINE_Y_DASHED or LINE_Y
+	local lineY = math.min(base + LINE_DROP, math.max(base, math.ceil(NAME_Y + tile.name:GetStringHeight() + 2)))
 	ns.JournalRestyle(tile.line, "italic", 13, dashed and INK.noteLight or INK.tileInk)
 	tile.line:ClearAllPoints()
-	tile.line:SetPoint("TOPLEFT", 10, -(dashed and 49 or 42))
+	tile.line:SetPoint("TOPLEFT", 10, -lineY)
 	tile.line:SetText(data.line or "")
 	bound(tile.line, w - 20 - (line2 and 80 or 0))
+	tile.line2:ClearAllPoints()
+	tile.line2:SetPoint("TOPRIGHT", -8, -(lineY - 5))
+	ns.JournalAt(tile.barCase, tile, 10, lineY + 20)
+	ns.JournalAt(tile.barFill, tile, 11, lineY + 21)
 	tile.barCase:SetShown(not dashed)
 	tile.barFill:SetShown(not dashed and (data.bar or 0) > 0)
 	tile.barFill:SetWidth(math.max(0.01, (w - 22) * (data.bar or 0)))
