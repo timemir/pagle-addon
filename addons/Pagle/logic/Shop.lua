@@ -143,7 +143,8 @@ end
 ---@field module string             -- def.name, or "Core"
 ---@field preview? fun(stage: Frame) -- nil for a good put away: its Module isn't loaded
 ---@field earned boolean            -- an earned good (SHOP-R22), whether or not it is owned yet
----@field earnedText? string
+---@field earnedText? string        -- its row's tag: its earnedText, or a function's first text while not owned
+---@field earnedNote? string        -- its stage's note: its earnedText, or a function's second text while not owned
 ---@field default boolean           -- its slot's default (SHOP-R22, SHOP-R23)
 ---@field price? integer            -- a good for sale's price (SHOP-R22)
 ---@field state PagleShopState
@@ -170,8 +171,11 @@ local FILTERS = {
 --- The filters, in the order the list shows them.
 ns.SHOP_FILTERS = { "all", "owned", "notOwned", "canAfford" }
 
---- A good the shop can show, or nil: a good of a live slot (Core's or a Module On's), or an owned good of a Module
---- that isn't On, from the cache (SHOP-R35). A default of a Module that isn't On is neither (SHOP-R35).
+--- A good the shop can show, or nil: a good of a live slot (Core's or a Module On's) whose Module is On, or an owned
+--- good of a Module that isn't On, from the cache (SHOP-R35). A default of a Module that isn't On is neither
+--- (SHOP-R35). Its owner is the good's Module, which in a Core slot open to earned goods may be another's (SHOP-R23);
+--- an earnedText function is called here, for a good not owned (SHOP-R22). A good with no preview of its own takes
+--- its slot's, if Core gave the slot one (the crest's bookplate, SHOP-R25).
 ---@param goodID any
 ---@return PagleShopEntry?
 function Model:Entry(goodID)
@@ -180,7 +184,7 @@ function Model:Entry(goodID)
 	end
 	local goods = self.sources.goods
 	local good = goods:Good(goodID)
-	local slot = good and self.slots[good.slot]
+	local slot = good and self.on[good.module] and self.slots[good.slot]
 	if good and slot then
 		local price = good.tier and ns.TIER_PRICES[good.tier]
 		local state
@@ -191,6 +195,13 @@ function Model:Entry(goodID)
 		else
 			state = self.sources.balance.balance >= price and "forSale" or "short"
 		end
+		local preview, slotPreview = good.preview, slot.preview
+		if not preview and slotPreview then
+			preview = function(stage)
+				slotPreview(stage, good)
+			end
+		end
+		local earnedText, earnedNote = goods:EarnedTexts(goodID)
 		return {
 			id = goodID,
 			name = good.name,
@@ -199,10 +210,11 @@ function Model:Entry(goodID)
 			description = good.description,
 			slotLabel = slot.label,
 			category = slot.category,
-			module = slot.module,
-			preview = good.preview,
+			module = good.module,
+			preview = preview,
 			earned = good.isEarned ~= nil,
-			earnedText = good.earnedText,
+			earnedText = earnedText,
+			earnedNote = earnedNote,
 			default = goods:DefaultOf(slot.id) == goodID,
 			price = price,
 			state = state,
@@ -216,6 +228,7 @@ function Model:Entry(goodID)
 		id = goodID,
 		name = cached.name,
 		icon = cached.icon,
+		shield = cached.slot == ns.CREST_SLOT or nil,
 		description = cached.description,
 		slotLabel = cached.slotLabel,
 		category = cached.category,
@@ -235,7 +248,8 @@ end
 ---@field state PagleShopState
 ---@field price? string   -- a good for sale's price, written: the window draws the coin after it
 ---@field short? true     -- the balance doesn't cover the price: it shows in red
----@field tag? string     -- otherwise: "In use", "default", "Owned", its earnedText, or "Hunts is off"
+---@field tag? string     -- otherwise: "In use", "default", "Owned", its earnedText (a function's first text), or
+--- "Hunts is off"
 
 -- The row for `entry`.
 ---@private
@@ -376,7 +390,8 @@ end
 ---@field use? true                 -- Use shows: owned, not in use, its Module On
 ---@field greyed? true              -- put away
 ---@field tags string[]             -- "Owned", "In use", "default", "Hunts is off"
----@field notes string[]            -- an earned good's earnedText and "A Ledger reward, not for sale"; "Yours to keep"
+---@field notes string[]            -- an earned good's earnedText (a function's second text) and "A Ledger reward, not
+--- for sale"; "Yours to keep"
 
 --- The stage for `goodID`, or nil when the shop doesn't show that good (Select).
 ---@param goodID any
@@ -424,8 +439,8 @@ function Model:Stage(goodID)
 		stage.notes[1] = L.SHOP_KEEP
 	end
 	if entry.earned then
-		if entry.earnedText then
-			stage.notes[#stage.notes + 1] = entry.earnedText
+		if entry.earnedNote then
+			stage.notes[#stage.notes + 1] = entry.earnedNote
 		end
 		stage.notes[#stage.notes + 1] = L.SHOP_REWARD:format(owner)
 	end

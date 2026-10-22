@@ -10,6 +10,9 @@ local ns = select(2, ...)
 ---@field id string              -- "core.toaststyle", "hunts.notebookcover", "stats.trackerframe"
 ---@field label string           -- "Toast style"
 ---@field category "Announcements"|"Bookplate"|"Fish Journal"|"Hunts"|"Trackers" -- ns.SLOT_CATEGORY_ORDER
+---@field openToEarned? boolean  -- Core's slots only: any Module may add earned goods to it (SHOP-R23)
+---@field preview? fun(stage: Frame, good: PagleRegisteredGood) -- Core's slots only: draws a good of the slot that
+--- has no preview of its own on the shop's stage (an open slot's goods from other Modules, SHOP-R25)
 
 --- A good a Module or Core registers (wallet-and-shop.md › Contracts): exactly one of default, for sale (tier) or
 --- earned (isEarned).
@@ -22,13 +25,14 @@ local ns = select(2, ...)
 ---@field default? boolean        -- SHOP-R22
 ---@field tier? 1|2|3             -- for sale
 ---@field isEarned? fun(): boolean -- earned
----@field earnedText? string      -- earned: "Angler Level 30"
+---@field earnedText? string|fun(): string?, string? -- earned: "Angler Level 30", or the row's tag and the stage's
+--- note, worked out each time the shop draws the good while it isn't owned (SHOP-R22)
 ---@field preview? fun(stage: Frame)   -- draws the look on the shop's preview stage
 
---- A registered slot, with who registered it.
+--- A registered slot, with who registered it. `openToEarned` and `preview` are kept for Core's slots only.
 ---@class PagleRegisteredSlot: PagleSlot
 ---@field module string           -- def.name, or "Core"
----@field goods PagleRegisteredGood[] -- its goods, in registration order
+---@field goods PagleRegisteredGood[] -- its goods, in registration order, another Module's in an open slot included
 ---@field package seq integer       -- registration order among all slots
 
 --- A registered good: a copy of what was registered, with who registered it.
@@ -164,16 +168,32 @@ function Goods:RegisterSlot(module, slot)
 		return problem
 	end
 	self.registered = self.registered + 1
+	local core = module == ns.CORE_OWNER
 	self.slots[slot.id] = {
 		id = slot.id,
 		label = slot.label,
 		category = slot.category,
+		openToEarned = core and slot.openToEarned == true or nil,
+		preview = core and type(slot.preview) == "function" and slot.preview or nil,
 		module = module,
 		goods = {},
 		seq = self.registered,
 	}
 	self:Settle()
 	return nil
+end
+
+-- Whether `good`, of `module`, may go in `slot` (SHOP-R23): a slot of the same owner, or an earned good (isEarned
+-- set, neither a default nor a tier) of another Module in a Core slot open to earned goods.
+---@param slot PagleRegisteredSlot
+---@param module string
+---@param good table
+---@return boolean
+local function mayUse(slot, module, good)
+	if slot.module == module then
+		return true
+	end
+	return slot.openToEarned == true and good.isEarned ~= nil and not good.default and good.tier == nil
 end
 
 -- Why a good can't register for `module`, or nil if it can (SHOP-R22, SHOP-R23).
@@ -195,7 +215,7 @@ function Goods:GoodProblem(module, good)
 	local slot = self.slots[good.slot]
 	if not slot then
 		return ("M:RegisterGood: %s's slot %s isn't registered"):format(id, tostring(good.slot))
-	elseif slot.module ~= module then
+	elseif not mayUse(slot, module, good) then
 		return ("M:RegisterGood: %s's slot %s is %s's"):format(id, slot.id, slot.module)
 	elseif type(good.name) ~= "string" or good.name == "" then
 		return ("M:RegisterGood: %s has no name"):format(id)
@@ -217,12 +237,11 @@ function Goods:GoodProblem(module, good)
 			end
 		end
 	end
-	for _, field in ipairs({ "description", "earnedText" }) do
-		if good[field] ~= nil and type(good[field]) ~= "string" then
-			return ("M:RegisterGood: %s's %s must be a string"):format(id, field)
-		end
-	end
-	if good.icon ~= nil and type(good.icon) ~= "string" and type(good.icon) ~= "number" then
+	if good.description ~= nil and type(good.description) ~= "string" then
+		return ("M:RegisterGood: %s's description must be a string"):format(id)
+	elseif good.earnedText ~= nil and type(good.earnedText) ~= "string" and type(good.earnedText) ~= "function" then
+		return ("M:RegisterGood: %s's earnedText must be a string or a function"):format(id)
+	elseif good.icon ~= nil and type(good.icon) ~= "string" and type(good.icon) ~= "number" then
 		return ("M:RegisterGood: %s's icon must be a texture path or file ID"):format(id)
 	elseif good.preview ~= nil and type(good.preview) ~= "function" then
 		return ("M:RegisterGood: %s's preview must be a function"):format(id)
@@ -284,6 +303,36 @@ function Goods:CallIsEarned(good)
 	elseif cached.earned == nil then
 		cached.earned = false
 	end
+end
+
+-- A text an earnedText function gave, or nil for anything but a string with something in it.
+---@param text any
+---@return string?
+local function textOf(text)
+	return type(text) == "string" and text ~= "" and text or nil
+end
+
+--- An earned good's texts as the shop draws them now (SHOP-R22): the row's tag and the stage's note. An earnedText
+--- string is both; a function is called now, through `call`, every time the good isn't owned (never cached, never for
+--- ownership, SHOP-R30), and gives the tag and, optionally, the note. Nothing for a function that raises (reported) or
+--- gives no text, an owned good's function, a good with no earnedText, and a good that isn't earned or registered.
+---@param goodID any
+---@return string? tag
+---@return string? note
+function Goods:EarnedTexts(goodID)
+	local good = self.goods[goodID]
+	local earnedText = good and good.isEarned and good.earnedText
+	if type(earnedText) == "string" then
+		return earnedText, earnedText
+	elseif type(earnedText) ~= "function" or self:IsOwned(goodID) then
+		return nil, nil
+	end
+	local tag, note
+	self.options.call(function()
+		tag, note = earnedText()
+	end)
+	tag = textOf(tag)
+	return tag, tag and textOf(note)
 end
 
 --- `M:RefreshGoods()` for `module` (SHOP-R31): calls each of its earned goods' isEarned() and caches the results.
@@ -352,13 +401,25 @@ function Goods:SlotsWithGoods(keep)
 	return list
 end
 
---- The goods registered this session in a slot, in registration order (empty for a slot not registered). Core's
---- own; nothing in them may be changed.
+--- The goods registered this session in a slot, in registration order (empty for a slot not registered), but for
+--- another Module's in an open Core slot while that Module isn't On (SHOP-R23, SHOP-R90). Core's own; nothing in them
+--- may be changed.
 ---@param slotID string
 ---@return PagleRegisteredGood[]
 function Goods:GoodsOf(slotID)
 	local slot = self.slots[slotID]
-	return slot and slot.goods or {}
+	if not slot then
+		return {}
+	elseif not slot.openToEarned then
+		return slot.goods
+	end
+	local order, list = self:OrderOn(), {}
+	for _, good in ipairs(slot.goods) do
+		if good.module == slot.module or order[good.module] then
+			list[#list + 1] = good
+		end
+	end
+	return list
 end
 
 --- A good registered this session, as registered (with its preview, isEarned and earnedText), or nil. Core's own;
@@ -440,8 +501,8 @@ function Goods:IsForSale(goodID)
 	return good ~= nil and good.tier ~= nil and not self:IsOwned(goodID)
 end
 
---- The good equipped in a slot (SHOP-R32): the stored pick while it is owned and registered by a Module On, else the
---- slot's default. Reading never clears the pick, so it comes back with its Module (SHOP-R90). Nil for a slot with
+--- The good equipped in a slot (SHOP-R32): the stored pick while it is owned and registered by a Module On (its
+--- slot's, and its own in an open Core slot, SHOP-R23), else the slot's default. Reading never clears the pick, so it comes back with its Module (SHOP-R90). Nil for a slot with
 --- no goods.
 ---@param slotID any
 ---@return string?
@@ -451,7 +512,13 @@ function Goods:GetEquipped(slotID)
 	end
 	local stored = self.options.db().profile.appearance[slotID]
 	local good = self.goods[stored]
-	if good and good.slot == slotID and self:IsLive(slotID) and self:IsOwned(stored) then
+	if
+		good
+		and good.slot == slotID
+		and self:IsLive(slotID)
+		and self:OrderOn()[good.module]
+		and self:IsOwned(stored)
+	then
 		return stored
 	end
 	return self:DefaultOf(slotID)

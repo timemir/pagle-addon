@@ -731,4 +731,285 @@ describe("ns.NewGoods", function()
 			assert.is_true(env.goods:IsOwned("hunts.cover.gold"))
 		end)
 	end)
+
+	describe("a Core slot open to earned goods", function()
+		-- Core's crest slot, open to earned goods, with Plain its default (SHOP-R23, SHOP-R25), and Core's toast style
+		-- slot, which isn't open.
+		local function coreSlots(env)
+			assert.is_nil(
+				env.goods:RegisterSlot(
+					"Core",
+					{ id = "core.crest", label = "Bookplate crest", category = "Bookplate", openToEarned = true }
+				)
+			)
+			assert.is_nil(
+				env.goods:RegisterGood(
+					"Core",
+					{ id = "core.crest.plain", slot = "core.crest", name = "Plain", default = true }
+				)
+			)
+			assert.is_nil(
+				env.goods:RegisterSlot(
+					"Core",
+					{ id = "core.toaststyle", label = "Toast style", category = "Announcements" }
+				)
+			)
+		end
+
+		-- The Ledger's earned crest `id` in Core's crest slot, its isEarned returning `earned.value`.
+		local function crest(earned, fields)
+			local good = {
+				id = "ledger.crest.elwynn",
+				slot = "core.crest",
+				name = "The Old Oak",
+				icon = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn",
+				isEarned = function()
+					return earned.value
+				end,
+				earnedText = "Master of the forest",
+			}
+			for key, value in pairs(fields or {}) do
+				if value == false then
+					good[key] = nil
+				else
+					good[key] = value
+				end
+			end
+			return good
+		end
+
+		it("takes another Module's earned good, cached as that Module's (SHOP-R23, SHOP-R26)", function()
+			local env = newGoods()
+			coreSlots(env)
+
+			assert.is_nil(env.goods:RegisterGood("Ledger", crest({ value = true })))
+
+			local ids = {}
+			for i, good in ipairs(env.goods:GoodsOf("core.crest")) do
+				ids[i] = good.id .. " " .. good.module
+			end
+			assert.are.same({ "core.crest.plain Core", "ledger.crest.elwynn Ledger" }, ids)
+			assert.are.same({ "Ledger", "core.crest", "Bookplate crest", true }, {
+				env.db.global.goods["ledger.crest.elwynn"].module,
+				env.db.global.goods["ledger.crest.elwynn"].slot,
+				env.db.global.goods["ledger.crest.elwynn"].slotLabel,
+				env.db.global.goods["ledger.crest.elwynn"].earned,
+			})
+			assert.are.equal("Ledger", env.goods:GetGood("ledger.crest.elwynn").module)
+			assert.is_true(env.goods:IsOwned("ledger.crest.elwynn"))
+			assert.is_true(env.goods:SetEquipped("core.crest", "ledger.crest.elwynn"))
+			assert.are.equal("ledger.crest.elwynn", env.goods:GetEquipped("core.crest"))
+		end)
+
+		local isEarned = function()
+			return true
+		end
+		local refused = {
+			{
+				"a good for sale",
+				"Ledger",
+				crest({ value = true }, { isEarned = false, earnedText = false, tier = 1 }),
+			},
+			{
+				"a default",
+				"Ledger",
+				crest({ value = true }, { isEarned = false, earnedText = false, default = true }),
+			},
+			{ "an earned default", "Ledger", crest({ value = true }, { default = true }) },
+			{ "an earned good for sale", "Ledger", crest({ value = true }, { tier = 2 }) },
+			{
+				"an earned good in a Core slot not open",
+				"Ledger",
+				crest({ value = true }, { slot = "core.toaststyle" }),
+			},
+			{
+				"an earned good without its Module's prefix",
+				"Ledger",
+				crest({ value = true }, { id = "core.crest.oak" }),
+			},
+			{
+				"an earned good in a Module's slot",
+				"Hunts",
+				{ id = "hunts.oak", slot = "ledger.binding", name = "Oak", isEarned = isEarned },
+			},
+			{
+				"an earned good in a Module's slot registered open",
+				"Hunts",
+				{ id = "hunts.oak", slot = "ledger.open", name = "Oak", isEarned = isEarned },
+			},
+			{
+				"an earnedText that is neither a string nor a function",
+				"Ledger",
+				crest({ value = true }, { earnedText = 3 }),
+			},
+		}
+		for _, case in ipairs(refused) do
+			it("still refuses " .. case[1] .. ", registering and caching nothing (SHOP-R23)", function()
+				local env = newGoods()
+				coreSlots(env)
+				env.goods:RegisterSlot(
+					"Ledger",
+					{ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" }
+				)
+				-- openToEarned is Core's alone: on a Module's slot it opens nothing.
+				env.goods:RegisterSlot(
+					"Ledger",
+					{ id = "ledger.open", label = "Open", category = "Fish Journal", openToEarned = true }
+				)
+
+				assert.is_string(env.goods:RegisterGood(case[2], case[3]))
+				assert.is_nil(env.db.global.goods[case[3].id])
+				assert.are.same({ 1, 0, 0 }, {
+					#env.goods:GoodsOf("core.crest"),
+					#env.goods:GoodsOf("core.toaststyle"),
+					#env.goods:GoodsOf("ledger.open"),
+				})
+			end)
+		end
+
+		it("says the slot is Core's when it refuses a Module's good for sale there (SHOP-R23)", function()
+			local env = newGoods()
+			coreSlots(env)
+
+			assert.are.equal(
+				"M:RegisterGood: ledger.crest.elwynn's slot core.crest is Core's",
+				env.goods:RegisterGood(
+					"Ledger",
+					crest({ value = true }, { isEarned = false, earnedText = false, tier = 1 })
+				)
+			)
+		end)
+
+		it(
+			"puts the good away while its Module is off: the slot falls back to its default, and lists it no more (SHOP-R32, SHOP-R33, SHOP-R90)",
+			function()
+				local env = newGoods()
+				coreSlots(env)
+				env.goods:RegisterGood("Ledger", crest({ value = true }))
+				env.goods:Start()
+				env.goods:SetEquipped("core.crest", "ledger.crest.elwynn")
+				env.fired = {}
+
+				env.on.Ledger = nil
+				env.goods:Settle()
+				local off = { env.goods:GetEquipped("core.crest"), #env.goods:GoodsOf("core.crest") }
+				local owned = env.goods:IsOwned("ledger.crest.elwynn")
+				env.on.Ledger = 10
+				env.goods:Settle()
+
+				assert.are.same({ "core.crest.plain", 1 }, off)
+				assert.is_true(owned) -- still owned, from the cache (SHOP-R30)
+				assert.are.equal("ledger.crest.elwynn", env.goods:GetEquipped("core.crest"))
+				assert.are.same({
+					{ "AppearanceChanged", "core.crest", "core.crest.plain" },
+					{ "AppearanceChanged", "core.crest", "ledger.crest.elwynn" },
+				}, env.fired)
+			end
+		)
+	end)
+
+	describe("an earned good's texts", function()
+		it("are its earnedText string, for the row and the stage alike (SHOP-R22)", function()
+			local env = newGoods()
+			huntsCovers(env, { value = false })
+
+			assert.are.same({ "Every Hunt done", "Every Hunt done" }, { env.goods:EarnedTexts("hunts.cover.gold") })
+		end)
+
+		it(
+			"come from its earnedText function each time they are asked for while it isn't owned, never at registration, Refresh or an ownership check (SHOP-R22, SHOP-R30)",
+			function()
+				local env = newGoods()
+				local calls, texts = 0, { "Expert · 88%", "Earned when the forest reaches Master." }
+				assert.is_nil(
+					env.goods:RegisterSlot("Ledger", { id = "ledger.book", label = "Book", category = "Fish Journal" })
+				)
+				assert.is_nil(
+					env.goods:RegisterGood(
+						"Ledger",
+						{ id = "ledger.book.plain", slot = "ledger.book", name = "Plain", default = true }
+					)
+				)
+				assert.is_nil(env.goods:RegisterGood("Ledger", {
+					id = "ledger.book.oak",
+					slot = "ledger.book",
+					name = "Oak",
+					isEarned = function()
+						return false
+					end,
+					earnedText = function()
+						calls = calls + 1
+						return texts[1], texts[2]
+					end,
+				}))
+				env.goods:Refresh("Ledger")
+				env.goods:IsOwned("ledger.book.oak")
+				env.goods:OwnedOf("ledger.book")
+				assert.are.equal(0, calls)
+
+				local first = { env.goods:EarnedTexts("ledger.book.oak") }
+				texts = { "Master · 100%" }
+				local second = { env.goods:EarnedTexts("ledger.book.oak") }
+
+				assert.are.same({ "Expert · 88%", "Earned when the forest reaches Master." }, first)
+				assert.are.same({ "Master · 100%" }, second) -- a stage note only when it gives one
+				assert.are.equal(2, calls)
+				assert.is_nil(env.db.global.goods["ledger.book.oak"].earnedText) -- never cached (SHOP-R26)
+
+				env.goods:SetPurchased({ ["ledger.book.oak"] = true }) -- owned now: the function isn't called
+				assert.are.same({}, { env.goods:EarnedTexts("ledger.book.oak") })
+				assert.are.equal(2, calls)
+			end
+		)
+
+		it("are nothing when the function raises, which is reported, or gives what isn't text (SHOP-R22)", function()
+			-- `call` as securecallfunction: an error is reported (here noted) and returns nothing.
+			local errors = 0
+			local env = newGoods(nil, function(fn, ...)
+				local ok, result = pcall(fn, ...)
+				if ok then
+					return result
+				end
+				errors = errors + 1
+			end)
+			local give
+			env.goods:RegisterSlot("Ledger", { id = "ledger.book", label = "Book", category = "Fish Journal" })
+			env.goods:RegisterGood(
+				"Ledger",
+				{ id = "ledger.book.plain", slot = "ledger.book", name = "Plain", default = true }
+			)
+			env.goods:RegisterGood("Ledger", {
+				id = "ledger.book.oak",
+				slot = "ledger.book",
+				name = "Oak",
+				isEarned = function()
+					return false
+				end,
+				earnedText = function()
+					return give()
+				end,
+			})
+
+			give = function()
+				error("broken")
+			end
+			local raised = { env.goods:EarnedTexts("ledger.book.oak") }
+			give = function()
+				return 3, ""
+			end
+			local odd = { env.goods:EarnedTexts("ledger.book.oak") }
+
+			assert.are.same({}, raised)
+			assert.are.equal(1, errors)
+			assert.are.same({}, odd)
+		end)
+
+		it("are nothing for a good that isn't earned, or isn't registered (SHOP-R22)", function()
+			local env = newGoods()
+			huntsCovers(env, { value = false })
+
+			assert.are.same({}, { env.goods:EarnedTexts("hunts.cover.velvet") })
+			assert.are.same({}, { env.goods:EarnedTexts("hunts.cover.none") })
+		end)
+	end)
 end)
