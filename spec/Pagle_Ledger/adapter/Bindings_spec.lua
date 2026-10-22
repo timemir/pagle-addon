@@ -7,7 +7,8 @@
 -- Core's binding slot (SHOP-R25), where the Ledger registers its earned bindings (SHOP-R23).
 local SLOT = "core.binding"
 
--- LED-R110's earned bindings, in its order, with their earnedText.
+-- LED-R110's earned bindings, in its order, with their earnedText (the row's tag, for the second round's nine with no
+-- Casts yet, LED-R118).
 local GOODS = {
 	{ "ledger.binding.level10", "earned", "Angler Level 10" },
 	{ "ledger.binding.level20", "earned", "Angler Level 20" },
@@ -20,6 +21,15 @@ local GOODS = {
 	{ "ledger.binding.abyssal", "earned", "Prestige X" },
 	{ "ledger.binding.keeper", "earned", "Complete the Ledger" },
 	{ "ledger.binding.iridescent", "earned", "Every fish in every colour" },
+	{ "ledger.binding.wave", "earned", "0 of 300 catches" },
+	{ "ledger.binding.logbook", "earned", "0 of 25 zones" },
+	{ "ledger.binding.heartwood", "earned", "A catch after 10 got away" },
+	{ "ledger.binding.stormglass", "earned", "0 of 10 zones" },
+	{ "ledger.binding.lacquer", "earned", "0 of 30 days" },
+	{ "ledger.binding.knit", "earned", "0 of 10,000 Casts" },
+	{ "ledger.binding.flywallet", "earned", "0 of 5 lures" },
+	{ "ledger.binding.carapace", "earned", "0 of 50 clams" },
+	{ "ledger.binding.ember", "earned", "Prestige VII" },
 }
 
 -- A good's kind as LED-R110's table writes it.
@@ -92,7 +102,7 @@ end
 
 describe("the Ledger's earned bindings", function()
 	it(
-		"register in Core's binding slot after Core's own, in LED-R110's order, earned, with no slot and no preview of their own, and Field Leather equipped (LED-R110, LED-R116, SHOP-R21, SHOP-R23, SHOP-R32)",
+		"register in Core's binding slot after Core's own, in LED-R110's order, the second round's nine last, earned, with no slot and no preview of their own, and Field Leather equipped (LED-R110, LED-R116, LED-R118, SHOP-R21, SHOP-R23, SHOP-R32)",
 		function()
 			local fake = ledger()
 			local goods = fake.ns.goods
@@ -103,7 +113,11 @@ describe("the Ledger's earned bindings", function()
 			local registered = {}
 			for _, good in ipairs(goods:GoodsOf(SLOT)) do
 				if good.module == "Ledger" then
-					registered[#registered + 1] = { good.id, kindOf(good), good.earnedText }
+					local tag = good.earnedText
+					if type(tag) == "function" then
+						tag = tag()
+					end
+					registered[#registered + 1] = { good.id, kindOf(good), tag }
 					assert(good.preview == nil, good.id)
 				else
 					assert.are.same({ "Core", 0 }, { good.module, #registered }, good.id) -- Core's all come first
@@ -436,11 +450,17 @@ describe("the Ledger's expansion earned bindings", function()
 			end
 		)
 
-		it("note a binding not yet registered, kept for ADR 0015's registration (LED-R118, LED-R90)", function()
-			local _, loaded = ledgerOver(release("first release"), nil, firstWaters(25))
-			local goods = loaded.env.PagleLedgerDB.global.celebrated.goods
-			assert.is_true(goods["ledger.binding.logbook"])
-		end)
+		it(
+			"own Captain's Logbook in Core's binding slot after 25 zones fished, noted in the celebrated set, and equip it (LED-R118, LED-R90, SHOP-R32)",
+			function()
+				local fake, loaded = ledgerOver(release("first release"), nil, firstWaters(25))
+				assert.is_true(fake.Pagle.IsOwned("ledger.binding.logbook"))
+				assert.is_true(loaded.env.PagleLedgerDB.global.celebrated.goods["ledger.binding.logbook"])
+				assert.is_false(fake.Pagle.IsOwned("ledger.binding.wave"))
+				assert.is_true(fake.Pagle.SetEquipped(SLOT, "ledger.binding.logbook"))
+				assert.are.equal("ledger.binding.logbook", fake.Pagle.GetEquipped(SLOT))
+			end
+		)
 	end)
 end)
 

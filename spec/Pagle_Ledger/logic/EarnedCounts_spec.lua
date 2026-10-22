@@ -496,13 +496,13 @@ describe("the second round's earned goods", function()
 		)
 	end)
 
-	describe("registered in Core's toast style slot (LED-R118, SHOP-R23, SHOP-R25)", function()
+	describe("registered in Core's toast style and binding slots (LED-R118, LED-R110, SHOP-R23, SHOP-R25)", function()
 		local counts
 
-		-- The seven goods over hooks whose earnedBy names goods earned in `earned`, and whose count reads `counts`
+		-- The sixteen goods over hooks whose earnedBy names goods earned in `earned`, and whose count reads `counts`
 		-- (nil while updating).
 		local function register(earned)
-			return ns.CountedToastStyles({
+			return ns.CountedGoods({
 				earnedBy = function(goodID)
 					return earned[goodID] == true
 				end,
@@ -519,22 +519,62 @@ describe("the second round's earned goods", function()
 			counts = {}
 		end)
 
-		it("are the seven toast styles, named and described by lore, with an icon and no preview (LED-R160)", function()
-			local rows = {}
-			for i, registered in ipairs(register({ ["ledger.toaststyle.koi"] = true })) do
-				rows[i] = { registered.id, registered.slot, registered.name, registered.isEarned(), registered.preview }
-				assert.are.equal(ns.L["ledgergood." .. registered.id .. ".description"], registered.description)
-				assert.matches("^Interface\\Icons\\", registered.icon)
+		it(
+			"are the seven toast styles then the nine bindings, named and described by lore, with an icon and no preview (LED-R160)",
+			function()
+				local rows = {}
+				for i, registered in
+					ipairs(register({ ["ledger.toaststyle.koi"] = true, ["ledger.binding.carapace"] = true }))
+				do
+					rows[i] =
+						{ registered.id, registered.slot, registered.name, registered.isEarned(), registered.preview }
+					assert.are.equal(ns.L["ledgergood." .. registered.id .. ".description"], registered.description)
+					assert.matches("^Interface\\Icons\\", registered.icon)
+				end
+				assert.are.same({
+					{ "ledger.toaststyle.glass", "core.toaststyle", "Chapel Glass", false },
+					{ "ledger.toaststyle.deep", "core.toaststyle", "The Deep Lure", false },
+					{ "ledger.toaststyle.koi", "core.toaststyle", "Ink and Koi", true },
+					{ "ledger.toaststyle.trophy", "core.toaststyle", "Mounted Trophy", false },
+					{ "ledger.toaststyle.slate", "core.toaststyle", "Fishmonger's Slate", false },
+					{ "ledger.toaststyle.ice", "core.toaststyle", "Through the Ice", false },
+					{ "ledger.toaststyle.stitch", "core.toaststyle", "Cross-Stitch Sampler", false },
+					{ "ledger.binding.wave", "core.binding", "Breaking Wave", false },
+					{ "ledger.binding.logbook", "core.binding", "Captain's Logbook", false },
+					{ "ledger.binding.heartwood", "core.binding", "Carved Heartwood", false },
+					{ "ledger.binding.stormglass", "core.binding", "Stormglass Reliquary", false },
+					{ "ledger.binding.lacquer", "core.binding", "Black Lacquer Koi", false },
+					{ "ledger.binding.knit", "core.binding", "Cable Knit", false },
+					{ "ledger.binding.flywallet", "core.binding", "Fly Wallet", false },
+					{ "ledger.binding.carapace", "core.binding", "Crab Carapace", true },
+					{ "ledger.binding.ember", "core.binding", "Ember Scale", false },
+				}, rows)
 			end
-			assert.are.same({
-				{ "ledger.toaststyle.glass", "core.toaststyle", "Chapel Glass", false },
-				{ "ledger.toaststyle.deep", "core.toaststyle", "The Deep Lure", false },
-				{ "ledger.toaststyle.koi", "core.toaststyle", "Ink and Koi", true },
-				{ "ledger.toaststyle.trophy", "core.toaststyle", "Mounted Trophy", false },
-				{ "ledger.toaststyle.slate", "core.toaststyle", "Fishmonger's Slate", false },
-				{ "ledger.toaststyle.ice", "core.toaststyle", "Through the Ice", false },
-				{ "ledger.toaststyle.stitch", "core.toaststyle", "Cross-Stitch Sampler", false },
-			}, rows)
+		)
+
+		it("earn each binding by its rule and the celebrated set, through earnedBy (LED-R118)", function()
+			local asked = {}
+			local goods = ns.CountedGoods({
+				earnedBy = function(goodID, rule)
+					asked[#asked + 1] = { goodID, rule }
+					return rule == "ember"
+				end,
+				count = function()
+					return nil
+				end,
+				formatNumber = tostring,
+			})
+			assert.are.same({ false, true }, { goods[8].isEarned(), goods[16].isEarned() })
+			assert.are.same({ { "ledger.binding.wave", "wave" }, { "ledger.binding.ember", "ember" } }, asked)
+		end)
+
+		it("tag a binding with its count of its mark, the one-step ones with their earned text (SHOP-R22)", function()
+			local goods = register({})
+			counts["ledger.binding.logbook"], counts["ledger.binding.knit"] = 12, 2500
+			assert.are.same({ "<12> of <25> zones", "25 zones fished" }, { goods[9].earnedText() })
+			assert.are.same({ "<2500> of <10000> Casts", "10,000 Casts" }, { goods[13].earnedText() })
+			counts["ledger.binding.heartwood"] = 0
+			assert.are.same({ "A catch after 10 got away", "A catch after 10 got away" }, { goods[10].earnedText() })
 		end)
 
 		it("tag each with its count of its mark, and note the earned text in full (SHOP-R22)", function()

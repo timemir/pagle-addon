@@ -6,9 +6,9 @@ end
 local ns = select(2, ...)
 
 -- The Curio Shop's second round's earned goods (LED-R118, LED-R119): the counts the fold keeps for them, each good's
--- count and mark, and their texts. Seven toast styles in Core's slot and nine Journal bindings, which register into
--- Core's binding slot with ADR 0015; until then only their rules are counted. Pure logic, everything passed in
--- (CORE-R7); logic/EarnedGoods.lua turns each into a rule, logic/Fold.lua counts, adapter/Bindings.lua registers.
+-- count and mark, and their texts. Seven toast styles in Core's toast style slot and nine bindings in Core's binding
+-- slot (ADR 0015), whose look and art are Core's. Pure logic, everything passed in (CORE-R7); logic/EarnedGoods.lua
+-- turns each into a rule, logic/Fold.lua counts, adapter/Bindings.lua registers.
 
 -- Tunables (ledger.md › Tunables, LED-R118, LED-R119).
 --- Through the Ice's zones: Dun Morogh, Alterac Mountains and Winterspring.
@@ -100,8 +100,9 @@ local SECONDS_PER_DAY = 86400
 ---@field earn string          -- its rule's name, the good's key: L.EARNED_TEXT and L.EARNED_UNIT are keyed by it
 ---@field count LedgerCountName
 ---@field mark integer
----@field slot? string         -- the toast styles' Core slot; the bindings register with ADR 0015 (LED-R110)
----@field icon? string         -- the toast styles' icon on the shop's row (Core draws the style itself, ANN-R82)
+---@field slot? string         -- the toast styles' Core slot; the bindings' is Core's binding slot (LED-R110)
+---@field icon? string         -- the toast styles' icon on the shop's row (Core draws the style itself, ANN-R82); the
+---                               bindings' is the ledger book (ns.BINDING_ICON)
 
 local ICONS = "Interface\\Icons\\"
 
@@ -174,6 +175,18 @@ ns.COUNTED_GOODS = {
 	{ id = "ledger.binding.carapace", earn = "carapace", count = "clams", mark = 50 },
 	{ id = "ledger.binding.ember", earn = "ember", count = "prestige", mark = 7 },
 }
+
+--- The second round's good of ID `goodID` (LED-R118), or nil for any other good.
+---@param goodID string?
+---@return LedgerCountedGood?
+function ns.CountedGood(goodID)
+	for _, good in ipairs(ns.COUNTED_GOODS) do
+		if good.id == goodID then
+			return good
+		end
+	end
+	return nil
+end
 
 --- Fresh counts (ledger.md › Data, LedgerCounts), for a fresh state.
 ---@return LedgerCounts
@@ -413,46 +426,46 @@ function ns.RoundTwoFallback()
 	return FALLBACK_TIER, release + FALLBACK_DAYS * SECONDS_PER_DAY
 end
 
---- What LED-R118's toast styles read when the shop asks.
+--- What LED-R118's goods read when the shop asks.
 ---@class LedgerCountedHooks
 ---@field earnedBy fun(goodID: string, rule: string): boolean -- the good's rule or the celebrated set (LED-R118)
 ---@field count fun(good: LedgerCountedGood): integer?        -- its count now; nil while the projection updates
 ---@field formatNumber fun(n: integer): string                -- BreakUpLargeNumbers
 
---- LED-R118's seven toast styles to register in Core's `core.toaststyle` slot (SHOP-R23, SHOP-R25), in its order:
---- named and described by lore (`ledgergood.<goodID>.name`, `.description`, LED-R160), by its ID while the name has no
---- text (LED-R161), earned by `hooks.earnedBy`, with no preview (Core draws them, ANN-R82) and the fallback of
---- ns.RoundTwoFallback. Its earnedText is a function (SHOP-R22): the count's texts, from the count as it stands, and
---- while the projection updates, the texts it gave last (the plain earned text before any).
+--- LED-R118's sixteen goods to register, in its order (SHOP-R23, SHOP-R25): the seven toast styles in Core's
+--- `core.toaststyle` slot, then the nine bindings in Core's `core.binding` slot (LED-R110, ADR 0015) with the ledger
+--- book's icon (ns.BINDING_ICON). Each is named and described by lore (`ledgergood.<goodID>.name`, `.description`,
+--- LED-R160), by its ID while the name has no text (LED-R161), earned by `hooks.earnedBy`, with no preview (Core draws
+--- them, ANN-R82, SHOP-R25) and the fallback of ns.RoundTwoFallback. Its earnedText is a function (SHOP-R22): the
+--- count's texts, from the count as it stands, and while the projection updates, the texts it gave last (the plain
+--- earned text before any).
 ---@param hooks LedgerCountedHooks
 ---@return PagleGood[]
-function ns.CountedToastStyles(hooks)
+function ns.CountedGoods(hooks)
 	local tier, from = ns.RoundTwoFallback()
 	local goods = {}
 	for _, good in ipairs(ns.COUNTED_GOODS) do
-		if good.slot then
-			local id, earn = good.id, good.earn
-			local lastTag, lastNote = ns.L.EARNED_TEXT[earn], ns.L.EARNED_TEXT[earn]
-			goods[#goods + 1] = {
-				id = id,
-				slot = good.slot,
-				name = ns.Lore("ledgergood." .. id .. ".name") or id,
-				description = ns.Lore("ledgergood." .. id .. ".description"),
-				icon = good.icon,
-				isEarned = function()
-					return hooks.earnedBy(id, earn)
-				end,
-				earnedText = function()
-					local n = hooks.count(good)
-					if n then
-						lastTag, lastNote = ns.EarnedCountTexts(good, n, hooks.formatNumber)
-					end
-					return lastTag, lastNote
-				end,
-				fallbackTier = tier,
-				fallbackFrom = from,
-			}
-		end
+		local id, earn = good.id, good.earn
+		local lastTag, lastNote = ns.L.EARNED_TEXT[earn], ns.L.EARNED_TEXT[earn]
+		goods[#goods + 1] = {
+			id = id,
+			slot = good.slot or ns.BINDING_SLOT,
+			name = ns.Lore("ledgergood." .. id .. ".name") or id,
+			description = ns.Lore("ledgergood." .. id .. ".description"),
+			icon = good.icon or ns.BINDING_ICON,
+			isEarned = function()
+				return hooks.earnedBy(id, earn)
+			end,
+			earnedText = function()
+				local n = hooks.count(good)
+				if n then
+					lastTag, lastNote = ns.EarnedCountTexts(good, n, hooks.formatNumber)
+				end
+				return lastTag, lastNote
+			end,
+			fallbackTier = tier,
+			fallbackFrom = from,
+		}
 	end
 	return goods
 end

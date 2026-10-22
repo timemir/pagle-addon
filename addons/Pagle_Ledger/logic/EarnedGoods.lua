@@ -198,8 +198,7 @@ function ns.EarnedGoodOwned(goodID, rule, view)
 end
 
 --- Every expansion and second-round good earned by a rule (LED-R116–R118), as `{ id, earn }`: the earned bindings in
---- LED-R110's order, then LED-R117's goods, then LED-R118's, its nine bindings among them though they aren't
---- registered until ADR 0015 lands, so each is kept from the moment it is earned.
+--- LED-R110's order, then LED-R117's goods, then LED-R118's, its nine bindings among them.
 ---@return { id: string, earn: LedgerEarnedRule }[]
 function ns.EarnedGoods()
 	local list = {}
