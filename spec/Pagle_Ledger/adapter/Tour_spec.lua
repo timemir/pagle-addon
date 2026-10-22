@@ -165,28 +165,31 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 		assert.is_false(journal.frame.searchDrop:IsShown())
 	end)
 
-	it("write nothing of a new Angler's onboarding: no journal item, ledger.fresh or First look seen (CORE-R68)", function()
-		local fake, loaded = ledger(nil, true)
-		-- Core's adapter gives each First look its tour stop, core.onboarding.look.ledger.journal (ONB-R84).
-		fake.ns.AddFirstLookTourStops()
-		local before = copy(fake.global.onboarding)
-		local shown = {}
+	it(
+		"write nothing of a new Angler's onboarding: no journal item, ledger.fresh or First look seen (CORE-R68)",
+		function()
+			local fake, loaded = ledger(nil, true)
+			-- Core's adapter gives each First look its tour stop, core.onboarding.look.ledger.journal (ONB-R84).
+			fake.ns.AddFirstLookTourStops()
+			local before = copy(fake.global.onboarding)
+			local shown = {}
 
-		fake.slash("dev tour ledger")
-		fake.wait(60)
-		fake.slash("dev tour core")
-		fake.wait(1.6)
-		shown[1] = fake.firstLooks:Showing()
-		fake.wait(60)
+			fake.slash("dev tour ledger")
+			fake.wait(60)
+			fake.slash("dev tour core")
+			fake.wait(1.6)
+			shown[1] = fake.firstLooks:Showing()
+			fake.wait(60)
 
-		assert.are.equal(9, #fake.tourShots)
-		assert.are.same(before, fake.global.onboarding)
-		assert.is_false(fake.onboarding:IsEveningItemDone("journal"))
-		assert.are.same({}, fake.notesShown)
-		-- The First look's own stop still shows the set, marking nothing (ONB-R84).
-		assert.are.equal("ledger.journal", shown[1] and shown[1].id)
-		assert.is_false(loaded.ns.journal:IsShown())
-	end)
+			assert.are.equal(9, #fake.tourShots)
+			assert.are.same(before, fake.global.onboarding)
+			assert.is_false(fake.onboarding:IsEveningItemDone("journal"))
+			assert.are.same({}, fake.notesShown)
+			-- The First look's own stop still shows the set, marking nothing (ONB-R84).
+			assert.are.equal("ledger.journal", shown[1] and shown[1].id)
+			assert.is_false(loaded.ns.journal:IsShown())
+		end
+	)
 
 	it("tick the journal item, note ledger.fresh and show the First look as the Angler opens the book after", function()
 		local fake, loaded = ledger(nil, true)

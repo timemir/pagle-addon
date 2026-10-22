@@ -400,7 +400,10 @@ describe("Core's first-moment notes", function()
 		notes:AnnouncementShown(catchNod(), "nod", where, false)
 		notes:AnnouncementShown(catchNod(), "nod", where, true)
 		notes:AnnouncementShown(toast, "toast", where, false)
-		notes:CardShown({ title = "Session", numbers = { casts = 3, catches = 2, gotAway = 1, seconds = 600 } }, where.frame)
+		notes:CardShown(
+			{ title = "Session", numbers = { casts = 3, catches = 2, gotAway = 1, seconds = 600 } },
+			where.frame
+		)
 
 		assert.are.same({}, seen.shown)
 		assert.are.same({}, state.notesSeen)
