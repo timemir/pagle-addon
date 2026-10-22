@@ -50,6 +50,9 @@ function ns.Hunts.OnInitialize()
 		end,
 		ServerTime = GetServerTime,
 	}))
+	--- The run log (HNT-R150–R155): which runs are on, and the live step that logs each run the first time it is used
+	--- (adapter/RunLog.lua, logic/RunLog.lua).
+	ns.StartRunLog(ns.Module)
 	--- Hunts' moments, Write-up and summary line (HNT-R85–R91, HNT-R111, HNT-R112): the projection's outlets and the
 	--- redraws reach them (logic/Moments.lua).
 	ns.moments = ns.NewHuntsMoments(ns.db.global, {

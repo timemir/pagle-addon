@@ -257,4 +257,8 @@ ns.L = {
 	TOUR_TRACKER = "the Hunts tracker in the dock, with three pins",
 	TOUR_COVER = "the Hunts board in the %s cover",
 	TOUR_TRACKER_FRAME = "the Hunts tracker in the %s frame",
+
+	-- The run log's dev diagnostic lines (HNT-R140, HNT-R151, logic/RunLog.lua): dev-only, never shown to players.
+	RUN_LOG_EVENT_IGNORED = "Hunts: the pushed definition of %s is ignored: %s (HNT-R140)",
+	RUN_LOG_RUN_IGNORED = "Hunts: a pushed run of %s is ignored: it needs an event ID and times start < end (HNT-R151)",
 }
