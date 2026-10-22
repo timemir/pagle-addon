@@ -505,6 +505,60 @@ function ns.SetVSlice(frame, atlasName, name, width, height, capTop, capBottom, 
 	slice.middle:ClearAllPoints()
 	slice.middle:SetPoint("TOPLEFT", slice.top, "BOTTOMLEFT")
 	slice.middle:SetPoint("BOTTOMRIGHT", slice.bottom, "TOPRIGHT")
+	slice.top:Show()
+	slice.middle:Show()
+	slice.bottom:Show()
+	-- A Curio Shop expansion frame's pieces, from a kit frame drawn on this frame before (ns.SetKitSlice).
+	local kit = frame --[[@as TackleKitSlice]]
+	for _, piece in ipairs(kit.pieces or {}) do
+		piece:Hide()
+	end
+end
+
+--- A frame drawn as one of the Curio Shop expansion's tracker frames (TKB-R125): its pieces, top to bottom, as
+--- logic/TrackerFrames.lua cuts them. On a frame that has drawn the board kit's (ns.SetVSlice), those slices too.
+---@class TackleKitSlice: Frame
+---@field pieces Texture[]
+---@field top Texture?
+---@field middle Texture?
+---@field bottom Texture?
+
+--- Draws sprite `name` of atlas `atlasName` sliced in three down on `frame` as `slice` says, its drawn element `width`
+--- × `height` (a kit tracker frame, which grows with its lines): scaled evenly to `width`, its top and foot kept, its
+--- middle stretched or repeated (ns.FrameSlices). Makes the pieces as it needs them, and hides the ones it doesn't and
+--- any board kit slices drawn on `frame` before.
+---@param frame Frame
+---@param atlasName string
+---@param name string
+---@param slice TackleFrameSlice
+---@param width number
+---@param height number
+---@param layer DrawLayer?
+function ns.SetKitSlice(frame, atlasName, name, slice, width, height, layer)
+	local kit = frame --[[@as TackleKitSlice]]
+	kit.pieces = kit.pieces or {}
+	for _, texture in ipairs({ kit.top, kit.middle, kit.bottom }) do
+		texture:Hide()
+	end
+	local atlas, sprite = spriteOf(atlasName, name)
+	local cut = ns.FrameSlices(atlas, sprite, slice, width, height)
+	frame:SetSize(width, height)
+	for i, piece in ipairs(cut.pieces) do
+		local texture = kit.pieces[i]
+		if not texture then
+			texture = crisp(frame:CreateTexture(nil, layer or "BACKGROUND"))
+			kit.pieces[i] = texture
+		end
+		texture:SetTexture(atlas.file)
+		texture:SetTexCoord(cut.left, cut.right, piece.top, piece.bottom)
+		texture:SetSize(cut.width, piece.height)
+		texture:ClearAllPoints()
+		texture:SetPoint("TOPLEFT", frame, "TOPLEFT", cut.x, -piece.y)
+		texture:Show()
+	end
+	for i = #cut.pieces + 1, #kit.pieces do
+		kit.pieces[i]:Hide()
+	end
 end
 
 -- The papers' lean (TKB-R102: a Notice "at a slight tilt that straightens on hover").

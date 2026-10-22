@@ -377,8 +377,9 @@ end
 
 --- The Tackle Board's projection def for `M:NewProjection` (TKB-R81) over `global.board` (made here if missing):
 --- rules version TKB_RULES_VERSION × 1000 + Core's Session rules version (SIZE_RULES_VERSION isn't folded). A live
---- apply that changes the state asks the views to redraw, after reporting the Coins or the Activity XP it changed;
---- `done` runs in TKB-R84's order: ns.outlets.Done, ns.ReportCoins, ns.ReportXP, ns.ScheduleLiveStep (TKB-R84), then
+--- apply that changes the state asks the views to redraw, after reporting the Coins or the Activity XP it changed and
+--- refreshing the earned goods when it reached one's Campfire milestone (TKB-R126); `done` runs in TKB-R84's order:
+--- ns.outlets.Done, ns.ReportCoins, ns.ReportXP, then ns.RefreshGoods (TKB-R126), ns.ScheduleLiveStep (TKB-R84), then
 --- a redraw.
 ---@param global table PagleTackleBoardDB's global section
 ---@param sessionRulesVersion integer Pagle.SESSION_RULES_VERSION
@@ -395,7 +396,7 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 			return ns.NewBoardState()
 		end,
 		apply = function(state, record, mode)
-			local coins, xp = state.coins, state.xp
+			local coins, xp, reached = state.coins, state.xp, ns.GoodMilestonesReached(state)
 			local changed = ns.ApplyEntry(state, record, mode)
 			ns.CountForWriteUp(state, record, mode) -- TKB-R84: a first build's Casts (logic/Moments.lua)
 			if changed and mode == "live" then
@@ -408,6 +409,10 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 				if state.xp ~= xp then
 					ns.ReportXP()
 				end
+				-- TKB-R126, SHOP-R31: an earned good's Campfire milestone reached, never mid-rebuild
+				if ns.GoodMilestonesReached(state) ~= reached then
+					ns.RefreshGoods()
+				end
 				ns.Redraw("projection")
 			end
 		end,
@@ -415,6 +420,7 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 			ns.outlets.Done(state, info)
 			ns.ReportCoins()
 			ns.ReportXP()
+			ns.RefreshGoods() -- TKB-R126, SHOP-R31: the earned goods, once the build is done
 			ns.ScheduleLiveStep()
 			ns.Redraw("projection")
 		end,

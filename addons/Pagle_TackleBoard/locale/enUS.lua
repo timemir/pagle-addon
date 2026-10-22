@@ -240,6 +240,9 @@ ns.L = {
 	-- The goods and the tracker block (TKB-R122, TKB-R125; logic/Goods.lua, adapter/TrackerBlock.lua).
 	-- The tracker frame slot's label, in the Curio Shop and on Settings (TKB-R125, SET-R43).
 	SLOT_TRACKER_FRAME = "Tackle Board tracker frame",
+	-- An earned good's tag and note in the Curio Shop while it isn't earned (TKB-R126, SHOP-R22): its Campfire
+	-- milestone.
+	GOOD_EARNED_CAMPFIRE = "Campfire: {days} days",
 	-- The tracker's header, right of the title: the Campfire's days by the flame, then the open goals; or the open
 	-- goals alone with no fire lit.
 	TRACKER_OPEN = "{n} open",

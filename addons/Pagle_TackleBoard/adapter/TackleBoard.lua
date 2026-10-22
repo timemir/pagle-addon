@@ -17,7 +17,7 @@ function ns.TackleBoard.OnInitialize()
 	if not ns.Module then
 		return
 	end
-	-- Its tracker frame slot and goods (TKB-R125, SHOP-R21).
+	-- Its tracker frame slot and goods, and Hearth Ember in Core's toast style slot (TKB-R125, TKB-R126, SHOP-R21).
 	ns.RegisterGoods(ns.Module)
 
 	-- Account-wide, one shared profile, with the defaults in tackle-board.md › Data.

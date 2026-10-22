@@ -1,20 +1,27 @@
--- The Tackle Board's goods on FakePagle (TKB-R125; SHOP-R20–R23, SHOP-R26, SHOP-R30–R33, SHOP-R90; SET-R44,
--- SET-R50, SET-R51): the tracker-frame slot and its three goods in Core's goods registry, their names from lore, and
--- their previews on the shop's stage, drawn by the tracker block maker (CORE-R73).
+-- The Tackle Board's goods on FakePagle (TKB-R125, TKB-R126; SHOP-R20–R23, SHOP-R26, SHOP-R30–R33, SHOP-R90; SET-R44,
+-- SET-R50, SET-R51): the tracker-frame slot and its goods in Core's goods registry, their names from lore, their
+-- previews on the shop's stage, drawn by the tracker block maker (CORE-R73), and the earned ones owned at their
+-- Campfire milestones through the projection (TKB-R73).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
 
 local SLOT = "tackleboard.trackerframe"
 
--- TKB-R125's goods, in its order, with their kinds.
+-- TKB-R125's goods, in its order, with their kinds: the three at first, then the Curio Shop expansion's, Live Embers
+-- earned (TKB-R126).
 local GOODS = {
 	{ "tackleboard.trackerframe.none", "default" },
 	{ "tackleboard.trackerframe.corkboard", "tier 1" },
 	{ "tackleboard.trackerframe.driftwood", "tier 2" },
+	{ "tackleboard.trackerframe.net", "tier 1" },
+	{ "tackleboard.trackerframe.bamboo", "tier 1" },
+	{ "tackleboard.trackerframe.tin", "tier 2" },
+	{ "tackleboard.trackerframe.bobber", "tier 2" },
+	{ "tackleboard.trackerframe.embers", "earned" },
 }
 
--- A good's kind as TKB-R125 writes it; "earned" for one with isEarned (the Tackle Board has none).
+-- A good's kind as TKB-R125 and TKB-R126 write it; "earned" for one with isEarned.
 ---@param good PagleRegisteredGood
 ---@return string
 local function kindOf(good)
@@ -36,7 +43,7 @@ end
 
 describe("The Tackle Board's goods", function()
 	it(
-		'register the slot tackleboard.trackerframe ("Tackle Board tracker frame", Trackers) with No frame the default, Corkboard tier 1 and Tideworn Plank tier 2, none earned (TKB-R125, SHOP-R21, SHOP-R22)',
+		'register the slot tackleboard.trackerframe ("Tackle Board tracker frame", Trackers) with No frame the default, Corkboard, Fishing Net and Bamboo Slats tier 1, Tideworn Plank, Tackle Tin and Bobber tier 2, and Live Embers earned (TKB-R125, TKB-R126, SHOP-R21, SHOP-R22)',
 		function()
 			local _, fake = loggedIn()
 			local goods = fake.ns.goods
@@ -68,22 +75,32 @@ describe("The Tackle Board's goods", function()
 		end
 		table.sort(ids)
 		assert.are.same({
+			"tackleboard.toaststyle.ember",
+			"tackleboard.trackerframe.bamboo",
+			"tackleboard.trackerframe.bobber",
 			"tackleboard.trackerframe.corkboard",
 			"tackleboard.trackerframe.driftwood",
+			"tackleboard.trackerframe.embers",
+			"tackleboard.trackerframe.net",
 			"tackleboard.trackerframe.none",
+			"tackleboard.trackerframe.tin",
 		}, ids)
 	end)
 
-	it("sell for 150 and 400 Coins in the Curio Shop, as the Tackle Board's (TKB-R125, SHOP-R22)", function()
-		local _, fake = loggedIn()
-		local shop = fake.ns.ShopModel(tostring)
+	it(
+		"sell for 150 Coins at tier 1 and 400 at tier 2 in the Curio Shop, as the Tackle Board's (TKB-R125, SHOP-R22)",
+		function()
+			local _, fake = loggedIn()
+			local shop = fake.ns.ShopModel(tostring)
 
-		assert.are.same({ 150, 400 }, {
-			shop:Entry("tackleboard.trackerframe.corkboard").price,
-			shop:Entry("tackleboard.trackerframe.driftwood").price,
-		})
-		assert.are.equal("TackleBoard", fake.Pagle.GetGood("tackleboard.trackerframe.none").module)
-	end)
+			local prices = {}
+			for _, name in ipairs({ "corkboard", "driftwood", "net", "bamboo", "tin", "bobber" }) do
+				prices[#prices + 1] = shop:Entry("tackleboard.trackerframe." .. name).price
+			end
+			assert.are.same({ 150, 400, 150, 150, 400, 400 }, prices)
+			assert.are.equal("TackleBoard", fake.Pagle.GetGood("tackleboard.trackerframe.none").module)
+		end
+	)
 
 	it(
 		"are named by their IDs, with no description, while their boardgood lore keys have no text (TKB-R130)",
@@ -112,6 +129,15 @@ describe("The Tackle Board's goods", function()
 		assert.are.same({ "Corkboard", "Pinned up like a Notice." }, { cork.name, cork.description })
 		assert.are.same({ "Tideworn Plank" }, { plank.name, plank.description })
 		assert.are.equal("tackleboard.trackerframe.none", fake.Pagle.GetGood("tackleboard.trackerframe.none").name)
+	end)
+
+	it("show Live Embers' earnedText, \"Campfire: 365 days\", while it isn't earned (TKB-R126, SHOP-R22)", function()
+		local _, fake = loggedIn()
+
+		assert.are.same({ "Campfire: 365 days", "Campfire: 365 days" }, {
+			fake.ns.goods:EarnedTexts("tackleboard.trackerframe.embers"),
+		})
+		assert.is_false(fake.Pagle.IsOwned("tackleboard.trackerframe.embers"))
 	end)
 
 	it("register each good with its authored icon (TKB-R125, SHOP-R26)", function()
@@ -222,7 +248,9 @@ describe("A tracker frame's preview", function()
 				assert.are.same(expected, textsOf(block), id)
 				local style, dressed = ns.TRACKER_FRAMES[id], block.frame
 				assert.are.equal(style ~= nil, dressed ~= nil and dressed:IsShown(), id)
-				if style then
+				if style and style.slice then
+					assert.are.equal(ns.BOARD_ATLASES.TrackerFrames2.file, dressed.pieces[1].texture, id)
+				elseif style then
 					assert.are.equal(ns.BOARD_ATLASES.Tracker.file, dressed.top.texture, id)
 				end
 			end
@@ -263,4 +291,180 @@ describe("A tracker frame's preview", function()
 			assert.are.same({ "trk-drift", true }, { plank.frame, plank.rules })
 		end
 	)
+
+	it(
+		"dresses the Curio Shop expansion's frames in their own kit styles, each a panel of TrackerFrames2 (TKB-R125)",
+		function()
+			local ns = loggedIn().ns
+
+			for _, name in ipairs({ "net", "bamboo", "tin", "bobber", "embers" }) do
+				local style = ns.TRACKER_FRAMES["tackleboard.trackerframe." .. name]
+				assert.are.equal(ns.TRACKER_STYLES[name], style, name)
+				assert.are.same({ "TrackerFrames2", "frame-" .. name }, { style.atlas, style.frame }, name)
+			end
+		end
+	)
 end)
+
+-- The earned goods' Campfire (TKB-R126, TKB-R73): a board started on day 0 and lit day after day.
+local DAY, T = board.DAY, board.DAY0 + 3600 -- the start record's time, on board day 0
+local DUROTAR, BLACKMOUTH = 14, 6358 -- a Haul Notice counts a Catch of any item in its zone
+local NOTICE = "n;haul;1;10;1;14" -- a tier-1 Notice done by one Catch in Durotar
+
+-- A tier-1 Notice issued and done on board day `day`: it lights the day (TKB-R70).
+local function litDay(day)
+	local t = T + day * DAY
+	return { board.issue(t + 1, NOTICE), board.cast(t + 2, DUROTAR, { BLACKMOUTH }) }
+end
+
+-- The board started on day 0 and lit on each of its first `days` days.
+local function litDays(days)
+	local log = { board.start(T) }
+	for day = 0, days - 1 do
+		for _, entry in ipairs(litDay(day)) do
+			log[#log + 1] = entry
+		end
+	end
+	return log
+end
+
+-- Notes the projections' mode at each M:RefreshGoods (SHOP-R31): "live", a done's or "idle".
+local function noteRefreshes(fake)
+	local modes = {}
+	local goods = fake.ns.goods
+	local refresh = goods.Refresh
+	goods.Refresh = function(self, module)
+		if module == "TackleBoard" then
+			modes[#modes + 1] = fake.projections:Mode() or "idle"
+		end
+		return refresh(self, module)
+	end
+	return modes
+end
+
+describe("Live Embers, earned at the Campfire's 365-day milestone (TKB-R126, TKB-R73, SHOP-R31)", function()
+	local EMBERS = "tackleboard.trackerframe.embers"
+
+	it(
+		"isn't owned with 364 days lit, and is after the one M:RefreshGoods of the live entry lighting the 365th",
+		function()
+			local fake = board.withHistory(litDays(364))
+			local loaded = board.load(fake)
+			local modes = noteRefreshes(fake)
+			fake.login()
+			fake.enterWorld()
+			local ns = loaded.ns
+			assert.are.equal(364, ns.State().fire.count)
+			assert.is_false(fake.Pagle.IsOwned(EMBERS))
+			local entries = litDay(364)
+
+			board.live(fake, entries[1]) -- the Notice goes up: nothing reached
+			assert.are.same({ "done" }, modes)
+			board.live(fake, entries[2]) -- done: the 365th day lit
+
+			assert.is_not_nil(ns.State().fire.milestones[365])
+			assert.are.same({ "done", "live" }, modes)
+			assert.is_true(fake.Pagle.IsOwned(EMBERS))
+		end
+	)
+
+	it(
+		"is owned from a build over a year-long fire, and stays owned through its rebuild, refreshed from done",
+		function()
+			local fake = board.withHistory(litDays(365))
+			local loaded = board.load(fake)
+			local modes = noteRefreshes(fake)
+			fake.login()
+			fake.enterWorld()
+			assert.is_true(fake.Pagle.IsOwned(EMBERS))
+
+			loaded.ns.projection:Rebuild()
+
+			assert.are.same({ "done", "done" }, modes) -- never mid-rebuild
+			assert.is_true(fake.Pagle.IsOwned(EMBERS))
+		end
+	)
+
+	it("isn't owned at the 100-day milestone, only at its own (TKB-R126)", function()
+		local fake = board.withHistory(litDays(100))
+		board.built(fake)
+
+		assert.is_false(fake.Pagle.IsOwned(EMBERS))
+	end)
+
+	it(
+		"stays owned once reached, through a rebuild that no longer reaches it: its title is celebrated (TKB-R73, TKB-R83)",
+		function()
+			local first = board.withHistory(litDays(365))
+			local _, loaded = board.built(first)
+			assert.is_true(first.Pagle.IsOwned(EMBERS))
+			-- a new log (another logId, LOG-R72) whose board has no fire, over the same PagleTackleBoardDB
+			local fake = board.withHistory({ board.start(T) })
+			fake.globals.PagleTackleBoardDB = { global = loaded.env.PagleTackleBoardDB.global }
+
+			local ns = board.built(fake)
+
+			assert.are.equal(0, ns.State().fire.count)
+			assert.is_true(fake.Pagle.IsOwned(EMBERS))
+		end
+	)
+end)
+
+describe(
+	"Hearth Ember, earned at the Campfire's 100-day milestone, a toast style in Core's slot (TKB-R126, TKB-R73, SHOP-R23, SHOP-R31)",
+	function()
+		local EMBER = "tackleboard.toaststyle.ember"
+
+		it(
+			"is registered in core.toaststyle as the Tackle Board's, earned, with no preview of its own: Core draws it (SHOP-R25)",
+			function()
+				local _, fake = loggedIn()
+				local goods = fake.ns.goods
+
+				local good = goods:Good(EMBER)
+				assert.are.same(
+					{ "core.toaststyle", "TackleBoard", true, nil, nil },
+					{ good.slot, fake.Pagle.GetGood(EMBER).module, good.isEarned ~= nil, good.tier, good.preview }
+				)
+				assert.are.same({ "Campfire: 100 days", "Campfire: 100 days" }, { goods:EarnedTexts(EMBER) })
+				assert.is_false(fake.Pagle.IsOwned(EMBER))
+			end
+		)
+
+		it(
+			"isn't owned with 99 days lit, and is after the one M:RefreshGoods of the live entry lighting the 100th",
+			function()
+				local fake = board.withHistory(litDays(99))
+				local loaded = board.load(fake)
+				local modes = noteRefreshes(fake)
+				fake.login()
+				fake.enterWorld()
+				assert.is_false(fake.Pagle.IsOwned(EMBER))
+				local entries = litDay(99)
+
+				board.live(fake, entries[1])
+				board.live(fake, entries[2])
+
+				assert.is_not_nil(loaded.ns.State().fire.milestones[100])
+				assert.are.same({ "done", "live" }, modes)
+				assert.is_true(fake.Pagle.IsOwned(EMBER))
+				assert.is_false(fake.Pagle.IsOwned("tackleboard.trackerframe.embers")) -- that one waits for 365
+			end
+		)
+
+		it(
+			"is owned from a build over a 100-day fire, through its rebuild, and equips like Core's own (SHOP-R25, SHOP-R32)",
+			function()
+				local fake = board.withHistory(litDays(100))
+				local ns = board.built(fake)
+				assert.is_true(fake.Pagle.IsOwned(EMBER))
+
+				ns.projection:Rebuild()
+
+				assert.is_true(fake.Pagle.IsOwned(EMBER))
+				assert.is_true(fake.Pagle.SetEquipped("core.toaststyle", EMBER))
+				assert.are.equal(EMBER, fake.Pagle.GetEquipped("core.toaststyle"))
+			end
+		)
+	end
+)

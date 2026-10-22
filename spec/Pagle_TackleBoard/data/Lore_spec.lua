@@ -1,11 +1,13 @@
 -- The Tackle Board's generated lore (DATA-R104, TKB-R130): addons/Pagle_TackleBoard/data/Lore.lua adds to ns.L the
 -- name of each of the Fly Box's 30 patterns, the text of each of the board's 8 titles and the name and description of
--- each of its 3 tracker frames, from data/lore/tackleboard.toml: the M7 batch (DATA-R111).
+-- each of its 9 goods (its 8 tracker frames and Hearth Ember), from data/lore/tackleboard.toml: the M7 batch
+-- (DATA-R111), with the Curio Shop expansion's goods (TKB-R125, TKB-R126).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
 
--- tackle-board.md › Data: the Fly Box's patterns in pattern order (TKB-R62), the titles and the goods (TKB-R125).
+-- tackle-board.md › Data: the Fly Box's patterns in pattern order (TKB-R62), the titles and the goods (TKB-R125,
+-- TKB-R126).
 local PATTERNS = {
 	"murloc_nymph",
 	"westfall_wheatwing",
@@ -40,10 +42,19 @@ local PATTERNS = {
 }
 local TITLES =
 	{ "tally_25", "tally_100", "tally_500", "campfire_7", "campfire_30", "campfire_100", "campfire_365", "flybox" }
-local GOODS =
-	{ "tackleboard.trackerframe.none", "tackleboard.trackerframe.corkboard", "tackleboard.trackerframe.driftwood" }
+local GOODS = {
+	"tackleboard.trackerframe.none",
+	"tackleboard.trackerframe.corkboard",
+	"tackleboard.trackerframe.driftwood",
+	"tackleboard.trackerframe.net",
+	"tackleboard.trackerframe.bamboo",
+	"tackleboard.trackerframe.tin",
+	"tackleboard.trackerframe.bobber",
+	"tackleboard.trackerframe.embers",
+	"tackleboard.toaststyle.ember",
+}
 
--- Every lore key the batch must hold (TKB-R130's Lore keys): 30 + 8 + 3 × 2 = 44.
+-- Every lore key the batch must hold (TKB-R130's Lore keys): 30 + 8 + 9 × 2 = 56.
 local function loreKeys()
 	local keys = {}
 	for _, pattern in ipairs(PATTERNS) do
@@ -66,9 +77,9 @@ describe("the Tackle Board's committed lore (DATA-R111, its M7 batch)", function
 		ns = board.load(nil, { lore = true }).ns
 	end)
 
-	it("holds all 44 lines once Pagle_TackleBoard loads: every fly name, title text and good (TKB-R130)", function()
+	it("holds all 56 lines once Pagle_TackleBoard loads: every fly name, title text and good (TKB-R130)", function()
 		local keys = loreKeys()
-		assert.are.equal(44, #keys)
+		assert.are.equal(56, #keys)
 		for _, key in ipairs(keys) do
 			local value = rawget(ns.L, key)
 			assert(type(value) == "string" and value:find("%S"), key .. " has no text")
