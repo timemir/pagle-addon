@@ -1,6 +1,7 @@
 """The repo's own lore (DATA-R111): data/lore/ledger.toml, the Ledger's first batch and its M4 titles and bindings,
 data/lore/core.toml, Core's goods, Hunts' M5 batch, its goods in data/lore/hunts.toml and its Hunts' and sets' text in
-data/hunts/hunts.toml, Stats' M6 batch, its tracker frames in data/lore/stats.toml, and the Tackle Board's M7 batch,
+data/hunts/hunts.toml, Hunts' M8 batch, the event pool's text in data/hunts/events/ and the ladder titles in
+data/lore/hunts.toml, Stats' M6 batch, its tracker frames in data/lore/stats.toml, and the Tackle Board's M7 batch,
 its fly patterns, titles and tracker frames in data/lore/tackleboard.toml, each with its lore check on (DATA-R66,
 LED-R162, HNT-R130, STA-R88, TKB-R130)."""
 
@@ -17,7 +18,8 @@ import pytest
 
 from cli_fixture import run
 from pagle_data.errors import Problems
-from pagle_data.generate import Layers, hunt_list_of, read_layers
+from pagle_data.events import event_hunt_hashes
+from pagle_data.generate import Layers, event_list_of, hunt_list_of, read_layers
 from pagle_data.hunts import hunt_hash
 from pagle_data.lore import Text, catalogue_ids, check_lore
 
@@ -297,10 +299,16 @@ HUNT_GOODS = [
 ]
 
 
+def _event_text() -> dict[str, str]:
+    """Every line of the event pool's lore by key (DATA-R97): each event's name and note and its Hunts' names."""
+    return {key: text.value for texts in _layers().lore.events.values() for key, text in texts.items()}
+
+
 def _hunts_text() -> dict[str, str]:
-    """Every line of Hunts' lore by key: its goods' (data/lore/hunts.toml) and its Hunts' and sets' (DATA-R105)."""
+    """Every line of Hunts' lore by key: its goods' and ladder titles (data/lore/hunts.toml), its Hunts' and sets'
+    (DATA-R105) and its events' (DATA-R97)."""
     lore = _layers().lore
-    return {key: text.value for key, text in (lore.files["hunts"] | lore.hunts).items()}
+    return {key: text.value for key, text in (lore.files["hunts"] | lore.hunts).items()} | _event_text()
 
 
 def test_the_manifest_lists_hunts_seven_goods() -> None:
@@ -313,15 +321,183 @@ def test_the_manifest_lists_hunts_seven_goods() -> None:
     assert all(not allowed for allowed in manifest["huntgood"].ids.values())
 
 
-def test_the_manifest_lists_the_ladder_title_at_25_and_bookmakers_bane_is_its_text() -> None:
-    # HNT-R130, HNT-R148, DATA-R106: [hunts.ladder] with fields title, ID 25 so far (50 and 100 come with the pool's
-    # lore batch, #307), and 25's title is "Bookmaker's Bane"; deleting it fails the hunts lore check (DATA-R107).
+LADDER_STEPS = ["25", "50", "100"]  # hunts.md › Tunables, Ladder steps (HNT-R148)
+
+
+def test_the_manifest_lists_the_ladder_titles_at_25_50_and_100_and_bookmakers_bane_is_25_s() -> None:
+    # HNT-R130, HNT-R148, DATA-R106: [hunts.ladder] with fields title and IDs 25, 50 and 100 (50 and 100 from the
+    # pool's lore batch, #307), none with a placeholder, and 25's title is "Bookmaker's Bane".
     ladder = _layers().lore.manifest["hunts"]["ladder"]
-    assert ladder.fields == ("title",) and list(ladder.ids) == ["25"]
+    assert ladder.fields == ("title",) and list(ladder.ids) == LADDER_STEPS
+    assert all(not allowed for allowed in ladder.ids.values())
     assert _hunts_text()["ladder.25.title"] == "Bookmaker's Bane"
-    assert _without("hunts", "ladder.25.title") == [
-        "data/lore/hunts.toml: ladder.25.title: missing: manifest.toml lists it (DATA-R106, DATA-R107)"
+
+
+@pytest.mark.parametrize("step", LADDER_STEPS)
+def test_deleting_any_one_ladder_title_fails_the_hunts_lore_check_naming_its_key(step: str) -> None:
+    # DATA-R107's missing, for the hunts lore ID: the manifest lists every ladder step (DATA-R106, HNT-R130).
+    key = f"ladder.{step}.title"
+    assert _without("hunts", key) == [
+        f"data/lore/hunts.toml: {key}: missing: manifest.toml lists it (DATA-R106, DATA-R107)"
     ]
+
+
+def test_every_ladder_title_is_its_own_bare_epithet() -> None:
+    # HNT-R148: a title the Angler signs with, earned once at its step, so no two share a text; VOICE.md choice 6
+    # (approved): bare epithets, capitalised, with no "the" or "of" in front; never "Master Angler" (LED-R75).
+    titles = [_hunts_text()[f"ladder.{step}.title"] for step in LADDER_STEPS]
+    assert len(set(titles)) == len(titles)
+    for title in titles:
+        assert title[0].isupper(), title
+        assert not re.match(r"(the|of)\b", title, re.IGNORECASE), title
+        assert "master angler" not in title.lower()
+
+
+def _ladder_title(step: str, value: str) -> Callable[[dict[str, Text]], dict[str, Text]]:
+    """An edit to the hunts lore file's texts that sets ladder.<step>.title to value, adding it when it isn't there."""
+    return lambda texts: texts | {f"ladder.{step}.title": Text("ladder", step, "title", value)}
+
+
+@pytest.mark.parametrize(
+    ("step", "value", "problem"),
+    [
+        ("100", "B" * 33, "ladder.100.title: length: 33 code points, over title's limit of 32 (DATA-R107)"),
+        ("50", "B" * 32, None),
+        (
+            "50",
+            "Bookmaker's {zone}",
+            "ladder.50.title: placeholder: { or } outside an allowed placeholder (manifest.toml allows none here)"
+            " (DATA-R107, DATA-R108)",
+        ),
+        (
+            "75",
+            "Bookmaker's Bother",
+            "ladder.75.title: orphan: 75 isn't in manifest.toml's [hunts.ladder] ids (DATA-R106, DATA-R107)",
+        ),
+    ],
+    ids=["a 33-code-point title", "a 32-code-point title", "a { in a title", "a step the manifest doesn't list"],
+)
+def test_the_hunts_lore_check_judges_a_ladder_title(step: str, value: str, problem: str | None) -> None:
+    # DATA-R107 on [ladder."<n>"] in data/lore/hunts.toml: a title has the title limit of 32 code points (Tunables ›
+    # Lore limits), allows no placeholder (the manifest gives it none, DATA-R108), and a step manifest.toml doesn't
+    # list is an orphan (DATA-R106).
+    found = _problems_with("hunts", _ladder_title(step, value))
+    assert found == ([] if problem is None else [f"data/lore/hunts.toml: {problem}"])
+
+
+# The 1.0 event pool (hunts.md › Data): every event in data/hunts/events/, read through the generator's layers.
+def _events() -> list[dict[str, object]]:
+    events = event_list_of(_layers())["events"]
+    assert isinstance(events, list)
+    return events
+
+
+def _event_hunt_ids(event: dict[str, object]) -> list[str]:
+    hunts = event["hunts"]
+    assert isinstance(hunts, list)
+    return [str(hunt["id"]) for hunt in hunts]
+
+
+def test_every_pool_event_has_a_name_a_note_and_named_hunts_and_nothing_else() -> None:
+    # HNT-R130, DATA-R97: each of the pool's 24 events has its name and note, and each of its Hunts its name, in its
+    # own file, all passing the Hunts lore check (read_layers raises on any problem); the M8 batch (DATA-R111, #307).
+    events = _events()
+    assert len(events) == 24
+    keys = set()
+    for event in events:
+        keys |= {f"event.{event['id']}.name", f"event.{event['id']}.note"}
+        keys |= {f"hunt.{hunt}.name" for hunt in _event_hunt_ids(event)}
+    text = _event_text()
+    assert set(text) == keys
+    assert all(text[key].strip() for key in keys)
+
+
+def test_no_two_event_hunts_share_a_name() -> None:
+    # HNT-R86: an event Hunt's first mark is announced as "{Hunt name} · first mark" with no event beside it, and the
+    # tracker shows "{Hunt}: {count} / {next threshold}" (HNT-R175), so each name tells its Hunt apart on its own.
+    names = [_event_text()[f"hunt.{hunt}.name"] for event in _events() for hunt in _event_hunt_ids(event)]
+    assert len(set(names)) == len(names)
+
+
+# HNT-R27: Pagle Wagers is a bet between anglers and Nat Pagle, never odds, a fish being due or a chance to win
+# (#284); "only" with a time word would also misstate a window (#175). Whole words, ignoring case.
+NO_ODDS = r"\b(odds|due|overdue|chances?|likely|luck|lucky|sure|certain|guaranteed?|bound to|long shot|only)\b"
+
+
+@pytest.mark.parametrize("key", sorted(_event_text()))
+def test_no_line_of_event_lore_claims_odds_a_due_fish_or_a_chance(key: str) -> None:
+    text = _event_text()[key]
+    assert not re.search(NO_ODDS, text, re.IGNORECASE), text
+
+
+def _event_file(event_id: str) -> str:
+    return f"data/hunts/events/{event_id}.toml"
+
+
+def test_the_generator_fails_on_a_deleted_event_note_and_names_the_key(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R97, DATA-R63: an event's note is a key its file must have (Data: data/hunts/events/<event-id>.toml keys),
+    # so a copy of data/ with one deleted writes nothing.
+    note = _event_text()["event.feralas_redgill.note"]
+    _generator_fails_on(
+        tmp_path,
+        capsys,
+        _event_file("feralas_redgill"),
+        _replacing(f'note = "{note}"\n', ""),
+        f"{_event_file('feralas_redgill')}: event: missing key 'note'",
+    )
+
+
+def test_the_generator_fails_on_a_29_code_point_event_hunt_name_and_names_the_key(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R99, DATA-R107 through the generator itself (DATA-R63): an event Hunt's name has the name limit of 28
+    # code points (Tunables › Lore limits).
+    name = _event_text()["hunt.feralas_redgill_trout.name"]
+    _generator_fails_on(
+        tmp_path,
+        capsys,
+        _event_file("feralas_redgill"),
+        _replacing(f'name = "{name}"\n', f'name = "{"T" * 29}"\n'),
+        f"{_event_file('feralas_redgill')}: hunt.feralas_redgill_trout.name: length: 29 code points, over name's"
+        " limit of 28 (DATA-R107)",
+    )
+
+
+def test_the_generator_fails_on_a_brace_in_an_event_note_and_names_the_key(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R99, DATA-R107's placeholder: an event's text allows no { or } at all, {zone} included (DATA-R105).
+    note = _event_text()["event.feralas_redgill.note"]
+    _generator_fails_on(
+        tmp_path,
+        capsys,
+        _event_file("feralas_redgill"),
+        _replacing(f'note = "{note}"\n', 'note = "Rain over {zone}."\n'),
+        f"{_event_file('feralas_redgill')}: event.feralas_redgill.note: placeholder: "
+        "{ or } in a Hunt's or set's text, which allows none (DATA-R105, DATA-R107)",
+    )
+
+
+def test_renaming_an_event_and_its_hunts_changes_no_hash_and_not_the_event_list_fingerprint(tmp_path: Path) -> None:
+    # DATA-R109, DATA-R98, DATA-R94: lore is never in an event Hunt's hash or the event list's fingerprint, so a
+    # wording fix rebuilds nothing.
+    shutil.copytree(REPO / "data", tmp_path / "data")
+    path = tmp_path / _event_file("feralas_redgill")
+    text = path.read_text(encoding="utf-8")
+    keys = ("event.feralas_redgill.name", "event.feralas_redgill.note", "hunt.feralas_redgill_trout.name")
+    for n, key in enumerate(keys):
+        old = _event_text()[key]
+        assert text.count(f'"{old}"') == 1, old
+        text = text.replace(f'"{old}"', f'"Renamed {n}"')
+    path.write_text(text, encoding="utf-8")
+    renamed = read_layers(tmp_path)
+    texts = renamed.lore.events[_event_file("feralas_redgill")]
+    assert [texts[key].value for key in keys] == ["Renamed 0", "Renamed 1", "Renamed 2"]
+    before, after = event_list_of(_layers()), event_list_of(renamed)
+    assert after["fingerprint"] == before["fingerprint"]
+    assert event_hunt_hashes(after) == event_hunt_hashes(before)
 
 
 def test_hunts_lore_has_a_name_and_a_description_for_every_good() -> None:

@@ -1,5 +1,5 @@
 # Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 10: 10 (Duskwood), low band.
-# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# The name, note and Hunt names are the M8 lore batch (#307), drafted from data/lore/VOICE.md.
 # Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
 #   duskwood_witching_haul: Haul, species.any, 99.7% of Catches: tiers 135 / 360 / 720, 45 / 120 / 241 min
 #   duskwood_witching_catfish: Named fish, species 6308 (Raw Bristle Whisker Catfish), 60.7% of Catches: tiers 80 / 220 / 435, 44 / 121 / 239 min
@@ -11,29 +11,29 @@ id = "duskwood_witching"
 zones = [10]
 tags = ["river", "night"]
 name = "Witching Hour"
-note = "Water in these dark woods is no friendlier after midnight, but it bites."
+note = "Slow black rivers through woods where it never quite gets light. After midnight the fish bite, and so does everything else."
 
 [[hunt]]
 id = "duskwood_witching_haul"
 class = "species.any"
 tiers = [135, 360, 720]
-name = "A Dark Wood Basket"
+name = "Lantern-Light Basket"
 
 [[hunt]]
 id = "duskwood_witching_catfish"
 species = 6308
 tiers = [80, 220, 435]
-name = "Catfish in the Dark"
+name = "Whiskers in the Dark"
 
 [[hunt]]
 id = "duskwood_witching_snapper"
 species = 6289
 tiers = [45, 125, 255]
-name = "Mud Snapper Run"
+name = "Black-Water Snappers"
 
 [[hunt]]
 id = "duskwood_witching_midnight"
 class = "species.any"
 conditions = { time = [[0, 180]] }
 tiers = [17, 45, 90]
-name = "Witching Hour"
+name = "After the Twelfth Bell"

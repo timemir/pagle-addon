@@ -1,5 +1,5 @@
 # Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 28: 28 (Western Plaguelands), mid band.
-# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# The name, note and Hunt names are the M8 lore batch (#307), drafted from data/lore/VOICE.md.
 # Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
 #   western_plaguelands_lake_haul: Haul, species.any, 92.3% of Catches: tiers 125 / 330 / 665, 45 / 119 / 240 min
 #   western_plaguelands_lake_redgill: Named fish, species 13758 (Raw Redgill), 60.0% of Catches: tiers 80 / 215 / 430, 44 / 120 / 239 min
@@ -10,26 +10,26 @@
 id = "western_plaguelands_lake"
 zones = [28]
 tags = ["lake", "day"]
-name = "Blighted Lake Afternoon"
-note = "The plague hasn't reached the redgill. Nobody has told them."
+name = "An Afternoon in the Blight"
+note = "Dead fields, a sick sky and a lake full of healthy redgill. Nobody has told them about the plague."
 
 [[hunt]]
 id = "western_plaguelands_lake_haul"
 class = "species.any"
 tiers = [125, 330, 665]
-name = "A Blighted Basket"
+name = "A Basket Despite It All"
 
 [[hunt]]
 id = "western_plaguelands_lake_redgill"
 species = 13758
 tiers = [80, 215, 430]
-name = "Redgill Run"
+name = "Redgill in Good Health"
 
 [[hunt]]
 id = "western_plaguelands_lake_trout"
 species = 8365
 tiers = [13, 35, 70]
-name = "Lake Trout"
+name = "Trout in the Blight"
 
 [[hunt]]
 id = "western_plaguelands_lake_afternoon"

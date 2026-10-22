@@ -1,5 +1,5 @@
 # Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 47: 47 (The Hinterlands), mid band.
-# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# The name, note and Hunt names are the M8 lore batch (#307), drafted from data/lore/VOICE.md.
 # Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
 #   hinterlands_coast_haul: Haul, species.any, 88.8% of Catches: tiers 120 / 320 / 640, 45 / 120 / 240 min
 #   hinterlands_coast_yellowtail: Named fish, species 4603 (Raw Spotted Yellowtail), 10.8% of Catches: tiers 15 / 40 / 75, 46 / 124 / 232 min
@@ -10,30 +10,30 @@
 id = "hinterlands_coast"
 zones = [47]
 tags = ["coast", "day"]
-name = "Hill Country Coast"
-note = "Past the trolls and the gryphons, the hills run down to a quiet sea."
+name = "Where the Hills Meet the Sea"
+note = "Wild hill country, gryphons overhead, and a quiet sea at the bottom of it all. The mightfish are worth the climb down."
 
 [[hunt]]
 id = "hinterlands_coast_haul"
 class = "species.any"
 tiers = [120, 320, 640]
-name = "A Coastal Basket"
+name = "Down from the Hills"
 
 [[hunt]]
 id = "hinterlands_coast_yellowtail"
 species = 4603
 tiers = [15, 40, 75]
-name = "Yellowtail Run"
+name = "Quiet-Sea Yellowtail"
 
 [[hunt]]
 id = "hinterlands_coast_mightfish"
 species = 13754
 tiers = [4, 11, 20]
-name = "Mightfish Run"
+name = "Worth the Climb"
 
 [[hunt]]
 id = "hinterlands_coast_morning"
 class = "species.any"
 conditions = { time = [[540, 780]] }
 tiers = [20, 55, 105]
-name = "Morning Tide"
+name = "Late-Morning Tide"

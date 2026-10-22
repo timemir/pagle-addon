@@ -41,6 +41,13 @@ name = "Wax Seal"
 description = "Parchment with a red rule down its margin and a wax seal pressed in the corner, as if the list were official."
 
 # The completed-run ladder (HNT-R148): a title at 25, 50 and 100 completed runs, listed in manifest.toml under
-# [hunts.ladder]. 25 is the spec's own; 50 and 100 come with the event pool's lore batch (#307).
+# [hunts.ladder]. 25 is the spec's own; 50 and 100 are the event pool's lore batch (#307). Each is a bare epithet the
+# Angler signs with, like the set titles, and each is more of the same bet won.
 [ladder."25"]
 title = "Bookmaker's Bane"
+
+[ladder."50"]
+title = "Bookmaker's Ruin"
+
+[ladder."100"]
+title = "Breaker of the House"

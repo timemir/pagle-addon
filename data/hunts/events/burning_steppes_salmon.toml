@@ -1,5 +1,5 @@
 # Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 46: 46 (Burning Steppes), high band.
-# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# The name, note and Hunt names are the M8 lore batch (#307), drafted from data/lore/VOICE.md.
 # Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
 #   burning_steppes_salmon_haul: Haul, species.any, 83.6% of Catches: tiers 115 / 300 / 600, 46 / 120 / 239 min
 #   burning_steppes_salmon_salmon: Named fish, species 13889 (Raw Whitescale Salmon), 29.7% of Catches: tiers 40 / 105 / 215, 45 / 118 / 241 min
@@ -11,7 +11,7 @@ id = "burning_steppes_salmon"
 zones = [46]
 tags = ["lake", "day"]
 name = "Salmon under Ash"
-note = "Ash on the water and salmon under it. Bring a hat."
+note = "Black hills, ash on the water and salmon under it. Bring a hat with a wide brim."
 
 [[hunt]]
 id = "burning_steppes_salmon_haul"
@@ -23,17 +23,17 @@ name = "An Ashen Basket"
 id = "burning_steppes_salmon_salmon"
 species = 13889
 tiers = [40, 105, 215]
-name = "Whitescale Run"
+name = "Salmon through the Soot"
 
 [[hunt]]
 id = "burning_steppes_salmon_redgill"
 species = 13758
 tiers = [25, 70, 140]
-name = "Redgill under Ash"
+name = "Embers and Redgill"
 
 [[hunt]]
 id = "burning_steppes_salmon_noon"
 class = "species.any"
 conditions = { time = [[720, 960]] }
 tiers = [19, 50, 100]
-name = "Hot Afternoon"
+name = "The Hottest Hours"
