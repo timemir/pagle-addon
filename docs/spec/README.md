@@ -139,7 +139,7 @@ Core's rung table ([announcements.md](core/announcements.md#rungs-modules-use-so
 | Daily and weekly reset | TKB-R10–R14 (the only Module that uses it) | every other file says it doesn't depend on it |
 | Uncharted and unconfirmed Catches | LOG-R8, LOG-R96 | DATA-R45–R57; REP-R10; each Module's last edge-case rule |
 | Windows, time and seasons | LOG-R46–R50, DATA-R35–R38 | HNT-R40–R53 (the board); LED-R127; STA-R14–R15 |
-| Simulated Size | LOG-R65–R69, LOG-R100, ADR 0014 | LED-R80–R85 (records); HNT-R10 (`minBand`); TKB-R42 (Size goals) |
+| Simulated Size | LOG-R65–R69, LOG-R100, ADR 0014 | LED-R80–R85 (records); HNT-R10 (`minBand`); TKB-R32 (no Size goals) |
 | Lore and display text | DATA-R100–R112 | each Module's Lore rule; CORE-R8 for interface text |
 | Settings | CORE-R40–R44 (mechanism) | [settings.md](settings.md) (layout); each file's Settings section (values) |
 
