@@ -92,6 +92,20 @@ function ns.ZoneCrestID(crest)
 	return "ledger.crest." .. crest.key
 end
 
+--- The zone crest of the zone `areaID` (LED-R113): its good's ID and its name (its lore, or its ID while the key has no
+--- text, LED-R161), for the Zone Master banner's crest line; nil for a zone without a crest.
+---@param areaID integer
+---@return { id: string, name: string }?
+function ns.ZoneCrestOf(areaID)
+	for _, crest in ipairs(ns.ZONE_CRESTS) do
+		if crest.areaID == areaID then
+			local id = ns.ZoneCrestID(crest)
+			return { id = id, name = ns.Lore("crest." .. crest.key .. ".name") or id }
+		end
+	end
+	return nil
+end
+
 -- Each continent's place in LED-R113's order: the Eastern Kingdoms, Kalimdor, then any other.
 local CONTINENT_ORDER = { [0] = 1, [1] = 2 }
 

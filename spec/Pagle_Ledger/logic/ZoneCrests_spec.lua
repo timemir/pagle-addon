@@ -97,6 +97,27 @@ describe("the zone crests", function()
 		end)
 	end)
 
+	describe("the crest of a zone", function()
+		it("is its good's ID and its name from lore, or nothing for a zone without one (LED-R113)", function()
+			assert.are.same(
+				{ id = "ledger.crest.elwynn", name = ns.L["crest.elwynn.name"] },
+				ns.ZoneCrestOf(LAKE) -- areaID 12
+			)
+			assert.are.same({ id = "ledger.crest.blackrock", name = "The Black Spire" }, ns.ZoneCrestOf(25))
+			assert.is_nil(ns.ZoneCrestOf(1581)) -- a dungeon's areaID
+			assert.is_nil(ns.ZoneCrestOf(0))
+		end)
+
+		it("is named by its ID while its lore has no text (LED-R161)", function()
+			local lore = ns.L["crest.elwynn.name"]
+			ns.L["crest.elwynn.name"] = ""
+			local crest = ns.ZoneCrestOf(LAKE)
+			ns.L["crest.elwynn.name"] = lore
+
+			assert.are.same({ id = "ledger.crest.elwynn", name = "ledger.crest.elwynn" }, crest)
+		end)
+	end)
+
 	describe("their order", function()
 		it(
 			"is by continent, the Eastern Kingdoms, Kalimdor, then any other, each by its zones' names (LED-R113)",
