@@ -26,8 +26,13 @@ local NUMBER_LABELS = { L.CARD_CASTS, L.CARD_CATCHES, L.CARD_GOT_AWAY, L.CARD_TI
 local NUMBERS_HEIGHT = 90
 -- The close button's bottom, above the card's.
 local CLOSE_BOTTOM = 20
--- Rows shown before the list scrolls with the mouse wheel.
+-- Ruled lines shown before the list scrolls with the mouse wheel.
 local ROWS_SHOWN = 12
+-- A row's width, the page's past its margin; a moment's title's indent past its icon, and the least gap between the
+-- title and its own text beside it.
+local ROW_WIDTH, INDENT, GAP = WIDTH - MARGIN - 30, 28, 16
+-- The size of the hand a moment's own text is in (adapter/Art.lua's CardDetail).
+local DETAIL_SIZE = 20
 
 ---@class PagleCardRowView: Frame
 ---@field kind "heading"|"line"|"moment"|"link"
@@ -78,8 +83,8 @@ function ns.CloseCardOnScreen(card)
 	end
 end
 
--- Row `i` of the list, made on first use, on a ruled line: an icon, the text and, on the right, a moment's own text
--- in the Angler's hand.
+-- Row `i` of the list, made on first use: an icon, the text and a moment's own text in the Angler's hand. show places
+-- it, on as many ruled lines as fillRow says it takes.
 ---@param frame PagleCardFrame
 ---@param i integer
 ---@return PagleCardRowView
@@ -87,19 +92,43 @@ local function rowAt(frame, i)
 	local row = frame.rows[i]
 	if not row then
 		row = CreateFrame("Frame", nil, frame.content) --[[@as PagleCardRowView]]
-		row:SetSize(WIDTH - MARGIN - 30, LINE)
-		row:SetPoint("TOPLEFT", 0, -(i - 1) * LINE)
+		row:SetSize(ROW_WIDTH, LINE)
 		row.icon = row:CreateTexture(nil, "ARTWORK")
 		row.icon:SetSize(20, 20)
-		row.icon:SetPoint("BOTTOMLEFT", 0, 5)
+		-- On the row's first line, 5 above its rule.
+		row.icon:SetPoint("TOPLEFT", 0, 25 - LINE)
 		row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) -- the icon's own border off
 		row.text = ns.ArtText(row, "CardLine")
 		row.detail = ns.ArtText(row, "CardDetail")
-		row.detail:SetPoint("BOTTOMRIGHT", 0, 4)
-		row.detail:SetJustifyH("RIGHT")
 		frame.rows[i] = row
 	end
 	return row
+end
+
+-- Places a moment's own text, already in row.detail, on its row (#314): at the right of the title's line when the two
+-- fit there side by side; else on the lines under the title, from its left, wrapped to the row and LINE apart, so each
+-- line sits on a rule as the title's does. Returns the lines it takes under the title.
+---@param row PagleCardRowView
+---@return integer
+local function placeDetail(row)
+	local detail = row.detail
+	detail:ClearAllPoints()
+	detail:SetWidth(0) -- measured unbounded
+	detail:SetWordWrap(false)
+	detail:SetSpacing(0)
+	local width = detail:GetStringWidth()
+	if width == 0 or INDENT + row.text:GetStringWidth() + GAP + width <= ROW_WIDTH then
+		detail:SetJustifyH("RIGHT")
+		detail:SetPoint("BOTTOMRIGHT", row, "TOPRIGHT", 0, 4 - LINE)
+		return 0
+	end
+	detail:SetJustifyH("LEFT")
+	detail:SetWordWrap(true)
+	detail:SetWidth(ROW_WIDTH - INDENT)
+	detail:SetSpacing(LINE - DETAIL_SIZE)
+	-- Its last line on the row's last rule, the lines above it LINE apart: n lines are n LINEs less the spacing tall.
+	detail:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", INDENT, 4)
+	return math.max(1, math.ceil(detail:GetStringHeight() / LINE))
 end
 
 -- The ink of a Write-up section's Show me around » (ANN-R64), and its ink under the mouse.
@@ -135,11 +164,14 @@ local function linkOf(frame, row)
 end
 
 -- Fills row `row` from a card row: a heading printed in red, a line, a moment with its icon and its own text, or a
--- Write-up section's Show me around » link. Each sits on its line.
+-- Write-up section's Show me around » link. Each sits on its line, a moment's own text maybe on more under it: returns
+-- the ruled lines the row takes.
 ---@param frame PagleCardFrame
 ---@param row PagleCardRowView
 ---@param data PagleCardRow
+---@return integer
 local function fillRow(frame, row, data)
+	local lines = 1
 	row.kind = data.kind
 	row.module = data.module
 	row.text:ClearAllPoints()
@@ -163,12 +195,15 @@ local function fillRow(frame, row, data)
 		row.text:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 8, 2)
 		row.icon:SetTexture(textureOf(data.icon))
 		row.icon:Show()
+		lines = lines + placeDetail(row)
 	else
 		ns.SetArtFont(row.text, "CardLine")
 		row.text:SetPoint("BOTTOMLEFT", 0, 7)
 		row.icon:Hide()
 	end
+	row:SetHeight(lines * LINE)
 	row:Show()
+	return lines
 end
 
 -- The gilt close button on `parent`: the art's three-sliced button with its words, brighter under the mouse.
@@ -335,16 +370,20 @@ local function show(card)
 	local rows = ns.CardRows(card, BreakUpLargeNumbers, function(module)
 		return ns.guideSteps ~= nil and ns.guideSteps:FirstOf(module) ~= nil
 	end)
+	-- Each row on the ruled line under the last row's last.
+	local lines = 0
 	for i, data in ipairs(rows) do
-		fillRow(frame, rowAt(frame, i), data)
+		local row = rowAt(frame, i)
+		row:SetPoint("TOPLEFT", frame.content, "TOPLEFT", 0, -lines * LINE)
+		lines = lines + fillRow(frame, row, data)
 	end
 	for i = #rows + 1, #frame.rows do
 		frame.rows[i]:Hide()
 	end
-	frame.content:SetHeight(math.max(1, #rows) * LINE)
+	frame.content:SetHeight(math.max(1, lines) * LINE)
 	frame.scroll:SetVerticalScroll(0)
 	local listTop = 14 + (numbers and NUMBERS_HEIGHT or 0)
-	local listHeight = math.min(#rows, ROWS_SHOWN) * LINE
+	local listHeight = math.min(lines, ROWS_SHOWN) * LINE
 	frame.scroll:ClearAllPoints()
 	frame.scroll:SetPoint("TOPLEFT", frame.body, "TOPLEFT", MARGIN, -listTop)
 	frame.scroll:SetHeight(math.max(1, listHeight))
