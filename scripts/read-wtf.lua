@@ -3,8 +3,9 @@
 --   - the latest !BugGrabber session's Lua errors, with their stacks;
 --   - the Catch log, decoded with Core's own codec (addons/Pagle/logic/CatchLog.lua): the logId, the entries by
 --     tag, the C1 Casts by outcome, per character and per zone areaID, those in zone areaID 0, their time span, the
---     realm's UTC offset from the latest Cast's realm minute (LOG-R49), the B1 and S1 entries, each P1 (Prestige) and U1 (purchase) entry, and PagleDB.global.decodeErrors (0 when AceDB
---     left that default out of the file);
+--     realm's UTC offset from the latest Cast's realm minute (LOG-R49), the B1 and S1 entries, each P1 (Prestige,
+--     with its Activity XP) and U1 (purchase) entry, and PagleDB.global.decodeErrors (0 when AceDB left that default
+--     out of the file);
 --   - the Ledger (PagleLedgerDB in Pagle_Ledger.lua): the projection Core stores and whether its logId, lastSeq and
 --     rulesVersion are current, its state (items, the Uncharted list, zone ranks) with what the Ledger's own logic/
 --     computes from it over the world index (the level, charted zones, shown ranks, Ledger completion), and the
@@ -26,6 +27,8 @@
 --     logic/), the celebrated set checked against the completed goals and titles, and the tracker settings;
 --   - the wallet: each Module's reported Coins (PagleDB.global.coins.earned), the balance (held while negative) and
 --     the wallet projection (PagleDB.global.projections.wallet): spent and purchased;
+--   - Activity XP: each Module's reported total (PagleDB.global.activityXP.earned) and their sum, and whether these
+--     totals and the Coins totals belong to PagleLog's logId;
 --   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
 --   - the tracker dock's saved place (PagleDB.profile.dock.point);
 --   - the cards: the Write-up waiting, the Session summary cards, the open summary and the pending moments;
@@ -308,13 +311,14 @@ local function printCasts(log, facts, since)
 end
 
 -- The Prestige (P1, LOG-R38) and purchase (U1, LOG-R39) entries: a count each, then one line per entry, P1 with
--- its rank and U1 with its good and price, each with its character and time.
+-- its rank and Activity XP snapshot (AXP-R5, 0 for a pre-1.0 P1 without one) and U1 with its good and price, each
+-- with its character and time.
 local function printPrestigesAndPurchases(log, facts)
 	for _, kind in ipairs({ { "P1", facts.prestiges }, { "U1", facts.purchases } }) do
 		local tag, records = kind[1], kind[2]
 		print(tag .. ": " .. (#records > 0 and count(#records, "entry", "entries") or "none"))
 		for _, record in ipairs(records) do
-			local what = tag == "P1" and "rank " .. record.rank
+			local what = tag == "P1" and ("rank %d, %d Activity XP"):format(record.rank, record.activityXP)
 				or ("%s for %s"):format(record.good, count(record.price, "Coin"))
 			print(("  %s, %s, %s"):format(what, characterName(log, record.char), utc(record.time)))
 		end
@@ -2264,6 +2268,53 @@ local function printWallet(pagle, log)
 	printWalletProjection(stored, log, core.WALLET_RULES_VERSION)
 end
 
+-- The line for a store of totals' logId (SHOP-R3, AXP-R3): whether it is PagleLog's, else what login does with it.
+---@param logId any
+---@param log table?
+---@return string
+local function totalsLogId(logId, log)
+	if logId == nil then
+		return "none stored (a fresh log's, or no Module has reported since PagleLog had one)"
+	elseif not log then
+		return tostring(logId) .. ", no PagleLog to compare with"
+	elseif logId == log.logId then
+		return tostring(logId) .. ", PagleLog's"
+	end
+	return ("%s, DIFFERS from PagleLog's %s, so Core empties these totals at login"):format(
+		tostring(logId),
+		tostring(log.logId)
+	)
+end
+
+-- Prints the Activity XP section (activity-xp.md › Data): each Module's last reported total (AXP-R3) and their sum,
+-- the snapshot the next Prestige would write (AXP-R5), then whether these totals and the Coins totals belong to
+-- PagleLog's logId (AXP-R3, SHOP-R3).
+local function printActivityXP(pagle, log)
+	local global, why = pagleGlobal(pagle)
+	if not global then
+		print("== Activity XP: " .. why)
+		return
+	end
+	local store = tableOr(global.activityXP)
+	local earned = tableOr(store.earned)
+	local sum, names = 0, sortedKeys(earned)
+	for _, name in ipairs(names) do
+		sum = sum + (tonumber(earned[name]) or 0)
+	end
+	-- AceDB leaves the default, an empty earned table, out of the file.
+	print(
+		("== Activity XP (PagleDB.global.activityXP.earned): total %d%s"):format(
+			sum,
+			#names == 0 and ", no Module has reported Activity XP" or ""
+		)
+	)
+	for _, name in ipairs(names) do
+		print(name .. ": " .. tostring(earned[name]))
+	end
+	print("logId: " .. totalsLogId(store.logId, log))
+	print("Coins logId: " .. totalsLogId(tableOr(global.coins).logId, log))
+end
+
 -- Prints the Looks section (wallet-and-shop.md › Data, catch-log.md › Data, #173): each slot's stored pick from
 -- PagleDB.profile.appearance, or its default (SHOP-R32), for every slot a cached good or a stored pick names; the
 -- goods cache's size and its earned goods cached as earned (SHOP-R26); and profile.lengthUnit (LOG-R69). PagleDB
@@ -3060,6 +3111,7 @@ local function main(args)
 	printStats(options.account, pagleLog(pagle.saved), facts, options)
 	printBoard(options.account, pagleLog(pagle.saved), facts, options)
 	printWallet(pagle, pagleLog(pagle.saved))
+	printActivityXP(pagle, pagleLog(pagle.saved))
 	printLooks(pagle)
 	printDock(pagle)
 	printCards(pagle)

@@ -115,7 +115,7 @@ describe("PagleDB's onboarding migration", function()
 		ns.Migrate(new, ns.PAGLEDB_MIGRATIONS, { catchLog = catchLog({ BUILD_ENTRY }) })
 		ns.Migrate(returning, ns.PAGLEDB_MIGRATIONS, { catchLog = catchLog({ castEntry(SERVER_TIME - 9000) }) })
 
-		assert.are.equal(2, new.global.schemaVersion)
+		assert.are.equal(#ns.PAGLEDB_MIGRATIONS, new.global.schemaVersion)
 		assert.are.equal("waiting", new.global.onboarding.letter)
 		assert.are.equal("returning", returning.global.onboarding.letter)
 	end)

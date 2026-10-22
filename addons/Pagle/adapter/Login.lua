@@ -41,6 +41,7 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	})
 	ns.Migrate(ns.db, ns.PAGLEDB_MIGRATIONS, { catchLog = ns.catchLog }) -- step 2 reads the log (ONB-R2)
 	ns.OpenWallet() -- SHOP-R3
+	ns.OpenActivityXP() -- AXP-R3
 	ns.RegisterCoreGoods(ns.CORE_PREVIEWS) -- SHOP-R25: before any Module registers its own
 	ns.BuildCatalogue()
 	ns.WireFieldReport(ns.host) -- LOG-R78: Core's projection, ahead of every Module's

@@ -1,7 +1,7 @@
 -- What Stats never does. It reads only Core (STA-R1, ADR 0001: Modules only see Core): never the Catch log's
 -- SavedVariables or Core's, never another Module's DB, and it calls no other Module. And it celebrates nothing
--- (STA-R2): no Moment, Session summary line, Write-up section or Coins, and no Module record. Checked over every file
--- Stats ships: each name below fails the spec wherever Stats' code says it.
+-- (STA-R2): no Moment, Session summary line, Write-up section, Coins or Activity XP (AXP-R1), and no Module record.
+-- Checked over every file Stats ships: each name below fails the spec wherever Stats' code says it.
 
 local DIR = "addons/Pagle_Stats/"
 
@@ -22,6 +22,7 @@ local FORBIDDEN = {
 	{ "%f[%w_]SetSummaryLine%f[^%w_]", CELEBRATES_NOTHING },
 	{ "%f[%w_]RaiseWriteUp%f[^%w_]", CELEBRATES_NOTHING },
 	{ "%f[%w_]ReportCoinsEarned%f[^%w_]", CELEBRATES_NOTHING },
+	{ "%f[%w_]ReportXPEarned%f[^%w_]", "AXP-R1: Stats pays no Activity XP" },
 	-- A Module record (LOG-R14); none arrive before M7, but Stats appends none ever.
 	{ "%f[%w_]AppendRecord%f[^%w_]", CELEBRATES_NOTHING },
 }
@@ -82,6 +83,7 @@ describe("Stats' boundary (ADR 0001, STA-R1, STA-R2)", function()
 			{ 'M:SetSummaryLine("Best Session yet")', CELEBRATES_NOTHING },
 			{ "M:RaiseWriteUp(section)", CELEBRATES_NOTHING },
 			{ "M:ReportCoinsEarned(5)", CELEBRATES_NOTHING },
+			{ "M:ReportXPEarned(150)", "AXP-R1: Stats pays no Activity XP" },
 			{ 'M:AppendRecord({ kind = "stats" })', CELEBRATES_NOTHING },
 		}
 		for _, case in ipairs(planted) do

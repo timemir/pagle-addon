@@ -90,6 +90,7 @@ Projection.__index = Projection
 ---@field package list PagleProjection[]
 ---@field package loginSeq integer?    -- set by Start
 ---@field package mode (PagleApplyMode|"done")?
+---@field package entry PagleRecord? -- the entry a live apply is applying, while it runs (LiveEntry)
 ---@field package deferred PagleRecord[] -- live entries handed over while an apply or done ran
 ---@field package chunked PagleProjection[] -- running in chunks across frames
 ---@field package stepping boolean     -- a frame step is scheduled
@@ -192,15 +193,17 @@ local function mustRebuild(machinery, def)
 		or db.rulesVersion ~= def.rulesVersion
 end
 
--- Runs `fn` with `mode` as the mode in progress (Mode). Live entries handed over meanwhile wait for settle.
+-- Runs `fn` with `mode` as the mode in progress (Mode), and `entry` as the live entry it applies (LiveEntry). Live
+-- entries handed over meanwhile wait for settle.
 ---@param machinery PagleProjections
 ---@param mode PagleApplyMode|"done"
+---@param entry PagleRecord? the entry, for a live apply only
 ---@param fn fun()
-local function during(machinery, mode, fn)
-	local outer = machinery.mode
-	machinery.mode = mode
+local function during(machinery, mode, entry, fn)
+	local outerMode, outerEntry = machinery.mode, machinery.entry
+	machinery.mode, machinery.entry = mode, entry
 	fn()
-	machinery.mode = outer
+	machinery.mode, machinery.entry = outerMode, outerEntry
 end
 
 -- Applies one record to a projection in `mode`, through the Module-calling function so an error is reported and the
@@ -211,7 +214,7 @@ end
 ---@param run PagleProjectionRun? the catch-up or rebuild it belongs to; nil for a live entry
 local function applyOne(projection, record, mode, run)
 	local machinery = projection.machinery
-	during(machinery, mode, function()
+	during(machinery, mode, mode == "live" and record or nil, function()
 		machinery.options.call(projection.def.apply, projection.state, record, mode)
 	end)
 	if run and run.timing then
@@ -374,7 +377,7 @@ function Projections:finish(projection, run)
 			replayed = run.replayed,
 		}
 		run.inDone = true
-		during(self, "done", function()
+		during(self, "done", nil, function()
 			self.options.call(def.done, projection.state, info)
 		end)
 		run.inDone = nil
@@ -496,6 +499,13 @@ end
 ---@return (PagleApplyMode|"done")?
 function Projections:Mode()
 	return self.mode
+end
+
+--- The entry a live apply is applying (LOG-R73), while it runs, else nil: in a replay, rebuild or done, and outside
+--- any apply. How Core hands `ActivityXPChanged` the entry whose apply led to a report (AXP-R7).
+---@return PagleRecord?
+function Projections:LiveEntry()
+	return self.entry
 end
 
 --- Runs `fn` once no projection is updating (LOG-R63, ANN-R10, ANN-R61): now if none is, else right after the last

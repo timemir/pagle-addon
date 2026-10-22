@@ -81,15 +81,20 @@ end
 
 --- `M:ReportCoinsEarned(total)` over `wallet` (SHOP-R2, SHOP-R3), so Core's adapter and FakePagle publish one
 --- method: an error at the Module's call, storing nothing, for anything but a whole number of Coins, 0 or more.
+--- `stamp`, if given, runs before each total is stored: Core's wiring has the totals take the log's logId there.
 ---@param registry PagleModuleRegistry
 ---@param wallet PagleWallet
+---@param stamp fun()?
 ---@return fun(self: PagleModuleHandle, total: integer)
-function ns.ReportCoinsEarnedMethod(registry, wallet)
+function ns.ReportCoinsEarnedMethod(registry, wallet, stamp)
 	return function(self, total)
 		local module = registry:ModuleCalling(self, "ReportCoinsEarned", "total")
 		local problem = ns.CoinTotalProblem(total)
 		if problem then
 			error(problem, 2)
+		end
+		if stamp then
+			stamp()
 		end
 		wallet:Report(module.def.name, total)
 	end

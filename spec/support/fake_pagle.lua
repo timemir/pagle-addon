@@ -17,9 +17,9 @@
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
--- Sessions, moments, Session summary, cards, wallet, goods, wallet projection and tracker dock are built and connected
--- by logic/Wiring.lua, which Core's adapter runs too: the fake hands it a host over its fakes where Core's adapter
--- hands it the client (adapter/Host.lua).
+-- Sessions, moments, Session summary, cards, wallet, Activity XP, goods, wallet projection and tracker dock are built
+-- and connected by logic/Wiring.lua, which Core's adapter runs too: the fake hands it a host over its fakes where
+-- Core's adapter hands it the client (adapter/Host.lua).
 -- Only the client is faked.
 --
 -- Records Core hands to Modules are shared and immutable (CORE-R18). FakePagle hands out read-only proxies
@@ -88,6 +88,13 @@
 --- Pagle.OpenFieldReport) and Settings.
 ---@field coinReports { module: string, total: integer }[] Each M:ReportCoinsEarned Core accepted, in order, an
 --- unchanged total too (SHOP-R2).
+---@field xpReports { module: string, total: integer, entry: PagleRecord? }[] Each M:ReportXPEarned Core accepted, in
+--- order, an unchanged total too (AXP-R2), with the live entry it carried to ActivityXPChanged (nil from a done or
+--- outside any apply, AXP-R7). An ActivityXPChanged fires only for a changed total.
+---@field setActivityXP fun(name: string, total: integer) Stores a Module's lifetime Activity XP as a saved PagleDB
+--- holds it (fake.global.activityXP.earned), firing nothing: how a spec has a disabled or uninstalled Module's last
+--- total count (AXP-R3, AXP-R90), listed by Pagle.GetActivityXP with `enabled` false unless that Module registers.
+--- Raises an error for a total M:ReportXPEarned would refuse.
 ---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
 --- fires if the balance or held changes (SHOP-R12). The wallet projection sets the log's own at enterWorld's done and
 --- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
@@ -114,7 +121,8 @@
 ---@field summarized PagleRaisedMoment[] Each moment Core kept, as it was raised, shown or not (ANN-R25): a
 --- summaryOnly one is here and never in announcements. A moment Core dropped (ANN-R4) is in neither.
 ---@field global table PagleDB.global, the one the fake's Core keeps all its keys in, from Core's defaults
---- (ns.PAGLEDB_DEFAULTS): `coins.earned`, each Module's last reported total by def.name (SHOP-R3);
+--- (ns.PAGLEDB_DEFAULTS): `coins.earned`, each Module's last reported total by def.name (SHOP-R3), and
+--- `activityXP.earned`, its last reported Activity XP (AXP-R3), each with the `logId` of fake.catchLog;
 --- `lastEndedSession` (LOG-R63); and the Session summary keys (announcements.md › Data): `summary` (the open
 --- Session's moments and every Module's M:SetSummaryLine lines), `pending` (moments raised with no Session open,
 --- ANN-R52), `cards` (each SessionEnded's card for a Session that raised a moment, ANN-R53, at most 3, ANN-R54) and
@@ -567,11 +575,11 @@ end)
 
 -- The wallet (SHOP-R2–R4, SHOP-R12), on Core's wiring over fake.global.coins: M:ReportCoinsEarned,
 -- Pagle.GetBalance (read-only) and BalanceChanged. Each report Core accepts is also in fake.coinReports. PagleDB is
--- open from the start, as it is by the time any Module registers (login step 1).
+-- open from the start, as it is by the time any Module registers (login step 1): the Activity XP part below opens
+-- the stored totals, once fake.catchLog, whose logId they belong to (SHOP-R3), exists.
 part(function(fake, Pagle, ns, host)
 	fake.coinReports = {}
 	ns.WireWallet(host)
-	ns.OpenWallet()
 	local wallet = ns.wallet
 	local report = wallet.Report
 	function wallet.Report(self, name, total)
@@ -822,6 +830,35 @@ part(function(fake, _, ns, host)
 	ModuleHandle.AppendRecord = readOnlyAtCaller(ModuleHandle.AppendRecord)
 	function fake.prestige()
 		return readOnly(ns.RecordPrestige())
+	end
+end)
+
+-- Activity XP (AXP-R2–R7, ADR 0011), on Core's wiring over fake.global.activityXP: M:ReportXPEarned on the handle,
+-- Pagle.GetActivityXP (read-only) and ActivityXPChanged, whose entry is the live record being applied. Each report
+-- Core accepts is also in fake.xpReports. Login step 1 opens the wallet's and Activity XP's stored totals here, tied
+-- to fake.catchLog's logId (SHOP-R3, AXP-R3), which has none until fake.login: they belong to the fake's log.
+part(function(fake, Pagle, ns, host)
+	fake.xpReports = {}
+	ns.WireActivityXP(host)
+	ns.OpenWallet()
+	ns.OpenActivityXP()
+	local activityXP = ns.activityXP
+	local report = activityXP.Report
+	function activityXP.Report(self, name, total, entry)
+		fake.xpReports[#fake.xpReports + 1] = { module = name, total = total, entry = entry }
+		report(self, name, total, entry)
+	end
+
+	function Pagle.GetActivityXP()
+		return readOnly(activityXP:Get())
+	end
+
+	function fake.setActivityXP(name, total)
+		local problem = ns.XPTotalProblem(total)
+		if problem then
+			error(problem, 2)
+		end
+		fake.global.activityXP.earned[name] = total
 	end
 end)
 

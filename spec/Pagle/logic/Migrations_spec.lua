@@ -58,15 +58,40 @@ describe("ns.Migrate", function()
 		assert.are.equal(context, got[1])
 	end)
 
-	it("brings a new PagleDB to schemaVersion 2, the onboarding state's (catch-log.md › Data, ONB-R1)", function()
-		local db = { global = {} }
+	it(
+		"brings a new PagleDB to schemaVersion 3, the Coins totals' logId (catch-log.md › Data, ONB-R1, SHOP-R3)",
+		function()
+			local db = { global = { coins = { earned = {} } } }
+			local catchLog = ns.OpenCatchLog(savedLog(), { decodeErrors = 0 }, SERVER_TIME)
+
+			ns.Migrate(db, ns.PAGLEDB_MIGRATIONS, { catchLog = catchLog })
+
+			assert.are.equal(3, #ns.PAGLEDB_MIGRATIONS)
+			assert.are.equal(3, db.global.schemaVersion)
+			assert.are.equal("waiting", db.global.onboarding.letter)
+			assert.are.equal(catchLog.data.logId, db.global.coins.logId)
+		end
+	)
+
+	it("gives step 3 the Coins totals stored before M8 the log's logId, keeping them (SHOP-R3, SHOP-R4)", function()
+		local db = { global = { schemaVersion = 2, coins = { earned = { Ledger = 1200, Hunts = 300 } } } }
 		local catchLog = ns.OpenCatchLog(savedLog(), { decodeErrors = 0 }, SERVER_TIME)
 
 		ns.Migrate(db, ns.PAGLEDB_MIGRATIONS, { catchLog = catchLog })
 
-		assert.are.equal(2, #ns.PAGLEDB_MIGRATIONS)
-		assert.are.equal(2, db.global.schemaVersion)
-		assert.are.equal("waiting", db.global.onboarding.letter)
+		assert.are.same(
+			{ earned = { Ledger = 1200, Hunts = 300 }, logId = "3f9a2c1e7b0d4a65" }, -- savedLog's logId
+			db.global.coins
+		)
+	end)
+
+	it("gives step 3 no logId on a fresh install, whose log has none until PLAYER_LOGIN (SHOP-R3, LOG-R15)", function()
+		local db = { global = { schemaVersion = 2, coins = { earned = {} } } }
+		local catchLog = ns.OpenCatchLog(nil, { decodeErrors = 0 }, SERVER_TIME)
+
+		ns.Migrate(db, ns.PAGLEDB_MIGRATIONS, { catchLog = catchLog })
+
+		assert.are.same({ earned = {} }, db.global.coins)
 	end)
 
 	it("leaves step 1, the first schema, with nothing to migrate (ADR 0003)", function()

@@ -11,7 +11,8 @@ ns.PAGLEDB_DEFAULTS = {
 	global = {
 		decodeErrors = 0, -- LOG-R16
 		dev = false, -- the /pagle dev switch (#247)
-		coins = { earned = {} }, -- SHOP-R3
+		coins = { earned = {} }, -- SHOP-R3; `logId` too, no default (migration step 3)
+		activityXP = { earned = {} }, -- AXP-R3; `logId` too, no default (activity-xp.md › Data)
 		goods = {}, -- SHOP-R26: every registered good, by ID
 		-- announcements.md › Data: the open Session's summary, moments raised with no Session open, the stored
 		-- Session summary cards and the Write-up sections waiting (ANN-R50–R54, ANN-R61).
@@ -53,6 +54,14 @@ ns.PAGLEDB_MIGRATIONS = {
 	-- 2 (M8.5): the onboarding state, new or returning by the Catch log (ONB-R1, ONB-R2, logic/Onboarding.lua).
 	function(db, context)
 		ns.AddOnboarding(db.global, context.catchLog)
+	end,
+	-- 3 (M8): the Coins totals belong to the log's logId (SHOP-R3). A DB from before stored none, and its totals are
+	-- this log's: they take its logId, so ADDON_LOADED keeps them (a disabled Module's too, SHOP-R4).
+	function(db, context)
+		local coins = db.global.coins
+		if type(coins) == "table" then
+			coins.logId = context.catchLog.data.logId
+		end
 	end,
 }
 

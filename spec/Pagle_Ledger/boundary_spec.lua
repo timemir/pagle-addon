@@ -1,7 +1,7 @@
 -- What the Ledger never does (ADR 0001, Modules only see Core): it never reads the Catch log's SavedVariables or
 -- Core's, never reads another Module's DB and calls no other Module. Checked over every file the Ledger ships: each
 -- name below fails the spec wherever the Ledger's code says it. It reads Catches only through its Module handle
--- (LED-R2, from ticket #100 on).
+-- (LED-R2, from ticket #100 on), and reports no Activity XP (AXP-R1).
 
 local DIR = "addons/Pagle_Ledger/"
 
@@ -11,6 +11,8 @@ local FORBIDDEN = {
 	{ "%f[%w_]PagleDB%f[^%w_]", "ADR 0001: the Ledger never reads Core's SavedVariables" },
 	-- Its state is rebuilt from Catches alone; only the Tackle Board appends Module records (ADR 0008, LOG-R41).
 	{ "%f[%w_]AppendRecord%f[^%w_]", "ADR 0008: the Ledger appends no Module records" },
+	-- Its own XP is its own fold (LED-R20): it reads the others' Activity XP, never reports any.
+	{ "%f[%w_]ReportXPEarned%f[^%w_]", "AXP-R1: the Ledger reports no Activity XP" },
 }
 -- Every other roster Module (CORE-R1): its addon (its AceAddon and its folder name), any global named after it, and
 -- its DB.
@@ -54,6 +56,8 @@ describe("The Ledger's boundary", function()
 			{ 'local stats = _G["Pagle_Stats"]', "ADR 0001: the Ledger calls no other Module" },
 			{ "Pagle_TackleBoard_Open()", "ADR 0001: the Ledger calls no other Module" },
 			{ 'M:AppendRecord("celebrated", "1")', "ADR 0008: the Ledger appends no Module records" },
+			{ "M:ReportXPEarned(state.xp)", "AXP-R1: the Ledger reports no Activity XP" },
+			{ 'M["ReportXPEarned"](M, 10)', "AXP-R1: the Ledger reports no Activity XP" },
 		}
 		for _, case in ipairs(planted) do
 			it(case[1], function()
