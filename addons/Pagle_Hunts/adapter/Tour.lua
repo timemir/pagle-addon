@@ -40,7 +40,12 @@ end
 ---@return HuntsTourSample
 ---@return fun() out
 local function swapIn()
-	local sample = ns.HuntsTourSample(ns.huntList, GetServerTime())
+	local sample = ns.HuntsTourSample(
+		ns.huntList,
+		GetServerTime(),
+		ns.events and ns.events:Events() or {},
+		not ns.IsUpdating() and ns.State() or nil
+	)
 	-- What the views read of a projection (logic/Seams.lua): the sample's state, never updating.
 	local sampleProjection = {
 		GetState = function()
@@ -112,7 +117,8 @@ local function boardStop(M, stop, label)
 		ns.Redraw("tour")
 		local now = GetServerTime()
 		local rows = ns.groups:Rows({ filtered = true })
-		board:Open(stop.place({ sample = sample, rows = rows, list = ns.hunts, now = now }))
+		local runs = ns.RunsShown(ns.State(), now)
+		board:Open(stop.place({ sample = sample, rows = rows, runs = runs, list = ns.hunts, now = now }))
 	end, function()
 		if not saved then
 			return

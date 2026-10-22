@@ -245,6 +245,19 @@ describe("the tracker's Pagle Wagers block", function()
 
 			assert.are.same({ "spread" }, opened)
 		end)
+
+		it('turn the board to the Pagle Wagers spread from "+1 more", a slip per run on (HNT-R162)', function()
+			local history = twoOn()
+			history[#history + 1] = runOn("fixture_brook", 2 * DAY)
+			history[#history + 1] = runOn("fixture_cove", 2 * DAY + HOUR)
+			local r = start(history)
+
+			r.ns.tracker.wagers.more:Click()
+
+			assert.is_true(r.ns.board:IsShown())
+			assert.are.same({ mode = "wagers" }, r.ns.board.router:Place())
+			assert.are.equal(4, #r.ns.BoardWagersSpread().slips)
+		end)
 	end)
 
 	describe("its own collapsed state (HNT-R177)", function()

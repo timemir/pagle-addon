@@ -273,6 +273,8 @@ ns.L = {
 	TOUR_BOARD_SOON = "the Hunts board: a Hunt in Soon",
 	TOUR_BOARD_LATER = "the Hunts board: a Hunt in Later",
 	TOUR_BOARD_ON_DEMAND = "the Hunts board: a Hunt in On demand",
+	TOUR_BOARD_WAGERS = "the Hunts board: the wager strip and the WAGERS group, a run's entry",
+	TOUR_WAGERS = "the Hunts board: the Pagle Wagers spread, its slips and ladder",
 	TOUR_SET = "the Hunts board: a set's page, its title earned",
 	TOUR_SET_ENTRY = "the Hunts board: an entry opened from its set's page",
 	TOUR_RETIRED = "the Hunts board: a Retired Hunt's entry",
@@ -304,6 +306,32 @@ ns.L = {
 	-- The pay rule, from the Tunables: tier 1's XP and Coins, a further tier's, then a settled run's.
 	RUN_PAY_RULE = "Each Hunt's first mark pays +%d XP and %d Coins, each mark after it +%d XP and %d Coins. "
 		.. "Land every Hunt's first mark and the wager settles: +%d XP and %d Coins more.",
+
+	-- The Pagle Wagers ribbon and spread (HNT-R162, HNT-R204): logic/Sets.lua's ribbon, logic/Wagers.lua's slips and
+	-- ladder. As above, nothing here claims odds, a due fish or a chance (HNT-R27).
+	RIBBON_ON = "%d on", -- under the ribbon's name while runs are on
+	SPREAD_TITLE = "On the table",
+	SPREAD_NOTE = "Three days each. Land every Hunt's first mark before it closes.",
+	SPREAD_EMPTY = "No wagers on the table yet.",
+	SLIP_WHERE = "%s · %s", -- "Darkshore · until Sat 17:00": the run's zones and its end
+	SLIP_OPENS = "opens %s", -- a run ahead, in place of the countdown: "opens Sat 15:00"
+	SLIP_CLOSED = "closed", -- a run that ended while the board was open
+	SLIP_MARKS = "%d of %d first marks",
+	SLIP_SETTLED = "settled", -- the stamp on a completed run's slip
+	-- A pushed run's holiday tag (DATA-R97), in its slip's margin: interface text, keyed by tag ID.
+	HOLIDAYS = {
+		hallows_end = "Hallow's End",
+		winter_veil = "Feast of Winter Veil",
+		lunar_festival = "Lunar Festival",
+		noblegarden = "Noblegarden",
+		midsummer = "Midsummer Fire Festival",
+		harvest_festival = "Harvest Festival",
+		stv_extravaganza = "Stranglethorn Fishing Extravaganza",
+	},
+	-- The ladder (HNT-R148): "0 wagers settled · 25 more for Bookmaker's Bane", or past the last mark its count alone.
+	WAGERS_SETTLED_ONE = "%s wager settled",
+	WAGERS_SETTLED_OTHER = "%s wagers settled",
+	WAGERS_LADDER_LINE = "%s · %d more for %s",
 
 	-- The run log's dev diagnostic lines (HNT-R140, HNT-R151, logic/RunLog.lua): dev-only, never shown to players.
 	RUN_LOG_EVENT_IGNORED = "Hunts: the pushed definition of %s is ignored: %s (HNT-R140)",
