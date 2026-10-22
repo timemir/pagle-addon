@@ -5,7 +5,8 @@
 local PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing."
 
 -- Core logged in and in the world with its own goods and a fixture Ledger (order 10) whose "Fish Journal" slot has
--- Oak (default), Lapis (tier 3) and Ivy (tier 1). `options.saved` is a PagleDB; `options.noLedger` leaves the Ledger
+-- Oak (default), Lapis (tier 3) and Ivy (tier 1), and with two zone crests in Core's crest slot, earned goods
+-- (SHOP-R23): The Old Oak, earned, and The Desert Sun, not. `options.saved` is a PagleDB; `options.noLedger` leaves the Ledger
 -- unregistered (off); `options.hunts` registers Hunts (order 20) with a Trackers slot. Returns the loaded addon.
 local function coreWithModules(options)
 	options = options or {}
@@ -17,6 +18,22 @@ local function coreWithModules(options)
 		ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
 		ledger:RegisterGood({ id = "ledger.binding.lapis", slot = "ledger.binding", name = "Lapis", tier = 3 })
 		ledger:RegisterGood({ id = "ledger.binding.ivy", slot = "ledger.binding", name = "Ivy", tier = 1 })
+		for _, crest in ipairs({
+			{ "ledger.crest.elwynn", "The Old Oak", true },
+			{ "ledger.crest.tanaris", "The Desert Sun" },
+		}) do
+			ledger:RegisterGood({
+				id = crest[1],
+				slot = "core.crest",
+				name = crest[2],
+				isEarned = function()
+					return crest[3] == true
+				end,
+				earnedText = function()
+					return "Unfished"
+				end,
+			})
+		end
 	end
 	if options.hunts then
 		local hunts = Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
@@ -87,7 +104,6 @@ describe("The Look and Feel page", function()
 				"  1 more in the Curio Shop",
 				"# Bookplate",
 				"Bookplate crest = core.crest.plain",
-				"  10 more in the Curio Shop",
 				"# Fish Journal",
 				"Journal binding = ledger.binding.oak",
 				"  2 more in the Curio Shop",
@@ -107,7 +123,7 @@ describe("The Look and Feel page", function()
 			assert.is_false(table.concat(shown, "\n"):find("Fish Journal", 1, true) ~= nil)
 			assert.are.same(
 				{ "# Trackers", "Hunts tracker frame = hunts.trackerframe.none", "# Curio Shop" },
-				{ shown[10], shown[11], shown[12] }
+				{ shown[9], shown[10], shown[11] }
 			)
 		end
 	)
@@ -181,6 +197,23 @@ describe("A slot dropdown", function()
 		)
 	end)
 
+	it(
+		"lists the crests earned, of whichever Module, with no note: none is for sale (SET-R51, SHOP-R23, SHOP-R25)",
+		function()
+			local loaded = coreWithModules()
+
+			local row = loaded.client.settings.rowNamed(showLook(loaded), "Bookplate crest")
+
+			assert.are.same(
+				{ "core.crest.plain=Plain", "ledger.crest.elwynn=The Old Oak" },
+				loaded.client.settings.optionValues(row)
+			)
+			assert.are.same({}, loaded.client.settings.notesOf(row))
+			loaded.client.settings.dropdownOf(row):pick("The Old Oak")
+			assert.are.equal("ledger.crest.elwynn", loaded.env.Pagle.GetEquipped("core.crest"))
+		end
+	)
+
 	it("shows no note once every good for sale in the slot is owned (SET-R51)", function()
 		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.ivy"] = true, ["ledger.binding.lapis"] = true })
@@ -231,7 +264,8 @@ describe("The Announcements page's slot rows", function()
 end)
 
 describe("Defaults", function()
-	-- A PagleDB whose picks are Lapis, Ripple, Gilded, crest 1 and Hunts' Velvet cover, all bought.
+	-- A PagleDB whose picks are Lapis, Ripple, Gilded, The Old Oak and Hunts' Velvet cover, all bought but the crest,
+	-- which is earned.
 	local function picked()
 		return {
 			profiles = {
@@ -240,7 +274,7 @@ describe("Defaults", function()
 						["ledger.binding"] = "ledger.binding.lapis",
 						["core.toaststyle"] = "core.toaststyle.ripple",
 						["core.soundset"] = "core.soundset.gilded",
-						["core.crest"] = "core.crest.elwynn",
+						["core.crest"] = "ledger.crest.elwynn",
 						["hunts.cover"] = "hunts.cover.velvet",
 					},
 				},
@@ -251,7 +285,6 @@ describe("Defaults", function()
 		["ledger.binding.lapis"] = true,
 		["core.toaststyle.ripple"] = true,
 		["core.soundset.gilded"] = true,
-		["core.crest.elwynn"] = true,
 		["hunts.cover.velvet"] = true,
 	}
 
@@ -301,7 +334,7 @@ describe("Defaults", function()
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.soundset.driftwood",
-			"core.crest.elwynn",
+			"ledger.crest.elwynn",
 			"ledger.binding.lapis",
 		}, {
 			Pagle.GetEquipped("core.toaststyle"),

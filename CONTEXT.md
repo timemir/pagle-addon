@@ -217,7 +217,7 @@ Core's shop where the Angler spends Pagle Coins on looks for Pagle's own views, 
 _Avoid_: store, Trading Post, Bait Shop, shop (alone)
 
 **Bookplate crest**:
-The look the Angler wears on the Fish Journal's bookplate, bought in the Curio Shop: a zone's shield, pinned on the Prestige crest, or Plain, the default, which shows nothing.
+The look the Angler wears on the Fish Journal's bookplate, chosen in the Curio Shop: a zone's shield, earned when that zone reaches Master, pinned on the Prestige crest, or Plain, the default, which shows nothing.
 _Avoid_: crest (alone), emblem, medallion, zone crest
 
 ### QoL

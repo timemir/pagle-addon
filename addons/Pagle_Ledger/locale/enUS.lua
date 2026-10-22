@@ -56,6 +56,15 @@ ns.L = {
 	BINDING_SLOT_LABEL = "Journal binding",
 	BINDING_EARNED = "Angler Level %d",
 
+	-- A zone crest not yet earned (LED-R115): the row's tag and the stage's note. The crests' names and descriptions
+	-- are lore (LED-R160).
+	CREST_PROGRESS = "%s · %d%%",
+	CREST_UNFISHED = "Unfished",
+	CREST_UNCHARTED = "Not yet charted",
+	CREST_NOTE_PROGRESS = "Earned when %s reaches Master in the Fish Journal. It is %s, %d%%. %s.",
+	CREST_NOTE_UNFISHED = "Earned when %s reaches Master in the Fish Journal. Catch anything there to begin.",
+	CREST_NOTE_UNCHARTED = "Earned when %s reaches Master in the Fish Journal, once its waters are charted.",
+
 	-- The moments (LED-R97). A level-up's text counts the levels it raised.
 	LEVEL_UP_TITLE = "Angler Level %d",
 	LEVEL_UP_STAMP = "Level %d",

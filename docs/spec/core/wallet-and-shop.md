@@ -34,8 +34,8 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 - **SHOP-R22** Every good is exactly one of:
   - **default**: free and owned by everyone; each slot has exactly one
   - **for sale**: price tier 1, 2 or 3 (150, 400 or 900 Coins)
-  - **earned**: never for sale; owned when its Module says so (`isEarned()`), with an `earnedText` saying how ("Angler Level 30")
-- **SHOP-R23** Registration raises a Lua error and ignores the call for: a duplicate ID, an ID without the Module's prefix, an unknown slot, a slot registered by a different Module (or by Core, for a Module), a second default in a slot, and a good with more than one of `default` / `tier` / `isEarned`, or none of them. At `ModulesChanged`, a slot with no default is reported through `geterrorhandler()`, and its first registered good acts as the default. Only `default = true` marks a default; `default` is `true` or `false`, and anything else is a mistake.
+  - **earned**: never for sale; owned when its Module says so (`isEarned()`), with an `earnedText` saying how: a string ("Angler Level 30"), or a function the shop calls each time it draws the good while it isn't owned, returning the row's tag and, optionally, a note for the stage ("Expert · 88%", "Earned when … Next: …"). A function's texts are never cached, and Core never calls it to decide ownership (SHOP-R30).
+- **SHOP-R23** Registration raises a Lua error and ignores the call for: a duplicate ID, an ID without the Module's prefix, an unknown slot, a slot registered by a different Module (or by Core, for a Module, except an earned good in a Core slot registered with `openToEarned = true`: only `core.crest`, SHOP-R25), a second default in a slot, and a good with more than one of `default` / `tier` / `isEarned`, or none of them. At `ModulesChanged`, a slot with no default is reported through `geterrorhandler()`, and its first registered good acts as the default. Only `default = true` marks a default; `default` is `true` or `false`, and anything else is a mistake.
 - **SHOP-R24** Stock never rotates and nothing is limited-time: every good registered is always in the shop.
 - **SHOP-R25** Core's own slots and goods, at M4 (tiers are tunable):
 
@@ -43,11 +43,11 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
   |---|---|
   | Toast style (`core.toaststyle`) | `core.toaststyle.page` (default), `core.toaststyle.ripple` (tier 1), `core.toaststyle.lanternglow` (tier 2) |
   | Sound set (`core.soundset`) | `core.soundset.driftwood` (default), `core.soundset.gilded` (tier 2) |
-  | Bookplate crest (`core.crest`) | `core.crest.plain` (default); tier 1: `core.crest.elwynn`, `core.crest.westfall`, `core.crest.darkshore`; tier 2: `core.crest.redridge`, `core.crest.wetlands`, `core.crest.stranglethorn`, `core.crest.dustwallow`; tier 3: `core.crest.feralas`, `core.crest.tanaris`, `core.crest.winterspring` |
+  | Bookplate crest (`core.crest`, `openToEarned`) | `core.crest.plain` (default). The zone crests in it are the Ledger's earned goods, `ledger.crest.<key>` (LED-R113); no crest is for sale |
 
   Every good's name and description is lore, read from `data/lore/core.toml` through `ns.L`; the working names (Timber, Ripple, Lantern Glow, Driftwood, Gilded, Plain) were its first drafts, and the 1.0 sign-off ([#264](https://github.com/timemir/wow-fish/issues/264)) renamed Timber to Torn Page and its ID from `core.toaststyle.timber` to `core.toaststyle.page`.
   The crest is the Angler's emblem; the Ledger draws it on the Journal bookplate. Its slot is shown whatever Modules are enabled.
-  Each crest but Plain is a zone's: a gilt-and-enamel heater shield with a landmark of that zone over the same barry-wavy water at its foot, original art (no faction or game crest). Its icon is Core's own texture, `Interface\AddOns\Pagle\media\crests\{key}` (256 × 256, the shield 120:140 at its full height, centred, transparent around it), and it is drawn as the shield wherever a crest's icon shows: the shop's row and bill (in place of the medallion, UI), the stage's bookplate and the Journal bookplate (LED-R146); Core's slot dropdown lists crests by name only (SET-R51). Plain's icon is the same shield as a dashed gilt outline, for the shop; the Journal draws nothing for Plain (LED-R112).
+  Each crest but Plain is a zone's, earned when that zone reaches Master in the Fish Journal (LED-R113, LED-R114): a gilt-and-enamel heater shield with a landmark of that zone over the same barry-wavy water at its foot, original art (no faction or game crest). Its icon is its owner's texture (the Ledger's, `Interface\AddOns\Pagle_Ledger\media\crests\{key}`; Plain's is Core's, `Interface\AddOns\Pagle\media\crests\plain`), each 256 × 256, the shield 120:140 at its full height, centred, transparent around it, and every good in the slot is drawn as the shield wherever a crest's icon shows: the shop's row and bill (in place of the medallion, UI), the stage's bookplate (the slot's `preview`, which draws any crest in it that has no preview of its own, the Ledger's included) and the Journal bookplate (LED-R146); Core's slot dropdown lists crests by name only (SET-R51). Plain's icon is the same shield as a dashed gilt outline, for the shop; the Journal draws nothing for Plain (LED-R112).
 - **SHOP-R26** Core caches every registered good in `PagleDB.global.goods`: name, slot, slot label and category, Module, icon, `default`, tier, description and, for earned goods, the `isEarned()` result as of the last registration or `RefreshGoods` (SHOP-R31). The cache is never pruned for a good that is owned.
 
 ### Owning and equipping
@@ -82,6 +82,8 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 ---@field id string              -- "core.toaststyle", "hunts.notebookcover", "stats.trackerframe"
 ---@field label string           -- "Toast style"
 ---@field category "Announcements"|"Bookplate"|"Fish Journal"|"Hunts"|"Trackers"
+---@field openToEarned? boolean  -- Core's slots only: any Module may add earned goods to it (SHOP-R23)
+---@field preview? fun(stage: Frame, good: PagleGood) -- Core's slots only: draws a good of the slot with no preview of its own
 
 ---@class PagleGood
 ---@field id string
@@ -92,7 +94,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 ---@field default? boolean        -- SHOP-R22
 ---@field tier? 1|2|3             -- for sale
 ---@field isEarned? fun(): boolean -- earned
----@field earnedText? string      -- earned: "Angler Level 30"
+---@field earnedText? string|fun(): string, string? -- earned: "Angler Level 30", or the row's tag and the stage's note (SHOP-R22)
 ---@field preview fun(stage: Frame)   -- draws the look on the shop's preview stage
 
 ---@class Balance
@@ -126,7 +128,7 @@ What each Module pays and registers, as designed so far (each Module's spec is a
 | Hunts: a Standing Hunt completed / each further tier / set finished | 30 / 15 / 100 |
 | Hunts: a Hunt Event Hunt's tier 1 / each later tier / a completed run (paid again in every run) | 15 / 10 / 50 |
 
-Goods by Module: Ledger registers extra Journal bindings (for sale) and the six level bindings (earned); Hunts registers notebook covers; Hunts, Stats and the Tackle Board each register frames for their own tracker.
+Goods by Module: Ledger registers extra Journal bindings (for sale), the six level bindings (earned) and the fifty zone crests (earned, in Core's crest slot); Hunts registers notebook covers; Hunts, Stats and the Tackle Board each register frames for their own tracker.
 
 ## UI
 
@@ -141,7 +143,7 @@ One window, "Curio Shop" (the layout of the prototype's variant B), drawn with t
   - owned: "Owned" on the row; "OWNED" and a **Use** button on the stage
   - equipped: "IN USE" after a wax dot on the row, and on the stage
   - default: "default"
-  - earned and not yet earned: its `earnedText`, "a Ledger reward, not for sale"
+  - earned and not yet earned: its `earnedText` on the row (a function's first text); on the stage, a function's second text, or the string, then "a Ledger reward, not for sale"
 - **Buy:** a bill of sale over the case, which dims: a sheet of paper with a torn top, "CURIO SHOP", "Buy {name}?" in handwriting, the good's medallion, a dashed rule, "Price" with the price and a coin, "Pagle Coins left after" with N, "Looks are yours for good.", a hand-ticked **"Use it now"** checkbox (on by default), and Buy / Cancel. Esc is Cancel there and leaves the shop open; any other key goes on to the game. No Announcement follows.
 
 ### Motion and sound

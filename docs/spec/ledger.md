@@ -255,6 +255,23 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 
   A binding is a look only, the Ledger art kit's (its Bindings board, one to one with these goods): the leather (Core's leather for Field Leather; a grey leather under a vertex tint measured from the kit's swatches for the level bindings and Sharkskin; Birch Bark's bark and Sea-Green Buckram's cloth their own textures), the band toned to it, the gilt of the breadcrumbs and fleurons (a silver gilt turns the brass plate silver), and the page paper taking a tenth of its hue. Each good's `preview` draws the kit's closed-book swatch of it (no pages).
 - **LED-R111** A level binding's `isEarned()` is true when the higher of the peak level (LED-R35) and the highest level in the celebrated set is at least its level. The Ledger calls `M:RefreshGoods()` after a live entry that raises the peak level past a multiple of 10, and from `done` (SHOP-R31).
+- **LED-R113** **Zone crests.** The Ledger registers fifty earned goods in Core's `core.crest` slot (SHOP-R23, SHOP-R25), `ledger.crest.<key>`, one per zone in its zone crest table (`logic/ZoneCrests.lua`: key, zone areaID and continent), named and described by lore (`crest.<key>.name`, `.description`, LED-R160) with the icon `Interface\AddOns\Pagle_Ledger\media\crests\<key>`. The table holds the two continents' zones and capital cities and Forever's new zones; dungeons, raids and battlegrounds have none, nor do the three charted zones that are only a lake, a sea or a mountain's gate (areaIDs 170, 457 and 25), whose Master earns the title alone. A zone that isn't charted (LED-R54) registers its crest anyway, shown as not yet charted until a release charts it. Crests register in continent order, Eastern Kingdoms (0), Kalimdor (1), then any other, each continent's in the order of its zones' names from `C_Map.GetAreaInfo`, and that is the shop's order (SHOP-R21).
+
+  | Continent | Keys |
+  |---|---|
+  | Eastern Kingdoms | `alterac` 36, `arathi` 45, `badlands` 3, `blastedlands` 4, `burningsteppes` 46, `deadwind` 41, `dunmorogh` 1, `duskwood` 10, `easternplague` 139, `elwynn` 12, `hillsbrad` 267, `hinterlands` 47, `ironforge` 1537, `lochmodan` 38, `redridge` 44, `riverglades` 16591, `searinggorge` 51, `silverpine` 130, `stormwind` 1519, `stranglethorn` 33, `swampofsorrows` 8, `tirisfal` 85, `undercity` 1497, `westernplague` 28, `westfall` 40, `wetlands` 11 |
+  | Kalimdor | `ashenvale` 331, `azshara` 16, `barrens` 17, `darkshore` 148, `darnassus` 1657, `desolace` 405, `durotar` 14, `dustwallow` 15, `felwood` 361, `feralas` 357, `hyjal` 616, `moonglade` 493, `mulgore` 215, `orgrimmar` 1637, `shendralas` 16651, `silithus` 1377, `stonetalon` 406, `tanaris` 440, `teldrassil` 141, `thousandneedles` 400, `thunderbluff` 1638, `ungoro` 490, `winterspring` 618 |
+  | Other (2991) | `zephras` 16593 |
+
+- **LED-R114** A zone crest's `isEarned()` is true when its zone's shown rank (LED-R52) is Master. The shown rank never falls, so a crest is never lost: not when new data gives the zone more to find, and not when it stops being charted (LED-R54 keeps its celebrated rank). The Ledger calls `M:RefreshGoods()` after a live entry that raises a zone's shown rank to Master, and from `done` (SHOP-R31).
+- **LED-R115** A zone crest's `earnedText` is a function (SHOP-R22) returning the row's tag and the stage's note, from the projection's last finished state (while it updates, the texts it gave last); `{zone}` is the zone's name (LED-R126), `{rank}` its shown rank, `{p}` its completion (LED-R53):
+
+  | Zone | Row | Stage |
+  |---|---|---|
+  | charted, fished | "{rank} · {p}%" | "Earned when {zone} reaches Master in the Fish Journal. It is {rank}, {p}%. {next requirement}." (LED-R134, from Visitor up) |
+  | charted, not fished | "Unfished" | "Earned when {zone} reaches Master in the Fish Journal. Catch anything there to begin." |
+  | not charted | "Not yet charted" | "Earned when {zone} reaches Master in the Fish Journal, once its waters are charted." |
+
 - **LED-R112** The Journal is drawn in `Pagle.GetEquipped("ledger.binding")`, and its bookplate shows `Pagle.GetEquipped("core.crest")`'s icon, pinned as the crest's shield (SHOP-R25, LED-R146), or no emblem while that is the slot's default, Plain ("No emblem, only the owner's name"). It redraws on `AppearanceChanged` for either slot.
 
 ### The Fish Journal
@@ -336,10 +353,11 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
   | `family.<familyID>.name` | every trophy family |
   | `title.<titleID>.text` | `level1`, `level10`, `level20`, `level30`, `level40`, `level50`, `level60`, `prestige1`, `prestige5`, `prestige10`, `zonemaster` (allows `{zone}`), `complete.ledger`, `complete.junk`, `complete.treasure`, `complete.trophy` |
   | `binding.<name>.name`, `.description` | each binding good `ledger.binding.<name>` (LED-R110) |
+  | `crest.<key>.name`, `.description` | each zone crest `ledger.crest.<key>` (LED-R113): its name is the landmark on it, its description a word on the water there; neither names a place from the game (DATA-R3) |
   | `line.<id>.text` | `uncaughtlegend`, `uncaughtjunk`, `uncaughttreasure`, `unchartedwaters` |
 
 - **LED-R161** `{zone}` in the `zonemaster` title is filled with the zone's name from `C_Map.GetAreaInfo` (DATA-R108). A key with no text (before the Ledger's lore check turns on) shows nothing: its line is left out.
-- **LED-R162** The Ledger's lore check turns on in M3 (`ledger` in `data/checks.toml`'s `lore`, DATA-R66, DATA-R107), with the `line` IDs in the manifest; the `title` and `binding` IDs enter the manifest in M4, with the title and binding batch (DATA-R111).
+- **LED-R162** The Ledger's lore check turns on in M3 (`ledger` in `data/checks.toml`'s `lore`, DATA-R66, DATA-R107), with the `line` IDs in the manifest; the `title` and `binding` IDs enter the manifest in M4, with the title and binding batch (DATA-R111), and the `crest` IDs with the zone crests.
 
 ## Data
 
@@ -442,7 +460,7 @@ Pagle.RegisterModule{
 | `Pagle.GetAngler` | LED-R41, LED-R126 |
 | `M:RaiseMoment`, `M:RaiseWriteUp`, `M:SetSummaryLine` | LED-R93–R97 |
 | `M:ReportCoinsEarned` | LED-R89 |
-| `M:RegisterSlot`, `M:RegisterGood`, `M:RefreshGoods`, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.IsOwned`, `Pagle.GetGood` (the crest's icon), `Pagle.OpenShop`, event `AppearanceChanged` | LED-R110–R112, LED-R146 |
+| `M:RegisterSlot`, `M:RegisterGood`, `M:RefreshGoods`, `Pagle.GetEquipped`, `Pagle.SetEquipped`, `Pagle.IsOwned`, `Pagle.GetGood` (the crest's icon), `Pagle.OpenShop`, event `AppearanceChanged` | LED-R110–R115, LED-R146 |
 | `Pagle.OpenFieldReport` | LED-R135, LED-R138, LED-R144 (REP-R43) |
 | `Pagle.RegisterEvent` (for `GET_ITEM_INFO_RECEIVED`) | LED-R126 |
 | `Pagle.IsAnimationsOn`, `Pagle.Animate`, `Pagle.Cue`, `Pagle.StopMotion`, `Pagle.EASE`, `Pagle.Bezier` ([announcements.md › Contracts](core/announcements.md#contracts)) | UI › Motion |

@@ -25,7 +25,7 @@ REPO = Path(__file__).resolve().parents[2]
 LEDGER_TOML = REPO / "data" / "lore" / "ledger.toml"
 
 
-# SHOP-R25: Core's sixteen goods at M4, by slot.
+# SHOP-R25: Core's six goods, by slot; its crest slot's zone crests are the Ledger's (LED-R113).
 CORE_GOODS = [
     "core.toaststyle.page",
     "core.toaststyle.ripple",
@@ -33,16 +33,6 @@ CORE_GOODS = [
     "core.soundset.driftwood",
     "core.soundset.gilded",
     "core.crest.plain",
-    "core.crest.elwynn",
-    "core.crest.westfall",
-    "core.crest.darkshore",
-    "core.crest.redridge",
-    "core.crest.wetlands",
-    "core.crest.stranglethorn",
-    "core.crest.dustwallow",
-    "core.crest.feralas",
-    "core.crest.tanaris",
-    "core.crest.winterspring",
 ]
 # LED-R75: the title IDs, in its table's order; LED-R110: the bindings without their ledger.binding. prefix.
 LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]
@@ -59,6 +49,59 @@ TITLES = [
 ]
 # DATA-R107: every lore check, built and on by M7.
 ALL_CHECKS = ["ledger", "core", "hunts", "stats", "tackleboard"]
+# LED-R113: the zone crests without their ledger.crest. prefix, in the manifest's order.
+ZONE_CRESTS = [
+    "alterac",
+    "arathi",
+    "badlands",
+    "blastedlands",
+    "burningsteppes",
+    "deadwind",
+    "dunmorogh",
+    "duskwood",
+    "easternplague",
+    "elwynn",
+    "hillsbrad",
+    "hinterlands",
+    "ironforge",
+    "lochmodan",
+    "redridge",
+    "riverglades",
+    "searinggorge",
+    "silverpine",
+    "stormwind",
+    "stranglethorn",
+    "swampofsorrows",
+    "tirisfal",
+    "undercity",
+    "westernplague",
+    "westfall",
+    "wetlands",
+    "ashenvale",
+    "azshara",
+    "barrens",
+    "darkshore",
+    "darnassus",
+    "desolace",
+    "durotar",
+    "dustwallow",
+    "felwood",
+    "feralas",
+    "moonglade",
+    "hyjal",
+    "mulgore",
+    "orgrimmar",
+    "shendralas",
+    "silithus",
+    "stonetalon",
+    "tanaris",
+    "teldrassil",
+    "thousandneedles",
+    "thunderbluff",
+    "ungoro",
+    "winterspring",
+    "zephras",
+]
 BINDINGS = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
 
 
@@ -130,8 +173,8 @@ def _without(lore_id: str, key: str, checks: tuple[str, ...] = tuple(ALL_CHECKS)
     return _problems_with(lore_id, lambda texts: {name: text for name, text in texts.items() if name != key}, checks)
 
 
-def test_the_manifest_lists_core_s_nine_goods() -> None:
-    # DATA-R106, SHOP-R25: [core.good] with fields name and description and the nine good IDs, none with a placeholder.
+def test_the_manifest_lists_core_s_six_goods() -> None:
+    # DATA-R106, SHOP-R25: [core.good] with fields name and description and the six good IDs, none with a placeholder.
     manifest = _layers().lore.manifest["core"]
     assert sorted(manifest) == ["good"]
     assert manifest["good"].fields == ("name", "description")
@@ -171,7 +214,7 @@ def test_the_ledger_s_lore_passes_its_check() -> None:
 def test_the_manifest_lists_the_ledger_s_four_shared_lines() -> None:
     # LED-R160, LED-R162 (its M3 part): [ledger.line] with fields ["text"] and the four line IDs.
     manifest = _layers().lore.manifest["ledger"]
-    assert sorted(manifest) == ["binding", "line", "title"]
+    assert sorted(manifest) == ["binding", "crest", "line", "title"]
     assert manifest["line"].fields == ("text",)
     assert sorted(manifest["line"].ids) == ["uncaughtjunk", "uncaughtlegend", "uncaughttreasure", "unchartedwaters"]
     assert all(not allowed for allowed in manifest["line"].ids.values())  # no placeholder (DATA-R108)
@@ -247,6 +290,27 @@ def test_the_ledger_s_lore_has_every_title_and_binding() -> None:
     for binding in BINDINGS:
         assert _ledger_text(f"binding.{binding}.name").strip()
         assert _ledger_text(f"binding.{binding}.description").strip()
+
+
+def test_the_manifest_lists_the_ledger_s_fifty_zone_crests() -> None:
+    # DATA-R106, LED-R113, LED-R162: [ledger.crest] with a name and a description for each zone crest, none with a
+    # placeholder, and the lore has both for each (DATA-R107 passes: read_layers raises on any problem).
+    manifest = _layers().lore.manifest["ledger"]
+    assert manifest["crest"].fields == ("name", "description")
+    assert list(manifest["crest"].ids) == ZONE_CRESTS
+    assert all(not allowed for allowed in manifest["crest"].ids.values())
+    for crest in ZONE_CRESTS:
+        assert _ledger_text(f"crest.{crest}.name").strip()
+        assert _ledger_text(f"crest.{crest}.description").strip()
+
+
+@pytest.mark.parametrize("crest", ["elwynn", "zephras"])
+def test_deleting_a_zone_crest_s_name_fails_the_lore_check_naming_its_key(crest: str) -> None:
+    # DATA-R107's missing: the manifest lists every zone crest (DATA-R106, LED-R113).
+    key = f"crest.{crest}.name"
+    assert _without("ledger", key) == [
+        f"data/lore/ledger.toml: {key}: missing: manifest.toml lists it (DATA-R106, DATA-R107)"
+    ]
 
 
 @pytest.mark.parametrize("title", TITLES)
@@ -561,7 +625,7 @@ def test_no_day_or_night_line_says_only() -> None:
     found = [
         f"{key}: {text}"
         for key, text in sorted(_lines().items())
-        if not key.startswith(("title.", "binding."))
+        if not key.startswith(("title.", "binding.", "crest."))
         and timed.search(text)
         and re.search(r"\bonly\b", text, re.IGNORECASE)
     ]
