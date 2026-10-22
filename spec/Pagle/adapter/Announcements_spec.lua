@@ -31,6 +31,11 @@ local function loadCore()
 	return loaded, M, summarized
 end
 
+-- Core's crop of a moment's art to the fish's head (ns.HeadCrop), as texture coordinates.
+local function headCrop(loaded, art)
+	return loaded.ns.HeadCrop(art)
+end
+
 -- A moment on `rung` titled `title`, with other fields from `fields`.
 local function moment(rung, title, fields)
 	local m = { rung = rung, kind = "spec", title = title }
@@ -533,6 +538,72 @@ describe("the announcements art", function()
 			}, seals)
 		end
 	)
+end)
+
+describe("a variety's art and a fish crest on the client (VAR-R25)", function()
+	-- A variety's art: a 192 × 96 rectangle at (0, 0) of a 2048 atlas (VAR-R11).
+	local ART = {
+		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
+		left = 0,
+		right = 0.09375,
+		top = 0,
+		bottom = 0.046875,
+	}
+
+	-- Rounded to 6 places, for texture coordinates worked out in floating point.
+	local function rounded(coords)
+		local out = {}
+		for i, v in ipairs(coords) do
+			out[i] = math.floor(v * 1e6 + 0.5) / 1e6
+		end
+		return out
+	end
+
+	it(
+		"draws a toast's and a Nod's medallion with the art cropped to the fish's head, and the icon again after",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, moment("toast", "Rare variety", { text = "Coral", icon = 6359, art = ART }))
+			local toast = frameOf(loaded, "toast")
+
+			assert.are.equal(ART.texture, toast.icon.texture)
+			assert.are.same(rounded({ headCrop(loaded, ART) }), rounded(toast.icon.texCoord))
+
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+			raise(loaded, M, moment("toast", "New Species", { icon = 136245 }))
+			assert.are.same({ 136245, { 0, 1, 0, 1 } }, { toast.icon.texture, toast.icon.texCoord })
+
+			raise(loaded, M, moment("nod", "New variety · Coral", { art = ART }))
+			local nod = frameOf(loaded, "nod")
+			assert.are.same({ ART.texture }, { nod.icon.texture })
+			assert.are.same(rounded({ headCrop(loaded, ART) }), rounded(nod.icon.texCoord))
+		end
+	)
+
+	it("draws a banner's art on its seal's ribbon, and a crest good's icon in the Prestige crest's place", function()
+		local loaded, M = loadCore()
+		raise(loaded, M, moment("banner", "Epic variety", { text = "Phoenix-fin", art = ART }))
+		local banner = frameOf(loaded, "banner")
+		assert.are.same({ true, true, ART.texture, { ART.left, ART.right, ART.top, ART.bottom }, false }, {
+			banner.seal.shown,
+			banner.ribbonArt.shown,
+			banner.ribbonArt.texture,
+			banner.ribbonArt.texCoord,
+			banner.crestIcon.shown,
+		})
+		loaded.client.advance(BANNER + LEAVE_BANNER)
+
+		raise(loaded, M, moment("banner", "Every colour of Firefin Snapper", { seal = "crest", crest = "fish6359" }))
+		assert.are.same({ false, false, false, false, true, "fish6359", false }, {
+			banner.seal.shown,
+			banner.crest.shown,
+			banner.portrait.shown,
+			banner.crestLabel.shown,
+			banner.crestIcon.shown,
+			banner.crestIcon.texture,
+			banner.ribbonArt.shown,
+		})
+	end)
 end)
 
 describe("the column on the client", function()

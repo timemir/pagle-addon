@@ -98,6 +98,8 @@ local TICKS = 20
 ---@field crest PagleSprite?
 ---@field portrait Texture?
 ---@field crestLabel FontString?
+---@field crestIcon Texture? a banner's crest good's icon, in the Prestige crest's place (VAR-R25)
+---@field ribbonArt Texture? a banner's headline art on its seal's ribbon (VAR-R25)
 ---@field extras Frame? a banner's or the splash's row of labels and Coins
 
 -- The motion's timeline: the canvas loops each animation over 7 s; in game each plays once.
@@ -495,6 +497,21 @@ local function addWords(frame, coinsFont, host, clipName)
 	frame.coins = newCoins(frame.words, coinsFont)
 end
 
+-- Sets a headline's medallion: its art cropped to the fish's head when it has one (a variety's, VAR-R25), else its
+-- icon.
+---@param bezel PagleBezel
+---@param size integer
+---@param trim string
+---@param headline PagleRaisedMoment
+local function setMedallion(bezel, size, trim, headline)
+	local art = headline.art
+	if art then
+		ns.SetBezel(bezel, size, trim, art.texture, { ns.HeadCrop(art) })
+	else
+		ns.SetBezel(bezel, size, trim, textureOf(headline.icon))
+	end
+end
+
 -- Draws a toast: its page by rung (logic/ToastStyles.lua's ns.ToastPage), the medallion, the words, the ruler or the
 -- held headlines, the stamps right to left from the top right corner, "+N more" and the Coins at the bottom right.
 ---@param frame PagleAnnouncementFrame
@@ -510,8 +527,12 @@ local function drawToast(frame, display, style)
 	ns.SetSprite(frame.page, style.atlas, "toast-" .. page.page)
 	ns.PlaceSprite(frame.page, body, 0, 0)
 	local bezel = frame.bezel --[[@as PagleBezel]]
-	local icon = announcement.fighting and FIGHTING_ICON or textureOf(headline.icon)
-	ns.SetBezel(bezel, page.bezel, page.high and style.highTrim or style.trim, icon)
+	local trim = page.high and style.highTrim or style.trim
+	if announcement.fighting then
+		ns.SetBezel(bezel, page.bezel, trim, FIGHTING_ICON)
+	else
+		setMedallion(bezel, page.bezel, trim, headline)
+	end
 	bezel:ClearAllPoints()
 	bezel:SetPoint("TOPLEFT", body, "TOPLEFT", page.bx, -(page.h - page.bezel) / 2)
 
@@ -599,7 +620,7 @@ end
 local function drawNod(frame, display, style)
 	local announcement = display.announcement
 	local headline = announcement.headline
-	ns.SetBezel(frame.bezel --[[@as PagleBezel]], 34, style.trim, textureOf(headline.icon))
+	setMedallion(frame.bezel --[[@as PagleBezel]], 34, style.trim, headline)
 	local fonts, inks = { what = "NodWhat", name = "NodName" }, { what = style.what, name = style.name }
 	writeHeadline(frame, headline, fonts, inks, 300)
 	local x = 72 + frame.title:GetWidth()
@@ -667,8 +688,9 @@ local function drawExtras(frame, announcement, coinSize)
 	extras:SetShown(width > 0)
 end
 
--- Draws a banner: the spaced gilt title, the seal (a number, a mark, or the Prestige crest with the Angler's portrait),
--- the text in gilt handwriting, then the labels and Coins.
+-- Draws a banner: the spaced gilt title, the seal (a number, a mark, the Prestige crest with the Angler's portrait, or a
+-- crest good's icon in its place, VAR-R25) with the headline's art on its ribbon when it has one, the text in gilt
+-- handwriting, then the labels and Coins.
 ---@param frame PagleAnnouncementFrame
 ---@param display PagleDisplay
 local function drawBanner(frame, display)
@@ -678,12 +700,16 @@ local function drawBanner(frame, display)
 	local seal = ns.BannerSeal(headline)
 	local wax = frame.seal --[[@as PagleSprite]]
 	local number = frame.sealNumber --[[@as FontString]]
+	local prestige = seal.crest == true and seal.icon == nil
 	wax:SetShown(not seal.crest)
-	frame.crest:SetShown(seal.crest == true)
-	frame.portrait:SetShown(seal.crest == true)
-	frame.crestLabel:SetShown(seal.crest == true)
+	frame.crest:SetShown(prestige)
+	frame.portrait:SetShown(prestige)
+	frame.crestLabel:SetShown(prestige)
+	frame.crestIcon:SetShown(seal.icon ~= nil)
 	number:SetShown(seal.number ~= nil)
-	if seal.crest then
+	if seal.icon then
+		frame.crestIcon:SetTexture(seal.icon)
+	elseif seal.crest then
 		SetPortraitTexture(frame.portrait, "player")
 		frame.crestLabel:SetText(ns.Capitals(headline.title))
 	else
@@ -695,7 +721,14 @@ local function drawBanner(frame, display)
 		ns.SetArtFont(number, #digits > 2 and "SealSmall" or "SealNumber")
 		number:SetText(digits)
 	end
-	local y = -29 - 150 - (seal.crest and 26 or 4)
+	local art = headline.art
+	local ribbon = frame.ribbonArt --[[@as Texture]]
+	ribbon:SetShown(art ~= nil)
+	if art then
+		ribbon:SetTexture(art.texture)
+		ribbon:SetTexCoord(art.left, art.right, art.top, art.bottom)
+	end
+	local y = -29 - 150 - ((seal.crest or art) and 26 or 4)
 	local text = frame.text
 	text:ClearAllPoints()
 	text:SetPoint("TOP", frame, "TOP", 0, y)
@@ -817,6 +850,14 @@ local BUILD = {
 		frame.portrait:SetPoint("TOP", centre, "TOP", 0, -10)
 		frame.crestLabel = ns.ArtText(centre, "Crest")
 		frame.crestLabel:SetPoint("CENTER", centre, "TOP", 0, -117)
+		-- A crest good's icon in the Prestige crest's place (VAR-R25: a fish crest), a shield as the zone crests are.
+		frame.crestIcon = centre:CreateTexture(nil, "ARTWORK", nil, 1)
+		frame.crestIcon:SetSize(150, 150)
+		frame.crestIcon:SetPoint("TOP", centre, "TOP", 0, 20)
+		-- The headline's art across the seal's foot, its ribbon (VAR-R25: an Epic variety), 2:1 as the art is.
+		frame.ribbonArt = centre:CreateTexture(nil, "ARTWORK", nil, 3)
+		frame.ribbonArt:SetSize(132, 66)
+		frame.ribbonArt:SetPoint("CENTER", centre, "BOTTOM", 0, 6)
 		frame.text = ns.ArtText(frame, "TitleGilt")
 		frame.extras = CreateFrame("Frame", nil, frame)
 		frame.stamps = {}

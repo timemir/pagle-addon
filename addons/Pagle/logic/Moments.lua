@@ -23,6 +23,18 @@ local ns = select(2, ...)
 ---@field summaryOnly? boolean   -- ANN-R63
 ---@field firstNote? string      -- the Margin note shown the first time a moment of this Module and kind shows (ONB-R53)
 ---@field seal? integer|"waves"|"book"|"quill"|"crest" -- a banner's wax seal: a number, a mark or the Prestige crest
+---@field crest? integer|string  -- with seal "crest": a crest good's icon shown in the Prestige crest's place (VAR-R25)
+---@field art? PagleMomentArt    -- a texture rectangle drawn instead of `icon` where the headline shows (VAR-R25)
+
+--- A moment's art (announcements.md › Contracts): a texture and its texel rectangle as texture coordinates, a
+--- variety's art (VAR-R11). A toast's or Nod's medallion shows it cropped to the fish's head (ns.HeadCrop), a banner on
+--- its seal's ribbon. Never stored: the Session summary shows `icon`.
+---@class PagleMomentArt
+---@field texture integer|string
+---@field left number
+---@field right number
+---@field top number
+---@field bottom number
 
 ---@alias PagleRung "nod"|"toast.low"|"toast"|"toast.high"|"banner"|"splash"
 
@@ -86,6 +98,18 @@ function ns.MomentProblem(moment)
 	end
 	if moment.firstNote ~= nil and (type(moment.firstNote) ~= "string" or moment.firstNote == "") then
 		return "RaiseMoment: a moment's firstNote is a text (ONB-R93)"
+	end
+	local art = moment.art
+	if art ~= nil then
+		local rectangle = type(art) == "table"
+			and (type(art.texture) == "string" or type(art.texture) == "number")
+			and type(art.left) == "number"
+			and type(art.right) == "number"
+			and type(art.top) == "number"
+			and type(art.bottom) == "number"
+		if not rectangle then
+			return "RaiseMoment: a moment's art is { texture, left, right, top, bottom }"
+		end
 	end
 	return nil
 end
@@ -259,10 +283,12 @@ local function copyOf(def, moment, raised)
 	for key, value in pairs(moment) do
 		copy[key] = value
 	end
-	if type(moment.ruler) == "table" then
-		copy.ruler = {}
-		for key, value in pairs(moment.ruler) do
-			copy.ruler[key] = value
+	for _, key in ipairs({ "ruler", "art" }) do
+		if type(moment[key]) == "table" then
+			copy[key] = {}
+			for field, value in pairs(moment[key]) do
+				copy[key][field] = value
+			end
 		end
 	end
 	copy.module, copy.moduleTitle, copy.moduleOrder = def.name, def.title, def.order

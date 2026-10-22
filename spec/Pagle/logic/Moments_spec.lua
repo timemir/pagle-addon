@@ -228,6 +228,18 @@ describe("a Cast's Announcements", function()
 		assert.are.equal(312, world.shown[1].headline.ruler.new)
 		assert.are_not.equal(mine, world.shown[1].headline)
 	end)
+
+	it("copies a moment's art too (ANN-R3, VAR-R25)", function()
+		local world = newWorld()
+		local mine =
+			moment("toast", "Rare variety", { art = { texture = 1, left = 0, right = 0.1, top = 0, bottom = 0.05 } })
+
+		world.moments:Raise(LEDGER, mine)
+		mine.art.right = 1
+		world.frame()
+
+		assert.are.same({ texture = 1, left = 0, right = 0.1, top = 0, bottom = 0.05 }, world.shown[1].headline.art)
+	end)
 end)
 
 describe("when a moment may be raised", function()
@@ -346,6 +358,13 @@ describe("ns.MomentProblem", function()
 		assert.is_nil(ns.MomentProblem({ rung = "toast", kind = "k", title = "t", firstNote = "A new Species." }))
 		assert.matches("firstNote", ns.MomentProblem({ rung = "toast", kind = "k", title = "t", firstNote = 3 }))
 		assert.matches("firstNote", ns.MomentProblem({ rung = "toast", kind = "k", title = "t", firstNote = "" }))
+	end)
+
+	it("takes an art that is a texture and its rectangle, and refuses any other (VAR-R25)", function()
+		local art = { texture = "Interface\\Varieties1", left = 0, right = 0.09375, top = 0, bottom = 0.046875 }
+		assert.is_nil(ns.MomentProblem({ rung = "toast", kind = "k", title = "t", art = art }))
+		assert.matches("art", ns.MomentProblem({ rung = "toast", kind = "k", title = "t", art = "Varieties1" }))
+		assert.matches("art", ns.MomentProblem({ rung = "toast", kind = "k", title = "t", art = { texture = 1 } }))
 	end)
 end)
 
