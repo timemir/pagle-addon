@@ -1143,7 +1143,13 @@ local function printHuntsState(hunts, list, state, now, options)
 	local ids, titles = sortedKeys(progressOf), sortedKeys(sets)
 	if list then
 		-- Hunts' own line and wording (logic/Moments.lua, locale/), numbers written plain.
-		local line = hunts.HuntsSummaryLine({ hunts = progressOf, sets = sets }, now, tostring)
+		local line = hunts.HuntsSummaryLine({
+			hunts = progressOf,
+			sets = sets,
+			-- The completed-run count and the ladder (HNT-R89, HNT-R148, HNT-R165).
+			settled = tonumber(state.settled) or 0,
+			ladder = tableOr(state.ladder),
+		}, now, tostring)
 		print(
 			("summary line: %s, at %s (%s) (HNT-R89)"):format(
 				line,

@@ -217,6 +217,11 @@ ANN-R51.
 | Hunts | Hunt completed, further tier | `toast.high` |
 | Hunts | set title | `banner` |
 | Hunts | window opened (opt-in, pinned Hunts) | `nod` with `expiresAt` at the window's close |
+| Hunts | Pagle Wagers: first mark | `toast` |
+| Hunts | Pagle Wagers: further mark | `toast.low` |
+| Hunts | Pagle Wagers: settled run | `toast.high` |
+| Hunts | Pagle Wagers: ladder title | `banner` |
+| Hunts | Pagle Wagers: companion hint (behind its off switch) | `nod`, no `cast` |
 | Tackle Board | Notice completed | `toast.low` |
 | Tackle Board | Expedition completed | `toast` |
 | Tackle Board | Campfire milestone, title, Fly Box complete | `banner` |

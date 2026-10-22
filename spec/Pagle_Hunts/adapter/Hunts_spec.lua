@@ -197,7 +197,7 @@ describe("Pagle_Hunts with Core", function()
 		assert.is_false(db.profile.windowMoments) -- HNT-R88
 		assert.is_false(db.profile.showCompleted) -- HNT-R82
 		assert.are.same({}, db.profile.pins) -- HNT-R81
-		assert.are.same({ tiers = {}, sets = {} }, db.global.celebrated) -- HNT-R90
+		assert.are.same({ tiers = {}, sets = {}, runs = {}, ladder = {} }, db.global.celebrated) -- HNT-R90
 	end)
 
 	it("keeps what an earlier login saved (hunts.md › Data)", function()
@@ -216,7 +216,11 @@ describe("Pagle_Hunts with Core", function()
 		local db = loadAddon("Pagle_Hunts", foreverWith({ PagleHuntsDB = saved })).ns.db
 
 		assert.are.equal(1, db.global.schemaVersion)
-		assert.are.same({ tiers = { night_run = 2 }, sets = { camp_hours = true } }, db.global.celebrated)
+		-- A set saved before Hunt Events gains empty run and ladder entries (HNT-R90).
+		assert.are.same(
+			{ tiers = { night_run = 2 }, sets = { camp_hours = true }, runs = {}, ladder = {} },
+			db.global.celebrated
+		)
 		assert.are.same({ shown = false, collapsed = true }, db.profile.tracker)
 		assert.is_true(db.profile.windowMoments)
 		assert.is_true(db.profile.showCompleted)

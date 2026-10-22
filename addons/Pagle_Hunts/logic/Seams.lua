@@ -43,6 +43,9 @@ local ns = select(2, ...)
 --                             OnInitialize.
 --   ns.outlets.Credited(record, reached) and the `marks`, `settled` and `ladder` of each HuntsReached
 --                             (logic/Projection.lua): what a live entry newly reached in runs, for the moments.
+--   ns.LadderTitle(step), ns.TitlesEarned(state), ns.EventMomentIcon(event) (logic/WagerMoments.lua, Moments.lua):
+--                             a ladder title's text, the set and ladder titles earned (HNT-R165's "{n} titles"), and
+--                             an event's icon in a moment (#301).
 --   ns.ReadContentItem, ns.WriteContentItem, ns.HuntEventProblem (logic/Content.lua), ns.EncodeRun and
 --                             ns.EncodeDefParts (logic/Records.lua): reading, checking and logging pushed definitions.
 
