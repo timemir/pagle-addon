@@ -127,7 +127,8 @@ local ns = select(2, ...)
 ---@field on? boolean            -- a radio's pick
 ---@field inked? boolean         -- a seal pressed (false: the empty ring)
 ---@field numeral? string        -- a contents line's numeral
----@field binding? string        -- a binding line's closed book (the Bindings atlas)
+---@field binding? string        -- a binding line's closed book
+---@field bindingAtlas? "Bindings"|"Bindings2" -- and its atlas (LED-R110)
 ---@field state? "inUse"|"use"|"level"|"shop" -- a binding line's state
 ---@field columns? integer       -- tiles across
 ---@field rank? integer          -- a crest's prestige rank

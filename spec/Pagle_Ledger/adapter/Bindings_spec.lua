@@ -1,7 +1,7 @@
--- The Ledger's Journal bindings on FakePagle (LED-R110–R115, LED-R35, LED-R92, LED-R93; SHOP-R21–R23, SHOP-R30–R33):
--- the slot and its ten goods, the level bindings earned by the peak or celebrated level, M:RefreshGoods only from a
--- live entry or done, the Journal drawn in the equipped binding, the closed-book swatch on the shop's stage, and the
--- zone crests in Core's crest slot.
+-- The Ledger's Journal bindings on FakePagle (LED-R110–R116, LED-R35, LED-R92, LED-R93; SHOP-R21–R23, SHOP-R30–R33):
+-- the slot and its goods, the level bindings earned by the peak or celebrated level, the expansion's earned bindings
+-- by their rules, M:RefreshGoods only from a live entry or done, the Journal drawn in the equipped binding, its
+-- material and corners, the closed-book swatch on the shop's stage, and the zone crests in Core's crest slot.
 
 local SLOT = "ledger.binding"
 
@@ -17,6 +17,25 @@ local GOODS = {
 	{ "ledger.binding.birch", "tier 1" },
 	{ "ledger.binding.buckram", "tier 2" },
 	{ "ledger.binding.sharkskin", "tier 3" },
+	{ "ledger.binding.chartlinen", "tier 1" },
+	{ "ledger.binding.sailcloth", "tier 1" },
+	{ "ledger.binding.oilskin", "tier 1" },
+	{ "ledger.binding.moss", "tier 2" },
+	{ "ledger.binding.driftwood", "tier 2" },
+	{ "ledger.binding.eelskin", "tier 2" },
+	{ "ledger.binding.kodo", "tier 2" },
+	{ "ledger.binding.frosthide", "tier 2" },
+	{ "ledger.binding.netcork", "tier 2" },
+	{ "ledger.binding.copper", "tier 3" },
+	{ "ledger.binding.velvet", "tier 3" },
+	{ "ledger.binding.turtle", "tier 3" },
+	{ "ledger.binding.morocco", "tier 3" },
+	{ "ledger.binding.coral", "tier 4" },
+	{ "ledger.binding.pearl", "tier 5" },
+	{ "ledger.binding.legend", "earned", "Land all three Legends" },
+	{ "ledger.binding.monster", "earned", "Land a Monster" },
+	{ "ledger.binding.abyssal", "earned", "Prestige X" },
+	{ "ledger.binding.keeper", "earned", "Ledger 100%" },
 }
 
 -- A good's kind as LED-R110's table writes it.
@@ -87,7 +106,7 @@ end
 
 describe("the Ledger's Journal bindings", function()
 	it(
-		"register the slot ledger.binding and its ten goods in LED-R110's order, with their kinds, and Field Leather equipped (LED-R110, SHOP-R21, SHOP-R22, SHOP-R32)",
+		"register the slot ledger.binding and its goods in LED-R110's order, with their kinds, Iridescent Scale not one, and Field Leather equipped (LED-R110, LED-R116, SHOP-R21, SHOP-R22, SHOP-R32)",
 		function()
 			local fake = ledger()
 			local goods = fake.ns.goods
@@ -104,6 +123,7 @@ describe("the Ledger's Journal bindings", function()
 				registered[i] = { good.id, kindOf(good), good.earnedText }
 			end
 			assert.are.same(GOODS, registered)
+			assert.is_nil(fake.Pagle.GetGood("ledger.binding.iridescent"))
 			assert.are.equal("ledger.binding.field", fake.Pagle.GetEquipped(SLOT))
 		end
 	)
@@ -180,8 +200,16 @@ describe("the Ledger's Journal bindings", function()
 			local color = texture.vertexColor or { 1, 1, 1 }
 			return { color[1], color[2], color[3] }
 		end
+		local corners = {}
+		for i, piece in ipairs(frame.corners) do
+			corners[i] = piece:IsShown() and {
+				(piece --[[@as table]]).texCoord,
+			} or false
+		end
 		return {
 			leather = (frame.leatherFill --[[@as table]]).texture,
+			repeats = (frame.leatherFill --[[@as table]]).texCoord,
+			corners = corners,
 			tint = frame.leatherTint,
 			band = rgb(frame.band[1]),
 			paper = { rgb(frame.papers.left.parchment), rgb(frame.papers.right.parchment) },
@@ -194,8 +222,26 @@ describe("the Ledger's Journal bindings", function()
 	---@param goodID string
 	local function lookOf(ns, goodID)
 		local look = ns.BindingLook(goodID)
+		-- the leather inside the band, 920 × 600 less 7 each side, over the material's repeat
+		local w, h = 920 - 14, 600 - 14
+		local corners = {}
+		for i = 1, 4 do
+			corners[i] = false
+			if look.corners then
+				local l, r, t, b = ns.JournalCoords("BindingCorners", "corner-" .. look.corners)
+				if i % 2 == 0 then
+					l, r = r, l
+				end
+				if i > 2 then
+					t, b = b, t
+				end
+				corners[i] = { { l, r, t, b } }
+			end
+		end
 		return {
-			leather = ns.JOURNAL_FILES[look.texture],
+			leather = look.texture,
+			repeats = { 0, w / look.tileW, 0, h / look.tileH },
+			corners = corners,
 			tint = look.tint or { 1, 1, 1 },
 			band = look.band or { 1, 1, 1 },
 			paper = { look.paperTint, look.paperTint },
@@ -237,25 +283,211 @@ describe("the Ledger's Journal bindings", function()
 		end
 	)
 
-	it("preview each binding as the kit's closed book of it on the shop's stage, no pages (LED-R110)", function()
-		local fake, loaded = ledger()
-		local ns = loaded.ns
-		local stage = loaded.env.CreateFrame("Frame")
-		local atlas = ns.JOURNAL_ATLASES.Bindings
+	it(
+		"draw the open Journal in an expansion binding: its material at its repeat, its corner pieces mirrored to the book's four corners, and none in one without (LED-R110, LED-R112)",
+		function()
+			local fake = newFakePagle()
+			fake.profile.announcements.motion = false
+			local loaded = fake.load("Pagle_Ledger")
+			fake.login()
+			fake.enterWorld()
+			fake.setPurchased({ ["ledger.binding.driftwood"] = true, ["ledger.binding.sailcloth"] = true })
+			local ns = loaded.ns
+			ns.ToggleJournal()
+			local frame = ns.journal.frame
 
-		for _, row in ipairs(GOODS) do
-			local id = row[1]
-			local look = ns.BindingLook(id)
+			assert.is_true(fake.Pagle.SetEquipped(SLOT, "ledger.binding.driftwood"))
 
-			fake.ns.goods:Good(id).preview(stage)
+			local drawn = bookTints(frame)
+			assert.are.same(lookOf(ns, "ledger.binding.driftwood"), drawn)
+			assert.are.equal("Interface\\AddOns\\Pagle_Ledger\\media\\journal\\bindings\\driftwood", drawn.leather)
+			assert.are.same({ 0, 906 / 150, 0, 586 / 196 }, drawn.repeats)
+			assert.is_truthy(drawn.corners[4])
+			assert.are.same({ 44, 44 }, { frame.corners[4]:GetSize() })
 
-			assert.are.equal(1, #stage.children) -- one swatch, drawn afresh for each good
-			local swatch = stage.children[1]
-			assert.is_true(swatch:IsShown())
-			assert.are.equal(atlas.file, swatch.book.texture)
-			assert.are.same({ ns.JournalCoords("Bindings", look.swatch) }, swatch.book.texCoord, id)
+			assert.is_true(fake.Pagle.SetEquipped(SLOT, "ledger.binding.sailcloth"))
+
+			assert.are.same(lookOf(ns, "ledger.binding.sailcloth"), bookTints(frame))
+			assert.are.same({ false, false, false, false }, bookTints(frame).corners)
 		end
+	)
+
+	it(
+		"preview each binding as the kit's closed book of it on the shop's stage, from its atlas, 104 wide, no pages (LED-R110)",
+		function()
+			local fake, loaded = ledger()
+			local ns = loaded.ns
+			local stage = loaded.env.CreateFrame("Frame")
+
+			for _, row in ipairs(GOODS) do
+				local id = row[1]
+				local look = ns.BindingLook(id)
+
+				fake.ns.goods:Good(id).preview(stage)
+
+				assert.are.equal(1, #stage.children) -- one swatch, drawn afresh for each good
+				local swatch = stage.children[1]
+				assert.is_true(swatch:IsShown())
+				assert.are.equal(ns.JOURNAL_ATLASES[look.swatchAtlas].file, swatch.book.texture, id)
+				assert.are.same({ ns.JournalCoords(look.swatchAtlas, look.swatch) }, swatch.book.texCoord, id)
+				assert.are.same({ 104, 104 }, { swatch:GetWidth(), swatch.book.box[3] }, id)
+			end
+			assert.are.equal("Bindings2", ns.BindingLook("ledger.binding.pearl").swatchAtlas)
+		end
+	)
+end)
+
+describe("the Ledger's expansion earned bindings", function()
+	local RACER, ANGELFISH, QUEENFISH, MACKEREL = 19803, 19805, 19806, 6303
+	local STV, FERALAS = 33, 357
+
+	-- A catalogue (DATA-R76) named `fingerprint`: Stranglethorn lists the Racer and the Angelfish, Feralas the Mackerel
+	-- and, unless `queenfish` is false, the Queenfish; every item sized (LOG-R65), a Legend from its Catch ID alone.
+	-- With `racer` false, the Racer is in no release, so its Catches are Uncharted (LED-R64).
+	---@param fingerprint string
+	---@param options { queenfish: boolean?, racer: boolean? }?
+	local function release(fingerprint, options)
+		options = options or {}
+		local items = {
+			[ANGELFISH] = fishRecord(ANGELFISH, { legend = true, typicalLength = 1800 }),
+			[MACKEREL] = fishRecord(MACKEREL, { typicalLength = 300 }),
+		}
+		local stv = { catchEntry(ANGELFISH) }
+		if options.racer ~= false then
+			items[RACER] = fishRecord(RACER, { legend = true, typicalLength = 2200 })
+			stv[2] = catchEntry(RACER)
+		end
+		local feralas = { catchEntry(MACKEREL) }
+		if options.queenfish ~= false then
+			items[QUEENFISH] = fishRecord(QUEENFISH, { legend = true, typicalLength = 2000 })
+			feralas[2] = catchEntry(QUEENFISH)
+		end
+		return catalogueWith({
+			fingerprint = fingerprint,
+			items = items,
+			areas = {
+				[STV] = areaRecord(0, { catches = stv }),
+				[FERALAS] = areaRecord(0, { continent = 1, catches = feralas }),
+			},
+		})
+	end
+
+	-- A Ledger on a fresh fake over `data`, its log `log` (or the saved one of `from`, with its PagleLedgerDB), logged in
+	-- and in the world, M:RefreshGoods noted.
+	---@param data table
+	---@param from { fake: FakePagle, loaded: LoadedAddon }?
+	---@param log table[]?
+	---@return FakePagle fake
+	---@return LoadedAddon loaded
+	---@return string[] modes
+	local function ledgerOver(data, from, log)
+		local fake = newFakePagle()
+		fake.setCatalogue(data)
+		if from then
+			fake.catchLog.data = from.fake.catchLog.data
+			fake.globals.PagleLedgerDB = from.loaded.env.PagleLedgerDB
+		else
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for _, record in ipairs(log or {}) do
+				fake.catchLog:Append(record)
+			end
+		end
+		local loaded = fake.load("Pagle_Ledger")
+		local modes = noteRefreshes(fake)
+		fake.login()
+		fake.enterWorld()
+		return fake, loaded, modes
+	end
+
+	it(
+		"own Three Gilt Fish after the live entry that lands the last listed Legend, and keep it when a release lists another (LED-R116, LED-R63, SHOP-R31)",
+		function()
+			local fake, loaded, modes = ledgerOver(
+				release("first release", { queenfish = false }),
+				nil,
+				{ castRecord({ time = T0, zone = STV, items = { RACER } }) }
+			)
+			assert.is_false(fake.Pagle.IsOwned("ledger.binding.legend"))
+
+			fake.playCast("caught", { { itemID = ANGELFISH, quantity = 1 } })
+
+			assert.are.same({ "done", "live" }, modes)
+			assert.is_true(fake.Pagle.IsOwned("ledger.binding.legend"))
+
+			-- The next login: a release listing the Queenfish rebuilds the projection (LED-R191); two of three caught.
+			local later, reloaded, laterModes = ledgerOver(release("second release"), { fake = fake, loaded = loaded })
+			assert.are.same({ "done" }, laterModes)
+			assert.are.same(
+				{ done = 2, total = 3 },
+				reloaded.ns.LedgerCompletion(reloaded.ns.world, reloaded.ns.projection:GetState()).legends
+			)
+			assert.is_true(later.Pagle.IsOwned("ledger.binding.legend"))
+		end
+	)
+
+	it(
+		"own Monster Hide from the live entry of the first Catch in the Monster band, and keep it through a rebuild that loses the record (LED-R116, LED-R80, LED-R64)",
+		function()
+			-- A Legend is sized from its Catch ID alone (LOG-R67), so any Catch of it may be a Monster; the Racer caught
+			-- before, so its first Catch's moment is behind.
+			local fake, loaded, modes =
+				ledgerOver(release("first release"), nil, { castRecord({ time = T0, zone = STV, items = { RACER } }) })
+			local before = loaded.ns.projection:GetState().items[RACER].record
+			assert.are_not.equal(5, before and before.band)
+			local monsterAt
+			fake.Pagle.RegisterCallback("Spec", "Catch", function(_, catch)
+				if catch.size and catch.size.band == 5 and not monsterAt then
+					monsterAt = #modes + 1 -- the refresh this Cast's live entry makes
+				end
+			end)
+			for _ = 1, 40 do
+				fake.playCast("caught", { { itemID = RACER, quantity = 1 } })
+				assert.are.equal(monsterAt ~= nil, fake.Pagle.IsOwned("ledger.binding.monster"))
+			end
+			assert(monsterAt, "no Racer in the Monster band in 40 Casts")
+			-- one refresh at the done, one for the Monster's Cast (LED-R116), and none for the other Casts
+			assert.are.same({ "done", "live" }, modes)
+
+			local later, reloaded = ledgerOver(release("second release", { racer = false }), {
+				fake = fake,
+				loaded = loaded,
+			})
+			assert.is_nil(reloaded.ns.projection:GetState().items[RACER])
+			assert.is_true(later.Pagle.IsOwned("ledger.binding.monster"))
+		end
+	)
+
+	it("own Abyssal Black at Prestige X, not at IX (LED-R116, LED-R34)", function()
+		local function owned(ranks)
+			local entries = {}
+			for rank = 1, ranks do
+				entries[rank] = prestigeEntry(SERVER_TIME - 5000 + rank, rank)
+			end
+			local fake = openJournal({ entries = entries, id = false })
+			return fake.Pagle.IsOwned("ledger.binding.abyssal")
+		end
+
+		assert.is_false(owned(9))
+		assert.is_true(owned(10))
 	end)
+
+	it(
+		"own Keeper's Gold with the complete.ledger title celebrated, from registration on (LED-R116, LED-R75, LED-R90)",
+		function()
+			local fake = newFakePagle()
+			fake.catchLog.data.logId = "log"
+			fake.globals.PagleLedgerDB = {
+				global = { celebrated = { coins = 0, titles = { ["title:complete.ledger"] = true }, logId = "log" } },
+			}
+			fake.load("Pagle_Ledger")
+
+			assert.is_true(fake.Pagle.IsOwned("ledger.binding.keeper"))
+			fake.login()
+			fake.enterWorld()
+			assert.is_true(fake.Pagle.IsOwned("ledger.binding.keeper"))
+			assert.is_false(fake.Pagle.IsOwned("ledger.binding.legend"))
+		end
+	)
 end)
 
 describe("the Ledger's zone crests", function()

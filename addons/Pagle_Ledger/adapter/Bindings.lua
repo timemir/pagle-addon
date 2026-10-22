@@ -18,8 +18,10 @@ local CREST_SLOT = ns.CREST_SLOT
 -- the Ledger names it, as it names the slot.
 local DEFAULT_CREST = "core.crest.plain"
 
--- The closed book's place on the stage: down from its top, as Core's crest bookplate sits (adapter/CoreGoods.lua).
-local SWATCH_TOP = 16
+-- The closed book's place on the stage: down from its top, as Core's crest bookplate sits (adapter/CoreGoods.lua);
+-- and its width, the Ledger art kit's books', which the expansion's larger ones are drawn down to so every binding
+-- shows the same size and fits the stage's 190.
+local SWATCH_TOP, SWATCH_W = 16, 104
 
 --- A closed-book swatch (LED-R110): the kit's swatch of the binding, a closed book with its gilt rules and brass
 --- plate, no pages.
@@ -35,16 +37,14 @@ local swatches = setmetatable({}, { __mode = "k" })
 ---@return LedgerBindingSwatch
 local function buildSwatch(stage)
 	local swatch = CreateFrame("Frame", nil, stage) --[[@as LedgerBindingSwatch]]
-	local sprite = ns.JOURNAL_ATLASES.Bindings.sprites["binding-field-leather"]
-	swatch:SetSize(sprite.box[3], sprite.box[4])
 	swatch:SetPoint("TOP", 0, -SWATCH_TOP)
 	swatch.book = ns.JournalSprite(swatch, "Bindings", "binding-field-leather", "ARTWORK")
-	ns.JournalBoxAt(swatch.book, swatch, 0, 0)
 	return swatch
 end
 
 --- Draws binding `look`'s closed book on the Curio Shop's preview stage (LED-R110): one swatch per stage, re-pointed
---- at the binding's and shown at each call. The shop hides what another good drew there.
+--- at the binding's, in its atlas, drawn 104 wide (the Ledger art kit's books' width), and shown at each call. The
+--- shop hides what another good drew there.
 ---@param stage Frame
 ---@param look LedgerBindingLook
 ---@return LedgerBindingSwatch
@@ -54,7 +54,10 @@ function ns.DrawBindingSwatch(stage, look)
 		swatch = buildSwatch(stage)
 		swatches[stage] = swatch
 	end
-	ns.JournalSetSprite(swatch.book, "Bindings", look.swatch)
+	local book = swatch.book
+	ns.JournalResprite(book, look.swatchAtlas, look.swatch, SWATCH_W)
+	swatch:SetSize(book.box[3], book.box[4])
+	ns.JournalBoxAt(book, swatch, 0, 0)
 	swatch:Show()
 	return swatch
 end
@@ -70,6 +73,21 @@ function ns.CrestIcon()
 	end
 	local good = crest and Pagle.GetGood(crest)
 	return good and good.icon
+end
+
+--- Whether expansion good `goodID` is earned now (LED-R116, LED-R117): by `rule` over the projection's state as it
+--- stands (even mid-update: Core asks only at registration, before any update, and after a live entry or a done,
+--- SHOP-R31) and the celebrated set as saved, or kept there once earned.
+---@param goodID string
+---@param rule LedgerEarnedRule
+---@return boolean
+function ns.EarnedGoodNow(goodID, rule)
+	local projection = ns.projection
+	return ns.EarnedGoodOwned(goodID, rule, {
+		state = projection and projection:GetState() --[[@as LedgerState?]],
+		celebrated = ns.SavedCelebrated(),
+		world = ns.world,
+	})
 end
 
 --- Registers the Ledger's slot and its goods (LED-R110, SHOP-R21), then the zone crests in Core's crest slot (LED-R113,
@@ -88,6 +106,7 @@ function ns.RegisterBindings(module)
 			local state = projection and projection:GetState() --[[@as LedgerState?]]
 			return ns.LevelBindingEarned(level, state, ns.SavedCelebrated())
 		end,
+		earnedBy = ns.EarnedGoodNow,
 		preview = ns.DrawBindingSwatch,
 	})
 	for _, good in ipairs(goods) do

@@ -397,7 +397,7 @@ makers.leader = function(parent)
 		-- the value: a state on a binding's line, a count or a mark on a contents line
 		local face, valueSize, hex = "print", size, INK.small
 		if binding then
-			ns.JournalSetSprite(self.swatch, "Bindings", block.binding)
+			ns.JournalResprite(self.swatch, block.bindingAtlas or "Bindings", block.binding, 11)
 			ns.JournalBoxAt(self.swatch, self, 1, 1)
 			if block.state == "inUse" then
 				face, valueSize, hex = "hand", 17, INK.green
