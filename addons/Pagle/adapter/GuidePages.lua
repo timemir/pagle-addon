@@ -546,7 +546,7 @@ local OFF = {
 		local window = sampleWindow(left, "nod", 40, 191.5, 214, 30)
 		pages.offWindow, pages.offSample = window, drawSample(window)
 		nav.Note(left, L.GUIDE_OFF_NOD_NOTE, 226, 222, 216, window, 1)
-		small(left, ns.GuideLooksLine(ns.GuideLookWindows(ns.Modules:Modules())), 317.5)
+		small(left, ns.GuideLooksLine(ns.GuideLookWindows(ns.Modules:Modules(), ns.firstLooks:List())), 317.5)
 
 		ns.NewGuideKicker(right, L.GUIDE_OFF_RIGHT_KICKER)
 		ns.NewGuideTitle(right, L.GUIDE_OFF_RIGHT_TITLE, 25)

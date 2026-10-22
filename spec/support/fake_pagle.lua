@@ -214,6 +214,10 @@
 --- :TargetHidden(id) plays a target hiding (Core's adapter watches for it each frame).
 ---@field menuButton { name: string, shown: boolean, IsVisible: fun(self): boolean } Pagle's menu button, which
 --- core.welcome and core.character point at; set `shown` to false to play it hidden.
+---@field looksShown { id: string, title: string, notes: { text: string, n: integer }[] }[] Each First look Core
+--- would show, in order (ONB-R55, ONB-R59): M:ShowFirstLook's, its notes whose targets show, numbered 1 to n (ONB-R56).
+---@field firstLooks PagleFirstLooks Core's First looks on its wiring: :Showing() is what is on screen now, :List() every
+--- set registered, and :TargetHidden(id, index) plays a note's target hiding (Core's adapter watches for it each frame).
 ---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
 --- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
 
@@ -1350,6 +1354,40 @@ part(function(fake, _, ns, host)
 		end,
 	})
 	fake.marginNotes = ns.marginNotes
+end)
+
+-- First looks (core/onboarding.md › First looks), on Core's wiring: M:RegisterFirstLook validates as Core does, and
+-- M:ShowFirstLook shows a set once per account with Margin notes on (fake.global.onboarding), or with `again` (the
+-- "?", ONB-R59) seen or not. The fake draws nothing: each set Core would show lands in fake.looksShown, and
+-- fake.firstLooks:Showing() is what is on screen. A target shows while its IsVisible says so (a table without one
+-- always does). The set leaves as its window hides, through the window's OnHide where it has HookScript (a client
+-- frame). No tour stops: Core's adapter adds those.
+part(function(fake, _, ns, host)
+	fake.looksShown = {}
+	---@type table<string, true>
+	local hooked = {}
+	ns.WireFirstLooks(host, {
+		show = function(set, entries)
+			local notes = {}
+			for i, entry in ipairs(entries) do
+				notes[i] = { text = set.notes[entry.index].text, n = entry.n }
+			end
+			fake.looksShown[#fake.looksShown + 1] = { id = set.id, title = set.title, notes = notes }
+			local window = ns.firstLooks:Window(set.id)
+			if window and not hooked[set.id] and type(window.HookScript) == "function" then
+				hooked[set.id] = true
+				window:HookScript("OnHide", function()
+					ns.firstLooks:WindowHidden(set.id)
+				end)
+			end
+		end,
+		renumber = function() end,
+		hide = function() end,
+		isShown = function(region)
+			return type(region.IsVisible) ~= "function" or region:IsVisible() == true
+		end,
+	})
+	fake.firstLooks = ns.firstLooks
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.

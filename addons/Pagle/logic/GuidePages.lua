@@ -152,22 +152,24 @@ function ns.GuideListOf(items)
 	return table.concat(items, L.GUIDE_LIST_COMMA, 1, #items - 1) .. L.GUIDE_LIST_AND .. items[#items]
 end
 
---- The Modules whose windows have a First look (ONB-R57), by roster name; Core's Curio Shop has one too.
-local LOOK_WINDOWS = { Ledger = true, Hunts = true, Stats = true, TackleBoard = true }
-
---- The windows Off you go names (ONB-R38): those of the registered Modules that have First looks, in def.order, then
---- the Curio Shop. Until First looks register (#326), a window's set is the one ONB-R57 gives its Module.
+--- The windows Off you go names (ONB-R38): the titles of the First looks registered (ns.firstLooks:List()), the
+--- registered Modules' in def.order, each Module's as registered, then Core's (the Curio Shop's).
 ---@param modules PagleModule[] by def.order
+---@param looks PagleLookRecord[] every registered set, with its owner
 ---@return string[]
-function ns.GuideLookWindows(modules)
-	local names = ns.L.GUIDE_LOOK_WINDOWS
+function ns.GuideLookWindows(modules, looks)
 	local windows = {}
-	for _, module in ipairs(modules) do
-		if LOOK_WINDOWS[module.def.name] then
-			windows[#windows + 1] = names[module.def.name]
+	local function add(owner)
+		for _, record in ipairs(looks) do
+			if record.owner == owner then
+				windows[#windows + 1] = record.set.title
+			end
 		end
 	end
-	windows[#windows + 1] = names.Core
+	for _, module in ipairs(modules) do
+		add(module.def.name)
+	end
+	add(ns.CORE_OWNER)
 	return windows
 end
 
