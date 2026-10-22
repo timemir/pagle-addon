@@ -838,6 +838,116 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("pushed content", function()
+		---@class FakePagleListening: FakePagle
+		---@field fired PagleCompanionState[] each PushedContentReady's state, in order
+
+		-- A fake whose every PushedContentReady lands in `fired`.
+		---@return FakePagleListening
+		local function listening()
+			local fake = newFakePagle() --[[@as FakePagleListening]]
+			fake.fired = {}
+			fake.Pagle.RegisterCallback("spec", "PushedContentReady", function(_, state)
+				fake.fired[#fake.fired + 1] = state
+			end)
+			return fake
+		end
+
+		it(
+			"reads missing from login with no Pagle_Content set, firing PushedContentReady at once (PUSH-R15, PUSH-R16, PUSH-R90)",
+			function()
+				local fake = listening()
+				assert.are.equal("checking", fake.Pagle.GetCompanionState())
+
+				fake.login()
+
+				assert.are.equal("missing", fake.Pagle.GetCompanionState())
+				assert.are.same({ "missing" }, fake.fired)
+				assert.are.same({}, fake.Pagle.GetPushedContent("huntRun"))
+			end
+		)
+
+		it(
+			"ends the check with a set state and items on the frame after login, keeping the known kinds (PUSH-R10, PUSH-R21, PUSH-R22)",
+			function()
+				local fake = listening()
+				local run = { kind = "huntRun", v = 1, event = "p_test_tide", start = 1, ["end"] = 2 }
+				fake.setPushedContent({ state = "notRunning", items = { run, { kind = "notice", v = 1 } } })
+
+				fake.login()
+				assert.are.equal("checking", fake.Pagle.GetCompanionState())
+				assert.are.same({}, fake.Pagle.GetPushedContent("huntRun"))
+				assert.are.same({}, fake.fired)
+				fake.nextFrame()
+
+				assert.are.equal("notRunning", fake.Pagle.GetCompanionState())
+				assert.are.same({ "notRunning" }, fake.fired)
+				local runs = fake.Pagle.GetPushedContent("huntRun")
+				assert.are.same({ run }, runs)
+				runs[1].event = "changed"
+				assert.are.equal("p_test_tide", fake.Pagle.GetPushedContent("huntRun")[1].event)
+				assert.are.same({}, fake.Pagle.GetPushedContent("notice"))
+			end
+		)
+
+		it("keeps checking for good with a set state of checking (PUSH-R93)", function()
+			local fake = listening()
+			fake.setPushedContent({ state = "checking" })
+
+			fake.login()
+			fake.nextFrame()
+
+			assert.are.equal("checking", fake.Pagle.GetCompanionState())
+			assert.are.same({}, fake.fired)
+		end)
+
+		it(
+			"checks a raw PagleContentData with Core's real check, the test key registered by the spec (PUSH-R13)",
+			function()
+				local fixtures = pushedContentFixtures()
+				local fake = listening()
+				fake.ns.PUSHED_KEYS.testKey = fixtures.testKey
+				fake.setPushedContent({ data = fixtures.good })
+
+				fake.login()
+				assert.are.equal("checking", fake.Pagle.GetCompanionState())
+				fake.nextFrame()
+
+				assert.are.equal("connected", fake.Pagle.GetCompanionState())
+				assert.are.same({ "connected" }, fake.fired)
+				assert.are.equal(1, #fake.Pagle.GetPushedContent("huntRun"))
+				assert.are.equal(42, fake.global.pushed.seq)
+				fake.slash("dev on")
+				fake.slash("dev content")
+				assert.are.equal(
+					"Pagle dev: kinds handed out: huntEvent 1, huntRun 1.",
+					fake.printed[#fake.printed - 2]
+				)
+			end
+		)
+
+		it("reads a raw file that fails the check missing, as Core does (PUSH-R13)", function()
+			local fixtures = pushedContentFixtures()
+			local fake = listening()
+			fake.setPushedContent({ data = fixtures.good })
+
+			fake.login()
+			fake.nextFrame()
+
+			assert.are.equal("missing", fake.Pagle.GetCompanionState())
+			assert.are.same({ "missing" }, fake.fired)
+		end)
+
+		it("refuses a set after login: Core reads Pagle_Content once (PUSH-R1)", function()
+			local fake = newFakePagle()
+			fake.login()
+
+			assert.has_error(function()
+				fake.setPushedContent({ state = "connected", items = {} })
+			end)
+		end)
+	end)
+
 	describe("goods", function()
 		-- Hunts registered on `fake`, with its notebook cover slot: a default, a tier-2 good and an earned good whose
 		-- isEarned() returns `earned.value`.

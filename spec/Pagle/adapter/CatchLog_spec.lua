@@ -18,6 +18,7 @@ local PAGLEDB_KEYS = {
 		"writeUp",
 		"coins",
 		"activityXP", -- activity-xp.md › Data (AXP-R3), from M8
+		"pushed", -- pushed-content.md › Data (PUSH-R13), from M8
 		"goods",
 		"projections",
 		"minimap", -- CORE-R53, from M8.5

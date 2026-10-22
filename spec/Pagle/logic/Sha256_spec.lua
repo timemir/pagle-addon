@@ -83,7 +83,7 @@ describe("ns.Sha256", function()
 				steps = steps + 1
 			end
 
-			assert.are.equal(4, steps)
+			assert.are.equal(13, steps)
 			assert.is_true(prepare())
 			local hash = ns.NewSha256()
 			hash:Update(fixtures.data:sub(1, 4096))

@@ -138,8 +138,10 @@ local function contribution(rotations, shift, j, k)
 	return t
 end
 
--- P and H entries a preparation step fills: about a millisecond's work in stock Lua 5.1.
-local FILL_PER_STEP = 16384
+-- P and H entries a preparation step fills, and contribution tables it builds once they're filled: each about half a
+-- millisecond's work in stock Lua 5.1, so a step fits a frame's budget with room on a slower machine (#293).
+local FILL_PER_STEP = 8192
+local CONTRIBUTIONS_PER_STEP = 8
 
 --- Builds the spread tables in steps: SP[b], byte b with each bit i moved to bit 2i, so that adding up to three spread
 --- bytes sums each bit in its own two-bit field; P[v] and H[v], the low and the high bit of each field of a sum v (its
@@ -164,35 +166,50 @@ local function buildSteps()
 	end
 	local P, H = { [0] = 0 }, { [0] = 0 }
 	local filled = 0
+	-- Each contribution table to build: where it goes, its index there, and contribution's arguments.
+	local S, s0, s1 = {}, {}, {}
+	local jobs = {}
+	for k = 0, 3 do
+		jobs[#jobs + 1] = { S, k + 1, { 2, 13, 22 }, nil, 0, k } -- Σ0
+		jobs[#jobs + 1] = { S, k + 5, { 6, 11, 25 }, nil, 0, k } -- Σ1
+	end
+	for j = 0, 3 do
+		for k = 0, 3 do
+			jobs[#jobs + 1] = { s0, 4 * j + k + 1, { 7, 18 }, 3, j, k } -- σ0
+			jobs[#jobs + 1] = { s1, 4 * j + k + 1, { 17, 19 }, 10, j, k } -- σ1
+		end
+	end
+	local built = 0
 	return function()
 		if T then
 			return T
 		end
-		-- Field by field from the top: P[v] = 2 * P[v >> 2] + (v AND 1), H[v] = 2 * H[v >> 2] + (v >> 1 AND 1).
-		local stop = filled + FILL_PER_STEP
-		if stop > 65535 then
-			stop = 65535
-		end
-		for v = filled + 1, stop do
-			local field = v % 4
-			local rest = (v - field) / 4
-			P[v] = 2 * P[rest] + field % 2
-			H[v] = 2 * H[rest] + (field - field % 2) / 2
-		end
-		filled = stop
 		if filled < 65535 then
+			-- Field by field from the top: P[v] = 2 * P[v >> 2] + (v AND 1), H[v] = 2 * H[v >> 2] + (v >> 1 AND 1).
+			local stop = filled + FILL_PER_STEP
+			if stop > 65535 then
+				stop = 65535
+			end
+			for v = filled + 1, stop do
+				local field = v % 4
+				local rest = (v - field) / 4
+				P[v] = 2 * P[rest] + field % 2
+				H[v] = 2 * H[rest] + (field - field % 2) / 2
+			end
+			filled = stop
 			return nil
 		end
-		local S, s0, s1 = {}, {}, {}
-		for k = 0, 3 do
-			S[k + 1] = contribution({ 2, 13, 22 }, nil, 0, k) -- Σ0
-			S[k + 5] = contribution({ 6, 11, 25 }, nil, 0, k) -- Σ1
+		local stop = built + CONTRIBUTIONS_PER_STEP
+		if stop > #jobs then
+			stop = #jobs
 		end
-		for j = 0, 3 do
-			for k = 0, 3 do
-				s0[4 * j + k + 1] = contribution({ 7, 18 }, 3, j, k) -- σ0
-				s1[4 * j + k + 1] = contribution({ 17, 19 }, 10, j, k) -- σ1
-			end
+		for i = built + 1, stop do
+			local job = jobs[i]
+			job[1][job[2]] = contribution(job[3], job[4], job[5], job[6])
+		end
+		built = stop
+		if built < #jobs then
+			return nil
 		end
 		T = { SP = SP, P = P, H = H, S = S, s0 = s0, s1 = s1 }
 		cache.T = T

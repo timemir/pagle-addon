@@ -54,6 +54,7 @@ local ns = select(2, ...)
 ---@field evening PagleEvening The First evening list (ns.WireEvening, ONB-R60–R63).
 ---@field marginNotes PagleMarginNotes Core's Margin notes (ns.WireMarginNotes, ONB-R50–R53).
 ---@field firstLooks PagleFirstLooks Core's First looks (ns.WireFirstLooks, ONB-R55–R59).
+---@field pushedContent PaglePushedContent Core's pushed content this login (ns.WirePushedContent, PUSH-R10–R23).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. A Module's records are the ones Pagle.IterateCatches yields plus its own Module records (LOG-R42).
@@ -982,6 +983,9 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 		onboarding = function(args)
 			ns.onboarding:RunDev(args)
 		end,
+		content = function()
+			return ns.pushedContent:Report()
+		end,
 		probe = function()
 			ns.RunProbe({
 				globals = globals,
@@ -1006,6 +1010,42 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 		end,
 		print = host.print,
 	})
+end
+
+--- What only the client knows about the companion's data addon: Core's adapter reads the global and the AddOns list,
+--- FakePagle its own (core/pushed-content.md).
+---@class PaglePushedContentClient
+---@field data fun(): any                     -- PagleContentData, the global Pagle_Content sets (PUSH-R1, PUSH-R2)
+---@field presence fun(): PaglePushedPresence -- Pagle_Content's install and load state, for an absent file's reason
+
+--- Core's pushed-content reader as ns.pushedContent (core/pushed-content.md, ADR 0013), firing PushedContentReady on
+--- the bus once its check ends (PUSH-R16), over the shipped keys (ns.PUSHED_KEYS, PUSH-R12) and
+--- PagleDB.global.pushed.seq (PUSH-R13), with ns.StartPushedContent, login step 2's part, after ModulesChanged
+--- (PUSH-R10). `/pagle dev content` (PUSH-R14) prints its report (ns.WireDev).
+---@param host PagleHost
+---@param client PaglePushedContentClient
+function ns.WirePushedContent(host, client)
+	ns.pushedContent = ns.NewPushedContent({
+		data = client.data,
+		presence = client.presence,
+		keys = function()
+			return ns.PUSHED_KEYS
+		end,
+		global = function()
+			return host.db().global
+		end,
+		serverTime = host.serverTime,
+		clock = host.clock,
+		nextFrame = host.nextFrame,
+		fire = function(state)
+			host.fire("PushedContentReady", state)
+		end,
+		report = host.report,
+	})
+	--- Login step 2, after ModulesChanged: reads PagleContentData once and starts its check (PUSH-R1, PUSH-R10).
+	function ns.StartPushedContent()
+		ns.pushedContent:Start()
+	end
 end
 
 --- Core's onboarding (core/onboarding.md) as ns.onboarding, over PagleDB.global.onboarding, with `/pagle dev
