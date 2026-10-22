@@ -70,6 +70,7 @@ logic\FieldReportBox.lua
 logic\Dock.lua
 logic\Onboarding.lua
 logic\Guide.lua
+logic\Evening.lua
 logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
@@ -123,4 +124,5 @@ adapter\GuideKit.lua
 adapter\GuideBook.lua
 adapter\Guide.lua
 adapter\Tour.lua
+adapter\Evening.lua
 adapter\Login.lua

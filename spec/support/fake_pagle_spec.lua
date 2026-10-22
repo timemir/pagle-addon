@@ -3047,4 +3047,148 @@ describe("FakePagle", function()
 			end
 		)
 	end)
+
+	describe("the First evening list", function()
+		-- A fixture Hunts with a docked tracker 40 px tall, and a fixture Ledger, registered; then login, a new Angler's
+		-- with the Letter opened. Returns the two handles and Hunts' frame.
+		local function withList(fake)
+			fake.global.onboarding = fake.ns.NewOnboardingState("opened")
+			local ledger = fake.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local hunts = fake.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
+			local frame = {
+				IsShown = function()
+					return true
+				end,
+				GetWidth = function()
+					return 200
+				end,
+				GetHeight = function()
+					return 40
+				end,
+			}
+			hunts:RegisterTracker({ id = "hunts", order = 10, frame = frame })
+			fake.login()
+			return ledger, hunts, frame
+		end
+
+		-- Off to the water, on a guide open at its last step.
+		local function offToTheWater(fake)
+			fake.guide:Open("off")
+			fake.guide:Finish()
+		end
+
+		-- The ids of the stack's trackers, top to bottom.
+		local function stacked(fake)
+			local ids = {}
+			for i, tracker in ipairs(fake.dock.stack()) do
+				ids[i] = tracker.module .. "." .. tracker.id
+			end
+			return ids
+		end
+
+		it("docks after Off to the water as Core's own tracker, above Hunts' (ONB-R60, CORE-R70)", function()
+			local fake = newFakePagle()
+			withList(fake)
+			assert.are.same({ "Hunts.hunts" }, stacked(fake))
+
+			offToTheWater(fake)
+
+			assert.are.same({ "Core.evening", "Hunts.hunts" }, stacked(fake))
+			assert.are.same({ 0, -168 }, { fake.dock.stack()[1].y, fake.dock.stack()[2].y })
+			assert.is_true(fake.global.onboarding.evening.shown)
+			assert.are.same({ 0, 6 }, { fake.eveningList.done, fake.eveningList.total })
+		end)
+
+		it("ticks a Cast, a Catch, a Session ending without a card and the shop opening (ONB-R61)", function()
+			local fake = newFakePagle()
+			withList(fake)
+			fake.enterWorld()
+			offToTheWater(fake)
+
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+			fake.wait(300) -- an ordinary Catch raises no moment, so its Session ends with no card (ANN-R53)
+			fake.Pagle.OpenShop()
+
+			local done = {}
+			for _, line in ipairs(fake.eveningList.lines) do
+				done[#done + 1] = line.id .. (line.done and " done" or "")
+			end
+			assert.are.same({ "cast done", "catch done", "journal", "hunts", "session done", "shop done" }, done)
+			assert.are.same({ "tick", "tick", "tick", "tick" }, fake.eveningSounds)
+			assert.are.same({}, fake.cardsShown)
+		end)
+
+		it(
+			"ticks a fixture Module's own item through M:CompleteEveningItem, and refuses another's (ONB-R61)",
+			function()
+				local fake = newFakePagle()
+				local ledger, hunts = withList(fake)
+				offToTheWater(fake)
+
+				ledger:CompleteEveningItem("journal")
+
+				assert.is_true(fake.onboarding:IsEveningItemDone("journal"))
+				assert.are.same({ "tick" }, fake.eveningSounds)
+				assert.has_error(function()
+					hunts:CompleteEveningItem("journal")
+				end, "M:CompleteEveningItem: journal is not one of Hunts's First evening items")
+				assert.has_error(function()
+					ledger.CompleteEveningItem({}, "journal")
+				end, "CompleteEveningItem is a Module handle method: call M:CompleteEveningItem(id)")
+			end
+		)
+
+		it("plays listDone at the last tick and folds 2.5 s later, paying nothing (ONB-R62, ONB-R64)", function()
+			local fake = newFakePagle()
+			local ledger, hunts = withList(fake)
+			fake.enterWorld()
+			offToTheWater(fake)
+			ledger:CompleteEveningItem("journal")
+			hunts:CompleteEveningItem("hunts")
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+			fake.Pagle.OpenShop()
+			fake.wait(300)
+
+			assert.are.equal("listDone", fake.eveningSounds[#fake.eveningSounds])
+			assert.is_false(fake.global.onboarding.evening.closed)
+			fake.wait(2.5)
+
+			assert.is_nil(fake.eveningList)
+			assert.is_true(fake.global.onboarding.evening.closed)
+			assert.are.same({ "Hunts.hunts" }, stacked(fake))
+			assert.are.same({}, fake.coinReports)
+			assert.are.same({}, fake.announcements)
+		end)
+
+		it("never docks for a returning Angler (ONB-R60, ONB-R2)", function()
+			local fake = newFakePagle()
+			withList(fake)
+			fake.global.onboarding.letter = "returning"
+
+			offToTheWater(fake)
+
+			assert.is_nil(fake.eveningList)
+		end)
+
+		it("shows again at the next login while unfinished (ONB-R60)", function()
+			local fake = newFakePagle()
+			local seeded = fake.ns.NewOnboardingState("opened")
+			seeded.evening.shown, seeded.evening.done.cast = true, true
+			fake.global.onboarding = seeded
+
+			fake.login()
+
+			assert.are.same({ 1, 4 }, { fake.eveningList.done, fake.eveningList.total })
+		end)
+
+		it("docks with /pagle dev onboarding evening (ONB-R83)", function()
+			local fake = newFakePagle()
+			withList(fake)
+
+			fake.slash("dev on")
+			fake.slash("dev onboarding evening")
+
+			assert.are.same({ "Core.evening", "Hunts.hunts" }, stacked(fake))
+		end)
+	end)
 end)
