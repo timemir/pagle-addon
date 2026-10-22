@@ -310,6 +310,8 @@ local function build(journal)
 	frame:SetClampedToScreen(true)
 	frame:EnableMouse(true)
 	frame:SetMovable(true)
+	-- Over the other windows in its strata (show raises it) and brought back over them when clicked.
+	frame:SetToplevel(true)
 	frame:RegisterForDrag("LeftButton")
 	frame:SetScript("OnDragStart", frame.StartMoving)
 	frame:SetScript("OnDragStop", function(self)
@@ -408,7 +410,7 @@ local function crumbAt(journal, i)
 	return crumb
 end
 
--- Lays the crumbs along the strip in the binding's gilt, the fleurons between them, each opening its level but the
+-- Lays the crumbs along the strip in the binding's gilt over its shadow, the fleurons between them, each opening its level but the
 -- last (LED-R125, LED-R110); the last are cut short before the search slip.
 ---@param journal LedgerJournal
 ---@param crumbs LedgerCrumb[]
@@ -421,6 +423,9 @@ local function drawCrumbs(journal, crumbs, look)
 		local crumb = crumbAt(journal, i)
 		crumb.gilt = look.gilt
 		crumb.label:SetTextColor(unpack(look.gilt))
+		local shadow = look.giltShadow
+		crumb.label:SetShadowColor(shadow[1], shadow[2], shadow[3], shadow[4])
+		crumb.label:SetShadowOffset(shadow[5], shadow[6])
 		if crumb.fleuron then
 			-- the fleuron's gilt toward the binding's (the kit tints it from its own #e8c96a)
 			crumb.fleuron:SetVertexColor(
@@ -477,6 +482,8 @@ function Journal:Show()
 		self.justOpened = true
 		frame:Show()
 	end
+	-- It opens over every window already open: the Pagle windows share its strata, at frame levels of their own.
+	frame:Raise()
 	if fresh then
 		self.binding = nil
 	end
