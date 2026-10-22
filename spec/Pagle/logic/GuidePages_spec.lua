@@ -187,24 +187,43 @@ describe("the Moments presets (ONB-R35)", function()
 end)
 
 describe("Off you go (ONB-R38, ONB-R61)", function()
-	it("names the windows with First looks of the registered Modules, then the Curio Shop", function()
+	-- The First looks registered (ns.firstLooks:List()): each as { owner, title }.
+	local function looks(list)
+		local records = {}
+		for i, look in ipairs(list) do
+			records[i] = { owner = look[1], set = { id = look[1]:lower() .. ".window", title = look[2] } }
+		end
+		return records
+	end
+	-- Every set ONB-R57 lists, registered out of order, the Curio Shop's first as Core's adapter has it.
+	local EVERY_LOOK = looks({
+		{ "Core", "the Curio Shop" },
+		{ "TackleBoard", "the Tackle Board" },
+		{ "Ledger", "the Fish Journal" },
+		{ "Stats", "Stats" },
+		{ "Hunts", "Hunts" },
+	})
+
+	it("names the windows with First looks registered, the Modules' in def.order, then the Curio Shop", function()
 		assert.are.equal(
 			"Don’t want notes? Turn off Margin notes in Settings. The Fish Journal, Hunts, Stats, the Tackle Board"
 				.. " and the Curio Shop each get a short set the first time you open them.",
-			ns.GuideLooksLine(ns.GuideLookWindows(everyModule()))
+			ns.GuideLooksLine(ns.GuideLookWindows(everyModule(), EVERY_LOOK))
 		)
 	end)
 
-	it("names only the registered ones, and the Curio Shop alone with every Module off", function()
+	it("names only the registered ones, and the Curio Shop alone with no Module's set", function()
 		assert.are.equal(
 			"Don’t want notes? Turn off Margin notes in Settings. Stats and the Curio Shop each get a short set the"
 				.. " first time you open them.",
-			ns.GuideLooksLine(ns.GuideLookWindows(modules({ { "Stats", "Stats", 30 }, { "QoL", "QoL", 50 } })))
+			ns.GuideLooksLine(
+				ns.GuideLookWindows(modules({ { "Stats", "Stats", 30 }, { "QoL", "QoL", 50 } }), EVERY_LOOK)
+			)
 		)
 		assert.are.equal(
 			"Don’t want notes? Turn off Margin notes in Settings. The Curio Shop gets a short set the first time you"
 				.. " open it.",
-			ns.GuideLooksLine(ns.GuideLookWindows({}))
+			ns.GuideLooksLine(ns.GuideLookWindows(everyModule(), looks({ { "Core", "the Curio Shop" } })))
 		)
 	end)
 
