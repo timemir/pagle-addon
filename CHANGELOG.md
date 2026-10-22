@@ -12,14 +12,14 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 - Open any of it from Pagle's entry in the addon compartment by the minimap, or with `/pagle`. Pagle's settings live in the game's own Settings panel, where its search finds every option.
 - When you earn something, Pagle says so in the moment: a toast writes the fish's name out in ink while its stamps come down, a banner drops its seal for a new Angler Level, and a Legend gets the whole screen. A Session that earned something ends with a summary card.
 - The Interruption budget keeps announcements from talking over your fishing, Cozy mode holds them all for the end of the Session, and the Animations setting stills the motion if you'd rather it kept still.
-- Pagle Coins are paid for things achieved, never for sheer volume. Spend them in the Curio Shop on looks: toast styles, sound sets, bookplate crests, Journal bindings, notebook covers and tracker frames. The stock never rotates, and nothing in it buys a title or a star.
+- Pagle Coins are paid for things achieved, never for sheer volume. Spend them in the Curio Shop on looks: toast styles, sound sets, Journal bindings, notebook covers and tracker frames. The stock never rotates, and nothing in it buys a title or a star.
 - The Field report: seen a fish in new waters, or outside its usual hours? `/pagle report` gathers what Pagle doesn't know yet for you to post on the issue form. It never names your characters.
 - Lengths show in inches or centimetres, as you prefer. An optional reminder tells you every 50 unsaved Casts to `/reload`, since the game saves only on a reload or logout.
 
 ### Ledger
 
 - The Fish Journal keeps your life as an angler. Every Catch earns XP toward your Angler Level, doubled by Fresh Water after a break from fishing. At the top you can Prestige for an emblem and climb again.
-- Each Species earns up to three stars, and each zone a Zone Mastery rank from Visitor to Master. The Junk Museum, Treasures and the Trophy Room fill in as you go.
+- Each Species earns up to three stars, and each zone a Zone Mastery rank from Visitor to Master. Master a zone and its bookplate crest is yours, fifty-three in all, to wear on the Journal. The Junk Museum, Treasures and the Trophy Room fill in as you go.
 - Fish you haven't caught stay nameless. A riddle sets the scene, and a plain hint is there when you'd rather just know.
 - Legends, the named catches you won't land on an ordinary day, arrive with a splash and a title to sign the Journal with.
 - Your longest of each Species is kept, from Tiddler to Monster.

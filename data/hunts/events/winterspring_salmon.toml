@@ -1,5 +1,5 @@
 # Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 618: 618 (Winterspring), high band.
-# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# The name, note and Hunt names are the M8 lore batch (#307), drafted from data/lore/VOICE.md.
 # Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
 #   winterspring_salmon_haul: Haul, species.any, 86.4% of Catches: tiers 115 / 310 / 620, 44 / 120 / 239 min
 #   winterspring_salmon_salmon: Named fish, species 13889 (Raw Whitescale Salmon), 43.0% of Catches: tiers 60 / 155 / 310, 47 / 120 / 240 min
@@ -10,23 +10,23 @@ id = "winterspring_salmon"
 zones = [618]
 tags = ["lake", "night"]
 name = "Snowbound Salmon"
-note = "Cold water, white salmon, and the evenings drawing in early."
+note = "Cold water, white salmon and the evenings drawing in early. Mind the ice on the way home."
 
 [[hunt]]
 id = "winterspring_salmon_haul"
 class = "species.any"
 tiers = [115, 310, 620]
-name = "A Snowbound Basket"
+name = "Ice on the Line"
 
 [[hunt]]
 id = "winterspring_salmon_salmon"
 species = 13889
 tiers = [60, 155, 310]
-name = "Whitescale Run"
+name = "White Fish, White Hills"
 
 [[hunt]]
 id = "winterspring_salmon_evening"
 species = 13889
 conditions = { time = [[1200, 0]] }
 tiers = [10, 25, 50]
-name = "Salmon by Evening"
+name = "Evenings Drawing In"

@@ -1,12 +1,13 @@
--- Makes the test logs the M4 and M7 exit checks play (#172, #174, #243; docs/agents/in-game-verification.md): a copy
--- of the dev's SavedVariables/Pagle.lua with PagleLog replaced by a synthetic one a few Catches short of a level or a
--- Catch Milestone, so it is reached live in the game, or (boardday) holding a Tackle Board started two board days ago
--- with a goal done on its first day and nothing on its second, so the next login closes the unlit day. Run it in WSL
--- with the game fully closed.
+-- Makes the test logs the M4, M7 and M8 exit checks play (#172, #174, #243, #310; docs/agents/in-game-verification.md):
+-- a copy of the dev's SavedVariables/Pagle.lua with PagleLog replaced by a synthetic one a few Catches short of a level
+-- or a Catch Milestone, so it is reached live in the game, or (boardday) holding a Tackle Board started two board days
+-- ago with a goal done on its first day and nothing on its second, so the next login closes the unlit day, or (wagers)
+-- the last fallback slot's run settled and the current slot's not logged, so the next login puts the current one on.
+-- Run it in WSL with the game fully closed.
 --
 --   lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder>
---       --preset <level10|level60|catches1000|boardday|big5|big20|showcase> [--out <folder>]
---       [--catalogue <Catalogue.lua>]
+--       --preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers> [--out <folder>]
+--       [--catalogue <Catalogue.lua>] [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>]
 --   lua scripts/make-test-log.lua --account <folder> --install [--out <folder>]
 --   lua scripts/make-test-log.lua --account <folder> --restore [--out <folder>]
 --
@@ -43,18 +44,27 @@
 -- Ledger's and the Tackle Board's own logic/, it is written only when the Campfire is at least SHOWCASE_FIRE days, the
 -- last lit day is the board's day, Kindling is held and SHOWCASE_COINS Coins are earned in all.
 --
+-- wagers (#310) writes the fallback slot before the current one played to completion, for M8 exit check step 7: Hunts'
+-- own logic/Rotation.lua over the event pool (the repo's data/EventList.lua, or --eventlist; the Hunt list's classes
+-- from data/HuntList.lua, or --huntlist) gives the slot and its pick, and refuses in slot 0, before the origin or with
+-- an empty pool. After the header comes that slot's `run` record (Hunts' own logic/Records.lua, source `r`) an hour
+-- into it, then caught Casts in the event's zones until every Hunt of it reaches tier 1, nothing after the slot's end.
+-- Folded with Hunts' own logic/ (listed in Pagle_Hunts.toc), it is written only when that run is the one known run,
+-- completed, `settled` is 1 and no run is on now, so the login's live step logs the current slot's run (HNT-R151).
+--
 -- --install copies the newest stage's Pagle.lua into the account's SavedVariables, only when the account's Pagle.lua
 -- is the one backed up or another test log made here (a boardday one only before its board day ends, as the next
--- reset would close day 2 unlit too). --restore puts back the backup of the stage whose test log is
--- installed, byte for byte, and removes a file that wasn't there. Both first keep every file they replace in
--- <stage>/replaced-<time>/. These two are the only ones that write under the account folder.
+-- reset would close day 2 unlit too, and a wagers one only before its current fallback slot ends). --restore puts back
+-- the backup of the stage whose test log is installed, byte for byte, and removes a file that wasn't there. Both first
+-- keep every file they replace in <stage>/replaced-<time>/. These two are the only ones that write under the account
+-- folder.
 --
 -- SavedVariables files are loaded as data: each runs in an empty environment, so it can only assign values, and
 -- precompiled chunks are refused. Exits 2 on a usage error, 1 when it refuses (nothing is changed then), else 0.
 
 local USAGE = "usage: lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder>"
-	.. " (--preset <level10|level60|catches1000|boardday|big5|big20|showcase> [--catalogue <Catalogue.lua>] | --install"
-	.. " | --restore)"
+	.. " (--preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers> [--catalogue <Catalogue.lua>]"
+	.. " [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>] | --install | --restore)"
 	.. " [--out <folder>]\n"
 
 -- The repo root, from this script's path: Core's, the Ledger's and the Tackle Board's logic/ and the catalogue are
@@ -120,8 +130,15 @@ local PRESETS = {
 	big20 = { bytes = 20 * MIB, checks = "M8 launch re-verification checks 2 and 10" },
 	-- The in-game look-and-feel check: a lit Campfire of SHOWCASE_FIRE days or more and Coins to spend.
 	showcase = { showcase = true, checks = "the in-game look-and-feel check" },
+	-- #310: the last fallback slot's run played to completion, the current slot left unlogged.
+	wagers = { wagers = true, check = "M8", step = "7" },
 }
-local PRESET_NAMES = { "level10", "level60", "catches1000", "boardday", "big5", "big20", "showcase" }
+local PRESET_NAMES = { "level10", "level60", "catches1000", "boardday", "big5", "big20", "showcase", "wagers" }
+
+-- wagers' run: its `run` record WAGERS_RECORD_OFFSET seconds into the slot before the current one, as a login an hour
+-- into it logs it (HNT-R151), the Casts from a minute after; at most WAGERS_MAX_CASTS of them, so a run its Casts can't
+-- complete (a Big ones Hunt above the character's reach, LOG-R67) stops.
+local WAGERS_RECORD_OFFSET, WAGERS_MAX_CASTS = 3600, 3000
 
 -- boardday's board: day 0 is BOARD_DAYS board days before the dev's current one, and its `start` record is
 -- BOARD_START_OFFSET seconds into it, its goals' `issue` records at the same time and the Casts from a minute after.
@@ -140,9 +157,9 @@ local SHOWCASE_LIT, SHOWCASE_UNLIT, SHOWCASE_TODAY = 104, { 5, 13, 22, 47, 81 },
 -- all, several tier-3 goods (900 each, SHOP-R22).
 local SHOWCASE_FIRE, SHOWCASE_COINS = 100, 5000
 -- A lit day's play: at most SHOWCASE_NOTICES Notices completed and SHOWCASE_EXPEDITION_CASTS Casts toward each open
--- Expedition, a goal given up for the day after SHOWCASE_GOAL_CASTS Casts (a Size goal waits on its bands), then a
--- session of SHOWCASE_EXPLORE Casts in the next charted zone in turn, so every zone's list is fished in time. Today
--- completes one Notice only, its Casts ending SHOWCASE_TODAY_END before the run.
+-- Expedition, a goal given up for the day after SHOWCASE_GOAL_CASTS Casts, then a session of SHOWCASE_EXPLORE Casts
+-- in the next charted zone in turn, so every zone's list is fished in time. Today completes one Notice only, its
+-- Casts ending SHOWCASE_TODAY_END before the run.
 local SHOWCASE_NOTICES, SHOWCASE_EXPEDITION_CASTS, SHOWCASE_GOAL_CASTS = 3, 60, 300
 local SHOWCASE_EXPLORE, SHOWCASE_TODAY_END = 30, 600
 -- The generator is drawn again, at most SHOWCASE_DRAWS times, until it hands out a goal the test Casts can complete:
@@ -179,7 +196,14 @@ local function parseArgs(args)
 	local i = 1
 	while args[i] do
 		local word, value = args[i], args[i + 1]
-		if word == "--account" or word == "--preset" or word == "--out" or word == "--catalogue" then
+		if
+			word == "--account"
+			or word == "--preset"
+			or word == "--out"
+			or word == "--catalogue"
+			or word == "--huntlist"
+			or word == "--eventlist"
+		then
 			if not value then
 				return nil, word .. " needs a value"
 			end
@@ -1121,10 +1145,6 @@ local function goalPairs(sim, goal, caught)
 		return pairsWhere(game, sim.pairs.all, function(item)
 			return not item.noise and item.quality ~= nil and item.quality >= target
 		end)
-	elseif kind == "size" then
-		return pairsWhere(game, sim.pairs.all, function(item)
-			return item.species ~= nil and item.typicalLength ~= nil
-		end)
 	elseif kind == "lure" then
 		return sim.pairs.all
 	elseif kind == "collector" and goal.type == "e" then
@@ -1145,7 +1165,7 @@ local function goalPairs(sim, goal, caught)
 end
 
 -- Whether the test Casts can complete a goal definition from nothing: enough distinct Species, zones or items for a
--- distinct-count kind, and some pair for the others (a Size goal's bands come as the Catches are sized, LOG-R65).
+-- distinct-count kind, and some pair for the others.
 local function completable(sim, def)
 	local list = goalPairs(sim, def, sim.board.caught)
 	if def.kind == "lure" and not sim.lure then
@@ -1282,11 +1302,10 @@ local function showcaseDay(sim, layout, k, isToday, now)
 		end
 	end
 	if isToday then
-		-- The Notice nearest done, a Size Notice last: its Catches move it on only in their bands (TKB-R42).
+		-- The Notice nearest done.
 		local day = sim.board.day
 		table.sort(notices, function(a, b)
-			local left = remaining(board, a, day) + (a.kind == "size" and SHOWCASE_GOAL_CASTS or 0)
-			local right = remaining(board, b, day) + (b.kind == "size" and SHOWCASE_GOAL_CASTS or 0)
+			local left, right = remaining(board, a, day), remaining(board, b, day)
 			return left < right or left == right and a.seq < b.seq
 		end)
 		work(sim, notices[1] or {}, SHOWCASE_GOAL_CASTS, before)
@@ -1618,6 +1637,370 @@ local function showcaseNote()
 	print("  and each reports its whole Coins total (SHOP-R92): the Curio Shop's purse holds their sum.")
 end
 
+-- Hunts (wagers) ---------------------------------------------------------------------------------------------------
+
+-- Hunts as its OnInitialize builds it (HNT-R136, adapter/Hunts.lua): each locale/, data/ and logic/ file
+-- Pagle_Hunts.toc lists, in TOC order, on the client's `bit` library (LuaBitOp, which the rotation's FNV-1a hash
+-- reads), with `huntListPath` (--huntlist) for data/HuntList.lua and `eventListPath` (--eventlist) for
+-- data/EventList.lua; then the Hunt list, its lookups over the game's catalogue and Core's MatchesConditions, where
+-- each Hunt bites and the event pool at runtime (ns.hunts, ns.lookups, ns.where, ns.events).
+local function loadHunts(game, huntListPath, eventListPath)
+	local bit = wtf.luaBitOp()
+	if not bit then
+		refuse("no LuaBitOp (`bit`), which Hunts' rotation needs: run scripts/setup.sh; nothing written")
+	end
+	local ns = {}
+	local env = setmetatable({ Pagle = {}, bit = bit }, { __index = _G })
+	local dir = ROOT .. "/addons/Pagle_Hunts/"
+	local given = { ["data/HuntList.lua"] = huntListPath, ["data/EventList.lua"] = eventListPath }
+	for _, file in ipairs(wtf.tocEntries("Pagle_Hunts")) do
+		if file:match("^locale/[^/]+%.lua$") or file:match("^data/[^/]+%.lua$") or file:match("^logic/[^/]+%.lua$") then
+			local path = given[file] or dir .. file
+			local ok, err = wtf.loadInto(ns, env, path, "Pagle_Hunts")
+			if not ok then
+				refuse(("can't load %s: %s; nothing written"):format(path, tostring(err)))
+			end
+		end
+	end
+	if type(ns.huntList) ~= "table" or type(ns.eventList) ~= "table" then
+		refuse("the Hunt list or the event pool sets no ns.huntList or ns.eventList; nothing written")
+	end
+	local catalogue = game.catalogue
+	ns.hunts = ns.NewHuntList(ns.huntList, ns.L)
+	ns.lookups = ns.NewLookups({
+		GetItem = catalogue.GetItem,
+		GetZones = catalogue.GetZones,
+		GetZoneCatches = catalogue.GetZoneCatches,
+		GetZoneOf = catalogue.GetZoneOf,
+		GetArea = catalogue.GetArea,
+		GetWindowSpec = catalogue.GetWindowSpec,
+		MatchesConditions = game.core.MatchesConditions,
+	}, ns.hunts)
+	ns.where = ns.NewWhere(ns.hunts, ns.lookups)
+	ns.events = ns.NewEventList(ns.eventList, ns.L, ns.lookups)
+	ns.label = eventListPath or "the repo's addons/Pagle_Hunts/data/EventList.lua"
+	return ns
+end
+
+-- Hunts' projection def over `catchLog` (logic/Projection.lua, HNT-R136): its Coins and XP reports go nowhere, a
+-- `run` record's earlier Casts are read back from the same log (HNT-R149), and `done` would check titles at `now`.
+local function huntsDef(hunts, catchLog, now)
+	return hunts.ProjectionDef({}, hunts.lookups, {
+		ReportCoinsEarned = function() end,
+		ReportXPEarned = function() end,
+		IterateCatches = function(afterSeq)
+			return catchLog:Iterate(afterSeq, "Hunts")
+		end,
+		ServerTime = function()
+			return now
+		end,
+	})
+end
+
+-- An event's name as the board shows it (HNT-R140), with its ID when the lore names it.
+local function eventLabel(hunts, event)
+	local name = hunts.events:EventName(event)
+	return name == event.id and name or ("%s (%s)"):format(name, event.id)
+end
+
+-- Plans wagers' run at server time `now` from Hunts' own rotation (logic/Rotation.lua, HNT-R152) over the pool: the
+-- current fallback slot and the one before it, which must have ended, and that slot's pick (HNT-R153: no other run is
+-- known in the test log, so its own pick). Refuses before the origin, in slot 0, and with no pick.
+local function planWagers(hunts, now)
+	local current = hunts.RotationSlotAt(now)
+	if not current then
+		refuse(
+			("the fallback rotation starts at %s, after now: no slot has ended yet (HNT-R152); nothing written"):format(
+				utc(hunts.ROTATION_ORIGIN)
+			)
+		)
+	end
+	local slot = hunts.RotationSlot(current)
+	if current == 0 then
+		refuse(
+			("the current fallback slot, 0 (from %s), is the rotation's first: no slot before it has ended (HNT-R152)"):format(
+				utc(slot.start)
+			)
+				.. "; wait until slot 1 starts, at "
+				.. utc(slot.end_)
+				.. ", then run this again; nothing written"
+		)
+	end
+	local pool = hunts.events:Events()
+	if #pool == 0 then
+		refuse(("the event pool %s has no event, so the rotation runs nothing; nothing written"):format(hunts.label))
+	end
+	local previous = hunts.RotationSlot(current - 1)
+	local event = hunts.RotationPick(pool, current - 1)
+	if not event then
+		refuse(
+			("slot %d's band, %s, has no event in the rotation (HNT-R152), so no run was on; nothing written"):format(
+				current - 1,
+				previous.band
+			)
+		)
+	end
+	return {
+		current = slot,
+		slot = previous,
+		event = event,
+		pool = pool,
+		key = hunts.RunKey(event.id, previous.start),
+		recordTime = previous.start + WAGERS_RECORD_OFFSET,
+	}
+end
+
+-- The (zone, item) pairs on the event's zones' lists that a Cast of `hunt` may catch for it: its target (HNT-R10,
+-- HNT-R12), conditions and Size aside. The ordinary Species, junk and trophies outside any window when there are any,
+-- else any other item the catalogue knows that isn't removed or Noise.
+local function wagerPairs(game, hunts, event, hunt)
+	local target = { kind = "natural", species = hunt.species, class = hunt.class, tiers = hunt.tiers }
+	local plain, other, taken = {}, {}, {}
+	for _, zone in ipairs(event.zones) do
+		for _, entry in ipairs(game.catalogue.GetZoneCatches(zone) or {}) do
+			local item = game.catalogue.GetItem(entry.itemID)
+			local cast = { outcome = "caught", conditions = {}, items = { { itemID = entry.itemID, quantity = 1 } } }
+			local key = zone .. ":" .. entry.areaID .. ":" .. entry.itemID
+			if item and not item.removed and not item.noise and not taken[key] then
+				if #hunts.MatchingCatches(target, cast, hunts.lookups) > 0 then
+					taken[key] = true
+					local pair =
+						{ zone = zone, subzone = entry.areaID ~= zone and entry.areaID or 0, itemID = entry.itemID }
+					local list = ordinary(game, entry.itemID) and not entry.window and plain or other
+					list[#list + 1] = pair
+				end
+			end
+		end
+	end
+	return #plain > 0 and plain or other
+end
+
+-- wagers' log: the header just before the run record, the `run` record of the slot's pick (Hunts' own encoder,
+-- logic/Records.lua, HNT-R150) an hour into the slot, then caught Casts by the fishing character in the event's
+-- zones, CAST_GAP apart, each Hunt of the event in turn until it reaches tier 1 in the run: a Hunt with conditions
+-- (a Timed Hunt's realm window) waits for a time they match, and a Big ones Hunt casts its one item until enough of
+-- its Catches are sized at its band (HNT-R14, LOG-R65). Folded with Hunts' own logic/ as it is written; nothing at or
+-- after the slot's end, and at most WAGERS_MAX_CASTS Casts.
+local function writeWagers(game, hunts, facts, log, layout, now)
+	local slot, event = layout.slot, layout.event
+	local data, catchLog, header = newLog(game, log, facts, layout.recordTime - 60)
+	local def = huntsDef(hunts, catchLog, now)
+	local state = def.reset()
+	for _, record in ipairs(header) do
+		def.apply(state, record, "rebuild")
+	end
+	local payload = hunts.EncodeRun(event.id, slot.start, slot.end_, "r")
+	local run = {
+		kind = "module",
+		char = facts.char,
+		time = layout.recordTime,
+		module = "Hunts",
+		recordKind = hunts.RUN_RECORD,
+		payload = payload,
+	}
+	def.apply(state, catchLog:Append(run), "rebuild")
+	local sim = { casts = 0, t = layout.recordTime + 60, unreached = {} }
+	local function reached(hunt)
+		local known = state.runs[layout.key]
+		local progress = known and known.hunts[hunt.id]
+		return progress ~= nil and progress.reached[1] ~= nil
+	end
+	for _, hunt in ipairs(event.hunts) do
+		local candidates = wagerPairs(game, hunts, event, hunt)
+		local i = 0
+		while #candidates > 0 and not reached(hunt) and sim.t < slot.end_ and sim.casts < WAGERS_MAX_CASTS do
+			-- A Big ones Hunt's one item, so its Catches gain the experience their Size grows with (LOG-R67).
+			i = hunt.minBand and 1 or i % #candidates + 1
+			local t = sim.t
+			local record = castRecord(game, facts, candidates[i], t)
+			while t < slot.end_ and not game.core.MatchesConditions(hunt.conditions, record.conditions) do
+				t = t + 60
+				record = castRecord(game, facts, candidates[i], t)
+			end
+			if t >= slot.end_ then
+				break
+			end
+			def.apply(state, catchLog:Append(record), "rebuild")
+			sim.casts, sim.t = sim.casts + 1, t + CAST_GAP
+		end
+		if not reached(hunt) then
+			sim.unreached[#sim.unreached + 1] = hunt.id
+		end
+	end
+	sim.state = state
+	return data, sim
+end
+
+-- Checks wagers' log as the game will read it: decoded whole with Core's codec, each Species Catch sized (LOG-R65),
+-- and folded from nothing with Hunts' own logic/ (HNT-R136), which must agree with the state folded while writing.
+-- The slot's run must be the one known run, completed within its slot, `settled` 1, and no run on now; nothing is
+-- logged at or after the slot's end. Then the live step at login, without the companion (HNT-R151, HNT-R153), must
+-- log the current slot's run and nothing else, after which the board shows nothing of the old run (HNT-R143,
+-- HNT-R160). Returns what it found and the failures.
+local function checkWagers(game, hunts, facts, data, layout, sim, now)
+	local found = { tags = {}, failures = {}, casts = 0, zones = {} }
+	local function fail(line)
+		found.failures[#found.failures + 1] = line
+	end
+	for _, entry in ipairs(data.entries) do
+		local tag = entry:match("^(%u%d+)|") or "(no tag)"
+		found.tags[tag] = (found.tags[tag] or 0) + 1
+	end
+	local global = { decodeErrors = 0 }
+	local catchLog = game.open(deepCopy(data), global, now)
+	local def = huntsDef(hunts, catchLog, now)
+	local state = def.reset()
+	local slot = layout.slot
+	for record in catchLog:Iterate(0, "Hunts") do
+		def.apply(state, record, "rebuild")
+		if record.time >= slot.end_ or record.time < slot.start then
+			found.outside = true
+		end
+		if record.kind == "cast" then
+			found.casts = found.casts + 1
+			found.zones[record.conditions.zone] = true
+			if record.char ~= facts.char then
+				fail("a Cast is on another character")
+			end
+		end
+	end
+	if global.decodeErrors > 0 then
+		fail(count(global.decodeErrors, "entry", "entries") .. " Core's codec can't decode")
+	end
+	local problem = logIdProblem(data, facts)
+	if problem then
+		fail(problem)
+	end
+	if data.test ~= true then
+		fail("PagleLog.test isn't true, so /pagle dev catch would refuse it")
+	end
+	if found.outside then
+		fail("an entry falls outside the slot")
+	end
+	if not deepEqual(state, sim.state) then
+		fail("Hunts' fold of the written log isn't the one made while writing it")
+	end
+	found.state = state
+	local known = hunts.RunsKnown(state)
+	local run = state.runs[layout.key]
+	if #known ~= 1 or not run then
+		fail(("Hunts knows %s, not the one run %s"):format(count(#known, "run"), layout.key))
+	elseif not run.completedAt or run.completedAt >= slot.end_ or state.settled ~= 1 then
+		local short = #sim.unreached > 0 and (" (short of tier 1: %s)"):format(table.concat(sim.unreached, ", ")) or ""
+		fail(("the run %s isn't settled in its slot, %d settled%s"):format(layout.key, state.settled, short))
+	end
+	if #hunts.RunOn(state, now) > 0 then
+		fail("a run is on now, so the current slot would be covered")
+	end
+	found.run = run
+
+	-- The live step at login, without the companion: the current slot's run, then what the board shows.
+	local snapshot = { companion = "missing", events = {}, runs = {} }
+	local steps = hunts.PlanRunLog({ state = deepCopy(state), now = now, snapshot = snapshot, pool = layout.pool })
+	local logged = steps[1] and steps[1].kind == hunts.RUN_RECORD and hunts.DecodeRun(steps[1].payload)
+	if #steps ~= 1 or not logged or logged.start ~= layout.current.start or logged.source ~= "r" then
+		fail(("the live step at login would log %s, not the current slot's run"):format(count(#steps, "record")))
+		return found
+	end
+	found.next = hunts.events:Event(logged.event)
+	found.nextRun = logged
+	local after = deepCopy(state)
+	hunts.AddRun(after, logged, hunts.lookups)
+	found.shown = hunts.RunsShown(after, now, snapshot, layout.pool)
+	for _, entry in ipairs(found.shown) do
+		if entry.run.event == layout.event.id then
+			fail("the board would still show " .. layout.event.id)
+		end
+	end
+	if not (found.shown[1] and found.shown[1].on and found.shown[1].run.event == logged.event) then
+		fail("the board wouldn't show the current slot's run on")
+	end
+	return found
+end
+
+-- wagers' lines: the rotation, the run and its Hunts, the fold, and what the live step logs at login.
+local function printWagers(found, layout, hunts, game)
+	local current, slot, event = layout.current, layout.slot, layout.event
+	print(
+		("rotation: origin %s; now in slot %d, %s to %s, %s band; %s in the pool (%s)"):format(
+			utc(hunts.ROTATION_ORIGIN),
+			current.slot,
+			utc(current.start),
+			utc(current.end_),
+			current.band,
+			count(#layout.pool, "event"),
+			hunts.label
+		)
+	)
+	local zones = {}
+	for zone in pairs(found.zones) do
+		zones[#zones + 1] = zone
+	end
+	table.sort(zones)
+	print(
+		("run: slot %d's pick, %s, %s band, %s to %s, logged %s; settled %s by %s in zone %s"):format(
+			slot.slot,
+			eventLabel(hunts, event),
+			slot.band,
+			utc(slot.start),
+			utc(slot.end_),
+			utc(layout.recordTime),
+			utc(found.run.completedAt),
+			count(found.casts, "Cast"),
+			table.concat(zones, ", ")
+		)
+	)
+	local tiers = {}
+	for _, hunt in ipairs(event.hunts) do
+		local progress = found.run.hunts[hunt.id]
+		tiers[#tiers + 1] = ("%s %d (tier %d)"):format(hunt.id, progress.count, #progress.reached)
+	end
+	print("hunts: " .. table.concat(tiers, ", "))
+	local state = found.state
+	print(
+		("fold: 1 run known, %s, no run on now; Hunts' Coins %s, Angler XP %s (catalogue: %s)"):format(
+			count(state.settled, "wager settled", "wagers settled"),
+			thousands(state.coins),
+			thousands(state.xp),
+			game.label
+		)
+	)
+	local ahead = {}
+	for _, entry in ipairs(found.shown) do
+		if not entry.on then
+			ahead[#ahead + 1] = eventLabel(hunts, entry.event)
+		end
+	end
+	print(
+		("at login: the live step logs slot %d's run of %s, on until %s; the board then shows it on%s, and nothing of %s"):format(
+			current.slot,
+			eventLabel(hunts, found.next),
+			utc(found.nextRun.end_),
+			#ahead > 0 and " and " .. table.concat(ahead, ", ") .. " ahead" or "",
+			event.id
+		)
+	)
+end
+
+-- What the dev should see at a wagers test log's login (HNT-R111, HNT-R151, HNT-R143).
+local function wagersNote(found, hunts, layout)
+	print("  Hunts writes itself up from the test log (a first build, HNT-R111), with no moment: the section lists")
+	print(
+		("  %s, its Pagle Coins and Angler XP. Then the live step logs the current slot's run (HNT-R151):"):format(
+			count(found.state.settled, "wager settled", "wagers settled")
+		)
+	)
+	print(
+		("  the strip, the WAGERS group, the spread and the tracker show %s only, and nothing lists %s (HNT-R143)."):format(
+			eventLabel(hunts, found.next),
+			eventLabel(hunts, layout.event)
+		)
+	)
+	print(
+		"  Play it without the companion (no Pagle_Content): while it is connected, no fallback run starts (HNT-R153)."
+	)
+end
+
 -- Stages ---------------------------------------------------------------------------------------------------------
 
 -- The test logs made for the account: each stage folder under `root` with its stage.txt, oldest first.
@@ -1806,8 +2189,14 @@ local function makeTestLog(options, now)
 	local facts = readRealLog(game, log)
 	facts.log, facts.characters = log, deepCopy(log.characters)
 
-	local data, found, boardPlan, showcase, sim
-	if preset.showcase then
+	local data, found, boardPlan, showcase, sim, hunts, wagers
+	if preset.wagers then
+		hunts = loadHunts(game, options.huntlist, options.eventlist)
+		wagers = planWagers(hunts, now)
+		math.randomseed(now)
+		data, sim = writeWagers(game, hunts, facts, log, wagers, now)
+		found = checkWagers(game, hunts, facts, data, wagers, sim, now)
+	elseif preset.showcase then
 		local board = loadBoard(game)
 		showcase = planShowcase(game, board, log, now)
 		math.randomseed(now)
@@ -1869,8 +2258,8 @@ local function makeTestLog(options, now)
 	end
 	writeFile(stage .. "/Pagle.lua", text)
 	-- A boardday test log is played only before its board day ends, a showcase one before its last lit day closes
-	-- unlit (install refuses after).
-	local until_ = boardPlan and boardPlan.nextReset or showcase and showcase.deadline
+	-- unlit, a wagers one before its current fallback slot ends (install refuses after).
+	local until_ = boardPlan and boardPlan.nextReset or showcase and showcase.deadline or wagers and wagers.current.end_
 	local nextReset = until_ and ("nextReset %d\n"):format(until_) or ""
 	writeFile(
 		stage .. "/stage.txt",
@@ -1888,11 +2277,11 @@ local function makeTestLog(options, now)
 		tags[#tags + 1] = tag .. " " .. n
 	end
 	table.sort(tags)
-	local aim = preset.showcase
-			and ("a Campfire of %d days or more lit on the board's day, and %s Coins or more to spend"):format(
-				SHOWCASE_FIRE,
-				thousands(SHOWCASE_COINS)
-			)
+	local aim = preset.wagers and "the last fallback slot's run settled, the current slot's not logged yet"
+		or preset.showcase and ("a Campfire of %d days or more lit on the board's day, and %s Coins or more to spend"):format(
+			SHOWCASE_FIRE,
+			thousands(SHOWCASE_COINS)
+		)
 		or preset.board and "a started board, day 0 lit and day 1 not, two board days old"
 		or preset.bytes and ("a Pagle.lua of about %d MiB of real-looking Casts"):format(preset.bytes / MIB)
 		or preset.level and ("within %d Catches of level %d"):format(PROBE_CATCHES, preset.level)
@@ -1917,7 +2306,9 @@ local function makeTestLog(options, now)
 			fishers
 		)
 	)
-	if preset.showcase then
+	if preset.wagers then
+		printWagers(found, wagers, hunts, game)
+	elseif preset.showcase then
 		printShowcase(found, showcase, sim, game)
 	elseif preset.board then
 		printBoardFold(found, boardPlan)
@@ -1935,7 +2326,16 @@ local function makeTestLog(options, now)
 	print(("test log: %s/Pagle.lua, PagleDB and the rest of Pagle.lua as they were"):format(stage))
 	print("Nothing under " .. options.account .. " was changed. To play it, with the game fully closed:")
 	print("  " .. command(options, "--install"))
-	if preset.showcase then
+	if preset.wagers then
+		print(
+			("  then log in as %s before %s, when slot %d ends: after it, a later slot's event is on instead."):format(
+				characterName(log, facts.char),
+				utc(wagers.current.end_),
+				wagers.current.slot
+			)
+		)
+		wagersNote(found, hunts, wagers)
+	elseif preset.showcase then
 		local lit = showcase.todayLit and "today" or "yesterday"
 		print(
 			("  then log in as %s. Before the next daily reset, %s, the Campfire shows %s lit; log in before the"):format(
@@ -1989,6 +2389,7 @@ local function install(options, now)
 	elseif nextReset and now >= nextReset then
 		local why = stage.preset == "showcase"
 				and "its last lit day's next day ended at %s, so it would burn a Kindling;"
+			or stage.preset == "wagers" and "its fallback slot ended at %s, so a later slot's event would be on;"
 			or "its board day ended at %s, so day 2 would close unlit too;"
 		refuse(
 			("%s is a %s test log and " .. why):format(stage.dir, stage.preset, utc(nextReset))
@@ -2011,6 +2412,7 @@ local function install(options, now)
 	local was = real and "the real log, as backed up" or ("test log %s (logId %s)"):format(other.preset, currentLogId)
 	print(("the Pagle.lua it replaced, %s, is kept in %s/"):format(was, kept))
 	local by = stage.preset == "showcase" and " before %s, when its Campfire's last lit day is followed by an unlit one"
+		or stage.preset == "wagers" and " before %s, when its current fallback slot ends"
 		or " before the next daily reset, %s"
 	local before = nextReset and by:format(utc(nextReset)) or ""
 	print("Log in as " .. tostring(stage.character) .. before .. ".")

@@ -403,3 +403,220 @@ description = "Stiff sea-green cloth with cream rules. Spray beads up and rolls 
 [binding.sharkskin] # Curio Shop, tier 3
 name = "Sharkskin"
 description = "Rough grey hide with silver tooling. It won't slip out of a wet hand."
+
+# Zone crests (LED-R113, manifest.toml's [ledger.crest]): the good ledger.crest.<key>'s name, the landmark on its
+# shield, and the description the Curio Shop shows beside it, a word on the water there. Neither names a place from
+# the game (DATA-R3). Each is earned when its zone reaches Master (LED-R114); the comment names the zone, for review
+# only. The first ten were Core's for-sale crests, signed off in #264, and keep their text.
+
+[crest.alterac] # Alterac Mountains
+name = "The Broken Tower"
+description = "A broken tower on a cold peak. The kingdom is gone. The streams are still good."
+
+[crest.arathi] # Arathi Highlands
+name = "The Standing Stones"
+description = "Old standing stones on the highland grass, older than anyone who argues about them."
+
+[crest.badlands] # Badlands
+name = "The Stone Arch"
+description = "A stone arch the wind took ten thousand years to finish. Bring your own water."
+
+[crest.blackrock] # Blackrock Mountain
+name = "The Black Spire"
+description = "A black mountain with fire in its cracks and chains across its gate. Fish the lava pools at your own risk."
+
+[crest.blastedlands] # Blasted Lands
+name = "The Burning Gate"
+description = "A gate of black stone with green fire in it. Nobody fishes there for the view."
+
+[crest.burningsteppes] # Burning Steppes
+name = "The Burning Peak"
+description = "A mountain on fire under an ash sky. The water is warm enough to cook in."
+
+[crest.deadwind] # Deadwind Pass
+name = "The Lonely Tower"
+description = "A tall tower in a dead valley. The pools are quiet. Too quiet, some say, and leave."
+
+[crest.dunmorogh] # Dun Morogh
+name = "The Ram"
+description = "Curled horns over a snowfield. The rams up there have opinions about strangers."
+
+[crest.duskwood] # Duskwood
+name = "Eyes in the Wood"
+description = "Two eyes between black trees. Anglers there keep the lantern lit and the line short."
+
+[crest.easternplague] # Eastern Plaguelands
+name = "The Chapel"
+description = "A small chapel holding its light against the blight. Good water lies beside it."
+
+[crest.elwynn] # Elwynn Forest
+name = "The Old Oak"
+description = "The first lake most anglers ever saw, and the oak they sat under."
+
+[crest.hillsbrad] # Hillsbrad Foothills
+name = "Three Apples"
+description = "Three apples from the foothill orchards. The trout below the mill are fat on windfalls."
+
+[crest.hinterlands] # The Hinterlands
+name = "Three Feathers"
+description = "Great feathers from the wild hills, where big birds nest above the rivers."
+
+[crest.ironforge] # Ironforge
+name = "The Anvil"
+description = "An anvil before the mountain's forge. There is a lake under there, and dwarves fish it."
+
+[crest.lochmodan] # Loch Modan
+name = "The Great Dam"
+description = "A dam holding back a highland lake. Dwarves built it to last, and it has."
+
+[crest.lordamere] # Lordamere Lake
+name = "The Lake Isle"
+description = "A wooded island on a wide grey lake, a boat drawn up on its shore. Quiet water, and plenty of it."
+
+[crest.redridge] # Redridge Mountains
+name = "Three Peaks"
+description = "Three red peaks standing in a mountain lake, and every one of them reflected."
+
+[crest.riverglades] # Riverglades
+name = "The Barge"
+description = "A barge on a winding river between green hills. Trade comes by water there, and so do fish."
+
+[crest.searinggorge] # Searing Gorge
+name = "The Crucible"
+description = "A crucible pouring molten gold. Fishing there means lava, so bring patience and a long rod."
+
+[crest.silverpine] # Silverpine Forest
+name = "Silver Pines"
+description = "Silver pines on a dark lake shore. Something howls out there most nights."
+
+[crest.stormwind] # Stormwind City
+name = "The White Keep"
+description = "White walls and a gate over the canals. The city fishes its own waterways, politely."
+
+[crest.stranglethorn] # Stranglethorn Vale
+name = "The Leap"
+description = "A fish leaping clear of the jungle surf, as if it heard about the contest."
+
+[crest.swampofsorrows] # Swamp of Sorrows
+name = "The Drowned Shrine"
+description = "A temple roof breaking the swamp water. What is under it stays under it."
+
+[crest.tirisfal] # Tirisfal Glades
+name = "The Bat"
+description = "A bat across a sickly moon. Even the fish there look a little tired."
+
+[crest.undercity] # Undercity
+name = "The Broken Crown"
+description = "A broken crown over green canals. The court is gone. The canals still hold fish."
+
+[crest.westernplague] # Western Plaguelands
+name = "The Crow"
+description = "A crow on a dead tree over empty fields. The farmers left. The fish did not."
+
+[crest.westfall] # Westfall
+name = "The Windmill"
+description = "Sails turning over the coast road. The sea is closer than the farmers admit."
+
+[crest.wetlands] # Wetlands
+name = "The Anchor"
+description = "A harbour's anchor, hauled up from the mud. Still smells faintly of it."
+
+[crest.ashenvale] # Ashenvale
+name = "The Wisp"
+description = "A wisp drifting between dark trees. The forest notices every angler who stays too long."
+
+[crest.azshara] # Azshara
+name = "The Fallen Column"
+description = "A column of an old empire, the sea climbing it. Something still swims in those ruins."
+
+[crest.barrens] # The Barrens
+name = "The Acacia"
+description = "A flat-topped tree on the dry plains. Every oasis out there is somebody's favourite spot."
+
+[crest.darkshore] # Darkshore
+name = "The Crescent"
+description = "A crescent over grey water, for anglers who fish after dark."
+
+[crest.darnassus] # Darnassus
+name = "The Silver Well"
+description = "A well glowing silver under a great tree. The lake around it holds the city's fish."
+
+[crest.desolace] # Desolace
+name = "The Horned Skull"
+description = "A great horned skull from an old graveyard. The coast is kinder than the inland."
+
+[crest.durotar] # Durotar
+name = "The Scorpid"
+description = "A scorpid on red earth. The coast is better company than the scorpids."
+
+[crest.dustwallow] # Dustwallow Marsh
+name = "The Lantern"
+description = "A lantern left burning on a fisherman's hut in the marsh fog."
+
+[crest.felwood] # Felwood
+name = "The Tainted Tree"
+description = "A twisted tree with green fire in its veins. Wash every catch from there. Twice."
+
+[crest.feralas] # Feralas
+name = "The Falls"
+description = "Water falling between the giant trees, for anglers who take the long way."
+
+[crest.moonglade] # Moonglade
+name = "The Antlers"
+description = "Antlers over a still lake, under the moon. A quiet place, kept quiet on purpose."
+
+[crest.hyjal] # Mount Hyjal
+name = "The Sapling"
+description = "A green shoot rising out of old embers. The mountain is mending, and its streams with it."
+
+[crest.mulgore] # Mulgore
+name = "The Totem"
+description = "A carved totem on the long grass plains, where the streams run clear from the hills."
+
+[crest.orgrimmar] # Orgrimmar
+name = "The Spiked Gate"
+description = "A spiked gate in a red canyon. The city's pools are deeper than they look."
+
+[crest.shendralas] # Shen'dralas
+name = "The Open Tome"
+description = "An open book on a broken pedestal, kept by people who never stopped reading."
+
+[crest.silithus] # Silithus
+name = "The Scarab"
+description = "A scarab on desert sand. The lakes there are small and suspicious."
+
+[crest.stonetalon] # Stonetalon Mountains
+name = "The Talon"
+description = "A great talon gripping a stone. Mountain water, cold and quick."
+
+[crest.tanaris] # Tanaris
+name = "The Desert Sun"
+description = "A desert sun over the only shade for miles: the shoreline."
+
+[crest.teldrassil] # Teldrassil
+name = "The Starlit Crown"
+description = "A tree so tall its crown is in the stars. Its roots drink from very old water."
+
+[crest.thousandneedles] # Thousand Needles
+name = "The Needles"
+description = "Stone needles rising from the flats. Fish in their shadows, and keep your hat on."
+
+[crest.thunderbluff] # Thunder Bluff
+name = "The Mesa"
+description = "A high mesa with a tent on top. The pools below catch the falls, and the fish with them."
+
+[crest.ungoro] # Un'Goro Crater
+name = "The Footprint"
+description = "A footprint the size of a rowing boat. The crater has bigger worries than fish."
+
+[crest.veiledsea] # The Veiled Sea
+name = "The Fog Bank"
+description = "A ship half lost in a bank of sea fog. Out here the fish come up from very deep, and so does everything else."
+
+[crest.winterspring] # Winterspring
+name = "The Frost"
+description = "A snowflake over still water, where ice fishing is real fishing."
+
+[crest.zephras] # Zephras Isle
+name = "The Floating Isle"
+description = "An island floating on cloud, its ship tied to the stone. The water is a long way down."

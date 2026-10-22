@@ -56,6 +56,15 @@ ns.L = {
 	BINDING_SLOT_LABEL = "Journal binding",
 	BINDING_EARNED = "Angler Level %d",
 
+	-- A zone crest not yet earned (LED-R115): the row's tag and the stage's note. The crests' names and descriptions
+	-- are lore (LED-R160).
+	CREST_PROGRESS = "%s · %d%%",
+	CREST_UNFISHED = "Unfished",
+	CREST_UNCHARTED = "Not yet charted",
+	CREST_NOTE_PROGRESS = "Earned when %s reaches Master in the Fish Journal. It is %s, %d%%. %s.",
+	CREST_NOTE_UNFISHED = "Earned when %s reaches Master in the Fish Journal. Catch anything there to begin.",
+	CREST_NOTE_UNCHARTED = "Earned when %s reaches Master in the Fish Journal, once its waters are charted.",
+
 	-- The moments (LED-R97). A level-up's text counts the levels it raised.
 	LEVEL_UP_TITLE = "Angler Level %d",
 	LEVEL_UP_STAMP = "Level %d",
@@ -74,6 +83,9 @@ ns.L = {
 	ZONE_RANK_STAMP = "Rank up",
 	ZONE_MASTER_TITLE = "Zone Master",
 	ZONE_MASTER_STAMP = "Master",
+	-- A crest's "Earned" line with its name: the zone's on the Zone Master's moment (LED-R97), riding in its text as
+	-- its title does (TEXT_WITH_TITLE), and the fish crest's on Every colour's (VAR-R25, VAR-R12).
+	CREST_EARNED = "Earned: %s",
 	TROPHY_WEIGHT_TITLE = "Trophy weight",
 	TROPHY_WEIGHT_STAMP = "Trophy",
 	NEW_CURIO_TITLE = "New curio",
@@ -102,11 +114,10 @@ ns.L = {
 	NEW_VARIETY_STAMP = "New variety",
 	RARE_VARIETY_TITLE = "Rare variety",
 	EPIC_VARIETY_TITLE = "Epic variety",
-	-- A Species' every variety caught (VAR-R25): its banner with the Species' name, its stamp, and its fish crest's
-	-- "Earned" line with the crest's name (VAR-R12).
+	-- A Species' every variety caught (VAR-R25): its banner with the Species' name and its stamp; its fish crest's
+	-- "Earned" line is CREST_EARNED.
 	EVERY_COLOUR_TITLE = "Every colour of %s",
 	EVERY_COLOUR_STAMP = "Every colour",
-	CREST_EARNED = "Earned: %s",
 	-- A title (lore, LED-R75) riding in a moment's text, after the text it has (LED-R97), and a completion title's own;
 	-- also a Legend's page and plate (LED-R147).
 	TITLE_LINE = "Title: %s",

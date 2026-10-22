@@ -116,14 +116,16 @@ ns.L = {
 		soon = "Soon: opens within 3 hours",
 		later = "Later: opens after that, or needs more skill",
 		onDemand = "On demand: starts when you do",
+		wagers = "Wagers: on for days, not hours",
 	},
 	-- The headings as the page sets them: the group's name in small caps, then its note in italic.
-	GROUP_NAMES = { now = "Now", soon = "Soon", later = "Later", onDemand = "On demand" },
+	GROUP_NAMES = { now = "Now", soon = "Soon", later = "Later", onDemand = "On demand", wagers = "Wagers" },
 	GROUP_NOTES = {
 		now = "open right now",
 		soon = "opens within 3 hours",
 		later = "opens after that, or needs more skill",
 		onDemand = "starts when you do",
+		wagers = "on for days, not hours",
 	},
 	TIMELINE_LEGEND = "Hatched: open · Dashed: window unconfirmed · Pencil: needs more skill · Blue: your camp is up",
 	-- The legend as the page draws it: each bar style's own stroke, then its words.
@@ -171,6 +173,13 @@ ns.L = {
 	TRIMS = { bronze = "Bronze", silver = "Silver", gold = "Gold" }, -- HNT-R18
 	TITLE_EARNED = "Title earned",
 	TITLE_EARNED_STAMP = "Title",
+	-- Pagle Wagers' moments (HNT-R86's wager rows): logic/WagerMoments.lua. A further mark's text is HUNT_TIER_TEXT's.
+	WAGER_MARK = "Pagle Wagers",
+	WAGER_MARK_TEXT = "%s · first mark", -- "Shore Snapper · first mark"
+	WAGER_MARK_STAMP = "Mark",
+	WAGER_TIER = "%s mark", -- "Silver mark"
+	WAGER_SETTLED = "Wager settled",
+	WAGER_SETTLED_STAMP = "Settled",
 	WRITE_UP_FIRST_BUILD_ONE = "Your Hunts were written up from %s Cast",
 	WRITE_UP_FIRST_BUILD_OTHER = "Your Hunts were written up from %s Casts",
 	WRITE_UP_WHILE_OFF = "While Hunts was off",
@@ -178,11 +187,18 @@ ns.L = {
 	WRITE_UP_COMPLETED_OTHER = "%s Hunts completed",
 	WRITE_UP_FURTHER_ONE = "%s further tier",
 	WRITE_UP_FURTHER_OTHER = "%s further tiers",
+	WRITE_UP_SETTLED_ONE = "%s wager settled",
+	WRITE_UP_SETTLED_OTHER = "%s wagers settled",
 	WRITE_UP_TITLE = "Title: %s",
 	WRITE_UP_COINS = "Pagle Coins +%s",
+	WRITE_UP_XP = "Angler XP +%s",
 	SUMMARY_LINE = "Hunts: %s of %s done · %s", -- "Hunts: 3 of 16 done · 1 title"
+	-- Once a run is settled (HNT-R89): "Hunts: 3 of 16 done · 1 title · 2 wagers settled".
+	SUMMARY_LINE_SETTLED = "Hunts: %s of %s done · %s · %s",
 	SUMMARY_TITLES_ONE = "%s title",
 	SUMMARY_TITLES_OTHER = "%s titles",
+	SUMMARY_SETTLED_ONE = "%s wager settled",
+	SUMMARY_SETTLED_OTHER = "%s wagers settled",
 
 	-- A Hunt's entry on the board's right page (HNT-R3, HNT-R64–R66, HNT-R69): logic/Entry.lua.
 	ENTRY_KICKER = "%s · %s",
@@ -257,4 +273,32 @@ ns.L = {
 	TOUR_TRACKER = "the Hunts tracker in the dock, with three pins",
 	TOUR_COVER = "the Hunts board in the %s cover",
 	TOUR_TRACKER_FRAME = "the Hunts tracker in the %s frame",
+
+	-- Pagle Wagers on the Board (HNT-R161, HNT-R163, HNT-R164): logic/Wagers.lua. Hunt Events are only ever
+	-- "Pagle Wagers" to players (CONTEXT.md), and nothing here claims odds, a due fish or a chance (HNT-R27).
+	WAGERS_KICKER = "Pagle Wagers", -- the strip's kicker, and the breadcrumb between "Hunts" and the run
+	STRIP_NAME = "%s · %s", -- "Shore Wager · Darkshore": the run's event and its zones
+	JOIN_ZONES = " & ",
+	STRIP_CLOSES = "closes in %s", -- a server-time duration (HNT-R203)
+	STRIP_MORE = "+%d more on the table",
+	STRIP_NEXT = "Next: %s, %s", -- "Next: Shore Wager, Sat 15:00"
+	RUN_KICKER_ROTATION = "From the rotation · %s waters",
+	BANDS = { low = "low", mid = "mid", high = "high" }, -- an event's skill band (HNT-R156)
+	RUN_KICKER_PUSHED = "Sent by the companion",
+	RUN_FROM_UNTIL = "from %s until %s", -- a run ahead: its start and its end
+	SEAL_SETTLED = "Settled %s", -- a completed run's seal, with the short date
+	-- An event Hunt's shape (HNT-R163), then its target line: "Timed · Darkshore Grouper, 22:00–04:00".
+	SHAPES = { timed = "Timed", big = "Big ones", quality = "Quality", haul = "Haul", named = "Named fish" },
+	RUN_HUNT_LINE = "%s · %s",
+	RUN_TARGET_TIME = "%s, %s",
+	RUN_CASTS_ONE = "%s Cast in these waters this run.",
+	RUN_CASTS_OTHER = "%s Casts in these waters this run.",
+	RUN_SO_FAR = "So far +%d XP · %d Coins",
+	-- The pay rule, from the Tunables: tier 1's XP and Coins, a further tier's, then a settled run's.
+	RUN_PAY_RULE = "Each Hunt's first mark pays +%d XP and %d Coins, each mark after it +%d XP and %d Coins. "
+		.. "Land every Hunt's first mark and the wager settles: +%d XP and %d Coins more.",
+
+	-- The run log's dev diagnostic lines (HNT-R140, HNT-R151, logic/RunLog.lua): dev-only, never shown to players.
+	RUN_LOG_EVENT_IGNORED = "Hunts: the pushed definition of %s is ignored: %s (HNT-R140)",
+	RUN_LOG_RUN_IGNORED = "Hunts: a pushed run of %s is ignored: it needs an event ID and times start < end (HNT-R151)",
 }

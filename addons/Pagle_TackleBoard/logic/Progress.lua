@@ -91,10 +91,6 @@ function COUNT.quality(goal, _, _, item)
 	return item ~= nil and not item.noise and item.quality ~= nil and item.quality >= goal.target and addOne(goal)
 end
 
-function COUNT.size(goal, _, slot, item)
-	return item ~= nil and slot.size ~= nil and slot.size.band >= goal.target and addOne(goal)
-end
-
 -- The Collector Notice's two keys (TKB-R42): what each category counts as.
 local COLLECTOR_NOTICE_KEYS = { junk = "junk", container = "container" }
 

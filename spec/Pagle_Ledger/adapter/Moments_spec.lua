@@ -109,7 +109,7 @@ describe("the Ledger's live moments", function()
 			local announcement = announcements[1]
 			-- Its Catch is the Yellowtail's Spotted, a Common variety (VAR-R3), caught for the first time.
 			assert.are.same({
-				"newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10",
+				"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
 				"newVariety New variety · Spotted / nil nil",
 			}, momentsOf(announcement))
 			assert.are.same({ "New variety" }, announcement.stamps)
@@ -137,7 +137,7 @@ describe("the Ledger's live moments", function()
 		assert.are.equal(1, #announcements)
 		-- Its text carries the Catch's size, as a real Catch's does (LED-R81), and its variety rides on it (VAR-R25).
 		assert.are.same({
-			"newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10",
+			"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
 			"newVariety New variety · Spotted / nil nil",
 		}, momentsOf(announcements[1]))
 	end)
@@ -145,10 +145,14 @@ describe("the Ledger's live moments", function()
 	it(
 		"raise a New here Nod for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",
 		function()
-			-- Caught before with no zone (0), so the two stay below level 2: 520 + 320 XP. That Catch was as long or
-			-- longer, and of the variety the live one is, Spotted (VAR-R3: both Catch IDs' position is 3), so neither a
-			-- size record nor a variety is new.
-			local fake, loaded = session({ cast(T0 + 130, 0, { MACKEREL }) })
+			-- Caught twice before in one Cast, with no zone (0), so the Casts stay below level 2. The live Catch is the
+			-- Yellowtail's Spotted (VAR-R3), celebrated already (LED-R91), so its variety isn't new either.
+			local shownBefore = { coins = 0, varieties = { [MACKEREL] = { [3] = true } }, logId = LOG_ID }
+			local fake, loaded = session(
+				{ cast(T0, 0, { MACKEREL, MACKEREL }) },
+				{ global = { celebrated = shownBefore } }
+			)
+			fake.conditions.skillRank = 1 -- a Reach of 1/300: shorter than the second of those Catches (LOG-R67)
 
 			local record = assert(fake.playCast("caught", loot(MACKEREL)))
 
@@ -170,8 +174,9 @@ describe("the Ledger's live moments", function()
 	)
 
 	it("name an item the client doesn't have yet Item {id}, and a zone with no name … (LED-R97, LED-R126)", function()
-		local fake = session({ cast(T0, 0, { TROUT }) })
+		local fake = session({ cast(T0, 0, { TROUT, TROUT }) })
 		fake.conditions.zone = 999 -- a zone C_Map.GetAreaInfo has no name for
+		fake.conditions.skillRank = 1 -- a Reach of 1/300: shorter than the second of those Catches (LOG-R67)
 
 		fake.playCast("caught", loot(TROUT))
 
@@ -188,10 +193,11 @@ describe("the Ledger's live moments", function()
 		local celebrated = { coins = 0, varieties = { [MACKEREL] = { [1] = true } }, logId = LOG_ID }
 		local fake = session(nil, { global = { celebrated = celebrated } })
 		fake.playCast("caught", loot(MACKEREL))
-		-- Its second Catch is longer, a size record (LED-R82); the third, Core's size says, is not.
+		-- Its second Catch is longer, a size record (LED-R82); the third, at skill 1, can't be (LOG-R67).
 		fake.playCast("caught", loot(MACKEREL))
 		local seen = #shown(fake)
 
+		fake.conditions.skillRank = 1
 		fake.playCast("caught", loot(MACKEREL))
 		fake.playCast("gotAway")
 
@@ -209,7 +215,7 @@ describe("the Ledger's live moments", function()
 			fake.playCast("caught", loot(MACKEREL))
 
 			assert.are.same({
-				"newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10",
+				"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
 				"zoneRank Zone rank: Visitor / Darkshore 2",
 				"newVariety New variety · Spotted / nil nil",
 			}, momentsOf(shown(fake)[1]))
@@ -379,7 +385,7 @@ describe("the Ledger's live moments", function()
 		assert.are.same({
 			{ "levelUp Angler Level 2 / nil 20" },
 			{
-				"newSpecies New Species / Raw Spotted Yellowtail · Decent · 9.5 in 10",
+				"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
 				"newVariety New variety · Spotted / nil nil",
 			},
 		}, celebrated)

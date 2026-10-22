@@ -22,7 +22,7 @@ local HAUL_HERE = "n;haul;2;15;30;148" -- 30 Catches in Darkshore, the fake's zo
 local HAUL_DUROTAR = "n;haul;2;15;30;14"
 local LURE = "n;lure;3;20;25;"
 local ONE_HERE = "n;haul;1;10;1;148" -- done by one Catch in Darkshore
-local EXPEDITION = "e;size;0;60;1;4"
+local EXPEDITION = "e;quality;0;60;3;3"
 
 -- The start record's time, today; its goals follow one second apart.
 local T = D + 60
@@ -130,7 +130,7 @@ end
 -- The lines of a full board read in Darkshore with no fire lit.
 local FULL_HERE = {
 	"Tackle Board | 4 open",
-	"Expedition: A Whopper-or-better Catch | 0/1 | anywhere",
+	"Expedition: 3 rare-or-better Catches | 0/3 | anywhere",
 	"30 Catches in Darkshore | 0/30 | Darkshore · here",
 	"25 Catches with a lure on | 0/25 | anywhere",
 	"+1 more on the board (elsewhere)",
@@ -220,7 +220,7 @@ describe("its lines (TKB-R121, TKB-R122)", function()
 
 		assert.are.same({
 			"Tackle Board | 4 open",
-			"Expedition: A Whopper-or-better Catch | 0/1 | anywhere",
+			"Expedition: 3 rare-or-better Catches | 0/3 | anywhere",
 			"30 Catches in Durotar | 0/30 | Durotar · here",
 			"25 Catches with a lure on | 0/25 | anywhere",
 			"+1 more on the board (elsewhere)",
@@ -327,7 +327,7 @@ describe("its clicks and the flash (TKB-R123, TKB-R109, CORE-R71)", function()
 		assert.are.same({
 			"Tackle Board | (flame) 1 · 3 open",
 			"1 Catch in Darkshore | Complete",
-			"Expedition: A Whopper-or-better Catch | 0/1 | anywhere",
+			"Expedition: 3 rare-or-better Catches | 0/3 | anywhere",
 			"25 Catches with a lure on | 1/25 | anywhere", -- the fake fishes with a lure on
 			"+1 more on the board (elsewhere)",
 		}, read(ns))
@@ -339,7 +339,7 @@ describe("its clicks and the flash (TKB-R123, TKB-R109, CORE-R71)", function()
 		assert.are.equal("1 Catch in Darkshore | Complete", read(ns)[2])
 		loaded.client.advance(0.1)
 
-		assert.are.equal("Expedition: A Whopper-or-better Catch | 0/1 | anywhere", read(ns)[2])
+		assert.are.equal("Expedition: 3 rare-or-better Catches | 0/3 | anywhere", read(ns)[2])
 		for _, line in ipairs(read(ns)) do
 			assert.is_nil(line:find("1 Catch in Darkshore", 1, true))
 		end

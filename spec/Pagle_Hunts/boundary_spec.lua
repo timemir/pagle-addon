@@ -1,19 +1,25 @@
 -- What Hunts never does (ADR 0001, Modules only see Core): it never reads the Catch log's SavedVariables or Core's,
 -- never reads another Module's DB and calls no other Module, the Ledger included, even for the board's art. Nor does
 -- it read an item's quality or class from the client: class membership comes only from the Hunt list (HNT-R12). Nor
--- does it give a set title to the game (HNT-R22).
+-- does it give a set title to the game (HNT-R22). And it appends its own Module records, the runs it uses and the
+-- pushed definitions they need, from one file only: logic/RunLog.lua's live step (HNT-R136, HNT-R150, ADR 0008).
 -- Checked over every file Hunts ships: each name below fails the spec wherever Hunts' code says it.
 
 local DIR = "addons/Pagle_Hunts/"
 
 local QUALITY_OR_CLASS = "HNT-R12: Hunts never reads item quality or class from C_Item"
+local RUN_RECORDS = "HNT-R150: only logic/RunLog.lua appends Hunts' records"
+
+-- The one file that may append Hunts' records (HNT-R150), relative to the addon folder.
+local APPENDS = "logic/RunLog.lua"
+
+-- A Module record, however it's reached: M:AppendRecord, M.AppendRecord(M, …), M["AppendRecord"] or a local copy.
+local APPEND = { "%f[%w_]AppendRecord%f[^%w_]", RUN_RECORDS }
 
 -- Each forbidden thing: a Lua pattern over code with comments removed, and the rule it breaks.
 local FORBIDDEN = {
 	{ "%f[%w_]PagleLog%f[^%w_]", "ADR 0001: Hunts reads Catches only through its projection" },
 	{ "%f[%w_]PagleDB%f[^%w_]", "ADR 0001: Hunts never reads Core's SavedVariables" },
-	-- Its state is rebuilt from Catches alone; only the Tackle Board appends Module records (ADR 0008, LOG-R41).
-	{ "%f[%w_]AppendRecord%f[^%w_]", "ADR 0008: Hunts appends no Module records" },
 	-- C_Item.GetItemInfo and GetItemInfoInstant, global or not, return the quality, class and subclass.
 	{ "%f[%w_]GetItemInfo", QUALITY_OR_CLASS },
 	{ "%f[%w_]GetItemQualityByID%f[^%w_]", QUALITY_OR_CLASS },
@@ -36,11 +42,16 @@ end
 -- Any AceAddon lookup, Core's addon object included: Hunts reaches Core only through Pagle.* and its handle.
 FORBIDDEN[#FORBIDDEN + 1] = { "[:.]GetAddon%s*%(", "ADR 0001: Hunts reaches Core only through Pagle.*" }
 
--- Each forbidden thing the code says, as "<why>: <match>".
+-- Each forbidden thing the code of `file` (relative to the addon folder) says, as "<why>: <match>".
+---@param file string
 ---@param text string
 ---@return string[]
-local function offences(text)
-	return forbiddenIn(withoutComments(text), FORBIDDEN)
+local function offences(file, text)
+	local forbidden = { unpack(FORBIDDEN) }
+	if file ~= APPENDS then
+		forbidden[#forbidden + 1] = APPEND
+	end
+	return forbiddenIn(withoutComments(text), forbidden)
 end
 
 describe("Hunts' boundary (ADR 0001, HNT-R12)", function()
@@ -55,9 +66,14 @@ describe("Hunts' boundary (ADR 0001, HNT-R12)", function()
 	end)
 
 	for _, path in ipairs(shippedFiles(DIR)) do
-		it(path .. " reads no other addon's data, calls no other Module and reads no item quality or class", function()
-			assert.are.same({}, offences(readFile(path)))
-		end)
+		it(
+			path
+				.. " reads no other addon's data, calls no other Module, reads no item quality or class and appends"
+				.. " records only from the run log",
+			function()
+				assert.are.same({}, offences(path:sub(#DIR + 1), readFile(path)))
+			end
+		)
 	end
 
 	describe("catches", function()
@@ -73,7 +89,6 @@ describe("Hunts' boundary (ADR 0001, HNT-R12)", function()
 			{ 'C_AddOns.IsAddOnLoaded("Pagle_Stats")', "ADR 0001: Hunts calls no other Module" },
 			{ 'local qol = _G["Pagle_QoL"]', "ADR 0001: Hunts calls no other Module" },
 			{ "Pagle_TackleBoard_Open()", "ADR 0001: Hunts calls no other Module" },
-			{ 'M:AppendRecord("completed", "trout")', "ADR 0008: Hunts appends no Module records" },
 			{ "local _, _, quality = C_Item.GetItemInfo(itemID)", QUALITY_OR_CLASS },
 			{ "local _, _, _, _, _, classID = GetItemInfoInstant(itemID)", QUALITY_OR_CLASS },
 			{ "local quality = C_Item.GetItemQualityByID(itemID)", QUALITY_OR_CLASS },
@@ -85,28 +100,57 @@ describe("Hunts' boundary (ADR 0001, HNT-R12)", function()
 		}
 		for _, case in ipairs(planted) do
 			it(case[1], function()
-				local found = offences(case[1])
+				local found = offences("logic/Board.lua", case[1])
 
 				assert.is_true(#found > 0)
 				assert.are.equal(case[2], found[1]:sub(1, #case[2]))
 			end)
 		end
 
+		-- A record appended anywhere but the run log, however it's reached (HNT-R150).
+		local appends = {
+			{ "logic/Runs.lua", 'M:AppendRecord("run", payload)' },
+			{ "logic/Projection.lua", 'M.AppendRecord(M, "def", payload)' },
+			{ "logic/Rotation.lua", 'M["AppendRecord"](M, "run", payload)' },
+			{ "adapter/RunLog.lua", 'ns.Module:AppendRecord("run", payload)' },
+			{ "adapter/Hunts.lua", "local append = ns.Module.AppendRecord" },
+		}
+		for _, case in ipairs(appends) do
+			it(case[2] .. " in " .. case[1], function()
+				local found = offences(case[1], case[2])
+
+				assert.is_true(#found > 0)
+				assert.are.equal(RUN_RECORDS, found[1]:sub(1, #RUN_RECORDS))
+			end)
+		end
+
+		it("but not an AppendRecord in logic/RunLog.lua (HNT-R150)", function()
+			assert.are.same({}, offences("logic/RunLog.lua", "self.module:AppendRecord(record.kind, record.payload)"))
+		end)
+
 		it("but not what only a comment says, nor Hunts' own PagleHuntsDB and Pagle_Hunts", function()
 			assert.are.same(
 				{},
-				offences('-- never PagleLog\n--[[ PagleLedgerDB ]]\nlocal db = PagleHuntsDB\nlocal _ = "Pagle_Hunts"')
+				offences(
+					"logic/Board.lua",
+					"-- never PagleLog, never M:AppendRecord\n--[[ PagleLedgerDB ]]\n"
+						.. 'local db = PagleHuntsDB\nlocal _ = "Pagle_Hunts"'
+				)
 			)
 		end)
 
 		it("nor reporting Activity XP, which Hunts pays (AXP-R2, HNT-R115)", function()
-			assert.are.same({}, offences("ns.Module:ReportXPEarned(total)\nclient.ReportXPEarned(state.xp)"))
+			assert.are.same(
+				{},
+				offences("adapter/Hunts.lua", "ns.Module:ReportXPEarned(total)\nclient.ReportXPEarned(state.xp)")
+			)
 		end)
 
 		it("nor the item calls Hunts needs for names and icons (HNT-R54)", function()
 			assert.are.same(
 				{},
 				offences(
+					"adapter/Names.lua",
 					"local item = Item:CreateFromItemID(itemID)\nlocal name = item:GetItemName()\n"
 						.. "local icon = C_Item.GetItemIconByID(itemID)\nlocal n = C_Item.GetItemNameByID(itemID)"
 				)

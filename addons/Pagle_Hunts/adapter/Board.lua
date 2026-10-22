@@ -116,10 +116,12 @@ function Board:RegisterLeather(part, renderer)
 	self.leather[part] = renderer
 end
 
---- Selects `huntID` in the mode shown without drawing (HNT-R67): for the timeline, as it picks the Hunt to show.
+--- Selects `huntID` in the mode shown without drawing (HNT-R67): for the timeline, as it picks the Hunt to show; or
+--- on the Board the run `runKey` in its place (HNT-R161).
 ---@param huntID string?
-function Board:Select(huntID)
-	self.router:Select(huntID)
+---@param runKey string?
+function Board:Select(huntID, runKey)
+	self.router:Select(huntID, runKey)
 end
 
 --- The breadcrumb trail where the board is (HNT-R61): logic/Board.lua's router's.
@@ -540,11 +542,16 @@ function ns.ToggleBoard()
 	ns.board:Toggle()
 end
 
---- Opens the board on the Board mode, asking the timeline to select `huntID` (HNT-R67, HNT-R77); open, it turns there
---- and never closes.
----@param huntID string?
-function ns.OpenBoard(huntID)
-	ns.board:Open({ mode = "board", hunt = huntID })
+--- Opens the board on the Board mode, asking the timeline to select a Hunt (HNT-R67, HNT-R77) or a run (HNT-R164):
+--- `target` is a Hunt's ID, or `{ hunt = huntID }` or `{ run = runKey }`; open, it turns there and never closes. A run
+--- the board no longer shows (ended, HNT-R143) selects the Hunt HNT-R67 picks.
+---@param target (string|{ hunt: string?, run: string? })?
+function ns.OpenBoard(target)
+	if type(target) == "table" then
+		ns.board:Open({ mode = "board", hunt = target.hunt, run = target.run })
+	else
+		ns.board:Open({ mode = "board", hunt = target })
+	end
 end
 
 -- The board redraws the mode shown at every redraw while open (HNT-R42).

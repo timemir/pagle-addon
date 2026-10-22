@@ -168,26 +168,51 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
 ### Simulated Size
 
-- **LOG-R65** A Catch has a **Simulated Size** when `Pagle.GetItem(itemID)` has category `fish` or `questFish` and is not Noise; Legends included. Trophy fish (they have a real weight), Sub-collection items, Noise, Uncharted items and item `0` have none. Each Catch (one loot slot) has one size, whatever its quantity. Core computes it whenever it decodes a record, from the Catch ID and the current catalogue; it is never stored, and records carry it as `size = { length, band }` (`length` in whole millimetres, `band` 1–5). An Uncharted Catch gains its size when a release classifies it as a Species (LOG-R96). Beside `size`, a decoded item of a Species with varieties carries its `variety` (VAR-R4).
+- **LOG-R65** A Catch has a **Simulated Size** when `Pagle.GetItem(itemID)` has category `fish` or `questFish`, is not Noise and gives its Species a `typicalLength`; Legends included. Trophy fish (they have a real weight), Sub-collection items, Noise, Uncharted items and item `0` have none. Each Catch (one loot slot) has one size, whatever its quantity. Core computes it whenever it decodes a record and never stores it; records carry it as `size = { length, band }` (`length` in whole millimetres, `band` 1–5). It comes from the Catch ID (LOG-R66), the current catalogue and two things the log holds as recorded ([ADR 0014](../../adr/0014-simulated-size-is-bounded-by-a-reach-of-skill-and-experience.md)):
+  - the **skill rank**: the Cast's `skillRank`, its modifier (lures, gear) never counting; without one, the `rank` of that character's latest Skill Reading before the Cast in the log; without one, 1.
+  - the **earlier Catches** `n`: the Angler's Catches of the same item ID earlier in the log, on any character, one per slot whatever its quantity, the earlier slots of the same Cast included. Item `0` is never counted. They are counted from the log alone (LOG-R100), never through the catalogue, so a release that classifies an Uncharted item, moves an item between Species or retunes a typical length changes no item's count. Pagle's experience starts at install: nothing before the log is credited.
+
+  An Uncharted Catch gains its size when a release classifies it as a Species (LOG-R96), the one it would have had live. Beside `size`, a decoded item of a Species with varieties carries its `variety` (VAR-R4), from the Catch ID and the catalogue alone.
 - **LOG-R66** The **percentile** `u` of a Catch is a frozen hash of its Catch ID string (LOG-R13), computed in Core `logic/` with the `bit` library (LuaBitOp, which WoW ships; tests install the same library) and all arithmetic kept exact below 2^53:
   1. FNV-1a 32-bit over the ID's bytes: `h = 2166136261`; for each byte `c`, `h = bxor(h, c) % 2^32`, then `h = ((h % 256) * 16777216 + h * 403) % 2^32` (that is, `h * 16777619 mod 2^32`).
   2. Murmur3's `fmix32` finaliser: `h = h xor (h >> 16)`, `h = mul32(h, 0x85ebca6b)`, `h = h xor (h >> 13)`, `h = mul32(h, 0xc2b2ae35)`, `h = h xor (h >> 16)`, with `mul32(a, b) = (a * (b % 65536) + ((a * floor(b / 65536)) % 65536) * 65536) % 2^32` and every `bit` result taken `% 2^32`.
   3. `u = h / 2^32`, in [0, 1).
 
-  Test vectors (`h` after step 2):
+  Test vectors (`h` after step 2), with their size at a typical length of 300 mm as a Legend's (LOG-R67):
 
-  | Catch ID | `h` | `u` | Band | Length at typical 300 mm |
+  | Catch ID | `h` | `u` | Band as a Legend | Length as a Legend |
   |---|---|---|---|---|
-  | `Player-4395-0A1B2C3D-1791731747-0:1` | 2657620567 | 0.618776 | 2 Decent | 314 |
-  | `Player-4395-0A1B2C3D-1791731747-0:2` | 4227872046 | 0.984378 | 4 Whopper | 453 |
-  | `Player-4395-0A1B2C3D-1791731762-1:1` | 1190098033 | 0.277091 | 2 Decent | 249 |
-  | `Player-1-00000001-1700000000-0:1` | 3063819173 | 0.713351 | 3 Hefty | 333 |
+  | A `Player-4395-0A1B2C3D-1791731747-0:1` | 2657620567 | 0.618776 | 2 Decent | 314 |
+  | B `Player-4395-0A1B2C3D-1791731747-0:2` | 4227872046 | 0.984378 | 4 Whopper | 453 |
+  | C `Player-4395-0A1B2C3D-1791731762-1:1` | 1190098033 | 0.277091 | 2 Decent | 249 |
+  | D `Player-1-00000001-1700000000-0:1` | 3063819173 | 0.713351 | 3 Hefty | 333 |
 
-  A test also draws 300,000 synthetic Catch IDs (sequential times, 1–3 items per Cast) and checks every band's share is within 0.5 percentage points of LOG-R67's, and that the percentiles of items 1 and 2 of the same Cast are uncorrelated.
+  A test also draws 300,000 synthetic Catch IDs (sequential times, 1–3 items per Cast) and checks every band's share at a full Reach is within 0.5 percentage points of LOG-R67's (Tiddler 0.41%, Decent 8.11%, Hefty 13.08%, Whopper 29.6%, Monster 48.8%: band `i` from `u ≥ c³` of its low edge), and that the percentiles of items 1 and 2 of the same Cast are uncorrelated.
 
-  The **1.0 freeze spec** (`spec/Pagle/logic/Size_spec.lua`, [#267](https://github.com/timemir/wow-fish/issues/267)) pins this table and, for each of LOG-R67's cut points, the two synthetic Catch IDs whose percentiles lie closest below and at or above it (within 0.00000005), with their `h` and band. Changing any constant of the hash or any cut point fails it, with a message naming ADR 0010. The table's lengths follow the multipliers, which stay tunable (LOG-R68): a retune updates that column with `SIZE_RULES_VERSION`, never a band.
-- **LOG-R67** The **Size band** is the band whose cut points hold `u`: 1 Tiddler [0, 0.15), 2 Decent [0.15, 0.70), 3 Hefty [0.70, 0.93), 4 Whopper [0.93, 0.995), 5 Monster [0.995, 1). Within band `i`, the length is linear between that band's two multipliers (Tunables) of the Species' typical length: `length = floor(typical * (m[i] + (m[i+1] - m[i]) * (u - cut[i]) / (cut[i+1] - cut[i])) + 0.5)`. Length therefore rises with `u` within a Species. `Pagle.SIZE_BANDS` lists the bands in order as `{ key, name }`; the names are signed off for 1.0 ([#264](https://github.com/timemir/wow-fish/issues/264)), and band 2's key stays `typical`.
-- **LOG-R68** The hash and the cut points are frozen once shipped (ADR 0010): a Catch's band never changes, so Hunts and Notices that target a minimum band are never revoked by a rebuild. The typical lengths (in the catalogue, LOG-R55) and the multipliers can be retuned; a change to a typical length changes `CONTENT_FINGERPRINT`, and a change to the multipliers changes `Pagle.SIZE_RULES_VERSION`, which Modules that store sizes fold into their rules version. Neither moves a Catch between bands or changes which Catch is a Species' longest.
+  The **1.0 freeze spec** (`spec/Pagle/logic/Size_spec.lua`, [#267](https://github.com/timemir/wow-fish/issues/267)) pins the hash of these vectors and LOG-R67's worked examples; for each band edge `c`, the two synthetic Catch IDs whose `u` lies closest below and at or above `c³` (within 0.00000011, from a search of 30,000,000), with their `h` and band at a full Reach; the two closest either side of `u = 0.421875`, where a Reach of 0.8 meets Whopper's edge, with the bands that skill 239, 240 and 241 (at `n` 1,000) and `n` 639, 640 and 641 (at skill 300) give them; and, for Legends, the two either side of each cut point (within 0.00000005) and the multipliers' ends at the full range's. Changing the hash, the 300 or 1,000, either curve, the exponent, a band edge, a range end or a Legend's cut point fails it, with a message naming ADR 0014.
+- **LOG-R67** The **Reach** `R` of a Species Catch that isn't a Legend is how big a fish the Angler can land at that Cast, as a place in its Species' **full range**, 0.55× to 1.80× the typical length (ADR 0014): the lesser of the **skill reach** `min(max(skillRank / 300, 0), 1)` and the **experience reach** `√(min(n, 1000) / 1000)` (LOG-R65's skill rank and `n`). The Catch's place in that range is `p = R × u^(1/3)`, so `p` never exceeds `R`, and `n = 0` puts every first Catch of an item at the range's bottom. Then:
+  - `length = floor(typical * (0.55 + 1.25 * p) + 0.5)`
+  - the **Size band** is the one whose low edge `c` `p` has reached: 1 Tiddler [0, 0.16), 2 Decent [0.16, 0.44), 3 Hefty [0.44, 0.60), 4 Whopper [0.60, 0.80), 5 Monster [0.80, 1]. Core tests `R * R * R * u >= c * c * c` in doubles, multiplications only, so the band is the same on every platform's maths library; only the length uses `^`. The band never reads the typical length.
+
+  Worked examples at a typical length of 300 mm, on LOG-R66's vectors:
+
+  | Skill rank, `n` | `R` | A | B | C | D |
+  |---|---|---|---|---|---|
+  | any, 0 | 0 | 165 Tiddler | 165 Tiddler | 165 Tiddler | 165 Tiddler |
+  | 300, 10 | 0.1 | 197 Tiddler | 202 Tiddler | 189 Tiddler | 199 Tiddler |
+  | 150, 1,000 or 300, 250 | 0.5 | 325 Decent | 352 Hefty | 287 Decent | 333 Hefty |
+  | 200, 300 | √0.3 = 0.548 | 340 Hefty | 369 Hefty | 299 Decent | 349 Hefty |
+  | 225, 1,000 | 0.75 | 405 Whopper | 445 Whopper | 348 Hefty | 416 Whopper |
+  | 300 (or more), 1,000 (or more) | 1 | 485 Monster | 538 Monster | 409 Whopper | 500 Monster |
+
+  A **Legend** has no Reach, as a once-in-a-career Catch would otherwise always be a Tiddler: its band is the one whose cut points hold `u` (ADR 0010), 1 Tiddler [0, 0.15), 2 Decent [0.15, 0.70), 3 Hefty [0.70, 0.93), 4 Whopper [0.93, 0.995), 5 Monster [0.995, 1), and within band `i` its length is linear between that band's two multipliers (Tunables) of the typical length: `length = floor(typical * (m[i] + (m[i+1] - m[i]) * (u - cut[i]) / (cut[i+1] - cut[i])) + 0.5)`. The multipliers' ends are the full range's.
+
+  Length rises with `p` (with `u`, for a Legend) within a Species. `Pagle.SIZE_BANDS` lists the bands in order as `{ key, name }`; the names are signed off for 1.0 ([#264](https://github.com/timemir/wow-fish/issues/264)), and band 2's key stays `typical`.
+- **LOG-R68** Everything that places a Catch in a band is frozen once shipped (ADR 0014): the hash, the 300 and 1,000, both reach curves, the exponent 3, the band edges, the full range's ends and a Legend's cut points. Every input is in the log as recorded, so a Catch's band never changes on a rebuild, and Hunts and Notices that target a minimum band are never revoked. The typical lengths (in the catalogue, LOG-R55) and a Legend's four inner multipliers can be retuned: a change to a typical length changes `CONTENT_FINGERPRINT`, and a change to the multipliers, or before 1.0 to anything else about how a size is drawn, changes `Pagle.SIZE_RULES_VERSION` (2 from the Reach), which Modules that store sizes fold into their rules version. Neither moves a Catch between bands or changes which Catch is a Species' longest.
+- **LOG-R100** Core knows each item's earlier Catches (LOG-R65) at every Cast it hands out, from `Pagle.IterateCatches` and `M:IterateCatches` from any `afterSeq`, `CatchLog:Reverse`, `Catch` and `CastEnded`, so a Cast's sizes are the same whether the log is read whole, from a later `seq` or back:
+  - It counts the raw entries, decoding none: a `C1` entry counts each slot of its last field, the items, when that field reads as the codec reads it (`<itemID>x<quantity>`, comma-separated); its other fields aren't read, so a Cast entry whose other fields don't decode (LOG-R16) still counts. Nothing is stored in `PagleLog` for it (ADR 0003).
+  - For the login it keeps the counts at each `seq` a read started or ended at, and at the log's end as Casts are appended, and counts on or back from the nearest, so a read from `seq` 0 counts as it goes and a read near the end counts only the entries between. The Skill Readings the fallback skill needs are found by tag and decoded once a login, as far as a Cast needs them.
+  - It keeps the counts at the log's end in `PagleDB.global.catchCounts` (Data), so the next login counts on from there rather than from `seq` 0: a raw count of a 100,000-entry log takes about 55 ms in Lua 5.1, more than a login step should. They are counted on from only when their `logId` and `rulesVersion` are the log's and `SIZE_RULES_VERSION`, and the log still holds their `entry` at their `seq`; otherwise Core counts the log again. They are a cache of the log, never a source: losing them changes no size.
 - **LOG-R69** Lengths show in the Angler's **length unit** (Core setting): `Pagle.FormatLength(mm)` returns "34.2 cm" or "13.5 in", to 0.1 of the unit. The default is inches when `GetCurrentRegion()` returns 1 (Americas and Oceania) and cm otherwise, including when the call doesn't exist; `GetCurrentRegion` is on the launch re-verification list. Changing the unit changes only the display, never a comparison: Modules compare `length` in millimetres.
 
 ### Projections
@@ -208,7 +233,7 @@ Core runs every Module's stored projection the same way (ADR 0004).
   In `done`, a Module may only raise a Write-up and `summaryOnly` moments ([announcements.md](announcements.md#write-up)).
 - **LOG-R77** The Module's **celebrated set** (the high-water mark of what was already shown) lives in its DB outside `projection`, so a rebuild never clears it. Core never touches it. If the whole Module DB is lost, the celebrated set is lost with it, and the next build counts as a first build (LOG-R76).
 - **LOG-R78** Core runs its own projections (the Field report's, the wallet's spent total and owned goods, the varieties caught of [varieties.md](varieties.md) VAR-R10) with the same machinery.
-- **LOG-R79** Pagle's backend folds the Catch log through `logic/` alone ([#223](https://github.com/timemir/wow-fish/issues/223), [#76](https://github.com/timemir/wow-fish/issues/76) item 5). Its projection driver loads each addon's `logic/` files, Core's `data/Catalogue.lua` and Hunts' `data/HuntList.lua`, never `adapter/` or `locale/`, and computes no value itself. So every `logic/` file loads without `ns.L`, each projection can be bound from `logic/`, and every value the backend shows is a function of projection state in `logic/`. The driver reads the log with Core's `ns.OpenCatchLog(log, global, now, getItem)`, `getItem` being the catalogue's `GetItem`: without that fourth argument no Catch has a Simulated Size (LOG-R65). The functions it calls are in [Contracts › The backend's hooks](#the-backends-hooks); a binding hook folds to the same state as the client's projection, with none of its moments, Coins reports or other effects.
+- **LOG-R79** Pagle's backend folds the Catch log through `logic/` alone ([#223](https://github.com/timemir/wow-fish/issues/223), [#76](https://github.com/timemir/wow-fish/issues/76) item 5). Its projection driver loads each addon's `logic/` files, Core's `data/Catalogue.lua` and Hunts' `data/HuntList.lua`, never `adapter/` or `locale/`, and computes no value itself. So every `logic/` file loads without `ns.L`, each projection can be bound from `logic/`, and every value the backend shows is a function of projection state in `logic/`. The driver reads the log with Core's `ns.OpenCatchLog(log, global, now, getItem)`, `getItem` being the catalogue's `GetItem`: without that fourth argument no Catch has a Simulated Size (LOG-R65). Its Casts carry the client's sizes, as the earlier Catches and skill come from the log alone (LOG-R100). The functions it calls are in [Contracts › The backend's hooks](#the-backends-hooks); a binding hook folds to the same state as the client's projection, with none of its moments, Coins reports or other effects.
 
 ### The diagnostics buffer
 
@@ -268,6 +293,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.lastEndedSession` | the ID of the last Session `SessionEnded` fired for (LOG-R63) |
 | `global.sessionBreaks` | `{ [castEntryID] = true }`, the Casts after which `/pagle dev endsession` ended a Session (LOG-R99); absent until it's first used |
 | `global.decodeErrors` | count of entries the codec couldn't decode (LOG-R16) |
+| `global.catchCounts` | the earlier Catch counts at the log's end, for the next login (LOG-R100): `logId`, `rulesVersion` (`SIZE_RULES_VERSION`), `seq`, `entry` (the entry string at `seq`) and `counts` (`{ [itemID] = n }`); absent until Core has first counted to the log's end. A cache: losing it changes nothing. |
 | `global.dev` | boolean, the `/pagle dev` switch (#247); default `false`. Never shown to players. |
 | `global.diagnostics` | ring buffer of up to 500 entries (LOG-R81) |
 | `global.probe` | what `/pagle dev probe` saved for launch re-verification (#261): `time`, `build`, `locale`, `checks`; and `timings`, the load timings of the last login made with dev mode on (#262): `time`, `entries`, `budget`, `syncLimit`, `marks` (debugprofilestop ms at each login step) and `projections` (each catch-up or rebuild: `name`, `mode`, `started`, `finished`, `applied`, `frames`, `longest`). Absent until either is first saved; tooling only, never shown to players. |
@@ -280,6 +306,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.minimap` | the minimap icon's place and shown state (CORE-R53, CORE-R56): `angle`, degrees round the minimap counterclockwise from its right, to 0.1, default `225` (its bottom left); `hide`, default `false` |
 | `profile.reloadReminder` | boolean, the `/reload` reminder (LOG-R86); default `false` |
 | `profile.lengthUnit` | `"cm"`, `"in"`, or `nil` for the region default (LOG-R69); default `nil`. The Defaults button sets it back to `nil` (SET-R13). |
+| `profile.anglerTooltips` | the "Show other Anglers on player tooltips" setting ([anglers-in-game.md](anglers-in-game.md#data), VIEW-R30); default `true` |
 | `profile.*` (other keys) | Core settings in the other topic files: `profile.announcements`, `profile.appearance`, `profile.dock` |
 
 ### Module SavedVariables
@@ -313,7 +340,7 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@field variety? PagleVariety  -- VAR-R4
 ---@field cast PagleCast
 
----@class PagleSize             -- a Simulated Size (LOG-R65–R67)
+---@class PagleSize             -- a Simulated Size (LOG-R65–R67, LOG-R100)
 ---@field length integer         -- millimetres
 ---@field band integer           -- 1 Tiddler … 5 Monster
 
@@ -462,10 +489,10 @@ Both sit on the Settings root, in its Saving and Units sections (CORE-R40, SET-R
 | Diagnostics: buffer size | 500 | LOG-R81 |
 | Unsaved-Casts reminder step | 50 Casts | LOG-R86 |
 | Realm UTC offset rounding | 15 min | LOG-R49 |
-| Size multipliers of the typical length at each band edge | 0.55 / 0.75 / 1.10 / 1.30 / 1.55 / 1.80 | LOG-R67 |
-| `Pagle.SIZE_RULES_VERSION` before 1.0 | 1 | LOG-R68 |
+| A Legend's size multipliers of the typical length at each band edge (the ends frozen) | 0.55 / 0.75 / 1.10 / 1.30 / 1.55 / 1.80 | LOG-R67 |
+| `Pagle.SIZE_RULES_VERSION` before 1.0 | 2 | LOG-R68 |
 
-The size band cut points (0.15 / 0.70 / 0.93 / 0.995) and the hash are not tunables: they are frozen (LOG-R68, ADR 0010).
+These are not tunables: they are frozen (LOG-R68, ADR 0014). The hash; the skill reach's 300 and the experience reach's 1,000, its square root and the place's exponent 3; the band edges as places in the full range (0.16 / 0.44 / 0.60 / 0.80); the full range's ends (0.55× and 1.80× the typical length); a Legend's cut points (0.15 / 0.70 / 0.93 / 0.995).
 
 ## Edge cases
 

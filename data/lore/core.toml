@@ -7,9 +7,8 @@
 #
 # The Curio Shop shows a good's name and description beside its preview, under its slot and Module
 # (wallet-and-shop.md › UI), so a description is about the look or the sound itself, never the shop or the addon.
-# Each zone crest but Plain is a zone's shield (SHOP-R25): its name is the landmark on it, its description Pagle's
-# word on the water there. Neither names the zone or any other place from the game (DATA-R3). The fish crests and the
-# fish varieties follow, from the varieties release (core/varieties.md).
+# Core's crests are Plain and, from the varieties release, the fish crests (core/varieties.md), followed by the fish
+# varieties: the zone crests are the Ledger's earned goods, their lore in ledger.toml (LED-R113).
 
 [good."core.toaststyle.page"] # Toast style, the default, was "Timber"
 name = "Torn Page"
@@ -34,51 +33,6 @@ description = "Small, bright bells. A touch grand for a mackerel, and none the w
 [good."core.crest.plain"] # Bookplate crest, the default
 name = "Plain"
 description = "No emblem, only the owner's name. Plenty of fine anglers never wanted more."
-
-[good."core.crest.elwynn"] # Bookplate crest, tier 1: Elwynn Forest
-name = "The Old Oak"
-description = "The first lake most anglers ever saw, and the oak they sat under."
-
-[good."core.crest.westfall"] # Bookplate crest, tier 1: Westfall
-name = "The Windmill"
-description = "Sails turning over the coast road. The sea is closer than the farmers admit."
-
-[good."core.crest.darkshore"] # Bookplate crest, tier 1: Darkshore
-name = "The Crescent"
-description = "A crescent over grey water, for anglers who fish after dark."
-
-[good."core.crest.redridge"] # Bookplate crest, tier 2: Redridge Mountains
-name = "Three Peaks"
-description = "Three red peaks standing in a mountain lake, and every one of them reflected."
-
-[good."core.crest.wetlands"] # Bookplate crest, tier 2: Wetlands
-name = "The Anchor"
-description = "A harbour's anchor, hauled up from the mud. Still smells faintly of it."
-
-[good."core.crest.stranglethorn"] # Bookplate crest, tier 2: Stranglethorn Vale
-name = "The Leap"
-description = "A fish leaping clear of the jungle surf, as if it heard about the contest."
-
-[good."core.crest.dustwallow"] # Bookplate crest, tier 2: Dustwallow Marsh
-name = "The Lantern"
-description = "A lantern left burning on a fisherman's hut in the marsh fog."
-
-[good."core.crest.feralas"] # Bookplate crest, tier 3: Feralas
-name = "The Falls"
-description = "Water falling between the giant trees, for anglers who take the long way."
-
-[good."core.crest.tanaris"] # Bookplate crest, tier 3: Tanaris
-name = "The Desert Sun"
-description = "A desert sun over the only shade for miles: the shoreline."
-
-[good."core.crest.winterspring"] # Bookplate crest, tier 3: Winterspring
-name = "The Frost"
-description = "A snowflake over still water, where ice fishing is real fishing."
-
-# The fish crests (VAR-R12), Core's earned goods in its core.crest slot, one per Species with varieties, owned once all
-# ten of its varieties are caught. Every name is the one pattern "{fish} Crest": {fish} is filled at runtime with the
-# Species' item name as the client resolves it, so no game name ships (DATA-R3, DATA-R134). A description never names
-# the fish or any place (DATA-R135). The comment after each table names the Species, for review only.
 
 [good."core.crest.fish.1467"] # Bookplate crest, earned: all ten varieties of Spotted Sunfish
 name = "{fish} Crest"

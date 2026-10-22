@@ -1,5 +1,5 @@
 # Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 36: 36 (Alterac Mountains), low band.
-# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# The name, note and Hunt names are the M8 lore batch (#307), drafted from data/lore/VOICE.md.
 # Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
 #   alterac_dawn_trout_haul: Haul, species.any, 97.1% of Catches: tiers 130 / 350 / 700, 45 / 120 / 240 min
 #   alterac_dawn_trout_smallfish: Named fish, species 6291 (Raw Brilliant Smallfish), 23.7% of Catches: tiers 30 / 85 / 170, 42 / 119 / 239 min
@@ -11,13 +11,13 @@ id = "alterac_dawn_trout"
 zones = [36]
 tags = ["lake", "day"]
 name = "Dawn Trout"
-note = "Trout in the cold mountain water feed hardest just as the sun clears the peaks."
+note = "Cold lakes high among the peaks. The wager is trout before breakfast, and the frost on the line comes free."
 
 [[hunt]]
 id = "alterac_dawn_trout_haul"
 class = "species.any"
 tiers = [130, 350, 700]
-name = "A Mountain Basket"
+name = "A Cold Creel"
 
 [[hunt]]
 id = "alterac_dawn_trout_smallfish"
@@ -29,11 +29,11 @@ name = "Smallfish by the Handful"
 id = "alterac_dawn_trout_catfish"
 species = 6308
 tiers = [25, 65, 130]
-name = "Mountain Catfish"
+name = "Whiskers in the Snowmelt"
 
 [[hunt]]
 id = "alterac_dawn_trout_trout"
 species = 8365
 conditions = { time = [[300, 480]] }
 tiers = [6, 15, 30]
-name = "Dawn Trout"
+name = "Before Breakfast"

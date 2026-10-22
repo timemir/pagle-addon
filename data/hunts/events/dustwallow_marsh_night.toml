@@ -1,5 +1,5 @@
 # Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 15: 15 (Dustwallow Marsh), low band.
-# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# The name, note and Hunt names are the M8 lore batch (#307), drafted from data/lore/VOICE.md.
 # Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
 #   dustwallow_marsh_night_haul: Haul, species.any, 97.8% of Catches: tiers 130 / 350 / 705, 44 / 119 / 240 min
 #   dustwallow_marsh_night_trout: Named fish, species 8365 (Raw Mithril Head Trout), 37.5% of Catches: tiers 50 / 135 / 270, 44 / 120 / 240 min
@@ -10,20 +10,20 @@
 id = "dustwallow_marsh_night"
 zones = [15]
 tags = ["coast", "night"]
-name = "Marsh Nights"
-note = "The marsh coast after dark: warm, wet and busy with trout."
+name = "Late on the Marsh"
+note = "A warm, wet coast that hums all night. Trout in the creeks, yellowtail off the shore, and something always biting your neck."
 
 [[hunt]]
 id = "dustwallow_marsh_night_haul"
 class = "species.any"
 tiers = [130, 350, 705]
-name = "A Marsh Basket"
+name = "Bog-Water Bucket"
 
 [[hunt]]
 id = "dustwallow_marsh_night_trout"
 species = 8365
 tiers = [50, 135, 270]
-name = "Marsh Trout"
+name = "Trout in the Reeds"
 
 [[hunt]]
 id = "dustwallow_marsh_night_yellowtail"

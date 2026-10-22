@@ -11,8 +11,12 @@ local ns = select(2, ...)
 --
 --   ns.ToggleBoard()          Opens the Hunts board, or closes it if shown (HNT-R68). Registration's view and
 --                             `/pagle hunts` call it (HNT-R135). Defined by the board, adapter/Board.lua.
---   ns.OpenBoard(huntID?)     Opens the board (never closes it), on that Hunt if given (HNT-R67, HNT-R77): the
---                             tracker's lines call it. Defined by the board, adapter/Board.lua.
+--   ns.OpenBoard(target?)     Opens the board (never closes it), on the Board ribbon with that Hunt selected if
+--                             given (a Hunt's ID, or `{ hunt = id }`, HNT-R67, HNT-R77), or that run (`{ run = runKey
+--                             }`, HNT-R164): the tracker's lines call it. Defined by the board, adapter/Board.lua.
+--   ns.OpenWagers(runKey?)    Opens the board on the Pagle Wagers spread (HNT-R162), on that run if given: the wager
+--                             strip and the "Pagle Wagers" breadcrumb call it (HNT-R161, HNT-R164). The spread is
+--                             #303's, which replaces this stand-in; until then it does nothing.
 --   ns.State()                The projection's HuntsState (hunts.md › Projection state). Read-only for views.
 --                             Reads `ns.projection` (logic/Projection.lua, made in OnInitialize) at call time: a
 --                             new empty state each call while it has none.
@@ -43,6 +47,9 @@ local ns = select(2, ...)
 --                             OnInitialize.
 --   ns.outlets.Credited(record, reached) and the `marks`, `settled` and `ladder` of each HuntsReached
 --                             (logic/Projection.lua): what a live entry newly reached in runs, for the moments.
+--   ns.LadderTitle(step), ns.TitlesEarned(state), ns.EventMomentIcon(event) (logic/WagerMoments.lua, Moments.lua):
+--                             a ladder title's text, the set and ladder titles earned (HNT-R165's "{n} titles"), and
+--                             an event's icon in a moment (#301).
 --   ns.ReadContentItem, ns.WriteContentItem, ns.HuntEventProblem (logic/Content.lua), ns.EncodeRun and
 --                             ns.EncodeDefParts (logic/Records.lua): reading, checking and logging pushed definitions.
 
@@ -99,6 +106,11 @@ end
 function ns.IsUpdating()
 	local projection = ns.projection
 	return projection ~= nil and projection:IsUpdating()
+end
+
+--- Opens the Pagle Wagers spread (HNT-R162): a stand-in that does nothing until #303's spread replaces it.
+---@param runKey string?
+function ns.OpenWagers(runKey) -- luacheck: no unused args
 end
 
 local redrawn = {} -- the subscribed views' redraws, in subscription order

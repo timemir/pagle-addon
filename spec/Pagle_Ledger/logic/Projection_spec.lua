@@ -38,6 +38,7 @@ describe("the Ledger's projection def", function()
 			FormatNumber = tostring,
 			RefreshGoods = note("RefreshGoods"),
 			SizeText = function() end,
+			ZoneCrest = function() end,
 		}
 	end
 	local outlets = noting({})
@@ -48,9 +49,9 @@ describe("the Ledger's projection def", function()
 			-- LEDGER_RULES_VERSION 6: 4 when ★ moved to the 5th Catch (LED-R45), 5 for the full Prestige cost and
 			-- Activity XP in the climb (LED-R4, LED-R30, LED-R37), 6 for the varieties caught (VAR-R20).
 			assert.are.equal(600, ns.RulesVersion(nil))
-			assert.are.equal(601, ns.RulesVersion(1))
+			assert.are.equal(602, ns.RulesVersion(2))
 			assert.are.equal(600, ns.ProjectionDef({}, lookups, outlets, nil).rulesVersion)
-			assert.are.equal(601, ns.ProjectionDef({}, lookups, outlets, 1).rulesVersion)
+			assert.are.equal(602, ns.ProjectionDef({}, lookups, outlets, 2).rulesVersion)
 		end
 	)
 
@@ -155,6 +156,53 @@ describe("the Ledger's projection def", function()
 			def.apply(state, reading(2, 80), "live") -- Skill Milestone 75: 1,000 XP
 
 			assert.are.same({ 10, 1 }, { ns.PeakLevel(state), refreshes() })
+		end
+	)
+
+	it(
+		"refreshes the goods after a live entry that raises a zone to Master, the moment its crest is earned, and not for a lesser rank (LED-R114, SHOP-R31)",
+		function()
+			-- Pond lists one ungated Species and nothing else, so its first Catch passes every rank to Master; Brook
+			-- lists two, so its first Catch reaches Regular only (LED-R50).
+			local POND, BROOK, ONE, TWO = 12, 40, 6303, 6291
+			local areas = {
+				[POND] = { hasData = true, catches = { catchEntry(ONE) } },
+				[BROOK] = { hasData = true, catches = { catchEntry(ONE), catchEntry(TWO) } },
+			}
+			local getItem = itemLookup({ [ONE] = fishRecord(ONE), [TWO] = fishRecord(TWO) })
+			local world = ns.NewWorld({
+				GetItem = getItem,
+				GetZones = function()
+					return { POND, BROOK }
+				end,
+				GetArea = function(zone)
+					return areas[zone]
+				end,
+				GetZoneCatches = function(zone)
+					local list = {}
+					for i, catch in ipairs(areas[zone].catches) do
+						list[i] = { areaID = zone, itemID = catch.itemID, confirmed = true }
+					end
+					return list
+				end,
+			})
+			local charted = { GetItem = getItem, MatchesConditions = function() end, world = world }
+			local calls = {}
+			local def = ns.ProjectionDef({}, charted, noting(calls))
+			local state = def.reset()
+			local function refreshes()
+				local n = 0
+				for _, call in ipairs(calls) do
+					n = n + (call == "RefreshGoods nil" and 1 or 0)
+				end
+				return n
+			end
+
+			def.apply(state, castRecord({ seq = 1, zone = BROOK, items = { ONE } }), "live")
+			assert.are.same({ 2, 0 }, { state.zones[BROOK].rank, refreshes() })
+			def.apply(state, castRecord({ seq = 2, zone = POND, items = { ONE } }), "live")
+
+			assert.are.same({ 5, 1 }, { state.zones[POND].rank, refreshes() })
 		end
 	)
 

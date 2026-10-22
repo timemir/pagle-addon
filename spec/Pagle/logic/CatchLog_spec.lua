@@ -669,9 +669,12 @@ describe("the tie counter", function()
 end)
 
 describe("the Simulated Size on decoded Casts", function()
-	-- The character of LOG-R66's test vectors, and a fixture catalogue: a fish and a Legend whose Species are 300 mm
-	-- long, a quest fish, a trophy, a junk item, a Noise fish and a fish whose Species has no typical length yet.
+	-- The character of LOG-R66's first three test vectors, Oak and the character of its fourth (Dee), and a fixture
+	-- catalogue: a fish and a Legend whose Species are 300 mm long, a quest fish, a trophy, a junk item, a Noise fish
+	-- and a fish whose Species has no typical length yet.
 	local VEE = { guid = "Player-4395-0A1B2C3D", name = "Vee", classID = 1, raceID = 1, realmID = 4395 }
+	local OAK = { guid = "Player-4395-0F0E0D0C", name = "Oak", classID = 1, raceID = 3, realmID = 4395 }
+	local DEE = { guid = "Player-1-00000001", name = "Dee", classID = 1, raceID = 1, realmID = 1 }
 	local ITEMS = {
 		[6358] = { category = "fish", species = 6358, typicalLength = 300, legend = false, noise = false },
 		[19808] = { category = "fish", species = 19808, typicalLength = 300, legend = true, noise = false },
@@ -682,16 +685,24 @@ describe("the Simulated Size on decoded Casts", function()
 		[8365] = { category = "fish", species = 8365, legend = false, noise = false },
 	}
 
-	-- A log of Vee's entries, opened over `items` (ITEMS by default) as its catalogue.
+	-- A log of these entries by Vee (1), Oak (2) and Dee (3), opened over `items` (ITEMS by default) as its catalogue.
 	local function veeLog(entries, items)
-		return ns.OpenCatchLog(savedLog(entries, 1, { VEE }), {}, nil, function(itemID)
+		return ns.OpenCatchLog(savedLog(entries, 1, { VEE, OAK, DEE }), {}, nil, function(itemID)
 			return (items or ITEMS)[itemID]
 		end)
 	end
 
-	-- A Cast of Vee's at 1791731747 (LOG-R66's first two vectors) or 1791731762 with tie 1 (its third), of these items.
-	local function castOf(items, third)
-		return ("C1|1|%s|c|494|1439|1|148|453|86|25|263|||%s"):format(third and "1791731762|1" or "1791731747|0", items)
+	-- LOG-R66's vectors as Casts: Vee's at 1791731747 tie 0 (its items 1 and 2 are vectors A and B), Vee's at
+	-- 1791731762 tie 1 (item 1 is C) and Dee's at 1700000000 tie 0 (item 1 is D), of these items, at this skill rank
+	-- (empty for none; 86 by default).
+	local AB, C, D = "1|1791731747|0", "1|1791731762|1", "3|1700000000|0"
+	local function castOf(items, at, skillRank)
+		return ("C1|%s|c|494|1439|1|148|453|%s|25|263|||%s"):format(at or AB, skillRank or "86", items)
+	end
+
+	-- A Cast of these items by `char` at `time`, skill 300.
+	local function earlier(char, time, items)
+		return ("C1|%d|%d|0|c|494|1439|1|148|453|300|0||||%s"):format(char, time, items)
 	end
 
 	-- Each item's size, by its position in the Cast; false for none.
@@ -703,17 +714,32 @@ describe("the Simulated Size on decoded Casts", function()
 		return all
 	end
 
-	it("gives a fish and a Legend LOG-R66's sizes, one per Catch whatever its quantity (LOG-R65, LOG-R66)", function()
-		local catchLog = veeLog({ castOf("6358x3,19808x1") })
+	-- Each Cast's sizes (`sizes`) in records, by its entry ID.
+	local function sizesById(list)
+		local all = {}
+		for _, record in ipairs(list) do
+			if record.kind == "cast" then
+				all[record.id] = sizes(record)
+			end
+		end
+		return all
+	end
 
-		assert.are.same({ { length = 314, band = 2 }, { length = 453, band = 4 } }, sizes(records(catchLog, 0)[1]))
-	end)
+	it(
+		"gives a fish's first Catch its smallest length and a Legend its own, one per Catch (LOG-R65, LOG-R67)",
+		function()
+			local catchLog = veeLog({ castOf("6358x3,19808x1") })
+
+			-- 0.55 × 300 for the fish; vector B as a Legend: ADR 0010's band and length (LOG-R66's table).
+			assert.are.same({ { length = 165, band = 1 }, { length = 453, band = 4 } }, sizes(records(catchLog, 0)[1]))
+		end
+	)
 
 	it("gives a quest fish a size, and none to a trophy, junk, Noise, an Uncharted item or item 0 (LOG-R65)", function()
-		local catchLog = veeLog({ castOf("6717x1,6309x1,6303x2,6291x1,7777x1,0x1", true) })
+		local catchLog = veeLog({ castOf("6717x1,6309x1,6303x2,6291x1,7777x1,0x1", C) })
 
 		assert.are.same(
-			{ { length = 249, band = 2 }, false, false, false, false, false },
+			{ { length = 165, band = 1 }, false, false, false, false, false },
 			sizes(records(catchLog, 0)[1])
 		)
 	end)
@@ -724,40 +750,206 @@ describe("the Simulated Size on decoded Casts", function()
 		local released = setmetatable({
 			[8365] = { category = "fish", species = 8365, typicalLength = 300, legend = false, noise = false },
 		}, { __index = ITEMS })
-		assert.are.same({ { length = 314, band = 2 } }, sizes(records(veeLog({ castOf("8365x1") }, released), 0)[1]))
+		assert.are.same({ { length = 165, band = 1 } }, sizes(records(veeLog({ castOf("8365x1") }, released), 0)[1]))
 	end)
 
 	it(
-		"gives an Uncharted Catch, once a release classifies it, the size it would have had (LOG-R96, LOG-R65)",
+		"counts the Angler's earlier Catches of the item by slot, on any character, earlier slots of the same Cast"
+			.. " included, item 0 and later Catches never (LOG-R65, LOG-R67)",
 		function()
-			local items = {}
-			local catchLog = veeLog({ castOf("7777x1") }, items)
-			assert.are.same({ false }, sizes(records(catchLog, 0)[1]))
+			local catchLog = veeLog({
+				earlier(1, 1791731000, "6358x5,0x1,6303x1"), -- one slot of 6358, whatever its quantity
+				earlier(2, 1791731060, "6358x1,6358x1"), -- Oak's
+				"S1|1|1791731100|0|300|300|0",
+				"A1|1|1791731110|0|Ledger|note|6358x1", -- a Module record, not a Cast
+				"C1|1|1791731120|0|g|494|1439|1|148|453|300|0||||", -- got away
+				earlier(1, 1791731180, "6358x1,6358x1,6358x1,6358x1,6358x1,6358x1"),
+				castOf("6358x1,6358x2", AB, "300"), -- after 9 Catches, then 10
+				castOf("6358x1", C, "300"), -- after 11
+			})
 
-			items[7777] = { category = "fish", species = 7777, typicalLength = 300, legend = false, noise = false }
+			local read = records(catchLog, 0)
+			-- R = √(9 ÷ 1,000) on A, p 0.080841; √(10 ÷ 1,000) on B, p 0.099477; √(11 ÷ 1,000) on C, p 0.068376.
+			assert.are.same({ { length = 195, band = 1 }, { length = 202, band = 1 } }, sizes(read[#read - 1]))
+			assert.are.same({ { length = 191, band = 1 } }, sizes(read[#read]))
+		end
+	)
 
-			assert.are.same({ { length = 314, band = 2 } }, sizes(records(catchLog, 0)[1]))
+	-- Oak's 1,000 Catches of 6358, then Vee's Casts with no skill rank, around Vee's and Oak's Skill Readings.
+	local function skillLog()
+		local entries = { "S1|1|1791730000|0|150|225|0", "S1|2|1791730001|0|300|300|0" }
+		for i = 1, 100 do
+			entries[#entries + 1] = earlier(2, 1791730100 + i * 5, ("6358x1,"):rep(9) .. "6358x1")
+		end
+		entries[#entries + 1] = castOf("6358x1,6358x1", AB, "") -- after 1,000 Catches, then 1,001
+		entries[#entries + 1] = "S1|1|1791731750|0|225|300|0"
+		entries[#entries + 1] = castOf("6358x1", C, "") -- after 1,002
+		entries[#entries + 1] = castOf("6358x1", D, "") -- after 1,003, by Dee, who has no Skill Reading
+		entries[#entries + 1] = "S1|1|1791731800|0|300|300|0"
+		return entries
+	end
+
+	it(
+		"takes a Cast without a skill rank at its character's latest Skill Reading before it, else at skill 1"
+			.. " (LOG-R65, LOG-R67)",
+		function()
+			local read = sizesById(records(veeLog(skillLog()), 0))
+
+			-- R = 150 ÷ 300 on A and B (p 0.426070, 0.497383), 225 ÷ 300 on C (p 0.488955), 1 ÷ 300 on D.
+			assert.are.same(
+				{ { length = 325, band = 2 }, { length = 352, band = 3 } },
+				read[VEE.guid .. "-1791731747-0"]
+			)
+			assert.are.same({ { length = 348, band = 3 } }, read[VEE.guid .. "-1791731762-1"])
+			assert.are.same({ { length = 166, band = 1 } }, read[DEE.guid .. "-1700000000-0"])
 		end
 	)
 
 	it(
-		"puts the same sizes on an appended Cast and on that Cast read back either way (LOG-R42, LOG-R43, LOG-R65)",
+		"sizes every Cast read from a later seq, forwards or back, as a read from seq 0 does (LOG-R42, LOG-R65, LOG-R100)",
 		function()
-			local catchLog = veeLog({})
+			local entries = skillLog()
+			local whole = sizesById(records(veeLog(entries), 0))
+			local shared = veeLog(entries) -- one log read from every seq, its reads kept for the login
+			for afterSeq = #entries, 0, -1 do
+				for _, catchLog in ipairs({ veeLog(entries), shared }) do
+					for id, got in pairs(sizesById(records(catchLog, afterSeq))) do
+						assert.are.same(whole[id], got, ("read after seq %d"):format(afterSeq))
+					end
+					local back = {}
+					for cast in catchLog:Reverse("cast", afterSeq) do
+						back[#back + 1] = cast
+					end
+					for id, got in pairs(sizesById(back)) do
+						assert.are.same(whole[id], got, ("read back from seq %d"):format(afterSeq))
+					end
+				end
+			end
+		end
+	)
+
+	it(
+		"counts an item the catalogue doesn't know, so classifying it moves no other item's size, and it gets the"
+			.. " sizes it would have had (LOG-R65, LOG-R96)",
+		function()
+			local entries = {
+				earlier(1, 1791731000, "6358x1,6358x1,7777x1"),
+				castOf("7777x1,6358x1", AB, "300"), -- A: 7777 after 1 Catch; B: 6358 after 2
+				castOf("7777x1", C, "300"), -- 7777 after 2
+			}
+			local function read(items)
+				local all = records(veeLog(entries, items), 0)
+				return { sizes(all[2]), sizes(all[3]) }
+			end
+			local fish = { category = "fish", species = 7777, typicalLength = 300, legend = false, noise = false }
+			local asOily = { category = "fish", species = 6358, typicalLength = 300, legend = false, noise = false }
+
+			-- R = √(2 ÷ 1,000) on B (p 0.044487), √(1 ÷ 1,000) on A (p 0.026947), √(2 ÷ 1,000) on C (p 0.029156).
+			assert.are.same({ { false, { length = 182, band = 1 } }, { false } }, read(ITEMS))
+			local classified =
+				{ { { length = 175, band = 1 }, { length = 182, band = 1 } }, { { length = 176, band = 1 } } }
+			assert.are.same(classified, read(setmetatable({ [7777] = fish }, { __index = ITEMS })))
+			assert.are.same(classified, read(setmetatable({ [7777] = asOily }, { __index = ITEMS })))
+		end
+	)
+
+	it(
+		"counts a Cast entry's items whether or not the rest of it decodes, as every reader does (LOG-R16, LOG-R100)",
+		function()
+			local catchLog = veeLog({
+				"C1|1|1791731000|0|c|494|1439|1|148|453|300|0||x||6358x1", -- an events field the codec can't read
+				castOf("6358x1", C, "300"), -- after 1 Catch
+			})
+
+			local read = records(catchLog, 0)
+			assert.are.equal(1, #read)
+			-- R = √(1 ÷ 1,000) on C, p 0.020616: 300 × (0.55 + 1.25 × 0.020616) = 172.7.
+			assert.are.same({ { length = 173, band = 1 } }, sizes(read[1]))
+		end
+	)
+
+	it(
+		"puts the same sizes on an appended Cast and on that Cast read back either way, counting the log before it"
+			.. " (LOG-R42, LOG-R43, LOG-R65, LOG-R100)",
+		function()
+			local catchLog = veeLog({
+				earlier(1, 1791731000, "6358x1,6358x1,6358x1"),
+				earlier(2, 1791731060, "6358x1,6358x1,6358x1,6358x1,6358x1,6358x1"),
+			})
+			records(catchLog, 1) -- a read from a later seq first
+			catchLog:Reverse("cast", 10)() -- and one back from past the log's end
 
 			local appended = catchLog:Append({
 				kind = "cast",
 				char = 1,
 				time = 1791731747,
 				outcome = "caught",
-				conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+				conditions = { minute = 494, zone = 148, subzone = 453, skillRank = 300, events = {}, auras = {} },
 				items = { { itemID = 6358, quantity = 1 }, { itemID = 19808, quantity = 1 } },
 			})
 
-			local expected = { { length = 314, band = 2 }, { length = 453, band = 4 } }
+			-- R = √(9 ÷ 1,000) on A, as above, and vector B as a Legend.
+			local expected = { { length = 195, band = 1 }, { length = 453, band = 4 } }
 			assert.are.same(expected, sizes(appended))
-			assert.are.same(expected, sizes(records(catchLog, 0)[1]))
+			assert.are.same(expected, sizes(records(catchLog, 0)[3]))
+			assert.are.same(expected, sizes(records(catchLog, 2)[1]))
 			assert.are.same(expected, sizes(catchLog:Reverse("cast")()))
+			assert.are.same(expected, sizes(catchLog:Reverse("cast", 10)()))
+		end
+	)
+
+	it(
+		"keeps the earlier Catch counts at the log's end in PagleDB.global.catchCounts, and the next login counts on"
+			.. " from them (LOG-R100)",
+		function()
+			local entries = {
+				earlier(1, 1791731000, "6358x1,6358x1,6358x1"),
+				earlier(2, 1791731060, "6358x1,6358x1,6358x1,6358x1,6358x1,6358x1"),
+			}
+			local global = {}
+			local saved = savedLog(entries, 1, { VEE, OAK, DEE })
+			local catchLog = ns.OpenCatchLog(saved, global, nil, function(itemID)
+				return ITEMS[itemID]
+			end)
+			records(catchLog, 0)
+
+			-- Kept with the log's ID, the size rules and the entry they end at, so another log's are never counted on.
+			local function kept(fields)
+				return {
+					logId = fields.logId or saved.logId,
+					rulesVersion = fields.rulesVersion or ns.SIZE_RULES_VERSION,
+					seq = fields.seq or 2,
+					entry = fields.entry or entries[2],
+					counts = { [6358] = fields.oily },
+				}
+			end
+			assert.are.same(kept({ oily = 9 }), global.catchCounts)
+
+			-- The next login, with Vee's Cast of vectors A and B appended at the last, read from seq 2.
+			entries[3] = castOf("6358x1,6358x1", AB, "300")
+			local function nextLogin(stored)
+				global.catchCounts = stored
+				local opened = ns.OpenCatchLog(saved, global, nil, function(itemID)
+					return ITEMS[itemID]
+				end)
+				return sizes(records(opened, 2)[1])
+			end
+			-- After 9 and 10 Catches, as above, whether counted again or on from the kept counts.
+			local counted = { { length = 195, band = 1 }, { length = 202, band = 1 } }
+			assert.are.same(counted, nextLogin(nil))
+			assert.are.same(counted, nextLogin(kept({ oily = 9 })))
+			-- Kept counts doctored to 99 show they are counted on from: R = √(99 ÷ 1,000) on A, p 0.268120; √(100 ÷
+			-- 1,000) on B, p 0.314572.
+			assert.are.same({ { length = 266, band = 2 }, { length = 283, band = 2 } }, nextLogin(kept({ oily = 99 })))
+			-- Counts kept for another log, under other size rules, or at an entry that isn't this log's are counted again.
+			for _, stale in ipairs({
+				kept({ oily = 99, logId = "0000000000000000" }),
+				kept({ oily = 99, rulesVersion = ns.SIZE_RULES_VERSION - 1 }),
+				kept({ oily = 99, entry = entries[1] }),
+				kept({ oily = 99, seq = 4 }),
+			}) do
+				assert.are.same(counted, nextLogin(stale))
+			end
 		end
 	)
 

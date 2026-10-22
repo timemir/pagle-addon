@@ -1,6 +1,7 @@
--- The Ledger's Journal bindings on FakePagle (LED-R110–R112, LED-R35, LED-R92, LED-R93; SHOP-R21–R23, SHOP-R30–R33):
+-- The Ledger's Journal bindings on FakePagle (LED-R110–R115, LED-R35, LED-R92, LED-R93; SHOP-R21–R23, SHOP-R30–R33):
 -- the slot and its ten goods, the level bindings earned by the peak or celebrated level, M:RefreshGoods only from a
--- live entry or done, the Journal drawn in the equipped binding, and the closed-book swatch on the shop's stage.
+-- live entry or done, the Journal drawn in the equipped binding, the closed-book swatch on the shop's stage, and the
+-- zone crests in Core's crest slot.
 
 local SLOT = "ledger.binding"
 
@@ -208,13 +209,14 @@ describe("the Ledger's Journal bindings", function()
 			local fake = newFakePagle()
 			fake.profile.announcements.motion = false -- the binding changes at once, without the kit's dip
 			fake.catchLog.data.logId = "log"
-			-- Celebrated at level 10 before (LED-R90): Tanned Hide is earned (LED-R111).
-			fake.globals.PagleLedgerDB =
-				{ global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } }
+			-- Celebrated at level 10 before (LED-R90): Tanned Hide is earned (LED-R111); and zone 12 at Master, so its
+			-- crest is too (LED-R114).
+			fake.globals.PagleLedgerDB = {
+				global = { celebrated = { coins = 0, levels = { [0] = 10 }, zones = { [12] = 5 }, logId = "log" } },
+			}
 			local loaded = fake.load("Pagle_Ledger")
 			fake.login()
 			fake.enterWorld()
-			fake.setPurchased({ ["core.crest.elwynn"] = true }) -- one of Core's crests bought (SHOP-R25, SHOP-R11)
 			local ns = loaded.ns
 			ns.ToggleJournal()
 			local journal = ns.journal
@@ -228,10 +230,10 @@ describe("the Ledger's Journal bindings", function()
 			assert.are_not.same(lookOf(ns, "ledger.binding.field"), lookOf(ns, "ledger.binding.level10"))
 
 			local drawn = journal.pages
-			assert.is_true(fake.Pagle.SetEquipped("core.crest", "core.crest.elwynn"))
+			assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.elwynn"))
 
 			assert.are_not.equal(drawn, journal.pages)
-			assert.are.equal("Interface\\AddOns\\Pagle\\media\\crests\\elwynn", ns.CrestIcon())
+			assert.are.equal("Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn", ns.CrestIcon())
 		end
 	)
 
@@ -254,4 +256,89 @@ describe("the Ledger's Journal bindings", function()
 			assert.are.same({ ns.JournalCoords("Bindings", look.swatch) }, swatch.book.texCoord, id)
 		end
 	end)
+end)
+
+describe("the Ledger's zone crests", function()
+	-- A Ledger on a fresh fake whose client names each crest's zone by its key backwards (C_Map.GetAreaInfo), with
+	-- `celebrated` saved (LED-R90), logged in and in the world over an empty log: no zone is charted.
+	---@param celebrated table?
+	---@return FakePagle fake
+	---@return LoadedAddon loaded
+	local function crested(celebrated)
+		local fake = newFakePagle()
+		fake.catchLog.data.logId = "log"
+		if celebrated then
+			celebrated.logId = "log"
+			fake.globals.PagleLedgerDB = { global = { celebrated = celebrated } }
+		end
+		local loaded = fake.load("Pagle_Ledger", { holdAddonLoaded = true })
+		for _, crest in ipairs(loaded.ns.ZONE_CRESTS) do
+			loaded.client.areaNames[crest.areaID] = crest.key:reverse()
+		end
+		loaded.client.fire("ADDON_LOADED", "Pagle_Ledger")
+		fake.login()
+		fake.enterWorld()
+		return fake, loaded
+	end
+
+	it(
+		"register in Core's crest slot after Plain, the fifty-three earned goods in LED-R113's order, the Ledger's, in the zone group (LED-R113, SHOP-R23)",
+		function()
+			local fake, loaded = crested()
+			local ns = loaded.ns
+			local sorted = ns.SortedZoneCrests(function(areaID)
+				return loaded.client.areaNames[areaID]
+			end)
+
+			local registered = fake.ns.goods:GoodsOf("core.crest")
+			assert.are.equal(54, #registered)
+			assert.are.equal("core.crest.plain", registered[1].id)
+			for i, crest in ipairs(sorted) do
+				local good = registered[i + 1]
+				assert.are.same({
+					ns.ZoneCrestID(crest),
+					"Ledger",
+					"zone",
+					"Interface\\AddOns\\Pagle_Ledger\\media\\crests\\" .. crest.key,
+					ns.L["crest." .. crest.key .. ".name"],
+				}, { good.id, good.module, good.group, good.icon, good.name })
+				assert.is_false(fake.Pagle.IsOwned(good.id))
+			end
+			assert.are.equal("Ledger", fake.Pagle.GetGood("ledger.crest.zephras").module)
+			assert.are.equal("core.crest.plain", fake.Pagle.GetEquipped("core.crest"))
+		end
+	)
+
+	it(
+		"own the crest of a zone celebrated at Master, which the Journal's bookplate then shows (LED-R114, LED-R112)",
+		function()
+			local fake, loaded = crested({ coins = 0, zones = { [1] = 5, [12] = 4 } })
+
+			assert.is_true(fake.Pagle.IsOwned("ledger.crest.dunmorogh"))
+			assert.is_false(fake.Pagle.IsOwned("ledger.crest.elwynn"))
+			assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.dunmorogh"))
+			assert.are.equal("Interface\\AddOns\\Pagle_Ledger\\media\\crests\\dunmorogh", loaded.ns.CrestIcon())
+		end
+	)
+
+	it(
+		"say on the shop's row and stage how a crest not yet earned is earned, its zone named by the client (LED-R115, SHOP-R22)",
+		function()
+			local fake = crested()
+			local shop = fake.ns.ShopModel()
+
+			-- The fake's catalogue charts zone 12, unfished over the empty log; the new zones aren't charted (LED-R54).
+			assert.are.equal("Unfished", shop:Row("ledger.crest.elwynn").tag)
+			assert.are.same({
+				"Earned when nnywle reaches Master in the Fish Journal. Catch anything there to begin.",
+				"A Ledger reward, not for sale",
+			}, shop:Stage("ledger.crest.elwynn").notes)
+			assert.are.equal("Not yet charted", shop:Row("ledger.crest.riverglades").tag)
+			assert.are.same({
+				"Earned when sedalgrevir reaches Master in the Fish Journal, once its waters are charted.",
+				"A Ledger reward, not for sale",
+			}, shop:Stage("ledger.crest.riverglades").notes)
+			assert.are.equal("Bookplate crest · Ledger", shop:Stage("ledger.crest.elwynn").slotLine)
+		end
+	)
 end)

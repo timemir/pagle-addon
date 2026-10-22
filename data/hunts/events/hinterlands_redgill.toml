@@ -1,5 +1,5 @@
 # Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 47: 47 (The Hinterlands), mid band.
-# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# The name, note and Hunt names are the M8 lore batch (#307), drafted from data/lore/VOICE.md.
 # Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
 #   hinterlands_redgill_haul: Haul, species.any, 88.8% of Catches: tiers 120 / 320 / 640, 45 / 120 / 240 min
 #   hinterlands_redgill_redgill: Named fish, species 13758 (Raw Redgill), 44.2% of Catches: tiers 60 / 160 / 320, 45 / 121 / 241 min
@@ -10,30 +10,30 @@
 id = "hinterlands_redgill"
 zones = [47]
 tags = ["river", "night"]
-name = "Hill Country Rivers"
-note = "The rivers of the wild hill country run clear and cold, and the redgill bite late."
+name = "Cold Rivers, Late Nights"
+note = "Clear, cold rivers through the wild hills. The redgill keep late hours, so bring a second blanket."
 
 [[hunt]]
 id = "hinterlands_redgill_haul"
 class = "species.any"
 tiers = [120, 320, 640]
-name = "A Hill Country Basket"
+name = "A Riverbank Basket"
 
 [[hunt]]
 id = "hinterlands_redgill_redgill"
 species = 13758
 tiers = [60, 160, 320]
-name = "Redgill Run"
+name = "Hill-River Redgill"
 
 [[hunt]]
 id = "hinterlands_redgill_trout"
 species = 8365
 tiers = [9, 25, 45]
-name = "River Trout"
+name = "Trout in the Riffles"
 
 [[hunt]]
 id = "hinterlands_redgill_night"
 species = 13758
 conditions = { time = [[1380, 180]] }
 tiers = [10, 25, 55]
-name = "Redgill after Dark"
+name = "Late Hours"

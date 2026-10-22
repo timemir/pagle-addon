@@ -24,7 +24,10 @@ logic\Qualify.lua
 logic\Waters.lua
 logic\Titles.lua
 logic\Runs.lua
+logic\Rotation.lua
+logic\RunLog.lua
 logic\Projection.lua
+logic\WagerMoments.lua
 logic\Moments.lua
 logic\Groups.lua
 logic\Labels.lua
@@ -34,6 +37,7 @@ logic\Board.lua
 logic\Sets.lua
 logic\Goods.lua
 logic\Entry.lua
+logic\Wagers.lua
 logic\Tracker.lua
 logic\Tour.lua
 adapter\BookAtlas.lua
@@ -44,10 +48,12 @@ adapter\Board.lua
 adapter\Sets.lua
 adapter\Goods.lua
 adapter\Hunts.lua
+adapter\RunLog.lua
 adapter\Groups.lua
 adapter\Names.lua
 adapter\Timeline.lua
 adapter\WindowMoments.lua
 adapter\Entry.lua
+adapter\Wagers.lua
 adapter\Tracker.lua
 adapter\Tour.lua

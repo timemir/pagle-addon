@@ -23,6 +23,7 @@ logic\World.lua
 logic\Titles.lua
 logic\Stars.lua
 logic\ZoneMastery.lua
+logic\ZoneCrests.lua
 logic\Legends.lua
 logic\Varieties.lua
 logic\CatchMilestones.lua

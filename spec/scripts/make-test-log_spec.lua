@@ -8,7 +8,9 @@
 -- The boardday preset (#243) runs over spec/scripts/fixtures/WTF/Account/M7-Test#1/: the same account with a started
 -- Tackle Board (Bram's `start`, an `issue` and, last, a `day` record of Tuesday 13 October 15:00 UTC, the weekly
 -- reset too) and a Pagle_TackleBoard.lua (no .bak); its test log is folded with the Tackle Board's own logic/
--- (TKB-R81). Each test cites #172's doc, in-game-verification.md › Test logs, by its bullet, or the rule it checks.
+-- (TKB-R81). The wagers preset (#310) runs over the M4-Test#1 account with a fixture Hunt list and event pool and the
+-- rotation's origin moved; its test log is folded with Hunts' own logic/ (HNT-R136) and logged into on FakePagle.
+-- Each test cites #172's doc, in-game-verification.md › Test logs, by its bullet, or the rule it checks.
 
 local FIXTURE = "spec/scripts/fixtures/WTF/Account/M4-Test#1"
 local BOARD_FIXTURE = "spec/scripts/fixtures/WTF/Account/M7-Test#1"
@@ -110,15 +112,18 @@ end
 
 -- Makes a test log on a new copy of the fixture account (`fixture`, else M4-Test#1) at server time `now` (else NOW),
 -- with `globals` in the script's environment and the files in `planted` (name to text) added to its SavedVariables
--- first; returns the account, the test logs' folder, the one stage folder the run made (nil if none) and the run's
--- output.
-local function make(preset, now, fixture, globals, planted)
+-- first, and `extra` after the other arguments; returns the account, the test logs' folder, the one stage folder the
+-- run made (nil if none) and the run's output.
+local function make(preset, now, fixture, globals, planted, extra)
 	local account, out = newAccount(fixture)
 	for name, text in pairs(planted or {}) do
 		writeFile(account .. "/SavedVariables/" .. name, text)
 	end
-	local lines, err, code =
-		run({ "--account", account, "--preset", preset, "--out", out, "--catalogue", CATALOGUE }, now, globals)
+	local args = { "--account", account, "--preset", preset, "--out", out, "--catalogue", CATALOGUE }
+	for _, word in ipairs(extra or {}) do
+		args[#args + 1] = word
+	end
+	local lines, err, code = run(args, now, globals)
 	local stages = folders(out .. "/" .. account:match("[^/]*$"))
 	local stage = stages[1] and out .. "/" .. account:match("[^/]*$") .. "/" .. stages[1]
 	return { account = account, out = out, stage = stage, stages = stages, lines = lines, err = err, code = code }
@@ -1151,6 +1156,392 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 		)
 	end)
 
+	-- The wagers preset (#310, M8 exit check step 7) over the fixture account, with the fixture Hunt list and event pool
+	-- (spec/scripts/fixtures/TestLogHuntList.lua and TestLogEventList.lua: one event per band) and the rotation's origin
+	-- moved to Thursday 8 October 15:00 UTC (1791471600) by a loadfile that sets it after logic/Rotation.lua loads, as a
+	-- spec moves it in `prepare` (ns.ROTATION_ORIGIN is read at call time). At NOW (Wednesday 14 October 17:46) the
+	-- current fallback slot is 2, the high band's fixture_westfall_night, from 14 October 15:00 (1791990000); slot 1, the
+	-- one before, is the mid band's fixture_westfall_dawn, 11 October 15:00 (1791730800) to 14 October 15:00; slot 3,
+	-- ahead, the low band's fixture_elwynn_evening (HNT-R152, HNT-R156).
+	local WAGERS_ORIGIN, SLOT = 1791471600, 72 * 3600
+	local PREVIOUS, CURRENT = WAGERS_ORIGIN + SLOT, WAGERS_ORIGIN + 2 * SLOT
+	local WAGERS_ARGS = {
+		"--huntlist",
+		"spec/scripts/fixtures/TestLogHuntList.lua",
+		"--eventlist",
+		"spec/scripts/fixtures/TestLogEventList.lua",
+	}
+
+	-- A loadfile that loads every file as loadfile does, but runs Hunts' logic/Rotation.lua with the rotation's origin
+	-- at `origin` (HNT-R152, Tunables).
+	local function withOrigin(origin)
+		return function(path)
+			local chunk = loadfile(path)
+			if not (chunk and path:match("Pagle_Hunts/logic/Rotation%.lua$")) then
+				return chunk
+			end
+			return function(addon, ns)
+				setfenv(chunk, getfenv(1))
+				chunk(addon, ns)
+				ns.ROTATION_ORIGIN = origin
+			end
+		end
+	end
+
+	-- What a data file in an addon's shape (`ns.<field> = …`) sets, run as the client runs an addon's files.
+	local function fixtureData(path, field)
+		local data = {}
+		local chunk = assert(loadfile(path))
+		setfenv(chunk, setmetatable({ Pagle = {} }, { __index = _G }))
+		chunk("Pagle_Hunts", data)
+		return data[field]
+	end
+	local WAGERS_LIST = fixtureData("spec/scripts/fixtures/TestLogHuntList.lua", "huntList")
+	local WAGERS_POOL = fixtureData("spec/scripts/fixtures/TestLogEventList.lua", "eventList")
+	local CATALOGUE_DATA = fixtureData(CATALOGUE, "catalogue")
+
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+	local huntsSupport = dofile("spec/Pagle_Hunts/support.lua")
+
+	-- Hunts' own logic/ as OnInitialize builds it (HNT-R136), on FakePagle over the fixture catalogue, Hunt list and
+	-- pool, with the origin moved: the oracle a wagers test log is folded with.
+	local huntsNs = (function()
+		local fake = newFakePagle()
+		fake.setCatalogue(CATALOGUE_DATA)
+		local loaded = huntsSupport.load(fake, {
+			list = WAGERS_LIST,
+			events = WAGERS_POOL,
+			prepare = function(loading)
+				loading.ns.ROTATION_ORIGIN = WAGERS_ORIGIN
+			end,
+		})
+		return loaded.ns
+	end)()
+
+	-- A PagleLog folded with Hunts' projection from nothing, as a first build does (HNT-R136, HNT-R149): the state and
+	-- how many entries didn't decode. A `run` record's earlier Casts are read back through the same log.
+	local function huntsFolded(log)
+		local global = { decodeErrors = 0 }
+		local catchLog = core.OpenCatchLog(log, global, NOW, catalogue.GetItem)
+		local def = huntsNs.ProjectionDef({}, huntsNs.lookups, {
+			ReportCoinsEarned = function() end,
+			ReportXPEarned = function() end,
+			IterateCatches = function(afterSeq)
+				return catchLog:Iterate(afterSeq, "Hunts")
+			end,
+			ServerTime = function()
+				return NOW
+			end,
+		})
+		local state = def.reset()
+		for record in catchLog:Iterate(0, "Hunts") do
+			def.apply(state, record, "rebuild")
+		end
+		return state, global.decodeErrors
+	end
+
+	-- Hunts' records in a PagleLog, in order, as "kind payload" (hunts.md › Contracts), and the time of each.
+	local function huntsRecords(log)
+		local out, times = {}, {}
+		for record in core.OpenCatchLog(log, { decodeErrors = 0 }, NOW):Iterate(0, "Hunts") do
+			if record.kind == "module" then
+				out[#out + 1] = record.recordKind .. " " .. record.payload
+				times[#times + 1] = record.time
+			end
+		end
+		return out, times
+	end
+
+	describe("--preset wagers at NOW (#310, in-game-verification.md › Test logs)", function()
+		local made = make("wagers", NOW, nil, { loadfile = withOrigin(WAGERS_ORIGIN) }, nil, WAGERS_ARGS)
+		local text = made.stage and readFile(made.stage .. "/Pagle.lua")
+		local log = text and globalsOf(text).PagleLog
+		local key = "fixture_westfall_dawn@" .. PREVIOUS
+
+		it("exits 0 and makes one dated test log for the account", function()
+			assert.are.equal("", made.err)
+			assert.are.equal(0, made.code)
+			assert.are.same({ "20261014-174640-wagers" }, made.stages)
+		end)
+
+		it("writes a test log Core's codec decodes whole, with a new logId (LOG-R15, LOG-R16)", function()
+			local records, undecodable = decoded(log)
+			assert.are.equal(0, undecodable)
+			assert.are.equal(#log.entries, #records + #huntsRecords(log))
+			assert.is_true(log.test)
+			assert.are.equal(16, #log.logId)
+			assert.are_not.equal(ORIGINAL_LOG_ID, log.logId)
+		end)
+
+		it(
+			"logs slot 1's run of its pick, source r, an hour into the slot, and the current slot's not at all (HNT-R150, HNT-R152)",
+			function()
+				local records, times = huntsRecords(log)
+				assert.are.same({ ("run fixture_westfall_dawn|%d|%d|r"):format(PREVIOUS, CURRENT) }, records)
+				assert.are.same({ PREVIOUS + 3600 }, times)
+				assert.are.equal("fixture_westfall_dawn", huntsNs.RotationPick(huntsNs.events:Events(), 1).id)
+			end
+		)
+
+		it(
+			"catches with Bram in Westfall, the event's zone, after the run record and before the slot's end (HNT-R144)",
+			function()
+				local casts = 0
+				for _, record in ipairs((decoded(log))) do
+					assert.is_true(record.time >= PREVIOUS and record.time < CURRENT)
+					if record.kind == "cast" then
+						casts = casts + 1
+						assert.are.equal(2, record.char)
+						assert.are.equal("caught", record.outcome)
+						assert.are.equal(40, record.conditions.zone)
+						assert.are.equal(160, record.conditions.skillRank)
+						assert.is_true(record.time > PREVIOUS + 3600)
+					end
+				end
+				assert.is_true(casts > 0)
+			end
+		)
+
+		it(
+			"folds through Hunts' own logic/ to one known run, completed, 1 settled, and no run on now (HNT-R143, HNT-R146, HNT-R148)",
+			function()
+				local state, undecodable = huntsFolded(log)
+				assert.are.equal(0, undecodable)
+				local keys = {}
+				for runKey in pairs(state.runs) do
+					keys[#keys + 1] = runKey
+				end
+				assert.are.same({ key }, keys)
+				local known = state.runs[key]
+				assert.are.same({ PREVIOUS, CURRENT, "r" }, { known.start, known.end_, known.source })
+				assert.is_true(known.completedAt > PREVIOUS and known.completedAt < CURRENT)
+				assert.are.equal(1, state.settled)
+				for _, hunt in ipairs(huntsNs.events:Event("fixture_westfall_dawn").hunts) do
+					assert.is_truthy(known.hunts[hunt.id].reached[1])
+				end
+				assert.are.same({}, huntsNs.RunOn(state, NOW))
+			end
+		)
+
+		it("catches the Timed Hunt's tier inside its realm window, from the realm offset (HNT-R5, LOG-R49)", function()
+			local state = huntsFolded(log)
+			local tier = state.runs[key].hunts.fixture_westfall_dawn_mackerel.reached[1]
+			for _, record in ipairs((decoded(log))) do
+				if record.kind == "cast" and record.items[1].catchId == tier.catchId then
+					assert.is_true(record.conditions.minute >= 300 and record.conditions.minute < 480)
+				end
+			end
+		end)
+
+		it("draws the Big ones Hunt's Catches until their Size bands qualify (HNT-R14, LOG-R65)", function()
+			local state = huntsFolded(log)
+			local progress = state.runs[key].hunts.fixture_westfall_dawn_big
+			assert.are.equal(2, progress.count)
+			local bands = {}
+			for _, record in ipairs((decoded(log))) do
+				if record.kind == "cast" and record.items[1].itemID == 6299 then
+					bands[#bands + 1] = record.items[1].size.band
+				end
+			end
+			-- Every Catch but the two that counted came short of band 2, so the last one is a qualifying one.
+			assert.is_true(#bands > 2)
+			assert.is_true(bands[#bands] >= 2)
+			local short = 0
+			for _, band in ipairs(bands) do
+				short = short + (band < 2 and 1 or 0)
+			end
+			assert.are.equal(#bands - 2, short)
+		end)
+
+		it(
+			"leaves the live step at login to log the current slot's run, its pick, and nothing else (HNT-R151, HNT-R153)",
+			function()
+				local plan = huntsNs.PlanRunLog({
+					state = (huntsFolded(log)),
+					now = NOW,
+					snapshot = { companion = "missing", events = {}, runs = {} },
+					pool = huntsNs.events:Events(),
+				})
+				assert.are.same({
+					{
+						kind = "run",
+						payload = ("fixture_westfall_night|%d|%d|r"):format(CURRENT, CURRENT + SLOT),
+					},
+				}, plan)
+			end
+		)
+
+		it("prints the rotation, the run and its fold, and what the login logs (HNT-R151, HNT-R160)", function()
+			assert.are.equal(
+				"== Test log wagers: the last fallback slot's run settled, the current slot's not logged yet"
+					.. " (M8 exit check step 7)",
+				made.lines[1]
+			)
+			local state = huntsFolded(log)
+			local casts = 0
+			for _, record in ipairs((decoded(log))) do
+				casts = casts + (record.kind == "cast" and 1 or 0)
+			end
+			assert.matches(("(A1 1, B1 1, C1 %d, S1 2)"):format(casts), made.lines[3], 1, true)
+			assert.are.equal(
+				"rotation: origin 2026-10-08 15:00 UTC; now in slot 2, 2026-10-14 15:00 UTC to 2026-10-17 15:00 UTC, high band;"
+					.. " 3 events in the pool (spec/scripts/fixtures/TestLogEventList.lua)",
+				made.lines[4]
+			)
+			assert.are.equal(
+				(
+					"run: slot 1's pick, fixture_westfall_dawn, mid band, 2026-10-11 15:00 UTC to 2026-10-14 15:00 UTC, logged"
+					.. " 2026-10-11 16:00 UTC; settled %s by %d Casts in zone 40"
+				):format(os.date("!%Y-%m-%d %H:%M UTC", state.runs[key].completedAt), casts),
+				made.lines[5]
+			)
+			local known = state.runs[key]
+			assert.are.equal(
+				("hunts: fixture_westfall_dawn_haul %d (tier %d), fixture_westfall_dawn_mackerel %d (tier %d),"):format(
+					known.hunts.fixture_westfall_dawn_haul.count,
+					#known.hunts.fixture_westfall_dawn_haul.reached,
+					known.hunts.fixture_westfall_dawn_mackerel.count,
+					#known.hunts.fixture_westfall_dawn_mackerel.reached
+				)
+					.. (" fixture_westfall_dawn_big %d (tier %d)"):format(
+						known.hunts.fixture_westfall_dawn_big.count,
+						#known.hunts.fixture_westfall_dawn_big.reached
+					),
+				made.lines[6]
+			)
+			assert.are.equal(
+				("fold: 1 run known, 1 wager settled, no run on now; Hunts' Coins %d, Angler XP %d (catalogue: %s)"):format(
+					state.coins,
+					state.xp,
+					CATALOGUE
+				),
+				made.lines[7]
+			)
+			assert.are.equal(
+				"at login: the live step logs slot 2's run of fixture_westfall_night, on until 2026-10-17 15:00 UTC;"
+					.. " the board then shows it on and fixture_elwynn_evening ahead, and nothing of fixture_westfall_dawn",
+				made.lines[8]
+			)
+			local printed = table.concat(made.lines, "\n")
+			assert.matches("log in as Bram Reed before 2026-10-17 15:00 UTC", printed, 1, true)
+			assert.matches("1 wager settled", printed, 1, true)
+		end)
+
+		it("keeps the current slot's end in stage.txt, so --install refuses after it (HNT-R152)", function()
+			assert.matches(("\nnextReset %d\n$"):format(CURRENT + SLOT), readFile(made.stage .. "/stage.txt"))
+		end)
+	end)
+
+	-- The wagers test log made at NOW, logged into on FakePagle at NOW with Hunts over the fixture catalogue, Hunt list
+	-- and pool, the origin moved, and no companion (Pagle_Content missing), as the dev does after --install: the first
+	-- build, then the live step once PushedContentReady has fired (HNT-R111, HNT-R151).
+	describe("a wagers test log at its login", function()
+		local made = make("wagers", NOW, nil, { loadfile = withOrigin(WAGERS_ORIGIN) }, nil, WAGERS_ARGS)
+		local log = globalsOf(readFile(made.stage .. "/Pagle.lua")).PagleLog
+		local state = huntsFolded(log)
+		local casts = 0
+		for _, record in ipairs((decoded(log))) do
+			casts = casts + (record.kind == "cast" and 1 or 0)
+		end
+		local r = huntsSupport.start({
+			catalogue = CATALOGUE_DATA,
+			list = WAGERS_LIST,
+			events = WAGERS_POOL,
+			prepare = function(loading)
+				loading.ns.ROTATION_ORIGIN = WAGERS_ORIGIN
+			end,
+			history = function(fake)
+				fake.catchLog.data = log
+			end,
+			from = NOW - SERVER_TIME,
+		})
+		r.fake.nextFrame()
+		r.loaded.client.runTimers()
+		local fake = r.fake
+
+		it("writes Hunts up from the test log: 1 wager settled, its Coins and Angler XP (HNT-R111)", function()
+			local sections = {}
+			for _, section in ipairs(fake.writeUps) do
+				if section.module == "Hunts" then
+					sections[#sections + 1] = { section.heading, unpack(section.lines) }
+				end
+			end
+			assert.are.same({
+				{
+					("Your Hunts were written up from %d Casts"):format(casts),
+					"1 wager settled",
+					("Pagle Coins +%d"):format(state.coins),
+					("Angler XP +%d"):format(state.xp),
+				},
+			}, sections)
+			assert.are.equal(
+				"Hunts: 0 of 0 done · 0 titles · 1 wager settled",
+				fake.global.summary.lines.Hunts.lines.hunts
+			)
+		end)
+
+		it("logs the current slot's run live, after the old one (HNT-R150, HNT-R151)", function()
+			assert.are.same({
+				("run fixture_westfall_dawn|%d|%d|r"):format(PREVIOUS, CURRENT),
+				("run fixture_westfall_night|%d|%d|r"):format(CURRENT, CURRENT + SLOT),
+			}, huntsRecords(fake.catchLog.data))
+		end)
+
+		it(
+			"shows the current slot's run on and the next ahead, and nothing of the ended run (HNT-R143, HNT-R160)",
+			function()
+				local shown = {}
+				for i, entry in ipairs(r.ns.RunsShown(r.ns.State(), NOW)) do
+					shown[i] = entry.key .. (entry.on and " on" or " ahead")
+				end
+				assert.are.same({
+					"fixture_westfall_night@" .. CURRENT .. " on",
+					"fixture_elwynn_evening@" .. CURRENT + SLOT .. " ahead",
+				}, shown)
+				assert.are.equal(1, r.ns.State().settled)
+			end
+		)
+	end)
+
+	describe("--install and --restore of a wagers test log (in-game-verification.md › Test logs)", function()
+		local made = make("wagers", NOW, nil, { loadfile = withOrigin(WAGERS_ORIGIN) }, nil, WAGERS_ARGS)
+		local test = readFile(made.stage .. "/Pagle.lua")
+		local installErr, installCode = modeRun(made, "--install", NOW + 10)
+		local installed = savedFiles(made.account)
+		-- What the client writes at the logout after playing it: the live step's run record, the old file as .bak, and
+		-- Hunts' projection rebuilt for the test log, in a Pagle_Hunts.lua there wasn't before.
+		local played = test:gsub(
+			'"C1|',
+			('"A1|2|%d|0|Hunts|run|fixture_westfall_night|%d|%d|r", -- [0]\r\n"C1|'):format(
+				NOW + 30,
+				CURRENT,
+				CURRENT + SLOT
+			),
+			1
+		)
+		local sv = made.account .. "/SavedVariables/"
+		writeFile(sv .. "Pagle.lua", played)
+		writeFile(sv .. "Pagle.lua.bak", test)
+		writeFile(sv .. "Pagle_Hunts.lua", "\r\nPagleHuntsDB = {\r\n}\r\n")
+		local restoreErr, restoreCode = modeRun(made, "--restore", NOW + 20)
+
+		it("--install puts the test log in as the account's Pagle.lua", function()
+			assert.are.equal("", installErr)
+			assert.are.equal(0, installCode)
+			assert.are.equal(test, installed["Pagle.lua"])
+		end)
+
+		it(
+			"--restore puts the real files back byte for byte and removes Pagle_Hunts.lua, which wasn't there",
+			function()
+				assert.are.equal("", restoreErr)
+				assert.are.equal(0, restoreCode)
+				assert.are.same(fixtureFiles(), savedFiles(made.account))
+				assert.are.equal(played, readFile(made.stage .. "/replaced-20261014-174700/Pagle.lua"))
+			end
+		)
+	end)
+
 	describe("refusing (every refusal exits 1 and changes nothing; usage errors exit 2)", function()
 		it("refuses without a Pagle.lua, writing nothing", function()
 			local account, out = newAccount()
@@ -1285,12 +1676,88 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 			end
 		)
 
+		it(
+			"wagers refuses, writing nothing, when the current fallback slot is the rotation's first (HNT-R152)",
+			function()
+				local made = make("wagers", NOW, nil, { loadfile = withOrigin(NOW - 3600) }, nil, WAGERS_ARGS)
+				assert.are.equal(1, made.code)
+				assert.matches(
+					"the current fallback slot, 0 (from 2026-10-14 16:46 UTC), is the rotation's first",
+					made.err,
+					1,
+					true
+				)
+				assert.are.same({}, made.stages)
+			end
+		)
+
+		it("wagers refuses, writing nothing, before the rotation's starting point (HNT-R152, HNT-R204)", function()
+			local made = make("wagers", NOW, nil, { loadfile = withOrigin(NOW + 3600) }, nil, WAGERS_ARGS)
+			assert.are.equal(1, made.code)
+			assert.matches("the fallback rotation starts at 2026-10-14 18:46 UTC, after now", made.err, 1, true)
+			assert.are.same({}, made.stages)
+		end)
+
+		it("wagers refuses, writing nothing, when the event pool is empty (HNT-R152, DATA-R98)", function()
+			local pool = os.tmpname() .. ".lua"
+			writeFile(pool, 'local ns = select(2, ...)\nns.eventList = { fingerprint = "0", events = {} }\n')
+			local made = make("wagers", NOW, nil, { loadfile = withOrigin(WAGERS_ORIGIN) }, nil, {
+				"--huntlist",
+				"spec/scripts/fixtures/TestLogHuntList.lua",
+				"--eventlist",
+				pool,
+			})
+			os.remove(pool)
+			assert.are.equal(1, made.code)
+			assert.matches("the event pool " .. pool .. " has no event", made.err, 1, true)
+			assert.are.same({}, made.stages)
+		end)
+
+		it("wagers refuses to write when the run doesn't settle in its slot (HNT-R146)", function()
+			-- A record encoder that logs every run an hour long, so the slot's run has ended before its Casts.
+			local origin = withOrigin(WAGERS_ORIGIN)
+			local function loadShortRun(path)
+				local chunk = origin(path)
+				if not (chunk and path:match("Pagle_Hunts/logic/Records%.lua$")) then
+					return chunk
+				end
+				return function(addon, ns)
+					setfenv(chunk, getfenv(1))
+					chunk(addon, ns)
+					local encode = ns.EncodeRun
+					ns.EncodeRun = function(id, start, _, source)
+						return encode(id, start, start + 3600, source)
+					end
+				end
+			end
+			local made = make("wagers", NOW, nil, { loadfile = loadShortRun }, nil, WAGERS_ARGS)
+			assert.are.equal(1, made.code)
+			assert.matches(
+				"misses the preset: the run fixture_westfall_dawn@" .. PREVIOUS .. " isn't settled",
+				made.err,
+				1,
+				true
+			)
+			assert.are.same({}, made.stages)
+		end)
+
+		it(
+			"--install refuses a wagers test log once its fallback slot has ended, changing nothing (HNT-R152)",
+			function()
+				local made = make("wagers", NOW, nil, { loadfile = withOrigin(WAGERS_ORIGIN) }, nil, WAGERS_ARGS)
+				local err, code = modeRun(made, "--install", CURRENT + SLOT)
+				assert.are.equal(1, code)
+				assert.matches("its fallback slot ended at 2026-10-17 15:00 UTC", err, 1, true)
+				assert.are.same(fixtureFiles(), savedFiles(made.account))
+			end
+		)
+
 		it("exits 2 on a usage error", function()
 			local _, err, code = run({ "--account", "x", "--preset", "level99" })
 			assert.are.equal(2, code)
 			assert.matches("no preset level99", err, 1, true)
 			assert.matches(
-				"the presets are level10, level60, catches1000, boardday, big5, big20, showcase",
+				"the presets are level10, level60, catches1000, boardday, big5, big20, showcase, wagers",
 				err,
 				1,
 				true

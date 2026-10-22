@@ -100,13 +100,13 @@ local function whenOf(reached, sources)
 	return L.LADDER_WHEN_ZONE:format(date, sources.AreaName(reached.zone) or L.NAME_UNKNOWN)
 end
 
--- The tier ladder (HNT-R64, HNT-R18's trims are the board's): one step per tier, then the ink bar toward the next
--- unreached tier, or the count once every tier is reached.
----@param hunt HuntDef
+--- The tier ladder (HNT-R64, HNT-R18's trims are the board's): one step per tier, then the ink bar toward the next
+--- unreached tier, or the count once every tier is reached. A run's entry draws each event Hunt's with it (HNT-R163).
+---@param hunt HuntDef|HuntEventHunt
 ---@param progress HuntProgress?
 ---@param sources HuntNameSources
 ---@return HuntEntryLadder
-local function ladderOf(hunt, progress, sources)
+function ns.HuntLadder(hunt, progress, sources)
 	local L = ns.L
 	local reached = progress and progress.reached or {}
 	local count = progress and progress.count or 0
@@ -251,7 +251,7 @@ local function progressOf(input)
 			L.SET_LINE_UPDATING:format(input.list:SetName(hunt.set), L.UPDATING)
 	end
 	local progress = input.state.hunts[hunt.id]
-	return sealOf(progress), ladderOf(hunt, progress, input.sources), effortOf(progress), setLineOf(input)
+	return sealOf(progress), ns.HuntLadder(hunt, progress, input.sources), effortOf(progress), setLineOf(input)
 end
 
 --- A Hunt's entry (HNT-R64), or for a Retired Hunt its retired entry (HNT-R3): its name, target line, "Retired

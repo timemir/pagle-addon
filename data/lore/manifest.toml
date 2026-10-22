@@ -47,6 +47,66 @@ ids = [
 fields = ["name", "description"]
 ids = ["field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin"]
 
+# The Ledger's zone crests (LED-R113), each good ledger.crest.<key> in Core's crest slot, with a name and a
+# description, from the zone crest batch (LED-R162).
+[ledger.crest]
+fields = ["name", "description"]
+ids = [
+	"alterac",
+	"arathi",
+	"badlands",
+	"blackrock",
+	"blastedlands",
+	"burningsteppes",
+	"deadwind",
+	"dunmorogh",
+	"duskwood",
+	"easternplague",
+	"elwynn",
+	"hillsbrad",
+	"hinterlands",
+	"ironforge",
+	"lochmodan",
+	"lordamere",
+	"redridge",
+	"riverglades",
+	"searinggorge",
+	"silverpine",
+	"stormwind",
+	"stranglethorn",
+	"swampofsorrows",
+	"tirisfal",
+	"undercity",
+	"westernplague",
+	"westfall",
+	"wetlands",
+	"ashenvale",
+	"azshara",
+	"barrens",
+	"darkshore",
+	"darnassus",
+	"desolace",
+	"durotar",
+	"dustwallow",
+	"felwood",
+	"feralas",
+	"moonglade",
+	"hyjal",
+	"mulgore",
+	"orgrimmar",
+	"shendralas",
+	"silithus",
+	"stonetalon",
+	"tanaris",
+	"teldrassil",
+	"thousandneedles",
+	"thunderbluff",
+	"ungoro",
+	"veiledsea",
+	"winterspring",
+	"zephras",
+]
+
 # Core's goods (SHOP-R25), each with a name and a description (wallet-and-shop.md › UI), from M4 with Core's lore
 # check (DATA-R107). Then the fish crests (VAR-R12), one per Species with varieties, from the varieties release: each
 # allows {fish}, which only their names hold, filled with the Species' item name at runtime (DATA-R108, DATA-R134).
@@ -59,16 +119,6 @@ ids = [
 	"core.soundset.driftwood",
 	"core.soundset.gilded",
 	"core.crest.plain",
-	"core.crest.elwynn",
-	"core.crest.westfall",
-	"core.crest.darkshore",
-	"core.crest.redridge",
-	"core.crest.wetlands",
-	"core.crest.stranglethorn",
-	"core.crest.dustwallow",
-	"core.crest.feralas",
-	"core.crest.tanaris",
-	"core.crest.winterspring",
 	{ id = "core.crest.fish.1467", placeholders = ["fish"] },
 	{ id = "core.crest.fish.4603", placeholders = ["fish"] },
 	{ id = "core.crest.fish.6289", placeholders = ["fish"] },
@@ -500,11 +550,11 @@ ids = [
 	"hunts.trackerframe.waxseal",
 ]
 
-# Hunts' ladder titles (HNT-R148, HNT-R130), each earned at a completed-run count: 25 now, with the event pool's
-# content data (#297); 50 and 100 come with the pool's lore batch (#307).
+# Hunts' ladder titles (HNT-R148, HNT-R130), each earned at a completed-run count: 25 with the event pool's content
+# data (#297), 50 and 100 with the pool's lore batch (#307).
 [hunts.ladder]
 fields = ["title"]
-ids = ["25"]
+ids = ["25", "50", "100"]
 
 # Stats' goods (STA-R88), its three tracker frames, each with a name and a description, from M6 with Stats' lore check
 # (DATA-R107). Core owns the kind good, so Stats' is statsgood (DATA-R102).

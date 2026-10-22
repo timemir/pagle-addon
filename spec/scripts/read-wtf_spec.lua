@@ -6,7 +6,7 @@
 -- #146). M4#1 holds what the M4 exit check reads (#173, #174). M5#1 and M5-Stale#1 hold a Pagle_Hunts.lua, for what
 -- the M5 exit check reads (#199, #200). M6#1, M6-Stale#1 and M6-New#1 hold a Pagle_Stats.lua, for what the M6 exit
 -- check reads (#219, #221), and M6-Break#1 a Session break (#258). M7#1, M7-Stale#1 and M7-New#1 hold a Pagle_TackleBoard.lua, for what the M7 exit check
--- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261), and M8-Reverify#1 what the Re-verification section reads (#262), and M8.5#1 an onboarding state for the Onboarding section (#320), and M8-XP#1 Activity XP totals and a P1 with its snapshot, for the Activity XP section (#291). The Ledger, Stats and Tackle Board runs read their catalogue from
+-- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261), and M8-Reverify#1 what the Re-verification section reads (#262), and M8.5#1 an onboarding state for the Onboarding section (#320), and M8-XP#1 Activity XP totals and a P1 with its snapshot, for the Activity XP section (#291), and M8-Wagers#1 Hunts' runs, records and ladder, a Ledger climb past a Prestige snapshot and a pushed seq, for what the M8 Hunt Events exit check reads (#309). The Ledger, Stats and Tackle Board runs read their catalogue from
 -- spec/scripts/fixtures/Catalogue.lua (--catalogue) and the Hunts runs their Hunt list from
 -- spec/scripts/fixtures/HuntList.lua (--huntlist), so the lines the Modules' logic computes are counted by hand, and
 -- don't move with the generated data.
@@ -161,8 +161,8 @@ describe("scripts/read-wtf.lua", function()
 		it("prints the Ledger's projection, state and celebrated set, with the level from its own logic", function()
 			-- LOG-R70's stored values; LED-R30's level: 2,310 XP = 1,080 (1→2) + 1,160 (2→3) + 70 into level 3,
 			-- whose step costs 1,000 + 80 × 3 = 1,240. ledger.md › Data for the state and the celebrated set. An M2
-			-- state has no items, Uncharted list or zone ranks, and M2's rules version, 100, isn't the Ledger's 601 (LED-R2:
-			-- LEDGER_RULES_VERSION 6 × 100 + Core's SIZE_RULES_VERSION 1, LOG-R68).
+			-- state has no items, Uncharted list or zone ranks, and M2's rules version, 100, isn't the Ledger's 602 (LED-R2:
+			-- LEDGER_RULES_VERSION 6 × 100 + Core's SIZE_RULES_VERSION 2, LOG-R68).
 			-- Completion over the fixture catalogue's world (LED-R70, LED-R71): Species 6303 and 6358 caught, of 6291,
 			-- 6299, 6303 and 13759 listed and 6358 caught; nothing else; 2 of 11 is 18%. 148 and 1519 aren't charted.
 			assert.are.same({
@@ -170,7 +170,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 8, logId 5d2e8a0c4b1f7e93, fingerprint a1b2c3d4, rulesVersion 100",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (8 entries)",
-				"rulesVersion: 100 DIFFERS from the Ledger's 601, so Core rebuilds it at login (LED-R2, LOG-R72)",
+				"rulesVersion: 100 DIFFERS from the Ledger's 602, so Core rebuilds it at login (LED-R2, LOG-R72)",
 				"world: "
 					.. CATALOGUE
 					.. ", fingerprint 0123456789abcdef (NOT the projection's: the lines computed below use it), 2 charted zones",
@@ -198,11 +198,12 @@ describe("scripts/read-wtf.lua", function()
 
 		it("prints each Module's reported total and the balance (SHOP-R3, SHOP-R12)", function()
 			-- Nothing spends before the Curio Shop (M4), so the balance is 30 + 12, and there's no wallet projection
-			-- (SHOP-R11) yet.
+			-- (SHOP-R11) yet. SHOP-R3: a PagleDB from before M8 stores no logId with its totals.
 			assert.are.same({
 				"== Wallet (PagleDB.global.coins.earned): balance 42",
 				"Hunts: 12",
 				"Ledger: 30",
+				"logId: none stored (a fresh log's, or no Module has reported since PagleLog had one)",
 				"wallet projection: none stored (no build has finished, LOG-R72)",
 			}, section(out, "== Wallet"))
 		end)
@@ -247,7 +248,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 8, logId 5d2e8a0c4b1f7e93, fingerprint a1b2c3d4, rulesVersion 100",
 				"logId: DIFFERS from PagleLog's 7c0b19e4d3a2f658, so Core rebuilds it at login (LOG-R72)",
 				"lastSeq: differs from PagleLog's length (1 entry)",
-				"rulesVersion: 100 DIFFERS from the Ledger's 601, so Core rebuilds it at login (LED-R2, LOG-R72)",
+				"rulesVersion: 100 DIFFERS from the Ledger's 602, so Core rebuilds it at login (LED-R2, LOG-R72)",
 				"world: "
 					.. CATALOGUE
 					.. ", fingerprint 0123456789abcdef (NOT the projection's: the lines computed below use it), 2 charted zones",
@@ -274,6 +275,7 @@ describe("scripts/read-wtf.lua", function()
 		it("reads a PagleDB with no coins as no Module having reported (AceDB leaves out the empty default)", function()
 			assert.are.same({
 				"== Wallet (PagleDB.global.coins.earned): balance 0, no Module has reported Coins",
+				"logId: none stored (a fresh log's, or no Module has reported since PagleLog had one)",
 				"wallet projection: none stored (no build has finished, LOG-R72)",
 			}, section(out, "== Wallet"))
 		end)
@@ -315,7 +317,7 @@ describe("scripts/read-wtf.lua", function()
 			"prints M3's state and celebrated set, with ranks and completion from the Ledger's logic (LED-R4, LED-R5, LED-R30,"
 				.. " LED-R50, LED-R52, LED-R54, LED-R63, LED-R70, LED-R71, LED-R92)",
 			function()
-				-- ledger.md › Data for the state and the celebrated set; LED-R4: M3's rules version, 200, isn't the Ledger's 601.
+				-- ledger.md › Data for the state and the celebrated set; LED-R4: M3's rules version, 200, isn't the Ledger's 602.
 				-- LED-R30: 4,560 XP = 1,080 + 1,160 + 1,240 to level 4, 1,080 into it, whose step costs
 				-- 1,000 + 80 × 4 = 1,320. LED-R5: 6309 is junk, a curio; 13901 a trophy; 999001 is in no catalogue.
 				-- LED-R50, LED-R54: Duskwood (10) has no data, so it isn't charted and shows rank 0; Elwynn (12) is computed Local (3) but celebrated Expert (4), and the
@@ -327,7 +329,7 @@ describe("scripts/read-wtf.lua", function()
 					"projection: lastSeq 11, logId 3f9a2c1e7b0d4a65, fingerprint 0123456789abcdef, rulesVersion 200",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (11 entries)",
-					"rulesVersion: 200 DIFFERS from the Ledger's 601, so Core rebuilds it at login (LED-R2, LOG-R72)",
+					"rulesVersion: 200 DIFFERS from the Ledger's 602, so Core rebuilds it at login (LED-R2, LOG-R72)",
 					"world: " .. CATALOGUE .. ", fingerprint 0123456789abcdef (the projection's), 2 charted zones",
 					"state: 9 Casts, 8 Catches, 4560 XP (Angler Level 4, 1080 into it, next step 1320), 44 Coins, 2 Species",
 					"state curio items: 1 (6309 ×2)",
@@ -429,8 +431,8 @@ describe("scripts/read-wtf.lua", function()
 			"prints an M4 projection as one to rebuild, and leaves its Legend out of the curio and trophy items",
 			function()
 				-- LED-R2: 401 = LEDGER_RULES_VERSION 4 × 100 + Core's SIZE_RULES_VERSION 1 (LOG-R68), and the Ledger's is
-				-- 601 since the varieties caught (LED-R4, VAR-R20). LED-R30 at prestige rank 1, the Ledger's logic at the full
-				-- cost: 1,080 to level 2, 920 into it, whose step costs 1,160. LED-R5:
+				-- 602 since the Reach and the varieties caught (LED-R4, ADR 0014, VAR-R20). LED-R30 at prestige rank 1,
+				-- the Ledger's logic at the full cost: 1,080 to level 2, 920 into it, whose step costs 1,160. LED-R5:
 				-- 19803 is a Legend, neither curio nor trophy (LED-R63). LED-R70: Species 6291 and 6303 of 6291, 6299, 6303
 				-- and 13759 (19803, a Legend, is outside it), junk 1 of 1, treasure 0 of 1, trophy 1 of 2, no zone at
 				-- Master: 4 of 10 is 40%; Legends 1 of 1.
@@ -440,7 +442,7 @@ describe("scripts/read-wtf.lua", function()
 					"projection: lastSeq 9, logId 8e1d4b7a2c6f0935, fingerprint 0123456789abcdef, rulesVersion 401",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (9 entries)",
-					"rulesVersion: 401 DIFFERS from the Ledger's 601, so Core rebuilds it at login (LED-R2, LOG-R72)",
+					"rulesVersion: 401 DIFFERS from the Ledger's 602, so Core rebuilds it at login (LED-R2, LOG-R72)",
 					"world: " .. CATALOGUE .. ", fingerprint 0123456789abcdef (the projection's), 2 charted zones",
 					"state: 1004 Casts, 1003 Catches, 2000 XP (Angler Level 2, 920 into it, next step 1160), 900 Coins,"
 						.. " 2 Species",
@@ -464,7 +466,8 @@ describe("scripts/read-wtf.lua", function()
 			-- order. LED-R77: the stored key is earned, so it's the active title. LED-R90: the celebrated set's M4 keys.
 			assert.are.same({
 				"== Ledger M4 (PagleLedgerDB): Prestige, Catch Milestones, Legends, records, titles",
-				"climb: prestige rank 1, 2000 XP, computed level 2, peak level 60",
+				"climb: prestige rank 1, 2000 XP of its own, Prestige snapshot 0, the climb's Activity XP 0 (Core's stored"
+					.. " total 0 − 0, LED-R37), computed level 2, peak level 60",
 				"Catch Milestones: 1 (1000 at 2026-10-12 10:22:40 UTC), 1003 lifetime Catches",
 				"Legends caught: 1 (19803 ×1, first at 2026-10-12 10:15:20 UTC by character 1 in zone 40)",
 				"records: 1 of 2 Species, 1 Legend",
@@ -490,6 +493,7 @@ describe("scripts/read-wtf.lua", function()
 			assert.are.same({
 				"== Wallet (PagleDB.global.coins.earned): balance 0, held (500 earned − 550 spent = -50, SHOP-R12)",
 				"Ledger: 500",
+				"logId: none stored (a fresh log's, or no Module has reported since PagleLog had one)",
 				"projection: lastSeq 9, logId 8e1d4b7a2c6f0935, fingerprint 0123456789abcdef, rulesVersion 1",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (9 entries)",
@@ -540,7 +544,8 @@ describe("scripts/read-wtf.lua", function()
 				.. " title:level60, title:prestige1, legend:19803)"
 			assert.are.same({
 				"== Ledger M4 (PagleLedgerDB): Prestige, Catch Milestones, Legends, records, titles",
-				"climb: prestige rank 1, 2000 XP, computed level 2, peak level 60",
+				"climb: prestige rank 1, 2000 XP of its own, Prestige snapshot 0, the climb's Activity XP 0 (Core's stored"
+					.. " total 0 − 0, LED-R37), computed level 2, peak level 60",
 				"Catch Milestones: 1 (1000 at 2026-10-12 10:22:40 UTC), 1003 lifetime Catches",
 				"Legends caught: can't be told from the other items without the world (see world: above)",
 				"records: 1 of 2 Species, 1 Legend",
@@ -566,10 +571,9 @@ describe("scripts/read-wtf.lua", function()
 		local TEST_CATALOGUE = "spec/scripts/fixtures/TestLogCatalogue.lua"
 
 		it("prints the sized Catches by band and per Species, from Core's Size.lua (LOG-R65–R67)", function()
-			-- Counted by an independent reading of LOG-R66 and LOG-R67 over the log's C1 entries (FNV-1a, fmix32, the
-			-- cut points, the multipliers); the 95% range is the central 95% of a binomial of 569 draws at LOG-R67's
-			-- share, summed exactly. The hash is frozen (ADR 0010), so these counts never move. This log's Hefty and
-			-- Monster counts fall above their ranges by chance: five bands, each with a 5% chance of falling outside.
+			-- Counted by an independent reading of LOG-R65–R67 over the log's C1 and S1 entries (FNV-1a, fmix32, each
+			-- Cast's skill rank and its item's earlier Catches, the Reach, the band edges): a test log of 995 Casts at
+			-- skill 150 never reaches past Hefty. The draw is frozen (ADR 0014), so these counts never move.
 			local out, err, code = run(ACCOUNTS .. "M8#1", "--catalogue", TEST_CATALOGUE)
 			assert.are.equal(0, code)
 			assert.are.equal("", err)
@@ -581,16 +585,16 @@ describe("scripts/read-wtf.lua", function()
 			assert.are.same({
 				"sizes: 569 Catches with a Simulated Size, of 3 Species (LOG-R65), from PagleLog over "
 					.. TEST_CATALOGUE,
-				"sizes by band: Catches (their share; LOG-R67's share, the 95% range of the Catches at it)",
-				"  1 Tiddler: 75 (13.2%; 15%, 69–102)",
-				"  2 Decent: 295 (51.8%; 55%, 290–336)",
-				"  3 Hefty: 155 (27.2%; 23%, 111–151), OUTSIDE its 95% range",
-				"  4 Whopper: 35 (6.2%; 6.5%, 26–49)",
-				"  5 Monster: 9 (1.6%; 0.5%, 0–7), OUTSIDE its 95% range",
+				"sizes by band: Catches (their share), each bounded by its Reach (LOG-R67)",
+				"  1 Tiddler: 166 (29.2%)",
+				"  2 Decent: 382 (67.1%)",
+				"  3 Hefty: 21 (3.7%)",
+				"  4 Whopper: 0 (0.0%)",
+				"  5 Monster: 0 (0.0%)",
 				"sizes per Species: Catches, shortest–longest, typical length (DATA-R20)",
-				"  6291: 142 Catches, 172–538 mm, typical 300 mm",
-				"  6299: 142 Catches, 138–409 mm, typical 250 mm",
-				"  6303: 285 Catches, 193–627 mm, typical 350 mm",
+				"  6291: 142 Catches, 165–301 mm, typical 300 mm",
+				"  6299: 142 Catches, 138–253 mm, typical 250 mm",
+				"  6303: 285 Catches, 193–411 mm, typical 350 mm",
 			}, { unpack(m4, first) })
 		end)
 
@@ -658,9 +662,12 @@ describe("scripts/read-wtf.lua", function()
 				-- (HNT-R17), 2 titles earned. HNT-R18: tier 1 bronze, tier 2 silver. HNT-R23: camp_hours came from a Catch,
 				-- pagles_wagers from grouper_by_moonlight's retirement (dated its UTC day). HNT-R90: night_run's tier 2 and
 				-- pagles_wagers aren't celebrated yet. HNT-R81: the pin on the Retired Hunt is dropped at load. hunts.md ›
-				-- PagleHuntsDB: tracker.shown and showCompleted are left out at their defaults (AceDB).
+				-- PagleHuntsDB: tracker.shown and showCompleted are left out at their defaults (AceDB), and so are Hunt
+				-- Events' settings. An M5 state has no runs, ladder or Activity XP (HNT-R148, HNT-R150), and its PagleDB
+				-- no Activity XP totals (AXP-R3); --now is before the rotation's starting point (HNT-R152).
 				assert.are.same({
 					"== Hunts (PagleHuntsDB)",
+					"records: no Hunts A1 entries in PagleLog",
 					"projection: lastSeq 6, logId 6c2f9e0a1b3d5e77, fingerprint"
 						.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 2",
 					"logId: matches PagleLog's",
@@ -682,14 +689,25 @@ describe("scripts/read-wtf.lua", function()
 					"titles earned: 2",
 					"  camp_hours: 2026-10-12, earned at 2026-10-12 13:00:00 UTC, from a Catch",
 					"  pagles_wagers: 2026-09-01, earned at 2026-09-01 00:00:00 UTC, from a retirement",
+					"settled: 0 (HNT-R148)",
+					"ladder: 0 of 3 steps (25 / 50 / 100) (HNT-R148)",
+					"coins: 305 (HNT-R110), xp: 0 (HNT-R115), Core stores no Hunts total (AXP-R3)",
+					"runs: none known (HNT-R150)",
+					"rotation: no slot before its starting point, 2026-10-19 15:00:00 UTC (HNT-R152, HNT-R204)",
 					"celebrated tiers: 3 (dawn_trout 1, night_run 1, rack_hour 1)",
 					"celebrated titles: 1 (camp_hours)",
+					"celebrated runs: none",
+					"celebrated ladder: none",
+					"celebrated: every reached mark, settled run and ladder step is in it (HNT-R90)",
 					"pins: 2 (grouper_by_moonlight, night_run); not current, so Hunts drops the pin at load (HNT-R81):"
 						.. " grouper_by_moonlight",
 					"tracker.shown: true (not saved: the default)",
 					"tracker.collapsed: true",
 					"windowMoments: true",
 					"showCompleted: false (not saved: the default)",
+					"tracker.wagersCollapsed: false (not saved: the default)",
+					"companionHint: true (not saved: the default)",
+					"lastHintNod: 0 (not saved: the default)",
 				}, section(out, "== Hunts"))
 			end
 		)
@@ -762,14 +780,14 @@ describe("scripts/read-wtf.lua", function()
 				local pool = repoFingerprint("addons/Pagle_Hunts/data/EventList.lua")
 				local lines = section(run(ACCOUNTS .. "M5#1", "--catalogue", CATALOGUE, "--now", NOW), "== Hunts")
 				local prefix = "Hunt list: the repo's addons/Pagle_Hunts/data/HuntList.lua, fingerprint " .. fingerprint
-				assert.are.equal(prefix, lines[6]:sub(1, #prefix))
+				assert.are.equal(prefix, lines[7]:sub(1, #prefix))
 				assert.are.equal(
 					"fingerprint: DIFFERS from the catalogue's plus the Hunt list's and the event pool's, 0123456789abcdef+"
 						.. fingerprint
 						.. "+"
 						.. pool
 						.. ", so Core rebuilds it at login (DATA-R72, DATA-R98, LOG-R72)",
-					lines[7]
+					lines[8]
 				)
 			end
 		)
@@ -779,7 +797,7 @@ describe("scripts/read-wtf.lua", function()
 			-- summary line or stale pin is computed; the stored values are all still there.
 			local missing = "spec/scripts/fixtures/no-such-HuntList.lua"
 			local lines = section(run(ACCOUNTS .. "M5#1", "--catalogue", CATALOGUE, "--huntlist", missing), "== Hunts")
-			assert.are.equal("Hunt list: can't load " .. missing, lines[6]:sub(1, #missing + 22))
+			assert.are.equal("Hunt list: can't load " .. missing, lines[7]:sub(1, #missing + 22))
 			assert.are.same({
 				"fingerprint: can't be checked without the Hunt list",
 				"summary line: can't be computed without the Hunt list",
@@ -787,8 +805,8 @@ describe("scripts/read-wtf.lua", function()
 				"  dawn_trout: count 1, effort 4, sinceLast 0, 1 tier reached",
 				"    tier 1 bronze: 2026-08-29 (realm date), zone 1519, item 8365",
 				"  first_light: count 0, effort 5, sinceLast 5, 0 tiers reached",
-			}, { unpack(lines, 7, 12) })
-			assert.are.equal("pins: 2 (grouper_by_moonlight, night_run)", lines[#lines - 4])
+			}, { unpack(lines, 8, 13) })
+			assert.are.equal("pins: 2 (grouper_by_moonlight, night_run)", lines[#lines - 7])
 		end)
 
 		it("prints the moved tracker dock (CORE-R70, CORE-R71)", function()
@@ -811,6 +829,7 @@ describe("scripts/read-wtf.lua", function()
 				"== Wallet (PagleDB.global.coins.earned): balance 345",
 				"Hunts: 305",
 				"Ledger: 40",
+				"logId: none stored (a fresh log's, or no Module has reported since PagleLog had one)",
 				"wallet projection: none stored (no build has finished, LOG-R72)",
 			}, section(out, "== Wallet"))
 			assert.are.same({
@@ -862,8 +881,10 @@ describe("scripts/read-wtf.lua", function()
 			"flags the rulesVersion and the fingerprint, and reads the left-out defaults (HNT-R136, DATA-R72)",
 			function()
 				assert.are.equal(0, code)
+				-- AXP-R3: Core stores 150 for Hunts, which the stale state doesn't hold.
 				assert.are.same({
 					"== Hunts (PagleHuntsDB)",
+					"records: no Hunts A1 entries in PagleLog",
 					"projection: lastSeq 6, logId 6c2f9e0a1b3d5e77, fingerprint 0123456789abcdef+0000000000000000,"
 						.. " rulesVersion 3",
 					"logId: matches PagleLog's",
@@ -876,13 +897,25 @@ describe("scripts/read-wtf.lua", function()
 					"summary line: Hunts: 0 of 4 done · 0 titles, at 2026-10-14 17:46:40 UTC (--now) (HNT-R89)",
 					"state: 0 Casts, 0 Coins, 0 Hunts with progress, 0 titles",
 					"titles earned: none",
+					"settled: 0 (HNT-R148)",
+					"ladder: 0 of 3 steps (25 / 50 / 100) (HNT-R148)",
+					"coins: 0 (HNT-R110), xp: 0 (HNT-R115), DIFFERS from Core's stored Hunts total 150: the next report"
+						.. " sets it (AXP-R3)",
+					"runs: none known (HNT-R150)",
+					"rotation: no slot before its starting point, 2026-10-19 15:00:00 UTC (HNT-R152, HNT-R204)",
 					"celebrated tiers: none",
 					"celebrated titles: none",
+					"celebrated runs: none",
+					"celebrated ladder: none",
+					"celebrated: every reached mark, settled run and ladder step is in it (HNT-R90)",
 					"pins: none",
 					"tracker.shown: true (not saved: the default)",
 					"tracker.collapsed: false (not saved: the default)",
 					"windowMoments: false (not saved: the default)",
 					"showCompleted: false (not saved: the default)",
+					"tracker.wagersCollapsed: false (not saved: the default)",
+					"companionHint: true (not saved: the default)",
+					"lastHintNod: 0 (not saved: the default)",
 				}, section(out, "== Hunts"))
 			end
 		)
@@ -1206,7 +1239,8 @@ describe("scripts/read-wtf.lua", function()
 		local out = run(ACCOUNTS .. "M3#1", "--catalogue", CATALOGUE, "--item", "6291", "--item", "6299")
 		assert.are.same({
 			"== Ledger M4 (PagleLedgerDB): Prestige, Catch Milestones, Legends, records, titles",
-			"climb: prestige rank 0, 4560 XP, computed level 4, peak level 4",
+			"climb: prestige rank 0, 4560 XP of its own, Prestige snapshot 0, the climb's Activity XP 0 (Core's stored"
+				.. " total 0 − 0, LED-R37), computed level 4, peak level 4",
 			"Catch Milestones: none, 8 lifetime Catches",
 			"Legends caught: none",
 			"records: 0 of 2 Species, 0 Legends",
@@ -1291,13 +1325,13 @@ describe("scripts/read-wtf.lua", function()
 		it(
 			"prints the projection's bookkeeping, current against the log, its rules version and the catalogue (LOG-R70, TKB-R81)",
 			function()
-				-- LOG-R70's stored values. TKB-R81: 1000 × TKB_RULES_VERSION 2 + Core's SESSION_RULES_VERSION 2 = 2002; the
+				-- LOG-R70's stored values. TKB-R81: 1000 × TKB_RULES_VERSION 3 + Core's SESSION_RULES_VERSION 2 = 3002; the
 				-- fingerprint is the catalogue's content fingerprint, with no extra.
 				assert.are.same({
-					"projection: lastSeq 54, logId 3c9e1a7f5b2d8046, fingerprint 0123456789abcdef, rulesVersion 2002",
+					"projection: lastSeq 54, logId 3c9e1a7f5b2d8046, fingerprint 0123456789abcdef, rulesVersion 3002",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (54 entries)",
-					"rulesVersion: the Tackle Board's, 2002 (TKB-R81)",
+					"rulesVersion: the Tackle Board's, 3002 (TKB-R81)",
 					"fingerprint: the catalogue's, " .. CATALOGUE .. " (LOG-R70)",
 				}, { unpack(lines, 15, 19) })
 			end
@@ -1391,7 +1425,7 @@ describe("scripts/read-wtf.lua", function()
 						.. GUID
 						.. '1792508702-0, Notice haul, "2 Catches in Area 12", pays 10, fly elwynn_royal',
 					"tally: 8 Notices, 1 Expedition (TKB-R61)",
-					"coins: 180 (TKB-R63)",
+					"coins: 180 (TKB-R63), xp: 1550 (TKB-R65), equals Core's stored TackleBoard total (AXP-R3)",
 					"flies: 9 of 30 tied, in pattern order (TKB-R62):",
 					"  goldshire_gnat: day 5, goal " .. GUID .. "1792422301-0",
 					"  duskwood_shadow: day 0, goal " .. GUID .. "1791990602-0",
@@ -1486,7 +1520,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 3, logId 6f2a9c4e1b7d3580, fingerprint fedcba9876543210, rulesVersion 1000",
 				"logId: matches PagleLog's",
 				"lastSeq: differs from PagleLog's length (4 entries)",
-				"rulesVersion: 1000 DIFFERS from the Tackle Board's 2002 (1000 × TKB_RULES_VERSION 2 + Core's"
+				"rulesVersion: 1000 DIFFERS from the Tackle Board's 3002 (1000 × TKB_RULES_VERSION 3 + Core's"
 					.. " SESSION_RULES_VERSION 2), so Core rebuilds it at login (TKB-R81, LOG-R72)",
 				"fingerprint: DIFFERS from the catalogue's 0123456789abcdef, "
 					.. CATALOGUE
@@ -1591,14 +1625,22 @@ describe("scripts/read-wtf.lua", function()
 		it(
 			"prints each Module's total, their sum and whose logId each store of totals has (AXP-R3, SHOP-R3)",
 			function()
+				-- AXP-R3: the Activity XP totals are PagleLog's; PUSH-R13: no pushed file accepted yet, so no seq.
 				assert.are.same({
 					"== Activity XP (PagleDB.global.activityXP.earned): total 850",
 					"Hunts: 600",
 					"TackleBoard: 250",
 					"logId: 5c2e9a7b1d3f4068, PagleLog's",
-					"Coins logId: 0000000000000001, DIFFERS from PagleLog's 5c2e9a7b1d3f4068, so Core empties these totals at"
-						.. " login",
+					"pushed seq: none accepted (PUSH-R13)",
 				}, section(out, "== Activity XP"))
+				-- SHOP-R3: the Coins totals belong to another log, so Core empties them at the next login.
+				assert.are.same({
+					"== Wallet (PagleDB.global.coins.earned): balance 40",
+					"Ledger: 40",
+					"logId: 0000000000000001, DIFFERS from PagleLog's 5c2e9a7b1d3f4068, so Core empties these totals at"
+						.. " login (SHOP-R3)",
+					"wallet projection: none stored (no build has finished, LOG-R72)",
+				}, section(out, "== Wallet"))
 			end
 		)
 
@@ -1613,10 +1655,195 @@ describe("scripts/read-wtf.lua", function()
 			assert.are.same({
 				"== Activity XP (PagleDB.global.activityXP.earned): total 0, no Module has reported Activity XP",
 				"logId: none stored (a fresh log's, or no Module has reported since PagleLog had one)",
-				"Coins logId: none stored (a fresh log's, or no Module has reported since PagleLog had one)",
+				"pushed seq: none accepted (PUSH-R13)",
 			}, section(run(ACCOUNTS .. "M4#1", "--catalogue", CATALOGUE), "== Activity XP"))
 		end)
 	end)
+
+	-- M8-Wagers#1 holds what the M8 Hunt Events exit check reads (#309, roadmap.md › M8 Hunt Events, steps 2, 5 and 7):
+	-- a PagleLog on a realm at UTC−7 with two fallback runs of darkshore_moonlight logged, in slots 0 and 3 (from
+	-- ROTATION_ORIGIN 2026-10-19 15:00 UTC, 72 h each, HNT-R152), a `def` part of a pushed definition, a `run` record
+	-- whose end is before its start and a `wager` record (both of which Hunts' codec skips), a Tackle Board record, Casts
+	-- in Darkshore in both runs, and a P1 snapshot of 15000 Activity XP; PagleDB with Activity XP and Coins totals of
+	-- PagleLog's logId and pushed seq 7; a Ledger at prestige rank 1 with 1500 XP of its own; and Hunts' state, written
+	-- by hand: the first run ended with only its Timed Hunt's mark, the second settled, and 25 runs settled in all with
+	-- ladder step 25 reached (the 23 earlier settled runs are left out of `runs` to keep the fixture short; the reader
+	-- reads the state as stored and never folds the log). Its celebrated set holds the second run without its Timed
+	-- mark, and no ladder step. Read against spec/scripts/fixtures/HuntList.lua and EventList.lua (one low-band event,
+	-- darkshore_moonlight) at --now 1795600000, 2026-11-25 09:46:40 UTC, in slot 12: the first run ended 33 days
+	-- before, the second 25.
+	describe(
+		"on an account after the M8 Hunt Events exit check's steps (#309, roadmap.md › M8 Hunt Events)",
+		function()
+			local NOW = "1795600000"
+			local function read(now)
+				return run(
+					ACCOUNTS .. "M8-Wagers#1",
+					"--catalogue",
+					CATALOGUE,
+					"--huntlist",
+					HUNTLIST,
+					"--eventlist",
+					EVENTLIST,
+					"--now",
+					now
+				)
+			end
+			local out, err, code = read(NOW)
+			local SECOND = "  darkshore_moonlight@1793199600: darkshore_moonlight, source r (the rotation), "
+			local SETTLED = ", settled realm 2026-10-29 22:30, server 2026-10-30 05:30:00 UTC (HNT-R146)"
+
+			it("exits 0 and writes nothing to stderr", function()
+				assert.are.equal(0, code)
+				assert.are.equal("", err)
+			end)
+
+			it(
+				"prints Hunts' records, runs, rotation, ladder, Activity XP and celebrated runs (HNT-R89–R92, HNT-R142–R153)",
+				function()
+					-- LOG-R40, HNT-R150, HNT-R154: Hunts' A1 entries by kind, the TackleBoard one not counted; Hunts'
+					-- codec skips a run whose end isn't after its start, and a kind it doesn't append.
+					-- HNT-R136: rules version 2; DATA-R72, DATA-R98: the fingerprint joins the Hunt list's and the pool's.
+					-- HNT-R89: " · 25 wagers settled", the ladder title counted among the titles (HNT-R148, HNT-R165).
+					-- HNT-R148: 25 settled, step 25 earned at the second run's completion. HNT-R110, HNT-R115, AXP-R3:
+					-- Hunts' Coins and Activity XP, and Core's stored total for Hunts the same.
+					-- HNT-R142, HNT-R143, HNT-R145, HNT-R146, HNT-R150: each known run by start, its bounds in realm time
+					-- (LOG-R49, UTC−7 from the latest Cast) and server time, ended at --now, each Hunt's count and tiers
+					-- within it, and the second's completion.
+					-- HNT-R152, HNT-R153: slot 12 is low, its pick the band's one event, no run logged over it, 2 d 5 h
+					-- 13 min to its end.
+					-- HNT-R90: the celebrated runs and ladder; HNT-R91: the second run's Timed mark and step 25 were never
+					-- shown; HNT-R92: the first run ended more than 30 days ago, so its mark isn't flagged.
+					-- hunts.md › PagleHuntsDB: wagersCollapsed and lastHintNod saved, companionHint left out at its default.
+					assert.are.same({
+						"== Hunts (PagleHuntsDB)",
+						"records: 5 Hunts A1 entries in PagleLog: run 3, def 1, wager 1",
+						"records Hunts skips: 2 (seq 8, 9) (HNT-R150, HNT-R154)",
+						"projection: lastSeq 14, logId 9a4c2e6b8d1f3057, fingerprint"
+							.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 2",
+						"logId: matches PagleLog's",
+						"lastSeq: equals PagleLog's length (14 entries)",
+						"rulesVersion: Hunts', 2 (HNT-R136)",
+						"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
+						"fingerprint: the catalogue's plus the Hunt list's and the event pool's (DATA-R72, DATA-R98)",
+						"summary line: Hunts: 0 of 5 done · 1 title · 25 wagers settled, at 2026-11-25 09:46:40 UTC (--now)"
+							.. " (HNT-R89)",
+						"state: 6 Casts, 2390 Coins, 0 Hunts with progress, 0 titles",
+						"titles earned: none",
+						"settled: 25 (HNT-R148)",
+						"ladder: 1 of 3 steps (25 / 50 / 100) (HNT-R148)",
+						"  25: realm 2026-10-29 22:30, server 2026-10-30 05:30:00 UTC",
+						"coins: 2390 (HNT-R110), xp: 17650 (HNT-R115), equals Core's stored Hunts total (AXP-R3)",
+						"runs: 2 known, by start, at 2026-11-25 09:46:40 UTC (--now), realm time at the log's realm clock"
+							.. " (UTC-07:00) (HNT-R150)",
+						"  darkshore_moonlight@1792422000: darkshore_moonlight, source r (the rotation), ended (HNT-R143)",
+						"    start realm 2026-10-19 08:00, server 2026-10-19 15:00:00 UTC;"
+							.. " end realm 2026-10-22 08:00, server 2026-10-22 15:00:00 UTC",
+						"    darkshore_moonlight_haul: count 2, tiers 0 of 3 (20 / 50 / 100)",
+						"    darkshore_moonlight_grouper: count 2, tiers 0 of 2 (3 / 8)",
+						"    darkshore_moonlight_timed: count 1, tiers 1 of 1 (1)",
+						SECOND .. "ended (HNT-R143)" .. SETTLED,
+						"    start realm 2026-10-28 08:00, server 2026-10-28 15:00:00 UTC;"
+							.. " end realm 2026-10-31 08:00, server 2026-10-31 15:00:00 UTC",
+						"    darkshore_moonlight_haul: count 20, tiers 1 of 3 (20 / 50 / 100)",
+						"    darkshore_moonlight_grouper: count 3, tiers 1 of 2 (3 / 8)",
+						"    darkshore_moonlight_timed: count 1, tiers 1 of 1 (1)",
+						"rotation: slot 12 (low), 2026-11-24 15:00:00 UTC to 2026-11-27 15:00:00 UTC, pick darkshore_moonlight,"
+							.. " no logged run covers it, ends in 2 d 5 h 13 min (HNT-R152, HNT-R153)",
+						"celebrated tiers: none",
+						"celebrated titles: none",
+						"celebrated runs: 1",
+						"  darkshore_moonlight@1793199600: tiers darkshore_moonlight_grouper 1, darkshore_moonlight_haul 1,"
+							.. " settled, endsAt 2026-10-31 15:00:00 UTC",
+						"celebrated ladder: none",
+						"celebrated: MISSING darkshore_moonlight@1793199600 darkshore_moonlight_timed tier 1 (HNT-R90, HNT-R91)",
+						"celebrated: MISSING ladder step 25 (HNT-R90, HNT-R91)",
+						"celebrated: 1 run ended more than 30 days ago left out (HNT-R92): darkshore_moonlight@1792422000",
+						"pins: none",
+						"tracker.shown: true (not saved: the default)",
+						"tracker.collapsed: true",
+						"windowMoments: false (not saved: the default)",
+						"showCompleted: false (not saved: the default)",
+						"tracker.wagersCollapsed: true",
+						"companionHint: true (not saved: the default)",
+						"lastHintNod: 1793200000 (2026-10-28 15:06:40 UTC)",
+					}, section(out, "== Hunts"))
+				end
+			)
+
+			it(
+				"reads the run as on or ahead, and the slot then, at an earlier --now (HNT-R143, HNT-R152, HNT-R153)",
+				function()
+					-- 2026-10-29 18:53:20 UTC: the second run is on, and covers slot 3, its own slot (HNT-R153: nothing is
+					-- logged over a covered slot). The first run ended 7 days before, so its uncelebrated mark is flagged now
+					-- (HNT-R92).
+					local on = section(read("1793300000"), "== Hunts")
+					assert.are.equal(SECOND .. "on (HNT-R143)" .. SETTLED, lineStarting(on, SECOND))
+					assert.are.equal(
+						"rotation: slot 3 (low), 2026-10-28 15:00:00 UTC to 2026-10-31 15:00:00 UTC, pick darkshore_moonlight,"
+							.. " covered by darkshore_moonlight@1793199600, ends in 1 d 20 h 6 min (HNT-R152, HNT-R153)",
+						lineStarting(on, "rotation:")
+					)
+					assert.are.equal(
+						"celebrated: MISSING darkshore_moonlight@1792422000 darkshore_moonlight_timed tier 1 (HNT-R90, HNT-R91)",
+						lineStarting(on, "celebrated: MISSING darkshore_moonlight@1792422000")
+					)
+					assert.is_nil(lineStarting(on, "celebrated: 1 run ended"))
+					-- 2026-10-27 11:20 UTC: the second run is still ahead; slot 2 is high, and the pool has no high event.
+					local ahead = section(read("1793100000"), "== Hunts")
+					assert.are.equal(SECOND .. "ahead (HNT-R143)" .. SETTLED, lineStarting(ahead, SECOND))
+					assert.are.equal(
+						"rotation: slot 2 (high), 2026-10-25 15:00:00 UTC to 2026-10-28 15:00:00 UTC, pick none (no high event"
+							.. " in the pool), no logged run covers it, ends in 1 d 3 h 40 min (HNT-R152, HNT-R153)",
+						lineStarting(ahead, "rotation:")
+					)
+					-- Before the rotation's starting point there is no slot (HNT-R152, HNT-R204).
+					assert.are.equal(
+						"rotation: no slot before its starting point, 2026-10-19 15:00:00 UTC (HNT-R152, HNT-R204)",
+						lineStarting(section(read("1792000000"), "== Hunts"), "rotation:")
+					)
+				end
+			)
+
+			it(
+				"prints the climb's Activity XP since the latest Prestige snapshot, and the level with it (LED-R31, LED-R37)",
+				function()
+					-- LED-R37: the climb's Activity XP is Core's stored total, 17650 + 300, less the latest P1's 15000.
+					-- LED-R30, LED-R31: 1500 + 2950 = 4450 XP climbs steps of 1080, 1160 and 1240 to level 4 (1500 alone
+					-- reaches level 2); LED-R35: the peak is 60 after a Prestige. LED-R2: the Ledger's rules version 5.
+					local ledger = section(out, "== Ledger (")
+					assert.are.equal("rulesVersion: the Ledger's, 602 (LED-R2)", ledger[5])
+					assert.are.equal(
+						"climb: prestige rank 1, 1500 XP of its own, Prestige snapshot 15000, the climb's Activity XP 2950"
+							.. " (Core's stored total 17950 − 15000, LED-R37), computed level 4, peak level 60",
+						lineStarting(section(out, "== Ledger M4"), "climb:")
+					)
+				end
+			)
+
+			it(
+				"prints the Activity XP totals, the P1 snapshot, the Coins logId and the pushed seq (AXP-R3, PUSH-R13)",
+				function()
+					assert.are.same({
+						"== Activity XP (PagleDB.global.activityXP.earned): total 17950",
+						"Hunts: 17650",
+						"TackleBoard: 300",
+						"logId: 9a4c2e6b8d1f3057, PagleLog's",
+						"pushed seq: 7 (PUSH-R13)",
+					}, section(out, "== Activity XP"))
+					assert.are.equal(
+						"logId: 9a4c2e6b8d1f3057, PagleLog's",
+						lineStarting(section(out, "== Wallet"), "logId:")
+					)
+					-- LOG-R38, AXP-R5: the P1 carries the total at the Prestige.
+					assert.are.equal(
+						"  rank 1, 15000 Activity XP, 1 Ada Brook (Player-4618-0A1B2C3D), 2026-10-27 11:20:00 UTC",
+						lineStarting(section(out, "== Catch log"), "  rank 1,")
+					)
+				end
+			)
+		end
+	)
 
 	-- M8.5#1 holds an onboarding state partway through (core/onboarding.md › Data): the Letter put off once, the guide
 	-- left at Moments with a restriction to reopen it after, two notes and one First look seen, two First evening items

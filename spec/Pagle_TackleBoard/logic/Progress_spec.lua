@@ -20,9 +20,6 @@ local CONTAINER_A, CONTAINER_B, REMOVED_CONTAINER = 92021, 92022, 92023
 local TREASURE_A, TREASURE_B, TROPHY_A = 92031, 92032, 92041
 local UNCHARTED = 999999 -- no catalogue record (LOG-R55)
 
--- Size bands (LOG-R65): 3 Hefty, 4 Whopper, 5 Monster.
-local HEFTY, WHOPPER, MONSTER = 3, 4, 5
-
 local GOAL_SEQ = 100 -- the seq of the record that issued every goal here
 
 -- The fixture catalogue as a later release might change it (TKB-R44, TKB-R196): `change(catalogue)` edits a copy.
@@ -56,13 +53,12 @@ local function goal(fields)
 	return made
 end
 
--- A caught Cast record (LOG-R42) after the goal, in `zone`, on board day 0, with one Catch per entry of `catches`:
--- an item ID, or `{ itemID, band }` for a Catch with a Simulated Size of that band (LOG-R65). Every Catch is a stack
--- of 3, to show quantity never matters (TKB-R40). `options` sets `seq`, `outcome`, `day` and `lure`. Its board day
+-- A caught Cast record (LOG-R42) after the goal, in `zone`, on board day 0, with one Catch per item ID of `catches`.
+-- Every Catch is a stack of 3, to show quantity never matters (TKB-R40). `options` sets `seq`, `outcome`, `day` and `lure`. Its board day
 -- isn't a field of a Cast: the runner hands it over as the projection does, its day once advanced to the Cast.
 local seq = GOAL_SEQ
 ---@param zone integer
----@param catches (integer|integer[])[]
+---@param catches integer[]
 ---@param options { seq: integer?, outcome: string?, day: integer?, lure: integer? }?
 ---@return table
 local function cast(zone, catches, options)
@@ -70,18 +66,8 @@ local function cast(zone, catches, options)
 	seq = seq + 1
 	local id = ("Player-4618-0A1B2C3D-%d-0"):format(1791732000 + seq)
 	local items = {}
-	for n, catch in ipairs(catches) do
-		local itemID, band = catch, nil
-		if type(catch) == "table" then
-			itemID, band = catch[1], catch[2]
-		end
-		items[n] = {
-			n = n,
-			itemID = itemID,
-			quantity = 3,
-			catchId = id .. ":" .. n,
-			size = band and { length = 400, band = band } or nil,
-		}
+	for n, itemID in ipairs(catches) do
+		items[n] = { n = n, itemID = itemID, quantity = 3, catchId = id .. ":" .. n }
 	end
 	return {
 		seq = options.seq or seq,
@@ -294,31 +280,6 @@ describe("Goal progress", function()
 		end)
 	end)
 
-	describe("size", function()
-		it("counts +1 per Catch of the target Size band or better: a Monster for Hefty (TKB-R42)", function()
-			local size = goal({ kind = "size", need = 10, target = HEFTY })
-
-			local progress, counted = run(size, {
-				cast(
-					DUROTAR,
-					{ { SMALLFISH, HEFTY }, { SMALLFISH, 2 }, { MACKEREL, MONSTER }, { SMALLFISH, WHOPPER } }
-				),
-				cast(0, { TROPHY_A, { LEGEND, HEFTY }, { UNCHARTED, MONSTER }, { 0, MONSTER } }),
-			})
-
-			assert.are.equal(4, progress)
-			assert.are.same({ true, false, true, true, false, true, false, false }, counted)
-		end)
-
-		it("at Whopper counts Whopper or Monster, not Hefty (TKB-R42)", function()
-			local size = goal({ type = "e", kind = "size", tier = 0, need = 1, target = WHOPPER })
-
-			local _, counted = run(size, { cast(BARRENS, { { SMALLFISH, HEFTY }, { SMALLFISH, WHOPPER } }) })
-
-			assert.are.same({ false, true }, counted)
-		end)
-	end)
-
 	describe("lure", function()
 		it("counts +1 per Catch of a Cast with a lure on, any item and zone (TKB-R42, TKB-R43)", function()
 			local lure = goal({ kind = "lure", need = 15 })
@@ -452,7 +413,7 @@ describe("Goal progress", function()
 		it("needs the record's need, for every goal but a Variety Expedition (TKB-R34, TKB-R44)", function()
 			assert.are.equal(30, ns.GoalNeed(goal({ kind = "haul", need = 30, target = DUROTAR }), Pagle))
 			assert.are.equal(3, ns.GoalNeed(goal({ kind = "variety", need = 3, target = DUROTAR }), Pagle))
-			assert.are.equal(1, ns.GoalNeed(goal({ type = "e", kind = "size", need = 1, target = WHOPPER }), Pagle))
+			assert.are.equal(3, ns.GoalNeed(goal({ type = "e", kind = "quality", need = 3, target = 3 }), Pagle))
 		end)
 	end)
 end)
@@ -606,7 +567,6 @@ describe("Goal progress over a changed catalogue", function()
 			local goals = {
 				goal({ kind = "wanderer", tier = 3, need = 3 }),
 				goal({ kind = "quality", need = 3, target = 2 }),
-				goal({ kind = "size", need = 3, target = HEFTY }),
 				goal({ kind = "collector", tier = 2, need = 2 }),
 				goal({ type = "e", kind = "collector", tier = 0, need = 3 }),
 				goal({ kind = "lure", need = 15 }),

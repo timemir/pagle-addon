@@ -16,6 +16,7 @@ This directory is Pagle's product spec. It describes the current state only, and
 | [core/wallet-and-shop.md](core/wallet-and-shop.md) | `SHOP` | Pagle Coins (earning, spending, balance), goods and slots, owning and equipping, the Curio Shop window, the Look and Feel page | M2, M4 |
 | [core/activity-xp.md](core/activity-xp.md) | `AXP` | Activity XP: the lifetime totals Modules other than the Ledger report toward the Angler Level, their snapshot in each Prestige entry, and the overview of what pays | M8 Hunt Events |
 | [core/pushed-content.md](core/pushed-content.md) | `PUSH` | The companion's `Pagle_Content` data addon: the signature check, the companion state, content by kind | M8 Hunt Events |
+| [core/anglers-in-game.md](core/anglers-in-game.md) | `VIEW` | Published Anglers in game: reading the Companion's `Pagle_Following` and `Pagle_Anglers`, the Pagle block on player tooltips, `Pagle.GetFollowedAnglers()` | Track V In-game views |
 | [core/onboarding.md](core/onboarding.md) | `ONB` | Onboarding: the Letter, the Field guide and its step registry, the binding field, Margin notes, First looks and the "?", the First evening list, `/pagle guide` and Getting started | M8.5 Onboarding |
 | [core/field-report.md](core/field-report.md) | `REP` | The Field report: what goes in, the `PAGLE-REPORT 1` format, privacy, the report box | M3 |
 | [content-data.md](content-data.md) | `DATA` | The `data/` layers, the generator and its checks, the catalogue's Lua shape, `confirmed` and the two-reporter rule, the content fingerprint, the Hunt list and event pool formats, the tag list and `released.lock`, lore, Field report intake, the DB2 watch | M0–M9 |
@@ -71,7 +72,7 @@ A Module talks to Core and nothing else (ADR 0001): it never calls, reads or lis
 
 **Everything a Module shows is derived from the log**, read through the content catalogue. Each Module keeps a **stored projection** in its own SavedVariable (ADR 0004): Core feeds it every entry once, as `"live"` while the Module runs, as `"replay"` when it catches up on entries recorded while it was off, or as `"rebuild"` when the content fingerprint or its rules version changed (LOG-R70–R77). Only live entries may raise moments. A Module's **celebrated set**, kept outside the projection, remembers what was already shown, so a rebuild never shows anything twice or takes anything away. History a Module first builds from, or catches up on, becomes one **Write-up** card instead of pop-ups (ANN-R60–R63).
 
-Sessions (runs of Casts with no 5-minute gap) are cut by Core from the log and tagged on every record, never stored and never cut by a Module (LOG-R60–R64, LOG-R98). Simulated Sizes are computed by Core from the Catch ID alone, with frozen bands (LOG-R65–R69, ADR 0010).
+Sessions (runs of Casts with no 5-minute gap) are cut by Core from the log and tagged on every record, never stored and never cut by a Module (LOG-R60–R64, LOG-R98). Simulated Sizes are computed by Core from the Catch ID, bounded by a Reach of the Cast's skill and the Angler's earlier Catches of the item, with frozen bands (LOG-R65–R69, LOG-R100, ADR 0014).
 
 ### Feedback, Coins and looks
 
@@ -139,7 +140,7 @@ Core's rung table ([announcements.md](core/announcements.md#rungs-modules-use-so
 | Daily and weekly reset | TKB-R10–R14 (the only Module that uses it) | every other file says it doesn't depend on it |
 | Uncharted and unconfirmed Catches | LOG-R8, LOG-R96 | DATA-R45–R57; REP-R10; each Module's last edge-case rule |
 | Windows, time and seasons | LOG-R46–R50, DATA-R35–R38 | HNT-R40–R53 (the board); LED-R127; STA-R14–R15 |
-| Simulated Size | LOG-R65–R69, ADR 0010 | LED-R80–R85 (records); HNT-R10 (`minBand`); TKB-R42 (Size goals) |
+| Simulated Size | LOG-R65–R69, LOG-R100, ADR 0014 | LED-R80–R85 (records); HNT-R10 (`minBand`); TKB-R32 (no Size goals) |
 | Lore and display text | DATA-R100–R112 | each Module's Lore rule; CORE-R8 for interface text |
 | Settings | CORE-R40–R44 (mechanism) | [settings.md](settings.md) (layout); each file's Settings section (values) |
 
@@ -183,7 +184,7 @@ Every Core and Module file follows one template (the conventions in [Decide how 
 
 `content-data.md`, `settings.md` and `roadmap.md` adapt it to what they cover. The level of detail is behaviour plus every **public contract**, stated exactly: `Pagle` API functions, events, Catch log entry formats, SavedVariables shapes and projection versions, Announcement rungs, Coins paid. Module internals (files, local functions) are left to build tickets.
 
-Every number lives in its file's **Tunables** table, with the rules that use it; a few values that must never change (the Size band cut points, the Simulated Size hash) are marked frozen instead.
+Every number lives in its file's **Tunables** table, with the rules that use it; a few values that must never change (the Size band edges and the Reach, the Simulated Size hash) are marked frozen instead.
 
 ### The edge-case checklist
 
@@ -227,7 +228,8 @@ Any ticket whose answer changes the spec edits the spec in the same change, keep
 | [0007](../adr/0007-core-presents-announcements.md) | Core presents Announcements |
 | [0008](../adr/0008-modules-append-opaque-records-to-the-catch-log.md) | Modules append opaque records to the Catch log |
 | [0009](../adr/0009-core-holds-the-pagle-coins-wallet.md) | Core holds the Pagle Coins wallet and the Curio Shop |
-| [0010](../adr/0010-simulated-size-is-fixed-by-the-catch-id.md) | A Simulated Size is fixed by the Catch ID, and its band cut points are frozen |
+| [0010](../adr/0010-simulated-size-is-fixed-by-the-catch-id.md) | A Simulated Size is fixed by the Catch ID, and its band cut points are frozen (superseded by 0014) |
+| [0014](../adr/0014-simulated-size-is-bounded-by-a-reach-of-skill-and-experience.md) | A Simulated Size is bounded by a Reach of skill and experience, and its curves and band edges are frozen |
 
 ## Outside this spec
 
