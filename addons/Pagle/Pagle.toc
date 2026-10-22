@@ -69,6 +69,7 @@ logic\FieldReportText.lua
 logic\FieldReportBox.lua
 logic\Dock.lua
 logic\Onboarding.lua
+logic\MarginNotes.lua
 logic\Guide.lua
 logic\Wiring.lua
 adapter\Core.lua

@@ -317,6 +317,22 @@ ns.L = {
 	},
 	-- /pagle guide notes (ONB-R80): every Margin note and First look shows again, once each.
 	GUIDE_NOTES_AGAIN = "Pagle: margin notes will show again, once each.",
+	-- Core's Margin notes on first moments (ONB-R2, ONB-R3, ONB-R52), verbatim from the spec: each *term* is pencilled
+	-- in red (ns.RedPencil). core.toast's follows the moment's firstNote, if it has one (ONB-R53).
+	NOTE_NOD = "That’s a *Nod*: one quiet line for every Catch. It’s gone in three seconds, and it’s in your Ledger"
+		.. " for good.",
+	NOTE_TOAST = "The coin is *Pagle Coins*: earned by doing things, never bought, spent on looks in the Curio Shop.",
+	NOTE_SUMMARY = "You stepped away five minutes, so the Session closed. Everything it earned is here, *even what"
+		.. " never popped up*.",
+	NOTE_UNCHARTED = "Pagle hasn’t charted this one yet. It’s kept, and credited the day it is. *"
+		.. HELP_CHART
+		.. "* in the Pagle menu copies it out, to share if you like.",
+	NOTE_WELCOME = "Welcome back. */pagle guide* shows you around, if you want the tour.",
+	NOTE_CHARACTER = "Same Ledger on every character. Only your *fishing clothes* are per character.",
+	-- /pagle dev onboarding note <id> (ONB-R83): an id no note has, with the ones it knows; a note whose target isn't
+	-- on screen now.
+	DEV_NOTE_NONE = "Pagle dev: no margin note %s; the notes are %s.",
+	DEV_NOTE_NO_TARGET = "Pagle dev: margin note %s has nothing on screen to point at now.",
 	-- The Field guide's book (ONB-R20): its strip's crumbs and its count, "{n} of {m}" with n in brighter gilt.
 	GUIDE_CRUMB_PAGLE = "Pagle",
 	GUIDE_CRUMB_GUIDE = "A field guide",

@@ -49,6 +49,7 @@ local ns = select(2, ...)
 ---@field onboarding PagleOnboarding Core's onboarding state and its hooks (ns.WireOnboarding, core/onboarding.md).
 ---@field guideSteps PagleGuideSteps The Field guide's step registry (ns.WireGuide, ONB-R21).
 ---@field guide PagleGuide The Field guide (ns.WireGuide, ONB-R20–R27).
+---@field marginNotes PagleMarginNotes Core's Margin notes (ns.WireMarginNotes, ONB-R50–R53).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. A Module's records are the ones Pagle.IterateCatches yields plus its own Module records (LOG-R42).
@@ -1115,5 +1116,129 @@ function ns.WireGuide(host, view)
 			ids[i] = entry.step.id
 		end
 		host.print(ns.L.DEV_GUIDE_NO_STEP:format(id ~= "" and id or "<id>", table.concat(ids, ", ")))
+	end)
+end
+
+--- What Margin notes' wiring needs from where Core runs, beyond the host: Core's adapter draws the notes
+--- (adapter/MarginNotes.lua), FakePagle records them.
+---@class PagleMarginNotesWiringView: PagleMarginNotesView
+---@field coreTarget fun(key: "nod"|"coin"|"card"|"menu"): PagleNoteTarget? -- what a Core note points at on screen
+--- now, resolved each time it's read; nil when nothing it could point at shows. `menu` is Pagle's menu button: the
+--- minimap icon while it shows, else the Addon Compartment's button (ONB-R52, ONB-R108).
+---@field isUncharted fun(itemID: integer): boolean -- no catalogue has the item (LOG-R55)
+
+--- Core's Margin notes (core/onboarding.md › Margin notes) as ns.marginNotes, with `M:ShowMarginNote` on every Module
+--- handle (ONB-R90, ONB-R92), the onboarding hooks' notes, `core.welcome` and `core.character` on Pagle's menu button
+--- (ONB-R2, ONB-R3), RestrictionChanged's hold (ONB-R51), and `/pagle dev onboarding note <id>` (ONB-R83). Each live
+--- caught Cast with an Uncharted Catch is noted, so its Nod shows `core.uncharted` (ONB-R52): Core's adapter hands
+--- what shows to ns.marginNotes:AnnouncementShown and :CardShown. Call it after ns.WireOnboarding.
+---@param host PagleHost
+---@param view PagleMarginNotesWiringView
+function ns.WireMarginNotes(host, view)
+	local notes = ns.NewMarginNotes({
+		onboarding = function()
+			return ns.onboarding
+		end,
+		isRestricted = host.isRestricted,
+		after = host.after,
+		view = view,
+	})
+	ns.marginNotes = notes
+
+	-- Each Module note shown this login, by id, for /pagle dev onboarding note (ONB-R83).
+	---@type table<string, PagleMarginNote>
+	local known = {}
+
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Shows one of the Module's Margin notes beside its target (ONB-R50–R52): once per account, never with Margin
+	--- notes off, waiting out a restriction (ONB-R51). A Module calls it only `if M.ShowMarginNote then`, so it runs on
+	--- a Core without it (ONB-R90). Raises an error at the Module's call, showing nothing, for a missing or mistyped
+	--- field (ns.MarginNoteProblem). Core keeps a copy, so a later change to the Module's table changes nothing.
+	---@param note PagleMarginNote
+	function ModuleHandle:ShowMarginNote(note)
+		local module = host.registry:ModuleCalling(self, "ShowMarginNote", "note")
+		local problem = ns.MarginNoteProblem(note, module.def.name)
+		if problem then
+			error(problem, 2)
+		end
+		local copy = { id = note.id, text = note.text, target = note.target, side = note.side }
+		known[copy.id] = copy
+		notes:Show(copy)
+	end
+
+	-- One of Core's notes on its target now, shown as ONB-R50 has it; nothing while its target can't be found.
+	---@param id string
+	local function showCore(id)
+		local target = view.coreTarget(ns.CORE_MARGIN_NOTES[id].target)
+		if target then
+			notes:Show(ns.CoreMarginNote(id, target))
+		end
+	end
+	-- ONB-R2, ONB-R3: Onboarding raises these; ShowMarginNote's checks decide whether the note shows.
+	ns.onboarding:SetHook("welcome", function()
+		showCore("core.welcome")
+	end)
+	ns.onboarding:SetHook("character", function()
+		showCore("core.character")
+	end)
+
+	-- Its own owner on the bus, so no other registration replaces these.
+	local owner = "Pagle margin notes"
+	host.listen(owner, "RestrictionChanged", function(_, isRestricted)
+		notes:RestrictionChanged(isRestricted)
+	end)
+	-- The live Casts that caught an Uncharted item (LOG-R55), whose Nod shows core.uncharted (ONB-R52).
+	---@type table<string, true>
+	local uncharted = {}
+	host.listen(owner, "CastEnded", function(_, outcome, cast)
+		if outcome ~= "caught" or not cast then
+			return
+		end
+		local n = 1
+		while cast.items[n] do
+			local itemID = cast.items[n].itemID
+			if itemID ~= 0 and view.isUncharted(itemID) then
+				uncharted[cast.id] = true
+				return
+			end
+			n = n + 1
+		end
+	end)
+
+	--- Whether an Announcement's Cast caught an Uncharted item (ONB-R52).
+	---@param announcement PagleAnnouncement
+	---@return boolean
+	function ns.IsUnchartedAnnouncement(announcement)
+		return announcement.cast ~= nil and uncharted[announcement.cast] == true
+	end
+
+	ns.onboarding:AddDevCommand("note", "note <id>", function(args)
+		local id = args:match("^%s*(%S*)")
+		local core = ns.CORE_MARGIN_NOTES[id]
+		local note
+		if core then
+			local target = view.coreTarget(core.target)
+			note = target and ns.CoreMarginNote(id, target)
+		else
+			note = known[id]
+			if not note then
+				local ids = {}
+				for coreId in pairs(ns.CORE_MARGIN_NOTES) do
+					ids[#ids + 1] = coreId
+				end
+				for moduleId in pairs(known) do
+					ids[#ids + 1] = moduleId
+				end
+				table.sort(ids)
+				host.print(ns.L.DEV_NOTE_NONE:format(id ~= "" and id or "<id>", table.concat(ids, ", ")))
+				return
+			end
+		end
+		if not note or not view.isShown(note) then
+			host.print(ns.L.DEV_NOTE_NO_TARGET:format(id))
+			return
+		end
+		notes:ShowNow(note)
 	end)
 end

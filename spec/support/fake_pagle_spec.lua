@@ -2868,6 +2868,161 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("Margin notes", function()
+		-- A stand-in target region, shown until `hidden` is set.
+		local function region()
+			local made = { hidden = false }
+			function made:IsVisible()
+				return not self.hidden
+			end
+			return made
+		end
+
+		-- QoL registered and logged in; returns its handle.
+		local function withQoL(fake)
+			local M = fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+			fake.login()
+			return M
+		end
+
+		-- The ids of the notes fake.notesShown holds, in order.
+		local function shownIds(fake)
+			local ids = {}
+			for i, note in ipairs(fake.notesShown) do
+				ids[i] = note.id
+			end
+			return ids
+		end
+
+		local LURE = "Your pole has no lure on. |cff9a2a1aOnly that|r; then you cast."
+
+		it(
+			"shows a Module's note once per account, marking notesSeen, through M:ShowMarginNote (ONB-R50, ONB-R92)",
+			function()
+				local fake = newFakePagle()
+				local M = withQoL(fake)
+				local button = region()
+
+				M:ShowMarginNote({ id = "qol.lure", text = LURE, target = button })
+				fake.wait(12)
+				M:ShowMarginNote({ id = "qol.lure", text = LURE, target = button })
+
+				assert.are.same({ "qol.lure" }, shownIds(fake))
+				assert.are.equal(button, fake.notesShown[1].target)
+				assert.is_true(fake.global.onboarding.notesSeen["qol.lure"])
+			end
+		)
+
+		it("shows nothing with Margin notes off (ONB-R50, ONB-R81)", function()
+			local fake = newFakePagle()
+			local M = withQoL(fake)
+			fake.global.onboarding.notesOn = false
+
+			M:ShowMarginNote({ id = "qol.lure", text = LURE, target = region() })
+
+			assert.are.same({}, fake.notesShown)
+		end)
+
+		it("raises an error at the Module's call for a missing or mistyped field, showing nothing (ONB-R90)", function()
+			local fake = newFakePagle()
+			local M = withQoL(fake)
+
+			local ok, err = pcall(function()
+				M:ShowMarginNote({ id = "ledger.fresh", text = LURE, target = region() })
+			end)
+
+			assert.is_false(ok)
+			assert.matches("fake_pagle_spec%.lua:%d+: ShowMarginNote: a note's id is qol%.<name>", tostring(err))
+			assert.are.same({}, fake.notesShown)
+		end)
+
+		it("holds a note raised in combat until after it, and drops one whose target hid (ONB-R51)", function()
+			local fake = newFakePagle()
+			local M = withQoL(fake)
+			local stays, goes = region(), region()
+
+			fake.setRestricted(true)
+			M:ShowMarginNote({ id = "qol.lure", text = LURE, target = stays })
+			M:ShowMarginNote({ id = "qol.bare", text = LURE, target = goes })
+			goes.hidden = true
+			assert.are.same({}, fake.notesShown)
+			fake.setRestricted(false)
+
+			assert.are.same({ "qol.lure" }, shownIds(fake))
+			assert.is_nil(fake.global.onboarding.notesSeen["qol.bare"])
+		end)
+
+		it("takes a note away after 12 s (ONB-R51)", function()
+			local fake = newFakePagle()
+			local M = withQoL(fake)
+			M:ShowMarginNote({ id = "qol.lure", text = LURE, target = region() })
+
+			fake.wait(11.5)
+			assert.are.equal(1, #fake.marginNotes:Showing())
+			fake.wait(0.5)
+
+			assert.are.same({}, fake.marginNotes:Showing())
+		end)
+
+		it(
+			"shows core.welcome on Pagle's menu button for a returning Angler at the first SessionStarted (ONB-R2)",
+			function()
+				local fake = newFakePagle()
+				fake.global.onboarding = fake.ns.NewOnboardingState("returning")
+				fake.login()
+				fake.enterWorld()
+
+				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+
+				assert.are.same({ "core.welcome" }, shownIds(fake))
+				assert.are.equal(fake.menuButton, fake.notesShown[1].target())
+				assert.are.equal(
+					"Welcome back. |cff9a2a1a/pagle guide|r shows you around, if you want the tour.",
+					fake.notesShown[1].text
+				)
+			end
+		)
+
+		it(
+			"shows core.character on another character while QoL is registered, and not without QoL (ONB-R3, ONB-R101)",
+			function()
+				local fake = newFakePagle()
+				fake.global.onboarding = fake.ns.NewOnboardingState("opened")
+				fake.global.onboarding.characters["Player-4618-0A1B2C3D"] = true
+				withQoL(fake)
+				assert.are.same({ "core.character" }, shownIds(fake))
+
+				local without = newFakePagle()
+				without.global.onboarding = without.ns.NewOnboardingState("opened")
+				without.global.onboarding.characters["Player-4618-0A1B2C3D"] = true
+				without.login()
+				assert.are.same({}, without.notesShown)
+			end
+		)
+
+		it("shows a note seen before with /pagle dev onboarding note <id>, marking nothing (ONB-R83)", function()
+			local fake = newFakePagle()
+			local M = withQoL(fake)
+			M:ShowMarginNote({ id = "qol.lure", text = LURE, target = region() })
+			fake.wait(12)
+			fake.slash("dev on")
+
+			fake.slash("dev onboarding note qol.lure")
+			fake.slash("dev onboarding note core.welcome")
+			fake.slash("dev onboarding note core.nod")
+			fake.slash("dev onboarding note qol.nothing")
+
+			assert.are.same({ "qol.lure", "qol.lure", "core.welcome" }, shownIds(fake))
+			assert.is_nil(fake.global.onboarding.notesSeen["core.welcome"])
+			assert.are.same({
+				"Pagle dev: dev commands are on.",
+				"Pagle dev: margin note core.nod has nothing on screen to point at now.",
+				"Pagle dev: no margin note qol.nothing; the notes are core.character, core.nod, core.summary,"
+					.. " core.toast, core.uncharted, core.welcome, qol.lure.",
+			}, fake.printed)
+		end)
+	end)
+
 	describe("the Field guide", function()
 		-- The fixture Modules' steps at their orders (ONB-R21), each Module but `without` registered: QoL's two, the
 		-- Ledger's and the Tackle Board's, with Core's four at 10, 20, 50 and 90. Returns the handles by name.

@@ -194,6 +194,12 @@
 --- 546 frames on the client fake.load gave the Module, as its build drew them at the step's first showing, and the nav
 --- it got: its moves are Core's, its widgets plain frames that keep what they were made with. No client, no pages.
 ---@field guideHeld boolean Whether Announcements are held for the guide now (ONB-R70).
+---@field notesShown PagleMarginNote[] Each Margin note Core would show, in order (ONB-R50–R52): M:ShowMarginNote's,
+--- and core.welcome and core.character on fake.menuButton. Once per account and only with Margin notes on.
+---@field marginNotes PagleMarginNotes Core's Margin notes on its wiring: :Showing() is what is on screen now, and
+--- :TargetHidden(id) plays a target hiding (Core's adapter watches for it each frame).
+---@field menuButton { name: string, shown: boolean, IsVisible: fun(self): boolean } Pagle's menu button, which
+--- core.welcome and core.character point at; set `shown` to false to play it hidden.
 ---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
 --- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
 
@@ -1209,6 +1215,47 @@ part(function(fake, _, ns, host)
 		coreSteps = {},
 	})
 	fake.guide, fake.guideSteps = ns.guide, ns.guideSteps
+end)
+
+-- Margin notes (core/onboarding.md › Margin notes), on Core's wiring: M:ShowMarginNote validates as Core does, shows a
+-- note once per account and only with Margin notes on (fake.global.onboarding), holds one raised while restricted
+-- (fake.setRestricted) and drops it if its target hid, and takes it away after 12 s (fake.wait). The fake draws
+-- nothing: each note Core would show lands in fake.notesShown, and fake.marginNotes:Showing() is what is on screen.
+-- A target is shown while its IsVisible says so (a table without one always is). The onboarding hooks' notes point
+-- at fake.menuButton, Pagle's menu button (ONB-R2, ONB-R3); nothing in the fake shows Announcements or cards, so
+-- Core's first-moment notes never show here.
+part(function(fake, _, ns, host)
+	fake.notesShown = {}
+	fake.menuButton = { name = "Pagle's menu button", shown = true }
+	function fake.menuButton:IsVisible()
+		return self.shown
+	end
+	ns.WireMarginNotes(host, {
+		show = function(note)
+			fake.notesShown[#fake.notesShown + 1] = note
+		end,
+		hide = function() end,
+		place = function() end,
+		isShown = function(note)
+			local region = note.target
+			if type(region) == "function" then
+				region = region()
+			end
+			return region ~= nil and (type(region.IsVisible) ~= "function" or region:IsVisible() == true)
+		end,
+		coreTarget = function(key)
+			if key == "menu" then
+				return function()
+					return fake.menuButton
+				end
+			end
+			return nil
+		end,
+		isUncharted = function()
+			return false
+		end,
+	})
+	fake.marginNotes = ns.marginNotes
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.
