@@ -86,6 +86,7 @@ describe("the Journal bindings", function()
 				tileW = 128,
 				tileH = 128,
 				gilt = { 0xe8 / 255, 0xc9 / 255, 0x6a / 255 },
+				giltShadow = { 0, 0, 0, 0.95, 0, -1 },
 				silver = false,
 				paperTint = { 1, 1, 1 },
 				swatchAtlas = "Bindings",
@@ -94,6 +95,22 @@ describe("the Journal bindings", function()
 			assert.are.same(field, ns.BindingLook("core.crest.plain"))
 			assert.are.same(field, ns.BindingLook(nil))
 		end)
+
+		it(
+			"presses a dark gilt's crumbs into a light material, a light edge under them, not the black shadow",
+			function()
+				local birch = ns.BindingLook("ledger.binding.birch")
+				assert.are.same({ 1, 0.96, 0.86, 0.6, 0, -1 }, birch.giltShadow)
+				assert.are.same({ 0, 0, 0, 0.95, 0, -1 }, ns.BindingLook("ledger.binding.field").giltShadow)
+				-- every dark gilt, and only those, takes the pressed edge
+				for _, binding in ipairs(ns.BINDINGS) do
+					local look = ns.BindingLook(ns.BindingID(binding))
+					local g = look.gilt
+					local dark = 0.2126 * g[1] + 0.7152 * g[2] + 0.0722 * g[3] <= 0.45
+					assert.are.equal(dark, look.giltShadow[1] == 1, binding.name)
+				end
+			end
+		)
 
 		it(
 			"tints the grey leather a level binding's tint, the band toward it and the paper by a tenth (LED-R110)",
@@ -173,6 +190,7 @@ describe("the Journal bindings", function()
 					tileH = 196,
 					band = { math.min(1, 0x5a / 255 * 1.9), math.min(1, 0x54 / 255 * 1.9), 0x48 / 255 * 1.9 },
 					gilt = { 0xd8 / 255, 0xd0 / 255, 0xc0 / 255 },
+					giltShadow = { 0, 0, 0, 0.95, 0, -1 },
 					silver = false,
 					corners = "iron",
 					paperTint = { 1, 1, 1 },

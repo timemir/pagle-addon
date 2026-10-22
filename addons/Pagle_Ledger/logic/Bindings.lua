@@ -344,6 +344,13 @@ end
 local SILVER = 0.12
 -- How much of the binding's hue the page paper takes ("the page paper cools slightly").
 local PAPER_SHARE = 0.1
+-- A gilt this light or less (Rec. 709 weights over its hex values) is dark ink on a light material: its words take
+-- a light edge under them, pressed into the material, never the black shadow that blurs dark words on birch.
+local DARK_GILT = 0.45
+-- The crumbs' shadow under a light gilt, as the kit's font draws words on the leather, and the pressed edge under a
+-- dark one: { r, g, b, a, x, y }.
+local GILT_SHADOW = { 0, 0, 0, 0.95, 0, -1 }
+local PRESSED_EDGE = { 1, 0.96, 0.86, 0.6, 0, -1 }
 -- A material's repeat without one of its own, in UI units: the leathers' (their texture is 256 texels at 2 a unit).
 local LEATHER_TILE = 128
 
@@ -356,6 +363,7 @@ local LEATHER_TILE = 128
 ---@field tint? number[]         -- the material's vertex tint; nil for a texture drawn as it is
 ---@field band? number[]         -- the band's tone (desaturated, then tinted); nil for the band as it is
 ---@field gilt number[]          -- the crumbs and fleurons (LED-R125)
+---@field giltShadow number[]    -- the crumbs' shadow, { r, g, b, a, x, y }: a light pressed edge under a dark gilt
 ---@field silver boolean         -- the brass plate turns silver (LED-R149)
 ---@field corners? LedgerBindingCorners -- the open book's corner pieces; nil for none
 ---@field paperTint number[]     -- the page paper's vertex tint
@@ -398,6 +406,8 @@ function ns.BindingLook(goodID)
 		tint = tint,
 		band = band,
 		gilt = gilt,
+		giltShadow = 0.2126 * gilt[1] + 0.7152 * gilt[2] + 0.0722 * gilt[3] <= DARK_GILT and PRESSED_EDGE
+			or GILT_SHADOW,
 		silver = silver,
 		corners = found.corners,
 		paperTint = paper,
