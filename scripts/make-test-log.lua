@@ -6,7 +6,7 @@
 -- Run it in WSL with the game fully closed.
 --
 --   lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder>
---       --preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers> [--out <folder>]
+--       --preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers|veteran> [--out <folder>]
 --       [--catalogue <Catalogue.lua>] [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>]
 --   lua scripts/make-test-log.lua --account <folder> --install [--out <folder>]
 --   lua scripts/make-test-log.lua --account <folder> --restore [--out <folder>]
@@ -52,6 +52,14 @@
 -- Folded with Hunts' own logic/ (listed in Pagle_Hunts.toc), it is written only when that run is the one known run,
 -- completed, `settled` is 1 and no run is on now, so the login's live step logs the current slot's run (HNT-R151).
 --
+-- veteran writes a seasoned account to play as: three weeks of sessions across the charted zones (the standing Hunts
+-- move on from them), three Prestige entries, the last fallback slot's run settled as wagers plays it and the current
+-- slot's run logged and part played, so it is on at the next login. Its Prestiges are honest through the test-log
+-- grants (catch-log.md › Test logs): `devXP` gives each one's snapshot (AXP-R5) a full climb's Activity XP, and
+-- `devCoins` tops the balance up to VETERAN_COINS. Folded with the Ledger's and Hunts' own logic/, it is written only
+-- when the Ledger is at Prestige 3 below level 60, a standing Hunt has a tier, the old run is settled and the current
+-- one is on.
+--
 -- --install copies the newest stage's Pagle.lua into the account's SavedVariables, only when the account's Pagle.lua
 -- is the one backed up or another test log made here (a boardday one only before its board day ends, as the next
 -- reset would close day 2 unlit too, and a wagers one only before its current fallback slot ends). --restore puts back
@@ -63,7 +71,7 @@
 -- precompiled chunks are refused. Exits 2 on a usage error, 1 when it refuses (nothing is changed then), else 0.
 
 local USAGE = "usage: lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder>"
-	.. " (--preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers> [--catalogue <Catalogue.lua>]"
+	.. " (--preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers|veteran> [--catalogue <Catalogue.lua>]"
 	.. " [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>] | --install | --restore)"
 	.. " [--out <folder>]\n"
 
@@ -132,8 +140,20 @@ local PRESETS = {
 	showcase = { showcase = true, checks = "the in-game look-and-feel check" },
 	-- #310: the last fallback slot's run played to completion, the current slot left unlogged.
 	wagers = { wagers = true, check = "M8", step = "7" },
+	-- A seasoned Angler to look around as: Prestige III, Hunts under way, Pagle Wagers live and Coins to spend.
+	veteran = { veteran = true, checks = "a seasoned account to play and look around as" },
 }
-local PRESET_NAMES = { "level10", "level60", "catches1000", "boardday", "big5", "big20", "showcase", "wagers" }
+local PRESET_NAMES =
+	{ "level10", "level60", "catches1000", "boardday", "big5", "big20", "showcase", "wagers", "veteran" }
+
+-- veteran's log: VETERAN_DAYS days of history before the last fallback slot, a session of VETERAN_SESSION Casts each
+-- evening in the next charted zone in turn, and a Prestige the evening of each of VETERAN_PRESTIGE_DAYS. Its test-log
+-- grants (catch-log.md › Test logs): Activity XP enough that each Prestige's snapshot is VETERAN_CLIMB_GAP above the
+-- last, so each climb reaches 60, and VETERAN_CLIMB_XP more into the climb after the last; Coins enough that the
+-- balance is VETERAN_COINS. The current slot's run is played until half its Hunts reach tier 1, its Casts ending
+-- VETERAN_END before the run, so it is still on at the next login.
+local VETERAN_DAYS, VETERAN_SESSION, VETERAN_PRESTIGE_DAYS = 21, 40, { 6, 12, 18 }
+local VETERAN_CLIMB_GAP, VETERAN_CLIMB_XP, VETERAN_COINS, VETERAN_END = 201000, 60000, 50000, 900
 
 -- wagers' run: its `run` record WAGERS_RECORD_OFFSET seconds into the slot before the current one, as a login an hour
 -- into it logs it (HNT-R151), the Casts from a minute after; at most WAGERS_MAX_CASTS of them, so a run its Casts can't
@@ -1643,8 +1663,9 @@ end
 -- Pagle_Hunts.toc lists, in TOC order, on the client's `bit` library (LuaBitOp, which the rotation's FNV-1a hash
 -- reads), with `huntListPath` (--huntlist) for data/HuntList.lua and `eventListPath` (--eventlist) for
 -- data/EventList.lua; then the Hunt list, its lookups over the game's catalogue and Core's MatchesConditions, where
--- each Hunt bites and the event pool at runtime (ns.hunts, ns.lookups, ns.where, ns.events).
-local function loadHunts(game, huntListPath, eventListPath)
+-- each Hunt bites and the event pool at runtime (ns.hunts, ns.lookups, ns.where, ns.events). With `since`, a test
+-- log's release date (catch-log.md › Test logs), every Hunt is out from then, as Hunts' adapter makes it in the game.
+local function loadHunts(game, huntListPath, eventListPath, since)
 	local bit = wtf.luaBitOp()
 	if not bit then
 		refuse("no LuaBitOp (`bit`), which Hunts' rotation needs: run scripts/setup.sh; nothing written")
@@ -1666,7 +1687,7 @@ local function loadHunts(game, huntListPath, eventListPath)
 		refuse("the Hunt list or the event pool sets no ns.huntList or ns.eventList; nothing written")
 	end
 	local catalogue = game.catalogue
-	ns.hunts = ns.NewHuntList(ns.huntList, ns.L)
+	ns.hunts = ns.NewHuntList(ns.HuntListFrom(ns.huntList, since), ns.L)
 	ns.lookups = ns.NewLookups({
 		GetItem = catalogue.GetItem,
 		GetZones = catalogue.GetZones,
@@ -2001,6 +2022,355 @@ local function wagersNote(found, hunts, layout)
 	)
 end
 
+-- The veteran ------------------------------------------------------------------------------------------------------
+
+-- Plans veteran's log at server time `now`: wagers' rotation (planWagers), the current slot's own pick, which must
+-- have started long enough ago to log its run and play some of it, and the history's first day.
+local function planVeteran(hunts, now)
+	local layout = planWagers(hunts, now)
+	local current = layout.current
+	local event = hunts.RotationPick(layout.pool, current.slot)
+	if not event then
+		refuse(
+			("the current slot %d's band, %s, has no event in the rotation (HNT-R152); nothing written"):format(
+				current.slot,
+				current.band
+			)
+		)
+	end
+	local runTime = math.min(current.start + WAGERS_RECORD_OFFSET, now - VETERAN_END - 600)
+	if runTime <= current.start then
+		refuse(
+			("the current fallback slot began %s, too lately to play its run; run this again in an hour"):format(
+				utc(current.start)
+			) .. "; nothing written"
+		)
+	end
+	layout.currentEvent = event
+	layout.currentKey = hunts.RunKey(event.id, current.start)
+	layout.currentTime = runTime
+	-- The history ends the day before the old run's slot begins.
+	layout.historyStart = layout.slot.start - (VETERAN_DAYS + 1) * 86400
+	-- Each Prestige's snapshot (AXP-R5) a full climb's Activity XP above the last; the grant covers them all and the
+	-- climb after the last.
+	layout.snapshots = {}
+	for k = 1, #VETERAN_PRESTIGE_DAYS do
+		layout.snapshots[k] = k * VETERAN_CLIMB_GAP
+	end
+	layout.devXP = #VETERAN_PRESTIGE_DAYS * VETERAN_CLIMB_GAP + VETERAN_CLIMB_XP
+	return layout
+end
+
+-- Appends a record to veteran's log and folds it into the running Hunts state (every entry, as the game hands Hunts
+-- its Casts and its own records) and the Ledger's (every entry but Module records, LOG-R42).
+local function veteranAppend(sim, record)
+	local appended = sim.catchLog:Append(record)
+	sim.huntsDef.apply(sim.hunts, appended, "rebuild")
+	if appended.kind ~= "module" then
+		sim.fold.apply(sim.ledger, appended, "rebuild")
+	end
+	return appended
+end
+
+-- Logs `event`'s run from `slot` at `time` (Hunts' own encoder, source `r`), then plays it as wagers does: caught
+-- Casts in its zones, each of its first `hunts` Hunts in turn until it reaches tier 1 in the run, nothing at or after
+-- `stop`. With `open`, a Cast that would complete the run (its Hunts can share Catches) is left out, so it stays on
+-- unsettled. Returns the Hunts left short of tier 1.
+local function playRun(sim, event, slot, time, hunts, stop, open)
+	local game, facts, ns = sim.game, sim.facts, sim.huntsNs
+	veteranAppend(sim, {
+		kind = "module",
+		char = facts.char,
+		time = time,
+		module = "Hunts",
+		recordKind = ns.RUN_RECORD,
+		payload = ns.EncodeRun(event.id, slot.start, slot.end_, "r"),
+	})
+	local key = ns.RunKey(event.id, slot.start)
+	local function reached(hunt)
+		local known = sim.hunts.runs[key]
+		local progress = known and known.hunts[hunt.id]
+		return progress ~= nil and progress.reached[1] ~= nil
+	end
+	local unreached = {}
+	-- Kept open: one Hunt is held back, never played nor reached by a Cast another one plays. It is the one whose
+	-- Catches leave the others the most to play, so a narrow Hunt is held rather than a broad one.
+	local held, heldHunt = {}, nil
+	local function keyOf(pair)
+		return pair.zone .. ":" .. pair.subzone .. ":" .. pair.itemID
+	end
+	if open then
+		hunts = math.min(hunts, #event.hunts - 1)
+		local best = -1
+		for _, candidate in ipairs(event.hunts) do
+			local its = {}
+			for _, pair in ipairs(wagerPairs(game, ns, event, candidate)) do
+				its[keyOf(pair)] = true
+			end
+			local left = 0
+			for _, other in ipairs(event.hunts) do
+				if other ~= candidate then
+					for _, pair in ipairs(wagerPairs(game, ns, event, other)) do
+						left = left + (its[keyOf(pair)] and 0 or 1)
+					end
+				end
+			end
+			if left > best then
+				best, held, heldHunt = left, its, candidate
+			end
+		end
+	end
+	sim.t = time + 60
+	local toPlay = {}
+	for _, hunt in ipairs(event.hunts) do
+		if hunt ~= heldHunt and #toPlay < hunts then
+			toPlay[#toPlay + 1] = hunt
+		end
+	end
+	for _, hunt in ipairs(toPlay) do
+		local candidates = {}
+		for _, pair in ipairs(wagerPairs(game, ns, event, hunt)) do
+			if not held[keyOf(pair)] then
+				candidates[#candidates + 1] = pair
+			end
+		end
+		local i, casts = 0, 0
+		while #candidates > 0 and not reached(hunt) and sim.t < stop and casts < WAGERS_MAX_CASTS do
+			i = hunt.minBand and 1 or i % #candidates + 1
+			local t = sim.t
+			local record = castRecord(game, facts, candidates[i], t)
+			while t < stop and not game.core.MatchesConditions(hunt.conditions, record.conditions) do
+				t = t + 60
+				record = castRecord(game, facts, candidates[i], t)
+			end
+			if t >= stop then
+				break
+			end
+			veteranAppend(sim, record)
+			casts, sim.t = casts + 1, t + CAST_GAP
+		end
+		if not reached(hunt) then
+			unreached[#unreached + 1] = hunt.id
+		end
+	end
+	return unreached
+end
+
+-- veteran's log: the header just before the history's first day; each day an evening session of VETERAN_SESSION
+-- Casts in the next charted zone in turn (one in BIG_AWAY got away), a Prestige before it on each Prestige day; then
+-- the old slot's run played to settled and the current slot's run played until half its Hunts reach tier 1, its
+-- Casts ending VETERAN_END before the run. Folded with the Ledger's and Hunts' own logic/ as it is written.
+local function writeVeteran(game, hunts, facts, log, layout, now)
+	local data, catchLog, header = newLog(game, log, facts, layout.historyStart - 60)
+	local fold = game.ledger.NewLedgerFold(game.lookups)
+	local sim = {
+		game = game,
+		facts = facts,
+		catchLog = catchLog,
+		fold = fold,
+		ledger = fold.reset(),
+		huntsNs = hunts,
+		huntsDef = huntsDef(hunts, catchLog, now),
+		pairs = showcasePairs(game, facts),
+	}
+	sim.hunts = sim.huntsDef.reset()
+	for _, record in ipairs(header) do
+		sim.huntsDef.apply(sim.hunts, record, "rebuild")
+		fold.apply(sim.ledger, record, "rebuild")
+	end
+	local prestigeOn = {}
+	for k, day in ipairs(VETERAN_PRESTIGE_DAYS) do
+		prestigeOn[day] = k
+	end
+	local zones = sim.pairs.zones
+	for d = 0, VETERAN_DAYS - 1 do
+		local evening = layout.historyStart + d * 86400 + math.random(17 * 3600, 20 * 3600)
+		local rank = prestigeOn[d]
+		if rank then
+			veteranAppend(sim, {
+				kind = "prestige",
+				char = facts.char,
+				time = evening - 600,
+				rank = rank,
+				activityXP = layout.snapshots[rank],
+			})
+		end
+		local list = sim.pairs.byZone[zones[d % #zones + 1]]
+		for i = 1, VETERAN_SESSION do
+			local pair = list[(math.floor(d / #zones) * VETERAN_SESSION + i - 1) % #list + 1]
+			local record = castRecord(game, facts, pair, evening + (i - 1) * CAST_GAP)
+			if math.random(BIG_AWAY) == 1 then
+				record.outcome, record.items = "gotAway", {}
+			end
+			veteranAppend(sim, record)
+		end
+	end
+	sim.oldShort = playRun(sim, layout.event, layout.slot, layout.recordTime, math.huge, layout.slot.end_)
+	local half = math.max(1, math.floor(#layout.currentEvent.hunts / 2))
+	sim.currentShort =
+		playRun(sim, layout.currentEvent, layout.current, layout.currentTime, half, now - VETERAN_END, true)
+	return data, sim
+end
+
+-- Checks veteran's log as the game will read it: decoded whole with Core's codec, folded from nothing with Hunts' own
+-- logic/ (which must agree with the state folded while writing) and the Ledger's, its climb read over Core's Activity
+-- XP total at login: the grant and Hunts' XP (LED-R37, AXP-R6). The Ledger must be at Prestige 3 below level 60, a
+-- standing Hunt must have a tier, the old run must be settled and the current one on now. Returns what it found and
+-- the failures.
+local function checkVeteran(game, hunts, facts, data, layout, sim, now)
+	local found = { tags = {}, failures = {}, casts = 0, sessions = {}, zones = {} }
+	local function fail(line)
+		found.failures[#found.failures + 1] = line
+	end
+	for _, entry in ipairs(data.entries) do
+		local tag = entry:match("^(%u%d+)|") or "(no tag)"
+		found.tags[tag] = (found.tags[tag] or 0) + 1
+	end
+	local global = { decodeErrors = 0 }
+	local catchLog = game.open(deepCopy(data), global, now)
+	local def = huntsDef(hunts, catchLog, now)
+	local state = def.reset()
+	for record in catchLog:Iterate(0, "Hunts") do
+		def.apply(state, record, "rebuild")
+	end
+	local fold = game.ledger.NewLedgerFold(game.lookups)
+	local ledger = fold.reset()
+	for record in game.open(deepCopy(data), global, now):Iterate() do
+		fold.apply(ledger, record, "rebuild")
+		if record.kind == "cast" then
+			found.casts = found.casts + 1
+			found.first, found.last = found.first or record.time, record.time
+			found.sessions[record.session] = true
+			found.zones[record.conditions.zone] = true
+			if record.char ~= facts.char then
+				fail("a Cast is on another character")
+			end
+		end
+	end
+	if global.decodeErrors > 0 then
+		fail(count(global.decodeErrors, "entry", "entries") .. " Core's codec can't decode")
+	end
+	local problem = logIdProblem(data, facts)
+	if problem then
+		fail(problem)
+	end
+	if data.test ~= true then
+		fail("PagleLog.test isn't true, so its grants would mean nothing")
+	end
+	if not deepEqual(state, sim.hunts) then
+		fail("Hunts' fold of the written log isn't the one made while writing it")
+	end
+	found.hunts, found.ledger = state, ledger
+	-- Core's Activity XP total at login: the grant and Hunts' report (no Tackle Board record in this log).
+	found.total = layout.devXP + state.xp
+	found.level = game.ledger.Level(ledger, found.total)
+	if ledger.prestige ~= #VETERAN_PRESTIGE_DAYS or found.level >= game.ledger.LEVEL_CAP then
+		fail(
+			("the Ledger is at Prestige %d, level %d, not Prestige %d below level %d"):format(
+				ledger.prestige,
+				found.level,
+				#VETERAN_PRESTIGE_DAYS,
+				game.ledger.LEVEL_CAP
+			)
+		)
+	end
+	found.tiered = 0
+	for _, progress in pairs(state.hunts) do
+		if progress.reached[1] then
+			found.tiered = found.tiered + 1
+		end
+	end
+	if found.tiered == 0 then
+		fail("no standing Hunt has a tier")
+	end
+	local old = state.runs[layout.key]
+	if not (old and old.completedAt) then
+		fail(("the old run %s isn't settled"):format(layout.key))
+	end
+	local on = false
+	for _, run in ipairs(hunts.RunOn(state, now)) do
+		on = on or run.key == layout.currentKey
+	end
+	local current = state.runs[layout.currentKey]
+	if not on or (current and current.completedAt) then
+		fail(("the current run %s isn't on now, unsettled"):format(layout.currentKey))
+	end
+	found.coins = { Ledger = game.ledger.CoinsEarned(ledger, found.total), Hunts = state.coins }
+	found.earned = found.coins.Ledger + found.coins.Hunts
+	return found
+end
+
+-- veteran's lines: the Ledger's climb, the Hunts and runs, and the Coins the grant tops up.
+local function printVeteran(found, layout, sim, hunts, game)
+	local ledger, state = found.ledger, found.hunts
+	print(
+		("Ledger: Prestige %d, Angler Level %d over %s Activity XP (%s granted); %s Species, %s fished"):format(
+			ledger.prestige,
+			found.level,
+			thousands(found.total),
+			thousands(layout.devXP),
+			thousands(countOf(ledger.species)),
+			count(countOf(ledger.zones), "zone")
+		)
+	)
+	local short = #sim.oldShort > 0 and (" (short: %s)"):format(table.concat(sim.oldShort, ", ")) or ""
+	local current, marks = state.runs[layout.currentKey], 0
+	for _, hunt in ipairs(layout.currentEvent.hunts) do
+		local progress = current and current.hunts[hunt.id]
+		marks = marks + (progress and progress.reached[1] and 1 or 0)
+	end
+	print(
+		("Hunts: %s with a tier; %s; old run %s settled%s; current run %s on until %s, %d of %d first marks"):format(
+			count(found.tiered, "standing Hunt"),
+			count(state.settled, "wager settled", "wagers settled"),
+			eventLabel(hunts, layout.event),
+			short,
+			eventLabel(hunts, layout.currentEvent),
+			utc(layout.current.end_),
+			marks,
+			#layout.currentEvent.hunts
+		)
+	)
+	print(
+		("Casts: %s in %s Sessions, %s to %s (catalogue: %s)"):format(
+			thousands(found.casts),
+			thousands(countOf(found.sessions)),
+			utc(found.first),
+			utc(found.last),
+			game.label
+		)
+	)
+	print(
+		("Coins: Ledger %s, Hunts %s, and %s granted: %s to spend, nothing spent"):format(
+			thousands(found.coins.Ledger),
+			thousands(found.coins.Hunts),
+			thousands(found.devCoins),
+			thousands(found.earned + found.devCoins)
+		)
+	)
+end
+
+-- veteran's steps in one table, so makeTestLog holds one upvalue for them (Lua 5.1 allows a function 60): its plan,
+-- write, check and print, its aim, and the grants it writes into the log once checked.
+local VETERAN = {
+	plan = planVeteran,
+	write = writeVeteran,
+	check = checkVeteran,
+	print = printVeteran,
+	aim = function()
+		return ("Prestige %d, Hunts under way, a Pagle Wagers run on and %s Coins to spend"):format(
+			#VETERAN_PRESTIGE_DAYS,
+			thousands(VETERAN_COINS)
+		)
+	end,
+	-- The Activity XP the Prestiges' snapshots hold and the climb after them, the Coins that bring the balance to
+	-- VETERAN_COINS and the release date the standing Hunts are out from (catch-log.md › Test logs).
+	grant = function(data, layout, found)
+		found.devCoins = math.max(0, VETERAN_COINS - found.earned)
+		data.devXP, data.devCoins, data.devHuntsSince = layout.devXP, found.devCoins, layout.historyStart
+	end,
+}
+
 -- Stages ---------------------------------------------------------------------------------------------------------
 
 -- The test logs made for the account: each stage folder under `root` with its stage.txt, oldest first.
@@ -2189,8 +2559,17 @@ local function makeTestLog(options, now)
 	local facts = readRealLog(game, log)
 	facts.log, facts.characters = log, deepCopy(log.characters)
 
-	local data, found, boardPlan, showcase, sim, hunts, wagers
-	if preset.wagers then
+	local data, found, boardPlan, showcase, sim, hunts, wagers, veteran
+	if preset.veteran then
+		hunts = loadHunts(game, options.huntlist, options.eventlist)
+		veteran = VETERAN.plan(hunts, now)
+		-- Hunts again, every standing Hunt out from the history's first day, as the log's release date makes it
+		hunts = loadHunts(game, options.huntlist, options.eventlist, veteran.historyStart)
+		math.randomseed(now)
+		data, sim = VETERAN.write(game, hunts, facts, log, veteran, now)
+		found = VETERAN.check(game, hunts, facts, data, veteran, sim, now)
+		VETERAN.grant(data, veteran, found)
+	elseif preset.wagers then
 		hunts = loadHunts(game, options.huntlist, options.eventlist)
 		wagers = planWagers(hunts, now)
 		math.randomseed(now)
@@ -2259,7 +2638,10 @@ local function makeTestLog(options, now)
 	writeFile(stage .. "/Pagle.lua", text)
 	-- A boardday test log is played only before its board day ends, a showcase one before its last lit day closes
 	-- unlit, a wagers one before its current fallback slot ends (install refuses after).
-	local until_ = boardPlan and boardPlan.nextReset or showcase and showcase.deadline or wagers and wagers.current.end_
+	local until_ = boardPlan and boardPlan.nextReset
+		or showcase and showcase.deadline
+		or wagers and wagers.current.end_
+		or veteran and veteran.current.end_
 	local nextReset = until_ and ("nextReset %d\n"):format(until_) or ""
 	writeFile(
 		stage .. "/stage.txt",
@@ -2277,7 +2659,8 @@ local function makeTestLog(options, now)
 		tags[#tags + 1] = tag .. " " .. n
 	end
 	table.sort(tags)
-	local aim = preset.wagers and "the last fallback slot's run settled, the current slot's not logged yet"
+	local aim = preset.veteran and VETERAN.aim()
+		or preset.wagers and "the last fallback slot's run settled, the current slot's not logged yet"
 		or preset.showcase and ("a Campfire of %d days or more lit on the board's day, and %s Coins or more to spend"):format(
 			SHOWCASE_FIRE,
 			thousands(SHOWCASE_COINS)
@@ -2306,7 +2689,9 @@ local function makeTestLog(options, now)
 			fishers
 		)
 	)
-	if preset.wagers then
+	if preset.veteran then
+		VETERAN.print(found, veteran, sim, hunts, game)
+	elseif preset.wagers then
 		printWagers(found, wagers, hunts, game)
 	elseif preset.showcase then
 		printShowcase(found, showcase, sim, game)
@@ -2326,7 +2711,16 @@ local function makeTestLog(options, now)
 	print(("test log: %s/Pagle.lua, PagleDB and the rest of Pagle.lua as they were"):format(stage))
 	print("Nothing under " .. options.account .. " was changed. To play it, with the game fully closed:")
 	print("  " .. command(options, "--install"))
-	if preset.wagers then
+	if preset.veteran then
+		print(
+			("  then log in as %s before %s, when the current run's slot ends: after it, that run is over."):format(
+				characterName(log, facts.char),
+				utc(veteran.current.end_)
+			)
+		)
+		print("  Its Coins and Activity XP grants count only on this test log (catch-log.md › Test logs): --restore")
+		print("  puts your real log back, and with it the real totals.")
+	elseif preset.wagers then
 		print(
 			("  then log in as %s before %s, when slot %d ends: after it, a later slot's event is on instead."):format(
 				characterName(log, facts.char),
@@ -2390,6 +2784,7 @@ local function install(options, now)
 		local why = stage.preset == "showcase"
 				and "its last lit day's next day ended at %s, so it would burn a Kindling;"
 			or stage.preset == "wagers" and "its fallback slot ended at %s, so a later slot's event would be on;"
+			or stage.preset == "veteran" and "its current run's slot ended at %s, so that run is over;"
 			or "its board day ended at %s, so day 2 would close unlit too;"
 		refuse(
 			("%s is a %s test log and " .. why):format(stage.dir, stage.preset, utc(nextReset))
@@ -2412,7 +2807,7 @@ local function install(options, now)
 	local was = real and "the real log, as backed up" or ("test log %s (logId %s)"):format(other.preset, currentLogId)
 	print(("the Pagle.lua it replaced, %s, is kept in %s/"):format(was, kept))
 	local by = stage.preset == "showcase" and " before %s, when its Campfire's last lit day is followed by an unlit one"
-		or stage.preset == "wagers" and " before %s, when its current fallback slot ends"
+		or (stage.preset == "wagers" or stage.preset == "veteran") and " before %s, when its current fallback slot ends"
 		or " before the next daily reset, %s"
 	local before = nextReset and by:format(utc(nextReset)) or ""
 	print("Log in as " .. tostring(stage.character) .. before .. ".")

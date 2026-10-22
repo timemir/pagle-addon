@@ -392,7 +392,10 @@ function ns.WireWallet(host)
 	--- ns.TieTotalsToLog), then the wallet reads and writes them from now on.
 	function ns.OpenWallet()
 		local coins = host.db().global.coins
-		ns.TieTotalsToLog(coins, host.catchLog().data.logId)
+		local data = host.catchLog().data
+		ns.TieTotalsToLog(coins, data.logId)
+		-- a test log's granted Coins, under their own source; none on a player's log
+		coins.earned[ns.DEV_SOURCE] = ns.TestLogGrant(data, "devCoins")
 		ns.wallet:Open(coins.earned)
 	end
 end
@@ -419,7 +422,10 @@ function ns.WireActivityXP(host)
 	--- Login step 1, once PagleDB is open: empties the stored totals if they belong to another log (AXP-R3), then
 	--- Activity XP reads and writes them from now on.
 	function ns.OpenActivityXP()
-		ns.activityXP:Open(host.db().global.activityXP)
+		local store = host.db().global.activityXP
+		ns.activityXP:Open(store)
+		-- a test log's granted Activity XP, under its own source; none on a player's log
+		store.earned[ns.DEV_SOURCE] = ns.TestLogGrant(host.catchLog().data, "devXP")
 	end
 end
 

@@ -29,8 +29,9 @@ function ns.Hunts.OnInitialize()
 	ns.db = LibStub("AceDB-3.0"):New("PagleHuntsDB", ns.DB_DEFAULTS, true)
 	ns.MigrateDB(ns.db.global)
 
-	--- The Hunt list at runtime (HNT-R1): every file has loaded by now, data\HuntList.lua and the lore included.
-	ns.hunts = ns.NewHuntList(ns.huntList, ns.L)
+	--- The Hunt list at runtime (HNT-R1): every file has loaded by now, data\HuntList.lua and the lore included. On a
+	--- test log with a release date (catch-log.md › Test logs), every Hunt is out from then.
+	ns.hunts = ns.NewHuntList(ns.HuntListFrom(ns.huntList, Pagle.GetTestLogGrant("devHuntsSince")), ns.L)
 	--- Hunts' reads of Core's catalogue and rules (logic/Qualify.lua).
 	ns.lookups = ns.NewLookups(Pagle, ns.hunts)
 	--- Where each Hunt bites (HNT-R30–R34): worked out here, once per load, where the catalogue is ready (CORE-R10).

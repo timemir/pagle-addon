@@ -32,6 +32,34 @@ local ns = select(2, ...)
 ---@field hunts HuntDef[]
 ---@field classes table<string, table<integer, true>>
 
+--- The Hunt list with every Hunt out from `since` at the latest: a test log's release date (catch-log.md › Test
+--- logs), so a test log can play the standing Hunts before they are released. A copy, each Hunt whose `since` is
+--- later counting from `since`, under a fingerprint of its own, so the projection rebuilds over it (HNT-R136). `data`
+--- itself is never changed; without `since` (any player's log) or a list, `data` as it is.
+---@param data HuntListData?
+---@param since integer?
+---@return HuntListData?
+function ns.HuntListFrom(data, since)
+	if not (data and since) then
+		return data
+	end
+	local hunts = {}
+	for i, hunt in ipairs(data.hunts) do
+		local copy = {}
+		for key, value in pairs(hunt) do
+			copy[key] = value
+		end
+		copy.since = math.min(hunt.since, since)
+		hunts[i] = copy
+	end
+	return {
+		fingerprint = data.fingerprint .. "+" .. since,
+		sets = data.sets,
+		hunts = hunts,
+		classes = data.classes,
+	}
+end
+
 --- Whether `hunt` exists at server time `t`: from its `since` on, and before its `retired` if it has one (HNT-R2).
 ---@param hunt HuntDef
 ---@param t integer

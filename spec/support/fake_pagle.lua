@@ -611,6 +611,12 @@ part(function(fake, Pagle, ns, host)
 		return readOnly(wallet:Get())
 	end
 
+	-- A test log's grants, as Core reads them from its log (catch-log.md › Test logs).
+	function Pagle.GetTestLogGrant(name)
+		local log = fake.catchLog
+		return log and ns.TestLogGrant(log.data, name) or nil
+	end
+
 	function fake.setSpent(spent)
 		wallet:SetSpent(spent)
 	end

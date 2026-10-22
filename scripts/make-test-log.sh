@@ -4,7 +4,7 @@
 # check's showcase (docs/agents/in-game-verification.md).
 #
 #   scripts/make-test-log.sh --account <WTF/Account/<ACCT> folder>
-#       --preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers>
+#       --preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers|veteran>
 #       [--out <folder>] [--catalogue <Catalogue.lua>] [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>]
 #   scripts/make-test-log.sh --account <folder> --install [--out <folder>]
 #   scripts/make-test-log.sh --account <folder> --restore [--out <folder>]

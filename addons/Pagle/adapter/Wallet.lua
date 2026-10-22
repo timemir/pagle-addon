@@ -21,3 +21,12 @@ ns.WireWallet(ns.host)
 function Pagle.GetBalance()
 	return ns.wallet:Get()
 end
+
+--- A test log's grant `name` (catch-log.md › Test logs): its whole number, only on a log marked `test = true`, else
+--- nil. Readable from a Module's OnInitialize on: login step 1 has opened the log by then.
+---@param name "devCoins"|"devXP"|"devHuntsSince"
+---@return integer?
+function Pagle.GetTestLogGrant(name)
+	local log = ns.catchLog
+	return log and ns.TestLogGrant(log.data, name) or nil
+end

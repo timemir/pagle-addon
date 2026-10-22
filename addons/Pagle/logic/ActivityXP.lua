@@ -95,7 +95,7 @@ function ActivityXP:Get()
 	end
 	local bySource = {}
 	for name, total in pairs(self.store.earned) do
-		bySource[name] = { total = total, enabled = on[name] == true }
+		bySource[name] = { total = total, enabled = on[name] == true or name == ns.DEV_SOURCE }
 	end
 	return { total = self:Total(), bySource = bySource }
 end

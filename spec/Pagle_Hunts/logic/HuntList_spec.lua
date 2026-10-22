@@ -140,6 +140,24 @@ describe("The Hunt list at runtime", function()
 		end)
 	end)
 
+	describe("a test log's release date (catch-log.md › Test logs)", function()
+		it("counts every Hunt released later from the date, keeps earlier ones, and fingerprints the copy", function()
+			local data = ns.huntList
+			local from = ns.HuntListFrom(data, JUN_1)
+
+			for i, hunt in ipairs(from.hunts) do
+				assert.are.equal(math.min(data.hunts[i].since, JUN_1), hunt.since)
+				assert.are.equal(data.hunts[i].id, hunt.id)
+			end
+			assert.are.equal(data.fingerprint .. "+" .. JUN_1, from.fingerprint)
+			assert.are_not.equal(data.hunts[1], from.hunts[1]) -- a copy: the list itself never changes
+		end)
+
+		it("is the list as it is without a date: any player's log", function()
+			assert.are.equal(ns.huntList, ns.HuntListFrom(ns.huntList, nil))
+		end)
+	end)
+
 	describe("text from Hunts' own ns.L (HNT-R1, DATA-R105)", function()
 		it("names Hunts and sets, titles and notes sets, from the lore", function()
 			assert.are.same(

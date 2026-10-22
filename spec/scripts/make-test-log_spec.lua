@@ -1432,6 +1432,74 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 		end)
 	end)
 
+	describe("--preset veteran at NOW (in-game-verification.md › Test logs)", function()
+		local made = make("veteran", NOW, nil, { loadfile = withOrigin(WAGERS_ORIGIN) }, nil, {
+			"--huntlist",
+			"spec/scripts/fixtures/TestLogVeteranHuntList.lua",
+			"--eventlist",
+			"spec/scripts/fixtures/TestLogEventList.lua",
+		})
+		local text = made.stage and readFile(made.stage .. "/Pagle.lua")
+		local log = text and globalsOf(text).PagleLog
+
+		it("exits 0 and makes one dated test log for the account", function()
+			assert.are.equal("", made.err)
+			assert.are.equal(0, made.code)
+			assert.are.same({ "20261014-174640-veteran" }, made.stages)
+		end)
+
+		it("writes a test log Core's codec decodes whole, with its grants (catch-log.md › Data)", function()
+			local records, undecodable = decoded(log)
+			assert.are.equal(0, undecodable)
+			assert.are.equal(#log.entries, #records + #huntsRecords(log))
+			assert.is_true(log.test)
+			assert.are.equal(3 * 201000 + 60000, log.devXP)
+			assert.is_true(log.devCoins > 0 and log.devCoins <= 50000)
+			assert.are.equal(PREVIOUS - 22 * 86400, log.devHuntsSince)
+		end)
+
+		it(
+			"puts the standing Hunt out from the release date, so the history's Casts give it a tier (HNT-R2)",
+			function()
+				local list = huntsNs.HuntListFrom(
+					fixtureData("spec/scripts/fixtures/TestLogVeteranHuntList.lua", "huntList"),
+					log.devHuntsSince
+				)
+				assert.are.equal(log.devHuntsSince, list.hunts[1].since)
+				local printed = table.concat(made.lines, "\n")
+				assert.matches("Hunts: 1 standing Hunt with a tier", printed, 1, true)
+			end
+		)
+
+		it("holds three Prestige entries, ranks 1 to 3, each snapshot a full climb above the last (AXP-R5)", function()
+			local prestiges = {}
+			for _, record in ipairs((decoded(log))) do
+				if record.kind == "prestige" then
+					prestiges[#prestiges + 1] = { record.rank, record.activityXP }
+				end
+			end
+			assert.are.same({ { 1, 201000 }, { 2, 402000 }, { 3, 603000 } }, prestiges)
+		end)
+
+		it("leaves the old run settled and the current slot's run on, part played (HNT-R143, HNT-R148)", function()
+			local state = huntsFolded(log)
+			local old = state.runs["fixture_westfall_dawn@" .. PREVIOUS]
+			assert.is_truthy(old and old.completedAt)
+			local on = huntsNs.RunOn(state, NOW)
+			assert.are.equal(1, #on)
+			assert.are.equal(("fixture_westfall_night@%d"):format(CURRENT), on[1].key)
+		end)
+
+		it("prints its aim and keeps the current slot's end in stage.txt", function()
+			assert.are.equal(
+				"== Test log veteran: Prestige 3, Hunts under way, a Pagle Wagers run on and 50,000 Coins to spend"
+					.. " (a seasoned account to play and look around as)",
+				made.lines[1]
+			)
+			assert.matches(("\nnextReset %d\n$"):format(CURRENT + SLOT), readFile(made.stage .. "/stage.txt"))
+		end)
+	end)
+
 	-- The wagers test log made at NOW, logged into on FakePagle at NOW with Hunts over the fixture catalogue, Hunt list
 	-- and pool, the origin moved, and no companion (Pagle_Content missing), as the dev does after --install: the first
 	-- build, then the live step once PushedContentReady has fired (HNT-R111, HNT-R151).
