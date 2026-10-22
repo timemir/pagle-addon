@@ -69,6 +69,7 @@ logic\FieldReportBox.lua
 logic\Dock.lua
 logic\Onboarding.lua
 logic\Guide.lua
+logic\Letter.lua
 logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
