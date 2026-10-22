@@ -107,13 +107,12 @@ end
 
 -- Core's book binding (ADR 0015) as the list shows it: Field Leather and every binding for sale, in the shop's order.
 local BOOK_BINDING = {
-	"BOOK BINDING 1 of 35",
+	"BOOK BINDING 1 of 34",
 	"Field Leather | IN USE",
 	"Birch Bark | 150",
 	"Tide-Chart Linen | 150",
 	"Tarred Sailcloth | 150",
 	"Oilskin Yellow | 150",
-	"Oilcloth | 150",
 	"Canvas Field Pad | 150",
 	"Waxed Kraft | 150",
 	"Tartan Wool | 150",
@@ -695,7 +694,7 @@ describe("The Curio Shop's list", function()
 			"Driftwood | IN USE",
 			"CRESTS 1 of 1",
 			"Plain | IN USE",
-			"BOOK BINDING 1 of 35",
+			"BOOK BINDING 1 of 34",
 			"Field Leather | IN USE",
 			"JOURNAL BINDING 1 of 2",
 			"Oak | IN USE",
@@ -703,9 +702,9 @@ describe("The Curio Shop's list", function()
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(9 + 27 + 35, #listed(loaded))
+		assert.are.equal(9 + 27 + 34, #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(15 + 27 + 36, #listed(loaded))
+		assert.are.equal(15 + 27 + 35, #listed(loaded))
 	end)
 
 	it(
@@ -726,7 +725,7 @@ describe("The Curio Shop's list", function()
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
-			assert.are.equal(15 + 27 + 36, #listed(loaded))
+			assert.are.equal(15 + 27 + 35, #listed(loaded))
 		end
 	)
 

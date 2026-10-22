@@ -14,7 +14,7 @@ ns.DEFAULT_BINDING = "core.binding.field"
 
 -- The bindings' art, all Core's (Pagle/media/books): Field Leather's leather (the books' own), the grey leather a
 -- vertex tint colours, Birch Bark's bark and Buckram's cloth, the Curio Shop expansion's materials, one per key
--- (`bindings/<key>`), the two cloths drawn at the book's size (`fills/<key>`), and the second round's materials, one
+-- (`bindings/<key>`), Verdigris's cloth drawn at the book's size (`fills/<key>`), and the second round's materials, one
 -- per key (`bindings3/<key>`: two of its keys, shagreen and lacquer, are the expansion's already).
 local BOOKS = "Interface\\AddOns\\Pagle\\media\\books\\"
 local FIELD_LEATHER = BOOKS .. "Leather"
@@ -452,18 +452,9 @@ ns.BINDINGS = {
 		silver = true,
 		corners = "silver",
 	}),
-	-- The books kit v2's covers (its Covers.lua): Oilcloth, a waxed green cloth drawn at the book's size; Tooled
-	-- Leather, Field Leather's leather darker at its foot with a gilt double rule; Verdigris, copper gone green, with a
-	-- gilt corner. No kit has a closed book of them.
-	{
-		key = "oilcloth",
-		id = idOf("core", "oilcloth"),
-		tier = 1,
-		icon = ICONS .. "INV_Fabric_Felcloth_Ebon",
-		fill = FILLS .. "oilcloth",
-		gilt = FIELD_GILT,
-		silver = false,
-	},
+	-- The books kit v2's covers (its Covers.lua): Tooled Leather, Field Leather's leather darker at its foot with a
+	-- gilt double rule; Verdigris, copper gone green, drawn at the book's size, with a gilt corner. No kit has a closed
+	-- book of them.
 	{
 		key = "tooled",
 		id = idOf("core", "tooled"),
@@ -574,7 +565,7 @@ local PRESSED_EDGE = { 1, 0.96, 0.86, 0.6, 0, -1 }
 --- corner, the page paper's tint and the closed book's swatch.
 ---@class PagleBindingLook
 ---@field texture? string        -- the material's texture, tiled at tileW × tileH
----@field fill? string           -- or a cloth drawn at the frame's size (Oilcloth, Verdigris)
+---@field fill? string           -- or a cloth drawn at the frame's size (Verdigris)
 ---@field tileW number           -- UI units a repeat, across
 ---@field tileH number           -- and down
 ---@field tint? number[]         -- the material's vertex tint; nil for a texture drawn as it is
@@ -588,7 +579,7 @@ local PRESSED_EDGE = { 1, 0.96, 0.86, 0.6, 0, -1 }
 ---@field giltCorner? boolean    -- Verdigris's gilt corner at the top left
 ---@field paperTint number[]     -- the page paper's vertex tint
 ---@field swatchAtlas? "Bindings"|"Bindings2"|"Covers2"|"Bindings3" -- the closed book's atlas (the shop's preview)
----@field swatch? string         -- and its sprite there; nil where no kit drew one (Oilcloth, Tooled, Verdigris)
+---@field swatch? string         -- and its sprite there; nil where no kit drew one (Tooled, Verdigris)
 ---@field cornerArt? string      -- a whole book's own corner piece in BindingParts2, in place of `corners` (BIND-R17)
 ---@field clasp? string          -- a whole book's clasp on the fore-edge, in BindingParts2 (BIND-R14)
 ---@field claspX? number         -- its left edge from the frame's right edge, in UI units

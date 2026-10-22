@@ -62,8 +62,8 @@ describe("Core's slots and goods", function()
 				bindings[i] = binding.id .. (binding.default and " default" or " tier " .. binding.tier)
 			end
 			assert.are.same({ "core.binding.field default", "core.binding.birch tier 1" }, { bindings[1], bindings[2] })
-			assert.are.same({ 35, "core.binding.trophycase tier 5" }, { #bindings, bindings[35] })
-			assert.are.same("core.binding.shagreenbone tier 4", bindings[33])
+			assert.are.same({ 34, "core.binding.trophycase tier 5" }, { #bindings, bindings[34] })
+			assert.are.same("core.binding.shagreenbone tier 4", bindings[32])
 
 			assert.are.same({
 				{
@@ -221,7 +221,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 33 + #FISH_CREST_SPECIES + 35, {} }, { count, without })
+			assert.are.same({ 33 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
 		end
 	)
 end)
@@ -583,15 +583,15 @@ describe("Core's goods' previews", function()
 				return binding
 			end
 
-			goods:Good("core.binding.oilcloth").preview(stage)
+			goods:Good("core.binding.verdigris").preview(stage)
 
 			assert.are.equal(1, #made)
 			local live = made[1]
-			assert.are.equal("core.binding.oilcloth", live.options.pinned)
+			assert.are.equal("core.binding.verdigris", live.options.pinned)
 			assert.is_true(live.options.cornerSize < 44 and live.options.giltCornerSize < 40)
 			assert.is_true(live.frame:IsShown())
 			assert.are.same({ 104, 134 }, { live.frame:GetSize() })
-			assert.are.same(ns.BindingLook("core.binding.oilcloth"), live.binding:Look())
+			assert.are.same(ns.BindingLook("core.binding.verdigris"), live.binding:Look())
 			assert.is_table(withText(stage, "Every book of yours wears it."))
 
 			goods:Good("core.binding.tooled").preview(stage) -- the same live book, pinned to the next one

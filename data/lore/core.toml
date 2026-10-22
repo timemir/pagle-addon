@@ -159,10 +159,6 @@ description = "Old sail, tarred black against the weather and whipped round the 
 name = "Oilskin Yellow"
 description = "Waxed yellow cloth that sheds rain and spray. You can find it at the bottom of the boat, which is the point."
 
-[binding.oilcloth] # core.binding, tier 1
-name = "Oilcloth"
-description = "Stiff oiled canvas that sheds the rain, and most of the fish slime."
-
 [binding.canvas] # core.binding, tier 1
 name = "Canvas Field Pad"
 description = "Plain khaki canvas, stencilled with a number nobody remembers assigning. Fits a coat pocket, just."

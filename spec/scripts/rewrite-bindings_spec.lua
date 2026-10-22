@@ -2,9 +2,10 @@
 -- covers became one Core slot, `core.binding` (ADR 0015, #351, #353). It runs over a copy of four fixture accounts
 -- in one WTF folder, written the way the client writes them (CRLF, no indent):
 --   - M9-Bindings#1: a PagleLog with purchases of old IDs (the old free default cover at seq 4, a Journal binding,
---     two covers, one of them bought again under its new ID), a Module record whose payload names an old ID, a
---     PagleDB with four profiles' picks, the goods cache, the wallet projection, catchCounts and Core's projections,
---     and Module files whose projections stand before (Hunts), inside (Stats) and at the end (Ledger) of the log;
+--     Oilcloth, a cover no longer sold (#354), at seq 7, and a cover bought again under its new ID), a Module record
+--     whose payload names an old ID, a PagleDB with four profiles' picks, the goods cache, the wallet projection,
+--     catchCounts and Core's projections, and Module files whose projections stand before (Hunts), inside (Stats) and
+--     at the end (Ledger) of the log;
 --   - M4#1: an M4 account with a Journal binding picked and cached, and no binding purchase;
 --   - M1#1: an account with no old ID; M0#1: one with no Pagle.lua.
 -- What the rewrite leaves is read back with Core's own codec and wallet projection, the same oracle the game uses.
@@ -134,7 +135,7 @@ describe("scripts/rewrite-bindings.lua (ADR 0015, #353)", function()
 			for _, line in ipairs({
 				"  PagleLog seq 4: hunts.notebookcover.leather removed (price 0), the old default",
 				"  PagleLog seq 5: ledger.binding.birch -> core.binding.birch (price 150)",
-				"  PagleLog seq 7: hunts.notebookcover.oilcloth -> core.binding.oilcloth (price 150)",
+				"  PagleLog seq 7: hunts.notebookcover.oilcloth removed (price 150), no longer sold",
 				"  PagleLog seq 9: hunts.notebookcover.tooled -> core.binding.tooled (price 400)",
 				"  looks, profile Default: ledger.binding = ledger.binding.level10, hunts.notebookcover = "
 					.. "hunts.notebookcover.oilcloth -> core.binding = ledger.binding.level10",
@@ -144,7 +145,7 @@ describe("scripts/rewrite-bindings.lua (ADR 0015, #353)", function()
 			end
 		end)
 
-		it("renames the U1 entries in place and removes the old default's, every other line as it was", function()
+		it("renames the U1 entries in place and removes the dropped covers', every other line as it was", function()
 			local old, new =
 				linesOf(before["./M9-Bindings#1/SavedVariables/Pagle.lua"]),
 				linesOf(after["./M9-Bindings#1/SavedVariables/Pagle.lua"])
@@ -158,22 +159,21 @@ describe("scripts/rewrite-bindings.lua (ADR 0015, #353)", function()
 				'"C1|1|1791800060|0|c|494|1439|1|12|0|150|25||||6303x1", -- [3]',
 				'"U1|1|1791800200|0|core.binding.birch|150", -- [4]',
 				'"C1|1|1791800260|0|c|495|1439|1|40|0|150|25||||19803x1", -- [5]',
-				'"U1|1|1791800300|0|core.binding.oilcloth|150", -- [6]',
-				'"U1|1|1791800400|0|core.toaststyle.ripple|150", -- [7]',
-				'"U1|1|1791800400|1|core.binding.tooled|400", -- [8]',
-				'"U1|1|1791800500|0|core.binding.tooled|400", -- [9]',
-				'"C1|1|1791800560|0|g|497|1439|1|12|0|150|25||||", -- [10]',
-				'"A1|1|1791800600|0|Hunts|note|U1|1|2|0|ledger.binding.birch|150", -- [11]',
+				'"U1|1|1791800400|0|core.toaststyle.ripple|150", -- [6]',
+				'"U1|1|1791800400|1|core.binding.tooled|400", -- [7]',
+				'"U1|1|1791800500|0|core.binding.tooled|400", -- [8]',
+				'"C1|1|1791800560|0|g|497|1439|1|12|0|150|25||||", -- [9]',
+				'"A1|1|1791800600|0|Hunts|note|U1|1|2|0|ledger.binding.birch|150", -- [10]',
 				"},",
 				"}",
 				"PagleDB = {",
-			}, { unpack(new, 14, 27) })
+			}, { unpack(new, 14, 26) })
 		end)
 
 		it("keeps the logId and characters, and Core's codec reads every entry (LOG-R16)", function()
 			local records, undecodable = decoded(log)
 			assert.are.equal(0, undecodable)
-			assert.are.equal(10, #records) -- the A1 is Hunts' own, not yielded to Core (LOG-R41)
+			assert.are.equal(9, #records) -- the A1 is Hunts' own, not yielded to Core (LOG-R41)
 			assert.are.equal("9b3e5c7a1d2f4086", log.logId)
 			assert.are.equal("Player-4618-0A1B2C3D", log.characters[1].guid)
 		end)
@@ -182,11 +182,10 @@ describe("scripts/rewrite-bindings.lua (ADR 0015, #353)", function()
 			local state = walletOver(log)
 			assert.are.same({
 				["core.binding.birch"] = true,
-				["core.binding.oilcloth"] = true,
 				["core.binding.tooled"] = true,
 				["core.toaststyle.ripple"] = true,
 			}, state.purchased)
-			assert.are.equal(150 + 150 + 150 + 400, state.spent) -- SHOP-R11
+			assert.are.equal(150 + 150 + 400, state.spent) -- SHOP-R11
 		end)
 
 		it("renames the stored purchased set and drops its rulesVersion, so Core rebuilds it (LOG-R72)", function()
@@ -194,7 +193,6 @@ describe("scripts/rewrite-bindings.lua (ADR 0015, #353)", function()
 			assert.is_nil(wallet.rulesVersion)
 			assert.are.same({
 				["core.binding.birch"] = true,
-				["core.binding.oilcloth"] = true,
 				["core.binding.tooled"] = true,
 				["core.toaststyle.ripple"] = true,
 			}, wallet.projection.purchased)
@@ -231,7 +229,7 @@ describe("scripts/rewrite-bindings.lua (ADR 0015, #353)", function()
 			assert.is_true(db.global.goods["ledger.binding.level10"].earned)
 		end)
 
-		it("drops catchCounts, and rebuilds the projections that had read past the removed entry", function()
+		it("drops catchCounts, and rebuilds the projections that had read past a removed entry", function()
 			assert.is_nil(db.global.catchCounts)
 			assert.is_nil(db.global.projections.varieties.rulesVersion)
 			assert.are.equal(1, db.global.projections.fieldReport.rulesVersion) -- lastSeq 3, before it
