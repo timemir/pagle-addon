@@ -27,6 +27,10 @@ logic\Secrets.lua
 logic\ReportOnce.lua
 logic\Restriction.lua
 logic\WorkQueue.lua
+logic\Base64.lua
+logic\Sha256.lua
+logic\Rsa.lua
+logic\PushedKeys.lua
 logic\Conditions.lua
 logic\NextWindow.lua
 logic\LiveConditions.lua

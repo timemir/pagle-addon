@@ -694,3 +694,32 @@ function glyphsOutside(text)
 	end
 	return found
 end
+
+--- The bytes `hex` spells, two hex digits a byte: the signing fixtures' form (spec/Pagle/fixtures/Signing.lua).
+---@param hex string
+---@return string
+function fromHex(hex)
+	assert(#hex % 2 == 0 and not hex:find("[^%x]"), "not hex: " .. hex)
+	return (hex:gsub("..", function(pair)
+		return string.char(tonumber(pair, 16))
+	end))
+end
+
+--- `bytes` as lowercase hex, two digits a byte.
+---@param bytes string
+---@return string
+function toHex(bytes)
+	return (bytes:gsub(".", function(byte)
+		return ("%02x"):format(byte:byte())
+	end))
+end
+
+--- The known answers in spec/Pagle/fixtures/Signing.lua, which scripts/make-signing-fixtures.sh writes from openssl
+--- (PUSH-R2, PUSH-R11), and the bytes of spec/Pagle/fixtures/signing/random-64k.bin as `data`.
+---@return table
+function signingFixtures()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+	local fixtures = dofile("spec/Pagle/fixtures/Signing.lua")
+	fixtures.data = readFile("spec/Pagle/fixtures/signing/random-64k.bin")
+	return fixtures
+end
