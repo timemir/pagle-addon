@@ -36,6 +36,7 @@ logic\Size.lua
 logic\Length.lua
 logic\CatchLog.lua
 logic\Projections.lua
+logic\MinimapIcon.lua
 logic\Migrations.lua
 logic\Catalogue.lua
 logic\Areas.lua
@@ -112,6 +113,7 @@ adapter\CoreGoods.lua
 adapter\Cards.lua
 adapter\ToastStyles.lua
 adapter\Menu.lua
+adapter\MinimapIcon.lua
 adapter\ReloadReminder.lua
 adapter\FieldReportText.lua
 adapter\FieldReportBox.lua

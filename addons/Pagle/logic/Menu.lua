@@ -15,6 +15,23 @@ function ns.CompartmentText(waiting)
 	return ns.L.COMPARTMENT
 end
 
+--- The tooltip of Pagle's menu, the same on the minimap icon and the compartment entry (CORE-R55): "Pagle", then
+--- each line that applies, in order: "3 waiting" while Cozy mode holds moments for a summary (CORE-R51, ANN-R42),
+--- and "A letter for you" while the Letter shows (ONB-R13).
+---@param waiting integer
+---@param letterShows boolean
+---@return string[]
+function ns.MenuTooltipLines(waiting, letterShows)
+	local lines = { ns.L.MENU_NAME }
+	if waiting > 0 then
+		lines[#lines + 1] = ns.L.MENU_TOOLTIP_WAITING:format(waiting)
+	end
+	if letterShows then
+		lines[#lines + 1] = ns.L.MENU_TOOLTIP_LETTER
+	end
+	return lines
+end
+
 --- One button on the compartment menu.
 ---@class PagleMenuEntry
 ---@field label string

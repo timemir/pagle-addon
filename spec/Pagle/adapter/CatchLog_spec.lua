@@ -19,6 +19,7 @@ local PAGLEDB_KEYS = {
 		"coins",
 		"goods",
 		"projections",
+		"minimap", -- CORE-R53, from M8.5
 		"onboarding", -- onboarding.md › Data (ONB-R1)
 	},
 	profile = { "reloadReminder", "lengthUnit", "announcements", "appearance", "dock" },

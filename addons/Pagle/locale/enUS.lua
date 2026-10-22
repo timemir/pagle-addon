@@ -53,6 +53,10 @@ ns.L = {
 	SETTINGS_LENGTH_UNIT = "Length unit",
 	SETTINGS_LENGTH_UNIT_TOOLTIP = "How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes only what you see.",
 	SETTINGS_LENGTH_UNITS = { cm = "Centimetres", ["in"] = "Inches" },
+	-- The root's Pagle menu section (SET-R10 row 10): its header, the checkbox's label and its tooltip (CORE-R56).
+	SETTINGS_PAGLE_MENU = "Pagle menu",
+	SETTINGS_MINIMAP_ICON = "Show the minimap icon",
+	SETTINGS_MINIMAP_ICON_TOOLTIP = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button by the minimap.",
 	-- The Announcements page's Core rows (SET-R30): labels and tooltips, and Per's value in minutes.
 	SETTINGS_COZY = "Cozy mode",
 	SETTINGS_COZY_TOOLTIP = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently.",
@@ -209,6 +213,11 @@ ns.L = {
 	-- The compartment entry's label (CORE-R51): Pagle, with the moments Cozy mode holds for a summary (ANN-R42).
 	COMPARTMENT = "Pagle",
 	COMPARTMENT_WAITING = "Pagle · %d waiting",
+	-- The tooltip of Pagle's menu (CORE-R55), on the minimap icon and the compartment entry: its first line, then
+	-- the waiting count (CORE-R51) and the Letter's line (ONB-R13).
+	MENU_NAME = "Pagle",
+	MENU_TOOLTIP_WAITING = "%d waiting",
+	MENU_TOOLTIP_LETTER = "A letter for you",
 
 	-- /pagle help (CORE-R60, CORE-R61): the header, then a line per command (its name, its help). Core lists the
 	-- reserved commands.

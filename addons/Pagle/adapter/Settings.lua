@@ -229,9 +229,28 @@ local function unitsSection(category, layout)
 	end, L.SETTINGS_LENGTH_UNIT_TOOLTIP)
 end
 
+-- The Pagle menu section (CORE-R40, SET-R10 row 10): Show the minimap icon, on unless PagleDB.global.minimap.hide
+-- (CORE-R56). It has no default, so the root's Defaults button leaves it, restoring only the reminder and the length
+-- unit (SET-R13): where the icon is, and whether it shows, are the player's account-wide choices, not a profile's.
+---@param category SettingsCategory
+---@param layout SettingsLayout
+local function pagleMenuSection(category, layout)
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PAGLE_MENU))
+	local shown = Settings.RegisterProxySetting(
+		category,
+		"Pagle_Core_minimapIcon",
+		Settings.VarType.Boolean,
+		L.SETTINGS_MINIMAP_ICON,
+		nil,
+		ns.IsMinimapIconShown,
+		ns.SetMinimapIconShown
+	)
+	Settings.CreateCheckbox(category, shown, L.SETTINGS_MINIMAP_ICON_TOOLTIP)
+end
+
 -- The root's rows (SET-R10): the paragraph while no Module is On, the status list under "Modules", the note, the
 -- Field report section, then Saving's reminder checkbox and the Units section, whose defaults the root's Defaults
--- button restores (SET-R13).
+-- button restores (SET-R13), and last the Pagle menu section.
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 ---@param anyModuleOn boolean
@@ -262,6 +281,7 @@ local function buildRoot(category, layout, anyModuleOn)
 	)
 	Settings.CreateCheckbox(category, reminder, L.SETTINGS_RELOAD_REMINDER_TOOLTIP:format(ns.RELOAD_REMINDER_STEP))
 	unitsSection(category, layout)
+	pagleMenuSection(category, layout)
 end
 
 -- A dropdown's options as the native control takes them, read each time it opens.

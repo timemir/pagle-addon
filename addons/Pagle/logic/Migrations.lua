@@ -22,6 +22,8 @@ ns.PAGLEDB_DEFAULTS = {
 		-- catch-log.md › Data: Core's own projections (LOG-R78), and the diagnostics buffer (LOG-R81).
 		projections = { fieldReport = {}, wallet = {} }, -- REP-R25; wallet-and-shop.md › Data
 		diagnostics = {},
+		-- catch-log.md › Data: the minimap icon's angle round the minimap and its shown state (CORE-R53, CORE-R56).
+		minimap = { angle = ns.MINIMAP_ICON_ANGLE, hide = false },
 	},
 	profile = {
 		reloadReminder = false, -- LOG-R86

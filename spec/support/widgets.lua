@@ -91,8 +91,9 @@ end
 --- frame's mouse and moving state: `mouseEnabled`, `movable`, `dragButtons` (RegisterForDrag's arguments) and
 --- `moving`, `userPlaced` (SetUserPlaced's, or true from StartMoving), its strata, whether it's `toplevel` and how
 --- often it was `raised`; also whether it takes clicks (`enabled`) and key presses (`keyboardEnabled`), and a scroll
---- frame's `verticalScroll` and `scrollChild`. As the client's, Show, Hide and SetShown run OnShow or OnHide when the
---- shown state changes, and SetSize, SetWidth and SetHeight run OnSizeChanged when the size does.
+--- frame's `verticalScroll` and `scrollChild`, a button's `highlightTexture`, and its centre on the screen
+--- (`screenCenter`, { x, y }, which a spec sets; nil until then). As the client's, Show, Hide and SetShown run OnShow
+--- or OnHide when the shown state changes, and SetSize, SetWidth and SetHeight run OnSizeChanged when the size does.
 ---@param kind string "Frame", "Button", "FontString", "Texture", …
 ---@param parent table?
 ---@return table
@@ -299,6 +300,18 @@ function widgets.newWidget(kind, parent)
 	function widget:GetTop()
 		return self.screenTop
 	end
+	-- Its centre on the screen, the same way: `screenCenter` ({ x, y }), nil until a spec sets it.
+	function widget:GetCenter()
+		local center = self.screenCenter
+		if center then
+			return center[1], center[2]
+		end
+		return nil
+	end
+	-- Its scale times its parents', as the client's.
+	function widget:GetEffectiveScale()
+		return self:GetScale() * (parent and parent:GetEffectiveScale() or 1)
+	end
 	-- A texture's tint, as { r, g, b[, a] }.
 	function widget:SetVertexColor(r, g, b, a)
 		self.vertexColor = { r, g, b, a }
@@ -354,6 +367,10 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:LockHighlight()
 		self.highlightLocked = true
+	end
+	-- A button's highlight texture (`highlightTexture`, SetHighlightTexture's file ID or path).
+	function widget:SetHighlightTexture(texture)
+		self.highlightTexture = texture
 	end
 	function widget:UnlockHighlight()
 		self.highlightLocked = false

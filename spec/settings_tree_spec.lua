@@ -50,6 +50,8 @@ local TIPS = {
 	motion = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each "
 		.. "appears as it settles.",
 	windowMoments = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
+	minimapIcon = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns "
+		.. "button by the minimap.",
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
 	huntsTracker = "A small tracker under the minimap with the Hunts you've pinned on the board.",
 	statsTracker = "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell turns it on.",
@@ -86,6 +88,8 @@ local EXPECTED = {
 			{ "checkbox", "Remind me to /reload when Casts are unsaved", tip = TIPS.reminder },
 			{ "header", "Units" },
 			{ "dropdown", "Length unit", tip = TIPS.lengthUnit },
+			{ "header", "Pagle menu" },
+			{ "checkbox", "Show the minimap icon", tip = TIPS.minimapIcon },
 		},
 	},
 	{
@@ -702,19 +706,25 @@ describe("Each page's Defaults button", function()
 		end
 	)
 
-	it("on the root restores the reminder to off and the length unit to the region's (SET-R13, LOG-R69)", function()
-		local loaded = ready()
-		setRow(loaded, "Pagle", "Remind me to /reload when Casts are unsaved", true)
-		setRow(loaded, "Pagle", "Length unit", "cm")
+	it(
+		"on the root restores the reminder to off and the length unit to the region's, leaving Show the minimap icon"
+			.. " (SET-R13, LOG-R69, CORE-R56)",
+		function()
+			local loaded = ready()
+			setRow(loaded, "Pagle", "Remind me to /reload when Casts are unsaved", true)
+			setRow(loaded, "Pagle", "Length unit", "cm")
+			setRow(loaded, "Pagle", "Show the minimap icon", false)
 
-		loaded.client.settings.defaults(loaded.client.settings.page("Pagle"))
+			loaded.client.settings.defaults(loaded.client.settings.page("Pagle"))
 
-		assert.are.same({
-			["Remind me to /reload when Casts are unsaved"] = false,
-			["Length unit"] = "in", -- the fake client's realm is a US one
-		}, valuesOn(loaded, "Pagle"))
-		assert.is_nil(loaded.namespaces.Pagle.db.profile.lengthUnit) -- following the region (SET-R13)
-	end)
+			assert.are.same({
+				["Remind me to /reload when Casts are unsaved"] = false,
+				["Length unit"] = "in", -- the fake client's realm is a US one
+				["Show the minimap icon"] = false,
+			}, valuesOn(loaded, "Pagle"))
+			assert.is_nil(loaded.namespaces.Pagle.db.profile.lengthUnit) -- following the region (SET-R13)
+		end
+	)
 
 	it(
 		"on Fishing restores QoL's value rows, leaving the fishing set, the key bindings and the button's place (SET-R21)",

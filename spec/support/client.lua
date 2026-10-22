@@ -378,6 +378,11 @@ local function clientStubs(client)
 		end
 	end
 	stubs.UIErrorsFrame = widgets.newWidget("MessageFrame", stubs.UIParent)
+	-- The minimap itself (Frames.lua in the forever dump), whose edge Pagle's icon sits on (CORE-R53): 198
+	-- units across, as Blizzard_Minimap/Mainline/Minimap.xml at the forever 1.60.1 commit makes it. A spec that drags
+	-- the icon gives it a `screenCenter` (spec/support/widgets.lua).
+	stubs.Minimap = widgets.newWidget("Minimap", stubs.MinimapCluster)
+	stubs.Minimap:SetSize(198, 198)
 	-- A 1920×1080 screen at UI scale 1.
 	stubs.UIParent:SetSize(1920, 1080)
 	return stubs
