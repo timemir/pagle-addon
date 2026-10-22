@@ -948,6 +948,100 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("the Followed Anglers", function()
+		local DAY = 24 * 3600
+
+		-- IGV Contracts' Pagle_Following example, written ten minutes before the fake's server time.
+		local function example()
+			local data = anglerFileExamples().following
+			data.generatedAt = SERVER_TIME - 600
+			return data
+		end
+
+		it("read absent with no Pagle_Following set, before login and after (VIEW-R11, VIEW-R90)", function()
+			local fake = newFakePagle()
+			assert.are.same({ state = "absent", anglers = {} }, fake.Pagle.GetFollowedAnglers())
+
+			fake.login()
+
+			assert.are.same({ state = "absent", anglers = {} }, fake.Pagle.GetFollowedAnglers())
+		end)
+
+		it(
+			"serve a set PagleFollowingData from login as Core's reads do, Ada in fresh copies (VIEW-R1, VIEW-R11)",
+			function()
+				local fake = newFakePagle()
+				fake.setFollowing(example())
+				assert.are.equal("absent", fake.Pagle.GetFollowedAnglers().state)
+
+				fake.login()
+
+				local followed = fake.Pagle.GetFollowedAnglers()
+				assert.are.same(fake.ns.FollowedAnglers(fake.ns.ReadFollowingFile(example()), SERVER_TIME), followed)
+				assert.are.same(
+					{ "ok", "Ada", 5120 },
+					{ followed.state, followed.anglers[1].name, followed.anglers[1].catches }
+				)
+				followed.anglers[1].name = "Changed"
+				assert.are.equal("Ada", fake.Pagle.GetFollowedAnglers().anglers[1].name)
+			end
+		)
+
+		it("read none, and absent for a file IGV-R44 refuses, as Core does (VIEW-R11, IGV-R44)", function()
+			local none, refused = newFakePagle(), newFakePagle()
+			local empty = example()
+			empty.anglers, empty.count = {}, 0
+			none.setFollowing(empty)
+			local broken = example()
+			broken.v = 2
+			refused.setFollowing(broken)
+
+			none.login()
+			refused.login()
+
+			assert.are.same({ state = "none", anglers = {} }, none.Pagle.GetFollowedAnglers())
+			assert.are.same({ state = "absent", anglers = {} }, refused.Pagle.GetFollowedAnglers())
+		end)
+
+		it("expire at 24 h on the fake's clock, with no reload (VIEW-R2, VIEW-R11)", function()
+			local fake = newFakePagle()
+			fake.setFollowing(example())
+			fake.login()
+
+			fake.wait(DAY - 601)
+			assert.are.equal("ok", fake.Pagle.GetFollowedAnglers().state)
+			fake.wait(1)
+			assert.are.same({ state = "expired", anglers = {} }, fake.Pagle.GetFollowedAnglers())
+		end)
+
+		it("print both files' states for /pagle dev views, as Core does (VIEW-R12)", function()
+			local fake = newFakePagle()
+			fake.setFollowing(example())
+			fake.login()
+
+			fake.slash("dev on")
+			fake.slash("dev views")
+
+			assert.are.same({
+				"Pagle dev: Pagle_Following is live.",
+				("Pagle dev: Pagle_Following's generatedAt %d, Anglers 1."):format(SERVER_TIME - 600),
+				"Pagle dev: Pagle_Anglers is absent: not loaded yet (it loads at the first player tooltip outside"
+					.. " combat, with the tooltip setting on).",
+				"Pagle dev: Pagle_Anglers' generatedAt none, blocks none.",
+				"Pagle dev: Pagle_Anglers hasn't loaded this login.",
+			}, { unpack(fake.printed, #fake.printed - 4) })
+		end)
+
+		it("refuse a set after login: Core reads Pagle_Following once (VIEW-R1)", function()
+			local fake = newFakePagle()
+			fake.login()
+
+			assert.has_error(function()
+				fake.setFollowing(example())
+			end)
+		end)
+	end)
+
 	describe("goods", function()
 		-- Hunts registered on `fake`, with its notebook cover slot: a default, a tier-2 good and an earned good whose
 		-- isEarned() returns `earned.value`.
