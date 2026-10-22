@@ -81,11 +81,11 @@ logic\Moments.lua
 logic\Summary.lua
 logic\Cards.lua
 logic\Announcements.lua
+logic\LayeredArt.lua
+logic\PrestigeFrames.lua
 logic\ToastStyles.lua
 logic\Motion.lua
 logic\BookBinding.lua
-logic\LayeredArt.lua
-logic\PrestigeFrames.lua
 logic\LegendCrests.lua
 logic\Fit.lua
 logic\Menu.lua

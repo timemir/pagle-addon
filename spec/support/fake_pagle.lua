@@ -584,7 +584,7 @@ part(function(fake, Pagle, ns)
 	end)
 end)
 
--- The Prestige frames and emblems (announcements.md › Contracts; ledger.md › LED-R152, LED-R153), on Core's real
+-- The Prestige frames and emblems (announcements.md › Contracts; ledger.md › LED-R154, LED-R152), on Core's real
 -- logic/LayeredArt.lua and logic/PrestigeFrames.lua over the client fake.load gave the Module: its frames, and
 -- Pagle.Animate's player. Only a label's face is the client's own font: Core's art fonts are its adapter's.
 part(function(fake, Pagle, ns)

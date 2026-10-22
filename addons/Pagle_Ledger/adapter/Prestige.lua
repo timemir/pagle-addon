@@ -8,7 +8,8 @@ local ns = select(2, ...)
 -- Prestiging on the client (LED-R33): whether it is allowed now, and the Journal's own confirm card that asks before
 -- the Ledger calls `M:RecordPrestige()` (LOG-R38). The Ledger is the only Module that calls it. The Angler page's
 -- button calls ns.AskPrestige, and closing the Journal hides the card. The card is the Ledger art kit's (its Angler.lua:
--- the Prestige confirm), drawn in the book: the book darkens, the card drops in and its seal is pressed on.
+-- the Prestige confirm), drawn in the book: the book darkens, the card drops in and the emblem of the rank to come
+-- (Core's, LED-R152) is pressed on.
 
 local INK = ns.JOURNAL_INK
 
@@ -23,17 +24,20 @@ function ns.CanPrestige()
 	return ns.PrestigeAllowed(projection:GetState() --[[@as LedgerState?]], projection:IsUpdating())
 end
 
---- The confirm card over the book: the shade, the card with its seal (the rank to come), its words and its two buttons.
+--- The confirm card over the book: the shade, the card with the emblem of the rank to come, its words and its two
+--- buttons.
 ---@class LedgerPrestigeCard: Frame
 ---@field shade Texture
 ---@field card Frame
----@field seal LedgerSeal
+---@field emblem Texture
 ---@field yes LedgerButton
 ---@field no LedgerButton
 ---@field closing boolean?
 
 -- The card's size and place on the book (the kit's 380 × 219.7 at 270, 160).
 local CARD_W, CARD_H, CARD_X, CARD_Y = 380, 219.7, 270, 160
+-- The emblem of the rank to come, centred on the card's top edge (LED-R152).
+local EMBLEM_SIZE = 64
 
 ---@type LedgerPrestigeCard?
 local shown
@@ -56,8 +60,8 @@ local function build(book)
 	local back = ns.JournalVSlice(face, "Parts", "dialog", CARD_H, 22, 22, "BACKGROUND")
 	back:SetPoint("TOPLEFT")
 	card.card = face
-	card.seal = ns.JournalSeal(face, 68, 18)
-	card.seal:SetPoint("CENTER", face, "TOP", 0, 0)
+	card.emblem = face:CreateTexture(nil, "OVERLAY")
+	card.emblem:SetPoint("CENTER", face, "TOP", 0, 0)
 	local kicker = ns.JournalLabel(face, "sc", 14, INK.kicker, L.PRESTIGE_CONFIRM_KICKER, { justify = "CENTER" })
 	kicker:SetPoint("TOP", face, "TOPLEFT", CARD_W / 2, -46)
 	local title = ns.JournalLabel(face, "print", 26, INK.title, L.PRESTIGE_CONFIRM_TITLE, { justify = "CENTER" })
@@ -97,8 +101,9 @@ local function cardOf()
 end
 
 --- Asks "Begin a new Ledger?" on the open Journal, with "Prestige" and "Not yet" (LED-R33), when Prestige is allowed
---- now: the book darkens to 55% (0.2 s), the card drops in from 20 units up (0.3 s, a slight overshoot) and its seal,
---- the numeral of the rank to come, is pressed on at 0.2 s with the stamp sound (MOTION.md › The Prestige confirm).
+--- now: the book darkens to 55% (0.2 s), the card drops in from 20 units up (0.3 s, a slight overshoot) and the
+--- Prestige emblem of the rank to come, 64 units (LED-R152), is pressed on at 0.2 s with the stamp sound (MOTION.md ›
+--- The Prestige confirm).
 --- Confirming checks again and calls `M:RecordPrestige()` only if it still is; otherwise nothing happens.
 function ns.AskPrestige()
 	if not ns.CanPrestige() or not ns.journal:IsShown() then
@@ -109,8 +114,7 @@ function ns.AskPrestige()
 		return
 	end
 	local state = ns.projection:GetState() --[[@as LedgerState]]
-	local mark = ns.PrestigeMark(state.prestige + 1)
-	ns.JournalSetSeal(card.seal, mark.emblem or "", true)
+	Pagle.SetPrestigeEmblem(card.emblem, state.prestige + 1, EMBLEM_SIZE)
 	card.closing = false
 	card:Show()
 	card:SetAlpha(1)
@@ -141,8 +145,8 @@ function ns.AskPrestige()
 			ease = Pagle.Bezier(0.3, 1.5, 0.5, 1),
 			keys = { { 0, { 1.8, 0 } }, { 0.7, { 0.95, 1 } }, { 1, { 1, 1 } } },
 			apply = function(v)
-				card.seal:SetSize(68 * v[1], 68 * v[1])
-				card.seal:SetAlpha(v[2])
+				card.emblem:SetSize(EMBLEM_SIZE * v[1], EMBLEM_SIZE * v[1])
+				card.emblem:SetAlpha(v[2])
 			end,
 		},
 	})

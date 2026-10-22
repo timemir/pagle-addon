@@ -1,5 +1,5 @@
--- The Prestige frames and Prestige emblems on the client, through the real TOC and Pagle's API (ledger.md › LED-R152,
--- LED-R153; announcements.md › Contracts): each rank's frame built from its layers (Core's layered art, the composed
+-- The Prestige frames and Prestige emblems on the client, through the real TOC and Pagle's API (ledger.md › LED-R154,
+-- LED-R152; announcements.md › Contracts): each rank's frame built from its layers (Core's layered art, the composed
 -- toast styles' renderer), drawn at a scale with its label, its well and its crest's pin; its motion played and
 -- stopped, and still with Animations off; and the emblems at their sizes. Sprites, places and texture coordinates are
 -- asserted, not pixels.
@@ -65,7 +65,7 @@ end
 describe("a Prestige frame", function()
 	it(
 		"builds each rank's frame from its own atlas: No Prestige's, I to X, and the Master's from XI on, each layer"
-			.. " behind or over the well, in the kit's order (LED-R152)",
+			.. " behind or over the well, in the kit's order (LED-R154)",
 		function()
 			local loaded = core()
 			local frame = newFrame(loaded)
@@ -96,7 +96,7 @@ describe("a Prestige frame", function()
 	)
 
 	it(
-		"draws at a scale of its 260 × 280 box: its sprites, its well and the crest's pin with it (LED-R146, LED-R152)",
+		"draws at a scale of its 260 × 280 box: its sprites, its well and the crest's pin with it (LED-R146, LED-R154)",
 		function()
 			local loaded = core()
 			local frame = newFrame(loaded)
@@ -120,7 +120,7 @@ describe("a Prestige frame", function()
 
 	it(
 		"labels its plaque with the rank's numeral, or Master with a star stamp for each Master Prestige, at most five"
-			.. " and then +n, in the kit's ink; No Prestige's has none (LED-R152)",
+			.. " and then +n, in the kit's ink; No Prestige's has none (LED-R154)",
 		function()
 			local loaded = core()
 			local frame = newFrame(loaded)
@@ -154,7 +154,7 @@ describe("a Prestige frame", function()
 
 	it(
 		"moves from V up while asked to, each layer on its own keyframes, and stops when it hides or is told; I to IV"
-			.. " stand still (LED-R152)",
+			.. " stand still (LED-R154)",
 		function()
 			local loaded = core()
 			local frame, parent = newFrame(loaded)
@@ -189,7 +189,7 @@ describe("a Prestige frame", function()
 	)
 
 	it(
-		"stands still with Animations off: unmoved, and what only flashes or rises unseen (LED-R152, SET-R30)",
+		"stands still with Animations off: unmoved, and what only flashes or rises unseen (LED-R154, SET-R30)",
 		function()
 			local loaded = core({ motion = false })
 			local frame = newFrame(loaded)
@@ -217,7 +217,7 @@ end)
 describe("a Prestige emblem", function()
 	it(
 		"shows the rank's emblem, I to X and the Master's past X, at the size asked: 64, 34 or 22; none at rank 0"
-			.. " (LED-R153)",
+			.. " (LED-R152)",
 		function()
 			local loaded = core()
 			local Pagle = loaded.env.Pagle
@@ -237,7 +237,7 @@ describe("a Prestige emblem", function()
 		end
 	)
 
-	it("writes the rank's emblem into a line of text at 22, and nothing at rank 0 (LED-R153)", function()
+	it("writes the rank's emblem into a line of text at 22, and nothing at rank 0 (LED-R152)", function()
 		local loaded = core()
 		local Pagle = loaded.env.Pagle
 

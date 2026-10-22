@@ -70,16 +70,52 @@ OWN_TEXT = {
 }
 
 
+# DATA-R3: Pagle's own lore that is an area's name, excused for one lore key alone, by the generated file it is in:
+# that key's line is left out of the match, so the same name anywhere else in the file still fails. Each is the
+# dev's pick, reviewed, and names none of the game's places.
+OWN_LORE = {
+    "addons/Pagle_Ledger/data/Lore.lua": {
+        # Rank III's Prestige frame (LED-R154) is a lighthouse on a point, and the dev kept "The Lighthouse" for it
+        # over the kit's "The Lamp Room": a plain English word for the frame's own building, which some of the
+        # game's subzones also happen to be called.
+        "prestigeframe.lighthouse.name": "Lighthouse",
+    },
+}
+
+
+def _without_own_lore(path: str, content: str) -> str:
+    """`content` without the lines of OWN_LORE's keys for `path` (a generated Lore.lua's `L["<key>"] = "…"` lines)."""
+    keys = OWN_LORE.get(path, {})
+    return "\n".join(line for line in content.split("\n") if not any(line.startswith(f'L["{k}"] = ') for k in keys))
+
+
 def test_no_name_from_areas_csv_appears_in_any_generated_file(repo_outputs: Mapping[str, str]) -> None:
     # DATA-R3: no area name from the game ships; the source layer keeps the enUS names, the generator never emits
-    # them. Every generated file, as generated and as committed, apart from OWN_TEXT's reviewed coincidences.
+    # them. Every generated file, as generated and as committed, apart from OWN_TEXT's reviewed coincidences and
+    # OWN_LORE's keys.
     names = {area.name for area in _slice().areas.values() if area.name}
     assert len(names) > 1000
     for path, text in repo_outputs.items():
         allowed = OWN_TEXT.get(path, {})
         for content in (text, (REPO / path).read_text(encoding="utf-8")):
+            content = _without_own_lore(path, content)
             leaked = sorted(name for name in names if name in content and name not in allowed)
             assert leaked == [], f"{path} holds area names {leaked}"
+
+
+def test_own_lore_excuses_only_its_key_and_still_names_an_area() -> None:
+    # DATA-R3: an OWN_LORE key's line is in its file and holds the area name it is excused for, so a stale entry can't
+    # hide a later leak; and the name in any other line of the file is still caught.
+    names = {area.name for area in _slice().areas.values() if area.name}
+    for path, keys in OWN_LORE.items():
+        content = (REPO / path).read_text(encoding="utf-8")
+        for key, name in keys.items():
+            assert name in names, name
+            line = next(line for line in content.split("\n") if line.startswith(f'L["{key}"] = '))
+            assert name in line, key
+            leak = content + f'\nL["prestigeframe.other.name"] = "{name}"\n'
+            assert name in _without_own_lore(path, leak)
+            assert name not in _without_own_lore(path, content)
 
 
 def test_every_area_name_allowed_as_own_text_is_still_an_area_s_name_and_in_its_file() -> None:

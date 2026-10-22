@@ -105,16 +105,28 @@ describe("Prestiging (LED-R33)", function()
 		assert.is_false(below.ns.CanPrestige())
 	end)
 
-	it("asks on the Journal's own card, Prestige or Not yet, its seal the rank to come (LED-R33)", function()
-		local _, loaded = ledger()
+	it(
+		"asks on the Journal's own card, Prestige or Not yet, the emblem of the rank to come at 64 on its top"
+			.. " (LED-R33, LED-R152)",
+		function()
+			local fake, loaded = ledger()
 
-		loaded.ns.AskPrestige()
+			loaded.ns.AskPrestige()
 
-		local card = loaded.ns.journal.prestigeCard
-		assert.is_true(loaded.ns.IsPrestigeConfirmShown())
-		assert.are.same({ "I", CONFIRM[1], CONFIRM[2], CONFIRM[3], "Prestige", "Not yet" }, shownTexts(card))
-		assert.is_nil(loaded.client.popup)
-	end)
+			local card = loaded.ns.journal.prestigeCard
+			assert.is_true(loaded.ns.IsPrestigeConfirmShown())
+			assert.are.same({ CONFIRM[1], CONFIRM[2], CONFIRM[3], "Prestige", "Not yet" }, shownTexts(card))
+			local atlas, sprite = fake.ns.ATLASES.PrestigeEmblems, fake.ns.ATLASES.PrestigeEmblems.sprites["emblem-i"]
+			assert.are.same({ atlas.file, sprite.x / atlas.width, sprite.y / atlas.height, 64, true }, {
+				card.emblem.texture,
+				card.emblem.texCoord[1],
+				card.emblem.texCoord[3],
+				card.emblem.width,
+				card.emblem:IsShown(),
+			})
+			assert.is_nil(loaded.client.popup)
+		end
+	)
 
 	it(
 		"drops the card in over the darkened book with the open sound and the stamp as the seal lands (LED-R33)",
@@ -301,8 +313,10 @@ end)
 
 describe("the Prestige emblem block (LED-R34)", function()
 	-- Opens a spread whose left page is `blocks`, on a Ledger below 60.
+	local fake
 	local function drawn(blocks)
-		local _, loaded = ledger({ records = { cast(T0, 1) } })
+		local loaded
+		fake, loaded = ledger({ records = { cast(T0, 1) } })
 		loaded.ns.RegisterJournalSpread("emblems", {
 			crumbs = function()
 				return {}
@@ -315,8 +329,6 @@ describe("the Prestige emblem block (LED-R34)", function()
 		return loaded.ns.journal.frame.left.drawn.emblem
 	end
 
-	-- The texts an emblem widget shows: its numeral.
-	local shown = shownTexts
 	-- Its stars shown.
 	local function stars(widget)
 		local count = 0
@@ -325,21 +337,37 @@ describe("the Prestige emblem block (LED-R34)", function()
 		end
 		return count
 	end
+	-- The emblem sprite its texture shows, by its texture coordinates in Core's emblems atlas.
+	local function emblemOf(widget)
+		local atlas = fake.ns.ATLASES.PrestigeEmblems
+		for name, sprite in pairs(atlas.sprites) do
+			if
+				widget.emblem.texCoord[1] == sprite.x / atlas.width
+				and widget.emblem.texCoord[3] == sprite.y / atlas.height
+			then
+				return name
+			end
+		end
+		return nil
+	end
 
-	it("draws the emblem's roman numeral on the gilt shield, and a Master Prestige's stars", function()
-		local widgets = drawn({
-			{ kind = "emblem", mark = { emblem = "I", stars = 0 } },
-			{ kind = "emblem", mark = { emblem = "X", stars = 2 } },
-		})
+	it(
+		"draws Core's emblem for the rank at 34, its numeral in its art, and a Master Prestige's stars (LED-R152)",
+		function()
+			local widgets = drawn({
+				{ kind = "emblem", mark = { emblem = "I", stars = 0, rank = 1 } },
+				{ kind = "emblem", mark = { emblem = "X", stars = 2, rank = 12 } },
+			})
 
-		assert.are.same({ "I", 0 }, { shown(widgets[1])[1], stars(widgets[1]) })
-		assert.are.same({ "X", 2 }, { shown(widgets[2])[1], stars(widgets[2]) })
-		assert.is_true(widgets[1].shield:IsShown())
-	end)
+			assert.are.same({ "emblem-i", 0, 34 }, { emblemOf(widgets[1]), stars(widgets[1]), widgets[1].emblem.width })
+			assert.are.same({ "emblem-master", 2 }, { emblemOf(widgets[2]), stars(widgets[2]) })
+			assert.is_true(widgets[1].emblem:IsShown())
+		end
+	)
 
 	it("draws nothing before the first Prestige", function()
-		local widget = drawn({ { kind = "emblem", mark = { stars = 0 } } })[1]
+		local widget = drawn({ { kind = "emblem", mark = { stars = 0, rank = 0 } } })[1]
 
-		assert.are.same({}, shown(widget))
+		assert.are.same({ false, 0 }, { widget.emblem:IsShown(), stars(widget) })
 	end)
 end)

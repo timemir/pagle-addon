@@ -1,7 +1,7 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- The Prestige frames and Prestige emblems (ledger.md › LED-R152, LED-R153; announcements.md › ANN-R83): which frame
+-- The Prestige frames and Prestige emblems (ledger.md › LED-R154, LED-R152; announcements.md › ANN-R83): which frame
 -- and emblem a prestige rank shows, what the frame's label reads, and the emblem as a texture or in a line of text.
 -- Core's, since the Ledger's bookplate and Core's Prestige banner both draw them (data/PrestigeArt.lua); a frame is
 -- drawn as well art (logic/LayeredArt.lua) holding the Angler's likeness. Pagle.NewPrestigeFrame, SetPrestigeEmblem,
@@ -15,10 +15,10 @@ local ns = select(2, ...)
 -- The ranks with a frame and emblem of their own, I to X (LED-R34); past X, the Master's, the frame art's 11th.
 local OWN = 10
 local MASTER = 11
--- The star stamps a Master's label shows before the rest go as "+n" (LED-R152).
+-- The star stamps a Master's label shows before the rest go as "+n" (LED-R154).
 local LABEL_STARS = 5
 
---- The frame prestige rank `rank` shows (LED-R152): No Prestige's below 1, its own for I to X, the Master's past X
+--- The frame prestige rank `rank` shows (LED-R154): No Prestige's below 1, its own for I to X, the Master's past X
 --- (a rank with no frame of its own, ANN-R83).
 ---@param rank integer
 ---@return PaglePrestigeFrameArt
@@ -29,7 +29,7 @@ function ns.PrestigeFrameArt(rank)
 	return ns.PRESTIGE_FRAME_ART[math.min(math.floor(rank), MASTER)]
 end
 
---- What a frame's label plaque reads (LED-R152): the rank's numeral, "I" to "X", or past X "Master" with a star stamp
+--- What a frame's label plaque reads (LED-R154): the rank's numeral, "I" to "X", or past X "Master" with a star stamp
 --- for each Master Prestige, at most five and then "+{n}"; nothing at rank 0.
 ---@param rank integer
 ---@return PagleWellArtLabel?
@@ -57,7 +57,7 @@ function ns.DrawPrestigeFrame(art, rank, scale)
 	art:DrawArt(frame, scale, ns.PrestigeFrameLabel(rank), frame.key)
 end
 
---- A Prestige frame (LED-R152; announcements.md › Contracts, Pagle.NewPrestigeFrame): well art with `SetRank(rank,
+--- A Prestige frame (LED-R154; announcements.md › Contracts, Pagle.NewPrestigeFrame): well art with `SetRank(rank,
 --- scale)`, which draws the rank's frame at `scale` of the kit's 260 × 280 box, resting, its label the rank's numeral
 --- or "Master" and its stars. Its caller fills `GetWell()` with the likeness (SetPortraitTexture), pins a crest at
 --- `GetPin()`, and calls `Play()` while it should move and `Stop()` when not; hidden, it stops by itself.
@@ -89,7 +89,7 @@ function ns.PrestigeFrameInfo(rank)
 	return { key = frame.key, moving = moving }
 end
 
---- The emblem sprite of prestige rank `rank` (LED-R153): I to X, the Master's past X, none at 0.
+--- The emblem sprite of prestige rank `rank` (LED-R152): I to X, the Master's past X, none at 0.
 ---@param rank integer
 ---@return string?
 function ns.PrestigeEmblemSprite(rank)
@@ -99,7 +99,7 @@ function ns.PrestigeEmblemSprite(rank)
 	return ns.PRESTIGE_EMBLEMS[math.floor(rank)] or "emblem-master"
 end
 
---- Shows prestige rank `rank`'s emblem in `texture`, `size` units square (LED-R153: 64 on the Prestige confirm, 34
+--- Shows prestige rank `rank`'s emblem in `texture`, `size` units square (LED-R152: 64 on the Prestige confirm, 34
 --- beside the Angler Level, 22 in lists and tooltips); at rank 0 hides it. Returns whether it shows.
 ---@param texture Texture
 ---@param rank integer

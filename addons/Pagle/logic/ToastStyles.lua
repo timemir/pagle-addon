@@ -381,6 +381,7 @@ end
 ---@field shadow? { color: string, alpha: number, x: number, y: number }
 
 ---@alias PagleToastBox PagleArtBox
+---@alias PagleToastLayerMotion PagleArtMotion
 
 --- A composed rung's layer (logic/LayeredArt.lua's), on the host it draws on: under the medallion's icon, over it,
 --- or over the words. A layer's motion that loops on the canvas loops in game, but ns.TOAST_MOTION_ONCE's.
@@ -435,6 +436,16 @@ end
 --- Ice's tip-up flag springs up and settles). Every other layer's motion is the style's own weather, and loops while
 --- its toast is on screen.
 ns.TOAST_MOTION_ONCE = { ["ice-flag"] = true }
+
+--- A layer's motion as animations (logic/LayeredArt.lua's ns.LayerAnimations), `landing` seconds in, a keyframe
+--- ns.TOAST_MOTION_ONCE names played once: the toast layers' rule, which the Legend crests' layered pieces share.
+---@param motion PagleArtMotion
+---@param landing number
+---@param apply fun(kind: string, values: number[])
+---@return PagleAnimation[]
+function ns.ToastLayerAnimations(motion, landing, apply)
+	return ns.LayerAnimations(motion, landing, apply, ns.TOAST_MOTION_ONCE[motion.keyframes])
+end
 
 --- The rung of a composed style's art a page is drawn from (ANN-R82): toast.low's pages from its low rung, toast.high's
 --- from its high one, every other page from its toast rung; with no page, the Nod's.

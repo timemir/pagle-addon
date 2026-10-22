@@ -5,10 +5,11 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The Fish Journal's Angler page (LED-R146): the bookplate on the left, with the crest (LED-R112), the active title
--- (LED-R77), the Prestige emblem and button (LED-R33, LED-R34) and the next Catch Milestone (LED-R42); the hands on
--- the rod, the Skill Milestones, "Signed As", "Bindings" and "Where your XP came from" (LED-R150) on the right. Pure
--- logic, everything read from the spread's context (CORE-R7); the book draws it (adapter/Journal.lua).
+-- The Fish Journal's Angler page (LED-R146): the bookplate on the left, with the Prestige frame (LED-R154) and the
+-- crest (LED-R112), the active title (LED-R77), the Prestige emblem and button (LED-R33, LED-R34) and the next Catch
+-- Milestone (LED-R42); the hands on the rod, the Skill Milestones, "Signed As", "Bindings" and "Where your XP came
+-- from" (LED-R150) on the right. Pure logic, everything read from the spread's context (CORE-R7); the book draws it
+-- (adapter/Journal.lua).
 
 -- The Angler page is ns.JOURNAL_ANGLER, its place ns.JournalPlace.angler (logic/Journal.lua).
 
@@ -23,11 +24,11 @@ local function catchesLine(catches, format)
 	return next and text .. L.ANGLER_NEXT_MILESTONE:format(format(next)) or text
 end
 
--- The bookplate (LED-R146): the equipped crest (LED-R112), "Ex Libris", "The Angler's Ledger", "kept since
--- {date}" (none before the first Catch), the shown level (LED-R36), the active title in handwriting (LED-R77,
--- none without lore text, LED-R161), the ink XP bar (LED-R145), the Prestige emblem and stars or "No Prestige seals
--- yet" (LED-R34), the Prestige button while LED-R33 allows it, Ledger completion and its parts (LED-R70, LED-R71),
--- and the lifetime Catches with the next Catch Milestone (LED-R42).
+-- The bookplate (LED-R146): the Prestige frame (LED-R154) with the equipped crest (LED-R112), "Ex Libris", "The
+-- Angler's Ledger", "kept since {date}" (none before the first Catch), the shown level (LED-R36), the active title in
+-- handwriting (LED-R77, none without lore text, LED-R161), the ink XP bar (LED-R145), the Prestige emblem and stars
+-- or "No Prestige yet" (LED-R34, LED-R152), the Prestige button while LED-R33 allows it, Ledger completion and its
+-- parts (LED-R70, LED-R71), and the lifetime Catches with the next Catch Milestone (LED-R42).
 ---@param context LedgerSpreadContext
 ---@return LedgerBlock[]
 local function bookplate(context)
@@ -35,8 +36,8 @@ local function bookplate(context)
 	local state = context.state
 	local celebrated = context.celebrated
 	local format = context.formatNumber
-	-- the Prestige crest for the rank, holding the likeness, with the bookplate crest pinned on it (LED-R112)
-	local blocks = { { kind = "crest", rank = state.prestige, icon = context.crest } }
+	-- the Prestige frame for the rank (LED-R154), holding the likeness, with the bookplate crest pinned on it (LED-R112)
+	local blocks = { { kind = "prestigeFrame", rank = state.prestige, icon = context.crest } }
 	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_EX_LIBRIS }
 	blocks[#blocks + 1] = { kind = "title", text = L.ANGLER_LEDGER }
 	-- The first Catch with a realm date; with none, the first Catch's server time at the realm's offset now.

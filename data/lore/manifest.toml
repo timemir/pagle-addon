@@ -104,6 +104,24 @@ ids = [
 	"zephras",
 ]
 
+# The Prestige frames (LED-R154), each with a name and a description.
+[ledger.prestigeframe]
+fields = ["name", "description"]
+ids = [
+	"none",
+	"jetty",
+	"castoff",
+	"lighthouse",
+	"opensea",
+	"storm",
+	"dive",
+	"coral",
+	"midnight",
+	"leviathan",
+	"starward",
+	"constellation",
+]
+
 # The Ledger's earned goods in Core's slots, each with a name and a description: its earned bindings in Core's
 # binding slot (LED-R110, ADR 0015), then its toast styles and sound sets (LED-R117).
 [ledger.ledgergood]

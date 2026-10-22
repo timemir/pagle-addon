@@ -640,18 +640,20 @@ describe("the round two's composed toast styles", function()
 				end
 			end
 			local applied = {}
-			local bob = motionOf("ledger.toaststyle.deep", "deep-bob")
-			local animations = ns.LayerAnimations(bob, 0.98, function(kind, values)
-				applied[#applied + 1] = { kind, values }
-			end, ns.TOAST_MOTION_ONCE[bob.keyframes])
+			local animations = ns.ToastLayerAnimations(
+				motionOf("ledger.toaststyle.deep", "deep-bob"),
+				0.98,
+				function(kind, values)
+					applied[#applied + 1] = { kind, values }
+				end
+			)
 
 			assert.are.equal(1, #animations)
 			assert.are.same({ 2.6, 0.98, "infinite" }, { animations[1].dur, animations[1].delay, animations[1].iter })
 			assert.are.same({ 0.5, { 0, 3, 0, 1, 1 } }, animations[1].keys[2])
 			animations[1].apply({ 0, 3, 0, 1, 1 })
 			assert.are.same({ { "transform", { 0, 3, 0, 1, 1 } } }, applied)
-			local ice = motionOf("ledger.toaststyle.ice", "ice-flag")
-			local flag = ns.LayerAnimations(ice, 0, function() end, ns.TOAST_MOTION_ONCE[ice.keyframes])
+			local flag = ns.ToastLayerAnimations(motionOf("ledger.toaststyle.ice", "ice-flag"), 0, function() end)
 			assert.are.same({ 1, { 80 } }, { flag[1].iter, { flag[1].keys[1][2][3] } })
 		end
 	)

@@ -1,6 +1,6 @@
 -- The Ledger's parts of onboarding on FakePagle (core/onboarding.md): the Field guide's Your Ledger step (ONB-R21,
--- ONB-R36) drawn from a fixture state with the Angler page's crest (LED-R146) and the guide's parts; its line on What's
--- in the box (ONB-R91); the First evening list's `journal` item (ONB-R61); the `ledger.fresh` Margin note (ONB-R52);
+-- ONB-R36) drawn from a fixture state with the Angler page's Prestige frame (LED-R146) and the guide's parts; its line
+-- on What's in the box (ONB-R91); the First evening list's `journal` item (ONB-R61); the `ledger.fresh` Margin note (ONB-R52);
 -- and the first New Species toast's note (ONB-R53).
 
 local MACKEREL, ELWYNN = 6303, 12
@@ -66,7 +66,7 @@ describe("the Ledger's onboarding", function()
 		end)
 
 		it(
-			"shows the bookplate on the left: Ex Libris, the Angler page's crest holding the likeness, The Angler's "
+			"shows the bookplate on the left: Ex Libris, the Angler page's Prestige frame holding the likeness, The Angler's "
 				.. "Ledger, the character and kept since … your first Catch (ONB-R36, LED-R146)",
 			function()
 				local fake, loaded = ledger()
@@ -84,10 +84,10 @@ describe("the Ledger's onboarding", function()
 					"kept since … your first Catch",
 				}, shownTexts(left))
 				assert.are.same({ "plate" }, partsOn(left))
-				-- the Angler page's crest: the plain Prestige crest (rank 0) with the player's likeness, no crest pinned
+				-- the Angler page's Prestige frame: No Prestige's (rank 0) with the player's likeness, no crest pinned
 				local crest = loaded.ns.guideLedger.crest
-				assert.are.same({ loaded.ns.JournalCoords("Crests", "crest-none") }, crest.frameArt.texCoord)
-				assert.are.equal("player", crest.portrait.portrait)
+				assert.are.equal("none", crest.frame.key)
+				assert.are.equal("player", crest.frame:GetWell().portrait)
 				assert.is_false(crest.pin:IsShown())
 			end
 		)

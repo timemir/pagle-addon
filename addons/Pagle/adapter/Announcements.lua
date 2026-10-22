@@ -1812,17 +1812,17 @@ local function hide(display, atOnce)
 	end
 	frame.display, frame.drawnRuler, frame.moved = nil, nil, nil
 	ns.StopMotion(frame)
-	-- A composed style's layers stop looping as their toast goes (ANN-R82), the splash's crest as it goes (LED-R153),
-	-- and a Prestige frame as its banner goes (ANN-R83).
+	-- A composed style's layers stop looping as their toast goes (ANN-R82), and the splash's crest as it goes (LED-R153).
 	ns.StopToastLayers(frame)
 	if frame.legendCrest then
 		frame.legendCrest:Stop()
 	end
-	if frame.prestige then
-		frame.prestige:Stop()
-	end
 	if frame.ruler then
 		frame.ruler:SetScript("OnUpdate", nil)
+	end
+	-- A banner's Prestige frame stops moving as the banner goes (ANN-R83).
+	if frame.prestige then
+		frame.prestige:Stop()
 	end
 	for i, entry in ipairs(ns.columnFrames) do
 		if entry == frame then

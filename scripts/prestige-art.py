@@ -1,4 +1,4 @@
-"""Writes addons/Pagle/data/PrestigeArt.lua from the Prestige frames kit's art.json (LED-R152, LED-R153, ANN-R83):
+"""Writes addons/Pagle/data/PrestigeArt.lua from the Prestige frames kit's art.json (LED-R154, LED-R152, ANN-R83):
 each rank's Prestige frame (its atlas and its layers, drawn by logic/LayeredArt.lua) and the Prestige emblems' atlas.
 
     .tools/bin/python scripts/prestige-art.py <kit>/art.json addons/Pagle/data/PrestigeArt.lua
@@ -108,7 +108,7 @@ def frame_art(frame):
 HEADER = """---@class PagleNS
 local ns = select(2, ...)
 
--- The Prestige frames and Prestige emblems (ledger.md › LED-R152, LED-R153; announcements.md › ANN-R83), as the
+-- The Prestige frames and Prestige emblems (ledger.md › LED-R154, LED-R152; announcements.md › ANN-R83), as the
 -- Prestige frames kit's art.json has them: written by scripts/prestige-art.py, so change the kit and run it, not this
 -- file. Core's, since the Ledger's bookplate and Core's Prestige banner both draw them. Each frame's atlas joins
 -- ns.ATLASES by name (its sprites' boxes are the whole sprite, at 1.5 texels a unit); its art, by prestige rank in

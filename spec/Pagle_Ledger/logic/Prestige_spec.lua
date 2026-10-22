@@ -241,19 +241,38 @@ describe("Prestige", function()
 		end)
 	end)
 
-	describe("emblems (LED-R34)", function()
-		it("gives emblem I at rank 1 and X at 10, with no stars, and none at rank 0", function()
-			assert.are.same({ stars = 0 }, ns.PrestigeMark(0))
-			assert.are.same({ emblem = "I", stars = 0 }, ns.PrestigeMark(1))
-			assert.are.same({ emblem = "IV", stars = 0 }, ns.PrestigeMark(4))
-			assert.are.same({ emblem = "IX", stars = 0 }, ns.PrestigeMark(9))
-			assert.are.same({ emblem = "X", stars = 0 }, ns.PrestigeMark(10))
+	describe("marks (LED-R34)", function()
+		it("gives numeral I at rank 1 and X at 10, with no stars, and none at rank 0, each with its rank", function()
+			assert.are.same({ stars = 0, rank = 0 }, ns.PrestigeMark(0))
+			assert.are.same({ emblem = "I", stars = 0, rank = 1 }, ns.PrestigeMark(1))
+			assert.are.same({ emblem = "IV", stars = 0, rank = 4 }, ns.PrestigeMark(4))
+			assert.are.same({ emblem = "IX", stars = 0, rank = 9 }, ns.PrestigeMark(9))
+			assert.are.same({ emblem = "X", stars = 0, rank = 10 }, ns.PrestigeMark(10))
 		end)
 
+		it(
+			"names a Prestige frame for its tooltip from lore, with the rank's name or No Prestige yet (LED-R154, LED-R160)",
+			function()
+				assert.are.same({
+					name = "The Lighthouse",
+					description = "The lamp room at the end of the point, glass all round and the light going out over the water.",
+					rank = "Prestige III",
+				}, ns.PrestigeFrameTip(3, "lighthouse"))
+				assert.are.same({
+					name = "The Angler’s Constellation",
+					description = ns.L["prestigeframe.constellation.description"],
+					rank = "Master Prestige 4",
+				}, ns.PrestigeFrameTip(14, "constellation"))
+				assert.are.same("No Prestige yet", ns.PrestigeFrameTip(0, "none").rank)
+				-- a key with no lore: no name or description (LED-R161)
+				assert.are.same({ rank = "Prestige I" }, ns.PrestigeFrameTip(1, "nowhere"))
+			end
+		)
+
 		it("gives X with rank − 10 stars from rank 11, the Master Prestiges", function()
-			assert.are.same({ emblem = "X", stars = 1 }, ns.PrestigeMark(11))
-			assert.are.same({ emblem = "X", stars = 2 }, ns.PrestigeMark(12))
-			assert.are.same({ emblem = "X", stars = 15 }, ns.PrestigeMark(25))
+			assert.are.same({ emblem = "X", stars = 1, rank = 11 }, ns.PrestigeMark(11))
+			assert.are.same({ emblem = "X", stars = 2, rank = 12 }, ns.PrestigeMark(12))
+			assert.are.same({ emblem = "X", stars = 15, rank = 25 }, ns.PrestigeMark(25))
 		end)
 	end)
 

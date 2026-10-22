@@ -294,7 +294,7 @@ describe("FakePagle", function()
 
 	it(
 		"makes Prestige frames and emblems on the loaded Module's client from Core's art, the frame moving on"
-			.. " Pagle.Animate's player while Animations are on (LED-R152, LED-R153)",
+			.. " Pagle.Animate's player while Animations are on (LED-R154, LED-R152)",
 		function()
 			local fake = newFakePagle()
 			local loaded = fake.load("Pagle_QoL")

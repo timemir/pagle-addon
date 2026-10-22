@@ -114,9 +114,13 @@ _Avoid_: external XP, bonus XP, XP income
 Starting the Angler Level over from 1, after reaching its cap, in exchange for a permanent prestige rank.
 _Avoid_: reset, rebirth, paragon
 
-**Prestige crest**:
-The frame round the Angler's likeness on the Fish Journal's bookplate, which shows their prestige rank: a plain one before the first Prestige, then one for each rank. It is earned, never bought.
-_Avoid_: crest (alone), frame, bookplate crest (which is the look pinned on it)
+**Prestige frame**:
+The portrait frame round the Angler's likeness on the Fish Journal's bookplate and on the Prestige banner, which shows their prestige rank: an unwritten one before the first Prestige, one of its own for each rank I to X, then the Master's. It is earned, never bought.
+_Avoid_: Prestige crest, crest (alone), border, bookplate crest (which is the look pinned on it)
+
+**Prestige emblem**:
+The small badge for a prestige rank, its Prestige frame in miniature with its numeral, shown beside the Prestige line and the Angler Level, on the Prestige confirm and in lists and tooltips. There is none before the first Prestige.
+_Avoid_: Prestige crest, seal, badge (alone), rank icon
 
 **Fresh Water**:
 Bonus XP on Catches made after a break from fishing, the Pagle counterpart to WoW's rested XP. It is a bonus, never a penalty.
@@ -166,9 +170,17 @@ _Avoid_: colour, skin, morph, variant
 How often a Variety turns up: Common, Uncommon, Rare or Epic. Each Species has four Common, three Uncommon, two Rare and one Epic.
 _Avoid_: quality (which is an item's own grade in the game), tier
 
+**Zone crest**:
+A Bookplate crest earned when its zone reaches Master: the zone's shield.
+_Avoid_: zone badge, Mastery crest
+
 **Fish crest**:
 A Bookplate crest earned by catching all ten varieties of one Species.
 _Avoid_: species crest, variety crest
+
+**Legend crest**:
+A Legend's own crest, holding its icon, on the Fish Journal's Legends spread and plate and on the Legend splash; a Legend not yet caught, or one with no crest of its own, shows the Unwritten crest. It is never worn on the bookplate.
+_Avoid_: Prestige crest, legend frame, crest (alone)
 
 **Catch Milestone**:
 A lifetime Catch count the Angler reaches, such as the 1,000th Catch, recognised with a banner. It is recognition only and earns no XP.
@@ -233,8 +245,8 @@ Core's shop where the Angler spends Pagle Coins on looks for Pagle's own views, 
 _Avoid_: store, Trading Post, Bait Shop, shop (alone)
 
 **Bookplate crest**:
-The look the Angler wears on the Fish Journal's bookplate, chosen in Look and Feel's Crests dropdown: a zone's shield, earned when that zone reaches Master, or a fish's, earned when all ten of its varieties are caught, pinned on the Prestige crest, or Plain, the default, which shows nothing. Earned crests are never listed in the Curio Shop, whose Crests category holds only the crests for sale and Plain.
-_Avoid_: crest (alone), emblem, medallion, zone crest
+The look the Angler wears on the Fish Journal's bookplate, chosen in Look and Feel's Crests dropdown: a Zone crest, earned when that zone reaches Master, or a Fish crest, earned when all ten of its varieties are caught, pinned on the Prestige frame, or Plain, the default, which shows nothing. Earned crests are never listed in the Curio Shop, whose Crests category holds only the crests for sale and Plain.
+_Avoid_: crest (alone), emblem, medallion, Prestige crest
 
 **Binding**:
 The look the Angler's books wear, chosen once in the Curio Shop: the Fish Journal, the Hunts board and the Stats book all wear the same one. Some are bought and some are earned, and Field Leather is the default. The Field guide keeps its own plain leather. Not to be confused with a key binding, such as the Fishing key's.

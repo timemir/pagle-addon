@@ -70,12 +70,13 @@ local FIXTURE = {
 -- `updating`: the projection still building) and on the Angler page. `modules` registers other Modules before the
 -- Ledger loads (openJournal's).
 ---@param log table[]?
----@param options { catalogue: table?, saved: table?, updating: boolean?, modules: fun(fake: FakePagle)? }?
+---@param options { catalogue: table?, saved: table?, updating: boolean?, modules: fun(fake: FakePagle)?, motion: boolean? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function anglerPage(log, options)
 	options = options or {}
 	return openJournal({
+		motion = options.motion,
 		catalogue = options.catalogue or catalogue(),
 		characters = characters(),
 		logId = "log",
@@ -98,7 +99,7 @@ describe("the Journal's Angler page", function()
 	end)
 
 	it(
-		"shows the bookplate: the crest, kept since, the shown level, the active title, the ink XP bar, the Prestige seals, completion and its six parts, and the lifetime Catches with the next milestone (LED-R146, LED-R112, LED-R77, LED-R34, LED-R42, LED-R71)",
+		"shows the bookplate: the Prestige frame, kept since, the shown level, the active title, the ink XP bar, the Prestige line, completion and its six parts, and the lifetime Catches with the next milestone (LED-R146, LED-R154, LED-R112, LED-R77, LED-R34, LED-R42, LED-R71)",
 		function()
 			local _, loaded = anglerPage()
 
@@ -111,7 +112,7 @@ describe("the Journal's Angler page", function()
 			-- title under the level, automatic: the highest level title, level 1's Minnow (LED-R77); no Prestige yet
 			-- (LED-R34), and below 60 no button (LED-R33); and the next Catch Milestone (LED-R42).
 			assert.are.same({
-				"[crest]",
+				"[prestigeFrame]",
 				"Ex Libris",
 				"The Angler's Ledger",
 				"kept since 11 Oct",
@@ -127,14 +128,14 @@ describe("the Journal's Angler page", function()
 				"3 Catches · next milestone 1,000",
 			}, blockTexts(loaded.ns.journal.pages.left))
 			local left = loaded.ns.journal.pages.left
-			-- the plain crest, holding the likeness, no bookplate crest on it
-			assert.are.same({ kind = "crest", rank = 0 }, left[1])
+			-- No Prestige's frame, holding the likeness, no bookplate crest on it
+			assert.are.same({ kind = "prestigeFrame", rank = 0 }, left[1])
 			assert.are.same({
 				kind = "bookplate",
 				text = "4",
 				value = "Angler Level",
 				signature = "Minnow",
-				note = "No Prestige seals yet",
+				note = "No Prestige yet",
 			}, left[5])
 			assert.are.equal("1,030 of 1,320.", left[6].bar.text)
 			assert.are.equal("33% of the Ledger complete (2 of 6)", left[7].value)
@@ -144,8 +145,8 @@ describe("the Journal's Angler page", function()
 			end
 			assert.are.same({ "1 of 2", "0 of 0", "1 of 1", "0 of 1", "0 of 1", "0 of 1" }, parts)
 			-- the likeness is the player's portrait
-			local crest = loaded.ns.journal.frame.left.drawn.crest[1]
-			assert.are.equal("player", crest.portrait.portrait)
+			local crest = loaded.ns.journal.frame.left.drawn.prestigeFrame[1]
+			assert.are.equal("player", crest.frame:GetWell().portrait)
 			assert.is_false(crest.pin:IsShown())
 		end
 	)
@@ -154,7 +155,10 @@ describe("the Journal's Angler page", function()
 		local _, loaded = anglerPage({ FIXTURE[1], FIXTURE[2] })
 		local left = blockTexts(loaded.ns.journal.pages.left)
 
-		assert.are.same({ "[crest]", "Ex Libris", "The Angler's Ledger", "2" }, { left[1], left[2], left[3], left[4] })
+		assert.are.same(
+			{ "[prestigeFrame]", "Ex Libris", "The Angler's Ledger", "2" },
+			{ left[1], left[2], left[3], left[4] }
+		)
 		assert.are.equal("0 Catches · next milestone 1,000", left[#left])
 		for _, text in ipairs(left) do
 			assert.is_nil(text:find("kept since", 1, true))
@@ -321,24 +325,24 @@ local function click(loaded, side, text)
 end
 
 describe("the Angler page's bookplate in M4", function()
-	it("shows no seals and no Prestige button at rank 0 below 60 (LED-R146, LED-R34, LED-R33)", function()
+	it("shows no emblem and no Prestige button at rank 0 below 60 (LED-R146, LED-R34, LED-R33)", function()
 		local _, loaded = anglerPage()
 		local left = loaded.ns.journal.pages.left
 
 		assert.are.same({}, ofKind(left, "button"))
 		local bookplate = assert(blockOfKind(left, "bookplate"))
-		assert.are.same({ nil, "No Prestige seals yet" }, { bookplate.mark, bookplate.note })
+		assert.are.same({ nil, "No Prestige yet" }, { bookplate.mark, bookplate.note })
 	end)
 
-	it("shows emblem II at rank 2, in place of No Prestige seals yet (LED-R146, LED-R34)", function()
+	it("shows emblem II at rank 2, in place of No Prestige yet (LED-R146, LED-R34)", function()
 		local _, loaded = anglerPage(fixturePlus({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
 		local left = loaded.ns.journal.pages.left
 
 		local bookplate = assert(blockOfKind(left, "bookplate"))
-		assert.are.same({ { emblem = "II", stars = 0 }, "Prestige II" }, { bookplate.mark, bookplate.note })
-		-- the crest is Prestige II's frame
-		assert.are.same({ kind = "crest", rank = 2 }, left[1])
-		assert.are.equal("crest-ii", loaded.ns.CrestSprite(2))
+		assert.are.same({ { emblem = "II", stars = 0, rank = 2 }, "Prestige II" }, { bookplate.mark, bookplate.note })
+		-- the frame is Prestige II's, Casting Off
+		assert.are.same({ kind = "prestigeFrame", rank = 2 }, left[1])
+		assert.are.equal("castoff", loaded.ns.journal.frame.left.drawn.prestigeFrame[1].frame.key)
 	end)
 
 	it(
@@ -400,22 +404,25 @@ describe("the Angler page's bookplate in M4", function()
 		assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.elwynn"))
 
 		assert.are.same(
-			{ kind = "crest", rank = 0, icon = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn" },
+			{ kind = "prestigeFrame", rank = 0, icon = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn" },
 			loaded.ns.journal.pages.left[1]
 		)
-		local crest = loaded.ns.journal.frame.left.drawn.crest[1]
+		local crest = loaded.ns.journal.frame.left.drawn.prestigeFrame[1]
 		assert.is_true(crest.pin:IsShown())
 		assert.is_true(fake.Pagle.SetEquipped("core.crest", "core.crest.plain"))
-		assert.are.same({ kind = "crest", rank = 0 }, loaded.ns.journal.pages.left[1])
+		assert.are.same({ kind = "prestigeFrame", rank = 0 }, loaded.ns.journal.pages.left[1])
 		assert.is_false(crest.pin:IsShown())
 	end)
 
-	-- The pin's centre from the crest frame's top left (y down) for a frame `w` wide: the shield 34% of `w` wide, its
-	-- right edge `past` of `w` beyond the frame's, its foot `up` of the frame's height above the frame's (LED-R146).
-	local function pinCentre(w, past, up)
-		local h = w * 230 / 200
-		local side = w * 0.34 * 140 / 120 -- the square texture's side: the shield is its full height
-		return side, w + past * w - side * 60 / 140, h - up * h - side / 2
+	-- The pin's centre from the frame's top left (y down) on the bookplate and the square texture's side: the frame's
+	-- pin point at 0.65 of the kit's box, the shield 50 units wide and 140:120 tall, its full height (LED-R146).
+	local function pinCentre(fake, rank)
+		local pin = fake.ns.PrestigeFrameArt(rank).pin
+		return 50 * 140 / 120, pin.x * 0.65, pin.y * 0.65
+	end
+
+	local function near(a, b)
+		return math.abs(a - b) < 0.01
 	end
 
 	-- `region`'s one anchor as { point, relativeTo, relativePoint, x, y }.
@@ -424,17 +431,20 @@ describe("the Angler page's bookplate in M4", function()
 	end
 
 	it(
-		"pins the equipped crest's whole shield at the plain frame's lower right, turned 6° clockwise, with its shadow and pin (LED-R146, LED-R112)",
+		"pins the equipped crest's whole shield, 50 units wide, centred on the frame's pin point, turned 6° clockwise, with its shadow and pin (LED-R146, LED-R112)",
 		function()
 			local fake, loaded = anglerPage()
 			fake.setPurchased({ ["ledger.crest.westfall"] = true }) -- owned: a purchased ID is (SHOP-R30)
 			assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.westfall"))
 
-			local crest = loaded.ns.journal.frame.left.drawn.crest[1]
+			local crest = loaded.ns.journal.frame.left.drawn.prestigeFrame[1]
 			local pin = crest.pin
-			local side, x, y = pinCentre(132, 0.04, 0.02)
-			assert.are.same({ side, side }, { pin:GetSize() })
-			assert.are.same({ "CENTER", crest, "TOPLEFT", x, -y }, anchorOf(pin))
+			local side, x, y = pinCentre(fake, 0)
+			local w, h = pin:GetSize()
+			assert.is_true(near(side, w) and near(side, h))
+			local point, relativeTo, relativePoint, px, py = pin:GetPoint(1)
+			assert.are.same({ "CENTER", crest, "TOPLEFT" }, { point, relativeTo, relativePoint })
+			assert.is_true(near(x, px) and near(-y, py))
 			local icon = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\westfall"
 			assert.are.same({ icon, nil, nil }, { pin.shield.texture, pin.shield.texCoord, pin.shield.masks })
 			assert.are.equal(-math.rad(6), pin.shield.rotation)
@@ -449,16 +459,81 @@ describe("the Angler page's bookplate in M4", function()
 		end
 	)
 
-	it("pins it 12% past a Prestige frame and 16% up, clear of the wreath and ribbon (LED-R146)", function()
+	it("pins it at a Prestige frame's own pin point (LED-R146, LED-R154)", function()
 		local fake, loaded = anglerPage(fixturePlus({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
 		fake.setPurchased({ ["ledger.crest.winterspring"] = true }) -- owned: a purchased ID is (SHOP-R30)
 		assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.winterspring"))
 
-		local crest = loaded.ns.journal.frame.left.drawn.crest[1]
-		local side, x, y = pinCentre(150, 0.12, 0.16)
-		assert.are.same({ side, side }, { crest.pin:GetSize() })
-		assert.are.same({ "CENTER", crest, "TOPLEFT", x, -y }, anchorOf(crest.pin))
+		local crest = loaded.ns.journal.frame.left.drawn.prestigeFrame[1]
+		local _, x, y = pinCentre(fake, 2)
+		local _, _, _, px, py = crest.pin:GetPoint(1)
+		assert.is_true(near(x, px) and near(-y, py))
+		-- over the frame: the pin's frame drawn above Core's
+		assert.is_true(crest.pin:GetFrameLevel() > crest.frame:GetFrameLevel())
 	end)
+
+	it(
+		"draws the rank's Prestige frame at 0.65 of its box with the likeness in its well, and takes its room at the"
+			.. " page's left (LED-R146, LED-R154)",
+		function()
+			local _, loaded = anglerPage(fixturePlus({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
+
+			local widget = loaded.ns.journal.frame.left.drawn.prestigeFrame[1]
+			assert.are.same({ "castoff", 169, 182, "II" }, {
+				widget.frame.key,
+				widget.frame.width,
+				widget.frame.height,
+				widget.frame.label:GetText(),
+			})
+			assert.are.equal("player", widget.frame:GetWell().portrait)
+			assert.are.same({ 173, 182 }, { widget.floatW, widget.floatH })
+		end
+	)
+
+	it(
+		"moves a frame from V up while the Angler page is open, and stops as the Journal closes (LED-R154, SET-R30)",
+		function()
+			local ranks = {}
+			for rank = 1, 5 do
+				ranks[#ranks + 1] = prestige(T0 + 600 + rank, rank)
+			end
+			local _, loaded = anglerPage(fixturePlus(ranks), { motion = true })
+			local frame = loaded.ns.journal.frame.left.drawn.prestigeFrame[1].frame
+
+			assert.are.equal("storm", frame.key)
+			assert.are.equal(frame, frame.art.playing)
+			loaded.ns.journal.frame:Hide()
+			loaded.client.update(0.1)
+			assert.is_nil(frame.art.playing)
+		end
+	)
+
+	it("stands a moving frame still with Animations off (LED-R154, SET-R30)", function()
+		local ranks = {}
+		for rank = 1, 5 do
+			ranks[#ranks + 1] = prestige(T0 + 600 + rank, rank)
+		end
+		local _, loaded = anglerPage(fixturePlus(ranks)) -- the Journal's specs draw with Animations off
+
+		local frame = loaded.ns.journal.frame.left.drawn.prestigeFrame[1].frame
+		assert.are.equal("storm", frame.key)
+		assert.is_nil(frame.art.playing)
+	end)
+
+	it(
+		"names the frame when hovered: its name in gilt, its description, and the rank with its emblem at 22 (LED-R154)",
+		function()
+			local _, loaded = anglerPage(fixturePlus({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
+			local frame = loaded.ns.journal.frame.left.drawn.prestigeFrame[1].frame
+
+			frame.scripts.OnEnter(frame)
+
+			local lines = loaded.client.tooltipLines()
+			assert.are.equal("Casting Off", lines[1])
+			assert.matches("clinker%-built rowboat", lines[2])
+			assert.matches("^|T.*Emblems:22:22:.*|t Prestige II$", lines[3])
+		end
+	)
 
 	it("leaves the pin upright on a client whose textures can't turn (LED-R146)", function()
 		local _, loaded = anglerPage()

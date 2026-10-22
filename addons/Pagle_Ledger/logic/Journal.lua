@@ -114,16 +114,16 @@ local ns = select(2, ...)
 --- - `plate` (a Legend's plate across the spread: its `icon`, `text` the name, `lines` its first Catch and its size
 ---   text, `seal` its title, `value` at its foot; a click anywhere opens `place`; LED-R147), drawn by
 ---   adapter/JournalLegends.lua over both pages
---- - `crest` (the Angler page's Prestige crest for prestige `rank` holding the Angler's likeness, with the bookplate
----   crest's `icon` pinned on it, LED-R146), drawn by adapter/JournalAngler.lua; `rule` (the fleuron rule); `map`
----   (uncharted waters' blank chart, LED-R138)
+--- - `prestigeFrame` (the Angler page's Prestige frame for prestige `rank` holding the Angler's likeness, with the
+---   bookplate crest's `icon` pinned on it, LED-R146, LED-R154), drawn by adapter/JournalAngler.lua; `rule` (the
+---   fleuron rule); `map` (uncharted waters' blank chart, LED-R138)
 --- - `variety` (a varieties spread's row: the variety's `art`, drawn `look` "silhouette" while uncaught, `text` its name
 ---   or "Undiscovered", its `rarity` as a pill, filled when `inked`, its count as `value`, `selected` banded, opening
 ---   `place`), `varietyArt` (its `art` large, drawn `look`) and `fishCrest` (the fish crest's `icon` small, its name as
 ---   `text` and the hand's `value`), drawn by adapter/JournalVarieties.lua (VAR-R24)
 --- Any block with `foot` sits at its page's foot when the page has room above it (the varieties spread's fish crest).
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"crest"|"rule"|"map"|"variety"|"varietyArt"|"varietyCard"|"fishCrest"|"level"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"prestigeFrame"|"rule"|"map"|"variety"|"varietyArt"|"varietyCard"|"fishCrest"|"level"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"

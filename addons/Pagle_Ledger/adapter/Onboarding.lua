@@ -6,7 +6,7 @@ end
 local ns = select(2, ...)
 
 -- The Ledger's parts of onboarding on the client (core/onboarding.md): the Field guide's Your Ledger step (ONB-R36),
--- drawn with the Ledger's own art (the Angler page's crest holding the likeness, its fonts and inks) and the guide's
+-- drawn with the Ledger's own art (the Angler page's Prestige frame holding the likeness, its fonts and inks) and the guide's
 -- parts through `nav.Part`; and, as the Fish Journal opens, the First evening list's `journal` item (ONB-R61), the
 -- `ledger.fresh` Margin note (ONB-R52) and the Journal's First look (ONB-R57), with its "?" (ONB-R59). Margin notes,
 -- First looks and the coach bar are Core's frames (ONB-R92); every call is made only when Core has it (ONB-R90), so
@@ -56,9 +56,10 @@ end
 
 -- ---------------------------------------------------------------- the Your Ledger step (ONB-R36)
 
--- The bookplate's crest drawn at this scale of the Angler page's (LED-R146), so the plain frame stands 72 high in the
--- plate, where the kit's ring sits.
-local CREST_SCALE = 0.48
+-- The bookplate's Prestige frame drawn at this scale of the Angler page's (LED-R146, LED-R154), so No Prestige's ring
+-- stands 72 high in the plate, where the kit's ring sits; the ring's top is 11 units under the frame's box's there.
+local CREST_SCALE = 0.59
+local CREST_TOP = 207 - 11
 -- The box of Skill Milestones (the kit's): its top, a row's height, and a row's height when four share it.
 local BOX_Y, ROW_H, ROW_H_FOUR = 125.7, 50, 40
 
@@ -77,7 +78,7 @@ local BOX_Y, ROW_H, ROW_H_FOUR = 125.7, 50, 40
 ---@field right Frame
 ---@field name FontString
 ---@field crestHolder Frame
----@field crest LedgerJournalWidget
+---@field crest LedgerPrestigeFrameWidget
 ---@field since FontString
 ---@field heading FontString
 ---@field fill Texture
@@ -100,18 +101,18 @@ local function pageNow()
 	})
 end
 
--- Draws the bookplate's crest (the Angler page's: the Prestige crest for the rank holding the likeness, the equipped
--- bookplate crest pinned on it, LED-R112) centred on the plate at the page's x 221, its top at y 207.
+-- Draws the bookplate's Prestige frame (the Angler page's: the frame for the rank holding the likeness, the equipped
+-- bookplate crest pinned on it, LED-R112, LED-R154) centred on the plate at the page's x 221, its ring's top at y 207.
 ---@param view LedgerGuideStepView
 ---@param prestige integer
 local function fillCrest(view, prestige)
 	local crest = view.crest
-	crest:Fill({ kind = "crest", rank = prestige, icon = ns.CrestIcon() }, 0, function() end, { same = false })
-	local w, h = (crest.floatW or 18) - 18, (crest.floatH or 6) - 6
+	crest:Fill({ kind = "prestigeFrame", rank = prestige, icon = ns.CrestIcon() }, 0, function() end, { same = false })
+	local w, h = crest.frame:GetSize()
 	crest:SetSize(w, h)
 	local holder = view.crestHolder
 	holder:SetSize(w * CREST_SCALE, h * CREST_SCALE)
-	ns.JournalAt(holder, view.left, 221 - w * CREST_SCALE / 2, 207)
+	ns.JournalAt(holder, view.left, 221 - w * CREST_SCALE / 2, CREST_TOP)
 end
 
 -- Fills the box of Skill Milestones and moves what follows it to fit its rows (the kit's 50 units a row, 40 when
@@ -177,7 +178,7 @@ local function refresh(view)
 end
 
 --- Draws the Your Ledger step's two pages (ONB-R36; board 7, the probe's Guide.lua): on the left, the bookplate on
---- the guide's plate with "Ex Libris", the Angler page's crest holding the likeness, "The Angler's Ledger", the
+--- the guide's plate with "Ex Libris", the Angler page's Prestige frame holding the likeness, "The Angler's Ledger", the
 --- character's name and kept since; on the right, the box of Skill Milestones headed by the character's skill, the
 --- account paragraph and the note. Core draws the foot (ONB-R23).
 ---@param left Frame
@@ -192,7 +193,7 @@ function ns.DrawGuideLedgerStep(left, right, nav)
 	text(left, "sc", 13, INK.red, L.ANGLER_EX_LIBRIS, 221, 186.6, { center = true })
 	local holder = CreateFrame("Frame", nil, left)
 	holder:SetFrameLevel(left:GetFrameLevel() + 2)
-	local crest = ns.NewJournalWidgetOf("crest", holder)
+	local crest = ns.NewJournalWidgetOf("prestigeFrame", holder) --[[@as LedgerPrestigeFrameWidget]]
 	crest:SetScale(CREST_SCALE)
 	crest:SetPoint("TOPLEFT", holder, "TOPLEFT", 0, 0)
 	text(left, "print", 19, INK.title, L.ANGLER_LEDGER, 221, 289.6, { center = true })

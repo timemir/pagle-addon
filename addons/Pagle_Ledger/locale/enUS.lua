@@ -148,7 +148,7 @@ ns.L = {
 	PRESTIGE_READY_TITLE = "Prestige ready",
 	PRESTIGE_READY_TEXT = "Open the Fish Journal to begin a new Ledger.",
 	PRESTIGE_READY_STAMP = "Prestige ready",
-	-- A Prestige's emblem, I to X, then the Master Prestige's rank − 10 (LED-R34).
+	-- A Prestige's numeral, I to X, then the Master Prestige's rank − 10 (LED-R34).
 	PRESTIGE_TITLE = "Prestige %s",
 	MASTER_PRESTIGE_TITLE = "Master Prestige %d",
 	-- A Catch Milestone's moment and Write-up line (LED-R42, LED-R94), the count with BreakUpLargeNumbers.
@@ -427,7 +427,7 @@ ns.L = {
 	-- Prestige line and button (LED-R33, LED-R34), "Signed As" (LED-R77: the active pick marked) and "Bindings" with
 	-- each binding's state (LED-R110; "Angler Level {L}" is BINDING_EARNED).
 	ANGLER_NEXT_MILESTONE = " · next milestone %s",
-	ANGLER_NO_PRESTIGE = "No Prestige seals yet",
+	ANGLER_NO_PRESTIGE = "No Prestige yet",
 	ANGLER_PRESTIGE = BEGIN_A_NEW_LEDGER .. " (Prestige)",
 	ANGLER_SIGNED_AS = "Signed As",
 	ANGLER_AUTOMATIC = "Automatic",
@@ -567,7 +567,7 @@ ns.L = {
 			"Start the Companion, then /reload.",
 		},
 	},
-	-- The Prestige confirm (LED-R33); a Master Prestige's stars beside emblem X are STAR stamps (LED-R34).
+	-- The Prestige confirm (LED-R33); a Master Prestige's stars beside the Master's emblem are STAR stamps (LED-R34).
 	PRESTIGE_CONFIRM_KICKER = "Prestige",
 	PRESTIGE_CONFIRM_TITLE = BEGIN_A_NEW_LEDGER .. "?",
 	PRESTIGE_CONFIRM_TEXT = "Your Angler Level climbs again from 1. Nothing you've earned is taken away.",

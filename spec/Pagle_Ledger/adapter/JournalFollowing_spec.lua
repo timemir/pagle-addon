@@ -361,7 +361,7 @@ describe("the Following spread's right page, the selected Angler's card (LED-R15
 	)
 
 	it(
-		'reads a Hardcore Angler at rank 0 with "Hardcore Angler", no title, no other character and no Prestige seals (LED-R151, LED-R146)',
+		'reads a Hardcore Angler at rank 0 with "Hardcore Angler", no title, no other character and no Prestige (LED-R151, LED-R146)',
 		function()
 			local right = cardOf(2)
 
@@ -379,7 +379,7 @@ describe("the Following spread's right page, the selected Angler's card (LED-R15
 				kind = "level",
 				text = "31",
 				value = "Angler Level",
-				note = "No Prestige seals yet",
+				note = "No Prestige yet",
 				seal = "Ledger 24%",
 			}, right[3])
 			assert.are.same({ "1 of 12", "1", "4,102" }, { right[4].value, right[5].value, right[6].value })

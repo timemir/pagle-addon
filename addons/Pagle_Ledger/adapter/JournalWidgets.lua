@@ -511,15 +511,17 @@ end
 ---@field caption FontString
 ---@field signature FontString
 ---@field seal LedgerSeal
----@field emblem LedgerSpriteTexture
----@field emblemText FontString
+---@field emblem Texture
 ---@field emblemNote FontString
 ---@field stars LedgerSpriteTexture[]
 
+-- The Prestige emblem's size beside the Angler Level (LED-R152), and on a line of its own.
+local EMBLEM_SIZE = 34
+
 -- The bookplate's row (LED-R132, LED-R146), as the kit's Home and Angler page: the shown level in large numerals; beside
--- them "Angler Level" in small capitals and the active title in the hand under it; the Prestige emblem, a gilt shield
--- with its numeral and a Master Prestige's stars, with its words at the right (`note`: "Prestige VII", or "No
--- Prestige seals yet" with no emblem); and on Home a wax seal with Ledger completion.
+-- them "Angler Level" in small capitals and the active title in the hand under it; the Prestige emblem (Core's, its
+-- numeral in its art, LED-R152) and a Master Prestige's stars, with its words at the right (`note`: "Prestige VII",
+-- or "No Prestige yet" with no emblem); and on Home a wax seal with Ledger completion.
 makers.bookplate = function(parent)
 	local widget = newWidget(parent) --[[@as LedgerBookplateWidget]]
 	widget.numerals = ns.JournalLabel(widget, "print", 56, INK.title)
@@ -527,9 +529,8 @@ makers.bookplate = function(parent)
 	widget.caption = ns.JournalLabel(widget, "sc", 14, INK.kicker)
 	widget.signature = ns.JournalLabel(widget, "hand", 27, INK.hand)
 	widget.seal = ns.JournalSeal(widget, 76, 13)
-	widget.emblem = ns.JournalSprite(widget, "Parts", "emblem", "ARTWORK", 0, 26)
-	widget.emblemText = ns.JournalLabel(widget, "sc", 11.5, INK.brass, "", { justify = "CENTER" })
-	widget.emblemText:SetPoint("CENTER", widget.emblem, "CENTER", 0, 1)
+	widget.emblem = widget:CreateTexture(nil, "ARTWORK")
+	widget.emblem:Hide()
 	widget.emblemNote = ns.JournalLabel(widget, "italic", 13, INK.note, "", { justify = "RIGHT" })
 	widget.stars = {}
 	function widget.Fill(self, block, width, _, draw)
@@ -556,11 +557,10 @@ makers.bookplate = function(parent)
 			right = width - 80
 		end
 		local mark = block.mark
-		local numeral = mark and mark.emblem
-		local emblem = numeral ~= nil
-		self.emblem:SetShown(emblem)
-		self.emblemText:SetShown(emblem)
-		self.emblemText:SetText(numeral or "")
+		local emblem = mark ~= nil and Pagle.SetPrestigeEmblem(self.emblem, mark.rank or 0, EMBLEM_SIZE)
+		if not emblem then
+			self.emblem:Hide()
+		end
 		self.emblemNote:SetShown(block.note ~= nil)
 		self.emblemNote:SetText(block.note or "")
 		bound(self.emblemNote, width * 0.45)
@@ -576,8 +576,9 @@ makers.bookplate = function(parent)
 			ns.JournalBoxAt(star, self, right - noteW - 4 - i * 11, 44)
 		end
 		if emblem then
-			ns.JournalBoxAt(self.emblem, self, right - noteW - 30, 4)
-			right = right - noteW - 34
+			self.emblem:ClearAllPoints()
+			self.emblem:SetPoint("TOPLEFT", self, "TOPLEFT", right - noteW - EMBLEM_SIZE - 4, 0)
+			right = right - noteW - EMBLEM_SIZE - 8
 		else
 			right = right - noteW
 		end
@@ -819,24 +820,20 @@ makers.stamps = function(parent)
 end
 
 ---@class LedgerEmblemWidget: LedgerJournalWidget
----@field shield LedgerSpriteTexture
+---@field emblem Texture
 ---@field stars LedgerSpriteTexture[]
 
--- A Prestige emblem on its own line (LED-R34): the gilt shield with its numeral and a Master Prestige's stars.
--- Nothing at all before the first Prestige.
+-- A Prestige emblem on its own line (LED-R34, LED-R152): Core's emblem for the rank, its numeral in its art, and a
+-- Master Prestige's stars. Nothing at all before the first Prestige.
 makers.emblem = function(parent)
 	local widget = newWidget(parent) --[[@as LedgerEmblemWidget]]
-	widget.shield = ns.JournalSprite(widget, "Parts", "emblem", "ARTWORK", 0, 34)
-	ns.JournalBoxAt(widget.shield, widget, 0, 0)
-	widget.label = ns.JournalLabel(widget, "sc", 15, INK.brass, "", { justify = "CENTER" })
-	widget.label:SetPoint("CENTER", widget.shield, "CENTER", 0, 1)
+	widget.emblem = widget:CreateTexture(nil, "ARTWORK")
+	widget.emblem:SetPoint("TOPLEFT", widget, "TOPLEFT", 0, 0)
+	widget.emblem:Hide()
 	widget.stars = {}
 	function widget.Fill(self, block)
-		local mark = block.mark or { stars = 0 }
-		local shown = mark.emblem ~= nil
-		self.shield:SetShown(shown)
-		self.label:SetShown(shown)
-		self.label:SetText(mark.emblem or "")
+		local mark = block.mark or { stars = 0, rank = 0 }
+		local shown = Pagle.SetPrestigeEmblem(self.emblem, mark.rank or 0, EMBLEM_SIZE)
 		local stars = shown and mark.stars or 0
 		for i = 1, math.max(stars, #self.stars) do
 			local star = self.stars[i] or ns.JournalSprite(self, "Parts", "star", "ARTWORK", 0, 12)

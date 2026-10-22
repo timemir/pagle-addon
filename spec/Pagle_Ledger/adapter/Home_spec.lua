@@ -282,7 +282,7 @@ describe("the Journal's Home, right page", function()
 			text = "12",
 			value = "Angler Level",
 			seal = "14%",
-			mark = { stars = 0 },
+			mark = { stars = 0, rank = 0 },
 			signature = "Minnow",
 		}, right[1])
 		assert.are.equal("xpBar", right[2].kind)
@@ -437,7 +437,7 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 			text = "12",
 			value = "Angler Level",
 			seal = "14%",
-			mark = { stars = 0 },
+			mark = { stars = 0, rank = 0 },
 			signature = "Minnow",
 		}, pages(loaded).right[1])
 		-- the seal reads the Ledger's completion under its word
@@ -445,25 +445,31 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 		assert.are.same({ "12", "Angler Level", "Minnow", "Ledger\n14%" }, texts)
 	end)
 
-	it("shows emblem III beside the level at rank 3, and the active title under it (LED-R132, LED-R34)", function()
-		local _, loaded = openHome(prestiged(3), level12)
+	it(
+		"shows Core's emblem III beside the level at rank 3, its numeral in its art, and the active title under it"
+			.. " (LED-R132, LED-R34, LED-R152)",
+		function()
+			local _, loaded = openHome(prestiged(3), level12)
 
-		-- A Prestige means a climb reached 60, so the peak level is 60 and automatic signs with level60 (LED-R35).
-		local bookplate = pages(loaded).right[1]
-		assert.are.same({ emblem = "III", stars = 0 }, bookplate.mark)
-		assert.are.equal("Nat's Peer", bookplate.signature)
-		local texts = shownTexts(drawnBookplate(loaded))
-		assert.are.same({ bookplate.text, "Angler Level", "Nat's Peer", "Ledger\n14%", "III" }, texts)
-		assert.is_true(drawnBookplate(loaded).emblem:IsShown())
-	end)
+			-- A Prestige means a climb reached 60, so the peak level is 60 and automatic signs with level60 (LED-R35).
+			local bookplate = pages(loaded).right[1]
+			assert.are.same({ emblem = "III", stars = 0, rank = 3 }, bookplate.mark)
+			assert.are.equal("Nat's Peer", bookplate.signature)
+			local texts = shownTexts(drawnBookplate(loaded))
+			assert.are.same({ bookplate.text, "Angler Level", "Nat's Peer", "Ledger\n14%" }, texts)
+			local emblem = drawnBookplate(loaded).emblem
+			assert.are.same({ true, 34 }, { emblem:IsShown(), emblem.width })
+		end
+	)
 
-	it("shows a Master Prestige's stars beside emblem X (LED-R34)", function()
+	it("shows a Master Prestige's stars beside the Master's emblem (LED-R34, LED-R152)", function()
 		local _, loaded = openHome(prestiged(12), level12)
 
 		local bookplate = pages(loaded).right[1]
-		assert.are.same({ emblem = "X", stars = 2 }, bookplate.mark)
+		assert.are.same({ emblem = "X", stars = 2, rank = 12 }, bookplate.mark)
 		local widget = drawnBookplate(loaded)
-		assert.are.same({ bookplate.text, "Angler Level", "Nat's Peer", "Ledger\n14%", "X" }, shownTexts(widget))
+		assert.are.same({ bookplate.text, "Angler Level", "Nat's Peer", "Ledger\n14%" }, shownTexts(widget))
+		assert.is_true(widget.emblem:IsShown())
 		-- two stars, as the kit's star sprite
 		local shown = 0
 		for _, star in ipairs(widget.stars) do

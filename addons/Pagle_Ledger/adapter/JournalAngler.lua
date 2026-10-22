@@ -5,35 +5,22 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The Angler page's own widget (LED-R146, LED-R34, LED-R112; ledger.md › UI): the bookplate's crest, the Ledger art
--- kit's Prestige crest for the prestige rank (none, I to X, and Master past X) holding the Angler's likeness, the
--- player's portrait masked round over the crest's dark well, with the equipped bookplate crest's shield pinned at its
--- lower right. The kit's P.Crest (Angler.lua, Demo.lua's crests board) and the crest kit's P.Pinnable (Crests.lua).
+-- The Angler page's own widget (LED-R146, LED-R154, LED-R112; ledger.md › UI): the bookplate's Prestige frame for the
+-- prestige rank, Core's (Pagle.NewPrestigeFrame, its art in Core's media/prestige/), holding the Angler's likeness,
+-- the player's portrait masked round in its well, with the equipped bookplate crest's shield pinned at the frame's
+-- pin. From V up the frame moves while the page is open, with Animations on; hovering it names it (LED-R154). The
+-- crest kit's P.Pinnable (Crests.lua) for the pin.
 
--- The crest frames by prestige rank (LED-R34): the kit's twelve, ranks 1 to 10 their own, every Master Prestige the
--- Master's.
-local NUMERALS = { "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x" }
-
---- The kit's crest sprite for prestige rank `rank`.
----@param rank integer
----@return string
-function ns.CrestSprite(rank)
-	if rank <= 0 then
-		return "crest-none"
-	end
-	return "crest-" .. (NUMERALS[rank] or "master")
-end
-
--- A crest's width: the plain frame is drawn smaller than a Prestige one, as the canvas does.
-local PLAIN_W, PRESTIGE_W = 132, 150
-
--- The pinned bookplate crest (LED-R146): its shield's width, of the frame's; how far its right edge sits past the
--- frame's and its foot above the frame's, of the frame's width and height, on the plain frame and on a Prestige one,
--- whose wreath and ribbon fill the foot; and its turn, clockwise.
-local PIN_W = 0.34
-local PIN_PAST = { plain = 0.04, prestige = 0.12 }
-local PIN_UP = { plain = 0.02, prestige = 0.16 }
+-- The frame drawn at this share of the kit's 260 × 280 box (LED-R146): 169 × 182 units, the likeness 73 across.
+local FRAME_SCALE = 0.65
+-- The pinned crest's shield is 120:140, its square texture's full height, and turned 6° clockwise (LED-R146).
+local SHIELD_SIDE = 140 / 120
 local PIN_TURN = 6
+-- The room the frame takes at the page's left, past its box, for the words beside it.
+local FLOAT_GAP = 4
+-- The emblem before the rank's name in the frame's tooltip (LED-R152), and the gilt of its name.
+local TIP_EMBLEM = 22
+local TIP_GILT = "f0cd6a"
 
 --- Turns a pinned crest's texture PIN_TURN degrees clockwise, on a client whose textures turn; upright otherwise.
 ---@param texture Texture
@@ -78,24 +65,19 @@ local function newPin(parent)
 	return pin
 end
 
--- Pins crest texture `icon` on a crest frame `w` x `h` (`frame` "plain" or "prestige") drawn at `widget`'s top left.
+-- Pins crest texture `icon` on the frame drawn at `widget`'s top left: its shield `width` wide, centred on the frame's
+-- pin point (`x`, `y` from the top left, y down).
 ---@param pin LedgerCrestPin
 ---@param widget Frame
 ---@param icon integer|string
----@param frame "plain"|"prestige"
----@param w number
----@param h number
-local function setPin(pin, widget, icon, frame, w, h)
-	local side = w * PIN_W * 140 / 120 -- the shield, 120:140, is the square texture's full height
+---@param x number
+---@param y number
+---@param width number
+local function setPin(pin, widget, icon, x, y, width)
+	local side = width * SHIELD_SIDE
 	pin:SetSize(side, side)
 	pin:ClearAllPoints()
-	pin:SetPoint(
-		"CENTER",
-		widget,
-		"TOPLEFT",
-		w + PIN_PAST[frame] * w - side * 60 / 140,
-		-(h - PIN_UP[frame] * h - side / 2)
-	)
+	pin:SetPoint("CENTER", widget, "TOPLEFT", x, -y)
 	pin.shield:SetTexture(icon)
 	pin.shadow:SetTexture(icon)
 	pin.shadow:SetSize(side, side)
@@ -107,43 +89,65 @@ local function setPin(pin, widget, icon, frame, w, h)
 	pin.head:SetPoint("CENTER", pin, "TOP", side * 0.05, -side * 0.04)
 end
 
----@class LedgerCrestWidget: LedgerJournalWidget
----@field frameArt LedgerSpriteTexture
----@field portrait Texture
+---@class LedgerPrestigeFrameWidget: LedgerJournalWidget
+---@field frame PaglePrestigeFrame
 ---@field pin LedgerCrestPin
+---@field rank integer
 
-ns.RegisterJournalWidget("crest", function(parent)
-	local widget = ns.NewJournalWidget(parent) --[[@as LedgerCrestWidget]]
-	widget.frameArt = ns.JournalSprite(widget, "Crests", "crest-none", "ARTWORK", 0, PLAIN_W, PLAIN_W * 230 / 200)
-	widget.portrait = ns.JournalCrisp(widget:CreateTexture(nil, "ARTWORK", nil, 1))
-	local mask = widget:CreateMaskTexture()
-	mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-	mask:SetAllPoints(widget.portrait)
-	widget.portrait:AddMaskTexture(mask)
+-- The frame's tooltip (LED-R154), over the frame: its name in gilt and its description, then the rank's name with
+-- its emblem.
+---@param widget LedgerPrestigeFrameWidget
+local function showTip(widget)
+	local tip = ns.PrestigeFrameTip(widget.rank, Pagle.GetPrestigeFrame(widget.rank).key)
+	GameTooltip:SetOwner(widget.frame, "ANCHOR_RIGHT")
+	GameTooltip:SetText(tip.name or tip.rank, ns.JournalRGB(TIP_GILT))
+	if tip.description then
+		GameTooltip:AddLine(tip.description, 1, 1, 1, true)
+	end
+	if tip.name then
+		local emblem = Pagle.PrestigeEmblemMarkup(widget.rank, TIP_EMBLEM)
+		GameTooltip:AddLine(emblem == "" and tip.rank or emblem .. " " .. tip.rank, 0.8, 0.8, 0.8)
+	end
+	GameTooltip:Show()
+end
+
+ns.RegisterJournalWidget("prestigeFrame", function(parent)
+	local widget = ns.NewJournalWidget(parent) --[[@as LedgerPrestigeFrameWidget]]
+	widget.frame = Pagle.NewPrestigeFrame(widget)
+	widget.frame:SetPoint("TOPLEFT")
 	widget.pin = newPin(widget)
-	widget.texture = widget.portrait
+	widget.pin:SetFrameLevel(widget.frame:GetFrameLevel() + 2)
+	widget.texture = widget.frame:GetWell()
+	widget.rank = 0
+	-- The page gives a float no height, so the frame itself takes the mouse.
+	widget.frame:EnableMouse(true)
+	widget.frame:SetScript("OnEnter", function()
+		showTip(widget)
+	end)
+	widget.frame:SetScript("OnLeave", function(self)
+		if GameTooltip:IsOwned(self) then
+			GameTooltip:Hide()
+		end
+	end)
 	function widget.Fill(self, block)
-		local name = ns.CrestSprite(block.rank or 0)
-		local w = name == "crest-none" and PLAIN_W or PRESTIGE_W
-		local h = w * 230 / 200
-		local atlas = ns.JOURNAL_ATLASES.Crests
-		local sprite = atlas.sprites[name]
-		local kx, ky = w / sprite.box[3], h / sprite.box[4]
-		ns.JournalSetSprite(self.frameArt, "Crests", name)
-		self.frameArt:SetSize(sprite.w / atlas.scale * kx, sprite.h / atlas.scale * ky)
-		self.frameArt.box = { sprite.box[1] * kx, sprite.box[2] * ky, w, h }
-		ns.JournalBoxAt(self.frameArt, self, 0, 0)
-		-- the likeness over the frame's dark well, as the canvas stacks them
-		local size = w * 0.58
-		self.portrait:SetSize(size, size)
-		ns.JournalAt(self.portrait, self, w * 0.21, h * 0.1826)
-		SetPortraitTexture(self.portrait, "player")
-		-- the bookplate crest the Angler has on (LED-R112), pinned at the frame's lower right; none for Plain
+		local rank = block.rank or 0
+		self.rank = rank
+		local frame = self.frame
+		frame:SetRank(rank, FRAME_SCALE)
+		SetPortraitTexture(frame:GetWell(), "player")
+		-- From V up it moves while the page shows, with Animations on; the page closed, it stops (LED-R154).
+		frame:Play()
+		-- the bookplate crest the Angler has on (LED-R112), pinned at the frame's pin; none for Plain
 		self.pin:SetShown(block.icon ~= nil)
 		if block.icon ~= nil then
-			setPin(self.pin, self, block.icon, name == "crest-none" and "plain" or "prestige", w, h)
+			local x, y, width = frame:GetPin()
+			setPin(self.pin, self, block.icon, x, y, width)
 		end
-		self.floatW, self.floatH = w + 18, h + 6
+		local w, h = frame:GetSize()
+		self.floatW, self.floatH = w + FLOAT_GAP, h
+		if GameTooltip:IsOwned(frame) then
+			showTip(self)
+		end
 		return 0
 	end
 	return widget

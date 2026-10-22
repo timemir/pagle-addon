@@ -711,3 +711,53 @@ description = "Six inches of good black ice, one hole and a lot of waiting. When
 [ledgergood."ledger.toaststyle.stitch"] # core.toaststyle, earned: the sampler’s 20 fish
 name = "Cross-Stitch Sampler"
 description = "Stitched by someone patient on the long nights between seasons. Every fish in it took an evening; the needle is still in."
+
+# The Prestige frames (LED-R154): each frame's name and the line its tooltip carries.
+
+[prestigeframe.none] # No Prestige
+name = "Unwritten"
+description = "A ring in ink, and a pencilled guess at what will go round it."
+
+[prestigeframe.jetty] # I
+name = "The Jetty"
+description = "Planks off the old jetty, lashed into a ring, still smelling of tar and low tide."
+
+[prestigeframe.castoff] # II
+name = "Casting Off"
+description = "The rail of a clinker-built rowboat, three coats of paint deep, with the oars shipped across it."
+
+[prestigeframe.lighthouse] # III
+name = "The Lighthouse"
+description = "The lamp room at the end of the point, glass all round and the light going out over the water."
+
+[prestigeframe.opensea] # IV
+name = "The Open Sea"
+description = "A compass rose off a navigator’s chart, every point of it true, the north crowned in gold."
+
+[prestigeframe.storm] # V
+name = "The Storm"
+description = "The helm of a ketch in a full gale: mahogany, brass and eight good spokes, and the sky coming apart overhead."
+
+[prestigeframe.dive] # VI
+name = "The Dive"
+description = "A copper diving helmet, bolted down and pumped full of air. The angler has gone over the side to look the fish in the eye."
+
+[prestigeframe.coral] # VII
+name = "The Coral Gardens"
+description = "A ring of mother-of-pearl in a reef: red coral up one side, a sea fan on the other, and somebody always swimming past."
+
+[prestigeframe.midnight] # VIII
+name = "The Midnight Zone"
+description = "Black glass from where no light comes down, lit by the things that live there. One of them has taken an interest."
+
+[prestigeframe.leviathan] # IX
+name = "The Leviathan"
+description = "The serpent at the bottom of every sailor’s story, coiled round a ring of old gold with its own tail in its mouth."
+
+[prestigeframe.starward] # X
+name = "The Starward Sea"
+description = "Where the sea runs out the sky begins: an armillary of gold and silver under the night, and the old fish among the stars."
+
+[prestigeframe.constellation] # Master
+name = "The Angler’s Constellation"
+description = "Past the tenth, they put you in the sky: an angler of stars with a rod and a line, and a fish on the end of it. One more star in the crown for every Master Prestige."

@@ -1,11 +1,13 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- Layered art (announcements.md › ANN-R82, ANN-R83; ledger.md › LED-R152): a stack of sprites from one atlas, each at
+-- Layered art (announcements.md › ANN-R82, ANN-R83; ledger.md › LED-R154): a stack of sprites from one atlas, each at
 -- its box, on the host its art puts it on, with its motion, the CSS keyframes of the kit that drew it. Core's one
--- renderer for everything drawn so: the composed toast styles (adapter/ToastLayers.lua), the Prestige frames
--- (logic/PrestigeFrames.lua) and the Legend crests. It only calls methods on the regions it is handed and plays its
--- motion on the motion player it is handed, so FakePagle builds the real thing over a Module's client too.
+-- renderer for everything drawn so: the composed toast styles (adapter/ToastLayers.lua) and the Prestige frames
+-- (logic/PrestigeFrames.lua, as well art: layers round a well and a label); a layered piece on a host of its own (a
+-- Legend crest) draws its slots with ns.CommitLayerSlot and moves them with ns.LayerAnimations. It only calls methods
+-- on the regions it is handed and plays its motion on the motion player it is handed, so FakePagle builds the real
+-- thing over a Module's client too.
 --
 --   local art = ns.NewLayeredArt({ anchor = frame, hosts = { back = { frame = frame, layer = "BORDER" } },
 --       owner = frame, motion = { animate = ns.Animate, stop = ns.StopMotion, isOn = ns.MotionOn } })
@@ -270,8 +272,9 @@ local function scaled(box, scale)
 	return { x = box.x * scale, y = box.y * scale, w = box.w * scale, h = box.h * scale }
 end
 
--- Draws a slot where its motion has it now (its resting frame with none): a sweep's strip seen through its window at
--- its scroll, any other sprite moved, turned, scaled or mirrored about its origin, at its alpha.
+--- Draws a slot where its motion has it now (its resting frame with none): a sweep's strip seen through its window at
+--- its scroll, any other sprite moved, turned, scaled or mirrored about its origin, at its alpha. Its box and origin
+--- are from `anchor`'s top left.
 ---@param slot PagleLayerSlot
 ---@param anchor Region
 local function commit(slot, anchor)
@@ -299,6 +302,7 @@ local function commit(slot, anchor)
 		texture:SetTexCoord(tc[1], tc[2], tc[3], tc[4])
 	end
 end
+ns.CommitLayerSlot = commit
 
 --- Draws `layers` from `atlas` in their resting frame: each sprite at its box (fitted, then scaled, as `placing`
 --- has it) on its host, in the art's order, a sweep's strip under its mask; one that only flashes, and a sweep,
@@ -432,7 +436,7 @@ end
 
 -- ---------------------------------------------------------------- well art
 
---- Layered art round a well (ledger.md › LED-R152; announcements.md › ANN-R83): a Prestige frame round the Angler's
+--- Layered art round a well (ledger.md › LED-R154; announcements.md › ANN-R83): a Prestige frame round the Angler's
 --- likeness, a Legend crest round its item's icon. Its art is a kit's box of layers (ns.PRESTIGE_BOX), "back" ones
 --- behind the well and "front" ones over it, its well a circle in the box (ns.PRESTIGE_WELL), its label the words on
 --- its plaque in the kit's ink, and the point a crest is pinned at.

@@ -67,7 +67,10 @@ local function layersOf(frame, host)
 	return layers
 end
 
+-- The shared renderer's sprite coordinates and slot drawing (logic/LayeredArt.lua), for what this file draws itself:
+-- the Nod's slices, the stamps, and layered pieces drawn on a host of their own.
 local coordsOf = ns.SpriteCoords
+local commit = ns.CommitLayerSlot -- luacheck: ignore 211 (the Legend crests' layered pieces draw with it)
 
 -- The Nod's body three-sliced to `width` (ANN-R82): `slice.left` (where its words start) and `slice.right` of it kept,
 -- its middle stretched.
@@ -318,12 +321,11 @@ function ns.PlayToastLayers(frame, display, style, page, form)
 	end
 	local stamps = {}
 	for _, stamp in ipairs(movingStamps(frame)) do
-		local motion = stamp.layered.spec.motion --[[@as PagleArtMotion]]
-		local turns = ns.LayerAnimations(motion, LANDING[form], function(kind, values)
+		local turns = ns.ToastLayerAnimations(stamp.layered.spec.motion, LANDING[form], function(kind, values)
 			if kind == "transform" and stamp.layered then
 				tilt(stamp, values[3])
 			end
-		end, ns.TOAST_MOTION_ONCE[motion.keyframes])
+		end)
 		for _, animation in ipairs(turns) do
 			stamps[#stamps + 1] = animation
 		end

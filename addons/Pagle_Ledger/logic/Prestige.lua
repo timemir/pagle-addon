@@ -15,20 +15,21 @@ ns.PRESTIGE_COINS = 100
 -- Prestiges with an emblem (LED-R34, Tunables): I to X, one per rank; every rank above is a Master Prestige.
 local EMBLEMS = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" }
 
---- What a prestige rank shows (LED-R34): its emblem, I to X (nil at rank 0), and from rank 11 on, rank − 10 stars
---- beside emblem X.
+--- What a prestige rank shows (LED-R34): its numeral, I to X (nil at rank 0), and from rank 11 on, rank − 10 stars
+--- beside the Master's emblem; and the rank itself, whose Prestige frame and emblem Core draws (LED-R154, LED-R152).
 ---@class LedgerPrestigeMark
 ---@field emblem? string  -- "I" … "X"; nil before the first Prestige
 ---@field stars integer   -- Master Prestige stars: rank − 10 from rank 11, else 0
+---@field rank integer
 
---- The emblem and stars of prestige rank `rank` (LED-R34).
+--- The numeral, stars and rank of prestige rank `rank` (LED-R34).
 ---@param rank integer
 ---@return LedgerPrestigeMark
 function ns.PrestigeMark(rank)
 	if rank <= 0 then
-		return { stars = 0 }
+		return { stars = 0, rank = 0 }
 	end
-	return { emblem = EMBLEMS[math.min(rank, #EMBLEMS)], stars = math.max(0, rank - #EMBLEMS) }
+	return { emblem = EMBLEMS[math.min(rank, #EMBLEMS)], stars = math.max(0, rank - #EMBLEMS), rank = rank }
 end
 
 --- Prestige rank `rank`'s name (LED-R34), as its moment titles it: "Prestige {I…X}", or "Master Prestige {rank − 10}"
@@ -42,6 +43,20 @@ function ns.PrestigeName(rank)
 	end
 	local L = ns.L
 	return mark.stars > 0 and L.MASTER_PRESTIGE_TITLE:format(mark.stars) or L.PRESTIGE_TITLE:format(mark.emblem)
+end
+
+--- The bookplate's Prestige frame's tooltip (LED-R154): the frame's name and description, lore
+--- `prestigeframe.<key>.name` and `.description` (LED-R160; nil while either has no text, LED-R161), then the rank's
+--- name, "Prestige {I…X}" or "Master Prestige {n}", or "No Prestige yet".
+---@param rank integer
+---@param key string the frame's, from Core (Pagle.GetPrestigeFrame)
+---@return { name: string?, description: string?, rank: string }
+function ns.PrestigeFrameTip(rank, key)
+	return {
+		name = ns.Lore("prestigeframe." .. key .. ".name"),
+		description = ns.Lore("prestigeframe." .. key .. ".description"),
+		rank = ns.PrestigeName(rank) or ns.L.ANGLER_NO_PRESTIGE,
+	}
 end
 
 --- Applies a Prestige entry (LED-R32, LED-R37), in any mode. The ending climb's XP is its own and its Activity XP, the

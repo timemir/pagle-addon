@@ -175,6 +175,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
   - **Sonar Scope** (`core.toaststyle.sonar`, earned): Built by an engineer who wanted to see the fish before they saw him. It hums, it pings, and it has never once been wrong about a ping. *Motion:* The sweep turns on the scope and the blips light as it passes (two sprites, rotate and alpha); a faint scan line rolls down the tube. On toast.high a red lamp blinks on top.
   - **Prize Foil** (`core.toaststyle.foil`, Curio crate only): The rare one, pulled from the pack on the first try. Hold it to the light and the whole lake runs through it. *Motion:* A band of rainbow light rolls across the foil (one sprite, translated, masked to the card). On toast.high the card sits in a clear graded case.
   - **Storm Front** (`core.toaststyle.storm`, tier 5): The catch you made when everyone sensible had gone in. The pennant says gale; the angler says one more cast. *Motion:* Lightning lights the cloud from inside and a bolt cracks down (two sprites, alpha, every seven seconds); the gale pennant snaps. On toast.high a storm lantern swings over the corner.
+- **ANN-R83** A banner whose seal is `"frame"` shows the Prestige frame of `frameRank` (ledger.md › LED-R154) in the seal's place: Core's `media/prestige/Frame<Key>` sprites at 0.6 of the kit's box (156 × 168 units, the likeness's centre on the seal's centre, where the wax seal's was), drawn by Core's layered art (the composed toast styles' renderer, ANN-R82), the player's portrait masked round in its well, and on its label the numeral or "Master" with its stars (LED-R154). It drops in as the seal does (UI › Motion), then its own motion plays from 0.63 s while the banner holds, with Animations on, and stops as the banner goes; off, it rests. A rank Core has no frame for shows the Master's. The Announce atlas's old `crest-prestige` sprite is retired.
 
 ## Data
 
@@ -212,13 +213,14 @@ A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `
 ---@field pastText? string       -- shown in the summary if it expired
 ---@field summaryOnly? boolean   -- ANN-R63
 ---@field firstNote? string      -- the Margin note shown the first time a moment of this Module and kind shows (ONB-R53)
----@field seal? integer|"waves"|"book"|"quill"|"crest" -- a banner's wax seal (UI); default "waves"
----@field crest? integer|string  -- with seal "crest": a crest good's icon in the Prestige crest's place (VAR-R25)
+---@field seal? integer|"waves"|"book"|"quill"|"frame"|"crest" -- a banner's wax seal (UI); default "waves"
+---@field frameRank? integer    -- with seal "frame": the prestige rank whose Prestige frame to show (ANN-R83)
+---@field crest? integer|string  -- with seal "crest": a crest good's icon in the seal's place (VAR-R25)
 ---@field art? { texture: integer|string, left: number, right: number, top: number, bottom: number } -- VAR-R11's art
 ---@field onClick? fun()         -- run when its toast or Nod is clicked away (ANN-R20); never stored
 ```
 
-`seal` is what a banner headline's wax seal shows: a number pressed into it (an Angler Level, a Catch Milestone's count), a pressed mark (`"waves"`, `"book"`, `"quill"`), or `"crest"` for the Prestige crest holding the Angler's portrait with the title on its ribbon; with `crest` set, that icon (a fish crest, VAR-R25) shows in the Prestige crest's place, with no portrait and no ribbon. Any other value, or none, shows the waves. Only a banner headline's is read.
+`seal` is what a banner headline's wax seal shows: a number pressed into it (an Angler Level, a Catch Milestone's count), a pressed mark (`"waves"`, `"book"`, `"quill"`), `"frame"` for the Prestige frame of `frameRank` holding the Angler's portrait (ANN-R83), or `"crest"` with `crest` set, that icon (a fish crest, VAR-R25) in the seal's place. Any other value, or none (or a `"frame"` without `frameRank`, a `"crest"` without `crest`), shows the waves. Only a banner headline's is read.
 
 `art` is a texture and its rectangle as texture coordinates (a fish variety's art, VAR-R11), drawn only where the moment is the headline: a toast's or Nod's medallion shows it cropped to the fish's head (the square at the art's left, from 3% to 40.5% of its width and 12.5% to 87.5% of its height) in place of `icon`, and a banner shows it whole across its seal's foot, the seal's ribbon. `icon` still names what the moment is about, for the Session summary, which never stores `art`.
 
@@ -313,7 +315,7 @@ The frames move as the art kit's motion has them (`pagle-announce-kit` v2, its `
 | Frame | Motion | Settled |
 |---|---|---|
 | Toast | It rises 26 units and fades in (0.56–0.98 s, overshooting a little); its name is written out left to right in 16 steps (0.98–1.82 s); its stamps slam down from 2.6x (1.89–2.31 s, overshooting); its coin turns in edge-on (2.31–2.66 s). Its record ruler keeps its own count (ANN-R22), and its "New record" stamp slams down as it lands. | 2.66 s |
-| Banner | The seal or crest drops from 2.2x (0–0.63 s, overshooting); the gilt tooling draws out from the seal (0.35–1.12 s); the rays fade in, turning from −8° (0.35–1.4 s). | 1.4 s |
+| Banner | The seal or Prestige frame drops from 2.2x (0–0.63 s, overshooting); the gilt tooling draws out from the seal (0.35–1.12 s); the rays fade in, turning from −8° (0.35–1.4 s). | 1.4 s |
 | Splash | The rays turn clockwise once a minute for as long as it shows. | never |
 | Nod | It fades in. A Rare or Epic catch Nod (VAR-R26) also gets one gleam across its strip, left to right in the rarity's colour, added onto the paper, brightest midway and gone at the far end (0.1–0.7 s); it holds nothing up and plays nothing. | 0.3 s |
 
@@ -354,6 +356,7 @@ These sit on the Announcements page. Toast style and sound set also appear on Lo
 | Cards kept | 3 | ANN-R54 |
 | Toast variants per sound set | 3 (Gilded 1) | ANN-R72 |
 | Motion sprites per composed rung | at most 2, plus `toast.high`'s extras | ANN-R82 |
+| Banner's Prestige frame | 0.6 of the kit's 260 × 280 box; its motion from 0.63 s | ANN-R83 |
 | Legend sting length | ~3 s | ANN-R72 |
 | Loudness target | −20 dBFS RMS, −1 dBFS peak | ANN-R74 |
 | Toast style atlas density | 1.5 texels per UI unit for the expansion's styles (2 for Torn Page, Ripple and Lantern Glow) | ANN-R81 |

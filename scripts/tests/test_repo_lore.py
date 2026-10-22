@@ -311,7 +311,7 @@ def test_the_ledger_s_lore_passes_its_check() -> None:
 def test_the_manifest_lists_the_ledger_s_four_shared_lines() -> None:
     # LED-R160, LED-R162 (its M3 part): [ledger.line] with fields ["text"] and the four line IDs.
     manifest = _layers().lore.manifest["ledger"]
-    assert sorted(manifest) == ["crest", "ledgergood", "line", "title"]
+    assert sorted(manifest) == ["crest", "ledgergood", "line", "prestigeframe", "title"]
     assert manifest["line"].fields == ("text",)
     assert sorted(manifest["line"].ids) == ["uncaughtjunk", "uncaughtlegend", "uncaughttreasure", "unchartedwaters"]
     assert all(not allowed for allowed in manifest["line"].ids.values())  # no placeholder (DATA-R108)
@@ -1093,3 +1093,31 @@ def test_the_manifest_lists_the_ledger_s_earned_goods_in_core_s_slots() -> None:
     for good in LEDGER_GOODS:
         assert _ledger_text(f"ledgergood.{good}.name").strip()
         assert _ledger_text(f"ledgergood.{good}.description").strip()
+
+
+PRESTIGE_FRAMES = [
+    "none",
+    "jetty",
+    "castoff",
+    "lighthouse",
+    "opensea",
+    "storm",
+    "dive",
+    "coral",
+    "midnight",
+    "leviathan",
+    "starward",
+    "constellation",
+]
+
+
+def test_the_manifest_lists_the_prestige_frames() -> None:
+    # DATA-R106, LED-R154: [ledger.prestigeframe] with a name and a description for each Prestige frame, No Prestige's
+    # to the Master's, and the lore has both; rank III keeps the dev's name, The Lighthouse.
+    manifest = _layers().lore.manifest["ledger"]
+    assert manifest["prestigeframe"].fields == ("name", "description")
+    assert list(manifest["prestigeframe"].ids) == PRESTIGE_FRAMES
+    for key in PRESTIGE_FRAMES:
+        assert _ledger_text(f"prestigeframe.{key}.name").strip()
+        assert _ledger_text(f"prestigeframe.{key}.description").strip()
+    assert _ledger_text("prestigeframe.lighthouse.name") == "The Lighthouse"

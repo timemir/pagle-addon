@@ -8,12 +8,12 @@ end
 ---@class Pagle
 local Pagle = Pagle
 
--- The Prestige frames and emblems on the client (ledger.md › LED-R152, LED-R153; announcements.md › ANN-R83): well
+-- The Prestige frames and emblems on the client (ledger.md › LED-R154, LED-R152; announcements.md › ANN-R83): well
 -- art (logic/LayeredArt.lua) over the client's frames, Core's art fonts and its motion driver, for Core's Prestige
 -- banner and, through Pagle's API, the Ledger's bookplate (ADR 0001: the art is Core's, media/prestige/).
 
---- Makes well art on `parent` (logic/LayeredArt.lua's ns.WellArtMaker): the Prestige frames' renderer, and the
---- Legend crests'.
+--- Makes well art on `parent` (logic/LayeredArt.lua's ns.WellArtMaker): layered art round a well, the Prestige
+--- frames' (and any art in the Prestige frames kit's box with a well and a plaque).
 ---@type fun(parent: Frame): PagleWellArt
 ns.NewWellArt = ns.WellArtMaker({
 	createFrame = function(parent)

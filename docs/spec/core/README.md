@@ -203,6 +203,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.GetFollowedAnglers()` | `{ state, anglers }` | [anglers-in-game.md](anglers-in-game.md#contracts) |
 | `Pagle.Animate(owner, animations, onDone?)`, `Cue(owner, seconds, fn)`, `StopMotion(owner)`, `EASE`, `Bezier(x1, y1, x2, y2)` | Core's one motion driver | announcements.md |
 | `Pagle.WheelScroll(scroll, delta, options?)` | a mouse wheel notch: a third of the view, gliding | [announcements.md](announcements.md#paglewheelscrollscroll-delta-options) |
+| `Pagle.NewPrestigeFrame(parent)`, `GetPrestigeFrame(rank)`, `SetPrestigeEmblem(texture, rank, size)`, `PrestigeEmblemMarkup(rank, size)` | a Prestige frame, with `SetRank`, `GetWell`, `GetPin`, `Play` and `Stop`; a rank's frame `{ key, moving }`; its emblem on a texture or in a line | [here](#paglenewprestigeframeparent) |
 | `Pagle.FitToScreen(frame, options)` | number, the scale used | [here](#paglefittoscreenframe-options) |
 | `Pagle.NewBookBinding(frame, options?)` | `PagleBookBinding`: `Look()`, `SetLook(goodID?)` | [book-binding.md](book-binding.md#contracts) |
 | `Pagle.NewLegendCrest(parent, width)` | a Legend's crest, with `SetLegend`, `Play` and `Stop` | [here](#paglenewlegendcrestparent-width) |
@@ -274,6 +275,18 @@ if M.RegisterTourStop then
     function() --[[ put back everything show changed ]] end)
 end
 ```
+
+### `Pagle.NewPrestigeFrame(parent)`
+
+A Prestige frame (ledger.md LED-R154) as a frame on `parent`, for the Module to place; it shows nothing until `frame:SetRank(rank, scale)`. The frames' and emblems' art is Core's (`media/prestige/`), since the Prestige banner draws them too (ANN-R83); Core draws them with its one layered-art renderer, the composed toast styles' (ANN-R82).
+
+- `frame:SetRank(rank, scale)`: the rank's frame (No Prestige's at 0, its own for I to X, the Master's past X) at `scale` of the kit's 260 × 280 box, which is then its size, resting; its plaque reads the numeral, or "Master" with a star for each Master Prestige (at most five, then "+n"). Drawn again as the same frame, a moving frame carries on.
+- `frame:GetWell()`: the texture in its well, masked round, for the Module to fill (`SetPortraitTexture(well, "player")`).
+- `frame:GetPin()`: where a crest is pinned on it, from its top left in its units (y down), and the shield's width.
+- `frame:Play(delay?)`: from V up its sprites move as the kit has them, looping, on Core's motion driver; played again while it moves, it carries on. With Animations off it keeps its resting frame (unmoved; what only flashes unseen). Once it is no longer visible (its window closed, its page turned) the driver settles it, and it moves again only when played again.
+- `frame:Stop()`: it stops where it is.
+- `Pagle.GetPrestigeFrame(rank)`: `{ key, moving }`, the frame's key (for the Module's lore, `prestigeframe.<key>`) and whether it moves.
+- `Pagle.SetPrestigeEmblem(texture, rank, size)`: shows the rank's Prestige emblem (LED-R152) in `texture`, `size` units square; at rank 0 hides it. Returns whether it shows. `Pagle.PrestigeEmblemMarkup(rank, size)`: the same as an inline texture for a line of text, `""` at rank 0.
 
 ### `Pagle.FitToScreen(frame, options)`
 
