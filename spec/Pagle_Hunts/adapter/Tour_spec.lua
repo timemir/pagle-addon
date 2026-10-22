@@ -1,9 +1,9 @@
 -- Hunts' tour stops on FakePagle (CORE-R65, CORE-R68), over the fixture Hunt list, event pool and catalogue: the board
 -- on a Hunt of each group, the Board with the wager strip, the WAGERS group and a run's entry, the Pagle Wagers spread,
--- a set's page, an entry from it and a retired entry, the tracker in the dock, and each good Hunts sells worn; each
--- shown on the tour's sample (logic/Tour.lua) and put back as it was, nothing saved. FakePagle's clock is before the
--- rotation's starting point, so no run is on, and the sample's runs come from the fixture pool. The tour runs on
--- FakePagle's clock (fake.wait); Hunts' own timers on the client's, which stands still here.
+-- a set's page, an entry from it and a retired entry, the tracker in the dock, and each good Hunts sells or gives
+-- worn; each shown on the tour's sample (logic/Tour.lua) and put back as it was, nothing saved. FakePagle's clock is
+-- before the rotation's starting point, so no run is on, and the sample's runs come from the fixture pool. The tour
+-- runs on FakePagle's clock (fake.wait); Hunts' own timers on the client's, which stands still here.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
@@ -17,7 +17,20 @@ local C = catalogue
 local FROM = hunts.untilRealm(17, 30)
 -- One stop's span on the tour's clock: shown, shot 2.8 s in, hidden 0.5 s later, the next 0.3 s after that.
 local STOP = 2.8 + 0.5 + 0.3
-local STOPS = 16
+-- The eleven stops before the goods, then each cover and tracker frame but the defaults (HNT-R121).
+local COVERS, FRAMES = {}, {}
+for _, row in ipairs(hunts.GOODS["hunts.notebookcover"]) do
+	if row[2] ~= "default" then
+		COVERS[#COVERS + 1] = row[1]
+	end
+end
+for _, row in ipairs(hunts.GOODS["hunts.trackerframe"]) do
+	if row[2] ~= "default" then
+		FRAMES[#FRAMES + 1] = row[1]
+	end
+end
+local GOODS_FROM = 11
+local STOPS = GOODS_FROM + #COVERS + #FRAMES
 
 -- Hunts' Session summary line as Core holds it, or nil (HNT-R89).
 local function summaryLine(fake)
@@ -120,8 +133,28 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 			"  hunts.cover.oilcloth: the Hunts board in the Oilcloth cover",
 			"  hunts.cover.tooled: the Hunts board in the Tooled Leather cover",
 			"  hunts.cover.verdigris: the Hunts board in the Verdigris cover",
+			"  hunts.cover.canvas: the Hunts board in the Canvas Field Pad cover",
+			"  hunts.cover.kraft: the Hunts board in the Waxed Kraft cover",
+			"  hunts.cover.tartan: the Hunts board in the Tartan Wool cover",
+			"  hunts.cover.maplinen: the Hunts board in the Map Linen cover",
+			"  hunts.cover.planks: the Hunts board in the Bound Planks cover",
+			"  hunts.cover.snakeskin: the Hunts board in the Snakeskin cover",
+			"  hunts.cover.shagreen: the Hunts board in the Stingray Shagreen cover",
+			"  hunts.cover.lacquer: the Hunts board in the Lacquered Red cover",
+			"  hunts.cover.bone: the Hunts board in the Bone & Rawhide cover",
+			"  hunts.cover.brasscase: the Hunts board in the Brass Hunter's Case cover",
+			"  hunts.cover.scrimshaw: the Hunts board in the Scrimshaw Panel cover",
+			"  hunts.cover.trophycase: the Hunts board in the Gilded Trophy Case cover",
+			"  hunts.cover.pathfinder: the Hunts board in the Pathfinder's Calf cover",
+			"  hunts.cover.fiveseal: the Hunts board in the Five-Set Seal cover",
+			"  hunts.cover.wagersilk: the Hunts board in the Winner's Brocade cover",
 			"  hunts.trackerframe.inkwash: the Hunts tracker in the Ink Wash frame",
 			"  hunts.trackerframe.waxseal: the Hunts tracker in the Wax Seal frame",
+			"  hunts.trackerframe.slate: the Hunts tracker in the Chalk Slate frame",
+			"  hunts.trackerframe.mapscrap: the Hunts tracker in the Map Scrap frame",
+			"  hunts.trackerframe.bounty: the Hunts tracker in the Bounty Poster frame",
+			"  hunts.trackerframe.spyglass: the Hunts tracker in the Spyglass Rim frame",
+			"  hunts.trackerframe.wagerribbon: the Hunts tracker in the Winner's Ribbon frame",
 		}, run.fake.printed)
 	end)
 
@@ -205,22 +238,28 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 		assert.is_nil(shown[11].wearing)
 	end)
 
-	it("wear each notebook cover on the board and each tracker frame on the tracker (HNT-R121)", function()
-		local run = start()
-		local ns = run.ns
+	it(
+		"wear each notebook cover on the board and each tracker frame on the tracker, earned ones too (HNT-R121, HNT-R122)",
+		function()
+			local run = start()
+			local ns = run.ns
 
-		local shown = tour(run)
+			local shown = tour(run)
 
-		for i, id in ipairs({ "oilcloth", "tooled", "verdigris" }) do
-			assert.are.equal(ns.COVERS["hunts.notebookcover." .. id], shown[11 + i].cover)
-			assert.are.same({ mode = "board", hunt = shown[11 + i].place.hunt }, shown[11 + i].place)
+			for i, id in ipairs(COVERS) do
+				assert.are.equal(ns.COVERS[id], shown[GOODS_FROM + i].cover)
+				assert.are.same(
+					{ mode = "board", hunt = shown[GOODS_FROM + i].place.hunt },
+					shown[GOODS_FROM + i].place
+				)
+			end
+			for i, id in ipairs(FRAMES) do
+				assert.are.equal(id, shown[GOODS_FROM + #COVERS + i].wearing)
+				assert.are.equal(3, shown[GOODS_FROM + #COVERS + i].lines)
+			end
+			assert.are.equal(STOPS, #run.fake.tourShots)
 		end
-		for i, id in ipairs({ "inkwash", "waxseal" }) do
-			assert.are.equal("hunts.trackerframe." .. id, shown[14 + i].wearing)
-			assert.are.equal(3, shown[14 + i].lines)
-		end
-		assert.are.equal(STOPS, #run.fake.tourShots)
-	end)
+	)
 
 	it("leave Hunts as they found it: board closed, the real list, state, grouping, pins; nothing saved", function()
 		local run = start({ profile = { pins = {}, tracker = { shown = true, collapsed = true } } })

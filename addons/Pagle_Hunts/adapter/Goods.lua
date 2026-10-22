@@ -5,20 +5,24 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- Hunts' goods on the client (HNT-R120–R122, HNT-R70, HNT-R79): registered with Core, previewed on the Curio Shop's
--- stage, and the looks the board's leather and the tracker wear. The four covers are the books art kit v2's
--- (adapter/BoardWidgets.lua's leather): Leather, Oilcloth and Verdigris drawn at the board's size, Tooled Leather with
--- its gilt double rule, Verdigris with its gilt corner. The tracker's three looks are the kit's: the native block
--- restyled, Ink Wash's paper and Wax Seal's parchment (adapter/BookAtlas.lua's TrackerInk and TrackerWax), each with
--- its own fonts and inks.
+-- Hunts' goods on the client (HNT-R120–R123, HNT-R70, HNT-R79): registered with Core, owned while their rules hold,
+-- previewed on the Curio Shop's stage, and the looks the board's leather and the tracker wear. The first four covers
+-- are the books art kit v2's (adapter/BoardWidgets.lua's leather): Leather, Oilcloth and Verdigris drawn at the
+-- board's size, Tooled Leather with its gilt double rule, Verdigris with its gilt corner. The expansion's fifteen are
+-- the Curio Shop expansion kit's: a material tiled under the band in its tone, metal corners, and a closed-notebook
+-- swatch (Covers2) for the stage. The tracker's first three looks are the books kit's: the native block restyled, Ink
+-- Wash's paper and Wax Seal's parchment (adapter/BookAtlas.lua's TrackerInk and TrackerWax); the expansion's five are
+-- three-slices of TrackerFrames2, with the kit's insets and inks.
 
 -- A tint from its hex code, as the prototypes' CSS writes it: { r, g, b }, 0 to 1 (ns.BoardTint).
 local tint = ns.BoardTint
 
---- A notebook cover's look (HNT-R70, HNT-R121): the leather the board wears (adapter/Board.lua's BoardCoverLook, every
---- field given) and the elastic strap the closed notebook shows in the shop.
+--- A notebook cover's look (HNT-R70, HNT-R121, HNT-R123): the leather the board wears (adapter/Board.lua's
+--- BoardCoverLook, every field given) and the closed notebook the shop shows: the board's leather with an elastic
+--- strap, or an expansion cover's own swatch in the Covers2 atlas.
 ---@class HuntsCoverLook: BoardCover
----@field strap number[]
+---@field strap number[]?
+---@field swatch string?   -- its Covers2 sprite
 
 -- The straps, as the kit's cover swatches draw them: dark leather, or deep green on the green cloth.
 local STRAP, GREEN_STRAP = tint("2a1608"), tint("1c3a30")
@@ -39,6 +43,42 @@ ns.COVERS = {
 	},
 }
 
+-- The expansion covers' foot: the kit's board shades its material 18% darker toward the foot.
+local KIT_FOOT = 0.82
+
+-- Each expansion cover's look (HNT-R123), from the Curio Shop expansion kit's goods.json: its material
+-- (ns.COVER_TILES) and its repeat in UI units, its band's tone, its corners, and its Covers2 swatch.
+---@type { [1]: string, [2]: number, [3]: number, [4]: string, [5]: BoardCornerKind? }[]
+local KIT_COVERS = {
+	{ "canvas", 96, 96, "6a5e3a" },
+	{ "kraft", 180, 180, "7a5a30" },
+	{ "tartan", 96, 96, "14244a" },
+	{ "maplinen", 150, 196, "5a6a7a" },
+	{ "planks", 150, 196, "5a3414" },
+	{ "snakeskin", 40, 40, "3a4a1e", "brass" },
+	{ "shagreen", 60, 60, "4a6a60", "silver" },
+	{ "lacquer", 150, 196, "8a1410", "gold" },
+	{ "bone", 200, 200, "8a6a3a" },
+	{ "brasscase", 150, 196, "8a5a14" },
+	{ "scrimshaw", 150, 196, "3a2410", "bone" },
+	{ "trophycase", 150, 196, "3a1a08", "gold" },
+	{ "pathfinder", 200, 200, "7a4818", "brass" },
+	{ "fiveseal", 128, 128, "1a1612" },
+	{ "wagersilk", 56, 56, "3a1450", "gold" },
+}
+for _, kit in ipairs(KIT_COVERS) do
+	local key = kit[1]
+	ns.COVERS[ns.COVER_SLOT .. "." .. key] = {
+		foot = KIT_FOOT,
+		tile = ns.COVER_TILES .. key,
+		tileW = kit[2],
+		tileH = kit[3],
+		band = tint(kit[4]),
+		corners = kit[5],
+		swatch = "swatch-" .. key,
+	}
+end
+
 --- The look of cover good `goodID`, or Leather's for an ID that isn't a cover's.
 ---@param goodID string?
 ---@return HuntsCoverLook
@@ -52,10 +92,13 @@ local NOTEBOOK_WIDTH, NOTEBOOK_HEIGHT, NOTEBOOK_CORNER = 110, 140, 24
 local SPINE_WIDTH = 8
 local STRAP_WIDTH, STRAP_INSET, STRAP_OVER = 8, 14, 3
 
---- A closed notebook on a stage (HNT-R121): the leather in a cover, its spine's shadow and its strap; no pages.
+--- A closed notebook on a stage (HNT-R121): the leather in a cover, its spine's shadow and its strap; no pages. An
+--- expansion cover shows its swatch over it instead, the leather hidden (HNT-R123).
 ---@class HuntsNotebook: Frame
 ---@field cover BoardLeatherView
 ---@field strap Texture
+---@field leather Frame          -- what the leather draws on: hidden under a swatch
+---@field swatch HuntsSpriteTexture
 
 -- Builds a stage's notebook, at its top as the Ledger's closed book and Core's crest bookplate sit.
 ---@param stage Frame
@@ -64,20 +107,26 @@ local function buildNotebook(stage)
 	local notebook = CreateFrame("Frame", nil, stage) --[[@as HuntsNotebook]]
 	notebook:SetSize(NOTEBOOK_WIDTH, NOTEBOOK_HEIGHT)
 	notebook:SetPoint("TOP", 0, -16)
-	notebook.cover = ns.NewBoardLeather(notebook, NOTEBOOK_CORNER)
-	local spine = notebook:CreateTexture(nil, "BORDER", nil, 2)
+	local leather = CreateFrame("Frame", nil, notebook)
+	leather:SetAllPoints()
+	notebook.leather = leather
+	notebook.cover = ns.NewBoardLeather(leather, NOTEBOOK_CORNER)
+	local spine = leather:CreateTexture(nil, "BORDER", nil, 2)
 	spine:SetColorTexture(0, 0, 0, 0.35)
 	spine:SetPoint("TOPLEFT", 2, -2)
 	spine:SetPoint("BOTTOMLEFT", 2, 2)
 	spine:SetWidth(SPINE_WIDTH)
 	-- The strap rides over the kit's band.
-	local over = CreateFrame("Frame", nil, notebook)
+	local over = CreateFrame("Frame", nil, leather)
 	over:SetAllPoints()
-	over:SetFrameLevel(notebook:GetFrameLevel() + 8)
+	over:SetFrameLevel(leather:GetFrameLevel() + 8)
 	notebook.strap = over:CreateTexture(nil, "ARTWORK")
 	notebook.strap:SetPoint("TOPRIGHT", -STRAP_INSET, STRAP_OVER)
 	notebook.strap:SetPoint("BOTTOMRIGHT", -STRAP_INSET, -STRAP_OVER)
 	notebook.strap:SetWidth(STRAP_WIDTH)
+	-- An expansion cover's swatch: the notebook, strap and pencil drawn in, at the notebook's height.
+	notebook.swatch = ns.ArtSprite(notebook, "Covers2", "swatch-canvas", "ARTWORK")
+	notebook.swatch:Hide()
 	return notebook
 end
 
@@ -96,8 +145,17 @@ local function previewCover(stage, goodID)
 		drawn[stage] = notebook
 	end
 	local look = ns.CoverLook(goodID)
-	notebook.cover:SetCover(look)
-	notebook.strap:SetColorTexture(look.strap[1], look.strap[2], look.strap[3], 1)
+	notebook.leather:SetShown(look.swatch == nil)
+	notebook.swatch:SetShown(look.swatch ~= nil)
+	if look.swatch then
+		local _, sprite = ns.ArtSpriteOf("Covers2", look.swatch)
+		ns.SetSprite(notebook.swatch, "Covers2", look.swatch, NOTEBOOK_HEIGHT / sprite.box[4] * sprite.box[3])
+		ns.CenterSprite(notebook.swatch, notebook)
+	else
+		notebook.cover:SetCover(look)
+		local strap = look.strap or STRAP
+		notebook.strap:SetColorTexture(strap[1], strap[2], strap[3], 1)
+	end
 	notebook:Show()
 end
 
@@ -108,14 +166,21 @@ end
 ---@field [3] number[]
 ---@field [4] boolean?
 
---- A tracker look (HNT-R79): the books kit's geometry and type for one of the three. The block is `width` wide; the
---- words sit from `x` to `right`; the first Hunt's lines start `first` down and each Hunt takes `step`, its second line
---- `second` below its first. `frame` is its paper's atlas (adapter/BookAtlas.lua), sliced down so it grows with its lines.
+--- A tracker look (HNT-R79, HNT-R123): the books kit's geometry and type for one of the first three, or the expansion
+--- kit's for one of its five. The block is `width` wide; the words sit from `x` to `right`; "Hunts" sits `titleY` down
+--- and its mark `chevronY`; the first Hunt's lines start `first` down and each Hunt takes `step`, its second line
+--- `second` below its first. `frame` is its paper's atlas (adapter/BookAtlas.lua) and `sprite` the paper in it, sliced
+--- down so it grows with its lines: `slice`'s top and foot keep their height, the middle stretches (or repeats every
+--- `period`).
 ---@class HuntsTrackerLook
 ---@field frame string?        -- nil: no frame, the native look
+---@field sprite string?       -- the paper's sprite in `frame`: "frame" when nil
+---@field slice { top: number, foot: number, period: number? }?
 ---@field width number
 ---@field x number
 ---@field right number
+---@field titleY number
+---@field chevronY number
 ---@field first number
 ---@field step number
 ---@field second number
@@ -141,6 +206,8 @@ ns.TRACKER_LOOKS = {
 		width = 260,
 		x = 8,
 		right = 252,
+		titleY = 10,
+		chevronY = 14,
 		first = 26,
 		step = 41,
 		second = 20,
@@ -156,9 +223,12 @@ ns.TRACKER_LOOKS = {
 	},
 	inkwash = {
 		frame = "TrackerInk",
+		slice = { top = 30, foot = 20 },
 		width = 268,
 		x = 12,
 		right = 256,
+		titleY = 12,
+		chevronY = 14,
 		first = 32,
 		step = 44,
 		second = 23,
@@ -174,9 +244,12 @@ ns.TRACKER_LOOKS = {
 	},
 	waxseal = {
 		frame = "TrackerWax",
+		slice = { top = 30, foot = 20 },
 		width = 272,
 		x = 16,
 		right = 260,
+		titleY = 12,
+		chevronY = 14,
 		first = 32,
 		step = 42,
 		second = 21,
@@ -193,12 +266,86 @@ ns.TRACKER_LOOKS = {
 }
 local LOOKS = ns.TRACKER_LOOKS
 
---- Each tracker frame's look, by good ID (HNT-R121). No frame (ns.NO_TRACKER_FRAME) has none: the native look.
+-- The expansion's tracker frames (HNT-R123), from the Curio Shop expansion kit's goods.json: each a three-slice of its
+-- TrackerFrames2 sprite, 262 wide, its words inside the text insets, in its inks (header, text, dim, accent), set in
+-- the kit's type: "Hunts" in Marcellus, the lines in IM Fell. A dark panel takes bright dots, a paper inked ones.
+---@type { key: string, insets: number[], slice: number[], inks: string[], paper: boolean }[]
+local KIT_FRAMES = {
+	{
+		key = "slate",
+		insets = { 16, 16, 14, 14 },
+		slice = { 30, 30 },
+		inks = { "ffffff", "f0f0e8", "b8bcb8", "f0d070" },
+		paper = false,
+	},
+	{
+		key = "mapscrap",
+		insets = { 16, 16, 14, 14 },
+		slice = { 50, 24 },
+		inks = { "5a1a0a", "2a1a0a", "6a5030", "9a2a1a" },
+		paper = true,
+	},
+	{
+		key = "bounty",
+		insets = { 18, 18, 36, 14 },
+		slice = { 42, 20 },
+		inks = { "5a1a0a", "2a1406", "6a4a24", "9a2a1a" },
+		paper = true,
+	},
+	{
+		key = "spyglass",
+		insets = { 16, 46, 18, 18 },
+		slice = { 48, 14 },
+		inks = { "f0cd6a", "e8eef8", "a8b4c8", "f0cd6a" },
+		paper = false,
+	},
+	{
+		key = "wagerribbon",
+		insets = { 16, 46, 14, 22 },
+		slice = { 48, 26 },
+		inks = { "f0cd6a", "f4e8ff", "c0a8d8", "f0cd6a" },
+		paper = false,
+	},
+}
+-- Their width, the header's height under its inset, and each Hunt's lines, as the kit's canvas sets them.
+local KIT_WIDTH, KIT_HEADER, KIT_STEP, KIT_SECOND = 262, 20, 38, 18
+for _, kit in ipairs(KIT_FRAMES) do
+	local left, right, top, foot = unpack(kit.insets)
+	local header, text, dim, accent = tint(kit.inks[1]), tint(kit.inks[2]), tint(kit.inks[3]), tint(kit.inks[4])
+	LOOKS[kit.key] = {
+		frame = "TrackerFrames2",
+		sprite = "frame-" .. kit.key,
+		slice = { top = kit.slice[1], foot = kit.slice[2] },
+		width = KIT_WIDTH,
+		x = left,
+		right = KIT_WIDTH - right,
+		titleY = top,
+		chevronY = top + 2,
+		first = top + KIT_HEADER,
+		step = KIT_STEP,
+		second = KIT_SECOND,
+		foot = foot,
+		shade = false,
+		paper = kit.paper,
+		caps = false,
+		header = { "gilt", 14, header },
+		chevron = header,
+		name = { "print", 13, text },
+		label = { "print", 13, accent },
+		sub = { "italic", 12, dim },
+	}
+end
+
+--- Each tracker frame's look, by good ID (HNT-R121, HNT-R123). No frame (ns.NO_TRACKER_FRAME) has none: the native
+--- look.
 ---@type table<string, HuntsTrackerLook>
 ns.TRACKER_FRAMES = {
 	["hunts.trackerframe.inkwash"] = LOOKS.inkwash,
 	["hunts.trackerframe.waxseal"] = LOOKS.waxseal,
 }
+for _, kit in ipairs(KIT_FRAMES) do
+	ns.TRACKER_FRAMES[ns.TRACKER_FRAME_SLOT .. "." .. kit.key] = LOOKS[kit.key]
+end
 
 --- The look the tracker wears for tracker frame `goodID`: its own, or the native look for none.
 ---@param goodID string?
@@ -207,8 +354,6 @@ function ns.TrackerLook(goodID)
 	return ns.TRACKER_FRAMES[goodID] or LOOKS.native
 end
 
--- The frame's paper keeps this much of its top and its foot when it slices down.
-local FRAME_TOP, FRAME_FOOT = 30, 20
 -- A dot's size; an extra line's height ("+N more", the empty line); the room between the Pagle Wagers block and the
 -- Hunts block's header under it.
 local DOT_SIZE, EXTRA_LINE, WAGERS_GAP = 8, 20, 6
@@ -438,8 +583,8 @@ local function drawHeader(header, title, chevron, look, text, top, collapsed)
 	setFont(title, look.header)
 	title:SetText(look.caps and ns.BoardSmallCaps(text) or text)
 	title:ClearAllPoints()
-	title:SetPoint("TOPLEFT", header, "TOPLEFT", look.x + 16, -(look.caps and 12 or 10))
-	drawChevron(chevron, header, look.x, 14, look.chevron, collapsed)
+	title:SetPoint("TOPLEFT", header, "TOPLEFT", look.x + 16, -look.titleY)
+	drawChevron(chevron, header, look.x, look.chevronY, look.chevron, collapsed)
 end
 
 -- Draws each of `entries` (a Hunt's or a run's two lines) on `lines` from `y` down, under a dot of its group
@@ -550,10 +695,15 @@ function ns.DrawTrackerBlock(view, look, content)
 	end
 	local headerOnly = top + look.first
 	local height = y == headerOnly and (look.frame and headerOnly + look.foot or headerOnly) or y + look.foot
+	local slice = look.slice
+	if slice then
+		-- never shorter than its paper's top and foot, so they never overlap
+		height = math.max(height, slice.top + slice.foot)
+	end
 	block:SetSize(look.width, height)
 	view.paper:SetShown(look.frame ~= nil)
-	if look.frame then
-		ns.SetVSlice(view.paper, look.frame, "frame", height, FRAME_TOP, FRAME_FOOT)
+	if look.frame and slice then
+		ns.SetVSlice(view.paper, look.frame, look.sprite or "frame", height, slice.top, slice.foot, slice.period)
 	end
 end
 
@@ -614,17 +764,46 @@ local function wearCover(animate)
 	ns.board:SetCover(ns.CoverLook(Pagle.GetEquipped(ns.COVER_SLOT)), animate)
 end
 
---- Registers Hunts' slots and goods (HNT-R120, HNT-R121, SHOP-R21), from OnInitialize right after RegisterModule
---- (HNT-R122), and dresses the board in the equipped cover: at ModulesChanged, when every slot is registered and the
---- stored purchases are owned (Core notes that look without an AppearanceChanged, SHOP-R33), and at once at every
+-- The celebrated set as saved (HNT-R90). Hunts' goods register before its DB is made (HNT-R122), so until then it is
+-- the saved variable's own, as the last session left it; empty for a first login.
+---@return HuntsCelebrated
+local function savedCelebrated()
+	local db = ns.db
+	-- luacheck: read globals PagleHuntsDB (the saved variable, loaded before ADDON_LOADED, before AceDB wraps it)
+	---@diagnostic disable-next-line: undefined-global -- Hunts' saved variable, which no annotation declares
+	local saved = PagleHuntsDB
+	local global = db and db.global or type(saved) == "table" and saved.global
+	return type(global) == "table" and type(global.celebrated) == "table" and global.celebrated or {}
+end
+
+--- Whether `rule` holds now (HNT-R122): over the projection's state once it is built and not updating, and the
+--- celebrated set; the celebrated set alone before (Core calls it at registration, then at each RefreshGoods,
+--- SHOP-R31).
+---@param rule HuntsEarnedRule
+---@return boolean
+function ns.HuntsGoodEarnedNow(rule)
+	local projection = ns.projection
+	local state = projection and not projection:IsUpdating() and projection:GetState() --[[@as HuntsState?]] or nil
+	return ns.HuntsGoodEarned(rule, state, savedCelebrated(), ns.huntList.sets)
+end
+
+--- Registers Hunts' slots and goods (HNT-R120–R123, SHOP-R21), its goods in Core's slots after its own, from
+--- OnInitialize right after RegisterModule (HNT-R122), and refreshes the earned ones through the projection's outlet
+--- (SHOP-R31). Dresses the board in the equipped cover: at ModulesChanged, when every slot is registered and the stored
+--- purchases are owned (Core notes that look without an AppearanceChanged, SHOP-R33), and at once at every
 --- AppearanceChanged for the slot after.
 ---@param module PagleModuleHandle
 function ns.RegisterGoods(module)
-	for _, entry in ipairs(ns.HuntsGoods(ns.PreviewGood)) do
-		module:RegisterSlot(entry.slot)
+	for _, entry in ipairs(ns.HuntsGoods(ns.PreviewGood, ns.HuntsGoodEarnedNow)) do
+		if entry.slot then
+			module:RegisterSlot(entry.slot)
+		end
 		for _, good in ipairs(entry.goods) do
 			module:RegisterGood(good)
 		end
+	end
+	ns.outlets.RefreshGoods = function()
+		module:RefreshGoods()
 	end
 	Pagle.RegisterCallback(OWNER, "ModulesChanged", function()
 		wearCover(false)
