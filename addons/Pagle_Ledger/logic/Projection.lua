@@ -56,12 +56,15 @@ function ns.BindProjections(M)
 	})
 end
 
---- A Ledger state's lifetime Coins earned (SHOP-R2, LED-R2), as the Ledger reports them with M:ReportCoinsEarned:
---- for Pagle's backend (#223), read after done.
+--- A Ledger state's lifetime Coins earned (SHOP-R2, LED-R2, LED-R88), as the Ledger reports them with
+--- M:ReportCoinsEarned: the state's, and 20 for each level the current climb's Activity XP adds above its own level,
+--- worked out from Core's total and never stored (LED-R38), so a total recounted lower takes them back. For Pagle's
+--- backend (#223) too, read after done.
 ---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
 ---@return integer
-function ns.CoinsEarned(state)
-	return state.coins
+function ns.CoinsEarned(state, total)
+	return state.coins + ns.LEVEL_UP_COINS * (ns.Level(state, total) - ns.OwnLevel(state))
 end
 
 --- The Ledger's projection def (LED-R2, LOG-R70), bound to `global.projection`, which it makes if missing: Core
@@ -70,12 +73,17 @@ end
 ---
 --- A `"live"` entry's achievements are celebrated as it is applied (LED-R91): their moments raised, Coins reported
 --- and the summary line set through `outlets`. A `"replay"` or `"rebuild"` entry's go to the scratch list (LED-R98),
---- which `reset` and `done` clear; `done` reads it (LED-R93, logic/Done.lua).
+--- which `reset` and `done` clear; `done` reads it (LED-R93, logic/Done.lua). The climb's Activity XP is Core's total
+--- as ns.ActivityXPTotal reads it, whenever the level is worked out (LED-R37).
+---
+--- Also returns what the Ledger does on `ActivityXPChanged(entry)` (LED-R39), given the built state: the adapter
+--- calls it only while the projection isn't updating, since `done` does the same.
 ---@param global table PagleLedgerDB's global section
 ---@param lookups LedgerLookups Core's lookups
 ---@param outlets LedgerOutlets
 ---@param sizeRulesVersion integer? Pagle.SIZE_RULES_VERSION
----@return PagleProjectionDef
+---@return PagleProjectionDef def
+---@return fun(state: LedgerState, entry: PagleRecord?) activityXPChanged
 function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 	if type(global.projection) ~= "table" then
 		global.projection = {}
@@ -102,23 +110,57 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 	---@param state LedgerState
 	---@param record PagleRecord
 	local function applyLive(state, record)
-		local coins, peak = state.coins, ns.PeakLevel(state)
-		local earned = fold.apply(state, record, "live")
+		-- The climb's Activity XP as Core holds it while this entry is applied (LED-R38).
+		local total = ns.ActivityXPTotal()
+		local coins, peak = ns.CoinsEarned(state, total), ns.PeakLevel(state, total)
+		local earned = fold.apply(state, record, "live", nil, total)
 		local celebrated = ns.CelebratedSet(global)
 		for _, moment in ipairs(ns.Celebrate(celebrated, state, record, earned, outlets, lookups)) do
 			outlets.RaiseMoment(moment)
 		end
-		celebrated.coins = state.coins
-		if state.coins ~= coins then
-			outlets.ReportCoinsEarned(state.coins)
+		local after = ns.CoinsEarned(state, total)
+		celebrated.coins = after
+		if after ~= coins then
+			outlets.ReportCoinsEarned(after)
 		end
 		-- A level binding may be earned now (LED-R111, SHOP-R31).
-		if ns.LevelBindingCrossed(peak, ns.PeakLevel(state)) then
+		if ns.LevelBindingCrossed(peak, ns.PeakLevel(state, total)) then
 			outlets.RefreshGoods()
 		end
 		-- The shown level and completion change only with an achievement (a level-up, a first Catch, a rank), so an
 		-- entry that earned none leaves the line as it is, once set.
 		if #earned > 0 or not summaryLine then
+			setSummaryLine(state, celebrated)
+		end
+	end
+
+	-- ActivityXPChanged(entry) (LED-R39, LED-R199): the shown level worked out again. A level above the celebrated one
+	-- raises its levelUp, with `cast` the entry's ID when the entry is a live Cast (ANN-R10), else summary-only
+	-- (ANN-R63); then the Coins, the level bindings and the summary line. A lower total raises nothing, and the shown
+	-- level stays (LED-R36, LED-R38).
+	---@param state LedgerState
+	---@param entry PagleRecord?
+	local function activityXPChanged(state, entry)
+		local total = ns.ActivityXPTotal()
+		local celebrated = ns.CelebratedSet(global)
+		-- The celebrated level stands for the shown one before this total (every level-up is celebrated as it comes).
+		local peak = state.prestige > 0 and ns.LEVEL_CAP or ns.ShownLevel(state, celebrated, 0)
+		local cast = entry and entry.kind == "cast" and entry.id or nil
+		local earned = ns.ActivityLevelUps(state, total, cast)
+		local moments = ns.CelebrateEarned(celebrated, state, earned, outlets, lookups, cast)
+		for _, moment in ipairs(moments) do
+			moment.summaryOnly = not cast or nil
+			outlets.RaiseMoment(moment)
+		end
+		local coins = ns.CoinsEarned(state, total)
+		if coins ~= celebrated.coins then
+			celebrated.coins = coins
+			outlets.ReportCoinsEarned(coins)
+		end
+		if ns.LevelBindingCrossed(peak, ns.PeakLevel(state, total)) then
+			outlets.RefreshGoods()
+		end
+		if #moments > 0 then
 			setSummaryLine(state, celebrated)
 		end
 	end
@@ -144,12 +186,14 @@ function ns.ProjectionDef(global, lookups, outlets, sizeRulesVersion)
 				end
 			end
 		end,
-		-- LED-R93: the first build's, rebuild's or catch-up's celebration, then Coins, the goods and the summary line.
+		-- LED-R93: the first build's, rebuild's or catch-up's celebration, with the levels the climb's Activity XP
+		-- brings (LED-R39), then Coins, the goods and the summary line.
 		done = function(state, info)
 			local celebrated = ns.CelebrateDone(global, state, scratch, info, outlets, lookups)
 			scratch = {}
 			outlets.RefreshGoods() -- the level bindings, never mid-rebuild (LED-R111, SHOP-R31)
 			setSummaryLine(state, celebrated)
 		end,
-	}
+	},
+		activityXPChanged
 end

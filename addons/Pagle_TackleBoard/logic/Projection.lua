@@ -12,8 +12,9 @@ local ns = select(2, ...)
 -- goals on their pins (TKB-R21–R23, TKB-R57, TKB-R101). Each Cast runs the completions (logic/Completions.lua).
 
 --- The Tackle Board's rules version (Tunables, TKB-R81): rises whenever a progress, Campfire, Fly Box or
---- pattern-order rule changes. Generation changes don't need it (TKB-R22). Not bumped within M7.
-ns.TKB_RULES_VERSION = 1
+--- pattern-order rule changes. Generation changes don't need it (TKB-R22). 2 since completions pay Activity XP
+--- (TKB-R65), so a version-1 projection rebuilds and its `xp` fills in from the log.
+ns.TKB_RULES_VERSION = 2
 
 -- Tunables (TKB-R20). The caps are the pin counts (ns.NOTICE_PINS, ns.EXPEDITION_PINS).
 --- Notices owed at each daily reset, up to the cap (TKB-R20, tackle-board.md › Tunables).
@@ -55,6 +56,7 @@ function ns.NewBoardState()
 		goals = {},
 		tally = { notices = 0, expeditions = 0 },
 		coins = 0,
+		xp = 0,
 		flies = {},
 		titles = {},
 		fire = { count = 0, kindling = 0, longest = 0, milestones = {}, log = {} },
@@ -374,8 +376,9 @@ end
 
 --- The Tackle Board's projection def for `M:NewProjection` (TKB-R81) over `global.board` (made here if missing):
 --- rules version TKB_RULES_VERSION × 1000 + Core's Session rules version (SIZE_RULES_VERSION isn't folded). A live
---- apply that changes the state asks the views to redraw; `done` runs in TKB-R84's order: ns.outlets.Done,
---- ns.ReportCoins, ns.ScheduleLiveStep (TKB-R84), then a redraw.
+--- apply that changes the state asks the views to redraw, after reporting the Coins or the Activity XP it changed;
+--- `done` runs in TKB-R84's order: ns.outlets.Done, ns.ReportCoins, ns.ReportXP, ns.ScheduleLiveStep (TKB-R84), then
+--- a redraw.
 ---@param global table PagleTackleBoardDB's global section
 ---@param sessionRulesVersion integer Pagle.SESSION_RULES_VERSION
 ---@return PagleProjectionDef
@@ -391,7 +394,7 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 			return ns.NewBoardState()
 		end,
 		apply = function(state, record, mode)
-			local coins = state.coins
+			local coins, xp = state.coins, state.xp
 			local changed = ns.ApplyEntry(state, record, mode)
 			ns.CountForWriteUp(state, record, mode) -- TKB-R84: a first build's Casts (logic/Moments.lua)
 			if changed and mode == "live" then
@@ -399,12 +402,18 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 				if state.coins ~= coins then
 					ns.ReportCoins()
 				end
+				-- TKB-R65, AXP-R2: likewise the Activity XP, from inside the apply, so Core takes this entry as the
+				-- one it came from (AXP-R7)
+				if state.xp ~= xp then
+					ns.ReportXP()
+				end
 				ns.Redraw("projection")
 			end
 		end,
 		done = function(state, info)
 			ns.outlets.Done(state, info)
 			ns.ReportCoins()
+			ns.ReportXP()
 			ns.ScheduleLiveStep()
 			ns.Redraw("projection")
 		end,
@@ -413,10 +422,10 @@ end
 
 --- The Tackle Board's projection for Pagle's backend (#223, #76 item 5), whose projection driver folds the Catch log
 --- through logic/ alone, without adapter/ or locale/ (CORE-R7). Binds ns.ProjectionDef with `M:NewProjection` over a
---- table of its own making, without its `done`, which only celebrates, reports Coins and schedules the live step
---- (TKB-R84, TKB-R63, TKB-R13): none of them changes the state, and the driver drops them all. The projection reads
---- Core's catalogue through ns.api.pagle, which the adapter sets; without one, it gets ns.api with only `pagle`.
---- The client's adapter never calls it.
+--- table of its own making, without its `done`, which only celebrates, reports Coins and Activity XP and schedules
+--- the live step (TKB-R84, TKB-R63, TKB-R65, TKB-R13): none of them changes the state, and the driver drops them
+--- all. The projection reads Core's catalogue through ns.api.pagle, which the adapter sets; without one, it gets ns.api
+--- with only `pagle`. The client's adapter never calls it.
 ---@param M PagleModuleHandle
 ---@return PagleProjection
 function ns.BindProjections(M)

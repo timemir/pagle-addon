@@ -31,8 +31,9 @@ local function grant(state, earned, titleID, day, castID)
 end
 
 -- Marks a goal done on the Cast's board day and pays it out, in TKB-R60's order: done and its pin freed; the tally;
--- its pay; a fly; a tally title; the day lit, with a milestone's Coins and title; the Fly Box title if the box just
--- filled. Returns what it earned.
+-- its pay and its Activity XP (TKB-R65: by type and tier from the Tunables, never from the goal); a fly; a tally
+-- title; the day lit, with a milestone's Coins and title; the Fly Box title if the box just filled. Returns what it
+-- earned.
 ---@param state TackleBoardState
 ---@param goal TackleGoal
 ---@param cast PagleCast the completing Cast
@@ -41,10 +42,12 @@ local function complete(state, goal, cast)
 	local day, castID = state.day, cast.id
 	goal.doneDay, goal.doneTime, goal.doneCast = day, cast.time, castID
 	ns.FreePin(state, goal)
+	local xp = goal.type == "e" and ns.EXPEDITION_XP or ns.NOTICE_XP[goal.tier]
 	---@type TackleEarned
-	local earned = { pay = goal.pay, coins = goal.pay, titles = {}, lit = false }
+	local earned = { pay = goal.pay, coins = goal.pay, xp = xp, titles = {}, lit = false }
 	local tallyTitle = ns.Tally.Add(state.tally, goal.type)
 	state.coins = state.coins + goal.pay
+	state.xp = state.xp + xp
 	local wasFull = ns.FlyBox.IsFull(state.flies)
 	earned.fly = ns.FlyBox.Tie(state.flies, goal)
 	if tallyTitle then
