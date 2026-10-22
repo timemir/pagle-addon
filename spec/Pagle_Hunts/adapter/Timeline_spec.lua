@@ -637,7 +637,7 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 			for i = 2, #labelled do
 				local room = (labelled[i].x - labelled[i - 1].x) * 190
 				local half = (#labelled[i].label + #labelled[i - 1].label) * 6 / 2
-				assert.is_true(half < room, labelled[i - 1].label .. " and " .. labelled[i].label .. " meet")
+				assert(half < room, labelled[i - 1].label .. " and " .. labelled[i].label .. " meet")
 			end
 		end
 	)

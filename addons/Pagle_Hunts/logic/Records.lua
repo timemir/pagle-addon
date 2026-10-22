@@ -62,8 +62,8 @@ end
 ---@param payload string
 ---@return HuntRunRecord?
 function ns.DecodeRun(payload)
-	local event, start, end_, source = string.match(payload, "^([%w_]+)|(%d+)|(%d+)|([rp])$")
-	start, end_ = count(start), count(end_)
+	local event, startText, endText, source = string.match(payload, "^([%w_]+)|(%d+)|(%d+)|([rp])$")
+	local start, end_ = count(startText), count(endText)
 	if not event or not start or not end_ or start >= end_ then
 		return nil
 	end
@@ -130,8 +130,8 @@ end
 ---@param payload string
 ---@return HuntDefRecord?
 function ns.DecodeDef(payload)
-	local event, part, parts, text = string.match(payload, "^([%w_]+)|(%d+)/(%d+)|(.+)$")
-	part, parts = count(part), count(parts)
+	local event, partText, partsText, text = string.match(payload, "^([%w_]+)|(%d+)/(%d+)|(.+)$")
+	local part, parts = count(partText), count(partsText)
 	if not event or not part or not parts or part < 1 or part > parts then
 		return nil
 	end

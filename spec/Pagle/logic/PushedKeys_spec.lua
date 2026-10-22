@@ -80,8 +80,8 @@ describe("ns.PUSHED_KEYS", function()
 		for _, keyId in ipairs(keyIds) do
 			local key = ns.PUSHED_KEYS[keyId]
 			assert.are.equal(512, #key.n, keyId)
-			assert.is_string(key.rr, keyId)
-			assert.is_number(key.n0inv, keyId)
+			assert(type(key.rr) == "string", keyId)
+			assert(type(key.n0inv) == "number", keyId)
 		end
 		assert.are_not.equal(ns.PUSHED_KEYS["pagle-2026a"].n, ns.PUSHED_KEYS["pagle-2026b"].n)
 	end)

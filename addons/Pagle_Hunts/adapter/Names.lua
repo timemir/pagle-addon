@@ -139,11 +139,13 @@ end
 
 -- Clock times as Core writes them (HNT-R50, CORE-R87): ns.FormatClock writes every one through this seam
 -- (logic/Seams.lua), in the clock format the Settings root's Clock row picks.
+---@diagnostic disable-next-line: duplicate-set-field -- replacing logic/Seams.lua's stand-in is its contract
 function ns.ClockTime(hour, minute)
 	return Pagle.FormatClock(hour, minute)
 end
 
 -- The format the timeline's hour ticks read in (HNT-R62, CORE-R87): ns.FormatRulerHour asks it at each tick.
+---@diagnostic disable-next-line: duplicate-set-field -- replacing logic/Seams.lua's stand-in is its contract
 function ns.ClockFormat()
 	return Pagle.GetClockFormat()
 end
