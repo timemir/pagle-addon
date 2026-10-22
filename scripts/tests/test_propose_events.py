@@ -142,6 +142,22 @@ def test_a_draft_s_shapes_and_text(tmp_path: Path, capsys: pytest.CaptureFixture
     assert _event(third)["tags"] == ["dusk"]
 
 
+def test_a_span_a_run_can_t_always_complete_is_left_out(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # DATA-R99, Tunables: a night window open 00:00-00:15 gives 45 minutes a run, under the 3-hour floor, so no draft
+    # takes it; the drafts take the day window and dusk in turn instead.
+    root = write_tree(tmp_path)
+    windows = root / "data" / "forever" / "windows.toml"
+    night = '[window.night]\ntime = [[0, 15]]\nwhy = "a short night"\n'
+    windows.write_text(windows.read_text(encoding="utf-8") + "\n" + night, encoding="utf-8")
+    out = tmp_path / "drafts"
+    assert _propose(root, capsys, "--zone", "12", "--out", str(out))[0] == 0
+    drafts = _drafts(out)
+    tags = {name.removeprefix("elwynn_forest_"): _event(draft)["tags"] for name, draft in drafts.items()}
+    assert tags == {"brilliant_smallfish": ["day"], "slitherskin_mackerel": ["dusk"], "rainbow_fin_albacore": ["day"]}
+    for draft in drafts.values():
+        assert all(hunt.get("conditions") != {"time": [[0, 15]]} for hunt in _hunts(draft))
+
+
 def test_it_prints_each_hunt_s_expected_minutes_per_tier(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     # DATA-R99: per draft, each Hunt's expected minutes per tier, so curators can compare.
     root = write_tree(tmp_path)

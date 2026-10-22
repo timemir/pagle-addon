@@ -61,7 +61,9 @@ ROTATING_PER_BAND = 8
 # Tunables: an event Hunt's longest closed share of a run, half of 72 hours (DATA-R99, HNT-R142's default run).
 RUN_MINUTES = 72 * 60
 LONGEST_CLOSED_MINUTES = RUN_MINUTES // 2
-# The fields the closed-stretch check reads (DATA-R99): time, and events forecast from their weekly rules (DATA-R38).
+# Tunables: the least an event Hunt is open in any 72-hour run, 3 hours (DATA-R99, the dev's decision, 22 Oct).
+LEAST_OPEN_MINUTES = 3 * 60
+# The fields the run checks read (DATA-R99): time, and events forecast from their weekly rules (DATA-R38).
 _RUN_FIELDS = ("time", "events")
 # Any week will do: the time and events fields repeat weekly. 2026-01-04 is a Sunday, 00:00 realm time.
 _WEEK_START = datetime(2026, 1, 4)
@@ -447,6 +449,12 @@ class RunOpenness:
     longest_closed: int
     least_open: int
 
+    @property
+    def fits(self) -> bool:
+        """Whether a run can always complete it (DATA-R99, Tunables): closed no more than half of a run at a stretch,
+        and open at least the floor in every run."""
+        return self.longest_closed <= LONGEST_CLOSED_MINUTES and self.least_open >= LEAST_OPEN_MINUTES
+
 
 def run_openness(spec: Mapping[str, object], rules: Rules) -> RunOpenness:
     """A spec's RunOpenness over one week at the step (Tunables), read as Core's MatchesConditions reads it (LOG-R48,
@@ -493,7 +501,8 @@ def _check_completes(
     problems: Problems,
 ) -> None:
     """DATA-R99: each Hunt can complete in the event's zones and their subzones (listed, the items their catch lists
-    hold), and no time-based condition keeps it closed for more than half of a 72-hour run (Tunables)."""
+    hold), and no time-based condition keeps it closed for more than half of a 72-hour run or open less than 3 hours
+    in one (Tunables)."""
     cannot = "so the Hunt can't complete there (DATA-R99)"
     for hunt in event.hunts:
         species, class_id = hunt.get("species"), hunt.get("class")
@@ -517,6 +526,12 @@ def _check_completes(
                 f"closed {_minutes_text(found.longest_closed)} running, more than half of a 72-hour run"
                 f" ({LONGEST_CLOSED_MINUTES // 60} hours); a run can have it open as little as"
                 f" {_minutes_text(found.least_open)} (DATA-R99)"
+            )
+            problems.add(hunt.at / "conditions", message)
+        elif found.least_open < LEAST_OPEN_MINUTES:
+            message = (
+                f"a run can have it open as little as {_minutes_text(found.least_open)}, less than the"
+                f" {LEAST_OPEN_MINUTES // 60} hours every 72-hour run needs (DATA-R99)"
             )
             problems.add(hunt.at / "conditions", message)
 
