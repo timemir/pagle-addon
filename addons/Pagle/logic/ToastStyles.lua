@@ -275,3 +275,45 @@ function ns.HeadCrop(art)
 	local w, h = art.right - art.left, art.bottom - art.top
 	return art.left + w * HEAD_LEFT, art.left + w * HEAD_RIGHT, art.top + h * HEAD_TOP, art.top + h * HEAD_BOTTOM
 end
+
+--- How a catch Nod draws the variety its line names (VAR-R26): the name and the line either side of it, the rarity's
+--- colour for the gem before the name and its ink for the name (these two alone leave the style's ink, ANN-R80), the
+--- colour for the medallion's ring, none for Common, whose ring stays the style's, and whether its strip gleams as it
+--- enters.
+---@class PagleNodVarietyLook
+---@field name string
+---@field before string
+---@field after string
+---@field color number[]
+---@field ink number[]
+---@field ring number[]?
+---@field gleam boolean
+
+-- The rarities whose catch Nod gleams as it enters (VAR-R26), and the one whose ring stays the style's.
+local GLEAMS = { rare = true, epic = true }
+local PLAIN_RING = "common"
+
+--- A catch Nod's variety as it is drawn (VAR-R26), or nil for a headline that isn't Core's catch Nod naming one, or
+--- one of a rarity Core doesn't know.
+---@param headline { catchNod: true?, variety: PagleNodVariety? }
+---@return PagleNodVarietyLook?
+function ns.CatchNodVarietyLook(headline)
+	local variety = headline.catchNod and headline.variety
+	if not variety then
+		return nil
+	end
+	for _, rarity in ipairs(ns.VARIETY_RARITIES) do
+		if rarity.key == variety.rarity then
+			return {
+				name = variety.name,
+				before = variety.before,
+				after = variety.after,
+				color = rarity.color,
+				ink = rarity.ink,
+				ring = rarity.key ~= PLAIN_RING and rarity.color or nil,
+				gleam = GLEAMS[rarity.key] == true,
+			}
+		end
+	end
+	return nil
+end

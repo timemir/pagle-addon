@@ -1343,7 +1343,11 @@ describe("FakePagle", function()
 				assert.are.equal(1, #fake.catchNods)
 				local nod = fake.catchNods[1]
 				assert.are.same({ "nod", cast.id, 6358 }, { nod.rung, nod.cast, nod.headline.icon })
-				assert.matches("^Oily Blackmouth · %a+ · %d+%.%d in$", nod.headline.title)
+				-- Oily Blackmouth has varieties, so the Nod names its Catch's (VAR-R26).
+				local variety = nod.headline.variety
+				assert.are.same(cast.items[1].variety.rarity, variety.rarity)
+				assert.are.equal(variety.before .. " " .. variety.name .. " " .. variety.after, nod.headline.title)
+				assert.matches("^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d in$", nod.headline.title)
 				assert.are.same({}, fake.announcements)
 				assert.are.same({}, fake.summarized)
 			end

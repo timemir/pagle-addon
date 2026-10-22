@@ -102,6 +102,8 @@ ns.L = {
 	ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting",
 	-- The catch Nod (ANN-R13): a Catch's name, its Size band and its length; an item the client hasn't named yet.
 	CATCH_NOD = "%s · %s · %s",
+	-- A catch Nod naming its Catch's variety (VAR-R26): the Catch's name, the variety's name, the band and the length.
+	CATCH_NOD_VARIETY = "%s · %s · %s · %s",
 	CATCH_NOD_ITEM = "Item %d",
 	-- The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
 	-- (ANN-R54), and the Write-up's (ANN-R61); Core's numbers (ANN-R53), time fished in MINUTES or hours and minutes;

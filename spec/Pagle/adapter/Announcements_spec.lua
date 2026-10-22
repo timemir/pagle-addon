@@ -902,7 +902,8 @@ describe("The catch Nod on the client", function()
 
 			assert.is_true(showing(loaded, "nod"))
 			local frame = frameOf(loaded, "nod") --[[@as table]]
-			assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", frame.title:GetText())
+			-- Oily Blackmouth has varieties: its line names the Catch's (VAR-R26).
+			assert.matches("^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d cm$", frame.title:GetText())
 			assert.are.same({}, stampsOf(frame))
 			assert.are.same({}, loaded.client.sounds)
 			assert.are.same({}, summarized)
