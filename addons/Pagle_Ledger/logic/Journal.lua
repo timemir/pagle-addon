@@ -40,6 +40,15 @@ local ns = select(2, ...)
 ---@field askPrestige? fun()             -- asks before Prestiging (ns.AskPrestige, LED-R33)
 ---@field pickTitle? fun(key: string?)   -- sets the active title and redraws (ns.PickActiveTitle, LED-R77)
 ---@field goods? LedgerJournalGoods      -- Core's goods calls, for the Angler page's Bindings (LED-R146)
+---@field getVarieties? fun(speciesID: integer): PagleVarietyEntry[]? -- Pagle.GetVarieties (VAR-R11); nil while updating
+---@field rarities? PagleVarietyRarity[] -- Pagle.VARIETY_RARITIES, Common to Epic (VAR-R11); nil while updating
+---@field fishCrest? fun(speciesID: integer): LedgerFishCrest -- a Species' fish crest (VAR-R12, VAR-R24)
+
+--- A Species' fish crest, as the varieties spread's foot shows it (VAR-R12, VAR-R24): its icon, and its name once Core
+--- has registered the crest's good (none before).
+---@class LedgerFishCrest
+---@field icon integer|string
+---@field name string?
 
 --- Core's goods calls the Angler page's Bindings make (LED-R146, SHOP-R30–R34, SHOP-R40).
 ---@class LedgerJournalGoods
@@ -63,12 +72,15 @@ local ns = select(2, ...)
 ---@field askPrestige fun()
 ---@field pickTitle fun(key: string?)
 ---@field goods LedgerJournalGoods
+---@field getVarieties fun(speciesID: integer): PagleVarietyEntry[]?
+---@field rarities PagleVarietyRarity[]
+---@field fishCrest fun(speciesID: integer): LedgerFishCrest
 ---@field activityXP? ActivityXP                     -- Pagle.GetActivityXP() (AXP-R6, LED-R150)
 ---@field prestigeSources? LedgerPrestigeSources     -- PagleLedgerDB.global.prestigeSources (LED-R150)
 
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:
 --- - `kicker`, `title`, `text` (`text`, in the serif face; `hand` for the handwriting face, `color` "faded", "red" or
----   "blue" over the ink)
+---   "blue" over the ink; a kicker's `ink` its own, a text's `style` "italic" the italic face, VAR-R24)
 --- - `link` (`text`, opening `place`, or calling `action` instead when it has one)
 --- - `leader` (a dotted-leader line: `text` left, `value` right, opening `place` if set, or calling `action` instead,
 ---   its value then in a link's red)
@@ -95,8 +107,13 @@ local ns = select(2, ...)
 --- - `crest` (the Angler page's Prestige crest for prestige `rank` holding the Angler's likeness, with the bookplate
 ---   crest's `icon` pinned on it, LED-R146), drawn by adapter/JournalAngler.lua; `rule` (the fleuron rule); `map`
 ---   (uncharted waters' blank chart, LED-R138)
+--- - `variety` (a varieties spread's row: the variety's `art`, drawn `look` "silhouette" while uncaught, `text` its name
+---   or "Undiscovered", its `rarity` as a pill, filled when `inked`, its count as `value`, `selected` banded, opening
+---   `place`), `varietyArt` (its `art` large, drawn `look`) and `fishCrest` (the fish crest's `icon` small, its name as
+---   `text` and the hand's `value`), drawn by adapter/JournalVarieties.lua (VAR-R24)
+--- Any block with `foot` sits at its page's foot when the page has room above it (the varieties spread's fish crest).
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"crest"|"rule"|"map"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"crest"|"rule"|"map"|"variety"|"varietyArt"|"fishCrest"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -123,7 +140,7 @@ local ns = select(2, ...)
 ---@field stars? LedgerStars
 ---@field selected? boolean
 ---@field lines? string[]
----@field style? "chart"|"button"|"radio"|"legend"|"pair" -- a link's or icon's look (adapter/JournalWidgets.lua)
+---@field style? "chart"|"button"|"radio"|"legend"|"pair"|"italic" -- a link's, icon's or text's look (adapter/JournalWidgets.lua)
 ---@field on? boolean            -- a radio's pick
 ---@field inked? boolean         -- a seal pressed (false: the empty ring)
 ---@field numeral? string        -- a contents line's numeral
@@ -132,6 +149,17 @@ local ns = select(2, ...)
 ---@field columns? integer       -- tiles across
 ---@field rank? integer          -- a crest's prestige rank
 ---@field note? string           -- the bookplate's Prestige words
+---@field ink? number[]          -- a kicker's own ink, { r, g, b } (a variety's rarity, VAR-R24)
+---@field art? PagleVarietyArt   -- a variety's art (VAR-R11, VAR-R24)
+---@field rarity? LedgerVarietyRarity -- a variety row's rarity pill (VAR-R24)
+---@field foot? boolean          -- at the page's foot (VAR-R24)
+
+--- A variety's rarity as its pill shows it (VAR-R24, core/varieties.md › UI): its name, and its colour and its darker
+--- ink on parchment, each { r, g, b }.
+---@class LedgerVarietyRarity
+---@field name string
+---@field color number[]
+---@field ink number[]
 
 --- One weight's tick on a measuring board (LED-R143): its pounds, where it sits from the lightest weight (0) to the
 --- heaviest (1), and whether it is landed.
@@ -190,6 +218,9 @@ ns.JOURNAL_TROPHY_ROOM = "trophy"
 ns.JOURNAL_CURIOS = "curios"
 --- The Angler page's ID (LED-R146). logic/JournalAngler.lua registers it.
 ns.JOURNAL_ANGLER = "angler"
+--- The varieties spread's ID (VAR-R24): its args are `{ species = id, variety = position? }`, the variety selected
+--- (the first caught, or position 1, without one). logic/JournalVarieties.lua registers it.
+ns.JOURNAL_VARIETIES = "varieties"
 --- The Legends spread's ID (LED-R147): its args may name a `legend` (item ID) to choose, and `plate` to show its
 --- plate. logic/JournalLegends.lua registers it.
 ns.JOURNAL_LEGENDS = "legends"
@@ -221,6 +252,14 @@ end
 ---@return LedgerJournalPlace
 function ns.JournalPlace.fish(species, hint)
 	return { id = ns.JOURNAL_FISH, args = { species = species, hint = hint } }
+end
+
+--- Species `species`' varieties spread, with the variety at position `variety` selected when given (VAR-R23, VAR-R24).
+---@param species integer
+---@param variety integer?
+---@return LedgerJournalPlace
+function ns.JournalPlace.varieties(species, variety)
+	return { id = ns.JOURNAL_VARIETIES, args = { species = species, variety = variety } }
 end
 
 --- The Trophy Room, open on family `family` when given (LED-R143, LED-R137).

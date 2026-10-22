@@ -17,11 +17,15 @@ local CORE_UNBOUGHT = {
 	"SOUND SET 1 of 2",
 	"Driftwood | IN USE",
 	"Gilded | 400",
-	"BOOKPLATE CREST 1 of 3",
+	"BOOKPLATE CREST 1 of 40",
 	"Plain | IN USE",
 	"The Old Oak | Expert · 88%",
 	"The Desert Sun | Unfished",
 }
+-- Core's fish crests follow under their group's header, none earned (VAR-R12, SHOP-R27).
+for _, row in ipairs(fishCrestRows()) do
+	CORE_UNBOUGHT[#CORE_UNBOUGHT + 1] = row
+end
 
 -- Core with the Ledger and Hunts registered, Core's own goods, Hunts' covers and the Ledger's bindings and two zone
 -- crests in Core's crest slot (earned goods, their earnedText functions, SHOP-R22, SHOP-R23), logged in and in the
@@ -552,7 +556,7 @@ describe("The Curio Shop's list", function()
 			"Torn Page | IN USE",
 			"SOUND SET 1 of 2",
 			"Driftwood | IN USE",
-			"BOOKPLATE CREST 1 of 3",
+			"BOOKPLATE CREST 1 of 40",
 			"Plain | IN USE",
 			"JOURNAL BINDING 1 of 2",
 			"Oak | IN USE",
@@ -560,9 +564,9 @@ describe("The Curio Shop's list", function()
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(12, #listed(loaded))
+		assert.are.equal(12 + #fishCrestRows(), #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(17, #listed(loaded))
+		assert.are.equal(17 + #fishCrestRows(), #listed(loaded))
 	end)
 
 	it(
@@ -580,7 +584,7 @@ describe("The Curio Shop's list", function()
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
-			assert.are.equal(17, #listed(loaded))
+			assert.are.equal(17 + #fishCrestRows(), #listed(loaded))
 		end
 	)
 

@@ -9,7 +9,7 @@ import pytest
 from areas_fixture import write_areas
 from baseline_fixture import write_baseline
 from cli_fixture import run
-from item_fixture import CHECKS, write_item_layer
+from item_fixture import CHECKS, item_records_lua, write_item_layer
 from observed_fixture import write_observed
 from hunts_fixture import write_hunts
 from pools_fixture import write_pools
@@ -54,10 +54,7 @@ def records(root: Path, capsys: pytest.CaptureFixture[str]) -> dict[int, str]:
     """Each emitted item record's Lua, by item ID, from the Catalogue.lua the generator wrote."""
     code, output = run(root, capsys)
     assert code == 0, output
-    text = (root / CATALOGUE).read_text(encoding="utf-8")
-    block = re.search(r"^\titems = \{\n(.*?)^\t\},$", text, flags=re.MULTILINE | re.DOTALL)
-    assert block is not None, text
-    return {int(item): record for item, record in re.findall(r"^\t\t\[(\d+)\] = (\{.*\}),$", block.group(1), re.M)}
+    return item_records_lua((root / CATALOGUE).read_text(encoding="utf-8"))
 
 
 def fails(root: Path, capsys: pytest.CaptureFixture[str], *problems: str) -> None:

@@ -16,12 +16,15 @@ local ns = select(2, ...)
 ---@field state HuntsState      -- ns.State()
 ---@field updating boolean      -- ns.IsUpdating(): nothing is drawn from the state (HNT-R69)
 ---@field now integer           -- the grouping's time, or now before the first grouping
+---@field runsOn integer?       -- how many runs are on (HNT-R162), for the Pagle Wagers ribbon's count
 
---- One ribbon on the leather's right edge (HNT-R61).
+--- One ribbon hanging from under the leather (HNT-R61).
 ---@class BoardRibbon
----@field set string?           -- the set's ID; nil for the Board ribbon
+---@field set string?           -- the set's ID; nil for the Board ribbon and the Pagle Wagers ribbon
+---@field wagers boolean?       -- the Pagle Wagers ribbon (HNT-R162)
 ---@field text string           -- the word stacked down the ribbon
 ---@field name string?          -- the set's full name, for its tooltip
+---@field count string?         -- "{n} on" under the Pagle Wagers ribbon's name while runs are on
 ---@field index integer?        -- the set's place in the Hunt list, for its colour (ns.BoardRibbonColor)
 ---@field chosen boolean        -- the ribbon of the mode shown
 ---@field place BoardPlace      -- where clicking it goes
@@ -53,15 +56,28 @@ function ns.RibbonWord(name)
 	return name:match("(%S+)%s*$") or name
 end
 
---- The set ribbons (HNT-R61): "Board", then one per set that has a current Hunt, an earned title or a done Retired
---- Hunt, in Hunt list order. The Board ribbon is chosen on the Board; a set's on its page and the entries opened
---- from it.
+--- The set ribbons (HNT-R61): "Board", then "Pagle Wagers" (HNT-R162) with "{n} on" while runs are on, then one per
+--- set that has a current Hunt, an earned title or a done Retired Hunt, in Hunt list order. The Board ribbon is chosen
+--- on the Board; Pagle Wagers on its spread; a set's on its page and the entries opened from it.
 ---@param input HuntsSetsInput
 ---@param place BoardPlace where the board is
 ---@return BoardRibbon[]
 function ns.BuildRibbons(input, place)
+	local L = ns.L
 	local onSet = place.mode ~= "board" and place.set or nil
-	local ribbons = { { text = ns.L.RIBBON_BOARD, chosen = onSet == nil, place = { mode = "board" } } }
+	local onWagers = place.mode == "wagers"
+	local runsOn = input.runsOn or 0
+	local ribbons = {
+		{ text = L.RIBBON_BOARD, chosen = onSet == nil and not onWagers, place = { mode = "board" } },
+		{
+			wagers = true,
+			text = L.WAGERS_KICKER,
+			name = L.WAGERS_KICKER,
+			count = runsOn > 0 and L.RIBBON_ON:format(runsOn) or nil,
+			chosen = onWagers,
+			place = { mode = "wagers" },
+		},
+	}
 	for index, set in ipairs(input.list:Sets()) do
 		if hasRibbon(input, set.id) then
 			local name = input.list:SetName(set.id)
@@ -78,12 +94,11 @@ function ns.BuildRibbons(input, place)
 	return ribbons
 end
 
---- One gilt breadcrumb (HNT-R61): its words and the place clicking it goes back to. "Pagle Wagers" has no place: it
---- goes to the Pagle Wagers spread on its run (`run`, through ns.OpenWagers, #303).
+--- One gilt breadcrumb (HNT-R61): its words and the place clicking it goes back to; "Pagle Wagers" goes to the Pagle
+--- Wagers spread (HNT-R162, HNT-R164).
 ---@class BoardCrumbView
 ---@field text string
 ---@field place BoardPlace?
----@field run string?
 
 --- The breadcrumbs' words for the router's trail (logic/Board.lua's BoardCrumb): "Hunts", then the set's name, then
 --- the Hunt's, each going back to its own level; with a run selected, "Hunts", "Pagle Wagers", then the run's event's
@@ -106,7 +121,7 @@ function ns.BuildCrumbs(trail, list, runName)
 			local id = crumb.id or ""
 			text = runName and runName(id) or id
 		end
-		crumbs[i] = { text = text, place = crumb.place, run = crumb.kind == "wagers" and crumb.id or nil }
+		crumbs[i] = { text = text, place = crumb.place }
 	end
 	return crumbs
 end

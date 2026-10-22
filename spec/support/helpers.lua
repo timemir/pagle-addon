@@ -120,6 +120,58 @@ end
 OILY_BLACKMOUTH = "|cffffffff|Hitem:6358::::::::15:::::::::|h[Oily Blackmouth]|h|r"
 --- Fishing (Classic Journeyman), on the generated catalogue's fishing-spell list (probe report 70338 §4).
 FISHING = 7731
+--- The Species with varieties in the generated catalogue, by Species ID: Core's fish crests, in their order (VAR-R12).
+FISH_CREST_SPECIES = {
+	1467,
+	4603,
+	6289,
+	6291,
+	6299,
+	6303,
+	6308,
+	6317,
+	6358,
+	6359,
+	6361,
+	6362,
+	6458,
+	6522,
+	8365,
+	12238,
+	13422,
+	13754,
+	13755,
+	13756,
+	13757,
+	13758,
+	13759,
+	13760,
+	13888,
+	13889,
+	13890,
+	13893,
+	16967,
+	16968,
+	16969,
+	16970,
+	19807,
+	19975,
+	21071,
+	21153,
+	251524,
+}
+
+--- The Curio Shop's list rows of Core's fish crests (VAR-R12, VAR-R13) as a spec reads them, "{name} | {tag}": their
+--- group's header, then each crest with none of its varieties caught and its fish not cached ("Item {itemID} Crest").
+---@return string[]
+function fishCrestRows()
+	local rows = { "FISH CRESTS" }
+	for _, speciesID in ipairs(FISH_CREST_SPECIES) do
+		rows[#rows + 1] = ("Item %d Crest | 0 of 10 varieties"):format(speciesID)
+	end
+	return rows
+end
+
 --- The build entry the fake client's build matches, so login appends no B1.
 BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1"):format(SERVER_TIME - 5000)
 

@@ -113,7 +113,7 @@ describe("the set ribbons (HNT-R61)", function()
 	it("stack the last word of the set's name, and keep the full name for the tooltip", function()
 		local run = start()
 
-		local dusk = run.ns.BoardRibbons({ mode = "board" })[2]
+		local dusk = run.ns.BoardRibbons({ mode = "board" })[3] -- after Board and Pagle Wagers (HNT-R162)
 
 		assert.are.same({ "Dusk", "Dusk" }, { dusk.text, dusk.name })
 		assert.are.equal("Wagers", run.ns.RibbonWord("House Wagers"))
@@ -357,15 +357,21 @@ local function opened(run, place)
 end
 
 describe("the ribbons, crumbs and nameplate on the leather (HNT-R61)", function()
-	it("hang Board and each set's ribbon, Board chosen when the board opens (HNT-R67)", function()
-		local run = start()
+	it(
+		"hang Board, Pagle Wagers and each set's ribbon, Board chosen when the board opens (HNT-R67, HNT-R162)",
+		function()
+			local run = start()
 
-		local ribbons = opened(run).anchors.ribbons
+			local ribbons = opened(run).anchors.ribbons
 
-		assert.are.same({ "Board", "Dusk", "Wagers", "fixture_pair", "fixture_tide" }, shownTexts(ribbons))
-		assert.is_true(buttonWith(ribbons, "Board").chosen)
-		assert.is_false(buttonWith(ribbons, "Dusk").chosen)
-	end)
+			assert.are.same(
+				{ "Board", "Pagle Wagers", "Dusk", "Wagers", "fixture_pair", "fixture_tide" },
+				shownTexts(ribbons)
+			)
+			assert.is_true(buttonWith(ribbons, "Board").chosen)
+			assert.is_false(buttonWith(ribbons, "Dusk").chosen)
+		end
+	)
 
 	it("open a set's page from its ribbon, and the Board from the Board ribbon (HNT-R66)", function()
 		local run = start()

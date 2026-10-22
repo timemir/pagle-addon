@@ -83,7 +83,8 @@ ns.L = {
 	ZONE_RANK_STAMP = "Rank up",
 	ZONE_MASTER_TITLE = "Zone Master",
 	ZONE_MASTER_STAMP = "Master",
-	-- The zone's crest's "Earned" line (LED-R97), riding in the Zone Master's text as its title does (TEXT_WITH_TITLE).
+	-- A crest's "Earned" line with its name: the zone's on the Zone Master's moment (LED-R97), riding in its text as
+	-- its title does (TEXT_WITH_TITLE), and the fish crest's on Every colour's (VAR-R25, VAR-R12).
 	CREST_EARNED = "Earned: %s",
 	TROPHY_WEIGHT_TITLE = "Trophy weight",
 	TROPHY_WEIGHT_STAMP = "Trophy",
@@ -107,6 +108,16 @@ ns.L = {
 	CATCHES_OTHER = "%s Catches",
 	SIZE_RECORD_TITLE = "Size record",
 	SIZE_RECORD_STAMP = "Record",
+	-- A variety's first Catch (VAR-R25): a Common or Uncommon one's headline with the variety's name (lore, VAR-R11),
+	-- and its stamp riding on the Cast's toast; a Rare one's and an Epic one's titles, the name as their text.
+	NEW_VARIETY_TITLE = "New variety · %s",
+	NEW_VARIETY_STAMP = "New variety",
+	RARE_VARIETY_TITLE = "Rare variety",
+	EPIC_VARIETY_TITLE = "Epic variety",
+	-- A Species' every variety caught (VAR-R25): its banner with the Species' name and its stamp; its fish crest's
+	-- "Earned" line is CREST_EARNED.
+	EVERY_COLOUR_TITLE = "Every colour of %s",
+	EVERY_COLOUR_STAMP = "Every colour",
 	-- A title (lore, LED-R75) riding in a moment's text, after the text it has (LED-R97), and a completion title's own;
 	-- also a Legend's page and plate (LED-R147).
 	TITLE_LINE = "Title: %s",
@@ -152,6 +163,12 @@ ns.L = {
 	WRITE_UP_LEVEL_ROSE = "Angler Level %d to %d",
 	WRITE_UP_SPECIES_ONE = "%d Species",
 	WRITE_UP_SPECIES_OTHER = "%d Species",
+	-- Varieties caught, then the fish with every variety caught (VAR-R25, VAR-R91).
+	WRITE_UP_VARIETIES_ONE = "%d variety",
+	WRITE_UP_VARIETIES_OTHER = "%d varieties",
+	WRITE_UP_EVERY_COLOUR_ONE = "%d fish in every colour",
+	WRITE_UP_EVERY_COLOUR_OTHER = "%d fish in every colour",
+	WRITE_UP_VARIETIES_COLOURS = "%s · %s",
 	WRITE_UP_ZONES_ONE = "%d zone ranked",
 	WRITE_UP_ZONES_OTHER = "%d zones ranked",
 	WRITE_UP_MASTERED_ONE = "%d mastered",
@@ -303,6 +320,28 @@ ns.L = {
 	FISH_REGULAR = "%s " .. REGULAR .. " (%d/%d)",
 	CHECK_ON = CHECK_ON,
 	CHECK_OFF = CHECK_OFF,
+	-- The fish spread's varieties (VAR-R23): "Varieties" with "7 of 10" at its right, and the link to the varieties
+	-- spread.
+	FISH_VARIETIES = "Varieties",
+	FISH_VARIETIES_COUNT = "%d of %d",
+	FISH_VARIETIES_LINK = "See all ten »",
+	-- The varieties spread (VAR-R24, VAR-R27): its title, which is its crumb too, "7 of 10 caught", a row's "6 caught",
+	-- an uncaught variety's words in place of its name, the right page's kicker by rarity key, an uncaught one's title
+	-- and its odds ("About one Catch in 29."), and the foot's words under the fish crest.
+	VARIETIES_TITLE = "Its colours",
+	VARIETIES_CAUGHT = "%d of %d caught",
+	VARIETY_COUNT = "%s caught",
+	VARIETY_UNDISCOVERED = "Undiscovered",
+	VARIETY_KICKER = {
+		common = "A common colour",
+		uncommon = "An uncommon colour",
+		rare = "A rare colour",
+		epic = "An epic colour",
+	},
+	VARIETY_NOT_DISCOVERED = "Not yet discovered",
+	VARIETY_ODDS = "Not landed yet. About one Catch in %s.",
+	VARIETY_ALL_TEN = "All ten.",
+	VARIETY_TO_GO = "%d to go.",
 	-- Search with no match (LED-R148).
 	SEARCH_NONE = "Nothing by that name in the Ledger yet.",
 	-- The search drop-down's two parts (LED-R148).
@@ -321,6 +360,7 @@ ns.L = {
 	ANGLER_COMPLETE = "%d%% of the Ledger complete (%s of %s)",
 	ANGLER_PARTS = {
 		species = "Species",
+		varieties = "Varieties",
 		junk = "Junk Museum",
 		treasure = "Treasures",
 		trophy = "Trophy Room weights",

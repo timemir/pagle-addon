@@ -504,17 +504,21 @@ function ns.NewBezel(parent)
 	return bezel
 end
 
---- Sets a medallion's size (84, 64, 34 or 22), trim and icon.
+--- Sets a medallion's size (84, 64, 34 or 22), ring and icon, the icon's whole texture or `coords` of it ({ left,
+--- right, top, bottom }: a variety's art cropped to the fish's head, VAR-R25).
 ---@param bezel PagleBezel
 ---@param size integer
----@param trim string "gold", "silver" or "bronze"
+---@param ring PagleBezelRing its toast style's, logic/ToastStyles.lua's ns.BezelRing
 ---@param icon integer|string
-function ns.SetBezel(bezel, size, trim, icon)
+---@param coords number[]?
+function ns.SetBezel(bezel, size, ring, icon, coords)
 	bezel:SetSize(size, size)
-	ns.SetSprite(bezel.Ring, "Announce", ("bezel-%s-%d"):format(trim, size))
+	ns.SetSprite(bezel.Ring, ring.atlas, ring.sprite)
 	ns.CenterSprite(bezel.Ring, bezel)
 	bezel.Icon:SetSize(INNER[size] - 2, INNER[size] - 2)
 	bezel.Icon:SetTexture(icon)
+	coords = coords or { 0, 1, 0, 1 }
+	bezel.Icon:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
 	ns.SetSprite(bezel.Gloss, "Announce", "gloss-" .. size)
 	ns.CenterSprite(bezel.Gloss, bezel)
 end

@@ -166,6 +166,12 @@ ns.L = {
 	TRACKER_PROGRESS = "%d / %d",
 	TRACKER_ALL_TIERS = "all tiers",
 	TRACKER_UPDATING = "updating…",
+	-- The tracker's Pagle Wagers block (HNT-R175), under its header WAGERS_KICKER: a run's tracker label is "settled"
+	-- or TRACKER_ENDS_IN's; its second line its first marks and its closest Hunt, joined by TRACKER_JOIN.
+	TRACKER_SETTLED = "settled",
+	TRACKER_FIRST_MARKS = "%d of %d first marks",
+	TRACKER_CLOSEST = "%s: %d / %d", -- "Shore Snapper: 1 / 2": the closest Hunt, its count and its next threshold
+	TRACKER_WAGERS_MORE = "+%d more wagers on the table",
 	SETTING_SHOW_TRACKER = "Show the Hunts tracker",
 	SETTING_SHOW_TRACKER_TOOLTIP = "A small tracker under the minimap with the Hunts you've pinned on the board.",
 
@@ -272,6 +278,8 @@ ns.L = {
 	TOUR_BOARD_SOON = "the Hunts board: a Hunt in Soon",
 	TOUR_BOARD_LATER = "the Hunts board: a Hunt in Later",
 	TOUR_BOARD_ON_DEMAND = "the Hunts board: a Hunt in On demand",
+	TOUR_BOARD_WAGERS = "the Hunts board: the wager strip and the WAGERS group, a run's entry",
+	TOUR_WAGERS = "the Hunts board: the Pagle Wagers spread, its slips and ladder",
 	TOUR_SET = "the Hunts board: a set's page, its title earned",
 	TOUR_SET_ENTRY = "the Hunts board: an entry opened from its set's page",
 	TOUR_RETIRED = "the Hunts board: a Retired Hunt's entry",
@@ -281,7 +289,8 @@ ns.L = {
 
 	-- Pagle Wagers on the Board (HNT-R161, HNT-R163, HNT-R164): logic/Wagers.lua. Hunt Events are only ever
 	-- "Pagle Wagers" to players (CONTEXT.md), and nothing here claims odds, a due fish or a chance (HNT-R27).
-	WAGERS_KICKER = "Pagle Wagers", -- the strip's kicker, and the breadcrumb between "Hunts" and the run
+	WAGERS_KICKER = "Pagle Wagers", -- the strip's kicker, the breadcrumb between "Hunts" and the run, and the
+	-- tracker's Pagle Wagers header (HNT-R175)
 	STRIP_NAME = "%s · %s", -- "Shore Wager · Darkshore": the run's event and its zones
 	JOIN_ZONES = " & ",
 	STRIP_CLOSES = "closes in %s", -- a server-time duration (HNT-R203)
@@ -302,6 +311,48 @@ ns.L = {
 	-- The pay rule, from the Tunables: tier 1's XP and Coins, a further tier's, then a settled run's.
 	RUN_PAY_RULE = "Each Hunt's first mark pays +%d XP and %d Coins, each mark after it +%d XP and %d Coins. "
 		.. "Land every Hunt's first mark and the wager settles: +%d XP and %d Coins more.",
+
+	-- The Pagle Wagers ribbon and spread (HNT-R162, HNT-R204): logic/Sets.lua's ribbon, logic/Wagers.lua's slips and
+	-- ladder. As above, nothing here claims odds, a due fish or a chance (HNT-R27).
+	RIBBON_ON = "%d on", -- under the ribbon's name while runs are on
+	SPREAD_TITLE = "On the table",
+	SPREAD_NOTE = "Three days each. Land every Hunt's first mark before it closes.",
+	SPREAD_EMPTY = "No wagers on the table yet.",
+	SLIP_WHERE = "%s · %s", -- "Darkshore · until Sat 17:00": the run's zones and its end
+	SLIP_OPENS = "opens %s", -- a run ahead, in place of the countdown: "opens Sat 15:00"
+	SLIP_CLOSED = "closed", -- a run that ended while the board was open
+	SLIP_MARKS = "%d of %d first marks",
+	SLIP_SETTLED = "settled", -- the stamp on a completed run's slip
+	-- A pushed run's holiday tag (DATA-R97), in its slip's margin: interface text, keyed by tag ID.
+	HOLIDAYS = {
+		hallows_end = "Hallow's End",
+		winter_veil = "Feast of Winter Veil",
+		lunar_festival = "Lunar Festival",
+		noblegarden = "Noblegarden",
+		midsummer = "Midsummer Fire Festival",
+		harvest_festival = "Harvest Festival",
+		stv_extravaganza = "Stranglethorn Fishing Extravaganza",
+	},
+	-- The ladder (HNT-R148): "0 wagers settled · 25 more for Bookmaker's Bane", or past the last mark its count alone.
+	WAGERS_SETTLED_ONE = "%s wager settled",
+	WAGERS_SETTLED_OTHER = "%s wagers settled",
+	WAGERS_LADDER_LINE = "%s · %d more for %s",
+
+	-- Onboarding (core/onboarding.md; adapter/Look.lua). Hunts' line on the Field guide's What's in the box (ONB-R91);
+	-- the board's First look (ONB-R57): its window's name on the coach bar ("First look · Hunts") and its five notes,
+	-- verbatim from the canvas (board 13, the kit's World.lua), each *term* pencilled in red by Core. The fifth is
+	-- ONB-R57's, naming Pagle Wagers as its ribbon reads (WAGERS_KICKER), not "Pagle’s Wagers". Then the "?" beside the
+	-- board's close (ONB-R59).
+	GUIDE_BLURB = "Fish that only bite at night, in winter or at the fair, and which of them bite right now.",
+	LOOK_TITLE = "Hunts",
+	LOOK_GROUPS = "*Now*, *Soon* and *Later*: what’s open, what opens within three hours, and the rest.",
+	LOOK_NOW_LINE = "The red line is *now*, in realm time. Hatched bars are when each Hunt is open.",
+	LOOK_NATURAL = "*Natural* means the game itself keeps this fish to its hours. Imposed Hunts are Pagle’s own rules.",
+	LOOK_PIN = "*Pin* a Hunt to keep it on your tracker while you fish.",
+	LOOK_SETS = "Each ribbon is a *Hunt set*. Finish every Hunt in one and its title is yours. *Pagle Wagers* holds the "
+		.. "Hunt Events running now.",
+	LOOK_HELP = "?",
+	LOOK_AGAIN = "Show the notes for this page again",
 
 	-- The run log's dev diagnostic lines (HNT-R140, HNT-R151, logic/RunLog.lua): dev-only, never shown to players.
 	RUN_LOG_EVENT_IGNORED = "Hunts: the pushed definition of %s is ignored: %s (HNT-R140)",

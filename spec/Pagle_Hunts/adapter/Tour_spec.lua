@@ -1,7 +1,9 @@
--- Hunts' tour stops on FakePagle (CORE-R65, CORE-R68), over the fixture Hunt list and catalogue: the board on a Hunt
--- of each group, a set's page, an entry from it and a retired entry, the tracker in the dock, and each good Hunts
--- sells or gives worn; each shown on the tour's sample (logic/Tour.lua) and put back as it was, nothing saved. The tour runs
--- on FakePagle's clock (fake.wait); Hunts' own timers on the client's, which stands still here.
+-- Hunts' tour stops on FakePagle (CORE-R65, CORE-R68), over the fixture Hunt list, event pool and catalogue: the board
+-- on a Hunt of each group, the Board with the wager strip, the WAGERS group and a run's entry, the Pagle Wagers spread,
+-- a set's page, an entry from it and a retired entry, the tracker in the dock, and each good Hunts sells or gives
+-- worn; each shown on the tour's sample (logic/Tour.lua) and put back as it was, nothing saved. FakePagle's clock is
+-- before the rotation's starting point, so no run is on, and the sample's runs come from the fixture pool. The tour
+-- runs on FakePagle's clock (fake.wait); Hunts' own timers on the client's, which stands still here.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
@@ -15,7 +17,7 @@ local C = catalogue
 local FROM = hunts.untilRealm(17, 30)
 -- One stop's span on the tour's clock: shown, shot 2.8 s in, hidden 0.5 s later, the next 0.3 s after that.
 local STOP = 2.8 + 0.5 + 0.3
--- The nine stops before the goods, then each cover and tracker frame but the defaults (HNT-R121).
+-- The eleven stops before the goods, then each cover and tracker frame but the defaults (HNT-R121).
 local COVERS, FRAMES = {}, {}
 for _, row in ipairs(hunts.GOODS["hunts.notebookcover"]) do
 	if row[2] ~= "default" then
@@ -27,7 +29,8 @@ for _, row in ipairs(hunts.GOODS["hunts.trackerframe"]) do
 		FRAMES[#FRAMES + 1] = row[1]
 	end
 end
-local STOPS = 9 + #COVERS + #FRAMES
+local GOODS_FROM = 11
+local STOPS = GOODS_FROM + #COVERS + #FRAMES
 
 -- Hunts' Session summary line as Core holds it, or nil (HNT-R89).
 local function summaryLine(fake)
@@ -76,6 +79,8 @@ local function seen(run)
 		if right and right.view then
 			out.seal = right.view.seal:IsShown()
 		end
+		out.left = shownTexts(board:Page(place, "left"))
+		out.right = right and shownTexts(right) or {}
 		out.cover = board.cover
 	end
 	out.grouper = ns.groups:Row("fixture_grouper") ~= nil
@@ -107,7 +112,7 @@ local function tour(run, during)
 end
 
 describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
-	it("are the board's groups, a set, its entry, a retired entry, the tracker and each good, in tour order", function()
+	it("are the board's groups, Pagle Wagers, a set, its entries, the tracker and each good, in tour order", function()
 		local run = start()
 
 		run.fake.slash("dev tour list hunts")
@@ -119,6 +124,8 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 			"  hunts.board.soon: the Hunts board: a Hunt in Soon",
 			"  hunts.board.later: the Hunts board: a Hunt in Later",
 			"  hunts.board.ondemand: the Hunts board: a Hunt in On demand",
+			"  hunts.board.wagers: the Hunts board: the wager strip and the WAGERS group, a run's entry",
+			"  hunts.wagers: the Hunts board: the Pagle Wagers spread, its slips and ladder",
 			"  hunts.set.page: the Hunts board: a set's page, its title earned",
 			"  hunts.set.entry: the Hunts board: an entry opened from its set's page",
 			"  hunts.set.retired: the Hunts board: a Retired Hunt's entry",
@@ -170,17 +177,54 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 		assert.is_true(shown[1].grouper)
 	end)
 
+	it("show the wager strip, the WAGERS group and a run's entry on sample runs from the pool (HNT-R161)", function()
+		local run = start()
+		-- Before the rotation's starting point, with no pushed run: nothing is on (HNT-R204).
+		assert.are.same({}, run.ns.RunsShown(run.ns.State(), run.loaded.env.GetServerTime()))
+
+		local shown = tour(run)
+
+		local stop = shown[6]
+		assert.are.equal("board", stop.place.mode)
+		assert.matches("^fixture_%a+@%d+$", stop.place.run)
+		for _, text in ipairs({ "PAGLE WAGERS", "Shore Wager · Darkshore", "+1 more on the table", "WAGERS" }) do
+			assert(hunts.has(stop.left, text), "the Board lacks " .. text)
+		end
+		assert.is_true(hunts.has(stop.right, "FROM THE ROTATION · LOW WATERS"))
+		-- Nothing of the sample's runs stays after the tour.
+		assert.are.same({}, run.ns.RunsShown(run.ns.State(), run.loaded.env.GetServerTime()))
+	end)
+
+	it("show the Pagle Wagers spread with a slip per sample run, one settled, and the ladder (HNT-R162)", function()
+		local run = start()
+
+		local shown = tour(run)
+
+		local stop = shown[7]
+		assert.are.same({ mode = "wagers" }, stop.place)
+		for _, text in ipairs({
+			"On the table",
+			"Shore Wager",
+			"fixture_vale",
+			"SETTLED",
+			"7 wagers settled · 18 more for Bookmaker's Bane",
+		}) do
+			assert(hunts.has(stop.left, text), "the spread lacks " .. text)
+		end
+		assert.is_true(hunts.has(stop.right, "Shore Wager"))
+	end)
+
 	it("show a set's page with its title earned, an entry from it and a retired entry (HNT-R3, HNT-R66)", function()
 		local run = start()
 
 		local shown = tour(run)
 
-		assert.are.same({ mode = "set", set = "fixture_dusk" }, shown[6].place)
-		assert.is_true(shown[6].seal)
-		assert.are.same({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }, shown[7].place)
-		assert.is_string(shown[7].name)
-		assert.are.same({ mode = "retired", set = "fixture_dusk", hunt = "fixture_sunscale" }, shown[8].place)
-		assert.is_string(shown[8].name)
+		assert.are.same({ mode = "set", set = "fixture_dusk" }, shown[8].place)
+		assert.is_true(shown[8].seal)
+		assert.are.same({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }, shown[9].place)
+		assert.is_string(shown[9].name)
+		assert.are.same({ mode = "retired", set = "fixture_dusk", hunt = "fixture_sunscale" }, shown[10].place)
+		assert.is_string(shown[10].name)
 	end)
 
 	it("show the tracker in the dock with the sample's three pins, the board closed (HNT-R75, HNT-R76)", function()
@@ -188,10 +232,10 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 
 		local shown = tour(run)
 
-		assert.is_false(shown[9].board)
-		assert.is_true(shown[9].tracker)
-		assert.are.equal(3, shown[9].lines)
-		assert.is_nil(shown[9].wearing)
+		assert.is_false(shown[11].board)
+		assert.is_true(shown[11].tracker)
+		assert.are.equal(3, shown[11].lines)
+		assert.is_nil(shown[11].wearing)
 	end)
 
 	it(
@@ -203,12 +247,15 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 			local shown = tour(run)
 
 			for i, id in ipairs(COVERS) do
-				assert.are.equal(ns.COVERS[id], shown[9 + i].cover)
-				assert.are.same({ mode = "board", hunt = shown[9 + i].place.hunt }, shown[9 + i].place)
+				assert.are.equal(ns.COVERS[id], shown[GOODS_FROM + i].cover)
+				assert.are.same(
+					{ mode = "board", hunt = shown[GOODS_FROM + i].place.hunt },
+					shown[GOODS_FROM + i].place
+				)
 			end
 			for i, id in ipairs(FRAMES) do
-				assert.are.equal(id, shown[9 + #COVERS + i].wearing)
-				assert.are.equal(3, shown[9 + #COVERS + i].lines)
+				assert.are.equal(id, shown[GOODS_FROM + #COVERS + i].wearing)
+				assert.are.equal(3, shown[GOODS_FROM + #COVERS + i].lines)
 			end
 			assert.are.equal(STOPS, #run.fake.tourShots)
 		end

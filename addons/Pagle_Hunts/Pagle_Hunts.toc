@@ -55,5 +55,7 @@ adapter\Timeline.lua
 adapter\WindowMoments.lua
 adapter\Entry.lua
 adapter\Wagers.lua
+adapter\WagersSpread.lua
 adapter\Tracker.lua
 adapter\Tour.lua
+adapter\Look.lua

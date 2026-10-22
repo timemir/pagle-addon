@@ -37,7 +37,7 @@ local function newWorld()
 			return world.serverTime
 		end,
 		soundSet = function()
-			return ns.SOUND_SETS.driftwood
+			return ns.SOUND_SETS["core.soundset.driftwood"]
 		end,
 		show = function(display)
 			world.visible[#world.visible + 1] = display
@@ -853,6 +853,62 @@ describe("Announcement sounds", function()
 	local DRIFTWOOD = SOUNDS .. "driftwood\\"
 
 	it(
+		"are a set for each of Core's sound set goods and the three the Ledger and Hunts earn in Core's slot, each"
+			.. " three toast variants and a banner in its folder, Gilded's one (ANN-R72, ANN-R74, SHOP-R25, Tunables)",
+		function()
+			local sets = {}
+			for id, set in pairs(ns.SOUND_SETS) do
+				local folder = SOUNDS .. id:match("[^.]+$") .. "\\"
+				local expected = { toast = {}, banner = folder .. "banner.ogg" }
+				for i = 1, #set.toast do
+					expected.toast[i] = ("%stoast_%d.ogg"):format(folder, i)
+				end
+				assert.are.same(expected, set, id)
+				sets[#sets + 1] = id .. " " .. #set.toast
+			end
+			table.sort(sets)
+
+			assert.are.same({
+				"core.soundset.driftwood 3",
+				"core.soundset.dulcimer 3",
+				"core.soundset.frost 3",
+				"core.soundset.gilded 1",
+				"core.soundset.gizmo 3",
+				"core.soundset.glass 3",
+				"core.soundset.harp 3",
+				"core.soundset.kalimba 3",
+				"core.soundset.marimba 3",
+				"core.soundset.musicbox 3",
+				"core.soundset.rain 3",
+				"core.soundset.shipbell 3",
+				"core.soundset.steelpan 3",
+				"core.soundset.wardrums 3",
+				"hunts.soundset.nightwatch 3",
+				"ledger.soundset.choir 3",
+				"ledger.soundset.concertina 3",
+			}, sets)
+		end
+	)
+
+	it(
+		"come from the sound set keyed by the equipped good's ID, Driftwood for any other ID or none (ANN-R72)",
+		function()
+			assert.are.same({
+				SOUNDS .. "gilded\\banner.ogg",
+				DRIFTWOOD .. "banner.ogg",
+				DRIFTWOOD .. "banner.ogg",
+				DRIFTWOOD .. "banner.ogg",
+			}, {
+				ns.SoundSetOf("core.soundset.gilded").banner,
+				ns.SoundSetOf("core.soundset.driftwood").banner,
+				ns.SoundSetOf("core.toaststyle.ripple").banner,
+				ns.SoundSetOf(nil).banner,
+			})
+			assert.are.equal(ns.SOUND_SETS[ns.SOUND_SET_DEFAULT], ns.SoundSetOf("hunts.soundset.unknown"))
+		end
+	)
+
+	it(
 		"cycles the toast sound through toast_1, toast_2 and toast_3, playing a waiting toast's only when it shows"
 			.. " (ANN-R24, ANN-R71, ANN-R72)",
 		function()
@@ -880,8 +936,34 @@ describe("Announcement sounds", function()
 
 		world.advance(BANNER + LEAVE)
 
-		assert.are.same({ DRIFTWOOD .. "banner.ogg", SOUNDS .. "legend.ogg" }, world.played)
+		assert.are.same({ DRIFTWOOD .. "banner.ogg", SOUNDS .. "legend\\19803.ogg" }, world.played)
 	end)
+
+	it(
+		"plays each Legend's own sting, picked by the splash's icon, the Legend's item ID, and 19803's for any other"
+			.. " (ANN-R70, ANN-R72)",
+		function()
+			local world = newWorld()
+			for _, icon in ipairs({ 19806, 19805, 19803, 6292, "Interface\\Icons\\INV_Misc_Fish_02" }) do
+				world.lanes:Push(announcement("splash", "Legend", { icon = icon }))
+			end
+			for _ = 1, 5 do
+				world.advance(ns.SPLASH_SECONDS + LEAVE)
+			end
+
+			assert.are.same({
+				SOUNDS .. "legend\\19806.ogg",
+				SOUNDS .. "legend\\19805.ogg",
+				SOUNDS .. "legend\\19803.ogg",
+				SOUNDS .. "legend\\19803.ogg",
+				SOUNDS .. "legend\\19803.ogg",
+			}, world.played)
+			assert.are.same(
+				{ SOUNDS .. "legend\\19803.ogg", SOUNDS .. "legend\\19803.ogg" },
+				{ ns.LegendSting(), ns.LegendSting(19804) }
+			)
+		end
+	)
 
 	it(
 		"plays only the banner's sound when toasts appear in the same frame, and the next toast plays the variant"
@@ -939,14 +1021,18 @@ describe("Announcement sounds", function()
 	)
 
 	it("plays only files Pagle ships under addons/Pagle/media/sounds/ (ANN-R72, ANN-R74)", function()
-		local paths = { ns.LEGEND_STING }
+		local paths = {}
+		for _, sting in pairs(ns.LEGEND_STINGS) do
+			paths[#paths + 1] = sting
+		end
+		assert.are.equal(3, #paths)
 		for _, set in pairs(ns.SOUND_SETS) do
 			paths[#paths + 1] = set.banner
 			for _, path in ipairs(set.toast) do
 				paths[#paths + 1] = path
 			end
 		end
-		assert.are.equal(3, #ns.SOUND_SETS.driftwood.toast)
+		assert.are.equal(3, #ns.SOUND_SETS["core.soundset.driftwood"].toast)
 
 		for _, path in ipairs(paths) do
 			local file = path:match("^Interface\\AddOns\\Pagle\\(media\\sounds\\.+%.ogg)$")

@@ -120,6 +120,7 @@ describe("M:RaiseMoment", function()
 			catchOne(loaded) -- Hunts raises now; the Ledger, still rebuilding, sees the Cast live when it finishes
 			loaded.client.runTimers() -- Core's Field report projection rebuilds first (LOG-R78)
 			loaded.client.runTimers() -- then Core's wallet projection (LOG-R78)
+			loaded.client.runTimers() -- then Core's variety projection (VAR-R10)
 			loaded.client.runTimers() -- the rebuild's entries
 			loaded.client.runTimers() -- the rebuild finishes in this frame: done in a frame of its own (#79)
 			assert.are.same({}, seen.shown)

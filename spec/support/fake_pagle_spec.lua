@@ -1358,9 +1358,72 @@ describe("FakePagle", function()
 				assert.are.equal(1, #fake.catchNods)
 				local nod = fake.catchNods[1]
 				assert.are.same({ "nod", cast.id, 6358 }, { nod.rung, nod.cast, nod.headline.icon })
+				-- Its variety is a first: Core's projection folded the Cast before its CastEnded (LOG-R73), yet the
+				-- Nod doesn't count it, so it names none (VAR-R27).
+				assert.is_nil(nod.headline.variety)
 				assert.matches("^Oily Blackmouth · %a+ · %d+%.%d in$", nod.headline.title)
 				assert.are.same({}, fake.announcements)
 				assert.are.same({}, fake.summarized)
+			end
+		)
+
+		it("name a Catch's variety on its Nod once an earlier Cast caught it (VAR-R26, VAR-R27)", function()
+			local fake = newFakePagle()
+			fake.itemNames[6358] = "Oily Blackmouth"
+			fake.login()
+			fake.enterWorld()
+
+			-- Casts until one's variety is one an earlier Cast caught: each before it names none.
+			local caught = {}
+			---@type { cast: PagleCast, nod: PagleAnnouncement }?
+			local named
+			for _ = 1, 30 do
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				fake.nextFrame()
+				local nod, index = fake.catchNods[#fake.catchNods], assert(cast.items[1].variety).index
+				if caught[index] then
+					named = { cast = cast, nod = nod }
+					break
+				end
+				assert.is_nil(nod.headline.variety)
+				caught[index] = true
+			end
+
+			named = assert(named)
+			local variety = assert(named.nod.headline.variety)
+			assert.are.same(assert(named.cast.items[1].variety).rarity, variety.rarity)
+			assert.are.equal(variety.before .. " " .. variety.name .. " " .. variety.after, named.nod.headline.title)
+			assert.matches("^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d in$", named.nod.headline.title)
+		end)
+
+		it(
+			"name no first variety on a Nod while Core's projection updates, which folds the Cast after it, and a"
+				.. " variety its stored state holds (VAR-R27, LOG-R72, LOG-R74)",
+			function()
+				local all = {}
+				for index = 1, 10 do
+					all[index] = true
+				end
+				local fake = newFakePagle()
+				fake.itemNames[6358] = "Oily Blackmouth"
+				fake.itemNames[6359] = "Firefin Snapper"
+				fake.global.projections.varieties.projection = { bySpecies = { [6359] = all } }
+				fake.login()
+				assert.is_true(fake.projections:IsUpdating())
+
+				local first = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				local stored = assert(fake.playCast("caught", { { itemID = 6359, quantity = 1 } }))
+				fake.enterWorld()
+				fake.nextFrame()
+
+				local nods = {}
+				for _, nod in ipairs(fake.catchNods) do
+					nods[nod.cast] = nod
+				end
+				assert.is_nil(assert(nods[first.id]).headline.variety)
+				assert.is_table(assert(nods[stored.id]).headline.variety)
+				-- The projection folded that Cast only after its Nod was made.
+				assert.is_true(fake.Pagle.GetVarietiesCaught(6358)[assert(first.items[1].variety).index])
 			end
 		)
 
@@ -2057,6 +2120,92 @@ describe("FakePagle", function()
 				assert.are.same(plain(second.items[1].size), read[2])
 			end
 		)
+	end)
+
+	describe("varieties", function()
+		local KEYS = { "k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9", "k10" }
+
+		it("serves Pagle.VARIETY_RARITIES as Core does, read-only (VAR-R11, CORE-R18)", function()
+			local Pagle = loadAddon("Pagle", FOREVER_GLOBALS).env.Pagle
+			local fake = newFakePagle()
+
+			assert.are.same(Pagle.VARIETY_RARITIES, fake.Pagle.VARIETY_RARITIES)
+			assert.has_error(function()
+				fake.Pagle.VARIETY_RARITIES[1].name = "Plain"
+			end)
+			assert.are.equal("Common", fake.ns.VARIETY_RARITIES[1].name)
+		end)
+
+		it(
+			"serves Pagle.GetVarieties and puts Core's variety on the played Cast and its Catch event, over the"
+				.. " catalogue served now (VAR-R4, VAR-R11)",
+			function()
+				local fake = newFakePagle()
+				fake.ns.catalogue.items[6358].varieties = KEYS
+				fake.setCatalogue(fake.ns.catalogue)
+				fake.login()
+				local catches = {}
+				fake.Pagle.RegisterCallback("Spec", "Catch", function(_, catch)
+					catches[#catches + 1] = catch
+				end)
+				local species = fake.ns.catalogue.items[6358].species
+
+				assert.are.equal(species .. ".k10", fake.Pagle.GetVarieties(species)[10].id)
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				local expected = fake.ns.VarietyOf(cast.items[1].catchId, fake.ns.catalogue.items[6358])
+				assert.is_table(expected)
+				assert.are.same(expected.id, cast.items[1].variety.id)
+				assert.are.same(expected.id, catches[1].variety.id)
+			end
+		)
+
+		it(
+			"serves Pagle.GetVarietiesCaught from Core's variety projection over the history, a fresh set each call,"
+				.. " and counts the earned-goods refresh its done runs (VAR-R10, VAR-R11, VAR-R13)",
+			function()
+				local fake = newFakePagle()
+				fake.ns.catalogue.items[6358].varieties = KEYS
+				fake.setCatalogue(fake.ns.catalogue)
+				local species = fake.ns.catalogue.items[6358].species
+				fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+				for i = 1, 8 do
+					fake.catchLog:Append(castRecord({ time = SERVER_TIME - 9000 + i, items = { 6358 } }))
+				end
+				fake.login()
+				fake.enterWorld()
+
+				local expected = {}
+				for record in fake.Pagle.IterateCatches(0) do
+					expected[record.items[1].variety.index] = true
+				end
+				local caught = fake.Pagle.GetVarietiesCaught(species)
+				assert.are.same(expected, caught)
+				caught[11] = true
+				assert.are.same(expected, fake.Pagle.GetVarietiesCaught(species))
+				assert.are.same({}, fake.Pagle.GetVarietiesCaught(6303))
+				assert.are.equal(1, fake.varietyRefreshes)
+			end
+		)
+
+		it("refreshes the earned goods after a played Cast only when it adds a variety (VAR-R13)", function()
+			local fake = newFakePagle()
+			fake.ns.catalogue.items[6358].varieties = KEYS
+			fake.setCatalogue(fake.ns.catalogue)
+			local species = fake.ns.catalogue.items[6358].species
+			fake.login()
+			fake.enterWorld()
+
+			local refreshes = fake.varietyRefreshes
+			for _ = 1, 6 do
+				local before = fake.Pagle.GetVarietiesCaught(species)
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				local index = cast.items[1].variety.index
+				refreshes = refreshes + (before[index] and 0 or 1)
+
+				assert.is_true(fake.Pagle.GetVarietiesCaught(species)[index])
+				assert.are.equal(refreshes, fake.varietyRefreshes)
+			end
+		end)
 	end)
 
 	describe("the length unit", function()

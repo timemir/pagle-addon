@@ -186,10 +186,26 @@ describe("the page turn (MOTION.md › Turning to another spread)", function()
 		local sizes = run.ns.BOARD_RIBBON
 		run.ns.ToggleBoard()
 		play(run, 0.2)
+		-- Board, Pagle Wagers (HNT-R162), then fixture_dusk's
 		local ribbons = board.frame.anchors.ribbons.ribbons
-		assert.are.same({ sizes.lengthChosen, sizes.length }, { ribbons[1].height, ribbons[2].height })
+		assert.are.same({ sizes.lengthChosen, sizes.length }, { ribbons[1].height, ribbons[3].height })
 
 		board:Open({ mode = "set", set = "fixture_dusk" })
+		assert.are.same({ sizes.lengthChosen, sizes.length }, { ribbons[1].height, ribbons[3].height })
+		play(run, 0.25)
+
+		assert.are.same({ sizes.length, sizes.lengthChosen }, { ribbons[1].height, ribbons[3].height })
+	end)
+
+	it("eases the Pagle Wagers ribbon longer as its spread opens (HNT-R162)", function()
+		local run = start()
+		local board = run.ns.board
+		local sizes = run.ns.BOARD_RIBBON
+		run.ns.ToggleBoard()
+		play(run, 0.2)
+		local ribbons = board.frame.anchors.ribbons.ribbons
+
+		run.ns.OpenWagers()
 		assert.are.same({ sizes.lengthChosen, sizes.length }, { ribbons[1].height, ribbons[2].height })
 		play(run, 0.25)
 
@@ -210,7 +226,7 @@ describe("the page turn (MOTION.md › Turning to another spread)", function()
 		assert.is_true(board:Page(set, "right").clip:IsShown())
 		assert.are.same(
 			{ run.ns.BOARD_RIBBON.length, run.ns.BOARD_RIBBON.lengthChosen },
-			{ board.frame.anchors.ribbons.ribbons[1].height, board.frame.anchors.ribbons.ribbons[2].height }
+			{ board.frame.anchors.ribbons.ribbons[1].height, board.frame.anchors.ribbons.ribbons[3].height }
 		)
 	end)
 end)

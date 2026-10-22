@@ -354,8 +354,9 @@ function ns.TrackerLook(goodID)
 	return ns.TRACKER_FRAMES[goodID] or LOOKS.native
 end
 
--- A dot's size; an extra line's height ("+N more", the empty line).
-local DOT_SIZE, EXTRA_LINE = 8, 20
+-- A dot's size; an extra line's height ("+N more", the empty line); the room between the Pagle Wagers block and the
+-- Hunts block's header under it.
+local DOT_SIZE, EXTRA_LINE, WAGERS_GAP = 8, 20, 6
 
 --- The tracker's widgets, for its draws (and specs that read them).
 ---@class HuntsTrackerView
@@ -367,27 +368,47 @@ local DOT_SIZE, EXTRA_LINE = 8, 20
 ---@field lines HuntsTrackerLineButton[]   -- one per shown Hunt, ns.TRACKER_SHOWN of them
 ---@field more HuntsTrackerMoreButton   -- "+N more", opens the board (HNT-R77)
 ---@field empty FontString       -- "Pin a Hunt to keep it here."
+---@field wagers HuntsTrackerWagersView   -- the Pagle Wagers block above the header (HNT-R175)
 ---@field look HuntsTrackerLook  -- the look it last drew in
 ---@field wearing string?        -- a tracker frame's good ID the dev tour dresses it in (adapter/Tour.lua); nil: the
 --- equipped one
+---@field counting boolean?      -- whether the tracker last told the grouping lines that count down show (HNT-R42)
+
+--- The Pagle Wagers block's widgets (HNT-R175), on the same block above the Hunts block, all hidden while no run is on.
+---@class HuntsTrackerWagersView
+---@field header Button          -- collapses and expands it (HNT-R177)
+---@field title FontString       -- "Pagle Wagers"
+---@field chevron Texture[]
+---@field lines HuntsTrackerLineButton[]   -- one per shown run, ns.TRACKER_RUNS of them, its run key in `runKey`
+---@field more HuntsTrackerMoreButton   -- "+{n} more wagers on the table", opens the Pagle Wagers spread
 
 ---@class HuntsTrackerLineButton: Button
 ---@field shade Texture
 ---@field dot BoardDotView
----@field first FontString       -- the Hunt's name
+---@field first FontString       -- the Hunt's name, or the run's event's
 ---@field label FontString       -- its tracker label, at the right
 ---@field second FontString
 ---@field huntID string?
+---@field runKey string?         -- a run's lines (HNT-R175)
 
 ---@class HuntsTrackerMoreButton: Button
 ---@field text FontString
 
 --- What a tracker block shows (HNT-R76): each Hunt's dot, name, label and second line (none in the shop's sample),
---- "+N more", the empty line, and whether it is collapsed to its header.
+--- "+N more", the empty line, and whether it is collapsed to its header; above them, while a run is on, the Pagle
+--- Wagers block (HNT-R175).
 ---@class HuntsTrackerContent
 ---@field hunts { dot: HuntGroup, name: string, label: string, second: string? }[]
 ---@field more string?
 ---@field empty boolean
+---@field collapsed boolean
+---@field wagers HuntsTrackerWagersContent?   -- nil: no Pagle Wagers block
+
+--- What the Pagle Wagers block shows (HNT-R175, HNT-R177): each run's name, label and second line, under a dot in
+--- the wagers' oxblood, "+{n} more wagers on the table", and whether it is collapsed to its header.
+---@class HuntsTrackerWagersContent
+---@field runs { name: string, label: string, second: string }[]
+---@field more string?
 ---@field collapsed boolean
 
 -- Lets a Shift-drag that starts on `child` move the dock: a mouse-enabled child takes the drag, so it hands it to the
@@ -449,6 +470,18 @@ local function buildLine(block)
 	return line
 end
 
+-- An extra line's button ("+N more"), hidden until drawn.
+---@param block Frame
+---@return HuntsTrackerMoreButton
+local function buildMore(block)
+	local more = CreateFrame("Button", nil, block) --[[@as HuntsTrackerMoreButton]]
+	more.text = more:CreateFontString(nil, "OVERLAY")
+	more.text:SetJustifyH("LEFT")
+	passDrags(more, block)
+	more:Hide()
+	return more
+end
+
 -- The header: "Hunts" with the collapse mark before it.
 ---@param block Frame
 ---@return Button header
@@ -486,14 +519,18 @@ function ns.NewTrackerBlock(parent)
 	for i = 1, ns.TRACKER_SHOWN do
 		lines[i] = buildLine(block)
 	end
-	local more = CreateFrame("Button", nil, block) --[[@as HuntsTrackerMoreButton]]
-	more.text = more:CreateFontString(nil, "OVERLAY")
-	more.text:SetJustifyH("LEFT")
+	local more = buildMore(block)
 	more:SetScript("OnClick", function()
 		ns.OpenBoard()
 	end)
-	passDrags(more, block)
-	more:Hide()
+	local wagers = {}
+	wagers.header, wagers.title, wagers.chevron = buildHeader(block)
+	wagers.header:Hide()
+	wagers.lines = {}
+	for i = 1, ns.TRACKER_RUNS do
+		wagers.lines[i] = buildLine(block)
+	end
+	wagers.more = buildMore(block)
 	local empty = block:CreateFontString(nil, "OVERLAY")
 	empty:SetJustifyH("LEFT")
 	empty:Hide() -- its words come with its look's font, at its draw
@@ -507,6 +544,7 @@ function ns.NewTrackerBlock(parent)
 		lines = lines,
 		more = more,
 		empty = empty,
+		wagers = wagers,
 		look = LOOKS.native,
 	}
 end
@@ -529,47 +567,59 @@ local function drawChevron(chevron, header, x, y, color, collapsed)
 	end
 end
 
---- Draws `content` on a tracker block in `look` (HNT-R76, HNT-R79): the paper, the header with its mark, each Hunt's
---- dot, name and label with its second line, "+N more" or the empty line; sizes the block to what shows.
----@param view HuntsTrackerView
+-- Draws a header `top` down the block in `look`: `text` (in small caps on paper) after the collapse mark.
+---@param header Button
+---@param title FontString
+---@param chevron Texture[]
 ---@param look HuntsTrackerLook
----@param content HuntsTrackerContent
-function ns.DrawTrackerBlock(view, look, content)
-	view.look = look
-	local block = view.frame
+---@param text string
+---@param top number
+---@param collapsed boolean
+local function drawHeader(header, title, chevron, look, text, top, collapsed)
+	header:ClearAllPoints()
+	header:SetPoint("TOPLEFT", 0, -top)
+	header:SetPoint("TOPRIGHT", 0, -top)
+	header:SetHeight(look.first)
+	setFont(title, look.header)
+	title:SetText(look.caps and ns.BoardSmallCaps(text) or text)
+	title:ClearAllPoints()
+	title:SetPoint("TOPLEFT", header, "TOPLEFT", look.x + 16, -look.titleY)
+	drawChevron(chevron, header, look.x, look.chevronY, look.chevron, collapsed)
+end
+
+-- Draws each of `entries` (a Hunt's or a run's two lines) on `lines` from `y` down, under a dot of its group
+-- (`entry.dot`, else `dot`), and hides the lines past them; returns the y under the last.
+---@param lines HuntsTrackerLineButton[]
+---@param entries { dot: (HuntGroup|"wagers")?, name: string, label: string, second: string? }[]
+---@param look HuntsTrackerLook
+---@param y number
+---@param dot (HuntGroup|"wagers")?
+---@return number
+local function drawLines(lines, entries, look, y, dot)
 	local x, right = look.x, look.right
-	-- the header
-	view.header:SetHeight(look.first)
-	setFont(view.title, look.header)
-	view.title:SetText(look.caps and ns.BoardSmallCaps(ns.L.TITLE) or ns.L.TITLE)
-	view.title:ClearAllPoints()
-	view.title:SetPoint("TOPLEFT", view.header, "TOPLEFT", x + 16, -look.titleY)
-	drawChevron(view.chevron, view.header, x, look.chevronY, look.chevron, content.collapsed)
-	-- each Hunt
-	local y = look.first
-	for i, line in ipairs(view.lines) do
-		local hunt = content.hunts[i]
-		line:SetShown(hunt ~= nil)
-		if hunt then
+	for i, line in ipairs(lines) do
+		local entry = entries[i]
+		line:SetShown(entry ~= nil)
+		if entry then
 			line:ClearAllPoints()
 			line:SetPoint("TOPLEFT", 0, -y)
 			line:SetSize(look.width, look.step)
 			line.shade:SetShown(look.shade)
-			line.dot:SetGroup(hunt.dot, look.paper)
+			line.dot:SetGroup(entry.dot or dot --[[@as HuntGroup|"wagers"]], look.paper)
 			line.dot:ClearAllPoints()
 			line.dot:SetPoint("TOPLEFT", x, -8)
 			setFont(line.label, look.label)
-			line.label:SetText(hunt.label)
+			line.label:SetText(entry.label)
 			line.label:ClearAllPoints()
 			line.label:SetPoint("TOPRIGHT", line, "TOPLEFT", right, -4)
 			setFont(line.first, look.name)
-			line.first:SetText(hunt.name)
+			line.first:SetText(entry.name)
 			line.first:ClearAllPoints()
 			line.first:SetPoint("TOPLEFT", x + 14, -3)
 			line.first:SetWidth(math.max(1, right - x - 14 - line.label:GetStringWidth() - 6))
 			setFont(line.second, look.sub)
-			line.second:SetText(hunt.second or "")
-			line.second:SetShown(hunt.second ~= nil)
+			line.second:SetText(entry.second or "")
+			line.second:SetShown(entry.second ~= nil)
 			line.second:ClearAllPoints()
 			line.second:SetPoint("TOPLEFT", x + 14, -look.second)
 			-- a long target line shrinks a little, then is cut short, within the block
@@ -578,26 +628,73 @@ function ns.DrawTrackerBlock(view, look, content)
 			y = y + look.step
 		end
 	end
-	view.more:SetShown(content.more ~= nil)
-	if content.more then
-		setFont(view.more.text, look.label)
-		view.more.text:SetText(content.more)
-		view.more.text:ClearAllPoints()
-		view.more.text:SetPoint("LEFT", x + 14, 0)
-		view.more:ClearAllPoints()
-		view.more:SetPoint("TOPLEFT", 0, -y)
-		view.more:SetSize(look.width, EXTRA_LINE)
-		y = y + EXTRA_LINE
+	return y
+end
+
+-- Draws an extra line's `text` ("+N more") at `y`, or hides it for nil; returns the y under it.
+---@param more HuntsTrackerMoreButton
+---@param look HuntsTrackerLook
+---@param text string?
+---@param y number
+---@return number
+local function drawMore(more, look, text, y)
+	more:SetShown(text ~= nil)
+	if not text then
+		return y
 	end
+	setFont(more.text, look.label)
+	more.text:SetText(text)
+	more.text:ClearAllPoints()
+	more.text:SetPoint("LEFT", look.x + 14, 0)
+	more:ClearAllPoints()
+	more:SetPoint("TOPLEFT", 0, -y)
+	more:SetSize(look.width, EXTRA_LINE)
+	return y + EXTRA_LINE
+end
+
+-- Draws the Pagle Wagers block at the block's top (HNT-R175, HNT-R177), or hides it for `content` nil; returns how
+-- far down the Hunts block's header goes under it.
+---@param view HuntsTrackerWagersView
+---@param look HuntsTrackerLook
+---@param content HuntsTrackerWagersContent?
+---@return number
+local function drawWagers(view, look, content)
+	view.header:SetShown(content ~= nil)
+	if not content then
+		drawLines(view.lines, {}, look, 0)
+		drawMore(view.more, look, nil, 0)
+		return 0
+	end
+	drawHeader(view.header, view.title, view.chevron, look, ns.L.WAGERS_KICKER, 0, content.collapsed)
+	local y = drawLines(view.lines, content.collapsed and {} or content.runs, look, look.first, "wagers")
+	y = drawMore(view.more, look, not content.collapsed and content.more or nil, y)
+	return y + WAGERS_GAP
+end
+
+--- Draws `content` on a tracker block in `look` (HNT-R76, HNT-R79, HNT-R175): the paper under both blocks; the Pagle
+--- Wagers block while a run is on, its header, each run's lines and "+{n} more wagers on the table"; under it the
+--- Hunts header with its mark, each Hunt's dot, name and label with its second line, "+N more" or the empty line.
+--- Sizes the block to what shows, so the dock reflows (CORE-R70).
+---@param view HuntsTrackerView
+---@param look HuntsTrackerLook
+---@param content HuntsTrackerContent
+function ns.DrawTrackerBlock(view, look, content)
+	view.look = look
+	local block = view.frame
+	local top = drawWagers(view.wagers, look, content.wagers)
+	drawHeader(view.header, view.title, view.chevron, look, ns.L.TITLE, top, content.collapsed)
+	local y = drawLines(view.lines, content.hunts, look, top + look.first)
+	y = drawMore(view.more, look, content.more, y)
 	view.empty:SetShown(content.empty)
 	if content.empty then
 		setFont(view.empty, look.sub)
 		view.empty:SetText(ns.L.TRACKER_EMPTY)
 		view.empty:ClearAllPoints()
-		view.empty:SetPoint("TOPLEFT", x + 14, -(y + 2))
+		view.empty:SetPoint("TOPLEFT", look.x + 14, -(y + 2))
 		y = y + EXTRA_LINE
 	end
-	local height = y == look.first and (look.frame and look.first + look.foot or look.first) or y + look.foot
+	local headerOnly = top + look.first
+	local height = y == headerOnly and (look.frame and headerOnly + look.foot or headerOnly) or y + look.foot
 	local slice = look.slice
 	if slice then
 		-- never shorter than its paper's top and foot, so they never overlap
