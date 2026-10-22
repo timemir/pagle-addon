@@ -17,6 +17,8 @@ ns.L = {
 	NOT_FOREVER = "Pagle: this isn't World of Warcraft: Forever, so Pagle stays off.",
 	-- LOG-R67: the Size band names, Tiddler to Monster, in band order (Pagle.SIZE_BANDS), signed off for 1.0 (#264).
 	SIZE_BANDS = { "Tiddler", "Decent", "Hefty", "Whopper", "Monster" },
+	-- VAR-R2: the variety rarity names, Common to Epic, in rarity order (Pagle.VARIETY_RARITIES).
+	VARIETY_RARITIES = { "Common", "Uncommon", "Rare", "Epic" },
 	-- LOG-R69: a length in each length unit, to 0.1 of it; ANN-R22: a size record's margin that rounds to zero.
 	LENGTH = { cm = "%.1f cm", ["in"] = "%.1f in" },
 	LENGTH_MARGIN_UNDER = { cm = "+<0.1 cm", ["in"] = "+<0.1 in" },

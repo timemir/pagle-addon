@@ -37,6 +37,7 @@ logic\LiveConditions.lua
 logic\Modules.lua
 logic\Sessions.lua
 logic\Size.lua
+logic\Variety.lua
 logic\Length.lua
 logic\CatchLog.lua
 logic\Projections.lua

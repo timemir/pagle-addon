@@ -17,6 +17,7 @@ local ns = select(2, ...)
 ---@field noise boolean          -- Noise (CONTEXT.md)
 ---@field removed boolean        -- proven gone from Forever; left out of every list
 ---@field pool boolean           -- in any pool type's catches (LOG-R56)
+---@field varieties? string[]   -- a sized, non-Legend Species item: its Species' ten variety keys in order (VAR-R4)
 
 --- One element of `PagleArea.catches` (keyed, not positional).
 ---@class PagleCatchEntry
