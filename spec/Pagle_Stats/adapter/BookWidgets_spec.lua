@@ -31,8 +31,6 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 	it("draws the books kit's textures from Core's media, and in-client ones only where the kit has none", function()
 		local ns, parent = kit()
 		parent:SetSize(980, 640)
-		ns.NewBookLeather(parent)
-		ns.NewBookCorners(parent)
 		ns.NewBookParchment(parent, "RIGHT")
 		ns.NewBookMark(parent, "fleuron", 16)
 		ns.NewBookMark(parent, "hand", 16)
@@ -51,8 +49,8 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 			end
 		end
 		assert.are.same({}, stray)
-		assert.is_true(#drawn >= 6)
-		assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\Leather", ns.BOOK_FILES.leather)
+		assert.is_true(#drawn >= 4)
+		assert.is_nil(ns.NewBookCorners)
 	end)
 
 	it(
@@ -340,23 +338,27 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		assert.are.equal(#"Smallfish" * 6 + 1, row.name.width)
 	end)
 
-	it("puts the brass corners on the book's four corners, one sprite mirrored", function()
-		local ns, parent = kit()
-		parent:SetSize(980, 640)
+	it(
+		"tones the nameplate silver for a binding that says so, and brass again for one that doesn't (STA-R70)",
+		function()
+			local ns, parent = kit()
+			local plate = ns.NewBookPlate(parent)
 
-		local corners = ns.NewBookCorners(parent)
-
-		local left, right = corners[1].texCoord, corners[2].texCoord
-		assert.are.same({ left[2], left[1] }, { right[1], right[2] }) -- mirrored across
-		assert.are.same(
-			{ corners[1].texCoord[4], corners[1].texCoord[3] },
-			{ corners[3].texCoord[3], corners[3].texCoord[4] }
-		)
-		assert.are.same(
-			{ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" },
-			{ corners[1].points[1][1], corners[2].points[1][1], corners[3].points[1][1], corners[4].points[1][1] }
-		)
-	end)
+			plate:SetSilver(true) -- before its words: kept until the slices are made
+			plate:SetPlate("5 Casts")
+			local slices = { plate.brass.left, plate.brass.middle, plate.brass.right }
+			for _, slice in ipairs(slices) do
+				assert.is_true(slice.desaturated)
+				assert.are.same({ 1.1, 1.1, 1.15 }, slice.vertexColor)
+			end
+			plate:SetSilver(false)
+			plate:SetPlate("6 Casts") -- a redraw keeps the tone
+			for _, slice in ipairs(slices) do
+				assert.is_false(slice.desaturated)
+				assert.are.same({ 1, 1, 1 }, slice.vertexColor)
+			end
+		end
+	)
 
 	it(
 		"draws a figure line with a leader to its value, reddening under the mouse only when it opens something",

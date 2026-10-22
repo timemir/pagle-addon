@@ -1,6 +1,7 @@
 -- Core's own goods as Core runs them, through the real TOC (wallet-and-shop.md › Goods, SHOP-R25; announcements.md
--- › Sounds, ANN-R72; content-data.md › Lore, DATA-R101): the toast style, sound set and bookplate crest slots Core
--- registers at login, their goods' names from lore, and the previews they draw on the Curio Shop's stage.
+-- › Sounds, ANN-R72; content-data.md › Lore, DATA-R101; ADR 0015): the toast style, sound set, bookplate crest and
+-- book binding slots Core registers at login, their goods' names from lore, and the previews they draw on the Curio
+-- Shop's stage.
 
 -- The generator's Core Lore.lua for a few good keys (DATA-R104), in its shape: plain assignments to ns.L.
 local FIXTURE = "spec/Pagle/fixtures/Lore.lua"
@@ -31,8 +32,9 @@ describe("Core's slots and goods", function()
 	end)
 
 	it(
-		"register the three slots first, in the Curio Shop's categories, with every good's tier in SHOP-R25's order, the"
-			.. " crest slot holding Plain then the fish crests, earned, by Species ID (SHOP-R22, SHOP-R25, VAR-R12)",
+		"register the four slots first, in the Curio Shop's categories, with every good's tier in SHOP-R25's order, the"
+			.. " crest slot holding Plain then the fish crests, earned, by Species ID, and the binding slot Field Leather"
+			.. " then every binding for sale by tier (SHOP-R22, SHOP-R25, VAR-R12, ADR 0015)",
 		function()
 			local loaded = loadCore()
 			loaded.client.fire("PLAYER_LOGIN")
@@ -54,6 +56,12 @@ describe("Core's slots and goods", function()
 			for _, speciesID in ipairs(FISH_CREST_SPECIES) do
 				crests[#crests + 1] = "core.crest.fish." .. speciesID .. " earned fish"
 			end
+			local bindings = {}
+			for i, binding in ipairs(loaded.ns.CoreBindings()) do
+				bindings[i] = binding.id .. (binding.default and " default" or " tier " .. binding.tier)
+			end
+			assert.are.same({ "core.binding.field default", "core.binding.birch tier 1" }, { bindings[1], bindings[2] })
+			assert.are.same({ 34, "core.binding.trophycase tier 5" }, { #bindings, bindings[34] })
 
 			assert.are.same({
 				{
@@ -108,18 +116,21 @@ describe("Core's slots and goods", function()
 					"Core",
 					crests,
 				},
+				{ "core.binding", "Book binding", "Books", "Core", bindings },
 			}, slots)
 			assert.are.same({ false, false }, {
 				Pagle.IsOwned("core.toaststyle.ripple"),
 				Pagle.IsOwned("core.soundset.gilded"),
 			})
-			-- All three are open to other Modules' earned goods: the earned toast styles and sound sets, and the Ledger's
-			-- zone crests (SHOP-R23, SHOP-R25).
+			assert.are.equal("core.binding.field", Pagle.GetEquipped("core.binding"))
+			assert.is_false(Pagle.IsOwned("core.binding.birch"))
+			-- All four are open to other Modules' earned goods: the earned toast styles and sound sets, the Ledger's
+			-- zone crests, and the Ledger's and Hunts' earned bindings (SHOP-R23, SHOP-R25).
 			local open = {}
 			for _, slot in ipairs(goods:Slots()) do
 				open[#open + 1] = slot.openToEarned == true
 			end
-			assert.are.same({ true, true, true }, open)
+			assert.are.same({ true, true, true, true }, open)
 		end
 	)
 
@@ -178,8 +189,8 @@ describe("Core's slots and goods", function()
 	)
 
 	it(
-		"each have an icon, the Curio Shop's swatch: Plain's and the fish crests' are Core's own textures, the rest"
-			.. " in-client (SHOP-R25, VAR-R12, wallet-and-shop.md › UI)",
+		"each have an icon, the Curio Shop's swatch: Plain's and the fish crests' are Core's own textures, a shop"
+			.. " expansion cover's its material, the rest in-client (SHOP-R25, VAR-R12, wallet-and-shop.md › UI)",
 		function()
 			local loaded = loadCore()
 			loaded.client.fire("PLAYER_LOGIN")
@@ -193,7 +204,10 @@ describe("Core's slots and goods", function()
 					local icon = Pagle.GetGood(good.id).icon
 					local key = good.id:match("^core%.crest%.(%a+)$")
 					local fish = good.id:match("^core%.crest%.fish%.(%d+)$")
+					local cover = good.id:match("^core%.binding%.(%a+)$")
+					cover = cover and loaded.ns.BindingLook(good.id).swatchAtlas == "Covers2" and cover
 					local expected = key and "^Interface\\AddOns\\Pagle\\media\\crests\\" .. key .. "$"
+						or cover and "^Interface\\AddOns\\Pagle\\media\\books\\bindings\\" .. cover .. "$"
 						or fish and "^Interface\\AddOns\\Pagle\\media\\crests\\fish\\" .. fish .. "$"
 						or "^Interface\\Icons\\%S+$"
 					if type(icon) ~= "string" or not icon:find(expected) then
@@ -202,7 +216,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 30 + #FISH_CREST_SPECIES, {} }, { count, without })
+			assert.are.same({ 30 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
 		end
 	)
 end)
@@ -320,6 +334,18 @@ describe("Core's goods' names", function()
 		assert.are.equal("core.toaststyle.lanternglow", Pagle.GetGood("core.toaststyle.lanternglow").name)
 		assert.are.equal("Leaping Trout", loaded.env.PagleDB.global.goods["core.toaststyle.ripple"].name) -- SHOP-R26
 	end)
+
+	it(
+		"read a binding's from Core's lore kind binding, binding.<key>.name and .description (SHOP-R25, DATA-R102)",
+		function()
+			local loaded = loadCoreWithLore()
+			local Pagle = loaded.env.Pagle
+
+			local birch = Pagle.GetGood("core.binding.birch")
+			assert.are.same({ "Birch Bark", "Pale bark with dark flecks." }, { birch.name, birch.description })
+			assert.are.equal("core.binding.buckram", Pagle.GetGood("core.binding.buckram").name) -- no key in the fixture
+		end
+	)
 end)
 
 -- Every widget drawn on `widget`, depth first, shown ones only: what the player sees on it.
@@ -487,6 +513,81 @@ describe("Core's goods' previews", function()
 				{ true, false },
 				{ withText(stage, "Show on screen") ~= nil, withText(stage, "» Toast") ~= nil }
 			)
+		end
+	)
+
+	it(
+		"draw a binding's closed book from the kits' swatch, its drawn book 104 wide 16 down the stage, a Module's earned one with the slot's preview (SHOP-R25, ADR 0015)",
+		function()
+			local loaded, stage = stageOf()
+			local goods, ns = loaded.ns.goods, loaded.ns
+			local slot = goods:Slots()[4]
+			assert.are.equal("core.binding", slot.id)
+
+			for _, case in ipairs({
+				{ "core.binding.field", "Bindings", "binding-field-leather" },
+				{ "core.binding.driftwood", "Bindings2", "swatch-driftwood" },
+				{ "core.binding.lacquer", "Covers2", "swatch-lacquer" },
+			}) do
+				goods:Good(case[1]).preview(stage)
+
+				local atlas, sprite = ns.ATLASES[case[2]], ns.ATLASES[case[2]].sprites[case[3]]
+				assert.are.same({ atlas.file }, texturesOn(stage), case[1])
+				local book
+				for _, widget in ipairs(shownOn(stage)) do
+					if widget.texture == atlas.file then
+						book = widget
+					end
+				end
+				assert.are.same({ sprite.x / atlas.width, (sprite.x + sprite.w) / atlas.width }, {
+					book.texCoord[1],
+					book.texCoord[2],
+				}, case[1])
+				assert.are.equal(104, book.box[3], case[1])
+				assert.is_table(withText(stage, "Every book of yours wears it."))
+			end
+			-- the Ledger's earned one, and Hunts', drawn by Core from its own art
+			slot.preview(stage, { id = "ledger.binding.keeper", icon = "Interface\\Icons\\INV_Misc_Book_09" })
+			assert.are.same({ ns.ATLASES.Bindings2.file }, texturesOn(stage))
+			slot.preview(stage, { id = "hunts.binding.wagersilk", icon = "x" })
+			assert.are.same({ ns.ATLASES.Covers2.file }, texturesOn(stage))
+		end
+	)
+
+	it(
+		"draw a binding no kit drew closed as a live closed book, 104 x 134, the renderer pinned to it, one per stage, hidden for a swatch (SHOP-R25, BIND-R1, BIND-R2)",
+		function()
+			local loaded, stage = stageOf()
+			local goods, ns, Pagle = loaded.ns.goods, loaded.ns, loaded.env.Pagle
+			local made, newBinding = {}, Pagle.NewBookBinding
+			Pagle.NewBookBinding = function(frame, options)
+				local binding = newBinding(frame, options)
+				made[#made + 1] = { frame = frame, options = options, binding = binding }
+				return binding
+			end
+
+			goods:Good("core.binding.oilcloth").preview(stage)
+
+			assert.are.equal(1, #made)
+			local live = made[1]
+			assert.are.equal("core.binding.oilcloth", live.options.pinned)
+			assert.is_true(live.options.cornerSize < 44 and live.options.giltCornerSize < 40)
+			assert.is_true(live.frame:IsShown())
+			assert.are.same({ 104, 134 }, { live.frame:GetSize() })
+			assert.are.same(ns.BindingLook("core.binding.oilcloth"), live.binding:Look())
+			assert.is_table(withText(stage, "Every book of yours wears it."))
+
+			goods:Good("core.binding.tooled").preview(stage) -- the same live book, pinned to the next one
+
+			assert.are.equal(1, #made)
+			assert.are.equal("core.binding.tooled", live.binding.pinned)
+			assert.are.same(ns.BindingLook("core.binding.tooled"), live.binding:Look())
+
+			goods:Good("core.binding.birch").preview(stage) -- a swatch again after it
+
+			assert.is_false(live.frame:IsShown())
+			assert.are.same({ ns.ATLASES.Bindings.file }, texturesOn(stage))
+			assert.are.equal(1, #made)
 		end
 	)
 

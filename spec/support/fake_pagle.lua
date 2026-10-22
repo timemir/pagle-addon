@@ -502,6 +502,55 @@ part(function(fake, Pagle, ns)
 	end)
 end)
 
+-- The book binding (core/book-binding.md), on Core's real logic/BookBinding.lua: Pagle.NewBookBinding wears the
+-- equipped `core.binding` look (fake.ns.BindingLook) or a pinned one, follows AppearanceChanged on the fake's bus,
+-- dips on the motion driver above, and plays the page turn through the loaded Module's client (client.sounds,
+-- "836 SFX"). It draws nothing: each book's `binding.skin` records the look on it (`look`) and the dip's alpha
+-- (`dim`, 1 at rest), and counts as shown while its frame is visible.
+part(function(fake, Pagle, ns)
+	local bindings = ns.NewBookBindings({
+		lookOf = function(goodID)
+			return ns.BindingLook(goodID)
+		end,
+		equipped = function()
+			return Pagle.GetEquipped(ns.BINDING_SLOT)
+		end,
+		skin = function(frame)
+			return {
+				dim = 1,
+				Dress = function(skin, look)
+					skin.look = look
+				end,
+				Dim = function(skin, alpha)
+					skin.dim = alpha
+				end,
+				IsShown = function()
+					return frame:IsVisible()
+				end,
+			}
+		end,
+		motionOn = function()
+			return Pagle.IsAnimationsOn()
+		end,
+		animate = function(owner, animations, onDone)
+			Pagle.Animate(owner, animations, onDone)
+		end,
+		stopMotion = function(owner)
+			Pagle.StopMotion(owner)
+		end,
+		cue = function(owner, seconds, fn)
+			Pagle.Cue(owner, seconds, fn)
+		end,
+		turnSound = function()
+			fake.clientEnv.PlaySound(ns.BINDING_TURN_SOUND, "SFX")
+		end,
+	})
+	Pagle.NewBookBinding = bindings.New
+	Pagle.RegisterCallback("Pagle book binding", "AppearanceChanged", function(_, slot, goodID)
+		bindings.Changed(slot, goodID)
+	end)
+end)
+
 -- Restriction state (CORE-R30), on Core's real Restriction logic. setRestricted works as combat would.
 part(function(fake, Pagle, ns)
 	local restriction = ns.NewRestriction(false, {})

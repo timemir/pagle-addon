@@ -5,34 +5,36 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- Hunts' goods (HNT-R120–R123): its two slots and their goods as data, Night Watch in Core's sound set slot, each
--- good's name and description from lore, when each earned good is owned, and the goods to register made from them.
--- Pure logic, everything passed in (CORE-R7): adapter/Goods.lua registers them, draws each preview and holds the looks
--- the board and the tracker wear.
+-- Hunts' goods (HNT-R120–R123): its slot and its goods as data, its earned bindings in Core's binding slot and Night
+-- Watch in Core's sound set slot, each good's name and description from lore, when each earned good is owned, and the
+-- goods to register made from them. Pure logic, everything passed in (CORE-R7): adapter/Goods.lua registers them, draws
+-- each tracker frame's preview and holds the looks the tracker wears. Core draws the bindings and plays the sound set
+-- (ADR 0015, SHOP-R25).
 
---- The notebook cover slot (HNT-R120): the board's leather (HNT-R70).
-ns.COVER_SLOT = "hunts.notebookcover"
 --- The tracker frame slot (HNT-R120): the Hunts tracker's frame (HNT-R79).
 ns.TRACKER_FRAME_SLOT = "hunts.trackerframe"
 --- Core's sound set slot (SHOP-R25), open to earned goods (SHOP-R23): Night Watch's (HNT-R123).
 ns.CORE_SOUND_SET_SLOT = "core.soundset"
+--- Core's binding slot (SHOP-R25), open to earned goods (SHOP-R23): Hunts' three earned bindings' (HNT-R122). Pagle's
+--- API doesn't name Core's slots, so Hunts names it.
+ns.CORE_BINDING_SLOT = "core.binding"
 
 local ICONS = "Interface\\Icons\\"
 
---- Where the Curio Shop expansion's covers keep their materials (HNT-R123): `media/books/covers/<key>`, each a
---- power-of-two square tiled at its cover's repeat and also its good's icon, Hunts' own media, loaded only when worn.
-ns.COVER_TILES = "Interface\\AddOns\\Pagle_Hunts\\media\\books\\covers\\"
+--- Where Core keeps the bindings' materials (ADR 0015): Core draws Hunts' earned bindings, and each one's material is
+--- also its good's icon (HNT-R123).
+local BINDING_TILES = "Interface\\AddOns\\Pagle\\media\\books\\bindings\\"
 
 --- What earns an earned good (HNT-R122): any set's title, every set's title (HNT-R20), or ns.WAGER_GOODS_RUNS
 --- completed runs (HNT-R148).
 ---@alias HuntsEarnedRule "anySetTitle"|"everySetTitle"|"wagerRuns"
 
 --- One of Hunts' goods, as data: exactly one of `default`, `tier` or `earned` (SHOP-R22, HNT-R122), and its icon, the
---- shop's swatch for it (HNT-R121): an in-client texture, or an expansion cover's material.
+--- shop's swatch for it (HNT-R121): an in-client texture, or an earned binding's material.
 ---@class HuntsGoodData
 ---@field id string
 ---@field default? true
----@field tier? 1|2|3|4|5 -- Tunables: notebook cover and tracker frame tiers
+---@field tier? 1|2|3|4|5 -- Tunables: tracker frame tiers
 ---@field earned? HuntsEarnedRule
 ---@field icon string
 
@@ -40,54 +42,26 @@ ns.COVER_TILES = "Interface\\AddOns\\Pagle_Hunts\\media\\books\\covers\\"
 ---@class HuntsSlotData
 ---@field id string
 ---@field label string -- an ns.L key
----@field category "Hunts"|"Trackers"
+---@field category "Trackers"
 ---@field goods HuntsGoodData[]
 
---- The slots' defaults (HNT-R121, SHOP-R22): the board's own leather, and no tracker frame (the plain native block).
-ns.DEFAULT_COVER = "hunts.notebookcover.leather"
+--- The slot's default (HNT-R121, SHOP-R22): no tracker frame (the plain native block).
 ns.NO_TRACKER_FRAME = "hunts.trackerframe.none"
 
 --- How many completed runs earn Winner's Brocade and Winner's Ribbon (HNT-R122): the completed-run count's (HNT-R148).
 ns.WAGER_GOODS_RUNS = 10
 
--- An expansion cover (HNT-R121, HNT-R123): for sale at `tier`, or earned by `earned`; its icon its material.
+-- An earned binding of Hunts' (HNT-R122, ADR 0015), `hunts.binding.<key>`, earned by `earned`; its icon its material.
 ---@param key string
----@param tier (1|2|3|4|5)?
----@param earned HuntsEarnedRule?
+---@param earned HuntsEarnedRule
 ---@return HuntsGoodData
-local function cover(key, tier, earned)
-	return { id = ns.COVER_SLOT .. "." .. key, tier = tier, earned = earned, icon = ns.COVER_TILES .. key }
+local function binding(key, earned)
+	return { id = "hunts.binding." .. key, earned = earned, icon = BINDING_TILES .. key }
 end
 
---- HNT-R120's slots and HNT-R121's goods, in the order they register.
+--- HNT-R120's slot and HNT-R121's goods, in the order they register.
 ---@type HuntsSlotData[]
 ns.HUNTS_GOODS = {
-	{
-		id = ns.COVER_SLOT,
-		label = "SLOT_NOTEBOOK_COVER",
-		category = "Hunts",
-		goods = {
-			{ id = ns.DEFAULT_COVER, default = true, icon = ICONS .. "INV_Misc_LeatherScrap_05" },
-			{ id = "hunts.notebookcover.oilcloth", tier = 1, icon = ICONS .. "INV_Fabric_Felcloth_Ebon" },
-			{ id = "hunts.notebookcover.tooled", tier = 2, icon = ICONS .. "Trade_LeatherWorking" },
-			{ id = "hunts.notebookcover.verdigris", tier = 3, icon = ICONS .. "INV_Ore_Copper_01" },
-			cover("canvas", 1),
-			cover("kraft", 1),
-			cover("tartan", 1),
-			cover("maplinen", 2),
-			cover("planks", 2),
-			cover("snakeskin", 3),
-			cover("shagreen", 3),
-			cover("lacquer", 3),
-			cover("bone", 3),
-			cover("brasscase", 3),
-			cover("scrimshaw", 4),
-			cover("trophycase", 5),
-			cover("pathfinder", nil, "anySetTitle"),
-			cover("fiveseal", nil, "everySetTitle"),
-			cover("wagersilk", nil, "wagerRuns"),
-		},
-	},
 	{
 		id = ns.TRACKER_FRAME_SLOT,
 		label = "SLOT_TRACKER_FRAME",
@@ -105,10 +79,19 @@ ns.HUNTS_GOODS = {
 	},
 }
 
---- Hunts' goods in Core's slots (HNT-R123, SHOP-R23): Night Watch, earned with every set's title (HNT-R122). Core
---- plays it (ANN-R72) and previews it with its slot's preview; Hunts only says when it is owned.
+--- Hunts' goods in Core's slots (HNT-R122, HNT-R123, SHOP-R23): its three earned bindings, then Night Watch, earned
+--- with every set's title. Core draws the bindings (ADR 0015) and plays the sound set (ANN-R72), and previews each with
+--- its slot's preview; Hunts only says when each is owned.
 ---@type { slot: string, goods: HuntsGoodData[] }[]
 ns.HUNTS_CORE_GOODS = {
+	{
+		slot = ns.CORE_BINDING_SLOT,
+		goods = {
+			binding("pathfinder", "anySetTitle"),
+			binding("fiveseal", "everySetTitle"),
+			binding("wagersilk", "wagerRuns"),
+		},
+	},
 	{
 		slot = ns.CORE_SOUND_SET_SLOT,
 		goods = {

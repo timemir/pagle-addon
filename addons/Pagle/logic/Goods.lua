@@ -7,9 +7,9 @@ local ns = select(2, ...)
 
 --- A slot a Module or Core registers (wallet-and-shop.md › Contracts).
 ---@class PagleSlot
----@field id string              -- "core.toaststyle", "hunts.notebookcover", "stats.trackerframe"
+---@field id string              -- "core.toaststyle", "core.binding", "stats.trackerframe"
 ---@field label string           -- "Toast style"
----@field category "Announcements"|"Crests"|"Fish Journal"|"Hunts"|"Trackers" -- ns.SLOT_CATEGORY_ORDER
+---@field category "Announcements"|"Crests"|"Books"|"Trackers" -- ns.SLOT_CATEGORY_ORDER
 ---@field openToEarned? boolean  -- Core's slots only: any Module may add earned goods to it (SHOP-R23)
 ---@field hideEarned? boolean    -- Core's slots only: the shop lists none of its earned goods, which Look and Feel
 --- equips (SHOP-R25, SHOP-R27)
@@ -177,7 +177,7 @@ end
 ns.CORE_OWNER = "Core"
 
 --- The slot categories (wallet-and-shop.md › Contracts), in the order the shop's chips and Look and Feel list them.
-ns.SLOT_CATEGORY_ORDER = { "Announcements", "Crests", "Fish Journal", "Hunts", "Trackers" }
+ns.SLOT_CATEGORY_ORDER = { "Announcements", "Crests", "Books", "Trackers" }
 
 --- Each slot category, as a set.
 ---@type table<string, true>
@@ -188,7 +188,7 @@ end
 
 --- One category's slots, in the order they were handed in.
 ---@class PagleSlotSection
----@field category string        -- the slot category, as registered ("Fish Journal")
+---@field category string        -- the slot category, as registered ("Books")
 ---@field slots PagleRegisteredSlot[]
 
 --- `slots` grouped by category, in ns.SLOT_CATEGORY_ORDER, each category's in the order given; a category with none

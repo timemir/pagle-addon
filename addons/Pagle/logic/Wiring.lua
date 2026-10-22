@@ -651,8 +651,9 @@ function ns.WireGoods(host)
 end
 
 --- Publishes the goods registry's reads and its one write on `Pagle` (wallet-and-shop.md › Contracts):
---- `Pagle.IsOwned`, `GetEquipped`, `SetEquipped` and `GetGood`, over ns.goods (ns.WireGoods). `wrap` turns what
---- GetGood returns into what Modules get: Core's adapter passes none, FakePagle its read-only proxy (CORE-R18).
+--- `Pagle.IsOwned`, `GetEquipped`, `SetEquipped`, `GetGood` and `GetSlotGoods`, over ns.goods (ns.WireGoods), and
+--- `Pagle.GetBindingLook`. `wrap` turns what GetGood returns into what Modules get: Core's adapter passes none,
+--- FakePagle its read-only proxy (CORE-R18).
 ---@param Pagle table
 ---@param wrap (fun(value: any): any)?
 function ns.PublishGoods(Pagle, wrap)
@@ -694,6 +695,26 @@ function ns.PublishGoods(Pagle, wrap)
 	---@return PagleGoodInfo?
 	function api.GetGood(goodID)
 		return wrap(ns.goods:GetGood(goodID))
+	end
+
+	--- The IDs of a slot's goods as the shop lists them (SHOP-R21): in registration order, another Module's in an open
+	--- Core slot only while that Module is On (SHOP-R35). Empty for a slot not registered. A fresh list each call.
+	---@param slot string
+	---@return string[]
+	function api.GetSlotGoods(slot)
+		local ids = {}
+		for i, good in ipairs(ns.goods:GoodsOf(slot)) do
+			ids[i] = good.id
+		end
+		return ids
+	end
+
+	--- The look of a binding (ADR 0015, logic/Bindings.lua), which every book wears: Field Leather's for an ID that
+	--- isn't a binding's. A fresh table each call.
+	---@param goodID string?
+	---@return PagleBindingLook
+	function api.GetBindingLook(goodID)
+		return ns.BindingLook(goodID)
 	end
 end
 

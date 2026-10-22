@@ -60,7 +60,7 @@ CORE_GOODS = [
     "core.soundset.gizmo",
     "core.soundset.wardrums",
 ]
-# LED-R75: the title IDs, in its table's order; LED-R110: the bindings without their ledger.binding. prefix.
+# LED-R75: the title IDs, in its table's order.
 LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]
 TITLES = [
     *LEVEL_TITLES,
@@ -132,37 +132,56 @@ ZONE_CRESTS = [
     "winterspring",
     "zephras",
 ]
-BINDINGS = [
+# LED-R110: the Ledger's earned bindings, in Core's binding slot, by good ID (ADR 0015).
+LEDGER_BINDINGS = [
+    "ledger.binding.level10",
+    "ledger.binding.level20",
+    "ledger.binding.level30",
+    "ledger.binding.level40",
+    "ledger.binding.level50",
+    "ledger.binding.level60",
+    "ledger.binding.legend",
+    "ledger.binding.monster",
+    "ledger.binding.abyssal",
+    "ledger.binding.keeper",
+    "ledger.binding.iridescent",
+]
+# SHOP-R25: Core's bindings, Field Leather and every binding for sale in the shop's order, by key.
+CORE_BINDINGS = [
     "field",
-    "level10",
-    "level20",
-    "level30",
-    "level40",
-    "level50",
-    "level60",
     "birch",
-    "buckram",
-    "sharkskin",
     "chartlinen",
     "sailcloth",
     "oilskin",
+    "oilcloth",
+    "canvas",
+    "kraft",
+    "tartan",
+    "buckram",
     "moss",
     "driftwood",
     "eelskin",
     "kodo",
     "frosthide",
     "netcork",
+    "tooled",
+    "maplinen",
+    "planks",
+    "sharkskin",
     "copper",
     "velvet",
     "turtle",
     "morocco",
+    "verdigris",
+    "snakeskin",
+    "shagreen",
+    "lacquer",
+    "bone",
+    "brasscase",
     "coral",
+    "scrimshaw",
     "pearl",
-    "legend",
-    "monster",
-    "abyssal",
-    "keeper",
-    "iridescent",
+    "trophycase",
 ]
 
 
@@ -239,7 +258,7 @@ def test_the_manifest_lists_core_s_goods_then_its_fish_crests() -> None:
     # placeholder, then the fish crests (VAR-R12), each allowing {fish} (DATA-R108); [core.variety] is the varieties'
     # (test_repo_varieties.py).
     manifest = _layers().lore.manifest["core"]
-    assert sorted(manifest) == ["good", "variety"]
+    assert sorted(manifest) == ["binding", "good", "variety"]
     assert manifest["good"].fields == ("name", "description")
     ids = list(manifest["good"].ids)
     assert ids[: len(CORE_GOODS)] == CORE_GOODS
@@ -279,7 +298,7 @@ def test_the_ledger_s_lore_passes_its_check() -> None:
 def test_the_manifest_lists_the_ledger_s_four_shared_lines() -> None:
     # LED-R160, LED-R162 (its M3 part): [ledger.line] with fields ["text"] and the four line IDs.
     manifest = _layers().lore.manifest["ledger"]
-    assert sorted(manifest) == ["binding", "crest", "ledgergood", "line", "title"]
+    assert sorted(manifest) == ["crest", "ledgergood", "line", "title"]
     assert manifest["line"].fields == ("text",)
     assert sorted(manifest["line"].ids) == ["uncaughtjunk", "uncaughtlegend", "uncaughttreasure", "unchartedwaters"]
     assert all(not allowed for allowed in manifest["line"].ids.values())  # no placeholder (DATA-R108)
@@ -331,30 +350,42 @@ def test_the_generator_fails_on_a_deleted_good_name_and_names_the_key(
     )
 
 
-def test_the_manifest_lists_the_ledger_s_titles_and_bindings() -> None:
+def test_the_manifest_lists_the_ledger_s_titles() -> None:
     # LED-R160, LED-R162 (its M4 part): [ledger.title] with a text for each of LED-R75's title IDs, only zonemaster
-    # allowing {zone} (DATA-R108), and [ledger.binding] with a name and a description for each of LED-R110's goods.
+    # allowing {zone} (DATA-R108). Its earned bindings are ledgergood (LED-R110, ADR 0015).
     manifest = _layers().lore.manifest["ledger"]
     assert manifest["title"].fields == ("text",)
     assert list(manifest["title"].ids) == TITLES
     assert {id_: allowed for id_, allowed in manifest["title"].ids.items() if allowed} == {"zonemaster": {"zone"}}
+
+
+def test_the_manifest_lists_core_s_bindings_in_the_shop_s_order() -> None:
+    # SHOP-R25, DATA-R102, DATA-R106 (ADR 0015): [core.binding] with a name and a description for Field Leather and
+    # every binding for sale, none with a placeholder, and the lore has both (read_layers raises on any problem).
+    manifest = _layers().lore.manifest["core"]
     assert manifest["binding"].fields == ("name", "description")
-    assert list(manifest["binding"].ids) == BINDINGS
+    assert list(manifest["binding"].ids) == CORE_BINDINGS
     assert all(not allowed for allowed in manifest["binding"].ids.values())
+    core = _layers().lore.files["core"]
+    for binding in CORE_BINDINGS:
+        assert core[f"binding.{binding}.name"].value.strip()
+        assert core[f"binding.{binding}.description"].value.strip()
+    assert core["binding.field.name"].value == "Field Leather"
+    assert core["binding.oilcloth.name"].value == "Oilcloth"
 
 
 def _ledger_text(key: str) -> str:
     return _layers().lore.files["ledger"][key].value
 
 
-def test_the_ledger_s_lore_has_every_title_and_binding() -> None:
+def test_the_ledger_s_lore_has_every_title_and_earned_binding() -> None:
     # DATA-R107 passes (read_layers raises on any problem); LED-R160: a text for each of the 16 titles, a name and a
-    # description for each of the 10 bindings.
+    # description for each of its 11 earned bindings (ledgergood, LED-R110).
     for title in TITLES:
         assert _ledger_text(f"title.{title}.text").strip()
-    for binding in BINDINGS:
-        assert _ledger_text(f"binding.{binding}.name").strip()
-        assert _ledger_text(f"binding.{binding}.description").strip()
+    for binding in LEDGER_BINDINGS:
+        assert _ledger_text(f"ledgergood.{binding}.name").strip()
+        assert _ledger_text(f"ledgergood.{binding}.description").strip()
 
 
 def test_the_manifest_lists_the_ledger_s_fifty_three_zone_crests() -> None:
@@ -414,31 +445,16 @@ def test_no_title_is_master_angler_and_no_level_title_is_angler(title: str) -> N
         assert not re.search(r"\bangler\b", text, re.IGNORECASE), text
 
 
-# HNT-R121: Hunts' seven goods, in its table's order: four notebook covers, then three tracker frames.
+# HNT-R121–R123: Hunts' goods in the manifest's order: its first three tracker frames, Night Watch, its three earned
+# bindings (Core's slot, ADR 0015), then the expansion's tracker frames.
 HUNT_GOODS = [
-    "hunts.notebookcover.leather",
-    "hunts.notebookcover.oilcloth",
-    "hunts.notebookcover.tooled",
-    "hunts.notebookcover.verdigris",
     "hunts.trackerframe.none",
     "hunts.trackerframe.inkwash",
     "hunts.trackerframe.waxseal",
     "hunts.soundset.nightwatch",
-    "hunts.notebookcover.canvas",
-    "hunts.notebookcover.kraft",
-    "hunts.notebookcover.tartan",
-    "hunts.notebookcover.maplinen",
-    "hunts.notebookcover.planks",
-    "hunts.notebookcover.snakeskin",
-    "hunts.notebookcover.shagreen",
-    "hunts.notebookcover.lacquer",
-    "hunts.notebookcover.bone",
-    "hunts.notebookcover.brasscase",
-    "hunts.notebookcover.scrimshaw",
-    "hunts.notebookcover.trophycase",
-    "hunts.notebookcover.pathfinder",
-    "hunts.notebookcover.fiveseal",
-    "hunts.notebookcover.wagersilk",
+    "hunts.binding.pathfinder",
+    "hunts.binding.fiveseal",
+    "hunts.binding.wagersilk",
     "hunts.trackerframe.slate",
     "hunts.trackerframe.mapscrap",
     "hunts.trackerframe.bounty",
@@ -460,7 +476,7 @@ def _hunts_text() -> dict[str, str]:
 
 
 def test_the_manifest_lists_hunts_seven_goods() -> None:
-    # HNT-R130, DATA-R106: [hunts.huntgood] with fields name and description and HNT-R121's seven good IDs, none with
+    # HNT-R130, DATA-R106: [hunts.huntgood] with fields name and description and Hunts' good IDs (HUNT_GOODS), none with
     # a placeholder; huntgood is Hunts' own kind, as Core owns good (DATA-R102).
     manifest = _layers().lore.manifest["hunts"]
     assert sorted(manifest) == ["huntgood", "ladder"]
@@ -1040,6 +1056,7 @@ def test_the_generator_fails_on_a_29_code_point_fly_name_and_names_the_key(
 
 
 LEDGER_GOODS = [
+    *LEDGER_BINDINGS,
     "ledger.toaststyle.legend",
     "ledger.toaststyle.prestige",
     "ledger.soundset.concertina",
@@ -1048,8 +1065,8 @@ LEDGER_GOODS = [
 
 
 def test_the_manifest_lists_the_ledger_s_earned_goods_in_core_s_slots() -> None:
-    # DATA-R106, LED-R117: [ledger.ledgergood] with a name and a description for each of the Ledger's earned toast
-    # styles and sound sets, and the lore has both (DATA-R107 passes: read_layers raises on any problem).
+    # DATA-R106, LED-R110, LED-R117: [ledger.ledgergood] with a name and a description for each of the Ledger's
+    # earned bindings, toast styles and sound sets, and the lore has both (DATA-R107 passes: read_layers raises on any problem).
     manifest = _layers().lore.manifest["ledger"]
     assert manifest["ledgergood"].fields == ("name", "description")
     assert list(manifest["ledgergood"].ids) == LEDGER_GOODS

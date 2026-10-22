@@ -31,7 +31,7 @@ end
 -- Core's fish crests (VAR-R12) among them, are neither listed nor counted (SHOP-R25).
 local CREST_LINES = { "Crests (1 of 1)", "  core.crest.plain In use" }
 
--- The Curio Shop expansion's toast styles and sound sets (SHOP-R25), each slot's in its order, with their tiers.
+-- The Curio Shop expansion's toast styles and sound sets, and the bindings for sale (SHOP-R25), each slot's in its order, with their tiers.
 local EXPANSION = {
 	toaststyle = {
 		{ "ship", 1 },
@@ -61,12 +61,48 @@ local EXPANSION = {
 		{ "gizmo", 3 },
 		{ "wardrums", 4 },
 	},
+	-- Core's book binding's bindings for sale (ADR 0015), in the shop's order.
+	binding = {
+		{ "birch", 1 },
+		{ "chartlinen", 1 },
+		{ "sailcloth", 1 },
+		{ "oilskin", 1 },
+		{ "oilcloth", 1 },
+		{ "canvas", 1 },
+		{ "kraft", 1 },
+		{ "tartan", 1 },
+		{ "buckram", 2 },
+		{ "moss", 2 },
+		{ "driftwood", 2 },
+		{ "eelskin", 2 },
+		{ "kodo", 2 },
+		{ "frosthide", 2 },
+		{ "netcork", 2 },
+		{ "tooled", 2 },
+		{ "maplinen", 2 },
+		{ "planks", 2 },
+		{ "sharkskin", 3 },
+		{ "copper", 3 },
+		{ "velvet", 3 },
+		{ "turtle", 3 },
+		{ "morocco", 3 },
+		{ "verdigris", 3 },
+		{ "snakeskin", 3 },
+		{ "shagreen", 3 },
+		{ "lacquer", 3 },
+		{ "bone", 3 },
+		{ "brasscase", 3 },
+		{ "coral", 4 },
+		{ "scrimshaw", 4 },
+		{ "pearl", 5 },
+		{ "trophycase", 5 },
+	},
 }
 -- Each tier's price (SHOP-R22), as the list prints it.
 local PRICES = { "150", "400", "900", "2,000", "5,000" }
 local PRICE_VALUES = { 150, 400, 900, 2000, 5000 }
 
--- The expansion's goods of Core's slot `slot` ("toaststyle" or "soundset") as the list outlines them, none bought,
+-- The expansion's goods of Core's slot `slot` ("toaststyle", "soundset" or "binding") as the list outlines them, none bought,
 -- with a balance of `balance`: each priced, in red where the balance falls short.
 ---@param slot string
 ---@param balance integer
@@ -99,26 +135,36 @@ local function expansionAffordable(slot, balance)
 	return ids
 end
 
+-- Core's book binding (ADR 0015) as the list outlines it with Field Leather in use and a balance of `balance`.
+---@param balance integer
+---@return string[]
+local function bindingLines(balance)
+	return joined({ "Book binding (1 of 34)", "  core.binding.field In use" }, expansionLines("binding", balance))
+end
+
 -- Core's own slots (SHOP-R25) as the list outlines them while nothing of Core's is bought and the balance is under
 -- 150: each default in use, everything else priced in red.
 local CORE_UNBOUGHT = joined(
 	joined(
 		joined(
-			joined({
-				"Toast style (1 of 15)",
-				"  core.toaststyle.page In use",
-				"  core.toaststyle.ripple 150" .. " [red]",
-				"  core.toaststyle.lanternglow 400" .. " [red]",
-			}, expansionLines("toaststyle", 0)),
-			{
-				"Sound set (1 of 14)",
-				"  core.soundset.driftwood In use",
-				"  core.soundset.gilded 400" .. " [red]",
-			}
+			joined(
+				joined({
+					"Toast style (1 of 15)",
+					"  core.toaststyle.page In use",
+					"  core.toaststyle.ripple 150" .. " [red]",
+					"  core.toaststyle.lanternglow 400" .. " [red]",
+				}, expansionLines("toaststyle", 0)),
+				{
+					"Sound set (1 of 14)",
+					"  core.soundset.driftwood In use",
+					"  core.soundset.gilded 400" .. " [red]",
+				}
+			),
+			expansionLines("soundset", 0)
 		),
-		expansionLines("soundset", 0)
+		CREST_LINES
 	),
-	CREST_LINES
+	bindingLines(0)
 )
 
 -- CORE_UNBOUGHT, then `lines`.
@@ -136,7 +182,7 @@ end
 -- Hunts' notebook covers on its handle: Plain (default), Velvet (tier 2, icon 134939, a description) and Gold (earned
 -- while `earned.value`, "Every Hunt done").
 local function huntsCovers(hunts, earned)
-	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
 	hunts:RegisterGood({ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true })
 	hunts:RegisterGood({
 		id = "hunts.cover.velvet",
@@ -159,7 +205,7 @@ end
 
 -- The Ledger's binding slot: Oak (default) and Lapis (tier 3).
 local function ledgerBindings(ledger)
-	ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" })
+	ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Books" })
 	ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
 	ledger:RegisterGood({ id = "ledger.binding.lapis", slot = "ledger.binding", name = "Lapis", tier = 3 })
 end
@@ -313,7 +359,7 @@ local function huntsFrames(hunts, earned)
 	hunts:RegisterSlot({
 		id = "hunts.frame",
 		label = "Frame",
-		category = "Hunts",
+		category = "Trackers",
 		groups = { { key = "gilt", name = "Gilt frames" }, { key = "wood", name = "Wooden frames" } },
 	})
 	hunts:RegisterGood({ id = "hunts.frame.plain", slot = "hunts.frame", name = "Plain", default = true })
@@ -371,7 +417,7 @@ describe("The Curio Shop's list", function()
 								"  core.soundset.gilded 400" .. " [red]",
 							}, expansionLines("soundset", 300))
 						),
-						CREST_LINES
+						joined(CREST_LINES, bindingLines(300))
 					),
 					{
 						"Journal binding (1 of 2)",
@@ -394,7 +440,7 @@ describe("The Curio Shop's list", function()
 			local fake, handles = shopping()
 			handles.Ledger:ReportCoinsEarned(1000)
 
-			local rows = model(fake):List({ category = "Hunts" })[1].rows
+			local rows = model(fake):List({ category = "Trackers" })[1].rows
 
 			assert.are.same(
 				{ id = "hunts.cover.velvet", name = "Velvet", icon = 134939, state = "forSale", price = "400" },
@@ -412,7 +458,7 @@ describe("The Curio Shop's list", function()
 		local shop = model(fake)
 
 		local rows = shop:List({ category = "Crests" })[1].rows
-		local velvet = shop:List({ category = "Hunts" })[1].rows[2]
+		local velvet = shop:List({ category = "Trackers" })[1].rows[2]
 
 		assert.are.same({ true, true }, { rows[1].shield, rows[2].shield })
 		assert.is_nil(velvet.shield)
@@ -452,12 +498,13 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11 + 24, #ids("all"))
+		assert.are.equal(11 + 24 + 34, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",
 			"core.soundset.driftwood",
 			"core.crest.plain",
+			"core.binding.field",
 			"ledger.binding.oak",
 			"hunts.cover.plain",
 		}, ids("owned"))
@@ -465,6 +512,7 @@ describe("The Curio Shop's list", function()
 			joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", math.huge)),
 			joined({ "core.soundset.gilded" }, expansionAffordable("soundset", math.huge))
 		)
+		notOwned = joined(notOwned, expansionAffordable("binding", math.huge))
 		assert.are.same(
 			joined(notOwned, { "ledger.binding.lapis", "hunts.cover.velvet", "hunts.cover.gold" }),
 			ids("notOwned")
@@ -473,7 +521,10 @@ describe("The Curio Shop's list", function()
 			joined(
 				joined(
 					joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", 550)),
-					joined({ "core.soundset.gilded" }, expansionAffordable("soundset", 550))
+					joined(
+						joined({ "core.soundset.gilded" }, expansionAffordable("soundset", 550)),
+						expansionAffordable("binding", 550)
+					)
 				),
 				{ "hunts.cover.velvet" }
 			),
@@ -490,14 +541,17 @@ describe("The Curio Shop's list", function()
 			assert.are.same({
 				{ category = "Announcements", label = "Announcements" },
 				{ category = "Crests", label = "Crests" },
-				{ category = "Fish Journal", label = "Fish Journal" },
-				{ category = "Hunts", label = "Hunts" },
+				{ category = "Books", label = "Books" },
+				{ category = "Trackers", label = "Trackers" },
 			}, shop:Chips())
-			assert.are.same({
-				"Journal binding (1 of 2)",
-				"  ledger.binding.oak In use",
-				"  ledger.binding.lapis 900" .. " [red]",
-			}, outline(shop:List({ category = "Fish Journal" })))
+			assert.are.same(
+				joined(bindingLines(300), {
+					"Journal binding (1 of 2)",
+					"  ledger.binding.oak In use",
+					"  ledger.binding.lapis 900" .. " [red]",
+				}),
+				outline(shop:List({ category = "Books" }))
+			)
 		end
 	)
 
@@ -543,7 +597,7 @@ describe("A grouped slot on the Curio Shop's list", function()
 				"  -- Wooden frames",
 				"  hunts.frame.oak 150",
 				"  hunts.frame.birch 400" .. " [red]",
-			}, outline(model(fake):List({ category = "Hunts" })))
+			}, outline(model(fake):List({ category = "Trackers" })))
 		end
 	)
 
@@ -555,16 +609,16 @@ describe("A grouped slot on the Curio Shop's list", function()
 			"Frame (1 of 5)",
 			"  -- Wooden frames",
 			"  hunts.frame.birch 400" .. " [red]",
-		}, outline(shop:List({ search = "birch", category = "Hunts" }))) -- Core's Birch Scroll is no Frame
+		}, outline(shop:List({ search = "birch", category = "Trackers" }))) -- Core's Birch Scroll is no Frame
 		assert.are.same({
 			"Frame (1 of 5)",
 			"  hunts.frame.velvet 150",
 			"  -- Wooden frames",
 			"  hunts.frame.oak 150",
-		}, outline(shop:List({ category = "Hunts", filter = "canAfford" })))
+		}, outline(shop:List({ category = "Trackers", filter = "canAfford" })))
 		assert.are.same(
 			{ "Frame (1 of 5)", "  hunts.frame.plain In use" },
-			outline(shop:List({ search = "plain", category = "Hunts" }))
+			outline(shop:List({ search = "plain", category = "Trackers" }))
 		)
 	end)
 
@@ -573,7 +627,7 @@ describe("A grouped slot on the Curio Shop's list", function()
 		huntsCovers(handles.Hunts, { value = false })
 		fake.login()
 
-		local group = model(fake):List({ category = "Hunts" })[1]
+		local group = model(fake):List({ category = "Trackers" })[1]
 
 		assert.is_nil(group.headings)
 		assert.are.same({ "hunts.cover.plain", "hunts.cover.velvet", "hunts.cover.gold" }, {
@@ -605,7 +659,7 @@ describe("An earned good's texts and progress in the Curio Shop", function()
 	-- Hunts' frames (Gold leaf earned while `earned.value`, with `progress` as its progress if given), logged in.
 	local function earning(earned, progress)
 		local fake, handles = coreWithModules()
-		handles.Hunts:RegisterSlot({ id = "hunts.frame", label = "Frame", category = "Hunts" })
+		handles.Hunts:RegisterSlot({ id = "hunts.frame", label = "Frame", category = "Trackers" })
 		handles.Hunts:RegisterGood({ id = "hunts.frame.plain", slot = "hunts.frame", name = "Plain", default = true })
 		handles.Hunts:RegisterGood({
 			id = "hunts.frame.leaf",
@@ -711,7 +765,7 @@ describe("The Curio Shop's Put away group", function()
 				name = name,
 				slot = "hunts.cover",
 				slotLabel = "Notebook cover",
-				category = "Hunts",
+				category = "Trackers",
 				module = "Hunts",
 			}
 			for key, value in pairs(fields) do
@@ -756,7 +810,7 @@ describe("The Curio Shop's Put away group", function()
 			assert.are.same({
 				{ category = "Announcements", label = "Announcements" },
 				{ category = "Crests", label = "Crests" },
-				{ category = "Fish Journal", label = "Fish Journal" },
+				{ category = "Books", label = "Books" },
 			}, model(fake):Chips(), "no chip for a slot that isn't live")
 		end
 	)
@@ -775,8 +829,8 @@ describe("The Curio Shop's Put away group", function()
 		assert.are.equal(2, putAway({ filter = "owned" }))
 		assert.are.equal(0, putAway({ filter = "notOwned" }))
 		assert.are.equal(0, putAway({ filter = "canAfford" }))
-		assert.are.equal(2, putAway({ category = "Hunts" }))
-		assert.are.equal(0, putAway({ category = "Fish Journal" }))
+		assert.are.equal(2, putAway({ category = "Trackers" }))
+		assert.are.equal(0, putAway({ category = "Books" }))
 	end)
 end)
 
@@ -915,7 +969,7 @@ describe("The Curio Shop's stage", function()
 	it("hands over the good's preview and icon (wallet-and-shop.md › UI)", function()
 		local fake, handles = coreWithModules()
 		local function preview() end
-		handles.Hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+		handles.Hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
 		handles.Hunts:RegisterGood({
 			id = "hunts.cover.plain",
 			slot = "hunts.cover",

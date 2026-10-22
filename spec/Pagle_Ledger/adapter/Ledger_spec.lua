@@ -169,23 +169,26 @@ describe("Pagle_Ledger with Core", function()
 		assert.are.equal("angler", db.profile.activeTitle)
 	end)
 
-	it("adds no Settings rows, its Journal binding showing on Look and Feel under Fish Journal (SET-R53)", function()
-		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
-		loaded.client.fire("PLAYER_LOGIN")
-		local settings = loaded.client.settings
+	it(
+		"adds no Settings rows, its earned bindings picked from Core's Book binding on Look and Feel under Books (SET-R53, SHOP-R25)",
+		function()
+			local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+			loaded.client.fire("PLAYER_LOGIN")
+			local settings = loaded.client.settings
 
-		local names = {}
-		for i, category in ipairs(settings.categories) do
-			names[i] = category.name
+			local names = {}
+			for i, category in ipairs(settings.categories) do
+				names[i] = category.name
+			end
+			local look = {}
+			for i, row in ipairs(settings.show(assert(settings.category("Look and Feel")))) do
+				look[i] = row.initializer:GetName()
+			end
+			assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
+			assert.are.equal(8, #settings.category("Announcements").layout.initializers) -- Core's own (SET-R30)
+			assert.are.same({ "Books", "Book binding", "Curio Shop" }, { look[7], look[8], look[9] })
 		end
-		local look = {}
-		for i, row in ipairs(settings.show(assert(settings.category("Look and Feel")))) do
-			look[i] = row.initializer:GetName()
-		end
-		assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
-		assert.are.equal(8, #settings.category("Announcements").layout.initializers) -- Core's own (SET-R30)
-		assert.are.same({ "Fish Journal", "Journal binding", "Curio Shop" }, { look[7], look[8], look[9] })
-	end)
+	)
 end)
 
 describe("Pagle_Ledger with FakePagle", function()

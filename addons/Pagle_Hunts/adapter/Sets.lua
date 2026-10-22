@@ -126,16 +126,38 @@ end
 
 ---@class SetsCrumb: Button
 ---@field label FontString
+---@field gilt number[]        -- its words' gilt: the binding's
+---@field giltBright number[]  -- under the mouse
 
 ---@class SetsCrumbsAnchor: Frame
 ---@field crumbs SetsCrumb[]
 ---@field fleurons Texture[]
 
+-- The kit's gilt, which the fleuron's art is drawn in: a binding's gilt tints it toward its own.
+local KIT_GILT = LOOK.gilt
+-- How far a crumb under the mouse brightens toward white (the kit's #e8c96a to its #fff4c8).
+local BRIGHTEN = 0.65
+
+-- `gilt` brightened toward white, for a crumb under the mouse.
+---@param gilt number[]
+---@return number[]
+local function brighter(gilt)
+	return {
+		gilt[1] + (1 - gilt[1]) * BRIGHTEN,
+		gilt[2] + (1 - gilt[2]) * BRIGHTEN,
+		gilt[3] + (1 - gilt[3]) * BRIGHTEN,
+	}
+end
+
 -- The gilt breadcrumbs (HNT-R61): "Hunts", the set, the Hunt (or "Pagle Wagers" and the run's event, HNT-R164), the
--- kit's fleuron between each, each going back up.
+-- kit's fleuron between each, each going back up; all in the binding's gilt and its shadow (HNT-R70), the kit's before
+-- the board wears one.
 ---@param anchor SetsCrumbsAnchor
 local function drawCrumbs(anchor)
 	anchor.crumbs, anchor.fleurons = anchor.crumbs or {}, anchor.fleurons or {}
+	local look = ns.board:Look()
+	local gilt, shadow = look and look.gilt or KIT_GILT, look and look.giltShadow
+	local bright = look and brighter(gilt) or LOOK.giltBright
 	local x = 0
 	local crumbs = ns.BoardCrumbs()
 	for i, data in ipairs(crumbs) do
@@ -143,6 +165,11 @@ local function drawCrumbs(anchor)
 			local fleuron = ns.BoardPooled(anchor.fleurons, i - 1, function()
 				return ns.NewBoardMark(anchor, "fleuron", FLEURON)
 			end)
+			fleuron:SetVertexColor(
+				math.min(1, gilt[1] / KIT_GILT[1]),
+				math.min(1, gilt[2] / KIT_GILT[2]),
+				math.min(1, gilt[3] / KIT_GILT[3])
+			)
 			fleuron:ClearAllPoints()
 			fleuron:SetPoint("LEFT", x + FLEURON_ROOM, 0)
 			x = x + FLEURON + 2 * FLEURON_ROOM
@@ -153,13 +180,19 @@ local function drawCrumbs(anchor)
 			made.label:SetWordWrap(false)
 			made.label:SetPoint("LEFT")
 			made:SetScript("OnEnter", function(self)
-				self.label:SetTextColor(LOOK.giltBright[1], LOOK.giltBright[2], LOOK.giltBright[3])
+				self.label:SetTextColor(self.giltBright[1], self.giltBright[2], self.giltBright[3])
 			end)
 			made:SetScript("OnLeave", function(self)
-				self.label:SetTextColor(LOOK.gilt[1], LOOK.gilt[2], LOOK.gilt[3])
+				self.label:SetTextColor(self.gilt[1], self.gilt[2], self.gilt[3])
 			end)
 			return made
 		end)
+		crumb.gilt, crumb.giltBright = gilt, bright
+		crumb.label:SetTextColor(gilt[1], gilt[2], gilt[3])
+		if shadow then
+			crumb.label:SetShadowColor(shadow[1], shadow[2], shadow[3], shadow[4])
+			crumb.label:SetShadowOffset(shadow[5], shadow[6])
+		end
 		crumb.label:SetText(data.text)
 		-- the last crumbs are cut short, never past the strip's room before the clock
 		crumb.label:SetWidth(0)
@@ -185,7 +218,8 @@ end
 ---@class SetsNameplateAnchor: Frame
 ---@field plate SetsPlate
 
--- The brass nameplate on the cover's corner (HNT-R61), with each earned title and its full date in its tooltip.
+-- The brass nameplate on the cover's corner (HNT-R61), with each earned title and its full date in its tooltip; silver
+-- under a binding that asks for it (HNT-R70).
 ---@param anchor SetsNameplateAnchor
 local function drawNameplate(anchor)
 	if not anchor.plate then
@@ -202,6 +236,8 @@ local function drawNameplate(anchor)
 	end
 	local data = ns.BoardNameplate()
 	anchor.plate:SetPlate(data.text)
+	local look = ns.board:Look()
+	anchor.plate:SetSilver(look ~= nil and look.silver)
 	anchor.plate.lines = { data.text, unpack(data.titles) }
 end
 

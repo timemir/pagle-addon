@@ -1,5 +1,5 @@
 -- The Hunts board's notebook on FakePagle (HNT-R60, HNT-R61, HNT-R67, HNT-R68, HNT-R70): the frame, how it opens,
--- moves and closes, the pages the router gives each mode, the leather's anchors, the cover, and its redraws. Its entry
+-- moves and closes, the pages the router gives each mode, the leather's anchors, the binding, and its redraws. Its entry
 -- points through Core's real logic are in Hunts_spec.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -269,41 +269,58 @@ describe("the Hunts board's leather (HNT-R61)", function()
 	end)
 end)
 
-describe("the Hunts board's cover (HNT-R70)", function()
-	it("wears the kit's leather until a cover is set, then that cover, then the kit's again", function()
-		local loaded, _, board = loggedIn()
-		board:Toggle()
-		local cover = board.frame.cover
-		local leather = loaded.ns.BOOK_FILES.leather
-		assert.are.equal(leather, cover.fill.texture)
-
-		board:SetCover({ fill = "Cloth", corner = true })
-		assert.are.equal("Cloth", cover.fill.texture)
-		assert.is_true(cover.corner:IsShown())
-		board:SetCover(nil)
-
-		assert.are.equal(leather, cover.fill.texture)
-		assert.is_false(cover.corner:IsShown())
-		assert.is_true(cover.band:IsShown()) -- every cover keeps the kit's band
-	end)
-
-	it("keeps a cover set before the board was first opened", function()
+describe("the Hunts board's binding (HNT-R70)", function()
+	it("wears Core's binding on its frame, following the equipped one, and tints its pages' paper", function()
 		local _, _, board = loggedIn()
-
-		board:SetCover({ fill = "Cloth" })
 		board:Toggle()
 
-		assert.are.equal("Cloth", board.frame.cover.fill.texture)
+		local binding = board.frame.binding
+		assert.is_nil(binding.pinned) -- it follows the equipped binding (BIND-R1)
+		assert.are.equal(binding:Look(), board:Look())
+		for _, side in ipairs({ "left", "right" }) do
+			assert.are.same(binding:Look().paperTint, board.frame.papers[side].paper.vertexColor)
+		end
 	end)
 
-	it("hangs the ribbons' tops under the kit's band, whatever the cover", function()
+	it("inks its crumbs and nameplate again from each new look while open (BIND-R3)", function()
+		local _, fake, board = loggedIn()
+		local inked = {}
+		board:RegisterLeather("crumbs", function()
+			inked[#inked + 1] = { "crumbs", board:Look() }
+		end)
+		board:RegisterLeather("nameplate", function()
+			inked[#inked + 1] = { "nameplate", board:Look() }
+		end)
+		board:Toggle()
+		inked = {}
+
+		board.frame.binding:SetLook("hunts.binding.fiveseal")
+
+		local fiveseal = fake.Pagle.GetBindingLook("hunts.binding.fiveseal")
+		assert.are.same({ { "crumbs", fiveseal }, { "nameplate", fiveseal } }, inked)
+		assert.are.same(fiveseal.paperTint, board.frame.papers.left.paper.vertexColor)
+	end)
+
+	it("keeps a binding pinned before the board was first opened, and follows the equipped one again after", function()
+		local _, fake, board = loggedIn()
+
+		board:SetBinding("hunts.binding.pathfinder")
+		board:Toggle()
+		assert.are.equal("hunts.binding.pathfinder", board.frame.binding.pinned)
+		assert.are.same(fake.Pagle.GetBindingLook("hunts.binding.pathfinder"), board:Look())
+
+		board:SetBinding(nil)
+		assert.is_nil(board.frame.binding.pinned)
+	end)
+
+	it("hangs the ribbons' tops under the binding's band, whatever the binding", function()
 		local loaded, _, board = loggedIn()
 		board:Toggle()
 		local ribbons = board.frame.anchors.ribbons
 		local tuck = loaded.ns.BOARD_RIBBON.tuck
 		assert.are.same({ "TOPLEFT", board.frame, "TOPLEFT", 176, -(600 - tuck) }, ribbons.points[1])
 
-		board:SetCover({ fill = "Cloth" })
+		board:SetBinding("hunts.binding.wagersilk")
 
 		assert.are.same({ "TOPLEFT", board.frame, "TOPLEFT", 176, -(600 - tuck) }, ribbons.points[1])
 	end)

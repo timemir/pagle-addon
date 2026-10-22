@@ -18,6 +18,7 @@ This directory is Pagle's product spec. It describes the current state only, and
 | [core/pushed-content.md](core/pushed-content.md) | `PUSH` | The companion's `Pagle_Content` data addon: the signature check, the companion state, content by kind | M8 Hunt Events |
 | [core/anglers-in-game.md](core/anglers-in-game.md) | `VIEW` | Published Anglers in game: reading the Companion's `Pagle_Following` and `Pagle_Anglers`, the Pagle block on player tooltips, `Pagle.GetFollowedAnglers()` | Track V In-game views |
 | [core/onboarding.md](core/onboarding.md) | `ONB` | Onboarding: the Letter, the Field guide and its step registry, the binding field, Margin notes, First looks and the "?", the First evening list, `/pagle guide` and Getting started | M8.5 Onboarding |
+| [core/book-binding.md](core/book-binding.md) | `BIND` | The book binding: `Pagle.NewBookBinding`, the one renderer of the `core.binding` look on every book (its material, band, corners and features), and a change of binding with its one page-turn sound | One binding for every book ([#351](https://github.com/timemir/wow-fish/issues/351)) |
 | [core/field-report.md](core/field-report.md) | `REP` | The Field report: what goes in, the `PAGLE-REPORT 1` format, privacy, the report box | M3 |
 | [content-data.md](content-data.md) | `DATA` | The `data/` layers, the generator and its checks, the catalogue's Lua shape, `confirmed` and the two-reporter rule, the content fingerprint, the Hunt list and event pool formats, the tag list and `released.lock`, lore, Field report intake, the DB2 watch | M0–M9 |
 | [qol.md](qol.md) | `QOL` | `Pagle_QoL`: the Fishing key, the double-click, gear, lures, clams, CVar leases for a Fishing stretch, the next-action button, Nudges, the Angleur and Fishing Buddy popup | M1, Track Q, M9 |
@@ -121,8 +122,8 @@ These hold everywhere and come from the map's settled Notes:
 
 | Module | Projection | Module records | Moments (highest rung) | Pagle Coins | Curio Shop slots | Settings rows | Summary line |
 |---|---|---|---|---|---|---|---|
-| Ledger | XP, levels, mastery, collections, records (LED-R2) | none | many, up to `splash` for a Legend (LED-R97) | levels, Prestige, discoveries, ranks, Legends (LED-R88) | `ledger.binding` | none (LED-R1) | `ledger` |
-| Hunts | counts, tiers, effort, set titles (HNT-R136) | none | `toast.high` tiers, `banner` set titles, opt-in `nod` windows (HNT-R86, HNT-R88) | 30 / 15 / 100 (HNT-R110) | `hunts.notebookcover`, `hunts.trackerframe` | Announcements, Trackers | `hunts` |
+| Ledger | XP, levels, mastery, collections, records (LED-R2) | none | many, up to `splash` for a Legend (LED-R97) | levels, Prestige, discoveries, ranks, Legends (LED-R88) | earned goods in `core.binding`, `core.crest`, `core.toaststyle`, `core.soundset` | none (LED-R1) | `ledger` |
+| Hunts | counts, tiers, effort, set titles (HNT-R136) | none | `toast.high` tiers, `banner` set titles, opt-in `nod` windows (HNT-R86, HNT-R88) | 30 / 15 / 100 (HNT-R110) | `hunts.trackerframe`; earned goods in `core.binding`, `core.soundset` | Announcements, Trackers | `hunts` |
 | Stats | counts per scope, every Session (STA-R20) | none | none (STA-R2) | none | `stats.trackerframe` | Trackers | none |
 | Tackle Board | goals, Campfire, Fly Box, titles (TKB-R81) | `start`, `day`, `issue`, `reroll` (TKB-R80) | `toast.low` / `toast` goals, `banner` milestones and titles, `nod` Campfire news (TKB-R86) | goals and Campfire milestones (TKB-R63) | `tackleboard.trackerframe` | Trackers | `board` |
 | QoL | none (QOL-R3) | none | none | none | none | the Fishing page | none |

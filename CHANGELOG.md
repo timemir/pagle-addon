@@ -12,7 +12,7 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 - Open any of it from Pagle's entry in the addon compartment by the minimap, or with `/pagle`. Pagle's settings live in the game's own Settings panel, where its search finds every option.
 - When you earn something, Pagle says so in the moment: a toast writes the fish's name out in ink while its stamps come down, a banner drops its seal for a new Angler Level, and a Legend gets the whole screen. A Session that earned something ends with a summary card.
 - The Interruption budget keeps announcements from talking over your fishing, Cozy mode holds them all for the end of the Session, and the Animations setting stills the motion if you'd rather it kept still.
-- Pagle Coins are paid for things achieved, never for sheer volume. Spend them in the Curio Shop on looks: toast styles, sound sets, Journal bindings, notebook covers and tracker frames. The stock never rotates, and nothing in it buys a title or a star.
+- Pagle Coins are paid for things achieved, never for sheer volume. Spend them in the Curio Shop on looks: toast styles, sound sets, bindings and tracker frames. The stock never rotates, and nothing in it buys a title or a star.
 - The Field report: seen a fish in new waters, or outside its usual hours? `/pagle report` gathers what Pagle doesn't know yet for you to post on the issue form. It never names your characters.
 - Lengths show in inches or centimetres, as you prefer, and times of day in 24-hour or 12-hour, following the game's own clock unless you pick one. An optional reminder tells you every 50 unsaved Casts to `/reload`, since the game saves only on a reload or logout.
 
@@ -62,7 +62,7 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 
 Every window of Pagle's own is drawn as something an angler would keep.
 
-- The Fish Journal, the Hunts board and the Stats book are leather-bound, with parchment pages, brass and wax seals. Their pages turn, and a catch made while one is open is written in as you watch. The Journal's binding and the notebook's cover can be changed in the Curio Shop.
+- The Fish Journal, the Hunts board and the Stats book are leather-bound, with parchment pages, brass and wax seals. Their pages turn, and a catch made while one is open is written in as you watch. They wear one binding, chosen in the Curio Shop.
 - The Tackle Board is cork in a leather frame, with a Campfire whose flames flicker, pins that lift under your mouse and a DONE stamp for every goal.
 - The Curio Shop is a travelling merchant's sample case, and each purchase is sealed in wax on its bill of sale. The Field report is a sea chart with a typed slip.
 - Each window plays the game's own interface sounds, at your sound effects volume, and shrinks to fit a small screen or a large UI scale.

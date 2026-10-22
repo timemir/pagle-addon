@@ -52,9 +52,8 @@ ns.L = {
 	-- The tab of every continent but the Eastern Kingdoms and Kalimdor (LED-R126, LED-R130).
 	OTHER_WATERS = "Other waters",
 
-	-- The Journal bindings (LED-R110): the slot's label and how a level binding is earned. Their names and
-	-- descriptions are lore (LED-R160).
-	BINDING_SLOT_LABEL = "Journal binding",
+	-- The Ledger's earned bindings (LED-R110): how a level binding is earned. Their names and descriptions are lore
+	-- (LED-R160).
 	BINDING_EARNED = "Angler Level %d",
 	-- How the expansion's earned goods are earned (LED-R116, LED-R117), by rule (logic/EarnedGoods.lua): interface
 	-- text, not lore.

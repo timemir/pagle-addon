@@ -268,8 +268,7 @@ ns.L = {
 	SHOP_CATEGORIES = {
 		Announcements = "Announcements",
 		Crests = "Crests",
-		["Fish Journal"] = "Fish Journal",
-		Hunts = "Hunts",
+		Books = "Books",
 		Trackers = "Trackers",
 	},
 	SHOP_OWNED_COUNT = "%d of %d",
@@ -692,10 +691,12 @@ ns.L = {
 	DEV_TOUR_LETTER = "the Letter",
 
 	-- Core's own slots (SHOP-R25): their labels. Their goods' names and descriptions are lore (DATA-R101), in
-	-- data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`.
+	-- data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`, a binding's as `binding.<key>.name` and
+	-- `binding.<key>.description`.
 	SLOT_TOAST_STYLE = "Toast style",
 	SLOT_SOUND_SET = "Sound set",
 	SLOT_CREST = "Crests",
+	SLOT_BOOK_BINDING = "Book binding",
 	-- The crest slot's groups (SHOP-R27): the zones' crests, then the fishes', which name them; the Curio Shop lists
 	-- neither, as it lists no earned crest (SHOP-R25).
 	SLOT_CREST_ZONES = "Zone crests",
@@ -720,4 +721,6 @@ ns.L = {
 	-- A crest's preview (wallet-and-shop.md › UI): a small bookplate, then where it shows.
 	PREVIEW_EX_LIBRIS = "Ex Libris",
 	PREVIEW_CREST_NOTE = "On the Fish Journal's bookplate.",
+	-- A binding's preview (wallet-and-shop.md › UI): its closed book, then what wears it (ADR 0015).
+	PREVIEW_BINDING_NOTE = "Every book of yours wears it.",
 }

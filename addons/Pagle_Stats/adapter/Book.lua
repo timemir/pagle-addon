@@ -5,9 +5,10 @@ end
 ---@class PagleStatsNS
 local ns = select(2, ...)
 
--- The Stats book on the client (STA-R70–R75; stats.md › UI): a leather binding with two parchment pages, the gilt
--- breadcrumbs and the search box's anchor on the strip above them, the brass nameplate and the live line on the
--- leather's foot band below them, brass corners, and the ribbons hanging from under its foot, drawing on each page what
+-- The Stats book on the client (STA-R70–R75; stats.md › UI): the equipped binding, drawn by Core's renderer
+-- (Pagle.NewBookBinding, ADR 0015), with two parchment pages, the breadcrumbs in the binding's gilt and the search box's
+-- anchor on the strip above them, the nameplate and the live line on the leather's foot band below them, and the
+-- ribbons hanging from under its foot, drawing on each page what
 -- logic/Book.lua's router says the page shown puts there. The pages' contents are the page files' renderers
 -- (adapter/Home.lua to Lifetime.lua); this file draws only the book. It makes no secure frames, so it opens and works
 -- in combat and while restricted (STA-R71, STA-R93). The look is the books art kit's Stats book, in
@@ -78,8 +79,8 @@ local LEATHER_PARTS = { "search" }
 ---@class StatsBookFrame: Frame
 ---@field close StatsBookCloseButton
 ---@field help StatsBookHelpButton                   -- the "?" beside it (ONB-R59)
----@field leather StatsBookLeatherView
----@field corners Texture[]
+---@field binding PagleBookBinding                  -- Core's renderer, following the equipped binding
+---@field look PagleBindingLook                       -- the look it wears now, which inks the crumbs, plate and paper
 ---@field papers table<StatsBookSide, StatsBookParchmentView>
 ---@field paperFrames table<StatsBookSide, Frame>     -- each page's paper, which a turn's wipes measure
 ---@field turnFold Frame?                             -- the page turn's fold (adapter/BookMotion.lua)
@@ -283,7 +284,43 @@ local function buildRibbons(book, frame)
 	end
 end
 
--- Builds the book, hidden: the leather, two pages, the strip's crumbs, live line and search anchor, the nameplate,
+-- The kit's fleuron gilt (#e8c96a), which a binding's gilt tints it toward.
+local FLEURON_GILT = { 0.91, 0.79, 0.42 }
+
+-- Inks `crumb` in `look`'s gilt and gilt shadow, its fleuron toned toward that gilt.
+---@param crumb StatsBookCrumbView
+---@param look PagleBindingLook
+local function inkCrumb(crumb, look)
+	local gilt, shadow = look.gilt, look.giltShadow
+	crumb.label:SetTextColor(gilt[1], gilt[2], gilt[3])
+	crumb.label:SetShadowColor(shadow[1], shadow[2], shadow[3], shadow[4])
+	crumb.label:SetShadowOffset(shadow[5], shadow[6])
+	if crumb.fleuron then
+		crumb.fleuron:SetVertexColor(
+			math.min(1, gilt[1] / FLEURON_GILT[1]),
+			math.min(1, gilt[2] / FLEURON_GILT[2]),
+			math.min(1, gilt[3] / FLEURON_GILT[3])
+		)
+	end
+end
+
+-- Dresses the book in its binding's `look` (STA-R70): the crumbs in its gilt, the nameplate brass or silver, the
+-- pages' paper under its tint. Core's renderer calls it with each look the book puts on.
+---@param frame StatsBookFrame
+---@param look PagleBindingLook
+local function wear(frame, look)
+	frame.look = look
+	for _, crumb in ipairs(frame.crumbButtons) do
+		inkCrumb(crumb, look)
+	end
+	frame.plate:SetSilver(look.silver)
+	local tint = look.paperTint
+	for _, paper in pairs(frame.papers) do
+		paper.paper:SetVertexColor(tint[1], tint[2], tint[3])
+	end
+end
+
+-- Builds the book, hidden: the binding, two pages, the strip's crumbs, live line and search anchor, the nameplate,
 -- the ribbons and the close button. It drags by the leather and saves where it was left in profile.window (STA-R71);
 -- Esc hides it through UISpecialFrames (STA-R70).
 ---@param book StatsBook
@@ -312,8 +349,6 @@ local function build(book)
 			ns.db.profile.window = { point, relativePoint, x * scale, y * scale }
 		end
 	end)
-	frame.leather = ns.NewBookLeather(frame)
-	frame.corners = ns.NewBookCorners(frame)
 	frame.papers, frame.paperFrames, frame.bodies, frame.updating = {}, {}, {}, {}
 	buildPage(frame, "left")
 	buildPage(frame, "right")
@@ -332,6 +367,14 @@ local function build(book)
 	frame.plate:SetPoint("TOPLEFT", frame, "TOPLEFT", PLATE_X, -PLATE_Y)
 	frame.plate:SetFrameLevel(frame:GetFrameLevel() + 10)
 	buildRibbons(book, frame)
+
+	-- the leather: the equipped binding, followed through every change, inking what is drawn on it (made last, so its
+	-- first look finds the papers and the plate)
+	frame.binding = Pagle.NewBookBinding(frame, {
+		onLook = function(look)
+			wear(frame, look)
+		end,
+	})
 
 	frame.close = ns.NewBookClose(frame)
 	frame.close:SetPoint("CENTER", frame, "TOPRIGHT", -3, -3)
@@ -658,7 +701,7 @@ local function crumbAt(frame, i)
 			crumb.fleuron = ns.NewBookMark(crumb, "fleuron", 16)
 			crumb.fleuron:SetPoint("LEFT", 8, 0)
 		end
-		crumb.label = ns.BookText(crumb, ns.BookFonts().crumb, LOOK.gilt)
+		crumb.label = ns.BookText(crumb, ns.BookFonts().crumb, frame.look.gilt)
 		crumb.label:SetPoint("LEFT", i > 1 and 32 or 0, 0)
 		crumb:SetScript("OnEnter", function(self)
 			if self:GetScript("OnClick") then
@@ -666,7 +709,8 @@ local function crumbAt(frame, i)
 			end
 		end)
 		crumb:SetScript("OnLeave", function(self)
-			self.label:SetTextColor(LOOK.gilt[1], LOOK.gilt[2], LOOK.gilt[3])
+			local gilt = frame.look.gilt
+			self.label:SetTextColor(gilt[1], gilt[2], gilt[3])
 		end)
 		frame.crumbButtons[i] = crumb
 	end
@@ -683,7 +727,7 @@ local function drawCrumbs(book)
 	for i, data in ipairs(trail) do
 		local crumb = crumbAt(frame, i)
 		crumb.label:SetText(crumbWords(book, data))
-		crumb.label:SetTextColor(LOOK.gilt[1], LOOK.gilt[2], LOOK.gilt[3])
+		inkCrumb(crumb, frame.look)
 		-- the last crumbs are cut short, never past the strip's room before the search slip
 		local lead = i > 1 and 34 or 2
 		ns.BookBound(crumb.label, frame.crumbs:GetWidth() - x - lead)

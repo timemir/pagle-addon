@@ -5,8 +5,8 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- The Hunts board on the client (HNT-R60, HNT-R61, HNT-R67, HNT-R68, HNT-R70): a two-page notebook in leather, with the
--- leather's anchors above and beside the pages, drawing on each page what logic/Board.lua's router says the mode shown
+-- The Hunts board on the client (HNT-R60, HNT-R61, HNT-R67, HNT-R68, HNT-R70): a two-page notebook in Core's binding
+-- (Pagle.NewBookBinding, ADR 0015), with the leather's anchors above and beside the pages, drawing on each page what logic/Board.lua's router says the mode shown
 -- puts there. The pages' contents are the renderers adapter/Timeline.lua, Entry.lua, Sets.lua and WagersSpread.lua
 -- register; this file
 -- draws only the notebook. It makes no secure frames, so it opens and stays open while restricted (HNT-R68). The look
@@ -47,6 +47,10 @@ local EXTENT_HEIGHT = HEIGHT + 10 + ns.BOARD_RIBBON.lengthChosen - ns.BOARD_RIBB
 --- adapter/Sets.lua the crumbs, the nameplate and the ribbons.
 ---@alias BoardLeatherPart "crumbs"|"clock"|"completed"|"nameplate"|"ribbons"
 local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
+-- The anchors the binding's look inks (HNT-R70): the crumbs in its gilt, the nameplate in its metal.
+local INKED = { crumbs = true, nameplate = true }
+-- The binding's material on the frame's BACKGROUND layer, under the papers' own frames (BIND-R10).
+local LEATHER_SUBLEVEL = 2
 
 --- Draws one of the leather's anchors: `anchor` is its frame, `place` where the board is.
 ---@alias BoardLeatherRenderer fun(anchor: Frame, place: BoardPlace)
@@ -54,7 +58,7 @@ local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
 ---@class BoardFrame: Frame
 ---@field close BoardCloseButton
 ---@field help BoardHelpButton                 -- the "?" beside it (ONB-R59)
----@field cover BoardLeatherView               -- the leather, in the cover it wears (HNT-R70)
+---@field binding PagleBookBinding            -- the leather: Core's binding, the equipped one or the pinned one (HNT-R70)
 ---@field papers table<BoardSide, BoardParchmentView>
 ---@field paperFrames table<BoardSide, Frame>  -- each page's paper: the spreads' clip frames sit on it
 ---@field bodies table<BoardSide, Frame>       -- each page's body, inside its padding: the renderers' pages fill it
@@ -65,7 +69,9 @@ local LEATHER_PARTS = { "crumbs", "clock", "completed", "nameplate", "ribbons" }
 ---@class HuntsBoard
 ---@field router BoardRouter
 ---@field frame BoardFrame?
----@field cover BoardCoverLook?              -- the cover set, nil for the default leather
+---@field pinned string?                     -- the binding good the board wears in place of the equipped one (the
+--- tour's binding stops), nil to follow the equipped one
+---@field look PagleBindingLook?             -- the binding's look the board wears, once its frame is made
 ---@field pages table<string, BoardTurnPage> -- each spread's page, by "mode:set:side", made at its first draw
 ---@field shown string?                       -- the spread shown, "mode:set"
 ---@field turnFrom string?                    -- the spread shown when it was opened elsewhere: the next draw turns from it
@@ -133,31 +139,22 @@ function Board:Trail()
 	return self.router:Trail()
 end
 
--- The fields of `look` over the default cover's.
----@param look BoardCoverLook?
----@return BoardCover
-local function coverOf(look)
-	local merged = {}
-	for key, value in pairs(ns.BOARD_COVER) do
-		merged[key] = value
-	end
-	for key, value in pairs(look or {}) do
-		merged[key] = value
-	end
-	return merged --[[@as BoardCover]] -- every field, from ns.BOARD_COVER
-end
-
---- Dresses the leather in `look` (HNT-R70), or in the default leather with nil. adapter/Goods.lua calls it with the
---- equipped cover, at load and at `AppearanceChanged`; with `animate`, an open board's binding dips while the cover
---- changes underneath (MOTION.md › Controls).
----@param look BoardCoverLook?
----@param animate boolean?
-function Board:SetCover(look, animate)
-	self.cover = look
+--- Pins the board's binding to `goodID`'s (BIND-R2), or with nil lets it follow the equipped binding again (HNT-R70):
+--- the tour's binding stops show each binding on it. Kept for a board not yet made, which is made wearing it.
+---@param goodID string?
+function Board:SetBinding(goodID)
+	self.pinned = goodID
 	local frame = self.frame
 	if frame then
-		frame.cover:SetCover(coverOf(look), animate)
+		frame.binding:SetLook(goodID)
 	end
+end
+
+--- The binding's look the board wears (HNT-R70), nil before its frame is made: its crumbs' gilt and its nameplate's
+--- metal read it as they draw.
+---@return PagleBindingLook?
+function Board:Look()
+	return self.look
 end
 
 -- A page on the frame: its parchment, its spine on the inner edge, and its body inside the padding. The paper takes
@@ -241,12 +238,19 @@ local function build(board)
 		-- FloatingChatFrame.xml does the same "So that we don't save the position".
 		self:SetUserPlaced(false)
 	end)
-	frame.cover = ns.NewBoardLeather(frame)
-	frame.cover:SetCover(coverOf(board.cover))
 	frame.papers, frame.paperFrames, frame.bodies = {}, {}, {}
 	buildPage(frame, "left")
 	buildPage(frame, "right")
 	buildAnchors(frame)
+	-- the leather: Core's binding, under the papers and over the ribbons' tops (HNT-R70); Core dips it and plays the page
+	-- turn when the equipped one changes (BIND-R20, BIND-R21), and the board inks its own parts from each look
+	frame.binding = Pagle.NewBookBinding(frame, {
+		pinned = board.pinned,
+		sublevel = LEATHER_SUBLEVEL,
+		onLook = function(look)
+			board:Ink(frame, look)
+		end,
+	})
 	-- the fold over both papers, above every spread's page, while a page turns
 	local pages = CreateFrame("Frame", nil, frame)
 	pages:SetPoint("TOPLEFT", SIDE, -STRIP)
@@ -500,6 +504,22 @@ local function drawLeather(board, place, only)
 		if renderer and (not only or only[part]) then
 			renderer(anchors[part], place)
 		end
+	end
+end
+
+--- Inks the board's own parts from the binding's `look` on `frame` (HNT-R70, BIND-R3): the pages' paper tinted, and,
+--- while it shows, the crumbs in the binding's gilt and the nameplate in its metal drawn again; closed, they take it at
+--- the next draw.
+---@param frame BoardFrame
+---@param look PagleBindingLook
+function Board:Ink(frame, look)
+	self.look = look
+	local tint = look.paperTint
+	for _, paper in pairs(frame.papers) do
+		paper.paper:SetVertexColor(tint[1], tint[2], tint[3])
+	end
+	if self:IsShown() then
+		drawLeather(self, self.router:Place(), INKED)
 	end
 end
 

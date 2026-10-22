@@ -58,6 +58,9 @@ local ns = select(2, ...)
 ---@field getEquipped fun(slot: string): string?         -- Pagle.GetEquipped
 ---@field setEquipped fun(slot: string, goodID: string): boolean -- Pagle.SetEquipped
 ---@field openShop fun(goodID: string?)                  -- Pagle.OpenShop
+---@field slotGoods fun(slot: string): string[]           -- Pagle.GetSlotGoods
+---@field getGood fun(goodID: string): PagleGoodInfo?     -- Pagle.GetGood
+---@field bindingLook fun(goodID: string?): PagleBindingLook -- Pagle.GetBindingLook
 
 --- What a spread draws from: the Journal's context while the projection isn't updating, when every field is set (the
 --- router draws no spread while it updates, LED-R122). The router casts once; spreads and their parts take this.

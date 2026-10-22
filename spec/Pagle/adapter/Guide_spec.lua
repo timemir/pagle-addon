@@ -139,6 +139,27 @@ describe("the Field guide's book (ONB-R20, ONB-R27)", function()
 		end
 	)
 
+	it("wears Field Leather through Core's binding renderer, never the equipped binding (ONB-R20, ADR 0015)", function()
+		local loaded = withGuide()
+		pagle(loaded, "guide")
+		local book = bookOf(loaded)
+		local binding = book.binding
+		local field = loaded.ns.BindingLook(loaded.ns.DEFAULT_BINDING)
+
+		assert.are.equal("core.binding.field", binding.pinned)
+		assert.are.same(field, binding:Look()) -- Core's look, a fresh table each time
+		local skin = binding.skin
+		assert.are.equal(field.texture, skin.fill.texture) -- the tiled grain, as before
+		assert.is_false(skin.bandPieces[1].desaturated) -- the band untoned
+		for _, corner in ipairs(skin.corners) do
+			assert.is_false(corner.shown) -- no corner pieces
+		end
+
+		loaded.ns.Fire("AppearanceChanged", "core.binding", "core.binding.other")
+		assert.are.equal("core.binding.field", binding.goodID)
+		assert.are.same(field, binding:Look())
+	end)
+
 	it("reads 'Pagle · A field guide' on its strip, with '{n} of {m}' at its right (ONB-R20)", function()
 		local loaded = withGuide()
 
@@ -375,7 +396,7 @@ describe("moving through the Field guide (ONB-R22–R24, ONB-R26)", function()
 			assert.are.same({ 40, -586 }, { first[4], first[5] })
 			assert.are.equal(98 + 8, second[4] - first[4])
 			assert.are.equal(98, book.ribbons[1].width)
-			assert.is_true(book.ribbons[1]:GetFrameLevel() < book.leather.band:GetFrameLevel())
+			assert.is_true(book.ribbons[1]:GetFrameLevel() < book.binding.skin.band:GetFrameLevel())
 
 			book.ribbons[6]:Click()
 			assert.are.equal("ledger", shownStep(loaded))

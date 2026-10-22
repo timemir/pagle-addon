@@ -11,6 +11,7 @@ Core is the `Pagle` addon. This file covers how Modules attach to it, the whole 
 | [wallet-and-shop.md](wallet-and-shop.md) | `SHOP` | Pagle Coins and the Curio Shop |
 | [field-report.md](field-report.md) | `REP` | `/pagle report` and the diagnostics it reads |
 | [varieties.md](varieties.md) | `VAR` | Fish varieties, their rarity, Core's variety projection and the fish crests |
+| [book-binding.md](book-binding.md) | `BIND` | The book binding: `Pagle.NewBookBinding`, which draws the `core.binding` look on every book and changes it |
 
 Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunables table.
 
@@ -194,7 +195,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.GetVarieties(speciesID)`, `Pagle.VARIETY_RARITIES` | a Species' ten or `nil`, rarity list | [varieties.md](varieties.md) |
 | `Pagle.GetVarietiesCaught(speciesID)` | a fresh set `{ [index] = true }` of the positions caught | [varieties.md](varieties.md) |
 | `Pagle.GetBalance()` | `Balance` | [wallet-and-shop.md](wallet-and-shop.md#contracts) |
-| `Pagle.IsOwned(goodID)`, `GetEquipped(slotID)`, `SetEquipped(slotID, goodID)`, `GetGood(goodID)`, `OpenShop(goodID?)` | | wallet-and-shop.md |
+| `Pagle.IsOwned(goodID)`, `GetEquipped(slotID)`, `SetEquipped(slotID, goodID)`, `GetGood(goodID)`, `GetSlotGoods(slot)`, `GetBindingLook(goodID)`, `OpenShop(goodID?)` | | wallet-and-shop.md |
 | `Pagle.OpenFieldReport()`, `GetFieldReportCount()` | | [field-report.md](field-report.md#contracts) |
 | `Pagle.IsAnimationsOn()` | boolean, the Animations setting | [announcements.md](announcements.md#contracts) |
 | `Pagle.GetActivityXP()` | `ActivityXP` | [activity-xp.md](activity-xp.md#contracts) |
@@ -203,6 +204,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.Animate(owner, animations, onDone?)`, `Cue(owner, seconds, fn)`, `StopMotion(owner)`, `EASE`, `Bezier(x1, y1, x2, y2)` | Core's one motion driver | announcements.md |
 | `Pagle.WheelScroll(scroll, delta, options?)` | a mouse wheel notch: a third of the view, gliding | [announcements.md](announcements.md#paglewheelscrollscroll-delta-options) |
 | `Pagle.FitToScreen(frame, options)` | number, the scale used | [here](#paglefittoscreenframe-options) |
+| `Pagle.NewBookBinding(frame, options?)` | `PagleBookBinding`: `Look()`, `SetLook(goodID?)` | [book-binding.md](book-binding.md#contracts) |
 
 ### Module handle (returned by `RegisterModule`)
 

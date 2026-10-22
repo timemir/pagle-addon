@@ -229,12 +229,16 @@ Pagle's one currency, held by Core for the Angler. Modules pay it in for things 
 _Avoid_: currency (alone), points, gold, Tender (Retail's Trading Post currency)
 
 **Curio Shop**:
-Core's shop where the Angler spends Pagle Coins on looks for Pagle's own views, such as toast styles, sound sets, Journal bindings and tracker frames. It never sells meanings (titles, flies, stars, Legends) and its stock never rotates.
+Core's shop where the Angler spends Pagle Coins on looks for Pagle's own views, such as toast styles, sound sets, bindings and tracker frames. It never sells meanings (titles, flies, stars, Legends) and its stock never rotates.
 _Avoid_: store, Trading Post, Bait Shop, shop (alone)
 
 **Bookplate crest**:
 The look the Angler wears on the Fish Journal's bookplate, chosen in Look and Feel's Crests dropdown: a zone's shield, earned when that zone reaches Master, or a fish's, earned when all ten of its varieties are caught, pinned on the Prestige crest, or Plain, the default, which shows nothing. Earned crests are never listed in the Curio Shop, whose Crests category holds only the crests for sale and Plain.
 _Avoid_: crest (alone), emblem, medallion, zone crest
+
+**Binding**:
+The look the Angler's books wear, chosen once in the Curio Shop: the Fish Journal, the Hunts board and the Stats book all wear the same one. Some are bought and some are earned, and Field Leather is the default. The Field guide keeps its own plain leather. Not to be confused with a key binding, such as the Fishing key's.
+_Avoid_: cover, notebook cover, Journal binding, leather (for the look)
 
 ### QoL
 

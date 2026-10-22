@@ -99,7 +99,7 @@ describe("the Ledger's committed lore (DATA-R111, its M3 batch)", function()
 end)
 
 describe("the Ledger's committed lore (DATA-R111, its M4 batch)", function()
-	-- LED-R75's title IDs and LED-R110's bindings, without their ledger.binding. prefix (LED-R160).
+	-- LED-R75's title IDs, and LED-R110's earned bindings' good IDs (LED-R160).
 	local TITLES = {
 		"level1",
 		"level10",
@@ -117,8 +117,19 @@ describe("the Ledger's committed lore (DATA-R111, its M4 batch)", function()
 		"complete.treasure",
 		"complete.trophy",
 	}
-	local BINDINGS =
-		{ "field", "level10", "level20", "level30", "level40", "level50", "level60", "birch", "buckram", "sharkskin" }
+	local BINDINGS = {
+		"ledger.binding.level10",
+		"ledger.binding.level20",
+		"ledger.binding.level30",
+		"ledger.binding.level40",
+		"ledger.binding.level50",
+		"ledger.binding.level60",
+		"ledger.binding.legend",
+		"ledger.binding.monster",
+		"ledger.binding.abyssal",
+		"ledger.binding.keeper",
+		"ledger.binding.iridescent",
+	}
 	local L
 
 	setup(function()
@@ -143,10 +154,15 @@ describe("the Ledger's committed lore (DATA-R111, its M4 batch)", function()
 		assert.is_truthy(L["title.zonemaster.text"]:find("{zone}", 1, true))
 	end)
 
-	it("has a name and a description for each of the 10 bindings (LED-R110, LED-R160)", function()
-		for _, binding in ipairs(BINDINGS) do
-			hasText(("binding.%s.name"):format(binding))
-			hasText(("binding.%s.description"):format(binding))
+	it(
+		"has a name and a description for each of its 11 earned bindings, and none for Core's (LED-R110, LED-R160)",
+		function()
+			for _, binding in ipairs(BINDINGS) do
+				hasText(("ledgergood.%s.name"):format(binding))
+				hasText(("ledgergood.%s.description"):format(binding))
+			end
+			assert.is_nil(L["binding.field.name"])
+			assert.is_nil(L["binding.birch.name"])
 		end
-	end)
+	)
 end)

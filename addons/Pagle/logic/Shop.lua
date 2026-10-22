@@ -595,8 +595,8 @@ end
 ---@field category string
 ---@field label string
 
---- The category chips (wallet-and-shop.md › UI): Announcements, Crests, Fish Journal, Hunts and Trackers, each
---- only if a live slot uses it.
+--- The category chips (wallet-and-shop.md › UI): Announcements, Crests, Books and Trackers, each only if a
+--- live slot uses it.
 ---@return PagleShopChip[]
 function Model:Chips()
 	local chips = {}

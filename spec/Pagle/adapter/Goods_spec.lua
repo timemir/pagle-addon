@@ -8,7 +8,7 @@
 ---@param hunts table the Hunts handle
 ---@param earned { value: boolean }
 local function registerCovers(hunts, earned)
-	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Hunts" })
+	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
 	hunts:RegisterGood({ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true })
 	hunts:RegisterGood({ id = "hunts.cover.velvet", slot = "hunts.cover", name = "Velvet", tier = 2, icon = 134939 })
 	hunts:RegisterGood({
@@ -63,7 +63,7 @@ describe("M:RegisterSlot and M:RegisterGood", function()
 			name = "Velvet",
 			slot = "hunts.cover",
 			slotLabel = "Notebook cover",
-			category = "Hunts",
+			category = "Trackers",
 			module = "Hunts",
 			icon = 134939,
 			tier = 2,
@@ -72,8 +72,8 @@ describe("M:RegisterSlot and M:RegisterGood", function()
 	end)
 
 	for _, case in ipairs({
-		{ "a duplicate slot", "RegisterSlot", { id = "hunts.cover", label = "Cover", category = "Hunts" } },
-		{ "a slot without the prefix", "RegisterSlot", { id = "cover", label = "Cover", category = "Hunts" } },
+		{ "a duplicate slot", "RegisterSlot", { id = "hunts.cover", label = "Cover", category = "Trackers" } },
+		{ "a slot without the prefix", "RegisterSlot", { id = "cover", label = "Cover", category = "Trackers" } },
 		{
 			"a good in an unknown slot",
 			"RegisterGood",
@@ -273,7 +273,7 @@ describe("Core's own goods", function()
 		local loaded = huntsCore()
 		local ns = loaded.ns
 
-		-- Core's three slots (SHOP-R25) are in already, from login step 1 (spec/Pagle/adapter/CoreGoods_spec.lua).
+		-- Core's four slots (SHOP-R25) are in already, from login step 1 (spec/Pagle/adapter/CoreGoods_spec.lua).
 		ns.RegisterCoreSlot({ id = "core.frame", label = "Tracker frame", category = "Trackers" })
 		ns.RegisterCoreGood({ id = "core.frame.plain", slot = "core.frame", name = "Plain", default = true })
 		local ok, err = pcall(function()
@@ -284,8 +284,8 @@ describe("Core's own goods", function()
 		assert.is_false(ok)
 		assert.matches("Goods_spec.lua:%d+: M:RegisterGood: hunts.frame doesn't start with core.", tostring(err))
 		assert.are.same({ "core.frame", "hunts.cover" }, {
-			ns.goods:Slots()[4].id,
 			ns.goods:Slots()[5].id,
+			ns.goods:Slots()[6].id,
 		})
 		assert.are.equal("Core", loaded.env.Pagle.GetGood("core.frame.plain").module)
 		assert.are.equal("core.frame.plain", loaded.env.Pagle.GetEquipped("core.frame"))

@@ -449,51 +449,23 @@ describe("the board's art kit", function()
 			plate:SetPlate(nil)
 			assert.is_false(plate:IsShown())
 		end)
+
+		it("tones the brass silver under a binding that asks for it, and back (HNT-R70)", function()
+			local ns, parent = kit()
+			local plate = ns.NewBoardPlate(parent)
+			plate:SetPlate("2 titles · 9 Hunts done")
+
+			plate:SetSilver(true)
+			assert.is_true(plate.brass.middle:IsDesaturated())
+			assert.are.same({ 1.1, 1.1, 1.15 }, plate.brass.left.vertexColor)
+
+			plate:SetSilver(false)
+			assert.is_false(plate.brass.right:IsDesaturated())
+			assert.are.same({ 1, 1, 1 }, plate.brass.left.vertexColor)
+		end)
 	end)
 
-	describe("the leather and the parchment (HNT-R60)", function()
-		it("lay the kit's grain, tiled, under its vignette, with the band round it above the ribbons", function()
-			local ns, parent = kit()
-
-			local leather = ns.NewBoardLeather(parent)
-
-			assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\Leather", leather.fill.texture)
-			-- 400 × 300 less the band's 7 at each side, 128 units a repeat
-			assert.are.same({ 0, 386 / 128, 0, 286 / 128 }, leather.fill.texCoord)
-			assert.are.same(coords(103, 3, 126, 126, 512, 256), leather.vignette.texCoord)
-			assert.is_true(leather.band:IsShown())
-			assert.are.equal(parent:GetFrameLevel() + 6, leather.band:GetFrameLevel())
-			assert.are.same({ 16, 16 }, { leather.bandPieces.TL.width, leather.bandPieces.TL.height })
-			assert.is_false(leather.corner:IsShown())
-			assert.is_false(leather.tooling[1].edges[1]:IsShown())
-		end)
-
-		it("wear the kit v2's covers: a cloth at the leather's size, the tooled gilt rule, the gilt corner", function()
-			local ns, parent = kit()
-			local leather = ns.NewBoardLeather(parent)
-
-			leather:SetCover(ns.CoverLook("hunts.notebookcover.oilcloth"))
-			assert.are.equal("Interface\\AddOns\\Pagle_Hunts\\media\\books\\Cover-oil", leather.fill.texture)
-			assert.are.same({ 0, 1, 0, 1 }, leather.fill.texCoord) -- drawn to the leather's size, not tiled
-			assert.is_true(leather.band:IsShown())
-
-			leather:SetCover(ns.CoverLook("hunts.notebookcover.tooled"))
-			assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\Leather", leather.fill.texture)
-			assert.are.same({ 0, 386 / 128, 0, 286 / 128 }, leather.fill.texCoord)
-			-- the gilt double rule, 9 and 12 units in, 1.5 units thick
-			assert.is_true(leather.tooling[1].edges[1]:IsShown())
-			assert.are.same({ "TOPLEFT", 9, -9 }, leather.tooling[1].edges[1].points[1])
-			assert.are.same({ "TOPLEFT", 12, -12 }, leather.tooling[2].edges[1].points[1])
-			assert.are.equal(1.5, leather.tooling[1].edges[1].height)
-			assert.is_false(leather.corner:IsShown())
-
-			leather:SetCover(ns.CoverLook("hunts.notebookcover.verdigris"))
-			assert.are.equal("Interface\\AddOns\\Pagle_Hunts\\media\\books\\Cover-verd", leather.fill.texture)
-			assert.is_true(leather.corner:IsShown())
-			assert.are.equal("Interface\\AddOns\\Pagle_Hunts\\media\\books\\HuntsParts", leather.corner.texture)
-			assert.is_false(leather.tooling[1].edges[1]:IsShown())
-		end)
-
+	describe("the parchment (HNT-R60)", function()
 		it("lay the kit's parchment, mirrored on a right page, with the gutter at the spine", function()
 			local ns, parent = kit()
 

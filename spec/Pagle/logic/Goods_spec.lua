@@ -44,7 +44,9 @@ describe("ns.NewGoods", function()
 	-- Hunts' notebook cover slot, with a default, a tier-2 good and an earned good whose isEarned returns `earned.value`.
 	local function huntsCovers(env, earned)
 		local goods = env.goods
-		assert.is_nil(goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Notebook cover", category = "Hunts" }))
+		assert.is_nil(
+			goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
+		)
 		assert.is_nil(
 			goods:RegisterGood(
 				"Hunts",
@@ -88,25 +90,29 @@ describe("ns.NewGoods", function()
 			{
 				"a slot ID with a space",
 				"Hunts",
-				{ slot = { id = "hunts.big cover", label = "Cover", category = "Hunts" } },
+				{ slot = { id = "hunts.big cover", label = "Cover", category = "Trackers" } },
 			},
 			{
 				"a slot ID without the Module's prefix",
 				"Hunts",
-				{ slot = { id = "ledger.cover", label = "Cover", category = "Hunts" } },
+				{ slot = { id = "ledger.cover", label = "Cover", category = "Trackers" } },
 			},
 			{
 				"a slot ID that is only the prefix",
 				"Hunts",
-				{ slot = { id = "hunts.", label = "Cover", category = "Hunts" } },
+				{ slot = { id = "hunts.", label = "Cover", category = "Trackers" } },
 			},
 			{
 				"Core's slot ID without core.",
 				"Core",
 				{ slot = { id = "hunts.style", label = "Style", category = "Announcements" } },
 			},
-			{ "a duplicate slot ID", "Hunts", { slot = { id = "hunts.cover", label = "Cover", category = "Hunts" } } },
-			{ "a slot without a label", "Hunts", { slot = { id = "hunts.frame", category = "Hunts" } } },
+			{
+				"a duplicate slot ID",
+				"Hunts",
+				{ slot = { id = "hunts.cover", label = "Cover", category = "Trackers" } },
+			},
+			{ "a slot without a label", "Hunts", { slot = { id = "hunts.frame", category = "Trackers" } } },
 			{ "an unknown category", "Hunts", { slot = { id = "hunts.frame", label = "Frame", category = "Maps" } } },
 			{ "a good that isn't a table", "Hunts", { good = "hunts.cover.tide" } },
 			{ "a duplicate good ID", "Hunts", { good = cover({ id = "hunts.cover.velvet" }) } },
@@ -142,12 +148,19 @@ describe("ns.NewGoods", function()
 			{
 				"groups that aren't a list",
 				"Hunts",
-				{ slot = { id = "hunts.frame", label = "Frame", category = "Hunts", groups = "gilt" } },
+				{ slot = { id = "hunts.frame", label = "Frame", category = "Trackers", groups = "gilt" } },
 			},
 			{
 				"a group without a key",
 				"Hunts",
-				{ slot = { id = "hunts.frame", label = "Frame", category = "Hunts", groups = { { name = "Gilt" } } } },
+				{
+					slot = {
+						id = "hunts.frame",
+						label = "Frame",
+						category = "Trackers",
+						groups = { { name = "Gilt" } },
+					},
+				},
 			},
 			{
 				"a group key with a dot",
@@ -156,7 +169,7 @@ describe("ns.NewGoods", function()
 					slot = {
 						id = "hunts.frame",
 						label = "Frame",
-						category = "Hunts",
+						category = "Trackers",
 						groups = { { key = "gilt.old", name = "Gilt" } },
 					},
 				},
@@ -164,7 +177,9 @@ describe("ns.NewGoods", function()
 			{
 				"a group without a name",
 				"Hunts",
-				{ slot = { id = "hunts.frame", label = "Frame", category = "Hunts", groups = { { key = "gilt" } } } },
+				{
+					slot = { id = "hunts.frame", label = "Frame", category = "Trackers", groups = { { key = "gilt" } } },
+				},
 			},
 			{
 				"a group key twice",
@@ -173,7 +188,7 @@ describe("ns.NewGoods", function()
 					slot = {
 						id = "hunts.frame",
 						label = "Frame",
-						category = "Hunts",
+						category = "Trackers",
 						groups = { { key = "gilt", name = "Gilt" }, { key = "gilt", name = "Gold" } },
 					},
 				},
@@ -192,7 +207,7 @@ describe("ns.NewGoods", function()
 				assert.is_nil(
 					env.goods:RegisterSlot(
 						"Ledger",
-						{ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" }
+						{ id = "ledger.binding", label = "Journal binding", category = "Books" }
 					)
 				)
 				local cached = {}
@@ -231,7 +246,7 @@ describe("ns.NewGoods", function()
 			)
 			assert.are.equal(
 				"M:RegisterSlot: ledger.cover doesn't start with hunts.",
-				env.goods:RegisterSlot("Hunts", { id = "ledger.cover", label = "Cover", category = "Hunts" })
+				env.goods:RegisterSlot("Hunts", { id = "ledger.cover", label = "Cover", category = "Trackers" })
 			)
 		end)
 
@@ -244,7 +259,7 @@ describe("ns.NewGoods", function()
 			assert.is_nil(
 				env.goods:RegisterSlot(
 					"Hunts",
-					{ id = "hunts.frame", label = "Frame", category = "Hunts", groups = groups }
+					{ id = "hunts.frame", label = "Frame", category = "Trackers", groups = groups }
 				)
 			)
 			groups[1].name = "Changed"
@@ -289,10 +304,7 @@ describe("ns.NewGoods", function()
 		it("lists the slots of Core first, then by Module order, each with its goods in order (SHOP-R21)", function()
 			local env = newGoods()
 			huntsCovers(env, { value = false })
-			env.goods:RegisterSlot(
-				"Ledger",
-				{ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" }
-			)
+			env.goods:RegisterSlot("Ledger", { id = "ledger.binding", label = "Journal binding", category = "Books" })
 			env.goods:RegisterSlot("Core", { id = "core.crest", label = "Crests", category = "Crests" })
 			env.goods:RegisterSlot(
 				"Core",
@@ -320,7 +332,7 @@ describe("ns.NewGoods", function()
 		"prices tiers 1 to 5 at 150, 400, 900, 2,000 and 5,000 Coins, and registers a tier 4 and a tier 5 good (SHOP-R22, Tunables)",
 		function()
 			local env = newGoods()
-			env.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Cover", category = "Hunts" })
+			env.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Cover", category = "Trackers" })
 			env.goods:RegisterGood(
 				"Hunts",
 				{ id = "hunts.cover.calf", slot = "hunts.cover", name = "Calf", default = true }
@@ -787,7 +799,7 @@ describe("ns.NewGoods", function()
 					name = "Plain",
 					slot = "hunts.cover",
 					slotLabel = "Notebook cover",
-					category = "Hunts",
+					category = "Trackers",
 					module = "Hunts",
 					default = true,
 				},
@@ -795,7 +807,7 @@ describe("ns.NewGoods", function()
 					name = "Velvet",
 					slot = "hunts.cover",
 					slotLabel = "Notebook cover",
-					category = "Hunts",
+					category = "Trackers",
 					module = "Hunts",
 					tier = 2,
 				},
@@ -803,7 +815,7 @@ describe("ns.NewGoods", function()
 					name = "Gold",
 					slot = "hunts.cover",
 					slotLabel = "Notebook cover",
-					category = "Hunts",
+					category = "Trackers",
 					module = "Hunts",
 					earned = true,
 				},
@@ -811,7 +823,7 @@ describe("ns.NewGoods", function()
 					name = "Tide",
 					slot = "hunts.cover",
 					slotLabel = "Notebook cover",
-					category = "Hunts",
+					category = "Trackers",
 					module = "Hunts",
 					icon = 134939,
 					tier = 1,
@@ -967,12 +979,12 @@ describe("ns.NewGoods", function()
 				coreSlots(env)
 				env.goods:RegisterSlot(
 					"Ledger",
-					{ id = "ledger.binding", label = "Journal binding", category = "Fish Journal" }
+					{ id = "ledger.binding", label = "Journal binding", category = "Books" }
 				)
 				-- openToEarned is Core's alone: on a Module's slot it opens nothing.
 				env.goods:RegisterSlot(
 					"Ledger",
-					{ id = "ledger.open", label = "Open", category = "Fish Journal", openToEarned = true }
+					{ id = "ledger.open", label = "Open", category = "Books", openToEarned = true }
 				)
 
 				assert.is_string(env.goods:RegisterGood(case[2], case[3]))
@@ -1082,7 +1094,7 @@ describe("ns.NewGoods", function()
 				local env = newGoods()
 				local calls, texts = 0, { "Expert · 88%", "Earned when the forest reaches Master." }
 				assert.is_nil(
-					env.goods:RegisterSlot("Ledger", { id = "ledger.book", label = "Book", category = "Fish Journal" })
+					env.goods:RegisterSlot("Ledger", { id = "ledger.book", label = "Book", category = "Books" })
 				)
 				assert.is_nil(
 					env.goods:RegisterGood(
@@ -1133,7 +1145,7 @@ describe("ns.NewGoods", function()
 				errors = errors + 1
 			end)
 			local give
-			env.goods:RegisterSlot("Ledger", { id = "ledger.book", label = "Book", category = "Fish Journal" })
+			env.goods:RegisterSlot("Ledger", { id = "ledger.book", label = "Book", category = "Books" })
 			env.goods:RegisterGood(
 				"Ledger",
 				{ id = "ledger.book.plain", slot = "ledger.book", name = "Plain", default = true }

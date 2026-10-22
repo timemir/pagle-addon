@@ -69,10 +69,8 @@ local FIT = { width = BOOK.extentW, height = BOOK.extentH }
 ---@field frame LedgerJournalFrame?
 ---@field pages LedgerJournalPages?
 ---@field plate string?                -- the brass plate's words as last read; nil until first read (LED-R149)
----@field binding string?              -- the binding it was last drawn in (LED-R112)
 ---@field prestigeCard LedgerPrestigeCard? -- the Prestige confirm, made at its first asking (adapter/Prestige.lua)
 ---@field private redrawQueued boolean
----@field private bindOwner table?    -- the motion driver's owner of a binding change
 ---@field private drawnSubjects { left: string?, right: string? }? -- each page's subject as last drawn (LED-R129)
 ---@field private drawnId string?      -- the spread last drawn, and its depth in crumbs
 ---@field private drawnDepth integer?
@@ -123,6 +121,9 @@ function Journal:Context() -- luacheck: no self
 			getEquipped = Pagle.GetEquipped,
 			setEquipped = Pagle.SetEquipped,
 			openShop = Pagle.OpenShop,
+			slotGoods = Pagle.GetSlotGoods,
+			getGood = Pagle.GetGood,
+			bindingLook = Pagle.GetBindingLook,
 		},
 		-- The varieties (VAR-R23, VAR-R24): a Species' ten, the rarities and its fish crest.
 		getVarieties = Pagle.GetVarieties,
@@ -296,6 +297,25 @@ local function buildBack(journal, frame)
 	return back
 end
 
+-- Inks crumb `crumb` in binding `look` (LED-R112, LED-R125): its words in the look's gilt over its shadow, and the
+-- fleuron before them toward that gilt (the kit tints it from its own #e8c96a).
+---@param crumb LedgerJournalCrumbView
+---@param look PagleBindingLook
+local function inkCrumb(crumb, look)
+	crumb.gilt = look.gilt
+	crumb.label:SetTextColor(unpack(look.gilt))
+	local shadow = look.giltShadow
+	crumb.label:SetShadowColor(shadow[1], shadow[2], shadow[3], shadow[4])
+	crumb.label:SetShadowOffset(shadow[5], shadow[6])
+	if crumb.fleuron then
+		crumb.fleuron:SetVertexColor(
+			math.min(1, look.gilt[1] / 0.91),
+			math.min(1, look.gilt[2] / 0.79),
+			math.min(1, look.gilt[3] / 0.42)
+		)
+	end
+end
+
 -- Builds the book, hidden: the kit's shell, two leaves on each page, the back link, the "being written up" pages,
 -- the Legend plate, the fold and the search box's drop-down. It moves by dragging its leather (the pages take their
 -- own clicks), kept on the screen, and the client keeps no position: Show fits it centred again at each opening
@@ -319,7 +339,14 @@ local function build(journal)
 		-- A moved frame is user-placed, and the client would save where it was left (as the Tackle Board, TKB-R100).
 		self:SetUserPlaced(false)
 	end)
-	ns.BuildJournalShell(frame)
+	frame.crumbButtons = {}
+	-- Core's binding round it (LED-R112): each look it puts on inks the crumbs drawn so far, as the shell inks its plate
+	-- and paper.
+	ns.BuildJournalShell(frame, function(look)
+		for _, crumb in ipairs(frame.crumbButtons) do
+			inkCrumb(crumb, look)
+		end
+	end)
 	frame.leaves, frame.shownLeaf = { left = {}, right = {} }, { left = 1, right = 1 }
 	for _, side in ipairs({ "left", "right" }) do
 		for i = 1, 2 do
@@ -331,7 +358,6 @@ local function build(journal)
 		end
 	end
 	frame.left, frame.right = frame.leaves.left[1].body, frame.leaves.right[1].body
-	frame.crumbButtons = {}
 	frame.back = buildBack(journal, frame)
 	frame.updatingView = buildUpdating(frame)
 	frame.legendPlate = ns.BuildLegendPlate(frame.pagesFrame)
@@ -410,30 +436,18 @@ local function crumbAt(journal, i)
 	return crumb
 end
 
--- Lays the crumbs along the strip in the binding's gilt over its shadow, the fleurons between them, each opening its level but the
--- last (LED-R125, LED-R110); the last are cut short before the search slip.
+-- Lays the crumbs along the strip in the binding's gilt, the fleurons between them, each opening its level but the
+-- last (LED-R125, LED-R112); the last are cut short before the search slip.
 ---@param journal LedgerJournal
 ---@param crumbs LedgerCrumb[]
----@param look LedgerBindingLook
-local function drawCrumbs(journal, crumbs, look)
+local function drawCrumbs(journal, crumbs)
 	local frame = journal.frame --[[@as LedgerJournalFrame]]
+	local look = frame.binding:Look()
 	local room = frame.crumbs:GetWidth()
 	local x = 0
 	for i, data in ipairs(crumbs) do
 		local crumb = crumbAt(journal, i)
-		crumb.gilt = look.gilt
-		crumb.label:SetTextColor(unpack(look.gilt))
-		local shadow = look.giltShadow
-		crumb.label:SetShadowColor(shadow[1], shadow[2], shadow[3], shadow[4])
-		crumb.label:SetShadowOffset(shadow[5], shadow[6])
-		if crumb.fleuron then
-			-- the fleuron's gilt toward the binding's (the kit tints it from its own #e8c96a)
-			crumb.fleuron:SetVertexColor(
-				math.min(1, look.gilt[1] / 0.91),
-				math.min(1, look.gilt[2] / 0.79),
-				math.min(1, look.gilt[3] / 0.42)
-			)
-		end
+		inkCrumb(crumb, look)
 		local lead = i > 1 and 32 or 0
 		crumb.label:SetText(data.label)
 		ns.JournalBound(crumb.label, math.max(1, room - x - lead))
@@ -469,7 +483,6 @@ end
 --- Opens the book, drawn as it stands now, fitted to the screen; opening it ticks the First evening list's item and
 --- may show the Ledger's Margin note (ONB-R61, ONB-R52).
 function Journal:Show()
-	local fresh = not self.frame
 	local frame = self.frame or build(self)
 	self.frame = frame
 	local opening = not frame:IsShown() or frame.closing
@@ -484,9 +497,6 @@ function Journal:Show()
 	end
 	-- It opens over every window already open: the Pagle windows share its strata, at frame levels of their own.
 	frame:Raise()
-	if fresh then
-		self.binding = nil
-	end
 	self:Draw()
 	-- what opening it does for onboarding, on its pages as drawn (adapter/Onboarding.lua)
 	if opening then
@@ -562,41 +572,6 @@ function Journal:Settle()
 	end
 	Pagle.StopMotion(frame)
 	frame:SetAlpha(1)
-end
-
---- Draws the book in binding `look` (LED-R112); `changing` from another one while open, as the kit changes binding
---- (MOTION.md): the page-turn sound, the leather dipping to 25% and back and the band to 55% (0.4 s), the binding
---- changing underneath at the dip.
----@param look LedgerBindingLook
----@param changing boolean
-function Journal:Rebind(look, changing)
-	local frame = self.frame --[[@as LedgerJournalFrame]]
-	local owner = self.bindOwner or {}
-	self.bindOwner = owner
-	Pagle.StopMotion(owner)
-	frame.leatherFill:SetAlpha(1)
-	frame.bandFrame:SetAlpha(1)
-	if changing then
-		ns.JournalSound("rebind") -- whether or not things move
-	end
-	if not (changing and ns.MotionOn()) then
-		ns.TintJournalShell(frame, look)
-		return
-	end
-	Pagle.Animate(owner, {
-		{
-			dur = 0.4,
-			ease = Pagle.EASE.inOut,
-			keys = { { 0, { 1 } }, { 0.5, { 0.25 } }, { 1, { 1 } } },
-			apply = function(v)
-				frame.leatherFill:SetAlpha(v[1])
-				frame.bandFrame:SetAlpha(0.4 + 0.6 * v[1])
-			end,
-		},
-	})
-	Pagle.Cue(owner, 0.2, function()
-		ns.TintJournalShell(frame, look)
-	end)
 end
 
 -- The leaf of `side` not shown now, made ready: shown whole and drawn on.
@@ -742,8 +717,8 @@ local function crossfade(journal, from, to)
 	}, finish)
 end
 
---- Draws both pages, the crumbs, the search slip and the back link from the router now, in the equipped binding, if
---- the book is open (LED-R122, LED-R125, LED-R112). Another spread turns the page to it, a fish picked crossfades the
+--- Draws both pages, the crumbs, the search slip and the back link from the router now, the crumbs in the binding's
+--- gilt, if the book is open (LED-R122, LED-R125, LED-R112). Another spread turns the page to it, a fish picked crossfades the
 --- right page, a Legend's plate opens over the spread; the same spread is drawn again in place, keeping each page's
 --- scroll while its subject stays (LED-R129), and its widgets play their moments of change.
 function Journal:Draw()
@@ -751,12 +726,6 @@ function Journal:Draw()
 	if not frame or not frame:IsShown() then
 		return
 	end
-	local binding = Pagle.GetEquipped(ns.BINDING_SLOT)
-	local look = ns.BindingLook(binding)
-	if binding ~= self.binding or not frame.leatherTint then
-		self:Rebind(look, self.binding ~= nil and frame.leatherTint ~= nil)
-	end
-	self.binding = binding
 	local context = self:Context()
 	local pages = self.router:Pages(context)
 	self.pages = pages
@@ -808,7 +777,7 @@ function Journal:Draw()
 		self.drawnPlate = true
 		frame.search:Hide()
 		frame.searchDrop:Hide()
-		drawCrumbs(self, pages.crumbs or {}, look)
+		drawCrumbs(self, pages.crumbs or {})
 		self.drawnSubjects, self.drawnId = pages.subjects, self.router:Place().id
 		return
 	end
@@ -848,7 +817,7 @@ function Journal:Draw()
 		self.finishTurn()
 	end
 	local crumbs = function()
-		drawCrumbs(self, pages.crumbs or {}, look)
+		drawCrumbs(self, pages.crumbs or {})
 	end
 
 	if turning then

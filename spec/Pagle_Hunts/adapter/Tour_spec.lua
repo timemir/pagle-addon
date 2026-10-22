@@ -17,20 +17,17 @@ local C = catalogue
 local FROM = hunts.untilRealm(17, 30)
 -- One stop's span on the tour's clock: shown, shot 2.8 s in, hidden 0.5 s later, the next 0.3 s after that.
 local STOP = 2.8 + 0.5 + 0.3
--- The eleven stops before the goods, then each cover and tracker frame but the defaults (HNT-R121).
-local COVERS, FRAMES = {}, {}
-for _, row in ipairs(hunts.GOODS["hunts.notebookcover"]) do
-	if row[2] ~= "default" then
-		COVERS[#COVERS + 1] = row[1]
-	end
-end
+-- The eleven stops before the goods, then Hunts' three earned bindings (HNT-R122) and each tracker frame but the
+-- default (HNT-R121).
+local BINDINGS = { "hunts.binding.pathfinder", "hunts.binding.fiveseal", "hunts.binding.wagersilk" }
+local FRAMES = {}
 for _, row in ipairs(hunts.GOODS["hunts.trackerframe"]) do
 	if row[2] ~= "default" then
 		FRAMES[#FRAMES + 1] = row[1]
 	end
 end
 local GOODS_FROM = 11
-local STOPS = GOODS_FROM + #COVERS + #FRAMES
+local STOPS = GOODS_FROM + #BINDINGS + #FRAMES
 
 -- Hunts' Session summary line as Core holds it, or nil (HNT-R89).
 local function summaryLine(fake)
@@ -66,7 +63,7 @@ local function start(options)
 end
 
 -- What stop `i` shows at its shot: the board's place, the group of the Hunt it shows, its entry's name, whether the
--- set's seal shows and its cover; or the tracker's lines and frame.
+-- set's seal shows and the binding it is pinned to; or the tracker's lines and frame.
 ---@param run HuntsRun
 local function seen(run)
 	local ns = run.ns
@@ -86,7 +83,7 @@ local function seen(run)
 		end
 		out.left = shownTexts(board:Page(place, "left"))
 		out.right = right and shownTexts(right) or {}
-		out.cover = board.cover
+		out.binding = board.pinned
 	end
 	out.grouper = ns.groups:Row("fixture_grouper") ~= nil
 	local lines = 0
@@ -135,24 +132,15 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 			"  hunts.set.entry: the Hunts board: an entry opened from its set's page",
 			"  hunts.set.retired: the Hunts board: a Retired Hunt's entry",
 			"  hunts.tracker: the Hunts tracker in the dock, with three pins",
-			"  hunts.cover.oilcloth: the Hunts board in the Oilcloth cover",
-			"  hunts.cover.tooled: the Hunts board in the Tooled Leather cover",
-			"  hunts.cover.verdigris: the Hunts board in the Verdigris cover",
-			"  hunts.cover.canvas: the Hunts board in the Canvas Field Pad cover",
-			"  hunts.cover.kraft: the Hunts board in the Waxed Kraft cover",
-			"  hunts.cover.tartan: the Hunts board in the Tartan Wool cover",
-			"  hunts.cover.maplinen: the Hunts board in the Map Linen cover",
-			"  hunts.cover.planks: the Hunts board in the Bound Planks cover",
-			"  hunts.cover.snakeskin: the Hunts board in the Snakeskin cover",
-			"  hunts.cover.shagreen: the Hunts board in the Stingray Shagreen cover",
-			"  hunts.cover.lacquer: the Hunts board in the Lacquered Red cover",
-			"  hunts.cover.bone: the Hunts board in the Bone & Rawhide cover",
-			"  hunts.cover.brasscase: the Hunts board in the Brass Hunter's Case cover",
-			"  hunts.cover.scrimshaw: the Hunts board in the Scrimshaw Panel cover",
-			"  hunts.cover.trophycase: the Hunts board in the Gilded Trophy Case cover",
-			"  hunts.cover.pathfinder: the Hunts board in the Pathfinder's Calf cover",
-			"  hunts.cover.fiveseal: the Hunts board in the Five-Set Seal cover",
-			"  hunts.cover.wagersilk: the Hunts board in the Winner's Brocade cover",
+			"  hunts.binding.pathfinder: the Hunts board in the "
+				.. run.ns.HuntsGoodName("hunts.binding.pathfinder")
+				.. " binding",
+			"  hunts.binding.fiveseal: the Hunts board in the "
+				.. run.ns.HuntsGoodName("hunts.binding.fiveseal")
+				.. " binding",
+			"  hunts.binding.wagersilk: the Hunts board in the "
+				.. run.ns.HuntsGoodName("hunts.binding.wagersilk")
+				.. " binding",
 			"  hunts.trackerframe.inkwash: the Hunts tracker in the Ink Wash frame",
 			"  hunts.trackerframe.waxseal: the Hunts tracker in the Wax Seal frame",
 			"  hunts.trackerframe.slate: the Hunts tracker in the Chalk Slate frame",
@@ -244,23 +232,22 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 	end)
 
 	it(
-		"wear each notebook cover on the board and each tracker frame on the tracker, earned ones too (HNT-R121, HNT-R122)",
+		"wear each of Hunts' earned bindings on the board and each tracker frame on the tracker (HNT-R70, HNT-R121, HNT-R122)",
 		function()
 			local run = start()
-			local ns = run.ns
 
 			local shown = tour(run)
 
-			for i, id in ipairs(COVERS) do
-				assert.are.equal(ns.COVERS[id], shown[GOODS_FROM + i].cover)
+			for i, id in ipairs(BINDINGS) do
+				assert.are.equal(id, shown[GOODS_FROM + i].binding)
 				assert.are.same(
 					{ mode = "board", hunt = shown[GOODS_FROM + i].place.hunt },
 					shown[GOODS_FROM + i].place
 				)
 			end
 			for i, id in ipairs(FRAMES) do
-				assert.are.equal(id, shown[GOODS_FROM + #COVERS + i].wearing)
-				assert.are.equal(3, shown[GOODS_FROM + #COVERS + i].lines)
+				assert.are.equal(id, shown[GOODS_FROM + #BINDINGS + i].wearing)
+				assert.are.equal(3, shown[GOODS_FROM + #BINDINGS + i].lines)
 			end
 			assert.are.equal(STOPS, #run.fake.tourShots)
 		end
@@ -274,7 +261,6 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 			projection = ns.projection,
 			grouping = ns.groups:Grouping(),
 			pins = ns.db.profile.pins,
-			cover = ns.board.cover,
 			applyCast = ns.ApplyCast,
 			reached = ns.outlets.Reached,
 			db = hunts.deepCopy(run.loaded.env.PagleHuntsDB),
@@ -288,7 +274,8 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 
 		assert.is_false(ns.board:IsShown())
 		assert.are.same({ mode = "board" }, ns.board.router:Place())
-		assert.are.equal(before.cover, ns.board.cover)
+		assert.is_nil(ns.board.pinned) -- the board follows the equipped binding again (BIND-R2)
+		assert.is_nil(ns.board.frame.binding.pinned)
 		assert.are.equal(before.hunts, ns.hunts)
 		assert.are.equal(before.projection, ns.projection)
 		assert.are.equal(before.grouping, ns.groups:Grouping())
