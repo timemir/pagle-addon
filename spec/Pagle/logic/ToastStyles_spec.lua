@@ -129,7 +129,7 @@ describe("the toast styles", function()
 				local roles = { style.stampInk }
 				for _, page in ipairs({ pageOf("low"), pageOf("toast"), pageOf("high"), nil }) do
 					local inks = ns.ToastInks(style, page)
-					for _, role in ipairs({ inks.what, inks.name, inks.amt }) do
+					for _, role in ipairs({ inks.what, inks.name, inks.amt, inks.label, inks.value }) do
 						roles[#roles + 1] = role
 					end
 				end
@@ -204,6 +204,33 @@ describe("the toast styles", function()
 			assert.are.same(ns.Rgb("E8B830"), ink(ns.ToastInks(folio, pageOf("high")).what))
 			-- Torn Page keeps the ledger's own.
 			assert.are.same({ ink("red"), ink("ink"), ink("amt") }, inksOf(ns.ToastStyleOf(TORN_PAGE), pageOf("toast")))
+		end
+	)
+
+	it(
+		"write the size ruler's label and number in a dark style's `small` ink on every page and the Nod, and in the"
+			.. " ledger's inks for a style without one (ANN-R81)",
+		function()
+			local function rulerInks(id)
+				local style, out = ns.ToastStyleOf(id), {}
+				for _, page in ipairs({ pageOf("low"), pageOf("toast"), pageOf("high") }) do
+					local inks = ns.ToastInks(style, page)
+					out[#out + 1] = { ink(inks.label), ink(inks.value) }
+				end
+				local nod = ns.ToastInks(style)
+				out[#out + 1] = { ink(nod.label), ink(nod.value) }
+				return out
+			end
+			local function each(label, value)
+				return { { label, value }, { label, value }, { label, value }, { label, value } }
+			end
+
+			-- Moonlit Vellum and Oxblood Vellum: light ink on a dark page.
+			assert.are.same(each(ns.Rgb("B0BCD8"), ns.Rgb("B0BCD8")), rulerInks("core.toaststyle.moon"))
+			assert.are.same(each(ns.Rgb("E0C8A0"), ns.Rgb("E0C8A0")), rulerInks("ledger.toaststyle.prestige"))
+			-- Ship's Log and Torn Page have none: the ledger's brown.
+			assert.are.same(each(ink("ink2"), ink("ink")), rulerInks("core.toaststyle.ship"))
+			assert.are.same(each(ink("ink2"), ink("ink")), rulerInks(TORN_PAGE))
 		end
 	)
 

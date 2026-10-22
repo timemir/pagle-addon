@@ -55,8 +55,8 @@ ns.ANNOUNCE_COLORS = {
 
 --- A toast style: its toast and Nod atlas, its medallions' ring (the shared trim, a toast.high's own, or its own ring
 --- in its atlas), the rubber stamp sprite and its ink, and the page's inks, each a role in ns.ANNOUNCE_COLORS: the
---- kicker and name, the Coins', toast.high's kicker and toast.low's, each the ledger's own where the style has none
---- (ns.ToastInks), and the tint of toast.high's wax, over its grey with `waxDesaturated`.
+--- kicker and name, the Coins', toast.high's kicker and toast.low's, the size ruler's label and number (`small`),
+--- each the ledger's own where the style has none (ns.ToastInks), and the tint of toast.high's wax, over its grey with `waxDesaturated`.
 ---@class PagleToastStyle
 ---@field id string
 ---@field atlas string
@@ -72,6 +72,7 @@ ns.ANNOUNCE_COLORS = {
 ---@field lowWhat? string
 ---@field lowName? string
 ---@field lowAmt? string
+---@field small? string                    -- the size ruler's label and number, for a dark page (ANN-R81)
 ---@field wax? string
 ---@field waxDesaturated? true
 
@@ -187,6 +188,7 @@ local RINGED = {
 			lowWhat = "C8D0E8",
 			lowName = "E8ECF8",
 			lowAmt = "C8D0E8",
+			small = "B0BCD8",
 			wax = "58A3FF",
 		},
 		waxDesaturated = true,
@@ -261,6 +263,7 @@ local RINGED = {
 			lowWhat = "E8C890",
 			lowName = "FBEFD0",
 			lowAmt = "E8C890",
+			small = "E0C8A0",
 			wax = "D9D9D9",
 		},
 	},
@@ -315,20 +318,30 @@ function ns.BezelRing(style, size, high)
 	return { atlas = "Announce", sprite = ("bezel-%s-%d"):format(high and style.highTrim or style.trim, size) }
 end
 
---- The inks a style writes in on `page` (ANN-R80, ANN-R81), each a role in ns.ANNOUNCE_COLORS: the kicker, the name
---- and the Coins. toast.low is in pencil and toast.high's kicker gilt, unless the style has its own; with no page, the
---- Nod's.
+--- The inks a style writes in on `page` (ANN-R80, ANN-R81), each a role in ns.ANNOUNCE_COLORS: the kicker, the name,
+--- the Coins, and the size ruler's label and number. toast.low is in pencil and toast.high's kicker gilt, unless the
+--- style has its own; the ruler's label and number are in the style's `small` on every page, the Nod's number too, or
+--- in the ledger's inks for a style without one. With no page, the Nod's.
 ---@param style PagleToastStyle
 ---@param page PagleToastPage?
----@return { what: string, name: string, amt: string }
+---@return { what: string, name: string, amt: string, label: string, value: string }
 function ns.ToastInks(style, page)
+	local label, value = style.small or "ink2", style.small or "ink"
 	if page and page.low then
-		return { what = style.lowWhat or "pencil", name = style.lowName or "pencilName", amt = style.lowAmt or "amtLow" }
+		return {
+			what = style.lowWhat or "pencil",
+			name = style.lowName or "pencilName",
+			amt = style.lowAmt or "amtLow",
+			label = label,
+			value = value,
+		}
 	end
 	return {
 		what = page and page.high and (style.highWhat or "giltDeep") or style.what,
 		name = style.name,
 		amt = style.amt or "amt",
+		label = label,
+		value = value,
 	}
 end
 
