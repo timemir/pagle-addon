@@ -43,7 +43,7 @@ Part of [Core](README.md). Every fish Pagle sizes comes in **ten varieties**: an
 
 ### In the Ledger (amending ledger.md)
 
-- **VAR-R20 (LED-R70)** Ledger completion adds **every Species with varieties** (done: all ten caught), from the Ledger's own projection, removed Species left out of both sides. 37 parts at release.
+- **VAR-R20 (LED-R70)** Ledger completion adds **every Species with varieties** (done: all ten caught), from the Ledger's own projection, removed Species left out of both sides. Its world is the Species part's (LED-R10: listed in a charted zone), so 35 parts at release: Zulian Mudskunk and Whimsyfin have varieties and crests but are on no charted zone's list. The `complete.varieties` title counts the same 35 (VAR-R22).
 - **VAR-R21 (LED-R71)** The Angler page adds the part "Varieties" with "{fish complete} of {N}".
 - **VAR-R22 (LED-R75)** Title `complete.varieties`, earned when every variety of every Species with varieties has been caught (a total above 0). Lore: "Keeper of Every Colour". It is meant to be the rarest title the Ledger gives.
 - **VAR-R23 (LED-R142)** The fish spread's right page adds, under the stamps, "Varieties" with "{n} of 10" and a link "See all ten »" that opens the **varieties spread** (UI, LED-R151) on the first caught variety. A Species without varieties shows neither, and neither does one never caught (its stamps aren't shown, LED-R142).

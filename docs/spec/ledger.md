@@ -150,7 +150,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 
 - **LED-R70** **Ledger completion** is `floor(100 × done / total)` over, for each, the world minus removed items:
   - every Species (done: caught)
-  - every Species with varieties (done: all ten caught, from the Ledger's own projection; VAR-R20): 37 parts at release
+  - every Species with varieties in the world (done: all ten caught, from the Ledger's own projection; VAR-R20): 35 parts at release, as two of the 37 are on no charted zone's list
   - every Sub-collection item: Junk Museum, Treasures and Trophy Room items (done: caught)
   - every charted zone (done: computed rank Master)
 
