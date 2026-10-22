@@ -136,6 +136,8 @@ ns.BOARD_FONTS = {
 	GuideFact = { "print", 14.5, "3E220C" },
 	GuideNote = { "italic", 13, "7A5A30" },
 	GuideButton = { "gilt", 18, "F4DFA8", true },
+	-- the "?" on its brass pin beside the close mark (ONB-R59)
+	HelpMark = { "gilt", 15, "3A2406" },
 	-- the board's tooltip
 	TipTitle = { "gilt", 15, "F6E3A8" },
 	TipLine = { "print", 13.5, "E8DABC" },

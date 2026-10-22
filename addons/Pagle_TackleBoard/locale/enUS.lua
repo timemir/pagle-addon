@@ -291,4 +291,17 @@ ns.L = {
 	GUIDE_FACT_SHOP = "which buy looks in the Curio Shop.",
 	BOARD_IS_UP = "Your board is up",
 	GUIDE_LEAVE = "Or leave it for now. The board waits under Tackle Board in the Pagle menu, and in Settings.",
+	-- The board's First look (ONB-R55–R57; adapter/FirstLook.lua): its name on the coach bar ("First look · {title}"),
+	-- and its five notes, each {term} printed in the red pencil.
+	LOOK_TITLE = "the Tackle Board",
+	LOOK_NOTES = {
+		{ text = "{term} are the bigger weekly ones. They wait too, up to two.", term = "Expeditions" },
+		{ text = "A Notice {term}. Don’t fancy it? Take it down, once, for another.", term = "never expires" },
+		{ text = "Your {term}: days in a row with one done. A missed day burns Kindling instead.", term = "Campfire" },
+		{ text = "Each one done ties a fly for your {term}.", term = "Fly Box" },
+		{ text = "They pay {term}, spent on looks in the Curio Shop.", term = "Pagle Coins" },
+	},
+	-- The "?" beside the board's close (ONB-R59): its mark on the pin, and its tooltip.
+	LOOK_AGAIN_MARK = "?",
+	LOOK_AGAIN = "Show the notes for this page again",
 }

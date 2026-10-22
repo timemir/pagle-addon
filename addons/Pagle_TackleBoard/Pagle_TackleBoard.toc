@@ -51,3 +51,4 @@ adapter\Reroll.lua
 adapter\Moments.lua
 adapter\LiveStep.lua
 adapter\GuidePage.lua
+adapter\FirstLook.lua

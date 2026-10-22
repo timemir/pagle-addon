@@ -70,6 +70,7 @@ local GLOW_EMPTY = 0.25
 ---@field glowBase number?                         -- the light on the cork's alpha at rest, nil while it is hidden
 ---@field glowBoost number?                        -- how much brighter it flares as the fire steps up
 ---@field settled boolean?                         -- its last draw drew a started board that wasn't updating
+---@field help TackleBoardHelp?                    -- the "?" beside the close mark, on a Core with First looks (ONB-R59)
 
 --- The Tackle Board: its parts' renderers, and its frame once made.
 ---@class TackleBoard
@@ -239,6 +240,8 @@ local function build(board)
 	frame.close:SetScript("OnClick", function()
 		board:Hide()
 	end)
+	-- The "?" beside the close mark, for its First look (ONB-R59; adapter/FirstLook.lua).
+	ns.AddBoardLook(frame)
 	table.insert(UISpecialFrames, FRAME_NAME)
 	frame:Hide()
 	-- Closed by its mark, Esc or a toggle, never by its parent hiding (the UI hidden): it sounds its closing, and every
@@ -363,6 +366,8 @@ function Board:Draw(reason, detail, highlight)
 	if before and frame.settled then
 		ns.PlayBoardChanges(frame, before)
 	end
+	-- The "?" and, as a started board opens, its First look (ONB-R55, ONB-R59).
+	ns.BoardLookDrawn(frame, reason)
 end
 
 -- The board's entry points (logic/Seams.lua lists them); every caller calls them through ns at call time.

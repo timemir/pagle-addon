@@ -27,6 +27,8 @@ function ns.TackleBoard.OnInitialize()
 	ns.AddSettings(ns.Module)
 	-- Its step in the Field guide, before ModulesChanged too (ONB-R21, ONB-R37).
 	ns.RegisterGuidePage(ns.Module)
+	-- Its First look, so it joins Off you go's list and the tour (ONB-R56).
+	ns.RegisterBoardLook(ns.Module)
 
 	--- The Tackle Board's one projection (TKB-R81): Core catches it up or rebuilds it after login and hands it each new
 	--- entry (LOG-R71–R73). ns.State, ns.IsUpdating and ns.IsStarted follow it from here on.

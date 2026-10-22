@@ -5,8 +5,9 @@ end
 ---@class PagleTackleBoardNS
 local ns = select(2, ...)
 
--- The Tackle Board's parts of onboarding (core/onboarding.md): what its Field guide step shows (ONB-R37). Pure logic
--- (CORE-R7): the client's names come through ns.api, read through ns at call time; adapter/GuidePage.lua draws it.
+-- The Tackle Board's parts of onboarding (core/onboarding.md): what its Field guide step shows (ONB-R37) and its
+-- board's First look's notes (ONB-R57). Pure logic (CORE-R7): the client's names come through ns.api, read through ns
+-- at call time; adapter/GuidePage.lua and adapter/FirstLook.lua draw them.
 
 --- The step's place in the guide (ONB-R21, ONB-R37): after the Ledger's (60), before Core's Off you go (90); its
 --- skip link "Not now" goes on to the next step, not to the last.
@@ -92,4 +93,50 @@ function ns.GuideSample()
 		fireDays = SAMPLE_FIRE.count,
 		flies = ns.Fill(ns.L.FLY_BOX_TIED, { n = math.min(SAMPLE_TIED, #ns.FLY_PATTERNS), total = #ns.FLY_PATTERNS }),
 	}
+end
+
+-- The board's First look (ONB-R55–R57; board 15, "First look · the Tackle Board", and the kit's World.lua).
+
+--- The board's set's id (ONB-R56: "<module>.<window>").
+ns.BOARD_LOOK_ID = "tackleboard.board"
+
+-- The red pencil a note's key term is written in (core/onboarding.md › Contracts, PagleMarginNote).
+local RED = "|cff9a2a1a"
+
+-- Each note's place beside the board (x, y of its top left from the board's, in the board's units: the canvas's,
+-- whose board stands at 282, 84 drawn at 0.88), its width, and what its arrow points at: the first Expedition, the
+-- first Notice's take-down, the Campfire, the Fly Box and the shop card. The fourth sits over the cork, as drawn.
+local LOOK_PLACES = {
+	{ x = -307, y = 7, w = 186, target = "expedition" },
+	{ x = -307, y = 245, w = 186, target = "notice" },
+	{ x = -307, y = 518, w = 186, target = "campfire" },
+	{ x = 361, y = 373, w = 240, target = "flybox" },
+	{ x = 1086, y = 495, w = 190, target = "coins" },
+}
+
+--- One note of the board's First look: its words (the key term in the red pencil), where it sits and what it points
+--- at (a name the board's frame resolves, adapter/FirstLook.lua).
+---@class TackleLookNote
+---@field text string
+---@field x number
+---@field y number
+---@field w number
+---@field target "expedition"|"notice"|"campfire"|"flybox"|"coins"
+
+--- The board's First look's five notes (ONB-R57's Tackle Board set): Expeditions; a Notice never expires and its
+--- take-down; the Campfire and Kindling; the Fly Box; Coins.
+---@return TackleLookNote[]
+function ns.BoardLookNotes()
+	local notes = {}
+	for i, note in ipairs(ns.L.LOOK_NOTES) do
+		local place = LOOK_PLACES[i]
+		notes[i] = {
+			text = ns.Fill(note.text, { term = RED .. note.term .. "|r" }),
+			x = place.x,
+			y = place.y,
+			w = place.w,
+			target = place.target,
+		}
+	end
+	return notes
 end
