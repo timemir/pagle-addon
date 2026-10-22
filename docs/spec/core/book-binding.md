@@ -28,7 +28,16 @@ Part of [Core](README.md). The Angler's books (the Fish Journal, the Hunts board
   - `giltCorner`: Verdigris's gilt corner at the top left, 40 units square (`options.giltCornerSize`).
 
   Each is hidden in a look without it.
-- **BIND-R13** Everything the renderer draws is Core's art in `Pagle/media/books`: the band and the vignette in `BookAtlas`, the corner pieces in `BindingCorners`, the gilt corner in `BindingGilt`, and Core's leather. The materials and the swatches are the bindings' own ([wallet-and-shop.md](wallet-and-shop.md)). A spec checks that every atlas the renderer reads names a BLP file that ships, and that every corner kind has its sprite.
+- **BIND-R13** Everything the renderer draws is Core's art in `Pagle/media/books`: the band and the vignette in `BookAtlas`, the corner pieces in `BindingCorners`, the gilt corner in `BindingGilt`, a whole book's parts in `BindingParts2`, and Core's leather. The materials and the swatches are the bindings' own ([wallet-and-shop.md](wallet-and-shop.md)). A spec checks that every atlas the renderer reads names a BLP file that ships, and that every corner kind has its sprite.
+
+#### A whole book's parts
+
+The Curio Shop's second round's ten bindings (LED-R118, SHOP-R25) are whole books: each has a closed cover of its own (the shop's preview, in `Bindings3`), and on the open book, beside its material and band, four parts of its own, each a look field only they set (`BindingParts2`, the round-two kit's goods.json, measured on its 920 × 600 Journal). Every other binding has none of them, and draws exactly as BIND-R10–R12 say. All four are on the features' frame (BIND-R12), so they dip with the band (BIND-R20).
+
+- **BIND-R14** `clasp`: the clasp on the fore-edge, at its sprite's size (110 high), its left edge `claspX` units from the frame's right edge (the kit's place less 920: −22 to −54, so it sits on the band and stands out past it), centred down the frame's right edge, over the corner pieces (sublevel 3).
+- **BIND-R15** `ribbon`: the silk ribbon, 32 × 136, under the corner pieces (sublevel 0), hanging from the pages' foot out past the frame's: its top left 60 units right of the pages' centre and 24 up into their foot when the book passes `options.pages` (the page block's rect in the frame, `{ x, y, w, h }` from its top left), else 60 right of the frame's centre and 40 up from its foot (the same place on the kit's Journal, its pages 884 × 546 at 18, 38). No book's shell anchors it.
+- **BIND-R16** `fillet`: a line round the binding in its own colour, at 75%, 1.6 units wide and 5 units in from the frame's edges (four edges, as the tooled rule's).
+- **BIND-R17** `cornerArt`: its own corner piece in place of a metal's, 76 units square standing 4 out past each corner (both at the corner pieces' 44, scaled with `options.cornerSize`), the top-left piece mirrored across and down into the others as BIND-R12's. A look has at most one of `corners` and `cornerArt`; changing to a look with `corners` puts the pieces back at their size, at the corners.
 
 ### A change of binding
 
@@ -52,6 +61,7 @@ Part of [Core](README.md). The Angler's books (the Fish Journal, the Hunts board
 ---@field sublevel? integer         -- the material's BACKGROUND sublevel, the vignette's is one more (0)
 ---@field cornerSize? number        -- the corner pieces' size (44)
 ---@field giltCornerSize? number    -- the gilt corner's size (40)
+---@field pages? { x: number, y: number, w: number, h: number } -- the page block in the frame, for the ribbon (BIND-R15)
 
 ---@class PagleBookBinding
 ---@field skin PagleBookBindingSkin  -- what draws it, for a spec or a probe to read; a book never changes it
@@ -59,7 +69,7 @@ Part of [Core](README.md). The Angler's books (the Fish Journal, the Hunts board
 ---@field SetLook fun(self, goodID: string?)
 ```
 
-`frame` should have its size before the call, as the material is tiled to it (BIND-R10). The band's frame is six levels above `frame` and the features' one more, so a book puts what must cover the binding (its close button, its plate) ten levels up, as the Journal does. The look's fields are `ns.BindingLook`'s (`PagleBindingLook`): `texture` or `fill`, `tileW`, `tileH`, `tint`, `foot`, `band`, `gilt`, `giltShadow` (`{ r, g, b, a, x, y }`), `silver`, `corners`, `tooled`, `giltCorner`, `paperTint`, and the shop's `swatchAtlas` and `swatch`.
+`frame` should have its size before the call, as the material is tiled to it (BIND-R10). The band's frame is six levels above `frame` and the features' one more, so a book puts what must cover the binding (its close button, its plate) ten levels up, as the Journal does. The look's fields are `ns.BindingLook`'s (`PagleBindingLook`): `texture` or `fill`, `tileW`, `tileH`, `tint`, `foot`, `band`, `gilt`, `giltShadow` (`{ r, g, b, a, x, y }`), `silver`, `corners`, `tooled`, `giltCorner`, `paperTint`, the shop's `swatchAtlas` and `swatch`, and, for the second round's whole books only, `cornerArt`, `clasp`, `claspX`, `ribbon` and `fillet` (BIND-R14–R17).
 
 In Module specs, FakePagle's `Pagle.NewBookBinding` follows the slot and dips on Core's real logic (`logic/BookBinding.lua`), plays the page turn through the Module's client (`client.sounds`, `"836 SFX"`), and draws nothing: a book's `binding.skin` records the look it wears (`look`) and the dip's alpha (`dim`, 1 at rest).
 
@@ -71,5 +81,9 @@ In Module specs, FakePagle's `Pagle.NewBookBinding` follows the slot and dips on
 | The band's corners | 16 units | BIND-R11 |
 | The corner pieces, the gilt corner | 44, 40 units | BIND-R12 |
 | The tooled rule | `#d8b660`, 1.5 units, 9 and 12 units in | BIND-R12 |
+| A whole book's clasp | its left edge `claspX` from the frame's right edge, centred down it | BIND-R14 |
+| A whole book's ribbon | 32 × 136; 60 right of the pages' centre and 24 up into their foot, else 60 right of the frame's centre and 40 up from its foot | BIND-R15 |
+| A whole book's fillet | 75%, 1.6 units, 5 units in | BIND-R16 |
+| A whole book's corner art | 76 units, 4 out past each corner, at the corner pieces' 44 | BIND-R17 |
 | The dip | 0.4 s, ease-in-out, to 25% (the band and features to 55%), the change at 0.2 s | BIND-R20 |
 | The page turn | sound kit 836, SFX | BIND-R21 |

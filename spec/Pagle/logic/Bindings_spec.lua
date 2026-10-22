@@ -68,6 +68,7 @@ describe("the bindings", function()
 				{ "core.binding.brasscase", 3 },
 				{ "core.binding.coral", 4 },
 				{ "core.binding.scrimshaw", 4 },
+				{ "core.binding.shagreenbone", 4 },
 				{ "core.binding.pearl", 5 },
 				{ "core.binding.trophycase", 5 },
 			}, order)
@@ -75,7 +76,7 @@ describe("the bindings", function()
 	)
 
 	it(
-		"hold the Ledger's eleven earned bindings and Hunts' three, theirs to register, with Core's looks (LED-R110, HNT-R122, SHOP-R23)",
+		"hold the Ledger's twenty earned bindings and Hunts' three, theirs to register, with Core's looks (LED-R110, LED-R118, HNT-R122, SHOP-R23)",
 		function()
 			local earned = {}
 			for _, binding in ipairs(ns.BINDINGS) do
@@ -103,8 +104,17 @@ describe("the bindings", function()
 				"hunts.binding.pathfinder",
 				"hunts.binding.fiveseal",
 				"hunts.binding.wagersilk",
+				"ledger.binding.wave",
+				"ledger.binding.logbook",
+				"ledger.binding.heartwood",
+				"ledger.binding.stormglass",
+				"ledger.binding.lacquer",
+				"ledger.binding.knit",
+				"ledger.binding.flywallet",
+				"ledger.binding.carapace",
+				"ledger.binding.ember",
 			}, earned)
-			assert.are.equal(48, #ns.BINDINGS)
+			assert.are.equal(58, #ns.BINDINGS)
 		end
 	)
 
@@ -176,6 +186,8 @@ describe("the bindings", function()
 					"velvet",
 					"pearl",
 					"iridescent",
+					"shagreenbone",
+					"stormglass",
 				}, silver)
 			end
 		)
@@ -289,6 +301,100 @@ describe("the bindings", function()
 			end
 		)
 
+		it(
+			"draws each of the round two's ten as a whole book: its material at its repeat, its band toned to its base, its crumb as the gilt, its own corner art, clasp, ribbon and fillet, and its cover in Bindings3 (BIND-R14–R17, LED-R118, SHOP-R25)",
+			function()
+				assert.are.same({
+					texture = BOOKS .. "bindings3\\wave",
+					tileW = 96,
+					tileH = 48,
+					foot = 0.8,
+					band = gained("1e3a6a"),
+					gilt = rgb("f0cd6a"),
+					giltShadow = { 0, 0, 0, 0.95, 0, -1 },
+					silver = false,
+					cornerArt = "corner-wave",
+					clasp = "clasp-wave",
+					claspX = -40,
+					ribbon = "ribbon-wave",
+					fillet = rgb("f0cd6a"),
+					paperTint = { 1, 1, 1 },
+					swatchAtlas = "Bindings3",
+					swatch = "cover-wave",
+				}, ns.BindingLook("ledger.binding.wave"))
+				local bone = ns.BindingLook("core.binding.shagreenbone")
+				assert.are.same({
+					BOOKS .. "bindings3\\shagreenbone",
+					24,
+					24,
+					rgb("e6f4ec"),
+					rgb("e6d8b8"),
+					true,
+					"corner-shagreenbone",
+					"clasp-shagreenbone",
+					-34,
+					"ribbon-shagreenbone",
+					"cover-shagreenbone",
+				}, {
+					bone.texture,
+					bone.tileW,
+					bone.tileH,
+					bone.gilt,
+					bone.fillet,
+					bone.silver,
+					bone.cornerArt,
+					bone.clasp,
+					bone.claspX,
+					bone.ribbon,
+					bone.swatch,
+				})
+				-- Black Lacquer Koi is the Ledger's, apart from Core's Lacquered Red
+				local koi = ns.BindingLook("ledger.binding.lacquer")
+				assert.are.same(
+					{ BOOKS .. "bindings3\\lacquer", "cover-lacquer", -22 },
+					{ koi.texture, koi.swatch, koi.claspX }
+				)
+				-- Cable Knit's dark brown crumbs are pressed in with a light edge (LED-R125)
+				assert.are.same({ 1, 0.96, 0.86, 0.6, 0, -1 }, ns.BindingLook("ledger.binding.knit").giltShadow)
+			end
+		)
+
+		it(
+			"gives a clasp, a ribbon, a fillet and corner art to the round two's ten only, so every other look is as it was (BIND-R14–R17)",
+			function()
+				local whole = {}
+				for _, binding in ipairs(ns.BINDINGS) do
+					local look = ns.BindingLook(binding.id)
+					local fields = (look.clasp and 1 or 0)
+						+ (look.claspX and 1 or 0)
+						+ (look.ribbon and 1 or 0)
+						+ (look.fillet and 1 or 0)
+						+ (look.cornerArt and 1 or 0)
+					assert.is_true(fields == 0 or fields == 5, binding.id)
+					if fields == 5 then
+						whole[#whole + 1] = binding.id
+						assert.is_nil(look.corners, binding.id)
+						for _, sprite in ipairs({ look.cornerArt, look.clasp, look.ribbon }) do
+							assert(ns.ATLASES.BindingParts2.sprites[sprite], sprite)
+						end
+						assert.are.equal("Bindings3", look.swatchAtlas, binding.id)
+					end
+				end
+				assert.are.same({
+					"ledger.binding.wave",
+					"ledger.binding.logbook",
+					"ledger.binding.heartwood",
+					"core.binding.shagreenbone",
+					"ledger.binding.stormglass",
+					"ledger.binding.lacquer",
+					"ledger.binding.knit",
+					"ledger.binding.flywallet",
+					"ledger.binding.carapace",
+					"ledger.binding.ember",
+				}, whole)
+			end
+		)
+
 		it("sets exactly one of a texture and a fill, and every swatch is in its atlas (ADR 0015)", function()
 			local fills = 0
 			for _, binding in ipairs(ns.BINDINGS) do
@@ -308,7 +414,7 @@ describe("the bindings", function()
 				local look = ns.BindingLook(binding.id)
 				files[look.texture or look.fill] = true
 			end
-			for _, name in ipairs({ "Bindings", "Bindings2", "Covers2" }) do
+			for _, name in ipairs({ "Bindings", "Bindings2", "Covers2", "Bindings3", "BindingParts2" }) do
 				files[ns.ATLASES[name].file] = true
 			end
 			for file in pairs(files) do

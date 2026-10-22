@@ -96,6 +96,7 @@ local EXPANSION = {
 		{ "brasscase", 3 },
 		{ "coral", 4 },
 		{ "scrimshaw", 4 },
+		{ "shagreenbone", 4 },
 		{ "pearl", 5 },
 		{ "trophycase", 5 },
 	},
@@ -141,7 +142,7 @@ end
 ---@param balance integer
 ---@return string[]
 local function bindingLines(balance)
-	return joined({ "Book binding (1 of 34)", "  core.binding.field In use" }, expansionLines("binding", balance))
+	return joined({ "Book binding (1 of 35)", "  core.binding.field In use" }, expansionLines("binding", balance))
 end
 
 -- Core's own slots (SHOP-R25) as the list outlines them while nothing of Core's is bought and the balance is under
@@ -500,7 +501,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11 + 25 + 34, #ids("all"))
+		assert.are.equal(11 + 25 + 35, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",

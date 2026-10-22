@@ -100,7 +100,7 @@ end
 
 -- Core's book binding (ADR 0015) as the list shows it: Field Leather and every binding for sale, in the shop's order.
 local BOOK_BINDING = {
-	"BOOK BINDING 1 of 34",
+	"BOOK BINDING 1 of 35",
 	"Field Leather | IN USE",
 	"Birch Bark | 150",
 	"Tide-Chart Linen | 150",
@@ -133,6 +133,7 @@ local BOOK_BINDING = {
 	"Brass Hunter's Case | 900",
 	"Coral Inlay | 2,000",
 	"Scrimshaw Panel | 2,000",
+	"Shagreen and Bone | 2,000",
 	"Mother-of-Pearl | 5,000",
 	"Gilded Trophy Case | 5,000",
 }
@@ -687,7 +688,7 @@ describe("The Curio Shop's list", function()
 			"Driftwood | IN USE",
 			"CRESTS 1 of 1",
 			"Plain | IN USE",
-			"BOOK BINDING 1 of 34",
+			"BOOK BINDING 1 of 35",
 			"Field Leather | IN USE",
 			"JOURNAL BINDING 1 of 2",
 			"Oak | IN USE",
@@ -695,9 +696,9 @@ describe("The Curio Shop's list", function()
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(9 + 25 + 34, #listed(loaded))
+		assert.are.equal(9 + 25 + 35, #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(15 + 25 + 35, #listed(loaded))
+		assert.are.equal(15 + 25 + 36, #listed(loaded))
 	end)
 
 	it(
@@ -718,7 +719,7 @@ describe("The Curio Shop's list", function()
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
-			assert.are.equal(15 + 25 + 35, #listed(loaded))
+			assert.are.equal(15 + 25 + 36, #listed(loaded))
 		end
 	)
 

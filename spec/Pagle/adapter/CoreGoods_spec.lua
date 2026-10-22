@@ -61,7 +61,8 @@ describe("Core's slots and goods", function()
 				bindings[i] = binding.id .. (binding.default and " default" or " tier " .. binding.tier)
 			end
 			assert.are.same({ "core.binding.field default", "core.binding.birch tier 1" }, { bindings[1], bindings[2] })
-			assert.are.same({ 34, "core.binding.trophycase tier 5" }, { #bindings, bindings[34] })
+			assert.are.same({ 35, "core.binding.trophycase tier 5" }, { #bindings, bindings[35] })
+			assert.are.same("core.binding.shagreenbone tier 4", bindings[33])
 
 			assert.are.same({
 				{
@@ -217,7 +218,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 31 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
+			assert.are.same({ 31 + #FISH_CREST_SPECIES + 35, {} }, { count, without })
 		end
 	)
 end)
@@ -529,6 +530,8 @@ describe("Core's goods' previews", function()
 				{ "core.binding.field", "Bindings", "binding-field-leather" },
 				{ "core.binding.driftwood", "Bindings2", "swatch-driftwood" },
 				{ "core.binding.lacquer", "Covers2", "swatch-lacquer" },
+				-- the round two's closed cover (BIND-R17)
+				{ "core.binding.shagreenbone", "Bindings3", "cover-shagreenbone" },
 			}) do
 				goods:Good(case[1]).preview(stage)
 
@@ -552,6 +555,16 @@ describe("Core's goods' previews", function()
 			assert.are.same({ ns.ATLASES.Bindings2.file }, texturesOn(stage))
 			slot.preview(stage, { id = "hunts.binding.wagersilk", icon = "x" })
 			assert.are.same({ ns.ATLASES.Covers2.file }, texturesOn(stage))
+			-- the Ledger's round two's, its closed cover, 104 wide and so 104 / 200 × 261 tall
+			slot.preview(stage, { id = "ledger.binding.wave", icon = "Interface\\Icons\\INV_Misc_Book_09" })
+			assert.are.same({ ns.ATLASES.Bindings3.file }, texturesOn(stage))
+			local cover
+			for _, widget in ipairs(shownOn(stage)) do
+				if widget.texture == ns.ATLASES.Bindings3.file then
+					cover = widget
+				end
+			end
+			assert.are.same({ 0, 0, 104, 261 * 104 / 200 }, cover.box)
 		end
 	)
 

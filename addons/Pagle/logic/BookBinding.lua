@@ -20,6 +20,7 @@ local DIP, DEEPEST = 0.4, 0.25
 ---@field sublevel integer?                   -- the material's BACKGROUND sublevel (BIND-R10)
 ---@field cornerSize number?                  -- the corner pieces' size (BIND-R12)
 ---@field giltCornerSize number?              -- the gilt corner's size (BIND-R12)
+---@field pages { x: number, y: number, w: number, h: number }? -- the page block in the frame, from its top left (BIND-R15)
 
 --- What draws one book's binding: Core's regions on its frame (adapter/BookBinding.lua), or FakePagle's record.
 ---@class PagleBookBindingSkin
