@@ -91,10 +91,11 @@ function ns.EarnedGoodNow(goodID, rule)
 end
 
 --- Registers the Ledger's slot and its goods (LED-R110, SHOP-R21), then the zone crests in Core's crest slot (LED-R113,
---- SHOP-R23), from OnInitialize after RegisterModule, and redraws the open Journal whenever the equipped binding or
---- crest changes (LED-R112, SHOP-R33). A level binding and a zone crest are earned from the projection's state and the
---- celebrated set as they stand when Core asks (LED-R111, LED-R114, SHOP-R31); a crest's texts, from the state the
---- Journal shows (LED-R115).
+--- SHOP-R23) and its four goods in Core's toast style and sound set slots (LED-R117), from OnInitialize after
+--- RegisterModule, and redraws the open Journal whenever the equipped binding or crest changes (LED-R112, SHOP-R33).
+--- A level binding, a zone crest and an expansion good are earned from the projection's state and the celebrated set
+--- as they stand when Core asks (LED-R111, LED-R114, LED-R116, LED-R117, SHOP-R31); a crest's texts, from the state
+--- the Journal shows (LED-R115).
 ---@param module PagleModuleHandle
 function ns.RegisterBindings(module)
 	module:RegisterSlot(ns.BindingSlot())
@@ -129,6 +130,11 @@ function ns.RegisterBindings(module)
 	})
 	for _, crest in ipairs(crests) do
 		module:RegisterGood(crest)
+	end
+	-- LED-R117's four in Core's toast style and sound set slots, which Core opens to earned goods (SHOP-R23, SHOP-R25)
+	-- and draws and plays.
+	for _, good in ipairs(ns.CoreSlotGoods(ns.EarnedGoodNow)) do
+		module:RegisterGood(good)
 	end
 	Pagle.RegisterCallback(OWNER, "AppearanceChanged", function(_, slot)
 		if slot == ns.BINDING_SLOT or slot == CREST_SLOT then

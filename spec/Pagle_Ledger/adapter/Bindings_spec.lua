@@ -490,6 +490,116 @@ describe("the Ledger's expansion earned bindings", function()
 	)
 end)
 
+describe("the Ledger's goods in Core's open slots", function()
+	local RACER, ANGELFISH = 19803, 19805
+	local STV = 33
+
+	-- A catalogue (DATA-R76) named `fingerprint` whose Stranglethorn lists the Racer and the Angelfish, or the Racer
+	-- alone without `angelfish`.
+	---@param fingerprint string
+	---@param angelfish boolean
+	local function release(fingerprint, angelfish)
+		local items = { [RACER] = fishRecord(RACER, { legend = true, typicalLength = 2200 }) }
+		local catches = { catchEntry(RACER) }
+		if angelfish then
+			items[ANGELFISH] = fishRecord(ANGELFISH, { legend = true, typicalLength = 1800 })
+			catches[2] = catchEntry(ANGELFISH)
+		end
+		return catalogueWith({
+			fingerprint = fingerprint,
+			items = items,
+			areas = { [STV] = areaRecord(0, { catches = catches }) },
+		})
+	end
+
+	-- Which of LED-R117's four `fake` owns, in its order.
+	---@param fake FakePagle
+	local function owned(fake)
+		local list = {}
+		for i, id in ipairs({
+			"ledger.toaststyle.legend",
+			"ledger.toaststyle.prestige",
+			"ledger.soundset.concertina",
+			"ledger.soundset.choir",
+		}) do
+			list[i] = fake.Pagle.IsOwned(id)
+		end
+		return list
+	end
+
+	it(
+		"register LED-R117's four in Core's toast style and sound set slots, the Ledger's, after Core's own (LED-R117, SHOP-R23, SHOP-R25)",
+		function()
+			local fake = ledger()
+			local goods = fake.ns.goods
+
+			local function ledgerGoods(slot)
+				local list = {}
+				for _, good in ipairs(goods:GoodsOf(slot)) do
+					if good.module == "Ledger" then
+						list[#list + 1] = { good.id, good.name, good.earnedText }
+					end
+				end
+				return list
+			end
+			assert.are.same({
+				{ "ledger.toaststyle.legend", "The Tall Tale", "Land a Legend" },
+				{ "ledger.toaststyle.prestige", "Oxblood Vellum", "Prestige V" },
+			}, ledgerGoods("core.toaststyle"))
+			assert.are.same({
+				{ "ledger.soundset.concertina", "Old Salt's Concertina", "Prestige I" },
+				{ "ledger.soundset.choir", "Choir of the Deep", "Land all three Legends" },
+			}, ledgerGoods("core.soundset"))
+			assert.are.same({ false, false, false, false }, owned(fake))
+			assert.are.same({}, fake.reported)
+		end
+	)
+
+	it(
+		"own The Tall Tale from the first Legend's live entry and Choir of the Deep from the last's, and keep Choir through a rebuild with another Legend listed (LED-R117, LED-R63, SHOP-R31)",
+		function()
+			local fake = newFakePagle()
+			fake.setCatalogue(release("first release", false))
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			local loaded = fake.load("Pagle_Ledger")
+			fake.login()
+			fake.enterWorld()
+			assert.are.same({ false, false, false, false }, owned(fake))
+
+			fake.playCast("caught", { { itemID = RACER, quantity = 1 } })
+
+			assert.are.same({ true, false, false, true }, owned(fake))
+
+			local later = newFakePagle()
+			later.setCatalogue(release("second release", true))
+			later.catchLog.data = fake.catchLog.data
+			later.globals.PagleLedgerDB = loaded.env.PagleLedgerDB
+			later.load("Pagle_Ledger")
+			later.login()
+			later.enterWorld()
+
+			assert.are.same({ true, false, false, true }, owned(later))
+		end
+	)
+
+	it(
+		"own Old Salt's Concertina at Prestige I and Oxblood Vellum at V, from the log's Prestiges (LED-R117, LED-R34)",
+		function()
+			local function after(ranks)
+				local entries = {}
+				for rank = 1, ranks do
+					entries[rank] = prestigeEntry(SERVER_TIME - 5000 + rank, rank)
+				end
+				return owned((openJournal({ entries = entries, id = false })))
+			end
+
+			assert.are.same({ false, false, true, false }, after(1))
+			assert.are.same({ false, false, true, false }, after(4))
+			assert.are.same({ false, true, true, false }, after(5))
+		end
+	)
+end)
+
 describe("the Ledger's zone crests", function()
 	-- A Ledger on a fresh fake whose client names each crest's zone by its key backwards (C_Map.GetAreaInfo), with
 	-- `celebrated` saved (LED-R90), logged in and in the world over an empty log: no zone is charted.
