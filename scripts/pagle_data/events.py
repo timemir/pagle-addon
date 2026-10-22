@@ -73,6 +73,11 @@ _EVENT_REQUIRED = ("id", "zones", "tags", "name", "note")
 _EVENT_OPTIONAL = ("skill", "rotation", "retired")
 _HUNT_REQUIRED = ("id", "tiers", "name")
 _HUNT_OPTIONAL = ("species", "class", "minBand", "conditions")
+# A pushed huntEvent item's fields (hunts.md › Contracts: Pushed Hunt Events and runs), its kind and the version Hunts
+# knows (PUSH-R21, Tunables); its Hunts' fields are an event file's [[hunt]] keys.
+PUSHED_KIND = "huntEvent"
+PUSHED_VERSION = 1
+_PUSHED_REQUIRED = ("id", "zones", "tags", "skill", "rotation", "name", "note")
 
 # An event's emitted record (DATA-R98): id, zones, tags, skill, band, rotation, retired?, hunts.
 EventRecord = dict[str, object]
@@ -106,10 +111,11 @@ class HuntEvent:
     retired: int | None
     hunts: tuple[EventHunt, ...]
     texts: tuple[Text, ...] = ()
+    path: str = "event"  # where its fields sit in file: an event file's [event], a pushed item's top level ("")
 
     @property
     def at(self) -> At:
-        return At(self.file, "event")
+        return At(self.file, self.path)
 
     @property
     def rotating(self) -> bool:
@@ -262,20 +268,27 @@ def _read_hunt(table: Mapping[str, object], at: At, problems: Problems) -> tuple
     return (None if hunt_id is None else EventHunt(hunt_id, record, at)), texts
 
 
-def _hunt_at(file: str, table: Mapping[str, object], index: int) -> At:
-    """Where an event's [[hunt]] sits: by its ID when it has a string one, else by its position."""
+def _hunt_at(file: str, key: str, table: Mapping[str, object], index: int) -> At:
+    """Where an event's Hunt sits, under key (an event file's [[hunt]], a pushed item's hunts): by its ID when it has a
+    string one, else by its position."""
     hunt_id = table.get("id")
-    return At(file, f"hunt.{hunt_id}" if isinstance(hunt_id, str) else f"hunt[{index}]")
+    return At(file, f"{key}.{hunt_id}" if isinstance(hunt_id, str) else f"{key}[{index}]")
 
 
-def _event_id(table: Mapping[str, object], at: At, stem: str, problems: Problems) -> str:
-    """DATA-R97: an event's id matches its file name and [%w_]+, never starting p_. A non-string one is a problem,
-    and the file name stands in for it."""
+def _event_id(table: Mapping[str, object], at: At, stem: str | None, problems: Problems) -> str | None:
+    """DATA-R97: an event file's id matches its file name (stem) and [%w_]+, never starting p_; a pushed item's
+    (stem None) matches [%w_]+ and starts p_ (HNT-R140). A non-string one is a problem, and the file name stands in
+    for it."""
     event_id = read_string(table, "id", at, problems)
     if event_id is None:
         return stem
     if not HUNT_ID.fullmatch(event_id):
         problems.add(at / "id", f"'{event_id}' doesn't match [%w_]+ (DATA-R97)")
+    if stem is None:
+        if not event_id.startswith(PUSHED_PREFIX):
+            message = f"'{event_id}' doesn't start with {PUSHED_PREFIX}; a pushed event's does (HNT-R140)"
+            problems.add(at / "id", message)
+        return event_id
     if event_id.startswith(PUSHED_PREFIX):
         problems.add(at / "id", f"'{event_id}' starts with {PUSHED_PREFIX}, which is kept for pushed events (DATA-R97)")
     if event_id != stem:
@@ -283,20 +296,20 @@ def _event_id(table: Mapping[str, object], at: At, stem: str, problems: Problems
     return event_id
 
 
-def _read_event(root: Path, path: Path, tags: Mapping[str, str], problems: Problems) -> HuntEvent | None:
-    """One <event-id>.toml (DATA-R97): its [event] and [[hunt]] tables, with every check that needs nothing but the
-    file and the tag list."""
-    file = f"{EVENTS_DIR}/{path.name}"
-    document = read_toml(root, file, problems)
-    if document is None:
-        return None
-    check_keys(document, At(file), problems, required=("event",), optional=("hunt",))
-    at = At(file, "event")
-    table = expect_table(document["event"], at, problems) if "event" in document else None
-    if table is None:
-        return None
-    check_keys(table, at, problems, required=_EVENT_REQUIRED, optional=_EVENT_OPTIONAL)
-    event_id = _event_id(table, at, path.stem, problems)
+def _read_definition(
+    table: Mapping[str, object],
+    entries: object,
+    at: At,
+    hunts_key: str,
+    stem: str | None,
+    tags: Mapping[str, str],
+    problems: Problems,
+) -> HuntEvent | None:
+    """An event's fields (table, sitting at at) and its Hunts (entries, under hunts_key), with every DATA-R97 and
+    DATA-R99 check that needs nothing but the definition and the tag list: an event file's (stem its file name) or a
+    pushed item's (stem None; which fields it may have is the caller's)."""
+    file = at.file
+    event_id = _event_id(table, at, stem, problems)
     texts = list(read_texts("event", event_id, table, ("name", "note"), at, problems))
     rotation = table.get("rotation", True)
     if not isinstance(rotation, bool):
@@ -304,32 +317,78 @@ def _read_event(root: Path, path: Path, tags: Mapping[str, str], problems: Probl
         rotation = True
     retired = read_date(table, "retired", at, problems)
 
-    entries = document.get("hunt", [])
     if not isinstance(entries, list):
-        problems.add(At(file, "hunt"), f"expected an array of tables ([[hunt]]), got {describe(entries)}")
+        problems.add(At(file, hunts_key), f"expected an array of tables ([[hunt]]), got {describe(entries)}")
         entries = []
     if not MIN_HUNTS <= len(entries) <= MAX_HUNTS:
         problems.add(At(file), f"has {len(entries)} Hunts; an event has {MIN_HUNTS} to {MAX_HUNTS} (DATA-R99)")
     hunts: list[EventHunt] = []
     for index, entry in enumerate(entries):
-        hunt_table = expect_table(entry, At(file, f"hunt[{index}]"), problems)
+        hunt_table = expect_table(entry, At(file, f"{hunts_key}[{index}]"), problems)
         if hunt_table is None:
             continue
-        hunt, hunt_texts = _read_hunt(hunt_table, _hunt_at(file, hunt_table, index), problems)
+        hunt, hunt_texts = _read_hunt(hunt_table, _hunt_at(file, hunts_key, hunt_table, index), problems)
         texts.extend(hunt_texts)
         if hunt is not None:
             hunts.append(hunt)
-    return HuntEvent(
-        event_id,
-        file,
-        _zones(table, at, problems),
-        _tags(table, at, tags, problems),
-        _skill(table, at, problems),
-        rotation,
-        retired,
-        tuple(hunts),
-        tuple(texts),
-    )
+    zones, event_tags, skill = _zones(table, at, problems), _tags(table, at, tags, problems), _skill(table, at, problems)
+    if event_id is None:
+        return None
+    return HuntEvent(event_id, file, zones, event_tags, skill, rotation, retired, tuple(hunts), tuple(texts), at.path)
+
+
+def _read_document(
+    document: Mapping[str, object], file: str, stem: str, tags: Mapping[str, str], problems: Problems
+) -> HuntEvent | None:
+    """An <event-id>.toml's top-level table (DATA-R97): its [event] and [[hunt]] tables."""
+    check_keys(document, At(file), problems, required=("event",), optional=("hunt",))
+    at = At(file, "event")
+    table = expect_table(document["event"], at, problems) if "event" in document else None
+    if table is None:
+        return None
+    check_keys(table, at, problems, required=_EVENT_REQUIRED, optional=_EVENT_OPTIONAL)
+    return _read_definition(table, document.get("hunt", []), at, "hunt", stem, tags, problems)
+
+
+def _read_event(root: Path, path: Path, tags: Mapping[str, str], problems: Problems) -> HuntEvent | None:
+    """One root/data/hunts/events/<event-id>.toml (DATA-R97), with every check that needs nothing but the file and
+    the tag list."""
+    file = f"{EVENTS_DIR}/{path.name}"
+    document = read_toml(root, file, problems)
+    return None if document is None else _read_document(document, file, path.stem, tags, problems)
+
+
+def read_event_file(path: Path, tags: Mapping[str, str], problems: Problems) -> HuntEvent | None:
+    """An <event-id>.toml anywhere (scripts/check-event.py, DATA-R99), named in problems by its path as given, with
+    every check that needs nothing but the file and the tag list."""
+    document = read_toml(Path(), str(path), problems)
+    return None if document is None else _read_document(document, str(path), path.stem, tags, problems)
+
+
+def read_pushed_event(item: object, file: str, tags: Mapping[str, str], problems: Problems) -> HuntEvent | None:
+    """A pushed huntEvent item (hunts.md › Contracts) as data, from file: kind huntEvent at version 1 (PUSH-R21),
+    exactly the Contracts fields (an id starting p_, a skill, rotation = false, hunts), then every check an event
+    file gets that needs nothing but the definition and the tag list (DATA-R97, DATA-R99). Its fields are named from
+    the item's top level, its Hunts as hunts.<id>."""
+    at = At(file)
+    table = expect_table(item, at, problems)
+    if table is None:
+        return None
+    kind = table.get("kind")
+    if kind != PUSHED_KIND:
+        shown = f"'{kind}'" if isinstance(kind, str) else describe(kind)
+        problems.add(at / "kind", f'expected "{PUSHED_KIND}", got {shown} (PUSH-R21)')
+    version = table.get("v")
+    if version != PUSHED_VERSION or isinstance(version, bool):
+        known = f"the {PUSHED_KIND} version Hunts knows"
+        problems.add(at / "v", f"expected {PUSHED_VERSION}, {known}, got {version!r} (PUSH-R21)")
+    fields = {key: value for key, value in table.items() if key not in ("kind", "v", "hunts")}
+    check_keys(fields, at, problems, required=_PUSHED_REQUIRED, optional=())
+    if "hunts" not in table:
+        problems.add(at, "missing key 'hunts'")
+    if fields.get("rotation") is True:
+        problems.add(at / "rotation", "true; a pushed event never enters the fallback rotation (hunts.md › Contracts)")
+    return _read_definition(fields, table.get("hunts", []), at, "hunts", None, tags, problems)
 
 
 def read_events(root: Path, problems: Problems) -> EventLayer:
