@@ -7,17 +7,14 @@ local ns = select(2, ...)
 
 -- The books art kit's atlases (the Hunts board and the Stats book, post-1.0 art): texel rectangles in its textures, 2
 -- texels per UI unit. `box` is where the drawn element sits in its sprite, in UI units from the sprite's top left (x,
--- y, w, h): code places the box, and the sprite's margin carries its shadow or glow. The book shell (leather,
--- parchment, the binding and wax atlas) and the kit's parts are Core's media (Pagle/media/books), which Stats reads too;
+-- y, w, h): code places the box, and the sprite's margin carries its shadow or glow. The wax atlas and the kit's parts
+-- are Core's media (Pagle/media/books), which Core's book shell (ADR 0016) and Stats read too;
 -- each tracker frame is Hunts' own (Pagle_Hunts/media/books), so a tracker loads only the frame it wears. Repacked from
 -- the kit's BookParts.tga (art/books/generate.py in the dev's kit) with its tracker frames split out; the textures are
 -- BLP (DXT5), encoded by scripts/encode-blp.py.
 
 local CORE = "Interface\\AddOns\\Pagle\\media\\books\\"
 local OWN = "Interface\\AddOns\\Pagle_Hunts\\media\\books\\"
-
---- The page paper, a whole texture. The leather is Core's binding renderer's (ADR 0015).
-ns.BOOK_FILES = { parchment = CORE .. "Parchment" }
 
 -- The expansion kit's sprites (goods.json): TrackerFrames2's frames, 556 x 440 texels at 2, the frame 262 x 200 in it.
 -- The covers' closed notebooks and fills are Core's now, as every binding's art is (ADR 0015).
@@ -36,8 +33,8 @@ end
 
 ---@type table<string, HuntsArtAtlas>
 ns.ATLASES = {
-	-- The book shell: the wax seal and its "not yet" ring, the wax close button, the brass nameplate (a three-slice),
-	-- the fleuron and the spine's gutter. The band and vignette are Core's binding renderer's (ADR 0015).
+	-- The wax seal and its "not yet" ring. The rest of the book (the close, the nameplate, the fleuron, the gutter, the
+	-- paper and the leather) is Core's book shell's (ADR 0016).
 	Book = {
 		file = CORE .. "BookAtlas",
 		width = 512,
@@ -46,12 +43,6 @@ ns.ATLASES = {
 		sprites = {
 			["seal"] = { x = 234, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
 			["seal-empty"] = { x = 366, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
-			["close"] = { x = 2, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
-			["close-pushed"] = { x = 70, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
-			["close-highlight"] = { x = 138, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
-			["plate"] = { x = 274, y = 136, w = 128, h = 64, box = { 0, 0, 64, 32 } },
-			["fleuron"] = { x = 406, y = 136, w = 32, h = 32, box = { 0, 0, 16, 16 } },
-			["gutter"] = { x = 442, y = 136, w = 64, h = 8, box = { 0, 0, 32, 4 } },
 		},
 	},
 	-- The kit's parts: the grosgrain ribbon and its stitch, chips, the pinned pill, item rings, tier marks, the ink

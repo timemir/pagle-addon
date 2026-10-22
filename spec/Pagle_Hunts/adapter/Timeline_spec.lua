@@ -583,7 +583,7 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 
 		run.ns.ToggleBoard()
 
-		assert.are.same({ "08:15 · Sun 11 Oct · Autumn" }, shownTexts(run.ns.board.frame.anchors.clock))
+		assert.are.same({ "08:15 · Sun 11 Oct · Autumn" }, shownTexts(run.ns.board.book.anchors.clock))
 	end)
 
 	it("shows no season when no season window matches", function()
@@ -592,7 +592,7 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 
 		run.ns.ToggleBoard()
 
-		assert.are.same({ "14:05 · Sun 11 Oct" }, shownTexts(run.ns.board.frame.anchors.clock))
+		assert.are.same({ "14:05 · Sun 11 Oct" }, shownTexts(run.ns.board.book.anchors.clock))
 	end)
 
 	it('adds "(paused in combat)" while restricted, and freezes with the grouping (HNT-R43)', function()
@@ -605,19 +605,19 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 
 		assert.are.same(
 			{ "08:15 · Sun 11 Oct · Autumn (paused in combat)" },
-			shownTexts(run.ns.board.frame.anchors.clock)
+			shownTexts(run.ns.board.book.anchors.clock)
 		)
 
 		run.fake.setRestricted(false)
-		assert.are.same({ "08:25 · Sun 11 Oct · Autumn" }, shownTexts(run.ns.board.frame.anchors.clock))
+		assert.are.same({ "08:25 · Sun 11 Oct · Autumn" }, shownTexts(run.ns.board.book.anchors.clock))
 	end)
 
 	it('saves "show completed" from its checkbox and redraws (HNT-R82)', function()
 		local run = start({ list = extraList({ ALWAYS, ALWAYS }) })
 		useState(run, { extra_1 = reached(1) })
 		run.ns.ToggleBoard()
-		local box = run.ns.board.frame.anchors.completed.children[1]
-		assert.are.same({ "show completed" }, shownTexts(run.ns.board.frame.anchors.completed))
+		local box = run.ns.board.book.anchors.completed.children[1]
+		assert.are.same({ "show completed" }, shownTexts(run.ns.board.book.anchors.completed))
 		assert.is_false(box:GetChecked())
 
 		box:Click()

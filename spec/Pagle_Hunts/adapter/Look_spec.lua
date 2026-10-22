@@ -163,7 +163,7 @@ describe("the Hunts board's First look (ONB-R55–R57)", function()
 			assert.are.equal(entry.kicker:GetStringWidth(), found[3].width)
 			assert.are.equal(entry.pin, found[4])
 			assert.are.equal(run.ns.BoardWagersRibbon(), found[5])
-			assert.is_true(found[5].wagers)
+			assert.are.equal("wagers", found[5].id)
 		end
 	)
 
@@ -274,14 +274,15 @@ describe('the Hunts board\'s "?" (ONB-R59)', function()
 		assert.are.equal("?", help.label:GetText())
 	end)
 
-	it('reads "Show the notes for this page again" under the mouse', function()
+	it('reads "Show the notes for this page again" under the mouse, on the shell\'s slip (BOOK-R15)', function()
 		local run = hunts.start()
 		run.ns.ToggleBoard()
 		local help = run.ns.board.frame.help
 
 		help:GetScript("OnEnter")(help)
 
-		assert.are.same({ "Show the notes for this page again" }, run.loaded.client.tooltipLines())
+		assert.is_true(help.tip:IsShown())
+		assert.are.equal("Show the notes for this page again", help.tip.text:GetText())
 	end)
 
 	it("shows the set again once seen, and with Margin notes off; pressed again while it shows, hides it", function()
