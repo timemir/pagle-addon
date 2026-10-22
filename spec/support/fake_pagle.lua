@@ -743,6 +743,11 @@ part(function(fake, Pagle, ns, host)
 	ns.PublishSize(Pagle, host, readOnly)
 end)
 
+-- The variety rarities as Core publishes them (VAR-R11): Pagle.VARIETY_RARITIES, read-only here (CORE-R18).
+part(function(_, Pagle, ns)
+	ns.PublishVarieties(Pagle, readOnly)
+end)
+
 -- Projections (LOG-R70–R77), on Core's wiring over fake.catchLog: M:NewProjection and M:IterateCatches on the
 -- handle. login notes loginSeq (the log's length then); enterWorld is login step 3, running every catch-up and
 -- rebuild at once; each entry the fake appends afterwards (playCast, readSkill) is handed over live, before its events.
@@ -924,7 +929,15 @@ part(function(fake, Pagle, ns)
 		ns.Catalogue = ns.NewCatalogue(data)
 		Pagle.CONTENT_FINGERPRINT = ns.Catalogue.CONTENT_FINGERPRINT
 	end
-	for _, name in ipairs({ "GetItem", "GetZones", "GetArea", "GetZoneOf", "GetZoneCatches", "GetWindowSpec" }) do
+	for _, name in ipairs({
+		"GetItem",
+		"GetVarieties",
+		"GetZones",
+		"GetArea",
+		"GetZoneOf",
+		"GetZoneCatches",
+		"GetWindowSpec",
+	}) do
 		Pagle[name] = function(...)
 			return readOnly(ns.Catalogue[name](...))
 		end

@@ -295,10 +295,11 @@ end
 
 -- Core and the Ledger -------------------------------------------------------------------------------------------
 
--- Core's codec, sizes (logic/Size.lua on LuaBitOp, LOG-R65, LOG-R66) and MatchesConditions, the catalogue's
--- accessors (Core's logic/Catalogue.lua over the catalogue file), and the Ledger's logic/ in Pagle_Ledger.toc order
--- with its world index over that catalogue (LED-R10). `open` opens a Catch log as Core does in the game: every Cast
--- it hands out sized through the catalogue (LOG-R65).
+-- Core's codec, sizes (logic/Size.lua on LuaBitOp, LOG-R65, LOG-R66), varieties (logic/Variety.lua, VAR-R4) and
+-- MatchesConditions, the catalogue's accessors (Core's logic/Catalogue.lua over the catalogue file), and the Ledger's
+-- logic/ in Pagle_Ledger.toc order with its world index over that catalogue (LED-R10). `open` opens a Catch log as
+-- Core does in the game: every Cast it hands out sized, and given its varieties, through the catalogue (LOG-R65,
+-- VAR-R4).
 local function loadGame(cataloguePath)
 	if not wtf.luaBitOp() then
 		refuse("no LuaBitOp to size the Catches with: run scripts/setup.sh, then this through scripts/make-test-log.sh")
@@ -306,6 +307,7 @@ local function loadGame(cataloguePath)
 	local core = wtf.loadCore({
 		"locale/enUS.lua",
 		"logic/Size.lua",
+		"logic/Variety.lua",
 		"logic/Conditions.lua",
 		"logic/Sessions.lua",
 		"logic/CatchLog.lua",

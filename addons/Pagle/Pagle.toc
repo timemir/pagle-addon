@@ -40,6 +40,7 @@ logic\LiveConditions.lua
 logic\Modules.lua
 logic\Sessions.lua
 logic\Size.lua
+logic\Variety.lua
 logic\Length.lua
 logic\CatchLog.lua
 logic\Projections.lua
@@ -96,6 +97,7 @@ adapter\Modules.lua
 adapter\Host.lua
 adapter\CatchLog.lua
 adapter\Size.lua
+adapter\Variety.lua
 adapter\Projections.lua
 adapter\Angler.lua
 adapter\Fishing.lua

@@ -72,6 +72,28 @@ describe("the catalogue on Pagle", function()
 		assert.are.equal("0123456789abcdef", Pagle.CONTENT_FINGERPRINT)
 	end)
 
+	it("publishes a Species' ten varieties, and the rarities in order (VAR-R11)", function()
+		local data = fixture()
+		local keys = { "k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9", "k10" }
+		data.items[6359] = { category = "fish", species = 6359, legend = false, noise = false, varieties = keys }
+		local Pagle = loadOver(data).env.Pagle
+
+		local varieties = Pagle.GetVarieties(6359)
+		assert.are.equal(10, #varieties)
+		assert.are.same({ "6359.k1", "k1", 1, "common" }, {
+			varieties[1].id,
+			varieties[1].key,
+			varieties[1].index,
+			varieties[1].rarity,
+		})
+		assert.is_nil(Pagle.GetVarieties(6358))
+		local rarities = {}
+		for rarity, entry in ipairs(Pagle.VARIETY_RARITIES) do
+			rarities[rarity] = entry.key .. " " .. entry.name .. " " .. entry.weight
+		end
+		assert.are.same({ "common Common 1750", "uncommon Uncommon 733", "rare Rare 350", "epic Epic 100" }, rarities)
+	end)
+
 	it("gives Core the fishing spells, auras, events and aliases (LOG-R56)", function()
 		local catalogue = loadOver(fixture()).ns.Catalogue
 

@@ -767,3 +767,116 @@ describe("the Simulated Size on decoded Casts", function()
 		assert.are.same({ false }, sizes(records(catchLog, 0)[1]))
 	end)
 end)
+
+describe("the variety on decoded Casts", function()
+	-- The character of VAR-R3's test vectors, and a fixture catalogue: a fish whose Species lists its ten varieties, a
+	-- Legend that would list them too, and a fish whose Species lists none.
+	local VEE = { guid = "Player-4395-0A1B2C3D", name = "Vee", classID = 1, raceID = 1, realmID = 4395 }
+	local KEYS = { "k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9", "k10" }
+	local ITEMS = {
+		[6359] = {
+			category = "fish",
+			species = 6359,
+			typicalLength = 300,
+			legend = false,
+			noise = false,
+			varieties = KEYS,
+		},
+		[19808] = {
+			category = "fish",
+			species = 19808,
+			typicalLength = 300,
+			legend = true,
+			noise = false,
+			varieties = KEYS,
+		},
+		[6358] = { category = "fish", species = 6358, typicalLength = 300, legend = false, noise = false },
+		[6303] = { category = "junk", legend = false, noise = false },
+	}
+
+	-- A log of Vee's entries, opened over `items` (ITEMS by default) as its catalogue.
+	local function veeLog(entries, items)
+		return ns.OpenCatchLog(savedLog(entries, 1, { VEE }), {}, nil, function(itemID)
+			return (items or ITEMS)[itemID]
+		end)
+	end
+
+	-- A Cast of Vee's at 1791731747 (VAR-R3's first two vectors) or 1791731762 with tie 1 (its third), of these items.
+	local function castOf(items, third)
+		return ("C1|1|%s|c|494|1439|1|148|453|86|25|263|||%s"):format(third and "1791731762|1" or "1791731747|0", items)
+	end
+
+	-- Each item's variety, by its position in the Cast; false for none.
+	local function varieties(cast)
+		local all = {}
+		for _, item in ipairs(cast.items) do
+			all[item.n] = item.variety or false
+		end
+		return all
+	end
+
+	it(
+		"gives each Catch of a Species with varieties VAR-R3's, whatever its quantity, beside its size (VAR-R4)",
+		function()
+			local cast = records(veeLog({ castOf("6359x3,6359x1") }), 0)[1]
+
+			assert.are.same({
+				{ id = "6359.k9", index = 9, rarity = "rare" },
+				{ id = "6359.k1", index = 1, rarity = "common" },
+			}, varieties(cast))
+			assert.is_table(cast.items[1].size)
+		end
+	)
+
+	it("gives none to a Legend, a Species without varieties, junk, an Uncharted item or item 0 (VAR-R1)", function()
+		local cast = records(veeLog({ castOf("19808x1,6358x1,6303x1,7777x1,0x1", true) }), 0)[1]
+
+		assert.are.same({ false, false, false, false, false }, varieties(cast))
+		assert.is_table(cast.items[1].size) -- a Legend keeps its size (LOG-R65)
+	end)
+
+	it(
+		"gives an Uncharted Catch, once a release classifies it, the variety it would have had (VAR-R1, VAR-R90)",
+		function()
+			local items = {}
+			local catchLog = veeLog({ castOf("7777x1", true) }, items)
+			assert.are.same({ false }, varieties(records(catchLog, 0)[1]))
+
+			items[7777] = {
+				category = "fish",
+				species = 7777,
+				typicalLength = 300,
+				legend = false,
+				noise = false,
+				varieties = KEYS,
+			}
+
+			assert.are.same({ { id = "7777.k10", index = 10, rarity = "epic" } }, varieties(records(catchLog, 0)[1]))
+		end
+	)
+
+	it("puts the same varieties on an appended Cast and on that Cast read back either way (VAR-R4, LOG-R43)", function()
+		local catchLog = veeLog({})
+
+		local appended = catchLog:Append({
+			kind = "cast",
+			char = 1,
+			time = 1791731747,
+			outcome = "caught",
+			conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+			items = { { itemID = 6359, quantity = 1 }, { itemID = 6359, quantity = 2 } },
+		})
+
+		local expected =
+			{ { id = "6359.k9", index = 9, rarity = "rare" }, { id = "6359.k1", index = 1, rarity = "common" } }
+		assert.are.same(expected, varieties(appended))
+		assert.are.same(expected, varieties(records(catchLog, 0)[1]))
+		assert.are.same(expected, varieties(catchLog:Reverse("cast")()))
+	end)
+
+	it("gives no varieties when opened without a catalogue (VAR-R4)", function()
+		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6359x1") }, 1, { VEE }), {})
+
+		assert.are.same({ false }, varieties(records(catchLog, 0)[1]))
+	end)
+end)
