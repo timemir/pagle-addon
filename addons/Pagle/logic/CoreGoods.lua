@@ -21,7 +21,7 @@ local ns = select(2, ...)
 ---@field id string
 ---@field label string
 ---@field category "Announcements"|"Bookplate"
----@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): the crest slot
+---@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): all three
 ---@field groups? PagleSlotGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
@@ -46,14 +46,16 @@ ns.CREST_SLOT = "core.crest"
 --- icon, which the Ledger draws on the Journal's bookplate through Pagle.GetGood (LED-R112). Every good has an icon,
 --- the shop's swatch (wallet-and-shop.md › UI). Plain's is Core's own texture, drawn as the shield (SHOP-R25); every
 --- other is an in-client texture listed in build 70338's ManifestInterfaceData, standing in until Pagle has its own art.
---- The crest slot holds Plain alone: it is open to earned goods (SHOP-R23), and its zone crests are the Ledger's
---- (LED-R113), drawn on the stage by the slot's preview.
+--- All three slots are open to earned goods (SHOP-R23): the toast styles and sound sets the Ledger, Hunts and the
+--- Tackle Board earn, and the Ledger's zone crests (LED-R113), each drawn on the stage by its slot's preview. The crest
+--- slot holds Plain alone.
 ---@type PagleCoreSlot[]
 ns.CORE_GOODS = {
 	{
 		id = ns.TOAST_STYLE_SLOT,
 		label = L.SLOT_TOAST_STYLE,
 		category = "Announcements",
+		openToEarned = true,
 		goods = {
 			{ id = ns.TOAST_STYLE_DEFAULT, default = true, icon = ICONS .. "INV_Crate_01" },
 			{ id = "core.toaststyle.ripple", tier = 1, icon = ICONS .. "Ability_Shaman_WaterShield" },
@@ -64,6 +66,7 @@ ns.CORE_GOODS = {
 		id = ns.SOUND_SET_SLOT,
 		label = L.SLOT_SOUND_SET,
 		category = "Announcements",
+		openToEarned = true,
 		goods = {
 			{
 				id = "core.soundset.driftwood",
