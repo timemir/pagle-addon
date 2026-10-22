@@ -87,6 +87,7 @@ function ns.EarnedGoodNow(goodID, rule)
 		state = projection and projection:GetState() --[[@as LedgerState?]],
 		celebrated = ns.SavedCelebrated(),
 		world = ns.world,
+		sizeBands = ns.SizeBandCount(Pagle.SIZE_BANDS),
 	})
 end
 

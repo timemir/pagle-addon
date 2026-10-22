@@ -93,14 +93,19 @@ describe("the expansion's earned goods", function()
 	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
 
 	-- What the rules read: the fixture world (Lake's Legends `legends`, and the Species with varieties when
-	-- `coloured`), `made` and `celebrated`.
+	-- `coloured`), `made`, `celebrated` and Core's five Size bands (LOG-R67).
 	---@param made LedgerState?
 	---@param celebrated table? a LedgerCelebrated, as hand-made as the state
 	---@param legends integer[]?
 	---@param coloured boolean?
 	---@return LedgerEarnedView
 	local function view(made, celebrated, legends, coloured)
-		return { world = ns.NewWorld(lookups(legends, coloured)), state = made, celebrated = celebrated or {} }
+		return {
+			world = ns.NewWorld(lookups(legends, coloured)),
+			state = made,
+			celebrated = celebrated or {},
+			sizeBands = 5,
+		}
 	end
 
 	-- Whether `goodID`, by `rule`, is owned over `v`.
@@ -172,6 +177,26 @@ describe("the expansion's earned goods", function()
 		assert.is_true(owned("ledger.binding.monster", "monster", view(state({ fishBand = 5 }))))
 		assert.is_true(owned("ledger.binding.monster", "monster", view(state({ items = { LEGEND }, legendBand = 5 }))))
 		assert.is_false(owned("ledger.binding.monster", "monster", view(nil)))
+	end)
+
+	it(
+		"take the Monster band as the last of the Size bands Core passes in, none without them (LED-R80, CORE-R7)",
+		function()
+			local fishAt5 = view(state({ fishBand = 5 }))
+			fishAt5.sizeBands = 6
+			assert.is_false(owned("ledger.binding.monster", "monster", fishAt5))
+			fishAt5.sizeBands = nil
+			assert.is_false(owned("ledger.binding.monster", "monster", fishAt5))
+		end
+	)
+
+	it("count Core's Size bands by index, a read-only copy's too (LOG-R67, CORE-R18)", function()
+		local bands = { { key = "a" }, { key = "b" }, { key = "c" } }
+		local proxy = setmetatable({}, { __index = bands })
+
+		assert.are.same({ 3, 3 }, { ns.SizeBandCount(bands), ns.SizeBandCount(proxy) })
+		assert.is_nil(ns.SizeBandCount(nil))
+		assert.is_nil(ns.SizeBandCount({}))
 	end)
 
 	it(

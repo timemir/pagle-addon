@@ -65,7 +65,7 @@ ns.L = {
 		prestige1 = "Prestige I",
 		prestige5 = "Prestige V",
 		prestige10 = "Prestige X",
-		ledger = "Ledger 100%",
+		ledger = "Complete the Ledger",
 		varieties = "Every fish in every colour",
 	},
 

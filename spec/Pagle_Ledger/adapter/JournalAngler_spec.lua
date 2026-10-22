@@ -593,7 +593,7 @@ describe("the Angler page's Bindings", function()
 				{ "Three Gilt Fish", "Land all three Legends" },
 				{ "Monster Hide", "Land a Monster" },
 				{ "Abyssal Black", "Prestige X" },
-				{ "Keeper's Gold", "Ledger 100%" },
+				{ "Keeper's Gold", "Complete the Ledger" },
 				{ "Iridescent Scale", "Every fish in every colour" },
 			}, lines(loaded))
 		end
@@ -638,7 +638,7 @@ describe("the Angler page's Bindings", function()
 			local list = lines(loaded)
 			assert.are.same({ "Monster Hide", "Use" }, list[27])
 			assert.are.same({ "Abyssal Black", "Use" }, list[28])
-			assert.are.same({ "Keeper's Gold", "Ledger 100%" }, list[29])
+			assert.are.same({ "Keeper's Gold", "Complete the Ledger" }, list[29])
 		end
 	)
 
