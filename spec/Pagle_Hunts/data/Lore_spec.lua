@@ -30,15 +30,15 @@ describe("Hunts' committed lore (DATA-R111, its M5 and M8 batches)", function()
 		return value
 	end
 
-	it("names each of the 16 v1 Hunts once Pagle_Hunts loads (HNT-R1, DATA-R105)", function()
-		assert.are.equal(16, #ns.huntList.hunts)
+	it("names each of the 12 Standing Hunts once Pagle_Hunts loads (HNT-R1, DATA-R105)", function()
+		assert.are.equal(12, #ns.huntList.hunts)
 		for _, hunt in ipairs(ns.huntList.hunts) do
 			assert.are.equal(text(("hunt.%s.name"):format(hunt.id)), ns.hunts:HuntName(hunt.id))
 		end
 	end)
 
-	it("gives each of the 5 sets a name and a title (HNT-R1, HNT-R22, DATA-R105)", function()
-		assert.are.equal(5, #ns.huntList.sets)
+	it("gives each of the 4 sets a name and a title (HNT-R1, HNT-R22, DATA-R105)", function()
+		assert.are.equal(4, #ns.huntList.sets)
 		for _, set in ipairs(ns.huntList.sets) do
 			assert.are.equal(text(("set.%s.name"):format(set.id)), ns.hunts:SetName(set.id))
 			assert.are.equal(text(("set.%s.title"):format(set.id)), ns.hunts:SetTitle(set.id))

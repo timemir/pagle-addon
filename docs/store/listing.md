@@ -123,7 +123,7 @@ Every claim in the description, in its order, with the rule or spec section it r
 | Uncaught fish stay nameless; a riddle and a plain hint | LED-R124, LED-R141 |
 | Legends: a splash and a title to sign with | `CONTEXT.md` › Legend; LED-R63, LED-R75, LED-R77, LED-R97 |
 | Your longest of each Species, from Tiddler to Monster | LED-R80–R82, LED-R140; `CONTEXT.md` › Size band |
-| Hunts by night, season or event, or under conditions of their own (the grouper by moonlight) | `CONTEXT.md` › Natural Hunt, Imposed Hunt; HNT-R4, HNT-R5; `data/hunts/hunts.toml` (`grouper_by_moonlight`) |
+| Hunts by night, season or event, or under conditions of their own (the grouper by moonlight) | `CONTEXT.md` › Natural Hunt, Imposed Hunt; HNT-R4, HNT-R5; `data/hunts/events/darkshore_moonlight.toml` (`darkshore_moonlight_grouper`) |
 | The Hunts board, a leather notebook, with a timeline of now, soon and later | HNT-R40, HNT-R60, HNT-R62 |
 | Completes in bronze, then silver and gold; set titles | HNT-R15, HNT-R16, HNT-R18, HNT-R20 |
 | Counts your Casts without odds | HNT-R25–R27 |

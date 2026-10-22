@@ -28,9 +28,10 @@ def test_the_committed_list_emits_the_three_generated_classes_over_the_catalogue
         assert set(members) <= layers.items.keys()
 
 
-# hunts.md › Data, "The v1 Hunt list": the five sets and the 16 Hunts in table order, each as (id, set, kind, target,
-# window or conditions, tiers). Written from the table, not from hunts.toml, so the file can't drift from the spec.
-V1_SETS = ["round_the_clock", "turn_of_the_year", "sunday_showdown", "camp_hours", "pagles_wagers"]
+# hunts.md › Data, "The Standing Hunt list": the four sets and the 12 Hunts in table order, each as (id, set, kind,
+# target, window or conditions, tiers). Written from the table, not from hunts.toml, so the file can't drift from the
+# spec. House Wagers left the list and its four Hunts became pool events (#286).
+V1_SETS = ["round_the_clock", "turn_of_the_year", "sunday_showdown", "camp_hours"]
 V1_HUNTS: list[tuple[str, str, str, tuple[str, object], tuple[str, object], list[int]]] = [
     ("night_run", "round_the_clock", "natural", ("species", 13759), ("window", "night"), [1, 10, 40]),
     ("first_light", "round_the_clock", "natural", ("species", 13760), ("window", "day"), [1, 10, 40]),
@@ -51,39 +52,14 @@ V1_HUNTS: list[tuple[str, str, str, tuple[str, object], tuple[str, object], list
         [1, 10, 25],
     ),
     ("hut_hour", "camp_hours", "imposed", ("class", "species.any"), ("conditions", {"auras": [1280342]}), [1, 5, 15]),
-    (
-        "grouper_by_moonlight",
-        "pagles_wagers",
-        "imposed",
-        ("species", 12238),
-        ("conditions", {"areas": [148], "time": [[1320, 240]]}),
-        [1, 5, 20],
-    ),
-    (
-        "oddity_at_dusk",
-        "pagles_wagers",
-        "imposed",
-        ("class", "fixed.oddity"),
-        ("conditions", {"time": [[1080, 1260]]}),
-        [1, 10, 25],
-    ),
-    (
-        "witching_hour",
-        "pagles_wagers",
-        "imposed",
-        ("class", "species.any"),
-        ("conditions", {"areas": [10], "time": [[0, 180]]}),
-        [1, 10, 30],
-    ),
-    ("dawn_trout", "pagles_wagers", "imposed", ("species", 8365), ("conditions", {"time": [[300, 480]]}), [1, 10, 25]),
 ]
 # DATA-R87, Tunables: every v1 `since` is the pre-1.0 placeholder 2026-11-04, 00:00 UTC (`date -u -d 2026-11-04 +%s`).
 PLACEHOLDER_SINCE = 1793750400
 
 
 def test_the_committed_list_is_hunts_md_v1_table_in_order() -> None:
-    # hunts.md › Data (the v1 Hunt list), HNT-R1 (display order is file order), DATA-R87 and DATA-R93: the five sets
-    # and the 16 Hunts in table order, every since the pre-1.0 placeholder, none retired and none with a minBand.
+    # hunts.md › Data (the Standing Hunt list), HNT-R1 (display order is file order), DATA-R87 and DATA-R93: the four
+    # sets and the 12 Hunts in table order, every since the pre-1.0 placeholder, none retired and none with a minBand.
     hunt_list = hunt_list_of(read_layers(REPO))
     assert [entry["id"] for entry in hunt_list["sets"]] == V1_SETS
     expected = [
@@ -105,7 +81,7 @@ def test_the_committed_list_has_the_one_fixed_class_and_the_generated_classes() 
 
 # hunts.md › Data: "The M5 build ticket checks every item and area ID above against data/db2/ by its enUS name". Each
 # ID with its name as data/db2/ gives it (items.csv's Display_lang, areas.csv's AreaName_lang); hunts.md's bracketed
-# names are the intent, and 8365's DB2 name carries the "Raw " that hunts.md leaves off.
+# names are the intent. No Standing Hunt names an area since House Wagers left the list (#286).
 V1_ITEM_NAMES = {
     13759: "Raw Nightfin Snapper",
     13760: "Raw Sunscale Salmon",
@@ -117,12 +93,10 @@ V1_ITEM_NAMES = {
     19805: "Keefer's Angelfish",
     19806: "Dezian Queenfish",
     19803: "Brownell's Blue Striped Racer",
-    12238: "Darkshore Grouper",
     6522: "Deviate Fish",
     251524: "Whimsyfin",
-    8365: "Raw Mithril Head Trout",
 }
-V1_AREA_NAMES = {148: "Darkshore", 10: "Duskwood"}
+V1_AREA_NAMES: dict[int, str] = {}
 # DATA-R39's aura list, as data/forever/lists.toml's comment names them, and DATA-R38's event list.
 V1_AURAS = {1280341: "Rack", 1280342: "Hut"}
 V1_EVENTS = {301}

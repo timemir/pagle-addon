@@ -116,7 +116,7 @@ describe("the set ribbons (HNT-R61)", function()
 		local dusk = run.ns.BoardRibbons({ mode = "board" })[3] -- after Board and Pagle Wagers (HNT-R162)
 
 		assert.are.same({ "Dusk", "Dusk" }, { dusk.text, dusk.name })
-		assert.are.equal("Wagers", run.ns.RibbonWord("House Wagers"))
+		assert.are.equal("Clock", run.ns.RibbonWord("Round the Clock"))
 	end)
 
 	it("choose Board on the Board, and a set's ribbon on its page and on the entries opened from it", function()
