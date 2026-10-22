@@ -326,8 +326,9 @@ ns.L = {
 	DEV_GUIDE_NO_STEP = "Pagle dev: no guide step %s; the steps are %s.",
 	-- A tour stop per guide step (ONB-R84): its label for /pagle dev tour list.
 	DEV_TOUR_GUIDE_STEP = "the Field guide at its %s step",
-	-- Core's own steps (ONB-R30, ONB-R31, ONB-R34, ONB-R38): their ribbons, and the Welcome step's foot (ONB-R26).
-	-- Their pages are #323's; until then each shows its kicker and title, verbatim from the probe.
+	-- Core's own steps (ONB-R30, ONB-R31, ONB-R34, ONB-R38): their ribbons, the Welcome step's foot (ONB-R26), and
+	-- their pages, verbatim from the probe (PagleArtGuide's Guide.lua) with › written » (CORE-R9). A *term* between
+	-- asterisks is in the red pencil (ns.GuideRedPencil).
 	GUIDE_RIBBON_WELCOME = "Welcome",
 	GUIDE_RIBBON_BOX = "What’s in the box",
 	GUIDE_RIBBON_MOMENTS = "Moments",
@@ -349,6 +350,94 @@ ns.L = {
 	GUIDE_OFF_RIGHT_KICKER = "Your first evening",
 	GUIDE_OFF_RIGHT_TITLE = "A short list, if you like",
 	GUIDE_OFF_AGAIN = "|cff3e220c/pagle guide|r opens this guide again.",
+	-- A count on the pages in words, from 0 (ns.GuideCountWord); past ten, in figures. A list's joins.
+	GUIDE_COUNT_WORDS = { "no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten" },
+	GUIDE_LIST_COMMA = ", ",
+	GUIDE_LIST_AND = " and ",
+	-- Welcome (ONB-R30, board 2): the letter in the hand, its signature and foot, then the three promises.
+	GUIDE_WELCOME_LETTER = {
+		"From now on, every fish you pull out of the water gets written down: where, when, how big, and what it took to land it.",
+		"Fish long enough and the water starts telling you things: what bites only at night, which fish you keep missing, how far you’ve come.",
+		"Let me show you around. It takes two minutes, and you can change everything later.",
+	},
+	GUIDE_WELCOME_SIGNED = "Pagle",
+	GUIDE_WELCOME_FOOT = "Everything here is also in Options » AddOns » Pagle.",
+	GUIDE_WELCOME_PROMISES = {
+		{
+			"I",
+			"I never fish for you.",
+			"Pagle watches and writes things down. Every key press does one thing at most, and your hands do the fishing.",
+		},
+		{
+			"II",
+			"Nothing expires.",
+			"There are no dailies to miss. Goals wait for you, and a day away costs you nothing.",
+		},
+		{ "III", "Every part is optional." },
+	},
+	-- The third promise's line: the roster's size in words (ONB-R30).
+	GUIDE_WELCOME_PARTS = "Pagle comes in %s parts. Turn any of them off in the AddOns list and it leaves no trace.",
+	-- What's in the box (ONB-R31, board 3): the paragraph (Pagle in the title's ink), the menu drawing's header and
+	-- its note, the right page's kicker (the registered Modules in words), the Curio Shop's row, and ONB-R103's line.
+	GUIDE_BOX_TEXT = "Pagle is a small kit, not one big window. Each part has its own place, and every one of them opens from the |cff3e220cPagle|r entry under the addons button by your minimap.",
+	GUIDE_BOX_MENU = "Pagle",
+	GUIDE_BOX_MENU_NOTE = "Click a name to open it. */pagle* opens Settings.",
+	GUIDE_BOX_PARTS = "%s parts, and a shop",
+	GUIDE_BOX_PART = "%s part, and a shop",
+	GUIDE_BOX_SHOP = "Curio Shop",
+	GUIDE_BOX_SHOP_BLURB = "Pagle Coins come from things you achieve, and buy looks, never power.",
+	GUIDE_BOX_NONE = "Turn parts on in the AddOns list.",
+	-- Moments (ONB-R34, ONB-R35, board 6): the left page's lines, each sample's name and line, the budget paragraph
+	-- (the Lively preset's count and minutes); the presets' cards, Your own mix, and the note under them.
+	GUIDE_MOMENTS_TEXT = "Pagle tells you, in one of three sizes. The bigger the moment, the bigger the note.",
+	GUIDE_MOMENTS_SAMPLES = {
+		nod = { "A Nod", "Every Catch. One line, gone in 3 seconds." },
+		toast = { "A toast", "A new fish, a record, Coins earned." },
+		banner = { "A banner", "A new Angler Level, and the title that comes with it." },
+	},
+	GUIDE_MOMENTS_BUDGET = "At most %d pop-ups every %d minutes: past that, small ones step down to a Nod. Everything lands on the Session summary when you stop.",
+	-- The samples' catch, in place of /pagle dev preview's "(a /pagle dev preview)" line.
+	GUIDE_MOMENTS_SAMPLE_TEXT = "Oily Blackmouth",
+	GUIDE_PRESETS = {
+		lively = { "Lively", "Every Catch gets its Nod; toasts and banners with sound.", "as it comes" },
+		quieter = { "Quieter", "No Nod for ordinary Catches, and fewer pop-ups. The big moments still show." },
+		cozy = { "Cozy", "Nothing pops up and nothing plays. It all waits for your Session summary." },
+	},
+	-- A preset card's pencilled line: its budget's count and minutes; Cozy's.
+	GUIDE_PRESET_POPUPS = "%d pop-ups in %d minutes",
+	GUIDE_PRESET_COZY_WHAT = "a Legend still shows, silently",
+	GUIDE_PRESET_OWN = "Your own mix, kept as it is.",
+	GUIDE_MOMENTS_NOTE = "Each one only sets the switches in Settings » Announcements, where you can fine-tune them later.",
+	-- Off you go (ONB-R38, board 9): the paragraph, the sample Nod's note, the margin-notes paragraph naming the
+	-- windows with First looks (one, or a list), the right page's line, and the First evening list as it will look.
+	GUIDE_OFF_TEXT = "The first time something new happens (your first Nod, your first new fish, your first Session summary) I’ll leave a note beside it. Once. After that the margins stay clean.",
+	GUIDE_OFF_NOD_NOTE = "That’s a *Nod*: every Catch gets one. It’s gone in three seconds.",
+	GUIDE_OFF_LOOKS = "Don’t want notes? Turn off Margin notes in Settings. %s each get a short set the first time you open them.",
+	GUIDE_OFF_LOOKS_ONE = "Don’t want notes? Turn off Margin notes in Settings. %s gets a short set the first time you open it.",
+	GUIDE_LOOK_WINDOWS = {
+		Ledger = "the Fish Journal",
+		Hunts = "Hunts",
+		Stats = "Stats",
+		TackleBoard = "the Tackle Board",
+		Core = "the Curio Shop",
+	},
+	GUIDE_OFF_LIST_TEXT = "It sits under your quests and ticks itself off. Close it whenever you like.",
+	-- The First evening list (ONB-R61): its header, "{done} of {total}", each item and the hints the board shows.
+	GUIDE_EVENING_TITLE = "First evening",
+	GUIDE_EVENING_COUNT = "%d of %d",
+	GUIDE_EVENING_ITEMS = {
+		cast = "Make a Cast",
+		catch = "Land a Catch",
+		journal = "Open the Fish Journal",
+		hunts = "See what’s biting on Hunts",
+		session = "Finish a Session",
+		shop = "Peek into the Curio Shop",
+	},
+	GUIDE_EVENING_HINTS = {
+		cast = "press your Fishing key, or double right-click",
+		castNoQoL = "right-click the water with Fishing",
+		session = "step away 5 minutes for your summary",
+	},
 
 	-- Core's own slots (SHOP-R25): their labels. Their goods' names and descriptions are lore (DATA-R101), in
 	-- data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`.

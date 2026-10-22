@@ -14,8 +14,7 @@ local Pagle = Pagle
 -- link and Next » on the right, Off to the water on the last); its build draws the rest with its nav. The book opens
 -- with the books' fade and sound over a dim of the world, turns with their page turn, drops the current ribbon, and
 -- fits the screen (ONB-R27); every motion is settled at once with Animations off. Announcements are held under
--- "guide" while it is open (ONB-R70). Core's own four steps are placeholders here, their kicker and title alone,
--- until #323 draws them (ns.GUIDE_CORE_STEPS).
+-- "guide" while it is open (ONB-R70). Core's own four steps are drawn by adapter/GuidePages.lua (ns.GUIDE_CORE_STEPS).
 
 local L = ns.L
 local BOOK = ns.GUIDE_BOOK
@@ -264,54 +263,6 @@ local function close()
 	}, finish)
 	C_Timer.After(BOOK.closeFade, finish)
 end
-
--- Core's own steps until #323 draws them (ONB-R30, ONB-R31, ONB-R34, ONB-R38): each page's kicker and title, and Off
--- you go's Off to the water, so the guide is whole end to end.
-
--- A placeholder: the left page's kicker and title, and the right page's when given.
----@param left string[] kicker, title
----@param right string[]?
----@return PagleCoreGuideStepDrawing
-local function placeholder(left, right)
-	return {
-		build = function(leftPage, rightPage)
-			ns.NewGuideKicker(leftPage, left[1])
-			ns.NewGuideTitle(leftPage, left[2])
-			if right then
-				ns.NewGuideKicker(rightPage, right[1])
-				ns.NewGuideTitle(rightPage, right[2], 25)
-			end
-		end,
-	}
-end
-
---- What draws each of Core's own steps, by id (logic/Guide.lua's ns.CoreGuideSteps), looked up as each step first
---- draws: #323 replaces these entries with its pages.
----@type table<string, PagleCoreGuideStepDrawing>
-ns.GUIDE_CORE_STEPS = {
-	welcome = placeholder(
-		{ L.GUIDE_WELCOME_KICKER, L.GUIDE_WELCOME_TITLE },
-		{ L.GUIDE_WELCOME_RIGHT_KICKER, L.GUIDE_WELCOME_RIGHT_TITLE }
-	),
-	box = placeholder({ L.GUIDE_BOX_KICKER, L.GUIDE_BOX_TITLE }),
-	moments = placeholder(
-		{ L.GUIDE_MOMENTS_KICKER, L.GUIDE_MOMENTS_TITLE },
-		{ L.GUIDE_MOMENTS_RIGHT_KICKER, L.GUIDE_MOMENTS_RIGHT_TITLE }
-	),
-	off = {
-		build = function(left, right, nav)
-			placeholder(
-				{ L.GUIDE_OFF_KICKER, L.GUIDE_OFF_TITLE },
-				{ L.GUIDE_OFF_RIGHT_KICKER, L.GUIDE_OFF_RIGHT_TITLE }
-			).build(left, right, nav)
-			-- Off to the water (ONB-R38): the kit's big leather button, and the line under it
-			local off = ns.NewGuideButton(right, L.GUIDE_OFF, nav.Finish, 382, 46, 18)
-			ns.GuideAt(off, right, 30, 359.7)
-			local again = ns.GuideText(right, "italic", 13, "note", L.GUIDE_OFF_AGAIN, { justify = "CENTER" })
-			again:SetPoint("TOP", right, "TOPLEFT", 221, -(415.7 + 2.275))
-		end,
-	},
-}
 
 ns.WireGuide(ns.host, {
 	show = show,
