@@ -18,6 +18,7 @@ local ns = select(2, ...)
 ---@field tour fun(args: string)        -- runs `/pagle dev tour <args>` (CORE-R66–R68, logic/Tour.lua)
 ---@field probe fun()                   -- runs `/pagle dev probe` (#261, logic/Probe.lua)
 ---@field onboarding fun(args: string)  -- runs `/pagle dev onboarding <args>` (ONB-R83, logic/Onboarding.lua)
+---@field content fun(): string[]       -- `/pagle dev content`'s lines (PUSH-R14, logic/PushedContent.lua)
 ---@field print fun(line: string)      -- prints a chat line
 
 --- The dev commands.
@@ -272,6 +273,10 @@ function Dev:Run(args)
 		options.probe()
 	elseif name == "onboarding" then
 		options.onboarding(rest)
+	elseif name == "content" then
+		for _, line in ipairs(options.content()) do
+			options.print(line)
+		end
 	else
 		options.print(L.DEV_USAGE)
 	end
