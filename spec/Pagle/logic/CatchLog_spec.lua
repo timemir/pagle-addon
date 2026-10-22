@@ -877,6 +877,7 @@ describe("the Simulated Size on decoded Casts", function()
 				earlier(2, 1791731060, "6358x1,6358x1,6358x1,6358x1,6358x1,6358x1"),
 			})
 			records(catchLog, 1) -- a read from a later seq first
+			catchLog:Reverse("cast", 10)() -- and one back from past the log's end
 
 			local appended = catchLog:Append({
 				kind = "cast",
@@ -893,6 +894,7 @@ describe("the Simulated Size on decoded Casts", function()
 			assert.are.same(expected, sizes(records(catchLog, 0)[3]))
 			assert.are.same(expected, sizes(records(catchLog, 2)[1]))
 			assert.are.same(expected, sizes(catchLog:Reverse("cast")()))
+			assert.are.same(expected, sizes(catchLog:Reverse("cast", 10)()))
 		end
 	)
 

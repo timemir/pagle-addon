@@ -675,7 +675,7 @@ end
 ---@return fun(): PagleRecord?
 local function reverse(catchLog, kind, fromSeq, sized)
 	local entries, characters = catchLog.data.entries, catchLog.data.characters
-	local seq = (fromSeq or #entries) + 1
+	local seq = math.min(fromSeq or #entries, #entries) + 1 -- past the end there is nothing to walk, nor to count
 	local counts -- the earlier Catch counts over the entries before `seq`, once the first Cast is asked for
 	sized = sized and kind == "cast" and catchLog.getItem ~= nil
 	return function()
