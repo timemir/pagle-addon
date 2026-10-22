@@ -126,7 +126,8 @@ local function setRefresh()
 end
 
 -- Cancels every timer and sets each again from `grouping` (HNT-R42): the next window edge among current Hunts, the
--- next `since` or `retired` in the list, and the refresh while a view is shown.
+-- next `since` or `retired` in the list, the next run start or end or slot turn (logic/RunLog.lua; the live step
+-- after that regroup logs what is due), and the refresh while a view is shown.
 ---@param grouping HuntsGrouping
 local function setTimers(grouping)
 	local now = grouping.time
@@ -136,6 +137,7 @@ local function setTimers(grouping)
 	end
 	setTimer("edge", ns.NextEdge(windows, now), now)
 	setTimer("list", ns.NextListChange(ns.hunts:Hunts(), now), now)
+	setTimer("runs", ns.NextRunEdge(ns.State(), now), now)
 	setRefresh()
 end
 
@@ -268,7 +270,7 @@ end
 
 --- Starts grouping, from OnInitialize once Hunts is registered: drops the pins on Hunts gone since the last session
 --- (HNT-R81), then waits for the first PLAYER_ENTERING_WORLD to group, and regroups on ConditionsChanged,
---- SkillChanged and RestrictionChanged(false) (HNT-R42, HNT-R43).
+--- SkillChanged, PushedContentReady and RestrictionChanged(false) (HNT-R42, HNT-R43).
 function ns.StartGroups()
 	dropStalePins(GetServerTime())
 	Pagle.RegisterEvent(OWNER, "PLAYER_ENTERING_WORLD", function()
@@ -279,6 +281,10 @@ function ns.StartGroups()
 		regroup()
 	end)
 	Pagle.RegisterCallback(OWNER, "SkillChanged", function()
+		regroup()
+	end)
+	-- The pushed runs are known from here on: the runs timer is set again with them (HNT-R42, HNT-R151).
+	Pagle.RegisterCallback(OWNER, "PushedContentReady", function()
 		regroup()
 	end)
 	Pagle.RegisterCallback(OWNER, "RestrictionChanged", function(_, isRestricted)

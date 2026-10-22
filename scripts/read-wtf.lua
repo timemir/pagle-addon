@@ -822,27 +822,9 @@ local function printCelebratedM4(ledger, celebrated, getItem)
 end
 
 -- The sizes part (#267): every Catch in PagleLog with a Simulated Size, sized by Core's own codec and logic/Size.lua
--- over the catalogue (LOG-R65–R67), by band beside LOG-R67's shares and per Species, so the bands can be checked on
--- a real log before the 1.0 freeze (ADR 0010).
-
--- Each band's share of Catches, from LOG-R67's cut points (0, 0.15, 0.70, 0.93, 0.995, 1).
-local SIZE_SHARES = { 0.15, 0.55, 0.23, 0.065, 0.005 }
-
--- The central 95% range of a binomial count of `n` draws at probability `p`: the lowest count whose cumulative
--- probability passes 2.5% and the lowest that reaches 97.5%, each term summed in log space so none underflows.
-local function binomialRange(n, p)
-	local logPmf, logRatio = n * math.log(1 - p), math.log(p) - math.log(1 - p)
-	local cdf, low = 0, nil
-	for k = 0, n do
-		cdf = cdf + math.exp(logPmf)
-		low = low or (cdf > 0.025 and k or nil)
-		if cdf >= 0.975 then
-			return low, k
-		end
-		logPmf = logPmf + math.log((n - k) / (k + 1)) + logRatio
-	end
-	return low or n, n
-end
+-- over the catalogue (LOG-R65–R67, LOG-R100), by band and per Species, so the sizes can be looked over on a real log.
+-- Each Catch's band is bounded by its Reach (ADR 0014), so no band has a share to check against; the freeze spec
+-- (spec/Pagle/logic/Size_spec.lua) pins how the bands are drawn.
 
 -- Every Catch in `log` with a Simulated Size (LOG-R65), decoded by Core's codec with `getItem`: the Catches per
 -- band, and per Species its Catches, shortest and longest length and typical length (DATA-R20).
@@ -909,22 +891,9 @@ local function printSizes(log, catalogue)
 			label
 		)
 	)
-	print("sizes by band: Catches (their share; LOG-R67's share, the 95% range of the Catches at it)")
-	for band, share in ipairs(SIZE_SHARES) do
-		local n, low, high = tally.bands[band], binomialRange(tally.total, share)
-		local outside = (n < low or n > high) and ", OUTSIDE its 95% range" or ""
-		print(
-			("  %d %s: %d (%.1f%%; %s%%, %d–%d)%s"):format(
-				band,
-				tostring(core.SIZE_BANDS[band].name),
-				n,
-				100 * n / tally.total,
-				("%g"):format(100 * share),
-				low,
-				high,
-				outside
-			)
-		)
+	print("sizes by band: Catches (their share), each bounded by its Reach (LOG-R67)")
+	for band, n in ipairs(tally.bands) do
+		print(("  %d %s: %d (%.1f%%)"):format(band, tostring(core.SIZE_BANDS[band].name), n, 100 * n / tally.total))
 	end
 	print("sizes per Species: Catches, shortest–longest, typical length (DATA-R20)")
 	for _, id in ipairs(species) do
@@ -1174,7 +1143,13 @@ local function printHuntsState(hunts, list, state, now, options)
 	local ids, titles = sortedKeys(progressOf), sortedKeys(sets)
 	if list then
 		-- Hunts' own line and wording (logic/Moments.lua, locale/), numbers written plain.
-		local line = hunts.HuntsSummaryLine({ hunts = progressOf, sets = sets }, now, tostring)
+		local line = hunts.HuntsSummaryLine({
+			hunts = progressOf,
+			sets = sets,
+			-- The completed-run count and the ladder (HNT-R89, HNT-R148, HNT-R165).
+			settled = tonumber(state.settled) or 0,
+			ladder = tableOr(state.ladder),
+		}, now, tostring)
 		print(
 			("summary line: %s, at %s (%s) (HNT-R89)"):format(
 				line,

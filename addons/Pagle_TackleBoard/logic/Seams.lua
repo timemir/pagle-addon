@@ -99,10 +99,10 @@ local ns = select(2, ...)
 ---@field ItemName fun(itemID: integer): string?         -- C_Item.GetItemNameByID; nil until the client has it cached
 ---@field RequestItem fun(itemID: integer)               -- asks the client to load an item (ns.ItemArrived on arrival)
 ---@field FormatNumber fun(n: integer): string           -- BreakUpLargeNumbers: "2,340" (the Write-up's heading, TKB-R84)
----@field pagle table                                    -- Core: GetArea, GetZones, GetZoneCatches, GetItem, GetAngler, GetConditions, SIZE_BANDS
+---@field pagle table                                    -- Core: GetArea, GetZones, GetZoneCatches, GetItem, GetAngler, GetConditions
 
 ---@alias TackleGoalType "n"|"e"                  -- Notice, Expedition
----@alias TackleGoalKind "haul"|"variety"|"wanderer"|"quality"|"size"|"collector"|"lure"|"species"
+---@alias TackleGoalKind "haul"|"variety"|"wanderer"|"quality"|"collector"|"lure"|"species"
 ---@alias TackleDayLog "lit"|"burned"|"out"|"unlit"
 ---@alias TackleApplyMode "live"|"replay"|"rebuild"
 
@@ -116,7 +116,7 @@ local ns = select(2, ...)
 ---@field tier integer               -- 1–3 for a Notice, 0 for an Expedition (TKB-R34)
 ---@field pay integer                -- Coins (TKB-R34)
 ---@field need integer               -- TKB-R34
----@field target? integer            -- zone, continent, minimum quality or band, or representative item
+---@field target? integer            -- zone, continent, minimum quality, or representative item
 ---@field items? integer[]           -- Variety Expedition: representative items, ascending
 
 --- A goal on the board (tackle-board.md › Projection): its definition, from its record, and its progress.

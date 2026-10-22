@@ -1,6 +1,6 @@
 # Tackle Board
 
-> Status: Done · Milestones: M7 · Sources: [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Prototype the Tackle Board](https://github.com/timemir/wow-fish/issues/29#issuecomment-6126015781), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Decide the lore pipeline](https://github.com/timemir/wow-fish/issues/34#issuecomment-6129762441), [Prototype the Settings tree](https://github.com/timemir/wow-fish/issues/32#issuecomment-6129969765), [Write the Core spec](https://github.com/timemir/wow-fish/issues/35), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652); ADR 0001, 0004, 0007, 0008, 0009, 0010. Prototype: `prototypes/tackle-board/` (variant C)
+> Status: Done · Milestones: M7 · Sources: [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Prototype the Tackle Board](https://github.com/timemir/wow-fish/issues/29#issuecomment-6126015781), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Decide the lore pipeline](https://github.com/timemir/wow-fish/issues/34#issuecomment-6129762441), [Prototype the Settings tree](https://github.com/timemir/wow-fish/issues/32#issuecomment-6129969765), [Write the Core spec](https://github.com/timemir/wow-fish/issues/35), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652); ADR 0001, 0004, 0007, 0008, 0009, 0014. Prototype: `prototypes/tackle-board/` (variant C)
 
 The Tackle Board is the `Pagle_TackleBoard` Module: an opt-in cork board of **Notices** and **Expeditions** that never expire, a **Campfire** kept alight by **Kindling**, a **Fly Box**, and a tally with titles. It builds on the Core contracts in [`core/`](core/README.md) and uses terms as `CONTEXT.md` defines them.
 
@@ -16,7 +16,7 @@ The Tackle Board is the `Pagle_TackleBoard` Module: an opt-in cork board of **No
 - anything about *when* a fish bites: a goal never uses a time of day, season or calendar event (that is Hunts' ground). A goal never references a Hunt. The Tackle Board pays **Activity XP** toward the Angler Level only through Core (TKB-R65, ADR 0011), never into the Ledger or Hunts directly (ADR 0001).
 - the balance, the shop or how a tracker frame is bought (Core, ADR 0009)
 - how moments are shown (Core, ADR 0007), or the tracker dock (CORE-R70)
-- Simulated Sizes (Core computes them, LOG-R65); the Tackle Board only reads the band
+- Simulated Sizes (Core computes them, LOG-R65); the Tackle Board reads none, since it has no size goal (TKB-R32)
 
 **Uses from Core:** the calls listed under [Contracts](#pagle-api-used).
 
@@ -71,10 +71,11 @@ Generation runs live only, so it may use `math.random`; tests inject the random 
   | `variety` | 2 | 1 | Notice: a candidate zone with ≥ 3 eligible Species. Expedition: a candidate zone with 4–12 eligible Species |
   | `wanderer` | 1 | 1 | Notice: always. Expedition: a continent with ≥ 5 candidate zones |
   | `quality` | 1 | 1 | always |
-  | `size` | 1 | 1 | always |
   | `collector` | 1 | 1 | Notice: always. Expedition: at least 6 Sub-collection items (TKB-R46) the Angler has never caught appear in the catch lists of candidate zones, gated entries included |
   | `lure` | 1 | (none) | always |
   | `species` | 1 | (none) | a candidate zone with ≥ 1 eligible Species |
+
+  There is no `size` kind. Under a Reach (ADR 0014) a goal of a Size band is out of a new Angler's range and trivial for a veteran's, and a goal of size records stalls once the Reach is full. The kinds above share its weight: each is drawn in proportion to its weight among those left.
 - **TKB-R33** **Picking the target:** a zone is drawn by weight from the candidates that make the kind eligible. A Species goal draws a zone with at least one eligible Species, then one of its eligible Species uniformly, and stores its representative item (TKB-R31). A Wanderer Expedition draws a continent uniformly from those eligible; only continents with a name in the continent name map (Tunables) are eligible. A Variety Expedition stores the representative item of every eligible Species of its zone at issue time. Before the draw, targets that an open goal of the same type and kind already has are removed from the candidates (for Species goals, compared by `species`, not by representative item); only if that leaves none are they put back. Taking back already-open kinds (TKB-R32) may therefore repeat a kind, but only repeats a target when no other exists.
 - **TKB-R34** **Need, tier and pay.** A Notice draws its tier 1–3 uniformly unless the table fixes it, and pays 10 / 15 / 20 Coins for tier 1 / 2 / 3. An Expedition has tier 0 and pays 60.
 
@@ -84,12 +85,11 @@ Generation runs live only, so it may use `math.random`; tests inject the random 
   | `variety` | 3 / 4 / 5 different Species in the zone; need is `min(drawn, eligible Species in the zone)` and the tier follows the need (3 → 1, 4 → 2, 5 → 3) | every stored Species, caught in the zone |
   | `wanderer` | 3 zones in one board day; tier fixed at 3 | 5 zones on the continent |
   | `quality` | 3 / 5 / 8 Catches of uncommon quality or better | 3 Catches of rare quality or better |
-  | `size` | 3 / 6 / 10 Catches of the Hefty band or better | 1 Catch of the Whopper band or better |
   | `collector` | a junk item and a container in one board day (need 2); tier fixed at 2 | 3 Sub-collection items never caught before |
   | `lure` | 15 / 20 / 25 Catches with a lure on | (none) |
   | `species` | 5 / 10 / 15 Catches of the Species | (none) |
-- **TKB-R35** A goal never targets the Monster band on its own (Hefty or Whopper are the minimums; a Monster still counts as better), never a Legend, and never a time of day, season, calendar event or Hunt.
-- **TKB-R36** The goal's text is built at display time from its record, through `ns.L` templates (interface text, not lore): "30 Catches in Stranglethorn Vale", "4 different Species in Feralas", "Every Species of Feralas", "Catches in 3 zones today", "Catches in 5 zones of Kalimdor", "5 uncommon-or-better Catches", "3 rare-or-better Catches", "3 Hefty-or-better Catches", "A Whopper-or-better Catch", "A junk item and a container today", "3 Sub-collection items you don't have", "20 Catches with a lure on", "10 Oily Blackmouth". Zone names come from `C_Map.GetAreaInfo`, or "Area {id}" when the client has no name; Species names from `C_Item.GetItemNameByID` on the representative item, shown as "…" until the client has it and redrawn on `GET_ITEM_INFO_RECEIVED` (registered with `Pagle.RegisterEvent`); continent names from `C_Map.GetMapInfo` on the continent's uiMapID (Tunables; `GetArea().continent` is the continent's instance map ID, 0 or 1), or "Continent {id}" with that ID when the client has none; and band names from `Pagle.SIZE_BANDS`.
+- **TKB-R35** A goal never targets a Legend, and never a time of day, season, calendar event or Hunt.
+- **TKB-R36** The goal's text is built at display time from its record, through `ns.L` templates (interface text, not lore): "30 Catches in Stranglethorn Vale", "4 different Species in Feralas", "Every Species of Feralas", "Catches in 3 zones today", "Catches in 5 zones of Kalimdor", "5 uncommon-or-better Catches", "3 rare-or-better Catches", "A junk item and a container today", "3 Sub-collection items you don't have", "20 Catches with a lure on", "10 Oily Blackmouth". Zone names come from `C_Map.GetAreaInfo`, or "Area {id}" when the client has no name; Species names from `C_Item.GetItemNameByID` on the representative item, shown as "…" until the client has it and redrawn on `GET_ITEM_INFO_RECEIVED` (registered with `Pagle.RegisterEvent`); continent names from `C_Map.GetMapInfo` on the continent's uiMapID (Tunables; `GetArea().continent` is the continent's instance map ID, 0 or 1), or "Continent {id}" with that ID when the client has none.
 
 ### Progress
 
@@ -105,14 +105,13 @@ Generation runs live only, so it may use `math.random`; tests inject the random 
   | `wanderer` (Notice) | the zone isn't `0` | distinct zones on the board day |
   | `wanderer` (Expedition) | `GetArea(zone).continent` is the target | distinct zones |
   | `quality` | the item has `noise = false` and a `quality` (LOG-R55; none means no count) at least the target (2 uncommon, 3 rare) | +1 per Catch |
-  | `size` | the Catch has a `size` (LOG-R65) with `band` at least the target (3 Hefty, 4 Whopper) | +1 per Catch |
   | `collector` (Notice) | the item has `noise = false` and is category `junk` (counts as "junk") or `container` (counts as "container") | distinct of the two, on the board day |
   | `collector` (Expedition) | the item is a Sub-collection item (TKB-R46) the Angler had never caught before this Catch | distinct items |
   | `lure` | the Cast's `conditions.lure` is set | +1 per Catch |
   | `species` | the item's `species` is the representative item's, in any zone | +1 per Catch |
 
   A `removed` item still counts for the rows that don't name `removed`, the Variety and Collector Notices among them; only Sub-collection items (TKB-R46) and the goals TKB-R44 names leave it out.
-- **TKB-R43** Kinds that need the catalogue (`variety`, `quality`, `size`, `collector`, `species`) never count an Uncharted item or item `0`. `haul`, `lure` and `wanderer` count every Catch, Uncharted, item `0` and Noise included: their text promises Catches, and Noise still earns nothing on its own. Catalogue `confirmed` flags never matter for progress.
+- **TKB-R43** Kinds that need the catalogue (`variety`, `quality`, `collector`, `species`) never count an Uncharted item or item `0`. `haul`, `lure` and `wanderer` count every Catch, Uncharted, item `0` and Noise included: their text promises Catches, and Noise still earns nothing on its own. Catalogue `confirmed` flags never matter for progress.
 - **TKB-R44** A Variety Expedition leaves out of both its need and its progress any stored Species the catalogue now marks `removed`, or whose representative item no longer has a `species`, so a content fix never strands it. A goal is **stranded** when its target no longer resolves in the current catalogue: a Variety Expedition with no Species left, a Species goal whose representative item is Uncharted, has no `species` or is `removed`, a zone goal (`haul`, `variety`) whose zone `GetArea` no longer knows, or a Wanderer Expedition whose continent no zone of `Pagle.GetZones()` is on. A stranded goal stays open and never completes; the board marks it "no longer catchable", and it can be taken down even if it is re-posted.
 - **TKB-R45** Progress is evaluated one Catch at a time, in the Cast's item order. Within one Catch, goals are evaluated in board order (TKB-R101). A goal **completes** at the Catch that brings its progress to its need; later Catches don't count for it.
 - **TKB-R46** A **Sub-collection item** here is an item with category `junk`, `container`, `treasure` or `trophy`, with `noise = false` and `removed = false`. "Never caught before" means no earlier Catch in the whole log (any character, before or after the board started) has that item ID.
@@ -152,7 +151,9 @@ Generation runs live only, so it may use `math.random`; tests inject the random 
   | `reroll` | the player takes a goal down |
 
   A record kind the Module doesn't know, or a payload it can't parse or whose values are out of range (an unknown `type` or `kind`, a tier outside 0–3, a non-positive need), is skipped. A changed shape gets a new kind (`issue2`), never an edit (ADR 0008).
-- **TKB-R81** The Module keeps one projection (LOG-R70) over every entry `M:IterateCatches` yields: its own records, and every Cast from the first `seq` (for zone recency and the ever-caught set), whether or not the board was started then. Its `rulesVersion` is `TKB_RULES_VERSION × 1000 + Pagle.SESSION_RULES_VERSION` (Tunables). The Size band is frozen (LOG-R68) and the Module never reads a length, so `SIZE_RULES_VERSION` isn't folded. `TKB_RULES_VERSION` rises whenever a progress, Campfire, Fly Box or pattern-order rule changes; generation changes don't need it (TKB-R22).
+
+  A `size` goal, a kind dropped before 1.0 (TKB-R32, ADR 0014), is such an unknown kind. A beta log's `issue` of one is skipped, so its goal stays owed and the next live step issues another kind in its place (TKB-R21); a `reroll` to one is skipped whole, so the goal it took down stays open and can be taken down again; and a `reroll` of one is ignored by TKB-R57, its old goal being unknown. What a completed `size` goal paid leaves the totals with the rebuild `TKB_RULES_VERSION` 3 brings (TKB-R81).
+- **TKB-R81** The Module keeps one projection (LOG-R70) over every entry `M:IterateCatches` yields: its own records, and every Cast from the first `seq` (for zone recency and the ever-caught set), whether or not the board was started then. Its `rulesVersion` is `TKB_RULES_VERSION × 1000 + Pagle.SESSION_RULES_VERSION` (Tunables). The Module reads no Simulated Size (TKB-R32), so `SIZE_RULES_VERSION` isn't folded. `TKB_RULES_VERSION` rises whenever a progress, Campfire, Fly Box or pattern-order rule changes; generation changes don't need it (TKB-R22).
 - **TKB-R82** The projection's state at any moment is a pure function of the log entries applied, the catalogue, and the day it has been advanced to (TKB-R14). Advancing to today outside an apply (the live step) gives the same state a later rebuild reaches when it applies the next entry, because no completion happens without an entry.
 - **TKB-R83** The **celebrated set** (LOG-R77), in `PagleTackleBoardDB.global.celebrated`, holds the IDs of completed goals and titles already shown. A goal or title is added when its live moment is raised, and in `done` as TKB-R84 says. A live completion of a goal, or a live earning of a title, already in it raises no moment; the goal still pays and ties its fly, and a milestone still pays its Coins, which then show only in the Coins total, not as a stamp. The set only grows (a few IDs a day).
 - **TKB-R84** While applying entries in `"replay"` or `"rebuild"` mode, the Module tallies what they earned in a scratch field outside the stored state (cleared by `reset` and after `done`): goals completed by type, Coins, Activity XP, flies tied, titles earned, Kindling burned, and whether the fire went out. After a catch-up or rebuild, in `done`:
@@ -226,11 +227,11 @@ Every record is `A1|<header>|TackleBoard|<kind>|<payload>` (LOG-R40, LOG-R11). P
 | `issue` | `type;kind;tier;pay;need;target` |
 | `reroll` | `oldGoalID;type;kind;tier;pay;need;target` (the new goal's definition; `oldGoalID` is an entry ID, TKB-R23) |
 
-- `type`: `n` Notice, `e` Expedition. `kind`: `haul`, `variety`, `wanderer`, `quality`, `size`, `collector`, `lure`, `species`. `tier`: 1–3 for a Notice, 0 for an Expedition. `pay`: Coins.
-- `target` by kind: `haul` zone areaID; `variety` Notice zone areaID, Expedition `zoneAreaID:itemID,itemID,…` (the representative items, TKB-R31); `wanderer` Notice empty, Expedition continent ID; `quality` minimum quality (2 or 3); `size` minimum band (3 or 4); `collector` empty; `lure` empty; `species` the representative item ID.
+- `type`: `n` Notice, `e` Expedition. `kind`: `haul`, `variety`, `wanderer`, `quality`, `collector`, `lure`, `species`. `tier`: 1–3 for a Notice, 0 for an Expedition. `pay`: Coins.
+- `target` by kind: `haul` zone areaID; `variety` Notice zone areaID, Expedition `zoneAreaID:itemID,itemID,…` (the representative items, TKB-R31); `wanderer` Notice empty, Expedition continent ID; `quality` minimum quality (2 or 3); `collector` empty; `lure` empty; `species` the representative item ID.
 - The Variety Expedition's 12-Species ceiling (TKB-R32) keeps every payload under the 200-byte limit (LOG-R40).
 
-Examples: `A1|1|1791731747|0|TackleBoard|issue|n;haul;2;15;30;33` (30 Catches in Stranglethorn Vale, pays 15); `A1|1|1791732000|0|TackleBoard|reroll|Player-4618-0A1B2C3D-1791731747-0;n;size;1;10;3;3`.
+Examples: `A1|1|1791731747|0|TackleBoard|issue|n;haul;2;15;30;33` (30 Catches in Stranglethorn Vale, pays 15); `A1|1|1791732000|0|TackleBoard|reroll|Player-4618-0A1B2C3D-1791731747-0;n;quality;1;10;3;2`.
 
 ### Projection (`PagleTackleBoardDB.global.board`, LOG-R70)
 
@@ -260,7 +261,7 @@ Examples: `A1|1|1791731747|0|TackleBoard|issue|n;haul;2;15;30;33` (30 Catches in
 ---@field tier integer
 ---@field pay integer
 ---@field need integer
----@field target? integer           -- zone, continent, minimum quality or band, or representative item
+---@field target? integer           -- zone, continent, minimum quality, or representative item
 ---@field items? integer[]            -- Variety Expedition: representative items
 ---@field reposted boolean
 ---@field pin? integer                -- index in pins of its type; nil while in the overflow strip
@@ -353,7 +354,6 @@ Pagle.RegisterModule{
 | `Pagle.RegisterCallback` (for `ConditionsChanged`, `AppearanceChanged`), `Pagle.RegisterEvent` (for `GET_ITEM_INFO_RECEIVED`) | TKB-R36, TKB-R121, TKB-R124 |
 | event `ModulesChanged` | TKB-R120 (the tracker redraws in its equipped frame) |
 | `Pagle.GetZones`, `GetArea`, `GetZoneCatches`, `GetItem`, `GetAngler` | generation (TKB-R30–R33), progress (TKB-R42) |
-| `Pagle.SIZE_BANDS`, Catch `size` | TKB-R36, TKB-R42 |
 | `Pagle.SESSION_RULES_VERSION` | TKB-R81 |
 | `Pagle.GetConditions`, event `ConditionsChanged` | TKB-R121 |
 | `M:RaiseMoment`, `M:SetSummaryLine`, `M:RaiseWriteUp` | TKB-R84–R87 |
@@ -425,7 +425,6 @@ Before the board is started, the checkbox is greyed out (`isEnabled` returns fal
 | Wanderer Expedition: candidate zones on the continent at least | 5 | TKB-R32 |
 | Collector Expedition: uncaught Sub-collection items in candidate zones at least | 6 | TKB-R32 |
 | Quality targets | uncommon (2) for Notices, rare (3) for Expeditions | TKB-R34 |
-| Size targets | Hefty (3) for Notices, Whopper (4) for Expeditions | TKB-R34 |
 | Recent-zone weight / other candidate zones | 8 / 1 | TKB-R30 |
 | Recent window | 14 days | TKB-R30 |
 | Kindling at Start and after a fire goes out | 2 | TKB-R71, TKB-R72 |
@@ -443,7 +442,7 @@ Before the board is started, the checkbox is greyed out (`isEnabled` returns fal
 | "Complete" flash on the tracker | 3 s | TKB-R123 |
 | Continent name maps (continent ID → uiMapID) | 0 → 1415 (Eastern Kingdoms), 1 → 1414 (Kalimdor) | TKB-R36 |
 | Week slack | 43,200 s | TKB-R12 |
-| `TKB_RULES_VERSION` before 1.0 | 2 (1 before Activity XP, TKB-R65) | TKB-R81 |
+| `TKB_RULES_VERSION` before 1.0 | 3 (2 before the `size` kind was dropped, ADR 0014; 1 before Activity XP, TKB-R65) | TKB-R81 |
 
 ## Edge cases
 

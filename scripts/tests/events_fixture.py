@@ -33,8 +33,8 @@ DB2_ITEMS = (
     "13760,7,8,2,Raw Sunscale Salmon\n"
 )
 
-# The acceptance event: two zones, a Haul, a Named fish, a Big ones and a Timed Hunt (hunts.md › The 1.0 event pool),
-# its skill left out, so the generator works it out from the zones' skill bases (DATA-R97).
+# The acceptance event: two zones, a Haul, a Named fish, a Named fish with a minBand and a Timed Hunt (hunts.md ›
+# The 1.0 event pool), its skill left out, so the generator works it out from the zones' skill bases (DATA-R97).
 SHALLOWS = """\
 # A fixture Hunt Event.
 [event]

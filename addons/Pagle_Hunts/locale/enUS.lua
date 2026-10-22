@@ -171,6 +171,13 @@ ns.L = {
 	TRIMS = { bronze = "Bronze", silver = "Silver", gold = "Gold" }, -- HNT-R18
 	TITLE_EARNED = "Title earned",
 	TITLE_EARNED_STAMP = "Title",
+	-- Pagle Wagers' moments (HNT-R86's wager rows): logic/WagerMoments.lua. A further mark's text is HUNT_TIER_TEXT's.
+	WAGER_MARK = "Pagle Wagers",
+	WAGER_MARK_TEXT = "%s · first mark", -- "Shore Snapper · first mark"
+	WAGER_MARK_STAMP = "Mark",
+	WAGER_TIER = "%s mark", -- "Silver mark"
+	WAGER_SETTLED = "Wager settled",
+	WAGER_SETTLED_STAMP = "Settled",
 	WRITE_UP_FIRST_BUILD_ONE = "Your Hunts were written up from %s Cast",
 	WRITE_UP_FIRST_BUILD_OTHER = "Your Hunts were written up from %s Casts",
 	WRITE_UP_WHILE_OFF = "While Hunts was off",
@@ -178,11 +185,18 @@ ns.L = {
 	WRITE_UP_COMPLETED_OTHER = "%s Hunts completed",
 	WRITE_UP_FURTHER_ONE = "%s further tier",
 	WRITE_UP_FURTHER_OTHER = "%s further tiers",
+	WRITE_UP_SETTLED_ONE = "%s wager settled",
+	WRITE_UP_SETTLED_OTHER = "%s wagers settled",
 	WRITE_UP_TITLE = "Title: %s",
 	WRITE_UP_COINS = "Pagle Coins +%s",
+	WRITE_UP_XP = "Angler XP +%s",
 	SUMMARY_LINE = "Hunts: %s of %s done · %s", -- "Hunts: 3 of 16 done · 1 title"
+	-- Once a run is settled (HNT-R89): "Hunts: 3 of 16 done · 1 title · 2 wagers settled".
+	SUMMARY_LINE_SETTLED = "Hunts: %s of %s done · %s · %s",
 	SUMMARY_TITLES_ONE = "%s title",
 	SUMMARY_TITLES_OTHER = "%s titles",
+	SUMMARY_SETTLED_ONE = "%s wager settled",
+	SUMMARY_SETTLED_OTHER = "%s wagers settled",
 
 	-- A Hunt's entry on the board's right page (HNT-R3, HNT-R64–R66, HNT-R69): logic/Entry.lua.
 	ENTRY_KICKER = "%s · %s",
@@ -257,4 +271,8 @@ ns.L = {
 	TOUR_TRACKER = "the Hunts tracker in the dock, with three pins",
 	TOUR_COVER = "the Hunts board in the %s cover",
 	TOUR_TRACKER_FRAME = "the Hunts tracker in the %s frame",
+
+	-- The run log's dev diagnostic lines (HNT-R140, HNT-R151, logic/RunLog.lua): dev-only, never shown to players.
+	RUN_LOG_EVENT_IGNORED = "Hunts: the pushed definition of %s is ignored: %s (HNT-R140)",
+	RUN_LOG_RUN_IGNORED = "Hunts: a pushed run of %s is ignored: it needs an event ID and times start < end (HNT-R151)",
 }

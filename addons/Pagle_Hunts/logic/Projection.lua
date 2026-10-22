@@ -28,16 +28,19 @@ ns.COINS_COMPLETED, ns.COINS_TIER, ns.COINS_TITLE = 30, 15, 100
 
 --- Where the projection hands what it found to Hunts' moments (logic/Moments.lua), which replaces each field; called
 --- through `ns.outlets` at call time, so the replacement reaches the projection. Stand-ins: do nothing;
---- logic/Moments.lua replaces both when it loads.
+--- logic/Moments.lua replaces Reached, Credited and Done when it loads.
 ---   Reached(cast, reached)  after a `"live"` Cast that newly reached a tier, a set title, a mark, a completed run
 ---                           or a ladder step, before Coins and Activity XP are reported (HNT-R137 step 4)
 ---   Credited(record, reached) after a `"live"` `run` record whose earlier Casts reached a mark, a completed run or
----                           a ladder step (HNT-R149), before Coins and Activity XP are reported. Stand-in: nothing;
----                           the wager moments (#301) replace it.
+---                           a ladder step (HNT-R149), before Coins and Activity XP are reported: the wager moments,
+---                           summary-only (logic/WagerMoments.lua)
 ---   Done(state, info)       from `done`, after the titles are checked and Coins and Activity XP reported (HNT-R111,
 ---                           HNT-R112)
----   Diagnostic(line)        a dev diagnostic line: a logged pushed definition that fails the in-game checks
----                           (HNT-R140, logic/Runs.lua). Stand-in: nothing; Core has no dev-line call for Modules yet.
+---   Diagnostic(line)        a dev diagnostic line: a logged or pushed definition that fails the in-game checks, or a
+---                           pushed run that isn't one (HNT-R140, logic/Runs.lua, logic/RunLog.lua). Stand-in:
+---                           nothing; Core has no dev-line call for Modules yet.
+---   StepDue()               from `done`, last: the run log's live step is due, on a later frame (HNT-R151, HNT-R155,
+---                           LOG-R40). Stand-in: nothing; adapter/RunLog.lua replaces it.
 ns.outlets = {
 	---@param cast PagleCast
 	---@param reached HuntsReached
@@ -47,6 +50,7 @@ ns.outlets = {
 	Credited = function(record, reached) end, -- luacheck: no unused args
 	---@param line string
 	Diagnostic = function(line) end, -- luacheck: no unused args
+	StepDue = function() end,
 	---@param state HuntsState
 	---@param info PagleProjectionInfo
 	Done = function(state, info) end, -- luacheck: no unused args
@@ -298,6 +302,10 @@ function ns.ProjectionDef(global, lookups, client)
 			local reached
 			if record.kind == "cast" then
 				---@cast record PagleCast
+				-- A replayed Cast may fall in a fallback slot nobody logged: the run log's next step logs it (HNT-R155).
+				if mode == "replay" then
+					ns.NoteReplayedCast(record.time)
+				end
 				reached = ns.ApplyCast(state, record, lookups)
 				if live and ns.AnyReached(reached) then
 					ns.outlets.Reached(record, reached)
@@ -333,6 +341,8 @@ function ns.ProjectionDef(global, lookups, client)
 			client.ReportXPEarned(state.xp) -- on the same timing (HNT-R115, AXP-R2)
 			ns.outlets.Done(state, info)
 			ns.Redraw("projection")
+			-- The run log's step, never from here (LOG-R40): what this catch-up or rebuild leaves to log (HNT-R151).
+			ns.outlets.StepDue()
 		end,
 	}
 end

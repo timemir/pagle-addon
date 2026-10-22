@@ -229,7 +229,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 **Core rules:**
 - CORE-R40's Units section, CORE-R50's Curio Shop entry enabled, CORE-R61's `shop`
 - LOG-R16 for `P1` and `U1`; LOG-R38, LOG-R39
-- LOG-R55's `typicalLength`; LOG-R65–R69 (Simulated Size and the length unit)
+- LOG-R55's `typicalLength`; LOG-R65–R69 (Simulated Size and the length unit); LOG-R100 (the earlier Catch counts behind the Reach, ADR 0014)
 - LOG-R78 for the wallet projection
 - ANN-R22's size ruler, ANN-R72's Gilded set and ANN-R80's other toast styles, as Core's goods (SHOP-R25)
 - SHOP-R10, SHOP-R11, SHOP-R12's held line, SHOP-R13, SHOP-R20–R26, SHOP-R30–R35, SHOP-R40, SHOP-R41, SHOP-R90–R96 in full
