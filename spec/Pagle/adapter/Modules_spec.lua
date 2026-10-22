@@ -62,6 +62,20 @@ describe("Pagle.RegisterModule", function()
 		assert.is_table(Pagle.RegisterModule(qolDef()))
 	end)
 
+	it(
+		"takes an optional guideBlurb, and raises an error at the caller for one that isn't a string (ONB-R91)",
+		function()
+			local loaded = loadWith({ QoL = {} })
+			local Pagle = loaded.env.Pagle
+
+			assert.matches("Modules_spec%.lua:%d+: .*guideBlurb", registerError(Pagle, qolDef({ guideBlurb = 5 })))
+			assert.matches("Modules_spec%.lua:%d+: .*guideBlurb", registerError(Pagle, qolDef({ guideBlurb = "" })))
+
+			assert.is_table(Pagle.RegisterModule(qolDef({ guideBlurb = "One press, one action." })))
+			assert.are.equal("One press, one action.", loaded.ns.Modules:Modules()[1].def.guideBlurb)
+		end
+	)
+
 	it("raises an error at the caller for a second registration, keeping the first (CORE-R14)", function()
 		local Pagle = loadWith({ QoL = {} }).env.Pagle
 		Pagle.RegisterModule(qolDef())
