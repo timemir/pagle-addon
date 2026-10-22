@@ -1,0 +1,9 @@
+PagleFollowingData = {
+v = 1,
+generatedAt = 1791735100,
+count = 1,
+anglers = {
+{ name = "Ada", more = 1, hardcore = false, title = "Warden of Feralas Waters", level = 23, prestige = 1, ledger = 37, legends = 3, legendsTotal = 12, waters = 4, catches = 5120, asOf = 20261012, guids = { "Player-4618-0A1B2C3D", "Player-4618-0A1B2C3E" } },
+},
+ok = true,
+}

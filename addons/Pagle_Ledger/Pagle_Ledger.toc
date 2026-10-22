@@ -43,6 +43,7 @@ logic\Home.lua
 logic\JournalAngler.lua
 logic\JournalCollections.lua
 logic\JournalLegends.lua
+logic\JournalFollowing.lua
 logic\JournalZone.lua
 logic\Tour.lua
 logic\Onboarding.lua
@@ -52,6 +53,7 @@ adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalCollections.lua
 adapter\JournalLegends.lua
+adapter\JournalFollowing.lua
 adapter\JournalAngler.lua
 adapter\JournalZone.lua
 adapter\JournalVarieties.lua

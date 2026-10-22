@@ -19,6 +19,7 @@ local ns = select(2, ...)
 ---@field probe fun()                   -- runs `/pagle dev probe` (#261, logic/Probe.lua)
 ---@field onboarding fun(args: string)  -- runs `/pagle dev onboarding <args>` (ONB-R83, logic/Onboarding.lua)
 ---@field content fun(): string[]       -- `/pagle dev content`'s lines (PUSH-R14, logic/PushedContent.lua)
+---@field views fun(): string[]         -- `/pagle dev views`' lines (VIEW-R12, logic/AnglersInGame.lua)
 ---@field print fun(line: string)      -- prints a chat line
 
 --- The dev commands.
@@ -275,6 +276,10 @@ function Dev:Run(args)
 		options.onboarding(rest)
 	elseif name == "content" then
 		for _, line in ipairs(options.content()) do
+			options.print(line)
+		end
+	elseif name == "views" then
+		for _, line in ipairs(options.views()) do
 			options.print(line)
 		end
 	else

@@ -420,6 +420,7 @@ describe("Home's Legends line (LED-R132)", function()
 			"Curios: junk, treasure, uncharted",
 			"Legends",
 			"The Angler: hands, titles, bindings",
+			"Following",
 		}, leaders)
 
 		local line = journal.frame.right.drawn.leader[3]

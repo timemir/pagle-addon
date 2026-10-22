@@ -1,0 +1,9 @@
+PagleAnglersData = {
+v = 1,
+generatedAt = 1791734400,
+count = 1,
+blocks = {
+{ region = "eu", builtAt = 1791734400, cardCount = 2, keyCount = 3, titles = { "Seeker of the Deep", "Warden of Feralas Waters" }, cards = "00223001037031200016001210007121", keys = "0439501234567000002046180A1B2C3D000001046180A1B2C3E000001" },
+},
+ok = true,
+}

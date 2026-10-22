@@ -24,7 +24,14 @@ local PAGLEDB_KEYS = {
 		"minimap", -- CORE-R53, from M8.5
 		"onboarding", -- onboarding.md › Data (ONB-R1)
 	},
-	profile = { "reloadReminder", "lengthUnit", "announcements", "appearance", "dock" },
+	profile = {
+		"reloadReminder",
+		"lengthUnit",
+		"announcements",
+		"appearance",
+		"dock",
+		"anglerTooltips", -- anglers-in-game.md › Data (VIEW-R30), from Track V
+	},
 }
 
 -- Loads Core on Forever with these SavedVariables, as the client does at login.

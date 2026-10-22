@@ -132,6 +132,8 @@ function Journal:Context() -- luacheck: no self
 		-- at the latest Prestige
 		activityXP = Pagle.GetActivityXP(),
 		prestigeSources = ns.db.global.prestigeSources,
+		-- Home's Following line and the Following spread read the Followed Anglers as they draw (LED-R151)
+		followedAnglers = Pagle.GetFollowedAnglers,
 	}
 end
 

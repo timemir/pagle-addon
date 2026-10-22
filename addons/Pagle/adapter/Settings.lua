@@ -263,6 +263,31 @@ local function pagleMenuSection(category, layout)
 	Settings.CreateCheckbox(category, shown, L.SETTINGS_MINIMAP_ICON_TOOLTIP)
 end
 
+-- The Pagle website section (SET-R10 row 11, VIEW-R30): Show other Anglers on player tooltips, bound to
+-- PagleDB.profile.anglerTooltips, on by default (logic/Migrations.lua). Off, there's no Pagle block and Pagle_Anglers
+-- never loads; turned on mid-session, the next hover outside restriction loads it (adapter/AnglersInGame.lua, VIEW-R3).
+-- Like Show the minimap icon it has no default: the root's Defaults button restores only the reminder and the length
+-- unit (SET-R13).
+---@param category SettingsCategory
+---@param layout SettingsLayout
+local function pagleWebsiteSection(category, layout)
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_PAGLE_WEBSITE))
+	local tooltips = Settings.RegisterProxySetting(
+		category,
+		"Pagle_Core_anglerTooltips",
+		Settings.VarType.Boolean,
+		L.SETTINGS_ANGLER_TOOLTIPS,
+		nil,
+		function()
+			return ns.db.profile.anglerTooltips == true
+		end,
+		function(value)
+			ns.db.profile.anglerTooltips = value
+		end
+	)
+	Settings.CreateCheckbox(category, tooltips, L.SETTINGS_ANGLER_TOOLTIPS_TOOLTIP)
+end
+
 -- A row's label, at the status list's name column.
 ---@param own table
 ---@param label string
@@ -361,8 +386,8 @@ local function gettingStarted(layout)
 end
 
 -- The root's rows (SET-R10): the paragraph while no Module is On, the status list under "Modules", the note, the
--- Getting started section, the Field report section, then Saving's reminder checkbox and the Units section, whose defaults the root's Defaults
--- button restores (SET-R13), and last the Pagle menu section.
+-- Getting started section, the Field report section, then Saving's reminder checkbox and the Units section, whose
+-- defaults the root's Defaults button restores (SET-R13), the Pagle menu section and last the Pagle website section.
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 ---@param anyModuleOn boolean
@@ -395,6 +420,7 @@ local function buildRoot(category, layout, anyModuleOn)
 	Settings.CreateCheckbox(category, reminder, L.SETTINGS_RELOAD_REMINDER_TOOLTIP:format(ns.RELOAD_REMINDER_STEP))
 	unitsSection(category, layout)
 	pagleMenuSection(category, layout)
+	pagleWebsiteSection(category, layout)
 end
 
 -- A dropdown's options as the native control takes them, read each time it opens.

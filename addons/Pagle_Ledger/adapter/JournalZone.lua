@@ -145,16 +145,50 @@ end)
 ---@field dashW number?
 ---@field dashH number?
 ---@field glow Texture
+---@field stamp LedgerRowStamp
+
+--- A row's ink stamp after its words (a Followed Angler's "HC", LED-R151): small capitals in the red ink in a ruled
+--- red box, as the kit draws its stamps.
+---@class LedgerRowStamp: Frame
+---@field label FontString
 
 -- A row's height with a medallion and without (the kit's 32 and 25).
 local ROW_H, ROW_H_PLAIN = 32, 25
+-- A row stamp's height, and the room round its words.
+local STAMP_H, STAMP_PAD = 14, 8
 
--- A list row (LED-R136, LED-R137, LED-R143, LED-R147): the kit's P.Row. Its medallion (the item's icon round in
--- sepia, or the unknown fish's for what isn't caught, LED-R124), its words (in italic, faded, for what is unknown), its
--- margin notes in the hand at the right, its stars as textures and a value at the right; a faint wash under the
--- mouse; selected, a deeper wash in a dashed outline. A click opens its place. A fish caught since the page was last
--- drawn is logged on its row: the unknown medallion gives way to the fish's own, a green wash swells and fades, and
--- its name is written in with the write sound (MOTION.md › A new fish logged).
+-- A row's stamp on `parent`, hidden: its words and a 1.5-unit red rule round them that follows its size.
+---@param parent Frame
+---@return LedgerRowStamp
+local function newStamp(parent)
+	local stamp = CreateFrame("Frame", nil, parent) --[[@as LedgerRowStamp]]
+	stamp.label = ns.JournalLabel(stamp, "sc", 11, INK.red, "", { justify = "CENTER" })
+	stamp.label:SetPoint("CENTER", 0, 0)
+	for _, edge in ipairs({
+		{ "TOPLEFT", "TOPRIGHT", nil, 1.5 },
+		{ "BOTTOMLEFT", "BOTTOMRIGHT", nil, 1.5 },
+		{ "TOPLEFT", "BOTTOMLEFT", 1.5, nil },
+		{ "TOPRIGHT", "BOTTOMRIGHT", 1.5, nil },
+	}) do
+		local rule = ns.JournalTint(stamp, INK.red, 0.85)
+		rule:SetPoint(edge[1])
+		rule:SetPoint(edge[2])
+		if edge[3] then
+			rule:SetWidth(edge[3])
+		else
+			rule:SetHeight(edge[4])
+		end
+	end
+	stamp:Hide()
+	return stamp
+end
+
+-- A list row (LED-R136, LED-R137, LED-R143, LED-R147, LED-R151): the kit's P.Row. Its medallion (the item's icon
+-- round in sepia, or the unknown fish's for what isn't caught, LED-R124), its words (in italic, faded, for what is
+-- unknown), its margin notes in the hand at the right, its stars as textures and a value at the right, and a stamp
+-- after its words; a faint wash under the mouse; selected, a deeper wash in a dashed outline. A click opens its place.
+-- A fish caught since the page was last drawn is logged on its row: the unknown medallion gives way to the fish's
+-- own, a green wash swells and fades, and its name is written in with the write sound (MOTION.md › A new fish logged).
 ns.RegisterJournalWidget("row", function(parent)
 	local widget = ns.NewJournalWidget(parent) --[[@as LedgerJournalRowView]]
 	ns.JournalClickable(widget)
@@ -169,6 +203,7 @@ ns.RegisterJournalWidget("row", function(parent)
 	widget.medal = ns.JournalMedal(widget, 26)
 	widget.name = ns.JournalLabel(widget, "print", 15, INK.body)
 	widget.label = widget.name
+	widget.stamp = newStamp(widget)
 	widget.margin = ns.JournalLabel(widget, "hand", 17, INK.note, "", { justify = "RIGHT" })
 	widget.stars = ns.JournalStarRow(widget, 12)
 	widget.value = ns.JournalLabel(widget, "print", 13.5, INK.small, "", { justify = "RIGHT" })
@@ -210,7 +245,8 @@ ns.RegisterJournalWidget("row", function(parent)
 		self.value:SetShown(block.value ~= nil)
 		if block.value then
 			self.value:SetText(block.value)
-			ns.JournalBound(self.value, 80)
+			-- room for a Followed Angler's "Lv 60 · VIII · 100%" (LED-R151) as for a count
+			ns.JournalBound(self.value, math.max(80, (right - left) * 0.45))
 			self.value:ClearAllPoints()
 			self.value:SetPoint("TOPRIGHT", self, "TOPLEFT", right, -(h - 18) / 2)
 			right = right - self.value:GetWidth() - 9
@@ -233,9 +269,21 @@ ns.RegisterJournalWidget("row", function(parent)
 		local faded = block.color == "faded"
 		ns.JournalRestyle(self.name, faded and "italic" or "print", 15, faded and INK.noteLight or INK.body)
 		self.name:SetText(block.text)
-		ns.JournalBound(self.name, math.max(10, right - left))
+		-- the stamp after the words, the words cut short before it when the row is narrow
+		local stamp = self.stamp
+		stamp:SetShown(block.stamp ~= nil)
+		local stampW = 0
+		if block.stamp then
+			stamp.label:SetText(block.stamp)
+			stampW = stamp.label:GetStringWidth() + STAMP_PAD
+			stamp:SetSize(stampW, STAMP_H)
+		end
+		ns.JournalBound(self.name, math.max(10, right - left - (stampW > 0 and stampW + 6 or 0)))
 		self.name:ClearAllPoints()
 		self.name:SetPoint("TOPLEFT", left, -(h - 19) / 2)
+		if block.stamp then
+			ns.JournalAt(stamp, self, left + self.name:GetWidth() + 6, (h - STAMP_H) / 2)
+		end
 		-- a fish logged since the page was last drawn
 		local key = block.place and (block.place.id .. ":" .. tostring(block.place.args and block.place.args.species))
 			or block.text

@@ -24,6 +24,7 @@ local CHECK_ON, CHECK_OFF = sprite(468, 1836, 34, 34), sprite(430, 1836, 34, 34)
 local BEGIN_A_NEW_LEDGER = "Begin a new Ledger"
 local ZONE_REWARD = "Reward for mastery: each new seal earns XP."
 local UNWRITTEN_LEGEND = "unwritten legend"
+local IN_THIS_LEDGER = "In this Ledger"
 
 ---@class PagleLedgerStrings
 ns.L = {
@@ -217,9 +218,9 @@ ns.L = {
 	-- or BRASS_PLATE while the active title has no lore text (LED-R161).
 	HOME_LEVEL = "Angler Level",
 	HOME_PERCENT = "%d%%",
-	HOME_CONTENTS = "In this Ledger",
+	HOME_CONTENTS = IN_THIS_LEDGER,
 	-- The contents' numerals, the Angler line's mark, and the word over the completion on Home's seal.
-	HOME_NUMERALS = { "i.", "ii.", "iii.", "iv." },
+	HOME_NUMERALS = { "i.", "ii.", "iii.", "iv.", "v." },
 	HOME_ANGLER_MARK = "»",
 	HOME_SEAL_WORD = "Ledger",
 	HOME_CURIOS = "Curios: junk, treasure, uncharted",
@@ -481,6 +482,44 @@ ns.L = {
 	LEGENDS_PLATE_RETURN = "Click anywhere to return.",
 	LEGENDS_PLATE_KICKER = "A Legend of these waters",
 	LEGENDS_PLATE_SEAL = "Title",
+	-- Following (LED-R151): Home's line ("—" expired, "no Companion" absent), the left page's words, the index's
+	-- "Lv {L} · {roman} · {p}%" (no roman before the first Prestige) and Hardcore stamp, the card's, and each empty
+	-- state's three lines. Numbers in %s are BreakUpLargeNumbers'.
+	FOLLOWING_TITLE = "Following",
+	FOLLOWING_KICKER = IN_THIS_LEDGER,
+	FOLLOWING_EXPIRED_MARK = "—",
+	FOLLOWING_NO_COMPANION = "no Companion",
+	FOLLOWING_COUNT_ONE = "%s Angler you follow. Follow and unfollow on the Pagle website.",
+	FOLLOWING_COUNT_OTHER = "%s Anglers you follow. Follow and unfollow on the Pagle website.",
+	FOLLOWING_ROW = "Lv %d · %s · %d%%",
+	FOLLOWING_ROW_NO_PRESTIGE = "Lv %d · %d%%",
+	FOLLOWING_HARDCORE_STAMP = "HC",
+	FOLLOWING_HARDCORE = "Hardcore Angler",
+	FOLLOWING_MORE_ONE = "and %s more character",
+	FOLLOWING_MORE_OTHER = "and %s more characters",
+	FOLLOWING_SEAL = "Ledger %d%%",
+	FOLLOWING_LEGENDS = "Legends",
+	FOLLOWING_LEGENDS_COUNT = "%s of %s",
+	FOLLOWING_WATERS = "Waters mastered",
+	FOLLOWING_CATCHES = "Lifetime Catches",
+	FOLLOWING_AS_OF = "As of %s",
+	FOLLOWING_EMPTY = {
+		none = {
+			"You follow no one yet.",
+			"Follow an Angler from their page on the Pagle website.",
+			"The Companion brings them in within the hour; they show here after your next /reload.",
+		},
+		absent = {
+			"The Companion keeps this page.",
+			"Anglers you follow on the Pagle website are brought into the game by the Pagle Companion.",
+			"Without it, this page stays empty. Pasting your log still updates your own Angler page.",
+		},
+		expired = {
+			"These pages are more than a day old.",
+			"Pagle has set them aside until the Companion brings fresh ones.",
+			"Start the Companion, then /reload.",
+		},
+	},
 	-- The Prestige confirm (LED-R33); a Master Prestige's stars beside emblem X are STAR stamps (LED-R34).
 	PRESTIGE_CONFIRM_KICKER = "Prestige",
 	PRESTIGE_CONFIRM_TITLE = BEGIN_A_NEW_LEDGER .. "?",

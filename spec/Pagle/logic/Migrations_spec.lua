@@ -111,4 +111,8 @@ describe("ns.PAGLEDB_DEFAULTS", function()
 			assert.are.same({ fieldReport = {}, wallet = {}, varieties = {} }, ns.PAGLEDB_DEFAULTS.global.projections)
 		end
 	)
+
+	it('turns "Show other Anglers on player tooltips" on (VIEW-R30)', function()
+		assert.is_true(ns.PAGLEDB_DEFAULTS.profile.anglerTooltips)
+	end)
 end)
