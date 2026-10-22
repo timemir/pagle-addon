@@ -72,7 +72,7 @@ describe("The Settings root with no Module On", function()
 			end
 		end
 
-		-- The paragraph, the five status rows and the note: the fake panel draws a row of a template only through
+		-- The paragraph, the five status rows, the note and Getting started's three (SET-R10 rows 4–6): the fake panel draws a row of a template only through
 		-- its XML mixin's Init, and raises an error if Core writes InitFrame, Resetter or GetExtent onto an
 		-- initializer (spec/support/settings.lua).
 		local template = assert(loaded.client.templates.PagleSettingsRowTemplate, "Core's XML defines the template")
@@ -85,6 +85,9 @@ describe("The Settings root with no Module On", function()
 			"Tackle Board",
 			"QoL",
 			"Turn Modules on or off in the AddOns list.",
+			"Field guide",
+			"Margin notes",
+			"First evening list",
 		}, own)
 	end)
 
@@ -98,11 +101,20 @@ describe("The Settings root with no Module On", function()
 
 			assert.are.equal("Recording your Catches. Enable a Module to see them.", texts[1])
 			assert.are.equal("Modules", texts[2])
-			-- The note, the Field report section (spec/Pagle/adapter/FieldReportBox_spec.lua), Saving's header and row
+			-- The note, Getting started (spec/Pagle/adapter/GettingStarted_spec.lua), the Field report section
+			-- (spec/Pagle/adapter/FieldReportBox_spec.lua), Saving's header and row
 			-- (spec/Pagle/adapter/ReloadReminder_spec.lua), then Units' (spec/Pagle/adapter/Length_spec.lua) and the
 			-- Pagle menu's (spec/Pagle/adapter/MinimapIcon_spec.lua).
 			assert.are.same({
 				"Turn Modules on or off in the AddOns list.",
+				"Getting started",
+				"Field guide",
+				"Show me around again",
+				"The eight pages you saw on your first day.",
+				"Margin notes",
+				"Show them again",
+				"First evening list",
+				"0 of 4 done",
 				"Help chart the waters",
 				"Field report",
 				"Open Field report",
@@ -112,7 +124,7 @@ describe("The Settings root with no Module On", function()
 				"Length unit",
 				"Pagle menu",
 				"Show the minimap icon",
-			}, { unpack(texts, #texts - 9) })
+			}, { unpack(texts, #texts - 17) })
 			for _, name in ipairs({ "Ledger", "Hunts", "Stats", "Tackle Board", "QoL" }) do
 				assert.is_true(contains(texts, name))
 			end

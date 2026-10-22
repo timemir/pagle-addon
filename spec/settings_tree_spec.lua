@@ -50,6 +50,7 @@ local TIPS = {
 	motion = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each "
 		.. "appears as it settles.",
 	windowMoments = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
+	marginNotes = "Explain things the first time they happen.",
 	minimapIcon = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns "
 		.. "button by the minimap.",
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
@@ -68,7 +69,9 @@ local TRACKER_MODULES = { "Hunts", "Stats", "TackleBoard" }
 -- SET-R40–R44, SET-R50), page by page in the panel's order. A row is { kind, label }, with `under` when it is
 -- indented under the nearest row before it without `under` (↳), `caption` for a button's caption, `tip` for its
 -- tooltip, `range` for a slider's { min, max, step } as shown (settings.md › Tunables), and for a status line its
--- `state` and `button`. A button given one quoted string has only a caption
+-- `state` and `button`. A row Core draws itself on the root (Getting started's, SET-R10 rows 4–6) is a "button" or
+-- "checkbox" with its `caption` and `line`; the First evening list's line counts the items of the Modules On
+-- (`evening`, ONB-R61). A button given one quoted string has only a caption
 -- (SET-R2). `of` names the Module (or Modules, all of which must be off) whose row it is: it vanishes while that
 -- Module isn't On (SET-R4), and a status line reads Off with no button instead (SET-R90).
 local EXPECTED = {
@@ -82,6 +85,15 @@ local EXPECTED = {
 			{ "status", "Tackle Board", state = "On", button = "Start my board", of = "TackleBoard" },
 			{ "status", "QoL", state = "On", button = "Fishing settings »", of = "QoL" },
 			{ "text", "Turn Modules on or off in the AddOns list." },
+			{ "header", "Getting started" },
+			{
+				"button",
+				"Field guide",
+				caption = "Show me around again",
+				line = "The eight pages you saw on your first day.",
+			},
+			{ "checkbox", "Margin notes", caption = "Show them again", tip = TIPS.marginNotes },
+			{ "checkbox", "First evening list", line = "0 of %d done", evening = true },
 			{ "header", "Help chart the waters" },
 			{ "button", "Field report", caption = "Open Field report", tip = TIPS.fieldReport },
 			{ "header", "Saving" },
@@ -203,7 +215,12 @@ local function expectedTree(off, started)
 			for key, value in pairs(row) do
 				copy[key] = value
 			end
-			copy.of = nil
+			copy.of, copy.evening = nil, nil
+			if row.evening then
+				-- Core's four items, the Ledger's journal and Hunts' hunts (ONB-R61)
+				local total = 4 + (isOff.Ledger and 0 or 1) + (isOff.Hunts and 0 or 1)
+				copy.line = row.line:format(total)
+			end
 			if row[1] == "status" and isOff[row.of] then
 				copy.state, copy.button = "Off", nil
 				rows[#rows + 1] = copy
@@ -274,6 +291,43 @@ local function tooltipOf(loaded, row)
 	return tip
 end
 
+-- Whether a drawn widget holds a shown check button, depth first.
+---@param widget table
+---@return boolean
+local function holdsCheck(widget)
+	for _, child in ipairs(widget.children) do
+		if child.shown and (child.kind == "CheckButton" or holdsCheck(child)) then
+			return true
+		end
+	end
+	return false
+end
+
+-- A row Core draws itself, not a status line, as EXPECTED writes it: a paragraph or note ("text"), or one of Getting
+-- started's (SET-R10 rows 4–6): a "checkbox" with a shown check button, else a "button" with a shown one, each with its
+-- label, its button's `caption` and the text left as its `line`.
+---@param settings FakeSettings
+---@param frame table
+---@param texts string[]
+---@return table
+local function coreRowAsWritten(settings, frame, texts)
+	local caption
+	for _, button in ipairs(settings.buttonsOf(frame)) do
+		caption = button.text
+	end
+	local kind = holdsCheck(frame) and "checkbox" or caption and "button" or "text"
+	if kind == "text" then
+		return { "text", texts[1] }
+	end
+	local out = { kind, texts[1], caption = caption }
+	for i = 2, #texts do
+		if texts[i] ~= caption and texts[i] ~= "" then
+			out.line = texts[i]
+		end
+	end
+	return out
+end
+
 -- A drawn row as EXPECTED writes it. An indented row whose parent isn't the nearest unindented row before it reads
 -- `under = "wrong parent"`.
 ---@param loaded LoadedAddon
@@ -290,7 +344,7 @@ local function asWritten(loaded, row, top)
 		if initializer.searchTags[1] == "MODULES" then
 			out = { "status", texts[1], state = texts[3], button = texts[4] }
 		else
-			out = { "text", texts[1] }
+			out = coreRowAsWritten(settings, frame, texts)
 		end
 	elseif template == "SettingButtonControlTemplate" then
 		local label = initializer:GetData().name
