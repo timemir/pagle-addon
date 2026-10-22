@@ -1,8 +1,9 @@
 -- STA-R58, the copy test: no Stats string says or implies that a Catch is owed. Every value in Stats' string table
 -- (ns.L, as Stats loads it, so the generated data/Lore.lua's entries too) and every string value in
 -- data/lore/stats.toml (the M6 lore batch, #210) is checked for "due", "overdue", "soon",
--- "pity", "guaranteed", "bound to" and "owed", case-insensitively and as whole words. The one exception is the exact
--- line "Every Cast is its own roll; nothing is owed." This spec runs in scripts/check.sh's busted stage, so every
+-- "pity", "guaranteed", "bound to" and "owed", case-insensitively and as whole words. The exceptions are the exact
+-- lines "Every Cast is its own roll; nothing is owed." and the First look's Dry spell note (ONB-R57), each saying that
+-- nothing is owed. This spec runs in scripts/check.sh's busted stage, so every
 -- Stats ticket's strings are held to it.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -10,17 +11,18 @@ local stats = dofile("spec/Pagle_Stats/support.lua")
 
 local LORE = "data/lore/stats.toml"
 
--- The words and phrases STA-R58 bans, and its one allowed line.
+-- The words and phrases STA-R58 bans, and its two allowed lines: the luck ruler's, and the First look's Dry spell note.
 local BANNED = { "due", "overdue", "soon", "pity", "guaranteed", "bound to", "owed" }
 local ALLOWED = "Every Cast is its own roll; nothing is owed."
+local ALLOWED_NOTE = "A *Dry spell* is how long you’ve waited. Unlucky isn’t broken: nothing is owed."
 
 --- The banned words in `text`, in BANNED's order: whole words, any case, a phrase's words apart by any space. None
---- for the allowed line, exactly as STA-R58 gives it.
+--- for the allowed lines, exactly as STA-R58 gives them.
 ---@param text string
 ---@return string[]
 local function bannedIn(text)
 	local found = {}
-	if text == ALLOWED then
+	if text == ALLOWED or text == ALLOWED_NOTE then
 		return found
 	end
 	local lower = text:lower()
@@ -149,8 +151,10 @@ describe("the copy test (STA-R58)", function()
 		assert.are.same({}, problemsIn(loreStrings(LORE)))
 	end)
 
-	it("has the one allowed line in Stats' string table, exactly", function()
-		assert.are.equal(ALLOWED, stats.load().ns.L.NOTHING_IS_OWED)
+	it("has the two allowed lines in Stats' string table, exactly", function()
+		local L = stats.load().ns.L
+		assert.are.equal(ALLOWED, L.NOTHING_IS_OWED)
+		assert.are.equal(ALLOWED_NOTE, L.LOOK_DRY_SPELL)
 	end)
 
 	describe("bites", function()
@@ -175,8 +179,13 @@ describe("the copy test (STA-R58)", function()
 			assert.are.same({ "due" }, bannedIn("long over-due"))
 		end)
 
-		it("on the allowed line changed in any way, or inside a longer string", function()
+		it("on an allowed line changed in any way, or inside a longer string", function()
 			assert.are.same({ "owed" }, bannedIn("Every Cast is its own roll; nothing is owed"))
+			assert.are.same(
+				{ "owed" },
+				bannedIn("A Dry spell is how long you’ve waited. Unlucky isn’t broken: nothing is owed.")
+			)
+			assert.are.same({ "owed" }, bannedIn(ALLOWED_NOTE .. " Keep at it."))
 			assert.are.same({ "owed" }, bannedIn("every cast is its own roll; nothing is owed."))
 			assert.are.same({ "owed" }, bannedIn("Unlucky. Every Cast is its own roll; nothing is owed."))
 		end)
@@ -186,6 +195,7 @@ describe("the copy test (STA-R58)", function()
 			assert.are.same({}, bannedIn("Bound"))
 			assert.are.same({}, bannedIn("Duelist, residue, pitying, owedness, boundary to"))
 			assert.are.same({}, bannedIn(ALLOWED))
+			assert.are.same({}, bannedIn(ALLOWED_NOTE))
 		end)
 
 		it("on a planted string anywhere in Stats' string table, nested tables too", function()

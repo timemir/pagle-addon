@@ -168,6 +168,29 @@ function ns.WhereIAm(conditions)
 	return { page = "place", area = area }
 end
 
+--- The spread the book's First look shows on (ONB-R57, board 14): `area`'s place page with an item's entry chosen,
+--- so every note has its region: the first row whose Dry spell has a luck reading (its ruler and "nothing is owed",
+--- STA-R51, STA-R54), else the first row. Nil with no area (zone 0) or no rows.
+---@param area integer? the place, nil for none
+---@param groups StatsGroup[] its row groups (ns.Groups), in their order
+---@return StatsBookTarget?
+function ns.BookLookTarget(area, groups)
+	if area == nil then
+		return nil
+	end
+	local first
+	for _, group in ipairs(groups) do
+		for _, reading in ipairs(group.readings) do
+			local dry = ns.DrySpell(reading)
+			if dry.P and dry.since > 0 then
+				return { page = "place", area = area, item = reading.item }
+			end
+			first = first or reading.item
+		end
+	end
+	return first and { page = "place", area = area, item = first } or nil
+end
+
 --- The ribbon of the page shown (it stands out): Where I am on the current place's page, an entry chosen or not; This
 --- Session, Lifetime and Sessions on their own pages; none elsewhere.
 ---@param place StatsBookTarget

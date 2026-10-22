@@ -47,6 +47,7 @@ adapter\Lifetime.lua
 adapter\Sessions.lua
 adapter\Item.lua
 adapter\Search.lua
+adapter\Look.lua
 adapter\Settings.lua
 adapter\Settings.xml
 adapter\Tracker.lua
