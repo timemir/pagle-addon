@@ -51,7 +51,7 @@ local DEEP = {
 }
 
 describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
-	it("is PagleLedgerJournal, centred, not movable, closed until opened, and Esc closes it (LED-R120)", function()
+	it("is PagleLedgerJournal, closed until opened, and Esc closes it (LED-R120)", function()
 		local _, loaded = loggedIn()
 		local journal = loaded.ns.journal
 
@@ -62,9 +62,43 @@ describe("the Fish Journal's frame (LED-R120, LED-R121)", function()
 		assert.are.equal("PagleLedgerJournal", frame.name)
 		assert.is_true(has(loaded.env.UISpecialFrames, "PagleLedgerJournal"))
 		assert.is_true(frame:IsShown())
-		assert.is_not_true(frame.movable)
 		loaded.client.pressEscape()
 		assert.is_false(journal:IsShown())
+	end)
+
+	it("moves by dragging its leather, and the client saves no position (LED-R120)", function()
+		local _, loaded = loggedIn()
+		local journal = loaded.ns.journal
+		journal:Toggle()
+		local frame = journal.frame
+
+		assert.is_true(frame:IsMovable())
+		frame:GetScript("OnDragStart")(frame)
+		assert.is_true(frame:IsUserPlaced())
+		frame:GetScript("OnDragStop")(frame)
+
+		assert.is_false(frame:IsUserPlaced())
+	end)
+
+	it("opens centred each time, wherever it was dragged to, and stays put while open (LED-R120)", function()
+		local _, loaded = loggedIn()
+		local journal = loaded.ns.journal
+		journal:Toggle()
+		local frame = journal.frame
+		local centred = frame.points
+
+		-- Where a drag leaves it: the client re-anchors a moved frame by its top left.
+		frame:GetScript("OnDragStart")(frame)
+		frame:ClearAllPoints()
+		frame:SetPoint("TOPLEFT", 40, -60)
+		frame:GetScript("OnDragStop")(frame)
+		local dragged = frame.points
+		journal:Show()
+		assert.are.same(dragged, frame.points)
+
+		journal:Toggle()
+		journal:Toggle()
+		assert.are.same(centred, frame.points)
 	end)
 
 	it("closes with its close button, and each toggle opens or closes it (LED-R120)", function()
