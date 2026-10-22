@@ -297,8 +297,9 @@ local function buildBack(journal, frame)
 end
 
 -- Builds the book, hidden: the kit's shell, two leaves on each page, the back link, the "being written up" pages,
--- the Legend plate, the fold and the search box's drop-down. Centred and not movable (ledger.md › UI); Esc hides it
--- through UISpecialFrames.
+-- the Legend plate, the fold and the search box's drop-down. It moves by dragging its leather (the pages take their
+-- own clicks), kept on the screen, and the client keeps no position: Show fits it centred again at each opening
+-- (LED-R120). Esc hides it through UISpecialFrames.
 ---@param journal LedgerJournal
 ---@return LedgerJournalFrame
 local function build(journal)
@@ -306,7 +307,16 @@ local function build(journal)
 	frame:Hide() -- hidden before its scripts are set: being made isn't closing
 	frame:SetPoint("CENTER")
 	frame:SetFrameStrata("HIGH")
+	frame:SetClampedToScreen(true)
 	frame:EnableMouse(true)
+	frame:SetMovable(true)
+	frame:RegisterForDrag("LeftButton")
+	frame:SetScript("OnDragStart", frame.StartMoving)
+	frame:SetScript("OnDragStop", function(self)
+		self:StopMovingOrSizing()
+		-- A moved frame is user-placed, and the client would save where it was left (as the Tackle Board, TKB-R100).
+		self:SetUserPlaced(false)
+	end)
 	ns.BuildJournalShell(frame)
 	frame.leaves, frame.shownLeaf = { left = {}, right = {} }, { left = 1, right = 1 }
 	for _, side in ipairs({ "left", "right" }) do
