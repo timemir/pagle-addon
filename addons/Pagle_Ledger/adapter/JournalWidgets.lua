@@ -1257,22 +1257,18 @@ function ns.NewJournalPage(parent, width, height)
 	page.thumb = ns.JournalTint(page, INK.kicker, 1)
 	page.thumb:SetWidth(4)
 	page.scroll:EnableMouseWheel(true)
+	-- A notch glides a third of the page (Pagle.WheelScroll), over the content as last drawn, the thumb following.
+	local wheel = {
+		height = height,
+		range = function()
+			return (page.contentH or 0) - page.height
+		end,
+		onScroll = function()
+			placeThumb(page)
+		end,
+	}
 	page.scroll:SetScript("OnMouseWheel", function(self, delta)
-		local range = math.max(0, (page.contentH or 0) - page.height)
-		local from = self:GetVerticalScroll() or 0
-		local to = math.max(0, math.min(range, from - delta * 26))
-		Pagle.StopMotion(page.content)
-		Pagle.Animate(page.content, {
-			{
-				dur = 0.12,
-				ease = Pagle.EASE.out,
-				keys = { { 0, { from } }, { 1, { to } } },
-				apply = function(v)
-					self:SetVerticalScroll(v[1])
-					placeThumb(page)
-				end,
-			},
-		})
+		Pagle.WheelScroll(self, delta, wheel)
 	end)
 	placeThumb(page)
 	return page

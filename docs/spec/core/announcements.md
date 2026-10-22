@@ -227,6 +227,17 @@ Pagle.Animate(frame, {
 - An owner that is no longer visible while it moves (closed, or the whole UI hidden) settles there: each animation jumps to where it settles (a loop to where it starts), each cue still to come runs, then `onDone`. Nothing it ends with, such as hiding a card or closing a note, is lost. A loop starts again only when its Module starts it, as its frame shows.
 - The driver ticks only while something moves (QOL-R25).
 
+### `Pagle.WheelScroll(scroll, delta, options?)`
+
+What a scroll frame's `OnMouseWheel` calls, so every book and list scrolls alike: `delta` notches (the client's +1 a notch up, −1 down) of **a third of the view** each, so two thirds of what showed stay in sight. The step is in the view's own units, so a window `Pagle.FitToScreen` shrinks still moves the same share of what it shows. It glides there on the motion driver (0.12 s, `EASE.out`, the scroll frame its owner); a notch while a glide runs adds to where that glide was going, not to where it has got to, so a quick spin goes as far as its notches, and each glide starts where the last one is, so nothing jumps. It never passes the top or the foot, and gives way to anything else that scrolls the frame while it glides (a page sent back to its top, a dragged scroll bar). With Animations off it jumps there.
+
+```lua
+---@class PagleWheelOptions
+---@field height number?            -- the view's height in the scroll frame's units (default its GetHeight)
+---@field range (fun(): number)?    -- how far it scrolls (default its GetVerticalScrollRange)
+---@field onScroll fun(offset)?     -- runs at each step of the glide: a scroll bar or thumb that follows it
+```
+
 ### `M:RaiseWriteUp(section)`
 
 ```lua

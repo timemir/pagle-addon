@@ -137,13 +137,14 @@ end
 ---@class PagleMotionPlayer
 ---@field host PagleMotionHost
 ---@field running table<PagleMotionOwner, PagleMotionSet>
+---@field wheeling table<ScrollFrame, number> where each scroll frame's wheel glide is going, while it glides
 local MotionPlayer = {}
 MotionPlayer.__index = MotionPlayer
 
 ---@param host PagleMotionHost
 ---@return PagleMotionPlayer
 function ns.NewMotionPlayer(host)
-	return setmetatable({ host = host, running = {} }, MotionPlayer)
+	return setmetatable({ host = host, running = {}, wheeling = {} }, MotionPlayer)
 end
 
 --- Plays `animations` on `owner`, each at its first frame at once so nothing shows its settled state first; with
@@ -217,6 +218,68 @@ function MotionPlayer:Cue(owner, seconds, fn)
 			done = fn,
 		},
 	})
+end
+
+-- A mouse wheel notch (announcements.md › Contracts, Pagle.WheelScroll): a third of the view, so two thirds of what
+-- showed stay in sight (Blizzard's UIPanelScrollFrame steps half its height), and in the view's own units, so a window
+-- Pagle.FitToScreen shrinks scrolls the same share of what it shows: the notches to a view's height, and the glide to
+-- a notch's end, in seconds.
+ns.WHEEL_NOTCHES, ns.WHEEL_DUR = 3, 0.12
+
+--- Where `delta` wheel notches (the client's +1 a notch up, -1 down) send a view `height` tall from offset `from`,
+--- within 0..`range`.
+---@param from number
+---@param delta number
+---@param height number
+---@param range number
+---@return number
+function ns.WheelTarget(from, delta, height, range)
+	return math.max(0, math.min(range, from - delta * height / ns.WHEEL_NOTCHES))
+end
+
+---@class PagleWheelOptions
+---@field height number? the view's height in the scroll frame's units (default its GetHeight)
+---@field range (fun(): number)? how far it scrolls (default its GetVerticalScrollRange)
+---@field onScroll fun(offset: number)? runs at each step of the glide (a scroll bar or thumb that follows it)
+
+--- Scrolls `scroll` by `delta` wheel notches, gliding to it (ns.WHEEL_DUR, eased out) on `scroll`'s own clock. A notch
+--- while a glide runs adds to where that glide was going, not to where it has got to, so a quick spin goes as far as
+--- its notches; each glide starts from where the last one is, so nothing jumps. A glide gives way to anything else that
+--- scrolls the frame meanwhile (a page sent back to its top, a dragged scroll bar). With motion off it jumps there.
+---@param scroll ScrollFrame
+---@param delta number
+---@param options PagleWheelOptions?
+function MotionPlayer:Wheel(scroll, delta, options)
+	options = options or {}
+	local range = options.range and options.range() or scroll:GetVerticalScrollRange() or 0
+	local now = scroll:GetVerticalScroll() or 0
+	local from = self.running[scroll] and self.wheeling[scroll] or now
+	local to = ns.WheelTarget(from, delta, options.height or scroll:GetHeight() or 0, math.max(0, range))
+	self:Stop(scroll)
+	self.wheeling[scroll] = to
+	local set ---@type number?
+	self:Animate(scroll, {
+		{
+			dur = ns.WHEEL_DUR,
+			ease = ns.EASE.out,
+			keys = { { 0, { now } }, { 1, { to } } },
+			apply = function(v)
+				-- Off by more than a unit (a scroll bar's whole steps) from where it last set it: moved by another.
+				if set and math.abs((scroll:GetVerticalScroll() or 0) - set) > 1 then
+					self.wheeling[scroll] = nil
+					self:Stop(scroll)
+					return
+				end
+				set = v[1]
+				scroll:SetVerticalScroll(v[1])
+				if options.onScroll then
+					options.onScroll(v[1])
+				end
+			end,
+		},
+	}, function()
+		self.wheeling[scroll] = nil
+	end)
 end
 
 -- Runs an animation's `done` once.
