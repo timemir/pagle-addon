@@ -98,6 +98,20 @@ function ns.IsModuleAPICompatible(value, apiVersion)
 	return api ~= nil and api <= apiVersion
 end
 
+--- A TOC `## Version` as Pagle shows it (CORE-R41, REP-R30): the version the packager wrote (a tag, or the commit
+--- hash before the first tag), or `dev` while the field is still a token the packager fills in (CORE-R2: a whole
+--- "@…@", as `@project-version@` in a checkout it never packaged), so the token is never shown. Nil when there's no
+--- version: the addon isn't installed, or its TOC has no such field.
+---@param value string? the TOC field, as `C_AddOns.GetAddOnMetadata` returns it
+---@param dev string what stands for an unpackaged checkout's version
+---@return string?
+function ns.ShownVersion(value, dev)
+	if value == nil or value == "" then
+		return nil
+	end
+	return value:find("^@.+@$") and dev or value
+end
+
 -- Why a def can't register, or nil if it can (CORE-R14): an optional field, such as guideBlurb (ONB-R91), mistyped too.
 ---@private
 ---@param def any

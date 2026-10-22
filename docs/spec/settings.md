@@ -99,7 +99,7 @@ The rules below are authoritative; this sketch only summarises them.
   | 11 | Pagle website | Show other Anglers on player tooltips | checkbox | on (VIEW-R30, `PagleDB.profile.anglerTooltips`). Tooltip: "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle Companion." It sits beside the Companion hint's row once that switch is on (#305). From Track V. |
 
   The length unit sits on the root because it is a Core option that three Modules display ([Write the Settings spec](https://github.com/timemir/wow-fish/issues/44#issuecomment-6129738678)). Saving, Units and Pagle menu are the sections of Core's options that CORE-R40 lists; their keys are `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)) and `PagleDB.global.minimap` (CORE-R53); Pagle website's is `PagleDB.profile.anglerTooltips` ([anglers-in-game.md](core/anglers-in-game.md), VIEW-R30). Getting started is onboarding's ([onboarding.md](core/onboarding.md), ONB-R81).
-- **SET-R11** The status list is a table of the roster in CORE-R1 order: its name, its TOC version and its state, as CORE-R41 gives them. Each On Module's row ends with one button (CORE-R44):
+- **SET-R11** The status list is a table of the roster in CORE-R1 order: its name, its TOC version ("dev" in an unpackaged checkout) and its state, as CORE-R41 gives them. The version column is one line that ends before the state column; a longer version is cut with "...", so it never runs under the state. Each On Module's row ends with one button (CORE-R44):
 
   | Module | Button | Source |
   |---|---|---|

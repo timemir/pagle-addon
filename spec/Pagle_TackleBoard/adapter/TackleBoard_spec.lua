@@ -92,7 +92,7 @@ describe("Pagle_TackleBoard with Core", function()
 
 			local _, buttons = statusList(loaded)
 
-			assert.are.same({ "Tackle Board", "@project-version@", "On", "Start my board" }, boardRow(loaded))
+			assert.are.same({ "Tackle Board", "dev", "On", "Start my board" }, boardRow(loaded))
 			assert.are.equal(1, #buttons)
 			assert.are.equal("Start my board", buttons[1]:GetText())
 		end
@@ -107,7 +107,7 @@ describe("Pagle_TackleBoard with Core", function()
 			return true
 		end
 
-		assert.are.same({ "Tackle Board", "@project-version@", "On", "Open Tackle Board" }, boardRow(loaded))
+		assert.are.same({ "Tackle Board", "dev", "On", "Open Tackle Board" }, boardRow(loaded))
 	end)
 
 	it('adds "Tackle Board" to the compartment menu and board to /pagle help (TKB-R1, CORE-R50, CORE-R60)', function()

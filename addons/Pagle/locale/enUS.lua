@@ -207,6 +207,9 @@ ns.L = {
 		off = "Off",
 		notInstalled = "Not installed",
 	},
+	-- A Module's version in the status list while its TOC still holds the packager's token: a checkout, never
+	-- packaged (CORE-R2, CORE-R41, ns.ShownVersion). Short: the version column is 64 pixels.
+	MODULE_VERSION_DEV = "dev",
 	-- A status button for a Module's first view (CORE-R44): its label.
 	OPEN_VIEW = "Open %s",
 

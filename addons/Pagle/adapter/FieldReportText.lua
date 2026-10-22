@@ -16,7 +16,8 @@ end
 --- (REP-R30); a secret is never a name (CORE-R31). Built when called, never stored.
 ns.FieldReportText = ns.FieldReportTextFunction(ns.host, {
 	addon = function()
-		return C_AddOns.GetAddOnMetadata("Pagle", "Version") or "unknown"
+		-- "dev" for a checkout's unfilled token (ns.ShownVersion), unlocalised: the header is the parser's (REP-R30).
+		return ns.ShownVersion(C_AddOns.GetAddOnMetadata("Pagle", "Version"), "dev") or "unknown"
 	end,
 	locale = function()
 		return GetLocale()
