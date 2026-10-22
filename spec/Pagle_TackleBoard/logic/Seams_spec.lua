@@ -10,7 +10,7 @@ local GOAL = "Player-4618-0A1B2C3D-1791731747-0"
 describe("the Tackle Board's seams", function()
 	describe("the board's entry points and actions (TKB-R1, TKB-R2, TKB-R55)", function()
 		it(
-			"toggle and open the board, take down no goal the board doesn't know, and report no Coins before Start, with no error",
+			"toggle and open the board, take down no goal the board doesn't know, and report no Coins or Activity XP before Start, with no error",
 			function()
 				local loaded, fake = board.load()
 				local ns = loaded.ns
@@ -23,6 +23,7 @@ describe("the Tackle Board's seams", function()
 					ns.OpenBoard(GOAL)
 					ns.TakeDown(GOAL)
 					ns.ReportCoins()
+					ns.ReportXP()
 				end)
 				fake.nextFrame()
 				for _ in fake.Pagle.IterateCatches(0) do
@@ -33,6 +34,9 @@ describe("the Tackle Board's seams", function()
 					{ { module = "TackleBoard", total = 0 }, { module = "TackleBoard", total = 0 } },
 					fake.coinReports
 				)
+				-- and done's and ReportXP's: 0 Activity XP before Start (TKB-R65)
+				assert.are.same({ 0, 0 }, { fake.xpReports[1].total, fake.xpReports[2].total })
+				assert.are.equal(2, #fake.xpReports)
 			end
 		)
 
@@ -53,6 +57,7 @@ describe("the Tackle Board's seams", function()
 					goals = {},
 					tally = { notices = 0, expeditions = 0 },
 					coins = 0,
+					xp = 0,
 					flies = {},
 					titles = {},
 					fire = { count = 0, kindling = 0, longest = 0, milestones = {}, log = {} },

@@ -158,7 +158,11 @@ describe("completing a goal", function()
 				)
 				assert.are.same({}, state.titles)
 				assert.are.same({
-					{ idAt(T + 1), { pay = 10, coins = 10, fly = goal.fly, titles = {}, lit = true }, "rebuild" },
+					{
+						idAt(T + 1),
+						{ pay = 10, coins = 10, xp = 100, fly = goal.fly, titles = {}, lit = true },
+						"rebuild",
+					},
 				}, calls)
 			end
 		)

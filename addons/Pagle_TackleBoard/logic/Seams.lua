@@ -44,6 +44,10 @@ local ns = select(2, ...)
 --   ns.ReportCoins()          Reports lifetime Coins with M:ReportCoinsEarned (TKB-R63). `done` calls it before
 --                             ns.ScheduleLiveStep, and the projection's apply after a live entry that changes the Coins.
 --                             Reports ns.State().coins, 0 before Start (SHOP-R2). Defined in adapter/Moments.lua.
+--   ns.ReportXP()             Reports lifetime Activity XP with M:ReportXPEarned (TKB-R65, AXP-R2), on ReportCoins'
+--                             timing: `done` calls it after ns.ReportCoins, and the projection's apply after a live
+--                             entry that changes the XP, so Core takes that entry as the one it came from (AXP-R7).
+--                             Reports ns.State().xp, 0 before Start. Defined in adapter/Moments.lua.
 --   ns.RaiseMoment(moment, remake?), ns.RaiseWriteUp(section), ns.SetSummaryLine(line)
 --                             What logic/Moments.lua tells Core (TKB-R84–R87), through the Module handle; nothing while
 --                             the Module is inert (CORE-R13). A goal's moment still reading "…" for a Species name
@@ -142,6 +146,7 @@ local ns = select(2, ...)
 ---@field goals { [string]: TackleGoal }   -- open goals, and goals completed in the last 28 board days
 ---@field tally { notices: integer, expeditions: integer }
 ---@field coins integer               -- lifetime Coins earned (TKB-R63)
+---@field xp integer                  -- lifetime Activity XP earned (TKB-R65)
 ---@field flies { [string]: { day: integer, time: integer, goal: TackleGoal } }  -- tied patterns, with a copy of the goal that tied it
 ---@field titles { [string]: { day: integer, cast: string } }  -- titleID -> board day and Cast entry ID it was earned on
 ---@field fire { count: integer, kindling: integer, longest: integer, milestones: { [integer]: { day: integer, cast: string } }, log: { [integer]: TackleDayLog } }  -- log keeps the last 28 days
@@ -152,6 +157,7 @@ local ns = select(2, ...)
 ---@class TackleEarned
 ---@field pay integer                 -- the goal's pay (TKB-R34)
 ---@field coins integer               -- the goal's pay plus any Campfire milestone's Coins
+---@field xp integer                  -- the goal's Activity XP (TKB-R65); a milestone pays none
 ---@field fly? string                 -- pattern ID tied (TKB-R62); nil when its pool was empty
 ---@field titles string[]             -- title IDs earned, in TKB-R60's order: tally, Campfire, Fly Box
 ---@field milestone? { days: integer, coins: integer, title: string }  -- Campfire milestone reached (TKB-R73)

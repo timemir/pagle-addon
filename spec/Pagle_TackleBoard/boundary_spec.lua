@@ -2,7 +2,7 @@
 -- Catch log's SavedVariables or Core's, never another Module's DB, and it names no other Module, so it pays no Ledger XP
 -- and never references a Hunt. It appends its Module records only from live code (TKB-R80): only
 -- adapter/LiveStep.lua (the start, day and issue records) and adapter/Reroll.lua (the reroll record) may call
--- AppendRecord. And its logic/ reaches Core and the client only through ns.api and the seams (CORE-R7,
+-- AppendRecord, and only adapter/Moments.lua, which reports the Coins, reports Activity XP (TKB-R65). And its logic/ reaches Core and the client only through ns.api and the seams (CORE-R7,
 -- logic/Seams.lua): never Core's API, the Module handle, the DB or a timer itself. Checked over every file the Tackle
 -- Board ships: each name below fails the spec wherever its code says it.
 
@@ -15,9 +15,13 @@ local NO_MODULE_DB = "ADR 0001: the Tackle Board never reads another Module's DB
 local ONLY_PAGLE_API = "ADR 0001: the Tackle Board reaches Core only through Pagle.*, never its AceAddon"
 local LIVE_RECORDS = "TKB-R80: only adapter/LiveStep.lua and adapter/Reroll.lua append records"
 local LOGIC_SEAMS = "CORE-R7: logic/ reaches Core and the client only through ns.api and the seams"
+local XP_REPORTS = "TKB-R65: only adapter/Moments.lua, which reports the Coins, reports Activity XP"
 
 -- The files that may append the Tackle Board's records (TKB-R80), relative to the addon folder.
 local APPENDS = { ["adapter/LiveStep.lua"] = true, ["adapter/Reroll.lua"] = true }
+
+-- The one file that may report Activity XP (TKB-R65): the one that reports the Coins (TKB-R63).
+local REPORTS_XP = "adapter/Moments.lua"
 
 -- Each forbidden thing: a Lua pattern over code with comments removed, and the rule it breaks.
 local FORBIDDEN = {
@@ -37,6 +41,8 @@ end
 FORBIDDEN[#FORBIDDEN + 1] = { "%f[%w_]GetAddon%s*%(", ONLY_PAGLE_API }
 -- A Module record, however it's reached: M:AppendRecord, M.AppendRecord(M, …), M["AppendRecord"] or a local copy.
 local APPEND = { "%f[%w_]AppendRecord%f[^%w_]", LIVE_RECORDS }
+-- An Activity XP report, however it's reached: M:ReportXPEarned, M["ReportXPEarned"](M, …) or a local copy.
+local REPORT_XP = { "%f[%w_]ReportXPEarned%f[^%w_]", XP_REPORTS }
 
 -- What logic/ never reaches itself (logic/Seams.lua): Core's API (ns.api.pagle instead; the CORE-R11 guard is a bare
 -- `Pagle`), the Module handle, the DB and the client's timers.
@@ -55,6 +61,9 @@ local function offences(file, text)
 	local forbidden = { unpack(FORBIDDEN) }
 	if not APPENDS[file] then
 		forbidden[#forbidden + 1] = APPEND
+	end
+	if file ~= REPORTS_XP then
+		forbidden[#forbidden + 1] = REPORT_XP
 	end
 	if file:match("^logic/") then
 		for _, rule in ipairs(LOGIC_FORBIDDEN) do
@@ -100,6 +109,9 @@ describe("the Tackle Board's boundary (ADR 0001, TKB-R80)", function()
 			{ "logic/Moments.lua", "ns.Module:RaiseMoment(moment)", LOGIC_SEAMS },
 			{ "logic/Moments.lua", "local set = ns.db.global.celebrated", LOGIC_SEAMS },
 			{ "logic/Tracker.lua", "C_Timer.After(3, done)", LOGIC_SEAMS },
+			{ "adapter/LiveStep.lua", "ns.Module:ReportXPEarned(ns.State().xp)", XP_REPORTS },
+			{ "logic/Projection.lua", 'M["ReportXPEarned"](M, state.xp)', XP_REPORTS },
+			{ "adapter/TackleBoard.lua", "local report = M.ReportXPEarned", XP_REPORTS },
 		}
 		for _, case in ipairs(planted) do
 			it(case[2] .. " in " .. case[1], function()
@@ -113,6 +125,16 @@ describe("the Tackle Board's boundary (ADR 0001, TKB-R80)", function()
 		it("but not an AppendRecord in adapter/LiveStep.lua or adapter/Reroll.lua (TKB-R80)", function()
 			assert.are.same({}, offences("adapter/LiveStep.lua", 'ns.Module:AppendRecord("start", payload)'))
 			assert.are.same({}, offences("adapter/Reroll.lua", 'ns.Module:AppendRecord("reroll", payload)'))
+		end)
+
+		it("but not a ReportXPEarned in adapter/Moments.lua, beside ReportCoinsEarned (TKB-R65)", function()
+			assert.are.same(
+				{},
+				offences(
+					"adapter/Moments.lua",
+					"module:ReportCoinsEarned(ns.State().coins)\nmodule:ReportXPEarned(ns.State().xp)"
+				)
+			)
 		end)
 
 		it(

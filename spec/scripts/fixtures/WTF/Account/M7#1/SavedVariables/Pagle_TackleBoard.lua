@@ -627,12 +627,13 @@ false, -- [2]
 },
 },
 ["week"] = 1,
+["xp"] = 1550,
 ["zones"] = {
 [12] = 1792684830,
 [40] = 1792771200,
 },
 },
-["rulesVersion"] = 1002,
+["rulesVersion"] = 2002,
 },
 ["celebrated"] = {
 ["goals"] = {

@@ -27,6 +27,7 @@ local DUROTAR, BARRENS = 14, 17
 local N1, N2, N3 = "n;haul;2;15;30;14", "n;quality;1;10;3;2", "n;lure;3;20;25;"
 local N4, N5, N6 = "n;size;1;10;3;3", "n;haul;1;10;20;17", "n;species;2;15;10;6358"
 local N7, N8 = "n;wanderer;3;20;3;", "n;collector;2;15;2;"
+local N3_DONE = "n;haul;3;20;1;14" -- a tier-3 Notice one Catch in Durotar completes
 local E1, E2 = "e;size;0;60;1;4", "e;haul;0;60;150;17"
 
 -- The board after day 0's start: three Notices and an Expedition issued.
@@ -48,6 +49,7 @@ local function unstarted(zones, caught)
 		goals = {},
 		tally = { notices = 0, expeditions = 0 },
 		coins = 0,
+		xp = 0,
 		flies = {},
 		titles = {},
 		fire = { count = 0, kindling = 0, longest = 0, milestones = {}, log = {} },
@@ -461,7 +463,7 @@ describe("the Tackle Board's projection", function()
 			local ns = nextLogin(log, global)
 
 			assert.are.equal(999, ns.State().coins)
-			assert.are.equal(1002, global.board.rulesVersion) -- TKB_RULES_VERSION × 1000 + SESSION_RULES_VERSION
+			assert.are.equal(2002, global.board.rulesVersion) -- TKB_RULES_VERSION × 1000 + SESSION_RULES_VERSION
 		end)
 
 		it("rebuilds to the same state when TKB_RULES_VERSION changes", function()
@@ -469,13 +471,37 @@ describe("the Tackle Board's projection", function()
 
 			local ns = nextLogin(log, global, {
 				prepare = function(loaded)
-					loaded.ns.TKB_RULES_VERSION = 2
+					loaded.ns.TKB_RULES_VERSION = 3
 				end,
 			})
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(2002, global.board.rulesVersion)
+			assert.are.equal(3002, global.board.rulesVersion)
 		end)
+
+		it("is at rules version 2, since completions pay Activity XP (TKB-R81, TKB-R65, Tunables)", function()
+			assert.are.equal(2, board.load().ns.TKB_RULES_VERSION)
+		end)
+
+		it(
+			"rebuilds a stored version-1 projection, which had no Activity XP, filling it in from the log (TKB-R81)",
+			function()
+				-- a tier-3 Notice done by a Catch in Durotar: 200 Activity XP (TKB-R65)
+				local fake =
+					withHistory({ start(D0 + 3600), issue(D0 + 3601, N3_DONE), cast(D0 + 3602, DUROTAR, { 6358 }) })
+				local ns, loaded = built(fake)
+				local first = copy(ns.State())
+				local global = loaded.env.PagleTackleBoardDB.global
+				global.board.rulesVersion = 1002 -- as version 1 stored it: TKB_RULES_VERSION 1 × 1000 + SESSION_RULES_VERSION
+				global.board.projection.xp = nil
+
+				local again = nextLogin(fake.catchLog.data, global)
+
+				assert.are.equal(200, first.xp)
+				assert.are.same(first, again.State())
+				assert.are.equal(2002, global.board.rulesVersion)
+			end
+		)
 
 		it("rebuilds to the same state when Pagle.SESSION_RULES_VERSION changes (TKB-R41)", function()
 			local log, global, first = savedMarked()
@@ -485,7 +511,7 @@ describe("the Tackle Board's projection", function()
 			local ns = nextLogin(log, global, { sessionRules = sessionRules })
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(1000 + sessionRules, global.board.rulesVersion)
+			assert.are.equal(2000 + sessionRules, global.board.rulesVersion)
 		end)
 
 		it(
@@ -517,7 +543,7 @@ describe("the Tackle Board's projection", function()
 			assert.are.equal(ns.projection:GetState(), ns.State())
 		end)
 
-		it("done calls ns.outlets.Done, ns.ReportCoins, ns.ScheduleLiveStep, then redraws, in that order", function()
+		it("done calls Done, ReportCoins, ReportXP, ScheduleLiveStep, then redraws, in order (TKB-R84)", function()
 			local calls = {}
 			local ns = built(withHistory(join(STARTED, { cast(D0 + 7200, DUROTAR, { 6358 }) })), {
 				prepare = function(loaded)
@@ -531,6 +557,9 @@ describe("the Tackle Board's projection", function()
 					seams.ReportCoins = function()
 						calls[#calls + 1] = "ReportCoins"
 					end
+					seams.ReportXP = function()
+						calls[#calls + 1] = "ReportXP"
+					end
 					seams.ScheduleLiveStep = function()
 						calls[#calls + 1] = "ScheduleLiveStep"
 					end
@@ -540,7 +569,10 @@ describe("the Tackle Board's projection", function()
 				end,
 			})
 
-			assert.are.same({ "Done true true", "ReportCoins", "ScheduleLiveStep", "Redraw projection" }, calls)
+			assert.are.same(
+				{ "Done true true", "ReportCoins", "ReportXP", "ScheduleLiveStep", "Redraw projection" },
+				calls
+			)
 			assert.is_true(ns.IsStarted())
 		end)
 
