@@ -1,6 +1,6 @@
 -- The Ledger's onboarding as data, with no Core (core/onboarding.md): the Your Ledger step's live parts (ONB-R36,
 -- LED-R40, LED-R146) through ns.GuideLedgerPage, the Fish Journal's First look (ONB-R57) as ns.JOURNAL_FIRST_LOOK,
--- and the red pencil a Margin note's term is written in (Contracts).
+-- the red pencil a Margin note's term is written in (Contracts), and whether a Session has ended (ONB-R52).
 
 describe("the Ledger's onboarding", function()
 	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
@@ -187,5 +187,21 @@ describe("the Ledger's onboarding", function()
 			"That’s |cff9a2a1aFresh Water|r, the blue.",
 			ns.RedPencilTerms("That’s *Fresh Water*, the blue.")
 		)
+	end)
+
+	describe("whether a Session has ended, as ledger.fresh waits for (ONB-R52)", function()
+		it("is false with no Cast yet, open Session or none", function()
+			assert.is_false(ns.SessionHasEnded(nil, nil))
+			assert.is_false(ns.SessionHasEnded(nil, "a"))
+		end)
+
+		it("is false while the first Cast's Session is the one open", function()
+			assert.is_false(ns.SessionHasEnded("a", "a"))
+		end)
+
+		it("is true once the first Cast's Session is no longer open: none open, or a later one (LOG-R64)", function()
+			assert.is_true(ns.SessionHasEnded("a", nil))
+			assert.is_true(ns.SessionHasEnded("a", "b"))
+		end)
 	end)
 end)

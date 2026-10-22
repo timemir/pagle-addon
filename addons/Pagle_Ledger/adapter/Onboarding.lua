@@ -414,10 +414,31 @@ function ns.AttachJournalLook(frame)
 	frame.look:Show()
 end
 
+-- Whether a Session has ended yet (ONB-R52), remembered once it has: once SessionEnded has fired, the Session it ended
+-- is no longer open, so the Catch log's first Cast is in a Session other than the one open now (LOG-R62, LOG-R63).
+-- The walk stops at the first Cast.
+local sessionEnded = false
+---@return boolean
+local function hasSessionEnded()
+	if not sessionEnded then
+		local first
+		for record in Pagle.IterateCatches(0) do
+			if record.kind == "cast" then
+				first = (record --[[@as PagleCast]]).session
+				break
+			end
+		end
+		local open = Pagle.GetSession()
+		sessionEnded = ns.SessionHasEnded(first, open and open.id)
+	end
+	return sessionEnded
+end
+
 --- The Fish Journal has opened, drawn (adapter/Journal.lua): the First evening list's `journal` item (ONB-R61); with
---- its pages written, the `ledger.fresh` note on the ink bar's blue part while it shows (ONB-R52, once per account,
---- Core's); then its First look (ONB-R55: Core shows it once, and only with a part to point at). Each only on a Core
---- that has it (ONB-R90).
+--- its pages written and once the Angler has had a Session end, the `ledger.fresh` note on the ink bar's blue part
+--- while it shows (ONB-R52, once per account, Core's: until a Session ends it isn't asked for, so a new Angler, whose
+--- Fresh Water starts full, never reads "You've been away" before being away); then its First look (ONB-R55: Core
+--- shows it once, and only with a part to point at). Each only on a Core that has it (ONB-R90).
 ---@param journal LedgerJournal
 function ns.JournalOpened(journal)
 	local M = ns.Module
@@ -431,7 +452,7 @@ function ns.JournalOpened(journal)
 		return
 	end
 	local fresh = ns.JournalFreshPart(journal)
-	if fresh and M.ShowMarginNote then
+	if fresh and M.ShowMarginNote and hasSessionEnded() then
 		M:ShowMarginNote({ id = "ledger.fresh", text = ns.RedPencilTerms(L.NOTE_FRESH), target = fresh })
 	end
 	if ns.journalLook and M.ShowFirstLook then

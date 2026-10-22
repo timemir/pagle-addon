@@ -197,9 +197,11 @@ describe("the Ledger's onboarding", function()
 		end)
 
 		it(
-			"shows ledger.fresh on the ink bar's blue part the first time it opens with Fresh Water, once (ONB-R52)",
+			"shows ledger.fresh on the ink bar's blue part the first time it opens with Fresh Water once a Session has "
+				.. "ended, once (ONB-R52)",
 			function()
-				local fake, loaded = ledger()
+				-- A Session that ended before this login, 700 s ago (LOG-R60).
+				local fake, loaded = ledger({ castRecord({ time = T0, zone = ELWYNN, items = { MACKEREL } }) })
 				local journal = loaded.ns.journal
 
 				journal:Toggle()
@@ -235,6 +237,62 @@ describe("the Ledger's onboarding", function()
 				assert.are.same({ "ledger.fresh" }, { fake.notesShown[1] and fake.notesShown[1].id })
 			end
 		)
+
+		it("shows no ledger.fresh to a new Angler before any Session, and marks it unseen (ONB-R52)", function()
+			local fake, loaded = ledger()
+
+			loaded.ns.journal:Toggle()
+
+			assert.is_truthy(loaded.ns.JournalFreshPart(loaded.ns.journal))
+			assert.are.same({}, fake.notesShown)
+			assert.is_nil(fake.global.onboarding.notesSeen["ledger.fresh"])
+		end)
+
+		it("shows no ledger.fresh while the first Session is still open (ONB-R52, LOG-R64)", function()
+			local fake, loaded =
+				ledger({ castRecord({ time = SERVER_TIME - 10, zone = ELWYNN, items = { MACKEREL } }) })
+			assert.is_not_nil(fake.Pagle.GetSession())
+
+			loaded.ns.journal:Toggle()
+
+			assert.is_truthy(loaded.ns.JournalFreshPart(loaded.ns.journal))
+			assert.are.same({}, fake.notesShown)
+			assert.is_nil(fake.global.onboarding.notesSeen["ledger.fresh"])
+		end)
+
+		it(
+			"shows ledger.fresh at the first opening after the first Session's SessionEnded (ONB-R52, LOG-R62)",
+			function()
+				local fake, loaded = ledger()
+				local journal = loaded.ns.journal
+				fake.playCast("caught", { { itemID = MACKEREL, quantity = 1 } })
+				journal:Toggle()
+				journal:Close()
+				assert.are.same({}, fake.notesShown)
+
+				local ended = false
+				fake.Pagle.RegisterCallback("spec: ended", "SessionEnded", function()
+					ended = true
+				end)
+				fake.wait(300)
+				assert.is_true(ended)
+				journal:Toggle()
+
+				assert.are.same({ "ledger.fresh" }, { fake.notesShown[1] and fake.notesShown[1].id })
+			end
+		)
+
+		it("counts a Session ended before the one open now, from the Catch log (ONB-R52, LOG-R98)", function()
+			local fake, loaded = ledger({
+				castRecord({ time = T0, zone = ELWYNN, items = { MACKEREL } }),
+				castRecord({ time = SERVER_TIME - 10, zone = ELWYNN, items = { MACKEREL } }),
+			})
+			assert.is_not_nil(fake.Pagle.GetSession())
+
+			loaded.ns.journal:Toggle()
+
+			assert.are.same({ "ledger.fresh" }, { fake.notesShown[1] and fake.notesShown[1].id })
+		end)
 
 		it("shows no note while the Ledger is being written up (ONB-R52, LED-R122)", function()
 			local fake, loaded = ledger(nil, { building = true })
