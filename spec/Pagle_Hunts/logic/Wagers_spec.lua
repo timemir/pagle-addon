@@ -280,7 +280,7 @@ describe("the wager slips on the Pagle Wagers spread (HNT-R162, HNT-R160)", func
 
 		for _, text in ipairs(words) do
 			for _, word in ipairs({ "odds", "chance", "due", "likely", "luck", "%%" }) do
-				assert.is_nil(text:lower():find(word), text)
+				assert(text:lower():find(word) == nil, text)
 			end
 		end
 	end)
