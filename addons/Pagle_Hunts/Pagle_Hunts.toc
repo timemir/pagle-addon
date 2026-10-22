@@ -58,3 +58,4 @@ adapter\Wagers.lua
 adapter\WagersSpread.lua
 adapter\Tracker.lua
 adapter\Tour.lua
+adapter\Look.lua
