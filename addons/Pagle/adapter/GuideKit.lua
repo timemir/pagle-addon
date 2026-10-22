@@ -9,8 +9,8 @@ end
 -- The onboarding art kit on the client (core/onboarding.md › UI): the guide's inks, type set at the kit's sizes, and
 -- the widgets every onboarding piece draws with, from the GuideParts atlas (data/GuideArt.lua) through Core's art
 -- helpers (adapter/Art.lua: ns.ArtSprite, ns.SetThreeSlice, ns.NewNineSlice, ns.ArtFaceFont): a page's kicker and
--- title, the leather button, the foot's skip link and « back, a choice card, an illustrative note, a part of the
--- atlas and the step ribbons (the binding field is adapter/GuideBindingField.lua's). Positions are the onboarding
+-- title, the leather button, the foot's skip link and « back, a choice card, an illustrative note and a part of the
+-- atlas (the binding field is adapter/GuideBindingField.lua's; the step ribbons are the book shell's, GuideBook.lua). Positions are the onboarding
 -- kit's (prototypes/onboarding-kit, PagleArtGuide's GuideKit.lua and Guide.lua): the canvas's CSS pixels, UI units,
 -- from a page's top left, y down. A step's build reaches the widgets through its nav (logic/Guide.lua's
 -- ns.NewGuideNav); later onboarding pieces (the Letter, Margin notes, First looks, the First evening list) call them
@@ -31,11 +31,9 @@ ns.GUIDE_INKS = {
 	red = rgb("9A2A1A"), -- the red pencil: a note's key term and badge, a link under the mouse
 	green = rgb("2A6A2A"), -- a pencilled tag ("the usual"), "Bound"
 	brown = rgb("7A3A10"), -- « back
-	gilt = rgb("EFD286"), -- a ribbon's words
-	giltOn = rgb("FFF0BC"), -- the current ribbon's
 	wax = rgb("F4DFA8"), -- the leather button's words
-	crumb = rgb("E8C96A"), -- the strip's crumbs
-	count = rgb("C9B27A"), -- "{n} of {m}" on the strip
+	crumb = rgb("E8C96A"), -- a First look coach bar's title
+	count = rgb("C9B27A"), -- its count and "done"
 }
 local INKS = ns.GUIDE_INKS
 
@@ -115,13 +113,10 @@ function ns.NewGuideTitle(page, text, size)
 	return title
 end
 
---- The guide's sounds (the kit's SOUND.md; the books' own): sound kit ids on the SFX channel, and whether each goes
---- with the motion (with Animations off the page turns without a sound, as the books do).
+--- The guide's sounds (the kit's SOUND.md): sound kit ids on the SFX channel, and whether each goes with the motion
+--- (played only while things move). The book's own (open, close, the page turn) are the shell's (BOOK-R4, BOOK-R31).
 ---@type table<string, { id: integer, motion: boolean }>
 ns.GUIDE_SOUNDS = {
-	bookOpen = { id = 829, motion = false }, -- IG_SPELLBOOK_OPEN
-	bookClose = { id = 830, motion = false }, -- IG_SPELLBOOK_CLOSE
-	pageTurn = { id = 836, motion = true }, -- IG_ABILITY_PAGE_TURN: Next, back, a ribbon
 	click = { id = 852, motion = false }, -- IG_MAINMENU_OPTION: a button, a skip link
 	check = { id = 856, motion = false }, -- IG_MAINMENU_OPTION_CHECKBOX_ON: a choice card picked
 	uncheck = { id = 857, motion = false }, -- IG_MAINMENU_OPTION_CHECKBOX_OFF
@@ -433,105 +428,3 @@ ns.GUIDE_WIDGETS = {
 		return ns.NewNineSlice(frame, "GuideParts", sprite, cap)
 	end,
 }
-
--- The step ribbons (ONB-R24): one per step under the book's foot, 98 wide with an 8-unit gap, each hanging 92 units,
--- the current one 110 and brighter, a seen one ticked in full colour, one not yet seen dimmed (the sprites carry the
--- tick and the 82%). Each label is its step's ribbon text in gilt, 28 units above its end.
-
---- The ribbons' measures (Tunables): width, gap, how long each hangs, the current one's length, how much of each top
---- tucks under the book's band, and how long a change of current takes (MOTION.md: 0.2 s, ease-out).
-ns.GUIDE_RIBBON = { width = 98, gap = 8, length = 92, lengthCurrent = 110, tuck = 14, ease = 0.2 }
-local RIBBON = ns.GUIDE_RIBBON
-
---- One step ribbon.
----@class PagleGuideRibbonView: Button
----@field body Texture
----@field label FontString
----@field state "plain"|"done"|"on"
----@field length number how long it hangs now: eased toward its state's length
----@field hover boolean
----@field SetRibbon fun(self: PagleGuideRibbonView, ribbon: PagleGuideRibbon, animate: boolean?)
-
--- Each state's sprite: not yet seen, seen (ticked), current.
-local RIBBON_SPRITES = { plain = "rib", done = "rib-done", on = "rib-on" }
-
--- Hangs `ribbon` `length` long: the bottom `length` units of its state's sprite (its swallowtail always shows) from its
--- top; while it hangs longer than that sprite (the old current drawing up), the current one's sprite.
----@param ribbon PagleGuideRibbonView
----@param length number
-local function hangRibbon(ribbon, length)
-	ribbon.length = length
-	local name = RIBBON_SPRITES[ribbon.state]
-	local atlas = ns.ATLASES.GuideParts
-	if length > atlas.sprites[name].box[4] + 0.01 then
-		name = RIBBON_SPRITES.on
-	end
-	local sprite = atlas.sprites[name]
-	local dropped = (sprite.box[4] - length) * atlas.scale
-	local body = ribbon.body
-	body:SetTexture(atlas.file)
-	body:SetTexCoord(
-		sprite.x / atlas.width,
-		(sprite.x + sprite.w) / atlas.width,
-		(sprite.y + dropped) / atlas.height,
-		(sprite.y + sprite.h) / atlas.height
-	)
-	body:SetSize(sprite.w / atlas.scale, sprite.h / atlas.scale - sprite.box[4] + length)
-	body:ClearAllPoints()
-	body:SetPoint("TOPLEFT", ribbon, "TOPLEFT", -sprite.box[1], 0)
-	ribbon:SetSize(RIBBON.width, length)
-	ribbon.label:ClearAllPoints()
-	ribbon.label:SetPoint("BOTTOM", ribbon, "TOPLEFT", RIBBON.width / 2, -(length - 28))
-	local brighter = ribbon.hover and ribbon.state ~= "on" and (ribbon.state == "done" and 1.12 or 1.15) or 1
-	body:SetVertexColor(brighter, brighter, brighter)
-end
-
---- A step ribbon on `parent` (the book), clicked to turn to its step.
----@param parent Frame
----@return PagleGuideRibbonView
-function ns.NewGuideRibbon(parent)
-	local ribbon = CreateFrame("Button", nil, parent) --[[@as PagleGuideRibbonView]]
-	ribbon.body = ns.ArtCrisp(ribbon:CreateTexture(nil, "ARTWORK"))
-	ribbon.label = ns.GuideText(ribbon, "gilt", 12, "gilt", "", {
-		shadow = true,
-		wrap = true,
-		width = 82,
-		spacing = 1.8,
-		justify = "CENTER",
-	})
-	ribbon.state, ribbon.hover = "plain", false
-	ribbon:SetScript("OnEnter", function(self)
-		self.hover = true
-		hangRibbon(self, self.length)
-	end)
-	ribbon:SetScript("OnLeave", function(self)
-		self.hover = false
-		hangRibbon(self, self.length)
-	end)
-	hangRibbon(ribbon, RIBBON.length)
-	function ribbon.SetRibbon(self, data, animate)
-		self.label:SetText(data.label)
-		self.state = data.current and "on" or (data.seen and "done" or "plain")
-		local ink = data.current and INKS.giltOn or INKS.gilt
-		self.label:SetTextColor(ink[1], ink[2], ink[3])
-		self.label:SetAlpha((data.current or data.seen) and 1 or 0.85)
-		local to = data.current and RIBBON.lengthCurrent or RIBBON.length
-		Pagle.StopMotion(self)
-		if animate and to ~= self.length then
-			-- the new current drops as the old one draws up (MOTION.md: 0.2 s, ease-out); settled with Animations off
-			Pagle.Animate(self, {
-				{
-					dur = RIBBON.ease,
-					ease = Pagle.EASE.out,
-					keys = { { 0, { self.length } }, { 1, { to } } },
-					apply = function(v)
-						hangRibbon(self, v[1])
-					end,
-				},
-			})
-		else
-			hangRibbon(self, to)
-		end
-	end
-	return ribbon
-end
