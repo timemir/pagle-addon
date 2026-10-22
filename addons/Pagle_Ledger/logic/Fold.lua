@@ -12,7 +12,8 @@ local ns = select(2, ...)
 -- Uncharted list (LED-R64), the collections' items (LED-R60, LED-R61) with their XP and Coins, and first-Catch facts.
 -- M4's catches (LED-R4): the Legend class (LED-R63, logic/Legends.lua) and Catch Milestones (LED-R42,
 -- logic/CatchMilestones.lua). M4's Prestige (LED-R30–R32): Prestige entries start a new climb (logic/Prestige.lua)
--- and a climb at 60 is ready. M4's Simulated Size records (LED-R80–R83): logic/Records.lua.
+-- and a climb at 60 is ready. M4's Simulated Size records (LED-R80–R83): logic/Records.lua. Fish varieties
+-- (VAR-R20, VAR-R25): logic/Varieties.lua.
 
 --- A realm date (LOG-R49), as the Journal prints it.
 ---@alias LedgerDate { year: integer, month: integer, day: integer }
@@ -39,6 +40,8 @@ local ns = select(2, ...)
 ---@field items { [integer]: LedgerFirst }    -- trophy, curio and Legend items, by item ID (LED-R60, LED-R63)
 ---@field uncharted { [integer]: LedgerFirst } -- Uncharted item IDs, with zones (LED-R64)
 ---@field zones { [integer]: LedgerZone }     -- every zone fished, never 0 (LED-R6)
+---@field varieties { [integer]: { [integer]: LedgerVariety } } -- by Species ID, each variety caught by its position
+--- (VAR-R20, logic/Varieties.lua)
 
 --- An item's Catches and its first Catch (ledger.md › Data, LedgerFirst): that Cast's time, character, zone and realm
 --- date. Legend items also keep their Simulated Size record and `since` (LED-R80, logic/Records.lua).
@@ -73,12 +76,15 @@ local ns = select(2, ...)
 --- Coins (LED-R88; 0 when it pays none). Tickets #101 and #102 turn M2's kinds into moments and Write-up lines, ticket
 --- #137 M3's; the fold never reads the celebrated set (LED-R3).
 ---@class LedgerAchievement
----@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"caughtStar"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"prestigeReady"|"prestige"|"legend"|"catchMilestone"|"sizeRecord"|"completeTitle"
+---@field kind "levelUp"|"newSpecies"|"newInZone"|"skillMilestone"|"newCurio"|"trophyWeight"|"uncharted"|"caughtStar"|"elementStar"|"regularStar"|"familyStar"|"zoneRank"|"prestigeReady"|"prestige"|"legend"|"catchMilestone"|"sizeRecord"|"completeTitle"|"newVariety"|"fishComplete"
 ---@field cast? string
 ---@field coins integer
 ---@field levels? integer[]                   -- levelUp: the levels it raised, ascending
 ---@field n? integer                          -- catchMilestone: the lifetime Catches it marks (LED-R42)
----@field species? integer                    -- newSpecies, newInZone, caughtStar, elementStar, regularStar: the Species ID
+---@field species? integer                    -- newSpecies, newInZone, caughtStar, elementStar, regularStar,
+--- newVariety, fishComplete: the Species ID
+---@field index? integer                      -- newVariety: the variety's position (VAR-R2)
+---@field rarity? "common"|"uncommon"|"rare"|"epic" -- newVariety: its rarity, which picks its moment (VAR-R25)
 ---@field itemID? integer                     -- the item caught, for every Catch's kind but familyStar and catchMilestone
 ---@field zone? integer                       -- newSpecies, newInZone, zoneRank: the Cast's zone
 ---@field ranks? integer[]                    -- zoneRank: the Zone Mastery ranks it passed, ascending (LED-R51)
@@ -106,8 +112,8 @@ local ns = select(2, ...)
 
 --- The Ledger's rules version (LED-R2, LED-R4, Tunables): 1 in M2, 2 in M3, 3 in M4, then +1 per change: 4 when ★
 --- moved to a Species' 5th Catch (LED-R45), 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32,
---- LED-R37).
-ns.LEDGER_RULES_VERSION = 5
+--- LED-R37), 6 for the varieties caught (VAR-R20).
+ns.LEDGER_RULES_VERSION = 6
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
 --- Catch XP, before Fresh Water (LED-R20); one Fresh Water doubles it (LED-R22), as the ink XP bar shows (LED-R145).
@@ -168,6 +174,8 @@ local function firstCatch(record)
 		date = copyDate(record.conditions.date),
 	}
 end
+--- A copy of a Cast's realm date, nil when it has none: for logic/Varieties.lua.
+ns.CopyDate = copyDate
 --- A first Catch's facts (ledger.md › Data, LedgerFirst), with no Catch counted yet: for logic/Legends.lua.
 ns.FirstCatch = firstCatch
 
@@ -236,6 +244,7 @@ local function reset()
 		items = {},
 		uncharted = {},
 		zones = {},
+		varieties = {},
 	}
 end
 
@@ -374,6 +383,10 @@ function ns.NewLedgerFold(lookups)
 							zone = zone,
 						}
 					end
+				end
+				-- Its variety, when Core decoded one (VAR-R1, VAR-R4).
+				if catch.variety then
+					ns.CreditVariety(state, record, id, itemID, catch.variety, earned, getItem)
 				end
 			end
 			ns.CreditSizeRecord(state, class, id, record, catch, earned)

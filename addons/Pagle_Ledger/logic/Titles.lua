@@ -27,8 +27,9 @@ local ns = select(2, ...)
 local LEVELS = { 1, 10, 20, 30, 40, 50, 60 }
 local PRESTIGES = { 1, 5, 10 }
 -- The completion parts (ns.COMPLETION_PARTS) with a title each (LED-R75), in its order: `complete.<part>` once that
--- part's count (LED-R71) is done, at a total above 0. Species and zones have none.
-local TITLED_PARTS = { "junk", "treasure", "trophy" }
+-- part's count (LED-R71) is done, at a total above 0; `complete.varieties` when every fish with varieties is
+-- complete (VAR-R22). Species and zones have none.
+local TITLED_PARTS = { "junk", "treasure", "trophy", "varieties" }
 
 -- Each title's place in LED-R75's table, by title key; `zonemaster:` and `legend:` keys by their prefix, then by
 -- their number.
@@ -159,7 +160,7 @@ end
 
 --- What a title key is (LED-R75), so a moment can take the titles that ride on it: "level" with the level,
 --- "prestige" with the rank, "zonemaster" with the zone, "legend" with the item ID, or "complete" with the part
---- ("ledger", "junk", "treasure" or "trophy"). Nothing for a key that names no title.
+--- ("ledger", "junk", "treasure", "trophy" or "varieties"). Nothing for a key that names no title.
 ---@param key string
 ---@return ("level"|"prestige"|"zonemaster"|"legend"|"complete")? kind
 ---@return (integer|string)? n
