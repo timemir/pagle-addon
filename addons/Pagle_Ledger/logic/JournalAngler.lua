@@ -164,17 +164,21 @@ local function signedAs(context, blocks)
 	end
 end
 
+-- Core's slot of the binding every book wears (ADR 0015). Pagle's API doesn't name it, so the Ledger does, as it names
+-- Core's crest slot.
+local BOOK_BINDING_SLOT = "core.binding"
+
 -- "Bindings" (LED-R146, LED-R110): every binding in LED-R110's order, its closed book, its name and its state: "In use"
 -- for the equipped one, "Use" (equipping it, SHOP-R32) when owned, "Angler Level {L}" for a level binding not earned
 -- yet (LED-R111), an expansion one's earnedText ("Land a Monster", LED-R116) likewise, and "In the Curio Shop"
--- (opening the shop at it, SHOP-R40) for one for sale and not owned. Look and Feel picks the same setting, so the page
--- reads Pagle.GetEquipped at each draw.
+-- (opening the shop at it, SHOP-R40) for one for sale and not owned. The binding is the one every book wears, in Core's
+-- slot (LED-R112): Look and Feel picks the same setting, so the page reads Pagle.GetEquipped at each draw.
 ---@param context LedgerSpreadContext
 ---@param blocks LedgerBlock[]
 local function bindings(context, blocks)
 	local L = ns.L
 	local goods = context.goods
-	local equipped = goods.getEquipped(ns.BINDING_SLOT)
+	local equipped = goods.getEquipped(BOOK_BINDING_SLOT)
 	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_BINDINGS }
 	for _, binding in ipairs(ns.BINDINGS) do
 		local id = ns.BindingID(binding)
@@ -190,7 +194,7 @@ local function bindings(context, blocks)
 		elseif goods.isOwned(id) then
 			line.value, line.state = L.ANGLER_BINDING_USE, "use"
 			line.action = function()
-				goods.setEquipped(ns.BINDING_SLOT, id)
+				goods.setEquipped(BOOK_BINDING_SLOT, id)
 			end
 		elseif binding.level then
 			line.value, line.state = L.BINDING_EARNED:format(binding.level), "level"

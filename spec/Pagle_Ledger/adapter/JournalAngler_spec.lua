@@ -675,9 +675,8 @@ describe("the Angler page's Bindings", function()
 
 			click(loaded, "right", "Tanned Hide")
 
-			assert.are.equal("ledger.binding.level10", fake.Pagle.GetEquipped("ledger.binding"))
-			assert.are.equal("ledger.binding.level10", loaded.ns.journal.binding)
-			assert.are.same(loaded.ns.BindingLook("ledger.binding.level10").tint, loaded.ns.journal.frame.leatherTint)
+			assert.are.equal("ledger.binding.level10", fake.Pagle.GetEquipped("core.binding"))
+			assert.are.same(fake.ns.BindingLook("ledger.binding.level10"), loaded.ns.journal.frame.binding:Look())
 			local list = lines(loaded)
 			assert.are.same({ { "Field Leather", "Use" }, { "Tanned Hide", "In use" } }, { list[1], list[2] })
 		end
@@ -686,7 +685,7 @@ describe("the Angler page's Bindings", function()
 	it("follows a pick made elsewhere, as Look and Feel's (SHOP-R32, LED-R112)", function()
 		local fake, loaded = anglerPage(nil, { saved = LEVEL_10 })
 
-		assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
+		assert.is_true(fake.Pagle.SetEquipped("core.binding", "ledger.binding.level10"))
 
 		assert.are.same({ "Tanned Hide", "In use" }, lines(loaded)[2])
 	end)

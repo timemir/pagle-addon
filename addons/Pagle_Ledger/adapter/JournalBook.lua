@@ -5,11 +5,11 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The Fish Journal's book shell (ledger.md › UI): the leather binding (its tiled grain under the rounded nine-slice
--- band), two parchment pages with their gutters at the spine and slightly rounded outer corners, the gilt strip with
--- the breadcrumbs and the search slip, the wax close button and the brass plate; and a binding's look over them
--- (LED-R110, LED-R112). The kit's Book.lua and Bindings.lua (PagleArtLedger), forked from the books kit, drawn on
--- Core's book textures (Pagle/media/books) and the Ledger's binding leathers. adapter/Journal.lua lays its pages out.
+-- The Fish Journal's book shell (ledger.md › UI): the binding every book wears, drawn by Core (Pagle.NewBookBinding,
+-- core/book-binding.md), two parchment pages with their gutters at the spine and slightly rounded outer corners, the
+-- gilt strip with the breadcrumbs and the search slip, the wax close button and the brass plate, the plate and the
+-- paper inked from the binding's look (LED-R112). The kit's Book.lua (PagleArtLedger), forked from the books kit, drawn
+-- on Core's book textures (Pagle/media/books). adapter/Journal.lua lays its pages out.
 
 local INK = ns.JOURNAL_INK
 local rgb = ns.JournalRGB
@@ -31,8 +31,8 @@ local BOOK = ns.JOURNAL_BOOK
 ns.JOURNAL_PAGE_W = (BOOK.width - 2 * BOOK.side) / 2
 ns.JOURNAL_PAGE_H = BOOK.height - BOOK.strip - BOOK.foot
 
--- The band's shown size (32 texels), how far in the tiled grain starts, and its repeat (Leather is 256 texels).
-local BAND, FILL_INSET, LEATHER_TILE = 16, 7, 128
+-- How far in from the book's edge the binding's material starts, inside its band (BIND-R10).
+local BAND_INSET = 7
 -- The spine's gutter shade's width, and a page's rounded corner's radius.
 local GUTTER_W, CORNER = 40, 6
 local CORNER_MASKS = {
@@ -43,7 +43,7 @@ local CORNER_MASKS = {
 }
 -- The search slip (the kit's 252 × 23), centred in the strip between the band's inner edge and the pages.
 local SEARCH_W, SEARCH_H = 252, 23
-local STRIP_MIDDLE = (FILL_INSET + BOOK.strip) / 2
+local STRIP_MIDDLE = (BAND_INSET + BOOK.strip) / 2
 
 ---@class LedgerJournalPaper: Frame
 ---@field parchment Texture
@@ -59,17 +59,8 @@ local STRIP_MIDDLE = (FILL_INSET + BOOK.strip) / 2
 ---@field label FontString
 ---@field action fun()?
 
---- One of a binding's corner pieces on the open book (LED-R110): the corner sprite, mirrored across or down.
----@class LedgerCornerPiece: LedgerSpriteTexture
----@field flipX boolean
----@field flipY boolean
-
 ---@class LedgerJournalShell: Frame
----@field leatherFill Texture
----@field vignette Texture
----@field bandFrame Frame
----@field band Texture[]
----@field corners LedgerCornerPiece[]  -- top left, top right, bottom left, bottom right (LED-R110)
+---@field binding PagleBookBinding -- the binding every book wears, Core's (LED-R112)
 ---@field pagesFrame Frame
 ---@field papers table<"left"|"right", LedgerJournalPaper>
 ---@field strip Frame
@@ -79,73 +70,6 @@ local STRIP_MIDDLE = (FILL_INSET + BOOK.strip) / 2
 ---@field close Button
 ---@field look LedgerJournalLookButton
 ---@field plate LedgerJournalPlateView
----@field binding string?
----@field leatherTint number[]   -- the leather's tint as last drawn (LED-R112)
-
--- The leather: the tiled grain shading toward its foot, the vignette over it, and the band on a frame of its own
--- above the pages' level, so nothing on the leather pokes over it.
----@param frame LedgerJournalShell
-local function buildLeather(frame)
-	local fill = ns.JournalCrisp(frame:CreateTexture(nil, "BACKGROUND", nil, 0))
-	fill:SetTexture(ns.JOURNAL_FILES.leather, "REPEAT", "REPEAT")
-	fill:SetPoint("TOPLEFT", FILL_INSET, -FILL_INSET)
-	fill:SetPoint("BOTTOMRIGHT", -FILL_INSET, FILL_INSET)
-	frame.leatherFill = fill
-	frame.vignette = ns.JournalPiece(frame, "Book", "vignette", "BACKGROUND", 1, { 1, 1, 126, 126 })
-	frame.vignette:SetAllPoints(fill)
-	local bandFrame = CreateFrame("Frame", nil, frame)
-	bandFrame:SetAllPoints()
-	bandFrame:SetFrameLevel(frame:GetFrameLevel() + 6)
-	frame.bandFrame = bandFrame
-	-- the nine slices of the 96-texel binding sprite: 32-texel corners, the edges stretched from a 2-texel slice
-	local function piece(sx, sy, sw, sh)
-		return ns.JournalPiece(bandFrame, "Book", "binding", "BORDER", 0, { sx, sy, sw, sh })
-	end
-	local tl, tr, bl, br = piece(0, 0, 32, 32), piece(64, 0, 32, 32), piece(0, 64, 32, 32), piece(64, 64, 32, 32)
-	local top, bottom = piece(47, 0, 2, 32), piece(47, 64, 2, 32)
-	local left, right = piece(0, 47, 32, 2), piece(64, 47, 32, 2)
-	for _, corner in ipairs({ tl, tr, bl, br }) do
-		corner:SetSize(BAND, BAND)
-	end
-	tl:SetPoint("TOPLEFT")
-	tr:SetPoint("TOPRIGHT")
-	bl:SetPoint("BOTTOMLEFT")
-	br:SetPoint("BOTTOMRIGHT")
-	top:SetPoint("TOPLEFT", tl, "TOPRIGHT")
-	top:SetPoint("BOTTOMRIGHT", tr, "BOTTOMLEFT")
-	bottom:SetPoint("TOPLEFT", bl, "TOPRIGHT")
-	bottom:SetPoint("BOTTOMRIGHT", br, "BOTTOMLEFT")
-	left:SetPoint("TOPLEFT", tl, "BOTTOMLEFT")
-	left:SetPoint("BOTTOMRIGHT", bl, "TOPRIGHT")
-	right:SetPoint("TOPLEFT", tr, "BOTTOMLEFT")
-	right:SetPoint("BOTTOMRIGHT", br, "TOPRIGHT")
-	frame.band = { tl, tr, bl, br, top, bottom, left, right }
-	-- A binding's corner pieces over the band's corners (LED-R110), each the top-left piece mirrored to its corner;
-	-- hidden until a binding that wears them is drawn.
-	frame.corners = {}
-	for i, corner in ipairs({ "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }) do
-		local cornerPiece = ns.JournalSprite(bandFrame, "BindingCorners", "corner-brass", "OVERLAY", 0) --[[@as LedgerCornerPiece]]
-		cornerPiece:SetPoint(corner)
-		cornerPiece.flipX, cornerPiece.flipY = i % 2 == 0, i > 2
-		cornerPiece:Hide()
-		frame.corners[i] = cornerPiece
-	end
-end
-
--- Points corner piece `piece` at the corner sprite of `kind`, mirrored to its corner, and shows it.
----@param piece LedgerCornerPiece
----@param kind LedgerBindingCorners
-local function setCorner(piece, kind)
-	local l, r, t, b = ns.JournalCoords("BindingCorners", "corner-" .. kind)
-	if piece.flipX then
-		l, r = r, l
-	end
-	if piece.flipY then
-		t, b = b, t
-	end
-	piece:SetTexCoord(l, r, t, b)
-	piece:Show()
-end
 
 -- One page's paper: the parchment (the right page's mirrored, so the two don't match), its outer corners slightly
 -- rounded, and the gutter's shade at the spine. It takes the mouse, so a click on the paper goes no further.
@@ -333,12 +257,14 @@ local function buildLook(frame)
 	frame.look = look
 end
 
---- Builds the shell on `frame` (sized 920 × 600): the leather and its band, the two papers on `frame.pagesFrame`, the
---- strip with the crumbs' row and the search slip, the brass plate, the wax close button and its "?".
+--- Builds the shell on `frame` (sized 920 × 600): the two papers on `frame.pagesFrame`, the strip with the crumbs' row
+--- and the search slip, the brass plate, the wax close button and its "?", and last the binding round them, Core's
+--- (LED-R112). Each look the binding puts on inks the plate and the paper (ns.InkJournalShell), then goes to `onLook`
+--- for the rest of the book (the crumbs): once before this returns, then at each change of binding (BIND-R3).
 ---@param frame LedgerJournalShell
-function ns.BuildJournalShell(frame)
+---@param onLook fun(look: PagleBindingLook)?
+function ns.BuildJournalShell(frame, onLook)
 	frame:SetSize(BOOK.width, BOOK.height)
-	buildLeather(frame)
 	frame.pagesFrame = CreateFrame("Frame", nil, frame)
 	frame.pagesFrame:SetPoint("TOPLEFT", BOOK.side, -BOOK.strip)
 	frame.pagesFrame:SetPoint("BOTTOMRIGHT", -BOOK.side, BOOK.foot)
@@ -354,40 +280,23 @@ function ns.BuildJournalShell(frame)
 	buildPlate(frame)
 	buildClose(frame)
 	buildLook(frame)
+	frame.binding = Pagle.NewBookBinding(frame, {
+		onLook = function(look)
+			ns.InkJournalShell(frame, look)
+			if onLook then
+				onLook(look)
+			end
+		end,
+	})
 end
 
--- ---------------------------------------------------------------- a binding's look (LED-R110, LED-R112)
+-- ---------------------------------------------------------------- a binding's look (LED-R112)
 
---- Draws the book in binding `look` (logic/Bindings.lua's ns.BindingLook): the material tiled at its repeat and under
---- its tint (a vertex tint over the grey leather, or a material's own grain), the band toward the binding's hue, the
---- gilt of the crumbs and fleurons, a silver plate, its corner pieces, and the page paper cooled by a tenth of the
---- binding's hue (the kits' Bindings).
+--- Inks the shell's own parts from binding `look` (Core's, BIND-R3): the brass plate turned silver where the look
+--- says, and both pages' paper in the look's tint, cooled by the binding's hue.
 ---@param frame LedgerJournalShell
----@param look LedgerBindingLook
-function ns.TintJournalShell(frame, look)
-	local fill = frame.leatherFill
-	fill:SetTexture(look.texture, "REPEAT", "REPEAT")
-	local w, h = BOOK.width - 2 * FILL_INSET, BOOK.height - 2 * FILL_INSET
-	fill:SetTexCoord(0, w / (look.tileW or LEATHER_TILE), 0, h / (look.tileH or LEATHER_TILE))
-	for _, piece in ipairs(frame.corners) do
-		if look.corners then
-			setCorner(piece, look.corners)
-		else
-			piece:Hide()
-		end
-	end
-	local t = look.tint or { 1, 1, 1 }
-	fill:SetGradient("VERTICAL", CreateColor(t[1] * 0.8, t[2] * 0.8, t[3] * 0.8, 1), CreateColor(t[1], t[2], t[3], 1))
-	frame.leatherTint = t
-	for _, piece in ipairs(frame.band) do
-		if look.band then
-			piece:SetDesaturated(true)
-			piece:SetVertexColor(look.band[1], look.band[2], look.band[3])
-		else
-			piece:SetDesaturated(false)
-			piece:SetVertexColor(1, 1, 1)
-		end
-	end
+---@param look PagleBindingLook
+function ns.InkJournalShell(frame, look)
 	for _, slice in ipairs(frame.plate.slices) do
 		slice:SetDesaturated(look.silver)
 		local lift = look.silver and 1.1 or 1

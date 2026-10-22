@@ -37,7 +37,7 @@ end
 
 describe("the Fish Journal's art (ledger.md › UI)", function()
 	it(
-		"draws its own parts, crests, binding swatches and corners and every binding's material from its media, as BLP files that ship (LED-R110)",
+		"draws its own parts, crests, binding swatches and every binding's material from its media, as BLP files that ship (LED-R110)",
 		function()
 			local _, loaded = openJournal()
 			local atlases = loaded.ns.JOURNAL_ATLASES
@@ -45,7 +45,7 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 				return file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
 			end
 
-			for _, name in ipairs({ "Parts", "Crests", "Bindings", "Bindings2", "BindingCorners" }) do
+			for _, name in ipairs({ "Parts", "Crests", "Bindings", "Bindings2" }) do
 				local file = atlases[name].file
 				assert.matches("^Interface\\AddOns\\Pagle_Ledger\\media\\journal\\", file)
 				assert(#readFile(path(file)) > 0, path(file))
@@ -54,9 +54,6 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 				local look = loaded.ns.BindingLook(loaded.ns.BindingID(binding))
 				assert(#readFile(path(look.texture)) > 0, path(look.texture))
 				assert(atlases[look.swatchAtlas].sprites[look.swatch], look.swatch)
-				if look.corners then
-					assert(atlases.BindingCorners.sprites["corner-" .. look.corners], look.corners)
-				end
 			end
 		end
 	)
@@ -173,22 +170,6 @@ describe("the Fish Journal's sounds (ledger.md › UI)", function()
 		loaded.ns.OpenLegendPlate(loaded.ns.journal.frame.legendPlate)
 
 		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
-	end)
-
-	it("sounds a binding change while things don't move, the binding changing at once (LED-R112)", function()
-		local fake, loaded = openJournal({
-			globals = {
-				PagleLedgerDB = { global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } },
-			},
-			logId = "log",
-		})
-		local journal = loaded.ns.journal
-		local from = #loaded.client.sounds
-
-		assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
-
-		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
-		assert.are.same(loaded.ns.BindingLook("ledger.binding.level10").tint, journal.frame.leatherTint)
 	end)
 end)
 
@@ -315,27 +296,5 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 
 		assert.are.equal(0.6, journal.frame.left.drawn.xpBar[1].bar.pct)
 		assert.are.equal(1, journal.frame.alpha)
-	end)
-
-	it("changes binding under a dip of the leather, with the page-turn sound (LED-R112)", function()
-		local fake, loaded = openJournal({
-			motion = true,
-			globals = {
-				PagleLedgerDB = { global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } },
-			},
-			logId = "log",
-		})
-		local journal = loaded.ns.journal
-		loaded.client.update(1)
-		local from = #loaded.client.sounds
-
-		assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
-
-		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
-		assert.are.same({ 1, 1, 1 }, journal.frame.leatherTint)
-		loaded.client.update(0.25)
-		assert.are.same(loaded.ns.BindingLook("ledger.binding.level10").tint, journal.frame.leatherTint)
-		loaded.client.update(0.25)
-		assert.are.equal(1, journal.frame.leatherFill.alpha)
 	end)
 end)
