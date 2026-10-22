@@ -1182,7 +1182,8 @@ function ns.AnnouncementFramesShowing()
 end
 
 -- A frame of `form` not in use, made if none is. The column's take the pointer: on one, its clock stands still, and a
--- click sends it away (ANN-R20).
+-- click sends it away, then runs its headline's `onClick` if it has one (ANN-R20), under securecallfunction so a
+-- Module's failure is reported, not raised.
 ---@param form PagleAnnouncementForm
 ---@return PagleAnnouncementFrame
 local function acquire(form)
@@ -1206,8 +1207,13 @@ local function acquire(form)
 			end
 		end)
 		frame:SetScript("OnMouseUp", function(self)
-			if self.display then
-				ns.lanes:Dismiss(self.display)
+			local display = self.display
+			if display then
+				ns.lanes:Dismiss(display)
+				local onClick = display.announcement.headline.onClick
+				if onClick then
+					securecallfunction(onClick)
+				end
 			end
 		end)
 	end

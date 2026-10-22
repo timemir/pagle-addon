@@ -23,6 +23,7 @@ local ns = select(2, ...)
 ---@field summaryOnly? boolean   -- ANN-R63
 ---@field firstNote? string      -- the Margin note shown the first time a moment of this Module and kind shows (ONB-R53)
 ---@field seal? integer|"waves"|"book"|"quill"|"crest" -- a banner's wax seal: a number, a mark or the Prestige crest
+---@field onClick? fun()         -- what clicking its toast or Nod does as it sends it away (ANN-R20); never stored
 
 ---@alias PagleRung "nod"|"toast.low"|"toast"|"toast.high"|"banner"|"splash"
 
@@ -86,6 +87,9 @@ function ns.MomentProblem(moment)
 	end
 	if moment.firstNote ~= nil and (type(moment.firstNote) ~= "string" or moment.firstNote == "") then
 		return "RaiseMoment: a moment's firstNote is a text (ONB-R93)"
+	end
+	if moment.onClick ~= nil and type(moment.onClick) ~= "function" then
+		return "RaiseMoment: a moment's onClick is a function (ANN-R20)"
 	end
 	return nil
 end
