@@ -1173,7 +1173,6 @@ describe("scripts/read-wtf.lua", function()
 			"latest Cast: zone 12, no subzone, skill 150 + 25 = 175 (for --area and --skill)",
 			"tracker: false (not saved: the default)",
 			"watched: none (not saved: the default)",
-			"window: not saved, so centred (the default, STA-R71)",
 		}, section(out, "== Stats (PagleStatsDB)"))
 		-- STA-R41: 2 Casts on hi; STA-R43: learning; the first Nightfin was the first Cast, so 1 since.
 		assert.are.equal(
@@ -1208,7 +1207,6 @@ describe("scripts/read-wtf.lua", function()
 				"latest Cast: zone 148, subzone 453, skill 86 + 25 = 111 (for --area and --skill)",
 				"tracker: false (not saved: the default)",
 				"watched: none (not saved: the default)",
-				"window: not saved, so centred (the default, STA-R71)",
 			}, section(out, "== Stats (PagleStatsDB)"))
 			assert.are.same(
 				{ "== Stats item 13759 in area 12 (--stats-item, --area): no projection stored to read" },
