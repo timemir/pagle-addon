@@ -137,6 +137,26 @@ function ns.RegisterBindings(module)
 	for _, good in ipairs(ns.CoreSlotGoods(ns.EarnedGoodNow)) do
 		module:RegisterGood(good)
 	end
+	-- LED-R118's seven toast styles in Core's toast style slot, which Core draws (ANN-R82); each tag counts from the
+	-- projection's last finished state. Its nine bindings register into Core's binding slot with ADR 0015.
+	local countedGoods = ns.CountedToastStyles({
+		earnedBy = ns.EarnedGoodNow,
+		count = function(good)
+			local projection = ns.projection
+			if projection == nil or projection:IsUpdating() then
+				return nil
+			end
+			return ns.EarnedCount(good, {
+				state = projection:GetState() --[[@as LedgerState?]],
+				celebrated = ns.SavedCelebrated(),
+				world = ns.world,
+			})
+		end,
+		formatNumber = BreakUpLargeNumbers,
+	})
+	for _, good in ipairs(countedGoods) do
+		module:RegisterGood(good)
+	end
 	Pagle.RegisterCallback(OWNER, "AppearanceChanged", function(_, slot)
 		if slot == ns.BINDING_SLOT or slot == CREST_SLOT then
 			ns.journal:Draw()

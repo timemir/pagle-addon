@@ -113,10 +113,13 @@ describe("the expansion's earned goods", function()
 		return ns.EarnedGoodOwned(goodID, rule, v)
 	end
 
-	it("are the five earned bindings and LED-R117's four, each by its rule (LED-R116, LED-R117)", function()
+	it("start with the five earned bindings and LED-R117's four, each by its rule (LED-R116, LED-R117)", function()
+		-- LED-R118's follow them (logic/EarnedCounts_spec.lua).
 		local rules = {}
-		for _, good in ipairs(ns.EarnedGoods()) do
-			rules[#rules + 1] = { good.id, good.earn }
+		for i, good in ipairs(ns.EarnedGoods()) do
+			if i <= 9 then
+				rules[i] = { good.id, good.earn }
+			end
 		end
 
 		assert.are.same({

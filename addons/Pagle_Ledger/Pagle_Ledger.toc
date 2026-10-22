@@ -24,6 +24,7 @@ logic\Titles.lua
 logic\Stars.lua
 logic\ZoneMastery.lua
 logic\ZoneCrests.lua
+logic\EarnedCounts.lua
 logic\EarnedGoods.lua
 logic\Legends.lua
 logic\Varieties.lua
