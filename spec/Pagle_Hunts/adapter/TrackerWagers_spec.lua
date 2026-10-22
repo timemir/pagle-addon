@@ -35,9 +35,11 @@ local function castIn(record, zone, itemIDs)
 end
 
 --- Hunts logged in at NOW over the banded pool, `history` (records) in the Catch log, names loaded, the run log's
---- step run; `options.saved` as PagleHuntsDB, `options.caughtUp` false to keep the projection updating.
+--- step run; `options.saved` as PagleHuntsDB, `options.caughtUp` false to keep the projection updating. The companion
+--- hint's switch is off unless `options.hint`, so the block with no run on is the runs' alone (HNT-R172, HNT-R176);
+--- with it on, as at 1.0, FakePagle's companion reads "missing".
 ---@param history table[]
----@param options { saved: table?, caughtUp: boolean? }?
+---@param options { saved: table?, caughtUp: boolean?, hint: boolean? }?
 ---@return HuntsRun
 local function start(history, options)
 	options = options or {}
@@ -48,6 +50,7 @@ local function start(history, options)
 		caughtUp = options.caughtUp,
 		prepare = function(loaded)
 			loaded.ns.ROTATION_ORIGIN = NOW + 365 * DAY
+			loaded.ns.COMPANION_HINT_ON = options.hint == true
 		end,
 		history = function(fake)
 			hunts.append(fake, history)
@@ -179,6 +182,14 @@ describe("the tracker's Pagle Wagers block", function()
 			end
 			assert.is_false(r.ns.tracker.wagers.more:IsShown())
 			assert.are.equal(0, topOf(r.ns.tracker.header))
+		end)
+
+		it("shows with no run on as the companion hint's block alone, its switch on as at 1.0 (HNT-R176)", function()
+			local r = start({}, { hint = true })
+
+			assert.are.same({ header = "Pagle Wagers", runs = {} }, read(r))
+			assert.is_true(r.ns.tracker.wagers.hint:IsShown())
+			assert.is_false(r.ns.tracker.wagers.more:IsShown())
 		end)
 
 		it(
