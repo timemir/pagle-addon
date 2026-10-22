@@ -12,11 +12,12 @@ local ns = select(2, ...)
 -- list's data and the event pool (CORE-R7); adapter/Tour.lua swaps the sample in at each stop's show and back out at
 -- its hide, so nothing is saved.
 
---- One of Hunts' tour stops: the board on a place, or the tracker; either in one of Hunts' goods.
+--- One of Hunts' tour stops: the board on a place, or the tracker; the board in one of Hunts' earned bindings, or the
+--- tracker in one of its tracker frames.
 ---@class HuntsTourStop
 ---@field id string      -- the stop's ID under "hunts.": "board.home"
 ---@field label string   -- its label's key in ns.L, read when the stop registers (scripts load logic/ without locale)
----@field good string?   -- the good it wears (HNT-R121), whose name fills the label's %s
+---@field good string?   -- the good it wears (HNT-R121, HNT-R122), whose name fills the label's %s
 ---@field place (fun(context: HuntsTourContext): BoardPlace)? -- the board's place; nil for the tracker
 
 --- What a stop's place reads, once the sample is in.
@@ -319,8 +320,8 @@ end
 
 --- Hunts' tour stops, in tour order (CORE-R68): the Board, on a Hunt of each group; the Board on a run, with the wager
 --- strip and the WAGERS group, and the Pagle Wagers spread; a set's page, an entry from it and a retired entry; the
---- tracker in the dock; then the board in each notebook cover and the tracker in each tracker frame Hunts sells or
---- gives (HNT-R121, HNT-R122), the defaults being the stops before.
+--- tracker in the dock; then the board in each binding Hunts gives (HNT-R70, HNT-R122) and the tracker in each tracker
+--- frame Hunts sells or gives (HNT-R121), the defaults being the stops before.
 ---@type HuntsTourStop[]
 ns.HUNTS_TOUR = {
 	{ id = "board.home", label = "TOUR_BOARD", place = home },
@@ -335,16 +336,24 @@ ns.HUNTS_TOUR = {
 	{ id = "set.retired", label = "TOUR_RETIRED", place = retiredEntry },
 	{ id = "tracker", label = "TOUR_TRACKER" },
 }
+
+--- Hunts' earned bindings, which it adds to Core's `core.binding` slot (HNT-R122): the tour shows each on the board,
+--- by ID, as Core lists no slot's goods to a Module. The bindings Core sells are Core's (ADR 0015).
+ns.HUNTS_TOUR_BINDINGS = { "hunts.binding.pathfinder", "hunts.binding.fiveseal", "hunts.binding.wagersilk" }
+
+for _, goodID in ipairs(ns.HUNTS_TOUR_BINDINGS) do
+	ns.HUNTS_TOUR[#ns.HUNTS_TOUR + 1] =
+		{ id = "binding." .. goodID:match("[^.]+$"), label = "TOUR_BINDING", good = goodID, place = home }
+end
 for _, slot in ipairs(ns.HUNTS_GOODS) do
-	for _, good in ipairs(slot.goods) do
-		if not good.default then
-			local suffix = good.id:match("[^.]+$")
-			if slot.id == ns.COVER_SLOT then
-				ns.HUNTS_TOUR[#ns.HUNTS_TOUR + 1] =
-					{ id = "cover." .. suffix, label = "TOUR_COVER", good = good.id, place = home }
-			else
-				ns.HUNTS_TOUR[#ns.HUNTS_TOUR + 1] =
-					{ id = "trackerframe." .. suffix, label = "TOUR_TRACKER_FRAME", good = good.id }
+	if slot.id == ns.TRACKER_FRAME_SLOT then
+		for _, good in ipairs(slot.goods) do
+			if not good.default then
+				ns.HUNTS_TOUR[#ns.HUNTS_TOUR + 1] = {
+					id = "trackerframe." .. good.id:match("[^.]+$"),
+					label = "TOUR_TRACKER_FRAME",
+					good = good.id,
+				}
 			end
 		end
 	end

@@ -1,7 +1,7 @@
 -- The board's motion and sounds (hunts.md › UI, HNT-R60, HNT-R62, HNT-R70; the books art kit v2's MOTION.md and
 -- SOUND.md): Core's motion driver (Pagle.Animate) run by the fake client's frames, the book fading in and out with its
 -- sounds, the page turn between spreads with the ribbons' lengths easing, the live timeline's rows sliding and a Hunt
--- just opened flashing with its sound, the cover's dip, the ink running on, fitting the screen, and the realm-minute
+-- just opened flashing with its sound, the ink running on, fitting the screen, and the realm-minute
 -- refresh; and Core's Animations setting, off, drawing everything settled and silencing the motion's beats.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -308,25 +308,6 @@ describe("the live timeline (MOTION.md › The live Hunts timeline)", function()
 end)
 
 describe("the leather's motion", function()
-	it("dips the open board's binding while a new cover goes on underneath (HNT-R70)", function()
-		local run = start()
-		run.ns.ToggleBoard()
-		play(run, 0.2)
-		heard(run)
-		local cover = run.ns.board.frame.cover
-
-		run.fake.setPurchased({ ["hunts.notebookcover.oilcloth"] = true })
-		assert.is_true(run.fake.Pagle.SetEquipped("hunts.notebookcover", "hunts.notebookcover.oilcloth"))
-		assert.are.same({ "836 SFX" }, heard(run))
-		assert.are.equal(run.ns.BOOK_FILES.leather, cover.fill.texture)
-		play(run, 0.21)
-		near(0.25, cover.fill:GetAlpha(), 0.05)
-		assert.are.equal(run.ns.COVER_FILES.oilcloth, cover.fill.texture)
-		play(run, 0.25)
-
-		assert.are.equal(1, cover.fill:GetAlpha())
-	end)
-
 	it('plays the checkbox\'s sounds as "show completed" is ticked and unticked', function()
 		local run = start()
 		run.ns.ToggleBoard()
