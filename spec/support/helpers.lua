@@ -584,13 +584,14 @@ end
 --- log's; the player's alone by default), `logId` (the log's), `log` (records appended in order), `entries` (the
 --- log's entries as saved, in place of `log`), `globals` (set on
 --- the fake's globals before the Ledger loads, such as a saved PagleLedgerDB), `itemNames`, `areaNames` and `mapNames`
---- (what the fake client's C_Item and C_Map know), `before` (run with loaded and fake before the book opens), and
+--- (what the fake client's C_Item and C_Map know), `modules` (run with fake before the Ledger loads: registering
+--- another Module, such as a paying one, AXP-R2), `before` (run with loaded and fake before the book opens), and
 --- where it opens: `place`, one of the Ledger's own places as `{ constructor, args... }` (ns.JournalPlace, e.g.
 --- `{ "zone", 148 }`), or `id` and `args` for a spec's own spread, which must be registered; Home, at its first
 --- opening, by default; with `id` false the book stays closed. With `building`, it stops after login, before entering
 --- the world, so the projection is still being built (LOG-R74, LED-R122). With `motion`, Core's Animations setting
 --- stays on and the Journal moves (its page turns, crossfades and moments); without it, everything draws settled.
----@param options { catalogue: table?, characters: table[]?, logId: string?, log: table[]?, entries: string[]?, globals: table?, itemNames: table?, areaNames: table?, mapNames: table?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, building: boolean?, place: table?, id: string|false|nil, args: table?, motion: boolean? }?
+---@param options { catalogue: table?, characters: table[]?, logId: string?, log: table[]?, entries: string[]?, globals: table?, itemNames: table?, areaNames: table?, mapNames: table?, modules: fun(fake: FakePagle)?, before: fun(loaded: LoadedAddon, fake: FakePagle)?, building: boolean?, place: table?, id: string|false|nil, args: table?, motion: boolean? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 function openJournal(options)
@@ -615,6 +616,9 @@ function openJournal(options)
 		fake.catchLog:Append(record)
 	end
 	over(fake.globals, options.globals)
+	if options.modules then
+		options.modules(fake)
+	end
 	local loaded = fake.load("Pagle_Ledger")
 	over(loaded.client.itemNames, options.itemNames)
 	over(loaded.client.areaNames, options.areaNames)

@@ -30,6 +30,7 @@ logic\Done.lua
 logic\Projection.lua
 logic\Derived.lua
 logic\InkBar.lua
+logic\XPSources.lua
 logic\JournalText.lua
 logic\Journal.lua
 logic\JournalParts.lua

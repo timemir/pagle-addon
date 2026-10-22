@@ -1,6 +1,6 @@
 -- Prestiging on FakePagle (LED-R33, LED-R194, LOG-R38): ns.CanPrestige, the Journal's confirm card ns.AskPrestige
--- shows, the P1 it appends through M:RecordPrestige, the Journal hiding it, and the emblem block (LED-R34) the
--- Journal's widgets draw.
+-- shows, the P1 it appends through M:RecordPrestige, the Journal hiding it, each source's Activity XP saved with it
+-- for Where your XP came from (LED-R150), and the emblem block (LED-R34) the Journal's widgets draw.
 
 local T0 = SERVER_TIME - 700
 local ZONE = 12 -- uncharted in the catalogue below: no Zone Mastery rank adds to the numbers (LED-R54)
@@ -30,8 +30,8 @@ end
 
 -- A Ledger on a fake over the catalogue, its log holding `records` (a Cast reaching 60 by default) or the saved
 -- entries `entries`, logged in and, unless `updating`, in the world (the projection built); the Journal open on the
--- Angler page, or closed with `closed`.
----@param options { records: table[]?, entries: string[]?, updating: boolean?, closed: boolean?, motion: boolean? }?
+-- Angler page, or closed with `closed`. `modules` registers other Modules before the Ledger loads (openJournal's).
+---@param options { records: table[]?, entries: string[]?, updating: boolean?, closed: boolean?, motion: boolean?, modules: fun(fake: FakePagle)? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function ledger(options)
@@ -48,6 +48,7 @@ local function ledger(options)
 		id = id,
 		place = not options.closed and { "angler" } or nil,
 		motion = options.motion,
+		modules = options.modules,
 	})
 end
 
@@ -82,7 +83,7 @@ end
 local CONFIRM = {
 	"Prestige",
 	"Begin a new Ledger?",
-	"Your Angler Level starts again at 1, and climbs at half the cost. Nothing you've earned is taken away.",
+	"Your Angler Level climbs again from 1. Nothing you've earned is taken away.",
 }
 
 describe("Prestiging (LED-R33)", function()
@@ -153,6 +154,60 @@ describe("Prestiging (LED-R33)", function()
 		end
 	)
 
+	it(
+		"saves each source's Activity XP total with the Prestige, splitting the next climb by their rises (LED-R150, LED-R37)",
+		function()
+			local handles = {}
+			local fake, loaded = ledger({
+				modules = function(fake)
+					for name, order in pairs({ Hunts = 20, TackleBoard = 40 }) do
+						local handle = fake.Pagle.RegisterModule({ name = name, title = name, order = order })
+						handle:NewProjection({
+							db = {},
+							rulesVersion = 1,
+							reset = function()
+								return {}
+							end,
+							apply = function() end,
+							done = function()
+								handle:ReportXPEarned(name == "Hunts" and 1500 or 900)
+							end,
+						})
+						handles[name] = handle
+					end
+				end,
+			})
+
+			loaded.ns.AskPrestige()
+			clickCard(loaded, 1)
+
+			-- The P1 snapshots Core's 2,400 (AXP-R5); the Ledger keeps each source's part of it, outside the projection.
+			assert.are.same({ prestigeEntry(SERVER_TIME, 1, 0, 1, 2400) }, prestiges(fake))
+			assert.are.same(
+				{ rank = 1, activityXP = 2400, totals = { Hunts = 1500, TackleBoard = 900 } },
+				loaded.env.PagleLedgerDB.global.prestigeSources
+			)
+
+			-- Hunts rises to 2,100 and the Tackle Board to 1,100: this climb's 800 is their 600 and 200. The climb's own
+			-- XP is the 2,640 carried: 200,840 own and 2,400 Activity XP past the 200,600 reaching 60 cost (LED-R31,
+			-- LED-R32); the Ledger's own all told stays 200,840.
+			handles.Hunts:ReportXPEarned(2100)
+			handles.TackleBoard:ReportXPEarned(1100)
+			loaded.client.runTimers()
+			local climb = {}
+			for _, block in ipairs(loaded.ns.journal.pages.right) do
+				if block.kind == "xpSource" and not block.header then
+					climb[#climb + 1] = { block.text, block.value, block.total }
+				end
+			end
+			assert.are.same({
+				{ "Catches and discoveries", "2,640", "200,840" },
+				{ "Hunts", "600", "2,100" },
+				{ "Tackle Board", "200", "1,100" },
+			}, climb)
+		end
+	)
+
 	it("appends nothing for Not yet (LED-R33)", function()
 		local fake, loaded = ledger()
 
@@ -175,6 +230,7 @@ describe("Prestiging (LED-R33)", function()
 
 		assert.are.same({}, prestiges(fake))
 		assert.are.equal(0, loaded.ns.projection:GetState().prestige)
+		assert.is_nil(loaded.env.PagleLedgerDB.global.prestigeSources) -- nothing saved without a Prestige (LED-R150)
 	end)
 
 	it("doesn't ask below 60 (LED-R33)", function()
