@@ -38,7 +38,7 @@ Fishing                                                    (QoL only)
 Announcements
                             Cozy mode;  Interruption budget  ↳ Interruptions  ↳ Per;  Show every catch;  Animations;  Toast style;  Sound set
   [Hunts]                   Tell me when a pinned Hunt's window opens;  Remind me about the Pagle companion
-                            (only while Hunts' companion hint switch is on, off at 1.0: HNT-R172)
+                            (while Hunts' companion hint switch is on, as at 1.0: HNT-R172)
 Trackers
                             Tracker position  [Reset]
   [Hunts]                   Show the Hunts tracker;  Hunts tracker frame
@@ -167,7 +167,7 @@ The rules below are authoritative; this sketch only summarises them.
   | Hunts | Tell me when a pinned Hunt's window opens | checkbox | off (HNT-R88, `PagleHuntsDB.profile.windowMoments`) | "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes." |
   | | Remind me about the Pagle companion | checkbox | on (HNT-R170, HNT-R171, `PagleHuntsDB.profile.companionHint`) | "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you new wagers." |
 
-  Neither is greyed out in Cozy mode: the Nod then goes to the Session summary (ANN-R40), as moments do. The second row is registered only while Hunts' companion hint switch is on (HNT-R172), which it isn't at 1.0, so 1.0's section is the first row alone. *Default chosen while building (#305): hunts.md › Settings put it on a "Hunts" page, which Settings doesn't have (SET-R1); it governs a reminder and its Nod, so it sits here after the window row. Dismissing the hint on the board turns it off; turning it on brings the hint and the Nod back.* No other Module adds rows to Announcements: the Ledger has no rows, Stats raises no moments (STA-R2), and the Tackle Board's and QoL's sections are on other pages.
+  Neither is greyed out in Cozy mode: the Nod then goes to the Session summary (ANN-R40), as moments do. The second row is registered only while Hunts' companion hint switch is on (HNT-R172), which it is at 1.0, so 1.0's section has both rows. *Default chosen while building (#305): hunts.md › Settings put it on a "Hunts" page, which Settings doesn't have (SET-R1); it governs a reminder and its Nod, so it sits here after the window row. Dismissing the hint on the board turns it off; turning it on brings the hint and the Nod back.* No other Module adds rows to Announcements: the Ledger has no rows, Stats raises no moments (STA-R2), and the Tackle Board's and QoL's sections are on other pages.
 - **SET-R33** The Announcements page's Defaults button restores every row of SET-R30 and SET-R32 to its default, the two looks included (SET-R60), and so the companion row, while it is registered, to on.
 
 ### Trackers
