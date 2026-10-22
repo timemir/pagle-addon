@@ -229,6 +229,38 @@ describe("FakePagle", function()
 		assert.are.same({ 0.5, 1, loaded.env.UIParent, 0, 10 }, { scale, frame:GetScale(), relativeTo, x, y })
 	end)
 
+	it(
+		"wears a book's binding with Pagle.NewBookBinding on Core's logic: the equipped look, a dip on a change and one"
+			.. " page turn through the Module's client (BIND-R1, BIND-R20, BIND-R21)",
+		function()
+			local fake = newFakePagle()
+			fake.ns.BINDING_SLOT = "core.binding"
+			fake.ns.BindingLook = function(goodID)
+				return { id = goodID or "none" }
+			end
+			local loaded = fake.load("Pagle_QoL")
+			local frame = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
+			local looks = {}
+			local binding = fake.Pagle.NewBookBinding(frame, {
+				onLook = function(look)
+					looks[#looks + 1] = look.id
+				end,
+			})
+			local skin = binding.skin --[[@as table]]
+			local from = #loaded.client.sounds
+
+			fake.fire("AppearanceChanged", "core.binding", "core.binding.tooled")
+			loaded.client.update(0.2)
+			local deepest = { skin.dim, skin.look.id }
+			loaded.client.update(0.25)
+
+			assert.are.same({ fake.Pagle.GetEquipped("core.binding") or "none", "core.binding.tooled" }, looks)
+			assert.are.same({ 0.25, "core.binding.tooled" }, deepest)
+			assert.are.same({ "836 SFX" }, { unpack(loaded.client.sounds, from + 1) })
+			assert.are.equal(1, skin.dim)
+		end
+	)
+
 	it("passes WoW events to the handlers Modules registered through Pagle (CORE-R23)", function()
 		local fake = newFakePagle()
 		local got = {}
