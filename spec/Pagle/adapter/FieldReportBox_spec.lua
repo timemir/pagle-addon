@@ -541,7 +541,7 @@ end
 
 describe("The Settings root's Help chart the waters section (SET-R10)", function()
 	it(
-		"has the header and the Field report row after the Modules note, before Saving, with SET-R10's tooltip"
+		"has the header and the Field report row after Getting started, before Saving, with SET-R10's tooltip"
 			.. " (CORE-R40, SET-R10)",
 		function()
 			local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
@@ -552,15 +552,20 @@ describe("The Settings root's Help chart the waters section (SET-R10)", function
 			end
 			local _, button = reportRows(loaded)
 
-			local note = "Turn Modules on or off in the AddOns list."
+			-- Getting started's last row, for this returning Angler: Margin notes, as it has no First evening list
+			-- (SET-R10 rows 4–6, ONB-R81).
+			local header = "Help chart the waters"
+			local found = false
 			for i, name in ipairs(names) do
-				if name == note then
+				if name == header then
+					found = true
 					assert.are.same(
-						{ note, "Help chart the waters", "Field report", "Saving" },
-						{ names[i], names[i + 1], names[i + 2], names[i + 3] }
+						{ "Margin notes", header, "Field report", "Saving" },
+						{ names[i - 1], names[i], names[i + 1], names[i + 2] }
 					)
 				end
 			end
+			assert.is_true(found)
 			assert.are.equal(
 				"Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form.",
 				button.initializer:GetTooltip()

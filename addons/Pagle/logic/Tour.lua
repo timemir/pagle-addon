@@ -158,6 +158,12 @@ function ns.NewTour(options)
 	return setmetatable({ options = options }, Tour)
 end
 
+--- Whether a tour is under way (CORE-R66): what its stops open isn't the Angler's doing (CORE-R68).
+---@return boolean
+function Tour:IsRunning()
+	return self.run ~= nil
+end
+
 -- "1 stop", "2 stops".
 ---@param n integer
 ---@return string

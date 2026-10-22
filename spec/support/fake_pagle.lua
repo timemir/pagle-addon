@@ -199,6 +199,14 @@
 --- M:SetDialogOpen on the handle tells it a Module's dialog is open (ONB-R100), letter:IsDialogOpen() reads it.
 ---@field letterOnScreen boolean Whether the Letter's frame would be on screen now (ONB-R11).
 ---@field inInstance boolean What IsInInstance() answers the Letter (ONB-R10); false unless a spec sets it.
+---@field evening PagleEvening The First evening list (core/onboarding.md › The First evening list), Core's own on its
+--- wiring (ns.WireEvening): M:CompleteEveningItem on the handle marks a Module's own item, as Core's items tick on
+--- CastStarted, Catch, SessionEnded and the shop opening; fake.guide:Finish() (Off to the water) docks it for a new
+--- Angler, and fake.login shows it again while due. evening:IsEveningItemDone isn't here: read
+--- fake.onboarding:IsEveningItemDone(id), or evening:List().
+---@field eveningList PagleEveningList? The list as Core would draw it now, docked; nil while it isn't shown. Its
+--- tracker is in fake.dock.stack() as Core's own ("evening", order 1, module "Core") while it shows.
+---@field eveningSounds string[] Each sound the list played, in order: `tick`, `listDone` (core/onboarding.md › Sounds).
 ---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
 --- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
 
@@ -1242,6 +1250,44 @@ part(function(fake, _, ns, host)
 		end,
 	})
 	fake.letter = ns.letter
+end)
+
+-- The First evening list (core/onboarding.md › The First evening list), on Core's wiring: M:CompleteEveningItem on
+-- the handle, Core's own items on CastStarted, Catch, SessionEnded and the shop opening, Off to the water and login.
+-- Its tracker is a stand-in frame docked as Core's own at order 1, so fake.dock.stack() lists it while it shows; what
+-- it would draw lands in fake.eveningList, each sound in fake.eveningSounds.
+part(function(fake, _, ns, host)
+	local frame = { shown = false }
+	function frame:IsShown()
+		return self.shown
+	end
+	-- The kit's tracker is 274 wide (adapter/Evening.lua); its height here stands for any.
+	function frame.GetWidth()
+		return 274
+	end
+	function frame.GetHeight()
+		return 160
+	end
+	fake.eveningSounds = {}
+	ns.WireEvening(host, {
+		frame = frame,
+		draw = function(list)
+			fake.eveningList = list
+			frame.shown = true
+		end,
+		hide = function()
+			fake.eveningList = nil
+			frame.shown = false
+		end,
+		fold = function()
+			fake.eveningList = nil
+			frame.shown = false
+		end,
+		sound = function(name)
+			fake.eveningSounds[#fake.eveningSounds + 1] = name
+		end,
+	})
+	fake.evening = ns.evening
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.
