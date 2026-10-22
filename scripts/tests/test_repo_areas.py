@@ -56,11 +56,12 @@ def test_no_noise_or_removed_item_is_listed_and_each_item_is_once_per_area() -> 
 
 def test_alias_sources_and_the_new_forever_zones_have_no_data() -> None:
     # DATA-R31: an alias source ships with hasData = false and no catches; Riverglades (16591), Shen'dralas
-    # (16651), Gilneas (17065) and Mount Hyjal (616, and its continent 2832 copy 16004) have no list yet.
+    # (16651), Gilneas (17065), Mount Hyjal (616, and its continent 2832 copy 16004) and Hyjal Crater (17852, new in
+    # 1.60.1.70450 on continent 2995, #312) have no list yet.
     layers = read_layers(REPO)
     sources = [alias.source for alias in layers.forever.aliases]
     assert 16521 in sources
-    for area in [*sources, 616, 16004, 16591, 16651, 17065]:
+    for area in [*sources, 616, 16004, 16591, 16651, 17065, 17852]:
         assert re.search(r"\[\d+\] = \{ catches = \{\}, continent = \d+, hasData = false,", record(area)), area
 
 

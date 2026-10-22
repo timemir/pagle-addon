@@ -43,12 +43,12 @@ def test_the_universe_is_the_baseline_s_258_loot_items_and_whimsyfin() -> None:
 
 def test_items_csv_holds_universe_items_only_sorted_by_id_for_the_slice_s_build() -> None:
     # DATA-R11: items.csv covers the item universe, under wago.tools' column names, sorted by ID, for the one build
-    # build.toml names (1.60.1.70338, as areas.csv). Spot checks by hand from wago.tools' ItemSparse and Item for
+    # build.toml names (1.60.1.70450, as areas.csv). Spot checks by hand from wago.tools' ItemSparse and Item for
     # that build: Raw Slitherskin Mackerel and Speckled Tastyfish.
     problems = Problems()
     layer = read_db2(REPO, problems)
     assert problems.found == []
-    assert (layer.version, layer.build) == ("1.60.1", 70338)
+    assert (layer.version, layer.build) == ("1.60.1", 70450)
     lines = (REPO / ITEMS).read_text(encoding="utf-8").splitlines()
     assert lines[0] == "ID,ClassID,SubclassID,OverallQualityID,Display_lang"
     ids = [int(line.split(",")[0]) for line in lines[1:]]

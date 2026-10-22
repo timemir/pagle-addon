@@ -5975,12 +5975,14 @@ ns.catalogue = {
 		[17824] = { catches = {}, continent = 0, hasData = true, parent = 279, skillBaseConfirmed = false },
 		[17845] = { catches = {}, continent = 2981, hasData = false, parent = 16597, skillBaseConfirmed = false },
 		[17847] = { catches = {}, continent = 0, hasData = false, parent = 16591, skillBaseConfirmed = false },
+		[17852] = { catches = {}, continent = 2995, hasData = false, parent = 0, skillBaseConfirmed = false },
+		[17853] = { catches = {}, continent = 0, hasData = true, parent = 33, skillBaseConfirmed = false },
 	},
 	auras = { 1265220, 1280341, 1280342, 1299323 },
 	events = {
 		[301] = { confirmed = false, duration = 120, start = 840, weekday = 1 },
 	},
-	fingerprint = "d220a40378b2efd5",
+	fingerprint = "f470cba89e1b940f",
 	fishingSpells = { 7620, 7731, 7732, 18248, 1240948, 1240959, 1240970, 1240983 },
 	items = {
 		[118] = { category = "other", legend = false, noise = true, pool = false, quality = 1, removed = false },
