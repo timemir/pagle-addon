@@ -388,4 +388,87 @@ describe("the Companion's data files", function()
 			assert.are.same(CARD_2, ns.LookUpAngler(following, anglers, "Player-4395-01234567", NOW))
 		end)
 	end)
+
+	describe("the Followed Anglers", function()
+		-- Ada as Pagle.GetFollowedAnglers hands her out: Pagle_Following's line, field for field.
+		local ADA = {
+			name = "Ada",
+			more = 1,
+			hardcore = false,
+			title = "Warden of Feralas Waters",
+			level = 23,
+			prestige = 1,
+			ledger = 37,
+			legends = 3,
+			legendsTotal = 12,
+			waters = 4,
+			catches = 5120,
+			asOf = 20261012,
+			guids = { "Player-4618-0A1B2C3D", "Player-4618-0A1B2C3E" },
+		}
+
+		it("are ok with IGV Contracts' example, Ada with her full card (VIEW-R11)", function()
+			local file = ns.ReadFollowingFile(anglerFileExamples().following)
+
+			assert.are.same({ state = "ok", anglers = { ADA } }, ns.FollowedAnglers(file, FOLLOWING_AT))
+		end)
+
+		it("keep the file's order (VIEW-R11, IGV-R31)", function()
+			local data = anglerFileExamples().following
+			data.anglers[2] = { name = "Bea", more = 0, title = "", guids = {} }
+			data.anglers[3] = { name = "Cy", guids = { "Player-1-00000002" } }
+			data.count = 3
+
+			local anglers = ns.FollowedAnglers(ns.ReadFollowingFile(data), FOLLOWING_AT).anglers
+
+			assert.are.same({ "Ada", "Bea", "Cy" }, { anglers[1].name, anglers[2].name, anglers[3].name })
+			assert.are.same({ name = "Bea", more = 0, title = "", guids = {} }, anglers[2])
+		end)
+
+		it("are fresh copies at each call, which the caller may keep and change (VIEW-R11)", function()
+			local data = anglerFileExamples().following
+			local file = ns.ReadFollowingFile(data)
+
+			local first = ns.FollowedAnglers(file, FOLLOWING_AT)
+			first.anglers[1].name = "Changed"
+			first.anglers[1].guids[1] = nil
+			table.insert(first.anglers, { name = "Extra" })
+			data.anglers[1].level = 99
+			local second = ns.FollowedAnglers(file, FOLLOWING_AT)
+
+			assert.are_not.equal(first.anglers, second.anglers)
+			assert.are.same({ state = "ok", anglers = { ADA } }, second)
+		end)
+
+		it("are none for a live file with no Anglers (VIEW-R11)", function()
+			local data = anglerFileExamples().following
+			data.anglers, data.count = {}, 0
+
+			assert.are.same(
+				{ state = "none", anglers = {} },
+				ns.FollowedAnglers(ns.ReadFollowingFile(data), FOLLOWING_AT)
+			)
+		end)
+
+		it("are expired from the file's 24th hour, read again at each call (VIEW-R2, VIEW-R11)", function()
+			local file = ns.ReadFollowingFile(anglerFileExamples().following)
+
+			assert.are.equal("ok", ns.FollowedAnglers(file, FOLLOWING_AT + DAY - 1).state)
+			assert.are.same({ state = "expired", anglers = {} }, ns.FollowedAnglers(file, FOLLOWING_AT + DAY))
+		end)
+
+		it("are absent for an absent file, whatever its reason (VIEW-R11, IGV-R44)", function()
+			local data = anglerFileExamples().following
+			data.ok = false
+
+			assert.are.same(
+				{ state = "absent", anglers = {} },
+				ns.FollowedAnglers(ns.ReadFollowingFile(data), FOLLOWING_AT)
+			)
+			assert.are.same(
+				{ state = "absent", anglers = {} },
+				ns.FollowedAnglers(ns.ReadFollowingFile(nil, "not read yet"), FOLLOWING_AT)
+			)
+		end)
+	end)
 end)

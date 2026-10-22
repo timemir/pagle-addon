@@ -373,3 +373,30 @@ function ns.LookUpAngler(following, anglers, guid, now)
 	end
 	return nil
 end
+
+---@alias PagleFollowedState "ok"|"none"|"expired"|"absent"
+
+--- What Pagle.GetFollowedAnglers() returns (VIEW-R11).
+---@class PagleFollowedAnglers
+---@field state PagleFollowedState
+---@field anglers PagleFollowedAngler[] empty unless the state is "ok"
+
+--- The Followed Anglers at server time `now` (VIEW-R11): "absent" or "expired" as Pagle_Following is (VIEW-R1, told
+--- at the call, VIEW-R2), "none" when it's live with no Anglers, and "ok" with every Angler in the file's order. The
+--- array and each Angler are fresh copies, the caller's to keep.
+---@param following PagleViewFile
+---@param now integer GetServerTime()
+---@return PagleFollowedAnglers
+function ns.FollowedAnglers(following, now)
+	local state = ns.ViewFileState(following, now)
+	if state ~= "live" then
+		return { state = state, anglers = {} }
+	elseif #following.anglers == 0 then
+		return { state = "none", anglers = {} }
+	end
+	local anglers = {}
+	for i, angler in ipairs(following.anglers) do
+		anglers[i] = copyAngler(angler)
+	end
+	return { state = "ok", anglers = anglers }
+end
