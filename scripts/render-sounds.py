@@ -2,8 +2,9 @@
 
     .tools/bin/python scripts/render-sounds.py
 
-Runs on the pinned Python in .tools/ (scripts/setup.sh installs numpy and soundfile). Commit what it writes: the
-files ship as they are, and scripts/check.sh checks their format and loudness but doesn't re-render them.
+Runs on the pinned Python in .tools/ (scripts/setup.sh installs numpy, soundfile and SciPy). Commit what it writes:
+the files ship as they are. scripts/check.sh checks their format and loudness, and renders each in memory to hold the
+committed file to it, to the encoder's noise; it never writes them.
 """
 
 import sys
