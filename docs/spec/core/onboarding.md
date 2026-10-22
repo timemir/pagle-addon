@@ -70,9 +70,9 @@ Copy is the probe's, verbatim (`prototypes/onboarding-kit/PagleArtGuide/Guide.lu
 ### Key binding fields
 
 - **ONB-R40** A **binding field** shows, for one binding action (`PAGLE_FISHING_KEY` or `PAGLE_SWAP_GEAR`): its label, a key cap, and a note. **Not bound**: a dashed cap "click to bind", note "default: nothing is bound". **Listening** (after a click): the dashed cap reads "press a key…" with a red outline, note "Esc leaves it as it was"; the field takes keyboard input (`EnableKeyboard`, `SetPropagateKeyboardInput(false)`). **Bound**: a gilt key cap with `GetBindingText(key, true)` and "Bound" in green. With two keys bound, the first shows.
-- **ONB-R41** While listening, a key press is taken with its modifiers by the same key-capture helper as the Settings key rows (SET-R20: `adapter/KeyBindingRow.lua`'s capture, moved into one Core helper both use, with the client calls it already makes). A bare modifier, `UNKNOWN` and `ESCAPE` aren't bindable: `ESCAPE` cancels and returns to the previous state; the others are ignored. Mouse buttons aren't taken.
+- **ONB-R41** While listening, a key press is taken with its modifiers by the same key-capture helper as the Settings key rows (SET-R20: `adapter/KeyBindingRow.lua`'s capture, moved into one Core helper both use, `adapter/KeyCapture.lua`, with the client calls it already makes). A bare modifier, `UNKNOWN` and `ESCAPE` aren't bindable: `ESCAPE` cancels and returns to the previous state; the others are ignored. Mouse buttons aren't taken.
 - **ONB-R42** **No conflict:** if `GetBindingAction(key)` is empty or already this action, Core calls `SetBinding(key, action)` then `SaveBindings(GetCurrentBindingSet())`, and the field shows Bound.
-- **ONB-R43** **Conflict:** otherwise the field turns into the conflict box: "{key cap} already does {GetBindingName(action) in red}. Use it for fishing instead?" (for Swap gear: "…Use it to swap gear instead?") with **Use {key} for fishing** / **Use {key} to swap gear** and **Pick another key**, and the note "the old use is listed, never silently lost". Use → `SetBinding(key, action)` and `SaveBindings`, which unbinds the old action from that key as the Key Bindings frame does; Core prints "Pagle: {key} now casts. It used to do {old name}; rebind that in Key Bindings if you need it." (for Swap gear, "now swaps your gear"). Pick another key → back to Listening. The Settings key rows keep taking a used key without asking, as Blizzard's do (SET-R20); the guide asks because a first-day player may not know what the key did. QOL-R10 still holds: the player chose the key.
+- **ONB-R43** **Conflict:** otherwise the field turns into the conflict box: "{key cap} already does {GetBindingName(action) in red}. Use it for fishing instead?" (for Swap gear: "…Use it to swap gear instead?") with **Use {key} for fishing** / **Use {key} to swap gear** and **Pick another key**, and the note "the old use is listed, never silently lost" under the buttons (so the box is 92 units tall, not the kit's 76). Use → `SetBinding(key, action)` and `SaveBindings`, which unbinds the old action from that key as the Key Bindings frame does; Core prints "Pagle: {key} now casts. It used to do {old name}; rebind that in Key Bindings if you need it." (for Swap gear, "now swaps your gear"). Pick another key → back to Listening. The Settings key rows keep taking a used key without asking, as Blizzard's do (SET-R20); the guide asks because a first-day player may not know what the key did. QOL-R10 still holds: the player chose the key.
 - **ONB-R44** A field never binds while restricted, and never touches the other key bound to the same action. Changing the binding elsewhere (Key Bindings, the Fishing page) is reflected when the step is next shown, and `UPDATE_BINDINGS` redraws an open field.
 
 ### Margin notes
@@ -175,7 +175,7 @@ M:RegisterGuideStep(step)       -- ONB-R21; before ModulesChanged
 
 ---@class PagleGuideNav
 ---@field Next fun()  ---@field Back fun()  ---@field Close fun()
----@field BindingField fun(parent: Frame, action: string, label: string): Frame   -- ONB-R40–R44, Core's widget
+---@field BindingField fun(parent: Frame, action: string, label: string): Frame   -- ONB-R40–R44, Core's widget, 382 x 62; field:Refresh() re-reads the bindings (a step's onShow), field:SetGreyed(bool) greys it (ONB-R32, ONB-R100)
 ---@field ChoiceCard fun(parent: Frame, title: string, line: string, tag?: string): Button
 ---@field Note fun(parent: Frame, text: string, x: number, y: number, w: number, target?: Region)  -- an illustrative note, part of the page
 ---@field Part fun(parent: Frame, sprite: string): Texture  -- a sprite of the guide's atlas (GuideParts), for pages a Module draws
@@ -196,6 +196,9 @@ M:RegisterFirstLook(set)        -- ONB-R56
 M:ShowFirstLook(id, again?)     -- from the window's OnShow; no-op if seen or notes are off, unless `again` (the "?", ONB-R59)
 
 M:CompleteEveningItem(id)       -- ONB-R61 ("journal" for the Ledger, "hunts" for Hunts)
+
+M:SetDialogOpen(open)           -- ONB-R100: a dialog of the Module's own that asks the player something opened (true)
+                                -- or closed (false); the Letter waits while any is open (QoL's conflict note)
 ```
 
 - **ONB-R90** Each call raises a Lua error at the caller, adding nothing, for a missing or mistyped field (CORE-R14's sense). A Module calls them only `if M.RegisterGuideStep then` (and likewise for each), so the same code runs on a Core without them.
@@ -247,7 +250,7 @@ See the kit's `SOUND.md`. New events: `letter` (TUTORIAL_POPUP), `noteIn` (IG_CH
 
 ## Edge cases
 
-- **ONB-R100 Angleur or Fishing Buddy loaded.** QoL's conflict note (QOL-R81) comes first; the Letter waits until it's answered or dismissed (ONB-R10). While QoL stands down (QOL-R82), the Casting step reads, under its title, "Pagle’s Fishing key is resting while {other} has it. You can still cast with a double right-click." and its binding field is disabled.
+- **ONB-R100 Angleur or Fishing Buddy loaded.** QoL's conflict note (QOL-R81) comes first; the Letter waits until it's answered or dismissed (ONB-R10). Core knows it is open without reading QoL (ADR 0001): QoL calls `M:SetDialogOpen(true)` as the note shows and `M:SetDialogOpen(false)` once it, and the Reload now note that follows a choice (QOL-R83), have both gone. While QoL stands down (QOL-R82), the Casting step reads, under its title, "Pagle’s Fishing key is resting while {other} has it. You can still cast with a double right-click." and its binding field is disabled.
 - **ONB-R101 QoL off.** No Casting or Fishing clothes steps, no `qol.lure` or `core.character` note; the `cast` item's hint is the QoL-off one.
 - **ONB-R102 Ledger off.** No Your Ledger step, no `journal` item, no Journal First look; Welcome and What's in the box still read correctly (they name only registered parts).
 - **ONB-R103 Every Module off.** The guide has Core's four steps; What's in the box shows only the Curio Shop and the line "Turn parts on in the AddOns list."

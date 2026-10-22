@@ -71,6 +71,8 @@ logic\Dock.lua
 logic\Onboarding.lua
 logic\MarginNotes.lua
 logic\Guide.lua
+logic\GuidePages.lua
+logic\Letter.lua
 logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
@@ -93,6 +95,7 @@ adapter\Sessions.lua
 adapter\Onboarding.lua
 adapter\Settings.lua
 adapter\Settings.xml
+adapter\KeyCapture.lua
 adapter\KeyBindingRow.lua
 adapter\AnnouncementSettings.lua
 adapter\Dock.lua
@@ -121,8 +124,11 @@ adapter\ShopArt.lua
 adapter\ShopMotion.lua
 adapter\Shop.lua
 adapter\GuideKit.lua
+adapter\GuideBindingField.lua
 adapter\GuideBook.lua
+adapter\GuidePages.lua
 adapter\Guide.lua
+adapter\Letter.lua
 adapter\Tour.lua
 adapter\MarginNotes.lua
 adapter\Login.lua

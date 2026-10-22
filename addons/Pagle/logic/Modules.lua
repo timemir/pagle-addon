@@ -16,6 +16,7 @@ ns.MODULE_ROSTER = { "Ledger", "Hunts", "Stats", "TackleBoard", "QoL" }
 ---@field views? { id: string, label: string|(fun():string), open: fun() }[]   -- compartment menu views
 ---@field menu? { label: string|(fun():string), onClick: fun() }[]             -- extra compartment entries
 ---@field slash? { name: string, fn: fun(args: string), help: string }[]     -- /pagle <name>
+---@field guideBlurb? string    -- its line on the Field guide's What's in the box page (ONB-R91)
 
 --- A roster entry's state, as the Settings status list shows it (CORE-R41).
 ---@alias PagleModuleState
@@ -97,7 +98,7 @@ function ns.IsModuleAPICompatible(value, apiVersion)
 	return api ~= nil and api <= apiVersion
 end
 
--- Why a def can't register, or nil if it can (CORE-R14).
+-- Why a def can't register, or nil if it can (CORE-R14): an optional field, such as guideBlurb (ONB-R91), mistyped too.
 ---@private
 ---@param def any
 ---@return string?
@@ -120,6 +121,9 @@ function Registry:Problem(def)
 	end
 	if type(def.order) ~= "number" then
 		return ("Pagle.RegisterModule: %s's def has no order"):format(name)
+	end
+	if def.guideBlurb ~= nil and (type(def.guideBlurb) ~= "string" or def.guideBlurb == "") then
+		return ("Pagle.RegisterModule: %s's def.guideBlurb is a string, its line in the Field guide"):format(name)
 	end
 	return nil
 end

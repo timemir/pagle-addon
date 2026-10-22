@@ -102,13 +102,14 @@ end
 ---@field package options PagleCardsOptions
 ---@field package ready boolean      -- login has settled: no projection updating, the held Announcements shown
 ---@field package showing PagleCard? -- the card on screen
+---@field package settled fun()[]    -- what OnSettled was given, called as the cards settle
 local Cards = {}
 Cards.__index = Cards
 
 ---@param options PagleCardsOptions
 ---@return PagleCards
 function ns.NewCards(options)
-	return setmetatable({ options = options, ready = false }, Cards)
+	return setmetatable({ options = options, ready = false, settled = {} }, Cards)
 end
 
 -- PagleDB.global, whose cards keys ns.PAGLEDB_DEFAULTS puts in place.
@@ -148,7 +149,30 @@ function Cards:Next()
 	if card then
 		self.showing = card
 		self.options.show(card)
+		return
 	end
+	for _, fn in ipairs(self.settled) do
+		fn()
+	end
+end
+
+--- Whether the cards have settled (ANN-R21): login has settled, no card shows, none would show now (a Write-up
+--- waiting in Cozy mode waits for its Session's card, ANN-R62), the lanes aren't held and no toast, banner or splash
+--- shows or waits. The Letter waits for it: the login's held Announcements and cards have shown and closed (ONB-R10).
+---@return boolean
+function Cards:IsSettled()
+	if not self.ready or self.showing or self.options.held() or not self.options.lanesEmpty() then
+		return false
+	end
+	local data = self:data()
+	return #data.cards == 0 and (#data.writeUp == 0 or self.options.cozy())
+end
+
+--- Calls `fn` each time Next finds the cards settled (IsSettled): as login settles with no card, as the last card
+--- closes, and as the lanes empty with none waiting. The Letter checks again then (ONB-R10).
+---@param fn fun()
+function Cards:OnSettled(fn)
+	self.settled[#self.settled + 1] = fn
 end
 
 --- `/pagle dev preview card` (#247): puts `card` on screen now, in place of the card showing (which shows again once

@@ -758,9 +758,9 @@ local BUILD = {
 		frame.recordPivot = ns.Pivot(frame.words, body, 0, 0)
 		return frame
 	end,
-	-- One line under the toast.
-	nod = function()
-		local frame = CreateFrame("Frame", nil, UIParent) --[[@as PagleAnnouncementFrame]]
+	-- One line under the toast. On `parent` instead, for a still sample.
+	nod = function(parent)
+		local frame = CreateFrame("Frame", nil, parent or UIParent) --[[@as PagleAnnouncementFrame]]
 		frame:SetSize(NOD_WIDTH, 40)
 		frame:SetFrameStrata("HIGH")
 		frame.strip = CreateFrame("Frame", nil, frame) --[[@as PagleThreeSlice]]
@@ -772,10 +772,13 @@ local BUILD = {
 		return frame
 	end,
 	-- Centre screen over the world, with no frame: a dark glow, faint gilt rays, the spaced gilt title, gilt tooling
-	-- either side of the red wax seal, the text, then the labels and Coins.
-	banner = function()
-		local frame = CreateFrame("Frame", nil, UIParent) --[[@as PagleAnnouncementFrame]]
-		frame:SetPoint("TOP", UIParent, "TOP", 0, -BANNER_TOP)
+	-- either side of the red wax seal, the text, then the labels and Coins. On `parent` instead, for a still sample,
+	-- placed by its parent.
+	banner = function(parent)
+		local frame = CreateFrame("Frame", nil, parent or UIParent) --[[@as PagleAnnouncementFrame]]
+		if not parent then
+			frame:SetPoint("TOP", UIParent, "TOP", 0, -BANNER_TOP)
+		end
 		frame:SetSize(980, 330)
 		frame:SetFrameStrata("HIGH")
 		ns.PlaceSprite(ns.ArtSprite(frame, "Splash", "glow", "BACKGROUND", 0), frame, 0, 40)
@@ -1081,17 +1084,78 @@ function ns.DrawAnnouncement(frame, display)
 	end
 end
 
+--- The forms an Announcement can be drawn in standing still, on a frame of the caller's: the Curio Shop's stage, the
+--- Field guide's Moments page (ONB-R34). The splash is full-screen, so it has none.
+local STILL_FORMS = { toast = true, nod = true, banner = true }
+
+--- A frame of `form` on `parent`, hidden, for an Announcement drawn standing still (wallet-and-shop.md › UI, the
+--- preview stage; ONB-R34): in its parent's strata, so it draws on its parent, and never one of the lanes' frames, so
+--- ns.DrawAnnouncement draws it settled, with no motion, no sound and no clock; nothing reaches the lanes or the
+--- Session summary. Its parent places and scales it.
+---@param parent Frame
+---@param form "toast"|"nod"|"banner"
+---@return PagleAnnouncementFrame
+function ns.NewStillAnnouncementFrame(parent, form)
+	assert(STILL_FORMS[form], "no still frame for the form " .. tostring(form))
+	local frame = BUILD[form](parent)
+	frame:SetFrameStrata(parent:GetFrameStrata())
+	frame:Hide()
+	return frame
+end
+
 --- A toast frame on `parent`, for a sample toast (wallet-and-shop.md › UI, the preview stage).
 ---@param parent Frame
 ---@return PagleAnnouncementFrame
 function ns.NewToastFrame(parent)
-	local frame = BUILD.toast(parent)
-	frame:Hide()
+	return ns.NewStillAnnouncementFrame(parent, "toast")
+end
+
+--- A Nod frame on `parent`, for a sample Nod standing still (ONB-R34).
+---@param parent Frame
+---@return PagleAnnouncementFrame
+function ns.NewNodFrame(parent)
+	return ns.NewStillAnnouncementFrame(parent, "nod")
+end
+
+--- A banner frame on `parent`, for a sample banner standing still (ONB-R34).
+---@param parent Frame
+---@return PagleAnnouncementFrame
+function ns.NewBannerFrame(parent)
+	return ns.NewStillAnnouncementFrame(parent, "banner")
+end
+
+-- Each parent's still frames, by form, made the first time one draws there. Weak, so a parent dropped goes.
+---@type table<Frame, table<string, PagleAnnouncementFrame>>
+local stills = setmetatable({}, { __mode = "k" })
+
+--- Draws `announcement` as a `form` ("toast", "nod" or "banner") standing still on `parent` (ONB-R34, as the Curio
+--- Shop's stage draws its toast): a frame of that form there, made on the first call and redrawn on each, in the
+--- toast style the announcement carries or else the equipped one (ANN-R80), shown. It doesn't move or expire, and
+--- nothing reaches the lanes, the sounds or the Session summary. Its parent places and scales it.
+---@param parent Frame
+---@param form "toast"|"nod"|"banner"
+---@param announcement PagleAnnouncement
+---@return PagleAnnouncementFrame
+function ns.DrawStillAnnouncement(parent, form, announcement)
+	local byForm = stills[parent]
+	if not byForm then
+		byForm = {}
+		stills[parent] = byForm
+	end
+	local frame = byForm[form]
+	if not frame then
+		frame = ns.NewStillAnnouncementFrame(parent, form)
+		byForm[form] = frame
+	end
+	ns.DrawAnnouncement(frame, { announcement = announcement, form = form, overflow = 0 })
+	frame:Show()
 	return frame
 end
 
 -- The column's foot above the screen's bottom, where the canvas's board puts its toast (ANN-R20).
 local COLUMN_FOOT = 156
+--- The toast column's foot, in UI units above the screen's bottom (ANN-R20): the Letter sits there too (ONB-R11).
+ns.ANNOUNCE_COLUMN_FOOT = COLUMN_FOOT
 -- How a leaving toast or Nod eases: slow, then away.
 local EASE_IN = ns.Bezier(0.42, 0, 1, 1)
 

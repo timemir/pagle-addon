@@ -10,10 +10,11 @@ end
 -- the widgets every onboarding piece draws with, from the GuideParts atlas (data/GuideArt.lua) through Core's art
 -- helpers (adapter/Art.lua: ns.ArtSprite, ns.SetThreeSlice, ns.NewNineSlice, ns.ArtFaceFont): a page's kicker and
 -- title, the leather button, the foot's skip link and « back, a choice card, an illustrative note, a part of the
--- atlas, the binding field's slot and the step ribbons. Positions are the onboarding kit's (prototypes/onboarding-kit,
--- PagleArtGuide's GuideKit.lua and Guide.lua): the canvas's CSS pixels, UI units, from a page's top left, y down. A
--- step's build reaches the widgets through its nav (logic/Guide.lua's ns.NewGuideNav); later onboarding pieces (the
--- Letter, Margin notes, First looks, the First evening list) call them here.
+-- atlas and the step ribbons (the binding field is adapter/GuideBindingField.lua's). Positions are the onboarding
+-- kit's (prototypes/onboarding-kit, PagleArtGuide's GuideKit.lua and Guide.lua): the canvas's CSS pixels, UI units,
+-- from a page's top left, y down. A step's build reaches the widgets through its nav (logic/Guide.lua's
+-- ns.NewGuideNav); later onboarding pieces (the Letter, Margin notes, First looks, the First evening list) call them
+-- here.
 
 local rgb = ns.Rgb
 
@@ -410,25 +411,8 @@ function ns.GuidePart(parent, sprite)
 	return ns.ArtSprite(parent, "GuideParts", sprite, "ARTWORK")
 end
 
---- A binding field (ONB-R40–R44, Contracts' nav.BindingField), #324's widget: until it lands, its paper and its label
---- alone, the field's size (382 x 62), binding nothing. #324 replaces this maker.
----@param parent Frame
----@param action string PAGLE_FISHING_KEY or PAGLE_SWAP_GEAR
----@param label string
----@return Frame
-function ns.NewGuideBindingField(parent, action, label)
-	local field = CreateFrame("Frame", nil, parent)
-	field:SetSize(COLUMN_WIDTH, 62)
-	field:SetFrameLevel(parent:GetFrameLevel() + 2)
-	ns.NewNineSlice(field, "GuideParts", "bind", 8)
-	local words = ns.GuideText(field, "print", 15, "body", label)
-	ns.GuideAt(words, field, 13, 21.5 + 2)
-	field.action = action
-	return field
-end
-
 --- The widgets a step's nav hands its build (logic/Guide.lua's ns.NewGuideNav), each looked up when called, so a later
---- piece that replaces one (#324's binding field, #325's arrow) reaches every step.
+--- piece that replaces one (#325's arrow) reaches every step. The binding field is adapter/GuideBindingField.lua's.
 ---@type PagleGuideWidgets
 ns.GUIDE_WIDGETS = {
 	BindingField = function(...)

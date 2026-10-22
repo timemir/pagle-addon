@@ -19,13 +19,11 @@ local Pagle = Pagle
 -- nothing onto Blizzard's initializers or settings (SET-R6).
 --
 -- A click on a key waits for the next key press, which that key button takes through its own keyboard input, and
--- binds it as Blizzard's KeybindListener:ProcessInput does (Blizzard_Keybindings.lua, same commit): the slot's key
--- replaced, the key taken from whatever action had it, then the binding set saved, as KeybindListener:Commit does.
--- Core runs none of Blizzard's Settings code for this (SET-R6): only the client's binding API (SetBinding,
--- SaveBindings, GetCurrentBindingSet, GetBindingKey, GetBindingText) and FrameXML's helpers in
--- Blizzard_SharedXML/BindingUtil.lua, which only read the modifier keys. SetBinding is refused to addons in combat
--- (warcraft.wiki.gg, API SetBinding: "nocombat"), so the keys take no click while restricted. Its own owner on Core's
--- bus.
+-- binds it in that slot, through Core's key capture (adapter/KeyCapture.lua), which the Field guide's binding field
+-- shares: the slot's key replaced, the key taken from whatever action had it, without asking, as Blizzard's rows do,
+-- then the binding set saved. Core runs none of Blizzard's Settings code for this (SET-R6). SetBinding is refused to
+-- addons in combat (warcraft.wiki.gg, API SetBinding: "nocombat"), so the keys take no click while restricted. Its
+-- own owner on Core's bus.
 local OWNER = "Pagle key binding rows"
 local L = ns.L
 
@@ -35,7 +33,7 @@ local TEMPLATE = "PagleSettingsKeyRowTemplate"
 -- and two key buttons of 160 by 22, the first from 80 left of the middle (Blizzard_Keybindings.xml).
 local LABEL_X, INDENT = 37, 15
 local KEY_WIDTH, KEY_HEIGHT, KEY_X = 160, 22, -80
--- The keys a row shows and binds, as Blizzard's: an action's first two.
+-- The keys a row shows and binds, as Blizzard's: an action's first two (ns.BindKey's).
 local SLOTS = 2
 
 ---@class PagleKeyRow the data of a keybinding row's initializer, which Core made and reads
@@ -56,9 +54,22 @@ local widgetsOf = setmetatable({}, { __mode = "k" })
 ---@type table<Frame, PagleKeyRow>
 local rowOf = setmetatable({}, { __mode = "k" })
 
--- The key slot waiting for a key press, if any: one at a time.
----@type { frame: Frame, slot: integer }?
-local waiting
+-- Whether slot `slot` of `frame` waits for a key press (Core's key capture waits for one thing at a time).
+---@param frame Frame
+---@param slot integer
+---@return boolean
+local function isWaiting(frame, slot)
+	local owner = ns.KeyCaptureOwner()
+	return type(owner) == "table" and owner.keyRow == frame and owner.slot == slot
+end
+
+-- Whether a slot of `frame` waits for a key press.
+---@param frame Frame
+---@return boolean
+local function waitsOn(frame)
+	local owner = ns.KeyCaptureOwner()
+	return type(owner) == "table" and owner.keyRow == frame
+end
 
 -- Whether `row` is drawn live: its isEnabled holds (a Module's isEnabled that raises reads as false) and nothing is
 -- restricted.
@@ -71,8 +82,6 @@ local function isLive(row)
 	return not row.isEnabled or securecallfunction(row.isEnabled) == true
 end
 
-local stopWaiting
-
 -- Draws the row `frame` shows: its label, indented under a parent, and each key slot's key, "Not Bound" or, while it
 -- waits, "Press a key"; all greyed out unless the row is live. A greyed-out row stops waiting.
 ---@param frame Frame
@@ -82,8 +91,8 @@ local function draw(frame)
 		return
 	end
 	local live = isLive(row)
-	if not live and waiting and waiting.frame == frame then
-		stopWaiting() -- draws it again, waiting no more
+	if not live and waitsOn(frame) then
+		ns.StopKeyCapture() -- draws it again, waiting no more
 		return
 	end
 	own.label:SetFontObject(live and "GameFontNormal" or "GameFontDisable")
@@ -94,7 +103,7 @@ local function draw(frame)
 	for slot = 1, SLOTS do
 		local button = own.keys[slot]
 		local key = keys[slot]
-		if waiting and waiting.frame == frame and waiting.slot == slot then
+		if isWaiting(frame, slot) then
 			button:SetText(L.SETTINGS_KEY_WAITING)
 			button:LockHighlight()
 		else
@@ -113,72 +122,25 @@ function ns.RedrawKeyRows()
 	end
 end
 
--- No slot waits any more: its key button gives up the keyboard, and its row is redrawn.
-function stopWaiting()
-	local now = waiting
-	if not now then
-		return
-	end
-	waiting = nil
-	local button = widgetsOf[now.frame].keys[now.slot]
-	button:EnableKeyboard(false)
-	button:SetScript("OnKeyDown", nil)
-	draw(now.frame)
-end
-
--- Binds `key` to `action` in its slot `slot`, as KeybindListener:ProcessInput does: the action's first two keys
--- unbound, `key` taken from whatever action had it, the two bound again in order with `key` in its slot, then the
--- binding set saved (KeybindListener:Commit).
----@param action string
----@param slot integer
----@param key string
-local function bind(action, slot, key)
-	local keys = { GetBindingKey(action) }
-	for i = 1, SLOTS do
-		if keys[i] then
-			SetBinding(keys[i])
-		end
-	end
-	SetBinding(key)
-	keys[slot] = key
-	for i = 1, SLOTS do
-		if keys[i] then
-			SetBinding(keys[i], action)
-		end
-	end
-	SaveBindings(GetCurrentBindingSet())
-end
-
--- The waiting slot's key press or mouse button, as KeybindListener:ProcessInput takes it: a modifier alone keeps it
--- waiting, Escape stops it binding nothing, and any other binds the key with the modifiers held.
----@param input string
-local function pressed(input)
-	local now = waiting
-	if not now then
-		return
-	end
-	local key = GetConvertedKeyOrButton(input)
-	if IsKeyPressIgnoredForBinding(key) then
-		return
-	end
-	stopWaiting()
-	local row = rowOf[now.frame]
-	if key ~= "ESCAPE" and row and isLive(row) then
-		bind(row.binding, now.slot, CreateKeyChordStringUsingMetaKeyState(key))
-		draw(now.frame)
-	end
-end
-
--- Slot `slot` of `frame` waits for a key press, which its key button takes before any binding does.
+-- Slot `slot` of `frame` waits for a key press, which its key button takes before any binding does: a key, or a mouse
+-- button clicked on it, binds in that slot while the row is live; whatever stops it waiting redraws the row.
 ---@param frame Frame
 ---@param slot integer
 local function startWaiting(frame, slot)
-	waiting = { frame = frame, slot = slot }
-	local button = widgetsOf[frame].keys[slot]
-	button:EnableKeyboard(true)
-	button:SetScript("OnKeyDown", function(_, input)
-		pressed(input)
-	end)
+	ns.StartKeyCapture({
+		owner = { keyRow = frame, slot = slot },
+		frame = widgetsOf[frame].keys[slot],
+		onKey = function(key)
+			local row = rowOf[frame]
+			if row and isLive(row) then
+				ns.BindKey(row.binding, slot, key)
+				draw(frame)
+			end
+		end,
+		onStop = function()
+			draw(frame)
+		end,
+	})
 	draw(frame)
 end
 
@@ -193,13 +155,13 @@ local function clicked(frame, slot, mouseButton)
 		return
 	end
 	if mouseButton == "LeftButton" then
-		local again = waiting and waiting.frame == frame and waiting.slot == slot
-		stopWaiting()
+		local again = isWaiting(frame, slot)
+		ns.StopKeyCapture()
 		if not again then
 			startWaiting(frame, slot)
 		end
 	elseif mouseButton == "RightButton" then
-		stopWaiting()
+		ns.StopKeyCapture()
 		local key = select(slot, GetBindingKey(row.binding))
 		if key then
 			SetBinding(key)
@@ -207,7 +169,7 @@ local function clicked(frame, slot, mouseButton)
 		end
 		draw(frame)
 	else
-		pressed(mouseButton)
+		ns.PressKeyCapture(mouseButton)
 	end
 end
 
@@ -260,8 +222,8 @@ local function widgets(frame)
 		own.keys[slot] = button
 	end
 	frame:SetScript("OnHide", function()
-		if waiting and waiting.frame == frame then
-			stopWaiting()
+		if waitsOn(frame) then
+			ns.StopKeyCapture()
 		end
 	end)
 	widgetsOf[frame] = own
@@ -284,8 +246,8 @@ end
 
 --- The frame shows no row any more: it stops waiting, and redraws leave it alone.
 function PagleSettingsKeyRowMixin:Release()
-	if waiting and waiting.frame == self then
-		stopWaiting()
+	if waitsOn(self) then
+		ns.StopKeyCapture()
 	end
 	rowOf[self] = nil
 end
@@ -316,6 +278,6 @@ end)
 
 -- Combat starts or ends: a waiting slot stops, and the keys grey out or come back (SET-R93, CORE-R32).
 Pagle.RegisterCallback(OWNER, "RestrictionChanged", function()
-	stopWaiting()
+	ns.StopKeyCapture()
 	ns.RedrawKeyRows()
 end)

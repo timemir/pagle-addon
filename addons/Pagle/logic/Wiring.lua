@@ -49,6 +49,7 @@ local ns = select(2, ...)
 ---@field onboarding PagleOnboarding Core's onboarding state and its hooks (ns.WireOnboarding, core/onboarding.md).
 ---@field guideSteps PagleGuideSteps The Field guide's step registry (ns.WireGuide, ONB-R21).
 ---@field guide PagleGuide The Field guide (ns.WireGuide, ONB-R20–R27).
+---@field letter PagleLetter The Letter (ns.WireLetter, ONB-R10–R14).
 ---@field marginNotes PagleMarginNotes Core's Margin notes (ns.WireMarginNotes, ONB-R50–R53).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
@@ -1116,6 +1117,68 @@ function ns.WireGuide(host, view)
 			ids[i] = entry.step.id
 		end
 		host.print(ns.L.DEV_GUIDE_NO_STEP:format(id ~= "" and id or "<id>", table.concat(ids, ", ")))
+	end)
+end
+
+--- What the Letter's wiring needs from where Core runs, beyond the host: Core's adapter passes its frame and
+--- IsInInstance() (adapter/Letter.lua), FakePagle its records.
+---@class PagleLetterView
+---@field show fun()               -- the frame on screen, rising in with the `letter` sound (ONB-R11)
+---@field hide fun()               -- the frame off screen, at once
+---@field inInstance fun(): boolean -- IsInInstance()
+
+--- The Letter (core/onboarding.md › The Letter) as ns.letter over ns.onboarding, ns.cards and ns.guide, with
+--- `M:SetDialogOpen` on every Module handle (ONB-R100) and `/pagle dev onboarding letter` (ONB-R83). It checks again
+--- on RestrictionChanged and as the cards settle (a card closing, the lanes emptying); the adapter adds
+--- PLAYER_ENTERING_WORLD (Letter:EnteredWorld) and ZONE_CHANGED_NEW_AREA (ONB-R10). Call it after ns.WireCards,
+--- ns.WireOnboarding and ns.WireGuide.
+---@param host PagleHost
+---@param view PagleLetterView
+function ns.WireLetter(host, view)
+	local letter = ns.NewLetter({
+		onboarding = function()
+			return ns.onboarding
+		end,
+		isRestricted = host.isRestricted,
+		inInstance = view.inInstance,
+		cardsSettled = function()
+			return ns.cards:IsSettled()
+		end,
+		after = host.after,
+		show = view.show,
+		hide = view.hide,
+		-- ONB-R12: the guide at its first step (ONB-R20), wherever it was left.
+		openGuide = function()
+			local first = ns.guideSteps:List()[1]
+			ns.guide:Open(first and first.step.id)
+		end,
+	})
+	ns.letter = letter
+
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Tells Core that a dialog of the Module's own, asking the player something, opened (`true`) or closed (`false`):
+	--- the Letter waits while one is open and checks again as it closes (ONB-R10, ONB-R100; QoL's conflict note,
+	--- QOL-R81). Call it only `if M.SetDialogOpen then`, so it runs on a Core without it. Raises an error at the
+	--- Module's call for anything but a boolean.
+	---@param open boolean
+	function ModuleHandle:SetDialogOpen(open)
+		local module = host.registry:ModuleCalling(self, "SetDialogOpen", "open")
+		if type(open) ~= "boolean" then
+			error(("SetDialogOpen: open must be true or false, got %s"):format(type(open)), 2)
+		end
+		letter:SetDialogOpen(module.def.name, open)
+	end
+
+	ns.cards:OnSettled(function()
+		letter:Check()
+	end)
+	-- Its own owner on the bus, so no other registration replaces it (ONB-R10, ONB-R14).
+	host.listen("Pagle letter", "RestrictionChanged", function()
+		letter:Check()
+	end)
+	ns.onboarding:AddDevCommand("letter", "letter", function()
+		letter:ShowNow()
 	end)
 end
 

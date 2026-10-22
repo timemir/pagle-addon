@@ -3176,6 +3176,31 @@ describe("FakePagle", function()
 			end
 		)
 
+		it("hands a build a binding field that keeps SetGreyed and counts Refresh (ONB-R32, ONB-R44)", function()
+			local fake = newFakePagle()
+			fake.load("Pagle_Stats")
+			local M = fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+			M:RegisterGuideStep({
+				id = "casting",
+				order = 30,
+				ribbon = "Casting",
+				build = function(_, right, nav)
+					local field = nav.BindingField(right, "PAGLE_FISHING_KEY", "Fishing key")
+					field:SetGreyed(true)
+					field:Refresh()
+				end,
+			})
+			fake.login()
+
+			fake.guide:Open("casting")
+
+			local field = fake.guidePages.casting.right.children[1]
+			assert.are.same(
+				{ "PAGLE_FISHING_KEY", "Fishing key", true, 1 },
+				{ field.action, field.label, field.greyed, field.refreshed }
+			)
+		end)
+
 		it(
 			"gives each step a tour stop with Core's ns.AddGuideTourStops, leaving the state as it was (ONB-R84)",
 			function()
@@ -3201,5 +3226,95 @@ describe("FakePagle", function()
 				assert.is_false(fake.guideHeld)
 			end
 		)
+	end)
+
+	describe("the Letter", function()
+		-- A new Angler's fake, logged in with QoL registered, past PLAYER_ENTERING_WORLD's delay and the cards'
+		-- settling. Returns the fake and QoL's handle.
+		local function arrived()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+			fake.login()
+			fake.enterWorld()
+			fake.letter:EnteredWorld()
+			fake.wait(fake.ns.LETTER_DELAY)
+			fake.nextFrame()
+			fake.nextFrame()
+			return fake, M
+		end
+
+		it("shows for a new Angler once the delay has passed and the cards have settled (ONB-R10)", function()
+			local fake = arrived()
+
+			assert.is_true(fake.letterOnScreen)
+			assert.is_true(fake.letter:IsShowing())
+		end)
+
+		it("waits while a Module says its dialog is open, and shows as it closes (ONB-R10, ONB-R100)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+			fake.login()
+			M:SetDialogOpen(true)
+			fake.enterWorld()
+			fake.letter:EnteredWorld()
+			fake.wait(fake.ns.LETTER_DELAY)
+			fake.nextFrame()
+			fake.nextFrame()
+			assert.is_true(fake.letter:IsDialogOpen())
+			assert.is_false(fake.letterOnScreen)
+
+			M:SetDialogOpen(false)
+
+			assert.is_true(fake.letterOnScreen)
+		end)
+
+		it("raises an error at the Module's call for an open that isn't a boolean (ONB-R90's sense)", function()
+			local fake = newFakePagle()
+			local M = fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+
+			local ok, problem = pcall(function()
+				M:SetDialogOpen("yes")
+			end)
+			local okSelf, problemSelf = pcall(function()
+				M.SetDialogOpen({}, true)
+			end)
+
+			assert.is_false(ok)
+			assert.matches("fake_pagle_spec%.lua:%d+: SetDialogOpen: open must be true or false", tostring(problem))
+			assert.is_false(okSelf)
+			assert.matches("call M:SetDialogOpen%(open%)", tostring(problemSelf))
+			assert.is_false(fake.letter:IsDialogOpen())
+		end)
+
+		it("hides as a restriction starts and shows again as it ends (ONB-R14)", function()
+			local fake = arrived()
+
+			fake.setRestricted(true)
+			assert.is_false(fake.letterOnScreen)
+			fake.setRestricted(false)
+
+			assert.is_true(fake.letterOnScreen)
+		end)
+
+		it("opens the guide at its first step from Open the letter, setting opened (ONB-R12)", function()
+			local fake = arrived()
+
+			fake.letter:Open()
+
+			assert.is_false(fake.letterOnScreen)
+			assert.are.equal("opened", fake.global.onboarding.letter)
+			assert.are.same({ id = "welcome", how = "open", index = 1, count = 4 }, fake.guideShown[1])
+		end)
+
+		it("shows from /pagle dev onboarding letter with dev mode on (ONB-R83)", function()
+			local fake = newFakePagle()
+			fake.global.onboarding = fake.ns.NewOnboardingState("declined")
+			fake.login()
+
+			fake.slash("dev on")
+			fake.slash("dev onboarding letter")
+
+			assert.is_true(fake.letterOnScreen)
+		end)
 	end)
 end)

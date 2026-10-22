@@ -84,25 +84,28 @@ end
 local ICON = 6358
 
 --- The sample Announcement `/pagle dev preview <kind>` shows (#247), for a toast, Nod, banner or splash: a headline
---- of that rung, with stamps and Coins where the form shows them. Nil for another kind.
+--- of that rung, with stamps and Coins where the form shows them. Nil for another kind. With `text`, its headline's
+--- text reads that instead of the dev preview's line (the Field guide's Moments samples, ONB-R34).
 ---@param kind string
+---@param text string?
 ---@return PagleAnnouncement?
-function ns.DevPreviewAnnouncement(kind)
+function ns.DevPreviewAnnouncement(kind, text)
 	local L = ns.L
+	text = text or L.DEV_SAMPLE_TEXT
 	if kind == "toast" then
 		return ns.MakeAnnouncement({
-			sample({ rung = "toast", title = L.DEV_SAMPLE_TOAST, text = L.DEV_SAMPLE_TEXT, icon = ICON, coins = 10 }),
+			sample({ rung = "toast", title = L.DEV_SAMPLE_TOAST, text = text, icon = ICON, coins = 10 }),
 			sample({ rung = "toast.low", title = L.DEV_SAMPLE_STAMP, stamp = L.DEV_SAMPLE_STAMP, coins = 2 }),
 		})
 	elseif kind == "nod" then
-		return ns.MakeAnnouncement({ sample({ rung = "nod", title = L.DEV_SAMPLE_NOD, text = L.DEV_SAMPLE_TEXT }) })
+		return ns.MakeAnnouncement({ sample({ rung = "nod", title = L.DEV_SAMPLE_NOD, text = text }) })
 	elseif kind == "banner" then
 		return ns.MakeAnnouncement({
-			sample({ rung = "banner", title = L.DEV_SAMPLE_BANNER, text = L.DEV_SAMPLE_TEXT, coins = 20 }),
+			sample({ rung = "banner", title = L.DEV_SAMPLE_BANNER, text = text, coins = 20 }),
 		})
 	elseif kind == "splash" then
 		return ns.MakeAnnouncement({
-			sample({ rung = "splash", title = L.DEV_SAMPLE_SPLASH, text = L.DEV_SAMPLE_TEXT, icon = ICON, coins = 50 }),
+			sample({ rung = "splash", title = L.DEV_SAMPLE_SPLASH, text = text, icon = ICON, coins = 50 }),
 		})
 	end
 	return nil

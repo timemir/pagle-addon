@@ -192,8 +192,13 @@
 --- show, in order: opened on, or turned to forward or back (ONB-R22, ONB-R23).
 ---@field guidePages table<string, { left: table, right: table, nav: PagleGuideNav }> Each step's two pages, 442 x
 --- 546 frames on the client fake.load gave the Module, as its build drew them at the step's first showing, and the nav
---- it got: its moves are Core's, its widgets plain frames that keep what they were made with. No client, no pages.
+--- it got: its moves are Core's, its widgets plain frames that keep what they were made with (a binding field also
+--- keeps `greyed` from SetGreyed and counts its Refresh calls in `refreshed`). No client, no pages.
 ---@field guideHeld boolean Whether Announcements are held for the guide now (ONB-R70).
+---@field letter PagleLetter The Letter (core/onboarding.md › The Letter), Core's own on its wiring (ns.WireLetter):
+--- M:SetDialogOpen on the handle tells it a Module's dialog is open (ONB-R100), letter:IsDialogOpen() reads it.
+---@field letterOnScreen boolean Whether the Letter's frame would be on screen now (ONB-R11).
+---@field inInstance boolean What IsInInstance() answers the Letter (ONB-R10); false unless a spec sets it.
 ---@field notesShown PagleMarginNote[] Each Margin note Core would show, in order (ONB-R50–R52): M:ShowMarginNote's,
 --- and core.welcome and core.character on fake.menuButton. Once per account and only with Margin notes on.
 ---@field marginNotes PagleMarginNotes Core's Margin notes on its wiring: :Showing() is what is on screen now, and
@@ -1176,8 +1181,16 @@ part(function(fake, _, ns, host)
 		return frame
 	end
 	local widgets = {
+		-- Its Refresh counts in `refreshed`, and SetGreyed keeps `greyed`, as the step called them (ONB-R44, ONB-R32).
 		BindingField = function(parent, action, label)
-			return made("Button", parent, { action = action, label = label })
+			local field = made("Button", parent, { action = action, label = label, greyed = false, refreshed = 0 })
+			function field.Refresh(self)
+				self.refreshed = self.refreshed + 1
+			end
+			function field.SetGreyed(self, greyed)
+				self.greyed = greyed
+			end
+			return field
 		end,
 		ChoiceCard = function(parent, title, line, tag)
 			return made("Button", parent, { title = title, line = line, tag = tag })
@@ -1215,6 +1228,26 @@ part(function(fake, _, ns, host)
 		coreSteps = {},
 	})
 	fake.guide, fake.guideSteps = ns.guide, ns.guideSteps
+end)
+
+-- The Letter (core/onboarding.md › The Letter), on Core's wiring: M:SetDialogOpen on the handle (ONB-R100), the
+-- checks on RestrictionChanged and the cards settling (ONB-R10, ONB-R14), and `/pagle dev onboarding letter`
+-- (ONB-R83). The fake draws no frame: fake.letterOnScreen says whether it would show. A spec drives
+-- PLAYER_ENTERING_WORLD's part itself (fake.letter:EnteredWorld()) and sets fake.inInstance.
+part(function(fake, _, ns, host)
+	fake.letterOnScreen, fake.inInstance = false, false
+	ns.WireLetter(host, {
+		show = function()
+			fake.letterOnScreen = true
+		end,
+		hide = function()
+			fake.letterOnScreen = false
+		end,
+		inInstance = function()
+			return fake.inInstance
+		end,
+	})
+	fake.letter = ns.letter
 end)
 
 -- Margin notes (core/onboarding.md › Margin notes), on Core's wiring: M:ShowMarginNote validates as Core does, shows a
