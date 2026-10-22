@@ -1,6 +1,6 @@
 # Core
 
-> Status: Done · Milestones: M0, M1, M2, M3, M4 (`/pagle shop`), M5 (the tracker dock, CORE-R70–R73) · Sources: [Define the Core/Module contract](https://github.com/timemir/wow-fish/issues/9#issuecomment-6112445901), [How do DBM-style multi-addon packages wire Core and Modules?](https://github.com/timemir/wow-fish/issues/3#issuecomment-6109740635), [Choose the toolchain and libraries](https://github.com/timemir/wow-fish/issues/8#issuecomment-6112249259), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Define the content data pipeline](https://github.com/timemir/wow-fish/issues/19#issuecomment-6113646946), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Prototype the Hunts board](https://github.com/timemir/wow-fish/issues/24#issuecomment-6114195571), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652); ADR 0001, 0004, 0007, 0008, 0009
+> Status: Done · Milestones: M0, M1, M2, M3, M4 (`/pagle shop`), M5 (the tracker dock, CORE-R70–R73), M8.5 Onboarding (the minimap icon, CORE-R53–R56; `guide`, CORE-R61) · Sources: [Define the Core/Module contract](https://github.com/timemir/wow-fish/issues/9#issuecomment-6112445901), [How do DBM-style multi-addon packages wire Core and Modules?](https://github.com/timemir/wow-fish/issues/3#issuecomment-6109740635), [Choose the toolchain and libraries](https://github.com/timemir/wow-fish/issues/8#issuecomment-6112249259), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Define the content data pipeline](https://github.com/timemir/wow-fish/issues/19#issuecomment-6113646946), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Prototype the Hunts board](https://github.com/timemir/wow-fish/issues/24#issuecomment-6114195571), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652); ADR 0001, 0004, 0007, 0008, 0009
 
 Core is the `Pagle` addon. This file covers how Modules attach to it, the whole `Pagle` API at a glance, and the surfaces Core hosts for everyone: the Settings root, the compartment menu, `/pagle` and the tracker dock. The rest of Core is split by topic:
 
@@ -22,12 +22,13 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - presenting every Announcement, the Session summary and the Write-up (ADR 0007)
 - Pagle Coins and the Curio Shop (ADR 0009)
 - the Field report
-- the hosted surfaces: Settings root, compartment menu, `/pagle`, tracker dock
+- onboarding: the Letter, the Field guide, Margin notes, First looks and the First evening list ([onboarding.md](onboarding.md))
+- the hosted surfaces: Settings root, the Pagle menu (its compartment entry and minimap icon), `/pagle`, tracker dock
 - the projection machinery every Module uses (ADR 0004)
 
 **Core does not own:** any Module view (Journal, Hunts board, Stats window, Tackle Board), any content only one Module reads (the Hunt list, the Ledger's curve and titles, the Tackle Board's templates), or any reward rule.
 
-**Core alone shows:** its Settings root and topic pages, the Curio Shop, the Field report box, Announcements, the Session summary and the Write-up. With no Module enabled, Core records silently.
+**Core alone shows:** its Settings root and topic pages, the Curio Shop, the Field report box, Announcements, the Session summary and the Write-up, the Letter, the Field guide, Margin notes, First looks, the First evening list and the minimap icon. With no Module enabled, Core records silently.
 
 ## Rules
 
@@ -38,7 +39,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - **CORE-R3** Every Module TOC has `## Dependencies: Pagle` and `## X-Pagle-API: <n>`. Modules are loaded normally, not on demand.
 - **CORE-R4** Code detects Forever with a nil-guarded `WOW_PROJECT_ID == WOW_PROJECT_CAMELOT`, never with interface or build numbers. If the check fails, Core prints one chat line and never creates the `Pagle` global, so every Module's guard (CORE-R11) stops it.
 - **CORE-R5** Core's SavedVariables are `PagleLog` and `PagleDB` (see [catch-log.md](catch-log.md#data)), both account-wide. No addon in the package uses `SavedVariablesPerCharacter`; per-character facts are keyed by character GUID.
-- **CORE-R6** Core embeds LibStub, CallbackHandler-1.0, AceAddon-3.0, AceEvent-3.0 and AceDB-3.0, vendored at a recorded commit. Modules reach them through LibStub and embed nothing themselves.
+- **CORE-R6** Core embeds LibStub, CallbackHandler-1.0, AceAddon-3.0, AceEvent-3.0 and AceDB-3.0, vendored at a recorded commit, and, from M8.5, LibDataBroker-1.1 and LibDBIcon-1.0 for the minimap icon (CORE-R53), each vendored the same way at its own recorded commit by an update script. Modules reach them through LibStub and embed nothing themselves.
 - **CORE-R7** Every addon splits its code into `logic/` (pure Lua: no WoW globals, everything passed in as arguments, unit-tested with busted) and `adapter/` (events, frames, SavedVariables, Ace). luacheck enforces it with a per-path `std`.
 - **CORE-R8** Every user-facing string goes through the addon's string table (`ns.L`), enUS only in 1.0.
 - **CORE-R9** Every string the package draws uses only characters the client's fonts have: ASCII, Latin-1 (U+00A0–U+00FF), the en and em dashes (– —, U+2013, U+2014), curly single and double quotes (‘ ’ “ ”, U+2018, U+2019, U+201C, U+201D), the bullet (•, U+2022) and the ellipsis (…, U+2026). On 2026-10-15 `/pagle dev glyphs` on build 1.60.1.70374 showed each of these, and every Latin-1 character tried (· « » ×), drawn in all four fonts Pagle uses (GameFontHighlight, ChatFontNormal, NumberFontNormalSmallGray, `Fonts\MORPHEUS.TTF`); ★ and ✓ as a box in all four, and → as a box in GameFontHighlight and MORPHEUS (#248). The build also draws a box for ☆, ☑, ☐, ❧, ☚ and ▸. Anything outside the set stays out, even where one font has it. A symbol outside the set is drawn as an in-client texture (`|T…|t`, its path in the build's ManifestInterfaceData) or written in words; each one the Ledger draws is one shared constant in its string table. A busted spec (`spec/glyphs_spec.lua`) checks every Lua string literal, XML and TOC line the package ships outside `libs/`, generated files included; the generator checks lore on the way in (DATA-R107). `/pagle dev glyphs` shows a probe line in each font Pagle uses, to settle in game whether a character renders.
@@ -85,8 +86,9 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - **CORE-R40** Core registers one Settings category, "Pagle", with Blizzard's native Settings API; AceConfig and AceGUI are not used. The root is a hub. It holds:
   - a "Recording your Catches. Enable a Module to see them." line when no Module is enabled
   - the Module status list (CORE-R41), with each On Module's action button (CORE-R44)
+  - from M8.5, the Getting started section: the Field guide, Margin notes and the First evening list ([onboarding.md](onboarding.md), ONB-R81)
   - a "Help chart the waters" button that opens the Field report
-  - Core's options: the Saving section (the `/reload` reminder, LOG-R86) and the Units section (the length unit, LOG-R69); both are in [catch-log.md](catch-log.md#settings), and their rows in `docs/spec/settings.md` (SET-R10)
+  - Core's options: the Saving section (the `/reload` reminder, LOG-R86), the Units section (the length unit, LOG-R69) and, from M8.5, the Pagle menu section (Show the minimap icon, CORE-R56); the first two are in [catch-log.md](catch-log.md#settings), and all their rows in `docs/spec/settings.md` (SET-R10)
 
   Under the root, Core registers four **topic pages**, in this order: **Fishing**, **Announcements**, **Trackers** and **Look and Feel**. Pages are grouped by what the player is doing, not by owner. The list is fixed: Modules add rows to it (CORE-R42) and never register pages of their own. The layout and order of rows belong to `docs/spec/settings.md`.
 - **CORE-R41** The status list shows the roster in CORE-R1 order, each with its TOC version and one state:
@@ -118,11 +120,15 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   For example, with the Ledger and QoL enabled: "Fish Journal", "Input: Both", "Curio Shop  1,950 ●", "Help chart the waters (3)", "Settings".
 - **CORE-R51** While Cozy mode holds moments, the compartment entry's label shows how many are waiting ("Pagle · 3 waiting"); the count is defined in ANN-R42.
 - **CORE-R52** A menu `label` may be a function, so a Module can show live state (QoL's "Input: Both"); it is called each time the menu opens.
+- **CORE-R53** From M8.5, Core also shows a **minimap icon**: a LibDataBroker launcher "Pagle" drawn by LibDBIcon, its icon the website's favicon (a gilt "P" on parchment; `media/minimap/Pagle.blp`, from pagle-backend's `favicon.ico`, the 48 px image at 64 x 64). The player drags it around the minimap as LibDBIcon allows; its place and shown state are saved account-wide (`PagleDB.global.minimap`, LibDBIcon's table). The compartment entry stays. Together they are **Pagle's menu**.
+- **CORE-R54** A left click on the icon opens the same menu as the compartment entry (CORE-R50, CORE-R52), anchored at the icon. Other buttons do nothing.
+- **CORE-R55** **The tooltip.** The icon and the compartment entry (its `funcOnEnter`/`funcOnLeave`) show the same tooltip: "Pagle", then each line that applies: the waiting count while Cozy mode holds moments (CORE-R51's "3 waiting") and "A letter for you" while the Letter shows (ONB-R13).
+- **CORE-R56** **Show the minimap icon** (Settings root, SET-R10; default on) shows or hides the icon at once. With it hidden, nothing else changes: the compartment entry is still there, and notes meant for Pagle's menu point at the compartment's button (ONB-R52).
 
 ### Slash commands
 
 - **CORE-R60** Core owns `/pagle`. With no argument it opens the Settings root. `/pagle help` lists every command with its help text, Core's and each registered Module's.
-- **CORE-R61** Core's own subcommands are `help`, `settings` (same as no argument), `shop` (toggle the Curio Shop) and `report` (open the Field report). They are reserved.
+- **CORE-R61** Core's own subcommands are `help`, `settings` (same as no argument), `shop` (toggle the Curio Shop), `report` (open the Field report) and, from M8.5, `guide` (open the Field guide; `guide notes` shows Margin notes again, ONB-R80). They are reserved.
 - **CORE-R62** A Module's `slash = {{ name, fn, help }}` entries become `/pagle <name> <args>`; `fn` receives the rest of the line, trimmed. Subcommand names match case-insensitively. A name that collides with a reserved one or an earlier Module's is skipped and reported through `geterrorhandler()`; the rest of the Module's registration goes ahead. An unknown subcommand prints the help list.
 
 ### Screenshot tour (dev)
@@ -136,7 +142,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 
 ### Tracker dock
 
-- **CORE-R70** Core owns one HUD anchor, the **tracker dock**, by default under the minimap cluster at its right edge. Module trackers stack in it. A Module docks its tracker with `M:RegisterTracker{ id, order, frame }`; the dock stacks visible frames top to bottom by the tracker's `order` (Hunts 10, Stats 20, Tackle Board 30; ties by Module name), with fixed spacing, and reflows when one hides, resizes or its Module is disabled.
+- **CORE-R70** Core owns one HUD anchor, the **tracker dock**, by default under the minimap cluster at its right edge. Module trackers stack in it. A Module docks its tracker with `M:RegisterTracker{ id, order, frame }`; the dock stacks visible frames top to bottom by the tracker's `order` (Core's First evening list 1, ONB-R60; Hunts 10, Stats 20, Tackle Board 30; ties by Module name), with fixed spacing, and reflows when one hides, resizes or its Module is disabled.
 - **CORE-R71** The player moves the dock by Shift-dragging any docked tracker; the whole stack moves. The position is saved and can be reset from the Trackers page (CORE-R40). It never moves while restricted. If it overlaps Blizzard's own tracker, the player moves it.
 - **CORE-R72** A Module decides when its own tracker is shown (each Module's setting); the dock only stacks. With no tracker visible, the dock shows nothing.
 - **CORE-R73** Each tracker is a native objective-tracker-style block. Its frame is drawn by its Module, which reads its equipped tracker-frame look from Core (`Pagle.GetEquipped`).
@@ -199,6 +205,7 @@ Grouped by topic; the rules live in the linked file.
 | `M:RegisterTracker{ id, order, frame }` | here |
 | `M:AddSetting(topic, setting)` | here |
 | `M:RegisterTourStop(id, label, show, hide)`: a stop for the dev screenshot tour (CORE-R65) | here |
+| `M:RegisterGuideStep(step)`, `M:ShowMarginNote(note)`, `M:RegisterFirstLook(set)`, `M:ShowFirstLook(id, again?)`, `M:CompleteEveningItem(id)` | [onboarding.md](onboarding.md#contracts) |
 
 ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so Core knows which Module wrote the record.
 
@@ -213,6 +220,7 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ---@field views? { id: string, label: string|fun():string, open: fun() }[]   -- compartment menu views
 ---@field menu? { label: string|fun():string, onClick: fun() }[]             -- extra compartment entries
 ---@field slash? { name: string, fn: fun(args: string), help: string }[]     -- /pagle <name>
+---@field guideBlurb? string    -- its line on the Field guide's What's in the box page (ONB-R91)
 ```
 
 ### `M:AddSetting(topic, setting)`
@@ -269,6 +277,7 @@ The big windows (the Curio Shop, the books, the Hunts and Tackle boards) are dra
 |---|---|
 | `RestrictionChanged` | `isRestricted: boolean` |
 | `ModulesChanged` | none (CORE-R19) |
+| `GuideOpened`, `GuideClosed` | none; `stepId` (ONB-R20, onboarding.md) |
 
 Fishing, Session, wallet, Activity XP (`ActivityXPChanged`) and pushed-content (`PushedContentReady`) events are listed in their topic files.
 
@@ -276,6 +285,7 @@ Fishing, Session, wallet, Activity XP (`ActivityXPChanged`) and pushed-content (
 
 - **Settings root and topic pages:** native Settings panels; layout in `docs/spec/settings.md`. Look reference: `prototypes/settings-tree/` (variant B).
 - **Compartment menu:** the native Addon Compartment dropdown (CORE-R50).
+- **Minimap icon:** LibDBIcon's round button with the favicon (CORE-R53).
 - **Tracker dock:** an invisible anchor; each docked tracker draws itself.
 
 ## Settings
@@ -292,7 +302,7 @@ The other Core options are in each topic file's Settings section.
 |---|---|---|
 | `Pagle.API_VERSION` before 1.0 | 1 | CORE-R15 |
 | Module menu order | Ledger 10, Hunts 20, Stats 30, TackleBoard 40, QoL 50 | CORE-R50 |
-| Tracker order | Hunts 10, Stats 20, TackleBoard 30 | CORE-R70 |
+| Tracker order | First evening list 1, Hunts 10, Stats 20, TackleBoard 30 | CORE-R70 |
 | Dock default offset | 10 px below the minimap cluster, right-aligned | CORE-R70 |
 | Dock spacing between trackers | 8 px | CORE-R70 |
 

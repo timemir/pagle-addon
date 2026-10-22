@@ -1,0 +1,23 @@
+## Interface: 120100, 16001
+## Title: Pagle Art: Guide (throwaway)
+## Notes: Test bed for onboarding: the letter, the field guide, margin notes, first looks, the First evening list. Type /pagleguide.
+## Author: Pagle
+## Version: 1
+## AllowLoadGameType: camelot
+
+Atlas.lua
+Atlases\GuideParts.lua
+Atlases\Samples.lua
+Fonts.lua
+Kit.lua
+Fit.lua
+Motion.lua
+Sound.lua
+Book.lua
+Book.xml
+Views.lua
+LedgerKit.lua
+GuideKit.lua
+Guide.lua
+World.lua
+Demo.lua

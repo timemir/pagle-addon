@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Done · Milestones: M0–M9, Track Q · Sources: [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652) (its body holds the launch re-verification list), [Choose the toolchain and libraries](https://github.com/timemir/wow-fish/issues/8#issuecomment-6112249259), [Write the QoL spec](https://github.com/timemir/wow-fish/issues/37#issuecomment-6130705093), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the QoL feature set](https://github.com/timemir/wow-fish/issues/16#issuecomment-6113508077), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Write the Tackle Board spec](https://github.com/timemir/wow-fish/issues/43), [Write the Stats spec](https://github.com/timemir/wow-fish/issues/42), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Move the prototypes to main](https://github.com/timemir/wow-fish/issues/36#issuecomment-6129511014), [Write the Settings spec](https://github.com/timemir/wow-fish/issues/44); ADR 0003, 0005 (notes: compatibility starts at 1.0)
+> Status: Done · Milestones: M0–M9 (with M8.5), Track Q · Sources: [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652) (its body holds the launch re-verification list), [Choose the toolchain and libraries](https://github.com/timemir/wow-fish/issues/8#issuecomment-6112249259), [Write the QoL spec](https://github.com/timemir/wow-fish/issues/37#issuecomment-6130705093), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the QoL feature set](https://github.com/timemir/wow-fish/issues/16#issuecomment-6113508077), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Write the Tackle Board spec](https://github.com/timemir/wow-fish/issues/43), [Write the Stats spec](https://github.com/timemir/wow-fish/issues/42), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Move the prototypes to main](https://github.com/timemir/wow-fish/issues/36#issuecomment-6129511014), [Write the Settings spec](https://github.com/timemir/wow-fish/issues/44); ADR 0003, 0005 (notes: compatibility starts at 1.0)
 
 This file sets the order in which Pagle is built. It assigns spec rules to milestones; the rules themselves live in the other spec files. Terms are used as `CONTEXT.md` defines them.
 
@@ -389,9 +389,39 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 7. Wait past the run's end (or use a test log): the run leaves the board and tracker, the next slot's event is on, and nothing lists the old one.
 8. `scripts/check.sh` passes with the pool's 24 events and the `hunts` lore check on.
 
+## M8.5 Onboarding
+
+**Goal:** a new Angler is welcomed and taught by fishing: the Letter, the eight-page Field guide, Margin notes on first moments, a First look on each window with a "?" to see it again, and the First evening list ([core/onboarding.md](core/onboarding.md)), plus Pagle's minimap icon ([#290](https://github.com/timemir/wow-fish/issues/290)), as [the onboarding kit, grilled with the dev](https://github.com/timemir/wow-fish/issues/260#issuecomment-6335904394) decided. 1.0 waits for it: shipped after 1.0, every launch player's Catch log would already hold Casts, so none would see the Letter (ONB-R2).
+
+**Runs alongside M8.** Only the Hunts First look waits for M8's board (its Pagle Wagers note points at the ribbon, ONB-R57); every other ticket starts now. M9's Settings UX pass (#266) and store screenshots (#270) wait for this milestone's exit check.
+
+**Build order,** each step one or more build tickets:
+1. Core: the onboarding state, `/pagle guide`, the dev commands and read-wtf's Onboarding section; Announcement hold reasons and the budget default; the binding field's shared key capture; the minimap icon.
+2. Core: the guide's book and step registry, then Core's four steps, the Letter, Margin notes, First looks with the coach bar and the "?", and the First evening list.
+3. The Modules' parts: QoL's Casting and Fishing clothes steps; the Ledger's step, Journal First look and notes; the Tackle Board's step and First look; Stats' First look; Hunts' First look (after M8's board).
+4. The copy review, then the exit check.
+
+**Core rules:**
+- ONB-R1–R3, ONB-R10–R14, ONB-R20–R27, ONB-R30, ONB-R31, ONB-R34, ONB-R35, ONB-R38, ONB-R40–R44, ONB-R50–R53, ONB-R55–R59, ONB-R60–R64, ONB-R70, ONB-R71, ONB-R80–R84, ONB-R90–R93, ONB-R100–R109 ([core/onboarding.md](core/onboarding.md))
+- CORE-R6 for LibDataBroker-1.1 and LibDBIcon-1.0; CORE-R40 for Getting started and the Pagle menu section; CORE-R53–R56; CORE-R61 for `guide`; CORE-R70 for the First evening list's order
+- ANN-R31 for the default of 20 per 5 min; ANN-R38; ANN-R64; `PagleMoment.firstNote`
+
+**Module rules** (each Module builds its parts of onboarding's rules):
+- QoL: ONB-R32, ONB-R33 and the `qol.lure` note (ONB-R52)
+- Ledger: ONB-R36, the Fish Journal's First look (ONB-R57) and "?" (ONB-R59), the `ledger.fresh` note, the `journal` item (ONB-R61), `newSpecies`'s `firstNote` (ONB-R53), its `guideBlurb` (ONB-R91)
+- Tackle Board: ONB-R37, its First look and "?", its `guideBlurb`
+- Stats: its First look and "?", its `guideBlurb`
+- Hunts: its First look and "?", the `hunts` item, its `guideBlurb`
+
+**Settings rules:** SET-R10 rows 4–6 (Getting started) and 10 (Show the minimap icon); SET-R30 for the Interruptions slider's 1–30 range and its default
+
+**Exit check:** [core/onboarding.md › In-game exit check](core/onboarding.md#in-game-exit-check), steps 1–14, then:
+15. The minimap icon shows the favicon; dragging moves it round the minimap and the place survives `/reload`; a left click opens the Pagle menu; its tooltip and the compartment entry's read "A letter for you" while the Letter shows; Show the minimap icon hides and shows it.
+16. `scripts/check.sh` passes.
+
 ## M9 Release
 
-Launch re-verification on the live build, the 1.0 gates (lore, Settings UX, Simulated Size), the CurseForge and Wago projects, then the 1.0 tag. Named M8 Release until the Hunts redesign took M8 ([#288](https://github.com/timemir/wow-fish/issues/288)). The Settings UX pass (#266), the store screenshots (#270), the tag's preparation (#275) and the exit check (#276) wait for M8 Hunt Events; launch re-verification (#272–#274) and the store projects (#271) don't.
+Launch re-verification on the live build, the 1.0 gates (lore, Settings UX, Simulated Size), the CurseForge and Wago projects, then the 1.0 tag. Named M8 Release until the Hunts redesign took M8 ([#288](https://github.com/timemir/wow-fish/issues/288)). The Settings UX pass (#266), the store screenshots (#270), the tag's preparation (#275) and the exit check (#276) wait for M8 Hunt Events and M8.5 Onboarding; launch re-verification (#272–#274) and the store projects (#271) don't.
 
 **Rules:** QOL-R100–R104 (QoL's launch re-verification), DATA-R57 for check 24, and DATA-R73, DATA-R87 and DATA-R95 at the tag (Before the tag). Every other check below names the rules it may change.
 

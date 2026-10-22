@@ -1,0 +1,27 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <!-- Templates for the book language. Mixins are defined in Book.lua (loaded first). -->
+
+  <Button name="PagleGuideWaxCloseButtonTemplate" virtual="true" mixin="PagleGuideWaxCloseMixin">
+    <Scripts><OnLoad method="OnLoad"/></Scripts>
+  </Button>
+
+  <Frame name="PagleGuideBrassPlateTemplate" virtual="true" mixin="PagleGuideBrassPlateMixin">
+    <Scripts><OnLoad method="OnLoad"/></Scripts>
+  </Frame>
+
+  <Frame name="PagleGuideWaxSealTemplate" virtual="true" mixin="PagleGuideWaxSealMixin">
+    <Size x="72" y="72"/>
+    <Scripts><OnLoad method="OnLoad"/></Scripts>
+  </Frame>
+
+  <!-- A book: CreateFrame("Frame", "MyBook", UIParent, "PagleGuideBookTemplate"), then
+       book:SetBookSize(w, h), book:SetLeftPageWeight(n), book:SetCrumbs(list, onClick),
+       book:SetSearchPlaceholder(text, onSearch), book:AddRibbon(label, "red"|"here", onClick),
+       book:SetNameplate(text); put content in book.LeftPage and book.RightPage. -->
+  <Frame name="PagleGuideBookTemplate" virtual="true" mixin="PagleGuideBookMixin" frameStrata="HIGH">
+    <Scripts>
+      <OnLoad method="OnLoad"/>
+      <OnSizeChanged method="OnSizeChanged"/>
+    </Scripts>
+  </Frame>
+</Ui>

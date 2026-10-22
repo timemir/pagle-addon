@@ -7,7 +7,7 @@
 ### Product structure
 
 **Core**:
-The always-loaded base addon that every Module depends on. It observes and records Catches, presents the Announcements Modules raise through it, holds the Angler's Pagle Coins and the Curio Shop, and gives out Field reports; beyond those and settings it shows the player nothing of its own, and every other view belongs to a Module.
+The always-loaded base addon that every Module depends on. It observes and records Catches, presents the Announcements Modules raise through it, holds the Angler's Pagle Coins and the Curio Shop, gives out Field reports, and welcomes a new Angler and explains each part the first time it's met; beyond those and settings it shows the player nothing of its own, and every other view belongs to a Module.
 _Avoid_: framework, base module, engine
 
 **Module**:
@@ -179,6 +179,28 @@ _Avoid_: recap, report, session stats (which belong to Stats)
 **Write-up**:
 The single card shown when a Module first builds from history it never saw, such as a Module the player enables late, listing what that history earned. Everything in it counts as already celebrated, so none of it pops up on its own.
 _Avoid_: catch-up toast, backfill, welcome screen
+
+### Onboarding
+
+**Letter**:
+The note Pagle leaves a new Angler once, on arrival, that opens the Field guide. An Angler whose Catch log already holds Casts gets none.
+_Avoid_: welcome popup, splash (which is a Legend's Announcement)
+
+**Field guide**:
+Pagle's short book of pages introducing each part that is on, opened from the Letter and reopened whenever the Angler asks.
+_Avoid_: tour (which is the dev screenshot tour), tutorial, onboarding (the internal name for the whole effort)
+
+**Margin note**:
+A pencilled slip beside something on screen, with an arrow to it, explaining it the first time the Angler meets it. Each one shows once per Angler.
+_Avoid_: tooltip, hint, coach mark
+
+**First look**:
+The set of Margin notes shown together on a window the first time it opens, and again whenever the Angler asks for it on that window.
+_Avoid_: coach, walkthrough, help page
+
+**First evening list**:
+A short list of first things to do with Pagle, which ticks itself off as the Angler does them and folds away when done. It pays nothing.
+_Avoid_: checklist, quest, tutorial goals
 
 ### Pagle Coins
 

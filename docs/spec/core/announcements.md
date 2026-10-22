@@ -1,6 +1,6 @@
 # Core: Announcements, the Session summary and the Write-up
 
-> Status: Done · Milestones: M2, M4 (the Gilded sound set and the other toast styles as Curio Shop goods, size rulers, the catch Nod) · Sources: [Prototype Catch feedback: toasts, sounds and cozy mode](https://github.com/timemir/wow-fish/issues/13#issuecomment-6113132854), [Decide who owns Announcements: a Core service or each Module](https://github.com/timemir/wow-fish/issues/22#issuecomment-6113769547), [Prototype Pagle's sounds](https://github.com/timemir/wow-fish/issues/23#issuecomment-6113915981), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Show a quiet catch Nod for every ordinary Catch](https://github.com/timemir/wow-fish/issues/256); ADR 0001, 0004, 0007, 0009, 0010. Prototypes: `prototypes/catch-feedback/`, `prototype/sounds` branch (`prototypes/sounds/`)
+> Status: Done · Milestones: M2, M4 (the Gilded sound set and the other toast styles as Curio Shop goods, size rulers, the catch Nod), M8.5 Onboarding (ANN-R38's `guide` reason, ANN-R64, `firstNote`, the budget default 20 per 5 min) · Sources: [Prototype Catch feedback: toasts, sounds and cozy mode](https://github.com/timemir/wow-fish/issues/13#issuecomment-6113132854), [Decide who owns Announcements: a Core service or each Module](https://github.com/timemir/wow-fish/issues/22#issuecomment-6113769547), [Prototype Pagle's sounds](https://github.com/timemir/wow-fish/issues/23#issuecomment-6113915981), [Design Stats: session stats, honest odds and dry spells](https://github.com/timemir/wow-fish/issues/21#issuecomment-6113657288), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Design the Pagle currency and shop](https://github.com/timemir/wow-fish/issues/28#issuecomment-6125331898), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Show a quiet catch Nod for every ordinary Catch](https://github.com/timemir/wow-fish/issues/256); ADR 0001, 0004, 0007, 0009, 0010. Prototypes: `prototypes/catch-feedback/`, `prototype/sounds` branch (`prototypes/sounds/`)
 
 Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules raise **moments**, and Core merges, paces and draws them.
 
@@ -59,7 +59,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 ### Interruption budget
 
 - **ANN-R30** An **interruption** is an Announcement shown as a toast, banner or splash. Each one shown counts on its own: a Cast's banner and its toast are 2. Nods and cards aren't interruptions.
-- **ANN-R31** With the budget on (the default), when an Announcement with a `toast.low` headline reaches the front of the column's queue, Core counts the interruptions shown in the last 5 minutes. If there are already 4, it steps down to a Nod (with a compact ruler if it has one) and takes its turn as one. Every other rung always gets through and always counts.
+- **ANN-R31** With the budget on (the default), when an Announcement with a `toast.low` headline reaches the front of the column's queue, Core counts the interruptions shown in the last 5 minutes. If there are already 20 (the default count; ONB-R35's Lively preset), it steps down to a Nod (with a compact ruler if it has one) and takes its turn as one. Every other rung always gets through and always counts.
 - **ANN-R32** With the budget off, nothing steps down. The count and window are player settings.
 
 ### Combat hold
@@ -72,6 +72,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 
   Held Nods don't show again; they are already in the Session summary, except a catch Nod, which is simply dropped (ANN-R13).
 - **ANN-R37** Held Announcements count toward the budget only when they actually show.
+- **ANN-R38** **Hold reasons.** The hold is kept per reason: `combat` (ANN-R35, ANN-R36) and, from M8.5, `guide`, while the Field guide is open (ONB-R70). While any reason holds, everything is held as in ANN-R35, Nods dropped. When the last reason ends, what was held shows by the rules of the reason that held it longest: after `combat`, as ANN-R36 says; after `guide` alone, at once, with held toasts shown as themselves in order, never folded into "While you were fighting". A combat hold that starts while the guide holds closes the guide (ONB-R25), so `combat`'s rules apply.
 
 ### Cozy mode
 
@@ -109,6 +110,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 - **ANN-R61** Core shows one **Write-up** card, styled like the Session summary, once no projection is updating (LOG-R74). Sections from several Modules raised in the same login share it, one section each, by Module order. Its sections are kept in `global.writeUp` until the card is closed, so it survives a logout; it is outside the 3-card limit and always shows before stored summary cards.
 - **ANN-R62** The Write-up is held through combat. In Cozy mode it isn't shown; its sections stay in `global.writeUp` and join the next card Core creates (ANN-R53), whichever Session that is, making it show even if that Session raised no moment.
 - **ANN-R63** After any rebuild that isn't a first build (a content update reclassifying Catches), a Module raises newly earned moments with `summaryOnly = true`: they go to the open or next Session summary, never pop up, and count toward its "at least one moment" test.
+- **ANN-R64** **Show me around.** From M8.5, a Write-up section from a Module that has a Field guide step (ONB-R21) ends with the link **Show me around »**: it closes the card and opens the guide at that Module's first step (ONB-R82). Sections from Modules without one have no link.
 
 ### Sounds
 
@@ -137,7 +139,7 @@ Part of [Core](README.md). Core presents every Announcement (ADR 0007): Modules 
 | `global.pending` | moments raised with no Session open (ANN-R52) |
 | `global.cards` | up to 3 cards waiting to be seen: `{ title, numbers = { casts, catches, gotAway, seconds }, coins, lines, moments, writeUp }` |
 | `global.writeUp` | Write-up sections waiting: `{ { module, order, title, heading, lines } }` |
-| `profile.announcements` | `{ cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 4, window = 300 } }` (`everyCatch`: "Show every catch", ANN-R13; `motion`: "Animations", UI › Motion) |
+| `profile.announcements` | `{ cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 20, window = 300 } }` (`everyCatch`: "Show every catch", ANN-R13; `motion`: "Animations", UI › Motion) |
 | `profile.appearance` | equipped toast style and sound set, among other slots ([wallet-and-shop.md](wallet-and-shop.md#data)) |
 
 A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `title`, `text`, `icon`, `stamp`, `coins`, `expiresAt`, `pastText`. The display lanes, the budget's recent interruptions and the hold live in memory only.
@@ -162,6 +164,7 @@ A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `
 ---@field expiresAt? integer     -- server time (ANN-R45)
 ---@field pastText? string       -- shown in the summary if it expired
 ---@field summaryOnly? boolean   -- ANN-R63
+---@field firstNote? string      -- the Margin note shown the first time a moment of this Module and kind shows (ONB-R53)
 ---@field seal? integer|"waves"|"book"|"quill"|"crest" -- a banner's wax seal (UI); default "waves"
 ```
 
@@ -258,7 +261,7 @@ One `OnUpdate` drives every animation, Core's and each Module's (`adapter/Motion
 | Show every catch | on/off | on (ANN-R13) |
 | Animations | on/off | on (UI › Motion) |
 | Interruption budget | on/off | on |
-| Budget: interruptions | 1–10 | 4 |
+| Budget: interruptions | 1–30 | 20 |
 | Budget: window | 1–15 min | 5 min |
 | Toast style | owned styles | Torn Page |
 | Sound set | owned sets | Driftwood |
@@ -277,7 +280,7 @@ These sit on the Announcements page. Toast style and sound set also appear on Lo
 | Held toasts that fold into one | 3 | ANN-R36 |
 | Stamps shown | 4 | ANN-R11 |
 | Ruler fill animation | 1.5 s | ANN-R22 |
-| Budget default | 4 per 5 min | ANN-R31 |
+| Budget default | 20 per 5 min | ANN-R31 |
 | Rare-record flair threshold (Ledger's rule) | 50 Catches of the Species since the last record | rung table |
 | Delay after combat | 2 s | ANN-R36 |
 | Cards kept | 3 | ANN-R54 |

@@ -10,12 +10,13 @@ This directory is Pagle's product spec. It describes the current state only, and
 
 | File | Prefix | Covers | Milestones |
 |---|---|---|---|
-| [core/README.md](core/README.md) | `CORE` | Packaging and load, attaching a Module, the `Pagle` API at a glance, the event bus, restriction state, the Settings root and topic pages, the compartment menu, `/pagle`, the tracker dock | M0–M5 |
+| [core/README.md](core/README.md) | `CORE` | Packaging and load, attaching a Module, the `Pagle` API at a glance, the event bus, restriction state, the Settings root and topic pages, the compartment menu and minimap icon, `/pagle`, the tracker dock | M0–M5, M8.5 |
 | [core/catch-log.md](core/catch-log.md) | `LOG` | Observing fishing, the Catch log and its entry formats, characters and the Angler, Skill Readings, conditions and `NextWindow`, the content catalogue at runtime, Sessions, Simulated Size, projections, the diagnostics buffer | M1, M2, M3, M4, M7 |
 | [core/announcements.md](core/announcements.md) | `ANN` | Moments and the rung ladder, a Cast's Announcements, the display lanes, the Interruption budget, combat hold, Cozy mode, the Session summary, the Write-up, sounds and toast styles | M2, M4 |
 | [core/wallet-and-shop.md](core/wallet-and-shop.md) | `SHOP` | Pagle Coins (earning, spending, balance), goods and slots, owning and equipping, the Curio Shop window, the Look and Feel page | M2, M4 |
 | [core/activity-xp.md](core/activity-xp.md) | `AXP` | Activity XP: the lifetime totals Modules other than the Ledger report toward the Angler Level, their snapshot in each Prestige entry, and the overview of what pays | M8 Hunt Events |
 | [core/pushed-content.md](core/pushed-content.md) | `PUSH` | The companion's `Pagle_Content` data addon: the signature check, the companion state, content by kind | M8 Hunt Events |
+| [core/onboarding.md](core/onboarding.md) | `ONB` | Onboarding: the Letter, the Field guide and its step registry, the binding field, Margin notes, First looks and the "?", the First evening list, `/pagle guide` and Getting started | M8.5 Onboarding |
 | [core/field-report.md](core/field-report.md) | `REP` | The Field report: what goes in, the `PAGLE-REPORT 1` format, privacy, the report box | M3 |
 | [content-data.md](content-data.md) | `DATA` | The `data/` layers, the generator and its checks, the catalogue's Lua shape, `confirmed` and the two-reporter rule, the content fingerprint, the Hunt list and event pool formats, the tag list and `released.lock`, lore, Field report intake, the DB2 watch | M0–M9 |
 | [qol.md](qol.md) | `QOL` | `Pagle_QoL`: the Fishing key, the double-click, gear, lures, clams, CVar leases for a Fishing stretch, the next-action button, Nudges, the Angleur and Fishing Buddy popup | M1, Track Q, M9 |
@@ -24,7 +25,7 @@ This directory is Pagle's product spec. It describes the current state only, and
 | [stats.md](stats.md) | `STA` | `Pagle_Stats`: counts per place, skill side and window, Session records, Your odds, Dry spells and luck readings, the Stats book and the live tracker | M6 |
 | [tackle-board.md](tackle-board.md) | `TKB` | `Pagle_TackleBoard`: board days, Notices and Expeditions as Module records, goal kinds, rerolls, the Campfire and Kindling, the Fly Box, the cork board and its tracker | M7 |
 | [settings.md](settings.md) | `SET` | Where every option sits in the Settings tree: rows, order, headers, greying, Defaults, entry points, and each row's milestone | M1–M7 |
-| [roadmap.md](roadmap.md) | none | The milestones M0–M9 and Track Q: goal, the rules each one builds, and its in-game exit check; the toolchain (M0); the launch re-verification checklist (M9) | M0–M9 |
+| [roadmap.md](roadmap.md) | none | The milestones M0–M9 (with M8.5) and Track Q: goal, the rules each one builds, and its in-game exit check; the toolchain (M0); the launch re-verification checklist (M9) | M0–M9 |
 | README.md (this file) | none | The index, the architecture overview, the Module map, and how to read the spec | |
 
 Beside the spec:

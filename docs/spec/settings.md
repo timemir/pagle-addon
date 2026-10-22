@@ -1,6 +1,6 @@
 # Settings
 
-> Status: Done · Milestones: M1 (the root, the Fishing page), Track Q (the rest of the Fishing page), M2 (Announcements), M3 (Help chart the waters, Open Fish Journal), M4 (Units, the look rows, Look and Feel), M5 (Trackers, Hunts' rows), M6 (Stats' rows), M7 (the Tackle Board's rows) · Sources: [Prototype the Settings tree](https://github.com/timemir/wow-fish/issues/32#issuecomment-6129969765), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545) (the length unit, via a comment on [Write the Settings spec](https://github.com/timemir/wow-fish/issues/44#issuecomment-6129738678)), [Prototype the Curio Shop](https://github.com/timemir/wow-fish/issues/30#issuecomment-6125718197), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Write the QoL spec](https://github.com/timemir/wow-fish/issues/37#issuecomment-6130705093), [Write the Stats spec](https://github.com/timemir/wow-fish/issues/42#issuecomment-6130764087), [Write the Tackle Board spec](https://github.com/timemir/wow-fish/issues/43#issuecomment-6130761945), [Write the Hunts spec](https://github.com/timemir/wow-fish/issues/41#issuecomment-6131040991), [Write the Ledger spec](https://github.com/timemir/wow-fish/issues/40#issuecomment-6131150684); ADR 0001, 0009. Prototype: `prototypes/settings-tree/` (variant B)
+> Status: Done · Milestones: M1 (the root, the Fishing page), Track Q (the rest of the Fishing page), M2 (Announcements), M3 (Help chart the waters, Open Fish Journal), M4 (Units, the look rows, Look and Feel), M5 (Trackers, Hunts' rows), M6 (Stats' rows), M7 (the Tackle Board's rows), M8.5 Onboarding (Getting started, Pagle menu, the Interruptions slider's range) · Sources: [Prototype the Settings tree](https://github.com/timemir/wow-fish/issues/32#issuecomment-6129969765), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545) (the length unit, via a comment on [Write the Settings spec](https://github.com/timemir/wow-fish/issues/44#issuecomment-6129738678)), [Prototype the Curio Shop](https://github.com/timemir/wow-fish/issues/30#issuecomment-6125718197), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Write the QoL spec](https://github.com/timemir/wow-fish/issues/37#issuecomment-6130705093), [Write the Stats spec](https://github.com/timemir/wow-fish/issues/42#issuecomment-6130764087), [Write the Tackle Board spec](https://github.com/timemir/wow-fish/issues/43#issuecomment-6130761945), [Write the Hunts spec](https://github.com/timemir/wow-fish/issues/41#issuecomment-6131040991), [Write the Ledger spec](https://github.com/timemir/wow-fish/issues/40#issuecomment-6131150684); ADR 0001, 0009. Prototype: `prototypes/settings-tree/` (variant B)
 
 This file is the one place that shows Pagle's whole Settings tree: which rows sit on which page, in what order, under which header, indented under what, and when each is greyed out. Terms are used as `CONTEXT.md` defines them.
 
@@ -88,11 +88,15 @@ The rules below are authoritative; this sketch only summarises them.
   | 1 | | only while no Module is On (CORE-R41) | paragraph | "Recording your Catches. Enable a Module to see them." |
   | 2 | Modules | the status list (SET-R11) | custom | From M1. |
   | 3 | | | note | "Turn Modules on or off in the AddOns list." |
-  | 4 | Help chart the waters | Field report | button | "Open Field report", or "Open Field report ({N})" while `Pagle.GetFieldReportCount()` is above 0, read each time the root is shown; it calls `Pagle.OpenFieldReport()` (REP-R43). Tooltip: "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form." From M3. |
-  | 5 | Saving | Remind me to `/reload` when Casts are unsaved | checkbox | LOG-R86; default off. Tooltip: "A chat line every {step} Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them.", with {step} filled from LOG-R86's tunable (50). From M1. |
-  | 6 | Units | Length unit | dropdown | "Centimetres" / "Inches"; LOG-R69, whose default (inches or centimetres by `GetCurrentRegion()`) is Core's. Tooltip: "How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes only what you see." From M4. |
+  | 4 | Getting started | Field guide | button | "Show me around again", with the line "The eight pages you saw on your first day."; opens the Field guide (ONB-R81). From M8.5. |
+  | 5 | | Margin notes | checkbox | on (`PagleDB.global.onboarding.notesOn`), with the button "Show them again" (as `/pagle guide notes`, ONB-R80). Tooltip: "Explain things the first time they happen." From M8.5. |
+  | 6 | | First evening list | checkbox | shows the list again (ONB-R63); its line reads "{done} of {total} done"; the row is shown only while an item isn't done. From M8.5. |
+  | 7 | Help chart the waters | Field report | button | "Open Field report", or "Open Field report ({N})" while `Pagle.GetFieldReportCount()` is above 0, read each time the root is shown; it calls `Pagle.OpenFieldReport()` (REP-R43). Tooltip: "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form." From M3. |
+  | 8 | Saving | Remind me to `/reload` when Casts are unsaved | checkbox | LOG-R86; default off. Tooltip: "A chat line every {step} Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them.", with {step} filled from LOG-R86's tunable (50). From M1. |
+  | 9 | Units | Length unit | dropdown | "Centimetres" / "Inches"; LOG-R69, whose default (inches or centimetres by `GetCurrentRegion()`) is Core's. Tooltip: "How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes only what you see." From M4. |
+  | 10 | Pagle menu | Show the minimap icon | checkbox | on (CORE-R56, `PagleDB.global.minimap`). Tooltip: "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button by the minimap." From M8.5. |
 
-  The length unit sits on the root because it is a Core option that three Modules display ([Write the Settings spec](https://github.com/timemir/wow-fish/issues/44#issuecomment-6129738678)). Saving and Units are the two sections of Core's options that CORE-R40 lists; their keys are `PagleDB.profile.reloadReminder` and `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)).
+  The length unit sits on the root because it is a Core option that three Modules display ([Write the Settings spec](https://github.com/timemir/wow-fish/issues/44#issuecomment-6129738678)). Saving, Units and Pagle menu are the sections of Core's options that CORE-R40 lists; their keys are `PagleDB.profile.reloadReminder`, `PagleDB.profile.lengthUnit` ([catch-log.md](core/catch-log.md#data)) and `PagleDB.global.minimap` (CORE-R53). Getting started is onboarding's ([onboarding.md](core/onboarding.md), ONB-R81).
 - **SET-R11** The status list is a table of the roster in CORE-R1 order: its name, its TOC version and its state, as CORE-R41 gives them. Each On Module's row ends with one button (CORE-R44):
 
   | Module | Button | Source |
@@ -145,7 +149,7 @@ The rules below are authoritative; this sketch only summarises them.
   |---|---|---|---|---|
   | Cozy mode | checkbox | off (ANN-R40) | | "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently." |
   | Interruption budget | checkbox | on (ANN-R31, ANN-R32) | Cozy mode is on | "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway." |
-  | ↳ Interruptions | slider | 1–10, step 1 · 4 | Cozy mode is on, or the budget is off | |
+  | ↳ Interruptions | slider | 1–30, step 1 · 20 | Cozy mode is on, or the budget is off | |
   | ↳ Per | slider, shown as "{n} min" | 1–15 min, step 1 min · 5 min (stored in seconds) | Cozy mode is on, or the budget is off | |
   | Show every catch | checkbox | on (ANN-R13, `everyCatch`) | Cozy mode is on | "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing." |
   | Animations | checkbox | on ([announcements.md › Motion](core/announcements.md#motion), `motion`) | | "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles." |
@@ -279,7 +283,7 @@ This file is the tree; the rules above place every option. Each option's values 
 
 | Name | Value | Rules |
 |---|---|---|
-| Interruptions slider | 1–10, step 1 (ANN Settings) | SET-R30 |
+| Interruptions slider | 1–30, step 1 (ANN Settings) | SET-R30 |
 | Per slider | 1–15 min, step 1 min (ANN Settings) | SET-R30 |
 | Watched Dry spells cap, shown as "{n} of 3" | Stats' Watches tunable (3) | SET-R42 |
 | Reminder step in the tooltip | LOG-R86's step (50 Casts) | SET-R10 |
