@@ -346,7 +346,7 @@ describe("Live Embers, earned at the Campfire's 365-day milestone (TKB-R126, TKB
 	local EMBERS = "tackleboard.trackerframe.embers"
 
 	it(
-		"isn't owned with 364 days lit, and is after the one M:RefreshGoods of the live entry lighting the 365th",
+		"isn't owned with 364 days lit, and is after the one M:RefreshGoods of the live entry lighting the 365th (TKB-R126, SHOP-R31)",
 		function()
 			local fake = board.withHistory(litDays(364))
 			local loaded = board.load(fake)
@@ -369,7 +369,7 @@ describe("Live Embers, earned at the Campfire's 365-day milestone (TKB-R126, TKB
 	)
 
 	it(
-		"is owned from a build over a year-long fire, and stays owned through its rebuild, refreshed from done",
+		"is owned from a build over a year-long fire, and stays owned through its rebuild, refreshed from done (TKB-R126, SHOP-R31)",
 		function()
 			local fake = board.withHistory(litDays(365))
 			local loaded = board.load(fake)
@@ -432,7 +432,7 @@ describe(
 		)
 
 		it(
-			"isn't owned with 99 days lit, and is after the one M:RefreshGoods of the live entry lighting the 100th",
+			"isn't owned with 99 days lit, and is after the one M:RefreshGoods of the live entry lighting the 100th (TKB-R126, SHOP-R31)",
 			function()
 				local fake = board.withHistory(litDays(99))
 				local loaded = board.load(fake)

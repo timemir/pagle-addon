@@ -23,24 +23,30 @@ end
 describe("a kit tracker frame's slices (TKB-R125)", function()
 	local ns = board.load().ns
 
-	it("scale the sprite to the frame's width, its margin outside, across the sprite's full width", function()
-		-- 100 wide: twice the element's 50
-		local cut = ns.FrameSlices(ATLAS, SPRITE, { top = 10, foot = 6, mode = "stretch" }, 100, 120)
+	it(
+		"scale the sprite to the frame's width, its margin outside, across the sprite's full width (TKB-R125)",
+		function()
+			-- 100 wide: twice the element's 50
+			local cut = ns.FrameSlices(ATLAS, SPRITE, { top = 10, foot = 6, mode = "stretch" }, 100, 120)
 
-		assert.are.same({ -10, 120, 4 / 512, 124 / 512 }, { cut.x, cut.width, cut.left, cut.right })
-	end)
+			assert.are.same({ -10, 120, 4 / 512, 124 / 512 }, { cut.x, cut.width, cut.left, cut.right })
+		end
+	)
 
-	it("keep the top and foot at their shape, scaled with the width, and stretch the middle between them", function()
-		local cut = ns.FrameSlices(ATLAS, SPRITE, { top = 10, foot = 6, mode = "stretch" }, 100, 120)
+	it(
+		"keep the top and foot at their shape, scaled with the width, and stretch the middle between them (TKB-R125)",
+		function()
+			local cut = ns.FrameSlices(ATLAS, SPRITE, { top = 10, foot = 6, mode = "stretch" }, 100, 120)
 
-		assert.are.same({
-			piece(-10, 30, 0, 15), -- the margin above and the top, 15 units at twice the size
-			piece(20, 88, 15, 39), -- the middle, 24 units stretched to what is left
-			piece(108, 22, 39, 50), -- the foot and the margin under it
-		}, cut.pieces)
-	end)
+			assert.are.same({
+				piece(-10, 30, 0, 15), -- the margin above and the top, 15 units at twice the size
+				piece(20, 88, 15, 39), -- the middle, 24 units stretched to what is left
+				piece(108, 22, 39, 50), -- the foot and the margin under it
+			}, cut.pieces)
+		end
+	)
 
-	it("repeat a tiled middle every period, at the frame's scale, the last one cut short", function()
+	it("repeat a tiled middle every period, at the frame's scale, the last one cut short (TKB-R125)", function()
 		local cut = ns.FrameSlices(ATLAS, SPRITE, { top = 10, foot = 6, mode = "tile", period = 8 }, 100, 120)
 
 		-- 88 units of middle: five whole periods of 16, then 8, half a period
@@ -56,14 +62,14 @@ describe("a kit tracker frame's slices (TKB-R125)", function()
 		}, cut.pieces)
 	end)
 
-	it("squeeze the top and foot together, with no middle, in a frame shorter than both", function()
+	it("squeeze the top and foot together, with no middle, in a frame shorter than both (TKB-R125)", function()
 		-- 16 high, half the 32 the top and foot take
 		local cut = ns.FrameSlices(ATLAS, SPRITE, { top = 10, foot = 6, mode = "tile", period = 8 }, 100, 16)
 
 		assert.are.same({ piece(-5, 15, 0, 15), piece(10, 11, 39, 50) }, cut.pieces)
 	end)
 
-	it("draw no middle when the top and foot just fill the frame", function()
+	it("draw no middle when the top and foot just fill the frame (TKB-R125)", function()
 		local cut = ns.FrameSlices(ATLAS, SPRITE, { top = 10, foot = 6, mode = "stretch" }, 100, 32)
 
 		assert.are.same({ piece(-10, 30, 0, 15), piece(20, 22, 39, 50) }, cut.pieces)

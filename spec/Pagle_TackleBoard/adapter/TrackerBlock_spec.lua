@@ -218,53 +218,59 @@ describe("A tracker block in one of the Curio Shop expansion's frames (TKB-R125)
 		return shown
 	end
 
-	it("takes its sprite, insets and slice from the kit's goods.json, in the TrackerFrames2 atlas", function()
-		local _, ns = newBlock()
+	it(
+		"takes its sprite, insets and slice from the kit's goods.json, in the TrackerFrames2 atlas (TKB-R125)",
+		function()
+			local _, ns = newBlock()
 
-		for name, kit in pairs(KIT) do
-			local style = ns.TRACKER_STYLES[name]
-			local insets = kit[2]
-			assert.are.same(
-				{ "TrackerFrames2", kit[1], insets[1], insets[2], insets[3], insets[4], kit[3] },
-				{ style.atlas, style.frame, style.left, style.right, style.header + 4, style.pad, style.slice },
-				name
+			for name, kit in pairs(KIT) do
+				local style = ns.TRACKER_STYLES[name]
+				local insets = kit[2]
+				assert.are.same(
+					{ "TrackerFrames2", kit[1], insets[1], insets[2], insets[3], insets[4], kit[3] },
+					{ style.atlas, style.frame, style.left, style.right, style.header + 4, style.pad, style.slice },
+					name
+				)
+				local sprite = ns.BOARD_ATLASES.TrackerFrames2.sprites[kit[1]]
+				assert.are.same({ 556, 440, { 8, 6, 262, 200 } }, { sprite.w, sprite.h, sprite.box }, name)
+			end
+			assert.are.equal(
+				"Interface\\AddOns\\Pagle_TackleBoard\\media\\board\\TrackerFrames2",
+				ns.BOARD_ATLASES.TrackerFrames2.file
 			)
-			local sprite = ns.BOARD_ATLASES.TrackerFrames2.sprites[kit[1]]
-			assert.are.same({ 556, 440, { 8, 6, 262, 200 } }, { sprite.w, sprite.h, sprite.box }, name)
 		end
-		assert.are.equal(
-			"Interface\\AddOns\\Pagle_TackleBoard\\media\\board\\TrackerFrames2",
-			ns.BOARD_ATLASES.TrackerFrames2.file
-		)
-	end)
+	)
 
-	it("slices its frame in three round its lines, reaching out by the insets, scaled evenly to its width", function()
-		local block, ns = newBlock()
-		block:SetLines(LINES)
+	it(
+		"slices its frame in three round its lines, reaching out by the insets, scaled evenly to its width (TKB-R125)",
+		function()
+			local block, ns = newBlock()
+			block:SetLines(LINES)
 
-		block:SetFrame(ns.TRACKER_STYLES.net)
+			block:SetFrame(ns.TRACKER_STYLES.net)
 
-		local atlas = ns.BOARD_ATLASES.TrackerFrames2
-		local frame = block.frame
-		local height = block:GetHeight()
-		assert.is_true(frame:IsShown())
-		assert.are.same({ 250 + 32, height }, { frame.width, frame.height })
-		assert.are.same({ "TOPLEFT", -16, 0 }, frame.points[1])
-		local cut = ns.FrameSlices(atlas, atlas.sprites["frame-net"], KIT.net[3], 250 + 32, height)
-		local expected = {}
-		for i, piece in ipairs(cut.pieces) do
-			expected[i] = {
-				cut.x,
-				-piece.y,
-				cut.width,
-				piece.height,
-				{ cut.left, cut.right, piece.top, piece.bottom },
-				atlas.file,
-			}
+			local atlas = ns.BOARD_ATLASES.TrackerFrames2
+			local frame = block.frame
+			local height = block:GetHeight()
+			assert.is_true(frame:IsShown())
+			assert.are.same({ 250 + 32, height }, { frame.width, frame.height })
+			assert.are.same({ "TOPLEFT", -16, 0 }, frame.points[1])
+			local cut = ns.FrameSlices(atlas, atlas.sprites["frame-net"], KIT.net[3], 250 + 32, height)
+			local expected = {}
+			for i, piece in ipairs(cut.pieces) do
+				expected[i] = {
+					cut.x,
+					-piece.y,
+					cut.width,
+					piece.height,
+					{ cut.left, cut.right, piece.top, piece.bottom },
+					atlas.file,
+				}
+			end
+			assert.are.equal(3, #expected) -- top, stretched middle, foot
+			assert.are.same(expected, shownPieces(frame))
 		end
-		assert.are.equal(3, #expected) -- top, stretched middle, foot
-		assert.are.same(expected, shownPieces(frame))
-	end)
+	)
 
 	it("repeats Bamboo Slats' middle down the frame (TKB-R125)", function()
 		local block, ns = newBlock()
@@ -275,7 +281,7 @@ describe("A tracker block in one of the Curio Shop expansion's frames (TKB-R125)
 		assert.is_true(#shownPieces(block.frame) > 3)
 	end)
 
-	it("sets its words in by the top and foot insets", function()
+	it("sets its words in by the top and foot insets (TKB-R125)", function()
 		local block, ns = newBlock()
 		block:SetLines(LINES)
 		local plain = block:GetHeight()
@@ -288,7 +294,7 @@ describe("A tracker block in one of the Curio Shop expansion's frames (TKB-R125)
 	end)
 
 	it(
-		"inks its words in the kit's inks: the header, the text, the dim and the accent for here and Complete",
+		"inks its words in the kit's inks: the header, the text, the dim and the accent for here and Complete (TKB-R125)",
 		function()
 			local block, ns = newBlock()
 			block:SetFrame(ns.TRACKER_STYLES.embers)
