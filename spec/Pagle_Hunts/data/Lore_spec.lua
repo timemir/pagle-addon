@@ -51,13 +51,18 @@ describe("Hunts' committed lore (DATA-R111, its M5 and M8 batches)", function()
 		assert.is_truthy(note and note:find("level 60", 1, true))
 	end)
 
-	it("has a name and a description for each of Hunts' goods (HNT-R121, HNT-R130)", function()
-		assert.are.equal(27, #GOODS)
-		for _, good in ipairs(GOODS) do
-			text(("huntgood.%s.name"):format(good))
-			text(("huntgood.%s.description"):format(good))
+	it(
+		"has a name and a description for each of Hunts' goods, Night Watch too (HNT-R121, HNT-R123, HNT-R130)",
+		function()
+			text("huntgood.hunts.soundset.nightwatch.name")
+			text("huntgood.hunts.soundset.nightwatch.description")
+			assert.are.equal(27, #GOODS)
+			for _, good in ipairs(GOODS) do
+				text(("huntgood.%s.name"):format(good))
+				text(("huntgood.%s.description"):format(good))
+			end
 		end
-	end)
+	)
 
 	it(
 		"names each of the pool's 24 events and its Hunts, with each event's note (HNT-R130, DATA-R97, the M8 batch)",

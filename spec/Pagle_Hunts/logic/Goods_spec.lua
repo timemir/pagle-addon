@@ -1,4 +1,4 @@
--- Hunts' earned goods (HNT-R122): when each is owned, read from the projection's state and the celebrated
+-- Hunts' earned goods (HNT-R122, HNT-R123): when each is owned, read from the projection's state and the celebrated
 -- set (HNT-R90) together, over hand-made states in hunts.md › Projection state's shape and the fixture Hunt list's
 -- four sets (fixture_dusk, fixture_wagers, fixture_pair and fixture_tide).
 
@@ -7,8 +7,8 @@ local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
 local SETS = { "fixture_dusk", "fixture_wagers", "fixture_pair", "fixture_tide" }
 
--- The goods earned with every set's title (HNT-R122).
-local EVERY_SET = { "hunts.notebookcover.fiveseal" }
+-- The goods earned with every set's title (HNT-R122): Five-Set Seal, and Night Watch in Core's sound set slot (HNT-R123).
+local EVERY_SET = { "hunts.notebookcover.fiveseal", "hunts.soundset.nightwatch" }
 
 -- A set title's record in state.sets (HuntsSetTitle).
 local TITLE = { earnedAt = hunts.JAN_1, date = { year = 2026, month = 1, day = 1 }, fromRetirement = false }
@@ -59,12 +59,13 @@ describe("Hunts' earned goods", function()
 		return ns.HuntsGoodEarned(ns.HuntsGoodRule(goodID), state, set, list)
 	end
 
-	it("give each earned good its rule, and no other good one (HNT-R122)", function()
-		assert.are.same({ "anySetTitle", "everySetTitle", "wagerRuns", "wagerRuns" }, {
+	it("give each earned good its rule, and no other good one (HNT-R122, HNT-R123)", function()
+		assert.are.same({ "anySetTitle", "everySetTitle", "wagerRuns", "wagerRuns", "everySetTitle" }, {
 			ns.HuntsGoodRule("hunts.notebookcover.pathfinder"),
 			ns.HuntsGoodRule("hunts.notebookcover.fiveseal"),
 			ns.HuntsGoodRule("hunts.notebookcover.wagersilk"),
 			ns.HuntsGoodRule("hunts.trackerframe.wagerribbon"),
+			ns.HuntsGoodRule("hunts.soundset.nightwatch"),
 		})
 		assert.is_nil(ns.HuntsGoodRule("hunts.notebookcover.trophycase"))
 		assert.is_nil(ns.HuntsGoodRule("hunts.notebookcover.leather"))
@@ -93,9 +94,9 @@ describe("Hunts' earned goods", function()
 		end)
 	end)
 
-	describe("Five-Set Seal", function()
+	describe("Five-Set Seal and Night Watch", function()
 		it(
-			"is earned with every set's title, each in the projection or the celebrated set (HNT-R122, HNT-R20)",
+			"are earned with every set's title, each in the projection or the celebrated set (HNT-R122, HNT-R123, HNT-R20)",
 			function()
 				for _, id in ipairs(EVERY_SET) do
 					assert.are.equal(true, earned(id, stateWith(ns, SETS), celebrated()), id)
@@ -128,7 +129,7 @@ describe("Hunts' earned goods", function()
 			end
 		)
 
-		it("isn't earned while one set's title is missing from both (HNT-R122)", function()
+		it("aren't earned while one set's title is missing from both (HNT-R122, HNT-R123)", function()
 			for _, id in ipairs(EVERY_SET) do
 				local state = stateWith(ns, { "fixture_dusk", "fixture_wagers" })
 				assert.are.equal(false, earned(id, state, celebrated({ sets = { fixture_pair = true } })), id)
@@ -136,7 +137,7 @@ describe("Hunts' earned goods", function()
 			end
 		end)
 
-		it("isn't earned over a Hunt list with no sets (HNT-R122)", function()
+		it("aren't earned over a Hunt list with no sets (HNT-R122)", function()
 			assert.is_false(ns.HuntsGoodEarned("everySetTitle", stateWith(ns, SETS), celebrated(), {}))
 		end)
 	end)

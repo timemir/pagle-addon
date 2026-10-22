@@ -103,9 +103,17 @@ ns.HUNTS_GOODS = {
 	},
 }
 
---- Hunts' goods in Core's slots (SHOP-R23): none yet.
+--- Hunts' goods in Core's slots (HNT-R123, SHOP-R23): Night Watch, earned with every set's title (HNT-R122). Core
+--- plays it (ANN-R72) and previews it with its slot's preview; Hunts only says when it is owned.
 ---@type { slot: string, goods: HuntsGoodData[] }[]
-ns.HUNTS_CORE_GOODS = {}
+ns.HUNTS_CORE_GOODS = {
+	{
+		slot = ns.CORE_SOUND_SET_SLOT,
+		goods = {
+			{ id = "hunts.soundset.nightwatch", earned = "everySetTitle", icon = ICONS .. "INV_Misc_Lantern_01" },
+		},
+	},
+}
 
 --- The rule that earns good `goodID` (HNT-R122), or nil for a good that isn't Hunts' earned one.
 ---@param goodID string

@@ -201,6 +201,19 @@ describe("Hunts' goods", function()
 		end
 	)
 
+	it(
+		"register Night Watch, earned, in Core's sound set slot, with no slot of Hunts' for it (HNT-R123, SHOP-R23)",
+		function()
+			local _, fake = loggedIn()
+
+			local good = fake.ns.goods:Good("hunts.soundset.nightwatch")
+			assert.are.same({ "core.soundset", "Hunts", "earned" }, { good.slot, good.module, kindOf(good) })
+			assert.are.same({ "Night Watch", "Finish every Hunt set" }, { good.name, good.earnedText })
+			assert.is_nil(good.preview) -- Core's slot previews it
+			assert.is_string(fake.Pagle.GetGood("hunts.soundset.nightwatch").description)
+		end
+	)
+
 	it("say what earns each earned good: a set, every set, ten Wager runs (HNT-R122, SHOP-R22)", function()
 		local _, fake = loggedIn()
 
@@ -611,6 +624,7 @@ describe("Hunts' earned goods, through the projection", function()
 	local DARKSHORE, WESTFALL, ELWYNN = { zone = C.DARKSHORE }, { zone = C.WESTFALL }, { zone = C.ELWYNN }
 	local PATHFINDER, FIVESEAL = "hunts.notebookcover.pathfinder", "hunts.notebookcover.fiveseal"
 	local WAGERSILK, RIBBON = "hunts.notebookcover.wagersilk", "hunts.trackerframe.wagerribbon"
+	local NIGHT_WATCH = "hunts.soundset.nightwatch"
 
 	-- fixture_oddity done at dusk in Darkshore: fixture_wagers' first Hunt (fixture_grouper doesn't exist yet).
 	local function oddity(fake)
@@ -669,7 +683,7 @@ describe("Hunts' earned goods, through the projection", function()
 	it("own none of them before a set title or a completed run (HNT-R122)", function()
 		local _, fake = hunts.login(oddity)
 
-		for _, id in ipairs({ PATHFINDER, FIVESEAL, WAGERSILK, RIBBON }) do
+		for _, id in ipairs({ PATHFINDER, FIVESEAL, WAGERSILK, RIBBON, NIGHT_WATCH }) do
 			assert.are.equal(false, fake.Pagle.IsOwned(id), id)
 		end
 	end)
@@ -695,12 +709,23 @@ describe("Hunts' earned goods, through the projection", function()
 		assert.is_false(fake.Pagle.IsOwned(FIVESEAL))
 	end)
 
-	it("own Five-Set Seal when every set's title is earned (HNT-R122, HNT-R20)", function()
+	it("own Five-Set Seal and Night Watch when every set's title is earned (HNT-R122, HNT-R123, HNT-R20)", function()
 		local _, fake = hunts.login(wagersTitle, { prepare = wagersOnly })
 
 		assert.is_true(fake.Pagle.IsOwned(FIVESEAL))
+		assert.is_true(fake.Pagle.IsOwned(NIGHT_WATCH))
 		assert.is_true(fake.Pagle.IsOwned(PATHFINDER))
 	end)
+
+	it(
+		"let Night Watch be equipped in Core's sound set slot once earned, Core playing it (HNT-R123, SHOP-R23, SHOP-R32)",
+		function()
+			local _, fake = hunts.login(wagersTitle, { prepare = wagersOnly })
+
+			assert.is_true(fake.Pagle.SetEquipped("core.soundset", NIGHT_WATCH))
+			assert.are.equal(NIGHT_WATCH, fake.Pagle.GetEquipped("core.soundset"))
+		end
+	)
 
 	it(
 		"keep them after a rebuild whose definitions no longer earn the title: the celebrated set holds it, from registration on (HNT-R122, HNT-R90, SHOP-R31)",
@@ -721,6 +746,7 @@ describe("Hunts' earned goods, through the projection", function()
 			assert.is_nil(next.ns.State().sets.fixture_wagers)
 			assert.is_true(nextFake.Pagle.IsOwned(PATHFINDER))
 			assert.is_true(nextFake.Pagle.IsOwned(FIVESEAL))
+			assert.is_true(nextFake.Pagle.IsOwned(NIGHT_WATCH))
 		end
 	)
 
