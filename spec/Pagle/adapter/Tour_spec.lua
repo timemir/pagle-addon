@@ -71,14 +71,15 @@ end
 
 describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 	it(
-		"are each Announcement form, both cards, the shop, the Field report, the glyphs and each Settings page",
+		"are each Announcement form, both cards, the shop, the Field report, the glyphs, each Settings page and each"
+			.. " Field guide step (ONB-R84)",
 		function()
 			local loaded = touring()
 
 			pagle(loaded, "dev tour list core")
 
 			assert.are.same({
-				"Pagle dev: 13 tour stops:",
+				"Pagle dev: 17 tour stops:",
 				"  core.announce.toast: a sample toast",
 				"  core.announce.nod: a sample nod",
 				"  core.announce.banner: a sample banner",
@@ -92,6 +93,10 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 				"  core.settings.fishing: Settings: Fishing",
 				"  core.settings.announcements: Settings: Announcements",
 				"  core.settings.look: Settings: Look and Feel",
+				"  core.onboarding.step.welcome: the Field guide at its welcome step",
+				"  core.onboarding.step.box: the Field guide at its box step",
+				"  core.onboarding.step.moments: the Field guide at its moments step",
+				"  core.onboarding.step.off: the Field guide at its off step",
 			}, loaded.printed)
 		end
 	)
@@ -105,9 +110,9 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 		end
 
 		pagle(loaded, "dev tour core")
-		loaded.client.advance(60)
+		loaded.client.advance(90)
 
-		assert.are.equal(13, #shown)
+		assert.are.equal(17, #shown)
 		for i, n in ipairs(shown) do
 			assert(n > 0, "stop " .. i .. " showed nothing")
 		end
@@ -119,14 +124,14 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 		local saved = copy(loaded.env.PagleDB)
 
 		pagle(loaded, "dev tour core")
-		loaded.client.advance(60)
+		loaded.client.advance(90)
 
 		assert.are.equal(0, added(onScreen(loaded), before))
-		assert.are.equal(13, loaded.client.screenshots)
+		assert.are.equal(17, loaded.client.screenshots)
 		assert.are.same(saved, loaded.env.PagleDB)
-		assert.are.equal("Pagle dev: tour 1/13: core.announce.toast", loaded.printed[2])
-		assert.are.equal("Pagle dev: tour 13/13: core.settings.look", loaded.printed[14])
-		assert.are.equal("Pagle dev: the tour is done at ", loaded.printed[15]:sub(1, 31))
+		assert.are.equal("Pagle dev: tour 1/17: core.announce.toast", loaded.printed[2])
+		assert.are.equal("Pagle dev: tour 17/17: core.onboarding.step.off", loaded.printed[18])
+		assert.are.equal("Pagle dev: the tour is done at ", loaded.printed[19]:sub(1, 31))
 	end)
 
 	it("leave open a window that was open before its stop", function()
@@ -135,7 +140,7 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 		local shop = loaded.ns.shopFrame
 
 		pagle(loaded, "dev tour core")
-		loaded.client.advance(60)
+		loaded.client.advance(90)
 
 		assert.is_true(shop:IsShown())
 	end)
@@ -145,7 +150,7 @@ describe("Core's own tour stops (CORE-R65, CORE-R68)", function()
 		setCombat(loaded, true)
 
 		pagle(loaded, "dev tour")
-		loaded.client.advance(60)
+		loaded.client.advance(90)
 
 		assert.are.equal(0, loaded.client.screenshots)
 		assert.are.same({ "Pagle dev: the tour waits until combat ends; try again then." }, loaded.printed)

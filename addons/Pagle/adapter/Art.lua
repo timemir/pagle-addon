@@ -13,10 +13,12 @@ end
 -- reused by the lanes redraws in place.
 
 local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
--- The faces (media/fonts/OFL-*.txt): IM Fell English for print, Caveat for the Angler's handwriting, Marcellus for
--- gilt, stamps and labels.
+-- The faces (media/fonts/OFL-*.txt): IM Fell English for print, its italic for notes and its small caps (IM Fell
+-- English SC) for kickers, Caveat for the Angler's handwriting, Marcellus for gilt, stamps and labels.
 local FACES = {
 	print = "IMFeENrm28P.ttf",
+	italic = "IMFeENit28P.ttf",
+	sc = "IMFeENsc28P.ttf",
 	gilt = "Marcellus-Regular.ttf",
 	hand = "Caveat-Medium.ttf",
 	handSemi = "Caveat-SemiBold.ttf",
@@ -68,6 +70,9 @@ local FONTS = {
 	CardDetail = { "hand", 20, "ink2" },
 	CardGroup = { "print", 13, "red" },
 	Button = { "gilt", 17, "gilt", true },
+	-- the books' kicker over a page's title (the Field guide's, ONB-R30), in IM Fell English SC: the client has no
+	-- small caps of its own
+	SmallCaps = { "sc", 14, "kicker" },
 }
 
 --- The art's font object names, by key: PagleArt<key>.
@@ -96,6 +101,43 @@ end
 function ns.SetArtFont(fontString, key)
 	fontString:SetFontObject(ns.ART_FONTS[key])
 	ns.Ink(fontString, FONTS[key][3])
+end
+
+--- The art's font object name for the small-caps kicker (IM Fell English SC, 14), in the books' kicker ink.
+ns.ART_SMALL_CAPS = ns.ART_FONTS.SmallCaps
+
+--- A face the art bundles, for a font made at any size (ns.ArtFaceFont).
+---@alias PagleArtFace "print"|"italic"|"sc"|"gilt"|"hand"|"handSemi"|"handBold"
+
+-- Each font object ns.ArtFaceFont has made, by face, size and shadow.
+---@type table<string, Font>
+local faceFonts = {}
+
+--- A font object in the art's `face` at `size` (UI units), with a shadow when `shadow` (words on leather, ribbons and
+--- the world; never on paper), made once: the Field guide's pages set type at many sizes, as the books do. Its ink is
+--- the font string's to set.
+---@param face PagleArtFace
+---@param size number
+---@param shadow boolean?
+---@return Font
+function ns.ArtFaceFont(face, size, shadow)
+	local key = ("%s_%s%s"):format(face, (tostring(size):gsub("%.", "_")), shadow and "_s" or "")
+	local font = faceFonts[key]
+	if not font then
+		local file = assert(FACES[face], "the art has no face " .. tostring(face))
+		font = CreateFont("PagleArtFace_" .. key)
+		if font:SetFont(FONT_DIR .. file, size, "") == false then
+			font:SetFont(FALLBACK, size, "")
+		end
+		if shadow then
+			font:SetShadowColor(0, 0, 0, 0.95)
+			font:SetShadowOffset(0, -1)
+		else
+			font:SetShadowOffset(0, 0)
+		end
+		faceFonts[key] = font
+	end
+	return font
 end
 
 --- The size of the art's font `key`.
@@ -157,6 +199,7 @@ local function crisp(texture)
 	end
 	return texture
 end
+ns.ArtCrisp = crisp
 
 ---@param atlasName string
 ---@param name string
@@ -320,6 +363,107 @@ function ns.SetThreeSlice(frame, atlasName, name, width, cap, layer)
 	slice.middle:ClearAllPoints()
 	slice.middle:SetPoint("TOPLEFT", slice.left, "TOPRIGHT")
 	slice.middle:SetPoint("BOTTOMRIGHT", slice.right, "BOTTOMLEFT")
+end
+
+--- A panel drawn as a sprite sliced in nine on a frame, following the frame's size: its corners keep their size, its
+--- edges and middle stretch. The frame is the drawn element's box; the sprite's margin (its shadow) hangs outside it.
+--- Paper, cards, fields and boxes of any size are drawn so (the onboarding kit's GuideParts: "note", "opt", "bind", …).
+---@class PagleNineSlice
+---@field pieces Texture[] top left, top, top right, left, middle, right, bottom left, bottom, bottom right
+local NineSlice = {}
+NineSlice.__index = NineSlice
+
+--- Shows or hides the panel.
+---@param shown boolean
+function NineSlice:SetShown(shown)
+	for _, piece in ipairs(self.pieces) do
+		piece:SetShown(shown)
+	end
+end
+
+function NineSlice:Show()
+	self:SetShown(true)
+end
+
+function NineSlice:Hide()
+	self:SetShown(false)
+end
+
+--- Tints the panel (a card under the mouse warms, a dimmed one greys).
+---@param r number
+---@param g number
+---@param b number
+---@param a number?
+function NineSlice:SetVertexColor(r, g, b, a)
+	for _, piece in ipairs(self.pieces) do
+		piece:SetVertexColor(r, g, b, a or 1)
+	end
+end
+
+--- Draws sprite `name` of atlas `atlasName` nine-sliced on `frame`, in `layer` (BACKGROUND by default, under the
+--- frame's own words): `cap` UI units of the drawn element are kept at each corner (a number, or { x, y }), with the
+--- sprite's margin outside them. The pieces are anchored to the frame, so the panel follows its size from then on.
+---@param frame Frame
+---@param atlasName string
+---@param name string
+---@param cap number|number[]
+---@param layer DrawLayer?
+---@param sublevel integer?
+---@return PagleNineSlice
+function ns.NewNineSlice(frame, atlasName, name, cap, layer, sublevel)
+	local atlas, sprite = spriteOf(atlasName, name)
+	local scale, box = atlas.scale, sprite.box
+	local capX, capY = cap, cap
+	if type(cap) == "table" then
+		capX, capY = cap[1], cap[2]
+	end
+	---@cast capX number
+	---@cast capY number
+	local spriteWidth, spriteHeight = sprite.w / scale, sprite.h / scale
+	local left, top = box[1], box[2]
+	local right, bottom = spriteWidth - box[1] - box[3], spriteHeight - box[2] - box[4]
+	-- The sprite's columns and rows in UI units from its top left, each { from, span }: a cap with its margin, the
+	-- stretched middle, the other cap with its margin.
+	local cols = { { 0, left + capX }, { left + capX, 0 }, { spriteWidth - capX - right, capX + right } }
+	cols[2][2] = cols[3][1] - cols[2][1]
+	local rows = { { 0, top + capY }, { top + capY, 0 }, { spriteHeight - capY - bottom, capY + bottom } }
+	rows[2][2] = rows[3][1] - rows[2][1]
+	local pieces = {}
+	for row = 1, 3 do
+		for col = 1, 3 do
+			local piece = crisp(frame:CreateTexture(nil, layer or "BACKGROUND", nil, sublevel or 0))
+			local x0, y0 = sprite.x + cols[col][1] * scale, sprite.y + rows[row][1] * scale
+			piece:SetTexture(atlas.file)
+			piece:SetTexCoord(
+				x0 / atlas.width,
+				(x0 + cols[col][2] * scale) / atlas.width,
+				y0 / atlas.height,
+				(y0 + rows[row][2] * scale) / atlas.height
+			)
+			pieces[#pieces + 1] = piece
+		end
+	end
+	local tl, t, tr, l, m, r, bl, b, br = unpack(pieces)
+	tl:SetSize(cols[1][2], rows[1][2])
+	tl:SetPoint("TOPLEFT", frame, "TOPLEFT", -left, top)
+	tr:SetSize(cols[3][2], rows[1][2])
+	tr:SetPoint("TOPRIGHT", frame, "TOPRIGHT", right, top)
+	bl:SetSize(cols[1][2], rows[3][2])
+	bl:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", -left, -bottom)
+	br:SetSize(cols[3][2], rows[3][2])
+	br:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", right, -bottom)
+	-- each edge and the middle between the corners round it
+	for _, span in ipairs({
+		{ t, tl, "TOPRIGHT", tr, "BOTTOMLEFT" },
+		{ b, bl, "TOPRIGHT", br, "BOTTOMLEFT" },
+		{ l, tl, "BOTTOMLEFT", bl, "TOPRIGHT" },
+		{ r, tr, "BOTTOMLEFT", br, "TOPRIGHT" },
+		{ m, tl, "BOTTOMRIGHT", br, "TOPLEFT" },
+	}) do
+		span[1]:SetPoint("TOPLEFT", span[2], span[3])
+		span[1]:SetPoint("BOTTOMRIGHT", span[4], span[5])
+	end
+	return setmetatable({ pieces = pieces }, NineSlice)
 end
 
 --- A medallion: a brass, bronze or silver ring with an icon round inside it and the gloss over it.

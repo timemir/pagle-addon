@@ -185,10 +185,20 @@ describe("/pagle guide (ONB-R80, CORE-R61)", function()
 		assert.are.same({ "Pagle: margin notes will show again, once each." }, loaded.printed)
 	end)
 
-	it("on its own prints the help list, guide in it, until the guide opens from it (ONB-R80, #322)", function()
+	it("on its own opens the Field guide, printing nothing (ONB-R80, ONB-R22)", function()
 		local loaded = enterWorld(loadCore({ BUILD_ENTRY }))
 
 		pagle(loaded, "Guide")
+
+		assert.are.same({}, loaded.printed)
+		assert.is_true(loaded.env.PagleGuide:IsShown())
+		assert.are.equal("welcome", state(loaded).guideStep)
+	end)
+
+	it("lists guide in the help list (ONB-R80, CORE-R61)", function()
+		local loaded = enterWorld(loadCore({ BUILD_ENTRY }))
+
+		pagle(loaded, "help")
 
 		assert.are.equal("Pagle commands:", loaded.printed[1])
 		assert.are.equal(
@@ -256,7 +266,7 @@ describe("/pagle dev onboarding (ONB-R83)", function()
 		pagle(loaded, "dev onboarding")
 		pagle(loaded, "dev onboarding letters")
 
-		local usage = "Pagle dev: /pagle dev onboarding reset"
+		local usage = "Pagle dev: /pagle dev onboarding reset | step <id>"
 		assert.are.same({ "Pagle dev: dev commands are on.", usage, usage }, loaded.printed)
 	end)
 end)

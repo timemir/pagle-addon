@@ -30,10 +30,12 @@ local CLOSE_BOTTOM = 20
 local ROWS_SHOWN = 12
 
 ---@class PagleCardRowView: Frame
----@field kind "heading"|"line"|"moment"
+---@field kind "heading"|"line"|"moment"|"link"
 ---@field icon Texture
 ---@field text FontString
 ---@field detail FontString
+---@field link Button? over a link row's words, made at the first: its Module in `module`
+---@field module string?
 
 ---@class PagleCardNumber
 ---@field value FontString
@@ -100,16 +102,59 @@ local function rowAt(frame, i)
 	return row
 end
 
--- Fills row `row` from a card row: a heading printed in red, a line, or a moment with its icon and its own text. Each
--- sits on its line.
+-- The ink of a Write-up section's Show me around » (ANN-R64), and its ink under the mouse.
+local LINK_INK, LINK_HOVER = { 0x7a / 255, 0x2a / 255, 0x14 / 255 }, { 0xb4 / 255, 0x28 / 255, 0x1a / 255 }
+
+-- A link row's button over its words, made on first use: it closes the card, as the player would, then opens the
+-- Field guide at the row's Module's first step (ANN-R64, ONB-R82).
+---@param frame PagleCardFrame
+---@param row PagleCardRowView
+---@return Button
+local function linkOf(frame, row)
+	local link = row.link
+	if not link then
+		link = CreateFrame("Button", nil, row)
+		link:SetPoint("BOTTOMLEFT", row.text, "BOTTOMLEFT", 0, -2)
+		link:SetPoint("TOPRIGHT", row.text, "TOPRIGHT", 0, 2)
+		link:SetScript("OnEnter", function()
+			row.text:SetTextColor(LINK_HOVER[1], LINK_HOVER[2], LINK_HOVER[3])
+		end)
+		link:SetScript("OnLeave", function()
+			row.text:SetTextColor(LINK_INK[1], LINK_INK[2], LINK_INK[3])
+		end)
+		link:SetScript("OnClick", function()
+			local module = row.module
+			closed(frame)
+			if module then
+				ns.guide:OpenModule(module)
+			end
+		end)
+		row.link = link
+	end
+	return link
+end
+
+-- Fills row `row` from a card row: a heading printed in red, a line, a moment with its icon and its own text, or a
+-- Write-up section's Show me around » link. Each sits on its line.
+---@param frame PagleCardFrame
 ---@param row PagleCardRowView
 ---@param data PagleCardRow
-local function fillRow(row, data)
+local function fillRow(frame, row, data)
 	row.kind = data.kind
+	row.module = data.module
 	row.text:ClearAllPoints()
 	row.text:SetText(data.text)
 	row.detail:SetText(data.detail or "")
-	if data.kind == "heading" then
+	if row.link then
+		row.link:SetShown(data.kind == "link")
+	end
+	if data.kind == "link" then
+		ns.SetArtFont(row.text, "CardLine")
+		row.text:SetTextColor(LINK_INK[1], LINK_INK[2], LINK_INK[3])
+		row.text:SetPoint("BOTTOMLEFT", 0, 7)
+		row.icon:Hide()
+		linkOf(frame, row):Show()
+	elseif data.kind == "heading" then
 		ns.SetArtFont(row.text, "CardGroup")
 		row.text:SetPoint("BOTTOMLEFT", 0, 4)
 		row.icon:Hide()
@@ -286,9 +331,12 @@ local function show(card)
 			frame.numbers[i].value:SetText(value)
 		end
 	end
-	local rows = ns.CardRows(card, BreakUpLargeNumbers)
+	-- ANN-R64: a section from a Module with a Field guide step ends with Show me around »
+	local rows = ns.CardRows(card, BreakUpLargeNumbers, function(module)
+		return ns.guideSteps ~= nil and ns.guideSteps:FirstOf(module) ~= nil
+	end)
 	for i, data in ipairs(rows) do
-		fillRow(rowAt(frame, i), data)
+		fillRow(frame, rowAt(frame, i), data)
 	end
 	for i = #rows + 1, #frame.rows do
 		frame.rows[i]:Hide()

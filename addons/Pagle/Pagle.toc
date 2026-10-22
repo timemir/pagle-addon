@@ -16,6 +16,7 @@ libs\AceDB-3.0\AceDB-3.0.lua
 data\Catalogue.lua
 data\AnnounceArt.lua
 data\ShopArt.lua
+data\GuideArt.lua
 data\FieldArt.lua
 data\ApiInventory.lua
 
@@ -67,6 +68,7 @@ logic\FieldReportText.lua
 logic\FieldReportBox.lua
 logic\Dock.lua
 logic\Onboarding.lua
+logic\Guide.lua
 logic\Wiring.lua
 adapter\Core.lua
 adapter\Callbacks.lua
@@ -115,5 +117,8 @@ adapter\FieldReportBox.lua
 adapter\ShopArt.lua
 adapter\ShopMotion.lua
 adapter\Shop.lua
+adapter\GuideKit.lua
+adapter\GuideBook.lua
+adapter\Guide.lua
 adapter\Tour.lua
 adapter\Login.lua

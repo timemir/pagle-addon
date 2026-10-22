@@ -183,6 +183,17 @@
 --- fake.global.onboarding, which fake.login adds when it's missing (ONB-R1, ONB-R2: letter "returning" when
 --- fake.catchLog holds a Cast then, else "waiting") and puts PLAYER_GUID in (ONB-R3). A spec may seed
 --- fake.global.onboarding before login (ns.NewOnboardingState), as a saved PagleDB holds it, and set its hooks.
+---@field guide PagleGuide The Field guide (core/onboarding.md › The Field guide), Core's own on its wiring
+--- (ns.WireGuide): M:RegisterGuideStep on the handle validates and orders steps as Core does, ModulesChanged
+--- (fake.login) closes the registry, and Open, Next, Back, GoTo, Skip, Close and Finish move as ONB-R22–R26 say,
+--- writing fake.global.onboarding. RestrictionChanged (fake.setRestricted) closes and reopens it (ONB-R25).
+---@field guideSteps PagleGuideSteps The guide's step registry: guideSteps:List() is every step, in order (ONB-R21).
+---@field guideShown { id: string, how: PagleGuideShow, index: integer, count: integer }[] Each page the book would
+--- show, in order: opened on, or turned to forward or back (ONB-R22, ONB-R23).
+---@field guidePages table<string, { left: table, right: table, nav: PagleGuideNav }> Each step's two pages, 442 x
+--- 546 frames on the client fake.load gave the Module, as its build drew them at the step's first showing, and the nav
+--- it got: its moves are Core's, its widgets plain frames that keep what they were made with. No client, no pages.
+---@field guideHeld boolean Whether Announcements are held for the guide now (ONB-R70).
 ---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
 --- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
 
@@ -1143,6 +1154,61 @@ part(function(fake, _, ns, host)
 		login()
 		ns.StartOnboarding()
 	end
+end)
+
+-- The Field guide (core/onboarding.md › The Field guide), on Core's wiring: M:RegisterGuideStep, the guide's moves
+-- and its hold. The fake's book draws no art: each page it would show lands in fake.guideShown, and each step's build
+-- runs on the Module's client at its first showing (fake.guidePages), with widgets that are plain frames.
+part(function(fake, _, ns, host)
+	fake.guideShown, fake.guidePages, fake.guideHeld = {}, {}, false
+	-- A plain frame of `kind` on `parent`, keeping what it was made with.
+	local function made(kind, parent, fields)
+		local frame = fake.clientEnv.CreateFrame(kind, nil, parent)
+		for key, value in pairs(fields) do
+			frame[key] = value
+		end
+		return frame
+	end
+	local widgets = {
+		BindingField = function(parent, action, label)
+			return made("Button", parent, { action = action, label = label })
+		end,
+		ChoiceCard = function(parent, title, line, tag)
+			return made("Button", parent, { title = title, line = line, tag = tag })
+		end,
+		Note = function(parent, text, x, y, w, target, n)
+			return made("Frame", parent, { text = text, x = x, y = y, w = w, target = target, n = n })
+		end,
+		Part = function(parent, sprite)
+			local texture = parent:CreateTexture(nil, "ARTWORK")
+			texture.sprite = sprite
+			return texture
+		end,
+	}
+	ns.WireGuide(host, {
+		show = function(page, how)
+			local id = page.entry.step.id
+			fake.guideShown[#fake.guideShown + 1] = { id = id, how = how, index = page.index, count = page.count }
+			if fake.clientEnv and not fake.guidePages[id] then
+				local left = fake.clientEnv.CreateFrame("Frame")
+				local right = fake.clientEnv.CreateFrame("Frame")
+				left:SetSize(442, 546)
+				right:SetSize(442, 546)
+				local nav = ns.NewGuideNav(ns.guide, widgets)
+				fake.guidePages[id] = { left = left, right = right, nav = nav }
+				host.call(page.entry.step.build, left, right, nav)
+			end
+		end,
+		close = function() end,
+		hold = function()
+			fake.guideHeld = true
+		end,
+		release = function()
+			fake.guideHeld = false
+		end,
+		coreSteps = {},
+	})
+	fake.guide, fake.guideSteps = ns.guide, ns.guideSteps
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.

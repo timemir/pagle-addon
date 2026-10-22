@@ -39,6 +39,7 @@ ns.ANNOUNCE_COLORS = {
 	cream = rgb("EFE0BB"), -- a banner's handwritten line
 	creamText = rgb("E6D8B8"),
 	paperInk = rgb("3A2614"), -- a card's lines
+	kicker = rgb("8A5A2A"), -- the books' small-caps kicker (adapter/Art.lua's SmallCaps)
 	whenText = rgb("D8C49A"), -- a card's time, on its leather head
 	dim = rgb("A89A7A"), -- the splash's "click anywhere"
 	rule = rgb("2A1A0A"), -- a ruler's ticks

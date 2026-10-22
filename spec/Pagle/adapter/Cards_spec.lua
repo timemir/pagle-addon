@@ -104,6 +104,36 @@ end
 
 describe("the Write-up card", function()
 	it(
+		"ends a section from a Module with a Field guide step with Show me around », which closes the card and opens"
+			.. " the guide at that Module's first step; a Module with no step gets none (ANN-R64, ONB-R82)",
+		function()
+			local loaded = loadCore(history(2))
+			moduleWritingUp(loaded, "Hunts", 20)
+			local ledger = moduleWritingUp(loaded, "Ledger", 10)
+			ledger:RegisterGuideStep({ id = "ledger", order = 60, ribbon = "Your Ledger", build = function() end })
+			enterWorld(loaded)
+			frames(loaded)
+
+			assert.are.same({
+				title = "Write-up",
+				rows = { "# Ledger written up", "2 Casts", "Show me around »", "# Hunts written up", "2 Casts" },
+			}, shownCard(loaded))
+			local link
+			for _, row in ipairs(loaded.ns.cardFrame.rows) do
+				if row.kind == "link" then
+					link = row.link
+				end
+			end
+			link:Click()
+
+			assert.is_nil(shownCard(loaded))
+			assert.are.same({}, loaded.env.PagleDB.global.writeUp)
+			assert.is_true(loaded.ns.guide:IsOpen())
+			assert.are.equal("ledger", loaded.ns.guide:Current().step.id)
+		end
+	)
+
+	it(
 		"puts two Modules' first-build sections on one Write-up card by Module order, shown only after the last"
 			.. " projection finishes and the lanes are empty, with no sound (ANN-R21, ANN-R60, ANN-R61, ANN-R92)",
 		function()

@@ -267,21 +267,25 @@ function ns.RaiseWriteUpMethod(registry, cards)
 	end
 end
 
---- One row of a card's list (announcements.md › UI): a heading, a line of text, or a moment with its text and icon.
+--- One row of a card's list (announcements.md › UI): a heading, a line of text, a moment with its text and icon, or a
+--- Write-up section's Show me around » link to its Module's first guide step (ANN-R64).
 ---@class PagleCardRow
----@field kind "heading"|"line"|"moment"
+---@field kind "heading"|"line"|"moment"|"link"
 ---@field text string
 ---@field detail? string
 ---@field icon? integer|string
+---@field module? string a link's Module, by def.name
 
 --- A card's rows below Core's numbers (ANN-R53): "Pagle Coins +N" above 0, each Module's summary lines, each
 --- Module's moments under its stored title, then the Write-up sections, each under its own heading (ANN-R60: Core
---- adds nothing of its own to a section). A moment that had expired when the card was made shows its pastText
---- instead, or its title if it has none (ANN-R45).
+--- adds nothing of its own to a section but, from a Module `hasStep` says has a Field guide step, the link Show me
+--- around », ANN-R64). A moment that had expired when the card was made shows its pastText instead, or its title if
+--- it has none (ANN-R45).
 ---@param card PagleCard
 ---@param formatNumber fun(n: integer): string the Coins sum as shown ("1,200", BreakUpLargeNumbers)
+---@param hasStep (fun(module: string): boolean)? whether a Module has a guide step (ONB-R21); none: no link
 ---@return PagleCardRow[]
-function ns.CardRows(card, formatNumber)
+function ns.CardRows(card, formatNumber, hasStep)
 	local rows = {}
 	if (card.coins or 0) > 0 then
 		rows[#rows + 1] = { kind = "line", text = ns.L.CARD_COINS:format(formatNumber(card.coins)) }
@@ -305,6 +309,9 @@ function ns.CardRows(card, formatNumber)
 		rows[#rows + 1] = { kind = "heading", text = section.heading }
 		for _, line in ipairs(section.lines) do
 			rows[#rows + 1] = { kind = "line", text = line }
+		end
+		if hasStep and section.module and hasStep(section.module) then
+			rows[#rows + 1] = { kind = "link", text = ns.L.GUIDE_SHOW_ME_AROUND, module = section.module }
 		end
 	end
 	return rows
