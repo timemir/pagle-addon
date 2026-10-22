@@ -37,11 +37,11 @@ local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 ---@field toast string[]
 ---@field banner string
 
---- The sound sets Core plays, by name (ANN-R72, ANN-R74): Driftwood, the free default, and Gilded, a Curio Shop
---- good (logic/CoreGoods.lua's sound set slot).
+--- The sound sets Core plays, keyed by their sound set good's ID (ANN-R72, ANN-R74): Driftwood, the free default, and
+--- Gilded, a Curio Shop good (logic/CoreGoods.lua's sound set slot).
 ---@type table<string, PagleSoundSet>
 ns.SOUND_SETS = {
-	driftwood = {
+	[ns.SOUND_SET_DEFAULT] = {
 		toast = {
 			SOUNDS .. "driftwood\\toast_1.ogg",
 			SOUNDS .. "driftwood\\toast_2.ogg",
@@ -49,11 +49,19 @@ ns.SOUND_SETS = {
 		},
 		banner = SOUNDS .. "driftwood\\banner.ogg",
 	},
-	gilded = {
+	["core.soundset.gilded"] = {
 		toast = { SOUNDS .. "gilded\\toast_1.ogg" },
 		banner = SOUNDS .. "gilded\\banner.ogg",
 	},
 }
+
+--- The sound set a sound set good plays (ANN-R70, ANN-R72): its own, or Driftwood for any other ID or none, as before
+--- Core's slot is registered.
+---@param goodID any
+---@return PagleSoundSet
+function ns.SoundSetOf(goodID)
+	return ns.SOUND_SETS[goodID] or ns.SOUND_SETS[ns.SOUND_SET_DEFAULT]
+end
 --- The Legend sting every set shares (ANN-R72).
 ns.LEGEND_STING = SOUNDS .. "legend.ogg"
 

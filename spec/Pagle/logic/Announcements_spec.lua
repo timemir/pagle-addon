@@ -37,7 +37,7 @@ local function newWorld()
 			return world.serverTime
 		end,
 		soundSet = function()
-			return ns.SOUND_SETS.driftwood
+			return ns.SOUND_SETS["core.soundset.driftwood"]
 		end,
 		show = function(display)
 			world.visible[#world.visible + 1] = display
@@ -853,6 +853,27 @@ describe("Announcement sounds", function()
 	local DRIFTWOOD = SOUNDS .. "driftwood\\"
 
 	it(
+		"come from the sound set keyed by the equipped good's ID, Driftwood for any other ID or none (ANN-R72)",
+		function()
+			assert.are.same(
+				{
+					SOUNDS .. "gilded\\banner.ogg",
+					DRIFTWOOD .. "banner.ogg",
+					DRIFTWOOD .. "banner.ogg",
+					DRIFTWOOD .. "banner.ogg",
+				},
+				{
+					ns.SoundSetOf("core.soundset.gilded").banner,
+					ns.SoundSetOf("core.soundset.driftwood").banner,
+					ns.SoundSetOf("core.toaststyle.ripple").banner,
+					ns.SoundSetOf(nil).banner,
+				}
+			)
+			assert.are.equal(ns.SOUND_SETS[ns.SOUND_SET_DEFAULT], ns.SoundSetOf("hunts.soundset.unknown"))
+		end
+	)
+
+	it(
 		"cycles the toast sound through toast_1, toast_2 and toast_3, playing a waiting toast's only when it shows"
 			.. " (ANN-R24, ANN-R71, ANN-R72)",
 		function()
@@ -946,7 +967,7 @@ describe("Announcement sounds", function()
 				paths[#paths + 1] = path
 			end
 		end
-		assert.are.equal(3, #ns.SOUND_SETS.driftwood.toast)
+		assert.are.equal(3, #ns.SOUND_SETS["core.soundset.driftwood"].toast)
 
 		for _, path in ipairs(paths) do
 			local file = path:match("^Interface\\AddOns\\Pagle\\(media\\sounds\\.+%.ogg)$")
