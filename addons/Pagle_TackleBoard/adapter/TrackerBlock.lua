@@ -72,27 +72,13 @@ ns.BOARD_ATLASES.TrackerFrames2 = {
 
 --- One of the Curio Shop expansion's frames (TKB-R125), from the kit's goods.json: its sprite in TrackerFrames2; its
 --- insets, how far its words sit in from its edges (`left`, `right`, the header's words `top` down, the room `foot`
---- under the last line); its slice; and its inks (`header`, `text`, `dim`, `accent`, "RRGGBB"). Its words are set as
---- the kit's board sets them: the title in gilt, the header's right text and where lines in italics a size down, the
---- goal lines in print, the dim ink for the header's right text, where and plain lines, and the accent for " · here"
---- and "Complete"; with a shadow on a dark frame (`shadow`).
+--- under the last line); its slice; and its accent ink ("RRGGBB") for " · here" and "Complete". Its words are in the
+--- board's fonts Kit<Key>Title … Kit<Key>More (adapter/BoardArt.lua's ns.BOARD_FONTS), which carry its other inks.
 ---@param key string the style's key, its fonts' prefix
----@param kit { sprite: string, insets: { left: number, right: number, top: number, foot: number }, slice: TackleFrameSlice, inks: { header: string, text: string, dim: string, accent: string }, shadow: boolean }
+---@param kit { sprite: string, insets: { left: number, right: number, top: number, foot: number }, slice: TackleFrameSlice, accent: string }
 ---@return TackleTrackerStyle
 local function kitStyle(key, kit)
-	local inks, shadow = kit.inks, kit.shadow or nil
-	local fonts = {
-		Title = { "gilt", 14, inks.header, shadow },
-		HeadRight = { "italic", 12, inks.dim, shadow },
-		Goal = { "print", 13, inks.text, shadow },
-		Count = { "print", 13, inks.text, shadow },
-		Where = { "italic", 12, inks.dim, shadow },
-		More = { "italic", 13, inks.dim, shadow },
-	}
 	local prefix = "Kit" .. key:sub(1, 1):upper() .. key:sub(2)
-	for role, font in pairs(fonts) do
-		ns.BOARD_FONTS[prefix .. role] = font
-	end
 	-- The header's words sit 4 below the header's top, as No frame's do (layOut); the first goal line 22 under them.
 	local header = kit.insets.top - 4
 	return {
@@ -116,8 +102,8 @@ local function kitStyle(key, kit)
 		moreX = 0,
 		moreY = 4,
 		pad = kit.insets.foot,
-		here = inks.accent,
-		complete = inks.accent,
+		here = kit.accent,
+		complete = kit.accent,
 	}
 end
 
@@ -197,22 +183,19 @@ ns.TRACKER_STYLES = {
 		sprite = "frame-net",
 		insets = { left = 16, right = 16, top = 18, foot = 14 },
 		slice = { top = 24, foot = 12, mode = "stretch" },
-		inks = { header = "F0CD6A", text = "F0ECE0", dim = "B8B4A0", accent = "8AE08A" },
-		shadow = true,
+		accent = "8AE08A",
 	}),
 	bamboo = kitStyle("bamboo", {
 		sprite = "frame-bamboo",
 		insets = { left = 24, right = 24, top = 14, foot = 14 },
 		slice = { top = 10, foot = 10, mode = "tile", period = 34 },
-		inks = { header = "4A1A04", text = "1E1404", dim = "4A3A14", accent = "8A2A0A" },
-		shadow = false,
+		accent = "8A2A0A",
 	}),
 	tin = kitStyle("tin", {
 		sprite = "frame-tin",
 		insets = { left = 16, right = 16, top = 16, foot = 30 },
 		slice = { top = 20, foot = 44, mode = "stretch" },
-		inks = { header = "F0E080", text = "F2F6EE", dim = "B8D0C0", accent = "F0E080" },
-		shadow = true,
+		accent = "F0E080",
 	}),
 	bobber = kitStyle("bobber", {
 		sprite = "frame-bobber",
@@ -220,15 +203,13 @@ ns.TRACKER_STYLES = {
 		-- as its board draws them
 		insets = { left = 16, right = 50, top = 24, foot = 14 },
 		slice = { top = 44, foot = 14, mode = "stretch" },
-		inks = { header = "A81A10", text = "1E1A14", dim = "5A5448", accent = "C8281A" },
-		shadow = false,
+		accent = "C8281A",
 	}),
 	embers = kitStyle("embers", {
 		sprite = "frame-embers",
 		insets = { left = 16, right = 16, top = 14, foot = 22 },
 		slice = { top = 16, foot = 30, mode = "stretch" },
-		inks = { header = "FFC060", text = "F6EAD8", dim = "C8A888", accent = "FF9A40" },
-		shadow = true,
+		accent = "FF9A40",
 	}),
 }
 
