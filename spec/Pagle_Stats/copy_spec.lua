@@ -227,10 +227,11 @@ describe("the copy test (STA-R58)", function()
 			end
 
 			assert.is_true(read["Lantern Glow"])
-			-- The generator's Lua for the same file (addons/Pagle/data/Lore.lua) holds the same strings.
+			-- The generator's Lua for the same file (addons/Pagle/data/Lore.lua) holds the same strings: Core's goods'
+			-- and its fish varieties' (VAR-R11).
 			local generated, unread = 0, {}
 			for key, text in pairs(loadAddon("Pagle", FOREVER_GLOBALS).ns.L) do
-				if type(key) == "string" and key:match("^good%.core%.") then
+				if type(key) == "string" and (key:match("^good%.core%.") or key:match("^variety%.")) then
 					generated = generated + 1
 					if not read[text] then
 						unread[#unread + 1] = key
