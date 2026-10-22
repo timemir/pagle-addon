@@ -354,6 +354,10 @@ local function show(card)
 	layBody(frame, body)
 	frame:SetHeight(HEAD + body + FOOT)
 	frame:Show()
+	-- ONB-R52: the first Session summary's Margin note, adapter/MarginNotes.lua's, looked up when called.
+	if ns.NoteCard then
+		securecallfunction(ns.NoteCard, card, frame)
+	end
 end
 
 -- logic/Cards.lua's hide, for the combat hold (ANN-R35): off screen without closing it, so it shows again after.

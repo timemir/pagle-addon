@@ -1304,6 +1304,10 @@ local function show(display)
 	end
 	ns.DrawAnnouncement(frame, display)
 	frame:Show()
+	-- ONB-R52, ONB-R53: Core's first-moment notes, adapter/MarginNotes.lua's, looked up when called.
+	if ns.NoteAnnouncement then
+		securecallfunction(ns.NoteAnnouncement, display, frame)
+	end
 end
 
 -- The frame a display shows in, if any does.

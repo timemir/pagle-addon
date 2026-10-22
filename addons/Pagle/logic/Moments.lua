@@ -21,6 +21,7 @@ local ns = select(2, ...)
 ---@field expiresAt? integer     -- server time (ANN-R45)
 ---@field pastText? string       -- shown in the summary if it expired
 ---@field summaryOnly? boolean   -- ANN-R63
+---@field firstNote? string      -- the Margin note shown the first time a moment of this Module and kind shows (ONB-R53)
 ---@field seal? integer|"waves"|"book"|"quill"|"crest" -- a banner's wax seal: a number, a mark or the Prestige crest
 
 ---@alias PagleRung "nod"|"toast.low"|"toast"|"toast.high"|"banner"|"splash"
@@ -82,6 +83,9 @@ function ns.MomentProblem(moment)
 	end
 	if type(moment.title) ~= "string" or moment.title == "" then
 		return "RaiseMoment: a moment needs a title"
+	end
+	if moment.firstNote ~= nil and (type(moment.firstNote) ~= "string" or moment.firstNote == "") then
+		return "RaiseMoment: a moment's firstNote is a text (ONB-R93)"
 	end
 	return nil
 end

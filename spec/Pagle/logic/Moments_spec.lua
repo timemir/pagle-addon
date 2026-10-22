@@ -341,6 +341,12 @@ describe("ns.MomentProblem", function()
 			assert.is_nil(ns.MomentProblem({ rung = rung, kind = "k", title = "t" }))
 		end
 	end)
+
+	it("takes a firstNote that is a text, and refuses any other (ONB-R53, ONB-R93)", function()
+		assert.is_nil(ns.MomentProblem({ rung = "toast", kind = "k", title = "t", firstNote = "A new Species." }))
+		assert.matches("firstNote", ns.MomentProblem({ rung = "toast", kind = "k", title = "t", firstNote = 3 }))
+		assert.matches("firstNote", ns.MomentProblem({ rung = "toast", kind = "k", title = "t", firstNote = "" }))
+	end)
 end)
 
 -- A caught Cast record (LOG-R65) holding `items`, each `{ itemID, size? }`, as the Catch log hands it out.

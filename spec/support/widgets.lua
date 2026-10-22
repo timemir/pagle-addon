@@ -300,6 +300,14 @@ function widgets.newWidget(kind, parent)
 	function widget:GetTop()
 		return self.screenTop
 	end
+	-- Its left and bottom edges on the screen, as `screenLeft` and `screenBottom`: nil until a spec sets them, as
+	-- GetRight and GetTop.
+	function widget:GetLeft()
+		return self.screenLeft
+	end
+	function widget:GetBottom()
+		return self.screenBottom
+	end
 	-- Its centre on the screen, the same way: `screenCenter` ({ x, y }), nil until a spec sets it.
 	function widget:GetCenter()
 		local center = self.screenCenter
@@ -486,6 +494,25 @@ function widgets.newWidget(kind, parent)
 			region.color = { r, g, b, a }
 		end
 		return texture
+	end
+	-- A line (Frame:CreateLine) that keeps its draw layer and sublevel, its ends (`startPoint`, `endPoint`: each
+	-- { relativePoint, relativeTo, x, y }), its `thickness` and its `color` ({ r, g, b, a }).
+	function widget:CreateLine(_, layer, _, sublevel)
+		local line = widgets.newWidget("Line", self)
+		line.layer, line.sublevel = layer or "ARTWORK", sublevel or 0
+		line.SetStartPoint = function(region, relativePoint, relativeTo, x, y)
+			region.startPoint = { relativePoint, relativeTo, x or 0, y or 0 }
+		end
+		line.SetEndPoint = function(region, relativePoint, relativeTo, x, y)
+			region.endPoint = { relativePoint, relativeTo, x or 0, y or 0 }
+		end
+		line.SetThickness = function(region, thickness)
+			region.thickness = thickness
+		end
+		line.SetColorTexture = function(region, r, g, b, a)
+			region.color = { r, g, b, a }
+		end
+		return line
 	end
 	-- A texture's or font string's draw layer and sublevel, as the client's Region:GetDrawLayer/SetDrawLayer: later
 	-- layers draw over earlier ones, and in one layer a higher sublevel draws over a lower.
