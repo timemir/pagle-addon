@@ -23,7 +23,9 @@ ns.DB_DEFAULTS = {
 		pins = {}, -- { [huntID] = true } (HNT-R81)
 	},
 	global = {
-		celebrated = { tiers = {}, sets = {} }, -- { tiers = { [huntID] = highestTier }, sets = { [setID] = true } } (HNT-R90)
+		-- { tiers = { [huntID] = highestTier }, sets = { [setID] = true }, runs = { [runKey] = { tiers = { [huntID] =
+		-- highestTier }, settled = true?, endsAt } }, ladder = { [n] = true } } (HNT-R90, HNT-R92)
+		celebrated = { tiers = {}, sets = {}, runs = {}, ladder = {} },
 	},
 }
 
@@ -50,6 +52,10 @@ ns.COINS_EVENT, ns.COINS_RUN = { 15, 10 }, 50
 
 --- Tunables (hunts.md): the completed-run counts that earn a ladder title, ascending (HNT-R148).
 ns.LADDER_STEPS = { 25, 50, 100 }
+
+--- Tunables (hunts.md): how long the celebrated set keeps a run's entry after the run ends, in seconds: 30 days
+--- (HNT-R92). A rebuild raises nothing for a run that ended longer ago than that.
+ns.CELEBRATED_RUN_KEEP = 30 * 86400
 
 --- Tunables (hunts.md): how many hours back the projection's hour index reaches from its latest Cast (hunts.md ›
 --- Projection state, `hours`): 14 days. A run record credits its earlier Casts from it (HNT-R149).

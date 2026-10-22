@@ -1,3 +1,7 @@
+---
+status: superseded by ADR-0014
+---
+
 # A Simulated Size is fixed by the Catch ID, and its band cut points are frozen
 
 Core gives every Species Catch a Simulated Size computed from its Catch ID alone: a frozen hash turns the ID into a percentile, the percentile picks the **Size band** through fixed cut points (Tiddler, Decent, Hefty, Whopper, Monster at 15 / 70 / 93 / 99.5), and the Species' typical length scales the shared curve into a length. Nothing the player does (lure, skill, conditions, place) moves it. Hunts and Tackle Board Notices may target a minimum Size band, and they are rebuilt from the Catch log (ADR 0004), so a Catch's band must never change after it is logged: if it could, a rebuild could revoke a completed Hunt (the problem ADR 0005 exists to prevent). The hash and the cut points are therefore frozen once shipped. The typical lengths and the length multipliers stay tunable: since length rises with the percentile within a Species, retuning changes the numbers shown but never which band a Catch is in, nor which Catch holds a Species record.

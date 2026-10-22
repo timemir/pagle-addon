@@ -633,7 +633,7 @@ false, -- [2]
 [40] = 1792771200,
 },
 },
-["rulesVersion"] = 2002,
+["rulesVersion"] = 3002,
 },
 ["celebrated"] = {
 ["goals"] = {

@@ -222,7 +222,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
   
   and the pool fails when a band has fewer rotating events than the minimum per band (Tunables, 8 at 1.0).
   
-  `scripts/propose-events.py --zone <areaID> [--zone <areaID>] [--out <dir>]` drafts candidate event files from a zone (or two zones of one band) × its listed Species × the five Hunt shapes (Haul, Named fish, Big ones, Quality, Timed, HNT Data), with tiers suggested from the zones' loot shares so that, at the catch rate Tunable, tier 1 takes about 45 minutes, tier 2 about 2 hours and tier 3 about 4; it writes drafts outside `data/` and never commits. `scripts/check-event.py <file>` runs these checks on one event file or one pushed `huntEvent` item (as JSON) against the committed catalogue, so pagle-backend can check a `p_` definition before it pushes it (pagle-backend #2); it exits 0 when the event passes and prints each failure otherwise.
+  `scripts/propose-events.py --zone <areaID> [--zone <areaID>] [--out <dir>]` drafts candidate event files from a zone (or two zones of one band) × its listed Species × the four Hunt shapes (Haul, Named fish, Quality, Timed, HNT Data), with tiers suggested from the zones' loot shares so that, at the catch rate Tunable, tier 1 takes about 45 minutes, tier 2 about 2 hours and tier 3 about 4; it writes drafts outside `data/` and never commits. `scripts/check-event.py <file>` runs these checks on one event file or one pushed `huntEvent` item (as JSON) against the committed catalogue, so pagle-backend can check a `p_` definition before it pushes it (pagle-backend #2); it exits 0 when the event passes and prints each failure otherwise.
 
 ### Lore
 

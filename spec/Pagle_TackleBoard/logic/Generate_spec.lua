@@ -162,10 +162,10 @@ describe("generating a goal", function()
 	describe("the kind (TKB-R32)", function()
 		it("is drawn by the Notice weights, haul 2, variety 2 and 1 for the rest, in the table's order", function()
 			local drawn = {}
-			for value = 1, 10 do
+			for value = 1, 9 do
 				local random = scripted({ value })
 				drawn[value] = ns.GenerateGoal(context({ random = random }), "n").kind
-				assert.are.same({ 1, 10 }, random.calls[1])
+				assert.are.same({ 1, 9 }, random.calls[1])
 			end
 			assert.are.same({
 				"haul",
@@ -174,38 +174,44 @@ describe("generating a goal", function()
 				"variety",
 				"wanderer",
 				"quality",
-				"size",
 				"collector",
 				"lure",
 				"species",
 			}, drawn)
 		end)
 
-		it("is drawn from the six Expedition kinds, 1 each, never lure or species", function()
+		it("is drawn from the five Expedition kinds, 1 each, never lure or species", function()
 			local drawn = {}
-			for value = 1, 6 do
+			for value = 1, 5 do
 				local random = scripted({ value })
 				drawn[value] = ns.GenerateGoal(context({ random = random }), "e").kind
-				assert.are.same({ 1, 6 }, random.calls[1])
+				assert.are.same({ 1, 5 }, random.calls[1])
 			end
-			assert.are.same({ "haul", "variety", "wanderer", "quality", "size", "collector" }, drawn)
+			assert.are.same({ "haul", "variety", "wanderer", "quality", "collector" }, drawn)
+		end)
+
+		it("never draws a size goal, for either type, issued or rerolled (ADR 0014)", function()
+			for _, goalType in ipairs({ "n", "e" }) do
+				assert.is_nil(kindsDrawn({}, goalType, nil, 1000).size)
+				assert.is_nil(kindsDrawn({}, goalType, "quality", 1000).size)
+			end
 		end)
 
 		it("leaves out the kinds already open in the same type, and only those", function()
 			local open = {
 				openGoal("n", "haul", ELWYNN),
 				openGoal("n", "quality", 2),
-				openGoal("e", "size", 4), -- an Expedition: no bearing on a Notice's kind
+				openGoal("e", "variety", WESTFALL), -- an Expedition: no bearing on a Notice's kind
 			}
 			assert.are.same(
-				{ variety = true, wanderer = true, size = true, collector = true, lure = true, species = true },
+				{ variety = true, wanderer = true, collector = true, lure = true, species = true },
 				kindsDrawn({ open = open }, "n")
 			)
 		end)
 
 		it("is drawn from every kind again when every kind is open in the type", function()
 			local open = {}
-			for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "size", "collector" }) do
+			for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "collector" }) do
 				open[#open + 1] = openGoal("e", kind)
 			end
 			assert.are.same({
@@ -213,18 +219,17 @@ describe("generating a goal", function()
 				variety = true,
 				wanderer = true,
 				quality = true,
-				size = true,
 				collector = true,
 			}, kindsDrawn({ open = open }, "e"))
 		end)
 
 		it("never draws the old goal's kind on a reroll, even when every other kind is open", function()
 			local open = {}
-			for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "size" }) do
+			for _, kind in ipairs({ "haul", "variety", "wanderer", "quality" }) do
 				open[#open + 1] = openGoal("e", kind)
 			end
 			assert.are.same(
-				{ haul = true, variety = true, wanderer = true, quality = true, size = true },
+				{ haul = true, variety = true, wanderer = true, quality = true },
 				kindsDrawn({ open = open }, "e", "collector")
 			)
 			assert.is_nil(kindsDrawn({}, "n", "haul").haul)
@@ -258,18 +263,18 @@ describe("generating a goal", function()
 
 		it("draws no haul, variety or species with no candidate zone, and every always-eligible kind", function()
 			assert.are.same(
-				{ wanderer = true, quality = true, size = true, collector = true, lure = true },
+				{ wanderer = true, quality = true, collector = true, lure = true },
 				kindsDrawn({ bestBaseSkill = 24 }, "n")
 			)
-			assert.are.same({ quality = true, size = true }, kindsDrawn({ bestBaseSkill = 24 }, "e"))
+			assert.are.same({ quality = true }, kindsDrawn({ bestBaseSkill = 24 }, "e"))
 		end)
 	end)
 
 	-- Every Notice kind open once, so the kind is drawn from all of them by the Notice weights (TKB-R32): the draw's
-	-- values are haul 1–2, variety 3–4, wanderer 5, quality 6, size 7, collector 8, lure 9, species 10.
+	-- values are haul 1–2, variety 3–4, wanderer 5, quality 6, collector 7, lure 8, species 9.
 	local function everyNoticeKindOpen(extra)
 		local open = {}
-		for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "size", "collector", "lure", "species" }) do
+		for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "collector", "lure", "species" }) do
 			open[#open + 1] = openGoal("n", kind)
 		end
 		for _, goal in ipairs(extra) do
@@ -317,11 +322,11 @@ describe("generating a goal", function()
 			-- An open Species Notice for Large Raw Mightfish (13893) names the Mightfish Species (13754): Darkshore's
 			-- other 4 Species are left, the highest of them Sagefish's 12238.
 			local open = everyNoticeKindOpen({ openGoal("n", "species", 13893) })
-			local random = scripted({ 10, 1, 4 })
+			local random = scripted({ 9, 1, 4 })
 			local goal =
 				ns.GenerateGoal(context({ pagle = zonesOnly({ DARKSHORE }), open = open, random = random }), "n")
 			assert.are.same({ "species", 12238 }, { goal.kind, goal.target })
-			assert.are.same({ { 1, 10 }, { 1, 1 }, { 1, 4 } }, { random.calls[1], random.calls[2], random.calls[3] })
+			assert.are.same({ { 1, 9 }, { 1, 1 }, { 1, 4 } }, { random.calls[1], random.calls[2], random.calls[3] })
 		end)
 
 		it("draws a Species goal's zone among those with a Species no open Species goal names", function()
@@ -331,7 +336,7 @@ describe("generating a goal", function()
 				openGoal("n", "species", 6291),
 				openGoal("n", "species", 6303),
 			})
-			local random = scripted({ 10, 1, 1 })
+			local random = scripted({ 9, 1, 1 })
 			local ctx = context({ pagle = zonesOnly({ DUROTAR, WESTFALL }), open = open, random = random })
 			assert.are.equal(6308, ns.GenerateGoal(ctx, "n").target)
 			assert.are.same({ { 1, 1 }, { 1, 2 } }, { random.calls[2], random.calls[3] })
@@ -342,7 +347,7 @@ describe("generating a goal", function()
 			for _, item in ipairs({ 6289, 6291, 6303 }) do
 				open[#open + 1] = openGoal("n", "species", item)
 			end
-			local random = scripted({ 10, 1, 2 })
+			local random = scripted({ 9, 1, 2 })
 			local goal = ns.GenerateGoal(context({ pagle = zonesOnly({ DUROTAR }), open = open, random = random }), "n")
 			assert.are.equal(6291, goal.target)
 			assert.are.same({ 1, 3 }, random.calls[3])
@@ -397,9 +402,8 @@ describe("generating a goal", function()
 				{ 1, 1, "haul", { 20, 30, 40 }, BARRENS },
 				{ 3, 1, "variety", { 3, 4, 5 }, BARRENS },
 				{ 6, 0, "quality", { 3, 5, 8 }, 2 },
-				{ 7, 0, "size", { 3, 6, 10 }, 3 },
-				{ 9, 0, "lure", { 15, 20, 25 }, nil },
-				{ 10, 2, "species", { 5, 10, 15 }, 4603 }, -- Yellowtail, The Barrens' lowest
+				{ 8, 0, "lure", { 15, 20, 25 }, nil },
+				{ 9, 2, "species", { 5, 10, 15 }, 4603 }, -- Yellowtail, The Barrens' lowest
 			}
 			for _, case in ipairs(cases) do
 				local kindValue, draws, kind, needs, target = case[1], case[2], case[3], case[4], case[5]
@@ -419,7 +423,7 @@ describe("generating a goal", function()
 				local wanderer = ns.GenerateGoal(context({ random = random }), "n")
 				assert.are.same({ type = "n", kind = "wanderer", tier = 3, need = 3, pay = 20 }, wanderer)
 				assert.are.equal(1, #random.calls)
-				random = scripted({ 8 })
+				random = scripted({ 7 })
 				local collector = ns.GenerateGoal(context({ random = random }), "n")
 				assert.are.same({ type = "n", kind = "collector", tier = 2, need = 2, pay = 15 }, collector)
 				assert.are.equal(1, #random.calls)
@@ -442,8 +446,7 @@ describe("generating a goal", function()
 				{ 2, "variety", 4, WESTFALL },
 				{ 3, "wanderer", 5, 1 },
 				{ 4, "quality", 3, 3 },
-				{ 5, "size", 1, 4 },
-				{ 6, "collector", 3, nil },
+				{ 5, "collector", 3, nil },
 			}
 			for _, case in ipairs(cases) do
 				local goal = ns.GenerateGoal(context({ random = scripted({ case[1], 1 }) }), "e")
@@ -453,34 +456,28 @@ describe("generating a goal", function()
 	end)
 
 	describe("what a goal never targets (TKB-R35)", function()
-		it(
-			"is the Monster band, a Legend, a time of day, season, event or Hunt, for any kind of either type",
-			function()
-				for _, goalType in ipairs({ "n", "e" }) do
-					local kinds = {}
-					for _, goal in ipairs(goalsDrawn({}, goalType, nil, 1000)) do
-						kinds[goal.kind] = true
-						for field in pairs(goal) do
-							assert.is_truthy(
-								({ type = 1, kind = 1, tier = 1, pay = 1, need = 1, target = 1, items = 1 })[field]
-							)
-						end
-						if goal.kind == "size" then
-							assert.is_true(goal.target < 5) -- band 5 is Monster (LOG-R67)
-						end
-						local named = goal.items or (goal.kind == "species" and { goal.target }) or {}
-						for _, item in ipairs(named) do
-							assert.is_false(pagle.GetItem(item).legend)
-						end
+		it("is a Legend, a time of day, season, event or Hunt, for any kind of either type", function()
+			for _, goalType in ipairs({ "n", "e" }) do
+				local kinds = {}
+				for _, goal in ipairs(goalsDrawn({}, goalType, nil, 1000)) do
+					kinds[goal.kind] = true
+					for field in pairs(goal) do
+						assert.is_truthy(
+							({ type = 1, kind = 1, tier = 1, pay = 1, need = 1, target = 1, items = 1 })[field]
+						)
 					end
-					local expected = goalType == "n" and 8 or 6
-					local count = 0
-					for _ in pairs(kinds) do
-						count = count + 1
+					local named = goal.items or (goal.kind == "species" and { goal.target }) or {}
+					for _, item in ipairs(named) do
+						assert.is_false(pagle.GetItem(item).legend)
 					end
-					assert.are.equal(expected, count)
 				end
+				local expected = goalType == "n" and 7 or 5
+				local count = 0
+				for _ in pairs(kinds) do
+					count = count + 1
+				end
+				assert.are.equal(expected, count)
 			end
-		)
+		end)
 	end)
 end)

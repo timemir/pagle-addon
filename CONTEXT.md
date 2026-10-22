@@ -147,8 +147,12 @@ The Angler's bounded 100%: every Species caught, every Sub-collection item and e
 _Avoid_: 100%, completionist score, total progress
 
 **Simulated Size**:
-Pagle's own length for a Species Catch, decided by the Catch alone and never by anything the player did, shown with its Size band and kept as personal records per Species. Hunts and Notices may ask for a Size band, but it never earns Angler Level XP, stars, Zone Mastery or Ledger completion, and it is never presented as game data.
+Pagle's own length for a Species Catch, decided by the Catch, the catching character's fishing skill at the time and how many of that fish the Angler had caught before, never by lures, auras, conditions or place. Skill and experience don't make the fish bigger; they set how big a fish the Angler can land. It is shown with its Size band and kept as personal records per Species. A Hunt may ask for a Size band (a Tackle Board goal never does), but it never earns Angler Level XP, stars, Zone Mastery or Ledger completion, and it is never presented as game data.
 _Avoid_: weight (which is the real number on trophy fish), size roll
+
+**Reach**:
+The longest Simulated Size the Angler can land of a fish at a given Cast: the lesser of what the catching character's fishing skill allows and what the Angler's earlier Catches of that fish allow. Their first Catch of a fish is always its smallest length, and every Catch is at most the Reach. Legends have no Reach.
+_Avoid_: cap, ceiling, max size, limit
 
 **Size band**:
 The word that places a Simulated Size within its Species' range: Tiddler, Decent, Hefty, Whopper or Monster. It stands in for heft; Pagle never shows a simulated weight.
@@ -295,3 +299,17 @@ _Avoid_: drop rate, loot chance (which are the game's own numbers), catch rate
 **Dry spell**:
 The Casts an Angler has made, in the scope where an item can be caught, since they last caught it. It is shown with how unusual that wait is, never as a promise that the item is due.
 _Avoid_: pity, overdue, bad-luck streak
+
+### The website
+
+**Companion**:
+The desktop app, outside the game, that uploads the Angler's Catch log to the Pagle website and writes the website's data into data addons Pagle reads. Pagle works fully without it; what it brings in shows nothing once it is a day old.
+_Avoid_: companion app, client, uploader, sync tool
+
+**Published Angler**:
+An Angler shown on the Pagle website and, through other players' Companions, in their games: on player tooltips and, when followed, in the Fish Journal. Only its visible characters are ever matched, and only the website's values are shown, never the in-game ones.
+_Avoid_: public profile, registered player, member
+
+**Followed Angler**:
+A Published Angler the player follows on the Pagle website, who gets a full card in the Fish Journal's Following spread and a "Following" mark on their tooltip.
+_Avoid_: friend, contact, watched Angler

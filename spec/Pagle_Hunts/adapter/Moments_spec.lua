@@ -222,12 +222,16 @@ describe("Hunts' moments", function()
 					"1 further tier",
 					"Title: fixture_wagers",
 					"Pagle Coins +205",
+					-- Standing Hunts pay Activity XP too: 500 at tier 1, 250 a further tier (HNT-R113, HNT-R111).
+					"Angler XP +1,750",
 				},
 			}, writeUps(fake))
 			assert.are.same({}, kept(fake))
 			assert.are.same({
 				tiers = { fixture_snapper = 1, fixture_oddity = 1, fixture_rack = 2 },
 				sets = { fixture_wagers = true },
+				runs = {},
+				ladder = {},
 			}, loaded.env.PagleHuntsDB.global.celebrated)
 
 			-- Already celebrated: the next Nightfin, fixture_snapper's second, raises nothing (HNT-R91).
@@ -248,7 +252,12 @@ describe("Hunts' moments", function()
 			})
 
 			assert.are.same({
-				{ "Your Hunts were written up from 1 Cast", "1 Hunt completed", "Pagle Coins +1,234" },
+				{
+					"Your Hunts were written up from 1 Cast",
+					"1 Hunt completed",
+					"Pagle Coins +1,234",
+					"Angler XP +500",
+				},
 			}, writeUps(fake))
 		end)
 
@@ -259,7 +268,10 @@ describe("Hunts' moments", function()
 			end)
 
 			assert.are.same({ {}, {} }, { writeUps(fake), kept(fake) })
-			assert.are.same({ tiers = {}, sets = {} }, loaded.env.PagleHuntsDB.global.celebrated)
+			assert.are.same(
+				{ tiers = {}, sets = {}, runs = {}, ladder = {} },
+				loaded.env.PagleHuntsDB.global.celebrated
+			)
 			assert.are.same({ {}, {} }, { writeUps(quiet), kept(quiet) })
 		end)
 	end)
@@ -289,12 +301,20 @@ describe("Hunts' moments", function()
 			})
 
 			assert.are.same({
-				{ "While Hunts was off", "2 Hunts completed", "Title: fixture_wagers", "Pagle Coins +160" },
+				{
+					"While Hunts was off",
+					"2 Hunts completed",
+					"Title: fixture_wagers",
+					"Pagle Coins +160",
+					"Angler XP +1,000",
+				},
 			}, writeUps(fake))
 			assert.are.same({ {}, {} }, { kept(fake), fake.announcements })
 			assert.are.same({
 				tiers = { fixture_snapper = 1, fixture_oddity = 1, fixture_rack = 1 },
 				sets = { fixture_wagers = true },
+				runs = {},
+				ladder = {},
 			}, loaded.env.PagleHuntsDB.global.celebrated)
 		end)
 
@@ -314,7 +334,10 @@ describe("Hunts' moments", function()
 				end
 			)
 
-			assert.are.same({ { "While Hunts was off", "1 Hunt completed", "Pagle Coins +30" } }, writeUps(fake))
+			assert.are.same(
+				{ { "While Hunts was off", "1 Hunt completed", "Pagle Coins +30", "Angler XP +500" } },
+				writeUps(fake)
+			)
 			assert.are.same({
 				{
 					rung = "banner",
@@ -406,6 +429,8 @@ describe("Hunts' moments", function()
 			assert.are.same({
 				tiers = { fixture_snapper = 3, fixture_oddity = 1, fixture_rack = 2 },
 				sets = { fixture_wagers = true },
+				runs = {},
+				ladder = {},
 			}, loaded.env.PagleHuntsDB.global.celebrated)
 		end)
 	end)

@@ -113,14 +113,6 @@ function ns.ItemArrived(itemID, success)
 	return success == true
 end
 
---- A Size band's name, from Pagle.SIZE_BANDS (TKB-R36, LOG-R67), or "…" for a band Core doesn't list.
----@param band integer
----@return string
-function ns.BandName(band)
-	local entry = ns.api.pagle.SIZE_BANDS[band]
-	return entry and entry.name or ns.L.NAME_UNKNOWN
-end
-
 -- Lore names (TKB-R130): fly patterns and titles read their names from the generated lore (data/Lore.lua), falling
 -- back to their IDs while a key has no text.
 
@@ -163,7 +155,6 @@ ns.KIND_ICONS = {
 	variety = icon("INV_Misc_Fish_09"), -- another fish: different Species
 	wanderer = icon("INV_Misc_Map_01"), -- a map: zones
 	quality = icon("INV_Misc_Gem_Pearl_02"), -- a pearl: uncommon or rare
-	size = icon("INV_Misc_Fish_24"), -- a big fish: Hefty or Whopper
 	collector = icon("INV_Box_02"), -- a chest: junk, containers, Sub-collection items
 	lure = icon("INV_Misc_Orb_03"), -- Shiny Bauble: a lure on
 	species = icon("Trade_Fishing"), -- the rod: one Species
@@ -185,8 +176,6 @@ function ns.GoalText(goal)
 		fields.continent = ns.ContinentName(target)
 	elseif kind == "quality" then
 		fields.quality = ns.L.QUALITY_NAMES[target] or ns.L.NAME_UNKNOWN
-	elseif kind == "size" then
-		fields.band = ns.BandName(target)
 	elseif kind == "species" then
 		fields.species = ns.SpeciesName(target)
 	end

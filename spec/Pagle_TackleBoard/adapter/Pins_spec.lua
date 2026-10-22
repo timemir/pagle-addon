@@ -19,7 +19,7 @@ local QUALITY = "n;quality;1;10;3;2"
 local COLLECTOR = "n;collector;2;15;2;" -- day-bound: 2 on one board day
 local LURE = "n;lure;3;20;25;"
 local STRANDED = "n;species;2;15;10;" .. REMOVED_FISH
-local EXPEDITION = "e;size;0;60;1;4"
+local EXPEDITION = "e;quality;0;60;3;3"
 local VARIETY = "e;variety;0;60;3;148:" .. MACKEREL .. "," .. BLACKMOUTH .. "," .. MIGHTFISH
 
 -- Each goal record's time: the start is at T, its goals one second apart after it.
@@ -108,10 +108,13 @@ describe("a started board's pins (TKB-R101, TKB-R102)", function()
 		assert.is_true(visible(poster, frame))
 		assert.are.equal(atlas.file, poster.paper.texture)
 		assert.are.equal("60", poster.seal.label:GetText())
-		assert.are.same(
-			{ "E X P E D I T I O N   ·   S I Z E", "A Whopper-or-better Catch", "0 of 1", "anywhere", "pays 60 Coins" },
-			reads(expedition(frame, 1))
-		)
+		assert.are.same({
+			"E X P E D I T I O N   ·   Q U A L I T Y",
+			"3 rare-or-better Catches",
+			"0 of 3",
+			"anywhere",
+			"pays 60 Coins",
+		}, reads(expedition(frame, 1)))
 		assert.are.same({ "HAUL", "30 Catches in Darkshore", "0 of 30", "I'm here", "pays" }, reads(notice(frame, 1)))
 		assert.are.same(
 			{ "QUALITY", "3 uncommon-or-better Catches", "0 of 3", "anywhere", "pays" },

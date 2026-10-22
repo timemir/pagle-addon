@@ -133,11 +133,11 @@ ids = [
 	"hunts.trackerframe.waxseal",
 ]
 
-# Hunts' ladder titles (HNT-R148, HNT-R130), each earned at a completed-run count: 25 now, with the event pool's
-# content data (#297); 50 and 100 come with the pool's lore batch (#307).
+# Hunts' ladder titles (HNT-R148, HNT-R130), each earned at a completed-run count: 25 with the event pool's content
+# data (#297), 50 and 100 with the pool's lore batch (#307).
 [hunts.ladder]
 fields = ["title"]
-ids = ["25"]
+ids = ["25", "50", "100"]
 
 # Stats' goods (STA-R88), its three tracker frames, each with a name and a description, from M6 with Stats' lore check
 # (DATA-R107). Core owns the kind good, so Stats' is statsgood (DATA-R102).
