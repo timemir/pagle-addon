@@ -28,3 +28,5 @@ L["huntgood.hunts.trackerframe.inkwash.name"] = "Ink Wash"
 L["event.fixture_shore.name"] = "Shore Wager"
 L["event.fixture_shore.note"] = "Darkshore's tide, three days long."
 L["hunt.fixture_shore_snapper.name"] = "Shore Snapper"
+-- The first ladder title (HNT-R148, from #297's lore); the titles at 50 and 100 have no keys, so they fall back.
+L["ladder.25.title"] = "Bookmaker's Bane"

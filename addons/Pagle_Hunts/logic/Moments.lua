@@ -5,11 +5,12 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- What the Angler is told about Hunts (HNT-R85–R87, HNT-R89–R91, HNT-R111, HNT-R112): a moment for each tier and set
--- title a live apply newly reaches, guarded by the celebrated set; the Write-up or summary-only moments from done;
--- and Hunts' line in the Session summary. Pure logic, everything passed in (CORE-R7): the projection's outlets
--- (logic/Projection.lua) and the redraws (logic/Seams.lua) reach it through `ns.moments`, which the adapter makes in
--- OnInitialize; the Hunt list (`ns.hunts`) is read at call time.
+-- What the Angler is told about Hunts (HNT-R85–R87, HNT-R89–R92, HNT-R111, HNT-R112): a moment for each tier and set
+-- title a live apply newly reaches, and for Pagle Wagers' marks, settled runs and ladder titles (logic/WagerMoments.lua),
+-- guarded by the celebrated set; the Write-up or summary-only moments from done; and Hunts' line in the Session
+-- summary. Pure logic, everything passed in (CORE-R7): the projection's outlets (logic/Projection.lua) and the
+-- redraws (logic/Seams.lua) reach it through `ns.moments`, which the adapter makes in OnInitialize; the Hunt list
+-- (`ns.hunts`) is read at call time.
 
 --- Where Hunts' moments, Write-up sections and summary line go, and what they read (HNT-R86, HNT-R89, HNT-R111).
 ---@class HuntsMomentsClient
@@ -19,17 +20,24 @@ local ns = select(2, ...)
 ---@field FormatNumber fun(n: integer): string
 ---@field ServerTime fun(): integer
 
---- The celebrated set (HNT-R90): each Hunt's highest tier already shown and each set title already shown.
+--- The celebrated set (HNT-R90): each Standing Hunt's highest tier already shown and each set title already shown;
+--- each run's entry by run key (HuntsCelebratedRun, logic/WagerMoments.lua) and each ladder title already shown.
 ---@class HuntsCelebrated
 ---@field tiers table<string, integer>
 ---@field sets table<string, true>
+---@field runs table<string, HuntsCelebratedRun>
+---@field ladder table<integer, true>
 
 --- PagleHuntsDB.global.celebrated (HNT-R90, LOG-R77), its default from ns.DB_DEFAULTS (logic/Data.lua, the one place
---- each key gets one). Core never touches it; nothing here clears or lowers it.
+--- each key gets one); a set saved before Hunt Events gains its empty `runs` and `ladder` here. Core never touches
+--- it; nothing here clears or lowers it, and only `done` drops run entries, 30 days after their run (HNT-R92).
 ---@param global table PagleHuntsDB's global section
 ---@return HuntsCelebrated
 function ns.HuntsCelebrated(global)
-	return global.celebrated
+	local celebrated = global.celebrated
+	celebrated.runs = celebrated.runs or {}
+	celebrated.ladder = celebrated.ladder or {}
+	return celebrated
 end
 
 --- The moment for tier `k` of `hunt` (HNT-R86): its completion at tier 1, a further tier after; `huntTier` is the
@@ -82,9 +90,9 @@ function ns.HuntSetTitleMoment(setID)
 end
 
 --- The moments for what a `"live"` Cast newly reached (HNT-R86, HNT-R87, HNT-R91), each added to the celebrated set:
---- a tier above the Hunt's celebrated one, or a title not yet shown. A tier and a title from a Catch carry the Cast's
---- entry ID, so Core merges them into its Announcement (ANN-R10); a title from a retirement is summary-only and
---- carries none.
+--- a tier above the Hunt's celebrated one, or a title not yet shown, then Pagle Wagers' marks, settled runs and ladder
+--- titles, in that order. A tier, a wager and a title from a Catch carry the Cast's entry ID, so Core merges them into
+--- its Announcement (ANN-R10); a title from a retirement is summary-only and carries none.
 ---@param celebrated HuntsCelebrated
 ---@param state HuntsState
 ---@param cast PagleCast
@@ -113,29 +121,63 @@ function ns.CelebrateReached(celebrated, state, cast, reached)
 			celebrated.sets[setID] = true
 		end
 	end
+	for _, moment in ipairs(ns.CelebrateWagersReached(celebrated, state, reached, cast.id)) do
+		moments[#moments + 1] = moment
+	end
 	return moments
 end
 
---- What a Write-up section lists (HNT-R111): Hunts completed (tier 1), further tiers, the set titles in file order.
+--- What a Write-up section lists (HNT-R111): Standing Hunts completed (tier 1), further tiers, the set titles in file
+--- order; event Hunts' first and further marks, settled runs, and the ladder steps whose titles were earned.
 ---@class HuntsWriteUpCounts
 ---@field completed integer
 ---@field further integer
 ---@field titles string[]
+---@field marks integer
+---@field furtherMarks integer
+---@field settled integer
+---@field ladder integer[]
 
--- The Coins what `counts` lists paid (HNT-R110).
+-- The Coins what `counts` lists paid (HNT-R110): ladder titles pay none.
 ---@param counts HuntsWriteUpCounts
 ---@return integer
 local function coinsOf(counts)
-	return counts.completed * ns.COINS_COMPLETED + counts.further * ns.COINS_TIER + #counts.titles * ns.COINS_TITLE
+	return counts.completed * ns.COINS_COMPLETED
+		+ counts.further * ns.COINS_TIER
+		+ #counts.titles * ns.COINS_TITLE
+		+ counts.marks * ns.TierAmount(ns.COINS_EVENT, 1)
+		+ counts.furtherMarks * ns.TierAmount(ns.COINS_EVENT, 2)
+		+ counts.settled * ns.COINS_RUN
 end
 
--- A Write-up section's lines (HNT-R111): "{n} Hunts completed", "{n} further tiers", "Title: {title}" for each title,
--- "Pagle Coins +{n}"; each count only when above 0.
+-- The Activity XP what `counts` lists paid (HNT-R113, HNT-R114): titles pay none.
+---@param counts HuntsWriteUpCounts
+---@return integer
+local function xpOf(counts)
+	return counts.completed * ns.TierAmount(ns.XP_STANDING, 1)
+		+ counts.further * ns.TierAmount(ns.XP_STANDING, 2)
+		+ counts.marks * ns.TierAmount(ns.XP_EVENT, 1)
+		+ counts.furtherMarks * ns.TierAmount(ns.XP_EVENT, 2)
+		+ counts.settled * ns.XP_RUN
+end
+
+-- Whether `counts` lists anything earned (HNT-R111: a section only then).
+---@param counts HuntsWriteUpCounts
+---@return boolean
+local function earnedAny(counts)
+	local wagers = counts.marks + counts.furtherMarks + counts.settled + #counts.ladder
+	return counts.completed + counts.further + #counts.titles + wagers > 0
+end
+
+-- A Write-up section's lines (HNT-R111): "{n} Hunts completed", "{n} further tiers", "{n} wagers settled",
+-- "Title: {title}" for each set title then each ladder title, "Pagle Coins +{n}" and "Angler XP +{n}"; each only when
+-- above 0.
 ---@param counts HuntsWriteUpCounts
 ---@param coins integer
+---@param xp integer
 ---@param format fun(n: integer): string
 ---@return string[]
-local function writeUpLines(counts, coins, format)
+local function writeUpLines(counts, coins, xp, format)
 	local L = ns.L
 	local lines = {}
 	if counts.completed > 0 then
@@ -144,11 +186,20 @@ local function writeUpLines(counts, coins, format)
 	if counts.further > 0 then
 		lines[#lines + 1] = ns.CountText(counts.further, "WRITE_UP_FURTHER", format)
 	end
+	if counts.settled > 0 then
+		lines[#lines + 1] = ns.CountText(counts.settled, "WRITE_UP_SETTLED", format)
+	end
 	for _, setID in ipairs(counts.titles) do
 		lines[#lines + 1] = L.WRITE_UP_TITLE:format(ns.hunts:SetTitle(setID))
 	end
+	for _, step in ipairs(counts.ladder) do
+		lines[#lines + 1] = L.WRITE_UP_TITLE:format(ns.LadderTitle(step))
+	end
 	if coins > 0 then
 		lines[#lines + 1] = L.WRITE_UP_COINS:format(format(coins))
+	end
+	if xp > 0 then
+		lines[#lines + 1] = L.WRITE_UP_XP:format(format(xp))
 	end
 	return lines
 end
@@ -190,12 +241,15 @@ local function celebrate(celebrated, tiers, sets)
 	end
 end
 
--- Counts tiers into a Write-up's completions and further tiers.
+-- Counts tiers into a Write-up's completions and further tiers, and wagers into its marks, settled runs and ladder
+-- titles.
 ---@param tiers { hunt: HuntDef, k: integer }[]
 ---@param titles string[]
+---@param wagers HuntsWager[]
 ---@return HuntsWriteUpCounts
-local function countsOf(tiers, titles)
-	local counts = { completed = 0, further = 0, titles = titles }
+local function countsOf(tiers, titles, wagers)
+	local counts =
+		{ completed = 0, further = 0, titles = titles, marks = 0, furtherMarks = 0, settled = 0, ladder = {} }
 	for _, at in ipairs(tiers) do
 		if at.k == 1 then
 			counts.completed = counts.completed + 1
@@ -203,15 +257,27 @@ local function countsOf(tiers, titles)
 			counts.further = counts.further + 1
 		end
 	end
+	for _, wager in ipairs(wagers) do
+		if wager.kind == "ladder" then
+			counts.ladder[#counts.ladder + 1] = wager.step
+		elseif wager.kind == "settled" then
+			counts.settled = counts.settled + 1
+		elseif wager.tier == 1 then
+			counts.marks = counts.marks + 1
+		else
+			counts.furtherMarks = counts.furtherMarks + 1
+		end
+	end
 	return counts
 end
 
--- Raises a summary-only moment for each tier and title (HNT-R112, ANN-R63): no pop-up and no `cast`.
+-- Raises a summary-only moment for each tier, title and wager (HNT-R112, ANN-R63): no pop-up and no `cast`.
 ---@param state HuntsState
 ---@param tiers { hunt: HuntDef, k: integer }[]
 ---@param sets string[]
+---@param wagers HuntsWager[]
 ---@param client HuntsMomentsClient
-local function raiseSummaryOnly(state, tiers, sets, client)
+local function raiseSummaryOnly(state, tiers, sets, wagers, client)
 	for _, at in ipairs(tiers) do
 		local moment = ns.HuntTierMoment(at.hunt, at.k, state.hunts[at.hunt.id].reached[at.k])
 		moment.summaryOnly = true
@@ -222,35 +288,48 @@ local function raiseSummaryOnly(state, tiers, sets, client)
 		moment.summaryOnly = true
 		client.RaiseMoment(moment)
 	end
+	for _, moment in ipairs(ns.SummaryOnlyWagers(state, wagers)) do
+		client.RaiseMoment(moment)
+	end
 end
 
---- The projection's done (HNT-R111, HNT-R112, HNT-R190–R192), after the titles are checked: what is newly in the
---- state against the celebrated set, raised and then marked, never popping up (ANN-R4).
+--- The projection's done (HNT-R92, HNT-R111, HNT-R112, HNT-R190–R192), after the titles are checked: what is newly
+--- in the state against the celebrated set, raised and then marked, never popping up (ANN-R4).
 ---   - first build: everything is marked, and one section headed by the Casts applied lists it, if anything was
----     earned (a fresh install, with no Cast, gets no first build at all, LOG-R76)
----   - a rebuild that isn't one: every new tier and title raised summary-only
+---     earned, with the lifetime Coins and Activity XP (a fresh install, with no Cast, gets no first build at all,
+---     LOG-R76)
+---   - a rebuild that isn't one: every new tier, title and wager raised summary-only
 ---   - a catch-up: what the replayed entries earned in one "While Hunts was off" section, if anything; a title from a
 ---     retirement is raised summary-only instead
+--- A run that ended more than 30 days ago raises nothing and is left out of a catch-up's section: what it earned
+--- counts in the totals only. Then the celebrated entries of such runs are dropped (HNT-R92).
 ---@param celebrated HuntsCelebrated
 ---@param state HuntsState
 ---@param info PagleProjectionInfo
 ---@param client HuntsMomentsClient
 function ns.CelebrateHuntsDone(celebrated, state, info, client)
 	local L, format = ns.L, client.FormatNumber
+	local now = client.ServerTime()
 	local tiers, sets = uncelebrated(celebrated, state)
+	local wagers = ns.UncelebratedWagers(celebrated, state, now)
 	if info.firstBuild then
 		-- Everything the state holds is written up, not only what is above a celebrated set kept from before.
-		local all, titles = uncelebrated({ tiers = {}, sets = {} }, state)
+		local none = { tiers = {}, sets = {}, runs = {}, ladder = {} }
+		local all, titles = uncelebrated(none, state)
+		local allWagers = ns.UncelebratedWagers(none, state)
 		celebrate(celebrated, all, titles)
-		if #all > 0 or #titles > 0 then
+		ns.CelebrateWagers(celebrated, state, allWagers)
+		local counts = countsOf(all, titles, allWagers)
+		if earnedAny(counts) then
 			client.RaiseWriteUp({
 				heading = ns.CountText(state.casts, "WRITE_UP_FIRST_BUILD", format),
-				lines = writeUpLines(countsOf(all, titles), state.coins, format),
+				lines = writeUpLines(counts, state.coins, state.xp, format),
 			})
 		end
 	elseif info.rebuilt then
-		raiseSummaryOnly(state, tiers, sets, client)
+		raiseSummaryOnly(state, tiers, sets, wagers, client)
 		celebrate(celebrated, tiers, sets)
+		ns.CelebrateWagers(celebrated, state, wagers)
 	else
 		-- A catch-up: titles from a retirement are summary-only, the rest go in the section (HNT-R87).
 		local retired, titles = {}, {}
@@ -258,20 +337,37 @@ function ns.CelebrateHuntsDone(celebrated, state, info, client)
 			local list = state.sets[setID].fromRetirement and retired or titles
 			list[#list + 1] = setID
 		end
-		raiseSummaryOnly(state, {}, retired, client)
-		if #tiers > 0 or #titles > 0 then
-			local counts = countsOf(tiers, titles)
+		raiseSummaryOnly(state, {}, retired, {}, client)
+		local counts = countsOf(tiers, titles, wagers)
+		if earnedAny(counts) then
 			client.RaiseWriteUp({
 				heading = L.WRITE_UP_WHILE_OFF,
-				lines = writeUpLines(counts, coinsOf(counts), format),
+				lines = writeUpLines(counts, coinsOf(counts), xpOf(counts), format),
 			})
 		end
 		celebrate(celebrated, tiers, sets)
+		ns.CelebrateWagers(celebrated, state, wagers)
 	end
+	ns.PruneCelebratedRuns(celebrated, now)
+end
+
+--- The titles `state` holds (HNT-R89, HNT-R165): the set titles and the ladder titles earned.
+---@param state HuntsState
+---@return integer
+function ns.TitlesEarned(state)
+	local titles = 0
+	for _ in pairs(state.sets) do
+		titles = titles + 1
+	end
+	for _ in pairs(state.ladder or {}) do
+		titles = titles + 1
+	end
+	return titles
 end
 
 --- Hunts' Session summary line (HNT-R89), with lifetime numbers: "Hunts: {done} of {current} done · {n} titles",
---- {current} the Hunts current at `now`, {done} those of them done, {n} the set titles earned.
+--- {current} the Hunts current at `now`, {done} those of them done, {n} the set and ladder titles earned (HNT-R165);
+--- then " · {r} wagers settled" once the completed-run count is above 0 (HNT-R148).
 ---@param state HuntsState
 ---@param now integer
 ---@param format fun(n: integer): string
@@ -279,11 +375,13 @@ end
 function ns.HuntsSummaryLine(state, now, format)
 	local L = ns.L
 	local done, current = ns.DoneOfCurrent(ns.hunts, state, now)
-	local titles = 0
-	for _ in pairs(state.sets) do
-		titles = titles + 1
+	local titles = ns.CountText(ns.TitlesEarned(state), "SUMMARY_TITLES", format)
+	local settled = state.settled or 0
+	if settled > 0 then
+		local runs = ns.CountText(settled, "SUMMARY_SETTLED", format)
+		return L.SUMMARY_LINE_SETTLED:format(format(done), format(current), titles, runs)
 	end
-	return L.SUMMARY_LINE:format(format(done), format(current), ns.CountText(titles, "SUMMARY_TITLES", format))
+	return L.SUMMARY_LINE:format(format(done), format(current), titles)
 end
 
 ---@class HuntsMoments
@@ -307,6 +405,17 @@ end
 function Moments:Reached(cast, reached)
 	local celebrated = ns.HuntsCelebrated(self.global)
 	for _, moment in ipairs(ns.CelebrateReached(celebrated, ns.State(), cast, reached)) do
+		self.client.RaiseMoment(moment)
+	end
+end
+
+--- A `"live"` `run` record credited Casts already folded (ns.outlets.Credited, HNT-R149): its marks, settled runs and
+--- ladder titles arrive summary-only, with no `cast`, as a rebuild's would.
+---@param reached HuntsReached
+function Moments:Credited(reached)
+	local celebrated = ns.HuntsCelebrated(self.global)
+	local now = self.client.ServerTime()
+	for _, moment in ipairs(ns.CelebrateWagersReached(celebrated, ns.State(), reached, nil, now)) do
 		self.client.RaiseMoment(moment)
 	end
 end
@@ -348,6 +457,14 @@ end
 function ns.outlets.Reached(cast, reached)
 	if ns.moments then
 		ns.moments:Reached(cast, reached)
+	end
+end
+
+---@param record PagleModuleRecord
+---@param reached HuntsReached
+function ns.outlets.Credited(record, reached) -- luacheck: no unused args (the outlet's shape, logic/Projection.lua)
+	if ns.moments then
+		ns.moments:Credited(reached)
 	end
 end
 
