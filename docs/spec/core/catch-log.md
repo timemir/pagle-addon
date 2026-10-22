@@ -199,7 +199,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
   | Skill rank, `n` | `R` | A | B | C | D |
   |---|---|---|---|---|---|
   | any, 0 | 0 | 165 Tiddler | 165 Tiddler | 165 Tiddler | 165 Tiddler |
-  | 300, 10 | 0.1 | 197 Tiddler | 202 Tiddler | | 199 Tiddler |
+  | 300, 10 | 0.1 | 197 Tiddler | 202 Tiddler | 189 Tiddler | 199 Tiddler |
   | 150, 1,000 or 300, 250 | 0.5 | 325 Decent | 352 Hefty | 287 Decent | 333 Hefty |
   | 200, 300 | √0.3 = 0.548 | 340 Hefty | 369 Hefty | 299 Decent | 349 Hefty |
   | 225, 1,000 | 0.75 | 405 Whopper | 445 Whopper | 348 Hefty | 416 Whopper |

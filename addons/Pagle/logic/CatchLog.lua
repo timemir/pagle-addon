@@ -666,6 +666,19 @@ local function sizeCast(catchLog, cast, counts)
 	end
 end
 
+-- Steps `counts` past one entry read forwards: sizes it by the counts before it when it is a Cast (LOG-R67), then
+-- counts its items in (LOG-R100).
+---@param catchLog PagleCatchLog
+---@param counts PagleCatchCounts
+---@param record PagleRecord?
+---@param entry any
+local function stepCounts(catchLog, counts, record, entry)
+	if record and record.kind == "cast" then
+		sizeCast(catchLog, record --[[@as PagleCast]], counts)
+	end
+	countEntry(counts, entry, 1)
+end
+
 -- CatchLog:Reverse's walk; Casts carry their sizes when `sized` and the log has a catalogue. Walking back, the
 -- counts start at `fromSeq` and each entry passed is taken back out, so they always cover the entries before the next.
 ---@param catchLog PagleCatchLog
@@ -733,8 +746,8 @@ end
 
 --- Walks the entries with `seq > afterSeq`, up to the log's length now, in order, decoding each as it goes
 --- (LOG-R42). Casts and Skill Readings carry their Session's ID, and Casts their Simulated Sizes, the same whether the
---- log is read whole or from a later `afterSeq` (LOG-R98, LOG-R100). An entry the codec can't read is skipped and counted in `PagleDB.global.decodeErrors`,
---- once per entry for this login however many readers meet it (LOG-R16). Module records are yielded only to the
+--- log is read whole or from a later `afterSeq` (LOG-R98, LOG-R100). An entry the codec can't read is skipped and
+--- counted in `PagleDB.global.decodeErrors`, once per entry for this login however many readers meet it (LOG-R16). Module records are yielded only to the
 --- Module named by `module`, its own (LOG-R41, LOG-R42): without one, as Pagle.IterateCatches reads, none is; another
 --- Module's are skipped, never counted as undecodable.
 ---@param afterSeq integer?
@@ -752,10 +765,7 @@ function CatchLog:Iterate(afterSeq, module)
 			local entry = entries[seq]
 			local record = decode(entry, seq, characters)
 			if counts then
-				if record and record.kind == "cast" then
-					sizeCast(self, record --[[@as PagleCast]], counts)
-				end
-				countEntry(counts, entry, 1)
+				stepCounts(self, counts, record, entry)
 			end
 			if not record then
 				countUndecodable(self, seq)
@@ -820,10 +830,7 @@ function CatchLog:Append(record)
 	ensureLogId(self.data, record.time)
 	entries[seq] = entry
 	if counts then
-		if appended.kind == "cast" then
-			sizeCast(self, appended --[[@as PagleCast]], counts)
-		end
-		countEntry(counts, entry, 1)
+		stepCounts(self, counts, appended, entry)
 		storeCounts(self, seq, counts)
 	end
 	tail:Add(appended)

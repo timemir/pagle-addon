@@ -71,6 +71,7 @@ describe("a Simulated Size bounded by a Reach, frozen at 1.0 (ADR 0014)", functi
 		-- R = 0.1: 10 earlier Catches, √0.01.
 		{ A, 300, 10, 1, 197 }, -- p 0.085214
 		{ B, 300, 10, 1, 202 }, -- p 0.099477
+		{ C, 300, 10, 1, 189 }, -- p 0.065194
 		{ D, 300, 10, 1, 199 }, -- p 0.089351
 	}
 

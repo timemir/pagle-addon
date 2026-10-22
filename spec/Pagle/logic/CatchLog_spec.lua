@@ -806,7 +806,7 @@ describe("the Simulated Size on decoded Casts", function()
 	)
 
 	it(
-		"sizes every Cast read from a later seq, forwards or back, as a read from seq 0 does (LOG-R42, LOG-R65)",
+		"sizes every Cast read from a later seq, forwards or back, as a read from seq 0 does (LOG-R42, LOG-R65, LOG-R100)",
 		function()
 			local entries = skillLog()
 			local whole = sizesById(records(veeLog(entries), 0))
@@ -854,7 +854,7 @@ describe("the Simulated Size on decoded Casts", function()
 	)
 
 	it(
-		"counts a Cast entry's items whether or not the rest of it decodes, as every reader does (LOG-R16, LOG-R65)",
+		"counts a Cast entry's items whether or not the rest of it decodes, as every reader does (LOG-R16, LOG-R100)",
 		function()
 			local catchLog = veeLog({
 				"C1|1|1791731000|0|c|494|1439|1|148|453|300|0||x||6358x1", -- an events field the codec can't read
@@ -870,7 +870,7 @@ describe("the Simulated Size on decoded Casts", function()
 
 	it(
 		"puts the same sizes on an appended Cast and on that Cast read back either way, counting the log before it"
-			.. " (LOG-R42, LOG-R43, LOG-R65)",
+			.. " (LOG-R42, LOG-R43, LOG-R65, LOG-R100)",
 		function()
 			local catchLog = veeLog({
 				earlier(1, 1791731000, "6358x1,6358x1,6358x1"),
