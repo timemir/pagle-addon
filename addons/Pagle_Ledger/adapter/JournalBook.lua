@@ -53,6 +53,12 @@ local STRIP_MIDDLE = (FILL_INSET + BOOK.strip) / 2
 ---@field label FontString
 ---@field slices Texture[]
 
+---@class LedgerJournalLookButton: Button
+---@field wax Texture
+---@field glow Texture
+---@field label FontString
+---@field action fun()?
+
 ---@class LedgerJournalShell: Frame
 ---@field leatherFill Texture
 ---@field vignette Texture
@@ -65,6 +71,7 @@ local STRIP_MIDDLE = (FILL_INSET + BOOK.strip) / 2
 ---@field search EditBox
 ---@field searchHint FontString
 ---@field close Button
+---@field look LedgerJournalLookButton
 ---@field plate LedgerJournalPlateView
 ---@field binding string?
 ---@field leatherTint number[]   -- the leather's tint as last drawn (LED-R112)
@@ -250,8 +257,53 @@ local function buildClose(frame)
 	frame.close = close
 end
 
+-- The "?" beside the wax close (ONB-R59): a smaller seal of the same red wax, under the close on the leather's corner,
+-- with a gilt "?", pressed when clicked and glowing under the mouse, its tooltip "Show the notes for this page again".
+-- Hidden until the Journal's First look is registered (adapter/Onboarding.lua sets its `action` and shows it).
+---@param frame LedgerJournalShell
+local function buildLook(frame)
+	local look = CreateFrame("Button", nil, frame) --[[@as LedgerJournalLookButton]]
+	look:SetSize(22, 22)
+	look.wax = ns.JournalPiece(look, "Book", "seal", "ARTWORK")
+	look.wax:SetAllPoints()
+	look.glow = ns.JournalPiece(look, "Book", "close-highlight", "HIGHLIGHT")
+	look.glow:SetAllPoints()
+	look.glow:SetBlendMode("ADD")
+	look.glow:Hide()
+	look.label =
+		ns.JournalLabel(look, "gilt", 14, INK.wax, ns.L.FIRST_LOOK_BUTTON, { shadow = true, justify = "CENTER" })
+	look.label:SetPoint("CENTER", 0, 1)
+	look:SetScript("OnMouseDown", function(self)
+		self.wax:SetVertexColor(0.78, 0.78, 0.78)
+		self.label:SetPoint("CENTER", 1, 0)
+	end)
+	look:SetScript("OnMouseUp", function(self)
+		self.wax:SetVertexColor(1, 1, 1)
+		self.label:SetPoint("CENTER", 0, 1)
+	end)
+	look:SetScript("OnEnter", function(self)
+		self.glow:Show()
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		GameTooltip:SetText(ns.L.FIRST_LOOK_AGAIN)
+		GameTooltip:Show()
+	end)
+	look:SetScript("OnLeave", function(self)
+		self.glow:Hide()
+		GameTooltip:Hide()
+	end)
+	look:SetScript("OnClick", function(self)
+		if self.action then
+			self.action()
+		end
+	end)
+	look:SetPoint("CENTER", frame, "TOPRIGHT", -3, -31)
+	look:SetFrameLevel(frame:GetFrameLevel() + 10)
+	look:Hide()
+	frame.look = look
+end
+
 --- Builds the shell on `frame` (sized 920 × 600): the leather and its band, the two papers on `frame.pagesFrame`, the
---- strip with the crumbs' row and the search slip, the brass plate and the wax close button.
+--- strip with the crumbs' row and the search slip, the brass plate, the wax close button and its "?".
 ---@param frame LedgerJournalShell
 function ns.BuildJournalShell(frame)
 	frame:SetSize(BOOK.width, BOOK.height)
@@ -270,6 +322,7 @@ function ns.BuildJournalShell(frame)
 	buildSearch(frame)
 	buildPlate(frame)
 	buildClose(frame)
+	buildLook(frame)
 end
 
 -- ---------------------------------------------------------------- a binding's look (LED-R110, LED-R112)

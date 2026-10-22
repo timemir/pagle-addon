@@ -63,6 +63,8 @@ ns.L = {
 	LEVELS_RAISED_OTHER = "+%d levels",
 	NEW_SPECIES_TITLE = "New Species",
 	NEW_SPECIES_STAMP = "New!",
+	-- The first New Species toast's Margin note, before Core's coin note (ONB-R52, ONB-R53).
+	NEW_SPECIES_FIRST_NOTE = "A new Species for your Ledger.",
 	NEW_IN_ZONE_TITLE = "New here",
 	NEW_IN_ZONE_TEXT = "%s in %s",
 	NEW_IN_ZONE_STAMP = "New here",
@@ -422,6 +424,47 @@ ns.L = {
 		.. "taken away.",
 	PRESTIGE_CONFIRM_YES = "Prestige",
 	PRESTIGE_CONFIRM_NO = "Not yet",
+	-- The Ledger's line on the Field guide's What's in the box step (ONB-R91).
+	GUIDE_BLURB = "Your book: every water and every fish, your Angler Level, records and titles.",
+	-- The Field guide's Your Ledger step (ONB-R36), verbatim from the kit (board 7): its ribbon, the left page, the
+	-- bookplate's "kept since" before the first Catch, the right page, the box of Skill Milestones (LED-R40) and the
+	-- note. A *term* in the note is in the red pencil.
+	GUIDE_RIBBON = "Your Ledger",
+	GUIDE_KICKER = "Your Ledger",
+	GUIDE_TITLE = "It starts with your next fish",
+	GUIDE_BODY = "Pagle writes down only what it sees. Fish you caught before today aren’t in your Ledger, and Pagle "
+		.. "won’t pretend they are. Your first Catch is page one.",
+	GUIDE_KEPT_NONE = "kept since … your first Catch",
+	GUIDE_RIGHT_KICKER = "Already written in",
+	GUIDE_RIGHT_TITLE = "What Pagle could see",
+	GUIDE_RIGHT_BODY = "Your Fishing skill is the one thing that tells your past honestly, so it counts from the start.",
+	GUIDE_HEADING = "%s · Fishing %d",
+	GUIDE_READ_NOW = "read just now",
+	GUIDE_MILESTONE = "Skill Milestone %d",
+	GUIDE_MILESTONES = "Skill Milestones %s and %d",
+	GUIDE_MILESTONE_JOIN = ", ",
+	GUIDE_REACHED_BEFORE = "reached before Pagle came",
+	GUIDE_REACHED = "reached %s",
+	GUIDE_TO_GO = "%d skill to go",
+	GUIDE_LATER = "for later",
+	GUIDE_XP = "+%s XP",
+	GUIDE_ACCOUNT = "Every character on this account writes in the same Ledger. Log in with another and Pagle reads "
+		.. "their Fishing skill too.",
+	GUIDE_NOTE = "Turn a part on later and it reads back through *every Catch* since today, then writes up what you’d "
+		.. "earned.",
+	-- The Margin note the first time the Journal opens with Fresh Water (ONB-R52), verbatim; *term* in red.
+	NOTE_FRESH = "You’ve been away, so your next Catches earn bonus XP. That’s *Fresh Water*, the blue in your bar. A "
+		.. "rest is never a penalty.",
+	-- The Fish Journal's First look (ONB-R57), verbatim from the kit (board 12): the coach bar's window, its five
+	-- notes, *terms* in red; and the "?" beside the wax close that shows them again (ONB-R59).
+	FIRST_LOOK_TITLE = "the Fish Journal",
+	FIRST_LOOK_TILE = "Every water you fish gets a tile. Its rank climbs from *Visitor* to *Master*.",
+	FIRST_LOOK_XP_BAR = "Your Angler Level. The *blue* stretch is Fresh Water: bonus XP after a break.",
+	FIRST_LOOK_NOTES = "Notes to self: what’s closest to done. They rewrite themselves as you fish.",
+	FIRST_LOOK_SEARCH = "Find a water or a fish. A fish you haven’t caught is *never named*.",
+	FIRST_LOOK_UNFISHED = "Dashed tiles are waters you haven’t fished yet, with the skill they ask.",
+	FIRST_LOOK_BUTTON = "?",
+	FIRST_LOOK_AGAIN = "Show the notes for this page again",
 	-- The Journal's tour stops' labels, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.
 	TOUR_HOME = "the Fish Journal: Home",
 	TOUR_ZONE = "the Fish Journal: the most-fished zone, its most-caught Species open",

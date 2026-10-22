@@ -319,6 +319,8 @@ local function build(journal)
 	frame.close:SetScript("OnClick", function()
 		journal:Close()
 	end)
+	-- its "?", beside the close, while it has a First look (adapter/Onboarding.lua, ONB-R59)
+	ns.AttachJournalLook(frame)
 	table.insert(UISpecialFrames, FRAME_NAME)
 	-- Opening: the book's sound, and it fades in (0.16 s). Closing however it closes (Esc, the close button, a
 	-- toggle) hides the Prestige confirm (LED-R33, adapter/Prestige.lua), with the closing sound unless Close played
@@ -439,12 +441,14 @@ function Journal:Toggle()
 	end
 end
 
---- Opens the book, drawn as it stands now, fitted to the screen.
+--- Opens the book, drawn as it stands now, fitted to the screen; opening it ticks the First evening list's item and
+--- may show the Ledger's Margin note (ONB-R61, ONB-R52).
 function Journal:Show()
 	local fresh = not self.frame
 	local frame = self.frame or build(self)
 	self.frame = frame
-	if not frame:IsShown() or frame.closing then
+	local opening = not frame:IsShown() or frame.closing
+	if opening then
 		Pagle.StopMotion(frame)
 		frame.closing = false
 		-- fitted again by Core as the UI scale or the screen's size changes
@@ -457,6 +461,10 @@ function Journal:Show()
 		self.binding = nil
 	end
 	self:Draw()
+	-- what opening it does for onboarding, on its pages as drawn (adapter/Onboarding.lua)
+	if opening then
+		ns.JournalOpened(self)
+	end
 end
 
 --- Closes the book with its sound: it fades out (0.12 s), then hides, left at rest for its next showing. Hidden with

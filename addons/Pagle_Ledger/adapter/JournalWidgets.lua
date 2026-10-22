@@ -70,6 +70,15 @@ function ns.RegisterJournalWidget(kind, maker)
 	makers[kind] = maker
 end
 
+--- A widget of block kind `kind` on `parent`, outside any page: the Field guide's Your Ledger step draws the Angler
+--- page's crest with it (ONB-R36, LED-R146).
+---@param kind string
+---@param parent Frame
+---@return LedgerJournalWidget
+function ns.NewJournalWidgetOf(kind, parent)
+	return makers[kind](parent)
+end
+
 -- A widget on `parent`: a Button, so the kinds that open a place take clicks.
 ---@param parent Frame
 ---@return LedgerJournalWidget

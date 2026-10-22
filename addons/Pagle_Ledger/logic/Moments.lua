@@ -205,6 +205,8 @@ function celebrate.newSpecies(celebrated, _, earned, outlets)
 		icon = earned.itemID,
 		cast = earned.cast,
 		coins = earned.coins,
+		-- the first one's Margin note, before Core's on its coin (ONB-R53)
+		firstNote = L.NEW_SPECIES_FIRST_NOTE,
 	}
 end
 

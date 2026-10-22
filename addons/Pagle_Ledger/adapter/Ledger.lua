@@ -37,6 +37,15 @@ function ns.Ledger.OnInitialize()
 	)
 	-- The Journal bindings (LED-R110): after the projection, which their isEarned reads (LED-R111).
 	ns.RegisterBindings(ns.Module)
+	-- The Field guide's Your Ledger step (ONB-R21, ONB-R36), before ModulesChanged, on a Core that has the call
+	-- (ONB-R90).
+	if ns.Module.RegisterGuideStep then
+		ns.RegisterGuideLedgerStep(ns.Module)
+	end
+	-- The Fish Journal's First look (ONB-R56, ONB-R57), before the book first shows, on a Core that has it.
+	if ns.Module.RegisterFirstLook then
+		ns.RegisterJournalFirstLook(ns.Module)
+	end
 	-- The Journal's stops for `/pagle dev tour` (CORE-R65), on a Core that has the call.
 	if ns.Module.RegisterTourStop then
 		ns.RegisterTourStops(ns.Module)

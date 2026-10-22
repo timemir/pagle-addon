@@ -444,8 +444,9 @@ Pagle.RegisterModule{
 | `Pagle.RegisterEvent` (for `GET_ITEM_INFO_RECEIVED`) | LED-R126 |
 | `Pagle.IsAnimationsOn`, `Pagle.Animate`, `Pagle.Cue`, `Pagle.StopMotion`, `Pagle.EASE`, `Pagle.Bezier` ([announcements.md › Contracts](core/announcements.md#contracts)) | UI › Motion |
 | `Pagle.FitToScreen` ([core/README.md › Contracts](core/README.md#paglefittoscreenframe-options)) | UI (it shrinks to fit the screen) |
+| `M:RegisterGuideStep`, `M:ShowMarginNote`, `M:RegisterFirstLook`, `M:ShowFirstLook`, `M:CompleteEveningItem`, `def.guideBlurb`, a moment's `firstNote`, each only where Core has it ([core/onboarding.md › Contracts](core/onboarding.md#contracts), ONB-R90) | ONB-R36, ONB-R52, ONB-R53, ONB-R56, ONB-R57, ONB-R59, ONB-R61, ONB-R91 |
 
-WoW APIs for its own presentation: `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_Item.GetItemInfoInstant` (item icons), `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `GetServerTime`, `GetGameTime`, `issecretvalue` (to leave out a secret realm clock, CORE-R31), `UISpecialFrames` (Esc, LED-R120), `C_Timer.After`, `BreakUpLargeNumbers`, `SetPortraitTexture` (the likeness, LED-R146), and `PlaySound` (the Journal's sounds, UI).
+WoW APIs for its own presentation: `C_Item.GetItemNameByID`, `C_Item.RequestLoadItemDataByID`, `C_Item.GetItemInfoInstant` (item icons), `C_Map.GetAreaInfo`, `C_Map.GetMapInfo`, `GetServerTime`, `GetGameTime`, `issecretvalue` (to leave out a secret realm clock, CORE-R31), `UISpecialFrames` (Esc, LED-R120), `C_Timer.After`, `BreakUpLargeNumbers`, `SetPortraitTexture` (the likeness, LED-R146), `GameTooltip` (the "?", ONB-R59), and `PlaySound` (the Journal's sounds, UI).
 
 ### Coins paid
 
