@@ -79,6 +79,7 @@ value     = str | int | bool | "{" *(value ",") "}" | "{" *(field ",") "}"
 | Kinds and versions passed on | `huntEvent` 1, `huntRun` 1 | PUSH-R21 |
 | File format versions read | 1 | PUSH-R13 |
 | Check budget per frame | about 4 ms | PUSH-R10 |
+| Public keys shipped | none yet: `ns.PUSHED_KEYS` in `logic/PushedKeys.lua` ships empty, and the first keys come with the backend (pagle-backend #2); `scripts/pushed-key.py` prints each key's entry | PUSH-R12 |
 
 *Decided while writing the spec (#289): the 64 KiB cap and the per-frame budget are first values; the backend's requirement on pagle-backend #2 names "a size cap agreed with the addon's Tunable".*
 

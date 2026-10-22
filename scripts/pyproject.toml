@@ -20,6 +20,7 @@ files = [
     "scripts/render-sounds.py",
     "scripts/import-field-report.py",
     "scripts/triage-field-report.py",
+    "scripts/pushed-key.py",
 ]
 python_version = "3.12"
 strict = true
