@@ -35,10 +35,11 @@ local function loggedIn(saved)
 	return loaded, loaded.env.PagleMinimapButton
 end
 
--- The rows the root ends with: the Pagle menu section's header and its checkbox.
+-- The Pagle menu section's header and its checkbox: the root's last rows but the Pagle website section's two
+-- (spec/Pagle/adapter/AnglersInGame_spec.lua).
 local function menuRows(loaded)
 	local initializers = loaded.client.settings.category("Pagle").layout.initializers
-	return initializers[#initializers - 1], initializers[#initializers]
+	return initializers[#initializers - 3], initializers[#initializers - 2]
 end
 
 -- The icon's textures, by the file each shows.
@@ -341,19 +342,28 @@ describe("The tooltip of Pagle's menu", function()
 end)
 
 describe("Show the minimap icon", function()
-	it("is a checkbox under a Pagle menu header, the root's last rows, with its tooltip (SET-R10 row 10)", function()
-		local loaded = loggedIn()
+	it(
+		"is a checkbox under a Pagle menu header, before the Pagle website section, with its tooltip (SET-R10 row 10)",
+		function()
+			local loaded = loggedIn()
 
-		local header, row = menuRows(loaded)
+			local header, row = menuRows(loaded)
 
-		assert.are.same({ "Pagle menu", "SettingsListSectionHeaderTemplate" }, { header:GetName(), header.template })
-		assert.are.same({ "Show the minimap icon", "SettingsCheckboxControlTemplate" }, { row:GetName(), row.template })
-		assert.are.equal(
-			"A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button"
-				.. " by the minimap.",
-			row.data.tooltip
-		)
-	end)
+			assert.are.same(
+				{ "Pagle menu", "SettingsListSectionHeaderTemplate" },
+				{ header:GetName(), header.template }
+			)
+			assert.are.same(
+				{ "Show the minimap icon", "SettingsCheckboxControlTemplate" },
+				{ row:GetName(), row.template }
+			)
+			assert.are.equal(
+				"A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button"
+					.. " by the minimap.",
+				row.data.tooltip
+			)
+		end
+	)
 
 	it(
 		"reads on by default, and has no default for the root's Defaults button to restore (CORE-R56, SET-R13)",

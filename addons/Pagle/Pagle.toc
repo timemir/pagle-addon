@@ -34,6 +34,7 @@ logic\Rsa.lua
 logic\PushedKeys.lua
 logic\PushedPayload.lua
 logic\PushedContent.lua
+logic\AnglersInGame.lua
 logic\Conditions.lua
 logic\NextWindow.lua
 logic\LiveConditions.lua
@@ -118,6 +119,7 @@ adapter\Slash.lua
 adapter\Wallet.lua
 adapter\ActivityXP.lua
 adapter\PushedContent.lua
+adapter\AnglersInGame.lua
 adapter\Goods.lua
 adapter\WalletProjection.lua
 adapter\VarietyProjection.lua

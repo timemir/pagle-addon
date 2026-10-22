@@ -28,7 +28,8 @@ local ns = select(2, ...)
 --   ns.Redraw(reason)         Asks every subscribed view to redraw (HNT-R42's last paragraph). Callers and their
 --                             reasons: "groups" after each regroup, pause, pin and filter change
 --                             (adapter/Groups.lua), "projection" after each live apply that changes the state and
---                             after each done (logic/Projection.lua), "names" when item names load (adapter/Names.lua).
+--                             after each done (logic/Projection.lua), "names" when item names load (adapter/Names.lua),
+--                             "companion" when the companion hint may have changed (adapter/Companion.lua).
 --                             A view that is hidden may ignore it.
 --   ns.SetViewShown(view, shown) A view tells the grouping it showed or hid (HNT-R42's refresh): the board
 --                             ("board") and the tracker ("tracker"). Defined in adapter/Groups.lua.

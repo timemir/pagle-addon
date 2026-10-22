@@ -21,13 +21,14 @@ Part of [Core](README.md). The Companion brings Published Anglers into the game 
 
 ### The reads
 
-- **VIEW-R10** **Looking up a unit.** For a player unit's GUID (`UnitGUID`), Core looks in `Pagle_Following` first, then `Pagle_Anglers`, each only while live, by IGV-R46's lookups. A match in `Pagle_Following` is a **Followed Angler**'s full card; one in `Pagle_Anglers` a tooltip card (IGV-R10, IGV-R11). No match, or neither file live, is no card. A secret or `nil` GUID (CORE-R31) is never looked up.
+- **VIEW-R10** **Looking up a unit.** For a player unit's GUID (the tooltip data's `guid`, the value `UnitGUID` gives), Core looks in `Pagle_Following` first, then `Pagle_Anglers`, each only while live, by IGV-R46's lookups. A match in `Pagle_Following` is a **Followed Angler**'s full card; one in `Pagle_Anglers` a tooltip card (IGV-R10, IGV-R11). No match, or neither file live, is no card. A secret or `nil` GUID (CORE-R31) is never looked up.
 - **VIEW-R11** **`Pagle.GetFollowedAnglers()`** returns `{ state, anglers }`:
   - `state` is `"absent"` when `Pagle_Following` is absent (VIEW-R1), `"expired"` when it is expired, `"none"` when it is live with no Anglers, and `"ok"` otherwise;
-  - `anglers` is a fresh array, empty unless the state is `"ok"`, of every Angler in the file in the file's order (IGV-R31), each a copy the caller may keep, with the full card's fields as `Pagle_Following`'s grammar names them: `name`, `more`, `hardcore`, `title` (`""` when none), `level`, `prestige`, `ledger`, `legends`, `legendsTotal`, `waters`, `catches`, `asOf` (`YYYYMMDD`) and `guids`.
+  - `anglers` is a fresh array, empty unless the state is `"ok"`, of every Angler in the file in the file's order (IGV-R31), each a copy the caller may keep (an exception to CORE-R18's no defensive copies, since the file is read once a login and outlives the call), with the full card's fields as `Pagle_Following`'s grammar names them: `name`, `more`, `hardcore`, `title` (`""` when none), `level`, `prestige`, `ledger`, `legends`, `legendsTotal`, `waters`, `catches`, `asOf` (`YYYYMMDD`) and `guids`.
 
   It reads the state at the call, so an expiry mid-session (VIEW-R2) shows at the next call.
 - **VIEW-R12** With dev mode on (`/pagle dev on`), `/pagle dev views` prints each file's state (live, absent with IGV-R44's first failing condition, or expired with its age), its `generatedAt`, its Angler or block count, and whether `Pagle_Anglers` has loaded this login.
+- **VIEW-R13** **Text is drawn as written.** Core doubles every `|` in a name or title it reads from either file, in the cards VIEW-R10 finds and the Anglers VIEW-R11 hands out, so the client never reads one as an escape sequence (a colour, texture or link). *Decided while building Track V: IGV's grammar allows `|` in Lua strings.*
 
 ### The tooltip block
 

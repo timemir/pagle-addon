@@ -39,6 +39,7 @@ logic\Goods.lua
 logic\Entry.lua
 logic\Wagers.lua
 logic\Tracker.lua
+logic\Companion.lua
 logic\Tour.lua
 adapter\BookAtlas.lua
 adapter\BookArt.lua
@@ -57,5 +58,6 @@ adapter\Entry.lua
 adapter\Wagers.lua
 adapter\WagersSpread.lua
 adapter\Tracker.lua
+adapter\Companion.lua
 adapter\Tour.lua
 adapter\Look.lua

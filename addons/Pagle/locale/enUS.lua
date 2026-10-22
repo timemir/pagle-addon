@@ -70,6 +70,10 @@ ns.L = {
 	SETTINGS_PAGLE_MENU = "Pagle menu",
 	SETTINGS_MINIMAP_ICON = "Show the minimap icon",
 	SETTINGS_MINIMAP_ICON_TOOLTIP = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button by the minimap.",
+	-- The root's Pagle website section (SET-R10 row 11, VIEW-R30).
+	SETTINGS_PAGLE_WEBSITE = "Pagle website",
+	SETTINGS_ANGLER_TOOLTIPS = "Show other Anglers on player tooltips",
+	SETTINGS_ANGLER_TOOLTIPS_TOOLTIP = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle Companion.",
 	-- The Announcements page's Core rows (SET-R30): labels and tooltips, and Per's value in minutes.
 	SETTINGS_COZY = "Cozy mode",
 	SETTINGS_COZY_TOOLTIP = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently.",
@@ -271,7 +275,7 @@ ns.L = {
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
 	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs"
-		.. " | tour [module | list | stop] | probe | onboarding <command> | content",
+		.. " | tour [module | list | stop] | probe | onboarding <command> | content | views",
 	-- /pagle dev content (PUSH-R14): the companion state, or for an absent file the first reason PUSH-R13 found; the
 	-- header fields as read (generatedAt, keyId, seq, expires; each "none" when missing); the kinds handed out and
 	-- those dropped, each "kind count", comma-separated; and the frames the check took, its longest frame in ms and
@@ -322,6 +326,51 @@ ns.L = {
 	PAYLOAD_TOO_DEEP = "tables nested more than %s deep",
 	PAYLOAD_ENDED = "the payload ends too soon",
 	PAYLOAD_AFTER_TABLE = "more after the payload's table",
+	-- /pagle dev views (VIEW-R12): each data file's state, by its folder name: live; absent, with the first reason
+	-- IGV-R44 found (a VIEWS_* line); or expired, with its age and the expiry age in seconds. Then its generatedAt and
+	-- count as read (each "none" when missing), and whether Pagle_Anglers has loaded this login.
+	DEV_VIEWS_LIVE = "Pagle dev: %s is live.",
+	DEV_VIEWS_ABSENT = "Pagle dev: %s is absent: %s.",
+	DEV_VIEWS_EXPIRED = "Pagle dev: %s is expired: generated %s s ago, the expiry age is %s s.",
+	DEV_VIEWS_FOLLOWING = "Pagle dev: Pagle_Following's generatedAt %s, Anglers %s.",
+	DEV_VIEWS_ANGLERS = "Pagle dev: Pagle_Anglers' generatedAt %s, blocks %s.",
+	DEV_VIEWS_LOADED = "Pagle dev: Pagle_Anglers has loaded this login.",
+	DEV_VIEWS_NOT_LOADED = "Pagle dev: Pagle_Anglers hasn't loaded this login.",
+	DEV_VIEWS_NONE = "none",
+	-- Why a data file is absent (VIEW-R1, IGV-R44), the first that holds, as /pagle dev views names it: no file (by
+	-- folder name, with the client's reason a load failed, or the global's name), then IGV-R44's conditions in order.
+	-- A global's or field's name; v as read; count as read, the list's name and its length; a block's number, and its
+	-- field's name and the length it should have.
+	VIEWS_NOT_READ = "not read yet (Pagle reads it at login)",
+	VIEWS_NOT_LOADED_YET = "not loaded yet (it loads at the first player tooltip while Pagle isn't restricted, with the tooltip"
+		.. " setting on)",
+	VIEWS_NOT_INSTALLED = "no file (%s isn't installed)",
+	VIEWS_DID_NOT_LOAD = "no file (%s didn't load: %s)",
+	VIEWS_NO_DATA = "no file (%s loaded but set no %s)",
+	VIEWS_NOT_TABLE = "%s isn't a table",
+	VIEWS_NOT_OK = "ok isn't true",
+	VIEWS_UNKNOWN_VERSION = "an unknown file format, v %s",
+	VIEWS_NOT_NUMBER = "%s isn't a number",
+	VIEWS_WRONG_COUNT = "count is %s, but %s holds %d",
+	VIEWS_BLOCK_NOT_TABLE = "block %d isn't a table",
+	VIEWS_BLOCK_NOT_NUMBER = "block %d's %s isn't a number",
+	VIEWS_BLOCK_NOT_TITLES = "block %d's titles isn't a table",
+	VIEWS_BLOCK_LENGTH = "block %d's %s isn't %s bytes long",
+	-- The Pagle block on a player's tooltip (VIEW-R21), in its order: the header, then "Following" at its right for a
+	-- Followed Angler; the Angler Level line, with the level and its Prestige (LED-R34: I to X by PRESTIGE_NUMERALS,
+	-- then a Master Prestige's rank − 10, in words as the bookplate writes it, LED-R146, since ★ isn't in the client's
+	-- fonts, CORE-R9); the Ledger's completion %; the Legends caught of N; and a Hardcore Angler's line.
+	ANGLER_TIP_HEADER = "Pagle Angler",
+	ANGLER_TIP_FOLLOWING = "Following",
+	ANGLER_TIP_LEVEL = "Angler Level",
+	ANGLER_TIP_PRESTIGE = "%d · Prestige %s",
+	ANGLER_TIP_MASTER_PRESTIGE = "%d · Master Prestige %d",
+	PRESTIGE_NUMERALS = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" },
+	ANGLER_TIP_LEDGER = "Ledger",
+	ANGLER_TIP_LEDGER_VALUE = "%d%%",
+	ANGLER_TIP_LEGENDS = "Legends",
+	ANGLER_TIP_LEGENDS_VALUE = "%d of %d",
+	ANGLER_TIP_HARDCORE = "Hardcore Angler",
 	-- /pagle dev onboarding (ONB-R83): its subcommands' usages, " | " between them, in the order added.
 	DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding %s",
 	DEV_ONBOARDING_RESET = "Pagle dev: onboarding is back as a new Angler's, with the Letter waiting; /reload to"

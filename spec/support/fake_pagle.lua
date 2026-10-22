@@ -104,6 +104,12 @@
 --- fires once; a `{ state = "checking" }` never ends. With none set, as with no Pagle_Content installed, the check
 --- ends "missing" at login itself. Pagle.GetPushedContent hands out fresh copies, never read-only. Raises an error
 --- after login.
+---@field setFollowing fun(data: any) The PagleFollowingData Pagle_Following sets this login (core/anglers-in-game.md),
+--- before fake.login: Core's real reads take it at login (VIEW-R1), absent, expired (on fake.serverTime, so fake.wait
+--- moves it, VIEW-R2), none or ok as IGV-R44 and IGV-R45 say, and Pagle.GetFollowedAnglers serves it, fresh copies,
+--- never read-only (VIEW-R11). helpers.lua's anglerFileExamples().following is IGV Contracts' example. With none set,
+--- as with no Pagle_Following installed, it reads absent. Raises an error after login. Pagle_Anglers is never
+--- installed here: no Module reads it.
 ---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
 --- fires if the balance or held changes (SHOP-R12). The wallet projection sets the log's own at enterWorld's done and
 --- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
@@ -923,6 +929,47 @@ part(function(fake, Pagle, ns, host)
 		else
 			ns.StartPushedContent()
 		end
+	end
+end)
+
+-- The Companion's Pagle_Following (core/anglers-in-game.md), on Core's wiring: Pagle.GetFollowedAnglers over the
+-- PagleFollowingData fake.setFollowing sets, which fake.login reads after the pushed content, as Core's login step 2
+-- does (VIEW-R1). Pagle_Anglers isn't installed, so a load of it fails "MISSING" (VIEW-R3).
+part(function(fake, Pagle, ns, host)
+	local following ---@type any
+	local loggedIn = false
+	ns.WireAnglerViews(host, {
+		following = function()
+			return following
+		end,
+		presence = function()
+			return { installed = following ~= nil, loaded = following ~= nil }
+		end,
+		load = function()
+			return false, "MISSING"
+		end,
+		anglers = function()
+			return nil
+		end,
+		isSecret = function()
+			return false
+		end,
+	})
+	local views = ns.anglerViews
+	function Pagle.GetFollowedAnglers()
+		return views:FollowedAnglers()
+	end
+
+	function fake.setFollowing(data)
+		assert(not loggedIn, "FakePagle: Core reads Pagle_Following once, at PLAYER_LOGIN; set it before fake.login()")
+		following = data
+	end
+
+	local login = fake.login
+	function fake.login()
+		login()
+		loggedIn = true
+		ns.StartAnglerViews()
 	end
 end)
 

@@ -50,9 +50,13 @@ local TIPS = {
 	motion = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each "
 		.. "appears as it settles.",
 	windowMoments = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
+	companionHint = "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you "
+		.. "new wagers.",
 	marginNotes = "Explain things the first time they happen.",
 	minimapIcon = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns "
 		.. "button by the minimap.",
+	anglerTooltips = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle "
+		.. "Companion.",
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
 	huntsTracker = "A small tracker under the minimap with the Hunts you've pinned on the board.",
 	statsTracker = "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell turns it on.",
@@ -102,6 +106,8 @@ local EXPECTED = {
 			{ "dropdown", "Length unit", tip = TIPS.lengthUnit },
 			{ "header", "Pagle menu" },
 			{ "checkbox", "Show the minimap icon", tip = TIPS.minimapIcon },
+			{ "header", "Pagle website" },
+			{ "checkbox", "Show other Anglers on player tooltips", tip = TIPS.anglerTooltips },
 		},
 	},
 	{
@@ -240,7 +246,9 @@ end
 
 -- The whole package on the fake client: Core, then every roster Module but those in `options.off`, each of which is
 -- installed but disabled in the AddOns list (CORE-R41's Off). `options.globals` adds to the Forever globals.
----@param options { off: string[]?, globals: table? }?
+-- `options.hintOn` turns Hunts' companion hint switch on before its OnInitialize, as the release that turns it on
+-- will (HNT-R172): shipped, it is off.
+---@param options { off: string[]?, globals: table?, hintOn: boolean? }?
 ---@return LoadedAddon
 local function loadPackage(options)
 	options = options or {}
@@ -254,7 +262,14 @@ local function loadPackage(options)
 			also[#also + 1] = module.addon
 		end
 	end
-	local loaded = loadAddon("Pagle", foreverWith(options.globals), { also = also })
+	local beforeLoaded = options.hintOn
+			and {
+				Pagle_Hunts = function(ns)
+					ns.COMPANION_HINT_ON = true
+				end,
+			}
+		or nil
+	local loaded = loadAddon("Pagle", foreverWith(options.globals), { also = also, beforeLoaded = beforeLoaded })
 	for _, module in ipairs(ROSTER) do
 		if off[module.name] then
 			loaded.client.addons[module.addon] = {
@@ -268,7 +283,7 @@ local function loadPackage(options)
 end
 
 -- The package logged in and in the world, its projections' first builds done: the tree is registered.
----@param options { off: string[]?, globals: table? }?
+---@param options { off: string[]?, globals: table?, hintOn: boolean? }?
 ---@return LoadedAddon
 local function ready(options)
 	return enterWorld(loadPackage(options), 3)
@@ -413,6 +428,31 @@ describe("The Settings tree, every Module loaded", function()
 			end
 		)
 	end
+
+	it("is unchanged by the companion hint while its switch is off, as at 1.0 (HNT-R172)", function()
+		local loaded = ready()
+
+		assert.is_false(loaded.namespaces.Pagle_Hunts.COMPANION_HINT_ON)
+		assert.are.same(expectedTree(), drawnTree(loaded))
+		local rows = pageAsWritten(loaded, loaded.client.settings.page("Announcements"))
+		assert.are.same({ "checkbox", "Tell me when a pinned Hunt's window opens" }, { rows[#rows][1], rows[#rows][2] })
+	end)
+
+	it(
+		"adds Remind me about the Pagle companion after Hunts' window row once the hint switch is on (SET-R32, HNT-R172)",
+		function()
+			local loaded = ready({ hintOn = true })
+
+			local expected = expectedTree()
+			for _, page in ipairs(expected) do
+				if page.name == "Announcements" then
+					page.rows[#page.rows + 1] =
+						{ "checkbox", "Remind me about the Pagle companion", tip = TIPS.companionHint }
+				end
+			end
+			assert.are.same(expected, drawnTree(loaded))
+		end
+	)
 
 	it("registers no Trackers page while no tracker Module is On (SET-R1, SET-R40)", function()
 		local loaded = ready({ off = TRACKER_MODULES })
@@ -767,12 +807,13 @@ describe("Each page's Defaults button", function()
 
 	it(
 		"on the root restores the reminder to off and the length unit to the region's, leaving Show the minimap icon"
-			.. " (SET-R13, LOG-R69, CORE-R56)",
+			.. " and Show other Anglers on player tooltips (SET-R13, LOG-R69, CORE-R56, VIEW-R30)",
 		function()
 			local loaded = ready()
 			setRow(loaded, "Pagle", "Remind me to /reload when Casts are unsaved", true)
 			setRow(loaded, "Pagle", "Length unit", "cm")
 			setRow(loaded, "Pagle", "Show the minimap icon", false)
+			setRow(loaded, "Pagle", "Show other Anglers on player tooltips", false)
 
 			loaded.client.settings.defaults(loaded.client.settings.page("Pagle"))
 
@@ -780,6 +821,7 @@ describe("Each page's Defaults button", function()
 				["Remind me to /reload when Casts are unsaved"] = false,
 				["Length unit"] = "in", -- the fake client's realm is a US one
 				["Show the minimap icon"] = false,
+				["Show other Anglers on player tooltips"] = false,
 			}, valuesOn(loaded, "Pagle"))
 			assert.is_nil(loaded.namespaces.Pagle.db.profile.lengthUnit) -- following the region (SET-R13)
 		end
@@ -828,6 +870,17 @@ describe("Each page's Defaults button", function()
 			assert.are.equal(point, qol.db.profile.indicator.point)
 		end
 	)
+
+	it("on Announcements restores the companion row to on once the hint switch is on (SET-R33, HNT-R170)", function()
+		local loaded = ready({ hintOn = true })
+		setRow(loaded, "Announcements", "Remind me about the Pagle companion", false)
+		assert.is_false(loaded.namespaces.Pagle_Hunts.db.profile.companionHint)
+
+		loaded.client.settings.defaults(loaded.client.settings.page("Announcements"))
+
+		assert.is_true(valuesOn(loaded, "Announcements")["Remind me about the Pagle companion"])
+		assert.is_true(loaded.namespaces.Pagle_Hunts.db.profile.companionHint)
+	end)
 
 	it("on Announcements restores every row, the two looks and Hunts' row included (SET-R33)", function()
 		local loaded = readyWithLooks()
@@ -1017,7 +1070,10 @@ local function everyString()
 	collectStrings(loaded, strings, seen)
 	local none = ready({ off = { "Ledger", "Hunts", "Stats", "TackleBoard", "QoL" } })
 	collectStrings(none, strings, seen)
-	return strings, { loaded, none }
+	-- the companion hint's row, only once its switch is on (HNT-R172)
+	local hint = ready({ hintOn = true })
+	collectStrings(hint, strings, seen)
+	return strings, { loaded, none, hint }
 end
 
 -- A Lua pattern matching what `format` draws once filled, capturing each filled part, and each part's specifier
@@ -1184,6 +1240,7 @@ end
 -- The capitalised words a row may have after its first: CONTEXT.md's terms and names, which keep their capitals.
 local NAMES = {
 	AddOns = true,
+	Anglers = true,
 	Board = true,
 	Casts = true,
 	Catches = true,

@@ -377,7 +377,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 - HNT-R130 for the `event` and `ladder` keys, HNT-R136–R138 for runs and the rules version 2
 - HNT-R140–R156, HNT-R160–R165, HNT-R170–R172, HNT-R175–R177
 - HNT-R199–R204
-- Settings: "Remind me about the Pagle companion" on Hunts, only once the hint switch is on (HNT-R172)
+- Settings: "Remind me about the Pagle companion" on Announcements, under Hunts' header (SET-R32), only once the hint switch is on (HNT-R172)
 
 **Exit check:**
 1. With the rotation's starting point in the past: `/pagle hunts` shows the wager strip above "What's biting", a WAGERS row whose bar spans the ruler with ▸ at its end, and the Pagle Wagers ribbon reading "1 on". The ribbon's spread lists the slip with its countdown and the ladder at 0 of 25.
@@ -425,7 +425,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 **Build order:** 1. Core's reads (VIEW-R1–R4, VIEW-R10–R12). 2. The tooltip block and its Settings row, and the Following spread, in parallel.
 
-**Core rules:** VIEW-R1–R4, VIEW-R10–R12, VIEW-R20–R22, VIEW-R30; edge cases VIEW-R90–R95 ([core/anglers-in-game.md](core/anglers-in-game.md))
+**Core rules:** VIEW-R1–R4, VIEW-R10–R13, VIEW-R20–R22, VIEW-R30; edge cases VIEW-R90–R95 ([core/anglers-in-game.md](core/anglers-in-game.md))
 
 **Module rules:** Ledger: LED-R132 for its "Following" line, LED-R151
 

@@ -43,6 +43,8 @@ local ns = select(2, ...)
 ---@field getVarieties? fun(speciesID: integer): PagleVarietyEntry[]? -- Pagle.GetVarieties (VAR-R11); nil while updating
 ---@field rarities? PagleVarietyRarity[] -- Pagle.VARIETY_RARITIES, Common to Epic (VAR-R11); nil while updating
 ---@field fishCrest? fun(speciesID: integer): LedgerFishCrest -- a Species' fish crest (VAR-R12, VAR-R24)
+---@field followedAnglers? fun(): PagleFollowedAnglers -- Pagle.GetFollowedAnglers (VIEW-R11), called at each drawing
+---                                     -- of Home's contents and the Following spread (LED-R132, LED-R151)
 
 --- A Species' fish crest, as the varieties spread's foot shows it (VAR-R12, VAR-R24): its icon, and its name once Core
 --- has registered the crest's good (none before).
@@ -75,6 +77,7 @@ local ns = select(2, ...)
 ---@field getVarieties fun(speciesID: integer): PagleVarietyEntry[]?
 ---@field rarities PagleVarietyRarity[]
 ---@field fishCrest fun(speciesID: integer): LedgerFishCrest
+---@field followedAnglers fun(): PagleFollowedAnglers
 ---@field activityXP? ActivityXP                     -- Pagle.GetActivityXP() (AXP-R6, LED-R150)
 ---@field prestigeSources? LedgerPrestigeSources     -- PagleLedgerDB.global.prestigeSources (LED-R150)
 
@@ -83,7 +86,8 @@ local ns = select(2, ...)
 ---   "blue" over the ink; a kicker's `ink` its own, a text's `style` "italic" the italic face, VAR-R24)
 --- - `link` (`text`, opening `place`, or calling `action` instead when it has one)
 --- - `leader` (a dotted-leader line: `text` left, `value` right, opening `place` if set, or calling `action` instead,
----   its value then in a link's red)
+---   its value then in a link's red; `style` "pair" with no leader, "ruled" with a rule under it instead, LED-R151;
+---   `color` "faded" greyed)
 --- - `button` (`text` on a button, calling `action`: the Angler page's Prestige, LED-R146)
 --- - `seal` (a wax seal reading `text`)
 --- - `stamps` (`stamps`: ink stamps, each `{ text, inked }`)
@@ -97,10 +101,13 @@ local ns = select(2, ...)
 ---   active title `signature` in handwriting under it, and a wax seal reading `seal`, LED-R132)
 --- - `board` (`ticks`: the Trophy Room's measuring board, LED-R143) and `plinth` (`icon` and `look`, `text` the name,
 ---   `value` the plaque, LED-R144), drawn by adapter/JournalCollections.lua
+--- - `level` (a Followed Angler's Angler Level in large numerals under its caption `value`, its Prestige words `note`
+---   under them, and a wax seal reading `seal`, LED-R151), drawn by adapter/JournalFollowing.lua
 --- - `emblem` (`mark`: a prestige rank's emblem and stars, ns.PrestigeMark; nothing drawn without an emblem)
 --- - `ladder` (`rungs` side by side, each `{ text, inked, circled }`: Zone Mastery's ranks, LED-R135) and `row` (a list
 ---   row: a small `icon` drawn `look`, `text` in `color`, its `margin` notes in handwriting, its `stars`, a `value` at
----   the right, `selected` marked, opening `place`; LED-R136, LED-R137), drawn by adapter/JournalZone.lua
+---   the right, a `stamp` after its words, `selected` marked, opening `place`; LED-R136, LED-R137, LED-R151), drawn
+---   by adapter/JournalZone.lua
 --- - `plate` (a Legend's plate across the spread: its `icon`, `text` the name, `lines` its first Catch and its size
 ---   text, `seal` its title, `value` at its foot; a click anywhere opens `place`; LED-R147), drawn by
 ---   adapter/JournalLegends.lua over both pages
@@ -113,7 +120,7 @@ local ns = select(2, ...)
 ---   `text` and the hand's `value`), drawn by adapter/JournalVarieties.lua (VAR-R24)
 --- Any block with `foot` sits at its page's foot when the page has room above it (the varieties spread's fish crest).
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"crest"|"rule"|"map"|"variety"|"varietyArt"|"fishCrest"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"crest"|"rule"|"map"|"variety"|"varietyArt"|"fishCrest"|"level"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -140,7 +147,7 @@ local ns = select(2, ...)
 ---@field stars? LedgerStars
 ---@field selected? boolean
 ---@field lines? string[]
----@field style? "chart"|"button"|"radio"|"legend"|"pair"|"italic" -- a link's, icon's or text's look (adapter/JournalWidgets.lua)
+---@field style? "chart"|"button"|"radio"|"legend"|"pair"|"italic"|"ruled" -- a link's, icon's, text's or leader's look (adapter/JournalWidgets.lua)
 ---@field on? boolean            -- a radio's pick
 ---@field inked? boolean         -- a seal pressed (false: the empty ring)
 ---@field numeral? string        -- a contents line's numeral
@@ -154,6 +161,7 @@ local ns = select(2, ...)
 ---@field art? PagleVarietyArt   -- a variety's art (VAR-R11, VAR-R24)
 ---@field rarity? LedgerVarietyRarity -- a variety row's rarity pill (VAR-R24)
 ---@field foot? boolean          -- at the page's foot (VAR-R24)
+---@field stamp? string          -- a row's ink stamp after its words (a Followed Angler's "HC", LED-R151)
 
 --- A variety's rarity as its pill shows it (VAR-R24, core/varieties.md › UI): its name, and its colour and its darker
 --- ink on parchment, each { r, g, b }.
@@ -225,6 +233,9 @@ ns.JOURNAL_VARIETIES = "varieties"
 --- The Legends spread's ID (LED-R147): its args may name a `legend` (item ID) to choose, and `plate` to show its
 --- plate. logic/JournalLegends.lua registers it.
 ns.JOURNAL_LEGENDS = "legends"
+--- The Following spread's ID (LED-R151): its args may name an `angler` (its place in GetFollowedAnglers' order) to
+--- select. logic/JournalFollowing.lua registers it.
+ns.JOURNAL_FOLLOWING = "following"
 
 --- Every spread's place, one constructor per spread (LED-R125): each link, crumb, tile and note opens one. A place
 --- names its spread by ID, so a link to a spread that hasn't registered does nothing (Router:Open).
@@ -289,6 +300,14 @@ end
 ---@return LedgerJournalPlace
 function ns.JournalPlace.legends(legend, plate)
 	return { id = ns.JOURNAL_LEGENDS, args = legend and { legend = legend, plate = plate } or nil }
+end
+
+--- The Following spread, with the Followed Angler at `angler` (its place in GetFollowedAnglers' order) selected when
+--- given (LED-R151): what Home's contents and the index open.
+---@param angler integer?
+---@return LedgerJournalPlace
+function ns.JournalPlace.following(angler)
+	return { id = ns.JOURNAL_FOLLOWING, args = angler and { angler = angler } or nil }
 end
 
 --- Adds the removed line to a caught item's entry `blocks` (LED-R12): "No longer found in Forever's waters." while

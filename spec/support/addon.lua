@@ -94,7 +94,7 @@ local readToc = dofile("spec/support/toc.lua")
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
 ---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID. They replace
 --- the fake client's stubs of the same name, e.g. InCombatLockdown for a load in combat.
----@param options { holdAddonLoaded: boolean?, dependencyLibsOnly: boolean?, replace: table<string, string>?, also: string[]? }?
+---@param options { holdAddonLoaded: boolean?, dependencyLibsOnly: boolean?, replace: table<string, string>?, also: string[]?, beforeLoaded: table<string, fun(ns: table)>? }?
 --- holdAddonLoaded: don't fire ADDON_LOADED(name); the spec fires it with loaded.client.fire, e.g. after adding a
 --- listener that must be there before it. dependencyLibsOnly: load only the libs/ files of each dependency, for a
 --- stand-in that provides the rest (FakePagle's fake.load). replace: files of the named addon to load from another
@@ -102,6 +102,8 @@ local readToc = dofile("spec/support/toc.lua")
 --- generated fixture in place of the committed generated file. also: more addons to load after the named one, in
 --- order, into the same globals and client, each after its dependencies and with its own ADDON_LOADED, as the client
 --- loads every enabled addon (`{ "Pagle_Hunts", "Pagle_QoL" }`): a spec of the whole package, every Module loaded.
+--- beforeLoaded: by addon name, a function given that addon's ns once its files have run and before its ADDON_LOADED,
+--- e.g. to turn on a Tunable its OnInitialize reads (`{ Pagle_Hunts = function(ns) ns.COMPANION_HINT_ON = true end }`).
 ---@return LoadedAddon
 function loadAddon(name, globals, options)
 	options = options or {}
@@ -178,6 +180,10 @@ function loadAddon(name, globals, options)
 					return ("%s: %s failed while loading: %s"):format(toc, file, tostring(runErr))
 				end
 			end
+		end
+		local before = options.beforeLoaded and options.beforeLoaded[addon]
+		if before then
+			before(ns)
 		end
 		if isDependency or not options.holdAddonLoaded then
 			client.fire("ADDON_LOADED", addon)

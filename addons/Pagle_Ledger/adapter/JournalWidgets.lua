@@ -364,12 +364,15 @@ end
 ---@field state FontString
 ---@field swatch LedgerSpriteTexture
 ---@field dots LedgerDotLine
+---@field rule Texture
+---@field ink string           -- its words' ink, back under the mouse's leaving
 
 -- A contents line (LED-R132): its numeral in small capitals, its words, a dotted leader and its value, the words
 -- turning red under the mouse; or a binding's line (LED-R146): its closed book, its name and its state at the right
 -- ("In use" in the hand, "Use" and "In the Curio Shop" as ink links calling `action`, "Angler Level {L}" in italic);
--- or with `style` "pair", words and a value with no leader (a hand on the rod, LED-R146). It opens its place or calls
--- its action.
+-- or with `style` "pair", words and a value with no leader (a hand on the rod, LED-R146), and "ruled" the same over
+-- a rule (a Followed Angler's card, LED-R151). With `color` "faded" its words and value are greyed (Home's Following
+-- line with no Companion, LED-R151). It opens its place or calls its action.
 makers.leader = function(parent)
 	local widget = newWidget(parent) --[[@as LedgerLeaderWidget]]
 	ns.JournalClickable(widget)
@@ -380,29 +383,37 @@ makers.leader = function(parent)
 	widget.value:SetPoint("TOPRIGHT", 0, -3)
 	widget.swatch = ns.JournalSprite(widget, "Bindings", "binding-field-leather", "ARTWORK", 0, 11)
 	widget.dots = ns.JournalDotLine(widget, INK.noteLight, 1)
+	widget.rule = ns.JournalTint(widget, INK.rule, 1)
+	widget.rule:SetHeight(1)
+	widget.rule:SetPoint("BOTTOMLEFT")
+	widget.rule:SetPoint("BOTTOMRIGHT")
 	widget:SetScript("OnEnter", function(self)
 		if self.place or self.action then
 			self.label:SetTextColor(rgb(INK.hover))
 		end
 	end)
 	widget:SetScript("OnLeave", function(self)
-		self.label:SetTextColor(rgb(INK.body))
+		self.label:SetTextColor(rgb(self.ink or INK.body))
 	end)
 	function widget.Fill(self, block, width, open)
 		self.place, self.action, self.open = block.place, block.action, open
 		local binding = block.binding ~= nil
-		local pair = block.style == "pair"
+		local ruled = block.style == "ruled"
+		local pair = block.style == "pair" or ruled
+		self.rule:SetShown(ruled)
+		local faded = block.color == "faded"
+		self.ink = faded and INK.faded or INK.body
 		self.swatch:SetShown(binding)
 		self.numeral:SetShown(block.numeral ~= nil)
 		self.numeral:SetText(block.numeral or "")
 		local left = block.numeral and 28 or (binding and 22 or 0)
 		local size = (binding or pair) and 14.5 or 16
-		ns.JournalRestyle(self.label, "print", size, INK.body)
+		ns.JournalRestyle(self.label, "print", size, self.ink)
 		self.label:ClearAllPoints()
 		self.label:SetPoint("TOPLEFT", left, -3)
 		self.label:SetText(block.text)
 		-- the value: a state on a binding's line, a count or a mark on a contents line
-		local face, valueSize, hex = "print", size, INK.small
+		local face, valueSize, hex = "print", size, faded and INK.faded or INK.small
 		if binding then
 			ns.JournalResprite(self.swatch, block.bindingAtlas or "Bindings", block.binding, 11)
 			ns.JournalBoxAt(self.swatch, self, 1, 1)
@@ -427,7 +438,7 @@ makers.leader = function(parent)
 				self.dots:Lay(from, 15, to - from)
 			end
 		end
-		return (binding or pair) and 22 or 26
+		return (binding or (pair and not ruled)) and 22 or 26
 	end
 	return widget
 end
