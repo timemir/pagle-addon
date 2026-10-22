@@ -276,6 +276,8 @@ function ns.CatchNodMoment(cast, itemName, lengthUnit, varieties, caughtBefore)
 		moment.title = L.CATCH_NOD:format(name, band, length)
 		return moment
 	end
+	-- A look is found only for a variety.
+	---@cast variety PagleVariety
 	moment.title = L.CATCH_NOD_VARIETY:format(name, look.name, band, length)
 	-- The line with a mark in the name's place, cut there: "\001" is in no name.
 	local before, after = L.CATCH_NOD_VARIETY:format(name, "\001", band, length):match("^(.-)%s*\001%s*(.*)$")

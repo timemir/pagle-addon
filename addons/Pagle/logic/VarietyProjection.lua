@@ -53,6 +53,8 @@ local function count(state, record)
 		local species = speciesOf(variety)
 		local index = variety and variety.index
 		if species and type(index) == "number" then
+			-- A Species is read only from a variety.
+			---@cast variety PagleVariety
 			local caught = state.bySpecies[species]
 			if not caught then
 				caught = {}

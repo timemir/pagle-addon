@@ -1374,7 +1374,9 @@ describe("FakePagle", function()
 			fake.enterWorld()
 
 			-- Casts until one's variety is one an earlier Cast caught: each before it names none.
-			local caught, named = {}, nil
+			local caught = {}
+			---@type { cast: PagleCast, nod: PagleAnnouncement }?
+			local named
 			for _ = 1, 30 do
 				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
 				fake.nextFrame()
@@ -1387,8 +1389,9 @@ describe("FakePagle", function()
 				caught[index] = true
 			end
 
-			local variety = assert(assert(named).nod.headline.variety)
-			assert.are.same(named.cast.items[1].variety.rarity, variety.rarity)
+			named = assert(named)
+			local variety = assert(named.nod.headline.variety)
+			assert.are.same(assert(named.cast.items[1].variety).rarity, variety.rarity)
 			assert.are.equal(variety.before .. " " .. variety.name .. " " .. variety.after, named.nod.headline.title)
 			assert.matches("^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d in$", named.nod.headline.title)
 		end)
