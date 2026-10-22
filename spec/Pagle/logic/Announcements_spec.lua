@@ -584,6 +584,155 @@ describe("the combat hold", function()
 	end)
 end)
 
+describe("hold reasons", function()
+	it(
+		"holds for the guide as for combat: what is on screen hidden, everything new held, Nods dropped (ANN-R38)",
+		function()
+			local world = newWorld()
+			world.lanes:Push(announcement("banner", "Level 12"))
+			world.lanes:Push(announcement("nod", "New here"))
+			world.lanes:Push(announcement("toast", "New Species"))
+
+			world.lanes:Hold("guide")
+			world.lanes:Push(announcement("toast", "Size record"))
+			world.lanes:Push(announcement("nod", "Uncharted"))
+			world.advance(60)
+
+			assert.are.same({}, world.visible)
+			assert.are.same({ true, true, false }, {
+				world.lanes:IsHeld(),
+				world.lanes:IsHeld("guide"),
+				world.lanes:IsHeld("combat"),
+			})
+			assert.are.same({ "Level 12", "New here", "New Species" }, titles(world.shown))
+		end
+	)
+
+	it(
+		"shows what the guide alone held at once on its release: Nods dropped, toasts as themselves in order (ANN-R38,"
+			.. " ONB-R70)",
+		function()
+			local world = newWorld()
+			world.lanes:Hold("guide")
+			world.lanes:Push(announcement("toast", "New Species"))
+			world.lanes:Push(announcement("nod", "New here"))
+			world.lanes:Push(announcement("toast.low", "Size record"))
+
+			world.lanes:Release("guide")
+
+			assert.are.same({ "toast Size record", "toast New Species" }, column(world))
+			assert.is_false(world.lanes:IsHeld())
+			world.advance(60)
+			assert.are.same({ "New Species", "Size record" }, titles(world.shown))
+		end
+	)
+
+	it(
+		"never folds what the guide alone held into While you were fighting: 3 or more toasts show as themselves, in"
+			.. " turn, with the banner (ANN-R38)",
+		function()
+			local world = newWorld()
+			world.lanes:Hold("guide")
+			world.lanes:Push(announcement("banner", "Level 12"))
+			for i = 1, 4 do
+				world.lanes:Push(announcement("toast", "Toast " .. i))
+			end
+
+			world.lanes:Release("guide")
+
+			assert.are.same(
+				{ { "toast Toast 3", "toast Toast 2", "toast Toast 1" }, "Level 12" },
+				{ column(world), centre(world) }
+			)
+			world.advance(TOAST + LEAVE)
+			assert.are.same({ "toast Toast 4" }, column(world))
+		end
+	)
+
+	it(
+		"stays held for combat when the guide is released inside a combat hold, then shows by combat's rules (ANN-R36,"
+			.. " ANN-R38, ONB-R25)",
+		function()
+			local world = newWorld()
+			world.lanes:Hold("guide")
+			world.lanes:Push(announcement("toast", "New Species"))
+			world.lanes:Hold("combat")
+			world.lanes:Push(announcement("toast", "Size record"))
+			world.lanes:Push(announcement("toast.high", "Hunt completed"))
+
+			world.lanes:Release("guide")
+			assert.are.same({ true, false }, { world.lanes:IsHeld(), world.lanes:IsHeld("guide") })
+			world.advance(60)
+			assert.are.same({}, world.shown)
+
+			world.lanes:Release("combat")
+			world.advance(1.9)
+			assert.are.same({}, world.shown)
+			world.advance(0.1)
+			assert.are.same({ "toast While you were fighting" }, column(world))
+		end
+	)
+
+	it(
+		"shows by combat's rules, at once, when the guide reopened inside the wait after combat ends last (ANN-R36,"
+			.. " ANN-R38, ONB-R25)",
+		function()
+			local world = newWorld()
+			world.lanes:Hold("combat")
+			for i = 1, 3 do
+				world.lanes:Push(announcement("toast", "Toast " .. i))
+			end
+			world.lanes:Release("combat")
+			world.lanes:Hold("guide")
+			world.advance(2)
+			assert.are.same({ true, false }, { world.lanes:IsHeld(), world.lanes:IsHeld("combat") })
+			world.advance(60)
+			assert.are.same({}, world.shown)
+
+			world.lanes:Release("guide")
+
+			assert.are.same({ "toast While you were fighting" }, column(world))
+		end
+	)
+
+	it("leaves combat's 2 s wait as it runs when the guide holds and releases inside it (ANN-R36, ANN-R38)", function()
+		local world = newWorld()
+		world.lanes:Hold("combat")
+		world.lanes:Push(announcement("toast", "New Species"))
+		world.lanes:Release("combat")
+		world.advance(1)
+		world.lanes:Hold("guide")
+		world.lanes:Release("guide")
+		assert.are.same({}, world.shown)
+
+		world.advance(1)
+
+		assert.are.same({ "toast New Species" }, column(world))
+		assert.is_false(world.lanes:IsHeld())
+	end)
+
+	it("takes a release for a reason not holding as nothing (ANN-R38)", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "New Species"))
+		world.lanes:Hold("combat")
+
+		world.lanes:Release("guide")
+		world.advance(60)
+
+		assert.are.same({ {}, true, 0 }, { column(world), world.lanes:IsHeld(), world.emptied })
+	end)
+
+	it("holds for combat when no reason is given (ANN-R35, ANN-R38)", function()
+		local world = newWorld()
+		world.lanes:Hold()
+
+		assert.is_true(world.lanes:IsHeld("combat"))
+		world.lanes:Release()
+		world.advance(2)
+		assert.is_false(world.lanes:IsHeld())
+	end)
+end)
+
 describe("Cozy mode in the lanes", function()
 	it("shows no toast, banner or Nod and plays nothing (ANN-R40)", function()
 		local world = newWorld()
