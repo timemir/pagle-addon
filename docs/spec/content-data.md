@@ -353,6 +353,7 @@ An imposed Hunt's `conditions` is an inline table with any of the LOG-R48 fields
 | `data/forever/varieties.lock` | DATA-R133 |
 | `data/hunts/tags.toml` | DATA-R97 |
 | `data/lore/*.toml`, `manifest.toml`, `VOICE.md` | DATA-R100–R111 |
+| `data/art/prestige/` | The Prestige kit's sources for the web art: `art.json`, the lossless 32-bit atlases `tga/prestige/*.tga` and `tga/legends/*.tga`, and `wells/<legend>.svg` ([The web art](#the-web-art)) |
 
 Nothing here is a SavedVariable: the shipped data is read-only Lua (DATA-R80).
 
@@ -414,10 +415,32 @@ The parser accepts exactly the `PAGLE-REPORT 1` format (REP-R30–R33). Core and
 | `scripts/extract-baseline.py <dump>` | DATA-R9 (run once) |
 | `scripts/propose-events.py --zone <areaID> [--zone <areaID>] [--out <dir>]` | DATA-R99 |
 | `scripts/check-event.py <file>` | DATA-R99 (also pagle-backend's check before a push) |
+| `scripts/export-web-art.py [--out <dir>] [--only <key> …]` | [The web art](#the-web-art) |
 
 The two event scripts (DATA-R99) share the generator's readers and checks. *Decided while building them (#298):*
 - **`propose-events.py`** reads the baseline's chances for its tier suggestions and nothing else does, so no chance reaches a generated file (DATA-R4). An area's shares follow VMaNGOS's loot rules: a positive chance is a percentage, rows at 0 split what is left, quest (negative) chances never count. Only items on the area's catch list count; a gated one is scaled by its window's open share of a run, and a season-gated one counts for nothing. A Hunt's share is its mean over the zones' areas that have a loot share. The drafts are for the top 3 Species, each with a Haul, its Named fish, Quality when uncommon items reach a 45-minute tier, and a Timed Hunt. The Timed spans rotate: the `night` window, the `day` window, then 18:00–21:00 (`dusk`), each adding its time tag; a span that fails DATA-R99's run checks (closed over 36 hours at a stretch, or open under 3 hours in a run) is left out. No draft has a `minBand`. Lore is written as `{TODO …}`, which the Hunts lore check fails as a placeholder (DATA-R107) until people write it. The default `--out` is `pagle-event-drafts-<date-time>` in the system temp directory; a folder under `data/` is refused.
 - **`check-event.py`** takes a `.toml` file as an event file and a `.json` file as one pushed `huntEvent` item. A pushed item must have exactly the Contracts fields, `kind = "huntEvent"`, `v = 1`, an `id` starting `p_` and `rotation = false`, and it always gets the Hunts lore check. A file in `data/hunts/events/` is judged by the generator's own run, and only its problems are printed. Any other event must have an event ID and Hunt IDs that are new to the pool and `hunts.toml`. Exit 0: the event passes; 1: it fails, each failure on its own line; 2: the committed data itself fails the generator.
+
+### The web art
+
+The website (pagle-backend) shows the Prestige frames, the Prestige emblems and the Legend crests from the same art the addon draws. `scripts/export-web-art.py` (logic in `pagle_data/web_art.py`) writes them from `data/art/prestige/`; nothing it writes is committed. pagle-backend runs it at a pinned commit of this repo and copies the output, so a change to the art reaches the site when pagle-backend moves its pin.
+
+```
+.tools/bin/python scripts/export-web-art.py              # everything, into build/web-art/ (git-ignored)
+.tools/bin/python scripts/export-web-art.py --out <dir> --only prestige-frame-5 legend-crest-19803 prestige-emblem-master
+```
+
+It runs on the pinned Python, whose Pillow (`PYTHON_PACKAGES` in `scripts/tools.env`) brings WebP, or on any Python 3.12+ with Pillow built with WebP. Its test, `scripts/tests/test_web_art.py`, runs in the check's generator stage.
+
+- **No game art.** Every pixel comes from the Pagle-drawn atlases or `wells/*.svg`; no Blizzard texture or icon goes into any output (pagle-backend ANG-R54). Where the client draws a Legend's item icon in its crest's well, the export draws the kit's sepia fish for that Legend (`wells/<legend key>.svg` on the well's sepia ground); the Unwritten crest keeps the dark fish in its own atlas.
+- **Keys.** Frames `prestige-frame-<none|1…10|master>`; emblems `prestige-emblem-<1…10|master>-<64|34|22>`; crests `legend-crest-<19803|19805|19806|unwritten>`.
+- **Sizes.** 2 pixels per unit: a frame or crest's box is 260 × 280 units, so its `<key>.webp` is 520 × 560; an emblem is 128, 68 or 44 px.
+- **Every frame and crest** gets `<key>.webp`: its layers in z order, each unmoved and at its first keyframe's opacity, ADD layers added (plus-lighter), clipped to the box. Words are never baked in: the label plaque is blank, and `index.json` gives its ink, size, face and top for the site to set the text (a frame's numeral, or "Master" with its stars, as the Ledger's bookplate does; a crest's "Legend" or "Unwritten"). A frame's well is empty: the site's likeness goes there, between z 2 and z 4.
+- **A frame or crest that moves** (frames V–X and Master, all four crests) also gets a `<key>/` folder: a transparent WebP per layer at 2× its drawn size, `manifest.json` (the layers in z order: `file`, `rect` {x, y, w, h} in units, `z`, `blend` `normal` or `add`, rest `opacity`, `animation` (the keyframes name or null), `class` and `timing`), and `<key>.css`: one `@keyframes` per motion, named `pg-frame-<n>-<motion>` or `pg-crest-<key>-<motion>`, of `transform` (rotate, scale, translate) and `opacity` only, then a class per moving layer with its `animation` and `transform-origin`. Translations and origins are percentages of the layer's own box, so the motion scales with the size the site draws at; a translating motion shared by two layers of different sizes becomes a keyframes per layer (`pg-frame-6-bubble-fx1`). The site puts the CSS under `prefers-reduced-motion: no-preference` itself, and draws an `add` layer with `mix-blend-mode: plus-lighter`.
+- **Emblems** are flat, numerals baked in.
+- **`index.json`** lists what was written: each piece's key, name, description, motion summary, rank or item, files, well and label, and each emblem's files.
+
+To refresh the art, copy a new kit's `art.json` and `tga/` over `data/art/prestige/`; the well glyphs change only by hand.
 
 ## UI
 

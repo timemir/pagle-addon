@@ -28,6 +28,9 @@ __pycache__/
 *.zip
 # The pinned tools (scripts/setup.sh) and the cached packager (scripts/package.sh)
 .tools/
+# The web art export's default output (scripts/export-web-art.py), never committed: pagle-backend runs the export at
+# a pinned commit and copies what it writes
+/build/
 
 # WoW SavedVariables / logs accidentally copied in
 WTF/

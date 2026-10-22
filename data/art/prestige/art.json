@@ -1,0 +1,2674 @@
+{
+ "box": [
+  260,
+  280
+ ],
+ "well": {
+  "cx": 130,
+  "cy": 124,
+  "r": 56
+ },
+ "scale": 1.5,
+ "frames": [
+  {
+   "key": "none",
+   "rank": 0,
+   "name": "Unwritten",
+   "description": "A ring in ink, and a pencilled guess at what will go round it.",
+   "motionSummary": null,
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameNone",
+   "atlasSize": [
+    512,
+    512
+   ],
+   "layers": [
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 38.0,
+     "y": 28.67,
+     "w": 184.0,
+     "h": 187.33,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 276,
+      "h": 281
+     }
+    }
+   ],
+   "label": null,
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "jetty",
+   "rank": 1,
+   "name": "The Jetty",
+   "description": "Planks off the old jetty, lashed into a ring, still smelling of tar and low tide.",
+   "motionSummary": null,
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameJetty",
+   "atlasSize": [
+    512,
+    512
+   ],
+   "layers": [
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 28.0,
+     "y": 29.33,
+     "w": 187.33,
+     "h": 184.0,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 281,
+      "h": 276
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 56.0,
+     "y": 198.0,
+     "w": 146.67,
+     "h": 51.33,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 287,
+      "y": 2,
+      "w": 220,
+      "h": 77
+     }
+    }
+   ],
+   "label": {
+    "textTop": 222,
+    "ink": "#f2ead6",
+    "size": 13,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": "0 1px 0 rgba(40,28,14,.8)"
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "castoff",
+   "rank": 2,
+   "name": "Casting Off",
+   "description": "The rail of a clinker-built rowboat, three coats of paint deep, with the oars shipped across it.",
+   "motionSummary": null,
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameCastoff",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 2.0,
+     "y": 13.33,
+     "w": 256.0,
+     "h": 219.33,
+     "z": 1,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 384,
+      "h": 329
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 40.0,
+     "y": 37.33,
+     "w": 180.0,
+     "h": 179.33,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 335,
+      "w": 270,
+      "h": 269
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 58.0,
+     "y": 203.33,
+     "w": 144.0,
+     "h": 36.67,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 276,
+      "y": 335,
+      "w": 216,
+      "h": 55
+     }
+    }
+   ],
+   "label": {
+    "textTop": 216,
+    "ink": "#f0cd6a",
+    "size": 13,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": "0 1px 0 #06140f"
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "lamproom",
+   "rank": 3,
+   "name": "The Lamp Room",
+   "description": "The lamp room at the end of the point, glass all round and the light going out over the water.",
+   "motionSummary": null,
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameLamproom",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 0.0,
+     "y": 69.33,
+     "w": 260.0,
+     "h": 96.67,
+     "z": 1,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 693,
+      "w": 390,
+      "h": 145
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 47.33,
+     "y": 45.33,
+     "w": 165.33,
+     "h": 234.67,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 248,
+      "h": 352
+     }
+    },
+    {
+     "name": "front",
+     "sprite": "front",
+     "x": 44.0,
+     "y": 0.0,
+     "w": 172.0,
+     "h": 220.67,
+     "z": 6,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 358,
+      "w": 258,
+      "h": 331
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 74.0,
+     "y": 232.67,
+     "w": 112.0,
+     "h": 29.33,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 264,
+      "y": 2,
+      "w": 168,
+      "h": 44
+     }
+    }
+   ],
+   "label": {
+    "textTop": 241,
+    "ink": "#3a2404",
+    "size": 11.5,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": "0 1px 0 rgba(255,244,200,.7)"
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "opensea",
+   "rank": 4,
+   "name": "The Open Sea",
+   "description": "A compass rose off a navigator’s chart, every point of it true, the north crowned in gold.",
+   "motionSummary": null,
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameOpensea",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 6.0,
+     "y": 0.0,
+     "w": 252.0,
+     "h": 250.67,
+     "z": 1,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 378,
+      "h": 376
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 47.33,
+     "y": 44.0,
+     "w": 165.33,
+     "h": 166.0,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 382,
+      "w": 248,
+      "h": 249
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 46.67,
+     "y": 227.33,
+     "w": 166.67,
+     "h": 34.67,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 254,
+      "y": 382,
+      "w": 250,
+      "h": 52
+     }
+    }
+   ],
+   "label": {
+    "textTop": 237,
+    "ink": "#1e3a5e",
+    "size": 12.5,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": null
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "storm",
+   "rank": 5,
+   "name": "The Storm",
+   "description": "The helm of a ketch in a full gale: mahogany, brass and eight good spokes, and the sky coming apart overhead.",
+   "motionSummary": "The wheel rocks against the sea (rotation); every seven seconds lightning cracks out of the cloud and lights it (alpha).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameStorm",
+   "atlasSize": [
+    1024,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 2.67,
+     "y": 0.0,
+     "w": 244.0,
+     "h": 265.33,
+     "z": 1,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 366,
+      "h": 398
+     }
+    },
+    {
+     "name": "fx2",
+     "sprite": "fx2",
+     "x": 16.0,
+     "y": 0.0,
+     "w": 222.0,
+     "h": 230.0,
+     "z": 2,
+     "blend": "ADD",
+     "motion": {
+      "keyframes": "pf-glow",
+      "duration": 7.0,
+      "easing": "linear",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha"
+      ],
+      "origin": [
+       130.0,
+       140.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         0.86,
+         1.0
+        ],
+        "css": {
+         "opacity": "0"
+        },
+        "alpha": 0.0
+       },
+       {
+        "at": [
+         0.87
+        ],
+        "css": {
+         "opacity": ".35"
+        },
+        "alpha": 0.35
+       },
+       {
+        "at": [
+         0.88
+        ],
+        "css": {
+         "opacity": "0"
+        },
+        "alpha": 0.0
+       },
+       {
+        "at": [
+         0.9
+        ],
+        "css": {
+         "opacity": ".45"
+        },
+        "alpha": 0.45
+       },
+       {
+        "at": [
+         0.96
+        ],
+        "css": {
+         "opacity": "0"
+        },
+        "alpha": 0.0
+       }
+      ],
+      "restAlpha": 0.0
+     },
+     "rect": {
+      "x": 370,
+      "y": 404,
+      "w": 333,
+      "h": 345
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 8.67,
+     "y": 6.67,
+     "w": 242.67,
+     "h": 242.67,
+     "z": 4,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-helm",
+      "duration": 4.6,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "transform"
+      ],
+      "origin": [
+       130.0,
+       124.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "transform": "rotate(-7deg)"
+        },
+        "transform": {
+         "rotate": -7.0
+        }
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "transform": "rotate(7deg)"
+        },
+        "transform": {
+         "rotate": 7.0
+        }
+       }
+      ],
+      "restAlpha": 1.0
+     },
+     "rect": {
+      "x": 2,
+      "y": 404,
+      "w": 364,
+      "h": 364
+     }
+    },
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 182.0,
+     "y": -8.0,
+     "w": 62.67,
+     "h": 110.0,
+     "z": 2,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-flash",
+      "duration": 7.0,
+      "easing": "linear",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha"
+      ],
+      "origin": [
+       213.0,
+       47.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         0.86,
+         1.0
+        ],
+        "css": {
+         "opacity": "0"
+        },
+        "alpha": 0.0
+       },
+       {
+        "at": [
+         0.87
+        ],
+        "css": {
+         "opacity": ".9"
+        },
+        "alpha": 0.9
+       },
+       {
+        "at": [
+         0.88
+        ],
+        "css": {
+         "opacity": ".1"
+        },
+        "alpha": 0.1
+       },
+       {
+        "at": [
+         0.9
+        ],
+        "css": {
+         "opacity": "1"
+        },
+        "alpha": 1.0
+       },
+       {
+        "at": [
+         0.94
+        ],
+        "css": {
+         "opacity": "0"
+        },
+        "alpha": 0.0
+       }
+      ],
+      "restAlpha": 0.0
+     },
+     "rect": {
+      "x": 2,
+      "y": 772,
+      "w": 94,
+      "h": 165
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 50.0,
+     "y": 234.0,
+     "w": 157.33,
+     "h": 38.0,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 941,
+      "w": 236,
+      "h": 57
+     }
+    }
+   ],
+   "label": {
+    "textTop": 246,
+    "ink": "#2a2418",
+    "size": 12.5,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": null
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "dive",
+   "rank": 6,
+   "name": "The Dive",
+   "description": "A copper diving helmet, bolted down and pumped full of air. The angler has gone over the side to look the fish in the eye.",
+   "motionSummary": "Air bubbles rise from the gooseneck in two streams (translate and alpha).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameDive",
+   "atlasSize": [
+    512,
+    512
+   ],
+   "layers": [
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 12.0,
+     "y": 26.0,
+     "w": 248.0,
+     "h": 254.0,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 372,
+      "h": 381
+     }
+    },
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 195.33,
+     "y": 2.0,
+     "w": 28.0,
+     "h": 55.33,
+     "z": 6,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-bubble",
+      "duration": 3.2,
+      "easing": "ease-in",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha",
+       "transform"
+      ],
+      "origin": [
+       211.0,
+       55.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0
+        ],
+        "css": {
+         "transform": "translateY(18px)",
+         "opacity": "0"
+        },
+        "alpha": 0.0,
+        "transform": {
+         "y": 18.0
+        }
+       },
+       {
+        "at": [
+         0.15
+        ],
+        "css": {
+         "opacity": "1"
+        },
+        "alpha": 1.0
+       },
+       {
+        "at": [
+         1.0
+        ],
+        "css": {
+         "transform": "translateY(-16px)",
+         "opacity": "0"
+        },
+        "alpha": 0.0,
+        "transform": {
+         "y": -16.0
+        }
+       }
+      ],
+      "restAlpha": 0.0
+     },
+     "rect": {
+      "x": 186,
+      "y": 387,
+      "w": 42,
+      "h": 83
+     }
+    },
+    {
+     "name": "fx2",
+     "sprite": "fx2",
+     "x": 210.0,
+     "y": 23.33,
+     "w": 31.33,
+     "h": 44.67,
+     "z": 6,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-bubble",
+      "duration": 3.2,
+      "easing": "ease-in",
+      "delay": 1.6,
+      "loop": true,
+      "kinds": [
+       "alpha",
+       "transform"
+      ],
+      "origin": [
+       225.0,
+       61.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0
+        ],
+        "css": {
+         "transform": "translateY(18px)",
+         "opacity": "0"
+        },
+        "alpha": 0.0,
+        "transform": {
+         "y": 18.0
+        }
+       },
+       {
+        "at": [
+         0.15
+        ],
+        "css": {
+         "opacity": "1"
+        },
+        "alpha": 1.0
+       },
+       {
+        "at": [
+         1.0
+        ],
+        "css": {
+         "transform": "translateY(-16px)",
+         "opacity": "0"
+        },
+        "alpha": 0.0,
+        "transform": {
+         "y": -16.0
+        }
+       }
+      ],
+      "restAlpha": 0.0
+     },
+     "rect": {
+      "x": 2,
+      "y": 438,
+      "w": 47,
+      "h": 67
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 70.0,
+     "y": 228.67,
+     "w": 120.0,
+     "h": 31.33,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 387,
+      "w": 180,
+      "h": 47
+     }
+    }
+   ],
+   "label": {
+    "textTop": 238,
+    "ink": "#3a2404",
+    "size": 11.5,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": "0 1px 0 rgba(255,244,200,.7)"
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "coral",
+   "rank": 7,
+   "name": "The Coral Gardens",
+   "description": "A ring of mother-of-pearl in a reef: red coral up one side, a sea fan on the other, and somebody always swimming past.",
+   "motionSummary": "Little fish circle the ring (one sprite, rotation); the sea fan sways in the current (rotation).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameCoral",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 22.67,
+     "y": 132.0,
+     "w": 217.33,
+     "h": 134.0,
+     "z": 1,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 326,
+      "h": 201
+     }
+    },
+    {
+     "name": "fx2",
+     "sprite": "fx2",
+     "x": 110.67,
+     "y": 44.67,
+     "w": 148.67,
+     "h": 90.0,
+     "z": 2,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-fan",
+      "duration": 5.0,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "transform"
+      ],
+      "origin": [
+       184.0,
+       126.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "transform": "rotate(-3deg)"
+        },
+        "transform": {
+         "rotate": -3.0
+        }
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "transform": "rotate(3deg)"
+        },
+        "transform": {
+         "rotate": 3.0
+        }
+       }
+      ],
+      "restAlpha": 1.0
+     },
+     "rect": {
+      "x": 248,
+      "y": 207,
+      "w": 223,
+      "h": 135
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 49.33,
+     "y": 46.0,
+     "w": 161.33,
+     "h": 162.0,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 207,
+      "w": 242,
+      "h": 243
+     }
+    },
+    {
+     "name": "front",
+     "sprite": "front",
+     "x": 4.67,
+     "y": 118.67,
+     "w": 218.67,
+     "h": 106.67,
+     "z": 6,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 454,
+      "w": 328,
+      "h": 160
+     }
+    },
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 103.33,
+     "y": 36.67,
+     "w": 64.67,
+     "h": 174.0,
+     "z": 7,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-orbit",
+      "duration": 22.0,
+      "easing": "linear",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "transform"
+      ],
+      "origin": [
+       130.0,
+       124.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0
+        ],
+        "css": {
+         "transform": "rotate(0deg)"
+        },
+        "transform": {
+         "rotate": 0.0
+        }
+       },
+       {
+        "at": [
+         1.0
+        ],
+        "css": {
+         "transform": "rotate(-360deg)"
+        },
+        "transform": {
+         "rotate": -360.0
+        }
+       }
+      ],
+      "restAlpha": 1.0
+     },
+     "rect": {
+      "x": 334,
+      "y": 346,
+      "w": 97,
+      "h": 261
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 56.0,
+     "y": 225.33,
+     "w": 148.0,
+     "h": 32.67,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 618,
+      "w": 222,
+      "h": 49
+     }
+    }
+   ],
+   "label": {
+    "textTop": 235,
+    "ink": "#7a3a5a",
+    "size": 12.5,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": null
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "midnight",
+   "rank": 8,
+   "name": "The Midnight Zone",
+   "description": "Black glass from where no light comes down, lit by the things that live there. One of them has taken an interest.",
+   "motionSummary": "The jellyfish pulses (scale) and the lights in the glass breathe (alpha).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameMidnight",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 6.67,
+     "y": 0.0,
+     "w": 246.67,
+     "h": 241.33,
+     "z": 1,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 370,
+      "h": 362
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 50.67,
+     "y": 48.0,
+     "w": 158.0,
+     "h": 158.0,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 266,
+      "y": 368,
+      "w": 237,
+      "h": 237
+     }
+    },
+    {
+     "name": "fx2",
+     "sprite": "fx2",
+     "x": 55.33,
+     "y": 49.33,
+     "w": 149.33,
+     "h": 149.33,
+     "z": 5,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-photo",
+      "duration": 3.4,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha"
+      ],
+      "origin": [
+       130.0,
+       140.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "opacity": ".35"
+        },
+        "alpha": 0.35
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "opacity": "1"
+        },
+        "alpha": 1.0
+       }
+      ],
+      "restAlpha": 0.35
+     },
+     "rect": {
+      "x": 266,
+      "y": 609,
+      "w": 224,
+      "h": 224
+     }
+    },
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 43.33,
+     "y": 0.0,
+     "w": 173.33,
+     "h": 210.67,
+     "z": 6,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-jelly",
+      "duration": 2.8,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "transform"
+      ],
+      "origin": [
+       130.0,
+       -2.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "transform": "scale(1, 1)"
+        },
+        "transform": {
+         "scale": [
+          1.0,
+          1.0
+         ]
+        }
+       },
+       {
+        "at": [
+         0.4
+        ],
+        "css": {
+         "transform": "scale(1.04, .93)"
+        },
+        "transform": {
+         "scale": [
+          1.04,
+          0.93
+         ]
+        }
+       },
+       {
+        "at": [
+         0.7
+        ],
+        "css": {
+         "transform": "scale(.98, 1.03)"
+        },
+        "transform": {
+         "scale": [
+          0.98,
+          1.03
+         ]
+        }
+       }
+      ],
+      "restAlpha": 1.0
+     },
+     "rect": {
+      "x": 2,
+      "y": 368,
+      "w": 260,
+      "h": 316
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 57.33,
+     "y": 222.0,
+     "w": 145.33,
+     "h": 32.0,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 688,
+      "w": 218,
+      "h": 48
+     }
+    }
+   ],
+   "label": {
+    "textTop": 232,
+    "ink": "#bff8ff",
+    "size": 12.5,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": "0 0 6px rgba(127,244,255,.9)"
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "leviathan",
+   "rank": 9,
+   "name": "The Leviathan",
+   "description": "The serpent at the bottom of every sailor’s story, coiled round a ring of old gold with its own tail in its mouth.",
+   "motionSummary": "Now and then its eye catches the light (alpha).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameLeviathan",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 27.33,
+     "y": 34.0,
+     "w": 204.0,
+     "h": 198.0,
+     "z": 2,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 306,
+      "h": 297
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 54.67,
+     "y": 52.0,
+     "w": 150.0,
+     "h": 150.0,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 271,
+      "y": 303,
+      "w": 225,
+      "h": 225
+     }
+    },
+    {
+     "name": "front",
+     "sprite": "front",
+     "x": 40.67,
+     "y": 10.0,
+     "w": 176.67,
+     "h": 203.33,
+     "z": 6,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 303,
+      "w": 265,
+      "h": 305
+     }
+    },
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 128.67,
+     "y": 28.67,
+     "w": 19.33,
+     "h": 18.67,
+     "z": 7,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-eye",
+      "duration": 5.0,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha"
+      ],
+      "origin": [
+       130.0,
+       140.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         0.7,
+         1.0
+        ],
+        "css": {
+         "opacity": "0"
+        },
+        "alpha": 0.0
+       },
+       {
+        "at": [
+         0.8
+        ],
+        "css": {
+         "opacity": "1"
+        },
+        "alpha": 1.0
+       },
+       {
+        "at": [
+         0.9
+        ],
+        "css": {
+         "opacity": ".3"
+        },
+        "alpha": 0.3
+       }
+      ],
+      "restAlpha": 0.0
+     },
+     "rect": {
+      "x": 271,
+      "y": 532,
+      "w": 29,
+      "h": 28
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 40.0,
+     "y": 226.0,
+     "w": 180.0,
+     "h": 40.0,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 612,
+      "w": 270,
+      "h": 60
+     }
+    }
+   ],
+   "label": {
+    "textTop": 237,
+    "ink": "#f0cd6a",
+    "size": 12.5,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": "0 1px 0 #021410"
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "starward",
+   "rank": 10,
+   "name": "The Starward Sea",
+   "description": "Where the sea runs out the sky begins: an armillary of gold and silver under the night, and the old fish among the stars.",
+   "motionSummary": "The armillary bands rock on their pivots (rotation); the stars twinkle (alpha).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameStarward",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 25.33,
+     "y": 22.67,
+     "w": 209.33,
+     "h": 208.67,
+     "z": 1,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 314,
+      "h": 313
+     }
+    },
+    {
+     "name": "fx2",
+     "sprite": "fx2",
+     "x": 48.0,
+     "y": 81.33,
+     "w": 170.67,
+     "h": 131.33,
+     "z": 2,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-twinkle",
+      "duration": 3.0,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha"
+      ],
+      "origin": [
+       130.0,
+       140.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "opacity": ".2"
+        },
+        "alpha": 0.2
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "opacity": "1"
+        },
+        "alpha": 1.0
+       }
+      ],
+      "restAlpha": 0.2
+     },
+     "rect": {
+      "x": 244,
+      "y": 319,
+      "w": 256,
+      "h": 197
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 55.33,
+     "y": 0.0,
+     "w": 158.67,
+     "h": 202.0,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 319,
+      "w": 238,
+      "h": 303
+     }
+    },
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 24.0,
+     "y": 67.33,
+     "w": 212.0,
+     "h": 119.33,
+     "z": 6,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-armil",
+      "duration": 9.0,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "transform"
+      ],
+      "origin": [
+       130.0,
+       124.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "transform": "rotate(-6deg)"
+        },
+        "transform": {
+         "rotate": -6.0
+        }
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "transform": "rotate(6deg)"
+        },
+        "transform": {
+         "rotate": 6.0
+        }
+       }
+      ],
+      "restAlpha": 1.0
+     },
+     "rect": {
+      "x": 2,
+      "y": 626,
+      "w": 318,
+      "h": 179
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 40.0,
+     "y": 230.0,
+     "w": 180.0,
+     "h": 40.0,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 809,
+      "w": 270,
+      "h": 60
+     }
+    }
+   ],
+   "label": {
+    "textTop": 241,
+    "ink": "#f0cd6a",
+    "size": 12.5,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": "0 1px 0 #02061a"
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  },
+  {
+   "key": "constellation",
+   "rank": 11,
+   "name": "The Angler’s Constellation",
+   "description": "Past the tenth, they put you in the sky: an angler of stars with a rod and a line, and a fish on the end of it. One more star in the crown for every Master Prestige.",
+   "motionSummary": "The burst of gilt turns very slowly (rotation); the stars twinkle (alpha).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\FrameConstellation",
+   "atlasSize": [
+    1024,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "fx2",
+     "sprite": "fx2",
+     "x": 0.0,
+     "y": 0.0,
+     "w": 260.0,
+     "h": 262.0,
+     "z": 0,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-rays",
+      "duration": 90.0,
+      "easing": "linear",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "transform"
+      ],
+      "origin": [
+       130.0,
+       124.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0
+        ],
+        "css": {
+         "transform": "rotate(0deg)"
+        },
+        "transform": {
+         "rotate": 0.0
+        }
+       },
+       {
+        "at": [
+         1.0
+        ],
+        "css": {
+         "transform": "rotate(360deg)"
+        },
+        "transform": {
+         "rotate": 360.0
+        }
+       }
+      ],
+      "restAlpha": 1.0
+     },
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 390,
+      "h": 393
+     }
+    },
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 29.33,
+     "y": 26.0,
+     "w": 201.33,
+     "h": 202.0,
+     "z": 1,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 399,
+      "w": 302,
+      "h": 303
+     }
+    },
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 39.33,
+     "y": 41.33,
+     "w": 157.33,
+     "h": 162.67,
+     "z": 2,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "pf-twinkle",
+      "duration": 2.6,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha"
+      ],
+      "origin": [
+       130.0,
+       140.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "opacity": ".2"
+        },
+        "alpha": 0.2
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "opacity": "1"
+        },
+        "alpha": 1.0
+       }
+      ],
+      "restAlpha": 0.2
+     },
+     "rect": {
+      "x": 255,
+      "y": 706,
+      "w": 236,
+      "h": 244
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 42.0,
+     "y": 0.0,
+     "w": 166.0,
+     "h": 205.33,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 706,
+      "w": 249,
+      "h": 308
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 35.33,
+     "y": 230.0,
+     "w": 190.0,
+     "h": 40.0,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 255,
+      "y": 954,
+      "w": 285,
+      "h": 60
+     }
+    }
+   ],
+   "label": {
+    "textTop": 241,
+    "ink": "#f4f0e0",
+    "size": 12.5,
+    "face": "Marcellus",
+    "caps": true,
+    "shadow": "0 1px 0 #02061a"
+   },
+   "pin": {
+    "x": 195.9,
+    "y": 179.3,
+    "shieldWidth": 76.92307692307692
+   }
+  }
+ ],
+ "legends": [
+  {
+   "key": "racer",
+   "item": 19803,
+   "name": "The Racer’s Crest",
+   "description": "A ring that will not sit still: racing stripes, a stopwatch for a crown, a gilt wave breaking off its bow and its pennants streaming out behind.",
+   "motionSummary": "A streak of light laps the racing band (rotation, 1.6 s a lap); the streamers flutter (rotation).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\legends\\LegendRacer",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 0.0,
+     "y": 27.33,
+     "w": 60.67,
+     "h": 171.33,
+     "z": 1,
+     "blend": "BLEND",
+     "rect": {
+      "x": 329,
+      "y": 256,
+      "w": 91,
+      "h": 257
+     }
+    },
+    {
+     "name": "fx2",
+     "sprite": "fx2",
+     "x": 0.0,
+     "y": 37.33,
+     "w": 98.0,
+     "h": 166.67,
+     "z": 2,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "lc-flutter",
+      "duration": 0.9,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "transform"
+      ],
+      "origin": [
+       90.0,
+       124.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "transform": "rotate(-2.5deg)"
+        },
+        "transform": {
+         "rotate": -2.5
+        }
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "transform": "rotate(2deg)"
+        },
+        "transform": {
+         "rotate": 2.0
+        }
+       }
+      ],
+      "restAlpha": 1.0
+     },
+     "rect": {
+      "x": 329,
+      "y": 2,
+      "w": 147,
+      "h": 250
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 50.0,
+     "y": 8.0,
+     "w": 160.0,
+     "h": 199.33,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 240,
+      "h": 299
+     }
+    },
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 67.33,
+     "y": 51.33,
+     "w": 69.33,
+     "h": 51.33,
+     "z": 5,
+     "blend": "ADD",
+     "motion": {
+      "keyframes": "lc-lap",
+      "duration": 1.6,
+      "easing": "linear",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "transform"
+      ],
+      "origin": [
+       130.0,
+       124.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0
+        ],
+        "css": {
+         "transform": "rotate(0deg)"
+        },
+        "transform": {
+         "rotate": 0.0
+        }
+       },
+       {
+        "at": [
+         1.0
+        ],
+        "css": {
+         "transform": "rotate(360deg)"
+        },
+        "transform": {
+         "rotate": 360.0
+        }
+       }
+      ],
+      "restAlpha": 1.0
+     },
+     "rect": {
+      "x": 246,
+      "y": 517,
+      "w": 104,
+      "h": 77
+     }
+    },
+    {
+     "name": "front",
+     "sprite": "front",
+     "x": 44.0,
+     "y": 74.67,
+     "w": 215.33,
+     "h": 134.67,
+     "z": 6,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 305,
+      "w": 323,
+      "h": 202
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 50.0,
+     "y": 228.0,
+     "w": 160.0,
+     "h": 40.0,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 511,
+      "w": 240,
+      "h": 60
+     }
+    }
+   ],
+   "label": {
+    "text": "Legend",
+    "textTop": 239,
+    "ink": "#f4f8ff",
+    "size": 13,
+    "face": "Marcellus",
+    "caps": true
+   },
+   "icon": {
+    "sepia": true,
+    "round": true,
+    "note": "the Legend’s item icon, sepia, masked round in the well"
+   }
+  },
+  {
+   "key": "angelfish",
+   "item": 19805,
+   "name": "The Angel’s Crest",
+   "description": "Pearl and gold and a pair of wings, with a halo it keeps slightly crooked. Every angler who has seen one swears it was looking back.",
+   "motionSummary": "The wings beat slowly (rotation at each root), the halo floats (translation and alpha) and the light round it breathes (alpha).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\legends\\LegendAngelfish",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 4.0,
+     "y": 0.0,
+     "w": 252.0,
+     "h": 246.0,
+     "z": 0,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "lc-aura",
+      "duration": 4.0,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha"
+      ],
+      "origin": [
+       130.0,
+       140.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "opacity": ".65"
+        },
+        "alpha": 0.65
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "opacity": "1"
+        },
+        "alpha": 1.0
+       }
+      ],
+      "restAlpha": 0.65
+     },
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 378,
+      "h": 369
+     }
+    },
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 0.0,
+     "y": 34.67,
+     "w": 95.33,
+     "h": 115.33,
+     "z": 1,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "lc-wingL",
+      "duration": 3.2,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "transform"
+      ],
+      "origin": [
+       86.0,
+       104.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "transform": "rotate(0deg)"
+        },
+        "transform": {
+         "rotate": 0.0
+        }
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "transform": "rotate(5deg)"
+        },
+        "transform": {
+         "rotate": 5.0
+        }
+       }
+      ],
+      "restAlpha": 1.0
+     },
+     "rect": {
+      "x": 248,
+      "y": 375,
+      "w": 143,
+      "h": 173
+     }
+    },
+    {
+     "name": "fx2",
+     "sprite": "fx2",
+     "x": 164.67,
+     "y": 34.67,
+     "w": 95.33,
+     "h": 115.33,
+     "z": 1,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "lc-wingR",
+      "duration": 3.2,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "transform"
+      ],
+      "origin": [
+       174.0,
+       104.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "transform": "rotate(0deg)"
+        },
+        "transform": {
+         "rotate": 0.0
+        }
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "transform": "rotate(-5deg)"
+        },
+        "transform": {
+         "rotate": -5.0
+        }
+       }
+      ],
+      "restAlpha": 1.0
+     },
+     "rect": {
+      "x": 248,
+      "y": 552,
+      "w": 143,
+      "h": 173
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 49.33,
+     "y": 46.0,
+     "w": 161.33,
+     "h": 162.0,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 375,
+      "w": 242,
+      "h": 243
+     }
+    },
+    {
+     "name": "fx3",
+     "sprite": "fx3",
+     "x": 80.67,
+     "y": 12.67,
+     "w": 98.67,
+     "h": 42.67,
+     "z": 6,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "lc-halo",
+      "duration": 3.2,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha",
+       "transform"
+      ],
+      "origin": [
+       130.0,
+       140.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "transform": "translateY(0)",
+         "opacity": ".9"
+        },
+        "alpha": 0.9,
+        "transform": {
+         "y": 0.0
+        }
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "transform": "translateY(-4px)",
+         "opacity": "1"
+        },
+        "alpha": 1.0,
+        "transform": {
+         "y": -4.0
+        }
+       }
+      ],
+      "restAlpha": 0.9
+     },
+     "rect": {
+      "x": 2,
+      "y": 686,
+      "w": 148,
+      "h": 64
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 50.0,
+     "y": 224.0,
+     "w": 160.0,
+     "h": 40.0,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 622,
+      "w": 240,
+      "h": 60
+     }
+    }
+   ],
+   "label": {
+    "text": "Legend",
+    "textTop": 235,
+    "ink": "#6a4a10",
+    "size": 13,
+    "face": "Marcellus",
+    "caps": true
+   },
+   "icon": {
+    "sepia": true,
+    "round": true,
+    "note": "the Legend’s item icon, sepia, masked round in the well"
+   }
+  },
+  {
+   "key": "queenfish",
+   "item": 19806,
+   "name": "The Queen’s Crest",
+   "description": "Gold set with rubies, emeralds and sapphires on a mantle of purple and ermine, under a crown that was never made for a person.",
+   "motionSummary": "Light catches the jewels in turn, ring and crown (alpha and scale, two sets out of step).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\legends\\LegendQueenfish",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "back",
+     "sprite": "back",
+     "x": 2.0,
+     "y": 9.33,
+     "w": 256.0,
+     "h": 251.33,
+     "z": 1,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 384,
+      "h": 377
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 50.0,
+     "y": 47.33,
+     "w": 160.0,
+     "h": 160.0,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 224,
+      "y": 383,
+      "w": 240,
+      "h": 240
+     }
+    },
+    {
+     "name": "front",
+     "sprite": "front",
+     "x": 66.0,
+     "y": 0.0,
+     "w": 128.0,
+     "h": 72.67,
+     "z": 6,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 674,
+      "w": 192,
+      "h": 109
+     }
+    },
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 59.33,
+     "y": 44.67,
+     "w": 145.33,
+     "h": 150.0,
+     "z": 7,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "lc-glint",
+      "duration": 3.6,
+      "easing": "ease-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha",
+       "transform"
+      ],
+      "origin": [
+       130.0,
+       140.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "opacity": "0",
+         "transform": "scale(.6)"
+        },
+        "alpha": 0.0,
+        "transform": {
+         "scale": [
+          0.6,
+          0.6
+         ]
+        }
+       },
+       {
+        "at": [
+         0.12
+        ],
+        "css": {
+         "opacity": "1"
+        },
+        "alpha": 1.0
+       },
+       {
+        "at": [
+         0.3
+        ],
+        "css": {
+         "opacity": "0"
+        },
+        "alpha": 0.0
+       }
+      ],
+      "restAlpha": 0.0
+     },
+     "rect": {
+      "x": 224,
+      "y": 627,
+      "w": 218,
+      "h": 225
+     }
+    },
+    {
+     "name": "fx2",
+     "sprite": "fx2",
+     "x": 59.33,
+     "y": 3.33,
+     "w": 145.33,
+     "h": 191.33,
+     "z": 7,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "lc-glint",
+      "duration": 3.6,
+      "easing": "ease-out",
+      "delay": 1.8,
+      "loop": true,
+      "kinds": [
+       "alpha",
+       "transform"
+      ],
+      "origin": [
+       130.0,
+       140.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "opacity": "0",
+         "transform": "scale(.6)"
+        },
+        "alpha": 0.0,
+        "transform": {
+         "scale": [
+          0.6,
+          0.6
+         ]
+        }
+       },
+       {
+        "at": [
+         0.12
+        ],
+        "css": {
+         "opacity": "1"
+        },
+        "alpha": 1.0
+       },
+       {
+        "at": [
+         0.3
+        ],
+        "css": {
+         "opacity": "0"
+        },
+        "alpha": 0.0
+       }
+      ],
+      "restAlpha": 0.0
+     },
+     "rect": {
+      "x": 2,
+      "y": 383,
+      "w": 218,
+      "h": 287
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 50.0,
+     "y": 230.0,
+     "w": 160.0,
+     "h": 40.0,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 856,
+      "w": 240,
+      "h": 60
+     }
+    }
+   ],
+   "label": {
+    "text": "Legend",
+    "textTop": 241,
+    "ink": "#f6e6b0",
+    "size": 13,
+    "face": "Marcellus",
+    "caps": true
+   },
+   "icon": {
+    "sepia": true,
+    "round": true,
+    "note": "the Legend’s item icon, sepia, masked round in the well"
+   }
+  },
+  {
+   "key": "unwritten",
+   "item": null,
+   "name": "The Unwritten Crest",
+   "description": "Old bronze, a blank cartouche and a lot of sea mist. Shown for a Legend not yet landed, and for any Legend that has no crest of its own yet.",
+   "motionSummary": "Sea mist drifts round the ring (translation and alpha).",
+   "atlas": "Interface\\AddOns\\Pagle\\media\\legends\\LegendUnwritten",
+   "atlasSize": [
+    512,
+    1024
+   ],
+   "layers": [
+    {
+     "name": "fx1",
+     "sprite": "fx1",
+     "x": 0.0,
+     "y": 2.0,
+     "w": 260.0,
+     "h": 243.33,
+     "z": 1,
+     "blend": "BLEND",
+     "motion": {
+      "keyframes": "lc-mist",
+      "duration": 6.0,
+      "easing": "ease-in-out",
+      "delay": 0.0,
+      "loop": true,
+      "kinds": [
+       "alpha",
+       "transform"
+      ],
+      "origin": [
+       130.0,
+       140.0
+      ],
+      "frames": [
+       {
+        "at": [
+         0.0,
+         1.0
+        ],
+        "css": {
+         "transform": "translateX(-6px)",
+         "opacity": ".8"
+        },
+        "alpha": 0.8,
+        "transform": {
+         "x": -6.0
+        }
+       },
+       {
+        "at": [
+         0.5
+        ],
+        "css": {
+         "transform": "translateX(6px)",
+         "opacity": "1"
+        },
+        "alpha": 1.0,
+        "transform": {
+         "x": 6.0
+        }
+       }
+      ],
+      "restAlpha": 0.8
+     },
+     "rect": {
+      "x": 2,
+      "y": 2,
+      "w": 390,
+      "h": 365
+     }
+    },
+    {
+     "name": "body",
+     "sprite": "body",
+     "x": 50.0,
+     "y": 30.67,
+     "w": 160.0,
+     "h": 176.0,
+     "z": 4,
+     "blend": "BLEND",
+     "rect": {
+      "x": 2,
+      "y": 371,
+      "w": 240,
+      "h": 264
+     }
+    },
+    {
+     "name": "lab",
+     "sprite": "lab",
+     "x": 50.0,
+     "y": 224.0,
+     "w": 160.0,
+     "h": 40.0,
+     "z": 8,
+     "blend": "BLEND",
+     "rect": {
+      "x": 246,
+      "y": 543,
+      "w": 240,
+      "h": 60
+     }
+    },
+    {
+     "name": "well",
+     "sprite": "well",
+     "x": 74.0,
+     "y": 68.0,
+     "w": 112.0,
+     "h": 112.0,
+     "z": 3,
+     "blend": "BLEND",
+     "rect": {
+      "x": 246,
+      "y": 371,
+      "w": 168,
+      "h": 168
+     }
+    }
+   ],
+   "label": {
+    "text": "Unwritten",
+    "textTop": 235,
+    "ink": "#e6dcc0",
+    "size": 13,
+    "face": "Marcellus",
+    "caps": true
+   },
+   "icon": null
+  }
+ ],
+ "emblems": {
+  "atlas": "Interface\\AddOns\\Pagle\\media\\prestige\\Emblems",
+  "atlasSize": [
+   512,
+   1024
+  ],
+  "design": 64,
+  "drawn": [
+   34,
+   22
+  ],
+  "sprites": {
+   "emblem-i": {
+    "x": 2,
+    "y": 2,
+    "w": 128,
+    "h": 128
+   },
+   "emblem-ii": {
+    "x": 134,
+    "y": 2,
+    "w": 128,
+    "h": 128
+   },
+   "emblem-iii": {
+    "x": 266,
+    "y": 2,
+    "w": 128,
+    "h": 128
+   },
+   "emblem-iv": {
+    "x": 2,
+    "y": 134,
+    "w": 128,
+    "h": 128
+   },
+   "emblem-v": {
+    "x": 134,
+    "y": 134,
+    "w": 128,
+    "h": 128
+   },
+   "emblem-vi": {
+    "x": 266,
+    "y": 134,
+    "w": 128,
+    "h": 128
+   },
+   "emblem-vii": {
+    "x": 2,
+    "y": 266,
+    "w": 128,
+    "h": 128
+   },
+   "emblem-viii": {
+    "x": 134,
+    "y": 266,
+    "w": 128,
+    "h": 128
+   },
+   "emblem-ix": {
+    "x": 266,
+    "y": 266,
+    "w": 128,
+    "h": 128
+   },
+   "emblem-x": {
+    "x": 2,
+    "y": 398,
+    "w": 128,
+    "h": 128
+   },
+   "emblem-master": {
+    "x": 134,
+    "y": 398,
+    "w": 128,
+    "h": 128
+   }
+  }
+ }
+}
