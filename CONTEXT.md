@@ -114,6 +114,10 @@ _Avoid_: external XP, bonus XP, XP income
 Starting the Angler Level over from 1, after reaching its cap, in exchange for a permanent prestige rank.
 _Avoid_: reset, rebirth, paragon
 
+**Prestige crest**:
+The frame round the Angler's likeness on the Fish Journal's bookplate, which shows their prestige rank: a plain one before the first Prestige, then one for each rank. It is earned, never bought.
+_Avoid_: crest (alone), frame, bookplate crest (which is the look pinned on it)
+
 **Fresh Water**:
 Bonus XP on Catches made after a break from fishing, the Pagle counterpart to WoW's rested XP. It is a bonus, never a penalty.
 _Avoid_: rested XP, Rested Angler, diminishing returns
@@ -211,6 +215,10 @@ _Avoid_: currency (alone), points, gold, Tender (Retail's Trading Post currency)
 **Curio Shop**:
 Core's shop where the Angler spends Pagle Coins on looks for Pagle's own views, such as toast styles, sound sets, Journal bindings and tracker frames. It never sells meanings (titles, flies, stars, Legends) and its stock never rotates.
 _Avoid_: store, Trading Post, Bait Shop, shop (alone)
+
+**Bookplate crest**:
+The look the Angler wears on the Fish Journal's bookplate, bought in the Curio Shop: a zone's shield, pinned on the Prestige crest, or Plain, the default, which shows nothing.
+_Avoid_: crest (alone), emblem, medallion, zone crest
 
 ### QoL
 
