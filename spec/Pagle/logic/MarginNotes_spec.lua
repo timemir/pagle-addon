@@ -16,7 +16,7 @@ end
 
 -- Margin notes over a fresh onboarding state, a clock and a view noting what it is asked to do. Returns the notes,
 -- the onboarding state, and `seen`: `shown` (each note shown, in order), `hidden` ({ id, atOnce }), `placed` (ids),
--- `restricted` (set it), and `wait(seconds)`, which runs each timer that comes due.
+-- `restricted` and `touring` (set them: a dev tour running), and `wait(seconds)`, which runs each timer that comes due.
 local function margins()
 	local global = { onboarding = ns.NewOnboardingState("waiting") }
 	local onboarding = ns.NewOnboarding({
@@ -28,7 +28,7 @@ local function margins()
 		end,
 		print = function() end,
 	})
-	local seen = { shown = {}, hidden = {}, placed = {}, restricted = false, now = 0, timers = {} }
+	local seen = { shown = {}, hidden = {}, placed = {}, restricted = false, touring = false, now = 0, timers = {} }
 	local function resolve(note)
 		local region = note.target
 		if type(region) == "function" then
@@ -42,6 +42,9 @@ local function margins()
 		end,
 		isRestricted = function()
 			return seen.restricted
+		end,
+		isTouring = function()
+			return seen.touring
 		end,
 		after = function(seconds, fn)
 			seen.timers[#seen.timers + 1] = { at = seen.now + seconds, fn = fn }
@@ -148,6 +151,23 @@ describe("Margin notes", function()
 
 		assert.are.same({}, seen.shown)
 		assert.are.same({}, state.notesSeen)
+	end)
+
+	it("show none while a dev tour runs, and mark none seen, so its first time after shows it (CORE-R68)", function()
+		local notes, state, seen = margins()
+		seen.touring = true
+
+		assert.is_false(notes:Show(lure()))
+		seen.restricted = true
+		assert.is_false(notes:Show({ id = "ledger.fresh", text = "Fresh.", target = target("bar") }))
+
+		assert.are.same({}, seen.shown)
+		assert.are.same({}, state.notesSeen)
+		seen.touring, seen.restricted = false, false
+		notes:RestrictionChanged(false)
+		assert.are.same({}, seen.shown)
+		assert.is_true(notes:Show(lure()))
+		assert.are.same({ "qol.lure" }, shownIds(seen))
 	end)
 
 	it("show one again once /pagle guide notes has cleared notesSeen (ONB-R80)", function()
@@ -367,6 +387,26 @@ describe("Core's first-moment notes", function()
 		notes:AnnouncementShown(digest, "toast", targets(), false)
 
 		assert.are.same({}, seen.shown)
+	end)
+
+	it("show none while a dev tour runs, marking none seen (CORE-R68, ONB-R52, ONB-R53)", function()
+		local notes, state, seen = margins()
+		seen.touring = true
+		local where = targets()
+		local toast = ns.MakeAnnouncement({
+			raised("Ledger", "sizeRecord", "toast", { coins = 5, firstNote = "A record." }),
+		}) --[[@as table]]
+
+		notes:AnnouncementShown(catchNod(), "nod", where, false)
+		notes:AnnouncementShown(catchNod(), "nod", where, true)
+		notes:AnnouncementShown(toast, "toast", where, false)
+		notes:CardShown(
+			{ title = "Session", numbers = { casts = 3, catches = 2, gotAway = 1, seconds = 600 } },
+			where.frame
+		)
+
+		assert.are.same({}, seen.shown)
+		assert.are.same({}, state.notesSeen)
 	end)
 
 	it("show core.summary beside the first Session summary card, and not for a Write-up or sample (ONB-R52)", function()

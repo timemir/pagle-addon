@@ -26,8 +26,10 @@ local function summaryLine(fake)
 end
 
 --- Hunts on a FakePagle at realm 17:30 (support.start), logged in, caught up and grouped, the fixture items' names
---- loaded and Fishing read at 150; `options.profile` as PagleHuntsDB's profile; dev on.
----@param options { profile: table? }?
+--- loaded and Fishing read at 150; `options.profile` as PagleHuntsDB's profile; with `options.fresh`, for a new Angler:
+--- the onboarding state as login step 1 makes it with no Cast yet (ONB-R1, ONB-R2: `letter = "waiting"`), nothing seen
+--- and no First evening item done; dev on.
+---@param options { profile: table?, fresh: boolean? }?
 ---@return HuntsRun
 local function start(options)
 	options = options or {}
@@ -37,6 +39,9 @@ local function start(options)
 		from = FROM,
 		names = true,
 		beforeLogin = function(run)
+			if options.fresh then
+				run.fake.global.onboarding = run.fake.ns.NewOnboardingState("waiting")
+			end
 			-- the two the board shows that catalogue.NAMES leaves out
 			run.loaded.client.loadItem(C.SUNSCALE, "Sunscale Salmon")
 			run.loaded.client.loadItem(C.GROUPER, "Darkshore Grouper")
@@ -259,6 +264,38 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 		for i = 1, STOPS do
 			assert.are.equal(before.line or false, lines[i], "stop " .. i)
 		end
+	end)
+
+	it("write nothing of a new Angler's onboarding: no hunts item, no First look seen (CORE-R68, ONB-R84)", function()
+		local run = start({ fresh = true })
+		local fake = run.fake
+		-- Core's adapter gives each First look its tour stop, core.onboarding.look.hunts.board (ONB-R84).
+		fake.ns.AddFirstLookTourStops()
+		local before = hunts.deepCopy(fake.global.onboarding)
+
+		tour(run)
+		fake.slash("dev tour core")
+		fake.wait(1.6)
+		local showing = fake.firstLooks:Showing()
+		fake.wait(60)
+
+		assert.are.equal(STOPS + 1, #fake.tourShots)
+		assert.are.same(before, fake.global.onboarding)
+		assert.is_false(fake.onboarding:IsEveningItemDone("hunts"))
+		assert.are.same({}, fake.notesShown)
+		-- The First look's own stop still shows the set, marking nothing (ONB-R84).
+		assert.are.equal("hunts.board", showing and showing.id)
+		assert.is_false(run.ns.board:IsShown())
+	end)
+
+	it("tick the hunts item and show the First look as the Angler opens the board after (ONB-R55, ONB-R61)", function()
+		local run = start({ fresh = true })
+		tour(run)
+
+		run.ns.board:Open({ mode = "board" })
+
+		assert.is_true(run.fake.onboarding:IsEveningItemDone("hunts"))
+		assert.is_true(run.fake.onboarding:IsLookSeen("hunts.board"))
 	end)
 
 	it("leave the board open on the place it was on, and a hidden tracker hidden", function()

@@ -49,7 +49,8 @@ local function fixture(id, frame, n)
 end
 
 -- First looks over a fresh onboarding state and a view noting what it's asked: `shown` ({ id, numbers }), `renumbered`
--- ({ id, numbers }), `hidden` (ids). `numbers` lists each shown note as "index=n".
+-- ({ id, numbers }), `hidden` (ids), and `touring` (set it: a dev tour running). `numbers` lists each shown note as
+-- "index=n".
 local function looks()
 	local global = { onboarding = ns.NewOnboardingState("waiting") }
 	local onboarding = ns.NewOnboarding({
@@ -61,7 +62,7 @@ local function looks()
 		end,
 		print = function() end,
 	})
-	local seen = { shown = {}, renumbered = {}, hidden = {}, reported = {} }
+	local seen = { shown = {}, renumbered = {}, hidden = {}, reported = {}, touring = false }
 	local function numbers(entries)
 		local list = {}
 		for i, entry in ipairs(entries) do
@@ -80,6 +81,9 @@ local function looks()
 				return
 			end
 			return unpack(results, 2)
+		end,
+		isTouring = function()
+			return seen.touring
 		end,
 		view = {
 			show = function(set, entries)
@@ -217,6 +221,21 @@ describe("showing a First look (ONB-R55, ONB-R56)", function()
 		assert.is_false(onboarding:IsLookSeen("ledger.journal"))
 	end)
 
+	it("shows nothing while a dev tour runs, marking nothing, so the window's first opening after shows it", function()
+		-- CORE-R68: a tour stop that opens the window isn't the Angler's first look at it.
+		local firstLooks, onboarding, seen = looks()
+		firstLooks:Add("Ledger", fixture())
+		seen.touring = true
+
+		assert.is_false(firstLooks:Show("ledger.journal"))
+
+		assert.are.same({}, seen.shown)
+		assert.is_false(onboarding:IsLookSeen("ledger.journal"))
+		seen.touring = false
+		assert.is_true(firstLooks:Show("ledger.journal"))
+		assert.is_true(onboarding:IsLookSeen("ledger.journal"))
+	end)
+
 	it("drops a note whose target is hidden or gone as it shows, the numbers closing up", function()
 		local firstLooks, _, seen = looks()
 		local set, targets = fixture(nil, nil, 4)
@@ -302,6 +321,17 @@ describe('the "?" (ONB-R59)', function()
 
 		assert.is_true(firstLooks:Show("ledger.journal", true))
 		assert.are.equal(2, #seen.shown)
+	end)
+
+	it("still shows the set while a dev tour runs: the dev pressed it (ONB-R59, CORE-R68)", function()
+		local firstLooks, onboarding, seen = looks()
+		firstLooks:Add("Ledger", fixture())
+		seen.touring = true
+
+		assert.is_true(firstLooks:Show("ledger.journal", true))
+
+		assert.are.equal(1, #seen.shown)
+		assert.is_true(onboarding:IsLookSeen("ledger.journal"))
 	end)
 
 	it("leaves a set showing alone when its window's OnShow asks for it again", function()

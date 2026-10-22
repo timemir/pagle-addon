@@ -135,6 +135,7 @@ end
 ---@class PagleFirstLooksOptions
 ---@field onboarding fun(): PagleOnboarding -- notesOn and looksSeen (ONB-R55)
 ---@field call fun(fn: function, ...: any): ... -- runs a Module's function, reporting an error and returning nothing
+---@field isTouring fun(): boolean -- a dev tour runs (CORE-R66): its stops aren't the Angler's (CORE-R68)
 ---@field view PagleFirstLooksView
 
 -- A registered set and its owner.
@@ -268,7 +269,9 @@ end
 
 --- Shows set `id` (ONB-R55, ONB-R59): from its window's OnShow, once per account and only with Margin notes on; with
 --- `again` (the window's "?"), whether or not it was seen and whether or not Margin notes is on, or, while it shows,
---- hides it. Marks it seen as it shows. Nothing while a tour stop shows a set (ONB-R84). Returns whether it shows.
+--- hides it. Marks it seen as it shows. Nothing while a tour stop shows a set (ONB-R84), and without `again` nothing,
+--- marking nothing, while a dev tour runs: a stop that opens the window isn't the Angler's first look (CORE-R68).
+--- Returns whether it shows.
 ---@param id string
 ---@param again boolean?
 ---@return boolean
@@ -287,7 +290,7 @@ function FirstLooks:Show(id, again)
 	end
 	if not again then
 		local onboarding = self.options.onboarding()
-		if not onboarding:AreNotesOn() or onboarding:IsLookSeen(id) then
+		if self.options.isTouring() or not onboarding:AreNotesOn() or onboarding:IsLookSeen(id) then
 			return false
 		end
 	end

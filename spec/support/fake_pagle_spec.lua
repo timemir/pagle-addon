@@ -4028,6 +4028,29 @@ describe("FakePagle", function()
 			end
 		)
 
+		it(
+			"ignores M:CompleteEveningItem from a dev tour stop, and ticks the item after it (CORE-R68, ONB-R61)",
+			function()
+				local fake = newFakePagle()
+				local ledger = withList(fake)
+				offToTheWater(fake)
+				-- A stop that opens the Fish Journal, as the Ledger's do: the book's OnShow ticks its item.
+				ledger:RegisterTourStop("journal", "the Fish Journal", function()
+					ledger:CompleteEveningItem("journal")
+				end, function() end)
+				fake.slash("dev on")
+
+				fake.slash("dev tour ledger")
+				fake.wait(60)
+
+				assert.are.equal(1, #fake.tourShots)
+				assert.is_false(fake.onboarding:IsEveningItemDone("journal"))
+				assert.are.same({}, fake.eveningSounds)
+				ledger:CompleteEveningItem("journal")
+				assert.is_true(fake.onboarding:IsEveningItemDone("journal"))
+			end
+		)
+
 		it("plays listDone at the last tick and folds 2.5 s later, paying nothing (ONB-R62, ONB-R64)", function()
 			local fake = newFakePagle()
 			local ledger, hunts = withList(fake)
