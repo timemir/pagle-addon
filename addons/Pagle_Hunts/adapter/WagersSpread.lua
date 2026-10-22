@@ -79,7 +79,7 @@ function ns.BoardWagersSpread(runKey)
 		ladder = state.ladder or {},
 		ended = endedThisShowing(input.now),
 		run = runKey,
-		-- hint: the companion hint's lines for the placeholder slip (HNT-R170), #305's to fill
+		hint = input.hint and input.hint.lines, -- the placeholder slip's, while the hint applies (HNT-R170)
 	})
 end
 
@@ -97,7 +97,7 @@ end
 local KICKER_Y, TITLE_Y, NOTE_Y, SLIPS_Y = 3, 19, 54, 82
 local SLIP_HEIGHT, SLIP_GAP, EDGE, INSET, GAP = 58, 8, 4, 14, 10
 local NAME_ROW, WHERE_ROW, MARKS_ROW, PIP, PIP_STEP = 7, 26, 41, 10, 13
-local STAMP_HEIGHT, HINT_LINE = 22, 16
+local STAMP_HEIGHT, HINT_SPACING, HINT_BUTTONS = 22, 2, 18
 local LADDER_HEIGHT, LADDER_NUMBER_Y, LADDER_TITLE_Y, LADDER_BAR_Y, LADDER_LINE_Y = 84, 9, 27, 48, 63
 
 ---@class WagerSlipView: Button
@@ -126,6 +126,7 @@ local LADDER_HEIGHT, LADDER_NUMBER_Y, LADDER_TITLE_Y, LADDER_BAR_Y, LADDER_LINE_
 ---@field hint Frame
 ---@field hintOutline BoardOutline
 ---@field hintLines FontString[]
+---@field hintButtons CompanionHintButtons   -- Get it and Dismiss, at the placeholder slip's foot (HNT-R170)
 ---@field rule Texture
 ---@field numbers FontString[]
 ---@field titles FontString[]
@@ -295,6 +296,7 @@ local function viewOf(page)
 	view.more:SetWidth(width)
 	view.hint:SetSize(width, SLIP_HEIGHT)
 	view.hintOutline = ns.BoardOutline(view.hint, 0, "BORDER")
+	view.hintButtons = ns.NewHintButtons(view.hint)
 	view.rule:ClearAllPoints()
 	view.rule:SetSize(width, 1)
 	view.line:SetWidth(width)
@@ -346,35 +348,51 @@ local function layLadder(page, view, ladder)
 	view.line:Show()
 end
 
--- Lays the companion hint's dashed placeholder slip (HNT-R170) at `y`, #305's lines in it; returns the y below it.
+-- Fills the companion hint's dashed placeholder slip (HNT-R170): its lines, each wrapping within the slip, then Get
+-- it and Dismiss at its foot's right; hidden for none. Returns its height, 0 for none; layHint puts it in place.
 ---@param page Frame
 ---@param view WagersSpreadView
 ---@param lines string[]?
----@param y number
 ---@return number
-local function layHint(page, view, lines, y)
+local function fillHint(page, view, lines)
 	if not lines then
 		view.hint:Hide()
 		ns.BoardHideFrom(view.hintLines, 0)
-		return y
+		ns.HideHintButtons(view.hintButtons)
+		return 0
 	end
 	local width = page:GetWidth()
-	local height = 2 * GAP + #lines * HINT_LINE
-	view.hint:SetSize(width, height)
-	view.hint:ClearAllPoints()
-	view.hint:SetPoint("TOPLEFT", 0, -y)
-	view.hintOutline:Dashed(LOOK.note, width, height)
-	view.hint:Show()
+	local y = GAP
 	for i, words in ipairs(lines) do
 		local line = ns.BoardPooled(view.hintLines, i, function()
-			return text(view.hint, ns.BoardFonts().note, LOOK.note)
+			return ns.BoardText(view.hint, ns.BoardFonts().note, LOOK.note)
 		end)
+		line:SetText(words)
+		ns.BoardWrap(line, width - 2 * INSET, 0)
 		line:ClearAllPoints()
-		line:SetPoint("TOPLEFT", INSET, -(GAP + (i - 1) * HINT_LINE))
-		fit(line, words, width - 2 * INSET)
+		line:SetPoint("TOPLEFT", INSET, -y)
+		line:Show()
+		y = y + math.ceil(line:GetStringHeight()) + HINT_SPACING
 	end
 	ns.BoardHideFrom(view.hintLines, #lines)
-	return y + height + SLIP_GAP
+	ns.PlaceHintButtons(view.hintButtons, view.hint, INSET, y)
+	local height = y + HINT_BUTTONS + GAP
+	view.hint:SetSize(width, height)
+	view.hintOutline:Dashed(LOOK.note, width, height)
+	return height
+end
+
+-- Puts the placeholder slip `fillHint` filled at `y`, and shows it, if it holds lines.
+---@param view WagersSpreadView
+---@param lines string[]?
+---@param y number
+local function layHint(view, lines, y)
+	if not lines then
+		return
+	end
+	view.hint:ClearAllPoints()
+	view.hint:SetPoint("TOPLEFT", 0, -y)
+	view.hint:Show()
 end
 
 -- The spread's left page (HNT-R162): kicker, title and note; a slip per run, as many as fit above the ladder, then
@@ -390,7 +408,8 @@ local function drawSpread(page, place)
 	view.note:SetText(data.note)
 	local width = page:GetWidth()
 	local room = page:GetHeight() - LADDER_HEIGHT - SLIP_GAP - SLIPS_Y
-	local hintRoom = data.hint and (2 * GAP + #data.hint * HINT_LINE + SLIP_GAP) or 0
+	local hintHeight = fillHint(page, view, data.hint)
+	local hintRoom = data.hint and hintHeight + SLIP_GAP or 0
 	local fits = math.max(0, math.floor((room - hintRoom + SLIP_GAP) / (SLIP_HEIGHT + SLIP_GAP)))
 	local shown = #data.slips
 	if shown > fits then
@@ -425,7 +444,7 @@ local function drawSpread(page, place)
 	else
 		view.empty:Hide()
 	end
-	layHint(page, view, data.hint, y)
+	layHint(view, data.hint, y)
 	layLadder(page, view, data.ladder)
 end
 

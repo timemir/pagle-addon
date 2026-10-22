@@ -26,6 +26,7 @@ local ns = select(2, ...)
 ---@field crest? integer|string  -- with seal "crest": a crest good's icon shown in the Prestige crest's place (VAR-R25)
 ---@field art? PagleMomentArt    -- a texture rectangle drawn instead of `icon` where the headline shows (VAR-R25)
 ---@field variety? PagleNodVariety -- Core's catch Nod only: the variety its line names (VAR-R26)
+---@field onClick? fun()         -- what clicking its toast or Nod does as it sends it away (ANN-R20); never stored
 
 --- A moment's art (announcements.md › Contracts): a texture and its texel rectangle as texture coordinates, a
 --- variety's art (VAR-R11). A toast's or Nod's medallion shows it cropped to the fish's head (ns.HeadCrop), a banner on
@@ -120,6 +121,9 @@ function ns.MomentProblem(moment)
 		if not rectangle then
 			return "RaiseMoment: a moment's art is { texture, left, right, top, bottom }"
 		end
+	end
+	if moment.onClick ~= nil and type(moment.onClick) ~= "function" then
+		return "RaiseMoment: a moment's onClick is a function (ANN-R20)"
 	end
 	return nil
 end

@@ -104,6 +104,7 @@ function ns.BoardTimeline(place)
 		-- Pagle Wagers on the Board (HNT-R160, HNT-R161): the runs on and ahead, and the run asked for (HNT-R164)
 		runs = board and ns.RunsShown(state, now) or nil,
 		run = board and place.run or nil,
+		hint = board and ns.CompanionHintNow() or nil, -- under the wager strip while it applies (HNT-R170)
 	})
 end
 

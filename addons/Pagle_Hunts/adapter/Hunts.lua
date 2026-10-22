@@ -86,6 +86,10 @@ function ns.Hunts.OnInitialize()
 	-- Window moments (HNT-R88): their Announcements row (SET-R32) and the regroup baseline.
 	ns.StartWindowMoments()
 
+	-- The companion hint (HNT-R170–R172): its Announcements row after the window moments' and its weekly Nod, only
+	-- while the hint switch is on.
+	ns.StartCompanionHint()
+
 	-- Hunts' stops for `/pagle dev tour` (CORE-R65), on a Core that has the call.
 	if ns.Module.RegisterTourStop then
 		ns.RegisterTourStops(ns.Module)

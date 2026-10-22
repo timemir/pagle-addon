@@ -26,7 +26,7 @@ end
 
 -- The Pagle Wagers block's content (HNT-R175, HNT-R177) from the runs the board shows, read as the board reads them
 -- (ns.BoardWagersInput: at ns.ViewNow(), so its countdowns freeze with the board's while restricted, HNT-R43), with
--- each run's key on its lines; nil with no run on.
+-- each run's key on its lines; with no run on, the companion hint's line while it applies (HNT-R176), else nil.
 ---@param view HuntsTrackerView
 ---@return HuntsTrackerWagersContent?
 local function wagersContent(view)
@@ -44,6 +44,7 @@ local function wagersContent(view)
 	return {
 		runs = runs,
 		more = not collapsed and lines.more > 0 and ns.TrackerWagersMore(lines.more) or nil,
+		hint = not collapsed and lines.hint or nil,
 		collapsed = collapsed,
 	}
 end
@@ -62,7 +63,7 @@ end
 
 -- Draws both blocks from the grouping, the runs, the projection and the equipped frame's look (adapter/Goods.lua's
 -- ns.DrawTrackerBlock sizes the block to what shows), and tells the grouping whether lines that count down show: the
--- Hunts block expanded, or the Pagle Wagers block shown and expanded.
+-- Hunts block expanded, or the Pagle Wagers block shown and expanded with runs on (its hint line counts nothing down).
 ---@param view HuntsTrackerView
 local function draw(view)
 	local look = ns.TrackerLook(view.wearing or Pagle.GetEquipped(ns.TRACKER_FRAME_SLOT))
@@ -93,7 +94,7 @@ local function draw(view)
 		collapsed = collapsed,
 		wagers = wagers,
 	})
-	counting(view, not collapsed or (wagers ~= nil and not wagers.collapsed))
+	counting(view, not collapsed or (wagers ~= nil and #wagers.runs > 0))
 end
 
 -- Shows the block while its setting is on, drawn; hidden, nothing on it counts down (HNT-R42).
@@ -138,6 +139,10 @@ function ns.StartTracker(module)
 		end)
 	end
 	view.wagers.more:SetScript("OnClick", function()
+		ns.OpenWagers()
+	end)
+	-- The companion hint's "why?" opens the Pagle Wagers spread too (HNT-R176).
+	view.wagers.hint.why:SetScript("OnClick", function()
 		ns.OpenWagers()
 	end)
 	view.wagers.header:SetScript("OnClick", function()

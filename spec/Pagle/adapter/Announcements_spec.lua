@@ -677,6 +677,53 @@ describe("the column on the client", function()
 	)
 
 	it(
+		"runs a clicked toast's or Nod's headline onClick as it sends it away (ANN-R20, announcements.md › Contracts)",
+		function()
+			local loaded, M = loadCore()
+			local clicked = {}
+			raise(
+				loaded,
+				M,
+				moment("nod", "Open me", {
+					onClick = function()
+						clicked[#clicked + 1] = "nod"
+					end,
+				})
+			)
+			local nod = frameOf(loaded, "nod")
+			nod.scripts.OnMouseUp(nod, "LeftButton")
+			assert.is_false(showing(loaded, "nod"))
+
+			raise(
+				loaded,
+				M,
+				moment("toast", "Me too", {
+					onClick = function()
+						error("the Module's own failure")
+					end,
+				})
+			)
+			local toast = frameOf(loaded, "toast")
+			toast.scripts.OnMouseUp(toast, "LeftButton")
+
+			assert.are.same({ "nod" }, clicked)
+			assert.is_false(showing(loaded, "toast")) -- sent away all the same, its error reported, not raised
+			local errors = loaded.client.errors
+			assert.are.equal(1, #errors)
+			assert.matches("the Module's own failure", errors[1])
+		end
+	)
+
+	it("refuses a moment whose onClick isn't a function (announcements.md › Contracts)", function()
+		local _, M = loadCore()
+
+		local ok, err = pcall(M.RaiseMoment, M, moment("nod", "Bad", { onClick = "open" }))
+
+		assert.is_false(ok)
+		assert.matches("RaiseMoment: a moment's onClick is a function", tostring(err))
+	end)
+
+	it(
 		"lets a toast leave over 0.4 s, fading as it drifts up; with Animations off it goes at once"
 			.. " (announcements.md › Motion)",
 		function()
