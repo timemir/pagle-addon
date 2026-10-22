@@ -320,7 +320,7 @@ end
 
 --- Core's cards, as ns.cards, with M:RaiseWriteUp on every Module handle (logic/Wiring.lua; ANN-R21, ANN-R54,
 --- ANN-R61): they wait for the projections' idle hook from load, then show in the card frame whenever no toast, banner
---- or splash shows or waits and the lanes aren't held through combat (ANN-R55).
+--- or splash shows or waits and the lanes aren't held for any reason (ANN-R38, ANN-R55).
 ns.WireCards(ns.host, {
 	show = show,
 	hide = hide,

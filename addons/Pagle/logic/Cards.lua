@@ -92,7 +92,7 @@ end
 ---@field whenIdle fun(fn: fun())               -- runs fn once no projection is updating (ns.projections:WhenIdle)
 ---@field nextFrame fun(step: fun())            -- runs step on the next frame
 ---@field lanesEmpty fun(): boolean             -- no toast, banner or splash shows or waits (ns.lanes:IsEmpty())
----@field held fun(): boolean                   -- the lanes are held through combat (ns.lanes:IsHeld(), ANN-R35)
+---@field held fun(): boolean                   -- the lanes are held, for any reason (ns.lanes:IsHeld(), ANN-R38)
 ---@field cozy fun(): boolean                   -- Cozy mode is on (ANN-R62)
 ---@field show fun(card: PagleCard)             -- puts the card on screen, until the player closes it
 ---@field hide fun(card: PagleCard)             -- takes it off screen without closing it (ANN-R35)
@@ -132,9 +132,9 @@ function Cards:Start()
 end
 
 --- Shows the next card if one may show now (ANN-R21): login has settled, none is showing, the lanes aren't held
---- through combat (ANN-R55) and no toast, banner or splash shows or waits. The Write-up comes first, unless Cozy mode is on
---- (ANN-R61, ANN-R62); then the stored cards, oldest first (ANN-R54). Cards aren't interruptions and play no sound
---- (ANN-R30): they never go through the lanes.
+--- for any reason (ANN-R38, ANN-R55) and no toast, banner or splash shows or waits. The Write-up comes first, unless
+--- Cozy mode is on (ANN-R61, ANN-R62); then the stored cards, oldest first (ANN-R54). Cards aren't interruptions and
+--- play no sound (ANN-R30): they never go through the lanes.
 function Cards:Next()
 	if not self.ready or self.showing or self.options.held() or not self.options.lanesEmpty() then
 		return
@@ -168,8 +168,9 @@ function Cards:Preview(card)
 	return true
 end
 
---- A restriction started (ANN-R35): the card on screen goes off it unclosed, so it stays in global.cards (or its
---- sections in global.writeUp) and shows again once the lanes have shown what they held (ANN-R36).
+--- A hold started, for any reason (ANN-R35, ANN-R38; adapter/Announcements.lua's ns.HoldAnnouncements): the card on
+--- screen goes off it unclosed, so it stays in global.cards (or its sections in global.writeUp) and shows again once
+--- the lanes have shown what they held (ANN-R36). Which reasons hold is the lanes' to keep: the cards wait on held().
 function Cards:Hold()
 	local card = self.showing
 	if card then

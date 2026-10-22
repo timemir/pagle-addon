@@ -146,6 +146,58 @@ describe("the combat hold", function()
 	end)
 end)
 
+describe("the guide's hold", function()
+	it(
+		"hides the toast and card on screen while the guide holds, then shows the held toasts as themselves at once,"
+			.. " never the held Nod, and the card again (ANN-R35, ANN-R38, ONB-R70)",
+		function()
+			local loaded, M = loggedIn({ global = { cards = { storedCard() } } })
+			raise(loaded, M, { rung = "toast", kind = "spec", title = "New Species" })
+
+			loaded.ns.HoldAnnouncements("guide")
+			assert.are.same({ nil, nil }, { showing(loaded, "toast"), card(loaded) })
+			raise(loaded, M, { rung = "nod", kind = "spec", title = "New here" })
+			raise(loaded, M, { rung = "toast.low", kind = "spec", title = "Size record" })
+			loaded.client.advance(30)
+			assert.is_nil(showing(loaded, "nod"))
+
+			loaded.ns.ReleaseAnnouncements("guide")
+
+			local titles = {}
+			for _, frame in ipairs(loaded.ns.columnFrames) do
+				titles[#titles + 1] = frame.display.announcement.headline.title
+			end
+			table.sort(titles)
+			assert.are.same({ "New Species", "Size record" }, titles)
+			assert.is_nil(card(loaded))
+			loaded.client.advance(60)
+			assert.is_nil(showing(loaded, "nod"))
+			assert.are.equal("Fishing session", card(loaded))
+		end
+	)
+
+	it(
+		"stays held through combat when the guide closes for a restriction, then shows by combat's rules (ANN-R36,"
+			.. " ANN-R38, ONB-R25)",
+		function()
+			local loaded, M = loggedIn()
+			loaded.ns.HoldAnnouncements("guide")
+			raise(loaded, M, { rung = "toast", kind = "spec", title = "New Species" })
+			setCombat(loaded, true)
+			loaded.ns.ReleaseAnnouncements("guide")
+			raise(loaded, M, { rung = "toast.low", kind = "spec", title = "Size record" })
+			raise(loaded, M, { rung = "toast.high", kind = "spec", title = "Hunt completed" })
+			loaded.client.advance(30)
+			assert.is_nil(showing(loaded, "toast"))
+
+			setCombat(loaded, false)
+			loaded.client.advance(2)
+
+			assert.are.equal("While you were fighting", showing(loaded, "toast"))
+		end
+	)
+end)
+
 describe("Cozy mode", function()
 	it(
 		"shows no toast or banner and plays nothing, shows a splash silently, and counts both on the compartment"

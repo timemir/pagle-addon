@@ -305,11 +305,12 @@ describe("Announcement frames", function()
 			local ruler = { old = 1, new = 2, unit = "lb", label = "w" }
 			raise(loaded, M, moment("toast", "Size record", { ruler = ruler }))
 			loaded.client.advance(6)
-			for _ = 1, 4 do
+			for _ = 1, 20 do
 				raise(loaded, M, moment("toast", "Interruption"))
 				loaded.client.advance(6)
 			end
-			raise(loaded, M, moment("toast.low", "Size record", { ruler = ruler })) -- the 5th: a Nod (ANN-R31)
+			-- Past PagleDB's 20 per 5 minutes: a Nod (ANN-R31).
+			raise(loaded, M, moment("toast.low", "Size record", { ruler = ruler }))
 
 			local drawn = {}
 			for _, form in ipairs({ "toast", "nod" }) do
@@ -698,10 +699,10 @@ describe("the Interruption budget on the client", function()
 	end
 
 	it(
-		"steps the 5th toast.low down to a Nod with a compact ruler, at PagleDB's 4 per 5 minutes (ANN-R31, ANN-R22)",
+		"steps the 21st toast.low down to a Nod with a compact ruler, at PagleDB's 20 per 5 minutes (ANN-R31, ANN-R22)",
 		function()
 			local loaded, M = loadCore()
-			interrupt(loaded, M, 4)
+			interrupt(loaded, M, 20)
 
 			raise(
 				loaded,
@@ -727,7 +728,7 @@ describe("the Interruption budget on the client", function()
 	it("steps nothing down with the budget off in PagleDB (ANN-R32)", function()
 		local loaded, M = loadCore()
 		loaded.ns.db.profile.announcements.budget.on = false
-		interrupt(loaded, M, 4)
+		interrupt(loaded, M, 20)
 
 		raise(loaded, M, moment("toast.low", "Size record"))
 

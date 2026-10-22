@@ -59,6 +59,10 @@ ns.LEGEND_STING = SOUNDS .. "legend.ogg"
 
 ---@alias PagleAnnouncementForm "toast"|"nod"|"banner"|"splash"
 
+--- Why the lanes hold (ANN-R38): `combat` while restricted and through the wait after it (ANN-R35, ANN-R36);
+--- `guide` while the Field guide is open (ONB-R70).
+---@alias PagleHoldReason "combat"|"guide"
+
 --- One Announcement as it goes on screen.
 ---@class PagleDisplay
 ---@field announcement PagleAnnouncement
@@ -97,10 +101,12 @@ ns.LEGEND_STING = SOUNDS .. "legend.ogg"
 ---@field package bannerLeaving boolean?       -- the last banner is leaving: the centre is still taken
 ---@field package interruptions number[]        -- when each recent interruption appeared (ANN-R30), oldest first
 ---@field package toastSounds table<PagleSoundSet, integer> -- toast sounds played per set, for its next variant (ANN-R72)
----@field package holding boolean               -- restricted, or within the wait after (ANN-R35, ANN-R36)
+---@field package holds table<PagleHoldReason, true> -- the reasons holding now (ANN-R38)
+---@field package fought boolean               -- combat held at some point in this hold: it shows by ANN-R36's rules
 ---@field package heldToasts PagleAnnouncement[] -- toasts held, in order
 ---@field package heldBig PagleAnnouncement[]   -- banners and splashes held: splashes first, then in order raised
----@field package releases integer              -- Hold and Release calls so far: a wait that sees a newer one ends
+---@field package releases integer              -- combat's Hold and Release calls so far: a wait that sees a newer
+--                                                 one ends
 local Lanes = {}
 Lanes.__index = Lanes
 
@@ -114,7 +120,8 @@ function ns.NewLanes(options)
 		big = {},
 		interruptions = {},
 		toastSounds = {},
-		holding = false,
+		holds = {},
+		fought = false,
 		heldToasts = {},
 		heldBig = {},
 		releases = 0,
@@ -189,7 +196,7 @@ function Lanes:Push(announcement)
 		return
 	end
 	local lane = LANE[kept.rung]
-	if self.holding then
+	if self:IsHeld() then
 		if lane == "big" then
 			wait(self.heldBig, kept)
 		elseif lane == "toast" then
@@ -204,21 +211,33 @@ function Lanes:Push(announcement)
 	end
 end
 
---- Whether the lanes are holding (ANN-R35, ANN-R36): restricted, or in the wait after. Cards wait too (ANN-R55).
+--- Whether the lanes are holding (ANN-R38): for `reason`, or with none given for any reason. Cards wait too while
+--- they hold for any (ANN-R55).
+---@param reason PagleHoldReason?
 ---@return boolean
-function Lanes:IsHeld()
-	return self.holding
+function Lanes:IsHeld(reason)
+	if reason then
+		return self.holds[reason] == true
+	end
+	return next(self.holds) ~= nil
 end
 
---- A restriction started (ANN-R35): the banner or splash and the toasts on screen go off it at once and are held,
---- with the toasts, banners and splashes that wait, and every Announcement pushed from now; the Nods on screen or
---- waiting go and never show (ANN-R36). Inside the wait after a restriction, the wait starts over at the next Release.
-function Lanes:Hold()
-	self.releases = self.releases + 1
-	if self.holding then
+--- A hold for `reason` started (ANN-R35, ANN-R38; `combat` if none is given): if nothing held yet, the banner or
+--- splash and the toasts on screen go off it at once and are held, with the toasts, banners and splashes that wait,
+--- and every Announcement pushed from now; the Nods on screen or waiting go and never show (ANN-R36). Inside the wait
+--- after a restriction, a `combat` hold starts the wait over at the next Release.
+---@param reason PagleHoldReason?
+function Lanes:Hold(reason)
+	reason = reason or "combat"
+	if reason == "combat" then
+		self.releases = self.releases + 1
+		self.fought = true
+	end
+	local holding = self:IsHeld()
+	self.holds[reason] = true
+	if holding then
 		return
 	end
-	self.holding = true
 	local centre, column = self.centre, self.column
 	self.centre, self.column = nil, {}
 	if centre then
@@ -245,27 +264,49 @@ function Lanes:Hold()
 	self.big, self.waiting = {}, {}
 end
 
---- The restriction ended (ANN-R36): AFTER_COMBAT_SECONDS later, unless a restriction started meanwhile, the lanes
---- show what they held, its expired moments dropped (ANN-R45): each splash and banner as itself, splashes first, and
---- the held toasts: FIGHTING_DIGEST or more fold into one "While you were fighting" toast, fewer show as themselves,
---- in order; then the cards (ANN-R21).
-function Lanes:Release()
+--- The hold for `reason` ended (ANN-R38; `combat` if none is given). For `combat`, the restriction ended (ANN-R36):
+--- AFTER_COMBAT_SECONDS later, unless a restriction started meanwhile, combat stops holding. For `guide`, it stops at
+--- once. Once no reason holds, the lanes show what they held (showHeld). A release for a reason not holding does
+--- nothing.
+---@param reason PagleHoldReason?
+function Lanes:Release(reason)
+	reason = reason or "combat"
+	if reason ~= "combat" then
+		if self.holds[reason] then
+			self.holds[reason] = nil
+			self:holdEnded()
+		end
+		return
+	end
 	self.releases = self.releases + 1
 	local release = self.releases
 	self.options.after(ns.AFTER_COMBAT_SECONDS, function()
-		if self.releases == release and self.holding then
-			self:showHeld()
+		if self.releases == release and self.holds.combat then
+			self.holds.combat = nil
+			self:holdEnded()
 		end
 	end)
+end
+
+-- A reason stopped holding: once none holds, what was held shows (ANN-R38).
+---@package
+function Lanes:holdEnded()
+	if not self:IsHeld() then
+		self:showHeld(self.fought)
+		self.fought = false
+	end
 end
 
 -- The "While you were fighting" toast for held toasts, below.
 local whileFighting
 
--- Ends the hold, putting what it held in the lanes (ANN-R36).
+-- Puts what the lanes held in the lanes, its expired moments dropped (ANN-R45): each splash and banner as itself,
+-- splashes first, and the held toasts as themselves, in order (ANN-R36, ANN-R38). After a hold combat was part of
+-- (`fought`), FIGHTING_DIGEST or more toasts fold into one "While you were fighting" toast instead; after the guide
+-- alone, never. Then the cards (ANN-R21).
 ---@package
-function Lanes:showHeld()
-	self.holding = false
+---@param fought boolean
+function Lanes:showHeld(fought)
 	self.big, self.heldBig = self.heldBig, {}
 	local held = {}
 	for _, announcement in ipairs(self.heldToasts) do
@@ -276,7 +317,7 @@ function Lanes:showHeld()
 		end
 	end
 	self.heldToasts = {}
-	if #held >= ns.FIGHTING_DIGEST then
+	if fought and #held >= ns.FIGHTING_DIGEST then
 		self.waiting = { whileFighting(held) }
 	else
 		self.waiting = held
@@ -478,7 +519,7 @@ end
 -- shows as a Nod (ANN-R31).
 ---@package
 function Lanes:next()
-	while not self.holding do
+	while not self:IsHeld() do
 		local front = self.waiting[1]
 		local shown
 		if self.big[1] and self:bigMayStart(self.big[1]) then

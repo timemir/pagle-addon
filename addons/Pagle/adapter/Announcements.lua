@@ -1328,17 +1328,33 @@ ns.lanes = ns.NewLanes({
 	end,
 })
 
--- The combat hold (ANN-R35, ANN-R36): a restriction holds the lanes and takes the card on screen off it; its end
--- starts the wait after which they show what they held, then the cards. A load while restricted (a /reload in
--- combat) starts held: RestrictionChanged never fires for the starting state (CORE-R30).
+--- Holds Announcements for `reason` (ANN-R38): the lanes hold it (ns.lanes:Hold) and the card on screen goes off it
+--- unclosed (ns.cards:Hold); cards wait while any reason holds (ANN-R55). The Field guide holds for "guide" while it
+--- is open (ONB-R70); a second hold for a reason already holding changes nothing.
+---@param reason PagleHoldReason
+function ns.HoldAnnouncements(reason)
+	ns.lanes:Hold(reason)
+	ns.cards:Hold()
+end
+
+--- Ends the hold for `reason` (ANN-R38): once no reason holds, what was held shows, then the cards. After "guide"
+--- alone it shows at once, toasts as themselves; after a hold combat was part of, as ANN-R36 says. A release for a
+--- reason not holding does nothing.
+---@param reason PagleHoldReason
+function ns.ReleaseAnnouncements(reason)
+	ns.lanes:Release(reason)
+end
+
+-- The combat hold (ANN-R35, ANN-R36): a restriction holds for "combat"; its end starts the wait after which the
+-- lanes show what they held, then the cards. A load while restricted (a /reload in combat) starts held:
+-- RestrictionChanged never fires for the starting state (CORE-R30).
 if Pagle.IsRestricted() then
-	ns.lanes:Hold()
+	ns.lanes:Hold("combat")
 end
 Pagle.RegisterCallback(OWNER, "RestrictionChanged", function(_, isRestricted)
 	if isRestricted then
-		ns.lanes:Hold()
-		ns.cards:Hold()
+		ns.HoldAnnouncements("combat")
 	else
-		ns.lanes:Release()
+		ns.ReleaseAnnouncements("combat")
 	end
 end)
