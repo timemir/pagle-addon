@@ -2,7 +2,7 @@
 
 > Status: Ready to build · Prefix `ONB` · Milestone: M8.5 Onboarding · Sources: [Backlog: an onboarding experience on first open](https://github.com/timemir/wow-fish/issues/260), [the onboarding kit, grilled with the dev](https://github.com/timemir/wow-fish/issues/260#issuecomment-6335904394) (the kit is in [`prototypes/onboarding-kit/`](../../../prototypes/onboarding-kit/README.md): 18 canvas boards and the `PagleArtGuide` probe); ADR 0001, 0007
 
-Part of [Core](README.md). Every capitalised term means what `CONTEXT.md` says. A number in brackets that isn't `ONB-` points at the rest of the spec. The rules this feature changes elsewhere are amended in their own files: CORE-R6, CORE-R40, CORE-R53–R56 (the minimap icon) and CORE-R61 in [README.md](README.md); ANN-R31, ANN-R38, ANN-R64 and `PagleMoment.firstNote` in [announcements.md](announcements.md); SET-R10 and SET-R30 in [settings.md](../settings.md).
+Part of [Core](README.md). Every capitalised term means what `CONTEXT.md` says. A number in brackets that isn't `ONB-` points at the rest of the spec. The rules this feature changes elsewhere are amended in their own files: CORE-R40, CORE-R53–R56 (the minimap icon) and CORE-R61 in [README.md](README.md); ANN-R31, ANN-R38, ANN-R64 and `PagleMoment.firstNote` in [announcements.md](announcements.md); SET-R10 and SET-R30 in [settings.md](../settings.md).
 
 ## Purpose and boundary
 
@@ -36,7 +36,7 @@ Modules still see only Core (ADR 0001): a Module's step never reads another Modu
 
 ### The Field guide
 
-- **ONB-R20** The **guide** is a two-page book at 920 x 600: Core's own fork of the Stats book's shell (`Pagle_Stats/adapter/BookWidgets.lua`'s leather, corners, parchment, close, ribbon and plate, `Book:RegisterPage`, `ns.PlayTurn`), drawn on Core's `media/books`, so it adds no book art (a shared book API is [#319](https://github.com/timemir/wow-fish/issues/319), not this feature). Its strip's crumbs read "Pagle · A field guide" with "{n} of {m}" at the strip's right, and a row of **step ribbons** hangs under its bottom edge (ONB-R24). It opens from the Letter, `/pagle guide`, the Settings root's **Show me around again** and a Write-up's link (ONB-R82), in `DIALOG` strata over a dim of the world (alpha 0.58), and is in `UISpecialFrames` (Esc closes it).
+- **ONB-R20** The **guide** is a two-page book at 920 x 600: Core's own fork of the Stats book's shell (`Pagle_Stats/adapter/BookWidgets.lua`'s leather, parchment, close and ribbon, `Book:RegisterPage`, `ns.PlayTurn`; no brass corners or nameplate, as the canvas has none), drawn on Core's `media/books`, so it adds no book art (a shared book API is [#319](https://github.com/timemir/wow-fish/issues/319), not this feature). Its strip's crumbs read "Pagle · A field guide" with "{n} of {m}" at the strip's right, and a row of **step ribbons** hangs under its bottom edge (ONB-R24). It opens from the Letter, `/pagle guide`, the Settings root's **Show me around again** and a Write-up's link (ONB-R82), in `DIALOG` strata over a dim of the world (alpha 0.58), and is in `UISpecialFrames` (Esc closes it).
 - **ONB-R21** **Steps.** The guide is the registered steps in `order`. Core's own: `welcome` (10), `box` (20), `moments` (50), `off` (90). Modules': QoL `casting` (30) and `clothes` (40), Ledger `ledger` (60), Tackle Board `board` (70). A Module registers its steps with `M:RegisterGuideStep(step)` before `ModulesChanged` (as CORE-R42); a later call is reported through `geterrorhandler()` and dropped. With every Module on there are 8 steps; with the Tackle Board off, 7, and the count reads "{n} of 7".
 - **ONB-R22** **Opening.** The guide opens at `guideStep` if it is set and still registered, else at the first step; a Write-up's link opens it at that Module's first step. Each step shown sets `guideStep` to its id and adds it to `stepsSeen`. Closing (the wax close, Esc, a restriction) keeps `guideStep`, so the guide reopens where it was left.
 - **ONB-R23** **Moving.** Each step's right page ends in a foot: a **skip link** on the left and **Next »** on the right. The last step has **Off to the water** instead (ONB-R38). Each step but the first has **« back** at its left page's foot. Next and back turn the page forward or backward (the Stats book's page turn). The skip link's label is the step's own (`skipLabel`, default "Skip the rest"); it jumps to the last step without visiting the rest, or to the next step where the step says so (`skipTo = "next"`).
@@ -169,7 +169,7 @@ New Module handle calls (CORE-R12), and one new `def` field:
 ---@field ribbon string         -- the ribbon's label
 ---@field skipLabel? string     -- the foot's skip link; default "Skip the rest"
 ---@field skipTo? "next"|"last" -- default "last"
----@field build fun(left: Frame, right: Frame, nav: PagleGuideNav)  -- draw the two pages once (UI units, 460 x 546 each)
+---@field build fun(left: Frame, right: Frame, nav: PagleGuideNav)  -- draw the two pages once (UI units, 442 x 546 each)
 ---@field onShow? fun()         -- each time the step shows (re-read live state: bindings, sets, board)
 M:RegisterGuideStep(step)       -- ONB-R21; before ModulesChanged
 
