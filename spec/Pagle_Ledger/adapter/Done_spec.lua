@@ -82,7 +82,13 @@ describe("the Ledger's done", function()
 			local fake, loaded = session({ history = HISTORY })
 
 			assert.are.same({
-				{ "Your Ledger was written up from 3 Casts", "Angler Level 2", "2 Species", "Pagle Coins +40" },
+				{
+					"Your Ledger was written up from 3 Casts",
+					"Angler Level 2",
+					"2 Species",
+					"2 varieties",
+					"Pagle Coins +40",
+				},
 			}, writeUps(fake))
 			assert.are.same({}, fake.summarized)
 			assert.are.same({}, fake.announcements)
@@ -103,8 +109,9 @@ describe("the Ledger's done", function()
 				prestige = 0,
 				milestones = {},
 				titles = { ["title:level1"] = true },
-				-- The varieties' keys: none caught, no fish complete (VAR-R25).
-				varieties = {},
+				-- The varieties' keys: each Species' one caught (both Catches of the Yellowtail are its second, VAR-R3),
+				-- no fish complete (VAR-R25).
+				varieties = { [MACKEREL] = { [2] = true }, [SMALLFISH] = { [1] = true } },
 				fishComplete = {},
 				coins = 40,
 				logId = fake.catchLog.data.logId,
@@ -137,7 +144,13 @@ describe("the Ledger's done", function()
 			local fake, loaded = session({ history = HISTORY, saved = saved })
 
 			assert.are.same({
-				{ "Your Ledger was written up from 3 Casts", "Angler Level 2", "2 Species", "Pagle Coins +40" },
+				{
+					"Your Ledger was written up from 3 Casts",
+					"Angler Level 2",
+					"2 Species",
+					"2 varieties",
+					"Pagle Coins +40",
+				},
 			}, writeUps(fake))
 			assert.are.same({}, fake.summarized)
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
@@ -164,7 +177,7 @@ describe("the Ledger's done", function()
 	end
 
 	it(
-		"writes up a catch-up's new Species, the level it brought and its Coins, with no moment (LED-R93, LED-R190)",
+		"writes up a catch-up's new Species and varieties, the level it brought and its Coins, with no moment (LED-R93, LED-R190, VAR-R91)",
 		function()
 			local last, lastLoaded = session({ history = HISTORY })
 
@@ -175,7 +188,7 @@ describe("the Ledger's done", function()
 			})
 
 			assert.are.same(
-				{ { "While the Ledger was off", "Angler Level 2 to 3", "1 Species", "Pagle Coins +30" } },
+				{ { "While the Ledger was off", "Angler Level 2 to 3", "1 Species", "2 varieties", "Pagle Coins +30" } },
 				writeUps(fake)
 			)
 			assert.are.same({}, fake.summarized)
@@ -187,7 +200,7 @@ describe("the Ledger's done", function()
 			assert.are.same({ [0] = 3 }, celebrated.levels)
 			assert.are.equal(70, celebrated.coins)
 			assert.are.same(
-				{ ledger = "Ledger: Angler Level 3 · 2% complete" },
+				{ ledger = "Ledger: Angler Level 3 · 1% complete" },
 				fake.global.summary.lines.Ledger.lines
 			)
 		end
@@ -198,7 +211,8 @@ describe("the Ledger's done", function()
 		function()
 			local last, lastLoaded = session({ history = HISTORY })
 
-			local fake, loaded = nextSession(last, lastLoaded, { cast(T0 + 600, BLASTED_LANDS, { SMALLFISH }) })
+			-- Its Catch is of the variety HISTORY's was, already caught (VAR-R3: its Catch ID's position is 1 too).
+			local fake, loaded = nextSession(last, lastLoaded, { cast(T0 + 840, BLASTED_LANDS, { SMALLFISH }) })
 
 			assert.are.same({}, fake.writeUps)
 			assert.are.same({}, fake.summarized)
