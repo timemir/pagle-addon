@@ -51,15 +51,33 @@ local LOG = {
 -- One stop's span on the tour's clock: shown, shot 2.8 s in, hidden 0.5 s later, the next 0.3 s after that.
 local STOP = 2.8 + 0.5 + 0.3
 
--- A Ledger on FakePagle with the log above, the book closed, and dev on.
+-- A deep copy of `value`.
+local function copy(value)
+	if type(value) ~= "table" then
+		return value
+	end
+	local result = {}
+	for key, field in pairs(value) do
+		result[key] = copy(field)
+	end
+	return result
+end
+
+-- A Ledger on FakePagle with the log above, the book closed, and dev on; with `fresh`, for a new Angler: the
+-- onboarding state as login step 1 makes it with no Cast yet (ONB-R1, ONB-R2: `letter = "waiting"`), nothing seen and
+-- no First evening item done.
 ---@param id string? the spread the book is open on, closed without
-local function ledger(id)
+---@param fresh boolean?
+local function ledger(id, fresh)
 	local fake, loaded = openJournal({
 		catalogue = fixture(),
 		log = LOG,
 		itemNames = NAMES,
 		areaNames = ZONES,
 		id = id or false,
+		modules = fresh and function(f)
+			f.global.onboarding = f.ns.NewOnboardingState("waiting")
+		end or nil,
 	})
 	fake.slash("dev on")
 	fake.printed = {}
@@ -145,6 +163,40 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 		assert.is_true(journal:IsShown())
 		assert.are.same({ id = "curios" }, journal.router:Place())
 		assert.is_false(journal.frame.searchDrop:IsShown())
+	end)
+
+	it("write nothing of a new Angler's onboarding: no journal item, ledger.fresh or First look seen (CORE-R68)", function()
+		local fake, loaded = ledger(nil, true)
+		-- Core's adapter gives each First look its tour stop, core.onboarding.look.ledger.journal (ONB-R84).
+		fake.ns.AddFirstLookTourStops()
+		local before = copy(fake.global.onboarding)
+		local shown = {}
+
+		fake.slash("dev tour ledger")
+		fake.wait(60)
+		fake.slash("dev tour core")
+		fake.wait(1.6)
+		shown[1] = fake.firstLooks:Showing()
+		fake.wait(60)
+
+		assert.are.equal(9, #fake.tourShots)
+		assert.are.same(before, fake.global.onboarding)
+		assert.is_false(fake.onboarding:IsEveningItemDone("journal"))
+		assert.are.same({}, fake.notesShown)
+		-- The First look's own stop still shows the set, marking nothing (ONB-R84).
+		assert.are.equal("ledger.journal", shown[1] and shown[1].id)
+		assert.is_false(loaded.ns.journal:IsShown())
+	end)
+
+	it("tick the journal item, note ledger.fresh and show the First look as the Angler opens the book after", function()
+		local fake, loaded = ledger(nil, true)
+		fake.slash("dev tour ledger")
+		fake.wait(60)
+
+		loaded.ns.journal:Toggle()
+
+		assert.is_true(fake.onboarding:IsEveningItemDone("journal"))
+		assert.is_true(fake.onboarding:IsLookSeen("ledger.journal"))
 	end)
 
 	it("aren't registered on a Core without M:RegisterTourStop, and the Ledger still starts", function()

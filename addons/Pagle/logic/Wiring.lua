@@ -1287,6 +1287,14 @@ function ns.WireLetter(host, view)
 	end)
 end
 
+-- Whether `/pagle dev tour` runs now (CORE-R66): what its stops open isn't the Angler's doing, so it ticks no First
+-- evening item and shows no Margin note or First look, marking nothing (CORE-R68). The tour stops' own TourShow
+-- samples write nothing anyway. False before ns.WireDev has built the tour.
+---@return boolean
+local function isTouring()
+	return ns.tour ~= nil and ns.tour:IsRunning()
+end
+
 --- Where the First evening list is drawn: adapter/Evening.lua's tracker, FakePagle's record of it.
 ---@class PagleEveningWiringView: PagleEveningView
 ---@field frame table the tracker frame Core docks (CORE-R70): the dock reads its IsShown, GetWidth and GetHeight
@@ -1328,9 +1336,9 @@ function ns.WireEvening(host, view)
 	---@class PagleModuleHandle
 	local ModuleHandle = ns.ModuleHandle
 	--- Marks one of the Module's First evening items done (ONB-R61): "journal" for the Ledger as the Fish Journal opens,
-	--- "hunts" for Hunts as its board opens. Ignored when the list is closed or the item done; kept before the list
-	--- docks. Call it only `if M.CompleteEveningItem then`, so it runs on a Core without it (ONB-R90). Raises an error
-	--- at the Module's call for an id that isn't one of its items.
+	--- "hunts" for Hunts as its board opens. Ignored when the list is closed or the item done, and while a dev tour runs
+	--- (CORE-R68); kept before the list docks. Call it only `if M.CompleteEveningItem then`, so it runs on a Core
+	--- without it (ONB-R90). Raises an error at the Module's call for an id that isn't one of its items.
 	---@param id string
 	function ModuleHandle:CompleteEveningItem(id)
 		local module = host.registry:ModuleCalling(self, "CompleteEveningItem", "id")
@@ -1344,7 +1352,9 @@ function ns.WireEvening(host, view)
 				2
 			)
 		end
-		evening:Complete(id)
+		if not isTouring() then
+			evening:Complete(id)
+		end
 	end
 
 	-- Core's own items (ONB-R61), each on its own owner on the bus.
@@ -1360,7 +1370,7 @@ function ns.WireEvening(host, view)
 	end)
 	-- The shop a tour stop opens isn't the Angler's doing (CORE-R68).
 	ns.shop.OnOpen(function()
-		if not (ns.tour and ns.tour:IsRunning()) then
+		if not isTouring() then
 			evening:Complete("shop")
 		end
 	end)
@@ -1414,6 +1424,7 @@ function ns.WireMarginNotes(host, view)
 			return ns.onboarding
 		end,
 		isRestricted = host.isRestricted,
+		isTouring = isTouring,
 		after = host.after,
 		view = view,
 	})
@@ -1426,9 +1437,10 @@ function ns.WireMarginNotes(host, view)
 	---@class PagleModuleHandle
 	local ModuleHandle = ns.ModuleHandle
 	--- Shows one of the Module's Margin notes beside its target (ONB-R50–R52): once per account, never with Margin
-	--- notes off, waiting out a restriction (ONB-R51). A Module calls it only `if M.ShowMarginNote then`, so it runs on
-	--- a Core without it (ONB-R90). Raises an error at the Module's call, showing nothing, for a missing or mistyped
-	--- field (ns.MarginNoteProblem). Core keeps a copy, so a later change to the Module's table changes nothing.
+	--- notes off or while a dev tour runs (CORE-R68), waiting out a restriction (ONB-R51). A Module calls it only
+	--- `if M.ShowMarginNote then`, so it runs on a Core without it (ONB-R90). Raises an error at the Module's call,
+	--- showing nothing, for a missing or mistyped field (ns.MarginNoteProblem). Core keeps a copy, so a later change to
+	--- the Module's table changes nothing.
 	---@param note PagleMarginNote
 	function ModuleHandle:ShowMarginNote(note)
 		local module = host.registry:ModuleCalling(self, "ShowMarginNote", "note")
@@ -1529,6 +1541,7 @@ function ns.WireFirstLooks(host, view)
 			return ns.onboarding
 		end,
 		call = host.call,
+		isTouring = isTouring,
 		view = view,
 	})
 	ns.firstLooks = looks
@@ -1581,10 +1594,10 @@ function ns.WireFirstLooks(host, view)
 
 	--- Shows one of the Module's First looks (ONB-R55, ONB-R59): from its window's OnShow, once the window has drawn what
 	--- the notes point at (a target not shown then drops its note), `M:ShowFirstLook(id)` shows it the first time only,
-	--- with Margin notes on; the window's "?" calls `M:ShowFirstLook(id, true)`, which shows it seen
-	--- or not and with Margin notes off, marking it seen, and hides it while it shows. Closing the window hides it. Call
-	--- it only `if M.ShowFirstLook then` (ONB-R90). Raises an error at the Module's call for an id that isn't one of its
-	--- registered sets, or an `again` that isn't a boolean. Returns whether the set shows now.
+	--- with Margin notes on and no dev tour running (CORE-R68); the window's "?" calls `M:ShowFirstLook(id, true)`,
+	--- which shows it seen or not and with Margin notes off, marking it seen, and hides it while it shows. Closing the
+	--- window hides it. Call it only `if M.ShowFirstLook then` (ONB-R90). Raises an error at the Module's call for an
+	--- id that isn't one of its registered sets, or an `again` that isn't a boolean. Returns whether the set shows now.
 	---@param id string
 	---@param again boolean?
 	---@return boolean

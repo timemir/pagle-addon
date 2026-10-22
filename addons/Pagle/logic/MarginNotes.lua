@@ -105,6 +105,7 @@ end
 ---@class PagleMarginNotesOptions
 ---@field onboarding fun(): PagleOnboarding       -- notesOn and notesSeen (ONB-R50)
 ---@field isRestricted fun(): boolean             -- Pagle.IsRestricted() (ONB-R51)
+---@field isTouring fun(): boolean                -- a dev tour runs (CORE-R66): its stops aren't the Angler's (CORE-R68)
 ---@field after fun(seconds: number, fn: fun())   -- runs fn `seconds` from now (C_Timer.After)
 ---@field view PagleMarginNotesView
 
@@ -174,11 +175,15 @@ local function pending(notes, id)
 end
 
 --- Shows a note beside its target (ONB-R50, ONB-R51): nothing with Margin notes off, for a note seen before, or for
---- one on screen or waiting already. While restricted it waits for the restriction to end. Returns whether it shows
---- or waits.
+--- one on screen or waiting already. While restricted it waits for the restriction to end. Nothing, and nothing
+--- marked, while a dev tour runs: what its stops open isn't the Angler's first time (CORE-R68). Returns whether it
+--- shows or waits.
 ---@param note PagleMarginNote
 ---@return boolean
 function MarginNotes:Show(note)
+	if self.options.isTouring() then
+		return false
+	end
 	local onboarding = self.options.onboarding()
 	if not onboarding:AreNotesOn() or onboarding:IsNoteSeen(note.id) or pending(self, note.id) then
 		return false
@@ -275,7 +280,7 @@ end
 --- first toast with Coins shows `core.toast` at its coin, prefixed by the `firstNote` of its first moment whose
 --- `{module}.{kind}` note isn't seen yet, which it marks seen too; otherwise that moment's own note shows beside the
 --- frame. Samples (`/pagle dev preview`'s, the Curio Shop's in their own style) and the "While you were fighting"
---- digest show none. A moment held by Cozy
+--- digest show none, nor does anything while a dev tour runs (MarginNotes:Show, CORE-R68). A moment held by Cozy
 --- mode never shows, so it never gets here (ONB-R52).
 ---@param announcement PagleAnnouncement
 ---@param form PagleAnnouncementForm
