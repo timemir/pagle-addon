@@ -11,6 +11,7 @@ Core is the `Pagle` addon. This file covers how Modules attach to it, the whole 
 | [wallet-and-shop.md](wallet-and-shop.md) | `SHOP` | Pagle Coins and the Curio Shop |
 | [field-report.md](field-report.md) | `REP` | `/pagle report` and the diagnostics it reads |
 | [varieties.md](varieties.md) | `VAR` | Fish varieties, their rarity, Core's variety projection and the fish crests |
+| [book-binding.md](book-binding.md) | `BIND` | The book binding: `Pagle.NewBookBinding`, which draws the `core.binding` look on every book and changes it |
 
 Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunables table.
 
@@ -194,6 +195,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.GetFollowedAnglers()` | `{ state, anglers }` | [anglers-in-game.md](anglers-in-game.md#contracts) |
 | `Pagle.Animate(owner, animations, onDone?)`, `Cue(owner, seconds, fn)`, `StopMotion(owner)`, `EASE`, `Bezier(x1, y1, x2, y2)` | Core's one motion driver | announcements.md |
 | `Pagle.FitToScreen(frame, options)` | number, the scale used | [here](#paglefittoscreenframe-options) |
+| `Pagle.NewBookBinding(frame, options?)` | `PagleBookBinding`: `Look()`, `SetLook(goodID?)` | [book-binding.md](book-binding.md#contracts) |
 
 ### Module handle (returned by `RegisterModule`)
 

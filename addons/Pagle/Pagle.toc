@@ -18,6 +18,7 @@ data\AnnounceArt.lua
 data\ToastStyleArt.lua
 data\ShopArt.lua
 data\GuideArt.lua
+data\BookBindingArt.lua
 data\FieldArt.lua
 data\VarietyArt.lua
 data\ApiInventory.lua
@@ -75,6 +76,7 @@ logic\Cards.lua
 logic\Announcements.lua
 logic\ToastStyles.lua
 logic\Motion.lua
+logic\BookBinding.lua
 logic\Fit.lua
 logic\Menu.lua
 logic\ReloadReminder.lua
@@ -131,6 +133,7 @@ adapter\Skins.lua
 adapter\Art.lua
 adapter\Motion.lua
 adapter\Fit.lua
+adapter\BookBinding.lua
 adapter\Announcements.lua
 adapter\CoreGoods.lua
 adapter\Cards.lua

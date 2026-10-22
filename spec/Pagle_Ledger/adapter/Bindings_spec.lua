@@ -1,7 +1,8 @@
 -- The Ledger's Journal bindings on FakePagle (LED-R110–R116, LED-R35, LED-R92, LED-R93; SHOP-R21–R23, SHOP-R30–R33):
 -- the slot and its goods, the level bindings earned by the peak or celebrated level, the expansion's earned bindings
--- by their rules, M:RefreshGoods only from a live entry or done, the Journal drawn in the equipped binding, its
--- material and corners, the closed-book swatch on the shop's stage, and the zone crests in Core's crest slot.
+-- by their rules, M:RefreshGoods only from a live entry or done, the Journal redrawn for a new crest, the closed-book
+-- swatch on the shop's stage, and the zone crests in Core's crest slot. The Journal wearing the binding is
+-- JournalBinding_spec.lua's.
 
 local SLOT = "ledger.binding"
 
@@ -194,123 +195,27 @@ describe("the Ledger's Journal bindings", function()
 		end
 	)
 
-	-- The open Journal's leather (its texture and tint), its band's tone, each page's paper tint and the plate's
-	-- silver.
-	---@param frame LedgerJournalFrame
-	local function bookTints(frame)
-		local function rgb(texture)
-			local color = texture.vertexColor or { 1, 1, 1 }
-			return { color[1], color[2], color[3] }
-		end
-		local corners = {}
-		for i, piece in ipairs(frame.corners) do
-			corners[i] = piece:IsShown() and {
-				(piece --[[@as table]]).texCoord,
-			} or false
-		end
-		return {
-			leather = (frame.leatherFill --[[@as table]]).texture,
-			repeats = (frame.leatherFill --[[@as table]]).texCoord,
-			corners = corners,
-			tint = frame.leatherTint,
-			band = rgb(frame.band[1]),
-			paper = { rgb(frame.papers.left.parchment), rgb(frame.papers.right.parchment) },
-			silver = (frame.plate.slices[1] --[[@as table]]).desaturated == true,
-		}
-	end
-
-	-- What binding `goodID` draws those in (logic/Bindings.lua).
-	---@param ns PagleLedgerNS
-	---@param goodID string
-	local function lookOf(ns, goodID)
-		local look = ns.BindingLook(goodID)
-		-- the leather inside the band, 920 × 600 less 7 each side, over the material's repeat
-		local w, h = 920 - 14, 600 - 14
-		local corners = {}
-		for i = 1, 4 do
-			corners[i] = false
-			if look.corners then
-				local l, r, t, b = ns.JournalCoords("BindingCorners", "corner-" .. look.corners)
-				if i % 2 == 0 then
-					l, r = r, l
-				end
-				if i > 2 then
-					t, b = b, t
-				end
-				corners[i] = { { l, r, t, b } }
-			end
-		end
-		return {
-			leather = look.texture,
-			repeats = { 0, w / look.tileW, 0, h / look.tileH },
-			corners = corners,
-			tint = look.tint or { 1, 1, 1 },
-			band = look.band or { 1, 1, 1 },
-			paper = { look.paperTint, look.paperTint },
-			silver = look.silver,
-		}
-	end
-
 	it(
-		"draw the open Journal in the equipped binding, and redraw it when the binding or the crest changes (LED-R112, SHOP-R33)",
-		function()
-			local fake = newFakePagle()
-			fake.profile.announcements.motion = false -- the binding changes at once, without the kit's dip
-			fake.catchLog.data.logId = "log"
-			-- Celebrated at level 10 before (LED-R90): Tanned Hide is earned (LED-R111); and zone 12 at Master, so its
-			-- crest is too (LED-R114).
-			fake.globals.PagleLedgerDB = {
-				global = { celebrated = { coins = 0, levels = { [0] = 10 }, zones = { [12] = 5 }, logId = "log" } },
-			}
-			local loaded = fake.load("Pagle_Ledger")
-			fake.login()
-			fake.enterWorld()
-			local ns = loaded.ns
-			ns.ToggleJournal()
-			local journal = ns.journal
-			assert.are.same(lookOf(ns, "ledger.binding.field"), bookTints(journal.frame))
-			assert.is_nil(ns.CrestIcon()) -- Plain, the default: no emblem (LED-R112, SHOP-R25)
-
-			assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
-
-			assert.are.equal("ledger.binding.level10", journal.binding)
-			assert.are.same(lookOf(ns, "ledger.binding.level10"), bookTints(journal.frame))
-			assert.are_not.same(lookOf(ns, "ledger.binding.field"), lookOf(ns, "ledger.binding.level10"))
-
-			local drawn = journal.pages
-			assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.elwynn"))
-
-			assert.are_not.equal(drawn, journal.pages)
-			assert.are.equal("Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn", ns.CrestIcon())
-		end
-	)
-
-	it(
-		"draw the open Journal in an expansion binding: its material at its repeat, its corner pieces mirrored to the book's four corners, and none in one without (LED-R110, LED-R112)",
+		"redraw the open Journal when the crest changes, its bookplate's emblem the crest's icon (LED-R112, SHOP-R33)",
 		function()
 			local fake = newFakePagle()
 			fake.profile.announcements.motion = false
+			fake.catchLog.data.logId = "log"
+			-- zone 12 celebrated at Master, so its crest is earned (LED-R114)
+			fake.globals.PagleLedgerDB =
+				{ global = { celebrated = { coins = 0, zones = { [12] = 5 }, logId = "log" } } }
 			local loaded = fake.load("Pagle_Ledger")
 			fake.login()
 			fake.enterWorld()
-			fake.setPurchased({ ["ledger.binding.driftwood"] = true, ["ledger.binding.sailcloth"] = true })
 			local ns = loaded.ns
 			ns.ToggleJournal()
-			local frame = ns.journal.frame
+			assert.is_nil(ns.CrestIcon()) -- Plain, the default: no emblem (LED-R112, SHOP-R25)
+			local drawn = ns.journal.pages
 
-			assert.is_true(fake.Pagle.SetEquipped(SLOT, "ledger.binding.driftwood"))
+			assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.elwynn"))
 
-			local drawn = bookTints(frame)
-			assert.are.same(lookOf(ns, "ledger.binding.driftwood"), drawn)
-			assert.are.equal("Interface\\AddOns\\Pagle_Ledger\\media\\journal\\bindings\\driftwood", drawn.leather)
-			assert.are.same({ 0, 906 / 150, 0, 586 / 196 }, drawn.repeats)
-			assert.is_truthy(drawn.corners[4])
-			assert.are.same({ 44, 44 }, { frame.corners[4]:GetSize() })
-
-			assert.is_true(fake.Pagle.SetEquipped(SLOT, "ledger.binding.sailcloth"))
-
-			assert.are.same(lookOf(ns, "ledger.binding.sailcloth"), bookTints(frame))
-			assert.are.same({ false, false, false, false }, bookTints(frame).corners)
+			assert.are_not.equal(drawn, ns.journal.pages)
+			assert.are.equal("Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn", ns.CrestIcon())
 		end
 	)
 
