@@ -116,6 +116,14 @@ local function absentFile(reason, data)
 	return { reason = reason, generatedAt = data.generatedAt, count = data.count }
 end
 
+-- A name or title from the files as the client draws it as written: every `|` doubled, so none starts an escape
+-- sequence (VIEW-R13). Anything that isn't a string is left as it is.
+---@param text any
+---@return any
+local function drawable(text)
+	return type(text) == "string" and (text:gsub("|", "||")) or text
+end
+
 -- A copy of a Followed Angler's line, its full card's fields only (VIEW-R11), its guids a fresh array.
 ---@param line any
 ---@return PagleFollowedAngler
@@ -161,6 +169,7 @@ function ns.ReadFollowingFile(data, missing)
 	local anglers, guids = {}, {}
 	for i, line in ipairs(data.anglers) do
 		local angler = copyAngler(line)
+		angler.name, angler.title = drawable(angler.name), drawable(angler.title)
 		anglers[i] = angler
 		for _, guid in ipairs(angler.guids) do
 			if type(guid) == "string" and not guids[guid] then
@@ -335,7 +344,7 @@ local function readCard(block, n)
 	local text = block.titles[tonumber(title)]
 	return {
 		followed = false,
-		title = type(text) == "string" and text or "",
+		title = type(text) == "string" and drawable(text) or "",
 		level = tonumber(level),
 		prestige = tonumber(prestige),
 		ledger = tonumber(ledger),

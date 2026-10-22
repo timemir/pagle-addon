@@ -310,6 +310,20 @@ describe("the Companion's data files", function()
 			assert.are.equal("", ns.LookUpAngler(absent(), anglers, "Player-4395-01234567", NOW).title)
 		end)
 
+		it(
+			"doubles every | in a Pagle_Anglers title, so the client draws it as written (VIEW-R10, VIEW-R13)",
+			function()
+				local examples = anglerFileExamples()
+				examples.anglers.blocks[1].titles[2] = "Warden |cff00ff00of Feralas"
+				local anglers = ns.ReadAnglersFile(examples.anglers)
+
+				assert.are.equal(
+					"Warden ||cff00ff00of Feralas",
+					ns.LookUpAngler(absent(), anglers, "Player-4618-0A1B2C3D", NOW).title
+				)
+			end
+		)
+
 		-- A block of `cards` (each 16 characters) and `keys` (search key and card number each), its titles `titles`.
 		local function packed(titles, cards, keys)
 			local text = {}
@@ -421,6 +435,16 @@ describe("the Companion's data files", function()
 
 			assert.are.same({ "Ada", "Bea", "Cy" }, { anglers[1].name, anglers[2].name, anglers[3].name })
 			assert.are.same({ name = "Bea", more = 0, title = "", guids = {} }, anglers[2])
+		end)
+
+		it("double every | in a name and a title, so the client draws them as written (VIEW-R11, VIEW-R13)", function()
+			local data = anglerFileExamples().following
+			data.anglers[1].name = "A|cffff0000da"
+			data.anglers[1].title = "Warden |TInterface\\Icons\\X:0|t"
+
+			local ada = ns.FollowedAnglers(ns.ReadFollowingFile(data), FOLLOWING_AT).anglers[1]
+
+			assert.are.same({ "A||cffff0000da", "Warden ||TInterface\\Icons\\X:0||t" }, { ada.name, ada.title })
 		end)
 
 		it("are fresh copies at each call, which the caller may keep and change (VIEW-R11)", function()

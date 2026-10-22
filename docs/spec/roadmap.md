@@ -425,7 +425,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 **Build order:** 1. Core's reads (VIEW-R1–R4, VIEW-R10–R12). 2. The tooltip block and its Settings row, and the Following spread, in parallel.
 
-**Core rules:** VIEW-R1–R4, VIEW-R10–R12, VIEW-R20–R22, VIEW-R30; edge cases VIEW-R90–R95 ([core/anglers-in-game.md](core/anglers-in-game.md))
+**Core rules:** VIEW-R1–R4, VIEW-R10–R13, VIEW-R20–R22, VIEW-R30; edge cases VIEW-R90–R95 ([core/anglers-in-game.md](core/anglers-in-game.md))
 
 **Module rules:** Ledger: LED-R132 for its "Following" line, LED-R151
 
