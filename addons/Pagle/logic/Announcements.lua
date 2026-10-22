@@ -52,30 +52,21 @@ end
 
 --- The sound sets Core plays, keyed by their sound set good's ID (ANN-R72, ANN-R74), each in the folder its ID's last
 --- segment names: Driftwood, the free default; Gilded and the Curio Shop expansion's twelve, Curio Shop goods
---- (logic/CoreGoods.lua's sound set slot); and the three earned goods the Ledger and Hunts register in Core's slot,
---- which Core plays like its own (SHOP-R25). Every set has three toast variants but Gilded, which has one (Tunables).
+--- (logic/CoreGoods.lua's sound set slot, read from it); and the three earned goods the Ledger and Hunts register in
+--- Core's slot, which Core plays like its own (SHOP-R25). Every set has three toast variants but a good whose
+--- `variants` says otherwise: Gilded, which has one (Tunables).
 ---@type table<string, PagleSoundSet>
 ns.SOUND_SETS = {}
-for _, goodID in ipairs({
-	ns.SOUND_SET_DEFAULT,
-	"core.soundset.gilded",
-	"core.soundset.rain",
-	"core.soundset.marimba",
-	"core.soundset.shipbell",
-	"core.soundset.kalimba",
-	"core.soundset.musicbox",
-	"core.soundset.glass",
-	"core.soundset.steelpan",
-	"core.soundset.dulcimer",
-	"core.soundset.frost",
-	"core.soundset.harp",
-	"core.soundset.gizmo",
-	"core.soundset.wardrums",
-	"ledger.soundset.concertina",
-	"ledger.soundset.choir",
-	"hunts.soundset.nightwatch",
-}) do
-	ns.SOUND_SETS[goodID] = soundSet(goodID:match("[^.]+$"), goodID == "core.soundset.gilded" and 1 or 3)
+for _, slot in ipairs(ns.CORE_GOODS) do
+	if slot.id == ns.SOUND_SET_SLOT then
+		for _, good in ipairs(slot.goods) do
+			ns.SOUND_SETS[good.id] = soundSet(good.id:match("[^.]+$"), good.variants or 3)
+		end
+	end
+end
+-- The Ledger's and Hunts' own, named here as Core reads no Module (ADR 0001).
+for _, goodID in ipairs({ "ledger.soundset.concertina", "ledger.soundset.choir", "hunts.soundset.nightwatch" }) do
+	ns.SOUND_SETS[goodID] = soundSet(goodID:match("[^.]+$"), 3)
 end
 
 --- The sound set a sound set good plays (ANN-R70, ANN-R72): its own, or Driftwood for any other ID or none, as before
@@ -97,7 +88,7 @@ end
 local FIRST_LEGEND = 19803
 
 --- The sting a splash plays (ANN-R70, ANN-R72): its Legend's, by the headline's `icon`, the Legend's item ID (LED-R63),
---- or the first Legend's for an item without a sting of its own, any other icon, or none, as the shop's ▶ Legend.
+--- or the first Legend's for an item without a sting of its own, any other icon, or none, as the shop's » Legend.
 ---@param icon any
 ---@return string
 function ns.LegendSting(icon)

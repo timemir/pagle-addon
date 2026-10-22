@@ -314,7 +314,6 @@ local function newRuler(parent, compact)
 	ruler.label:SetShown(not compact)
 	ruler.record = ns.NewStamp(parent)
 	if compact then
-		ns.Ink(ruler.value, "ink")
 		ruler:SetHeight(20)
 		bar:SetPoint("LEFT")
 		bar:SetSize(COMPACT_TRACK, 9)
@@ -591,6 +590,8 @@ local function drawToast(frame, display, style)
 
 	local ruler = frame.ruler --[[@as PagleRulerView]]
 	ruler.style = style
+	ns.Ink(ruler.label, inks.label)
+	ns.Ink(ruler.value, inks.value)
 	ruler:ClearAllPoints()
 	if page.ruled then
 		local nameSize = ns.ArtFontSize(fonts.name)
@@ -740,6 +741,7 @@ local function drawNod(frame, display, style)
 	end
 	local ruler = frame.ruler --[[@as PagleRulerView]]
 	ruler.style = style
+	ns.Ink(ruler.value, ns.ToastInks(style).value)
 	ruler:ClearAllPoints()
 	if headline.ruler then
 		-- As wide as it ends: the track, then the number and the margin once landed.

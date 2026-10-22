@@ -7,9 +7,9 @@ local ns = select(2, ...)
 -- the free default and the kit's Ledger style; Ripple and Lantern Glow are Curio Shop goods, the kit's Ripple and
 -- Lantern styles; the Curio Shop expansion's twelve are Curio Shop goods too, and three more are earned goods the
 -- Ledger and the Tackle Board register in Core's slot (ANN-R81, SHOP-R25). A style picks the toast and Nod art (its
--- own atlas, data/AnnounceArt.lua), the medallions' trim or its own ring, the rubber stamps' ink, the page's inks and
--- toast.high's wax; the banner, the splash and the cards look the same in every style. A style changes only the
--- look, never timing, lanes, the Interruption budget, sounds or which moments show.
+-- own atlas, data/AnnounceArt.lua or data/ToastStyleArt.lua), the medallions' trim or its own ring, the rubber stamps'
+-- ink, the page's inks and toast.high's wax; the banner, the splash and the cards look the same in every style. A
+-- style changes only the look, never timing, lanes, the Interruption budget, sounds or which moments show.
 -- adapter/Art.lua draws the art, and adapter/Announcements.lua and adapter/Cards.lua the frames.
 
 --- An { r, g, b } from a "RRGGBB" hex string: Core's one, for the announcements' inks and the Curio Shop's
@@ -55,8 +55,8 @@ ns.ANNOUNCE_COLORS = {
 
 --- A toast style: its toast and Nod atlas, its medallions' ring (the shared trim, a toast.high's own, or its own ring
 --- in its atlas), the rubber stamp sprite and its ink, and the page's inks, each a role in ns.ANNOUNCE_COLORS: the
---- kicker and name, the Coins', toast.high's kicker and toast.low's, each the ledger's own where the style has none
---- (ns.ToastInks), and the tint of toast.high's wax, over its grey with `waxDesaturated`.
+--- kicker and name, the Coins', toast.high's kicker and toast.low's, the size ruler's label and number (`small`),
+--- each the ledger's own where the style has none (ns.ToastInks), and the tint of toast.high's wax, over its grey with `waxDesaturated`.
 ---@class PagleToastStyle
 ---@field id string
 ---@field atlas string
@@ -72,6 +72,7 @@ ns.ANNOUNCE_COLORS = {
 ---@field lowWhat? string
 ---@field lowName? string
 ---@field lowAmt? string
+---@field small? string                    -- the size ruler's label and number, for a dark page (ANN-R81)
 ---@field wax? string
 ---@field waxDesaturated? true
 
@@ -113,7 +114,7 @@ ns.TOAST_STYLES = {
 }
 
 -- The Curio Shop expansion's twelve styles and the three the Ledger and the Tackle Board earn in Core's slot, which
--- Core draws like its own (ANN-R81, SHOP-R25), each with its own ring in its own atlas (data/AnnounceArt.lua). Their
+-- Core draws like its own (ANN-R81, SHOP-R25), each with its own ring in its own atlas (data/ToastStyleArt.lua). Their
 -- inks are the shop expansion kit's goods.json's, as "RRGGBB", each added to ns.ANNOUNCE_COLORS as the role
 -- "<goodID>.<field>". Its blue, green and silver stamps take the blue stamp, the rest the red. `wax` is close to the
 -- board's filter on the red wax: a tint over its grey for a style that turns it, a shade for one that keeps it.
@@ -123,7 +124,14 @@ local RINGED = {
 		id = "core.toaststyle.ship",
 		atlas = "ToastsShip",
 		stamp = "stamp-blue",
-		inks = { what = "1F3A5A", name = "14202E", stampInk = "1F3A6A", amt = "7A5410", wax = "47AEFF" },
+		inks = {
+			what = "1F3A5A",
+			name = "14202E",
+			stampInk = "1F3A6A",
+			amt = "7A5410",
+			small = "14202E",
+			wax = "47AEFF",
+		},
 		waxDesaturated = true,
 	},
 	-- Peeled bark tied with twine.
@@ -131,7 +139,14 @@ local RINGED = {
 		id = "core.toaststyle.birch",
 		atlas = "ToastsBirch",
 		stamp = "stamp-blue",
-		inks = { what = "6A3A1A", name = "2A1A0A", stampInk = "3A5A2A", amt = "7A5410", wax = "BBD062" },
+		inks = {
+			what = "6A3A1A",
+			name = "2A1A0A",
+			stampInk = "3A5A2A",
+			amt = "7A5410",
+			small = "2A1A0A",
+			wax = "BBD062",
+		},
 		waxDesaturated = true,
 	},
 	-- Sand in the fold, a shell left behind.
@@ -139,7 +154,14 @@ local RINGED = {
 		id = "core.toaststyle.tidepool",
 		atlas = "ToastsTidepool",
 		stamp = "stamp-blue",
-		inks = { what = "1F5A5A", name = "102A2A", stampInk = "1F6A6A", amt = "7A5410", wax = "56FFCF" },
+		inks = {
+			what = "1F5A5A",
+			name = "102A2A",
+			stampInk = "1F6A6A",
+			amt = "7A5410",
+			small = "102A2A",
+			wax = "56FFCF",
+		},
 		waxDesaturated = true,
 	},
 	-- Soundings, rhumb lines and a compass rose; the red wax as it is.
@@ -147,14 +169,21 @@ local RINGED = {
 		id = "core.toaststyle.chart",
 		atlas = "ToastsChart",
 		stamp = "stamp",
-		inks = { what = "8A1A10", name = "1A1408", stampInk = "8A1A10", amt = "7A5410" },
+		inks = { what = "8A1A10", name = "1A1408", stampInk = "8A1A10", amt = "7A5410", small = "1A1408" },
 	},
 	-- Rime grown in from the corners.
 	{
 		id = "core.toaststyle.frost",
 		atlas = "ToastsFrost",
 		stamp = "stamp-blue",
-		inks = { what = "2A5A8A", name = "0E2440", stampInk = "2A6AA0", amt = "7A5410", wax = "77D9FF" },
+		inks = {
+			what = "2A5A8A",
+			name = "0E2440",
+			stampInk = "2A6AA0",
+			amt = "7A5410",
+			small = "0E2440",
+			wax = "77D9FF",
+		},
 		waxDesaturated = true,
 	},
 	-- Ticker tape, rivets and a gear.
@@ -162,7 +191,14 @@ local RINGED = {
 		id = "core.toaststyle.goblin",
 		atlas = "ToastsGoblin",
 		stamp = "stamp-blue",
-		inks = { what = "1A6A2A", name = "102010", stampInk = "2A7A2A", amt = "7A5410", wax = "68FF3F" },
+		inks = {
+			what = "1A6A2A",
+			name = "102010",
+			stampInk = "2A7A2A",
+			amt = "7A5410",
+			small = "102010",
+			wax = "68FF3F",
+		},
 		waxDesaturated = true,
 	},
 	-- A kelp-wrapped spine studded with pearls.
@@ -170,7 +206,14 @@ local RINGED = {
 		id = "core.toaststyle.kelp",
 		atlas = "ToastsKelp",
 		stamp = "stamp-blue",
-		inks = { what = "2A6A5A", name = "142A24", stampInk = "1E5A4E", amt = "7A5410", wax = "7AFFBF" },
+		inks = {
+			what = "2A6A5A",
+			name = "142A24",
+			stampInk = "1E5A4E",
+			amt = "7A5410",
+			small = "142A24",
+			wax = "7AFFBF",
+		},
 		waxDesaturated = true,
 	},
 	-- Night-blue vellum written in silver, on every page.
@@ -187,6 +230,7 @@ local RINGED = {
 			lowWhat = "C8D0E8",
 			lowName = "E8ECF8",
 			lowAmt = "C8D0E8",
+			small = "B0BCD8",
 			wax = "58A3FF",
 		},
 		waxDesaturated = true,
@@ -196,7 +240,14 @@ local RINGED = {
 		id = "core.toaststyle.leaf",
 		atlas = "ToastsLeaf",
 		stamp = "stamp",
-		inks = { what = "3A5A10", name = "1A2A06", stampInk = "8A3A10", amt = "7A5410", wax = "FF9621" },
+		inks = {
+			what = "3A5A10",
+			name = "1A2A06",
+			stampInk = "8A3A10",
+			amt = "7A5410",
+			small = "1A2A06",
+			wax = "FF9621",
+		},
 		waxDesaturated = true,
 	},
 	-- Rolled up and corked: Driftglass Bottle.
@@ -204,7 +255,14 @@ local RINGED = {
 		id = "core.toaststyle.bottle",
 		atlas = "ToastsBottle",
 		stamp = "stamp-blue",
-		inks = { what = "6A2A10", name = "2A1408", stampInk = "1F4A7A", amt = "7A5410", wax = "FF631F" },
+		inks = {
+			what = "6A2A10",
+			name = "2A1408",
+			stampInk = "1F4A7A",
+			amt = "7A5410",
+			small = "2A1408",
+			wax = "FF631F",
+		},
 		waxDesaturated = true,
 	},
 	-- A bronze plate, the catch hammered in.
@@ -222,6 +280,7 @@ local RINGED = {
 			lowName = "1E1004",
 			lowAmt = "3A1E06",
 			wax = "FF803C",
+			small = "3A1E06",
 		},
 		waxDesaturated = true,
 	},
@@ -230,7 +289,14 @@ local RINGED = {
 		id = "core.toaststyle.folio",
 		atlas = "ToastsFolio",
 		stamp = "stamp",
-		inks = { what = "9A1A10", name = "1A1030", stampInk = "A8781A", amt = "7A5410", highWhat = "E8B830" },
+		inks = {
+			what = "9A1A10",
+			name = "1A1030",
+			stampInk = "A8781A",
+			amt = "7A5410",
+			highWhat = "E8B830",
+			small = "4A3A6A",
+		},
 	},
 	-- The Tall Tale: a gilt border, blue silk and a proper seal (the Ledger's, LED-R117).
 	{
@@ -244,6 +310,7 @@ local RINGED = {
 			amt = "7A5410",
 			highWhat = "D8A830",
 			wax = "0D95FF",
+			small = "140E04",
 		},
 		waxDesaturated = true,
 	},
@@ -261,6 +328,7 @@ local RINGED = {
 			lowWhat = "E8C890",
 			lowName = "FBEFD0",
 			lowAmt = "E8C890",
+			small = "E0C8A0",
 			wax = "D9D9D9",
 		},
 	},
@@ -269,7 +337,14 @@ local RINGED = {
 		id = "tackleboard.toaststyle.ember",
 		atlas = "ToastsEmber",
 		stamp = "stamp",
-		inks = { what = "8A2A08", name = "1E0E04", stampInk = "C0400A", amt = "7A5410", wax = "FF4300" },
+		inks = {
+			what = "8A2A08",
+			name = "1E0E04",
+			stampInk = "C0400A",
+			amt = "7A5410",
+			small = "1E0E04",
+			wax = "FF4300",
+		},
 		waxDesaturated = true,
 	},
 }
@@ -315,20 +390,30 @@ function ns.BezelRing(style, size, high)
 	return { atlas = "Announce", sprite = ("bezel-%s-%d"):format(high and style.highTrim or style.trim, size) }
 end
 
---- The inks a style writes in on `page` (ANN-R80, ANN-R81), each a role in ns.ANNOUNCE_COLORS: the kicker, the name
---- and the Coins. toast.low is in pencil and toast.high's kicker gilt, unless the style has its own; with no page, the
---- Nod's.
+--- The inks a style writes in on `page` (ANN-R80, ANN-R81), each a role in ns.ANNOUNCE_COLORS: the kicker, the name,
+--- the Coins, and the size ruler's label and number. toast.low is in pencil and toast.high's kicker gilt, unless the
+--- style has its own; the ruler's label and number are in the style's `small` on every page, the Nod's number too, or
+--- in the ledger's inks for a style without one. With no page, the Nod's.
 ---@param style PagleToastStyle
 ---@param page PagleToastPage?
----@return { what: string, name: string, amt: string }
+---@return { what: string, name: string, amt: string, label: string, value: string }
 function ns.ToastInks(style, page)
+	local label, value = style.small or "ink2", style.small or "ink"
 	if page and page.low then
-		return { what = style.lowWhat or "pencil", name = style.lowName or "pencilName", amt = style.lowAmt or "amtLow" }
+		return {
+			what = style.lowWhat or "pencil",
+			name = style.lowName or "pencilName",
+			amt = style.lowAmt or "amtLow",
+			label = label,
+			value = value,
+		}
 	end
 	return {
 		what = page and page.high and (style.highWhat or "giltDeep") or style.what,
 		name = style.name,
 		amt = style.amt or "amt",
+		label = label,
+		value = value,
 	}
 end
 

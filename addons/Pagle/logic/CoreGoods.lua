@@ -14,6 +14,7 @@ local ns = select(2, ...)
 ---@field default? true
 ---@field tier? 1|2|3|4|5           -- Tunables: Core goods' tiers
 ---@field icon? string              -- a texture path in the client: the shop's swatch, and a crest's look (LED-R112)
+---@field variants? integer         -- a sound set's toast variants, if not three (ANN-R74; Tunables): Gilded's one
 
 --- One of Core's slots, with its goods in the order the shop lists them.
 ---@class PagleCoreSlot
@@ -83,7 +84,7 @@ ns.CORE_GOODS = {
 		openToEarned = true,
 		goods = {
 			{ id = ns.SOUND_SET_DEFAULT, default = true, icon = ICONS .. "INV_Misc_Drum_01" },
-			{ id = "core.soundset.gilded", tier = 2, icon = ICONS .. "INV_Misc_Bell_01" },
+			{ id = "core.soundset.gilded", tier = 2, variants = 1, icon = ICONS .. "INV_Misc_Bell_01" },
 			-- The Curio Shop expansion's (ANN-R72).
 			{ id = "core.soundset.rain", tier = 1, icon = ICONS .. "Spell_Nature_Tranquility" },
 			{ id = "core.soundset.marimba", tier = 1, icon = ICONS .. "INV_Misc_Drum_02" },
