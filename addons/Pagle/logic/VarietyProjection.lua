@@ -19,6 +19,8 @@ ns.VARIETY_RULES_VERSION = 1
 ---@field db table                         -- PagleDB.global.projections.varieties
 ---@field iterate fun(afterSeq: integer?): fun(): PagleRecord? -- the log's records (Pagle.IterateCatches)
 ---@field changed fun()                    -- after its done, and after a live Catch that adds a variety (VAR-R13)
+---@field added? fun(castId: string, ids: table<string, true>) -- a live Cast's varieties caught for the first time,
+--- before its `changed` (VAR-R27)
 
 -- A fresh, empty state: no variety caught.
 ---@return PagleVarietyState
@@ -36,16 +38,16 @@ end
 
 -- Counts one record (VAR-R10): each item of a caught Cast that has a variety (VAR-R1, VAR-R4) adds its position to
 -- its Species' set. Every other kind, and an item without a variety (an Uncharted Catch, a Trophy, a Legend), adds
--- nothing. Returns whether it added a position not caught before.
+-- nothing. Returns the IDs of the varieties it added that weren't caught before, as a set, or nil for none.
 ---@param state PagleVarietyState
 ---@param record PagleRecord
----@return boolean
+---@return table<string, true>?
 local function count(state, record)
 	if record.kind ~= "cast" then
-		return false
+		return nil
 	end
 	---@cast record PagleCast
-	local added = false
+	local added
 	for _, item in ipairs(record.items or {}) do
 		local variety = item.variety
 		local species = speciesOf(variety)
@@ -58,7 +60,8 @@ local function count(state, record)
 			end
 			if not caught[index] then
 				caught[index] = true
-				added = true
+				added = added or {}
+				added[variety.id] = true
 			end
 		end
 	end
@@ -74,24 +77,29 @@ end
 function ns.AddVarietyProjection(options)
 	return ns.AddCoreProjection(
 		options.projections,
-		ns.VarietyProjectionDef(options.db, options.changed),
+		ns.VarietyProjectionDef(options.db, options.changed, options.added),
 		options.iterate,
 		"varieties"
 	)
 end
 
 --- The variety projection's def (LOG-R70) over `db`: each live Catch that adds a variety, and each done, calls
---- `changed`.
+--- `changed`; a live Cast's first-caught varieties go to `added` first, when given, with the Cast's ID.
 ---@param db table PagleDB.global.projections.varieties, or a table of the caller's making
 ---@param changed fun()
+---@param added (fun(castId: string, ids: table<string, true>))?
 ---@return PagleProjectionDef
-function ns.VarietyProjectionDef(db, changed)
+function ns.VarietyProjectionDef(db, changed, added)
 	return {
 		db = db,
 		rulesVersion = ns.VARIETY_RULES_VERSION,
 		reset = reset,
 		apply = function(state, record, mode)
-			if count(state, record) and mode == "live" then
+			local ids = count(state, record)
+			if ids and mode == "live" then
+				if added then
+					added(record.id, ids)
+				end
 				changed()
 			end
 		end,

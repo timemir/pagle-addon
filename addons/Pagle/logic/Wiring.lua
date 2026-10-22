@@ -255,10 +255,19 @@ local function varietiesOf(speciesID)
 	return ns.Catalogue and ns.Catalogue.GetVarieties(speciesID)
 end
 
+-- Whether a Catch's variety was caught before its Cast (VAR-R27), from Core's variety projection; false before it is
+-- wired.
+---@param variety PagleVariety
+---@param castId string
+---@return boolean
+local function caughtBefore(variety, castId)
+	return ns.VarietyCaughtBefore ~= nil and ns.VarietyCaughtBefore(variety, castId)
+end
+
 --- Core's catch Nod (ANN-R13) on ns.moments: at each live `CastEnded("caught", cast)` (LOG-R9), while
 --- PagleDB.profile.announcements.everyCatch ("Show every catch") is on, the Cast's catch Nod (ns.CatchNodMoment) in
---- the Angler's length unit, naming its Catch's variety from the catalogue (VAR-R26). Replays and rebuilds fire no
---- CastEnded, so only live Casts get one (ANN-R4).
+--- the Angler's length unit, naming its Catch's variety from the catalogue (VAR-R26) once it was caught before this
+--- Cast (VAR-R27). Replays and rebuilds fire no CastEnded, so only live Casts get one (ANN-R4).
 ---@param host PagleHost
 ---@param itemName fun(itemID: integer): string? the client's name for an item, nil until it has cached it
 function ns.WireCatchNods(host, itemName)
@@ -267,7 +276,7 @@ function ns.WireCatchNods(host, itemName)
 		if outcome ~= "caught" or not cast or not host.db().profile.announcements.everyCatch then
 			return
 		end
-		local moment = ns.CatchNodMoment(cast, itemName, ns.LengthUnit(), varietiesOf)
+		local moment = ns.CatchNodMoment(cast, itemName, ns.LengthUnit(), varietiesOf, caughtBefore)
 		if moment then
 			ns.moments:RaiseCatchNod(moment)
 		end
@@ -954,6 +963,11 @@ function ns.WireVarietyProjection(host, Pagle)
 		hooks[#hooks + 1] = fn
 	end
 
+	-- The last live Cast that caught a variety for the first time, and those varieties (VAR-R27): what
+	-- ns.VarietyCaughtBefore leaves out, whether the projection folded that Cast before its Nod or will after.
+	---@type { castId: string, ids: table<string, true> }?
+	local lastFirsts
+
 	--- Login step 1, once PagleDB is open.
 	function ns.StartVarietyProjection()
 		ns.varietyProjection = ns.AddVarietyProjection({
@@ -965,7 +979,25 @@ function ns.WireVarietyProjection(host, Pagle)
 					host.call(fn)
 				end
 			end,
+			added = function(castId, ids)
+				lastFirsts = { castId = castId, ids = ids }
+			end,
 		})
+	end
+
+	--- Whether `variety` was caught before the Cast `castId` (VAR-R26, VAR-R27), in Core's projection as stored: the
+	--- catch Nod names only such a variety, so a Nod is never the first to show one. A position that Cast itself
+	--- caught first doesn't count, whether the projection has folded the Cast already (it is live before CastEnded,
+	--- LOG-R73) or folds it later (it was updating). Mid-rebuild it reads the last stored state (LOG-R72).
+	---@param variety PagleVariety
+	---@param castId string
+	---@return boolean
+	function ns.VarietyCaughtBefore(variety, castId)
+		local speciesID = tonumber(variety.id:match("^(%d+)%."))
+		if not speciesID or not Pagle.GetVarietiesCaught(speciesID)[variety.index] then
+			return false
+		end
+		return not (lastFirsts and lastFirsts.castId == castId and lastFirsts.ids[variety.id])
 	end
 
 	---@class Pagle

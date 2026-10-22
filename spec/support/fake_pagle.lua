@@ -126,7 +126,8 @@
 --- Core's catch Nod is never here: it is in catchNods.
 ---@field catchNods PagleAnnouncement[] Each catch Nod Core would hand the display (ANN-R13): one per played caught
 --- Cast for which no Module raised a moment, while `profile.announcements.everyCatch` is on, on the frame after.
---- Its headline's title is "{item name} · {band} · {length}", the name from `itemNames`.
+--- Its headline's title is "{item name} · {band} · {length}", the name from `itemNames`, naming a variety only once
+--- caught before its Cast (VAR-R27).
 ---@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch Nod and
 --- the fish crests' fish (VAR-R12); a spec sets them. An item without one reads "Item {itemID}".
 ---@field itemArrived fun(itemID: integer) The client's GET_ITEM_INFO_RECEIVED for an item: renames its Species' fish

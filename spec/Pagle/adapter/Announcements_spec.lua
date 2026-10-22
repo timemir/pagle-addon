@@ -886,11 +886,20 @@ describe("Announcement sounds on the client", function()
 end)
 
 describe("The catch Nod on the client", function()
-	-- Core as loadCore makes it, with Oily Blackmouth's name cached and the Angler's unit in cm.
-	local function catching()
+	-- Core as loadCore makes it, with Oily Blackmouth's name cached, the Angler's unit in cm and, unless `firstTime`,
+	-- every one of its varieties caught before in Core's projection (VAR-R10), so its Nod may name any (VAR-R27).
+	---@param firstTime boolean?
+	local function catching(firstTime)
 		local loaded, M, summarized = loadCore()
 		loaded.client.itemNames[6358] = "Oily Blackmouth"
 		loaded.ns.db.profile.lengthUnit = "cm"
+		if not firstTime then
+			local all = {}
+			for index = 1, 10 do
+				all[index] = true
+			end
+			loaded.ns.db.global.projections.varieties.projection.bySpecies[6358] = all
+		end
 		return loaded, M, summarized
 	end
 
@@ -919,6 +928,16 @@ describe("The catch Nod on the client", function()
 			assert.is_false(showing(loaded, "nod"))
 		end
 	)
+
+	it("names no variety caught for the first time: that Catch reads as one without (VAR-R27)", function()
+		local loaded = catching(true)
+
+		catchAndFlush(loaded)
+
+		local frame = frameOf(loaded, "nod") --[[@as table]]
+		assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", frame.display.announcement.headline.title)
+		assert.is_nil(frame.display.announcement.headline.variety)
+	end)
 
 	it("never counts toward the Interruption budget (ANN-R13, ANN-R30, ANN-R31)", function()
 		local loaded, M = catching()

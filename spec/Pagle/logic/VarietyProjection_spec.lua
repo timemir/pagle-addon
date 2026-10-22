@@ -77,7 +77,8 @@ end
 -- A world over a saved log holding `entries` and a stored variety projection `db` (empty by default): the machinery
 -- (frames the spec runs, chunked from more than `syncLimit` pending entries), the catalogue's items in `world.items`,
 -- read at each decode, and each call of the projection's `changed` counted in `world.changed`, with whether the
--- projection was updating then in `world.updatingAtChange`.
+-- projection was updating then in `world.updatingAtChange`; each call of its `added` in `world.added`, as
+-- { castId, ids, the changed calls before it }.
 local function newWorld(entries, db, syncLimit)
 	local world = {
 		db = db or {},
@@ -87,6 +88,7 @@ local function newWorld(entries, db, syncLimit)
 		frames = {},
 		changed = 0,
 		updatingAtChange = {},
+		added = {},
 	}
 	local catchLog = ns.OpenCatchLog(savedLog(entries), { decodeErrors = 0 }, SERVER_TIME, function(itemID)
 		return world.items[itemID]
@@ -127,6 +129,9 @@ local function newWorld(entries, db, syncLimit)
 			world.changed = world.changed + 1
 			world.updatingAtChange[#world.updatingAtChange + 1] = world.projections:IsUpdating()
 				and world.projections:Mode() ~= "done"
+		end,
+		added = function(castId, ids)
+			world.added[#world.added + 1] = { castId, ids, world.changed }
 		end,
 	})
 
@@ -255,6 +260,25 @@ describe("ns.AddVarietyProjection", function()
 		assert.are.same({ [1] = true, [10] = true }, world.db.projection.bySpecies[FIREFIN])
 		assert.are.equal(2, world.changed) -- the done's, then the live Catch's
 	end)
+
+	it(
+		"hands a live Cast's first-caught varieties to added, with the Cast's ID, before its changed, and only those"
+			.. " (VAR-R27)",
+		function()
+			local world = newWorld({ caught(T1, { FIREFIN }) })
+			world.enterWorld()
+
+			world.live(T10, { FIREFIN, FIREFIN })
+			world.live(timeFor(1, T10 + 1), { FIREFIN })
+
+			local position2 = positionAt(T10, 2)
+			local ids = { ["6359.k10"] = true }
+			if position2 ~= 1 and position2 ~= 10 then
+				ids["6359.k" .. position2] = true
+			end
+			assert.are.same({ { GUID .. "-" .. T10 .. "-0", ids, 1 } }, world.added)
+		end
+	)
 
 	it("leaves changed alone for a live Catch of a variety already caught, or without one (VAR-R13)", function()
 		local world = newWorld({ caught(T1, { FIREFIN }) })

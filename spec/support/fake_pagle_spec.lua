@@ -1358,13 +1358,69 @@ describe("FakePagle", function()
 				assert.are.equal(1, #fake.catchNods)
 				local nod = fake.catchNods[1]
 				assert.are.same({ "nod", cast.id, 6358 }, { nod.rung, nod.cast, nod.headline.icon })
-				-- Oily Blackmouth has varieties, so the Nod names its Catch's (VAR-R26).
-				local variety = assert(nod.headline.variety)
-				assert.are.same(assert(cast.items[1].variety).rarity, variety.rarity)
-				assert.are.equal(variety.before .. " " .. variety.name .. " " .. variety.after, nod.headline.title)
-				assert.matches("^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d in$", nod.headline.title)
+				-- Its variety is a first: Core's projection folded the Cast before its CastEnded (LOG-R73), yet the
+				-- Nod doesn't count it, so it names none (VAR-R27).
+				assert.is_nil(nod.headline.variety)
+				assert.matches("^Oily Blackmouth · %a+ · %d+%.%d in$", nod.headline.title)
 				assert.are.same({}, fake.announcements)
 				assert.are.same({}, fake.summarized)
+			end
+		)
+
+		it("name a Catch's variety on its Nod once an earlier Cast caught it (VAR-R26, VAR-R27)", function()
+			local fake = newFakePagle()
+			fake.itemNames[6358] = "Oily Blackmouth"
+			fake.login()
+			fake.enterWorld()
+
+			-- Casts until one's variety is one an earlier Cast caught: each before it names none.
+			local caught, named = {}, nil
+			for _ = 1, 30 do
+				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				fake.nextFrame()
+				local nod, index = fake.catchNods[#fake.catchNods], assert(cast.items[1].variety).index
+				if caught[index] then
+					named = { cast = cast, nod = nod }
+					break
+				end
+				assert.is_nil(nod.headline.variety)
+				caught[index] = true
+			end
+
+			local variety = assert(assert(named).nod.headline.variety)
+			assert.are.same(named.cast.items[1].variety.rarity, variety.rarity)
+			assert.are.equal(variety.before .. " " .. variety.name .. " " .. variety.after, named.nod.headline.title)
+			assert.matches("^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d in$", named.nod.headline.title)
+		end)
+
+		it(
+			"name no first variety on a Nod while Core's projection updates, which folds the Cast after it, and a"
+				.. " variety its stored state holds (VAR-R27, LOG-R72, LOG-R74)",
+			function()
+				local all = {}
+				for index = 1, 10 do
+					all[index] = true
+				end
+				local fake = newFakePagle()
+				fake.itemNames[6358] = "Oily Blackmouth"
+				fake.itemNames[6359] = "Firefin Snapper"
+				fake.global.projections.varieties.projection = { bySpecies = { [6359] = all } }
+				fake.login()
+				assert.is_true(fake.projections:IsUpdating())
+
+				local first = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
+				local stored = assert(fake.playCast("caught", { { itemID = 6359, quantity = 1 } }))
+				fake.enterWorld()
+				fake.nextFrame()
+
+				local nods = {}
+				for _, nod in ipairs(fake.catchNods) do
+					nods[nod.cast] = nod
+				end
+				assert.is_nil(assert(nods[first.id]).headline.variety)
+				assert.is_table(assert(nods[stored.id]).headline.variety)
+				-- The projection folded that Cast only after its Nod was made.
+				assert.is_true(fake.Pagle.GetVarietiesCaught(6358)[assert(first.items[1].variety).index])
 			end
 		)
 

@@ -231,13 +231,15 @@ end
 --- has cached it ("Item {itemID}" then). `cast` may be a read-only proxy, so its items are read by index.
 --- A Catch with a variety that `varieties` (Pagle.GetVarieties) names reads "{item name} · {variety name} · {band} ·
 --- {length}" (VAR-R26): the moment's `variety` cuts the line about the name, and its `art` is a copy of the variety's,
---- for the medallion. Only a Catch with a size has a variety (VAR-R1).
+--- for the medallion. Only a Catch with a size has a variety (VAR-R1). With `caughtBefore`, it names only a variety
+--- caught before this Cast (VAR-R27): a first one reads as a Catch without a variety, its moment the Ledger's.
 ---@param cast PagleCast
 ---@param itemName fun(itemID: integer): string?
 ---@param lengthUnit PagleLengthUnit
 ---@param varieties (fun(speciesID: integer): PagleVarietyEntry[]?)?
+---@param caughtBefore (fun(variety: PagleVariety, castId: string): boolean)?
 ---@return PagleMoment?
-function ns.CatchNodMoment(cast, itemName, lengthUnit, varieties)
+function ns.CatchNodMoment(cast, itemName, lengthUnit, varieties, caughtBefore)
 	if cast.outcome ~= "caught" then
 		return nil
 	end
@@ -265,7 +267,11 @@ function ns.CatchNodMoment(cast, itemName, lengthUnit, varieties)
 		return moment
 	end
 	local band, length = ns.SIZE_BANDS[size.band].name, ns.FormatLength(size.length, lengthUnit)
-	local look = named.variety and varieties and lookOf(named.variety, varieties)
+	local variety = named.variety
+	local look = variety
+		and varieties
+		and (not caughtBefore or caughtBefore(variety, cast.id))
+		and lookOf(variety, varieties)
 	if not look then
 		moment.title = L.CATCH_NOD:format(name, band, length)
 		return moment
@@ -273,7 +279,7 @@ function ns.CatchNodMoment(cast, itemName, lengthUnit, varieties)
 	moment.title = L.CATCH_NOD_VARIETY:format(name, look.name, band, length)
 	-- The line with a mark in the name's place, cut there: "\001" is in no name.
 	local before, after = L.CATCH_NOD_VARIETY:format(name, "\001", band, length):match("^(.-)%s*\001%s*(.*)$")
-	moment.variety = { name = look.name, rarity = named.variety.rarity, before = before, after = after }
+	moment.variety = { name = look.name, rarity = variety.rarity, before = before, after = after }
 	local art = look.art
 	if art then
 		moment.art = { texture = art.texture, left = art.left, right = art.right, top = art.top, bottom = art.bottom }
