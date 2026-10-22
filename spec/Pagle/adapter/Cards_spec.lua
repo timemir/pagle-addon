@@ -393,6 +393,96 @@ describe("the Session summary cards", function()
 	end)
 
 	it(
+		"lay a moment's text too long to sit beside its title on the ruled lines under it, from the title's left and"
+			.. " wrapped to the row, which takes every line it fills; a short one stays at the right of the title's"
+			.. " line (#314, announcements.md › UI)",
+		function()
+			-- The page's ruled lines' spacing, and the text's width under a title: the row's, past the icon.
+			local LINE, UNDER = 30, 580 - 62 - 30 - 28
+			-- Two cards like #314's: a Ledger moment, then the Tackle Board's long one and a short one.
+			local function tackleCard()
+				local card = storedCard(27, "Angler Level 8")
+				local function moment(title, text)
+					return {
+						module = "TackleBoard",
+						moduleTitle = "Tackle Board",
+						moduleOrder = 30,
+						kind = "notice",
+						rung = "toast",
+						title = title,
+						text = text,
+					}
+				end
+				card.moments[2] = {
+					module = "TackleBoard",
+					title = "Tackle Board",
+					order = 30,
+					moments = {
+						moment("Notice complete", "6 Notices or better Catches. Tied for your Fly Box: Red Rock Ember"),
+						moment("Hunt completed", "Dusk Hunt"),
+					},
+				}
+				return card
+			end
+			local loaded = loadCore(history(2), { global = { cards = { tackleCard(), tackleCard() } } })
+			enterWorld(loaded)
+			frames(loaded)
+			-- Each shown row as { first line, lines, where its moment's text is }, its lines counted down the list.
+			local function layout()
+				local frame = loaded.ns.cardFrame
+				local laid = {}
+				for _, row in ipairs(frame.rows) do
+					if row.shown then
+						local _, _, _, _, y = row:GetPoint()
+						local place = "-"
+						if row.kind == "moment" and row.detail:GetText() ~= "" then
+							local point, _, relativePoint, x, dy = row.detail:GetPoint()
+							place = ("%s of %s %d,%d"):format(point, relativePoint, x, dy)
+							if row.detail:CanWordWrap() then
+								place = ("%s, wrapped to %d"):format(place, row.detail.width)
+							end
+						end
+						laid[#laid + 1] = { 1 - y / LINE, row:GetHeight() / LINE, place }
+					end
+				end
+				return laid, frame.content:GetHeight() / LINE, frame.scroll:GetHeight() / LINE
+			end
+
+			assert.are.same({
+				"# Ledger",
+				"Angler Level 8",
+				"# Tackle Board",
+				"Notice complete · 6 Notices or better Catches. Tied for your Fly Box: Red Rock Ember",
+				"Hunt completed · Dusk Hunt",
+			}, shownCard(loaded).rows)
+			local under = ("BOTTOMLEFT of BOTTOMLEFT 28,4, wrapped to %d"):format(UNDER)
+			assert.are.same({
+				{
+					{ 1, 1, "-" },
+					{ 2, 1, "-" },
+					{ 3, 1, "-" },
+					{ 4, 2, under },
+					{ 6, 1, "BOTTOMRIGHT of TOPRIGHT 0,-26" },
+				},
+				6,
+				6,
+			}, { layout() })
+
+			-- The client wraps a text too long for one line under the title onto two, LINE apart: the row takes three.
+			for _, row in ipairs(loaded.ns.cardFrame.rows) do
+				row.detail.GetStringHeight = function()
+					return 2 * LINE - 10
+				end
+			end
+			close(loaded)
+			local laid, content = layout()
+			assert.are.same({ 4, 3, under }, laid[4])
+			assert.are.same({ 7, 1, "BOTTOMRIGHT of TOPRIGHT 0,-26" }, laid[5])
+			assert.are.equal(7, content)
+		end
+	)
+
+	it(
 		"show when the Session ends and the lanes are empty; a summaryOnly moment never pops up and makes its"
 			.. " Session's card (ANN-R21, ANN-R63, ANN-R91)",
 		function()
