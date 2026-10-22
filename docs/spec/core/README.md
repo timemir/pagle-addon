@@ -10,6 +10,7 @@ Core is the `Pagle` addon. This file covers how Modules attach to it, the whole 
 | [announcements.md](announcements.md) | `ANN` | Moments, the Announcement policy, toasts, sounds, the Session summary, the Write-up |
 | [wallet-and-shop.md](wallet-and-shop.md) | `SHOP` | Pagle Coins and the Curio Shop |
 | [field-report.md](field-report.md) | `REP` | `/pagle report` and the diagnostics it reads |
+| [varieties.md](varieties.md) | `VAR` | Fish varieties, their rarity, Core's variety projection and the fish crests |
 
 Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunables table.
 
