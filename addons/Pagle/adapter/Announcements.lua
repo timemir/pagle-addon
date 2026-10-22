@@ -33,6 +33,17 @@ local FIGHTING_ICON = "Interface\\Icons\\Ability_DualWield"
 local BANNER_TOP = 120
 -- A Nod's line at most, and the track of its compact ruler, which the number and the margin follow.
 local NOD_WIDTH, COMPACT_TRACK = 640, 90
+-- A Nod's words: its title alone, and a catch Nod's whole line naming a variety (VAR-R26), whose first half is cut
+-- short before it passes.
+local NOD_TITLE, NOD_VARIETY_LINE = 300, 400
+-- A catch Nod's gem (VAR-R26): its box, the side of its rim and of its fill (each a square turned to a diamond), and
+-- the gaps before it and between it and the name; then the gap between the name and the line's second half.
+local GEM_BOX, GEM_RIM, GEM_FILL, GEM_GAP, GEM_NAME_GAP, NAME_GAP = 10, 7, 5, 6, 3, 6
+-- A Rare or Epic catch Nod's gleam (VAR-R26): a soft glow stretched tall and leaning, swept once across the strip
+-- from just past the medallion: its size and lean, when it starts and how long it takes, and its brightest.
+local GLEAM_WIDTH, GLEAM_HEIGHT, GLEAM_LEAN = 30, 64, math.rad(-20)
+local GLEAM_DELAY, GLEAM_SECONDS, GLEAM_PEAK = 0.1, 0.6, 0.9
+local GLEAM_INSET = 14
 -- The ticks on a full ruler's track, every fourth one long.
 local TICKS = 20
 
@@ -59,6 +70,11 @@ local TICKS = 20
 ---@field ruler { old: number, new: number, unit: string, label: string }
 ---@field elapsed number
 ---@field lengthUnit PagleLengthUnit
+
+-- A catch Nod's gem (VAR-R26): a rim in the rarity's ink round a fill in its colour, both squares turned 45°.
+---@class PagleNodGem: Frame
+---@field rim Texture
+---@field fill Texture
 
 ---@class PagleDigestRow: Frame
 ---@field bezel PagleBezel
@@ -90,6 +106,12 @@ local TICKS = 20
 ---@field ruler PagleRulerView?
 ---@field page PagleSprite? a toast's page
 ---@field strip PagleThreeSlice? a Nod's strip
+---@field gem PagleNodGem? a Nod's gem before the variety's name (VAR-R26)
+---@field variety FontString? a Nod's variety name, in the rarity's ink (VAR-R26)
+---@field tail FontString? a Nod's line after the variety's name (VAR-R26)
+---@field gleamClip Frame? the part of a Nod's strip its gleam sweeps across (VAR-R26)
+---@field gleam PagleSprite? a Rare or Epic catch Nod's gleam (VAR-R26)
+---@field gleams boolean? the Nod drawn gleams as it enters
 ---@field bezel PagleBezel?
 ---@field wax PagleSprite? toast.high's wax
 ---@field rows PagleDigestRow[]? "While you were fighting"'s
@@ -612,25 +634,102 @@ local function drawToast(frame, display, style)
 	end
 end
 
+-- Tints a medallion's ring in `color` (a catch Nod's rarity, VAR-R26), its metal greyed first so the colour shows
+-- true; or, with none, leaves it the style's own.
+---@param bezel PagleBezel
+---@param color number[]?
+local function tintRing(bezel, color)
+	local ring = bezel.Ring
+	ring:SetDesaturated(color ~= nil)
+	if color then
+		ring:SetVertexColor(color[1], color[2], color[3])
+	else
+		ring:SetVertexColor(1, 1, 1)
+	end
+end
+
+-- Writes a catch Nod's line naming its variety (VAR-R26) in the hand: the line's first half in the style's ink, a gem
+-- in the rarity's colour rimmed in its ink, the name in the rarity's ink (the rarity replaces the style's ink there
+-- alone, ANN-R80), then the second half in the style's ink. The first half is cut short with "..." when the whole
+-- line would pass NOD_VARIETY_LINE. Returns the line's right edge from the frame's left, and its last part.
+---@param frame PagleAnnouncementFrame
+---@param look PagleNodVarietyLook
+---@param style PagleToastStyle
+---@return number
+---@return Region
+local function writeVariety(frame, look, style)
+	local title = frame.title
+	local name = frame.variety --[[@as FontString]]
+	local tail = frame.tail --[[@as FontString]]
+	local gem = frame.gem --[[@as PagleNodGem]]
+	frame.text:SetText("")
+	frame.text:Hide()
+	for _, part in ipairs({ title, name, tail }) do
+		ns.SetArtFont(part, "NodName")
+	end
+	ns.Ink(title, style.name)
+	ns.Ink(tail, style.name)
+	name:SetTextColor(look.ink[1], look.ink[2], look.ink[3])
+	title:SetText(look.before)
+	name:SetText(look.name)
+	tail:SetText(look.after)
+	fit(name, NOD_TITLE)
+	fit(tail, NOD_TITLE)
+	local rest = GEM_GAP + GEM_BOX + GEM_NAME_GAP + name:GetWidth() + NAME_GAP + tail:GetWidth()
+	fit(title, math.max(NOD_VARIETY_LINE - rest, 60))
+	gem.rim:SetColorTexture(look.ink[1], look.ink[2], look.ink[3], 1)
+	gem.fill:SetColorTexture(look.color[1], look.color[2], look.color[3], 1)
+	gem:ClearAllPoints()
+	gem:SetPoint("LEFT", title, "RIGHT", GEM_GAP, 0)
+	name:ClearAllPoints()
+	name:SetPoint("LEFT", gem, "RIGHT", GEM_NAME_GAP, 1)
+	tail:ClearAllPoints()
+	tail:SetPoint("LEFT", name, "RIGHT", NAME_GAP, -1)
+	gem:Show()
+	name:Show()
+	tail:Show()
+	return 72 + title:GetWidth() + rest, tail
+end
+
 -- Draws a Nod: the medallion, then on a torn strip its words, a compact ruler, its stamps and its Coins, in a line
--- the strip is three-sliced to fit.
+-- the strip is three-sliced to fit. A catch Nod naming a variety writes its line in parts, with the variety's art in
+-- the medallion, its ring in the rarity's colour, and for a Rare or Epic one a gleam ready to sweep it (VAR-R26).
 ---@param frame PagleAnnouncementFrame
 ---@param display PagleDisplay
 ---@param style PagleToastStyle
 local function drawNod(frame, display, style)
 	local announcement = display.announcement
 	local headline = announcement.headline
-	setMedallion(frame.bezel --[[@as PagleBezel]], 34, style.trim, headline)
-	local fonts, inks = { what = "NodWhat", name = "NodName" }, { what = style.what, name = style.name }
-	writeHeadline(frame, headline, fonts, inks, 300)
-	local x = 72 + frame.title:GetWidth()
+	local look = ns.CatchNodVarietyLook(headline)
+	local bezel = frame.bezel --[[@as PagleBezel]]
+	setMedallion(bezel, 34, style.trim, headline)
+	tintRing(bezel, look and look.ring)
+	local gleam = frame.gleam --[[@as PagleSprite]]
+	gleam:SetAlpha(0)
+	frame.gleams = false
+	if look and look.gleam then
+		frame.gleams = true
+		gleam:SetVertexColor(look.color[1], look.color[2], look.color[3])
+	end
+	local x
 	---@type Region
-	local last = frame.title
+	local last
 	frame.text:ClearAllPoints()
-	if frame.text:IsShown() then
-		frame.text:SetPoint("LEFT", frame.title, "RIGHT", 9, 1)
-		x = x + 9 + frame.text:GetWidth()
-		last = frame.text
+	if look then
+		x, last = writeVariety(frame, look, style)
+	else
+		for _, part in ipairs({ frame.gem, frame.variety, frame.tail }) do
+			part:Hide()
+		end
+		local fonts, inks = { what = "NodWhat", name = "NodName" }, { what = style.what, name = style.name }
+		writeHeadline(frame, headline, fonts, inks, NOD_TITLE)
+		x = 72 + frame.title:GetWidth()
+		last = frame.title
+		if frame.text:IsShown() then
+			frame.text:SetPoint("LEFT", frame.title, "RIGHT", 9, 1)
+			x = x + 9 + frame.text:GetWidth()
+			last = frame.text
+		end
 	end
 	local ruler = frame.ruler --[[@as PagleRulerView]]
 	ruler.style = style
@@ -802,6 +901,35 @@ local BUILD = {
 		frame.bezel:SetPoint("LEFT")
 		frame.title:SetPoint("LEFT", frame, "LEFT", 72, 0)
 		frame.ruler = newRuler(frame.words, true)
+		-- A catch Nod's variety (VAR-R26): the gem, the name and the line after it, hidden until one names a variety.
+		local gem = CreateFrame("Frame", nil, frame.words) --[[@as PagleNodGem]]
+		gem:SetSize(GEM_BOX, GEM_BOX)
+		gem.rim = gem:CreateTexture(nil, "OVERLAY", nil, 0)
+		gem.fill = gem:CreateTexture(nil, "OVERLAY", nil, 1)
+		for texture, side in pairs({ [gem.rim] = GEM_RIM, [gem.fill] = GEM_FILL }) do
+			texture:SetSize(side, side)
+			texture:SetPoint("CENTER")
+			texture:SetRotation(math.rad(45))
+		end
+		gem:Hide()
+		frame.gem = gem
+		frame.variety = ns.ArtText(frame.words, "NodName")
+		frame.variety:Hide()
+		frame.tail = ns.ArtText(frame.words, "NodName")
+		frame.tail:Hide()
+		-- Its gleam, on the strip past the medallion and under the words, clipped to the strip.
+		local clip = CreateFrame("Frame", nil, frame.strip)
+		clip:SetPoint("TOPLEFT", frame.strip, "TOPLEFT", GLEAM_INSET, 0)
+		clip:SetPoint("BOTTOMRIGHT", frame.strip, "BOTTOMRIGHT")
+		clip:SetClipsChildren(true)
+		frame.gleamClip = clip
+		local gleam = ns.ArtSprite(clip, "Announce", "halo", "ARTWORK")
+		gleam:SetSize(GLEAM_WIDTH, GLEAM_HEIGHT)
+		gleam:SetRotation(GLEAM_LEAN)
+		gleam:SetDesaturated(true)
+		gleam:SetBlendMode("ADD")
+		gleam:SetAlpha(0)
+		frame.gleam = gleam
 		return frame
 	end,
 	-- Centre screen over the world, with no frame: a dark glow, faint gilt rays, the spaced gilt title, gilt tooling
@@ -1030,9 +1158,10 @@ local MOTION = {
 		end
 		ns.Animate(frame, animations)
 	end,
-	-- It fades in (0.3 s).
+	-- It fades in (0.3 s). A Rare or Epic catch Nod's gleam sweeps across its strip once as it does, left to right,
+	-- brightest midway and gone at the far end (VAR-R26); it plays nothing and holds nothing up.
 	nod = function(frame)
-		ns.Animate(frame, {
+		local animations = {
 			{
 				dur = ns.SETTLE_SECONDS.nod,
 				ease = ns.EASE.out,
@@ -1041,7 +1170,28 @@ local MOTION = {
 					frame:SetAlpha(v[1])
 				end,
 			},
-		})
+		}
+		if frame.gleams then
+			local gleam = frame.gleam --[[@as PagleSprite]]
+			local clip = frame.gleamClip --[[@as Frame]]
+			local across = frame.strip:GetWidth() - GLEAM_INSET
+			animations[#animations + 1] = {
+				dur = GLEAM_SECONDS,
+				delay = GLEAM_DELAY,
+				ease = ns.EASE.inOut,
+				keys = {
+					{ 0, { -GLEAM_WIDTH, 0 } },
+					{ 0.5, { (across - GLEAM_WIDTH) / 2, GLEAM_PEAK } },
+					{ 1, { across, 0 } },
+				},
+				apply = function(v)
+					gleam:ClearAllPoints()
+					gleam:SetPoint("LEFT", clip, "LEFT", v[1], 0)
+					gleam:SetAlpha(math.max(0, v[2]))
+				end,
+			}
+		end
+		ns.Animate(frame, animations)
 	end,
 	-- The seal drops in, the gilt tooling draws out from it and the rays turn in: settled by 1.4 s.
 	banner = function(frame)
