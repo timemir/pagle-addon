@@ -33,6 +33,8 @@ local function styledCore(options)
 		profiles = options.picked and { Default = { appearance = { ["core.toaststyle"] = options.picked } } } or nil,
 	}
 	local loaded = loadCore(entries, saved)
+	-- Margin notes off: these hear only the Announcements' own sounds, not a note's noteIn (ONB-R50, ONB-R52).
+	loaded.env.PagleDB.global.onboarding.notesOn = false
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 	enterWorld(loaded, 3)
 	loaded.client.runTimers()

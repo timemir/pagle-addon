@@ -397,6 +397,8 @@ describe("the Session summary cards", function()
 			.. " Session's card (ANN-R21, ANN-R63, ANN-R91)",
 		function()
 			local loaded = loadCore(history(2))
+			-- Margin notes off: no note's noteIn among the sounds (ONB-R50, ONB-R52).
+			loaded.env.PagleDB.global.onboarding.notesOn = false
 			local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 			M:NewProjection({
 				-- Built before, under other rules: a rebuild that isn't a first build.
