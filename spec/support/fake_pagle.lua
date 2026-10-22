@@ -179,6 +179,10 @@
 ---@field serverTime fun(): integer The fake's server time: SERVER_TIME plus its clock, in whole seconds.
 ---@field dock FakeDock The tracker dock (CORE-R70–R72): what M:RegisterTracker docked, laid out when read. The
 --- saved point is fake.profile.dock.point (core/README.md › Data), nil until a drag; a spec may seed it.
+---@field onboarding PagleOnboarding Core's onboarding (core/onboarding.md), on Core's wiring over
+--- fake.global.onboarding, which fake.login adds when it's missing (ONB-R1, ONB-R2: letter "returning" when
+--- fake.catchLog holds a Cast then, else "waiting") and puts PLAYER_GUID in (ONB-R3). A spec may seed
+--- fake.global.onboarding before login (ns.NewOnboardingState), as a saved PagleDB holds it, and set its hooks.
 ---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
 --- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
 
@@ -1124,6 +1128,21 @@ part(function(fake, _, ns, host)
 			return ns.dock:Reset()
 		end,
 	}
+end)
+
+-- Onboarding (core/onboarding.md), on Core's wiring over fake.global.onboarding: fake.login adds the state when it's
+-- missing, with letter by the history in fake.catchLog (ONB-R1, ONB-R2), then the character (PLAYER_GUID, ONB-R3),
+-- after ModulesChanged as Core's login does. A returning Angler's welcome hook waits for the first SessionStarted or
+-- fake.wait(20) (ONB-R2). `/pagle guide notes` (ONB-R80) and `/pagle dev onboarding reset` (ONB-R83) run through
+-- fake.slash as Core's.
+part(function(fake, _, ns, host)
+	ns.WireOnboarding(host)
+	fake.onboarding = ns.onboarding
+	local login = fake.login
+	function fake.login()
+		login()
+		ns.StartOnboarding()
+	end
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.

@@ -1238,6 +1238,7 @@ describe("FakePagle", function()
 					"/pagle settings: open Pagle's settings (also /pagle on its own)",
 					"/pagle shop: open or close the Curio Shop",
 					"/pagle report: open the Field report, to help chart the waters",
+					"/pagle guide: open the Field guide; /pagle guide notes shows the margin notes again",
 					"/pagle help: list these commands",
 					"/pagle qol: cycle Input",
 				}, fake.printed)
@@ -1284,7 +1285,7 @@ describe("FakePagle", function()
 			fake.slash("help")
 
 			assert.are.same({ "Pagle: QoL's /pagle Report is skipped: Pagle reserves report" }, fake.reported)
-			assert.are.equal("/pagle qol: cycle Input", fake.printed[6])
+			assert.are.equal("/pagle qol: cycle Input", fake.printed[7])
 		end)
 	end)
 
@@ -2781,5 +2782,89 @@ describe("FakePagle", function()
 				assert.are.same({}, fake.global.cards)
 			end
 		)
+	end)
+
+	describe("onboarding", function()
+		-- `casts` of the fake character's caught Casts in fake.catchLog's history, long before login.
+		local function withHistory(fake, casts)
+			fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+			for i = 1, casts do
+				fake.catchLog:Append({
+					kind = "cast",
+					char = 1,
+					time = 1791731000 + i,
+					outcome = "caught",
+					conditions = { minute = 494, zone = 148, subzone = 453, events = {}, auras = {} },
+					items = { { itemID = 6358, quantity = 1 } },
+				})
+			end
+		end
+
+		it("adds the state at login, waiting for a new Angler, with the character in it (ONB-R1–R3)", function()
+			local fake = newFakePagle()
+			assert.is_nil(fake.global.onboarding)
+
+			fake.login()
+
+			local expected = fake.ns.NewOnboardingState("waiting")
+			expected.characters[PLAYER_GUID] = true
+			assert.are.same(expected, fake.global.onboarding)
+			assert.is_false(fake.onboarding:IsReturning())
+		end)
+
+		it("is returning when the history holds a Cast, and raises the welcome hook once (ONB-R2)", function()
+			local fake = newFakePagle()
+			withHistory(fake, 2)
+			local raised = 0
+			fake.onboarding:SetHook("welcome", function()
+				raised = raised + 1
+			end)
+			fake.login()
+			fake.enterWorld()
+
+			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
+			fake.wait(20)
+
+			assert.are.equal("returning", fake.global.onboarding.letter)
+			assert.are.equal(1, raised)
+		end)
+
+		it("raises the character hook for a second character while QoL is registered (ONB-R3)", function()
+			local fake = newFakePagle()
+			local seeded = fake.ns.NewOnboardingState("opened")
+			seeded.characters["Player-4618-0A1B2C3D"] = true
+			fake.global.onboarding = seeded
+			fake.Pagle.RegisterModule({ name = "QoL", title = "QoL", order = 50 })
+			local raised = 0
+			fake.onboarding:SetHook("character", function()
+				raised = raised + 1
+			end)
+
+			fake.login()
+
+			assert.are.equal(1, raised)
+			assert.are.equal(seeded, fake.global.onboarding)
+			assert.is_true(seeded.characters[PLAYER_GUID])
+		end)
+
+		it("runs /pagle guide notes and /pagle dev onboarding reset as Core does (ONB-R80, ONB-R83)", function()
+			local fake = newFakePagle()
+			withHistory(fake, 3)
+			fake.login()
+			fake.onboarding:MarkNoteSeen("core.nod")
+
+			fake.slash("guide notes")
+			fake.slash("dev on")
+			fake.slash("dev onboarding reset")
+
+			local expected = fake.ns.NewOnboardingState("waiting")
+			expected.characters[PLAYER_GUID] = true
+			assert.are.same(expected, fake.global.onboarding)
+			assert.are.same({
+				"Pagle: margin notes will show again, once each.",
+				"Pagle dev: dev commands are on.",
+				"Pagle dev: onboarding is back as a new Angler's, with the Letter waiting; /reload to start from there.",
+			}, fake.printed)
+		end)
 	end)
 end)

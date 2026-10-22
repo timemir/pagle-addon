@@ -39,7 +39,7 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 		addonLoaded = addonLoaded,
 		logOpened = debugprofilestop(),
 	})
-	ns.Migrate(ns.db, ns.PAGLEDB_MIGRATIONS)
+	ns.Migrate(ns.db, ns.PAGLEDB_MIGRATIONS, { catchLog = ns.catchLog }) -- step 2 reads the log (ONB-R2)
 	ns.OpenWallet() -- SHOP-R3
 	ns.RegisterCoreGoods(ns.CORE_PREVIEWS) -- SHOP-R25: before any Module registers its own
 	ns.BuildCatalogue()
@@ -58,6 +58,9 @@ Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()
 	ns.BuildAreaIndex() -- LOG-R23
 	ns.StartConditions() -- LOG-R47: its baseline has real areas, and a Module meets a running service
 	ns.Fire("ModulesChanged") -- CORE-R19
+	-- ONB-R1–R3: the character joins the onboarding state, after ModulesChanged, so whatever a hook shows (#325)
+	-- meets Core's menu and every Module registered.
+	ns.StartOnboarding()
 end)
 
 -- Steps 3 and 4, at the first PLAYER_ENTERING_WORLD after a login or reload only, never on a later loading screen.

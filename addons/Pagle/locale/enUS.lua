@@ -225,7 +225,11 @@ ns.L = {
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
 	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs"
-		.. " | tour [module | list | stop] | probe",
+		.. " | tour [module | list | stop] | probe | onboarding <command>",
+	-- /pagle dev onboarding (ONB-R83): its subcommands' usages, " | " between them, in the order added.
+	DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding %s",
+	DEV_ONBOARDING_RESET = "Pagle dev: onboarding is back as a new Angler's, with the Letter waiting; /reload to"
+		.. " start from there.",
 	-- The kinds, comma-separated.
 	DEV_PREVIEW_KINDS = "Pagle dev: /pagle dev preview <kind>, where kind is one of %s",
 	-- The kind.
@@ -299,8 +303,11 @@ ns.L = {
 		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
 		{ name = "shop", help = "open or close the Curio Shop" },
 		{ name = "report", help = "open the Field report, to help chart the waters" },
+		{ name = "guide", help = "open the Field guide; /pagle guide notes shows the margin notes again" },
 		{ name = "help", help = "list these commands" },
 	},
+	-- /pagle guide notes (ONB-R80): every Margin note and First look shows again, once each.
+	GUIDE_NOTES_AGAIN = "Pagle: margin notes will show again, once each.",
 
 	-- Core's own slots (SHOP-R25): their labels. Their goods' names and descriptions are lore (DATA-R101), in
 	-- data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`.

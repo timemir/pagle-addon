@@ -46,6 +46,7 @@ local ns = select(2, ...)
 ---@field dev PagleDevCommands Core's `/pagle dev` commands (ns.WireDev).
 ---@field tourStops PagleTourStops Core's one registry of tour stops (ns.WireDev, CORE-R65).
 ---@field tour PagleTour Core's `/pagle dev tour` (ns.WireDev, CORE-R66).
+---@field onboarding PagleOnboarding Core's onboarding state and its hooks (ns.WireOnboarding, core/onboarding.md).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. A Module's records are the ones Pagle.IterateCatches yields plus its own Module records (LOG-R42).
@@ -909,6 +910,9 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 		tour = function(args)
 			ns.tour:Run(args)
 		end,
+		onboarding = function(args)
+			ns.onboarding:RunDev(args)
+		end,
 		probe = function()
 			ns.RunProbe({
 				globals = globals,
@@ -933,4 +937,68 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 		end,
 		print = host.print,
 	})
+end
+
+--- Core's onboarding (core/onboarding.md) as ns.onboarding, over PagleDB.global.onboarding, with `/pagle dev
+--- onboarding reset` (ONB-R83) in its dev group, and ns.StartOnboarding, login step 2's part (ONB-R1–R3). The
+--- migration adds the state at login step 1 (logic/Migrations.lua); later pieces add their own hooks (SetHook), the
+--- guide's opener (SetGuideOpener) and dev subcommands (AddDevCommand).
+---@param host PagleHost
+function ns.WireOnboarding(host)
+	local onboarding = ns.NewOnboarding({
+		global = function()
+			return host.db().global
+		end,
+		call = host.call,
+		print = host.print,
+	})
+	ns.onboarding = onboarding
+
+	-- The logged-in character's GUID (LOG-R25, LOG-R26); nil before PLAYER_LOGIN, or without a GUID to key it by.
+	---@return string?
+	local function guid()
+		local char = host.character()
+		local character = char and host.catchLog().data.characters[char]
+		return character and character.guid
+	end
+
+	-- Whether QoL is registered (ONB-R3, ONB-R101).
+	---@return boolean
+	local function qolRegistered()
+		for _, module in ipairs(host.registry:Modules()) do
+			if module.def.name == "QoL" then
+				return true
+			end
+		end
+		return false
+	end
+
+	--- Login step 2, after ModulesChanged (LOG-R1): adds the state for a PagleDB that lost it since its migration
+	--- (ONB-R1), adds the logged-in character, raising the `character` hook for another one while QoL is registered
+	--- (ONB-R3), and waits for a returning Angler's welcome (ONB-R2): the first SessionStarted or
+	--- ONBOARDING_WELCOME_DELAY s from now, whichever comes first, raises the `welcome` hook, once.
+	function ns.StartOnboarding()
+		ns.AddOnboarding(host.db().global, host.catchLog())
+		onboarding:SeeCharacter(guid(), qolRegistered())
+		local due = true
+		local function welcome()
+			if due then
+				due = false
+				onboarding:Welcome()
+			end
+		end
+		host.after(ns.ONBOARDING_WELCOME_DELAY, welcome)
+		-- Its own owner on the bus, so no other registration replaces it.
+		host.listen("Pagle onboarding", "SessionStarted", welcome)
+	end
+
+	onboarding:AddDevCommand("reset", "reset", function()
+		local current = guid()
+		if not current then
+			host.print(ns.L.DEV_NO_CHARACTER)
+			return
+		end
+		onboarding:Reset(current)
+		host.print(ns.L.DEV_ONBOARDING_RESET)
+	end)
 end

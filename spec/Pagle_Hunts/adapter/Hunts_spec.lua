@@ -74,6 +74,7 @@ describe("Pagle_Hunts with Core", function()
 			"/pagle settings: open Pagle's settings (also /pagle on its own)",
 			"/pagle shop: open or close the Curio Shop",
 			"/pagle report: open the Field report, to help chart the waters",
+			"/pagle guide: open the Field guide; /pagle guide notes shows the margin notes again",
 			"/pagle help: list these commands",
 			"/pagle hunts: Open or close the Hunts board",
 		}, loaded.printed)
@@ -254,7 +255,7 @@ describe("Pagle_Hunts with FakePagle", function()
 		local expected = labels(plain.menu())
 		table.insert(expected, 1, "Hunts")
 		assert.are.same(expected, labels(fake.menu()))
-		assert.are.same({ "/pagle hunts: Open or close the Hunts board" }, { unpack(fake.printed, 6) })
+		assert.are.same({ "/pagle hunts: Open or close the Hunts board" }, { unpack(fake.printed, 7) })
 	end)
 
 	it("stops after RegisterModule returns nil, with no SavedVariables touched (CORE-R13)", function()

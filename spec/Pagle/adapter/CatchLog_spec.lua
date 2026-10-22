@@ -19,6 +19,7 @@ local PAGLEDB_KEYS = {
 		"coins",
 		"goods",
 		"projections",
+		"onboarding", -- onboarding.md › Data (ONB-R1)
 	},
 	profile = { "reloadReminder", "lengthUnit", "announcements", "appearance", "dock" },
 }
@@ -50,7 +51,7 @@ describe("Core's SavedVariables at load", function()
 		local loaded = login({})
 
 		assert.are.equal("Default", loaded.ns.db:GetCurrentProfile())
-		assert.are.equal(1, loaded.ns.db.global.schemaVersion)
+		assert.are.equal(#loaded.ns.PAGLEDB_MIGRATIONS, loaded.ns.db.global.schemaVersion)
 	end)
 
 	it("load a PagleDB saved by an earlier login, profile keys and all, into the Default profile (CORE-R5)", function()

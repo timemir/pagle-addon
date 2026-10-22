@@ -5,7 +5,7 @@ local ns = select(2, ...)
 -- logic, everything passed in (CORE-R7); adapter/Slash.lua registers the command and acts on what this resolves.
 
 --- Core's own subcommands, reserved for it (CORE-R61), and its hidden `dev` (#247), which help never lists.
-ns.SLASH_RESERVED = { "help", "settings", "shop", "report", "dev" }
+ns.SLASH_RESERVED = { "help", "settings", "shop", "report", "guide", "dev" }
 
 --- Splits what follows `/pagle` into its subcommand, lowercased, and the rest of the line, trimmed (CORE-R62).
 ---@param line string
@@ -90,6 +90,8 @@ end
 ---@field settings fun() opens the Settings root (Pagle.OpenSettings); also /pagle on its own
 ---@field shop fun()     opens or closes the Curio Shop (ns.shop.Toggle, SHOP-R40)
 ---@field report fun()   opens the Field report box (Pagle.OpenFieldReport)
+---@field guide fun(args: string): "help"? `guide notes` shows Margin notes again; `guide` opens the Field guide, or
+--- returns "help" for the help list until the guide's book can open (ns.onboarding:Guide, ONB-R80)
 ---@field dev fun(args: string) the hidden dev commands (ns.dev, #247), which /pagle help never lists
 
 --- Core's own subcommands over `Pagle`'s functions, each looked up when it runs.
@@ -106,6 +108,9 @@ function ns.CoreSubcommands(Pagle)
 		report = function()
 			Pagle.OpenFieldReport()
 		end,
+		guide = function(args)
+			return ns.onboarding:Guide(args)
+		end,
 		dev = function(args)
 			ns.dev:Run(args)
 		end,
@@ -114,8 +119,8 @@ end
 
 --- What `/pagle <line>` does (CORE-R60–R62): `"core"` and the name of one of Core's own subcommands (`settings` too
 --- with no subcommand); `"module"` with the Module subcommand it names and the rest of the line, trimmed; otherwise
---- `"help"`, for `help` and an unknown name. A core subcommand gets the rest of the line too: only `dev` (#247) reads
---- it.
+--- `"help"`, for `help` and an unknown name. A core subcommand gets the rest of the line too: only `guide` (ONB-R80)
+--- and `dev` (#247) read it.
 ---@param line string what follows /pagle
 ---@param core PagleCoreSubcommands
 ---@return "core"|"module"|"help" action
@@ -163,7 +168,7 @@ function Commands:AddModules(modules, report)
 end
 
 --- Runs `/pagle <line>` (CORE-R60–R62): one of Core's own subcommands, a Module's subcommand through `call`, or the
---- help list.
+--- help list, which a core subcommand also gets by returning `"help"` (`guide`, until the guide opens, ONB-R80).
 ---@param line string what follows /pagle
 ---@param core PagleCoreSubcommands
 ---@param call fun(fn: function, ...: any) calls a Module's function; an error is reported, not raised (securecallfunction)
@@ -172,13 +177,16 @@ function Commands:Run(line, core, call, print)
 	local action, command, args = self:Resolve(line, core)
 	if action == "core" then
 		---@cast command string
-		core[command](args --[[@as string]])
+		local asked = core[command](args --[[@as string]])
+		if asked ~= "help" then
+			return
+		end
 	elseif action == "module" then
 		---@cast command PagleSlashCommand
 		call(command.fn, args)
-	else
-		for _, helpLine in ipairs(self:HelpLines()) do
-			print(helpLine)
-		end
+		return
+	end
+	for _, helpLine in ipairs(self:HelpLines()) do
+		print(helpLine)
 	end
 end

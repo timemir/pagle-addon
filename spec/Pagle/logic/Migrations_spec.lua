@@ -44,12 +44,37 @@ describe("ns.Migrate", function()
 		end
 	end)
 
-	it("starts PagleDB at schemaVersion 1, the first schema (catch-log.md › Data, ADR 0003)", function()
+	it("hands each step the context, after the DB (catch-log.md › Data)", function()
+		local context, got = {}, {}
 		local db = { global = {} }
 
-		ns.Migrate(db, ns.PAGLEDB_MIGRATIONS)
+		ns.Migrate(db, {
+			function(_, given)
+				got[#got + 1] = given
+			end,
+		}, context)
 
-		assert.are.equal(1, db.global.schemaVersion)
+		assert.are.same({ context }, got)
+		assert.are.equal(context, got[1])
+	end)
+
+	it("brings a new PagleDB to schemaVersion 2, the onboarding state's (catch-log.md › Data, ONB-R1)", function()
+		local db = { global = {} }
+		local catchLog = ns.OpenCatchLog(savedLog(), { decodeErrors = 0 }, SERVER_TIME)
+
+		ns.Migrate(db, ns.PAGLEDB_MIGRATIONS, { catchLog = catchLog })
+
+		assert.are.equal(2, #ns.PAGLEDB_MIGRATIONS)
+		assert.are.equal(2, db.global.schemaVersion)
+		assert.are.equal("waiting", db.global.onboarding.letter)
+	end)
+
+	it("leaves step 1, the first schema, with nothing to migrate (ADR 0003)", function()
+		local db = { global = { schemaVersion = 0 } }
+
+		ns.PAGLEDB_MIGRATIONS[1](db, {})
+
+		assert.are.same({ schemaVersion = 0 }, db.global)
 	end)
 end)
 
