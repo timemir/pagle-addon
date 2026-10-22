@@ -78,7 +78,7 @@ Copy is the probe's, verbatim (`prototypes/onboarding-kit/PagleArtGuide/Guide.lu
 ### Margin notes
 
 - **ONB-R50** A **Margin note** is a slip of paper pencilled in blue (Caveat), one key term in red, with a red-pencil number badge, a curved pencil arrow from its nearest edge to a red ring on the thing it explains. Each note has an id and shows **once per account**: `notesSeen[id] = true` as it shows. With **Margin notes** off (ONB-R81), none shows (the guide's own illustrative notes are part of its pages and always show).
-- **ONB-R51** A note shows beside its target and leaves when it's clicked, when its target hides, or after 12 s, whichever comes first. It never takes the mouse from the world except over its own paper. It shows only when not restricted; one raised while restricted waits until the restriction ends, and is dropped if its target has hidden by then.
+- **ONB-R51** A note shows beside its target and leaves when it's clicked, when its target hides, or after 12 s, whichever comes first. It never takes the mouse from the world except over its own paper. It shows only when not restricted; one raised while restricted waits until the restriction ends, and is dropped if its target has hidden by then (unseen, so its next first occurrence shows it). A note on screen when a restriction starts hides at once and waits with the rest; when the restriction ends it comes back beside its target, if that still shows, with a fresh 12 s.
 - **ONB-R52** **First moments.** Core shows these notes the first time each happens, beside the frame that shows it:
 
   | Id | When | Target | Text | Owner |
@@ -92,7 +92,7 @@ Copy is the probe's, verbatim (`prototypes/onboarding-kit/PagleArtGuide/Guide.lu
   | `qol.lure` | the next-action button first shows "Lure" | the button | "Your pole has no lure on. Your next press puts the best one in your bags on. *Only that*; then you cast." | QoL |
   | `ledger.fresh` | the Fish Journal opens with Fresh Water above 0 for the first time | the ink bar's blue part | "You’ve been away, so your next Catches earn bonus XP. That’s *Fresh Water*, the blue in your bar. A rest is never a penalty." | Ledger |
 
-  **Pagle's menu button** is the minimap icon while it shows (CORE-R53), else the Addon Compartment's button. A moment held by Cozy mode never shows its note; the note shows at its next first occurrence outside Cozy mode. A Module shows its own with `M:ShowMarginNote(note)` (ONB-R92).
+  **Pagle's menu button** is the minimap icon while it shows (CORE-R53), else the Addon Compartment's button. A moment held by Cozy mode never shows its note; the note shows at its next first occurrence outside Cozy mode. Core tells an Uncharted Catch itself, from the catalogue (LOG-R55), as the Cast ends, whichever Module's Nod shows it; that Nod gets `core.uncharted`, not `core.nod`. Samples (`/pagle dev preview`'s, the Curio Shop's toasts in their own style, a preview card) and the "While you were fighting" digest get no note. A Module shows its own with `M:ShowMarginNote(note)` (ONB-R92).
 - **ONB-R53** **Moment notes.** A moment may carry `firstNote` (`PagleMoment.firstNote`, ONB-R93): the first time a moment of that Module and `kind` shows, Core shows a note with that text beside its frame, id `{module}.{kind}`. Used for `core.toast` above; Modules may add more later.
 
 ### First looks
@@ -216,6 +216,7 @@ The repo's own pieces are used wherever there is one: `Pagle.Animate`, `Pagle.Be
 
 - Arrows are `Line` objects (`frame:CreateLine()`, `SetStartPoint`/`SetEndPoint`, thickness 2, `#23407a` at 90%), a quadratic curve cut into 14 segments with a two-stroke head, and a 12-unit red ring at the target. `CreateLine` drew in the client in the probe.
 - Margin notes are straight in game (the canvas tilts them ±1.3°; a frame can't rotate its text).
+- A note sits on its `side`, or the side with most room past the note itself, 40 units from its target (beside it, its top 30 above the target's middle; above or below it, centred on it), and at least 8 units inside the screen. Core's own notes take the canvas's widths (`core.nod` 250, `core.toast` 280, `core.summary` 260, `core.uncharted` 300, `core.welcome` and `core.character` 250); any other note is 270 wide. Each note carries the badge 1.
 - Fonts: Core's bundled IM Fell English (print, italic), IM Fell English SC (kickers), Caveat (the hand: notes, Letter, signature, tags) and Marcellus (ribbons, buttons, the coach bar).
 
 ### Motion
@@ -243,6 +244,7 @@ See the kit's `SOUND.md`. New events: `letter` (TUTORIAL_POPUP), `noteIn` (IG_CH
 | Letter showings before it's declined | 2 | ONB-R12 |
 | Returning Angler's note delay | 20 s or first `SessionStarted` | ONB-R2 |
 | Margin note lifetime | 12 s | ONB-R51 |
+| Margin note gap from its target, inset from the screen's edge, default width | 40, 8, 270 units | core/onboarding.md › UI |
 | First evening fold delay | 2.5 s | ONB-R62 |
 | Ribbon size, gap, current length | 98 x 92, 8, 110 | ONB-R24 |
 | World dim behind the guide | 0.58 | ONB-R20 |
