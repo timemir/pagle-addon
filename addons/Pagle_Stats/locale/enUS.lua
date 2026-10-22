@@ -109,8 +109,6 @@ ns.L = {
 	DATE = "%d %s %s",
 	-- A Session's heading, "Monday 5 October": the weekday, the day without a leading zero and the month.
 	SESSION_HEADING = "%s %d %s",
-	-- A window's bound in realm time, "18:00".
-	WINDOW_TIME = "%02d:%02d",
 	-- Names (ns.Item, ns.AreaName, ns.CharacterName, ns.QualityName) and their fallbacks.
 	ITEM_FALLBACK = "Item %d",
 	AREA_FALLBACK = "Area %d",

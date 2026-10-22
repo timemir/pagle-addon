@@ -89,7 +89,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   - the Module status list (CORE-R41), with each On Module's action button (CORE-R44)
   - from M8.5, the Getting started section: the Field guide, Margin notes and the First evening list ([onboarding.md](onboarding.md), ONB-R81)
   - a "Help chart the waters" button that opens the Field report
-  - Core's options: the Saving section (the `/reload` reminder, LOG-R86), the Units section (the length unit, LOG-R69) and, from M8.5, the Pagle menu section (Show the minimap icon, CORE-R56); the first two are in [catch-log.md](catch-log.md#settings), and all their rows in `docs/spec/settings.md` (SET-R10)
+  - Core's options: the Saving section (the `/reload` reminder, LOG-R86), the Units section (the length unit, LOG-R69, and the clock format, CORE-R87) and, from M8.5, the Pagle menu section (Show the minimap icon, CORE-R56); the first two are in [catch-log.md](catch-log.md#settings), and all their rows in `docs/spec/settings.md` (SET-R10)
 
   Under the root, Core registers four **topic pages**, in this order: **Fishing**, **Announcements**, **Trackers** and **Look and Feel**. Pages are grouped by what the player is doing, not by owner. The list is fixed: Modules add rows to it (CORE-R42) and never register pages of their own. The layout and order of rows belong to `docs/spec/settings.md`.
 - **CORE-R41** The status list shows the roster in CORE-R1 order, each with its TOC version and one state. The version is never the packager's raw token: while the TOC still says `@project-version@` (any whole `@…@`, a checkout the packager never filled in, CORE-R2), it reads "dev"; a Module that isn't installed shows none (`ns.ShownVersion`). The states:
@@ -148,13 +148,20 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - **CORE-R72** A Module decides when its own tracker is shown (each Module's setting); the dock only stacks. With no tracker visible, the dock shows nothing.
 - **CORE-R73** Each tracker is a native objective-tracker-style block. Its frame is drawn by its Module, which reads its equipped tracker-frame look from Core (`Pagle.GetEquipped`).
 
+### Clock times
+
+- **CORE-R87** Every time of day the package shows (a realm time such as the Hunts board's clock, a window's or an event's time, a Session's start) is written in the Angler's **clock format** (Core setting): `Pagle.FormatClock(hour, minute)` returns "18:30" in 24-hour, two-digit hours, or "6:30 PM" in 12-hour, the hour without a leading zero and "AM"/"PM" after a space; midnight is "00:00" or "12:00 AM", noon "12:00" or "12:00 PM". `Pagle.GetClockFormat()` returns the format itself, `"24h"` or `"12h"`, for a Module that writes a time its own way (the Hunts timeline's compact hour ticks, HNT-R62). The hour is taken mod 24, so 24:00, a day's end, reads as midnight. The setting is the Settings root's Clock row (SET-R10): "Follow the game's clock", the default, which stores nothing (`PagleDB.profile.clockFormat` `nil`), "24-hour" (`"24h"`) or "12-hour" (`"12h"`). Following the game's clock reads the minimap clock's 24-hour mode, the CVar `timeMgrUseMilitaryTime`, at each call: 12-hour only when it is `"0"`, and 24-hour when it is `"1"` or the client has no such CVar, as Pagle wrote every time before the setting. Only the display changes: a Module keeps and compares times as numbers. Durations ("2h", "ends in 3h", "13h") aren't times of day and don't change, nor do the Field report's `t=HH:MM` (a machine-read field, REP-R22) and the dev commands' lines.
+  - `ClockFormatChanged(format)` fires when the format now differs from the one `Pagle.FormatClock` last wrote in (or `Pagle.GetClockFormat` last answered): after a pick on the Clock row, and at a `CVAR_UPDATE` that changes the game's clock while the row follows it. It never fires before a time has been written, so there is nothing stale to redraw. A Module redraws every shown view that writes a time of day when it fires.
+  - The format is chosen as Core's, not a Module's, because three Modules write clock times (Hunts, Stats and the Tackle Board) and they would otherwise disagree. The 12-hour style is the game's own: the hour as `TIMEMANAGER_TICKER_12HOUR` writes it ("%d:%02d"), then `TIMEMANAGER_AM` or `TIMEMANAGER_PM` ("AM", "PM"), so Pagle's times read like the minimap clock's.
+
 ## Data
 
-Core's SavedVariables are specified in [catch-log.md](catch-log.md#data). This file adds one `PagleDB.profile` key:
+Core's SavedVariables are specified in [catch-log.md](catch-log.md#data). This file adds two `PagleDB.profile` keys:
 
 | Key | Type | Default |
 |---|---|---|
 | `dock.point` | `{ point, relativeTo = "UIParent", relativePoint, x, y }` or `nil` | `nil` (CORE-R70 default) |
+| `clockFormat` | `"24h"`, `"12h"`, or `nil` to follow the game's clock (CORE-R87) | `nil`; the root's Defaults button sets it back to `nil` (SET-R13) |
 
 ## Contracts
 
@@ -183,6 +190,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.CONTENT_FINGERPRINT` | string | catch-log.md |
 | `Pagle.GetItem(itemID)`, `GetArea(areaID)`, `GetZones()`, `GetZoneOf(areaID)`, `GetZoneCatches(zoneAreaID)`, `GetWindowSpec(windowID)` | catalogue records | catch-log.md |
 | `Pagle.SIZE_BANDS`, `Pagle.SIZE_RULES_VERSION`, `Pagle.FormatLength(mm)` | band list, integer, string | catch-log.md |
+| `Pagle.FormatClock(hour, minute)`, `Pagle.GetClockFormat()` | string, a time of day in the clock format: "18:30" or "6:30 PM"; `"24h"` or `"12h"` | [here](#clock-times) (CORE-R87) |
 | `Pagle.GetVarieties(speciesID)`, `Pagle.VARIETY_RARITIES` | a Species' ten or `nil`, rarity list | [varieties.md](varieties.md) |
 | `Pagle.GetVarietiesCaught(speciesID)` | a fresh set `{ [index] = true }` of the positions caught | [varieties.md](varieties.md) |
 | `Pagle.GetBalance()` | `Balance` | [wallet-and-shop.md](wallet-and-shop.md#contracts) |
@@ -283,6 +291,7 @@ The big windows (the Curio Shop, the books, the Hunts and Tackle boards) are dra
 | `RestrictionChanged` | `isRestricted: boolean` |
 | `ModulesChanged` | none (CORE-R19) |
 | `GuideOpened`, `GuideClosed` | none; `stepId` (ONB-R20, onboarding.md) |
+| `ClockFormatChanged` | `format: "24h"\|"12h"`, the format times now read in (CORE-R87) |
 
 Fishing, Session, wallet, Activity XP (`ActivityXPChanged`) and pushed-content (`PushedContentReady`) events are listed in their topic files.
 
@@ -298,6 +307,7 @@ Fishing, Session, wallet, Activity XP (`ActivityXPChanged`) and pushed-content (
 | Option | Values | Default |
 |---|---|---|
 | Tracker position (Trackers page, SET-R40) | button "Reset": puts the dock back at its default place (CORE-R71) | |
+| Clock (`profile.clockFormat`, the root's Units section, SET-R10) | Follow the game's clock / 24-hour / 12-hour | Follow the game's clock (CORE-R87) |
 
 The other Core options are in each topic file's Settings section.
 

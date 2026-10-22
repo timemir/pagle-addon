@@ -586,6 +586,62 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 		assert.are.same({ "08:15 · Sun 11 Oct · Autumn" }, shownTexts(run.ns.board.frame.anchors.clock))
 	end)
 
+	it("writes the realm time in Core's clock format, redrawn at once when it changes (HNT-R50, CORE-R87)", function()
+		local run = start({ catalogue = withSeasons() })
+		run.ns.ToggleBoard()
+
+		run.fake.profile.clockFormat = "12h"
+		run.fake.noteClockFormat() -- ClockFormatChanged, as the Settings root's Clock row fires it
+		local picked = shownTexts(run.ns.board.frame.anchors.clock)
+		run.fake.profile.clockFormat = nil -- following the game's clock, set to 24-hour
+		run.fake.militaryTime = "1"
+		run.fake.noteClockFormat()
+		local game24 = shownTexts(run.ns.board.frame.anchors.clock)
+		run.fake.militaryTime = "0" -- the minimap clock's 24-hour mode turned off: CVAR_UPDATE
+		run.fake.noteClockFormat()
+
+		assert.are.same({
+			{ "8:15 AM · Sun 11 Oct · Autumn" },
+			{ "08:15 · Sun 11 Oct · Autumn" },
+			{ "8:15 AM · Sun 11 Oct · Autumn" },
+		}, { picked, game24, shownTexts(run.ns.board.frame.anchors.clock) })
+	end)
+
+	it(
+		"labels the ruler's hour ticks compact in 12-hour, 12p to 6a, redrawn at once, each clear of the next"
+			.. " (HNT-R62, CORE-R87)",
+		function()
+			local run = start()
+			run.ns.ToggleBoard()
+
+			run.fake.profile.clockFormat = "12h"
+			run.fake.noteClockFormat() -- ClockFormatChanged: the board redraws (ns.Redraw("clock"))
+
+			local ruler = run.ns.BoardTimeline({ mode = "board" }).ruler
+			local labelled = {}
+			for _, tick in ipairs(ruler.ticks) do
+				if tick.label then
+					labelled[#labelled + 1] = tick
+				end
+			end
+			local shown, texts = {}, {}
+			for _, text in ipairs(pageTexts(run, "left")) do
+				texts[text] = true
+			end
+			for i, tick in ipairs(labelled) do
+				shown[i] = texts[tick.label] and tick.label or "not drawn: " .. tick.label
+			end
+			assert.are.same({ "12p", "3p", "6p", "9p", "12a", "3a", "6a" }, shown)
+			-- Centred on their ticks over the track's 190 units, 3 hours (23.75) apart: at the fake's 6 pixels a
+			-- character, no two neighbours meet.
+			for i = 2, #labelled do
+				local room = (labelled[i].x - labelled[i - 1].x) * 190
+				local half = (#labelled[i].label + #labelled[i - 1].label) * 6 / 2
+				assert.is_true(half < room, labelled[i - 1].label .. " and " .. labelled[i].label .. " meet")
+			end
+		end
+	)
+
 	it("shows no season when no season window matches", function()
 		local run = start()
 		wait(run, untilRealm(14, 5))

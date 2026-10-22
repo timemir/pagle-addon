@@ -57,6 +57,9 @@ ns.L = {
 	-- LOG-R69: a length in each length unit, to 0.1 of it; ANN-R22: a size record's margin that rounds to zero.
 	LENGTH = { cm = "%.1f cm", ["in"] = "%.1f in" },
 	LENGTH_MARGIN_UNDER = { cm = "+<0.1 cm", ["in"] = "+<0.1 in" },
+	-- CORE-R87: a clock time in each clock format: 24-hour "18:05", 12-hour "6:05 PM", as the game writes them
+	-- (TIMEMANAGER_TICKER_12HOUR's hour without a leading zero, then TIMEMANAGER_AM or TIMEMANAGER_PM).
+	CLOCK = { ["24h"] = "%02d:%02d", ["12h"] = { am = "%d:%02d AM", pm = "%d:%02d PM" } },
 	-- Error reports (CORE-R23): owner, event, the error.
 	EVENT_REGISTER_FAILED = "Pagle: %s couldn't register the event %s: %s",
 	EVENT_HANDLER_FAILED = "Pagle: %s's handler for the event %s failed: %s",
@@ -101,6 +104,14 @@ ns.L = {
 	SETTINGS_LENGTH_UNIT = "Length unit",
 	SETTINGS_LENGTH_UNIT_TOOLTIP = "How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes only what you see.",
 	SETTINGS_LENGTH_UNITS = { cm = "Centimetres", ["in"] = "Inches" },
+	-- The Units section's Clock row (SET-R10 row 9a, CORE-R87): its label, tooltip and options.
+	SETTINGS_CLOCK = "Clock",
+	SETTINGS_CLOCK_TOOLTIP = "How Pagle writes a time of day, such as the realm time at the top of the Hunts board. Following the game uses the minimap clock's 24-hour mode.",
+	SETTINGS_CLOCK_CHOICES = {
+		game = "Follow the game's clock",
+		["24h"] = "24-hour (18:30)",
+		["12h"] = "12-hour (6:30 PM)",
+	},
 	-- The root's Pagle menu section (SET-R10 row 10): its header, the checkbox's label and its tooltip (CORE-R56).
 	SETTINGS_PAGLE_MENU = "Pagle menu",
 	SETTINGS_MINIMAP_ICON = "Show the minimap icon",

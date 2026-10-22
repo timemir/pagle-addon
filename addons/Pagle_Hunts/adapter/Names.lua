@@ -137,9 +137,24 @@ local function openCalendar()
 	C_Calendar.OpenCalendar()
 end
 
+-- Clock times as Core writes them (HNT-R50, CORE-R87): ns.FormatClock writes every one through this seam
+-- (logic/Seams.lua), in the clock format the Settings root's Clock row picks.
+function ns.ClockTime(hour, minute)
+	return Pagle.FormatClock(hour, minute)
+end
+
+-- The format the timeline's hour ticks read in (HNT-R62, CORE-R87): ns.FormatRulerHour asks it at each tick.
+function ns.ClockFormat()
+	return Pagle.GetClockFormat()
+end
+
 --- Starts the event name lookup (HNT-R53): at the first PLAYER_ENTERING_WORLD, or at the first
---- RestrictionChanged(false) if that falls while restricted. The adapter's OnInitialize calls it once Hunts is active.
+--- RestrictionChanged(false) if that falls while restricted; and the clock's redraw, every view at once when Core's
+--- clock format changes (HNT-R50). The adapter's OnInitialize calls it once Hunts is active.
 function ns.StartNames()
+	Pagle.RegisterCallback(OWNER, "ClockFormatChanged", function()
+		ns.Redraw("clock")
+	end)
 	Pagle.RegisterCallback(OWNER, "RestrictionChanged", function(_, isRestricted)
 		if not isRestricted and afterRestriction then
 			local step = afterRestriction

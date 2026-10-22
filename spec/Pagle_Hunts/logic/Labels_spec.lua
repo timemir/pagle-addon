@@ -486,3 +486,81 @@ describe("Labels in realm time", function()
 		end)
 	end)
 end)
+
+describe("Labels in Core's clock format (HNT-R50, CORE-R87)", function()
+	-- Hunts over a FakePagle set to 12-hour: every clock time goes through Pagle.FormatClock (ns.ClockTime).
+	local function twelveHour()
+		local loaded, fake = hunts.load()
+		fake.profile.clockFormat = "12h"
+		return loaded.ns, fake
+	end
+
+	it("writes 24-hour by default: midnight 00:00, 00:05, noon 12:00, 23:59, and a day's end as 00:00", function()
+		local ns = hunts.load().ns
+
+		assert.are.same(
+			{ "00:00", "00:05", "12:00", "23:59", "00:00" },
+			{ ns.FormatClock(0), ns.FormatClock(5), ns.FormatClock(720), ns.FormatClock(1439), ns.FormatClock(1440) }
+		)
+	end)
+
+	it("writes 12-hour: midnight 12:00 AM, 12:05 AM, noon 12:00 PM, 11:59 PM, and a day's end as 12:00 AM", function()
+		local ns = twelveHour()
+
+		assert.are.same(
+			{ "12:00 AM", "12:05 AM", "12:00 PM", "11:59 PM", "12:00 AM" },
+			{ ns.FormatClock(0), ns.FormatClock(5), ns.FormatClock(720), ns.FormatClock(1439), ns.FormatClock(1440) }
+		)
+	end)
+
+	it("writes the board's clock, the window line and a later day's time in it", function()
+		local ns = twelveHour()
+		local c = { group = "later", window = { opensAt = NOW + 37 * MINUTE }, now = NOW, snapshot = SUNDAY }
+
+		assert.are.same({
+			"8:15 AM · Sun 11 Oct",
+			"Opens at 8:52 AM.",
+			"Mon 12:00 AM",
+		}, {
+			ns.TimelineClock(NOW, SUNDAY, nil, false),
+			ns.HuntWindowLine(c, {}),
+			ns.FormatRealmWhen(NOW + (15 * 60 + 45) * MINUTE, NOW, SUNDAY),
+		})
+	end)
+
+	it("writes the conditions line's times and an event's weekly time in it, its duration as before", function()
+		local ns, fake = twelveHour()
+		local names = {
+			EventName = function()
+				return "Stranglethorn Fishing Extravaganza"
+			end,
+			NextWindow = fake.Pagle.NextWindow,
+		}
+
+		assert.are.same({
+			"Realm time 10:00 PM–4:00 AM",
+			"Stranglethorn Fishing Extravaganza, Sundays 2:00 PM for 2h",
+		}, {
+			ns.HuntConditionsLine({ time = { { 1320, 240 } } }, nil, NOW, SUNDAY, names),
+			ns.HuntConditionsLine({ events = { 301 } }, "event.301", NOW, SUNDAY, names),
+		})
+	end)
+
+	it(
+		"labels the ruler's hour ticks 06 and 18 in 24-hour, and compact 6a, 6p, 12a, 12p in 12-hour (HNT-R62)",
+		function()
+			local ns24 = hunts.load().ns
+			local ns12 = twelveHour()
+			local function labels(ns)
+				local out = {}
+				for i, hour in ipairs({ 0, 6, 12, 18, 21 }) do
+					out[i] = ns.FormatRulerHour(hour)
+				end
+				return out
+			end
+
+			assert.are.same({ "00", "06", "12", "18", "21" }, labels(ns24))
+			assert.are.same({ "12a", "6a", "12p", "6p", "9p" }, labels(ns12))
+		end
+	)
+end)

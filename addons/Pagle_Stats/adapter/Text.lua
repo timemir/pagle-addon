@@ -34,6 +34,9 @@ ns.WireText({
 	Date = function(format, time)
 		return (date(format, time)) --[[@as string]]
 	end,
+	FormatClock = function(hour, minute)
+		return Pagle.FormatClock(hour, minute)
+	end,
 	ServerTime = function()
 		return GetServerTime()
 	end,
@@ -74,10 +77,14 @@ function ns.OncePerFrame(fn)
 end
 
 --- Calls `fn` whenever a reading may have moved (STA-R73): a Cast ends (not an interrupted one), a Session ends, or
---- the area or the skill changes. The book and the tracker each register it under their own `owner` (CORE-R20).
+--- the area or the skill changes; and when Core's clock format changes, which rewrites every time of day (STA-R59).
+--- The book and the tracker each register it under their own `owner` (CORE-R20).
 ---@param owner string
 ---@param fn fun()
 function ns.OnReadingsMove(owner, fn)
+	Pagle.RegisterCallback(owner, "ClockFormatChanged", function()
+		fn()
+	end)
 	Pagle.RegisterCallback(owner, "CastEnded", function(_, outcome)
 		if outcome ~= "interrupted" then
 			fn()
