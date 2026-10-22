@@ -112,6 +112,28 @@ ns.L = {
 	-- A Module's keybinding row (SET-R20): a key slot with no key, and the slot waiting for the next key press.
 	SETTINGS_KEY_NOT_BOUND = "Not Bound",
 	SETTINGS_KEY_WAITING = "Press a key",
+	-- The Field guide's binding field (ONB-R40–R43): its dashed cap and note when Not bound and while Listening, the
+	-- word when Bound, and the conflict box. Each action's own words, by binding action: the question (with the old
+	-- action's name, in red), the Use button (with the key) and the chat line after Use (the key, the old name).
+	GUIDE_BIND_CLICK = "click to bind",
+	GUIDE_BIND_DEFAULT = "default: nothing is bound",
+	GUIDE_BIND_LISTEN = "press a key…",
+	GUIDE_BIND_ESC = "Esc leaves it as it was",
+	GUIDE_BIND_BOUND = "Bound",
+	GUIDE_BIND_PICK = "Pick another key",
+	GUIDE_BIND_KEPT = "the old use is listed, never silently lost",
+	GUIDE_BIND_ASK = {
+		PAGLE_FISHING_KEY = "already does %s. Use it for fishing instead?",
+		PAGLE_SWAP_GEAR = "already does %s. Use it to swap gear instead?",
+	},
+	GUIDE_BIND_USE = {
+		PAGLE_FISHING_KEY = "Use %s for fishing",
+		PAGLE_SWAP_GEAR = "Use %s to swap gear",
+	},
+	GUIDE_BIND_TOLD = {
+		PAGLE_FISHING_KEY = "Pagle: %s now casts. It used to do %s; rebind that in Key Bindings if you need it.",
+		PAGLE_SWAP_GEAR = "Pagle: %s now swaps your gear. It used to do %s; rebind that in Key Bindings if you need it.",
+	},
 	-- The status list (CORE-R41): each roster Module's name, by def.name, and each state.
 	MODULE_NAMES = {
 		Ledger = "Ledger",

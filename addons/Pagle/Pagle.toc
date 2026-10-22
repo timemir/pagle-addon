@@ -119,6 +119,7 @@ adapter\ShopArt.lua
 adapter\ShopMotion.lua
 adapter\Shop.lua
 adapter\GuideKit.lua
+adapter\GuideBindingField.lua
 adapter\GuideBook.lua
 adapter\Guide.lua
 adapter\Tour.lua

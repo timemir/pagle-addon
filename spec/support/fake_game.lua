@@ -5,6 +5,7 @@
 --
 --   loaded.client.boundKeys.PAGLE_FISHING_KEY = { "F", "SHIFT-F" }  -- GetBindingKey's keys
 --   loaded.client.overrideAction("F")                               -- "SPELL Fishing", as GetBindingAction reads it
+--   loaded.client.bindingNames.ASSISTTARGET = "Assist Target"       -- GetBindingName("ASSISTTARGET")
 --   loaded.client.keysDown.F = true                                 -- IsKeyDown("F")
 --   loaded.client.channel = "Fishing"                               -- UnitChannelInfo("player")
 --   loaded.client.update(0.5)                                       -- one frame, 0.5 s after the last
@@ -84,6 +85,8 @@
 --- "create <name> <icon>", "save <setID>" or "use <setID>".
 ---@field wearSet fun(setID: integer) Puts the set's items on (slot 16 into `mainHand`, the rest into `worn`), as
 --- the end of a swap does. It fires no event.
+---@field bindingNames table<string, string> Each binding command's name in Key Bindings, as `GetBindingName` returns
+--- it; a command not listed reads as itself. Default: Assist Target and Move Forward.
 ---@field bindingTexts table<string, string> Short key texts `GetBindingText(key, true)` returns, by key; a key not
 --- listed reads as itself with SHIFT-, CTRL- and ALT- shortened to s-, c- and a-.
 ---@field mouseFoci table[] The frames under the mouse, topmost first, as `GetMouseFoci()` returns them. Default
@@ -236,6 +239,27 @@ return function(client, stubs)
 	end
 	stubs.GetCurrentBindingSet = function()
 		return 1
+	end
+	-- What a key does (ONB-R42, ONB-R43): GetBindingAction(key) is the player's binding command on `key`, or "" with
+	-- none; with `checkOverride` a priority override on it comes first (warcraft.wiki.gg, API GetBindingAction).
+	-- GetBindingName(command) is its name in Key Bindings: client.bindingNames', else the command itself, as the client
+	-- returns a command with no BINDING_NAME_ global (FrameXML, Blizzard_SharedXML/BindingUtil.lua).
+	client.bindingNames = { ASSISTTARGET = "Assist Target", MOVEFORWARD = "Move Forward" }
+	stubs.GetBindingAction = function(key, checkOverride)
+		if checkOverride and client.overrideAction(key) then
+			return client.overrideAction(key)
+		end
+		for command, keys in pairs(client.boundKeys) do
+			for _, bound in ipairs(keys) do
+				if bound == key then
+					return command
+				end
+			end
+		end
+		return ""
+	end
+	stubs.GetBindingName = function(command)
+		return client.bindingNames[command] or command
 	end
 	-- FrameXML's binding helpers, as Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57
 	-- ("1.60.1 (70338)"), Interface/AddOns/Blizzard_SharedXML/BindingUtil.lua defines them, for the mouse buttons and
