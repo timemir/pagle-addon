@@ -262,10 +262,15 @@ PagleLog = {
   },
   entries = { "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1", ... },
   test = true,           -- only on a test log (see below); absent on a player's log
+  devCoins = 50000,      -- only on a test log: Coins it grants (see below)
+  devXP = 700000,        -- only on a test log: Activity XP it grants (see below)
+  devHuntsSince = 1791000000, -- only on a test log: its Hunts' release date (see below)
 }
 ```
 
 `test = true` marks a **test log**: one the test-log tooling wrote for the dev, never one a player fished. Only on a test log does `/pagle dev catch` append synthetic Casts ([in-game verification › Dev commands](../../agents/in-game-verification.md#dev-commands)). A test log is never a release concern: 1.0's freeze rules (LOG-R17) don't apply to it. A format change (LOG-R18) starts a new log without the flag.
+
+A test log may also grant Coins (`devCoins`) and Activity XP (`devXP`), each a whole number, 0 or more, so the tooling can set up a rich or high-prestige account without months of synthetic Casts. At login step 1 Core stores each under the source "Dev", beside the Modules' totals (SHOP-R3, AXP-R3): the wallet counts the Coins, and Activity XP counts the XP, which the Ledger's climb and its Prestige snapshots read (LED-R37, AXP-R5). "Dev" counts as On, and the Curio Shop's purse counts its Coins in the balance but draws no segment for it. It may also set a release date for Hunts (`devHuntsSince`, a server time): Hunts then treats every Hunt whose `since` is later as out from that date (HNT-R2), so a test log can play the standing Hunts before they are released. Modules read the grants with `Pagle.GetTestLogGrant(name)`. All three are read only on a log with `test = true`: on a player's log the fields mean nothing, and the totals' tie to the logId (SHOP-R3, AXP-R3) drops the Coins and XP when another log is installed.
 
 ### Entry formats
 

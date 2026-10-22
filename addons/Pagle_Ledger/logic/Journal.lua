@@ -123,7 +123,7 @@ local ns = select(2, ...)
 ---   `text` and the hand's `value`), drawn by adapter/JournalVarieties.lua (VAR-R24)
 --- Any block with `foot` sits at its page's foot when the page has room above it (the varieties spread's fish crest).
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"crest"|"rule"|"map"|"variety"|"varietyArt"|"fishCrest"|"level"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"crest"|"rule"|"map"|"variety"|"varietyArt"|"varietyCard"|"fishCrest"|"level"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -164,6 +164,8 @@ local ns = select(2, ...)
 ---@field art? PagleVarietyArt   -- a variety's art (VAR-R11, VAR-R24)
 ---@field rarity? LedgerVarietyRarity -- a variety row's rarity pill (VAR-R24)
 ---@field foot? boolean          -- at the page's foot (VAR-R24)
+---@field link? string          -- a varieties card's link words (VAR-R23)
+---@field pips? { ink: number[], inked: boolean }[] -- a varieties card's ten, in their rarities' inks (VAR-R23)
 ---@field stamp? string          -- a row's ink stamp after its words (a Followed Angler's "HC", LED-R151)
 
 --- A variety's rarity as its pill shows it (VAR-R24, core/varieties.md › UI): its name, and its colour and its darker

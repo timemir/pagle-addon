@@ -277,6 +277,21 @@ describe("The Curio Shop's purse", function()
 		end
 	)
 
+	it(
+		"counts a test log's granted Coins in the balance, with no segment of their own (catch-log.md › Test logs)",
+		function()
+			local fake = coreWithModules("Ledger")
+			fake.global.coins.earned.Ledger = 100
+			fake.global.coins.earned.Dev = 900
+
+			local purse = model(fake):Purse()
+
+			assert.are.equal("1,000", purse.balance)
+			assert.are.same({ "Ledger" }, { purse.segments[1].module, purse.segments[2] and purse.segments[2].module })
+			assert.are.equal(1, purse.segments[1].share)
+		end
+	)
+
 	it("has no segment before any Module reports, and never says Spent (wallet-and-shop.md › UI)", function()
 		local fake = coreWithModules()
 		fake.setSpent(50)

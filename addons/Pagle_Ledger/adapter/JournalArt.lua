@@ -564,9 +564,13 @@ end
 
 -- ---------------------------------------------------------------- the kit's pieces
 
+-- How much of each edge of a game icon to leave out: its square dark border, which a round mask would show as flat
+-- edges inside the medallion's ring.
+local ICON_CROP = 0.08
+
 --- Shows `icon` on `texture` in the Journal's sepia (LED-R140, ledger.md › UI): an item ID's icon, or a texture,
 --- desaturated about 60% and warmed toward sepia, as the canvas draws every icon; or, `look` "silhouette", in black
---- (LED-R124).
+--- (LED-R124). Every caller masks it round, so the icon's square border is cropped away.
 ---@param texture Texture
 ---@param icon integer|string? an item ID or a texture
 ---@param look "sepia"|"silhouette"?
@@ -576,6 +580,7 @@ function ns.JournalItemIcon(texture, icon, look)
 		icon = fileID or icon
 	end
 	texture:SetTexture(icon)
+	texture:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
 	if look == "silhouette" then
 		texture:SetDesaturated(true)
 		texture:SetVertexColor(0, 0, 0)

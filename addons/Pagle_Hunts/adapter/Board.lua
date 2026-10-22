@@ -223,6 +223,8 @@ local function build(board)
 	local frame = CreateFrame("Frame", FRAME_NAME, UIParent) --[[@as BoardFrame]]
 	frame:SetSize(WIDTH, HEIGHT)
 	frame:SetFrameStrata("HIGH")
+	-- Over the other windows in its strata (show raises it) and brought back over them when clicked.
+	frame:SetToplevel(true)
 	frame:SetClampedToScreen(true)
 	-- the ribbons hang under the leather: the clamp keeps them on screen too
 	frame:SetClampRectInsets(0, 0, 0, -(ns.BOARD_RIBBON.lengthChosen - ns.BOARD_RIBBON.tuck))
@@ -333,6 +335,8 @@ function Board:Open(place)
 		ns.BoardSound("bookOpen")
 		ns.FadeIn(frame)
 	end
+	-- It opens over every window already open: the Pagle windows share its strata, at frame levels of their own.
+	frame:Raise()
 	if not self.told then
 		self.told = true
 		ns.SetViewShown("board", true)

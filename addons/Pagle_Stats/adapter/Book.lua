@@ -329,6 +329,8 @@ local function build(book)
 	local frame = CreateFrame("Frame", FRAME_NAME, UIParent) --[[@as StatsBookFrame]]
 	frame:SetSize(WIDTH, HEIGHT)
 	frame:SetFrameStrata("HIGH")
+	-- Over the other windows in its strata (show raises it) and brought back over them when clicked.
+	frame:SetToplevel(true)
 	frame:SetClampedToScreen(true)
 	-- the ribbons hang under the leather: the clamp keeps them on screen too
 	frame:SetClampRectInsets(0, 0, 0, -(ns.BOOK_RIBBON.lengthChosen - ns.BOOK_RIBBON.tuck))
@@ -467,6 +469,8 @@ function Book:Open(target)
 			self:Tick()
 		end)
 	end
+	-- It opens over every window already open: the Pagle windows share its strata, at frame levels of their own.
+	frame:Raise()
 	self:Draw(turnable)
 	-- its First look the first time it opens, once the spread it points at is drawn (ONB-R55, adapter/Look.lua)
 	if opening then

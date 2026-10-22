@@ -698,6 +698,38 @@ describe("The Curio Shop's list", function()
 		assert.are.equal(rowOf(loaded, "hunts.frame.ash").bezel, looks.notes[2].target())
 	end)
 
+	it("keeps the First look's arrow on a row in the tray as the list scrolls, else on the tray (ONB-R57)", function()
+		local loaded = shopCore()
+		loaded.env.Pagle.OpenShop()
+		local frame = shopFrame(loaded)
+		local rows = {}
+		for _, line in ipairs(frame.lines) do
+			if line:IsShown() and not line.header then
+				rows[#rows + 1] = line.bezel
+			end
+		end
+		assert(#rows >= 2, "the list shows two goods")
+		local looks = loaded.ns.ShopFirstLook()
+
+		-- The client lays the tray out from 100 to 500, the list scrolled so only the second row is in it: the selected
+		-- good's row, wherever it is, is clipped above or below.
+		frame.scroll.screenTop, frame.scroll.screenBottom = 500, 100
+		for i, bezel in ipairs(rows) do
+			if i == 2 then
+				bezel.screenTop, bezel.screenBottom = 300, 260
+			else
+				bezel.screenTop, bezel.screenBottom = 560, 520
+			end
+		end
+		assert.are.equal(rows[2], looks.notes[2].target())
+
+		-- Scrolled further, no row in the tray: the tray itself.
+		for _, bezel in ipairs(rows) do
+			bezel.screenTop, bezel.screenBottom = 900, 860
+		end
+		assert.are.equal(frame.scroll, looks.notes[2].target())
+	end)
+
 	it("puts a clicked row's good on the stage (wallet-and-shop.md › UI)", function()
 		local loaded = shopCore()
 		loaded.env.Pagle.OpenShop()

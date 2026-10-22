@@ -20,6 +20,23 @@ local ns = select(2, ...)
 local Wallet = {}
 Wallet.__index = Wallet
 
+--- The source a test log's grants are stored under, beside the Modules' totals: its Coins in the wallet and its
+--- Activity XP (catch-log.md › Test logs). Always counted as On.
+ns.DEV_SOURCE = "Dev"
+
+--- What a test log grants as `field` (catch-log.md › Test logs): its whole number, 0 or more, only on a log marked
+--- `test = true`; nil on a player's log, or for anything else there.
+---@param data table PagleLog
+---@param field "devCoins"|"devXP"|"devHuntsSince"
+---@return integer?
+function ns.TestLogGrant(data, field)
+	local value = data.test == true and data[field] or nil
+	if type(value) ~= "number" or value < 0 or value ~= math.floor(value) or value == math.huge then
+		return nil
+	end
+	return value
+end
+
 --- Why `total` can't be a Module's lifetime Coins earned, or nil if it can: a whole number, 0 or more (SHOP-R2).
 ---@param total any
 ---@return string?

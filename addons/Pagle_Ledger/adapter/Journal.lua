@@ -330,6 +330,8 @@ local function build(journal)
 	frame:SetClampedToScreen(true)
 	frame:EnableMouse(true)
 	frame:SetMovable(true)
+	-- Over the other windows in its strata (show raises it) and brought back over them when clicked.
+	frame:SetToplevel(true)
 	frame:RegisterForDrag("LeftButton")
 	frame:SetScript("OnDragStart", frame.StartMoving)
 	frame:SetScript("OnDragStop", function(self)
@@ -493,6 +495,8 @@ function Journal:Show()
 		self.justOpened = true
 		frame:Show()
 	end
+	-- It opens over every window already open: the Pagle windows share its strata, at frame levels of their own.
+	frame:Raise()
 	self:Draw()
 	-- what opening it does for onboarding, on its pages as drawn (adapter/Onboarding.lua)
 	if opening then

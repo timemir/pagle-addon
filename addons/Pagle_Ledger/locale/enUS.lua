@@ -335,7 +335,7 @@ ns.L = {
 	-- The fish spread's varieties (VAR-R23): "Varieties" with "7 of 10" at its right, and the link to the varieties
 	-- spread.
 	FISH_VARIETIES = "Varieties",
-	FISH_VARIETIES_COUNT = "%d of %d",
+	FISH_VARIETIES_COUNT = "%d of %d found",
 	FISH_VARIETIES_LINK = "See all ten »",
 	-- The varieties spread (VAR-R24, VAR-R27): its title, which is its crumb too, "7 of 10 caught", a row's "6 caught",
 	-- an uncaught variety's words in place of its name, the right page's kicker by rarity key, an uncaught one's title

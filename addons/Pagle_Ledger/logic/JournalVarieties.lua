@@ -6,7 +6,7 @@ end
 local ns = select(2, ...)
 
 -- The Journal's fish varieties (VAR-R23, VAR-R24, VAR-R27; core/varieties.md › In the Ledger): the fish spread's
--- Varieties lines and the varieties spread, as page data, from the Ledger's own record of the varieties caught
+-- varieties card and the varieties spread, as page data, from the Ledger's own record of the varieties caught
 -- (state.varieties, VAR-R20) over Core's static list of a Species' ten (Pagle.GetVarieties, VAR-R11). Discovery
 -- (VAR-R27): an uncaught variety's name and words are never read here, so no page, crumb or note can name it; its
 -- art goes out only as a silhouette. Pure logic over the spread context (CORE-R7); adapter/JournalVarieties.lua draws
@@ -89,9 +89,11 @@ local function caughtCount(list, caught)
 	return n
 end
 
---- The fish spread's Varieties lines (VAR-R23, LED-R142), under its checklist: "Varieties" with "{n} of 10" at its
---- right and "See all ten »", opening the varieties spread on its first caught variety. Only for a caught Species
---- with varieties: none for a Species without, and none for one never caught (LED-R124), whose checklist isn't shown.
+--- The varieties card in a caught Species' entry (VAR-R23, LED-R140): on the fish spread's left page and the zone
+--- spread's right page with the fish selected, under "First landed …". "Varieties", "{n} of 10 found", a pip for each
+--- of the ten in its rarity's ink, filled once caught, the first caught variety's art and "See all ten »"; the whole
+--- card opens the varieties spread on that variety. Only for a caught Species with varieties: none for a Species
+--- without, and none for one never caught (LED-R124). An uncaught variety gives only its rarity (VAR-R27).
 ---@param id integer the Species ID
 ---@param context LedgerSpreadContext
 ---@return LedgerBlock[]
@@ -101,16 +103,21 @@ function ns.JournalFishVarieties(id, context)
 	if not list or not context.state.species[id] then
 		return {}
 	end
+	local selected = selectedOf(list, caught, nil)
+	local pips = {}
+	for index, entry in ipairs(list) do
+		local rarity = rarityOf(context.rarities, entry.rarity)
+		pips[index] = { ink = rarity and rarity.ink or { 0, 0, 0 }, inked = caught[index] ~= nil }
+	end
 	return {
 		{
-			kind = "kicker",
+			kind = "varietyCard",
 			text = L.FISH_VARIETIES,
 			value = L.FISH_VARIETIES_COUNT:format(caughtCount(list, caught), sizeOf(list)),
-		},
-		{
-			kind = "link",
-			text = L.FISH_VARIETIES_LINK,
-			place = ns.JournalPlace.varieties(id, selectedOf(list, caught, nil)),
+			link = L.FISH_VARIETIES_LINK,
+			art = caught[selected] and list[selected].art or nil,
+			pips = pips,
+			place = ns.JournalPlace.varieties(id, selected),
 		},
 	}
 end

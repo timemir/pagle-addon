@@ -204,6 +204,8 @@ local function build(board)
 	local frame = CreateFrame("Frame", FRAME_NAME, UIParent) --[[@as TackleBoardFrame]]
 	frame:SetSize(WIDTH, HEIGHT)
 	frame:SetFrameStrata("HIGH")
+	-- Over the other windows in its strata (show raises it) and brought back over them when clicked.
+	frame:SetToplevel(true)
 	frame:SetClampedToScreen(true)
 	frame:EnableMouse(true)
 	frame:SetMovable(true)
@@ -295,6 +297,8 @@ function Board:Open(goalID)
 		-- Sounded here, once per opening: the kit's probe sounded it at every start of the motion, so twice.
 		ns.BoardSound("boardOpen")
 	end
+	-- It opens over every window already open: the Pagle windows share its strata, at frame levels of their own.
+	frame:Raise()
 	self:Draw("open", nil, goalID)
 end
 

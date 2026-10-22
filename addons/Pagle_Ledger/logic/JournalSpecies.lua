@@ -98,7 +98,7 @@ end
 
 --- A Species' entry (LED-R140, LED-R141): the fish spread's left page, and the zone spread's right page with a fish
 --- selected. Caught: its icon in sepia, large; its name; the stamps (LED-R48); "First landed …" (the zone part left
---- out for zone 0); its blurb (left out while missing, LED-R161); "Found in …" with " Only by …"; its size line
+--- out for zone 0); its varieties' card (VAR-R23); its blurb (left out while missing, LED-R161); "Found in …" with " Only by …"; its size line
 --- once it has a record (LED-R80, by Pagle's measure, in the Angler's unit, LED-R85); and the removed line (LED-R12). Uncaught, and never named (LED-R124): a silhouette, "An unknown fish", its riddle in quotes and
 --- the plain hint's link, or the plain hint itself once opened (DATA-R112).
 ---@param id integer the Species ID
@@ -137,6 +137,10 @@ function ns.JournalSpeciesEntry(id, context, hint)
 		},
 		{ kind = "text", hand = true, text = first },
 	}
+	-- its varieties' card, the way to the varieties spread (VAR-R23, logic/JournalVarieties.lua)
+	for _, block in ipairs(ns.JournalFishVarieties(id, context)) do
+		blocks[#blocks + 1] = block
+	end
 	local blurb = text:Lore(("species.%d.blurb"):format(id))
 	if blurb then
 		blocks[#blocks + 1] = { kind = "text", text = blurb }
@@ -281,10 +285,6 @@ local function waters(id, context)
 			kind = "text",
 			text = L.FISH_REGULAR:format(box(3), math.min(species.n, ns.REGULAR_CATCHES), ns.REGULAR_CATCHES),
 		}
-	end
-	-- under the checklist, its varieties and the link to them (VAR-R23, logic/JournalVarieties.lua)
-	for _, block in ipairs(ns.JournalFishVarieties(id, context)) do
-		blocks[#blocks + 1] = block
 	end
 	return blocks
 end

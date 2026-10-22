@@ -171,6 +171,28 @@ describe("The balance across logins", function()
 		assert.are.same({ balance = 0, held = false, earned = {} }, loaded.env.Pagle.GetBalance())
 	end)
 
+	it("counts a test log's granted Coins and Activity XP under Dev, and nothing on a player's log", function()
+		local function login(test)
+			local log = savedLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" })
+			log.test, log.devCoins, log.devXP = test, 50000, 700000
+			local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }))
+			loaded.client.fire("PLAYER_LOGIN")
+			loaded.client.fire("PLAYER_ENTERING_WORLD")
+			return loaded.env.Pagle
+		end
+
+		local Pagle = login(true)
+		assert.are.same({ balance = 50000, held = false, earned = { Dev = 50000 } }, Pagle.GetBalance())
+		assert.are.same(
+			{ total = 700000, bySource = { Dev = { total = 700000, enabled = true } } },
+			Pagle.GetActivityXP()
+		)
+
+		Pagle = login(nil)
+		assert.are.same({ balance = 0, held = false, earned = {} }, Pagle.GetBalance())
+		assert.are.same({ total = 0, bySource = {} }, Pagle.GetActivityXP())
+	end)
+
 	it("shows 0 and held while earned is below spent, and BalanceChanged says so (SHOP-R12, SHOP-R91)", function()
 		local loaded = loadCore({ global = { coins = { earned = { Ledger = 1720, TackleBoard = 2030 } } } })
 		local ledger = register(loaded, "Ledger")

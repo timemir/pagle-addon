@@ -102,8 +102,11 @@ function Model:Purse()
 	local balance = self.sources.balance
 	local names, sum = {}, 0
 	for name, total in pairs(balance.earned) do
-		names[#names + 1] = name
-		sum = sum + total
+		-- a test log's granted Coins count in the balance, but the bar shows only what the Modules earned
+		if name ~= ns.DEV_SOURCE then
+			names[#names + 1] = name
+			sum = sum + total
+		end
 	end
 	table.sort(names, byRoster)
 	local segments = {}
