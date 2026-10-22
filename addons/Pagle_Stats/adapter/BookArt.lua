@@ -258,6 +258,7 @@ end
 ---@param capTop number
 ---@param capBottom number
 ---@param period number?
+---@return number height -- the height it drew, `height` grown to its caps if shorter
 function ns.SetVSlice(frame, atlasName, name, height, capTop, capBottom, period)
 	local slice = frame --[[@as StatsVSlice]]
 	local atlas, sprite = spriteOf(atlasName, name)
@@ -302,6 +303,7 @@ function ns.SetVSlice(frame, atlasName, name, height, capTop, capBottom, period)
 	for i = #middles + 1, #slice.middles do
 		slice.middles[i]:Hide()
 	end
+	return height
 end
 
 --- A round dot: a solid colour through the portrait mask's disc, with a thin dark edge, as the group and tracker

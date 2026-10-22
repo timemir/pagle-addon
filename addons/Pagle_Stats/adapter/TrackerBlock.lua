@@ -403,15 +403,13 @@ function ns.NewTrackerBlock(parent)
 			block.rows[i]:Hide()
 		end
 		local height = math.max(top + look.foot, 1)
-		if look.frame then
-			-- never shorter than the paper's fixed top and foot
-			height = ns.SliceDown(height, look.sliceTop, look.sliceFoot, look.period)
-		end
-		block:SetSize(look.width, height)
 		block.paper:SetShown(look.frame ~= nil)
 		if look.frame then
-			ns.SetVSlice(block.paper, look.frame, look.sprite, height, look.sliceTop, look.sliceFoot, look.period)
+			-- never shorter than the paper's fixed top and foot: the block takes the height its paper draws
+			height =
+				ns.SetVSlice(block.paper, look.frame, look.sprite, height, look.sliceTop, look.sliceFoot, look.period)
 		end
+		block:SetSize(look.width, height)
 		return height
 	end
 
