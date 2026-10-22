@@ -576,7 +576,6 @@ ns.L = {
 	FIRST_LOOK_NOTES = "Notes to self: what’s closest to done. They rewrite themselves as you fish.",
 	FIRST_LOOK_SEARCH = "Find a water or a fish. A fish you haven’t caught is *never named*.",
 	FIRST_LOOK_UNFISHED = "Dashed tiles are waters you haven’t fished yet, with the skill they ask.",
-	FIRST_LOOK_BUTTON = "?",
 	FIRST_LOOK_AGAIN = "Show the notes for this page again",
 	-- The Journal's tour stops' labels, for `/pagle dev tour list` (CORE-R68): dev-only, never shown to players.
 	TOUR_HOME = "the Fish Journal: Home",

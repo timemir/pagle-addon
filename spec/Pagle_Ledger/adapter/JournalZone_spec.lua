@@ -331,7 +331,7 @@ describe("the Journal's zone spread", function()
 			"draws a row's name, its margin in handwriting and its three stars, inked or blank (LED-R136, ledger.md › UI)",
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
-				local rows = loaded.ns.journal.frame.left.drawn.row
+				local rows = loaded.ns.journal.shown.left.drawn.row
 
 				-- Blackmouth: pools, ★★ alone of three (one Catch is short of ★'s five), as the kit's stars inked
 				-- and in ghost ink.
@@ -358,7 +358,7 @@ describe("the Journal's zone spread", function()
 
 		it("draws the ladder's ranks with the shown one circled in red (LED-R135)", function()
 			local _, loaded = zoneSpread(DARKSHORE)
-			local ladder = loaded.ns.journal.frame.left.drawn.ladder[1]
+			local ladder = loaded.ns.journal.shown.left.drawn.ladder[1]
 
 			local words, circled = {}, {}
 			for i, rung in ipairs(ladder.rungs) do
@@ -441,7 +441,7 @@ describe("the Journal's zone spread", function()
 		it("opens the Field report from its Help chart the waters link (LED-R138, REP-R43)", function()
 			local fake, loaded = zoneSpread(STORMWIND)
 
-			loaded.ns.journal.frame.right.drawn.link[1]:Click()
+			loaded.ns.journal.shown.right.drawn.link[1]:Click()
 
 			assert.are.equal(1, #fake.fieldReportsOpened)
 		end)
@@ -450,7 +450,7 @@ describe("the Journal's zone spread", function()
 			local fake, loaded = zoneSpread(STORMWIND)
 			fake.setRestricted(true)
 
-			loaded.ns.journal.frame.right.drawn.link[1]:Click()
+			loaded.ns.journal.shown.right.drawn.link[1]:Click()
 
 			assert.are.same({}, fake.fieldReportsOpened)
 			assert.are.equal("Pagle: the Field report opens after combat.", fake.printed[#fake.printed])
@@ -460,7 +460,7 @@ describe("the Journal's zone spread", function()
 	it("opens the Field report from a charted zone's Also caught here link (LED-R135, REP-R43)", function()
 		local fake, loaded = zoneSpread(DARKSHORE)
 
-		loaded.ns.journal.frame.left.drawn.link[1]:Click()
+		loaded.ns.journal.shown.left.drawn.link[1]:Click()
 
 		assert.are.equal(1, #fake.fieldReportsOpened)
 	end)
@@ -478,7 +478,7 @@ describe("the Journal's zone spread", function()
 			end
 		end
 		assert.are.same({ "Eastern Kingdoms", "Kalimdor (on)" }, tabs)
-		local tile = journal.frame.left.drawn.tiles[1].children[1]
+		local tile = journal.shown.left.drawn.tiles[1].children[1]
 		assert.are.equal("Darkshore", tile.name.text)
 		tile:Click()
 
@@ -489,7 +489,7 @@ describe("the Journal's zone spread", function()
 	describe("with a fish selected", function()
 		-- Clicks Species row `i` of the left page, as drawn.
 		local function clickRow(loaded, i)
-			loaded.ns.journal.frame.left.drawn.row[i]:Click()
+			loaded.ns.journal.shown.left.drawn.row[i]:Click()
 		end
 
 		it(
@@ -524,7 +524,7 @@ describe("the Journal's zone spread", function()
 					link.place
 				)
 
-				loaded.ns.journal.frame.right.drawn.link[1]:Click()
+				loaded.ns.journal.shown.right.drawn.link[1]:Click()
 
 				-- night · pools · Darkshore · skill ~75 (DATA-R112).
 				local right = loaded.ns.journal.pages.right
@@ -571,7 +571,7 @@ describe("the Journal's zone spread", function()
 			journal:OpenPlace(loaded.ns.JournalPlace.fish(BLACKMOUTH))
 
 			-- Its one tile, Darkshore's.
-			local tile = journal.frame.right.drawn.tiles[1].tiles[1]
+			local tile = journal.shown.right.drawn.tiles[1].tiles[1]
 			assert.are.equal("Darkshore", tile.name.text)
 			tile:Click()
 
@@ -642,7 +642,7 @@ describe("the Journal's zone spread", function()
 			local journal = loaded.ns.journal
 
 			-- The right page's rows are its families: Catfish, then Redgill.
-			journal.frame.right.drawn.row[2]:Click()
+			journal.shown.right.drawn.row[2]:Click()
 
 			assert.are.same({ id = "trophy", args = { family = 4 } }, journal.router:Place())
 			assert.are.same({ "Home", "The Trophy Room" }, crumbLabels(loaded))
@@ -704,11 +704,11 @@ describe("the Journal's zone spread", function()
 	describe("scrolling", function()
 		it("keeps the left page's scroll when the right page opens a fish's plain hint (LED-R129, LED-R141)", function()
 			local _, loaded = zoneSpread(DARKSHORE)
-			loaded.ns.journal.frame.left.drawn.row[3]:Click()
+			loaded.ns.journal.shown.left.drawn.row[3]:Click()
 			scrollPage(loaded, "left", 120)
 
 			-- The right page's "Read the plain hint ▸".
-			loaded.ns.journal.frame.right.drawn.link[1]:Click()
+			loaded.ns.journal.shown.right.drawn.link[1]:Click()
 
 			local right = loaded.ns.journal.pages.right
 			assert.are.equal("night · pools · Darkshore · skill ~75", right[#right].text)
@@ -719,11 +719,11 @@ describe("the Journal's zone spread", function()
 			"keeps the left page's scroll when a fish is selected on it, and starts the right page's new entry at the top (LED-R129, LED-R136)",
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
-				loaded.ns.journal.frame.left.drawn.row[1]:Click()
+				loaded.ns.journal.shown.left.drawn.row[1]:Click()
 				scrollPage(loaded, "left", 120)
 				scrollPage(loaded, "right", 80)
 
-				loaded.ns.journal.frame.left.drawn.row[3]:Click()
+				loaded.ns.journal.shown.left.drawn.row[3]:Click()
 
 				assert.are.equal("An unknown fish", loaded.ns.journal.pages.crumbs[4].label)
 				assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
@@ -748,7 +748,7 @@ describe("the Journal's zone spread", function()
 		it("starts both pages at the top when another zone opens (LED-R129)", function()
 			local _, loaded = zoneSpread(DARKSHORE)
 			local journal = loaded.ns.journal
-			journal.frame.left.drawn.row[1]:Click()
+			journal.shown.left.drawn.row[1]:Click()
 			scrollPage(loaded, "left", 120)
 			scrollPage(loaded, "right", 80)
 
@@ -763,7 +763,7 @@ describe("the Journal's zone spread", function()
 			function()
 				local _, loaded = zoneSpread(DARKSHORE)
 				local journal = loaded.ns.journal
-				journal.frame.left.drawn.row[1]:Click()
+				journal.shown.left.drawn.row[1]:Click()
 				scrollPage(loaded, "left", 120)
 				scrollPage(loaded, "right", 80)
 

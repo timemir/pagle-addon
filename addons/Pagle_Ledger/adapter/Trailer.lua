@@ -10,14 +10,13 @@ Pagle.RegisterTrailerPart("Ledger", function(ctx)
 	for _, record in ipairs(ctx.records) do
 		fold.apply(state, record, "rebuild")
 	end
-	local savedPlace, wasShown = ns.journal.router:Place(), ns.journal:IsShown()
+	local savedPlace, wasShown = ns.journal:Place(), ns.journal:IsShown()
 	ctx.defer(function()
 		if ctx.loggingOut then
 			return
 		end
-		ns.journal.router:Open(savedPlace.id, savedPlace.args)
 		if wasShown then
-			ns.journal:Draw()
+			ns.journal:OpenPlace(savedPlace, "still")
 		else
 			ns.journal:Close()
 		end
@@ -94,11 +93,11 @@ Pagle.RegisterTrailerPart("Ledger", function(ctx)
 			open(ns.JournalPlace.zone(ctx.zone, species))
 		end,
 		search = function()
-			ns.journal.frame.search:SetText(ns.journal:Context().text:Item(other):sub(1, 4))
-			ns.journal.frame.search:ClearFocus()
+			ns.journal.search:SetText(ns.journal:Context().text:Item(other):sub(1, 4))
+			ns.journal.search:ClearFocus()
 		end,
 		searchResult = function()
-			ns.journal.frame.search:SetText("")
+			ns.journal.search:SetText("")
 			open(ns.JournalPlace.fish(other))
 		end,
 		varieties = function()

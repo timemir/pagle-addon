@@ -312,7 +312,7 @@ describe("the Prestige emblem block (LED-R34)", function()
 			end,
 		})
 		loaded.ns.journal:Open("emblems")
-		return loaded.ns.journal.frame.left.drawn.emblem
+		return loaded.ns.journal.shown.left.drawn.emblem
 	end
 
 	-- The texts an emblem widget shows: its numeral.

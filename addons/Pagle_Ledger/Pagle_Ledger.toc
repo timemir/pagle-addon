@@ -49,7 +49,6 @@ logic\JournalZone.lua
 logic\Tour.lua
 logic\Onboarding.lua
 adapter\JournalArt.lua
-adapter\JournalBook.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalCollections.lua

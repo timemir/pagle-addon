@@ -112,7 +112,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 		fake.wait(1.6)
 		for i = 1, 8 do
 			assert(journal:IsShown(), "stop " .. i .. " left the book closed")
-			local search = journal.frame.search:GetText()
+			local search = journal.search:GetText()
 			seen[i] = { place = journal.router:Place(), search = search ~= "" and search or nil }
 			fake.wait(STOP)
 		end
@@ -136,8 +136,8 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 		fake.slash("dev tour ledger")
 		fake.wait(1.6 + 7 * STOP)
 
-		assert.is_true(journal.frame.searchDrop:IsShown())
-		assert.are.equal("Raw Brilliant Smallfish", journal.frame.searchDrop.rows[1].label:GetText())
+		assert.is_true(journal.searchDrop:IsShown())
+		assert.are.equal("Raw Brilliant Smallfish", journal.searchDrop.rows[1].label:GetText())
 	end)
 
 	it("leave the book closed, on Home, when it was closed (LED-R120)", function()
@@ -149,7 +149,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 
 		assert.is_false(journal:IsShown())
 		assert.are.same({ id = "home" }, journal.router:Place())
-		assert.are.equal("", journal.frame.search:GetText())
+		assert.are.equal("", journal.search:GetText())
 		assert.are.equal(8, #fake.tourShots)
 	end)
 
@@ -162,7 +162,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 
 		assert.is_true(journal:IsShown())
 		assert.are.same({ id = "curios" }, journal.router:Place())
-		assert.is_false(journal.frame.searchDrop:IsShown())
+		assert.is_false(journal.searchDrop:IsShown())
 	end)
 
 	it(

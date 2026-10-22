@@ -231,8 +231,8 @@ describe("the Journal's Home, left page", function()
 		assert.are.equal("Kalimdor", chosen)
 
 		-- Clicking the Other waters tab, then a tile's zone and back Home by the Home crumb.
-		local frame = loaded.ns.journal.frame
-		frame.left.drawn.tabs[1].tabs[2]:Click()
+		local journal = loaded.ns.journal
+		journal.shown.left.drawn.tabs[1].tabs[2]:Click()
 		assert.are.same({ "Isle of Dread" }, tileNames(loaded))
 		loaded.ns.RegisterJournalSpread("zone", {
 			crumbs = function()
@@ -242,9 +242,9 @@ describe("the Journal's Home, left page", function()
 				return { left = {}, right = {} }
 			end,
 		})
-		frame.left.drawn.tiles[1].children[1]:Click()
+		journal.shown.left.drawn.tiles[1].children[1]:Click()
 		assert.are.same({ id = "zone", args = { zone = ISLE } }, loaded.ns.journal.router:Place())
-		frame.crumbButtons[1]:Click()
+		journal.frame.crumbButtons[1]:Click()
 
 		_, chosen = tabs(loaded)
 		assert.are.equal("Other waters", chosen)
@@ -258,7 +258,7 @@ describe("the Journal's Home, left page", function()
 			scrollPage(loaded, "right", 80)
 
 			-- The Other waters tab.
-			loaded.ns.journal.frame.left.drawn.tabs[1].tabs[2]:Click()
+			loaded.ns.journal.shown.left.drawn.tabs[1].tabs[2]:Click()
 
 			assert.are.same({ "Isle of Dread" }, tileNames(loaded))
 			assert.are.same({ 0, 80 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
@@ -365,11 +365,11 @@ describe("the Journal's Home, right page", function()
 
 			-- The Trophy Room (#143) registers itself; take it away to see a link to a spread not yet registered.
 			loaded.ns.journalSpreads.trophy = nil
-			journal.frame.right.drawn.leader[1]:Click()
+			journal.shown.right.drawn.leader[1]:Click()
 			assert.are.same({ id = "home" }, journal.router:Place())
 
 			loaded.ns.RegisterJournalSpread("trophy", spread("trophy"))
-			journal.frame.right.drawn.leader[1]:Click()
+			journal.shown.right.drawn.leader[1]:Click()
 			assert.are.same({ id = "trophy" }, journal.router:Place())
 		end
 	)
@@ -378,7 +378,7 @@ describe("the Journal's Home, right page", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
 		local journal = loaded.ns.journal
 
-		journal.frame.right.drawn.link[1]:Click()
+		journal.shown.right.drawn.link[1]:Click()
 
 		assert.are.same({ id = "fish", args = { species = MACKEREL } }, journal.router:Place())
 		local labels = {}
@@ -391,7 +391,7 @@ describe("the Journal's Home, right page", function()
 	it("is where the fish spread's back link returns from a note (LED-R125)", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
 		local journal = loaded.ns.journal
-		journal.frame.right.drawn.link[1]:Click()
+		journal.shown.right.drawn.link[1]:Click()
 
 		journal.frame.back:Click()
 
@@ -403,7 +403,7 @@ describe("the Journal's Home, right page", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
 		local journal = loaded.ns.journal
 
-		journal.frame.right.drawn.leader[4]:Click()
+		journal.shown.right.drawn.leader[4]:Click()
 
 		assert.are.same({ id = "angler" }, journal.router:Place())
 		local labels = {}
@@ -424,7 +424,7 @@ end
 
 -- The drawn bookplate row's widget (LED-R132).
 local function drawnBookplate(loaded)
-	return loaded.ns.journal.frame.right.drawn.bookplate[1]
+	return loaded.ns.journal.shown.right.drawn.bookplate[1]
 end
 
 describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-R4's M4 stage)", function()

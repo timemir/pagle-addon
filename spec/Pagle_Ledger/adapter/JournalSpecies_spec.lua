@@ -261,7 +261,7 @@ describe("an uncaught Species' entry (LED-R141)", function()
 		local journal = loaded.ns.journal
 		openFish(loaded, SECRET)
 
-		journal.frame.left.drawn.link[1]:Click()
+		journal.shown.left.drawn.link[1]:Click()
 
 		local hint =
 			{ kind = "text", hand = true, text = "night · pools · Elwynn Forest · Westfall +1 · skill ~25" }
@@ -281,7 +281,7 @@ describe("an uncaught Species' entry (LED-R141)", function()
 		scrollPage(loaded, "left", 120)
 		scrollPage(loaded, "right", 80)
 
-		journal.frame.left.drawn.link[1]:Click()
+		journal.shown.left.drawn.link[1]:Click()
 
 		assert.are.equal("night · pools · Elwynn Forest · Westfall +1 · skill ~25", journal.pages.left[4].text)
 		assert.are.same({ 120, 80 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
@@ -427,7 +427,7 @@ describe("the fish spread (LED-R142)", function()
 		})
 		openFish(loaded, MACKEREL)
 
-		local tiles = loaded.ns.journal.frame.right.drawn.tiles[1]
+		local tiles = loaded.ns.journal.shown.right.drawn.tiles[1]
 		tiles.children[2]:Click()
 
 		assert.are.same({ zone = WESTFALL, species = MACKEREL }, opened)
@@ -436,14 +436,14 @@ end)
 
 -- Types `query` into the open book's search box, as the player does: its text changes.
 local function typeInto(loaded, query)
-	local search = loaded.ns.journal.frame.search
+	local search = loaded.ns.journal.search
 	search:SetText(query)
 	search:GetScript("OnTextChanged")(search, true)
 end
 
 -- The search dropdown's shown lines, in order.
 local function dropdown(loaded)
-	local frame = loaded.ns.journal.frame
+	local frame = loaded.ns.journal
 	local lines = {}
 	if not frame.searchDrop:IsShown() then
 		return lines
@@ -475,7 +475,7 @@ describe("the Journal's search box (LED-R148)", function()
 		journal:Toggle()
 		typeInto(loaded, "sh")
 
-		journal.frame.searchDrop.rows[2]:Click()
+		journal.searchDrop.rows[2]:Click()
 
 		assert.are.same({ id = "fish", args = { species = STRAY } }, journal.router:Place())
 		assert.are.same(
@@ -483,7 +483,7 @@ describe("the Journal's search box (LED-R148)", function()
 			{ journal.pages.crumbs[1].label, journal.pages.crumbs[2].label }
 		)
 		assert.are.same({}, dropdown(loaded))
-		assert.are.equal("", journal.frame.search:GetText())
+		assert.are.equal("", journal.search:GetText())
 	end)
 
 	it("shows the no-match line for a string matching nothing, and nothing for an empty box (LED-R148)", function()

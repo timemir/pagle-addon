@@ -23,28 +23,27 @@ function ns.RegisterTourStops(M)
 		---@type LedgerTourSaved?
 		local saved
 		M:RegisterTourStop(stop.id, ns.L[stop.label], function()
-			saved = { shown = journal:IsShown(), place = journal.router:Place() }
+			saved = { shown = journal:IsShown(), place = journal:Place() }
 			local context = journal:Context()
 			local ready = not context.updating and context --[[@as LedgerSpreadContext]]
 			journal:OpenPlace(ready and stop.place(ready) or ns.JournalPlace.home())
 			-- the screenshot shows the spread settled, never mid-turn
 			journal:Settle()
-			local frame = journal.frame
-			if ready and stop.search and frame then
-				frame.search:SetText(stop.search(ready))
+			if ready and stop.search and journal.search then
+				journal.search:SetText(stop.search(ready))
 			end
 		end, function()
-			local frame = journal.frame
-			if not saved or not frame then
+			local search = journal.search
+			if not saved or not search then
 				return
 			end
-			frame.search:SetText("")
-			frame.search:ClearFocus()
-			journal.router:Open(saved.place.id, saved.place.args)
-			if saved.shown then
-				journal:Draw()
-			else
-				frame:Hide()
+			search:SetText("")
+			search:ClearFocus()
+			-- back on its place, drawn there in place; a book that was closed closes again
+			journal:OpenPlace(saved.place, "still")
+			if not saved.shown then
+				journal:Close()
+				journal:Settle()
 			end
 			saved = nil
 		end)
