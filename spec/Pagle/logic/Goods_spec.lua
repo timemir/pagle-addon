@@ -854,8 +854,8 @@ describe("ns.NewGoods", function()
 	end)
 
 	describe("a Core slot open to earned goods", function()
-		-- Core's crest slot, open to earned goods, with Plain its default (SHOP-R23, SHOP-R25), and Core's toast style
-		-- slot, which isn't open.
+		-- Core's crest slot, open to earned goods, with Plain its default (SHOP-R23, SHOP-R25), and a Core slot that
+		-- isn't open.
 		local function coreSlots(env)
 			assert.is_nil(
 				env.goods:RegisterSlot(
@@ -870,10 +870,7 @@ describe("ns.NewGoods", function()
 				)
 			)
 			assert.is_nil(
-				env.goods:RegisterSlot(
-					"Core",
-					{ id = "core.toaststyle", label = "Toast style", category = "Announcements" }
-				)
+				env.goods:RegisterSlot("Core", { id = "core.closed", label = "Closed", category = "Announcements" })
 			)
 		end
 
@@ -941,7 +938,7 @@ describe("ns.NewGoods", function()
 			{
 				"an earned good in a Core slot not open",
 				"Ledger",
-				crest({ value = true }, { slot = "core.toaststyle" }),
+				crest({ value = true }, { slot = "core.closed" }),
 			},
 			{
 				"an earned good without its Module's prefix",
@@ -982,7 +979,7 @@ describe("ns.NewGoods", function()
 				assert.is_nil(env.db.global.goods[case[3].id])
 				assert.are.same({ 1, 0, 0 }, {
 					#env.goods:GoodsOf("core.crest"),
-					#env.goods:GoodsOf("core.toaststyle"),
+					#env.goods:GoodsOf("core.closed"),
 					#env.goods:GoodsOf("ledger.open"),
 				})
 			end)

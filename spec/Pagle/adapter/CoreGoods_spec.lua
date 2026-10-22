@@ -78,12 +78,45 @@ describe("Core's slots and goods", function()
 				Pagle.IsOwned("core.toaststyle.ripple"),
 				Pagle.IsOwned("core.soundset.gilded"),
 			})
-			-- Only the crest slot is open to other Modules' earned goods, the Ledger's zone crests (SHOP-R23, SHOP-R25).
+			-- All three are open to other Modules' earned goods: the earned toast styles and sound sets, and the Ledger's
+			-- zone crests (SHOP-R23, SHOP-R25).
 			local open = {}
 			for _, slot in ipairs(goods:Slots()) do
 				open[#open + 1] = slot.openToEarned == true
 			end
-			assert.are.same({ false, false, true }, open)
+			assert.are.same({ true, true, true }, open)
+		end
+	)
+
+	it(
+		"take another Module's earned toast style and sound set, owned and equipped like Core's own (SHOP-R23, SHOP-R25, SHOP-R32)",
+		function()
+			local loaded = loadCore()
+			loaded.client.fire("PLAYER_LOGIN")
+			local Pagle = loaded.env.Pagle
+			local M = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local function earned(id, slot)
+				return M:RegisterGood({
+					id = id,
+					slot = slot,
+					name = id,
+					isEarned = function()
+						return true
+					end,
+					earnedText = "Land a Legend",
+				})
+			end
+
+			assert.is_nil(earned("ledger.toaststyle.legend", "core.toaststyle"))
+			assert.is_nil(earned("ledger.soundset.concertina", "core.soundset"))
+			assert.are.same({ true, true }, {
+				Pagle.SetEquipped("core.toaststyle", "ledger.toaststyle.legend"),
+				Pagle.SetEquipped("core.soundset", "ledger.soundset.concertina"),
+			})
+			assert.are.same({ "ledger.toaststyle.legend", "ledger.soundset.concertina" }, {
+				Pagle.GetEquipped("core.toaststyle"),
+				Pagle.GetEquipped("core.soundset"),
+			})
 		end
 	)
 
@@ -311,6 +344,25 @@ describe("Core's goods' previews", function()
 			assert.are.same({ 60, 70 }, { crest:GetSize() })
 			assert.are.same({ 0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1 }, crest.texCoord)
 			assert.is_nil(crest.masks)
+		end
+	)
+
+	it(
+		"draw another Module's toast style as a sample toast and its sound set with the sound buttons, with each slot's preview (SHOP-R25)",
+		function()
+			local loaded, stage = stageOf()
+			local slots = loaded.ns.goods:Slots()
+			assert.are.same({ "core.toaststyle", "core.soundset" }, { slots[1].id, slots[2].id })
+			local ICON = "Interface\\Icons\\INV_Misc_Note_02"
+
+			slots[2].preview(stage, { id = "ledger.soundset.concertina", icon = ICON })
+			assert.are.same({ ICON }, texturesOn(stage))
+			assert.is_table(withText(stage, "» Toast"))
+			slots[1].preview(stage, { id = "ledger.toaststyle.legend", icon = ICON })
+			assert.are.same(
+				{ true, false },
+				{ withText(stage, "Show on screen") ~= nil, withText(stage, "» Toast") ~= nil }
+			)
 		end
 	)
 
