@@ -115,25 +115,48 @@ local function buildCrest(panel)
 end
 
 ---@class PagleBindingPanel: Frame
----@field book PagleSprite  -- the closed book, the binding's swatch
----@field icon Texture      -- the binding's icon, where no kit drew a closed book of it
+---@field book PagleSprite         -- the closed book, the binding's swatch
+---@field live Frame               -- a live closed book, where no kit drew one: the binding drawn by the renderer
+---@field binding PagleBookBinding? -- the live book's binding, pinned to the good shown, made at its first showing
 ---@field note FontString
 
 -- The closed book's top on the stage, as the crest's bookplate sits, and the width its drawn book is drawn at: the
 -- Ledger art kit's books', which the shop expansion's larger ones are drawn down to, so every binding shows the same
--- size and, with the note under it, fits the stage's 190. A binding with no closed book shows its icon, as large as a
--- sound set's swatch.
-local BOOK_TOP, BOOK_WIDTH, ICON_TOP, ICON_SIZE = 16, 104, 24, 72
+-- size and, with the note under it, fits the stage's 190. A binding no kit drew closed is drawn live at that size, as
+-- tall as the Ledger kit's swatches (104 × 134), its corner pieces and gilt corner drawn down by LIVE_SCALE from the
+-- open books' (the Fish Journal's 600 high).
+local BOOK_TOP, BOOK_WIDTH, LIVE_HEIGHT = 16, 104, 134
+local LIVE_SCALE = LIVE_HEIGHT / 600
+local LIVE_CORNER, LIVE_GILT_CORNER = math.floor(44 * LIVE_SCALE + 0.5), math.floor(40 * LIVE_SCALE + 0.5)
 
--- A binding's panel: its closed book, or its icon, then that every book wears it (ADR 0015).
+-- A binding's panel: its closed book, the swatch or a live one, then that every book wears it (ADR 0015).
 ---@param panel PagleBindingPanel
 local function buildBinding(panel)
 	panel.book = ns.ArtSprite(panel, "Bindings", "binding-field-leather")
-	panel.icon = panel:CreateTexture(nil, "ARTWORK")
-	panel.icon:SetSize(ICON_SIZE, ICON_SIZE)
-	panel.icon:SetPoint("TOP", 0, -ICON_TOP)
+	panel.live = CreateFrame("Frame", nil, panel)
+	panel.live:SetSize(BOOK_WIDTH, LIVE_HEIGHT)
+	panel.live:SetPoint("TOP", 0, -BOOK_TOP)
+	panel.live:Hide()
 	panel.note = ns.Text(panel, "GameFontDisableSmall")
 	panel.note:SetText(L.PREVIEW_BINDING_NOTE)
+end
+
+-- Draws binding `goodID` as a live closed book on `panel`, the renderer pinned to it (BIND-R1, BIND-R2). Returns how
+-- far down its foot is.
+---@param panel PagleBindingPanel
+---@param goodID string
+---@return number
+local function drawLiveBook(panel, goodID)
+	panel.live:Show()
+	if panel.binding then
+		panel.binding:SetLook(goodID)
+	else
+		panel.binding = Pagle.NewBookBinding(
+			panel.live,
+			{ pinned = goodID, cornerSize = LIVE_CORNER, giltCornerSize = LIVE_GILT_CORNER }
+		)
+	end
+	return BOOK_TOP + LIVE_HEIGHT
 end
 
 -- Draws `look`'s closed book from its swatch, its drawn book BOOK_WIDTH wide, its top BOOK_TOP down the panel and
@@ -158,17 +181,17 @@ end
 ---@type table<string, PagleCorePreview>
 ns.CORE_PREVIEWS = {
 	-- A binding's closed book (ADR 0015), the kits' swatch of it, Core's art for a Module's earned one too (SHOP-R25);
-	-- its icon for the three no kit drew closed (Oilcloth, Tooled Leather, Verdigris).
+	-- for the three no kit drew closed (Oilcloth, Tooled Leather, Verdigris), a live one the renderer draws.
 	[ns.BINDING_SLOT] = function(stage, good)
 		local panel = ns.CorePreviewPanel(stage, ns.BINDING_SLOT, buildBinding) --[[@as PagleBindingPanel]]
 		local look = ns.BindingLook(good.id)
-		local foot = ICON_TOP + ICON_SIZE
+		local foot
 		panel.book:SetShown(look.swatch ~= nil)
-		panel.icon:SetShown(look.swatch == nil)
 		if look.swatch then
+			panel.live:Hide()
 			foot = drawClosedBook(panel, look)
 		else
-			panel.icon:SetTexture(good.icon)
+			foot = drawLiveBook(panel, good.id)
 		end
 		panel.note:ClearAllPoints()
 		panel.note:SetPoint("TOP", panel, "TOP", 0, -(foot + 10))

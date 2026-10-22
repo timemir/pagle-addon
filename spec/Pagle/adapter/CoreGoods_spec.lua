@@ -554,17 +554,42 @@ describe("Core's goods' previews", function()
 		end
 	)
 
-	it("draw a binding no kit drew closed as its icon for now (SHOP-R25)", function()
-		local loaded, stage = stageOf()
-		local goods = loaded.ns.goods
+	it(
+		"draw a binding no kit drew closed as a live closed book, 104 x 134, the renderer pinned to it, one per stage, hidden for a swatch (SHOP-R25, BIND-R1, BIND-R2)",
+		function()
+			local loaded, stage = stageOf()
+			local goods, ns, Pagle = loaded.ns.goods, loaded.ns, loaded.env.Pagle
+			local made, newBinding = {}, Pagle.NewBookBinding
+			Pagle.NewBookBinding = function(frame, options)
+				local binding = newBinding(frame, options)
+				made[#made + 1] = { frame = frame, options = options, binding = binding }
+				return binding
+			end
 
-		goods:Good("core.binding.oilcloth").preview(stage)
+			goods:Good("core.binding.oilcloth").preview(stage)
 
-		assert.are.same({ loaded.env.Pagle.GetGood("core.binding.oilcloth").icon }, texturesOn(stage))
-		assert.is_table(withText(stage, "Every book of yours wears it."))
-		goods:Good("core.binding.birch").preview(stage) -- a closed book again after it
-		assert.are.same({ loaded.ns.ATLASES.Bindings.file }, texturesOn(stage))
-	end)
+			assert.are.equal(1, #made)
+			local live = made[1]
+			assert.are.equal("core.binding.oilcloth", live.options.pinned)
+			assert.is_true(live.options.cornerSize < 44 and live.options.giltCornerSize < 40)
+			assert.is_true(live.frame:IsShown())
+			assert.are.same({ 104, 134 }, { live.frame:GetSize() })
+			assert.are.same(ns.BindingLook("core.binding.oilcloth"), live.binding:Look())
+			assert.is_table(withText(stage, "Every book of yours wears it."))
+
+			goods:Good("core.binding.tooled").preview(stage) -- the same live book, pinned to the next one
+
+			assert.are.equal(1, #made)
+			assert.are.equal("core.binding.tooled", live.binding.pinned)
+			assert.are.same(ns.BindingLook("core.binding.tooled"), live.binding:Look())
+
+			goods:Good("core.binding.birch").preview(stage) -- a swatch again after it
+
+			assert.is_false(live.frame:IsShown())
+			assert.are.same({ ns.ATLASES.Bindings.file }, texturesOn(stage))
+			assert.are.equal(1, #made)
+		end
+	)
 
 	it("draw a toast style with the drawer its slot has when it is drawn, added after login (ANN-R80)", function()
 		local loaded, stage = stageOf()
