@@ -73,6 +73,7 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	end, function(value)
 		stored().cozy = value
 	end)
+	ns.cozySetting = cozy
 	Settings.CreateCheckbox(page, cozy, L.SETTINGS_COZY_TOOLTIP)
 
 	local budgetOn = Settings.RegisterProxySetting(page, BUDGET, Boolean, L.SETTINGS_BUDGET, true, function()

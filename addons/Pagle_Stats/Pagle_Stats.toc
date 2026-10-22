@@ -52,3 +52,4 @@ adapter\Settings.lua
 adapter\Settings.xml
 adapter\Tracker.lua
 adapter\Stats.lua
+adapter\Trailer.lua

@@ -81,6 +81,21 @@ function ns.NewGoods(options)
 	return setmetatable({ options = options, slots = {}, goods = {}, purchased = {}, registered = 0 }, Goods)
 end
 
+--- An isolated view over the registered goods, for a recording with a disposable DB. Ownership and the last
+--- drawn appearances are separate; the registered slots and native preview functions are shared read-only.
+---@return PagleGoods
+function Goods:PreviewCopy()
+	local copy = ns.NewGoods(self.options)
+	copy.slots, copy.goods, copy.registered = self.slots, self.goods, self.registered
+	if self.shown then
+		copy.shown = {}
+		for slot, good in pairs(self.shown) do
+			copy.shown[slot] = good
+		end
+	end
+	return copy
+end
+
 ---@private
 ---@return table<string, table>
 function Goods:Cache()

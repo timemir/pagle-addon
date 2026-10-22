@@ -46,6 +46,7 @@ adapter\Board.lua
 adapter\Pins.lua
 adapter\Ledge.lua
 adapter\TackleBoard.lua
+adapter\Trailer.lua
 adapter\Generate.lua
 adapter\Reroll.lua
 adapter\Moments.lua
