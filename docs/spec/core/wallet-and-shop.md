@@ -29,7 +29,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 
 ### Goods
 
-- **SHOP-R20** A **good** is a look for one of Pagle's own views, in one **slot**. Goods never carry meaning: titles, Fly Box flies, stars, Legends, Prestige and set emblems are never goods. Words drawn into a good's art ("WANTED" on Bounty Poster, "No.7" on Canvas Field Pad, "FLIES · HOOKS" on Tackle Tin, "the Long Haul" on Scrimshaw Panel, "NO.0042 · PAID" on Goblin Ticker, the I–V on Five-Set Seal) are decoration, part of the texture, not strings: they are outside CORE-R8, never in `ns.L`, and stay English in every locale.
+- **SHOP-R20** A **good** is a look for one of Pagle's own views, in one **slot**. Goods never carry meaning: titles, Fly Box flies, stars, Legends, Prestige and set emblems are never goods. Words drawn into a good's art ("WANTED" on Bounty Poster, "No.7" on Canvas Field Pad, "FLIES · HOOKS" on Tackle Tin, "the Long Haul" on Scrimshaw Panel, "NO.0042 · PAID" on Goblin Ticker, the I–V on Four-Set Seal) are decoration, part of the texture, not strings: they are outside CORE-R8, never in `ns.L`, and stay English in every locale.
 - **SHOP-R21** Modules register their own slots and goods with `M:RegisterSlot` and `M:RegisterGood`, at any time after `RegisterModule`; Core registers its own. Slot and good IDs are `<def.name lowercased>.<name>` (`core.` for Core's), match `[%w_.]+`, and never change once shipped.
 - **SHOP-R22** Every good is exactly one of:
   - **default**: free and owned by everyone; each slot has exactly one
