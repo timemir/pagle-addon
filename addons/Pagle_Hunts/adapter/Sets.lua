@@ -35,7 +35,7 @@ end
 --- The breadcrumbs where the board is (HNT-R61), as data.
 ---@return BoardCrumbView[]
 function ns.BoardCrumbs()
-	return ns.BuildCrumbs(ns.board:Trail(), ns.hunts)
+	return ns.BuildCrumbs(ns.board:Trail(), ns.hunts, ns.BoardRunName)
 end
 
 -- A current Hunt's tracker label (HNT-R51) from its row in the grouping, at the grouping's time; nil before the first
@@ -109,7 +109,8 @@ end
 ---@field crumbs SetsCrumb[]
 ---@field fleurons Texture[]
 
--- The gilt breadcrumbs (HNT-R61): "Hunts", the set, the Hunt, the kit's fleuron between each, each going back up.
+-- The gilt breadcrumbs (HNT-R61): "Hunts", the set, the Hunt (or "Pagle Wagers" and the run's event, HNT-R164), the
+-- kit's fleuron between each, each going back up.
 ---@param anchor SetsCrumbsAnchor
 local function drawCrumbs(anchor)
 	anchor.crumbs, anchor.fleurons = anchor.crumbs or {}, anchor.fleurons or {}
@@ -147,7 +148,11 @@ local function drawCrumbs(anchor)
 		crumb:SetPoint("LEFT", x, 0)
 		x = x + width
 		crumb:SetScript("OnClick", function()
-			ns.board:Open(data.place)
+			if data.place then
+				ns.board:Open(data.place)
+			else
+				ns.OpenWagers(data.run) -- "Pagle Wagers" goes to its spread (HNT-R164, #303)
+			end
 		end)
 	end
 	ns.BoardHideFrom(anchor.crumbs, #crumbs)

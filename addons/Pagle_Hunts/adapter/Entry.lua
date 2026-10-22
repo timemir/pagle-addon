@@ -118,6 +118,9 @@ local function setChip(chip, data, room)
 	return width
 end
 
+--- A chip on `parent` (HNT-R65), and its dressing: a run's entry draws its zone chips with them (adapter/Wagers.lua).
+ns.NewEntryChip, ns.SetEntryChip = newChip, setChip
+
 --- The pin toggle (HNT-R80): the kit's paper pill with its red pin and "Pinned" in the hand, faint ("Pin") until
 --- pinned; a click pins or unpins the Hunt shown.
 ---@class EntryPinView: Button
@@ -470,6 +473,12 @@ local function render(page, place)
 	local held = page --[[@as EntryPage]]
 	local view = held.entry or newView(page)
 	held.entry = view
+	-- a run selected on the Board shows its run's entry in place of a Hunt's (HNT-R161, HNT-R163)
+	if place.mode == "board" and place.run and ns.DrawRunEntry(page, place.run) then
+		hideAll(view)
+		return
+	end
+	ns.HideRunEntry(page)
 	local now = GetServerTime()
 	local hunt, shown = shownAt(place, now)
 	if not hunt then
