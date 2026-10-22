@@ -25,7 +25,7 @@ ns.BINDING_ICON = "Interface\\Icons\\INV_Misc_Book_09"
 ---@field name string
 ---@field default? true
 ---@field level? integer -- earned at this peak or celebrated level (LED-R111)
----@field tier? 1|2|3
+---@field tier? 1|2|3|4|5
 ---@field texture "leather"|"leatherGrey"|"bark"|"cloth"
 ---@field tint? number[]  -- the grey leather's vertex tint, { r, g, b }
 ---@field gilt string

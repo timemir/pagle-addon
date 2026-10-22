@@ -126,7 +126,7 @@ describe("ns.NewGoods", function()
 				},
 			},
 			{ "neither default, for sale nor earned", "Hunts", { good = cover({ tier = false }) } },
-			{ "tier 4", "Hunts", { good = cover({ tier = 4 }) } },
+			{ "tier 6", "Hunts", { good = cover({ tier = 6 }) } },
 			{ "an isEarned that isn't a function", "Hunts", { good = cover({ tier = false, isEarned = true }) } },
 			{ "a good without a name", "Hunts", { good = cover({ name = "" }) } },
 			{ "a preview that isn't a function", "Hunts", { good = cover({ preview = "stage" }) } },
@@ -315,6 +315,29 @@ describe("ns.NewGoods", function()
 			assert.are.same({ "hunts.cover.plain", "hunts.cover.velvet", "hunts.cover.gold" }, covers)
 		end)
 	end)
+
+	it(
+		"prices tiers 1 to 5 at 150, 400, 900, 2,000 and 5,000 Coins, and registers a tier 4 and a tier 5 good (SHOP-R22, Tunables)",
+		function()
+			local env = newGoods()
+			env.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Cover", category = "Hunts" })
+			env.goods:RegisterGood(
+				"Hunts",
+				{ id = "hunts.cover.calf", slot = "hunts.cover", name = "Calf", default = true }
+			)
+			env.goods:RegisterGood(
+				"Hunts",
+				{ id = "hunts.cover.scrim", slot = "hunts.cover", name = "Scrim", tier = 4 }
+			)
+			env.goods:RegisterGood(
+				"Hunts",
+				{ id = "hunts.cover.trophy", slot = "hunts.cover", name = "Trophy", tier = 5 }
+			)
+
+			assert.are.same({ 150, 400, 900, 2000, 5000 }, ns.TIER_PRICES)
+			assert.are.same({}, env.reported)
+		end
+	)
 
 	describe("owning", function()
 		it("lists a slot's owned goods, and which of its goods are still for sale (SHOP-R22, SHOP-R30)", function()

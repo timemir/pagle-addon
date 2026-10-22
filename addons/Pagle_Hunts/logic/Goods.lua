@@ -21,7 +21,7 @@ local ICONS = "Interface\\Icons\\"
 ---@class HuntsGoodData
 ---@field id string
 ---@field default? true
----@field tier? 1|2|3 -- Tunables: notebook cover and tracker frame tiers
+---@field tier? 1|2|3|4|5 -- Tunables: notebook cover and tracker frame tiers
 ---@field icon string
 
 --- One of Hunts' slots, with its goods in the order the shop lists them.

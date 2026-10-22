@@ -34,7 +34,7 @@ local ns = select(2, ...)
 ---@field description? string
 ---@field icon? integer|string
 ---@field default? boolean        -- SHOP-R22
----@field tier? 1|2|3             -- for sale
+---@field tier? 1|2|3|4|5         -- for sale
 ---@field isEarned? fun(): boolean -- earned
 ---@field earnedText? string|fun(): string?, string? -- earned: "Angler Level 30", or the row's tag and the stage's
 --- note, worked out each time the shop draws the good while it isn't owned (SHOP-R22)
@@ -195,7 +195,7 @@ function ns.SlotsByCategory(slots)
 end
 
 --- The price of each tier of goods for sale, in Pagle Coins (SHOP-R22, Tunables).
-ns.TIER_PRICES = { 150, 400, 900 }
+ns.TIER_PRICES = { 150, 400, 900, 2000, 5000 }
 
 --- Registers a slot for `module` (SHOP-R21). Returns why it can't (SHOP-R23), registering nothing, or nil.
 ---@param module string def.name, or "Core"
@@ -285,7 +285,7 @@ function Goods:GoodProblem(module, good)
 	if kinds ~= 1 then
 		return ("M:RegisterGood: %s must be exactly one of default, for sale (tier) or earned (isEarned)"):format(id)
 	elseif good.tier ~= nil and not ns.TIER_PRICES[good.tier] then
-		return ("M:RegisterGood: %s's tier must be 1, 2 or 3, got %s"):format(id, tostring(good.tier))
+		return ("M:RegisterGood: %s's tier must be 1 to 5, got %s"):format(id, tostring(good.tier))
 	elseif good.isEarned ~= nil and type(good.isEarned) ~= "function" then
 		return ("M:RegisterGood: %s's isEarned must be a function"):format(id)
 	elseif good.default then

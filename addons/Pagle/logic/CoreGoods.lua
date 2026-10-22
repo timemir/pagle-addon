@@ -12,7 +12,7 @@ local ns = select(2, ...)
 ---@class PagleCoreGood
 ---@field id string
 ---@field default? true
----@field tier? 1|2|3               -- Tunables: Core goods' tiers
+---@field tier? 1|2|3|4|5           -- Tunables: Core goods' tiers
 ---@field icon? string              -- a texture path in the client: the shop's swatch, and a crest's look (LED-R112)
 ---@field soundSet? string          -- a sound set's name in ns.SOUND_SETS (ANN-R72)
 
