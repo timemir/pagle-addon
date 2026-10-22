@@ -1,5 +1,5 @@
 # Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 1377: 1377 (Silithus), high band.
-# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# The name, note and Hunt names are the M8 lore batch (#307), drafted from data/lore/VOICE.md.
 # Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
 #   silithus_coast_haul: Haul, species.any, 91.2% of Catches: tiers 125 / 330 / 655, 46 / 121 / 239 min
 #   silithus_coast_grouper: Named fish, species 12238 (Darkshore Grouper), 11.7% of Catches: tiers 16 / 40 / 85, 45 / 114 / 242 min
@@ -10,14 +10,14 @@
 id = "silithus_coast"
 zones = [1377]
 tags = ["coast"]
-name = "Hive Shore"
-note = "Sand to the water's edge, the hives behind, and plain sea fish just past the surf."
+name = "Sand to the Water's Edge"
+note = "Sand all the way down to the water, and something buzzing in the dunes behind. Past the surf it's honest sea fish."
 
 [[hunt]]
 id = "silithus_coast_haul"
 class = "species.any"
 tiers = [125, 330, 655]
-name = "A Sandy Basket"
+name = "Honest Sea Fish"
 
 [[hunt]]
 id = "silithus_coast_grouper"
@@ -35,4 +35,4 @@ name = "Albacore off the Sand"
 id = "silithus_coast_mackerel"
 species = 6303
 tiers = [11, 30, 60]
-name = "Mackerel Run"
+name = "Dune-Shore Mackerel"
