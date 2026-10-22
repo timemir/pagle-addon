@@ -32,12 +32,21 @@ function ns.Hunts.OnInitialize()
 	ns.lookups = ns.NewLookups(Pagle, ns.hunts)
 	--- Where each Hunt bites (HNT-R30–R34): worked out here, once per load, where the catalogue is ready (CORE-R10).
 	ns.where = ns.NewWhere(ns.hunts, ns.lookups)
+	--- The event pool at runtime (HNT-R140), each event Hunt's waters worked out here too, once per load (HNT-R30).
+	ns.events = ns.NewEventList(ns.eventList, ns.L, ns.lookups)
 
 	--- Hunts' projection (HNT-R136): Core catches it up or rebuilds it after login and hands it each new entry live
 	--- (LOG-R71–R74). The views read it through ns.State() and ns.IsUpdating() (logic/Seams.lua).
 	ns.projection = ns.Module:NewProjection(ns.ProjectionDef(ns.db.global, ns.lookups, {
 		ReportCoinsEarned = function(total)
 			ns.Module:ReportCoinsEarned(total)
+		end,
+		ReportXPEarned = function(total)
+			ns.Module:ReportXPEarned(total)
+		end,
+		-- A run record's earlier Casts, read back from the log (HNT-R149, LOG-R42).
+		IterateCatches = function(afterSeq)
+			return ns.Module:IterateCatches(afterSeq)
 		end,
 		ServerTime = GetServerTime,
 	}))

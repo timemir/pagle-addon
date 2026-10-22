@@ -19,7 +19,7 @@ local ns = select(2, ...)
 
 --- Every read Hunts makes of Core's catalogue and rules, as one table (ADR 0001: through Pagle.* only): Where's
 --- (HuntsWaterLookups, HNT-R30–R34) and the rules' (HuntsLookups), the class members from the Hunt list.
----@class HuntsCoreLookups: HuntsLookups, HuntsWaterLookups
+---@class HuntsCoreLookups: HuntsLookups, HuntsWaterLookups, HuntsEventChecks
 
 --- Hunts' lookups over `core` (Pagle) and `list`: adapter/Hunts.lua builds them once at OnInitialize, and the specs
 --- the same way.
@@ -44,7 +44,7 @@ end
 -- Whether a Catch's item is the Hunt's target (HNT-R10 step 2): its Species for a `species` target (every item of
 -- the Species, DATA-R19), or a member of its class for a `class` target (HNT-R12). Item 0 and an Uncharted item
 -- match nothing (HNT-R196).
----@param hunt HuntDef
+---@param hunt HuntDef|HuntEventHunt
 ---@param itemID integer
 ---@param lookups HuntsLookups
 ---@return boolean
@@ -66,9 +66,24 @@ end
 ---@param lookups HuntsLookups
 ---@return { n: integer, itemID: integer, quantity: integer, catchId: string, size: PagleSize? }[]
 function ns.QualifyingCatches(hunt, cast, lookups)
+	-- Step 1's existence: from its since and before its retired (HNT-R2, HNT-R13).
+	if not ns.Exists(hunt, cast.time) then
+		return {}
+	end
+	return ns.MatchingCatches(hunt, cast, lookups)
+end
+
+--- The Catches of `cast` that qualify for `hunt` when it exists at the Cast's time, in loot-slot order: HNT-R10 with
+--- step 1's "exists" left to the caller. ns.QualifyingCatches reads a Standing Hunt's `since` and `retired`; an event
+--- Hunt exists only within a known run of its event, which the projection judges (HNT-R144, logic/Runs.lua).
+---@param hunt HuntDef|HuntEventHunt
+---@param cast PagleCast
+---@param lookups HuntsLookups
+---@return { n: integer, itemID: integer, quantity: integer, catchId: string, size: PagleSize? }[]
+function ns.MatchingCatches(hunt, cast, lookups)
 	local out = {}
-	-- Step 1: a caught Cast while the Hunt exists, from its since and before its retired (HNT-R2, HNT-R13).
-	if cast.outcome ~= "caught" or not ns.Exists(hunt, cast.time) then
+	-- Step 1: a caught Cast.
+	if cast.outcome ~= "caught" then
 		return out
 	end
 	-- Step 4: an imposed Hunt's own conditions, at the Cast (HNT-R5). A natural Hunt's window is never consulted, so a
@@ -105,9 +120,20 @@ end
 ---@param lookups HuntsLookups
 ---@return integer[]
 function ns.CountCatches(progress, hunt, cast, lookups)
+	return ns.CountQualifying(progress, hunt, cast, ns.QualifyingCatches(hunt, cast, lookups))
+end
+
+--- ns.CountCatches over the qualifying Catches already found (`catches`, in loot-slot order): how an event Hunt,
+--- whose existence its run decides, counts within the run (HNT-R145).
+---@param progress HuntProgress
+---@param hunt HuntDef|HuntEventHunt
+---@param cast PagleCast
+---@param catches { itemID: integer, catchId: string }[]
+---@return integer[]
+function ns.CountQualifying(progress, hunt, cast, catches)
 	local newly = {}
 	local conditions = cast.conditions
-	for _, catch in ipairs(ns.QualifyingCatches(hunt, cast, lookups)) do
+	for _, catch in ipairs(catches) do
 		progress.count = progress.count + 1
 		progress.caught = true
 		local k = #progress.reached + 1
