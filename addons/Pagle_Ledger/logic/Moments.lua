@@ -23,6 +23,8 @@ local ns = select(2, ...)
 ---@field uncharted { [integer]: true }      -- Uncharted item IDs (LED-R64)
 ---@field skill { [integer]: true }          -- Skill Milestone thresholds
 ---@field milestones { [integer]: true }     -- Catch Milestones (LED-R42)
+---@field varieties { [integer]: { [integer]: true } } -- each Species' varieties, by position (VAR-R25)
+---@field fishComplete { [integer]: true }   -- Species with every variety caught (VAR-R25)
 ---@field coins integer                      -- the lifetime Coins total
 ---@field logId? string                      -- the PagleLog.logId it belongs to
 
@@ -38,6 +40,13 @@ local ns = select(2, ...)
 ---@field FormatNumber fun(n: integer): string          -- BreakUpLargeNumbers
 ---@field RefreshGoods fun()                            -- M:RefreshGoods (LED-R111)
 ---@field SizeText fun(size: PagleSize?): string?       -- ns.SizeText over Pagle.SIZE_BANDS and Pagle.FormatLength
+---@field Variety fun(speciesID: integer, index: integer): LedgerVarietyLook? -- Pagle.GetVarieties(speciesID)[index]
+---@field Good fun(goodID: string): { name: string?, icon: (integer|string)? }? -- Pagle.GetGood (a fish crest, VAR-R25)
+
+--- A variety as Core lists it (VAR-R11), what its moments show: its name and its art.
+---@class LedgerVarietyLook
+---@field name string
+---@field art? { texture: integer|string, left: number, right: number, top: number, bottom: number }
 
 -- In-client textures for the moments that have no item (LED-R97): the level's ledger book and Fishing's own icon.
 local LEVEL_ICON = ns.BINDING_ICON
@@ -53,7 +62,8 @@ local PRESTIGE_ICON = "Interface\\Icons\\INV_Misc_Ribbon_01"
 local CATCH_MILESTONE_ICON = "Interface\\Icons\\INV_Misc_Fish_14"
 local TITLE_ICON = "Interface\\Icons\\INV_Scroll_03"
 
---- The celebrated set in PagleLedgerDB.global, with M2's, M3's and M4's keys made if missing (LED-R90).
+--- The celebrated set in PagleLedgerDB.global, with M2's, M3's and M4's keys and the varieties' made if missing
+--- (LED-R90, VAR-R25).
 ---@param global table PagleLedgerDB's global section
 ---@return LedgerCelebrated
 function ns.CelebratedSet(global)
@@ -74,6 +84,8 @@ function ns.CelebratedSet(global)
 		"skill",
 		"milestones",
 		"titles",
+		"varieties",
+		"fishComplete",
 	}) do
 		if type(celebrated[key]) ~= "table" then
 			celebrated[key] = {}
@@ -540,6 +552,83 @@ function celebrate.sizeRecord(_, _, earned, outlets)
 		icon = earned.itemID,
 		cast = earned.cast,
 		ruler = { old = earned.old, new = earned.new, unit = "length", label = "length" },
+	}
+end
+
+--- The good ID of a Species' fish crest (VAR-R12), which Core registers in its `core.crest` slot.
+---@param speciesID integer
+---@return string
+function ns.FishCrestID(speciesID)
+	return "core.crest.fish." .. speciesID
+end
+
+-- A copy of a variety's art (VAR-R11), for a moment: Core's lists are shared (CORE-R18). Nil without one.
+---@param look LedgerVarietyLook?
+---@return table?
+local function copyArt(look)
+	local art = look and look.art
+	if not art then
+		return nil
+	end
+	return { texture = art.texture, left = art.left, right = art.right, top = art.top, bottom = art.bottom }
+end
+
+-- A variety's first Catch (VAR-R25, VAR-R27), where its name and art are first shown: a Common or Uncommon one a
+-- `toast.low` "New variety · {name}", riding as "New variety" on the Cast's toast when there is one; a Rare one a
+-- `toast` "Rare variety" with its name, its art in the bezel; an Epic one a `banner` "Epic variety" with its name, its
+-- art on the seal's ribbon. Each carries the item caught as its icon, for where the art isn't drawn, and no Coins.
+function celebrate.newVariety(celebrated, _, earned, outlets)
+	local species = earned.species --[[@as integer]]
+	local index = earned.index --[[@as integer]]
+	local caught = celebrated.varieties[species]
+	if not caught then
+		caught = {}
+		celebrated.varieties[species] = caught
+	end
+	if caught[index] then
+		return nil
+	end
+	caught[index] = true
+	local L = ns.L
+	local look = outlets.Variety(species, index)
+	local name = look and look.name or L.NAME_UNKNOWN
+	local moment = { icon = earned.itemID, art = copyArt(look), cast = earned.cast }
+	local rarity = earned.rarity
+	if rarity == "epic" then
+		moment.rung, moment.kind, moment.order = "banner", "epicVariety", 97
+		moment.title, moment.text = L.EPIC_VARIETY_TITLE, name
+	elseif rarity == "rare" then
+		moment.rung, moment.kind, moment.order = "toast", "rareVariety", 105
+		moment.title, moment.text = L.RARE_VARIETY_TITLE, name
+	else
+		moment.rung, moment.kind, moment.order = "toast.low", "newVariety", 120
+		moment.title, moment.stamp = L.NEW_VARIETY_TITLE:format(name), L.NEW_VARIETY_STAMP
+	end
+	return moment
+end
+
+-- A Species' every variety caught (VAR-R25): a `banner` "Every colour of {Species}", sealed with its fish crest (the
+-- crest's icon, VAR-R12) and its "Earned" line, no Coins. Without the crest registered, the seal shows its waves and
+-- no line.
+function celebrate.fishComplete(celebrated, _, earned, outlets)
+	local species = earned.species --[[@as integer]]
+	if celebrated.fishComplete[species] then
+		return nil
+	end
+	celebrated.fishComplete[species] = true
+	local L = ns.L
+	local crest = outlets.Good(ns.FishCrestID(species))
+	return {
+		rung = "banner",
+		kind = "everyColour",
+		order = 95,
+		title = L.EVERY_COLOUR_TITLE:format(itemName(outlets, species)),
+		text = crest and crest.name and L.CREST_EARNED:format(crest.name) or nil,
+		stamp = L.EVERY_COLOUR_STAMP,
+		icon = earned.itemID,
+		cast = earned.cast,
+		seal = crest and crest.icon and "crest" or nil,
+		crest = crest and crest.icon or nil,
 	}
 end
 

@@ -99,9 +99,12 @@ function ns.ClientSizeText(size)
 	return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
 end
 
+--- Core's `Pagle.GetVarieties` (VAR-R11): a Species' ten, in order.
+---@alias LedgerGetVarieties fun(speciesID: integer): LedgerVarietyLook[]?
+
 --- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
---- and numbers, the Angler's logId, the goods' refresh and Core's size text (LED-R81, LED-R89, LED-R90, LED-R93–R95,
---- LED-R97, LED-R111).
+--- and numbers, the Angler's logId, the goods' refresh, Core's size text, a variety's name and art and a fish crest's
+--- name and icon (LED-R81, LED-R89, LED-R90, LED-R93–R95, LED-R97, LED-R111, VAR-R25).
 ---@param module PagleModuleHandle
 ---@return LedgerOutlets
 function ns.Outlets(module)
@@ -130,5 +133,14 @@ function ns.Outlets(module)
 			module:RefreshGoods()
 		end,
 		SizeText = ns.ClientSizeText,
+		Variety = function(speciesID, index)
+			-- Core's static list (VAR-R11); nil on a Core without varieties yet, so the moment names none.
+			local getVarieties = (Pagle --[[@as { GetVarieties: LedgerGetVarieties? }]]).GetVarieties
+			local list = getVarieties and getVarieties(speciesID)
+			return list and list[index]
+		end,
+		Good = function(goodID)
+			return Pagle.GetGood(goodID)
+		end,
 	}
 end

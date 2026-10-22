@@ -40,7 +40,8 @@ end
 
 -- Adds every achievement in the state to the celebrated set (LED-R93's first build): the level, the prestige rank,
 -- Species and their stars, Species × zone pairs, Skill and Catch Milestones, the zones fished at their computed rank,
--- curio, trophy and Legend items, their families' stars, the Uncharted items and the titles earned.
+-- curio, trophy and Legend items, their families' stars, the Uncharted items, the varieties caught and the fish with
+-- every one (VAR-R25), and the titles earned.
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
 ---@param lookups LedgerLookups
@@ -82,6 +83,15 @@ local function celebrateAll(celebrated, state, lookups)
 	for itemID in pairs(state.uncharted) do
 		celebrated.uncharted[itemID] = true
 	end
+	for id, caught in pairs(state.varieties or {}) do
+		celebrated.varieties[id] = celebrated.varieties[id] or {}
+		for index in pairs(caught) do
+			celebrated.varieties[id][index] = true
+		end
+		if ns.FishComplete(state, getItem, id) then
+			celebrated.fishComplete[id] = true
+		end
+	end
 	-- After the zones: a Zone Master title follows the shown rank (LED-R75).
 	for _, key in ipairs(ns.TitleKeys({ world = world, state = state, celebrated = celebrated, getItem = getItem })) do
 		celebrated.titles[key] = true
@@ -91,6 +101,8 @@ end
 --- What a Write-up section counts (LED-R94); each line only when its count is above 0.
 ---@class LedgerWriteUpCounts
 ---@field species integer        -- Species
+---@field varieties integer      -- varieties caught (VAR-R25)
+---@field colours integer        -- fish with every variety caught (VAR-R25)
 ---@field zones integer          -- zones ranked: with a shown rank
 ---@field mastered integer       -- of those, at Master
 ---@field trophy integer         -- trophy weights
@@ -116,7 +128,8 @@ local function addTitleLines(lines, keys, outlets)
 	end
 end
 
--- Write-up lines after the level's, in LED-R94's order: Species, zones ranked and mastered, trophy weights, curios,
+-- Write-up lines after the level's, in LED-R94's order: Species, varieties and fish in every colour, zones ranked and
+-- mastered, trophy weights, curios,
 -- Legends, Skill Milestones, the Catch Milestone and titles. Stars and Uncharted items have none.
 ---@param lines string[] holding the level's line, when there is one
 ---@param counts LedgerWriteUpCounts
@@ -125,6 +138,15 @@ local function addLines(lines, counts, outlets)
 	local L = ns.L
 	if counts.species > 0 then
 		lines[#lines + 1] = ns.CountText(counts.species, L.WRITE_UP_SPECIES_ONE, L.WRITE_UP_SPECIES_OTHER)
+	end
+	-- "{n} varieties · {m} fish in every colour", either part alone when the other is 0 (VAR-R91).
+	local colours = counts.colours > 0
+		and ns.CountText(counts.colours, L.WRITE_UP_EVERY_COLOUR_ONE, L.WRITE_UP_EVERY_COLOUR_OTHER)
+	if counts.varieties > 0 then
+		local varieties = ns.CountText(counts.varieties, L.WRITE_UP_VARIETIES_ONE, L.WRITE_UP_VARIETIES_OTHER)
+		lines[#lines + 1] = colours and L.WRITE_UP_VARIETIES_COLOURS:format(varieties, colours) or varieties
+	elseif colours then
+		lines[#lines + 1] = colours
 	end
 	if counts.zones > 0 then
 		local zones = ns.CountText(counts.zones, L.WRITE_UP_ZONES_ONE, L.WRITE_UP_ZONES_OTHER)
@@ -181,6 +203,8 @@ local function stateCounts(celebrated, state, lookups)
 	local world = lookups.world
 	local counts = {
 		species = count(state.species),
+		varieties = 0,
+		colours = 0,
 		zones = 0,
 		mastered = 0,
 		trophy = 0,
@@ -211,6 +235,12 @@ local function stateCounts(celebrated, state, lookups)
 	end
 	for n in pairs(state.milestones) do
 		counts.catches = math.max(counts.catches, n)
+	end
+	for id, caught in pairs(state.varieties or {}) do
+		counts.varieties = counts.varieties + count(caught)
+		if ns.FishComplete(state, lookups.GetItem, id) then
+			counts.colours = counts.colours + 1
+		end
 	end
 	local view = { world = world, state = state, celebrated = celebrated, getItem = lookups.GetItem }
 	for _, key in ipairs(ns.TitleKeys(view)) do
@@ -314,6 +344,8 @@ end
 local function newCounts(moments, achievements, titles, rank)
 	local counts = {
 		species = 0,
+		varieties = 0,
+		colours = 0,
 		zones = 0,
 		mastered = 0,
 		trophy = 0,
@@ -329,6 +361,10 @@ local function newCounts(moments, achievements, titles, rank)
 		newCurio = "curio",
 		skillMilestone = "skill",
 		legend = "legends",
+		newVariety = "varieties",
+		rareVariety = "varieties",
+		epicVariety = "varieties",
+		everyColour = "colours",
 	}
 	local ranked, mastered, levelUp, prestige = {}, {}, false, false
 	for i, moment in ipairs(moments) do

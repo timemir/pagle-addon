@@ -255,6 +255,7 @@ describe("the Ledger's values for the backend (#223)", function()
 		it("gives each part of Ledger completion as { done, total } (LED-R71)", function()
 			assert.are.same({
 				species = { 2, 3 },
+				varieties = { 0, 0 },
 				junk = { 0, 1 },
 				treasure = { 0, 0 },
 				trophy = { 1, 2 },

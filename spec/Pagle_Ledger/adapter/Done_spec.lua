@@ -103,6 +103,9 @@ describe("the Ledger's done", function()
 				prestige = 0,
 				milestones = {},
 				titles = { ["title:level1"] = true },
+				-- The varieties' keys: none caught, no fish complete (VAR-R25).
+				varieties = {},
+				fishComplete = {},
 				coins = 40,
 				logId = fake.catchLog.data.logId,
 			}, celebrated)

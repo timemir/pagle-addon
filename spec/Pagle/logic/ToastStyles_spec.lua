@@ -141,6 +141,7 @@ describe("a banner's seal", function()
 			assert.are.same({
 				{ number = 12 },
 				{ crest = true },
+				{ crest = true, icon = "crests\\fish\\6359" },
 				{ mark = "book" },
 				{ mark = "quill" },
 				{ mark = "waves" },
@@ -148,10 +149,30 @@ describe("a banner's seal", function()
 			}, {
 				ns.BannerSeal({ seal = 12 }),
 				ns.BannerSeal({ seal = "crest" }),
+				ns.BannerSeal({ seal = "crest", crest = "crests\\fish\\6359" }),
 				ns.BannerSeal({ seal = "book" }),
 				ns.BannerSeal({ seal = "quill" }),
 				ns.BannerSeal({}),
 				ns.BannerSeal({ seal = "anchor" }),
+			})
+		end
+	)
+end)
+
+describe("a moment's art in a medallion", function()
+	it(
+		"is cropped to the fish's head: a square at the left of the art, inset from its snout (VAR-R25, VAR-R26)",
+		function()
+			-- A 192 × 96 variety at (384, 192) on a 2048 atlas.
+			local art = { texture = 1, left = 384 / 2048, right = 576 / 2048, top = 192 / 2048, bottom = 288 / 2048 }
+			local left, right, top, bottom = ns.HeadCrop(art)
+
+			-- 72 texels square: 5.76 to 77.76 across, 12 to 84 down.
+			assert.are.same({ 389.76, 461.76, 204, 276 }, {
+				math.floor(left * 2048 * 100 + 0.5) / 100,
+				math.floor(right * 2048 * 100 + 0.5) / 100,
+				math.floor(top * 2048 * 100 + 0.5) / 100,
+				math.floor(bottom * 2048 * 100 + 0.5) / 100,
 			})
 		end
 	)

@@ -166,9 +166,13 @@ A stored moment keeps: `module`, `moduleTitle`, `moduleOrder`, `kind`, `rung`, `
 ---@field summaryOnly? boolean   -- ANN-R63
 ---@field firstNote? string      -- the Margin note shown the first time a moment of this Module and kind shows (ONB-R53)
 ---@field seal? integer|"waves"|"book"|"quill"|"crest" -- a banner's wax seal (UI); default "waves"
+---@field crest? integer|string  -- with seal "crest": a crest good's icon in the Prestige crest's place (VAR-R25)
+---@field art? { texture: integer|string, left: number, right: number, top: number, bottom: number } -- VAR-R11's art
 ```
 
-`seal` is what a banner headline's wax seal shows: a number pressed into it (an Angler Level, a Catch Milestone's count), a pressed mark (`"waves"`, `"book"`, `"quill"`), or `"crest"` for the Prestige crest holding the Angler's portrait with the title on its ribbon. Any other value, or none, shows the waves. Only a banner headline's is read.
+`seal` is what a banner headline's wax seal shows: a number pressed into it (an Angler Level, a Catch Milestone's count), a pressed mark (`"waves"`, `"book"`, `"quill"`), or `"crest"` for the Prestige crest holding the Angler's portrait with the title on its ribbon; with `crest` set, that icon (a fish crest, VAR-R25) shows in the Prestige crest's place, with no portrait and no ribbon. Any other value, or none, shows the waves. Only a banner headline's is read.
+
+`art` is a texture and its rectangle as texture coordinates (a fish variety's art, VAR-R11), drawn only where the moment is the headline: a toast's or Nod's medallion shows it cropped to the fish's head (the square at the art's left, from 3% to 40.5% of its width and 12.5% to 87.5% of its height) in place of `icon`, and a banner shows it whole across its seal's foot, the seal's ribbon. `icon` still names what the moment is about, for the Session summary, which never stores `art`.
 
 ### `Pagle.IsAnimationsOn()`
 
