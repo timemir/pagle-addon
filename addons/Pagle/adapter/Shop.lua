@@ -26,8 +26,14 @@ local WIDTH, HEIGHT = 980, 640
 local TRAY_X, TRAY_Y, TRAY_W, TRAY_H = 22, 98, 470, 520
 -- The search slip, the filters' row and the first chips' row, from the tray's top; the room the chips wrap in.
 local FIND_Y, FILTER_Y, CHIP_Y, CONTROLS_W = 14, 59, 98, 438
--- The goods: their inset in the tray, a row's width and height, a slot's header's height.
-local LIST_X, ROW_W, ROW_H, HEADER_H = 16, 432, 44, 31
+-- The goods: their inset in the tray, a row's width and height, a slot's header's height, and a grouped slot's group
+-- header's (SHOP-R27).
+local LIST_X, ROW_W, ROW_H, HEADER_H, GROUP_H = 16, 432, 44, 31, 26
+-- A group header's inset, at the medallions', and its rule's opacity, fainter than a slot's.
+local GROUP_X, GROUP_RULE_ALPHA = 8, 0.5
+-- An earned good's progress dots on the description card (SHOP-R22): each one's size and the room between them, and
+-- the room above and under their row.
+local DOT, DOT_GAP, DOT_PAD = 10, 8, 8
 -- The cards on the lid: the showcase card's top left; the stage inside it (the card's dark well, 370 x 132, centred
 -- at its top, the paper round and under it; as wide as the toast styles' sample toast, 464 at 0.8, needs); the
 -- description card under the showcase card, stretched to INFO_H.
@@ -86,7 +92,7 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@field string PagleSprite          the tag's string, tied to its hole
 
 ---@class PagleShopLine: Button
----@field header boolean              a group's header, not a good's row
+---@field header boolean              a group's header (a slot's, or a grouped slot's group's), not a good's row
 ---@field goodID string?              a row's good
 ---@field label PagleShopFontString   a header's label, or a row's name
 ---@field count PagleShopFontString   a header's owned count or note
@@ -101,6 +107,17 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@field glow Texture?               the warm glow a row gives once as a purchase is delivered to it
 ---@field stepDown PagleShopFontString? the slot's old good's new tag, fading in as a purchase takes its place
 
+--- One progress dot (SHOP-R22): a dark hairline edge, the dot's colour inside it, and the paper inside that while it
+--- is only ringed, each drawn round through the portrait mask.
+---@class PagleShopDot: Frame
+---@field edge Texture
+---@field fill Texture
+---@field hollow Texture
+
+--- An earned good's progress dots on the description card, centred under its description.
+---@class PagleShopDots: Frame
+---@field dots PagleShopDot[]         pooled: the shown ones are the good's, in order
+
 ---@class PagleShopStageFrame
 ---@field card PagleSprite            the showcase card, its dark well at the top
 ---@field area Frame                  where previews draw, clipped to the card
@@ -112,6 +129,7 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@field slotLine PagleShopFontString
 ---@field description PagleShopFontString
 ---@field notes PagleShopFontString
+---@field dots PagleShopDots           an earned good's progress, between its description and its notes
 ---@field tags PagleShopFontString
 ---@field buy PagleShopPill           "Buy for N" and the coin
 ---@field needed PagleShopFontString  "N more Coins"
@@ -549,9 +567,6 @@ local function lineAt(frame, i)
 	line.count = ns.ShopText(line, "SlotCount")
 	line.count:SetPoint("TOPRIGHT", 0, -10)
 	line.rule = ns.ArtSprite(line, "Shop", "slot-rule", "ARTWORK")
-	line.rule:ClearAllPoints()
-	line.rule:SetPoint("LEFT", line.label, "RIGHT", 10, 0)
-	line.rule:SetPoint("RIGHT", line.count, "LEFT", -10, 0)
 	line.rule:SetHeight(1)
 	-- a row's
 	line.bezel = ns.NewShopBezel(line, 34)
@@ -582,25 +597,37 @@ local function lineAt(frame, i)
 	return line
 end
 
--- Shows a header's regions or a row's on `line`.
+-- Shows a slot's header's regions, a grouped slot's group header's (SHOP-R27) or a good's row's on `line`. Either
+-- header is no good: it takes no click, and what points at the list's goods passes over it.
 ---@param line PagleShopLine
----@param header boolean
-local function shapeLine(line, header)
+---@param shape "slot"|"group"|"row"
+local function shapeLine(line, shape)
+	local header = shape ~= "row"
 	line.header = header
-	line.count:SetShown(header)
+	line.count:SetShown(shape == "slot")
 	line.rule:SetShown(header)
 	line.bezel:SetShown(not header)
 	line:EnableMouse(not header)
-	ns.SetShopFont(line.label, header and "Slot" or "Good")
+	ns.SetShopFont(line.label, shape == "slot" and "Slot" or shape == "group" and "Chip" or "Good")
 	line.label:ClearAllPoints()
-	if header then
+	line.rule:ClearAllPoints()
+	line.rule:SetPoint("LEFT", line.label, "RIGHT", 10, 0)
+	line.rule:SetAlpha(shape == "group" and GROUP_RULE_ALPHA or 1)
+	if shape == "slot" then
 		line.label:SetPoint("TOPLEFT", 0, -12)
+		line.rule:SetPoint("RIGHT", line.count, "LEFT", -10, 0)
+	elseif shape == "group" then
+		line.label:SetPoint("LEFT", GROUP_X, 0)
+		line.rule:SetPoint("RIGHT", line, "RIGHT", -GROUP_X, 0)
+	else
+		line.label:SetPoint("LEFT", line.bezel, "RIGHT", 12, 0)
+	end
+	if header then
+		line.goodID = nil
 		line.selectedMark:Hide()
 		line.tag:Hide()
 		line.wax:Hide()
 		line.price:Hide()
-	else
-		line.label:SetPoint("LEFT", line.bezel, "RIGHT", 12, 0)
 	end
 end
 
@@ -645,7 +672,8 @@ local function drawRowEnd(line, data)
 	drawRowTag(line, data)
 end
 
--- Draws the list from `groups`: each group's header, then its rows, top to bottom in the scroll child.
+-- Draws the list from `groups`: each group's header, then its rows, top to bottom in the scroll child, a grouped
+-- slot's group header (SHOP-R27) over the first row of its group.
 ---@param frame PagleShopFrame
 ---@param groups PagleShopGroup[]
 local function drawList(frame, groups)
@@ -653,8 +681,7 @@ local function drawList(frame, groups)
 	for _, group in ipairs(groups) do
 		i = i + 1
 		local header = lineAt(frame, i)
-		shapeLine(header, true)
-		header.goodID = nil
+		shapeLine(header, "slot")
 		header:SetHeight(HEADER_H)
 		at(header, frame.content, LIST_X, y)
 		ns.SetShopText(header.label, group.label)
@@ -662,10 +689,22 @@ local function drawList(frame, groups)
 		header:SetAlpha(group.putAway and GREYED_ALPHA or 1)
 		header:Show()
 		y = y + HEADER_H
-		for _, data in ipairs(group.rows) do
+		for r, data in ipairs(group.rows) do
+			local heading = group.headings and group.headings[r]
+			if heading then
+				i = i + 1
+				local subhead = lineAt(frame, i)
+				shapeLine(subhead, "group")
+				subhead:SetHeight(GROUP_H)
+				at(subhead, frame.content, LIST_X, y)
+				ns.SetShopText(subhead.label, heading)
+				subhead:SetAlpha(1)
+				subhead:Show()
+				y = y + GROUP_H
+			end
 			i = i + 1
 			local row = lineAt(frame, i)
-			shapeLine(row, false)
+			shapeLine(row, "row")
 			row.goodID = data.id
 			row.listY = y
 			row:SetHeight(ROW_H)
@@ -798,7 +837,10 @@ local function buildStage(frame)
 	stage.notes = ns.ShopText(frame, "Notes")
 	stage.notes:SetWidth(width)
 	stage.notes:SetWordWrap(true)
-	stage.notes:SetPoint("TOPLEFT", stage.description, "BOTTOMLEFT", 0, -6)
+	stage.dots = CreateFrame("Frame", nil, frame) --[[@as PagleShopDots]]
+	stage.dots:SetHeight(DOT)
+	stage.dots.dots = {}
+	stage.dots:Hide()
 
 	local footY = INFO_Y + INFO_H - 16 - 44
 	stage.buy = ns.NewShopButton(frame, function()
@@ -827,6 +869,74 @@ local function buildStage(frame)
 	return stage --[[@as PagleShopStageFrame]]
 end
 
+-- A texture of `dot`'s, `inset` units inside it, drawn round through the portrait mask.
+---@param dot Frame
+---@param sublevel integer
+---@param inset number
+---@return Texture
+local function roundIn(dot, sublevel, inset)
+	local texture = dot:CreateTexture(nil, "ARTWORK", nil, sublevel)
+	texture:SetPoint("TOPLEFT", inset, -inset)
+	texture:SetPoint("BOTTOMRIGHT", -inset, inset)
+	local mask = dot:CreateMaskTexture()
+	mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+	mask:SetAllPoints(texture)
+	texture:AddMaskTexture(mask)
+	return texture
+end
+
+-- The pooled progress dot `i` (SHOP-R22): the ink's hairline edge, its colour, and the paper inside a ringed one.
+---@param dots PagleShopDots
+---@param i integer
+---@return PagleShopDot
+local function dotAt(dots, i)
+	local dot = dots.dots[i]
+	if dot then
+		return dot
+	end
+	dot = CreateFrame("Frame", nil, dots) --[[@as PagleShopDot]]
+	dot:SetSize(DOT, DOT)
+	local ink, paper = ns.SHOP_INKS.ink, ns.SHOP_INKS.paper
+	dot.edge = roundIn(dot, 0, 0)
+	dot.edge:SetColorTexture(ink[1], ink[2], ink[3], 0.55)
+	dot.fill = roundIn(dot, 1, 1)
+	dot.hollow = roundIn(dot, 2, 2.5)
+	dot.hollow:SetColorTexture(paper[1], paper[2], paper[3], 1)
+	dots.dots[i] = dot
+	return dot
+end
+
+-- Draws an earned good's progress (SHOP-R22) as a row of dots centred under its description, each filled in its
+-- colour or ringed in it, and its notes under them; with none, the notes sit under the description.
+---@param stage PagleShopStageFrame
+---@param progress PagleProgressDot[]?
+local function drawDots(stage, progress)
+	local dots = stage.dots
+	stage.notes:ClearAllPoints()
+	if not progress then
+		dots:Hide()
+		stage.notes:SetPoint("TOPLEFT", stage.description, "BOTTOMLEFT", 0, -6)
+		return
+	end
+	for i, data in ipairs(progress) do
+		local dot = dotAt(dots, i)
+		local color = data.color
+		dot.fill:SetColorTexture(color[1], color[2], color[3], 1)
+		dot.hollow:SetShown(not data.filled)
+		dot:ClearAllPoints()
+		dot:SetPoint("LEFT", (i - 1) * (DOT + DOT_GAP), 0)
+		dot:Show()
+	end
+	for i = #progress + 1, #dots.dots do
+		dots.dots[i]:Hide()
+	end
+	dots:SetWidth(#progress * DOT + (#progress - 1) * DOT_GAP)
+	dots:ClearAllPoints()
+	dots:SetPoint("TOP", stage.description, "BOTTOM", 0, -DOT_PAD)
+	dots:Show()
+	stage.notes:SetPoint("TOPLEFT", dots, "BOTTOMLEFT", 0, -DOT_PAD)
+end
+
 -- Hides what shows the selected good, for a stage with none.
 ---@param stage PagleShopStageFrame
 local function clearStage(stage)
@@ -836,6 +946,7 @@ local function clearStage(stage)
 		stage.slotLine,
 		stage.description,
 		stage.notes,
+		stage.dots,
 		stage.tags,
 		stage.buy,
 		stage.needed,
@@ -927,6 +1038,7 @@ local function drawStage(frame, data, fresh)
 	for _, region in ipairs({ stage.name, stage.slotLine, stage.description, stage.notes }) do
 		region:Show()
 	end
+	drawDots(stage, data.progress)
 	drawFoot(stage, data)
 end
 

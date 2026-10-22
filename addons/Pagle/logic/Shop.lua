@@ -154,7 +154,6 @@ end
 ---@field earned boolean            -- an earned good (SHOP-R22), whether or not it is owned yet
 ---@field earnedText? string        -- its row's tag while not yet earned: the string, or a function's first text
 ---@field earnedNote? string        -- its stage's note: the string, or while not yet earned a function's second text
----@field progress? PagleProgressDot[] -- while not yet earned, its progress's well-made dots (SHOP-R22)
 ---@field group? string             -- the key of its slot's group it is listed under (SHOP-R27)
 ---@field default boolean           -- its slot's default (SHOP-R22, SHOP-R23)
 ---@field price? integer            -- a good for sale's price (SHOP-R22)
@@ -264,9 +263,9 @@ local function wellMadeDots(dots)
 	return kept[1] and kept or nil
 end
 
--- Fills in `entry`'s earned texts and progress from `good` (SHOP-R22): a string earnedText is the row's tag and the
--- stage's note; a function's, called now and only while the good isn't earned, gives the tag and then the note, and
--- `progress`, called likewise, the stage's dots. Nothing of either is kept past this model.
+-- Fills in `entry`'s earned texts from `good` (SHOP-R22): a string earnedText is the row's tag and the stage's note;
+-- a function's, called now and only while the good isn't earned, gives the tag and then the note. Nothing of it is
+-- kept past this model.
 ---@private
 ---@param entry PagleShopEntry
 ---@param good PagleRegisteredGood
@@ -282,9 +281,6 @@ function Model:ReadEarned(entry, good)
 		local tag, note = self.call(text)
 		entry.earnedText = type(tag) == "string" and tag or nil
 		entry.earnedNote = type(note) == "string" and note or nil
-	end
-	if good.progress then
-		entry.progress = wellMadeDots(self.call(good.progress))
 	end
 end
 
@@ -533,7 +529,11 @@ function Model:Stage(goodID)
 			stage.notes[#stage.notes + 1] = entry.earnedNote
 		end
 		stage.notes[#stage.notes + 1] = L.SHOP_REWARD:format(owner)
-		stage.progress = entry.progress
+	end
+	-- Its progress, called only here, for the stage, and only while it isn't earned (SHOP-R22).
+	local good = self.sources.goods:Good(entry.id)
+	if state == "unearned" and good and good.progress then
+		stage.progress = wellMadeDots(self.call(good.progress))
 	end
 	return stage
 end
