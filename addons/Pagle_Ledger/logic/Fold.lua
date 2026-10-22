@@ -110,7 +110,9 @@ ns.CATCH_XP = 10
 local NEW_SPECIES_XP = 500
 local SPECIES_IN_ZONE_XP = 100
 local FIRST_IN_ZONE_XP = 200
-local SKILL_MILESTONE_XP = 1000
+--- XP for each Skill Milestone (LED-R40, Tunables), which the Field guide's Your Ledger step shows (ONB-R36).
+ns.SKILL_MILESTONE_XP = 1000
+local SKILL_MILESTONE_XP = ns.SKILL_MILESTONE_XP
 local CURIO_XP = 150
 local TROPHY_WEIGHT_XP = 100
 -- Fresh Water's Catch XP multiplier (LED-R22, Tunables).
