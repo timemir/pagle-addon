@@ -348,3 +348,33 @@ describe("the live tracker's lines", function()
 		end)
 	end)
 end)
+
+describe("a tracker frame's three-slice", function()
+	local ns = stats.load().ns
+
+	it("keeps its top and foot and stretches one middle over the rest (STA-R88)", function()
+		local height, middles = ns.SliceDown(300, 20, 36)
+
+		assert.are.equal(300, height)
+		assert.are.same({ 244 }, middles)
+	end)
+
+	it("tiles its middle at its period, the last tile cut short, never stretched past it (STA-R88)", function()
+		local height, middles = ns.SliceDown(200, 14, 14, 36)
+
+		assert.are.equal(200, height)
+		assert.are.same({ 36, 36, 36, 36, 28 }, middles)
+	end)
+
+	it("has no middle when its lines fill just its top and foot (STA-R88)", function()
+		assert.are.same({ 88, {} }, { ns.SliceDown(88, 68, 20) })
+		assert.are.same({ 88, {} }, { ns.SliceDown(88, 68, 20, 36) })
+	end)
+
+	it("never draws shorter than its top and foot: a short tracker grows to them (STA-R88)", function()
+		local height, middles = ns.SliceDown(54, 68, 20)
+
+		assert.are.equal(88, height)
+		assert.are.same({}, middles)
+	end)
+end)
