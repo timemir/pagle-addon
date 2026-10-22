@@ -21,6 +21,8 @@ local function loadCore()
 		summarized[#summarized + 1] = moment
 	end
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+	-- Margin notes off: these hear only the Announcements' own sounds, not a note's noteIn (ONB-R50, ONB-R52).
+	loaded.env.PagleDB.global.onboarding.notesOn = false
 	loaded.client.fire("PLAYER_LOGIN")
 	loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 	loaded.client.runTimers()

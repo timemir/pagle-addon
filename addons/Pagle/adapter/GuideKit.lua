@@ -124,6 +124,7 @@ ns.GUIDE_SOUNDS = {
 	click = { id = 852, motion = false }, -- IG_MAINMENU_OPTION: a button, a skip link
 	check = { id = 856, motion = false }, -- IG_MAINMENU_OPTION_CHECKBOX_ON: a choice card picked
 	uncheck = { id = 857, motion = false }, -- IG_MAINMENU_OPTION_CHECKBOX_OFF
+	noteIn = { id = 827, motion = false }, -- IG_CHAT_SCROLL_DOWN: a Margin note, or a First look's set, appears
 }
 
 --- Plays the guide's sound `name` on the SFX channel; one that goes with the motion only while things move.
@@ -345,8 +346,8 @@ end
 
 --- An illustrative note on a page (Contracts' nav.Note): a slip of paper in the Angler's pencil, `w` wide and as tall
 --- as its text, its top left at `x`, `y` of `parent`, a key term between *asterisks* in red, and its red-pencil number
---- badge when `n` is given. Its pencil arrow to `target` is Margin notes' (#325, ns.DrawNoteArrow); until that lands,
---- the paper shows alone. It is part of the page, so it always shows (ONB-R50).
+--- badge when `n` is given. Its pencil arrow to `target` is Margin notes' (ns.DrawNoteArrow, adapter/MarginNotes.lua). It
+--- is part of the page, so it always shows (ONB-R50).
 ---@class PagleGuideNote: Frame
 ---@field paper PagleNineSlice
 ---@field text FontString
@@ -361,7 +362,8 @@ function ns.GuideRedPencil(text)
 	return (text:gsub("%*(.-)%*", "|cff9a2a1a%1|r"))
 end
 
---- What draws a note's pencil arrow to its target (#325's Line-drawn arrow and ring): nil until Margin notes land.
+--- What draws a note's pencil arrow to its target: adapter/MarginNotes.lua, a later file, sets it to its Line-drawn
+--- arrow and ring (#325); it is looked up as each note is made.
 ---@type (fun(note: Frame, target: Region): Frame)?
 ns.DrawNoteArrow = nil
 

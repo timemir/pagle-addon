@@ -164,6 +164,13 @@ stds.wow = {
 		-- The Announcement frames, hung from UIParent, and their sounds on the SFX channel (ANN-R73, ANN-R80); their
 		-- lanes run on GetTime and C_Timer.After, and an item icon comes from C_Item.GetItemInfoInstant (above).
 		"UIParent",
+		-- Margin notes' pencil arrows (core/onboarding.md › UI) are Line objects: Frame:CreateLine, with
+		-- SetStartPoint, SetEndPoint, SetThickness and SetColorTexture, and the note is placed from its target's
+		-- GetLeft, GetRight, GetBottom, GetTop and GetEffectiveScale. They are widget methods, not globals, so no
+		-- name joins the inventory. vscode-wow-api at WOW_API_COMMIT, Annotations/Core/Widget/Frame/Frame.lua:
+		-- `function Frame:CreateLine(name, drawLayer, templateName, subLevel) end`; the onboarding kit's probe
+		-- (prototypes/onboarding-kit/PagleArtGuide/GuideKit.lua, P.Arrow) drew its arrows with it in the client
+		-- (core/onboarding.md › UI: "`CreateLine` drew in the client in the probe").
 		"PlaySoundFile",
 		-- The art kits' UI foley (opening and closing a window, a click), by the client's own sound kit ids on the SFX
 		-- channel, never through the SOUNDKIT table: the Field report box, QoL's pinned notes, the Curio Shop's (its Buy,

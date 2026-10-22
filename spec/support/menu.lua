@@ -38,11 +38,12 @@ return function(client, stubs)
 	-- Blizzard_Minimap/Mainline/AddonCompartment at the forever 1.60.1 commit (.luacheckrc): RegisterAddon keeps the
 	-- table, and the menu reads its text each time it opens. No addon lists itself through its TOC here.
 	client.compartment = {}
-	stubs.AddonCompartmentFrame = {
-		RegisterAddon = function(_, addonData)
-			client.compartment[#client.compartment + 1] = addonData
-		end,
-	}
+	-- The compartment's button is a frame on the minimap cluster (AddonCompartment.xml), which a Margin note meant for
+	-- Pagle's menu points at while the minimap icon is hidden (ONB-R108).
+	stubs.AddonCompartmentFrame = widgets.newWidget("DropdownButton", stubs.MinimapCluster)
+	function stubs.AddonCompartmentFrame.RegisterAddon(_, addonData)
+		client.compartment[#client.compartment + 1] = addonData
+	end
 	function client.clickCompartment(text)
 		for _, entry in ipairs(client.compartment) do
 			if entry.text == text then

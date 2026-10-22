@@ -19,6 +19,8 @@ end
 -- plus the client's clock, with the Ledger registered and every login frame run. Returns the Ledger's handle too.
 local function loggedIn(saved)
 	local loaded = loadCore(history(2), saved)
+	-- Margin notes off: these hear only the Announcements' own sounds, not a note's noteIn (ONB-R50, ONB-R52).
+	loaded.env.PagleDB.global.onboarding.notesOn = false
 	local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 	enterWorld(loaded, 3)
 	return loaded, M
