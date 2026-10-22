@@ -1154,6 +1154,8 @@ end
 
 -- The column's foot above the screen's bottom, where the canvas's board puts its toast (ANN-R20).
 local COLUMN_FOOT = 156
+--- The toast column's foot, in UI units above the screen's bottom (ANN-R20): the Letter sits there too (ONB-R11).
+ns.ANNOUNCE_COLUMN_FOOT = COLUMN_FOOT
 -- How a leaving toast or Nod eases: slow, then away.
 local EASE_IN = ns.Bezier(0.42, 0, 1, 1)
 

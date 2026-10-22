@@ -472,3 +472,69 @@ describe("time fished", function()
 		})
 	end)
 end)
+
+describe("when the login's cards are settled (ANN-R21, ONB-R10)", function()
+	-- Counts each time the cards say they have settled.
+	local function counted(world)
+		local seen = { count = 0 }
+		world.cards:OnSettled(function()
+			seen.count = seen.count + 1
+		end)
+		return seen
+	end
+
+	it("is settled once login has settled with no card waiting, and says so then (ANN-R21, ONB-R10)", function()
+		local world = newWorld()
+		local seen = counted(world)
+		assert.is_false(world.cards:IsSettled())
+
+		settle(world)
+
+		assert.is_true(world.cards:IsSettled())
+		assert.are.equal(1, seen.count)
+	end)
+
+	it("isn't settled while a card shows or waits, and says so as the last one closes (ANN-R21, ANN-R54)", function()
+		local world = newWorld()
+		world.global.cards = { card("First"), card("Second") }
+		local seen = counted(world)
+		settle(world)
+		assert.is_false(world.cards:IsSettled())
+
+		world.cards:Close(world.shown[1])
+		assert.is_false(world.cards:IsSettled())
+		assert.are.equal(0, seen.count)
+		world.cards:Close(world.shown[2])
+
+		assert.is_true(world.cards:IsSettled())
+		assert.are.equal(1, seen.count)
+	end)
+
+	it("isn't settled while the lanes hold or aren't empty, and says so when they free (ANN-R21, ANN-R38)", function()
+		local world = newWorld()
+		local seen = counted(world)
+		world.held = true
+		settle(world)
+		assert.is_false(world.cards:IsSettled())
+		world.held, world.lanesEmpty = false, false
+		world.cards:Next()
+		assert.is_false(world.cards:IsSettled())
+
+		world.lanesEmpty = true
+		world.cards:Next()
+
+		assert.is_true(world.cards:IsSettled())
+		assert.are.equal(1, seen.count)
+	end)
+
+	it("counts a Write-up waiting in Cozy mode as settled: it waits for the Session's card (ANN-R62)", function()
+		local world = newWorld()
+		world.cozy = true
+		world.global.writeUp = {
+			{ module = "Ledger", order = 10, title = "Ledger", heading = "Written up", lines = {} },
+		}
+		settle(world)
+
+		assert.is_true(world.cards:IsSettled())
+	end)
+end)

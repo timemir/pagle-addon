@@ -65,6 +65,8 @@ stds.wow = {
 		"GetRealZoneText",
 		"GetSubZoneText",
 		"GetInstanceInfo",
+		-- The Letter waits outside an instance (ONB-R10).
+		"IsInInstance",
 		-- QoL's Fishing key: its overrides and what it reads to choose them (QOL-R11, QOL-R20–R26).
 		"GetBindingKey",
 		"SetOverrideBinding",

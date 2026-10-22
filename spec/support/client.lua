@@ -16,6 +16,8 @@
 ---@field loot FakeLoot The loot window, as the loot API reads it.
 ---@field areaNames table<integer, string> Each area's name, as `C_Map.GetAreaInfo` returns it. Default none.
 ---@field mapNames table<integer, string> Each uiMap's name, for `C_Map.GetMapInfo`. Default none.
+---@field instanceType string? The instance the player is in, for `IsInInstance` ("party", "raid", …); nil or "none"
+--- in the open world, the default.
 ---@field sounds string[] Each PlaySoundFile and PlaySound call, in order, as "<path> <channel>" or "<sound kit id>
 --- <channel>".
 ---@field screenshots integer How many times Screenshot() was called. A spec may wrap the stub to see the screen then.
@@ -232,6 +234,12 @@ local function clientStubs(client)
 		end,
 		GetInstanceInfo = function()
 			return "Kalimdor", "none", 0, "", 0, 0, false, 1, 0, nil, false
+		end,
+		-- In the open world unless a spec sets client.instanceType ("party", "raid", "pvp", "arena", "scenario"): as the
+		-- client's, inInstance, instanceType (the Letter, ONB-R10).
+		IsInInstance = function()
+			local instanceType = client.instanceType or "none"
+			return instanceType ~= "none", instanceType
 		end,
 		GetGameTime = function()
 			return 8, 15

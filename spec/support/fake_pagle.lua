@@ -195,6 +195,10 @@
 --- it got: its moves are Core's, its widgets plain frames that keep what they were made with (a binding field also
 --- keeps `greyed` from SetGreyed and counts its Refresh calls in `refreshed`). No client, no pages.
 ---@field guideHeld boolean Whether Announcements are held for the guide now (ONB-R70).
+---@field letter PagleLetter The Letter (core/onboarding.md › The Letter), Core's own on its wiring (ns.WireLetter):
+--- M:SetDialogOpen on the handle tells it a Module's dialog is open (ONB-R100), letter:IsDialogOpen() reads it.
+---@field letterOnScreen boolean Whether the Letter's frame would be on screen now (ONB-R11).
+---@field inInstance boolean What IsInInstance() answers the Letter (ONB-R10); false unless a spec sets it.
 ---@field compartmentText fun(): string The compartment entry's label as it reads now (CORE-R51): "Pagle", or with
 --- moments kept while Cozy mode was on and no Session summary card shown since, "Pagle · 2 waiting" (ANN-R42).
 
@@ -1218,6 +1222,26 @@ part(function(fake, _, ns, host)
 		coreSteps = {},
 	})
 	fake.guide, fake.guideSteps = ns.guide, ns.guideSteps
+end)
+
+-- The Letter (core/onboarding.md › The Letter), on Core's wiring: M:SetDialogOpen on the handle (ONB-R100), the
+-- checks on RestrictionChanged and the cards settling (ONB-R10, ONB-R14), and `/pagle dev onboarding letter`
+-- (ONB-R83). The fake draws no frame: fake.letterOnScreen says whether it would show. A spec drives
+-- PLAYER_ENTERING_WORLD's part itself (fake.letter:EnteredWorld()) and sets fake.inInstance.
+part(function(fake, _, ns, host)
+	fake.letterOnScreen, fake.inInstance = false, false
+	ns.WireLetter(host, {
+		show = function()
+			fake.letterOnScreen = true
+		end,
+		hide = function()
+			fake.letterOnScreen = false
+		end,
+		inInstance = function()
+			return fake.inInstance
+		end,
+	})
+	fake.letter = ns.letter
 end)
 
 --- A fresh FakePagle: no Module registered, not restricted, before PLAYER_LOGIN.

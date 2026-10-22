@@ -363,3 +363,66 @@ describe("Standing down", function()
 		assert.is_true(loaded.env.PagleQoLDB.global.someSetting)
 	end)
 end)
+
+describe("Core's Letter while QoL asks (ONB-R100, ONB-R10)", function()
+	-- Each way the question ends: Esc on the conflict note, or either choice and then Later, Esc or Reload now on the
+	-- Reload now note.
+	local ENDINGS = {
+		["Esc on the conflict note"] = function(client)
+			client.pressEscape()
+		end,
+		["Use Pagle, then Later"] = function(_, loaded)
+			choose(loaded, "primary")
+			choose(loaded, "secondary")
+		end,
+		["Use {other}, then Esc"] = function(client, loaded)
+			choose(loaded, "secondary")
+			client.pressEscape()
+		end,
+		["Use Pagle, then Reload now"] = function(_, loaded)
+			choose(loaded, "primary")
+			choose(loaded, "primary")
+		end,
+	}
+
+	for ending, finish in pairs(ENDINGS) do
+		it(("tells Core its dialog is open until the question ends: %s (ONB-R100)"):format(ending), function()
+			local fake, client, loaded = start({ Angleur = ANGLEUR })
+			assert.is_true(fake.letter:IsDialogOpen())
+
+			finish(client, loaded)
+
+			assert.is_false(fake.letter:IsDialogOpen())
+		end)
+	end
+
+	it("keeps it open from a choice to the Reload now note, with Core's Animations off too (ONB-R100)", function()
+		local fake = newFakePagle()
+		fake.profile.announcements.motion = false
+		local loaded = fake.load("Pagle_QoL")
+		loaded.client.addons.Angleur = ANGLEUR
+		fake.login()
+		fake.fireGameEvent("PLAYER_LOGIN")
+		local opened = {}
+		local setDialogOpen = fake.letter.SetDialogOpen
+		function fake.letter.SetDialogOpen(self, owner, open)
+			opened[#opened + 1] = open
+			setDialogOpen(self, owner, open)
+		end
+
+		assert(shownNote(loaded)).primary:Click()
+
+		assert.is_true(fake.letter:IsDialogOpen())
+		assert.are.same({ true }, opened)
+	end)
+
+	it("tells Core nothing when no other fishing-key addon is loaded, nor for the tour's samples (CORE-R68)", function()
+		local fake, _, loaded = start({})
+
+		loaded.ns.PreviewNotes(true)
+		assert.is_false(fake.letter:IsDialogOpen())
+		loaded.ns.PreviewNotes(false)
+
+		assert.is_false(fake.letter:IsDialogOpen())
+	end)
+end)

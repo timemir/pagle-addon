@@ -7,7 +7,7 @@ local ns = select(2, ...)
 
 -- Coexisting with Angleur and Fishing Buddy (QOL-R80–R84). At PLAYER_LOGIN, before QoL first arms (QOL-R33), it
 -- looks for an other fishing-key addon; if one is loaded, it asks the player which to keep and stands down for the
--- rest of the session, whatever the answer (QOL-R82, QOL-R97).
+-- rest of the session, whatever the answer (QOL-R82, QOL-R97). While it asks, Core's Letter waits (ONB-R100).
 
 local standingDown = false
 
@@ -187,13 +187,56 @@ local function showNote(name, title, primary, secondary, onPrimary, onSecondary)
 	return note
 end
 
+-- The conflict note and the Reload now note in its place, once each is made: the real ones, never the tour's.
+local asking = {} ---@type PagleQoLNote[]
+
+-- Tells Core whether QoL's question is on screen (M:SetDialogOpen, ONB-R100): the Letter waits while the conflict
+-- note, or the Reload now note in its place, shows, and checks again once neither does. On a Core without the call,
+-- nothing.
+---@param open boolean
+local function tellCore(open)
+	local M = ns.Module
+	if M and M.SetDialogOpen then
+		M:SetDialogOpen(open)
+	end
+end
+
+-- A real note joins the question: Core hears it open now, and closed once it and the other have gone, however they
+-- went (a choice's fade, Esc, Later). A choice on the conflict note (`answered`, its fade ending) is followed by the
+-- Reload now note, so the question goes on: with Animations off its fade ends before that note is made.
+---@param note PagleQoLNote
+---@param answered boolean? a choice on this note brings the Reload now note
+local function ask(note, answered)
+	asking[#asking + 1] = note
+	tellCore(true)
+	note:HookScript("OnHide", function()
+		if answered and note.closing then
+			return
+		end
+		for _, other in ipairs(asking) do
+			if other:IsShown() then
+				return
+			end
+		end
+		tellCore(false)
+	end)
+end
+
 --- After either choice, offers the reload that finishes it (QOL-R83): the Reload now note, in the conflict note's
 --- place. Only a click on "Reload now" reloads (QOL-R6): "Later" and Esc just close it, and the chat line still says
 --- /reload. This click is the one ReloadUI() the boundary spec allows.
 local function offerReload()
-	showNote(RELOAD_NOTE, ns.L.CONFLICT_RELOAD_TEXT, ns.L.CONFLICT_RELOAD_NOW, ns.L.CONFLICT_RELOAD_LATER, function()
-		ReloadUI()
-	end)
+	ask(
+		showNote(
+			RELOAD_NOTE,
+			ns.L.CONFLICT_RELOAD_TEXT,
+			ns.L.CONFLICT_RELOAD_NOW,
+			ns.L.CONFLICT_RELOAD_LATER,
+			function()
+				ReloadUI()
+			end
+		)
+	)
 end
 
 ---@param found PagleQoLConflict[]
@@ -225,9 +268,12 @@ function ns.CheckConflicts()
 	standingDown = true
 	-- Each choice runs only from a click on its own button; Esc hides the note and runs neither, so it chooses nothing
 	-- (QOL-R81, QOL-R84). Neither choice reloads the UI; each offers the Reload now note (QOL-R83).
-	showNote(CONFLICT_NOTE, ns.L.CONFLICT_TEXT, ns.L.CONFLICT_USE_PAGLE, ns.UseOtherLabel(found), function()
-		usePagle(found)
-	end, useOther)
+	ask(
+		showNote(CONFLICT_NOTE, ns.L.CONFLICT_TEXT, ns.L.CONFLICT_USE_PAGLE, ns.UseOtherLabel(found), function()
+			usePagle(found)
+		end, useOther),
+		true
+	)
 end
 
 -- The two notes as `/pagle dev tour` shows them (CORE-R65): made the first time, inert (each choice only closes its
