@@ -785,7 +785,7 @@ describe("The Curio Shop's stage", function()
 			local dots = stage.dots
 			assert.is_true(dots:IsShown())
 			assert.are.same({ "TOP", stage.description, "BOTTOM", 0, -8 }, { dots:GetPoint() })
-			assert.are.same({ "TOPLEFT", dots, "BOTTOMLEFT", 0, -8 }, { stage.notes:GetPoint() })
+			assert.are.same({ "TOPLEFT", stage.description, "BOTTOMLEFT", 0, -26 }, { stage.notes:GetPoint() })
 			assert.are.equal("Gild three frames.\nA Hunts reward, not for sale", stage.notes:GetText())
 			local shown = {}
 			for _, dot in ipairs(dots.dots) do
@@ -798,7 +798,7 @@ describe("The Curio Shop's stage", function()
 			assert.are.same({ 0.8, 0.2, 0.1, 1 }, shown[1].fill.color)
 			assert.is_false(shown[1].hollow:IsShown())
 			assert.are.same({ 0.1, 0.4, 0.9, 1 }, shown[2].fill.color)
-			assert.is_true(shown[2].hollow:IsShown(), "ringed: the paper shows inside")
+			assert.is_true(shown[2].hollow:IsShown()) -- ringed: the paper shows inside
 			for _, texture in ipairs({ shown[2].edge, shown[2].fill, shown[2].hollow }) do
 				assert.are.equal(1, #texture.masks, "each drawn round")
 			end

@@ -154,7 +154,6 @@ end
 ---@field earned boolean            -- an earned good (SHOP-R22), whether or not it is owned yet
 ---@field earnedText? string        -- its row's tag while not yet earned: the string, or a function's first text
 ---@field earnedNote? string        -- its stage's note: the string, or while not yet earned a function's second text
----@field group? string             -- the key of its slot's group it is listed under (SHOP-R27)
 ---@field default boolean           -- its slot's default (SHOP-R22, SHOP-R23)
 ---@field price? integer            -- a good for sale's price (SHOP-R22)
 ---@field state PagleShopState
@@ -213,7 +212,6 @@ function Model:Entry(goodID)
 			module = slot.module,
 			preview = good.preview,
 			earned = good.isEarned ~= nil,
-			group = good.group,
 			default = goods:DefaultOf(slot.id) == goodID,
 			price = price,
 			state = state,

@@ -934,7 +934,8 @@ local function drawDots(stage, progress)
 	dots:ClearAllPoints()
 	dots:SetPoint("TOP", stage.description, "BOTTOM", 0, -DOT_PAD)
 	dots:Show()
-	stage.notes:SetPoint("TOPLEFT", dots, "BOTTOMLEFT", 0, -DOT_PAD)
+	-- In the card's column, under the dots' row.
+	stage.notes:SetPoint("TOPLEFT", stage.description, "BOTTOMLEFT", 0, -(DOT_PAD + DOT + DOT_PAD))
 end
 
 -- Hides what shows the selected good, for a stage with none.
