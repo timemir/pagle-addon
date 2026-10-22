@@ -56,9 +56,9 @@ local function loadLedger(fake, prepare)
 	loaded.ns.NewLedgerFold = function(lookups)
 		local fold = newFold(lookups)
 		local apply = fold.apply
-		fold.apply = function(state, record, mode, earned)
+		fold.apply = function(state, record, mode, ...)
 			applied[#applied + 1] = record.seq .. " " .. record.kind .. " " .. mode
-			return apply(state, record, mode, earned)
+			return apply(state, record, mode, ...)
 		end
 		return fold
 	end
@@ -281,7 +281,7 @@ describe("the Ledger's projection", function()
 		end
 	)
 
-	it("rebuilds a projection stored at 201, M3's fold with Core's sizes, at 401 (LED-R4, LED-R2)", function()
+	it("rebuilds a projection stored at 201, M3's fold with Core's sizes, at 501 (LED-R4, LED-R2)", function()
 		local last, lastLoaded = firstSession()
 		lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 201
 		local fake = nextSession(last, lastLoaded, 0)
@@ -291,11 +291,11 @@ describe("the Ledger's projection", function()
 		fake.enterWorld()
 
 		assert.are.same(rebuiltTo(fake, 5), applied)
-		assert.are.equal(401, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		assert.are.equal(501, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 	end)
 
 	it(
-		"rebuilds a projection stored at 301, M4's fold, at 401, with ★ at the 5th Catch (LED-R4, LED-R2, LED-R45)",
+		"rebuilds a projection stored at 301, M4's fold, at 501, with ★ at the 5th Catch (LED-R4, LED-R2, LED-R45)",
 		function()
 			local last, lastLoaded = firstSession()
 			lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 301
@@ -306,7 +306,27 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(401, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(501, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		end
+	)
+
+	it(
+		"rebuilds a projection stored at 401, the half-cost climb's, at 501, the full cost's with Activity XP (LED-R4, LED-R2, LED-R30, LED-R37)",
+		function()
+			local last, lastLoaded = firstSession()
+			lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 401
+			local fake = nextSession(last, lastLoaded, 0)
+			local loaded, applied = loadLedger(fake)
+
+			fake.login()
+			fake.enterWorld()
+
+			assert.are.same(rebuiltTo(fake, 5), applied)
+			assert.are.equal(501, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.same(
+				{ 0, foldOfLog(fake, loaded.ns).lifetimeXP },
+				{ loaded.ns.projection:GetState().prestigeActivityXP, loaded.ns.projection:GetState().lifetimeXP }
+			)
 		end
 	)
 end)

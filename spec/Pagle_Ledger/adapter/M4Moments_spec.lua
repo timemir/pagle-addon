@@ -12,7 +12,7 @@ local ZONE = 12
 -- reaches level 60 at rank 0 with 240 XP carried (as adapter/Prestige_spec.lua works out): 200 for the zone, then 610
 -- per Species (Catch 10, new 500, in the zone 100) and 10 more for each of the first 300 in Fresh Water (LED-R20,
 -- LED-R22), 200,840 against the 200,600 reaching 60 costs (LED-R30).
-local FIRST_FISH, FISH_COUNT, TO_60 = 100001, 524, 324
+local FIRST_FISH, FISH_COUNT, TO_60 = 100001, 660, 324
 -- One Species with three items of very different typical lengths, so a Catch of the next is always longer.
 local PIKE, BIG_PIKE, HUGE_PIKE = 90040, 90041, 90042
 -- A Legend item (LED-R5), with its title in the Ledger's lore batch: "Racer-Chaser" (LED-R75).
@@ -290,8 +290,8 @@ describe("the Ledger's M4 live moments", function()
 			assert.are.equal(1, ns.db.global.celebrated.prestige)
 			seen = #fake.announcements
 
-			-- The next climb, at half the cost, reaches 60 with 200 more Species (LED-R30).
-			fake.playCast("caught", loot(fishes(TO_60 + 1, 200)))
+			-- The next climb, at the full cost, reaches 60 with 330 more Species: 240 carried and 610 each (LED-R30).
+			fake.playCast("caught", loot(fishes(TO_60 + 1, 330)))
 
 			local next = byKind(shown(fake, seen))
 			assert.are.equal("Prestige ready", next.prestigeReady.title)
@@ -482,7 +482,7 @@ describe("the Ledger's M4 done", function()
 		function()
 			local last, lastLoaded = session({ history = { cast(T0, fishes(1, TO_60 - 1)) } })
 
-			-- 60, the Prestige with 240 carried, then 20 Species at half cost: 12,440 XP, level 16 (LED-R30, LED-R32).
+			-- 60, the Prestige with 240 carried, then 20 Species at the full cost: 12,440 XP, level 9 (LED-R30, LED-R32).
 			local fake, loaded = nextSession(last, lastLoaded, {
 				history = {
 					cast(T0 + 60, fishes(TO_60, 1)),
@@ -494,15 +494,15 @@ describe("the Ledger's M4 done", function()
 			assert.are.same({
 				{
 					"While the Ledger was off",
-					"Angler Level 1 to 16 · Prestige 1",
+					"Angler Level 1 to 9 · Prestige 1",
 					"21 Species",
 					"Title: Nat's Peer",
 					"Title: Returning Tide",
-					"Pagle Coins +630",
+					"Pagle Coins +490",
 				},
 			}, writeUps(fake))
 			assert.are.same({}, fake.announcements)
-			assert.are.same({ [0] = 60, [1] = 16 }, loaded.ns.db.global.celebrated.levels)
+			assert.are.same({ [0] = 60, [1] = 9 }, loaded.ns.db.global.celebrated.levels)
 		end
 	)
 
