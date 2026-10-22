@@ -51,6 +51,86 @@ local function boundByBackend(prepare)
 	return bound, loaded.ns
 end
 
+local FIXTURE_LIST = "spec/Pagle_Hunts/fixtures/HuntList.lua"
+local FIXTURE_EVENTS = "spec/Pagle_Hunts/fixtures/EventList.lua"
+local RUN_START = hunts.at(10, 0)
+local RUN_KEY = "fixture_shore@" .. RUN_START
+
+-- A pool event's run, fixture_shore over Darkshore, logged at its start and fished through to completion: a Deviate
+-- Fish at dusk (its Timed oddity, and its Haul's first fish), then a Nightfin that night (its Named fish and its
+-- Haul's tier 1, completing the run), and one more the next night.
+---@param fake table
+local function poolRun(fake)
+	append(fake, {
+		hunts.record("run", hunts.runPayload("fixture_shore", RUN_START, RUN_START + 3 * 86400), RUN_START),
+		cast(10, DUSK, DARKSHORE, { C.DEVIATE }),
+		cast(10, NIGHT, DARKSHORE, { C.NIGHTFIN }),
+		cast(11, NIGHT, DARKSHORE, { C.NIGHTFIN }),
+	})
+end
+
+-- Hunts as the backend's driver hosts it (LOG-R79), with no login and no OnInitialize: its logic/ files and its data
+-- files in TOC order, the fixture Hunt list and event pool in place of data/HuntList.lua and data/EventList.lua (with
+-- `noEvents`, data/EventList.lua left out, as the driver's load list had it), never adapter/ or locale/, over
+-- `fake`'s Pagle API and the fold's GetServerTime. ns.BindProjections binds it over a handle that keeps the def and
+-- reads the log back for M:IterateCatches as Core's does, Hunts' own Module records included (LOG-R41, LOG-R42);
+-- then every record so read is folded from reset, and done runs as a first build.
+---@param fake table a FakePagle with its catalogue and log set, never logged in
+---@param noEvents boolean?
+---@return HuntsState state
+---@return PagleHuntsNS ns
+local function foldByDriver(fake, noEvents)
+	-- What a Module's files see of FakePagle (its Pagle API, and pairs, ipairs, next and unpack that read through the
+	-- read-only proxies it hands out), and the fold's time.
+	local env = setmetatable({
+		GetServerTime = function()
+			return SERVER_TIME
+		end,
+	}, { __index = _G })
+	for name, value in pairs(fake.globals) do
+		env[name] = value
+	end
+	local data = { ["data/HuntList.lua"] = FIXTURE_LIST, ["data/EventList.lua"] = not noEvents and FIXTURE_EVENTS }
+	local ns = {}
+	for _, file in ipairs(addonFiles("Pagle_Hunts")) do
+		local path = file:find("^logic/") and "addons/Pagle_Hunts/" .. file or data[file]
+		if path then
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
+			local chunk = assert(loadfile(path))
+			setfenv(chunk, env)
+			chunk("Pagle_Hunts", ns)
+		end
+	end
+	local def
+	ns.BindProjections({
+		NewProjection = function(_, bound)
+			def = bound
+			return {}
+		end,
+		IterateCatches = function(_, afterSeq)
+			return fake.catchLog:Iterate(afterSeq, "Hunts")
+		end,
+	})
+	local state, casts = def.reset() or {}, 0
+	for record in fake.catchLog:Iterate(0, "Hunts") do
+		def.apply(state, record, "rebuild")
+		casts = casts + (record.kind == "cast" and 1 or 0)
+	end
+	def.done(state, { firstBuild = casts > 0, rebuilt = true, replayed = 0 })
+	return state, ns
+end
+
+-- A FakePagle over the fixture catalogue with `records(fake)` appended, never logged in: the log the driver folds and
+-- the Pagle API it hosts.
+---@param records fun(fake: table)
+---@return table
+local function driverFake(records)
+	local fake = newFakePagle()
+	fake.setCatalogue(C.base())
+	records(fake)
+	return fake
+end
+
 describe("Hunts' projection for the backend (#223)", function()
 	it("folds the Hunts to the state the client's projection holds", function()
 		local client = login(history)
@@ -146,5 +226,63 @@ describe("Hunts' projection for the backend (#223)", function()
 				{ id = "fixture_tide", hunts = 2, done = 0 },
 			}, journal.sets)
 		end)
+	end)
+
+	describe("the event pool (LOG-R79, DATA-R98)", function()
+		it("lists every pool event as plain data, in event-ID order, after BindProjections", function()
+			local _, ns = boundByBackend()
+
+			assert.are.same({
+				{ id = "fixture_shore", tags = { "coast", "low" }, skill = { 75, 150 }, band = "low", rotation = true },
+				{ id = "fixture_vale", tags = { "lake", "low" }, skill = { 25, 150 }, band = "low", rotation = true },
+			}, ns.EventPool())
+		end)
+
+		it("includes a retired event with its retired time, and a pool event kept out of the rotation", function()
+			local _, ns = boundByBackend(function(loaded)
+				loaded.ns.eventList.events[1].retired = JUNE_1
+				loaded.ns.eventList.events[2].rotation = false
+			end)
+
+			local pool = ns.EventPool()
+			assert.are.equal(JUNE_1, pool[1].retired)
+			assert.is_false(pool[2].rotation)
+		end)
+
+		it("hands out copies: changing one leaves the pool as it was", function()
+			local _, ns = boundByBackend()
+
+			local pool = ns.EventPool()
+			pool[1].tags[1], pool[1].skill[1], pool[1].id = "changed", 1, "changed"
+
+			assert.are.same({ "coast", "low" }, ns.events:Event("fixture_shore").tags)
+			assert.are.same({ 75, 150 }, ns.events:Event("fixture_shore").skill)
+			assert.are.equal("fixture_shore", ns.EventPool()[1].id)
+		end)
+	end)
+
+	describe("a pool event's run, as the driver loads Hunts (LOG-R79)", function()
+		it("is credited, the fold reaching the state the client's projection holds", function()
+			local client = login(poolRun)
+			local state, ns = foldByDriver(driverFake(poolRun))
+
+			assert.are.same({ "fixture_shore", "fixture_vale" }, { ns.EventPool()[1].id, ns.EventPool()[2].id })
+			assert.are.same(client.ns.State(), state)
+			local run = state.runs[RUN_KEY]
+			assert.is_truthy(run)
+			assert.are.equal(2, run.hunts.fixture_shore_snapper.count)
+			assert.are.equal(1, run.hunts.fixture_shore_oddity.count)
+			assert.are.equal(3, run.hunts.fixture_shore_haul.count)
+			assert.are.equal(hunts.at(10, NIGHT), run.completedAt)
+		end)
+
+		it(
+			"is ignored without data/EventList.lua, the load list LOG-R79 had before: no pool, so no known event",
+			function()
+				local state = foldByDriver(driverFake(poolRun), true)
+
+				assert.is_nil(state.runs[RUN_KEY])
+			end
+		)
 	end)
 end)
