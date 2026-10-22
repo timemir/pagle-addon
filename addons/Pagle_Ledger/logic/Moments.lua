@@ -95,12 +95,14 @@ function ns.CountText(n, one, other, format)
 	return (n == 1 and one or other):format(format and format(n) or n)
 end
 
---- The shown level (LED-R36, LED-R92): the higher of the computed level and the highest celebrated in this climb.
+--- The shown level (LED-R36, LED-R92): the higher of the computed level, its Activity XP included (LED-R38), and the
+--- highest celebrated in this climb.
 ---@param state LedgerState
 ---@param celebrated LedgerCelebrated
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
 ---@return integer
-function ns.ShownLevel(state, celebrated)
-	return math.max(ns.Level(state), celebrated.levels[state.prestige] or 0)
+function ns.ShownLevel(state, celebrated, total)
+	return math.max(ns.Level(state, total), celebrated.levels[state.prestige] or 0)
 end
 
 --- The Ledger's summary line (LED-R95): the prestige rank when above 0, the shown level and Ledger completion's

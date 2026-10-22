@@ -39,34 +39,29 @@ end
 --- The level cap (LED-R30, Tunables).
 ns.LEVEL_CAP = 60
 
--- The Prestige climb cost factor (LED-R30, Tunables): every step costs this much of its rank-0 cost after any Prestige.
-local PRESTIGE_FACTOR = 0.5
+-- The Prestige climb cost factor (LED-R30, Tunables): 1 in every climb, so a climb after a Prestige costs what the
+-- first did (#279; 0.5 after any Prestige before LEDGER_RULES_VERSION 5).
+local PRESTIGE_FACTOR = 1
 
---- What going from level `level` to the next costs at prestige rank `rank` (LED-R30, Tunables): (1,000 + 80 × L) × f,
---- with f = 1 at rank 0 and 0.5 after any Prestige. 1,000 + 80 × L is even, so half of it is whole too.
+--- What going from level `level` to the next costs (LED-R30, Tunables): (1,000 + 80 × L) × f, the same in every
+--- climb.
 ---@param level integer
----@param rank integer the prestige rank
 ---@return integer
-function ns.StepCost(level, rank)
-	local cost = 1000 + 80 * level
-	if rank > 0 then
-		return math.floor(cost * PRESTIGE_FACTOR)
-	end
-	return cost
+function ns.StepCost(level)
+	return (1000 + 80 * level) * PRESTIGE_FACTOR
 end
 
---- The climb `xp` covers at prestige rank `rank` (LED-R30): the level, 1 plus the steps covered, at most 60; then
---- below 60 the XP into the level and the next step's cost, at 60 the carried XP (unused until a Prestige carries it
---- into the next climb, LED-R32) and no cost.
+--- The climb `xp` covers (LED-R30): the level, 1 plus the steps covered, at most 60; then below 60 the XP into the
+--- level and the next step's cost, at 60 the carried XP (unused until a Prestige carries it into the next climb,
+--- LED-R32) and no cost.
 ---@param xp integer the climb's XP (LED-R31)
----@param rank integer the prestige rank
 ---@return integer level
 ---@return integer into XP into the level, or the carried XP at 60
 ---@return integer? cost the next step's cost; nil at 60
-function ns.ClimbOf(xp, rank)
+function ns.ClimbOf(xp)
 	local level = 1
 	while level < ns.LEVEL_CAP do
-		local cost = ns.StepCost(level, rank)
+		local cost = ns.StepCost(level)
 		if xp < cost then
 			return level, xp, cost
 		end
@@ -76,20 +71,104 @@ function ns.ClimbOf(xp, rank)
 	return level, xp, nil
 end
 
---- The climb's computed level (LED-R30), at the state's prestige rank.
+-- Where Core's Activity XP total comes from: none until ns.SetActivityXPSource gives one.
+---@type (fun(): integer)?
+local activityXPSource
+
+--- Sets where Core's Activity XP total comes from (AXP-R6, LED-R37): the adapter passes one reading
+--- `Pagle.GetActivityXP().total` (adapter/Ledger.lua), as Pagle's backend may, the way it sets ns.world. Nil sets none
+--- again, so logic/ alone reads a climb of the Ledger's own XP.
+---@param source (fun(): integer)?
+function ns.SetActivityXPSource(source)
+	activityXPSource = source
+end
+
+--- Core's Activity XP total now (AXP-R6, LED-R37), from the source ns.SetActivityXPSource set, 0 without one. Read
+--- whenever the level is worked out, never stored (ADR 0011); the fold never reads it.
+---@return integer
+function ns.ActivityXPTotal()
+	return activityXPSource and activityXPSource() or 0
+end
+
+--- The current climb's Activity XP (LED-R37): `max(0, total − s)`, with `s` the `activityXP` of the latest Prestige
+--- entry the state applied (0 before the first, AXP-R5). Never below 0, so a total recounted lower (AXP-R4) never
+--- takes XP from the Ledger's own.
+---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
+---@return integer
+function ns.ClimbActivityXP(state, total)
+	return math.max(0, (total or ns.ActivityXPTotal()) - (state.prestigeActivityXP or 0))
+end
+
+--- The climb's XP (LED-R31): the state's own XP of the climb (the Ledger's own since the latest Prestige, plus the
+--- carried XP) and the climb's Activity XP, which Fresh Water never doubles (LED-R22, AXP-R8).
+---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
+---@return integer
+function ns.ClimbXP(state, total)
+	return state.xp + ns.ClimbActivityXP(state, total)
+end
+
+--- The state's climb now (LED-R30, LED-R38): ns.ClimbOf over the climb's XP, its Activity XP included.
+---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
+---@return integer level
+---@return integer into XP into the level, or the carried XP at 60
+---@return integer? cost the next step's cost; nil at 60
+function ns.Climb(state, total)
+	return ns.ClimbOf(ns.ClimbXP(state, total))
+end
+
+--- The climb's computed level (LED-R30, LED-R38), its Activity XP included.
+---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
+---@return integer
+function ns.Level(state, total)
+	return (ns.Climb(state, total))
+end
+
+--- The level the climb's own XP reaches alone, without its Activity XP (LED-R31): the fold keeps the Coins of its
+--- levels in the state, and the levels the Activity XP adds above it are worked out (ns.CoinsEarned, LED-R38).
 ---@param state LedgerState
 ---@return integer
-function ns.Level(state)
-	return (ns.ClimbOf(state.xp, state.prestige))
+function ns.OwnLevel(state)
+	return (ns.ClimbOf(state.xp))
 end
 
 --- The peak level (LED-R35): 60 once the prestige rank is above 0, else the current level. Level rewards follow it,
 --- so a Prestige never takes them away.
 ---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
 ---@return integer
-function ns.PeakLevel(state)
+function ns.PeakLevel(state, total)
 	if state.prestige > 0 then
 		return ns.LEVEL_CAP
 	end
-	return ns.Level(state)
+	return ns.Level(state, total)
+end
+
+--- The level-ups the climb's Activity XP brings (LED-R39, LED-R199): one `levelUp` for the levels above the climb's
+--- own level up to the computed one, with its climb's rank and 20 Coins a level for its moment (LED-R88, LED-R97),
+--- then `prestigeReady` when that is 60. `cast` is the Cast they ride on, or nil. Celebrating them raises and pays
+--- only the levels above the celebrated one (logic/Moments.lua).
+---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
+---@param cast string? the live Cast's entry ID (ANN-R10)
+---@return LedgerAchievement[]
+function ns.ActivityLevelUps(state, total, cast)
+	local own, level = ns.OwnLevel(state), ns.Level(state, total)
+	if level <= own then
+		return {}
+	end
+	local levels = {}
+	for raised = own + 1, level do
+		levels[#levels + 1] = raised
+	end
+	local earned = {
+		{ kind = "levelUp", cast = cast, coins = ns.LEVEL_UP_COINS * #levels, levels = levels, rank = state.prestige },
+	}
+	if level >= ns.LEVEL_CAP then
+		earned[2] = { kind = "prestigeReady", cast = cast, coins = 0, rank = state.prestige }
+	end
+	return earned
 end
