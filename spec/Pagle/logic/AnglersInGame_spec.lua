@@ -55,11 +55,9 @@ describe("the Companion's data files", function()
 		for _, case in ipairs(ABSENT) do
 			local name, changes, reason = case[1], case[2], case[3]
 			it(("reads a file with %s absent, at any time (VIEW-R1, IGV-R44)"):format(name), function()
-				local data = anglerFileExamples().following
+				local data = changes
 				if type(changes) == "table" then
-					data = with(data, changes)
-				else
-					data = changes
+					data = with(anglerFileExamples().following, changes)
 				end
 
 				local file = ns.ReadFollowingFile(data)
