@@ -35,6 +35,21 @@ ns.L = {
 	BOOK_LIVE_LINE = "Session: %s · %s · %s",
 	BOOK_UPDATING = "Updating my records…",
 
+	-- Onboarding (core/onboarding.md). Stats' line on the Field guide's What's in the box (ONB-R91); the book's First
+	-- look (ONB-R57): its window's name on the coach bar ("First look · Stats") and its five notes, verbatim from the
+	-- canvas (board "First look · Stats"), each *term* pencilled in red by Core; and the "?" beside the book's close
+	-- (ONB-R59).
+	GUIDE_BLURB = "Your own numbers: your odds, from your own Casts, and how long you’ve waited. It never pops up.",
+	LOOK_TITLE = "Stats",
+	LOOK_ODDS_SINCE = "Every fish of this water: your odds, and how many Casts since you last caught it.",
+	LOOK_YOUR_ODDS = "*Your odds* come only from your own Casts, and always say how many.",
+	-- STA-R58's second fixed line: it says nothing is owed, as the ruler's own line does.
+	LOOK_DRY_SPELL = "A *Dry spell* is how long you’ve waited. Unlucky isn’t broken: nothing is owed.",
+	LOOK_WATCH = "*Watch* up to three fish to keep their Dry spells on your tracker.",
+	LOOK_NEVER_POPS_UP = "Stats *never pops up* and never announces. It’s here when you ask.",
+	LOOK_HELP = "?",
+	LOOK_AGAIN = "Show the notes for this page again",
+
 	-- The Session pages (stats.md › UI › This Session, Sessions; STA-R97). A Session's entry: its kicker on the Sessions
 	-- page ("Session 12", numbered from the oldest), "21:04 to now, 25m at the water.", its figures and headings.
 	SESSION_NUMBERED = "Session %s",

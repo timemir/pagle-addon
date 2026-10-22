@@ -154,9 +154,11 @@ end
 ---@field updating boolean?               -- stop at login: the projection's first build waits for fake.enterWorld
 ---@field at table?                       -- where the player is then (support.move's fields)
 ---@field motion boolean?                 -- Core's Animations setting on (off by default: support.load)
+---@field firstLook boolean?              -- the book's First look not yet seen (seen by default: support.start)
 
 --- Pagle_Stats on a fake that has logged in with its projection built (STA-R20), the fixture's areas and items named
---- on the client, and the player moved as `options.at` says.
+--- on the client, and the player moved as `options.at` says. The Angler has seen the book's First look, so the book
+--- opens as STA-R70 has it, unless `options.firstLook` (adapter/Look_spec.lua: ONB-R55).
 ---@param options StatsSpecStart?
 ---@return LoadedAddon loaded
 ---@return table fake
@@ -176,6 +178,9 @@ function support.start(options)
 		support.load(fake, { catalogue = options.catalogue, prepare = options.prepare, motion = options.motion })
 	support.nameAll(loaded, options.items)
 	fake.login()
+	if not options.firstLook then
+		fake.global.onboarding.looksSeen["stats.book"] = true
+	end
 	if not options.updating then
 		fake.enterWorld()
 	end

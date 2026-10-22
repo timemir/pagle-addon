@@ -65,6 +65,7 @@ ns.BOOK_LOOK = {
 	ledgerRedAlpha = 0.35,
 	sepia = tint("dcb37a"), -- an item icon's tint over its greys (CSS sepia(.75))
 	plateText = tint("2a1a04"), -- the brass nameplate's words
+	wax = tint("f4dfa8"), -- the gilt "?" pressed into the wax beside the close (ONB-R59)
 	margin = tint("5a4028"), -- a row's margin: its Dry spell in handwriting
 	ribbonLabel = tint("efd286"), -- a ribbon's words
 	ribbonLabelOn = tint("fff0bc"), -- the chosen ribbon's
@@ -1341,6 +1342,73 @@ function ns.NewBookClose(parent)
 		self.pushed:Hide()
 	end)
 	return close
+end
+
+--- The "?" beside the close (ONB-R59), in the book's own wax: the plain seal of red wax at the close's size with a
+--- gilt "?" pressed into it, the close's glow under the mouse, the wax darker while pressed; and its tooltip on the
+--- book's dark slip (the Lifetime index's), under it. Its click is the book's (adapter/Book.lua).
+---@class StatsBookHelpTip: Frame
+---@field slip StatsThreeSlice
+---@field text FontString
+
+---@class StatsBookHelpButton: Button
+---@field wax Texture
+---@field glow Texture
+---@field label FontString
+---@field tip StatsBookHelpTip
+
+-- The "?"'s size (the close's), its tooltip slip's height, end caps and padding, and how far under the "?" it hangs.
+local HELP_SIZE, HELP_TIP_HEIGHT, HELP_TIP_CAP, HELP_TIP_PAD, HELP_TIP_DROP = 26, 33, 10, 12, 4
+-- The wax's shade while pressed.
+local HELP_PRESSED = 0.78
+
+---@param parent Frame
+---@param tooltip string the tooltip's words
+---@return StatsBookHelpButton
+function ns.NewBookHelp(parent, tooltip)
+	local help = CreateFrame("Button", nil, parent) --[[@as StatsBookHelpButton]]
+	help:SetSize(HELP_SIZE, HELP_SIZE)
+	help.wax = ns.ArtSprite(help, "Book", "seal", "ARTWORK", 0, HELP_SIZE)
+	help.wax:SetAllPoints()
+	help.label = ns.BookText(help, ns.ArtFont("gilt", 17, true), LOOK.wax)
+	help.label:SetJustifyH("CENTER")
+	help.label:SetPoint("CENTER", 0, 1)
+	help.label:SetText(ns.L.LOOK_HELP)
+	help.glow = ns.ArtSprite(help, "Book", "close-highlight", "HIGHLIGHT", 0, HELP_SIZE)
+	help.glow:SetAllPoints()
+	help.glow:SetBlendMode("ADD")
+
+	local tip = CreateFrame("Frame", nil, parent) --[[@as StatsBookHelpTip]]
+	tip:SetFrameLevel(help:GetFrameLevel() + 20)
+	tip.slip = CreateFrame("Frame", nil, tip) --[[@as StatsThreeSlice]]
+	tip.slip:SetPoint("TOPLEFT")
+	-- on the slip's own frame, which draws over the tip's: the words over the paper
+	tip.text = ns.BookText(tip.slip, ns.BookFonts().tip, LOOK.tipText)
+	tip.text:SetWordWrap(false)
+	tip.text:SetPoint("LEFT", tip, "LEFT", HELP_TIP_PAD, 0)
+	tip.text:SetText(tooltip)
+	tip:Hide()
+	help.tip = tip
+
+	help:SetScript("OnMouseDown", function(self)
+		self.wax:SetVertexColor(HELP_PRESSED, HELP_PRESSED, HELP_PRESSED)
+	end)
+	help:SetScript("OnMouseUp", function(self)
+		self.wax:SetVertexColor(1, 1, 1)
+	end)
+	help:SetScript("OnEnter", function(self)
+		local width = math.ceil(tip.text:GetStringWidth()) + 2 * HELP_TIP_PAD
+		ns.SetThreeSlice(tip.slip, "Stats", "tip", width, HELP_TIP_CAP, "BACKGROUND")
+		tip:SetSize(width, HELP_TIP_HEIGHT)
+		tip:ClearAllPoints()
+		tip:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", 0, -HELP_TIP_DROP)
+		tip:SetFrameLevel(self:GetFrameLevel() + 20)
+		tip:Show()
+	end)
+	help:SetScript("OnLeave", function()
+		tip:Hide()
+	end)
+	return help
 end
 
 --- A grosgrain ribbon (STA-R74): one white ribbon tinted to its colour, with a gold running stitch over it, hanging

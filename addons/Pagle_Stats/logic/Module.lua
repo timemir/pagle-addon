@@ -17,6 +17,8 @@ function ns.ModuleDef(toggleBook)
 		name = "Stats",
 		title = ns.L.TITLE,
 		order = 30,
+		-- Stats' line on the Field guide's What's in the box (ONB-R91); Stats has no guide step.
+		guideBlurb = ns.L.GUIDE_BLURB,
 		views = { { id = "book", label = ns.L.BOOK, open = toggleBook } },
 		slash = {
 			{
