@@ -5,7 +5,7 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The zone crests (LED-R113–R115): fifty earned goods in Core's crest slot, one per zone in the table below, each
+-- The zone crests (LED-R113–R115): fifty-three earned goods in Core's crest slot, one per zone in the table below, each
 -- earned when its zone's shown rank is Master and saying, until then, how far the zone has come. Pure logic,
 -- everything passed in (CORE-R7); adapter/Bindings.lua registers them after the bindings.
 
@@ -25,14 +25,15 @@ local ICONS = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\"
 ---@field areaID integer
 ---@field continent integer
 
---- LED-R113's table: the two continents' zones and capital cities, and Forever's new zones, the six not yet charted
---- among them, each continent's in its zones' enUS order. No dungeon, raid or battleground, and nothing for the lake,
---- the sea and the mountain's gate (areaIDs 170, 457 and 25).
+--- LED-R113's table: the two continents' outdoor zones (the mountain's gate, the lake and the sea among them, areaIDs
+--- 25, 170 and 457), their capital cities and Forever's new zones, the six not yet charted among them, each
+--- continent's in its zones' enUS order. No dungeon, raid or battleground.
 ---@type LedgerZoneCrest[]
 ns.ZONE_CRESTS = {
 	{ key = "alterac", areaID = 36, continent = 0 },
 	{ key = "arathi", areaID = 45, continent = 0 },
 	{ key = "badlands", areaID = 3, continent = 0 },
+	{ key = "blackrock", areaID = 25, continent = 0 },
 	{ key = "blastedlands", areaID = 4, continent = 0 },
 	{ key = "burningsteppes", areaID = 46, continent = 0 },
 	{ key = "deadwind", areaID = 41, continent = 0 },
@@ -44,6 +45,7 @@ ns.ZONE_CRESTS = {
 	{ key = "hinterlands", areaID = 47, continent = 0 },
 	{ key = "ironforge", areaID = 1537, continent = 0 },
 	{ key = "lochmodan", areaID = 38, continent = 0 },
+	{ key = "lordamere", areaID = 170, continent = 0 },
 	{ key = "redridge", areaID = 44, continent = 0 },
 	{ key = "riverglades", areaID = 16591, continent = 0 },
 	{ key = "searinggorge", areaID = 51, continent = 0 },
@@ -78,6 +80,7 @@ ns.ZONE_CRESTS = {
 	{ key = "thousandneedles", areaID = 400, continent = 1 },
 	{ key = "thunderbluff", areaID = 1638, continent = 1 },
 	{ key = "ungoro", areaID = 490, continent = 1 },
+	{ key = "veiledsea", areaID = 457, continent = 1 },
 	{ key = "winterspring", areaID = 618, continent = 1 },
 	{ key = "zephras", areaID = 16593, continent = 2991 },
 }

@@ -54,6 +54,7 @@ ZONE_CRESTS = [
     "alterac",
     "arathi",
     "badlands",
+    "blackrock",
     "blastedlands",
     "burningsteppes",
     "deadwind",
@@ -65,6 +66,7 @@ ZONE_CRESTS = [
     "hinterlands",
     "ironforge",
     "lochmodan",
+    "lordamere",
     "redridge",
     "riverglades",
     "searinggorge",
@@ -99,6 +101,7 @@ ZONE_CRESTS = [
     "thousandneedles",
     "thunderbluff",
     "ungoro",
+    "veiledsea",
     "winterspring",
     "zephras",
 ]
@@ -292,7 +295,7 @@ def test_the_ledger_s_lore_has_every_title_and_binding() -> None:
         assert _ledger_text(f"binding.{binding}.description").strip()
 
 
-def test_the_manifest_lists_the_ledger_s_fifty_zone_crests() -> None:
+def test_the_manifest_lists_the_ledger_s_fifty_three_zone_crests() -> None:
     # DATA-R106, LED-R113, LED-R162: [ledger.crest] with a name and a description for each zone crest, none with a
     # placeholder, and the lore has both for each (DATA-R107 passes: read_layers raises on any problem).
     manifest = _layers().lore.manifest["ledger"]

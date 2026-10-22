@@ -420,6 +420,10 @@ description = "Old standing stones on the highland grass, older than anyone who 
 name = "The Stone Arch"
 description = "A stone arch the wind took ten thousand years to finish. Bring your own water."
 
+[crest.blackrock] # Blackrock Mountain
+name = "The Black Spire"
+description = "A black mountain with fire in its cracks and chains across its gate. Fish the lava pools at your own risk."
+
 [crest.blastedlands] # Blasted Lands
 name = "The Burning Gate"
 description = "A gate of black stone with green fire in it. Nobody fishes there for the view."
@@ -463,6 +467,10 @@ description = "An anvil before the mountain's forge. There is a lake under there
 [crest.lochmodan] # Loch Modan
 name = "The Great Dam"
 description = "A dam holding back a highland lake. Dwarves built it to last, and it has."
+
+[crest.lordamere] # Lordamere Lake
+name = "The Lake Isle"
+description = "A wooded island on a wide grey lake, a boat drawn up on its shore. Quiet water, and plenty of it."
 
 [crest.redridge] # Redridge Mountains
 name = "Three Peaks"
@@ -599,6 +607,10 @@ description = "A high mesa with a tent on top. The pools below catch the falls, 
 [crest.ungoro] # Un'Goro Crater
 name = "The Footprint"
 description = "A footprint the size of a rowing boat. The crater has bigger worries than fish."
+
+[crest.veiledsea] # The Veiled Sea
+name = "The Fog Bank"
+description = "A ship half lost in a bank of sea fog. Out here the fish come up from very deep, and so does everything else."
 
 [crest.winterspring] # Winterspring
 name = "The Frost"
