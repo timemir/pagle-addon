@@ -157,6 +157,43 @@ describe("Pagle.NewBook (core/book.md)", function()
 		end
 	)
 
+	it(
+		"tints each ribbon its colour, the chosen one brighter, and eases a change of choice over 0.2 s (BOOK-R17)",
+		function()
+			local book = newBook()
+			book:Open()
+			local ribbons = book.frame.ribbons
+			assert.are.same({ 0.2 * 1.13, 0.4 * 1.13, 0.2 * 1.13 }, { unpack(ribbons[1].body.vertexColor, 1, 3) })
+			assert.are.same({ 0.5, 0.2, 0.2 }, { unpack(ribbons[2].body.vertexColor, 1, 3) })
+			assert.is_nil(ribbons[1].stitch.vertexColor) -- the gold stitch keeps its own colour
+			ribbons[2]:Click()
+			client.update(0.1)
+			assert.is_true(ribbons[2].height > 75 and ribbons[2].height < 86)
+			client.update(0.6)
+			assert.are.equal(86, ribbons[2].height)
+			assert.are.equal(75, ribbons[1].height)
+		end
+	)
+
+	it("sizes the brass plate to its words and tones it silver for a look that says so (BOOK-R10, BOOK-R14)", function()
+		local book = newBook({ plate = { x = 30, y = 360 } })
+		book:SetPlate("No Casts yet")
+		book:Open()
+		local plate = book.frame.plate
+		assert.are.equal(#"No Casts yet" * 6 + 22, plate.width)
+		book.binding.onLook({
+			gilt = { 0.8, 0.82, 0.86 },
+			giltShadow = { 0, 0, 0, 0.9, 1, -1 },
+			silver = true,
+			paperTint = { 1, 0.97, 0.93 },
+		})
+		for _, slice in ipairs({ plate.brass.left, plate.brass.middle, plate.brass.right }) do
+			assert.is_true(slice.desaturated)
+			assert.are.same({ 1.1, 1.1, 1.15 }, slice.vertexColor)
+		end
+		assert.are.same({ 1, 0.97, 0.93 }, { unpack(book.frame.parchments.left.paper.vertexColor, 1, 3) })
+	end)
+
 	it("saves where it is dragged in profile.books and opens there again (BOOK-R5)", function()
 		local book = newBook()
 		book:Open()

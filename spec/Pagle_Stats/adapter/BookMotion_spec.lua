@@ -1,6 +1,7 @@
 -- The Stats book's motion and sounds (stats.md › UI › Motion and sound; the books art kit v2's MOTION.md and
--- SOUND.md): its moves on Core's one driver (Pagle.Animate), the open and close fades and their sounds, the page turn
--- between spreads with its crumbs, ribbons and sound, the fit to a small screen, and the readings moving when a Cast
+-- SOUND.md): its moves on Core's one driver (Pagle.Animate), the open and close fades and their sounds and the page
+-- turn between spreads with its crumbs, ribbons and sound (Core's shell's, BOOK-R4, BOOK-R31, read on the Stats book;
+-- the shell keeps each page's side as its views["page:side:1"]), the fit to a small screen, and the readings moving when a Cast
 -- changes the entry shown: the ink fading up, the "me" mark sliding, the ruler fading at a catch with its "write" sound, the
 -- live line and its breathing dot. Core's Animations setting (Pagle.IsAnimationsOn) is on here; with it off, all of it
 -- draws settled at once. The fake client runs the driver's OnUpdate with client.update.
@@ -126,10 +127,10 @@ describe("the Stats book's page turn", function()
 			local loaded, _, book = ready(stats.darkshore())
 			loaded.ns.ToggleBook()
 			run(loaded, 0.2)
-			local home = { left = book.pages["home:left"], right = book.pages["home:right"] }
+			local home = { left = book.shell.views["home:left:1"], right = book.shell.views["home:right:1"] }
 
 			book.frame.ribbons[3]:Click() -- Lifetime
-			local life = { left = book.pages["lifetime:left"], right = book.pages["lifetime:right"] }
+			local life = { left = book.shell.views["lifetime:left:1"], right = book.shell.views["lifetime:right:1"] }
 			assert.are.equal("836 SFX", loaded.client.sounds[#loaded.client.sounds])
 			assert.are.same({ "Stats" }, crumbsOf(book))
 			run(loaded, 0.1)
@@ -160,7 +161,7 @@ describe("the Stats book's page turn", function()
 
 		loaded.ns.OpenBook({ page = "home" })
 		run(loaded, 0.1)
-		local home = { left = book.pages["home:left"], right = book.pages["home:right"] }
+		local home = { left = book.shell.views["home:left:1"], right = book.shell.views["home:right:1"] }
 
 		local new = strip(home.left)
 		assert.is_true(new[1] and new[2] == 0 and new[3] > 0 and new[3] < PAGE_WIDTH)
@@ -173,7 +174,7 @@ describe("the Stats book's page turn", function()
 		local loaded, _, book = ready(stats.darkshore())
 		loaded.ns.OpenBook({ page = "lifetime" })
 		run(loaded, 0.2)
-		local ribbons, sizes = book.frame.ribbons, loaded.ns.BOOK_RIBBON
+		local ribbons, sizes = book.frame.ribbons, { length = 75, lengthChosen = 86 } -- Core's (BOOK-R17)
 		assert.are.same({ sizes.length, sizes.lengthChosen }, { ribbons[4].height, ribbons[3].height })
 
 		ribbons[4]:Click()
@@ -193,14 +194,14 @@ describe("the Stats book's page turn", function()
 
 		book.frame.ribbons[4]:Click()
 		run(loaded, 0.6)
-		for key, view in pairs(book.pages) do
+		for key, view in pairs(book.shell.views) do
 			assert.are.equal(key:find("^sessions:") ~= nil, view.clip.shown, key)
 		end
 		book.frame.ribbons[2]:Click()
 		run(loaded, 0.1)
 		book.frame:Hide()
 
-		for key, view in pairs(book.pages) do
+		for key, view in pairs(book.shell.views) do
 			assert.are.equal(key:find("^session:") ~= nil, view.clip.shown, key)
 		end
 	end)
@@ -213,9 +214,9 @@ describe("the Stats book's page turn", function()
 
 		assert.are.same({ "829 SFX" }, loaded.client.sounds)
 		assert.are.same({ "Stats", "Lifetime" }, crumbsOf(book))
-		assert.are.same({ true, 0, PAGE_WIDTH }, strip(book.pages["lifetime:left"]))
-		assert.is_false(book.pages["home:left"].clip.shown)
-		assert.are.equal(loaded.ns.BOOK_RIBBON.lengthChosen, book.frame.ribbons[3].height)
+		assert.are.same({ true, 0, PAGE_WIDTH }, strip(book.shell.views["lifetime:left:1"]))
+		assert.is_false(book.shell.views["home:left:1"].clip.shown)
+		assert.are.equal(86, book.frame.ribbons[3].height) -- the chosen length (BOOK-R17)
 	end)
 end)
 
@@ -226,7 +227,7 @@ describe("the Stats book's readings moving (the kit's MOTION.md)", function()
 		loaded.ns.OpenBook({ page = "place", area = DARKSHORE, item = SMALLFISH })
 		run(loaded, 0.2)
 		local view
-		for _, child in ipairs(book.pages["place:right"].content.children) do
+		for _, child in ipairs(book.shell.views["place:right:1"].content.children) do
 			view = view or (child.shown and child.entryView)
 		end
 		return loaded, fake, book, assert(view)
@@ -304,7 +305,7 @@ describe("the Stats book's readings moving (the kit's MOTION.md)", function()
 				find(child)
 			end
 		end
-		find(book.pages["place:left"].content)
+		find(book.shell.views["place:left:1"].content)
 
 		stats.fish(fake, 1)
 		loaded.client.runTimers()

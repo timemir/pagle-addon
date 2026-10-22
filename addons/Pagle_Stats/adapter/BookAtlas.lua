@@ -17,30 +17,19 @@ local ns = select(2, ...)
 local CORE = "Interface\\AddOns\\Pagle\\media\\books\\"
 local OWN = "Interface\\AddOns\\Pagle_Stats\\media\\books\\"
 
---- The page paper, a whole texture.
-ns.BOOK_FILES = { parchment = CORE .. "Parchment" }
-
 ---@type table<string, StatsArtAtlas>
 ns.ATLASES = {
-	-- The book shell: the wax seal and its "not yet" ring, the wax close button, the brass nameplate (a three-slice),
-	-- the fleuron and the spine's gutter.
+	-- The fleuron the book's marks draw (the rest of the shell is Core's, Pagle.NewBook).
 	Book = {
 		file = CORE .. "BookAtlas",
 		width = 512,
 		height = 256,
 		scale = 2,
 		sprites = {
-			["seal"] = { x = 234, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
-			["seal-empty"] = { x = 366, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
-			["close"] = { x = 2, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
-			["close-pushed"] = { x = 70, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
-			["close-highlight"] = { x = 138, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
-			["plate"] = { x = 274, y = 136, w = 128, h = 64, box = { 0, 0, 64, 32 } },
 			["fleuron"] = { x = 406, y = 136, w = 32, h = 32, box = { 0, 0, 16, 16 } },
-			["gutter"] = { x = 442, y = 136, w = 64, h = 8, box = { 0, 0, 32, 4 } },
 		},
 	},
-	-- The kit's parts: the grosgrain ribbon and its stitch, chips, the pinned pill, item rings, tier marks, the ink
+	-- The kit's parts: chips, the pinned pill, item rings, tier marks, the ink
 	-- bar, the timeline's bars, the pin, the luck ruler's mark and the star.
 	Parts = {
 		file = CORE .. "BookParts",
@@ -66,8 +55,6 @@ ns.ATLASES = {
 			["me"] = { x = 430, y = 354, w = 40, h = 72, box = { 0, 6, 20, 30 } },
 			["pill"] = { x = 46, y = 354, w = 200, h = 60, box = { 0, 0, 100, 30 } },
 			["pin-glyph"] = { x = 294, y = 430, w = 32, h = 32, box = { 0, 0, 16, 16 } },
-			["ribbon"] = { x = 6, y = 474, w = 208, h = 284, box = { 2, 0, 100, 140 } },
-			["ribbon-stitch"] = { x = 218, y = 2, w = 208, h = 284, box = { 2, 0, 100, 140 } },
 			["scroll"] = { x = 466, y = 430, w = 8, h = 120, box = { 0, 0, 4, 60 } },
 			["sic-ring"] = { x = 430, y = 90, w = 40, h = 40, box = { 1, 1, 18, 18 } },
 			["star"] = { x = 330, y = 430, w = 30, h = 30, box = { 0, 0, 15, 15 } },

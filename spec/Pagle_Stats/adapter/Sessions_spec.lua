@@ -105,7 +105,7 @@ end
 
 -- The lines of side `side` of the page shown.
 local function page(book, side)
-	return linesOf(book.frame.paperFrames[side])
+	return linesOf(book.frame.papers[side])
 end
 
 -- The ledger's "Started" cells on side `side`, top to bottom.
@@ -144,7 +144,7 @@ local function clickable(book, side, text)
 			end
 		end
 	end
-	return assert(find(book.frame.paperFrames[side]), "nothing to click reads " .. text)
+	return assert(find(book.frame.papers[side]), "nothing to click reads " .. text)
 end
 
 -- The shown font string under side `side` whose text is `text`.
@@ -162,7 +162,7 @@ local function textNamed(book, side, text)
 			end
 		end
 	end
-	return assert(find(book.frame.paperFrames[side]), "no text " .. text)
+	return assert(find(book.frame.papers[side]), "no text " .. text)
 end
 
 describe("the Session pages", function()

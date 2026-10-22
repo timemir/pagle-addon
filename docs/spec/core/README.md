@@ -152,11 +152,12 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 
 ## Data
 
-Core's SavedVariables are specified in [catch-log.md](catch-log.md#data). This file adds one `PagleDB.profile` key:
+Core's SavedVariables are specified in [catch-log.md](catch-log.md#data). This file adds two `PagleDB.profile` keys:
 
 | Key | Type | Default |
 |---|---|---|
 | `dock.point` | `{ point, relativeTo = "UIParent", relativePoint, x, y }` or `nil` | `nil` (CORE-R70 default) |
+| `books` | each movable book's saved position by its id, `{ point, relativePoint, x, y }` in UIParent's units ([book.md](book.md#data), BOOK-R5) | `{}` |
 
 ## Contracts
 

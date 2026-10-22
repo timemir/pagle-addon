@@ -105,40 +105,41 @@ describe("the Stats book's frame (STA-R70, STA-R71)", function()
 		assert.are.same({ page = "lifetime" }, draws[1].place)
 	end)
 
-	it("opens centred while profile.window is nil", function()
-		local loaded, _, book = ready()
+	it("opens centred, lifted 40, while it has no saved position (BOOK-R5)", function()
+		local loaded, fake, book = ready()
 
 		loaded.ns.ToggleBook()
 
-		assert.is_nil(loaded.ns.db.profile.window)
+		assert.is_nil(fake.profile.books.stats)
 		assert.are.same({ { "CENTER", loaded.env.UIParent, "CENTER", 0, 40 } }, book.frame.points)
 	end)
 
-	it("moves by dragging the leather, saves where it was left in profile.window, and opens there next", function()
-		local loaded, _, book = ready()
-		loaded.ns.ToggleBook()
-		local frame = book.frame
-		assert.is_true(frame:IsMovable())
+	it(
+		"moves by dragging the leather, saves where it was left in Core's profile.books, and opens there next",
+		function()
+			local loaded, fake, book = ready()
+			loaded.ns.ToggleBook()
+			local frame = book.frame
+			assert.is_true(frame:IsMovable())
 
-		-- Where a drag leaves it: the client re-anchors a moved frame by its top left.
-		frame:GetScript("OnDragStart")(frame)
-		frame:ClearAllPoints()
-		frame:SetPoint("TOPLEFT", loaded.env.UIParent, "BOTTOMLEFT", 120, 700)
-		frame:GetScript("OnDragStop")(frame)
+			-- Where a drag leaves it: the client re-anchors a moved frame by its top left.
+			frame:GetScript("OnDragStart")(frame)
+			frame:ClearAllPoints()
+			frame:SetPoint("TOPLEFT", loaded.env.UIParent, "BOTTOMLEFT", 120, 700)
+			frame:GetScript("OnDragStop")(frame)
 
-		assert.are.same({ "TOPLEFT", "BOTTOMLEFT", 120, 700 }, loaded.ns.db.profile.window)
-		assert.is_false(frame:IsUserPlaced()) -- the client saves nothing itself
-		loaded.ns.ToggleBook()
-		frame:ClearAllPoints()
-		loaded.ns.ToggleBook()
-		assert.are.same({ { "TOPLEFT", loaded.env.UIParent, "BOTTOMLEFT", 120, 700 } }, frame.points)
-	end)
+			assert.are.same({ "TOPLEFT", "BOTTOMLEFT", 120, 700 }, fake.profile.books.stats)
+			assert.is_false(frame:IsUserPlaced()) -- the client saves nothing itself
+			loaded.ns.ToggleBook()
+			frame:ClearAllPoints()
+			loaded.ns.ToggleBook()
+			assert.are.same({ { "TOPLEFT", loaded.env.UIParent, "BOTTOMLEFT", 120, 700 } }, frame.points)
+		end
+	)
 
-	it("opens where a saved profile.window puts it after a /reload (STA-R71)", function()
+	it("opens where its saved position puts it after a /reload (STA-R71, BOOK-R5)", function()
 		local fake = newFakePagle()
-		fake.globals.PagleStatsDB = {
-			profiles = { Default = { window = { "TOPLEFT", "BOTTOMLEFT", 40, 600 } } },
-		}
+		fake.profile.books = { stats = { "TOPLEFT", "BOTTOMLEFT", 40, 600 } }
 		local loaded = stats.load(fake)
 		fake.login()
 
@@ -155,7 +156,7 @@ describe("the Stats book's frame (STA-R70, STA-R71)", function()
 	end
 
 	it("saves its place in UIParent's units, so it opens there after the UI scale changes (STA-R71)", function()
-		local loaded, _, book = ready()
+		local loaded, fake, book = ready()
 		local screen = loaded.env.UIParent
 		screen:SetSize(2560, 1440)
 		loaded.ns.ToggleBook()
@@ -174,7 +175,7 @@ describe("the Stats book's frame (STA-R70, STA-R71)", function()
 		assert.are.same({ "TOPLEFT", "BOTTOMLEFT", 120, 700 }, onScreen(frame))
 		frame:GetScript("OnDragStart")(frame)
 		frame:GetScript("OnDragStop")(frame) -- left where it is: saved as it was
-		local window = loaded.ns.db.profile.window
+		local window = fake.profile.books.stats
 		assert.are.same(
 			{ "TOPLEFT", "BOTTOMLEFT", 120, 700 },
 			{ window[1], window[2], math.floor(window[3] + 0.5), math.floor(window[4] + 0.5) }
@@ -182,7 +183,7 @@ describe("the Stats book's frame (STA-R70, STA-R71)", function()
 	end)
 
 	it("keeps its place on the screen when it is fitted again while open (STA-R71)", function()
-		local loaded, _, book = ready()
+		local loaded, fake, book = ready()
 		local screen = loaded.env.UIParent
 		screen:SetSize(2560, 1440)
 		loaded.ns.ToggleBook()
@@ -197,7 +198,7 @@ describe("the Stats book's frame (STA-R70, STA-R71)", function()
 
 		assert.is_true(frame:GetScale() < 1)
 		assert.are.same({ "TOPLEFT", "BOTTOMLEFT", 120, 700 }, onScreen(frame))
-		assert.are.same({ "TOPLEFT", "BOTTOMLEFT", 120, 700 }, loaded.ns.db.profile.window)
+		assert.are.same({ "TOPLEFT", "BOTTOMLEFT", 120, 700 }, fake.profile.books.stats)
 	end)
 end)
 
@@ -205,21 +206,22 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 	it(
 		"draws each side of the page shown with its renderer, on its own frame, and leaves a side with none blank",
 		function()
-			local loaded, _, book = ready()
-			book.router = loaded.ns.NewBookRouter() -- without the page tickets' renderers
+			local loaded, fake, book = ready()
+			-- without the page tickets' renderers
+			book.shell.router = fake.ns.NewBookRouter(loaded.ns.BOOK_PAGES, { page = "home" })
 			local draws = {}
 			book:RegisterPage("home", "left", writer("waters", draws))
 			book:RegisterPage("home", "right", writer("right now", draws))
 			book:RegisterPage("lifetime", "right", writer("every fish", draws))
 
 			loaded.ns.ToggleBook()
-			assert.are.same({ "waters home -" }, textsOf(book.frame.paperFrames.left))
-			assert.are.same({ "right now home -" }, textsOf(book.frame.paperFrames.right))
+			assert.are.same({ "waters home -" }, textsOf(book.frame.papers.left))
+			assert.are.same({ "right now home -" }, textsOf(book.frame.papers.right))
 			assert.are_not.equal(draws[1].content, draws[2].content)
 			loaded.ns.OpenBook({ page = "lifetime" })
 
-			assert.are.same({}, textsOf(book.frame.paperFrames.left))
-			assert.are.same({ "every fish lifetime -" }, textsOf(book.frame.paperFrames.right))
+			assert.are.same({}, textsOf(book.frame.papers.left))
+			assert.are.same({ "every fish lifetime -" }, textsOf(book.frame.papers.right))
 		end
 	)
 
@@ -227,16 +229,16 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 		local loaded, _, book = ready()
 
 		loaded.ns.ToggleBook()
-		assert.are.same({ page = "home" }, book.router:Place())
+		assert.are.same({ page = "home" }, book:Place())
 		loaded.ns.OpenBook({ page = "place", area = AUBERDINE, item = NIGHTFIN })
 		loaded.ns.ToggleBook()
 		loaded.ns.ToggleBook()
-		assert.are.same({ page = "place", area = AUBERDINE, item = NIGHTFIN }, book.router:Place())
+		assert.are.same({ page = "place", area = AUBERDINE, item = NIGHTFIN }, book:Place())
 		loaded.ns.OpenBook({ page = "sessions", session = "S-2", ledgerPage = 3 })
 		escape(loaded)
 		loaded.ns.ToggleBook()
 
-		assert.are.same({ page = "sessions", session = "S-2", ledgerPage = 3 }, book.router:Place())
+		assert.are.same({ page = "sessions", session = "S-2", ledgerPage = 3 }, book:Place())
 	end)
 
 	it("opens on the home spread again after a /reload, whatever it was left on (STA-R70)", function()
@@ -246,7 +248,7 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 		local reloaded = ready()
 		reloaded.ns.ToggleBook()
 
-		assert.are.same({ page = "home" }, reloaded.ns.book.router:Place())
+		assert.are.same({ page = "home" }, reloaded.ns.book:Place())
 	end)
 
 	it("never closes from ns.OpenBook: open, it turns to the target in place; with none, where it was left", function()
@@ -258,7 +260,7 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 		loaded.ns.OpenBook()
 
 		assert.is_true(book:IsShown())
-		assert.are.same({ page = "item", item = NIGHTFIN }, book.router:Place())
+		assert.are.same({ page = "item", item = NIGHTFIN }, book:Place())
 	end)
 
 	it("hands a renderer a copy of the place, so changing it moves nothing", function()
@@ -269,7 +271,7 @@ describe("the Stats book's pages (STA-R70, STA-R74)", function()
 
 		loaded.ns.ToggleBook()
 
-		assert.are.same({ page = "home" }, book.router:Place())
+		assert.are.same({ page = "home" }, book:Place())
 	end)
 
 	it("scrolls a side whose contents overflow, back to the top on a new target, kept on a redraw (STA-R70)", function()
@@ -337,7 +339,7 @@ describe("the Stats book's binding (STA-R70, ADR 0015)", function()
 				assert.are.same(look.gilt, { unpack(crumb.label.textColor, 1, 3) })
 			end
 			for _, side in ipairs({ "left", "right" }) do
-				assert.are.same(look.paperTint, { unpack(frame.papers[side].paper.vertexColor, 1, 3) })
+				assert.are.same(look.paperTint, { unpack(frame.parchments[side].paper.vertexColor, 1, 3) })
 			end
 
 			-- another binding: silver plate, its own gilt, a warmer paper
@@ -357,7 +359,7 @@ describe("the Stats book's binding (STA-R70, ADR 0015)", function()
 			end
 			assert.is_true(frame.plate.brass.left.desaturated)
 			for _, side in ipairs({ "left", "right" }) do
-				assert.are.same({ 1, 0.97, 0.93 }, { unpack(frame.papers[side].paper.vertexColor, 1, 3) })
+				assert.are.same({ 1, 0.97, 0.93 }, { unpack(frame.parchments[side].paper.vertexColor, 1, 3) })
 			end
 			loaded.ns.OpenBook({ page = "lifetime" }) -- crumbs drawn later take the binding's gilt too
 			for _, crumb in ipairs(frame.crumbButtons) do
@@ -394,14 +396,14 @@ describe("the Stats book's breadcrumbs (STA-R74)", function()
 		loaded.ns.OpenBook({ page = "place", area = AUBERDINE, item = NIGHTFIN })
 
 		crumbNamed(book, "Item 13759"):Click()
-		assert.are.same({ page = "place", area = AUBERDINE, item = NIGHTFIN }, book.router:Place())
+		assert.are.same({ page = "place", area = AUBERDINE, item = NIGHTFIN }, book:Place())
 		crumbNamed(book, "Auberdine"):Click()
-		assert.are.same({ page = "place", area = AUBERDINE }, book.router:Place())
+		assert.are.same({ page = "place", area = AUBERDINE }, book:Place())
 		crumbNamed(book, "Darkshore"):Click()
-		assert.are.same({ page = "place", area = DARKSHORE }, book.router:Place())
+		assert.are.same({ page = "place", area = DARKSHORE }, book:Place())
 		crumbNamed(book, "Stats"):Click()
 
-		assert.are.same({ page = "home" }, book.router:Place())
+		assert.are.same({ page = "home" }, book:Place())
 	end)
 
 	it('read "Stats ❧ {item}" on an item page and "Stats ❧ {kicker}" on a ribbon page', function()
@@ -438,7 +440,7 @@ end)
 
 describe("the Stats book's ribbons (STA-R74, stats.md › UI › On the leather)", function()
 	it("hang Where I am (green), This Session, Lifetime and Sessions, left to right under the leather", function()
-		local loaded, _, book = ready()
+		local loaded, fake, book = ready()
 
 		loaded.ns.ToggleBook()
 
@@ -449,7 +451,7 @@ describe("the Stats book's ribbons (STA-R74, stats.md › UI › On the leather)
 		assert.are.same({ "Where I am", "This Session", "Lifetime", "Sessions" }, ribbons)
 		assert.are.same(loaded.ns.BOOK_LOOK.ribbons.here, { unpack(book.frame.ribbons[1].body.vertexColor, 1, 3) })
 		-- each a ribbon's width and gap further right, hanging from under the foot, its top tucked under the band
-		local sizes = loaded.ns.BOOK_RIBBON
+		local sizes = fake.ns.BOOK_RIBBON
 		for i, ribbon in ipairs(book.frame.ribbons) do
 			local x = 456 + (i - 1) * (sizes.width + sizes.gap)
 			assert.are.same({ "TOPLEFT", book.frame, "TOPLEFT", x, -(640 - sizes.tuck) }, ribbon.points[1])
@@ -462,9 +464,9 @@ describe("the Stats book's ribbons (STA-R74, stats.md › UI › On the leather)
 		local ribbons = book.frame.ribbons
 
 		ribbons[2]:Click()
-		assert.are.same({ page = "session" }, book.router:Place())
+		assert.are.same({ page = "session" }, book:Place())
 		ribbons[4]:Click()
-		assert.are.same({ page = "sessions" }, book.router:Place())
+		assert.are.same({ page = "sessions" }, book:Place())
 		assert.are.same({ false, false, false, true }, {
 			ribbons[1].chosen,
 			ribbons[2].chosen,
@@ -473,7 +475,7 @@ describe("the Stats book's ribbons (STA-R74, stats.md › UI › On the leather)
 		})
 		ribbons[3]:Click()
 
-		assert.are.same({ page = "lifetime" }, book.router:Place())
+		assert.are.same({ page = "lifetime" }, book:Place())
 	end)
 
 	it("open Where I am on the subzone's page, the zone's with subzone 0, the home spread with zone 0", function()
@@ -482,15 +484,15 @@ describe("the Stats book's ribbons (STA-R74, stats.md › UI › On the leather)
 		local here = book.frame.ribbons[1]
 
 		here:Click()
-		assert.are.same({ page = "place", area = AUBERDINE }, book.router:Place())
+		assert.are.same({ page = "place", area = AUBERDINE }, book:Place())
 		assert.is_true(here.chosen)
 		stats.move(fake, { zone = ELWYNN, subzone = 0 })
 		here:Click()
-		assert.are.same({ page = "place", area = ELWYNN }, book.router:Place())
+		assert.are.same({ page = "place", area = ELWYNN }, book:Place())
 		stats.move(fake, { zone = 0, subzone = 0 })
 		here:Click()
 
-		assert.are.same({ page = "home" }, book.router:Place())
+		assert.are.same({ page = "home" }, book:Place())
 	end)
 end)
 
@@ -530,7 +532,7 @@ describe("the Stats book's nameplate and live line (stats.md › UI › On the l
 		assert.are.equal("Session: 3 Casts · 2 Catches · under 1m", live.label.text)
 		assert.are.equal(loaded.ns.BOOK_TEXTURES.disc, live.dot.texture)
 		live:Click()
-		assert.are.same({ page = "session" }, book.router:Place())
+		assert.are.same({ page = "session" }, book:Place())
 		fake.wait(3600)
 		loaded.client.runTimers()
 
@@ -556,8 +558,8 @@ describe("the Stats book while the projection is updating (STA-R72)", function()
 
 		assert.is_true(loaded.ns.IsUpdating())
 		assert.are.equal("Updating my records…", book.frame.plate.label.text)
-		assert.are.same({ "Updating my records…" }, textsOf(book.frame.paperFrames.left))
-		assert.are.same({ "Updating my records…" }, textsOf(book.frame.paperFrames.right))
+		assert.are.same({ "Updating my records…" }, textsOf(book.frame.papers.left))
+		assert.are.same({ "Updating my records…" }, textsOf(book.frame.papers.right))
 		assert.are.same({}, draws)
 	end)
 
@@ -570,11 +572,11 @@ describe("the Stats book while the projection is updating (STA-R72)", function()
 		loaded.ns.ToggleBook()
 
 		book.frame.ribbons[3]:Click()
-		assert.are.same({ page = "lifetime" }, book.router:Place())
+		assert.are.same({ page = "lifetime" }, book:Place())
 		assert.are.same({ "Stats", "Lifetime" }, crumbsOf(book))
 		crumbNamed(book, "Stats"):Click()
-		assert.are.same({ page = "home" }, book.router:Place())
-		assert.are.equal(book.frame.anchors.search, told[1].anchor)
+		assert.are.same({ page = "home" }, book:Place())
+		assert.are.equal(book.shell.anchors.search, told[1].anchor)
 		assert.is_true(told[#told].updating)
 		fake.enterWorld()
 		loaded.client.runTimers()

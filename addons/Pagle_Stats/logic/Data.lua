@@ -19,7 +19,6 @@ ns.DB_DEFAULTS = {
 	profile = {
 		tracker = false, -- "Show the live tracker" (STA-R81)
 		watched = {}, -- { { item = itemID, area = areaID } }, at most 3, oldest first (STA-R60)
-		-- window: the book's position { point, relativePoint, x, y }; nil, its default, centres it (STA-R71)
 	},
 }
 

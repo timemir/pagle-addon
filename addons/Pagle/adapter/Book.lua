@@ -530,6 +530,7 @@ end
 ---@field help PagleBookHelp?
 ---@field ribbons PagleBookRibbonView[]
 ---@field turnFold PagleBookFold?
+---@field anchors table<string, Frame>
 
 --- A turn or crossfade under way.
 ---@class PagleBookMotion
@@ -831,7 +832,8 @@ local function build(book)
 		writePlate(frame.plate, book.plateWords or "", book.plateTooltip)
 	end
 
-	-- the leather anchors
+	-- the leather anchors, on the frame too (frame.anchors)
+	frame.anchors = book.anchors
 	for name, def in pairs(options.anchors or {}) do
 		local anchor = CreateFrame("Frame", nil, frame)
 		anchor:SetSize(def.width, def.height)

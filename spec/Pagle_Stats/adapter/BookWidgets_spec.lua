@@ -31,7 +31,6 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 	it("draws the books kit's textures from Core's media, and in-client ones only where the kit has none", function()
 		local ns, parent = kit()
 		parent:SetSize(980, 640)
-		ns.NewBookParchment(parent, "RIGHT")
 		ns.NewBookMark(parent, "fleuron", 16)
 		ns.NewBookMark(parent, "hand", 16)
 		ns.NewBookInkBar(parent, 200):SetBar(0.5)
@@ -263,54 +262,6 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		assert.are.equal(200 - 22 - (#"I'm here" * 6 + 1) - 6, tile.name.width)
 	end)
 
-	it("hangs a grosgrain ribbon in its colour, its words in gilt, longer and brighter when chosen", function()
-		local ns, parent = kit()
-		local colors = ns.BOOK_LOOK.ribbons
-
-		local ribbon = ns.NewBookRibbon(parent)
-		ribbon:SetRibbon("Lifetime", colors.lifetime, false)
-		assert.are.equal("Lifetime", ribbon.label.text)
-		assert.are.same(colors.lifetime, { unpack(ribbon.body.vertexColor, 1, 3) })
-		assert.are.equal(75, ribbon.height)
-		ribbon:SetRibbon("Where I am", colors.here, true)
-
-		local lifted = { colors.here[1] * 1.13, colors.here[2] * 1.13, colors.here[3] * 1.13 }
-		assert.are.same(lifted, { unpack(ribbon.body.vertexColor, 1, 3) })
-		assert.are.equal(86, ribbon.height)
-		assert.is_true(ribbon.chosen)
-		assert.is_nil(ribbon.stitch.vertexColor) -- the gold stitch keeps its own colour
-	end)
-
-	it("eases a ribbon's length to its choice over 0.2 s when asked, at once with Animations off", function()
-		local loaded, fake = stats.load(nil, { motion = true })
-		local ns = loaded.ns
-		local colors = ns.BOOK_LOOK.ribbons
-		local ribbon = ns.NewBookRibbon(loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent))
-		ribbon:SetRibbon("Lifetime", colors.lifetime, false)
-
-		ribbon:SetRibbon("Lifetime", colors.lifetime, true, true)
-		assert.are.equal(75, ribbon.height) -- it starts where it was
-		loaded.client.update(0.1)
-		assert.is_true(ribbon.height > 75 and ribbon.height < 86)
-		loaded.client.update(0.15)
-		assert.are.equal(86, ribbon.height)
-
-		stats.animations(fake, false)
-		ribbon:SetRibbon("Lifetime", colors.lifetime, false, true)
-		assert.are.equal(75, ribbon.height)
-	end)
-
-	it("sizes the brass nameplate to its words", function()
-		local ns, parent = kit()
-
-		local plate = ns.NewBookPlate(parent)
-		plate:SetPlate("No Casts yet")
-
-		assert.are.equal("No Casts yet", plate.label.text)
-		assert.are.equal(#"No Casts yet" * 6 + 22, plate.width)
-		assert.are.equal(ns.ATLASES.Book.file, plate.brass.left.texture)
-	end)
-
 	it("sets a learning row's odds at its right edge, and stops a long name before them", function()
 		local ns, parent = kit()
 		local row = ns.NewBookRow(parent, 416)
@@ -337,28 +288,6 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 		row:SetRow(data)
 		assert.are.equal(#"Smallfish" * 6 + 1, row.name.width)
 	end)
-
-	it(
-		"tones the nameplate silver for a binding that says so, and brass again for one that doesn't (STA-R70)",
-		function()
-			local ns, parent = kit()
-			local plate = ns.NewBookPlate(parent)
-
-			plate:SetSilver(true) -- before its words: kept until the slices are made
-			plate:SetPlate("5 Casts")
-			local slices = { plate.brass.left, plate.brass.middle, plate.brass.right }
-			for _, slice in ipairs(slices) do
-				assert.is_true(slice.desaturated)
-				assert.are.same({ 1.1, 1.1, 1.15 }, slice.vertexColor)
-			end
-			plate:SetSilver(false)
-			plate:SetPlate("6 Casts") -- a redraw keeps the tone
-			for _, slice in ipairs(slices) do
-				assert.is_false(slice.desaturated)
-				assert.are.same({ 1, 1, 1 }, slice.vertexColor)
-			end
-		end
-	)
 
 	it(
 		"draws a figure line with a leader to its value, reddening under the mouse only when it opens something",
