@@ -162,8 +162,7 @@ function ns.CompletedRunCount(state, celebrated)
 end
 
 --- Whether `rule` holds (HNT-R122) over the projection's `state` (nil before it is built, or while it updates) and
---- the celebrated set together, so a good once earned is never lost: any set's title, every one of `sets`' titles,
---- or ns.WAGER_GOODS_RUNS completed runs.
+--- the celebrated set together: any set's title, every one of `sets`' titles, or ns.WAGER_GOODS_RUNS completed runs.
 ---@param rule HuntsEarnedRule
 ---@param state HuntsState?
 ---@param celebrated HuntsCelebrated
@@ -181,6 +180,59 @@ function ns.HuntsGoodEarned(rule, state, celebrated, sets)
 		end
 	end
 	return #sets > 0
+end
+
+--- Whether earned good `goodID`, earned by `rule`, is owned (HNT-R122): the celebrated set's goods have it, or the
+--- rule holds now (ns.HuntsGoodEarned), so a good once earned is never lost, not even when a release adds a set.
+---@param goodID string
+---@param rule HuntsEarnedRule
+---@param state HuntsState?
+---@param celebrated HuntsCelebrated
+---@param sets { id: string }[] the Hunt list's sets (HNT-R1)
+---@return boolean
+function ns.HuntsGoodOwned(goodID, rule, state, celebrated, sets)
+	local goods = celebrated.goods
+	return (goods ~= nil and goods[goodID] == true) or ns.HuntsGoodEarned(rule, state, celebrated, sets)
+end
+
+--- Every one of Hunts' earned goods (HNT-R122), as `{ id, earned }`: its own slots' in their order, then its goods in
+--- Core's slots.
+---@return { id: string, earned: HuntsEarnedRule }[]
+function ns.HuntsEarnedGoods()
+	local list = {}
+	for _, slots in ipairs({ ns.HUNTS_GOODS, ns.HUNTS_CORE_GOODS }) do
+		for _, slot in ipairs(slots) do
+			for _, good in ipairs(slot.goods) do
+				if good.earned then
+					list[#list + 1] = { id = good.id, earned = good.earned }
+				end
+			end
+		end
+	end
+	return list
+end
+
+--- Adds to the celebrated set (HNT-R90) each earned good whose rule now holds and that it doesn't have yet, so a good
+--- once earned is never lost (HNT-R122): after a live entry and in `done`, before Hunts calls `M:RefreshGoods()`
+--- (SHOP-R31). True when it added one.
+---@param celebrated HuntsCelebrated its `goods` made with the first good noted
+---@param state HuntsState?
+---@param sets { id: string }[] the Hunt list's sets (HNT-R1)
+---@return boolean
+function ns.NoteHuntsGoods(celebrated, state, sets)
+	local noted = false
+	for _, good in ipairs(ns.HuntsEarnedGoods()) do
+		local goods = celebrated.goods
+		if not (goods and goods[good.id]) and ns.HuntsGoodEarned(good.earned, state, celebrated, sets) then
+			if type(goods) ~= "table" then
+				goods = {}
+				celebrated.goods = goods
+			end
+			goods[good.id] = true
+			noted = true
+		end
+	end
+	return noted
 end
 
 --- An earned good's `earnedText` (HNT-R122): what earns it, in the Curio Shop.
@@ -211,12 +263,12 @@ end
 --- What a good's preview draws on the Curio Shop's stage: `goodID`'s look in slot `slotID`.
 ---@alias HuntsPreview fun(stage: Frame, slotID: string, goodID: string)
 
--- A good to register: named from lore, its icon its swatch, earned by its rule through `earned`, and its preview
--- drawn by `preview` (none for a good in Core's slot, which Core previews, SHOP-R23).
+-- A good to register: named from lore, its icon its swatch, owned by its ID and rule through `earned`, and its
+-- preview drawn by `preview` (none for a good in Core's slot, which Core previews, SHOP-R23).
 ---@param slotID string
 ---@param good HuntsGoodData
 ---@param preview HuntsPreview?
----@param earned fun(rule: HuntsEarnedRule): boolean
+---@param earned fun(goodID: string, rule: HuntsEarnedRule): boolean
 ---@return PagleGood
 local function goodOf(slotID, good, preview, earned)
 	local goodID, rule = good.id, good.earned
@@ -229,7 +281,7 @@ local function goodOf(slotID, good, preview, earned)
 		default = good.default,
 		tier = good.tier,
 		isEarned = rule and function()
-			return earned(rule)
+			return earned(goodID, rule)
 		end,
 		earnedText = rule and ns.HuntsEarnedText(rule),
 		preview = preview and function(stage)
@@ -239,10 +291,10 @@ local function goodOf(slotID, good, preview, earned)
 end
 
 --- Hunts' slots and their goods to register, in order (HNT-R120–R123): each good named from lore, its icon its
---- swatch, an earned good owned while `earned(rule)` holds (HNT-R122), and its preview drawn by `preview`; then its
---- goods in Core's slots, with no slot of their own (`slot` nil) and Core's preview.
+--- swatch, an earned good owned while `earned(goodID, rule)` holds (HNT-R122), and its preview drawn by `preview`;
+--- then its goods in Core's slots, with no slot of their own (`slot` nil) and Core's preview.
 ---@param preview HuntsPreview
----@param earned fun(rule: HuntsEarnedRule): boolean
+---@param earned fun(goodID: string, rule: HuntsEarnedRule): boolean
 ---@return { slot: PagleSlot?, goods: PagleGood[] }[]
 function ns.HuntsGoods(preview, earned)
 	local list = {}

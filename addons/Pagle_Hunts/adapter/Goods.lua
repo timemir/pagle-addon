@@ -834,15 +834,16 @@ local function savedCelebrated()
 	return type(global) == "table" and type(global.celebrated) == "table" and global.celebrated or {}
 end
 
---- Whether `rule` holds now (HNT-R122): over the projection's state once it is built and not updating, and the
---- celebrated set; the celebrated set alone before (Core calls it at registration, then at each RefreshGoods,
---- SHOP-R31).
+--- Whether earned good `goodID`, earned by `rule`, is owned now (HNT-R122): noted in the celebrated set's goods, or
+--- its rule holding over the projection's state once it is built and not updating, and the celebrated set; the
+--- celebrated set alone before (Core calls it at registration, then at each RefreshGoods, SHOP-R31).
+---@param goodID string
 ---@param rule HuntsEarnedRule
 ---@return boolean
-function ns.HuntsGoodEarnedNow(rule)
+function ns.HuntsGoodEarnedNow(goodID, rule)
 	local projection = ns.projection
 	local state = projection and not projection:IsUpdating() and projection:GetState() --[[@as HuntsState?]] or nil
-	return ns.HuntsGoodEarned(rule, state, savedCelebrated(), ns.huntList.sets)
+	return ns.HuntsGoodOwned(goodID, rule, state, savedCelebrated(), ns.huntList.sets)
 end
 
 --- Registers Hunts' slots and goods (HNT-R120–R123, SHOP-R21), its goods in Core's slots after its own, from

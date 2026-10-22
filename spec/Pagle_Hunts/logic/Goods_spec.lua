@@ -182,6 +182,94 @@ describe("Hunts' earned goods", function()
 		)
 	end)
 
+	describe("kept once earned, in the celebrated set's goods", function()
+		local ALL = {
+			"hunts.notebookcover.pathfinder",
+			"hunts.notebookcover.fiveseal",
+			"hunts.notebookcover.wagersilk",
+			"hunts.trackerframe.wagerribbon",
+			"hunts.soundset.nightwatch",
+		}
+
+		-- Whether `goodID` is owned over `state`, `set` and the Hunt list's sets `sets` (the fixture's by default).
+		local function owned(goodID, state, set, sets)
+			return ns.HuntsGoodOwned(goodID, ns.HuntsGoodRule(goodID), state, set, sets or list)
+		end
+
+		it("list all five earned goods, each with its rule (HNT-R122)", function()
+			local ids = {}
+			for _, good in ipairs(ns.HuntsEarnedGoods()) do
+				ids[#ids + 1] = good.id
+				assert.are.equal(ns.HuntsGoodRule(good.id), good.earned, good.id)
+			end
+			table.sort(ids)
+			local want = { unpack(ALL) }
+			table.sort(want)
+			assert.are.same(want, ids)
+		end)
+
+		it(
+			"own each of the five from the celebrated set's goods alone, with nothing else earning it (HNT-R122)",
+			function()
+				for _, id in ipairs(ALL) do
+					assert.are.equal(false, owned(id, stateWith(ns), celebrated()), id)
+					assert.are.equal(true, owned(id, stateWith(ns), celebrated({ goods = { [id] = true } })), id)
+					assert.are.equal(true, owned(id, nil, { goods = { [id] = true } }), id) -- saved bare, before AceDB
+				end
+				-- Another good noted owns only that one.
+				local set = celebrated({ goods = { ["hunts.notebookcover.wagersilk"] = true } })
+				assert.is_false(owned("hunts.trackerframe.wagerribbon", nil, set))
+			end
+		)
+
+		it("own each while its rule holds, noted or not (HNT-R122)", function()
+			assert.is_true(owned("hunts.notebookcover.pathfinder", stateWith(ns, { "fixture_pair" }), celebrated()))
+			assert.is_true(owned("hunts.notebookcover.fiveseal", stateWith(ns, SETS), celebrated()))
+			assert.is_true(owned("hunts.notebookcover.wagersilk", stateWith(ns, nil, 10), celebrated()))
+		end)
+
+		it(
+			"keep Five-Set Seal and Night Watch once noted when a release adds a set not yet titled (HNT-R122, HNT-R20)",
+			function()
+				local more = { unpack(list) }
+				more[#more + 1] = { id = "fixture_later" }
+				local set = celebrated({ sets = { fixture_dusk = true } })
+				assert.is_true(ns.NoteHuntsGoods(set, stateWith(ns, SETS), list))
+				for _, id in ipairs(EVERY_SET) do
+					-- The rule no longer holds over the longer list; the note keeps the good.
+					assert.are.equal(false, ns.HuntsGoodEarned("everySetTitle", stateWith(ns, SETS), set, more), id)
+					assert.are.equal(true, owned(id, stateWith(ns, SETS), set, more), id)
+					assert.are.equal(true, owned(id, nil, set, more), id)
+				end
+			end
+		)
+
+		it("note a good the first time its rule holds, and only then (HNT-R122, HNT-R90)", function()
+			local set = celebrated()
+			assert.is_false(ns.NoteHuntsGoods(set, stateWith(ns), list))
+			assert.is_nil(set.goods) -- made with the first good noted
+
+			assert.is_true(ns.NoteHuntsGoods(set, stateWith(ns, { "fixture_pair" }), list))
+			assert.are.same({ ["hunts.notebookcover.pathfinder"] = true }, set.goods)
+			assert.is_false(ns.NoteHuntsGoods(set, stateWith(ns, { "fixture_pair" }), list)) -- noted already
+
+			assert.is_true(ns.NoteHuntsGoods(set, stateWith(ns, SETS, 10), list))
+			assert.are.same({
+				["hunts.notebookcover.pathfinder"] = true,
+				["hunts.notebookcover.fiveseal"] = true,
+				["hunts.notebookcover.wagersilk"] = true,
+				["hunts.trackerframe.wagerribbon"] = true,
+				["hunts.soundset.nightwatch"] = true,
+			}, set.goods)
+		end)
+
+		it("note nothing over a bare celebrated set while no rule holds (HNT-R122, SHOP-R31)", function()
+			local set = {}
+			assert.is_false(ns.NoteHuntsGoods(set, nil, list))
+			assert.are.same({}, set)
+		end)
+	end)
+
 	it("counts completed runs as the most any of the three shows (HNT-R148, HNT-R90)", function()
 		assert.are.same({ 0, 7, 3, 25, 50 }, {
 			ns.CompletedRunCount(nil, {}),

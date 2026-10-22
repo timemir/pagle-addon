@@ -290,6 +290,15 @@ function ns.ProjectionDef(global, lookups, client)
 	if type(global.projection) ~= "table" then
 		global.projection = {}
 	end
+	-- Notes each earned good whose rule now holds in the celebrated set (HNT-R122), when there is one to note in (the
+	-- backend's driver binds no saved DB).
+	---@param state HuntsState
+	local function noteGoods(state)
+		local celebrated = global.celebrated
+		if type(celebrated) == "table" then
+			ns.NoteHuntsGoods(celebrated, state, ns.hunts:Sets())
+		end
+	end
 	return {
 		db = global.projection,
 		rulesVersion = ns.HUNTS_RULES_VERSION,
@@ -331,8 +340,9 @@ function ns.ProjectionDef(global, lookups, client)
 			if state.xp ~= xp then
 				client.ReportXPEarned(state.xp)
 			end
-			-- A set title or a completed run may earn a good (HNT-R122).
+			-- A set title or a completed run may earn a good (HNT-R122), noted once its rule holds.
 			if #reached.sets + #reached.settled > 0 then
+				noteGoods(state)
 				ns.outlets.RefreshGoods()
 			end
 			-- A Cast always changes the state (its count of Casts at least), and so does a record folded.
@@ -348,6 +358,7 @@ function ns.ProjectionDef(global, lookups, client)
 			client.ReportCoinsEarned(state.coins) -- after every catch-up or rebuild (HNT-R110, SHOP-R2)
 			client.ReportXPEarned(state.xp) -- on the same timing (HNT-R115, AXP-R2)
 			ns.outlets.Done(state, info)
+			noteGoods(state)
 			ns.outlets.RefreshGoods() -- the earned goods, never mid-catch-up or mid-rebuild (HNT-R122, SHOP-R31)
 			ns.Redraw("projection")
 			-- The run log's step, never from here (LOG-R40): what this catch-up or rebuild leaves to log (HNT-R151).
