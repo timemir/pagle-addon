@@ -4,4 +4,4 @@
 # rotating events per band (DATA-R99), turns on with the 1.0 pool's 24 events (#306).
 typicalLength = true
 lore = ["ledger", "core", "hunts", "stats", "tackleboard"]
-eventPool = false
+eventPool = true

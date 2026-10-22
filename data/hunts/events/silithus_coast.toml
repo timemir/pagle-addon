@@ -1,0 +1,38 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 1377: 1377 (Silithus), high band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   silithus_coast_haul: Haul, species.any, 91.2% of Catches: tiers 125 / 330 / 655, 46 / 121 / 239 min
+#   silithus_coast_grouper: Named fish, species 12238 (Darkshore Grouper), 11.7% of Catches: tiers 16 / 40 / 85, 45 / 114 / 242 min
+#   silithus_coast_albacore: Named fish, species 6361 (Raw Rainbow Fin Albacore), 12.0% of Catches: tiers 16 / 45 / 85, 44 / 125 / 236 min
+#   silithus_coast_mackerel: Named fish, species 6303 (Raw Slitherskin Mackerel), 8.1% of Catches: tiers 11 / 30 / 60, 46 / 124 / 248 min
+
+[event]
+id = "silithus_coast"
+zones = [1377]
+tags = ["coast"]
+name = "Hive Shore"
+note = "Sand to the water's edge, the hives behind, and plain sea fish just past the surf."
+
+[[hunt]]
+id = "silithus_coast_haul"
+class = "species.any"
+tiers = [125, 330, 655]
+name = "A Sandy Basket"
+
+[[hunt]]
+id = "silithus_coast_grouper"
+species = 12238
+tiers = [16, 40, 85]
+name = "Grouper past the Surf"
+
+[[hunt]]
+id = "silithus_coast_albacore"
+species = 6361
+tiers = [16, 45, 85]
+name = "Albacore off the Sand"
+
+[[hunt]]
+id = "silithus_coast_mackerel"
+species = 6303
+tiers = [11, 30, 60]
+name = "Mackerel Run"

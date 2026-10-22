@@ -1,0 +1,31 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 361 --zone 493: 361 (Felwood) + 493 (Moonglade), mid band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   felwood_moonglade_haul: Haul, species.any, 93.4% of Catches: tiers 125 / 335 / 670, 45 / 120 / 239 min
+#   felwood_moonglade_redgill: Named fish, species 13758 (Raw Redgill), 58.7% of Catches: tiers 80 / 210 / 425, 45 / 119 / 241 min
+#   felwood_moonglade_trout: Named fish, species 8365 (Raw Mithril Head Trout), 15.1% of Catches: tiers 20 / 55 / 110, 44 / 121 / 242 min
+
+[event]
+id = "felwood_moonglade"
+zones = [361, 493]
+tags = ["lake"]
+name = "Tainted Woods, Clear Lake"
+note = "From the tainted forest streams to the clear lake past them, the redgill don't seem to mind."
+
+[[hunt]]
+id = "felwood_moonglade_haul"
+class = "species.any"
+tiers = [125, 335, 670]
+name = "A Northern Basket"
+
+[[hunt]]
+id = "felwood_moonglade_redgill"
+species = 13758
+tiers = [80, 210, 425]
+name = "Redgill Run"
+
+[[hunt]]
+id = "felwood_moonglade_trout"
+species = 8365
+tiers = [20, 55, 110]
+name = "Lake Trout"

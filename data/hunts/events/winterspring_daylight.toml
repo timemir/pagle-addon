@@ -1,0 +1,32 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 618: 618 (Winterspring), high band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   winterspring_daylight_haul: Haul, species.any, 86.4% of Catches: tiers 115 / 310 / 620, 44 / 120 / 239 min
+#   winterspring_daylight_redgill: Named fish, species 13758 (Raw Redgill), 4.9% of Catches: tiers 7 / 18 / 35, 47 / 122 / 237 min
+#   winterspring_daylight_morning: Timed, species.any, 86.4% of Catches, 09:00-13:00, open 12 h a run: tiers 19 / 50 / 105, 44 / 116 / 243 min
+
+[event]
+id = "winterspring_daylight"
+zones = [618]
+tags = ["lake", "day"]
+name = "Winter Daylight"
+note = "Days are short up in the snow. Spend them on the water."
+
+[[hunt]]
+id = "winterspring_daylight_haul"
+class = "species.any"
+tiers = [115, 310, 620]
+name = "A Frozen Basket"
+
+[[hunt]]
+id = "winterspring_daylight_redgill"
+species = 13758
+tiers = [7, 18, 35]
+name = "Redgill in the Snow"
+
+[[hunt]]
+id = "winterspring_daylight_morning"
+class = "species.any"
+conditions = { time = [[540, 780]] }
+tiers = [19, 50, 105]
+name = "Bright Morning"

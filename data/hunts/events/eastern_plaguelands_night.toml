@@ -1,0 +1,32 @@
+# Curated for the 1.0 event pool (#306) from scripts/propose-events.py --zone 139: 139 (Eastern Plaguelands), high band.
+# The name, note and Hunt names are working text; the lore batch (#307) rewrites them.
+# Each Hunt's expected minutes per tier, fishing there at 180 Catches an hour (Tunables):
+#   eastern_plaguelands_night_haul: Haul, species.any, 85.7% of Catches: tiers 115 / 310 / 615, 45 / 121 / 239 min
+#   eastern_plaguelands_night_salmon: Named fish, species 13889 (Raw Whitescale Salmon), 32.7% of Catches: tiers 45 / 120 / 235, 46 / 122 / 239 min
+#   eastern_plaguelands_night_midnight: Timed, species 13889 (Raw Whitescale Salmon), 32.7% of Catches, 00:00-04:00, open 12 h a run: tiers 7 / 20 / 40, 43 / 122 / 244 min
+
+[event]
+id = "eastern_plaguelands_night"
+zones = [139]
+tags = ["river", "night"]
+name = "Dead River Nights"
+note = "Nobody fishes the dead east after dark by choice. The salmon count on it."
+
+[[hunt]]
+id = "eastern_plaguelands_night_haul"
+class = "species.any"
+tiers = [115, 310, 615]
+name = "A Night Basket"
+
+[[hunt]]
+id = "eastern_plaguelands_night_salmon"
+species = 13889
+tiers = [45, 120, 235]
+name = "Whitescale Run"
+
+[[hunt]]
+id = "eastern_plaguelands_night_midnight"
+species = 13889
+conditions = { time = [[0, 240]] }
+tiers = [7, 20, 40]
+name = "Salmon after Midnight"
