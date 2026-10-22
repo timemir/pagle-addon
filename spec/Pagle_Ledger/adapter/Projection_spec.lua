@@ -343,7 +343,10 @@ describe("the Ledger's projection", function()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
 			assert.are.equal(601, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
-			assert.are.same({}, loaded.ns.projection:GetState().varieties)
+			-- Every sized Species Catch in the log has a variety (VAR-R1), which the rebuilt fold now keeps.
+			local varieties = loaded.ns.projection:GetState().varieties
+			assert.is_not_nil(next(varieties))
+			assert.are.same(foldOfLog(fake, loaded.ns).varieties, varieties)
 		end
 	)
 end)
