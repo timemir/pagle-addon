@@ -442,3 +442,83 @@ describe("the sample toast", function()
 		end
 	)
 end)
+
+describe("an Announcement drawn standing still (ONB-R34, wallet-and-shop.md › UI)", function()
+	-- A page of the guide's strata, as a still sample's parent.
+	local function pageOf(loaded)
+		local page = loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent)
+		page:SetFrameStrata("DIALOG")
+		return page
+	end
+
+	for _, case in ipairs({
+		{ "nod", "NEW HERE" },
+		{ "toast", "NEW SPECIES" },
+		{ "banner", "A N G L E R    L E V E L    1 2" },
+	}) do
+		local form, title = case[1], case[2]
+		it(
+			"draws /pagle dev preview's "
+				.. form
+				.. " in the real "
+				.. form
+				.. " frame on a page, in its strata, that"
+				.. " neither moves nor expires, playing nothing",
+			function()
+				local loaded = styledCore()
+				local page = pageOf(loaded)
+				local announcement = loaded.ns.DevPreviewAnnouncement(form, "Oily Blackmouth")
+
+				local frame = loaded.ns.DrawStillAnnouncement(page, form, announcement)
+				loaded.client.advance(30)
+				for _ = 1, 120 do
+					loaded.client.nextFrame(1 / 60)
+				end
+
+				assert.are.same({ page, "DIALOG", true, 1, title, "Oily Blackmouth" }, {
+					frame:GetParent(),
+					frame:GetFrameStrata(),
+					frame.shown,
+					frame.alpha,
+					frame.title:GetText(),
+					frame.text:GetText(),
+				})
+				assert.are.same({ {}, nil }, { loaded.client.sounds, loaded.ns.announcementFrames[form] })
+			end
+		)
+	end
+
+	it("redraws the same frame on the same page, and a frame of each form apart", function()
+		local loaded = styledCore()
+		local page = pageOf(loaded)
+		local nod = loaded.ns.DrawStillAnnouncement(page, "nod", loaded.ns.DevPreviewAnnouncement("nod"))
+
+		local again =
+			loaded.ns.DrawStillAnnouncement(page, "nod", loaded.ns.DevPreviewAnnouncement("nod", "Mud Snapper"))
+		local banner = loaded.ns.DrawStillAnnouncement(page, "banner", loaded.ns.DevPreviewAnnouncement("banner"))
+
+		assert.are.equal(nod, again)
+		assert.are.equal("Mud Snapper", nod.text:GetText())
+		assert.are_not.equal(nod, banner)
+		-- The banner is placed by its page, not at the screen's top.
+		assert.are.same({}, banner.points)
+	end)
+
+	it("makes the Nod's and the banner's frames hidden on a parent, as the toast's (ONB-R34)", function()
+		local loaded = styledCore()
+		local page = pageOf(loaded)
+
+		local nod, banner = loaded.ns.NewNodFrame(page), loaded.ns.NewBannerFrame(page)
+
+		assert.are.same({ page, false, page, false }, { nod:GetParent(), nod.shown, banner:GetParent(), banner.shown })
+	end)
+
+	it("keeps /pagle dev preview's own line when no text is given (#247)", function()
+		local loaded = styledCore()
+
+		assert.are.equal(
+			"Oily Blackmouth (a /pagle dev preview)",
+			loaded.ns.DevPreviewAnnouncement("nod").headline.text
+		)
+	end)
+end)
