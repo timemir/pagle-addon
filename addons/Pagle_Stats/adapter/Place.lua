@@ -402,5 +402,26 @@ local function drawRight(content, place)
 	return y + view.pick:GetStringHeight() + PARAGRAPH
 end
 
+--- The first row of the place's left page drawn on `content`, nil while it has none: the book's First look points at
+--- its odds (adapter/Look.lua).
+---@param content Frame
+---@return StatsBookRowView?
+function ns.PlaceFirstRow(content)
+	local view = lefts[content]
+	if view and view.rows.used > 0 then
+		return view.rows.made[1] --[[@as StatsBookRowView]]
+	end
+	return nil
+end
+
+--- The frame the place's right page drawn on `content` gives a chosen item's entry (adapter/Entry.lua keeps its view
+--- on it), nil before that page's first draw: the book's First look points into it (adapter/Look.lua).
+---@param content Frame
+---@return StatsEntryFrame?
+function ns.PlaceEntryFrame(content)
+	local view = rights[content]
+	return view and view.entry --[[@as StatsEntryFrame]]
+end
+
 ns.book:RegisterPage("place", "left", drawLeft)
 ns.book:RegisterPage("place", "right", drawRight)

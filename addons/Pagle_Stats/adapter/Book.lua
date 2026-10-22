@@ -77,6 +77,7 @@ local LEATHER_PARTS = { "search" }
 
 ---@class StatsBookFrame: Frame
 ---@field close StatsBookCloseButton
+---@field help StatsBookHelpButton                   -- the "?" beside it (ONB-R59)
 ---@field leather StatsBookLeatherView
 ---@field corners Texture[]
 ---@field papers table<StatsBookSide, StatsBookParchmentView>
@@ -336,6 +337,15 @@ local function build(book)
 	frame.close:SetScript("OnClick", function()
 		book:Hide()
 	end)
+	-- the "?" beside it, in the same wax: the First look's notes again (ONB-R59, adapter/Look.lua); none on a Core
+	-- without First looks (ONB-R90)
+	frame.help = ns.NewBookHelp(frame, L.LOOK_AGAIN)
+	frame.help:SetPoint("RIGHT", frame.close, "LEFT", -4, 0)
+	frame.help:SetFrameLevel(frame:GetFrameLevel() + 10)
+	frame.help:SetScript("OnClick", function()
+		ns.ShowBookLookAgain()
+	end)
+	frame.help:SetShown(ns.HasBookLook())
 	-- hidden before it hears its OnHide: the close sound is for a book that was open
 	frame:Hide()
 	frame:SetScript("OnHide", function()
@@ -385,6 +395,7 @@ function Book:Open(target)
 	local frame = self.frame or build(self)
 	self.frame = frame
 	local turnable = frame:IsShown() and not self.closing
+	local opening = not frame:IsShown()
 	if self.closing then
 		-- opened again while fading out: it stays, whole
 		Pagle.StopMotion(self.closing)
@@ -414,6 +425,10 @@ function Book:Open(target)
 		end)
 	end
 	self:Draw(turnable)
+	-- its First look the first time it opens, once the spread it points at is drawn (ONB-R55, adapter/Look.lua)
+	if opening then
+		ns.ShowBookLook()
+	end
 end
 
 --- Closes the book: it fades out (0.12 s, easing in), the kit's CloseBook, then hides; at once with the motion off.

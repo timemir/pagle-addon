@@ -231,7 +231,9 @@ describe("the home spread's right page, Right now (stats.md › UI › Home spre
 
 			loaded.ns.ToggleBook()
 			assert.are.same({ "Item 6303, Darkshore: 0 Casts, none yet." }, watchLines(book))
-			assert.are.same({ MACKEREL }, loaded.client.itemRequests)
+			-- the watched item from the home spread; then Auberdine's rows, which the book drew as it tried its First
+			-- look's spread at its first opening this login (adapter/Look.lua, ONB-R57)
+			assert.are.same({ MACKEREL, I.SMALLFISH, I.FIREFIN }, loaded.client.itemRequests)
 			stats.loadItem(loaded, MACKEREL)
 			loaded.client.runTimers()
 

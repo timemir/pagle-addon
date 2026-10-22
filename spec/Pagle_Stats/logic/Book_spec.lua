@@ -194,3 +194,40 @@ describe("the Stats book's ribbons (STA-R74)", function()
 		end
 	)
 end)
+
+describe("the spread the book's First look shows on (ONB-R57, board 14)", function()
+	local SMALLFISH, BLACKMOUTH, FIREFIN = 6291, 6358, 6359
+
+	-- A row's reading: `n` Casts, `k` catches, the last at Cast `at` (none when nil), Your odds known or learning.
+	local function reading(item, n, k, at, state)
+		return { item = item, n = n, k = k, hit = at and { at = at } or nil, state = state or "known" }
+	end
+
+	it("is the place's page with the first row whose Dry spell has a luck reading chosen, its ruler drawn", function()
+		local _, ns = newRouter()
+		local groups = {
+			{ readings = { reading(FIREFIN, 150, 1, 150), reading(NIGHTFIN, 0, 0, nil, "learning") } },
+			{ readings = { reading(BLACKMOUTH, 150, 2, 20), reading(SMALLFISH, 150, 5, 5) } },
+		}
+
+		assert.are.same({ page = "place", area = AUBERDINE, item = BLACKMOUTH }, ns.BookLookTarget(AUBERDINE, groups))
+	end)
+
+	it("is the first row's entry when no row has a luck reading", function()
+		local _, ns = newRouter()
+		local groups = {
+			{ readings = {} },
+			{ readings = { reading(NIGHTFIN, 0, 0, nil, "learning"), reading(FIREFIN, 150, 1, 150) } },
+		}
+
+		assert.are.same({ page = "place", area = DARKSHORE, item = NIGHTFIN }, ns.BookLookTarget(DARKSHORE, groups))
+	end)
+
+	it("is none with no place to show (zone 0) or a place with no rows", function()
+		local _, ns = newRouter()
+
+		assert.is_nil(ns.BookLookTarget(nil, { { readings = { reading(FIREFIN, 150, 1, 150) } } }))
+		assert.is_nil(ns.BookLookTarget(ELWYNN, {}))
+		assert.is_nil(ns.BookLookTarget(ELWYNN, { { readings = {} } }))
+	end)
+end)

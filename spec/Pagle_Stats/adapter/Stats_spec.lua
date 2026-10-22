@@ -150,6 +150,27 @@ describe("Pagle_Stats with Core", function()
 		end
 	)
 
+	it(
+		"registers the book's First look with Core's, after the Curio Shop's, so Off you go and the tour list it"
+			.. " (ONB-R56, ONB-R84)",
+		function()
+			local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
+			local core = loaded.namespaces.Pagle
+			loaded.client.fire("PLAYER_LOGIN")
+
+			local sets = {}
+			for i, record in ipairs(core.firstLooks:List()) do
+				sets[i] = record.set.id
+			end
+			assert.are.same({ "core.shop", "stats.book" }, sets)
+			assert.are.equal("Stats", core.firstLooks:Owner("stats.book"))
+			-- the book opens through Core's real First looks, its "?" beside the close
+			loaded.env.SlashCmdList.PAGLE("stats")
+			assert.is_true(loaded.ns.book:IsShown())
+			assert.is_true(loaded.ns.book.frame.help:IsShown())
+		end
+	)
+
 	it("opens and toggles the book in combat, while restricted (STA-R70, STA-R93)", function()
 		local loaded = loadAddon("Pagle_Stats", FOREVER_GLOBALS)
 		loaded.client.fire("PLAYER_LOGIN")

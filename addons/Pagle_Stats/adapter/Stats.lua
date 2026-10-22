@@ -22,6 +22,11 @@ function ns.Stats.OnInitialize()
 	end
 	-- Stats' tracker frame slot and its goods, right after registering (STA-R88).
 	ns.RegisterGoods(ns.Module)
+	-- The book's First look, before the book first opens, so it joins Off you go's list and the tour (ONB-R56), on a
+	-- Core that has First looks (ONB-R90).
+	if ns.Module.RegisterFirstLook then
+		ns.Module:RegisterFirstLook(ns.BookFirstLook())
+	end
 
 	-- Account-wide, one shared profile, with the defaults in stats.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleStatsDB", ns.DB_DEFAULTS, true)
