@@ -342,7 +342,7 @@ ns.L = {
 	-- A global's or field's name; v as read; count as read, the list's name and its length; a block's number, and its
 	-- field's name and the length it should have.
 	VIEWS_NOT_READ = "not read yet (Pagle reads it at login)",
-	VIEWS_NOT_LOADED_YET = "not loaded yet (it loads at the first player tooltip outside combat, with the tooltip"
+	VIEWS_NOT_LOADED_YET = "not loaded yet (it loads at the first player tooltip while Pagle isn't restricted, with the tooltip"
 		.. " setting on)",
 	VIEWS_NOT_INSTALLED = "no file (%s isn't installed)",
 	VIEWS_DID_NOT_LOAD = "no file (%s didn't load: %s)",

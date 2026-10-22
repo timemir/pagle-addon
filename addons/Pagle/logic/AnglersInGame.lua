@@ -23,7 +23,8 @@ ns.VIEW_EXPIRY_AGE = 24 * 3600
 local KEY_WIDTH, SEARCH_WIDTH, CARD_WIDTH = 19, 13, 16
 
 -- The data addons, by folder name, and their globals (IGV Contracts › The addon folders).
-local FOLLOWING_ADDON, ANGLERS_ADDON = "Pagle_Following", "Pagle_Anglers"
+ns.FOLLOWING_ADDON, ns.ANGLERS_ADDON = "Pagle_Following", "Pagle_Anglers"
+local FOLLOWING_ADDON, ANGLERS_ADDON = ns.FOLLOWING_ADDON, ns.ANGLERS_ADDON
 local FOLLOWING_GLOBAL, ANGLERS_GLOBAL = "PagleFollowingData", "PagleAnglersData"
 
 ---@alias PagleViewFileState "live"|"absent"|"expired"
@@ -316,7 +317,8 @@ local function findKey(block, search)
 		local at = KEY_WIDTH * (middle - 1) + 1
 		local found = keys:sub(at, at + SEARCH_WIDTH - 1)
 		if found == search then
-			return tonumber(keys:sub(at + SEARCH_WIDTH, at + KEY_WIDTH - 1))
+			-- A card number that isn't digits is card 0, which no block has: the first match still ends the search.
+			return tonumber(keys:sub(at + SEARCH_WIDTH, at + KEY_WIDTH - 1)) or 0
 		elseif found < search then
 			low = middle + 1
 		else

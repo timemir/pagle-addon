@@ -367,6 +367,25 @@ describe("the Companion's data files", function()
 			}, ns.LookUpAngler(absent(), anglers, "Player-46180-00000001", NOW))
 		end)
 
+		it(
+			"stops at the first block with a match, even one whose card number isn't digits (VIEW-R10, IGV-R46)",
+			function()
+				local examples = anglerFileExamples()
+				local first = examples.anglers.blocks[1]
+				-- Player-4618-0A1B2C3D's key in the first block, its card number spoilt; the second block names it too.
+				first.keys = first.keys:gsub("046180A1B2C3D000001", "046180A1B2C3D00000X")
+				table.insert(
+					examples.anglers.blocks,
+					packed({ "Angler of the Shallows" }, { "0010500000000120" }, { { "046180A1B2C3D", 1 } })
+				)
+				examples.anglers.count = 2
+
+				assert.is_nil(
+					ns.LookUpAngler(absent(), ns.ReadAnglersFile(examples.anglers), "Player-4618-0A1B2C3D", NOW)
+				)
+			end
+		)
+
 		it("binary-searches a block's keys, finding each of them and nothing between (IGV-R46)", function()
 			-- Seven keys, ascending, naming cards 1 to 7 in a shuffled order; card n is at Angler Level 10 + n.
 			local order = { 4, 7, 1, 6, 2, 5, 3 }

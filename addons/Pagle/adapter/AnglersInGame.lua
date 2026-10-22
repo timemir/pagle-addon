@@ -16,7 +16,7 @@ local Pagle = Pagle
 -- row is the root's (adapter/Settings.lua, VIEW-R30).
 
 -- The Companion's data addons, by folder name (IGV Contracts › The addon folders).
-local FOLLOWING_ADDON, ANGLERS_ADDON = "Pagle_Following", "Pagle_Anglers"
+local FOLLOWING_ADDON, ANGLERS_ADDON = ns.FOLLOWING_ADDON, ns.ANGLERS_ADDON
 
 ns.WireAnglerViews(ns.host, {
 	following = function()

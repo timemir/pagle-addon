@@ -158,8 +158,8 @@ describe("the Companion's data addons", function()
 			enterWorld(loaded, 1)
 			assert.are.same({}, loaded.client.loads)
 			assert.are.same({
-				"Pagle dev: Pagle_Anglers is absent: not loaded yet (it loads at the first player tooltip outside"
-					.. " combat, with the tooltip setting on).",
+				"Pagle dev: Pagle_Anglers is absent: not loaded yet (it loads at the first player tooltip while Pagle"
+					.. " isn't restricted, with the tooltip setting on).",
 				"Pagle dev: Pagle_Anglers' generatedAt none, blocks none.",
 				"Pagle dev: Pagle_Anglers hasn't loaded this login.",
 			}, { unpack(devViews(loaded), 3) })

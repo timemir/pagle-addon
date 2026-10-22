@@ -224,8 +224,14 @@ describe("Core and a disabled Module", function()
 		}
 		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 		local adapter = assert(io.open("addons/Pagle/adapter/AnglersInGame.lua", "r")):read("*a")
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+		local logic = assert(io.open("addons/Pagle/logic/AnglersInGame.lua", "r")):read("*a")
+		-- ANGLERS_ADDON, the name that one call loads, is the Companion's Pagle_Anglers.
 		assert.is_truthy(
-			adapter:find('local FOLLOWING_ADDON, ANGLERS_ADDON = "Pagle_Following", "Pagle_Anglers"\n', 1, true)
+			adapter:find("local FOLLOWING_ADDON, ANGLERS_ADDON = ns.FOLLOWING_ADDON, ns.ANGLERS_ADDON\n", 1, true)
+		)
+		assert.is_truthy(
+			logic:find('ns.FOLLOWING_ADDON, ns.ANGLERS_ADDON = "Pagle_Following", "Pagle_Anglers"\n', 1, true)
 		)
 		for _, file in ipairs(addonFiles("Pagle")) do
 			if not file:match("^libs/") then
