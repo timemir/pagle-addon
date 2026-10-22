@@ -82,10 +82,11 @@ describe("The root's Saving section", function()
 		local loaded = core()
 		local row, root = reminderRow(loaded)
 		local initializers = root.layout.initializers
-		-- Then the Units section, the root's last (spec/Pagle/adapter/Length_spec.lua).
-		local header = initializers[#initializers - 3]
+		-- Then the Units section (spec/Pagle/adapter/Length_spec.lua) and the Pagle menu section, the root's last
+		-- (spec/Pagle/adapter/MinimapIcon_spec.lua), two rows each.
+		local header = initializers[#initializers - 5]
 
-		assert.are.equal(row, initializers[#initializers - 2])
+		assert.are.equal(row, initializers[#initializers - 4])
 		assert.are.equal("Saving", header:GetName())
 		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
 		assert.are.equal("SettingsCheckboxControlTemplate", row.template)

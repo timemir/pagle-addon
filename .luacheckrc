@@ -174,7 +174,8 @@ stds.wow = {
 		"PlaySound",
 		-- The Prestige banner's crest shows the Angler's portrait (announcements.md › UI).
 		"SetPortraitTexture",
-		-- The Tackle Board's "take it down" tooltip shows at the cursor (tackle-board.md › UI).
+		-- The Tackle Board's "take it down" tooltip shows at the cursor (tackle-board.md › UI), and a drag of the minimap
+		-- icon follows it round the minimap's edge (CORE-R53).
 		"GetCursorPosition",
 		-- The Fish Journal's serif and handwriting font objects (ledger.md › UI); its frame is drawn on CreateFrame and
 		-- UIParent above and hides with Esc through UISpecialFrames (below).
@@ -273,6 +274,12 @@ stds.wow_variables = {
 		-- AddonCompartment.lua: `function AddonCompartmentMixin:RegisterAddon(addonData)` keeps the table, whose `text`
 		-- the menu generator reads each time the compartment opens (`local text = addonData.text;`).
 		AddonCompartmentFrame = { fields = { "RegisterAddon" } },
+		-- A FrameXML frame the dump doesn't list (CORE-R53): Core's minimap icon is a child of the minimap, placed round
+		-- its edge. Gethe/wow-ui-source branch forever at 943764493e6b16d63ded3ab304150d1f05e58b57 ("1.60.1 (70338)"),
+		-- Interface/AddOns/Blizzard_Minimap/Mainline/Minimap.xml: `<Minimap name="Minimap" parentKey="Minimap"
+		-- mixin="MinimapMixin" enableMouse="true">`, 198 x 198 inside MinimapCluster. Pagle reads its size, centre and
+		-- scale (GetWidth, GetCenter, GetEffectiveScale) and parents and anchors its button to it.
+		"Minimap",
 		-- A FrameXML table the dump doesn't list (LOG-R80). probes/fishing-signals/results/
 		-- 2026-10-11-build70338-report.md, "Packaging, Settings and events": "Tooltip post-call hook (type Object) | ok
 		-- (TooltipDataType.Object = 4); fired 31 times", and its client table shows TooltipDataProcessor with

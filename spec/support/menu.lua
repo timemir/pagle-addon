@@ -9,6 +9,11 @@
 --   loaded.client.compartment[1].text           -- an Addon Compartment entry's label as it reads now
 --   loaded.client.clickCompartment("Pagle")     -- opens the compartment and clicks the entry reading "Pagle"
 --   loaded.client.openCompartmentMenu("Pagle")  -- clicks it, runs the timers, and returns the menu it opened
+--   local row = loaded.client.hoverCompartment("Pagle")  -- the mouse over its row (funcOnEnter); leaveCompartment
+--                                                        -- ("Pagle", row) moves it off (funcOnLeave)
+
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local widgets = dofile("spec/support/widgets.lua")
 
 ---@class FakeClient
 ---@field menus table[] Every context menu MenuUtil.CreateContextMenu opened, in order. Each has `buttons`
@@ -19,6 +24,11 @@
 --- the entry's func(nil, { buttonName = "LeftButton" }, menu). An error when no entry reads `text`.
 ---@field openCompartmentMenu fun(text: string): table Clicks the entry reading `text`, runs the timers (Core opens its
 --- menu on the next frame, CORE-R50) and returns the context menu that opened; an error when none did.
+---@field hoverCompartment fun(text: string): table Opens the Addon Compartment and moves the mouse onto the entry
+--- reading `text`, as Blizzard_Menu does for a button given SetOnEnter: its funcOnEnter(row, description). Returns the
+--- row, a fake widget. An error when no entry reads `text`.
+---@field leaveCompartment fun(text: string, row: table) Moves the mouse off that row: the entry's funcOnLeave(row,
+--- description).
 
 ---@param client FakeClient
 ---@param stubs table<string, any> The fake client's stubs, which this adds to.
@@ -41,6 +51,29 @@ return function(client, stubs)
 			end
 		end
 		error("no compartment entry reads " .. tostring(text))
+	end
+	-- The entry whose text reads `text` now.
+	local function compartmentEntry(text)
+		for _, entry in ipairs(client.compartment) do
+			if entry.text == text then
+				return entry
+			end
+		end
+		error("no compartment entry reads " .. tostring(text))
+	end
+	function client.hoverCompartment(text)
+		local entry = compartmentEntry(text)
+		local row = widgets.newWidget("Button", stubs.UIParent)
+		if entry.funcOnEnter then
+			entry.funcOnEnter(row, { text = entry.text })
+		end
+		return row
+	end
+	function client.leaveCompartment(text, row)
+		local entry = compartmentEntry(text)
+		if entry.funcOnLeave then
+			entry.funcOnLeave(row, { text = entry.text })
+		end
 	end
 	function client.openCompartmentMenu(text)
 		local opened = #client.menus
