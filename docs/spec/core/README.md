@@ -92,7 +92,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   - Core's options: the Saving section (the `/reload` reminder, LOG-R86), the Units section (the length unit, LOG-R69) and, from M8.5, the Pagle menu section (Show the minimap icon, CORE-R56); the first two are in [catch-log.md](catch-log.md#settings), and all their rows in `docs/spec/settings.md` (SET-R10)
 
   Under the root, Core registers four **topic pages**, in this order: **Fishing**, **Announcements**, **Trackers** and **Look and Feel**. Pages are grouped by what the player is doing, not by owner. The list is fixed: Modules add rows to it (CORE-R42) and never register pages of their own. The layout and order of rows belong to `docs/spec/settings.md`.
-- **CORE-R41** The status list shows the roster in CORE-R1 order, each with its TOC version and one state:
+- **CORE-R41** The status list shows the roster in CORE-R1 order, each with its TOC version and one state. The version is never the packager's raw token: while the TOC still says `@project-version@` (any whole `@…@`, a checkout the packager never filled in, CORE-R2), it reads "dev"; a Module that isn't installed shows none (`ns.ShownVersion`). The states:
   - **On**: enabled and registered
   - **Needs a newer Pagle**: inert (CORE-R13)
   - **Failed to start**: enabled, loaded, but never registered (it errored)

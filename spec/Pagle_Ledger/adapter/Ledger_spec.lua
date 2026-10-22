@@ -46,7 +46,7 @@ describe("Pagle_Ledger with Core", function()
 
 		local texts, buttons = loaded.client.settings.statusList()
 
-		assert.are.same({ "Ledger", "@project-version@", "On", "Open Fish Journal" }, { unpack(texts, 1, 4) })
+		assert.are.same({ "Ledger", "dev", "On", "Open Fish Journal" }, { unpack(texts, 1, 4) })
 		assert.are.equal(1, #buttons)
 		assert.are.equal("Open Fish Journal", buttons[1]:GetText())
 	end)

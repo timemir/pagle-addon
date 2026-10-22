@@ -79,7 +79,7 @@ Part of [Core](README.md). A **Field report** is the text an Angler copies out o
   ```
 
   - Line 1 is the format version.
-  - Line 2 is the header: the addon version (`C_AddOns.GetAddOnMetadata("Pagle", "Version")`), the first 8 characters of `Pagle.CONTENT_FINGERPRINT` (lowercase hex), the reporting client's `GetLocale()`, the reporter key, and the part number.
+  - Line 2 is the header: the addon version (`C_AddOns.GetAddOnMetadata("Pagle", "Version")`; `dev` while the TOC still holds the packager's `@project-version@` token, as CORE-R41's list shows it, and `unknown` with no version), the first 8 characters of `Pagle.CONTENT_FINGERPRINT` (lowercase hex), the reporting client's `GetLocale()`, the reporter key, and the part number.
   - A comment is ` # ` followed by names in the player's locale, for humans only: `I` rows get the item name (left out if `C_Item.GetItemInfo` hasn't cached it), then the area name; `K` and `P` rows get the area name.
   - `END` closes every part, so a truncated paste is detectable.
 - **REP-R31** Parsers treat ` # ` outside double quotes as the start of a comment and ignore the rest of the line. They ignore unknown `key=value` keys, so adding a key needs no version bump; a changed meaning of anything existing bumps `PAGLE-REPORT`.

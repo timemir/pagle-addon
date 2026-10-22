@@ -69,7 +69,7 @@ describe("Pagle_Stats with Core", function()
 		while texts[at] ~= "Stats" do
 			at = assert(texts[at + 1] and at + 1, "no Stats row in the status list")
 		end
-		assert.are.same({ "Stats", "@project-version@", "On", "Open Stats" }, { unpack(texts, at, at + 3) })
+		assert.are.same({ "Stats", "dev", "On", "Open Stats" }, { unpack(texts, at, at + 3) })
 		assert.are.equal(1, #buttons)
 		assert.are.equal("Open Stats", buttons[1]:GetText())
 	end)
