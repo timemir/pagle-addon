@@ -29,14 +29,19 @@ local ns = select(2, ...)
 ---@field char integer
 
 --- The number of varieties of a Species (VAR-R2): its catalogue item's `varieties` keys, ten for a Species with
---- varieties and 0 for one without (a Legend, a Species not sized, VAR-R1).
+--- varieties and 0 for one without (a Legend, a Species not sized, VAR-R1). Counted with ipairs, never `#`: Core's
+--- records are shared and may be read-only proxies, whose length reads 0 (CORE-R18, FakePagle).
 ---@param getItem fun(itemID: integer): PagleItem?
 ---@param speciesID integer
 ---@return integer
 function ns.VarietyCount(getItem, speciesID)
 	local item = getItem(speciesID) --[[@as { varieties: string[]? }?]]
 	local keys = item and item.varieties
-	return type(keys) == "table" and #keys or 0
+	local count = 0
+	for _ in ipairs(type(keys) == "table" and keys or {}) do
+		count = count + 1
+	end
+	return count
 end
 
 --- The varieties of a Species caught in a state (VAR-R20).
