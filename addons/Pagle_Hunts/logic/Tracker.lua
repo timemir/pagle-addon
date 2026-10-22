@@ -130,6 +130,7 @@ ns.TRACKER_RUNS = 3
 ---@field runs HuntsShownRun[]   -- ns.RunsShown at `now`: the runs on, then the runs ahead (HNT-R160)
 ---@field now integer            -- ns.ViewNow(): countdowns freeze with the board's while restricted (HNT-R43)
 ---@field updating boolean       -- ns.IsUpdating() (HNT-R78)
+---@field hint CompanionHint?    -- the companion hint while it applies (HNT-R170, HNT-R176)
 
 --- One run's two lines on the block (HNT-R175).
 ---@class HuntsTrackerRun
@@ -142,6 +143,7 @@ ns.TRACKER_RUNS = 3
 ---@class HuntsTrackerWagers
 ---@field runs HuntsTrackerRun[]   -- at most ns.TRACKER_RUNS
 ---@field more integer             -- the runs on past those, for "+{n} more wagers on the table"; 0 for no such line
+---@field hint string?             -- with no run on, the companion hint's one line (HNT-R176), with "why?"
 
 --- One run on's two lines (HNT-R175): its event's name and "settled" once completed, else "ends in {duration}"
 --- counted from `now`; then "{done} of {n} first marks" and its closest unfinished Hunt as "{Hunt}: {count} / {next
@@ -173,7 +175,8 @@ local function runLines(shown, input, state)
 end
 
 --- The Pagle Wagers block's lines (HNT-R175): the runs on, as ns.RunsShown orders them, at most ns.TRACKER_RUNS, then
---- how many more are on; nil with no run on, when the block is gone (the runs ahead show on the board alone).
+--- how many more are on. With no run on, the companion hint's one line while it applies (HNT-R176), else nil, when
+--- the block is gone (the runs ahead show on the board alone).
 ---@param input HuntsTrackerWagersInput
 ---@param state HuntsState ns.State(), for each run's progress
 ---@return HuntsTrackerWagers?
@@ -188,7 +191,7 @@ function ns.TrackerWagerLines(input, state)
 		end
 	end
 	if on == 0 then
-		return nil
+		return input.hint and { runs = {}, more = 0, hint = input.hint.tracker } or nil
 	end
 	lines.more = on - #lines.runs
 	return lines

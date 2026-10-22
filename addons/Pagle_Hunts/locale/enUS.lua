@@ -333,6 +333,27 @@ ns.L = {
 	WAGERS_SETTLED_OTHER = "%s wagers settled",
 	WAGERS_LADDER_LINE = "%s · %d more for %s",
 
+	-- The companion hint (HNT-R170–R172, HNT-R176): logic/Companion.lua and adapter/Companion.lua, shown only while the
+	-- hint switch is on. Interface text, not lore; as above, nothing here claims odds, a due fish or a chance
+	-- (HNT-R27). Missing, its two lines (the second for a first install, PUSH-R90); not running, its one.
+	HINT_MISSING = "New wagers are out there. The Pagle companion brings them: more XP, more Coins.",
+	HINT_FIRST_INSTALL = "Installed it just now? Log out to character select once.",
+	HINT_NOT_RUNNING = "The Pagle companion isn't running. Start it to get this week's wagers.",
+	HINT_GET_IT = "Get it",
+	HINT_DISMISS = "Dismiss",
+	-- Get it's box, holding the companion's address selected for Ctrl+C (as the Field report's link, REP-R40).
+	HINT_ADDRESS_KICKER = "The Pagle companion",
+	HINT_ADDRESS_COPY = "Ctrl+C to copy",
+	HINT_ADDRESS_CLOSE = "Close",
+	-- The tracker's Pagle Wagers block with no run on (HNT-R176), and its link to the Pagle Wagers spread.
+	TRACKER_HINT_MISSING = "New wagers with the Pagle companion",
+	TRACKER_HINT_NOT_RUNNING = "Pagle companion not running",
+	TRACKER_HINT_WHY = "why?",
+	-- Its row on the Announcements page, under Hunts' header (SET-R32), only while the switch is on.
+	COMPANION_HINT_SETTING = "Remind me about the Pagle companion",
+	COMPANION_HINT_TOOLTIP = "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't "
+		.. "bringing you new wagers.",
+
 	-- The run log's dev diagnostic lines (HNT-R140, HNT-R151, logic/RunLog.lua): dev-only, never shown to players.
 	RUN_LOG_EVENT_IGNORED = "Hunts: the pushed definition of %s is ignored: %s (HNT-R140)",
 	RUN_LOG_RUN_IGNORED = "Hunts: a pushed run of %s is ignored: it needs an event ID and times start < end (HNT-R151)",

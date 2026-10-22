@@ -20,7 +20,8 @@ local ns = select(2, ...)
 local LOOK = ns.BOARD_LOOK
 
 --- logic/Wagers.lua's inputs, read now: the runs on and ahead at ns.ViewNow() (frozen while the grouping is paused,
---- HNT-R43), the live conditions, and whether the projection is updating (HNT-R69).
+--- HNT-R43), the live conditions, whether the projection is updating (HNT-R69), and the companion hint while it
+--- applies (HNT-R170, adapter/Companion.lua).
 ---@return WagersInput
 function ns.BoardWagersInput()
 	local now = ns.ViewNow()
@@ -31,6 +32,7 @@ function ns.BoardWagersInput()
 		updating = ns.IsUpdating(),
 		list = ns.hunts,
 		sources = ns.names,
+		hint = ns.CompanionHintNow(),
 	}
 end
 
@@ -70,11 +72,12 @@ end
 -- The wager strip ----------------------------------------------------------------------------------------------------
 
 -- The strip's measures, in UI units down the timeline's page: its top under the title, its height, its oxblood edge,
--- its words' inset and rows, a pip's size and step, and the room the companion hint's line takes under it.
+-- its words' inset and rows, a pip's size and step; the companion hint's gap under it and between its lines.
 local STRIP_Y, STRIP_HEIGHT, EDGE, INSET, KICKER_ROW, NAME_ROW = 47, 38, 4, 14, 5, 19
-local PIP, PIP_STEP, GAP, HINT_HEIGHT = 10, 13, 10, 18
---- How far the strip pushes the ruler and the list down the page, with the hint's line under it or not.
-ns.WAGER_STRIP_ROOM, ns.WAGER_HINT_ROOM = STRIP_HEIGHT + 8, HINT_HEIGHT
+local PIP, PIP_STEP, GAP, HINT_TOP, HINT_SPACING = 10, 13, 10, 3, 2
+--- How far the strip pushes the ruler and the list down the page, and the least room the companion hint takes under
+--- it beside: its lines' heights and spacing are added to it (HNT-R161, HNT-R170).
+ns.WAGER_STRIP_ROOM, ns.WAGER_HINT_ROOM = STRIP_HEIGHT + 8, 4
 
 ---@class WagerPip: BoardDiamondView
 ---@field pip true
@@ -91,7 +94,9 @@ ns.WAGER_STRIP_ROOM, ns.WAGER_HINT_ROOM = STRIP_HEIGHT + 8, HINT_HEIGHT
 ---@field closes FontString
 ---@field updating FontString
 ---@field pips WagerPip[]
----@field hint FontString
+---@field hint Frame                    -- the companion hint under the strip (HNT-R170)
+---@field hintLines FontString[]
+---@field hintButtons CompanionHintButtons -- Get it and Dismiss, at its first line's right
 ---@field width number
 
 -- The strip's widgets on `page`, made at its first draw.
@@ -129,18 +134,51 @@ local function newStrip(page)
 		closes = text(fonts.count, LOOK.red, GAP, NAME_ROW - 3, true),
 		updating = text(fonts.note, LOOK.note, GAP, NAME_ROW, true),
 		pips = {},
-		hint = ns.BoardText(page, fonts.note, LOOK.note),
+		hint = CreateFrame("Frame", nil, page),
+		hintLines = {},
 		width = width,
 	}
-	view.hint:SetPoint("TOPLEFT", page, "TOPLEFT", INSET, -(STRIP_Y + STRIP_HEIGHT + 3))
-	view.hint:SetWidth(width - INSET)
-	view.hint:SetWordWrap(false)
+	view.hint:SetPoint("TOPLEFT", page, "TOPLEFT", INSET, -(STRIP_Y + STRIP_HEIGHT + HINT_TOP))
+	view.hint:SetSize(width - INSET, 1)
+	view.hint:Hide()
+	view.hintButtons = ns.NewHintButtons(view.hint)
 	return view
 end
 
 -- Each timeline page's strip, by its page frame.
 ---@type table<Frame, WagerStripView>
 local strips = {}
+
+-- Draws the companion hint's `lines` under the strip (HNT-R161, HNT-R170), each wrapping in the room Get it and
+-- Dismiss leave at its first line's right, or hides it for none; returns the room it takes down the page.
+---@param view WagerStripView
+---@param lines string[]?
+---@return number
+local function drawHint(view, lines)
+	if not lines then
+		view.hint:Hide()
+		ns.HideHintButtons(view.hintButtons)
+		return 0
+	end
+	local width = view.width - INSET
+	view.hint:Show()
+	local buttons = ns.PlaceHintButtons(view.hintButtons, view.hint, GAP, 0)
+	local y = 0
+	for i, words in ipairs(lines) do
+		local line = ns.BoardPooled(view.hintLines, i, function()
+			return ns.BoardText(view.hint, ns.BoardFonts().note, LOOK.note)
+		end)
+		line:SetText(words)
+		ns.BoardWrap(line, width - GAP - buttons - GAP, 0)
+		line:ClearAllPoints()
+		line:SetPoint("TOPLEFT", 0, -y)
+		line:Show()
+		y = y + math.ceil(line:GetStringHeight()) + HINT_SPACING
+	end
+	ns.BoardHideFrom(view.hintLines, #lines)
+	view.hint:SetHeight(math.max(1, y))
+	return y + ns.WAGER_HINT_ROOM
+end
 
 -- Sets `text` to `words` and keeps it within `room`, cut short with an ellipsis past it; returns the width it takes.
 ---@param text FontString
@@ -157,7 +195,7 @@ local function fit(text, words, room)
 end
 
 --- Draws the wager strip (HNT-R161) on the timeline's page `page`, or hides it with none (HNT-R204), and returns how
---- far it pushes the ruler down: none without a strip, more with the companion hint's line under it (#305 fills it).
+--- far it pushes the ruler down: none without a strip, more with the companion hint's lines under it (HNT-R170).
 ---@param page Frame
 ---@param strip WagerStrip?
 ---@return number
@@ -166,7 +204,7 @@ function ns.DrawWagerStrip(page, strip)
 	if not strip then
 		if view then
 			view.button:Hide()
-			view.hint:Hide()
+			drawHint(view, nil)
 		end
 		return 0
 	end
@@ -225,13 +263,7 @@ function ns.DrawWagerStrip(page, strip)
 	end
 	local words = strip.next or L.STRIP_NAME:format(strip.name or "", strip.zones or "")
 	fit(view.name, words, room - right - GAP)
-	if strip.hint then
-		view.hint:SetText(strip.hint)
-		view.hint:Show()
-		return ns.WAGER_STRIP_ROOM + ns.WAGER_HINT_ROOM
-	end
-	view.hint:Hide()
-	return ns.WAGER_STRIP_ROOM
+	return ns.WAGER_STRIP_ROOM + drawHint(view, strip.hint)
 end
 
 -- A run's entry ----------------------------------------------------------------------------------------------------

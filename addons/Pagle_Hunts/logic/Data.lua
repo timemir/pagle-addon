@@ -22,6 +22,8 @@ ns.DB_DEFAULTS = {
 		windowMoments = false, -- "Tell me when a pinned Hunt's window opens" (HNT-R88)
 		showCompleted = false, -- the board's "show completed" filter (HNT-R82)
 		pins = {}, -- { [huntID] = true } (HNT-R81)
+		companionHint = true, -- "Remind me about the Pagle companion": false once dismissed (HNT-R170)
+		lastHintNod = 0, -- the server time of the last companion Nod (HNT-R171)
 	},
 	global = {
 		-- { tiers = { [huntID] = highestTier }, sets = { [setID] = true }, runs = { [runKey] = { tiers = { [huntID] =
@@ -61,6 +63,18 @@ ns.CELEBRATED_RUN_KEEP = 30 * 86400
 --- Tunables (hunts.md): how many hours back the projection's hour index reaches from its latest Cast (hunts.md ›
 --- Projection state, `hours`): 14 days. A run record credits its earlier Casts from it (HNT-R149).
 ns.HOUR_INDEX_HOURS = 14 * 24
+
+--- Tunables (hunts.md): the companion hint switch (HNT-R170–R172), off at 1.0 (#288): while it is off there is no
+--- hint, no Nod, no placeholder slip, no tracker line and no Settings row. The companion state is still read and pushed
+--- runs still used (HNT-R153). The release that turns it on, once `Pagle_Content` works end to end, flips it here.
+ns.COMPANION_HINT_ON = false
+
+--- Tunables (hunts.md): the companion's address that Get it shows (HNT-R170). A placeholder until it is decided
+--- (#289 left it to the build): the release that turns the hint switch on sets the real one.
+ns.COMPANION_URL = "https://github.com/timemir/pagle-companion"
+
+--- Tunables (hunts.md): the least time between two companion Nods, in seconds: 7 days (HNT-R171).
+ns.HINT_NOD_INTERVAL = 7 * 86400
 
 --- What `amounts` (`{ tier 1, each further tier }`, the Tunables above) pays for reaching tier `k` (HNT-R110,
 --- HNT-R113, HNT-R114): amounts go by tier position, never per Hunt or per event.

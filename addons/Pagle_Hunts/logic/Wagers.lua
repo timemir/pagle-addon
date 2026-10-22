@@ -22,6 +22,7 @@ local ns = select(2, ...)
 ---@field updating boolean       -- ns.IsUpdating(): nothing is drawn from the projection's state (HNT-R69)
 ---@field list HuntList          -- a fixed class's members (HNT-R54, HNT-R55)
 ---@field sources HuntNameSources
+---@field hint CompanionHint?    -- the companion hint while it applies (HNT-R170, logic/Companion.lua); nil while not
 
 --- An event Hunt's shape (HNT-R163), worked out from its definition: "timed" with a `time` condition, "big" with a
 --- `minBand`, "quality" for a quality class, "haul" for any fish, else "named". *Default chosen while building (#302):
@@ -147,7 +148,7 @@ end
 ---@field updating string?   -- the updating line in place of the pips (HNT-R69)
 ---@field more string?       -- "+{n} more on the table" with more runs on
 ---@field next string?       -- none on: "Next: {name}, Sat 15:00", the first run ahead
----@field hint string?       -- the companion hint's line under it (HNT-R170), #305's to fill
+---@field hint string[]?     -- the companion hint's lines under it, with Get it and Dismiss, while it applies (HNT-R170)
 
 --- The wager strip (HNT-R161), or nil with no run on or ahead (HNT-R204).
 ---@param input WagersInput
@@ -157,7 +158,7 @@ function ns.BuildWagerStrip(input)
 	if not first then
 		return nil
 	end
-	local strip = { run = first.key, on = first.on, kicker = L.WAGERS_KICKER }
+	local strip = { run = first.key, on = first.on, kicker = L.WAGERS_KICKER, hint = input.hint and input.hint.lines }
 	if not first.on then
 		strip.next = L.STRIP_NEXT:format(eventName(first.event), ns.RealmWeekdayClock(first.run.start, input.snapshot))
 		return strip
@@ -441,7 +442,8 @@ end
 ---@field note string
 ---@field slips WagerSlip[]       -- the runs on, then ahead (HNT-R160), then those that closed this showing
 ---@field empty string?           -- "No wagers on the table yet." with no slip (HNT-R204)
----@field hint string[]?          -- the companion hint's lines on the dashed placeholder slip (HNT-R170), #305's
+---@field hint string[]?          -- the companion hint's lines on the dashed placeholder slip (HNT-R170), with Get it
+--- and Dismiss; nil while it doesn't apply
 ---@field ladder WagersLadder
 ---@field selected string?        -- the run the right page shows: the slip chosen, else the first open slip's
 
@@ -452,7 +454,7 @@ end
 ---@field ladder table<integer, integer>   -- state.ladder
 ---@field ended HuntsShownRun[]   -- runs that were on this showing and have ended since (HNT-R143, HNT-R162)
 ---@field run string?             -- the slip chosen (BoardPlace.run)
----@field hint string[]?          -- the companion hint's lines (HNT-R170), #305's to fill
+---@field hint string[]?          -- the companion hint's lines while it applies (HNT-R170)
 
 -- A pushed run's holiday tag's name (DATA-R97's holiday tags, interface text in ns.L keyed by tag ID), nil for a run
 -- of the rotation or an event with none. *Default chosen in #303: HNT-R162 names the tag but not its words.*
@@ -515,7 +517,7 @@ end
 
 --- The Pagle Wagers spread's left page (HNT-R162): one slip per run on, then ahead, in HNT-R160's order, then a slip
 --- for each run that ended while the board was open this showing, greyed and "closed" (by end); the companion hint's
---- placeholder slip when it applies (#305); and the ladder at the foot. With no slip it reads HNT-R204's line. The
+--- placeholder slip when it applies (HNT-R170); and the ladder at the foot. With no slip it reads HNT-R204's line. The
 --- right page shows the slip chosen, else the first open slip's run; a closed slip is never chosen (its run is no
 --- longer shown, HNT-R143).
 ---@param input WagersInput

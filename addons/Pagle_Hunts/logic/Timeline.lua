@@ -97,6 +97,7 @@ local MAX_SPANS = 48
 ---@field pick boolean               -- the Board picks a Hunt when none shown is asked for (HNT-R67)
 ---@field runs HuntsShownRun[]?      -- on the Board, ns.RunsShown: the strip and the WAGERS group (HNT-R160, HNT-R161)
 ---@field run string?                -- the run asked for or selected before (HNT-R164)
+---@field hint CompanionHint?        -- on the Board, the companion hint under the strip while it applies (HNT-R170)
 
 -- Server time `t` on the ruler.
 ---@param ruler { from: integer, to: integer }

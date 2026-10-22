@@ -236,6 +236,13 @@ local DOT_SIZE, EXTRA_LINE, WAGERS_GAP = 8, 20, 6
 ---@field chevron Texture[]
 ---@field lines HuntsTrackerLineButton[]   -- one per shown run, ns.TRACKER_RUNS of them, its run key in `runKey`
 ---@field more HuntsTrackerMoreButton   -- "+{n} more wagers on the table", opens the Pagle Wagers spread
+---@field hint HuntsTrackerHintLine     -- the companion hint's line with no run on (HNT-R176)
+
+--- The companion hint's line on the Pagle Wagers block (HNT-R176): its words, and "why?" at the right, which opens the
+--- Pagle Wagers spread.
+---@class HuntsTrackerHintLine: Frame
+---@field text FontString
+---@field why HuntsTrackerMoreButton
 
 ---@class HuntsTrackerLineButton: Button
 ---@field shade Texture
@@ -264,6 +271,7 @@ local DOT_SIZE, EXTRA_LINE, WAGERS_GAP = 8, 20, 6
 ---@class HuntsTrackerWagersContent
 ---@field runs { name: string, label: string, second: string }[]
 ---@field more string?
+---@field hint string?            -- with no run on, the companion hint's line (HNT-R176)
 ---@field collapsed boolean
 
 -- Lets a Shift-drag that starts on `child` move the dock: a mouse-enabled child takes the drag, so it hands it to the
@@ -337,6 +345,20 @@ local function buildMore(block)
 	return more
 end
 
+-- The companion hint's line (HNT-R176), hidden until drawn: its words, then "why?", a button.
+---@param block Frame
+---@return HuntsTrackerHintLine
+local function buildHint(block)
+	local hint = CreateFrame("Frame", nil, block) --[[@as HuntsTrackerHintLine]]
+	hint.text = hint:CreateFontString(nil, "OVERLAY")
+	hint.text:SetJustifyH("LEFT")
+	hint.text:SetWordWrap(false)
+	hint.why = buildMore(hint)
+	passDrags(hint.why, block)
+	hint:Hide()
+	return hint
+end
+
 -- The header: "Hunts" with the collapse mark before it.
 ---@param block Frame
 ---@return Button header
@@ -386,6 +408,7 @@ function ns.NewTrackerBlock(parent)
 		wagers.lines[i] = buildLine(block)
 	end
 	wagers.more = buildMore(block)
+	wagers.hint = buildHint(block)
 	local empty = block:CreateFontString(nil, "OVERLAY")
 	empty:SetJustifyH("LEFT")
 	empty:Hide() -- its words come with its look's font, at its draw
@@ -507,8 +530,41 @@ local function drawMore(more, look, text, y)
 	return y + EXTRA_LINE
 end
 
--- Draws the Pagle Wagers block at the block's top (HNT-R175, HNT-R177), or hides it for `content` nil; returns how
--- far down the Hunts block's header goes under it.
+-- Draws the companion hint's line at `y` (HNT-R176): its words, cut short before "why?" at the right; or hides it
+-- for nil. Returns the y under it.
+---@param hint HuntsTrackerHintLine
+---@param look HuntsTrackerLook
+---@param text string?
+---@param y number
+---@return number
+local function drawHint(hint, look, text, y)
+	hint:SetShown(text ~= nil)
+	if not text then
+		return y
+	end
+	hint:ClearAllPoints()
+	hint:SetPoint("TOPLEFT", 0, -y)
+	hint:SetSize(look.width, EXTRA_LINE)
+	local why = hint.why
+	setFont(why.text, look.label)
+	why.text:SetText(ns.L.TRACKER_HINT_WHY)
+	why.text:ClearAllPoints()
+	why.text:SetPoint("RIGHT")
+	local whyWidth = math.ceil(why.text:GetStringWidth()) + 2
+	why:ClearAllPoints()
+	why:SetPoint("TOPRIGHT", hint, "TOPLEFT", look.right, 0)
+	why:SetSize(whyWidth, EXTRA_LINE)
+	why:Show()
+	setFont(hint.text, look.sub)
+	hint.text:SetText(text)
+	hint.text:ClearAllPoints()
+	hint.text:SetPoint("LEFT", look.x + 14, 0)
+	hint.text:SetWidth(math.max(1, look.right - look.x - 14 - whyWidth - 6))
+	return y + EXTRA_LINE
+end
+
+-- Draws the Pagle Wagers block at the block's top (HNT-R175–R177), or hides it for `content` nil; returns how far down
+-- the Hunts block's header goes under it.
 ---@param view HuntsTrackerWagersView
 ---@param look HuntsTrackerLook
 ---@param content HuntsTrackerWagersContent?
@@ -518,11 +574,13 @@ local function drawWagers(view, look, content)
 	if not content then
 		drawLines(view.lines, {}, look, 0)
 		drawMore(view.more, look, nil, 0)
+		drawHint(view.hint, look, nil, 0)
 		return 0
 	end
 	drawHeader(view.header, view.title, view.chevron, look, ns.L.WAGERS_KICKER, 0, content.collapsed)
 	local y = drawLines(view.lines, content.collapsed and {} or content.runs, look, look.first, "wagers")
 	y = drawMore(view.more, look, not content.collapsed and content.more or nil, y)
+	y = drawHint(view.hint, look, not content.collapsed and content.hint or nil, y)
 	return y + WAGERS_GAP
 end
 
