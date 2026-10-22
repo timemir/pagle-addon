@@ -121,7 +121,7 @@ describe("the Hunts board's First look (ONB-R55–R57)", function()
 			"*Natural* means the game itself keeps this fish to its hours. Imposed Hunts are Pagle’s own rules.",
 			"*Pin* a Hunt to keep it on your tracker while you fish.",
 			"Each ribbon is a *Hunt set*. Finish every Hunt in one and its title is yours. *Pagle Wagers* holds the "
-				.. "Hunt Events running now.",
+				.. "wagers on the table now.",
 		}, texts)
 	end)
 
