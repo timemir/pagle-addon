@@ -78,8 +78,8 @@ local function log()
 end
 
 -- A Ledger on a fake over the fixture and its log, logged in, every name loaded, open at `place` when given (else
--- closed). `crestName`, if given, is the name Core gives Mackerel's fish crest good (VAR-R12); none by default, as
--- before Core registers it.
+-- closed). `crestName`, if given, stands in for the name Core gives Mackerel's fish crest good (VAR-R12), which is
+-- otherwise Core's own, "Item 6303 Crest" while the fake's Core has no name for the fish.
 local function loggedIn(place, crestName)
 	return openJournal({
 		catalogue = fixture(),
@@ -228,7 +228,8 @@ describe("the varieties spread (VAR-R24)", function()
 				"[varietyArt]",
 				"Gold bars on gold. Looks expensive. Fries like a mackerel.",
 				"First landed 3 Oct in Westfall, by Angler. 1 caught.",
-				"[fishCrest]",
+				-- the fish crest's name, as Core named its good (VAR-R12): the client hasn't the fish's name here
+				"Item 6303 Crest",
 			}, blockTexts(journal.pages.right))
 		end
 	)
@@ -263,12 +264,15 @@ describe("the varieties spread (VAR-R24)", function()
 		assert.are.same({ ink[1], ink[2], ink[3] }, { kicker.textColor[1], kicker.textColor[2], kicker.textColor[3] })
 	end)
 
-	it("puts the fish crest, its shield, at the right page's foot with what is left to go", function()
+	it("puts the fish crest, its shield and its name, at the right page's foot with what is left to go", function()
 		local _, loaded = loggedIn({ "varieties", MACKEREL })
 
 		local foot = loaded.ns.journal.frame.right.drawn.fishCrest[1]
 
-		assert.are.same({ CREST, false, "7 to go." }, { foot.crest.texture, foot.name:IsShown(), foot.toGo:GetText() })
+		assert.are.same(
+			{ CREST, "Item 6303 Crest", "7 to go." },
+			{ foot.crest.texture, foot.name:IsShown() and foot.name:GetText(), foot.toGo:GetText() }
+		)
 		assert.are.same({ 0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1 }, foot.crest.texCoord)
 		local page = loaded.ns.journal.frame.right
 		-- its anchor's last figure is how far down the page it sits: at the foot, the page's margin under it, so the
@@ -295,6 +299,50 @@ describe("the varieties spread (VAR-R24)", function()
 		assert.are.equal("Sea-witch", rows(loaded)[10].name:GetText())
 		assert.are.equal("4 of 10 caught", loaded.ns.journal.pages.left[3].text)
 	end)
+end)
+
+describe("Every colour of a Species (VAR-R12, VAR-R25)", function()
+	it(
+		"seals its banner with Core's fish crest and its Earned line, owns the crest, and says All ten. at the spread's"
+			.. " foot",
+		function()
+			local records, from = {}, T0
+			for index = 1, 9 do
+				local record = castOfVariety(index, from)
+				records[#records + 1] = record
+				from = record.time + 60
+			end
+			local fake, loaded = openJournal({
+				catalogue = fixture(),
+				log = records,
+				itemNames = NAMES,
+				areaNames = { [WESTFALL] = "Westfall" },
+				id = false,
+			})
+			assert.is_false(fake.Pagle.IsOwned("core.crest.fish.6303"))
+			local seen = #fake.announcements
+
+			fake.live(fake.catchLog:Append(castOfVariety(10, from)))
+			fake.nextFrame()
+
+			local banner
+			for i = seen + 1, #fake.announcements do
+				for _, moment in ipairs(fake.announcements[i].moments) do
+					if moment.kind == "everyColour" then
+						banner = moment
+					end
+				end
+			end
+			assert.are.same(
+				{ "Every colour of Raw Slitherskin Mackerel", "Earned: Item 6303 Crest", "crest", CREST },
+				{ banner.title, banner.text, banner.seal, banner.crest }
+			)
+			assert.is_true(fake.Pagle.IsOwned("core.crest.fish.6303"))
+			loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.varieties(MACKEREL, 10))
+			local foot = loaded.ns.journal.frame.right.drawn.fishCrest[1]
+			assert.are.same({ "Item 6303 Crest", "All ten." }, { foot.name:GetText(), foot.toGo:GetText() })
+		end
+	)
 end)
 
 describe("discovery in the Journal (VAR-R27)", function()

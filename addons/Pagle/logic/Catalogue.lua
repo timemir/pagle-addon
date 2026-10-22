@@ -157,6 +157,16 @@ function ns.NewCatalogue(data)
 		return varietyLists[speciesID]
 	end
 
+	-- The Species with varieties, ascending (VAR-R2): one fish crest each (VAR-R12).
+	local varietySpecies = sortedKeys(varietyKeys)
+
+	--- Every Species with varieties, by Species ID, ascending (VAR-R12): Core-internal (LOG-R56), the fish crests'
+	--- order. Core's own; nothing in it may be changed.
+	---@return integer[]
+	function catalogue.GetVarietySpecies()
+		return varietySpecies
+	end
+
 	--- Every zone areaID (`parent = 0`) in the AreaTable slice, ascending (LOG-R55).
 	---@return integer[]
 	function catalogue.GetZones()

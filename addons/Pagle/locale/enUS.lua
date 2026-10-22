@@ -600,6 +600,17 @@ ns.L = {
 	-- The crest slot's groups on the Curio Shop's list (SHOP-R27): the zones' crests, then the fishes'.
 	SLOT_CREST_ZONES = "Zone crests",
 	SLOT_CREST_FISH = "Fish crests",
+	-- A fish crest (VAR-R12): its fish, the Species' item name as the client has it, "Item {itemID}" until it has;
+	-- the prefix an enUS client's fish names carry ("Raw Spotted Yellowtail") that the crest's name drops, read on an
+	-- enUS client only; and, while it isn't earned, the row's tag and the stage's note (VAR-R13, VAR-R14), the count
+	-- still out there of each rarity, rarest last, joined with ", ".
+	FISH_CREST_ITEM = "Item %d",
+	FISH_CREST_DROP_PREFIX = "Raw ",
+	FISH_CREST_ROW = "%d of 10 varieties",
+	FISH_CREST_NOTE = "%d of 10 %s varieties. Still out there: %s.",
+	FISH_CREST_NOTE_ALL = "%d of 10 %s varieties.",
+	FISH_CREST_UNCAUGHT = "%d %s",
+	FISH_CREST_UNCAUGHT_JOIN = ", ",
 	-- A sound set's preview on the Curio Shop's stage (wallet-and-shop.md › UI): a button per sound, and a note. » is
 	-- Latin-1: the client's fonts have no ▶ (CORE-R9, #248).
 	PREVIEW_TOAST = "» Toast",

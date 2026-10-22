@@ -44,6 +44,7 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	ns.OpenActivityXP() -- AXP-R3
 	ns.RegisterCoreGoods(ns.CORE_PREVIEWS) -- SHOP-R25: before any Module registers its own
 	ns.BuildCatalogue()
+	ns.StartFishCrests() -- VAR-R12: Core's fish crests, over the catalogue, before the variety projection refreshes them
 	ns.WireFieldReport(ns.host) -- LOG-R78: Core's projection, ahead of every Module's
 	ns.StartWalletProjection() -- SHOP-R11, SHOP-R34: the stored spent and purchased set, before the catch-up
 	ns.StartVarietyProjection() -- VAR-R10: Core's varieties caught, which its fish crests read (VAR-R13)

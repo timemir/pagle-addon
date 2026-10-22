@@ -81,8 +81,8 @@ stds.wow = {
 		-- GetWeaponEnchantInfo is in stds.wow_variables. Its clams (QOL-R55, QOL-R57) use the same click, bag and
 		-- name calls.
 		"SetOverrideBindingClick",
-		-- GetItemNameByID is also the Ledger's item names (LED-R97, LED-R126), and RequestLoadItemDataByID the
-		-- Journal's uncached ones (LED-R126). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID is
+		-- GetItemNameByID is also the Ledger's item names (LED-R97, LED-R126) and Core's fish crests' fish (VAR-R12),
+		-- and RequestLoadItemDataByID the Journal's uncached ones (LED-R126) and those fish (VAR-R12). GetItemInfo: the Field report's item names (REP-R30). GetItemIconByID is
 		-- also Stats' item icons (STA-R59). GetItemQualityByID: Stats' Catches by quality for an item Core has no
 		-- quality for (STA-R33).
 		C_Item = {
@@ -394,6 +394,8 @@ local helperGlobals = {
 	"breakUpLargeNumbers",
 	"OILY_BLACKMOUTH",
 	"FISHING",
+	"FISH_CREST_SPECIES",
+	"fishCrestRows",
 	"BUILD_ENTRY",
 	"castEntry",
 	"prestigeEntry",

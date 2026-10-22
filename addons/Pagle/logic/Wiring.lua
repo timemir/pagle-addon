@@ -571,6 +571,16 @@ function ns.WireGoods(host)
 	function ns.RegisterCoreGood(good)
 		raise(goods:RegisterGood(ns.CORE_OWNER, good))
 	end
+	--- Renames one of Core's goods and its cache entry (SHOP-R26), for a fish crest whose fish the client names later
+	--- (VAR-R12). Nothing for a good Core hasn't registered.
+	---@param goodID string
+	---@param name string
+	function ns.RenameCoreGood(goodID, name)
+		local good = goods:Good(goodID)
+		if good and good.module == ns.CORE_OWNER then
+			goods:Rename(goodID, name)
+		end
+	end
 end
 
 --- Publishes the goods registry's reads and its one write on `Pagle` (wallet-and-shop.md › Contracts):

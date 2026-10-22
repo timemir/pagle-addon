@@ -127,8 +127,10 @@
 ---@field catchNods PagleAnnouncement[] Each catch Nod Core would hand the display (ANN-R13): one per played caught
 --- Cast for which no Module raised a moment, while `profile.announcements.everyCatch` is on, on the frame after.
 --- Its headline's title is "{item name} · {band} · {length}", the name from `itemNames`.
----@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch Nod; a
---- spec sets them. An item without one reads "Item {itemID}".
+---@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch Nod and
+--- the fish crests' fish (VAR-R12); a spec sets them. An item without one reads "Item {itemID}".
+---@field itemArrived fun(itemID: integer) The client's GET_ITEM_INFO_RECEIVED for an item: renames its Species' fish
+--- crest from `itemNames` (SHOP-R26) when it had none at login.
 ---@field summarized PagleRaisedMoment[] Each moment Core kept, as it was raised, shown or not (ANN-R25): a
 --- summaryOnly one is here and never in announcements. A moment Core dropped (ANN-R4) is in neither.
 ---@field global table PagleDB.global, the one the fake's Core keeps all its keys in, from Core's defaults
@@ -1008,13 +1010,24 @@ end)
 -- fake.global.projections.varieties after the wallet's and ahead of every Module's: Pagle.GetVarietiesCaught reads
 -- what it stored, a fresh set each call (VAR-R11). Each time Core would refresh its earned goods (after enterWorld's
 -- done, and after a live Catch that adds a variety) adds one to fake.varietyRefreshes, through Core's own hook
--- (ns.OnVarietiesCaught).
+-- (ns.OnVarietiesCaught). Core's fish crests (VAR-R12) are registered first, as login step 1 does, one per Species with
+-- varieties in the fixture catalogue, their fish named from fake.itemNames as an enUS client names them (less "Raw ");
+-- fake.itemArrived(itemID) is that item's GET_ITEM_INFO_RECEIVED, renaming its crest once fake.itemNames has it.
 part(function(fake, Pagle, ns, host)
 	fake.varietyRefreshes = 0
 	ns.WireVarietyProjection(host, Pagle)
 	ns.OnVarietiesCaught(function()
 		fake.varietyRefreshes = fake.varietyRefreshes + 1
 	end)
+	fake.itemArrived = ns.RegisterFishCrests({
+		species = ns.Catalogue.GetVarietySpecies(),
+		caught = Pagle.GetVarietiesCaught,
+		itemName = function(itemID)
+			return fake.itemNames[itemID]
+		end,
+		dropPrefix = ns.L.FISH_CREST_DROP_PREFIX,
+		owned = Pagle.IsOwned,
+	})
 	ns.StartVarietyProjection()
 end)
 

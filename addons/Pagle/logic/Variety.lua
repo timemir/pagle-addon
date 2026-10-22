@@ -75,6 +75,14 @@ for rarity, entry in ipairs({
 	ns.VARIETY_RARITIES[rarity] = entry
 end
 
+--- The rarity of a variety position (VAR-R2): its ns.VARIETY_RARITIES entry, nil for a position outside 1–10.
+---@param index integer
+---@return PagleVarietyRarity?
+function ns.VarietyRarity(index)
+	local rarity = RARITY_OF[index]
+	return rarity and ns.VARIETY_RARITIES[rarity]
+end
+
 local TWO_32 = 4294967296
 local bxor, rshift, byte = bit.bxor, bit.rshift, string.byte
 
