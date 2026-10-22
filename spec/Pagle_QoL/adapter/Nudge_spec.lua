@@ -35,26 +35,46 @@ local function theNudge(client)
 	return assert(frame), assert(line)
 end
 
--- The font strings and key caps on the strip that show now, left to right, as their texts: a key as "[G]", red words
--- as "*Pagle: Swap gear*".
+-- The font strings and key caps on the strip that show now, left to right: the first anchored to the strip, each
+-- after it to the one before.
+---@param frame table
+---@return table[]
+local function strung(frame)
+	local shown = {}
+	for _, child in ipairs(frame.children) do
+		if child.shown and (child.kind == "FontString" or child.Text) then
+			shown[#shown + 1] = child
+		end
+	end
+	local found, after = {}, frame
+	while true do
+		local nextPiece
+		for _, piece in ipairs(shown) do
+			if piece.points[1][2] == after then
+				nextPiece = piece
+			end
+		end
+		if not nextPiece then
+			return found
+		end
+		found[#found + 1] = nextPiece
+		after = nextPiece
+	end
+end
+
+-- The pieces on the strip that show now, left to right (see strung), as their texts: a key as "[G]", red words as
+-- "*Pagle: Swap gear*".
 ---@param frame table
 ---@return string[]
 local function pieces(frame)
-	local shown = {}
-	for _, child in ipairs(frame.children) do
-		if child.shown and child.kind == "FontString" then
-			local red = child.fontObject.name == "PagleQoLNudgeEm"
-			shown[#shown + 1] = { x = child.points[1][4], text = red and ("*" .. child.text .. "*") or child.text }
-		elseif child.shown and child.Text then
-			shown[#shown + 1] = { x = child.points[1][4], text = "[" .. child.Text.text .. "]" }
-		end
-	end
-	table.sort(shown, function(a, b)
-		return a.x < b.x
-	end)
 	local texts = {}
-	for i, piece in ipairs(shown) do
-		texts[i] = piece.text
+	for i, piece in ipairs(strung(frame)) do
+		if piece.Text then
+			texts[i] = "[" .. piece.Text.text .. "]"
+		else
+			local red = piece.fontObject.name == "PagleQoLNudgeEm"
+			texts[i] = red and ("*" .. piece.text .. "*") or piece.text
+		end
 	end
 	return texts
 end
@@ -98,6 +118,36 @@ describe("A Nudge", function()
 		assert.are.same({ "Still holding your pole. Press", "[s-G]", "to swap back." }, pieces(frame))
 		assert.are.equal(frames, #loaded.client.frames)
 	end)
+
+	it(
+		"sets each piece 8 px past the right end of the one before as it draws, a name in print on the hand's line (QOL-R75)",
+		function()
+			local _, loaded = start()
+			local ns = loaded.ns
+
+			ns.ShowNudge(ns.SwapBackNudge(nil))
+
+			local frame = theNudge(loaded.client)
+			local words, name, rest = unpack(strung(frame))
+			-- 30 px of paper, then each piece's left end on the right end of the one before, so a piece drawn wider than
+			-- it measured never runs into the next; the red words' middle 1 px down, the hand's back on the line.
+			assert.are.same({ "LEFT", frame, "LEFT", 30, 0 }, words.points[1])
+			assert.are.same({ "LEFT", words, "RIGHT", 8, -1 }, name.points[1])
+			assert.are.same({ "LEFT", name, "RIGHT", 8, 1 }, rest.points[1])
+			-- IM Fell English at 19, near the height of Caveat at 24, so it sits on the line, not a small chip in it.
+			assert.are.same(
+				{ "PagleQoLNudgeEm", "Interface\\AddOns\\Pagle\\media\\fonts\\IMFeENrm28P.ttf", 19 },
+				{ name.fontObject.name, name.fontObject.font[1], name.fontObject.font[2] }
+			)
+			assert.are.same({ "PagleQoLNudge", 24 }, { words.fontObject.name, words.fontObject.font[2] })
+
+			ns.ShowNudge(ns.SwapBackNudge("G"))
+			local press, key, back = unpack(strung(frame))
+			-- A key's cap is as wide as it is set, and sits 2 px up.
+			assert.are.same({ "LEFT", press, "RIGHT", 8, 2 }, key.points[1])
+			assert.are.same({ "LEFT", key, "RIGHT", 8, -2 }, back.points[1])
+		end
+	)
 
 	it("shows for 3 s, fades out over 0.5 s, then hides (QOL-R75)", function()
 		local _, loaded = start()

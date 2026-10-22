@@ -318,12 +318,15 @@ end
 ---@field lower Frame what's under the message, moved down by it
 ---@field dropdown Button the Fishing set field
 ---@field choice FontString the set it shows
+---@field list PagleQoLSetList the field's list, open under it after a click
 ---@field field Frame the Swap gear binding field (nav.BindingField)
 ---@field nudge Frame the swap-back Nudge's sample strip
 
 local clothes ---@type PagleQoLClothesPages?
 -- Save's message while it shows: kept until the step is left (ONB-R105).
 local saveMessage ---@type string?
+-- Opens the Fishing set field's list, filled as things are now (below, after refreshClothes, which it calls).
+local openList ---@type fun(list: PagleQoLSetList)
 
 -- A set card on `page` at `x` (the kit's kit()): the guide's card panel, the set's name in small caps, four slots
 -- (each an icon in the atlas's slot ring) and its line in italic.
@@ -405,6 +408,12 @@ local function refreshClothes()
 	local live = ns.CanEditGear()
 	setLive(pages.save, live)
 	setLive(pages.dropdown, live)
+	-- An open list closes as the field greys, and lists the sets as they are now.
+	if not live then
+		pages.list:Hide()
+	elseif pages.list:IsShown() then
+		openList(pages.list)
+	end
 	pages.choice:SetText(choiceLabel())
 	pages.message:SetText(saveMessage or "")
 	pages.message:SetShown(saveMessage ~= nil)
@@ -424,12 +433,195 @@ local function refreshClothes()
 	at(nudge, nudge:GetParent() --[[@as Region]], COLUMN_X / scale, 390.8 / scale)
 end
 
--- The Fishing set field (QOL-R40): the guide's field panel with the set's name and a caret; a click lists None and the
--- character's sets, except *Pagle Previous*, and a pick chooses it as the Fishing page's dropdown does (QOL-R42).
+--- The Fishing set field's list: the field's paper, opened under it, a row per choice. It is the page's own, drawn as
+--- the field promises, not the game's context menu, which is a dark tooltip box hung off the field's side.
+---@class PagleQoLSetList: Frame
+---@field field Button the field it opens under
+---@field nav PagleGuideNav
+---@field paper Texture the page's parchment under the field's panel, so nothing on the page shows through
+---@field rows PagleQoLSetRow[] every row made, reused each time it opens
+
+--- One choice in the list: a wash under the mouse, the choice cards' radio, and the set's name in the field's type.
+---@class PagleQoLSetRow: Button
+---@field wash Texture
+---@field radio Texture
+---@field radioOn Texture
+---@field label FontString
+---@field value integer the set ID it chooses, or ns.NO_FISHING_SET
+
+-- The list's measures: a row's height, the paper's edge around the rows, the gap under the field, where a row's words
+-- start (after its radio) and the room kept right of them.
+local ROW_H, LIST_EDGE, LIST_GAP, ROW_TEXT_X, ROW_TEXT_END = 26, 3, 2, 32, 12
+-- The page's parchment, which the list's paper is cut from (Core's media, as the fonts and the Field atlas are).
+local PARCHMENT = "Interface\\AddOns\\Pagle\\media\\books\\Parchment"
+-- A row under the mouse: the Journal search drop-down's wash, a warm brown at 12%.
+local WASH = rgb("784614")
+-- The owner of the list's watch on the mouse while it is open (a click outside it closes it).
+local LIST_OWNER = "Pagle_QoL guide set list"
+
+-- Shows a row at rest or under the mouse: the wash, and its words in the red pencil (as the guide's links go).
+---@param row PagleQoLSetRow
+---@param over boolean
+local function paintRow(row, over)
+	row.wash:SetShown(over)
+	local ink = over and INKS.red or INKS.title
+	row.label:SetTextColor(ink[1], ink[2], ink[3])
+end
+
+-- A text's full width, however wide the font string is set.
+---@param text FontString
+---@return number
+local function fullWidth(text)
+	if text.GetUnboundedStringWidth then
+		return text:GetUnboundedStringWidth()
+	end
+	return text:GetStringWidth()
+end
+
+-- Row `i` of `list`: made the first time, reused after. A click chooses its set as the Fishing page's dropdown does
+-- (QOL-R40, QOL-R42) and closes the list.
+---@param list PagleQoLSetList
+---@param i integer
+---@return PagleQoLSetRow
+local function rowOf(list, i)
+	local row = list.rows[i]
+	if row then
+		return row
+	end
+	row = CreateFrame("Button", nil, list) --[[@as PagleQoLSetRow]]
+	row.wash = row:CreateTexture(nil, "BACKGROUND")
+	row.wash:SetColorTexture(WASH[1], WASH[2], WASH[3], 0.12)
+	row.wash:SetAllPoints()
+	row.radio = list.nav.Part(row, "radio")
+	place(row.radio, row, 10.8, (ROW_H - 12) / 2)
+	row.radioOn = list.nav.Part(row, "radio-on")
+	place(row.radioOn, row, 10.8, (ROW_H - 12) / 2)
+	row.label = write(row, "print", 14.5, "title", "", ROW_TEXT_X, (ROW_H - 18) / 2, 18)
+	row:SetScript("OnEnter", function(self)
+		paintRow(self, true)
+	end)
+	row:SetScript("OnLeave", function(self)
+		paintRow(self, false)
+	end)
+	row:SetScript("OnClick", function(self)
+		PlaySound(SOUND_CHECK, "SFX")
+		list:Hide()
+		ns.ChooseFishingSet(self.value)
+		refreshClothes()
+	end)
+	list.rows[i] = row
+	return row
+end
+
+-- Whether the mouse is over `list` or its field: the topmost frame under it is one of theirs.
+---@param list PagleQoLSetList
+---@return boolean
+local function mouseOnList(list)
+	local region = GetMouseFoci()[1]
+	while region and not (region.IsForbidden and region:IsForbidden()) do
+		if region == list or region == list.field then
+			return true
+		end
+		region = region:GetParent()
+	end
+	return false
+end
+
+-- Fills the list with None and the character's sets, except *Pagle Previous* (QOL-R40), the chosen one's radio
+-- filled, and opens it under its field: left-aligned with it and as wide, or wider to the left when a name needs it,
+-- up to the column, so it never leaves the page (the field ends at the column's right edge). A name too long even then
+-- is cut. While it is open, a click anywhere but on it or its field closes it.
+function openList(list)
+	local field = list.field
+	local options = ns.ReadFishingSetOptions()
+	local chosen = ns.FishingSetChoice()
+	local widest = 0
+	for i, option in ipairs(options) do
+		local row = rowOf(list, i)
+		row.value = option.value
+		row.label:SetWidth(0)
+		row.label:SetText(option.label)
+		widest = math.max(widest, fullWidth(row.label))
+		row.radio:SetShown(option.value ~= chosen)
+		row.radioOn:SetShown(option.value == chosen)
+		paintRow(row, false)
+		row:Show()
+	end
+	for i = #options + 1, #list.rows do
+		list.rows[i]:Hide()
+	end
+	local fieldWidth = field:GetWidth()
+	local width = math.max(fieldWidth, math.ceil(widest) + ROW_TEXT_X + ROW_TEXT_END + 2 * LIST_EDGE)
+	width = math.min(width, COLUMN)
+	local height = #options * ROW_H + 2 * LIST_EDGE
+	list:SetSize(width, height)
+	list:ClearAllPoints()
+	list:SetPoint("TOPLEFT", field, "BOTTOMLEFT", fieldWidth - width, -LIST_GAP)
+	list.paper:SetTexCoord(0.05, 0.05 + width / 442, 0.3, math.min(1, 0.3 + height / 546))
+	for i = 1, #options do
+		local row = list.rows[i]
+		row:SetSize(width - 2 * LIST_EDGE, ROW_H)
+		at(row, list, LIST_EDGE, LIST_EDGE + (i - 1) * ROW_H)
+		row.label:SetWidth(width - 2 * LIST_EDGE - ROW_TEXT_X - ROW_TEXT_END)
+	end
+	if not InCombatLockdown() then
+		list:SetPropagateKeyboardInput(true)
+	end
+	list:Show()
+	Pagle.RegisterEvent(LIST_OWNER, "GLOBAL_MOUSE_DOWN", function()
+		if not mouseOnList(list) then
+			list:Hide()
+		end
+	end)
+end
+
+-- The Fishing set field's list (see openList), on `parent` above the page's other controls, closed. Esc closes it and
+-- goes no further; every other key goes on to the game. It closes as the page hides, so it is shut when the step
+-- shows again.
+---@param parent Frame
+---@param field Button
+---@param nav PagleGuideNav
+---@return PagleQoLSetList
+local function setList(parent, field, nav)
+	local list = CreateFrame("Frame", nil, parent) --[[@as PagleQoLSetList]]
+	list.field, list.nav, list.rows = field, nav, {}
+	list:SetFrameLevel(parent:GetFrameLevel() + 30)
+	list:EnableMouse(true)
+	-- A shadow a little down and right, the page's parchment, and the field's panel over it.
+	local shadow = list:CreateTexture(nil, "BACKGROUND", nil, -8)
+	shadow:SetColorTexture(0.16, 0.09, 0.03, 0.22)
+	shadow:SetPoint("TOPLEFT", 2, -3)
+	shadow:SetPoint("BOTTOMRIGHT", 2, -3)
+	list.paper = list:CreateTexture(nil, "BACKGROUND", nil, -7)
+	list.paper:SetTexture(PARCHMENT)
+	list.paper:SetAllPoints()
+	nav.Panel(list, "field", 6)
+	list:EnableKeyboard(true)
+	list:SetScript("OnKeyDown", function(self, key)
+		-- Only Esc stops here; the client blocks the call in combat, when the field is greyed and the list shut anyway.
+		if not InCombatLockdown() then
+			self:SetPropagateKeyboardInput(key ~= "ESCAPE")
+		end
+		if key == "ESCAPE" then
+			self:Hide()
+		end
+	end)
+	list:SetScript("OnHide", function(self)
+		Pagle.UnregisterEvent(LIST_OWNER, "GLOBAL_MOUSE_DOWN")
+		-- Hidden with the page, it is shut too.
+		self:Hide()
+	end)
+	list:Hide()
+	return list
+end
+
+-- The Fishing set field (QOL-R40): the guide's field panel with the set's name and a caret; a click opens its list
+-- under it (setList), or closes it.
 ---@param parent Frame
 ---@param nav PagleGuideNav
 ---@return Button dropdown
 ---@return FontString choice
+---@return PagleQoLSetList list
 local function setField(parent, nav)
 	local dropdown = CreateFrame("Button", nil, parent)
 	dropdown:SetSize(272.8, 32)
@@ -437,18 +629,16 @@ local function setField(parent, nav)
 	nav.Panel(dropdown, "field", 6)
 	local choice = write(dropdown, "print", 14.5, "title", "", 10.8, 7, 18)
 	place(nav.Part(dropdown, "caret"), dropdown, 254.8, 9.3)
-	dropdown:SetScript("OnClick", function(self)
+	local list = setList(parent, dropdown, nav)
+	dropdown:SetScript("OnClick", function()
 		PlaySound(SOUND_CLICK, "SFX")
-		MenuUtil.CreateContextMenu(self, function(_, root)
-			for _, option in ipairs(ns.ReadFishingSetOptions()) do
-				root:CreateButton(option.label, function()
-					ns.ChooseFishingSet(option.value)
-					refreshClothes()
-				end)
-			end
-		end)
+		if list:IsShown() then
+			list:Hide()
+		else
+			openList(list)
+		end
 	end)
-	return dropdown, choice
+	return dropdown, choice, list
 end
 
 -- Draws the Fishing clothes step's two pages, once (ONB-R33). Left: the two sets as cards, the arrows between them.
@@ -491,7 +681,7 @@ local function buildClothes(left, right, nav)
 	lower:SetSize(right:GetWidth(), right:GetHeight())
 	at(lower, right, 0, 0)
 	write(lower, "italic", 13.5, "line", L.GUIDE_SAVE_OR, COLUMN_X, 189, 18)
-	local dropdown, choice = setField(lower, nav)
+	local dropdown, choice, list = setField(lower, nav)
 	local field = nav.BindingField(lower, "PAGLE_SWAP_GEAR", L.SETTINGS_SWAP_GEAR)
 	at(field, lower, COLUMN_X, 231.7)
 	write(lower, "italic", 13, "note", L.GUIDE_SAVE_SLOTS, COLUMN_X, 307.7, 17.55, { width = COLUMN })
@@ -506,6 +696,7 @@ local function buildClothes(left, right, nav)
 		lower = lower,
 		dropdown = dropdown,
 		choice = choice,
+		list = list,
 		field = field,
 		nudge = nudge,
 	}
@@ -545,7 +736,10 @@ function ns.RegisterGuideSteps(M)
 		onShow = function()
 			saveMessage = nil
 			if clothes then
-				(clothes.field --[[@as PagleGuideBindingField]]):Refresh()
+				-- The step shows with its list shut.
+				clothes.list:Hide()
+				local field = clothes.field --[[@as PagleGuideBindingField]]
+				field:Refresh()
 			end
 			refreshClothes()
 		end,
