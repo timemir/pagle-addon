@@ -34,7 +34,7 @@ local ns = select(2, ...)
 ---@param speciesID integer
 ---@return integer
 function ns.VarietyCount(getItem, speciesID)
-	local item = getItem(speciesID)
+	local item = getItem(speciesID) --[[@as { varieties: string[]? }?]]
 	local keys = item and item.varieties
 	return type(keys) == "table" and #keys or 0
 end

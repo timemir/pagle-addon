@@ -385,8 +385,9 @@ function ns.NewLedgerFold(lookups)
 					end
 				end
 				-- Its variety, when Core decoded one (VAR-R1, VAR-R4).
-				if catch.variety then
-					ns.CreditVariety(state, record, id, itemID, catch.variety, earned, getItem)
+				local variety = (catch --[[@as { variety: LedgerCatchVariety? }]]).variety
+				if variety then
+					ns.CreditVariety(state, record, id, itemID, variety, earned, getItem)
 				end
 			end
 			ns.CreditSizeRecord(state, class, id, record, catch, earned)
