@@ -16,8 +16,8 @@ local ns = select(2, ...)
 local CORE = "Interface\\AddOns\\Pagle\\media\\books\\"
 local OWN = "Interface\\AddOns\\Pagle_Hunts\\media\\books\\"
 
---- The leather's grain (tiled, 128 UI units a repeat) and the page paper, whole textures.
-ns.BOOK_FILES = { leather = CORE .. "Leather", parchment = CORE .. "Parchment" }
+--- The page paper, a whole texture. The leather is Core's binding renderer's (ADR 0015).
+ns.BOOK_FILES = { parchment = CORE .. "Parchment" }
 
 -- The expansion kit's sprites (goods.json): TrackerFrames2's frames, 556 x 440 texels at 2, the frame 262 x 200 in it.
 -- The covers' closed notebooks and fills are Core's now, as every binding's art is (ADR 0015).
@@ -36,16 +36,14 @@ end
 
 ---@type table<string, HuntsArtAtlas>
 ns.ATLASES = {
-	-- The book shell: the binding band (a nine-slice), the leather's vignette, the wax seal and its "not yet" ring,
-	-- the wax close button, the brass nameplate (a three-slice), the fleuron and the spine's gutter.
+	-- The book shell: the wax seal and its "not yet" ring, the wax close button, the brass nameplate (a three-slice),
+	-- the fleuron and the spine's gutter. The band and vignette are Core's binding renderer's (ADR 0015).
 	Book = {
 		file = CORE .. "BookAtlas",
 		width = 512,
 		height = 256,
 		scale = 2,
 		sprites = {
-			["binding"] = { x = 2, y = 2, w = 96, h = 96, box = { 0, 0, 48, 48 } },
-			["vignette"] = { x = 102, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
 			["seal"] = { x = 234, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
 			["seal-empty"] = { x = 366, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
 			["close"] = { x = 2, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
