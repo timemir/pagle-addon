@@ -7,8 +7,9 @@ local ns = select(2, ...)
 
 -- The books art kit's atlases (the Stats book and the Hunts board, post-1.0 art): texel rectangles in its textures, 2
 -- texels per UI unit. `box` is where the drawn element sits in its sprite, in UI units from the sprite's top left (x,
--- y, w, h): code places the box, and the sprite's margin carries its shadow or glow. The book shell (leather,
--- parchment, the binding and wax atlas) and the kit's parts are Core's media (Pagle/media/books), which Hunts reads too;
+-- y, w, h): code places the box, and the sprite's margin carries its shadow or glow. The book shell (parchment
+-- and the wax atlas) and the kit's parts are Core's media (Pagle/media/books), which Hunts reads too, and the leather is
+-- Core's binding (Pagle.NewBookBinding);
 -- each tracker frame is Stats' own (Pagle_Stats/media/books), so a tracker loads only the frame it wears. Repacked from
 -- the kit's BookParts.tga (art/books/generate.py in the dev's kit) with its tracker frames split out; the textures are
 -- BLP (DXT5), encoded by scripts/encode-blp.py.
@@ -16,21 +17,19 @@ local ns = select(2, ...)
 local CORE = "Interface\\AddOns\\Pagle\\media\\books\\"
 local OWN = "Interface\\AddOns\\Pagle_Stats\\media\\books\\"
 
---- The leather's grain (tiled, 128 UI units a repeat) and the page paper, whole textures.
-ns.BOOK_FILES = { leather = CORE .. "Leather", parchment = CORE .. "Parchment" }
+--- The page paper, a whole texture.
+ns.BOOK_FILES = { parchment = CORE .. "Parchment" }
 
 ---@type table<string, StatsArtAtlas>
 ns.ATLASES = {
-	-- The book shell: the binding band (a nine-slice), the leather's vignette, the wax seal and its "not yet" ring,
-	-- the wax close button, the brass nameplate (a three-slice), the fleuron and the spine's gutter.
+	-- The book shell: the wax seal and its "not yet" ring, the wax close button, the brass nameplate (a three-slice),
+	-- the fleuron and the spine's gutter.
 	Book = {
 		file = CORE .. "BookAtlas",
 		width = 512,
 		height = 256,
 		scale = 2,
 		sprites = {
-			["binding"] = { x = 2, y = 2, w = 96, h = 96, box = { 0, 0, 48, 48 } },
-			["vignette"] = { x = 102, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
 			["seal"] = { x = 234, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
 			["seal-empty"] = { x = 366, y = 2, w = 128, h = 128, box = { 0, 0, 64, 64 } },
 			["close"] = { x = 2, y = 136, w = 64, h = 64, box = { 0, 0, 32, 32 } },
@@ -42,7 +41,7 @@ ns.ATLASES = {
 		},
 	},
 	-- The kit's parts: the grosgrain ribbon and its stitch, chips, the pinned pill, item rings, tier marks, the ink
-	-- bar, the timeline's bars, the pin, the brass corner, the luck ruler's mark and the star.
+	-- bar, the timeline's bars, the pin, the luck ruler's mark and the star.
 	Parts = {
 		file = CORE .. "BookParts",
 		width = 512,
@@ -57,7 +56,6 @@ ns.ATLASES = {
 			["chip-here"] = { x = 218, y = 470, w = 244, h = 48, box = { 1, 1, 120, 22 } },
 			["chip-red"] = { x = 218, y = 522, w = 244, h = 48, box = { 1, 1, 120, 22 } },
 			["chip-unc"] = { x = 218, y = 574, w = 244, h = 48, box = { 1, 1, 120, 22 } },
-			["corner"] = { x = 402, y = 818, w = 76, h = 76, box = { 0, 0, 34, 34 } },
 			["ic-pin"] = { x = 450, y = 898, w = 28, h = 28, box = { 1, 1, 12, 12 } },
 			["ic-ring"] = { x = 250, y = 354, w = 56, h = 56, box = { 3, 3, 22, 22 } },
 			["ic-ring-bronze"] = { x = 390, y = 898, w = 56, h = 56, box = { 3, 3, 22, 22 } },

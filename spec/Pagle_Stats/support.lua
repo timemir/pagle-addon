@@ -88,6 +88,38 @@ function support.catalogue()
 	return dofile(FIXTURE_CATALOGUE)
 end
 
+--- Field Leather's look as the book reads it (logic/Bindings.lua's ns.BindingLook): what the stand-in below wears.
+support.FIELD_LOOK = {
+	gilt = { 0.91, 0.79, 0.42 },
+	giltShadow = { 0, 0, 0, 0.95, 0, -1 },
+	silver = false,
+	paperTint = { 1, 1, 1 },
+}
+
+-- A stand-in for Core's binding renderer (#351, core/book-binding.md) on a FakePagle that lacks it: it wears Field
+-- Leather, hands the book that look at once as Core's does (BIND-R3), and keeps the book's `onLook` where Core's
+-- handle does, so a spec can hand it another look. The fake's own renderer wins wherever it has one.
+---@param fake table
+local function standInBinding(fake)
+	if fake.Pagle.NewBookBinding then
+		return
+	end
+	fake.Pagle.NewBookBinding = function(_, options)
+		options = options or {}
+		local binding = { pinned = options.pinned, onLook = options.onLook, look = support.FIELD_LOOK }
+		function binding.Look(self)
+			return self.look
+		end
+		function binding.SetLook(self, goodID)
+			self.pinned = goodID
+		end
+		if binding.onLook then
+			binding.onLook(binding.look)
+		end
+		return binding
+	end
+end
+
 --- Loads Pagle_Stats on `fake` (a new FakePagle if nil), serving `options.catalogue` or else the fixture catalogue
 --- through fake.setCatalogue first, so Stats reads it from OnInitialize on. Stats' GetServerTime is the fake's clock
 --- (fake.serverTime), so fake.wait moves it; a spec may still pin it. `options.prepare(loaded)` runs after Stats'
@@ -101,6 +133,7 @@ end
 ---@return table fake
 function support.load(fake, options)
 	fake = fake or newFakePagle()
+	standInBinding(fake)
 	options = options or {}
 	fake.profile.announcements.motion = options.motion == true
 	fake.setCatalogue(options.catalogue or support.catalogue())
