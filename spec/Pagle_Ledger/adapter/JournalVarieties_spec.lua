@@ -109,37 +109,53 @@ local function rows(loaded)
 	return list
 end
 
-describe("the fish spread's varieties (VAR-R23)", function()
-	it('shows "Varieties", "{n} of 10" and "See all ten »" under the checklist', function()
+describe("a fish's varieties card (VAR-R23)", function()
+	it("shows the card in the fish spread's entry, under First landed, its words, art and ten pips drawn", function()
 		local _, loaded = loggedIn({ "fish", MACKEREL })
 
-		local right = loaded.ns.journal.pages.right
-
+		local card = assert(blockOfKind(loaded.ns.journal.pages.left, "varietyCard"))
 		assert.are.same({
-			{ kind = "kicker", text = "Varieties", value = "3 of 10" },
-			{
-				kind = "link",
-				text = "See all ten »",
-				place = { id = "varieties", args = { species = MACKEREL, variety = 1 } },
-			},
-		}, { right[#right - 1], right[#right] })
+			"Varieties",
+			"3 of 10 found",
+			"See all ten »",
+			{ id = "varieties", args = { species = MACKEREL, variety = 1 } },
+		}, { card.text, card.value, card.link, card.place })
+		assert.is_nil(blockOfKind(loaded.ns.journal.pages.right, "varietyCard"))
+		local widget = loaded.ns.journal.frame.left.drawn.varietyCard[1]
+		assert.are.same(
+			{ "Varieties", "3 of 10 found", "See all ten »" },
+			{ widget.kicker.text, widget.count.text, widget.link.text }
+		)
+		assert.is_true(widget.art:IsShown())
+		local filled = 0
+		for _, pip in ipairs(widget.pips) do
+			if pip.color and pip.color[4] == 1 then
+				filled = filled + 1
+			end
+		end
+		assert.are.equal(3, filled)
 	end)
 
-	it("shows neither for a Species without varieties", function()
+	it("shows the card on the zone spread with the fish selected, the way there from a zone", function()
+		local _, loaded = loggedIn({ "zone", WESTFALL, MACKEREL })
+
+		assert.is_not_nil(blockOfKind(loaded.ns.journal.pages.right, "varietyCard"))
+	end)
+
+	it("shows no card for a Species without varieties", function()
 		local _, loaded = loggedIn({ "fish", NIGHTFISH })
 
-		assert.is_nil(blockOfKind(loaded.ns.journal.pages.right, "link"))
+		assert.is_nil(blockOfKind(loaded.ns.journal.pages.left, "varietyCard"))
 		for _, block in ipairs(loaded.ns.journal.pages.right) do
 			assert.are_not.equal("Varieties", block.text)
 		end
 	end)
 
-	it("turns to the varieties spread from the link, and back to the fish spread (LED-R125)", function()
+	it("turns to the varieties spread from the card, and back to the fish spread (LED-R125)", function()
 		local _, loaded = loggedIn({ "fish", MACKEREL })
 		local journal = loaded.ns.journal
 
-		local links = journal.frame.right.drawn.link
-		links[#links]:Click()
+		journal.frame.left.drawn.varietyCard[1]:Click()
 
 		assert.are.equal("varieties", journal.router:Place().id)
 		assert.are.same(

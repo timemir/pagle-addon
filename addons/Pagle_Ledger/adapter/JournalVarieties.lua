@@ -237,3 +237,104 @@ ns.RegisterJournalWidget("fishCrest", function(parent)
 	end
 	return widget
 end)
+
+-- The varieties card: a zone tile's paper (its 76 high), the art's size and place at its left, where its words and
+-- its ten pips start, a pip's size and the step between pips.
+local CARD_H, CARD_GAP = 76, 6
+local CARD_ART_W, CARD_ART_H, CARD_ART_X = 104, 52, 10
+local CARD_WORDS_X, PIP, PIP_STEP = 126, 10, 15
+-- An uncaught variety's pip: its rarity's ink, faint (VAR-R27 gives no more than the rarity).
+local PIP_GHOST = 0.22
+
+---@class LedgerVarietyCardWidget: LedgerJournalWidget
+---@field face LedgerThreeSlice?
+---@field hover LedgerThreeSlice?
+---@field cardW number?
+---@field art Texture
+---@field kicker FontString
+---@field count FontString
+---@field link FontString
+---@field pips Texture[]
+
+-- The varieties card in a caught fish's entry (VAR-R23): a raised paper card the page wide, as a zone tile, with the
+-- first caught variety's art at its left, "Varieties" in small capitals, "{n} of 10 found" in the hand, the ten as
+-- pips in their rarities' inks (filled once caught, faint until then) and "See all ten »" at its top right. The whole
+-- card opens the varieties spread; under the mouse it lifts as a tile does and the link turns red.
+ns.RegisterJournalWidget("varietyCard", function(parent)
+	local widget = ns.NewJournalWidget(parent) --[[@as LedgerVarietyCardWidget]]
+	ns.JournalClickable(widget)
+	widget.art = ns.JournalCrisp(widget:CreateTexture(nil, "ARTWORK"))
+	widget.art:SetSize(CARD_ART_W, CARD_ART_H)
+	widget.texture = widget.art
+	widget.kicker = ns.JournalLabel(widget, "sc", 14, INK.kicker)
+	widget.label = widget.kicker
+	widget.count = ns.JournalLabel(widget, "hand", 20, INK.hand)
+	widget.link = ns.JournalLabel(widget, "print", 14, INK.link, "", { justify = "RIGHT" })
+	widget.pips = {}
+	for i = 1, 10 do
+		local pip = widget:CreateTexture(nil, "ARTWORK", nil, 1)
+		pip:SetSize(PIP, PIP)
+		local mask = widget:CreateMaskTexture()
+		mask:SetTexture(
+			"Interface\\CharacterFrame\\TempPortraitAlphaMask",
+			"CLAMPTOBLACKADDITIVE",
+			"CLAMPTOBLACKADDITIVE"
+		)
+		mask:SetAllPoints(pip)
+		pip:AddMaskTexture(mask)
+		widget.pips[i] = pip
+	end
+	widget:SetScript("OnEnter", function(self)
+		if self.hover then
+			self.hover:Show()
+			self.face:Hide()
+		end
+		self.link:SetTextColor(rgb(INK.red))
+	end)
+	widget:SetScript("OnLeave", function(self)
+		if self.hover then
+			self.hover:Hide()
+			self.face:Show()
+		end
+		self.link:SetTextColor(rgb(INK.link))
+	end)
+	function widget.Fill(self, block, width, open)
+		self.place, self.open = block.place, open
+		if self.cardW ~= width then
+			-- the tile's paper, made again for a page of another width
+			if self.face then
+				self.face:Hide()
+				self.hover:Hide()
+			end
+			self.face = ns.JournalThreeSlice(self, "Parts", "tile", width, 6, "BACKGROUND")
+			self.hover = ns.JournalThreeSlice(self, "Parts", "tile-hover", width, 6, "BACKGROUND")
+			ns.JournalAt(self.face, self, 0, CARD_GAP)
+			ns.JournalAt(self.hover, self, 0, CARD_GAP)
+			self.cardW = width
+		end
+		self.face:Show()
+		self.hover:Hide()
+		ns.JournalVarietyArt(self.art, block.art)
+		ns.JournalAt(self.art, self, CARD_ART_X, CARD_GAP + (CARD_H - CARD_ART_H) / 2)
+		local x = block.art and CARD_WORDS_X or CARD_ART_X + 2
+		self.kicker:SetText(block.text or "")
+		ns.JournalAt(self.kicker, self, x, CARD_GAP + 10)
+		self.count:SetText(block.value or "")
+		ns.JournalAt(self.count, self, x, CARD_GAP + 26)
+		self.link:SetText(block.link or "")
+		self.link:SetTextColor(rgb(INK.link))
+		self.link:ClearAllPoints()
+		self.link:SetPoint("TOPRIGHT", self, "TOPRIGHT", -10, -(CARD_GAP + 10))
+		ns.JournalBound(self.kicker, math.max(10, width - x - self.link:GetStringWidth() - 20))
+		for i, pip in ipairs(self.pips) do
+			local data = block.pips and block.pips[i]
+			pip:SetShown(data ~= nil)
+			if data then
+				pip:SetColorTexture(data.ink[1], data.ink[2], data.ink[3], data.inked and 1 or PIP_GHOST)
+				ns.JournalAt(pip, self, x + (i - 1) * PIP_STEP, CARD_GAP + 56)
+			end
+		end
+		return CARD_H + 2 * CARD_GAP
+	end
+	return widget
+end)

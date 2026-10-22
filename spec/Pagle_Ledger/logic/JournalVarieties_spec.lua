@@ -1,4 +1,4 @@
--- The Journal's fish varieties with no Core (VAR-R23, VAR-R24, VAR-R27): the fish spread's Varieties lines and the
+-- The Journal's fish varieties with no Core (VAR-R23, VAR-R24, VAR-R27): the varieties card in a fish's entry and the
 -- varieties spread's pages as data, over a hand-made Ledger state, a Species' ten as Pagle.GetVarieties lists them and
 -- the rarities as Pagle.VARIETY_RARITIES does.
 
@@ -113,18 +113,42 @@ describe("the Journal's fish varieties", function()
 		return found
 	end
 
-	describe("on the fish spread (VAR-R23)", function()
-		it('adds "Varieties" with "{n} of 10" and the link to the varieties spread, on the first caught', function()
-			assert.are.same({
-				{ kind = "kicker", text = "Varieties", value = "3 of 10" },
-				{ kind = "link", text = "See all ten »", place = ns.JournalPlace.varieties(FISH, 1) },
-			}, ns.JournalFishVarieties(FISH, contextWith()))
+	describe("in a caught fish's entry (VAR-R23)", function()
+		it(
+			"adds the varieties card: its count, a pip per variety in its rarity's ink and the first caught's art",
+			function()
+				local pips = {}
+				for index = 1, 10 do
+					pips[index] =
+						{ ink = RARITIES[RARITY_OF[index]].ink, inked = index == 1 or index == 2 or index == 8 }
+				end
+				assert.are.same({
+					{
+						kind = "varietyCard",
+						text = "Varieties",
+						value = "3 of 10 found",
+						link = "See all ten »",
+						art = variety(FISH, 1).art,
+						pips = pips,
+						place = ns.JournalPlace.varieties(FISH, 1),
+					},
+				}, ns.JournalFishVarieties(FISH, contextWith()))
+			end
+		)
+
+		it("opens the varieties spread on the first caught variety, in order, and shows its art", function()
+			local card = ns.JournalFishVarieties(FISH, contextWith({ [9] = 1, [5] = 2 }))[1]
+
+			assert.are.same(ns.JournalPlace.varieties(FISH, 5), card.place)
+			assert.are.same(variety(FISH, 5).art, card.art)
 		end)
 
-		it("opens the varieties spread on the first caught variety, in order", function()
-			local lines = ns.JournalFishVarieties(FISH, contextWith({ [9] = 1, [5] = 2 }))
+		it("names no uncaught variety: its pip carries only its rarity's ink (VAR-R27)", function()
+			local card = ns.JournalFishVarieties(FISH, contextWith({ [1] = 1 }))[1]
 
-			assert.are.same(ns.JournalPlace.varieties(FISH, 5), lines[2].place)
+			for _, text in ipairs(strings(card)) do
+				assert(not text:find("Colour [2-9]"), text)
+			end
 		end)
 
 		it("shows nothing for a Species without varieties, nor for one never caught", function()
