@@ -208,8 +208,8 @@ describe("the toast styles", function()
 	)
 
 	it(
-		"write the size ruler's label and number in a dark style's `small` ink on every page and the Nod, and in the"
-			.. " ledger's inks for a style without one (ANN-R81)",
+		"write the size ruler's label and number in each expansion style's own `small` ink on every page and the Nod,"
+			.. " and in the ledger's inks for a style without one (ANN-R81)",
 		function()
 			local function rulerInks(id)
 				local style, out = ns.ToastStyleOf(id), {}
@@ -228,8 +228,9 @@ describe("the toast styles", function()
 			-- Moonlit Vellum and Oxblood Vellum: light ink on a dark page.
 			assert.are.same(each(ns.Rgb("B0BCD8"), ns.Rgb("B0BCD8")), rulerInks("core.toaststyle.moon"))
 			assert.are.same(each(ns.Rgb("E0C8A0"), ns.Rgb("E0C8A0")), rulerInks("ledger.toaststyle.prestige"))
-			-- Ship's Log and Torn Page have none: the ledger's brown.
-			assert.are.same(each(ink("ink2"), ink("ink")), rulerInks("core.toaststyle.ship"))
+			-- Ship's Log, on a light page: its own dark navy, the kit's #14202e.
+			assert.are.same(each(ns.Rgb("14202E"), ns.Rgb("14202E")), rulerInks("core.toaststyle.ship"))
+			-- Torn Page, one of the first three, has none: the ledger's brown.
 			assert.are.same(each(ink("ink2"), ink("ink")), rulerInks(TORN_PAGE))
 		end
 	)
