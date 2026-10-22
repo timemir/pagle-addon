@@ -21,6 +21,8 @@ local Pagle = Pagle
 ---| "AppearanceChanged" # PagleAppearanceChangedHandler
 ---| "SessionStarted" # PagleSessionStartedHandler
 ---| "SessionEnded" # PagleSessionEndedHandler
+---| "GuideOpened" # the Field guide opened (core/onboarding.md › Contracts): no payload
+---| "GuideClosed" # the Field guide closed: (stepId), the step it was on
 ---| string
 
 ---@class Pagle
