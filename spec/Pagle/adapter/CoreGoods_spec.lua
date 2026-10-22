@@ -30,83 +30,87 @@ describe("Core's slots and goods", function()
 		})
 	end)
 
-	it("register the three slots first, in the Curio Shop's categories, with every good's tier (SHOP-R25)", function()
-		local loaded = loadCore()
-		loaded.client.fire("PLAYER_LOGIN")
-		local goods = loaded.ns.goods
-		local Pagle = loaded.env.Pagle
+	it(
+		"register the three slots first, in the Curio Shop's categories, with every good's tier, the crest slot holding Plain alone (SHOP-R25)",
+		function()
+			local loaded = loadCore()
+			loaded.client.fire("PLAYER_LOGIN")
+			local goods = loaded.ns.goods
+			local Pagle = loaded.env.Pagle
 
-		local slots = {}
-		for _, slot in ipairs(goods:Slots()) do
-			local list = {}
-			for _, good in ipairs(goods:GoodsOf(slot.id)) do
-				list[#list + 1] = good.id .. " " .. (good.default and "default" or "tier " .. tostring(good.tier))
+			local slots = {}
+			for _, slot in ipairs(goods:Slots()) do
+				local list = {}
+				for _, good in ipairs(goods:GoodsOf(slot.id)) do
+					list[#list + 1] = good.id .. " " .. (good.default and "default" or "tier " .. tostring(good.tier))
+				end
+				slots[#slots + 1] = { slot.id, slot.label, slot.category, slot.module, list }
 			end
-			slots[#slots + 1] = { slot.id, slot.label, slot.category, slot.module, list }
-		end
 
-		assert.are.same({
-			{
-				"core.toaststyle",
-				"Toast style",
-				"Announcements",
-				"Core",
+			assert.are.same({
 				{
-					"core.toaststyle.page default",
-					"core.toaststyle.ripple tier 1",
-					"core.toaststyle.lanternglow tier 2",
+					"core.toaststyle",
+					"Toast style",
+					"Announcements",
+					"Core",
+					{
+						"core.toaststyle.page default",
+						"core.toaststyle.ripple tier 1",
+						"core.toaststyle.lanternglow tier 2",
+					},
 				},
-			},
-			{
-				"core.soundset",
-				"Sound set",
-				"Announcements",
-				"Core",
-				{ "core.soundset.driftwood default", "core.soundset.gilded tier 2" },
-			},
-			{
-				"core.crest",
-				"Bookplate crest",
-				"Bookplate",
-				"Core",
 				{
-					"core.crest.plain default",
-					"core.crest.elwynn tier 1",
-					"core.crest.westfall tier 1",
-					"core.crest.darkshore tier 1",
-					"core.crest.redridge tier 2",
-					"core.crest.wetlands tier 2",
-					"core.crest.stranglethorn tier 2",
-					"core.crest.dustwallow tier 2",
-					"core.crest.feralas tier 3",
-					"core.crest.tanaris tier 3",
-					"core.crest.winterspring tier 3",
+					"core.soundset",
+					"Sound set",
+					"Announcements",
+					"Core",
+					{ "core.soundset.driftwood default", "core.soundset.gilded tier 2" },
 				},
-			},
-		}, slots)
-		assert.are.same({ false, false, false }, {
-			Pagle.IsOwned("core.toaststyle.ripple"),
-			Pagle.IsOwned("core.soundset.gilded"),
-			Pagle.IsOwned("core.crest.feralas"),
-		})
-	end)
+				{
+					"core.crest",
+					"Bookplate crest",
+					"Bookplate",
+					"Core",
+					{ "core.crest.plain default" },
+				},
+			}, slots)
+			assert.are.same({ false, false }, {
+				Pagle.IsOwned("core.toaststyle.ripple"),
+				Pagle.IsOwned("core.soundset.gilded"),
+			})
+			-- Only the crest slot is open to other Modules' earned goods, the Ledger's zone crests (SHOP-R23, SHOP-R25).
+			local open = {}
+			for _, slot in ipairs(goods:Slots()) do
+				open[#open + 1] = slot.openToEarned == true
+			end
+			assert.are.same({ false, false, true }, open)
+		end
+	)
 
 	it(
-		"tell Pagle.GetGood's readers that Plain is the crest slot's default, a crest no one bought (SHOP-R25)",
+		"tell Pagle.GetGood's readers that Plain is the crest slot's default, and another Module's crest isn't (SHOP-R25)",
 		function()
 			local loaded = loadCore()
 			loaded.client.fire("PLAYER_LOGIN")
 			local Pagle = loaded.env.Pagle
+			assert.is_nil(loaded.ns.goods:RegisterGood("Ledger", {
+				id = "ledger.crest.elwynn",
+				slot = "core.crest",
+				name = "The Old Oak",
+				isEarned = function()
+					return true
+				end,
+			}))
 
 			assert.are.same({ true, false }, {
 				Pagle.GetGood(Pagle.GetEquipped("core.crest")).isDefault,
-				Pagle.GetGood("core.crest.elwynn").isDefault,
+				Pagle.GetGood("ledger.crest.elwynn").isDefault,
 			})
 		end
 	)
 
 	it(
-		"each have an icon, the Curio Shop's swatch: a crest's is Core's own texture, the rest in-client (SHOP-R25, wallet-and-shop.md › UI)",
+		"each have an icon, the Curio Shop's swatch: Plain's is Core's own texture, the rest in-client (SHOP-R25, wallet-and-shop.md › UI)",
 		function()
 			local loaded = loadCore()
 			loaded.client.fire("PLAYER_LOGIN")
@@ -127,37 +131,37 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 16, {} }, { count, without })
+			assert.are.same({ 6, {} }, { count, without })
 		end
 	)
 end)
 
 describe("Core's goods' names", function()
 	it("are each good's ID, with no description, while its lore key has no text (SHOP-R25, DATA-R104)", function()
-		local loaded = loadCoreWithLore() -- the fixture has no key for redridge
+		local loaded = loadCoreWithLore() -- the fixture has no key for Lantern Glow
 
 		assert.are.same({
-			name = "core.crest.redridge",
-			slot = "core.crest",
-			icon = "Interface\\AddOns\\Pagle\\media\\crests\\redridge",
+			name = "core.toaststyle.lanternglow",
+			slot = "core.toaststyle",
+			icon = "Interface\\Icons\\INV_Misc_Lantern_01",
 			module = "Core",
 			isDefault = false,
-		}, loaded.env.Pagle.GetGood("core.crest.redridge"))
+		}, loaded.env.Pagle.GetGood("core.toaststyle.lanternglow"))
 	end)
 
 	it("are read from lore, good.<goodID>.name and .description, once Lore.lua has them (DATA-R101)", function()
 		local loaded = loadCoreWithLore()
 		local Pagle = loaded.env.Pagle
 
-		local crest = Pagle.GetGood("core.crest.elwynn")
+		local ripple = Pagle.GetGood("core.toaststyle.ripple")
 		local gilded = Pagle.GetGood("core.soundset.gilded")
 		assert.are.same(
-			{ "Leaping Trout", "A trout mid-leap, on the bookplate of your Journal." },
-			{ crest.name, crest.description }
+			{ "Leaping Trout", "A trout mid-leap, rings spreading under it." },
+			{ ripple.name, ripple.description }
 		)
 		assert.are.same({ "Gilded", nil }, { gilded.name, gilded.description })
-		assert.are.equal("core.crest.redridge", Pagle.GetGood("core.crest.redridge").name)
-		assert.are.equal("Leaping Trout", loaded.env.PagleDB.global.goods["core.crest.elwynn"].name) -- SHOP-R26
+		assert.are.equal("core.toaststyle.lanternglow", Pagle.GetGood("core.toaststyle.lanternglow").name)
+		assert.are.equal("Leaping Trout", loaded.env.PagleDB.global.goods["core.toaststyle.ripple"].name) -- SHOP-R26
 	end)
 end)
 
@@ -212,26 +216,29 @@ local function stageOf()
 end
 
 describe("Core's goods' previews", function()
-	it("give each crest its own shipped texture, the look the Ledger draws (SHOP-R25, LED-R112)", function()
-		local loaded = loadCore()
-		loaded.client.fire("PLAYER_LOGIN")
+	it(
+		"give Plain, Core's one crest, its own shipped texture, the look the Ledger draws (SHOP-R25, LED-R112)",
+		function()
+			local loaded = loadCore()
+			loaded.client.fire("PLAYER_LOGIN")
 
-		local missing = {}
-		for _, good in ipairs(loaded.ns.goods:GoodsOf("core.crest")) do
-			local file =
-				loaded.env.Pagle.GetGood(good.id).icon:match("^Interface\\AddOns\\Pagle\\(media\\crests\\%a+)$")
-			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-			local handle = file and io.open("addons/Pagle/" .. file:gsub("\\", "/") .. ".blp", "rb")
-			if handle then
-				handle:close()
-			else
-				missing[#missing + 1] = good.id
+			local missing = {}
+			for _, good in ipairs(loaded.ns.goods:GoodsOf("core.crest")) do
+				local file =
+					loaded.env.Pagle.GetGood(good.id).icon:match("^Interface\\AddOns\\Pagle\\(media\\crests\\%a+)$")
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+				local handle = file and io.open("addons/Pagle/" .. file:gsub("\\", "/") .. ".blp", "rb")
+				if handle then
+					handle:close()
+				else
+					missing[#missing + 1] = good.id
+				end
 			end
-		end
 
-		assert.are.same({}, missing)
-		assert.are.equal(11, #loaded.ns.goods:GoodsOf("core.crest"))
-	end)
+			assert.are.same({}, missing)
+			assert.are.equal(1, #loaded.ns.goods:GoodsOf("core.crest"))
+		end
+	)
 
 	it("play a sound set's toast, its banner and the shared Legend sting from its buttons (ANN-R72)", function()
 		local loaded, stage = stageOf()
@@ -270,35 +277,42 @@ describe("Core's goods' previews", function()
 		assert.are.same({ "Interface\\Icons\\INV_Misc_Drum_01" }, texturesOn(stage))
 	end)
 
-	it("draw a crest on a small bookplate with the Angler's name (wallet-and-shop.md › UI)", function()
-		local loaded, stage = stageOf()
-		local goods = loaded.ns.goods
+	it(
+		"draw another Module's crest, with the crest slot's preview, on a small bookplate with the Angler's name (SHOP-R25, wallet-and-shop.md › UI)",
+		function()
+			local loaded, stage = stageOf()
+			local goods = loaded.ns.goods
+			local REDRIDGE = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\redridge"
+			local crestSlot = goods:Slots()[3]
+			assert.are.equal("core.crest", crestSlot.id)
 
-		goods:Good("core.soundset.gilded").preview(stage)
-		goods:Good("core.crest.redridge").preview(stage)
+			goods:Good("core.soundset.gilded").preview(stage)
+			goods:Good("core.crest.plain").preview(stage)
+			crestSlot.preview(stage, { id = "ledger.crest.redridge", icon = REDRIDGE })
 
-		assert.are.same({ "Interface\\AddOns\\Pagle\\media\\crests\\redridge" }, texturesOn(stage))
-		local shown = {}
-		for _, text in ipairs({ "Ex Libris", "Angler", "On the Fish Journal's bookplate.", "» Toast" }) do
-			shown[#shown + 1] = withText(stage, text) ~= nil
-		end
-		assert.are.same({ true, true, true, false }, shown)
-		-- The plate is scaled so its top inset, the plate and the note under it (10 below, one 14-high line) fit the
-		-- Curio Shop's 190-high stage.
-		local plate = withText(stage, "Ex Libris").parent
-		assert.are.equal(0.85, plate:GetScale())
-		assert.is_true((16 + 170) * plate:GetScale() + 10 + 14 <= 190)
-		-- the crest's shield, 60 x 70 where the icon stood, cropped to the shield and drawn square, not masked round
-		local crest
-		for _, widget in ipairs(shownOn(stage)) do
-			if widget.texture == "Interface\\AddOns\\Pagle\\media\\crests\\redridge" then
-				crest = widget
+			assert.are.same({ REDRIDGE }, texturesOn(stage))
+			local shown = {}
+			for _, text in ipairs({ "Ex Libris", "Angler", "On the Fish Journal's bookplate.", "» Toast" }) do
+				shown[#shown + 1] = withText(stage, text) ~= nil
 			end
+			assert.are.same({ true, true, true, false }, shown)
+			-- The plate is scaled so its top inset, the plate and the note under it (10 below, one 14-high line) fit the
+			-- Curio Shop's 190-high stage.
+			local plate = withText(stage, "Ex Libris").parent
+			assert.are.equal(0.85, plate:GetScale())
+			assert.is_true((16 + 170) * plate:GetScale() + 10 + 14 <= 190)
+			-- the crest's shield, 60 x 70 where the icon stood, cropped to the shield and drawn square, not masked round
+			local crest
+			for _, widget in ipairs(shownOn(stage)) do
+				if widget.texture == REDRIDGE then
+					crest = widget
+				end
+			end
+			assert.are.same({ 60, 70 }, { crest:GetSize() })
+			assert.are.same({ 0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1 }, crest.texCoord)
+			assert.is_nil(crest.masks)
 		end
-		assert.are.same({ 60, 70 }, { crest:GetSize() })
-		assert.are.same({ 0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1 }, crest.texCoord)
-		assert.is_nil(crest.masks)
-	end)
+	)
 
 	it("draw a toast style with the drawer its slot has when it is drawn, added after login (ANN-R80)", function()
 		local loaded, stage = stageOf()

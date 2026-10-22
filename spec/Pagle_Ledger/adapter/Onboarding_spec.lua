@@ -93,6 +93,25 @@ describe("the Ledger's onboarding", function()
 		)
 
 		it(
+			"pins the zone crest the Angler wears on the step's crest, the Ledger's own texture (ONB-R36, LED-R112, LED-R113)",
+			function()
+				local fake, loaded = ledger(nil, {
+					globals = {
+						PagleLedgerDB = { global = { celebrated = { zones = { [ELWYNN] = 5 }, logId = "log" } } },
+					},
+				})
+				assert.is_true(fake.Pagle.IsOwned("ledger.crest.elwynn")) -- its zone celebrated at Master (LED-R114)
+				assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.elwynn"))
+
+				ledgerStep(fake)
+
+				local pin = loaded.ns.guideLedger.crest.pin
+				assert.is_true(pin:IsShown())
+				assert.are.equal("Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn", pin.shield.texture)
+			end
+		)
+
+		it(
 			"shows the box of Skill Milestones on the right, from the Ledger's state: 75 ticked with its XP, 150 with "
 				.. "its skill to go, 225 and 300 for later; then the account paragraph and the note (ONB-R36, LED-R40)",
 			function()

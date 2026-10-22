@@ -1119,14 +1119,29 @@ describe("FakePagle", function()
 				Pagle.GetEquipped("core.crest"),
 			})
 			-- Named from Core's committed lore, as Core names it (DATA-R104, SHOP-R25).
-			assert.are.same({ "The Falls", "Interface\\AddOns\\Pagle\\media\\crests\\feralas", "Core" }, {
-				Pagle.GetGood("core.crest.feralas").name,
-				Pagle.GetGood("core.crest.feralas").icon,
-				fake.global.goods["core.crest.feralas"].module,
+			assert.are.same({ "Gilded", "Interface\\Icons\\INV_Misc_Bell_01", "Core" }, {
+				Pagle.GetGood("core.soundset.gilded").name,
+				Pagle.GetGood("core.soundset.gilded").icon,
+				fake.global.goods["core.soundset.gilded"].module,
 			})
 			assert.is_nil(fake.ns.goods:Good("core.crest.plain").preview)
-			fake.setPurchased({ ["core.crest.feralas"] = true })
-			assert.is_true(Pagle.SetEquipped("core.crest", "core.crest.feralas"))
+			fake.setPurchased({ ["core.soundset.gilded"] = true })
+			assert.is_true(Pagle.SetEquipped("core.soundset", "core.soundset.gilded"))
+			-- The crest slot holds Plain alone, open to a Module's earned crests (SHOP-R23, SHOP-R25).
+			assert.are.same(
+				{ "Plain" },
+				{ Pagle.GetGood("core.crest.plain").name, fake.global.goods["core.crest.feralas"] }
+			)
+			local ledger = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			ledger:RegisterGood({
+				id = "ledger.crest.feralas",
+				slot = "core.crest",
+				name = "The Falls",
+				isEarned = function()
+					return true
+				end,
+			})
+			assert.is_true(Pagle.SetEquipped("core.crest", "ledger.crest.feralas"))
 		end)
 
 		it("selects an owned good of a Module off under Put away, from the cache (SHOP-R40, SHOP-R35)", function()

@@ -38,6 +38,12 @@ local ns = select(2, ...)
 ---@field FormatNumber fun(n: integer): string          -- BreakUpLargeNumbers
 ---@field RefreshGoods fun()                            -- M:RefreshGoods (LED-R111)
 ---@field SizeText fun(size: PagleSize?): string?       -- ns.SizeText over Pagle.SIZE_BANDS and Pagle.FormatLength
+---@field ZoneCrest fun(areaID: integer): LedgerZoneCrest? -- the crest a zone's Master earns: ns.ZoneCrestOf (LED-R97)
+
+--- A zone's crest, the earned good its Master earns in Core's crest slot: its good ID and its name.
+---@class LedgerZoneCrest
+---@field id string                                     -- "ledger.crest.<key>"
+---@field name string
 
 -- In-client textures for the moments that have no item (LED-R97): the level's ledger book and Fishing's own icon.
 local LEVEL_ICON = ns.BINDING_ICON
@@ -649,8 +655,23 @@ local function celebrateTitles(celebrated, state, moments, achievements, outlets
 	return keys
 end
 
+-- Adds the zone's crest's "Earned" line to each Zone Master moment whose zone has a crest (LED-R97), after its text
+-- and the title riding in it, as the title rides: the banner's text is one line.
+---@param moments PagleMoment[]
+---@param achievements LedgerAchievement[] the achievement of each moment
+---@param outlets LedgerOutlets
+local function addCrestLines(moments, achievements, outlets)
+	for i, moment in ipairs(moments) do
+		local crest = moment.kind == "zoneMaster" and outlets.ZoneCrest(achievements[i].zone --[[@as integer]])
+		if crest then
+			moment.text = ns.L.TEXT_WITH_TITLE:format(moment.text, ns.L.CREST_EARNED:format(crest.name))
+		end
+	end
+end
+
 --- The moments (LED-R97) of the achievements in `earned` not yet celebrated, in order, each added to the set
---- (LED-R91), then the titles they newly earn (LED-R75): what a live entry or a projection's done (LED-R93) raises.
+--- (LED-R91), then the titles they newly earn (LED-R75), and a Zone Master's crest line: what a live entry or a
+--- projection's done (LED-R93) raises.
 ---@param celebrated LedgerCelebrated
 ---@param state LedgerState
 ---@param earned LedgerAchievement[]
@@ -675,6 +696,7 @@ function ns.CelebrateEarned(celebrated, state, earned, outlets, lookups, cast)
 		end
 	end
 	local titles = celebrateTitles(celebrated, state, moments, achievements, outlets, lookups, cast)
+	addCrestLines(moments, achievements, outlets)
 	return moments, achievements, titles
 end
 

@@ -660,11 +660,12 @@ local function valuesOn(loaded, name)
 	return values
 end
 
--- One look besides the default for every slot in the package (SHOP-R25, LED-R110, HNT-R120, STA-R88, TKB-R125).
+-- One look besides the default for every slot in the package (SHOP-R25, LED-R110, LED-R113, HNT-R120, STA-R88,
+-- TKB-R125). The crest is the Ledger's, in Core's slot (SHOP-R23).
 local LOOKS = {
 	"core.toaststyle.ripple",
 	"core.soundset.gilded",
-	"core.crest.elwynn",
+	"ledger.crest.elwynn",
 	"ledger.binding.birch",
 	"hunts.notebookcover.oilcloth",
 	"hunts.trackerframe.inkwash",
@@ -672,14 +673,18 @@ local LOOKS = {
 	"tackleboard.trackerframe.corkboard",
 }
 
--- A good's slot: its ID without the last part.
+-- A good's slot: its ID without the last part, but Core's crest slot for the Ledger's zone crests (LED-R113).
 ---@param good string
 ---@return string
 local function slotOf(good)
+	if good:find("^ledger%.crest%.") then
+		return "core.crest"
+	end
 	return (good:match("^(.+)%.[^.]+$"))
 end
 
--- The package over a log in which the Angler bought every look in LOOKS (SHOP-R11).
+-- The package over a log in which the Angler bought every look in LOOKS (SHOP-R11): the earned crest too, owned like
+-- any purchased ID (SHOP-R30).
 ---@return LoadedAddon
 local function readyWithLooks()
 	local entries = history(0)
@@ -855,7 +860,7 @@ describe("Each page's Defaults button", function()
 		assert.are.same({
 			["core.toaststyle"] = "core.toaststyle.page",
 			["core.soundset"] = "core.soundset.driftwood",
-			["core.crest"] = "core.crest.elwynn",
+			["core.crest"] = "ledger.crest.elwynn",
 			["ledger.binding"] = "ledger.binding.birch",
 			["hunts.notebookcover"] = "hunts.notebookcover.oilcloth",
 			["hunts.trackerframe"] = "hunts.trackerframe.inkwash",
@@ -889,7 +894,7 @@ describe("Each page's Defaults button", function()
 		assert.are.same({
 			["core.toaststyle"] = "core.toaststyle.ripple",
 			["core.soundset"] = "core.soundset.gilded",
-			["core.crest"] = "core.crest.elwynn",
+			["core.crest"] = "ledger.crest.elwynn",
 			["ledger.binding"] = "ledger.binding.birch",
 			["hunts.notebookcover"] = "hunts.notebookcover.oilcloth",
 			["hunts.trackerframe"] = "hunts.trackerframe.none",

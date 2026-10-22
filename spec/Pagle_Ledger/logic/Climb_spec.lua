@@ -323,6 +323,7 @@ describe("the climb at 1.0", function()
 						kept.goods = kept.goods + 1
 					end,
 					SizeText = function() end,
+					ZoneCrest = function() end,
 				}
 		end
 
