@@ -9,11 +9,9 @@ local ns = select(2, ...)
 -- Ledger's own projection (it never reads Core's, ADR 0001), the completion part they make and the moments of a
 -- variety's first Catch and of a fish complete. Pure logic, everything passed in (CORE-R7).
 
---- A Catch's variety as Core decodes it (VAR-R4): never stored in the log, so a Catch without one has none.
----@class LedgerCatchVariety
----@field id string                          -- "<speciesID>.<key>"
----@field index integer                      -- its position, 1–10 (VAR-R2)
----@field rarity "common"|"uncommon"|"rare"|"epic"
+--- A Catch's variety as Core decodes it (VAR-R4: `id` "<speciesID>.<key>", `index` its position 1–10 and `rarity`):
+--- never stored in the log, so a Catch without one has none.
+---@alias LedgerCatchVariety PagleVariety
 
 --- One variety caught (ledger.md › Data, core/varieties.md › Data): its Catches and the first of them.
 ---@class LedgerVariety
@@ -34,7 +32,7 @@ local ns = select(2, ...)
 ---@param speciesID integer
 ---@return integer
 function ns.VarietyCount(getItem, speciesID)
-	local item = getItem(speciesID) --[[@as { varieties: string[]? }?]]
+	local item = getItem(speciesID)
 	local keys = item and item.varieties
 	return type(keys) == "table" and #keys or 0
 end
