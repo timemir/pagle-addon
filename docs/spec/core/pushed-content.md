@@ -80,7 +80,7 @@ value     = str | int | bool | "{" *(value ",") "}" | "{" *(field ",") "}"
 | File format versions read | 1 | PUSH-R13 |
 | Check budget per frame | about 4 ms (`ns.PUSHED_CHECK_BUDGET`); each frame's steps are planned to 3.5 ms of it, leaving 0.5 ms for a step that runs longer than its kind has yet | PUSH-R10 |
 | Payload nesting limit | 16 tables deep, the payload's own table counting 1 (`ns.PAYLOAD_DEPTH_LIMIT`) | PUSH-R20 |
-| Public keys shipped | none yet: `ns.PUSHED_KEYS` in `logic/PushedKeys.lua` ships empty, and the first keys come with the backend (pagle-backend #2); `scripts/pushed-key.py` prints each key's entry | PUSH-R12 |
+| Public keys shipped | `pagle-2026a` (current) and `pagle-2026b` (next), from pagle-backend's `ops/content-keys/` at ede15a8, in `ns.PUSHED_KEYS` (`logic/PushedKeys.lua`); `scripts/pushed-key.py` prints each key's entry | PUSH-R12 |
 
 *Decided while writing the spec (#289): the 64 KiB cap and the per-frame budget are first values; the backend's requirement on pagle-backend #2 names "a size cap agreed with the addon's Tunable".*
 
