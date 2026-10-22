@@ -30,7 +30,8 @@ end
 ---@param view HuntsTrackerView
 ---@return HuntsTrackerWagersContent?
 local function wagersContent(view)
-	local lines = ns.TrackerWagerLines(ns.BoardWagersInput(), ns.State())
+	local input = ns.BoardWagersInput() --[[@as HuntsTrackerWagersInput]] -- the fields of it the block reads
+	local lines = ns.TrackerWagerLines(input, ns.State())
 	if not lines then
 		return nil
 	end

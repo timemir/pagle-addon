@@ -148,7 +148,7 @@ describe("the tracker's Pagle Wagers block", function()
 			local history = twoOn()
 			history[#history + 1], history[#history + 2] = brook, cove
 
-			local block = read(start(history))
+			local block = assert(read(start(history)))
 
 			assert.are.same({
 				"Shore Wager · ends in 1d 4h",
@@ -162,7 +162,7 @@ describe("the tracker's Pagle Wagers block", function()
 			local history = twoOn()
 			history[#history + 1] = castIn(SHORE, C.DARKSHORE, { C.NIGHTFIN, C.BLACKMOUTH })
 
-			local block = read(start(history))
+			local block = assert(read(start(history)))
 
 			assert.are.same(
 				{ dot = "wagers", first = "Shore Wager · settled", second = "3 of 3 first marks" },
@@ -196,7 +196,7 @@ describe("the tracker's Pagle Wagers block", function()
 				hunts.wait(r, 30) -- its end: the runs timer regroups (HNT-R42)
 				r.loaded.client.runTimers()
 
-				local block = read(r)
+				local block = assert(read(r))
 				assert.are.same(
 					{ "Shore Wager · ends in 1d 3h", "fixture_vale · ends in 1d 3h" },
 					{ block.runs[1].first, block.runs[2].first }
@@ -225,6 +225,10 @@ describe("the tracker's Pagle Wagers block", function()
 			assert.is_true(r.ns.board:IsShown())
 			local place = r.ns.board.router:Place()
 			assert.are.same({ "board", VALE_KEY }, { place.mode, place.run })
+
+			r.ns.tracker.wagers.lines[1]:Click() -- open, it turns to the other run
+
+			assert.are.same({ "board", SHORE_KEY }, { r.ns.board.router:Place().mode, r.ns.board.router:Place().run })
 		end)
 
 		it('open the Pagle Wagers spread from "+1 more"', function()

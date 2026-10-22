@@ -222,7 +222,7 @@ describe("the Hunts tracker's lines", function()
 
 			for _, text in ipairs(texts) do
 				for _, word in ipairs({ "odds", "chance", "due", "likely", "%%" }) do
-					assert.is_nil(text:lower():find(word), text)
+					assert.is_nil(text:lower():find(word))
 				end
 			end
 		end)
