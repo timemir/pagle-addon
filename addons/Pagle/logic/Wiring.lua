@@ -52,6 +52,7 @@ local ns = select(2, ...)
 ---@field letter PagleLetter The Letter (ns.WireLetter, ONB-R10–R14).
 ---@field evening PagleEvening The First evening list (ns.WireEvening, ONB-R60–R63).
 ---@field marginNotes PagleMarginNotes Core's Margin notes (ns.WireMarginNotes, ONB-R50–R53).
+---@field firstLooks PagleFirstLooks Core's First looks (ns.WireFirstLooks, ONB-R55–R59).
 
 --- Core's projection machinery (LOG-R70–R78) as ns.projections, and `M:NewProjection` and `M:IterateCatches` on every
 --- Module handle. A Module's records are the ones Pagle.IterateCatches yields plus its own Module records (LOG-R42).
@@ -1437,5 +1438,123 @@ function ns.WireMarginNotes(host, view)
 			return
 		end
 		notes:ShowNow(note)
+	end)
+end
+
+--- Core's First looks (core/onboarding.md › First looks) as ns.firstLooks, with `M:RegisterFirstLook` and
+--- `M:ShowFirstLook` on every Module handle (ONB-R56, ONB-R59, ONB-R90), ns.RegisterCoreFirstLook for Core's own (the
+--- Curio Shop's, ONB-R57), `/pagle dev onboarding look <id>` (ONB-R83), and ns.AddFirstLookTourStops, which gives each
+--- set its tour stop (ONB-R84). Call it after ns.WireOnboarding.
+---@param host PagleHost
+---@param view PagleFirstLooksView
+function ns.WireFirstLooks(host, view)
+	local looks = ns.NewFirstLooks({
+		onboarding = function()
+			return ns.onboarding
+		end,
+		call = host.call,
+		view = view,
+	})
+	ns.firstLooks = looks
+
+	-- Whether each set gets its tour stop as it registers (ns.AddFirstLookTourStops has run).
+	local touring = false
+	-- Adds `set`'s tour stop, `core.onboarding.look.<id>`: Core's, since the sets are (ONB-R84).
+	---@param set PagleFirstLook
+	local function addTourStop(set)
+		local id = set.id
+		local label = ns.L.DEV_TOUR_LOOK:format(set.title)
+		local problem = ns.tourStops:Add(ns.TOUR_CORE, "onboarding.look." .. id, label, function()
+			looks:TourShow(id)
+		end, function()
+			looks:TourHide()
+		end)
+		if problem then
+			host.report(problem)
+		end
+	end
+
+	-- Adds `owner`'s set, raising at the caller's call (`level`) for a mistake.
+	---@param owner string
+	---@param set PagleFirstLook
+	---@param level integer
+	local function add(owner, set, level)
+		local problem = looks:Add(owner, set)
+		if problem then
+			error(problem, level + 1)
+		end
+		if touring then
+			addTourStop(set)
+		end
+	end
+
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Registers one of the Module's First looks (ONB-R56): its id `<module>.<window>`, its window (a frame, or a
+	--- function returning it once it's made), its title for the coach bar, its notes, each with a text, a target
+	--- function and its x, y and w from the window's top left, and optionally `open` for the tour (ONB-R84). Register it
+	--- once, any time before the window first shows; at OnInitialize or OnEnable it also joins Off you go's list (ONB-R38)
+	--- and the tour. Call it only `if M.RegisterFirstLook then`, so it runs on a Core without it (ONB-R90). Raises an
+	--- error at the Module's call, adding nothing, for a missing or mistyped field or an id registered before. Core keeps
+	--- a copy, so a later change to the Module's table changes nothing.
+	---@param set PagleFirstLook
+	function ModuleHandle:RegisterFirstLook(set)
+		local module = host.registry:ModuleCalling(self, "RegisterFirstLook", "set")
+		add(module.def.name, set, 2)
+	end
+
+	--- Shows one of the Module's First looks (ONB-R55, ONB-R59): from its window's OnShow, once the window has drawn what
+	--- the notes point at (a target not shown then drops its note), `M:ShowFirstLook(id)` shows it the first time only,
+	--- with Margin notes on; the window's "?" calls `M:ShowFirstLook(id, true)`, which shows it seen
+	--- or not and with Margin notes off, marking it seen, and hides it while it shows. Closing the window hides it. Call
+	--- it only `if M.ShowFirstLook then` (ONB-R90). Raises an error at the Module's call for an id that isn't one of its
+	--- registered sets, or an `again` that isn't a boolean. Returns whether the set shows now.
+	---@param id string
+	---@param again boolean?
+	---@return boolean
+	function ModuleHandle:ShowFirstLook(id, again)
+		local module = host.registry:ModuleCalling(self, "ShowFirstLook", "id, again?")
+		if looks:Owner(id) ~= module.def.name then
+			error(("ShowFirstLook: %s is not one of %s's First looks"):format(tostring(id), module.def.name), 2)
+		end
+		if again ~= nil and type(again) ~= "boolean" then
+			error(("ShowFirstLook: again is true, false or nil, got %s"):format(type(again)), 2)
+		end
+		return looks:Show(id, again)
+	end
+
+	--- Registers one of Core's own First looks (the Curio Shop's, ONB-R57), raising at Core's call for a mistake.
+	---@param set PagleFirstLook
+	function ns.RegisterCoreFirstLook(set)
+		add(ns.CORE_OWNER, set, 2)
+	end
+
+	--- Gives each set its tour stop, `core.onboarding.look.<id>`, now and as each later one registers (ONB-R84,
+	--- CORE-R65): it opens the set's window and shows the set, marking nothing, and its hide closes a window it opened
+	--- (CORE-R68). Core's adapter calls it; FakePagle doesn't, so a Module's tour spec sees only its own stops.
+	function ns.AddFirstLookTourStops()
+		if touring then
+			return
+		end
+		touring = true
+		for _, record in ipairs(looks:List()) do
+			addTourStop(record.set)
+		end
+	end
+
+	ns.onboarding:AddDevCommand("look", "look <id>", function(args)
+		local id = args:match("^%s*(%S*)")
+		local shown = looks:ShowNow(id)
+		if shown == "unknown" then
+			local ids = {}
+			for i, record in ipairs(looks:List()) do
+				ids[i] = record.set.id
+			end
+			host.print(ns.L.DEV_LOOK_NONE:format(id ~= "" and id or "<id>", table.concat(ids, ", ")))
+		elseif shown == "closed" then
+			host.print(ns.L.DEV_LOOK_CLOSED:format(id))
+		elseif shown == "empty" then
+			host.print(ns.L.DEV_LOOK_EMPTY:format(id))
+		end
 	end)
 end

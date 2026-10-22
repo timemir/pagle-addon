@@ -512,6 +512,8 @@ end
 ---@field ChoiceCard fun(parent: Frame, title: string, line: string?, tag: string?): Button
 ---@field Note fun(parent: Frame, text: string, x: number, y: number, w: number, target: Region?, n: integer?): Frame
 ---@field Part fun(parent: Frame, sprite: string): Texture
+---@field Panel fun(frame: Frame, sprite: string, cap: number): PagleNineSlice -- a GuideParts sprite nine-sliced on
+--- `frame`, following its size (#329: QoL's set cards and Fishing set field)
 
 --- What a step's build gets (core/onboarding.md › Contracts): the guide's moves and Core's widgets.
 ---@class PagleGuideNav: PagleGuideWidgets
@@ -546,6 +548,7 @@ function ns.NewGuideNav(guide, widgets)
 		ChoiceCard = widgets.ChoiceCard,
 		Note = widgets.Note,
 		Part = widgets.Part,
+		Panel = widgets.Panel,
 	}
 end
 

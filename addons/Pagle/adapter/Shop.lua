@@ -150,9 +150,14 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@field track Texture
 ---@field thumb PagleSprite
 
+---@class PagleShopHelpButton: Button
+---@field bezel PagleShopBezel
+---@field label PagleShopFontString "?"
+
 ---@class PagleShopFrame: Frame
 ---@field case PagleSprite            the sample case: leather, tray, hinge, lid and its trade label
 ---@field CloseButton Button
+---@field HelpButton PagleShopHelpButton the "?" beside it (ONB-R59)
 ---@field purse PagleShopPurseFrame
 ---@field search PagleShopSearchBox
 ---@field filters table<string, PagleShopPill> by filter
@@ -182,6 +187,9 @@ local selected
 local playing
 
 local redraw, askToBuy, buy
+
+--- The Curio Shop's First look's id (ONB-R57).
+ns.SHOP_LOOK = "core.shop"
 
 -- Anchors `region` with its top left `x`, `y` from `relativeTo`'s top left (y grows downward).
 ---@param region Region
@@ -1264,6 +1272,36 @@ function buy(frame, goodID, useNow)
 	playPurchase(frame, goodID, was)
 end
 
+-- The "?" beside the close button (ONB-R59), in the shop's brass: a row's brass medallion, its well the leather's
+-- brown, with "?" in gilt. It shows the shop's First look again, seen or not and with Margin notes off, and pressed
+-- while the set shows, hides it. Its tooltip is the shop's own, under it.
+---@param frame PagleShopFrame
+---@return PagleShopHelpButton
+local function buildHelp(frame)
+	local help = CreateFrame("Button", nil, frame) --[[@as PagleShopHelpButton]]
+	help:SetSize(34, 34)
+	help:SetPoint("RIGHT", frame.CloseButton, "LEFT", -6, 0)
+	help.bezel = ns.NewShopBezel(help, 34)
+	help.bezel:SetPoint("CENTER")
+	help.bezel.Icon:SetColorTexture(0.29, 0.17, 0.08, 1)
+	help.label = ns.ShopText(help.bezel, "Help")
+	help.label:SetPoint("CENTER", 0, 1)
+	ns.SetShopText(help.label, "?")
+	help:SetScript("OnClick", function()
+		ns.firstLooks:Show(ns.SHOP_LOOK, true)
+	end)
+	help:SetScript("OnEnter", function(self)
+		local tip = frame.purse.tip
+		showTip(tip, self, { L.LOOK_AGAIN })
+		tip:ClearAllPoints()
+		tip:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", 0, -8)
+	end)
+	help:SetScript("OnLeave", function()
+		frame.purse.tip:Hide()
+	end)
+	return help
+end
+
 -- The window: the sample case, centred and movable by its leather, with its close button at the top right, the purse,
 -- the tray's controls and list, the lid's cards, and the bill of sale over them, fitted to the screen with its handle
 -- (adapter/Fit.lua), again when the UI scale or the window's size changes. Esc closes it.
@@ -1290,6 +1328,7 @@ local function build()
 	frame.CloseButton:SetScript("OnClick", function()
 		close(frame)
 	end)
+	frame.HelpButton = buildHelp(frame)
 
 	frame.purse = buildPurse(frame)
 	buildControls(frame)
@@ -1367,13 +1406,95 @@ local function show(selection)
 			frame.search:SetText("")
 		end
 	end
-	if not frame:IsShown() then
+	local opening = not frame:IsShown()
+	if opening then
 		frame:Show()
 		ns.ShopSound("open")
 	end
 	-- It opens over every window already open: the Pagle windows share its strata, at frame levels of their own.
 	frame:Raise()
 	redraw(true)
+	-- Its First look, the first time it opens (ONB-R55), once its list and stage are drawn.
+	if opening then
+		ns.firstLooks:Show(ns.SHOP_LOOK)
+	end
+end
+
+-- The row the shop's First look's second note points at: the selected good's medallion, else the first good's.
+---@param frame PagleShopFrame
+---@return Region?
+local function lookRow(frame)
+	local first
+	for _, line in ipairs(frame.lines) do
+		if line:IsShown() and not line.header then
+			if line.goodID == selected then
+				return line.bezel
+			end
+			first = first or line.bezel
+		end
+	end
+	return first
+end
+
+--- The Curio Shop's First look (ONB-R57; board "First look · the Curio Shop", its places from the canvas's case at
+--- 230, 110): Coins and the purse's bar, everything a look, Show on screen on the showcase card, and the stock never
+--- rotating (SHOP-R24) at Buy, or Use, or the description card. adapter/FirstLooks.lua registers it; its tour stop
+--- opens the shop as /pagle shop does.
+---@return PagleFirstLook
+function ns.ShopFirstLook()
+	-- What `find` returns of the window, nil before it's made.
+	local function on(find)
+		return function()
+			local frame = ns.shopFrame
+			return frame and find(frame)
+		end
+	end
+	return {
+		id = ns.SHOP_LOOK,
+		window = function()
+			return ns.shopFrame
+		end,
+		title = L.LOOK_SHOP_TITLE,
+		open = function()
+			Pagle.OpenShop()
+		end,
+		notes = {
+			{
+				text = L.LOOK_SHOP_COINS,
+				target = on(function(frame)
+					return frame.purse.label
+				end),
+				x = -214,
+				y = 120,
+				w = 200,
+			},
+			{ text = L.LOOK_SHOP_LOOKS, target = on(lookRow), x = -214, y = 360, w = 200 },
+			{
+				text = L.LOOK_SHOP_SHOW,
+				target = on(function(frame)
+					return frame.stage.area
+				end),
+				x = 992,
+				y = 270,
+				w = 200,
+			},
+			{
+				text = L.LOOK_SHOP_STOCK,
+				target = on(function(frame)
+					local stage = frame.stage
+					if stage.buy:IsShown() then
+						return stage.buy
+					elseif stage.use:IsShown() then
+						return stage.use
+					end
+					return stage.info
+				end),
+				x = 992,
+				y = 450,
+				w = 200,
+			},
+		},
+	}
 end
 
 --- Opens the Curio Shop (SHOP-R40): selecting `goodID` if the shop shows it (under "Put away" for an owned good of a

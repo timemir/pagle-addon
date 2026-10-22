@@ -366,6 +366,25 @@ ns.L = {
 	-- on screen now.
 	DEV_NOTE_NONE = "Pagle dev: no margin note %s; the notes are %s.",
 	DEV_NOTE_NO_TARGET = "Pagle dev: margin note %s has nothing on screen to point at now.",
+	-- First looks (ONB-R55, ONB-R57, ONB-R59): the coach bar under the window ("First look · {title}", how many notes,
+	-- one or more, and its link), the "?" button's tooltip, and the Curio Shop's set, verbatim from the canvas (board
+	-- "First look · the Curio Shop"); each *term* is pencilled in red (ns.RedPencil).
+	LOOK_BAR_TITLE = "First look · %s",
+	LOOK_BAR_COUNT = "%d notes, shown once",
+	LOOK_BAR_COUNT_ONE = "1 note, shown once",
+	LOOK_BAR_DONE = "Got it, put the notes away",
+	LOOK_AGAIN = "Show the notes for this page again",
+	LOOK_SHOP_TITLE = "the Curio Shop",
+	LOOK_SHOP_COINS = "Coins come only from things you’ve done. The bar shows what paid them.",
+	LOOK_SHOP_LOOKS = "Everything here is a *look*: toasts, sounds, bindings, crests. Nothing makes you fish better.",
+	LOOK_SHOP_SHOW = "*Show on screen* plays it for real before you buy.",
+	LOOK_SHOP_STOCK = "The stock *never rotates*. What’s here today is here next month.",
+	-- /pagle dev onboarding look <id> (ONB-R83): an id no set has, with the registered ones; a set whose window isn't
+	-- open; one none of whose targets shows now. The tour stop's label (ONB-R84).
+	DEV_LOOK_NONE = "Pagle dev: no First look %s; the sets are %s.",
+	DEV_LOOK_CLOSED = "Pagle dev: First look %s's window isn't open; open it first.",
+	DEV_LOOK_EMPTY = "Pagle dev: First look %s has nothing on screen to point at now.",
+	DEV_TOUR_LOOK = "the First look on %s",
 	-- The Field guide's book (ONB-R20): its strip's crumbs and its count, "{n} of {m}" with n in brighter gilt.
 	GUIDE_CRUMB_PAGLE = "Pagle",
 	GUIDE_CRUMB_GUIDE = "A field guide",
@@ -492,13 +511,6 @@ ns.L = {
 	GUIDE_OFF_NOD_NOTE = "That’s a *Nod*: every Catch gets one. It’s gone in three seconds.",
 	GUIDE_OFF_LOOKS = "Don’t want notes? Turn off Margin notes in Settings. %s each get a short set the first time you open them.",
 	GUIDE_OFF_LOOKS_ONE = "Don’t want notes? Turn off Margin notes in Settings. %s gets a short set the first time you open it.",
-	GUIDE_LOOK_WINDOWS = {
-		Ledger = "the Fish Journal",
-		Hunts = "Hunts",
-		Stats = "Stats",
-		TackleBoard = "the Tackle Board",
-		Core = "the Curio Shop",
-	},
 	GUIDE_OFF_LIST_TEXT = "It sits under your quests and ticks itself off. Close it whenever you like.",
 	-- The First evening list (ONB-R61): its header, "{done} of {total}", each item and the hints the board shows.
 	GUIDE_EVENING_TITLE = "First evening",

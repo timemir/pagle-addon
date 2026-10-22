@@ -205,8 +205,10 @@ end
 -- Chooses the set `setID` for this character, creating *Pagle Previous* from the gear worn now if it doesn't exist,
 -- so its slot is taken up front (QOL-R40, QOL-R42). With a fishing pole in hand it creates none: the slot check is
 -- then all that reserves the slot, and the first swap to the set creates it (QOL-R44). With no slot free for it,
--- nothing is created or chosen, and the chat says why. A change re-points the Fishing key at once (QOL-R25).
+-- nothing is created or chosen, and the chat says why: the line it prints is returned. A change re-points the Fishing
+-- key at once (QOL-R25).
 ---@param setID integer
+---@return string? message
 local function choose(setID)
 	local name = setName(setID)
 	if not name or name == ns.PREVIOUS_SET_NAME then
@@ -216,7 +218,7 @@ local function choose(setID)
 	local message = ns.SlotsMessage(freeSlots(), false, needPrevious)
 	if message then
 		print(message)
-		return
+		return message
 	end
 	if needPrevious and ns.MaySavePrevious(ns.PoleInHand()) then
 		saveWorn(ns.PREVIOUS_SET_NAME, GetInventoryItemTexture("player", 16))
@@ -243,7 +245,9 @@ end
 --- "Save what I'm wearing as my fishing set" (QOL-R41): the gear worn now goes into *Pagle Fishing*, created with
 --- the pole's icon (or the Fishing spell's) if it doesn't exist, and that set is chosen (QOL-R42). It checks the free
 --- slots for both sets it may create first, so it creates all or nothing. The Fishing set dropdown shows Pagle Fishing
---- the next time the panel draws it (SET-R62): nothing of QoL's may make a shown control re-read (SET-R6).
+--- the next time the panel draws it (SET-R62): nothing of QoL's may make a shown control re-read (SET-R6). Returns
+--- the line it printed when the free slots don't cover the sets, for the Field guide to show too (ONB-R105).
+---@return string? message
 function ns.SaveFishingSet()
 	if not ns.CanEditGear() then
 		return
@@ -252,7 +256,7 @@ function ns.SaveFishingSet()
 	local message = ns.SlotsMessage(freeSlots(), needFishing, previousSetID() == nil)
 	if message then
 		print(message)
-		return
+		return message
 	end
 	local icon = ns.FishingSetIcon(
 		ns.PoleInHand(),
@@ -262,8 +266,33 @@ function ns.SaveFishingSet()
 	saveWorn(ns.FISHING_SET_NAME, icon)
 	local setID = C_EquipmentSet.GetEquipmentSetID(ns.FISHING_SET_NAME)
 	if setID then
-		choose(setID)
+		return choose(setID)
 	end
+end
+
+--- One set as the Field guide's Fishing clothes step draws it (ONB-R33): its name, and its items by inventory slot.
+---@class PagleQoLGuideSet
+---@field name string
+---@field items table<integer, integer>
+
+--- The two sets the Fishing clothes step draws (ONB-R33), as the game reads them now: *Pagle Previous*, and the fishing
+--- set (the chosen one, else *Pagle Fishing*); each nil while it doesn't exist.
+---@return { previous: PagleQoLGuideSet?, fishing: PagleQoLGuideSet? }
+function ns.ReadGuideSets()
+	---@param setID integer?
+	---@return PagleQoLGuideSet?
+	local function read(setID)
+		local name = setID and setName(setID)
+		if not name then
+			return nil
+		end
+		---@cast setID integer
+		return { name = name, items = C_EquipmentSet.GetItemIDs(setID) }
+	end
+	return {
+		previous = read(previousSetID()),
+		fishing = read(chosenSetID() or C_EquipmentSet.GetEquipmentSetID(ns.FISHING_SET_NAME)),
+	}
 end
 
 --- Follows swaps' results and the character's sets. QoL's OnInitialize calls it once it has registered.

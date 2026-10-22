@@ -3,12 +3,34 @@
 -- presets (ONB-R34, ONB-R35) and Off you go (ONB-R38). Each page's words and parts are asserted, not pixels.
 
 -- The five Modules as their own tickets register them (CORE-R50's orders, ONB-R91's blurbs), each with a view and
--- QoL with its live Input entry (CORE-R52), by roster name.
+-- QoL with its live Input entry (CORE-R52), by roster name; those with a First look (ONB-R57) register it, by its
+-- title.
 local MODULES = {
-	{ name = "Ledger", title = "Ledger", order = 10, guideBlurb = "Your book.", view = "Fish Journal" },
-	{ name = "Hunts", title = "Hunts", order = 20, guideBlurb = "Fish that bite at night.", view = "Hunts" },
-	{ name = "Stats", title = "Stats", order = 30, view = "Stats" },
-	{ name = "TackleBoard", title = "Tackle Board", order = 40, guideBlurb = "Small goals.", view = "Tackle Board" },
+	{
+		name = "Ledger",
+		title = "Ledger",
+		order = 10,
+		guideBlurb = "Your book.",
+		view = "Fish Journal",
+		look = "the Fish Journal",
+	},
+	{
+		name = "Hunts",
+		title = "Hunts",
+		order = 20,
+		guideBlurb = "Fish that bite at night.",
+		view = "Hunts",
+		look = "Hunts",
+	},
+	{ name = "Stats", title = "Stats", order = 30, view = "Stats", look = "Stats" },
+	{
+		name = "TackleBoard",
+		title = "Tackle Board",
+		order = 40,
+		guideBlurb = "Small goals.",
+		view = "Tackle Board",
+		look = "the Tackle Board",
+	},
 	{ name = "QoL", title = "QoL", order = 50, guideBlurb = "One press, one action." },
 }
 
@@ -39,7 +61,15 @@ local function guideAt(id, names)
 				}
 				loaded.env.QoLInput = "Both"
 			end
-			loaded.env.Pagle.RegisterModule(def)
+			local M = loaded.env.Pagle.RegisterModule(def)
+			if module.look then
+				M:RegisterFirstLook({
+					id = module.name:lower() .. ".main",
+					window = loaded.env.CreateFrame("Frame"),
+					title = module.look,
+					notes = { { text = "A note.", target = function() end, x = -214, y = 100, w = 200 } },
+				})
+			end
 		end
 	end
 	enterWorld(loaded, 3)

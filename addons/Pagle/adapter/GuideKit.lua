@@ -427,6 +427,11 @@ ns.GUIDE_WIDGETS = {
 	Part = function(...)
 		return ns.GuidePart(...)
 	end,
+	-- A GuideParts sprite nine-sliced on a frame of the step's, which keeps `cap` units at each corner and follows the
+	-- frame's size: for a panel a Module's page draws at its own size, such as QoL's set cards (ONB-R33).
+	Panel = function(frame, sprite, cap)
+		return ns.NewNineSlice(frame, "GuideParts", sprite, cap)
+	end,
 }
 
 -- The step ribbons (ONB-R24): one per step under the book's foot, 98 wide with an 8-unit gap, each hanging 92 units,

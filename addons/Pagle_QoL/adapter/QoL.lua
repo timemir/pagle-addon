@@ -45,6 +45,11 @@ function ns.QoL.OnInitialize()
 	if ns.Module.RegisterTourStop then
 		ns.RegisterTourStops(ns.Module)
 	end
+	-- QoL's two Field guide steps, Casting and Fishing clothes, before ModulesChanged (ONB-R21), on a Core that has
+	-- the call (ONB-R90).
+	if ns.Module.RegisterGuideStep then
+		ns.RegisterGuideSteps(ns.Module)
+	end
 
 	-- Account-wide, one shared profile (QOL-R1), with the defaults in qol.md › Data.
 	ns.db = LibStub("AceDB-3.0"):New("PagleQoLDB", ns.DB_DEFAULTS, true)

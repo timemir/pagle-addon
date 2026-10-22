@@ -70,6 +70,7 @@ logic\FieldReportBox.lua
 logic\Dock.lua
 logic\Onboarding.lua
 logic\MarginNotes.lua
+logic\FirstLooks.lua
 logic\Guide.lua
 logic\GuidePages.lua
 logic\Letter.lua
@@ -133,4 +134,5 @@ adapter\Letter.lua
 adapter\Tour.lua
 adapter\Evening.lua
 adapter\MarginNotes.lua
+adapter\FirstLooks.lua
 adapter\Login.lua
