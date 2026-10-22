@@ -172,10 +172,8 @@ local EXPECTED = {
 			{ "slot", "Sound set" },
 			{ "header", "Bookplate" },
 			{ "slot", "Bookplate crest" },
-			{ "header", "Fish Journal", of = "Ledger" },
-			{ "slot", "Journal binding", of = "Ledger" },
-			{ "header", "Hunts", of = "Hunts" },
-			{ "slot", "Notebook cover", of = "Hunts" },
+			{ "header", "Books" },
+			{ "slot", "Book binding" },
 			{ "header", "Trackers", of = TRACKER_MODULES },
 			{ "slot", "Hunts tracker frame", of = "Hunts" },
 			{ "slot", "Stats tracker frame", of = "Stats" },
@@ -700,14 +698,13 @@ local function valuesOn(loaded, name)
 	return values
 end
 
--- One look besides the default for every slot in the package (SHOP-R25, LED-R110, LED-R113, HNT-R120, STA-R88,
--- TKB-R125). The crest is the Ledger's, in Core's slot (SHOP-R23).
+-- One look besides the default for every slot in the package (SHOP-R25, LED-R113, HNT-R120, STA-R88, TKB-R125). The
+-- crest is the Ledger's, in Core's slot (SHOP-R23).
 local LOOKS = {
 	"core.toaststyle.ripple",
 	"core.soundset.gilded",
 	"ledger.crest.elwynn",
-	"ledger.binding.birch",
-	"hunts.notebookcover.oilcloth",
+	"core.binding.birch",
 	"hunts.trackerframe.inkwash",
 	"stats.trackerframe.brass",
 	"tackleboard.trackerframe.corkboard",
@@ -793,10 +790,9 @@ describe("Each page's Defaults button", function()
 				"Tackle Board tracker frame",
 			}, restoredOn(loaded, "Trackers"))
 			assert.are.same({
+				"Book binding",
 				"Bookplate crest",
 				"Hunts tracker frame",
-				"Journal binding",
-				"Notebook cover",
 				"Sound set",
 				"Stats tracker frame",
 				"Tackle Board tracker frame",
@@ -914,8 +910,7 @@ describe("Each page's Defaults button", function()
 			["core.toaststyle"] = "core.toaststyle.page",
 			["core.soundset"] = "core.soundset.driftwood",
 			["core.crest"] = "ledger.crest.elwynn",
-			["ledger.binding"] = "ledger.binding.birch",
-			["hunts.notebookcover"] = "hunts.notebookcover.oilcloth",
+			["core.binding"] = "core.binding.birch",
 			["hunts.trackerframe"] = "hunts.trackerframe.inkwash",
 			["stats.trackerframe"] = "stats.trackerframe.brass",
 			["tackleboard.trackerframe"] = "tackleboard.trackerframe.corkboard",
@@ -948,8 +943,7 @@ describe("Each page's Defaults button", function()
 			["core.toaststyle"] = "core.toaststyle.ripple",
 			["core.soundset"] = "core.soundset.gilded",
 			["core.crest"] = "ledger.crest.elwynn",
-			["ledger.binding"] = "ledger.binding.birch",
-			["hunts.notebookcover"] = "hunts.notebookcover.oilcloth",
+			["core.binding"] = "core.binding.birch",
 			["hunts.trackerframe"] = "hunts.trackerframe.none",
 			["stats.trackerframe"] = "stats.trackerframe.none",
 			["tackleboard.trackerframe"] = "tackleboard.trackerframe.none",
@@ -967,8 +961,7 @@ describe("Each page's Defaults button", function()
 			["core.toaststyle"] = "core.toaststyle.page",
 			["core.soundset"] = "core.soundset.driftwood",
 			["core.crest"] = "core.crest.plain",
-			["ledger.binding"] = "ledger.binding.field",
-			["hunts.notebookcover"] = "hunts.notebookcover.leather",
+			["core.binding"] = "core.binding.field",
 			["hunts.trackerframe"] = "hunts.trackerframe.none",
 			["stats.trackerframe"] = "stats.trackerframe.none",
 			["tackleboard.trackerframe"] = "tackleboard.trackerframe.none",
@@ -980,14 +973,14 @@ describe("Each page's Defaults button", function()
 
 	it("on Look and Feel leaves the stored look of a Module that isn't On (SET-R52, SHOP-R32)", function()
 		local entries = history(0)
-		entries[#entries + 1] = purchaseEntry(SERVER_TIME - 2000, "hunts.notebookcover.oilcloth", 0)
+		entries[#entries + 1] = purchaseEntry(SERVER_TIME - 2000, "hunts.trackerframe.inkwash", 0)
 		local loaded = ready({
 			off = { "Hunts" },
 			globals = {
 				PagleLog = savedLog(entries),
 				PagleDB = {
 					profiles = {
-						Default = { appearance = { ["hunts.notebookcover"] = "hunts.notebookcover.oilcloth" } },
+						Default = { appearance = { ["hunts.trackerframe"] = "hunts.trackerframe.inkwash" } },
 					},
 				},
 			},
@@ -996,8 +989,8 @@ describe("Each page's Defaults button", function()
 		loaded.client.settings.defaults(loaded.client.settings.page("Look and Feel"))
 
 		assert.are.equal(
-			"hunts.notebookcover.oilcloth",
-			loaded.namespaces.Pagle.db.profile.appearance["hunts.notebookcover"]
+			"hunts.trackerframe.inkwash",
+			loaded.namespaces.Pagle.db.profile.appearance["hunts.trackerframe"]
 		)
 	end)
 end)

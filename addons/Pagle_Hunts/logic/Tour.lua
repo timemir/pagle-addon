@@ -319,8 +319,8 @@ end
 
 --- Hunts' tour stops, in tour order (CORE-R68): the Board, on a Hunt of each group; the Board on a run, with the wager
 --- strip and the WAGERS group, and the Pagle Wagers spread; a set's page, an entry from it and a retired entry; the
---- tracker in the dock; then the board in each notebook cover and the tracker in each tracker frame Hunts sells or
---- gives (HNT-R121, HNT-R122), the defaults being the stops before.
+--- tracker in the dock; then the tracker in each tracker frame Hunts sells or gives (HNT-R121, HNT-R122), the default
+--- being the stop before. The bindings are Core's (ADR 0015), so Hunts' tour has none.
 ---@type HuntsTourStop[]
 ns.HUNTS_TOUR = {
 	{ id = "board.home", label = "TOUR_BOARD", place = home },
@@ -339,13 +339,8 @@ for _, slot in ipairs(ns.HUNTS_GOODS) do
 	for _, good in ipairs(slot.goods) do
 		if not good.default then
 			local suffix = good.id:match("[^.]+$")
-			if slot.id == ns.COVER_SLOT then
-				ns.HUNTS_TOUR[#ns.HUNTS_TOUR + 1] =
-					{ id = "cover." .. suffix, label = "TOUR_COVER", good = good.id, place = home }
-			else
-				ns.HUNTS_TOUR[#ns.HUNTS_TOUR + 1] =
-					{ id = "trackerframe." .. suffix, label = "TOUR_TRACKER_FRAME", good = good.id }
-			end
+			ns.HUNTS_TOUR[#ns.HUNTS_TOUR + 1] =
+				{ id = "trackerframe." .. suffix, label = "TOUR_TRACKER_FRAME", good = good.id }
 		end
 	end
 end

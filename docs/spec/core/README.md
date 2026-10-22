@@ -186,7 +186,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.GetVarieties(speciesID)`, `Pagle.VARIETY_RARITIES` | a Species' ten or `nil`, rarity list | [varieties.md](varieties.md) |
 | `Pagle.GetVarietiesCaught(speciesID)` | a fresh set `{ [index] = true }` of the positions caught | [varieties.md](varieties.md) |
 | `Pagle.GetBalance()` | `Balance` | [wallet-and-shop.md](wallet-and-shop.md#contracts) |
-| `Pagle.IsOwned(goodID)`, `GetEquipped(slotID)`, `SetEquipped(slotID, goodID)`, `GetGood(goodID)`, `OpenShop(goodID?)` | | wallet-and-shop.md |
+| `Pagle.IsOwned(goodID)`, `GetEquipped(slotID)`, `SetEquipped(slotID, goodID)`, `GetGood(goodID)`, `GetSlotGoods(slot)`, `GetBindingLook(goodID)`, `OpenShop(goodID?)` | | wallet-and-shop.md |
 | `Pagle.OpenFieldReport()`, `GetFieldReportCount()` | | [field-report.md](field-report.md#contracts) |
 | `Pagle.IsAnimationsOn()` | boolean, the Animations setting | [announcements.md](announcements.md#contracts) |
 | `Pagle.GetActivityXP()` | `ActivityXP` | [activity-xp.md](activity-xp.md#contracts) |

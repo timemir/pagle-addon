@@ -17,20 +17,16 @@ local C = catalogue
 local FROM = hunts.untilRealm(17, 30)
 -- One stop's span on the tour's clock: shown, shot 2.8 s in, hidden 0.5 s later, the next 0.3 s after that.
 local STOP = 2.8 + 0.5 + 0.3
--- The eleven stops before the goods, then each cover and tracker frame but the defaults (HNT-R121).
-local COVERS, FRAMES = {}, {}
-for _, row in ipairs(hunts.GOODS["hunts.notebookcover"]) do
-	if row[2] ~= "default" then
-		COVERS[#COVERS + 1] = row[1]
-	end
-end
+-- The eleven stops before the goods, then each tracker frame but the default (HNT-R121). The bindings are Core's
+-- (ADR 0015): Hunts' tour wears none.
+local FRAMES = {}
 for _, row in ipairs(hunts.GOODS["hunts.trackerframe"]) do
 	if row[2] ~= "default" then
 		FRAMES[#FRAMES + 1] = row[1]
 	end
 end
 local GOODS_FROM = 11
-local STOPS = GOODS_FROM + #COVERS + #FRAMES
+local STOPS = GOODS_FROM + #FRAMES
 
 -- Hunts' Session summary line as Core holds it, or nil (HNT-R89).
 local function summaryLine(fake)
@@ -135,24 +131,6 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 			"  hunts.set.entry: the Hunts board: an entry opened from its set's page",
 			"  hunts.set.retired: the Hunts board: a Retired Hunt's entry",
 			"  hunts.tracker: the Hunts tracker in the dock, with three pins",
-			"  hunts.cover.oilcloth: the Hunts board in the Oilcloth cover",
-			"  hunts.cover.tooled: the Hunts board in the Tooled Leather cover",
-			"  hunts.cover.verdigris: the Hunts board in the Verdigris cover",
-			"  hunts.cover.canvas: the Hunts board in the Canvas Field Pad cover",
-			"  hunts.cover.kraft: the Hunts board in the Waxed Kraft cover",
-			"  hunts.cover.tartan: the Hunts board in the Tartan Wool cover",
-			"  hunts.cover.maplinen: the Hunts board in the Map Linen cover",
-			"  hunts.cover.planks: the Hunts board in the Bound Planks cover",
-			"  hunts.cover.snakeskin: the Hunts board in the Snakeskin cover",
-			"  hunts.cover.shagreen: the Hunts board in the Stingray Shagreen cover",
-			"  hunts.cover.lacquer: the Hunts board in the Lacquered Red cover",
-			"  hunts.cover.bone: the Hunts board in the Bone & Rawhide cover",
-			"  hunts.cover.brasscase: the Hunts board in the Brass Hunter's Case cover",
-			"  hunts.cover.scrimshaw: the Hunts board in the Scrimshaw Panel cover",
-			"  hunts.cover.trophycase: the Hunts board in the Gilded Trophy Case cover",
-			"  hunts.cover.pathfinder: the Hunts board in the Pathfinder's Calf cover",
-			"  hunts.cover.fiveseal: the Hunts board in the Five-Set Seal cover",
-			"  hunts.cover.wagersilk: the Hunts board in the Winner's Brocade cover",
 			"  hunts.trackerframe.inkwash: the Hunts tracker in the Ink Wash frame",
 			"  hunts.trackerframe.waxseal: the Hunts tracker in the Wax Seal frame",
 			"  hunts.trackerframe.slate: the Hunts tracker in the Chalk Slate frame",
@@ -243,28 +221,17 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 		assert.is_nil(shown[11].wearing)
 	end)
 
-	it(
-		"wear each notebook cover on the board and each tracker frame on the tracker, earned ones too (HNT-R121, HNT-R122)",
-		function()
-			local run = start()
-			local ns = run.ns
+	it("wear each tracker frame on the tracker, earned ones too (HNT-R121, HNT-R122)", function()
+		local run = start()
 
-			local shown = tour(run)
+		local shown = tour(run)
 
-			for i, id in ipairs(COVERS) do
-				assert.are.equal(ns.COVERS[id], shown[GOODS_FROM + i].cover)
-				assert.are.same(
-					{ mode = "board", hunt = shown[GOODS_FROM + i].place.hunt },
-					shown[GOODS_FROM + i].place
-				)
-			end
-			for i, id in ipairs(FRAMES) do
-				assert.are.equal(id, shown[GOODS_FROM + #COVERS + i].wearing)
-				assert.are.equal(3, shown[GOODS_FROM + #COVERS + i].lines)
-			end
-			assert.are.equal(STOPS, #run.fake.tourShots)
+		for i, id in ipairs(FRAMES) do
+			assert.are.equal(id, shown[GOODS_FROM + i].wearing)
+			assert.are.equal(3, shown[GOODS_FROM + i].lines)
 		end
-	)
+		assert.are.equal(STOPS, #run.fake.tourShots)
+	end)
 
 	it("leave Hunts as they found it: board closed, the real list, state, grouping, pins; nothing saved", function()
 		local run = start({ profile = { pins = {}, tracker = { shown = true, collapsed = true } } })

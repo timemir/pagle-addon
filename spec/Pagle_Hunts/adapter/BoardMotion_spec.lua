@@ -308,20 +308,19 @@ describe("the live timeline (MOTION.md › The live Hunts timeline)", function()
 end)
 
 describe("the leather's motion", function()
-	it("dips the open board's binding while a new cover goes on underneath (HNT-R70)", function()
+	it("dips the open board's binding while a new look goes on underneath (HNT-R70)", function()
 		local run = start()
 		run.ns.ToggleBoard()
 		play(run, 0.2)
 		heard(run)
 		local cover = run.ns.board.frame.cover
 
-		run.fake.setPurchased({ ["hunts.notebookcover.oilcloth"] = true })
-		assert.is_true(run.fake.Pagle.SetEquipped("hunts.notebookcover", "hunts.notebookcover.oilcloth"))
+		run.ns.board:SetCover({ fill = "Cloth", foot = 1 }, true)
 		assert.are.same({ "836 SFX" }, heard(run))
 		assert.are.equal(run.ns.BOOK_FILES.leather, cover.fill.texture)
 		play(run, 0.21)
 		near(0.25, cover.fill:GetAlpha(), 0.05)
-		assert.are.equal(run.ns.COVER_FILES.oilcloth, cover.fill.texture)
+		assert.are.equal("Cloth", cover.fill.texture)
 		play(run, 0.25)
 
 		assert.are.equal(1, cover.fill:GetAlpha())

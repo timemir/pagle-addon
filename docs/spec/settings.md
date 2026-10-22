@@ -47,8 +47,7 @@ Trackers
 Look and Feel
   [Announcements]           Toast style;  Sound set
   [Bookplate]               Bookplate crest
-  [Fish Journal]            Journal binding
-  [Hunts]                   Notebook cover
+  [Books]                   Book binding
   [Trackers]                Hunts tracker frame;  Stats tracker frame;  Tackle Board tracker frame
   [Curio Shop]              Buy more looks with Pagle Coins  [Open the Curio Shop]
 ```
@@ -203,7 +202,7 @@ The rules below are authoritative; this sketch only summarises them.
 
 - **SET-R50** Core builds Look and Feel from the goods registry; Modules add no rows to it (CORE-R42, wallet-and-shop.md UI). It shows, in order:
   1. a paragraph: "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing."
-  2. for each slot category in the order Announcements, Bookplate, Fish Journal, Hunts, Trackers, skipping a category with no slot shown: a header with the category's name, then one slot dropdown (SET-R51) per registered slot of Core or of an On Module, Core's slots first, then by `def.order`
+  2. for each slot category in the order Announcements, Bookplate, Books, Fish Journal, Hunts, Trackers, skipping a category with no slot shown: a header with the category's name, then one slot dropdown (SET-R51) per registered slot of Core or of an On Module, Core's slots first, then by `def.order`
   3. a header "Curio Shop" and a button row "Buy more looks with Pagle Coins" with the caption "Open the Curio Shop", which closes the panel and calls `Pagle.OpenShop()` (SHOP-R40, SET-R12)
 
   The slots in 1.0:
@@ -212,14 +211,13 @@ The rules below are authoritative; this sketch only summarises them.
   |---|---|---|---|
   | Announcements | `core.toaststyle` (Toast style), `core.soundset` (Sound set) | Core | SHOP-R25 |
   | Bookplate | `core.crest` (Bookplate crest), shown whatever Modules are On | Core | SHOP-R25 |
-  | Fish Journal | `ledger.binding` (Journal binding) | Ledger | LED-R110 |
-  | Hunts | `hunts.notebookcover` (Notebook cover) | Hunts | HNT-R120 |
+  | Books | `core.binding` (Book binding), the one binding every book wears, shown whatever Modules are On; the Ledger's and Hunts' earned bindings are among its options while their Module is On (ADR 0015) | Core | SHOP-R25, LED-R110, HNT-R122 |
   | Trackers | `hunts.trackerframe` (Hunts tracker frame), `stats.trackerframe` (Stats tracker frame), `tackleboard.trackerframe` (Tackle Board tracker frame) | Hunts, Stats, Tackle Board | HNT-R120, STA-R88, TKB-R125 |
 
-  The page, with its paragraph, its Curio Shop row and its first slots (Core's three and the Journal binding), arrives in M4; each later slot arrives with its Module's milestone.
+  The page, with its paragraph, its Curio Shop row and its first slots, arrives in M4; each later slot arrives with its Module's milestone. Core's one "Book binding" replaced the Ledger's "Journal binding" and Hunts' "Notebook cover" (#351), so no shipped slot uses the Fish Journal or Hunts categories.
 - **SET-R51** A **slot dropdown** is the same row wherever it appears (Look and Feel, and beside what it changes on Announcements or Trackers): its label is the slot's label, its options are the slot's owned goods by name (`Pagle.IsOwned`, SHOP-R30) in registration order, and its value is `Pagle.GetEquipped(slot)`. Picking one calls `Pagle.SetEquipped(slot, goodID)` (SHOP-R32). Under the dropdown, "{N} more in the Curio Shop" shows as plain text (not a link) while N, the slot's for-sale goods not owned, is above 0. Its `default` is the slot's default good, so a page's Defaults button restores it like any value row (SET-R60); on every page it appears, it reads and writes the same equipped setting. The options are read each time the dropdown opens and the value redraws on `AppearanceChanged`, so a purchase, a Use in the shop or a pick on the other page shows at once. It is never greyed out.
 - **SET-R52** The Look and Feel page's Defaults button sets every slot shown on it to the slot's default good (SET-R60). Slots of Modules that aren't On aren't shown, so their stored looks are left alone (SHOP-R32).
-- **SET-R53** The Ledger has no other rows anywhere: its "Open Fish Journal" is on the root and its Journal binding on Look and Feel ([ledger.md](ledger.md#settings)).
+- **SET-R53** The Ledger has no other rows anywhere: its "Open Fish Journal" is on the root, and its earned bindings are picked from Core's "Book binding" on Look and Feel ([ledger.md](ledger.md#settings)).
 
 ### Defaults and live rows
 

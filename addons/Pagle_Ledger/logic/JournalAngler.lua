@@ -164,11 +164,16 @@ local function signedAs(context, blocks)
 	end
 end
 
--- "Bindings" (LED-R146, LED-R110): every binding in LED-R110's order, its closed book, its name and its state: "In use"
--- for the equipped one, "Use" (equipping it, SHOP-R32) when owned, "Angler Level {L}" for a level binding not earned
--- yet (LED-R111), an expansion one's earnedText ("Land a Monster", LED-R116) likewise, and "In the Curio Shop"
--- (opening the shop at it, SHOP-R40) for one for sale and not owned. Look and Feel picks the same setting, so the page
--- reads Pagle.GetEquipped at each draw.
+-- The atlases of the Journal's own closed books (data/JournalArt.lua), the kits' Bindings boards: a binding whose swatch
+-- is in another (the covers' notebooks) shows none on the Angler page.
+local JOURNAL_SWATCHES = { Bindings = true, Bindings2 = true }
+
+-- "Bindings" (LED-R146, ADR 0015): every binding in Core's binding slot as the Curio Shop lists it
+-- (Pagle.GetSlotGoods), its closed book, its name and its state: "In use" for the equipped one, "Use" (equipping it,
+-- SHOP-R32) when owned, the Ledger's own earned one's earnedText ("Angler Level {L}", LED-R111; "Land a Monster",
+-- LED-R116) when it isn't earned yet, and "In the Curio Shop" (opening the shop at it, SHOP-R40) for any other not
+-- owned. Look and Feel picks the same setting, and every book wears it, so the page reads Pagle.GetEquipped at each
+-- draw.
 ---@param context LedgerSpreadContext
 ---@param blocks LedgerBlock[]
 local function bindings(context, blocks)
@@ -176,14 +181,16 @@ local function bindings(context, blocks)
 	local goods = context.goods
 	local equipped = goods.getEquipped(ns.BINDING_SLOT)
 	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_BINDINGS }
-	for _, binding in ipairs(ns.BINDINGS) do
-		local id = ns.BindingID(binding)
+	for _, id in ipairs(goods.slotGoods(ns.BINDING_SLOT)) do
+		local good, look = goods.getGood(id), goods.bindingLook(id)
+		local own = ns.LedgerBinding(id)
+		local atlas = look.swatchAtlas
 		---@type LedgerBlock
 		local line = {
 			kind = "leader",
-			text = ns.BindingName(binding),
-			binding = binding.swatch,
-			bindingAtlas = binding.swatchAtlas,
+			text = good and good.name or id,
+			binding = JOURNAL_SWATCHES[atlas] and look.swatch or nil,
+			bindingAtlas = JOURNAL_SWATCHES[atlas] and atlas --[[@as "Bindings"|"Bindings2"]] or nil,
 		}
 		if id == equipped then
 			line.value, line.state = L.ANGLER_BINDING_IN_USE, "inUse"
@@ -192,10 +199,8 @@ local function bindings(context, blocks)
 			line.action = function()
 				goods.setEquipped(ns.BINDING_SLOT, id)
 			end
-		elseif binding.level then
-			line.value, line.state = L.BINDING_EARNED:format(binding.level), "level"
-		elseif binding.earn then
-			line.value, line.state = L.EARNED_TEXT[binding.earn], "level"
+		elseif own then
+			line.value, line.state = ns.BindingEarnedText(own), "level"
 		else
 			line.value, line.state = L.ANGLER_BINDING_SHOP, "shop"
 			line.action = function()

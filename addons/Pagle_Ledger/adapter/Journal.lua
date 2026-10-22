@@ -123,6 +123,9 @@ function Journal:Context() -- luacheck: no self
 			getEquipped = Pagle.GetEquipped,
 			setEquipped = Pagle.SetEquipped,
 			openShop = Pagle.OpenShop,
+			slotGoods = Pagle.GetSlotGoods,
+			getGood = Pagle.GetGood,
+			bindingLook = Pagle.GetBindingLook,
 		},
 		-- The varieties (VAR-R23, VAR-R24): a Species' ten, the rarities and its fish crest.
 		getVarieties = Pagle.GetVarieties,

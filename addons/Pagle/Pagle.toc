@@ -17,6 +17,7 @@ data\Catalogue.lua
 data\AnnounceArt.lua
 data\ToastStyleArt.lua
 data\ShopArt.lua
+data\BindingArt.lua
 data\GuideArt.lua
 data\FieldArt.lua
 data\VarietyArt.lua
@@ -66,6 +67,7 @@ logic\ActivityXP.lua
 logic\Goods.lua
 logic\Shop.lua
 logic\LookAndFeel.lua
+logic\Bindings.lua
 logic\CoreGoods.lua
 logic\WalletProjection.lua
 logic\VarietyProjection.lua

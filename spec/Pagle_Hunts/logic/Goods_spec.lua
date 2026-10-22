@@ -8,7 +8,7 @@ local hunts = dofile("spec/Pagle_Hunts/support.lua")
 local SETS = { "fixture_dusk", "fixture_wagers", "fixture_pair", "fixture_tide" }
 
 -- The goods earned with every set's title (HNT-R122): Five-Set Seal, and Night Watch in Core's sound set slot (HNT-R123).
-local EVERY_SET = { "hunts.notebookcover.fiveseal", "hunts.soundset.nightwatch" }
+local EVERY_SET = { "hunts.binding.fiveseal", "hunts.soundset.nightwatch" }
 
 -- A set title's record in state.sets (HuntsSetTitle).
 local TITLE = { earnedAt = hunts.JAN_1, date = { year = 2026, month = 1, day = 1 }, fromRetirement = false }
@@ -61,18 +61,18 @@ describe("Hunts' earned goods", function()
 
 	it("give each earned good its rule, and no other good one (HNT-R122, HNT-R123)", function()
 		assert.are.same({ "anySetTitle", "everySetTitle", "wagerRuns", "wagerRuns", "everySetTitle" }, {
-			ns.HuntsGoodRule("hunts.notebookcover.pathfinder"),
-			ns.HuntsGoodRule("hunts.notebookcover.fiveseal"),
-			ns.HuntsGoodRule("hunts.notebookcover.wagersilk"),
+			ns.HuntsGoodRule("hunts.binding.pathfinder"),
+			ns.HuntsGoodRule("hunts.binding.fiveseal"),
+			ns.HuntsGoodRule("hunts.binding.wagersilk"),
 			ns.HuntsGoodRule("hunts.trackerframe.wagerribbon"),
 			ns.HuntsGoodRule("hunts.soundset.nightwatch"),
 		})
-		assert.is_nil(ns.HuntsGoodRule("hunts.notebookcover.trophycase"))
-		assert.is_nil(ns.HuntsGoodRule("hunts.notebookcover.leather"))
+		assert.is_nil(ns.HuntsGoodRule("core.binding.trophycase"))
+		assert.is_nil(ns.HuntsGoodRule("core.binding.field"))
 	end)
 
 	describe("Pathfinder's Calf", function()
-		local ID = "hunts.notebookcover.pathfinder"
+		local ID = "hunts.binding.pathfinder"
 
 		it("is earned with any set's title in the projection (HNT-R122, HNT-R20)", function()
 			assert.is_false(earned(ID, stateWith(ns), celebrated()))
@@ -143,7 +143,7 @@ describe("Hunts' earned goods", function()
 	end)
 
 	describe("Winner's Brocade and Winner's Ribbon", function()
-		local IDS = { "hunts.notebookcover.wagersilk", "hunts.trackerframe.wagerribbon" }
+		local IDS = { "hunts.binding.wagersilk", "hunts.trackerframe.wagerribbon" }
 
 		it("are earned at ten completed runs, the projection's completed-run count (HNT-R122, HNT-R148)", function()
 			assert.are.equal(10, ns.WAGER_GOODS_RUNS)
@@ -184,9 +184,9 @@ describe("Hunts' earned goods", function()
 
 	describe("kept once earned, in the celebrated set's goods", function()
 		local ALL = {
-			"hunts.notebookcover.pathfinder",
-			"hunts.notebookcover.fiveseal",
-			"hunts.notebookcover.wagersilk",
+			"hunts.binding.pathfinder",
+			"hunts.binding.fiveseal",
+			"hunts.binding.wagersilk",
 			"hunts.trackerframe.wagerribbon",
 			"hunts.soundset.nightwatch",
 		}
@@ -217,15 +217,15 @@ describe("Hunts' earned goods", function()
 					assert.are.equal(true, owned(id, nil, { goods = { [id] = true } }), id) -- saved bare, before AceDB
 				end
 				-- Another good noted owns only that one.
-				local set = celebrated({ goods = { ["hunts.notebookcover.wagersilk"] = true } })
+				local set = celebrated({ goods = { ["hunts.binding.wagersilk"] = true } })
 				assert.is_false(owned("hunts.trackerframe.wagerribbon", nil, set))
 			end
 		)
 
 		it("own each while its rule holds, noted or not (HNT-R122)", function()
-			assert.is_true(owned("hunts.notebookcover.pathfinder", stateWith(ns, { "fixture_pair" }), celebrated()))
-			assert.is_true(owned("hunts.notebookcover.fiveseal", stateWith(ns, SETS), celebrated()))
-			assert.is_true(owned("hunts.notebookcover.wagersilk", stateWith(ns, nil, 10), celebrated()))
+			assert.is_true(owned("hunts.binding.pathfinder", stateWith(ns, { "fixture_pair" }), celebrated()))
+			assert.is_true(owned("hunts.binding.fiveseal", stateWith(ns, SETS), celebrated()))
+			assert.is_true(owned("hunts.binding.wagersilk", stateWith(ns, nil, 10), celebrated()))
 		end)
 
 		it(
@@ -250,14 +250,14 @@ describe("Hunts' earned goods", function()
 			assert.is_nil(set.goods) -- made with the first good noted
 
 			assert.is_true(ns.NoteHuntsGoods(set, stateWith(ns, { "fixture_pair" }), list))
-			assert.are.same({ ["hunts.notebookcover.pathfinder"] = true }, set.goods)
+			assert.are.same({ ["hunts.binding.pathfinder"] = true }, set.goods)
 			assert.is_false(ns.NoteHuntsGoods(set, stateWith(ns, { "fixture_pair" }), list)) -- noted already
 
 			assert.is_true(ns.NoteHuntsGoods(set, stateWith(ns, SETS, 10), list))
 			assert.are.same({
-				["hunts.notebookcover.pathfinder"] = true,
-				["hunts.notebookcover.fiveseal"] = true,
-				["hunts.notebookcover.wagersilk"] = true,
+				["hunts.binding.pathfinder"] = true,
+				["hunts.binding.fiveseal"] = true,
+				["hunts.binding.wagersilk"] = true,
 				["hunts.trackerframe.wagerribbon"] = true,
 				["hunts.soundset.nightwatch"] = true,
 			}, set.goods)

@@ -472,12 +472,13 @@ describe("the board's art kit", function()
 			local ns, parent = kit()
 			local leather = ns.NewBoardLeather(parent)
 
-			leather:SetCover(ns.CoverLook("hunts.notebookcover.oilcloth"))
-			assert.are.equal("Interface\\AddOns\\Pagle_Hunts\\media\\books\\Cover-oil", leather.fill.texture)
+			-- Oilcloth's, Tooled Leather's and Verdigris's looks, as Board.lua hands them over (every field given)
+			leather:SetCover({ foot = 1, fill = "Interface\\AddOns\\Pagle\\media\\books\\fills\\oilcloth" })
+			assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\fills\\oilcloth", leather.fill.texture)
 			assert.are.same({ 0, 1, 0, 1 }, leather.fill.texCoord) -- drawn to the leather's size, not tiled
 			assert.is_true(leather.band:IsShown())
 
-			leather:SetCover(ns.CoverLook("hunts.notebookcover.tooled"))
+			leather:SetCover({ foot = 0.75, tooled = true })
 			assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\Leather", leather.fill.texture)
 			assert.are.same({ 0, 386 / 128, 0, 286 / 128 }, leather.fill.texCoord)
 			-- the gilt double rule, 9 and 12 units in, 1.5 units thick
@@ -487,8 +488,12 @@ describe("the board's art kit", function()
 			assert.are.equal(1.5, leather.tooling[1].edges[1].height)
 			assert.is_false(leather.corner:IsShown())
 
-			leather:SetCover(ns.CoverLook("hunts.notebookcover.verdigris"))
-			assert.are.equal("Interface\\AddOns\\Pagle_Hunts\\media\\books\\Cover-verd", leather.fill.texture)
+			leather:SetCover({
+				foot = 1,
+				fill = "Interface\\AddOns\\Pagle\\media\\books\\fills\\verdigris",
+				corner = true,
+			})
+			assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\fills\\verdigris", leather.fill.texture)
 			assert.is_true(leather.corner:IsShown())
 			assert.are.equal("Interface\\AddOns\\Pagle_Hunts\\media\\books\\HuntsParts", leather.corner.texture)
 			assert.is_false(leather.tooling[1].edges[1]:IsShown())

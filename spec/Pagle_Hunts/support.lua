@@ -121,27 +121,6 @@ end
 --- HNT-R121's goods by slot, in its order, each with its kind as the table writes it: the specs' oracle, kept apart
 --- from the addon's own list (logic/Goods.lua).
 support.GOODS = {
-	["hunts.notebookcover"] = {
-		{ "hunts.notebookcover.leather", "default" },
-		{ "hunts.notebookcover.oilcloth", "tier 1" },
-		{ "hunts.notebookcover.tooled", "tier 2" },
-		{ "hunts.notebookcover.verdigris", "tier 3" },
-		{ "hunts.notebookcover.canvas", "tier 1" },
-		{ "hunts.notebookcover.kraft", "tier 1" },
-		{ "hunts.notebookcover.tartan", "tier 1" },
-		{ "hunts.notebookcover.maplinen", "tier 2" },
-		{ "hunts.notebookcover.planks", "tier 2" },
-		{ "hunts.notebookcover.snakeskin", "tier 3" },
-		{ "hunts.notebookcover.shagreen", "tier 3" },
-		{ "hunts.notebookcover.lacquer", "tier 3" },
-		{ "hunts.notebookcover.bone", "tier 3" },
-		{ "hunts.notebookcover.brasscase", "tier 3" },
-		{ "hunts.notebookcover.scrimshaw", "tier 4" },
-		{ "hunts.notebookcover.trophycase", "tier 5" },
-		{ "hunts.notebookcover.pathfinder", "earned" },
-		{ "hunts.notebookcover.fiveseal", "earned" },
-		{ "hunts.notebookcover.wagersilk", "earned" },
-	},
 	["hunts.trackerframe"] = {
 		{ "hunts.trackerframe.none", "default" },
 		{ "hunts.trackerframe.inkwash", "tier 1" },
@@ -152,6 +131,13 @@ support.GOODS = {
 		{ "hunts.trackerframe.spyglass", "tier 3" },
 		{ "hunts.trackerframe.wagerribbon", "earned" },
 	},
+}
+
+--- Hunts' earned bindings in Core's binding slot (HNT-R122, ADR 0015), in their order.
+support.BINDINGS = {
+	{ "hunts.binding.pathfinder", "earned" },
+	{ "hunts.binding.fiveseal", "earned" },
+	{ "hunts.binding.wagersilk", "earned" },
 }
 
 --- A Hunts run on FakePagle: what support.start returns.

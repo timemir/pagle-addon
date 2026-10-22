@@ -1,11 +1,11 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- Core's own goods (wallet-and-shop.md › Goods, SHOP-R25): the toast style, sound set and bookplate crest slots and
--- their goods, as data, and their registration on Core's goods registry (logic/Goods.lua, logic/Wiring.lua's
--- ns.RegisterCoreSlot and ns.RegisterCoreGood). Pure logic (CORE-R7): adapter/CoreGoods.lua draws the previews, and
--- login step 1 registers them (adapter/Login.lua); FakePagle registers them too, so a Module's specs meet Core's
--- crests.
+-- Core's own goods (wallet-and-shop.md › Goods, SHOP-R25): the toast style, sound set, bookplate crest and book
+-- binding slots and their goods, as data (the bindings' from logic/Bindings.lua), and their registration on Core's
+-- goods registry (logic/Goods.lua, logic/Wiring.lua's ns.RegisterCoreSlot and ns.RegisterCoreGood). Pure logic
+-- (CORE-R7): adapter/CoreGoods.lua draws the previews, and login step 1 registers them (adapter/Login.lua); FakePagle
+-- registers them too, so a Module's specs meet Core's crests and bindings.
 
 --- One of Core's goods, as data: exactly one of `default` or `tier` (SHOP-R22). Its name and description are lore
 --- (DATA-R101).
@@ -15,13 +15,14 @@ local ns = select(2, ...)
 ---@field tier? 1|2|3|4|5           -- Tunables: Core goods' tiers
 ---@field icon? string              -- a texture path in the client: the shop's swatch, and a crest's look (LED-R112)
 ---@field variants? integer         -- a sound set's toast variants, if not three (ANN-R74; Tunables): Gilded's one
+---@field lore? string              -- its lore keys' `<kind>.<id>` (DATA-R101): `good.<goodID>` without one
 
 --- One of Core's slots, with its goods in the order the shop lists them.
 ---@class PagleCoreSlot
 ---@field id string
 ---@field label string
----@field category "Announcements"|"Bookplate"
----@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): all three
+---@field category "Announcements"|"Bookplate"|"Books"
+---@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): all four
 ---@field groups? PagleSlotGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
@@ -43,14 +44,29 @@ ns.SOUND_SET_DEFAULT = "core.soundset.driftwood"
 --- Core's bookplate crest slot (SHOP-R25, LED-R112).
 ns.CREST_SLOT = "core.crest"
 
---- Core's slots and goods at M4 (SHOP-R25), in the order they register and the shop lists them. A toast style's look is
+-- Core's book binding slot's goods (SHOP-R25): Field Leather and every binding for sale, in the shop's order
+-- (ns.CoreBindings), each named from Core's lore kind `binding` (`binding.<key>.*`, DATA-R102).
+---@type PagleCoreGood[]
+local BINDING_GOODS = {}
+for i, binding in ipairs(ns.CoreBindings()) do
+	BINDING_GOODS[i] = {
+		id = binding.id,
+		default = binding.default,
+		tier = binding.tier,
+		icon = binding.icon,
+		lore = "binding." .. binding.key,
+	}
+end
+
+--- Core's slots and goods (SHOP-R25), in the order they register and the shop lists them. A toast style's look is
 --- its ns.TOAST_STYLES entry (ANN-R80); a sound set's sounds are its ns.SOUND_SETS entry (ANN-R72); a crest's look is
 --- its icon, which the Ledger draws on the Journal's bookplate through Pagle.GetGood (LED-R112). Every good has an
 --- icon, the shop's swatch (wallet-and-shop.md › UI). Plain's is Core's own texture, drawn as the shield (SHOP-R25);
 --- every other is an in-client texture listed in build 70338's ManifestInterfaceData, standing in until Pagle has its
---- own art. All three slots are open to earned goods (SHOP-R23): the toast styles and sound sets the Ledger, Hunts and
---- the Tackle Board earn, and the Ledger's zone crests (LED-R113), each drawn on the stage by its slot's preview. The
---- crest slot holds Plain alone.
+--- own art. A binding's look is its ns.BindingLook (logic/Bindings.lua), which every book wears (ADR 0015). All four
+--- slots are open to earned goods (SHOP-R23): the toast styles and sound sets the Ledger, Hunts and the Tackle Board
+--- earn, the Ledger's zone crests (LED-R113), and the bindings the Ledger and Hunts earn (LED-R110, HNT-R122), each
+--- drawn on the stage by its slot's preview. The crest slot holds Plain alone.
 ---@type PagleCoreSlot[]
 ns.CORE_GOODS = {
 	{
@@ -114,14 +130,23 @@ ns.CORE_GOODS = {
 			{ id = "core.crest.plain", default = true, icon = CRESTS .. "plain" },
 		},
 	},
+	{
+		id = ns.BINDING_SLOT,
+		label = L.SLOT_BOOK_BINDING,
+		category = "Books",
+		openToEarned = true,
+		goods = BINDING_GOODS,
+	},
 }
 
--- A good's lore text for `field` (DATA-R101: `good.<goodID>.<field>`), or nil while the key has none.
+-- A good's lore text for `field` (DATA-R101: `<kind>.<id>.<field>`, `good.<goodID>` unless `key` names another),
+-- or nil while the key has none.
 ---@param goodID string
 ---@param field "name"|"description"
+---@param key string? its lore keys' `<kind>.<id>`
 ---@return string?
-local function lore(goodID, field)
-	local text = rawget(ns.L, ("good.%s.%s"):format(goodID, field))
+local function lore(goodID, field, key)
+	local text = rawget(ns.L, ("%s.%s"):format(key or "good." .. goodID, field))
 	if type(text) == "string" and text ~= "" then
 		return text
 	end
@@ -157,8 +182,8 @@ function ns.RegisterCoreGoods(previews)
 			ns.RegisterCoreGood({
 				id = good.id,
 				slot = slot.id,
-				name = lore(good.id, "name") or good.id,
-				description = lore(good.id, "description"),
+				name = lore(good.id, "name", good.lore) or good.id,
+				description = lore(good.id, "description", good.lore),
 				icon = good.icon,
 				default = good.default,
 				tier = good.tier,

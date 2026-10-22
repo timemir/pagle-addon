@@ -37,7 +37,7 @@ end
 
 describe("the Fish Journal's art (ledger.md › UI)", function()
 	it(
-		"draws its own parts, crests, binding swatches and corners and every binding's material from its media, as BLP files that ship (LED-R110)",
+		"draws its own parts, crests and corners from its media, the bindings' swatches from Core's, as BLP files that ship (LED-R110, ADR 0015)",
 		function()
 			local _, loaded = openJournal()
 			local atlases = loaded.ns.JOURNAL_ATLASES
@@ -45,14 +45,18 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 				return file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
 			end
 
-			for _, name in ipairs({ "Parts", "Crests", "Bindings", "Bindings2", "BindingCorners" }) do
+			for _, name in ipairs({ "Parts", "Crests", "BindingCorners" }) do
 				local file = atlases[name].file
 				assert.matches("^Interface\\AddOns\\Pagle_Ledger\\media\\journal\\", file)
 				assert(#readFile(path(file)) > 0, path(file))
 			end
+			for _, name in ipairs({ "Bindings", "Bindings2" }) do
+				local file = atlases[name].file
+				assert.matches("^Interface\\AddOns\\Pagle\\media\\books\\", file)
+				assert(#readFile(path(file)) > 0, path(file))
+			end
 			for _, binding in ipairs(loaded.ns.BINDINGS) do
 				local look = loaded.ns.BindingLook(loaded.ns.BindingID(binding))
-				assert(#readFile(path(look.texture)) > 0, path(look.texture))
 				assert(atlases[look.swatchAtlas].sprites[look.swatch], look.swatch)
 				if look.corners then
 					assert(atlases.BindingCorners.sprites["corner-" .. look.corners], look.corners)
@@ -185,7 +189,7 @@ describe("the Fish Journal's sounds (ledger.md › UI)", function()
 		local journal = loaded.ns.journal
 		local from = #loaded.client.sounds
 
-		assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
+		assert.is_true(fake.Pagle.SetEquipped("core.binding", "ledger.binding.level10"))
 
 		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
 		assert.are.same(loaded.ns.BindingLook("ledger.binding.level10").tint, journal.frame.leatherTint)
@@ -329,7 +333,7 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 		loaded.client.update(1)
 		local from = #loaded.client.sounds
 
-		assert.is_true(fake.Pagle.SetEquipped("ledger.binding", "ledger.binding.level10"))
+		assert.is_true(fake.Pagle.SetEquipped("core.binding", "ledger.binding.level10"))
 
 		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
 		assert.are.same({ 1, 1, 1 }, journal.frame.leatherTint)

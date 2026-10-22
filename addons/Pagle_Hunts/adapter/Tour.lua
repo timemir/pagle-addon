@@ -98,22 +98,19 @@ local function swapIn()
 	return sample, out
 end
 
--- A stop on the board: its show opens the board on the stop's place, in the stop's cover if it has one; its hide puts
--- the board back on the place it was on, in the cover it wore, closed if it was closed.
+-- A stop on the board: its show opens the board on the stop's place; its hide puts the board back on the place it was
+-- on, closed if it was closed.
 ---@param M PagleModuleHandle
 ---@param stop HuntsTourStop
 ---@param label string
 local function boardStop(M, stop, label)
 	local board = ns.board
-	---@type { shown: boolean, place: BoardPlace, cover: BoardCoverLook?, out: fun() }?
+	---@type { shown: boolean, place: BoardPlace, out: fun() }?
 	local saved
 	M:RegisterTourStop(stop.id, label, function()
-		local shown, place, cover = board:IsShown(), board.router:Place(), board.cover
+		local shown, place = board:IsShown(), board.router:Place()
 		local sample, out = swapIn()
-		saved = { shown = shown, place = place, cover = cover, out = out }
-		if stop.good then
-			board:SetCover(ns.CoverLook(stop.good))
-		end
+		saved = { shown = shown, place = place, out = out }
 		ns.Redraw("tour")
 		local now = GetServerTime()
 		local rows = ns.groups:Rows({ filtered = true })
@@ -124,7 +121,6 @@ local function boardStop(M, stop, label)
 			return
 		end
 		saved.out()
-		board:SetCover(saved.cover)
 		board.router:Open(saved.place)
 		if saved.shown then
 			board:Draw()

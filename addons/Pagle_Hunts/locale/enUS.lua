@@ -16,8 +16,7 @@ ns.L = {
 	BOARD = "Hunts",
 	BOARD_SLASH_HELP = "Open or close the Hunts board",
 
-	-- Hunts' slots (HNT-R120) and the sample tracker a tracker frame's preview draws (HNT-R121).
-	SLOT_NOTEBOOK_COVER = "Notebook cover",
+	-- Hunts' slot (HNT-R120) and the sample tracker a tracker frame's preview draws (HNT-R121).
 	SLOT_TRACKER_FRAME = "Hunts tracker frame",
 	-- Its two Hunts ("Night Run · in 37m", "Rack Hour · on demand"), the name at the left and the label at the right.
 	PREVIEW_TRACKER_HUNTS = { { "Night Run", "in 37m" }, { "Rack Hour", "on demand" } },
@@ -286,7 +285,6 @@ ns.L = {
 	TOUR_SET_ENTRY = "the Hunts board: an entry opened from its set's page",
 	TOUR_RETIRED = "the Hunts board: a Retired Hunt's entry",
 	TOUR_TRACKER = "the Hunts tracker in the dock, with three pins",
-	TOUR_COVER = "the Hunts board in the %s cover",
 	TOUR_TRACKER_FRAME = "the Hunts tracker in the %s frame",
 
 	-- Pagle Wagers on the Board (HNT-R161, HNT-R163, HNT-R164): logic/Wagers.lua. Hunt Events are only ever
