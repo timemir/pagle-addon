@@ -299,7 +299,7 @@ A NO-GO names each failing item, its ticket, and the next attempt's time.
 
 ### 8.5 The hand-off to pagle-backend
 
-The agents' token reaches only pagle-addon's issues, so the dev posts this where pagle-backend takes it. `{sha256}` is the first line of `launch.py post-tag 1.0.0`, read from the GitHub Release's own zip, not the local build.
+The orchestrator sends this to pagle-backend's session over the cross-session channel and also comments it on #380; pagle-backend mirrors it on its #59. `{sha256}` is the first line of `launch.py post-tag 1.0.0`, read from the GitHub Release's own zip, not the local build.
 
 ```md
 Pagle 1.0.0 is released: https://github.com/timemir/pagle-addon/releases/tag/1.0.0
@@ -311,3 +311,13 @@ Pagle 1.0.0 is released: https://github.com/timemir/pagle-addon/releases/tag/1.0
 
 Pin this zip by its SHA-256 (your PRJ-R63) and fetch it from the GitHub Release (PRJ-R64). Frozen from this tag: `Pagle.API_VERSION` 1, the Catch log's entry tags and the Simulated Size hash (LOG-R66, #267). The Paste copy test sizes (check 25) follow within the week.
 ```
+
+## 9. With pagle-backend (agreed 23 Oct)
+
+- **Companion hint:** the Companion's first release (v0.1.0) is cut by 1 Nov. pagle-backend gives a firm yes or no on `https://pagle.app/download` before Mon 2 Nov. Yes ships `COMPANION_HINT_ON = true`; no ships it off until 1.0.1.
+- **Release candidates:** RC1 (3 Nov) and RC2 go to pagle-backend, each with its zip SHA-256 and commit. It dry-runs its 1.0 pin against RC1.
+- **Log format:** 1.0 ships `LOG_FORMAT` 2 (LOG-R18). pagle-backend accepts pre-1.0 logs until its launch (L). At L it wipes dev logs and refuses every format below 2 as `dev_log`. Send it the format-2 Paste vector (`spec/Pagle/fixtures/PasteString.lua`) with the commit that carries it.
+- **Signing:** pushed content is signed with `pagle-2026a` at launch, with no switch to `2026b` before 1.0.1.
+- **Live pushed-content check:** in S2 (5 Nov 12:00–21:00) on RC2, before GO. Tell pagle-backend's dev the time. In that window pagle-backend schedules an Operator run and a withdrawal for `/reload` checks: `/pagle dev content` reads `connected`, the pushed run shows on the board, and the withdrawal removes it.
+- **After the tag:** pagle-backend pins the 1.0 commit on 6 Nov, checks the zip's SHA-256, folds the dev's live log at the tag, and re-exports the web art, which includes `hyjalcrater` if #373 landed.
+- **Check 25 (6–7 Nov):** send the real 1.0 Paste strings and the largest size that survives the copy test, for its part cap.
