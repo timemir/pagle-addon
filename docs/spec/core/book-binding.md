@@ -28,7 +28,7 @@ Part of [Core](README.md). The Angler's books (the Fish Journal, the Hunts board
   - `giltCorner`: Verdigris's gilt corner at the top left, 40 units square (`options.giltCornerSize`).
 
   Each is hidden in a look without it.
-- **BIND-R13** Everything the renderer draws is Core's art in `Pagle/media/books`: the band and the vignette in `BookAtlas`, the corner pieces in `BindingCorners`, the gilt corner in `BindingGilt`, a whole book's parts in `BindingParts2`, and Core's leather. The materials and the swatches are the bindings' own ([wallet-and-shop.md](wallet-and-shop.md)). A spec checks that every atlas the renderer reads names a BLP file that ships, and that every corner kind has its sprite.
+- **BIND-R13** Everything the renderer draws is Core's art in `Pagle/media/books`: the band and the vignette in `BookAtlas`, the corner pieces in `BindingCorners`, the gilt corner in `BindingGilt`, a whole book's parts in `BindingParts2`, and Core's leather. The materials and the swatches are the bindings' own ([wallet-and-shop.md](wallet-and-shop.md)). A spec checks that every atlas the renderer reads names a BLP file that ships, and that every corner kind has its sprite. `scripts/tests/test_repo_textures.py` checks that every BLP under `addons/` has art in it: one whose top level decodes as entirely transparent or one flat colour fails, since the client draws it without an error. The shop expansion's 34 materials in `bindings/` have been blank since they were added, and are its known failures until their art is restored ([#382](https://github.com/timemir/pagle-addon/issues/382)).
 
 #### A whole book's parts
 
