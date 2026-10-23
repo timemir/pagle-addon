@@ -54,8 +54,8 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
   - **Entries:** Core's codec refuses any entry that would hold one: `Append` raises an error in its caller and appends nothing, whatever wrote the record (Core, a Module through `M:AppendRecord`, the test-log tooling). The fields that could carry text are a build entry's `version`, a purchase's `good`, a Companion entry's `keyId` and a Module record's `payload`; the others are numbers.
   - **Module records:** `M:AppendRecord` raises for a payload with one before it reaches the codec (LOG-R40), so a Module that logs free text escapes or drops line feeds itself (Hunts' pushed definitions are written on one line, a line break in their strings escaped as `\n`, HNT-R154).
   - **The character table** (LOG-R25, LOG-R26): the names the client reports are kept with any line feed stripped, since a login can't refuse a character.
-- **LOG-R17** From 1.0 the entry formats below are frozen; a changed shape gets a new tag (`C2`), and the codec reads both.
-- **LOG-R18** Before 1.0 the formats change freely. When `PagleLog.format` differs from the codec's format number, Core starts a new log (new `logId`, no entries, characters kept) and prints one chat line ("Pagle: dev log format changed; started a new log."). Every projection then rebuilds (LOG-R72). From 1.0 the format number never changes in a way that needs this.
+- **LOG-R17** From 1.0 the entry formats below are frozen, and so is `PagleLog.format`: format 2, the one 1.0 ships (LOG-R18), is the frozen 1.0 format. A changed shape gets a new tag (`C2`), and the codec reads both; the format number stays 2.
+- **LOG-R18** Before 1.0 the formats change freely. When `PagleLog.format` differs from the codec's format number, Core starts a new log (new `logId`, no entries, characters kept) and prints one chat line ("Pagle: dev log format changed; started a new log."). Every projection then rebuilds (LOG-R72). 1.0 ships format 2, and every beta or dev log is format 1, so each one starts over at its first 1.0 login. That is pagle-backend's line between them: it refuses a log in any format below 1.0's as `dev_log` (pagle-backend OPS-R135, OPS-R136), and a 1.0 log always arrives under a new `logId` (pagle-backend CMP-R133). From 1.0 the format number never changes in a way that needs this (LOG-R17).
 
 ### The Cast snapshot
 
@@ -260,7 +260,7 @@ Core runs every Module's stored projection the same way (ADR 0004).
 
 ```lua
 PagleLog = {
-  format = 1,            -- PagleLog layout version (LOG-R18)
+  format = 2,            -- PagleLog layout version: 2 from 1.0, frozen (LOG-R17, LOG-R18)
   logId = "3f9a2c1e7b0d4a65",
   characters = {         -- array; entries refer to the index
     { guid = "Player-4618-0A1B2C3D", name = "Ada", surname = "Brook",

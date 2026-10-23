@@ -8,7 +8,7 @@ PagleDB = {
 },
 }
 PagleLog = {
-["format"] = 1,
+["format"] = 2,
 ["logId"] = "3f9a2c1e7b0d4a65",
 ["characters"] = {
 {

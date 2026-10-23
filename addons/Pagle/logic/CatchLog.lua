@@ -63,8 +63,9 @@ ns.COMPANION_READER = "Core"
 ---@field recordKind string      -- the Module's own kind, [%w_.]+
 ---@field payload string         -- the Module's string, verbatim: no line feed, at most 200 bytes when appended
 
---- The PagleLog layout version (LOG-R18). Before 1.0 it changes with any entry format change.
-ns.LOG_FORMAT = 1
+--- The PagleLog layout version (LOG-R18). 1.0 ships format 2, frozen from then on (LOG-R17); every beta or dev log
+--- is format 1, so it starts over at the first 1.0 login.
+ns.LOG_FORMAT = 2
 
 --- The most bytes a Module record's payload may hold (LOG-R40, Tunables).
 ns.MODULE_RECORD_PAYLOAD_LIMIT = 200

@@ -54,7 +54,7 @@ describe("Core's SavedVariables at load", function()
 	it("start an empty PagleLog and a PagleDB on a fresh install, silently (CORE-R5, LOG-R10)", function()
 		local loaded = login({})
 
-		assert.are.same({ format = 1, characters = {}, entries = {} }, loaded.env.PagleLog)
+		assert.are.same({ format = 2, characters = {}, entries = {} }, loaded.env.PagleLog)
 		assert.is_table(loaded.env.PagleDB)
 		assert.are.same({}, loaded.printed)
 	end)
@@ -97,11 +97,11 @@ describe("Core's SavedVariables at load", function()
 		end
 	end)
 
-	it("start a new log from one in another format, keeping characters, and say so once (LOG-R18)", function()
-		local loaded = login({ PagleLog = savedLog({ "C0|1|1791731690|0" }, 0) })
+	it("start a new log from a beta log (format 1), keeping characters, and say so once (LOG-R18)", function()
+		local loaded = login({ PagleLog = savedLog({ "S1|1|1791731690|0|86|150|0" }, 1) })
 
 		local log = loaded.env.PagleLog
-		assert.are.equal(1, log.format)
+		assert.are.equal(2, log.format)
 		assert.are.equal(ADA, log.characters[1].guid)
 		assert.are.same({}, log.entries)
 		assert.are_not.equal("3f9a2c1e7b0d4a65", log.logId)

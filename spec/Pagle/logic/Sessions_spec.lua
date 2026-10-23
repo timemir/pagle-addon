@@ -11,7 +11,7 @@ local T = 1791731000
 
 -- A PagleLog holding Ada, Bram and these entries.
 local function log(entries)
-	return savedLog(entries, 1, {
+	return savedLog(entries, 2, {
 		{ guid = ADA, name = "Ada", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
 		{ guid = BRAM, name = "Bram", classID = 1, raceID = 3, faction = "Alliance", realmID = 4618 },
 	})

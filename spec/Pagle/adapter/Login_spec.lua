@@ -62,7 +62,7 @@ describe("Core's login order", function()
 	)
 
 	it("notes loginSeq after the format check, so a set-aside log counts as empty (LOG-R1, LOG-R18)", function()
-		local log = savedLog({ "S0|1|1791731000|0|80|150|0" }, 0)
+		local log = savedLog({ "S1|1|1791731000|0|80|150|0" }, 1)
 		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }))
 
 		assert.are.equal(0, loaded.ns.loginSeq)
@@ -136,7 +136,7 @@ describe("Core's login order", function()
 
 		loaded.client.fire("ADDON_LOADED", "Pagle_QoL")
 
-		assert.are.same({ log = 1, db = #loaded.ns.PAGLEDB_MIGRATIONS, catalogue = true }, found)
+		assert.are.same({ log = 2, db = #loaded.ns.PAGLEDB_MIGRATIONS, catalogue = true }, found)
 	end)
 end)
 

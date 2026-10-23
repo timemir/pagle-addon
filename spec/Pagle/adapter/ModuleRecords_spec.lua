@@ -393,7 +393,7 @@ describe("a dev log written before Module records", function()
 		board:AppendRecord("start", "")
 
 		local log = loaded.env.PagleLog
-		assert.are.same({ 1, "3f9a2c1e7b0d4a65" }, { log.format, log.logId })
+		assert.are.same({ 2, "3f9a2c1e7b0d4a65" }, { log.format, log.logId })
 		assert.are.equal("C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1", log.entries[2])
 		assert.are.equal("A1", log.entries[#log.entries]:sub(1, 2))
 		assert.are.same({}, loaded.printed)

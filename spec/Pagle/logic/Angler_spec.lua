@@ -33,7 +33,7 @@ end
 local function anglerOver(characters, entries, global)
 	local saved
 	if characters or entries then
-		saved = { format = 1, logId = "3f9a2c1e7b0d4a65", characters = characters or {}, entries = entries or {} }
+		saved = { format = 2, logId = "3f9a2c1e7b0d4a65", characters = characters or {}, entries = entries or {} }
 	end
 	local catchLog = ns.OpenCatchLog(saved, global or {}, T)
 	return ns.NewAngler(catchLog), catchLog

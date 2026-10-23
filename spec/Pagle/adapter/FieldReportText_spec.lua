@@ -12,7 +12,7 @@ describe("ns.FieldReportText (REP-R30, REP-R35, REP-R36)", function()
 
 	-- Core loaded with the fixture Angler's PagleLog, on a client that knows the names above.
 	local function load()
-		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog({}, 1, CHARACTERS) }))
+		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog({}, 2, CHARACTERS) }))
 		loaded.env.C_Item = loaded.env.C_Item or {}
 		loaded.env.C_Item.GetItemInfo = function(itemID)
 			-- The name first, as the client returns it, then the rest of GetItemInfo's values.
@@ -114,7 +114,7 @@ describe("the Field report from a fixture Angler's log, rows to text (REP-R20–
 			BUILD_ENTRY,
 			castEntry(FIRST + 1),
 			castEntry(FIRST + 2, 9999, 0, 2),
-		}, 1, CHARACTERS)
+		}, 2, CHARACTERS)
 		local loaded = loadCore(log, {
 			global = {
 				diagnostics = {

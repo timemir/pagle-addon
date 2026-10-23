@@ -10,7 +10,7 @@ local BRAM = "Player-4618-0F0E0D0C"
 
 -- A PagleLog as the client loads it from SavedVariables (savedLog), holding Ada, Bram and these entries.
 local function adaAndBramLog(entries)
-	return savedLog(entries, 1, {
+	return savedLog(entries, 2, {
 		{ guid = ADA, name = "Ada", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
 		{ guid = BRAM, name = "Bram", classID = 1, raceID = 3, faction = "Alliance", realmID = 4618 },
 	})
@@ -279,7 +279,7 @@ describe("the Catch log codec", function()
 			catchLog:Append({ kind = "companion", char = 1, time = 1791731683, keyId = "pagle-2026-a", pushedSeq = 42 })
 
 			assert.are.same({ "K1|1|1791731683|0|pagle-2026-a|42" }, catchLog.data.entries)
-			assert.are.equal(1, ns.LOG_FORMAT, "an additive kind: PagleLog.format stays (LOG-R18)")
+			assert.are.equal(2, ns.LOG_FORMAT, "an additive kind: PagleLog.format stays (LOG-R18)")
 			assert.are.same(
 				{
 					{
@@ -618,7 +618,7 @@ describe("opening PagleLog", function()
 	it("starts an empty log on a fresh install, without a chat line (LOG-R10, LOG-R18)", function()
 		local catchLog, started = ns.OpenCatchLog(nil, {}, NOW)
 
-		assert.are.same({ format = 1, characters = {}, entries = {} }, catchLog.data)
+		assert.are.same({ format = 2, characters = {}, entries = {} }, catchLog.data)
 		assert.is_false(started)
 	end)
 
@@ -633,7 +633,7 @@ describe("opening PagleLog", function()
 		assert.is_false(started)
 	end)
 
-	for _, format in ipairs({ 0, 2, "nil" }) do
+	for _, format in ipairs({ 0, 1, 3, "nil" }) do
 		it(("starts a new log from one in format %s, keeping the characters (LOG-R18)"):format(format), function()
 			local saved = adaAndBramLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" })
 			saved.format = tonumber(format)
@@ -645,7 +645,7 @@ describe("opening PagleLog", function()
 			assert.is_true(started)
 			assert.are.equal(characters, catchLog.data.characters)
 			assert.are.same({}, catchLog.data.entries)
-			assert.are.equal(1, catchLog.data.format)
+			assert.are.equal(2, catchLog.data.format)
 			assert.is_nil(catchLog.data.stale)
 			assert.are.matches("^[0-9a-f]+$", catchLog.data.logId)
 			assert.are.equal(16, #catchLog.data.logId)
@@ -752,7 +752,7 @@ describe("the Simulated Size on decoded Casts", function()
 
 	-- A log of these entries by Vee (1), Oak (2) and Dee (3), opened over `items` (ITEMS by default) as its catalogue.
 	local function veeLog(entries, items)
-		return ns.OpenCatchLog(savedLog(entries, 1, { VEE, OAK, DEE }), {}, nil, function(itemID)
+		return ns.OpenCatchLog(savedLog(entries, 2, { VEE, OAK, DEE }), {}, nil, function(itemID)
 			return (items or ITEMS)[itemID]
 		end)
 	end
@@ -901,7 +901,7 @@ describe("the Simulated Size on decoded Casts", function()
 			-- A log over the fixture catalogue that counts the items it looks up.
 			local function counted()
 				local lookups = { n = 0 }
-				local catchLog = ns.OpenCatchLog(savedLog(entries, 1, { VEE, OAK, DEE }), {}, nil, function(itemID)
+				local catchLog = ns.OpenCatchLog(savedLog(entries, 2, { VEE, OAK, DEE }), {}, nil, function(itemID)
 					lookups.n = lookups.n + 1
 					return ITEMS[itemID]
 				end)
@@ -1019,7 +1019,7 @@ describe("the Simulated Size on decoded Casts", function()
 				earlier(2, 1791731060, "6358x1,6358x1,6358x1,6358x1,6358x1,6358x1"),
 			}
 			local global = {}
-			local saved = savedLog(entries, 1, { VEE, OAK, DEE })
+			local saved = savedLog(entries, 2, { VEE, OAK, DEE })
 			local catchLog = ns.OpenCatchLog(saved, global, nil, function(itemID)
 				return ITEMS[itemID]
 			end)
@@ -1066,7 +1066,7 @@ describe("the Simulated Size on decoded Casts", function()
 	)
 
 	it("gives no sizes when opened without a catalogue (LOG-R65)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6358x1") }, 1, { VEE }), {})
+		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6358x1") }, 2, { VEE }), {})
 
 		assert.are.same({ false }, sizes(records(catchLog, 0)[1]))
 	end)
@@ -1100,7 +1100,7 @@ describe("the variety on decoded Casts", function()
 
 	-- A log of Vee's entries, opened over `items` (ITEMS by default) as its catalogue.
 	local function veeLog(entries, items)
-		return ns.OpenCatchLog(savedLog(entries, 1, { VEE }), {}, nil, function(itemID)
+		return ns.OpenCatchLog(savedLog(entries, 2, { VEE }), {}, nil, function(itemID)
 			return (items or ITEMS)[itemID]
 		end)
 	end
@@ -1181,7 +1181,7 @@ describe("the variety on decoded Casts", function()
 	end)
 
 	it("gives no varieties when opened without a catalogue (VAR-R4)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6359x1") }, 1, { VEE }), {})
+		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6359x1") }, 2, { VEE }), {})
 
 		assert.are.same({ false }, varieties(records(catchLog, 0)[1]))
 	end)

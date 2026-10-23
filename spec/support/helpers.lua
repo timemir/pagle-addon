@@ -86,12 +86,12 @@ end
 --- `characters`, or by default Ada (Player-4618-0A1B2C3D), first and last seen at 1791700000. Each call makes a
 --- fresh table, which Core may change.
 ---@param entries string[]?
----@param format integer? Default 1.
+---@param format integer? Default 2, the codec's (LOG-R18).
 ---@param characters table[]?
 ---@return table
 function savedLog(entries, format, characters)
 	return {
-		format = format or 1,
+		format = format or 2,
 		logId = "3f9a2c1e7b0d4a65",
 		characters = characters or { characterRecord() },
 		entries = entries or {},
