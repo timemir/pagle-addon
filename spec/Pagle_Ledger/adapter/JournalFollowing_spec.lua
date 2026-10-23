@@ -306,7 +306,7 @@ describe("the Following spread's left page (LED-R151)", function()
 		"draws Core's Prestige emblem at 22 just before each row's value, the Master's from rank 11 (LED-R151, LED-R152)",
 		function()
 			local fake, loaded = journalWith(file(), "following")
-			local rows = loaded.ns.journal.frame.left.drawn.row
+			local rows = loaded.ns.journal.shown.left.drawn.row
 			local atlas = fake.ns.ATLASES.PrestigeEmblems
 			-- The emblem sprite a row's texture shows, by its texture coordinates in Core's emblems atlas.
 			local function emblemOf(row)
@@ -340,7 +340,7 @@ describe("the Following spread's left page (LED-R151)", function()
 		"draws no emblem at rank 0, and keeps no room for one: the row's height, name and value as a ranked row's (LED-R151, LED-R152)",
 		function()
 			local _, loaded = journalWith(file(), "following")
-			local rows = loaded.ns.journal.frame.left.drawn.row
+			local rows = loaded.ns.journal.shown.left.drawn.row
 			local ranked, plain = rows[1], rows[2]
 			-- Where `region` sits on its row `row`: its point, whether it is placed on the row, the row's point and the
 			-- offsets, SetPoint(point, x, y) being on the same point of its parent.
@@ -374,12 +374,12 @@ describe("the Following spread's left page (LED-R151)", function()
 				end
 			end,
 		})
-		assert.is_true(loaded.ns.journal.frame.left.drawn.row[1].emblem:IsShown())
+		assert.is_true(loaded.ns.journal.shown.left.drawn.row[1].emblem:IsShown())
 
 		unranked = true
 		loaded.ns.journal:Draw()
 
-		assert.is_false(loaded.ns.journal.frame.left.drawn.row[1].emblem:IsShown())
+		assert.is_false(loaded.ns.journal.shown.left.drawn.row[1].emblem:IsShown())
 	end)
 
 	it(
