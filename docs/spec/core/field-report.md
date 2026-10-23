@@ -1,6 +1,6 @@
 # Core: Field report
 
-> Status: Done · Milestones: M3 · Sources: [Design the /pagle report format and issue form](https://github.com/timemir/wow-fish/issues/26#issuecomment-6124884698), [Define the content data pipeline](https://github.com/timemir/wow-fish/issues/19#issuecomment-6113646946), [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372); ADR 0003, 0004, 0006
+> Status: Done · Milestones: M3 · Sources: [Design the /pagle report format and issue form](https://github.com/timemir/pagle-addon/issues/26#issuecomment-6124884698), [Define the content data pipeline](https://github.com/timemir/pagle-addon/issues/19#issuecomment-6113646946), [Define the Core data model](https://github.com/timemir/pagle-addon/issues/10#issuecomment-6112707372); ADR 0003, 0004, 0006
 
 Part of [Core](README.md). A **Field report** is the text an Angler copies out of Pagle to share what they've seen that the content data doesn't yet confirm. This file covers the in-game side: what goes in, the text format, and the box. Turning a pasted report into `data/observed/` (issue form, parser, Action, importer) belongs to `docs/spec/content-data.md`, which must accept exactly the format below.
 
@@ -106,7 +106,7 @@ Part of [Core](README.md). A **Field report** is the text an Angler copies out o
 - **REP-R43** The box is also reached from the compartment menu entry "Help chart the waters" (with the row count when above 0, CORE-R50) and the button in Core's Settings root (CORE-R40). The Ledger's Journal calls `Pagle.OpenFieldReport()` from an Uncharted fish or a zone with no data.
 - **REP-R44** While `Pagle.IsRestricted()` is true, no entry point opens the box; each prints one chat line ("Pagle: the Field report opens after combat."). A box already open stays open.
 - **REP-R45** Nothing about the Field report ever pops up on its own: it isn't an Announcement (nothing was earned) and it isn't a Nudge.
-- **REP-R46** The issue-form URL is `https://github.com/timemir/wow-fish/issues/new?template=field-report.yml`. 1.0 accepts reports through GitHub only; players who won't use GitHub can post the text anywhere for the dev to paste in.
+- **REP-R46** The issue-form URL is `https://github.com/timemir/pagle-addon/issues/new?template=field-report.yml`. 1.0 accepts reports through GitHub only; players who won't use GitHub can post the text anywhere for the dev to paste in.
 - **REP-R47** The box has a fixed size, 520 × 360, centred on the screen, whatever the report's length: the report text scrolls inside it and never grows the box.
 
 ## Data

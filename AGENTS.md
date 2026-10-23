@@ -2,7 +2,7 @@
 
 ### Issue tracker
 
-Issues live in GitHub Issues for `timemir/wow-fish`, accessed via `wsl gh` with a token scoped to this repo only. See `docs/agents/issue-tracker.md`.
+Issues live in GitHub Issues for `timemir/pagle-addon`, accessed via `wsl gh` with a token scoped to this repo only. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

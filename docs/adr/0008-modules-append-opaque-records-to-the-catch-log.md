@@ -22,4 +22,4 @@ The Tackle Board forced the question. Its Notices pay a currency, and a reroll i
 
 ## Note: the call lives on the Module handle
 
-In the Core spec ([Write the Core spec](https://github.com/timemir/wow-fish/issues/35)) the call is `M:AppendRecord(kind, payload)` on the handle `Pagle.RegisterModule` returns, so Core knows which Module wrote the record, and the entry carries the same header as every other kind: `A1|<char>|<time>|<tie>|<module>|<kind>|<payload>`.
+In the Core spec ([Write the Core spec](https://github.com/timemir/pagle-addon/issues/35)) the call is `M:AppendRecord(kind, payload)` on the handle `Pagle.RegisterModule` returns, so Core knows which Module wrote the record, and the entry carries the same header as every other kind: `A1|<char>|<time>|<tie>|<module>|<kind>|<payload>`.

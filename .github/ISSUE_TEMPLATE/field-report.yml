@@ -1,5 +1,5 @@
 # The Field report form (DATA-R115), at the URL Pagle's report box shows (REP-R46):
-# https://github.com/timemir/wow-fish/issues/new?template=field-report.yml
+# https://github.com/timemir/pagle-addon/issues/new?template=field-report.yml
 # The triage Action (.github/workflows/field-report-triage.yml, DATA-R117) reads the report field: GitHub renders it
 # under "### Report" in a code block, which scripts/pagle_data/report.py's report_field() takes it out of. Keep the
 # field's label "Report" (REPORT_LABEL there).

@@ -1,6 +1,6 @@
 # PagleProbe: which fishing signals can the Forever client see?
 
-A throwaway diagnostic addon for [issue #7](https://github.com/timemir/wow-fish/issues/7). You install it in the **WoW: Forever beta**, play through the checklist below, and paste the report back into the issue.
+A throwaway diagnostic addon for [issue #7](https://github.com/timemir/pagle-addon/issues/7). You install it in the **WoW: Forever beta**, play through the checklist below, and paste the report back into the issue.
 
 **It is read-only.** It never casts, clicks the bobber, applies lures, loots or takes any other game action. You do all the fishing yourself. The addon only watches and writes notes into its own saved-data file. It also does nothing heavy in combat.
 
