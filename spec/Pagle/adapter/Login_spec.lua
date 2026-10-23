@@ -191,7 +191,7 @@ describe("the character table at PLAYER_LOGIN", function()
 		)
 	end)
 
-	it("reads hardcore from C_GameRules.IsHardcoreActive when it exists, and never sets selfFound (LOG-R26)", function()
+	it("reads hardcore from C_GameRules.IsHardcoreActive when it exists (LOG-R26)", function()
 		for _, active in ipairs({ true, false }) do
 			local characters = loginAsAda({
 				C_GameRules = {
@@ -202,7 +202,6 @@ describe("the character table at PLAYER_LOGIN", function()
 			})
 
 			assert.are.equal(active, characters[1].hardcore)
-			assert.is_nil(characters[1].selfFound)
 		end
 	end)
 end)

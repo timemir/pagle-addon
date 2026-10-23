@@ -61,7 +61,7 @@ ns.COMPANION_READER = "Core"
 ---@class PagleModuleRecord : PagleRecord
 ---@field module string          -- the writing Module's def.name
 ---@field recordKind string      -- the Module's own kind, [%w_.]+
----@field payload string         -- the Module's string, verbatim: no newline, at most 200 bytes when appended
+---@field payload string         -- the Module's string, verbatim: no line feed, at most 200 bytes when appended
 
 --- The PagleLog layout version (LOG-R18). Before 1.0 it changes with any entry format change.
 ns.LOG_FORMAT = 1
@@ -70,7 +70,7 @@ ns.LOG_FORMAT = 1
 ns.MODULE_RECORD_PAYLOAD_LIMIT = 200
 
 --- Why a Module record of `kind` with `payload` can't be appended, or nil if it can (LOG-R40): `kind` must match
---- [%w_.]+ and `payload` be a string with no newline, at most MODULE_RECORD_PAYLOAD_LIMIT bytes.
+--- [%w_.]+ and `payload` be a string with no line feed (LOG-R101), at most MODULE_RECORD_PAYLOAD_LIMIT bytes.
 ---@param kind any
 ---@param payload any
 ---@return string?
@@ -82,7 +82,7 @@ function ns.ModuleRecordProblem(kind, payload)
 		return "a Module record's payload must be a string, got " .. type(payload)
 	end
 	if string.find(payload, "\n", 1, true) then
-		return "a Module record's payload can't hold a newline"
+		return "a Module record's payload can't hold a line feed"
 	end
 	if #payload > ns.MODULE_RECORD_PAYLOAD_LIMIT then
 		return ("a Module record's payload is at most %d bytes, got %d"):format(
@@ -859,7 +859,7 @@ end
 --- `{ kind = "companion", char, time, keyId, pushedSeq }`), and returns the record as every reader will see it.
 --- A Cast or Skill Reading carries its Session's ID (LOG-R98), and a Cast its Simulated Sizes, counted over the log
 --- before it (LOG-R100). Raises an error in the caller, appending nothing, for a record the codec can't write and read
---- back.
+--- back, and for one whose entry would hold a line feed (LOG-R101).
 ---@param record table
 ---@return PagleRecord
 function CatchLog:Append(record)
@@ -874,7 +874,8 @@ function CatchLog:Append(record)
 		local header = { tag, integerField(record.char), integerField(record.time), integerField(tie) }
 		return table.concat(header, "|") .. "|" .. table.concat(fields, "|")
 	end)
-	local appended = ok and decode(entry, seq, self.data.characters)
+	-- No entry ever holds a line feed (LOG-R101), whoever writes it and whatever its fields say.
+	local appended = ok and not string.find(entry, "\n", 1, true) and decode(entry, seq, self.data.characters)
 	if not appended then
 		error(("the Catch log can't write this %s record"):format(tostring(record.kind)), 2)
 	end

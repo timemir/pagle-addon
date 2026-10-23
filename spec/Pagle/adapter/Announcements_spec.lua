@@ -190,6 +190,23 @@ describe("Announcement frames", function()
 		assert.is_false(splash.shown)
 	end)
 
+	-- #363 (#76 item 12): a hint, not a button, since ReloadUI() is protected; no setting turns it off.
+	it("always carry the line /reload to keep it safe on a splash, in Cozy mode too (ANN-R41, ANN-R97)", function()
+		local loaded, M = loadCore()
+
+		raise(loaded, M, moment("splash", "Legend", { text = "Old Ironjaw", icon = 6292 }))
+		local splash = frameOf(loaded, "splash")
+		assert.are.same({ true, "/reload to keep it safe" }, { splash.reload:IsVisible(), splash.reload:GetText() })
+		splash:Click()
+
+		loaded.ns.db.profile.announcements.cozy = true
+		raise(loaded, M, moment("splash", "Legend", { text = "Keefer's Angelfish", icon = 19805 }))
+		assert.are.same(
+			{ true, "Keefer's Angelfish", true, "/reload to keep it safe" },
+			{ splash.shown, splash.text:GetText(), splash.reload:IsVisible(), splash.reload:GetText() }
+		)
+	end)
+
 	it(
 		"show a Nod raised while a toast shows under it in the column; both reach the summary (ANN-R20, ANN-R25)",
 		function()

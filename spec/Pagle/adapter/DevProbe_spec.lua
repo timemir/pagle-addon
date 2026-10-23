@@ -1,4 +1,4 @@
--- /pagle dev probe (#261): reads the client facts launch re-verification checks 3, 8, 11, 12, 16 and 18–22 need
+-- /pagle dev probe (#261): reads the client facts launch re-verification checks 3, 8, 11, 12, 16 and 18–21 need
 -- (roadmap.md › Launch re-verification checklist), saves them in PagleDB.global.probe and prints one line per check,
 -- through the real TOC and the fake client. Every API it tests is looked up by name through _G, so a name the client
 -- lacks is a miss, never an error.
@@ -23,15 +23,6 @@ local function liveClient(loaded)
 	env.C_GameRules = {
 		IsHardcoreActive = function()
 			return false
-		end,
-		IsSelfFoundAllowed = function()
-			return true
-		end,
-		IsSelfFoundBroken = function()
-			error("needs an argument")
-		end,
-		GetActiveGameMode = function()
-			return 3
 		end,
 	}
 	env.C_Weather = {
@@ -122,7 +113,7 @@ describe("/pagle dev probe", function()
 			for i = 1, #lines - 1 do
 				checks[i] = tonumber(lines[i]:match("^Pagle dev: probe (%d+): "))
 			end
-			assert.are.same({ 3, 8, 11, 12, 16, 18, 19, 20, 21, 22 }, checks)
+			assert.are.same({ 3, 8, 11, 12, 16, 18, 19, 20, 21 }, checks)
 			assert.are.equal("Pagle dev: Probe saved; /reload to write it.", lines[#lines])
 		end
 	)
@@ -189,25 +180,6 @@ describe("/pagle dev probe", function()
 			gameTime = "8:15",
 			fallbackDayStart = SERVER_TIME - (8 * 60 + 15) * 60,
 		}, loaded.env.PagleDB.global.probe.checks[18])
-	end)
-
-	it("reads check 22: every C_GameRules key with its type, and each Is*SelfFound* call's result (#261)", function()
-		local loaded = probing()
-
-		pagle(loaded, "dev probe")
-		loaded.client.advance(2)
-
-		local check = loaded.env.PagleDB.global.probe.checks[22]
-		assert.are.same({
-			{ name = "GetActiveGameMode", type = "function" },
-			{ name = "IsHardcoreActive", type = "function" },
-			{ name = "IsSelfFoundAllowed", type = "function" },
-			{ name = "IsSelfFoundBroken", type = "function" },
-		}, check.keys)
-		assert.are.equal("IsSelfFoundAllowed", check.calls[1].name)
-		assert.are.equal("true", check.calls[1].result)
-		assert.are.equal("IsSelfFoundBroken", check.calls[2].name)
-		assert.truthy(check.calls[2].result:find("^error: "))
 	end)
 
 	it("reads check 3: C_Weather's keys, what GetCurrentWeather returns, and the zone (#261, LOG-R21)", function()
@@ -385,7 +357,7 @@ describe("/pagle dev probe", function()
 		pagle(loaded, "dev probe")
 		loaded.client.advance(2)
 
-		for _, n in ipairs({ 3, 8, 12, 16, 18, 19, 20, 21, 22 }) do
+		for _, n in ipairs({ 3, 8, 12, 16, 18, 19, 20, 21 }) do
 			-- A line with no miss: its whole text, the check named, so a failure shows which.
 			local line = assert(checkLine(loaded, n))
 			assert.are.equal((line:gsub("; FAIL: .*", "")), line)

@@ -78,13 +78,13 @@ describe("the character table", function()
 		assert.are.equal(2, #catchLog.data.characters)
 	end)
 
-	it("never keeps selfFound, whatever it's handed (LOG-R26)", function()
+	it("writes no line feed into the character table: it strips any from the names it's handed (LOG-R101)", function()
 		local angler, catchLog = anglerOver()
 
-		angler:SeeCharacter(ada({ selfFound = true, hardcore = false }), T)
+		angler:SeeCharacter(ada({ name = "A\nda", surname = "Brook\n", faction = "\nAlliance" }), T)
 
-		assert.is_nil(catchLog.data.characters[1].selfFound)
-		assert.is_false(catchLog.data.characters[1].hardcore)
+		local character = catchLog.data.characters[1]
+		assert.are.same({ "Ada", "Brook", "Alliance" }, { character.name, character.surname, character.faction })
 	end)
 
 	it("gives a fresh log its logId as soon as it has a character (LOG-R15)", function()

@@ -269,12 +269,12 @@ function ns.EarnedCrests(state)
 	return crests
 end
 
---- The record kind of the Ledger's title record (#76 item 2): its payload is the picked title key, or "" for
---- automatic (LED-R77).
+--- The record kind of the Ledger's title record (LED-R157, #76 item 2): its payload is the title key "Signed as"
+--- picks, or "" for automatic (LED-R77).
 ns.TITLE_RECORD = "title"
 
---- The title a Ledger Module record picks (#76 item 2): nil when it isn't a title record, false when it picks
---- automatic, else the picked title key. The Ledger doesn't append it yet; the backend reads it from the log.
+--- The title a Ledger Module record picks (LED-R157): nil when it isn't a title record, false when it picks
+--- automatic, else the picked title key. The fold ignores it; the backend reads it from the log.
 ---@param record PagleModuleRecord
 ---@return (string|false)?
 function ns.PickedTitle(record)
@@ -285,6 +285,22 @@ function ns.PickedTitle(record)
 		return false
 	end
 	return record.payload
+end
+
+--- The title record to append for the title "Signed as" picks now (LED-R157): its payload ("" for automatic), or nil
+--- when the last title record the Ledger logged to this log already names it. One it logged to another log
+--- (`logged.logId` isn't `logId`) counts as none, and with none, automatic counts as logged.
+---@param logged { logId: string, key: string }? PagleLedgerDB.global.titleLogged
+---@param logId string? the log's logId now (Pagle.GetAngler().logId)
+---@param activeTitle string? the stored pick (PagleLedgerDB.profile.activeTitle), nil for automatic
+---@return string?
+function ns.TitleRecordFor(logged, logId, activeTitle)
+	local payload = activeTitle or ""
+	local named = logged and logged.logId == logId and logged.key or ""
+	if payload == named then
+		return nil
+	end
+	return payload
 end
 
 --- The record kind of the Ledger's crest record (LED-R156, #76 item 19): its payload is the good ID of the crest the

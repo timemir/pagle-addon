@@ -50,6 +50,10 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 - **LOG-R14** An entry's **`seq`** is its index in `PagleLog.entries`. The log is append-only: an entry is never rewritten, reordered, migrated or deleted, and there is no compaction.
 - **LOG-R15** `PagleLog.logId` is created once, with the file: 16 lowercase hex characters drawn from the first character's GUID, the server time and `math.random`. A `(logId, seq)` pair is the upload cursor for a future backend.
 - **LOG-R16** The codec in Core's `logic/` encodes and decodes every kind and reads every tag it has ever written. An entry it can't decode is skipped by every reader and counted in `PagleDB.global.decodeErrors`, once per entry per login however many readers meet it.
+- **LOG-R101** **No line feed in the log** ([#363](https://github.com/timemir/wow-fish/issues/363), [#76](https://github.com/timemir/wow-fish/issues/76) item 14). No `PagleLog` entry of any kind ever holds a line feed (LF, `0x0A`), and neither does the character table's text; a carriage return (CR, `0x0D`) may. Pagle's backend reads the log line by line and rejects a file with one (pagle-backend UPL-R10 step 8, UPL-R12 `nolf`, CMP-R31). Every writer keeps it out in the way that fits it:
+  - **Entries:** Core's codec refuses any entry that would hold one: `Append` raises an error in its caller and appends nothing, whatever wrote the record (Core, a Module through `M:AppendRecord`, the test-log tooling). The fields that could carry text are a build entry's `version`, a purchase's `good`, a Companion entry's `keyId` and a Module record's `payload`; the others are numbers.
+  - **Module records:** `M:AppendRecord` raises for a payload with one before it reaches the codec (LOG-R40), so a Module that logs free text escapes or drops line feeds itself (Hunts' pushed definitions are written on one line, a line break in their strings escaped as `\n`, HNT-R154).
+  - **The character table** (LOG-R25, LOG-R26): the names the client reports are kept with any line feed stripped, since a login can't refuse a character.
 - **LOG-R17** From 1.0 the entry formats below are frozen; a changed shape gets a new tag (`C2`), and the codec reads both.
 - **LOG-R18** Before 1.0 the formats change freely. When `PagleLog.format` differs from the codec's format number, Core starts a new log (new `logId`, no entries, characters kept) and prints one chat line ("Pagle: dev log format changed; started a new log."). Every projection then rebuilds (LOG-R72). From 1.0 the format number never changes in a way that needs this.
 
@@ -76,7 +80,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 ### Characters and the Angler
 
 - **LOG-R25** At `PLAYER_LOGIN`, Core adds the character to `PagleLog.characters` if its GUID is new, and updates `lastSeen` and the display fields if not. A faction or realm transfer that produces a new GUID is a new character; nothing links the two.
-- **LOG-R26** Display fields: `UnitName("player")` (first name and surname on Forever), `UnitClass` and `UnitRace` IDs, `UnitFactionGroup`, and the realm ID from the GUID. `hardcore` is `C_GameRules.IsHardcoreActive()` when that call exists, `nil` otherwise. `selfFound` stays `nil` until launch re-verification names a per-character call for it. Characters are never keyed by name.
+- **LOG-R26** Display fields: `UnitName("player")` (first name and surname on Forever), `UnitClass` and `UnitRace` IDs, `UnitFactionGroup`, and the realm ID from the GUID. `hardcore` is `C_GameRules.IsHardcoreActive()` when that call exists, `nil` otherwise. Characters are never keyed by name.
 - **LOG-R27** `Pagle.GetAngler()` returns the `Angler` (see [Contracts](#contracts)). Two `PagleLog` files belong to the same Angler when they share a character GUID; no account ID or BattleTag is stored.
 
 ### Skill Readings
@@ -103,7 +107,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
 ### Module records
 
-- **LOG-R40** `M:AppendRecord(kind, payload)` appends `A1|<header>|<module>|<kind>|<payload>` (ADR 0008), with `module` the Module's `def.name`. `kind` matches `[%w_.]+`. `payload` is any string without a newline, at most 200 bytes; a longer or invalid one raises a Lua error in the caller. Core never reads the payload. It returns the record and hands it to the Module's projections as a `"live"` entry under LOG-R73/R74: right away if they are up to date, after the current `apply` returns if called from inside one, or when the catch-up finishes if they are updating. Calling it during a `"replay"` or `"rebuild"` apply or from `done` raises a Lua error, so a rebuild never writes records twice.
+- **LOG-R40** `M:AppendRecord(kind, payload)` appends `A1|<header>|<module>|<kind>|<payload>` (ADR 0008), with `module` the Module's `def.name`. `kind` matches `[%w_.]+`. `payload` is any string without a line feed (LOG-R101), at most 200 bytes; a longer or invalid one raises a Lua error in the caller. Core never reads the payload. It returns the record and hands it to the Module's projections as a `"live"` entry under LOG-R73/R74: right away if they are up to date, after the current `apply` returns if called from inside one, or when the catch-up finishes if they are updating. Calling it during a `"replay"` or `"rebuild"` apply or from `done` raises a Lua error, so a rebuild never writes records twice.
 - **LOG-R41** A Module record is replayed only to the Module that wrote it, through its handle's `M:IterateCatches` and its projections. Records from a disabled or uninstalled Module stay in the log and are skipped. A Module never appends a record as a cache of derived state.
 
 ### Reading the log back
@@ -261,7 +265,7 @@ PagleLog = {
   characters = {         -- array; entries refer to the index
     { guid = "Player-4618-0A1B2C3D", name = "Ada", surname = "Brook",
       classID = 1, raceID = 1, faction = "Alliance", realmID = 4618,
-      hardcore = false, selfFound = false,      -- nil when the game exposes no flag
+      hardcore = false,      -- nil when the game exposes no flag
       firstSeen = 1791731680, lastSeen = 1791735000 },
   },
   entries = { "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1", ... },
@@ -376,7 +380,7 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 
 ---@class Angler
 ---@field logId string?          -- nil only on a fresh install before the first PLAYER_LOGIN
----@field characters { guid: string, name: string, surname?: string, classID: integer, raceID: integer, faction: string, realmID: integer, hardcore?: boolean, selfFound?: boolean, firstSeen: integer, lastSeen: integer }[]
+---@field characters { guid: string, name: string, surname?: string, classID: integer, raceID: integer, faction: string, realmID: integer, hardcore?: boolean, firstSeen: integer, lastSeen: integer }[]
 ---@field current integer?       -- index of the logged-in character; nil before PLAYER_LOGIN
 ---@field skill { [integer]: PagleSkillReading }   -- latest Skill Reading per character index
 ---@field bestBaseSkill integer  -- highest skill rank among all characters (0 if none)
@@ -467,7 +471,7 @@ What the backend's projection driver calls in `logic/` (LOG-R79), by the names a
 | `Pagle_Ledger` | `LifetimeCatches(state)` | lifetime Catches (LED-R42) |
 | `Pagle_Ledger` | `LegendList()` | the release's Legends for Region firsts (PRJ-R15): the item IDs LED-R63's "x of N" counts for an Angler with no Catches, listed and not removed (LED-R11, LED-R12), ascending. The driver calls it after `BindProjections`. |
 | `Pagle_Hunts` | `EventPool()` | the release's Hunt Event pool (DATA-R98, HNT-R140): every pool event, retired ones included, in event-ID order, each a plain `{ id, tags, skill, band, rotation, retired }` (`skill` is `{ low, high }`, `band` HNT-R156's, `retired` a server time or nil). The driver calls it after `BindProjections`, which builds the pool. |
-| `Pagle_Ledger` | `PickedTitle(record)` | for a Ledger Module record: nil when it isn't the title record, false when it picks automatic, else the picked title key. The title record (#76 item 2) has kind `title` and the key as its payload, `""` for automatic (LED-R77); the Ledger doesn't append it yet. |
+| `Pagle_Ledger` | `PickedTitle(record)` | for a Ledger Module record: nil when it isn't the title record, false when it picks automatic, else the picked title key. The title record (#76 item 2) has kind `title` and the key as its payload, `""` for automatic (LED-R77); the Ledger appends it whenever the title "Signed as" picks isn't the one it last logged (LED-R157). The latest by entry time is the picked title. |
 | `Pagle_Ledger` | `EquippedCrest(record)` | for a Ledger Module record: nil when it isn't the crest record, false when it equips Plain, else the equipped crest's good ID (`ledger.crest.<key>`, `core.crest.fish.<speciesID>`, or a crest bought in the Curio Shop). The crest record (#76 item 19) has kind `crest` and the good ID as its payload, `""` for Plain; the Ledger appends it whenever the crest its bookplate pins isn't the latest record's (LED-R156). The latest by entry time is the equipped crest. |
 | `Pagle_Ledger`, `Pagle_Stats`, `Pagle_Hunts`, `Pagle_TackleBoard` | `JournalValues(state, sessionRows)` | the Angler page's Journal values the Module holds, keyed as pagle-backend's angler-page.md › Journal values; no key comes from two Modules. The Ledger's is `JournalValues(state, sessionRows, total)`, whose `total` its `level` and the level titles in `titles` count (LED-R37). The Ledger: `level`, `parts`, `titles`, `nextCatchMilestone`, `skillMilestones`, `characters` (from `Pagle.GetAngler().skill`), `zones`, `species`, `legends`, `trophies`, and `xp` (`{ ledger }`, its own XP all told, without Activity XP), `varieties` (every Species with varieties by ID, `{ species, caught }`, each caught one `{ id, position, rarity, first }`) and `crests` (the earned zone crests in the zone crest table's order, then the fish crests by Species ID, each `{ id, kind, zone \| species, earnedAt }`, zone crests by computed rank only) (LED-R155). Stats: `stats`, `sessions` (newest first, at most `sessionRows` of them) and `odds` (every zone fished, most Casts first, its place spread's rows read on STA-R41's side with the live skill unknown, numbers as `nice()` rounds them, STA-R44). Hunts: `hunts` and `sets` at `GetServerTime()`, the fold's time, and `ladder` (the Pagle Wagers ladder's marks in step order, each `{ step, earned }`, HNT-R178). The Tackle Board: `flies`. A nullable field is nil. |
 

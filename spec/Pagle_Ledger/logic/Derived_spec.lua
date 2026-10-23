@@ -250,7 +250,7 @@ describe("the Ledger's values for the backend (#223)", function()
 		end)
 	end)
 
-	describe("the title record (#76 item 2)", function()
+	describe("the title record (LED-R157, #76 item 2)", function()
 		-- A Ledger Module record as the Catch log hands it to the Ledger (LOG-R41).
 		local function record(kind, payload)
 			return { kind = "module", module = "Ledger", recordKind = kind, payload = payload, char = 1, time = T0 }
@@ -266,6 +266,25 @@ describe("the Ledger's values for the backend (#223)", function()
 
 		it("is nil for any other record", function()
 			assert.is_nil(ledgerOver({}).PickedTitle(record("celebrated", "title:level1")))
+		end)
+
+		it("is due for a pick the last title record logged to this log doesn't name (LED-R157)", function()
+			local ns = ledgerOver({})
+
+			assert.are.equal("title:level10", ns.TitleRecordFor(nil, "log", "title:level10"))
+			assert.are.equal("", ns.TitleRecordFor({ logId = "log", key = "title:level10" }, "log", nil))
+			assert.are.equal(
+				"legend:19803",
+				ns.TitleRecordFor({ logId = "old", key = "legend:19803" }, "log", "legend:19803")
+			)
+		end)
+
+		it("isn't due for the pick last logged, nor for automatic with none logged to this log (LED-R157)", function()
+			local ns = ledgerOver({})
+
+			assert.is_nil(ns.TitleRecordFor({ logId = "log", key = "title:level10" }, "log", "title:level10"))
+			assert.is_nil(ns.TitleRecordFor(nil, "log", nil))
+			assert.is_nil(ns.TitleRecordFor({ logId = "old", key = "title:level10" }, "log", nil))
 		end)
 	end)
 

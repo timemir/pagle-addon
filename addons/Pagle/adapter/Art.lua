@@ -63,6 +63,7 @@ local FONTS = {
 	SplashWhat = { "print", 16, "red" },
 	SplashName = { "handBold", 58, "ink" },
 	AnyClick = { "gilt", 13, "dim" },
+	SplashReload = { "handSemi", 26, "cream", true },
 	-- cards
 	CardTitle = { "gilt", 26, "gilt", true },
 	CardNum = { "handBold", 44, "ink" },

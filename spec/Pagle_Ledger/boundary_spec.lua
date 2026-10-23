@@ -9,9 +9,9 @@ local DIR = "addons/Pagle_Ledger/"
 local FORBIDDEN = {
 	{ "%f[%w_]PagleLog%f[^%w_]", "ADR 0001, LED-R2: the Ledger reads Catches only through M:IterateCatches" },
 	{ "%f[%w_]PagleDB%f[^%w_]", "ADR 0001: the Ledger never reads Core's SavedVariables" },
-	-- Its state is rebuilt from Catches alone (ADR 0008, LOG-R41); the one Module record it appends is the crest record,
-	-- a player's choice (LED-R156), which `offences` lets through.
-	{ "%f[%w_]AppendRecord%f[^%w_]", "ADR 0008: the Ledger appends no Module records but its crest record" },
+	-- Its state is rebuilt from Catches alone (ADR 0008, LOG-R41); the Module records it appends are the crest and title
+	-- records, a player's choices (LED-R156, LED-R157), which `offences` lets through.
+	{ "%f[%w_]AppendRecord%f[^%w_]", "ADR 0008: the Ledger appends no Module records but its crest and title records" },
 	-- Its own XP is its own fold (LED-R20): it reads the others' Activity XP, never reports any.
 	{ "%f[%w_]ReportXPEarned%f[^%w_]", "AXP-R1: the Ledger reports no Activity XP" },
 }
@@ -29,8 +29,10 @@ end
 ---@param text string
 ---@return string[]
 local function offences(text)
-	-- The crest record (LED-R156), appended by its kind's name alone.
-	local code = withoutComments(text):gsub(":AppendRecord%(ns%.CREST_RECORD, ", ":Append(")
+	-- The crest and title records (LED-R156, LED-R157), each appended by its kind's name alone.
+	local code = withoutComments(text)
+		:gsub(":AppendRecord%(ns%.CREST_RECORD, ", ":Append(")
+		:gsub(":AppendRecord%(ns%.TITLE_RECORD, ", ":Append(")
 	return forbiddenIn(code, FORBIDDEN)
 end
 
@@ -60,7 +62,8 @@ describe("The Ledger's boundary", function()
 			{ "Pagle_TackleBoard_Open()", "ADR 0001: the Ledger calls no other Module" },
 			{ 'M:AppendRecord("celebrated", "1")', "ADR 0008: the Ledger appends no Module records" },
 			{ 'M:AppendRecord("crest", "ledger.crest.elwynn")', "ADR 0008: the Ledger appends no Module records" },
-			{ "M:AppendRecord(ns.TITLE_RECORD, key)", "ADR 0008: the Ledger appends no Module records" },
+			{ 'M:AppendRecord("title", key)', "ADR 0008: the Ledger appends no Module records" },
+			{ "M:AppendRecord(ns.RECORD_KINDS[kind], key)", "ADR 0008: the Ledger appends no Module records" },
 			{ "M:ReportXPEarned(state.xp)", "AXP-R1: the Ledger reports no Activity XP" },
 			{ 'M["ReportXPEarned"](M, 10)', "AXP-R1: the Ledger reports no Activity XP" },
 		}
@@ -81,8 +84,9 @@ describe("The Ledger's boundary", function()
 			assert.are.same({}, offences('<!--\nPagleDB, Pagle_QoL\n-->\n<Bindings name="Pagle_Ledger"/>'))
 		end)
 
-		it("but not the crest record, the one Module record the Ledger appends (LED-R156)", function()
+		it("but not the crest and title records, the Module records the Ledger appends (LED-R156, LED-R157)", function()
 			assert.are.same({}, offences("ns.Module:AppendRecord(ns.CREST_RECORD, payload)"))
+			assert.are.same({}, offences("ns.Module:AppendRecord(ns.TITLE_RECORD, title)"))
 		end)
 	end)
 end)

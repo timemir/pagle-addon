@@ -20,11 +20,16 @@ local function titleView()
 	}
 end
 
---- Sets the active title (LED-R77): an earned title key, or nil for automatic.
+--- Sets the active title (LED-R77): an earned title key, or nil for automatic. The frame after, the title record logs
+--- it if it isn't the one last logged (LED-R157).
 ---@param key string?
 ---@return boolean set false, and nothing stored, for a key that isn't earned
 function ns.SetActiveTitle(key)
-	return ns.StoreActiveTitle(ns.db.profile, titleView(), key)
+	if not ns.StoreActiveTitle(ns.db.profile, titleView(), key) then
+		return false
+	end
+	ns.QueueChoiceRecords()
+	return true
 end
 
 --- "Signed As"'s pick (LED-R146, SET-R70): sets the active title, an earned key or nil for automatic, and redraws the

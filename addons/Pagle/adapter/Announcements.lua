@@ -124,6 +124,7 @@ local TICKS = 20
 ---@field composed boolean? drawn last in a composed toast style (ANN-R82)
 ---@field toastLayers PagleToastLayers? a composed style's layers (adapter/ToastLayers.lua)
 ---@field legendCrest PagleLegendCrestFrame? the splash's Legend crest (LED-R153, adapter/LegendCrests.lua)
+---@field reload FontString? the splash's "/reload to keep it safe" (ANN-R97)
 
 -- The motion's timeline: the canvas loops each animation over 7 s; in game each plays once.
 local TIMELINE = 7
@@ -1314,6 +1315,11 @@ local BUILD = {
 		local hint = ns.ArtText(frame, "AnyClick")
 		hint:SetPoint("BOTTOM", frame, "BOTTOM", 0, 44)
 		hint:SetText(ns.SpacedCaps(L.ANNOUNCEMENT_SPLASH_HINT))
+		-- Always, in Cozy mode too (ANN-R97): a hint to save the Legend's Catch, not a button, as ReloadUI() is
+		-- protected.
+		frame.reload = ns.ArtText(frame, "SplashReload")
+		frame.reload:SetPoint("BOTTOM", hint, "TOP", 0, 14)
+		frame.reload:SetText(L.ANNOUNCEMENT_SPLASH_RELOAD)
 		frame:SetScript("OnClick", function(self)
 			if self.display then
 				ns.lanes:Dismiss(self.display)

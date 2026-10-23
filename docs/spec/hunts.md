@@ -535,7 +535,7 @@ All four fall in the low band, so the other 20 are 4 low, 8 mid and 8 high. Thei
 ---@field date { year: integer, month: integer, day: integer }   -- the Cast's realm date (cast.conditions.date)
 ```
 
-Seal and ladder dates are the stored realm `date`, never a conversion through today's snapshot (HNT-R50 is for forecasts). A set's `date` is the realm date of the Cast whose tier earned it, or, for a title from a retirement, the UTC day of that `retired` date (DATA-R87).
+Seal dates are the stored realm `date`, never a conversion through today's snapshot (HNT-R50 is for forecasts). A ladder title keeps the server time it was earned (`ladder`), with no realm date: pagle-backend reads it as server time (ANG-R27, ANG-R56, [#363](https://github.com/timemir/wow-fish/issues/363)). A set's `date` is the realm date of the Cast whose tier earned it, or, for a title from a retirement, the UTC day of that `retired` date (DATA-R87).
 
 ## Contracts
 

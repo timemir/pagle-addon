@@ -561,7 +561,7 @@ function ns.WireLogEntries(host)
 	end
 
 	--- Appends a Module record (`A1`, LOG-R40, ADR 0008) of the Module's own `kind` ([%w_.]+) with `payload` (a
-	--- string with no newline, at most 200 bytes, which Core never reads), for the logged-in character now, and
+	--- string with no line feed, at most 200 bytes, which Core never reads), for the logged-in character now, and
 	--- returns it. Its Module's projections get it as live (LOG-R73, LOG-R74): at once when up to date, after the
 	--- current apply returns when called from one, or behind the catch-up or rebuild in progress. Only this Module's
 	--- `M:IterateCatches` and projections ever see it (LOG-R41). Raises an error at the caller, appending nothing, for

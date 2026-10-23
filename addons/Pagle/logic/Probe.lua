@@ -1,7 +1,7 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
--- `/pagle dev probe` (#261): reads the client facts launch re-verification checks 3, 8, 11, 12, 16 and 18–22 need
+-- `/pagle dev probe` (#261): reads the client facts launch re-verification checks 3, 8, 11, 12, 16 and 18–21 need
 -- (roadmap.md › Launch re-verification checklist), saves them in PagleDB.global.probe and prints one line per check,
 -- so on launch day the dev types one command and `/reload`s, and an agent reads every answer from the WTF files
 -- (scripts/read-wtf.lua's Probe section, which judges them with ns.ProbeReport below). Pure logic over what it's
@@ -10,7 +10,7 @@ local ns = select(2, ...)
 -- miss, never an error. It changes no game state.
 
 --- The checks, in the order they print.
-ns.PROBE_CHECKS = { 3, 8, 11, 12, 16, 18, 19, 20, 21, 22 }
+ns.PROBE_CHECKS = { 3, 8, 11, 12, 16, 18, 19, 20, 21 }
 
 --- Nat Pagle's quest, "Nat Pagle, Angler Extreme" (check 8, DATA-R22).
 ns.PROBE_QUEST = 6607
@@ -310,25 +310,6 @@ READ[21] = function(globals, facts)
 	return check
 end
 
--- Check 22: every key of C_GameRules with its type, and each zero-argument Is* call naming SelfFound (LOG-R26).
-READ[22] = function(globals)
-	local rules = resolve(globals, "C_GameRules")
-	local check = { exists = type(rules) == "table", keys = {}, calls = {} }
-	for _, name in ipairs(check.exists and sortedKeys(rules) or {}) do
-		local kind = type(rules[name])
-		check.keys[#check.keys + 1] = { name = name, type = kind }
-		if kind == "function" and name:match("^Is") and name:find("SelfFound", 1, true) then
-			local ok, results = call(globals, "C_GameRules." .. name)
-			check.calls[#check.calls + 1] = {
-				name = name,
-				ok = ok,
-				result = ok and resultsText(results) or ("error: " .. tostring(results[1])),
-			}
-		end
-	end
-	return check
-end
-
 --- The probe: every check's facts read from `globals` (the client's _G), with the server time, GetBuildInfo and
 --- GetLocale. Check 8's second read is ns.ProbeQuestAgain's.
 ---@param globals table
@@ -615,29 +596,6 @@ REPORT[21] = function(check)
 		verdicts[1] = { true, "every listed spell has 7620's name and icon, and every Fishing channel seen is listed" }
 	end
 	return summary, details, verdicts
-end
-
-REPORT[22] = function(check)
-	if not check.exists then
-		return "C_GameRules is missing", {}, { { false, "no C_GameRules: LOG-R26's selfFound stays nil" } }
-	end
-	local keys, calls = {}, {}
-	for i, key in ipairs(check.keys or {}) do
-		keys[i] = ("%s (%s)"):format(tostring(key.name), tostring(key.type))
-	end
-	for i, c in ipairs(check.calls or {}) do
-		calls[i] = ("%s() = %s"):format(tostring(c.name), tostring(c.result))
-	end
-	local summary = ("C_GameRules has %d keys; Is*SelfFound* calls: %s"):format(#keys, listText(calls))
-	local details = { "keys: " .. listText(keys) }
-	for _, c in ipairs(check.calls or {}) do
-		if c.ok then
-			return summary,
-				details,
-				{ { true, ("C_GameRules.%s answers: a call LOG-R26 may name for selfFound"):format(c.name) } }
-		end
-	end
-	return summary, details, { { false, "no Is*SelfFound* call answers: LOG-R26's selfFound stays nil" } }
 end
 
 --- One check's report.
