@@ -6,6 +6,8 @@ An agent can't run the WoW client, but it can read what the client writes to dis
 
 The Forever beta is in `_classic_beta_` under the WoW install. On the dev's machine that's `G:\World of Warcraft\_classic_beta_`, which WSL reaches as `/mnt/g/World of Warcraft/_classic_beta_`. The live install's folder name is unknown until launch (Nov 4).
 
+For launch night and the 1.0 tag, [launch-runbook.md](launch-runbook.md) holds the plan, and `scripts/launch.py read <step>` runs the reader below with each dev step's flags and prints only that step's sections (launch-runbook.md › The read-wtf checklist).
+
 Under `WTF/Account/<ACCT>/` (find `<ACCT>` with `ls WTF/Account/`; skip its `SavedVariables` folder):
 
 | Fact | File | Format |
