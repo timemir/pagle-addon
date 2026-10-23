@@ -109,6 +109,17 @@ PagleDB = {
 ["enteringWorld"] = 15200.75,
 ["idle"] = 15950.5,
 },
+["logout"] = 9500.5,
+["addons"] = {
+{
+["name"] = "Pagle_Ledger",
+["at"] = 13100.65,
+}, -- [1]
+{
+["name"] = "Leatrix_Plus",
+["at"] = 13900.4,
+}, -- [2]
+},
 ["projections"] = {
 {
 ["name"] = "fieldReport",

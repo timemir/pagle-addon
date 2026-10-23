@@ -894,6 +894,53 @@ describe("the Simulated Size on decoded Casts", function()
 	)
 
 	it(
+		"hands the next forward reader of an entry the record read last, its sizes and Session on it, so readers"
+			.. " taking turns size each Catch once between them (CORE-R18, LOG-R98, LOG-R100)",
+		function()
+			local entries = skillLog()
+			-- A log over the fixture catalogue that counts the items it looks up.
+			local function counted()
+				local lookups = { n = 0 }
+				local catchLog = ns.OpenCatchLog(savedLog(entries, 1, { VEE, OAK, DEE }), {}, nil, function(itemID)
+					lookups.n = lookups.n + 1
+					return ITEMS[itemID]
+				end)
+				return catchLog, lookups
+			end
+			local alone, aloneLookups = counted()
+			local expected = records(alone, 0)
+
+			local catchLog, lookups = counted()
+			local first, second = catchLog:Iterate(0), catchLog:Iterate(0)
+			for _, record in ipairs(expected) do
+				local a, b = first(), second()
+				assert.are.equal(a, b)
+				assert.are.same(record, a)
+			end
+			assert.is_nil(first())
+			assert.is_nil(second())
+			assert.are.equal(aloneLookups.n, lookups.n)
+		end
+	)
+
+	it("decodes an entry again, to the same record, once 64 later entries have been read since", function()
+		local entries = {}
+		for i = 1, 100 do
+			entries[i] = earlier(1, 1791731000 + i * 5, "6358x1")
+		end
+		local catchLog = veeLog(entries)
+		local firstRead = records(catchLog, 0)
+		local again = records(catchLog, 0)
+
+		for seq = 1, 100 do
+			assert.are.same(firstRead[seq], again[seq])
+		end
+		assert.are_not.equal(firstRead[36], again[36]) -- read before the last 64: made again
+		assert.are.equal(firstRead[37], again[37]) -- one of the last 64 read, still kept: the same table
+		assert.are_not.equal(firstRead[100], again[100]) -- kept until 36 was made again in its place
+	end)
+
+	it(
 		"counts an item the catalogue doesn't know, so classifying it moves no other item's size, and it gets the"
 			.. " sizes it would have had (LOG-R65, LOG-R96)",
 		function()
@@ -1108,7 +1155,9 @@ describe("the variety on decoded Casts", function()
 				varieties = KEYS,
 			}
 
-			assert.are.same({ { id = "7777.k10", index = 10, rarity = "epic" } }, varieties(records(catchLog, 0)[1]))
+			-- The release's catalogue is read at the next login, which opens the log again (DATA-R80).
+			local released = veeLog({ castOf("7777x1", true) }, items)
+			assert.are.same({ { id = "7777.k10", index = 10, rarity = "epic" } }, varieties(records(released, 0)[1]))
 		end
 	)
 

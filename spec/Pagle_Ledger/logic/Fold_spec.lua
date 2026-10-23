@@ -731,6 +731,28 @@ describe("The Ledger's fold", function()
 			assert.are.same({ 60, 12345 }, { ns.ClimbOf(TO_60 + 12345, 0) })
 		end)
 
+		it(
+			"climbs as the steps taken one at a time do, at and either side of every level's first XP (LED-R30)",
+			function()
+				-- The climb walked step by step, each step's cost read as it is reached.
+				local function walked(xp)
+					local level = 1
+					while level < ns.LEVEL_CAP and xp >= ns.StepCost(level) do
+						xp = xp - ns.StepCost(level)
+						level = level + 1
+					end
+					return { level, xp, level < ns.LEVEL_CAP and ns.StepCost(level) or nil }
+				end
+				local reach = 0
+				for level = 1, ns.LEVEL_CAP do
+					for _, xp in ipairs({ reach - 1, reach, reach + 1 }) do
+						assert.are.same(walked(xp), { ns.ClimbOf(xp) }, ("at %d XP"):format(xp))
+					end
+					reach = reach + (level < ns.LEVEL_CAP and ns.StepCost(level) or 0)
+				end
+			end
+		)
+
 		it("reads the level and the peak level, the level at prestige rank 0, from the state (LED-R35)", function()
 			local state = fold.reset()
 			assert.are.same({ 1, 1 }, { ns.Level(state), ns.PeakLevel(state) })

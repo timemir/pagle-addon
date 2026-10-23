@@ -1888,8 +1888,9 @@ describe("scripts/read-wtf.lua", function()
 	-- M8-Reverify#1 holds what launch re-verification checks 2, 4-7 and 10 read (#262): Ada's Casts by day and night
 	-- (a realm 7 hours behind UTC; one Cast's realm minute reads 8 hours behind), one with no realm minute, one each in
 	-- zone 0, an alias source (16510) and a zone with no catch data (10); a diagnostics buffer with hovered pool texts
-	-- and two deDE entries whose texts didn't resolve; and hand-written load timings in PagleDB.global.probe.timings,
-	-- with no probe beside them. Its catalogue is spec/scripts/fixtures/ReverifyCatalogue.lua.
+	-- and two deDE entries whose texts didn't resolve; and hand-written load timings in PagleDB.global.probe.timings
+	-- (a /reload's, with two addons loaded after Core), with no probe beside them. Its catalogue is
+	-- spec/scripts/fixtures/ReverifyCatalogue.lua.
 	describe("on an account for launch re-verification checks 2, 4-7 and 10 (#262)", function()
 		local account = ACCOUNTS .. "M8-Reverify#1"
 		local out, err, code = run(account, "--catalogue", "spec/scripts/fixtures/ReverifyCatalogue.lua")
@@ -1915,7 +1916,8 @@ describe("scripts/read-wtf.lua", function()
 		end)
 
 		it(
-			"prints the load timings after Core's files loaded, each projection on its own line, against the budget"
+			"prints the load timings after Core's files loaded, the /reload's logout before them, each addon loaded"
+				.. " after Core, and each projection on its own line, against the budget"
 				.. " (checks 2 and 10, LOG-R71)",
 			function()
 				assert.are.same({
@@ -1927,6 +1929,12 @@ describe("scripts/read-wtf.lua", function()
 					"  PLAYER_LOGIN           2099.5 ms",
 					"  PLAYER_ENTERING_WORLD  3200.2 ms",
 					"  projections idle       3950.0 ms",
+					"  the /reload's PLAYER_LOGOUT 2500.0 ms before Core's files loaded: every addon's logout, the"
+						.. " SavedVariables written, and the addons before Core loaded",
+					"  addons loaded after Core, until PLAYER_LOGIN, each with the time since the one before:",
+					"    Pagle_Ledger             1100.1 ms (+250.4 ms)",
+					"    Leatrix_Plus             1899.9 ms (+799.8 ms)",
+					"    then PLAYER_LOGIN        2099.5 ms (+199.6 ms)",
 					"  fieldReport: rebuild of 14 entries, 3200.5 ms to 3204.0 ms (3.5 ms), 1 frame, at once, longest"
 						.. " 3.50 ms (LOG-R71: 500 pending entries or fewer)",
 					"  wallet: rebuild of 14 entries, 3204.1 ms to 3204.5 ms (0.4 ms), 1 frame, at once, longest 0.40 ms"
@@ -1936,7 +1944,7 @@ describe("scripts/read-wtf.lua", function()
 					"  Stats: rebuild of 14 entries, 3205.1 ms to 3949.5 ms (744.4 ms), 3 frames, longest frame 5.25 ms of"
 						.. " the 4 ms budget (LOG-R71): OVER",
 					"check 10: every projection caught up 749.8 ms after PLAYER_ENTERING_WORLD",
-				}, { unpack(reverify, 3, 14) })
+				}, { unpack(reverify, 3, 19) })
 			end
 		)
 
@@ -1950,7 +1958,7 @@ describe("scripts/read-wtf.lua", function()
 					"check 4: 1 Cast with no realm minute, seq 8",
 					"check 4: the realm's UTC offset, from each Cast's realm minute (LOG-R49): UTC-08:00: 1 Cast,"
 						.. " UTC-07:00: 10 Casts: more than one, so a clock change or a wrong realm minute",
-				}, { unpack(reverify, 15, 17) })
+				}, { unpack(reverify, 20, 22) })
 			end
 		)
 
@@ -1968,7 +1976,7 @@ describe("scripts/read-wtf.lua", function()
 					'  Player-4618-0A1B2C3D-1791820000-0 deDE: zone "Dunkelküste", subzone "Die lange Bucht", stored as'
 						.. " 0/0",
 					'  Player-4618-0A1B2C3D-1791821200-0 deDE: zone "Dämmerwald", subzone "Rabenflucht", stored as 10/0',
-				}, { unpack(reverify, 18, 25) })
+				}, { unpack(reverify, 23, 30) })
 			end
 		)
 
@@ -1986,7 +1994,7 @@ describe("scripts/read-wtf.lua", function()
 					"  16510/0: 1 Cast  FLAGGED: 16510 is an alias source of 12, never stored (LOG-R22, DATA-R32); 16510"
 						.. " has no catch data (hasData = false, DATA-R31)",
 					"check 6: 3 of 6 places flagged",
-				}, { unpack(reverify, 26) })
+				}, { unpack(reverify, 31) })
 			end
 		)
 	end)

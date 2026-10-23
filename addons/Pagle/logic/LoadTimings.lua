@@ -28,12 +28,40 @@ ns.LOAD_MARKS = {
 ---@field syncLimit integer   -- above this many pending entries a catch-up or rebuild is chunked (LOG-R71)
 ---@field marks table<string, number> -- the clock at each of ns.LOAD_MARKS reached
 ---@field projections PagleProjectionTiming[] -- each catch-up or rebuild, in the order they finished
+---@field logout number? -- the clock at Core's PLAYER_LOGOUT before this load, when this load is a /reload of the
+--- same client session (sameSessionLogout); nil after a client start
+---@field addons { name: string, at: number }[] -- each addon's ADDON_LOADED after Core's, until PLAYER_LOGIN, in order,
+--- with the clock: an addon's files, its SavedVariables and every ADDON_LOADED handler fall between its mark and the one
+--- before
 
 ---@class PagleNS
 ---@field loadTimings PagleLoadTimings? This login's load timings, while dev mode was on at ADDON_LOADED (#262).
 
+-- How far apart, in seconds, the clock and the server time may move between a logout and the next load for it to be a
+-- /reload of the same client session: the clock (debugprofilestop) runs on from the client's start, and a restart
+-- starts it again.
+local SAME_SESSION_SLACK = 2
+
+-- The clock at the logout noted in `lastLogout` (NoteLogout), if this load, at server time `time` and clock `clock`, is
+-- a /reload of that client session: both moved on together since. Else nil.
+---@param lastLogout any PagleDB.global.probe.lastLogout
+---@param time integer
+---@param clock number?
+---@return number?
+local function sameSessionLogout(lastLogout, time, clock)
+	if type(lastLogout) ~= "table" or type(lastLogout.clock) ~= "number" or type(lastLogout.time) ~= "number" then
+		return nil
+	end
+	local elapsed = clock and clock - lastLogout.clock
+	if not elapsed or elapsed < 0 or math.abs(elapsed / 1000 - (time - lastLogout.time)) > SAME_SESSION_SLACK then
+		return nil
+	end
+	return lastLogout.clock
+end
+
 --- Starts this login's load timings at Core's ADDON_LOADED, once PagleDB is open: with dev mode on, a fresh
---- PagleLoadTimings in `global.probe.timings` (the probe itself, if one is stored, is kept), holding `marks` so far;
+--- PagleLoadTimings in `global.probe.timings` (the probe itself, if one is stored, is kept), holding `marks` so far and
+--- the clock at the logout NoteLogout noted, if this load is a /reload of that session, which it reads once;
 --- with it off, nothing, and `global` is left as it was. Sets and returns ns.loadTimings.
 ---@param global table PagleDB.global
 ---@param time integer the server time now
@@ -54,10 +82,38 @@ function ns.StartLoadTimings(global, time, entries, marks)
 		syncLimit = ns.PROJECTION_SYNC_LIMIT,
 		marks = marks,
 		projections = {},
+		logout = sameSessionLogout(probe.lastLogout, time, marks.filesLoaded),
+		addons = {},
 	}
+	probe.lastLogout = nil
 	probe.timings = timings
 	ns.loadTimings = timings
 	return timings
+end
+
+--- Notes Core's PLAYER_LOGOUT, at server time `time` and clock `ms`, in `global.probe.lastLogout` while dev mode is on,
+--- so the next load's timings tell how long ago it was if that load is a /reload (StartLoadTimings); else nothing.
+---@param global table PagleDB.global
+---@param time integer
+---@param ms number
+function ns.NoteLogout(global, time, ms)
+	if global.dev ~= true then
+		return
+	end
+	local probe = type(global.probe) == "table" and global.probe or {}
+	global.probe = probe
+	probe.lastLogout = { time = time, clock = ms }
+end
+
+--- Notes an addon's ADDON_LOADED after Core's, at clock `ms`, while this login's load timings are kept and until
+--- PLAYER_LOGIN; else nothing.
+---@param name string the addon's folder name
+---@param ms number
+function ns.MarkAddonLoaded(name, ms)
+	local timings = ns.loadTimings
+	if timings and timings.marks.playerLogin == nil then
+		timings.addons[#timings.addons + 1] = { name = name, at = ms }
+	end
 end
 
 --- Notes the clock `ms` at mark `name` (ns.LOAD_MARKS), while this login's load timings are kept; else nothing.

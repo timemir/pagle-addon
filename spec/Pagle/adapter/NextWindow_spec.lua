@@ -56,6 +56,26 @@ describe("Pagle.NextWindow", function()
 		}, Pagle.NextWindow({ time = { { 1260, 360 } } }, SERVER_TIME))
 	end)
 
+	it("reads only the realm clock and the live calendar, never the area, auras, lure or skill (LOG-R50)", function()
+		local reads = {}
+		local function noted(name, value)
+			return function()
+				reads[#reads + 1] = name
+				return value
+			end
+		end
+		local Pagle = load({
+			GetRealZoneText = noted("GetRealZoneText", "Darkshore"),
+			GetSubZoneText = noted("GetSubZoneText", ""),
+			GetWeaponEnchantInfo = noted("GetWeaponEnchantInfo", false),
+			C_UnitAuras = { GetPlayerAuraBySpellID = noted("GetPlayerAuraBySpellID", nil) },
+			GetProfessions = noted("GetProfessions", nil),
+		})
+
+		assert.is_table(Pagle.NextWindow({ time = { { 1260, 360 } } }, SERVER_TIME))
+		assert.are.same({}, reads)
+	end)
+
 	it("forecasts an event from the catalogue's weekly rule, carrying its confirmed (LOG-R50, LOG-R56)", function()
 		local Pagle = load()
 		assert.are.same({

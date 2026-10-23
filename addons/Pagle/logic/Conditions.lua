@@ -306,6 +306,11 @@ local function checkSpec(spec)
 	return nil
 end
 
+-- The specs found valid, so one matched again isn't checked again: specs are shared and immutable (CORE-R18), and the
+-- same ones are matched for every Cast (Hunts' effort, the Field report) and every day of a forecast (NextWindow).
+-- Weakly keyed, so a spec no longer used elsewhere isn't kept here.
+local validSpecs = setmetatable({}, { __mode = "k" })
+
 --- Whether a snapshot meets a condition spec (LOG-R48, LOG-R49). Fields combine with AND, the values within a field
 --- with OR, and an absent field doesn't constrain. A nil or 0 snapshot value (secret or unresolved) never matches.
 --- Raises an error in the caller for an invalid spec: an empty list, a range with from == to, or a field or value
@@ -314,9 +319,12 @@ end
 ---@param snapshot ConditionsSnapshot
 ---@return boolean
 function ns.MatchesConditions(spec, snapshot)
-	local problem = checkSpec(spec)
-	if problem then
-		error("invalid condition spec: " .. problem, 2)
+	if type(spec) ~= "table" or not validSpecs[spec] then
+		local problem = checkSpec(spec)
+		if problem then
+			error("invalid condition spec: " .. problem, 2)
+		end
+		validSpecs[spec] = true
 	end
 	for field, values in pairs(spec) do
 		local matcher = matchers[field]
