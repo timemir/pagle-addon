@@ -90,7 +90,7 @@ _Avoid_: database, loot table, game data (which is Blizzard's)
 
 **Field report**:
 The text an Angler copies out of Pagle to share what they have seen in-game that the content data doesn't yet confirm, such as Uncharted Catches or a fish outside its stated window. It carries observations, never the Catch log, and nothing that names the Angler's characters.
-_Avoid_: report (alone), data dump, export (which is the backup string), Session summary
+_Avoid_: report (alone), data dump, export (which makes a Paste string), Session summary
 
 **Lore**:
 Every name and line of flavour Pagle invents: a Species' blurb and riddle, a Sub-collection plaque, titles, Fly Box patterns, and the names of Curio Shop goods. It ships beside the content data but never changes what anything counts for. Mechanical interface text and the game's own names are not lore.
@@ -337,6 +337,10 @@ _Avoid_: companion app, client, uploader, sync tool
 **Published Angler**:
 An Angler shown on the Pagle website and, through other players' Companions, in their games: on player tooltips and, when followed, in the Fish Journal. Only its visible characters are ever matched, and only the website's values are shown, never the in-game ones.
 _Avoid_: public profile, registered player, member
+
+**Paste string**:
+The text an Angler copies out of Pagle's export window and pastes on the Pagle website, to put the Catch log there without the Companion. A long log takes several, pasted one after another; making them is exporting.
+_Avoid_: export string, backup string, share code, upload code
 
 **Followed Angler**:
 A Published Angler the player follows on the Pagle website, who gets a full card in the Fish Journal's Following spread and a "Following" mark on their tooltip.

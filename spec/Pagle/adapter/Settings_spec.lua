@@ -128,7 +128,9 @@ describe("The Settings root with no Module On", function()
 				"Show the minimap icon",
 				"Pagle website",
 				"Show other Anglers on player tooltips",
-			}, { unpack(texts, #texts - 20) })
+				"Catch log",
+				"Copy for the website",
+			}, { unpack(texts, #texts - 22) })
 			for _, name in ipairs({ "Ledger", "Hunts", "Stats", "Tackle Board", "QoL" }) do
 				assert.is_true(contains(texts, name))
 			end

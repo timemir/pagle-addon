@@ -10,6 +10,7 @@ Core is the `Pagle` addon. This file covers how Modules attach to it, the whole 
 | [announcements.md](announcements.md) | `ANN` | Moments, the Announcement policy, toasts, sounds, the Session summary, the Write-up |
 | [wallet-and-shop.md](wallet-and-shop.md) | `SHOP` | Pagle Coins and the Curio Shop |
 | [field-report.md](field-report.md) | `REP` | `/pagle report` and the diagnostics it reads |
+| [paste-string.md](paste-string.md) | `PST` | The Paste string for the Pagle website: its upload documents and parts, the export window (`/pagle export`) and the last exported seq |
 | [varieties.md](varieties.md) | `VAR` | Fish varieties, their rarity, Core's variety projection and the fish crests |
 | [book-binding.md](book-binding.md) | `BIND` | The book binding: `Pagle.NewBookBinding`, which draws the `core.binding` look on every book and changes it |
 | [book.md](book.md) | `BOOK` | The book shell: `Pagle.NewBook`, the window, pages, strip, buttons, ribbons, router and page turn every book is built on |
@@ -25,13 +26,14 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - presenting every Announcement, the Session summary and the Write-up (ADR 0007)
 - Pagle Coins and the Curio Shop (ADR 0009)
 - the Field report
+- the Paste string and its export window ([paste-string.md](paste-string.md))
 - onboarding: the Letter, the Field guide, Margin notes, First looks and the First evening list ([onboarding.md](onboarding.md))
 - the hosted surfaces: Settings root, the Pagle menu (its compartment entry and minimap icon), `/pagle`, tracker dock
 - the projection machinery every Module uses (ADR 0004)
 
 **Core does not own:** any Module view (Journal, Hunts board, Stats window, Tackle Board), any content only one Module reads (the Hunt list, the Ledger's curve and titles, the Tackle Board's templates), or any reward rule.
 
-**Core alone shows:** its Settings root and topic pages, the Curio Shop, the Field report box, Announcements, the Session summary and the Write-up, the Letter, the Field guide, Margin notes, First looks, the First evening list and the minimap icon. With no Module enabled, Core records silently.
+**Core alone shows:** its Settings root and topic pages, the Curio Shop, the Field report box, the export window, Announcements, the Session summary and the Write-up, the Letter, the Field guide, Margin notes, First looks, the First evening list and the minimap icon. With no Module enabled, Core records silently.
 
 ## Rules
 
@@ -42,7 +44,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - **CORE-R3** Every Module TOC has `## Dependencies: Pagle` and `## X-Pagle-API: <n>`. Modules are loaded normally, not on demand.
 - **CORE-R4** Code detects Forever with a nil-guarded `WOW_PROJECT_ID == WOW_PROJECT_CAMELOT`, never with interface or build numbers. If the check fails, Core prints one chat line and never creates the `Pagle` global, so every Module's guard (CORE-R11) stops it.
 - **CORE-R5** Core's SavedVariables are `PagleLog` and `PagleDB` (see [catch-log.md](catch-log.md#data)), both account-wide. No addon in the package uses `SavedVariablesPerCharacter`; per-character facts are keyed by character GUID.
-- **CORE-R6** Core embeds LibStub, CallbackHandler-1.0, AceAddon-3.0, AceEvent-3.0 and AceDB-3.0, vendored at a recorded commit. Nothing else is embedded: the minimap icon (CORE-R53) is Core's own button, since LibDBIcon-1.0 is "All Rights Reserved" and LibDataBroker-1.1 states no licence, neither of which a GPL package can ship (ADR 0006). Modules reach them through LibStub and embed nothing themselves.
+- **CORE-R6** Core embeds LibStub, CallbackHandler-1.0, AceAddon-3.0, AceEvent-3.0 and AceDB-3.0, and LibDeflate 1.0.2 (zlib License) for the Paste string ([paste-string.md](paste-string.md), PST-R30), each vendored at a recorded commit by its own script (`scripts/update-ace3.sh`, `scripts/update-libdeflate.sh`). Nothing else is embedded: the minimap icon (CORE-R53) is Core's own button, since LibDBIcon-1.0 is "All Rights Reserved" and LibDataBroker-1.1 states no licence, neither of which a GPL package can ship (ADR 0006). Modules reach them through LibStub and embed nothing themselves.
 - **CORE-R7** Every addon splits its code into `logic/` (pure Lua: no WoW globals, everything passed in as arguments, unit-tested with busted) and `adapter/` (events, frames, SavedVariables, Ace). luacheck enforces it with a per-path `std`.
 - **CORE-R8** Every user-facing string goes through the addon's string table (`ns.L`), enUS only in 1.0.
 - **CORE-R9** Every string the package draws uses only characters the client's fonts have: ASCII, Latin-1 (U+00A0–U+00FF), the en and em dashes (– —, U+2013, U+2014), curly single and double quotes (‘ ’ “ ”, U+2018, U+2019, U+201C, U+201D), the bullet (•, U+2022) and the ellipsis (…, U+2026). On 2026-10-15 `/pagle dev glyphs` on build 1.60.1.70374 showed each of these, and every Latin-1 character tried (· « » ×), drawn in all four fonts Pagle uses (GameFontHighlight, ChatFontNormal, NumberFontNormalSmallGray, `Fonts\MORPHEUS.TTF`); ★ and ✓ as a box in all four, and → as a box in GameFontHighlight and MORPHEUS (#248). The build also draws a box for ☆, ☑, ☐, ❧, ☚ and ▸. Anything outside the set stays out, even where one font has it. A symbol outside the set is drawn as an in-client texture (`|T…|t`, its path in the build's ManifestInterfaceData) or written in words; each one the Ledger draws is one shared constant in its string table. A busted spec (`spec/glyphs_spec.lua`) checks every Lua string literal, XML and TOC line the package ships outside `libs/`, generated files included; the generator checks lore on the way in (DATA-R107). `/pagle dev glyphs` shows a probe line in each font Pagle uses, to settle in game whether a character renders.
@@ -80,6 +82,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   | Settings (`Pagle.OpenSettings`) | chat line "Pagle: settings open after combat." | Blizzard's panel handles it |
   | Curio Shop | chat line | closes, with its bill of sale |
   | Field report box | chat line | stays open |
+  | Export window ([paste-string.md](paste-string.md)) | chat line | stays open |
   | Session summary, Write-up | held ([announcements.md](announcements.md)) | hidden and held |
 
   Module views follow their own spec.
@@ -131,7 +134,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 ### Slash commands
 
 - **CORE-R60** Core owns `/pagle`. With no argument it opens the Settings root. `/pagle help` lists every command with its help text, Core's and each registered Module's.
-- **CORE-R61** Core's own subcommands are `help`, `settings` (same as no argument), `shop` (toggle the Curio Shop), `report` (open the Field report) and, from M8.5, `guide` (open the Field guide; `guide notes` shows Margin notes again, ONB-R80). They are reserved.
+- **CORE-R61** Core's own subcommands are `help`, `settings` (same as no argument), `shop` (toggle the Curio Shop), `report` (open the Field report), from Track P `export` (open the export window, PST-R50) and, from M8.5, `guide` (open the Field guide; `guide notes` shows Margin notes again, ONB-R80). They are reserved.
 - **CORE-R62** A Module's `slash = {{ name, fn, help }}` entries become `/pagle <name> <args>`; `fn` receives the rest of the line, trimmed. Subcommand names match case-insensitively. A name that collides with a reserved one or an earlier Module's is skipped and reported through `geterrorhandler()`; the rest of the Module's registration goes ahead. An unknown subcommand prints the help list.
 
 ### Screenshot tour (dev)
@@ -141,7 +144,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - **CORE-R65** A Module adds a **tour stop** with `M:RegisterTourStop(id, label, show, hide)`: `show` puts one surface on screen in a representative state, and `hide` puts back everything `show` changed. The stop is named `<module>.<id>`, the Module's name lowercased (`ledger.journal.home`); Core's own stops are named `core.<id>`. `id` is `[%w_.]+` and unique among the Module's stops; `label` is a non-empty string, shown only by `/pagle dev tour list`. A mistake raises a Lua error at the Module's call and adds nothing. A Module calls it only `if M.RegisterTourStop then`, so the same code runs on a Core without it. Core's own surfaces register through the same registry.
 - **CORE-R66** `/pagle dev tour` runs every stop: Core's first, then each Module's by `def.order`, each Module's in the order registered. `/pagle dev tour <module>` runs one Module's (`core` for Core's), any case. For each stop it prints `tour <n>/<count>: <name>`, calls `show`, and 2.8 s later (after a toast's motion settles, announcements.md › Motion, and before a Nod leaves, ANN-R20) calls `Screenshot()`; 0.5 s after that it calls `hide`, and the next stop shows 0.3 s later. It prints the local time as it starts (the client names screenshot files by it) and as it ends. On a client without `Screenshot()` the start line asks the dev to press Print Screen as each stop's line appears, and each stop waits 4 s instead of 0.5 s before its `hide`. A `show` or `hide` that errors is reported through `geterrorhandler()` and the tour goes on.
 - **CORE-R67** The tour doesn't start while restricted (CORE-R30): it prints one line and opens nothing, since stops open Settings and the Curio Shop. A restriction that starts during a tour ends it: the stop on screen hides without its screenshot and no further stop shows. One tour runs at a time; `/pagle dev tour stop` ends the one running the same way.
-- **CORE-R68** Nothing is saved: every `hide` leaves the screen and the saved variables as they were before its `show` (a window open before its stop stays open). `/pagle dev tour list [module]` prints each stop's name and label, in tour order, and shows nothing. Core's own stops are each Announcement form (`/pagle dev preview`'s samples through the real lanes, taken back off screen at `hide`), a sample Session summary card and a sample Write-up, the Curio Shop, the Field report box, the glyph probe panel, and the Settings root and each registered page.
+- **CORE-R68** Nothing is saved: every `hide` leaves the screen and the saved variables as they were before its `show` (a window open before its stop stays open). `/pagle dev tour list [module]` prints each stop's name and label, in tour order, and shows nothing. Core's own stops are each Announcement form (`/pagle dev preview`'s samples through the real lanes, taken back off screen at `hide`), a sample Session summary card and a sample Write-up, the Curio Shop, the Field report box, the export window, the glyph probe panel, and the Settings root and each registered page.
 
 ### Tracker dock
 
@@ -199,6 +202,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.GetBalance()` | `Balance` | [wallet-and-shop.md](wallet-and-shop.md#contracts) |
 | `Pagle.IsOwned(goodID)`, `GetEquipped(slotID)`, `SetEquipped(slotID, goodID)`, `GetGood(goodID)`, `GetSlotGoods(slot)`, `GetBindingLook(goodID)`, `OpenShop(goodID?)` | | wallet-and-shop.md |
 | `Pagle.OpenFieldReport()`, `GetFieldReportCount()` | | [field-report.md](field-report.md#contracts) |
+| `Pagle.OpenPasteExport()` | | [paste-string.md](paste-string.md#contracts) |
 | `Pagle.IsAnimationsOn()` | boolean, the Animations setting | [announcements.md](announcements.md#contracts) |
 | `Pagle.GetActivityXP()` | `ActivityXP` | [activity-xp.md](activity-xp.md#contracts) |
 | `Pagle.GetCompanionState()`, `Pagle.GetPushedContent(kind)` | state string, items | [pushed-content.md](pushed-content.md#contracts) |

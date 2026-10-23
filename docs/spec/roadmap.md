@@ -9,7 +9,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 - **Nothing is published before 1.0.** 1.0 means every Module is implemented (Core, QoL, Ledger, Hunts, Stats, Tackle Board) and M9 is done. There are no target dates: work continues straight through, and scope is cut rather than quality.
 - **No backward compatibility before 1.0.** The log format, every `PagleDB` / `Pagle<Module>DB` shape, Module state and Hunt definitions change freely; a dev log whose format is outdated is replaced by a new one (LOG-R18). The freezes start at 1.0: LOG-R17, CORE-R15, DATA-R73, DATA-R95.
 - **One version for the whole package, and no git tags before 1.0.** The packager publishes only on a tag push, so nothing reaches CurseForge or Wago by accident.
-- **Milestones.** Each milestone below is one GitHub Milestone with the same name. Every build ticket belongs to exactly one. Milestones set the order of work, not dates: the riskiest and most shared Core pieces come first, and leaf work runs in parallel. **Track Q** runs in parallel from the end of M1, and **Track V** alongside M8 onward; 1.0 doesn't wait for Track V.
+- **Milestones.** Each milestone below is one GitHub Milestone with the same name. Every build ticket belongs to exactly one. Milestones set the order of work, not dates: the riskiest and most shared Core pieces come first, and leaf work runs in parallel. **Track Q** runs in parallel from the end of M1, **Track V** alongside M8 onward, and **Track P** alongside M9; 1.0 doesn't wait for Track V, and waits for Track P.
 - **Rules per milestone.** A rule listed under a milestone is built in it. A rule listed "for" or "without" something is built only in that part; the rest of it is listed where it lands. Every milestone and Track Q lists its rules file by file, and every rule ID in the spec is listed somewhere below. The Milestones line in each spec file's header summarises the same split; where the two differ, this file wins and the header is fixed.
 - **Rules that name later features.** A rule listed in full is built for what exists in its milestone; the parts that name a later feature (a Curio Shop row in CORE-R33, the next-action button in QOL-R93, a rebuild in LOG-R18) take effect when that feature lands, without being listed again. Edge-case rules (the "Edge cases" block of each file) are listed where their main feature lands and hold from then on.
 - **Exit checks.** A milestone is done when its tickets are closed and its exit check passes in the game. Exit checks run on the Forever beta until it launches (Nov 4, 2026), and on the live build after that.
@@ -452,6 +452,24 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 **Exit check:** the Curio Shop lists every new good at its tier's price, with the earned ones showing their `earnedText`; buying and equipping a tier 4 toast style, a sound set, a binding, a cover and a frame of each tracker shows each look; catching each Legend plays its own sting; an earned Module good in a Core slot equips and plays like Core's own, and is put away with its Module off; `scripts/render-sounds.py` reproduces every committed set and sting; `scripts/check.sh` passes.
 
+## Track P: Paste string
+
+**Goal:** the no-install way onto the Pagle website ([#361](https://github.com/timemir/wow-fish/issues/361), from [#76](https://github.com/timemir/wow-fish/issues/76) items 3 and 4): Core builds Paste strings from `PagleLog` exactly as pagle-backend's [upload.md](https://github.com/timemir/pagle-backend/blob/main/docs/spec/upload.md) has them (UPL-R50–R52), cut into parts, in an export window with "New since last export" and "Everything", and keeps the last exported seq per `logId`. LibDeflate 1.0.2 is vendored for it (CORE-R6). It ships in 1.0, before the backend opens (day L), so 1.0 waits for it.
+
+**Build order:** 1. LibDeflate vendored and pinned (CORE-R6). 2. The upload document, parts and Paste string in `logic/` (PST-R10–R33), checked against upload.md's grammar and decoded by pagle-backend's decoder. 3. The export window, its entry points, the mark and the copy test (PST-R40, PST-R41, PST-R50–R53, PST-R60).
+
+**Core rules:** CORE-R6 for LibDeflate, CORE-R33 for the export window, CORE-R61 for `export`, CORE-R68 for its tour stop; PST-R1, PST-R2, PST-R10–R15, PST-R20–R23, PST-R30–R33, PST-R40, PST-R41, PST-R50–R53, PST-R60; edge cases PST-R90–R99 ([core/paste-string.md](core/paste-string.md))
+
+**Settings rules:** SET-R10 row 12 (Catch log), SET-R12 for its button
+
+**Exit check,** on the live Forever client with a log of more than 5,000 entries:
+1. `/pagle export` opens the window on "New since last export" at "Part 1 of k"; each part's string pastes on the website's Paste upload page and is applied in order; a part pasted out of order is refused as a gap.
+2. After copying every part, `/pagle export` says "Nothing new since your last export."; after a few more Casts and a `/reload`, it shows one part of just those, which the website applies.
+3. "Everything" shows every part from entry 1 again; the website takes them as unchanged.
+4. In combat, `/pagle export` prints its line and opens nothing.
+5. The copy test (launch re-verification check 25) passes, or its sizes are reported to pagle-backend.
+6. `scripts/check.sh` passes.
+
 ## M9 Release
 
 Launch re-verification on the live build, the 1.0 gates (lore, Settings UX, Simulated Size), the CurseForge and Wago projects, then the 1.0 tag. Named M8 Release until the Hunts redesign took M8 ([#288](https://github.com/timemir/wow-fish/issues/288)). The Settings UX pass (#266), the store screenshots (#270), the tag's preparation (#275) and the exit check (#276) wait for M8 Hunt Events and M8.5 Onboarding; launch re-verification (#272–#274) and the store projects (#271) don't.
@@ -488,6 +506,7 @@ Run on the live Forever build before tagging 1.0. Beta facts may change at launc
 | 22 | A per-character Self-Found call exists | LOG-R26 (`selfFound` stays `nil` until one is named) |
 | 23 | Got-away detection: `ERR_FISH_ESCAPED` arrives as LOG-R6 expects (first checked on the beta in M1) | LOG-R6 |
 | 24 | Which catalogue facts rest on beta builds only (`scripts/generate-data.py --min-build <first live build>`) | DATA-R46, DATA-R57 (may raise the minimum confirming build) |
+| 25 | The Paste string's copy test: `/pagle dev pastetest 64`, then 128, 256 and 512, each copied out of the export window with Ctrl+C and pasted into a text editor; it survives when its length is that many KB × 1,024 and its last run reads that length less 16 (PST-R60). Report the largest that survives to pagle-backend, whose roadmap raises the Paste part cap only then | PST-R22, PST-R23 (the part size never exceeds the Paste part cap, UPL-R51) |
 
 ### Before the tag
 
@@ -497,4 +516,4 @@ Run on the live Forever build before tagging 1.0. Beta facts may change at launc
 
 ## After 1.0
 
-On the roadmap but not specified: custom Journal art (1.0 uses in-client textures, shared with the Hunts board and the Stats window), translations (1.0 is enUS only, with every string in `ns.L` from M0), the export/backup string, QoL's recast reminder, and the post-launch Hunts (the Fishing Trip quest, Chef's Knife, the Rack and Hut contents), each with its own `since` date.
+On the roadmap but not specified: custom Journal art (1.0 uses in-client textures, shared with the Hunts board and the Stats window), translations (1.0 is enUS only, with every string in `ns.L` from M0), QoL's recast reminder, and the post-launch Hunts (the Fishing Trip quest, Chef's Knife, the Rack and Hut contents), each with its own `since` date.

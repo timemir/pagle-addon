@@ -23,8 +23,8 @@ end)
 --- Core's own subcommands (CORE-R61), for /pagle and the compartment menu (adapter/Menu.lua).
 ns.coreSubcommands = ns.CoreSubcommands(Pagle)
 
--- Runs `/pagle <line>`: the Settings root, the Curio Shop, the Field report box, a Module's subcommand, or the help
--- list.
+-- Runs `/pagle <line>`: the Settings root, the Curio Shop, the Field report box, the export window, a Module's
+-- subcommand, or the help list.
 ---@param line string what the player typed after /pagle
 local function run(line)
 	local name, rest = ns.ParseSlash(line)

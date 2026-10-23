@@ -254,6 +254,33 @@ ns.L = {
 	SETTINGS_FIELD_REPORT_BUTTON = "Open Field report",
 	SETTINGS_FIELD_REPORT_BUTTON_COUNT = "Open Field report (%d)",
 	SETTINGS_FIELD_REPORT_TOOLTIP = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form.",
+	-- The export window (paste-string.md › The export window): its title, the privacy line and the copy hint, the two
+	-- choices, the lines under a part's string (its entries and size, joined; the note when there are parts), the label
+	-- before the Paste upload page's URL, the part line, Close, the lines shown instead of a string (PST-R15, PST-R21),
+	-- and the chat line an entry point prints while restricted (PST-R50). The copy test's line (PST-R60).
+	PASTE_TITLE = "Export for the website",
+	PASTE_PRIVACY = "Holds your characters' names. Paste it only on the Pagle website.",
+	PASTE_COPY_HINT = "Ctrl+C to copy",
+	PASTE_CHOICE_NEW = "New since last export",
+	PASTE_CHOICE_EVERYTHING = "Everything",
+	-- The choice the window shows, after a bullet.
+	PASTE_CHOICE_PICKED = "• %s",
+	PASTE_ENTRIES = "Entries %s–%s of %s",
+	PASTE_NO_ENTRIES = "No entries",
+	PASTE_SIZE = "%d KB",
+	PASTE_PART_LINE = "%s  ·  %s",
+	PASTE_IN_ORDER = "Paste each part on its own, in order.",
+	PASTE_AT = "PASTE IT AT",
+	PASTE_PART = "Part %d of %d",
+	PASTE_CLOSE = "Close",
+	PASTE_NOTHING_NEW = "Nothing new since your last export.",
+	PASTE_CANT_EXPORT = "Pagle can't export this Catch log.",
+	PASTE_AFTER_COMBAT = "Pagle: the export window opens after combat.",
+	PASTE_TEST_LINE = "Copy test: %d KB",
+	-- The Settings root's Pagle website section (SET-R10 row 12): the export button's row label, caption and tooltip.
+	SETTINGS_PASTE_ROW = "Catch log",
+	SETTINGS_PASTE_BUTTON = "Copy for the website",
+	SETTINGS_PASTE_TOOLTIP = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion.",
 	-- The Curio Shop (wallet-and-shop.md › UI; its "Curio Shop" trade label is drawn in the case's art): the chat line
 	-- its entry points print while restricted (SHOP-R41); the purse (its label, a Module's legend entry with its total,
 	-- the segment's tooltip lines); the list (the search slip's hint, the filters, the category
@@ -342,7 +369,11 @@ ns.L = {
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
 	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs"
-		.. " | tour [module | list | stop] | probe | onboarding <command> | content | views",
+		.. " | tour [module | list | stop] | probe | onboarding <command> | content | views | pastetest <KB>",
+	-- /pagle dev pastetest <KB> (PST-R60): its usage, with the sizes it takes, and the line it prints once the window
+	-- shows the test string.
+	DEV_PASTE_TEST_USAGE = "Pagle dev: /pagle dev pastetest <KB>, from %d to %d; the check copies 64, 128, 256 and 512.",
+	DEV_PASTE_TEST_SHOWN = "Pagle dev: a %d KB test string is in the export window; copy it and check its length.",
 	-- /pagle dev content (PUSH-R14): the companion state, or for an absent file the first reason PUSH-R13 found; the
 	-- header fields as read (generatedAt, keyId, seq, expires; each "none" when missing); the kinds handed out and
 	-- those dropped, each "kind count", comma-separated; and the frames the check took, its longest frame in ms and
@@ -510,6 +541,7 @@ ns.L = {
 	DEV_TOUR_CARD = "a sample %s card",
 	DEV_TOUR_SHOP = "the Curio Shop",
 	DEV_TOUR_FIELD_REPORT = "the Field report box",
+	DEV_TOUR_EXPORT = "the export window",
 	DEV_TOUR_GLYPHS = "the glyph probe panel",
 	-- The Settings page's name.
 	DEV_TOUR_SETTINGS = "Settings: %s",
@@ -519,6 +551,7 @@ ns.L = {
 		{ name = "settings", help = "open Pagle's settings (also /pagle on its own)" },
 		{ name = "shop", help = "open or close the Curio Shop" },
 		{ name = "report", help = "open the Field report, to help chart the waters" },
+		{ name = "export", help = "copy your Catch log as a Paste string for the Pagle website" },
 		{ name = "guide", help = "open the Field guide; /pagle guide notes shows the margin notes again" },
 		{ name = "help", help = "list these commands" },
 	},

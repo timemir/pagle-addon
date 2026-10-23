@@ -1242,6 +1242,9 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 		views = function()
 			return ns.anglerViews:Report()
 		end,
+		showPaste = function(view)
+			ns.ShowPasteExport(view)
+		end,
 		probe = function()
 			ns.RunProbe({
 				globals = globals,

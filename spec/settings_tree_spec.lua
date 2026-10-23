@@ -59,6 +59,7 @@ local TIPS = {
 		.. "button by the minimap.",
 	anglerTooltips = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle "
 		.. "Companion.",
+	pasteExport = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion.",
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
 	huntsTracker = "A small tracker under the minimap with the Hunts you've pinned on the board.",
 	statsTracker = "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell turns it on.",
@@ -111,6 +112,7 @@ local EXPECTED = {
 			{ "checkbox", "Show the minimap icon", tip = TIPS.minimapIcon },
 			{ "header", "Pagle website" },
 			{ "checkbox", "Show other Anglers on player tooltips", tip = TIPS.anglerTooltips },
+			{ "button", "Catch log", caption = "Copy for the website", tip = TIPS.pasteExport },
 		},
 	},
 	{

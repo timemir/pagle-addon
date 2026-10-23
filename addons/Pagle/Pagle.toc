@@ -94,6 +94,8 @@ logic\Menu.lua
 logic\ReloadReminder.lua
 logic\FieldReportText.lua
 logic\FieldReportBox.lua
+logic\PasteString.lua
+logic\PasteExport.lua
 logic\Dock.lua
 logic\Onboarding.lua
 logic\MarginNotes.lua
@@ -161,6 +163,7 @@ adapter\ReloadReminder.lua
 adapter\FieldReportText.lua
 adapter\FieldKit.lua
 adapter\FieldReportBox.lua
+adapter\PasteExport.lua
 adapter\ShopArt.lua
 adapter\ShopMotion.lua
 adapter\Shop.lua
