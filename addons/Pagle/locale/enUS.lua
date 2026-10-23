@@ -425,14 +425,15 @@ ns.L = {
 	VIEWS_BLOCK_NOT_TITLES = "block %d's titles isn't a table",
 	VIEWS_BLOCK_LENGTH = "block %d's %s isn't %s bytes long",
 	-- The Pagle block on a player's tooltip (VIEW-R21), in its order: the header, then "Following" at its right for a
-	-- Followed Angler; the Angler Level line, with the level and its Prestige (LED-R34: I to X by PRESTIGE_NUMERALS,
-	-- then a Master Prestige's rank − 10, in words as the bookplate writes it, LED-R146, since ★ isn't in the client's
-	-- fonts, CORE-R9); the Ledger's completion %; the Legends caught of N; and a Hardcore Angler's line.
+	-- Followed Angler; the Angler Level line, with the level and its Prestige, its emblem's inline texture before its
+	-- words (LED-R34: I to X by PRESTIGE_NUMERALS, then a Master Prestige's rank − 10, in words as the bookplate writes
+	-- it, LED-R146, since ★ isn't in the client's fonts, CORE-R9; the emblem LED-R152's); the Ledger's completion %; the
+	-- Legends caught of N; and a Hardcore Angler's line.
 	ANGLER_TIP_HEADER = "Pagle Angler",
 	ANGLER_TIP_FOLLOWING = "Following",
 	ANGLER_TIP_LEVEL = "Angler Level",
-	ANGLER_TIP_PRESTIGE = "%d · Prestige %s",
-	ANGLER_TIP_MASTER_PRESTIGE = "%d · Master Prestige %d",
+	ANGLER_TIP_PRESTIGE = "%d · %s Prestige %s",
+	ANGLER_TIP_MASTER_PRESTIGE = "%d · %s Master Prestige %d",
 	PRESTIGE_NUMERALS = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" },
 	-- The Master's Prestige frame's label, before its star stamps (LED-R154); the others read their numeral.
 	PRESTIGE_FRAME_MASTER = "Master",

@@ -416,17 +416,23 @@ ns.ANGLER_TIP_COLORS = {
 -- The card's fields the block writes as numbers.
 local NUMBERS = { "level", "prestige", "ledger", "legends", "legendsTotal" }
 
+-- The Prestige emblem's size in the block, as in every list and tooltip (LED-R152).
+local EMBLEM_SIZE = 22
+
 -- The Angler Level line's right text (VIEW-R21, LED-R34): the level, then " · Prestige {I…X}" at ranks 1 to 10, or
--- " · Master Prestige {rank − 10}" from rank 11.
+-- " · Master Prestige {rank − 10}" from rank 11, each with the rank's emblem before its words (LED-R152, the
+-- Master's from rank 11); the level alone at rank 0, with no emblem.
 ---@param level integer
 ---@param rank integer
 ---@return string
 local function levelText(level, rank)
 	local L = ns.L
 	if rank > #L.PRESTIGE_NUMERALS then
-		return L.ANGLER_TIP_MASTER_PRESTIGE:format(level, rank - #L.PRESTIGE_NUMERALS)
+		local emblem = ns.PrestigeEmblemMarkup(rank, EMBLEM_SIZE)
+		return L.ANGLER_TIP_MASTER_PRESTIGE:format(level, emblem, rank - #L.PRESTIGE_NUMERALS)
 	elseif rank >= 1 then
-		return L.ANGLER_TIP_PRESTIGE:format(level, L.PRESTIGE_NUMERALS[floor(rank)])
+		local emblem = ns.PrestigeEmblemMarkup(rank, EMBLEM_SIZE)
+		return L.ANGLER_TIP_PRESTIGE:format(level, emblem, L.PRESTIGE_NUMERALS[floor(rank)])
 	end
 	return ("%d"):format(level)
 end
