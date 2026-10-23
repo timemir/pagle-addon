@@ -21,6 +21,7 @@ local ns = select(2, ...)
 ---@field getItem fun(itemID: integer): PagleItem?  -- Pagle.GetItem
 ---@field activeTitle? string                       -- the stored active title (LED-R77), for ns.ActiveTitle
 ---@field text? LedgerJournalText                   -- the Journal's words, for ns.ActiveTitle's name
+---@field activityXPTotal? integer                  -- Core's Activity XP total, ns.ActivityXPTotal() when nil
 
 -- The level titles and the prestige titles (LED-R75, Tunables): `level<L>` once the peak level reaches L,
 -- `prestige<R>` once the prestige rank reaches R.
@@ -85,7 +86,7 @@ end
 ---@return { [string]: true }
 local function computed(view, made)
 	local keys = {}
-	local peak = ns.PeakLevel(made)
+	local peak = ns.PeakLevel(made, view.activityXPTotal)
 	for _, level in ipairs(LEVELS) do
 		if peak >= level then
 			keys["title:level" .. level] = true

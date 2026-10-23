@@ -34,6 +34,7 @@ end
 ---@param catalogue table? another catalogue than the fixture's
 ---@return PagleLedgerNS ns
 ---@return LedgerState state the projection's, built
+---@return FakePagle fake
 local function ledgerOver(records, saved, catalogue)
 	local fake = newFakePagle()
 	fake.setCatalogue(catalogue or fixture())
@@ -45,7 +46,8 @@ local function ledgerOver(records, saved, catalogue)
 	local ns = fake.load("Pagle_Ledger").ns
 	fake.login()
 	fake.enterWorld()
-	return ns, ns.StateNow() --[[@as LedgerState]]
+	local state = ns.StateNow() --[[@as LedgerState]]
+	return ns, state, fake
 end
 
 local T0 = SERVER_TIME - 7000
@@ -137,6 +139,71 @@ describe("the Ledger's values for the backend (#223)", function()
 
 		assert.are.same({ prestige = 1, level = 1, xp = state.xp }, ns.Measures(state).anglerLevel)
 		assert.are.equal("title:level60", ns.AutomaticTitle(state))
+	end)
+
+	-- The backend passes Core's Activity XP total, the sum of the paying Modules' ActivityXPEarned (AXP-R9); the client
+	-- passes none and reads Pagle.GetActivityXP().total.
+	describe("with Core's Activity XP total as an argument (LED-R37, #76 item 15)", function()
+		-- Levels 1 to 10 cost 9 × 1,000 + 80 × (1 + … + 9) = 12,600 XP. Most tests below fold an empty log, so the
+		-- level is the Activity XP's alone.
+		local TO_LEVEL_10 = 12600
+
+		it("counts it in the Angler Level's level and XP (LED-R31)", function()
+			local ns, state = ledgerOver({})
+
+			assert.are.same({ prestige = 0, level = 10, xp = TO_LEVEL_10 }, ns.Measures(state, TO_LEVEL_10).anglerLevel)
+			assert.are.same({ prestige = 0, level = 1, xp = 0 }, ns.Measures(state, 0).anglerLevel)
+		end)
+
+		it("adds it to the Ledger's own XP", function()
+			local ns, state = ledgerOver(HISTORY)
+
+			assert.are.equal(state.xp + TO_LEVEL_10, ns.Measures(state, TO_LEVEL_10).anglerLevel.xp)
+			assert.are.equal(ns.ClimbOf(state.xp + TO_LEVEL_10), ns.Measures(state, TO_LEVEL_10).anglerLevel.level)
+		end)
+
+		it("reads Core's total in game when given none, and takes a given one over it", function()
+			local ns, state, fake = ledgerOver({})
+			fake.setActivityXP("Hunts", TO_LEVEL_10)
+
+			assert.are.equal(10, ns.Measures(state).anglerLevel.level)
+			assert.are.same(ns.Measures(state, TO_LEVEL_10), ns.Measures(state))
+			assert.are.same({ prestige = 0, level = 1, xp = 0 }, ns.Measures(state, 0).anglerLevel)
+		end)
+
+		it("counts only what is above the latest Prestige entry's snapshot, never below 0 (LED-R32, AXP-R5)", function()
+			local prestige = { kind = "prestige", char = 1, time = T0, rank = 1, activityXP = 1000 }
+			local ns, state = ledgerOver({ prestige })
+
+			assert.are.equal(state.xp + 500, ns.Measures(state, 1500).anglerLevel.xp)
+			assert.are.equal(state.xp, ns.Measures(state, 800).anglerLevel.xp)
+		end)
+
+		it("earns the level titles it reaches, the automatic title among them (LED-R75, LED-R77)", function()
+			local ns, state = ledgerOver({})
+
+			assert.are.same({ "title:level1" }, ns.EarnedTitles(state, 0))
+			assert.are.same({ "title:level1", "title:level10" }, ns.EarnedTitles(state, TO_LEVEL_10))
+			assert.are.equal("title:level10", ns.AutomaticTitle(state, TO_LEVEL_10))
+			assert.are.equal("title:level1", ns.AutomaticTitle(state, 0))
+		end)
+
+		it("gives the Journal's level and titles with it (LED-R30, LED-R75)", function()
+			local ns, state = ledgerOver({})
+
+			local journal = ns.JournalValues(state, 20, TO_LEVEL_10 + 500)
+
+			-- Level 10 to 11 costs 1,800.
+			assert.are.same({ into = 500, cost = 1800, carried = 0 }, journal.level)
+			assert.are.same({ "title:level1", "title:level10" }, journal.titles)
+		end)
+
+		it("pays 20 Coins for each level it adds above the climb's own (LED-R38, LED-R88)", function()
+			local ns, state = ledgerOver({})
+
+			assert.are.equal(9 * 20, ns.CoinsEarned(state, TO_LEVEL_10))
+			assert.are.equal(0, ns.CoinsEarned(state, 0))
+		end)
 	end)
 
 	describe("the Legend list (LED-R63, PRJ-R15)", function()

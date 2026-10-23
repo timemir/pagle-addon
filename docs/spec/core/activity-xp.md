@@ -1,6 +1,6 @@
 # Core: Activity XP
 
-> Status: Draft · Milestones: M8 Hunt Events · Sources: [Core XP income: how any Module awards Angler Level XP](https://github.com/timemir/wow-fish/issues/278), [XP amounts per activity, and the Prestige cost](https://github.com/timemir/wow-fish/issues/279), map [Hunts redesigned around Hunt Events](https://github.com/timemir/wow-fish/issues/277); ADR 0001 (its note of 18 Oct), ADR 0009, ADR 0011
+> Status: Draft · Milestones: M8 Hunt Events · Sources: [Core XP income: how any Module awards Angler Level XP](https://github.com/timemir/wow-fish/issues/278), [XP amounts per activity, and the Prestige cost](https://github.com/timemir/wow-fish/issues/279), map [Hunts redesigned around Hunt Events](https://github.com/timemir/wow-fish/issues/277), [Amendments from the Pagle backend](https://github.com/timemir/wow-fish/issues/76) item 15; ADR 0001 (its note of 18 Oct), ADR 0009, ADR 0011
 
 Part of [Core](README.md). Core holds each Module's lifetime **Activity XP**, the XP a Module other than the Ledger pays toward the Angler Level for something achieved there (ADR 0011). It works like the Coins wallet: each paying Module reports one lifetime total, and Core only keeps and shows the totals. The Ledger alone reads them and owns the Angler Level, its curve and Prestige ([ledger.md](../ledger.md)).
 
@@ -20,6 +20,7 @@ Part of [Core](README.md). Core holds each Module's lifetime **Activity XP**, th
 - **AXP-R6** `Pagle.GetActivityXP()` returns `{ total, bySource = { [def.name] = { total, enabled } } }`: `total` is the sum of the stored totals, and `enabled` is false for a Module that is disabled or not loaded (CORE-R41). Sources are listed only once they have reported.
 - **AXP-R7** When a stored total changes, Core fires `ActivityXPChanged(entry)` once, after storing it. `entry` is the live entry whose apply led to the report (the Cast or Module record), or `nil` for a report from `done`. So a level-up it causes can ride on that entry's Announcement (ANN-R10, LED-R39).
 - **AXP-R8** Activity XP is never doubled by Fresh Water (LED-R22) and never counts as Catch XP or Discovery XP. Beyond level 60 it carries into the next climb like any other XP (LED-R30, LED-R32).
+- **AXP-R9** Each paying Module's `logic/` also gives its lifetime Activity XP as a pure function of its projection state: `ActivityXPEarned(state)`, the total it reports (AXP-R2), read from the state alone, with no WoW API, frame or saved data beyond the state. It is for Pagle's backend ([#76](https://github.com/timemir/wow-fish/issues/76) item 15, LOG-R79), which rebuilds Activity XP from its own folds as it does Coins, never reads a client-written total and never sets the Ledger's source (LED-R37). The backend sums the reads per Module, keyed by `def.name`, and passes the sum to the Ledger's level reads as their `total` (LED-R37). For the same log, that sum equals `Pagle.GetActivityXP().total` once every paying Module is enabled and has reported from its `done`. Prestige snapshots stay as written: the backend applies each `P1`'s `activityXP` as the Ledger does (AXP-R5, LED-R32).
 
 ### What each Module pays
 
@@ -49,6 +50,7 @@ Nothing else pays: not Campfire milestones, titles, Size records, Stats or QoL. 
 |---|---|
 | `M:ReportXPEarned(total)` | AXP-R2 |
 | `Pagle.GetActivityXP()` → `{ total, bySource }` | AXP-R6 |
+| `ActivityXPEarned(state)` → integer, in each paying Module's `logic/` (Hunts, the Tackle Board), for the backend ([catch-log.md › The backend's hooks](catch-log.md#the-backends-hooks)) | AXP-R9 |
 | event `ActivityXPChanged(entry)` (callback `PagleActivityXPChanged`) | AXP-R7 |
 | the `activityXP` field of a `P1` entry | AXP-R5 |
 

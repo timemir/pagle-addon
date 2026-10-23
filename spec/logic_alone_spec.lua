@@ -3,7 +3,8 @@
 -- data/EventList.lua in TOC order (LOG-R79), never adapter/ or locale/, into globals that hold only Lua 5.1, `bit`, the Pagle API it builds over Core's
 -- logic/, and GetServerTime. It then asks Core's logic/ for its projections (ns.BindCoreProjections) and each roster
 -- Module's for its own (ns.BindProjections), folds every record through them, and reads each paying Module's Coins
--- (ns.CoinsEarned) from its state after done.
+-- (ns.CoinsEarned) and Activity XP (ns.ActivityXPEarned, #76 item 15) from its state after done, passing the Activity
+-- XP's sum to the Ledger's level reads as their `total` (AXP-R9, LED-R37).
 --
 -- This spec hosts the tree the way the driver does and checks what it reads against what the client computes for the
 -- same log: the Modules loaded whole on FakePagle (CORE-R18), adapter/ and locale/ included.
@@ -13,6 +14,9 @@ local MACKEREL, SMALLFISH, OILY, FIREFIN = 6303, 6291, 6358, 6359
 local ELWYNN, WESTFALL, DARKSHORE = 12, 40, 148
 --- The paying Modules (SHOP-R2): each reports its lifetime Coins, so each exposes them to the backend.
 local PAYING = { "Ledger", "Hunts", "TackleBoard" }
+--- The Modules that pay Activity XP (AXP-R1, AXP-R2): each reports its lifetime total, so each exposes it to the
+--- backend (AXP-R9).
+local PAYING_XP = { "Hunts", "TackleBoard" }
 
 -- The globals the driver gives wow-fish's code: Lua 5.1's pure functions and LuaBitOp. Reading any other global
 -- raises, as in the driver, so a WoW or adapter call logic/ makes fails the spec.
@@ -241,8 +245,30 @@ local function poolRun()
 	return { kind = "module", char = 1, time = T0, module = "Hunts", recordKind = "run", payload = payload }
 end
 
--- A FakePagle whose log holds Casts in three zones, a Skill Reading, a purchase and a pool event's run, and every
--- paying Module loaded whole on it and logged in: the client's side of the comparison.
+-- A Tackle Board record (TKB-R80) at `time`, its payload as written (tackle-board.md › Data).
+---@param kind string
+---@param time integer
+---@param payload string
+---@return table
+local function boardRecord(kind, time, payload)
+	return { kind = "module", char = 1, time = time, module = "TackleBoard", recordKind = kind, payload = payload }
+end
+
+-- The board started at T0, on the board day and week it falls in (daily reset 15:00 UTC, weekly Tuesday's; SERVER_TIME
+-- is Sunday 11 October 2026 15:15 UTC), with a tier-1 Notice and an Expedition for one Catch in Elwynn, which the
+-- first Cast completes: 100 + 600 Activity XP (TKB-R65), enough to count in the Angler Level.
+---@return table[]
+local function board()
+	local dayStart, weekStart = SERVER_TIME - 900 - 2 * 86400, SERVER_TIME - 900 - 5 * 86400
+	return {
+		boardRecord("start", T0 + 1, dayStart .. ";" .. weekStart),
+		boardRecord("issue", T0 + 2, "n;haul;1;10;1;" .. ELWYNN),
+		boardRecord("issue", T0 + 3, "e;haul;0;60;1;" .. ELWYNN),
+	}
+end
+
+-- A FakePagle whose log holds Casts in three zones, a Skill Reading, a purchase, a pool event's run and a started
+-- Tackle Board, and every paying Module loaded whole on it and logged in: the client's side of the comparison.
 ---@return FakePagle fake
 ---@return table<string, LoadedAddon> loaded each Module by roster name
 local function clientSide()
@@ -250,6 +276,9 @@ local function clientSide()
 	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
 	fake.catchLog:Append({ kind = "skill", char = 1, time = T0, rank = 150, max = 225, mod = 0 })
 	fake.catchLog:Append(poolRun())
+	for _, record in ipairs(board()) do
+		fake.catchLog:Append(record)
+	end
 	fake.catchLog:Append(cast(T0 + 10, ELWYNN, { MACKEREL, SMALLFISH }))
 	fake.catchLog:Append(cast(T0 + 70, ELWYNN))
 	fake.catchLog:Append(cast(T0 + 130, WESTFALL, { MACKEREL, OILY }))
@@ -310,11 +339,23 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 			assert(next(state.bySpecies[FIREFIN]) ~= nil, "the comparison isn't of empty sets")
 		end)
 
+		-- Core's Activity XP total as the backend counts it: the paying Modules' reads, summed (AXP-R9).
+		---@return integer
+		local function activityXPTotal()
+			local total = 0
+			for _, name in ipairs(PAYING_XP) do
+				total = total + hosted.modules[name].ActivityXPEarned(hosted.byKey[name].state)
+			end
+			return total
+		end
+
 		for _, name in ipairs(PAYING) do
 			it("gives " .. name .. " the lifetime Coins earned the client reports (SHOP-R2)", function()
 				local reported = fake.global.coins.earned[name] or 0
+				-- The Ledger's Coins count the levels its climb's Activity XP adds (LED-R38).
+				local total = name == "Ledger" and activityXPTotal() or nil
 
-				assert.are.equal(reported, hosted.modules[name].CoinsEarned(hosted.byKey[name].state))
+				assert.are.equal(reported, hosted.modules[name].CoinsEarned(hosted.byKey[name].state, total))
 			end)
 		end
 
@@ -322,20 +363,49 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 			assert.is_true(hosted.modules.Ledger.CoinsEarned(hosted.byKey.Ledger.state) > 0)
 		end)
 
+		for _, name in ipairs(PAYING_XP) do
+			it("gives " .. name .. " the lifetime Activity XP the client reports (AXP-R2, AXP-R9)", function()
+				local reported = fake.global.activityXP.earned[name] or 0
+
+				assert.are.equal(reported, hosted.modules[name].ActivityXPEarned(hosted.byKey[name].state))
+			end)
+		end
+
+		it("sums the Modules' Activity XP to the total Pagle.GetActivityXP() reports in game (AXP-R9)", function()
+			assert.are.equal(fake.Pagle.GetActivityXP().total, activityXPTotal())
+			assert(activityXPTotal() > 0, "the comparison isn't of zeros")
+		end)
+
+		it("leaves out no Module that reports Activity XP in game (AXP-R2)", function()
+			for name in pairs(fake.Pagle.GetActivityXP().bySource) do
+				assert(type(hosted.modules[name].ActivityXPEarned) == "function", name .. " has no ActivityXPEarned")
+			end
+		end)
+
 		it("reads the Ledger's measures, titles and tallies from its state as the client reads them", function()
 			local ledger, client = hosted.modules.Ledger, loaded.Ledger.ns
 			local state, clientState = hosted.byKey.Ledger.state, client.StateNow()
+			local total = activityXPTotal()
 
 			for _, read in ipairs({ "Measures", "EarnedTitles", "AutomaticTitle", "ZonesMastered", "LifetimeCatches" }) do
-				assert.are.same(client[read](clientState), ledger[read](state), read)
+				assert.are.same(client[read](clientState), ledger[read](state, total), read)
 			end
 			assert.are.equal(6, ledger.LifetimeCatches(state)) -- two on each of three Casts
+		end)
+
+		it("counts the Activity XP in the Ledger's Angler Level, so the comparison above has it (LED-R37)", function()
+			local ledger, state, total = hosted.modules.Ledger, hosted.byKey.Ledger.state, activityXPTotal()
+
+			-- logic/ alone sets no source, so without a total the climb is the Ledger's own XP.
+			local own = ledger.Measures(state).anglerLevel.xp
+			assert.are.equal(own + total, ledger.Measures(state, total).anglerLevel.xp)
 		end)
 
 		it("gives each Module's Journal values as the client's logic/ gives them, no key from two Modules", function()
 			local from = {}
 			for name, module in pairs(loaded) do
-				local values = hosted.modules[name].JournalValues(hosted.byKey[name].state, 20)
+				local total = name == "Ledger" and activityXPTotal() or nil
+				local values = hosted.modules[name].JournalValues(hosted.byKey[name].state, 20, total)
 				local clientState = name == "Ledger" and module.ns.StateNow() or module.ns.projection:GetState()
 
 				assert.are.same(module.ns.JournalValues(clientState, 20), values, name)

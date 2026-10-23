@@ -60,7 +60,7 @@ end
 --- A Ledger state's lifetime Coins earned (SHOP-R2, LED-R2, LED-R88), as the Ledger reports them with
 --- M:ReportCoinsEarned: the state's, and 20 for each level the current climb's Activity XP adds above its own level,
 --- worked out from Core's total and never stored (LED-R38), so a total recounted lower takes them back. For Pagle's
---- backend (#223) too, read after done.
+--- backend (#223) too, read after done, its `total` the paying Modules' ns.ActivityXPEarned summed (AXP-R9).
 ---@param state LedgerState
 ---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
 ---@return integer

@@ -1,5 +1,5 @@
--- The Tackle Board's projection for Pagle's backend (#223): ns.BindProjections and ns.CoinsEarned
--- (logic/Projection.lua), on FakePagle over the fixture catalogue. The backend's driver folds the Catch log through
+-- The Tackle Board's projection for Pagle's backend (#223): ns.BindProjections, ns.CoinsEarned and
+-- ns.ActivityXPEarned (logic/Projection.lua; #76 item 15), on FakePagle over the fixture catalogue. The backend's driver folds the Catch log through
 -- logic/ alone (spec/logic_alone_spec.lua), so the binding must fold a started board as the client's projection does.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -24,12 +24,14 @@ local function history()
 	}
 end
 
--- The Tackle Board loaded on a fake with `history()`, its OnInitialize replaced by what the backend's driver does:
--- register, then ns.BindProjections, with no ns.api (the driver loads no adapter/). Logged in and built.
+-- The Tackle Board loaded on a fake with `records` (`history()` by default), its OnInitialize replaced by what the
+-- backend's driver does: register, then ns.BindProjections, with no ns.api (the driver loads no adapter/). Logged in
+-- and built.
+---@param records table[]?
 ---@return PagleProjection bound
 ---@return PagleTackleBoardNS ns
-local function boundByBackend()
-	local fake = withHistory(history())
+local function boundByBackend(records)
+	local fake = withHistory(records or history())
 	local bound
 	local ns = built(fake, {
 		prepare = function(loaded)
@@ -55,6 +57,27 @@ describe("the Tackle Board's projection for the backend (#223)", function()
 		local bound, ns = boundByBackend()
 
 		assert.are.equal(70, ns.CoinsEarned(bound:GetState() --[[@as TackleBoardState]]))
+	end)
+
+	it("gives the lifetime Activity XP: 100 for the tier-1 Notice and 600 for the Expedition (TKB-R65)", function()
+		local bound, ns = boundByBackend()
+
+		assert.are.equal(700, ns.ActivityXPEarned(bound:GetState() --[[@as TackleBoardState]]))
+	end)
+
+	it("gives the Activity XP the client reports to Core for the same log (AXP-R2, AXP-R9)", function()
+		local fake = withHistory(history())
+		built(fake)
+		local bound, ns = boundByBackend()
+
+		local state = bound:GetState() --[[@as TackleBoardState]]
+		assert.are.equal(fake.global.activityXP.earned.TackleBoard, ns.ActivityXPEarned(state))
+	end)
+
+	it("gives 0 before Start, as the client reports (TKB-R65)", function()
+		local bound, ns = boundByBackend({})
+
+		assert.are.equal(0, ns.ActivityXPEarned(bound:GetState() --[[@as TackleBoardState]]))
 	end)
 
 	it("gives the Journal the 30 Fly Box patterns in pattern order, the last six rare (ANG Journal values)", function()
