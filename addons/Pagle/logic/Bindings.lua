@@ -483,11 +483,11 @@ ns.BINDINGS = {
 	cover("core", "planks", 150, 196, "5a3414", nil, 2),
 	cover("core", "snakeskin", 40, 40, "3a4a1e", "brass", 3),
 	cover("core", "shagreen", 60, 60, "4a6a60", "silver", 3),
-	cover("core", "lacquer", 150, 196, "8a1410", "gold", 3),
+	cover("core", "lacquer", 32, 32, "8a1410", "gold", 3), -- a small repeating pattern (#382), not the closed book's face
 	cover("core", "bone", 200, 200, "8a6a3a", nil, 3),
 	cover("core", "brasscase", 150, 196, "8a5a14", nil, 3),
 	cover("core", "scrimshaw", 150, 196, "3a2410", "bone", 4),
-	cover("core", "trophycase", 150, 196, "3a1a08", "gold", 5),
+	cover("core", "trophycase", 32, 32, "3a1a08", "gold", 5), -- likewise (#382)
 	cover("hunts", "pathfinder", 200, 200, "7a4818", "brass"),
 	cover("hunts", "fiveseal", 128, 128, "1a1612"),
 	cover("hunts", "wagersilk", 56, 56, "3a1450", "gold"),

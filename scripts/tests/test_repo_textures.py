@@ -20,14 +20,14 @@ SAMPLE_BLOCKS = 1024  # the spread read first: 16,384 texels however large the t
 
 # The shop expansion's materials (Pagle/media/books/bindings/) still blank since they were added: each is a mipmapped
 # DXT5 whose every block has zero endpoints, the encoding of a fully transparent image. Their art is being repainted
-# (#382); each passes, and so fails this list, once its art is back. Eleven are back so far (chartlinen, eelskin,
-# frosthide, keeper, kodo, kraft, legend, morocco, snakeskin, velvet, wagersilk).
+# (#382); each passes, and so fails this list, once its art is back. Thirteen are back so far (chartlinen, eelskin,
+# frosthide, keeper, kodo, kraft, lacquer, legend, morocco, snakeskin, trophycase, velvet, wagersilk).
 BLANK_SINCE_ADDED = frozenset(
     f"Pagle/media/books/bindings/{key}.blp"
     for key in (
-        "abyssal", "bone", "brasscase", "canvas", "copper", "driftwood", "fiveseal", "iridescent", "lacquer",
-        "maplinen", "monster", "moss", "netcork", "oilskin", "pathfinder", "pearl", "planks", "sailcloth", "scrimshaw",
-        "shagreen", "tartan", "trophycase", "turtle",
+        "abyssal", "bone", "brasscase", "canvas", "copper", "driftwood", "fiveseal", "iridescent", "maplinen",
+        "monster", "moss", "netcork", "oilskin", "pathfinder", "pearl", "planks", "sailcloth", "scrimshaw", "shagreen",
+        "tartan", "turtle",
     )
 )
 

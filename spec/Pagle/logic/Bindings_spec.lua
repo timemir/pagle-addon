@@ -253,8 +253,8 @@ describe("the bindings", function()
 			function()
 				assert.are.same({
 					texture = BOOKS .. "bindings\\lacquer",
-					tileW = 150,
-					tileH = 196,
+					tileW = 32,
+					tileH = 32,
 					foot = 0.82,
 					band = gained("8a1410"),
 					gilt = FIELD_GILT,
@@ -274,6 +274,9 @@ describe("the bindings", function()
 					wagersilk.swatchAtlas,
 					wagersilk.swatch,
 				})
+				-- the two repainted as small repeating patterns (#382) repeat every 32 units, not at the closed book's size
+				local trophycase = ns.BindingLook("core.binding.trophycase")
+				assert.are.same({ 32, 32 }, { trophycase.tileW, trophycase.tileH })
 			end
 		)
 
