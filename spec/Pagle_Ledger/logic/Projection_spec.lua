@@ -46,13 +46,14 @@ describe("the Ledger's projection def", function()
 	it(
 		"has rulesVersion LEDGER_RULES_VERSION × 100 + SIZE_RULES_VERSION, a missing one counting as 0 (LED-R2)",
 		function()
-			-- LEDGER_RULES_VERSION 8: 4 when ★ moved to the 5th Catch (LED-R45), 5 for the full Prestige cost and
+			-- LEDGER_RULES_VERSION 9: 4 when ★ moved to the 5th Catch (LED-R45), 5 for the full Prestige cost and
 			-- Activity XP in the climb (LED-R4, LED-R30, LED-R37), 6 for the varieties caught (VAR-R20), 7 for the
-			-- second round's counts (LED-R118), 8 for the crest times and record (LED-R155, LED-R156).
-			assert.are.equal(800, ns.RulesVersion(nil))
-			assert.are.equal(802, ns.RulesVersion(2))
-			assert.are.equal(800, ns.ProjectionDef({}, lookups, outlets, nil).rulesVersion)
-			assert.are.equal(802, ns.ProjectionDef({}, lookups, outlets, 2).rulesVersion)
+			-- second round's counts (LED-R118), 8 for the crest times and record (LED-R155, LED-R156), 9 for the
+			-- measures' rise times (LED-R158).
+			assert.are.equal(900, ns.RulesVersion(nil))
+			assert.are.equal(902, ns.RulesVersion(2))
+			assert.are.equal(900, ns.ProjectionDef({}, lookups, outlets, nil).rulesVersion)
+			assert.are.equal(902, ns.ProjectionDef({}, lookups, outlets, 2).rulesVersion)
 		end
 	)
 
