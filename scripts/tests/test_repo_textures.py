@@ -20,10 +20,10 @@ SAMPLE_BLOCKS = 1024  # the spread read first: 16,384 texels however large the t
 
 # The shop expansion's materials (Pagle/media/books/bindings/) still blank since they were added: each is a mipmapped
 # DXT5 whose every block has zero endpoints, the encoding of a fully transparent image. Their art is being repainted
-# (#382, #384); each passes, and so fails this list, once its art is back. Thirty are back so far; these four are not.
-BLANK_SINCE_ADDED = frozenset(
-    f"Pagle/media/books/bindings/{key}.blp" for key in ("bone", "canvas", "iridescent", "pathfinder")
-)
+# (#382, #384); each passes, and so fails this list, once its art is back. All 34 are back, so the list is empty; it
+# stays, for a texture that ships blank again while its art is being redone.
+BLANK_KEYS: tuple[str, ...] = ()
+BLANK_SINCE_ADDED = frozenset(f"Pagle/media/books/bindings/{key}.blp" for key in BLANK_KEYS)
 
 Texels = npt.NDArray[np.uint8]  # one RGBA row per texel, in no particular order
 
