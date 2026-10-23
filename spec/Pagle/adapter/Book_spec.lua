@@ -112,6 +112,63 @@ describe("Pagle.NewBook (core/book.md)", function()
 		assert.are.same({ "start", "lift", "midway", "land", "done" }, phases)
 	end)
 
+	it(
+		"lets a book draw its own notice on a layer over each paper, hidden again as the notice ends (BOOK-R22,"
+			.. " BOOK-R25)",
+		function()
+			local words = "Updating…"
+			local calls, hidden = {}, 0
+			local book = newBook({
+				notice = function()
+					return words
+				end,
+				noticeView = function(sides, notice)
+					calls[#calls + 1] = { sides.left, sides.right, notice }
+				end,
+			})
+			local drawn = 0
+			book:RegisterPage("home", "left", function()
+				drawn = drawn + 1
+			end)
+			book:Open()
+			local frame = book.frame
+			local layers = frame.noticeLayers
+			layers.left:SetScript("OnHide", function()
+				hidden = hidden + 1
+			end)
+			assert.are.same({ { layers.left, layers.right, "Updating…" } }, calls)
+			assert.are.equal(frame.papers.left, layers.left:GetParent())
+			assert.are.equal(frame.papers.right, layers.right:GetParent())
+			assert.is_true(layers.left:IsShown() and layers.right:IsShown())
+			-- the shell writes no words of its own, and no renderer runs
+			assert.is_false(frame.notices.left:IsShown() or frame.notices.right:IsShown())
+			assert.are.equal(0, drawn)
+			-- called again at each draw while the notice shows
+			book:Draw()
+			assert.are.equal(2, #calls)
+
+			words = nil
+			book:Draw()
+
+			assert.are.equal(2, #calls)
+			assert.is_false(layers.left:IsShown() or layers.right:IsShown())
+			assert.are.equal(1, hidden)
+			assert.are.equal(1, drawn)
+		end
+	)
+
+	it("writes the notice in the hand on both pages for a book without its own view (BOOK-R22, BOOK-R25)", function()
+		local book = newBook({
+			notice = function()
+				return "Updating…"
+			end,
+		})
+		book:Open()
+		assert.is_nil(book.frame.noticeLayers)
+		assert.are.equal("Updating…", book.frame.notices.left:GetText())
+		assert.is_true(book.frame.notices.left:IsShown() and book.frame.notices.right:IsShown())
+	end)
+
 	it("asks options.how for an Open without one (BOOK-R34)", function()
 		local asked = {}
 		local book = newBook({

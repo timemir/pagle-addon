@@ -185,12 +185,60 @@ describe("the Fish Journal while the projection updates (LED-R122)", function()
 		assert.is_true(journal.pages.updating)
 		assert.are.same({ { kind = "text", text = line } }, journal.pages.left)
 		assert.are.same({ { kind = "text", text = line } }, journal.pages.right)
-		-- and the First look's "?" beside the wax close, on the leather like the close (ONB-R59)
-		assert.are.same({ line, line, "?" }, shownTexts(journal.frame))
-		assert.is_true(journal.frame.notices.left:IsShown())
+		-- once, under the quill on the left page (BOOK-R25), and the First look's "?" beside the wax close, on the
+		-- leather like the close (ONB-R59)
+		assert.are.same({ line, "?" }, shownTexts(journal.frame))
+		assert.is_false(journal.frame.notices.left:IsShown())
 		assert.are.same({}, shownTexts(journal.frame.crumbs))
 		assert.is_false(journal.search:IsShown())
 		assert.is_false(journal.frame.back:IsShown())
+	end)
+
+	it(
+		"shows the quill over its line and the fleuron rule on the left page, a fleuron on the right (LED-R122,"
+			.. " BOOK-R25)",
+		function()
+			local _, loaded = loggedIn(true)
+			local journal = loaded.ns.journal
+
+			journal:Toggle()
+
+			local layers = journal.frame.noticeLayers
+			local view = journal.updatingView
+			assert.is_true(view.quill:IsVisible())
+			assert.are.equal(layers.left, view.quill:GetParent())
+			assert.is_truthy(view.quill:GetTexture():find("LedgerParts$"))
+			assert.are.equal("The Ledger is being written up from your Catch log.", view.words:GetText())
+			assert.are.same({ "TOP", layers.left, "TOPLEFT", 221, -273 }, { view.words:GetPoint() })
+			assert.is_true(view.fleuron:IsVisible())
+			assert.are.equal(layers.right, view.fleuron:GetParent())
+			assert.is_truthy(view.fleuron:GetTexture():find("BookAtlas$"))
+			assert.are.same(
+				{ 22, 22, 0.5 },
+				{ view.fleuron:GetWidth(), view.fleuron:GetHeight(), view.fleuron:GetAlpha() }
+			)
+		end
+	)
+
+	it("sways the quill 4° each way while it shows, and stops it when the update finishes (LED-R122)", function()
+		local fake, loaded = openJournal({ building = true, motion = true })
+		local journal = loaded.ns.journal
+		local quill = journal.updatingView.quill
+		local lowest, highest = math.huge, -math.huge
+		for _ = 1, 40 do
+			loaded.client.update(0.05)
+			local degrees = math.deg(quill.rotation)
+			lowest, highest = math.min(lowest, degrees), math.max(highest, degrees)
+		end
+		assert.is_true(lowest < -3.9 and lowest >= -4.001)
+		assert.is_true(highest > 3.9 and highest <= 4.001)
+
+		fake.enterWorld()
+		local rested = quill.rotation
+		loaded.client.update(0.3)
+
+		assert.is_false(journal.frame.noticeLayers.left:IsShown())
+		assert.are.equal(rested, quill.rotation)
 	end)
 
 	it("redraws when the update finishes (LED-R122)", function()

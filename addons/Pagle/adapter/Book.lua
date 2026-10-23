@@ -521,6 +521,7 @@ end
 ---@field binding PagleBookBinding
 ---@field parchments table<PagleBookSide, PagleBookParchment>
 ---@field notices table<PagleBookSide, FontString>
+---@field noticeLayers table<PagleBookSide, Frame>? -- each paper's layer for a book's own notice (BOOK-R25)
 ---@field crumbs Frame
 ---@field crumbButtons Button[]
 ---@field stripText FontString
@@ -794,6 +795,15 @@ local function build(book)
 		notice:SetWidth(rect.width - 2 * pad.x)
 		notice:Hide()
 		frame.notices[name] = notice
+		-- a book that draws its own notice draws it on a layer over the whole paper, above the body (BOOK-R25)
+		if options.noticeView then
+			local layer = CreateFrame("Frame", nil, paper)
+			layer:SetAllPoints(paper)
+			layer:SetFrameLevel(paper:GetFrameLevel() + 10)
+			layer:Hide()
+			frame.noticeLayers = frame.noticeLayers or {}
+			frame.noticeLayers[name] = layer
+		end
 	end
 
 	-- the strip: the crumbs at its left, the book's words at its right
@@ -1316,7 +1326,7 @@ local function crossfade(book, turn)
 	}, done)
 end
 
---- Draws the book now, if open (BOOK-R21–R24, BOOK-R30): `how`, from Open on a book already open, says how it moves.
+--- Draws the book now, if open (BOOK-R21–R25, BOOK-R30): `how`, from Open on a book already open, says how it moves.
 ---@param how PagleBookOpenHow?
 function Book:Draw(how)
 	local frame = self.frame
@@ -1364,7 +1374,7 @@ function Book:Draw(how)
 	local sides = {}
 	for _, side in ipairs({ "left", "right" }) do
 		local noticeText = frame.notices[side]
-		noticeText:SetShown(notice ~= nil)
+		noticeText:SetShown(notice ~= nil and not frame.noticeLayers)
 		noticeText:SetText(notice or "")
 		local renderer = not notice and router:Renderer(place.page, side)
 		if renderer then
@@ -1385,6 +1395,15 @@ function Book:Draw(how)
 				view.scroll:SetVerticalScroll(0)
 			end
 			sides[side] = view
+		end
+	end
+	-- a book's own notice (BOOK-R25): its layers show while the notice does, and it draws on them at each draw
+	local layers = frame.noticeLayers
+	if layers then
+		layers.left:SetShown(notice ~= nil)
+		layers.right:SetShown(notice ~= nil)
+		if notice then
+			options.noticeView(layers, notice)
 		end
 	end
 	self.drawnPage = not notice and place.page or nil

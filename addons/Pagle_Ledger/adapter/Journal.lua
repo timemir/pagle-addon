@@ -24,7 +24,8 @@ local SIDE, STRIP = 18, 38
 local PAD = { x = 30, top = 24, bottom = 24 }
 local BACK_ROOM = 22
 -- A page body's size: half the room between the leather's sides, and from the strip to the foot, inside its padding.
-local BODY_W = (WIDTH - 2 * SIDE) / 2 - 2 * PAD.x
+local PAGE_W = (WIDTH - 2 * SIDE) / 2
+local BODY_W = PAGE_W - 2 * PAD.x
 local BODY_H = HEIGHT - STRIP - 16 - PAD.top - PAD.bottom
 -- The search slip (the kit's 252 × 23), at the strip's right and centred in it between the band's inner edge (7 units
 -- in) and the pages; the crumbs stop short of it.
@@ -74,6 +75,13 @@ end
 
 ---@class LedgerJournalSearchView: EditBox
 
+--- The "being written up" pages (LED-R122), on the book's notice layers (BOOK-R25).
+---@class LedgerJournalUpdatingView
+---@field quill LedgerSpriteTexture
+---@field words FontString
+---@field fleuron Texture   -- the right page's
+---@field swaying boolean   -- the quill sways now; it stops when the layer hides
+
 --- The Fish Journal: its book (Core's shell), its router, and what its pages and brass plate show as last drawn.
 ---@class LedgerJournal
 ---@field book PagleBook               -- Core's shell (BOOK-R1); its frame from the first opening
@@ -94,6 +102,7 @@ end
 ---@field drawnPlate boolean?  -- whether the last drawing was a Legend's plate
 ---@field turnDirection ("fwd"|"back")? -- the next drawing turns the page this way (a Prestige)
 ---@field cacheKey string?     -- the place `pages` was read for in this drawing
+---@field updatingView LedgerJournalUpdatingView? -- the "being written up" pages, from the first update shown (LED-R122)
 local Journal = {}
 Journal.__index = Journal
 
@@ -288,6 +297,60 @@ local function legendPlateOf(journal)
 	return journal.legendPlate
 end
 
+-- The "being written up" pages (LED-R122): the quill over the left page with the line under it and the fleuron rule,
+-- a fleuron alone on the right (the kit's Home.lua: updating), on the notice layers over each paper (BOOK-R25).
+---@param sides table<PagleBookSide, Frame>
+---@return LedgerJournalUpdatingView
+local function buildUpdating(sides)
+	local left = sides.left
+	local quill = ns.JournalSprite(left, "Parts", "quill", "ARTWORK")
+	ns.JournalBoxAt(quill, left, 189, 192.2)
+	local words = ns.JournalLabel(left, "print", 18, INK.body, nil, {
+		justify = "CENTER",
+		wrap = true,
+		width = 300,
+		spacing = 6,
+	})
+	words:SetPoint("TOP", left, "TOPLEFT", PAGE_W / 2, -273)
+	ns.JournalRule(left, 146, 333.8, 150)
+	local fleuron = ns.JournalPiece(sides.right, "Book", "fleuron", "ARTWORK")
+	fleuron:SetSize(22, 22)
+	fleuron:SetAlpha(0.5)
+	fleuron:SetPoint("TOPLEFT", sides.right, "TOPLEFT", 210, -259)
+	---@type LedgerJournalUpdatingView
+	local view = { quill = quill, words = words, fleuron = fleuron, swaying = false }
+	-- the update over (or the book closed), the quill rests
+	left:HookScript("OnHide", function()
+		Pagle.StopMotion(quill)
+		view.swaying = false
+	end)
+	return view
+end
+
+-- The quill writes while the Ledger is being written up: it sways about its nib, 4° each way (0.8 s, ease-in-out,
+-- alternating, for as long as it shows); with Animations off it rests at its first lean.
+---@param view LedgerJournalUpdatingView
+local function swayQuill(view)
+	if view.swaying then
+		return
+	end
+	view.swaying = true
+	local quill = view.quill
+	Pagle.StopMotion(quill)
+	Pagle.Animate(quill, {
+		{
+			dur = 0.8,
+			ease = Pagle.EASE.inOut,
+			iter = "infinite",
+			dir = "alternate",
+			keys = { { 0, { -4 } }, { 1, { 4 } } },
+			apply = function(v)
+				quill:SetRotation(math.rad(v[1]))
+			end,
+		},
+	})
+end
+
 -- Last at each drawing (BOOK-R21): the brass plate's words, and a Legend's plate opened over the spread or closed.
 ---@param journal LedgerJournal
 ---@param place PagleBookPlace
@@ -395,6 +458,12 @@ do
 		notice = function()
 			journal.cacheKey = nil
 			return not ns.StateNow() and L.JOURNAL_UPDATING or nil
+		end,
+		-- LED-R122's pages are the Journal's own: the quill, its line and the fleurons (BOOK-R25)
+		noticeView = function(sides, words)
+			journal.updatingView = journal.updatingView or buildUpdating(sides)
+			journal.updatingView.words:SetText(words)
+			swayQuill(journal.updatingView)
 		end,
 		how = function(from, to)
 			return journal:How(from, to)

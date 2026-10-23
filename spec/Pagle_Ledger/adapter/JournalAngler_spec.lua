@@ -970,7 +970,7 @@ describe("the Angler page's Where your XP came from", function()
 		})
 
 		assert.is_true(loaded.ns.journal.pages.updating)
-		assert.is_true(loaded.ns.journal.frame.notices.left:IsShown())
+		assert.is_true(loaded.ns.journal.frame.noticeLayers.left:IsShown())
 
 		fake.enterWorld()
 
