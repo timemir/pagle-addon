@@ -35,6 +35,7 @@ from typing import Any
 from PIL import Image, ImageChops, ImageColor, ImageDraw, ImageFilter
 
 from pagle_data.files import write_atomic
+from pagle_data.prestige_kit import frame_key, frame_name
 
 ART_DIR = Path("data/art/prestige")
 PX = 2  # output pixels per unit
@@ -89,7 +90,10 @@ def frame_suffix(rank: int) -> str:
 
 def pieces(art: Json, art_dir: Path) -> list[Piece]:
     out = []
-    for frame in art["frames"]:
+    for kit_frame in art["frames"]:
+        # the addon's key and name for it (pagle_data/prestige_kit.py): rank III is The Lighthouse, not the kit's
+        # The Lamp Room, so the site names it as the game does
+        frame = {**kit_frame, "key": frame_key(kit_frame["key"]), "name": frame_name(kit_frame)}
         suffix = frame_suffix(frame["rank"])
         out.append(Piece(f"prestige-frame-{suffix}", f"pg-frame-{suffix}", "prestige-frame", frame,
                          atlas_path(art_dir, frame["atlas"]), tuple(by_z(frame["layers"]))))

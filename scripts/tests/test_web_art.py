@@ -54,6 +54,17 @@ def test_the_file_names(out: Path) -> None:
     assert files(out) == sorted(expected)
 
 
+def test_rank_iii_is_the_lighthouse_as_in_the_game(tmp_path: Path) -> None:
+    # The kit's `lamproom`, "The Lamp Room", is the addon's `lighthouse`, "The Lighthouse" (LED-R154): the site gets
+    # the addon's name, and never the kit's key.
+    export(REPO / ART_DIR, tmp_path, ["prestige-frame-3"])
+    assert files(tmp_path) == ["index.json", "prestige-frame-3.webp"]
+    index = (tmp_path / "index.json").read_text(encoding="utf-8")
+    assert [(p["key"], p["rank"], p["name"]) for p in json.loads(index)["pieces"]] == [
+        ("prestige-frame-3", 3, "The Lighthouse")]
+    assert "lamproom" not in index.lower() and "The Lamp Room" not in index
+
+
 def test_an_unknown_key_is_refused(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="no such piece: prestige-frame-12"):
         export(REPO / ART_DIR, tmp_path, ["prestige-frame-12"])

@@ -70,7 +70,7 @@ end
 -- The shared renderer's sprite coordinates and slot drawing (logic/LayeredArt.lua), for what this file draws itself:
 -- the Nod's slices, the stamps, and layered pieces drawn on a host of their own.
 local coordsOf = ns.SpriteCoords
-local commit = ns.CommitLayerSlot -- luacheck: ignore 211 (the Legend crests' layered pieces draw with it)
+local commit = ns.CommitLayerSlot
 
 -- The Nod's body three-sliced to `width` (ANN-R82): `slice.left` (where its words start) and `slice.right` of it kept,
 -- its middle stretched.

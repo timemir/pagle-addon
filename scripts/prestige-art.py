@@ -8,7 +8,7 @@ each layer's CSS keyframes become the motion tracks scripts/toast-styles2.py mak
 renderer draws both); layers are put in draw order and on the host they draw on, "back" (the kit's z under 4, behind
 the likeness) or "front" (the frame and what crosses over it); a label's CSS text-shadow becomes an ink's shadow with
 an offset (a glow alone, none). Rank III keeps the name the dev chose, The Lighthouse, so its key and texture are
-`lighthouse`, not the kit's `lamproom`.
+`lighthouse`, not the kit's `lamproom` (pagle_data/prestige_kit.py, which the web art export shares).
 """
 
 import importlib.util
@@ -17,6 +17,8 @@ import re
 import sys
 from pathlib import Path
 
+from pagle_data.prestige_kit import frame_key, frame_name
+
 _spec = importlib.util.spec_from_file_location("toast_styles2", Path(__file__).with_name("toast-styles2.py"))
 assert _spec is not None and _spec.loader is not None
 styles = importlib.util.module_from_spec(_spec)
@@ -24,9 +26,6 @@ _spec.loader.exec_module(styles)
 
 # The kit's z of the frame's own body: below it, behind the likeness.
 BODY_Z = 4
-# The kit's keys the repo names otherwise (the dev kept rank III's name, The Lighthouse).
-KEYS = {"lamproom": "lighthouse"}
-NAMES = {"lamproom": "The Lighthouse"}
 FACES = {"Marcellus": "gilt"}
 # The emblems' sprites by rank: I to X, then the Master's.
 NUMERALS = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"]
@@ -69,7 +68,7 @@ def label_of(label):
 
 
 def frame_art(frame):
-    key = KEYS.get(frame["key"], frame["key"])
+    key = frame_key(frame["key"])
     atlas = "Prestige" + key.capitalize()
     width, height = frame["atlasSize"]
     sprites = {}
@@ -141,7 +140,7 @@ def main(argv):
             sprite["box"] = [0, 0, sprite["w"] / scale, sprite["h"] / scale]
         entry["scale"] = scale
         body = styles.lua(entry).replace("{\n", "{\n\tfile = DIR .. " + json.dumps(file) + ",\n", 1)
-        out += f"-- {NAMES.get(frame['key'], frame['name'])} (rank {frame['rank']})\n"
+        out += f"-- {frame_name(frame)} (rank {frame['rank']})\n"
         out += f"ns.ATLASES[{json.dumps(atlas)}] = {body}\n"
         out += f"ns.PRESTIGE_FRAME_ART[{frame['rank']}] = {styles.lua(art)}\n\n"
     emblems = data["emblems"]
