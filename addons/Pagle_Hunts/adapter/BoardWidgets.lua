@@ -117,6 +117,24 @@ ns.BOARD_LOOK = {
 	oxblood = tint("8a2a1a"), -- Pagle Wagers: the run's bar, its mark, the strip's edge (HNT-R161)
 	stripPaper = tint("fbf4df"), -- the wager strip's paper, pinned over the page
 	runWashAlpha = 0.12, -- the run's bar's oxblood wash
+	--- The Pagle Wagers spread's own (HNT-R162, HNT-R163; data/art/wagers/art.json's `look`), a fourth value its alpha:
+	pencil = tint("6a6a6a"), -- "needs skill {n}" (HNT-R156): pencil grey, never red
+	spent = tint("8a7a60"), -- a settled run's dial
+	holiday = tint("2a6a3a"), -- a holiday's tag and chip
+	tagText = tint("f4ecd8"), -- the words on them
+	oxbloodWash = { 0x8a / 255, 0x2a / 255, 0x1a / 255, 0.07 }, -- the pay boxes' wash…
+	oxbloodRing = { 0x8a / 255, 0x2a / 255, 0x1a / 255, 0.3 }, -- …and their rim
+	aheadDash = { 0x6a / 255, 0x4a / 255, 0x28 / 255, 0.55 }, -- a run ahead's dashes, and the empty box's
+	hintDash = { 0x8a / 255, 0x2a / 255, 0x1a / 255, 1 }, -- the hint slip's dashes
+	hintPaper = { 0xff / 255, 0xf8 / 255, 0xe8 / 255, 0.55 }, -- the hint slip's paper
+	rowRule = { 0xc4 / 255, 0xa8 / 255, 0x74 / 255, 0.55 }, -- under each Hunt's row in the run's entry
+	huntsRule = { 0xc4 / 255, 0xa8 / 255, 0x74 / 255, 0.8 }, -- over the rows
+	secRule = { 0xc4 / 255, 0xa8 / 255, 0x74 / 255, 1 }, -- after a section's heading, fading out
+	barTrack = { 0x5a / 255, 0x3a / 255, 0x14 / 255, 0.14 }, -- a Hunt's ink bar: its track…
+	barEdge = { 0x5a / 255, 0x3a / 255, 0x14 / 255, 0.45 }, -- …its edge…
+	barInk = { 0x23 / 255, 0x40 / 255, 0x7a / 255, 0.75 }, -- …its ink…
+	barInkGot = { 0x8a / 255, 0x2a / 255, 0x1a / 255, 0.75 }, -- …in oxblood once it has its first mark
+	strike = { 0x5a / 255, 0x40 / 255, 0x28 / 255, 0.6 }, -- through a closed ticket's name
 	--- Ribbons: the Board's, then set colours in turn, in Hunt list order.
 	boardRibbon = tint("2e4a3a"),
 	ribbons = { tint("2f5a8a"), tint("2f7a4a"), tint("8a5a1a"), tint("6a3a7a"), tint("8a2a1a") },

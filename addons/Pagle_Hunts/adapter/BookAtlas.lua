@@ -129,7 +129,8 @@ ns.ATLASES = {
 	-- event mark's layers in a 64 box (shadow, four skies, four waters, the ring, seven holiday charms), the shape glyphs
 	-- and source marks (white, tinted; the companion's seal dot in red), the SETTLED stamp and a blank one, the ladder's
 	-- rail, its hatched fill (cropped, not stretched), posts and token, the closing note's arrow, the pencil and holiday
-	-- chips and the holiday tag. From the Pagle Wagers kit (art.json there has the layout and inks).
+	-- chips and the holiday tag. From the Pagle Wagers kit, whose sources are data/art/wagers/ (art.json there has the
+	-- layout and inks, adapter/WagersArt.lua the inks as the client sets them).
 	Wagers = {
 		file = OWN .. "Wagers",
 		width = 1024,

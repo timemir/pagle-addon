@@ -39,7 +39,7 @@ local ns = select(2, ...)
 
 --- A chip (HNT-R65): its kind, its words, and the tooltip's lines if it has one.
 ---@class HuntEntryChip
----@field kind "zone"|"more"|"skill"|"lure"|"note"|"unconfirmed"
+---@field kind "zone"|"more"|"skill"|"lure"|"note"|"unconfirmed"|"holiday" -- a run's entry adds "holiday" (HNT-R163)
 ---@field text string
 ---@field here boolean?        -- a zone chip for the live zone: the "you're here" badge
 ---@field badge string?        -- the badge's words

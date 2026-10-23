@@ -6,22 +6,20 @@ end
 local ns = select(2, ...)
 
 -- Pagle Wagers on the Board spread (HNT-R160, HNT-R161, HNT-R163, HNT-R164): gathers logic/Wagers.lua's inputs from
--- the runs the board shows (ns.RunsShown), the projection, the names and Core, and draws two of its pieces: the wager
--- strip, which adapter/Timeline.lua places above the timeline's ruler on the Board, and a run's entry, which
--- adapter/Entry.lua draws on the Board's right page while a run is selected. The WAGERS group's rows are the
--- timeline's own (adapter/Timeline.lua). The Pagle Wagers spread (#303) reuses the run's entry through
--- ns.DrawRunEntry and the strip's data through ns.BoardTimeline.
+-- the runs the board shows (ns.RunsShown), the projection, the names and Core, and draws the wager strip, which
+-- adapter/Timeline.lua places above the timeline's ruler on the Board. A run's entry, which adapter/Entry.lua draws on
+-- the Board's right page while a run is selected and the Pagle Wagers spread on its own, is adapter/WagersEntry.lua's
+-- ns.DrawRunEntry, from ns.BoardRunEntry here. The WAGERS group's rows are the timeline's own (adapter/Timeline.lua).
 --
--- The look is the books art kit's, after prototype variant B (prototypes/hunts-board/wagers/ on branch
--- prototype/hunts-wagers): the strip a pinned slip of paper with an oxblood edge, its pips the kit's tier marks; the
--- entry set in the Hunt entry's parts (the wax seal, the zone chips, the tier marks). Nothing here moves: the strip and
--- the entry settle at once, and the rows slide with the timeline's own motion (HNT-R60, HNT-R62).
+-- The strip's look is the books art kit's, after prototype variant B (prototypes/hunts-board/wagers/ on branch
+-- prototype/hunts-wagers): a pinned slip of paper with an oxblood edge, its pips the kit's tier marks. Nothing here
+-- moves: the strip settles at once, and the rows slide with the timeline's own motion (HNT-R60, HNT-R62).
 
 local LOOK = ns.BOARD_LOOK
 
 --- logic/Wagers.lua's inputs, read now: the runs on and ahead at ns.ViewNow() (frozen while the grouping is paused,
---- HNT-R43), the live conditions, whether the projection is updating (HNT-R69), and the companion hint while it
---- applies (HNT-R170, adapter/Companion.lua).
+--- HNT-R43), the live conditions, whether the projection is updating (HNT-R69), the companion hint while it applies
+--- (HNT-R170, adapter/Companion.lua), and the Angler's best skill for "needs skill {n}" (HNT-R156).
 ---@return WagersInput
 function ns.BoardWagersInput()
 	local now = ns.ViewNow()
@@ -33,6 +31,7 @@ function ns.BoardWagersInput()
 		list = ns.hunts,
 		sources = ns.names,
 		hint = ns.CompanionHintNow(),
+		best = Pagle.GetAngler().bestBaseSkill,
 	}
 end
 
@@ -264,257 +263,4 @@ function ns.DrawWagerStrip(page, strip)
 	local words = strip.next or L.STRIP_NAME:format(strip.name or "", strip.zones or "")
 	fit(view.name, words, room - right - GAP)
 	return ns.WAGER_STRIP_ROOM + drawHint(view, strip.hint)
-end
-
--- A run's entry ----------------------------------------------------------------------------------------------------
-
--- The entry's measures down the right page (as adapter/Entry.lua's): the kicker and the name, the seal's size and
--- where its centre sits from the page's top right, the room the heading leaves it and the least room the heading
--- takes; a Hunt's block (its name row, its line, its marks' row), a mark's size and step, and the gaps.
-local KICKER_Y, NAME_Y, SEAL_SIZE, SEAL_RIGHT, SEAL_DOWN, HEADING_ROOM, HEAD_ROOM = 3, 19, 88, 38.5, 39.5, 96, 92
-local HUNT_GAP, MARK, MARK_STEP, THRESHOLD_X, PROGRESS_WIDTH, CHIP_GAP, CHIP_HEIGHT = 7, 12, 40, 16, 80, 5, 22
-
----@class RunEntryHuntView
----@field name FontString
----@field progress FontString
----@field line FontString
----@field updating FontString
----@field marks BoardDiamondView[]
----@field thresholds FontString[]
-
----@class RunEntryView
----@field page Frame
----@field kicker FontString
----@field name FontString
----@field until_ FontString
----@field seal BoardSealView
----@field chips EntryChipView[]
----@field note FontString
----@field hunts RunEntryHuntView[]
----@field casts FontString
----@field soFar FontString
----@field payRule FontString
----@field shown boolean
-
--- Each right page's run entry, by its page frame.
----@type table<Frame, RunEntryView>
-local entries = {}
-
--- The run entry's widgets on `page`, made at its first draw.
----@param page Frame
----@return RunEntryView
-local function newEntry(page)
-	local fonts, width = ns.BoardFonts(), page:GetWidth()
-	local function text(font, color, wrapWidth, spacing)
-		local made = ns.BoardText(page, font, color)
-		if wrapWidth then
-			ns.BoardWrap(made, wrapWidth, spacing or 2)
-		end
-		return made
-	end
-	local heading = width - HEADING_ROOM
-	local view = {
-		page = page,
-		kicker = text(fonts.kicker, LOOK.kicker),
-		name = text(fonts.title, LOOK.title, heading, 2),
-		until_ = text(fonts.hand, LOOK.red, heading, 2),
-		seal = ns.NewBoardSeal(page, SEAL_SIZE),
-		chips = {},
-		note = text(fonts.hand, LOOK.hand, width, 2),
-		hunts = {},
-		casts = text(fonts.note, LOOK.count, width, 4),
-		soFar = text(fonts.small, LOOK.red, width, 4),
-		payRule = text(ns.ArtFont("italic", 11.5), LOOK.note, width, 3),
-		shown = false,
-	}
-	view.kicker:SetWidth(heading)
-	view.kicker:SetWordWrap(false)
-	view.seal:SetPoint("CENTER", page, "TOPLEFT", width - SEAL_RIGHT, -SEAL_DOWN)
-	return view
-end
-
--- A Hunt's block in the entry: its name and its "{count} / {next}" at the right, its shape and target line, its marks.
----@param view RunEntryView
----@return RunEntryHuntView
-local function newHunt(view)
-	local fonts, page, width = ns.BoardFonts(), view.page, view.page:GetWidth()
-	local hunt = {
-		name = ns.BoardText(page, fonts.text, LOOK.title),
-		progress = ns.BoardText(page, fonts.count, LOOK.hand),
-		line = ns.BoardText(page, fonts.note, LOOK.small),
-		updating = ns.BoardText(page, fonts.note, LOOK.note),
-		marks = {},
-		thresholds = {},
-	}
-	hunt.name:SetWidth(width - PROGRESS_WIDTH - 6)
-	hunt.name:SetWordWrap(false)
-	hunt.progress:SetWidth(PROGRESS_WIDTH)
-	hunt.progress:SetJustifyH("RIGHT")
-	hunt.progress:SetWordWrap(false)
-	for _, line in ipairs({ hunt.line, hunt.updating }) do
-		line:SetWidth(width)
-		line:SetWordWrap(false)
-	end
-	return hunt
-end
-
--- Every widget of the entry, and its pools'.
----@param view RunEntryView
----@return Region[]
-local function widgetsOf(view)
-	---@type Region[]
-	local all = { view.kicker, view.name, view.until_, view.seal, view.note, view.casts, view.soFar, view.payRule }
-	for _, chip in ipairs(view.chips) do
-		all[#all + 1] = chip
-	end
-	for _, hunt in ipairs(view.hunts) do
-		for _, widget in ipairs({ hunt.name, hunt.progress, hunt.line, hunt.updating }) do
-			all[#all + 1] = widget
-		end
-		for _, pool in ipairs({ hunt.marks, hunt.thresholds }) do
-			for _, widget in ipairs(pool) do
-				all[#all + 1] = widget
-			end
-		end
-	end
-	return all
-end
-
---- Hides the run's entry on `page`, if it has one: the right page shows a Hunt's entry instead.
----@param page Frame
-function ns.HideRunEntry(page)
-	local view = entries[page]
-	if view and view.shown then
-		view.shown = false
-		for _, widget in ipairs(widgetsOf(view)) do
-			widget:Hide()
-		end
-	end
-end
-
--- Lays a text at the page's left `x`, `y` down with its words; returns the y below it, `after` further down.
----@param text FontString
----@param words string?
----@param y number
----@param after number?
----@param x number?
----@return number
-local function line(text, words, y, after, x)
-	if not words then
-		text:Hide()
-		return y
-	end
-	text:SetText(words)
-	text:ClearAllPoints()
-	text:SetPoint("TOPLEFT", x or 0, -y)
-	text:Show()
-	return y + text:GetStringHeight() + (after or 2)
-end
-
--- Lays a Hunt's block from `y` down (HNT-R163): its name with its count toward the next mark at the right, its line,
--- then its tier marks with their thresholds, filled once reached (HNT-R64, HNT-R18); or the updating line (HNT-R69).
----@param view RunEntryView
----@param i integer
----@param data RunEntryHunt
----@param y number
----@return number
-local function layHunt(view, i, data, y)
-	local hunt = view.hunts[i] or newHunt(view)
-	view.hunts[i] = hunt
-	local ladder = data.ladder
-	line(hunt.progress, ladder.bar and ladder.bar.label, y, 0, view.page:GetWidth() - PROGRESS_WIDTH)
-	y = line(hunt.name, data.name, y, 1)
-	y = line(hunt.line, data.line, y, 3)
-	if ladder.updating then
-		ns.BoardHideFrom(hunt.marks, 0)
-		ns.BoardHideFrom(hunt.thresholds, 0)
-		return line(hunt.updating, ladder.updating, y, HUNT_GAP)
-	end
-	hunt.updating:Hide()
-	local fonts = ns.BoardFonts()
-	for k, step in ipairs(ladder.tiers or {}) do
-		local mark = ns.BoardPooled(hunt.marks, k, function()
-			return ns.NewBoardDiamond(view.page, MARK)
-		end)
-		mark:SetDiamond(ns.Trim(step.tier), step.reached)
-		mark:ClearAllPoints()
-		mark:SetPoint("TOPLEFT", (k - 1) * MARK_STEP, -y)
-		mark:Show()
-		local threshold = ns.BoardPooled(hunt.thresholds, k, function()
-			return ns.BoardText(view.page, fonts.small, LOOK.title)
-		end)
-		local ink = step.reached and LOOK.title or LOOK.note
-		threshold:SetTextColor(ink[1], ink[2], ink[3])
-		line(threshold, tostring(step.threshold), y - 1, 0, (k - 1) * MARK_STEP + THRESHOLD_X)
-	end
-	ns.BoardHideFrom(hunt.marks, #(ladder.tiers or {}))
-	ns.BoardHideFrom(hunt.thresholds, #(ladder.tiers or {}))
-	return y + MARK + HUNT_GAP
-end
-
--- Lays the zone chips in a row from `y`; returns the y below them.
----@param view RunEntryView
----@param chips HuntEntryChip[]
----@param y number
----@return number
-local function layChips(view, chips, y)
-	local width, x = view.page:GetWidth(), 0
-	for i, data in ipairs(chips) do
-		local chip = ns.BoardPooled(view.chips, i, function()
-			return ns.NewEntryChip(view.page)
-		end)
-		local chipWidth = ns.SetEntryChip(chip, data, width)
-		if x > 0 and x + chipWidth > width then
-			x, y = 0, y + CHIP_HEIGHT + CHIP_GAP
-		end
-		chip:ClearAllPoints()
-		chip:SetPoint("TOPLEFT", x, -y)
-		chip:Show()
-		x = x + chipWidth + CHIP_GAP
-	end
-	ns.BoardHideFrom(view.chips, #chips)
-	return #chips > 0 and y + CHIP_HEIGHT or y
-end
-
---- Draws run `runKey`'s entry (HNT-R163) on the right page `page`, top to bottom, as adapter/Entry.lua lays a Hunt's:
---- the kicker, the name, "until …" in the hand and the seal at the top right, the zone chips, the note in the hand,
---- each Hunt's block, the Casts, the sums and the pay rule in small italic. No pin toggle and no set line. Returns
---- false, drawing nothing, for a run the board doesn't show.
----@param page Frame
----@param runKey string
----@return boolean
-function ns.DrawRunEntry(page, runKey)
-	local entry = ns.BoardRunEntry(runKey)
-	if not entry then
-		ns.HideRunEntry(page)
-		return false
-	end
-	local view = entries[page]
-	if not view then
-		view = newEntry(page)
-		entries[page] = view
-	end
-	view.shown = true
-	view.seal:SetSeal(entry.seal.text, entry.seal.filled)
-	view.seal:Show()
-	local y = line(view.kicker, ns.BoardSmallCaps(entry.kicker), KICKER_Y, 0)
-	y = line(view.name, entry.name, math.max(y, NAME_Y), 2)
-	y = line(view.until_, entry.until_, y, 4)
-	y = layChips(view, entry.chips, math.max(y, HEAD_ROOM)) + 8
-	y = line(view.note, entry.note, y, 8)
-	for i, hunt in ipairs(entry.hunts) do
-		y = layHunt(view, i, hunt, y)
-	end
-	for i = #entry.hunts + 1, #view.hunts do
-		local hunt = view.hunts[i]
-		for _, widget in ipairs({ hunt.name, hunt.progress, hunt.line, hunt.updating }) do
-			widget:Hide()
-		end
-		ns.BoardHideFrom(hunt.marks, 0)
-		ns.BoardHideFrom(hunt.thresholds, 0)
-	end
-	y = line(view.casts, entry.casts, y + 2, 2)
-	y = line(view.soFar, entry.soFar, y, 6)
-	line(view.payRule, entry.payRule, y)
-	return true
 end

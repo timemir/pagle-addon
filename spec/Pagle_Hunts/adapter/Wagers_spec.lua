@@ -28,8 +28,8 @@ local SAT_15 = THU_11 + 2 * DAY + 4 * HOUR
 local AHEAD = { time = THU_11, minute = 13 * 60, date = { year = 2026, month = 10, day = 15, weekday = 5 } }
 local UTC = { time = THU_11, minute = 11 * 60, date = { year = 2026, month = 10, day = 15, weekday = 5 } }
 
-local RULE = "Each Hunt's first mark pays +150 XP and 15 Coins, each mark after it +100 XP and 10 Coins. "
-	.. "Land every Hunt's first mark and the wager settles: +250 XP and 50 Coins more."
+local RULE = "Each Hunt's first mark pays +150 XP and 15 Coins, each tier after it +100 XP and 10 Coins, and settling "
+	.. "the wager +250 XP and 50 Coins more."
 
 -- The fixture pool with fixture_vale in the mid band (the header).
 local function pool(fixture)
@@ -346,8 +346,9 @@ describe("selecting a run (HNT-R67, HNT-R164)", function()
 			"FROM THE ROTATION · LOW WATERS",
 			"Shore Wager",
 			"Darkshore",
-			"until Sat 17:00",
-			"not yet",
+			"you're here",
+			"closes in 2d 4h",
+			"until Sat 17:00 · 3d in all",
 			"Darkshore's tide, three days long.",
 			"fixture_shore_haul",
 			"Haul · Any fish",
@@ -355,16 +356,22 @@ describe("selecting a run (HNT-R67, HNT-R164)", function()
 			"Named fish · Raw Nightfin Snapper",
 			"fixture_shore_oddity",
 			"Timed · Deviate Fish or Whimsyfin, 18:00–21:00",
-			"1 / 2",
-			"1 caught",
-			"0 / 1",
-			"So far +150 XP · 15 Coins",
+			"opens at 18:00, in 5h", -- the oddity's window, at realm 13:00
+			" / 2",
+			" caught",
+			" / 1",
+			"1 Cast in these waters this run · 1 of 3 first marks",
+			"PAID SO FAR",
+			"+150 XP · 15 Coins",
+			"SETTLE IT",
+			"+250 XP · 50 Coins",
 			RULE,
 		}) do
 			assert(has(texts, text), "the run's entry lacks " .. text)
 		end
 		assert.is_false(has(texts, "Pin"))
 		assert.is_false(has(texts, "Pinned"))
+		assert.is_false(has(texts, "not yet")) -- no seal before the run settles
 	end)
 
 	it("opens on a run from OpenBoard({ run = key }), turning to the Board ribbon from a set's page", function()
@@ -403,7 +410,7 @@ end)
 
 describe("a run's entry (HNT-R163)", function()
 	it(
-		"is the run's data: kicker, zones, until, seal, note, each Hunt in order, the Casts, the sums, the rule",
+		"is the run's data: kicker, name, time block, chips, note, each Hunt in order, the Casts, the boxes, the rule",
 		function()
 			local r = oneOn()
 
@@ -412,37 +419,42 @@ describe("a run's entry (HNT-R163)", function()
 			assert.are.same({
 				"From the rotation · low waters",
 				"Shore Wager",
-				"until Sat 17:00",
-				{ text = "not yet", filled = false },
+				"closes in 2d 4h",
+				"until Sat 17:00 · 3d in all",
 				"Darkshore's tide, three days long.",
-				"1 Cast in these waters this run.",
-				"So far +150 XP · 15 Coins",
+				"1 Cast in these waters this run · 1 of 3 first marks",
 				RULE,
 			}, {
 				entry.kicker,
 				entry.name,
-				entry.until_,
-				entry.seal,
+				entry.time.hand,
+				entry.time.small,
 				entry.note,
 				entry.casts,
-				entry.soFar,
 				entry.payRule,
 			})
+			assert.is_nil(entry.seal)
+			assert.are.same({
+				{ label = "Paid so far", amount = "+150 XP · 15 Coins" },
+				{ label = "Settle it", amount = "+250 XP · 50 Coins" },
+			}, entry.pay)
 			assert.are.same({ { kind = "zone", text = "Darkshore", here = true, badge = "you're here" } }, entry.chips)
 			local lines = {}
 			for i, hunt in ipairs(entry.hunts) do
-				lines[i] = { hunt.name, hunt.line, hunt.ladder.bar.label }
+				lines[i] = { hunt.name, hunt.line, hunt.count.count .. hunt.count.rest }
 			end
 			assert.are.same({
 				{ "fixture_shore_haul", "Haul · Any fish", "1 / 2" },
 				{ "Shore Snapper", "Named fish · Raw Nightfin Snapper", "1 caught" },
 				{ "fixture_shore_oddity", "Timed · Deviate Fish or Whimsyfin, 18:00–21:00", "0 / 1" },
 			}, lines)
-			assert.are.same({ true }, { entry.hunts[2].ladder.tiers[1].reached })
+			assert.are.same({ true }, { entry.hunts[2].tiers[1].reached })
+			-- the oddity's window from its time condition alone, in realm time (HNT-R50)
+			assert.are.same({ open = false, text = "opens at 18:00, in 5h" }, entry.hunts[3].window)
 		end
 	)
 
-	it('presses the seal "Settled {short date}" once completed, and pays the run on top', function()
+	it('presses the seal, "Settled" over its short date, once completed, and pays the run on top', function()
 		-- A Deviate Fish on Wednesday evening, realm 18:30: the oddity's hours.
 		local history = onHistory()
 		history[#history + 1] = castAt(O + 3 * HOUR + 30 * 60, C.DARKSHORE, { C.DEVIATE })
@@ -451,11 +463,15 @@ describe("a run's entry (HNT-R163)", function()
 
 		local entry = r.ns.BoardRunEntry(SHORE)
 
-		assert.are.same("Settled 14 Oct", entry.seal.text)
-		assert.is_true(entry.seal.filled)
+		assert.are.same({ word = "Settled", date = "14 Oct" }, entry.seal)
 		-- Three first marks (the Deviate Fish is the Haul's second fish and the oddity's first) and the settled run:
 		-- 3 × 150 + 250 XP, 3 × 15 + 50 Coins.
-		assert.are.equal("So far +700 XP · 95 Coins", entry.soFar)
+		assert.are.same({ label = "Paid so far", amount = "+700 XP · 95 Coins" }, entry.pay[1])
+		assert.are.same({ label = "Settled", amount = "paid out" }, entry.pay[2])
+		r.ns.OpenBoard({ run = SHORE })
+		local texts = pageTexts(r, "right")
+		assert.is_true(has(texts, "SETTLED"))
+		assert.is_true(has(texts, "14 Oct"))
 	end)
 
 	it("reads the companion's kicker for a pushed run", function()
@@ -468,11 +484,13 @@ describe("a run's entry (HNT-R163)", function()
 			},
 		})
 
-		assert.are.equal("Sent by the companion", r.ns.BoardRunEntry("fixture_vale@" .. THU_11 - HOUR).kicker)
+		local entry = r.ns.BoardRunEntry("fixture_vale@" .. THU_11 - HOUR)
+
+		assert.are.same({ "Sent by the companion", "companion" }, { entry.kicker, entry.source })
 	end)
 
 	it(
-		"reads the updating line for its seal, ladders, Casts and sums while the projection updates (HNT-R69)",
+		"reads the updating line over its rows, with no seal, counts, Casts or boxes, while updating (HNT-R69)",
 		function()
 			local r = oneOn()
 			local state = r.ns.State()
@@ -489,9 +507,13 @@ describe("a run's entry (HNT-R163)", function()
 			local entry = r.ns.BoardRunEntry(SHORE)
 			local timeline = r.ns.BoardTimeline({ mode = "board" })
 
-			assert.are.same({ updating, updating, updating }, { entry.seal.text, entry.casts, entry.soFar })
+			assert.are.equal(updating, entry.updating)
+			assert.is_nil(entry.seal)
+			assert.is_nil(entry.casts)
+			assert.is_nil(entry.pay)
 			for _, hunt in ipairs(entry.hunts) do
-				assert.are.same({ updating = updating }, hunt.ladder)
+				assert.is_nil(hunt.count)
+				assert.is_nil(hunt.tiers)
 			end
 			-- The strip and the WAGERS rows still show from the known runs; the pips read the updating line.
 			assert.are.same(

@@ -1,6 +1,6 @@
 -- The companion hint and its weekly Nod on FakePagle (HNT-R161, HNT-R162, HNT-R170–R172, HNT-R176, HNT-R86, SET-R32,
 -- SET-R33, ANN-R12, ANN-R20, PUSH-R15, PUSH-R16): with the hint switch on, as it ships at 1.0, each state's hint under
--- the wager strip, as the dashed placeholder slip and as the tracker's line with no run on, Get it's box, Dismiss, the
+-- the wager strip, as the dashed hint slip and as the tracker's line with no run on, Get it's box, Dismiss, the
 -- Nod at login and the Settings row; turned off, nothing shows anywhere whatever the companion state. The lines' pure
 -- parts are in spec/Pagle_Hunts/logic/Companion_spec.lua.
 --
@@ -185,7 +185,7 @@ describe("with the hint switch turned off (HNT-R172)", function()
 				assert.are.same({}, hintButtons(page))
 			end)
 
-			it("shows no placeholder slip on the Pagle Wagers spread", function()
+			it("shows no hint slip on the Pagle Wagers spread", function()
 				local r = start({ off = true, state = state, runOn = true })
 
 				local page = spreadPage(r)
@@ -246,7 +246,7 @@ describe("with the hint switch on (HNT-R170)", function()
 			assert.is_true(shift(on) >= on.ns.WAGER_STRIP_ROOM + 2 * 14)
 		end)
 
-		it("shows both lines as a dashed placeholder slip on the spread, with Get it and Dismiss (HNT-R162)", function()
+		it("shows both lines as a dashed hint slip on the spread, with Get it and Dismiss (HNT-R162)", function()
 			local r = start({ state = "missing", runOn = true })
 
 			local page = spreadPage(r)
@@ -260,12 +260,17 @@ describe("with the hint switch on (HNT-R170)", function()
 			assert.is_true(#page.spread.hintOutline.dashes > 0) -- dashed
 		end)
 
-		it("shows the placeholder slip with no run on too, under the empty line (HNT-R162, HNT-R204)", function()
+		it("shows the hint slip with no run on too, over the empty box (HNT-R162, HNT-R204)", function()
 			local r = start({ state = "missing" })
 
 			local texts = shownTexts(spreadPage(r))
 
-			assert.is_true(hunts.has(texts, "No wagers on the table yet."))
+			assert.is_true(
+				hunts.has(
+					texts,
+					"No wagers on the table, and none posted ahead. The rotation puts one on at the next turn."
+				)
+			)
 			assert.is_true(holdsAll(texts, MISSING))
 		end)
 
@@ -311,7 +316,7 @@ describe("with the hint switch on (HNT-R170)", function()
 	end)
 
 	describe("and the companion not running", function()
-		it("shows its own line on the strip and the placeholder slip, with Get it and Dismiss", function()
+		it("shows its own line on the strip and the hint slip, with Get it and Dismiss", function()
 			local r = start({ state = "notRunning", runOn = true })
 
 			local board = boardPage(r)
@@ -366,7 +371,7 @@ describe("with the hint switch on (HNT-R170)", function()
 end)
 
 describe("the hint's words stay on the board's pages (HNT-R60)", function()
-	it("under the strip and on the placeholder slip, with Get it and Dismiss, and in Get it's box", function()
+	it("under the strip and on the hint slip, with Get it and Dismiss, and in Get it's box", function()
 		local r = start({ state = "missing", runOn = true })
 
 		local board = boardPage(r)
@@ -419,7 +424,7 @@ describe("Get it (HNT-R170)", function()
 end)
 
 describe("Dismiss (HNT-R170)", function()
-	it("hides the hint on the strip, the placeholder slip and the tracker, and saves it", function()
+	it("hides the hint on the strip, the hint slip and the tracker, and saves it", function()
 		local r = start({ state = "missing", runOn = true })
 		local page = boardPage(r)
 

@@ -56,7 +56,9 @@ adapter\Names.lua
 adapter\Timeline.lua
 adapter\WindowMoments.lua
 adapter\Entry.lua
+adapter\WagersArt.lua
 adapter\Wagers.lua
+adapter\WagersEntry.lua
 adapter\WagersSpread.lua
 adapter\Tracker.lua
 adapter\Companion.lua

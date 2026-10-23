@@ -1,5 +1,6 @@
--- The Hunts board's art (HNT-R60's second paragraph, HNT-R18, HNT-R55, HNT-R61, HNT-R63, HNT-R64, HNT-R76): what each
--- widget maker draws on the fake client, in the books art kit's sprites (adapter/BookAtlas.lua) and faces.
+-- The Hunts board's art (HNT-R60's second paragraph, HNT-R18, HNT-R55, HNT-R61, HNT-R63, HNT-R64, HNT-R76, HNT-R166,
+-- HNT-R167): what each widget maker draws on the fake client, in the books art kit's sprites (adapter/BookAtlas.lua),
+-- the Pagle Wagers kit's (the event mark, the time dial) and faces.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
@@ -90,6 +91,72 @@ describe("the books kit's sprite helpers (adapter/BookArt.lua)", function()
 		assert.are.same(coords(18, 762, 14, 24, 512, 1024), slice.left.texCoord)
 		assert.are.same(coords(18 + 390, 762, 14, 24, 512, 1024), slice.right.texCoord)
 		assert.are.same(coords(18 + 14, 762, 376, 24, 512, 1024), slice.middle.texCoord)
+	end)
+
+	it("three-slice a sprite at another height with caps of their own: a ticket's stub kept whole", function()
+		local ns, parent, loaded = kit()
+		local slice = loaded.env.CreateFrame("Frame", nil, parent)
+
+		ns.SetThreeSliceAt(slice, "Wagers", "ticket", 300, 52, 62, 12, "BACKGROUND")
+
+		-- the ticket is 416 × 120 texels at 446, 2 in Wagers, its paper 4 units in and 2 down: the stub's 62-unit cap and
+		-- the margin before it at the left, a 12-unit cap and the 4 after the paper at the right
+		assert.are.same({ 300, 52 }, { slice.width, slice.height })
+		assert.are.same(coords(446, 2, 132, 120, 1024, 1024), slice.left.texCoord)
+		assert.are.same(coords(446 + 384, 2, 32, 120, 1024, 1024), slice.right.texCoord)
+		assert.are.same({ "TOPLEFT", slice, "TOPLEFT", -4, 2 }, slice.left.points[1])
+
+		-- a chip drawn 20 high from its 22-unit box: caps and margins scaled with it
+		ns.SetThreeSliceAt(slice, "Parts", "chip", 100, 20, 10, 10)
+		assert.are.same({ 100, 20 }, { slice.width, slice.height })
+		assert(math.abs(slice.left.width - 11 * 20 / 22) < 1e-9)
+		assert(math.abs(slice.left.height - 24 * 20 / 22) < 1e-9)
+	end)
+
+	it("stack an event mark's layers in its box, the charm's centred at (46, 46) of 64 (HNT-R166)", function()
+		local ns, parent = kit()
+		local mark = ns.NewEventMark(parent, 32)
+
+		mark:SetMark({ "mark-shadow", "mark-sky-night", "mark-water-coast", "mark-ring", "mark-charm-winter_veil" })
+
+		local names = {}
+		for i, layer in ipairs(mark.layers) do
+			names[i] = spriteAt(ns, layer)
+		end
+		assert.are.same(
+			{ "mark-shadow", "mark-sky-night", "mark-water-coast", "mark-ring", "mark-charm-winter_veil" },
+			names
+		)
+		-- at half its size: the sky's 64 box is 32, the charm's 22 is 11, its top left at (46 - 11) / 2
+		assert.are.same({ 32, 32 }, { mark.layers[2].width, mark.layers[2].height })
+		assert.are.same({ "TOPLEFT", mark, "TOPLEFT", 17.5, -17.5 }, mark.layers[5].points[1])
+		assert.are.same(32 * 72 / 64, mark.layers[1].width) -- the shadow's margin with it
+
+		mark:SetMark({ "mark-shadow", "mark-sky-plain", "mark-ring" }, true)
+		assert.is_false(mark.layers[4].shown)
+		assert.is_true(mark.layers[1].desaturated)
+		assert.are.equal(0.75, mark.alpha)
+	end)
+
+	it("step a time dial's fill, tinted by its state, and draw a run ahead's dashed ring (HNT-R167)", function()
+		local ns, parent = kit()
+		local dial = ns.NewWagerDial(parent, 42)
+
+		dial:SetDial({ kind = "on", step = 26, urgent = false, left = "2d 4h" })
+		assert.are.same({ "dial-face", "dial-fill-26" }, { spriteAt(ns, dial.face), spriteAt(ns, dial.fill) })
+		assert.are.same(ns.BOARD_LOOK.oxblood, { unpack(dial.fill.vertexColor, 1, 3) })
+
+		dial:SetDial({ kind = "on", step = 1, urgent = true, left = "42m" })
+		assert.are.same(ns.BOARD_LOOK.nowLine, { unpack(dial.fill.vertexColor, 1, 3) })
+
+		dial:SetDial({ kind = "settled", step = 12, urgent = false, left = "1d" })
+		assert.are.same(ns.BOARD_LOOK.spent, { unpack(dial.fill.vertexColor, 1, 3) })
+
+		dial:SetDial({ kind = "closed", urgent = false, left = "closed" })
+		assert.is_false(dial.fill.shown)
+
+		dial:SetDial({ kind = "ahead", urgent = false })
+		assert.are.same({ "dial-ahead", false }, { spriteAt(ns, dial.face), dial.fill.shown })
 	end)
 
 	it("slice a frame down to any height, repeating its middle in steps when it keeps a pitch", function()

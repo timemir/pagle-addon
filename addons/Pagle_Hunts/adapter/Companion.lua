@@ -8,7 +8,7 @@ local ns = select(2, ...)
 -- The companion hint at runtime (HNT-R170–R172, HNT-R176, SET-R32): whether it applies now, read from the hint switch,
 -- Core's companion state (PUSH-R15) and the saved profile; Get it's box with the companion's address; Dismiss; the
 -- weekly Nod at login; and the Settings row that brings a dismissed hint back. Its lines and the Nod are
--- logic/Companion.lua's. The wager strip (adapter/Wagers.lua), the placeholder slip (adapter/WagersSpread.lua) and the
+-- logic/Companion.lua's. The wager strip (adapter/Wagers.lua), the hint slip (adapter/WagersSpread.lua) and the
 -- tracker's line (adapter/Tracker.lua, adapter/Goods.lua) draw it, with Get it and Dismiss made here.
 --
 -- With the switch off (ns.COMPANION_HINT_ON, on at 1.0, HNT-R172) the hint never applies, so nothing draws it, and
@@ -163,7 +163,7 @@ end
 -- The room between the two buttons.
 local BUTTON_GAP = 10
 
---- Get it and Dismiss (HNT-R170) on `parent`, hidden until placed: the wager strip's hint and the placeholder slip each
+--- Get it and Dismiss (HNT-R170) on `parent`, hidden until placed: the wager strip's hint and the hint slip each
 --- have a pair. Their clicks go through ns at call time.
 ---@param parent Frame
 ---@return CompanionHintButtons

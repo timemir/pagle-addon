@@ -193,6 +193,23 @@ end
 ---@param layer DrawLayer?
 ---@param sublevel integer?
 function ns.SetThreeSlice(frame, atlasName, name, width, cap, layer, sublevel)
+	local _, sprite = spriteOf(atlasName, name)
+	ns.SetThreeSliceAt(frame, atlasName, name, width, sprite.box[4], cap, cap, layer, sublevel)
+end
+
+--- Draws sprite `name` three-sliced on `frame` as ns.SetThreeSlice does, its drawn element `width` × `height`: the
+--- sprite scaled to that height, `capLeft` and `capRight` units of the element (at the sprite's own scale) kept at its
+--- left and right, so a cap may hold more than an edge (a ticket's stub). Makes the slices the first time.
+---@param frame Frame
+---@param atlasName string
+---@param name string
+---@param width number
+---@param height number
+---@param capLeft number
+---@param capRight number
+---@param layer DrawLayer?
+---@param sublevel integer?
+function ns.SetThreeSliceAt(frame, atlasName, name, width, height, capLeft, capRight, layer, sublevel)
 	local slice = frame --[[@as HuntsThreeSlice]]
 	if not slice.left then
 		slice.left = crisp(frame:CreateTexture(nil, layer or "BACKGROUND", nil, sublevel or 0))
@@ -201,23 +218,24 @@ function ns.SetThreeSlice(frame, atlasName, name, width, cap, layer, sublevel)
 	end
 	local atlas, sprite = spriteOf(atlasName, name)
 	local scale, box = atlas.scale, sprite.box
+	local k = height / box[4]
 	local spriteWidth = sprite.w / scale
 	local marginLeft, marginRight = box[1], spriteWidth - box[1] - box[3]
-	local leftWidth, rightWidth = marginLeft + cap, cap + marginRight
-	frame:SetSize(width, box[4])
+	local leftWidth, rightWidth = marginLeft + capLeft, capRight + marginRight
+	frame:SetSize(width, height)
 	local function piece(texture, from, span)
 		cut(texture, atlas, sprite.x + from * scale, sprite.y, span * scale, sprite.h)
-		texture:SetHeight(sprite.h / scale)
+		texture:SetHeight(sprite.h / scale * k)
 	end
 	piece(slice.left, 0, leftWidth)
-	slice.left:SetWidth(leftWidth)
+	slice.left:SetWidth(leftWidth * k)
 	piece(slice.right, spriteWidth - rightWidth, rightWidth)
-	slice.right:SetWidth(rightWidth)
+	slice.right:SetWidth(rightWidth * k)
 	piece(slice.middle, leftWidth, spriteWidth - leftWidth - rightWidth)
 	slice.left:ClearAllPoints()
-	slice.left:SetPoint("TOPLEFT", frame, "TOPLEFT", -marginLeft, box[2])
+	slice.left:SetPoint("TOPLEFT", frame, "TOPLEFT", -marginLeft * k, box[2] * k)
 	slice.right:ClearAllPoints()
-	slice.right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", marginRight, box[2])
+	slice.right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", marginRight * k, box[2] * k)
 	slice.middle:ClearAllPoints()
 	slice.middle:SetPoint("TOPLEFT", slice.left, "TOPRIGHT")
 	slice.middle:SetPoint("BOTTOMRIGHT", slice.right, "BOTTOMLEFT")

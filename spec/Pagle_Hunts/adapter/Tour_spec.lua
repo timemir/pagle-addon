@@ -81,8 +81,22 @@ local function seen(run)
 		if right and right.view then
 			out.seal = right.view.seal:IsShown()
 		end
-		out.left = shownTexts(board:Page(place, "left"))
+		local left = board:Page(place, "left")
+		out.left = shownTexts(left)
 		out.right = right and shownTexts(right) or {}
+		-- on the Pagle Wagers spread, its stamped tickets and its ladder's line, its runs of words joined
+		local spread = left and left.spread
+		if spread then
+			out.stamps = 0
+			for _, ticket in ipairs(spread.tickets) do
+				out.stamps = out.stamps + ((ticket.shown and ticket.stampFrame.shown) and 1 or 0)
+			end
+			local words = {}
+			for _, text in ipairs(spread.ladder.line) do
+				words[#words + 1] = text.shown and text.text or nil
+			end
+			out.ladder = table.concat(words)
+		end
 		out.binding = board.pinned
 	end
 	out.grouper = ns.groups:Row("fixture_grouper") ~= nil
@@ -188,24 +202,23 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 		assert.are.same({}, run.ns.RunsShown(run.ns.State(), run.loaded.env.GetServerTime()))
 	end)
 
-	it("show the Pagle Wagers spread with a slip per sample run, one settled, and the ladder (HNT-R162)", function()
-		local run = start()
+	it(
+		"show the Pagle Wagers spread with a ticket per sample run, one stamped settled, and the ladder (HNT-R162)",
+		function()
+			local run = start()
 
-		local shown = tour(run)
+			local shown = tour(run)
 
-		local stop = shown[7]
-		assert.are.same({ mode = "wagers" }, stop.place)
-		for _, text in ipairs({
-			"On the table",
-			"Shore Wager",
-			"fixture_vale",
-			"SETTLED",
-			"7 wagers settled · 18 more for Bookmaker's Bane",
-		}) do
-			assert(hunts.has(stop.left, text), "the spread lacks " .. text)
+			local stop = shown[7]
+			assert.are.same({ mode = "wagers" }, stop.place)
+			for _, text in ipairs({ "On the table", "Shore Wager", "fixture_vale" }) do
+				assert(hunts.has(stop.left, text), "the spread lacks " .. text)
+			end
+			assert.are.equal(1, stop.stamps)
+			assert.are.equal("7 wagers settled · 18 more for Bookmaker's Bane", stop.ladder)
+			assert.is_true(hunts.has(stop.right, "Shore Wager"))
 		end
-		assert.is_true(hunts.has(stop.right, "Shore Wager"))
-	end)
+	)
 
 	it("show a set's page with its title earned, an entry from it and a retired entry (HNT-R3, HNT-R66)", function()
 		local run = start()
