@@ -47,7 +47,8 @@ AnglerState.__index = AnglerState
 
 --- Adds the logged-in character to `PagleLog.characters` if its GUID is new, or updates `lastSeen` and the display
 --- fields if not (LOG-R25), and makes it the current one. `seen` holds the display fields as the client reports
---- them (LOG-R26); `selfFound` is never kept. A log without a logId gets one now (LOG-R15).
+--- them (LOG-R26), kept with any line feed stripped from their text (LOG-R101); `selfFound` is never kept. A log
+--- without a logId gets one now (LOG-R15).
 ---@param seen { guid: string, name: string, surname: string?, classID: integer, raceID: integer, faction: string, realmID: integer, hardcore: boolean? }
 ---@param now integer server time
 ---@return integer index
@@ -66,7 +67,12 @@ function AnglerState:SeeCharacter(seen, now)
 		characters[index] = character
 	end
 	for _, field in ipairs(DISPLAY_FIELDS) do
-		character[field] = seen[field]
+		local value = seen[field]
+		-- No line feed goes to the log, its character table included (LOG-R101).
+		if type(value) == "string" then
+			value = (string.gsub(value, "\n", ""))
+		end
+		character[field] = value
 	end
 	character.selfFound = nil
 	character.lastSeen = now

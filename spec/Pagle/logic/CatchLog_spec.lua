@@ -383,7 +383,7 @@ describe("the Catch log codec", function()
 			moduleRecord("TackleBoard", "", "x"),
 			moduleRecord("TackleBoard", "re|roll", "x"),
 			moduleRecord("TackleBoard", nil, "x"),
-			moduleRecord("TackleBoard", "day", "two\nlines"), -- a newline (LOG-R40)
+			moduleRecord("TackleBoard", "day", "two\nlines"), -- a line feed (LOG-R40, LOG-R101)
 			moduleRecord("TackleBoard", "day", ("x"):rep(201)), -- over 200 bytes (LOG-R40, Tunables)
 			moduleRecord("TackleBoard", "day", 7), -- not a string
 			moduleRecord("TackleBoard", "day", nil),
@@ -401,6 +401,8 @@ describe("the Catch log codec", function()
 			{ kind = "skill", char = 3, time = 1791731680, rank = 86, max = 150, mod = 0 }, -- no character 3
 			{ kind = "skill", char = 1, time = 1791731680.5, rank = 86, max = 150, mod = 0 },
 			{ kind = "build", char = 1, time = 1791731680, build = 70338, version = "1.60|1" },
+			{ kind = "build", char = 1, time = 1791731680, build = 70338, version = "1.60\n1" }, -- LOG-R101
+			{ kind = "build", char = 1, time = 1791731680, build = 70338, version = "1.60.1\n" },
 			{ kind = "cast", char = 1, time = 1791731680, outcome = "lost", conditions = {}, items = {} },
 			{
 				kind = "cast",
@@ -417,6 +419,25 @@ describe("the Catch log codec", function()
 			end)
 		end
 		assert.are.same({}, catchLog.data.entries)
+	end)
+
+	it("writes a carriage return as it is, the one line break an entry may hold (LOG-R101)", function()
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
+
+		catchLog:Append({ kind = "build", char = 1, time = 1791731680, build = 70338, version = "1.60\r1" })
+		catchLog:Append({
+			kind = "module",
+			char = 1,
+			time = 1791731680,
+			module = "TackleBoard",
+			recordKind = "day",
+			payload = "two\rlines",
+		})
+
+		assert.are.same(
+			{ "B1|1|1791731680|0|70338|1.60\r1", "A1|1|1791731680|1|TackleBoard|day|two\rlines" },
+			catchLog.data.entries
+		)
 	end)
 end)
 
