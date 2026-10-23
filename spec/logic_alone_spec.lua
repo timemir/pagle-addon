@@ -410,6 +410,7 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 				"Measures",
 				"AnglerLevel",
 				"MeasureRises",
+				"FirstComplete",
 				"EarnedTitles",
 				"AutomaticTitle",
 				"ZonesMastered",

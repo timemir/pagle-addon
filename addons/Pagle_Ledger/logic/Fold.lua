@@ -479,7 +479,7 @@ function ns.NewLedgerFold(lookups)
 			local from = #earned
 			applyCast(state, record --[[@as PagleCast]], earned)
 			-- Only a Cast raises Ledger completion, Species caught or Legends caught (LED-R158).
-			ns.NoteRises(state, world, earned, from, record.time)
+			ns.NoteRises(state, world, earned, from, record --[[@as PagleCast]])
 		elseif kind == "skill" then
 			applySkill(state, record --[[@as PagleSkillReading]], earned)
 		else

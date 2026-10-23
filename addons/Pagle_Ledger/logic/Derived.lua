@@ -57,12 +57,20 @@ end
 --- backend needn't read Measures after every record. `done` and `total` are LED-R70's, `species` and `legends`
 --- Measures' Species caught and Legends caught; `at` holds, by Measures' keys, the entry `time` of the Cast whose
 --- apply last made each greater than it was before it (Ledger completion by its percentage), nil while it never rose.
+--- `firstComplete` is the Cast after whose apply Ledger completion first stood at 100%, kept once set.
 ---@class LedgerRises
 ---@field done integer
 ---@field total integer
 ---@field species integer
 ---@field legends integer
 ---@field at { ledgerCompletion?: integer, speciesCaught?: integer, legendsCaught?: integer }
+---@field firstComplete? LedgerEntryMark
+
+--- The entry that marked something (LED-R158): its log `seq`, the index of its character (`char`) and its time.
+---@class LedgerEntryMark
+---@field seq integer
+---@field char integer
+---@field time integer
 
 --- A fresh state's rises (LED-R158): nothing caught, so nothing done or risen, of the total Ledger completion counts
 --- over the world before any Catch.
@@ -87,13 +95,15 @@ end
 --- Species caught and a completion part done, with one more in total for a Species on no zone list, and one more in
 --- the varieties' total too when it has varieties; a `fishComplete` a varieties part done; a `newCurio` or
 --- `trophyWeight` a Sub-collection item done, with one more in total for an item on no list; a `zoneRank` that
---- reaches Master a zone done; a `legend` a Legend caught. Each measure that rose takes the Cast's `time`.
+--- reaches Master a zone done; a `legend` a Legend caught. Each measure that rose takes the Cast's `time`, and the
+--- first Cast after which every part is done (`done == total`, Ledger completion at 100%) is kept as `firstComplete`.
 ---@param state LedgerState
 ---@param world LedgerWorld
 ---@param earned LedgerAchievement[]
 ---@param from integer the achievements before the Cast's
----@param time integer the Cast's entry time
-function ns.NoteRises(state, world, earned, from, time)
+---@param record PagleCast the Cast applied
+function ns.NoteRises(state, world, earned, from, record)
+	local time = record.time
 	local rises, getItem = state.rises, world.getItem
 	local done, total, species, legends = rises.done, rises.total, rises.species, rises.legends
 	-- Whether an item or Species counts: removed ones are left out of both sides (LED-R12).
@@ -141,6 +151,10 @@ function ns.NoteRises(state, world, earned, from, time)
 	if legends > rises.legends then
 		at.legendsCaught = time
 	end
+	-- Set once and never cleared, though completion may fall below 100% later (LED-R72).
+	if not rises.firstComplete and total > 0 and done == total then
+		rises.firstComplete = { seq = record.seq, char = record.char, time = time }
+	end
 	rises.done, rises.total, rises.species, rises.legends = done, total, species, legends
 end
 
@@ -153,6 +167,16 @@ end
 function ns.MeasureRises(state)
 	local at = state.rises.at
 	return { ledgerCompletion = at.ledgerCompletion, speciesCaught = at.speciesCaught, legendsCaught = at.legendsCaught }
+end
+
+--- The record after which Ledger completion first stood at 100% (LED-R158, the backend's `ledgerComplete`): its
+--- log `seq`, character index `char` and entry `time`, as the backend found it reading Measures after every record;
+--- nil while it never has. Kept once reached, though completion may fall below 100% later (LED-R72).
+---@param state LedgerState
+---@return LedgerEntryMark?
+function ns.FirstComplete(state)
+	local first = state.rises.firstComplete
+	return first and { seq = first.seq, char = first.char, time = first.time }
 end
 
 --- The title keys a Ledger state earns (LED-R75, LED-R76), in LED-R75's order: computed only, so a title the

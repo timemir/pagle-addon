@@ -408,7 +408,7 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
   - `zoneRank` reaching Master: a part done (LED-R50);
   - `legend`: a Legend caught.
 
-  Then each of the three measures greater than before the Cast takes the Cast's time: one comparison each per Cast. Ledger completion's percentage can fall (LED-R72): a Species with varieties on no list adds two parts to `total` and one done, so 100% becomes 90% with 10 of 11. Its next rise takes that Cast's time, even when it only climbs back. The Angler Level has no rise time, since the climb's Activity XP (LED-R37) rises on Hunts and Tackle Board records that the Ledger never sees: the backend reads it after every record with LED-R159's hook. Nothing in game reads `rises`. `LEDGER_RULES_VERSION` 9 rebuilds the projection to keep it (LED-R4).
+  Then each of the three measures greater than before the Cast takes the Cast's time: one comparison each per Cast. Ledger completion's percentage can fall (LED-R72): a Species with varieties on no list adds two parts to `total` and one done, so 100% becomes 90% with 10 of 11. Its next rise takes that Cast's time, even when it only climbs back. The Angler Level has no rise time, since the climb's Activity XP (LED-R37) rises on Hunts and Tackle Board records that the Ledger never sees: the backend reads it after every record with LED-R159's hook. `rises` also keeps `firstComplete`: the Cast after whose apply Ledger completion first stood at 100% (`done` equal to a `total` above 0), as `{ seq, char, time }` from the entry (its log index, its character's index in the log's `characters`, and its time). It is set once and never cleared, so a later fall below 100% and a rise back leave it as it was. It is the backend's `ledgerComplete`, which it got by reading `Measures` after every record and now reads with `FirstComplete(state)` (LOG-R79), nil while completion never reached 100%. Nothing in game reads `rises`. `LEDGER_RULES_VERSION` 9 rebuilds the projection to keep it (LED-R4).
 - **LED-R159** **The Angler Level alone** ([#364](https://github.com/timemir/wow-fish/issues/364)). `AnglerLevel(state, total)` (LOG-R79) gives `Measures`' `anglerLevel`, `{ prestige, level, xp }`: the prestige rank and the climb's level and XP (LED-R30–R32), its Activity XP from `total` included (AXP-R9, LED-R37). It works out no Ledger completion, so the backend's driver can read it after every record of any Module.
 
 ### Lore
@@ -486,6 +486,7 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 ---@field species integer                -- Species caught, removed ones left out (LED-R71)
 ---@field legends integer                -- Legends caught, removed ones left out (LED-R63)
 ---@field at { ledgerCompletion: integer?, speciesCaught: integer?, legendsCaught: integer? }  -- entry time of the Cast that last raised each (completion by its percentage); nil while it never rose
+---@field firstComplete? { seq: integer, char: integer, time: integer }  -- the Cast after which completion first stood at 100%; kept once set
 
 ---@class LedgerCounts                  -- LED-R118, LED-R119
 ---@field shards integer                 -- glass shards (LED-R119)

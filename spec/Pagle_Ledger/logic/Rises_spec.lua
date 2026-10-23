@@ -144,14 +144,19 @@ describe("the measures' rise times (LED-R158)", function()
 
 	-- Folds `records` in `mode` as the backend's driver did before LED-R158: Measures read after every record, each
 	-- measure's `at` the time of the last record after which it was greater than just before. Checks after every record
-	-- that the counts the fold keeps are Measures' own. Returns the state, the oracle's `at` and every reading.
+	-- that the counts the fold keeps are Measures' own. Returns the state, the oracle's `at`, every reading, and the
+	-- backend's `ledgerComplete` (its PRJ-R9): the first record after which Ledger completion is 100, as
+	-- { seq, char, time }, nil if none.
 	local function foldWithOracle(records, mode)
 		local fold = ns.NewLedgerFold(lookups)
 		local state = fold.reset()
-		local current, at, readings = ns.Measures(state, 0), {}, {}
+		local current, at, readings, first = ns.Measures(state, 0), {}, {}, nil
 		for _, record in ipairs(records) do
 			fold.apply(state, record, mode or "rebuild")
 			local measures = ns.Measures(state, 0)
+			if not first and measures.ledgerCompletion.percent >= 100 then
+				first = { seq = record.seq, char = record.char, time = record.time }
+			end
 			for _, measure in ipairs(MEASURED) do
 				if rose(measure, current[measure], measures[measure]) then
 					at[measure] = record.time
@@ -166,7 +171,7 @@ describe("the measures' rise times (LED-R158)", function()
 				"the counts the fold keeps after seq " .. tostring(record.seq)
 			)
 		end
-		return state, at, readings
+		return state, at, readings, first
 	end
 
 	-- The fixture's story, with the time of each record a measure rises on.
@@ -193,6 +198,8 @@ describe("the measures' rise times (LED-R158)", function()
 		-- FISH's first Catch masters Lake too: 7 of 8, 87%. Its tenth variety completes it: 8 of 8, 100%.
 		varietyCasts(log, FISH, 1, 10, records)
 		times.fish, times.fishComplete = records[#records - 9].time, records[#records].time
+		records[#records].char = 2 -- the second character's Cast completes the Ledger
+		times.fishCompleteSeq = records[#records].seq
 		add(log.cast(LAKE, { { LOOSE_JUNK } }), "looseJunk") -- 9 of 9: still 100%, no rise
 		add(log.cast(LAKE, { { STRAY, 1 } }), "stray") -- a Species and a varieties part more in total: 10 of 11, 90%
 		varietyCasts(log, STRAY, 2, 10, records)
@@ -264,6 +271,51 @@ describe("the measures' rise times (LED-R158)", function()
 		assert.are.equal(90, ns.Measures(state, 0).ledgerCompletion.percent)
 	end)
 
+	it("keeps the record after which Ledger completion first stood at 100%, as the backend found it", function()
+		local records, times = story()
+		local state, _, _, first = foldWithOracle(records)
+
+		assert.are.same(first, ns.FirstComplete(state))
+		assert.are.same({ seq = times.fishCompleteSeq, char = 2, time = times.fishComplete }, ns.FirstComplete(state))
+	end)
+
+	it("keeps it through a fall below 100% and the rise back, which isn't a first", function()
+		local records, times = story()
+		local cut = {}
+		for _, record in ipairs(records) do
+			cut[#cut + 1] = record
+			if record.time == times.stray then
+				break
+			end
+		end
+		local fallen, _, _, firstFallen = foldWithOracle(cut)
+		local risen, _, _, firstRisen = foldWithOracle(records)
+
+		-- At 90% after STRAY, and at 100% again after its tenth variety: the first stays FISH's tenth.
+		assert.are.equal(90, ns.Measures(fallen, 0).ledgerCompletion.percent)
+		assert.are.same(firstFallen, ns.FirstComplete(fallen))
+		assert.are.equal(times.fishComplete, ns.FirstComplete(fallen).time)
+		assert.are.equal(times.strayComplete, ns.MeasureRises(risen).ledgerCompletion)
+		assert.are.same(firstRisen, ns.FirstComplete(risen))
+		assert.are.equal(times.fishComplete, ns.FirstComplete(risen).time)
+	end)
+
+	it("has no first completion while Ledger completion stays below 100%", function()
+		local records, times = story()
+		local cut = {}
+		for _, record in ipairs(records) do
+			if record.time == times.fishComplete then
+				break
+			end
+			cut[#cut + 1] = record
+		end
+		local state, _, _, first = foldWithOracle(cut)
+
+		assert.is_nil(first)
+		assert.is_nil(ns.FirstComplete(state))
+		assert.are.equal(87, ns.Measures(state, 0).ledgerCompletion.percent)
+	end)
+
 	it("leaves every rise nil while nothing counted is caught", function()
 		local log = newLog()
 		local records = {
@@ -276,6 +328,7 @@ describe("the measures' rise times (LED-R158)", function()
 
 		assert.are.same({}, at)
 		assert.are.same({}, ns.MeasureRises(state))
+		assert.is_nil(ns.FirstComplete(state))
 	end)
 
 	it("folds to the same rises in every mode (LED-R3)", function()
@@ -309,9 +362,10 @@ describe("the measures' rise times (LED-R158)", function()
 				records[#records + 1] = log.cast(random(3) == 1 and RIVER or LAKE, catches)
 			end
 		end
-		local state, at = foldWithOracle(records)
+		local state, at, _, first = foldWithOracle(records)
 
 		assert.are.same(at, ns.MeasureRises(state))
+		assert.are.same(first, ns.FirstComplete(state))
 		assert.is_number(at.ledgerCompletion)
 		assert.is_number(at.speciesCaught)
 		assert.is_number(at.legendsCaught)
