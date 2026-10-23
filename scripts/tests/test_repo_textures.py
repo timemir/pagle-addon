@@ -18,16 +18,16 @@ ADDONS = REPO / "addons"
 HEADER = struct.Struct("<4sIBBBBII16I16I")  # magic, type, encoding, alpha depth, alpha encoding, mips, size, mip table
 SAMPLE_BLOCKS = 1024  # the spread read first: 16,384 texels however large the texture
 
-# The shop expansion's materials (Pagle/media/books/bindings/), blank since they were added: each is a mipmapped DXT5
-# whose every block has zero endpoints, the encoding of a fully transparent image. The kit they came from isn't
-# anywhere to re-encode them from (#382); each passes, and so fails this list, once its art is back.
+# The shop expansion's materials (Pagle/media/books/bindings/) still blank since they were added: each is a mipmapped
+# DXT5 whose every block has zero endpoints, the encoding of a fully transparent image. Their art is being repainted
+# (#382); each passes, and so fails this list, once its art is back. Eleven are back so far (chartlinen, eelskin,
+# frosthide, keeper, kodo, kraft, legend, morocco, snakeskin, velvet, wagersilk).
 BLANK_SINCE_ADDED = frozenset(
     f"Pagle/media/books/bindings/{key}.blp"
     for key in (
-        "abyssal", "bone", "brasscase", "canvas", "chartlinen", "copper", "driftwood", "eelskin", "fiveseal",
-        "frosthide", "iridescent", "keeper", "kodo", "kraft", "lacquer", "legend", "maplinen", "monster", "morocco",
-        "moss", "netcork", "oilskin", "pathfinder", "pearl", "planks", "sailcloth", "scrimshaw", "shagreen",
-        "snakeskin", "tartan", "trophycase", "turtle", "velvet", "wagersilk",
+        "abyssal", "bone", "brasscase", "canvas", "copper", "driftwood", "fiveseal", "iridescent", "lacquer",
+        "maplinen", "monster", "moss", "netcork", "oilskin", "pathfinder", "pearl", "planks", "sailcloth", "scrimshaw",
+        "shagreen", "tartan", "trophycase", "turtle",
     )
 )
 
@@ -133,7 +133,7 @@ def _shipped() -> list[object]:
     params: list[object] = []
     for path in sorted(ADDONS.rglob("*.blp")):
         name = path.relative_to(ADDONS).as_posix()
-        marks = [pytest.mark.xfail(reason="#382: blank since added, no art to restore yet", strict=True)]
+        marks = [pytest.mark.xfail(reason="#382: blank since added, its art not back yet", strict=True)]
         params.append(pytest.param(path, id=name, marks=marks if name in BLANK_SINCE_ADDED else ()))
     return params
 
