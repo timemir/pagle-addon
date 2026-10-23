@@ -25,7 +25,9 @@ local DAY = 86400
 -- A realm date `day` days after 1 October 2026 (LOG-R49).
 ---@param day integer
 local function dateAfter(day)
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
 	local time = os.time({ year = 2026, month = 10, day = 1 + day, hour = 12 })
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
 	local t = os.date("*t", time)
 	return { year = t.year, month = t.month, day = t.day, weekday = t.wday }
 end
@@ -382,8 +384,8 @@ describe("the second round's earned goods", function()
 				["ledger.binding.carapace"] = { clams = 50 },
 			}) do
 				local key, mark = next(count)
-				assert.is_true(owned(goodID, view(stateWith({ [key] = mark }))), goodID)
-				assert.is_false(owned(goodID, view(stateWith({ [key] = mark - 1 }))), goodID)
+				assert(owned(goodID, view(stateWith({ [key] = mark }))), goodID)
+				assert(not owned(goodID, view(stateWith({ [key] = mark - 1 }))), goodID)
 			end
 		end)
 
@@ -469,8 +471,8 @@ describe("the second round's earned goods", function()
 			local old = stateWith()
 			old.counts = nil
 			for _, counted in ipairs(ns.COUNTED_GOODS) do
-				assert.is_false(owned(counted.id, view(nil)), counted.id)
-				assert.is_false(owned(counted.id, view(old)), counted.id)
+				assert(not owned(counted.id, view(nil)), counted.id)
+				assert(not owned(counted.id, view(old)), counted.id)
 			end
 		end)
 

@@ -367,10 +367,10 @@ describe("the bindings", function()
 						+ (look.ribbon and 1 or 0)
 						+ (look.fillet and 1 or 0)
 						+ (look.cornerArt and 1 or 0)
-					assert.is_true(fields == 0 or fields == 5, binding.id)
+					assert(fields == 0 or fields == 5, binding.id)
 					if fields == 5 then
 						whole[#whole + 1] = binding.id
-						assert.is_nil(look.corners, binding.id)
+						assert(look.corners == nil, binding.id)
 						for _, sprite in ipairs({ look.cornerArt, look.clasp, look.ribbon }) do
 							assert(ns.ATLASES.BindingParts2.sprites[sprite], sprite)
 						end

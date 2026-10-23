@@ -35,7 +35,7 @@ local MOTION = { animate = ns.Animate, stop = ns.StopMotion, isOn = ns.MotionOn 
 
 --- A composed stamp as drawn: its art, its plate's width and its three slices.
 ---@class PagleLayeredStamp
----@field spec PagleToastLayer
+---@field spec PagleToastStamp
 ---@field width number
 
 -- A frame's layers, made the first time a composed style draws on it.
@@ -336,7 +336,7 @@ end
 --- One sprite of a layered piece that isn't a toast: its sprite in the piece's atlas, its box in the piece's own
 --- units, its z (the order it draws in: z 4 at sublevel 0 of the ARTWORK layer), and any blend and motion, as a toast
 --- style's layer has them.
----@class PagleLayeredPieceLayer: PagleToastBox
+---@class PagleLayeredPieceLayer: PagleArtBox
 ---@field name string
 ---@field sprite string
 ---@field z number
@@ -364,12 +364,13 @@ function ns.DrawLayeredPiece(host, atlasName, layers, shown)
 	for i, layer in ipairs(layers) do
 		local slot = piece.slots[i]
 		if not slot then
-			slot = { texture = ns.ArtCrisp(host:CreateTexture(nil, "ARTWORK")) } --[[@as PagleLayerSlot]]
+			local made = { texture = ns.ArtCrisp(host:CreateTexture(nil, "ARTWORK")) }
+			slot = made --[[@as PagleLayerSlot]]
 			piece.slots[i] = slot
 		end
 		local texture = slot.texture
 		texture:SetDrawLayer("ARTWORK", math.max(-8, math.min(7, layer.z - 4)))
-		slot.layer = layer --[[@as PagleToastLayer]]
+		slot.layer = layer --[[@as PagleArtLayer]]
 		slot.tc = coordsOf(atlas, layer.sprite)
 		slot.box = { x = layer.x, y = layer.y, w = layer.w, h = layer.h }
 		local origin = layer.motion and layer.motion.origin or { x = layer.x + layer.w / 2, y = layer.y + layer.h / 2 }

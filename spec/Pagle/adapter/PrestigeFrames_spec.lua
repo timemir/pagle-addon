@@ -59,7 +59,7 @@ local function slotOf(frame, name)
 			return slot
 		end
 	end
-	return nil
+	error("no layer " .. name)
 end
 
 describe("a Prestige frame", function()
@@ -88,7 +88,7 @@ describe("a Prestige frame", function()
 					end
 					local _, anchor, relative, x, y = texture:GetPoint()
 					assert.are.same({ frame, "TOPLEFT" }, { anchor, relative })
-					assert.is_true(near(layer.x + layer.w / 2, x) and near(-(layer.y + layer.h / 2), y), layer.name)
+					assert(near(layer.x + layer.w / 2, x) and near(-(layer.y + layer.h / 2), y), layer.name)
 				end
 			end
 			assert.matches("FrameStorm$", loaded.ns.ATLASES[loaded.ns.PrestigeFrameArt(5).atlas].file)

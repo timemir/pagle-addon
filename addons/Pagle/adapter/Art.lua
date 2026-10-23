@@ -96,6 +96,12 @@ for key, def in pairs(FONTS) do
 	ns.ART_FONTS[key] = name
 end
 
+--- A font string the art sets: the art font ns.ArtText made it in, and whether a composed style's ink (ns.SetInkFont)
+--- set it last.
+---@class PagleArtFontString: FontString
+---@field artKey string?
+---@field inked true?
+
 --- Puts a font string in the art's font `key`, in that font's ink, and its shadow back where a composed style's ink
 --- (ns.SetInkFont) gave it another.
 ---@param fontString FontString
@@ -103,8 +109,9 @@ end
 function ns.SetArtFont(fontString, key)
 	fontString:SetFontObject(ns.ART_FONTS[key])
 	ns.Ink(fontString, FONTS[key][3])
-	if fontString.inked then
-		fontString.inked = nil
+	local art = fontString --[[@as PagleArtFontString]]
+	if art.inked then
+		art.inked = nil
 		if FONTS[key][4] then
 			fontString:SetShadowColor(0, 0, 0, 0.9)
 			fontString:SetShadowOffset(0, -1.5)
@@ -131,7 +138,8 @@ function ns.SetInkFont(fontString, ink, size)
 	else
 		fontString:SetShadowOffset(0, 0)
 	end
-	fontString.inked = true
+	local art = fontString --[[@as PagleArtFontString]]
+	art.inked = true
 end
 
 --- The art's font object name for the small-caps kicker (IM Fell English SC, 14), in the books' kicker ink.
@@ -192,7 +200,7 @@ end
 ---@param layer DrawLayer?
 ---@return FontString
 function ns.ArtText(frame, key, layer)
-	local fontString = frame:CreateFontString(nil, layer or "OVERLAY")
+	local fontString = frame:CreateFontString(nil, layer or "OVERLAY") --[[@as PagleArtFontString]]
 	ns.SetArtFont(fontString, key)
 	fontString.artKey = key
 	fontString:SetWordWrap(false)

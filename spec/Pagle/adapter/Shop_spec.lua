@@ -1649,7 +1649,7 @@ describe("The Curio crate in the window", function()
 			end
 			frame.chips[1]:Click()
 			frame.search:Type("ripple")
-			assert.is_false(crateLine(loaded):IsShown(), "a search its label doesn't match")
+			assert(not crateLine(loaded):IsShown(), "a search its label doesn't match")
 			assert.are.same({ "TOAST STYLE 1 of 18", "Ripple | 150" }, listed(loaded))
 		end
 	)
@@ -1799,7 +1799,7 @@ describe("The Curio crate opening (SHOP-R55, wallet-and-shop.md › UI: Motion a
 			local scale = medal:GetScale()
 			assert.is_true(scale > 34 / 64 and scale < 1)
 			local y = offset(medal)[2] * scale -- its anchor's offset is in its own scaled units
-			assert.is_true(y > offset(opening.crate)[2] and y < -66, "between the crate and the middle of the well")
+			assert(y > offset(opening.crate)[2] and y < -66, "between the crate and the middle of the well")
 			assert.are.equal(loaded.ns.goods:Good("core.toaststyle.foil").icon, medal.Icon:GetTexture())
 
 			play(loaded, 0.5) -- 1.2 s: the medallion in the middle at 64, the good on the stage, its row coming in

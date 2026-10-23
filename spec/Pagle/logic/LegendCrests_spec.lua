@@ -67,13 +67,14 @@ describe("the Legend crests' art (LED-R153)", function()
 			local atlas = ns.ATLASES[art.atlas]
 			assert.are.equal(atlasName, art.atlas)
 			assert.are.equal("Interface\\AddOns\\Pagle\\media\\legends\\" .. atlasName, atlas.file)
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 			local file = assert(io.open("addons/Pagle/media/legends/" .. atlasName .. ".blp", "rb"))
 			assert.are.equal("BLP2", file:read(4))
 			file:close()
 			-- every layer's sprite in its atlas, in draw order, inside the crest's box
 			local z = -math.huge
 			for _, layer in ipairs(art.layers) do
-				assert.is_table(atlas.sprites[layer.sprite], key .. " " .. layer.sprite)
+				assert(type(atlas.sprites[layer.sprite]) == "table", key .. " " .. layer.sprite)
 				assert.is_true(layer.z >= z)
 				z = layer.z
 				assert.is_true(layer.x >= 0 and layer.x + layer.w <= ns.LEGEND_CREST_BOX.w + 0.01)
@@ -114,7 +115,7 @@ describe("a Legend crest's motion (LED-R153)", function()
 	it("moves all four crests, every layer's motion looping for as long as it plays", function()
 		for key, art in pairs(ns.LEGEND_CREST_ART) do
 			local animations = ns.LegendCrestAnimations(art, function() end)
-			assert.is_true(#animations > 0, key)
+			assert(#animations > 0, key)
 			for _, animation in ipairs(animations) do
 				assert.are.equal("infinite", animation.iter)
 			end

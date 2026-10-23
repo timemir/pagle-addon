@@ -479,22 +479,21 @@ describe("the round two's composed toast styles", function()
 				assert.are.equal(1.5, atlas.scale)
 				assert.are.equal("Interface\\AddOns\\Pagle\\media\\announce\\" .. atlasName, atlas.file)
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-				local file = io.open("addons/Pagle/media/announce/" .. atlasName .. ".blp", "rb")
-				assert.is_not_nil(file, atlasName)
+				local file = assert(io.open("addons/Pagle/media/announce/" .. atlasName .. ".blp", "rb"), atlasName)
 				assert.are.equal("BLP2", file:read(4))
 				file:close()
 				for _, rung in ipairs({ "toast", "high", "low", "nod" }) do
 					local art = style.art.rungs[rung]
-					assert.is_true(#art.layers > 0, id .. " " .. rung)
+					assert(#art.layers > 0, id .. " " .. rung)
 					for _, layer in ipairs(art.layers) do
-						assert.is_table(atlas.sprites[layer.sprite], layer.sprite)
+						assert(type(atlas.sprites[layer.sprite]) == "table", layer.sprite)
 						assert.is_truthy(({ under = true, front = true, over = true })[layer.host])
 					end
 					assert.is_table(art.icon)
 					assert.is_table(art.text)
 				end
-				assert.is_table(style.art.rungs.toast.stamp, id)
-				assert.is_table(style.art.rungs.nod.slice, id)
+				assert(type(style.art.rungs.toast.stamp) == "table", id)
+				assert(type(style.art.rungs.nod.slice) == "table", id)
 			end
 		end
 	)

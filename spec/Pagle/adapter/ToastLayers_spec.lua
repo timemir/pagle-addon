@@ -89,7 +89,7 @@ local function slotOf(frame, name)
 			return slot
 		end
 	end
-	return nil
+	error("no layer " .. name)
 end
 
 local function near(a, b)
@@ -123,13 +123,13 @@ describe("a toast in a composed toast style", function()
 				local drawLayer, sublevel = texture:GetDrawLayer()
 				assert.are.equal(drawLayers[layer.host], drawLayer)
 				sublevels[layer.host] = sublevels[layer.host] or -9
-				assert.is_true(sublevel > sublevels[layer.host], layer.name)
+				assert(sublevel > sublevels[layer.host], layer.name)
 				sublevels[layer.host] = sublevel
 				assert.are.equal(layer.blend or "BLEND", texture.blendMode)
 				-- The toast's own page is its rung: each sprite by its centre, at its size, unturned.
 				local _, anchor, relative, x, y = texture:GetPoint()
 				assert.are.same({ toast.body, "TOPLEFT" }, { anchor, relative })
-				assert.is_true(near(layer.x + layer.w / 2, x) and near(-(layer.y + layer.h / 2), y), layer.name)
+				assert(near(layer.x + layer.w / 2, x) and near(-(layer.y + layer.h / 2), y), layer.name)
 				assert.are.same({ layer.w, layer.h, 0 }, { texture.width, texture.height, texture.rotation })
 			end
 			-- The words and stamps sit between: over the medallion, under its frame's over-host.
@@ -182,7 +182,7 @@ describe("a toast in a composed toast style", function()
 			assert.are.equal(-4, spec.motion.transform[1][4])
 			for i, slice in ipairs(stamp.plate) do
 				assert.are.equal(atlas.file, slice.texture)
-				assert.is_true(near(-4 * math.pi / 180, -slice.rotation), "slice " .. i)
+				assert(near(-4 * math.pi / 180, -slice.rotation), "slice " .. i)
 			end
 			assert.is_true(near(plate[1], stamp.plate[1].texCoord[1]) and near(plate[2], stamp.plate[3].texCoord[2]))
 			assert.are.equal(spec.h, stamp.height)

@@ -158,7 +158,7 @@ describe("Pagle_Content", function()
 			local loaded = core(fixtures.good, { testKey = true })
 			enterWorld(loaded)
 			assert.are.equal("checking", loaded.env.Pagle.GetCompanionState())
-			assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.sonar"), "before the check ends")
+			assert(not loaded.env.Pagle.IsOwned("core.toaststyle.sonar"), "before the check ends")
 
 			loaded.client.advance(0)
 

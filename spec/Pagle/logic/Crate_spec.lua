@@ -35,7 +35,7 @@ describe("The Curio crate's pool", function()
 			for _, good in ipairs(ns.CRATE_POOL) do
 				crateOnly = crateOnly + (good.crateOnly and 1 or 0)
 			end
-			assert.is_true(crateOnly <= 2, "at most two goods are ever crate only (SHOP-R53)")
+			assert(crateOnly <= 2, "at most two goods are ever crate only (SHOP-R53)")
 		end
 	)
 end)
@@ -69,7 +69,7 @@ describe("ns.CrateDraw", function()
 	end)
 
 	it("can give a pool good no slot has registered yet: it reads the log alone (SHOP-R50)", function()
-		-- Shagreen and Bone waits for ADR 0015's binding slot; the draw knows nothing of the registry.
+		-- Shagreen and Bone, though its slot registers it now; the draw knows nothing of the registry.
 		assert.are.equal(SHAGREEN, (ns.CrateDraw(crateID(6), {}, 0, 1791731700)))
 	end)
 
@@ -79,9 +79,9 @@ describe("ns.CrateDraw", function()
 			local given = ns.CrateDraw(crateID(t), {}, 0, 1791731700)
 			counts[given] = counts[given] + 1
 		end
-		assert.is_true(math.abs(counts[FOIL] / n - 0.2) < 0.015, "Foil " .. counts[FOIL] / n)
-		assert.is_true(math.abs(counts[STORM] / n - 0.4) < 0.015, "Storm " .. counts[STORM] / n)
-		assert.is_true(math.abs(counts[SHAGREEN] / n - 0.4) < 0.015, "Shagreen " .. counts[SHAGREEN] / n)
+		assert(math.abs(counts[FOIL] / n - 0.2) < 0.015, "Foil " .. counts[FOIL] / n)
+		assert(math.abs(counts[STORM] / n - 0.4) < 0.015, "Storm " .. counts[STORM] / n)
+		assert(math.abs(counts[SHAGREEN] / n - 0.4) < 0.015, "Shagreen " .. counts[SHAGREEN] / n)
 	end)
 
 	it("gives the crate-only good to the crate after 7 in a row without one, while it is unowned (SHOP-R52)", function()

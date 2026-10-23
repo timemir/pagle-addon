@@ -388,7 +388,7 @@ describe("The wallet projection's Curio crates", function()
 			assert.are.same(drawn(TIMES), state.crates)
 			assert.are.same({ SHAGREEN, FOIL, STORM }, sorted(state.crates))
 			assert.are.same({ true, true }, { world.goods:IsOwned(FOIL), world.goods:IsOwned(STORM) })
-			assert.is_true(world.goods:IsOwned(SHAGREEN), "owned by the log, registered or not")
+			assert(world.goods:IsOwned(SHAGREEN), "owned by the log, registered or not")
 			assert.are.equal(1000, world.wallet:Get().balance)
 			local snapshot = world.snapshots[#world.snapshots]
 			assert.are.same(state.crates, snapshot.crates)

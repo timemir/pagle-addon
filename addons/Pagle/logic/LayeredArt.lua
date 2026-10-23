@@ -171,7 +171,7 @@ end
 --- Where a host's sprites are made: on `frame`, in its draw layer `layer`, the host's sprites one sublevel apart in
 --- the art's order.
 ---@class PagleArtHost
----@field frame Region
+---@field frame Frame
 ---@field layer DrawLayer
 
 --- The motion player a stack plays on: Core's (adapter/Motion.lua) or FakePagle's, and the Animations setting.
@@ -241,7 +241,8 @@ local function slotOf(art, hostName, i, masked)
 		local host = assert(art.hosts[hostName], "the art has no host " .. tostring(hostName))
 		local parent = host.frame
 		local texture = ns.ArtCrisp(parent:CreateTexture(nil, host.layer, nil, math.min(7, i - 7)))
-		slot = { texture = texture } --[[@as PagleLayerSlot]]
+		local made = { texture = texture }
+		slot = made --[[@as PagleLayerSlot]]
 		if masked then
 			slot.mask = parent:CreateMaskTexture()
 			texture:AddMaskTexture(slot.mask)
@@ -495,8 +496,8 @@ local STAR_GAP, STAR_STEP = 0.3, 1.05
 local function drawLabel(self, client, spec, label, scale)
 	local ink = spec.label and spec.label.ink
 	local shown = label ~= nil and ink ~= nil
-	local stars = shown and label.stars or 0
-	local more = shown and label.more or 0
+	local stars = label and ink and label.stars or 0
+	local more = label and ink and label.more or 0
 	self.label:SetShown(shown)
 	self.more:SetShown(more > 0)
 	for i = 1, math.max(stars, #self.stars) do
@@ -508,7 +509,7 @@ local function drawLabel(self, client, spec, label, scale)
 		end
 		star:SetShown(i <= stars)
 	end
-	if not shown then
+	if not label or not ink then
 		return
 	end
 	local size = ink.size * scale

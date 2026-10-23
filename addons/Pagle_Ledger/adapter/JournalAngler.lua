@@ -138,10 +138,12 @@ ns.RegisterJournalWidget("prestigeFrame", function(parent)
 		-- From V up it moves while the page shows, with Animations on; the page closed, it stops (LED-R154).
 		frame:Play()
 		-- the bookplate crest the Angler has on (LED-R112), pinned at the frame's pin; none for Plain
-		self.pin:SetShown(block.icon ~= nil)
-		if block.icon ~= nil then
-			local x, y, width = frame:GetPin()
+		local x, y, width = frame:GetPin()
+		if block.icon ~= nil and x and y and width then
+			self.pin:Show()
 			setPin(self.pin, self, block.icon, x, y, width)
+		else
+			self.pin:Hide()
 		end
 		local w, h = frame:GetSize()
 		self.floatW, self.floatH = w + FLOAT_GAP, h

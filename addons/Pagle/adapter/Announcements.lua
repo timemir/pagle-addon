@@ -420,7 +420,7 @@ local function setFont(fontString, font)
 	if type(font) == "table" then
 		ns.SetInkFont(fontString, font)
 	else
-		ns.SetArtFont(fontString, font)
+		ns.SetArtFont(fontString, font --[[@as string]])
 	end
 end
 
@@ -445,7 +445,7 @@ end
 ---@param width number
 local function shrink(fontString, font, width)
 	if type(font) ~= "table" then
-		ns.ShrinkToFit(fontString, font, width)
+		ns.ShrinkToFit(fontString, font --[[@as string]], width)
 		return
 	end
 	fontString:SetWidth(0)
@@ -616,8 +616,9 @@ end
 -- A font string a composed style inked, back in its art font (the Coins' label is set only when its frame is made).
 ---@param fontString FontString
 local function restoreFont(fontString)
-	if fontString.inked then
-		ns.SetArtFont(fontString, fontString.artKey)
+	local art = fontString --[[@as PagleArtFontString]]
+	if art.inked and art.artKey then
+		ns.SetArtFont(fontString, art.artKey)
 	end
 end
 
@@ -1535,7 +1536,7 @@ function ns.DrawAnnouncement(frame, display)
 	-- A composed style's own motion (ANN-R82), beside the form's.
 	if style.layered and (form == "toast" or form == "nod") then
 		local page = form == "toast" and ns.ToastPage(display.announcement) or nil
-		ns.PlayToastLayers(frame, display, style, page, form)
+		ns.PlayToastLayers(frame, display, style, page, form --[[@as "toast"|"nod"]])
 	end
 	-- A banner's Prestige frame's own motion, once its seal has dropped in, while the banner holds (ANN-R83).
 	local prestige = frame.prestige

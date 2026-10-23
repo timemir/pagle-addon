@@ -1588,7 +1588,7 @@ describe("The Curio crate", function()
 				assert.are.same(row, shop:Crate({ filter = filter }), filter)
 			end
 			assert.are.same(row, shop:Crate({ search = "CRATE" }))
-			assert.is_nil(shop:Crate({ search = "binding" }), "a search its label doesn't match leaves it out")
+			assert(shop:Crate({ search = "binding" }) == nil, "a search its label doesn't match leaves it out")
 			for _, group in ipairs(shop:List({})) do
 				for _, listed in ipairs(group.rows) do
 					assert.are_not.equal(CRATE, listed.id, "not in a slot's group")
@@ -1661,7 +1661,7 @@ describe("The Curio crate", function()
 				question = "Open a Curio crate?",
 				fine = "One look you don't own yet, by chance; the chances are on the crate.",
 			}, model(fake):Purchase(CRATE))
-			assert.is_nil(model(crated(1999)):Purchase(CRATE), "the balance short")
+			assert(model(crated(1999)):Purchase(CRATE) == nil, "the balance short")
 		end
 	)
 

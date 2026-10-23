@@ -387,8 +387,15 @@ end
 --- or over the words. A layer's motion that loops on the canvas loops in game, but ns.TOAST_MOTION_ONCE's.
 ---@class PagleToastLayer: PagleArtLayer
 ---@field host "under"|"front"|"over"
----@field slice? { left: number, right: number } -- a stamp's caps
----@field tilt? number                -- a stamp's, degrees clockwise
+
+--- A composed rung's stamp: its sprite at its box, three-sliced at its caps to hold its word and tilted, with any
+--- motion; drawn on the stamp's own frame, not on a host.
+---@class PagleToastStamp: PagleArtBox
+---@field name string
+---@field sprite string
+---@field slice { left: number, right: number } -- its caps
+---@field tilt? number                -- degrees clockwise
+---@field motion? PagleArtMotion
 
 ---@class PagleToastRung
 ---@field w number
@@ -401,7 +408,7 @@ end
 ---@field slice? { left: number, right: number } -- the Nod body's caps
 ---@field inks table<string, PagleToastInk>
 ---@field layers PagleToastLayer[]
----@field stamp? PagleToastLayer
+---@field stamp? PagleToastStamp
 
 ---@class PagleToastArt2
 ---@field atlas string
@@ -489,7 +496,7 @@ end
 --- gives only Chapel Glass a toast.low stamp of its own, and the Nod none).
 ---@param style PagleToastStyle
 ---@param page PagleToastPage?
----@return PagleToastLayer
+---@return PagleToastStamp
 function ns.ToastStampArt(style, page)
 	local rung = ns.ToastRungArt(style, page) --[[@as PagleToastRung]]
 	if rung.stamp then
