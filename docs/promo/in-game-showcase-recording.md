@@ -1,7 +1,7 @@
 # Recording the in-game showcase
 
-The script is approved in `in-game-showcase-script.md`. The narration text to
-paste into ElevenLabs is `in-game-showcase-voiceover.txt`.
+The script is approved in `in-game-showcase-script.md`. The narration as one
+read is `in-game-showcase-voiceover.txt`.
 
 ## Before recording
 
@@ -63,27 +63,35 @@ launch.
 
 ## Voiceover and editing
 
-The current narration is the developer's twelve separately generated MP3s in
-`C:\Users\Tim\Downloads\pagle_ingame_trailer`. Use these instead of the earlier
-whole-script takes below. The filenames swap the shop and Cozy chapter numbers:
-play `09-curio-shop.mp3` at 2:39, then `08-cozy.mp3` at 3:01. All other files
-follow the scene order, from `00-opening.mp3` to `11-closing.mp3`.
+The narrated cut of the 22 October recording
+(`C:\Users\Tim\Videos\2026-10-22 22-55-03.mp4`, 0:03 to 4:25) is
+`C:\Users\Tim\wow.export\pagle-promo\in-game-showcase\pagle-in-game-showcase.mp4`:
+4:22, 1920 × 1080 at 60 fps, with Nat's lines burned in as Friz Quadrata
+subtitles (also as `pagle-in-game-showcase.srt`). The folder holds the three
+stems (game, voice, music), the mix and every take.
 
-The existing ElevenLabs voice is **Nat — Pagle trailer**
-(`ydYLQ0Ug0aDVS7Rdoh7F`). The completed performances used
-`eleven_multilingual_v2`. Two takes are downloaded to:
+Nat is the ElevenLabs voice **Nat — Pagle trailer** (`ydYLQ0Ug0aDVS7Rdoh7F`),
+read with Eleven v4 as in trailer revision 10: the approved script's 35 lines,
+three takes each. Every chosen take was transcribed back to its script with
+Scribe v2 and picked for the pitch and pace closest to the trailer's lines. The
+first word of each line lands on its time in the script's table; subtitles
+follow the takes' word timestamps.
 
-- `.scratch/pagle-in-game-showcase/audio/nat-take-01.mp3` — 148.38 seconds.
-- `.scratch/pagle-in-game-showcase/audio/nat-take-02.mp3` — 136.53 seconds.
+Under the voice: the recording's own sound (lake, fishing, page turns and
+stamps), lifted to sit about 18 dB under Nat, and the Darkmoon Faire music
+looped on its bars, about 8 dB under Nat between lines and ducked a further
+8 dB while he speaks, ending on the song's own outro. Master: −14 LUFS,
+−2 dBTP.
 
-Two additional variants were rejected by the provider's account restriction;
-neither is needed for the edit. No further generations were requested.
+Build sources are in `.scratch/pagle-showcase/`: `script.py` (lines and times),
+`generate-vo.py` (takes and picking), `build.py` (stems, mix, subtitles and
+picture) and `update-docs.py` (this doc's narration table). The ElevenLabs key
+is the CLI's `.scratch/pagle-trailer-v10/.env.local`, outside git. A new
+recording needs the lines retimed in `script.py`; the takes can be reused.
 
-The narration is not played by the addon. Use the scene table's times as edit
-cues and place each narration paragraph over its corresponding scene, retaining
-room for the game's sounds and page turns. The raw voice performances are
-shorter than the uninterrupted take and need spacing between their paragraphs.
-Keep the opening fishing paragraph separate so it can fit your manual actions.
+The earlier narration (the twelve MP3s in
+`C:\Users\Tim\Downloads\pagle_ingame_trailer` and the
+`eleven_multilingual_v2` whole-script takes) is superseded.
 
 ## Verification status
 
