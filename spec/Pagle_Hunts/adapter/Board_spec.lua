@@ -1,6 +1,7 @@
--- The Hunts board's notebook on FakePagle (HNT-R60, HNT-R61, HNT-R67, HNT-R68, HNT-R70): the frame, how it opens,
--- moves and closes, the pages the router gives each mode, the leather's anchors, the binding, and its redraws. Its entry
--- points through Core's real logic are in Hunts_spec.
+-- The Hunts board's notebook on FakePagle (HNT-R60, HNT-R61, HNT-R67, HNT-R68, HNT-R70): Core's book shell (BOOK-R*,
+-- spec/Pagle/adapter/Book_spec.lua) as the board opens it: the frame, how it opens, moves and closes, the pages the
+-- router gives each mode, the leather's anchors, the binding, and its redraws. Its entry points through Core's real
+-- logic are in Hunts_spec.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
@@ -13,7 +14,7 @@ local function loggedIn()
 	fake.login()
 	local board = loaded.ns.board
 	board.router = loaded.ns.NewBoardRouter()
-	for _, part in ipairs({ "crumbs", "clock", "completed", "nameplate", "ribbons" }) do
+	for _, part in ipairs({ "clock", "completed" }) do
 		board:RegisterLeather(part, function() end)
 	end
 	return loaded, fake, board
@@ -24,7 +25,7 @@ end
 local function pageTexts(board)
 	local texts = {}
 	for _, side in ipairs({ "left", "right" }) do
-		for _, text in ipairs(shownTexts(board.frame.paperFrames[side])) do
+		for _, text in ipairs(shownTexts(board.frame.papers[side])) do
 			texts[#texts + 1] = text
 		end
 	end
@@ -75,35 +76,30 @@ describe("the Hunts board's frame (HNT-R60)", function()
 		assert.is_false(board:IsShown())
 	end)
 
-	it("moves by dragging the leather, and the client saves no position", function()
-		local _, _, board = loggedIn()
+	it("moves by dragging the leather, and the client saves no position of its own", function()
+		local loaded, _, board = loggedIn()
 		board:Toggle()
 		local frame = board.frame
 
 		assert.is_true(frame:IsMovable())
-		frame:GetScript("OnDragStart")(frame)
-		assert.is_true(frame:IsUserPlaced())
-		frame:GetScript("OnDragStop")(frame)
+		frame:Drag({ "TOPLEFT", loaded.env.UIParent, "TOPLEFT", 40, -60 })
 
 		assert.is_false(frame:IsUserPlaced())
 	end)
 
-	it("opens centred each time, wherever it was dragged to", function()
-		local loaded, _, board = loggedIn()
-		local centred = { { "CENTER", loaded.env.UIParent, "CENTER", 0, 40 } } -- 40 up, fitted to the screen
+	it("opens centred 40 up until dragged, then where it was left, saved as the book hunts (BOOK-R5)", function()
+		local loaded, fake, board = loggedIn()
 		board:Toggle()
 		local frame = board.frame
-		assert.are.same(centred, frame.points)
+		assert.are.same({ { "CENTER", loaded.env.UIParent, "CENTER", 0, 40 } }, frame.points)
 
-		-- Where a drag leaves it: the client re-anchors a moved frame by its top left.
-		frame:GetScript("OnDragStart")(frame)
-		frame:ClearAllPoints()
-		frame:SetPoint("TOPLEFT", 40, -60)
-		frame:GetScript("OnDragStop")(frame)
+		frame:Drag({ "TOPLEFT", loaded.env.UIParent, "TOPLEFT", 40, -60 })
 		board:Toggle()
+		loaded.client.update(0.2)
 		board:Toggle()
 
-		assert.are.same(centred, frame.points)
+		assert.are.equal("TOPLEFT", fake.profile.books.hunts[1])
+		assert.are.equal("TOPLEFT", frame.points[1][1])
 	end)
 
 	it("opens and stays open while restricted (HNT-R68)", function()
@@ -224,17 +220,14 @@ describe("the Hunts board's pages, by the page router (HNT-R61, HNT-R66, HNT-R67
 end)
 
 describe("the Hunts board's leather (HNT-R61)", function()
-	it("has an anchor for the crumbs, the clock, the checkbox, the nameplate and the ribbons", function()
+	it("has the shell's anchors for the clock and the checkbox, at the strip's right (BOOK-R16)", function()
 		local _, _, board = loggedIn()
 		board:Toggle()
 
-		local missing = {}
-		for _, part in ipairs({ "crumbs", "clock", "completed", "nameplate", "ribbons" }) do
-			if type(board.frame.anchors[part]) ~= "table" then
-				missing[#missing + 1] = part
-			end
-		end
-		assert.are.same({}, missing)
+		local clock, completed = board.book.anchors.clock, board.book.anchors.completed
+		assert.are.same({ 280, 22 }, { clock.width, clock.height })
+		assert.are.same({ 150, 22 }, { completed.width, completed.height })
+		assert.are.same({ "TOPRIGHT", board.frame, "TOPRIGHT", -18, -11.5 }, completed.points[1])
 	end)
 
 	it("draws each anchor's renderer after the pages, so it sees the Hunt the timeline selected", function()
@@ -244,20 +237,47 @@ describe("the Hunts board's leather (HNT-R61)", function()
 			order[#order + 1] = "left"
 			board:Select("fixture_snapper")
 		end)
-		board:RegisterPage("board", "right", function()
-			order[#order + 1] = "right"
+		board:RegisterPage("board", "right", function(_, place)
+			order[#order + 1] = "right " .. tostring(place.hunt)
 		end)
-		board:RegisterLeather("crumbs", function(anchor, place)
-			order[#order + 1] = "crumbs"
-			assert.are.equal(board.frame.anchors.crumbs, anchor)
+		board:RegisterLeather("clock", function(anchor, place)
+			order[#order + 1] = "clock"
+			assert.are.equal(board.book.anchors.clock, anchor)
 			seen = place
 		end)
 
 		board:Toggle()
 
-		assert.are.same({ "left", "right", "crumbs" }, order)
+		assert.are.same({ "left", "right fixture_snapper", "clock" }, order)
 		assert.are.same({ mode = "board", hunt = "fixture_snapper" }, seen)
 		assert.are.equal(2, #board.router:Trail())
+	end)
+
+	it("lays the router's trail as the shell's crumbs, and follows a crumb the shell opens", function()
+		local _, _, board = loggedIn()
+		board:Open({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" })
+		local crumbs = board.frame.crumbButtons
+		assert.are.equal("Hunts", crumbs[1].label:GetText())
+		assert.is_true(crumbs[3]:IsShown())
+
+		crumbs[2]:Click()
+
+		assert.are.same({ mode = "set", set = "fixture_dusk" }, board.router:Place())
+		assert.is_false(crumbs[3]:IsShown())
+	end)
+
+	it("hangs Board, Pagle Wagers and a ribbon per set from 176 along the foot, each opening its place", function()
+		local _, _, board = loggedIn()
+		board:Toggle()
+		local ribbons = board.frame.ribbons
+		assert.are.same({ "board", "wagers" }, { ribbons[1].id, ribbons[2].id })
+		assert.are.equal(176, ribbons[1].points[1][4])
+		local dusk = board.book:RibbonFrame("fixture_dusk")
+
+		dusk:Click()
+
+		assert.are.same({ mode = "set", set = "fixture_dusk" }, board.router:Place())
+		assert.is_true(dusk.chosen)
 	end)
 
 	it("refuses an anchor it doesn't have", function()
@@ -270,35 +290,13 @@ describe("the Hunts board's leather (HNT-R61)", function()
 end)
 
 describe("the Hunts board's binding (HNT-R70)", function()
-	it("wears Core's binding on its frame, following the equipped one, and tints its pages' paper", function()
+	it("wears Core's binding on its frame, following the equipped one (BOOK-R10)", function()
 		local _, _, board = loggedIn()
 		board:Toggle()
 
-		local binding = board.frame.binding
+		local binding = board.book.binding
 		assert.is_nil(binding.pinned) -- it follows the equipped binding (BIND-R1)
 		assert.are.equal(binding:Look(), board:Look())
-		for _, side in ipairs({ "left", "right" }) do
-			assert.are.same(binding:Look().paperTint, board.frame.papers[side].paper.vertexColor)
-		end
-	end)
-
-	it("inks its crumbs and nameplate again from each new look while open (BIND-R3)", function()
-		local _, fake, board = loggedIn()
-		local inked = {}
-		board:RegisterLeather("crumbs", function()
-			inked[#inked + 1] = { "crumbs", board:Look() }
-		end)
-		board:RegisterLeather("nameplate", function()
-			inked[#inked + 1] = { "nameplate", board:Look() }
-		end)
-		board:Toggle()
-		inked = {}
-
-		board.frame.binding:SetLook("hunts.binding.fiveseal")
-
-		local fiveseal = fake.Pagle.GetBindingLook("hunts.binding.fiveseal")
-		assert.are.same({ { "crumbs", fiveseal }, { "nameplate", fiveseal } }, inked)
-		assert.are.same(fiveseal.paperTint, board.frame.papers.left.paper.vertexColor)
 	end)
 
 	it("keeps a binding pinned before the board was first opened, and follows the equipped one again after", function()
@@ -306,23 +304,11 @@ describe("the Hunts board's binding (HNT-R70)", function()
 
 		board:SetBinding("hunts.binding.pathfinder")
 		board:Toggle()
-		assert.are.equal("hunts.binding.pathfinder", board.frame.binding.pinned)
+		assert.are.equal("hunts.binding.pathfinder", board.book.binding.pinned)
 		assert.are.same(fake.Pagle.GetBindingLook("hunts.binding.pathfinder"), board:Look())
 
 		board:SetBinding(nil)
-		assert.is_nil(board.frame.binding.pinned)
-	end)
-
-	it("hangs the ribbons' tops under the binding's band, whatever the binding", function()
-		local loaded, _, board = loggedIn()
-		board:Toggle()
-		local ribbons = board.frame.anchors.ribbons
-		local tuck = loaded.ns.BOARD_RIBBON.tuck
-		assert.are.same({ "TOPLEFT", board.frame, "TOPLEFT", 176, -(600 - tuck) }, ribbons.points[1])
-
-		board:SetBinding("hunts.binding.wagersilk")
-
-		assert.are.same({ "TOPLEFT", board.frame, "TOPLEFT", 176, -(600 - tuck) }, ribbons.points[1])
+		assert.is_nil(board.book.binding.pinned)
 	end)
 end)
 

@@ -85,21 +85,34 @@ local function click(loaded, id, side, text)
 	control:Click()
 end
 
+-- Whether step `id`'s pages are on screen (its sheets on the shell's shown pages).
+local function showing(loaded, id)
+	local sides = loaded.ns.guideBook.sides[id]
+	return sides ~= nil
+		and sides.left ~= nil
+		and sides.right ~= nil
+		and sides.left.content:IsVisible()
+		and sides.right.content:IsVisible()
+end
+
 -- The step on the pages now: the id whose pages show.
 local function shownStep(loaded)
-	for id, sides in pairs(loaded.ns.guideBook.sides) do
-		if sides.left.clip.shown and sides.right.clip.shown then
+	for id in pairs(loaded.ns.guideBook.sides) do
+		if showing(loaded, id) then
 			return id
 		end
 	end
 	return nil
 end
 
--- Each ribbon as "<label> <state> <length>".
+-- Each of the shell's ribbons as "<label> <state> <length>": "on" the chosen, "done" ticked, else "plain".
 local function ribbons(loaded)
 	local list = {}
+	local ticks = loaded.ns.guideBook.book.ticks
 	for i, ribbon in ipairs(bookOf(loaded).ribbons) do
-		list[i] = ("%s %s %d"):format(ribbon.label.text, ribbon.state, ribbon.length)
+		local tick = ticks[ribbon]
+		local hung = ribbon.chosen and "on" or (tick and tick.shown and "done") or "plain"
+		list[i] = ("%s %s %d"):format(ribbon.label.text, hung, ribbon.length)
 	end
 	return list
 end
@@ -118,7 +131,7 @@ end
 
 describe("the Field guide's book (ONB-R20, ONB-R27)", function()
 	it(
-		"is PagleGuide, 920 x 600 in DIALOG over the world's dim at 0.58, closed until opened, in UISpecialFrames",
+		"is PagleGuide, 920 x 600, fixed, in DIALOG over the world's dim at 0.58, closed until opened, in UISpecialFrames",
 		function()
 			local loaded = withGuide()
 			assert.is_nil(bookOf(loaded))
@@ -130,7 +143,8 @@ describe("the Field guide's book (ONB-R20, ONB-R27)", function()
 			assert.are.equal("DIALOG", book:GetFrameStrata())
 			assert.is_true(book.dim:IsShown())
 			assert.are.equal(0.58, book.dim.children[1].color[4])
-			assert.are.equal("HIGH", book.dim:GetFrameStrata())
+			assert.are.equal("DIALOG", book.dim:GetFrameStrata())
+			assert.is_falsy(book.movable) -- fixed: no drag, nothing saved (BOOK-R6)
 			local listed = false
 			for _, name in ipairs(loaded.env.UISpecialFrames) do
 				listed = listed or name == "PagleGuide"
@@ -166,8 +180,10 @@ describe("the Field guide's book (ONB-R20, ONB-R27)", function()
 		pagle(loaded, "guide")
 
 		local book = bookOf(loaded)
-		assert.are.same({ "Pagle", "A field guide" }, { book.crumbs[1].text, book.crumbs[2].text })
-		assert.are.equal("|cfff6e3a81|r of 8", book.count.text)
+		local crumbs = book.crumbButtons
+		assert.are.same({ "Pagle", "A field guide" }, { crumbs[1].label.text, crumbs[2].label.text })
+		assert.is_nil(crumbs[1]:GetScript("OnClick"))
+		assert.are.equal("|cfff6e3a81|r of 8", book.stripText.text)
 	end)
 
 	it("closes with Esc and with its wax close, keeping guideStep (ONB-R20, ONB-R22)", function()
@@ -199,7 +215,7 @@ describe("the Field guide's book (ONB-R20, ONB-R27)", function()
 			loaded.env.UIParent:SetSize(1188, 668)
 			loaded.client.fire("UI_SCALE_CHANGED")
 
-			assert.are.near((668 - 48) / 760, bookOf(loaded):GetScale(), 1e-9)
+			assert.are.near((668 - 48) / 700, bookOf(loaded):GetScale(), 1e-9)
 		end
 	)
 end)
@@ -212,7 +228,9 @@ describe("the Field guide's steps (ONB-R21, ONB-R90)", function()
 
 		local walked = {}
 		for _ = 1, 8 do
-			walked[#walked + 1] = shownStep(loaded) .. " " .. bookOf(loaded).count.text:gsub("|c%x%x%x%x%x%x%x%x", "")
+			walked[#walked + 1] = shownStep(loaded)
+				.. " "
+				.. bookOf(loaded).stripText.text:gsub("|c%x%x%x%x%x%x%x%x", "")
 			loaded.ns.guide:Next()
 		end
 
@@ -234,7 +252,7 @@ describe("the Field guide's steps (ONB-R21, ONB-R90)", function()
 		pagle(loaded, "guide")
 
 		assert.are.equal(7, #bookOf(loaded).ribbons)
-		assert.are.equal("|cfff6e3a81|r of 7", bookOf(loaded).count.text)
+		assert.are.equal("|cfff6e3a81|r of 7", bookOf(loaded).stripText.text)
 	end)
 
 	it("raises an error at the Module's call for a step missing its build, adding nothing (ONB-R90)", function()
@@ -374,7 +392,7 @@ describe("moving through the Field guide (ONB-R22–R24, ONB-R26)", function()
 	end)
 
 	it(
-		"hangs a ribbon per step: the current 110 long, seen ones ticked, the rest not; a click turns (ONB-R24)",
+		"hangs the shell's ribbon per step: the current chosen, seen ones ticked, the rest dimmed; a click turns (ONB-R24)",
 		function()
 			local loaded = withGuide()
 			stillness(loaded)
@@ -382,24 +400,27 @@ describe("moving through the Field guide (ONB-R22–R24, ONB-R26)", function()
 			loaded.ns.guide:Next()
 
 			assert.are.same({
-				"Welcome done 92",
-				"What’s in the box on 110",
-				"Ribbon casting plain 92",
-				"Ribbon clothes plain 92",
-				"Moments plain 92",
-				"Ribbon ledger plain 92",
-				"Ribbon board plain 92",
-				"Off you go plain 92",
+				"Welcome done 75",
+				"What’s in the box on 86",
+				"Ribbon casting plain 75",
+				"Ribbon clothes plain 75",
+				"Moments plain 75",
+				"Ribbon ledger plain 75",
+				"Ribbon board plain 75",
+				"Off you go plain 75",
 			}, ribbons(loaded))
 			local book = bookOf(loaded)
-			local first, second = book.ribbons[1].points[1], book.ribbons[2].points[1]
-			assert.are.same({ 40, -586 }, { first[4], first[5] })
-			assert.are.equal(98 + 8, second[4] - first[4])
-			assert.are.equal(98, book.ribbons[1].width)
-			assert.is_true(book.ribbons[1]:GetFrameLevel() < book.binding.skin.band:GetFrameLevel())
+			local red = loaded.ns.GUIDE_RIBBON.color
+			assert.are.same(red, book.ribbons[1].color)
+			assert.are.near(red[1] * 0.82, book.ribbons[3].color[1], 1e-9)
 
 			book.ribbons[6]:Click()
 			assert.are.equal("ledger", shownStep(loaded))
+			assert.are.equal("ledger", state(loaded).guideStep)
+			assert.is_true(state(loaded).stepsSeen.ledger)
+			assert.are.equal("|cfff6e3a86|r of 8", book.stripText.text)
+			assert.are.equal("Ribbon ledger on 86", ribbons(loaded)[6])
+			assert.are.equal("What’s in the box done 75", ribbons(loaded)[2])
 			book.ribbons[1]:Click()
 			assert.are.equal("welcome", shownStep(loaded))
 		end
@@ -516,31 +537,32 @@ describe("the Field guide's motion and sound (core/onboarding.md › Motion, ›
 		loaded.client.sounds = {}
 
 		loaded.ns.guide:Next()
-		local sides = loaded.ns.guideBook.sides
-		assert.is_true(sides.welcome.left.clip.shown)
+		assert.is_true(showing(loaded, "welcome"))
 		assert.is_true(bookOf(loaded).turnFold.shown)
+		assert.are.equal("|cfff6e3a81|r of 8", bookOf(loaded).stripText.text) -- the count waits for the spine
 		play(loaded, 0.6)
 
 		assert.are.equal("box", shownStep(loaded))
-		assert.is_false(sides.welcome.left.clip.shown)
-		assert.is_false(sides.welcome.right.clip.shown)
+		assert.are.equal("|cfff6e3a82|r of 8", bookOf(loaded).stripText.text)
+		assert.is_false(loaded.ns.guideBook.sides.welcome.left.content:IsVisible())
+		assert.is_false(loaded.ns.guideBook.sides.welcome.right.content:IsVisible())
 		assert.is_false(bookOf(loaded).turnFold.shown)
 		assert.are.same({ SOUND_TURN }, loaded.client.sounds)
 	end)
 
-	it("drops the new current ribbon from 92 to 110 as the old one draws up, over 0.2 s", function()
+	it("drops the new current ribbon from 75 to 86 as the old one draws up, over 0.2 s (BOOK-R17)", function()
 		local loaded = withGuide()
 		pagle(loaded, "guide")
 		play(loaded, 0.2)
 
 		loaded.ns.guide:Next()
 		local ribbonsNow = bookOf(loaded).ribbons
-		assert.are.same({ 110, 92 }, { ribbonsNow[1].length, ribbonsNow[2].length })
+		assert.are.same({ 86, 75 }, { ribbonsNow[1].length, ribbonsNow[2].length })
 		play(loaded, 0.1)
-		assert.is_true(ribbonsNow[2].length > 92 and ribbonsNow[2].length < 110)
+		assert.is_true(ribbonsNow[2].length > 75 and ribbonsNow[2].length < 86)
 		play(loaded, 0.15)
 
-		assert.are.same({ 92, 110 }, { ribbonsNow[1].length, ribbonsNow[2].length })
+		assert.are.same({ 75, 86 }, { ribbonsNow[1].length, ribbonsNow[2].length })
 	end)
 
 	it("appears settled with Animations off: whole at once, page turns at once and silent", function()
@@ -553,8 +575,8 @@ describe("the Field guide's motion and sound (core/onboarding.md › Motion, ›
 		assert.are.equal(1, book.alpha)
 		loaded.ns.guide:Next()
 		assert.are.equal("box", shownStep(loaded))
-		assert.is_false(loaded.ns.guideBook.sides.welcome.left.clip.shown)
-		assert.are.same({ 92, 110 }, { book.ribbons[1].length, book.ribbons[2].length })
+		assert.is_false(showing(loaded, "welcome"))
+		assert.are.same({ 75, 86 }, { book.ribbons[1].length, book.ribbons[2].length })
 		loaded.ns.guide:Close()
 
 		assert.is_false(book:IsShown())

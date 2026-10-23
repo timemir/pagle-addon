@@ -284,8 +284,7 @@ end
 ---@param kind string
 ---@return LedgerJournalWidget[]
 local function drawnOf(journal, side, kind)
-	local frame = journal.frame
-	local page = frame and frame[side]
+	local page = journal.shown[side]
 	return page and page.drawn[kind] or {}
 end
 
@@ -339,7 +338,7 @@ local TARGETS = {
 		return note and (note.label or note)
 	end,
 	search = function(journal)
-		local search = journal.frame and journal.frame.search
+		local search = journal.search
 		return search and search:IsShown() and search or nil
 	end,
 	unfished = function(journal)
@@ -401,18 +400,20 @@ function ns.RegisterJournalFirstLook(M)
 	ns.journalLook = true
 end
 
---- The book was made (adapter/Journal.lua): its "?" shows beside the wax close while its First look is registered
---- with a Core that shows it; pressing it shows the set again, seen or not, or hides it while it shows (ONB-R59).
----@param frame LedgerJournalFrame
-function ns.AttachJournalLook(frame)
+--- Whether the book's "?" shows beside the wax close (ONB-R59, BOOK-R15): while the Journal's First look is
+--- registered with a Core that shows it.
+---@return boolean
+function ns.JournalHelpShown()
 	local M = ns.Module
-	if not (ns.journalLook and M and M.ShowFirstLook) then
-		return
-	end
-	frame.look.action = function()
+	return ns.journalLook == true and M ~= nil and M.ShowFirstLook ~= nil
+end
+
+--- The "?" pressed (ONB-R59): shows the Journal's First look again, seen or not, or hides it while it shows.
+function ns.ShowJournalLookAgain()
+	local M = ns.Module
+	if ns.journalLook and M and M.ShowFirstLook then
 		M:ShowFirstLook(LOOK.id, true)
 	end
-	frame.look:Show()
 end
 
 -- Whether a Session has ended yet (ONB-R52), remembered once it has: once SessionEnded has fired, the Session it ended

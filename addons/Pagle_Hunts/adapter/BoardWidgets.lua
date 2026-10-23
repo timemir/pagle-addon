@@ -5,18 +5,46 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- The Hunts board's art (HNT-R60's second paragraph): its tints and fonts, and a widget maker for each piece the board,
--- its pages and the tracker draw, in the books art kit (the dev's PagleArtBooks probe, a fork of the Fish Journal's
--- book shell): parchment pages with their gutter, the wax close button, the brass nameplate (silver under a binding
--- that asks for it), grosgrain set ribbons, the wax seal (pressed, or the dashed "not yet"), the ink bar, the
--- timeline's bars, item medallions in their tier's ring (HNT-R18), tier marks, group dots, and the fleuron and
--- pointing-hand marks, drawn as textures, never as font glyphs. The sprites are adapter/BookAtlas.lua's, drawn with
--- adapter/BookArt.lua's helpers. Hunts shares no code with the Fish Journal or Stats (ADR 0001); the shell's textures
--- are Core's media, which both books read. The leather round the pages is Core's binding (Pagle.NewBookBinding, ADR
--- 0015), which adapter/Board.lua puts on the board.
+-- The Hunts board's art (HNT-R60's second paragraph): its tints and fonts, its sounds, and a widget maker for each
+-- piece its pages and the tracker draw, in the books art kit (the dev's PagleArtBooks probe): the wax seal (pressed,
+-- or the dashed "not yet"), the ink bar, the timeline's bars, item medallions in their tier's ring (HNT-R18), tier
+-- marks, group dots, the pointing hand and the "show completed" box, drawn as textures, never as font glyphs. The
+-- sprites are adapter/BookAtlas.lua's, drawn with adapter/BookArt.lua's helpers. The book round the pages (the window,
+-- the binding, the parchment, the crumbs, the nameplate, the wax close and "?", the ribbons and the page turn) is
+-- Core's shell, `Pagle.NewBook` (ADR 0016), which adapter/Board.lua opens.
 --
 -- The kit's shared pieces every board adapter uses: ns.BoardTint, ns.BoardOutline, ns.BoardTooltip and the pools
 -- (ns.BoardPooled, ns.BoardHideFrom).
+
+--- Whether things move: Core's Animations setting, `Pagle.IsAnimationsOn()` (announcements.md › Contracts; on by
+--- default). Core's driver reads it too, so the board asks only to choose what it draws.
+---@return boolean
+function ns.MotionOn()
+	return Pagle.IsAnimationsOn() ~= false
+end
+
+-- The books kit's sounds (SOUND.md) the board plays itself, by the client's sound kit ids, on the SFX channel: UI
+-- foley, never part of a sound set, with no setting of Pagle's own (the client's SFX volume is their switch). The
+-- book's opening, closing and page turn are the shell's (BOOK-R4, BOOK-R31).
+---@type table<string, integer>
+ns.BOARD_SOUNDS = {
+	check = 856, -- IG_MAINMENU_OPTION_CHECKBOX_ON: "show completed"
+	uncheck = 857, -- IG_MAINMENU_OPTION_CHECKBOX_OFF
+	huntOpens = 3175, -- MAP_PING: a Hunt's window opens while the board is open
+	write = 3093, -- IG_WRITE_QUEST: a catch is written into the Hunt's count
+}
+-- The beats tied to a motion, which play only while things move: the ink running on.
+local MOTION_TIED = { write = true }
+
+--- Plays the board's sound `name` (ns.BOARD_SOUNDS) on the SFX channel; a beat tied to a motion only while things move.
+---@param name string
+function ns.BoardSound(name)
+	local id = assert(ns.BOARD_SOUNDS[name], "the board has no sound " .. tostring(name))
+	if MOTION_TIED[name] and not ns.MotionOn() then
+		return
+	end
+	PlaySound(id, "SFX")
+end
 
 --- A tint from its hex code, as the kit's canvas writes it: { r, g, b }, 0 to 1.
 ---@param hex string "RRGGBB"
@@ -32,8 +60,7 @@ local tint = ns.BoardTint
 
 --- The board's tints, the books kit's design-system colours.
 ns.BOARD_LOOK = {
-	gilt = tint("e8c96a"), -- the breadcrumbs on the leather
-	giltBright = tint("fff4c8"), -- a crumb under the mouse
+	gilt = tint("e8c96a"), -- the "show completed" box's edge
 	clock = tint("f6e3a8"), -- the realm clock
 	clockJoin = tint("c9b27a"), -- the clock's dots
 	checkLabel = tint("e8d6a8"), -- "show completed"
@@ -63,12 +90,9 @@ ns.BOARD_LOOK = {
 	sealText = tint("f4dfa8"), -- a pressed seal's words
 	sealOff = tint("b8a080"), -- the dashed "not yet"
 	sepia = tint("dcb37a"), -- an item icon's tint over its greys (CSS sepia(.75))
-	plateText = tint("2a1a04"), -- the brass nameplate's words
 	chipText = tint("3a2614"),
 	here = tint("2a6a2a"), -- "you're here"
 	unconfirmed = tint("6a3a8a"), -- the unconfirmed chip's words
-	ribbonLabel = tint("efd286"), -- a ribbon's words
-	ribbonLabelOn = tint("fff0bc"), -- the chosen ribbon's
 	--- Tier trims (HNT-R18), by ns.Trim's names: the medallions' rings and the trims' other uses.
 	trims = { bronze = tint("a8652a"), silver = tint("c9ccd3"), gold = tint("f2c230") },
 	--- The tier marks' inks on the ladder, by trim.
@@ -127,14 +151,11 @@ local TEXTURES = ns.BOARD_TEXTURES
 ---@field count Font     -- a group's count, "next 22h" (17)
 ---@field inkCount Font  -- the ink bar's words (19)
 ---@field pin Font       -- "Pinned" (18)
----@field crumb Font     -- the leather's breadcrumbs (Marcellus, 14, shadowed)
 ---@field clock Font     -- the realm clock (14, shadowed)
 ---@field check Font     -- "show completed" (italic 13.5, shadowed)
 ---@field tier Font      -- a tier's threshold (Marcellus, 15)
 ---@field seal Font      -- a seal's date (13.5)
 ---@field sealSmall Font -- a seal's word and year (IM Fell, 9.5)
----@field ribbon Font    -- a ribbon's words (Marcellus 12, shadowed)
----@field plate Font     -- the nameplate (12)
 ---@field legend Font    -- the legend (italic 12.5)
 ---@field tick Font      -- the ruler's hours (12)
 local fonts
@@ -156,14 +177,11 @@ function ns.BoardFonts()
 			count = font("hand", 17),
 			inkCount = font("hand", 19),
 			pin = font("hand", 18),
-			crumb = font("gilt", 14, true),
 			clock = font("gilt", 14, true),
 			check = font("italic", 13.5, true),
 			tier = font("gilt", 15),
 			seal = font("gilt", 13.5),
 			sealSmall = font("print", 9.5),
-			ribbon = font("gilt", 12, true),
-			plate = font("gilt", 12),
 			legend = font("italic", 12.5),
 			tick = font("print", 12),
 		}
@@ -386,245 +404,6 @@ function ns.BoardHideFrom(pool, used)
 	for i = used + 1, #pool do
 		pool[i]:Hide()
 	end
-end
-
---- A parchment page on `frame`, filling it: the kit's parchment (mirrored on a right page, so the two don't match) and
---- the gutter's shade along the side `spine` names.
----@class BoardParchmentView
----@field paper Texture
----@field gutter Texture?
----@field corners MaskTexture[]   -- the rounded outer corners
-
--- The gutter's width at the spine.
-local GUTTER_WIDTH = 40
-
----@param frame Frame
----@param spine "LEFT"|"RIGHT"|nil
----@return BoardParchmentView
-function ns.NewBoardParchment(frame, spine)
-	local view = {}
-	view.paper = ns.ArtCrisp(frame:CreateTexture(nil, "BACKGROUND"))
-	view.paper:SetTexture(ns.BOOK_FILES.parchment)
-	view.paper:SetAllPoints()
-	if spine == "LEFT" then
-		view.paper:SetTexCoord(1, 0, 0, 1)
-	end
-	-- its outer corners slightly rounded, the corners at the spine square, as a bound page is
-	local outer = spine == "RIGHT" and { "TOPLEFT", "BOTTOMLEFT" }
-		or spine == "LEFT" and { "TOPRIGHT", "BOTTOMRIGHT" }
-		or { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }
-	view.corners = ns.RoundCorners(view.paper, frame, outer)
-	if spine then
-		local atlas, sprite = ns.ArtSpriteOf("Book", "gutter")
-		local gutter = ns.ArtCrisp(frame:CreateTexture(nil, "BORDER"))
-		ns.ArtCut(gutter, atlas, sprite.x + 1, sprite.y + 1, sprite.w - 2, sprite.h - 2)
-		gutter:SetWidth(GUTTER_WIDTH)
-		gutter:SetPoint("TOP" .. spine)
-		gutter:SetPoint("BOTTOM" .. spine)
-		if spine == "LEFT" then
-			local left, right, top, bottom =
-				(sprite.x + 1) / atlas.width,
-				(sprite.x + sprite.w - 1) / atlas.width,
-				(sprite.y + 1) / atlas.height,
-				(sprite.y + sprite.h - 1) / atlas.height
-			gutter:SetTexCoord(right, left, top, bottom)
-		end
-		view.gutter = gutter
-	end
-	return view
-end
-
---- The wax close button (HNT-R60): a round seal of red wax with a cross, pressed when clicked, glowing under the mouse.
----@class BoardCloseButton: Button
----@field normal Texture
----@field pushed Texture
----@field glow Texture
-
----@param parent Frame
----@return BoardCloseButton
-function ns.NewBoardClose(parent)
-	local close = CreateFrame("Button", nil, parent) --[[@as BoardCloseButton]]
-	close:SetSize(26, 26)
-	close.normal = ns.ArtSprite(close, "Book", "close", "ARTWORK", 0, 26)
-	close.normal:SetAllPoints()
-	close.pushed = ns.ArtSprite(close, "Book", "close-pushed", "ARTWORK", 1, 26)
-	close.pushed:SetAllPoints()
-	close.pushed:Hide()
-	close.glow = ns.ArtSprite(close, "Book", "close-highlight", "HIGHLIGHT", 0, 26)
-	close.glow:SetAllPoints()
-	close.glow:SetBlendMode("ADD")
-	close:SetScript("OnMouseDown", function(self)
-		self.pushed:Show()
-	end)
-	close:SetScript("OnMouseUp", function(self)
-		self.pushed:Hide()
-	end)
-	return close
-end
-
---- The "?" beside the close (ONB-R59), in the board's own wax: the plain seal of red wax at the close's size with a
---- gilt "?" pressed into it, the close's glow under the mouse, the wax darker while pressed, and its tooltip in the
---- board's GameTooltip. Its click is adapter/Look.lua's.
----@class BoardHelpButton: Button
----@field wax Texture
----@field glow Texture
----@field label FontString
-
--- The "?"'s size (the close's) and the wax's shade while pressed.
-local HELP_SIZE, HELP_PRESSED = 26, 0.78
-
----@param parent Frame
----@param tooltip string the tooltip's words
----@return BoardHelpButton
-function ns.NewBoardHelp(parent, tooltip)
-	local help = CreateFrame("Button", nil, parent) --[[@as BoardHelpButton]]
-	help:SetSize(HELP_SIZE, HELP_SIZE)
-	help.wax = ns.ArtSprite(help, "Book", "seal", "ARTWORK", 0, HELP_SIZE)
-	help.wax:SetAllPoints()
-	help.label = ns.BoardText(help, ns.ArtFont("gilt", 17, true), LOOK.sealText)
-	help.label:SetJustifyH("CENTER")
-	help.label:SetPoint("CENTER", 0, 1)
-	help.label:SetText(ns.L.LOOK_HELP)
-	help.glow = ns.ArtSprite(help, "Book", "close-highlight", "HIGHLIGHT", 0, HELP_SIZE)
-	help.glow:SetAllPoints()
-	help.glow:SetBlendMode("ADD")
-	help:SetScript("OnMouseDown", function(self)
-		self.wax:SetVertexColor(HELP_PRESSED, HELP_PRESSED, HELP_PRESSED)
-	end)
-	help:SetScript("OnMouseUp", function(self)
-		self.wax:SetVertexColor(1, 1, 1)
-	end)
-	help:SetScript("OnEnter", function(self)
-		ns.BoardTooltip(self, { tooltip })
-	end)
-	help:SetScript("OnLeave", function()
-		GameTooltip:Hide()
-	end)
-	return help
-end
-
---- A grosgrain set ribbon (HNT-R61): one white ribbon tinted to its colour, with a gold running stitch over it, hanging
---- from under the leather's foot, its words in gilt near its swallowtail end. The chosen one hangs longer and brighter;
---- one under the mouse brightens. adapter/Sets.lua lays them along the leather's ribbons anchor.
----@class BoardRibbonView: Button
----@field body Texture
----@field stitch Texture
----@field label FontString
----@field count FontString      -- the Pagle Wagers ribbon's "{n} on" under its name (HNT-R162), in the hand
----@field chosen boolean
----@field hover boolean
----@field wagers boolean?       -- the Pagle Wagers ribbon (adapter/Sets.lua)
----@field color number[]
----@field tooltip string[]?
----@field length number?        -- how long it hangs now
----@field SetRibbon fun(self: BoardRibbonView, text: string, color: number[], chosen: boolean, animate: boolean?) -- with
---- `animate`, a change of length eases (the kit's Ribbons.lua)
----@field SetCount fun(self: BoardRibbonView, count: string?) -- the words under its name, or none; the name rises
---- over them
-
---- The ribbons' measures (the kit's Hunts board, hanging a fifth shorter, as the dev asked): each one's width and the
---- gap between, how long it hangs (longer chosen), how much of its top tucks under the leather's band, its words'
---- inset, and how much brighter it turns.
-ns.BOARD_RIBBON = { width = 104, gap = 10, length = 83, lengthChosen = 96, tuck = 10, pad = 13, lift = 1.13 }
-local RIBBON = ns.BOARD_RIBBON
--- Where a ribbon's words sit above its swallowtail end: its name, its name over a count, and the count.
-local RIBBON_LABEL_Y, RIBBON_LABEL_OVER_Y, RIBBON_COUNT_Y = 31, 38, 17
-
--- Shows the bottom `length` units of ribbon sprite `name` (its swallowtail end always shows) in `texture`, the
--- ribbon's width across, from `ribbon`'s top left.
----@param texture Texture
----@param ribbon Frame
----@param name string
----@param length number
-local function hang(texture, ribbon, name, length)
-	local atlas, sprite = ns.ArtSpriteOf("Parts", name)
-	local box = sprite.box
-	local k = RIBBON.width / box[3]
-	local dropped = (box[4] - length) * atlas.scale
-	ns.ArtCut(texture, atlas, sprite.x, sprite.y + dropped, sprite.w, sprite.h - dropped)
-	texture:SetSize(sprite.w / atlas.scale * k, sprite.h / atlas.scale - box[4] + length)
-	texture:ClearAllPoints()
-	texture:SetPoint("TOPLEFT", ribbon, "TOPLEFT", -box[1] * k, 0)
-end
-
--- Hangs a ribbon `length` units below the leather.
----@param ribbon BoardRibbonView
----@param length number
-local function lengthen(ribbon, length)
-	ribbon.length = length
-	ribbon:SetSize(RIBBON.width, length)
-	hang(ribbon.body, ribbon, "ribbon", length)
-	hang(ribbon.stitch, ribbon, "ribbon-stitch", length)
-end
-
--- Paints a ribbon's tint (brighter chosen or under the mouse) and its words' ink.
----@param ribbon BoardRibbonView
-local function paintRibbon(ribbon)
-	local lift = (ribbon.chosen or ribbon.hover) and RIBBON.lift or 1
-	local color = ribbon.color
-	ribbon.body:SetVertexColor(math.min(1, color[1] * lift), math.min(1, color[2] * lift), math.min(1, color[3] * lift))
-	local ink = ribbon.chosen and LOOK.ribbonLabelOn or LOOK.ribbonLabel
-	ribbon.label:SetTextColor(ink[1], ink[2], ink[3])
-end
-
----@param parent Frame
----@return BoardRibbonView
-function ns.NewBoardRibbon(parent)
-	local ribbon = CreateFrame("Button", nil, parent) --[[@as BoardRibbonView]]
-	ribbon.body = ns.ArtCrisp(ribbon:CreateTexture(nil, "ARTWORK", nil, 0))
-	ribbon.stitch = ns.ArtCrisp(ribbon:CreateTexture(nil, "ARTWORK", nil, 1))
-	ribbon.label = ns.BoardText(ribbon, ns.BoardFonts().ribbon, LOOK.ribbonLabel)
-	ribbon.label:SetJustifyH("CENTER")
-	ns.BoardWrap(ribbon.label, RIBBON.width - 2 * RIBBON.pad, 1)
-	ribbon.label:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, RIBBON_LABEL_Y)
-	-- "{n} on" in the hand under the name (the variant A prototype's `.ribbon .count`), over the swallowtail's notch
-	ribbon.count = ns.BoardText(ribbon, ns.ArtFont("hand", 15, true), LOOK.gilt)
-	ribbon.count:SetJustifyH("CENTER")
-	ribbon.count:SetWordWrap(false)
-	ribbon.count:SetPoint("BOTTOM", ribbon, "BOTTOM", 0, RIBBON_COUNT_Y)
-	ribbon.count:Hide()
-	ribbon.chosen, ribbon.hover, ribbon.color = false, false, LOOK.boardRibbon
-	ribbon:SetScript("OnEnter", function(self)
-		self.hover = true
-		paintRibbon(self)
-		if self.tooltip then
-			ns.BoardTooltip(self, self.tooltip)
-		end
-	end)
-	ribbon:SetScript("OnLeave", function(self)
-		self.hover = false
-		paintRibbon(self)
-		GameTooltip:Hide()
-	end)
-	function ribbon.SetRibbon(self, text, color, chosen, animate)
-		self.label:SetText(text)
-		self.color, self.chosen = color, chosen
-		paintRibbon(self)
-		local length = chosen and RIBBON.lengthChosen or RIBBON.length
-		Pagle.StopMotion(self)
-		if animate and self.length and self.length ~= length and ns.MotionOn() then
-			-- the old one draws up as the new one drops (0.2 s, ease-out)
-			Pagle.Animate(self, {
-				{
-					dur = 0.2,
-					ease = Pagle.EASE.out,
-					keys = { { 0, { self.length } }, { 1, { length } } },
-					apply = function(v)
-						lengthen(self, v[1])
-					end,
-				},
-			})
-		else
-			lengthen(self, length)
-		end
-	end
-	function ribbon.SetCount(self, count)
-		self.count:SetText(count or "")
-		self.count:SetShown(count ~= nil)
-		self.label:ClearAllPoints()
-		self.label:SetPoint("BOTTOM", self, "BOTTOM", 0, count and RIBBON_LABEL_OVER_Y or RIBBON_LABEL_Y)
-	end
-	return ribbon
 end
 
 --- A wax seal (HNT-R64, HNT-R66): pressed red wax, tilted, with its words (a word, a date and a year, one above the
@@ -923,68 +702,17 @@ function ns.NewBoardDot(parent, size)
 	return dot
 end
 
---- A mark drawn as a texture (HNT-R60): the kit's gilt fleuron between crumbs (HNT-R61), or the pointing hand before
---- "back to {set}" (HNT-R66) in red ink.
----@alias BoardMark "fleuron"|"hand"
-
+--- The pointing hand before "back to {set}" (HNT-R66), in red ink: a texture, never a font glyph (HNT-R60).
 ---@param parent Frame
----@param mark BoardMark
 ---@param size number
 ---@return Texture
-function ns.NewBoardMark(parent, mark, size)
-	if mark == "fleuron" then
-		return ns.ArtSprite(parent, "Book", "fleuron", "ARTWORK", 0, size)
-	end
-	assert(mark == "hand", "no mark " .. tostring(mark))
+function ns.NewBoardHand(parent, size)
 	local texture = parent:CreateTexture(nil, "ARTWORK")
 	texture:SetTexture(TEXTURES.hand)
 	texture:SetSize(size, size)
 	texture:SetDesaturated(true)
 	texture:SetVertexColor(LOOK.red[1], LOOK.red[2], LOOK.red[3])
 	return texture
-end
-
---- The brass nameplate (HNT-R61): the kit's brass plate, three-sliced to its words, hidden with none.
----@class BoardPlateView: Frame
----@field brass HuntsThreeSlice
----@field label FontString
----@field SetPlate fun(self: BoardPlateView, text: string?)
----@field SetSilver fun(self: BoardPlateView, silver: boolean?) -- the brass toned silver, as a binding asks (HNT-R70)
-
--- The plate's end caps, and the room its words leave; a silver plate's lift, and its blue's.
-local PLATE_CAP, PLATE_ROOM = 8, 22
-local SILVER_LIFT, SILVER_BLUE = 1.1, 1.15
-
----@param parent Frame
----@return BoardPlateView
-function ns.NewBoardPlate(parent)
-	local plate = CreateFrame("Frame", nil, parent) --[[@as BoardPlateView]]
-	plate.brass = CreateFrame("Frame", nil, plate) --[[@as HuntsThreeSlice]]
-	plate.brass:SetPoint("TOPLEFT")
-	-- on the brass's own frame, which draws over the plate's: its words over its slices
-	plate.label = ns.BoardText(plate.brass, ns.BoardFonts().plate, LOOK.plateText)
-	plate.label:SetPoint("CENTER", plate, "CENTER", 0, 1)
-	function plate.SetPlate(self, text)
-		self.label:SetText(text or "")
-		local width = math.ceil(self.label:GetStringWidth()) + PLATE_ROOM
-		ns.SetThreeSlice(self.brass, "Book", "plate", width, PLATE_CAP, "ARTWORK")
-		self:SetSize(width, self.brass:GetHeight())
-		self:SetShown(text ~= nil)
-	end
-	-- the brass desaturated and lifted a little toward blue, as the Fish Journal tones its plate; its slices are made
-	-- by its first SetPlate
-	function plate.SetSilver(self, silver)
-		local brass = self.brass
-		for _, slice in ipairs({ brass.left, brass.middle, brass.right }) do
-			slice:SetDesaturated(silver == true)
-			if silver then
-				slice:SetVertexColor(SILVER_LIFT, SILVER_LIFT, SILVER_BLUE)
-			else
-				slice:SetVertexColor(1, 1, 1)
-			end
-		end
-	end
-	return plate
 end
 
 --- The "show completed" box on the leather (HNT-R61, HNT-R82): a small gilt-edged box, filled with the kit's gilt

@@ -10,7 +10,7 @@ local ns = select(2, ...)
 -- "since", Your odds, the Dry spell and "nothing is owed", Watch, and "Stats never pops up". Core draws the notes and
 -- the coach bar (ONB-R92); this file says what each note points at and when the set shows, through Stats' handle
 -- alone (ADR 0001), each call only on a Core that has it (ONB-R90). The book's "?" beside its close is
--- adapter/Book.lua's, in its wax (adapter/BookWidgets.lua's ns.NewBookHelp).
+-- Core's shell's (BOOK-R15), its click adapter/Book.lua's.
 --
 -- The book opens on the home spread (STA-R70), which has none of the set's regions. So the first time the set would
 -- show, the book opens on its spread instead: on an opening at the home spread it turns to that spread before it is
@@ -49,11 +49,11 @@ local function shownEntry()
 	if not book:IsShown() or ns.IsUpdating() then
 		return nil
 	end
-	local place = book.router:Place()
+	local place = book:Place()
 	if place.page ~= "place" or not place.item then
 		return nil
 	end
-	local right = book.pages["place:right"]
+	local right = book:Drawn("place", "right")
 	local frame = right and ns.PlaceEntryFrame(right.content)
 	local view = frame and frame.entryView
 	if view and view.toggle:IsVisible() then
@@ -106,7 +106,7 @@ function ns.BookFirstLook()
 				-- the first row's short odds, its Dry spell in the margin beside them
 				text = L.LOOK_ODDS_SINCE,
 				target = onSpread(function()
-					local left = ns.book.pages["place:left"]
+					local left = ns.book:Drawn("place", "left")
 					local row = left and ns.PlaceFirstRow(left.content)
 					return row and row.odds
 				end),
@@ -175,19 +175,17 @@ function ns.ShowBookLook()
 		return
 	end
 	local book = ns.book
-	if declined or book.router:Place().page ~= "home" then
+	if declined or book:Place().page ~= "home" then
 		return
 	end
 	local target = lookTarget()
 	if not target then
 		return
 	end
-	book.router:Open(target)
-	book:Draw()
+	book:Open(target, { motion = "still" })
 	if not M:ShowFirstLook(ns.BOOK_LOOK_ID) then
 		declined = true
-		book.router:Open({ page = "home" })
-		book:Draw()
+		book:Open({ page = "home" }, { motion = "still" })
 	end
 end
 
@@ -200,7 +198,7 @@ function ns.ShowBookLookAgain()
 		return
 	end
 	if not shownEntry() then
-		local place = ns.book.router:Place()
+		local place = ns.book:Place()
 		local target = (place.page == "place" and lookTarget(place.area)) or lookTarget()
 		if target then
 			ns.book:Open(target)

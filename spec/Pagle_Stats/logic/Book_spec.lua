@@ -1,6 +1,6 @@
--- The Stats book's page router (STA-R70, STA-R74): which page shows, with what chosen on it, which renderer draws each
--- side, the breadcrumb trail and where each ribbon goes. Pure logic, on the fixture catalogue's places: Darkshore
--- (148) with its subzone Auberdine (442), and Elwynn Forest (12).
+-- The Stats book's pages on Core's page router (STA-R70, STA-R74; core/book.md, BOOK-R20): which page shows, with
+-- what chosen on it, which renderer draws each side, the breadcrumb trail and where each ribbon goes. Pure logic, on
+-- the fixture catalogue's places: Darkshore (148) with its subzone Auberdine (442), and Elwynn Forest (12).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local stats = dofile("spec/Pagle_Stats/support.lua")
@@ -8,10 +8,11 @@ local stats = dofile("spec/Pagle_Stats/support.lua")
 local DARKSHORE, AUBERDINE, ELWYNN = 148, 442, 12
 local NIGHTFIN = 13759
 
--- A new router, and Stats' namespace.
+-- Core's router over the Stats book's pages, on the home spread as the book starts, and Stats' namespace.
 local function newRouter()
-	local loaded = stats.load()
-	return loaded.ns.NewBookRouter(), loaded.ns
+	local fake = newFakePagle()
+	local loaded = stats.load(fake)
+	return fake.ns.NewBookRouter(loaded.ns.BOOK_PAGES, { page = "home" }), loaded.ns
 end
 
 -- The fixture's zones: Auberdine is in Darkshore; every other place here is a zone.
@@ -21,9 +22,9 @@ end
 
 -- The trail's crumbs as "kind id -> page area item" strings, "-" for nothing and no arrow for a crumb that does
 -- nothing.
-local function trailOf(router)
+local function trailOf(router, ns)
 	local out = {}
-	for i, crumb in ipairs(router:Trail(zoneOf)) do
+	for i, crumb in ipairs(ns.BookTrail(router:Place(), zoneOf)) do
 		local line = crumb.kind .. " " .. tostring(crumb.id or "-")
 		local target = crumb.target
 		if target then
@@ -70,13 +71,13 @@ describe("the Stats book's router (STA-R70, STA-R74)", function()
 
 		assert.error_matches(function()
 			router:Open({ page = "journal" })
-		end, "the Stats book has no page journal", nil, true)
+		end, "the book has no page journal", nil, true)
 		assert.error_matches(function()
 			router:Open({ page = "place" })
-		end, "a Stats book place page needs its area", nil, true)
+		end, "a place page needs its area", nil, true)
 		assert.error_matches(function()
 			router:Open({ page = "item", area = DARKSHORE })
-		end, "a Stats book item page needs its item", nil, true)
+		end, "a item page needs its item", nil, true)
 		assert.are.same({ page = "lifetime" }, router:Place())
 	end)
 
@@ -91,7 +92,11 @@ describe("the Stats book's router (STA-R70, STA-R74)", function()
 		assert.are.equal(second, router:Renderer("place", "left"))
 		assert.are.equal(other, router:Renderer("place", "right"))
 		assert.is_nil(router:Renderer("home", "left"))
-		assert.are.same({ "home", "place", "item", "session", "lifetime", "sessions" }, ns.BOOK_PAGES)
+		local orders = {}
+		for page, def in pairs(ns.BOOK_PAGES) do
+			orders[page] = def.order
+		end
+		assert.are.same({ home = 0, place = 1, item = 1.5, session = 2, lifetime = 3, sessions = 4 }, orders)
 	end)
 
 	it("refuses a renderer for a page or side it doesn't have", function()
@@ -99,34 +104,34 @@ describe("the Stats book's router (STA-R70, STA-R74)", function()
 
 		assert.error_matches(function()
 			router:Register("hunts", "left", function() end)
-		end, "the Stats book has no page hunts", nil, true)
+		end, "the book has no page hunts", nil, true)
 		assert.error_matches(function()
 			router:Register("home", "middle", function() end)
-		end, "a Stats book page's side is left or right, not middle", nil, true)
+		end, "a book page's side is left or right, not middle", nil, true)
 		assert.error_matches(function()
 			router:Register("home", "left", "not a function")
-		end, "a Stats book page's renderer is a function", nil, true)
+		end, "a book page's renderer is a function", nil, true)
 	end)
 end)
 
 describe("the Stats book's breadcrumbs (STA-R74)", function()
 	it('reads "Stats" on the home spread', function()
-		local router = newRouter()
+		local router, ns = newRouter()
 
-		assert.are.same({ "stats - -> home - -" }, trailOf(router))
+		assert.are.same({ "stats - -> home - -" }, trailOf(router, ns))
 	end)
 
 	it('reads "Stats ❧ {zone}" on a zone page, each crumb opening what it names', function()
-		local router = newRouter()
+		local router, ns = newRouter()
 		router:Open({ page = "place", area = DARKSHORE })
 
-		assert.are.same({ "stats - -> home - -", "zone 148 -> place 148 -" }, trailOf(router))
+		assert.are.same({ "stats - -> home - -", "zone 148 -> place 148 -" }, trailOf(router, ns))
 	end)
 
 	it(
 		'adds "❧ {subzone}" on a subzone page, then "❧ {item}", which does nothing, while an entry is chosen',
 		function()
-			local router = newRouter()
+			local router, ns = newRouter()
 			router:Open({ page = "place", area = AUBERDINE, item = NIGHTFIN })
 
 			assert.are.same({
@@ -134,26 +139,26 @@ describe("the Stats book's breadcrumbs (STA-R74)", function()
 				"zone 148 -> place 148 -",
 				"subzone 442 -> place 442 -",
 				"item 13759",
-			}, trailOf(router))
+			}, trailOf(router, ns))
 		end
 	)
 
 	it('reads "Stats ❧ {item}" on an item page', function()
-		local router = newRouter()
+		local router, ns = newRouter()
 		router:Open({ page = "item", item = NIGHTFIN })
 
-		assert.are.same({ "stats - -> home - -", "item 13759 -> item - 13759" }, trailOf(router))
+		assert.are.same({ "stats - -> home - -", "item 13759 -> item - 13759" }, trailOf(router, ns))
 	end)
 
 	it('reads "Stats ❧ {its kicker}" on a ribbon page, the page keeping its Session and page number', function()
-		local router = newRouter()
+		local router, ns = newRouter()
 
 		router:Open({ page = "session" })
-		assert.are.same({ "stats - -> home - -", "ribbon session -> session - -" }, trailOf(router))
+		assert.are.same({ "stats - -> home - -", "ribbon session -> session - -" }, trailOf(router, ns))
 		router:Open({ page = "lifetime" })
-		assert.are.same({ "stats - -> home - -", "ribbon lifetime -> lifetime - -" }, trailOf(router))
+		assert.are.same({ "stats - -> home - -", "ribbon lifetime -> lifetime - -" }, trailOf(router, ns))
 		router:Open({ page = "sessions", session = "S-2", ledgerPage = 2 })
-		local crumbs = router:Trail(zoneOf)
+		local crumbs = ns.BookTrail(router:Place(), zoneOf)
 
 		assert.are.equal("ribbon", crumbs[2].kind)
 		assert.are.same({ page = "sessions", session = "S-2", ledgerPage = 2 }, crumbs[2].target)

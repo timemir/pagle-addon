@@ -233,12 +233,11 @@ describe("Pagle_Stats with Core", function()
 		assert.are.equal(1, rawget(loaded.env.PagleStatsDB.global, "schemaVersion"))
 	end)
 
-	it("starts with stats.md › Data's defaults: no tracker, nothing watched, the book centred", function()
+	it("starts with stats.md › Data's defaults: no tracker, nothing watched", function()
 		local db = loadAddon("Pagle_Stats", FOREVER_GLOBALS).ns.db
 
 		assert.is_false(db.profile.tracker) -- "Show the live tracker" (STA-R81)
 		assert.are.same({}, db.profile.watched) -- STA-R60
-		assert.is_nil(db.profile.window) -- centred (STA-R71)
 	end)
 
 	it(
@@ -259,7 +258,6 @@ describe("Pagle_Stats with Core", function()
 				Default = {
 					tracker = true,
 					watched = { { item = 13759, area = 148 }, { item = 6358, area = 331 } },
-					window = { "TOPLEFT", "TOPLEFT", 120, -80 },
 				},
 			},
 		}
@@ -268,7 +266,6 @@ describe("Pagle_Stats with Core", function()
 		assert.are.equal(1, db.global.schemaVersion)
 		assert.is_true(db.profile.tracker)
 		assert.are.same({ { item = 13759, area = 148 }, { item = 6358, area = 331 } }, db.profile.watched)
-		assert.are.same({ "TOPLEFT", "TOPLEFT", 120, -80 }, db.profile.window)
 	end)
 end)
 

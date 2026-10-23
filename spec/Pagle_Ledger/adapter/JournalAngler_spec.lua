@@ -145,7 +145,7 @@ describe("the Journal's Angler page", function()
 			end
 			assert.are.same({ "1 of 2", "0 of 0", "1 of 1", "0 of 1", "0 of 1", "0 of 1" }, parts)
 			-- the likeness is the player's portrait
-			local crest = loaded.ns.journal.frame.left.drawn.prestigeFrame[1]
+			local crest = loaded.ns.journal.shown.left.drawn.prestigeFrame[1]
 			assert.are.equal("player", crest.frame:GetWell().portrait)
 			assert.is_false(crest.pin:IsShown())
 		end
@@ -312,7 +312,7 @@ end
 ---@param side "left"|"right"
 ---@param text string
 local function click(loaded, side, text)
-	for _, widgets in pairs(loaded.ns.journal.frame[side].drawn) do
+	for _, widgets in pairs(loaded.ns.journal.shown[side].drawn) do
 		for _, widget in ipairs(widgets) do
 			if widget.label and widget.label.text == text then
 				local target = widget.face or widget
@@ -342,7 +342,7 @@ describe("the Angler page's bookplate in M4", function()
 		assert.are.same({ { emblem = "II", stars = 0, rank = 2 }, "Prestige II" }, { bookplate.mark, bookplate.note })
 		-- the frame is Prestige II's, Casting Off
 		assert.are.same({ kind = "prestigeFrame", rank = 2 }, left[1])
-		assert.are.equal("castoff", loaded.ns.journal.frame.left.drawn.prestigeFrame[1].frame.key)
+		assert.are.equal("castoff", loaded.ns.journal.shown.left.drawn.prestigeFrame[1].frame.key)
 	end)
 
 	it(
@@ -407,7 +407,7 @@ describe("the Angler page's bookplate in M4", function()
 			{ kind = "prestigeFrame", rank = 0, icon = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\elwynn" },
 			loaded.ns.journal.pages.left[1]
 		)
-		local crest = loaded.ns.journal.frame.left.drawn.prestigeFrame[1]
+		local crest = loaded.ns.journal.shown.left.drawn.prestigeFrame[1]
 		assert.is_true(crest.pin:IsShown())
 		assert.is_true(fake.Pagle.SetEquipped("core.crest", "core.crest.plain"))
 		assert.are.same({ kind = "prestigeFrame", rank = 0 }, loaded.ns.journal.pages.left[1])
@@ -437,7 +437,7 @@ describe("the Angler page's bookplate in M4", function()
 			fake.setPurchased({ ["ledger.crest.westfall"] = true }) -- owned: a purchased ID is (SHOP-R30)
 			assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.westfall"))
 
-			local crest = loaded.ns.journal.frame.left.drawn.prestigeFrame[1]
+			local crest = loaded.ns.journal.shown.left.drawn.prestigeFrame[1]
 			local pin = crest.pin
 			local side, x, y = pinCentre(fake, 0)
 			local w, h = pin:GetSize()
@@ -464,7 +464,7 @@ describe("the Angler page's bookplate in M4", function()
 		fake.setPurchased({ ["ledger.crest.winterspring"] = true }) -- owned: a purchased ID is (SHOP-R30)
 		assert.is_true(fake.Pagle.SetEquipped("core.crest", "ledger.crest.winterspring"))
 
-		local crest = loaded.ns.journal.frame.left.drawn.prestigeFrame[1]
+		local crest = loaded.ns.journal.shown.left.drawn.prestigeFrame[1]
 		local _, x, y = pinCentre(fake, 2)
 		local _, _, _, px, py = crest.pin:GetPoint(1)
 		assert.is_true(near(x, px) and near(-y, py))
@@ -478,7 +478,7 @@ describe("the Angler page's bookplate in M4", function()
 		function()
 			local _, loaded = anglerPage(fixturePlus({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
 
-			local widget = loaded.ns.journal.frame.left.drawn.prestigeFrame[1]
+			local widget = loaded.ns.journal.shown.left.drawn.prestigeFrame[1]
 			assert.are.same({ "castoff", 169, 182, "II" }, {
 				widget.frame.key,
 				widget.frame.width,
@@ -498,7 +498,7 @@ describe("the Angler page's bookplate in M4", function()
 				ranks[#ranks + 1] = prestige(T0 + 600 + rank, rank)
 			end
 			local _, loaded = anglerPage(fixturePlus(ranks), { motion = true })
-			local frame = loaded.ns.journal.frame.left.drawn.prestigeFrame[1].frame
+			local frame = loaded.ns.journal.shown.left.drawn.prestigeFrame[1].frame
 
 			assert.are.equal("storm", frame.key)
 			assert.are.equal(frame, frame.art.playing)
@@ -515,7 +515,7 @@ describe("the Angler page's bookplate in M4", function()
 		end
 		local _, loaded = anglerPage(fixturePlus(ranks)) -- the Journal's specs draw with Animations off
 
-		local frame = loaded.ns.journal.frame.left.drawn.prestigeFrame[1].frame
+		local frame = loaded.ns.journal.shown.left.drawn.prestigeFrame[1].frame
 		assert.are.equal("storm", frame.key)
 		assert.is_nil(frame.art.playing)
 	end)
@@ -524,7 +524,7 @@ describe("the Angler page's bookplate in M4", function()
 		"names the frame when hovered: its name in gilt, its description, and the rank with its emblem at 22 (LED-R154)",
 		function()
 			local _, loaded = anglerPage(fixturePlus({ prestige(T0 + 600, 1), prestige(T0 + 900, 2) }))
-			local frame = loaded.ns.journal.frame.left.drawn.prestigeFrame[1].frame
+			local frame = loaded.ns.journal.shown.left.drawn.prestigeFrame[1].frame
 
 			frame.scripts.OnEnter(frame)
 
@@ -704,7 +704,7 @@ describe("the Angler page's Bindings", function()
 			local _, loaded = anglerPage()
 			local ns = loaded.ns
 			local books = {}
-			for _, widget in ipairs(ns.journal.frame.right.drawn.leader) do
+			for _, widget in ipairs(ns.journal.shown.right.drawn.leader) do
 				if widget.swatch:IsShown() then
 					books[widget.label.text] = widget.swatch
 				end
@@ -760,7 +760,7 @@ describe("the Angler page's Bindings", function()
 
 		-- The eighth of the lines reading so: Sea-Green Buckram's.
 		local widgets = {}
-		for _, widget in ipairs(loaded.ns.journal.frame.right.drawn.leader) do
+		for _, widget in ipairs(loaded.ns.journal.shown.right.drawn.leader) do
 			if widget.value.text == "In the Curio Shop" then
 				widgets[#widgets + 1] = widget
 			end
@@ -839,7 +839,7 @@ end
 ---@param side "left"|"right"
 ---@return table
 local function xpBarWidget(loaded, side)
-	return assert(loaded.ns.journal.frame[side].drawn.xpBar[1], "no XP bar drawn")
+	return assert(loaded.ns.journal.shown[side].drawn.xpBar[1], "no XP bar drawn")
 end
 
 describe("the Angler page's Where your XP came from", function()
@@ -863,7 +863,7 @@ describe("the Angler page's Where your XP came from", function()
 			local right = loaded.ns.journal.pages.right
 			assert.are.equal("Where your XP came from", right[#right - 4].text)
 			-- drawn: the line's name and both figures, not struck through
-			local drawn = loaded.ns.journal.frame.right.drawn.xpSource
+			local drawn = loaded.ns.journal.shown.right.drawn.xpSource
 			assert.are.same({ "Hunts", "1,500", "1,500" }, shownTexts(drawn[3]))
 			assert.is_false(drawn[3].strikes[1]:IsShown())
 		end
@@ -891,7 +891,7 @@ describe("the Angler page's Where your XP came from", function()
 			loaded.ns.journal:Draw()
 
 			assert.are.same({ "Tackle Board", "900", "900", true }, sourceLines(loaded)[4])
-			local drawn = loaded.ns.journal.frame.right.drawn.xpSource[4]
+			local drawn = loaded.ns.journal.shown.right.drawn.xpSource[4]
 			for _, strike in ipairs(drawn.strikes) do
 				assert.is_true(strike:IsShown())
 			end
@@ -970,7 +970,7 @@ describe("the Angler page's Where your XP came from", function()
 		})
 
 		assert.is_true(loaded.ns.journal.pages.updating)
-		assert.is_true(loaded.ns.journal.frame.updatingView:IsShown())
+		assert.is_true(loaded.ns.journal.frame.notices.left:IsShown())
 
 		fake.enterWorld()
 
@@ -987,12 +987,12 @@ describe("the Angler page's Where your XP came from", function()
 		})
 		fake.setActivityXP("TackleBoard", 7654321)
 		loaded.ns.journal:Draw()
-		local frame = loaded.ns.journal.frame
+		local frame = loaded.ns.journal
 
-		local overflows = bounds.overflows(frame.leaves.right[frame.shownLeaf.right].body)
+		local overflows = bounds.overflows(frame.shown.right)
 
 		assert.are.same({}, overflows)
 		assert.is_true(bounds.measured > 0)
-		assert.are.same({ "Tackle Board", "7,654,321", "7,654,321" }, shownTexts(frame.right.drawn.xpSource[4]))
+		assert.are.same({ "Tackle Board", "7,654,321", "7,654,321" }, shownTexts(frame.shown.right.drawn.xpSource[4]))
 	end)
 end)

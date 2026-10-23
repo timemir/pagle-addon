@@ -89,8 +89,11 @@ describe("the Hunts board's words stay on its pages", function()
 				found[#found + 1] = overflow
 			end
 			measured = measured + placed
+			-- the shell's crumbs (BOOK-R12) and the board's clock and checkbox on its leather anchors (BOOK-R16)
+			local book = run.ns.board.book
+			local parts = { crumbs = book.frame.crumbs, clock = book.anchors.clock, completed = book.anchors.completed }
 			for _, part in ipairs({ "crumbs", "clock", "completed" }) do
-				for _, overflow in ipairs(bounds.overflows(run.ns.board.frame.anchors[part])) do
+				for _, overflow in ipairs(bounds.overflows(parts[part])) do
 					found[#found + 1] = ("%s %s: %s"):format(label, part, overflow)
 				end
 			end

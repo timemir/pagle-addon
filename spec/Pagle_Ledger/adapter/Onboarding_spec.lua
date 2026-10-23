@@ -214,7 +214,7 @@ describe("the Ledger's onboarding", function()
 						.. "your bar. A rest is never a penalty.",
 					note.text
 				)
-				assert.are.equal(journal.frame.right.drawn.xpBar[1].bar.fresh, note.target)
+				assert.are.equal(journal.shown.right.drawn.xpBar[1].bar.fresh, note.target)
 				assert.is_true(note.target:IsShown())
 
 				journal:Close()
@@ -347,14 +347,13 @@ describe("the Ledger's onboarding", function()
 			assert.are.same({ { "ledger.journal the Fish Journal", ALL } }, looks(fake))
 			-- each note points at its part of Home: the fished tile's rank, the ink bar's blue part, the first Note
 			-- to self, the search slip and an unfished tile's line
-			local frame = journal.frame
 			local set = loaded.ns.JournalFirstLook(journal)
 			local tile = set.notes[1].target().parent
 			assert.are.same({ false, tile.line }, { tile.dashed, set.notes[1].target() })
-			assert.are.equal(frame.left.drawn.tiles[1], tile.parent)
-			assert.are.equal(frame.right.drawn.xpBar[1].bar.fresh, set.notes[2].target())
-			assert.are.equal(frame.right.drawn.link[1].label, set.notes[3].target())
-			assert.are.equal(frame.search, set.notes[4].target())
+			assert.are.equal(journal.shown.left.drawn.tiles[1], tile.parent)
+			assert.are.equal(journal.shown.right.drawn.xpBar[1].bar.fresh, set.notes[2].target())
+			assert.are.equal(journal.shown.right.drawn.link[1].label, set.notes[3].target())
+			assert.are.equal(journal.search, set.notes[4].target())
 			assert.is_true(set.notes[5].target().parent.dashed)
 
 			journal:Close()
@@ -370,12 +369,13 @@ describe("the Ledger's onboarding", function()
 				local journal = loaded.ns.journal
 				journal:Toggle()
 				fake.firstLooks:Hide()
-				local look = journal.frame.look
+				local look = journal.frame.help
 
 				assert.is_true(look:IsShown())
 				assert.are.equal("?", look.label:GetText())
 				look.scripts.OnEnter(look)
-				assert.are.equal("Show the notes for this page again", loaded.env.GameTooltip.text)
+				assert.is_true(look.tip:IsShown())
+				assert.are.equal("Show the notes for this page again", look.tip.text:GetText())
 
 				look:Click()
 				assert.are.equal(2, #fake.looksShown)
@@ -394,7 +394,7 @@ describe("the Ledger's onboarding", function()
 			journal:Toggle()
 			assert.are.same({}, fake.looksShown)
 
-			journal.frame.look:Click()
+			journal.frame.help:Click()
 			assert.are.equal(1, #fake.looksShown)
 		end)
 
@@ -404,7 +404,7 @@ describe("the Ledger's onboarding", function()
 			journal:Open("zone", { zone = ELWYNN })
 			fake.firstLooks:Hide()
 
-			journal.frame.look:Click()
+			journal.frame.help:Click()
 
 			assert.are.same({ "1 " .. ALL[4]:sub(3) }, looks(fake)[#fake.looksShown][2])
 		end)
@@ -419,7 +419,7 @@ describe("the Ledger's onboarding", function()
 
 			loaded.ns.journal:Toggle()
 
-			assert.is_false(loaded.ns.journal.frame.look:IsShown())
+			assert.is_false(loaded.ns.journal.frame.help:IsShown())
 			assert.are.same({}, fake.looksShown)
 		end)
 	end)

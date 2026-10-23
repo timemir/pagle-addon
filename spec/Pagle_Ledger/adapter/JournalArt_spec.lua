@@ -89,7 +89,7 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 
 		assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\BookAtlas", loaded.ns.JOURNAL_ATLASES.Book.file)
 		assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\Parchment", loaded.ns.JOURNAL_FILES.parchment)
-		assert.are.equal(loaded.ns.JOURNAL_FILES.parchment, loaded.ns.journal.frame.papers.left.parchment.texture)
+		assert.are.equal(loaded.ns.JOURNAL_FILES.parchment, loaded.ns.journal.frame.parchments.left.paper.texture)
 	end)
 
 	it("sets its small capitals in IM Fell English SC, bundled in Core's fonts with its licence", function()
@@ -99,7 +99,7 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 		assert.is_true(#readFile("addons/Pagle/media/fonts/IMFeENsc28P.ttf") > 0)
 		assert.matches("SIL OPEN FONT LICENSE", readFile("addons/Pagle/media/fonts/OFL-IMFellEnglishSC.txt"))
 		-- Home's kicker is drawn in it
-		local kicker = loaded.ns.journal.frame.left.drawn.kicker[1].label
+		local kicker = loaded.ns.journal.shown.left.drawn.kicker[1].label
 		assert.are.same({ loaded.ns.JournalFontFile("sc"), 14, "" }, kicker.fontObject.font)
 	end)
 
@@ -110,33 +110,30 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 
 		journal:Toggle()
 
-		-- 950 × 640 with the wax close and the brass plate, 24 free each side
-		assert.are.equal(math.min((600 - 48) / 640, (800 - 48) / 950), journal.frame:GetScale())
+		-- 950 × 700 with the wax close and the ribbons' hang (BOOK-R3), 24 free each side
+		assert.are.equal(math.min((600 - 48) / 700, (800 - 48) / 950), journal.frame:GetScale())
 		journal:Toggle()
 		loaded.env.UIParent:SetSize(1920, 1080)
 		journal:Toggle()
 		assert.are.equal(1, journal.frame:GetScale())
 	end)
 
-	it(
-		"fits the screen again, centred, when the UI scale changes, through Core's fit (core/README.md › Contracts)",
-		function()
-			local _, loaded = openJournal({ id = false })
-			local journal = loaded.ns.journal
-			journal:Toggle()
-			assert.are.equal(1, journal.frame:GetScale())
+	it("fits the screen again where it stands when the UI scale changes, through Core's fit (BOOK-R3)", function()
+		local _, loaded = openJournal({ id = false })
+		local journal = loaded.ns.journal
+		journal:Toggle()
+		assert.are.equal(1, journal.frame:GetScale())
 
-			loaded.env.UIParent:SetSize(800, 600)
-			loaded.client.fireGameEvent("UI_SCALE_CHANGED")
+		loaded.env.UIParent:SetSize(800, 600)
+		loaded.client.fireGameEvent("UI_SCALE_CHANGED")
 
-			assert.are.equal(math.min((600 - 48) / 640, (800 - 48) / 950), journal.frame:GetScale())
-			local point, relativeTo, relativePoint, x, y = journal.frame:GetPoint(1)
-			assert.are.same(
-				{ "CENTER", loaded.env.UIParent, "CENTER", 0, 0 },
-				{ point, relativeTo, relativePoint, x, y }
-			)
-		end
-	)
+		assert.are.equal(math.min((600 - 48) / 700, (800 - 48) / 950), journal.frame:GetScale())
+		local point, relativeTo, relativePoint, x, y = journal.frame:GetPoint(1)
+		assert.are.same(
+			{ "CENTER", loaded.env.UIParent, "CENTER", 0, 40 / journal.frame:GetScale() },
+			{ point, relativeTo, relativePoint, x, y }
+		)
+	end)
 end)
 
 describe("the Fish Journal's sounds (ledger.md › UI)", function()
@@ -156,7 +153,7 @@ describe("the Fish Journal's sounds (ledger.md › UI)", function()
 		local _, loaded = openJournal()
 		local from = #loaded.client.sounds
 
-		loaded.ns.journal.frame.right.drawn.leader[1]:Click()
+		loaded.ns.journal.shown.right.drawn.leader[1]:Click()
 
 		assert.are.same({}, soundsSince(loaded, from))
 		assert.are.same({ "Home", "The Trophy Room" }, {
@@ -183,7 +180,7 @@ describe("the Fish Journal's sounds (ledger.md › UI)", function()
 		local _, loaded = openJournal()
 		local from = #loaded.client.sounds
 
-		loaded.ns.OpenLegendPlate(loaded.ns.journal.frame.legendPlate)
+		loaded.ns.OpenLegendPlate(loaded.ns.journal.legendPlate)
 
 		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
 	end)
@@ -205,12 +202,12 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 		local journal = loaded.ns.journal
 		loaded.client.update(0.2)
 		local from = #loaded.client.sounds
-		local home = journal.frame.left
+		local home = journal.shown.left
 
-		journal.frame.right.drawn.leader[1]:Click()
+		journal.shown.right.drawn.leader[1]:Click()
 
 		assert.are.same({ "836 SFX" }, soundsSince(loaded, from))
-		assert.are_not.equal(home, journal.frame.left)
+		assert.are_not.equal(home, journal.shown.left)
 		-- mid-turn, Home's left page still shows beside the lifting leaf
 		assert.is_true(has(shownTexts(journal.frame), "Where I've Fished"))
 		loaded.client.update(0.3)
@@ -218,7 +215,7 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 
 		assert.is_false(has(shownTexts(journal.frame), "Where I've Fished"))
 		assert.is_true(has(shownTexts(journal.frame), "The Trophy Room"))
-		assert.is_false(journal.frame.fold:IsShown())
+		assert.is_false(journal.frame.turnFold:IsShown())
 	end)
 
 	it("logs a fish caught since the page was drawn: its medallion, a green wash and the write sound", function()
@@ -252,7 +249,7 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 		journal:Draw()
 
 		assert.are.same({ "3093 SFX" }, soundsSince(loaded, from))
-		local row = journal.frame.left.drawn.row[1]
+		local row = journal.shown.left.drawn.row[1]
 		loaded.client.update(0.4)
 		assert.is_true(row.glow.alpha > 0)
 		loaded.client.update(1.2)
@@ -271,7 +268,7 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 
 		pages.left = { { kind = "seal", text = "Regular", inked = true } }
 		journal:Draw()
-		local seal = journal.frame.left.drawn.seal[1].seal
+		local seal = journal.shown.left.drawn.seal[1].seal
 		assert.are.equal("Visitor", seal.label.text)
 		loaded.client.update(0.2)
 		assert.are.equal("Regular", seal.label.text)
@@ -291,7 +288,7 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 
 		pages.left = { { kind = "xpBar", bar = { fill = 0.6, text = "600 of 1,000." } } }
 		journal:Draw()
-		local bar = journal.frame.left.drawn.xpBar[1].bar
+		local bar = journal.shown.left.drawn.xpBar[1].bar
 		assert.are.equal(0.2, bar.pct)
 		loaded.client.update(0.3)
 		assert.is_true(bar.pct > 0.2 and bar.pct < 0.6)
@@ -310,7 +307,7 @@ describe("the Fish Journal's motion (ledger.md › UI, the kit's MOTION.md)", fu
 		pages.left = { { kind = "xpBar", bar = { fill = 0.6, text = "600 of 1,000." } } }
 		journal:Draw()
 
-		assert.are.equal(0.6, journal.frame.left.drawn.xpBar[1].bar.pct)
+		assert.are.equal(0.6, journal.shown.left.drawn.xpBar[1].bar.pct)
 		assert.are.equal(1, journal.frame.alpha)
 	end)
 end)

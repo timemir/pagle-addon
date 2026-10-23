@@ -12,6 +12,7 @@ Core is the `Pagle` addon. This file covers how Modules attach to it, the whole 
 | [field-report.md](field-report.md) | `REP` | `/pagle report` and the diagnostics it reads |
 | [varieties.md](varieties.md) | `VAR` | Fish varieties, their rarity, Core's variety projection and the fish crests |
 | [book-binding.md](book-binding.md) | `BIND` | The book binding: `Pagle.NewBookBinding`, which draws the `core.binding` look on every book and changes it |
+| [book.md](book.md) | `BOOK` | The book shell: `Pagle.NewBook`, the window, pages, strip, buttons, ribbons, router and page turn every book is built on |
 
 Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunables table.
 
@@ -162,6 +163,7 @@ Core's SavedVariables are specified in [catch-log.md](catch-log.md#data). This f
 | Key | Type | Default |
 |---|---|---|
 | `dock.point` | `{ point, relativeTo = "UIParent", relativePoint, x, y }` or `nil` | `nil` (CORE-R70 default) |
+| `books` | each movable book's saved position by its id, `{ point, relativePoint, x, y }` in UIParent's units ([book.md](book.md#data), BOOK-R5) | `{}` |
 | `clockFormat` | `"24h"`, `"12h"`, or `nil` to follow the game's clock (CORE-R87) | `nil`; the root's Defaults button sets it back to `nil` (SET-R13) |
 
 ## Contracts
@@ -206,6 +208,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.NewPrestigeFrame(parent)`, `GetPrestigeFrame(rank)`, `SetPrestigeEmblem(texture, rank, size)`, `PrestigeEmblemMarkup(rank, size)` | a Prestige frame, with `SetRank`, `GetWell`, `GetPin`, `Play` and `Stop`; a rank's frame `{ key, moving }`; its emblem on a texture or in a line | [here](#paglenewprestigeframeparent) |
 | `Pagle.FitToScreen(frame, options)` | number, the scale used | [here](#paglefittoscreenframe-options) |
 | `Pagle.NewBookBinding(frame, options?)` | `PagleBookBinding`: `Look()`, `SetLook(goodID?)` | [book-binding.md](book-binding.md#contracts) |
+| `Pagle.NewBook(options)` | `PagleBook`: `RegisterPage`, `RegisterLeather`, `Open(place?, how?)`, `Close`, `Settle`, `Toggle`, `IsShown`, `Showing`, `Place`, `Draw`, `QueueDraw`, `SetRibbons`, `SetPlate(text, tooltip?)`, `RibbonFrame(id)`, `SetStripText`, `SetHelpShown`, `Look` | [book.md](book.md#contracts) |
 | `Pagle.NewLegendCrest(parent, width)` | a Legend's crest, with `SetLegend`, `Play` and `Stop` | [here](#paglenewlegendcrestparent-width) |
 
 ### Module handle (returned by `RegisterModule`)

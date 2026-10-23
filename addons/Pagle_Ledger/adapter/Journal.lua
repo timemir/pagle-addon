@@ -5,89 +5,97 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The Fish Journal's book on the client (LED-R120–R123, LED-R125; ledger.md › UI): the Ledger art kit's book (its
--- shell in adapter/JournalBook.lua) with the gilt breadcrumbs and the search slip on the strip above the pages and the
--- back link on the left page, drawing what logic/Journal.lua's router says the pages show with
--- adapter/JournalWidgets.lua's widgets. It makes no secure frames, so it opens and works while restricted (LED-R121).
--- Between spreads it turns the page, and a fish picked on a zone page crossfades the right page; the book fades as
--- it opens and closes, with its sounds (the kit's Views.lua and MOTION.md). It shrinks to fit a small screen.
+-- The Fish Journal's book on the client (LED-R120–R123, LED-R125; ledger.md › UI): Core's book shell
+-- (`Pagle.NewBook`, core/book.md, ADR 0016) drawing what logic/Journal.lua's router says the pages show with
+-- adapter/JournalWidgets.lua's widgets. The shell owns the window, its fades and sounds, the binding, the pages, the
+-- crumbs, the back link, the brass plate, the wax close and the "?", the page turn and the crossfade; the Journal keeps
+-- its pages, its search slip (a leather anchor), the Legend's plate over the spread, and which way it moves between two
+-- places (a turn, a crossfade when a fish is picked, or in place). It makes no secure frames (LED-R121).
 
 local L = ns.L
 local INK = ns.JOURNAL_INK
 local rgb = ns.JournalRGB
-local BOOK = ns.JOURNAL_BOOK
 
--- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists (LED-R120).
-local FRAME_NAME = "PagleLedgerJournal"
--- A page body's place on its paper (the kit's 30 in, 24 down) and its size; the left one leaves room for the back
--- link under it.
-local BODY_X, BODY_Y = 30, 24
-local BODY_W = ns.JOURNAL_PAGE_W - 2 * BODY_X
-local BODY_H = { left = ns.JOURNAL_PAGE_H - BODY_Y - 46, right = ns.JOURNAL_PAGE_H - 2 * BODY_Y }
--- The page turn's two halves (MOTION.md: the page lifts toward the spine, then lands from the spine outward), and the
--- right page's crossfade when a fish is picked.
-local LIFT, LAND, CROSSFADE = 0.22, 0.28, 0.2
--- How the book fits the screen (Pagle.FitToScreen, core/README.md › Contracts): its whole extent, what hangs outside
--- its frame included (the wax close, the brass plate), centred.
-local FIT = { width = BOOK.extentW, height = BOOK.extentH }
+-- The book's measures (the kit's Ledger.lua): 920 × 600, the shell's leather at the sides, the strip and the foot.
+local WIDTH, HEIGHT = 920, 600
+local SIDE, STRIP = 18, 38
+-- A page body's padding on its paper (the kit's 30 in, 24 down), and the room the left page leaves for the back link
+-- under its body.
+local PAD = { x = 30, top = 24, bottom = 24 }
+local BACK_ROOM = 22
+-- A page body's size: half the room between the leather's sides, and from the strip to the foot, inside its padding.
+local BODY_W = (WIDTH - 2 * SIDE) / 2 - 2 * PAD.x
+local BODY_H = HEIGHT - STRIP - 16 - PAD.top - PAD.bottom
+-- The search slip (the kit's 252 × 23), at the strip's right and centred in it between the band's inner edge (7 units
+-- in) and the pages; the crumbs stop short of it.
+local SEARCH_W, SEARCH_H = 252, 23
+local STRIP_MIDDLE = (7 + STRIP) / 2
 
----@class LedgerJournalCrumbView: LedgerJournalClickable
----@field label FontString
----@field fleuron Texture?
----@field gilt number[]?       -- the binding's gilt it was drawn in
+-- Each spread is a page of the book (BOOK-R20), the page of every spread registered, now or later: its place keeps
+-- the spread's args whole. The order plays no part: the Journal says how each move goes (Journal:How).
+---@type PagleBookPageDef
+local SPREAD_PAGE = { keeps = { "args" } }
+---@type table<string, PagleBookPageDef>
+local PAGES = setmetatable({ [ns.JOURNAL_HOME] = SPREAD_PAGE }, {
+	__index = function(_, id)
+		return ns.journalSpreads[id] and SPREAD_PAGE or nil
+	end,
+})
 
---- One page's leaf: a clip frame on the paper whose visible strip the page turn narrows, and the page body on it.
----@class LedgerJournalLeaf
----@field clip Frame
----@field content Frame
----@field body LedgerJournalPage
+--- The Journal's place `place` as the book's: its spread as the page, its args whole.
+---@param place LedgerJournalPlace
+---@return PagleBookPlace
+local function toBook(place)
+	return { page = place.id, args = place.args }
+end
 
----@class LedgerJournalFold: Frame
----@field shade Texture
----@field cast Texture
----@field edge Texture
+--- The book's place `place` as the Journal's.
+---@param place PagleBookPlace
+---@return LedgerJournalPlace
+local function fromBook(place)
+	return { id = place.page, args = place.args }
+end
 
----@class LedgerJournalUpdatingView: Frame
----@field quill LedgerSpriteTexture
+-- A key equal for two book places exactly when they are the same place.
+---@param place PagleBookPlace
+---@return string
+local function keyOf(place)
+	local names = {}
+	for key in pairs(place) do
+		names[#names + 1] = key
+	end
+	table.sort(names)
+	local parts = {}
+	for i, name in ipairs(names) do
+		parts[i] = name .. "=" .. tostring(place[name])
+	end
+	return table.concat(parts, " ")
+end
 
----@class LedgerJournalFrame: LedgerJournalShell
----@field leaves table<"left"|"right", LedgerJournalLeaf[]> -- each side's two leaves, the one shown and the next
----@field shownLeaf table<"left"|"right", integer>
----@field left LedgerJournalPage   -- the page bodies shown now
----@field right LedgerJournalPage
----@field crumbButtons LedgerJournalCrumbView[]
----@field searchDrop LedgerJournalSearchDrop -- its results (adapter/JournalSearch.lua)
----@field back LedgerJournalCrumbView  -- "« back", under the left page (LED-R125)
----@field updatingView LedgerJournalUpdatingView
----@field legendPlate LedgerLegendPlate
----@field fold LedgerJournalFold
----@field closing boolean?
+---@class LedgerJournalSearchView: EditBox
 
---- The Fish Journal: its router, its frame once made, and what its pages and brass plate show as last drawn.
+--- The Fish Journal: its book (Core's shell), its router, and what its pages and brass plate show as last drawn.
 ---@class LedgerJournal
----@field router LedgerJournalRouter
----@field frame LedgerJournalFrame?
----@field pages LedgerJournalPages?
+---@field book PagleBook               -- Core's shell (BOOK-R1); its frame from the first opening
+---@field router LedgerJournalRouter   -- the spreads' pages, at the book's place as last drawn
+---@field frame PagleBookFrame?        -- the book's frame, once first opened
+---@field pages LedgerJournalPages?    -- what the pages show as last drawn
+---@field shown { left: LedgerJournalPage?, right: LedgerJournalPage? } -- the page bodies shown now
+---@field search EditBox?              -- the search slip's box (LED-R148), from the first opening
+---@field searchHint FontString?
+---@field searchDrop LedgerJournalSearchDrop? -- its results (adapter/JournalSearch.lua)
+---@field legendPlate LedgerLegendPlate? -- a Legend's plate over the spread (LED-R147)
 ---@field plate string?                -- the brass plate's words as last read; nil until first read (LED-R149)
 ---@field prestigeCard LedgerPrestigeCard? -- the Prestige confirm, made at its first asking (adapter/Prestige.lua)
----@field private redrawQueued boolean
----@field private drawnSubjects { left: string?, right: string? }? -- each page's subject as last drawn (LED-R129)
----@field private drawnId string?      -- the spread last drawn, and its depth in crumbs
----@field private drawnDepth integer?
----@field private drawnPlate boolean?  -- whether the last drawing was a Legend's plate
----@field private turnDirection ("fwd"|"back")? -- the next drawing turns the page this way (a Prestige)
----@field turnOwner table              -- the motion driver's owner of the page turn
----@field finishTurn fun()?            -- settles the page turn or crossfade under way
----@field private justOpened boolean?  -- the book has just opened: its first drawing neither turns nor fades
+---@field redrawQueued boolean
+---@field bodies table<Frame, LedgerJournalPage> -- the page body drawn on each of the shell's content frames
+---@field drawnSubjects { left: string?, right: string? } -- each side's subject as last drawn (LED-R129)
+---@field drawnDepth integer?  -- the crumbs' depth as last drawn
+---@field drawnPlate boolean?  -- whether the last drawing was a Legend's plate
+---@field turnDirection ("fwd"|"back")? -- the next drawing turns the page this way (a Prestige)
+---@field cacheKey string?     -- the place `pages` was read for in this drawing
 local Journal = {}
 Journal.__index = Journal
-
---- The Journal, on Home until it is first left (LED-R120): a login or `/reload` starts it afresh.
-ns.journal = setmetatable({
-	router = ns.NewJournalRouter(ns.journalSpreads),
-	redrawQueued = false,
-	turnOwner = {},
-}, Journal)
 
 --- What the spreads, and the search box, read now (LED-R122, LED-R123, LED-R148): nothing of the state while the
 --- projection is updating.
@@ -138,336 +146,311 @@ function Journal:Context() -- luacheck: no self
 	}
 end
 
--- One leaf on `paper`: its clip frame and the page body, `height` tall, in it.
----@param paper Frame
----@param height number
----@return LedgerJournalLeaf
-local function newLeaf(paper, height)
-	local clip = CreateFrame("Frame", nil, paper)
-	clip:SetClipsChildren(true)
-	clip:SetAllPoints()
-	local content = CreateFrame("Frame", nil, clip)
-	content:SetAllPoints(paper)
-	local body = ns.NewJournalPage(content, BODY_W, height)
-	body:SetPoint("TOPLEFT", content, "TOPLEFT", BODY_X, -BODY_Y)
-	return { clip = clip, content = content, body = body }
-end
-
--- Shows only the strip from `a` to `b` (fractions of the page's width) of `leaf` on `paper`; hides it when empty.
----@param leaf LedgerJournalLeaf
----@param paper Frame
----@param a number
----@param b number
-local function reveal(leaf, paper, a, b)
-	local clip = leaf.clip
-	if b - a <= 0.002 then
-		clip:Hide()
-		return
+--- What the pages show at book place `place` (LED-R122, LED-R125), read once in a drawing however many of its parts
+--- ask (the pages, the crumbs, the back link, the search slip), and kept as `journal.pages`.
+---@param place PagleBookPlace
+---@return LedgerJournalPages
+function Journal:PagesAt(place)
+	local key = keyOf(place)
+	if self.cacheKey == key and self.pages then
+		return self.pages
 	end
-	local w = ns.JOURNAL_PAGE_W
-	clip:Show()
-	clip:ClearAllPoints()
-	clip:SetPoint("TOPLEFT", paper, "TOPLEFT", a * w, 0)
-	clip:SetPoint("BOTTOMLEFT", paper, "BOTTOMLEFT", a * w, 0)
-	clip:SetWidth((b - a) * w)
+	local at = fromBook(place)
+	self.router:Open(at.id, at.args)
+	self.pages = self.router:Pages(self:Context())
+	self.cacheKey = key
+	return self.pages
 end
 
--- The fold over the pages as a leaf turns: a shade over the turning strip, a cast shadow beside its moving edge and a
--- light line along it.
----@param frame LedgerJournalFrame
----@return LedgerJournalFold
-local function buildFold(frame)
-	local fold = CreateFrame("Frame", nil, frame.pagesFrame) --[[@as LedgerJournalFold]]
-	fold:SetAllPoints()
-	fold:SetFrameLevel(frame.pagesFrame:GetFrameLevel() + 40)
-	fold.shade = fold:CreateTexture(nil, "OVERLAY", nil, 0)
-	fold.shade:SetColorTexture(0.16, 0.08, 0.02, 1)
-	fold.cast = fold:CreateTexture(nil, "OVERLAY", nil, 1)
-	fold.cast:SetColorTexture(1, 1, 1, 1)
-	fold.edge = fold:CreateTexture(nil, "OVERLAY", nil, 2)
-	fold.edge:SetColorTexture(1, 0.97, 0.85, 1)
-	fold:Hide()
-	return fold
+-- Whether `pages` are a Legend's plate over the spread (LED-R147).
+---@param pages LedgerJournalPages
+---@return LedgerBlock?
+local function plateOf(pages)
+	local first = not pages.updating and pages.left[1]
+	return first and first.kind == "plate" and first or nil
 end
 
--- Places the fold: the turning strip from `x0` to `x1` on `paper` (units from its left), its moving edge at `ex`, the
--- cast shadow on the side `side` (-1 left of the edge, 1 right of it), at `shade` and `cast` strength.
----@param fold LedgerJournalFold
----@param paper Frame
----@param x0 number
----@param x1 number
----@param ex number
----@param side number
----@param shade number
----@param cast number
-local function placeFold(fold, paper, x0, x1, ex, side, shade, cast)
-	fold.shade:ClearAllPoints()
-	fold.shade:SetPoint("TOPLEFT", paper, "TOPLEFT", x0, 0)
-	fold.shade:SetPoint("BOTTOMLEFT", paper, "BOTTOMLEFT", x0, 0)
-	fold.shade:SetWidth(math.max(0.01, x1 - x0))
-	fold.shade:SetAlpha(shade)
-	local castW = 26
-	local castX = side > 0 and ex or ex - castW
-	fold.cast:ClearAllPoints()
-	fold.cast:SetPoint("TOPLEFT", paper, "TOPLEFT", castX, 0)
-	fold.cast:SetPoint("BOTTOMLEFT", paper, "BOTTOMLEFT", castX, 0)
-	fold.cast:SetWidth(castW)
-	local dark, clear = CreateColor(0.12, 0.06, 0.02, 0.32 * cast), CreateColor(0.12, 0.06, 0.02, 0)
-	if side > 0 then
-		fold.cast:SetGradient("HORIZONTAL", dark, clear)
+--- How the open book moves from `from` to `to` (BOOK-R30), the Journal's own choice for every move it isn't told
+--- (its links, crumbs, back link and search): it turns the page to another spread, or to another subject on the
+--- left page but Home's (forward when the crumbs go deeper), crossfades the right page when only its subject
+--- changes (a fish picked, with its sound), and draws in place otherwise, and into or out of a Legend's plate.
+---@param from PagleBookPlace?
+---@param to PagleBookPlace
+---@return PagleBookOpenHow?
+function Journal:How(from, to)
+	if not from or not self:IsShown() or not self.drawnSubjects.left or not ns.StateNow() then
+		return nil
+	end
+	local pages = self:PagesAt(to)
+	if self.drawnPlate or plateOf(pages) then
+		return { motion = "still" }
+	end
+	local drawn, subjects = self.drawnSubjects, pages.subjects or {}
+	local leftChanged, rightChanged = subjects.left ~= drawn.left, subjects.right ~= drawn.right
+	if to.page ~= from.page or (leftChanged and to.page ~= ns.JOURNAL_HOME) then
+		return { motion = "turn", forward = #(pages.crumbs or {}) >= (self.drawnDepth or 0) }
+	end
+	if rightChanged then
+		ns.JournalSound("pick") -- a fish picked sounds whether or not things move
+		return { motion = "fade" }
+	end
+	return { motion = "still" }
+end
+
+-- The page body on the shell's content frame `content` of side `side`, made at its first drawing: as wide as the body,
+-- and on the left page short of the back link. It scrolls itself, under its ink scrollbar.
+---@param journal LedgerJournal
+---@param content Frame
+---@param side "left"|"right"
+---@return LedgerJournalPage
+local function bodyOn(journal, content, side)
+	local body = journal.bodies[content]
+	if not body then
+		body = ns.NewJournalPage(content, BODY_W, BODY_H - (side == "left" and BACK_ROOM or 0))
+		body:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
+		journal.bodies[content] = body
+	end
+	return body
+end
+
+-- What draws side `side` of every page (BOOK-R21): the spread's blocks on that side's body, keeping its scroll while
+-- its subject stays (LED-R129). Under a Legend's plate the page stands as it was.
+---@param journal LedgerJournal
+---@param side "left"|"right"
+---@return fun(content: Frame, place: PagleBookPlace): number?
+local function sideRenderer(journal, side)
+	return function(content, place)
+		local pages = journal:PagesAt(place)
+		local body = bodyOn(journal, content, side)
+		local previous = journal.shown[side]
+		journal.shown[side] = body
+		if plateOf(pages) then
+			return nil
+		end
+		local subject = pages.subjects and pages.subjects[side]
+		local kept = journal.drawnSubjects[side] == subject
+		ns.DrawJournalPage(body, pages[side], function(target)
+			journal:OpenPlace(target)
+		end, not kept or body.subject ~= subject)
+		-- the same subject drawn on the other leaf (a crossfade) takes up the scroll it had
+		if kept and previous and previous ~= body then
+			ns.ScrollJournalPage(body, previous.scroll:GetVerticalScroll())
+		end
+		body.subject = subject
+		journal.drawnSubjects[side] = subject
+		return nil
+	end
+end
+
+-- The search slip on its leather anchor (LED-R148): a parchment field in a leather trim, its magnifier, and the
+-- placeholder in italic until something is typed; its drop-down on the book. Made at its first drawing.
+---@param journal LedgerJournal
+---@param anchor Frame
+local function buildSearch(journal, anchor)
+	local search = CreateFrame("EditBox", nil, anchor) --[[@as EditBox]]
+	search:SetAllPoints()
+	search:SetAutoFocus(false)
+	search:SetFontObject(ns.JournalFont("print", 14))
+	search:SetTextColor(rgb(INK.body))
+	search:SetTextInsets(26, 8, 0, 0)
+	local trim = ns.JournalTint(search, INK.trim, 1, "BACKGROUND", 0)
+	trim:SetAllPoints()
+	local field = ns.JournalTint(search, INK.field, 1, "BACKGROUND", 1)
+	field:SetPoint("TOPLEFT", 1, -1)
+	field:SetPoint("BOTTOMRIGHT", -1, 1)
+	local glass = ns.JournalSprite(search, "Parts", "glass", "ARTWORK")
+	glass:SetPoint("LEFT", search, "LEFT", 9 - glass.box[1], 0)
+	journal.searchHint =
+		ns.JournalLabel(search, "italic", 14, INK.noteLight, L.JOURNAL_SEARCH_HINT, { layer = "ARTWORK" })
+	journal.searchHint:SetPoint("LEFT", 26, 0)
+	search:SetScript("OnEscapePressed", function(self)
+		self:ClearFocus()
+	end)
+	search:SetScript("OnEnterPressed", function(self)
+		self:ClearFocus()
+	end)
+	journal.search = search
+	journal.searchDrop = ns.AttachJournalSearch(journal, search, journal.book.frame --[[@as Frame]])
+end
+
+-- The Legend's plate (LED-R147) on a frame over both papers, made at the first drawing.
+---@param journal LedgerJournal
+---@return LedgerLegendPlate
+local function legendPlateOf(journal)
+	if not journal.legendPlate then
+		local frame = journal.book.frame --[[@as PagleBookFrame]]
+		local over = CreateFrame("Frame", nil, frame)
+		over:SetPoint("TOPLEFT", frame.papers.left, "TOPLEFT")
+		over:SetPoint("BOTTOMRIGHT", frame.papers.right, "BOTTOMRIGHT")
+		over:SetFrameLevel(frame:GetFrameLevel() + 1)
+		journal.legendPlate = ns.BuildLegendPlate(over)
+	end
+	return journal.legendPlate
+end
+
+-- Last at each drawing (BOOK-R21): the brass plate's words, and a Legend's plate opened over the spread or closed.
+---@param journal LedgerJournal
+---@param place PagleBookPlace
+---@param notice string?
+local function afterDraw(journal, place, notice)
+	local pages = journal:PagesAt(place)
+	journal.cacheKey = nil
+	-- The brass plate always shows (LED-R149): LED-R122 hides only the pages' contents, so while the projection updates
+	-- it keeps the words last read. Only an update before anything was read (the login rebuild) leaves it unwritten.
+	if not notice and not pages.updating then
+		journal.plate = ns.BrassPlate(journal:Context() --[[@as LedgerSpreadContext]])
+	end
+	if journal.plate then
+		journal.book:SetPlate(journal.plate)
+	end
+	local plate = legendPlateOf(journal)
+	local block = not notice and plateOf(pages)
+	if block then
+		ns.FillLegendPlate(plate, block, function(target)
+			journal:OpenPlace(target)
+		end)
+		if not journal.drawnPlate then
+			ns.OpenLegendPlate(plate)
+			-- it covers both pages: under it, each starts again at the top (LED-R129)
+			for _, body in pairs(journal.shown) do
+				body.scroll:SetVerticalScroll(0)
+			end
+		end
+		journal.drawnPlate = true
+	elseif journal.drawnPlate and not notice then
+		journal.drawnPlate = false
+		ns.CloseLegendPlate(plate)
 	else
-		fold.cast:SetGradient("HORIZONTAL", clear, dark)
+		-- an update hides it; it opens again when the update finishes
+		journal.drawnPlate = false
+		plate:Hide()
 	end
-	local edgeX = ex - (side > 0 and 1.5 or 0)
-	fold.edge:ClearAllPoints()
-	fold.edge:SetPoint("TOPLEFT", paper, "TOPLEFT", edgeX, 0)
-	fold.edge:SetPoint("BOTTOMLEFT", paper, "BOTTOMLEFT", edgeX, 0)
-	fold.edge:SetWidth(1.5)
-	fold.edge:SetAlpha(0.55 * cast)
+	if not pages.updating then
+		journal.drawnDepth = #(pages.crumbs or {})
+	end
 end
 
--- The "being written up" pages (LED-R122): the quill over the left page with the line under it and the fleuron rule,
--- a fleuron alone on the right (the kit's Home.lua: updating).
----@param frame LedgerJournalFrame
----@return LedgerJournalUpdatingView
-local function buildUpdating(frame)
-	local view = CreateFrame("Frame", nil, frame.pagesFrame) --[[@as LedgerJournalUpdatingView]]
-	view:SetAllPoints()
-	view:SetFrameLevel(frame.pagesFrame:GetFrameLevel() + 20)
-	local left = frame.papers.left
-	view.quill = ns.JournalSprite(view, "Parts", "quill", "ARTWORK")
-	ns.JournalBoxAt(view.quill, left, 189, 192.2)
-	local words = ns.JournalLabel(view, "print", 18, INK.body, L.JOURNAL_UPDATING, {
-		justify = "CENTER",
-		wrap = true,
-		width = 300,
-		spacing = 6,
-	})
-	words:SetPoint("TOP", left, "TOPLEFT", ns.JOURNAL_PAGE_W / 2, -273)
-	ns.JournalRule(view, 146, 333.8, 150)
-	local fleuron = ns.JournalPiece(view, "Book", "fleuron", "ARTWORK")
-	fleuron:SetSize(22, 22)
-	fleuron:SetAlpha(0.5)
-	fleuron:SetPoint("TOPLEFT", frame.papers.right, "TOPLEFT", 210, -259)
-	view:Hide()
-	return view
-end
+--- The Journal, on Home until it is first left (LED-R120): a login or `/reload` starts it afresh. Its book is made at
+--- once and builds its frame at the first opening (BOOK-R1); it is movable, and saves where it is left (BOOK-R5).
+---@type LedgerJournal
+ns.journal = setmetatable({
+	router = ns.NewJournalRouter(ns.journalSpreads),
+	redrawQueued = false,
+	shown = {},
+	bodies = setmetatable({}, { __mode = "k" }),
+	drawnSubjects = {},
+}, Journal)
 
--- The quill writes while the Ledger is being written up: it sways about its nib, 4° each way (0.8 s, ease-in-out,
--- alternating, for as long as it shows).
----@param view LedgerJournalUpdatingView
-local function swayQuill(view)
-	local quill = view.quill
-	Pagle.StopMotion(quill)
-	Pagle.Animate(quill, {
-		{
-			dur = 0.8,
-			ease = Pagle.EASE.inOut,
-			iter = "infinite",
-			dir = "alternate",
-			keys = { { 0, { -4 } }, { 1, { 4 } } },
-			apply = function(v)
-				quill:SetRotation(math.rad(v[1]))
+do
+	local journal = ns.journal
+	journal.book = Pagle.NewBook({
+		id = "ledger.journal",
+		-- Esc closes it through UISpecialFrames (LED-R120)
+		name = "PagleLedgerJournal",
+		width = WIDTH,
+		height = HEIGHT,
+		pages = PAGES,
+		home = { page = ns.JOURNAL_HOME },
+		pad = PAD,
+		stripRoom = SEARCH_W + SIDE + 12,
+		-- the crumbs (LED-R125): Home first, each opening its level but the last; none while updating (LED-R122)
+		trail = function(place)
+			local crumbs = {}
+			for i, crumb in ipairs(journal:PagesAt(place).crumbs or {}) do
+				crumbs[i] = { text = crumb.label, target = crumb.place and toBook(crumb.place) or nil }
+			end
+			if crumbs[#crumbs] then
+				crumbs[#crumbs].target = nil
+			end
+			return crumbs
+		end,
+		-- "« back" on the left page, one crumb up (LED-R125)
+		back = {
+			text = L.JOURNAL_BACK,
+			target = function(place)
+				local back = journal:PagesAt(place).back
+				return back and toBook(back) or nil
 			end,
 		},
-	})
-end
-
--- The back link (LED-R125): "« back" in the hand at the left page's foot, turning red under the mouse.
----@param journal LedgerJournal
----@param frame LedgerJournalFrame
----@return LedgerJournalCrumbView
-local function buildBack(journal, frame)
-	local back = CreateFrame("Button", nil, frame.papers.left) --[[@as LedgerJournalCrumbView]]
-	back:SetFrameLevel(frame.papers.left:GetFrameLevel() + 8)
-	ns.JournalClickable(back)
-	function back.open(place)
-		journal:OpenPlace(place)
-	end
-	back.label = ns.JournalLabel(back, "hand", 19, INK.brown, L.JOURNAL_BACK)
-	back.label:SetPoint("LEFT")
-	back:SetSize(back.label:GetStringWidth() + 4, 24)
-	ns.JournalAt(back, frame.papers.left, BODY_X, ns.JOURNAL_PAGE_H - 38)
-	back:SetScript("OnEnter", function(self)
-		self.label:SetTextColor(rgb(INK.red))
-	end)
-	back:SetScript("OnLeave", function(self)
-		self.label:SetTextColor(rgb(INK.brown))
-	end)
-	return back
-end
-
--- Inks crumb `crumb` in binding `look` (LED-R112, LED-R125): its words in the look's gilt over its shadow, and the
--- fleuron before them toward that gilt (the kit tints it from its own #e8c96a).
----@param crumb LedgerJournalCrumbView
----@param look PagleBindingLook
-local function inkCrumb(crumb, look)
-	crumb.gilt = look.gilt
-	crumb.label:SetTextColor(unpack(look.gilt))
-	local shadow = look.giltShadow
-	crumb.label:SetShadowColor(shadow[1], shadow[2], shadow[3], shadow[4])
-	crumb.label:SetShadowOffset(shadow[5], shadow[6])
-	if crumb.fleuron then
-		crumb.fleuron:SetVertexColor(
-			math.min(1, look.gilt[1] / 0.91),
-			math.min(1, look.gilt[2] / 0.79),
-			math.min(1, look.gilt[3] / 0.42)
-		)
-	end
-end
-
--- Builds the book, hidden: the kit's shell, two leaves on each page, the back link, the "being written up" pages,
--- the Legend plate, the fold and the search box's drop-down. It moves by dragging its leather (the pages take their
--- own clicks), kept on the screen, and the client keeps no position: Show fits it centred again at each opening
--- (LED-R120). Esc hides it through UISpecialFrames.
----@param journal LedgerJournal
----@return LedgerJournalFrame
-local function build(journal)
-	local frame = CreateFrame("Frame", FRAME_NAME, UIParent) --[[@as LedgerJournalFrame]]
-	frame:Hide() -- hidden before its scripts are set: being made isn't closing
-	frame:SetPoint("CENTER")
-	frame:SetFrameStrata("HIGH")
-	frame:SetClampedToScreen(true)
-	frame:EnableMouse(true)
-	frame:SetMovable(true)
-	-- Over the other windows in its strata (show raises it) and brought back over them when clicked.
-	frame:SetToplevel(true)
-	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", frame.StartMoving)
-	frame:SetScript("OnDragStop", function(self)
-		self:StopMovingOrSizing()
-		-- A moved frame is user-placed, and the client would save where it was left (as the Tackle Board, TKB-R100).
-		self:SetUserPlaced(false)
-	end)
-	frame.crumbButtons = {}
-	-- Core's binding round it (LED-R112): each look it puts on inks the crumbs drawn so far, as the shell inks its plate
-	-- and paper.
-	ns.BuildJournalShell(frame, function(look)
-		for _, crumb in ipairs(frame.crumbButtons) do
-			inkCrumb(crumb, look)
-		end
-	end)
-	frame.leaves, frame.shownLeaf = { left = {}, right = {} }, { left = 1, right = 1 }
-	for _, side in ipairs({ "left", "right" }) do
-		for i = 1, 2 do
-			local leaf = newLeaf(frame.papers[side], BODY_H[side])
-			frame.leaves[side][i] = leaf
-			if i == 2 then
-				leaf.clip:Hide()
-			end
-		end
-	end
-	frame.left, frame.right = frame.leaves.left[1].body, frame.leaves.right[1].body
-	frame.back = buildBack(journal, frame)
-	frame.updatingView = buildUpdating(frame)
-	frame.legendPlate = ns.BuildLegendPlate(frame.pagesFrame)
-	frame.fold = buildFold(frame)
-	frame.searchDrop = ns.AttachJournalSearch(journal, frame.search, frame)
-
-	frame.close:SetScript("OnClick", function()
-		journal:Close()
-	end)
-	-- its "?", beside the close, while it has a First look (adapter/Onboarding.lua, ONB-R59)
-	ns.AttachJournalLook(frame)
-	table.insert(UISpecialFrames, FRAME_NAME)
-	-- Opening: the book's sound, and it fades in (0.16 s). Closing however it closes (Esc, the close button, a
-	-- toggle) hides the Prestige confirm (LED-R33, adapter/Prestige.lua), with the closing sound unless Close played
-	-- it already.
-	frame:SetScript("OnShow", function(self)
-		ns.JournalSound("bookOpen")
-		Pagle.StopMotion(self)
-		Pagle.Animate(self, {
-			{
-				dur = 0.16,
-				ease = Pagle.EASE.out,
-				keys = { { 0, { 0 } }, { 1, { 1 } } },
-				apply = function(v)
-					self:SetAlpha(v[1])
-				end,
+		-- the brass plate over the leather's lower left corner (LED-R149)
+		plate = { x = -12, y = HEIGHT - 18 },
+		-- the "?" beside the wax close, while the Journal's First look is registered (ONB-R59)
+		help = {
+			tooltip = L.FIRST_LOOK_AGAIN,
+			onClick = function()
+				ns.ShowJournalLookAgain()
+			end,
+		},
+		anchors = {
+			search = {
+				point = "TOPRIGHT",
+				x = -(SIDE + 6),
+				y = -(STRIP_MIDDLE - SEARCH_H / 2),
+				width = SEARCH_W,
+				height = SEARCH_H,
 			},
-		})
+		},
+		-- LED-R122: while the projection is updating, both pages show only its line
+		-- (asked first at each drawing, so each drawing reads its pages afresh)
+		notice = function()
+			journal.cacheKey = nil
+			return not ns.StateNow() and L.JOURNAL_UPDATING or nil
+		end,
+		how = function(from, to)
+			return journal:How(from, to)
+		end,
+		onDraw = function(place, notice)
+			afterDraw(journal, place, notice)
+		end,
+		-- what opening it does for onboarding, on its pages as drawn (adapter/Onboarding.lua)
+		onShow = function()
+			ns.JournalOpened(journal)
+		end,
+		-- closing however it closes hides the Prestige confirm (LED-R33, adapter/Prestige.lua)
+		onHide = function()
+			ns.HidePrestigeConfirm()
+		end,
+	})
+	-- every spread's sides, those registered later too
+	local left, right = sideRenderer(journal, "left"), sideRenderer(journal, "right")
+	local function registerPage(id)
+		journal.book:RegisterPage(id, "left", left)
+		journal.book:RegisterPage(id, "right", right)
+	end
+	for id in pairs(ns.journalSpreads) do
+		registerPage(id)
+	end
+	local register = ns.RegisterJournalSpread
+	---@diagnostic disable-next-line: duplicate-set-field -- wrapping logic/Journal.lua's, so a later spread gets its pages
+	function ns.RegisterJournalSpread(id, spread)
+		register(id, spread)
+		registerPage(id)
+	end
+	-- the search slip, hidden while updating (LED-R122) and under a Legend's plate
+	journal.book:RegisterLeather("search", function(anchor, place, notice)
+		if not journal.search then
+			buildSearch(journal, anchor)
+		end
+		local hidden = notice ~= nil or plateOf(journal:PagesAt(place)) ~= nil
+		local search = journal.search --[[@as EditBox]]
+		local drop = journal.searchDrop --[[@as Frame]]
+		search:SetShown(not hidden)
+		if hidden then
+			drop:Hide()
+		end
 	end)
-	frame:SetScript("OnHide", function(self)
-		-- Hidden with the whole UI as it fades out, it still ends closed: Core's driver settles the fade, whose end
-		-- hides it (Journal:Close).
-		if self.closing and self:IsShown() then
-			return
-		end
-		if not self.closing then
-			ns.JournalSound("bookClose")
-		end
-		self.closing = false
-		self:SetAlpha(1)
-		ns.HidePrestigeConfirm()
-	end)
-	return frame
-end
-
--- Crumb `i` of the strip, made on first use: its gilt words and, after the first, the fleuron before them.
----@param journal LedgerJournal
----@param i integer
----@return LedgerJournalCrumbView
-local function crumbAt(journal, i)
-	local frame = journal.frame --[[@as LedgerJournalFrame]]
-	local crumb = frame.crumbButtons[i]
-	if not crumb then
-		crumb = CreateFrame("Button", nil, frame.crumbs) --[[@as LedgerJournalCrumbView]]
-		ns.JournalClickable(crumb)
-		function crumb.open(place)
-			journal:OpenPlace(place)
-		end
-		if i > 1 then
-			crumb.fleuron = ns.JournalPiece(crumb, "Book", "fleuron", "OVERLAY")
-			crumb.fleuron:SetSize(16, 16)
-			crumb.fleuron:SetPoint("LEFT", 8, 0)
-		end
-		crumb.label = ns.JournalLabel(crumb, "gilt", 14, INK.gilt, "", { shadow = true })
-		crumb.label:SetPoint("LEFT", i > 1 and 32 or 0, 0)
-		crumb:SetScript("OnEnter", function(self)
-			if self.place then
-				self.label:SetTextColor(rgb(INK.giltLight))
-			end
-		end)
-		crumb:SetScript("OnLeave", function(self)
-			self.label:SetTextColor(unpack(self.gilt or ns.HexTint(INK.gilt)))
-		end)
-		frame.crumbButtons[i] = crumb
-	end
-	return crumb
-end
-
--- Lays the crumbs along the strip in the binding's gilt, the fleurons between them, each opening its level but the
--- last (LED-R125, LED-R112); the last are cut short before the search slip.
----@param journal LedgerJournal
----@param crumbs LedgerCrumb[]
-local function drawCrumbs(journal, crumbs)
-	local frame = journal.frame --[[@as LedgerJournalFrame]]
-	local look = frame.binding:Look()
-	local room = frame.crumbs:GetWidth()
-	local x = 0
-	for i, data in ipairs(crumbs) do
-		local crumb = crumbAt(journal, i)
-		inkCrumb(crumb, look)
-		local lead = i > 1 and 32 or 0
-		crumb.label:SetText(data.label)
-		ns.JournalBound(crumb.label, math.max(1, room - x - lead))
-		local width = crumb.label:GetWidth() + lead
-		crumb:SetSize(width, 20)
-		crumb:ClearAllPoints()
-		crumb:SetPoint("LEFT", x, 0)
-		crumb.place = i < #crumbs and data.place or nil
-		crumb:Show()
-		x = x + width
-	end
-	for i = #crumbs + 1, #frame.crumbButtons do
-		frame.crumbButtons[i]:Hide()
-	end
 end
 
 --- Whether the book is open: shown, and not fading out as it closes.
 ---@return boolean
 function Journal:IsShown()
-	return self.frame ~= nil and self.frame:IsShown() and not self.frame.closing
+	return self.book:IsShown()
+end
+
+--- The place the book is at, as the Journal's (LED-R125).
+---@return LedgerJournalPlace
+function Journal:Place()
+	return fromBook(self.book:Place())
 end
 
 --- Opens the book at the spread it was left on (Home at the first opening after a login or `/reload`), or closes it
@@ -480,78 +463,46 @@ function Journal:Toggle()
 	end
 end
 
---- Opens the book, drawn as it stands now, fitted to the screen; opening it ticks the First evening list's item and
---- may show the Ledger's Margin note (ONB-R61, ONB-R52).
+-- After each opening: the frame as the Journal's, and the "?" shown while its First look is registered (ONB-R59).
+---@param journal LedgerJournal
+local function opened(journal)
+	journal.frame = journal.book.frame
+	journal.book:SetHelpShown(ns.JournalHelpShown())
+end
+
+--- Opens the book where it was left, drawn as it stands now; opening it ticks the First evening list's item and may
+--- show the Ledger's Margin note (ONB-R61, ONB-R52).
 function Journal:Show()
-	local frame = self.frame or build(self)
-	self.frame = frame
-	local opening = not frame:IsShown() or frame.closing
-	if opening then
-		Pagle.StopMotion(frame)
-		frame.closing = false
-		-- fitted again by Core as the UI scale or the screen's size changes
-		Pagle.FitToScreen(frame, FIT)
-		-- a book opened anew draws its spread in place, never turning to it
-		self.justOpened = true
-		frame:Show()
-	end
-	-- It opens over every window already open: the Pagle windows share its strata, at frame levels of their own.
-	frame:Raise()
-	self:Draw()
-	-- what opening it does for onboarding, on its pages as drawn (adapter/Onboarding.lua)
-	if opening then
-		ns.JournalOpened(self)
-	end
+	self.book:Open()
+	opened(self)
 end
 
---- Closes the book with its sound: it fades out (0.12 s), then hides, left at rest for its next showing. Hidden with
---- the whole UI as it fades, it still ends closed: Core's driver settles the fade.
+--- Closes the book (BOOK-R4).
 function Journal:Close()
-	local frame = self.frame
-	if not frame or not frame:IsShown() or frame.closing then
-		return
-	end
-	ns.JournalSound("bookClose")
-	frame.closing = true
-	Pagle.StopMotion(frame)
-	Pagle.Animate(frame, {
-		{
-			dur = 0.12,
-			ease = Pagle.Bezier(0.42, 0, 1, 1),
-			keys = { { 0, { 1 } }, { 1, { 0 } } },
-			apply = function(v)
-				frame:SetAlpha(v[1])
-			end,
-		},
-	}, function()
-		if frame.closing then
-			frame:Hide()
-			-- its OnHide already did this, unless the whole UI hid it first
-			frame.closing = false
-			frame:SetAlpha(1)
-			ns.HidePrestigeConfirm()
-		end
-	end)
+	self.book:Close()
 end
 
---- Opens spread `id` with `args`, opening the book if it is closed (LED-R125). Does nothing, and returns false, when
---- no spread is registered as `id`.
+--- Opens spread `id` with `args`, opening the book if it is closed (LED-R125), moving as Journal:How says unless
+--- `motion` says how. Does nothing, and returns false, when no spread is registered as `id`.
 ---@param id string
 ---@param args table?
+---@param motion ("turn"|"fade"|"still")?
 ---@return boolean opened
-function Journal:Open(id, args)
-	if not self.router:Open(id, args) then
+function Journal:Open(id, args, motion)
+	if not ns.journalSpreads[id] then
 		return false
 	end
-	self:Show()
+	self.book:Open(toBook({ id = id, args = args }), motion and { motion = motion } or nil)
+	opened(self)
 	return true
 end
 
---- Opens `place`: its spread with its args (LED-R125). Every link, crumb, tile and search result opens through it.
+--- Opens `place`: its spread with its args (LED-R125). Every link, tile and search result opens through it.
 ---@param place LedgerJournalPlace
+---@param motion ("turn"|"fade"|"still")?
 ---@return boolean opened
-function Journal:OpenPlace(place)
-	return self:Open(place.id, place.args)
+function Journal:OpenPlace(place, motion)
+	return self:Open(place.id, place.args, motion)
 end
 
 --- The next drawing turns the page in `direction` even on the same spread (a Prestige turns to the new rank).
@@ -560,287 +511,24 @@ function Journal:TurnNext(direction)
 	self.turnDirection = direction
 end
 
---- Ends every motion of the book at once, as settled: the page turn, the crossfade, the opening fade (a tour stop's
---- screenshot).
+--- Ends every motion of the book at once, as settled (a tour stop's screenshot).
 function Journal:Settle()
-	local frame = self.frame
-	if not frame then
-		return
-	end
-	if self.finishTurn then
-		self.finishTurn()
-	end
-	Pagle.StopMotion(frame)
-	frame:SetAlpha(1)
+	self.book:Settle()
 end
 
--- The leaf of `side` not shown now, made ready: shown whole and drawn on.
----@param frame LedgerJournalFrame
----@param side "left"|"right"
----@return LedgerJournalLeaf next
----@return LedgerJournalLeaf shown
-local function swapLeaf(frame, side)
-	local shown = frame.leaves[side][frame.shownLeaf[side]]
-	local index = 3 - frame.shownLeaf[side]
-	frame.shownLeaf[side] = index
-	local nextLeaf = frame.leaves[side][index]
-	frame[side] = nextLeaf.body
-	return nextLeaf, shown
-end
-
--- Turns the page from the leaves `from` to the leaves `to` (MOTION.md): forward, the right page lifts toward the spine
--- uncovering the new right page, then lands on the left from the spine outward; backward is the mirror image. A fold
--- shade darkens the lifting page and a soft shadow falls beside its edge. The crumbs change as it passes the spine.
----@param journal LedgerJournal
----@param from { left: LedgerJournalLeaf, right: LedgerJournalLeaf }
----@param to { left: LedgerJournalLeaf, right: LedgerJournalLeaf }
----@param forward boolean
----@param crumbs fun()
-local function turn(journal, from, to, forward, crumbs)
-	local frame = journal.frame --[[@as LedgerJournalFrame]]
-	local papers = frame.papers
-	local lw, rw = ns.JOURNAL_PAGE_W, ns.JOURNAL_PAGE_W
-	local owner = journal.turnOwner
-	Pagle.StopMotion(owner)
-	local function finish()
-		journal.finishTurn = nil
-		Pagle.StopMotion(owner)
-		from.left.clip:Hide()
-		from.right.clip:Hide()
-		reveal(to.left, papers.left, 0, 1)
-		reveal(to.right, papers.right, 0, 1)
-		frame.fold:Hide()
-		crumbs()
-	end
-	journal.finishTurn = finish
-	if not ns.MotionOn() then
-		finish()
-		return
-	end
-	ns.JournalSound("pageTurn")
-	local fold = frame.fold
-	fold:Show()
-	if forward then
-		reveal(to.left, papers.left, 1, 1)
-		reveal(from.left, papers.left, 0, 1)
-	else
-		reveal(to.right, papers.right, 0, 0)
-		reveal(from.right, papers.right, 0, 1)
-	end
-	Pagle.Animate(owner, {
-		-- the page lifts toward the spine
-		{
-			dur = LIFT,
-			ease = Pagle.Bezier(0.5, 0, 0.9, 0.6),
-			keys = { { 0, { 0 } }, { 1, { 1 } } },
-			apply = function(v)
-				local k = v[1]
-				if forward then
-					reveal(from.right, papers.right, 0, 1 - k)
-					reveal(to.right, papers.right, 1 - k, 1)
-					placeFold(fold, papers.right, 0, (1 - k) * rw, (1 - k) * rw, 1, 0.28 * k, 1)
-				else
-					reveal(from.left, papers.left, k, 1)
-					reveal(to.left, papers.left, 0, k)
-					placeFold(fold, papers.left, k * lw, lw, k * lw, -1, 0.28 * k, 1)
-				end
-			end,
-		},
-		-- it lands on the other page, from the spine outward
-		{
-			dur = LAND,
-			delay = LIFT,
-			ease = Pagle.Bezier(0.1, 0.4, 0.4, 1),
-			keys = { { 0, { 0 } }, { 1, { 1 } } },
-			apply = function(v)
-				local k = v[1]
-				if k <= 0 then
-					return
-				end
-				if forward then
-					from.right.clip:Hide()
-					reveal(to.right, papers.right, 0, 1)
-					reveal(to.left, papers.left, 1 - k, 1)
-					reveal(from.left, papers.left, 0, 1 - k)
-					placeFold(fold, papers.left, (1 - k) * lw, lw, (1 - k) * lw, -1, 0.28 * (1 - k), 1 - k)
-				else
-					from.left.clip:Hide()
-					reveal(to.left, papers.left, 0, 1)
-					reveal(to.right, papers.right, 0, k)
-					reveal(from.right, papers.right, k, 1)
-					placeFold(fold, papers.right, 0, k * rw, k * rw, 1, 0.28 * (1 - k), 1 - k)
-				end
-			end,
-		},
-	}, finish)
-	Pagle.Cue(owner, LIFT, crumbs)
-end
-
--- Crossfades the right page from leaf `from` to leaf `to` (MOTION.md › Picking a fish on a zone page): the old one
--- fades out as the new one fades in, drifting up 3 units (0.2 s, ease-in-out), with the page-turn sound.
----@param journal LedgerJournal
----@param from LedgerJournalLeaf
----@param to LedgerJournalLeaf
-local function crossfade(journal, from, to)
-	local frame = journal.frame --[[@as LedgerJournalFrame]]
-	local paper = frame.papers.right
-	local owner = journal.turnOwner
-	Pagle.StopMotion(owner)
-	reveal(to, paper, 0, 1)
-	local function finish()
-		journal.finishTurn = nil
-		from.clip:Hide()
-		from.clip:SetAlpha(1)
-		to.clip:SetAlpha(1)
-		to.content:ClearAllPoints()
-		to.content:SetAllPoints(paper)
-	end
-	journal.finishTurn = finish
-	ns.JournalSound("pick") -- a fish picked sounds whether or not things move
-	if not ns.MotionOn() then
-		finish()
-		return
-	end
-	Pagle.Animate(owner, {
-		{
-			dur = CROSSFADE,
-			ease = Pagle.EASE.inOut,
-			keys = { { 0, { 0 } }, { 1, { 1 } } },
-			apply = function(v)
-				from.clip:SetAlpha(1 - v[1])
-				to.clip:SetAlpha(v[1])
-				to.content:ClearAllPoints()
-				to.content:SetPoint("TOPLEFT", paper, "TOPLEFT", 0, -3 * (1 - v[1]))
-				to.content:SetPoint("BOTTOMRIGHT", paper, "BOTTOMRIGHT", 0, -3 * (1 - v[1]))
-			end,
-		},
-	}, finish)
-end
-
---- Draws both pages, the crumbs, the search slip and the back link from the router now, the crumbs in the binding's
---- gilt, if the book is open (LED-R122, LED-R125, LED-R112). Another spread turns the page to it, a fish picked crossfades the
---- right page, a Legend's plate opens over the spread; the same spread is drawn again in place, keeping each page's
---- scroll while its subject stays (LED-R129), and its widgets play their moments of change.
+--- Draws the open book again where it is (LED-R122, LED-R123), keeping each page's scroll while its subject stays
+--- (LED-R129) as its widgets play their moments of change; a turn asked for (Journal:TurnNext) turns the page.
 function Journal:Draw()
-	local frame = self.frame
-	if not frame or not frame:IsShown() then
+	if not self:IsShown() then
 		return
 	end
-	local context = self:Context()
-	local pages = self.router:Pages(context)
-	self.pages = pages
-	-- The brass plate always shows (LED-R149): LED-R122 hides only the pages' contents, so while the projection updates
-	-- it keeps the words last read. Only an update before anything was read (the login rebuild) leaves it hidden.
-	if not pages.updating then
-		self.plate = ns.BrassPlate(context --[[@as LedgerSpreadContext]])
-	end
-	ns.SetJournalPlate(frame, self.plate)
-
-	local plate = frame.legendPlate
-	frame.updatingView:SetShown(pages.updating)
-	if pages.updating then
-		-- LED-R122: only the quill and its line, the crumbs, search and back link hidden; each page keeps its scroll
-		frame.crumbs:Hide()
-		frame.search:Hide()
-		frame.searchDrop:Hide()
-		frame.back:Hide()
-		frame.leaves.left[frame.shownLeaf.left].clip:Hide()
-		frame.leaves.right[frame.shownLeaf.right].clip:Hide()
-		plate:Hide()
-		self.drawnPlate = false -- a Legend's plate opens again when the update finishes
-		swayQuill(frame.updatingView)
-		return
-	end
-	local function open(target)
-		self:OpenPlace(target)
-	end
-	frame.crumbs:Show()
-	frame.back.place = pages.back
-	frame.back:SetShown(pages.back ~= nil)
-
-	-- A Legend's plate over the spread (LED-R147): it opens over the pages as they stand
-	local plateBlock = pages.left[1] and pages.left[1].kind == "plate" and pages.left[1] or nil
-	if plateBlock then
-		ns.FillLegendPlate(plate, plateBlock, open)
-		if not self.drawnPlate then
-			ns.OpenLegendPlate(plate)
-			-- it covers both pages: under it, each starts again at the top (LED-R129), and stands again where an update
-			-- hid it (LED-R122)
-			for _, side in ipairs({ "left", "right" }) do
-				frame[side].scroll:SetVerticalScroll(0)
-				local leaf = frame.leaves[side][frame.shownLeaf[side]]
-				if not leaf.clip:IsShown() then
-					reveal(leaf, frame.papers[side], 0, 1)
-				end
-			end
-		end
-		self.drawnPlate = true
-		frame.search:Hide()
-		frame.searchDrop:Hide()
-		drawCrumbs(self, pages.crumbs or {})
-		self.drawnSubjects, self.drawnId = pages.subjects, self.router:Place().id
-		return
-	end
-	frame.search:Show()
-	local leavingPlate = self.drawnPlate == true
-	self.drawnPlate = false
-	if leavingPlate then
-		ns.CloseLegendPlate(plate)
-	elseif plate:IsShown() then
-		plate:Hide()
-	end
-
-	-- How it moves from what was drawn: turn to another spread, crossfade the right page, or draw again in place
-	local place = self.router:Place()
-	local drawn = self.drawnSubjects
-	local subjects = pages.subjects or drawn or { left = "", right = "" }
-	local leftChanged = drawn ~= nil and subjects.left ~= drawn.left
-	local rightChanged = drawn ~= nil and subjects.right ~= drawn.right
-	local depth = #(pages.crumbs or {})
-	local forced = self.turnDirection
+	local direction = self.turnDirection
 	self.turnDirection = nil
-	local settled = self.justOpened
-	self.justOpened = false
-	local turning = drawn ~= nil
-		and not settled
-		and not leavingPlate
-		and (forced ~= nil or place.id ~= self.drawnId or (leftChanged and place.id ~= ns.JOURNAL_HOME))
-	local fading = drawn ~= nil
-		and not settled
-		and not turning
-		and not leavingPlate
-		and rightChanged
-		and not leftChanged
-	local forward = forced == "fwd" or (forced == nil and depth >= (self.drawnDepth or 0))
-	self.drawnSubjects, self.drawnId, self.drawnDepth = subjects, place.id, depth
-	if self.finishTurn then
-		self.finishTurn()
+	if direction then
+		self.book:Open(nil, { motion = "turn", forward = direction == "fwd" })
+	else
+		self.book:Draw()
 	end
-	local crumbs = function()
-		drawCrumbs(self, pages.crumbs or {})
-	end
-
-	if turning then
-		local toLeft, fromLeft = swapLeaf(frame, "left")
-		local toRight, fromRight = swapLeaf(frame, "right")
-		ns.DrawJournalPage(toLeft.body, pages.left, open, true)
-		ns.DrawJournalPage(toRight.body, pages.right, open, true)
-		turn(self, { left = fromLeft, right = fromRight }, { left = toLeft, right = toRight }, forward, crumbs)
-		return
-	end
-	crumbs()
-	local leftLeaf = frame.leaves.left[frame.shownLeaf.left]
-	reveal(leftLeaf, frame.papers.left, 0, 1)
-	ns.DrawJournalPage(leftLeaf.body, pages.left, open, drawn == nil or leftChanged)
-	if fading then
-		local toRight, fromRight = swapLeaf(frame, "right")
-		ns.DrawJournalPage(toRight.body, pages.right, open, true)
-		crossfade(self, fromRight, toRight)
-		return
-	end
-	local rightLeaf = frame.leaves.right[frame.shownLeaf.right]
-	reveal(rightLeaf, frame.papers.right, 0, 1)
-	ns.DrawJournalPage(rightLeaf.body, pages.right, open, drawn == nil or rightChanged)
 end
 
 --- A live entry was applied (LED-R123): the open spread redraws on the next frame, once however many arrive in it,

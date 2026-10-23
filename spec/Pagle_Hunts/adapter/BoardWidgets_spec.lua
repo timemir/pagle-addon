@@ -4,7 +4,6 @@
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local hunts = dofile("spec/Pagle_Hunts/support.lua")
 
-local BOOK = "Interface\\AddOns\\Pagle\\media\\books\\BookAtlas"
 local PARTS = "Interface\\AddOns\\Pagle\\media\\books\\BookParts"
 
 -- Hunts' ns, and a frame to draw on.
@@ -80,16 +79,17 @@ describe("the books kit's sprite helpers (adapter/BookArt.lua)", function()
 	end)
 
 	it("three-slice a sprite across: the caps keep their size, the middle stretches to the width", function()
-		local ns, parent = kit()
-		local slice = ns.NewBoardPlate(parent).brass
+		local ns, parent, loaded = kit()
+		local slice = loaded.env.CreateFrame("Frame", nil, parent)
 
-		ns.SetThreeSlice(slice, "Book", "plate", 120, 8, "ARTWORK")
+		ns.SetThreeSlice(slice, "Parts", "ink-empty", 120, 6, "ARTWORK")
 
-		-- the plate is 128 × 64 texels at 274, 136: 8-unit caps at each end, the middle between them
-		assert.are.same({ 120, 32 }, { slice.width, slice.height })
-		assert.are.same(coords(274, 136, 16, 64, 512, 256), slice.left.texCoord)
-		assert.are.same(coords(274 + 112, 136, 16, 64, 512, 256), slice.right.texCoord)
-		assert.are.same(coords(274 + 16, 136, 96, 64, 512, 256), slice.middle.texCoord)
+		-- the empty ink is 404 × 24 texels at 18, 762, its stroke 1 unit in: 6-unit caps past that margin at each end,
+		-- the middle between them
+		assert.are.same({ 120, 10 }, { slice.width, slice.height })
+		assert.are.same(coords(18, 762, 14, 24, 512, 1024), slice.left.texCoord)
+		assert.are.same(coords(18 + 390, 762, 14, 24, 512, 1024), slice.right.texCoord)
+		assert.are.same(coords(18 + 14, 762, 376, 24, 512, 1024), slice.middle.texCoord)
 	end)
 
 	it("slice a frame down to any height, repeating its middle in steps when it keeps a pitch", function()
@@ -122,7 +122,7 @@ describe("the books kit's sprite helpers (adapter/BookArt.lua)", function()
 		assert.are.equal("Interface\\AddOns\\Pagle\\media\\fonts\\IMFeENrm28P.ttf", fonts.text.font[1])
 		assert.are.equal("Interface\\AddOns\\Pagle\\media\\fonts\\IMFeENit28P.ttf", fonts.note.font[1])
 		assert.are.equal("Interface\\AddOns\\Pagle\\media\\fonts\\Caveat-Medium.ttf", fonts.hand.font[1])
-		assert.are.equal("Interface\\AddOns\\Pagle\\media\\fonts\\Marcellus-Regular.ttf", fonts.crumb.font[1])
+		assert.are.equal("Interface\\AddOns\\Pagle\\media\\fonts\\Marcellus-Regular.ttf", fonts.clock.font[1])
 		assert.are.same({ 29, 14 }, { fonts.title.font[2], fonts.text.font[2] })
 	end)
 end)
@@ -351,24 +351,13 @@ describe("the board's art kit", function()
 	end)
 
 	describe("the marks (HNT-R60)", function()
-		it("draw the kit's fleuron and the pointing hand as textures, the hand in red ink", function()
+		it("draw the pointing hand as a texture, in red ink", function()
 			local ns, parent = kit()
 
-			local fleuron = ns.NewBoardMark(parent, "fleuron", 16)
-			local hand = ns.NewBoardMark(parent, "hand", 16)
+			local hand = ns.NewBoardHand(parent, 16)
 
-			assert.are.same({ "Texture", BOOK }, { fleuron.kind, fleuron.texture })
-			assert.are.equal("fleuron", spriteAt(ns, fleuron))
 			assert.are.same({ "Texture", "Interface\\Cursor\\Point" }, { hand.kind, hand.texture })
 			assert.are.same({ unpack(ns.BOARD_LOOK.red) }, { unpack(hand.vertexColor, 1, 3) })
-		end)
-
-		it("refuse a mark there isn't", function()
-			local ns, parent = kit()
-
-			assert.has_error(function()
-				ns.NewBoardMark(parent, "leather", 12)
-			end, "no mark leather")
 		end)
 
 		it("are never font glyphs: no Hunts file writes ❧ or ☚", function()
@@ -383,48 +372,7 @@ describe("the board's art kit", function()
 		end)
 	end)
 
-	describe("the ribbons (HNT-R61)", function()
-		it("hang a tinted grosgrain with its stitch and words, longer and brighter when chosen", function()
-			local ns, parent = kit()
-			local ribbon = ns.NewBoardRibbon(parent)
-			local color = ns.BOARD_LOOK.boardRibbon
-
-			ribbon:SetRibbon("Board", color, true)
-			assert.are.equal("Board", ribbon.label:GetText())
-			assert.are.same({ 104, 96 }, { ribbon.width, ribbon.height })
-			assert.are.equal(PARTS, ribbon.body.texture)
-			assert.are.same(
-				{ color[1] * 1.13, color[2] * 1.13, color[3] * 1.13 },
-				{ unpack(ribbon.body.vertexColor, 1, 3) }
-			)
-			assert.are.same({ unpack(ns.BOARD_LOOK.ribbonLabelOn) }, { unpack(ribbon.label.textColor, 1, 3) })
-
-			ribbon:SetRibbon("Round the Clock", ns.BoardRibbonColor(1), false)
-			assert.are.same({ 104, 83 }, { ribbon.width, ribbon.height })
-			-- its bottom 83 of 140 units: the top 57 units (114 texels) dropped, the swallowtail end kept, not squashed
-			assert.are.equal((474 + 114) / 1024, ribbon.body.texCoord[3])
-			assert.are.equal(284 / 2 - 140 + 83, ribbon.body.height) -- the sprite's own scale: cut, never squashed
-			assert.are.equal((474 + 284) / 1024, ribbon.body.texCoord[4])
-			assert.are.same({ unpack(ns.BoardRibbonColor(1)) }, { unpack(ribbon.body.vertexColor, 1, 3) })
-			assert.is_nil(ribbon.stitch.vertexColor) -- the gold stitch keeps its own colour
-		end)
-
-		it("brighten under the mouse, and show their tooltip", function()
-			local ns, parent, loaded = kit()
-			local ribbon = ns.NewBoardRibbon(parent)
-			local color = ns.BoardRibbonColor(2)
-			ribbon:SetRibbon("Turn of the Year", color, false)
-			ribbon.tooltip = { "Turn of the Year" }
-
-			ribbon:GetScript("OnEnter")(ribbon)
-
-			assert.are.same(
-				{ color[1] * 1.13, color[2] * 1.13, color[3] * 1.13 },
-				{ unpack(ribbon.body.vertexColor, 1, 3) }
-			)
-			assert.are.same({ "Turn of the Year" }, loaded.client.tooltipLines())
-		end)
-
+	describe("the ribbons' colours (HNT-R61)", function()
 		it("take the set colours in turn, round again after the last", function()
 			local ns = kit()
 			local colors = ns.BOARD_LOOK.ribbons
@@ -435,56 +383,7 @@ describe("the board's art kit", function()
 		end)
 	end)
 
-	describe("the nameplate (HNT-R61)", function()
-		it("is the brass plate sized to its words, and hidden with none", function()
-			local ns, parent = kit()
-			local plate = ns.NewBoardPlate(parent)
-
-			plate:SetPlate("2 titles · 9 Hunts done")
-			assert.is_true(plate:IsShown())
-			assert.are.equal(BOOK, plate.brass.left.texture)
-			assert.are.equal("2 titles · 9 Hunts done", plate.label:GetText())
-			assert.are.equal(plate.label:GetStringWidth() + 22, plate.width)
-
-			plate:SetPlate(nil)
-			assert.is_false(plate:IsShown())
-		end)
-
-		it("tones the brass silver under a binding that asks for it, and back (HNT-R70)", function()
-			local ns, parent = kit()
-			local plate = ns.NewBoardPlate(parent)
-			plate:SetPlate("2 titles · 9 Hunts done")
-
-			plate:SetSilver(true)
-			assert.is_true(plate.brass.middle:IsDesaturated())
-			assert.are.same({ 1.1, 1.1, 1.15 }, plate.brass.left.vertexColor)
-
-			plate:SetSilver(false)
-			assert.is_false(plate.brass.right:IsDesaturated())
-			assert.are.same({ 1, 1, 1 }, plate.brass.left.vertexColor)
-		end)
-	end)
-
-	describe("the parchment (HNT-R60)", function()
-		it("lay the kit's parchment, mirrored on a right page, with the gutter at the spine", function()
-			local ns, parent = kit()
-
-			local left = ns.NewBoardParchment(parent, "RIGHT")
-			local right = ns.NewBoardParchment(parent, "LEFT")
-
-			assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\Parchment", left.paper.texture)
-			assert.is_nil(left.paper.texCoord)
-			assert.are.same({ 1, 0, 0, 1 }, right.paper.texCoord)
-			assert.are.same({ "TOPRIGHT" }, left.gutter.points[1])
-			assert.are.same({ "TOPLEFT" }, right.gutter.points[1])
-			assert.are.equal(40, left.gutter.width)
-			-- the outer corners rounded by Core's corner masks, the spine's square
-			assert.are.same({ "TOPLEFT", "BOTTOMLEFT" }, { left.corners[1].points[1][1], left.corners[2].points[1][1] })
-			assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\CornerTL", left.corners[1].texture)
-			assert.are.same({ left.corners[1], left.corners[2] }, left.paper.masks)
-			assert.are.equal("Interface\\AddOns\\Pagle\\media\\books\\CornerTR", right.corners[1].texture)
-		end)
-
+	describe("the headings", function()
 		it("set headings in small caps: capitals in the small kicker face", function()
 			assert.are.equal("NATURAL HUNT", kit().BoardSmallCaps("Natural Hunt"))
 		end)

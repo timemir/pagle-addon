@@ -1202,6 +1202,7 @@ local PAIRED = { plinth = true }
 --- those in use, by kind, in page order.
 ---@class LedgerJournalPage: Frame
 ---@field scroll ScrollFrame
+---@field subject string?   -- the subject drawn on it last (LED-R129, adapter/Journal.lua)
 ---@field content Frame
 ---@field width number
 ---@field height number
@@ -1227,6 +1228,15 @@ local function placeThumb(page)
 	local at = (page.scroll:GetVerticalScroll() or 0) / range
 	page.thumb:ClearAllPoints()
 	page.thumb:SetPoint("TOPRIGHT", page, "TOPRIGHT", 12, -at * (page.height - thumbH))
+end
+
+--- Scrolls `page` to `offset` as drawn, its thumb following: a page drawn on the book's other leaf takes up the scroll
+--- of the one it replaces while its subject stays (LED-R129).
+---@param page LedgerJournalPage
+---@param offset number
+function ns.ScrollJournalPage(page, offset)
+	page.scroll:SetVerticalScroll(offset)
+	placeThumb(page)
 end
 
 --- A page body on `parent`, `width` × `height`, that scrolls with the mouse wheel.

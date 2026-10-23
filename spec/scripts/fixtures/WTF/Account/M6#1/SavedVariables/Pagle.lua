@@ -191,6 +191,14 @@ PagleDB = {
 ["appearance"] = {
 ["stats.trackerframe"] = "stats.trackerframe.logbook",
 },
+["books"] = {
+["stats"] = {
+"TOPLEFT", -- [1]
+"TOPLEFT", -- [2]
+312, -- [3]
+-140, -- [4]
+},
+},
 ["dock"] = {
 ["point"] = {
 ["point"] = "TOPRIGHT",

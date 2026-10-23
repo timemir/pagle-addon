@@ -86,6 +86,7 @@ logic\PrestigeFrames.lua
 logic\ToastStyles.lua
 logic\Motion.lua
 logic\BookBinding.lua
+logic\Book.lua
 logic\LegendCrests.lua
 logic\Fit.lua
 logic\Menu.lua
@@ -145,6 +146,7 @@ adapter\Art.lua
 adapter\Motion.lua
 adapter\Fit.lua
 adapter\BookBinding.lua
+adapter\Book.lua
 adapter\ToastLayers.lua
 adapter\PrestigeFrames.lua
 adapter\Announcements.lua

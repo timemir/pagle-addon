@@ -203,7 +203,7 @@ describe("the Journal's Trophy Room", function()
 		local _, loaded = spread({ "trophyRoom" })
 		local journal = loaded.ns.journal
 
-		journal.frame.left.drawn.row[2]:Click()
+		journal.shown.left.drawn.row[2]:Click()
 
 		assert.are.equal("Catfish", journal.pages.right[2].text)
 	end)
@@ -215,7 +215,7 @@ describe("the Journal's Trophy Room", function()
 			scrollPage(loaded, "left", 120)
 			scrollPage(loaded, "right", 80)
 
-			loaded.ns.journal.frame.left.drawn.row[2]:Click()
+			loaded.ns.journal.shown.left.drawn.row[2]:Click()
 
 			assert.are.equal("Catfish", loaded.ns.journal.pages.right[2].text)
 			assert.are.same({ 120, 0 }, { pageScroll(loaded, "left"), pageScroll(loaded, "right") })
@@ -248,7 +248,7 @@ describe("the Journal's Trophy Room", function()
 		function()
 			local _, loaded = spread({ "trophyRoom", 2 })
 
-			local board = loaded.ns.journal.frame.right.drawn.board[1]
+			local board = loaded.ns.journal.shown.right.drawn.board[1]
 
 			assert.are.same({ "heaviest", "17", "19", "22", "26" }, shownTexts(board))
 			-- a landed mark is red and tall, one not landed grey and short
@@ -326,7 +326,7 @@ describe("the Journal's Curios", function()
 		function()
 			local _, loaded = spread({ "curios" })
 
-			local plinths = loaded.ns.journal.frame.left.drawn.plinth
+			local plinths = loaded.ns.journal.shown.left.drawn.plinth
 
 			assert.are.same(
 				{ "An empty plinth", "The plinth is dusted and ready. The exhibit is late." },
@@ -361,7 +361,7 @@ describe("the Journal's Curios", function()
 		local _, loaded = spread({ "curios" })
 
 		for _, side in ipairs({ "left", "right" }) do
-			for _, text in ipairs(shownTexts(loaded.ns.journal.frame[side])) do
+			for _, text in ipairs(shownTexts(loaded.ns.journal.shown[side])) do
 				assert.is_nil(text:find("Message in a Bottle", 1, true))
 				assert.is_nil(text:find("Small Chest", 1, true))
 			end
@@ -404,7 +404,7 @@ describe("the Journal's Curios", function()
 
 	it("opens the Field report from Help chart the waters (LED-R144, REP-R43)", function()
 		local fake, loaded = spread({ "curios" })
-		local links = loaded.ns.journal.frame.right.drawn.link
+		local links = loaded.ns.journal.shown.right.drawn.link
 
 		links[#links]:Click()
 
@@ -414,7 +414,7 @@ describe("the Journal's Curios", function()
 	it("prints Core's line instead while restricted, the Journal still open (LED-R121, REP-R44)", function()
 		local fake, loaded = spread({ "curios" })
 		fake.setRestricted(true)
-		local links = loaded.ns.journal.frame.right.drawn.link
+		local links = loaded.ns.journal.shown.right.drawn.link
 
 		links[#links]:Click()
 
@@ -427,7 +427,7 @@ end)
 describe("the Journal's ways into the collections", function()
 	-- Clicks the drawn leader on Home's right page whose words begin with `label`.
 	local function clickContents(loaded, label)
-		for _, leader in ipairs(loaded.ns.journal.frame.right.drawn.leader) do
+		for _, leader in ipairs(loaded.ns.journal.shown.right.drawn.leader) do
 			if leader.label.text == label then
 				leader:Click()
 				return

@@ -17,13 +17,13 @@ local function drawnTiles(tiles)
 		end,
 	})
 	loaded.ns.journal:Open("tiles")
-	return loaded, loaded.ns.journal.frame.left.drawn.tiles[1].tiles
+	return loaded, loaded.ns.journal.shown.left.drawn.tiles[1].tiles
 end
 
 -- Draws the spread again in place (the same tiles, filled anew) and returns its tiles.
 local function redrawn(loaded)
 	loaded.ns.journal:Draw()
-	return loaded.ns.journal.frame.left.drawn.tiles[1].tiles
+	return loaded.ns.journal.shown.left.drawn.tiles[1].tiles
 end
 
 -- How far below its tile's top `region` is placed (its one anchor's y offset, down).

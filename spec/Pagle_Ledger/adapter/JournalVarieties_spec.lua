@@ -103,7 +103,7 @@ end
 -- The variety rows drawn on the open book's left page, in order.
 local function rows(loaded)
 	local list = {}
-	for _, row in ipairs(loaded.ns.journal.frame.left.drawn.variety or {}) do
+	for _, row in ipairs(loaded.ns.journal.shown.left.drawn.variety or {}) do
 		list[#list + 1] = row
 	end
 	return list
@@ -121,7 +121,7 @@ describe("a fish's varieties card (VAR-R23)", function()
 			{ id = "varieties", args = { species = MACKEREL, variety = 1 } },
 		}, { card.text, card.value, card.link, card.place })
 		assert.is_nil(blockOfKind(loaded.ns.journal.pages.right, "varietyCard"))
-		local widget = loaded.ns.journal.frame.left.drawn.varietyCard[1]
+		local widget = loaded.ns.journal.shown.left.drawn.varietyCard[1]
 		assert.are.same(
 			{ "Varieties", "3 of 10 found", "See all ten »" },
 			{ widget.kicker.text, widget.count.text, widget.link.text }
@@ -155,7 +155,7 @@ describe("a fish's varieties card (VAR-R23)", function()
 		local _, loaded = loggedIn({ "fish", MACKEREL })
 		local journal = loaded.ns.journal
 
-		journal.frame.left.drawn.varietyCard[1]:Click()
+		journal.shown.left.drawn.varietyCard[1]:Click()
 
 		assert.are.equal("varieties", journal.router:Place().id)
 		assert.are.same(
@@ -254,7 +254,7 @@ describe("the varieties spread (VAR-R24)", function()
 		local _, loaded = loggedIn({ "varieties", MACKEREL, 10 })
 		local journal = loaded.ns.journal
 
-		local art = journal.frame.right.drawn.varietyArt[1].art
+		local art = journal.shown.right.drawn.varietyArt[1].art
 
 		assert.are.same(
 			{ "An epic colour", "Not yet discovered", "[varietyArt]", "Not landed yet. About one Catch in 100." },
@@ -274,7 +274,7 @@ describe("the varieties spread (VAR-R24)", function()
 	it("draws the rarity's kicker in its ink", function()
 		local _, loaded = loggedIn({ "varieties", MACKEREL, 8 })
 
-		local kicker = loaded.ns.journal.frame.right.drawn.kicker[1].label
+		local kicker = loaded.ns.journal.shown.right.drawn.kicker[1].label
 		local ink = loaded.env.Pagle.VARIETY_RARITIES[3].ink
 
 		assert.are.same({ ink[1], ink[2], ink[3] }, { kicker.textColor[1], kicker.textColor[2], kicker.textColor[3] })
@@ -283,14 +283,14 @@ describe("the varieties spread (VAR-R24)", function()
 	it("puts the fish crest, its shield and its name, at the right page's foot with what is left to go", function()
 		local _, loaded = loggedIn({ "varieties", MACKEREL })
 
-		local foot = loaded.ns.journal.frame.right.drawn.fishCrest[1]
+		local foot = loaded.ns.journal.shown.right.drawn.fishCrest[1]
 
 		assert.are.same(
 			{ CREST, "Item 6303 Crest", "7 to go." },
 			{ foot.crest.texture, foot.name:IsShown() and foot.name:GetText(), foot.toGo:GetText() }
 		)
 		assert.are.same({ 0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1 }, foot.crest.texCoord)
-		local page = loaded.ns.journal.frame.right
+		local page = loaded.ns.journal.shown.right
 		-- its anchor's last figure is how far down the page it sits: at the foot, the page's margin under it, so the
 		-- page needs no scrolling
 		local anchor = { foot:GetPoint(1) }
@@ -301,7 +301,7 @@ describe("the varieties spread (VAR-R24)", function()
 	it("names the crest once Core has its good (VAR-R12)", function()
 		local _, loaded = loggedIn({ "varieties", MACKEREL }, "The Mackerel Crest")
 
-		local foot = loaded.ns.journal.frame.right.drawn.fishCrest[1]
+		local foot = loaded.ns.journal.shown.right.drawn.fishCrest[1]
 
 		assert.are.same({ true, "The Mackerel Crest" }, { foot.name:IsShown(), foot.name:GetText() })
 	end)
@@ -355,7 +355,7 @@ describe("Every colour of a Species (VAR-R12, VAR-R25)", function()
 			)
 			assert.is_true(fake.Pagle.IsOwned("core.crest.fish.6303"))
 			loaded.ns.journal:OpenPlace(loaded.ns.JournalPlace.varieties(MACKEREL, 10))
-			local foot = loaded.ns.journal.frame.right.drawn.fishCrest[1]
+			local foot = loaded.ns.journal.shown.right.drawn.fishCrest[1]
 			assert.are.same({ "Item 6303 Crest", "All ten." }, { foot.name:GetText(), foot.toGo:GetText() })
 		end
 	)

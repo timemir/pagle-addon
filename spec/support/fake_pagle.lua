@@ -615,6 +615,46 @@ part(function(fake, Pagle, ns)
 	Pagle.PrestigeEmblemMarkup = ns.PrestigeEmblemMarkup
 end)
 
+-- The book shell (core/book.md), Core's real adapter/Book.lua, loaded at the first Pagle.NewBook into an environment
+-- whose globals are the loaded Module's client fake (read at each call, so a handle made while the Module loads builds
+-- its frame on that client at its first opening), with adapter/Art.lua's helpers loaded on first use. Saved positions
+-- are fake.profile.books.
+part(function(fake, Pagle, ns, host)
+	ns.host = ns.host or host
+	local env = setmetatable({ Pagle = Pagle }, {
+		__index = function(_, key)
+			local client = fake.clientEnv
+			if client and client[key] ~= nil then
+				return client[key]
+			end
+			return _G[key]
+		end,
+	})
+	local function run(file)
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
+		local chunk = assert(loadfile("addons/Pagle/" .. file))
+		setfenv(chunk, env)
+		chunk("Pagle", ns)
+	end
+	-- Core's art helpers, loaded on first use: Art.lua makes its fonts as it loads, on the client fake.
+	local ART = { ArtCrisp = true, ArtSprite = true, ArtFaceFont = true, SetThreeSlice = true, SetSprite = true }
+	local artLoaded = false
+	setmetatable(ns, {
+		__index = function(_, key)
+			if ART[key] and not artLoaded and fake.clientEnv then
+				artLoaded = true
+				run("adapter/Art.lua")
+				return rawget(ns, key)
+			end
+			return nil
+		end,
+	})
+	function Pagle.NewBook(options)
+		run("adapter/Book.lua") -- replaces Pagle.NewBook with the real one
+		return Pagle.NewBook(options)
+	end
+end)
+
 -- Restriction state (CORE-R30), on Core's real Restriction logic. setRestricted works as combat would.
 part(function(fake, Pagle, ns)
 	local restriction = ns.NewRestriction(false, {})

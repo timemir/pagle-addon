@@ -60,7 +60,7 @@ describe("search on the leather (STA-R76)", function()
 			local ns = loaded.ns
 
 			-- centred between the band's inner edge (7) and the pages (38): 9.5 above and below its 26
-			assert.are.same({ "TOPRIGHT", -24, -9.5 }, view.points[1])
+			assert.are.same({ "TOPRIGHT", book.frame, "TOPRIGHT", -24, -9.5 }, view.points[1])
 			assert.are.equal(26, view:GetHeight())
 			local slip
 			for _, child in ipairs(view.children) do

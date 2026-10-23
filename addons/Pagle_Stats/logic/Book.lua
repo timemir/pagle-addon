@@ -5,10 +5,10 @@ end
 ---@class PagleStatsNS
 local ns = select(2, ...)
 
--- The Stats book's page router (STA-R70, STA-R74): pure logic, everything passed in (CORE-R7). The book shows one
--- page at a time, and the router decides which: the place it is on (a StatsBookTarget: the page and what is chosen
--- on it), which renderer draws each side of it, the breadcrumb trail back up, and where the ribbons go.
--- adapter/Book.lua draws what it decides on the book.
+-- The Stats book's pages and crumbs (STA-R70, STA-R74): pure logic, everything passed in (CORE-R7). The book is Core's
+-- shell (Pagle.NewBook, core/book.md), which routes between the pages below, keeping of a target what each page keeps;
+-- this file says what the pages are, the crumb trail back up, and where the ribbons go. adapter/Book.lua hands them
+-- to the shell.
 --
 -- The pages, and the files whose renderers draw them (`ns.book:RegisterPage(page, side, renderer)`):
 --   "home"      the home spread (adapter/Home.lua): where I've fished on the left, right now on the right
@@ -26,7 +26,7 @@ local ns = select(2, ...)
 --- Draws one side of one page: `content` is that side's own frame inside the page's scrolling body, as wide as the
 --- body; `place` is where the book is (a copy). It returns the height it drew, so the body scrolls when that overflows
 --- (STA-R70); nil fits the body. Renderers never run while the projection is updating: the book then writes
---- "Updating my records…" on both sides itself (STA-R72).
+--- "Updating my records…" on both sides (STA-R72, BOOK-R22).
 ---@alias StatsBookRenderer fun(content: Frame, place: StatsBookTarget): number?
 
 --- One breadcrumb (STA-R74): what it names, and where it goes. adapter/Book.lua gives it its words: "Stats", the
@@ -43,10 +43,6 @@ local ns = select(2, ...)
 ---@field page StatsBookPage?
 ---@field green boolean
 
---- The book's pages and sides, in drawing order.
-ns.BOOK_PAGES = { "home", "place", "item", "session", "lifetime", "sessions" }
-ns.BOOK_SIDES = { "left", "right" }
-
 ---@type StatsBookRibbon[]
 ns.BOOK_RIBBONS = {
 	{ id = "here", green = true },
@@ -55,15 +51,17 @@ ns.BOOK_RIBBONS = {
 	{ id = "sessions", page = "sessions", green = false },
 }
 
---- What each page keeps of a target besides its page, and what it can't do without.
----@type table<StatsBookPage, { keeps: string[], needs: string? }>
-local PAGES = {
-	home = { keeps = {} },
-	place = { keeps = { "area", "item" }, needs = "area" },
-	item = { keeps = { "item", "area" }, needs = "item" },
-	session = { keeps = {} },
-	lifetime = { keeps = {} },
-	sessions = { keeps = { "session", "ledgerPage" } },
+--- The book's pages as Core's shell takes them (BOOK-R20): what each keeps of a target besides its page, what it can't
+--- do without, and its place in the turn order: the ribbons' order, the home spread first, an item's page after a
+--- place's.
+---@type table<StatsBookPage, PagleBookPageDef>
+ns.BOOK_PAGES = {
+	home = { keeps = {}, order = 0 },
+	place = { keeps = { "area", "item" }, needs = "area", order = 1 },
+	item = { keeps = { "item", "area" }, needs = "item", order = 1.5 },
+	session = { keeps = {}, order = 2 },
+	lifetime = { keeps = {}, order = 3 },
+	sessions = { keeps = { "session", "ledgerPage" }, order = 4 },
 }
 
 -- A copy of `target` with only what its page keeps.
@@ -71,71 +69,19 @@ local PAGES = {
 ---@return StatsBookTarget
 local function copy(target)
 	local place = { page = target.page }
-	for _, field in ipairs(PAGES[target.page].keeps) do
+	for _, field in ipairs(ns.BOOK_PAGES[target.page].keeps) do
 		place[field] = target[field]
 	end
 	return place
 end
 
----@class StatsBookRouter
----@field private place StatsBookTarget
----@field private renderers table<string, StatsBookRenderer> -- by "page:side"
-local Router = {}
-Router.__index = Router
-
---- A router on the home spread, with no renderers yet: the book makes one when its file loads, so the first opening
---- after a login or `/reload` shows the home spread (STA-R70).
----@return StatsBookRouter
-function ns.NewBookRouter()
-	return setmetatable({ place = { page = "home" }, renderers = {} }, Router)
-end
-
---- Registers `renderer` to draw side `side` of page `page`; a later registration replaces it. Raises on a page or side
---- the book doesn't have, so a typo fails when the file loads.
----@param page StatsBookPage
----@param side StatsBookSide
----@param renderer StatsBookRenderer
-function Router:Register(page, side, renderer)
-	assert(PAGES[page], "the Stats book has no page " .. tostring(page))
-	assert(side == "left" or side == "right", "a Stats book page's side is left or right, not " .. tostring(side))
-	assert(type(renderer) == "function", "a Stats book page's renderer is a function")
-	self.renderers[page .. ":" .. side] = renderer
-end
-
---- The renderer of side `side` of page `page`, or nil when none is registered: that side is left blank.
----@param page StatsBookPage
----@param side StatsBookSide
----@return StatsBookRenderer?
-function Router:Renderer(page, side)
-	return self.renderers[page .. ":" .. side]
-end
-
---- Shows `target`, keeping what its page shows (STA-R70: the book reopens on it). Raises when its page is unknown or
---- it lacks what the page needs (a place page its area, an item page its item), and the book stays where it was.
----@param target StatsBookTarget
-function Router:Open(target)
-	local page = PAGES[target.page]
-	assert(page, "the Stats book has no page " .. tostring(target.page))
-	assert(
-		not page.needs or target[page.needs] ~= nil,
-		"a Stats book " .. target.page .. " page needs its " .. tostring(page.needs)
-	)
-	self.place = copy(target)
-end
-
---- Where the book is, as a copy.
----@return StatsBookTarget
-function Router:Place()
-	return copy(self.place)
-end
-
---- The breadcrumb trail (STA-R74): "Stats" (home); on a place page its zone, then its subzone, then the chosen item,
---- which does nothing; on an item page the item; on a ribbon page its kicker. Each other crumb opens what it names:
---- an area's crumb its place page with nothing chosen, the last crumb the page as it is.
+--- The breadcrumb trail at `place` (STA-R74): "Stats" (home); on a place page its zone, then its subzone, then the
+--- chosen item, which does nothing; on an item page the item; on a ribbon page its kicker. Each other crumb opens what
+--- it names: an area's crumb its place page with nothing chosen, the last crumb the page as it is.
+---@param place StatsBookTarget
 ---@param zoneOf fun(area: integer): integer the zone an area is in: itself for a zone
 ---@return StatsBookCrumb[]
-function Router:Trail(zoneOf)
-	local place = self.place
+function ns.BookTrail(place, zoneOf)
 	local trail = { { kind = "stats", target = { page = "home" } } } ---@type StatsBookCrumb[]
 	local page = place.page
 	if page == "place" then

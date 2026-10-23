@@ -39,6 +39,7 @@
 --     totals belong to PagleLog's logId, and the last pushed-content seq Core accepted (PagleDB.global.pushed.seq);
 --   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
 --   - the tracker dock's saved place (PagleDB.profile.dock.point);
+--   - each movable book's saved place (PagleDB.profile.books, BOOK-R5);
 --   - the cards: the Write-up waiting, the Session summary cards, the open summary and the pending moments;
 --   - the onboarding state (PagleDB.global.onboarding): the Letter, the guide's step, the Margin notes and First looks
 --     seen, the First evening list and the characters, with PagleDB.global.schemaVersion;
@@ -1996,8 +1997,8 @@ local function printStatsItem(stats, state, places, options)
 end
 
 -- The profile (stats.md › PagleStatsDB, one shared "Default" profile): the live tracker setting (STA-R81), each watch
--- (STA-R60) with its reading in short (STA-R43, STA-R82: its count and band, or no luck reading), and the book's
--- position (STA-R71), each said to be the default when AceDB left it out of the file.
+-- (STA-R60) with its reading in short (STA-R43, STA-R82: its count and band, or no luck reading), each said to be
+-- the default when AceDB left it out of the file. The book's position is Core's (the Books section, BOOK-R5).
 local function printStatsProfile(stats, state, places, profile, live)
 	if profile.tracker == nil then
 		print("tracker: false (not saved: the default)")
@@ -2024,13 +2025,6 @@ local function printStatsProfile(stats, state, places, profile, live)
 			local text = "%s: %s, Dry spell %s, %s (%s)"
 			print(text:format(what, stats.OddsShort(reading), stats.DrySpellCount(reading), band, reading.scope))
 		end
-	end
-	local window = profile.window
-	if type(window) ~= "table" then
-		print("window: not saved, so centred (the default, STA-R71)")
-	else
-		local text = "window: %s of UIParent's %s, x %s, y %s (moved by the player, STA-R71)"
-		print(text:format(tostring(window[1]), tostring(window[2]), tostring(window[3]), tostring(window[4])))
 	end
 end
 
@@ -2795,6 +2789,31 @@ local function printDock(pagle)
 	end
 end
 
+-- Prints the Books section (core/book.md › Data, BOOK-R5): PagleDB.profile.books, each movable book's saved position
+-- by its id ("stats", the Journal's, the Hunts board's), in UIParent's units. A book with none saved opens centred.
+local function printBooks(pagle)
+	local _, why = pagleGlobal(pagle)
+	if why then
+		print("== Books: " .. why)
+		return
+	end
+	print("== Books (PagleDB.profile.books)")
+	local books = tableOr(tableOr(tableOr(pagle.saved.PagleDB.profiles).Default).books)
+	local ids = {}
+	for id in pairs(books) do
+		ids[#ids + 1] = tostring(id)
+	end
+	table.sort(ids)
+	if #ids == 0 then
+		print("none saved, so each book opens centred (BOOK-R5)")
+	end
+	for _, id in ipairs(ids) do
+		local at = tableOr(books[id])
+		local text = "%s: %s of UIParent's %s, x %s, y %s (moved by the player, BOOK-R5)"
+		print(text:format(id, tostring(at[1]), tostring(at[2]), tostring(at[3]), tostring(at[4])))
+	end
+end
+
 -- The titles of a card's moments, one line per Module group (ANN-R53), each indented by `indent`.
 local function printMoments(groups, indent)
 	for _, group in ipairs(groups) do
@@ -3527,6 +3546,7 @@ local function main(args)
 	printActivityXP(pagle, pagleLog(pagle.saved))
 	printLooks(pagle)
 	printDock(pagle)
+	printBooks(pagle)
 	printCards(pagle)
 	printOnboarding(pagle, pagleLog(pagle.saved))
 	printFieldReport(pagle, pagleLog(pagle.saved))
