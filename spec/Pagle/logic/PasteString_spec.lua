@@ -69,7 +69,7 @@ end
 
 -- A PagleLog table holding `entries`, with Ada, or `characters`.
 local function log(entries, characters)
-	return { format = 1, logId = LOG_ID, characters = characters or { character() }, entries = entries }
+	return { format = 2, logId = LOG_ID, characters = characters or { character() }, entries = entries }
 end
 
 -- `n` Skill Readings of character `char` (1), one a second from `first`, as entries: enough for parts.
@@ -348,7 +348,8 @@ end)
 
 describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 	it("writes upload.md's example part byte for byte, with its body-bytes and body-crc", function()
-		-- upload.md's example: entries 11 and 12 of a 12-entry log, after Ada's entry at 1791735000.
+		-- upload.md's example: entries 11 and 12 of a 12-entry log, after Ada's entry at 1791735000, its header's
+		-- format 2, 1.0's (LOG-R18); the body, its body-bytes and its body-crc don't depend on the format.
 		local entries = readings(9, 1791734000)
 		entries[10] = "S1|1|1791735000|0|86|150|25"
 		entries[11] = "C1|1|1791735050|0|c|494|1439|1|148|453|86|25|263|||6358x1"
@@ -356,7 +357,7 @@ describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 		local export = assert(ns.PasteExport(log(entries), 11, AS_OF))
 
 		assert.are.equal(
-			"PGL|1|3f9a2c1e7b0d4a65|1|1791735100|12|1|11|Player-4618-0A1B2C3D-1791735000-0|2|159|d28fda68\n"
+			"PGL|1|3f9a2c1e7b0d4a65|2|1791735100|12|1|11|Player-4618-0A1B2C3D-1791735000-0|2|159|d28fda68\n"
 				.. "Player-4618-0A1B2C3D|Ada|Brook|1|1|Alliance|4618|0|1791731680|1791735090\n"
 				.. "C1|1|1791735050|0|c|494|1439|1|148|453|86|25|263|||6358x1\n"
 				.. "S1|1|1791735090|0|87|150|25\n",
@@ -373,7 +374,7 @@ describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 		for n, part in ipairs(export.parts) do
 			local parsed = parse(ns.PasteDocument(export, n))
 			assert.are.equal(LOG_ID, parsed.logId)
-			assert.are.equal(1, parsed.format)
+			assert.are.equal(2, parsed.format)
 			assert.are.equal(AS_OF, parsed.asOf)
 			assert.are.equal(5, parsed.total)
 			assert.are.equal(part.from, parsed.from)
@@ -390,7 +391,7 @@ describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 
 	it("writes an empty body, 0 and 00000000, for a part with no characters and no entries", function()
 		local export = assert(ns.PasteExport(log({}, {}), 1, AS_OF))
-		assert.are.equal("PGL|1|3f9a2c1e7b0d4a65|1|1791735100|0|0|1||0|0|00000000\n", ns.PasteDocument(export, 1))
+		assert.are.equal("PGL|1|3f9a2c1e7b0d4a65|2|1791735100|0|0|1||0|0|00000000\n", ns.PasteDocument(export, 1))
 	end)
 
 	it("leaves out an LF a damaged entry holds, which LOG-R101 keeps out of the log, so it stays one line", function()
