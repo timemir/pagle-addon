@@ -11,14 +11,17 @@ local function core(military)
 	return loaded
 end
 
--- The Units section's Clock row, after the Length unit: the root's last row but the Pagle menu section's two
--- (spec/Pagle/adapter/MinimapIcon_spec.lua) and the Pagle website section's two
--- (spec/Pagle/adapter/AnglersInGame_spec.lua); the Length unit's row before it; and the root.
+-- The Units section's Clock row, found by its label so the sections after it (Pagle menu, Pagle website) can grow;
+-- the row before it, the Length unit's; and the root.
 local function clockRow(loaded)
 	local root = loaded.client.settings.category("Pagle")
 	local initializers = root.layout.initializers
-	local n = #initializers - 4
-	return initializers[n], initializers[n - 1], root
+	for n, initializer in ipairs(initializers) do
+		if initializer:GetName() == "Clock" then
+			return initializer, initializers[n - 1], root
+		end
+	end
+	error("no Clock row on the root")
 end
 
 -- Every ClockFormatChanged's format, in order, from now on.

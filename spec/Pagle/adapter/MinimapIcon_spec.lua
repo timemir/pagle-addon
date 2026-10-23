@@ -35,11 +35,16 @@ local function loggedIn(saved)
 	return loaded, loaded.env.PagleMinimapButton
 end
 
--- The Pagle menu section's header and its checkbox: the root's last rows but the Pagle website section's two
--- (spec/Pagle/adapter/AnglersInGame_spec.lua).
+-- The Pagle menu section's header and its checkbox, found by the header's label, then the row after them: the Pagle
+-- website section's header (spec/Pagle/adapter/AnglersInGame_spec.lua).
 local function menuRows(loaded)
 	local initializers = loaded.client.settings.category("Pagle").layout.initializers
-	return initializers[#initializers - 3], initializers[#initializers - 2]
+	for n, initializer in ipairs(initializers) do
+		if initializer:GetName() == "Pagle menu" then
+			return initializer, initializers[n + 1], initializers[n + 2]
+		end
+	end
+	error("no Pagle menu header on the root")
 end
 
 -- The icon's textures, by the file each shows.
@@ -347,8 +352,9 @@ describe("Show the minimap icon", function()
 		function()
 			local loaded = loggedIn()
 
-			local header, row = menuRows(loaded)
+			local header, row, website = menuRows(loaded)
 
+			assert.are.equal("Pagle website", website:GetName())
 			assert.are.same(
 				{ "Pagle menu", "SettingsListSectionHeaderTemplate" },
 				{ header:GetName(), header.template }

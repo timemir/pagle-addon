@@ -82,12 +82,15 @@ describe("The root's Saving section", function()
 		local loaded = core()
 		local row, root = reminderRow(loaded)
 		local initializers = root.layout.initializers
-		-- Then the Units section's three rows (spec/Pagle/adapter/Length_spec.lua, spec/Pagle/adapter/Clock_spec.lua),
-		-- the Pagle menu section (spec/Pagle/adapter/MinimapIcon_spec.lua) and the Pagle website section, the root's
-		-- last (spec/Pagle/adapter/AnglersInGame_spec.lua), two rows each.
-		local header = initializers[#initializers - 8]
+		local n = 1
+		while initializers[n] ~= row do
+			n = n + 1
+		end
+		-- The Units section follows (spec/Pagle/adapter/Length_spec.lua); the root's full order is
+		-- spec/Pagle/adapter/Settings_spec.lua's.
+		local header = initializers[n - 1]
 
-		assert.are.equal(row, initializers[#initializers - 7])
+		assert.are.equal("Units", initializers[n + 1]:GetName())
 		assert.are.equal("Saving", header:GetName())
 		assert.are.equal("SettingsListSectionHeaderTemplate", header.template)
 		assert.are.equal("SettingsCheckboxControlTemplate", row.template)

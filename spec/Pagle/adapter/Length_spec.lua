@@ -12,15 +12,17 @@ local function core(region)
 	return loaded
 end
 
--- The Saving section's reminder, then the Units section's header and Length unit row: the root's last rows but the
--- Units section's Clock row (spec/Pagle/adapter/Clock_spec.lua), the Pagle menu section's two
--- (spec/Pagle/adapter/MinimapIcon_spec.lua) and the Pagle website section's two
--- (spec/Pagle/adapter/AnglersInGame_spec.lua).
+-- The Saving section's reminder, then the Units section's header and Length unit row, found by the Length unit's
+-- label so the sections after it (Clock, Pagle menu, Pagle website) can grow; and the root.
 local function lastRows(loaded)
 	local root = loaded.client.settings.category("Pagle")
 	local initializers = root.layout.initializers
-	local n = #initializers - 5
-	return initializers[n - 2], initializers[n - 1], initializers[n], root
+	for n, initializer in ipairs(initializers) do
+		if initializer:GetName() == "Length unit" then
+			return initializers[n - 2], initializers[n - 1], initializer, root
+		end
+	end
+	error("no Length unit row on the root")
 end
 
 describe("Pagle.FormatLength", function()
@@ -84,8 +86,7 @@ describe("The root's Units section", function()
 	it("switches PagleDB.profile.lengthUnit, and Pagle.FormatLength with it (SET-R10, LOG-R69)", function()
 		local loaded = core(1)
 		local _, _, row, root = lastRows(loaded)
-		local rows = loaded.client.settings.show(root)
-		local frame = rows[#rows - 5].frame -- before the Clock row and the Pagle menu and Pagle website sections' two rows each
+		local frame = loaded.client.settings.rowNamed(loaded.client.settings.show(root), "Length unit").frame
 		assert.are.equal("Inches", frame.valueLabel)
 
 		row:GetSetting():SetValue("cm")
