@@ -1,6 +1,6 @@
 # Pagle's store listing
 
-> Status: Draft, for the dev's review · Ticket: [#269](https://github.com/timemir/wow-fish/issues/269) · Used by: #270 (screenshots), #271 (the CurseForge and Wago projects)
+> Status: Draft, for the dev's review · Ticket: [#269](https://github.com/timemir/pagle-addon/issues/269) · Used by: #270 (screenshots), #271 (the CurseForge and Wago projects)
 
 The text of Pagle's CurseForge and Wago project pages, one source for both sites. Paste each part into its field as written. The description is Markdown, which both sites take.
 
@@ -69,24 +69,24 @@ If Angleur or Fishing Buddy is loaded too, QoL asks which one should keep your f
 
 - Pagle runs on World of Warcraft: Forever only.
 - 1.0 is in English only.
-- Seen something Pagle doesn't know yet, such as a fish in new waters or outside its usual hours? Type `/pagle report` and post the Field report it gives you at https://github.com/timemir/wow-fish/issues/new?template=field-report.yml. It never names your characters.
+- Seen something Pagle doesn't know yet, such as a fish in new waters or outside its usual hours? Type `/pagle report` and post the Field report it gives you at https://github.com/timemir/pagle-addon/issues/new?template=field-report.yml. It never names your characters.
 
 ## Licence and credits
 
 **Pagle.** Copyright (C) 2026 the Pagle contributors.
 
-Pagle is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See [LICENSE](https://github.com/timemir/wow-fish/blob/main/LICENSE).
+Pagle is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See [LICENSE](https://github.com/timemir/pagle-addon/blob/main/LICENSE).
 
 **VMaNGOS.** Pagle's content data (where and when fish are caught) is derived from the VMaNGOS world database, https://github.com/vmangos/core, licensed under the GNU General Public License version 2 or later. Thanks to the VMaNGOS contributors. The snapshot used is VMaNGOS's db_latest release of 2026-09-28 (tag db_latest@4641790).
 
 **Blizzard Entertainment.** World of Warcraft, and the game IDs and names Pagle refers to (items, areas, spells and the like), belong to Blizzard Entertainment, Inc. Pagle ships IDs only, never Blizzard's text. Pagle is not affiliated with or endorsed by Blizzard Entertainment.
 
-Pagle also bundles libraries from Ace3 and fonts under the SIL Open Font License; [NOTICE](https://github.com/timemir/wow-fish/blob/main/NOTICE) lists them.
+Pagle also bundles libraries from Ace3 and fonts under the SIL Open Font License; [NOTICE](https://github.com/timemir/pagle-addon/blob/main/NOTICE) lists them.
 
 ## Links
 
-- Source: https://github.com/timemir/wow-fish
-- Issues and Field reports: https://github.com/timemir/wow-fish/issues
+- Source: https://github.com/timemir/pagle-addon
+- Issues and Field reports: https://github.com/timemir/pagle-addon/issues
 ````
 
 ## Categories and tags

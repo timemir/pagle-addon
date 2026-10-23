@@ -7,7 +7,7 @@ local ns = select(2, ...)
 -- the box, and FakePagle runs the same Pagle.OpenFieldReport over its fakes.
 
 --- The issue form a Field report is pasted into (REP-R46).
-ns.FIELD_REPORT_URL = "https://github.com/timemir/wow-fish/issues/new?template=field-report.yml"
+ns.FIELD_REPORT_URL = "https://github.com/timemir/pagle-addon/issues/new?template=field-report.yml"
 
 --- What the report box shows, built when it opens and kept while it stays open (REP-R40–R42).
 ---@class PagleFieldReportView

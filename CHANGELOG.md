@@ -81,4 +81,4 @@ Every window of Pagle's own is drawn as something an angler would keep.
 
 - Pagle runs on World of Warcraft: Forever only.
 - 1.0 is in English only.
-- Issues and Field reports: https://github.com/timemir/wow-fish/issues
+- Issues and Field reports: https://github.com/timemir/pagle-addon/issues

@@ -21,7 +21,7 @@ Natural Hunts complete on the Catch alone, so correcting content-data windows (e
 
 ## Note: "shipped" means released at 1.0 or later
 
-Pagle publishes nothing before 1.0 ([Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18)), so Hunt definitions change freely until then and there are no Retired Hunts in the first release. Every v1 Hunt has `since` set to the 1.0 release date.
+Pagle publishes nothing before 1.0 ([Cut the MVP slice and roadmap](https://github.com/timemir/pagle-addon/issues/18)), so Hunt definitions change freely until then and there are no Retired Hunts in the first release. Every v1 Hunt has `since` set to the 1.0 release date.
 
 ## Note: Hunt Events (18 Oct)
 

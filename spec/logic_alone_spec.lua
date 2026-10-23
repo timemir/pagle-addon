@@ -18,7 +18,7 @@ local PAYING = { "Ledger", "Hunts", "TackleBoard" }
 --- backend (AXP-R9).
 local PAYING_XP = { "Hunts", "TackleBoard" }
 
--- The globals the driver gives wow-fish's code: Lua 5.1's pure functions and LuaBitOp. Reading any other global
+-- The globals the driver gives Pagle's code: Lua 5.1's pure functions and LuaBitOp. Reading any other global
 -- raises, as in the driver, so a WoW or adapter call logic/ makes fails the spec.
 ---@return table
 local function driverGlobals()

@@ -1,6 +1,6 @@
 # Core: Onboarding (the Letter, the Field guide, Margin notes, First looks, the First evening list)
 
-> Status: Ready to build · Prefix `ONB` · Milestone: M8.5 Onboarding · Sources: [Backlog: an onboarding experience on first open](https://github.com/timemir/wow-fish/issues/260), [the onboarding kit, grilled with the dev](https://github.com/timemir/wow-fish/issues/260#issuecomment-6335904394) (the kit is in [`prototypes/onboarding-kit/`](../../../prototypes/onboarding-kit/README.md): 18 canvas boards and the `PagleArtGuide` probe); ADR 0001, 0007
+> Status: Ready to build · Prefix `ONB` · Milestone: M8.5 Onboarding · Sources: [Backlog: an onboarding experience on first open](https://github.com/timemir/pagle-addon/issues/260), [the onboarding kit, grilled with the dev](https://github.com/timemir/pagle-addon/issues/260#issuecomment-6335904394) (the kit is in [`prototypes/onboarding-kit/`](../../../prototypes/onboarding-kit/README.md): 18 canvas boards and the `PagleArtGuide` probe); ADR 0001, 0007
 
 Part of [Core](README.md). Every capitalised term means what `CONTEXT.md` says. A number in brackets that isn't `ONB-` points at the rest of the spec. The rules this feature changes elsewhere are amended in their own files: CORE-R40, CORE-R53–R56 (the minimap icon) and CORE-R61 in [README.md](README.md); ANN-R31, ANN-R38, ANN-R64 and `PagleMoment.firstNote` in [announcements.md](announcements.md); SET-R10 and SET-R30 in [settings.md](../settings.md).
 

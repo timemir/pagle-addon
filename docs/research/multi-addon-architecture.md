@@ -1,6 +1,6 @@
 # Multi-addon architecture: how Core and Modules are wired
 
-Research for [#3](https://github.com/timemir/wow-fish/issues/3). The question: how do established multi-addon packages structure an always-loaded Core and separately installable Modules on the Retail API, and what shape should Pagle use?
+Research for [#3](https://github.com/timemir/pagle-addon/issues/3). The question: how do established multi-addon packages structure an always-loaded Core and separately installable Modules on the Retail API, and what shape should Pagle use?
 
 Researched 2026-10-11. All addon claims come from the addons' own source at the commits pinned below. TOC and API claims come from Warcraft Wiki (the community API reference that Blizzard UI developers maintain) and Blizzard's own FrameXML source. Anything I could not trace to a primary source is marked **unverified**.
 
