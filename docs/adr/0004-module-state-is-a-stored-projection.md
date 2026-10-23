@@ -20,4 +20,4 @@ ADR 0002 recomputed everything on each load, which would cost every player a gro
 
 ## Note: a re-enabled Module catches up
 
-"A Module disabled and re-enabled rebuilds from scratch" means it *can* be rebuilt from the log, not that it is. Decided while writing the Core spec ([Write the Core spec](https://github.com/timemir/wow-fish/issues/35)): a re-enabled Module catches up from its stored `seq`, raises no pop-ups for that history, and shows one Write-up section for anything it earned meanwhile. It still rebuilds when its projection is missing or a version changes.
+"A Module disabled and re-enabled rebuilds from scratch" means it *can* be rebuilt from the log, not that it is. Decided while writing the Core spec ([Write the Core spec](https://github.com/timemir/pagle-addon/issues/35)): a re-enabled Module catches up from its stored `seq`, raises no pop-ups for that history, and shows one Write-up section for anything it earned meanwhile. It still rebuilds when its projection is missing or a version changes.

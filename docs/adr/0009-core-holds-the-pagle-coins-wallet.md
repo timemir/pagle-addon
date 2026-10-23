@@ -23,4 +23,4 @@ The dev's vision was one currency that many things pay into and that buys addon 
 
 ## Note: the Core spec
 
-The wallet and shop are specified in `docs/spec/core/wallet-and-shop.md` ([Write the Core spec](https://github.com/timemir/wow-fish/issues/35)). A purchase entry carries the shared entry header, `U1|<char>|<time>|<tie>|<good>|<price>` (layout in `docs/spec/core/catch-log.md`). "Income only ever adds" means disabling a Module never lowers what it paid; a rebalance or data fix can still recount a Module's total lower, which the balance-held-at-0 rule above already covers.
+The wallet and shop are specified in `docs/spec/core/wallet-and-shop.md` ([Write the Core spec](https://github.com/timemir/pagle-addon/issues/35)). A purchase entry carries the shared entry header, `U1|<char>|<time>|<tie>|<good>|<price>` (layout in `docs/spec/core/catch-log.md`). "Income only ever adds" means disabling a Module never lowers what it paid; a rebalance or data fix can still recount a Module's total lower, which the balance-held-at-0 rule above already covers.

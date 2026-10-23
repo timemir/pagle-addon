@@ -1,6 +1,6 @@
 # Pagle product spec
 
-> Status: Done · Sources: [Map: Forever fishing addon - product spec](https://github.com/timemir/wow-fish/issues/1), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652), [Define the Core/Module contract](https://github.com/timemir/wow-fish/issues/9#issuecomment-6112445901), [How do DBM-style multi-addon packages wire Core and Modules?](https://github.com/timemir/wow-fish/issues/3#issuecomment-6109740635), [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Write the spec index](https://github.com/timemir/wow-fish/issues/45); ADR 0001–0010
+> Status: Done · Sources: [Map: Forever fishing addon - product spec](https://github.com/timemir/pagle-addon/issues/1), [Decide how the spec is assembled](https://github.com/timemir/pagle-addon/issues/31#issuecomment-6128960652), [Define the Core/Module contract](https://github.com/timemir/pagle-addon/issues/9#issuecomment-6112445901), [How do DBM-style multi-addon packages wire Core and Modules?](https://github.com/timemir/pagle-addon/issues/3#issuecomment-6109740635), [Cut the MVP slice and roadmap](https://github.com/timemir/pagle-addon/issues/18#issuecomment-6113973068), [Write the spec index](https://github.com/timemir/pagle-addon/issues/45); ADR 0001–0010
 
 **Pagle** is a fishing addon for World of Warcraft: Forever (Blizzard's Classic+ branch on the Retail client: interface 16001, `WOW_PROJECT_ID` 18, Camelot; Classic-style fishing with one 1–300 skill). It aims to be the only fishing addon a player needs. It observes and rewards, never plays for the player, and every reward is display-only.
 
@@ -18,8 +18,8 @@ This directory is Pagle's product spec. It describes the current state only, and
 | [core/pushed-content.md](core/pushed-content.md) | `PUSH` | The companion's `Pagle_Content` data addon: the signature check, the companion state, content by kind | M8 Hunt Events |
 | [core/anglers-in-game.md](core/anglers-in-game.md) | `VIEW` | Published Anglers in game: reading the Companion's `Pagle_Following` and `Pagle_Anglers`, the Pagle block on player tooltips, `Pagle.GetFollowedAnglers()` | Track V In-game views |
 | [core/onboarding.md](core/onboarding.md) | `ONB` | Onboarding: the Letter, the Field guide and its step registry, the binding field, Margin notes, First looks and the "?", the First evening list, `/pagle guide` and Getting started | M8.5 Onboarding |
-| [core/book-binding.md](core/book-binding.md) | `BIND` | The book binding: `Pagle.NewBookBinding`, the one renderer of the `core.binding` look on every book (its material, band, corners and features), and a change of binding with its one page-turn sound | One binding for every book ([#351](https://github.com/timemir/wow-fish/issues/351)) |
-| [core/book.md](core/book.md) | `BOOK` | The book shell: `Pagle.NewBook`, the window, pages, strip, buttons, ribbons, router and page turn the Journal, the Stats book, the Hunts board and the Field guide are built on | One book shell for every book ([#357](https://github.com/timemir/wow-fish/issues/357), ADR 0016) |
+| [core/book-binding.md](core/book-binding.md) | `BIND` | The book binding: `Pagle.NewBookBinding`, the one renderer of the `core.binding` look on every book (its material, band, corners and features), and a change of binding with its one page-turn sound | One binding for every book ([#351](https://github.com/timemir/pagle-addon/issues/351)) |
+| [core/book.md](core/book.md) | `BOOK` | The book shell: `Pagle.NewBook`, the window, pages, strip, buttons, ribbons, router and page turn the Journal, the Stats book, the Hunts board and the Field guide are built on | One book shell for every book ([#357](https://github.com/timemir/pagle-addon/issues/357), ADR 0016) |
 | [core/field-report.md](core/field-report.md) | `REP` | The Field report: what goes in, the `PAGLE-REPORT 1` format, privacy, the report box | M3 |
 | [core/paste-string.md](core/paste-string.md) | `PST` | The Paste string: upload documents built from `PagleLog` as pagle-backend's upload.md has them, parts, the CRC-32 and LibDeflate encoding, the export window and the last exported seq | Track P Paste string |
 | [content-data.md](content-data.md) | `DATA` | The `data/` layers, the generator and its checks, the catalogue's Lua shape, `confirmed` and the two-reporter rule, the content fingerprint, the Hunt list and event pool formats, the tag list and `released.lock`, lore, Field report intake, the DB2 watch | M0–M9 |
@@ -168,7 +168,7 @@ Core's rung table ([announcements.md](core/announcements.md#rungs-modules-use-so
 
 ### The file template
 
-Every Core and Module file follows one template (the conventions in [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652)):
+Every Core and Module file follows one template (the conventions in [Decide how the spec is assembled](https://github.com/timemir/pagle-addon/issues/31#issuecomment-6128960652)):
 
 ```
 # <Module>

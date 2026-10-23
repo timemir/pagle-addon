@@ -1,7 +1,7 @@
 -- The Field report box and its entry points (field-report.md › Privacy, › The box and its entry points; REP-R37,
 -- REP-R40–R47, REP-R93; CORE-R33, CORE-R40, CORE-R50, CORE-R61; settings.md SET-R10, SET-R12).
 
-local URL = "https://github.com/timemir/wow-fish/issues/new?template=field-report.yml"
+local URL = "https://github.com/timemir/pagle-addon/issues/new?template=field-report.yml"
 
 local FIRST = SERVER_TIME - 700 -- the history's Casts are at FIRST + 1, + 2, …
 

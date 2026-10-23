@@ -30,7 +30,7 @@ def test_the_form_has_data_r115_s_title_labels_and_description() -> None:
     # description says a report in several parts is filed as one issue per part, and DATA-R123: a report posted
     # anywhere else reaches Pagle only when the dev pastes it into an issue.
     text = FORM.read_text(encoding="utf-8")
-    assert "https://github.com/timemir/wow-fish/issues/new?template=field-report.yml" in text
+    assert "https://github.com/timemir/pagle-addon/issues/new?template=field-report.yml" in text
     assert re.search(r"^title: Field report$", text, re.MULTILINE)
     assert re.search(r'^labels: \["field-report", "needs-triage"\]$', text, re.MULTILINE)
     description = " ".join(text.split("\nbody:\n", 1)[0].split())

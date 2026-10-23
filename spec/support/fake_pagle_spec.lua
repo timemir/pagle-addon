@@ -2530,7 +2530,7 @@ describe("FakePagle", function()
 					assert.truthy(view.parts[1]:find("^PAGLE%-REPORT 1\naddon test "))
 					assert.truthy(view.parts[1]:find("\nI 9999 453 ", 1, true))
 					assert.are.equal(
-						"https://github.com/timemir/wow-fish/issues/new?template=field-report.yml",
+						"https://github.com/timemir/pagle-addon/issues/new?template=field-report.yml",
 						view.url
 					)
 					assert.are.same({}, fake.printed)

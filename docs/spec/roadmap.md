@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Done · Milestones: M0–M9 (with M8.5), Track Q · Sources: [Cut the MVP slice and roadmap](https://github.com/timemir/wow-fish/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/wow-fish/issues/31#issuecomment-6128960652) (its body holds the launch re-verification list), [Choose the toolchain and libraries](https://github.com/timemir/wow-fish/issues/8#issuecomment-6112249259), [Write the QoL spec](https://github.com/timemir/wow-fish/issues/37#issuecomment-6130705093), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/wow-fish/issues/7#issuecomment-6110508010), [Define the Core data model](https://github.com/timemir/wow-fish/issues/10#issuecomment-6112707372), [Define the QoL feature set](https://github.com/timemir/wow-fish/issues/16#issuecomment-6113508077), [Design the Tackle Board](https://github.com/timemir/wow-fish/issues/25#issuecomment-6124911363), [Write the Tackle Board spec](https://github.com/timemir/wow-fish/issues/43), [Write the Stats spec](https://github.com/timemir/wow-fish/issues/42), [Design the Simulated Size bands](https://github.com/timemir/wow-fish/issues/33#issuecomment-6129722545), [Move the prototypes to main](https://github.com/timemir/wow-fish/issues/36#issuecomment-6129511014), [Write the Settings spec](https://github.com/timemir/wow-fish/issues/44); ADR 0003, 0005 (notes: compatibility starts at 1.0)
+> Status: Done · Milestones: M0–M9 (with M8.5), Track Q · Sources: [Cut the MVP slice and roadmap](https://github.com/timemir/pagle-addon/issues/18#issuecomment-6113973068), [Decide how the spec is assembled](https://github.com/timemir/pagle-addon/issues/31#issuecomment-6128960652) (its body holds the launch re-verification list), [Choose the toolchain and libraries](https://github.com/timemir/pagle-addon/issues/8#issuecomment-6112249259), [Write the QoL spec](https://github.com/timemir/pagle-addon/issues/37#issuecomment-6130705093), [Beta probe: which fishing signals can the Forever client see?](https://github.com/timemir/pagle-addon/issues/7#issuecomment-6110508010), [Define the Core data model](https://github.com/timemir/pagle-addon/issues/10#issuecomment-6112707372), [Define the QoL feature set](https://github.com/timemir/pagle-addon/issues/16#issuecomment-6113508077), [Design the Tackle Board](https://github.com/timemir/pagle-addon/issues/25#issuecomment-6124911363), [Write the Tackle Board spec](https://github.com/timemir/pagle-addon/issues/43), [Write the Stats spec](https://github.com/timemir/pagle-addon/issues/42), [Design the Simulated Size bands](https://github.com/timemir/pagle-addon/issues/33#issuecomment-6129722545), [Move the prototypes to main](https://github.com/timemir/pagle-addon/issues/36#issuecomment-6129511014), [Write the Settings spec](https://github.com/timemir/pagle-addon/issues/44); ADR 0003, 0005 (notes: compatibility starts at 1.0)
 
 This file sets the order in which Pagle is built. It assigns spec rules to milestones; the rules themselves live in the other spec files. Terms are used as `CONTEXT.md` defines them.
 
@@ -24,7 +24,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 - CORE-R15 (`Pagle.API_VERSION` is `1` before 1.0)
 - DATA-R1 (`LICENSE` and `NOTICE`)
 
-**Toolchain** (no spec file owns it; [Choose the toolchain and libraries](https://github.com/timemir/wow-fish/issues/8#issuecomment-6112249259) has the decisions):
+**Toolchain** (no spec file owns it; [Choose the toolchain and libraries](https://github.com/timemir/pagle-addon/issues/8#issuecomment-6112249259) has the decisions):
 - Plain Lua 5.1 with LuaCATS annotations. Core's public API and every domain type are fully annotated.
 - The repo layout: `addons/<Addon>/` for code, `spec/` for busted tests mirroring it.
 - `.luarc.json` (Lua 5.1 runtime, library paths for the vendored Ace3 and `types/`), and `types/` with `---@meta` stubs for Forever-only APIs that Ketho's annotations lack. No editor-specific files.
@@ -182,7 +182,7 @@ Content data pipeline v1, projection machinery and Sessions, Core Announcements 
 4. Disable Pagle_Ledger, fish a new Species, re-enable: a "While the Ledger was off" Write-up section lists it; no toast. `/reload`: nothing shows again.
 5. The Session summary card carries "Ledger: Angler Level {L}".
 
-**Sounds:** M2 moves the sounds prototype's shipping assets from the `prototype/sounds` branch into the addon source: `prototypes/sounds/render.py` goes into the build tooling and renders both sets, and its output is committed under `addons/Pagle/media/sounds/` as ANN-R74 lays out. The branch's rejected CC0 pack doesn't move. After this, the branch has nothing left to keep ([Move the prototypes to main](https://github.com/timemir/wow-fish/issues/36#issuecomment-6129511014)).
+**Sounds:** M2 moves the sounds prototype's shipping assets from the `prototype/sounds` branch into the addon source: `prototypes/sounds/render.py` goes into the build tooling and renders both sets, and its output is committed under `addons/Pagle/media/sounds/` as ANN-R74 lays out. The branch's rejected CC0 pack doesn't move. After this, the branch has nothing left to keep ([Move the prototypes to main](https://github.com/timemir/pagle-addon/issues/36#issuecomment-6129511014)).
 
 ## M3 Fish Journal
 
@@ -343,7 +343,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## M8 Hunt Events
 
-**Goal:** Hunts redesigned around **Hunt Events** (shown as Pagle Wagers), with **Activity XP** from any Module and Core's **pushed-content** reader, as the map [Hunts redesigned around Hunt Events](https://github.com/timemir/wow-fish/issues/277) decided (ADR 0011–0013). 1.0 waits for it, with no hard date. It ships with the fallback rotation, pushed Hunt Events whenever the companion's `Pagle_Content` passes Core's check (pagle-backend #2, pagle-companion #36), and the companion hint switched on (HNT-R172). *[#288](https://github.com/timemir/wow-fish/issues/288) kept the hint off until `Pagle_Content` worked end to end; with the reader built and M8's tickets closed, the dev turned it on for 1.0.*
+**Goal:** Hunts redesigned around **Hunt Events** (shown as Pagle Wagers), with **Activity XP** from any Module and Core's **pushed-content** reader, as the map [Hunts redesigned around Hunt Events](https://github.com/timemir/pagle-addon/issues/277) decided (ADR 0011–0013). 1.0 waits for it, with no hard date. It ships with the fallback rotation, pushed Hunt Events whenever the companion's `Pagle_Content` passes Core's check (pagle-backend #2, pagle-companion #36), and the companion hint switched on (HNT-R172). *[#288](https://github.com/timemir/pagle-addon/issues/288) kept the hint off until `Pagle_Content` worked end to end; with the reader built and M8's tickets closed, the dev turned it on for 1.0.*
 
 **Before it starts:** finish review fix A (one Core motion and fit API, `fix/review-a-motion-api`); land fixes A, B and C and the 1.0 changelog through `integ/review-fixes` onto `main` with one full gate; land the CI fix (test-check in its own job). The redesign rewrites the Hunts board, which A and B both touch.
 
@@ -391,7 +391,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## M8.5 Onboarding
 
-**Goal:** a new Angler is welcomed and taught by fishing: the Letter, the eight-page Field guide, Margin notes on first moments, a First look on each window with a "?" to see it again, and the First evening list ([core/onboarding.md](core/onboarding.md)), plus Pagle's minimap icon ([#290](https://github.com/timemir/wow-fish/issues/290)), as [the onboarding kit, grilled with the dev](https://github.com/timemir/wow-fish/issues/260#issuecomment-6335904394) decided. 1.0 waits for it: shipped after 1.0, every launch player's Catch log would already hold Casts, so none would see the Letter (ONB-R2).
+**Goal:** a new Angler is welcomed and taught by fishing: the Letter, the eight-page Field guide, Margin notes on first moments, a First look on each window with a "?" to see it again, and the First evening list ([core/onboarding.md](core/onboarding.md)), plus Pagle's minimap icon ([#290](https://github.com/timemir/pagle-addon/issues/290)), as [the onboarding kit, grilled with the dev](https://github.com/timemir/pagle-addon/issues/260#issuecomment-6335904394) decided. 1.0 waits for it: shipped after 1.0, every launch player's Catch log would already hold Casts, so none would see the Letter (ONB-R2).
 
 **Runs alongside M8.** Only the Hunts First look waits for M8's board (its Pagle Wagers note points at the ribbon, ONB-R57); every other ticket starts now. M9's Settings UX pass (#266) and store screenshots (#270) wait for this milestone's exit check.
 
@@ -421,7 +421,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## Track V: In-game views
 
-**Goal:** Published Anglers in game, from the two data addons the Companion writes ([#76](https://github.com/timemir/wow-fish/issues/76) items 9–11, pagle-backend's [in-game-views.md](https://github.com/timemir/pagle-backend/blob/main/docs/spec/in-game-views.md)): Core reads `Pagle_Following` and `Pagle_Anglers`, adds the Pagle block to player tooltips, and the Ledger draws the Following spread. Without the Companion's files nothing shows, so it ships in 1.0 if it is merged by the tag and in a patch otherwise; M9 doesn't wait for it. pagle-backend's B4 exit check and pagle-companion #34 wait for it.
+**Goal:** Published Anglers in game, from the two data addons the Companion writes ([#76](https://github.com/timemir/pagle-addon/issues/76) items 9–11, pagle-backend's [in-game-views.md](https://github.com/timemir/pagle-backend/blob/main/docs/spec/in-game-views.md)): Core reads `Pagle_Following` and `Pagle_Anglers`, adds the Pagle block to player tooltips, and the Ledger draws the Following spread. Without the Companion's files nothing shows, so it ships in 1.0 if it is merged by the tag and in a patch otherwise; M9 doesn't wait for it. pagle-backend's B4 exit check and pagle-companion #34 wait for it.
 
 **Build order:** 1. Core's reads (VIEW-R1–R4, VIEW-R10–R12). 2. The tooltip block and its Settings row, and the Following spread, in parallel.
 
@@ -454,7 +454,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## Track P: Paste string
 
-**Goal:** the no-install way onto the Pagle website ([#361](https://github.com/timemir/wow-fish/issues/361), from [#76](https://github.com/timemir/wow-fish/issues/76) items 3 and 4): Core builds Paste strings from `PagleLog` exactly as pagle-backend's [upload.md](https://github.com/timemir/pagle-backend/blob/main/docs/spec/upload.md) has them (UPL-R50–R52), cut into parts, in an export window with "New since last export" and "Everything", and keeps the last exported seq per `logId`. LibDeflate 1.0.2 is vendored for it (CORE-R6). It ships in 1.0, before the backend opens (day L), so 1.0 waits for it.
+**Goal:** the no-install way onto the Pagle website ([#361](https://github.com/timemir/pagle-addon/issues/361), from [#76](https://github.com/timemir/pagle-addon/issues/76) items 3 and 4): Core builds Paste strings from `PagleLog` exactly as pagle-backend's [upload.md](https://github.com/timemir/pagle-backend/blob/main/docs/spec/upload.md) has them (UPL-R50–R52), cut into parts, in an export window with "New since last export" and "Everything", and keeps the last exported seq per `logId`. LibDeflate 1.0.2 is vendored for it (CORE-R6). It ships in 1.0, before the backend opens (day L), so 1.0 waits for it.
 
 **Build order:** 1. LibDeflate vendored and pinned (CORE-R6). 2. The upload document, parts and Paste string in `logic/` (PST-R10–R33), checked against upload.md's grammar and decoded by pagle-backend's decoder. 3. The export window, its entry points, the mark and the copy test (PST-R40, PST-R41, PST-R50–R53, PST-R60).
 
@@ -472,9 +472,9 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 ## M9 Release
 
-Launch re-verification on the live build, the 1.0 gates (lore, Settings UX, Simulated Size), the CurseForge and Wago projects, then the 1.0 tag. Named M8 Release until the Hunts redesign took M8 ([#288](https://github.com/timemir/wow-fish/issues/288)). The Settings UX pass (#266), the store screenshots (#270), the tag's preparation (#275) and the exit check (#276) wait for M8 Hunt Events and M8.5 Onboarding; launch re-verification (#272–#274) and the store projects (#271) don't.
+Launch re-verification on the live build, the 1.0 gates (lore, Settings UX, Simulated Size), the CurseForge and Wago projects, then the 1.0 tag. Named M8 Release until the Hunts redesign took M8 ([#288](https://github.com/timemir/pagle-addon/issues/288)). The Settings UX pass (#266), the store screenshots (#270), the tag's preparation (#275) and the exit check (#276) wait for M8 Hunt Events and M8.5 Onboarding; launch re-verification (#272–#274) and the store projects (#271) don't.
 
-**Rules:** QOL-R100–R104 (QoL's launch re-verification), DATA-R57 for check 24, DATA-R73, DATA-R87 and DATA-R95 at the tag (Before the tag), and CORE-R74 (the tag's GitHub Release, [#362](https://github.com/timemir/wow-fish/issues/362)). Every other check below names the rules it may change.
+**Rules:** QOL-R100–R104 (QoL's launch re-verification), DATA-R57 for check 24, DATA-R73, DATA-R87 and DATA-R95 at the tag (Before the tag), and CORE-R74 (the tag's GitHub Release, [#362](https://github.com/timemir/pagle-addon/issues/362)). Every other check below names the rules it may change.
 
 ### Launch re-verification checklist
 
@@ -507,7 +507,7 @@ Run on the live Forever build before tagging 1.0. Beta facts may change at launc
 | 24 | Which catalogue facts rest on beta builds only (`scripts/generate-data.py --min-build <first live build>`) | DATA-R46, DATA-R57 (may raise the minimum confirming build) |
 | 25 | The Paste string's copy test: `/pagle dev pastetest 64`, then 128, 256 and 512, each copied out of the export window with Ctrl+C and pasted into a text editor; it survives when its length is that many KB × 1,024 and its last run reads that length less 16 (PST-R60). Report the largest that survives to pagle-backend, whose roadmap raises the Paste part cap only then | PST-R22, PST-R23 (the part size never exceeds the Paste part cap, UPL-R51) |
 
-There is no check 22: it looked for a per-character Self-Found call, and the character table dropped its `selfFound` field ([#363](https://github.com/timemir/wow-fish/issues/363), LOG-R26), so `/pagle dev probe` no longer reads `C_GameRules`. The other checks keep their numbers, which the launch tickets cite.
+There is no check 22: it looked for a per-character Self-Found call, and the character table dropped its `selfFound` field ([#363](https://github.com/timemir/pagle-addon/issues/363), LOG-R26), so `/pagle dev probe` no longer reads `C_GameRules`. The other checks keep their numbers, which the launch tickets cite.
 
 ### Before the tag
 

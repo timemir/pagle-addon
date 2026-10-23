@@ -8,7 +8,7 @@ When and how often an event is on is decided apart from the definition, as **run
 
 An event Hunt is always imposed: it counts a Catch only in its event's zones and during the run. Each run starts fresh and pays again, and its completed count feeds the titles at 25, 50 and 100.
 
-Decided in [The Hunt Event definition and the shipped calendar](https://github.com/timemir/wow-fish/issues/280), on the map [Hunts redesigned around Hunt Events](https://github.com/timemir/wow-fish/issues/277).
+Decided in [The Hunt Event definition and the shipped calendar](https://github.com/timemir/pagle-addon/issues/280), on the map [Hunts redesigned around Hunt Events](https://github.com/timemir/pagle-addon/issues/277).
 
 ## Considered Options
 
@@ -29,7 +29,7 @@ Decided in [The Hunt Event definition and the shipped calendar](https://github.c
 
 ## Note: the rotation is banded
 
-Decided in [Authoring enough Hunt Events: templates, generator and volume](https://github.com/timemir/wow-fish/issues/281). The fallback rotation's seeded shuffle is **banded**, so an Angler of any skill has an event in reach at least every 9 days:
+Decided in [Authoring enough Hunt Events: templates, generator and volume](https://github.com/timemir/pagle-addon/issues/281). The fallback rotation's seeded shuffle is **banded**, so an Angler of any skill has an event in reach at least every 9 days:
 - the rotating pool is split into low, mid and high bands, by each event's skill range;
 - the runs cycle low → mid → high, shuffled within each band by the same seeded rule;
 - the rotation is still the same for every Angler.
