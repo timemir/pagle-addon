@@ -65,9 +65,16 @@ ns.CELEBRATED_RUN_KEEP = 30 * 86400
 --- Projection state, `hours`): 14 days. A run record credits its earlier Casts from it (HNT-R149).
 ns.HOUR_INDEX_HOURS = 14 * 24
 
+--- Tunables (hunts.md): how near its end a run on gets its closing note on the Pagle Wagers spread and its countdown
+--- and dial in red, in seconds: 3 hours (HNT-R162, HNT-R167).
+ns.WAGER_CLOSING_NOTE = 3 * 3600
+
+--- The time dial's steps (HNT-R167): the Wagers atlas draws its fill in 36 (`dial-fill-01` to `dial-fill-36`).
+ns.WAGER_DIAL_STEPS = 36
+
 --- Tunables (hunts.md): the companion hint switch (HNT-R170–R172), on at 1.0. Were it off there would be no hint, no
---- Nod, no placeholder slip, no tracker line and no Settings row; the companion state would still be read and pushed
---- runs still used (HNT-R153).
+--- Nod, no hint slip, no tracker line and no Settings row; the companion state would still be read and pushed runs
+--- still used (HNT-R153).
 ns.COMPANION_HINT_ON = true
 
 --- Tunables (hunts.md): the companion's address that Get it shows (HNT-R170).

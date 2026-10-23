@@ -301,31 +301,69 @@ ns.L = {
 	RUN_KICKER_ROTATION = "From the rotation · %s waters",
 	BANDS = { low = "low", mid = "mid", high = "high" }, -- an event's skill band (HNT-R156)
 	RUN_KICKER_PUSHED = "Sent by the companion",
-	RUN_FROM_UNTIL = "from %s until %s", -- a run ahead: its start and its end
-	SEAL_SETTLED = "Settled %s", -- a completed run's seal, with the short date
+	-- The run's time block (HNT-R163): in the hand "closes in {duration}" (STRIP_CLOSES), once settled its own line, or
+	-- for a run ahead when it opens; under it its end and its length.
+	RUN_SETTLED_OPEN = "settled, and still open",
+	RUN_OPENS = "opens %s", -- "opens Sat 17:00"
+	RUN_UNTIL_ALL = "until %s · %s in all", -- "until Sat 17:00 · 3d in all"
+	RUN_UNTIL_TABLE = "until %s · %s on the table", -- a run ahead: "until Tue 17:00 · 3d on the table"
+	SEAL_SETTLED_WORD = "Settled", -- the seal pressed over a settled run's mark, over its short date
 	-- An event Hunt's shape (HNT-R163), then its target line: "Timed · Darkshore Grouper, 22:00–04:00".
 	SHAPES = { timed = "Timed", big = "Big ones", quality = "Quality", haul = "Haul", named = "Named fish" },
 	RUN_HUNT_LINE = "%s · %s",
 	RUN_TARGET_TIME = "%s, %s",
-	RUN_CASTS_ONE = "%s Cast in these waters this run.",
-	RUN_CASTS_OTHER = "%s Casts in these waters this run.",
-	RUN_SO_FAR = "So far +%d XP · %d Coins",
+	-- A Hunt's count at its row's right, the count (the %s) in the hand: "61 / 135", or "12 caught" past its last tier.
+	RUN_HUNT_PROGRESS = "%s / %d",
+	RUN_HUNT_CAUGHT = "%s caught",
+	-- A Timed Hunt's window under its row, in realm time.
+	RUN_WINDOW_OPEN = "open now, until %s", -- "open now, until 04:00"
+	RUN_WINDOW_SHUT = "opens at %s, in %s", -- "opens at 22:00, in 2h 50m"
+	-- The Casts made in the run's waters, with its Hunts' first marks: "84 Casts in these waters this run · 1 of 4 first
+	-- marks".
+	RUN_CASTS_ONE = "%s Cast in these waters this run · %d of %d first marks",
+	RUN_CASTS_OTHER = "%s Casts in these waters this run · %d of %d first marks",
+	-- The two pay boxes: what the run has paid, and what settling it pays (Tunables) or that it has.
+	PAY_SO_FAR = "Paid so far",
+	PAY_AMOUNT = "+%d XP · %d Coins",
+	PAY_SETTLE = "Settle it",
+	PAY_SETTLED = "Settled",
+	PAY_PAID_OUT = "paid out",
 	-- The pay rule, from the Tunables: tier 1's XP and Coins, a further tier's, then a settled run's.
-	RUN_PAY_RULE = "Each Hunt's first mark pays +%d XP and %d Coins, each mark after it +%d XP and %d Coins. "
-		.. "Land every Hunt's first mark and the wager settles: +%d XP and %d Coins more.",
+	RUN_PAY_RULE = "Each Hunt's first mark pays +%d XP and %d Coins, each tier after it +%d XP and %d Coins, and "
+		.. "settling the wager +%d XP and %d Coins more.",
+	-- The right page on the Pagle Wagers spread with no run at all.
+	ENTRY_NONE_TITLE = "Nothing to read yet",
+	ENTRY_NONE_HAND = "When a wager goes up it will be written here: its waters, its Hunts and what it pays.",
 
-	-- The Pagle Wagers ribbon and spread (HNT-R162, HNT-R204): logic/Sets.lua's ribbon, logic/Wagers.lua's slips and
-	-- ladder. As above, nothing here claims odds, a due fish or a chance (HNT-R27).
+	-- The Pagle Wagers ribbon and spread (HNT-R162, HNT-R204): logic/Sets.lua's ribbon, logic/WagersSpread.lua's
+	-- tickets, rows ahead and ladder. As above, nothing here claims odds, a due fish or a chance (HNT-R27).
 	RIBBON_ON = "%d on", -- under the ribbon's name while runs are on
 	SPREAD_TITLE = "On the table",
-	SPREAD_NOTE = "Three days each. Land every Hunt's first mark before it closes.",
-	SPREAD_EMPTY = "No wagers on the table yet.",
-	SLIP_WHERE = "%s · %s", -- "Darkshore · until Sat 17:00": the run's zones and its end
-	SLIP_OPENS = "opens %s", -- a run ahead, in place of the countdown: "opens Sat 15:00"
-	SLIP_CLOSED = "closed", -- a run that ended while the board was open
-	SLIP_MARKS = "%d of %d first marks",
-	SLIP_SETTLED = "settled", -- the stamp on a completed run's slip
-	-- A pushed run's holiday tag (DATA-R97), in its slip's margin: interface text, keyed by tag ID.
+	-- The note under the title, which follows the table.
+	SPREAD_NOTE_MANY = "%d wagers on. Land every Hunt's first mark before its wager closes.",
+	SPREAD_NOTE_ONE = "One wager on. Land every Hunt's first mark before it closes.",
+	SPREAD_NOTE_AHEAD = "Nothing on just now. The next wager opens %s.", -- the first run ahead's start, "Sat 17:00"
+	SPREAD_NOTE_NONE = "Nothing on the table, and nothing posted yet.",
+	-- The closing note in the margin: the event's name up to its first comma, and the time to its end.
+	SPREAD_CLOSING = "%s closes in %s!",
+	SPREAD_ON_NOW = "On now",
+	SPREAD_AHEAD = "Ahead",
+	SPREAD_AHEAD_CAPTION = "posted, and may change before it opens",
+	SPREAD_EMPTY = "No wagers on the table, and none posted ahead. The rotation puts one on at the next turn.",
+	-- A wager ticket: its zones and its end, "Darkshore · until Sat 17:00", or once it closed "closed Sat 17:00"; its
+	-- first marks; "closed" in its stub.
+	TICKET_LINE = "%s · %s",
+	TICKET_CLOSED_AT = "closed %s",
+	TICKET_CLOSED = "closed",
+	TICKET_MARKS = "%d of %d first marks",
+	TICKET_UPDATING = "updating…", -- its marks while the projection updates (HNT-R69)
+	-- An event short of skill (HNT-R156), in pencil on its ticket, its row ahead and its entry: its skill's lower end.
+	NEEDS_SKILL = "needs skill %d",
+	-- A run ahead's row: when it opens, and its length.
+	AHEAD_OPENS = "opens %s",
+	AHEAD_FOR = "for %s",
+	LADDER_LABEL = "The ladder",
+	-- A holiday run's tag (DATA-R97), on its ticket and as its entry's chip: interface text, keyed by tag ID.
 	HOLIDAYS = {
 		hallows_end = "Hallow's End",
 		winter_veil = "Feast of Winter Veil",

@@ -1,8 +1,9 @@
--- Pagle Wagers on the board as data (HNT-R27, HNT-R53, HNT-R54, HNT-R148, HNT-R162, HNT-R163, HNT-R204): an event
--- Hunt's shape and its line, the run entry's pay rule, and the Pagle Wagers spread's wager slips and ladder. Pure
--- logic, on the fixture event pool's Hunts and stand-in names, at FakePagle's fixed clock (realm 08:15 on Sunday 11
--- October 2026, at UTC). The strip, the WAGERS rows and a whole run entry are checked on FakePagle
--- (spec/Pagle_Hunts/adapter/Wagers_spec.lua), and the spread as drawn too (spec/Pagle_Hunts/adapter/
+-- Pagle Wagers on the board as data (HNT-R27, HNT-R53, HNT-R54, HNT-R156, HNT-R162, HNT-R163, HNT-R166, HNT-R167): an
+-- event Hunt's shape and its line, the run entry's pay rule, the event mark's layers, the time dial, "needs skill {n}",
+-- a holiday's name, and a run's entry with its fit rule. Pure logic, on the fixture event pool's Hunts and stand-in
+-- names, at FakePagle's fixed clock (realm 08:15 on Sunday 11 October 2026, at UTC). The spread's left page is
+-- spec/Pagle_Hunts/logic/WagersSpread_spec.lua's; the strip, the WAGERS rows and a whole run entry are checked on
+-- FakePagle (spec/Pagle_Hunts/adapter/Wagers_spec.lua), and the spread as drawn too (spec/Pagle_Hunts/adapter/
 -- WagersSpread_spec.lua).
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -70,8 +71,8 @@ describe("the run entry's pay rule (HNT-R163, HNT-R27)", function()
 		local rule = ns.RunPayRule()
 
 		assert.are.equal(
-			"Each Hunt's first mark pays +200 XP and 20 Coins, each mark after it +120 XP and 12 Coins. "
-				.. "Land every Hunt's first mark and the wager settles: +300 XP and 60 Coins more.",
+			"Each Hunt's first mark pays +200 XP and 20 Coins, each tier after it +120 XP and 12 Coins, and settling "
+				.. "the wager +300 XP and 60 Coins more.",
 			rule
 		)
 		for _, word in ipairs({ "odds", "chance", "due", "likely", "%%" }) do
@@ -80,10 +81,146 @@ describe("the run entry's pay rule (HNT-R163, HNT-R27)", function()
 	end)
 end)
 
--- The Pagle Wagers spread --------------------------------------------------------------------------------------------
-
 local HOUR, DAY = hunts.HOUR, 86400
 local NOW = SERVER_TIME -- realm 08:15 on Sunday 11 October 2026, at UTC (hunts.SUNDAY)
+
+-- What the spread and the entry share ----------------------------------------------------------------------------
+
+describe("the event mark's layers (HNT-R166)", function()
+	it("stack the shadow, the time tag's sky, the water tag's water, the ring and a holiday's charm", function()
+		local ns = load()
+
+		assert.are.same(
+			{ "mark-shadow", "mark-sky-night", "mark-water-coast", "mark-ring", "mark-charm-winter_veil" },
+			ns.EventMarkLayers({ "winter_veil", "coast", "night", "high" })
+		)
+		assert.are.same(
+			{ "mark-shadow", "mark-sky-day", "mark-water-lake", "mark-ring" },
+			ns.EventMarkLayers({ "lake", "low", "day" })
+		)
+	end)
+
+	it("draw a plain sky with no time tag, and open water with no water tag", function()
+		local ns = load()
+
+		assert.are.same(
+			{ "mark-shadow", "mark-sky-plain", "mark-water-river", "mark-ring" },
+			ns.EventMarkLayers({ "river" })
+		)
+		-- the empty box's mark: no tags at all
+		assert.are.same({ "mark-shadow", "mark-sky-plain", "mark-ring" }, ns.EventMarkLayers({}))
+		assert.are.same({ "mark-shadow", "mark-sky-plain", "mark-ring" }, ns.EventMarkLayers(nil))
+	end)
+
+	it("come from the tags alone: events with the same tags share a mark, the first tag of a kind picks", function()
+		local ns = load()
+
+		assert.are.same(ns.EventMarkLayers({ "lake", "day", "mid" }), ns.EventMarkLayers({ "day", "lake", "low" }))
+		assert.are.same(
+			{ "mark-shadow", "mark-sky-dusk", "mark-water-pool", "mark-ring", "mark-charm-midsummer" },
+			ns.EventMarkLayers({ "dusk", "pool", "midsummer", "night", "coast", "hallows_end" })
+		)
+	end)
+end)
+
+describe("the time dial (HNT-R167)", function()
+	it("shows the share still to go in 36 steps, rounded up, at least 1 while any is left", function()
+		local ns = load()
+		local length = 72 * HOUR
+
+		assert.are.equal(36, ns.DialStep(length, length))
+		assert.are.equal(18, ns.DialStep(length / 2, length))
+		assert.are.equal(19, ns.DialStep(length / 2 + 1, length))
+		assert.are.equal(1, ns.DialStep(1, length))
+		assert.are.equal(1, ns.DialStep(42 * 60, length))
+		assert.is_nil(ns.DialStep(0, length))
+		assert.is_nil(ns.DialStep(-60, length))
+	end)
+
+	it(
+		"is red within the closing-note time (3 h, Tunables), grey once settled, empty once closed, dashed ahead",
+		function()
+			local ns = load()
+			local function shown(start, end_, on)
+				return { key = "x@" .. start, run = { start = start, end_ = end_ }, on = on }
+			end
+			local now = 1000000
+
+			assert.are.equal(3 * 3600, ns.WAGER_CLOSING_NOTE)
+			assert.are.same(
+				{ kind = "on", step = 1, urgent = true, left = "42m" },
+				ns.WagerDial(shown(now - 72 * HOUR + 42 * 60, now + 42 * 60, true), now, false, false)
+			)
+			assert.are.same(
+				{ kind = "on", step = 2, urgent = true, left = "3h" },
+				ns.WagerDial(shown(now - 69 * HOUR, now + 3 * HOUR, true), now, false, false)
+			)
+			assert.are.same(
+				{ kind = "on", step = 2, urgent = false, left = "3h 1m" },
+				ns.WagerDial(shown(now - 69 * HOUR, now + 3 * HOUR + 60, true), now, false, false)
+			)
+			assert.are.same(
+				{ kind = "settled", step = 1, urgent = false, left = "42m" },
+				ns.WagerDial(shown(now - 72 * HOUR + 42 * 60, now + 42 * 60, true), now, true, false)
+			)
+			assert.are.same(
+				{ kind = "closed", urgent = false, left = "closed" },
+				ns.WagerDial(shown(now - 72 * HOUR, now - 60, false), now, false, true)
+			)
+			assert.are.same(
+				{ kind = "ahead", urgent = false },
+				ns.WagerDial(shown(now + HOUR, now + 73 * HOUR, false), now, false, false)
+			)
+		end
+	)
+end)
+
+describe('"needs skill {n}" (HNT-R156)', function()
+	it("is the event's skill lower end when it is above the Angler's best, else nothing", function()
+		local ns = load()
+		local event = { skill = { 276, 300 } }
+
+		assert.are.equal("needs skill 276", ns.EventSkillNeed(event, 275))
+		assert.is_nil(ns.EventSkillNeed(event, 276))
+		assert.is_nil(ns.EventSkillNeed(event, 300))
+		assert.is_nil(ns.EventSkillNeed(event, nil))
+	end)
+end)
+
+describe("a holiday run's tag (HNT-R162, HNT-R163)", function()
+	it("is its holiday tag's full name, and nothing for an event without one", function()
+		local ns = load()
+
+		assert.are.equal("Hallow's End", ns.EventHolidayName({ tags = { "coast", "hallows_end", "low" } }))
+		assert.are.equal("Feast of Winter Veil", ns.EventHolidayName({ tags = { "winter_veil", "low" } }))
+		assert.are.equal(
+			"Stranglethorn Fishing Extravaganza",
+			ns.EventHolidayName({ tags = { "stv_extravaganza", "coast" } })
+		)
+		assert.is_nil(ns.EventHolidayName({ tags = { "coast", "night", "low" } }))
+	end)
+end)
+
+describe("a line in more than one ink", function()
+	it("is the locale's line cut at its markers, each run with its ink, empty runs left out", function()
+		local ns = load()
+
+		assert.are.same(
+			{
+				{ text = "17", ink = "count" },
+				{ text = " wagers settled · 8 more for ", ink = "line" },
+				{ text = "Bookmaker's Bane", ink = "title" },
+			},
+			ns.InkRuns(
+				"\1 wagers settled · 8 more for \2",
+				"line",
+				{ ["\1"] = { "17", "count" }, ["\2"] = { "Bookmaker's Bane", "title" } }
+			)
+		)
+	end)
+end)
+
+-- A run's entry --------------------------------------------------------------------------------------------------
 
 -- One of ns.RunsShown's runs (HuntsShownRun) of the fixture pool's event `id`, from `start` to `end_`, on or ahead as
 -- NOW falls, with `huntsProgress` (by Hunt ID) its progress; `fields` over the run (`source`, `completedAt`).
@@ -95,187 +232,218 @@ local function shownRun(ns, id, start, end_, huntsProgress, fields)
 	return { key = id .. "@" .. start, run = run, event = ns.events:Event(id), on = start <= NOW }
 end
 
--- logic/Wagers.lua's inputs over `runs` at NOW, with the fixture catalogue's area names.
-local function wagersInput(ns, runs, updating)
+-- `shown` with its event's fields `fields` over a copy of it.
+local function withEvent(shown, fields)
+	local event = {}
+	for key, value in pairs(shown.event) do
+		event[key] = value
+	end
+	for key, value in pairs(fields) do
+		event[key] = value
+	end
+	shown.event = event
+	return shown
+end
+
+-- logic/Wagers.lua's inputs over `runs` at NOW, with the fixture catalogue's area names, the live zone Darkshore, a
+-- best skill of 150 and `window` (a Window) as every Hunt's next window.
+local function wagersInput(ns, runs, updating, window)
+	local snapshot = {}
+	for key, value in pairs(hunts.SUNDAY) do
+		snapshot[key] = value
+	end
+	snapshot.zone = C.DARKSHORE
 	return {
 		runs = runs,
 		now = NOW,
-		snapshot = hunts.SUNDAY,
+		snapshot = snapshot,
 		updating = updating == true,
 		list = ns.hunts,
+		best = 150,
 		sources = {
 			AreaName = function(areaID)
 				return C.NAMES.areas[areaID]
+			end,
+			ItemName = function(itemID)
+				return C.NAMES.items[itemID]
+			end,
+			NextWindow = window and function()
+				return window
 			end,
 		},
 	}
 end
 
--- A slip's words, as the specs read them.
-local function slipWords(slip)
-	return { slip.name, slip.where, slip.when, slip.marks }
-end
+describe("a run's entry (HNT-R163)", function()
+	-- fixture_shore on from a day ago for three days: the Snapper at its first mark, the Haul at 1 of 2 with 7 Casts.
+	local function shore(ns, fields)
+		return shownRun(ns, "fixture_shore", NOW - DAY, NOW + 2 * DAY, {
+			fixture_shore_snapper = hunts.progress({ tiers = 1, effort = 3 }),
+			fixture_shore_haul = hunts.progress({ count = 1, effort = 7 }),
+		}, fields)
+	end
 
-describe("the wager slips on the Pagle Wagers spread (HNT-R162, HNT-R160)", function()
-	it("give a run on its name, zones, until, its countdown in red, and its pips with its first marks", function()
+	it("reads its kicker, name, mark, time block, chips and note", function()
 		local ns = load()
-		local shore = shownRun(ns, "fixture_shore", NOW - DAY, NOW + 2 * DAY + 4 * HOUR, {
-			fixture_shore_snapper = hunts.progress({ tiers = 1 }),
-			fixture_shore_haul = hunts.progress({ count = 1 }),
-		})
 
-		local spread = ns.BuildWagersSpread(wagersInput(ns, { shore }), { settled = 0, ladder = {}, ended = {} })
+		local entry = ns.BuildRunEntry(wagersInput(ns, {}), shore(ns))
 
 		assert.are.same(
-			{ "Pagle Wagers", "On the table", "Three days each. Land every Hunt's first mark before it closes." },
-			{ spread.kicker, spread.title, spread.note }
+			{ "rotation", "From the rotation · low waters", "Shore Wager" },
+			{ entry.source, entry.kicker, entry.name }
 		)
-		assert.is_nil(spread.empty)
-		assert.are.equal(1, #spread.slips)
-		local slip = spread.slips[1]
-		-- HNT-R50, HNT-R203: a server-time countdown, and the end in realm time.
-		assert.are.same(
-			{ "Shore Wager", "Darkshore · until Tue 12:15", "closes in 2d 4h", "1 of 3 first marks" },
-			slipWords(slip)
-		)
-		assert.are.same({ shore.key, "red", true, false }, { slip.run, slip.tone, slip.on, slip.closed })
-		assert.are.same({ false, true, false }, slip.pips)
-		assert.is_nil(slip.settled)
-		assert.is_nil(slip.tag)
-		assert.are.equal(shore.key, spread.selected) -- the first slip's run by default
-		assert.is_true(slip.selected)
+		assert.are.same({ "mark-shadow", "mark-sky-plain", "mark-water-coast", "mark-ring" }, entry.mark)
+		assert.are.same({
+			dial = { kind = "on", step = 24, urgent = false, left = "2d" },
+			hand = "closes in 2d",
+			ahead = false,
+			small = "until Tue 08:15 · 3d in all",
+		}, entry.time)
+		assert.are.same({ { kind = "zone", text = "Darkshore", here = true, badge = "you're here" } }, entry.chips)
+		assert.are.equal("Darkshore's tide, three days long.", entry.note)
+		assert.is_nil(entry.seal)
+		assert.is_nil(entry.updating)
+		assert.is_false(entry.tight)
 	end)
 
-	it('read "settled" with its stamp once a run is completed, in place of the countdown (HNT-R146)', function()
+	it("gives each Hunt its glyph, line, count in two inks, diamonds in their trims and ink bar", function()
 		local ns = load()
-		local done = hunts.progress({ tiers = 1 })
-		local shore = shownRun(ns, "fixture_shore", NOW - DAY, NOW + 2 * DAY, {
-			fixture_shore_haul = hunts.progress({ tiers = 1 }),
+
+		local entry = ns.BuildRunEntry(wagersInput(ns, {}), shore(ns))
+
+		local haul, snapper, oddity = entry.hunts[1], entry.hunts[2], entry.hunts[3]
+		assert.are.same(
+			{ "haul", "Haul · Any fish", false, { count = "1", rest = " / 2" }, 0.5 },
+			{ haul.shape, haul.line, haul.got, haul.count, haul.fill }
+		)
+		assert.are.same({ { trim = "bronze", reached = false }, { trim = "silver", reached = false } }, haul.tiers)
+		assert.are.same(
+			{ "named", true, { count = "1", rest = " caught" }, 1 },
+			{ snapper.shape, snapper.got, snapper.count, snapper.fill }
+		)
+		assert.are.same({ { trim = "bronze", reached = true } }, snapper.tiers)
+		assert.are.same({ "timed", { count = "0", rest = " / 1" } }, { oddity.shape, oddity.count })
+	end)
+
+	it('reads the Casts with the first marks, "Paid so far" and "Settle it", then the pay rule', function()
+		local ns = load()
+
+		local entry = ns.BuildRunEntry(wagersInput(ns, {}), shore(ns))
+
+		assert.are.equal("7 Casts in these waters this run · 1 of 3 first marks", entry.casts)
+		assert.are.same({
+			{ label = "Paid so far", amount = "+150 XP · 15 Coins" },
+			{ label = "Settle it", amount = "+250 XP · 50 Coins" },
+		}, entry.pay)
+		assert.are.equal(ns.RunPayRule(), entry.payRule)
+	end)
+
+	it('presses the seal once settled, reads "settled, and still open" and "Settled" over "paid out"', function()
+		local ns = load()
+		local done = hunts.progress({ tiers = 1, time = NOW - HOUR, date = { year = 2026, month = 10, day = 10 } })
+		local shown = shownRun(ns, "fixture_shore", NOW - DAY, NOW + 2 * DAY, {
+			fixture_shore_haul = hunts.progress({ tiers = 1, count = 2 }),
 			fixture_shore_snapper = done,
 			fixture_shore_oddity = done,
 		}, { completedAt = NOW - HOUR })
 
-		local slip = ns.BuildWagersSpread(wagersInput(ns, { shore }), { settled = 1, ladder = {}, ended = {} }).slips[1]
+		local entry = ns.BuildRunEntry(wagersInput(ns, {}), shown)
 
-		assert.are.same({ "settled", "3 of 3 first marks" }, { slip.settled, slip.marks })
-		assert.is_nil(slip.when)
-		assert.are.same({ true, true, true }, slip.pips)
+		assert.are.same({ word = "Settled", date = "10 Oct" }, entry.seal)
+		assert.are.same({ "settled", "settled, and still open" }, { entry.time.dial.kind, entry.time.hand })
+		assert.are.same({ label = "Settled", amount = "paid out" }, entry.pay[2])
+		-- three first marks and the settled run: 3 × 150 + 250 XP, 3 × 15 + 50 Coins
+		assert.are.same({ label = "Paid so far", amount = "+700 XP · 95 Coins" }, entry.pay[1])
 	end)
 
-	it('give a run ahead "opens {weekday} {time}" where a run on has its countdown (default chosen in #303)', function()
+	it("reads a run ahead's opening with the dashed dial, and has no Casts line and no boxes", function()
 		local ns = load()
-		local shore = shownRun(ns, "fixture_shore", NOW - DAY, NOW + 2 * DAY)
 		local vale = shownRun(ns, "fixture_vale", NOW + 3 * HOUR, NOW + 3 * HOUR + 3 * DAY)
 
-		local slips =
-			ns.BuildWagersSpread(wagersInput(ns, { shore, vale }), { settled = 0, ladder = {}, ended = {} }).slips
+		local entry = ns.BuildRunEntry(wagersInput(ns, {}), vale)
 
-		assert.are.same({ shore.key, vale.key }, { slips[1].run, slips[2].run }) -- on, then ahead (HNT-R160)
-		assert.are.same(
-			{ "fixture_vale", "Ashenvale & Elwynn Forest · until Wed 11:15", "opens Sun 11:15", "0 of 3 first marks" },
-			slipWords(slips[2])
-		)
-		assert.are.same({ "note", false }, { slips[2].tone, slips[2].on })
-		assert.are.same({ false, false, false }, slips[2].pips)
+		assert.are.same({
+			dial = { kind = "ahead", urgent = false },
+			hand = "opens Sun 11:15",
+			ahead = true,
+			small = "until Wed 11:15 · 3d on the table",
+		}, entry.time)
+		assert.is_nil(entry.casts)
+		assert.is_nil(entry.pay)
+		assert.are.same({ "Ashenvale", "Elwynn Forest" }, { entry.chips[1].text, entry.chips[2].text })
 	end)
 
-	it("put a pushed run's holiday tag in the margin, never a rotation run's, and no other tag", function()
+	it('adds a pencilled "needs skill {n}" chip short of skill, then a holiday\'s chip, never in red', function()
 		local ns = load()
-		local function tagged(source, tags)
-			local shown = shownRun(ns, "fixture_shore", NOW - DAY, NOW + DAY, {}, { source = source })
-			local event = {}
-			for key, value in pairs(shown.event) do
-				event[key] = value
-			end
-			event.tags = tags
-			shown.event = event
-			local input = wagersInput(ns, { shown })
-			return ns.BuildWagersSpread(input, { settled = 0, ladder = {}, ended = {} }).slips[1].tag
+		local shown =
+			withEvent(shore(ns, { source = "p" }), { skill = { 276, 300 }, tags = { "coast", "winter_veil" } })
+
+		local entry = ns.BuildRunEntry(wagersInput(ns, {}), shown)
+
+		assert.are.same({
+			{ kind = "zone", text = "Darkshore", here = true, badge = "you're here" },
+			{ kind = "skill", text = "needs skill 276" },
+			{ kind = "holiday", text = "Feast of Winter Veil" },
+		}, entry.chips)
+		assert.is_nil(entry.chips[2].short) -- not the Hunt entry's red chip
+		assert.are.same({ "companion", "Sent by the companion" }, { entry.source, entry.kicker })
+		assert.are.equal("mark-charm-winter_veil", entry.mark[#entry.mark])
+	end)
+
+	it("reads a Timed Hunt's window: open now until its close, or when it opens and in how long", function()
+		local ns = load()
+		local open = { openNow = true, closesAt = NOW + 2 * HOUR }
+		local shut = { openNow = false, opensAt = NOW + 2 * HOUR + 50 * 60, closesAt = NOW + 5 * HOUR }
+
+		local opened = ns.BuildRunEntry(wagersInput(ns, {}, false, open), shore(ns))
+		local closed = ns.BuildRunEntry(wagersInput(ns, {}, false, shut), shore(ns))
+
+		assert.are.same({ open = true, text = "open now, until 10:15" }, opened.hunts[3].window)
+		assert.are.same({ open = false, text = "opens at 11:05, in 2h 50m" }, closed.hunts[3].window)
+		-- only a Hunt with a time condition has one
+		assert.is_nil(opened.hunts[1].window)
+	end)
+
+	it("tightens with five Hunts", function()
+		local ns = load()
+		local shown = shore(ns)
+		local five = {}
+		for i = 1, 5 do
+			five[i] = shown.event.hunts[(i - 1) % 3 + 1]
 		end
 
-		assert.are.equal("Hallow's End", tagged("p", { "coast", "hallows_end", "low" }))
-		assert.are.equal("Feast of Winter Veil", tagged("p", { "winter_veil", "low" }))
-		assert.is_nil(tagged("r", { "hallows_end", "low" }))
-		assert.is_nil(tagged("p", { "coast", "night", "low" }))
-	end)
-
-	it("keep a run that ended this showing, greyed and closed, after the rest, never chosen (HNT-R143)", function()
-		local ns = load()
-		local shore = shownRun(ns, "fixture_shore", NOW - 3 * DAY, NOW - HOUR, {
-			fixture_shore_snapper = hunts.progress({ tiers = 1 }),
-		})
-		local vale = shownRun(ns, "fixture_vale", NOW - HOUR, NOW + 3 * DAY - HOUR)
-
-		local spread = ns.BuildWagersSpread(
-			wagersInput(ns, { vale }),
-			{ settled = 0, ladder = {}, ended = { shore }, run = shore.key }
-		)
-
-		assert.are.same({ vale.key, shore.key }, { spread.slips[1].run, spread.slips[2].run })
-		local closed = spread.slips[2]
-		assert.are.same({ "closed", "faded", true, false }, { closed.when, closed.tone, closed.closed, closed.on })
-		assert.are.equal("1 of 3 first marks", closed.marks)
-		-- The run asked for has closed: the first open slip is chosen in its place.
-		assert.are.equal(vale.key, spread.selected)
-		assert.is_false(closed.selected)
-	end)
-
-	it("choose the slip asked for, else the first slip's run", function()
-		local ns = load()
-		local shore = shownRun(ns, "fixture_shore", NOW - DAY, NOW + 2 * DAY)
-		local vale = shownRun(ns, "fixture_vale", NOW - HOUR, NOW + 3 * DAY)
-		local input = wagersInput(ns, { shore, vale })
-
-		local chosen = ns.BuildWagersSpread(input, { settled = 0, ladder = {}, ended = {}, run = vale.key })
-		local unknown = ns.BuildWagersSpread(input, { settled = 0, ladder = {}, ended = {}, run = "fixture_vale@1" })
-
-		assert.are.same(
-			{ vale.key, false, true },
-			{ chosen.selected, chosen.slips[1].selected, chosen.slips[2].selected }
-		)
-		assert.are.equal(shore.key, unknown.selected)
+		assert.is_true(ns.BuildRunEntry(wagersInput(ns, {}), withEvent(shown, { hunts = five })).tight)
 	end)
 
 	it(
-		'read "No wagers on the table yet." with nothing on or ahead, the ladder still at the foot (HNT-R204)',
+		"draws nothing from the projection while it updates: the updating line, no seal, counts, Casts or boxes",
 		function()
 			local ns = load()
+			local shown = shore(ns, { completedAt = NOW - HOUR })
 
-			local spread = ns.BuildWagersSpread(wagersInput(ns, {}), { settled = 0, ladder = {}, ended = {} })
+			local entry = ns.BuildRunEntry(wagersInput(ns, {}, true), shown)
 
-			assert.are.same({}, spread.slips)
-			assert.are.equal("No wagers on the table yet.", spread.empty)
-			assert.is_nil(spread.selected)
-			assert.are.equal("0 wagers settled · 25 more for Bookmaker's Bane", spread.ladder.line)
+			assert.are.equal("Updating from your Catch log…", entry.updating)
+			assert.is_nil(entry.seal)
+			assert.are.same({ "on", "closes in 2d" }, { entry.time.dial.kind, entry.time.hand })
+			for _, hunt in ipairs(entry.hunts) do
+				assert.is_nil(hunt.got)
+				assert.is_nil(hunt.count)
+				assert.is_nil(hunt.tiers)
+				assert.is_nil(hunt.fill)
+				assert.is_string(hunt.line)
+			end
+			assert.is_nil(entry.casts)
+			assert.is_nil(entry.pay)
 		end
 	)
 
-	it("read the updating line for the marks, and press no stamp, while the projection updates (HNT-R69)", function()
+	it("claims no odds, chance or due fish in any of its words (HNT-R27)", function()
 		local ns = load()
-		local shore = shownRun(ns, "fixture_shore", NOW - DAY, NOW + 2 * DAY, {
-			fixture_shore_snapper = hunts.progress({ tiers = 1 }),
-		}, { completedAt = NOW - HOUR })
-
-		local spread = ns.BuildWagersSpread(wagersInput(ns, { shore }, true), { settled = 3, ladder = {}, ended = {} })
-
-		local slip = spread.slips[1]
-		assert.are.equal("Updating from your Catch log…", slip.marks)
-		assert.is_nil(slip.pips)
-		assert.is_nil(slip.settled)
-		assert.are.equal("closes in 2d", slip.when)
-		assert.are.same({ "Updating from your Catch log…", 0 }, { spread.ladder.line, spread.ladder.fill })
-	end)
-
-	it("claim no odds, chance or due fish in any of their words (HNT-R27)", function()
-		local ns = load()
-		local shore = shownRun(ns, "fixture_shore", NOW - DAY, NOW + 2 * DAY)
-		local vale = shownRun(ns, "fixture_vale", NOW + HOUR, NOW + 3 * DAY)
-		local spread = ns.BuildWagersSpread(wagersInput(ns, { shore, vale }), { settled = 0, ladder = {}, ended = {} })
-		local words = { spread.kicker, spread.title, spread.note, spread.ladder.line, ns.L.SPREAD_EMPTY }
-		for _, slip in ipairs(spread.slips) do
-			for _, word in ipairs(slipWords(slip)) do
-				words[#words + 1] = word
-			end
+		local entry = ns.BuildRunEntry(wagersInput(ns, {}), shore(ns))
+		local words = { entry.kicker, entry.time.hand, entry.time.small, entry.casts, entry.payRule }
+		for _, pay in ipairs(entry.pay) do
+			words[#words + 1] = pay.label .. " " .. pay.amount
 		end
 
 		for _, text in ipairs(words) do
@@ -286,42 +454,33 @@ describe("the wager slips on the Pagle Wagers spread (HNT-R162, HNT-R160)", func
 	end)
 end)
 
-describe("the ladder at the spread's foot (HNT-R148, HNT-R162)", function()
-	-- The ladder for `settled` completed runs and the steps earned in `ladder`.
-	local function ladderAt(settled, ladder, updating)
-		return load().BuildWagersLadder(settled, ladder or {}, updating)
-	end
-	-- The titles at 50 and 100, the lore's (#307) as ns.LadderTitle reads them.
-	local RUIN, BREAKER = load().LadderTitle(50), load().LadderTitle(100)
+describe("the entry's fit rule (HNT-R163)", function()
+	it("leaves nothing out when the entry ends within the limit", function()
+		local ns = load()
 
-	it("has three marks at 25, 50 and 100, each with its title, and the bar toward the next", function()
-		local ladder = ladderAt(0)
+		local out, ends = ns.RunEntryFit({ ends = 500, rule = 30, casts = 20, windows = 40 }, 512)
 
-		assert.are.same({
-			{ step = 25, title = "Bookmaker's Bane", reached = false },
-			{ step = 50, title = RUIN, reached = false },
-			{ step = 100, title = BREAKER, reached = false },
-		}, ladder.marks)
-		assert.are.same({ 0, "0 wagers settled · 25 more for Bookmaker's Bane" }, { ladder.fill, ladder.line })
+		assert.are.same({ { rule = false, casts = false, windows = false }, 500 }, { out, ends })
 	end)
 
-	it("counts one wager settled in the singular", function()
-		assert.are.equal("1 wager settled · 24 more for Bookmaker's Bane", ladderAt(1).line)
+	it("leaves out the pay rule first, then the Casts line, then the window lines, until it fits", function()
+		local ns = load()
+		local sizes = { rule = 30, casts = 20, windows = 40 }
+		local function fit(ends)
+			sizes.ends = ends
+			return (ns.RunEntryFit(sizes, 512))
+		end
+
+		assert.are.same({ rule = true, casts = false, windows = false }, fit(530))
+		assert.are.same({ rule = true, casts = true, windows = false }, fit(555))
+		assert.are.same({ rule = true, casts = true, windows = true }, fit(580))
 	end)
 
-	it("marks an earned step reached, and fills toward the next mark", function()
-		local ladder = ladderAt(30, { [25] = NOW })
+	it("skips a part that isn't shown: while updating, the Casts line", function()
+		local ns = load()
 
-		assert.are.same(
-			{ true, false, false },
-			{ ladder.marks[1].reached, ladder.marks[2].reached, ladder.marks[3].reached }
-		)
-		assert.are.same({ 30 / 50, "30 wagers settled · 20 more for " .. RUIN }, { ladder.fill, ladder.line })
-	end)
+		local out, ends = ns.RunEntryFit({ ends = 560, rule = 30, casts = 0, windows = 40 }, 512)
 
-	it('reads only "{count} wagers settled" past the last mark, its bar full (default chosen in #303)', function()
-		local ladder = ladderAt(104, { [25] = NOW, [50] = NOW, [100] = NOW })
-
-		assert.are.same({ 1, "104 wagers settled" }, { ladder.fill, ladder.line })
+		assert.are.same({ { rule = true, casts = false, windows = true }, 490 }, { out, ends })
 	end)
 end)

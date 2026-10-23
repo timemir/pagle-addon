@@ -9,7 +9,7 @@ local ns = select(2, ...)
 -- the hint applies and what it says on the board and the tracker, when the Nod is due, and the Nod itself.
 -- adapter/Companion.lua reads the switch, Core's companion state and the saved profile, and raises.
 
---- The companion hint while it applies (HNT-R170): its lines on the wager strip and the placeholder slip, and its one
+--- The companion hint while it applies (HNT-R170): its lines on the wager strip and the hint slip, and its one
 --- line on the tracker's Pagle Wagers block with no run on (HNT-R176).
 ---@class CompanionHint
 ---@field state "missing"|"notRunning"  -- the companion state it is for (PUSH-R15)

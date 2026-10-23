@@ -38,6 +38,7 @@ logic\Sets.lua
 logic\Goods.lua
 logic\Entry.lua
 logic\Wagers.lua
+logic\WagersSpread.lua
 logic\Tracker.lua
 logic\Companion.lua
 logic\Tour.lua

@@ -7,9 +7,11 @@ local ns = select(2, ...)
 
 -- Pagle Wagers on the Board spread (HNT-R160, HNT-R161, HNT-R163, HNT-R164) as data: the wager strip above the
 -- timeline's ruler, the WAGERS group's rows at the top of the timeline (logic/Timeline.lua puts them first), and a
--- run's entry on the right page. Pure logic, everything passed in (CORE-R7); the event pool (`ns.events`, for names)
--- is read at call time. adapter/Wagers.lua and adapter/Timeline.lua gather the inputs and draw the results; the Pagle
--- Wagers spread (#303) and the tracker's block (#304) read the same pieces.
+-- run's entry on the right page (HNT-R163, the Pagle Wagers kit's variant A), with what the entry and the Pagle Wagers
+-- spread share: the event mark's layers (HNT-R166), the time dial (HNT-R167) and "needs skill {n}" (HNT-R156). Pure
+-- logic, everything passed in (CORE-R7); the event pool (`ns.events`, for names) is read at call time.
+-- adapter/Wagers.lua and adapter/Timeline.lua gather the inputs and draw the strip and the rows, adapter/WagersEntry.lua
+-- the entry; the spread's left page is logic/WagersSpread.lua's, and the tracker's block (#304) reads the same pieces.
 --
 -- Players see Hunt Events only as "Pagle Wagers" (CONTEXT.md); every word here is interface text in ns.L, and none
 -- claims odds, a due fish or a chance (HNT-R27).
@@ -23,6 +25,7 @@ local ns = select(2, ...)
 ---@field list HuntList          -- a fixed class's members (HNT-R54, HNT-R55)
 ---@field sources HuntNameSources
 ---@field hint CompanionHint?    -- the companion hint while it applies (HNT-R170, logic/Companion.lua); nil while not
+---@field best integer?          -- Pagle.GetAngler().bestBaseSkill: "needs skill {n}" above it (HNT-R156); none, none
 
 --- An event Hunt's shape (HNT-R163), worked out from its definition: "timed" with a `time` condition, "big" with a
 --- `minBand`, "quality" for a quality class, "haul" for any fish, else "named". *Default chosen while building (#302):
@@ -257,34 +260,214 @@ function ns.BuildWagerRows(input, ruler)
 	return rows
 end
 
+-- What the spread and the entry share ----------------------------------------------------------------------------
+
+-- The tags that pick the event mark's layers (HNT-R166), by kind, from DATA-R97's closed list: a time tag its sky, a
+-- water tag its water, a holiday tag its charm.
+local SKIES = { night = true, day = true, dusk = true }
+local WATERS = { coast = true, lake = true, river = true, pool = true }
+local HOLIDAY_TAGS = {
+	hallows_end = true,
+	winter_veil = true,
+	lunar_festival = true,
+	noblegarden = true,
+	midsummer = true,
+	harvest_festival = true,
+	stv_extravaganza = true,
+}
+
+--- The event mark's layers for an event's `tags` (HNT-R166), bottom to top, by their names in the Wagers atlas: the
+--- shadow, the sky of its time tag (`mark-sky-plain` with none), the water of its water tag (none: open water), the
+--- brass ring, and its holiday tag's charm. Of each kind the first tag in the event's order picks; nothing else of the
+--- event counts, so events with the same tags share a mark, and a pushed event gets one too.
+---@param tags string[]?
+---@return string[]
+function ns.EventMarkLayers(tags)
+	local sky, water, charm
+	for _, tag in ipairs(tags or {}) do
+		if SKIES[tag] then
+			sky = sky or tag
+		elseif WATERS[tag] then
+			water = water or tag
+		elseif HOLIDAY_TAGS[tag] then
+			charm = charm or tag
+		end
+	end
+	local layers = { "mark-shadow", "mark-sky-" .. (sky or "plain") }
+	if water then
+		layers[#layers + 1] = "mark-water-" .. water
+	end
+	layers[#layers + 1] = "mark-ring"
+	if charm then
+		layers[#layers + 1] = "mark-charm-" .. charm
+	end
+	return layers
+end
+
+--- An event's holiday tag's name (DATA-R97's holiday tags, interface text in ns.L keyed by tag ID), nil for an event
+--- with none: a holiday run's name has it on a green tag (HNT-R162), and its entry as a chip (HNT-R163). *Default
+--- chosen in #303: HNT-R162 names the tag but not its words.* The names are the locale's full ones, never cut.
+---@param event HuntEvent
+---@return string?
+function ns.EventHolidayName(event)
+	for _, tag in ipairs(event.tags or {}) do
+		if HOLIDAY_TAGS[tag] then
+			return ns.L.HOLIDAYS[tag] or tag
+		end
+	end
+	return nil
+end
+
+--- "needs skill {n}" (HNT-R156) for an event short of skill: its skill range's lower end above the Angler's
+--- `bestBaseSkill` (as HNT-R33); nil otherwise, or with no best known.
+---@param event HuntEvent
+---@param best integer?
+---@return string?
+function ns.EventSkillNeed(event, best)
+	local need = event.skill and event.skill[1]
+	if need and best and need > best then
+		return ns.L.NEEDS_SKILL:format(need)
+	end
+	return nil
+end
+
+--- The time dial's step (HNT-R167) for `left` seconds of a run `length` long: the share still to go in 36ths, rounded
+--- up, at least 1 while any is left; nil with none left.
+---@param left number
+---@param length number
+---@return integer?
+function ns.DialStep(left, length)
+	if left <= 0 or length <= 0 then
+		return nil
+	end
+	local steps = ns.WAGER_DIAL_STEPS
+	return math.max(1, math.min(steps, math.ceil(steps * left / length)))
+end
+
+--- A run's time dial (HNT-R162's stub, HNT-R163's time block, HNT-R167).
+---@class WagerDial
+---@field kind "on"|"settled"|"closed"|"ahead"  -- oxblood, grey, empty, or the dashed ring of a run ahead
+---@field step integer?    -- the fill's step, 1–36, while on or settled
+---@field urgent boolean   -- a run on, not settled, within the closing-note time (Tunables): its ring and words in red
+---@field left string?     -- the stub's words: the duration left ("42m", "2d 21h"), or "closed"
+
+--- Whether `left` seconds to a run's end is within the closing-note time (Tunables, HNT-R162, HNT-R167).
+---@param left number
+---@return boolean
+function ns.ClosingSoon(left)
+	return left > 0 and left <= ns.WAGER_CLOSING_NOTE
+end
+
+--- Run `shown`'s time dial at `now` (HNT-R167): `settled` once completed, `closed` once it ended while the board was
+--- open. It only repeats what its words say, so it steps at each draw and never moves on its own.
+---@param shown HuntsShownRun
+---@param now integer
+---@param settled boolean
+---@param closed boolean
+---@return WagerDial
+function ns.WagerDial(shown, now, settled, closed)
+	if closed then
+		return { kind = "closed", urgent = false, left = ns.L.TICKET_CLOSED }
+	elseif not shown.on then
+		return { kind = "ahead", urgent = false }
+	end
+	local run = shown.run
+	local left = run.end_ - now
+	return {
+		kind = settled and "settled" or "on",
+		step = ns.DialStep(left, run.end_ - run.start),
+		urgent = not settled and ns.ClosingSoon(left),
+		left = ns.FormatDuration(left),
+	}
+end
+
+--- `text` cut at its markers into runs of words, each with its ink: `marks` gives the words and the ink for a marker
+--- (a control character "\1", "\2"), and every other word is in `ink`; an empty run is left out. A line in two or three
+--- inks is written whole in its locale string, then cut here, so its words stay the locale's.
+---@param text string
+---@param ink string
+---@param marks table<string, { [1]: string, [2]: string }>
+---@return { text: string, ink: string }[]
+function ns.InkRuns(text, ink, marks)
+	local runs = {}
+	local function add(words, wordsInk)
+		if words ~= "" then
+			runs[#runs + 1] = { text = words, ink = wordsInk }
+		end
+	end
+	local at = 1
+	while true do
+		local found = text:find("[\1-\9]", at)
+		if not found then
+			add(text:sub(at), ink)
+			return runs
+		end
+		add(text:sub(at, found - 1), ink)
+		local mark = marks[text:sub(found, found)]
+		if mark then
+			add(mark[1], mark[2])
+		end
+		at = found + 1
+	end
+end
+
 -- A run's entry ----------------------------------------------------------------------------------------------------
+
+--- An event Hunt's window line in a run's entry (HNT-R163), a Timed Hunt's alone: its window open now or when it
+--- opens next, by its `time` condition alone.
+---@class RunEntryWindow
+---@field open boolean       -- "open now, until {time}", in green
+---@field text string
 
 --- One event Hunt in a run's entry (HNT-R163).
 ---@class RunEntryHunt
 ---@field id string
 ---@field name string
----@field line string             -- its shape and target line
----@field ladder HuntEntryLadder  -- its tier ladder in this run, or the updating line (HNT-R69)
+---@field shape EventHuntShape     -- its glyph
+---@field line string              -- its shape and target line
+---@field got boolean?             -- it has its first mark: its glyph and ink bar in oxblood; nil while updating
+---@field count { count: string, rest: string }?  -- "{count} / {next threshold}" (or "{count} caught" once every tier
+--- is reached), cut where the count's ink ends; nil while updating
+---@field tiers { trim: "bronze"|"silver"|"gold", reached: boolean }[]?  -- its diamonds; nil while updating
+---@field fill number?             -- the ink bar toward the next threshold, 0–1; nil while updating
+---@field window RunEntryWindow?   -- a Timed Hunt's, for a run on
 
---- A run's entry, top to bottom (HNT-R163). It has no pin toggle and no set line.
+--- One of the two pay boxes (HNT-R163): its label over its amount.
+---@class RunEntryPay
+---@field label string
+---@field amount string
+
+--- The time block (HNT-R163): the dial, then a line in the hand over a small one.
+---@class RunEntryTime
+---@field dial WagerDial
+---@field hand string        -- "closes in 2d 21h", "settled, and still open", or "opens Sat 17:00"
+---@field ahead boolean      -- a run ahead: its hand in the Angler's blue, not in red
+---@field small string       -- "until Sat 17:00 · 3d in all", or "… · 3d on the table" ahead
+
+--- A run's entry, top to bottom (HNT-R163). It has no pin toggle and no set line; a field left nil isn't shown.
 ---@class RunEntry
 ---@field key string
----@field kicker string           -- "From the rotation · low waters", or "Sent by the companion"
+---@field source "rotation"|"companion"   -- its kicker's mark
+---@field kicker string             -- "From the rotation · low waters", or "Sent by the companion"
 ---@field name string
----@field chips HuntEntryChip[]   -- its zones, the live zone first with "you're here" (HNT-R65's zone chips)
----@field until_ string           -- "until Sat 17:00"; for a run ahead "from Sat 15:00 until Tue 15:00"
----@field seal HuntEntrySeal      -- pressed "Settled 16 Oct" once completed, a dashed "not yet" before
----@field note string?            -- the event's note, in the hand
----@field hunts RunEntryHunt[]    -- in definition order
----@field casts string            -- "{n} Casts in these waters this run."
----@field soFar string            -- "So far +{xp} XP · {coins} Coins", this run's
+---@field mark string[]             -- the event mark's layers (HNT-R166)
+---@field seal { word: string, date: string }?  -- pressed over the mark once settled; never while updating
+---@field time RunEntryTime
+---@field chips HuntEntryChip[]     -- its zones (the live zone first, "you're here"), "needs skill {n}", its holiday
+---@field note string?              -- the event's note, in the hand
+---@field updating string?          -- "Updating from your Catch log…" over the rows, which fade (HNT-R69)
+---@field hunts RunEntryHunt[]      -- in definition order
+---@field tight boolean             -- five Hunts or more: the rows tighten, the window lines are left out
+---@field casts string?             -- "{n} Casts in these waters this run · {done} of {count} first marks"
+---@field pay RunEntryPay[]?        -- "Paid so far", then "Settle it" or "Settled"
 ---@field payRule string
 
--- The run's zone chips: its zones in its order, the live zone first with the "you're here" badge.
+-- The run's chips: its zones in its order, the live zone first with the "you're here" badge (HNT-R65's zone chips);
+-- then "needs skill {n}" in pencil when short of skill (HNT-R156); then a holiday run's holiday on green.
 ---@param event HuntEvent
 ---@param input WagersInput
 ---@return HuntEntryChip[]
-local function zoneChips(event, input)
+local function chipsOf(event, input)
 	local L, live = ns.L, input.snapshot.zone
 	local chips = {}
 	for _, zone in ipairs(event.zones) do
@@ -295,6 +478,14 @@ local function zoneChips(event, input)
 		else
 			chips[#chips + 1] = chip
 		end
+	end
+	local need = ns.EventSkillNeed(event, input.best)
+	if need then
+		chips[#chips + 1] = { kind = "skill", text = need }
+	end
+	local holiday = ns.EventHolidayName(event)
+	if holiday then
+		chips[#chips + 1] = { kind = "holiday", text = holiday }
 	end
 	return chips
 end
@@ -330,233 +521,164 @@ local function castsIn(run)
 	return most
 end
 
---- A run's entry (HNT-R163) for one of ns.RunsShown's runs. While the projection updates, its seal, ladders, Casts
---- and sums read the updating line (HNT-R69).
+-- A Timed Hunt's window line (HNT-R163) at `now`, from its `time` condition alone (its window on the ruler,
+-- HNT-R161): "open now, until {time}" or "opens at {time}, in {duration}", in realm time (HNT-R50); nil for a Hunt
+-- without one, or with no window known.
+---@param hunt HuntEventHunt
+---@param input WagersInput
+---@return RunEntryWindow?
+local function windowOf(hunt, input)
+	local spec, nextWindow = timeSpec(hunt), input.sources.NextWindow
+	if not (spec and nextWindow) then
+		return nil
+	end
+	local window = nextWindow(spec, input.now)
+	if not window then
+		return nil
+	end
+	local L = ns.L
+	local function clock(t)
+		return ns.FormatClock(ns.RealmClockAt(t, input.snapshot).minute)
+	end
+	if window.openNow and window.closesAt then
+		return { open = true, text = L.RUN_WINDOW_OPEN:format(clock(window.closesAt)) }
+	elseif window.opensAt and window.opensAt > input.now then
+		return {
+			open = false,
+			text = L.RUN_WINDOW_SHUT:format(clock(window.opensAt), ns.FormatDuration(window.opensAt - input.now)),
+		}
+	end
+	return nil
+end
+
+-- An event Hunt's row in the entry (HNT-R163): its glyph, name, line and, unless updating (HNT-R69), its count toward
+-- the next threshold, its diamonds in their trims and its ink bar; a Timed Hunt's window for a run on.
+---@param hunt HuntEventHunt
+---@param shown HuntsShownRun
+---@param input WagersInput
+---@return RunEntryHunt
+local function huntRow(hunt, shown, input)
+	local L = ns.L
+	local row = {
+		id = hunt.id,
+		name = huntName(hunt),
+		shape = ns.EventHuntShape(hunt),
+		line = ns.EventHuntLine(hunt, input.list, input.sources),
+		window = shown.on and windowOf(hunt, input) or nil,
+	}
+	if input.updating then
+		return row
+	end
+	local progress = shown.run.hunts[hunt.id]
+	local ladder = ns.HuntLadder(hunt, progress, input.sources)
+	row.got = ns.HuntDone(progress)
+	row.tiers = {}
+	local next
+	for k, step in ipairs(ladder.tiers) do
+		row.tiers[k] = { trim = ns.Trim(k), reached = step.reached }
+		if not step.reached and not next then
+			next = step.threshold
+		end
+	end
+	local bar = ladder.bar --[[@as { fill: number, label: string }]]
+	row.fill = bar.fill
+	local count = tostring(progress and progress.count or 0)
+	local text = next and L.RUN_HUNT_PROGRESS:format("\1", next) or L.RUN_HUNT_CAUGHT:format("\1")
+	local before, after = text:match("^(.-)\1(.*)$")
+	row.count = { count = before .. count, rest = after }
+	return row
+end
+
+--- A run's entry (HNT-R163) for one of ns.RunsShown's runs. A run ahead has no Casts line and no pay boxes, and no
+--- window lines; while the projection updates, nothing comes from its state (HNT-R69): no seal, the rows without their
+--- counts, diamonds and bars under the updating line, and no Casts line or boxes.
 ---@param input WagersInput
 ---@param shown HuntsShownRun
 ---@return RunEntry
 function ns.BuildRunEntry(input, shown)
 	local L, run, event = ns.L, shown.run, shown.event
-	local kicker = run.source == "p" and L.RUN_KICKER_PUSHED or L.RUN_KICKER_ROTATION:format(L.BANDS[event.band])
+	local pushed = run.source == "p"
+	local settled = not input.updating and run.completedAt ~= nil
 	local untilWhen = ns.RealmWeekdayClock(run.end_, input.snapshot)
-	local entry = {
-		key = shown.key,
-		kicker = kicker,
-		name = eventName(event),
-		chips = zoneChips(event, input),
-		until_ = shown.on and L.LABEL_UNTIL:format(untilWhen)
-			or L.RUN_FROM_UNTIL:format(ns.RealmWeekdayClock(run.start, input.snapshot), untilWhen),
-		note = ns.events and ns.events:EventNote(event) or event.note,
-		hunts = {},
-		payRule = ns.RunPayRule(),
-	}
-	for i, hunt in ipairs(event.hunts) do
-		entry.hunts[i] = {
-			id = hunt.id,
-			name = huntName(hunt),
-			line = ns.EventHuntLine(hunt, input.list, input.sources),
-			ladder = input.updating and { updating = L.UPDATING }
-				or ns.HuntLadder(hunt, run.hunts[hunt.id], input.sources),
+	local length = ns.FormatDuration(run.end_ - run.start)
+	local time
+	if shown.on then
+		time = {
+			dial = ns.WagerDial(shown, input.now, settled, false),
+			hand = settled and L.RUN_SETTLED_OPEN or L.STRIP_CLOSES:format(ns.FormatDuration(run.end_ - input.now)),
+			ahead = false,
+			small = L.RUN_UNTIL_ALL:format(untilWhen, length),
+		}
+	else
+		time = {
+			dial = ns.WagerDial(shown, input.now, false, false),
+			hand = L.RUN_OPENS:format(ns.RealmWeekdayClock(run.start, input.snapshot)),
+			ahead = true,
+			small = L.RUN_UNTIL_TABLE:format(untilWhen, length),
 		}
 	end
-	if input.updating then
-		entry.seal = { text = L.UPDATING, filled = false }
-		entry.casts, entry.soFar = L.UPDATING, L.UPDATING
+	local entry = {
+		key = shown.key,
+		source = pushed and "companion" or "rotation",
+		kicker = pushed and L.RUN_KICKER_PUSHED or L.RUN_KICKER_ROTATION:format(L.BANDS[event.band]),
+		name = eventName(event),
+		mark = ns.EventMarkLayers(event.tags),
+		time = time,
+		chips = chipsOf(event, input),
+		note = ns.events and ns.events:EventNote(event) or event.note,
+		updating = input.updating and L.UPDATING or nil,
+		hunts = {},
+		tight = #event.hunts >= 5,
+		payRule = ns.RunPayRule(),
+	}
+	local done = 0
+	for i, hunt in ipairs(event.hunts) do
+		entry.hunts[i] = huntRow(hunt, shown, input)
+		done = done + (entry.hunts[i].got and 1 or 0)
+	end
+	if settled then
+		local date = ns.RunSettledDate(run) --[[@as { year: integer, month: integer, day: integer }]]
+		entry.seal = { word = L.SEAL_SETTLED_WORD, date = ns.FormatShortDate(date) }
+	end
+	if input.updating or not shown.on then
 		return entry
 	end
-	local settled = ns.RunSettledDate(run)
-	if settled then
-		entry.seal = { text = L.SEAL_SETTLED:format(ns.FormatShortDate(settled)), filled = true }
-	else
-		entry.seal = { text = L.SEAL_NOT_YET, filled = false }
-	end
-	entry.casts = ns.CountText(castsIn(run), "RUN_CASTS")
+	local casts = castsIn(run)
+	entry.casts = L["RUN_CASTS_" .. (casts == 1 and "ONE" or "OTHER")]:format(casts, done, #event.hunts)
 	local xp, coins = paidSoFar(run)
-	entry.soFar = L.RUN_SO_FAR:format(xp, coins)
+	entry.pay = {
+		{ label = L.PAY_SO_FAR, amount = L.PAY_AMOUNT:format(xp, coins) },
+		settled and { label = L.PAY_SETTLED, amount = L.PAY_PAID_OUT }
+			or { label = L.PAY_SETTLE, amount = L.PAY_AMOUNT:format(ns.XP_RUN, ns.COINS_RUN) },
+	}
 	return entry
 end
 
--- The Pagle Wagers spread --------------------------------------------------------------------------------------------
+--- What the entry's fit rule (HNT-R163) weighs, in UI units down the page: where the entry would end with everything
+--- in, and the room each part it may leave out takes (0 for a part not shown).
+---@class RunEntrySizes
+---@field ends number      -- the entry's foot with everything in
+---@field rule number      -- the pay rule, with its gap
+---@field casts number     -- the Casts line, with its gap
+---@field windows number   -- every window line's room together
 
---- One mark on the ladder (HNT-R148): its step, its title (`ladder.<n>.title`, lore) and whether it is earned.
----@class WagersLadderMark
----@field step integer
----@field title string
----@field reached boolean
-
---- The ladder at the spread's foot (HNT-R162).
----@class WagersLadder
----@field marks WagersLadderMark[]  -- at 25, 50 and 100 (Tunables)
----@field fill number               -- the ink bar: the completed-run count toward the next mark, full past the last
----@field line string               -- "{count} wagers settled · {n} more for {title}", or the updating line
-
---- The ladder (HNT-R148, HNT-R162) for `settled` completed runs, the steps earned in `ladder` (state.ladder, never
---- lost). Past the last mark the line is only "{count} wagers settled", the bar full. *Default chosen in #303: HNT-R162
---- doesn't say what the line reads past 100.* While the projection updates, nothing comes from its state (HNT-R69).
----@param settled integer state.settled
----@param ladder table<integer, integer> state.ladder
----@param updating boolean?
----@return WagersLadder
-function ns.BuildWagersLadder(settled, ladder, updating)
-	local L = ns.L
-	local marks, next = {}, nil
-	for i, step in ipairs(ns.LADDER_STEPS) do
-		marks[i] = { step = step, title = ns.LadderTitle(step), reached = not updating and ladder[step] ~= nil }
-		if not next and settled < step then
-			next = step
+--- The entry's fit rule (HNT-R163): laid top down, while it would end below `limit` (half the page's bottom margin
+--- below its drawable area) it leaves out the pay rule first (its words become the pay boxes' tooltip), then the Casts
+--- line, then the window lines, and stops as soon as it fits. Returns what it leaves out, and where it then ends.
+---@param sizes RunEntrySizes
+---@param limit number
+---@return { rule: boolean, casts: boolean, windows: boolean }
+---@return number
+function ns.RunEntryFit(sizes, limit)
+	local out = { rule = false, casts = false, windows = false }
+	local ends = sizes.ends
+	for _, part in ipairs({ "rule", "casts", "windows" }) do
+		if ends <= limit then
+			break
+		end
+		if sizes[part] > 0 then
+			out[part], ends = true, ends - sizes[part]
 		end
 	end
-	if updating then
-		return { marks = marks, fill = 0, line = L.UPDATING }
-	end
-	local count = ns.CountText(settled, "WAGERS_SETTLED")
-	if not next then
-		return { marks = marks, fill = 1, line = count }
-	end
-	return {
-		marks = marks,
-		fill = settled / next,
-		line = L.WAGERS_LADDER_LINE:format(count, next - settled, ns.LadderTitle(next)),
-	}
-end
-
---- One wager slip on the spread's left page (HNT-R162).
----@class WagerSlip
----@field run string              -- its run key: clicking it chooses it, its entry on the right page
----@field on boolean              -- on now, not ahead
----@field closed boolean          -- ended while the board was open this showing: greyed, "closed", never chosen
----@field selected boolean        -- the run the right page shows
----@field name string
----@field where string            -- "Darkshore · until Sat 17:00"
----@field when string?            -- "closes in 2d 4h" on, "opens Sat 15:00" ahead, "closed"; nil once settled
----@field tone "red"|"note"|"faded"  -- `when`'s ink: the countdown in red, a run ahead's in the note's, a closed one's faded
----@field pips boolean[]?         -- one per Hunt, in definition order, inked at its first mark; nil while updating
----@field marks string            -- "{done} of {n} first marks", or the updating line (HNT-R69)
----@field settled string?         -- "settled", with its stamp, once completed (HNT-R146)
----@field tag string?             -- a pushed run's holiday tag's name, in the margin ("Hallow's End")
-
---- The Pagle Wagers spread's left page, top to bottom (HNT-R162).
----@class WagersSpread
----@field kicker string           -- "Pagle Wagers"
----@field title string            -- "On the table"
----@field note string
----@field slips WagerSlip[]       -- the runs on, then ahead (HNT-R160), then those that closed this showing
----@field empty string?           -- "No wagers on the table yet." with no slip (HNT-R204)
----@field hint string[]?          -- the companion hint's lines on the dashed placeholder slip (HNT-R170), with Get it
---- and Dismiss; nil while it doesn't apply
----@field ladder WagersLadder
----@field selected string?        -- the run the right page shows: the slip chosen, else the first open slip's
-
---- What the spread reads besides WagersInput: the ladder's count and steps, the runs that ended while the board was
---- open this showing, and the slip chosen.
----@class WagersSpreadInput
----@field settled integer         -- state.settled (HNT-R148)
----@field ladder table<integer, integer>   -- state.ladder
----@field ended HuntsShownRun[]   -- runs that were on this showing and have ended since (HNT-R143, HNT-R162)
----@field run string?             -- the slip chosen (BoardPlace.run)
----@field hint string[]?          -- the companion hint's lines while it applies (HNT-R170)
-
--- A pushed run's holiday tag's name (DATA-R97's holiday tags, interface text in ns.L keyed by tag ID), nil for a run
--- of the rotation or an event with none. *Default chosen in #303: HNT-R162 names the tag but not its words.*
----@param shown HuntsShownRun
----@return string?
-local function holidayOf(shown)
-	if shown.run.source ~= "p" then
-		return nil
-	end
-	for _, tag in ipairs(shown.event.tags or {}) do
-		local name = ns.L.HOLIDAYS[tag]
-		if name then
-			return name
-		end
-	end
-	return nil
-end
-
--- One run's slip: on, ahead, or closed this showing.
----@param shown HuntsShownRun
----@param input WagersInput
----@param closed boolean
----@return WagerSlip
-local function slipOf(shown, input, closed)
-	local L, run, event = ns.L, shown.run, shown.event
-	local zones = table.concat(ns.EventZoneNames(event, input.sources), L.JOIN_ZONES)
-	local slip = {
-		run = shown.key,
-		on = shown.on and not closed,
-		closed = closed,
-		selected = false,
-		name = eventName(event),
-		where = L.SLIP_WHERE:format(zones, L.LABEL_UNTIL:format(ns.RealmWeekdayClock(run.end_, input.snapshot))),
-		tag = holidayOf(shown),
-	}
-	local settled = not input.updating and run.completedAt ~= nil
-	if closed then
-		slip.when, slip.tone = L.SLIP_CLOSED, "faded"
-	elseif not shown.on then
-		slip.when, slip.tone = L.SLIP_OPENS:format(ns.RealmWeekdayClock(run.start, input.snapshot)), "note"
-	elseif not settled then
-		slip.when, slip.tone = L.STRIP_CLOSES:format(ns.FormatDuration(run.end_ - input.now)), "red"
-	else
-		slip.tone = "red"
-	end
-	if input.updating then
-		slip.marks = L.UPDATING
-		return slip
-	end
-	slip.pips = {}
-	local done = 0
-	for i, hunt in ipairs(event.hunts) do
-		slip.pips[i] = ns.HuntDone(run.hunts[hunt.id])
-		done = done + (slip.pips[i] and 1 or 0)
-	end
-	slip.marks = L.SLIP_MARKS:format(done, #event.hunts)
-	slip.settled = settled and L.SLIP_SETTLED or nil
-	return slip
-end
-
---- The Pagle Wagers spread's left page (HNT-R162): one slip per run on, then ahead, in HNT-R160's order, then a slip
---- for each run that ended while the board was open this showing, greyed and "closed" (by end); the companion hint's
---- placeholder slip when it applies (HNT-R170); and the ladder at the foot. With no slip it reads HNT-R204's line. The
---- right page shows the slip chosen, else the first open slip's run; a closed slip is never chosen (its run is no
---- longer shown, HNT-R143).
----@param input WagersInput
----@param spread WagersSpreadInput
----@return WagersSpread
-function ns.BuildWagersSpread(input, spread)
-	local L = ns.L
-	local slips, shown = {}, {}
-	for _, run in ipairs(input.runs) do
-		slips[#slips + 1] = slipOf(run, input, false)
-		shown[run.key] = true
-	end
-	local ended = {}
-	for _, run in ipairs(spread.ended or {}) do
-		if not shown[run.key] then
-			ended[#ended + 1] = run
-		end
-	end
-	table.sort(ended, function(a, b)
-		if a.run.end_ ~= b.run.end_ then
-			return a.run.end_ < b.run.end_
-		end
-		return a.key < b.key
-	end)
-	for _, run in ipairs(ended) do
-		slips[#slips + 1] = slipOf(run, input, true)
-	end
-	local selected = spread.run and shown[spread.run] and spread.run or (input.runs[1] and input.runs[1].key)
-	for _, slip in ipairs(slips) do
-		slip.selected = not slip.closed and slip.run == selected
-	end
-	return {
-		kicker = L.WAGERS_KICKER,
-		title = L.SPREAD_TITLE,
-		note = L.SPREAD_NOTE,
-		slips = slips,
-		empty = #slips == 0 and L.SPREAD_EMPTY or nil,
-		hint = spread.hint,
-		ladder = ns.BuildWagersLadder(spread.settled or 0, spread.ladder or {}, input.updating),
-		selected = selected,
-	}
+	return out, ends
 end
