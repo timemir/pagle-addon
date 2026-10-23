@@ -434,8 +434,12 @@ The board shows Hunt Events under the players' name, **Pagle Wagers**, in two pl
 
   A `run` record adds the run to `runs` (HNT-R150) unless it overlaps a known run of the same event; a `def` record adds a part to `defs` (HNT-R154). Neither counts as a Cast.
 
-  Waters, classes and window specs are worked out once per load (HNT-R30); the catalogue and Hunt list can't change without a reload, and a change rebuilds the projection.
+  Waters, classes, window specs and the Cast index (HNT-R139) are worked out once per load (HNT-R30); the catalogue and Hunt list can't change without a reload, and a change rebuilds the projection.
 - **HNT-R138** The rules version rises whenever a rule here changes what the projection holds (qualifying, tiers, titles, runs, effort, Coins, XP).
+- **HNT-R139** **The Cast index.** So that `apply` doesn't test every Standing Hunt on every Cast (HNT-R137 step 2), Hunts files each Hunt of the list under what a Cast must have for that Hunt to change it. It builds this index from the Hunt list, the Hunts' waters (HNT-R30) and the class members, the first time a Cast needs it after a load. The index is no rule: it never drops a Hunt that could match, so the projection holds exactly what it would hold if every Hunt were tested, and the rules version doesn't rise for it (HNT-R138).
+  - An imposed Hunt whose conditions name `auras` (Rack Hour, Hut Hour) is filed under those auras, and one whose conditions name `areas` under those areas. Its conditions gate its effort (as its board spec, HNT-R6) and its Catches (HNT-R5) alike.
+  - Any other Hunt is filed in two ways. For effort (HNT-R25), it goes under its waters, or, for an imposed Hunt without waters or `areas`, in an always-tested list. A Hunt with no board spec, and a natural Hunt with no waters, has no effort. For a qualifying Catch (HNT-R10), it goes under its target Species, or under each member of its target class.
+  - A Cast is tested only against the always-tested Hunts and the Hunts filed under its zone, its subzone, an aura it was under, and, if it caught anything, each Catch's item or that item's Species. Those Hunts are tested in list order, as before.
 
 ## Data
 

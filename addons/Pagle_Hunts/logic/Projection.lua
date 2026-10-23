@@ -112,10 +112,178 @@ local function isEffort(hunt, cast, lookups)
 	return spec ~= nil and lookups.MatchesConditions(spec, cast.conditions) and ns.InWaters(hunt, cast)
 end
 
+--- The Standing Hunts' Cast index (HNT-R139): the Hunt list's Hunts by what a Cast must have for one to change it
+--- (where it was fished, what it caught, the auras it was under), so a Cast is tested only against Hunts that can
+--- match it. Each bucket holds positions in `hunts`, ascending.
+---@class HuntsCastIndex
+---@field hunts HuntDef[]                         -- the Hunt list's Hunts, in list order
+---@field always integer[]                        -- tested on every Cast: effort bound to no area
+---@field byArea table<integer, integer[]>        -- the Cast's zone or subzone
+---@field byItem table<integer, integer[]>        -- a caught item: a class target's members
+---@field bySpecies table<integer, integer[]>     -- a caught item's Species: a Species target
+---@field byAura table<integer, integer[]>        -- an aura the Cast was under
+
+-- Adds position `i` to `index[key]`, once: positions arrive ascending, so a repeat is the bucket's last.
+---@param index table<integer, integer[]>
+---@param key integer
+---@param i integer
+local function file(index, key, i)
+	local bucket = index[key]
+	if not bucket then
+		index[key] = { i }
+	elseif bucket[#bucket] ~= i then
+		bucket[#bucket + 1] = i
+	end
+end
+
+-- Files position `i` under each of `keys`.
+---@param index table<integer, integer[]>
+---@param keys integer[]
+---@param i integer
+local function fileAll(index, keys, i)
+	for _, key in ipairs(keys) do
+		file(index, key, i)
+	end
+end
+
+-- Files the Hunt at position `i` by its effort apart from its Catches: effort (isEffort) by its waters (ns.InWaters),
+-- or for an imposed Hunt without waters by its board spec's `areas` or else in `always`, and none for a Hunt with no
+-- board spec or a natural Hunt with no waters; a qualifying Catch (ns.MatchingCatches) by its target, its Species
+-- (read first, as isTarget does) or its class's members (an unknown class has none).
+---@param index HuntsCastIndex
+---@param hunt HuntDef
+---@param bites HuntWhere
+---@param i integer
+---@param lookups HuntsLookups
+local function fileByEffortAndTarget(index, hunt, bites, i, lookups)
+	local spec = bites.boardSpec
+	if spec ~= nil then
+		if #bites.waters > 0 then
+			fileAll(index.byArea, bites.waters, i)
+		elseif hunt.kind ~= "natural" then
+			if spec.areas then
+				fileAll(index.byArea, spec.areas, i)
+			else
+				index.always[#index.always + 1] = i
+			end
+		end
+	end
+	if hunt.species then
+		file(index.bySpecies, hunt.species, i)
+	elseif hunt.class then
+		for itemID in pairs(lookups.Class(hunt.class) or {}) do
+			file(index.byItem, itemID, i)
+		end
+	end
+end
+
+--- The Cast index over `list` (HNT-R139), from where each Hunt bites (`where`, ns.NewWhere) and the class members
+--- (`lookups.Class`), once per load. It files each Hunt under what a Cast must have for HNT-R25 or HNT-R10 to let the
+--- Hunt change it:
+--- - an imposed Hunt whose conditions (HNT-R5) and board spec (HNT-R6) both name `auras`, or both `areas`: one of
+---   those (LOG-R48's matchers), since its conditions gate its Catches and its board spec its effort;
+--- - any other Hunt by its effort and by its target, apart (fileByEffortAndTarget).
+--- A Hunt a Cast finds under none of its keys fails both tests, so the Cast leaves its progress as it was.
+---@param list HuntList
+---@param where table<string, HuntWhere>
+---@param lookups HuntsLookups
+---@return HuntsCastIndex
+function ns.NewCastIndex(list, where, lookups)
+	local index = { hunts = list:Hunts(), always = {}, byArea = {}, byItem = {}, bySpecies = {}, byAura = {} }
+	for i, hunt in ipairs(index.hunts) do
+		local bites = where[hunt.id]
+		local spec = bites.boardSpec
+		local gate = hunt.kind == "imposed" and hunt.conditions or nil
+		if spec and gate and gate.auras and spec.auras then
+			fileAll(index.byAura, gate.auras, i)
+			fileAll(index.byAura, spec.auras, i)
+		elseif spec and gate and gate.areas and spec.areas then
+			fileAll(index.byArea, gate.areas, i)
+			fileAll(index.byArea, spec.areas, i)
+		else
+			fileByEffortAndTarget(index, hunt, bites, i, lookups)
+		end
+	end
+	return index
+end
+
+-- Adds a bucket's positions not yet `seen` to `picked`.
+---@param seen table<integer, true>
+---@param picked integer[]
+---@param bucket integer[]?
+local function take(seen, picked, bucket)
+	if not bucket then
+		return
+	end
+	for _, i in ipairs(bucket) do
+		if not seen[i] then
+			seen[i] = true
+			picked[#picked + 1] = i
+		end
+	end
+end
+
+--- The Standing Hunts `cast` may change, in Hunt-list order, each once (HNT-R139): those of `index.always`, those
+--- filed under the Cast's zone, its subzone or an aura it was under, and, for a caught Cast, those filed under each
+--- Catch's item or its item's Species (item 0 matches nothing, HNT-R196). No other Hunt can change the Cast's fold.
+---@param index HuntsCastIndex
+---@param cast PagleCast
+---@param lookups HuntsLookups
+---@return HuntDef[]
+function ns.CastHunts(index, cast, lookups)
+	local seen, picked = {}, {}
+	take(seen, picked, index.always)
+	local conditions = cast.conditions
+	take(seen, picked, index.byArea[conditions.zone])
+	take(seen, picked, index.byArea[conditions.subzone])
+	if conditions.auras then
+		for _, aura in ipairs(conditions.auras) do
+			take(seen, picked, index.byAura[aura])
+		end
+	end
+	if cast.outcome == "caught" then
+		for _, catch in ipairs(cast.items) do
+			local itemID = catch.itemID
+			if itemID ~= 0 then
+				take(seen, picked, index.byItem[itemID])
+				local item = lookups.GetItem(itemID)
+				if item and item.species then
+					take(seen, picked, index.bySpecies[item.species])
+				end
+			end
+		end
+	end
+	table.sort(picked)
+	local out = {}
+	for k, i in ipairs(picked) do
+		out[k] = index.hunts[i]
+	end
+	return out
+end
+
+-- The Cast index ns.HuntsToTest last built, and the Hunt list, where and lookups it was built over.
+---@type { list: HuntList, where: table<string, HuntWhere>, lookups: HuntsLookups, index: HuntsCastIndex }?
+local built
+
+--- The Standing Hunts ApplyCast tests `cast` against (HNT-R139): ns.CastHunts over the Cast index of `ns.hunts`,
+--- `ns.where` and `lookups`, built the first time a Cast needs it and again only when one of them is replaced (a new
+--- load, the tour's sample list). Read through `ns` at call time, so a spec can hand back every Hunt instead.
+---@param cast PagleCast
+---@param lookups HuntsLookups
+---@return HuntDef[]
+function ns.HuntsToTest(cast, lookups)
+	local list, where = ns.hunts, ns.where
+	if not (built and built.list == list and built.where == where and built.lookups == lookups) then
+		built = { list = list, where = where, lookups = lookups, index = ns.NewCastIndex(list, where, lookups) }
+	end
+	return ns.CastHunts(built.index, cast, lookups)
+end
+
 --- Applies one Cast to `state` (HNT-R137 steps 1–3): its count of Casts (and the hour index, logic/Runs.lua); for
---- every Standing Hunt that exists at its time, then the event Hunts of each known run on at its time (HNT-R144), the
---- effort counter, then its qualifying Catches in loot-slot order (count, tiers, Coins, Activity XP); then the set
---- titles at its time, each run on for completion and the ladder. Returns what it newly reached.
+--- every Standing Hunt that exists at its time and may change it (HNT-R139), then the event Hunts of each known run on
+--- at its time (HNT-R144), the effort counter, then its qualifying Catches in loot-slot order (count, tiers, Coins,
+--- Activity XP); then the set titles at its time, each run on for completion and the ladder. Returns what it newly
+--- reached.
 ---@param state HuntsState
 ---@param cast PagleCast
 ---@param lookups HuntsCoreLookups
@@ -124,7 +292,8 @@ function ns.ApplyCast(state, cast, lookups)
 	local reached = ns.NewReached()
 	state.casts = state.casts + 1
 	ns.NoteCastHour(state, cast)
-	for _, hunt in ipairs(ns.hunts:Hunts()) do
+	-- Only the Standing Hunts the Cast can change: the rest would leave their progress as it was (HNT-R139).
+	for _, hunt in ipairs(ns.HuntsToTest(cast, lookups)) do
 		-- Casts before its since or from its retired on don't count (HNT-R2, HNT-R13).
 		if ns.Exists(hunt, cast.time) then
 			local progress = state.hunts[hunt.id] or ns.NewHuntProgress()
