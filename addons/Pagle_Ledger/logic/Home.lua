@@ -191,7 +191,7 @@ end
 -- The right page (LED-R132): the bookplate summary (the shown level in large numerals with the Prestige emblem and
 -- stars beside them, the active title in handwriting, Ledger completion's seal), the ink XP bar, Notes to self, and
 -- In this Ledger's contents with M4's Legends line and Track V's Following line last, each line opening its spread
--- (LED-R4, LED-R151).
+-- (LED-R4, LED-R163).
 ---@param context LedgerSpreadContext
 ---@return LedgerBlock[]
 local function rightPage(context)

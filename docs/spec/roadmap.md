@@ -427,7 +427,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 **Core rules:** VIEW-R1–R4, VIEW-R10–R13, VIEW-R20–R22, VIEW-R30; edge cases VIEW-R90–R95 ([core/anglers-in-game.md](core/anglers-in-game.md))
 
-**Module rules:** Ledger: LED-R132 for its "Following" line, LED-R151
+**Module rules:** Ledger: LED-R132 for its "Following" line, LED-R163
 
 **Settings rules:** SET-R10 row 11 (Show other Anglers on player tooltips)
 

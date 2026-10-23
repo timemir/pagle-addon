@@ -272,7 +272,7 @@ local function level12(loaded)
 end
 
 describe("the Journal's Home, right page", function()
-	it("reads the bookplate summary, the ink XP bar, Notes to self and In this Ledger (LED-R132, LED-R151)", function()
+	it("reads the bookplate summary, the ink XP bar, Notes to self and In this Ledger (LED-R132, LED-R163)", function()
 		-- Of 14 parts (4 Species, a junk, a chest, a trophy, 7 charted zones), the Mackerel and Elwynn are done: 14%.
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) }, level12)
 
@@ -313,7 +313,7 @@ describe("the Journal's Home, right page", function()
 				value = "»",
 				place = { id = "angler" },
 			},
-			-- Track V's line, last: no Pagle_Following here, so greyed (LED-R151)
+			-- Track V's line, last: no Pagle_Following here, so greyed (LED-R163)
 			{
 				kind = "leader",
 				numeral = "v.",

@@ -2,13 +2,13 @@
 
 > Status: Draft · Milestones: Track V In-game views · Sources: [Amendments from the Pagle backend](https://github.com/timemir/pagle-addon/issues/76) items 9 and 10, pagle-backend's [in-game-views.md](https://github.com/timemir/pagle-backend/blob/main/docs/spec/in-game-views.md) (IGV), its [prototype](https://github.com/timemir/pagle-backend/tree/main/prototypes/in-game-views) (variant A, IGV-R81), and the grilling on [#76](https://github.com/timemir/pagle-addon/issues/76) (2026-10-22); ADR 0001
 
-Part of [Core](README.md). The Companion brings Published Anglers into the game as two data addons it creates and owns, never shipped in Pagle's zip: **`Pagle_Following`**, the Followed Anglers with their full cards, and **`Pagle_Anglers`**, every Published Angler in the player's regions with the tooltip card (IGV-R40–R43). Core alone reads both, shows a Pagle block on player tooltips, and hands the Followed Anglers to the Ledger's Following spread (LED-R151). Their formats, and what counts as absent or expired, are pagle-backend's and are cited here, never restated.
+Part of [Core](README.md). The Companion brings Published Anglers into the game as two data addons it creates and owns, never shipped in Pagle's zip: **`Pagle_Following`**, the Followed Anglers with their full cards, and **`Pagle_Anglers`**, every Published Angler in the player's regions with the tooltip card (IGV-R40–R43). Core alone reads both, shows a Pagle block on player tooltips, and hands the Followed Anglers to the Ledger's Following spread (LED-R163). Their formats, and what counts as absent or expired, are pagle-backend's and are cited here, never restated.
 
 ## Purpose and boundary
 
 **Owns:** reading `Pagle_Following` and `Pagle_Anglers`, when `Pagle_Anglers` loads, the lookup of a player unit, `Pagle.GetFollowedAnglers()`, the Pagle block on the unit tooltip, and its Settings row.
 
-**Doesn't own:** the data files' formats, the absent and expired checks and the lookups' key rules (IGV-R40–R47, IGV Contracts); which Anglers and values the files hold (IGV-R1–R16); the Companion; the Following spread (LED-R151); `Pagle_Content` (pushed-content.md).
+**Doesn't own:** the data files' formats, the absent and expired checks and the lookups' key rules (IGV-R40–R47, IGV Contracts); which Anglers and values the files hold (IGV-R1–R16); the Companion; the Following spread (LED-R163); `Pagle_Content` (pushed-content.md).
 
 ## Rules
 

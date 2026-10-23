@@ -1,4 +1,4 @@
--- The Journal's Following on FakePagle (LED-R151, LED-R132, LED-R125, LED-R126, LED-R129, LED-R146): Home's
+-- The Journal's Following on FakePagle (LED-R163, LED-R132, LED-R125, LED-R126, LED-R129, LED-R146): Home's
 -- "Following" line and the Following spread, its index and the selected Angler's card, and its empty states, drawn
 -- from Pagle.GetFollowedAnglers() in each of its four states (VIEW-R11). The files are built in the shape of IGV
 -- Contracts' Pagle_Following example (helpers.lua's anglerFileExamples), Ada being that example's Angler.
@@ -109,8 +109,8 @@ local function followingLine(loaded)
 	return leaders[#leaders], journal.shown.right.drawn.leader[#leaders]
 end
 
-describe("Home's Following line (LED-R132, LED-R151)", function()
-	it('reads "Following" last in In this Ledger, with the number followed in state ok (LED-R132, LED-R151)', function()
+describe("Home's Following line (LED-R132, LED-R163)", function()
+	it('reads "Following" last in In this Ledger, with the number followed in state ok (LED-R132, LED-R163)', function()
 		local _, loaded = journalWith(file())
 
 		local block, drawn = followingLine(loaded)
@@ -123,19 +123,19 @@ describe("Home's Following line (LED-R132, LED-R151)", function()
 		assert.are.same({ "v.", "Following", "4" }, shownTexts(drawn))
 	end)
 
-	it('reads "0" with no one followed, in state none (LED-R151)', function()
+	it('reads "0" with no one followed, in state none (LED-R163)', function()
 		local _, loaded = journalWith(file({}))
 
 		assert.are.same({ "v.", "Following", "0" }, shownTexts(select(2, followingLine(loaded))))
 	end)
 
-	it('reads "—" once the file is a day old, in state expired (LED-R151)', function()
+	it('reads "—" once the file is a day old, in state expired (LED-R163)', function()
 		local _, loaded = journalWith(file(nil, DAY))
 
 		assert.are.same({ "v.", "Following", "—" }, shownTexts(select(2, followingLine(loaded))))
 	end)
 
-	it('greys out as "no Companion" with no Pagle_Following, in state absent (LED-R151)', function()
+	it('greys out as "no Companion" with no Pagle_Following, in state absent (LED-R163)', function()
 		local _, loaded = journalWith(nil)
 
 		local block, drawn = followingLine(loaded)
@@ -156,7 +156,7 @@ describe("Home's Following line (LED-R132, LED-R151)", function()
 	end)
 
 	it(
-		"reads the state at each drawing: a file that expires while Home is open shows — at the next (LED-R151)",
+		"reads the state at each drawing: a file that expires while Home is open shows — at the next (LED-R163)",
 		function()
 			local fake, loaded = journalWith(file())
 
@@ -174,7 +174,7 @@ describe("Home's Following line (LED-R132, LED-R151)", function()
 		{ "absent", nil },
 	}) do
 		it(
-			("opens the Following spread in state %s, Home ❧ Following with the back link (LED-R151, LED-R125)"):format(
+			("opens the Following spread in state %s, Home ❧ Following with the back link (LED-R163, LED-R125)"):format(
 				case[1]
 			),
 			function()
@@ -209,8 +209,8 @@ local function indexRows(blocks)
 	return rows
 end
 
-describe("the Following spread's left page (LED-R151)", function()
-	it("reads its kicker, title and count, then a row per Followed Angler in the file's order (LED-R151)", function()
+describe("the Following spread's left page (LED-R163)", function()
+	it("reads its kicker, title and count, then a row per Followed Angler in the file's order (LED-R163)", function()
 		local _, loaded = journalWith(file(), "following")
 		local left = loaded.ns.journal.pages.left
 
@@ -229,7 +229,7 @@ describe("the Following spread's left page (LED-R151)", function()
 	end)
 
 	it(
-		'reads "Lv {L} · {roman} · {p}%" at each row\'s right, no roman at rank 0 and X from rank 11, and stamps HC (LED-R151, LED-R34)',
+		'reads "Lv {L} · {roman} · {p}%" at each row\'s right, no roman at rank 0 and X from rank 11, and stamps HC (LED-R163, LED-R34)',
 		function()
 			local _, loaded = journalWith(file(), "following")
 
@@ -242,7 +242,7 @@ describe("the Following spread's left page (LED-R151)", function()
 		end
 	)
 
-	it("counts one Angler in the singular (LED-R151)", function()
+	it("counts one Angler in the singular (LED-R163)", function()
 		local _, loaded = journalWith(file({ angler() }), "following")
 
 		assert.are.equal(
@@ -251,7 +251,7 @@ describe("the Following spread's left page (LED-R151)", function()
 		)
 	end)
 
-	it("selects the first row on opening, and a row its click opens (LED-R151)", function()
+	it("selects the first row on opening, and a row its click opens (LED-R163)", function()
 		local _, loaded = journalWith(file(), "following")
 		local journal = loaded.ns.journal
 		local function selected()
@@ -273,14 +273,14 @@ describe("the Following spread's left page (LED-R151)", function()
 		assert.are.equal("Iver Coldwater", blockOfKind(journal.pages.right, "title").text)
 	end)
 
-	it("selects the first row when its args name no Angler in the file (LED-R151)", function()
+	it("selects the first row when its args name no Angler in the file (LED-R163)", function()
 		local _, loaded = journalWith(file(), "following", { angler = 9 })
 
 		assert.is_true(loaded.ns.journal.pages.left[4].selected)
 		assert.are.equal("Ada", blockOfKind(loaded.ns.journal.pages.right, "title").text)
 	end)
 
-	it("draws each row's name, the HC stamp for a Hardcore Angler only, and its value (LED-R151)", function()
+	it("draws each row's name, the HC stamp for a Hardcore Angler only, and its value (LED-R163)", function()
 		local _, loaded = journalWith(file(), "following")
 		local rows = loaded.ns.journal.shown.left.drawn.row
 
@@ -290,7 +290,7 @@ describe("the Following spread's left page (LED-R151)", function()
 		assert.is_false(rows[2].wash:IsShown())
 	end)
 
-	it("gives each row its Angler's prestige rank for the emblem, none at rank 0 (LED-R151, LED-R152)", function()
+	it("gives each row its Angler's prestige rank for the emblem, none at rank 0 (LED-R163, LED-R152)", function()
 		local _, loaded = journalWith(file(), "following")
 		local ranks = {}
 		for _, block in ipairs(loaded.ns.journal.pages.left) do
@@ -303,7 +303,7 @@ describe("the Following spread's left page (LED-R151)", function()
 	end)
 
 	it(
-		"draws Core's Prestige emblem at 22 just before each row's value, the Master's from rank 11 (LED-R151, LED-R152)",
+		"draws Core's Prestige emblem at 22 just before each row's value, the Master's from rank 11 (LED-R163, LED-R152)",
 		function()
 			local fake, loaded = journalWith(file(), "following")
 			local rows = loaded.ns.journal.shown.left.drawn.row
@@ -337,7 +337,7 @@ describe("the Following spread's left page (LED-R151)", function()
 	)
 
 	it(
-		"draws no emblem at rank 0, and keeps no room for one: the row's height, name and value as a ranked row's (LED-R151, LED-R152)",
+		"draws no emblem at rank 0, and keeps no room for one: the row's height, name and value as a ranked row's (LED-R163, LED-R152)",
 		function()
 			local _, loaded = journalWith(file(), "following")
 			local rows = loaded.ns.journal.shown.left.drawn.row
@@ -359,7 +359,7 @@ describe("the Following spread's left page (LED-R151)", function()
 		end
 	)
 
-	it("hides a row's emblem when the row is drawn again for an Angler at rank 0 (LED-R151, LED-R152)", function()
+	it("hides a row's emblem when the row is drawn again for an Angler at rank 0 (LED-R163, LED-R152)", function()
 		local unranked = false
 		local _, loaded = openJournal({
 			globals = { BreakUpLargeNumbers = breakUpLargeNumbers },
@@ -383,7 +383,7 @@ describe("the Following spread's left page (LED-R151)", function()
 	end)
 
 	it(
-		"keeps the index's scroll as another Angler is selected, starting the card at the top (LED-R129, LED-R151)",
+		"keeps the index's scroll as another Angler is selected, starting the card at the top (LED-R129, LED-R163)",
 		function()
 			local _, loaded = journalWith(file(), "following")
 			local journal = loaded.ns.journal
@@ -400,7 +400,7 @@ describe("the Following spread's left page (LED-R151)", function()
 	)
 
 	it(
-		"keeps its words on the parchment at the default size, a long Hardcore name and large figures too (LED-R151, CORE-R65)",
+		"keeps its words on the parchment at the default size, a long Hardcore name and large figures too (LED-R163, CORE-R65)",
 		function()
 			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 			local bounds = dofile("spec/support/bounds.lua")
@@ -427,7 +427,7 @@ describe("the Following spread's left page (LED-R151)", function()
 	)
 end)
 
-describe("the Following spread's right page, the selected Angler's card (LED-R151)", function()
+describe("the Following spread's right page, the selected Angler's card (LED-R163)", function()
 	-- The card of the Angler at `at` in four(), as the right page's blocks.
 	local function cardOf(at)
 		local _, loaded = journalWith(file(), "following", { angler = at })
@@ -435,7 +435,7 @@ describe("the Following spread's right page, the selected Angler's card (LED-R15
 	end
 
 	it(
-		"reads Prestige I's card: the name, its other character, the title in the hand, the level and the seal (LED-R151, LED-R146)",
+		"reads Prestige I's card: the name, its other character, the title in the hand, the level and the seal (LED-R163, LED-R146)",
 		function()
 			local right = cardOf(1)
 
@@ -453,7 +453,7 @@ describe("the Following spread's right page, the selected Angler's card (LED-R15
 	)
 
 	it(
-		'reads a Hardcore Angler at rank 0 with "Hardcore Angler", no title, no other character and no Prestige (LED-R151, LED-R146)',
+		'reads a Hardcore Angler at rank 0 with "Hardcore Angler", no title, no other character and no Prestige (LED-R163, LED-R146)',
 		function()
 			local right = cardOf(2)
 
@@ -479,7 +479,7 @@ describe("the Following spread's right page, the selected Angler's card (LED-R15
 	)
 
 	it(
-		'reads Prestige X at rank 10, "and {n} more characters", and the year on a date outside this one (LED-R151, LED-R126)',
+		'reads Prestige X at rank 10, "and {n} more characters", and the year on a date outside this one (LED-R163, LED-R126)',
 		function()
 			local right = cardOf(3)
 
@@ -498,7 +498,7 @@ describe("the Following spread's right page, the selected Angler's card (LED-R15
 		end
 	)
 
-	it('reads "Master Prestige {n}" from rank 11 (LED-R151, LED-R146)', function()
+	it('reads "Master Prestige {n}" from rank 11 (LED-R163, LED-R146)', function()
 		local right = cardOf(4)
 
 		assert.are.same({ "12", "Master Prestige 1", "Ledger 97%" }, { right[4].text, right[4].note, right[4].seal })
@@ -506,7 +506,7 @@ describe("the Following spread's right page, the selected Angler's card (LED-R15
 	end)
 
 	it(
-		"draws the card: the level in large numerals, the Prestige under it, the seal and the ruled rows (LED-R151)",
+		"draws the card: the level in large numerals, the Prestige under it, the seal and the ruled rows (LED-R163)",
 		function()
 			local _, loaded = journalWith(file(), "following")
 			local drawn = loaded.ns.journal.shown.right.drawn
@@ -534,7 +534,7 @@ describe("the Following spread's right page, the selected Angler's card (LED-R15
 	)
 end)
 
-describe("the Following spread's empty states (LED-R151)", function()
+describe("the Following spread's empty states (LED-R163)", function()
 	for _, case in ipairs({
 		{
 			"none",
@@ -566,7 +566,7 @@ describe("the Following spread's empty states (LED-R151)", function()
 	}) do
 		local state, following, lines = case[1], case[2], case[3]
 
-		it(("keeps the kicker and title, then reads its three lines in state %s (LED-R151)"):format(state), function()
+		it(("keeps the kicker and title, then reads its three lines in state %s (LED-R163)"):format(state), function()
 			local _, loaded = journalWith(following, "following")
 			local left = loaded.ns.journal.pages.left
 
@@ -583,7 +583,7 @@ describe("the Following spread's empty states (LED-R151)", function()
 			)
 		end)
 
-		it(("leaves the right page blank in state %s (LED-R151)"):format(state), function()
+		it(("leaves the right page blank in state %s (LED-R163)"):format(state), function()
 			local _, loaded = journalWith(following, "following", { angler = 1 })
 
 			assert.are.same({}, loaded.ns.journal.pages.right)
@@ -592,7 +592,7 @@ describe("the Following spread's empty states (LED-R151)", function()
 	end
 
 	it(
-		"shows the expired state at the next drawing once the file expires while the spread is open (LED-R151)",
+		"shows the expired state at the next drawing once the file expires while the spread is open (LED-R163)",
 		function()
 			local fake, loaded = journalWith(file(), "following", { angler = 2 })
 			assert.are.equal("Bram Ashcombe", blockOfKind(loaded.ns.journal.pages.right, "title").text)
@@ -606,8 +606,8 @@ describe("the Following spread's empty states (LED-R151)", function()
 	)
 end)
 
-describe("the Following spread's reads (LED-R151)", function()
-	it("reads the Followed Anglers only as the Journal draws, never while it stays closed (LED-R151)", function()
+describe("the Following spread's reads (LED-R163)", function()
+	it("reads the Followed Anglers only as the Journal draws, never while it stays closed (LED-R163)", function()
 		local calls = 0
 		local _, loaded = openJournal({
 			following = file(),

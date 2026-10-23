@@ -529,7 +529,7 @@ ns.L = {
 	LEGENDS_PLATE_RETURN = "Click anywhere to return.",
 	LEGENDS_PLATE_KICKER = "A Legend of these waters",
 	LEGENDS_PLATE_SEAL = "Title",
-	-- Following (LED-R151): Home's line ("—" expired, "no Companion" absent), the left page's words, the index's
+	-- Following (LED-R163): Home's line ("—" expired, "no Companion" absent), the left page's words, the index's
 	-- "Lv {L} · {roman} · {p}%" (no roman before the first Prestige) and Hardcore stamp, the card's, and each empty
 	-- state's three lines. Numbers in %s are BreakUpLargeNumbers'.
 	FOLLOWING_TITLE = "Following",

@@ -371,8 +371,8 @@ end
 -- turning red under the mouse; or a binding's line (LED-R146): its closed book, its name and its state at the right
 -- ("In use" in the hand, "Use" and "In the Curio Shop" as ink links calling `action`, "Angler Level {L}" in italic);
 -- or with `style` "pair", words and a value with no leader (a hand on the rod, LED-R146), and "ruled" the same over
--- a rule (a Followed Angler's card, LED-R151). With `color` "faded" its words and value are greyed (Home's Following
--- line with no Companion, LED-R151). It opens its place or calls its action.
+-- a rule (a Followed Angler's card, LED-R163). With `color` "faded" its words and value are greyed (Home's Following
+-- line with no Companion, LED-R163). It opens its place or calls its action.
 makers.leader = function(parent)
 	local widget = newWidget(parent) --[[@as LedgerLeaderWidget]]
 	ns.JournalClickable(widget)
