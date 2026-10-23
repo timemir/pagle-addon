@@ -15,8 +15,10 @@ spec/scripts/fixtures/** -text
 *.blp binary
 *.ttf binary
 
-# The Prestige kit's lossless atlases, the web art export's source (data/art/prestige/).
+# The Prestige kit's lossless atlases, the web art export's source (data/art/prestige/), and the Pagle Wagers kit's
+# (data/art/wagers/), with its event mark's layers as PNG.
 *.tga binary
+*.png binary
 
 # The signing fixtures (spec/Pagle/fixtures/): random bytes, and the Wycheproof vectors exactly as upstream has them.
 spec/Pagle/fixtures/signing/*.bin binary

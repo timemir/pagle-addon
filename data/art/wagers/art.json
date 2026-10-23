@@ -1,0 +1,2184 @@
+{
+ "version": 1,
+ "about": "Pagle Wagers spread, variant A (the Bookmaker's Ledger): the new atlas, the sprites reused from Core's, inks, colours and layout. UI units throughout.",
+ "conventions": "- Every position is from its parent's top left: the left or right page's drawable area, or the element it's in.\n    `x` from the left edge, `r` from the right edge (a TOPRIGHT anchor), `y` from the top, `b` from the bottom.\n  - A text's `y` is its line's top; the client puts a FontString of height `size` at y + (lineHeight - size) / 2.\n    `w` on a text is its width when it is cut (an ellipsis) or wraps.\n  - An ink names a face of BookArt.lua (print, italic, gilt, hand, handSemi, handBold), a size and a colour, and\n    `look` when BOARD_LOOK already has that colour. `caps`: capitals at 0.84 of the size (the client has no small\n    capitals), for the canvas's IM Fell English SC. `upper`: capitals at full size.",
+ "atlas": {
+  "file": "Interface\\AddOns\\Pagle_Hunts\\media\\books\\Wagers",
+  "width": 1024,
+  "height": 1024,
+  "scale": 2,
+  "sprites": {
+   "arrow": {
+    "x": 900,
+    "y": 150,
+    "w": 120,
+    "h": 88,
+    "box": [
+     0,
+     0,
+     60,
+     44
+    ]
+   },
+   "chip-holiday": {
+    "x": 134,
+    "y": 786,
+    "w": 244,
+    "h": 48,
+    "box": [
+     1,
+     1,
+     120,
+     22
+    ]
+   },
+   "chip-pencil": {
+    "x": 134,
+    "y": 734,
+    "w": 244,
+    "h": 48,
+    "box": [
+     1,
+     1,
+     120,
+     22
+    ]
+   },
+   "dial-ahead": {
+    "x": 234,
+    "y": 838,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-face": {
+    "x": 134,
+    "y": 838,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-01": {
+    "x": 334,
+    "y": 838,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-02": {
+    "x": 896,
+    "y": 242,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-03": {
+    "x": 896,
+    "y": 342,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-04": {
+    "x": 266,
+    "y": 442,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-05": {
+    "x": 896,
+    "y": 442,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-06": {
+    "x": 896,
+    "y": 542,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-07": {
+    "x": 896,
+    "y": 642,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-08": {
+    "x": 896,
+    "y": 742,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-09": {
+    "x": 434,
+    "y": 842,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-10": {
+    "x": 534,
+    "y": 842,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-11": {
+    "x": 634,
+    "y": 842,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-12": {
+    "x": 734,
+    "y": 842,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-13": {
+    "x": 834,
+    "y": 842,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-14": {
+    "x": 330,
+    "y": 542,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-15": {
+    "x": 382,
+    "y": 642,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-16": {
+    "x": 434,
+    "y": 742,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-17": {
+    "x": 266,
+    "y": 170,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-18": {
+    "x": 266,
+    "y": 270,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-19": {
+    "x": 534,
+    "y": 170,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-20": {
+    "x": 430,
+    "y": 170,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-21": {
+    "x": 634,
+    "y": 170,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-22": {
+    "x": 734,
+    "y": 170,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-23": {
+    "x": 366,
+    "y": 270,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-24": {
+    "x": 366,
+    "y": 370,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-25": {
+    "x": 430,
+    "y": 470,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-26": {
+    "x": 482,
+    "y": 570,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-27": {
+    "x": 534,
+    "y": 670,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-28": {
+    "x": 466,
+    "y": 270,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-29": {
+    "x": 466,
+    "y": 370,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-30": {
+    "x": 530,
+    "y": 470,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-31": {
+    "x": 582,
+    "y": 570,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-32": {
+    "x": 634,
+    "y": 670,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-33": {
+    "x": 734,
+    "y": 270,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-34": {
+    "x": 566,
+    "y": 370,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-35": {
+    "x": 566,
+    "y": 270,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "dial-fill-36": {
+    "x": 630,
+    "y": 470,
+    "w": 96,
+    "h": 96,
+    "box": [
+     0,
+     0,
+     48,
+     48
+    ]
+   },
+   "mark-charm-hallows_end": {
+    "x": 134,
+    "y": 978,
+    "w": 44,
+    "h": 44,
+    "box": [
+     0,
+     0,
+     22,
+     22
+    ]
+   },
+   "mark-charm-harvest_festival": {
+    "x": 374,
+    "y": 978,
+    "w": 44,
+    "h": 44,
+    "box": [
+     0,
+     0,
+     22,
+     22
+    ]
+   },
+   "mark-charm-lunar_festival": {
+    "x": 230,
+    "y": 978,
+    "w": 44,
+    "h": 44,
+    "box": [
+     0,
+     0,
+     22,
+     22
+    ]
+   },
+   "mark-charm-midsummer": {
+    "x": 326,
+    "y": 978,
+    "w": 44,
+    "h": 44,
+    "box": [
+     0,
+     0,
+     22,
+     22
+    ]
+   },
+   "mark-charm-noblegarden": {
+    "x": 278,
+    "y": 978,
+    "w": 44,
+    "h": 44,
+    "box": [
+     0,
+     0,
+     22,
+     22
+    ]
+   },
+   "mark-charm-stv_extravaganza": {
+    "x": 422,
+    "y": 978,
+    "w": 44,
+    "h": 44,
+    "box": [
+     0,
+     0,
+     22,
+     22
+    ]
+   },
+   "mark-charm-winter_veil": {
+    "x": 182,
+    "y": 978,
+    "w": 44,
+    "h": 44,
+    "box": [
+     0,
+     0,
+     22,
+     22
+    ]
+   },
+   "mark-ring": {
+    "x": 134,
+    "y": 434,
+    "w": 128,
+    "h": 128,
+    "box": [
+     0,
+     0,
+     64,
+     64
+    ]
+   },
+   "mark-shadow": {
+    "x": 866,
+    "y": 2,
+    "w": 144,
+    "h": 144,
+    "box": [
+     4,
+     4,
+     64,
+     64
+    ]
+   },
+   "mark-sky-day": {
+    "x": 2,
+    "y": 302,
+    "w": 128,
+    "h": 128,
+    "box": [
+     0,
+     0,
+     64,
+     64
+    ]
+   },
+   "mark-sky-dusk": {
+    "x": 2,
+    "y": 434,
+    "w": 128,
+    "h": 128,
+    "box": [
+     0,
+     0,
+     64,
+     64
+    ]
+   },
+   "mark-sky-night": {
+    "x": 2,
+    "y": 170,
+    "w": 128,
+    "h": 128,
+    "box": [
+     0,
+     0,
+     64,
+     64
+    ]
+   },
+   "mark-sky-plain": {
+    "x": 2,
+    "y": 566,
+    "w": 128,
+    "h": 128,
+    "box": [
+     0,
+     0,
+     64,
+     64
+    ]
+   },
+   "mark-water-coast": {
+    "x": 2,
+    "y": 698,
+    "w": 128,
+    "h": 128,
+    "box": [
+     0,
+     0,
+     64,
+     64
+    ]
+   },
+   "mark-water-lake": {
+    "x": 2,
+    "y": 830,
+    "w": 128,
+    "h": 128,
+    "box": [
+     0,
+     0,
+     64,
+     64
+    ]
+   },
+   "mark-water-pool": {
+    "x": 134,
+    "y": 302,
+    "w": 128,
+    "h": 128,
+    "box": [
+     0,
+     0,
+     64,
+     64
+    ]
+   },
+   "mark-water-river": {
+    "x": 134,
+    "y": 170,
+    "w": 128,
+    "h": 128,
+    "box": [
+     0,
+     0,
+     64,
+     64
+    ]
+   },
+   "post": {
+    "x": 482,
+    "y": 670,
+    "w": 48,
+    "h": 48,
+    "box": [
+     2,
+     2,
+     20,
+     20
+    ]
+   },
+   "post-got": {
+    "x": 430,
+    "y": 570,
+    "w": 48,
+    "h": 48,
+    "box": [
+     2,
+     2,
+     20,
+     20
+    ]
+   },
+   "rail-fill": {
+    "x": 2,
+    "y": 962,
+    "w": 890,
+    "h": 12,
+    "box": [
+     0,
+     0,
+     445,
+     6
+    ]
+   },
+   "rail-track": {
+    "x": 2,
+    "y": 150,
+    "w": 894,
+    "h": 16,
+    "box": [
+     1,
+     1,
+     445,
+     6
+    ]
+   },
+   "shape-bigones": {
+    "x": 470,
+    "y": 978,
+    "w": 36,
+    "h": 36,
+    "box": [
+     0,
+     0,
+     18,
+     18
+    ]
+   },
+   "shape-haul": {
+    "x": 550,
+    "y": 978,
+    "w": 36,
+    "h": 36,
+    "box": [
+     0,
+     0,
+     18,
+     18
+    ]
+   },
+   "shape-namedfish": {
+    "x": 590,
+    "y": 978,
+    "w": 36,
+    "h": 36,
+    "box": [
+     0,
+     0,
+     18,
+     18
+    ]
+   },
+   "shape-quality": {
+    "x": 510,
+    "y": 978,
+    "w": 36,
+    "h": 36,
+    "box": [
+     0,
+     0,
+     18,
+     18
+    ]
+   },
+   "shape-timed": {
+    "x": 330,
+    "y": 694,
+    "w": 36,
+    "h": 36,
+    "box": [
+     0,
+     0,
+     18,
+     18
+    ]
+   },
+   "src-companion": {
+    "x": 662,
+    "y": 978,
+    "w": 28,
+    "h": 28,
+    "box": [
+     0,
+     0,
+     14,
+     14
+    ]
+   },
+   "src-companion-seal": {
+    "x": 694,
+    "y": 978,
+    "w": 28,
+    "h": 28,
+    "box": [
+     0,
+     0,
+     14,
+     14
+    ]
+   },
+   "src-rotation": {
+    "x": 630,
+    "y": 978,
+    "w": 28,
+    "h": 28,
+    "box": [
+     0,
+     0,
+     14,
+     14
+    ]
+   },
+   "stamp-blank": {
+    "x": 134,
+    "y": 650,
+    "w": 192,
+    "h": 80,
+    "box": [
+     0,
+     0,
+     96,
+     40
+    ]
+   },
+   "stamp-settled": {
+    "x": 134,
+    "y": 566,
+    "w": 192,
+    "h": 80,
+    "box": [
+     0,
+     0,
+     96,
+     40
+    ]
+   },
+   "tag-holiday": {
+    "x": 2,
+    "y": 978,
+    "w": 128,
+    "h": 44,
+    "box": [
+     2,
+     1,
+     60,
+     18
+    ]
+   },
+   "ticket": {
+    "x": 446,
+    "y": 2,
+    "w": 416,
+    "h": 120,
+    "box": [
+     4,
+     2,
+     200,
+     52
+    ]
+   },
+   "ticket-sel": {
+    "x": 2,
+    "y": 2,
+    "w": 440,
+    "h": 130,
+    "box": [
+     6,
+     4,
+     200,
+     52
+    ]
+   },
+   "token": {
+    "x": 330,
+    "y": 642,
+    "w": 48,
+    "h": 48,
+    "box": [
+     0,
+     0,
+     24,
+     24
+    ]
+   }
+  }
+ },
+ "reused": {
+  "Parts": {
+   "file": "Interface\\AddOns\\Pagle\\media\\books\\BookParts",
+   "width": 512,
+   "height": 1024,
+   "scale": 2,
+   "sprites": {
+    "tier-on": {
+     "x": 430,
+     "y": 2,
+     "w": 40,
+     "h": 40,
+     "box": [
+      4,
+      4,
+      12,
+      12
+     ]
+    },
+    "tier-off": {
+     "x": 430,
+     "y": 46,
+     "w": 40,
+     "h": 40,
+     "box": [
+      4,
+      4,
+      12,
+      12
+     ]
+    },
+    "chip": {
+     "x": 46,
+     "y": 418,
+     "w": 244,
+     "h": 48,
+     "box": [
+      1,
+      1,
+      120,
+      22
+     ]
+    },
+    "chip-here": {
+     "x": 218,
+     "y": 470,
+     "w": 244,
+     "h": 48,
+     "box": [
+      1,
+      1,
+      120,
+      22
+     ]
+    }
+   }
+  },
+  "Book": {
+   "file": "Interface\\AddOns\\Pagle\\media\\books\\BookAtlas",
+   "width": 512,
+   "height": 256,
+   "scale": 2,
+   "sprites": {
+    "seal": {
+     "x": 234,
+     "y": 2,
+     "w": 128,
+     "h": 128,
+     "box": [
+      0,
+      0,
+      64,
+      64
+     ]
+    }
+   }
+  }
+ },
+ "tints": {
+  "white": "Sprites drawn white take the ink of their use as a vertex colour: dial-fill-*, shape-*, src-rotation, src-companion, and the reused tier-on and tier-off.",
+  "tiers": {
+   "bronze": "c0844a",
+   "silver": "b8bec6",
+   "gold": "d8a93a",
+   "off": "8a6a40"
+  }
+ },
+ "inks": {
+  "kicker": {
+   "face": "print",
+   "size": 14,
+   "color": "8a5a2a",
+   "caps": true,
+   "look": "kicker"
+  },
+  "title": {
+   "face": "print",
+   "size": 27,
+   "color": "3e220c",
+   "look": "title",
+   "lineHeight": 28.35
+  },
+  "margin": {
+   "face": "handSemi",
+   "size": 18,
+   "color": "9a2a1a",
+   "look": "red",
+   "lineHeight": 18.9
+  },
+  "note": {
+   "face": "italic",
+   "size": 13.5,
+   "color": "7a5a30",
+   "look": "count",
+   "lineHeight": 17.55
+  },
+  "secLabel": {
+   "face": "print",
+   "size": 13,
+   "color": "8a2a1a",
+   "caps": true,
+   "look": "oxblood"
+  },
+  "secLabelAhead": {
+   "face": "print",
+   "size": 13,
+   "color": "6a4a28",
+   "caps": true,
+   "look": "legend"
+  },
+  "secCount": {
+   "face": "handSemi",
+   "size": 16,
+   "color": "8a2a1a",
+   "look": "oxblood"
+  },
+  "secCountAhead": {
+   "face": "handSemi",
+   "size": 16,
+   "color": "6a4a28",
+   "look": "legend"
+  },
+  "secCaption": {
+   "face": "italic",
+   "size": 11.5,
+   "color": "8a6a40",
+   "look": "note"
+  },
+  "dialText": {
+   "face": "gilt",
+   "size": 10,
+   "color": "3a2614",
+   "look": "ink"
+  },
+  "dialTextUrgent": {
+   "face": "gilt",
+   "size": 10,
+   "color": "b4281a",
+   "look": "nowLine"
+  },
+  "tkName": {
+   "face": "print",
+   "size": 16.5,
+   "color": "3e220c",
+   "look": "title",
+   "lineHeight": 18.15
+  },
+  "tkLine": {
+   "face": "italic",
+   "size": 12.5,
+   "color": "5a4028",
+   "look": "small",
+   "lineHeight": 15
+  },
+  "need": {
+   "face": "hand",
+   "size": 14,
+   "color": "6a6a6a",
+   "look": "pencil"
+  },
+  "tkMarks": {
+   "face": "print",
+   "size": 12,
+   "color": "5a4028",
+   "look": "small",
+   "lineHeight": 12
+  },
+  "tag": {
+   "face": "gilt",
+   "size": 9.5,
+   "color": "f4ecd8",
+   "upper": true,
+   "look": "tagText"
+  },
+  "ahName": {
+   "face": "print",
+   "size": 14,
+   "color": "3e220c",
+   "look": "title",
+   "lineHeight": 14.7
+  },
+  "ahZones": {
+   "face": "italic",
+   "size": 12,
+   "color": "6a4a28",
+   "look": "legend",
+   "lineHeight": 14.4
+  },
+  "ahOpens": {
+   "face": "handSemi",
+   "size": 15,
+   "color": "5a3a14",
+   "look": "group",
+   "lineHeight": 15
+  },
+  "ahFor": {
+   "face": "italic",
+   "size": 11.5,
+   "color": "8a6a40",
+   "look": "note",
+   "lineHeight": 14.95
+  },
+  "hint": {
+   "face": "hand",
+   "size": 17,
+   "color": "23407a",
+   "look": "hand",
+   "lineHeight": 18.7
+  },
+  "hintSmall": {
+   "face": "italic",
+   "size": 12,
+   "color": "7a5a30",
+   "look": "count",
+   "lineHeight": 15.6
+  },
+  "empty": {
+   "face": "hand",
+   "size": 19,
+   "color": "23407a",
+   "look": "hand",
+   "lineHeight": 21.85
+  },
+  "ladLabel": {
+   "face": "print",
+   "size": 13,
+   "color": "8a5a2a",
+   "caps": true,
+   "look": "kicker"
+  },
+  "ladCount": {
+   "face": "handSemi",
+   "size": 17,
+   "color": "9a2a1a",
+   "look": "red"
+  },
+  "ladLine": {
+   "face": "print",
+   "size": 12.5,
+   "color": "5a4028",
+   "look": "small",
+   "lineHeight": 17.5
+  },
+  "ladTitle": {
+   "face": "italic",
+   "size": 12.5,
+   "color": "7a2a14",
+   "look": "setName"
+  },
+  "postNum": {
+   "face": "gilt",
+   "size": 10.5,
+   "color": "5a3a14",
+   "look": "group"
+  },
+  "postNumGot": {
+   "face": "gilt",
+   "size": 10.5,
+   "color": "f6e3a8",
+   "look": "clock"
+  },
+  "postTitle": {
+   "face": "italic",
+   "size": 11.5,
+   "color": "6a4a28",
+   "look": "legend",
+   "lineHeight": 12.65
+  },
+  "src": {
+   "face": "print",
+   "size": 12.5,
+   "color": "8a5a2a",
+   "caps": true,
+   "look": "kicker"
+  },
+  "evName": {
+   "face": "print",
+   "size": 23,
+   "color": "3e220c",
+   "look": "title",
+   "lineHeight": 23.92
+  },
+  "timeHand": {
+   "face": "hand",
+   "size": 21,
+   "color": "9a2a1a",
+   "look": "red",
+   "lineHeight": 22.68
+  },
+  "timeSmall": {
+   "face": "print",
+   "size": 12.5,
+   "color": "5a4028",
+   "look": "small",
+   "lineHeight": 16.9
+  },
+  "chip": {
+   "face": "print",
+   "size": 12.5,
+   "color": "3a2614",
+   "look": "chipText"
+  },
+  "chipHere": {
+   "face": "hand",
+   "size": 15,
+   "color": "2a6a2a",
+   "look": "here"
+  },
+  "chipPencil": {
+   "face": "italic",
+   "size": 12.5,
+   "color": "5a5a5a",
+   "look": "pencil"
+  },
+  "chipHoliday": {
+   "face": "gilt",
+   "size": 11,
+   "color": "f4ecd8",
+   "upper": true,
+   "look": "tagText"
+  },
+  "evNote": {
+   "face": "hand",
+   "size": 16.5,
+   "color": "23407a",
+   "look": "hand",
+   "lineHeight": 17.33
+  },
+  "evNoteTight": {
+   "face": "hand",
+   "size": 15,
+   "color": "23407a",
+   "look": "hand",
+   "lineHeight": 15.75
+  },
+  "huntName": {
+   "face": "print",
+   "size": 14.5,
+   "color": "3e220c",
+   "look": "title",
+   "lineHeight": 16
+  },
+  "huntCount": {
+   "face": "handSemi",
+   "size": 16,
+   "color": "23407a",
+   "look": "hand",
+   "lineHeight": 16
+  },
+  "huntNext": {
+   "face": "handSemi",
+   "size": 16,
+   "color": "5a3a14",
+   "look": "group",
+   "lineHeight": 16
+  },
+  "huntLine": {
+   "face": "print",
+   "size": 11.5,
+   "color": "6a4a28",
+   "look": "legend",
+   "lineHeight": 13.8
+  },
+  "window": {
+   "face": "italic",
+   "size": 11.5,
+   "color": "8a6a40",
+   "look": "note",
+   "lineHeight": 13.8
+  },
+  "windowOpen": {
+   "face": "italic",
+   "size": 11.5,
+   "color": "2a6a2a",
+   "look": "here",
+   "lineHeight": 13.8
+  },
+  "updating": {
+   "face": "hand",
+   "size": 16,
+   "color": "8a6a40",
+   "look": "note",
+   "lineHeight": 19.2
+  },
+  "casts": {
+   "face": "italic",
+   "size": 12,
+   "color": "6a4a28",
+   "look": "legend",
+   "lineHeight": 14.4
+  },
+  "payLabel": {
+   "face": "print",
+   "size": 11,
+   "color": "8a5a2a",
+   "caps": true,
+   "look": "kicker"
+  },
+  "payAmount": {
+   "face": "handSemi",
+   "size": 16,
+   "color": "9a2a1a",
+   "look": "red"
+  },
+  "payRule": {
+   "face": "italic",
+   "size": 10.5,
+   "color": "8a6a40",
+   "look": "note",
+   "lineHeight": 13.13
+  },
+  "sealWord": {
+   "face": "print",
+   "size": 9,
+   "color": "f4dfa8",
+   "caps": true,
+   "look": "sealText"
+  },
+  "sealDate": {
+   "face": "gilt",
+   "size": 11.5,
+   "color": "f4dfa8",
+   "look": "sealText"
+  },
+  "emptyTitle": {
+   "face": "print",
+   "size": 24,
+   "color": "3e220c",
+   "look": "title",
+   "lineHeight": 25.2
+  },
+  "emptyHand": {
+   "face": "hand",
+   "size": 20,
+   "color": "23407a",
+   "look": "hand",
+   "lineHeight": 21.6
+  }
+ },
+ "look": {
+  "ink": "3a2614",
+  "title": "3e220c",
+  "kicker": "8a5a2a",
+  "group": "5a3a14",
+  "small": "5a4028",
+  "note": "8a6a40",
+  "count": "7a5a30",
+  "legend": "6a4a28",
+  "hand": "23407a",
+  "red": "9a2a1a",
+  "setName": "7a2a14",
+  "nowLine": "b4281a",
+  "sealText": "f4dfa8",
+  "chipText": "3a2614",
+  "here": "2a6a2a",
+  "oxblood": "8a2a1a",
+  "clock": "f6e3a8",
+  "stripPaper": "fbf4df",
+  "pencil": "6a6a6a",
+  "spent": "8a7a60",
+  "holiday": "2a6a3a",
+  "tagText": "f4ecd8",
+  "oxbloodWash": [
+   "8a2a1a",
+   0.07
+  ],
+  "oxbloodRing": [
+   "8a2a1a",
+   0.3
+  ],
+  "aheadDash": [
+   "6a4a28",
+   0.55
+  ],
+  "hintDash": [
+   "8a2a1a",
+   1.0
+  ],
+  "hintPaper": [
+   "fff8e8",
+   0.55
+  ],
+  "rowRule": [
+   "c4a874",
+   0.55
+  ],
+  "huntsRule": [
+   "c4a874",
+   0.8
+  ],
+  "secRule": [
+   "c4a874",
+   1.0
+  ],
+  "barTrack": [
+   "5a3a14",
+   0.14
+  ],
+  "barEdge": [
+   "5a3a14",
+   0.45
+  ],
+  "barInk": [
+   "23407a",
+   0.75
+  ],
+  "barInkGot": [
+   "8a2a1a",
+   0.75
+  ],
+  "strike": [
+   "5a4028",
+   0.6
+  ]
+ },
+ "left": {
+  "width": 465,
+  "height": 500,
+  "about": "the drawable area: the left page less 26 each side, 22 above and 24 below",
+  "kicker": {
+   "x": 0,
+   "y": 0,
+   "ink": "kicker",
+   "text": "Pagle Wagers"
+  },
+  "title": {
+   "x": 0,
+   "y": 17,
+   "ink": "title",
+   "text": "On the table"
+  },
+  "margin": {
+   "r": 1,
+   "y": 1.5,
+   "w": 172,
+   "ink": "margin",
+   "justify": "RIGHT",
+   "wrap": true,
+   "arrow": {
+    "sprite": "arrow",
+    "r": 65,
+    "y": 35.6,
+    "w": 60,
+    "h": 44
+   },
+   "when": "a run on, not settled, closes within the Closing-soon note tunable (3 h): the first such by end"
+  },
+  "note": {
+   "x": 0,
+   "y": 48.3,
+   "w": 465,
+   "ink": "note",
+   "wrap": true
+  },
+  "section": {
+   "gapAbove": 9,
+   "height": 16,
+   "gapBelow": 5,
+   "label": {
+    "x": 0,
+    "y": 3,
+    "ink": "secLabel"
+   },
+   "count": {
+    "gap": 7,
+    "y": 0,
+    "ink": "secCount",
+    "lineHeight": 16
+   },
+   "rule": {
+    "gap": 7,
+    "y": 7.5,
+    "h": 1,
+    "color": "secRule"
+   },
+   "caption": {
+    "r": 0,
+    "y": 5,
+    "ink": "secCaption"
+   },
+   "ahead": {
+    "label": "secLabelAhead",
+    "count": "secCountAhead"
+   }
+  },
+  "ticketStep": 57,
+  "aheadStep": 42,
+  "hint": {
+   "gapAbove": 10,
+   "gapBelow": 2
+  },
+  "empty": {
+   "gapAbove": 16
+  },
+  "more": {
+   "ink": "ahOpens",
+   "text": "+{n} more on the table",
+   "height": 20,
+   "note": "past the capacity (below), this line takes the last row that would not fit"
+  },
+  "capacity": "rows are laid top down until the next would cross the ladder's top less 6; four tickets, two ahead rows and the ladder fit at 465 x 500"
+ },
+ "ticket": {
+  "height": 52,
+  "sprite": "ticket",
+  "selected": "ticket-sel",
+  "slice": {
+   "left": 62,
+   "right": 12
+  },
+  "note": "three-sliced: the left cap holds the stub, its wash, the perforation and its notches; the middle stretches",
+  "stub": {
+   "x": 0,
+   "y": 0,
+   "w": 50,
+   "h": 52
+  },
+  "dial": {
+   "x": 4,
+   "y": 5,
+   "size": 42
+  },
+  "dialText": {
+   "x": 0,
+   "y": 0,
+   "w": 50,
+   "h": 52,
+   "ink": "dialText",
+   "urgentInk": "dialTextUrgent",
+   "justify": "CENTER",
+   "valign": "MIDDLE"
+  },
+  "mark": {
+   "x": 58,
+   "y": 9,
+   "size": 34
+  },
+  "name": {
+   "x": 102,
+   "y": 9,
+   "rRoom": 102,
+   "ink": "tkName",
+   "cut": true,
+   "tag": {
+    "sprite": "tag-holiday",
+    "gap": 7,
+    "y": 8,
+    "h": 18,
+    "pad": 8,
+    "slice": {
+     "left": 3,
+     "right": 3
+    },
+    "ink": "tag",
+    "note": "never cut: the name is cut to leave it room"
+   }
+  },
+  "line": {
+   "x": 102,
+   "y": 28,
+   "rRoom": 102,
+   "ink": "tkLine",
+   "cut": true,
+   "src": {
+    "size": 12,
+    "gap": 4,
+    "y": 1.5,
+    "tint": "note"
+   },
+   "need": {
+    "gap": 8,
+    "ink": "need",
+    "y": 0.5
+   }
+  },
+  "pips": {
+   "r": 11.5,
+   "y": 14,
+   "size": 8,
+   "gap": 5,
+   "sprite": "Parts:tier-on",
+   "off": "Parts:tier-off",
+   "note": "one per Hunt: tier-on in bronze once it has its first mark, else tier-off. The reused tier sprites draw their diamond about 1.33 times their box, so a box of 8 gives the board's 11"
+  },
+  "marks": {
+   "r": 10,
+   "y": 27.5,
+   "ink": "tkMarks",
+   "justify": "RIGHT"
+  },
+  "stamp": {
+   "sprite": "stamp-settled",
+   "cx": -60,
+   "cy": 26,
+   "w": 96,
+   "h": 40,
+   "note": "centred at (width - 60, 26), in place of the pips and marks"
+  },
+  "closed": {
+   "alpha": 0.5,
+   "desaturate": true,
+   "strike": {
+    "h": 1,
+    "yFromNameTop": 9.5,
+    "color": "strike"
+   }
+  },
+  "selectedLook": {
+   "note": "ticket-sel: no notches, the oxblood ring and the pointer into the gutter, toward the entry"
+  },
+  "dialInks": {
+   "on": "oxblood",
+   "urgent": "nowLine",
+   "settled": "spent",
+   "closed": null
+  }
+ },
+ "ahead": {
+  "height": 38,
+  "dashed": {
+   "color": "aheadDash",
+   "width": 1.2
+  },
+  "mark": {
+   "x": 7,
+   "y": 7,
+   "size": 24
+  },
+  "name": {
+   "x": 41,
+   "y": 3.5,
+   "rRoom": 101,
+   "ink": "ahName",
+   "cut": true
+  },
+  "zones": {
+   "x": 41,
+   "y": 19.5,
+   "rRoom": 101,
+   "ink": "ahZones",
+   "cut": true,
+   "need": {
+    "gap": 4,
+    "ink": "need"
+   }
+  },
+  "opens": {
+   "r": 9,
+   "y": 4.5,
+   "ink": "ahOpens",
+   "justify": "RIGHT",
+   "text": "opens {weekday} {time}"
+  },
+  "length": {
+   "r": 9,
+   "y": 19.5,
+   "ink": "ahFor",
+   "justify": "RIGHT",
+   "text": "for {length}"
+  }
+ },
+ "hint": {
+  "pad": {
+   "x": 10,
+   "y": 9
+  },
+  "dashed": {
+   "color": "hintDash",
+   "width": 1.4
+  },
+  "paper": "hintPaper",
+  "src": {
+   "sprite": "src-companion",
+   "seal": "src-companion-seal",
+   "x": 11,
+   "y": 10,
+   "size": 18,
+   "tint": "oxblood"
+  },
+  "text": {
+   "x": 41,
+   "y": 10,
+   "r": 11,
+   "ink": "hint",
+   "wrap": true
+  },
+  "small": {
+   "gap": 3,
+   "ink": "hintSmall",
+   "wrap": true
+  },
+  "buttons": {
+   "x": 41,
+   "gap": 4,
+   "h": 25,
+   "note": "the existing hint buttons (ns.PlaceHintButtons)"
+  }
+ },
+ "empty": {
+  "pad": 16,
+  "height": 88,
+  "dashed": {
+   "color": "aheadDash",
+   "width": 1.2
+  },
+  "mark": {
+   "x": 17,
+   "y": 17,
+   "size": 54,
+   "tags": [],
+   "alpha": 0.75,
+   "desaturate": true
+  },
+  "text": {
+   "x": 85,
+   "r": 17,
+   "ink": "empty",
+   "wrap": true,
+   "valign": "MIDDLE"
+  }
+ },
+ "ladder": {
+  "top": 444.5,
+  "height": 67.5,
+  "note": "anchored to the page: its top 55.5 above the drawable area's foot",
+  "label": {
+   "x": 0,
+   "y": 4,
+   "ink": "ladLabel",
+   "text": "The ladder"
+  },
+  "line": {
+   "r": 0,
+   "y": 0,
+   "h": 17.5,
+   "inks": [
+    "ladCount",
+    "ladLine",
+    "ladTitle"
+   ],
+   "justify": "RIGHT",
+   "text": "{count} wagers settled · {n} more for {title}",
+   "note": "three FontStrings set right to left; past 100 only the first two"
+  },
+  "rail": {
+   "x": 6,
+   "y": 31.5,
+   "w": 445,
+   "h": 6,
+   "track": "rail-track",
+   "fill": "rail-fill",
+   "crop": true
+  },
+  "posts": {
+   "cy": 34.5,
+   "size": 20,
+   "sprite": "post",
+   "got": "post-got",
+   "at": [
+    0.3333333333333333,
+    0.6666666666666666,
+    1
+   ],
+   "num": {
+    "ink": "postNum",
+    "gotInk": "postNumGot"
+   },
+   "title": {
+    "y": 48.5,
+    "ink": "postTitle",
+    "justify": "CENTER",
+    "lastJustify": "RIGHT",
+    "lastR": -2
+   }
+  },
+  "token": {
+   "sprite": "token",
+   "size": 24,
+   "cy": 33.5
+  },
+  "share": "0 at 0, 1/3 at 25, 2/3 at 50, 1 at 100 and past, straight between"
+ },
+ "entry": {
+  "width": 321,
+  "height": 500,
+  "about": "the drawable area",
+  "src": {
+   "x": 0,
+   "y": 0,
+   "ink": "src",
+   "mark": {
+    "size": 13,
+    "gap": 5,
+    "y": 0,
+    "tint": "kicker"
+   },
+   "rotation": "From the rotation · {band} waters",
+   "companion": "Sent by the companion"
+  },
+  "name": {
+   "x": 0,
+   "y": 17,
+   "w": 251,
+   "ink": "evName",
+   "wrap": true,
+   "maxLines": 3
+  },
+  "mark": {
+   "r": -4,
+   "y": -2,
+   "size": 66
+  },
+  "seal": {
+   "sprite": "Book:seal",
+   "x": 272.9,
+   "y": 30.1,
+   "size": 66,
+   "rotate": -12,
+   "word": {
+    "ink": "sealWord",
+    "y": -8
+   },
+   "date": {
+    "ink": "sealDate",
+    "y": 4
+   },
+   "note": "pressed over the mark once settled: \"Settled\", then the short date"
+  },
+  "top": {
+   "minHeight": 70,
+   "gap": 8,
+   "gapTight": 5,
+   "note": "the time block sits below the taller of the mark (70) and the kicker and name"
+  },
+  "time": {
+   "height": 40,
+   "dial": {
+    "x": 0,
+    "y": 0,
+    "size": 40
+   },
+   "hand": {
+    "x": 49,
+    "y": 0.2,
+    "ink": "timeHand"
+   },
+   "small": {
+    "x": 49,
+    "y": 22.9,
+    "ink": "timeSmall"
+   },
+   "texts": {
+    "on": "closes in {duration}",
+    "settled": "settled, and still open",
+    "ahead": "opens {weekday} {time}",
+    "small": "until {weekday} {time} · {length} in all",
+    "smallAhead": "until {weekday} {time} · {length} on the table"
+   }
+  },
+  "chips": {
+   "gapAbove": 7,
+   "h": 20,
+   "gap": 4,
+   "padX": 7,
+   "slice": {
+    "left": 10,
+    "right": 10
+   },
+   "kinds": {
+    "zone": {
+     "sprite": "Parts:chip",
+     "ink": "chip"
+    },
+    "here": {
+     "sprite": "Parts:chip-here",
+     "ink": "chip",
+     "extra": "chipHere",
+     "extraGap": 5,
+     "text": "you're here"
+    },
+    "skill": {
+     "sprite": "chip-pencil",
+     "ink": "chipPencil",
+     "text": "needs skill {n}"
+    },
+    "holiday": {
+     "sprite": "chip-holiday",
+     "ink": "chipHoliday"
+    }
+   }
+  },
+  "note": {
+   "gapAbove": 6,
+   "ink": "evNote",
+   "tightInk": "evNoteTight",
+   "wrap": true
+  },
+  "hunts": {
+   "gapAbove": 7,
+   "rule": "huntsRule"
+  },
+  "row": {
+   "pad": 5,
+   "padTight": 3,
+   "rule": "rowRule",
+   "shape": {
+    "x": 0,
+    "y": 1,
+    "size": 16,
+    "tint": "legend",
+    "tintGot": "oxblood"
+   },
+   "name": {
+    "x": 26,
+    "y": 0,
+    "ink": "huntName",
+    "cut": true
+   },
+   "count": {
+    "r": 0,
+    "y": 0,
+    "inks": [
+     "huntCount",
+     "huntNext"
+    ],
+    "text": "{count} / {next}",
+    "justify": "RIGHT"
+   },
+   "line": {
+    "x": 26,
+    "y": 16,
+    "ink": "huntLine",
+    "cut": true,
+    "text": "{Shape} · {target}[, {window}]"
+   },
+   "diamonds": {
+    "r": 1.2,
+    "y": 19.1,
+    "size": 7.5,
+    "gap": 4.5,
+    "sprite": "Parts:tier-on",
+    "off": "Parts:tier-off",
+    "note": "one per tier, its trim's ink once reached (tints.tiers)"
+   },
+   "bar": {
+    "x": 26,
+    "y": 33.8,
+    "h": 5,
+    "gapTight": 3,
+    "track": "barTrack",
+    "edge": "barEdge",
+    "ink": "barInk",
+    "inkGot": "barInkGot"
+   },
+   "window": {
+    "x": 26,
+    "y": 41.8,
+    "ink": "window",
+    "openInk": "windowOpen",
+    "hiddenTight": true,
+    "texts": {
+     "open": "open now, until {time}",
+     "shut": "opens at {time}, in {duration}"
+    }
+   },
+   "heights": {
+    "plain": 49.8,
+    "timed": 66.6,
+    "tight": 44.8
+   }
+  },
+  "casts": {
+   "gapAbove": 6,
+   "ink": "casts",
+   "text": "{n} Casts in these waters this run · {done} of {count} first marks"
+  },
+  "pay": {
+   "gapAbove": 6,
+   "h": 40,
+   "gap": 6,
+   "wash": "oxbloodWash",
+   "ring": "oxbloodRing",
+   "label": {
+    "x": 7,
+    "y": 5,
+    "ink": "payLabel"
+   },
+   "amount": {
+    "x": 7,
+    "y": 19,
+    "ink": "payAmount"
+   },
+   "texts": {
+    "paid": [
+     "Paid so far",
+     "+{xp} XP · {coins} Coins"
+    ],
+    "settle": [
+     "Settle it",
+     "+250 XP · 50 Coins"
+    ],
+    "settled": [
+     "Settled",
+     "paid out"
+    ]
+   }
+  },
+  "rule": {
+   "gapAbove": 5,
+   "ink": "payRule",
+   "wrap": true
+  },
+  "updating": {
+   "ink": "updating",
+   "text": "Updating from your Catch log…",
+   "height": 29,
+   "rowsAlpha": 0.45,
+   "marks": "updating…",
+   "hides": [
+    "casts",
+    "pay"
+   ],
+   "note": "the casts line and the pay boxes wait for the projection: their numbers are not current yet, and leaving them out keeps a Timed Hunt's entry on the page"
+  },
+  "fit": {
+   "limit": 512,
+   "order": [
+    "rule",
+    "casts",
+    "windows"
+   ],
+   "note": "lay the entry top down; while it would end below 512 (the drawable 500 plus half the 24-unit bottom margin), leave out the pay rule (its words become the pay boxes' tooltip), then the Casts line, then the window lines. kit source: fit.py"
+  },
+  "tight": "five Hunts: rows pad 3, the note in evNoteTight, the window line left out (its window stays in the target line)",
+  "none": {
+   "title": {
+    "x": 0,
+    "y": 17,
+    "ink": "emptyTitle",
+    "text": "Nothing to read yet"
+   },
+   "hand": {
+    "x": 0,
+    "y": 55,
+    "ink": "emptyHand",
+    "wrap": true,
+    "text": "When a wager goes up it will be written here: its waters, its Hunts and what it pays."
+   }
+  }
+ },
+ "mark": {
+  "box": 64,
+  "note": "layers in mark units (a 64 box), stacked bottom to top, each drawn at size / 64 of its box; the charm's box centred at (46, 46)",
+  "order": [
+   "mark-shadow",
+   "mark-sky-{time or plain}",
+   "mark-water-{water}",
+   "mark-ring",
+   "mark-charm-{holiday}"
+  ],
+  "charm": {
+   "cx": 46,
+   "cy": 46,
+   "box": 22
+  }
+ },
+ "dial": {
+  "face": "dial-face",
+  "ahead": "dial-ahead",
+  "fill": "dial-fill-{k:02d}",
+  "steps": 36,
+  "rule": "k = ceil(36 x the share of the run still to go), at least 1 while the run is on; none once closed; the fill is white, tinted by the ticket's dialInks; the face is drawn at the same rect, under it"
+ },
+ "motion": {
+  "note": "All optional, and off with Animations off: every state reads from words, ink and stamps alone.",
+  "stamp": {
+   "when": "a run settles while the spread shows it",
+   "scale": [
+    1.6,
+    1.0
+   ],
+   "alpha": [
+    0,
+    1
+   ],
+   "duration": 0.22,
+   "easing": "ease-in",
+   "then": "the ticket nudges 1 unit down and back over 0.12 s"
+  },
+  "token": {
+   "when": "the settled count changes while the spread shows",
+   "duration": 0.45,
+   "easing": "ease-out",
+   "what": "the token and the fill slide to the new share"
+  },
+  "dial": {
+   "when": "every refresh (HNT-R42)",
+   "what": "the fill steps to its new k; no tween"
+  }
+ },
+ "lookExisting": {
+  "ink": "3a2614",
+  "title": "3e220c",
+  "kicker": "8a5a2a",
+  "group": "5a3a14",
+  "small": "5a4028",
+  "note": "8a6a40",
+  "count": "7a5a30",
+  "legend": "6a4a28",
+  "hand": "23407a",
+  "red": "9a2a1a",
+  "setName": "7a2a14",
+  "nowLine": "b4281a",
+  "sealText": "f4dfa8",
+  "chipText": "3a2614",
+  "here": "2a6a2a",
+  "oxblood": "8a2a1a",
+  "clock": "f6e3a8",
+  "stripPaper": "fbf4df"
+ },
+ "lookNew": [
+  "aheadDash",
+  "barEdge",
+  "barInk",
+  "barInkGot",
+  "barTrack",
+  "hintDash",
+  "hintPaper",
+  "holiday",
+  "huntsRule",
+  "oxbloodRing",
+  "oxbloodWash",
+  "pencil",
+  "rowRule",
+  "secRule",
+  "spent",
+  "strike",
+  "tagText"
+ ]
+}
