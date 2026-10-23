@@ -14,7 +14,6 @@ local ns = select(2, ...)
 ---@field faction string
 ---@field realmID integer
 ---@field hardcore? boolean      -- nil when the client has no C_GameRules.IsHardcoreActive
----@field selfFound? boolean     -- stays nil until launch re-verification names a call for it
 ---@field firstSeen integer      -- server time
 ---@field lastSeen integer       -- server time
 
@@ -47,7 +46,7 @@ AnglerState.__index = AnglerState
 
 --- Adds the logged-in character to `PagleLog.characters` if its GUID is new, or updates `lastSeen` and the display
 --- fields if not (LOG-R25), and makes it the current one. `seen` holds the display fields as the client reports
---- them (LOG-R26), kept with any line feed stripped from their text (LOG-R101); `selfFound` is never kept. A log
+--- them (LOG-R26), kept with any line feed stripped from their text (LOG-R101); nothing else in it is kept. A log
 --- without a logId gets one now (LOG-R15).
 ---@param seen { guid: string, name: string, surname: string?, classID: integer, raceID: integer, faction: string, realmID: integer, hardcore: boolean? }
 ---@param now integer server time
@@ -74,7 +73,6 @@ function AnglerState:SeeCharacter(seen, now)
 		end
 		character[field] = value
 	end
-	character.selfFound = nil
 	character.lastSeen = now
 	self.current = index
 	self.catchLog:EnsureLogId(now)

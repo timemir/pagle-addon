@@ -80,7 +80,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 ### Characters and the Angler
 
 - **LOG-R25** At `PLAYER_LOGIN`, Core adds the character to `PagleLog.characters` if its GUID is new, and updates `lastSeen` and the display fields if not. A faction or realm transfer that produces a new GUID is a new character; nothing links the two.
-- **LOG-R26** Display fields: `UnitName("player")` (first name and surname on Forever), `UnitClass` and `UnitRace` IDs, `UnitFactionGroup`, and the realm ID from the GUID. `hardcore` is `C_GameRules.IsHardcoreActive()` when that call exists, `nil` otherwise. `selfFound` stays `nil` until launch re-verification names a per-character call for it. Characters are never keyed by name.
+- **LOG-R26** Display fields: `UnitName("player")` (first name and surname on Forever), `UnitClass` and `UnitRace` IDs, `UnitFactionGroup`, and the realm ID from the GUID. `hardcore` is `C_GameRules.IsHardcoreActive()` when that call exists, `nil` otherwise. Characters are never keyed by name.
 - **LOG-R27** `Pagle.GetAngler()` returns the `Angler` (see [Contracts](#contracts)). Two `PagleLog` files belong to the same Angler when they share a character GUID; no account ID or BattleTag is stored.
 
 ### Skill Readings
@@ -265,7 +265,7 @@ PagleLog = {
   characters = {         -- array; entries refer to the index
     { guid = "Player-4618-0A1B2C3D", name = "Ada", surname = "Brook",
       classID = 1, raceID = 1, faction = "Alliance", realmID = 4618,
-      hardcore = false, selfFound = false,      -- nil when the game exposes no flag
+      hardcore = false,      -- nil when the game exposes no flag
       firstSeen = 1791731680, lastSeen = 1791735000 },
   },
   entries = { "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1", ... },
@@ -380,7 +380,7 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 
 ---@class Angler
 ---@field logId string?          -- nil only on a fresh install before the first PLAYER_LOGIN
----@field characters { guid: string, name: string, surname?: string, classID: integer, raceID: integer, faction: string, realmID: integer, hardcore?: boolean, selfFound?: boolean, firstSeen: integer, lastSeen: integer }[]
+---@field characters { guid: string, name: string, surname?: string, classID: integer, raceID: integer, faction: string, realmID: integer, hardcore?: boolean, firstSeen: integer, lastSeen: integer }[]
 ---@field current integer?       -- index of the logged-in character; nil before PLAYER_LOGIN
 ---@field skill { [integer]: PagleSkillReading }   -- latest Skill Reading per character index
 ---@field bestBaseSkill integer  -- highest skill rank among all characters (0 if none)

@@ -485,9 +485,10 @@ Run on the live Forever build before tagging 1.0. Beta facts may change at launc
 | 19 | `GetCurrentRegion()` exists | LOG-R69 (the default length unit) |
 | 20 | The `bit` library exists | LOG-R66 (the Simulated Size hash) |
 | 21 | The spell IDs a fishing channel reports, and that every rank shares spell 7620's name and icon | DATA-R39, LOG-R2, QOL-R22, QOL-R24, QOL-R71 |
-| 22 | A per-character Self-Found call exists | LOG-R26 (`selfFound` stays `nil` until one is named) |
 | 23 | Got-away detection: `ERR_FISH_ESCAPED` arrives as LOG-R6 expects (first checked on the beta in M1) | LOG-R6 |
 | 24 | Which catalogue facts rest on beta builds only (`scripts/generate-data.py --min-build <first live build>`) | DATA-R46, DATA-R57 (may raise the minimum confirming build) |
+
+There is no check 22: it looked for a per-character Self-Found call, and the character table dropped its `selfFound` field ([#363](https://github.com/timemir/wow-fish/issues/363), LOG-R26), so `/pagle dev probe` no longer reads `C_GameRules`. The other checks keep their numbers, which the launch tickets cite.
 
 ### Before the tag
 

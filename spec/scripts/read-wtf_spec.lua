@@ -1600,10 +1600,7 @@ describe("scripts/read-wtf.lua", function()
 				"    spell 7620: Fishing, icon 136245, known true",
 				"    spell 1240948: Fishing Rank 5, icon 136245, known false",
 				"  FAIL  1240948's name isn't 7620's (DATA-R39, QOL-R24)",
-				"check 22: C_GameRules has 2 keys; Is*SelfFound* calls: IsSelfFoundAllowed() = true",
-				"    keys: IsHardcoreActive (function), IsSelfFoundAllowed (function)",
-				"  ok    C_GameRules.IsSelfFoundAllowed answers: a call LOG-R26 may name for selfFound",
-				"probe: 7 of 10 checks FAIL: 3, 11, 12, 18, 19, 20, 21",
+				"probe: 7 of 9 checks FAIL: 3, 11, 12, 18, 19, 20, 21",
 			}, section(out, "== Probe"))
 		end)
 	end)
