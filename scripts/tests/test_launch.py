@@ -374,7 +374,7 @@ def test_post_tag_fails_a_zip_with_a_stray_folder(tmp_path: Path, capsys: pytest
 
 READ_WTF_OUT = """\
 == Lua errors (!BugGrabber, latest session 12): 0 errors
-== Catch log (PagleLog): format 1, logId x, 1 character, 3 entries
+== Catch log (PagleLog): format 2, logId x, 1 character, 3 entries
 C1 Casts: 1
 == Ledger (PagleLedgerDB)
 projection: none stored

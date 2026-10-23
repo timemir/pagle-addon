@@ -138,7 +138,7 @@ PagleDB = {
 },
 }
 PagleLog = {
-["format"] = 1,
+["format"] = 2,
 ["logId"] = "8c1d5e2f9a3b7c40",
 ["characters"] = {
 {

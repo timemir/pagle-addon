@@ -104,7 +104,7 @@ describe("scripts/read-wtf.lua", function()
 			-- The A1 is a Module record Core's codec reads (LOG-R40): it counts by its tag, and only the line that has
 			-- no tag is undecodable (LOG-R16).
 			assert.are.same({
-				"== Catch log (PagleLog): format 1, logId 3f9a2c1e7b0d4a65, 1 character, 11 entries",
+				"== Catch log (PagleLog): format 2, logId 3f9a2c1e7b0d4a65, 1 character, 11 entries",
 				"PagleDB.global.decodeErrors: 0",
 				"entries by tag: (no tag) 1, A1 1, B1 1, C1 6, S1 2",
 				"entries Core's codec can't decode: 1",

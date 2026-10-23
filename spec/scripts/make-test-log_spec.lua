@@ -151,7 +151,7 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 					globalsOf(readFileOrNil(FIXTURE .. "/SavedVariables/Pagle.lua")).PagleLog.characters,
 					log.characters
 				)
-				assert.are.equal(1, log.format)
+				assert.are.equal(2, log.format)
 				assert.matches("^%x+$", log.logId)
 				assert.are.equal(16, #log.logId)
 				assert.are.equal(log.logId:lower(), log.logId)

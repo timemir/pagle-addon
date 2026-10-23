@@ -9,7 +9,7 @@ PagleLog = {
 ["lastSeen"] = 1791800000,
 },
 },
-["format"] = 1,
+["format"] = 2,
 ["logId"] = "6c2f9e0a1b3d5e77",
 ["entries"] = {
 "B1|1|1791800000|0|70338|1.60.1",

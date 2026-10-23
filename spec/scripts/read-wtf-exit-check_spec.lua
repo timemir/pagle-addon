@@ -145,7 +145,7 @@ describe("scripts/read-wtf.lua's Catch log and exit check", function()
 			assert.are.equal("", err)
 			assert.are.equal(0, code)
 			assert.are.equal(
-				("== Catch log (PagleLog): format 1, logId %s, 2 characters, 7 entries"):format(log.logId),
+				("== Catch log (PagleLog): format 2, logId %s, 2 characters, 7 entries"):format(log.logId),
 				line(out, "== Catch log")
 			)
 			assert.are.equal("entries by tag: B1 1, C1 5, S1 1", line(out, "entries by tag: "))
@@ -310,23 +310,23 @@ describe("scripts/read-wtf.lua's Catch log and exit check", function()
 		end)
 	end)
 
-	it("reports a log in another format than the codec's and fails the check, keeping it as it is (LOG-R18)", function()
+	it("reports a beta log (format 1), not the codec's format, and fails the check, keeping it (LOG-R18)", function()
 		local folder = savedVariables({
-			PagleLog = { format = 0, logId = "0123456789abcdef", characters = { ADA }, entries = { "C0|1|1|0" } },
+			PagleLog = { format = 1, logId = "0123456789abcdef", characters = { ADA }, entries = { "C0|1|1|0" } },
 			PagleDB = { global = { decodeErrors = 0 } },
 		})
 		local out, err, code = run(folder, "--expect-casts", "1")
 		assert.are.equal("", err)
 		assert.are.equal(
-			"== Catch log (PagleLog): format 0, logId 0123456789abcdef, 1 character, 1 entry",
+			"== Catch log (PagleLog): format 1, logId 0123456789abcdef, 1 character, 1 entry",
 			line(out, "== Catch log")
 		)
 		assert.are.equal(
-			"PagleLog is format 0, the codec reads format 1: Core starts a new log at login",
+			"PagleLog is format 1, the codec reads format 2: Core starts a new log at login",
 			line(out, "PagleLog is ")
 		)
 		assert.are.same(
-			{ "  FAIL  PagleLog is format 0, the codec reads format 1" },
+			{ "  FAIL  PagleLog is format 1, the codec reads format 2" },
 			block(out, "== Exit check (#75 steps 3 and 4): FAILED (1 of 1 checks)")
 		)
 		assert.are.equal(1, code)
