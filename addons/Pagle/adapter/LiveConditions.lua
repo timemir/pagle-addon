@@ -138,6 +138,16 @@ local function readKeys(keys, now)
 	return (ns.StripSecrets(issecretvalue, snapshot)), extra.unresolved
 end
 
+-- The server time and the realm minute of day (LOG-R20) into `snapshot`; the minute is left nil while it is secret.
+---@param snapshot table
+local function readClock(snapshot)
+	snapshot.time = GetServerTime()
+	local hour, minute = GetGameTime()
+	if hour and not issecretvalue(hour) and not issecretvalue(minute) then
+		snapshot.minute = hour * 60 + minute
+	end
+end
+
 -- Every raw observation of the snapshot (LOG-R20), each secret value nil (CORE-R31), and the texts of a zone or
 -- subzone that didn't resolve.
 ---@param now CalendarTime?
@@ -145,11 +155,7 @@ end
 ---@return PagleUnresolvedAreas? unresolved
 local function readSnapshot(now)
 	local snapshot, unresolved = readKeys(ns.CONDITION_KEYS, now)
-	snapshot.time = GetServerTime()
-	local hour, minute = GetGameTime()
-	if hour and not issecretvalue(hour) and not issecretvalue(minute) then
-		snapshot.minute = hour * 60 + minute
-	end
+	readClock(snapshot)
 	snapshot.uiMap = C_Map.GetBestMapForUnit("player")
 	snapshot.instance = select(8, GetInstanceInfo())
 	return (ns.StripSecrets(issecretvalue, snapshot)), unresolved
@@ -163,6 +169,16 @@ end
 ---@return PagleUnresolvedAreas? unresolved
 function ns.TakeSnapshot()
 	return readSnapshot(readCalendarTime())
+end
+
+--- What a window forecast reads of the conditions now (LOG-R50): the server time, the realm minute and the events the
+--- live calendar shows active, each secret value nil (CORE-R31), read as a snapshot reads them. Nothing else, so a
+--- board forecasting every Hunt at once doesn't read the area, auras, lure and skill for each.
+---@return ConditionsSnapshot
+function ns.TakeForecastSnapshot()
+	local snapshot = readKeys({ "events" }, readCalendarTime())
+	readClock(snapshot)
+	return (ns.StripSecrets(issecretvalue, snapshot))
 end
 
 --- The conditions now (LOG-R45): a Cast snapshot's fields (LOG-R20), plus the realm date from

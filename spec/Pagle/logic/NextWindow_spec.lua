@@ -353,4 +353,46 @@ describe("ns.NextWindow", function()
 			forecast({ time = { { 360, 360 } } }, realm(2026, 10, 14, 8, 15))
 		end, "invalid condition spec: time[1] has from == to", 1, true)
 	end)
+
+	it("forecasts from its first week's look as a walk of the whole horizon does (LOG-R50)", function()
+		-- Weekly rules longer than the first look, overlapping, and one unconfirmed, so openings and their parts
+		-- cross the look's end: Saturdays for 14 days, and Mondays at 10:00 for 12 days, unconfirmed.
+		local rules = rulesOf({
+			[301] = sundayRule(),
+			[302] = { weekday = 7, start = 0, duration = 20160, confirmed = true },
+			[303] = { weekday = 2, start = 600, duration = 17280, confirmed = false },
+		})
+		local WINTER = { season = { { from = { 12, 1 }, to = { 2, 28 } } } }
+		local specs = {
+			NIGHT_WRAPPING,
+			NIGHT_SPLIT,
+			{ time = { { 360, 1260 } } },
+			SUMMER,
+			WINTER,
+			{ time = NIGHT_WRAPPING.time, season = SUMMER.season },
+			{ events = { 301 } },
+			{ events = { 302, 303 } },
+			{ events = { 303 }, time = NIGHT_WRAPPING.time },
+			-- A night inside a confirmed occurrence that an unconfirmed one overlaps and outlasts: the opening's
+			-- confirmed reads a part the first look cuts at its end.
+			{ events = { 302, 303 }, time = NIGHT_WRAPPING.time },
+			{ events = { 301, 302 }, season = WINTER.season, confirmed = true },
+		}
+		local function both(spec, fromTime, active)
+			local first = forecast(spec, fromTime, active, rules)
+			ns.FORECAST_FIRST_LOOK_DAYS = 400
+			local whole = forecast(spec, fromTime, active, rules)
+			ns.FORECAST_FIRST_LOOK_DAYS = 8
+			return first, whole
+		end
+		for _, spec in ipairs(specs) do
+			for step = 0, 80 do
+				local fromTime = realm(2026, 11, 20, 3, 0) + step * 31 * 3600
+				for _, active in ipairs({ {}, { 302 }, { 302, 303 } }) do
+					local first, whole = both(spec, fromTime, active)
+					assert.are.same(whole, first)
+				end
+			end
+		end
+	end)
 end)

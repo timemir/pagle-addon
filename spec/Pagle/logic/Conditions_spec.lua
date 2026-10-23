@@ -244,6 +244,15 @@ describe("Pagle.MatchesConditions", function()
 			rejects({ season = { { from = { 3, 1 }, to = { 3, 1 } } } }, "season[1] has from == to")
 		end)
 
+		it(
+			"raises an error each time the same invalid spec is matched, as a valid one is checked once (LOG-R48)",
+			function()
+				local spec = { time = { { 600, 600 } } }
+				rejects(spec, "time[1] has from == to")
+				rejects(spec, "time[1] has from == to")
+			end
+		)
+
 		it("raises an error even when the snapshot would fail an earlier field (LOG-R48)", function()
 			rejects({ areas = { 12 }, time = { { 600, 600 } } }, "time[1] has from == to")
 		end)

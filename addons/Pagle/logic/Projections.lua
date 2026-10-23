@@ -92,7 +92,8 @@ Projection.__index = Projection
 ---@field package mode (PagleApplyMode|"done")?
 ---@field package entry PagleRecord? -- the entry a live apply is applying, while it runs (LiveEntry)
 ---@field package deferred PagleRecord[] -- live entries handed over while an apply or done ran
----@field package chunked PagleProjection[] -- running in chunks across frames
+---@field package chunked PagleProjection[] -- running in chunks across frames, in the order they were added
+---@field package turn integer         -- the place in `chunked` whose turn is next
 ---@field package stepping boolean     -- a frame step is scheduled
 ---@field package frame integer        -- the frame steps run so far, for the timings
 ---@field package idle fun()[]         -- WhenIdle hooks waiting
@@ -107,6 +108,7 @@ function ns.NewProjections(options)
 		list = {},
 		deferred = {},
 		chunked = {},
+		turn = 1,
 		stepping = false,
 		frame = 0,
 		idle = {},
@@ -232,12 +234,14 @@ local function applyOne(projection, record, mode, run)
 end
 
 -- Starts a projection's catch-up or rebuild up to `target` (LOG-R71, LOG-R72): at once when few entries are
--- pending, else in chunks on later frames.
+-- pending, else in chunks on later frames. With `atOnce`, a run of few entries is added to it instead, for the caller
+-- to run with the others there (runAtOnce).
 ---@package
 ---@param projection PagleProjection
 ---@param target integer
 ---@param force boolean rebuild whatever the stored values say (Rebuild)
-function Projections:begin(projection, target, force)
+---@param atOnce PagleProjection[]?
+function Projections:begin(projection, target, force, atOnce)
 	local def = projection.def
 	local db = def.db
 	local rebuild = force or mustRebuild(self, def)
@@ -275,8 +279,62 @@ function Projections:begin(projection, target, force)
 	if target - from > (self.options.syncLimit or ns.PROJECTION_SYNC_LIMIT) then
 		self.chunked[#self.chunked + 1] = projection
 		self:schedule()
+	elseif atOnce then
+		atOnce[#atOnce + 1] = projection
 	else
-		while projection.run == run and self:timedAdvance(projection) do
+		self:runAtOnce({ projection })
+	end
+end
+
+-- Whether the projection at `index` in `list` must wait to finish: a run before it in `list` isn't over yet. Runs take
+-- turns an entry at a time, but each finish (its done) waits until the ones before it are over, the entries appended
+-- meanwhile applied too, so the projections finish in the order they were added, Core's own first, as when each ran to
+-- its end in turn: a Module's done that reports to another Module finds it up to date.
+---@param list PagleProjection[]
+---@param index integer
+---@return boolean
+local function waitsToFinish(list, index)
+	local run = list[index].run
+	if not run or run.phase ~= "finish" then
+		return false
+	end
+	for i = 1, index - 1 do
+		if list[i].run then
+			return true
+		end
+	end
+	return false
+end
+
+-- Whether the turn passes on from `projection` after a step: not once it has finished, so it applies the entries
+-- appended during its update before any other takes a step, and is up to date at once.
+---@param projection PagleProjection
+---@return boolean
+local function passesTurn(projection)
+	return not (projection.run and projection.run.phase == "live")
+end
+
+-- Runs the run each projection in `list` has now to its end, the runs taking turns a step at a time: runs over the
+-- same entries then read each entry once between them (CatchLog:Iterate keeps the records it read last). A run
+-- replaced meanwhile (Rebuild) is left to its own caller.
+---@package
+---@param list PagleProjection[] in the order they were added
+function Projections:runAtOnce(list)
+	local runs = {}
+	for i, projection in ipairs(list) do
+		runs[i] = projection.run
+	end
+	local turn = 1
+	while #list > 0 do
+		local projection = list[turn]
+		if projection.run == runs[turn] and waitsToFinish(list, turn) then
+			turn = turn % #list + 1
+		elseif projection.run == runs[turn] and self:timedAdvance(projection) then
+			turn = passesTurn(projection) and turn % #list + 1 or turn
+		else
+			table.remove(list, turn)
+			table.remove(runs, turn)
+			turn = turn > #list and 1 or turn
 		end
 	end
 end
@@ -396,29 +454,41 @@ function Projections:schedule()
 	end
 end
 
--- One frame's chunk: works through the chunked projections in order within the budget (LOG-R71, LOG-R72). The clock
--- is read after each step, and the chunk stops once the budget left can't fit another step as costly as this
--- frame's costliest, so a frame doesn't run past the budget on its last step. A finish runs a Module's done, whose
--- cost nothing predicts, so it starts a frame of its own. At least one step runs each frame.
+-- One frame's chunk: the chunked projections take turns, a step each, within the budget (LOG-R71, LOG-R72), so
+-- projections over the same entries read each entry once between them (CatchLog:Iterate keeps the records it read
+-- last); each finishes only after the ones added before it (waitsToFinish). The clock is read after each step, and the
+-- chunk stops once the budget left can't fit another step as costly as this frame's costliest, so a frame doesn't
+-- run past the budget on its last step. A finish runs a Module's done, whose cost nothing predicts, so it starts a
+-- frame of its own. At least one step runs each frame.
 ---@package
 function Projections:step()
 	local clock, budget = self.options.clock, self.options.budget or ns.PROJECTION_BUDGET
 	self.frame = self.frame + 1
 	local started, costliest, stepped = clock(), 0, false
-	while #self.chunked > 0 do
-		local projection = self.chunked[1]
-		if stepped and projection.run and projection.run.phase == "finish" then
-			break
-		end
-		stepped = true
-		local before = clock()
-		if not self:timedAdvance(projection) then
-			table.remove(self.chunked, 1)
-		end
-		local now = clock()
-		costliest = math.max(costliest, now - before)
-		if now - started + costliest > budget then
-			break
+	local chunked = self.chunked
+	while #chunked > 0 do
+		local turn = self.turn > #chunked and 1 or self.turn
+		local projection = chunked[turn]
+		if waitsToFinish(chunked, turn) then
+			self.turn = turn % #chunked + 1
+		else
+			if stepped and projection.run and projection.run.phase == "finish" then
+				self.turn = turn
+				break
+			end
+			stepped = true
+			local before = clock()
+			if self:timedAdvance(projection) then
+				self.turn = passesTurn(projection) and turn % #chunked + 1 or turn
+			else
+				table.remove(chunked, turn)
+				self.turn = turn
+			end
+			local now = clock()
+			costliest = math.max(costliest, now - before)
+			if now - started + costliest > budget then
+				break
+			end
 		end
 	end
 	if #self.chunked > 0 then
@@ -449,9 +519,11 @@ function Projections:Start(loginSeq)
 		return
 	end
 	self.loginSeq = loginSeq
+	local atOnce = {}
 	for _, projection in ipairs(self.list) do
-		self:begin(projection, loginSeq, false)
+		self:begin(projection, loginSeq, false, atOnce)
 	end
+	self:runAtOnce(atOnce)
 	self:settle()
 end
 
@@ -554,9 +626,9 @@ function ns.AddProjectionMethods(registry, projections, iterate)
 end
 
 --- Binds one of Core's own projections (LOG-R78) to a table in PagleDB: the same machinery as a Module's, with no
---- Module handle and no moments. Core adds its own at login step 1, before any Module's OnInitialize, so they run
---- first and the Modules' keep their order. Raises an error at the caller, binding nothing, for a def the contract
---- refuses.
+--- Module handle and no moments. Core adds its own at login step 1, before any Module's OnInitialize, so they take the
+--- first turns and finish first, and the Modules' keep their order. Raises an error at the caller, binding nothing,
+--- for a def the contract refuses.
 ---@param projections PagleProjections
 ---@param def PagleProjectionDef
 ---@param iterate fun(afterSeq: integer?, reader: string?): fun(): PagleRecord? the log's records after a seq

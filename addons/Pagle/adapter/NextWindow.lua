@@ -21,5 +21,5 @@ local Pagle = Pagle
 ---@param fromTime integer server time to forecast from
 ---@return Window?
 function Pagle.NextWindow(spec, fromTime)
-	return ns.ForecastWindow(spec, fromTime, (ns.TakeSnapshot()), ns.Catalogue.GetEventRule)
+	return ns.ForecastWindow(spec, fromTime, ns.TakeForecastSnapshot(), ns.Catalogue.GetEventRule)
 end

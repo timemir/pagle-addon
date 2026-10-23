@@ -3108,8 +3108,9 @@ local function minuteOfDay(minute)
 end
 
 -- Checks 2 and 10's timings (PagleDB.global.probe.timings, logic/LoadTimings.lua): each mark in ms after Core's files
--- loaded, then each projection's catch-up or rebuild on a line of its own, its longest frame set against LOG-R71's
--- budget (one that ran at once, in one frame, has none to meet).
+-- loaded, a /reload's logout before them, each addon loaded after Core until PLAYER_LOGIN, then each projection's
+-- catch-up or rebuild on a line of its own, its longest frame set against LOG-R71's budget (one that ran at once, in
+-- one frame, has none to meet).
 local function printTimings(timings, ns)
 	if type(timings) ~= "table" or type(timings.marks) ~= "table" then
 		print(
@@ -3136,6 +3137,32 @@ local function printTimings(timings, ns)
 				and "not reached (a catch-up or rebuild was still running at the /reload or logout)"
 			or "not reached"
 		print(("  %-22s %s"):format(mark[2], ms and at(ms) or missing))
+	end
+	-- A /reload's logout, in the same client session (logic/LoadTimings.lua): what came before Core's files loaded.
+	local logout = tonumber(timings.logout)
+	if logout then
+		print(
+			(
+				"  the /reload's PLAYER_LOGOUT %.1f ms before Core's files loaded: every addon's logout, the"
+				.. " SavedVariables written, and the addons before Core loaded"
+			):format(zero - logout)
+		)
+	end
+	-- Each addon after Core's, until PLAYER_LOGIN, with what it took since the one before: its files, its
+	-- SavedVariables and every ADDON_LOADED handler (Core's own login step 1 before the first).
+	local addons = type(timings.addons) == "table" and timings.addons or {}
+	if #addons > 0 then
+		print("  addons loaded after Core, until PLAYER_LOGIN, each with the time since the one before:")
+		local before = tonumber(marks.addonLoaded) or zero
+		for _, addon in ipairs(addons) do
+			local ms = tonumber(addon.at) or before
+			print(("    %-24s %s (+%.1f ms)"):format(tostring(addon.name), at(ms), ms - before))
+			before = ms
+		end
+		local login = tonumber(marks.playerLogin)
+		if login then
+			print(("    %-24s %s (+%.1f ms)"):format("then PLAYER_LOGIN", at(login), login - before))
+		end
 	end
 	for _, timing in ipairs(type(timings.projections) == "table" and timings.projections or {}) do
 		local started, finished = tonumber(timing.started) or 0, tonumber(timing.finished) or 0

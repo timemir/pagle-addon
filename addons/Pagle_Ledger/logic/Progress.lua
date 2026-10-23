@@ -51,6 +51,11 @@ function ns.StepCost(level)
 	return (1000 + 80 * level) * PRESTIGE_FACTOR
 end
 
+-- The XP a climb needs to reach each level (LED-R30): the step costs below it, summed; 0 for level 1. Made at the
+-- first climb worked out, as the fold works one out several times for every Cast it applies.
+---@type integer[]?
+local reachAt
+
 --- The climb `xp` covers (LED-R30): the level, 1 plus the steps covered, at most 60; then below 60 the XP into the
 --- level and the next step's cost, at 60 the carried XP (unused until a Prestige carries it into the next climb,
 --- LED-R32) and no cost.
@@ -59,16 +64,26 @@ end
 ---@return integer into XP into the level, or the carried XP at 60
 ---@return integer? cost the next step's cost; nil at 60
 function ns.ClimbOf(xp)
-	local level = 1
-	while level < ns.LEVEL_CAP do
-		local cost = ns.StepCost(level)
-		if xp < cost then
-			return level, xp, cost
+	if not reachAt then
+		reachAt = { 0 }
+		for level = 1, ns.LEVEL_CAP - 1 do
+			reachAt[level + 1] = reachAt[level] + ns.StepCost(level)
 		end
-		xp = xp - cost
-		level = level + 1
 	end
-	return level, xp, nil
+	-- The highest level whose reach `xp` covers.
+	local low, high = 1, ns.LEVEL_CAP
+	while low < high do
+		local middle = math.ceil((low + high) / 2)
+		if reachAt[middle] <= xp then
+			low = middle
+		else
+			high = middle - 1
+		end
+	end
+	if low == ns.LEVEL_CAP then
+		return low, xp - reachAt[low], nil
+	end
+	return low, xp - reachAt[low], ns.StepCost(low)
 end
 
 -- Where Core's Activity XP total comes from: none until ns.SetActivityXPSource gives one.

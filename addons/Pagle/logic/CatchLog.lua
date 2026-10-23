@@ -605,6 +605,9 @@ end
 ---@field package tailCounts PagleCatchCounts? the counts up to the log's end, once something needs them (Append)
 ---@field package skills { scanned: integer, [integer]: { seqs: integer[], ranks: integer[] } } each character's Skill
 --- Readings in the entries up to `scanned`, by seq, once a Cast without a skill rank needs them
+---@field package recentSeqs table<integer, integer> the seq of the record in each slot of `recent` (RECENT_RECORDS)
+---@field package recent table<integer, PagleRecord|false> the records read forwards last, each in slot
+--- seq % RECENT_RECORDS; false for an entry the codec can't read
 local CatchLog = {}
 CatchLog.__index = CatchLog
 
@@ -794,18 +797,35 @@ local function cutterAt(catchLog, afterSeq)
 	return cutter
 end
 
+-- How many of the records read forwards last the log keeps, by seq. The projections catching up or
+-- rebuilding take turns an entry at a time (logic/Projections.lua), so the next to read an entry finds its record here:
+-- each entry is decoded and sized once between them instead of once each. Records are shared (CORE-R18), and the one
+-- at a seq is the same for every forward reader this login (LOG-R98, LOG-R100), as the log only grows.
+local RECENT_RECORDS = 64
+
+-- Keeps `record` (false for an entry the codec can't read) as the one read last at `seq`.
+---@param catchLog PagleCatchLog
+---@param seq integer
+---@param record PagleRecord|false
+local function keepRecent(catchLog, seq, record)
+	local slot = seq % RECENT_RECORDS
+	catchLog.recentSeqs[slot], catchLog.recent[slot] = seq, record
+end
+
 --- Walks the entries with `seq > afterSeq`, up to the log's length now, in order, decoding each as it goes
 --- (LOG-R42). Casts and Skill Readings carry their Session's ID, and Casts their Simulated Sizes, the same whether the
 --- log is read whole or from a later `afterSeq` (LOG-R98, LOG-R100). An entry the codec can't read is skipped and
 --- counted in `PagleDB.global.decodeErrors`, once per entry for this login however many readers meet it (LOG-R16). Module records are yielded only to the
 --- Module named by `module`, its own (LOG-R41, LOG-R42): without one, as Pagle.IterateCatches reads, none is; another
 --- Module's are skipped, never counted as undecodable. A Companion entry is yielded only to ns.COMPANION_READER, Core's
---- projections (LOG-R37).
+--- projections (LOG-R37). An entry read forwards last is handed out as the record already made for it
+--- (RECENT_RECORDS), its sizes and Session already on it.
 ---@param afterSeq integer?
 ---@param module string? the reading Module's def.name (M:IterateCatches)
 ---@return fun(): PagleRecord?
 function CatchLog:Iterate(afterSeq, module)
 	local entries, characters = self.data.entries, self.data.characters
+	local recentSeqs, recent = self.recentSeqs, self.recent
 	local last = #entries
 	local seq = math.min(afterSeq or 0, last)
 	local cutter = cutterAt(self, seq)
@@ -814,16 +834,27 @@ function CatchLog:Iterate(afterSeq, module)
 		while seq < last do
 			seq = seq + 1
 			local entry = entries[seq]
-			local record = decode(entry, seq, characters)
-			if counts then
-				stepCounts(self, counts, record, entry)
+			local record
+			if recentSeqs[seq % RECENT_RECORDS] == seq then
+				record = recent[seq % RECENT_RECORDS] or nil
+				if counts then
+					countEntry(counts, entry, 1)
+				end
+			else
+				record = decode(entry, seq, characters)
+				if counts then
+					stepCounts(self, counts, record, entry)
+				end
 			end
 			if not record then
 				countUndecodable(self, seq)
+				keepRecent(self, seq, false)
 			else
+				-- Only Casts and Skill Readings get a Session, and they are every reader's (LOG-R98).
+				cutter:Add(record)
+				keepRecent(self, seq, record)
 				local owner = ns.RecordReader(record)
 				if owner == nil or owner == module then
-					cutter:Add(record)
 					return record
 				end
 			end
@@ -1001,6 +1032,8 @@ function ns.OpenCatchLog(saved, global, now, getItem)
 		getItem = getItem,
 		counts = { [0] = {} },
 		skills = { scanned = 0 },
+		recentSeqs = {},
+		recent = {},
 	}
 	local storedSeq, stored = storedCounts(global.catchCounts, data)
 	if storedSeq then
