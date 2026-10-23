@@ -1,5 +1,6 @@
-# Packages Pagle with the BigWigsMods packager when a tag is pushed, and only then, and uploads it to CurseForge
-# and Wago, never WoWInterface. No tags exist before 1.0. Build the same zip locally with scripts/package.sh.
+# Packages Pagle with the BigWigsMods packager when a tag is pushed, and only then, uploads it to CurseForge and
+# Wago, never WoWInterface, and attaches it to the tag's GitHub Release (CORE-R74). No tags exist before 1.0. Build
+# the same zip locally with scripts/package.sh.
 #
 # The tag is the bare version, the same for the whole package: 1.0.0, then 1.0.1 (git tag 1.0.0 && git push origin
 # 1.0.0). The packager reads the build type from the tag: a tag with "alpha" or "beta" in it publishes as that, any
@@ -7,7 +8,13 @@
 #
 # Uploads need both halves: the project IDs in Pagle.toc (## X-Curse-Project-ID, ## X-Wago-ID) and the
 # CF_API_TOKEN and WAGO_API_TOKEN repository secrets (Settings > Secrets and variables > Actions). A site missing
-# either is skipped, so the run still builds the zip. No GitHub Release is made: GITHUB_API_TOKEN isn't passed.
+# either is skipped, so the run still builds the zip.
+#
+# The GitHub Release needs no secret: the packager takes the workflow's own GITHUB_TOKEN as GITHUB_OAUTH, and
+# contents: write lets that token create the tag's release (named for the tag, the body Pagle's CHANGELOG.md) and
+# attach the zip and the packager's release.json. Like Wago's stability, the build type marks it: an alpha or beta tag
+# makes a pre-release, any other tag a normal release. pagle-backend pins a release by its zip's SHA-256 and fetches
+# that zip from here (its PRJ-R63, R64, R66). A re-run of the same tag updates its release and replaces the assets.
 #
 # The game version comes from the TOCs, so no -g is passed: the packager reads ## Interface: 16001 as game type
 # "forever", version 1.60.1 (it ignores ## AllowLoadGameType), and tags the upload with that version under
@@ -21,7 +28,7 @@ on:
       - "*"
 
 permissions:
-  contents: read
+  contents: write # the packager creates the tag's GitHub Release and uploads the zip to it
 
 jobs:
   release:
@@ -37,6 +44,8 @@ jobs:
           args: -w 0 # never upload to WoWInterface, whatever a TOC says
           pandoc: false # only WoWInterface uploads need it
         env:
-          # The names the pinned release.sh reads (it also takes CF_API_KEY for CurseForge).
+          # The names the pinned release.sh reads (it also takes CF_API_KEY for CurseForge, and GITHUB_API_TOKEN, a
+          # personal token, after GITHUB_OAUTH for GitHub; neither is passed).
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}

@@ -1,4 +1,5 @@
-"""Exercise the workflow's change detector against real Git history."""
+"""Exercise the Check workflow's change detector against real Git history, and hold the Release workflow (and
+the Check workflow's release-zip step) to what they may publish (CORE-R74)."""
 
 import os
 from pathlib import Path
@@ -7,11 +8,76 @@ import textwrap
 
 import pytest
 
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def workflow_text(name: str) -> str:
+    return (ROOT / ".github/workflows" / name).read_text()
+
+
+def mapping(text: str, header: str) -> dict[str, str]:
+    """The `key: value` lines indented one level under the first line that is exactly `header`, comments dropped."""
+    lines = text.splitlines()
+    indent = len(header) - len(header.lstrip())
+    found: dict[str, str] = {}
+    for line in lines[lines.index(header) + 1:]:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if len(line) - len(line.lstrip()) <= indent:
+            break
+        key, _, value = stripped.partition(":")
+        found[key] = value.split(" #", 1)[0].strip()
+    return found
+
+
+def packager_step(text: str) -> str:
+    return text.split("      - uses: BigWigsMods/packager@", 1)[1].split("\n      - ", 1)[0]
+
+
+def test_release_runs_on_tag_pushes_only() -> None:
+    text = workflow_text("release.yml")
+    assert text.split("\non:\n", 1)[1].split("\n\n", 1)[0] == '  push:\n    tags:\n      - "*"'
+
+
+def test_release_may_write_contents_and_nothing_else() -> None:
+    # contents: write lets the workflow's own GITHUB_TOKEN create the tag's GitHub Release and upload its zip.
+    text = workflow_text("release.yml")
+    assert mapping(text, "permissions:") == {"contents": "write"}
+    assert text.count("permissions:") == 1
+
+
+def test_release_passes_the_workflows_own_token_and_the_two_site_tokens() -> None:
+    # GITHUB_OAUTH is the first name the pinned release.sh reads its GitHub token from; GITHUB_API_TOKEN, a
+    # personal token, is never passed. CurseForge and Wago keep their own secrets.
+    step = packager_step(workflow_text("release.yml"))
+    assert mapping(step, "        env:") == {
+        "CF_API_TOKEN": "${{ secrets.CF_API_TOKEN }}",
+        "WAGO_API_TOKEN": "${{ secrets.WAGO_API_TOKEN }}",
+        "GITHUB_OAUTH": "${{ secrets.GITHUB_TOKEN }}",
+    }
+
+
+def test_release_never_uploads_to_wowinterface() -> None:
+    step = packager_step(workflow_text("release.yml"))
+    assert mapping(step, "        with:") == {"args": "-w 0", "pandoc": "false"}
+
+
+def test_check_workflow_packages_the_zip_without_publishing_it() -> None:
+    # The Check workflow builds the same zip, with every upload skipped (-d) and no token to publish with.
+    text = workflow_text("check.yml")
+    assert mapping(text, "permissions:") == {"contents": "read"}
+    assert "secrets." not in text
+    step = text.split("      - name: Package and check the release zip\n", 1)[1].split("\n  test-check:", 1)[0]
+    assert "env:" not in step
+    assert step.rstrip().endswith("bash scripts/package.sh")
+    package = (ROOT / "scripts/package.sh").read_text()
+    assert 'env -u GITHUB_ACTIONS bash "$packager" -d -t "$src" -r "$releasedir"' in package
+
 
 @pytest.fixture
 def detector() -> str:
-    workflow = Path(__file__).resolve().parents[2] / ".github/workflows/check.yml"
-    step = workflow.read_text().split("      - name: Find whether the gate's machinery changed\n", 1)[1]
+    step = workflow_text("check.yml").split("      - name: Find whether the gate's machinery changed\n", 1)[1]
     lines = step.split("        run: |\n", 1)[1].splitlines()
     body: list[str] = []
     for line in lines:
