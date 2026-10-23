@@ -87,13 +87,13 @@ end
 ---@field legendPlate LedgerLegendPlate? -- a Legend's plate over the spread (LED-R147)
 ---@field plate string?                -- the brass plate's words as last read; nil until first read (LED-R149)
 ---@field prestigeCard LedgerPrestigeCard? -- the Prestige confirm, made at its first asking (adapter/Prestige.lua)
----@field private redrawQueued boolean
----@field private bodies table<Frame, LedgerJournalPage> -- the page body drawn on each of the shell's content frames
----@field private drawnSubjects { left: string?, right: string? } -- each side's subject as last drawn (LED-R129)
----@field private drawnDepth integer?  -- the crumbs' depth as last drawn
----@field private drawnPlate boolean?  -- whether the last drawing was a Legend's plate
----@field private turnDirection ("fwd"|"back")? -- the next drawing turns the page this way (a Prestige)
----@field private cacheKey string?     -- the place `pages` was read for in this drawing
+---@field redrawQueued boolean
+---@field bodies table<Frame, LedgerJournalPage> -- the page body drawn on each of the shell's content frames
+---@field drawnSubjects { left: string?, right: string? } -- each side's subject as last drawn (LED-R129)
+---@field drawnDepth integer?  -- the crumbs' depth as last drawn
+---@field drawnPlate boolean?  -- whether the last drawing was a Legend's plate
+---@field turnDirection ("fwd"|"back")? -- the next drawing turns the page this way (a Prestige)
+---@field cacheKey string?     -- the place `pages` was read for in this drawing
 local Journal = {}
 Journal.__index = Journal
 
@@ -421,6 +421,7 @@ do
 		registerPage(id)
 	end
 	local register = ns.RegisterJournalSpread
+	---@diagnostic disable-next-line: duplicate-set-field -- wrapping logic/Journal.lua's, so a later spread gets its pages
 	function ns.RegisterJournalSpread(id, spread)
 		register(id, spread)
 		registerPage(id)
@@ -431,9 +432,8 @@ do
 			buildSearch(journal, anchor)
 		end
 		local hidden = notice ~= nil or plateOf(journal:PagesAt(place)) ~= nil
-		local search, drop =
-			journal.search, --[[@as EditBox]]
-			journal.searchDrop --[[@as Frame]]
+		local search = journal.search --[[@as EditBox]]
+		local drop = journal.searchDrop --[[@as Frame]]
 		search:SetShown(not hidden)
 		if hidden then
 			drop:Hide()

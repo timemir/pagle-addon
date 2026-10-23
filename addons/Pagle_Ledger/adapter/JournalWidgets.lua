@@ -1207,6 +1207,7 @@ local PAIRED = { plinth = true }
 --- those in use, by kind, in page order.
 ---@class LedgerJournalPage: Frame
 ---@field scroll ScrollFrame
+---@field subject string?   -- the subject drawn on it last (LED-R129, adapter/Journal.lua)
 ---@field content Frame
 ---@field width number
 ---@field height number

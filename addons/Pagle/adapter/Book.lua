@@ -69,7 +69,7 @@ local function sound(id)
 end
 
 -- Sets the book frame's alpha, and its dim's with it: the dim fades with the book (BOOK-R6).
----@param frame Frame
+---@param frame PagleBookFrame
 ---@param alpha number
 local function fade(frame, alpha)
 	frame:SetAlpha(alpha)
@@ -631,7 +631,10 @@ local function ribbonAt(book, i)
 			local data = book.ribbonList[i]
 			if data then
 				local target = data.target
-				book:Open(type(target) == "function" and target() or target)
+				if type(target) == "function" then
+					target = target()
+				end
+				book:Open(target --[[@as PagleBookPlace]])
 			end
 		end)
 		frame.ribbons[i] = ribbon
@@ -904,6 +907,7 @@ end
 ---@field plateTooltip string[]?
 ---@field stripWords string?
 ---@field helpShown boolean
+---@field Hidden fun(self)                             -- the book has closed, however it closed (BOOK-R40)
 
 ---@param options PagleBookOptions
 ---@return PagleBook

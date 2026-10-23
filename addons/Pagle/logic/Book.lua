@@ -10,6 +10,7 @@ local ns = select(2, ...)
 --- A place in a book: its page and what that page keeps (BOOK-R20). The book's own fields, besides `page`.
 ---@class PagleBookPlace
 ---@field page string
+---@field [string] any      -- the fields its page keeps (PagleBookPageDef.keeps)
 
 --- One page of a book (BOOK-R20).
 ---@class PagleBookPageDef

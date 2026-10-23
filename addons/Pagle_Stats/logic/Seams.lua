@@ -33,7 +33,7 @@ local ns = select(2, ...)
 ---@alias StatsBookPage "home"|"place"|"item"|"session"|"lifetime"|"sessions"
 
 --- Where ns.OpenBook opens the book (stats.md › UI): a spread or page, with the place, item or Session it shows.
----@class StatsBookTarget
+---@class StatsBookTarget: PagleBookPlace
 ---@field page StatsBookPage
 ---@field area integer?       -- the place, a zone or subzone areaID ("place", and "item" when opened from a place)
 ---@field item integer?       -- the item ID ("item", or an entry chosen on a "place" spread)

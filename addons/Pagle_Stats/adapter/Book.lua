@@ -234,14 +234,14 @@ ns.book.shell = Pagle.NewBook({
 		end,
 	},
 	trail = function(place)
-		local trail = {}
-		for i, crumb in ipairs(ns.BookTrail(place, zoneOf)) do
+		local trail, target = {}, place --[[@as StatsBookTarget]]
+		for i, crumb in ipairs(ns.BookTrail(target, zoneOf)) do
 			trail[i] = { text = crumbWords(crumb), target = crumb.target }
 		end
 		return trail
 	end,
 	chosenRibbon = function(place)
-		return ns.ChosenRibbon(place, ns.CurrentPlace(Pagle.GetConditions()))
+		return ns.ChosenRibbon(place --[[@as StatsBookTarget]], ns.CurrentPlace(Pagle.GetConditions()))
 	end,
 	notice = function()
 		return ns.IsUpdating() and L.BOOK_UPDATING or nil

@@ -78,7 +78,7 @@ local function inked(frame)
 			(crumbs[1].label --[[@as table]]).textColor,
 			(crumbs[2].label --[[@as table]]).textColor,
 		},
-		fleuron = rgb(crumbs[2].fleuron),
+		fleuron = rgb((crumbs[2] --[[@as table]]).fleuron),
 		silver = (frame.plate.brass.left --[[@as table]]).desaturated == true,
 		paper = { rgb(frame.parchments.left.paper), rgb(frame.parchments.right.paper) },
 	}
