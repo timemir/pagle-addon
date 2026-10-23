@@ -187,9 +187,9 @@ end
 --- logic/ alone, without adapter/ or locale/ (CORE-R7). Makes the Hunt list, Qualify's lookups, where each Hunt
 --- bites and the event pool as the adapter's OnInitialize does (ns.hunts, ns.lookups, ns.where, ns.events), then binds
 --- ns.ProjectionDef with `M:NewProjection` over a table of its own making, reading the log back through
---- `M:IterateCatches` as the client does. Coins and Activity XP aren't reported (the driver reads ns.CoinsEarned),
---- and `done` checks the set titles at GetServerTime(), which the driver answers with its fold's time. Without
---- locale/, the Hunt list has no text, which the fold never reads. The client's adapter never calls it.
+--- `M:IterateCatches` as the client does. Coins and Activity XP aren't reported (the driver reads ns.CoinsEarned and
+--- ns.ActivityXPEarned), and `done` checks the set titles at GetServerTime(), which the driver answers with its fold's
+--- time. Without locale/, the Hunt list has no text, which the fold never reads. The client's adapter never calls it.
 ---@param M PagleModuleHandle
 ---@return PagleProjection
 function ns.BindProjections(M)
@@ -217,6 +217,14 @@ end
 ---@return integer
 function ns.CoinsEarned(state)
 	return state.coins
+end
+
+--- A Hunts state's lifetime Activity XP (HNT-R113–R115, AXP-R2), as Hunts reports it with M:ReportXPEarned: for
+--- Pagle's backend (AXP-R9, #76 item 15), which sums it with the other paying Modules' into the Ledger's `total`.
+---@param state HuntsState
+---@return integer
+function ns.ActivityXPEarned(state)
+	return state.xp
 end
 
 ---@class HuntsJournalHunt

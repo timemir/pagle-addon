@@ -9,7 +9,9 @@ local ns = select(2, ...)
 -- through logic/ alone and computes none of these itself, so each is a function of a projection state, read through
 -- the world index the projection was bound with (ns.world: the adapter's OnInitialize sets it, and ns.BindProjections
 -- in the driver). Each counts what the state computes, never the celebrated set, which never leaves the client
--- (LOG-R77). Pure logic (CORE-R7).
+-- (LOG-R77). The reads that work out the level take Core's Activity XP total as `total` (LED-R37): the backend passes
+-- the sum of the paying Modules' ns.ActivityXPEarned (AXP-R9, #76 item 15); without it, ns.ActivityXPTotal() reads
+-- the source the adapter sets (Pagle.GetActivityXP().total), 0 in logic/ alone. Pure logic (CORE-R7).
 
 ---@class LedgerMeasures
 ---@field anglerLevel { prestige: integer, level: integer, xp: integer }   -- prestige rank, the climb's level and XP
@@ -19,19 +21,22 @@ local ns = select(2, ...)
 
 -- The title view of a state alone: no celebrated set, no stored active title.
 ---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
 ---@return LedgerTitleView
-local function computedView(state)
-	return { world = ns.world, state = state, celebrated = {}, getItem = ns.world.getItem }
+local function computedView(state, total)
+	return { world = ns.world, state = state, celebrated = {}, getItem = ns.world.getItem, activityXPTotal = total }
 end
 
---- The four leaderboard measures of a Ledger state: the Angler Level (LED-R30–R32), Ledger completion (LED-R70,
---- LED-R71), Species caught and Legends caught (LED-R63). Every number is a whole number, 0 or more.
+--- The four leaderboard measures of a Ledger state: the Angler Level (LED-R30–R32, its Activity XP included,
+--- LED-R37), Ledger completion (LED-R70, LED-R71), Species caught and Legends caught (LED-R63). Every number is a
+--- whole number, 0 or more.
 ---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
 ---@return LedgerMeasures
-function ns.Measures(state)
+function ns.Measures(state, total)
 	local completion = ns.LedgerCompletion(ns.world, state)
 	return {
-		anglerLevel = { prestige = state.prestige, level = ns.Level(state), xp = ns.ClimbXP(state) },
+		anglerLevel = { prestige = state.prestige, level = ns.Level(state, total), xp = ns.ClimbXP(state, total) },
 		ledgerCompletion = { percent = completion.percent, done = completion.done, total = completion.total },
 		speciesCaught = completion.species.done,
 		legendsCaught = completion.legends.done,
@@ -39,18 +44,20 @@ function ns.Measures(state)
 end
 
 --- The title keys a Ledger state earns (LED-R75, LED-R76), in LED-R75's order: computed only, so a title the
---- celebrated set keeps after a rebalance isn't listed.
+--- celebrated set keeps after a rebalance isn't listed. The level titles count the climb's Activity XP (LED-R37).
 ---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
 ---@return string[]
-function ns.EarnedTitles(state)
-	return ns.TitleKeys(computedView(state))
+function ns.EarnedTitles(state, total)
+	return ns.TitleKeys(computedView(state, total))
 end
 
 --- The automatic title's key (LED-R77): the highest level title a Ledger state earns, or nil with none.
 ---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
 ---@return string?
-function ns.AutomaticTitle(state)
-	return (ns.ActiveTitle(computedView(state)))
+function ns.AutomaticTitle(state, total)
+	return (ns.ActiveTitle(computedView(state, total)))
 end
 
 --- The charted zones a Ledger state ranks Master (LED-R50, LED-R71): Ledger completion's zone part.
@@ -92,9 +99,10 @@ end
 
 --- The Ledger's Journal values for Pagle's backend (#223, the Angler page's Journal values), from a state, the world
 --- index and Core's Pagle API (the characters' Skill Readings and the zones' continents):
---- - `level`: XP into the level, the next step's cost (nil at 60) and the carried XP (0 below 60) (LED-R30, LED-R145);
+--- - `level`: XP into the level, the next step's cost (nil at 60) and the carried XP (0 below 60) (LED-R30, LED-R145),
+---   the climb's Activity XP included (LED-R37);
 --- - `parts`: each part of Ledger completion as { done, total } (LED-R71);
---- - `titles`: ns.EarnedTitles; `nextCatchMilestone` (nil after the last, LED-R42);
+--- - `titles`: ns.EarnedTitles with the same `total`; `nextCatchMilestone` (nil after the last, LED-R42);
 --- - `skillMilestones`: every threshold, ascending, with whether it is credited (LED-R40);
 --- - `characters`: each character with a Skill Reading, by index: its latest rank and max (LED-R41);
 --- - `zones`: a tile per charted zone and per fished uncharted one, in tile order (LED-R131): its continent (nil
@@ -106,13 +114,14 @@ end
 ---   whether it is landed (LED-R47, LED-R61).
 ---@param state LedgerState
 ---@param sessionRows integer
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
 ---@return table
-function ns.JournalValues(state, sessionRows) -- luacheck: no unused args (the driver's one shape for every Module)
+function ns.JournalValues(state, sessionRows, total) -- luacheck: no unused args (the driver's one shape for every Module)
 	local pagle = Pagle -- luacheck: read globals Pagle (#223: the Angler's Skill Readings and the areas, from Core)
 	local world = ns.world
 	local completion = ns.LedgerCompletion(world, state)
 
-	local level, into, cost = ns.Climb(state)
+	local level, into, cost = ns.Climb(state, total)
 	local parts = {}
 	for _, part in ipairs(ns.COMPLETION_PARTS) do
 		parts[part] = { completion[part].done, completion[part].total }
@@ -184,7 +193,7 @@ function ns.JournalValues(state, sessionRows) -- luacheck: no unused args (the d
 	return {
 		level = { into = into, cost = cost, carried = level == ns.LEVEL_CAP and into or 0 },
 		parts = parts,
-		titles = ns.EarnedTitles(state),
+		titles = ns.EarnedTitles(state, total),
 		nextCatchMilestone = ns.NextCatchMilestone(state.catches),
 		skillMilestones = skillMilestones,
 		characters = characters,

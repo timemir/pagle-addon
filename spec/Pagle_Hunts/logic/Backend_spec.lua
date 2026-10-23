@@ -1,4 +1,5 @@
--- Hunts' projection for Pagle's backend (#223): ns.BindProjections and ns.CoinsEarned (logic/Projection.lua), on
+-- Hunts' projection for Pagle's backend (#223): ns.BindProjections, ns.CoinsEarned and ns.ActivityXPEarned
+-- (logic/Projection.lua; #76 item 15), on
 -- FakePagle over the fixture Hunt list and catalogue. The backend's driver folds the Catch log through logic/ alone
 -- (spec/logic_alone_spec.lua), so the binding must fold the Hunts as the client's projection does.
 
@@ -143,6 +144,31 @@ describe("Hunts' projection for the backend (#223)", function()
 		local bound, ns = boundByBackend()
 
 		assert.are.equal(3 * 30 + 15 + 100, ns.CoinsEarned(bound:GetState() --[[@as HuntsState]]))
+	end)
+
+	it("gives the lifetime Activity XP: 500 per completion and 250 per further tier, no title's (HNT-R113)", function()
+		local bound, ns = boundByBackend()
+
+		assert.are.equal(3 * 500 + 250, ns.ActivityXPEarned(bound:GetState() --[[@as HuntsState]]))
+	end)
+
+	it("gives the Activity XP the client reports to Core for the same log (AXP-R2, AXP-R9)", function()
+		local _, client = login(history)
+		local bound, ns = boundByBackend()
+
+		local reported = client.global.activityXP.earned.Hunts
+		assert.are.equal(reported, ns.ActivityXPEarned(bound:GetState() --[[@as HuntsState]]))
+		assert.is_true(reported > 0)
+	end)
+
+	it("counts a run's event Hunts and its completion, as the driver loads Hunts (HNT-R114, AXP-R9)", function()
+		local _, client = login(poolRun)
+		local state, ns = foldByDriver(driverFake(poolRun))
+
+		-- fixture_shore's three Hunts at tier 1 and the run completed (HNT-R114); the night Nightfin and the Deviate
+		-- Fish at dusk complete fixture_snapper and fixture_oddity too, Standing Hunts (HNT-R113).
+		assert.are.equal(3 * 150 + 250 + 2 * 500, ns.ActivityXPEarned(state))
+		assert.are.equal(client.global.activityXP.earned.Hunts, ns.ActivityXPEarned(state))
 	end)
 
 	it("counts a title a retirement completed by the server time, as the client's done does (HNT-R23)", function()

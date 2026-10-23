@@ -455,6 +455,15 @@ function ns.CoinsEarned(state)
 	return state.coins
 end
 
+--- A Tackle Board state's lifetime Activity XP (TKB-R65, AXP-R2), as the Tackle Board reports it with
+--- M:ReportXPEarned, 0 before Start: for Pagle's backend (AXP-R9, #76 item 15), which sums it with the other paying
+--- Modules' into the Ledger's `total`.
+---@param state TackleBoardState
+---@return integer
+function ns.ActivityXPEarned(state)
+	return state.xp
+end
+
 --- The Tackle Board's Journal values for Pagle's backend (#223, the Angler page's Journal values): `flies`, the 30
 --- Fly Box patterns in pattern order, each its ID and whether it is one of the rare six (TKB-R62). The tied ones are
 --- in the state itself.
