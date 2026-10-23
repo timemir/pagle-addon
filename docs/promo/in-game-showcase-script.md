@@ -13,12 +13,12 @@ keeping: warm, conversational, a little dry. Let the addon sound effects and
 page turns breathe between lines. The existing ElevenLabs voice
 **Nat - Pagle trailer** is the intended narrator; no new voice needs designing.
 
-Record one uninterrupted in-game take. Generate the ElevenLabs performance
-after the script is agreed, use its delivered timing to choreograph the addon,
-and add that performance in the video edit. The addon does not play narration.
-Times below are planning estimates, not final speech timings. The proposed
-sequence is about 3 minutes 40 seconds after the opening catch, plus the manual
-fishing prelude. Meaningful demonstrations take priority over a three-minute cap.
+Record one uninterrupted in-game take; the addon does not play narration. The
+narration below is the approved script for the 22 October 2026 recording, timed
+to that take: it runs 4:22, cut from 0:03 to 4:25 of the capture. Times in the
+table are in the finished video; the tour's own cues (`TRAILER_CUES` in
+`addons/Pagle/logic/Trailer.lua`, seconds from the record announcement) land at
+cue + 14.5 s. A new recording needs its lines retimed.
 
 ## Recording story
 
@@ -36,24 +36,26 @@ that all the account's seeded accomplishments came from the opening catch.
 
 ## Narration and choreography
 
-The clock starts with the record announcement. Each sequence includes time to
-read its result. Captions are short chapter cues; dialogue subtitles can be
-added separately in editing.
+The tour's chapter captions appear at the top of the screen; Nat's lines are
+burned in as dialogue subtitles at the bottom.
 
-| Guide time | Screen action | Pagle's narration | Chapter caption |
+| Video time | Screen action | Pagle's narration | Chapter caption |
 | --- | --- | --- | --- |
-| Before clock | Manual opening: show QoL's next-action indicator while the recorder presses the Fishing key to prepare, cast and reel. Gear and lure steps depend on the agreed opening. Keep the fishing view clear. | "Pole ready. Lure on. Same fishing key. Now... let's see what's biting." | None |
-| 0:00–0:10 | Let the new length record announcement complete its animation against the fishing scene. Keep its fish identity for the Journal handoff. Make the simulated nature of Pagle's length visible. | "Well now. That one's worth writing down. With Pagle, even an ordinary catch can become a personal best." | Every catch tells a story |
-| 0:10–0:40 | Open the Fish Journal. Navigate from the current water to the opening fish. Hold on its updated record. Follow its waters link, return, then use search to find a different caught Species. Show the zone's mastery seal and Species stars. | "And that's just the first page. Your Fish Journal remembers the fish, the waters, and the records you've made along the way. Look up an old favourite. Explore a different shore. Every discovery fills another space, and brings those mastery marks a little closer." | A collection worth keeping |
-| 0:40–0:58 | Open the Angler page. Show Angler Level, XP and Fresh Water, then completion and the earned titles. Select an earned title so the identity change is visible. Keep Prestige visible if the prepared state supports it; do not reset progression. | "Every catch helps you grow as an angler. Discoveries and completed goals carry you further. Come back after a break, and Fresh Water gives you a little extra. You've earned a name for yourself, too." | Grow with every catch |
-| 0:58–1:16 | Open the Trophy Room and select a family to reveal its measuring board and real landed weights. Visit Curios, then open an earned Legend's illustrated plate. These are past catches in the prepared account. | "Some catches deserve their own shelf. Trophy fish. Curious finds. And those few Legends you'll still be talking about long after the bait's gone." | Keep the memorable ones |
-| 1:16–1:42 | Open Stats in the current water. Select a caught item to reveal Your odds and the Dry spell ruler with a sufficient sample. Watch that item, close the book to expose the tracker, reopen through it, then switch between This Session and Lifetime. | "Wondering how the fishing's been? Your catches. Your waters. Your odds. Look back over a Session, compare it with a lifetime, or keep an eye on a Dry spell. Mind you, the next cast still doesn't owe you anything." | Know your waters |
-| 1:42–2:10 | Open Hunts. Select an available Hunt, show its conditions and location, briefly select a future Hunt to demonstrate its window, then return and pin the available Hunt. Close the notebook, reopen through the tracker and visit its Hunt set's title progress. | "Fancy a change of scenery? See which Hunts are open, what's coming soon, and where to try your luck. Pick one, pin it, and take the plan with you. There's a whole set to work towards, and a title for seeing it through." | Find your next adventure |
-| 2:10–2:39 | Open the Tackle Board. Show Notices and an Expedition. Select an unstarted Notice and replace it once; let the new paper settle. Visit a completed slip, open the Fly Box, select a collected pattern, then open the Campfire calendar and show Kindling. Leave a suitable goal visible in its tracker. | "Or take a smaller adventure from the Tackle Board. A few different fish. A longer Expedition. Swap a Notice if another suits you better. Your posted goals wait for you. Finish them to earn Coins, collect fly patterns, and keep your Campfire burning—with a little Kindling for the days life gets in the way." | A reason for another cast |
-| 2:39–3:01 | Follow the Curio Shop entry. Select an unowned look, preview it, open the bill of sale, confirm Buy with Use it now checked and let the full seal, coin and row animations play. Show the equipped result with the appropriate preview or view. | "Those Pagle Coins? Put them towards something that feels like you. A new binding. A different frame. A favourite look for your next proud moment. Try it, buy it, and make Pagle your own." | Make it yours |
-| 3:01–3:18 | Open the Announcements settings and turn on Cozy mode. Close settings, leave a short view of the water, then present a prepared Session summary with earned discoveries, progress and rewards. | "And when you'd rather listen to the water, settle into Cozy mode. Keep your earned moments for the Session summary, ready when the fishing's done." | Enjoy the quiet |
-| 3:18–3:28 | From established uncharted observations, open a Field report and reveal its selected text and Ctrl+C hint. Close it after the result is clear. Clipboard copying would need a manual key press; the automated demonstration stops at ready-to-copy text. Do not require a new uncharted catch during the take. | "Find something uncharted? Share a Field report, and help fill in the picture for the next angler." | Share what you discover |
-| 3:28–3:40 | Close the final window, leave the selected next goal in its tracker, hold the fishing scene, then show the Pagle wordmark and tagline. Finish the capture hold before restoring the original addon data. | "A collection to keep. Something to work towards. Another reason to try new waters. Pagle. Every catch, written down." | Pagle — Every catch, written down. |
+| 0:00–0:15 | Manual opening: QoL's next-action indicator while the recorder presses the Fishing key to prepare, cast and reel. | "Bind one Fishing key, and every press does the next sensible thing: your pole, a lure, the cast, the reel. One press, one action. Pagle never fishes for you. Now... let's see what's biting." | None |
+| 0:15–0:25 | The length record announcement completes against the fishing scene. | "Well now. That one's worth writing down. Pagle keeps your longest of every fish, so even an ordinary catch can be a personal best." | Every catch tells a story |
+| 0:25–0:55 | Fish Journal: home, the current water and its mastery rank, the opening fish's page, its waters, then a search and its result. | "And that's just the first page. Your Fish Journal remembers every water you've fished. Each zone climbs from Visitor to Master by the different fish you've caught there, not the sheer number. Every fish gets its own page: where it bites, your longest, and up to three stars." (0:43) "Follow it back to its waters... or just search for an old favourite." | A collection worth keeping |
+| 0:55–1:05 | The fish's varieties, then one selected. | "No two quite alike, either. Each fish comes in ten colours, up to a single epic. Land all ten, and its crest is yours." | No two quite alike |
+| 1:05–1:23 | The Angler page: Angler Level and where its XP came from, then a title selected. | "Every catch grows your Angler Level, with one Ledger for all your characters." (1:11) "Discoveries, records, Hunts and goals all add to it, and you can see exactly where it came from." (1:18) "And you've earned a name for yourself, too." | Grow with every catch / Every pursuit adds up |
+| 1:23–1:41 | The Trophy Room's real weights, the Curios, then an earned Legend's plate. | "Some catches deserve their own shelf. The Trophy Room keeps the real weights of your biggest fish." (1:29) "The Junk Museum takes everything else you drag up." (1:33) "And Legends: the ones you'll still be talking about long after the bait's gone." | Keep the memorable ones |
+| 1:41–2:07 | Stats in the current water; an item's odds and Dry spell, watched, closed and reopened from the tracker; This Session and Lifetime. | "Wondering how the fishing's been? Stats knows every water you've fished, and what bites there." (1:46) "Your odds come only from your own casts, and always say how many they rest on." (1:52) "Watch a fish, and its dry spell follows you on the tracker." (1:58) "Look back over a Session, or a lifetime. Mind you... the next cast still doesn't owe you anything." | Know your waters |
+| 2:07–2:35 | Hunts: what's on now, a later window, back to now, pinned, closed and reopened from the tracker, then a Hunt set's title. | "Fancy a change of scenery? Hunts are the catches worth planning for: a fish that only bites at night, in one season, or during an event." (2:17) "The board shows what's biting now, what opens soon, and what comes later." (2:22) "Pin one, and it follows you around, with a quiet nod when its window opens." (2:30) "Finish a whole set for its title." | Find your next adventure |
+| 2:35–2:48 | A Pagle Wagers run, then the Wagers spread. | "And every few days, Pagle Wagers put a fresh run of Hunts on the table, around a zone or two." (2:42) "Finish them before the run closes; every run you complete counts toward a title." | Race the week's events |
+| 2:48–3:17 | The Tackle Board: Notices and the Expedition, one Notice replaced, the Fly Box, the Campfire. | "Or take a smaller adventure from the Tackle Board: three Notices a day, and a longer Expedition each week." (2:55) "They never expire, so a missed day banks instead of vanishing. And if one doesn't suit you, swap it once." (3:02) "Every goal you finish earns Coins, and ties a new fly for your Fly Box." (3:09) "And it keeps your Campfire burning, with a little Kindling for the days life gets in the way." | A reason for another cast |
+| 3:17–3:39 | The Curio Shop: a look previewed, the bill of sale, the purchase, the look in use. | "Those Pagle Coins? You earn them for things you've done, never for sheer grinding, and they only ever buy looks." (3:24) "Toast styles, sound sets, a new binding for your books." (3:28) "Try it on, sign the bill... and it's yours for good." (3:35) "Make Pagle your own." | Make it yours |
+| 3:39–3:49 | Earned and still-to-earn bookplate crests. | "Master a zone, and its crest is yours to wear on the Journal's bookplate. Fifty-three of them, if you're the patient sort." | Master your waters |
+| 3:49–4:06 | Cozy mode on, a quiet view of the water, then the Session summary. | "And when you'd rather just listen to the water, settle into Cozy mode. Nothing pops up, nothing plays." (3:58) "Everything you earned waits in the Session summary, ready when the fishing's done." | Enjoy the quiet |
+| 4:06–4:15 | A Field report with its text ready to copy. | "Caught something Pagle doesn't know yet? Share a Field report, and help chart the waters for the next angler." | Share what you discover |
+| 4:15–4:22 | The fishing scene, the wordmark and the tagline. | "A collection to keep, and a reason for one more cast." (4:18) "Pagle. Every catch, written down." | Pagle / Pagle: Every catch, written down. |
 
 ## Feature coverage and demonstration requirements
 
@@ -84,10 +86,9 @@ added separately in editing.
 - Keep the demo fixture coherent across the Catch log, progression, earned
   Coins, purchases, goals, historical catches and the visible current Session.
   Preserve the opening fish's identity through the Journal handoff.
-- Source currently implements Standing Hunts. Draft Pagle Wagers/Hunt Events
-  documentation is not evidence of a shipping interface; exclude those claims.
-  The demo must also account for shipped Hunts whose availability starts later
-  than the recording date.
+- Standing Hunts and Pagle Wagers (Hunt Events) both ship and appear in the
+  tour. The demo must also account for shipped Hunts whose availability starts
+  later than the recording date.
 - Stats must display observed numbers with enough sample history; they are not
   the game's exact catch probabilities or a prediction of the next cast.
 - Pagle's simulated lengths and real trophy weights are separate. Fly patterns
@@ -109,7 +110,8 @@ reeling with the Fishing key, with a separate press for each action. The
 automated showcase begins after the record announcement.
 
 The narrator is the existing ElevenLabs voice **Nat - Pagle trailer**, with the
-warm, conversational delivery and dry humour used in this draft.
+warm, conversational delivery and dry humour used in this script, read with
+Eleven v4 as in the trailer.
 
 The complete script and scene sequence are approved. Recording instructions,
 the generated voice takes, and verification status are in
