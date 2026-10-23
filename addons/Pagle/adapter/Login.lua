@@ -17,6 +17,8 @@ local OWNER = "Pagle login"
 -- #262: the clock once Core's files have loaded (this is the TOC's last). The client reads the SavedVariables between
 -- this and ADDON_LOADED, so with a large PagleLog the gap is mostly that read. Kept only with dev mode on.
 local filesLoaded = debugprofilestop()
+-- #262: the load timings' own owner, for the other addons' ADDON_LOADED until PLAYER_LOGIN.
+local TIMINGS_OWNER = "Pagle load timings"
 
 --- The Catch log's length at load, before anything is appended this session (LOG-R1). Every entry after it is
 --- "live" to a projection (LOG-R74).
@@ -39,6 +41,13 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 		addonLoaded = addonLoaded,
 		logOpened = debugprofilestop(),
 	})
+	-- #262: each addon loaded after Core, until PLAYER_LOGIN, so the time before login is told addon by addon. Its own
+	-- owner, as this file's owns Core's ADDON_LOADED.
+	if ns.loadTimings then
+		Pagle.RegisterEvent(TIMINGS_OWNER, "ADDON_LOADED", function(_, name)
+			ns.MarkAddonLoaded(name, debugprofilestop())
+		end)
+	end
 	ns.Migrate(ns.db, ns.PAGLEDB_MIGRATIONS, { catchLog = ns.catchLog }) -- step 2 reads the log (ONB-R2)
 	ns.OpenWallet() -- SHOP-R3
 	ns.OpenActivityXP() -- AXP-R3
@@ -57,6 +66,7 @@ end)
 Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()
 	Pagle.UnregisterEvent(OWNER, "PLAYER_LOGIN")
 	ns.MarkLoadTiming("playerLogin", debugprofilestop()) -- #262
+	Pagle.UnregisterEvent(TIMINGS_OWNER, "ADDON_LOADED")
 	ns.SeeCharacter() -- LOG-R25
 	ns.BuildAreaIndex() -- LOG-R23
 	ns.StartConditions() -- LOG-R47: its baseline has real areas, and a Module meets a running service
@@ -84,4 +94,12 @@ Pagle.RegisterEvent(OWNER, "PLAYER_ENTERING_WORLD", function()
 	end
 	ns.LogBuild() -- LOG-R36
 	ns.ReadSkill() -- LOG-R31
+end)
+
+-- #262: with dev mode on, the clock and server time at Core's PLAYER_LOGOUT, so the next load, if it is a /reload, tells
+-- how long the logout, the SavedVariables written and the addons loaded before Core took (logic/LoadTimings.lua).
+Pagle.RegisterEvent(OWNER, "PLAYER_LOGOUT", function()
+	if ns.db then
+		ns.NoteLogout(ns.db.global, GetServerTime(), debugprofilestop())
+	end
 end)

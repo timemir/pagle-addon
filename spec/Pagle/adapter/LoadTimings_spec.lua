@@ -3,10 +3,10 @@
 -- PagleDB.global.probe.timings, through the real TOC and the fake client's login. With it off, nothing is kept.
 
 -- Core over a saved log of `entries`, with dev mode on unless `dev` is false, on a clock that moves 0.01 ms each time it's
--- read, so every step takes time, with a Ledger whose projection applies every record it's handed. ADDON_LOADED
--- fires once the clock is in place; PagleDB `saved`, if given, is the saved PagleDB.
-local function devCore(entries, dev, saved)
-	local ticks = 0
+-- read from `clockAt` ms (0 by default), so every step takes time, with a Ledger whose projection applies every record
+-- it's handed. ADDON_LOADED fires once the clock is in place; PagleDB `saved`, if given, is the saved PagleDB.
+local function devCore(entries, dev, saved, clockAt)
+	local ticks = (clockAt or 0) * 100
 	saved = saved or { global = {} }
 	saved.global.dev = dev ~= false
 	local loaded = loadAddon(
@@ -118,6 +118,63 @@ describe("load timings (#262)", function()
 		local loaded = logIn(devCore(history(10), false, { global = { probe = probe } }))
 		assert.are.equal(probe, loaded.env.PagleDB.global.probe)
 		assert.are.same({ time = 1, checks = {}, timings = { entries = 3 } }, probe)
+	end)
+
+	describe("a /reload", function()
+		it("notes Core's PLAYER_LOGOUT clock and server time for the next load, with dev mode on", function()
+			local loaded = logIn(devCore(history(10)))
+			loaded.client.fire("PLAYER_LOGOUT")
+
+			local lastLogout = loaded.env.PagleDB.global.probe.lastLogout
+			assert.are.equal(SERVER_TIME, lastLogout.time)
+			assert.is_true(lastLogout.clock > loaded.env.PagleDB.global.probe.timings.marks.idle)
+		end)
+
+		it("keeps how long ago that logout was when both clocks moved on together, as in one client session", function()
+			-- Logged out 2.5 s of the clock and 2 s of server time before this load's files loaded, at 10,000 ms.
+			local saved = { global = { probe = { lastLogout = { clock = 7500, time = SERVER_TIME - 2 } } } }
+			local loaded = logIn(devCore(history(10), true, saved, 10000))
+			local probe = loaded.env.PagleDB.global.probe
+
+			assert.are.equal(7500, probe.timings.logout)
+			assert.is_true(probe.timings.marks.filesLoaded > 10000)
+			assert.is_nil(probe.lastLogout) -- read once
+		end)
+
+		it("keeps none after a client restart, whose clock starts again", function()
+			for _, lastLogout in ipairs({
+				{ clock = 900000, time = SERVER_TIME - 2 }, -- the clock went back
+				{ clock = 7500, time = SERVER_TIME - 600 }, -- ten minutes of server time for 2.5 s of clock
+			}) do
+				local saved = { global = { probe = { lastLogout = lastLogout } } }
+				local probe = logIn(devCore(history(10), true, saved, 10000)).env.PagleDB.global.probe
+				assert.is_nil(probe.timings.logout)
+				assert.is_nil(probe.lastLogout)
+			end
+		end)
+
+		it("notes no logout with dev mode off", function()
+			local loaded = logIn(devCore(history(10), false))
+			loaded.client.fire("PLAYER_LOGOUT")
+			assert.is_nil(loaded.env.PagleDB.global.probe)
+		end)
+	end)
+
+	it("marks each addon's ADDON_LOADED after Core's until PLAYER_LOGIN, in order, with the clock", function()
+		local loaded = devCore(history(10))
+		loaded.client.fire("ADDON_LOADED", "Pagle_Ledger")
+		loaded.client.fire("ADDON_LOADED", "Leatrix_Plus")
+		logIn(loaded)
+		loaded.client.fire("ADDON_LOADED", "Blizzard_Calendar") -- loaded on demand, after the login
+
+		local timings = loaded.env.PagleDB.global.probe.timings
+		local names = {}
+		for i, addon in ipairs(timings.addons) do
+			names[i] = addon.name
+			assert.is_true(addon.at > (i == 1 and timings.marks.addonLoaded or timings.addons[i - 1].at))
+			assert.is_true(addon.at < timings.marks.playerLogin)
+		end
+		assert.are.same({ "Pagle_Ledger", "Leatrix_Plus" }, names)
 	end)
 
 	it("keeps a stored probe's checks beside the new timings, and /pagle dev probe keeps the timings", function()
