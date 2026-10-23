@@ -81,7 +81,9 @@ jobs:
           key: ${{ steps.mypy.outputs.cache-primary-key }}
 
       # Builds the release zip as the release workflow would, uploads off, and fails if anything but addon code
-      # gets in (fix .pkgmeta). package.sh needs zip and jq on top of setup's prerequisites; ubuntu-latest ships both.
+      # gets in (fix .pkgmeta), or if the packager builds more than the one zip a tag's GitHub Release gets
+      # (CORE-R74). It passes no token and this workflow keeps contents: read, so nothing is published from here.
+      # package.sh needs zip and jq on top of setup's prerequisites; ubuntu-latest ships both.
       - name: Package and check the release zip
         run: |
           missing=()

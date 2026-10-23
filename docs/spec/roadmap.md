@@ -38,7 +38,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
   6. from M1, the generator's check and tests (DATA-R61)
 - Tool versions are pinned in one place and installed by a setup script. `check.sh` runs locally in WSL.
 - GitHub Actions (Ubuntu, Lua 5.1) runs `check.sh` on pushes to `main` and on pull requests. Required checks run every spec without coverage, in two concurrent shards. A manual Check run with `coverage` enabled also runs a separate, non-blocking coverage report. Gate-regression cases run when gate machinery changes, with focused integration specs for the passing baseline and each planted mistake. Generator data rules run through the real CLI in the Python suite; gate cases retain generator exit propagation and stale-output checks.
-- A release workflow runs `BigWigsMods/packager@v2` on a tag push, uploading to CurseForge and Wago (never WoWInterface). `.pkgmeta` has `package-as: Pagle`. The project IDs and upload secrets are added in M9.
+- A release workflow runs `BigWigsMods/packager` (pinned to a commit) on a tag push, uploading to CurseForge and Wago (never WoWInterface). `.pkgmeta` has `package-as: Pagle`. The project IDs and upload secrets are added in M9, with the tag's GitHub Release (CORE-R74).
 - A PowerShell dev-loop script junctions (`mklink /J`) each `addons/*` folder into the beta's `Interface/AddOns/`, so edits go live after `/reload`.
 
 **Exit check:**
@@ -456,7 +456,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 
 Launch re-verification on the live build, the 1.0 gates (lore, Settings UX, Simulated Size), the CurseForge and Wago projects, then the 1.0 tag. Named M8 Release until the Hunts redesign took M8 ([#288](https://github.com/timemir/wow-fish/issues/288)). The Settings UX pass (#266), the store screenshots (#270), the tag's preparation (#275) and the exit check (#276) wait for M8 Hunt Events and M8.5 Onboarding; launch re-verification (#272–#274) and the store projects (#271) don't.
 
-**Rules:** QOL-R100–R104 (QoL's launch re-verification), DATA-R57 for check 24, and DATA-R73, DATA-R87 and DATA-R95 at the tag (Before the tag). Every other check below names the rules it may change.
+**Rules:** QOL-R100–R104 (QoL's launch re-verification), DATA-R57 for check 24, DATA-R73, DATA-R87 and DATA-R95 at the tag (Before the tag), and CORE-R74 (the tag's GitHub Release, [#362](https://github.com/timemir/wow-fish/issues/362)). Every other check below names the rules it may change.
 
 ### Launch re-verification checklist
 

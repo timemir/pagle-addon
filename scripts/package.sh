@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Builds the release zip locally with the BigWigsMods packager, uploads off, then checks its contents.
 # The release workflow (.github/workflows/release.yml) runs the same packager commit on a tag push:
-# PACKAGER_COMMIT in scripts/tools.env, which scripts/check.sh holds the workflow to.
+# PACKAGER_COMMIT in scripts/tools.env, which scripts/check.sh holds the workflow to. There the zip also goes to
+# the tag's GitHub Release (CORE-R74); here -d skips every upload, that one included.
 #
 #   scripts/package.sh             build .release/Pagle-<version>-forever.zip from HEAD and check it
 #
