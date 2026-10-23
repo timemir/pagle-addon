@@ -148,7 +148,7 @@ end)
 ---@field stamp LedgerRowStamp
 ---@field emblem Texture
 
---- A row's ink stamp after its words (a Followed Angler's "HC", LED-R151): small capitals in the red ink in a ruled
+--- A row's ink stamp after its words (a Followed Angler's "HC", LED-R163): small capitals in the red ink in a ruled
 --- red box, as the kit draws its stamps.
 ---@class LedgerRowStamp: Frame
 ---@field label FontString
@@ -186,10 +186,10 @@ local function newStamp(parent)
 	return stamp
 end
 
--- A list row (LED-R136, LED-R137, LED-R143, LED-R147, LED-R151): the kit's P.Row. Its medallion (the item's icon
+-- A list row (LED-R136, LED-R137, LED-R143, LED-R147, LED-R163): the kit's P.Row. Its medallion (the item's icon
 -- round in sepia, or the unknown fish's for what isn't caught, LED-R124), its words (in italic, faded, for what is
 -- unknown), its margin notes in the hand at the right, its stars as textures and a value at the right, Core's Prestige
--- emblem for a rank just before the value (a Followed Angler's, LED-R151, LED-R152: none, and no room kept, without
+-- emblem for a rank just before the value (a Followed Angler's, LED-R163, LED-R152: none, and no room kept, without
 -- one), and a stamp after its words; a faint wash under the mouse; selected, a deeper wash in a dashed outline. A click opens its place.
 -- A fish caught since the page was last drawn is logged on its row: the unknown medallion gives way to the fish's
 -- own, a green wash swells and fades, and its name is written in with the write sound (MOTION.md › A new fish logged).
@@ -251,7 +251,7 @@ ns.RegisterJournalWidget("row", function(parent)
 		self.value:SetShown(block.value ~= nil)
 		if block.value then
 			self.value:SetText(block.value)
-			-- room for a Followed Angler's "Lv 60 · VIII · 100%" (LED-R151) as for a count
+			-- room for a Followed Angler's "Lv 60 · VIII · 100%" (LED-R163) as for a count
 			ns.JournalBound(self.value, math.max(80, (right - left) * 0.45))
 			self.value:ClearAllPoints()
 			self.value:SetPoint("TOPRIGHT", self, "TOPLEFT", right, -(h - 18) / 2)

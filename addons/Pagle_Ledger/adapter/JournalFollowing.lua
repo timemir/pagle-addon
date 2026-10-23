@@ -5,7 +5,7 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The Following spread's own widget (LED-R151; ledger.md › UI): the selected Angler's level on its card, drawn from
+-- The Following spread's own widget (LED-R163; ledger.md › UI): the selected Angler's level on its card, drawn from
 -- the block logic/JournalFollowing.lua makes, in the Ledger art kit's look and with its pieces only (the print face's
 -- large numerals, the small capitals, the wax seal), as variant A of pagle-backend's prototype lays the card out
 -- (IGV-R81). The index's rows are the zone spread's (adapter/JournalZone.lua), the ruled rows the contents lines'
@@ -22,7 +22,7 @@ local SEAL, SEAL_TEXT, LEVEL_H = 78, 12.5, 96
 ---@field note FontString
 ---@field seal LedgerSeal
 
--- A Followed Angler's level (LED-R151): "Angler Level" in small capitals over the level in large numerals, the
+-- A Followed Angler's level (LED-R163): "Angler Level" in small capitals over the level in large numerals, the
 -- Prestige's words under them as the bookplate writes them (LED-R146), and at the right a wax seal reading "Ledger
 -- {p}%".
 ns.RegisterJournalWidget("level", function(parent)

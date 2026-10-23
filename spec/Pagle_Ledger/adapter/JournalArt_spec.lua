@@ -37,7 +37,7 @@ end
 
 describe("the Fish Journal's art (ledger.md › UI)", function()
 	it(
-		"draws its own parts and crests from its media, the bindings' swatches from Core's, as BLP files that ship (LED-R110, ADR 0015)",
+		"draws its own parts from its media, the bindings' swatches from Core's, as BLP files that ship (LED-R110, ADR 0015)",
 		function()
 			local fake, loaded = openJournal()
 			local atlases = loaded.ns.JOURNAL_ATLASES
@@ -45,11 +45,15 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 				return file:gsub("^Interface\\AddOns\\", "addons/"):gsub("\\", "/") .. ".blp"
 			end
 
-			for _, name in ipairs({ "Parts", "Crests" }) do
-				local file = atlases[name].file
-				assert.matches("^Interface\\AddOns\\Pagle_Ledger\\media\\journal\\", file)
-				assert(#readFile(path(file)) > 0, path(file))
-			end
+			local parts = atlases.Parts.file
+			assert.matches("^Interface\\AddOns\\Pagle_Ledger\\media\\journal\\", parts)
+			assert(#readFile(path(parts)) > 0, path(parts))
+			-- The kit's old Prestige and Legend crests and its Prestige emblem are retired: Core draws the Prestige
+			-- frames, emblems and Legend crests (LED-R152, LED-R153, LED-R154).
+			assert.is_nil(atlases.Crests)
+			assert.is_nil(atlases.Parts.sprites.emblem)
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+			assert.is_nil(io.open("addons/Pagle_Ledger/media/journal/Crests.blp", "rb"))
 			for _, name in ipairs({ "Bindings", "Bindings2" }) do
 				local file = atlases[name].file
 				assert.matches("^Interface\\AddOns\\Pagle\\media\\books\\", file)

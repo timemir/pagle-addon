@@ -5,7 +5,7 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The Fish Journal's Following spread (LED-R151) and Home's "Following" line (LED-R132): the Followed Anglers the
+-- The Fish Journal's Following spread (LED-R163) and Home's "Following" line (LED-R132): the Followed Anglers the
 -- Companion brings in, as Core hands them out (Pagle.GetFollowedAnglers, VIEW-R11), read at each drawing. A spread
 -- like Legends: the index on the left, the selected Angler's card on the right, or an empty state for each of `none`,
 -- `absent` and `expired`. Pure logic, everything read from the spread's context (CORE-R7); the book draws it
@@ -13,7 +13,7 @@ local ns = select(2, ...)
 
 -- The spread is ns.JOURNAL_FOLLOWING, its place ns.JournalPlace.following (logic/Journal.lua).
 
---- Home's contents line for Following (LED-R132, LED-R151), numbered `numeral`: the number of Followed Anglers in
+--- Home's contents line for Following (LED-R132, LED-R163), numbered `numeral`: the number of Followed Anglers in
 --- state `ok`, "0" in `none`, "—" in `expired`, and greyed out as "no Companion" in `absent`. Every state opens the
 --- spread.
 ---@param context LedgerSpreadContext
@@ -40,7 +40,7 @@ function ns.FollowingContentsLine(context, numeral)
 	return line
 end
 
--- An index row's right-hand value (LED-R151): "Lv {L} · {roman} · {p}%", with no roman numeral before the first
+-- An index row's right-hand value (LED-R163): "Lv {L} · {roman} · {p}%", with no roman numeral before the first
 -- Prestige and X from rank 11 on, as the Prestige emblem reads (LED-R34).
 ---@param followed PagleFollowedAngler
 ---@return string
@@ -53,7 +53,7 @@ local function rowValue(followed)
 	return L.FOLLOWING_ROW_NO_PRESTIGE:format(followed.level, followed.ledger)
 end
 
--- The left page in state `ok` (LED-R151): kicker, title, the count, then the index in GetFollowedAnglers' order (by
+-- The left page in state `ok` (LED-R163): kicker, title, the count, then the index in GetFollowedAnglers' order (by
 -- name, IGV-R31), each row the Angler's name, an "HC" stamp for a Hardcore Angler and its level, Prestige and Ledger
 -- completion at the right with its Prestige emblem's rank (LED-R152; none at rank 0), selecting it; the selected one
 -- is marked.
@@ -93,7 +93,7 @@ local function asOfDate(context, asOf)
 	return context.text:Date(date)
 end
 
--- The right page, the selected Angler's card (LED-R151): "Hardcore Angler" when it applies, the name, "and {n} more
+-- The right page, the selected Angler's card (LED-R163): "Hardcore Angler" when it applies, the name, "and {n} more
 -- characters" when it has others, the title in the hand (none when ""), the Angler Level in large numerals with the
 -- Prestige under it as the bookplate words it (LED-R146) and a wax seal with its Ledger completion, the ruled rows,
 -- and the as-of date. No region.
@@ -141,7 +141,7 @@ local function card(context, followed)
 	return blocks
 end
 
--- The left page in state `none`, `absent` or `expired` (LED-R151): its kicker and title, then the state's three
+-- The left page in state `none`, `absent` or `expired` (LED-R163): its kicker and title, then the state's three
 -- lines, the first in the hand and the last faded. The right page stays blank.
 ---@param state string "none", "absent" or "expired"
 ---@return LedgerBlock[]
