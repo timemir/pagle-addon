@@ -16,6 +16,10 @@ local ns = select(2, ...)
 local SECONDS_PER_DAY = 86400
 local MINUTES_PER_DAY = 1440
 local HORIZON_DAYS = 400 -- Tunables: the NextWindow horizon (LOG-R50)
+--- Most openings come and close within days, so a forecast looks this many days ahead first, and walks the whole
+--- horizon only when that look settles nothing (settledBefore). Not a Tunable: the forecast is the same either way,
+--- which spec/Pagle/logic/NextWindow_spec.lua checks by setting it to the horizon.
+ns.FORECAST_FIRST_LOOK_DAYS = 8
 local NOW_TOLERANCE = 60 -- seconds: a fromTime this close to the snapshot's time is now (LOG-R46)
 
 -- A span [from, to) of realm seconds: a server time plus the realm's UTC offset, so a realm day starts at a
@@ -209,6 +213,53 @@ local function check(spec)
 	end
 end
 
+-- The first opening of a spec's time-based fields over `range`, up to `horizon`, and each field's normalized spans.
+---@param spec PagleConditionSpec|PagleWindowSpec
+---@param range PagleForecastRange
+---@param context table the live calendar's events and the weekly rules, for the events field
+---@param horizon integer realm second the look ends at
+---@return PagleSpan? first
+---@return PagleSpan[][] fields
+local function openingWithin(spec, range, context, horizon)
+	local fields = {}
+	for _, field in ipairs(TIME_FIELDS) do
+		if spec[field] ~= nil then
+			fields[#fields + 1] = normalize(spansOf[field](spec[field], range, context), range.from, horizon)
+		end
+	end
+	local first = firstOpening(fields)
+	-- An opening after now: the calendar's active events open nothing later, so the events field (last of
+	-- TIME_FIELDS) is read again without their open-ended span (LOG-R50).
+	if first and first[1] > range.now and context.openEndedAdded then
+		context.openEnded = false
+		fields[#fields] = normalize(spansOf.events(spec.events, range, context), range.from, horizon)
+		first = firstOpening(fields)
+	end
+	return first, fields
+end
+
+-- Whether a look ending at `horizon` settles the forecast: the opening, and each field's span it lies in, end before
+-- the look does. Then a longer look finds the same opening, its close and its confirmed: a span is cut only at a
+-- look's end, and every span that could merge with those, or be one of their parts, starts before they end, so within
+-- this look too.
+---@param fields PagleSpan[][]
+---@param first PagleSpan
+---@param horizon integer
+---@return boolean
+local function settledBefore(fields, first, horizon)
+	if first[2] >= horizon then
+		return false
+	end
+	for _, spans in ipairs(fields) do
+		for _, span in ipairs(spans) do
+			if span[1] <= first[1] and first[1] < span[2] and span[2] >= horizon then
+				return false
+			end
+		end
+	end
+	return true
+end
+
 --- When a condition spec's time-based fields (`time`, `season`, `events`), intersected, next hold (LOG-R50):
 --- `{ openNow = true, closesAt? }` when they all hold at `fromTime`, else `{ opensAt, closesAt? }` for the next
 --- opening within 400 days, or nil with none. `closesAt` is left out when the opening doesn't stop within the
@@ -241,35 +292,28 @@ function ns.NextWindow(spec, fromTime, offset, activeEvents, getEventRule, nowTi
 
 	local shift = offset * 60
 	local from = fromTime + shift
-	local horizon = from + HORIZON_DAYS * SECONDS_PER_DAY
 	local dates = {}
-	---@type PagleForecastRange
-	local range = {
-		from = from,
-		now = (nowTime or fromTime) + shift,
-		firstDay = math.floor(from / SECONDS_PER_DAY),
-		lastDay = math.floor((horizon - 1) / SECONDS_PER_DAY),
-		-- Noon of a realm day, as a server time, with its realm minute: RealmDate reads that day back (LOG-R49).
-		dateOf = function(day)
-			dates[day] = dates[day] or ns.RealmDate(day * SECONDS_PER_DAY + SECONDS_PER_DAY / 2 - shift, 720)
-			return dates[day]
-		end,
-	}
-	local context = { activeEvents = activeEvents, getEventRule = getEventRule }
-
-	local fields = {}
-	for _, field in ipairs(TIME_FIELDS) do
-		if spec[field] ~= nil then
-			fields[#fields + 1] = normalize(spansOf[field](spec[field], range, context), from, horizon)
-		end
+	-- Noon of a realm day, as a server time, with its realm minute: RealmDate reads that day back (LOG-R49).
+	local function dateOf(day)
+		dates[day] = dates[day] or ns.RealmDate(day * SECONDS_PER_DAY + SECONDS_PER_DAY / 2 - shift, 720)
+		return dates[day]
 	end
-	local first = firstOpening(fields)
-	-- An opening after now: the calendar's active events open nothing later, so the events field (last of
-	-- TIME_FIELDS) is read again without their open-ended span (LOG-R50).
-	if first and first[1] > range.now and context.openEndedAdded then
-		context.openEnded = false
-		fields[#fields] = normalize(spansOf.events(spec.events, range, context), from, horizon)
-		first = firstOpening(fields)
+	local first, fields, horizon
+	for _, days in ipairs({ math.min(ns.FORECAST_FIRST_LOOK_DAYS, HORIZON_DAYS), HORIZON_DAYS }) do
+		horizon = from + days * SECONDS_PER_DAY
+		---@type PagleForecastRange
+		local range = {
+			from = from,
+			now = (nowTime or fromTime) + shift,
+			firstDay = math.floor(from / SECONDS_PER_DAY),
+			lastDay = math.floor((horizon - 1) / SECONDS_PER_DAY),
+			dateOf = dateOf,
+		}
+		first, fields =
+			openingWithin(spec, range, { activeEvents = activeEvents, getEventRule = getEventRule }, horizon)
+		if days == HORIZON_DAYS or (first and settledBefore(fields, first, horizon)) then
+			break
+		end
 	end
 
 	if first == nil then
