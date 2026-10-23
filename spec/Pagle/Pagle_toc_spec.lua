@@ -7,6 +7,14 @@ describe("Pagle.toc", function()
 		end)
 	end
 
+	it("embeds LibDeflate 1.0.2, reachable through LibStub, for the Paste string (CORE-R6, PST-R30)", function()
+		local LibDeflate, minor = loaded.env.LibStub:GetLibrary("LibDeflate", true)
+
+		assert.is_table(LibDeflate)
+		assert.are.equal(3, minor, "LibStub's minor for 1.0.2")
+		assert.are.equal("1.0.2-release", LibDeflate._VERSION)
+	end)
+
 	it("lists PagleLog and PagleDB as account-wide SavedVariables, and nothing per character (CORE-R5)", function()
 		local fields = assert(loaded.client.addons.Pagle.metadata)
 

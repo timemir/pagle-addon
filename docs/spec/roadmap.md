@@ -28,7 +28,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 - Plain Lua 5.1 with LuaCATS annotations. Core's public API and every domain type are fully annotated.
 - The repo layout: `addons/<Addon>/` for code, `spec/` for busted tests mirroring it.
 - `.luarc.json` (Lua 5.1 runtime, library paths for the vendored Ace3 and `types/`), and `types/` with `---@meta` stubs for Forever-only APIs that Ketho's annotations lack. No editor-specific files.
-- The vendored libraries of CORE-R6, at a recorded Ace3 commit, updated only by a script.
+- The vendored libraries of CORE-R6, each at a recorded upstream commit (Ace3, and LibDeflate 1.0.2 for the Paste string), updated only by a script (`scripts/update-ace3.sh`, `scripts/update-libdeflate.sh`).
 - `scripts/check.sh`, which reports the first failing stage in this order:
   1. format: `stylua --check`, StyLua defaults (tabs, 120 columns), Lua 5.1 syntax
   2. lint: luacheck with `std = "lua51"`, the per-path `std` of CORE-R7, and a hand-kept `read_globals` list in which each WoW API is added on purpose. That list is the inventory of WoW APIs Pagle uses, and M9 re-checks it.

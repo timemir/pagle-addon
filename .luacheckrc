@@ -344,7 +344,7 @@ stds.pagle = {
 std = "lua51"
 max_line_length = false -- StyLua owns line width, and it leaves long strings and comments as they are.
 exclude_files = {
-	"addons/*/libs/**", -- vendored, owned by scripts/update-ace3.sh
+	"addons/*/libs/**", -- vendored, owned by scripts/update-ace3.sh and scripts/update-libdeflate.sh
 	"types/**", -- LuaLS ---@meta stubs: declarations for the types stage, never loaded
 	"spec/scripts/fixtures/**", -- WTF files as the WoW client writes them: data the specs read, never our code
 	".tools/**",

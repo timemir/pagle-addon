@@ -54,6 +54,7 @@ def run_detector(detector: str, repo: Path, event: str, before: str = "", pr_bas
     *[(path, True) for path in (
         "scripts/check.sh", "scripts/test-check.sh", "scripts/setup.sh", "scripts/tools.env",
         "scripts/generate-data.py", "scripts/pyproject.toml", "scripts/ace3.sha256",
+        "scripts/libdeflate.sha256",
         "scripts/api-presence.lua", "scripts/api-inventory.lua", "scripts/pagle_data/generate.py",
         "spec/support/wow.lua", "spec/Pagle/adapter/Core_spec.lua", "spec/Pagle/Pagle_toc_spec.lua",
         "spec/Pagle_QoL/Pagle_QoL_toc_spec.lua", "types/wow.lua", ".luacheckrc", ".luarc.json",
