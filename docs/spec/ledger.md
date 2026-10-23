@@ -221,7 +221,7 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 
   | Achievement (`kind`) | Rung, `order` | `title` / `text` | `stamp` | `coins` | Also |
   |---|---|---|---|---|---|
-  | Legend (`legend`) | `splash`, 100 | "Legend" / "{item} · {size text}. Title: {title}" | "Legend!" | 100 | `icon` the item |
+  | Legend (`legend`) | `splash`, 100 | "Legend" / "{item} · {size text}. Title: {title}" | "Legend!" | 100 | `icon` the item; Core's splash adds "/reload to keep it safe" (ANN-R97) |
   | Level-up (`levelUp`), one per entry however many levels, for levels above the celebrated one | `banner`, 100 | "Angler Level {L}" / "Title: {title}" for each title earned with it, else "+{n} levels" when more than one, else empty | "Level {L}" | 20 × levels raised by the moment | `seal` {L} |
   | Prestige ready (`prestigeReady`), when a climb reaches 60 | `banner`, 110 | "Prestige ready" / "Open the Fish Journal to begin a new Ledger." | "Prestige ready" | | `seal` `"book"` |
   | Prestige (`prestige`) | `banner`, 90 | "Prestige {I…X}" or "Master Prestige {rank − 10}" / "Title: {title}" when one is earned | | 100 | no `cast`; `seal` `"frame"`, `frameRank` the new prestige rank |

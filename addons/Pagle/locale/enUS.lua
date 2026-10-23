@@ -141,13 +141,14 @@ ns.L = {
 	-- A number of minutes: the budget's window (SET-R10) and a card's time fished (ANN-R53).
 	MINUTES = "%d min",
 	-- The Announcement frames (announcements.md › UI): "While you were fighting"'s headlines past its rows (ANN-R36), stamps beyond the 4 shown
-	-- (ANN-R11), the Coins beside the drawn coin with their sum (ANN-R23), the record ruler's stamp (ANN-R22) and the
-	-- splash's hint.
+	-- (ANN-R11), the Coins beside the drawn coin with their sum (ANN-R23), the record ruler's stamp (ANN-R22), the
+	-- splash's hint and its line to save the Legend (ANN-R97).
 	ANNOUNCEMENT_MORE = "+%d more",
 	ANNOUNCEMENT_STAMPS_MORE = "+%d",
 	ANNOUNCEMENT_COINS = "+%s",
 	ANNOUNCEMENT_NEW_RECORD = "New record",
 	ANNOUNCEMENT_SPLASH_HINT = "Click anywhere to continue",
+	ANNOUNCEMENT_SPLASH_RELOAD = "/reload to keep it safe",
 	-- A Legend crest's plaque (LED-R153): a Legend's own crest's, and the Unwritten crest's.
 	LEGEND_CREST_LEGEND = "Legend",
 	LEGEND_CREST_UNWRITTEN = "Unwritten",
