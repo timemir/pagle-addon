@@ -25,6 +25,7 @@ files = [
     "scripts/check-event.py",
     "scripts/pushed-content.py",
     "scripts/export-web-art.py",
+    "scripts/launch.py",
 ]
 python_version = "3.12"
 strict = true
