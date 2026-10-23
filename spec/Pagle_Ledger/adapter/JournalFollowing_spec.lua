@@ -290,6 +290,98 @@ describe("the Following spread's left page (LED-R151)", function()
 		assert.is_false(rows[2].wash:IsShown())
 	end)
 
+	it("gives each row its Angler's prestige rank for the emblem, none at rank 0 (LED-R151, LED-R152)", function()
+		local _, loaded = journalWith(file(), "following")
+		local ranks = {}
+		for _, block in ipairs(loaded.ns.journal.pages.left) do
+			if block.kind == "row" then
+				ranks[#ranks + 1] = block.rank or false
+			end
+		end
+
+		assert.are.same({ 1, false, 10, 11 }, ranks)
+	end)
+
+	it(
+		"draws Core's Prestige emblem at 22 just before each row's value, the Master's from rank 11 (LED-R151, LED-R152)",
+		function()
+			local fake, loaded = journalWith(file(), "following")
+			local rows = loaded.ns.journal.frame.left.drawn.row
+			local atlas = fake.ns.ATLASES.PrestigeEmblems
+			-- The emblem sprite a row's texture shows, by its texture coordinates in Core's emblems atlas.
+			local function emblemOf(row)
+				for name, sprite in pairs(atlas.sprites) do
+					if
+						row.emblem.texCoord[1] == sprite.x / atlas.width
+						and row.emblem.texCoord[3] == sprite.y / atlas.height
+					then
+						return name
+					end
+				end
+				return nil
+			end
+
+			for i, sprite in pairs({ [1] = "emblem-i", [3] = "emblem-x", [4] = "emblem-master" }) do
+				local row = rows[i]
+				local emblem = row.emblem
+				assert.are.same(
+					{ sprite, atlas.file, 22, 22, true },
+					{ emblemOf(row), emblem.texture, emblem.width, emblem.height, emblem:IsShown() }
+				)
+				-- its right edge 5 units before the value's words, centred on the row
+				local _, _, _, valueRight = row.value:GetPoint(1)
+				local _, _, _, x, y = emblem:GetPoint(1)
+				assert.are.same({ valueRight - row.value:GetWidth() - 5, -(25 - 22) / 2 }, { x + 22, y })
+			end
+		end
+	)
+
+	it(
+		"draws no emblem at rank 0, and keeps no room for one: the row's height, name and value as a ranked row's (LED-R151, LED-R152)",
+		function()
+			local _, loaded = journalWith(file(), "following")
+			local rows = loaded.ns.journal.frame.left.drawn.row
+			local ranked, plain = rows[1], rows[2]
+			-- Where `region` sits on its row `row`: its point, whether it is placed on the row, the row's point and the
+			-- offsets, SetPoint(point, x, y) being on the same point of its parent.
+			local function at(region, row)
+				local anchor = { region:GetPoint(1) }
+				if type(anchor[2]) == "number" then
+					anchor = { anchor[1], region.parent, anchor[1], anchor[2], anchor[3] }
+				end
+				return { anchor[1], anchor[2] == row, anchor[3], anchor[4], anchor[5] }
+			end
+
+			assert.is_false(plain.emblem:IsShown())
+			assert.are.same({ 25, 25 }, { ranked:GetHeight(), plain:GetHeight() })
+			assert.are.same(at(ranked.name, ranked), at(plain.name, plain))
+			assert.are.same(at(ranked.value, ranked), at(plain.value, plain))
+		end
+	)
+
+	it("hides a row's emblem when the row is drawn again for an Angler at rank 0 (LED-R151, LED-R152)", function()
+		local unranked = false
+		local _, loaded = openJournal({
+			globals = { BreakUpLargeNumbers = breakUpLargeNumbers },
+			following = file({ angler() }),
+			id = "following",
+			modules = function(fake)
+				local read = fake.Pagle.GetFollowedAnglers
+				fake.Pagle.GetFollowedAnglers = function()
+					local followed = read()
+					followed.anglers[1].prestige = unranked and 0 or followed.anglers[1].prestige
+					return followed
+				end
+			end,
+		})
+		assert.is_true(loaded.ns.journal.frame.left.drawn.row[1].emblem:IsShown())
+
+		unranked = true
+		loaded.ns.journal:Draw()
+
+		assert.is_false(loaded.ns.journal.frame.left.drawn.row[1].emblem:IsShown())
+	end)
+
 	it(
 		"keeps the index's scroll as another Angler is selected, starting the card at the top (LED-R129, LED-R151)",
 		function()

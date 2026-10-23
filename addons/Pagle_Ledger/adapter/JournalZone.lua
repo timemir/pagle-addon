@@ -146,6 +146,7 @@ end)
 ---@field dashH number?
 ---@field glow Texture
 ---@field stamp LedgerRowStamp
+---@field emblem Texture
 
 --- A row's ink stamp after its words (a Followed Angler's "HC", LED-R151): small capitals in the red ink in a ruled
 --- red box, as the kit draws its stamps.
@@ -156,6 +157,8 @@ end)
 local ROW_H, ROW_H_PLAIN = 32, 25
 -- A row stamp's height, and the room round its words.
 local STAMP_H, STAMP_PAD = 14, 8
+-- A row's Prestige emblem's size, as in every list (LED-R152), and the room between it and the value.
+local EMBLEM_SIZE, EMBLEM_GAP = 22, 5
 
 -- A row's stamp on `parent`, hidden: its words and a 1.5-unit red rule round them that follows its size.
 ---@param parent Frame
@@ -185,8 +188,9 @@ end
 
 -- A list row (LED-R136, LED-R137, LED-R143, LED-R147, LED-R151): the kit's P.Row. Its medallion (the item's icon
 -- round in sepia, or the unknown fish's for what isn't caught, LED-R124), its words (in italic, faded, for what is
--- unknown), its margin notes in the hand at the right, its stars as textures and a value at the right, and a stamp
--- after its words; a faint wash under the mouse; selected, a deeper wash in a dashed outline. A click opens its place.
+-- unknown), its margin notes in the hand at the right, its stars as textures and a value at the right, Core's Prestige
+-- emblem for a rank just before the value (a Followed Angler's, LED-R151, LED-R152: none, and no room kept, without
+-- one), and a stamp after its words; a faint wash under the mouse; selected, a deeper wash in a dashed outline. A click opens its place.
 -- A fish caught since the page was last drawn is logged on its row: the unknown medallion gives way to the fish's
 -- own, a green wash swells and fades, and its name is written in with the write sound (MOTION.md › A new fish logged).
 ns.RegisterJournalWidget("row", function(parent)
@@ -207,6 +211,8 @@ ns.RegisterJournalWidget("row", function(parent)
 	widget.margin = ns.JournalLabel(widget, "hand", 17, INK.note, "", { justify = "RIGHT" })
 	widget.stars = ns.JournalStarRow(widget, 12)
 	widget.value = ns.JournalLabel(widget, "print", 13.5, INK.small, "", { justify = "RIGHT" })
+	widget.emblem = widget:CreateTexture(nil, "ARTWORK")
+	widget.emblem:Hide()
 	widget:SetScript("OnEnter", function(self)
 		if self.place then
 			self.hover:Show()
@@ -250,6 +256,15 @@ ns.RegisterJournalWidget("row", function(parent)
 			self.value:ClearAllPoints()
 			self.value:SetPoint("TOPRIGHT", self, "TOPLEFT", right, -(h - 18) / 2)
 			right = right - self.value:GetWidth() - 9
+		end
+		-- the Prestige emblem just before the value, centred on the row; at rank 0 none, and no room kept for it
+		local emblem = block.rank ~= nil and Pagle.SetPrestigeEmblem(self.emblem, block.rank, EMBLEM_SIZE)
+		if emblem then
+			local edge = block.value and right + 9 - EMBLEM_GAP or right
+			ns.JournalAt(self.emblem, self, edge - EMBLEM_SIZE, (h - EMBLEM_SIZE) / 2)
+			right = edge - EMBLEM_SIZE - 9
+		else
+			self.emblem:Hide()
 		end
 		self.stars:SetShown(block.stars ~= nil)
 		if block.stars then
