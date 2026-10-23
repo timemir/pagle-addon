@@ -1,18 +1,18 @@
 # Issue tracker: GitHub
 
-Issues and specs for this repo live as GitHub issues in `timemir/wow-fish`. Use the `gh` CLI for all operations.
+Issues and specs for this repo live as GitHub issues in `timemir/pagle-addon`. Use the `gh` CLI for all operations.
 
 ## Running `gh`
 
-`gh` is installed inside WSL, not on Windows. Prefix every command below with `wsl`, e.g. `wsl gh issue list`. WSL maps the repo to `/mnt/g/dev/wow-fish`, so `gh` infers the repo from the clone; pass `-R timemir/wow-fish` if it ever doesn't. `wsl` may print warnings about `/etc/wsl.conf` on stderr; they are harmless.
+`gh` is installed inside WSL, not on Windows. Prefix every command below with `wsl`, e.g. `wsl gh issue list`. WSL maps the repo to `/mnt/g/dev/wow-fish`, so `gh` infers the repo from the clone; pass `-R timemir/pagle-addon` if it ever doesn't. `wsl` may print warnings about `/etc/wsl.conf` on stderr; they are harmless.
 
 For multi-line bodies, write the body to a file and pass `--body-file <path>` rather than relying on a heredoc crossing the Windows/WSL boundary.
 
-The WSL `gh` is old (v2.4) and **silently drops array fields** passed as `gh api -f "labels[]=x"` or `-f "assignees[]=x"`. GitHub returns success, but nothing is applied. Send array fields as JSON instead: `echo '{"labels":["x"]}' | gh api --method POST repos/timemir/wow-fish/issues/<n>/labels --input -`. Quoting through PowerShell → WSL → bash is fragile, so put multi-step `gh` work in a bash script and run it with `wsl bash /mnt/c/...`.
+The WSL `gh` is old (v2.4) and **silently drops array fields** passed as `gh api -f "labels[]=x"` or `-f "assignees[]=x"`. GitHub returns success, but nothing is applied. Send array fields as JSON instead: `echo '{"labels":["x"]}' | gh api --method POST repos/timemir/pagle-addon/issues/<n>/labels --input -`. Quoting through PowerShell → WSL → bash is fragile, so put multi-step `gh` work in a bash script and run it with `wsl bash /mnt/c/...`.
 
 ## Credentials
 
-`gh` must use only a fine-grained PAT limited to `timemir/wow-fish` (Issues: read/write). Never fall back to account-wide credentials (an account-wide `gh auth login`, the global git credential helper). If `gh` is missing or unauthenticated, stop and ask rather than working around it.
+`gh` must use only a fine-grained PAT limited to `timemir/pagle-addon` (Issues: read/write). Never fall back to account-wide credentials (an account-wide `gh auth login`, the global git credential helper). If `gh` is missing or unauthenticated, stop and ask rather than working around it.
 
 ## Conventions
 

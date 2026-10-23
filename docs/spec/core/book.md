@@ -1,6 +1,6 @@
 # Core: the book shell
 
-> Status: In progress · Prefix `BOOK` · Sources: [#357](https://github.com/timemir/wow-fish/issues/357), [#319](https://github.com/timemir/wow-fish/issues/319), the four shells it folds (the Stats book's, which is the base, the Fish Journal's, the Hunts board's and the Field guide's); ADR 0001, 0015, 0016
+> Status: In progress · Prefix `BOOK` · Sources: [#357](https://github.com/timemir/pagle-addon/issues/357), [#319](https://github.com/timemir/pagle-addon/issues/319), the four shells it folds (the Stats book's, which is the base, the Fish Journal's, the Hunts board's and the Field guide's); ADR 0001, 0015, 0016
 
 Part of [Core](README.md). The Fish Journal, the Stats book, the Hunts board and the Field guide are one kind of window: two parchment pages in a binding, a gilt strip of crumbs above them, a wax close button, a brass nameplate, ribbons, a page router and a page turn (ADR 0016). Core draws that **shell** once: a book calls `Pagle.NewBook(options)` and gets a handle that opens, closes, routes and turns, and draws only its own pages, its leather anchors (a search slip, a clock, a live line) and its own effects.
 

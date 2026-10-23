@@ -8,7 +8,7 @@ The Ledger still owns the Angler Level, its curve and Prestige. The open problem
 
 The Ledger's projection stores only its own XP and works out the level from both whenever it needs it. So another Module's total never makes the Ledger rebuild, and the answer is the same on every rebuild, because the snapshots are in the log.
 
-Decided in [Core XP income: how any Module awards Angler Level XP](https://github.com/timemir/wow-fish/issues/278), on the map [Hunts redesigned around Hunt Events](https://github.com/timemir/wow-fish/issues/277). It follows the note added to ADR 0001 on 18 Oct.
+Decided in [Core XP income: how any Module awards Angler Level XP](https://github.com/timemir/pagle-addon/issues/278), on the map [Hunts redesigned around Hunt Events](https://github.com/timemir/pagle-addon/issues/277). It follows the note added to ADR 0001 on 18 Oct.
 
 ## Considered Options
 

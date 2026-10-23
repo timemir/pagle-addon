@@ -39,7 +39,7 @@ PROG = "import-field-report"
 WROTE_NOTHING = "wrote nothing"
 
 # The repo whose issues the form files (DATA-R115); gh's token is scoped to it (docs/agents/issue-tracker.md).
-REPO = "timemir/wow-fish"
+REPO = "timemir/pagle-addon"
 
 _Row = TypeVar("_Row", CatchRow, SkillRow, PoolTextRow)
 

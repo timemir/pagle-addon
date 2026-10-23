@@ -1,6 +1,6 @@
 # Core: the book binding
 
-> Status: In progress · Prefix `BIND` · Sources: [#351](https://github.com/timemir/wow-fish/issues/351), the four leather forks it folds (the Field guide's, the Stats book's, the Hunts board's and the Fish Journal's); ADR 0001, 0015
+> Status: In progress · Prefix `BIND` · Sources: [#351](https://github.com/timemir/pagle-addon/issues/351), the four leather forks it folds (the Field guide's, the Stats book's, the Hunts board's and the Fish Journal's); ADR 0001, 0015
 
 Part of [Core](README.md). The Angler's books (the Fish Journal, the Hunts board, the Stats book) wear one **binding**, chosen once in the Curio Shop (ADR 0015). Core owns the slot that holds it, `core.binding` ([wallet-and-shop.md](wallet-and-shop.md)), and draws it: every book calls `Pagle.NewBookBinding` on its frame, and Core draws the leather round it and changes it when the Angler picks another binding. The book draws everything else on itself, its own crumbs, nameplate and paper inked from the look Core hands it.
 
