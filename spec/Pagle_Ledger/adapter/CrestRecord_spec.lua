@@ -111,6 +111,47 @@ describe("the Ledger's crest record (LED-R156, #76 item 19)", function()
 		assert.are.same({ "", CREST }, crestRecords(fake))
 	end)
 
+	-- `/pagle trailer` equips the home water's crest as a demo, on its disposable copy of the account, and puts the
+	-- Angler's own back afterwards: the Ledger's records then go to the trailer's disposable log, as the Tackle Board's
+	-- do (ctx.moduleRecords), so PagleLog gains only the manual catch.
+	it("writes no crest record to PagleLog for the trailer's demo crest, during it or after it", function()
+		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog({ BUILD_ENTRY }) }), {
+			also = { "Pagle_Ledger", "Pagle_Stats", "Pagle_Hunts", "Pagle_TackleBoard", "Pagle_QoL" },
+		})
+		loaded.client.areaNames[148] = "Darkshore"
+		loaded.env.GetRealZoneText = function()
+			return "Darkshore"
+		end
+		enterWorld(loaded, 5)
+		loaded.client.advance(20)
+		local Pagle, ledger, log = loaded.env.Pagle, loaded.namespaces.Pagle_Ledger, loaded.env.PagleLog
+		local crest = ledger.ZoneCrestOf(loaded.namespaces.Pagle.Catalogue.GetZoneOf(148)).id
+		-- The crest records in PagleLog, as entries (LOG-R40).
+		local function logged()
+			local found = {}
+			for _, entry in ipairs(log.entries) do
+				if entry:find("^A1|%d+|%d+|%d+|Ledger|crest|") then
+					found[#found + 1] = entry
+				end
+			end
+			return found
+		end
+
+		loaded.env.SlashCmdList.PAGLE("trailer")
+		catchOne(loaded)
+		loaded.client.advance(205)
+		assert.are.equal(crest, Pagle.GetEquipped("core.crest"))
+		loaded.client.advance(1)
+		assert.are.same({}, logged())
+
+		loaded.client.advance(60)
+		assert.matches("trailer complete", loaded.printed[#loaded.printed])
+		loaded.client.advance(1)
+		assert.are.same({}, logged())
+		assert.is_nil(rawget(ledger.Module, "AppendRecord"))
+		assert.are.same({}, loaded.client.errors)
+	end)
+
 	it("waits for the projection's done while it is updating, then logs", function()
 		local fake, loaded = loggedIn(nil, { equipped = CREST, updating = true })
 		loaded.client.runTimers()

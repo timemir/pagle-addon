@@ -23,6 +23,11 @@ Pagle.RegisterTrailerPart("Ledger", function(ctx)
 	end)
 	ctx.swap(ns, "db", ctx.db(ns.db))
 	ctx.swap(ns, "projection", ctx.projection(state))
+	-- The crest record the demo crest's equip writes (LED-R156) belongs to the sample only, as the Tackle Board's
+	-- records do: it goes to the disposable log and folds into the sample's state, never into PagleLog.
+	ctx.moduleRecords(ns.Module, "Ledger", function(record)
+		fold.apply(state, record, "rebuild")
+	end)
 	ns.CelebratedSet(ns.db.global)
 	ctx.coins("Ledger", state.coins)
 	local openingItem = assert(Pagle.GetItem(ctx.item))
