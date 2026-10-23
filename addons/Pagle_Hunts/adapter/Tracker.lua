@@ -38,7 +38,7 @@ local function wagersContent(view)
 	local collapsed = saved().wagersCollapsed
 	local runs = {}
 	for i, run in ipairs(collapsed and {} or lines.runs) do
-		runs[i] = { name = run.name, label = run.label, second = run.second }
+		runs[i] = { name = run.name, label = run.label, second = run.second, dial = run.dial, urgent = run.urgent }
 		view.wagers.lines[i].runKey = run.key
 	end
 	return {

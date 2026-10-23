@@ -74,10 +74,11 @@ local function topOf(widget)
 	return -(type(anchor[2]) == "number" and anchor[3] or anchor[5] or 0)
 end
 
---- The Pagle Wagers block as the player reads it, or nil when it doesn't show: its header, each run's two lines with
---- its dot's group, and "+{n} more" when it shows.
+--- The Pagle Wagers block as the player reads it, or nil when it doesn't show: its header, each run's two lines after
+--- its time dial ("on 14": its kind and step, HNT-R175) or, were it shown, its dot's group, and "+{n} more" when it
+--- shows.
 ---@param r HuntsRun
----@return { header: string, runs: { dot: string, first: string, second: string }[], more: string? }?
+---@return { header: string, runs: { mark: string, first: string, second: string }[], more: string? }?
 local function read(r)
 	local wagers = r.ns.tracker.wagers
 	if not wagers.header:IsShown() then
@@ -86,8 +87,10 @@ local function read(r)
 	local out = { header = wagers.title:GetText(), runs = {} }
 	for _, line in ipairs(wagers.lines) do
 		if line:IsShown() then
+			local dial = line.dial
 			out.runs[#out.runs + 1] = {
-				dot = line.dot.group,
+				mark = dial and dial:IsShown() and not line.dot:IsShown() and (dial.kind .. " " .. dial.step)
+					or line.dot.group,
 				first = line.first:GetText() .. " · " .. line.label:GetText(),
 				second = line.second:GetText(),
 			}
@@ -114,12 +117,12 @@ local TWO_ON = {
 	header = "Pagle Wagers",
 	runs = {
 		{
-			dot = "wagers",
+			mark = "on 14", -- 1d 4h of 3d to go: 14 of 36 (HNT-R167)
 			first = "Shore Wager · ends in 1d 4h",
 			second = "1 of 3 first marks · Shore Snapper: 0 / 1",
 		},
 		{
-			dot = "wagers",
+			mark = "on 14",
 			first = "fixture_vale · ends in 1d 4h",
 			second = "1 of 3 first marks · fixture_vale_snapper: 0 / 1",
 		},
@@ -168,7 +171,7 @@ describe("the tracker's Pagle Wagers block", function()
 			local block = assert(read(start(history)))
 
 			assert.are.same(
-				{ dot = "wagers", first = "Shore Wager · settled", second = "3 of 3 first marks" },
+				{ mark = "settled 14", first = "Shore Wager · settled", second = "3 of 3 first marks" }, -- in grey
 				block.runs[1]
 			)
 		end)
@@ -343,24 +346,56 @@ describe("the tracker's Pagle Wagers block", function()
 			assert.are.equal(1, #r.fake.dock.stack())
 		end)
 
-		it("wears the equipped frame's paper under both blocks, its dots in paper ink", function()
-			local r = start(twoOn())
+		it(
+			"wears the equipped frame's paper under both blocks, each run's 14-unit dial centred where a dot is",
+			function()
+				local r = start(twoOn())
+				local view = r.ns.tracker
+
+				r.fake.setPurchased({ [INKWASH] = true })
+				assert.is_true(r.fake.Pagle.SetEquipped("hunts.trackerframe", INKWASH))
+
+				assert.is_true(view.paper:IsShown())
+				assert.are.same({ 268, view.frame.height }, { view.paper.width, view.paper.height })
+				assert.are.equal("PAGLE WAGERS", view.wagers.title:GetText()) -- small caps on the paper, as "HUNTS"
+				assert.are.equal("HUNTS", view.title:GetText())
+				assert.are.same(TWO_ON.runs, read(r).runs)
+				-- the dot (8 across at the look's x, 8 down) and the dial (14) share their centre, so the name doesn't move
+				local look, dial = r.ns.TRACKER_LOOKS.inkwash, view.wagers.lines[1].dial
+				assert.are.same({ 14, 14 }, { dial:GetWidth(), dial:GetHeight() })
+				assert.are.same(
+					{ "TOPLEFT", look.x - 3, -5 },
+					{ dial.points[1][1], dial.points[1][2], dial.points[1][3] }
+				)
+			end
+		)
+
+		it('reddens "ends in …" and the dial within the closing-note time, in each look\'s red (HNT-R175)', function()
+			local soon = runOn("fixture_shore", 2 * HOUR)
+			local r = start({ soon })
 			local view = r.ns.tracker
+			local function label()
+				local line = view.wagers.lines[1]
+				local color = line.label.textColor
+				return { line.label:GetText(), color[1], color[2], color[3], line.dial.ink }
+			end
+			local now, dark = r.ns.BOARD_LOOK.nowLine, r.ns.TRACKER_LOOKS.native.urgent
+
+			assert.are.same({ "ends in 2h", dark[1], dark[2], dark[3], now }, label())
 
 			r.fake.setPurchased({ [INKWASH] = true })
 			assert.is_true(r.fake.Pagle.SetEquipped("hunts.trackerframe", INKWASH))
 
-			assert.is_true(view.paper:IsShown())
-			assert.are.same({ 268, view.frame.height }, { view.paper.width, view.paper.height })
-			assert.are.equal("PAGLE WAGERS", view.wagers.title:GetText()) -- small caps on the paper, as "HUNTS"
-			assert.are.equal("HUNTS", view.title:GetText())
-			local ink, dot = r.ns.BOARD_LOOK.paperGroups.wagers, view.wagers.lines[1].dot
-			assert.are.same({ "wagers", ink[1], ink[2], ink[3] }, {
-				dot.group,
-				dot.face.vertexColor[1],
-				dot.face.vertexColor[2],
-				dot.face.vertexColor[3],
-			})
+			assert.are.same({ "ends in 2h", now[1], now[2], now[3], now }, label())
+			assert.are.same(now, r.ns.TRACKER_LOOKS.inkwash.urgent)
+		end)
+
+		it("keeps the label in its look's ink with more than 3 hours to go", function()
+			local r = start(twoOn())
+			local color, gold = r.ns.tracker.wagers.lines[1].label.textColor, r.ns.TRACKER_LOOKS.native.label[3]
+
+			assert.are.same({ gold[1], gold[2], gold[3] }, { color[1], color[2], color[3] })
+			assert.are.equal(r.ns.BOARD_LOOK.oxblood, r.ns.tracker.wagers.lines[1].dial.ink)
 		end)
 	end)
 
