@@ -192,12 +192,13 @@ def test_the_index_lists_what_was_written(out: Path) -> None:
 
 
 def test_every_zone_and_fish_crest_is_listed_by_the_addons_ids() -> None:
-    # LED-R113's fifty-three in ns.ZONE_CRESTS' order, VAR-R12's thirty-seven by Species ID, each with its texture,
+    # LED-R113's fifty-four in ns.ZONE_CRESTS' order, VAR-R12's thirty-seven by Species ID, each with its texture,
     # and no texture left over
     zones = zone_crests(REPO)
-    assert len(zones) == 53
+    assert len(zones) == 54
     assert (zones[0].id, zones[0].match) == ("ledger.crest.alterac", {"zone": 36, "continent": 0})
-    assert (zones[-1].id, zones[-1].match) == ("ledger.crest.zephras", {"zone": 16593, "continent": 2991})
+    assert (zones[-2].id, zones[-2].match) == ("ledger.crest.zephras", {"zone": 16593, "continent": 2991})
+    assert (zones[-1].id, zones[-1].match) == ("ledger.crest.hyjalcrater", {"zone": 17852, "continent": 2995})
     assert all(c.id == "ledger.crest." + c.key.removeprefix("zone-crest-") and c.kind == "zone" for c in zones)
     assert {c.texture for c in zones} == set((REPO / ZONE_CREST_MEDIA).glob("*.blp"))
     fish = fish_crests(REPO)

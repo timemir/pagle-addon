@@ -577,6 +577,10 @@ description = "A snowflake over still water, where ice fishing is real fishing."
 name = "The Floating Isle"
 description = "An island floating on cloud, its ship tied to the stone. The water is a long way down."
 
+[crest.hyjalcrater] # Hyjal Crater
+name = "The Crater Lake"
+description = "Still water in a broken ring of black stone. Something burned here once; the lake has kept quiet about it."
+
 # The Ledger's earned bindings in Core's binding slot (LED-R110, LED-R111, LED-R116; ADR 0015), each
 # ledgergood.<goodID>: the name and the description the Curio Shop shows beside its closed book. A binding
 # is a look only, so its description is about the book's leather or cloth. The comment says how it's had.
