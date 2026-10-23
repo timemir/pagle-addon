@@ -283,7 +283,7 @@ local function onRun(context)
 	return first and { mode = "board", run = first.key } or home()
 end
 
--- The Pagle Wagers spread (HNT-R162), on its first slip.
+-- The Pagle Wagers spread (HNT-R162), on its first ticket.
 ---@return BoardPlace
 local function wagers()
 	return { mode = "wagers" }
