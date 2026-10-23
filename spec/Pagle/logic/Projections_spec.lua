@@ -463,19 +463,126 @@ describe("a catch-up or rebuild of many entries", function()
 		assert.are.equal(1000, db.projection.count)
 	end)
 
-	it("shares one budget per frame between the projections, in the order they were added (LOG-R71)", function()
+	it(
+		"shares one budget per frame between the projections, taking turns in the order they were added (LOG-R71)",
+		function()
+			local world = machinery(casts(600))
+			local first, firstSeen = recorder({})
+			local second, secondSeen = recorder({})
+			bind(world, costly(world, first))
+			bind(world, costly(world, second))
+
+			world.projections:Start(600)
+			world.frame()
+
+			assert.are.same({ 2, 2 }, { #firstSeen.applied, #secondSeen.applied })
+			world.frame()
+			assert.are.same({ "3 rebuild", "4 rebuild" }, { unpack(firstSeen.applied, 3) })
+			assert.are.same({ "3 rebuild", "4 rebuild" }, { unpack(secondSeen.applied, 3) })
+			world.runFrames()
+			assert.are.same({ 600, 600 }, { #firstSeen.applied, #secondSeen.applied })
+		end
+	)
+
+	it("hands projections over the same entries the same record for each, read from the log once", function()
 		local world = machinery(casts(600))
-		local first, firstSeen = recorder({})
-		local second, secondSeen = recorder({})
-		bind(world, costly(world, first))
-		bind(world, costly(world, second))
+		local first, second = recorder({}), recorder({})
+		local handed = { {}, {} }
+		for i, def in ipairs({ first, second }) do
+			local apply = def.apply
+			def.apply = function(state, record, mode)
+				handed[i][record.seq] = record
+				apply(state, record, mode)
+			end
+			bind(world, costly(world, def))
+		end
 
 		world.projections:Start(600)
-		world.frame()
-
-		assert.are.same({ 4, 0 }, { #firstSeen.applied, #secondSeen.applied })
 		world.runFrames()
-		assert.are.same({ 600, 600 }, { #firstSeen.applied, #secondSeen.applied })
+
+		for seq = 1, 600 do
+			assert.are.equal(handed[1][seq], handed[2][seq]) -- one table: decoded and Session-tagged once
+		end
+		assert.are.equal("string", type(handed[2][600].session))
+	end)
+
+	it(
+		"finishes each projection after the ones added before it, though a later one has fewer entries to apply"
+			.. " (LOG-R71, LOG-R76)",
+		function()
+			local world = machinery(casts(1000))
+			local order = {}
+			local first, firstSeen = recorder({})
+			local second, secondSeen = recorder(builtDb(400))
+			for name, def in pairs({ first = first, second = second }) do
+				local done = def.done
+				def.done = function(state, info)
+					order[#order + 1] = name
+					done(state, info)
+				end
+			end
+			bind(world, costly(world, first))
+			bind(world, costly(world, second))
+
+			world.projections:Start(1000)
+			while #secondSeen.applied < 600 do
+				assert.is_true(world.frame())
+			end
+			for _ = 1, 10 do
+				world.frame()
+			end
+			assert.are.same({}, order) -- the second has applied all it needs; the first hasn't
+			world.runFrames()
+
+			assert.are.same({ "first", "second" }, order)
+			assert.are.same({ 1000, 600 }, { #firstSeen.applied, #secondSeen.applied })
+		end
+	)
+
+	it(
+		"runs a later projection's done only once an earlier one has applied the entries appended during its update"
+			.. " (LOG-R74, LOG-R76)",
+		function()
+			local world = machinery(casts(600))
+			local first, firstSeen = recorder({})
+			local second = recorder({})
+			local firstUpdating = {}
+			local projection
+			second.done = function()
+				firstUpdating[#firstUpdating + 1] = projection:IsUpdating()
+			end
+			projection = bind(world, costly(world, first))
+			bind(world, costly(world, second))
+
+			world.projections:Start(600)
+			world.frame()
+			world.append(1) -- during the update: live for both, after their done
+			world.runFrames()
+
+			assert.are.equal("601 live", firstSeen.applied[#firstSeen.applied])
+			assert.are.same({ false }, firstUpdating)
+		end
+	)
+
+	it("applies the entries of projections with few pending in turns, done before Start returns (LOG-R71)", function()
+		local world = machinery(casts(300))
+		local first, firstSeen = recorder({})
+		local second, secondSeen = recorder({})
+		local order = {}
+		for i, def in ipairs({ first, second }) do
+			local apply = def.apply
+			def.apply = function(state, record, mode)
+				order[#order + 1] = i .. ":" .. record.seq
+				apply(state, record, mode)
+			end
+			bind(world, def)
+		end
+
+		world.projections:Start(300)
+
+		assert.are.same({ "1:1", "2:1", "1:2", "2:2" }, { unpack(order, 1, 4) })
+		assert.are.same({ 1, 1 }, { #firstSeen.done, #secondSeen.done })
+		assert.are.same({}, world.frames)
 	end)
 end)
 
@@ -666,7 +773,8 @@ describe("the machinery's seams", function()
 			world.projections:Start(2)
 			local live = world.append(1)
 
-			assert.are.same({ "2 nil", "done nil", "1 nil", "2 nil", "3 3", "3 3" }, entries)
+			-- The two take turns a step at a time (runAtOnce), so the catch-up's done comes after the rebuild's applies.
+			assert.are.same({ "2 nil", "1 nil", "2 nil", "done nil", "3 3", "3 3" }, entries)
 			assert.are.equal(3, live.seq)
 			assert.is_nil(world.projections:LiveEntry())
 		end
