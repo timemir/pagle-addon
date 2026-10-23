@@ -30,6 +30,7 @@ local PAGLEDB_KEYS = {
 		"announcements",
 		"appearance",
 		"dock",
+		"books", -- core/book.md › Data (BOOK-R5)
 		"anglerTooltips", -- anglers-in-game.md › Data (VIEW-R30), from Track V
 	},
 }
