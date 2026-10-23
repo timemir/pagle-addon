@@ -1,5 +1,6 @@
 """The web art export (scripts/export-web-art.py, pagle_data/web_art.py), run on a few pieces: the file names, the
-manifest's shape, the CSS keyframes and the WebP sizes."""
+manifest's shape, the CSS keyframes and the WebP sizes; and the zone and fish crests' lists, sizes and index entries
+(content-data.md DATA-R136 to DATA-R138)."""
 
 import json
 import re
@@ -9,11 +10,12 @@ from typing import Any
 import pytest
 from PIL import Image
 
-from pagle_data.web_art import ART_DIR, export
+from pagle_data.web_art import ART_DIR, FISH_CREST_MEDIA, ZONE_CREST_MEDIA, export, fish_crests, zone_crests
 
 REPO = Path(__file__).resolve().parents[2]
 SUBSET = ["prestige-frame-none", "prestige-frame-5", "prestige-frame-6", "legend-crest-19803",
-          "legend-crest-unwritten", "prestige-emblem-master"]
+          "legend-crest-unwritten", "prestige-emblem-master", "zone-crest-elwynn", "fish-crest-6291"]
+CREST_PIXELS = {"70": (120, 140), "42": (72, 84), "28": (48, 56)}
 ANIMATED = {
     "prestige-frame-5": ["back", "fx2", "fx1", "body", "lab"],
     "prestige-frame-6": ["body", "fx1", "fx2", "lab"],
@@ -48,7 +50,8 @@ def size(path: Path) -> tuple[int, int]:
 def test_the_file_names(out: Path) -> None:
     expected = ["index.json", "prestige-frame-6.webp", "prestige-frame-none.webp", "prestige-frame-5.webp",
                 "legend-crest-19803.webp", "legend-crest-unwritten.webp",
-                *(f"prestige-emblem-master-{s}.webp" for s in (64, 34, 22))]
+                *(f"prestige-emblem-master-{s}.webp" for s in (64, 34, 22)),
+                *(f"{crest}-{s}.webp" for crest in ("zone-crest-elwynn", "fish-crest-6291") for s in (70, 42, 28))]
     for key, layers in ANIMATED.items():
         expected += [f"{key}/manifest.json", f"{key}/{key}.css", *(f"{key}/{layer}.webp" for layer in layers)]
     assert files(out) == sorted(expected)
@@ -178,3 +181,52 @@ def test_the_index_lists_what_was_written(out: Path) -> None:
     assert by_key["legend-crest-19803"]["item"] == 19803 and by_key["legend-crest-19803"]["well"]["drawn"] is True
     assert index["emblems"] == [{"key": "prestige-emblem-master",
                                  "files": {s: f"prestige-emblem-master-{s}.webp" for s in ("64", "34", "22")}}]
+    # each crest under the addon's good ID, with what pagle-backend's journal.crests matches it by (ANG-R81)
+    assert index["crestSizes"] == {s: {"w": w, "h": h} for s, (w, h) in CREST_PIXELS.items()}
+    assert index["crests"] == [
+        {"id": "ledger.crest.elwynn", "key": "zone-crest-elwynn", "kind": "zone", "zone": 12, "continent": 0,
+         "files": {s: f"zone-crest-elwynn-{s}.webp" for s in CREST_PIXELS}},
+        {"id": "core.crest.fish.6291", "key": "fish-crest-6291", "kind": "fish", "species": 6291,
+         "files": {s: f"fish-crest-6291-{s}.webp" for s in CREST_PIXELS}},
+    ]
+
+
+def test_every_zone_and_fish_crest_is_listed_by_the_addons_ids() -> None:
+    # LED-R113's fifty-three in ns.ZONE_CRESTS' order, VAR-R12's thirty-seven by Species ID, each with its texture,
+    # and no texture left over
+    zones = zone_crests(REPO)
+    assert len(zones) == 53
+    assert (zones[0].id, zones[0].match) == ("ledger.crest.alterac", {"zone": 36, "continent": 0})
+    assert (zones[-1].id, zones[-1].match) == ("ledger.crest.zephras", {"zone": 16593, "continent": 2991})
+    assert all(c.id == "ledger.crest." + c.key.removeprefix("zone-crest-") and c.kind == "zone" for c in zones)
+    assert {c.texture for c in zones} == set((REPO / ZONE_CREST_MEDIA).glob("*.blp"))
+    fish = fish_crests(REPO)
+    assert len(fish) == 37
+    species = [c.match["species"] for c in fish]
+    assert species == sorted(species)
+    assert all(c.id == f"core.crest.fish.{s}" and c.key == f"fish-crest-{s}" for c, s in zip(fish, species))
+    assert {c.texture for c in fish} == set((REPO / FISH_CREST_MEDIA).glob("*.blp"))
+
+
+@pytest.mark.parametrize("crest", ["zone-crest-elwynn", "fish-crest-6291"])
+def test_a_crest_is_its_shield_at_three_sizes(out: Path, crest: str) -> None:
+    for height, pixels in CREST_PIXELS.items():
+        path = out / f"{crest}-{height}.webp"
+        assert size(path) == pixels
+        with Image.open(path) as image:
+            alpha = image.getchannel("A")
+            w, h = image.size
+            assert alpha.getpixel((w // 2, h // 2)) == 255  # the field, opaque
+            assert alpha.getpixel((0, h - 1)) == 0 and alpha.getpixel((w - 1, h - 1)) == 0  # beside the point
+            assert alpha.getbbox() is not None
+
+
+def test_a_crest_painted_outside_its_shield_is_refused(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    lua = root / "addons/Pagle_Ledger/logic/ZoneCrests.lua"
+    lua.parent.mkdir(parents=True)
+    lua.write_text('ns.ZONE_CRESTS = {\n\t{ key = "wide", areaID = 1, continent = 0 },\n}\n', encoding="utf-8")
+    (root / ZONE_CREST_MEDIA).mkdir(parents=True)
+    Image.new("RGBA", (256, 256), (200, 30, 30, 255)).save(root / ZONE_CREST_MEDIA / "wide.blp", "PNG")
+    with pytest.raises(ValueError, match="zone-crest-wide: its texture is painted outside its 120:140 shield"):
+        export(REPO / ART_DIR, tmp_path / "out", ["zone-crest-wide"], root)

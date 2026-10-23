@@ -10,12 +10,18 @@ under one output folder, at 2 pixels per unit:
   (the layers in z order with their rect in units, blend, rest opacity and keyframes name) and `<key>.css` (the
   `@keyframes`, transform and opacity only, plus one class per moving layer with its timing and transform-origin).
 - `prestige-emblem-<1..10|master>-<64|34|22>.webp`, numerals baked in, at 128, 68 and 44 px.
-- `index.json`: every piece written, with its name, label and well.
+- `zone-crest-<key>-<70|42|28>.webp` and `fish-crest-<speciesID>-<70|42|28>.webp`: the Ledger's zone crests
+  (`ledger.crest.<key>`, LED-R113) and Core's fish crests (`core.crest.fish.<speciesID>`, VAR-R12), each cropped to its
+  120:140 shield and drawn 70, 42 and 28 px tall, at 2x: 120 x 140, 72 x 84 and 48 x 56 (content-data.md DATA-R136 to
+  DATA-R138). Their source is the addon's own crest textures (SHOP-R25), the BLPs under addons/, which are the only
+  copy in the repo; the zone list is ns.ZONE_CRESTS (Pagle_Ledger/logic/ZoneCrests.lua), the fish list
+  data/forever/varieties.toml's Species.
+- `index.json`: every piece written, with its name, label and well, and every crest with its good ID.
 
 No Blizzard texture, icon or other game art goes into any output (pagle-backend ANG-R54). Every pixel comes from the
-Pagle-drawn atlases in data/art/prestige/tga/ or from wells/*.svg: where the client draws a Legend's item icon in its
-crest's well, the export draws a Pagle-drawn sepia fish instead (the kit's own stand-ins, f_legend.py's SEPIA), and
-the Unwritten crest keeps its own dark fish, which is in its atlas.
+Pagle-drawn atlases in data/art/prestige/tga/, from wells/*.svg or from the Pagle-drawn crest textures: where the
+client draws a Legend's item icon in its crest's well, the export draws a Pagle-drawn sepia fish instead (the kit's
+own stand-ins, f_legend.py's SEPIA), and the Unwritten crest keeps its own dark fish, which is in its atlas.
 
 Needs Pillow built with WebP: the pinned one in .tools/ (PYTHON_PACKAGES in scripts/tools.env) is.
 """
@@ -34,12 +40,27 @@ from typing import Any
 
 from PIL import Image, ImageChops, ImageColor, ImageDraw, ImageFilter
 
+from pagle_data.errors import Problems
 from pagle_data.files import write_atomic
 from pagle_data.prestige_kit import frame_key, frame_name
+from pagle_data.varieties import read_varieties
 
 ART_DIR = Path("data/art/prestige")
+REPO = Path(__file__).resolve().parents[2]
 PX = 2  # output pixels per unit
 EMBLEM_SIZES = (64, 34, 22)
+
+# The crests (DATA-R136 to DATA-R138): where the addon keeps them, and the sizes the site gets, as shield heights in
+# CSS px (each written at PX). 70 is the bookplate's pin (the shop stage's 60 x 70 shield, LED-R146's 50-wide pin a
+# little under it), 42 a Master zone tile's emblem and 28 a Species row's, beside a line of text (pagle-backend
+# ANG-R70, ANG-R72): like the emblems' 64, 34 and 22, the site never scales one up. Heights are multiples of 7, so
+# each width (6/7 of it) is whole.
+ZONE_CRESTS_LUA = Path("addons/Pagle_Ledger/logic/ZoneCrests.lua")
+ZONE_CREST_MEDIA = Path("addons/Pagle_Ledger/media/crests")
+FISH_CREST_MEDIA = Path("addons/Pagle/media/crests/fish")
+CREST_SIZES = (70, 42, 28)
+CREST_SHIELD = (120, 140)  # the shield's proportions, at the texture's full height, centred (SHOP-R25)
+_ZONE_CREST_ROW = re.compile(r'\{\s*key\s*=\s*"([a-z0-9]+)",\s*areaID\s*=\s*(\d+),\s*continent\s*=\s*(\d+),?\s*\}')
 ROMAN = ("i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x")
 WEBP_QUALITY = 90  # lossy colour, lossless alpha
 
@@ -122,6 +143,71 @@ def emblem_keys() -> list[tuple[str, str]]:
     """(output key, atlas sprite) for ranks I..X and Master."""
     keys = [(f"prestige-emblem-{rank}", f"emblem-{numeral}") for rank, numeral in enumerate(ROMAN, start=1)]
     return keys + [("prestige-emblem-master", "emblem-master")]
+
+
+# ------------------------------------------------------------------------------------------------- the crests
+
+@dataclass(frozen=True)
+class Crest:
+    """One zone or fish crest: its good ID in the addon, its output key, its texture, and what the site matches it by
+    (a zone crest's areaID and continent, a fish crest's Species)."""
+
+    id: str
+    key: str
+    kind: str
+    texture: Path
+    match: Json
+
+
+def zone_crests(root: Path) -> list[Crest]:
+    """LED-R113's zone crests, in ns.ZONE_CRESTS' order (the order pagle-backend lists them in, ANG-R81)."""
+    source = root / ZONE_CRESTS_LUA
+    text = source.read_text(encoding="utf-8")
+    start = text.find("ns.ZONE_CRESTS = {")
+    end = text.find("\n}", start)
+    if start < 0 or end < 0:
+        raise ValueError(f"{ZONE_CRESTS_LUA.as_posix()}: no ns.ZONE_CRESTS table")
+    body = text[start:end]
+    rows = _ZONE_CREST_ROW.findall(body)
+    if len(rows) != body.count("key ="):
+        raise ValueError(f"{ZONE_CRESTS_LUA.as_posix()}: a row of ns.ZONE_CRESTS isn't {{ key, areaID, continent }}")
+    return [Crest(f"ledger.crest.{key}", f"zone-crest-{key}", "zone", root / ZONE_CREST_MEDIA / f"{key}.blp",
+                  {"zone": int(area), "continent": int(continent)}) for key, area, continent in rows]
+
+
+def fish_crests(root: Path) -> list[Crest]:
+    """VAR-R12's fish crests, one per Species in data/forever/varieties.toml, by ascending Species ID."""
+    problems = Problems()
+    layer = read_varieties(root, problems)
+    if problems:
+        raise ValueError("; ".join(problems))
+    return [Crest(f"core.crest.fish.{species}", f"fish-crest-{species}", "fish",
+                  root / FISH_CREST_MEDIA / f"{species}.blp", {"species": species})
+            for species in sorted(layer.species)]
+
+
+def crest_size(height: int) -> tuple[int, int]:
+    """A crest's pixels at a shield height of `height` CSS px."""
+    return height * CREST_SHIELD[0] // CREST_SHIELD[1] * PX, height * PX
+
+
+def crest_image(crest: Crest, height: int) -> Image.Image:
+    """The crest's shield, cropped from its square texture (120:140 at its full height, centred, SHOP-R25), drawn
+    `height` CSS px tall at PX. A texture that isn't square, or with paint outside the shield, is refused, so the crop
+    never cuts the art."""
+    if not crest.texture.is_file():
+        raise ValueError(f"{crest.key}: no texture {crest.texture.as_posix()}")
+    with Image.open(crest.texture) as opened:
+        texture = opened.convert("RGBA")
+    w, h = texture.size
+    if w != h:
+        raise ValueError(f"{crest.key}: its texture is {w} x {h}, not square (SHOP-R25)")
+    shield = h * CREST_SHIELD[0] / CREST_SHIELD[1]
+    box = ((w - shield) / 2, 0.0, (w + shield) / 2, float(h))
+    painted = texture.getchannel("A").getbbox()
+    if painted and (painted[0] < math.floor(box[0]) or painted[2] > math.ceil(box[2])):
+        raise ValueError(f"{crest.key}: its texture is painted outside its 120:140 shield")
+    return texture.convert("RGBa").resize(crest_size(height), Image.Resampling.LANCZOS, box=box).convert("RGBA")
 
 
 # ------------------------------------------------------------------------------------------------- pixels
@@ -461,12 +547,14 @@ def json_bytes(data: Json) -> bytes:
     return (json.dumps(data, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
 
 
-def export(art_dir: Path, out_dir: Path, only: Iterable[str] | None = None) -> list[Path]:
-    """Writes the web art for every piece and emblem (or only those keyed in `only`); returns the files written."""
+def export(art_dir: Path, out_dir: Path, only: Iterable[str] | None = None, root: Path = REPO) -> list[Path]:
+    """Writes the web art for every piece, emblem and crest (or only those keyed in `only`); returns the files
+    written. The crests come from the addon's textures and lists under `root`, the repo."""
     art = load_art(art_dir)
     wanted = set(only) if only is not None else None
     all_pieces = pieces(art, art_dir)
-    known = {p.key for p in all_pieces} | {k for k, _ in emblem_keys()}
+    all_crests = zone_crests(root) + fish_crests(root)
+    known = {p.key for p in all_pieces} | {k for k, _ in emblem_keys()} | {c.key for c in all_crests}
     if wanted is not None and wanted - known:
         raise ValueError(f"no such piece: {', '.join(sorted(wanted - known))}")
     written: list[Path] = []
@@ -476,7 +564,8 @@ def export(art_dir: Path, out_dir: Path, only: Iterable[str] | None = None) -> l
         written.append(path)
 
     index: Json = {"source": "data/art/prestige/art.json", "box": {"w": art["box"][0], "h": art["box"][1]},
-                   "scale": PX, "pieces": [], "emblems": []}
+                   "scale": PX, "pieces": [], "emblems": [],
+                   "crestSizes": {str(h): dict(zip(("w", "h"), crest_size(h))) for h in CREST_SIZES}, "crests": []}
     for piece in all_pieces:
         if wanted is not None and piece.key not in wanted:
             continue
@@ -514,6 +603,16 @@ def export(art_dir: Path, out_dir: Path, only: Iterable[str] | None = None) -> l
             write(out_dir / name, webp_bytes(premultiplied_resize(image, (size * PX, size * PX))))
             files[str(size)] = name
         index["emblems"].append({"key": key, "files": files})
+
+    for crest in all_crests:
+        if wanted is not None and crest.key not in wanted:
+            continue
+        files = {}
+        for height in CREST_SIZES:
+            name = f"{crest.key}-{height}.webp"
+            write(out_dir / name, webp_bytes(crest_image(crest, height)))
+            files[str(height)] = name
+        index["crests"].append({"id": crest.id, "key": crest.key, "kind": crest.kind, **crest.match, "files": files})
 
     write(out_dir / "index.json", json_bytes(index))
     return written
