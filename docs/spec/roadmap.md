@@ -380,9 +380,9 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 - Settings: "Remind me about the Pagle companion" on Announcements, under Hunts' header (SET-R32), while the hint switch is on, as at 1.0 (HNT-R172)
 
 **Exit check:**
-1. With the rotation's starting point in the past: `/pagle hunts` shows the wager strip above "What's biting", a WAGERS row whose bar spans the ruler with ▸ at its end, and the Pagle Wagers ribbon reading "1 on". The ribbon's spread lists the slip with its countdown and the ladder at 0 of 25.
+1. With the rotation's starting point in the past: `/pagle hunts` shows the wager strip above "What's biting", a WAGERS row whose bar spans the ruler with ▸ at its end, and the Pagle Wagers ribbon reading "1 on". The ribbon's spread lists the ticket with its countdown and the ladder at 0 of 25.
 2. Fish in the run's zone until one Hunt reaches tier 1: a "Pagle Wagers · first mark" toast with its Coins stamp; the pip inks in; the Angler page's "Where your XP came from" shows Hunts +150. `/reload`: `PagleLog` holds one `run` record for that slot (read-wtf).
-3. Reach every Hunt's tier 1: a "Wager settled" toast; the slip and the entry's seal read settled; the ladder reads 1 of 25.
+3. Reach every Hunt's tier 1: a "Wager settled" toast; the ticket and the entry's seal read settled; the ladder reads 1 of 25.
 4. Complete a Tackle Board Notice: its XP shows under Tackle Board on the Angler page, and a level it brings raises the Ledger's level-up with the Notice's toast.
 5. Prestige with a test log at level 60 (#262's tooling): the confirm card reads "climbs again from 1"; after `/reload` the `P1` entry carries `activityXP`.
 6. Without `Pagle_Content` (the switch on, HNT-R172): the hint's line shows under the wager strip and in the tracker, a Nod comes at most once a week, Get it shows `https://pagle.app/download`, and Announcements has "Remind me about the Pagle companion" under Hunts' header. With a hand-made, unsigned `Pagle_Content`: `/pagle dev content` reports it absent and why.
