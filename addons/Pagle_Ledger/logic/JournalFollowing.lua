@@ -55,7 +55,8 @@ end
 
 -- The left page in state `ok` (LED-R151): kicker, title, the count, then the index in GetFollowedAnglers' order (by
 -- name, IGV-R31), each row the Angler's name, an "HC" stamp for a Hardcore Angler and its level, Prestige and Ledger
--- completion at the right, selecting it; the selected one is marked.
+-- completion at the right with its Prestige emblem's rank (LED-R152; none at rank 0), selecting it; the selected one
+-- is marked.
 ---@param context LedgerSpreadContext
 ---@param anglers PagleFollowedAngler[]
 ---@param selected integer
@@ -74,6 +75,7 @@ local function index(context, anglers, selected)
 			text = followed.name,
 			stamp = followed.hardcore and L.FOLLOWING_HARDCORE_STAMP or nil,
 			value = rowValue(followed),
+			rank = followed.prestige >= 1 and followed.prestige or nil,
 			selected = i == selected,
 			place = ns.JournalPlace.following(i),
 		}

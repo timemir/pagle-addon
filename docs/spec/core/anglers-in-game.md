@@ -40,12 +40,12 @@ Part of [Core](README.md). The Companion brings Published Anglers into the game 
   | gap | a small blank gap | |
   | header | the Pagle favicon (the minimap icon's gilt "P") and "Pagle Angler", in Pagle teal | "Following", in green, only for a Followed Angler |
   | title | the title, in gold, without angle brackets so it can't be mistaken for the guild line; left out when there is none | |
-  | level | "Angler Level", in parchment | "{L}"; with " · Prestige {I–X}" at ranks 1–10, and " · Master Prestige {n}" from rank 11, `n` being rank − 10 (LED-R34) |
+  | level | "Angler Level", in parchment | "{L}"; with " · {emblem} Prestige {I–X}" at ranks 1–10, and " · {emblem} Master Prestige {n}" from rank 11, `n` being rank − 10 (LED-R34); `{emblem}` is the rank's Prestige emblem at 22, the Master's from rank 11, inline before its words (LED-R152, `Pagle.PrestigeEmblemMarkup`). At rank 0 the line is "{L}" alone, with no emblem and no space kept for one |
   | ledger | "Ledger" | "{p}%" |
   | legends | "Legends" | "{n} of {N}" |
   | hardcore | "Hardcore Angler", in red, only for a Hardcore Angler | |
 
-  It names no region (IGV-R6). Master Prestige is written in words, as the bookplate writes it (LED-R146), because ★ is outside the client's fonts (CORE-R9). *Decided in the grilling on #76 (2026-10-22): #76 item 10 drew one ★ per rank above 10.*
+  It names no region (IGV-R6). Master Prestige is written in words, as the bookplate writes it (LED-R146), because ★ is outside the client's fonts (CORE-R9). *Decided in the grilling on #76 (2026-10-22): #76 item 10 drew one ★ per rank above 10.* *Decided with the emblems in lists:* the emblem keeps LED-R152's list size of 22 rather than the line's height, as on the Prestige frame's tooltip (LED-R154), so its shape and colour still carry the rank; the words stay beside it, since the Master's emblem is the same from rank 11 on.
 - **VIEW-R22** The block shows in combat and while restricted, since the unit tooltip isn't secure; it is only text added to the game's tooltip. A first hover in combat finds Followed Anglers only, as `Pagle_Anglers` loads after (VIEW-R3).
 
 ### Settings

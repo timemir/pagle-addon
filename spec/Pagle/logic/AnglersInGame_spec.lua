@@ -532,6 +532,11 @@ describe("the Companion's data files", function()
 			return card
 		end
 
+		-- Prestige rank `rank`'s emblem in a line, at the 22 of lists and tooltips (LED-R152).
+		local function emblem(rank)
+			return ns.PrestigeEmblemMarkup(rank, 22)
+		end
+
 		-- The block's "Angler Level" line's right text for a tooltip card at prestige rank `rank`.
 		local function levelText(rank)
 			for _, line in ipairs(ns.AnglerTooltipLines(tooltipCard({ prestige = rank }))) do
@@ -558,7 +563,12 @@ describe("the Companion's data files", function()
 					rightColor = "green",
 				},
 				{ left = "Warden of Feralas Waters", leftColor = "gold" },
-				{ left = "Angler Level", leftColor = "parchment", right = "23 · Prestige I", rightColor = "white" },
+				{
+					left = "Angler Level",
+					leftColor = "parchment",
+					right = "23 · " .. emblem(1) .. " Prestige I",
+					rightColor = "white",
+				},
 				{ left = "Ledger", leftColor = "parchment", right = "37%", rightColor = "white" },
 				{ left = "Legends", leftColor = "parchment", right = "3 of 12", rightColor = "white" },
 			}, ns.AnglerTooltipLines(card))
@@ -579,7 +589,7 @@ describe("the Companion's data files", function()
 				{
 					left = "Angler Level",
 					leftColor = "parchment",
-					right = "60 · Master Prestige 2",
+					right = "60 · " .. emblem(12) .. " Master Prestige 2",
 					rightColor = "white",
 				},
 				{ left = "Ledger", leftColor = "parchment", right = "100%", rightColor = "white" },
@@ -588,16 +598,47 @@ describe("the Companion's data files", function()
 			}, ns.AnglerTooltipLines(card))
 		end)
 
-		it("writes Prestige I to X, then Master Prestige rank − 10 in words (VIEW-R21, LED-R34, LED-R146)", function()
-			assert.are.same({
-				"60",
-				"60 · Prestige I",
-				"60 · Prestige V",
-				"60 · Prestige X",
-				"60 · Master Prestige 1",
-				"60 · Master Prestige 13",
-			}, { levelText(0), levelText(1), levelText(5), levelText(10), levelText(11), levelText(23) })
-		end)
+		it(
+			"writes Prestige I to X, then Master Prestige rank − 10 in words, each after its emblem (VIEW-R21, LED-R34, LED-R146, LED-R152)",
+			function()
+				assert.are.same({
+					"60",
+					"60 · " .. emblem(1) .. " Prestige I",
+					"60 · " .. emblem(5) .. " Prestige V",
+					"60 · " .. emblem(10) .. " Prestige X",
+					"60 · " .. emblem(11) .. " Master Prestige 1",
+					"60 · " .. emblem(23) .. " Master Prestige 13",
+				}, { levelText(0), levelText(1), levelText(5), levelText(10), levelText(11), levelText(23) })
+			end
+		)
+
+		it(
+			"draws the rank's own emblem at 22, the Master's from rank 11, and none at rank 0 (VIEW-R21, LED-R152)",
+			function()
+				local atlas = ns.ATLASES.PrestigeEmblems
+				-- The sprite a line's emblem shows, by its pixel box in Core's emblems atlas, and its size.
+				local function emblemIn(text)
+					local size, left, top = text:match(
+						"^%d+ · |TInterface\\AddOns\\Pagle\\media\\prestige\\Emblems:"
+							.. "(%d+):%d+:0:0:512:1024:(%d+):%d+:(%d+):%d+|t "
+					)
+					for name, sprite in pairs(atlas.sprites) do
+						if sprite.x == tonumber(left) and sprite.y == tonumber(top) then
+							return name, tonumber(size)
+						end
+					end
+					return nil
+				end
+
+				assert.are.same({ "emblem-i", 22 }, { emblemIn(levelText(1)) })
+				assert.are.same({ "emblem-vii", 22 }, { emblemIn(levelText(7)) })
+				assert.are.same({ "emblem-x", 22 }, { emblemIn(levelText(10)) })
+				assert.are.same({ "emblem-master", 22 }, { emblemIn(levelText(11)) })
+				assert.are.same({ "emblem-master", 22 }, { emblemIn(levelText(23)) })
+				assert.are.equal("60", levelText(0))
+				assert.is_nil(levelText(0):find("|T", 1, true))
+			end
+		)
 
 		it("leaves the title line out when there's none (VIEW-R21, IGV-R14)", function()
 			local lines = ns.AnglerTooltipLines(tooltipCard({ title = "" }))

@@ -158,7 +158,7 @@ local ns = select(2, ...)
 ---@field bindingAtlas? "Bindings"|"Bindings2" -- and its atlas (LED-R110)
 ---@field state? "inUse"|"use"|"level"|"shop" -- a binding line's state
 ---@field columns? integer       -- tiles across
----@field rank? integer          -- a crest's prestige rank
+---@field rank? integer          -- a crest's prestige rank, or a row's Prestige emblem's (a Followed Angler's, LED-R151)
 ---@field note? string           -- the bookplate's Prestige words
 ---@field ink? number[]          -- a kicker's own ink, { r, g, b } (a variety's rarity, VAR-R24)
 ---@field art? PagleVarietyArt   -- a variety's art (VAR-R11, VAR-R24)
