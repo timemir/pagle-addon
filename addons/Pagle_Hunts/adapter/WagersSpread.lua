@@ -499,11 +499,12 @@ local function fillTicket(ticket, data)
 	greyOut(ticket, data.closed)
 end
 
--- A row ahead's widgets on `page`, `width` wide.
+--- A row ahead's widgets on `page`, `width` wide (HNT-R162); the wager strip draws one for a run ahead with none on
+--- (HNT-R161). Clicking it opens the Pagle Wagers spread on its run.
 ---@param page Frame
 ---@param width number
 ---@return WagerAheadView
-local function newAhead(page, width)
+function ns.NewWagerAheadRow(page, width)
 	local row = CreateFrame("Button", nil, page) --[[@as WagerAheadView]]
 	row:SetSize(width, AHEAD_H)
 	row.outline = ns.BoardOutline(row, 0, "BORDER")
@@ -520,11 +521,11 @@ local function newAhead(page, width)
 	return row
 end
 
--- Fills a row ahead from `data` (HNT-R162): dashed, its mark, name, zones and "needs skill", and at its right when it
--- opens over its length; the chosen one's dashes in oxblood.
+--- Fills a row ahead from `data` (HNT-R162): dashed, its mark, name, zones and "needs skill", and at its right when it
+--- opens over its length; the chosen one's dashes in oxblood.
 ---@param row WagerAheadView
 ---@param data WagerAheadRow
-local function fillAhead(row, data)
+function ns.FillWagerAheadRow(row, data)
 	local width = row:GetWidth()
 	row.aheadRun, row.selected = data.run, data.selected
 	row.outline:Dashed(data.selected and LOOK.hintDash or LOOK.aheadDash, width, AHEAD_H)
@@ -872,11 +873,11 @@ local function drawSpread(page, place)
 		else
 			aheads = aheads + 1
 			local row = ns.BoardPooled(view.aheadRows, aheads, function()
-				return newAhead(page, width)
+				return ns.NewWagerAheadRow(page, width)
 			end)
 			row:ClearAllPoints()
 			row:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -tops[i])
-			fillAhead(row, item.data --[[@as WagerAheadRow]])
+			ns.FillWagerAheadRow(row, item.data --[[@as WagerAheadRow]])
 		end
 	end
 	ns.BoardHideFrom(view.tickets, tickets)

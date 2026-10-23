@@ -194,7 +194,7 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 		local stop = shown[6]
 		assert.are.equal("board", stop.place.mode)
 		assert.matches("^fixture_%a+@%d+$", stop.place.run)
-		for _, text in ipairs({ "PAGLE WAGERS", "Shore Wager · Darkshore", "+1 more on the table", "WAGERS" }) do
+		for _, text in ipairs({ "Shore Wager", "+1 more on the table", "WAGERS" }) do
 			assert(hunts.has(stop.left, text), "the Board lacks " .. text)
 		end
 		assert.is_true(hunts.has(stop.right, "FROM THE ROTATION · LOW WATERS"))

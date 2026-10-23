@@ -42,6 +42,8 @@ local ROW_HEIGHT, HEADING_GAP, HEADING_HEIGHT = 26, 10, 24
 -- A row's slide to its new place, and a Hunt just opened's flash under its row: up to 22% by 0.35 s, gone by 1.4 s.
 local SLIDE, FLASH, FLASH_PEAK = 0.4, 1.4, 0.22
 local ICON_SIZE, RING_SIZE = 19, 22
+-- A run's event mark in a WAGERS row (HNT-R161, HNT-R166): its size and top, in the ring's place.
+local MARK_SIZE, MARK_Y = 22, 2
 -- The mark at the end of a run's bar that outlasts the ruler (HNT-R161's ▸): its size, centred on the bar's end.
 local MORE_SIZE = 12
 -- The scroll rail, this far right of the list's edge.
@@ -131,6 +133,7 @@ end
 ---@field y number?        -- where it sits down the list, as it slides
 ---@field dashes BoardOutline
 ---@field icon BoardIconView
+---@field mark WagerMarkView?   -- a run's event mark in the icon's place (HNT-R161), made at a run's first draw
 ---@field pin HuntsSpriteTexture
 ---@field name FontString
 ---@field track Frame
@@ -495,8 +498,23 @@ local function drawRow(view, drawn, row, y, slide)
 	else
 		drawn.dashes:Hide()
 	end
-	drawn.icon:SetIcon(row.icon or ns.TRADE_FISHING, row.tint)
-	drawn.icon:SetTrim(row.trim)
+	-- a run's event mark in the ring's place, or a Hunt's icon (HNT-R161, HNT-R166)
+	if row.mark then
+		if not drawn.mark then
+			drawn.mark = ns.NewEventMark(drawn, MARK_SIZE)
+			drawn.mark:SetPoint("TOPLEFT", 0, -MARK_Y)
+		end
+		drawn.mark:SetMark(row.mark)
+		drawn.mark:Show()
+		drawn.icon:Hide()
+	else
+		if drawn.mark then
+			drawn.mark:Hide()
+		end
+		drawn.icon:Show()
+		drawn.icon:SetIcon(row.icon or ns.TRADE_FISHING, row.tint)
+		drawn.icon:SetTrim(row.trim)
+	end
 	drawn.pin:SetShown(row.pinned)
 	drawn.name:SetText(row.name)
 	for i, bar in ipairs(row.bars) do

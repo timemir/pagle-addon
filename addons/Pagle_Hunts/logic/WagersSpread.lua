@@ -123,25 +123,6 @@ end
 --- and while updating
 ---@field marks string?           -- "{done} of {n} first marks", or "updating…" (HNT-R69); nil once settled
 
---- A dashed row for a run ahead (HNT-R162).
----@class WagerAheadRow
----@field run string              -- its run key: clicking it chooses it
----@field selected boolean
----@field mark string[]
----@field name string
----@field zones string            -- "Silithus", "Felwood & Moonglade"
----@field need string?            -- "needs skill {n}"
----@field opens string            -- "opens Sat 17:00"
----@field length string           -- "for 3d"
-
--- A run's zones, joined: "Felwood & Moonglade".
----@param event HuntEvent
----@param input WagersInput
----@return string
-local function zonesOf(event, input)
-	return table.concat(ns.EventZoneNames(event, input.sources), ns.L.JOIN_ZONES)
-end
-
 -- One run's ticket: on, or closed this showing.
 ---@param shown HuntsShownRun
 ---@param input WagersInput
@@ -162,7 +143,7 @@ local function ticketOf(shown, input, closed)
 		name = ns.events and ns.events:EventName(event) or event.id,
 		holiday = ns.EventHolidayName(event),
 		line = L.TICKET_LINE:format(
-			zonesOf(event, input),
+			ns.EventZonesText(event, input.sources),
 			(closed and L.TICKET_CLOSED_AT or L.LABEL_UNTIL):format(ends)
 		),
 		need = ns.EventSkillNeed(event, input.best),
@@ -181,24 +162,6 @@ local function ticketOf(shown, input, closed)
 	end
 	ticket.marks = L.TICKET_MARKS:format(done, #event.hunts)
 	return ticket
-end
-
--- One run ahead's dashed row.
----@param shown HuntsShownRun
----@param input WagersInput
----@return WagerAheadRow
-local function aheadOf(shown, input)
-	local L, run, event = ns.L, shown.run, shown.event
-	return {
-		run = shown.key,
-		selected = false,
-		mark = ns.EventMarkLayers(event.tags),
-		name = ns.events and ns.events:EventName(event) or event.id,
-		zones = zonesOf(event, input),
-		need = ns.EventSkillNeed(event, input.best),
-		opens = L.AHEAD_OPENS:format(ns.RealmWeekdayClock(run.start, input.snapshot)),
-		length = L.AHEAD_FOR:format(ns.FormatDuration(run.end_ - run.start)),
-	}
 end
 
 -- The spread ---------------------------------------------------------------------------------------------------------
@@ -287,7 +250,7 @@ function ns.BuildWagersSpread(input, spread)
 			tickets[#tickets + 1] = ticketOf(run, input, false)
 			on = on + 1
 		else
-			aheadRows[#aheadRows + 1] = aheadOf(run, input)
+			aheadRows[#aheadRows + 1] = ns.WagerAheadRow(run, input)
 			firstAhead = firstAhead or run
 		end
 	end

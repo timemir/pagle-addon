@@ -39,7 +39,8 @@ local MAX_SPANS = 48
 ---@field run string?                -- a run's row: its run key (HNT-R142)
 ---@field more boolean?              -- a run's row: the run outlasts the ruler, so a mark ends its bar
 ---@field name string
----@field icon integer|string|nil    -- HNT-R55's icon; nil while the client hasn't it
+---@field icon integer|string|nil    -- HNT-R55's icon; nil while the client hasn't it, and for a run's row
+---@field mark string[]?             -- a run's row: its event mark's layers, in the icon's place (HNT-R161, HNT-R166)
 ---@field tint number[]?             -- the icon's tint (a generated class's quality colour), nil for the sepia
 ---@field trim ("bronze"|"silver"|"gold")?   -- the highest tier's trim; nil before tier 1 and while updating (HNT-R69)
 ---@field pinned boolean

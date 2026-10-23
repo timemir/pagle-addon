@@ -138,19 +138,23 @@ end
 
 -- The wager strip ----------------------------------------------------------------------------------------------------
 
---- The wager strip above the timeline's ruler (HNT-R161): the first run on, or with none on the first run ahead.
+--- The wager strip above the timeline's ruler (HNT-R161): the first run on as a one-line wager ticket, or with none on
+--- the first run ahead as the spread's dashed row. It has no kicker: the ticket's paper and mark name it.
 ---@class WagerStrip
 ---@field run string         -- the run it names: clicking it opens the Pagle Wagers spread on it (#303)
 ---@field on boolean
----@field kicker string      -- "Pagle Wagers"
----@field name string?       -- a run on: its event's name…
----@field zones string?      -- …its zones…
----@field closes string?     -- …"closes in 2d 4h" (HNT-R50, a server-time duration, HNT-R203)…
----@field pips boolean[]?    -- …and one pip per Hunt, in definition order, inked (true) at its first mark in this run;
---- nil while the projection updates (HNT-R69)
----@field updating string?   -- the updating line in place of the pips (HNT-R69)
+---@field ahead WagerAheadRow?  -- none on: the first run ahead, drawn as the spread's dashed row (HNT-R162)
+---@field mark string[]?     -- a run on: its event mark's layers (HNT-R166)…
+---@field dial WagerDial?    -- …its time dial in the stub, without words (HNT-R167)…
+---@field name string?       -- …its event's name…
+---@field zones string?      -- …its zones, in italic after the name…
+---@field settled boolean?   -- …the SETTLED stamp in place of the pips once completed; never while updating…
+---@field pips boolean[]?    -- …one pip per Hunt, in definition order, inked (true) at its first mark in this run; nil
+--- once settled and while the projection updates (HNT-R69)…
+---@field updating string?   -- …the updating line in place of the pips (HNT-R69)…
+---@field closes string?     -- …"closes in 2d 4h" in the hand (HNT-R50, a server-time duration, HNT-R203)…
+---@field urgent boolean?    -- …red within the closing-note time while not settled (Tunables, HNT-R167)
 ---@field more string?       -- "+{n} more on the table" with more runs on
----@field next string?       -- none on: "Next: {name}, Sat 15:00", the first run ahead
 ---@field hint string[]?     -- the companion hint's lines under it, with Get it and Dismiss, while it applies (HNT-R170)
 
 --- The wager strip (HNT-R161), or nil with no run on or ahead (HNT-R204).
@@ -161,20 +165,28 @@ function ns.BuildWagerStrip(input)
 	if not first then
 		return nil
 	end
-	local strip = { run = first.key, on = first.on, kicker = L.WAGERS_KICKER, hint = input.hint and input.hint.lines }
+	local strip = { run = first.key, on = first.on, hint = input.hint and input.hint.lines }
 	if not first.on then
-		strip.next = L.STRIP_NEXT:format(eventName(first.event), ns.RealmWeekdayClock(first.run.start, input.snapshot))
+		strip.ahead = ns.WagerAheadRow(first, input)
 		return strip
 	end
+	local run = first.run
+	local settled = not input.updating and run.completedAt ~= nil
+	local dial = ns.WagerDial(first, input.now, settled, false)
+	dial.left = nil -- wordless: "closes in …" says the time
+	strip.mark = ns.EventMarkLayers(first.event.tags)
+	strip.dial = dial
 	strip.name = eventName(first.event)
-	strip.zones = table.concat(ns.EventZoneNames(first.event, input.sources), L.JOIN_ZONES)
-	strip.closes = L.STRIP_CLOSES:format(ns.FormatDuration(first.run.end_ - input.now))
+	strip.zones = ns.EventZonesText(first.event, input.sources)
+	strip.settled = settled
+	strip.closes = L.STRIP_CLOSES:format(ns.FormatDuration(run.end_ - input.now))
+	strip.urgent = dial.urgent
 	if input.updating then
-		strip.updating = L.UPDATING
-	else
+		strip.updating = L.TICKET_UPDATING -- as the tickets read it (HNT-R163)
+	elseif not settled then
 		strip.pips = {}
 		for i, hunt in ipairs(first.event.hunts) do
-			strip.pips[i] = ns.HuntDone(first.run.hunts[hunt.id])
+			strip.pips[i] = ns.HuntDone(run.hunts[hunt.id])
 		end
 	end
 	local on = 0
@@ -185,6 +197,43 @@ function ns.BuildWagerStrip(input)
 		strip.more = L.STRIP_MORE:format(on - 1)
 	end
 	return strip
+end
+
+--- The least room, in UI units with its gap, the zones take on the strip's line (HNT-R161): with less, they are left
+--- out rather than cut to a stub. *Default chosen while building (#376), as #375's prototype laid it.*
+ns.WAGER_STRIP_ZONES_LEAST = 38
+
+--- What the strip's line weighs, in UI units (HNT-R161): the room from the name's left to what sits at the right (the
+--- pips or the stamp, and "closes in …"), and the widths the name, "+{n} more on the table" and the zones would take,
+--- each of the last two with its gap (0 for one not there).
+---@class WagerStripSizes
+---@field room number
+---@field name number
+---@field more number
+---@field zones number
+
+--- The strip's fit rule (HNT-R161): short of room, the zones go first, cut short, then left out under
+--- ns.WAGER_STRIP_ZONES_LEAST; then "+{n} more on the table"; and only then is the name cut short. Returns the name's
+--- width, whether "+{n} more" shows, and the zones' width with their gap (nil when left out).
+---@param sizes WagerStripSizes
+---@return { name: number, more: boolean, zones: number? }
+function ns.WagerStripFit(sizes)
+	local room = sizes.room
+	local fit = { more = false }
+	if sizes.more > 0 then
+		if sizes.name + sizes.more > room then
+			-- "+{n} more" leaves, and the zones, which go before it, with it
+			fit.name = math.max(0, math.min(sizes.name, room))
+			return fit
+		end
+		fit.more, room = true, room - sizes.more
+	end
+	fit.name = math.max(0, math.min(sizes.name, room))
+	local left = room - fit.name
+	if sizes.zones > 0 and left >= ns.WAGER_STRIP_ZONES_LEAST then
+		fit.zones = math.min(sizes.zones, left)
+	end
+	return fit
 end
 
 -- The WAGERS group's rows ------------------------------------------------------------------------------------------
@@ -200,7 +249,8 @@ local function timeSpec(hunt)
 	return { time = conditions.time, season = conditions.season, events = conditions.events }
 end
 
---- One run's row in the WAGERS group (HNT-R161): a TimelineRow (logic/Timeline.lua) with its run key.
+--- One run's row in the WAGERS group (HNT-R161): a TimelineRow (logic/Timeline.lua) with its run key and, in place of
+--- an icon, its event mark.
 ---@param shown HuntsShownRun
 ---@param ruler { from: integer, to: integer }
 ---@param input WagersInput
@@ -224,17 +274,12 @@ local function runRow(shown, ruler, input)
 			end
 		end
 	end
-	local icon, tint = nil, nil
-	if event.hunts[1] then
-		icon, tint = ns.HuntIcon(event.hunts[1], input.list, input.sources)
-	end
 	local when = ns.RealmWeekdayClock(shown.on and run.end_ or run.start, input.snapshot)
 	return {
 		id = shown.key,
 		run = shown.key,
 		name = eventName(event),
-		icon = icon,
-		tint = tint,
+		mark = ns.EventMarkLayers(event.tags), -- in the place of a Hunt's icon (HNT-R166)
 		trim = nil,
 		pinned = false,
 		margin = shown.on and ns.L.LABEL_UNTIL:format(when) or when,
@@ -302,6 +347,44 @@ function ns.EventMarkLayers(tags)
 		layers[#layers + 1] = "mark-charm-" .. charm
 	end
 	return layers
+end
+
+--- An event's zones' names joined, "Felwood & Moonglade" (HNT-R161, HNT-R162).
+---@param event HuntEvent
+---@param sources HuntNameSources
+---@return string
+function ns.EventZonesText(event, sources)
+	return table.concat(ns.EventZoneNames(event, sources), ns.L.JOIN_ZONES)
+end
+
+--- A dashed row for a run ahead (HNT-R162), on the spread and, with none on, as the wager strip (HNT-R161).
+---@class WagerAheadRow
+---@field run string              -- its run key: clicking it chooses it
+---@field selected boolean
+---@field mark string[]
+---@field name string
+---@field zones string            -- "Silithus", "Felwood & Moonglade"
+---@field need string?            -- "needs skill {n}"
+---@field opens string            -- "opens Sat 17:00"
+---@field length string           -- "for 3d"
+
+--- Run ahead `shown`'s dashed row (HNT-R162): its mark, name, zones, "needs skill {n}", and when it opens over its
+--- length; not chosen.
+---@param shown HuntsShownRun
+---@param input WagersInput
+---@return WagerAheadRow
+function ns.WagerAheadRow(shown, input)
+	local L, run, event = ns.L, shown.run, shown.event
+	return {
+		run = shown.key,
+		selected = false,
+		mark = ns.EventMarkLayers(event.tags),
+		name = eventName(event),
+		zones = ns.EventZonesText(event, input.sources),
+		need = ns.EventSkillNeed(event, input.best),
+		opens = L.AHEAD_OPENS:format(ns.RealmWeekdayClock(run.start, input.snapshot)),
+		length = L.AHEAD_FOR:format(ns.FormatDuration(run.end_ - run.start)),
+	}
 end
 
 --- An event's holiday tag's name (DATA-R97's holiday tags, interface text in ns.L keyed by tag ID), nil for an event
