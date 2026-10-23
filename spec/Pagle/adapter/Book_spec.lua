@@ -116,6 +116,7 @@ describe("Pagle.NewBook (core/book.md)", function()
 		"lets a book draw its own notice on a layer over each paper, hidden again as the notice ends (BOOK-R22,"
 			.. " BOOK-R25)",
 		function()
+			---@type string?
 			local words = "Updating…"
 			local calls, hidden = {}, 0
 			local book = newBook({
