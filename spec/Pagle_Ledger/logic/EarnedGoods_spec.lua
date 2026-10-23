@@ -247,7 +247,7 @@ describe("the expansion's earned goods", function()
 			for index = 1, n do
 				made.varieties[COLOURED][index] = {
 					count = 1,
-					first = { entryId = "c" .. index, zone = LAKE, char = 1 },
+					first = { entryId = "c" .. index, time = index, zone = LAKE, char = 1 },
 				}
 			end
 			return made

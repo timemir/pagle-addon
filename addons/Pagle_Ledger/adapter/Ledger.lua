@@ -38,7 +38,44 @@ function ns.Ledger.OnInitialize()
 	--- its live entries and its done (LED-R122, LED-R123).
 	--- The fold reads the world index and Core's MatchesConditions as lookups (LED-R3, LED-R45).
 	local def, activityXPChanged = ns.ProjectionDef(ns.db.global, lookups, ns.Outlets(ns.Module), sizeRulesVersion)
-	ns.projection = ns.Module:NewProjection(ns.WithJournalRedraws(def))
+	-- The crest record (LED-R156, #76 item 19): the frame after the crest the bookplate pins changes, and after the
+	-- projection's done, that crest is logged when the log's latest crest record doesn't name it. Never from done
+	-- itself, where M:AppendRecord raises (LOG-R40), nor while the projection updates: its done queues it again.
+	local crestQueued = false
+	local function logCrest()
+		crestQueued = false
+		local state = ns.StateNow()
+		if not state then
+			return
+		end
+		local equipped = Pagle.GetEquipped(ns.CREST_SLOT)
+		local good = equipped and Pagle.GetGood(equipped)
+		local isDefault = not equipped or (good ~= nil and good.isDefault == true)
+		local payload = ns.CrestRecordFor(state, equipped or "", isDefault)
+		if payload then
+			ns.Module:AppendRecord(ns.CREST_RECORD, payload)
+		end
+	end
+	local function queueCrestLog()
+		if not crestQueued then
+			crestQueued = true
+			C_Timer.After(0, logCrest)
+		end
+	end
+	local journalDef = ns.WithJournalRedraws(def)
+	local journalDone = journalDef.done
+	journalDef.done = function(state, info)
+		if journalDone then
+			journalDone(state, info)
+		end
+		queueCrestLog()
+	end
+	ns.projection = ns.Module:NewProjection(journalDef)
+	Pagle.RegisterCallback(ns.Ledger, "AppearanceChanged", function(_, slot)
+		if slot == ns.CREST_SLOT then
+			queueCrestLog()
+		end
+	end)
 	-- Another Module's Activity XP changed the climb (LED-R39): the shown level is worked out again, then the Journal
 	-- redraws. While the projection updates, its done does it instead; one that already ran (the entries appended
 	-- meanwhile still applying) leaves it to the next frame's try, which finds nothing new when done did it.

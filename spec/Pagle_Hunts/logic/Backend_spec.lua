@@ -1,5 +1,5 @@
--- Hunts' projection for Pagle's backend (#223): ns.BindProjections, ns.CoinsEarned and ns.ActivityXPEarned
--- (logic/Projection.lua; #76 item 15), on
+-- Hunts' projection for Pagle's backend (#223): ns.BindProjections, ns.CoinsEarned, ns.ActivityXPEarned (#76 item
+-- 15) and ns.JournalValues with the Pagle Wagers ladder (logic/Projection.lua; HNT-R178), on
 -- FakePagle over the fixture Hunt list and catalogue. The backend's driver folds the Catch log through logic/ alone
 -- (spec/logic_alone_spec.lua), so the binding must fold the Hunts as the client's projection does.
 
@@ -242,6 +242,40 @@ describe("Hunts' projection for the backend (#223)", function()
 				hunt("fixture_hefty_blackmouth").target
 			)
 			assert.are.equal(0, hunt("fixture_hefty_blackmouth").trim)
+		end)
+
+		it("gives the Pagle Wagers ladder's marks in step order, none earned before 25 settled (HNT-R148)", function()
+			assert.are.same({
+				{ step = 25, earned = false },
+				{ step = 50, earned = false },
+				{ step = 100, earned = false },
+			}, journal.ladder)
+		end)
+
+		it("marks a step earned once the state holds its title, as the spread's ladder inks it (HNT-R162)", function()
+			local bound, ns = boundByBackend()
+			local state = bound:GetState() --[[@as HuntsState]]
+			local settled = setmetatable({ settled = 57, ladder = { [25] = JUNE_1, [50] = JUNE_1 + 60 } }, {
+				__index = state,
+			})
+
+			local ladder = ns.JournalValues(settled --[[@as HuntsState]], 20).ladder
+			assert.are.same({
+				{ step = 25, earned = true },
+				{ step = 50, earned = true },
+				{ step = 100, earned = false },
+			}, ladder)
+			local spread = ns.BuildWagersLadder(settled.settled, settled.ladder)
+			for i, mark in ipairs(spread.marks) do
+				assert.are.same({ mark.step, mark.reached }, { ladder[i].step, ladder[i].earned })
+			end
+		end)
+
+		it("keeps a ladder title earned when the count reads lower: it is never lost (HNT-R148)", function()
+			local bound, ns = boundByBackend()
+			local kept = setmetatable({ settled = 3, ladder = { [25] = JUNE_1 } }, { __index = bound:GetState() })
+
+			assert.is_true(ns.JournalValues(kept --[[@as HuntsState]], 20).ladder[1].earned)
 		end)
 
 		it("counts each set's current Hunts and those done (HNT-R17, HNT-R20)", function()

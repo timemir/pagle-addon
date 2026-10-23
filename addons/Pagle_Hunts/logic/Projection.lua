@@ -240,11 +240,13 @@ end
 --- fold time:
 --- - `hunts`: every Hunt of the list that exists now or has a reached tier, in list order (HNT-R2, HNT-R3, HNT-R15,
 ---   HNT-R17, HNT-R18, HNT-R54);
---- - `sets`: every set in list order, with its Hunts current now and how many of those are done (HNT-R17, HNT-R20).
+--- - `sets`: every set in list order, with its Hunts current now and how many of those are done (HNT-R17, HNT-R20);
+--- - `ladder`: the Pagle Wagers ladder's marks in step order (ns.LADDER_STEPS), each with whether its title is earned
+---   in the state, never lost (HNT-R148, HNT-R178), as the spread's ladder inks it (ns.BuildWagersLadder, HNT-R162).
 --- Reads the Hunt list ns.BindProjections (or the adapter) made.
 ---@param state HuntsState
 ---@param sessionRows integer
----@return { hunts: HuntsJournalHunt[], sets: { id: string, hunts: integer, done: integer }[] }
+---@return { hunts: HuntsJournalHunt[], sets: { id: string, hunts: integer, done: integer }[], ladder: { step: integer, earned: boolean }[] }
 function ns.JournalValues(state, sessionRows) -- luacheck: no unused args (the driver's one shape for every Module)
 	local now = GetServerTime() -- luacheck: read globals GetServerTime (#223: the driver's fold time)
 	local list = ns.hunts
@@ -282,7 +284,11 @@ function ns.JournalValues(state, sessionRows) -- luacheck: no unused args (the d
 		local done, current = ns.DoneOfCurrent(list, state, now, set.id)
 		sets[#sets + 1] = { id = set.id, hunts = current, done = done }
 	end
-	return { hunts = hunts, sets = sets }
+	local ladder = {}
+	for i, step in ipairs(ns.LADDER_STEPS) do
+		ladder[i] = { step = step, earned = state.ladder[step] ~= nil }
+	end
+	return { hunts = hunts, sets = sets, ladder = ladder }
 end
 
 --- Hunts' projection def (HNT-R136, LOG-R70), bound to `global.projection`, which it makes if missing: Core owns it

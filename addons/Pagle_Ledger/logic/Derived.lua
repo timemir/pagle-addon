@@ -111,7 +111,11 @@ end
 --- - `species`: every Species of the world by ID: caught, computed stars, removed (LED-R11, LED-R12, LED-R45);
 --- - `legends`: LED-R63's N, removed Legends left out, and every caught Legend by item ID, with removed;
 --- - `trophies`: every listed trophy family by ID: computed stars and its listed weights, lightest first, each with
----   whether it is landed (LED-R47, LED-R61).
+---   whether it is landed (LED-R47, LED-R61);
+--- - `xp`: `ledger`, the Ledger's own XP all told, every climb's, without Activity XP (LED-R150, LED-R155);
+--- - `varieties`: every Species with varieties by ID, its caught ones in position order, each with its variety ID,
+---   position, rarity and the time of its first Catch (VAR-R2, VAR-R20, LED-R155);
+--- - `crests`: the earned crests, ns.EarnedCrests (LED-R155).
 ---@param state LedgerState
 ---@param sessionRows integer
 ---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
@@ -190,6 +194,24 @@ function ns.JournalValues(state, sessionRows, total) -- luacheck: no unused args
 			{ family = family, stars = starList(ns.FamilyStars(world, state, family)), weights = weights }
 	end
 
+	local varieties = {}
+	for _, id in ipairs(worlds.species) do
+		local item = world.getItem(id)
+		local keys = item and item.varieties
+		if keys and ns.VarietyCount(world.getItem, id) > 0 then
+			local caught, ofSpecies = {}, state.varieties[id] or {}
+			for _, position in ipairs(ns.SortedKeys(ofSpecies)) do
+				caught[#caught + 1] = {
+					id = id .. "." .. keys[position],
+					position = position,
+					rarity = ns.VARIETY_RARITY_OF[position],
+					first = ofSpecies[position].first.time,
+				}
+			end
+			varieties[#varieties + 1] = { species = id, caught = caught }
+		end
+	end
+
 	return {
 		level = { into = into, cost = cost, carried = level == ns.LEVEL_CAP and into or 0 },
 		parts = parts,
@@ -201,7 +223,50 @@ function ns.JournalValues(state, sessionRows, total) -- luacheck: no unused args
 		species = species,
 		legends = { total = completion.legends.total, caught = caughtLegends },
 		trophies = trophies,
+		xp = { ledger = state.lifetimeXP },
+		varieties = varieties,
+		crests = ns.EarnedCrests(state),
 	}
+end
+
+---@class LedgerEarnedCrest
+---@field id string          -- the crest's good ID: `ledger.crest.<key>` or `core.crest.fish.<speciesID>`
+---@field kind "zone"|"fish"
+---@field zone? integer      -- a zone crest's areaID
+---@field species? integer   -- a fish crest's Species ID
+---@field earnedAt integer   -- server time of the record that earned it
+
+--- The crests a Ledger state earns, for Pagle's backend (LED-R155): the zone crests in the zone crest table's order
+--- (ns.ZONE_CRESTS, LED-R113), each once its zone's computed rank is Master (LED-R50), never by the celebrated set's
+--- shown rank, which never leaves the client (LOG-R77), at the time of the Cast that reached Master; then the fish
+--- crests by Species ID, each once all its varieties are caught (VAR-R12, VAR-R20), at the latest of its varieties'
+--- first Catches, the Cast that completed it.
+---@param state LedgerState
+---@return LedgerEarnedCrest[]
+function ns.EarnedCrests(state)
+	local crests = {}
+	for _, crest in ipairs(ns.ZONE_CRESTS) do
+		local zoneState = state.zones[crest.areaID]
+		if zoneState and zoneState.rank >= ns.ZONE_MASTER then
+			crests[#crests + 1] = {
+				id = ns.ZoneCrestID(crest),
+				kind = "zone",
+				zone = crest.areaID,
+				earnedAt = zoneState.masterAt,
+			}
+		end
+	end
+	local getItem = ns.world.getItem
+	for _, species in ipairs(ns.SortedKeys(state.varieties)) do
+		if ns.FishComplete(state, getItem, species) then
+			local last = 0
+			for _, variety in pairs(state.varieties[species]) do
+				last = math.max(last, variety.first.time)
+			end
+			crests[#crests + 1] = { id = ns.FishCrestID(species), kind = "fish", species = species, earnedAt = last }
+		end
+	end
+	return crests
 end
 
 --- The record kind of the Ledger's title record (#76 item 2): its payload is the picked title key, or "" for
@@ -220,4 +285,52 @@ function ns.PickedTitle(record)
 		return false
 	end
 	return record.payload
+end
+
+--- The record kind of the Ledger's crest record (LED-R156, #76 item 19): its payload is the good ID of the crest the
+--- bookplate pins (`Pagle.GetEquipped("core.crest")`, LED-R112), or "" for Plain, the slot's default.
+ns.CREST_RECORD = "crest"
+
+--- The crest a Ledger Module record equips (LED-R156): nil when it isn't a crest record, false when it equips Plain,
+--- else the crest's good ID. The backend takes the latest by entry time and shows it only when its fold earns it.
+---@param record PagleModuleRecord
+---@return (string|false)?
+function ns.EquippedCrest(record)
+	if record.recordKind ~= ns.CREST_RECORD then
+		return nil
+	end
+	if record.payload == "" then
+		return false
+	end
+	return record.payload
+end
+
+--- Folds a Ledger Module record into the state (LED-R156): a crest record becomes `state.crest` unless the one there
+--- is later by entry time, so the latest wins, the later in log order on equal time. Every other record changes
+--- nothing.
+---@param state LedgerState
+---@param record PagleModuleRecord
+function ns.NoteCrestRecord(state, record)
+	if ns.EquippedCrest(record) == nil then
+		return
+	end
+	local logged = state.crest
+	if logged == nil or record.time >= logged.time then
+		state.crest = { good = record.payload, time = record.time }
+	end
+end
+
+--- The crest record to append for the crest the bookplate pins now (LED-R156): its payload ("" for the slot's
+--- default, Plain), or nil when the state's latest crest record already names it. A log with none names Plain.
+---@param state LedgerState
+---@param equipped string Pagle.GetEquipped("core.crest")
+---@param isDefault boolean whether `equipped` is the slot's default (Plain)
+---@return string?
+function ns.CrestRecordFor(state, equipped, isDefault)
+	local payload = isDefault and "" or equipped
+	local logged = state.crest and state.crest.good or ""
+	if payload == logged then
+		return nil
+	end
+	return payload
 end

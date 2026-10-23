@@ -28,14 +28,14 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 ### The Module
 
 - **LED-R1** `Pagle_Ledger` registers with `def.name = "Ledger"`, `title = "Ledger"`, `order = 10`. From M3 it has one view, `{ id = "journal", label = "Fish Journal" }`, and one slash command, `/pagle journal` (help "Open or close the Fish Journal"); both toggle the Journal (any text after the command is ignored). It has no `settingsAction` (the Settings root shows "Open Fish Journal", CORE-R44), no extra menu entries and no settings rows: the Ledger has no settings page. In M2 it has no view and no slash command.
-- **LED-R2** The Ledger keeps one projection (LOG-R70) in `PagleLedgerDB.global.projection` over every record `M:IterateCatches` yields. It applies caught and got-away Casts, Skill Readings and Prestiges, and ignores every other kind. It appends no Module records. Its `rulesVersion` is `LEDGER_RULES_VERSION × 100 + Pagle.SIZE_RULES_VERSION` (Tunables), because it stores lengths (LOG-R68); `SIZE_RULES_VERSION` stays below 100. `LEDGER_RULES_VERSION` rises whenever a rule or Tunable that changes the projection changes. It has no `extraFingerprint`, and it never reads Sessions (no `SESSION_RULES_VERSION`).
+- **LED-R2** The Ledger keeps one projection (LOG-R70) in `PagleLedgerDB.global.projection` over every record `M:IterateCatches` yields. It applies caught and got-away Casts, Skill Readings, Prestiges and its own crest records (LED-R156), and ignores every other kind. The crest record is the one Module record it appends ([Data › Module records](#module-records)). Its `rulesVersion` is `LEDGER_RULES_VERSION × 100 + Pagle.SIZE_RULES_VERSION` (Tunables), because it stores lengths (LOG-R68); `SIZE_RULES_VERSION` stays below 100. `LEDGER_RULES_VERSION` rises whenever a rule or Tunable that changes the projection changes. It has no `extraFingerprint`, and it never reads Sessions (no `SESSION_RULES_VERSION`).
 - **LED-R3** The projection's state is a pure function of the entries applied and the catalogue, the same in every mode. The fold lives in the Ledger's `logic/`, with Core's lookups and `MatchesConditions` passed in. Entries are applied in `seq` order and a Cast's Catches in item order. The celebrated set (LED-R90) and the in-memory scratch list (LED-R98) are the only things outside the projection, and the fold never reads either.
 - **LED-R4** **Staging by milestone.** The fold, the moments and the Journal grow by milestone, and each milestone that changes the fold raises `LEDGER_RULES_VERSION`, so the projection rebuilds and what history newly earns arrives as summary-only moments (LED-R93):
   - **M2:** classification (LED-R5–R7) with no Legend class (a Legend item counts as its category until M4); XP rows Catch XP, new Species, Species in a zone, first Catch in a zone and Skill Milestones; Fresh Water; the climb without Prestige (no carried XP use, no `prestigeReady`); Skill Milestones; lifetime Catches as a count; Coins for level-ups and new Species; moments `levelUp`, `newSpecies`, `newInZone`, `skillMilestone`; the celebrated set, `done` and the summary line without completion.
   - **M3:** the world index, stars, Zone Mastery, the collections and the Uncharted list, completion, their XP, Coins and moments, and the Journal. The Journal leaves out every M4 element: Legends (contents line and spread), titles (the bookplate and brass plate show no title; "Lv {L} · Ledger {p}%"; the `zoneMaster` moment's text is just "{zone}"; no `completeTitle` moment), the zonemaster line of LED-R137, the Prestige emblems and button, "Signed As", "Bindings", the Catch Milestone part of LED-R146 (it reads "{lifetime} Catches"), and size text. It is drawn in the Field Leather look, whose tints the M3 Journal ticket picks, while no binding slot exists.
   - **M4:** Legends, titles, Simulated Size records (and size text), Catch Milestones, Prestige (with `prestigeReady`), the bindings, and every element M3 left out.
 
-  `LEDGER_RULES_VERSION` is 1 in M2, 2 in M3 and 3 in M4, then rises by 1 per change: 4 when ★ moved from a Species' first Catch to its 5th (LED-R45); 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32, LED-R37, M8 Hunt Events); 6 for the varieties caught (VAR-R20); 7 for the second round's counts (LED-R118, LED-R119). In M2 the Settings root has no "Open Fish Journal" button, since the Ledger has no view yet (CORE-R44).
+  `LEDGER_RULES_VERSION` is 1 in M2, 2 in M3 and 3 in M4, then rises by 1 per change: 4 when ★ moved from a Species' first Catch to its 5th (LED-R45); 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32, LED-R37, M8 Hunt Events); 6 for the varieties caught (VAR-R20); 7 for the second round's counts (LED-R118, LED-R119); 8 for the time a zone reached Master and a variety was first caught, and the crest record (LED-R155, LED-R156). In M2 the Settings root has no "Open Fish Journal" button, since the Ledger has no view yet (CORE-R44).
 
 ### Classifying a Catch
 
@@ -392,6 +392,16 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 - **LED-R148** **Search**, in the slip that is the book's leather anchor `search` (BOOK-R16; hidden while updating, LED-R122, and under a Legend's plate), matches, case-insensitively as a substring, the names of the zones that have a tile and of caught Species and caught Legends (never anything uncaught, LED-R124), on every text change from the first character, showing at most 4 zones then 6 fish in a dropdown, the zones under "Waters" each with its tile's line, the fish under "Fish" each with its icon, each part sorted by name; picking one opens its zone or fish spread (a Legend opens on the Legends spread with it chosen). A Species matches by its representative item's name (LED-R5). With no match: "Nothing by that name in the Ledger yet." Items whose names aren't loaded yet don't match.
 - **LED-R149** **The brass plate** on the cover's lower left corner, the shell's nameplate (BOOK-R14), always shows "Lv {shown level} · {active title} · Ledger {p}%".
 
+### Pagle's backend
+
+- **LED-R155** **The backend's Journal values** ([#76](https://github.com/timemir/wow-fish/issues/76) items 5 and 18, pagle-backend's `angler-page.md` › Journal values, `journal.v` 3). Besides the values LOG-R79's hooks list, the Ledger's `JournalValues(state, sessionRows, total)` gives, from its state and the world index alone (CORE-R7), with the client's values for the same state:
+  - `xp`: `{ ledger }`, the Ledger's own XP all told, every climb's, without Activity XP: the state's `lifetimeXP`, which "Where your XP came from" shows as "Catches and discoveries" under "All told" (LED-R150). `total` doesn't change it.
+  - `varieties`: every Species of LED-R11's world with varieties (VAR-R2), by Species ID, each `{ species, caught }`, with `caught` its caught varieties in position order, each `{ id, position, rarity, first }`: the variety ID `<speciesID>.<key>` (its catalogue item's keys, VAR-R4), its position 1–10, its rarity (`common`, `uncommon`, `rare` or `epic`, VAR-R2, the Ledger's frozen copy of Core's positions, so it needs no `Pagle.GetVarieties`, which the driver doesn't host) and the server time of its first Catch. A Species with none caught has `caught = {}`. These are the varieties the Ledger counts (VAR-R20); Core's variety projection holds the same positions (VAR-R10).
+  - `crests`: every crest the state earns, each `{ id, kind, zone | species, earnedAt }`: first the zone crests (`kind` `"zone"`, `zone` the areaID) in the zone crest table's order (`ns.ZONE_CRESTS`, LED-R113), each once its zone's **computed** rank is Master (LED-R50), never by the celebrated set's shown rank, which never leaves the client (LOG-R77, LED-R114 keeps it in game), `earnedAt` the time of the Cast that raised the computed rank to Master; then the fish crests (`kind` `"fish"`, `species` the Species ID) by Species ID, each once all its varieties are caught (VAR-R12, VAR-R20), `earnedAt` the latest of its varieties' first Catches, the Cast that completed it. `id` is the crest's good ID (`ledger.crest.<key>`, `core.crest.fish.<speciesID>`), as the web art's `index.json` keys them (DATA-R136).
+
+  To keep the two times, the projection stores a zone's `masterAt` and each variety's first `time` ([Data](#projection-state-pagleledgerdbglobalprojectionprojection-log-r70)); `LEDGER_RULES_VERSION` 8 rebuilds it (LED-R4).
+- **LED-R156** **The crest record** ([#76](https://github.com/timemir/wow-fish/issues/76) item 19, ADR 0008). The crest the bookplate pins (`Pagle.GetEquipped("core.crest")`, LED-R112) is a player's choice that `PagleDB.profile.appearance` keeps outside the log, so the Ledger logs it as its own Module record, kind `crest` (`ns.CREST_RECORD`), its payload the crest's good ID, or `""` for the slot's default, Plain. It appends one, the frame after the pinned crest changes (`AppearanceChanged` for `core.crest`, SHOP-R33) and the frame after its projection's `done` (from `done` itself `M:AppendRecord` raises, LOG-R40), whenever the pinned crest isn't the one the log's latest crest record names; a log without one names Plain. So it logs nothing for a Player who never leaves Plain, logs a crest already pinned when this rule ships once, at the next login, and never logs while the projection updates (`done` follows). Its fold keeps the latest crest record by entry time as `crest = { good, time }`, the later in log order on equal time; nothing else reads it in game. Pagle's backend reads each crest record with `EquippedCrest(record)` (LOG-R79), takes the latest by entry time, and shows it only when its own fold earns that crest (LED-R155).
+
 ### Lore
 
 - **LED-R152** **Prestige emblems**: one per rank I to X and the Master's, each its Prestige frame in miniature with its numeral on a centre disc, from Core's `media/prestige/Emblems` atlas (64 × 64 sprites, the numeral in the art, `Pagle.SetPrestigeEmblem`): drawn at 64 units on the Prestige confirm card (LED-R33), at 34 beside the Angler Level and the Prestige line (LED-R132, LED-R146), and at 22 in lists and tooltips (the Prestige frame's tooltip, LED-R154; the Following index's rows, LED-R151; and Core's Pagle block on a player's tooltip, VIEW-R21), where its shape and colour carry the rank. No Prestige has no emblem.
@@ -458,6 +468,7 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 ---@field zones { [integer]: LedgerZone }        -- every zone with a Catch (zone ≠ 0)
 ---@field varieties { [integer]: { [integer]: LedgerVariety } }  -- by Species ID, each variety caught by its position (VAR-R20)
 ---@field counts LedgerCounts            -- the second round's counts (LED-R118, LED-R119)
+---@field crest? { good: string, time: integer }  -- the latest crest record: good ID ("" for Plain) and time (LED-R156)
 
 ---@class LedgerCounts                  -- LED-R118, LED-R119
 ---@field shards integer                 -- glass shards (LED-R119)
@@ -476,7 +487,7 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 
 ---@class LedgerVariety                -- core/varieties.md › Data
 ---@field count integer                 -- Catches of the variety
----@field first { entryId: string, date: { year: integer, month: integer, day: integer }?, zone: integer, char: integer }  -- its first Catch (VAR-R24)
+---@field first { entryId: string, time: integer, date: { year: integer, month: integer, day: integer }?, zone: integer, char: integer }  -- its first Catch (VAR-R24; `time`, LED-R155)
 
 ---@class LedgerFirst
 ---@field n integer
@@ -514,9 +525,21 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 ---@field junk boolean
 ---@field treasure boolean
 ---@field rank integer                  -- computed rank, 0 if not charted (LED-R50)
+---@field masterAt? integer             -- time of the Cast that raised the computed rank to Master (LED-R155)
 ```
 
 Stars, levels (the peak level too, LED-R35), completion and titles are computed from this state and the world index when needed; they aren't stored.
+
+### Module records
+
+Every record is `A1|<header>|Ledger|<kind>|<payload>` (LOG-R40, LOG-R11), replayed to the Ledger alone (LOG-R41). A new shape is a new `kind` (ADR 0008).
+
+| Kind | Payload | Appended | Rules |
+|---|---|---|---|
+| `crest` | the good ID of the crest the bookplate pins (`[%w_.]+`), or empty for Plain | since `LEDGER_RULES_VERSION` 8 | LED-R156 |
+| `title` | the picked title key, or empty for automatic | not yet: its reader, `PickedTitle`, is in place for the backend | LED-R77, [#76](https://github.com/timemir/wow-fish/issues/76) item 2 |
+
+Examples: `A1|1|1791731747|0|Ledger|crest|ledger.crest.elwynn`; `A1|1|1791732000|0|Ledger|crest|` (Plain).
 
 ### `PagleLedgerDB` (AceDB, account-wide, one shared profile)
 
@@ -547,6 +570,7 @@ Pagle.RegisterModule{
 |---|---|
 | `Pagle.RegisterModule` | LED-R1 |
 | `M:IterateCatches`, `M:NewProjection` | LED-R2 |
+| `M:AppendRecord` (the crest record), `Pagle.GetEquipped("core.crest")`, `Pagle.GetGood` (whether it is the default), event `AppearanceChanged` | LED-R156 |
 | `M:RecordPrestige` | LED-R33 |
 | `Pagle.GetActivityXP`, event `ActivityXPChanged` | LED-R37–R39, LED-R145, LED-R146, LED-R150 |
 | `Pagle.GetFollowedAnglers` | LED-R132, LED-R151 |
@@ -639,7 +663,7 @@ The Ledger adds no rows to any Settings page.
 | Forecast in hours up to | 48 h | LED-R127 |
 | Write-up title lines | 3 | LED-R94 |
 | Continent name map (continent ID → uiMapID) | 0 → 1415 (Eastern Kingdoms), 1 → 1414 (Kalimdor); every other ContinentID is "Other waters" | LED-R126, LED-R130 |
-| `LEDGER_RULES_VERSION` | 7 (1 in M2, 2 in M3, 3 in M4, then +1 per change; 7 for the second round's counts, LED-R118) | LED-R2, LED-R4 |
+| `LEDGER_RULES_VERSION` | 8 (1 in M2, 2 in M3, 3 in M4, then +1 per change; 7 for the second round's counts, LED-R118; 8 for the crest times and record, LED-R155, LED-R156) | LED-R2, LED-R4 |
 
 ## Edge cases
 

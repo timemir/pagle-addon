@@ -267,8 +267,9 @@ local function board()
 	}
 end
 
--- A FakePagle whose log holds Casts in three zones, a Skill Reading, a purchase, a pool event's run and a started
--- Tackle Board, and every paying Module loaded whole on it and logged in: the client's side of the comparison.
+-- A FakePagle whose log holds Casts in three zones, a Skill Reading, a purchase, a pool event's run, a started
+-- Tackle Board, all ten Firefin varieties and the Ledger's crest record, and every paying Module loaded whole on it and
+-- logged in: the client's side of the comparison.
 ---@return FakePagle fake
 ---@return table<string, LoadedAddon> loaded each Module by roster name
 local function clientSide()
@@ -284,6 +285,24 @@ local function clientSide()
 	fake.catchLog:Append(cast(T0 + 130, WESTFALL, { MACKEREL, OILY }))
 	fake.catchLog:Append(cast(T0 + 190, DARKSHORE, { OILY, FIREFIN }))
 	fake.catchLog:Append({ kind = "purchase", char = 1, time = T0 + 250, good = "core.toaststyle.ripple", price = 120 })
+	-- All ten Firefin varieties (VAR-R3), one Catch each, so its fish crest is earned (VAR-R12).
+	local from = T0 + 300
+	for index = 1, 10 do
+		while fake.ns.VarietyIndex(("%s-%d-0:1"):format(PLAYER_GUID, from)) ~= index do
+			from = from + 1
+		end
+		fake.catchLog:Append(cast(from, DARKSHORE, { FIREFIN }))
+		from = from + 60
+	end
+	-- The Ledger's crest record (#76 item 19, LED-R156): Firefin's fish crest equipped.
+	fake.catchLog:Append({
+		kind = "module",
+		char = 1,
+		time = from,
+		module = "Ledger",
+		recordKind = "crest",
+		payload = "core.crest.fish." .. FIREFIN,
+	})
 	local loaded = {}
 	for _, name in ipairs({ "Ledger", "Hunts", "Stats", "TackleBoard" }) do
 		loaded[name] = fake.load("Pagle_" .. name)
@@ -390,7 +409,7 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 			for _, read in ipairs({ "Measures", "EarnedTitles", "AutomaticTitle", "ZonesMastered", "LifetimeCatches" }) do
 				assert.are.same(client[read](clientState), ledger[read](state, total), read)
 			end
-			assert.are.equal(6, ledger.LifetimeCatches(state)) -- two on each of three Casts
+			assert.are.equal(16, ledger.LifetimeCatches(state)) -- two on each of three Casts, and ten Firefin
 		end)
 
 		it("counts the Activity XP in the Ledger's Angler Level, so the comparison above has it (LED-R37)", function()
@@ -425,13 +444,78 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 				species = "Ledger",
 				legends = "Ledger",
 				trophies = "Ledger",
+				xp = "Ledger",
+				varieties = "Ledger",
+				crests = "Ledger",
 				stats = "Stats",
 				sessions = "Stats",
 				odds = "Stats",
 				hunts = "Hunts",
 				sets = "Hunts",
+				ladder = "Hunts",
 				flies = "TackleBoard",
 			}, from)
+		end)
+
+		-- The Ledger's Journal values as the driver reads them, its `total` the Modules' Activity XP summed.
+		---@return table
+		local function ledgerJournal()
+			return hosted.modules.Ledger.JournalValues(hosted.byKey.Ledger.state, 20, activityXPTotal())
+		end
+
+		it("gives the Ledger's own XP, without the Activity XP its level counts (LED-R150, LED-R155)", function()
+			local xp = ledgerJournal().xp.ledger
+
+			assert.are.equal(hosted.byKey.Ledger.state.lifetimeXP, xp)
+			assert.are.equal(loaded.Ledger.ns.XPSourceLines(loaded.Ledger.ns.StateNow())[1].total, xp)
+			assert.is_true(xp > 0)
+		end)
+
+		it("gives Firefin's varieties as Core's variety projection holds them in game (VAR-R10, LED-R155)", function()
+			local caught = {}
+			for _, entry in ipairs(ledgerJournal().varieties) do
+				if entry.species == FIREFIN then
+					for _, variety in ipairs(entry.caught) do
+						caught[variety.position] = true
+					end
+				end
+			end
+
+			assert.are.same(fake.global.projections.varieties.projection.bySpecies[FIREFIN], caught)
+			assert.is_true(caught[10])
+		end)
+
+		it("gives the crests the client owns, Firefin's fish crest among them (VAR-R12, LED-R155)", function()
+			local crests = ledgerJournal().crests
+
+			assert.is_true(#crests > 0)
+			for _, crest in ipairs(crests) do
+				assert(fake.Pagle.IsOwned(crest.id), crest.id .. " isn't owned in game")
+			end
+			assert.are.equal("core.crest.fish." .. FIREFIN, crests[#crests].id)
+		end)
+
+		it("reads the crest record the Ledger logged as the equipped crest (#76 item 19, LED-R156)", function()
+			local ledger, equipped = hosted.modules.Ledger, nil
+			for record in hosted.catchLog:Iterate(0, "Ledger") do
+				if record.kind == "module" then
+					equipped = ledger.EquippedCrest(record)
+				end
+			end
+
+			assert.are.equal("core.crest.fish." .. FIREFIN, equipped)
+			assert.are.equal(equipped, hosted.byKey.Ledger.state.crest.good)
+		end)
+
+		it("gives the Pagle Wagers ladder as the client's spread marks it (HNT-R148, HNT-R178)", function()
+			local state = hosted.byKey.Hunts.state
+			local spread = loaded.Hunts.ns.BuildWagersLadder(state.settled, state.ladder)
+			local ladder = hosted.modules.Hunts.JournalValues(state, 20).ladder
+
+			assert.are.equal(#spread.marks, #ladder)
+			for i, mark in ipairs(spread.marks) do
+				assert.are.same({ step = mark.step, earned = mark.reached }, ladder[i])
+			end
 		end)
 
 		it("lists the release's Legends as the client's Ledger does (PRJ-R15)", function()

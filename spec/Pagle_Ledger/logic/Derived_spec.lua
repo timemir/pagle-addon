@@ -32,13 +32,17 @@ end
 ---@param records table[]
 ---@param saved table?
 ---@param catalogue table? another catalogue than the fixture's
+---@param logId string? the log's logId, for a saved celebrated set that keeps it (LED-R90)
 ---@return PagleLedgerNS ns
 ---@return LedgerState state the projection's, built
 ---@return FakePagle fake
-local function ledgerOver(records, saved, catalogue)
+local function ledgerOver(records, saved, catalogue, logId)
 	local fake = newFakePagle()
 	fake.setCatalogue(catalogue or fixture())
 	fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
+	if logId then
+		fake.catchLog.data.logId = logId
+	end
 	for _, record in ipairs(records) do
 		fake.catchLog:Append(record)
 	end
@@ -379,6 +383,24 @@ describe("the Ledger's values for the backend (#223)", function()
 			}, journal.trophies)
 		end)
 
+		it("gives the Ledger's own XP all told, as Where your XP came from shows it (LED-R150, LED-R155)", function()
+			local own = ns.XPSourceLines(state, { total = 0, bySource = {} })[1]
+
+			assert.are.same({ ledger = own.total }, journal.xp)
+			assert.are.equal(state.lifetimeXP, journal.xp.ledger)
+			assert.is_true(journal.xp.ledger > 0)
+		end)
+
+		it("gives the Ledger's own XP without the Activity XP the level counts (LED-R37, LED-R155)", function()
+			assert.are.same(journal.xp, ns.JournalValues(state, 20, 12600).xp)
+		end)
+
+		it("keeps every climb's XP after a Prestige, the carried XP counted once (LED-R32, LED-R155)", function()
+			local prestiged = setmetatable({ xp = 300, prestige = 1, lifetimeXP = 200900 }, { __index = state })
+
+			assert.are.equal(200900, ns.JournalValues(prestiged, 20).xp.ledger)
+		end)
+
 		it("gives the XP into the level and the next step's cost below 60, with nothing carried (LED-R30)", function()
 			local climbing = setmetatable({ xp = 1500, prestige = 0 }, { __index = state })
 
@@ -391,6 +413,233 @@ describe("the Ledger's values for the backend (#223)", function()
 			local capped = setmetatable({ xp = 200600 + 500, prestige = 0 }, { __index = state })
 
 			assert.are.same({ into = 500, carried = 500 }, ns.JournalValues(capped, 20).level)
+		end)
+	end)
+
+	describe("variety and crest Journal values (ANG #224, #76 item 18)", function()
+		local KEYS = { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j" }
+		local DUSKWOOD_AREA = 10
+		local RARITIES =
+			{ "common", "common", "common", "common", "uncommon", "uncommon", "uncommon", "rare", "rare", "epic" }
+
+		-- Core's own variety hash (VAR-R3), to find a Cast time whose one Catch is a chosen variety.
+		local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
+
+		-- The variety Core gives the one Catch of a Cast by character 1 at `time` (its Catch ID's tie is 0).
+		local function varietyAt(time)
+			return core.VarietyIndex(("%s-%d-0:1"):format(PLAYER_GUID, time))
+		end
+
+		-- A caught Cast of one `itemID` in `zone` at the first time from `from` whose Catch is variety `index`.
+		local function castOfVariety(itemID, zone, index, from)
+			local time = from
+			while varietyAt(time) ~= index do
+				time = time + 1
+			end
+			return castRecord({ time = time, zone = zone, items = { itemID } })
+		end
+
+		-- Mackerel, Smallfish and the night fish are sized with ten varieties each (VAR-R1); Elwynn lists Mackerel
+		-- alone, so its first Catch masters it (LED-R50); Westfall lists the other two.
+		local function varietyFixture()
+			local sized = { typicalLength = 300, varieties = KEYS }
+			return catalogueWith({
+				items = {
+					[MACKEREL] = fishRecord(MACKEREL, sized),
+					[SMALLFISH] = fishRecord(SMALLFISH, sized),
+					[NIGHTFISH] = fishRecord(NIGHTFISH, sized),
+				},
+				areas = {
+					[ELWYNN] = areaRecord(0, { skillBase = 1, catches = { catchEntry(MACKEREL) } }),
+					[WESTFALL] = areaRecord(0, {
+						skillBase = 1,
+						catches = { catchEntry(SMALLFISH), catchEntry(NIGHTFISH, "night", NIGHT_WINDOW) },
+					}),
+				},
+				windows = { night = { spec = NIGHT_WINDOW, confirmed = true } },
+			})
+		end
+
+		-- All ten of Mackerel in Elwynn, in position order, then a second Catch of its first variety and one Smallfish
+		-- in Westfall. `times[i]` is the first Catch of Mackerel's variety i.
+		local times, records = {}, {}
+		local from = T0
+		for index = 1, 10 do
+			local record = castOfVariety(MACKEREL, ELWYNN, index, from)
+			records[#records + 1] = record
+			times[index] = record.time
+			from = record.time + 60
+		end
+		records[#records + 1] = castOfVariety(MACKEREL, ELWYNN, 1, from)
+		local smallfishTime = records[#records].time + 60
+		records[#records + 1] = castRecord({ time = smallfishTime, zone = WESTFALL, items = { SMALLFISH } })
+
+		local ns, state, fake, journal
+		setup(function()
+			ns, state, fake = ledgerOver(records, nil, varietyFixture())
+			journal = ns.JournalValues(state, 20)
+		end)
+
+		it("gives every Species with varieties by ID, its caught ones in position order (VAR-R2, VAR-R10)", function()
+			local smallfish = varietyAt(smallfishTime)
+			local mackerel = {}
+			for index = 1, 10 do
+				mackerel[index] = {
+					id = MACKEREL .. "." .. KEYS[index],
+					position = index,
+					rarity = RARITIES[index],
+					first = times[index],
+				}
+			end
+
+			assert.are.same({
+				{
+					species = SMALLFISH,
+					caught = {
+						{
+							id = SMALLFISH .. "." .. KEYS[smallfish],
+							position = smallfish,
+							rarity = RARITIES[smallfish],
+							first = smallfishTime,
+						},
+					},
+				},
+				{ species = MACKEREL, caught = mackerel },
+				{ species = NIGHTFISH, caught = {} },
+			}, journal.varieties)
+		end)
+
+		it("names each caught variety and its rarity as Core lists them in game (VAR-R11)", function()
+			for _, entry in ipairs(journal.varieties) do
+				local list = fake.Pagle.GetVarieties(entry.species)
+				for _, caught in ipairs(entry.caught) do
+					assert.are.same(
+						{ list[caught.position].id, list[caught.position].rarity },
+						{ caught.id, caught.rarity }
+					)
+				end
+			end
+		end)
+
+		it("counts the varieties the Journal counts: its caught positions are the Ledger's (VAR-R20)", function()
+			for _, entry in ipairs(journal.varieties) do
+				assert.are.equal(ns.VarietiesCaught(state, entry.species), #entry.caught)
+			end
+		end)
+
+		it(
+			"gives the earned crests, zone crests first, each with the time of the record that earned it (LED-R113, VAR-R12)",
+			function()
+				assert.are.same({
+					{ id = "ledger.crest.elwynn", kind = "zone", zone = ELWYNN, earnedAt = times[1] },
+					{ id = "core.crest.fish." .. MACKEREL, kind = "fish", species = MACKEREL, earnedAt = times[10] },
+				}, journal.crests)
+			end
+		)
+
+		it("gives the crests the client owns for the same log, and none it doesn't (LED-R114, VAR-R12)", function()
+			for _, crest in ipairs(journal.crests) do
+				assert(fake.Pagle.IsOwned(crest.id), crest.id .. " isn't owned in game")
+			end
+			assert.is_false(fake.Pagle.IsOwned("ledger.crest.westfall"))
+			assert.is_false(fake.Pagle.IsOwned("core.crest.fish." .. SMALLFISH))
+		end)
+
+		it("leaves out a zone crest the celebrated set alone keeps: computed only (ANG-R4, #76 item 6)", function()
+			-- Kept for this log, so the first build keeps it (LED-R90).
+			local saved = { global = { celebrated = { logId = "log", zones = { [WESTFALL] = 5 } } } }
+			local kept, keptState, keptFake = ledgerOver(records, saved, varietyFixture(), "log")
+
+			assert.is_true(keptFake.Pagle.IsOwned("ledger.crest.westfall"))
+			for _, crest in ipairs(kept.JournalValues(keptState, 20).crests) do
+				assert.are_not.equal("ledger.crest.westfall", crest.id)
+			end
+		end)
+
+		it("orders the zone crests by the zone crest table and the fish crests by Species ID (LED-R113)", function()
+			local fished = setmetatable({
+				zones = {
+					[WESTFALL] = { rank = 5, masterAt = T0 + 5 },
+					[ELWYNN] = { rank = 5, masterAt = T0 + 9 },
+					[DUSKWOOD_AREA] = { rank = 4 },
+				},
+			}, { __index = state })
+
+			local ids = {}
+			for i, crest in ipairs(ns.JournalValues(fished, 20).crests) do
+				ids[i] = crest.id
+			end
+
+			-- The table lists Elwynn ("elwynn") before Westfall ("westfall"); a zone below Master has none.
+			assert.are.same({ "ledger.crest.elwynn", "ledger.crest.westfall", "core.crest.fish." .. MACKEREL }, ids)
+		end)
+
+		it("gives none of either before any Catch", function()
+			local empty, emptyState = ledgerOver({}, nil, varietyFixture())
+			local values = empty.JournalValues(emptyState, 20)
+
+			assert.are.same({}, values.crests)
+			assert.are.same({ species = MACKEREL, caught = {} }, values.varieties[2])
+		end)
+	end)
+
+	describe("the crest record (#76 item 19, LED-R156)", function()
+		-- A Ledger Module record as the Catch log hands it to the Ledger (LOG-R41).
+		local function record(kind, payload, time)
+			return {
+				kind = "module",
+				module = "Ledger",
+				recordKind = kind,
+				payload = payload,
+				char = 1,
+				time = time or T0,
+			}
+		end
+
+		it("is the equipped crest's good ID in a `crest` record's payload", function()
+			local ns = ledgerOver({})
+
+			assert.are.equal("ledger.crest.elwynn", ns.EquippedCrest(record("crest", "ledger.crest.elwynn")))
+			assert.are.equal("core.crest.fish.6303", ns.EquippedCrest(record("crest", "core.crest.fish.6303")))
+		end)
+
+		it("equips Plain with an empty payload", function()
+			assert.is_false(ledgerOver({}).EquippedCrest(record("crest", "")))
+		end)
+
+		it("is nil for any other record", function()
+			assert.is_nil(ledgerOver({}).EquippedCrest(record("title", "ledger.crest.elwynn")))
+		end)
+
+		it("is folded into the state, the latest by entry time, the later in log order on equal time", function()
+			local _, state = ledgerOver({
+				record("crest", "ledger.crest.elwynn", T0),
+				record("crest", "", T0 + 60),
+				record("crest", "core.crest.fish.6303", T0 + 30),
+				record("crest", "ledger.crest.westfall", T0 + 60),
+			})
+
+			assert.are.same({ good = "ledger.crest.westfall", time = T0 + 60 }, state.crest)
+		end)
+
+		it("leaves the state without one while the log has none", function()
+			local _, state = ledgerOver(HISTORY)
+
+			assert.is_nil(state.crest)
+		end)
+
+		it("is to be logged when the equipped crest isn't the latest record's: Plain as an empty payload", function()
+			local ns = ledgerOver({})
+			local none = { crest = nil }
+			local elwynn = { crest = { good = "ledger.crest.elwynn", time = T0 } }
+			local plain = { crest = { good = "", time = T0 } }
+
+			assert.are.equal("ledger.crest.elwynn", ns.CrestRecordFor(none, "ledger.crest.elwynn", false))
+			assert.is_nil(ns.CrestRecordFor(none, "core.crest.plain", true))
+			assert.is_nil(ns.CrestRecordFor(elwynn, "ledger.crest.elwynn", false))
+			assert.are.equal("", ns.CrestRecordFor(elwynn, "core.crest.plain", true))
+			assert.is_nil(ns.CrestRecordFor(plain, "core.crest.plain", true))
+			assert.are.equal("core.crest.fish.6303", ns.CrestRecordFor(elwynn, "core.crest.fish.6303", false))
 		end)
 	end)
 end)

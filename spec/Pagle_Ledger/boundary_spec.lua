@@ -9,8 +9,9 @@ local DIR = "addons/Pagle_Ledger/"
 local FORBIDDEN = {
 	{ "%f[%w_]PagleLog%f[^%w_]", "ADR 0001, LED-R2: the Ledger reads Catches only through M:IterateCatches" },
 	{ "%f[%w_]PagleDB%f[^%w_]", "ADR 0001: the Ledger never reads Core's SavedVariables" },
-	-- Its state is rebuilt from Catches alone; only the Tackle Board appends Module records (ADR 0008, LOG-R41).
-	{ "%f[%w_]AppendRecord%f[^%w_]", "ADR 0008: the Ledger appends no Module records" },
+	-- Its state is rebuilt from Catches alone (ADR 0008, LOG-R41); the one Module record it appends is the crest record,
+	-- a player's choice (LED-R156), which `offences` lets through.
+	{ "%f[%w_]AppendRecord%f[^%w_]", "ADR 0008: the Ledger appends no Module records but its crest record" },
 	-- Its own XP is its own fold (LED-R20): it reads the others' Activity XP, never reports any.
 	{ "%f[%w_]ReportXPEarned%f[^%w_]", "AXP-R1: the Ledger reports no Activity XP" },
 }
@@ -28,7 +29,9 @@ end
 ---@param text string
 ---@return string[]
 local function offences(text)
-	return forbiddenIn(withoutComments(text), FORBIDDEN)
+	-- The crest record (LED-R156), appended by its kind's name alone.
+	local code = withoutComments(text):gsub(":AppendRecord%(ns%.CREST_RECORD, ", ":Append(")
+	return forbiddenIn(code, FORBIDDEN)
 end
 
 describe("The Ledger's boundary", function()
@@ -56,6 +59,8 @@ describe("The Ledger's boundary", function()
 			{ 'local stats = _G["Pagle_Stats"]', "ADR 0001: the Ledger calls no other Module" },
 			{ "Pagle_TackleBoard_Open()", "ADR 0001: the Ledger calls no other Module" },
 			{ 'M:AppendRecord("celebrated", "1")', "ADR 0008: the Ledger appends no Module records" },
+			{ 'M:AppendRecord("crest", "ledger.crest.elwynn")', "ADR 0008: the Ledger appends no Module records" },
+			{ "M:AppendRecord(ns.TITLE_RECORD, key)", "ADR 0008: the Ledger appends no Module records" },
 			{ "M:ReportXPEarned(state.xp)", "AXP-R1: the Ledger reports no Activity XP" },
 			{ 'M["ReportXPEarned"](M, 10)', "AXP-R1: the Ledger reports no Activity XP" },
 		}
@@ -74,6 +79,10 @@ describe("The Ledger's boundary", function()
 				offences('-- never PagleLog\n--[[ PagleQoLDB ]]\nlocal db = PagleLedgerDB\nlocal _ = "Pagle_Ledger"')
 			)
 			assert.are.same({}, offences('<!--\nPagleDB, Pagle_QoL\n-->\n<Bindings name="Pagle_Ledger"/>'))
+		end)
+
+		it("but not the crest record, the one Module record the Ledger appends (LED-R156)", function()
+			assert.are.same({}, offences("ns.Module:AppendRecord(ns.CREST_RECORD, payload)"))
 		end)
 	end)
 end)

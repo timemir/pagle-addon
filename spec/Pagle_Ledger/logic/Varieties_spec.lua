@@ -154,10 +154,10 @@ describe("fish varieties in the Ledger", function()
 
 	describe("the projection (VAR-R20, core/varieties.md › Data)", function()
 		it(
-			"is rules version 7: 6 for the varieties caught, 7 since the second round's counts (LED-R2, LED-R4, LED-R118, Tunables)",
+			"is rules version 8: 6 for the varieties caught, 7 for the second round's counts, 8 since each variety's first time (LED-R2, LED-R4, LED-R118, LED-R155, Tunables)",
 			function()
-				assert.are.equal(7, ns.LEDGER_RULES_VERSION)
-				assert.are.equal(702, ns.RulesVersion(2))
+				assert.are.equal(8, ns.LEDGER_RULES_VERSION)
+				assert.are.equal(802, ns.RulesVersion(2))
 			end
 		)
 
@@ -165,14 +165,20 @@ describe("fish varieties in the Ledger", function()
 			assert.are.same({}, fold.reset().varieties)
 		end)
 
-		it("keeps each variety's count and first Catch: entry ID, realm date, zone and character", function()
+		it("keeps each variety's count and first Catch: entry ID, time, realm date, zone and character", function()
 			local first = log.cast({ { FISH, 3 } }, 2)
 			local state = applyLive(fold, { first, log.cast({ { FISH_ALT, 3 }, { FISH, 8 } }) })
 
 			assert.are.same({
 				[3] = {
 					count = 2,
-					first = { entryId = first.id, date = { year = 2026, month = 10, day = 22 }, zone = LAKE, char = 2 },
+					first = {
+						entryId = first.id,
+						time = first.time,
+						date = { year = 2026, month = 10, day = 22 },
+						zone = LAKE,
+						char = 2,
+					},
 				},
 				[8] = state.varieties[FISH][8],
 			}, state.varieties[FISH])

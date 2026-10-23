@@ -140,13 +140,15 @@ end
 
 --- Credits the ranks one Cast passed in its zone (LED-R50, LED-R51): its computed rank only rises, and each rank it
 --- passes earns 250 × rank XP (LED-R20) and 2 × rank Coins (LED-R88) once, in one `zoneRank` achievement carrying
---- the ranks, ascending, however many the Cast passed. A zone that isn't charted keeps rank 0 (LED-R54).
+--- the ranks, ascending, however many the Cast passed. A zone that isn't charted keeps rank 0 (LED-R54). The Cast
+--- that reaches Master notes its time as the zone's `masterAt`, its zone crest's time for the backend (LED-R155).
 ---@param state LedgerState
 ---@param world LedgerWorld
 ---@param zone integer the Cast's zone; 0 credits nothing (LED-R6)
 ---@param cast string the Cast's entry ID
 ---@param earned LedgerAchievement[]
-function ns.CreditZoneRank(state, world, zone, cast, earned)
+---@param time integer the Cast's server time
+function ns.CreditZoneRank(state, world, zone, cast, earned, time)
 	local zoneState, zoneIndex = state.zones[zone], world.zones[zone]
 	if not (zoneState and zoneIndex) then
 		return
@@ -162,6 +164,9 @@ function ns.CreditZoneRank(state, world, zone, cast, earned)
 		coins = coins + RANK_COINS * passed
 	end
 	zoneState.rank = rank
+	if rank >= MASTER then
+		zoneState.masterAt = time
+	end
 	state.coins = state.coins + coins
 	earned[#earned + 1] = { kind = "zoneRank", cast = cast, coins = coins, zone = zone, ranks = ranks }
 end

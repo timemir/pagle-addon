@@ -18,13 +18,21 @@ local ns = select(2, ...)
 ---@field count integer
 ---@field first LedgerVarietyFirst
 
---- A variety's first Catch (VAR-R24's "First landed {date} in {zone}, by {character}"): the Cast's entry ID, realm
---- date, zone and character.
+--- A variety's first Catch (VAR-R24's "First landed {date} in {zone}, by {character}"): the Cast's entry ID, server
+--- time (the backend's `first`, LED-R155), realm date, zone and character.
 ---@class LedgerVarietyFirst
 ---@field entryId string
+---@field time integer
 ---@field date? LedgerDate                    -- nil only for a Cast stored without its realm minute
 ---@field zone integer
 ---@field char integer
+
+--- The rarity of each variety position (VAR-R2): 1–4 Common, 5–7 Uncommon, 8–9 Rare, 10 Epic. Frozen (VAR-R5,
+--- ADR 0010), so the Ledger's copy can't drift from Core's; it lets the backend's Journal values name a rarity from
+--- logic/ alone, where Core's Pagle.GetVarieties isn't hosted (LED-R155). spec/Pagle_Ledger/logic/Derived_spec.lua
+--- checks it against Core's list.
+ns.VARIETY_RARITY_OF =
+	{ "common", "common", "common", "common", "uncommon", "uncommon", "uncommon", "rare", "rare", "epic" }
 
 --- The number of varieties of a Species (VAR-R2): its catalogue item's `varieties` keys, ten for a Species with
 --- varieties and 0 for one without (a Legend, a Species not sized, VAR-R1). Counted with ipairs, not `#`: Core's
@@ -89,6 +97,7 @@ function ns.CreditVariety(state, record, speciesID, itemID, variety, earned, get
 		count = 1,
 		first = {
 			entryId = record.id,
+			time = record.time,
 			date = ns.CopyDate(record.conditions.date),
 			zone = record.conditions.zone,
 			char = record.char,

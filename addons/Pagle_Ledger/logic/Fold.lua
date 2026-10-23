@@ -43,6 +43,12 @@ local ns = select(2, ...)
 ---@field varieties { [integer]: { [integer]: LedgerVariety } } -- by Species ID, each variety caught by its position
 --- (VAR-R20, logic/Varieties.lua)
 ---@field counts LedgerCounts                 -- the second round's counts (LED-R118, logic/EarnedCounts.lua)
+---@field crest? LedgerCrestLogged            -- the latest crest record (LED-R156, logic/Derived.lua); nil before one
+
+--- The crest the Ledger's latest crest record names (LED-R156): its good ID, "" for Plain, and the record's time.
+---@class LedgerCrestLogged
+---@field good string
+---@field time integer
 
 --- The second round's counts (ledger.md › Data, LedgerCounts; LED-R118, LED-R119).
 ---@class LedgerCounts
@@ -88,6 +94,8 @@ local ns = select(2, ...)
 ---@field junk boolean                        -- a `junk` Catch here (LED-R50)
 ---@field treasure boolean                    -- a `container` or `treasure` Catch here (LED-R50)
 ---@field rank integer                        -- computed rank, 0 if not charted (LED-R50, LED-R54)
+---@field masterAt? integer                   -- server time of the Cast that raised the computed rank to Master
+--- (LED-R155: its zone crest's time); nil below Master
 
 --- What one `apply` earned (LED-R97's rows). `cast` is the Cast's entry ID (nil for a Skill Reading) and `coins` its
 --- Coins (LED-R88; 0 when it pays none). Tickets #101 and #102 turn M2's kinds into moments and Write-up lines, ticket
@@ -131,8 +139,9 @@ local ns = select(2, ...)
 
 --- The Ledger's rules version (LED-R2, LED-R4, Tunables): 1 in M2, 2 in M3, 3 in M4, then +1 per change: 4 when ★
 --- moved to a Species' 5th Catch (LED-R45), 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32,
---- LED-R37), 6 for the varieties caught (VAR-R20), 7 for the second round's counts (LED-R118, LED-R119).
-ns.LEDGER_RULES_VERSION = 7
+--- LED-R37), 6 for the varieties caught (VAR-R20), 7 for the second round's counts (LED-R118, LED-R119), 8 for the
+--- times a zone reached Master and a variety was first caught, and the crest record (LED-R155, LED-R156).
+ns.LEDGER_RULES_VERSION = 8
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
 --- Catch XP, before Fresh Water (LED-R20); one Fresh Water doubles it (LED-R22), as the ink XP bar shows (LED-R145).
@@ -415,7 +424,7 @@ function ns.NewLedgerFold(lookups)
 			ns.CreditSizeRecord(state, class, id, record, catch, earned)
 			stars.credit(state, record, starsBefore, earned)
 		end
-		ns.CreditZoneRank(state, world, zone, record.id, earned)
+		ns.CreditZoneRank(state, world, zone, record.id, earned, record.time)
 		-- The second round's counts (LED-R118), with the size records this Cast's Catches beat (LED-R82).
 		local beaten = 0
 		for i = from + 1, #earned do
@@ -452,7 +461,11 @@ function ns.NewLedgerFold(lookups)
 	local function apply(state, record, mode, earned, activity) -- luacheck: no unused args (mode: the same in every mode, LED-R3)
 		earned = earned or {}
 		local kind = record.kind
-		if kind ~= "cast" and kind ~= "skill" and kind ~= "prestige" then
+		if kind == "module" then
+			-- The Ledger's own Module records (LOG-R41): the crest record changes only `crest` (LED-R156).
+			ns.NoteCrestRecord(state, record --[[@as PagleModuleRecord]])
+			return earned
+		elseif kind ~= "cast" and kind ~= "skill" and kind ~= "prestige" then
 			return earned
 		end
 		activity = activity or 0
