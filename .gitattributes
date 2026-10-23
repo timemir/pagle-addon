@@ -16,7 +16,7 @@ spec/scripts/fixtures/** -text
 *.ttf binary
 
 # The Prestige kit's lossless atlases, the web art export's source (data/art/prestige/), the Pagle Wagers kit's
-# (data/art/wagers/), with its event mark's layers as PNG, and the books' (data/art/books/).
+# (data/art/wagers/), with its event mark's layers as PNG, the books' (data/art/books/) and the zone crests' (data/art/crests/).
 *.tga binary
 *.png binary
 

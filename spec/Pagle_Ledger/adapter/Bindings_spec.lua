@@ -610,7 +610,7 @@ describe("the Ledger's zone crests", function()
 	end
 
 	it(
-		"register in Core's crest slot after Plain, the fifty-three earned goods in LED-R113's order, the Ledger's, in the zone group (LED-R113, SHOP-R23)",
+		"register in Core's crest slot after Plain, the fifty-four earned goods in LED-R113's order, the Ledger's, in the zone group (LED-R113, SHOP-R23)",
 		function()
 			local fake, loaded = crested()
 			local ns = loaded.ns
@@ -621,7 +621,7 @@ describe("the Ledger's zone crests", function()
 			-- Plain, then Core's fish crests, registered before any Module (VAR-R12), then the Ledger's.
 			local registered = fake.ns.goods:GoodsOf("core.crest")
 			local before = 1 + #FISH_CREST_SPECIES
-			assert.are.equal(before + 53, #registered)
+			assert.are.equal(before + 54, #registered)
 			assert.are.equal("core.crest.plain", registered[1].id)
 			for i, crest in ipairs(sorted) do
 				local good = registered[before + i]

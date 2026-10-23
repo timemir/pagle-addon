@@ -5,7 +5,7 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The zone crests (LED-R113–R115): fifty-three earned goods in Core's crest slot, one per zone in the table below, each
+-- The zone crests (LED-R113–R115): fifty-four earned goods in Core's crest slot, one per zone in the table below, each
 -- earned when its zone's shown rank is Master and saying, until then, how far the zone has come. Pure logic,
 -- everything passed in (CORE-R7); adapter/Bindings.lua registers them after the bindings.
 
@@ -19,14 +19,15 @@ ns.ZONE_CREST_GROUP = "zone"
 local ICONS = "Interface\\AddOns\\Pagle_Ledger\\media\\crests\\"
 
 --- A zone crest (LED-R113): its key (`ledger.crest.<key>`, its lore `crest.<key>.*` and its texture), its zone's
---- areaID and the zone's ContinentID (0 the Eastern Kingdoms, 1 Kalimdor, 2991 Forever's isles).
+--- areaID and the zone's ContinentID (0 the Eastern Kingdoms, 1 Kalimdor, 2991 Forever's isles, 2995 Hyjal Crater's
+--- own map).
 ---@class LedgerZoneCrestRow
 ---@field key string
 ---@field areaID integer
 ---@field continent integer
 
 --- LED-R113's table: the two continents' outdoor zones (the mountain's gate, the lake and the sea among them, areaIDs
---- 25, 170 and 457), their capital cities and Forever's new zones, the six not yet charted among them, each
+--- 25, 170 and 457), their capital cities and Forever's new zones, the seven not yet charted among them, each
 --- continent's in its zones' enUS order. No dungeon, raid or battleground.
 ---@type LedgerZoneCrestRow[]
 ns.ZONE_CRESTS = {
@@ -83,6 +84,7 @@ ns.ZONE_CRESTS = {
 	{ key = "veiledsea", areaID = 457, continent = 1 },
 	{ key = "winterspring", areaID = 618, continent = 1 },
 	{ key = "zephras", areaID = 16593, continent = 2991 },
+	{ key = "hyjalcrater", areaID = 17852, continent = 2995 },
 }
 
 --- A zone crest's good ID (LED-R113).

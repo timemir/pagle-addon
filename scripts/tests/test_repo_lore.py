@@ -134,6 +134,7 @@ ZONE_CRESTS = [
     "veiledsea",
     "winterspring",
     "zephras",
+    "hyjalcrater",
 ]
 # LED-R110: the Ledger's earned bindings, in Core's binding slot, by good ID (ADR 0015).
 LEDGER_BINDINGS = [
@@ -399,7 +400,7 @@ def test_the_ledger_s_lore_has_every_title_and_earned_binding() -> None:
         assert _ledger_text(f"ledgergood.{binding}.description").strip()
 
 
-def test_the_manifest_lists_the_ledger_s_fifty_three_zone_crests() -> None:
+def test_the_manifest_lists_the_ledger_s_fifty_four_zone_crests() -> None:
     # DATA-R106, LED-R113, LED-R162: [ledger.crest] with a name and a description for each zone crest, none with a
     # placeholder, and the lore has both for each (DATA-R107 passes: read_layers raises on any problem).
     manifest = _layers().lore.manifest["ledger"]

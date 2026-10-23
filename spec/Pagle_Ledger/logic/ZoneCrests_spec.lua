@@ -1,6 +1,6 @@
 -- The zone crests (LED-R113–R115; wallet-and-shop.md SHOP-R22, SHOP-R23, SHOP-R25) through ns.ZONE_CRESTS,
 -- ns.SortedZoneCrests, ns.ZoneCrestEarned, ns.ZoneCrestTexts, ns.ZoneMasterReached and ns.ZoneCrestGoods, with no
--- Core: the fifty-three earned goods the Ledger registers in Core's crest slot, their order, when each is earned and what
+-- Core: the fifty-four earned goods the Ledger registers in Core's crest slot, their order, when each is earned and what
 -- the shop says of one not yet earned.
 
 -- A charted zone, Lake: two ungated Species, one gated (night), no junk or treasure requirement, one trophy family.
@@ -40,7 +40,7 @@ describe("the zone crests", function()
 
 	describe("their table", function()
 		it(
-			"holds fifty-three, one per zone, keys and areaIDs each once: 28 in the Eastern Kingdoms, 24 in Kalimdor, 1 elsewhere (LED-R113)",
+			"holds fifty-four, one per zone, keys and areaIDs each once: 28 in the Eastern Kingdoms, 24 in Kalimdor, 2 elsewhere (LED-R113)",
 			function()
 				local keys, areas, byContinent = {}, {}, {}
 				for _, crest in ipairs(ns.ZONE_CRESTS) do
@@ -52,8 +52,8 @@ describe("the zone crests", function()
 					assert.are.equal("ledger.crest." .. crest.key, ns.ZoneCrestID(crest))
 				end
 
-				assert.are.equal(53, #ns.ZONE_CRESTS)
-				assert.are.same({ [0] = 28, [1] = 24, [2991] = 1 }, byContinent)
+				assert.are.equal(54, #ns.ZONE_CRESTS)
+				assert.are.same({ [0] = 28, [1] = 24, [2991] = 1, [2995] = 1 }, byContinent)
 				-- The mountain's gate, the lake and the sea have theirs (LED-R113).
 				assert.are.same({ true, true, true }, { areas[25], areas[170], areas[457] })
 			end
@@ -120,7 +120,7 @@ describe("the zone crests", function()
 
 	describe("their order", function()
 		it(
-			"is by continent, the Eastern Kingdoms, Kalimdor, then any other, each by its zones' names (LED-R113)",
+			"is by continent, the Eastern Kingdoms, Kalimdor, then any other by ContinentID, each by its zones' names (LED-R113)",
 			function()
 				-- Names that run against the keys: each zone named by its key backwards.
 				local function backwards(areaID)
@@ -133,10 +133,11 @@ describe("the zone crests", function()
 
 				local sorted = ns.SortedZoneCrests(backwards)
 
-				assert.are.equal(53, #sorted)
+				assert.are.equal(54, #sorted)
 				local last
 				for i, crest in ipairs(sorted) do
-					local rank = crest.continent == 0 and 1 or crest.continent == 1 and 2 or 3
+					-- Forever's isles (2991), then Hyjal Crater's map (2995): the others by ContinentID.
+					local rank = crest.continent == 0 and 1 or crest.continent == 1 and 2 or 3 + crest.continent
 					if last then
 						assert(
 							last.rank < rank or last.rank == rank and last.name < crest.key:reverse(),
@@ -145,7 +146,8 @@ describe("the zone crests", function()
 					end
 					last = { rank = rank, name = crest.key:reverse() }
 				end
-				assert.are.equal("zephras", sorted[53].key)
+				-- "sarhpez" before "retarclajyh": the continents' order, not the names' (LED-R113)
+				assert.are.same({ "zephras", "hyjalcrater" }, { sorted[53].key, sorted[54].key })
 				assert.are.same({ "alterac", "veiledsea" }, { sorted[1].key, sorted[29].key }) -- "caretla", "aesdeliev"
 			end
 		)
@@ -281,12 +283,12 @@ describe("the zone crests", function()
 		end
 
 		it(
-			"are fifty-three earned goods in Core's crest slot, in the zone group, named from lore, each with the Ledger's texture (LED-R113, SHOP-R23)",
+			"are fifty-four earned goods in Core's crest slot, in the zone group, named from lore, each with the Ledger's texture (LED-R113, SHOP-R23)",
 			function()
 				local goods = goodsOver({ state = stateWith(nil) })
 				local elwynn = goodOf(goods, 12)
 
-				assert.are.equal(53, #goods)
+				assert.are.equal(54, #goods)
 				assert.are.same({
 					id = "ledger.crest.elwynn",
 					slot = "core.crest",
