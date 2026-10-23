@@ -12,9 +12,10 @@ local Pagle = Pagle
 -- report from, its text typed on a slip pinned to the chart, opened only by Pagle.OpenFieldReport, never on its own
 -- (REP-R45). What it shows is logic/FieldReportBox.lua's view, built when it opens and kept while it stays open
 -- (REP-R40). The art is the field art kit's (data/FieldArt.lua): the chart, the compass, the brass arrows and close
--- button, the leather Close and the slip's scroll thumb. Every position is the kit's canvas pixel, a UI unit, from the
--- box's top left. It fades in as it opens and out as it closes, on Core's motion driver (adapter/Motion.lua), and plays
--- the kit's open, close and click sounds (the kit's MOTION.md and SOUND.md).
+-- button, the leather Close and the slip's scroll thumb, drawn with the parts the export window shares
+-- (adapter/FieldKit.lua). Every position is the kit's canvas pixel, a UI unit, from the box's top left. It fades in
+-- as it opens and out as it closes, on Core's motion driver (adapter/Motion.lua), and plays the kit's open, close and
+-- click sounds (the kit's MOTION.md and SOUND.md).
 local L = ns.L
 
 -- The frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists.
@@ -28,82 +29,9 @@ local WHEEL_STEP = 36
 -- The line of the URL, and of the part controls and Close, as distances down from the top.
 local URL_Y, FOOT_Y = 279, 324
 
--- The kit's inks, from its canvas.
-local INKS = {
-	sea = { 0x1E, 0x2E, 0x44 }, -- the chart's title, the part line
-	note = { 0x4A, 0x30, 0x18 }, -- the privacy line
-	hint = { 0x6A, 0x5A, 0x48 }, -- "Ctrl+C to copy"
-	type = { 0x1A, 0x1A, 0x24 }, -- the typed report and URL
-	red = { 0x7A, 0x2A, 0x1A }, -- "POST IT AT"
-	gilt = { 0xF0, 0xCD, 0x6A }, -- Close on the leather
-}
-local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
--- What draws if a bundled face won't load: the client's own.
-local FALLBACK = "Fonts\\FRIZQT__.TTF"
--- Each font: its face (media/fonts/OFL-*.txt), size and ink, and whether it has a shadow (Close on the leather does;
--- what is on the chart doesn't). Cutive Mono types the report, as a typewriter would.
-local FONTS = {
-	Title = { "IMFeENrm28P.ttf", 26, "sea" },
-	Privacy = { "IMFeENit28P.ttf", 14, "note" },
-	CopyHint = { "Caveat-Medium.ttf", 18, "hint" },
-	Type = { "CutiveMono-Regular.ttf", 12, "type" },
-	PostAt = { "IMFeENrm28P.ttf", 13, "red" },
-	Url = { "CutiveMono-Regular.ttf", 11.5, "type" },
-	Part = { "Caveat-SemiBold.ttf", 21, "sea" },
-	Message = { "Caveat-Bold.ttf", 32, "sea" },
-	Button = { "Marcellus-Regular.ttf", 17, "gilt", true },
-}
--- The font objects, made the first time the box is built: PagleField<key>.
----@type table<string, table>
-local fonts = {}
--- The file each font object loaded: its bundled face, or the fallback.
----@type table<string, string>
-local fontFiles = {}
-
--- The font object for `key`, made the first time it is asked for.
----@param key string
----@return table
-local function font(key)
-	if not fonts[key] then
-		local def = FONTS[key]
-		local made = CreateFont("PagleField" .. key)
-		fontFiles[key] = FONT_DIR .. def[1]
-		if made:SetFont(fontFiles[key], def[2], "") == false then
-			fontFiles[key] = FALLBACK
-			made:SetFont(FALLBACK, def[2], "")
-		end
-		local ink = INKS[def[3]]
-		made:SetTextColor(ink[1] / 255, ink[2] / 255, ink[3] / 255)
-		if def[4] then
-			made:SetShadowColor(0, 0, 0, 0.95)
-			made:SetShadowOffset(0, -1)
-		else
-			made:SetShadowOffset(0, 0)
-		end
-		fonts[key] = made
-	end
-	return fonts[key]
-end
-
--- A one-line font string on `frame` in the font `key`.
----@param frame Frame
----@param key string
----@return FontString
-local function text(frame, key)
-	local made = frame:CreateFontString(nil, "OVERLAY")
-	made:SetFontObject(font(key))
-	made:SetWordWrap(false)
-	made:SetJustifyH("LEFT")
-	return made
-end
-
----@class PagleFieldReportBox: Frame
+---@class PagleFieldReportBox: PagleFieldWindow
 ---@field view PagleFieldReportView the view on show, built when it opened
 ---@field part integer the part shown
----@field chart PagleSprite the sea chart: with the slip for a report, without it for a message
----@field title FontString
----@field privacy FontString
----@field copyHint FontString
 ---@field message FontString REP-R41's or REP-R42's line, in place of the text
 ---@field scroll ScrollFrame the slip
 ---@field text EditBox the part shown, read-only and selected
@@ -113,173 +41,15 @@ end
 ---@field next PagleFieldBrassButton
 ---@field postAt FontString
 ---@field url EditBox the issue form's URL, read-only
----@field closeCorner PagleFieldBrassButton the brass X
 ---@field close Button
----@field closing boolean? fading out after Close or the X, so it takes no more clicks
 
 --- The box, made the first time it opens.
 ---@type PagleFieldReportBox?
 ns.fieldReportBox = nil
 
--- The box's sounds (the field art kit's SOUND.md): the client's own sound kits, by id, on the SFX channel, so the
--- player's SFX volume and mute rule them. UI foley, the same in every sound set (announcements.md › Sounds owns only
--- an Announcement's): IG_MAINMENU_OPEN as the box opens, IG_MAINMENU_CLOSE as it closes, IG_MAINMENU_OPTION for a
--- click on Close or an arrow.
-local SOUND_OPEN, SOUND_CLOSE, SOUND_CLICK = 850, 851, 852
-
--- The box opening (the kit's MOTION.md): the open sound, and the box fading in over 0.2 s (ease-out), from `from`
--- (0, or where a fade out had got to). With the Animations setting off it shows at once (adapter/Motion.lua).
----@param frame PagleFieldReportBox
----@param from number
-local function open(frame, from)
-	frame.closing = false
-	PlaySound(SOUND_OPEN, "SFX")
-	ns.StopMotion(frame)
-	ns.Animate(frame, {
-		{
-			dur = 0.2,
-			ease = ns.EASE.out,
-			keys = { { 0, { from } }, { 1, { 1 } } },
-			apply = function(values)
-				frame:SetAlpha(values[1])
-			end,
-		},
-	})
-end
-
--- Closes the box at once, giving back the keyboard: a hidden edit box would keep it.
----@param frame PagleFieldReportBox
-local function close(frame)
-	frame.text:ClearFocus()
-	frame.url:ClearFocus()
-	frame:Hide()
-end
-
--- Closes the box from Close or the X (the kit's MOTION.md): the keyboard given back at once, the close sound, and the
--- box fading out over 0.15 s (ease-in) from where it is, then hiding. Esc hides it at once, from an edit box or through
--- UISpecialFrames, with the close sound (its OnHide).
----@param frame PagleFieldReportBox
-local function fadeClose(frame)
-	if frame.closing then
-		return
-	end
-	frame.closing = true
-	frame.text:ClearFocus()
-	frame.url:ClearFocus()
-	PlaySound(SOUND_CLOSE, "SFX")
-	ns.StopMotion(frame)
-	ns.Animate(frame, {
-		{
-			dur = 0.15,
-			ease = ns.Bezier(0.42, 0, 1, 1),
-			keys = { { 0, { frame:GetAlpha() } }, { 1, { 0 } } },
-			apply = function(values)
-				frame:SetAlpha(values[1])
-			end,
-		},
-	}, function()
-		close(frame)
-	end)
-end
-
--- Keeps `box` showing `read()`: whatever the player types is put back, selected again, so the report stays as
--- built and Ctrl+C still copies all of it. It is selected whenever it gets the focus, and Esc in it closes the box,
--- since a focused edit box takes Esc before UISpecialFrames does. With `fromStart`, its cursor goes back to the start
--- whenever its text is put back and when it loses the focus, so a line too long for it reads from its beginning:
--- SetText leaves the cursor at the end, and the box scrolled there.
----@param frame PagleFieldReportBox
----@param box EditBox
----@param read fun(): string
----@param fromStart boolean?
-local function keepText(frame, box, read, fromStart)
-	box:SetAutoFocus(false)
-	box:SetScript("OnTextChanged", function(self, userInput)
-		if userInput then
-			self:SetText(read())
-			if fromStart then
-				self:SetCursorPosition(0)
-			end
-			self:HighlightText()
-		end
-	end)
-	box:SetScript("OnEditFocusGained", function(self)
-		self:HighlightText()
-	end)
-	if fromStart then
-		box:SetScript("OnEditFocusLost", function(self)
-			self:SetCursorPosition(0)
-		end)
-	end
-	box:SetScript("OnEscapePressed", function()
-		close(frame)
-	end)
-end
-
--- A read-only edit box on `parent`, typed in the font `key`, its selection the kit's blue.
----@param parent Frame
----@param key string
----@return EditBox
-local function typedBox(parent, key)
-	local box = CreateFrame("EditBox", nil, parent) --[[@as EditBox]]
-	box:SetFontObject(font(key))
-	box:SetHighlightColor(0.275, 0.47, 0.745, 0.28)
-	box:SetTextInsets(0, 0, 0, 0)
-	return box
-end
-
 --- The slip's scroll thumb: a slider whose thumb is the kit's brass bar.
 ---@class PagleFieldThumb: Slider
 ---@field art PagleSprite
-
---- A brass button: the X, or an arrow.
----@class PagleFieldBrassButton: Button
----@field art PagleSprite
-
--- A brass button 44 square, drawn as sprite `name` of the Field atlas.
----@param frame Frame
----@param name string
----@return PagleFieldBrassButton
-local function brassButton(frame, name)
-	local made = CreateFrame("Button", nil, frame) --[[@as PagleFieldBrassButton]]
-	made:SetSize(44, 44)
-	made.art = ns.ArtSprite(made, "Field", name)
-	ns.PlaceSprite(made.art, made, 0, 0)
-	return made
-end
-
--- Greys an arrow that can't page further, and stops it taking clicks.
----@param arrow PagleFieldBrassButton
----@param enabled boolean
-local function setArrow(arrow, enabled)
-	arrow:SetEnabled(enabled)
-	arrow.art:SetDesaturated(not enabled)
-	if enabled then
-		arrow.art:SetVertexColor(1, 1, 1)
-	else
-		arrow.art:SetVertexColor(0.85, 0.85, 0.85)
-	end
-end
-
--- The leather Close: the kit's button, three-sliced to fit its word.
----@param frame Frame
----@return Button
-local function leatherButton(frame)
-	local made = CreateFrame("Button", nil, frame) --[[@as Button]]
-	local leather = CreateFrame("Frame", nil, made)
-	leather:SetPoint("TOPLEFT")
-	-- The word on a frame above the leather's.
-	local words = CreateFrame("Frame", nil, made)
-	words:SetAllPoints()
-	words:SetFrameLevel(leather:GetFrameLevel() + 1)
-	local label = text(words, "Button")
-	label:SetJustifyH("CENTER")
-	label:SetText(L.FIELD_REPORT_CLOSE)
-	label:SetPoint("CENTER", made, "CENTER")
-	local width = math.floor(label:GetStringWidth() + 52 + 0.5)
-	ns.SetThreeSlice(leather, "Field", "button", width, 12, "ARTWORK")
-	made:SetSize(width, 40)
-	return made
-end
 
 -- Sets the slip's scroll range: the thumb shows while the part is longer than the slip, and it runs the whole slip's
 -- height, as long as the part's share of it.
@@ -312,8 +82,8 @@ local function showPart(frame, n)
 	frame.partLabel:SetShown(label ~= nil)
 	frame.previous:SetShown(label ~= nil)
 	frame.next:SetShown(label ~= nil)
-	setArrow(frame.previous, n > 1)
-	setArrow(frame.next, n < #parts)
+	ns.FieldSetArrow(frame.previous, n > 1)
+	ns.FieldSetArrow(frame.next, n < #parts)
 end
 
 -- The slip: the report typed in a read-only edit box (REP-R40) in a scroll frame, which the mouse wheel and the thumb
@@ -323,12 +93,12 @@ local function buildSlip(frame)
 	frame.scroll = CreateFrame("ScrollFrame", nil, frame) --[[@as ScrollFrame]]
 	frame.scroll:SetPoint("TOPLEFT", SLIP_X, -SLIP_Y)
 	frame.scroll:SetSize(SLIP_WIDTH, SLIP_HEIGHT)
-	frame.text = typedBox(frame.scroll, "Type")
+	frame.text = ns.FieldTypedBox(frame.scroll, "Type")
 	frame.text:SetMultiLine(true)
 	frame.text:SetMaxLetters(0)
 	frame.text:SetWidth(SLIP_WIDTH)
 	frame.scroll:SetScrollChild(frame.text)
-	keepText(frame, frame.text, function()
+	ns.FieldKeepText(frame, frame.text, function()
 		return frame.view.parts[frame.part]
 	end)
 
@@ -361,36 +131,14 @@ local function buildSlip(frame)
 	end)
 end
 
--- The box: the sea chart and its compass, the title, the brass X, the privacy line and the copy hint, the slip, the
--- issue form's URL in a second read-only edit box, the part controls, and Close. Centred; Esc closes it. Its own frame,
--- with no template, so it is the chart's size and nothing anchors it over the screen (#250, REP-R47).
+-- The box: the kit's sea chart window titled Help chart the waters, with the privacy line and the copy hint
+-- (adapter/FieldKit.lua), the slip, the issue form's URL in a second read-only edit box, the part controls, and Close.
+-- Centred; Esc closes it (REP-R47).
 ---@return PagleFieldReportBox
 local function build()
-	local frame = CreateFrame("Frame", FRAME_NAME, UIParent) --[[@as PagleFieldReportBox]]
-	frame:SetSize(WIDTH, HEIGHT)
-	frame:SetPoint("CENTER")
-	frame:SetFrameStrata("DIALOG")
-	frame:EnableMouse(true)
-	frame:SetClampedToScreen(true)
-
-	frame.chart = ns.ArtSprite(frame, "Chart", "chart", "BACKGROUND")
-	local compass = ns.ArtSprite(frame, "Field", "compass")
-	ns.PlaceSprite(compass, frame, 22, 16)
-	frame.title = text(frame, "Title")
-	frame.title:SetPoint("LEFT", frame, "TOPLEFT", 66, -33)
-	frame.title:SetText(L.HELP_CHART)
-	frame.closeCorner = brassButton(frame, "close")
-	frame.closeCorner:SetPoint("TOPRIGHT", -12, -10)
-	frame.closeCorner:SetScript("OnClick", function()
-		fadeClose(frame)
-	end)
-	frame.privacy = text(frame, "Privacy")
-	frame.privacy:SetPoint("TOPLEFT", 22, -58)
-	frame.privacy:SetText(L.FIELD_REPORT_PRIVACY)
-	frame.copyHint = text(frame, "CopyHint")
-	frame.copyHint:SetPoint("TOPRIGHT", -22, -56)
-	frame.copyHint:SetText(L.FIELD_REPORT_COPY_HINT)
-	frame.message = text(frame, "Message")
+	local frame =
+		ns.NewFieldWindow(FRAME_NAME, WIDTH, HEIGHT, L.HELP_CHART, L.FIELD_REPORT_PRIVACY, L.FIELD_REPORT_COPY_HINT) --[[@as PagleFieldReportBox]]
+	frame.message = ns.FieldText(frame, "Message")
 	frame.message:SetWordWrap(true)
 	frame.message:SetJustifyH("CENTER")
 	frame.message:SetWidth(WIDTH - 80)
@@ -398,53 +146,40 @@ local function build()
 
 	buildSlip(frame)
 
-	frame.postAt = text(frame, "PostAt")
+	frame.postAt = ns.FieldText(frame, "PostAt")
 	frame.postAt:SetPoint("LEFT", frame, "TOPLEFT", 22, -URL_Y)
 	frame.postAt:SetText(L.FIELD_REPORT_POST_AT)
-	frame.url = typedBox(frame, "Url")
+	frame.url = ns.FieldTypedBox(frame, "Url")
 	frame.url:SetHeight(20)
-	keepText(frame, frame.url, function()
+	ns.FieldKeepText(frame, frame.url, function()
 		return ns.FIELD_REPORT_URL
 	end, true)
+	frame.boxes = { frame.text, frame.url }
 
-	frame.previous = brassButton(frame, "arrow-prev")
+	frame.previous = ns.FieldBrassButton(frame, "arrow-prev")
 	frame.previous:SetPoint("LEFT", frame, "TOPLEFT", 22, -FOOT_Y)
 	frame.previous:SetScript("OnClick", function()
-		PlaySound(SOUND_CLICK, "SFX")
+		PlaySound(ns.FIELD_SOUND_CLICK, "SFX")
 		showPart(frame, frame.part - 1)
 	end)
-	frame.partLabel = text(frame, "Part")
+	frame.partLabel = ns.FieldText(frame, "Part")
 	frame.partLabel:SetPoint("LEFT", frame.previous, "RIGHT", 4, 0)
-	frame.next = brassButton(frame, "arrow-next")
+	frame.next = ns.FieldBrassButton(frame, "arrow-next")
 	frame.next:SetPoint("LEFT", frame.partLabel, "RIGHT", 4, 0)
 	frame.next:SetScript("OnClick", function()
-		PlaySound(SOUND_CLICK, "SFX")
+		PlaySound(ns.FIELD_SOUND_CLICK, "SFX")
 		showPart(frame, frame.part + 1)
 	end)
 
 	-- At the bottom centre, clear of the part controls on the left.
-	frame.close = leatherButton(frame)
+	frame.close = ns.FieldLeatherButton(frame, L.FIELD_REPORT_CLOSE)
 	frame.close:SetPoint("CENTER", frame, "TOP", 0, -FOOT_Y)
 	frame.close:SetScript("OnClick", function()
 		if not frame.closing then
-			PlaySound(SOUND_CLICK, "SFX")
-			fadeClose(frame)
+			PlaySound(ns.FIELD_SOUND_CLICK, "SFX")
+			ns.FieldFadeClose(frame)
 		end
 	end)
-	-- Hidden until it first opens, before its OnHide is set, so building it plays nothing.
-	frame:Hide()
-	-- Esc with no edit box focused hides it through UISpecialFrames (CloseSpecialWindows), as the tour does: at once,
-	-- with the close sound unless a fade already played it. It is left at rest for its next opening.
-	frame:SetScript("OnHide", function()
-		if not frame.closing then
-			PlaySound(SOUND_CLOSE, "SFX")
-		end
-		frame.closing = false
-		ns.StopMotion(frame)
-		frame:SetAlpha(1)
-		close(frame)
-	end)
-	table.insert(UISpecialFrames, FRAME_NAME)
 	return frame
 end
 
@@ -453,11 +188,10 @@ end
 ---@param frame PagleFieldReportBox
 local function layOutUrlLine(frame)
 	local label = frame.postAt
-	label:SetFontObject(font("PostAt"))
+	label:SetFontObject(ns.FieldFont("PostAt"))
 	local scale, urlX = ns.FieldReportUrlLine(label:GetStringWidth())
 	if scale < 1 then
-		label:SetFont(fontFiles.PostAt, FONTS.PostAt[2] * scale, "")
-		label:SetTextColor(INKS.red[1] / 255, INKS.red[2] / 255, INKS.red[3] / 255)
+		ns.FieldScaleFont(label, "PostAt", scale)
 	end
 	frame.url:ClearAllPoints()
 	frame.url:SetPoint("LEFT", frame, "TOPLEFT", urlX, -URL_Y)
@@ -486,16 +220,7 @@ local function show(view)
 	frame.url:SetText(view.url or "")
 	frame.url:SetCursorPosition(0) -- from "https://", not scrolled to its end
 	-- Opening, or opened again while it fades out: it fades in. Already open, it stays as it is.
-	local from ---@type number?
-	if frame.closing then
-		from = frame:GetAlpha()
-	elseif not frame:IsShown() then
-		from = 0
-	end
-	frame:Show()
-	if from then
-		open(frame, from)
-	end
+	ns.FieldShowWindow(frame)
 	layOutUrlLine(frame)
 	if hasText then
 		showPart(frame, 1)
