@@ -23,6 +23,7 @@ local PAGLEDB_KEYS = {
 		"projections",
 		"minimap", -- CORE-R53, from M8.5
 		"onboarding", -- onboarding.md › Data (ONB-R1)
+		"pasteExports", -- paste-string.md › Data (PST-R40), from Track P
 	},
 	profile = {
 		"reloadReminder",

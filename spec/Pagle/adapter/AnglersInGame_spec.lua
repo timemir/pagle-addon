@@ -485,14 +485,14 @@ describe("the Companion's data addons", function()
 	end)
 
 	describe("Show other Anglers on player tooltips", function()
-		-- The root's last two rows: the Pagle website header and the row (SET-R10 row 11).
+		-- The Pagle website header and its first row (SET-R10 row 11), before the export button (row 12).
 		local function websiteRows(loaded)
 			local initializers = loaded.client.settings.category("Pagle").layout.initializers
-			return initializers[#initializers - 1], initializers[#initializers]
+			return initializers[#initializers - 2], initializers[#initializers - 1]
 		end
 
 		it(
-			"is a checkbox under a Pagle website header, the root's last rows, with its tooltip (SET-R10 row 11, VIEW-R30)",
+			"is a checkbox under a Pagle website header, the section's first row, with its tooltip (SET-R10 row 11, VIEW-R30)",
 			function()
 				local loaded = core()
 				enterWorld(loaded)

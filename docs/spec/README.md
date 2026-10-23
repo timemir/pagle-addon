@@ -21,6 +21,7 @@ This directory is Pagle's product spec. It describes the current state only, and
 | [core/book-binding.md](core/book-binding.md) | `BIND` | The book binding: `Pagle.NewBookBinding`, the one renderer of the `core.binding` look on every book (its material, band, corners and features), and a change of binding with its one page-turn sound | One binding for every book ([#351](https://github.com/timemir/wow-fish/issues/351)) |
 | [core/book.md](core/book.md) | `BOOK` | The book shell: `Pagle.NewBook`, the window, pages, strip, buttons, ribbons, router and page turn the Journal, the Stats book, the Hunts board and the Field guide are built on | One book shell for every book ([#357](https://github.com/timemir/wow-fish/issues/357), ADR 0016) |
 | [core/field-report.md](core/field-report.md) | `REP` | The Field report: what goes in, the `PAGLE-REPORT 1` format, privacy, the report box | M3 |
+| [core/paste-string.md](core/paste-string.md) | `PST` | The Paste string: upload documents built from `PagleLog` as pagle-backend's upload.md has them, parts, the CRC-32 and LibDeflate encoding, the export window and the last exported seq | Track P Paste string |
 | [content-data.md](content-data.md) | `DATA` | The `data/` layers, the generator and its checks, the catalogue's Lua shape, `confirmed` and the two-reporter rule, the content fingerprint, the Hunt list and event pool formats, the tag list and `released.lock`, lore, Field report intake, the DB2 watch | M0–M9 |
 | [qol.md](qol.md) | `QOL` | `Pagle_QoL`: the Fishing key, the double-click, gear, lures, clams, CVar leases for a Fishing stretch, the next-action button, Nudges, the Angleur and Fishing Buddy popup | M1, Track Q, M9 |
 | [ledger.md](ledger.md) | `LED` | `Pagle_Ledger`: XP, Fresh Water, Angler Level and Prestige, milestones, Species and Zone Mastery, collections, Legends, Ledger completion, titles, size records, and the Fish Journal | M2, M3, M4 |
@@ -112,7 +113,7 @@ These hold everywhere and come from the map's settled Notes:
 
 | Addon | `def.name` · title · order | In one line | View and entry points | Tracker (dock order) | Built in |
 |---|---|---|---|---|---|
-| `Pagle` (Core) | none | Observes and records; hosts every shared service and surface | Settings root, compartment menu, `/pagle`, the Curio Shop (`/pagle shop`), the Field report box (`/pagle report`) | the dock itself (CORE-R70) | M0–M5, M7 |
+| `Pagle` (Core) | none | Observes and records; hosts every shared service and surface | Settings root, compartment menu, `/pagle`, the Curio Shop (`/pagle shop`), the Field report box (`/pagle report`), the export window (`/pagle export`) | the dock itself (CORE-R70) | M0–M5, M7, Track P |
 | `Pagle_Ledger` | `Ledger` · Ledger · 10 | The Angler's identity: levels, mastery, collections, Legends, titles, records | the Fish Journal: compartment "Fish Journal", `/pagle journal`, root button "Open Fish Journal" | none | M2–M4 |
 | `Pagle_Hunts` | `Hunts` · Hunts · 20 | Data-defined target Catches under conditions that open and close | the Hunts board: compartment "Hunts", `/pagle hunts`, "Open Hunts" | pinned Hunts (10) | M5 |
 | `Pagle_Stats` | `Stats` · Stats · 30 | The Angler's own numbers: Sessions, Your odds, Dry spells | the Stats book: compartment "Stats", `/pagle stats`, "Open Stats" | Session and watched Dry spells (20) | M6 |
@@ -235,4 +236,4 @@ Any ticket whose answer changes the spec edits the spec in the same change, keep
 
 ## Outside this spec
 
-Planned for after 1.0 and listed in [roadmap.md](roadmap.md#after-10), but not specified: custom Journal art, translations, the export/backup string, QoL's recast reminder, and post-launch Hunts. Out of scope altogether (the map's Out of scope): Retail, social and guild features, a backend or companion app, merging logs from two machines, Hunts pushed from a backend, and any automation beyond one action per keypress.
+Planned for after 1.0 and listed in [roadmap.md](roadmap.md#after-10), but not specified: custom Journal art, translations, QoL's recast reminder, and post-launch Hunts. The Paste string, which exports the Catch log for the Pagle website, ships in 1.0 ([core/paste-string.md](core/paste-string.md)). Out of scope altogether (the map's Out of scope): Retail, social and guild features, a backend or companion app, merging logs from two machines, Hunts pushed from a backend, and any automation beyond one action per keypress.

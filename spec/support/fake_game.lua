@@ -19,6 +19,7 @@
 --   loaded.client.mouseFoci = { someButton }                        -- GetMouseFoci(): the mouse is over a UI frame
 --   loaded.client.nextFrame(0.016)                                   -- the clock moves on, then one frame runs
 --   loaded.client.keysDown.SHIFT = true                              -- IsShiftKeyDown()
+--   loaded.client.keysDown.CTRL = true                               -- IsControlKeyDown() (META: IsMetaKeyDown())
 --   loaded.client.loadItem(6529, "Shiny Bauble")                     -- an uncached item's data arrives
 --   loaded.client.pressKey("F")                                      -- F's click override clicks its button
 --   loaded.client.itemUses                                           -- { "use 6529 on 16" }: what the presses used
@@ -30,7 +31,7 @@
 ---@class FakeClient
 ---@field boundKeys table<string, string[]> The keys bound to each binding command, as `GetBindingKey` returns them.
 ---@field keysDown table<string, true> The keys held down, by name without modifiers, as `IsKeyDown` takes them;
---- `SHIFT` is what `IsShiftKeyDown()` reads.
+--- `SHIFT` is what `IsShiftKeyDown()` reads, `CTRL` `IsControlKeyDown()` and `META` `IsMetaKeyDown()`.
 ---@field channel string? The spell the player is channeling, by name; `UnitChannelInfo("player")` returns it.
 ---@field casting string? The spell the player is casting with a cast time; `UnitCastingInfo("player")` returns it.
 ---@field mainHand integer? The item ID in the main hand (slot 16).
@@ -311,6 +312,12 @@ return function(client, stubs)
 	end
 	stubs.IsShiftKeyDown = function()
 		return client.keysDown.SHIFT == true
+	end
+	stubs.IsControlKeyDown = function()
+		return client.keysDown.CTRL == true
+	end
+	stubs.IsMetaKeyDown = function()
+		return client.keysDown.META == true
 	end
 	stubs.UnitChannelInfo = function(unit)
 		if unit == "player" then

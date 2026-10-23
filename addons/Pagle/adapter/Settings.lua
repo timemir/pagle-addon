@@ -297,6 +297,14 @@ local function pagleWebsiteSection(category, layout)
 		end
 	)
 	Settings.CreateCheckbox(category, tooltips, L.SETTINGS_ANGLER_TOOLTIPS_TOOLTIP)
+	-- SET-R10 row 12 (PST-R50): "Catch log" with the button "Copy for the website", which opens the export window.
+	-- Pressing it closes the panel first, since the window would open behind it; while restricted
+	-- Pagle.OpenPasteExport then prints its line (SET-R12).
+	local export = CreateSettingsButtonInitializer(L.SETTINGS_PASTE_ROW, L.SETTINGS_PASTE_BUTTON, function()
+		HideUIPanel(SettingsPanel)
+		Pagle.OpenPasteExport()
+	end, L.SETTINGS_PASTE_TOOLTIP, true)
+	layout:AddInitializer(export)
 end
 
 -- A row's label, at the status list's name column.

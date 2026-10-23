@@ -186,8 +186,12 @@ printf -- '-- edited by hand\n' >>"$addon/libs/AceDB-3.0/AceDB-3.0.lua"
 expect "a hand-edited vendored lib fails libs" libs "addons/Pagle/libs/AceDB-3.0/AceDB-3.0.lua: FAILED"
 
 copy
+printf -- '-- edited by hand\n' >>"$addon/libs/LibDeflate/LibDeflate.lua"
+expect "a hand-edited LibDeflate fails libs" libs "addons/Pagle/libs/LibDeflate/LibDeflate.lua: FAILED"
+
+copy
 printf 'return 1\n' >"$addon/libs/Stray.lua"
-expect "a file in libs/ that update-ace3.sh didn't vendor fails libs" libs "addons/Pagle/libs/Stray.lua"
+expect "a file in libs/ that no update script vendored fails libs" libs "addons/Pagle/libs/Stray.lua"
 
 copy
 printf 'local t = {a=1}\nreturn t\n' >"$addon/logic/Badly.lua"

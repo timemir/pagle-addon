@@ -112,7 +112,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
           PR_BASE: ${{ github.event.pull_request.base.sha }}
         run: |
-          machinery='^(scripts/(check\.sh|test-check\.sh|setup\.sh|tools\.env|pyproject\.toml|generate-data\.py|ace3\.sha256|api-presence\.lua|api-inventory\.lua)$|scripts/pagle_data/|\.github/workflows/(check|release)\.yml$|spec/(support/|Pagle/adapter/Core_spec\.lua$|Pagle/Pagle_toc_spec\.lua$|Pagle_QoL/Pagle_QoL_toc_spec\.lua$)|types/|\.luacheckrc$|\.luarc\.json$|\.stylua\.toml$|\.styluaignore$|\.luacov$|\.busted$)'
+          machinery='^(scripts/(check\.sh|test-check\.sh|setup\.sh|tools\.env|pyproject\.toml|generate-data\.py|ace3\.sha256|libdeflate\.sha256|api-presence\.lua|api-inventory\.lua)$|scripts/pagle_data/|\.github/workflows/(check|release)\.yml$|spec/(support/|Pagle/adapter/Core_spec\.lua$|Pagle/Pagle_toc_spec\.lua$|Pagle_QoL/Pagle_QoL_toc_spec\.lua$)|types/|\.luacheckrc$|\.luarc\.json$|\.stylua\.toml$|\.styluaignore$|\.luacov$|\.busted$)'
           base=
           case $EVENT in
           pull_request) base=$PR_BASE ;;

@@ -27,6 +27,8 @@ ns.PAGLEDB_DEFAULTS = {
 		diagnostics = {},
 		-- catch-log.md › Data: the minimap icon's angle round the minimap and its shown state (CORE-R53, CORE-R56).
 		minimap = { angle = ns.MINIMAP_ICON_ANGLE, hide = false },
+		-- paste-string.md › Data: each log's last exported seq, by logId (PST-R40).
+		pasteExports = {},
 	},
 	profile = {
 		books = {}, -- core/book.md › Data: each movable book's saved position by its id (BOOK-R5)

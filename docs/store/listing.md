@@ -81,7 +81,7 @@ Pagle is free software: you can redistribute it and/or modify it under the terms
 
 **Blizzard Entertainment.** World of Warcraft, and the game IDs and names Pagle refers to (items, areas, spells and the like), belong to Blizzard Entertainment, Inc. Pagle ships IDs only, never Blizzard's text. Pagle is not affiliated with or endorsed by Blizzard Entertainment.
 
-Pagle also bundles libraries from Ace3 and fonts under the SIL Open Font License; [NOTICE](https://github.com/timemir/wow-fish/blob/main/NOTICE) lists them.
+Pagle also bundles libraries from Ace3, LibDeflate (zlib License) and fonts under the SIL Open Font License; [NOTICE](https://github.com/timemir/wow-fish/blob/main/NOTICE) lists them.
 
 ## Links
 

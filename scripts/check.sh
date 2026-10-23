@@ -72,13 +72,17 @@ for dir in addons spec scripts types; do
 done
 
 # --- libs (#46), ahead of the numbered stages: the vendored libraries are exactly the files scripts/update-ace3.sh
-# vendored, byte for byte, as its manifest scripts/ace3.sha256 records them. Offline: the manifest is in the repo,
-# and update-ace3.sh --check compares both with upstream.
+# and scripts/update-libdeflate.sh vendored, byte for byte, as their manifests scripts/ace3.sha256 and
+# scripts/libdeflate.sha256 record them. Offline: the manifests are in the repo, and each script's --check compares
+# its files and manifest with upstream.
 stage libs
-if ! sha256sum --check --quiet --strict scripts/ace3.sha256 >&2 ||
-	! diff --label scripts/ace3.sha256 --label addons/ <(sed 's/^[0-9a-f]*  //' scripts/ace3.sha256) \
+lib_manifests=(scripts/ace3.sha256 scripts/libdeflate.sha256)
+if ! cat "${lib_manifests[@]}" | sha256sum --check --quiet --strict >&2 ||
+	! diff --label "${lib_manifests[*]}" --label addons/ \
+		<(cat "${lib_manifests[@]}" | sed 's/^[0-9a-f]*  //' | LC_ALL=C sort) \
 		<(find addons/*/libs -type f | LC_ALL=C sort) >&2; then
-	echo "libs: addons/*/libs/ differs from scripts/ace3.sha256; only scripts/update-ace3.sh changes it" >&2
+	echo "libs: addons/*/libs/ differs from ${lib_manifests[*]};" \
+		"only scripts/update-ace3.sh and scripts/update-libdeflate.sh change it" >&2
 	fail libs
 fi
 libs_time=$((SECONDS - started))

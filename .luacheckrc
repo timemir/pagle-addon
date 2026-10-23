@@ -143,6 +143,10 @@ stds.wow = {
 		-- QoL's next-action button (QOL-R70–R74): Shift-drag moves it, and its tooltip is the game's own; Item, which
 		-- waits for a lure's name, is in stds.wow_variables.
 		"IsShiftKeyDown",
+		-- The export window marks a part exported when Ctrl+C, or Cmd+C on a Mac, is pressed in its string's box
+		-- (PST-R40).
+		"IsControlKeyDown",
+		"IsMetaKeyDown",
 		"GameTooltip",
 		-- The character table, Skill Readings and build entries (LOG-R26, LOG-R30, LOG-R36).
 		"UnitName",
@@ -344,7 +348,7 @@ stds.pagle = {
 std = "lua51"
 max_line_length = false -- StyLua owns line width, and it leaves long strings and comments as they are.
 exclude_files = {
-	"addons/*/libs/**", -- vendored, owned by scripts/update-ace3.sh
+	"addons/*/libs/**", -- vendored, owned by scripts/update-ace3.sh and scripts/update-libdeflate.sh
 	"types/**", -- LuaLS ---@meta stubs: declarations for the types stage, never loaded
 	"spec/scripts/fixtures/**", -- WTF files as the WoW client writes them: data the specs read, never our code
 	".tools/**",
@@ -354,10 +358,11 @@ exclude_files = {
 -- CORE-R7: adapter/ is the one place an addon talks to the client. logic/ (everything passed in as arguments),
 -- locale/ (string tables) and anything else keep the plain Lua 5.1 default.
 files["addons/*/adapter/**"] = { std = "lua51+wow+wow_variables+pagle" }
--- LOG-R66 puts the Simulated Size hash in Core's logic/, on the client's `bit` library, and VAR-R5 the variety hash,
--- its own copy: the one client name a logic/ file reads, as stds.wow inventories it.
+-- LOG-R66 puts the Simulated Size hash in Core's logic/, on the client's `bit` library, VAR-R5 the variety hash, its
+-- own copy, and PST-R11 the Paste string's CRC-32: the one client name a logic/ file reads, as stds.wow inventories it.
 files["addons/Pagle/logic/Size.lua"] = { read_globals = { bit = stds.wow.read_globals.bit } }
 files["addons/Pagle/logic/Variety.lua"] = { read_globals = { bit = stds.wow.read_globals.bit } }
+files["addons/Pagle/logic/PasteString.lua"] = { read_globals = { bit = stds.wow.read_globals.bit } }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 -- /pagle's name (CORE-R60).

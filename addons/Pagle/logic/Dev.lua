@@ -20,6 +20,7 @@ local ns = select(2, ...)
 ---@field onboarding fun(args: string)  -- runs `/pagle dev onboarding <args>` (ONB-R83, logic/Onboarding.lua)
 ---@field content fun(): string[]       -- `/pagle dev content`'s lines (PUSH-R14, logic/PushedContent.lua)
 ---@field views fun(): string[]         -- `/pagle dev views`' lines (VIEW-R12, logic/AnglersInGame.lua)
+---@field showPaste fun(view: PaglePasteView) -- opens the export window with this view (PST-R60, logic/PasteExport.lua)
 ---@field print fun(line: string)      -- prints a chat line
 
 --- The dev commands.
@@ -281,6 +282,14 @@ function Dev:Run(args)
 	elseif name == "views" then
 		for _, line in ipairs(options.views()) do
 			options.print(line)
+		end
+	elseif name == "pastetest" then
+		local view = rest:match("^%d+$") and ns.PasteTestView(tonumber(rest) --[[@as integer]])
+		if view then
+			options.showPaste(view)
+			options.print(L.DEV_PASTE_TEST_SHOWN:format(view.testKB))
+		else
+			options.print(L.DEV_PASTE_TEST_USAGE:format(ns.PASTE_TEST_MIN_KB, ns.PASTE_TEST_MAX_KB))
 		end
 	else
 		options.print(L.DEV_USAGE)

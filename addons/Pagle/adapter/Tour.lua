@@ -9,8 +9,8 @@ end
 local Pagle = Pagle
 
 -- Core's own tour stops (CORE-R65, CORE-R68), in ns.tourStops with the Modules' (logic/Wiring.lua's ns.WireDev): each
--- Announcement form with `/pagle dev preview`'s sample, the two cards, the Curio Shop, the Field report box and the
--- glyph panel. adapter/Settings.lua adds the Settings pages as it registers them. Each hide puts back what its show
+-- Announcement form with `/pagle dev preview`'s sample, the two cards, the Curio Shop, the Field report box, the
+-- export window and the glyph panel. adapter/Settings.lua adds the Settings pages as it registers them. Each hide puts back what its show
 -- changed: a window open before its stop stays open.
 
 -- Adds one of Core's stops; a mistake here is Core's own, so it's raised.
@@ -95,6 +95,17 @@ end, function()
 	local box = ns.fieldReportBox
 	if box then
 		box:Hide()
+	end
+end)
+
+window("export", ns.L.DEV_TOUR_EXPORT, function()
+	return ns.pasteExportWindow ~= nil and ns.pasteExportWindow:IsShown()
+end, function()
+	Pagle.OpenPasteExport()
+end, function()
+	local frame = ns.pasteExportWindow
+	if frame then
+		frame:Hide()
 	end
 end)
 

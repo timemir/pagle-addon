@@ -597,7 +597,8 @@ end
 --- Makes `box` an edit box, as the client's EditBox behaves for what Pagle calls: SetText runs OnTextChanged with
 --- userInput false, drops the selection and puts the cursor (`cursor`, as SetCursorPosition and GetCursorPosition
 --- keep it) at the text's end; HighlightText keeps the selection in `highlight` ({ start, stop }, the client's defaults
---- 0 and -1 for all of it); SetFocus and ClearFocus move `client.focus`, SetFocus running OnEditFocusGained. A spec
+--- 0 and -1 for all of it); SetFocus and ClearFocus move `client.focus`, SetFocus running OnEditFocusGained;
+--- SetMultiLine keeps whether it is multi-line, as IsMultiLine reads it (one line by default). A spec
 --- plays the player with `box:Type(text)`: what the box holds after typing replaces its text and selection, the cursor
 --- at its end, and OnTextChanged runs with userInput true.
 ---@param client FakeClient
@@ -637,6 +638,12 @@ function widgets.editBox(client, box)
 	end
 	function box:HasFocus()
 		return client.focus == self
+	end
+	function box:SetMultiLine(multiLine)
+		self.multiLine = multiLine == true
+	end
+	function box:IsMultiLine()
+		return self.multiLine == true
 	end
 	function box:Type(text)
 		self.text = text

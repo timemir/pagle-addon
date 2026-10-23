@@ -1793,6 +1793,7 @@ describe("FakePagle", function()
 					"/pagle settings: open Pagle's settings (also /pagle on its own)",
 					"/pagle shop: open or close the Curio Shop",
 					"/pagle report: open the Field report, to help chart the waters",
+					"/pagle export: copy your Catch log as a Paste string for the Pagle website",
 					"/pagle guide: open the Field guide; /pagle guide notes shows the margin notes again",
 					"/pagle help: list these commands",
 					"/pagle qol: cycle Input",
@@ -1840,7 +1841,7 @@ describe("FakePagle", function()
 			fake.slash("help")
 
 			assert.are.same({ "Pagle: QoL's /pagle Report is skipped: Pagle reserves report" }, fake.reported)
-			assert.are.equal("/pagle qol: cycle Input", fake.printed[7])
+			assert.are.equal("/pagle qol: cycle Input", fake.printed[8])
 		end)
 	end)
 
