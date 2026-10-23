@@ -484,3 +484,175 @@ describe("the entry's fit rule (HNT-R163)", function()
 		assert.are.same({ { rule = true, casts = false, windows = true }, 490 }, { out, ends })
 	end)
 end)
+
+-- The Board's wager strip and WAGERS rows (HNT-R161) -------------------------------------------------------------
+
+-- fixture_shore on from a day ago, closing in `left` seconds (2d by default): the Snapper at its first mark, the Haul
+-- at 1 of 2; `fields` over the run.
+local function shoreOn(ns, left, fields)
+	left = left or (2 * DAY)
+	return shownRun(ns, "fixture_shore", NOW + left - 3 * DAY, NOW + left, {
+		fixture_shore_snapper = hunts.progress({ tiers = 1 }),
+		fixture_shore_haul = hunts.progress({ count = 1 }),
+	}, fields)
+end
+
+describe("the wager strip (HNT-R161)", function()
+	it(
+		"is the first run on's one-line ticket: a wordless dial, its mark, name, zones, pips and closing time",
+		function()
+			local ns = load()
+			local run = shoreOn(ns)
+
+			local strip = ns.BuildWagerStrip(wagersInput(ns, { run }))
+
+			assert.are.same({
+				run = run.key,
+				on = true,
+				mark = { "mark-shadow", "mark-sky-plain", "mark-water-coast", "mark-ring" },
+				dial = { kind = "on", step = 24, urgent = false }, -- 2d of 3d to go, and no words in it
+				name = "Shore Wager",
+				zones = "Darkshore",
+				settled = false,
+				pips = { false, true, false }, -- the Haul at 1 of 2, the Snapper at its first mark, the oddity none
+				closes = "closes in 2d",
+				urgent = false,
+			}, strip)
+		end
+	)
+
+	it("has no kicker", function()
+		local ns = load()
+
+		assert.is_nil(ns.BuildWagerStrip(wagersInput(ns, { shoreOn(ns) })).kicker)
+	end)
+
+	it('reddens "closes in …" and the dial within the closing-note time (3 h), not once settled', function()
+		local ns = load()
+
+		local soon = ns.BuildWagerStrip(wagersInput(ns, { shoreOn(ns, 42 * 60) }))
+		local later = ns.BuildWagerStrip(wagersInput(ns, { shoreOn(ns, 3 * HOUR + 60) }))
+		local settled = ns.BuildWagerStrip(wagersInput(ns, { shoreOn(ns, 42 * 60, { completedAt = NOW - HOUR }) }))
+
+		assert.are.same({ "closes in 42m", true, true }, { soon.closes, soon.urgent, soon.dial.urgent })
+		assert.are.same({ false, false }, { later.urgent, later.dial.urgent })
+		assert.are.same({ "closes in 42m", false, "settled" }, { settled.closes, settled.urgent, settled.dial.kind })
+	end)
+
+	it("presses the SETTLED stamp in place of the pips once the run is completed", function()
+		local ns = load()
+
+		local strip = ns.BuildWagerStrip(wagersInput(ns, { shoreOn(ns, nil, { completedAt = NOW - HOUR }) }))
+
+		assert.is_true(strip.settled)
+		assert.is_nil(strip.pips)
+	end)
+
+	it('reads "updating…" in place of the pips and the stamp while the projection updates (HNT-R69)', function()
+		local ns = load()
+
+		local strip = ns.BuildWagerStrip(wagersInput(ns, { shoreOn(ns, nil, { completedAt = NOW - HOUR }) }, true))
+
+		assert.are.same({ "updating…", false }, { strip.updating, strip.settled })
+		assert.is_nil(strip.pips)
+	end)
+
+	it('adds "+{n} more on the table" for the other runs on, not the runs ahead', function()
+		local ns = load()
+		local runs = {
+			shoreOn(ns),
+			shownRun(ns, "fixture_vale", NOW - HOUR, NOW + 3 * DAY),
+			shownRun(ns, "fixture_vale", NOW + 3 * HOUR, NOW + 3 * HOUR + 3 * DAY),
+		}
+
+		assert.are.equal("+1 more on the table", ns.BuildWagerStrip(wagersInput(ns, runs)).more)
+		assert.is_nil(ns.BuildWagerStrip(wagersInput(ns, { shoreOn(ns) })).more)
+	end)
+
+	it("is the spread's dashed row for the first run ahead with none on", function()
+		local ns = load()
+		local vale = withEvent(shownRun(ns, "fixture_vale", NOW + 3 * HOUR, NOW + 3 * HOUR + 3 * DAY), {
+			skill = { 276, 300 },
+		})
+
+		local strip = ns.BuildWagerStrip(wagersInput(ns, { vale }))
+
+		assert.are.same({
+			run = vale.key,
+			on = false,
+			ahead = {
+				run = vale.key,
+				selected = false,
+				mark = { "mark-shadow", "mark-sky-plain", "mark-water-lake", "mark-ring" },
+				name = "fixture_vale",
+				zones = "Ashenvale & Elwynn Forest",
+				need = "needs skill 276",
+				opens = "opens Sun 11:15",
+				length = "for 3d",
+			},
+		}, strip)
+	end)
+
+	it("carries the companion hint's lines under it while the hint applies (HNT-R170)", function()
+		local ns = load()
+		local input = wagersInput(ns, { shoreOn(ns) })
+		input.hint = { lines = { "first", "second" }, tracker = "line" }
+
+		assert.are.same({ "first", "second" }, ns.BuildWagerStrip(input).hint)
+	end)
+
+	it("is nil with no run on or ahead (HNT-R204)", function()
+		local ns = load()
+
+		assert.is_nil(ns.BuildWagerStrip(wagersInput(ns, {})))
+	end)
+end)
+
+describe("the wager strip's fit (HNT-R161)", function()
+	-- The room 300 between the name's left and the pips; "+2 more" 90 with its gap; the zones 80 with theirs.
+	local function fit(name, more, zones)
+		return load().WagerStripFit({ room = 300, name = name, more = more or 90, zones = zones or 80 })
+	end
+
+	it("shows everything when it all fits", function()
+		assert.are.same({ name = 120, more = true, zones = 80 }, fit(120))
+	end)
+
+	it("cuts the zones short first, then leaves them out under the least they take", function()
+		assert.are.same({ name = 160, more = true, zones = 50 }, fit(160))
+		local least = load().WAGER_STRIP_ZONES_LEAST
+		assert.are.same({ name = 210 - least + 1, more = true }, fit(210 - least + 1))
+		assert.are.same({ name = 210 - least, more = true, zones = least }, fit(210 - least))
+	end)
+
+	it('then leaves out "+{n} more", and only then cuts the name short', function()
+		assert.are.same({ name = 210, more = true }, fit(210))
+		assert.are.same({ name = 211, more = false }, fit(211))
+		assert.are.same({ name = 260, more = false }, fit(260, nil, 80)) -- the zones' 40 under the least: left out
+		assert.are.same({ name = 300, more = false }, fit(420))
+	end)
+
+	it("takes nothing for a part that isn't there", function()
+		assert.are.same({ name = 280, more = false }, fit(280, 0, 0))
+		assert.are.same({ name = 120, more = false, zones = 80 }, fit(120, 0, 80))
+	end)
+end)
+
+describe("the WAGERS group's rows (HNT-R161)", function()
+	it("show the run's event mark in place of its first Hunt's icon", function()
+		local ns = load()
+		local holiday = withEvent(shoreOn(ns), { tags = { "night", "coast", "winter_veil" } })
+
+		local rows = ns.BuildWagerRows(
+			wagersInput(ns, { holiday }, false, { onDemand = true }),
+			{ from = NOW - 2 * HOUR, to = NOW + 22 * HOUR }
+		)
+
+		assert.are.same(
+			{ "mark-shadow", "mark-sky-night", "mark-water-coast", "mark-ring", "mark-charm-winter_veil" },
+			rows[1].mark
+		)
+		assert.is_nil(rows[1].icon)
+		assert.is_nil(rows[1].tint)
+	end)
+end)

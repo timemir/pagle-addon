@@ -136,7 +136,9 @@ ns.TRACKER_RUNS = 3
 ---@class HuntsTrackerRun
 ---@field key string           -- its run key: clicking its lines opens the board on it (HNT-R164)
 ---@field name string          -- the event's name, at the left of the first line…
----@field label string         -- …and at the right "settled", or "ends in 1d 4h" (HNT-R51's tracker wording)
+---@field label string         -- …and at the right "settled", or "ends in 1d 4h" (HNT-R51's tracker wording)…
+---@field urgent boolean       -- …in red within the closing-note time while not settled (Tunables)
+---@field dial WagerDial       -- its time dial, without words, where a Hunt's line has its dot (HNT-R167)
 ---@field second string        -- "1 of 4 first marks · {Hunt}: 1 / 2", or "updating…" (HNT-R78)
 
 --- The Pagle Wagers block's lines.
@@ -149,14 +151,19 @@ ns.TRACKER_RUNS = 3
 --- counted from `now`; then "{done} of {n} first marks" and its closest unfinished Hunt as "{Hunt}: {count} / {next
 --- threshold}", ns.RunProgress's (the Hunt without its first mark nearest it, ties in definition order), none once
 --- every first mark is landed. While the projection updates, progress reads "updating…" and the label counts down.
+--- Its time dial (HNT-R167) has no words, and the label is red while the dial is (within the closing-note time, not
+--- settled).
 ---@param shown HuntsShownRun
 ---@param input HuntsTrackerWagersInput
 ---@param state HuntsState
 ---@return HuntsTrackerRun
 local function runLines(shown, input, state)
 	local L, run = ns.L, shown.run
-	local line = { key = shown.key, name = ns.events:EventName(shown.event) }
-	if run.completedAt and not input.updating then
+	local settled = run.completedAt ~= nil and not input.updating
+	local dial = ns.WagerDial(shown, input.now, settled, false)
+	dial.left = nil -- wordless: the label says the time
+	local line = { key = shown.key, name = ns.events:EventName(shown.event), dial = dial, urgent = dial.urgent }
+	if settled then
 		line.label = L.TRACKER_SETTLED
 	else
 		line.label = L.TRACKER_ENDS_IN:format(ns.FormatDuration(run.end_ - input.now))

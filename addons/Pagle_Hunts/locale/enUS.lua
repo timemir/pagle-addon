@@ -281,7 +281,7 @@ ns.L = {
 	TOUR_BOARD_LATER = "the Hunts board: a Hunt in Later",
 	TOUR_BOARD_ON_DEMAND = "the Hunts board: a Hunt in On demand",
 	TOUR_BOARD_WAGERS = "the Hunts board: the wager strip and the WAGERS group, a run's entry",
-	TOUR_WAGERS = "the Hunts board: the Pagle Wagers spread, its slips and ladder",
+	TOUR_WAGERS = "the Hunts board: the Pagle Wagers spread, its tickets and ladder",
 	TOUR_SET = "the Hunts board: a set's page, its title earned",
 	TOUR_SET_ENTRY = "the Hunts board: an entry opened from its set's page",
 	TOUR_RETIRED = "the Hunts board: a Retired Hunt's entry",
@@ -291,13 +291,11 @@ ns.L = {
 
 	-- Pagle Wagers on the Board (HNT-R161, HNT-R163, HNT-R164): logic/Wagers.lua. Hunt Events are only ever
 	-- "Pagle Wagers" to players (CONTEXT.md), and nothing here claims odds, a due fish or a chance (HNT-R27).
-	WAGERS_KICKER = "Pagle Wagers", -- the strip's kicker, the breadcrumb between "Hunts" and the run, and the
+	WAGERS_KICKER = "Pagle Wagers", -- the spread's kicker, the breadcrumb between "Hunts" and the run, and the
 	-- tracker's Pagle Wagers header (HNT-R175)
-	STRIP_NAME = "%s · %s", -- "Shore Wager · Darkshore": the run's event and its zones
 	JOIN_ZONES = " & ",
 	STRIP_CLOSES = "closes in %s", -- a server-time duration (HNT-R203)
 	STRIP_MORE = "+%d more on the table",
-	STRIP_NEXT = "Next: %s, %s", -- "Next: Shore Wager, Sat 15:00"
 	RUN_KICKER_ROTATION = "From the rotation · %s waters",
 	BANDS = { low = "low", mid = "mid", high = "high" }, -- an event's skill band (HNT-R156)
 	RUN_KICKER_PUSHED = "Sent by the companion",

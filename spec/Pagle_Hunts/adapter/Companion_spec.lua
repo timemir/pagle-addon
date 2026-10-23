@@ -180,7 +180,7 @@ describe("with the hint switch turned off (HNT-R172)", function()
 
 				local page = boardPage(r)
 
-				assert.is_true(hunts.has(shownTexts(page), "Shore Wager · Darkshore")) -- the strip itself shows
+				assert.is_true(hunts.has(shownTexts(page), "Shore Wager")) -- the strip itself shows
 				assert.is_false(holdsAny(shownTexts(page), MISSING) or holdsAny(shownTexts(page), NOT_RUNNING))
 				assert.are.same({}, hintButtons(page))
 			end)

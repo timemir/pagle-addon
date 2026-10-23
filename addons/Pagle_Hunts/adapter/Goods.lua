@@ -53,10 +53,13 @@ local drawn = setmetatable({}, { __mode = "k" })
 ---@field name HuntsTrackerFont
 ---@field label HuntsTrackerFont
 ---@field sub HuntsTrackerFont
+---@field urgent number[]      -- a run's label within the closing-note time (HNT-R175): red that reads on its ground
 
 -- The native look's inks; its grey a little lighter than the kit's, to read over bright ground.
 local GOLD, WHITE, GREY = tint("ffd100"), tint("ffffff"), tint("e4dcc6")
 local PAPER_INK, PAPER_SMALL = tint("2e1c0c"), tint("5a4028")
+-- A closing run's label (HNT-R175): over the world a bright red, on paper the Board's now line.
+local URGENT_DARK, URGENT_PAPER = tint("ff5a40"), tint("b4281a")
 
 --- The tracker's looks: "native" for No frame (the plain block, restyled in the kit's type), and the two frames for
 --- sale.
@@ -80,6 +83,7 @@ ns.TRACKER_LOOKS = {
 		name = { "print", 13, WHITE, true },
 		label = { "print", 13, GOLD, true },
 		sub = { "print", 13, GREY, true },
+		urgent = URGENT_DARK,
 	},
 	inkwash = {
 		frame = "TrackerInk",
@@ -101,6 +105,7 @@ ns.TRACKER_LOOKS = {
 		name = { "handSemi", 18, PAPER_INK },
 		label = { "hand", 17, tint("9a2a1a") },
 		sub = { "print", 13, PAPER_SMALL },
+		urgent = URGENT_PAPER,
 	},
 	waxseal = {
 		frame = "TrackerWax",
@@ -122,6 +127,7 @@ ns.TRACKER_LOOKS = {
 		name = { "gilt", 15, PAPER_INK },
 		label = { "hand", 17, tint("7a1a0e") },
 		sub = { "print", 13, PAPER_SMALL },
+		urgent = URGENT_PAPER,
 	},
 }
 local LOOKS = ns.TRACKER_LOOKS
@@ -193,6 +199,7 @@ for _, kit in ipairs(KIT_FRAMES) do
 		name = { "print", 13, text },
 		label = { "print", 13, accent },
 		sub = { "italic", 12, dim },
+		urgent = kit.paper and URGENT_PAPER or URGENT_DARK,
 	}
 end
 
@@ -214,9 +221,9 @@ function ns.TrackerLook(goodID)
 	return ns.TRACKER_FRAMES[goodID] or LOOKS.native
 end
 
--- A dot's size; an extra line's height ("+N more", the empty line); the room between the Pagle Wagers block and the
+-- A dot's size, and a run's time dial's in its place (HNT-R175); an extra line's height ("+N more", the empty line); the room between the Pagle Wagers block and the
 -- Hunts block's header under it.
-local DOT_SIZE, EXTRA_LINE, WAGERS_GAP = 8, 20, 6
+local DOT_SIZE, DIAL_SIZE, EXTRA_LINE, WAGERS_GAP = 8, 14, 20, 6
 
 --- The tracker's widgets, for its draws (and specs that read them).
 ---@class HuntsTrackerView
@@ -252,6 +259,7 @@ local DOT_SIZE, EXTRA_LINE, WAGERS_GAP = 8, 20, 6
 ---@class HuntsTrackerLineButton: Button
 ---@field shade Texture
 ---@field dot BoardDotView
+---@field dial WagerDialView?    -- a run's time dial in its dot's place (HNT-R175), made at a run's first draw
 ---@field first FontString       -- the Hunt's name, or the run's event's
 ---@field label FontString       -- its tracker label, at the right
 ---@field second FontString
@@ -271,10 +279,10 @@ local DOT_SIZE, EXTRA_LINE, WAGERS_GAP = 8, 20, 6
 ---@field collapsed boolean
 ---@field wagers HuntsTrackerWagersContent?   -- nil: no Pagle Wagers block
 
---- What the Pagle Wagers block shows (HNT-R175, HNT-R177): each run's name, label and second line, under a dot in
---- the wagers' oxblood, "+{n} more wagers on the table", and whether it is collapsed to its header.
+--- What the Pagle Wagers block shows (HNT-R175, HNT-R177): each run's name, label (red within the closing-note time)
+--- and second line, after its time dial, "+{n} more wagers on the table", and whether it is collapsed to its header.
 ---@class HuntsTrackerWagersContent
----@field runs { name: string, label: string, second: string }[]
+---@field runs { name: string, label: string, second: string, dial: WagerDial, urgent: boolean }[]
 ---@field more string?
 ---@field hint string?            -- with no run on, the companion hint's line (HNT-R176)
 ---@field collapsed boolean
@@ -470,10 +478,37 @@ local function drawHeader(header, title, chevron, look, text, top, collapsed)
 	drawChevron(chevron, header, look.x, look.chevronY, look.chevron, collapsed)
 end
 
--- Draws each of `entries` (a Hunt's or a run's two lines) on `lines` from `y` down, under a dot of its group
--- (`entry.dot`, else `dot`), and hides the lines past them; returns the y under the last.
+-- Draws a line's mark: a run's time dial (HNT-R175), 14 across and centred where a dot is, or a dot of its group.
+---@param line HuntsTrackerLineButton
+---@param x number
+---@param dial WagerDial?
+---@param group HuntGroup|"wagers"
+---@param paper boolean
+local function drawMark(line, x, dial, group, paper)
+	line.dot:SetShown(dial == nil)
+	if line.dial then
+		line.dial:SetShown(dial ~= nil)
+	end
+	if dial then
+		if not line.dial then
+			line.dial = ns.NewWagerDial(line, DIAL_SIZE)
+		end
+		line.dial:SetDial(dial)
+		line.dial:ClearAllPoints()
+		line.dial:SetPoint("TOPLEFT", x + (DOT_SIZE - DIAL_SIZE) / 2, -(8 + (DOT_SIZE - DIAL_SIZE) / 2))
+		line.dial:Show()
+		return
+	end
+	line.dot:SetGroup(group, paper)
+	line.dot:ClearAllPoints()
+	line.dot:SetPoint("TOPLEFT", x, -8)
+end
+
+-- Draws each of `entries` (a Hunt's or a run's two lines) on `lines` from `y` down, after a run's time dial or a dot
+-- of its group (`entry.dot`, else `dot`), its label red when `entry.urgent`; hides the lines past them; returns the y
+-- under the last.
 ---@param lines HuntsTrackerLineButton[]
----@param entries { dot: (HuntGroup|"wagers")?, name: string, label: string, second: string? }[]
+---@param entries { dot: (HuntGroup|"wagers")?, name: string, label: string, second: string?, dial: WagerDial?, urgent: boolean? }[]
 ---@param look HuntsTrackerLook
 ---@param y number
 ---@param dot (HuntGroup|"wagers")?
@@ -488,10 +523,11 @@ local function drawLines(lines, entries, look, y, dot)
 			line:SetPoint("TOPLEFT", 0, -y)
 			line:SetSize(look.width, look.step)
 			line.shade:SetShown(look.shade)
-			line.dot:SetGroup(entry.dot or dot --[[@as HuntGroup|"wagers"]], look.paper)
-			line.dot:ClearAllPoints()
-			line.dot:SetPoint("TOPLEFT", x, -8)
+			drawMark(line, x, entry.dial, entry.dot or dot --[[@as HuntGroup|"wagers"]], look.paper)
 			setFont(line.label, look.label)
+			if entry.urgent then
+				line.label:SetTextColor(look.urgent[1], look.urgent[2], look.urgent[3])
+			end
 			line.label:SetText(entry.label)
 			line.label:ClearAllPoints()
 			line.label:SetPoint("TOPRIGHT", line, "TOPLEFT", right, -4)

@@ -141,7 +141,7 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 			"  hunts.board.later: the Hunts board: a Hunt in Later",
 			"  hunts.board.ondemand: the Hunts board: a Hunt in On demand",
 			"  hunts.board.wagers: the Hunts board: the wager strip and the WAGERS group, a run's entry",
-			"  hunts.wagers: the Hunts board: the Pagle Wagers spread, its slips and ladder",
+			"  hunts.wagers: the Hunts board: the Pagle Wagers spread, its tickets and ladder",
 			"  hunts.set.page: the Hunts board: a set's page, its title earned",
 			"  hunts.set.entry: the Hunts board: an entry opened from its set's page",
 			"  hunts.set.retired: the Hunts board: a Retired Hunt's entry",
@@ -194,7 +194,7 @@ describe("Hunts' tour stops (CORE-R65, CORE-R68)", function()
 		local stop = shown[6]
 		assert.are.equal("board", stop.place.mode)
 		assert.matches("^fixture_%a+@%d+$", stop.place.run)
-		for _, text in ipairs({ "PAGLE WAGERS", "Shore Wager · Darkshore", "+1 more on the table", "WAGERS" }) do
+		for _, text in ipairs({ "Shore Wager", "+1 more on the table", "WAGERS" }) do
 			assert(hunts.has(stop.left, text), "the Board lacks " .. text)
 		end
 		assert.is_true(hunts.has(stop.right, "FROM THE ROTATION · LOW WATERS"))

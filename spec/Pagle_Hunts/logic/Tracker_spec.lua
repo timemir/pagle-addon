@@ -154,12 +154,16 @@ describe("the Hunts tracker's lines", function()
 						key = first.key,
 						name = "Shore Wager",
 						label = "ends in 1d 4h",
+						urgent = false,
+						dial = { kind = "on", step = 14, urgent = false }, -- 28h of 76h to go: 14 of 36 (HNT-R167)
 						second = "1 of 3 first marks · fixture_shore_haul: 1 / 2",
 					},
 					{
 						key = second.key,
 						name = "Shore Wager",
 						label = "ends in 2d 2h",
+						urgent = false,
+						dial = { kind = "on", step = 19, urgent = false },
 						second = "0 of 3 first marks · fixture_shore_haul: 0 / 2", -- a tie: the first in file order
 					},
 				},
@@ -199,6 +203,36 @@ describe("the Hunts tracker's lines", function()
 
 			assert.are.same({ "settled", "3 of 3 first marks" }, { line.label, line.second })
 		end)
+
+		it("give each run its wordless time dial, grey once settled (HNT-R167, HNT-R175)", function()
+			local done = shown(1, 28 * HOUR, {
+				fixture_shore_haul = progress(2, 1),
+				fixture_shore_snapper = progress(1, 1),
+				fixture_shore_oddity = progress(1, 1),
+			})
+			done.run.completedAt = NOW - HOUR
+
+			local line = ns.TrackerWagerLines(input({ done }), state).runs[1]
+
+			assert.are.same({ kind = "settled", step = 14, urgent = false }, line.dial)
+			assert.is_false(line.urgent)
+		end)
+
+		it(
+			'redden "ends in …" and the dial within the closing-note time (3 h), not once settled (HNT-R175)',
+			function()
+				local soon = shown(1, 3 * HOUR)
+				local later = shown(2, 3 * HOUR + 60)
+				local settled = shown(3, 42 * 60)
+				settled.run.completedAt = NOW - HOUR
+
+				local lines = ns.TrackerWagerLines(input({ soon, later, settled }), state).runs
+
+				assert.are.same({ "ends in 3h", true, true }, { lines[1].label, lines[1].urgent, lines[1].dial.urgent })
+				assert.are.same({ false, false }, { lines[2].urgent, lines[2].dial.urgent })
+				assert.are.same({ "settled", false }, { lines[3].label, lines[3].urgent })
+			end
+		)
 
 		it('reads "updating…" for progress while the projection updates, its countdown still running', function()
 			local done = shown(1, 37 * 60, { fixture_shore_snapper = progress(1, 1) })

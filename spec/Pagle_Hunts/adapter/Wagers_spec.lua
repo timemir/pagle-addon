@@ -139,39 +139,145 @@ local function shownWith(widget, field, out)
 	return out
 end
 
+--- The shown font string under `widget` reading `words`, or nil.
+local function textOf(widget, words)
+	for _, child in ipairs(widget.children) do
+		if child.shown then
+			if child.text == words then
+				return child
+			end
+			local found = textOf(child, words)
+			if found then
+				return found
+			end
+		end
+	end
+end
+
 --- A bar as { from, to, style }, positions rounded to 4 places.
 local function rounded(bar)
 	return { math.floor(bar.from * 1e4 + 0.5) / 1e4, math.floor(bar.to * 1e4 + 0.5) / 1e4, bar.style }
 end
 
 describe("the wager strip (HNT-R161)", function()
-	it("names the first run on: its zones, closes in 2d 4h, and a pip per Hunt inked at its first mark", function()
-		local r = oneOn()
+	it(
+		"names the first run on: its mark, dial, zones, closes in 2d 4h, and a pip per Hunt inked at its first mark",
+		function()
+			local r = oneOn()
 
-		local strip = r.ns.BoardTimeline({ mode = "board" }).strip
+			local strip = r.ns.BoardTimeline({ mode = "board" }).strip
 
-		assert.are.same({
-			run = SHORE,
-			on = true,
-			kicker = "Pagle Wagers",
-			name = "Shore Wager",
-			zones = "Darkshore",
-			closes = "closes in 2d 4h", -- HNT-R50, HNT-R203: a server-time duration
-			pips = { false, true, false }, -- the Haul at 1 of 2, the Snapper at its first mark, the oddity none
-		}, strip)
-	end)
+			assert.are.same({
+				run = SHORE,
+				on = true,
+				mark = { "mark-shadow", "mark-sky-plain", "mark-water-coast", "mark-ring" },
+				dial = { kind = "on", step = 26, urgent = false }, -- 2d 4h of 3d to go, without words (HNT-R167)
+				name = "Shore Wager",
+				zones = "Darkshore",
+				settled = false,
+				closes = "closes in 2d 4h", -- HNT-R50, HNT-R203: a server-time duration
+				urgent = false,
+				pips = { false, true, false }, -- the Haul at 1 of 2, the Snapper at its first mark, the oddity none
+			}, strip)
+		end
+	)
 
-	it("draws above the ruler, its pips as marks, inked at a first mark", function()
-		local r = oneOn()
+	it(
+		"draws the one-line ticket above the ruler: no kicker, its dial and mark, its pips inked at a first mark",
+		function()
+			local r = oneOn()
+			r.ns.ToggleBoard()
+
+			local texts = pageTexts(r, "left")
+			assert.is_false(has(texts, "PAGLE WAGERS"))
+			assert.is_true(has(texts, "Shore Wager"))
+			assert.is_true(has(texts, "Darkshore"))
+			assert.is_true(has(texts, "closes in 2d 4h"))
+			assert.is_false(has(texts, "2d 4h")) -- the dial has no words
+			local page = r.ns.board:Page(place(r), "left")
+			local pips = shownWith(page, "pip")
+			assert.are.equal(3, #pips)
+			assert.are.same({ false, true, false }, { pips[1].inked, pips[2].inked, pips[3].inked })
+			local strip = shownWith(page, "stripRun")[1]
+			assert.are.same({ 26, false, false }, { shownWith(strip, "step")[1].step, strip.settled, strip.urgent })
+			assert.are.same(
+				{ "mark-shadow", "mark-sky-plain", "mark-water-coast", "mark-ring" },
+				shownWith(strip, "names")[1].names
+			)
+		end
+	)
+
+	it('reddens "closes in …" within the closing-note time, and stamps SETTLED in place of the pips', function()
+		local r = oneOn({
+			now = SAT_15 - 42 * 60,
+			clock = {
+				time = SAT_15 - 42 * 60,
+				minute = 16 * 60 + 18,
+				date = { year = 2026, month = 10, day = 17, weekday = 7 },
+			},
+		})
 		r.ns.ToggleBoard()
 
-		local texts = pageTexts(r, "left")
-		assert.is_true(has(texts, "PAGLE WAGERS"))
-		assert.is_true(has(texts, "Shore Wager · Darkshore"))
-		assert.is_true(has(texts, "closes in 2d 4h"))
-		local pips = shownWith(r.ns.board:Page(place(r), "left"), "pip")
-		assert.are.equal(3, #pips)
-		assert.are.same({ false, true, false }, { pips[1].inked, pips[2].inked, pips[3].inked })
+		local strip = shownWith(r.ns.board:Page(place(r), "left"), "stripRun")[1]
+		local closes = textOf(strip, "closes in 42m")
+		local red, now = r.ns.BOARD_LOOK.nowLine, shownWith(strip, "step")[1]
+		assert.is_true(strip.urgent)
+		assert.are.same({ red[1], red[2], red[3] }, { closes.textColor[1], closes.textColor[2], closes.textColor[3] })
+		assert.are.same({ 1, red }, { now.step, now.ink }) -- the dial's last step, in the same red (HNT-R167)
+		assert.are.equal(3, #shownWith(strip, "pip"))
+
+		-- the run settles: the stamp in place of the pips, and the words back in the margin's red
+		local copy = hunts.deepCopy(r.ns.State())
+		copy.runs[SHORE].completedAt = SAT_15 - HOUR
+		r.ns.projection = {
+			GetState = function()
+				return copy
+			end,
+			IsUpdating = function()
+				return false
+			end,
+		}
+		r.ns.board:Draw()
+
+		strip = shownWith(r.ns.board:Page(place(r), "left"), "stripRun")[1]
+		closes = textOf(strip, "closes in 42m")
+		local margin = r.ns.BOARD_LOOK.red
+		assert.are.same({ true, false }, { strip.settled, strip.urgent })
+		assert.are.same({}, shownWith(strip, "pip"))
+		assert.are.same(
+			{ margin[1], margin[2], margin[3] },
+			{ closes.textColor[1], closes.textColor[2], closes.textColor[3] }
+		)
+	end)
+
+	it('leaves out the zones, then "+{n} more", before it cuts a long name', function()
+		-- The fake client measures 6 units a character: "Shore Wager", "Darkshore" and "+1 more on the table" don't
+		-- all fit beside "closes in 2d 4h" and the pips.
+		local function texts(r)
+			r.ns.board:Draw()
+			local all = pageTexts(r, "left")
+			return { has(all, "Darkshore"), has(all, "+1 more on the table") }
+		end
+		local alone = oneOn()
+		alone.ns.ToggleBoard()
+		local two = oneOn({
+			pushed = {
+				state = "notRunning",
+				items = {
+					{ kind = "huntRun", v = 1, event = "fixture_vale", start = THU_11 - HOUR, ["end"] = SAT_15 + HOUR },
+				},
+			},
+		})
+		two.ns.ToggleBoard()
+
+		assert.are.same({ true, false }, texts(alone))
+		assert.are.same({ false, true }, texts(two)) -- the zones go first
+
+		two.ns.L["event.fixture_shore.name"] = string.rep("A long wager name ", 3)
+		assert.are.same({ false, false }, texts(two)) -- then "+1 more", before the name is cut
+		local strip = shownWith(two.ns.board:Page(place(two), "left"), "stripRun")[1]
+		local name = textOf(strip, string.rep("A long wager name ", 3))
+		assert.is_true(name:GetWidth() < #name.text * 6)
 	end)
 
 	it('adds "+1 more on the table" with a second run on, naming the one that closes first', function()
@@ -193,21 +299,32 @@ describe("the wager strip (HNT-R161)", function()
 		)
 	end)
 
-	it('reads "Next: {name}, Sat 15:00" with none on and one ahead, and the WAGERS group is left out', function()
+	it("is the spread's dashed row for the run ahead with none on, and the WAGERS group is left out", function()
 		-- Slot 2 (the high band) has no event: nothing is on, and slot 3's fixture_shore starts at SAT_15.
 		local r = start({ origin = SAT_15 - 3 * SLOT, clock = UTC })
+		local asked = {}
+		r.ns.OpenWagers = function(key)
+			asked[#asked + 1] = key
+		end
 
 		local timeline = r.ns.BoardTimeline({ mode = "board" })
 
-		assert.are.same({
-			run = "fixture_shore@" .. SAT_15,
-			on = false,
-			kicker = "Pagle Wagers",
-			next = "Next: Shore Wager, Sat 15:00",
-		}, timeline.strip)
+		assert.are.same({ "fixture_shore@" .. SAT_15, false }, { timeline.strip.run, timeline.strip.on })
+		assert.are.same({ "Shore Wager", "Darkshore", "opens Sat 15:00", "for 3d" }, {
+			timeline.strip.ahead.name,
+			timeline.strip.ahead.zones,
+			timeline.strip.ahead.opens,
+			timeline.strip.ahead.length,
+		})
 		assert.is_nil(groupIn(timeline, "wagers")) -- it starts after the ruler's end: an empty group is left out
 		r.ns.ToggleBoard()
-		assert.is_true(has(pageTexts(r, "left"), "Next: Shore Wager, Sat 15:00"))
+		local texts = pageTexts(r, "left")
+		assert.is_true(has(texts, "opens Sat 15:00"))
+		assert.is_true(has(texts, "for 3d"))
+		local page = r.ns.board:Page(place(r), "left")
+		assert.are.same({}, shownWith(page, "stripRun"))
+		shownWith(page, "aheadRun")[1]:Click()
+		assert.are.same({ "fixture_shore@" .. SAT_15 }, asked)
 	end)
 
 	it("is left out before the rotation's starting point with no pushed run, and so is the group (HNT-R204)", function()
@@ -218,7 +335,8 @@ describe("the wager strip (HNT-R161)", function()
 		assert.is_nil(timeline.strip)
 		assert.is_nil(groupIn(timeline, "wagers"))
 		r.ns.ToggleBoard()
-		assert.is_false(has(pageTexts(r, "left"), "PAGLE WAGERS"))
+		assert.are.same({}, shownWith(r.ns.board:Page(place(r), "left"), "stripRun"))
+		assert.are.same({}, shownWith(r.ns.board:Page(place(r), "left"), "aheadRun"))
 		assert.are.same({}, shownWith(r.ns.board:Page(place(r), "left"), "runKey"))
 	end)
 
@@ -265,8 +383,9 @@ describe("the WAGERS group (HNT-R161, HNT-R62, HNT-R63)", function()
 			bars[i] = rounded(bar)
 		end
 		assert.are.same({ { 0, 1, "run" }, rounded({ from = 7 / 24, to = 10 / 24, style = "wager" }) }, bars)
-		-- Its icon is its first Hunt's (HNT-R55): the Haul's generated class.
-		assert.are.equal("Interface\\Icons\\Trade_Fishing", row.icon)
+		-- Its event mark, in place of its first Hunt's icon (HNT-R166).
+		assert.are.same({ "mark-shadow", "mark-sky-plain", "mark-water-coast", "mark-ring" }, row.mark)
+		assert.is_nil(row.icon)
 	end)
 
 	it("shows a run ahead within the ruler from its start, its margin its weekday and time", function()
@@ -312,6 +431,8 @@ describe("the WAGERS group (HNT-R161, HNT-R62, HNT-R63)", function()
 		local row = shownWith(r.ns.board:Page(place(r), "left"), "runKey")[1]
 
 		assert.are.same({ SHORE, "Shore Wager", "until Sat 17:00" }, { row.runKey, row.name.text, row.margin.text })
+		assert.is_true(row.mark.shown) -- the event mark, 22 across in the icon's place
+		assert.are.same({ 22, false }, { row.mark.size, row.icon.shown })
 		assert.is_true(row.more.shown)
 		assert.are.equal("Interface\\ChatFrame\\ChatFrameExpandArrow", row.more.texture)
 		local texts = pageTexts(r, "left")
@@ -515,9 +636,10 @@ describe("a run's entry (HNT-R163)", function()
 				assert.is_nil(hunt.count)
 				assert.is_nil(hunt.tiers)
 			end
-			-- The strip and the WAGERS rows still show from the known runs; the pips read the updating line.
+			-- The strip and the WAGERS rows still show from the known runs; the pips read "updating…", as the tickets'
+			-- marks do (HNT-R163).
 			assert.are.same(
-				{ nil, updating, "Shore Wager" },
+				{ nil, "updating…", "Shore Wager" },
 				{ timeline.strip.pips, timeline.strip.updating, timeline.strip.name }
 			)
 			assert.are.equal(SHORE, groupIn(timeline, "wagers").rows[1].id)

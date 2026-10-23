@@ -256,6 +256,7 @@ end
 ---@class WagerDialView: Frame
 ---@field face HuntsSpriteTexture
 ---@field fill HuntsSpriteTexture
+---@field kind ("on"|"settled"|"closed"|"ahead")?
 ---@field step integer?
 ---@field ink number[]?
 ---@field SetDial fun(self: WagerDialView, dial: WagerDial)
@@ -272,7 +273,7 @@ function ns.NewWagerDial(parent, size)
 	function dial.SetDial(self, data)
 		ns.SetSprite(self.face, "Wagers", data.kind == "ahead" and "dial-ahead" or "dial-face", size)
 		ns.PlaceSprite(self.face, self, 0, 0)
-		self.step = data.step
+		self.kind, self.step = data.kind, data.step
 		if data.step and (data.kind == "on" or data.kind == "settled") then
 			ns.SetSprite(self.fill, "Wagers", ("dial-fill-%02d"):format(data.step), size)
 			ns.PlaceSprite(self.fill, self, 0, 0)
