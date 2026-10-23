@@ -913,14 +913,17 @@ describe("The Ledger's fold", function()
 					lures = {},
 					clams = 0,
 				},
+				-- Nothing done or risen of the world's 2 Species and 3 charted zones (LED-R70, LED-R158).
+				rises = { done = 0, total = 5, species = 0, legends = 0, at = {} },
 			}, a)
 			assert.are_not.equal(a.counts, b.counts)
+			assert.are_not.equal(a.rises.at, b.rises.at)
 		end)
 
 		it(
-			"is LEDGER_RULES_VERSION 8: 4 when ★ moved to the 5th Catch, 5 for the full Prestige cost and Activity XP in the climb, 6 for the varieties caught, 7 for the second round's counts, 8 for the crest times and record (LED-R4, LED-R30, LED-R37, VAR-R20, LED-R118, LED-R155, LED-R156, Tunables)",
+			"is LEDGER_RULES_VERSION 9: 4 when ★ moved to the 5th Catch, 5 for the full Prestige cost and Activity XP in the climb, 6 for the varieties caught, 7 for the second round's counts, 8 for the crest times and record, 9 for the measures' rise times (LED-R4, LED-R30, LED-R37, VAR-R20, LED-R118, LED-R155, LED-R156, LED-R158, Tunables)",
 			function()
-				assert.are.equal(8, ns.LEDGER_RULES_VERSION)
+				assert.are.equal(9, ns.LEDGER_RULES_VERSION)
 			end
 		)
 	end)

@@ -36,11 +36,123 @@ end
 function ns.Measures(state, total)
 	local completion = ns.LedgerCompletion(ns.world, state)
 	return {
-		anglerLevel = { prestige = state.prestige, level = ns.Level(state, total), xp = ns.ClimbXP(state, total) },
+		anglerLevel = ns.AnglerLevel(state, total),
 		ledgerCompletion = { percent = completion.percent, done = completion.done, total = completion.total },
 		speciesCaught = completion.species.done,
 		legendsCaught = completion.legends.done,
 	}
+end
+
+--- The Angler Level measure alone (LED-R159): Measures' `anglerLevel`, the prestige rank and the climb's level and
+--- XP, its Activity XP included (LED-R30–R32, LED-R37), without working out Ledger completion. The backend reads it
+--- after every record of any Module, since Hunts and Tackle Board records raise the level through Activity XP.
+---@param state LedgerState
+---@param total integer? Core's Activity XP total; ns.ActivityXPTotal() when nil
+---@return { prestige: integer, level: integer, xp: integer }
+function ns.AnglerLevel(state, total)
+	return { prestige = state.prestige, level = ns.Level(state, total), xp = ns.ClimbXP(state, total) }
+end
+
+--- Ledger completion's counts and when three leaderboard measures last rose (LED-R158), kept by the fold so the
+--- backend needn't read Measures after every record. `done` and `total` are LED-R70's, `species` and `legends`
+--- Measures' Species caught and Legends caught; `at` holds, by Measures' keys, the entry `time` of the Cast whose
+--- apply last made each greater than it was before it (Ledger completion by its percentage), nil while it never rose.
+---@class LedgerRises
+---@field done integer
+---@field total integer
+---@field species integer
+---@field legends integer
+---@field at { ledgerCompletion?: integer, speciesCaught?: integer, legendsCaught?: integer }
+
+--- A fresh state's rises (LED-R158): nothing caught, so nothing done or risen, of the total Ledger completion counts
+--- over the world before any Catch.
+---@param world LedgerWorld
+---@return LedgerRises
+function ns.NewRises(world)
+	local nothing = { species = {}, items = {}, zones = {}, varieties = {} } -- all LedgerCompletion reads
+	local total = ns.LedgerCompletion(world, nothing --[[@as LedgerState]]).total
+	return { done = 0, total = total, species = 0, legends = 0, at = {} }
+end
+
+-- Ledger completion's percentage (LED-R70): 0 with nothing in total.
+---@param done integer
+---@param total integer
+---@return integer
+local function percentOf(done, total)
+	return total > 0 and math.floor(100 * done / total) or 0
+end
+
+--- Notes what one Cast's apply changed in the measures (LED-R158), from the achievements it appended after `from`,
+--- each counted as ns.LedgerCompletion counts it, removed items on neither side (LED-R12): a `newSpecies` adds a
+--- Species caught and a completion part done, with one more in total for a Species on no zone list, and one more in
+--- the varieties' total too when it has varieties; a `fishComplete` a varieties part done; a `newCurio` or
+--- `trophyWeight` a Sub-collection item done, with one more in total for an item on no list; a `zoneRank` that
+--- reaches Master a zone done; a `legend` a Legend caught. Each measure that rose takes the Cast's `time`.
+---@param state LedgerState
+---@param world LedgerWorld
+---@param earned LedgerAchievement[]
+---@param from integer the achievements before the Cast's
+---@param time integer the Cast's entry time
+function ns.NoteRises(state, world, earned, from, time)
+	local rises, getItem = state.rises, world.getItem
+	local done, total, species, legends = rises.done, rises.total, rises.species, rises.legends
+	-- Whether an item or Species counts: removed ones are left out of both sides (LED-R12).
+	local function counted(id)
+		local item = getItem(id)
+		return not (item and item.removed)
+	end
+	for i = from + 1, #earned do
+		local achievement = earned[i]
+		local kind = achievement.kind
+		if kind == "newSpecies" then
+			local id = achievement.species --[[@as integer]]
+			if counted(id) then
+				species, done = species + 1, done + 1
+				if not world.species[id] then
+					total = total + 1 + (ns.VarietyCount(getItem, id) > 0 and 1 or 0)
+				end
+			end
+		elseif kind == "fishComplete" then
+			local id = achievement.species --[[@as integer]]
+			done = done + (counted(id) and 1 or 0)
+		elseif kind == "newCurio" or kind == "trophyWeight" then
+			local itemID = achievement.itemID --[[@as integer]]
+			if ns.CollectionOf(getItem(itemID)) and counted(itemID) then
+				done = done + 1
+				total = total + (world.items[itemID] and 0 or 1)
+			end
+		elseif kind == "zoneRank" then
+			local ranks = achievement.ranks --[[@as integer[] ]]
+			done = done + (ranks[#ranks] == ns.ZONE_MASTER and 1 or 0)
+		elseif kind == "legend" then
+			local itemID = achievement.itemID --[[@as integer]]
+			if ns.CollectionOf(getItem(itemID)) == "legends" and counted(itemID) then
+				legends = legends + 1
+			end
+		end
+	end
+	local at = rises.at
+	if percentOf(done, total) > percentOf(rises.done, rises.total) then
+		at.ledgerCompletion = time
+	end
+	if species > rises.species then
+		at.speciesCaught = time
+	end
+	if legends > rises.legends then
+		at.legendsCaught = time
+	end
+	rises.done, rises.total, rises.species, rises.legends = done, total, species, legends
+end
+
+--- When Ledger completion, Species caught and Legends caught last rose (LED-R158), by Measures' keys: each the entry
+--- `time` of the Cast whose apply last made the measure greater than it was before it, Ledger completion by its
+--- percentage, as the backend compared Measures read after every record; nil while it never rose. The Angler Level
+--- isn't among them: Hunts and Tackle Board records raise it through Activity XP, and the Ledger never sees them.
+---@param state LedgerState
+---@return { ledgerCompletion?: integer, speciesCaught?: integer, legendsCaught?: integer }
+function ns.MeasureRises(state)
+	local at = state.rises.at
+	return { ledgerCompletion = at.ledgerCompletion, speciesCaught = at.speciesCaught, legendsCaught = at.legendsCaught }
 end
 
 --- The title keys a Ledger state earns (LED-R75, LED-R76), in LED-R75's order: computed only, so a title the

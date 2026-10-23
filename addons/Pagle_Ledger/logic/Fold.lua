@@ -44,6 +44,7 @@ local ns = select(2, ...)
 --- (VAR-R20, logic/Varieties.lua)
 ---@field counts LedgerCounts                 -- the second round's counts (LED-R118, logic/EarnedCounts.lua)
 ---@field crest? LedgerCrestLogged            -- the latest crest record (LED-R156, logic/Derived.lua); nil before one
+---@field rises LedgerRises                   -- when three leaderboard measures last rose (LED-R158, logic/Derived.lua)
 
 --- The crest the Ledger's latest crest record names (LED-R156): its good ID, "" for Plain, and the record's time.
 ---@class LedgerCrestLogged
@@ -140,8 +141,9 @@ local ns = select(2, ...)
 --- The Ledger's rules version (LED-R2, LED-R4, Tunables): 1 in M2, 2 in M3, 3 in M4, then +1 per change: 4 when ★
 --- moved to a Species' 5th Catch (LED-R45), 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32,
 --- LED-R37), 6 for the varieties caught (VAR-R20), 7 for the second round's counts (LED-R118, LED-R119), 8 for the
---- times a zone reached Master and a variety was first caught, and the crest record (LED-R155, LED-R156).
-ns.LEDGER_RULES_VERSION = 8
+--- times a zone reached Master and a variety was first caught, and the crest record (LED-R155, LED-R156), 9 for the
+--- times the leaderboard measures last rose (LED-R158).
+ns.LEDGER_RULES_VERSION = 9
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
 --- Catch XP, before Fresh Water (LED-R20); one Fresh Water doubles it (LED-R22), as the ink XP bar shows (LED-R145).
@@ -254,9 +256,11 @@ function ns.ClassifyCatch(itemID, item)
 	return "other"
 end
 
---- A fresh, empty state (LED-R3, LOG-R72's `def.reset`).
+--- A fresh, empty state (LED-R3, LOG-R72's `def.reset`) over the world index, which sets Ledger completion's total
+--- before any Catch (LED-R158).
+---@param world LedgerWorld
 ---@return LedgerState
-local function reset()
+local function reset(world)
 	return {
 		casts = 0,
 		catches = 0,
@@ -274,6 +278,7 @@ local function reset()
 		zones = {},
 		varieties = {},
 		counts = ns.NewEarnedCounts(),
+		rises = ns.NewRises(world),
 	}
 end
 
@@ -471,7 +476,10 @@ function ns.NewLedgerFold(lookups)
 		activity = activity or 0
 		local before, own, xp = ns.Level(state, activity), ns.OwnLevel(state), state.xp
 		if kind == "cast" then
+			local from = #earned
 			applyCast(state, record --[[@as PagleCast]], earned)
+			-- Only a Cast raises Ledger completion, Species caught or Legends caught (LED-R158).
+			ns.NoteRises(state, world, earned, from, record.time)
 		elseif kind == "skill" then
 			applySkill(state, record --[[@as PagleSkillReading]], earned)
 		else
@@ -506,5 +514,10 @@ function ns.NewLedgerFold(lookups)
 		return earned
 	end
 
-	return { reset = reset, apply = apply }
+	return {
+		reset = function()
+			return reset(world)
+		end,
+		apply = apply,
+	}
 end

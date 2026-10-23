@@ -406,10 +406,50 @@ describe("logic/ alone, as the backend's driver loads it (#223)", function()
 			local state, clientState = hosted.byKey.Ledger.state, client.StateNow()
 			local total = activityXPTotal()
 
-			for _, read in ipairs({ "Measures", "EarnedTitles", "AutomaticTitle", "ZonesMastered", "LifetimeCatches" }) do
+			for _, read in ipairs({
+				"Measures",
+				"AnglerLevel",
+				"MeasureRises",
+				"EarnedTitles",
+				"AutomaticTitle",
+				"ZonesMastered",
+				"LifetimeCatches",
+			}) do
 				assert.are.same(client[read](clientState), ledger[read](state, total), read)
 			end
 			assert.are.equal(16, ledger.LifetimeCatches(state)) -- two on each of three Casts, and ten Firefin
+		end)
+
+		it("gives the rise times the driver read from Measures after every Ledger record (LED-R158)", function()
+			local ledger, def = hosted.modules.Ledger, hosted.byKey.Ledger.def
+			-- The driver's way before LED-R158 (pagle-backend's PRJ-R8): a measure rose on a record when Measures read
+			-- after it is greater than just before, Ledger completion by its percentage.
+			local state = def.reset()
+			local before, at = ledger.Measures(state), {}
+			for record in hosted.catchLog:Iterate(0, "Ledger") do
+				def.apply(state, record, "rebuild")
+				local after = ledger.Measures(state)
+				if after.ledgerCompletion.percent > before.ledgerCompletion.percent then
+					at.ledgerCompletion = record.time
+				end
+				for _, count in ipairs({ "speciesCaught", "legendsCaught" }) do
+					if after[count] > before[count] then
+						at[count] = record.time
+					end
+				end
+				before = after
+			end
+
+			assert.are.same(at, ledger.MeasureRises(hosted.byKey.Ledger.state))
+			assert.is_number(at.ledgerCompletion)
+			assert.is_number(at.speciesCaught)
+		end)
+
+		it("reads the Angler Level alone as Measures reads it, Activity XP counted (LED-R159)", function()
+			local ledger, state, total = hosted.modules.Ledger, hosted.byKey.Ledger.state, activityXPTotal()
+
+			assert.are.same(ledger.Measures(state, total).anglerLevel, ledger.AnglerLevel(state, total))
+			assert.are.equal(ledger.AnglerLevel(state).xp + total, ledger.AnglerLevel(state, total).xp)
 		end)
 
 		it("counts the Activity XP in the Ledger's Angler Level, so the comparison above has it (LED-R37)", function()

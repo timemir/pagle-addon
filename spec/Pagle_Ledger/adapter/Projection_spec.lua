@@ -281,7 +281,7 @@ describe("the Ledger's projection", function()
 		end
 	)
 
-	it("rebuilds a projection stored at 201, M3's fold with Core's sizes, at 802 (LED-R4, LED-R2)", function()
+	it("rebuilds a projection stored at 201, M3's fold with Core's sizes, at 902 (LED-R4, LED-R2)", function()
 		local last, lastLoaded = firstSession()
 		lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 201
 		local fake = nextSession(last, lastLoaded, 0)
@@ -291,11 +291,11 @@ describe("the Ledger's projection", function()
 		fake.enterWorld()
 
 		assert.are.same(rebuiltTo(fake, 5), applied)
-		assert.are.equal(802, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		assert.are.equal(902, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 	end)
 
 	it(
-		"rebuilds a projection stored at 301, M4's fold, at 802, with ★ at the 5th Catch (LED-R4, LED-R2, LED-R45)",
+		"rebuilds a projection stored at 301, M4's fold, at 902, with ★ at the 5th Catch (LED-R4, LED-R2, LED-R45)",
 		function()
 			local last, lastLoaded = firstSession()
 			lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 301
@@ -306,12 +306,12 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(802, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(902, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 		end
 	)
 
 	it(
-		"rebuilds a projection stored at 401, the half-cost climb's, at 802, the full cost's with Activity XP (LED-R4, LED-R2, LED-R30, LED-R37)",
+		"rebuilds a projection stored at 401, the half-cost climb's, at 902, the full cost's with Activity XP (LED-R4, LED-R2, LED-R30, LED-R37)",
 		function()
 			local last, lastLoaded = firstSession()
 			lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 401
@@ -322,7 +322,7 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(802, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(902, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 			assert.are.same(
 				{ 0, foldOfLog(fake, loaded.ns).lifetimeXP },
 				{ loaded.ns.projection:GetState().prestigeActivityXP, loaded.ns.projection:GetState().lifetimeXP }
@@ -331,7 +331,7 @@ describe("the Ledger's projection", function()
 	)
 
 	it(
-		"rebuilds a projection stored at 501, sized before the Reach and before the varieties, at 802 (LED-R2, LOG-R68)",
+		"rebuilds a projection stored at 501, sized before the Reach and before the varieties, at 902 (LED-R2, LOG-R68)",
 		function()
 			local last, lastLoaded = firstSession()
 			lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 501
@@ -342,12 +342,12 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(802, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(902, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 		end
 	)
 
 	it(
-		"rebuilds a projection stored at 502, before the varieties, at 802, with its varieties caught (LED-R4, LED-R2, VAR-R20)",
+		"rebuilds a projection stored at 502, before the varieties, at 902, with its varieties caught (LED-R4, LED-R2, VAR-R20)",
 		function()
 			local last, lastLoaded = firstSession()
 			lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 502
@@ -358,7 +358,7 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(802, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(902, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 			-- Every sized Species Catch in the log has a variety (VAR-R1), which the rebuilt fold now keeps.
 			local varieties = loaded.ns.projection:GetState().varieties
 			assert.is_not_nil(next(varieties))
@@ -367,7 +367,7 @@ describe("the Ledger's projection", function()
 	)
 
 	it(
-		"rebuilds a projection stored at 702, before the crest times, at 802, each variety's first Catch timed (LED-R4, LED-R2, LED-R155)",
+		"rebuilds a projection stored at 702, before the crest times, at 902, each variety's first Catch timed (LED-R4, LED-R2, LED-R155)",
 		function()
 			local last, lastLoaded = firstSession()
 			lastLoaded.env.PagleLedgerDB.global.projection.rulesVersion = 702
@@ -378,7 +378,7 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(802, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(902, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 			local state = loaded.ns.projection:GetState()
 			assert.are.same(foldOfLog(fake, loaded.ns), state)
 			local _, ofSpecies = next(state.varieties)
@@ -386,6 +386,27 @@ describe("the Ledger's projection", function()
 			local _, variety = next(ofSpecies)
 			assert(variety, "the log has a variety caught")
 			assert.is_number(variety.first.time)
+		end
+	)
+
+	it(
+		"rebuilds a projection stored at 802, before the rise times, at 902, with when Species caught last rose (LED-R4, LED-R2, LED-R158)",
+		function()
+			local last, lastLoaded = firstSession()
+			local saved = lastLoaded.env.PagleLedgerDB.global.projection
+			saved.rulesVersion, saved.projection.rises = 802, nil -- as LEDGER_RULES_VERSION 8 stored it
+			local fake = nextSession(last, lastLoaded, 0)
+			local loaded, applied = loadLedger(fake)
+
+			fake.login()
+			fake.enterWorld()
+
+			assert.are.same(rebuiltTo(fake, 5), applied)
+			assert.are.equal(902, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			local state = loaded.ns.projection:GetState()
+			assert.are.same(foldOfLog(fake, loaded.ns), state)
+			-- Oily, the history's last new Species, at T0 + 120; the live Smallfish was caught before.
+			assert.are.equal(T0 + 120, loaded.ns.MeasureRises(state).speciesCaught)
 		end
 	)
 end)
