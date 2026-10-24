@@ -1,0 +1,31 @@
+# Silithid Swarm: silithid wasps buzzing, clicking and shrieking. Made only of the game's own clips (WOW_SOUND_DIR, wow.export's sound/ folder), which are Blizzard's and
+# not in the repo; each file is a mix of them laid on a timeline (see scripts/pagle_data/generated_sounds.py).
+
+[file.toast_1]
+# One angry buzz.
+mix = [
+	{ clip = "creature/silithidwasp/msilithidwaspaggroa", start = 0, semitones = 3 },
+]
+
+[file.toast_2]
+# An attack screech a step up.
+mix = [
+	{ clip = "creature/silithidwasp/msilithidwaspattacka", start = 0, semitones = 2 },
+]
+
+[file.toast_3]
+# Two wasps at once, one a little behind.
+mix = [
+	{ clip = "creature/silithidwasp/msilithidwaspattackb", start = 0 },
+	{ clip = "creature/silithidwasp/msilithidwaspaggroa", start = 0.3, semitones = 5, gain = 0.8 },
+]
+
+[file.banner]
+# A swarm: five wasps at different pitches, the death cry and the idle drone under them.
+mix = [
+	{ clip = "creature/silithidwasp/msilithidwaspstand2a", start = 0, semitones = 3, gain = 0.45, length = 2.8 },
+	{ clip = "creature/silithidwasp/msilithidwaspaggroa", start = 0, semitones = -3 },
+	{ clip = "creature/silithidwasp/msilithidwaspattacka", start = 0.1 },
+	{ clip = "creature/silithidwasp/msilithidwaspattackb", start = 0.2, semitones = 4 },
+	{ clip = "creature/silithidwasp/msilithidwaspdeatha", start = 0.55, semitones = -2, gain = 0.8, length = 2.2 },
+]

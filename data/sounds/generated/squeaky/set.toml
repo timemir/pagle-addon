@@ -1,0 +1,22 @@
+# Squeaky: a rubber duck, squeaks and a bath splash. Each file's ElevenLabs sound-effects prompt, its requested length in seconds and which raw take
+# ships ("a" or "b"; the takes are in raw/<file>/take_<x>.mp3).
+
+[file.toast_1]
+prompt = 'A single cartoonish rubber duck squeak, "squeek!", bright and cheeky, toy sound, clean, no music'
+seconds = 1.0
+pick = "a"
+
+[file.toast_2]
+prompt = 'Two quick rubber duck squeaks rising in pitch, "squeek-squeak!", with a tiny water plop, toy bath, cartoon, no music'
+seconds = 1.2
+pick = "a"
+
+[file.toast_3]
+prompt = 'A rubber duck squeak followed by a funny bubbly bath splash and a little "pop", cartoon, no music'
+seconds = 1.5
+pick = "a"
+
+[file.banner]
+prompt = 'A whole bathtub of rubber ducks squeaking in a happy cascade, a rising chorus of toy squeaks ending with a big splash and a bubbly pop, over-the-top cartoon, no music'
+seconds = 3.0
+pick = "a"
