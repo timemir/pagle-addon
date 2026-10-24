@@ -53,15 +53,28 @@ local EXPANSION = {
 		{ "rain", 1 },
 		{ "marimba", 1 },
 		{ "shipbell", 1 },
+		{ "squeaky", 1 },
+		{ "bubbleworks", 1 },
 		{ "kalimba", 2 },
 		{ "musicbox", 2 },
 		{ "glass", 2 },
 		{ "steelpan", 2 },
 		{ "dulcimer", 2 },
+		{ "goblintill", 2 },
+		{ "kazoo", 2 },
+		{ "arcade", 2 },
+		{ "boing", 2 },
+		{ "slime", 2 },
 		{ "frost", 3 },
 		{ "harp", 3 },
 		{ "gizmo", 3 },
+		{ "mrglglgl", 3 },
+		{ "parrot", 3 },
+		{ "laser", 3 },
+		{ "silithid", 3 },
+		{ "succubus", 3 },
 		{ "wardrums", 4 },
+		{ "dragonroost", 4 },
 	},
 	-- Core's book binding's bindings for sale (ADR 0015), in the shop's order.
 	binding = {
@@ -170,7 +183,7 @@ local CORE_UNBOUGHT = joined(
 					"  core.toaststyle.lanternglow 400" .. " [red]",
 				}, expansionLines("toaststyle", 0)),
 				{
-					"Sound set (1 of 14)",
+					"Sound set (1 of 27)",
 					"  core.soundset.driftwood In use",
 					"  core.soundset.gilded 400" .. " [red]",
 				}
@@ -427,7 +440,7 @@ describe("The Curio Shop's list", function()
 								"  core.toaststyle.lanternglow 400" .. " [red]",
 							}, expansionLines("toaststyle", 300)),
 							joined({
-								"Sound set (1 of 14)",
+								"Sound set (1 of 27)",
 								"  core.soundset.driftwood In use",
 								"  core.soundset.gilded 400" .. " [red]",
 							}, expansionLines("soundset", 300))
@@ -513,7 +526,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11 + 27 + 34, #ids("all"))
+		assert.are.equal(11 + 40 + 34, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",

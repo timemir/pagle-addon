@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from sounds_fixture import ANN_R74_FILES, EXPANSION_SETS, LEGEND_ITEMS, check_sound, read_sound
+from sounds_fixture import EXPANSION_SETS, LEGEND_ITEMS, RENDERED_FILES, check_sound, read_sound
 
 from pagle_data.sounds import NOTES, SOUND_FILES, Signal, hz, loudness, render
 
@@ -30,10 +30,10 @@ def _all_differ(sounds: list[Signal]) -> bool:
 
 
 def test_the_render_writes_exactly_the_files_ann_r74_lists(rendered: Path) -> None:
-    # ANN-R74: "It renders every sound set and every Legend sting", as "<set>/toast_<n>.ogg and banner.ogg" and
+    # ANN-R74: "It renders every sound set but the generated ones, and every Legend sting", as "<set>/toast_<n>.ogg and banner.ogg" and
     # "legend/<itemID>.ogg".
-    assert _files(rendered) == ANN_R74_FILES
-    assert sorted(SOUND_FILES) == ANN_R74_FILES
+    assert _files(rendered) == RENDERED_FILES
+    assert sorted(SOUND_FILES) == RENDERED_FILES
 
 
 def test_loudness_is_the_rms_of_the_audible_part_and_the_peak_in_dbfs() -> None:
@@ -56,7 +56,7 @@ def test_the_expansion_s_notes_are_equal_tempered_from_a4() -> None:
         assert hz(note) == pytest.approx(frequency, abs=0.01)
 
 
-@pytest.mark.parametrize("name", ANN_R74_FILES)
+@pytest.mark.parametrize("name", RENDERED_FILES)
 def test_each_file_is_mono_44_1_khz_ogg_vorbis_at_the_loudness_target(rendered: Path, name: str) -> None:
     # ANN-R74: mono, 44.1 kHz, .ogg, loudness-matched; Tunables: -20 dBFS RMS, -1 dBFS peak.
     check_sound(rendered / name)

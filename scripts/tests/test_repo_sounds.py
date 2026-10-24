@@ -3,16 +3,18 @@ Vorbis output isn't byte-stable; it checks what ships instead: the file list, th
 each file is the render's output, to the encoder's noise."""
 
 import io
+import tomllib
 from pathlib import Path
 
 import numpy as np
 import pytest
 import soundfile as sf
-from sounds_fixture import ANN_R74_FILES, check_sound, read_sound
+from sounds_fixture import ANN_R74_FILES, GENERATED_SETS, SOURCED_SETS, check_sound, read_sound
 
 from pagle_data.sounds import SAMPLE_RATE, SOUND_FILES, Signal, loudness
 
-SOUNDS = Path(__file__).resolve().parents[2] / "addons/Pagle/media/sounds"
+REPO = Path(__file__).resolve().parents[2]
+SOUNDS = REPO / "addons/Pagle/media/sounds"
 
 
 def _snr_db(reference: Signal, x: Signal) -> float:
@@ -30,7 +32,7 @@ def test_each_committed_sound_is_mono_44_1_khz_ogg_vorbis_at_the_loudness_target
     check_sound(SOUNDS / name)
 
 
-@pytest.mark.parametrize("name", ANN_R74_FILES)
+@pytest.mark.parametrize("name", sorted(SOUND_FILES))
 def test_each_committed_sound_is_what_render_sounds_renders(name: str) -> None:
     # ANN-R74: every sound file is rendered by scripts/render-sounds.py, "nothing is rendered by hand or elsewhere".
     # The committed file has the render's length and loudness, and is as far from the render as the encoder allows:
@@ -45,3 +47,33 @@ def test_each_committed_sound_is_what_render_sounds_renders(name: str) -> None:
     assert len(committed) == len(signal)
     assert loudness(committed)[0] == pytest.approx(loudness(ours)[0], abs=0.05)
     assert _snr_db(signal, committed) >= _snr_db(signal, ours) - 0.5
+
+
+def test_every_sound_is_rendered_or_one_of_the_generated_sets() -> None:
+    # ANN-R74: the files the render doesn't make are the generated sets', each folder named in GENERATED_SETS.
+    rendered = {name.split("/")[0] for name in SOUND_FILES}
+    committed = {name.split("/")[0] for name in ANN_R74_FILES}
+    assert committed - rendered == set(GENERATED_SETS)
+
+
+@pytest.mark.parametrize("folder", SOURCED_SETS)
+def test_each_generated_set_has_its_sources_committed(folder: str) -> None:
+    # ANN-R74: a generated set's prompts and raw takes are committed, since a generation can't be repeated. A file is
+    # a whole take, or a mix of parts (each with a prompt and its picked take) and the game's own clips.
+    source = REPO / "data/sounds/generated" / folder
+    spec = tomllib.loads((source / "set.toml").read_text(encoding="utf-8"))
+    files, parts = spec["file"], spec.get("part", {})
+    assert sorted(files) == ["banner", "toast_1", "toast_2", "toast_3"]
+    for name, file in files.items():
+        if "mix" not in file:
+            assert file["prompt"], name
+            assert (source / "raw" / name / f"take_{file['pick']}.mp3").is_file(), name
+            continue
+        assert file["mix"], name
+        for entry in file["mix"]:
+            if "part" in entry:
+                take = source / "raw" / entry["part"] / f"take_{entry.get('pick', 'a')}.mp3"
+                assert take.is_file(), f"{name}: {take}"
+                assert parts.get(entry["part"], {}).get("prompt") or entry["part"] in files, f"{name}: {entry['part']}"
+            else:
+                assert entry["clip"].startswith("creature/") or entry["clip"].startswith("character/"), name

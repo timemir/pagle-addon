@@ -1,0 +1,22 @@
+# Arcade: 8-bit coin blips and level-up jingles. Each file's ElevenLabs sound-effects prompt, its requested length in seconds and which raw take
+# ships ("a" or "b"; the takes are in raw/<file>/take_<x>.mp3).
+
+[file.toast_1]
+prompt = 'A single 8-bit arcade coin pickup blip, bright chiptune "ding", retro game sound effect'
+seconds = 0.8
+pick = "a"
+
+[file.toast_2]
+prompt = 'A quick rising 8-bit power-up arpeggio, retro chiptune game sound effect'
+seconds = 1.0
+pick = "a"
+
+[file.toast_3]
+prompt = 'Two chiptune coin blips then a short 8-bit "level up" jingle, retro game, no vocals'
+seconds = 1.5
+pick = "a"
+
+[file.banner]
+prompt = 'An 8-bit chiptune victory fanfare, a big level complete jingle with rising arpeggios and a final high sparkle, retro arcade game, no vocals'
+seconds = 3.0
+pick = "a"

@@ -101,7 +101,7 @@ describe("The Look and Feel page", function()
 				"Toast style = core.toaststyle.page",
 				"  15 more in the Curio Shop",
 				"Sound set = core.soundset.driftwood",
-				"  13 more in the Curio Shop",
+				"  26 more in the Curio Shop",
 				"# Crests",
 				"Crests = core.crest.plain",
 				"# Books",
