@@ -130,6 +130,8 @@ Exit codes: 2 on a usage error, 1 when an `--expect-casts` check fails (a missin
 
 ## Dev commands
 
+`/pagle dev catch` is available only from the development source checkout. The pinned packager removes its implementation and command wiring from release archives through `--@do-not-package@` sections. Diagnostic commands remain available. `scripts/package.sh` loads the unpacked committed archive and checks startup, genuine fishing signals, diagnostics, and refusal of synthetic slash commands.
+
 `/pagle dev …` drives Core's real code paths for a fast exit check, instead of waiting for a rare bite or a Session's gap. It's hidden: `/pagle help` never lists it, and a Module can't take the name.
 
 | Command | What it does |

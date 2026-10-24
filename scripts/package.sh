@@ -18,7 +18,7 @@
 # one the packager generated from the commits. Nothing else: no docs/, spec/, scripts/, probes/, prototypes/,
 # data/, no stray addons/ path and no empty folder.
 #
-# Run it in WSL. Needs bash >= 4.3, git, curl, unzip, zip and jq (sudo apt-get install zip jq);
+# Needs the Lua test tools in .tools/ (scripts/setup.sh), bash >= 4.3, git, curl, unzip, zip and jq;
 # the packager builds the zip with zip and reads upload APIs with jq.
 set -euo pipefail
 
@@ -129,5 +129,11 @@ if unzip -p "$zipfile" '*.toc' | grep -q '@project-version@'; then
 	echo "FAIL: a TOC in the zip still says @project-version@." >&2
 	exit 1
 fi
+
+# Exercise the shipped TOCs, startup and slash commands, rather than the development sources.
+mkdir "$work/addons"
+unzip -q "$zipfile" -d "$work/addons"
+cd "$root"
+PAGLE_RELEASE_ADDONS="$work/addons" "$root/.tools/bin/busted" --pattern=recording.lua spec/release
 
 echo "OK: $(basename "$zipfile") holds only ${got_tops// //, }/, as built from addons/."
