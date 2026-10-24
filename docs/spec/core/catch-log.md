@@ -282,13 +282,13 @@ A test log may also grant Coins (`devCoins`) and Activity XP (`devXP`), each a w
 
 ### Entry formats
 
-Every entry starts with the header `<tag>|<char>|<time>|<tie>` (LOG-R11). Numbers are decimal. Lists inside a field are comma-separated, ascending and without duplicates, except `items`, which keeps slot order and may repeat an item ID. An empty field means "none" or "unknown".
+Every entry starts with the header `<tag>|<char>|<time>|<tie>` (LOG-R11). The canonical Core grammar and checkpoint contract are shared with [pagle-backend](https://github.com/timemir/pagle-backend/blob/main/docs/spec/record-contract.md) (#302). Numbers have no plus sign, leading zeros, negative zero, fractions, or exponent notation; absolute values are at most 2^53 − 1. Only skill modifiers may be negative. Lists inside a field are comma-separated, ascending and without duplicates, except `items`, which keeps slot order and may repeat an item ID. An empty field means "none" or "unknown".
 
 | Tag | Kind | Fields after the header |
 |---|---|---|
 | `C1` | Cast | `outcome` (`c` caught, `g` got away) · `minute` (realm minute of day) · `uiMap` (empty if unknown) · `instance` (empty if unknown) · `zone` (`0` if unresolved or secret) · `subzone` (`0` if none, unresolved or secret) · `rank` · `mod` · `lure` (empty if none) · `events` · `auras` · `items` (`<itemID>x<qty>` per item, in slot order; empty when got away) |
 | `S1` | Skill Reading | `rank` · `max` · `mod` |
-| `P1` | Prestige | `rank` (the new prestige rank), `activityXP` (Core's Activity XP total when it was recorded, AXP-R5; read as 0 when absent, as in pre-1.0 dev logs) |
+| `P1` | Prestige | `rank` (the new prestige rank), `activityXP` (Core's Activity XP total when it was recorded, AXP-R5; required by the canonical contract) |
 | `B1` | Build | `build` (the `GetBuildInfo()` build number) · `version` (e.g. `1.60.1`) |
 | `U1` | Purchase | `good` (good ID, `[%w_.]+`, or `core.crate` for a Curio crate) · `price` |
 | `K1` | Companion | `keyId` · `seq` (the accepted file's, LOG-R37) |

@@ -1,0 +1,156 @@
+---@class PagleNS
+local ns = select(2, ...)
+
+local MAX = 9007199254740991
+
+local function number(text, minimum, signed)
+	if type(text) ~= "string" then
+		return nil
+	end
+	if text ~= "0" and not text:find(signed and "^%-?[1-9]%d*$" or "^[1-9]%d*$") then
+		return nil
+	end
+	local value = tonumber(text)
+	if not value or math.abs(value) > MAX or value < minimum then
+		return nil
+	end
+	return value
+end
+
+local function fields(text, separator)
+	local out, from = {}, 1
+	while true do
+		local at = text:find(separator, from, true)
+		if not at then
+			out[#out + 1] = text:sub(from)
+			return out
+		end
+		out[#out + 1] = text:sub(from, at - 1)
+		from = at + #separator
+	end
+end
+
+local function optional(text, signed)
+	return text == "" or number(text, signed and -MAX or 0, signed) ~= nil
+end
+
+local function ids(text)
+	if text == "" then
+		return true
+	end
+	local previous = -1
+	for _, field in ipairs(fields(text, ",")) do
+		local value = number(field, 0)
+		if not value or value <= previous then
+			return false
+		end
+		previous = value
+	end
+	return true
+end
+
+local function items(text)
+	if text == "" then
+		return true
+	end
+	for _, item in ipairs(fields(text, ",")) do
+		local id, quantity = item:match("^([^x]+)x([^x]+)$")
+		if not number(id, 0) or not number(quantity, 1) then
+			return false
+		end
+	end
+	return true
+end
+
+--- Checks Core's record envelope and payload. Module-owned payload schemas are checked by their owning validator.
+---@param entry any
+---@return string?
+function ns.CanonicalRecordProblem(entry)
+	if type(entry) ~= "string" or entry:find("\n", 1, true) then
+		return "record must be one line without LF"
+	end
+	local f = fields(entry, "|")
+	if #f < 4 or not number(f[2], 1) or not number(f[3], 0) or not number(f[4], 0) then
+		return "invalid canonical record header"
+	end
+	local tag, valid = f[1], false
+	if tag == "C1" and #f == 16 then
+		valid = (f[5] == "c" or f[5] == "g")
+			and optional(f[6])
+			and (f[6] == "" or tonumber(f[6]) < 1440)
+			and optional(f[7])
+			and optional(f[8])
+			and number(f[9], 0)
+			and number(f[10], 0)
+			and optional(f[11])
+			and optional(f[12], true)
+			and optional(f[13])
+			and ids(f[14])
+			and ids(f[15])
+			and items(f[16])
+			and (f[5] ~= "g" or f[16] == "")
+	elseif tag == "S1" and #f == 7 then
+		valid = number(f[5], 0) and number(f[6], 0) and number(f[7], -MAX, true)
+	elseif tag == "P1" and #f == 6 then
+		valid = number(f[5], 1) and number(f[6], 0)
+	elseif tag == "B1" and #f == 6 then
+		valid = number(f[5], 0) and f[6] ~= ""
+	elseif tag == "U1" and #f == 6 then
+		valid = f[5]:find("^[%w_.]+$") and number(f[6], 0)
+	elseif tag == "K1" and #f == 6 then
+		valid = f[5]:find("^[%w_.%-]+$") and number(f[6], 0)
+	elseif tag == "A1" and #f >= 7 then
+		local payload = table.concat(f, "|", 7)
+		valid = f[5]:find("^[%w_.]+$") and f[6]:find("^[%w_.]+$") and #payload <= 200
+	end
+	return not valid and "invalid or unsupported canonical record payload" or nil
+end
+
+local function hex(bytes)
+	return (bytes:gsub(".", function(byte)
+		return ("%02x"):format(byte:byte())
+	end))
+end
+
+local function natural(value, minimum)
+	assert(
+		type(value) == "number" and value >= minimum and value <= MAX and value == math.floor(value),
+		"checkpoint integer out of range"
+	)
+	return ("%.0f"):format(value)
+end
+
+--- The initial checkpoint for a log, including a held empty log.
+---@param logId string
+---@param format integer
+---@return string
+function ns.CheckpointInitial(logId, format)
+	assert(type(logId) == "string" and #logId == 16 and logId:find("^[0-9a-f]+$"), "invalid log ID")
+	return hex(ns.Sha256("PGL-CHECKPOINT|1|" .. logId .. "|" .. natural(format, 1) .. "\n"))
+end
+
+--- Advances one exact entry. Hashing does not imply canonical or semantic acceptance of the record.
+---@param previous string
+---@param seq integer
+---@param guid string
+---@param entry string
+---@return string
+function ns.CheckpointNext(previous, seq, guid, entry)
+	assert(type(previous) == "string" and #previous == 64 and previous:find("^[0-9a-f]+$"), "invalid digest")
+	assert(type(guid) == "string" and guid:find("^Player%-%d+%-[0-9A-F]+$"), "invalid character GUID")
+	assert(type(entry) == "string" and not entry:find("\n", 1, true), "invalid entry bytes")
+	local frame = "PGL-ENTRY|1|"
+		.. previous
+		.. "|"
+		.. natural(seq, 1)
+		.. "|"
+		.. #guid
+		.. "|"
+		.. guid
+		.. "|"
+		.. #entry
+		.. "|"
+		.. entry
+		.. "\n"
+	return hex(ns.Sha256(frame))
+end
