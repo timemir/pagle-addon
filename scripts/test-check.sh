@@ -65,17 +65,23 @@ copy() {
 		spec/Pagle/adapter/Core_spec.lua
 		spec/Pagle/Pagle_toc_spec.lua
 		spec/Pagle_QoL/Pagle_QoL_toc_spec.lua
+		# scripts/tests/test_launch.py opens every Module's TOC spec, which the launch-night interface bump edits.
+		spec/Pagle_Ledger/Pagle_Ledger_toc_spec.lua
+		spec/Pagle_Hunts/Pagle_Hunts_toc_spec.lua
+		spec/Pagle_Stats/Pagle_Stats_toc_spec.lua
+		spec/Pagle_TackleBoard/Pagle_TackleBoard_toc_spec.lua
 	)
+	local keep=()
 	cases=$((cases + 1))
 	case_tree="$scratch/cases/$cases"
 	cp -a "$base" "$case_tree"
 	for spec in "${retained[@]}"; do
 		[[ -f $case_tree/$spec ]] || { echo "test-check: missing retained spec $spec" >&2; exit 1; }
 	done
-	find "$case_tree/spec" -name '*_spec*.lua' \
-		! -path "$case_tree/${retained[0]}" \
-		! -path "$case_tree/${retained[1]}" \
-		! -path "$case_tree/${retained[2]}" -delete
+	for spec in "${retained[@]}"; do
+		keep+=(! -path "$case_tree/$spec")
+	done
+	find "$case_tree/spec" -name '*_spec*.lua' "${keep[@]}" -delete
 	ln -sfn "$case_tree" "$scratch/tree"
 }
 
