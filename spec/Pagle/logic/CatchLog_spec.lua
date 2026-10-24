@@ -26,6 +26,11 @@ local function records(catchLog, afterSeq)
 end
 
 describe("the Catch log codec", function()
+	it("rejects the leading-zero Skill Reading that bypassed Java checks (#302)", function()
+		local catchLog = ns.OpenCatchLog(adaAndBramLog({ "S1|1|1791735090|0|0301|0300|0" }), {})
+		assert.are.same({}, records(catchLog, 0))
+	end)
+
 	it("decodes catch-log.md's example Cast to the documented values (LOG-R11, LOG-R13, LOG-R16)", function()
 		local catchLog =
 			ns.OpenCatchLog(adaAndBramLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" }), {})
@@ -234,21 +239,10 @@ describe("the Catch log codec", function()
 		assert.are.equal(0, appended.activityXP)
 	end)
 
-	it("reads a pre-1.0 Prestige without the activityXP field as 0 (LOG-R38, AXP-R5, Entry formats)", function()
+	it("rejects a Prestige without its required Activity XP snapshot (#302)", function()
 		local catchLog = ns.OpenCatchLog(adaAndBramLog({ "P1|1|1791731682|0|2" }), {})
-
-		assert.are.same({
-			{
-				seq = 1,
-				id = ADA .. "-1791731682-0",
-				kind = "prestige",
-				char = 1,
-				time = 1791731682,
-				rank = 2,
-				activityXP = 0,
-			},
-		}, records(catchLog, 0))
-		assert.are.equal(1, catchLog:Prestiges())
+		assert.are.same({}, records(catchLog, 0))
+		assert.are.equal(0, catchLog:Prestiges())
 	end)
 
 	it("round-trips a purchase (LOG-R11, LOG-R16, LOG-R39, SHOP-R10, Entry formats)", function()
@@ -453,7 +447,7 @@ describe("an entry the codec can't decode", function()
 		"P1|1|1791731700|0|", -- no rank
 		"P1|1|1791731700|0|0", -- ranks start at 1
 		"P1|1|1791731700|0|one",
-		"P1|1|1791731700|0|1|", -- an empty activityXP: absent is 0, empty is no number (AXP-R5)
+		"P1|1|1791731700|0|1|", -- an empty activityXP is no number (#302)
 		"P1|1|1791731700|0|1|lots",
 		"P1|1|1791731700|0|1|-5",
 		"P1|1|1791731700|0|1|2|3", -- one field too many
@@ -518,7 +512,7 @@ describe("iterating the log", function()
 			adaAndBramLog({
 				"B1|1|1791731680|0|70338|1.60.1",
 				"C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1",
-				"P1|1|1791731750|0|1",
+				"P1|1|1791731750|0|1|0",
 				"S1|1|1791731751|0|87|150|0",
 				"U1|2|1791731752|0|core.crest.otter|300",
 				"C1|1|1791731760|0|g|494|1439|1|148|453|87|25|263|||",

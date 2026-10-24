@@ -37,6 +37,7 @@ logic\Restriction.lua
 logic\WorkQueue.lua
 logic\Base64.lua
 logic\Sha256.lua
+logic\Integrity.lua
 logic\Rsa.lua
 logic\PushedKeys.lua
 logic\PushedPayload.lua
