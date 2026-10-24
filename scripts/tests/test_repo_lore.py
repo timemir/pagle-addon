@@ -75,6 +75,14 @@ CORE_GOODS = [
     "core.toaststyle.sonar",
     "core.toaststyle.foil",
     "core.toaststyle.storm",
+    "core.toaststyle.hive",
+    "core.toaststyle.ooze",
+    "core.toaststyle.robot",
+    "core.toaststyle.spider",
+    "core.toaststyle.glacier",
+    "core.toaststyle.magma",
+    "core.toaststyle.arcane",
+    "core.toaststyle.pirate",
 ]
 # LED-R75: the title IDs, in its table's order.
 LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]
@@ -1093,6 +1101,16 @@ LEDGER_GOODS = [
     "ledger.toaststyle.slate",
     "ledger.toaststyle.ice",
     "ledger.toaststyle.stitch",
+    "ledger.toaststyle.crier",
+    "ledger.toaststyle.hall",
+    "ledger.toaststyle.glade",
+    "ledger.toaststyle.blueprint",
+    "ledger.toaststyle.drum",
+    "ledger.toaststyle.shroud",
+    "ledger.toaststyle.totem",
+    "ledger.toaststyle.hex",
+    "ledger.toaststyle.lion",
+    "ledger.toaststyle.warband",
 ]
 
 

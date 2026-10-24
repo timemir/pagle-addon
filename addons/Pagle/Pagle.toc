@@ -18,6 +18,7 @@ data\Catalogue.lua
 data\AnnounceArt.lua
 data\ToastStyleArt.lua
 data\ToastStyleArt2.lua
+data\ToastStyleArt3.lua
 data\PrestigeArt.lua
 data\ShopArt.lua
 data\BindingArt.lua

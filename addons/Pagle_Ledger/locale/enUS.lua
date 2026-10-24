@@ -83,6 +83,17 @@ ns.L = {
 		flywallet = "5 different lures",
 		carapace = "50 Big-mouth Clams",
 		ember = "Prestige VII",
+		-- The third round's race and faction styles (LED-R164).
+		crier = "Catch 100 fish as a Human",
+		hall = "Catch 100 fish as a Dwarf",
+		glade = "Catch 100 fish as a Night Elf",
+		blueprint = "Catch 100 fish as a Gnome",
+		drum = "Catch 100 fish as an Orc",
+		shroud = "Catch 100 fish as an Undead",
+		totem = "Catch 100 fish as a Tauren",
+		hex = "Catch 100 fish as a Troll",
+		lion = "Catch 300 fish on Alliance characters",
+		warband = "Catch 300 fish on Horde characters",
 	},
 	-- A second-round good's row tag while it isn't earned (LED-R118): "{n} of {mark} {unit}", the unit by the good's
 	-- key; a good with no unit shows its EARNED_TEXT.
@@ -102,6 +113,16 @@ ns.L = {
 		knit = "Casts",
 		flywallet = "lures",
 		carapace = "clams",
+		crier = "fish",
+		hall = "fish",
+		glade = "fish",
+		blueprint = "fish",
+		drum = "fish",
+		shroud = "fish",
+		totem = "fish",
+		hex = "fish",
+		lion = "fish",
+		warband = "fish",
 	},
 
 	-- A zone crest not yet earned (LED-R115): the row's tag and the stage's note. The crests' names and descriptions

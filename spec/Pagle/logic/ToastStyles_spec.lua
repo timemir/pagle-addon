@@ -41,6 +41,27 @@ local COMPOSED = {
 	["core.toaststyle.foil"] = "Toasts2Foil",
 	["core.toaststyle.storm"] = "Toasts2Storm",
 }
+-- The round three's eighteen (ANN-R84), all Core's, in the same format.
+local ROUND_THREE = {
+	["core.toaststyle.hive"] = "Toasts2Hive",
+	["core.toaststyle.ooze"] = "Toasts2Ooze",
+	["core.toaststyle.robot"] = "Toasts2Robot",
+	["core.toaststyle.spider"] = "Toasts2Spider",
+	["ledger.toaststyle.lion"] = "Toasts2Lion",
+	["ledger.toaststyle.warband"] = "Toasts2Warband",
+	["ledger.toaststyle.crier"] = "Toasts2Crier",
+	["ledger.toaststyle.hall"] = "Toasts2Hall",
+	["ledger.toaststyle.glade"] = "Toasts2Glade",
+	["ledger.toaststyle.blueprint"] = "Toasts2Blueprint",
+	["ledger.toaststyle.drum"] = "Toasts2Drum",
+	["ledger.toaststyle.shroud"] = "Toasts2Shroud",
+	["ledger.toaststyle.totem"] = "Toasts2Totem",
+	["ledger.toaststyle.hex"] = "Toasts2Hex",
+	["core.toaststyle.glacier"] = "Toasts2Glacier",
+	["core.toaststyle.magma"] = "Toasts2Magma",
+	["core.toaststyle.arcane"] = "Toasts2Arcane",
+	["core.toaststyle.pirate"] = "Toasts2Pirate",
+}
 local PAGES = { "low", "low-ruled", "toast", "toast-ruled", "high", "digest" }
 
 -- The page `name` (logic/ToastStyles.lua's pages), from a headline on its rung.
@@ -58,14 +79,14 @@ end
 describe("the toast styles", function()
 	it(
 		"are Core's fifteen and the three earned in Core's slot by the Ledger and the Tackle Board, by SHOP-R25's good"
-			.. " IDs, and the round two's ten composed styles (ANN-R80, ANN-R81, ANN-R82, SHOP-R25)",
+			.. " IDs, the round two's ten composed styles and the round three's eighteen (ANN-R80, ANN-R81, ANN-R82, ANN-R84, SHOP-R25)",
 		function()
 			local ids, expected = {}, {}
 			for id, style in pairs(ns.TOAST_STYLES) do
 				ids[#ids + 1] = id
 				assert.are.equal(id, style.id)
 			end
-			for _, atlases in ipairs({ FIRST, RINGED, COMPOSED }) do
+			for _, atlases in ipairs({ FIRST, RINGED, COMPOSED, ROUND_THREE }) do
 				for id in pairs(atlases) do
 					expected[#expected + 1] = id
 				end
@@ -74,7 +95,7 @@ describe("the toast styles", function()
 			table.sort(expected)
 
 			assert.are.same(expected, ids)
-			assert.are.equal(28, #ids)
+			assert.are.equal(46, #ids)
 			assert.are.same({ "core.toaststyle", TORN_PAGE }, { ns.TOAST_STYLE_SLOT, ns.TOAST_STYLE_DEFAULT })
 		end
 	)
@@ -619,6 +640,103 @@ describe("the round two's composed toast styles", function()
 		end
 	)
 
+	it(
+		"skew a layer as CSS does, in the order rotate, skew, scale: a skewed layer says so, and gives the matrix it is drawn with (ANN-R84)",
+		function()
+			local box = { x = 0, y = 0, w = 20, h = 10 }
+			local function r(v)
+				return math.floor(v * 1000 + 0.5) / 1000
+			end
+			local function round(list)
+				local out = {}
+				for i, v in ipairs(list) do
+					out[i] = r(v)
+				end
+				return out
+			end
+
+			-- No skew, with or without its two angles: unskewed, and the old centre.
+			assert.is_false(ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 0, 1, 1 }).skewed)
+			assert.is_false(ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 0, 1, 1, 0, 0 }).skewed)
+			-- skewX(45deg) about the box's top left: x' = x + y, so its centre (10, 5) goes to (15, 5).
+			local x = ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 0, 1, 1, 45, 0 })
+			assert.is_true(x.skewed)
+			assert.are.same({ 15, 5, 20, 10 }, round({ x.cx, x.cy, x.w, x.h }))
+			assert.are.same({ 1, 0, 1, 1 }, round(x.matrix))
+			-- skewY(45deg) then scaleX(0.5), as the Black Flag's: y' = y + x, and x halved.
+			local y = ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 0, 0.5, 1, 0, 45 })
+			assert.are.same({ 0.5, 0.5, 0, 1 }, round(y.matrix))
+			assert.are.same({ 5, 10, 10, 10 }, round({ y.cx, y.cy, y.w, y.h }))
+			-- rotate(90deg) skewX(45deg): the skew first, then the turn, so x' = -y and y' = x + y.
+			local both = ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 90, 1, 1, 45, 0 })
+			assert.are.same({ 0, 1, -1, 1 }, round(both.matrix))
+		end
+	)
+
+	it("give a skewed layer the sprite's points its matrix puts at the region's corners (ANN-R84)", function()
+		local box = { x = 0, y = 0, w = 20, h = 10 }
+		local tc = { 0, 1, 0, 1 }
+		local function placed(t)
+			return ns.TransformLayerBox(box, { x = 0, y = 0 }, t)
+		end
+		local function round(list)
+			local out = {}
+			for i, v in ipairs(list) do
+				out[i] = math.floor(v * 1000 + 0.5) / 1000
+			end
+			return out
+		end
+
+		-- With nothing to do the whole sprite, corner to corner: upper left, lower left, upper right, lower right.
+		assert.are.same({ 0, 0, 0, 1, 1, 0, 1, 1 }, ns.SkewedTexCoords(placed({ 0, 0, 0, 1, 1, 0, 0 }), box, tc))
+		-- skewX(45deg) slides the top row left and the bottom row right by half the height each way.
+		assert.are.same(
+			{ 0.25, 0, -0.25, 1, 1.25, 0, 0.75, 1 },
+			round(ns.SkewedTexCoords(placed({ 0, 0, 0, 1, 1, 45, 0 }), box, tc))
+		)
+		-- A sprite that is not the whole atlas: the same, in its own corner of the atlas.
+		local small = ns.SkewedTexCoords(placed({ 0, 0, 0, 1, 1, 0, 0 }), box, { 0.5, 0.75, 0.25, 0.5 })
+		assert.are.same({ 0.5, 0.25, 0.5, 0.5, 0.75, 0.25, 0.75, 0.5 }, small)
+		-- A flat matrix has no inverse: the sprite whole.
+		assert.are.same(
+			{ 0, 0, 0, 1, 1, 0, 1, 1 },
+			ns.SkewedTexCoords({ w = 20, h = 10, matrix = { 0, 0, 0, 0 } }, box, tc)
+		)
+	end)
+
+	it("draw a skewed layer with eight texture coordinates and no rotation, any other as before (ANN-R84)", function()
+		local drawn = {}
+		local texture = {
+			SetAlpha = function() end,
+			SetSize = function() end,
+			ClearAllPoints = function() end,
+			SetPoint = function() end,
+			SetRotation = function(_, radians)
+				drawn.rotation = radians
+			end,
+			SetTexCoord = function(_, ...)
+				drawn.texCoord = { ... }
+			end,
+		}
+		local function slot(transform)
+			return {
+				texture = texture,
+				state = { transform = transform },
+				box = { x = 0, y = 0, w = 20, h = 10 },
+				origin = { x = 0, y = 0 },
+				scale = 1,
+				tc = { 0, 1, 0, 1 },
+			}
+		end
+
+		ns.CommitLayerSlot(slot({ 0, 0, 90, 1, 1 }), {})
+		assert.are.equal(4, #drawn.texCoord)
+		assert.is_true(math.abs(drawn.rotation + math.pi / 2) < 0.000001)
+		ns.CommitLayerSlot(slot({ 0, 0, 0, 1, 1, 45, 0 }), {})
+		assert.are.equal(8, #drawn.texCoord)
+		assert.are.equal(0, drawn.rotation)
+	end)
+
 	it("scroll a sweep's strip through its window as CSS's background-position does (ANN-R82)", function()
 		-- A window a quarter of its strip: at 0 the strip's start, at 1 its end, halfway its middle.
 		assert.are.same({ 0, 0.25, 0, 1 }, { ns.ScrollWindow(0.25, 1, 0, 0) })
@@ -669,4 +787,34 @@ describe("the round two's composed toast styles", function()
 		assert.are.same({ body = true, mfront = true, fx1 = false, fx2 = false }, rests("core.toaststyle.storm"))
 		assert.are.same({ body = true, fx1 = false }, rests("ledger.toaststyle.glass"))
 	end)
+end)
+
+describe("the round three's composed toast styles", function()
+	it(
+		"are Core's, for sale, and draw as the round two's do: their own atlas, a rung each for toast, toast.high,"
+			.. " toast.low and the Nod, at 1.5 texels a unit, in a BLP the package ships (ANN-R84, ANN-R82)",
+		function()
+			for id, atlasName in pairs(ROUND_THREE) do
+				local style = ns.ToastStyleOf(id)
+				assert.are.same({ id, true, atlasName }, { style.id, style.layered, style.atlas })
+				local atlas = ns.ATLASES[atlasName]
+				assert.are.equal(1.5, atlas.scale)
+				assert.are.equal("Interface\\AddOns\\Pagle\\media\\announce\\" .. atlasName, atlas.file)
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+				local file = assert(io.open("addons/Pagle/media/announce/" .. atlasName .. ".blp", "rb"), atlasName)
+				assert.are.equal("BLP2", file:read(4))
+				file:close()
+				for _, rung in ipairs({ "toast", "high", "low", "nod" }) do
+					local art = style.art.rungs[rung]
+					assert(#art.layers > 0, id .. " " .. rung)
+					for _, layer in ipairs(art.layers) do
+						assert(type(atlas.sprites[layer.sprite]) == "table", layer.sprite)
+						assert.is_truthy(({ under = true, front = true, over = true })[layer.host])
+					end
+				end
+				assert(type(style.art.rungs.toast.stamp) == "table", id)
+				assert(type(style.art.rungs.nod.slice) == "table", id)
+			end
+		end
+	)
 end)

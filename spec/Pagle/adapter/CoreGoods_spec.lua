@@ -90,6 +90,15 @@ describe("Core's slots and goods", function()
 						"core.toaststyle.storm tier 5",
 						"core.toaststyle.sonar earned nil", -- once the companion is linked (SHOP-R29)
 						"core.toaststyle.foil crate only", -- the Curio crate's alone (SHOP-R50)
+						-- The round three's (ANN-R84).
+						"core.toaststyle.hive tier 4",
+						"core.toaststyle.ooze tier 3",
+						"core.toaststyle.robot tier 3",
+						"core.toaststyle.spider tier 3",
+						"core.toaststyle.glacier tier 4",
+						"core.toaststyle.magma tier 4",
+						"core.toaststyle.arcane tier 5",
+						"core.toaststyle.pirate tier 3",
 					},
 				},
 				{
@@ -234,7 +243,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 46 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
+			assert.are.same({ 54 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
 		end
 	)
 end)

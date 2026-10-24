@@ -342,6 +342,38 @@ description = "The rare one, pulled from the pack on the first try. Hold it to t
 name = "Storm Front"
 description = "The catch you made when everyone sensible had gone in. The pennant says gale; the angler says one more cast."
 
+[good."core.toaststyle.hive"] # core.toaststyle, tier 4
+name = "Hive Chitin"
+description = "Shed by something big that lives under the dunes and comes up when the sand sings. The plates still hum; the eyes still watch."
+
+[good."core.toaststyle.ooze"] # core.toaststyle, tier 3
+name = "Ooze"
+description = "Something crawled out of the swamp and decided your catch was the best thing it had ever eaten. It is still digesting the bones."
+
+[good."core.toaststyle.robot"] # core.toaststyle, tier 3
+name = "Mechanical Angler"
+description = "Built to fish while its maker slept. It has never slept, never blinked and never once let a fish go. The red eye means it is thinking."
+
+[good."core.toaststyle.spider"] # core.toaststyle, tier 3
+name = "Widow's Web"
+description = "Spun across the boathouse window overnight. Whatever got caught in it was hers first; she is only letting you borrow the name."
+
+[good."core.toaststyle.glacier"] # core.toaststyle, tier 4
+name = "Glacier Heart"
+description = "Cut from the blue heart of a glacier older than the first boat, where the cold goes all the way through and light comes out the other side changed."
+
+[good."core.toaststyle.magma"] # core.toaststyle, tier 4
+name = "Magma Flow"
+description = "Scooped from a river of molten rock by someone who forgot to bring a pan. The crust is cooling; the catch is not. Do not touch."
+
+[good."core.toaststyle.arcane"] # core.toaststyle, tier 5
+name = "Arcane Sigil"
+description = "Inscribed in a floating city of violet towers, by a mage who wanted to know whether a fish could be summoned. It could. It was not pleased."
+
+[good."core.toaststyle.pirate"] # core.toaststyle, tier 3
+name = "Black Flag"
+description = "Prised off the deck of a ship that only ever flew one flag. The crew are long gone; the parrot remembers every fish and will tell you about them, loudly."
+
 [good."core.crest.fish.1467"] # Bookplate crest, earned: all ten varieties of Spotted Sunfish
 name = "{fish} Crest"
 description = "A sunfish on a field of lake green. For the angler who has seen every spot it can wear."

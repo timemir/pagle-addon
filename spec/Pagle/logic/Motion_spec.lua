@@ -38,7 +38,7 @@ describe("the motion's easings", function()
 
 			assert.are.same({ 0, 1 }, { ease(0), ease(1) })
 			for _, t in ipairs({ 0.1, 0.25, 0.5, 0.75, 0.9 }) do
-				assert.is_true(ease(t) < t, t)
+				assert(ease(t) < t, "ease-in at " .. t .. " is not below the line")
 				assert.are.equal(identity(t), ease(t))
 			end
 			assert.is_true(ease(0.5) < ns.EASE.inOut(0.5) + 0.000001)

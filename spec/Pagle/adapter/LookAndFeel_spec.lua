@@ -99,7 +99,7 @@ describe("The Look and Feel page", function()
 				PARAGRAPH,
 				"# Announcements",
 				"Toast style = core.toaststyle.page",
-				"  15 more in the Curio Shop",
+				"  23 more in the Curio Shop",
 				"Sound set = core.soundset.driftwood",
 				"  26 more in the Curio Shop",
 				"# Crests",

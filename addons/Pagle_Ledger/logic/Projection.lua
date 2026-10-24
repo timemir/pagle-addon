@@ -29,6 +29,10 @@ function ns.LedgerLookups(pagle)
 		GetZoneCatches = pagle.GetZoneCatches,
 		MatchesConditions = pagle.MatchesConditions,
 		sizeBands = ns.SizeBandCount(pagle.SIZE_BANDS),
+		GetCharacter = function(index)
+			local angler = pagle.GetAngler and pagle.GetAngler()
+			return angler and angler.characters and angler.characters[index] or nil
+		end,
 	}
 	lookups.world = ns.NewWorld(lookups)
 	return lookups

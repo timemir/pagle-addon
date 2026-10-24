@@ -98,7 +98,7 @@ end
 ---@param placed { w: number, h: number, matrix: number[] } from TransformLayerBox
 ---@param box PagleArtBox the sprite's box, in the units of `placed`
 ---@param tc number[] the sprite's atlas coordinates: left, right, top, bottom
----@return number[] ULx, ULy, LLx, LLy, URx, URy, LRx, LRy for SetTexCoord
+---@return number[] coords ULx, ULy, LLx, LLy, URx, URy, LRx, LRy, for SetTexCoord
 function ns.SkewedTexCoords(placed, box, tc)
 	local a, b, cc, d = placed.matrix[1], placed.matrix[2], placed.matrix[3], placed.matrix[4]
 	local det = a * d - cc * b

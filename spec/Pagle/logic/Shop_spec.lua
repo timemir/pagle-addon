@@ -120,6 +120,22 @@ local ROUND_TWO_UNOWNED = {
 	"  core.toaststyle.foil From a crate",
 }
 local ROUND_TWO_IDS = { "core.toaststyle.sonar", "core.toaststyle.foil" }
+-- The round three's eight toast styles for sale (ANN-R84), after those, with their tiers; its ten race and faction
+-- styles are the Ledger's.
+local ROUND_THREE = {
+	{ "hive", 4 },
+	{ "ooze", 3 },
+	{ "robot", 3 },
+	{ "spider", 3 },
+	{ "glacier", 4 },
+	{ "magma", 4 },
+	{ "arcane", 5 },
+	{ "pirate", 3 },
+}
+local ROUND_THREE_IDS = {}
+for i, good in ipairs(ROUND_THREE) do
+	ROUND_THREE_IDS[i] = "core.toaststyle." .. good[1]
+end
 
 -- Each tier's price (SHOP-R22), as the list prints it.
 local PRICES = { "150", "400", "900", "2,000", "5,000" }
@@ -144,6 +160,13 @@ local function expansionLines(slot, balance)
 	if slot == "toaststyle" then
 		for _, line in ipairs(ROUND_TWO_UNOWNED) do
 			lines[#lines + 1] = line
+		end
+		for _, good in ipairs(ROUND_THREE) do
+			lines[#lines + 1] = ("  core.toaststyle.%s %s%s"):format(
+				good[1],
+				PRICES[good[2]],
+				PRICE_VALUES[good[2]] > balance and " [red]" or ""
+			)
 		end
 	end
 	return lines
@@ -177,7 +200,7 @@ local CORE_UNBOUGHT = joined(
 		joined(
 			joined(
 				joined({
-					"Toast style (1 of 18)",
+					"Toast style (1 of 26)",
 					"  core.toaststyle.page In use",
 					"  core.toaststyle.ripple 150" .. " [red]",
 					"  core.toaststyle.lanternglow 400" .. " [red]",
@@ -434,7 +457,7 @@ describe("The Curio Shop's list", function()
 					joined(
 						joined(
 							joined({
-								"Toast style (2 of 18)",
+								"Toast style (2 of 26)",
 								"  core.toaststyle.page default",
 								"  core.toaststyle.ripple In use",
 								"  core.toaststyle.lanternglow 400" .. " [red]",
@@ -526,7 +549,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11 + 40 + 34, #ids("all"))
+		assert.are.equal(11 + 8 + 40 + 34, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",
@@ -538,8 +561,11 @@ describe("The Curio Shop's list", function()
 		}, ids("owned"))
 		local notOwned = joined(
 			joined(
-				joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", math.huge)),
-				ROUND_TWO_IDS
+				joined(
+					joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", math.huge)),
+					ROUND_TWO_IDS
+				),
+				ROUND_THREE_IDS
 			),
 			joined({ "core.soundset.gilded" }, expansionAffordable("soundset", math.huge))
 		)
@@ -1323,7 +1349,7 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 			assert.are.same(
 				joined(
 					joined({
-						"Toast style (2 of 20)",
+						"Toast style (2 of 28)",
 						"  core.toaststyle.page In use",
 						"  core.toaststyle.ripple 150" .. " [red]",
 						"  core.toaststyle.lanternglow 400" .. " [red]",
@@ -1638,9 +1664,10 @@ describe("The Curio crate", function()
 				tags = {},
 				notes = {},
 				odds = {
-					{ id = FOIL, name = fake.ns.goods:Good(FOIL).name, chance = "20%" },
-					{ id = STORM, name = fake.ns.goods:Good(STORM).name, chance = "40%" },
-					{ id = SHAGREEN, name = "Shagreen and Bone", chance = "40%" },
+					{ id = FOIL, name = fake.ns.goods:Good(FOIL).name, chance = "14%" },
+					{ id = STORM, name = fake.ns.goods:Good(STORM).name, chance = "29%" },
+					{ id = SHAGREEN, name = "Shagreen and Bone", chance = "29%" },
+					{ id = "core.toaststyle.arcane", name = "Arcane Sigil", chance = "29%" },
 				},
 				pity = "A crate-only look within 8 more crates",
 				buy = "Buy for 2,000",
@@ -1654,7 +1681,7 @@ describe("The Curio crate", function()
 
 		local odds = model(fake):Stage(CRATE).odds
 
-		assert.are.same({ "33%", true, "67%" }, { odds[1].chance, odds[2].owned, odds[3].chance })
+		assert.are.same({ "20%", true, "40%" }, { odds[1].chance, odds[2].owned, odds[3].chance })
 		assert.is_nil(odds[2].chance)
 	end)
 
@@ -1705,8 +1732,8 @@ describe("The Curio crate", function()
 		end
 	)
 
-	it("never gives a good owned already: with two of three owned, it gives the third (SHOP-R50)", function()
-		local fake = crated(2500, { FOIL, STORM })
+	it("never gives a good owned already: with three of four owned, it gives the fourth (SHOP-R50)", function()
+		local fake = crated(2500, { FOIL, STORM, "core.toaststyle.arcane" })
 
 		local bought, given = fake.ns.shop.Buy(CRATE, false)
 
@@ -1721,9 +1748,9 @@ describe("The Curio crate", function()
 			-- Shagreen and Bone registers in Core's binding slot now (ADR 0015), so a stand-in pool good no slot
 			-- registers, with its lore name, joins the pool after the three, all owned.
 			local LATER = "core.binding.later"
-			local fake = crated(2500, { FOIL, STORM, SHAGREEN })
+			local fake = crated(2500, { FOIL, STORM, SHAGREEN, "core.toaststyle.arcane" })
 			local pool = fake.ns.CRATE_POOL
-			fake.ns.CRATE_POOL = { pool[1], pool[2], pool[3], { id = LATER } }
+			fake.ns.CRATE_POOL = { pool[1], pool[2], pool[3], pool[4], { id = LATER } }
 			rawset(fake.ns.L, "good." .. LATER .. ".name", "Later Binding")
 			fake.ns.shop.Buy(CRATE, true)
 
@@ -1741,6 +1768,7 @@ describe("The Curio crate", function()
 			local fake = crated(10000, { STORM })
 			assert.is_true(fake.ns.shop.Buy(CRATE, false))
 			assert.is_true(fake.ns.shop.Buy(CRATE, false))
+			assert.is_true(fake.ns.shop.Buy(CRATE, false))
 			local before = #fake.catchLog.data.entries
 			local shop = model(fake)
 
@@ -1755,7 +1783,10 @@ describe("The Curio crate", function()
 			assert.are.same({ "Empty: you have it all" }, stage.tags)
 			assert.is_nil(stage.buy)
 			assert.is_nil(stage.pity)
-			assert.are.same({ true, true, true }, { stage.odds[1].owned, stage.odds[2].owned, stage.odds[3].owned })
+			assert.are.same(
+				{ true, true, true, true },
+				{ stage.odds[1].owned, stage.odds[2].owned, stage.odds[3].owned, stage.odds[4].owned }
+			)
 			assert.is_nil(shop:Purchase(CRATE))
 			assert.is_false(fake.ns.shop.Buy(CRATE, false))
 			assert.are.equal(before, #fake.catchLog.data.entries)
@@ -1780,6 +1811,7 @@ describe("The Curio crate", function()
 
 		fake.ns.RecordPurchase(STORM, 0)
 		fake.ns.RecordPurchase(SHAGREEN, 0)
+		fake.ns.RecordPurchase("core.toaststyle.arcane", 0)
 		fake.ns.shop.Buy(CRATE, false)
 
 		local owned = model(fake):Stage(FOIL)
