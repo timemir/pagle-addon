@@ -18,7 +18,7 @@
 # one the packager generated from the commits. Nothing else: no docs/, spec/, scripts/, probes/, prototypes/,
 # data/, no stray addons/ path and no empty folder.
 #
-# Run it in WSL. Needs bash >= 4.3, git, curl, unzip, zip and jq (sudo apt-get install zip jq);
+# Needs the Lua test tools in .tools/ (scripts/setup.sh), bash >= 4.3, git, curl, unzip, zip and jq;
 # the packager builds the zip with zip and reads upload APIs with jq.
 set -euo pipefail
 
