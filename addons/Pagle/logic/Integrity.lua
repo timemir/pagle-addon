@@ -80,8 +80,8 @@ function ns.CanonicalRecordProblem(entry)
 			and (f[6] == "" or tonumber(f[6]) < 1440)
 			and optional(f[7])
 			and optional(f[8])
-			and number(f[9], 0)
-			and number(f[10], 0)
+			and number(f[9], 0) ~= nil
+			and number(f[10], 0) ~= nil
 			and optional(f[11])
 			and optional(f[12], true)
 			and optional(f[13])
@@ -90,18 +90,18 @@ function ns.CanonicalRecordProblem(entry)
 			and items(f[16])
 			and (f[5] ~= "g" or f[16] == "")
 	elseif tag == "S1" and #f == 7 then
-		valid = number(f[5], 0) and number(f[6], 0) and number(f[7], -MAX, true)
+		valid = number(f[5], 0) ~= nil and number(f[6], 0) ~= nil and number(f[7], -MAX, true) ~= nil
 	elseif tag == "P1" and #f == 6 then
-		valid = number(f[5], 1) and number(f[6], 0)
+		valid = number(f[5], 1) ~= nil and number(f[6], 0) ~= nil
 	elseif tag == "B1" and #f == 6 then
-		valid = number(f[5], 0) and f[6] ~= ""
+		valid = number(f[5], 0) ~= nil and f[6] ~= ""
 	elseif tag == "U1" and #f == 6 then
-		valid = f[5]:find("^[%w_.]+$") and number(f[6], 0)
+		valid = f[5]:find("^[%w_.]+$") ~= nil and number(f[6], 0) ~= nil
 	elseif tag == "K1" and #f == 6 then
-		valid = f[5]:find("^[%w_.%-]+$") and number(f[6], 0)
+		valid = f[5]:find("^[%w_.%-]+$") ~= nil and number(f[6], 0) ~= nil
 	elseif tag == "A1" and #f >= 7 then
 		local payload = table.concat(f, "|", 7)
-		valid = f[5]:find("^[%w_.]+$") and f[6]:find("^[%w_.]+$") and #payload <= 200
+		valid = f[5]:find("^[%w_.]+$") ~= nil and f[6]:find("^[%w_.]+$") ~= nil and #payload <= 200
 	end
 	return not valid and "invalid or unsupported canonical record payload" or nil
 end
