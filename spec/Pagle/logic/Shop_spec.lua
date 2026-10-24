@@ -183,7 +183,7 @@ local CORE_UNBOUGHT = joined(
 					"  core.toaststyle.lanternglow 400" .. " [red]",
 				}, expansionLines("toaststyle", 0)),
 				{
-					"Sound set (1 of 14)",
+					"Sound set (1 of 27)",
 					"  core.soundset.driftwood In use",
 					"  core.soundset.gilded 400" .. " [red]",
 				}
@@ -440,7 +440,7 @@ describe("The Curio Shop's list", function()
 								"  core.toaststyle.lanternglow 400" .. " [red]",
 							}, expansionLines("toaststyle", 300)),
 							joined({
-								"Sound set (1 of 14)",
+								"Sound set (1 of 27)",
 								"  core.soundset.driftwood In use",
 								"  core.soundset.gilded 400" .. " [red]",
 							}, expansionLines("soundset", 300))
@@ -526,7 +526,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11 + 27 + 34, #ids("all"))
+		assert.are.equal(11 + 40 + 34, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",

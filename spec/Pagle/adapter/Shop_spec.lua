@@ -37,15 +37,28 @@ local EXPANSION = {
 		{ "Rain on the Lake", 150 },
 		{ "Marimba Shore", 150 },
 		{ "Ship's Bell", 150 },
+		{ "Squeaky", 150 },
+		{ "Bubbleworks", 150 },
 		{ "Kalimba Creek", 400 },
 		{ "Music Box", 400 },
 		{ "Glass Floats", 400 },
 		{ "Steel Pan Lagoon", 400 },
 		{ "Tavern Dulcimer", 400 },
+		{ "Goblin Till", 400 },
+		{ "Kazoo Parade", 400 },
+		{ "Arcade Cabinet", 400 },
+		{ "Boing!", 400 },
+		{ "Slime Time", 400 },
 		{ "Frost Chimes", 900 },
 		{ "Harp of the Glade", 900 },
 		{ "Gnomish Gizmo", 900 },
+		{ "Mrglglgl", 900 },
+		{ "Pirate Parrot", 900 },
+		{ "Gnomish Laser", 900 },
+		{ "Silithid Swarm", 900 },
+		{ "Succubus' Whisper", 900 },
 		{ "War Drums", 2000 },
+		{ "Dragon's Roost", 2000 },
 	},
 }
 
@@ -87,7 +100,7 @@ end
 -- listed or counted (SHOP-R25).
 local CORE_UNBOUGHT = concat({
 	withExpansion({ "TOAST STYLE 1 of 18", "Torn Page | IN USE", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle"),
-	withExpansion({ "SOUND SET 1 of 14", "Driftwood | IN USE", "Gilded | 400" }, "soundset"),
+	withExpansion({ "SOUND SET 1 of 27", "Driftwood | IN USE", "Gilded | 400" }, "soundset"),
 	{ "CRESTS 1 of 1", "Plain | IN USE" },
 })
 
@@ -676,7 +689,7 @@ describe("The Curio Shop's list", function()
 		assert.are.same(
 			concat({
 				withExpansion({ "TOAST STYLE 1 of 18", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle", 500),
-				withExpansion({ "SOUND SET 1 of 14", "Gilded | 400" }, "soundset", 500),
+				withExpansion({ "SOUND SET 1 of 27", "Gilded | 400" }, "soundset", 500),
 				bindingsAtMost(500),
 				{ "NOTEBOOK COVER 1 of 2", "Velvet | 400" },
 			}),
@@ -690,7 +703,7 @@ describe("The Curio Shop's list", function()
 		assert.are.same({
 			"TOAST STYLE 1 of 18",
 			"Torn Page | IN USE",
-			"SOUND SET 1 of 14",
+			"SOUND SET 1 of 27",
 			"Driftwood | IN USE",
 			"CRESTS 1 of 1",
 			"Plain | IN USE",
@@ -702,9 +715,9 @@ describe("The Curio Shop's list", function()
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(9 + 27 + 34, #listed(loaded))
+		assert.are.equal(9 + 40 + 34, #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(15 + 27 + 35, #listed(loaded))
+		assert.are.equal(15 + 40 + 35, #listed(loaded))
 	end)
 
 	it(
@@ -725,7 +738,7 @@ describe("The Curio Shop's list", function()
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
-			assert.are.equal(15 + 27 + 35, #listed(loaded))
+			assert.are.equal(15 + 40 + 35, #listed(loaded))
 		end
 	)
 

@@ -234,7 +234,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 33 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
+			assert.are.same({ 46 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
 		end
 	)
 end)
