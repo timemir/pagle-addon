@@ -1,2 +1,8 @@
-# The chooser at /issues/new (#387). Blank issues stay open for the dev's own; the three forms are what a player sees.
-blank_issues_enabled: true
+# The chooser at /issues/new (#387). Blank issues are off, which leaves them to the maintainers: GitHub still gives
+# people with write access a blank issue. The three forms are what a player sees, and the companion app has its own
+# repository.
+blank_issues_enabled: false
+contact_links:
+  - name: Problem with the Pagle companion app
+    url: https://github.com/timemir/pagle-companion/issues/new/choose
+    about: Bugs and ideas for the Pagle companion app go in the pagle-companion repository.
