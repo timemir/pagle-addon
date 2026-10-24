@@ -1,0 +1,136 @@
+# The Bug report form (#387). Its fields are the facts a fix starts from: what happened against what should have, the
+# steps, the build, the Lua errors and the Catch log (docs/agents/in-game-verification.md reads the same facts from
+# the WTF files). Field reports (the /pagle report data) have their own form, field-report.yml.
+name: Bug report
+description: >-
+  Something in Pagle is broken, shows the wrong thing or throws a Lua error. For fishing data, use the Field report
+  form instead.
+title: "Bug: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! The more of this form you fill in, the faster the bug can be found and fixed. Lua errors
+        and the version are the two parts that help most.
+
+        Pagle's fishing data (catches, zones, species) goes through `/pagle report` and the Field report form instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you saw. Include any message or text on screen, word for word.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, in order, from a fresh login if you can. Where you were, what you cast on, which window was open.
+      placeholder: |
+        1. Log in and open the Ledger
+        2. …
+        3. …
+    validations:
+      required: true
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does it happen?
+      options:
+        - Every time
+        - Often
+        - Once or rarely
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Where in Pagle?
+      description: Pick the closest. Leave "Not sure" if it isn't clear.
+      options:
+        - Core (fishing, casting, catch log, wallet, shop)
+        - Ledger
+        - Hunts
+        - Stats
+        - Tackle Board
+        - QoL
+        - Settings or minimap button
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Pagle version
+      description: From the AddOns list at the character screen, or your CurseForge or Wago app.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: WoW client
+      description: >-
+        The flavor and build. In game, type `/dump (GetBuildInfo())` and paste the first two values, or name the
+        flavor.
+      placeholder: "Version and build, as /dump prints them"
+    validations:
+      required: true
+  - type: input
+    id: locale
+    attributes:
+      label: Game language
+      placeholder: enUS
+    validations:
+      required: false
+  - type: textarea
+    id: lua-errors
+    attributes:
+      label: Lua errors
+      description: >-
+        Paste the full text of any error, with its stack. Install BugSack with BugGrabber to see errors later, or run
+        `/console scriptErrors 1` and `/reload` to see them as they happen. "No errors" is a useful answer too.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: other-addons
+    attributes:
+      label: Other addons
+      description: >-
+        Addons that touch fishing, loot, tooltips, bags, key bindings or the same UI (for example Fishing Buddy, Auctionator,
+        ElvUI, Bagnon). If it only happens with some addons on, say so. Disabling the others and trying again tells us
+        a lot.
+    validations:
+      required: false
+  - type: textarea
+    id: catch-log
+    attributes:
+      label: Catch log or saved data
+      description: >-
+        Only if the bug is about catches, XP, Coins or the Ledger. Say which character, and what the Catch log should
+        show. Do not paste your SavedVariables file here; it holds character names and the issue is public.
+    validations:
+      required: false
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag images into this box. Cover character names if you'd rather not post them.
+    validations:
+      required: false
+  - type: checkboxes
+    id: public
+    attributes:
+      label: Public
+      options:
+        - label: I understand this issue is public, and I left out character names I want to keep private
+          required: true
