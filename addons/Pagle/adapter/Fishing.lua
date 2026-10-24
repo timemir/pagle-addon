@@ -39,9 +39,11 @@ local function recordCast(outcome, items, startedAt, area)
 		return nil
 	end
 	local snapshot, unresolved = ns.TakeSnapshot()
+	--@do-not-package@
 	if area then
 		snapshot.zone, snapshot.subzone, unresolved = area.zone, area.subzone, nil
 	end
+	--@end-do-not-package@
 	local cast = ns.catchLog:Append({
 		kind = "cast",
 		char = char,

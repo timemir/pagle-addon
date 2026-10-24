@@ -35,6 +35,7 @@ function ns.NewDevCommands(options)
 	return setmetatable({ options = options }, Dev)
 end
 
+--@do-not-package@
 -- `/pagle dev catch <itemID> [areaID]`: one caught Cast of one item, through Core's real append path, on a test log
 -- only. The area defaults to the current one; a zone's areaID stands for the zone with no subzone, a subzone's for
 -- itself in its zone.
@@ -70,6 +71,8 @@ local function catch(dev, args)
 		options.print(L.DEV_NO_CHARACTER)
 	end
 end
+
+--@end-do-not-package@
 
 --- The kinds `/pagle dev preview` shows, in the order it lists them.
 ns.DEV_PREVIEW_KINDS = { "toast", "nod", "banner", "splash", "card" }
@@ -260,8 +263,10 @@ function Dev:Run(args)
 		options.print(L.DEV_IS_OFF)
 	elseif name == "endsession" then
 		options.print(options.endSession() and L.DEV_SESSION_ENDED or L.DEV_NO_SESSION)
+	--@do-not-package@
 	elseif name == "catch" then
 		catch(self, rest)
+	--@end-do-not-package@
 	elseif name == "preview" then
 		preview(self, rest:lower())
 	elseif name == "glyphs" then
@@ -296,6 +301,7 @@ function Dev:Run(args)
 	end
 end
 
+--@do-not-package@
 --- The zone and subzone `areaID` stands for in `catalogue` (LOG-R55): a zone with subzone 0, or a subzone in its
 --- zone. Nil for an area outside the catalogue's slice.
 ---@param catalogue PagleCatalogue
@@ -309,3 +315,4 @@ function ns.DevArea(catalogue, areaID)
 	end
 	return zone, zone == areaID and 0 or areaID
 end
+--@end-do-not-package@

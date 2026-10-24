@@ -1210,12 +1210,15 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 		global = function()
 			return host.db().global
 		end,
+		--@do-not-package@
 		testLog = function()
 			return host.catchLog().data.test == true
 		end,
+		--@end-do-not-package@
 		endSession = function()
 			return ns.sessions:EndNow()
 		end,
+		--@do-not-package@
 		area = function(areaID)
 			return ns.DevArea(ns.Catalogue, areaID)
 		end,
@@ -1223,6 +1226,7 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 			local area = zone and { zone = zone, subzone = subzone } or nil
 			return ns.fishing:RecordSynthetic({ { itemID = itemID, quantity = 1 } }, area)
 		end,
+		--@end-do-not-package@
 		announce = function(announcement)
 			host.call(show, announcement)
 		end,
