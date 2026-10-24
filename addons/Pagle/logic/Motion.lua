@@ -62,6 +62,7 @@ ns.EASE = {
 	end,
 	ease = ns.Bezier(0.25, 0.1, 0.25, 1),
 	out = ns.Bezier(0, 0, 0.58, 1),
+	["in"] = ns.Bezier(0.42, 0, 1, 1),
 	inOut = ns.Bezier(0.42, 0, 0.58, 1),
 }
 

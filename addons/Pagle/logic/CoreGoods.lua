@@ -100,6 +100,16 @@ ns.CORE_GOODS = {
 			{ id = "core.toaststyle.storm", tier = 5, icon = ICONS .. "Spell_Nature_Lightning" },
 			{ id = "core.toaststyle.sonar", companion = true, icon = ICONS .. "Spell_Holy_MindVision" },
 			{ id = "core.toaststyle.foil", crate = true, icon = ICONS .. "INV_Misc_Gem_Opal_01" },
+			-- The round three's (ANN-R84): eight for sale; the other ten, the race and faction styles, are the Ledger's earned goods
+			-- (LED-R164).
+			{ id = "core.toaststyle.hive", tier = 4, icon = ICONS .. "Spell_Nature_InsectSwarm" },
+			{ id = "core.toaststyle.ooze", tier = 3, icon = ICONS .. "Spell_Nature_Acid_01" },
+			{ id = "core.toaststyle.robot", tier = 3, icon = ICONS .. "INV_Gizmo_02" },
+			{ id = "core.toaststyle.spider", tier = 3, icon = ICONS .. "INV_Misc_MonsterSpiderCarapace_01" },
+			{ id = "core.toaststyle.glacier", tier = 4, icon = ICONS .. "Spell_Frost_FrostNova" },
+			{ id = "core.toaststyle.magma", tier = 4, icon = ICONS .. "Spell_Fire_Volcano" },
+			{ id = "core.toaststyle.arcane", tier = 5, icon = ICONS .. "Spell_Holy_MagicalSentry" },
+			{ id = "core.toaststyle.pirate", tier = 3, icon = ICONS .. "INV_Misc_Coin_02" },
 		},
 	},
 	{

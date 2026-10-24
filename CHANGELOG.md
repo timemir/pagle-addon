@@ -65,6 +65,7 @@ Every window of Pagle's own is drawn as something an angler would keep.
 
 - The Fish Journal, the Hunts board and the Stats book are leather-bound, with parchment pages, brass and wax seals. Their pages turn, and a catch made while one is open is written in as you watch. They wear one binding, chosen in the Curio Shop.
 - The Tackle Board is cork in a leather frame, with a Campfire whose flames flicker, pins that lift under your mouse and a DONE stamp for every goal.
+- The Curio Shop sells eighteen more toast styles, from a hive to an arcane sigil, and thirteen more sound sets, from a rubber duck to a dragon. Ten of the styles are earned instead: catch a hundred fish as one of eight races, or three hundred on either faction's characters, and that race's or faction's style is yours.
 - The Curio Shop is a travelling merchant's sample case, and each purchase is sealed in wax on its bill of sale. The Field report is a sea chart with a typed slip.
 - Each window plays the game's own interface sounds, at your sound effects volume, and shrinks to fit a small screen or a large UI scale.
 - With the Animations setting off, everything draws settled at once.

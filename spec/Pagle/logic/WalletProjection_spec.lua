@@ -343,6 +343,7 @@ end)
 describe("The wallet projection's Curio crates", function()
 	local ADA = "Player-4618-0A1B2C3D" -- savedLog's character 1
 	local FOIL, STORM, SHAGREEN = "core.toaststyle.foil", "core.toaststyle.storm", "core.binding.shagreenbone"
+	local ARCANE = "core.toaststyle.arcane"
 
 	-- A crate's U1 at server time `time` (SHOP-R50).
 	local function crateEntry(time)
@@ -401,13 +402,14 @@ describe("The wallet projection's Curio crates", function()
 			crateEntry(TIMES[1]),
 			crateEntry(TIMES[2]),
 			crateEntry(TIMES[3]),
+			crateEntry(SERVER_TIME - 7000),
 			crateEntry(SERVER_TIME - 6000), -- only by a race: Buy is gone once the crate is empty (SHOP-R54)
 		})
 
 		world.enterWorld()
 
-		assert.are.equal(8000, world.db.projection.spent)
-		assert.are.equal(3, #world.db.projection.crates)
+		assert.are.equal(10000, world.db.projection.spent)
+		assert.are.equal(4, #world.db.projection.crates)
 	end)
 
 	it("never gives a good bought before, and gives the same goods again on a rebuild (SHOP-R51, ADR 0004)", function()
@@ -415,7 +417,7 @@ describe("The wallet projection's Curio crates", function()
 		local first = newWorld(entries)
 		first.enterWorld()
 		local crates = first.db.projection.crates
-		assert.are.same({ SHAGREEN, FOIL }, sorted(crates))
+		assert.are.same({ ARCANE, FOIL }, sorted(crates))
 
 		local world = newWorld(entries, first.db)
 		world.fingerprint = "a new release"

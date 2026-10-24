@@ -716,6 +716,46 @@ description = "Six inches of good black ice, one hole and a lot of waiting. When
 name = "Cross-Stitch Sampler"
 description = "Stitched by someone patient on the long nights between seasons. Every fish in it took an evening; the needle is still in."
 
+[ledgergood."ledger.toaststyle.crier"] # core.toaststyle, earned: Catch 100 fish as a Human
+name = "Town Crier's Proclamation"
+description = "Read out in the square at noon, between the price of bread and the knight who was knighted. Every word of it true, give or take an inch."
+
+[ledgergood."ledger.toaststyle.hall"] # core.toaststyle, earned: Catch 100 fish as a Dwarf
+name = "Mountain Hall"
+description = "Cut from the living rock under the mountain and inlaid by a smith who measured twice and boasted three times. The runes keep the forge warm."
+
+[ledgergood."ledger.toaststyle.glade"] # core.toaststyle, earned: Catch 100 fish as a Night Elf
+name = "Starlit Glade"
+description = "Written by moonlight at the edge of a sacred pool, where the water remembers everything that ever swam in it. The wisps came to read over your shoulder."
+
+[ledgergood."ledger.toaststyle.blueprint"] # core.toaststyle, earned: Catch 100 fish as a Gnome
+name = "Tinker's Blueprint"
+description = "Drawn up in the workshop between three other inventions and a small fire. Scale one to one, tolerances optional, catch guaranteed (not guaranteed)."
+
+[ledgergood."ledger.toaststyle.drum"] # core.toaststyle, earned: Catch 100 fish as an Orc
+name = "Clan Drum"
+description = "Stretched over a frame by the fire, painted with the clan’s hand and beaten loud enough to wake the next valley. One beat for every fish worth telling."
+
+[ledgergood."ledger.toaststyle.shroud"] # core.toaststyle, earned: Catch 100 fish as an Undead
+name = "Grave Shroud"
+description = "Torn from the cloth they buried you in, and stitched back up when you climbed out to go fishing. The catch doesn’t mind. The catch doesn’t know."
+
+[ledgergood."ledger.toaststyle.totem"] # core.toaststyle, earned: Catch 100 fish as a Tauren
+name = "Plains Totem"
+description = "Painted on a hide by a fire under a very large sky, by someone who believes every fish is a gift from the Earth. Say thank you."
+
+[ledgergood."ledger.toaststyle.hex"] # core.toaststyle, earned: Catch 100 fish as a Troll
+name = "Jungle Hex"
+description = "Lashed together by a witch doctor on an island where the fish bite back. The mask has seen your future: more fish. The mask has seen worse."
+
+[ledgergood."ledger.toaststyle.lion"] # core.toaststyle, earned: Catch 300 fish on Alliance characters
+name = "Lion's Charter"
+description = "Cut from the white stone of a harbour city that never stops building, and sealed under the lion of its kings. The banners only fly for a catch worth the trumpets."
+
+[ledgergood."ledger.toaststyle.warband"] # core.toaststyle, earned: Catch 300 fish on Horde characters
+name = "Iron Warband"
+description = "Hammered out under a red sky in a city built of iron and grudges. The braziers burn for the clan; the claw-marks are for whoever doubted the catch."
+
 # The Prestige frames (LED-R154): each frame's name and the line its tooltip carries.
 
 [prestigeframe.none] # No Prestige

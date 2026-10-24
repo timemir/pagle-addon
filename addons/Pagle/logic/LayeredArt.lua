@@ -57,31 +57,67 @@ function ns.ArtCrisp(texture)
 	return texture
 end
 
---- Where a layer's box is drawn under one moment of its transform (CSS's: translate, then rotate and scale about its
---- origin, in UI units with y down): its centre, size, rotation for the client (radians, anticlockwise) and whether
---- it is mirrored across. The translation is in the kit's units, drawn at `scale` (default 1) as the box is.
+--- Where a layer's box is drawn under one moment of its transform (CSS's: translate, then rotate, skew and scale about
+--- its origin, in UI units with y down): its centre, size, rotation for the client (radians, anticlockwise), whether
+--- it is mirrored across, and, for a skewed one, the matrix the client can't draw with a rotation alone. The translation
+--- is in the kit's units, drawn at `scale` (default 1) as the box is.
 ---@param box PagleArtBox
 ---@param origin { x: number, y: number }
----@param t number[]? { x, y, rotate (degrees clockwise), sx, sy }, none for none
+---@param t number[]? { x, y, rotate (degrees clockwise), sx, sy, kx?, ky? (skew, degrees) }, none for none
 ---@param scale number?
----@return { cx: number, cy: number, w: number, h: number, rotation: number, mirrored: boolean }
+---@return { cx: number, cy: number, w: number, h: number, rotation: number, mirrored: boolean, skewed: boolean, matrix: number[] }
 function ns.TransformLayerBox(box, origin, t, scale)
-	local tx, ty, degrees, sx, sy = 0, 0, 0, 1, 1
+	local tx, ty, degrees, sx, sy, kx, ky = 0, 0, 0, 1, 1, 0, 0
 	if t then
-		tx, ty, degrees, sx, sy = t[1], t[2], t[3], t[4], t[5]
+		tx, ty, degrees, sx, sy, kx, ky = t[1], t[2], t[3], t[4], t[5], t[6] or 0, t[7] or 0
 	end
 	scale = scale or 1
-	local dx, dy = (box.x + box.w / 2 - origin.x) * sx, (box.y + box.h / 2 - origin.y) * sy
+	local dx, dy = box.x + box.w / 2 - origin.x, box.y + box.h / 2 - origin.y
 	local r = math.rad(degrees)
 	local c, s = math.cos(r), math.sin(r)
+	-- The matrix R . K . S of rotate, skew and scale, as CSS's (a, b, c, d): x' = a x + c y, y' = b x + d y.
+	local ka, kb, kc, kd = sx, math.tan(math.rad(ky)) * sx, math.tan(math.rad(kx)) * sy, sy
+	local a, b = c * ka - s * kb, s * ka + c * kb
+	local cc, d = c * kc - s * kd, s * kc + c * kd
 	return {
-		cx = origin.x + tx * scale + c * dx - s * dy,
-		cy = origin.y + ty * scale + s * dx + c * dy,
+		cx = origin.x + tx * scale + a * dx + cc * dy,
+		cy = origin.y + ty * scale + b * dx + d * dy,
 		w = box.w * math.abs(sx),
 		h = box.h * math.abs(sy),
 		rotation = -r,
 		mirrored = sx < 0,
+		skewed = kx ~= 0 or ky ~= 0,
+		matrix = { a, b, cc, d },
 	}
+end
+
+--- The texture coordinates of a skewed layer's region: the region keeps the layer's size, centred where the matrix puts
+--- the box, and each of its four corners shows the point of the sprite the matrix maps there (the client turns a
+--- texture about its centre, but has no skew). A sprite with nothing past its edge shows nothing there: the art keeps
+--- a margin round each sprite. Mirrors come with the matrix, so the coordinates are never flipped on top.
+---@param placed { w: number, h: number, matrix: number[] } from TransformLayerBox
+---@param box PagleArtBox the sprite's box, in the units of `placed`
+---@param tc number[] the sprite's atlas coordinates: left, right, top, bottom
+---@return number[] coords ULx, ULy, LLx, LLy, URx, URy, LRx, LRy, for SetTexCoord
+function ns.SkewedTexCoords(placed, box, tc)
+	local a, b, cc, d = placed.matrix[1], placed.matrix[2], placed.matrix[3], placed.matrix[4]
+	local det = a * d - cc * b
+	if math.abs(det) < 1e-9 then
+		return { tc[1], tc[3], tc[1], tc[4], tc[2], tc[3], tc[2], tc[4] }
+	end
+	local u0, v0 = (tc[1] + tc[2]) / 2, (tc[3] + tc[4]) / 2
+	local du, dv = (tc[2] - tc[1]) / box.w, (tc[4] - tc[3]) / box.h
+	-- The sprite point a screen offset (qx, qy) from the region's centre shows: the matrix's inverse.
+	local function at(qx, qy)
+		local px, py = (d * qx - cc * qy) / det, (-b * qx + a * qy) / det
+		return u0 + px * du, v0 + py * dv
+	end
+	local hw, hh = placed.w / 2, placed.h / 2
+	local ulx, uly = at(-hw, -hh)
+	local llx, lly = at(-hw, hh)
+	local urx, ury = at(hw, -hh)
+	local lrx, lry = at(hw, hh)
+	return { ulx, uly, llx, lly, urx, ury, lrx, lry }
 end
 
 --- The share of a sweep's strip seen through its window at a scroll (CSS's background-position: 0 shows the strip's
@@ -296,6 +332,12 @@ local function commit(slot, anchor)
 	texture:SetSize(math.max(0.01, placed.w), math.max(0.01, placed.h))
 	texture:ClearAllPoints()
 	texture:SetPoint("CENTER", anchor, "TOPLEFT", placed.cx, -placed.cy)
+	if placed.skewed then
+		-- The client has no skew, so the region's four corners are given the sprite's points the matrix maps there.
+		texture:SetRotation(0)
+		texture:SetTexCoord(unpack(ns.SkewedTexCoords(placed, box, tc)))
+		return
+	end
 	texture:SetRotation(placed.rotation)
 	if placed.mirrored then
 		texture:SetTexCoord(tc[2], tc[1], tc[3], tc[4])

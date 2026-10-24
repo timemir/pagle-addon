@@ -51,6 +51,15 @@ local GOODS = {
 	"core.toaststyle.sonar",
 	"core.toaststyle.foil",
 	"core.toaststyle.storm",
+	-- The round three's eight composed toast styles for sale (ANN-R84).
+	"core.toaststyle.hive",
+	"core.toaststyle.ooze",
+	"core.toaststyle.robot",
+	"core.toaststyle.spider",
+	"core.toaststyle.glacier",
+	"core.toaststyle.magma",
+	"core.toaststyle.arcane",
+	"core.toaststyle.pirate",
 }
 
 describe("Core's committed lore (DATA-R111, its M4 batch)", function()

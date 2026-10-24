@@ -19,6 +19,13 @@ local getItem = itemLookup(ITEMS)
 -- Stranglethorn, 33).
 local ELWYNN, WESTFALL, WINTERSPRING, STRANGLETHORN, GREAT_SEA, VEILED_SEA = 12, 40, 618, 33, 2317, 214
 
+-- The log's characters (LOG-R25), by index: a Human and a Gnome of the Alliance, an Orc of the Horde.
+local CHARACTERS = {
+	{ raceID = 1, faction = "Alliance" },
+	{ raceID = 2, faction = "Horde" },
+	{ raceID = 7, faction = "Alliance" },
+}
+
 local T0 = SERVER_TIME - 700
 local DAY = 86400
 
@@ -53,6 +60,7 @@ local function newLog()
 			date = day and dateAfter(day) or nil,
 			items = fields.items or { MACKEREL },
 			outcome = fields.outcome,
+			char = fields.char,
 		})
 		record.conditions.lure = fields.lure
 		for n, size in pairs(fields.sizes or {}) do
@@ -95,6 +103,9 @@ describe("the second round's earned goods", function()
 			GetItem = getItem,
 			MatchesConditions = loaded.env.Pagle.MatchesConditions,
 			world = world,
+			GetCharacter = function(index)
+				return CHARACTERS[index]
+			end,
 		})
 		log = newLog()
 	end)
@@ -256,6 +267,103 @@ describe("the second round's earned goods", function()
 			assert.are.same({ 3, 2 }, { counts.ice, counts.sea })
 		end)
 
+		describe("the fish of each race and faction (LED-R164)", function()
+			it(
+				"counts a Species, a Legend and a trophy fish for the race and faction of the character who caught it",
+				function()
+					local counts = countsOf({
+						log.cast({ char = 1, items = { MACKEREL, LEGEND } }),
+						log.cast({ char = 2, items = { SMALLFISH } }),
+						log.cast({ char = 3, items = { MACKEREL, SMALLFISH, MACKEREL } }),
+					})
+
+					assert.are.same({ [1] = 2, [2] = 1, [7] = 3 }, counts.races)
+					assert.are.same({ Alliance = 5, Horde = 1 }, counts.factions)
+				end
+			)
+
+			it("counts neither junk, a chest, an item the catalogue lacks nor a got-away Cast", function()
+				local counts = countsOf({
+					log.cast({ char = 1, items = { JUNK, CLAM, 999999 } }),
+					log.gotAway({ char = 1 }),
+				})
+
+				assert.are.same({}, counts.races)
+				assert.are.same({}, counts.factions)
+			end)
+
+			it("counts nothing for a character the log doesn't have, and none of its fish toward another", function()
+				local counts = countsOf({
+					log.cast({ char = 9, items = { MACKEREL } }),
+					log.cast({ char = 1, items = { MACKEREL } }),
+				})
+
+				assert.are.same({ [1] = 1 }, counts.races)
+				assert.are.same({ Alliance = 1 }, counts.factions)
+			end)
+
+			it("counts the same in every mode, a rebuild or a live Cast (LED-R3)", function()
+				local records = {
+					log.cast({ char = 1, items = { MACKEREL } }),
+					log.cast({ char = 2, items = { SMALLFISH, LEGEND } }),
+				}
+				local live = applyLive(fold, records, nil, "live").counts
+
+				assert.are.same(live, (countsOf(records)))
+			end)
+
+			it("earns a race style at 100 fish of that race and not one short, whatever another race caught", function()
+				local records = {}
+				for i = 1, 99 do
+					records[i] = log.cast({ char = 3, items = { MACKEREL } })
+				end
+				records[100] = log.cast({ char = 1, items = { MACKEREL, MACKEREL } })
+				local _, state = countsOf(records)
+
+				assert.is_false(ns.EarnedGoodOwned("ledger.toaststyle.blueprint", "blueprint", view(state)))
+				assert.are.equal(99, ns.EarnedCount(good("ledger.toaststyle.blueprint"), view(state)))
+				assert.are.equal(2, ns.EarnedCount(good("ledger.toaststyle.crier"), view(state)))
+				assert.is_false(ns.EarnedGoodOwned("ledger.toaststyle.crier", "crier", view(state)))
+				records[#records + 1] = log.cast({ char = 3, items = { MACKEREL } })
+				local _, more = countsOf(records)
+				assert.is_true(ns.EarnedGoodOwned("ledger.toaststyle.blueprint", "blueprint", view(more)))
+			end)
+
+			it("earns a faction style at 300 fish over every race of it, the other faction's none", function()
+				local records = {}
+				for _ = 1, 150 do
+					records[#records + 1] = log.cast({ char = 1, items = { MACKEREL } })
+					records[#records + 1] = log.cast({ char = 3, items = { MACKEREL } })
+					records[#records + 1] = log.cast({ char = 2, items = { MACKEREL } })
+				end
+				local _, state = countsOf(records)
+
+				assert.are.equal(300, ns.EarnedCount(good("ledger.toaststyle.lion"), view(state)))
+				assert.is_true(ns.EarnedGoodOwned("ledger.toaststyle.lion", "lion", view(state)))
+				assert.are.equal(150, ns.EarnedCount(good("ledger.toaststyle.warband"), view(state)))
+				assert.is_false(ns.EarnedGoodOwned("ledger.toaststyle.warband", "warband", view(state)))
+			end)
+
+			it("reads 0 from a state saved before the fish were counted, until it rebuilds", function()
+				local state = fold.reset()
+				state.counts.races, state.counts.factions = nil, nil
+
+				assert.are.equal(0, ns.EarnedCount(good("ledger.toaststyle.crier"), view(state)))
+				assert.are.equal(0, ns.EarnedCount(good("ledger.toaststyle.lion"), view(state)))
+			end)
+
+			it("says what each style asks for, and how far along it is", function()
+				local function tag(goodID, n)
+					return (ns.EarnedCountTexts(good(goodID), n, tostring))
+				end
+
+				assert.are.equal("42 of 100 fish", tag("ledger.toaststyle.blueprint", 42))
+				assert.are.equal("300 of 300 fish", tag("ledger.toaststyle.warband", 400))
+				assert.are.equal("Catch 100 fish as a Gnome", ns.L.EARNED_TEXT.blueprint)
+				assert.are.equal("Catch 300 fish on Horde characters", ns.L.EARNED_TEXT.warband)
+			end)
+		end)
+
 		describe("the run Carved Heartwood waits for (LED-R118)", function()
 			it("is met by a caught Cast right after 10 got-away Casts in a row", function()
 				local records = {}
@@ -331,7 +439,7 @@ describe("the second round's earned goods", function()
 			return ns.EarnedGoodOwned(goodID, good(goodID).earn, v)
 		end
 
-		it("are the sixteen goods in LED-R118's order, after LED-R116's and LED-R117's", function()
+		it("are the twenty-six goods in LED-R118's and LED-R164's order, after LED-R116's and LED-R117's", function()
 			local ids = {}
 			for _, earnedGood in ipairs(ns.EarnedGoods()) do
 				ids[#ids + 1] = earnedGood.id
@@ -353,6 +461,16 @@ describe("the second round's earned goods", function()
 				"ledger.toaststyle.slate",
 				"ledger.toaststyle.ice",
 				"ledger.toaststyle.stitch",
+				"ledger.toaststyle.crier",
+				"ledger.toaststyle.hall",
+				"ledger.toaststyle.glade",
+				"ledger.toaststyle.blueprint",
+				"ledger.toaststyle.drum",
+				"ledger.toaststyle.shroud",
+				"ledger.toaststyle.totem",
+				"ledger.toaststyle.hex",
+				"ledger.toaststyle.lion",
+				"ledger.toaststyle.warband",
 				"ledger.binding.wave",
 				"ledger.binding.logbook",
 				"ledger.binding.heartwood",
@@ -370,7 +488,34 @@ describe("the second round's earned goods", function()
 			for _, counted in ipairs(ns.COUNTED_GOODS) do
 				marks[#marks + 1] = counted.mark
 			end
-			assert.are.same({ 12, 100, 25, 25, 30, 100, 20, 300, 25, 1, 10, 30, 10000, 5, 50, 7 }, marks)
+			assert.are.same({
+				12,
+				100,
+				25,
+				25,
+				30,
+				100,
+				20,
+				100,
+				100,
+				100,
+				100,
+				100,
+				100,
+				100,
+				100,
+				300,
+				300,
+				300,
+				25,
+				1,
+				10,
+				30,
+				10000,
+				5,
+				50,
+				7,
+			}, marks)
 		end)
 
 		it("earn each count kept in the state's counts at its mark, not one short", function()
@@ -522,7 +667,7 @@ describe("the second round's earned goods", function()
 		end)
 
 		it(
-			"are the seven toast styles then the nine bindings, named and described by lore, with an icon and no preview (LED-R160)",
+			"are the seventeen toast styles then the nine bindings, named and described by lore, with an icon and no preview (LED-R160)",
 			function()
 				local rows = {}
 				for i, registered in
@@ -541,6 +686,16 @@ describe("the second round's earned goods", function()
 					{ "ledger.toaststyle.slate", "core.toaststyle", "Fishmonger's Slate", false },
 					{ "ledger.toaststyle.ice", "core.toaststyle", "Through the Ice", false },
 					{ "ledger.toaststyle.stitch", "core.toaststyle", "Cross-Stitch Sampler", false },
+					{ "ledger.toaststyle.crier", "core.toaststyle", "Town Crier's Proclamation", false },
+					{ "ledger.toaststyle.hall", "core.toaststyle", "Mountain Hall", false },
+					{ "ledger.toaststyle.glade", "core.toaststyle", "Starlit Glade", false },
+					{ "ledger.toaststyle.blueprint", "core.toaststyle", "Tinker's Blueprint", false },
+					{ "ledger.toaststyle.drum", "core.toaststyle", "Clan Drum", false },
+					{ "ledger.toaststyle.shroud", "core.toaststyle", "Grave Shroud", false },
+					{ "ledger.toaststyle.totem", "core.toaststyle", "Plains Totem", false },
+					{ "ledger.toaststyle.hex", "core.toaststyle", "Jungle Hex", false },
+					{ "ledger.toaststyle.lion", "core.toaststyle", "Lion's Charter", false },
+					{ "ledger.toaststyle.warband", "core.toaststyle", "Iron Warband", false },
 					{ "ledger.binding.wave", "core.binding", "Breaking Wave", false },
 					{ "ledger.binding.logbook", "core.binding", "Captain's Logbook", false },
 					{ "ledger.binding.heartwood", "core.binding", "Carved Heartwood", false },
@@ -566,17 +721,17 @@ describe("the second round's earned goods", function()
 				end,
 				formatNumber = tostring,
 			})
-			assert.are.same({ false, true }, { goods[8].isEarned(), goods[16].isEarned() })
+			assert.are.same({ false, true }, { goods[18].isEarned(), goods[26].isEarned() })
 			assert.are.same({ { "ledger.binding.wave", "wave" }, { "ledger.binding.ember", "ember" } }, asked)
 		end)
 
 		it("tag a binding with its count of its mark, the one-step ones with their earned text (SHOP-R22)", function()
 			local goods = register({})
 			counts["ledger.binding.logbook"], counts["ledger.binding.knit"] = 12, 2500
-			assert.are.same({ "<12> of <25> zones", "25 zones fished" }, { goods[9].earnedText() })
-			assert.are.same({ "<2500> of <10000> Casts", "10,000 Casts" }, { goods[13].earnedText() })
+			assert.are.same({ "<12> of <25> zones", "25 zones fished" }, { goods[19].earnedText() })
+			assert.are.same({ "<2500> of <10000> Casts", "10,000 Casts" }, { goods[23].earnedText() })
 			counts["ledger.binding.heartwood"] = 0
-			assert.are.same({ "A catch after 10 got away", "A catch after 10 got away" }, { goods[10].earnedText() })
+			assert.are.same({ "A catch after 10 got away", "A catch after 10 got away" }, { goods[20].earnedText() })
 		end)
 
 		it("tag each with its count of its mark, and note the earned text in full (SHOP-R22)", function()

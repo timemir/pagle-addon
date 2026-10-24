@@ -66,6 +66,8 @@ local ns = select(2, ...)
 ---@field days { [integer]: true }            -- day numbers with a caught Cast
 ---@field lures { [integer]: true }           -- lure IDs on caught Casts
 ---@field clams integer                       -- Big-mouth Clam Catches
+---@field races { [integer]: integer }        -- race ID -> fish caught by characters of that race (LED-R164)
+---@field factions { [string]: integer }      -- "Alliance" or "Horde" -> fish caught by characters of that faction (LED-R164)
 
 --- An item's Catches and its first Catch (ledger.md › Data, LedgerFirst): that Cast's time, character, zone and realm
 --- date. Legend items also keep their Simulated Size record and `since` (LED-R80, logic/Records.lua).
@@ -132,6 +134,7 @@ local ns = select(2, ...)
 ---@field MatchesConditions fun(spec: table, snapshot: table): boolean
 ---@field world LedgerWorld
 ---@field sizeBands? integer -- ns.SizeBandCount of Pagle.SIZE_BANDS (LOG-R67): the last is the Monster band (LED-R80)
+---@field GetCharacter? fun(index: integer): { raceID: integer?, faction: string? }? -- a character's record by its index in the log (LOG-R25), for the fish of each race and faction (LED-R164)
 
 --- The Ledger's fold (LED-R3).
 ---@class LedgerFold
@@ -142,8 +145,8 @@ local ns = select(2, ...)
 --- moved to a Species' 5th Catch (LED-R45), 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32,
 --- LED-R37), 6 for the varieties caught (VAR-R20), 7 for the second round's counts (LED-R118, LED-R119), 8 for the
 --- times a zone reached Master and a variety was first caught, and the crest record (LED-R155, LED-R156), 9 for the
---- times the leaderboard measures last rose (LED-R158).
-ns.LEDGER_RULES_VERSION = 9
+--- times the leaderboard measures last rose (LED-R158), 10 for the fish caught by each race and faction (LED-R164).
+ns.LEDGER_RULES_VERSION = 10
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
 --- Catch XP, before Fresh Water (LED-R20); one Fresh Water doubles it (LED-R22), as the ink XP bar shows (LED-R145).
@@ -351,7 +354,7 @@ function ns.NewLedgerFold(lookups)
 	local function applyCast(state, record, earned)
 		state.casts = state.casts + 1
 		if record.outcome ~= "caught" then
-			ns.CountCast(state.counts, record, getItem, 0)
+			ns.CountCast(state.counts, record, getItem, 0, lookups.GetCharacter)
 			return
 		end
 		local from = #earned
@@ -437,7 +440,7 @@ function ns.NewLedgerFold(lookups)
 				beaten = beaten + 1
 			end
 		end
-		ns.CountCast(state.counts, record, getItem, beaten)
+		ns.CountCast(state.counts, record, getItem, beaten, lookups.GetCharacter)
 	end
 
 	-- A Skill Reading (LED-R40): each Skill Milestone not yet credited, at or below its rank, ascending.

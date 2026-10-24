@@ -336,8 +336,8 @@ function widgets.newWidget(kind, parent)
 	function widget:SetBlendMode(mode)
 		self.blendMode = mode
 	end
-	function widget:SetTexCoord(left, right, top, bottom)
-		self.texCoord = { left, right, top, bottom }
+	function widget:SetTexCoord(...)
+		self.texCoord = { ... }
 	end
 	-- Its frame level: one above its parent's (0 for a frame with none) until SetFrameLevel sets it, as the client
 	-- stacks children over their parent.

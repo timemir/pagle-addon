@@ -5,9 +5,10 @@ end
 ---@class PagleLedgerNS
 local ns = select(2, ...)
 
--- The Curio Shop's second round's earned goods (LED-R118, LED-R119): the counts the fold keeps for them, each good's
--- count and mark, and their texts. Seven toast styles in Core's toast style slot and nine bindings in Core's binding
--- slot (ADR 0015), whose look and art are Core's. Pure logic, everything passed in (CORE-R7); logic/EarnedGoods.lua
+-- The Curio Shop's second and third rounds' earned goods (LED-R118, LED-R119, LED-R164): the counts the fold keeps for
+-- them, each good's count and mark, and their texts. Seventeen toast styles in Core's toast style slot (seven of the
+-- second round, ten race and faction styles of the third) and nine bindings in Core's binding slot (ADR 0015), whose
+-- look and art are Core's. Pure logic, everything passed in (CORE-R7); logic/EarnedGoods.lua
 -- turns each into a rule, logic/Fold.lua counts, adapter/Bindings.lua registers.
 
 -- Tunables (ledger.md › Tunables, LED-R118, LED-R119).
@@ -46,6 +47,22 @@ for _, areaID in ipairs({
 }) do
 	OPEN_SEA[areaID] = true
 end
+--- The third round's race styles (LED-R164): the race ID (the third return of UnitRace) each style counts fish for, and
+--- the fish a race or a faction needs. The faction styles count a faction's fish over every race of it.
+ns.RACE_STYLES = {
+	crier = 1, -- Human
+	drum = 2, -- Orc
+	hall = 3, -- Dwarf
+	glade = 4, -- Night Elf
+	shroud = 5, -- Undead
+	totem = 6, -- Tauren
+	blueprint = 7, -- Gnome
+	hex = 8, -- Troll
+}
+local RACE_FISH = 100
+local FACTION_FISH = 300
+--- The Catch classes that are fish for those counts (LED-R5, LED-R164): the Species, the Legends and the trophy fish.
+local FISH_CLASSES = { species = true, legend = true, trophy = true }
 --- The Cross-Stitch Sampler's twenty Species, in the kit's order.
 ns.SAMPLER_SPECIES = {
 	6291,
@@ -78,8 +95,8 @@ local HEARTWOOD_RUN = 10
 --- Realm dates a zone must rest before its next first Catch of the day is a glass shard (LED-R119).
 local SHARD_REST_DAYS = 6
 
---- The fallback price of the second round's earned goods (SHOP-R28): tier 5, from 90 days after the release that ships
---- them. That release sets its server time here; nil until then, and the goods register with no fallback.
+--- The fallback price of the second and third rounds' earned goods (SHOP-R28), which ship in the same release: tier 5,
+--- from 90 days after the release that ships them. That release sets its server time here; nil until then, and the goods register with no fallback.
 ---@type integer?
 ns.ROUND_TWO_RELEASE = nil
 local FALLBACK_TIER = 5
@@ -92,7 +109,9 @@ local SECONDS_PER_DAY = 86400
 --- zones fished (LED-R6), `afterRun` a caught Cast after a run of got-away ones (0 or 1), `masters` zones at Master
 --- (LED-R52), `days` realm dates fished, `casts` Casts (LED-R93), `lures` different lures, `clams` Big-mouth Clams,
 --- `prestige` the prestige rank (LED-R34).
----@alias LedgerCountName "shards"|"deep"|"pairs"|"records"|"species"|"ice"|"sampler"|"sea"|"zones"|"afterRun"|"masters"|"days"|"casts"|"lures"|"clams"|"prestige"
+--- The third round's are `race1`–`race8` (fish caught by characters of that race ID) and `alliance` and `horde`
+--- (fish caught by characters of that faction), LED-R164.
+---@alias LedgerCountName "shards"|"deep"|"pairs"|"records"|"species"|"ice"|"sampler"|"sea"|"zones"|"afterRun"|"masters"|"days"|"casts"|"lures"|"clams"|"prestige"|"race1"|"race2"|"race3"|"race4"|"race5"|"race6"|"race7"|"race8"|"alliance"|"horde"
 
 --- One of the second round's earned goods (LED-R118): its rule is its count at its mark or above.
 ---@class LedgerCountedGood
@@ -106,7 +125,8 @@ local SECONDS_PER_DAY = 86400
 
 local ICONS = "Interface\\Icons\\"
 
---- LED-R118's goods, in its order: the seven toast styles, then the nine bindings.
+--- LED-R118's goods, in its order: the seven toast styles, then the nine bindings; then LED-R164's ten toast styles, the
+--- race styles and the faction styles.
 ---@type LedgerCountedGood[]
 ns.COUNTED_GOODS = {
 	{
@@ -165,6 +185,87 @@ ns.COUNTED_GOODS = {
 		slot = "core.toaststyle",
 		icon = ICONS .. "INV_Fabric_Linen_01",
 	},
+	-- LED-R164's race styles (a race's fish) and faction styles (a faction's fish), in the kit's order.
+	{
+		id = "ledger.toaststyle.crier",
+		earn = "crier",
+		count = "race1",
+		mark = RACE_FISH,
+		slot = "core.toaststyle",
+		icon = ICONS .. "INV_Scroll_05",
+	},
+	{
+		id = "ledger.toaststyle.hall",
+		earn = "hall",
+		count = "race3",
+		mark = RACE_FISH,
+		slot = "core.toaststyle",
+		icon = ICONS .. "Trade_BlackSmithing",
+	},
+	{
+		id = "ledger.toaststyle.glade",
+		earn = "glade",
+		count = "race4",
+		mark = RACE_FISH,
+		slot = "core.toaststyle",
+		icon = ICONS .. "Spell_Nature_WispSplode",
+	},
+	{
+		id = "ledger.toaststyle.blueprint",
+		earn = "blueprint",
+		count = "race7",
+		mark = RACE_FISH,
+		slot = "core.toaststyle",
+		icon = ICONS .. "Trade_Engineering",
+	},
+	{
+		id = "ledger.toaststyle.drum",
+		earn = "drum",
+		count = "race2",
+		mark = RACE_FISH,
+		slot = "core.toaststyle",
+		icon = ICONS .. "Ability_Warrior_BattleShout",
+	},
+	{
+		id = "ledger.toaststyle.shroud",
+		earn = "shroud",
+		count = "race5",
+		mark = RACE_FISH,
+		slot = "core.toaststyle",
+		icon = ICONS .. "Spell_Shadow_RaiseDead",
+	},
+	{
+		id = "ledger.toaststyle.totem",
+		earn = "totem",
+		count = "race6",
+		mark = RACE_FISH,
+		slot = "core.toaststyle",
+		icon = ICONS .. "Spell_Nature_StrengthOfEarthTotem02",
+	},
+	{
+		id = "ledger.toaststyle.hex",
+		earn = "hex",
+		count = "race8",
+		mark = RACE_FISH,
+		slot = "core.toaststyle",
+		icon = ICONS .. "INV_Misc_Bone_TrollSkull_01",
+	},
+	{
+		id = "ledger.toaststyle.lion",
+		earn = "lion",
+		count = "alliance",
+		mark = FACTION_FISH,
+		slot = "core.toaststyle",
+		icon = ICONS .. "INV_Shield_06",
+	},
+	{
+		id = "ledger.toaststyle.warband",
+		earn = "warband",
+		count = "horde",
+		mark = FACTION_FISH,
+		slot = "core.toaststyle",
+		icon = ICONS .. "Ability_Warrior_WarCry",
+	},
 	{ id = "ledger.binding.wave", earn = "wave", count = "sea", mark = 300 },
 	{ id = "ledger.binding.logbook", earn = "logbook", count = "zones", mark = 25 },
 	{ id = "ledger.binding.heartwood", earn = "heartwood", count = "afterRun", mark = 1 },
@@ -205,6 +306,8 @@ function ns.NewEarnedCounts()
 		days = {},
 		lures = {},
 		clams = 0,
+		races = {},
+		factions = {},
 	}
 end
 
@@ -240,12 +343,15 @@ end
 
 --- Counts one Cast (LED-R118, LED-R119), live or not, after the fold has credited it: a got-away Cast only lengthens the
 --- run of them; a caught one counts its shard, hour, pair, zones, day, lure and clams, and `beaten`, the size records
---- its Catches beat (LED-R82). `getItem` is Core's (LOG-R55).
+--- its Catches beat (LED-R82), and the fish by the race and faction of the character who caught them (LED-R164).
+--- `getItem` is Core's (LOG-R55); `getCharacter` gives a character's record by its index in the log (LOG-R25), nil for
+--- one it doesn't know.
 ---@param counts LedgerCounts
 ---@param record PagleCast
 ---@param getItem fun(itemID: integer): PagleItem?
 ---@param beaten integer
-function ns.CountCast(counts, record, getItem, beaten)
+---@param getCharacter? fun(index: integer): { raceID: integer?, faction: string? }?
+function ns.CountCast(counts, record, getItem, beaten, getCharacter)
 	if record.outcome ~= "caught" then
 		counts.gotAwayRun = counts.gotAwayRun + 1
 		return
@@ -275,6 +381,8 @@ function ns.CountCast(counts, record, getItem, beaten)
 	if lure and lure ~= 0 then
 		counts.lures[lure] = true
 	end
+	-- The caught Cast's character, whose race and faction its fish count for (LED-R164).
+	local character = getCharacter and getCharacter(record.char) or nil
 	-- The Species among its Catches, for the pair with the caught Cast before it.
 	local species, paired = {}, false
 	for _, catch in ipairs(record.items) do
@@ -283,9 +391,19 @@ function ns.CountCast(counts, record, getItem, beaten)
 			counts.clams = counts.clams + 1
 		end
 		local item = itemID ~= 0 and getItem(itemID) or nil
-		if ns.ClassifyCatch(itemID, item) == "species" and item and item.species then
+		local class = ns.ClassifyCatch(itemID, item)
+		if class == "species" and item and item.species then
 			species[item.species] = true
 			paired = paired or counts.lastSpecies[item.species] == true
+		end
+		if FISH_CLASSES[class] and character then
+			local race, faction = character.raceID, character.faction
+			if race then
+				counts.races[race] = (counts.races[race] or 0) + 1
+			end
+			if faction then
+				counts.factions[faction] = (counts.factions[faction] or 0) + 1
+			end
 		end
 	end
 	if paired then
@@ -387,6 +505,19 @@ local COUNTS = {
 		return math.max(view.state and view.state.prestige or 0, view.celebrated.prestige or 0)
 	end,
 }
+
+-- LED-R164's fish counts. A state saved before LEDGER_RULES_VERSION 10 has no `races` or `factions` until it rebuilds.
+for raceID = 1, 8 do
+	COUNTS["race" .. raceID] = function(_, counts)
+		return (counts.races or {})[raceID] or 0
+	end
+end
+COUNTS.alliance = function(_, counts)
+	return (counts.factions or {}).Alliance or 0
+end
+COUNTS.horde = function(_, counts)
+	return (counts.factions or {}).Horde or 0
+end
 
 --- Good `good`'s count now (LED-R118), over the state and the celebrated set; 0 without a state, and a state saved
 --- before the counts were kept counts nothing of its own until it rebuilds.

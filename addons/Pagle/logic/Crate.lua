@@ -26,6 +26,8 @@ ns.CRATE_POOL = {
 	{ id = "core.toaststyle.foil", crateOnly = true },
 	{ id = "core.toaststyle.storm" },
 	{ id = "core.binding.shagreenbone" },
+	-- The third round's grandest toast style (ANN-R84), for sale at tier 5 too; the pool had no crate in the log yet.
+	{ id = "core.toaststyle.arcane" },
 }
 
 --- Each candidate's weight (SHOP-R51, Tunables): a crate-only good 1, any other 2. Frozen once shipped (SHOP-R53).
