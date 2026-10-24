@@ -1,0 +1,58 @@
+# The Feature request form (#387). Asks for the problem before the idea, so a request can be weighed against what Pagle
+# already does (docs/spec/, CONTEXT.md).
+name: Feature request
+description: An idea for something Pagle could do, or something it does that could work better.
+title: "Idea: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! Describe the problem you ran into before the fix you have in mind: the problem is what
+        gets weighed against how Pagle already works.
+
+        Something broken? Use the Bug report form instead.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: What is hard, missing or annoying now, and when it comes up while fishing.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like Pagle to do?
+      description: Your idea in a few sentences. A sketch or screenshot of what you picture helps.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything you've tried
+      description: Other addons, settings or workarounds you use now, and what they miss.
+    validations:
+      required: false
+  - type: dropdown
+    id: module
+    attributes:
+      label: Where in Pagle?
+      options:
+        - Core (fishing, casting, catch log, wallet, shop)
+        - Ledger
+        - Hunts
+        - Stats
+        - Tackle Board
+        - QoL
+        - Settings or minimap button
+        - A new part
+        - Not sure
+    validations:
+      required: true
+  - type: checkboxes
+    id: public
+    attributes:
+      label: Public
+      options:
+        - label: I understand this issue is public
+          required: true
