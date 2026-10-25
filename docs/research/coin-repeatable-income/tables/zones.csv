@@ -1,0 +1,52 @@
+zone,name,kind,continent,skill_base,eligible_species,q_uncommon_plus,q_rare_plus,junk,container,unlisted_remainder
+1,Dun Morogh,open,0,-70,2,0.0,0.0,0.0,0.0,0.009
+12,Elwynn Forest,open,0,-70,3,0.0,0.0,0.0,0.0,0.004
+14,Durotar,open,1,-70,5,0.0,0.0,0.0,0.002,0.001
+85,Tirisfal Glades,open,0,-70,7,0.0,0.0,0.036,0.002,0.001
+141,Teldrassil,open,1,-70,3,0.0,0.0,0.0,0.001,0.004
+215,Mulgore,open,1,-70,2,0.0,0.0,0.0,0.0,0.005
+17,The Barrens,open,1,-20,9,0.006,0.0,0.0,0.007,0.009
+38,Loch Modan,open,0,-20,5,0.007,0.0,0.0,0.012,0.006
+40,Westfall,open,0,-20,9,0.003,0.0,0.0,0.008,0.006
+130,Silverpine Forest,open,0,-20,12,0.007,0.0,0.034,0.013,0.006
+148,Darkshore,open,1,-20,12,0.004,0.0,0.013,0.005,0.002
+718,Wailing Caverns,instance,43,-20,4,0.0,0.0,0.0,0.0,0.013
+719,Blackfathom Deeps,instance,48,-20,4,0.0,0.0,0.13,0.0,0.007
+1519,Stormwind City,city,0,-20,6,0.0,0.0,0.0,0.0,0.004
+1537,Ironforge,city,0,-20,3,0.0,0.0,0.0,0.0,0.006
+1581,The Deadmines,instance,36,-20,3,0.001,0.0,0.0,0.001,0.007
+1637,Orgrimmar,city,1,-20,3,0.0,0.0,0.0,0.0,0.003
+1638,Thunder Bluff,city,1,-20,3,0.0,0.0,0.0,0.0,0.004
+1657,Darnassus,city,1,-20,3,0.0,0.0,0.0,0.0,0.002
+10,Duskwood,open,0,55,4,0.0,0.0,0.0,0.0,0.001
+11,Wetlands,open,0,55,7,0.0,0.0,0.0,0.002,0.002
+44,Redridge Mountains,open,0,55,3,0.0,0.0,0.0,0.0,0.003
+267,Hillsbrad Foothills,open,0,55,4,0.001,0.0,0.0,0.001,0.0
+331,Ashenvale,open,1,55,12,0.0,0.0,0.006,0.001,0.003
+406,Stonetalon Mountains,open,1,55,5,0.0,0.0,0.075,0.013,0.015
+8,Swamp of Sorrows,open,0,130,7,0.0,0.0,0.0,0.002,0.002
+15,Dustwallow Marsh,open,1,130,8,0.001,0.0,0.0,0.004,0.017
+33,Stranglethorn Vale,open,0,130,11,0.006,0.0,0.0,0.013,0.0
+36,Alterac Mountains,open,0,130,6,0.006,0.0,0.0,0.016,0.009
+45,Arathi Highlands,open,0,130,9,0.001,0.0,0.021,0.003,0.002
+400,Thousand Needles,open,1,130,2,0.0,0.0,0.0,0.0,0.003
+405,Desolace,open,1,130,6,0.004,0.0,0.0,0.009,0.004
+796,Scarlet Monastery,instance,189,130,2,0.0,0.0,0.0,0.0,0.003
+16,Azshara,open,1,205,12,0.0,0.0,0.0,0.074,0.088
+28,Western Plaguelands,open,0,205,3,0.0,0.0,0.0,0.0,0.074
+47,The Hinterlands,open,0,205,8,0.0,0.0,0.0,0.021,0.072
+357,Feralas,open,1,205,9,0.001,0.0,0.0,0.025,0.064
+361,Felwood,open,1,205,3,0.0,0.0,0.0,0.0,0.061
+440,Tanaris,open,1,205,10,0.005,0.0,0.0,0.045,0.123
+490,Un'Goro Crater,open,1,205,3,0.0,0.0,0.001,0.0,0.076
+493,Moonglade,open,1,205,3,0.0,0.0,0.0,0.0,0.076
+1417,Sunken Temple,instance,109,205,4,0.0,0.0,0.0,0.0,0.071
+2100,Maraudon,instance,349,205,3,0.0,0.0,0.0,0.0,0.074
+41,Deadwind Pass,open,0,330,2,0.0,0.0,0.0,0.0,0.118
+46,Burning Steppes,open,0,330,2,0.0,0.0,0.033,0.0,0.13
+139,Eastern Plaguelands,open,0,330,6,0.0,0.0,0.0,0.0,0.142
+618,Winterspring,open,1,330,2,0.0,0.0,0.0,0.0,0.134
+1377,Silithus,open,1,330,9,0.0,0.0,0.044,0.009,0.076
+1977,Zul'Gurub,instance,309,330,2,0.0,0.0,0.0,0.0,0.05
+2017,Stratholme,instance,329,330,2,0.0,0.0,0.0,0.0,0.142
+2057,Scholomance,instance,289,330,2,0.0,0.0,0.0,0.0,0.152
