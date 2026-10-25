@@ -28,9 +28,9 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 
 		it("writes a reroll as the old goal's ID, then the new definition, Data's example (Data, TKB-R80)", function()
 			local payload =
-				ns.EncodeReroll(OLD_ID, { type = "n", kind = "quality", tier = 1, pay = 10, need = 3, target = 2 })
+				ns.EncodeReroll(OLD_ID, { type = "n", kind = "rarity", tier = 1, pay = 10, need = 3, target = 2 })
 
-			assert.are.equal(OLD_ID .. ";n;quality;1;10;3;2", payload)
+			assert.are.equal(OLD_ID .. ";n;rarity;1;10;3;2", payload)
 		end)
 
 		it("writes a Variety Expedition's target as zone:items, comma-separated and ascending (Data)", function()
@@ -85,8 +85,8 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 				{ type = "e", kind = "variety", tier = 0, pay = 60, need = 4, target = 148, items = { 6358, 13893 } },
 				{ type = "n", kind = "wanderer", tier = 3, pay = 20, need = 3 },
 				{ type = "e", kind = "wanderer", tier = 0, pay = 60, need = 5, target = 0 },
-				{ type = "n", kind = "quality", tier = 1, pay = 10, need = 3, target = 2 },
-				{ type = "e", kind = "quality", tier = 0, pay = 60, need = 3, target = 3 },
+				{ type = "n", kind = "rarity", tier = 1, pay = 10, need = 3, target = 2 },
+				{ type = "e", kind = "rarity", tier = 0, pay = 60, need = 8, target = 3 },
 				{ type = "n", kind = "collector", tier = 2, pay = 15, need = 2 },
 				{ type = "e", kind = "collector", tier = 0, pay = 60, need = 3 },
 				{ type = "n", kind = "lure", tier = 3, pay = 20, need = 25 },
@@ -115,6 +115,13 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 				assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";n;size;1;10;3;3"))
 			end
 		)
+
+		it("skips the old quality goal, issued or rerolled before the kind became rarity (TKB-R80)", function()
+			-- A dev test log's goals from before the Quality kind counted Variety rarity instead (nothing shipped).
+			assert.is_nil(ns.DecodeRecord("issue", "n;quality;1;10;3;2"))
+			assert.is_nil(ns.DecodeRecord("issue", "e;quality;0;60;3;3"))
+			assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";n;quality;1;10;3;2"))
+		end)
 
 		it("skips a payload it can't parse (TKB-R80)", function()
 			for _, case in ipairs({

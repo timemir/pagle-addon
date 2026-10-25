@@ -72,9 +72,9 @@ local function startedDaysAgo(days)
 	local fake = board.withHistory({
 		board.skill(NOW - 3600),
 		record("start", NOW, board.DAILY_RESET .. ";" .. WEEK_START),
-		record("issue", NOW + 1, "e;quality;0;60;3;3"),
+		record("issue", NOW + 1, "e;rarity;0;60;8;3"),
 		record("issue", NOW + 2, "n;haul;2;15;30;14"),
-		record("issue", NOW + 3, "n;quality;1;10;3;2"),
+		record("issue", NOW + 3, "n;rarity;1;10;3;2"),
 		record("issue", NOW + 4, "n;lure;3;20;25;"),
 	})
 	fake.wait(days * DAY)

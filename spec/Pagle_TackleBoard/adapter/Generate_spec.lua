@@ -38,7 +38,7 @@ describe("ns.GenerationContext (TKB-R30–R33)", function()
 		local state = ns.State()
 		state.goals.b = goal("b", 9, "size", 3)
 		state.goals.a = goal("a", 4, "haul", 14)
-		state.goals.c = goal("c", 6, "quality", 2, 1)
+		state.goals.c = goal("c", 6, "rarity", 2, 1)
 
 		local open = ns.GenerationContext(state, SERVER_TIME, board.random(1)).open
 

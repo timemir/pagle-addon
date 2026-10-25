@@ -173,7 +173,7 @@ describe("generating a goal", function()
 				"variety",
 				"variety",
 				"wanderer",
-				"quality",
+				"rarity",
 				"collector",
 				"lure",
 				"species",
@@ -187,20 +187,20 @@ describe("generating a goal", function()
 				drawn[value] = ns.GenerateGoal(context({ random = random }), "e").kind
 				assert.are.same({ 1, 5 }, random.calls[1])
 			end
-			assert.are.same({ "haul", "variety", "wanderer", "quality", "collector" }, drawn)
+			assert.are.same({ "haul", "variety", "wanderer", "rarity", "collector" }, drawn)
 		end)
 
 		it("never draws a size goal, for either type, issued or rerolled (ADR 0014)", function()
 			for _, goalType in ipairs({ "n", "e" }) do
 				assert.is_nil(kindsDrawn({}, goalType, nil, 1000).size)
-				assert.is_nil(kindsDrawn({}, goalType, "quality", 1000).size)
+				assert.is_nil(kindsDrawn({}, goalType, "rarity", 1000).size)
 			end
 		end)
 
 		it("leaves out the kinds already open in the same type, and only those", function()
 			local open = {
 				openGoal("n", "haul", ELWYNN),
-				openGoal("n", "quality", 2),
+				openGoal("n", "rarity", 2),
 				openGoal("e", "variety", WESTFALL), -- an Expedition: no bearing on a Notice's kind
 			}
 			assert.are.same(
@@ -211,25 +211,25 @@ describe("generating a goal", function()
 
 		it("is drawn from every kind again when every kind is open in the type", function()
 			local open = {}
-			for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "collector" }) do
+			for _, kind in ipairs({ "haul", "variety", "wanderer", "rarity", "collector" }) do
 				open[#open + 1] = openGoal("e", kind)
 			end
 			assert.are.same({
 				haul = true,
 				variety = true,
 				wanderer = true,
-				quality = true,
+				rarity = true,
 				collector = true,
 			}, kindsDrawn({ open = open }, "e"))
 		end)
 
 		it("never draws the old goal's kind on a reroll, even when every other kind is open", function()
 			local open = {}
-			for _, kind in ipairs({ "haul", "variety", "wanderer", "quality" }) do
+			for _, kind in ipairs({ "haul", "variety", "wanderer", "rarity" }) do
 				open[#open + 1] = openGoal("e", kind)
 			end
 			assert.are.same(
-				{ haul = true, variety = true, wanderer = true, quality = true },
+				{ haul = true, variety = true, wanderer = true, rarity = true },
 				kindsDrawn({ open = open }, "e", "collector")
 			)
 			assert.is_nil(kindsDrawn({}, "n", "haul").haul)
@@ -263,18 +263,18 @@ describe("generating a goal", function()
 
 		it("draws no haul, variety or species with no candidate zone, and every always-eligible kind", function()
 			assert.are.same(
-				{ wanderer = true, quality = true, collector = true, lure = true },
+				{ wanderer = true, rarity = true, collector = true, lure = true },
 				kindsDrawn({ bestBaseSkill = 24 }, "n")
 			)
-			assert.are.same({ quality = true }, kindsDrawn({ bestBaseSkill = 24 }, "e"))
+			assert.are.same({ rarity = true }, kindsDrawn({ bestBaseSkill = 24 }, "e"))
 		end)
 	end)
 
 	-- Every Notice kind open once, so the kind is drawn from all of them by the Notice weights (TKB-R32): the draw's
-	-- values are haul 1–2, variety 3–4, wanderer 5, quality 6, collector 7, lure 8, species 9.
+	-- values are haul 1–2, variety 3–4, wanderer 5, rarity 6, collector 7, lure 8, species 9.
 	local function everyNoticeKindOpen(extra)
 		local open = {}
-		for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "collector", "lure", "species" }) do
+		for _, kind in ipairs({ "haul", "variety", "wanderer", "rarity", "collector", "lure", "species" }) do
 			open[#open + 1] = openGoal("n", kind)
 		end
 		for _, goal in ipairs(extra) do
@@ -401,7 +401,7 @@ describe("generating a goal", function()
 			local cases = {
 				{ 1, 1, "haul", { 20, 30, 40 }, BARRENS },
 				{ 3, 1, "variety", { 3, 4, 5 }, BARRENS },
-				{ 6, 0, "quality", { 3, 5, 8 }, 2 },
+				{ 6, 0, "rarity", { 3, 5, 8 }, 2 },
 				{ 8, 0, "lure", { 15, 20, 25 }, nil },
 				{ 9, 2, "species", { 5, 10, 15 }, 4603 }, -- Yellowtail, The Barrens' lowest
 			}
@@ -445,7 +445,7 @@ describe("generating a goal", function()
 				{ 1, "haul", 150, ELWYNN },
 				{ 2, "variety", 4, WESTFALL },
 				{ 3, "wanderer", 5, 1 },
-				{ 4, "quality", 3, 3 },
+				{ 4, "rarity", 8, 3 },
 				{ 5, "collector", 3, nil },
 			}
 			for _, case in ipairs(cases) do

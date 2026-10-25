@@ -129,13 +129,13 @@ function ns.TrackerCount(progress, need)
 end
 
 --- The sample tracker each preview draws (TKB-R125): a Campfire of 5 days, then TKB-R125's two fixed goal lines, a
---- Haul Notice of 30 Catches in Elwynn Forest (area 12) at 12, and a Quality Notice of 5 uncommon-or-better Catches
+--- Haul Notice of 30 Catches in Elwynn Forest (area 12) at 12, and a Rarity Notice of 5 Catches of an uncommon variety or better
 --- at 2. Both are Notices; the zone's name is read from the client when drawn (TKB-R36).
 ns.SAMPLE_TRACKER = {
 	fire = 5,
 	goals = {
 		{ goal = { type = "n", kind = "haul", tier = 2, pay = 15, need = 30, target = 12 }, progress = 12 },
-		{ goal = { type = "n", kind = "quality", tier = 2, pay = 15, need = 5, target = 2 }, progress = 2 },
+		{ goal = { type = "n", kind = "rarity", tier = 2, pay = 15, need = 5, target = 2 }, progress = 2 },
 	},
 }
 
