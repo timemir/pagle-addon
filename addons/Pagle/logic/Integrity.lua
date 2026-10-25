@@ -181,8 +181,8 @@ function ns.CanonicalRecordProblem(entry)
 		valid = number(f[5], 0) ~= nil and number(f[6], 0) ~= nil and number(f[7], -MAX, true) ~= nil
 	elseif tag == "P1" and #f == 6 then
 		valid = number(f[5], 1) ~= nil and number(f[6], 0) ~= nil
-	elseif tag == "B1" and #f == 6 then
-		valid = number(f[5], 0) ~= nil and f[6] ~= ""
+	elseif tag == "B1" and #f == 7 then
+		valid = number(f[5], 0) ~= nil and f[6] ~= "" and #f[7] <= 64 and f[7]:find("^[%w][%w_.%-]*$") ~= nil
 	elseif tag == "U1" and #f == 6 then
 		valid = f[5]:find("^[%w_.]+$") ~= nil and number(f[6], 0) ~= nil
 	elseif tag == "K1" and #f == 6 then

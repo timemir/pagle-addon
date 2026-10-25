@@ -35,6 +35,7 @@ ns.GOOD_ID_PATTERN = "^[%w_.]+$"
 ---@class PagleBuild : PagleRecord
 ---@field build integer          -- the GetBuildInfo() build number
 ---@field version string         -- e.g. "1.60.1"
+---@field rules string           -- shipped immutable backend rule-set ID
 
 --- A Prestige (`P1`, LOG-R38): the Angler's new prestige rank, one more than the Prestiges before it, and Core's
 --- Activity XP total when it was recorded (AXP-R5), 0 for a pre-1.0 dev log's P1, which has none.
@@ -65,7 +66,8 @@ ns.COMPANION_READER = "Core"
 
 --- The PagleLog layout version (LOG-R18). 1.0 ships format 2, frozen from then on (LOG-R17); every beta or dev log
 --- is format 1, so it starts over at the first 1.0 login.
-ns.LOG_FORMAT = 2
+ns.LOG_FORMAT = 3
+ns.RULE_SET_ID = "pagle-2026a"
 
 --- The most bytes a Module record's payload may hold (LOG-R40, Tunables).
 ns.MODULE_RECORD_PAYLOAD_LIMIT = 200
@@ -290,13 +292,13 @@ local kinds = {
 
 	B1 = {
 		kind = "build",
-		count = 2,
+		count = 3,
 		encode = function(record)
-			return { integerField(record.build), record.version }
+			return { integerField(record.build), record.version, record.rules }
 		end,
 		decode = function(record, f)
-			record.build, record.version = integer(f[1]), f[2]
-			return record.build ~= nil and f[2] ~= ""
+			record.build, record.version, record.rules = integer(f[1]), f[2], f[3]
+			return record.build ~= nil and f[2] ~= "" and f[3] ~= nil
 		end,
 	},
 

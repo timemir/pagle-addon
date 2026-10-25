@@ -137,7 +137,8 @@ end
 ---@param version string e.g. "1.60.1"
 ---@param now integer server time
 ---@return PagleBuild?
-function AnglerState:LogBuild(build, version, now)
+function AnglerState:LogBuild(build, version, now, rules)
+	rules = rules or ns.RULE_SET_ID
 	local char, data, global = self.current, self.catchLog.data, self.catchLog.global
 	if not char then
 		return nil
@@ -145,15 +146,15 @@ function AnglerState:LogBuild(build, version, now)
 	local cache = global.lastBuild
 	if type(cache) ~= "table" or cache.logId ~= data.logId then
 		local last = self.catchLog:Reverse("build")() --[[@as PagleBuild?]]
-		cache = { logId = data.logId, build = last and last.build }
+		cache = { logId = data.logId, build = last and last.build, rules = last and last.rules }
 		global.lastBuild = cache
 	end
-	if cache.build == build then
+	if cache.build == build and cache.rules == rules then
 		return nil
 	end
-	local appended = self.catchLog:Append({ kind = "build", char = char, time = now, build = build, version = version })
+	local appended = self.catchLog:Append({ kind = "build", char = char, time = now, build = build, version = version, rules = rules })
 	---@cast appended PagleBuild
-	global.lastBuild = { logId = data.logId, build = build }
+	global.lastBuild = { logId = data.logId, build = build, rules = rules }
 	return appended
 end
 
