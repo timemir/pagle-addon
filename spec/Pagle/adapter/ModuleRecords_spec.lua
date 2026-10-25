@@ -74,10 +74,10 @@ describe("M:AppendRecord", function()
 			local before = #log.entries
 			local boardSeen, ledgerSeen = #seen.board, #seen.ledger
 
-			local record = board:AppendRecord("issue", "n|haul;30")
+			local record = board:AppendRecord("issue", "n;haul;1;10;20;148")
 
 			assert.are.same(
-				{ ("A1|2|%d|0|TackleBoard|issue|n|haul;30"):format(NOW) },
+				{ ("A1|2|%d|0|TackleBoard|issue|n;haul;1;10;20;148"):format(NOW) },
 				{ unpack(log.entries, before + 1) }
 			)
 			assert.are.same({
@@ -88,7 +88,7 @@ describe("M:AppendRecord", function()
 				time = NOW,
 				module = "TackleBoard",
 				recordKind = "issue",
-				payload = "n|haul;30",
+				payload = "n;haul;1;10;20;148",
 			}, record)
 			assert.are.same({ ("%d issue live"):format(before + 1) }, { unpack(seen.board, boardSeen + 1) })
 			assert.are.equal(ledgerSeen, #seen.ledger)
@@ -105,12 +105,14 @@ describe("M:AppendRecord", function()
 	it("takes a payload of exactly 200 bytes, and the next one gets the next tie (LOG-R12, LOG-R40)", function()
 		local loaded, board = coreWithBoard(history(1))
 
-		local first = board:AppendRecord("day", ("x"):rep(200))
-		local second = board:AppendRecord("day", "")
+		local suffix = "-0-0;n;haul;1;10;20;148"
+		local payload = "Player-1-" .. ("A"):rep(200 - #"Player-1-" - #suffix) .. suffix
+		local first = board:AppendRecord("reroll", payload)
+		local second = board:AppendRecord("day", "0;0")
 
 		assert.are.equal(PLAYER_GUID .. "-" .. NOW .. "-1", second.id)
 		assert.are.equal(first.seq + 1, second.seq)
-		assert.are.equal(("A1|2|%d|1|TackleBoard|day|"):format(NOW), loaded.env.PagleLog.entries[second.seq])
+		assert.are.equal(("A1|2|%d|1|TackleBoard|day|0;0"):format(NOW), loaded.env.PagleLog.entries[second.seq])
 	end)
 
 	local refused = {
@@ -153,7 +155,7 @@ describe("M:AppendRecord", function()
 		local before = #loaded.env.PagleLog.entries
 
 		local ok, err = pcall(function()
-			board:AppendRecord("start", "")
+			board:AppendRecord("start", "0;0")
 		end)
 
 		assert.is_false(ok)
@@ -166,7 +168,7 @@ describe("M:AppendRecord", function()
 		local loaded, handle, notes = coreWithBoard(history(1), {
 			apply = function(record, mode)
 				if record.kind == "cast" and mode == "live" then
-					board:AppendRecord("progress", "1")
+					board:AppendRecord("issue", "n;haul;1;10;20;148")
 					table.insert(seen.board, "returned")
 				end
 			end,
@@ -180,7 +182,7 @@ describe("M:AppendRecord", function()
 		assert.are.same({
 			("%d cast live"):format(before + 1),
 			"returned",
-			("%d progress live"):format(before + 2),
+			("%d issue live"):format(before + 2),
 		}, { unpack(seen.board, count + 1) })
 	end)
 
@@ -194,9 +196,9 @@ describe("M:AppendRecord", function()
 			assert.is_true(loaded.ns.projections:IsUpdating())
 			local before = #loaded.env.PagleLog.entries
 
-			board:AppendRecord("start", "")
+			board:AppendRecord("start", "0;0")
 			catchOne(loaded)
-			board:AppendRecord("day", "1")
+			board:AppendRecord("day", "0;0")
 			for _ = 1, 400 do
 				loaded.client.advance(0)
 			end
@@ -225,7 +227,7 @@ describe("M:AppendRecord", function()
 		local board = moduleWithProjection(loaded.env.Pagle, "TackleBoard", 40, seen)
 		loaded.client.fire("PLAYER_LOGIN")
 
-		local record = board:AppendRecord("start", "")
+		local record = board:AppendRecord("start", "0;0")
 		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 
 		assert.are.same({ ("%d start live"):format(record.seq) }, { seen[#seen - 1] })
@@ -294,10 +296,10 @@ end)
 describe("Module records in the log", function()
 	local function withRecords()
 		local entries = history(2)
-		entries[#entries + 1] = "A1|1|1791731000|0|TackleBoard|start|"
-		entries[#entries + 1] = "A1|1|1791731001|0|Ledger|note|x"
-		entries[#entries + 1] = "A1|1|1791731002|0|Stats|note|x" -- a Module not registered here
-		entries[#entries + 1] = "A1|1|1791731003|0|TackleBoard|issue|n|haul"
+		entries[#entries + 1] = "A1|1|1791731000|0|TackleBoard|start|0;0"
+		entries[#entries + 1] = "A1|1|1791731001|0|Ledger|title|title:level1"
+		entries[#entries + 1] = "A1|1|1791731002|0|Hunts|run|darkshore_moonlight|1792422000|1792681200|r" -- a Module not registered here
+		entries[#entries + 1] = "A1|1|1791731003|0|TackleBoard|issue|n;haul;1;10;20;148"
 		entries[#entries + 1] = castEntry(1791731004)
 		return entries
 	end
@@ -339,7 +341,7 @@ describe("Module records in the log", function()
 				"1 cast rebuild",
 				"2 cast rebuild",
 				"3 build rebuild",
-				"5 note rebuild", -- the Ledger's own
+				"5 title rebuild", -- the Ledger's own
 				"8 cast rebuild",
 				"done",
 				"9 skill live",
@@ -375,7 +377,7 @@ describe("Module records in the log", function()
 		loaded.env.Pagle.RegisterCallback("Spec", "Catch", function(_, catch)
 			got[#got + 1] = catch.cast.kind
 		end)
-		board:AppendRecord("day", "1")
+		board:AppendRecord("day", "0;0")
 
 		catchOne(loaded)
 
@@ -386,14 +388,14 @@ end)
 describe("a dev log written before Module records", function()
 	it("still loads with the same format, logId and entries, and silently (LOG-R14, LOG-R18)", function()
 		local saved = savedLog({
-			"B1|1|1791731680|0|70338|1.60.1",
+			"B1|1|1791731680|0|70338|1.60.1|pagle-2026a",
 			"C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1",
 		})
 		local loaded, board = coreWithBoard(saved)
-		board:AppendRecord("start", "")
+		board:AppendRecord("start", "0;0")
 
 		local log = loaded.env.PagleLog
-		assert.are.same({ 2, "3f9a2c1e7b0d4a65" }, { log.format, log.logId })
+		assert.are.same({ 3, "3f9a2c1e7b0d4a65" }, { log.format, log.logId })
 		assert.are.equal("C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1", log.entries[2])
 		assert.are.equal("A1", log.entries[#log.entries]:sub(1, 2))
 		assert.are.same({}, loaded.printed)

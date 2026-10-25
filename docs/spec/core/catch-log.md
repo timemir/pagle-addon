@@ -54,8 +54,8 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
   - **Entries:** Core's codec refuses any entry that would hold one: `Append` raises an error in its caller and appends nothing, whatever wrote the record (Core, a Module through `M:AppendRecord`, the test-log tooling). The fields that could carry text are a build entry's `version`, a purchase's `good`, a Companion entry's `keyId` and a Module record's `payload`; the others are numbers.
   - **Module records:** `M:AppendRecord` raises for a payload with one before it reaches the codec (LOG-R40), so a Module that logs free text escapes or drops line feeds itself (Hunts' pushed definitions are written on one line, a line break in their strings escaped as `\n`, HNT-R154).
   - **The character table** (LOG-R25, LOG-R26): the names the client reports are kept with any line feed stripped, since a login can't refuse a character.
-- **LOG-R17** From 1.0 the entry formats below are frozen, and so is `PagleLog.format`: format 2, the one 1.0 ships (LOG-R18), is the frozen 1.0 format. A changed shape gets a new tag (`C2`), and the codec reads both; the format number stays 2.
-- **LOG-R18** Before 1.0 the formats change freely. When `PagleLog.format` differs from the codec's format number, Core starts a new log (new `logId`, no entries, characters kept) and prints one chat line ("Pagle: dev log format changed; started a new log."). Every projection then rebuilds (LOG-R72). 1.0 ships format 2, and every beta or dev log is format 1, so each one starts over at its first 1.0 login. That is pagle-backend's line between them: it refuses a log in any format below 1.0's as `dev_log` (pagle-backend OPS-R135, OPS-R136), and a 1.0 log always arrives under a new `logId` (pagle-backend CMP-R133). From 1.0 the format number never changes in a way that needs this (LOG-R17).
+- **LOG-R17** From 1.0 the entry formats below are frozen, and so is `PagleLog.format`: format 3, the one 1.0 ships (LOG-R18), is the frozen 1.0 format. A changed shape gets a new tag (`C2`), and the codec reads both; the format number stays 3.
+- **LOG-R18** Before 1.0 the formats change freely. When `PagleLog.format` differs from the codec's format number, Core starts a new log (new `logId`, no entries, characters kept) and prints one chat line ("Pagle: dev log format changed; started a new log."). Every projection then rebuilds (LOG-R72). 1.0 ships format 3, and earlier beta or dev logs use another format, so each one starts over at its first 1.0 login. That is pagle-backend's line between them: it refuses a log in any format below 1.0's as `dev_log` (pagle-backend OPS-R135, OPS-R136), and a 1.0 log always arrives under a new `logId` (pagle-backend CMP-R133). From 1.0 the format number never changes in a way that needs this (LOG-R17).
 
 ### The Cast snapshot
 
@@ -91,7 +91,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
 ### Builds
 
-- **LOG-R36** At login (LOG-R1), Core reads `GetBuildInfo()` and appends a **build entry** (`B1`) if the build number differs from the last build entry in the log. The last one is cached in `PagleDB.global.lastBuild` as `{ logId, build }`; if the cache is missing or its `logId` differs from `PagleLog.logId`, Core finds it by scanning the log backwards.
+- **LOG-R36** At login (LOG-R1), Core reads `GetBuildInfo()` and appends a **build entry** (`B1`) if the game build number or shipped immutable rule-set ID differs from the last build entry in the log. The last one is cached in `PagleDB.global.lastBuild` as `{ logId, build, rules }`; if the cache is missing or its `logId` differs from `PagleLog.logId`, Core finds it by scanning the log backwards.
 
 ### Prestige
 
@@ -260,7 +260,7 @@ Core runs every Module's stored projection the same way (ADR 0004).
 
 ```lua
 PagleLog = {
-  format = 2,            -- PagleLog layout version: 2 from 1.0, frozen (LOG-R17, LOG-R18)
+  format = 3,            -- PagleLog layout version: 3 from 1.0, frozen (LOG-R17, LOG-R18)
   logId = "3f9a2c1e7b0d4a65",
   characters = {         -- array; entries refer to the index
     { guid = "Player-4618-0A1B2C3D", name = "Ada", surname = "Brook",
@@ -289,7 +289,7 @@ Every entry starts with the header `<tag>|<char>|<time>|<tie>` (LOG-R11). The ca
 | `C1` | Cast | `outcome` (`c` caught, `g` got away) · `minute` (realm minute of day) · `uiMap` (empty if unknown) · `instance` (empty if unknown) · `zone` (`0` if unresolved or secret) · `subzone` (`0` if none, unresolved or secret) · `rank` · `mod` · `lure` (empty if none) · `events` · `auras` · `items` (`<itemID>x<qty>` per item, in slot order; empty when got away) |
 | `S1` | Skill Reading | `rank` · `max` · `mod` |
 | `P1` | Prestige | `rank` (the new prestige rank), `activityXP` (Core's Activity XP total when it was recorded, AXP-R5; required by the canonical contract) |
-| `B1` | Build | `build` (the `GetBuildInfo()` build number) · `version` (e.g. `1.60.1`) |
+| `B1` | Build | `build` (the `GetBuildInfo()` build number) · `version` (e.g. `1.60.1`) · `rules` (shipped rule-set ID, e.g. `pagle-2026a`) |
 | `U1` | Purchase | `good` (good ID, `[%w_.]+`, or `core.crate` for a Curio crate) · `price` |
 | `K1` | Companion | `keyId` · `seq` (the accepted file's, LOG-R37) |
 | `A1` | Module record | `module` (`def.name`) · `kind` (`[%w_.]+`) · `payload` (everything after the 6th `\|`, verbatim) |
@@ -303,7 +303,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | Key | Contents |
 |---|---|
 | `global.schemaVersion` | integer; ordered `if version < N` migration steps run on load. Migrations exist only here and in each `Pagle<Module>DB`, never for `PagleLog`. |
-| `global.lastBuild` | `{ logId, build }`, the last logged build number (LOG-R36) |
+| `global.lastBuild` | `{ logId, build, rules }`, the last logged build and shipped rule-set ID (LOG-R36) |
 | `global.lastEndedSession` | the ID of the last Session `SessionEnded` fired for (LOG-R63) |
 | `global.sessionBreaks` | `{ [castEntryID] = true }`, the Casts after which `/pagle dev endsession` ended a Session (LOG-R99); absent until it's first used |
 | `global.decodeErrors` | count of entries the codec couldn't decode (LOG-R16) |

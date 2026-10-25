@@ -129,13 +129,14 @@ function AnglerState:ReadSkill(reading, now)
 	return appended
 end
 
---- Appends a build entry for the current character when `build` differs from the last build entry in the log
---- (LOG-R36), and returns it. The last one is cached in `PagleDB.global.lastBuild` as `{ logId, build }`; a
+--- Appends a build entry when the game build or shipped rule-set ID differs from the last build entry
+--- (LOG-R36), and returns it. The last one is cached in `PagleDB.global.lastBuild` as `{ logId, build, rules }`; a
 --- missing cache, or one of another logId, is rebuilt by walking the log back to its last build entry. Appends
 --- nothing while no character is current.
 ---@param build integer the GetBuildInfo() build number
 ---@param version string e.g. "1.60.1"
 ---@param now integer server time
+---@param rules string? shipped rule-set ID; defaults to Core's current immutable rule set
 ---@return PagleBuild?
 function AnglerState:LogBuild(build, version, now, rules)
 	rules = rules or ns.RULE_SET_ID
@@ -152,7 +153,14 @@ function AnglerState:LogBuild(build, version, now, rules)
 	if cache.build == build and cache.rules == rules then
 		return nil
 	end
-	local appended = self.catchLog:Append({ kind = "build", char = char, time = now, build = build, version = version, rules = rules })
+	local appended = self.catchLog:Append({
+		kind = "build",
+		char = char,
+		time = now,
+		build = build,
+		version = version,
+		rules = rules,
+	})
 	---@cast appended PagleBuild
 	global.lastBuild = { logId = data.logId, build = build, rules = rules }
 	return appended

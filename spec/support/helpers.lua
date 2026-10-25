@@ -86,12 +86,12 @@ end
 --- `characters`, or by default Ada (Player-4618-0A1B2C3D), first and last seen at 1791700000. Each call makes a
 --- fresh table, which Core may change.
 ---@param entries string[]?
----@param format integer? Default 2, the codec's (LOG-R18).
+---@param format integer? Default 3, the codec's (LOG-R18).
 ---@param characters table[]?
 ---@return table
 function savedLog(entries, format, characters)
 	return {
-		format = format or 2,
+		format = format or 3,
 		logId = "3f9a2c1e7b0d4a65",
 		characters = characters or { characterRecord() },
 		entries = entries or {},
@@ -162,7 +162,7 @@ FISH_CREST_SPECIES = {
 }
 
 --- The build entry the fake client's build matches, so login appends no B1.
-BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1"):format(SERVER_TIME - 5000)
+BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1|pagle-2026a"):format(SERVER_TIME - 5000)
 
 --- A caught Cast at server time `time`, as a PagleLog entry: in Darkshore (148) at realm 08:14, Fishing 86+25 with
 --- lure 263, catching one item. By default the item is Oily Blackmouth (6358), the subzone The Long Wash (453), and

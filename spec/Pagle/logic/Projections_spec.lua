@@ -12,7 +12,7 @@ local function cast(i)
 	return ("C1|1|%d|0|c|494|1439|1|148|453|86|25|263|||6358x1"):format(1791731000 + i)
 end
 local SKILL = "S1|1|1791730000|0|80|150|0"
-local BUILD = "B1|1|1791730000|1|70338|1.60.1"
+local BUILD = "B1|1|1791730000|1|70338|1.60.1|pagle-2026a"
 
 -- `n` Casts.
 local function casts(n)
@@ -95,8 +95,8 @@ local function machinery(entries)
 			char = 1,
 			time = 1791750000,
 			module = module,
-			recordKind = kind,
-			payload = "",
+			recordKind = module == "Ledger" and "title" or kind,
+			payload = module == "Ledger" and "" or "0;0",
 		})
 		world.projections:Live(record)
 		return record

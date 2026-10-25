@@ -112,7 +112,7 @@ local function boardPayload(kind, payload)
 	elseif goal == "collector" then
 		return target == ""
 	elseif goal == "wanderer" then
-		return (goalType == "n" and target == "") or (goalType == "e" and number(target, 1) ~= nil)
+		return (goalType == "n" and target == "") or (goalType == "e" and number(target, 0) ~= nil)
 	elseif goal == "variety" then
 		return (goalType == "n" and number(target, 1) ~= nil) or (goalType == "e" and varietyTarget(target))
 	end

@@ -10,7 +10,7 @@ local BRAM = "Player-4618-0F0E0D0C"
 
 -- A PagleLog as the client loads it from SavedVariables (savedLog), holding Ada, Bram and these entries.
 local function adaAndBramLog(entries)
-	return savedLog(entries, 2, {
+	return savedLog(entries, 3, {
 		{ guid = ADA, name = "Ada", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
 		{ guid = BRAM, name = "Bram", classID = 1, raceID = 3, faction = "Alliance", realmID = 4618 },
 	})
@@ -195,9 +195,16 @@ describe("the Catch log codec", function()
 	it("round-trips a build entry (LOG-R11, LOG-R16, Entry formats)", function()
 		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
 
-		catchLog:Append({ kind = "build", char = 2, time = 1791731681, build = 70338, version = "1.60.1" })
+		catchLog:Append({
+			kind = "build",
+			char = 2,
+			time = 1791731681,
+			build = 70338,
+			version = "1.60.1",
+			rules = "pagle-2026a",
+		})
 
-		assert.are.same({ "B1|2|1791731681|0|70338|1.60.1" }, catchLog.data.entries)
+		assert.are.same({ "B1|2|1791731681|0|70338|1.60.1|pagle-2026a" }, catchLog.data.entries)
 		assert.are.same({
 			{
 				seq = 1,
@@ -207,6 +214,7 @@ describe("the Catch log codec", function()
 				time = 1791731681,
 				build = 70338,
 				version = "1.60.1",
+				rules = "pagle-2026a",
 			},
 		}, records(catchLog, 0))
 	end)
@@ -273,7 +281,7 @@ describe("the Catch log codec", function()
 			catchLog:Append({ kind = "companion", char = 1, time = 1791731683, keyId = "pagle-2026-a", pushedSeq = 42 })
 
 			assert.are.same({ "K1|1|1791731683|0|pagle-2026-a|42" }, catchLog.data.entries)
-			assert.are.equal(2, ns.LOG_FORMAT, "an additive kind: PagleLog.format stays (LOG-R18)")
+			assert.are.equal(3, ns.LOG_FORMAT, "an additive kind: PagleLog.format stays (LOG-R18)")
 			assert.are.same(
 				{
 					{
@@ -313,20 +321,20 @@ describe("the Catch log codec", function()
 			.. " (LOG-R11, LOG-R16, LOG-R40, LOG-R42, Entry formats)",
 		function()
 			local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
-			local payload = "n|haul;1;30|1429;e|x" -- everything after the 6th |, verbatim
+			local payload = "p_test|1/1|a|b;c" -- everything after the 6th |, verbatim
 
 			catchLog:Append({
 				kind = "module",
 				char = 2,
 				time = 1791731684,
-				module = "TackleBoard",
-				recordKind = "issue.v1",
+				module = "Hunts",
+				recordKind = "def",
 				payload = payload,
 			})
 
-			assert.are.same({ "A1|2|1791731684|0|TackleBoard|issue.v1|n|haul;1;30|1429;e|x" }, catchLog.data.entries)
+			assert.are.same({ "A1|2|1791731684|0|Hunts|def|p_test|1/1|a|b;c" }, catchLog.data.entries)
 			local read = {}
-			for record in catchLog:Iterate(0, "TackleBoard") do
+			for record in catchLog:Iterate(0, "Hunts") do
 				read[#read + 1] = record
 			end
 			assert.are.same({
@@ -336,8 +344,8 @@ describe("the Catch log codec", function()
 					kind = "module",
 					char = 2,
 					time = 1791731684,
-					module = "TackleBoard",
-					recordKind = "issue.v1",
+					module = "Hunts",
+					recordKind = "def",
 					payload = payload,
 				},
 			}, read)
@@ -351,13 +359,13 @@ describe("the Catch log codec", function()
 			kind = "module",
 			char = 1,
 			time = 1791731685,
-			module = "TackleBoard",
-			recordKind = "start",
+			module = "Ledger",
+			recordKind = "title",
 			payload = "",
 		})
 
-		assert.are.same({ "A1|1|1791731685|0|TackleBoard|start|" }, catchLog.data.entries)
-		assert.are.same({ "module", "TackleBoard", "start", "" }, {
+		assert.are.same({ "A1|1|1791731685|0|Ledger|title|" }, catchLog.data.entries)
+		assert.are.same({ "module", "Ledger", "title", "" }, {
 			record.kind,
 			record.module,
 			record.recordKind,
@@ -418,18 +426,25 @@ describe("the Catch log codec", function()
 	it("writes a carriage return as it is, the one line break an entry may hold (LOG-R101)", function()
 		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
 
-		catchLog:Append({ kind = "build", char = 1, time = 1791731680, build = 70338, version = "1.60\r1" })
+		catchLog:Append({
+			kind = "build",
+			char = 1,
+			time = 1791731680,
+			build = 70338,
+			version = "1.60\r1",
+			rules = "pagle-2026a",
+		})
 		catchLog:Append({
 			kind = "module",
 			char = 1,
 			time = 1791731680,
-			module = "TackleBoard",
-			recordKind = "day",
-			payload = "two\rlines",
+			module = "Hunts",
+			recordKind = "def",
+			payload = "p_test|1/1|two\rlines",
 		})
 
 		assert.are.same(
-			{ "B1|1|1791731680|0|70338|1.60\r1", "A1|1|1791731680|1|TackleBoard|day|two\rlines" },
+			{ "B1|1|1791731680|0|70338|1.60\r1|pagle-2026a", "A1|1|1791731680|1|Hunts|def|p_test|1/1|two\rlines" },
 			catchLog.data.entries
 		)
 	end)
@@ -510,7 +525,7 @@ describe("iterating the log", function()
 	it("yields Prestiges and purchases in seq order beside Casts, Skill Readings and builds (LOG-R42)", function()
 		local catchLog = ns.OpenCatchLog(
 			adaAndBramLog({
-				"B1|1|1791731680|0|70338|1.60.1",
+				"B1|1|1791731680|0|70338|1.60.1|pagle-2026a",
 				"C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1",
 				"P1|1|1791731750|0|1|0",
 				"S1|1|1791731751|0|87|150|0",
@@ -532,9 +547,9 @@ describe("iterating the log", function()
 			return ns.OpenCatchLog(
 				adaAndBramLog({
 					"C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1",
-					"A1|1|1791731748|0|TackleBoard|start|",
-					"A1|1|1791731749|0|Ledger|note|x", -- another Module's
-					"A1|1|1791731750|0|TackleBoard|issue|n|haul",
+					"A1|1|1791731748|0|TackleBoard|start|1791731700;1791731700",
+					"A1|1|1791731749|0|Ledger|title|title:level1", -- another Module's
+					"A1|1|1791731750|0|TackleBoard|issue|n;haul;1;10;20;148",
 					"C1|1|1791731760|0|g|494|1439|1|148|453|87|25|263|||",
 				}),
 				{ decodeErrors = 0 }
@@ -612,7 +627,7 @@ describe("opening PagleLog", function()
 	it("starts an empty log on a fresh install, without a chat line (LOG-R10, LOG-R18)", function()
 		local catchLog, started = ns.OpenCatchLog(nil, {}, NOW)
 
-		assert.are.same({ format = 2, characters = {}, entries = {} }, catchLog.data)
+		assert.are.same({ format = 3, characters = {}, entries = {} }, catchLog.data)
 		assert.is_false(started)
 	end)
 
@@ -627,7 +642,7 @@ describe("opening PagleLog", function()
 		assert.is_false(started)
 	end)
 
-	for _, format in ipairs({ 0, 1, 3, "nil" }) do
+	for _, format in ipairs({ 0, 1, 2, 4, "nil" }) do
 		it(("starts a new log from one in format %s, keeping the characters (LOG-R18)"):format(format), function()
 			local saved = adaAndBramLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" })
 			saved.format = tonumber(format)
@@ -639,7 +654,7 @@ describe("opening PagleLog", function()
 			assert.is_true(started)
 			assert.are.equal(characters, catchLog.data.characters)
 			assert.are.same({}, catchLog.data.entries)
-			assert.are.equal(2, catchLog.data.format)
+			assert.are.equal(3, catchLog.data.format)
 			assert.is_nil(catchLog.data.stale)
 			assert.are.matches("^[0-9a-f]+$", catchLog.data.logId)
 			assert.are.equal(16, #catchLog.data.logId)
@@ -746,7 +761,7 @@ describe("the Simulated Size on decoded Casts", function()
 
 	-- A log of these entries by Vee (1), Oak (2) and Dee (3), opened over `items` (ITEMS by default) as its catalogue.
 	local function veeLog(entries, items)
-		return ns.OpenCatchLog(savedLog(entries, 2, { VEE, OAK, DEE }), {}, nil, function(itemID)
+		return ns.OpenCatchLog(savedLog(entries, 3, { VEE, OAK, DEE }), {}, nil, function(itemID)
 			return (items or ITEMS)[itemID]
 		end)
 	end
@@ -895,7 +910,7 @@ describe("the Simulated Size on decoded Casts", function()
 			-- A log over the fixture catalogue that counts the items it looks up.
 			local function counted()
 				local lookups = { n = 0 }
-				local catchLog = ns.OpenCatchLog(savedLog(entries, 2, { VEE, OAK, DEE }), {}, nil, function(itemID)
+				local catchLog = ns.OpenCatchLog(savedLog(entries, 3, { VEE, OAK, DEE }), {}, nil, function(itemID)
 					lookups.n = lookups.n + 1
 					return ITEMS[itemID]
 				end)
@@ -1013,7 +1028,7 @@ describe("the Simulated Size on decoded Casts", function()
 				earlier(2, 1791731060, "6358x1,6358x1,6358x1,6358x1,6358x1,6358x1"),
 			}
 			local global = {}
-			local saved = savedLog(entries, 2, { VEE, OAK, DEE })
+			local saved = savedLog(entries, 3, { VEE, OAK, DEE })
 			local catchLog = ns.OpenCatchLog(saved, global, nil, function(itemID)
 				return ITEMS[itemID]
 			end)
@@ -1060,7 +1075,7 @@ describe("the Simulated Size on decoded Casts", function()
 	)
 
 	it("gives no sizes when opened without a catalogue (LOG-R65)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6358x1") }, 2, { VEE }), {})
+		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6358x1") }, 3, { VEE }), {})
 
 		assert.are.same({ false }, sizes(records(catchLog, 0)[1]))
 	end)
@@ -1094,7 +1109,7 @@ describe("the variety on decoded Casts", function()
 
 	-- A log of Vee's entries, opened over `items` (ITEMS by default) as its catalogue.
 	local function veeLog(entries, items)
-		return ns.OpenCatchLog(savedLog(entries, 2, { VEE }), {}, nil, function(itemID)
+		return ns.OpenCatchLog(savedLog(entries, 3, { VEE }), {}, nil, function(itemID)
 			return (items or ITEMS)[itemID]
 		end)
 	end
@@ -1175,7 +1190,7 @@ describe("the variety on decoded Casts", function()
 	end)
 
 	it("gives no varieties when opened without a catalogue (VAR-R4)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6359x1") }, 2, { VEE }), {})
+		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6359x1") }, 3, { VEE }), {})
 
 		assert.are.same({ false }, varieties(records(catchLog, 0)[1]))
 	end)

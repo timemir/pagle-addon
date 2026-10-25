@@ -294,6 +294,7 @@ local kinds = {
 		kind = "build",
 		count = 3,
 		encode = function(record)
+			assert(type(record.rules) == "string", "missing build rule-set ID")
 			return { integerField(record.build), record.version, record.rules }
 		end,
 		decode = function(record, f)

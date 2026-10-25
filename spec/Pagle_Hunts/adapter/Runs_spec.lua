@@ -201,13 +201,18 @@ describe("Hunt Events' runs in Hunts' projection", function()
 			assert.are.same({ 30, 500 }, { state.coins, state.xp }) -- the Standing fixture_snapper's alone
 		end)
 
-		it("skips a record it can't decode, and one of another kind (HNT-R136, hunts.md › Contracts)", function()
+		it("skips an invalid run interval and refuses unsupported Module schemas at append", function()
 			local S = MARCH_1
 			local loaded = login(function(fake)
+				assert.has_error(function()
+					append(fake, { record("run", "fixture_shore|" .. S .. "|" .. (S + DAY) .. "|x", S) })
+				end)
+				assert.has_error(function()
+					append(fake, { record("note", "fixture_shore", S) })
+				end)
+
 				append(fake, {
 					record("run", "fixture_shore|" .. (S + DAY) .. "|" .. S .. "|r", S), -- start after end
-					record("run", "fixture_shore|" .. S .. "|" .. (S + DAY) .. "|x", S), -- an unknown source
-					record("note", "fixture_shore", S),
 					castAt(S + HOUR, NIGHT, DARKSHORE, { C.NIGHTFIN }),
 				})
 			end)
