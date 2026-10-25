@@ -114,3 +114,14 @@ function ns.ReportXP()
 		module:ReportXPEarned(ns.State().xp)
 	end
 end
+
+--- Reports lifetime Refreshes spent to Core (TKB-R58, REF-R2): the projection's `ticketsSpent` with
+--- M:ReportTicketsSpent, on ns.ReportCoins' timing, 0 before Start, so a new dev log's unstarted board replaces the last
+--- log's total. Core takes the count held from it (REF-R5); nothing here shows it. Nothing without a Module handle (an
+--- inert Module, CORE-R13).
+function ns.ReportTickets()
+	local module = ns.Module
+	if module then
+		module:ReportTicketsSpent(ns.State().ticketsSpent)
+	end
+end

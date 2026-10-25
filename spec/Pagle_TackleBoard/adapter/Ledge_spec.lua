@@ -389,6 +389,48 @@ describe("the shop card (TKB-R106, SHOP-R41, TKB-R193)", function()
 	end)
 end)
 
+describe("the Refresh count (TKB-R106, REF-R5)", function()
+	it("reads the Refreshes held under the shop card, 0 until one is earned", function()
+		local _, _, _, ledge = opened(FRESH)
+
+		assert.are.equal("0 Refreshes held", ledge.refresh.label:GetText())
+		assert.is_true(visible(ledge.refresh, ledge))
+	end)
+
+	it("follows Core's count as Refreshes are earned and spent, with the singular for one", function()
+		local _, fake, _, ledge = opened(FRESH)
+
+		fake.setTickets("Hunts", 1)
+		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
+		local one = ledge.refresh.label:GetText()
+		fake.setTickets("Hunts", 5)
+		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
+		local five = ledge.refresh.label:GetText()
+		fake.setTickets("TackleBoard", nil, 2)
+		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
+
+		assert.are.same({ "1 Refresh held", "5 Refreshes held", "3 Refreshes held" }, {
+			one,
+			five,
+			ledge.refresh.label:GetText(),
+		})
+	end)
+
+	it("says under the mouse what a Refresh is for and where it comes from", function()
+		local loaded, _, _, ledge = opened(FRESH)
+
+		ledge.refresh:GetScript("OnEnter")(ledge.refresh)
+
+		assert.are.same({
+			"Refreshes",
+			"Each one posts a fresh Notice or Expedition in an empty slot on the board. Click an empty slot to use one.",
+			"Pagle Wagers earn them.",
+		}, loaded.ns.BoardHoverLines())
+		ledge.refresh:GetScript("OnLeave")(ledge.refresh)
+		assert.is_nil(loaded.ns.BoardHoverLines())
+	end)
+end)
+
 describe("the board's layers (ns.BOARD_LAYERS)", function()
 	it(
 		"draws the card, the drawer, their veil, the updating note and the welcome slip over the spike's nail",

@@ -313,6 +313,10 @@ local function listen()
 			end
 		end
 	end)
+	-- A Refresh earned or spent changes which empty pins can be clicked, and the count on the ledge (TKB-R58, REF-R6).
+	Pagle.RegisterCallback(OWNER, "TicketsChanged", function()
+		ns.board:Draw("tickets")
+	end)
 end
 
 -- Reads the empty pins' times again every 60 s while the board is open (TKB-R105); it stops once the board is closed
@@ -364,8 +368,10 @@ local function drawPins(frame, draw)
 	local layout = ns.PinLayout(state, ns.api)
 	local places = ns.PinPlaces(#layout.overflow > 0)
 	local view = viewer(draw)
+	local held = ns.RefreshesHeld()
 	for _, row in ipairs({ { "expeditions", true }, { "notices", false } }) do
 		local name, poster = row[1], row[2]
+		local goalType = poster and "e" or "n"
 		for i, slot in ipairs(frame.slots[name]) do
 			---@cast slot TacklePinSlot
 			if not slot.goal then
@@ -387,6 +393,10 @@ local function drawPins(frame, draw)
 			else
 				slot.empty:SetEmpty(pin.empty)
 			end
+			-- TKB-R58: an empty pin takes a click while a Refresh can post a goal of its type on it
+			slot.empty:SetPostable(
+				not goal and ns.CanPostGoal(state, goalType, held, draw.updating) and goalType or nil
+			)
 			slot.highlight:SetShown(goal ~= nil and goal.id == highlighted)
 		end
 	end

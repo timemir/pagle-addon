@@ -78,6 +78,14 @@ function support.issue(time, payload)
 	return support.record("issue", time, payload)
 end
 
+--- A `post` record at `time` with a goal's payload (TKB-R58, tackle-board.md › Data): a Refresh spent on an empty slot.
+---@param time integer
+---@param payload string
+---@return table
+function support.post(time, payload)
+	return support.record("post", time, payload)
+end
+
 --- A `reroll` record at `time` taking goal `oldID` down for a goal of `payload`.
 ---@param time integer
 ---@param oldID string

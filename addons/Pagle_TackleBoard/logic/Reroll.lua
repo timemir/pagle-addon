@@ -6,8 +6,9 @@ end
 local ns = select(2, ...)
 
 -- Taking a goal down (TKB-R55, TKB-R56): whether a goal may be taken down, whether the player is asked first and
--- what. Pure logic (CORE-R7): Core's catalogue calls and the board day now come in from adapter/Reroll.lua, which
--- appends the `reroll` record that takes the goal down (TKB-R80).
+-- what. And spending a Refresh on an empty slot (TKB-R58, TKB-R59): whether a goal can be posted into one, and what
+-- the player is asked and told. Pure logic (CORE-R7): Core's catalogue calls, the board day now and the Refreshes held
+-- come in from adapter/Reroll.lua, which appends the `reroll` and `post` records (TKB-R80).
 
 --- The goal `goalID` names, if it is one that can be taken down (TKB-R55): an open goal (not completed) issued by an
 --- `issue` record, or a re-posted one only while it is stranded (TKB-R44). Nil otherwise, also for an ID the board
@@ -74,4 +75,43 @@ function ns.TakeDownQuestion(goal, today, pagle)
 		text = ns.Fill(L.TAKE_DOWN_TEXT, { progress = shown }),
 		progress = shown,
 	}
+end
+
+--- Whether a Refresh can post a goal of `goalType` now (TKB-R58): the board is started, the projection isn't updating
+--- (TKB-R108), at least one Refresh is held (REF-R5) and a pin of that type is empty (TKB-R101), so a post never goes
+--- past the caps. The adapter checks it again when the player confirms (TKB-R59).
+---@param state TackleBoardState
+---@param goalType TackleGoalType|any
+---@param held integer the Refreshes held, `Pagle.GetTickets().tickets`
+---@param updating boolean ns.IsUpdating() (TKB-R108)
+---@return boolean
+function ns.CanPostGoal(state, goalType, held, updating)
+	if state.started == nil or updating or held <= 0 then
+		return false
+	end
+	return (goalType == "n" or goalType == "e") and ns.EmptyPin(state, goalType) ~= nil
+end
+
+--- What an empty pin says under the mouse while a Refresh can be used on it (TKB-R58, TKB-R105): what clicking does by
+--- type, then what it costs and how many Refreshes are held.
+---@param goalType TackleGoalType
+---@param held integer the Refreshes held
+---@return string[] lines its title, what it does, what it costs
+function ns.PostTip(goalType, held)
+	local L = ns.L
+	return { L.POST_TIP_TITLE[goalType], L.POST_TIP[goalType], ns.Fill(L.POST_TIP_COST, { held = held }) }
+end
+
+--- The confirm's question before a Refresh posts a goal (TKB-R59), which always asks: it cannot be undone.
+---@class TacklePostQuestion
+---@field title string      -- "Post a new Notice?"
+---@field text string       -- "This uses 1 Refresh, and it can't be undone. The new goal can be taken down once, like any other."
+---@field cost string       -- "1 Refresh", as it reads in `text`, which the confirm inks apart
+
+---@param goalType TackleGoalType
+---@return TacklePostQuestion
+function ns.PostQuestion(goalType)
+	local L = ns.L
+	local cost = ns.Plural(1, "REFRESHES")
+	return { title = L.POST_TITLE[goalType], text = ns.Fill(L.POST_TEXT, { cost = cost }), cost = cost }
 end
