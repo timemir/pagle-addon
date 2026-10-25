@@ -1711,6 +1711,7 @@ local function huntsDef(hunts, catchLog, now)
 	return hunts.ProjectionDef({}, hunts.lookups, {
 		ReportCoinsEarned = function() end,
 		ReportXPEarned = function() end,
+		ReportTicketsEarned = function() end,
 		IterateCatches = function(afterSeq)
 			return catchLog:Iterate(afterSeq, "Hunts")
 		end,

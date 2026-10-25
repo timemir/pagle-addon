@@ -669,6 +669,19 @@ describe("the run's entry on the spread (HNT-R163)", function()
 		assert.is_false(view.seal.shown)
 	end)
 
+	it("shows the Refreshes a box pays beside its label, and nothing where none are paid (HNT-R117)", function()
+		local r = oneOn()
+		r.ns.OpenWagers()
+		local page = r.ns.board:Page(place(r), "right")
+		local view = r.ns.RunEntryView(page)
+
+		-- Nothing is paid so far; settling the run pays TICKETS_RUN.
+		assert.is_false(view.pay[1].refresh.shown)
+		assert.is_true(view.pay[2].refresh.shown)
+		assert.are.equal("+1 Refresh", view.pay[2].refresh.text)
+		assert.are.same({}, bounds.overflows(page))
+	end)
+
 	it("keeps to the page by the fit rule: the pay rule first, its words the boxes' tooltip", function()
 		local r = oneOn()
 		r.ns.OpenWagers()

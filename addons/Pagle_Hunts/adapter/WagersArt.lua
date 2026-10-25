@@ -79,6 +79,7 @@ ns.WAGER_INKS = {
 	casts = { face = "italic", size = 12, color = "legend", lineHeight = 14.4 },
 	payLabel = { face = "print", size = 11, color = "kicker", caps = true },
 	payAmount = { face = "handSemi", size = 16, color = "red" },
+	payRefresh = { face = "handSemi", size = 13, color = "red" },
 	payRule = { face = "italic", size = 10.5, color = "note", lineHeight = 13.13 },
 	sealWord = { face = "print", size = 9, color = "sealText", caps = true },
 	sealDate = { face = "gilt", size = 11.5, color = "sealText" },

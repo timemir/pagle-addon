@@ -654,7 +654,7 @@ describe("scripts/read-wtf.lua", function()
 		it(
 			"prints the projection, state, titles, celebrated set, pins and profile (LOG-R70, HNT-R89, HNT-R136, DATA-R72)",
 			function()
-				-- LOG-R70's stored values; HNT-R136: Hunts' rules version is 2 with Hunt Events (Tunables); DATA-R72,
+				-- LOG-R70's stored values; HNT-R136: Hunts' rules version is 4 with the Refreshes (Tunables); DATA-R72,
 				-- DATA-R98: the stored fingerprint is the catalogue's plus the Hunt list's and the event pool's (the
 				-- --eventlist fixture's). hunts.md › Projection state for the state.
 				-- HNT-R2, HNT-R3: at --now night_run, first_light, rack_hour and dawn_trout are current, grouper_by_moonlight
@@ -669,10 +669,10 @@ describe("scripts/read-wtf.lua", function()
 					"== Hunts (PagleHuntsDB)",
 					"records: no Hunts A1 entries in PagleLog",
 					"projection: lastSeq 6, logId 6c2f9e0a1b3d5e77, fingerprint"
-						.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 3",
+						.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 4",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (6 entries)",
-					"rulesVersion: Hunts', 3 (HNT-R136)",
+					"rulesVersion: Hunts', 4 (HNT-R136)",
 					"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
 					"fingerprint: the catalogue's plus the Hunt list's and the event pool's (DATA-R72, DATA-R98)",
 					"summary line: Hunts: 3 of 4 done · 2 titles, at 2026-10-14 17:46:40 UTC (--now) (HNT-R89)",
@@ -886,10 +886,10 @@ describe("scripts/read-wtf.lua", function()
 					"== Hunts (PagleHuntsDB)",
 					"records: no Hunts A1 entries in PagleLog",
 					"projection: lastSeq 6, logId 6c2f9e0a1b3d5e77, fingerprint 0123456789abcdef+0000000000000000,"
-						.. " rulesVersion 4",
+						.. " rulesVersion 3",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (6 entries)",
-					"rulesVersion: 4 DIFFERS from Hunts' 3, so Core rebuilds it at login (HNT-R138, LOG-R72)",
+					"rulesVersion: 3 DIFFERS from Hunts' 4, so Core rebuilds it at login (HNT-R138, LOG-R72)",
 					"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
 					"fingerprint: DIFFERS from the catalogue's plus the Hunt list's and the event pool's,"
 						.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, so Core rebuilds it at login"
@@ -1722,10 +1722,10 @@ describe("scripts/read-wtf.lua", function()
 						"records: 5 Hunts A1 entries in PagleLog: run 3, def 1, wager 1",
 						"records Hunts skips: 2 (seq 8, 9) (HNT-R150, HNT-R154)",
 						"projection: lastSeq 14, logId 9a4c2e6b8d1f3057, fingerprint"
-							.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 3",
+							.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 4",
 						"logId: matches PagleLog's",
 						"lastSeq: equals PagleLog's length (14 entries)",
-						"rulesVersion: Hunts', 3 (HNT-R136)",
+						"rulesVersion: Hunts', 4 (HNT-R136)",
 						"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
 						"fingerprint: the catalogue's plus the Hunt list's and the event pool's (DATA-R72, DATA-R98)",
 						"summary line: Hunts: 0 of 5 done · 1 title · 25 wagers settled, at 2026-11-25 09:46:40 UTC (--now)"
