@@ -460,7 +460,7 @@ describe("The Curio Shop's list", function()
 								"Toast style (2 of 26)",
 								"  core.toaststyle.page default",
 								"  core.toaststyle.ripple In use",
-								"  core.toaststyle.lanternglow 150", -- tier 1 now, so the 300 Coins cover it
+								"  core.toaststyle.lanternglow 250", -- tier 1 now, so the 300 Coins cover it
 							}, expansionLines("toaststyle", 300)),
 							joined({
 								"Sound set (1 of 27)",
