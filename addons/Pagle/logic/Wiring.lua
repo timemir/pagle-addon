@@ -740,7 +740,7 @@ function ns.PublishGoods(Pagle, wrap)
 		return wrap(ns.goods:GetGood(goodID))
 	end
 
-	--- The IDs of a slot's goods as the shop lists them (SHOP-R21): in registration order, another Module's in an open
+	--- The IDs of a slot's goods (SHOP-R21): in registration order, not the shop list's order by tier (SHOP-R27), another Module's in an open
 	--- Core slot only while that Module is On (SHOP-R35). Empty for a slot not registered. A fresh list each call.
 	---@param slot string
 	---@return string[]

@@ -12,10 +12,13 @@ local STORM_NAME = readFile("addons/Pagle/data/Lore.lua"):match(
 	'L%["good%.core%.toaststyle%.storm%.name"%] = "([^"]*)"'
 ) or "core.toaststyle.storm"
 
--- The Curio Shop expansion's toast styles and sound sets (SHOP-R25), each slot's in its order, by their lore names,
--- with their tiers' prices (SHOP-R22); the round two's Storm Front after the toast styles.
+-- Core's toast styles and sound sets for sale (SHOP-R25), each slot's in the order the list shows them after its
+-- default (SHOP-R27): cheapest tier first, goods of a tier in registration order, by their lore names, with their
+-- tiers' prices (SHOP-R22); the toast styles that aren't for sale after those that are.
 local EXPANSION = {
 	toaststyle = {
+		{ "Ripple", 250 },
+		{ "Lantern Glow", 250 },
 		{ "Ship's Log", 250 },
 		{ "Birch Scroll", 250 },
 		{ "Tidepool", 250 },
@@ -26,21 +29,20 @@ local EXPANSION = {
 		{ "Moonlit Vellum", 400 },
 		{ "Pressed Leaf", 400 },
 		{ "Driftglass Bottle", 400 },
-		{ "Rune-Plate", 900 },
 		{ "Illuminated Folio", 400 },
-		{ STORM_NAME, 3000 },
-		-- The round two's not for sale (SHOP-R29, SHOP-R50): their row's tag, not a price.
-		{ "Sonar Scope", nil, "Link the companion" },
-		{ "Prize Foil", nil, "From a crate" },
-		-- The round three's eight for sale (ANN-R84), after those; its ten race and faction styles are the Ledger's.
-		{ "Hive Chitin", 3000 },
+		{ "Rune-Plate", 900 },
 		{ "Ooze", 900 },
 		{ "Mechanical Angler", 900 },
 		{ "Widow's Web", 900 },
 		{ "Glacier Heart", 900 },
+		{ "Black Flag", 900 },
+		{ STORM_NAME, 3000 },
+		{ "Hive Chitin", 3000 },
 		{ "Magma Flow", 3000 },
 		{ "Arcane Sigil", 3000 },
-		{ "Black Flag", 900 },
+		-- The round two's not for sale (SHOP-R29, SHOP-R50): their row's tag, not a price.
+		{ "Sonar Scope", nil, "Link the companion" },
+		{ "Prize Foil", nil, "From a crate" },
 	},
 	soundset = {
 		{ "Rain on the Lake", 250 },
@@ -48,6 +50,7 @@ local EXPANSION = {
 		{ "Ship's Bell", 250 },
 		{ "Squeaky", 250 },
 		{ "Bubbleworks", 250 },
+		{ "Gilded", 400 },
 		{ "Kalimba Creek", 400 },
 		{ "Music Box", 400 },
 		{ "Glass Floats", 400 },
@@ -71,7 +74,7 @@ local EXPANSION = {
 	},
 }
 
--- `lines` with the expansion's rows of Core's slot `slot` ("toaststyle" or "soundset") after them, those priced at
+-- `lines` with the rows of Core's slot `slot` ("toaststyle" or "soundset") after them, those priced at
 -- most `most` (all by default, the ones not for sale with them), as the list shows them: "<name> | <price or tag>".
 ---@param lines string[]
 ---@param slot string
@@ -108,8 +111,8 @@ end
 -- the crest slot with Plain alone: its earned crests, the Ledger's two zone crests and Core's fish crests, aren't
 -- listed or counted (SHOP-R25).
 local CORE_UNBOUGHT = concat({
-	withExpansion({ "TOAST STYLE 1 of 26", "Torn Page | IN USE", "Ripple | 250", "Lantern Glow | 250" }, "toaststyle"),
-	withExpansion({ "SOUND SET 1 of 27", "Driftwood | IN USE", "Gilded | 400" }, "soundset"),
+	withExpansion({ "TOAST STYLE 1 of 26", "Torn Page | IN USE" }, "toaststyle"),
+	withExpansion({ "SOUND SET 1 of 27", "Driftwood | IN USE" }, "soundset"),
 	{ "CRESTS 1 of 1", "Plain | IN USE" },
 })
 
@@ -717,8 +720,8 @@ describe("The Curio Shop's list", function()
 		filters.canAfford:Click()
 		assert.are.same(
 			concat({
-				withExpansion({ "TOAST STYLE 1 of 26", "Ripple | 250", "Lantern Glow | 250" }, "toaststyle", 500),
-				withExpansion({ "SOUND SET 1 of 27", "Gilded | 400" }, "soundset", 500),
+				withExpansion({ "TOAST STYLE 1 of 26" }, "toaststyle", 500),
+				withExpansion({ "SOUND SET 1 of 27" }, "soundset", 500),
 				bindingsAtMost(500),
 				{ "NOTEBOOK COVER 1 of 2", "Velvet | 400" },
 			}),
