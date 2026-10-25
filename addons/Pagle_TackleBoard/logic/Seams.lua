@@ -106,7 +106,7 @@ local ns = select(2, ...)
 ---@field pagle table                                    -- Core: GetArea, GetZones, GetZoneCatches, GetItem, GetAngler, GetConditions
 
 ---@alias TackleGoalType "n"|"e"                  -- Notice, Expedition
----@alias TackleGoalKind "haul"|"variety"|"wanderer"|"quality"|"collector"|"lure"|"species"
+---@alias TackleGoalKind "haul"|"variety"|"wanderer"|"rarity"|"collector"|"lure"|"species"
 ---@alias TackleDayLog "lit"|"burned"|"out"|"unlit"
 ---@alias TackleApplyMode "live"|"replay"|"rebuild"
 
@@ -120,7 +120,7 @@ local ns = select(2, ...)
 ---@field tier integer               -- 1–3 for a Notice, 0 for an Expedition (TKB-R34)
 ---@field pay integer                -- Coins (TKB-R34)
 ---@field need integer               -- TKB-R34
----@field target? integer            -- zone, continent, minimum quality, or representative item
+---@field target? integer            -- zone, continent, minimum Variety rarity rank, or representative item
 ---@field items? integer[]           -- Variety Expedition: representative items, ascending
 
 --- A goal on the board (tackle-board.md › Projection): its definition, from its record, and its progress.

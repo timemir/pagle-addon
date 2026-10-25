@@ -53,12 +53,21 @@ local function goal(fields)
 	return made
 end
 
--- A caught Cast record (LOG-R42) after the goal, in `zone`, on board day 0, with one Catch per item ID of `catches`.
+-- A Catch of `itemID` whose decoded Cast item carries a Variety of `rarity` (VAR-R4), for `cast`'s `catches`.
+---@param itemID integer
+---@param rarity "common"|"uncommon"|"rare"|"epic"
+---@return { [1]: integer, rarity: string }
+local function varietyOf(itemID, rarity)
+	return { itemID, rarity = rarity }
+end
+
+-- A caught Cast record (LOG-R42) after the goal, in `zone`, on board day 0, with one Catch per entry of `catches`: an
+-- item ID, or a varietyOf(itemID, rarity) whose item carries that Variety (VAR-R4).
 -- Every Catch is a stack of 3, to show quantity never matters (TKB-R40). `options` sets `seq`, `outcome`, `day` and `lure`. Its board day
 -- isn't a field of a Cast: the runner hands it over as the projection does, its day once advanced to the Cast.
 local seq = GOAL_SEQ
 ---@param zone integer
----@param catches integer[]
+---@param catches (integer|{ [1]: integer, rarity: string })[]
 ---@param options { seq: integer?, outcome: string?, day: integer?, lure: integer? }?
 ---@return table
 local function cast(zone, catches, options)
@@ -66,8 +75,12 @@ local function cast(zone, catches, options)
 	seq = seq + 1
 	local id = ("Player-4618-0A1B2C3D-%d-0"):format(1791732000 + seq)
 	local items = {}
-	for n, itemID in ipairs(catches) do
+	for n, catch in ipairs(catches) do
+		local itemID = type(catch) == "table" and catch[1] or catch
 		items[n] = { n = n, itemID = itemID, quantity = 3, catchId = id .. ":" .. n }
+		if type(catch) == "table" then
+			items[n].variety = { id = itemID .. ".fixture", index = 1, rarity = catch.rarity }
+		end
 	end
 	return {
 		seq = options.seq or seq,
@@ -258,25 +271,97 @@ describe("Goal progress", function()
 		end)
 	end)
 
-	describe("quality", function()
-		it("counts +1 per Catch of the target quality or better, any category, any zone (TKB-R42)", function()
-			local quality = goal({ kind = "quality", need = 8, target = 2 })
+	describe("rarity", function()
+		it("counts +1 per Catch whose Variety is of the target rarity or rarer, any zone (TKB-R42)", function()
+			local rarity = goal({ kind = "rarity", need = 8, target = 2 })
 
-			local progress, counted = run(quality, {
-				cast(DUROTAR, { EEL, EEL, SMALLFISH, CONTAINER_B }),
-				cast(0, { LEGEND, JUNK_A, TREASURE_B }),
+			local progress, counted = run(rarity, {
+				cast(DUROTAR, {
+					varietyOf(SMALLFISH, "common"),
+					varietyOf(SMALLFISH, "uncommon"),
+					varietyOf(MACKEREL, "rare"),
+					varietyOf(CATFISH, "epic"),
+				}),
+				cast(0, { varietyOf(SMALLFISH, "uncommon"), varietyOf(SMALLFISH, "common") }),
 			})
 
-			assert.are.equal(5, progress)
-			assert.are.same({ true, true, false, true, true, false, true }, counted)
+			assert.are.equal(4, progress)
+			assert.are.same({ false, true, true, true, true, false }, counted)
 		end)
 
-		it("at rare counts quality 3 or better only, never an Uncharted item or item 0 (TKB-R42, TKB-R43)", function()
-			local quality = goal({ type = "e", kind = "quality", tier = 0, need = 3, target = 3 })
+		it("at rare counts rare and epic Varieties only (TKB-R42)", function()
+			local rarity = goal({ type = "e", kind = "rarity", tier = 0, need = 8, target = 3 })
 
-			local progress = run(quality, { cast(DARKSHORE, { EEL, TREASURE_B, LEGEND, UNCHARTED, 0 }) })
+			local progress, counted = run(rarity, {
+				cast(DARKSHORE, {
+					varietyOf(EEL, "common"),
+					varietyOf(EEL, "uncommon"),
+					varietyOf(EEL, "rare"),
+					varietyOf(EEL, "epic"),
+				}),
+			})
 
 			assert.are.equal(2, progress)
+			assert.are.same({ false, false, true, true }, counted)
+		end)
+
+		it("counts the Variety's rarity, never the item's quality (TKB-R42)", function()
+			local rarity = goal({ kind = "rarity", need = 8, target = 2 })
+
+			-- EEL, CONTAINER_B, TREASURE_B and LEGEND have an item quality of 2 or more but no Variety; SMALLFISH
+			-- has quality 1 and an uncommon Variety.
+			local progress, counted = run(rarity, {
+				cast(DUROTAR, { EEL, CONTAINER_B, TREASURE_B, LEGEND, varietyOf(SMALLFISH, "uncommon") }),
+			})
+
+			assert.are.equal(1, progress)
+			assert.are.same({ false, false, false, false, true }, counted)
+		end)
+
+		it(
+			"never counts an Uncharted item, item 0 or a Catch with no Variety, junk included (TKB-R42, TKB-R43)",
+			function()
+				local rarity = goal({ kind = "rarity", need = 8, target = 2 })
+
+				local progress = run(rarity, { cast(DARKSHORE, { UNCHARTED, 0, JUNK_A, SMALLFISH }) })
+
+				assert.are.equal(0, progress)
+			end
+		)
+
+		it("never counts Noise, whatever Variety its Catch carries (TKB-R42)", function()
+			local rarity = goal({ kind = "rarity", need = 8, target = 2 })
+
+			local progress =
+				run(rarity, { cast(DUROTAR, { varietyOf(MANA_POTION, "epic"), varietyOf(NOISY_JUNK, "rare") }) })
+
+			assert.are.equal(0, progress)
+		end)
+
+		it("ignores a got-away Cast and a Cast before the goal (TKB-R40)", function()
+			local rarity = goal({ kind = "rarity", need = 8, target = 2 })
+
+			local progress = run(rarity, {
+				cast(DUROTAR, { varietyOf(SMALLFISH, "rare") }, { outcome = "gotAway" }),
+				cast(DUROTAR, { varietyOf(SMALLFISH, "rare") }, { seq = GOAL_SEQ }),
+			})
+
+			assert.are.equal(0, progress)
+		end)
+	end)
+
+	describe("a goal of a kind the board no longer knows (a dev log's old `quality` goal)", function()
+		it("counts nothing and never completes, without an error", function()
+			local old = goal({ kind = "quality", need = 3, target = 2 })
+
+			local progress, counted
+			assert.has_no_error(function()
+				progress, counted = run(old, { cast(DUROTAR, { EEL, varietyOf(SMALLFISH, "epic"), CONTAINER_B }) })
+			end)
+
+			assert.are.equal(0, progress)
+			assert.are.same({ false, false, false }, counted)
+			assert.is_false(ns.IsComplete(old, Pagle))
 		end)
 	end)
 
@@ -413,7 +498,7 @@ describe("Goal progress", function()
 		it("needs the record's need, for every goal but a Variety Expedition (TKB-R34, TKB-R44)", function()
 			assert.are.equal(30, ns.GoalNeed(goal({ kind = "haul", need = 30, target = DUROTAR }), Pagle))
 			assert.are.equal(3, ns.GoalNeed(goal({ kind = "variety", need = 3, target = DUROTAR }), Pagle))
-			assert.are.equal(3, ns.GoalNeed(goal({ type = "e", kind = "quality", need = 3, target = 3 }), Pagle))
+			assert.are.equal(8, ns.GoalNeed(goal({ type = "e", kind = "rarity", need = 8, target = 3 }), Pagle))
 		end)
 	end)
 end)
@@ -566,7 +651,7 @@ describe("Goal progress over a changed catalogue", function()
 		it("a goal whose target still resolves, or that has none, isn't stranded (TKB-R44)", function()
 			local goals = {
 				goal({ kind = "wanderer", tier = 3, need = 3 }),
-				goal({ kind = "quality", need = 3, target = 2 }),
+				goal({ kind = "rarity", need = 3, target = 2 }),
 				goal({ kind = "collector", tier = 2, need = 2 }),
 				goal({ type = "e", kind = "collector", tier = 0, need = 3 }),
 				goal({ kind = "lure", need = 15 }),
@@ -584,11 +669,9 @@ describe("Goal progress over a changed catalogue", function()
 		end)
 	end)
 
-	describe("where Noise has a quality, a fish has none and a release classifies the Uncharted item", function()
+	describe("where a release classifies the Uncharted item", function()
 		local loaded = board.load(nil, {
 			catalogue = changedCatalogue(function(catalogue)
-				catalogue.items[MANA_POTION].quality = 2
-				catalogue.items[EEL].quality = nil
 				catalogue.items[UNCHARTED] = {
 					category = "fish",
 					species = MIGHTFISH,
@@ -603,24 +686,16 @@ describe("Goal progress over a changed catalogue", function()
 		local ns, Pagle = loaded.ns, loaded.env.Pagle
 		local run = runner(ns, Pagle)
 
-		it("a Quality goal counts neither the Noise nor the item without a quality (TKB-R42)", function()
-			local quality = goal({ kind = "quality", need = 3, target = 2 })
-
-			local _, counted = run(quality, { cast(DUROTAR, { MANA_POTION, EEL, CONTAINER_B }) })
-
-			assert.are.same({ false, false, true }, counted)
-		end)
-
 		it("the classified item now counts like any other Catch (TKB-R196)", function()
 			local species = goal({ kind = "species", need = 5, target = MIGHTFISH })
-			local quality = goal({ kind = "quality", need = 3, target = 3 })
+			local rarity = goal({ kind = "rarity", need = 3, target = 3 })
 			local variety = darkshoreVariety()
 
 			run(species, { cast(DUROTAR, { UNCHARTED }) })
-			run(quality, { cast(DUROTAR, { UNCHARTED }) })
+			run(rarity, { cast(DUROTAR, { varietyOf(UNCHARTED, "rare") }) })
 			run(variety, { cast(DARKSHORE, { UNCHARTED }) })
 
-			assert.are.same({ 1, 1, 1 }, { species.progress, quality.progress, variety.progress })
+			assert.are.same({ 1, 1, 1 }, { species.progress, rarity.progress, variety.progress })
 		end)
 	end)
 end)

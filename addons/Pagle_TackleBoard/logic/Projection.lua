@@ -14,8 +14,9 @@ local ns = select(2, ...)
 --- The Tackle Board's rules version (Tunables, TKB-R81): rises whenever a progress, Campfire, Fly Box or
 --- pattern-order rule changes. Generation changes don't need it (TKB-R22). 2 since completions pay Activity XP
 --- (TKB-R65), so a version-1 projection rebuilds and its `xp` fills in from the log; 3 since the `size` goal kind was
---- dropped (ADR 0014): a beta log's `size` goals are skipped on the rebuild (TKB-R80).
-ns.TKB_RULES_VERSION = 3
+--- dropped (ADR 0014): a beta log's `size` goals are skipped on the rebuild (TKB-R80); 4 since the `quality` goal kind
+--- became `rarity`, counting Variety rarity: a dev log's `quality` goals are skipped on the rebuild (TKB-R80).
+ns.TKB_RULES_VERSION = 4
 
 -- Tunables (TKB-R20). The caps are the pin counts (ns.NOTICE_PINS, ns.EXPEDITION_PINS).
 --- Notices owed at each daily reset, up to the cap (TKB-R20, tackle-board.md › Tunables).

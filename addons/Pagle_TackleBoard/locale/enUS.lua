@@ -38,7 +38,10 @@ ns.L = {
 			haul = { one = "{n} Catch in {zone}", other = "{n} Catches in {zone}" },
 			variety = { one = "{n} Species in {zone}", other = "{n} different Species in {zone}" },
 			wanderer = { one = "Catches in {n} zone today", other = "Catches in {n} zones today" },
-			quality = { one = "A {quality}-or-better Catch", other = "{n} {quality}-or-better Catches" },
+			rarity = {
+				one = "A Catch of {rarity} variety or better",
+				other = "{n} Catches of {rarity} variety or better",
+			},
 			collector = "A junk item and a container today",
 			lure = { one = "A Catch with a lure on", other = "{n} Catches with a lure on" },
 			species = "{n} {species}",
@@ -47,21 +50,24 @@ ns.L = {
 			haul = { one = "{n} Catch in {zone}", other = "{n} Catches in {zone}" },
 			variety = "Every Species of {zone}",
 			wanderer = { one = "Catches in {n} zone of {continent}", other = "Catches in {n} zones of {continent}" },
-			quality = { one = "A {quality}-or-better Catch", other = "{n} {quality}-or-better Catches" },
+			rarity = {
+				one = "A Catch of {rarity} variety or better",
+				other = "{n} Catches of {rarity} variety or better",
+			},
 			collector = {
 				one = "A Sub-collection item you don't have",
 				other = "{n} Sub-collection items you don't have",
 			},
 		},
 	},
-	-- A quality goal's minimum quality, by item quality (TKB-R36).
-	QUALITY_NAMES = { [2] = "uncommon", [3] = "rare" },
+	-- A rarity goal's minimum Variety rarity rank (VAR-R2), with its article: "an uncommon variety" (TKB-R36).
+	RARITY_NAMES = { [2] = "an uncommon", [3] = "a rare" },
 	-- Each kind's label on a slip, in small caps there (TKB-R102; M7 graph, open question 8).
 	KINDS = {
 		haul = "Haul",
 		variety = "Variety",
 		wanderer = "Wanderer",
-		quality = "Quality",
+		rarity = "Rarity",
 		collector = "Collector",
 		lure = "Lure",
 		species = "Species",

@@ -24,11 +24,11 @@ local D0 = board.DAY0 -- Wednesday 7 October 15:00 UTC: board day 0, the start r
 local DUROTAR, BARRENS = 14, 17
 
 -- Goal payloads (Data): three Notices and an Expedition, then spares.
-local N1, N2, N3 = "n;haul;2;15;30;14", "n;quality;1;10;3;2", "n;lure;3;20;25;"
-local N4, N5, N6 = "n;quality;2;15;5;2", "n;haul;1;10;20;17", "n;species;2;15;10;6358"
+local N1, N2, N3 = "n;haul;2;15;30;14", "n;rarity;1;10;3;2", "n;lure;3;20;25;"
+local N4, N5, N6 = "n;rarity;2;15;5;2", "n;haul;1;10;20;17", "n;species;2;15;10;6358"
 local N7, N8 = "n;wanderer;3;20;3;", "n;collector;2;15;2;"
 local N3_DONE = "n;haul;3;20;1;14" -- a tier-3 Notice one Catch in Durotar completes
-local E1, E2 = "e;quality;0;60;3;3", "e;haul;0;60;150;17"
+local E1, E2 = "e;rarity;0;60;8;3", "e;haul;0;60;150;17"
 
 -- The board after day 0's start: three Notices and an Expedition issued.
 local STARTED = {
@@ -331,7 +331,7 @@ describe("the Tackle Board's projection", function()
 			local state = ns.State()
 			local new = state.goals[idAt(D0 + 7200)]
 			assert.is_nil(state.goals[idAt(D0 + 3603)])
-			assert.are.same({ true, 2, 6, "quality" }, { new.reposted, new.pin, new.seq, new.kind })
+			assert.are.same({ true, 2, 6, "rarity" }, { new.reposted, new.pin, new.seq, new.kind })
 			assert.are.equal(idAt(D0 + 7200), state.pins.notices[2])
 			assert.are.same({ notices = 0, expeditions = 0 }, state.owed)
 		end)
@@ -391,6 +391,34 @@ describe("the Tackle Board's projection", function()
 			})))
 
 			assert.are.same(first, ns.State())
+		end)
+
+		it("skip a dev log's old quality goals, whose Catches then count for nothing, without an error", function()
+			-- the kind that counted item quality, renamed rarity when it counted Variety rarity instead (#401)
+			local ns
+			assert.has_no_error(function()
+				ns = built(withHistory({
+					start(D0 + 3600),
+					issue(D0 + 3601, "e;quality;0;60;3;3"),
+					issue(D0 + 3602, "n;quality;1;10;3;2"),
+					issue(D0 + 3603, N1),
+					issue(D0 + 3604, N2),
+					issue(D0 + 3605, N3),
+					reroll(D0 + 7200, idAt(D0 + 3603), "n;quality;2;15;5;2"),
+					cast(D0 + 7300, DUROTAR, { 6358, 13757, 92032 }),
+				}))
+			end)
+
+			local state = ns.State()
+			assert.are.same({ notices = 0, expeditions = 1 }, state.owed) -- the Expedition issue stays owed; N1-N3 took the Notices
+			assert.is_nil(state.goals[idAt(D0 + 3601)])
+			assert.is_nil(state.goals[idAt(D0 + 3602)])
+			assert.is_nil(state.goals[idAt(D0 + 7200)])
+			assert.are.same(
+				{ "haul", "rarity" },
+				{ state.goals[idAt(D0 + 3603)].kind, state.goals[idAt(D0 + 3604)].kind }
+			)
+			assert.are.same({ 3, 0 }, { state.goals[idAt(D0 + 3603)].progress, state.goals[idAt(D0 + 3604)].progress })
 		end)
 
 		it(
@@ -486,7 +514,7 @@ describe("the Tackle Board's projection", function()
 			local ns = nextLogin(log, global)
 
 			assert.are.equal(999, ns.State().coins)
-			assert.are.equal(3002, global.board.rulesVersion) -- TKB_RULES_VERSION 3 (Tunables) × 1000 + SESSION_RULES_VERSION
+			assert.are.equal(4002, global.board.rulesVersion) -- TKB_RULES_VERSION 4 (Tunables) × 1000 + SESSION_RULES_VERSION
 		end)
 
 		it("rebuilds to the same state when TKB_RULES_VERSION changes", function()
@@ -494,20 +522,17 @@ describe("the Tackle Board's projection", function()
 
 			local ns = nextLogin(log, global, {
 				prepare = function(loaded)
-					loaded.ns.TKB_RULES_VERSION = 4
+					loaded.ns.TKB_RULES_VERSION = 5
 				end,
 			})
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(4002, global.board.rulesVersion)
+			assert.are.equal(5002, global.board.rulesVersion)
 		end)
 
-		it(
-			"is at rules version 3, since the size goal kind was dropped (TKB-R81, TKB-R80, ADR 0014, Tunables)",
-			function()
-				assert.are.equal(3, board.load().ns.TKB_RULES_VERSION)
-			end
-		)
+		it("is at rules version 4, since the quality goal kind became rarity (TKB-R81, TKB-R80, Tunables)", function()
+			assert.are.equal(4, board.load().ns.TKB_RULES_VERSION)
+		end)
 
 		it(
 			"rebuilds a stored version-1 projection, which had no Activity XP, filling it in from the log (TKB-R81)",
@@ -525,7 +550,7 @@ describe("the Tackle Board's projection", function()
 
 				assert.are.equal(200, first.xp)
 				assert.are.same(first, again.State())
-				assert.are.equal(3002, global.board.rulesVersion)
+				assert.are.equal(4002, global.board.rulesVersion)
 			end
 		)
 
@@ -537,7 +562,7 @@ describe("the Tackle Board's projection", function()
 			local ns = nextLogin(log, global, { sessionRules = sessionRules })
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(3000 + sessionRules, global.board.rulesVersion)
+			assert.are.equal(4000 + sessionRules, global.board.rulesVersion)
 		end)
 
 		it(

@@ -184,7 +184,7 @@ local SAMPLE = {
 	"12/30",
 	"Elwynn Forest",
 	" · here",
-	"5 uncommon-or-better Catches",
+	"5 Catches of an uncommon variety or better",
 	"2/5",
 	"anywhere",
 }
