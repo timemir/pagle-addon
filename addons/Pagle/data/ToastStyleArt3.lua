@@ -3609,7 +3609,7 @@ ns.TOAST_STYLE_ART2["ledger.toaststyle.blueprint"] = {
 						origin = { x = 414, y = 0 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "over",
@@ -3629,7 +3629,7 @@ ns.TOAST_STYLE_ART2["ledger.toaststyle.blueprint"] = {
 						origin = { x = 437, y = -5 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, -360, 1, 1 },
 						},
 					},
 					host = "over",
@@ -3725,7 +3725,7 @@ ns.TOAST_STYLE_ART2["ledger.toaststyle.blueprint"] = {
 						origin = { x = 474, y = 0 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "over",
@@ -3745,7 +3745,7 @@ ns.TOAST_STYLE_ART2["ledger.toaststyle.blueprint"] = {
 						origin = { x = 497, y = -5 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, -360, 1, 1 },
 						},
 					},
 					host = "over",
@@ -3826,7 +3826,7 @@ ns.TOAST_STYLE_ART2["ledger.toaststyle.blueprint"] = {
 						origin = { x = 361, y = 1 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "over",
@@ -4817,7 +4817,7 @@ ns.TOAST_STYLE_ART2["ledger.toaststyle.totem"] = {
 						origin = { x = 482, y = 22 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "under",
@@ -6313,7 +6313,7 @@ ns.TOAST_STYLE_ART2["core.toaststyle.arcane"] = {
 						origin = { x = 52, y = 47 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "under",
@@ -6351,7 +6351,7 @@ ns.TOAST_STYLE_ART2["core.toaststyle.arcane"] = {
 						origin = { x = 52, y = 47 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "over",
@@ -6408,7 +6408,7 @@ ns.TOAST_STYLE_ART2["core.toaststyle.arcane"] = {
 						origin = { x = 56, y = 51 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "under",
@@ -6467,7 +6467,7 @@ ns.TOAST_STYLE_ART2["core.toaststyle.arcane"] = {
 						origin = { x = 56, y = 51 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "over",
@@ -6530,7 +6530,7 @@ ns.TOAST_STYLE_ART2["core.toaststyle.arcane"] = {
 						origin = { x = 40, y = 37 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "under",
@@ -6568,7 +6568,7 @@ ns.TOAST_STYLE_ART2["core.toaststyle.arcane"] = {
 						origin = { x = 40, y = 37 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "over",
@@ -6606,7 +6606,7 @@ ns.TOAST_STYLE_ART2["core.toaststyle.arcane"] = {
 						origin = { x = 21.5, y = 20.5 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "under",

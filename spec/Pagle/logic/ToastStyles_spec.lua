@@ -818,3 +818,85 @@ describe("the round three's composed toast styles", function()
 		end
 	)
 end)
+
+-- A looping transform whose keys are all the same moves nothing: the layer is declared as moving and shows still. The
+-- generator once folded a full turn (rotate(360deg)) to 0, so every spin ran 0 to 0 (#409). Keyed "<style> <keyframes>",
+-- the layers whose keys are meant to be equal, each with its reason; none yet.
+local STILL_ON_PURPOSE = {}
+
+describe("the composed toast styles' looping transforms", function()
+	-- Every motion of every rung's layers and stamp, as { name = "<style> <rung> <layer> <keyframes>", motion }.
+	local function motions()
+		local out = {}
+		for id, art in pairs(ns.TOAST_STYLE_ART2) do
+			for rungName, rung in pairs(art.rungs) do
+				local layers = { unpack(rung.layers) }
+				layers[#layers + 1] = rung.stamp
+				for _, layer in ipairs(layers) do
+					if layer.motion then
+						out[#out + 1] = {
+							name = ("%s %s %s %s"):format(id, rungName, layer.name, layer.motion.keyframes),
+							style = id .. " " .. layer.motion.keyframes,
+							motion = layer.motion,
+						}
+					end
+				end
+			end
+		end
+		return out
+	end
+
+	local function allEqual(keys)
+		for i = 2, #keys do
+			for column = 2, #keys[1] do
+				if keys[i][column] ~= keys[1][column] then
+					return false
+				end
+			end
+		end
+		return true
+	end
+
+	it("move: no looping layer has a transform whose keys are all equal, bar those meant to (#409)", function()
+		local still = {}
+		for _, entry in ipairs(motions()) do
+			local motion = entry.motion
+			if
+				motion.loop
+				and motion.transform
+				and allEqual(motion.transform)
+				and not STILL_ON_PURPOSE[entry.style]
+			then
+				still[#still + 1] = entry.name
+			end
+		end
+		table.sort(still)
+		assert.are.same({}, still)
+	end)
+
+	it(
+		"turn a full circle where the style says it turns: its rotate key runs 0 to 360, or to -360 turning back (#409)",
+		function()
+			local function rotations(id, rung, name)
+				local keys = {}
+				for _, layer in ipairs(ns.TOAST_STYLE_ART2[id].rungs[rung].layers) do
+					if layer.name == name then
+						for i, key in ipairs(layer.motion.transform) do
+							keys[i] = key[4]
+						end
+					end
+				end
+				return keys
+			end
+
+			assert.are.same({ 0, 360 }, rotations("core.toaststyle.arcane", "toast", "back"))
+			assert.are.same({ 0, 360 }, rotations("core.toaststyle.arcane", "toast", "fx2"))
+			assert.are.same({ 0, 360 }, rotations("core.toaststyle.sonar", "toast", "fx1"))
+			assert.are.same({ 0, 360 }, rotations("ledger.toaststyle.blueprint", "toast", "fx1"))
+			assert.are.same({ 0, -360 }, rotations("ledger.toaststyle.blueprint", "toast", "fx2"))
+			assert.are.same({ 0, 360 }, rotations("ledger.toaststyle.glass", "high", "back"))
+			assert.are.same({ 0, 360 }, rotations("ledger.toaststyle.ice", "high", "after"))
+			assert.are.same({ 0, 360 }, rotations("ledger.toaststyle.totem", "high", "back"))
+		end
+	)
+end)
