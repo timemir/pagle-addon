@@ -197,7 +197,7 @@ Every Core and Module file answers each of these with rules: a Module disabled a
 ### Status and Pending
 
 - **Done** means the file has no `Pending:` markers, every term is in `CONTEXT.md`, every number is in Tunables, and a **dry-run split** came back clean: a fresh agent with only the file, `CONTEXT.md` and the ADRs split it into build tickets and had nothing left to guess.
-- **Draft** means a `Pending: <ticket>` marker points at a ticket that is still open. Today every file is Done and there are no `Pending:` markers.
+- **Draft** means a `Pending: <ticket>` marker points at a ticket that is still open. Today every file is Done but `core/wallet-and-shop.md`, whose two `Pending:` markers wait on the price redesign's six tiers and the crate tiers' names.
 
 ### Words that mean one thing everywhere
 
