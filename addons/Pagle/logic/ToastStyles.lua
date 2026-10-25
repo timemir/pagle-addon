@@ -792,6 +792,7 @@ end
 ---@field ink number[]
 ---@field ring number[]?
 ---@field gleam boolean
+---@field backing number[]  -- the opaque disc behind its art in the medallion (ns.ArtBacking)
 
 --- How a catch Nod draws the variety its line names (VAR-R26): the name and the line either side of it.
 ---@class PagleNodVarietyLook: PagleVarietyLook
@@ -802,6 +803,22 @@ end
 -- The rarities whose toast or catch Nod gleams as it enters (VAR-R26), and the one whose ring stays the style's.
 local GLEAMS = { rare = true, epic = true }
 local PLAIN_RING = "common"
+
+-- The disc behind a variety's art (#424): its art is transparent round the fish, so the medallion's face is deep
+-- water, as the fish swims in, tinted a little by the rarity's colour.
+local BACKING, BACKING_TINT = { 0.07, 0.12, 0.18 }, 0.15
+
+--- The opaque colour behind a medallion's art, `{ r, g, b }`: deep water, tinted by `color` (a rarity's) a little, or
+--- plain without one.
+---@param color number[]?
+---@return number[]
+function ns.ArtBacking(color)
+	local out = {}
+	for i = 1, 3 do
+		out[i] = color and BACKING[i] * (1 - BACKING_TINT) + color[i] * BACKING_TINT or BACKING[i]
+	end
+	return out
+end
 
 -- The look of a variety of rarity `key`, or nil for a rarity Core doesn't know.
 ---@param key string
@@ -814,6 +831,7 @@ local function rarityLook(key)
 				ink = rarity.ink,
 				ring = rarity.key ~= PLAIN_RING and rarity.color or nil,
 				gleam = GLEAMS[rarity.key] == true,
+				backing = ns.ArtBacking(rarity.color),
 			}
 		end
 	end

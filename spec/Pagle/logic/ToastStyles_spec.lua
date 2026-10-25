@@ -515,6 +515,21 @@ describe("a toast's variety (#424, VAR-R25, VAR-R26)", function()
 		end
 	)
 
+	it("backs the art with deep water, tinted a little by the rarity's colour (#424)", function()
+		-- 15% of the colour over the water (0.07, 0.12, 0.18): Common's white lifts it, Epic's purple reddens it.
+		assert.are.same({ 0.07, 0.12, 0.18 }, ns.ArtBacking())
+		local white = ns.ArtBacking({ 1, 1, 1 })
+		assert.are.same({ 0.2095, 0.252, 0.303 }, {
+			math.floor(white[1] * 1e4 + 0.5) / 1e4,
+			math.floor(white[2] * 1e4 + 0.5) / 1e4,
+			math.floor(white[3] * 1e4 + 0.5) / 1e4,
+		})
+		for _, rarity in ipairs(ns.VARIETY_RARITIES) do
+			local found = look(record(), variety("toast.low", "newVariety", 120, rarity.key)) --[[@as PagleToastVarietyLook]]
+			assert.are.same(ns.ArtBacking(rarity.color), found.backing)
+		end
+	end)
+
 	it("writes only the name for a variety's own toast, which carries no stamp for itself", function()
 		local own = variety("toast", "rareVariety", 105, "rare")
 

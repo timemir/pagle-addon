@@ -71,6 +71,7 @@ local TICKS = 20
 ---@field record PagleStamp
 ---@field slammed boolean? its New record stamp has slammed down
 ---@field trackWidth number
+---@field stampScale number? the New record stamp's scale when the toast's stamp row is squeezed (1: none)
 ---@field style PagleToastStyle
 ---@field ruler { old: number, new: number, unit: string, label: string }
 ---@field elapsed number
@@ -347,18 +348,37 @@ local function newRuler(parent, compact)
 	return ruler
 end
 
--- Lays a full ruler `width` wide: the label at the left, room for the margin at the right, the track between.
+-- Room a full ruler keeps at its right for the margin, and how far along its track the landed number stands: the track
+-- is 1.1 times the new record long (logic/Announcements.lua's ns.RulerAt).
+local RULER_TAIL, RULER_LANDED = 74, 1 / 1.1
+-- How far the ruler's label (a size record's band) stands from the toast's bottom edge.
+local LABEL_PAD = 8
+
+-- How wide a ruled toast's name line may be: it ends where the landed number stands on a full ruler `rulerWidth` wide,
+-- so the number, the margin and the band never sit under the words.
+---@param rulerWidth number
+---@return number
+local function rulerNameLimit(rulerWidth)
+	return math.floor(math.max(60, rulerWidth - RULER_TAIL) * RULER_LANDED) - 6
+end
+
+-- Lays a full ruler `width` wide: the track from its left, room for the margin at the right, and its label (a size
+-- record's band, "Tiddler") in the toast's bottom left corner, `x` from the left of `body`, the toast's body, under the
+-- ruler's row rather than beside the track.
 ---@param ruler PagleRulerView
 ---@param width number
 ---@param label string
-local function layRuler(ruler, width, label)
+---@param body Frame
+---@param x number
+local function layRuler(ruler, width, label, body, x)
 	ruler:SetSize(width, 28)
 	ruler.label:SetText(ns.Capitals(label))
-	local left = ruler.label:GetStringWidth() + 10
-	local trackWidth = math.max(60, width - left - 74)
+	ruler.label:ClearAllPoints()
+	ruler.label:SetPoint("BOTTOMLEFT", body, "BOTTOMLEFT", x, LABEL_PAD)
+	local trackWidth = math.max(60, width - RULER_TAIL)
 	ruler.trackWidth = trackWidth
 	ruler.bar:ClearAllPoints()
-	ruler.bar:SetPoint("TOPLEFT", ruler, "TOPLEFT", left, -16)
+	ruler.bar:SetPoint("TOPLEFT", ruler, "TOPLEFT", 0, -16)
 	ruler.bar:SetSize(trackWidth, 10)
 	for i, tick in ipairs(ruler.ticks) do
 		tick:ClearAllPoints()
@@ -384,7 +404,7 @@ local function drawRuler(ruler, at)
 	ruler.margin:SetText(at.margin)
 	ruler.margin:SetShown(at.done)
 	if at.stamped and not ruler.compact then
-		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, ruler.style)
+		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, ruler.style, nil, ruler.stampScale)
 		if not ruler.slammed then
 			ruler.slammed = true
 			ns.Animate(ruler.record, { slam(ruler.record, 0) })
@@ -607,10 +627,11 @@ end
 ---@param ring PagleBezelRing
 ---@param headline PagleRaisedMoment
 ---@param art PagleMomentArt?
-local function setMedallion(bezel, size, ring, headline, art)
+---@param backing number[]? the disc behind art (ns.ArtBacking): its look's, else the plain one
+local function setMedallion(bezel, size, ring, headline, art, backing)
 	art = art or headline.art
 	if art then
-		ns.SetBezel(bezel, size, ring, art.texture, { ns.HeadCrop(art) })
+		ns.SetBezel(bezel, size, ring, art.texture, { ns.HeadCrop(art) }, backing or ns.ArtBacking())
 	else
 		ns.SetBezel(bezel, size, ring, textureOf(headline.icon))
 	end
@@ -632,12 +653,14 @@ end
 ---@param headline PagleRaisedMoment?
 ---@param icon (integer|string)?
 ---@param art PagleMomentArt?
-local function setComposedMedallion(bezel, size, headline, icon, art)
+---@param backing number[]? the disc behind art (ns.ArtBacking): its look's, else the plain one
+local function setComposedMedallion(bezel, size, headline, icon, art, backing)
 	bezel:SetSize(size, size)
 	bezel.Ring:Hide()
 	bezel.Gloss:Hide()
 	bezel.Icon:SetSize(size, size)
 	art = art or headline and headline.art
+	ns.SetBezelBacking(bezel, size, art and (backing or ns.ArtBacking()) or nil)
 	if art then
 		bezel.Icon:SetTexture(art.texture)
 		bezel.Icon:SetTexCoord(ns.HeadCrop(art))
@@ -677,7 +700,7 @@ end
 -- Writes a toast's name line when the toast announces a variety on it (VAR-R26, ANN-R80): the line's first half (the
 -- fish's name) in the style's ink, as writeHeadline wrote it, then a gem in the rarity's colour rimmed in its ink and
 -- the variety's name in its ink (the rarity replaces the style's ink there alone). The name is held to part of the
--- line, then the first half shrinks to what is left. Hides the gem and name for a toast with no such line. Returns the
+-- line, then the fish's name is cut short with "..." to what is left. Hides the gem and name for a toast with no such line. Returns the
 -- line's width, nil for none.
 ---@param frame PagleAnnouncementFrame
 ---@param look PagleToastVarietyLook?
@@ -697,21 +720,89 @@ local function writeToastVariety(frame, look, font, width)
 	name:SetTextColor(look.ink[1], look.ink[2], look.ink[3])
 	name:SetText(look.name)
 	shrink(name, font, math.floor(width * TOAST_NAME_SHARE))
+	-- The gem grows with the name's font from the Nod's (its 10 units go with NodName's size).
+	local k = fontSize(font) / ns.ArtFontSize("NodName")
+	gem:SetSize(GEM_BOX * k, GEM_BOX * k)
+	gem.rim:SetSize(GEM_RIM * k, GEM_RIM * k)
+	gem.fill:SetSize(GEM_FILL * k, GEM_FILL * k)
 	local lead = look.before ~= "" and GEM_GAP or 0
-	local rest = lead + GEM_BOX + GEM_NAME_GAP + name:GetWidth()
+	local rest = lead + GEM_BOX * k + GEM_NAME_GAP + name:GetWidth()
 	setFont(text, font)
 	text:SetText(look.before)
-	shrink(text, font, math.max(width - rest, 60))
+	-- The fish's name gives way first, cut short with "..." at its size; the variety's name stays whole.
+	fit(text, math.max(width - rest, 40))
 	text:Show()
 	gem.rim:SetColorTexture(look.ink[1], look.ink[2], look.ink[3], 1)
 	gem.fill:SetColorTexture(look.color[1], look.color[2], look.color[3], 1)
 	gem:ClearAllPoints()
 	gem:SetPoint("LEFT", text, "RIGHT", lead, 0)
 	name:ClearAllPoints()
-	name:SetPoint("LEFT", gem, "RIGHT", GEM_NAME_GAP, 1)
+	name:SetPoint("LEFT", gem, "RIGHT", GEM_NAME_GAP, 0)
 	gem:Show()
 	name:Show()
 	return text:GetWidth() + rest
+end
+
+-- The gap between a toast's kicker and its name line.
+local TOAST_LINE_GAP = 5
+-- The scales a toast's stamp row is squeezed through, largest first, to fit right of its kicker.
+local STAMP_SCALES = { 1, 0.9, 0.8, 0.7 }
+-- The gap between a toast's kicker and the stamp row.
+local STAMP_KICKER_GAP = 10
+
+-- Sets a toast's stamps, and its New record stamp when a ruled toast has one, at the largest of STAMP_SCALES at which
+-- the row, hung right to left from `x` with `gap` between them, still ends right of `limit` (the kicker's right
+-- edge and a gap): the stamps' words and padding shrink together. At the smallest it stays as it is, which only a
+-- row of four or more can need. `set` sets a stamp, `setRecord` the New record stamp, each at a scale. Returns the
+-- stamps showing and the New record stamp's width.
+---@param frame PagleAnnouncementFrame
+---@param announcement PagleAnnouncement
+---@param set fun(stamp: PagleStamp, text: string, scale: number)
+---@param setRecord fun(scale: number)
+---@param x number
+---@param gap number
+---@param limit number
+---@param withRecord boolean
+---@return PagleStamp[]
+---@return number
+local function setStampRow(frame, announcement, set, setRecord, x, gap, limit, withRecord)
+	local ruler = frame.ruler --[[@as PagleRulerView]]
+	local stamps
+	for _, scale in ipairs(STAMP_SCALES) do
+		stamps = fillStamps(frame, announcement, function(stamp, text)
+			set(stamp, text, scale)
+		end)
+		setRecord(scale)
+		ruler.stampScale = scale
+		local total = withRecord and ruler.record:GetWidth() + gap or 0
+		for _, stamp in ipairs(stamps) do
+			total = total + stamp:GetWidth() + gap
+		end
+		if x - (total - gap) >= limit then
+			break
+		end
+	end
+	return stamps, ruler.record:GetWidth()
+end
+
+-- Where a toast's kicker and name block starts down its page, `height` tall: centred, as the medallion is, unless the
+-- page is ruled or the digest's, whose rows are laid from `top`, the page's own. The block is the kicker, the gap and
+-- the name line, or the name line alone for a headline with no text.
+---@param page { h: number, ruled: boolean? }
+---@param headline { text: string? }
+---@param fonts { what: PagleWordsFont, name: PagleWordsFont }
+---@param top number
+---@param fighting boolean?
+---@return number
+local function blockTop(page, headline, fonts, top, fighting)
+	if page.ruled or fighting then
+		return top
+	end
+	local block = fontSize(fonts.name)
+	if headline.text then
+		block = block + fontSize(fonts.what) + TOAST_LINE_GAP
+	end
+	return (page.h - block) / 2
 end
 
 -- Readies a toast's gleam for `look` (VAR-R26): unseen, and swept as the toast enters when the variety is Rare or Epic,
@@ -764,7 +855,7 @@ local function drawComposedToast(frame, display, style)
 	if announcement.fighting then
 		setComposedMedallion(bezel, icon.w, nil, FIGHTING_ICON)
 	else
-		setComposedMedallion(bezel, icon.w, headline, nil, look and look.art)
+		setComposedMedallion(bezel, icon.w, headline, nil, look and look.art, look and look.backing)
 	end
 	bezel:ClearAllPoints()
 	bezel:SetPoint("TOPLEFT", body, "TOPLEFT", icon.x, -icon.y)
@@ -780,19 +871,27 @@ local function drawComposedToast(frame, display, style)
 		what = ns.ToastInk(style, page, "what") or "What",
 		name = ns.ToastInk(style, page, "name") or "Name",
 	}
+	-- A ruled toast's name line ends before the ruler's numbers.
+	local lineWidth = page.ruled and math.min(width, rulerNameLimit(width - 6)) or width
 	frame.title:ClearAllPoints()
-	frame.title:SetPoint("TOPLEFT", body, "TOPLEFT", box.x, -box.y)
+	frame.title:SetPoint(
+		"TOPLEFT",
+		body,
+		"TOPLEFT",
+		box.x,
+		-blockTop(page, headline, fonts, box.y, announcement.fighting)
+	)
 	frame.text:ClearAllPoints()
-	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -5)
+	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -TOAST_LINE_GAP)
 	if announcement.fighting then
 		writeHeadline(frame, { title = headline.title, text = "" }, fonts, inks, width)
 		frame.text:Hide()
 		drawDigest(frame, announcement.fighting, style, page.w - box.x - 34)
 	else
-		writeHeadline(frame, headline, fonts, inks, width)
+		writeHeadline(frame, headline, fonts, inks, lineWidth)
 		drawDigest(frame, {}, style, 0)
 	end
-	local line = writeToastVariety(frame, look, fonts.name, width)
+	local line = writeToastVariety(frame, look, fonts.name, lineWidth)
 	local clip = frame.nameClip --[[@as Frame]]
 	clip:ClearAllPoints()
 	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
@@ -807,7 +906,7 @@ local function drawComposedToast(frame, display, style)
 	if page.ruled then
 		local top = box.y + (frame.text:IsShown() and 18 or 0) + fontSize(fonts.name) + 4
 		ruler:SetPoint("TOPLEFT", body, "TOPLEFT", box.x, -top)
-		layRuler(ruler, width - 6, headline.ruler.label)
+		layRuler(ruler, width - 6, headline.ruler.label, body, box.x)
 	end
 
 	local more = frame.more --[[@as FontString]]
@@ -824,10 +923,12 @@ local function drawComposedToast(frame, display, style)
 	-- The stamps hang right to left from the style's stamp's top right, each by its centre from a pivot.
 	local spot = place(ns.ToastStampArt(style, page))
 	local x, y = spot.x + spot.w, spot.y + spot.h / 2
-	local stamps = fillStamps(frame, announcement, function(stamp, text)
-		ns.SetStamp(stamp, text, style, page)
+	local stamps, record = setStampRow(frame, announcement, function(stamp, text, scale)
+		ns.SetStamp(stamp, text, style, page, scale)
 		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
-	end)
+	end, function(scale)
+		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, page, scale)
+	end, x, 2, box.x + frame.title:GetWidth() + STAMP_KICKER_GAP, page.ruled == true)
 	local pivots = frame.pivots --[[@as Frame[] ]]
 	for i, stamp in ipairs(stamps) do
 		local stampWidth = stamp:GetWidth()
@@ -835,8 +936,6 @@ local function drawComposedToast(frame, display, style)
 		stamp:SetPoint("CENTER", pivots[i], "CENTER")
 		x = x - stampWidth - 2
 	end
-	ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, page)
-	local record = ruler.record:GetWidth()
 	ruler.record:Hide()
 	frame.recordPivot:SetPoint("CENTER", body, "TOPLEFT", x - record / 2, -y)
 	ruler.record:ClearAllPoints()
@@ -899,7 +998,7 @@ local function drawToast(frame, display, style)
 	if announcement.fighting then
 		ns.SetBezel(bezel, page.bezel, ring, FIGHTING_ICON)
 	else
-		setMedallion(bezel, page.bezel, ring, headline, look and look.art)
+		setMedallion(bezel, page.bezel, ring, headline, look and look.art, look and look.backing)
 	end
 	tintRing(bezel, look and look.ring)
 	readyToastGleam(frame, look, page)
@@ -909,19 +1008,27 @@ local function drawToast(frame, display, style)
 	local width = page.w - page.tx - 34 - (announcement.coins > 0 and 34 or 0)
 	local inks = ns.ToastInks(style, page)
 	local fonts = { what = "What", name = page.low and "NameLow" or page.high and "NameHigh" or "Name" }
+	-- A ruled toast's name line ends before the ruler's numbers.
+	local lineWidth = page.ruled and math.min(width, rulerNameLimit(width - 6)) or width
 	frame.title:ClearAllPoints()
-	frame.title:SetPoint("TOPLEFT", body, "TOPLEFT", page.tx, -page.ty)
+	frame.title:SetPoint(
+		"TOPLEFT",
+		body,
+		"TOPLEFT",
+		page.tx,
+		-blockTop(page, headline, fonts, page.ty, announcement.fighting)
+	)
 	frame.text:ClearAllPoints()
-	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -5)
+	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -TOAST_LINE_GAP)
 	if announcement.fighting then
 		writeHeadline(frame, { title = headline.title, text = "" }, fonts, inks, width)
 		frame.text:Hide()
 		drawDigest(frame, announcement.fighting, style, page.w - page.tx - 34)
 	else
-		writeHeadline(frame, headline, fonts, inks, width)
+		writeHeadline(frame, headline, fonts, inks, lineWidth)
 		drawDigest(frame, {}, style, 0)
 	end
-	local line = writeToastVariety(frame, look, fonts.name, width)
+	local line = writeToastVariety(frame, look, fonts.name, lineWidth)
 	-- The clip the name is written out in, round the name as written.
 	local clip = frame.nameClip --[[@as Frame]]
 	clip:ClearAllPoints()
@@ -938,7 +1045,7 @@ local function drawToast(frame, display, style)
 		local nameSize = ns.ArtFontSize(fonts.name)
 		local top = page.ty + (frame.text:IsShown() and 18 or 0) + nameSize + 4
 		ruler:SetPoint("TOPLEFT", body, "TOPLEFT", page.tx, -top)
-		layRuler(ruler, width - 6, headline.ruler.label)
+		layRuler(ruler, width - 6, headline.ruler.label, body, page.tx)
 	end
 
 	local more = frame.more --[[@as FontString]]
@@ -957,10 +1064,12 @@ local function drawToast(frame, display, style)
 	tintWax(frame.wax --[[@as PagleSprite]], style)
 	local x = page.high and page.w - 96 or page.w - 30
 	local drops = { 2, 8, 4, 6, 3, 7 }
-	local stamps = fillStamps(frame, announcement, function(stamp, text)
-		ns.SetStamp(stamp, text, style)
+	local stamps, record = setStampRow(frame, announcement, function(stamp, text, scale)
+		ns.SetStamp(stamp, text, style, nil, scale)
 		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
-	end)
+	end, function(scale)
+		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, nil, scale)
+	end, x, 4, page.tx + frame.title:GetWidth() + STAMP_KICKER_GAP, page.ruled == true)
 	-- Each stamp hangs by its centre from a pivot, so it slams down about its middle (adapter/Art.lua's ns.Pivot).
 	local pivots = frame.pivots --[[@as Frame[] ]]
 	for i, stamp in ipairs(stamps) do
@@ -970,8 +1079,6 @@ local function drawToast(frame, display, style)
 		x = x - stampWidth - 4
 	end
 	-- The New record stamp lands to their left once the ruler fills: measured now to hang it by its centre.
-	ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style)
-	local record = ruler.record:GetWidth()
 	ruler.record:Hide()
 	frame.recordPivot:SetPoint("CENTER", body, "TOPLEFT", x - record / 2, -19)
 	ruler.record:ClearAllPoints()
@@ -1052,7 +1159,7 @@ local function drawNod(frame, display, style)
 		for _, slice in ipairs({ strip.left, strip.middle, strip.right }) do
 			slice:Hide()
 		end
-		setComposedMedallion(bezel, rung.icon.w, headline)
+		setComposedMedallion(bezel, rung.icon.w, headline, nil, nil, look and look.backing)
 		bezel:ClearAllPoints()
 		bezel:SetPoint("TOPLEFT", frame, "TOPLEFT", rung.icon.x, -rung.icon.y)
 		left = rung.text.x
@@ -1073,7 +1180,7 @@ local function drawNod(frame, display, style)
 			bezel:SetPoint("LEFT")
 			frame.title:SetPoint("LEFT", frame, "LEFT", left, 0)
 		end
-		setMedallion(bezel, 34, ns.BezelRing(style, 34), headline)
+		setMedallion(bezel, 34, ns.BezelRing(style, 34), headline, nil, look and look.backing)
 		tintRing(bezel, look and look.ring)
 	end
 	local gleam = frame.gleam --[[@as PagleSprite]]

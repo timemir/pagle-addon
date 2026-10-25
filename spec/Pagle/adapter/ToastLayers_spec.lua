@@ -160,7 +160,12 @@ describe("a toast in a composed toast style", function()
 			})
 			assert.are.same({ "TOPLEFT", toast.body, "TOPLEFT", rung.icon.x, -rung.icon.y }, { toast.bezel:GetPoint() })
 			assert.are.same({ rung.icon.w, rung.icon.w }, { toast.bezel.Icon.width, toast.bezel.Icon.height })
-			assert.are.same({ "TOPLEFT", toast.body, "TOPLEFT", rung.text.x, -rung.text.y }, { toast.title:GetPoint() })
+			-- Its kicker and name block centred down the page, as the medallion is (#424).
+			local block = rung.inks.what.size + 5 + rung.inks.name.size
+			assert.are.same(
+				{ "TOPLEFT", toast.body, "TOPLEFT", rung.text.x, -(toast.body:GetHeight() - block) / 2 },
+				{ toast.title:GetPoint() }
+			)
 			-- Its kicker in its own small caps, as written; its name in its hand and ink.
 			assert.are.equal("New Species", toast.title:GetText())
 			local what = rung.inks.what
@@ -446,6 +451,12 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 				assert.are.same({ true, rgb(rare.ink) }, { slice.desaturated == true, rgb(slice.vertexColor) })
 			end
 			assert.are.equal("TIDDLER", toast.ruler.label:GetText())
+			-- An opaque disc behind the art fills the icon's box, the rarity's tint over deep water (#424).
+			local back = toast.bezel.Back
+			assert.are.same(
+				{ true, toast.bezel.Icon.width, toast.bezel.Icon.height, rgb(loaded.ns.ArtBacking(rare.color)) },
+				{ back.shown, back.width, back.height, rgb(back.color) }
+			)
 		end
 	)
 
@@ -464,6 +475,7 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 			assert.are.same({ false, { 1, 1, 1 } }, { slot.texture.desaturated == true, rgb(slot.texture.vertexColor) })
 		end
 		assert.are.same({ false, false, false }, { toast.gem.shown, toast.variety.shown, toast.gleams })
+		assert.is_false(toast.bezel.Back.shown)
 		for _, slice in ipairs(toast.stamps[1].plate) do
 			assert.are.same({ false, { 1, 1, 1 } }, { slice.desaturated == true, rgb(slice.vertexColor) })
 		end
