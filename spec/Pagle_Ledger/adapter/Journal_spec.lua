@@ -402,6 +402,92 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		assert.are.same({ 0x23 / 255, 0x40 / 255, 0x7a / 255 }, { unpack(widget.fresh.textColor, 1, 3) })
 	end)
 
+	it("shows a stamp's tooltip over it: its title, its rule, where the Angler stands (LED-R165)", function()
+		local loaded = drawn({
+			{
+				kind = "stamps",
+				stamps = {
+					{
+						text = "Caught",
+						inked = false,
+						tip = { title = "Caught", lines = { "Land it 5 times.", "3 of 5 landed." } },
+					},
+					{ text = "Regular", inked = false },
+				},
+			},
+		})
+		local widget = loaded.ns.journal.shown.left.drawn.stamps[1]
+		local first, second = widget.hits[1], widget.hits[2]
+
+		first.scripts.OnEnter(first)
+
+		assert.are.same({ "Caught", "Land it 5 times.", "3 of 5 landed." }, loaded.client.tooltipLines())
+		assert.are.equal(first, loaded.env.GameTooltip.owner)
+		first.scripts.OnLeave(first)
+		assert.are.same({}, loaded.client.tooltipLines())
+		-- a stamp with no tip shows none
+		second.scripts.OnEnter(second)
+		assert.are.same({}, loaded.client.tooltipLines())
+	end)
+
+	it("writes a stamp tooltip's rule in white and where the Angler stands in grey (LED-R165)", function()
+		local loaded = drawn({
+			{
+				kind = "stamps",
+				stamps = {
+					{ text = "Caught", inked = true, tip = { title = "Caught", lines = { "Rule.", "Standing." } } },
+				},
+			},
+		})
+		local hit = loaded.ns.journal.shown.left.drawn.stamps[1].hits[1]
+
+		hit.scripts.OnEnter(hit)
+
+		-- (the title is SetText's, gilt, whose colour the fake does not keep)
+		assert.are.same({ "", "FFFFFF", "CCCCCC" }, loaded.client.tooltipColors())
+	end)
+
+	it("keeps a stamp's tooltip up to date as the page is drawn again under the mouse (LED-R165)", function()
+		local loaded = drawn({
+			{
+				kind = "stamps",
+				stamps = {
+					{
+						text = "Caught",
+						inked = false,
+						tip = { title = "Caught", lines = { "Rule.", "3 of 5 landed." } },
+					},
+				},
+			},
+		})
+		local hit = loaded.ns.journal.shown.left.drawn.stamps[1].hits[1]
+		hit.scripts.OnEnter(hit)
+
+		loaded.ns.journal.shown.left.drawn.stamps[1]:Fill({
+			kind = "stamps",
+			stamps = {
+				{ text = "Caught", inked = true, tip = { title = "Caught", lines = { "Rule.", "5 of 5 landed." } } },
+			},
+		}, 300, false, { same = true })
+
+		assert.are.same({ "Caught", "Rule.", "5 of 5 landed." }, loaded.client.tooltipLines())
+	end)
+
+	it("hides the tooltip when the stamp it showed is gone (LED-R165)", function()
+		local loaded = drawn({
+			{
+				kind = "stamps",
+				stamps = { { text = "Caught", inked = false, tip = { title = "Caught", lines = { "Rule." } } } },
+			},
+		})
+		local widget = loaded.ns.journal.shown.left.drawn.stamps[1]
+		widget.hits[1].scripts.OnEnter(widget.hits[1])
+
+		widget:Fill({ kind = "stamps", stamps = {} }, 300, false, { same = true })
+
+		assert.are.same({}, loaded.client.tooltipLines())
+	end)
+
 	it("draws each kind of block with its words (ledger.md › UI)", function()
 		local loaded, texts = drawn({
 			{ kind = "kicker", text = "The Waters" },

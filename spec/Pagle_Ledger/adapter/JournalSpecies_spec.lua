@@ -119,6 +119,24 @@ local function textBlockTexts(blocks)
 	return texts
 end
 
+-- A page's stamps as their words and ink alone, without their tooltips.
+local function stampWords(blocks)
+	local words = {}
+	for i, stamp in ipairs(blockOfKind(blocks, "stamps").stamps) do
+		words[i] = { text = stamp.text, inked = stamp.inked }
+	end
+	return words
+end
+
+-- The lines of each of a page's stamps' tooltips, the title first.
+local function stampTips(blocks)
+	local tips = {}
+	for i, stamp in ipairs(blockOfKind(blocks, "stamps").stamps) do
+		tips[i] = { stamp.tip.title, unpack(stamp.tip.lines) }
+	end
+	return tips
+end
+
 describe("a caught Species' entry (LED-R140)", function()
 	it("shows its sepia icon, name, stamps, first Catch, blurb and listed zones (LED-R140)", function()
 		local _, loaded = loggedIn()
@@ -132,12 +150,78 @@ describe("a caught Species' entry (LED-R140)", function()
 			{ text = "Caught", inked = false },
 			{ text = "In its element", inked = false },
 			{ text = "Regular", inked = false },
-		}, blockOfKind(left, "stamps").stamps)
+		}, stampWords(left))
 		assert.are.same({
 			"First landed 3 Oct in Westfall, by Angler. 2 caught.",
 			"Slippery enough to earn the name.",
 			"Found in Duskwood, Elwynn Forest and Westfall.",
 		}, textBlockTexts(left))
+	end)
+
+	it(
+		"gives each stamp a tooltip: the rule and where the Angler stands, by zones without windows (LED-R165)",
+		function()
+			local _, loaded = loggedIn()
+
+			local left = openFish(loaded, MACKEREL).left
+
+			-- Two Catches, in Westfall and Elwynn of its three listed zones.
+			assert.are.same({
+				{ "Caught", "Land it 5 times.", "2 of 5 landed." },
+				{ "In its element", "Land it in 3 different zones.", "In 2 of 3 zones." },
+				{ "Regular", "Land it 50 times.", "2 of 50 landed." },
+			}, stampTips(left))
+		end
+	)
+
+	it("names the element windows in the tooltip of a Species that has them (LED-R165, LED-R45)", function()
+		local _, loaded = loggedIn()
+
+		local left = openFish(loaded, NIGHTFISH).left
+
+		-- Caught once, at night: its one window met.
+		assert.are.same({
+			"In its element",
+			"Land it under its element window, in any zone.",
+			"All met: night.",
+		}, stampTips(left)[2])
+	end)
+
+	it("names the window still needed until it is met (LED-R165)", function()
+		local _, loaded = loggedIn({ cast(T0 + 300, SECRET, ELWYNN, DAY_MINUTE) })
+
+		local left = openFish(loaded, SECRET).left
+
+		-- SECRET is now caught, by day: the night window it is listed under is not met.
+		assert.are.same({
+			"In its element",
+			"Land it under its element window, in any zone.",
+			"0 of 1 met. Still needed: night.",
+		}, stampTips(left)[2])
+	end)
+
+	it("shows the tooltip when the mouse goes over a stamp in the open book (LED-R165)", function()
+		local _, loaded = loggedIn()
+		openFish(loaded, MACKEREL)
+		loaded.ns.journal:Toggle()
+
+		local hit = loaded.ns.journal.shown.left.drawn.stamps[1].hits[2]
+		hit.scripts.OnEnter(hit)
+
+		assert.are.same(
+			{ "In its element", "Land it in 3 different zones.", "In 2 of 3 zones." },
+			loaded.client.tooltipLines()
+		)
+		hit.scripts.OnLeave(hit)
+		assert.are.same({}, loaded.client.tooltipLines())
+	end)
+
+	it("gives an uncaught Species no stamps, so no tooltips to name it by (LED-R124, LED-R165)", function()
+		local _, loaded = loggedIn()
+
+		local left = openFish(loaded, SECRET).left
+
+		assert.is_nil(blockOfKind(left, "stamps"))
 	end)
 
 	it('adds " Only by night." for a night-only fish, and leaves a missing blurb out (LED-R140, LED-R161)', function()
@@ -374,7 +458,7 @@ describe("the fish spread (LED-R142)", function()
 
 			local pages = openFish(loaded, MACKEREL)
 
-			assert.are.same({ text = "Caught", inked = true }, blockOfKind(pages.left, "stamps").stamps[1])
+			assert.are.same({ text = "Caught", inked = true }, stampWords(pages.left)[1])
 			assert.are.same({
 				drawnSymbols("☑ Caught (5/5)"),
 				drawnSymbols("☐ In its element (2/3)"),
