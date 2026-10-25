@@ -142,7 +142,7 @@ local ns = select(2, ...)
 --- The projection's state (`PagleTackleBoardDB.global.board`, tackle-board.md › Projection).
 ---@class TackleBoardState
 ---@field started? { seq: integer, time: integer }
----@field boundary? { seq: integer, day: integer, week: integer, dayStart: integer, weekStart: integer }  -- latest start/day record
+---@field boundary? { seq: integer, day: integer, week: integer, dayStart: integer, weekStart: integer, dayOrigin: integer?, weekOrigin: integer? }  -- latest start/day record
 ---@field day integer                 -- last processed board day (TKB-R14)
 ---@field week integer
 ---@field owed { notices: integer, expeditions: integer }
