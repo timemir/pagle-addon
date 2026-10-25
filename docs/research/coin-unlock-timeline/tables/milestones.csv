@@ -1,0 +1,73 @@
+player,order,milestone,basis,coins_spent,hours,day
+casual,cheapest-first,first purchase,any,150,0.2,0.1
+casual,cheapest-first,25%,count,4150,27.7,18.5
+casual,cheapest-first,50%,count,14150,117.0,78.0
+casual,cheapest-first,75%,count,33150,315.4,210.3
+casual,cheapest-first,100%,count,81136,845.0,563.4
+casual,cheapest-first,25%,value,22350,199.4,132.9
+casual,cheapest-first,50%,value,43050,424.8,283.2
+casual,cheapest-first,75%,value,60136,609.8,406.6
+casual,cheapest-first,100%,value,81136,845.0,563.4
+casual,prestige-first,first purchase,any,2000,10.4,6.9
+casual,prestige-first,25%,count,48886,489.6,326.4
+casual,prestige-first,50%,count,67386,691.1,460.7
+casual,prestige-first,75%,count,77386,803.1,535.4
+casual,prestige-first,100%,count,81136,845.0,563.4
+casual,prestige-first,25%,value,17086,145.3,96.9
+casual,prestige-first,50%,value,38986,379.7,253.1
+casual,prestige-first,75%,value,59686,605.0,403.3
+casual,prestige-first,100%,value,81136,845.0,563.4
+dedicated,cheapest-first,first purchase,any,150,0.2,0.0
+dedicated,cheapest-first,25%,count,4150,46.0,11.5
+dedicated,cheapest-first,50%,count,14150,216.3,54.1
+dedicated,cheapest-first,75%,count,33150,614.7,153.7
+dedicated,cheapest-first,100%,count,81136,1656.2,414.1
+dedicated,cheapest-first,25%,value,22350,385.1,96.3
+dedicated,cheapest-first,50%,value,43050,825.4,206.3
+dedicated,cheapest-first,75%,value,60136,1202.9,300.7
+dedicated,cheapest-first,100%,value,81136,1656.2,414.1
+dedicated,prestige-first,first purchase,any,2000,16.7,4.2
+dedicated,prestige-first,25%,count,48886,955.6,238.9
+dedicated,prestige-first,50%,count,67386,1361.8,340.4
+dedicated,prestige-first,75%,count,77386,1572.3,393.1
+dedicated,prestige-first,100%,count,81136,1656.2,414.1
+dedicated,prestige-first,25%,value,17086,274.1,68.5
+dedicated,prestige-first,50%,value,38986,736.8,184.2
+dedicated,prestige-first,75%,value,59686,1192.6,298.1
+dedicated,prestige-first,100%,value,81136,1656.2,414.1
+minmax15,cheapest-first,first purchase,any,150,0.1,0.1
+minmax15,cheapest-first,25%,count,4150,13.9,9.3
+minmax15,cheapest-first,50%,count,14150,93.2,62.1
+minmax15,cheapest-first,75%,count,33150,284.0,189.3
+minmax15,cheapest-first,100%,count,81136,788.5,525.7
+minmax15,cheapest-first,25%,value,22350,174.0,116.0
+minmax15,cheapest-first,50%,value,43050,389.0,259.3
+minmax15,cheapest-first,75%,value,60136,565.3,376.9
+minmax15,cheapest-first,100%,value,81136,788.5,525.7
+minmax15,prestige-first,first purchase,any,2000,4.2,2.8
+minmax15,prestige-first,25%,count,48886,451.2,300.8
+minmax15,prestige-first,50%,count,67386,642.3,428.2
+minmax15,prestige-first,75%,count,77386,748.4,498.9
+minmax15,prestige-first,100%,count,81136,788.5,525.7
+minmax15,prestige-first,25%,value,17086,121.9,81.3
+minmax15,prestige-first,50%,value,38986,346.1,230.7
+minmax15,prestige-first,75%,value,59686,560.6,373.8
+minmax15,prestige-first,100%,value,81136,788.5,525.7
+minmax4,cheapest-first,first purchase,any,150,0.1,0.0
+minmax4,cheapest-first,25%,count,4150,17.9,4.5
+minmax4,cheapest-first,50%,count,14150,184.1,46.0
+minmax4,cheapest-first,75%,count,33150,592.3,148.1
+minmax4,cheapest-first,100%,count,81136,1632.2,408.0
+minmax4,cheapest-first,25%,value,22350,364.5,91.1
+minmax4,cheapest-first,50%,value,43050,807.3,201.8
+minmax4,cheapest-first,75%,value,60136,1184.1,296.0
+minmax4,cheapest-first,100%,value,81136,1632.2,408.0
+minmax4,prestige-first,first purchase,any,2000,4.8,1.2
+minmax4,prestige-first,25%,count,48886,936.5,234.1
+minmax4,prestige-first,50%,count,67386,1341.7,335.4
+minmax4,prestige-first,75%,count,77386,1549.2,387.3
+minmax4,prestige-first,100%,count,81136,1632.2,408.0
+minmax4,prestige-first,25%,value,17086,248.4,62.1
+minmax4,prestige-first,50%,value,38986,717.1,179.3
+minmax4,prestige-first,75%,value,59686,1173.5,293.4
+minmax4,prestige-first,100%,value,81136,1632.2,408.0
