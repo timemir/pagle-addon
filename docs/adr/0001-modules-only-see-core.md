@@ -26,3 +26,7 @@ Decided while writing the QoL spec ([Write the QoL spec](https://github.com/time
 Clarified by the dev while redesigning Hunts (18 Oct): this ADR exists to keep the code clean, with every Module depending only on Core. It was never meant to rule out features. When a feature needs one Module's result to reach another, the answer is a Core contract that the source Module feeds and the other reads, never a call or event between Modules. Two such contracts follow:
 - **XP income.** Like the Coins wallet (ADR 0009), a Module may report the XP it has earned to Core, and the Ledger adds it to the Angler Level. This replaces the line under Consequences that a cross-Module reward "cannot exist". What it costs to disable a Module stays visible, because income is shown by source.
 - **Pushed content.** Pagle_Companion hands Core what the companion app delivered, such as Hunt Events, and Hunts reads those from Core. Neither Module knows the other exists.
+
+## Note: Refreshes
+
+[ADR 0017](0017-core-holds-the-refresh-purse-from-reported-totals.md) ([Hunt-earned refresh ticket for the Tackle Board](https://github.com/timemir/pagle-addon/issues/398)) adds a fourth Core contract that one Module feeds and another reads: Hunts reports the Refreshes it has earned, the Tackle Board the ones it has spent, and Core keeps the totals and the count held. Neither Module calls, reads or listens to the other.

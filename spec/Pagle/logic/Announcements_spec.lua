@@ -77,6 +77,7 @@ local function announcement(rung, title, fields)
 		stamps = {},
 		more = 0,
 		coins = headline.coins or 0,
+		tickets = headline.tickets,
 		moments = { headline },
 	}
 end
@@ -470,6 +471,23 @@ describe("the combat hold", function()
 
 			assert.are.same({ { "toast While you were fighting" }, "Level 12" }, { column(world), centre(world) })
 			assert.are.same({ "New Species", "Size record", "Hunt completed" }, fighting(world))
+		end
+	)
+
+	it(
+		"carries the held toasts' Coins and Refreshes onto the While you were fighting toast (ANN-R23, REF-R7)",
+		function()
+			local world = newWorld()
+			world.lanes:Hold()
+			world.lanes:Push(announcement("toast", "New Species", { coins = 10, tickets = 1 }))
+			world.lanes:Push(announcement("toast.low", "Size record", { coins = 5 }))
+			world.lanes:Push(announcement("toast.high", "Hunt completed", { tickets = 2 }))
+
+			world.lanes:Release()
+			world.advance(2)
+
+			local digest = displayOf(world, "While you were fighting").announcement
+			assert.are.same({ 15, 3 }, { digest.coins, digest.tickets })
 		end
 	)
 

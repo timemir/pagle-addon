@@ -125,6 +125,35 @@ describe("Announcement frames", function()
 	)
 
 	it(
+		'stamp the sum of a Cast\'s tickets as "Refresh +N" after the other stamps, outside the 4 and the +N, before'
+			.. " the Coins (ANN-R23, REF-R7)",
+		function()
+			local loaded, M = loadCore()
+			local moments =
+				{ moment("toast", "New Species", { text = "Nightfin Snapper", icon = 136245, cast = CAST }) }
+			for i, stamp in ipairs({ "New here", "Rank up", "Skill", "Trophy", "Extra" }) do
+				moments[#moments + 1] = moment("nod", "Moment " .. i, { stamp = stamp, cast = CAST, tickets = 1 })
+			end
+
+			raise(loaded, M, unpack(moments))
+
+			local toast = frameOf(loaded, "toast")
+			assert.are.same({ "NEW HERE", "RANK UP", "SKILL", "TROPHY", "+1", "REFRESH +5" }, stampsOf(toast))
+		end
+	)
+
+	it("stamps a banner's tickets the same way, and a toast with none shows no Refresh stamp (REF-R7)", function()
+		local loaded, M = loadCore()
+
+		raise(loaded, M, moment("banner", "Level 12", { cast = CAST, tickets = 2 }))
+		loaded.client.advance(BANNER + LEAVE_BANNER)
+		raise(loaded, M, moment("toast", "New Species", { cast = CAST }))
+
+		assert.are.same({ "REFRESH +2" }, stampsOf(frameOf(loaded, "banner")))
+		assert.are.same({}, stampsOf(frameOf(loaded, "toast")))
+	end)
+
+	it(
 		"show a banner in the centre for 5.9 s beside the column's 3 toasts, the 4th coming in as they leave (ANN-R20)",
 		function()
 			local loaded, M = loadCore()

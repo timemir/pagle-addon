@@ -146,6 +146,7 @@ ns.L = {
 	ANNOUNCEMENT_MORE = "+%d more",
 	ANNOUNCEMENT_STAMPS_MORE = "+%d",
 	ANNOUNCEMENT_COINS = "+%s",
+	ANNOUNCEMENT_STAMP_REFRESH = "Refresh +%d",
 	ANNOUNCEMENT_NEW_RECORD = "New record",
 	ANNOUNCEMENT_SPLASH_HINT = "Click anywhere to continue",
 	ANNOUNCEMENT_SPLASH_RELOAD = "/reload to keep it safe",

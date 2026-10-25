@@ -18,11 +18,13 @@ local ns = select(2, ...)
 --- Lifetime totals that belong to one Catch log (SHOP-R3, AXP-R3): PagleDB.global.coins or .activityXP.
 ---@class PagleLoggedTotals
 ---@field earned table<string, integer> the last report per Module, by def.name
+---@field spent? table<string, integer> the Refresh purse's last spent report per Module (REF-R3); the others have none
 ---@field logId string? the PagleLog.logId they were reported under
 
---- Ties a store of totals to the log (SHOP-R3, AXP-R3), as login step 1 does at ADDON_LOADED: when `logId` (PagleLog's
---- now) differs from the stored one, as for a new log (LOG-R18), the totals are emptied in place and the store takes
---- `logId`, so a new log never inherits the old one's. Returns whether it emptied them.
+--- Ties a store of totals to the log (SHOP-R3, AXP-R3, REF-R3), as login step 1 does at ADDON_LOADED: when `logId`
+--- (PagleLog's now) differs from the stored one, as for a new log (LOG-R18), the totals (`earned`, and `spent` where
+--- the store has it) are emptied in place and the store takes `logId`, so a new log never inherits the old one's.
+--- Returns whether it emptied them.
 ---@param store PagleLoggedTotals
 ---@param logId string?
 ---@return boolean emptied
@@ -32,6 +34,11 @@ function ns.TieTotalsToLog(store, logId)
 	end
 	for name in pairs(store.earned) do
 		store.earned[name] = nil
+	end
+	if store.spent then
+		for name in pairs(store.spent) do
+			store.spent[name] = nil
+		end
 	end
 	store.logId = logId
 	return true

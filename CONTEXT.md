@@ -244,6 +244,10 @@ _Avoid_: currency (alone), points, gold, Tender (Retail's Trading Post currency)
 Core's shop where the Angler spends Pagle Coins on looks for Pagle's own views, such as toast styles, sound sets, bindings and tracker frames. It never sells meanings (titles, flies, stars, Legends) and its stock never rotates.
 _Avoid_: store, Trading Post, Bait Shop, shop (alone)
 
+**Refresh** (working name):
+What a Hunt Event earns (players know it as a Pagle Wager) and the Tackle Board spends to post one new goal, a Notice or an Expedition at the Angler's choice, into an empty slot. It never takes the board past its caps and is not a reroll. Core holds the count (Hunts reports the Refreshes earned, the Tackle Board the ones spent), and there is no limit on how many can be held. The name is provisional: renaming it is a glossary and string change only.
+_Avoid_: ticket (the code's word, not the Angler's), reroll (which swaps an open goal and adds nothing), voucher, refill, token
+
 **Bookplate crest**:
 The look the Angler wears on the Fish Journal's bookplate, chosen in Look and Feel's Crests dropdown: a Zone crest, earned when that zone reaches Master, or a Fish crest, earned when all ten of its varieties are caught, pinned on the Prestige frame, or Plain, the default, which shows nothing. Earned crests are never listed in the Curio Shop, whose Crests category holds only the crests for sale and Plain.
 _Avoid_: crest (alone), emblem, medallion, Prestige crest

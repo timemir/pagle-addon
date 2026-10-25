@@ -2,8 +2,8 @@
 local ns = select(2, ...)
 
 -- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards, wallet, Activity
--- XP, Prestige and purchase entries, goods, Field report and wallet projection are built and connected to each other, to
--- PagleDB and to the Module handle. Pure logic over a host (CORE-R7): Core's adapter builds its host over the WoW
+-- XP, Refresh purse, Prestige and purchase entries, goods, Field report and wallet projection are built and connected
+-- to each other, to PagleDB and to the Module handle. Pure logic over a host (CORE-R7): Core's adapter builds its host over the WoW
 -- client (adapter/Host.lua), and FakePagle builds one over its fakes, so both run this one wiring and the double can't
 -- drift from Core. What differs between them is only the host and the display each factory is handed.
 
@@ -38,6 +38,7 @@ local ns = select(2, ...)
 ---@field cards PagleCards Core's cards (ns.WireCards).
 ---@field wallet PagleWallet Core's one wallet (ns.WireWallet).
 ---@field activityXP PagleActivityXP Core's Activity XP totals (ns.WireActivityXP).
+---@field tickets PagleTicketPurse Core's Refresh purse (ns.WireTickets).
 ---@field goods PagleGoods Core's one goods registry (ns.WireGoods).
 ---@field shop PagleShop The Curio Shop's entry points (ns.WireShop).
 ---@field dock PagleDockWiring Core's tracker dock (ns.WireDock).
@@ -477,6 +478,33 @@ function ns.WireActivityXP(host)
 		ns.activityXP:Open(store)
 		-- a test log's granted Activity XP, under its own source; none on a player's log
 		store.earned[ns.DEV_SOURCE] = ns.TestLogGrant(host.catchLog().data, "devXP")
+	end
+end
+
+--- Core's Refresh purse as ns.tickets (REF-R2–R6), firing TicketsChanged on the bus, and `M:ReportTicketsEarned` and
+--- `M:ReportTicketsSpent` on every Module handle. It is empty until login step 1 opens the stored totals
+--- (ns.OpenTickets). The totals belong to the log's logId (PagleDB.global.tickets.logId), which each report takes
+--- (REF-R3).
+---@param host PagleHost
+function ns.WireTickets(host)
+	ns.tickets = ns.NewTickets({
+		fire = host.fire,
+		logId = function()
+			return host.catchLog().data.logId
+		end,
+	})
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Reports the Module's lifetime Refreshes earned (REF-R2): see ns.ReportTicketsMethod. Raises an error for
+	--- anything but a whole number, 0 or more.
+	ModuleHandle.ReportTicketsEarned = ns.ReportTicketsMethod(host.registry, ns.tickets, "earned")
+	--- Reports the Module's lifetime Refreshes spent (REF-R2): see ns.ReportTicketsMethod. Raises an error for
+	--- anything but a whole number, 0 or more.
+	ModuleHandle.ReportTicketsSpent = ns.ReportTicketsMethod(host.registry, ns.tickets, "spent")
+	--- Login step 1, once PagleDB is open: empties the stored totals if they belong to another log (REF-R3), then
+	--- the purse reads and writes them from now on.
+	function ns.OpenTickets()
+		ns.tickets:Open(host.db().global.tickets)
 	end
 end
 

@@ -13,6 +13,7 @@ ns.PAGLEDB_DEFAULTS = {
 		dev = false, -- the /pagle dev switch (#247)
 		coins = { earned = {} }, -- SHOP-R3; `logId` too, no default (migration step 3)
 		activityXP = { earned = {} }, -- AXP-R3; `logId` too, no default (activity-xp.md › Data)
+		tickets = { earned = {}, spent = {} }, -- REF-R3; `logId` too, no default (refresh.md › Data)
 		pushed = {}, -- PUSH-R13: `seq`, the last accepted file's, no default (pushed-content.md › Data)
 		goods = {}, -- SHOP-R26: every registered good, by ID
 		-- announcements.md › Data: the open Session's summary, moments raised with no Session open, the stored

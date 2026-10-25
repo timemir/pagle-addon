@@ -51,6 +51,7 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	ns.Migrate(ns.db, ns.PAGLEDB_MIGRATIONS, { catchLog = ns.catchLog }) -- step 2 reads the log (ONB-R2)
 	ns.OpenWallet() -- SHOP-R3
 	ns.OpenActivityXP() -- AXP-R3
+	ns.OpenTickets() -- REF-R3
 	ns.RegisterCoreGoods(ns.CORE_PREVIEWS) -- SHOP-R25: before any Module registers its own
 	ns.BuildCatalogue()
 	ns.StartFishCrests() -- VAR-R12: Core's fish crests, over the catalogue, before the variety projection refreshes them

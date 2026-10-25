@@ -195,6 +195,38 @@ describe("a Cast's Announcements", function()
 		end
 	)
 
+	it(
+		"sums the tickets of each Announcement's own moments apart from the 4 stamps, a Nod's too, so none show"
+			.. " twice (ANN-R11, ANN-R23, REF-R7)",
+		function()
+			local world = newWorld()
+			world.moments:Raise(LEDGER, moment("banner", "Level 12", { tickets = 1 }))
+			for i = 1, 5 do
+				world.moments:Raise(HUNTS, moment("toast", "Hunt " .. i, { tickets = 2 }))
+			end
+			world.moments:Raise(LEDGER, moment("nod", "New in this zone", { tickets = 3 }))
+			world.frame()
+
+			assert.are.same({ "Level 12", "Hunt 1" }, headlines(world))
+			assert.are.same({ 1, 13 }, { world.shown[1].tickets, world.shown[2].tickets })
+			assert.are.equal(4, #world.shown[2].stamps)
+			assert.are.equal(1, world.shown[2].more)
+		end
+	)
+
+	it(
+		"leaves a moment with no tickets as it was: no `tickets` on the Announcement, the same stamps (REF-R7)",
+		function()
+			local world = newWorld()
+			world.moments:Raise(HUNTS, moment("toast", "Hunt completed", { coins = 5 }))
+			world.moments:Raise(HUNTS, moment("nod", "Tier 1", { tickets = 0 }))
+			world.frame()
+
+			assert.is_nil(world.shown[1].tickets)
+			assert.are.same({ "Tier 1" }, world.shown[1].stamps)
+		end
+	)
+
 	it("breaks ties on a rung by order, then the Module's def.order, then the earliest raised (ANN-R2)", function()
 		local world = newWorld()
 		world.moments:Raise(HUNTS, moment("toast", "Hunts, order 100"))

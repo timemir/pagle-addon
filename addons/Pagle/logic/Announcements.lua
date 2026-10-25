@@ -367,15 +367,16 @@ function Lanes:showHeld(fought)
 end
 
 -- The "While you were fighting" toast for the toasts held (ANN-R36): it lists each one's headline, carries their Coins
--- (ANN-R23), and is a plain `toast`, so it plays the toast sound once, counts as one interruption and never steps
+-- and Refreshes (ANN-R23, REF-R7), and is a plain `toast`, so it plays the toast sound once, counts as one interruption and never steps
 -- down (ANN-R31).
 ---@param toasts PagleAnnouncement[]
 ---@return PagleAnnouncement
 function whileFighting(toasts)
-	local headlines, coins = {}, 0
+	local headlines, coins, tickets = {}, 0, 0
 	for _, held in ipairs(toasts) do
 		headlines[#headlines + 1] = held.headline
 		coins = coins + held.coins
+		tickets = tickets + (held.tickets or 0)
 	end
 	---@type PagleRaisedMoment
 	local headline = {
@@ -393,6 +394,7 @@ function whileFighting(toasts)
 		stamps = {},
 		more = 0,
 		coins = coins,
+		tickets = tickets > 0 and tickets or nil,
 		moments = {},
 		fighting = headlines,
 	}

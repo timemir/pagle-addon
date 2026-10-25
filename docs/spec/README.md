@@ -14,6 +14,7 @@ This directory is Pagle's product spec. It describes the current state only, and
 | [core/catch-log.md](core/catch-log.md) | `LOG` | Observing fishing, the Catch log and its entry formats, characters and the Angler, Skill Readings, conditions and `NextWindow`, the content catalogue at runtime, Sessions, Simulated Size, projections, the diagnostics buffer | M1, M2, M3, M4, M7 |
 | [core/announcements.md](core/announcements.md) | `ANN` | Moments and the rung ladder, a Cast's Announcements, the display lanes, the Interruption budget, combat hold, Cozy mode, the Session summary, the Write-up, sounds and toast styles | M2, M4 |
 | [core/wallet-and-shop.md](core/wallet-and-shop.md) | `SHOP` | Pagle Coins (earning, spending, balance), goods and slots, owning and equipping, the Curio Shop window, the Look and Feel page | M2, M4 |
+| [core/refresh.md](core/refresh.md) | `REF` | Refreshes: the lifetime totals Hunts (earned) and the Tackle Board (spent) report, the count held, the "Refresh +N" stamp and the overview of who earns and spends | The coin economy ([#404](https://github.com/timemir/pagle-addon/issues/404), ADR 0017) |
 | [core/activity-xp.md](core/activity-xp.md) | `AXP` | Activity XP: the lifetime totals Modules other than the Ledger report toward the Angler Level, their snapshot in each Prestige entry, and the overview of what pays | M8 Hunt Events |
 | [core/pushed-content.md](core/pushed-content.md) | `PUSH` | The companion's `Pagle_Content` data addon: the signature check, the companion state, content by kind | M8 Hunt Events |
 | [core/anglers-in-game.md](core/anglers-in-game.md) | `VIEW` | Published Anglers in game: reading the Companion's `Pagle_Following` and `Pagle_Anglers`, the Pagle block on player tooltips, `Pagle.GetFollowedAnglers()` | Track V In-game views |
@@ -48,7 +49,7 @@ Pagle ships as one zip of six addons, DBM-style (CORE-R1–R3): **Core** (`Pagle
 
 ### Modules see only Core
 
-A Module talks to Core and nothing else (ADR 0001): it never calls, reads or listens to another Module, and no Module earns anything from another. Core publishes one global, `Pagle` (the read-only API and the event bus), and hands each Module a **Module handle** from `Pagle.RegisterModule` for the calls that act on its behalf (CORE-R12). Everything shared between Modules lives in Core: the Catch log, the content catalogue, conditions, Sessions, Simulated Sizes, Announcements, the wallet and the Curio Shop, the Settings tree, the compartment menu, `/pagle` and the tracker dock.
+A Module talks to Core and nothing else (ADR 0001): it never calls, reads or listens to another Module, and no Module earns anything from another. Core publishes one global, `Pagle` (the read-only API and the event bus), and hands each Module a **Module handle** from `Pagle.RegisterModule` for the calls that act on its behalf (CORE-R12). Everything shared between Modules lives in Core: the Catch log, the content catalogue, conditions, Sessions, Simulated Sizes, Announcements, the wallet, the Refresh purse and the Curio Shop, the Settings tree, the compartment menu, `/pagle` and the tracker dock.
 
 ```
                  the game client (loot, spells, calendar, auras, skill, zone text)
@@ -81,7 +82,7 @@ Sessions (runs of Casts with no 5-minute gap) are cut by Core from the log and t
 
 **Core presents every Announcement** (ADR 0007). Modules raise **moments** on a fixed rung ladder (`nod`, `toast.low`, `toast`, `toast.high`, `banner`, `splash`); Core merges one Cast's moments from every Module into at most two Announcements (its banners and splash, its toasts and nods), then applies the Interruption budget, the combat hold, Cozy mode and expiry, plays the sound, and collects everything into the Session summary (ANN-R1–R63). Stats and QoL raise none: Stats announces nothing, and QoL's **Nudges** are its own silent lines, not Announcements (QOL-R75–R78).
 
-**Core holds Pagle Coins** (ADR 0009). The Ledger, Hunts and the Tackle Board pay in for achievements only, each reporting its own lifetime total, so disabling a Module never takes back what it paid (SHOP-R1–R5). Coins buy **looks** in Core's **Curio Shop**: goods each Module registers for its own views (Journal bindings, notebook covers, tracker frames) beside Core's toast styles, sound sets and bookplate crests. Goods never carry meaning: titles, flies, stars and Legends are never sold (SHOP-R20).
+**Core holds Pagle Coins** (ADR 0009). The Ledger, Hunts and the Tackle Board pay in for achievements only, each reporting its own lifetime total, so disabling a Module never takes back what it paid (SHOP-R1–R5). **Core also holds Refreshes** (ADR 0017): Hunts reports the Refreshes its Pagle Wagers have earned, the Tackle Board the ones it has spent posting a goal into an empty slot, and Core keeps the count (REF-R1–R9). Coins buy **looks** in Core's **Curio Shop**: goods each Module registers for its own views (Journal bindings, notebook covers, tracker frames) beside Core's toast styles, sound sets and bookplate crests. Goods never carry meaning: titles, flies, stars and Legends are never sold (SHOP-R20).
 
 ### Content data
 
@@ -92,7 +93,7 @@ Pagle's knowledge of the fishing world is built in the repo, not in the game ([c
 | SavedVariable | Owner | Holds |
 |---|---|---|
 | `PagleLog` | Core (plain table) | The Catch log: `format`, `logId`, `characters`, `entries` ([catch-log.md](core/catch-log.md#data)) |
-| `PagleDB` | Core (AceDB) | Core's settings, Announcement data, the wallet and goods cache, Core's projections, the diagnostics buffer ([catch-log.md](core/catch-log.md#pagledb-acedb-one-shared-default-profile)) |
+| `PagleDB` | Core (AceDB) | Core's settings, Announcement data, the wallet, Refresh totals and goods cache, Core's projections, the diagnostics buffer ([catch-log.md](core/catch-log.md#pagledb-acedb-one-shared-default-profile)) |
 | `PagleLedgerDB`, `PagleHuntsDB`, `PagleStatsDB`, `PagleTackleBoardDB` | each Module (AceDB) | its settings, its projection table and its celebrated set (Stats has none) |
 | `PagleQoLDB` | QoL (AceDB) | its settings, the fishing set per character, and leased CVars |
 
@@ -122,15 +123,15 @@ These hold everywhere and come from the map's settled Notes:
 
 ### What each Module gives and takes
 
-| Module | Projection | Module records | Moments (highest rung) | Pagle Coins | Curio Shop slots | Settings rows | Summary line |
-|---|---|---|---|---|---|---|---|
-| Ledger | XP, levels, mastery, collections, records (LED-R2) | none | many, up to `splash` for a Legend (LED-R97) | levels, Prestige, discoveries, ranks, Legends (LED-R88) | earned goods in `core.binding`, `core.crest`, `core.toaststyle`, `core.soundset` | none (LED-R1) | `ledger` |
-| Hunts | counts, tiers, effort, set titles (HNT-R136) | none | `toast.high` tiers, `banner` set titles, opt-in `nod` windows (HNT-R86, HNT-R88) | 30 / 15 / 100 (HNT-R110) | `hunts.trackerframe`; earned goods in `core.binding`, `core.soundset` | Announcements, Trackers | `hunts` |
-| Stats | counts per scope, every Session (STA-R20) | none | none (STA-R2) | none | `stats.trackerframe` | Trackers | none |
-| Tackle Board | goals, Campfire, Fly Box, titles (TKB-R81) | `start`, `day`, `issue`, `reroll` (TKB-R80) | `toast.low` / `toast` goals, `banner` milestones and titles, `nod` Campfire news (TKB-R86) | goals and Campfire milestones (TKB-R63) | `tackleboard.trackerframe` | Trackers | `board` |
-| QoL | none (QOL-R3) | none | none | none | none | the Fishing page | none |
+| Module | Projection | Module records | Moments (highest rung) | Pagle Coins | Refreshes | Curio Shop slots | Settings rows | Summary line |
+|---|---|---|---|---|---|---|---|---|
+| Ledger | XP, levels, mastery, collections, records (LED-R2) | none | many, up to `splash` for a Legend (LED-R97) | levels, Prestige, discoveries, ranks, Legends (LED-R88) | none | earned goods in `core.binding`, `core.crest`, `core.toaststyle`, `core.soundset` | none (LED-R1) | `ledger` |
+| Hunts | counts, tiers, effort, set titles (HNT-R136) | none | `toast.high` tiers, `banner` set titles, opt-in `nod` windows (HNT-R86, HNT-R88) | 30 / 15 / 100 (HNT-R110) | earns, from Pagle Wagers only (REF-R8) | `hunts.trackerframe`; earned goods in `core.binding`, `core.soundset` | Announcements, Trackers | `hunts` |
+| Stats | counts per scope, every Session (STA-R20) | none | none (STA-R2) | none | none | `stats.trackerframe` | Trackers | none |
+| Tackle Board | goals, Campfire, Fly Box, titles (TKB-R81) | `start`, `day`, `issue`, `reroll` (TKB-R80) | `toast.low` / `toast` goals, `banner` milestones and titles, `nod` Campfire news (TKB-R86) | goals and Campfire milestones (TKB-R63) | spends one per posted goal (REF-R8) | `tackleboard.trackerframe` | Trackers | `board` |
+| QoL | none (QOL-R3) | none | none | none | none | none | the Fishing page | none |
 
-Core's rung table ([announcements.md](core/announcements.md#rungs-modules-use-so-far)) and payout table ([wallet-and-shop.md](core/wallet-and-shop.md#contracts)) repeat these as cross-checks; each Module's spec is authoritative for its own rows. [settings.md](settings.md) shows every row in place.
+Core's rung table ([announcements.md](core/announcements.md#rungs-modules-use-so-far)), payout table ([wallet-and-shop.md](core/wallet-and-shop.md#contracts)) and Refresh overview ([refresh.md](core/refresh.md#rules)) repeat these as cross-checks; each Module's spec is authoritative for its own rows. [settings.md](settings.md) shows every row in place.
 
 ### Where to look for a cross-cutting topic
 
@@ -233,6 +234,7 @@ Any ticket whose answer changes the spec edits the spec in the same change, keep
 | [0009](../adr/0009-core-holds-the-pagle-coins-wallet.md) | Core holds the Pagle Coins wallet and the Curio Shop |
 | [0010](../adr/0010-simulated-size-is-fixed-by-the-catch-id.md) | A Simulated Size is fixed by the Catch ID, and its band cut points are frozen (superseded by 0014) |
 | [0014](../adr/0014-simulated-size-is-bounded-by-a-reach-of-skill-and-experience.md) | A Simulated Size is bounded by a Reach of skill and experience, and its curves and band edges are frozen |
+| [0017](../adr/0017-core-holds-the-refresh-purse-from-reported-totals.md) | Core holds the Refresh purse from reported totals: the fourth cross-Module effect, after Coins, Activity XP and pushed content |
 
 ## Outside this spec
 
