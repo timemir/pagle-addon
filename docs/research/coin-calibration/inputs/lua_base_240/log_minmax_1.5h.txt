@@ -1,0 +1,20 @@
+base / minmax_1.5h: 10 runs, 221s
+| Source | Count | Coins when everything is found |
+|---|---:|---:|
+| Species (new Species) | 35 | 350 |
+| Trophy weights | 20 | 100 |
+| Curios (junk, containers, treasure) | 31 | 155 |
+| Legends | 3 | 300 |
+| Zone Mastery (charted zones x 30) | 62 | 1860 |
+| Levels 1 to 60, first climb | 59 | 1180 |
+| Standing Hunts (tiers) | 12 | 600 |
+| Standing Hunt set titles | 4 | 400 |
+| **All one-time sources** | | **4945** |
+
+Variant `base`: mean cumulative Pagle Coins over 10 runs per profile (seeds 1..10).
+
+| Profile | 1 h | 5 h | 10 h | 20 h | 50 h | 100 h | 200 h | 300 h | 500 h |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| minmax_1.5h, all sources | 984 | 2001 | 2778 | 4588 | 6224 | 7866 | 10720 | 13605 | 18705 |
+| minmax_1.5h, without the repeat Prestige climbs | 984 | 2001 | 2778 | 3696 | 4242 | 4476 | 4680 | 4945 | 4945 |
+

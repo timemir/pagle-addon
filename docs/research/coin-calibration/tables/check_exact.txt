@@ -1,0 +1,6 @@
+Calibrated, with refresh tickets (1 per run + 1 per tier-3 Hunt) exact
+  casual 32 89 201 495 693 857 1,030 | rep coins/day 94.8 xp 1070
+  dedicated 42 126 288 722 1,028 1,268 1,521 | rep coins/day 160.8 xp 1820
+re-priced 
+  casual 32 88 200 492 688 855 1,021 | rep coins/day 95.9 xp 1097
+  dedicated 42 128 288 729 1,034 1,280 1,537 | rep coins/day 157.6 xp 1789

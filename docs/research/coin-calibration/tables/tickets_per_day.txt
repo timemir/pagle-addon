@@ -1,0 +1,16 @@
+1 per run                          casual     earned 0.33/day used 0.33 lost 0.00  runs/day 0.33 tickets per run 1.00
+1 per run                          dedicated  earned 0.33/day used 0.33 lost 0.00  runs/day 0.33 tickets per run 1.00
+1 per run                          minmax15   earned 0.33/day used 0.33 lost 0.00  runs/day 0.33 tickets per run 1.00
+1 per run                          minmax4    earned 0.33/day used 0.33 lost 0.00  runs/day 0.33 tickets per run 1.00
+1 per run + 1 per tier-3 Hunt      casual     earned 0.35/day used 0.35 lost 0.00  runs/day 0.33 tickets per run 1.05
+1 per run + 1 per tier-3 Hunt      dedicated  earned 1.58/day used 1.58 lost 0.00  runs/day 0.33 tickets per run 4.74
+1 per run + 1 per tier-3 Hunt      minmax15   earned 0.61/day used 0.61 lost 0.00  runs/day 0.33 tickets per run 1.84
+1 per run + 1 per tier-3 Hunt      minmax4    earned 1.58/day used 1.58 lost 0.00  runs/day 0.33 tickets per run 4.74
+2 per run + 1 per tier-3 Hunt      casual     earned 0.69/day used 0.69 lost 0.00  runs/day 0.33 tickets per run 2.06
+2 per run + 1 per tier-3 Hunt      dedicated  earned 1.67/day used 1.67 lost 0.00  runs/day 0.33 tickets per run 5.00
+2 per run + 1 per tier-3 Hunt      minmax15   earned 0.94/day used 0.94 lost 0.00  runs/day 0.33 tickets per run 2.83
+2 per run + 1 per tier-3 Hunt      minmax4    earned 1.67/day used 1.67 lost 0.00  runs/day 0.33 tickets per run 5.00
+(all with 4/day + 2/wk)            casual     earned 0.35/day used 0.35 lost 0.00  runs/day 0.33 tickets per run 1.04
+(all with 4/day + 2/wk)            dedicated  earned 1.58/day used 1.58 lost 0.00  runs/day 0.33 tickets per run 4.73
+(all with 4/day + 2/wk)            minmax15   earned 0.60/day used 0.60 lost 0.00  runs/day 0.33 tickets per run 1.81
+(all with 4/day + 2/wk)            minmax4    earned 1.58/day used 1.58 lost 0.00  runs/day 0.33 tickets per run 4.75
