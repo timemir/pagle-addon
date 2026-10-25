@@ -79,6 +79,7 @@ local function wagers(fake)
 				stamp = moment.stamp,
 				icon = moment.icon,
 				coins = moment.coins,
+				tickets = moment.tickets,
 				cast = moment.cast,
 				summaryOnly = moment.summaryOnly,
 				seal = moment.seal,
@@ -199,6 +200,7 @@ describe("Pagle Wagers' moments", function()
 					-- The event's icon is its first Hunt's (HNT-R161): the Haul's, any fish, so Trade_Fishing (HNT-R55).
 					icon = TRADE_FISHING,
 					coins = 25,
+					tickets = 1, -- TICKETS_RUN (HNT-R117)
 					cast = live.id,
 				},
 			}, wagers(fake))
@@ -248,6 +250,56 @@ describe("Pagle Wagers' moments", function()
 			}, moments[#moments])
 			assert.are.equal(2, celebrated(loaded).runs["fixture_vale@" .. start].tiers.fixture_vale_haul)
 		end)
+
+		it(
+			"carry the Refreshes: a third mark's and a settled run's, summed in the Cast's Announcement (REF-R7)",
+			function()
+				-- fixture_deep: a Haul with three tiers (1 / 2 / 3 Catches), a Named fish and a Quality Hunt, in Elwynn.
+				local loaded, fake = login(nil, {
+					events = function(list)
+						list.events[#list.events + 1] = {
+							id = "fixture_deep",
+							zones = { 12 },
+							tags = { "lake", "low" },
+							skill = { 25, 150 },
+							band = "low",
+							rotation = false,
+							hunts = {
+								{ id = "fixture_deep_haul", class = "species.any", tiers = { 1, 2, 3 } },
+								{ id = "fixture_deep_blackmouth", species = 6358, tiers = { 1 } },
+								{ id = "fixture_deep_uncommon", class = "quality.uncommon", tiers = { 1 } },
+							},
+						}
+						return list
+					end,
+				})
+				local start = SERVER_TIME - HOUR
+				loaded.ns.Module:AppendRecord("run", runPayload("fixture_deep", start, start + 3 * DAY))
+				fishAt(fake, DAY_MINUTE, ELWYNN)
+
+				local live = fake.playCast("caught", {
+					{ itemID = C.BLACKMOUTH, quantity = 1 },
+					{ itemID = C.BLACKMOUTH, quantity = 1 },
+					{ itemID = C.BLACKMOUTH, quantity = 1 },
+					{ itemID = C.UNCOMMON, quantity = 1 },
+				})
+				fake.nextFrame()
+
+				local byKind = {}
+				for _, moment in ipairs(wagers(fake)) do
+					byKind[moment.kind] = moment
+					assert.are.equal(live.id, moment.cast)
+				end
+				assert.are.same(
+					{ "Gold mark", loaded.ns.TICKETS_TIER3 },
+					{ byKind.wagerTier.title, byKind.wagerTier.tickets }
+				)
+				assert.are.equal(loaded.ns.TICKETS_RUN, byKind.wagerSettled.tickets)
+				assert.is_nil(byKind.wagerMark.tickets)
+				assert.are.equal(1, #fake.announcements)
+				assert.are.equal(loaded.ns.TICKETS_RUN + loaded.ns.TICKETS_TIER3, fake.announcements[1].tickets)
+			end
+		)
 
 		it("raise the ladder title at the 25th settled run as a banner with no Coins (HNT-R86, HNT-R148)", function()
 			-- 24 runs completed in March, then a 25th on now.
@@ -319,6 +371,7 @@ describe("Pagle Wagers' moments", function()
 					stamp = "Settled",
 					icon = TRADE_FISHING,
 					coins = 25,
+					tickets = 1, -- TICKETS_RUN (HNT-R117)
 					summaryOnly = true,
 				},
 			}, wagers(fake))

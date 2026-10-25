@@ -31,6 +31,46 @@ describe("Pagle Wagers' moment parts", function()
 		end)
 	end)
 
+	describe("the Refreshes a moment carries (HNT-R86, HNT-R117, REF-R7)", function()
+		local event = ns.events:Event("fixture_vale") --[[@as HuntEvent]]
+		local haul = { id = "fixture_vale_haul", class = "species.any", tiers = { 1, 2, 3 } }
+		local huntTier = hunts.progress({ tiers = 3 }).reached[3]
+
+		it("is a settled run's", function()
+			local moment = ns.WagerSettledMoment(event)
+
+			assert.are.equal(ns.TICKETS_RUN, moment.tickets)
+			assert.are.equal(ns.COINS_RUN, moment.coins)
+		end)
+
+		it("is a third mark's, beside its Coins", function()
+			local moment = ns.WagerMarkMoment(haul, 3, huntTier)
+
+			assert.are.same({ "wagerTier", ns.TICKETS_TIER3, ns.TierAmount(ns.COINS_EVENT, 3) }, {
+				moment.kind,
+				moment.tickets,
+				moment.coins,
+			})
+		end)
+
+		it("is none for a first or a second mark, nor for a ladder title", function()
+			assert.is_nil(ns.WagerMarkMoment(haul, 1, huntTier).tickets)
+			assert.is_nil(ns.WagerMarkMoment(haul, 2, huntTier).tickets)
+			assert.is_nil(ns.WagerTitleMoment(25).tickets)
+		end)
+
+		it("is left out while a count is 0, as a moment with no Refreshes has no field (REF-R7)", function()
+			local run, tier3 = ns.TICKETS_RUN, ns.TICKETS_TIER3
+			ns.TICKETS_RUN, ns.TICKETS_TIER3 = 0, 0
+
+			local settled, mark = ns.WagerSettledMoment(event), ns.WagerMarkMoment(haul, 3, huntTier)
+			ns.TICKETS_RUN, ns.TICKETS_TIER3 = run, tier3
+
+			assert.is_nil(settled.tickets)
+			assert.is_nil(mark.tickets)
+		end)
+	end)
+
 	describe("a ladder title (HNT-R130, HNT-R148)", function()
 		it("is its lore, `ladder.<n>.title`", function()
 			assert.are.equal("Bookmaker's Bane", ns.LadderTitle(25))

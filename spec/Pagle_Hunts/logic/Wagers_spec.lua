@@ -67,17 +67,32 @@ describe("the run entry's pay rule (HNT-R163, HNT-R27)", function()
 	it("comes from the Tunables, and claims no odds, chance or due fish", function()
 		local ns = load()
 		ns.XP_EVENT, ns.COINS_EVENT, ns.XP_RUN, ns.COINS_RUN = { 200, 120 }, { 20, 12 }, 300, 60
+		ns.TICKETS_RUN, ns.TICKETS_TIER3 = 2, 1
 
 		local rule = ns.RunPayRule()
 
 		assert.are.equal(
 			"Each Hunt's first mark pays +200 XP and 20 Coins, each tier after it +120 XP and 12 Coins, and settling "
-				.. "the wager +300 XP and 60 Coins more.",
+				.. "the wager +300 XP and 60 Coins more. A Hunt's third mark also pays 1 Refresh, and settling the "
+				.. "wager 2 more.",
 			rule
 		)
 		for _, word in ipairs({ "odds", "chance", "due", "likely", "%%" }) do
 			assert.is_nil(rule:lower():find(word))
 		end
+	end)
+
+	it("names a Refresh only where a count above 0 pays one (HNT-R117)", function()
+		local ns = load()
+		local coins = "Each Hunt's first mark pays +150 XP and 8 Coins, each tier after it +100 XP and 5 Coins, and "
+			.. "settling the wager +250 XP and 25 Coins more."
+
+		ns.TICKETS_RUN, ns.TICKETS_TIER3 = 1, 0
+		assert.are.equal(coins .. " Settling the wager also pays 1 Refresh.", ns.RunPayRule())
+		ns.TICKETS_RUN, ns.TICKETS_TIER3 = 0, 2
+		assert.are.equal(coins .. " A Hunt's third mark also pays 2 Refreshes.", ns.RunPayRule())
+		ns.TICKETS_RUN, ns.TICKETS_TIER3 = 0, 0
+		assert.are.equal(coins, ns.RunPayRule())
 	end)
 end)
 
@@ -327,19 +342,22 @@ describe("a run's entry (HNT-R163)", function()
 
 	it('reads the Casts with the first marks, "Paid so far" and "Settle it", then the pay rule', function()
 		local ns = load()
+		ns.TICKETS_RUN, ns.TICKETS_TIER3 = 2, 1
 
 		local entry = ns.BuildRunEntry(wagersInput(ns, {}), shore(ns))
 
 		assert.are.equal("7 Casts in these waters this run · 1 of 3 first marks", entry.casts)
+		-- Settling pays Refreshes, shown beside the Coins; nothing is paid so far, so that box shows none (HNT-R117).
 		assert.are.same({
 			{ label = "Paid so far", amount = "+150 XP · 8 Coins" },
-			{ label = "Settle it", amount = "+250 XP · 25 Coins" },
+			{ label = "Settle it", amount = "+250 XP · 25 Coins", refresh = "+2 Refreshes" },
 		}, entry.pay)
 		assert.are.equal(ns.RunPayRule(), entry.payRule)
 	end)
 
 	it('presses the seal once settled, reads "settled, and still open" and "Settled" over "paid out"', function()
 		local ns = load()
+		ns.TICKETS_RUN, ns.TICKETS_TIER3 = 1, 1
 		local done = hunts.progress({ tiers = 1, time = NOW - HOUR, date = { year = 2026, month = 10, day = 10 } })
 		local shown = shownRun(ns, "fixture_shore", NOW - DAY, NOW + 2 * DAY, {
 			fixture_shore_haul = hunts.progress({ tiers = 1, count = 2 }),
@@ -353,7 +371,26 @@ describe("a run's entry (HNT-R163)", function()
 		assert.are.same({ "settled", "settled, and still open" }, { entry.time.dial.kind, entry.time.hand })
 		assert.are.same({ label = "Settled", amount = "paid out" }, entry.pay[2])
 		-- three first marks and the settled run: 3 × 150 + 250 XP, 3 × 8 + 25 Coins
-		assert.are.same({ label = "Paid so far", amount = "+700 XP · 49 Coins" }, entry.pay[1])
+		assert.are.same({ label = "Paid so far", amount = "+700 XP · 49 Coins", refresh = "+1 Refresh" }, entry.pay[1])
+	end)
+
+	it("counts a Hunt's third tier in the Refreshes paid so far, and the run once settled (HNT-R117)", function()
+		local ns = load()
+		ns.TICKETS_RUN, ns.TICKETS_TIER3 = 1, 3
+		local done = hunts.progress({ tiers = 1, time = NOW - HOUR })
+		local shown = shownRun(ns, "fixture_shore", NOW - DAY, NOW + 2 * DAY, {
+			fixture_shore_haul = hunts.progress({ tiers = 3, count = 5 }),
+			fixture_shore_snapper = done,
+		})
+
+		local entry = ns.BuildRunEntry(wagersInput(ns, {}), shown)
+
+		-- Two first marks and two further tiers: 2 × 150 + 2 × 100 XP, 2 × 8 + 2 × 5 Coins.
+		assert.are.same(
+			{ label = "Paid so far", amount = "+500 XP · 26 Coins", refresh = "+3 Refreshes" },
+			entry.pay[1]
+		)
+		assert.are.equal("+1 Refresh", entry.pay[2].refresh)
 	end)
 
 	it("reads a run ahead's opening with the dashed dial, and has no Casts line and no boxes", function()

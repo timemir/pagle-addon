@@ -39,6 +39,8 @@ local BAR_Y, BAR_Y_TIGHT, BAR_H, WINDOW_Y = 33.8, 32.8, 5, 41.8
 local ROW_PLAIN, ROW_TIMED, ROW_TIGHT = 49.8, 66.6, 44.8
 -- The Casts line's gap; the pay boxes' gap above, height, gap between and words' places; the pay rule's gap above.
 local CASTS_GAP, PAY_GAP, PAY_H, PAY_BETWEEN, PAY_X, PAY_LABEL_Y, PAY_AMOUNT_Y, RULE_GAP = 6, 6, 40, 6, 7, 5, 19, 5
+-- The Refreshes a box pays sit on the label row, at the right of the box (HNT-R117).
+local PAY_REFRESH_Y = 4
 -- With no run: the title's and the hand's tops.
 local NONE_TITLE_Y, NONE_HAND_Y = 17, 55
 -- How far below its drawable area the entry may end (HNT-R163's fit rule): the kit's 512 on its 500-unit area, half
@@ -88,6 +90,7 @@ local CHIPS = {
 ---@field ring BoardOutline
 ---@field label WagerText
 ---@field amount WagerText
+---@field refresh WagerText   -- the Refreshes the box pays, at the label's right (HNT-R117)
 ---@field tooltip string[]?
 
 ---@class RunEntryView
@@ -146,6 +149,7 @@ local function newPay(parent)
 	box.ring:Solid(LOOK.oxbloodRing, LOOK.oxbloodRing[4])
 	box.label = ns.NewWagerText(box, "payLabel")
 	box.amount = ns.NewWagerText(box, "payAmount")
+	box.refresh = ns.NewWagerText(box, "payRefresh")
 	box:EnableMouse(true)
 	box:SetScript("OnEnter", function(self)
 		if self.tooltip then
@@ -540,6 +544,12 @@ local function lay(view, entry, drop)
 			ns.PlaceWagerText(box.label, box, PAY_X, PAY_LABEL_Y)
 			ns.FitWagerText(box.amount, data.amount, boxWidth - 2 * PAY_X)
 			ns.PlaceWagerText(box.amount, box, PAY_X, PAY_AMOUNT_Y)
+			if data.refresh then
+				ns.FitWagerText(box.refresh, data.refresh, boxWidth - 2 * PAY_X)
+				ns.PlaceWagerText(box.refresh, box, PAY_X, PAY_REFRESH_Y, true)
+			else
+				box.refresh:Hide()
+			end
 			box.tooltip = drop.rule and { data.label, entry.payRule } or nil
 			box:Show()
 		end

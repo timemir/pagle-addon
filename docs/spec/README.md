@@ -126,7 +126,7 @@ These hold everywhere and come from the map's settled Notes:
 | Module | Projection | Module records | Moments (highest rung) | Pagle Coins | Refreshes | Curio Shop slots | Settings rows | Summary line |
 |---|---|---|---|---|---|---|---|---|
 | Ledger | XP, levels, mastery, collections, records (LED-R2) | none | many, up to `splash` for a Legend (LED-R97) | levels, Prestige, discoveries, ranks, Legends (LED-R88) | none | earned goods in `core.binding`, `core.crest`, `core.toaststyle`, `core.soundset` | none (LED-R1) | `ledger` |
-| Hunts | counts, tiers, effort, set titles (HNT-R136) | none | `toast.high` tiers, `banner` set titles, opt-in `nod` windows (HNT-R86, HNT-R88) | 30 / 15 / 100 (HNT-R110) | earns, from Pagle Wagers only (REF-R8) | `hunts.trackerframe`; earned goods in `core.binding`, `core.soundset` | Announcements, Trackers | `hunts` |
+| Hunts | counts, tiers, effort, set titles (HNT-R136) | none | `toast.high` tiers, `banner` set titles, opt-in `nod` windows (HNT-R86, HNT-R88) | 30 / 15 / 100 (HNT-R110) | earns, from Pagle Wagers only (HNT-R116, REF-R8) | `hunts.trackerframe`; earned goods in `core.binding`, `core.soundset` | Announcements, Trackers | `hunts` |
 | Stats | counts per scope, every Session (STA-R20) | none | none (STA-R2) | none | none | `stats.trackerframe` | Trackers | none |
 | Tackle Board | goals, Campfire, Fly Box, titles (TKB-R81) | `start`, `day`, `issue`, `post`, `reroll` (TKB-R80) | `toast.low` / `toast` goals, `banner` milestones and titles, `nod` Campfire news (TKB-R86) | goals and Campfire milestones (TKB-R63) | spends one per posted goal (TKB-R58, REF-R8) | `tackleboard.trackerframe` | Trackers | `board` |
 | QoL | none (QOL-R3) | none | none | none | none | none | the Fishing page | none |

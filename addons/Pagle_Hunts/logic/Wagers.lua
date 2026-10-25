@@ -68,11 +68,12 @@ function ns.EventHuntLine(hunt, list, sources)
 	return L.RUN_HUNT_LINE:format(L.SHAPES[ns.EventHuntShape(hunt)], target)
 end
 
---- The pay rule under a run's entry (HNT-R163), from the Tunables (HNT-R110, HNT-R114): what a first mark, a further
---- mark and a settled run pay.
+--- The pay rule under a run's entry (HNT-R163), from the Tunables (HNT-R110, HNT-R114, HNT-R117): what a first mark, a
+--- further mark and a settled run pay, then the Refreshes a third mark and a settled run pay, where either does.
 ---@return string
 function ns.RunPayRule()
-	return ns.L.RUN_PAY_RULE:format(
+	local L = ns.L
+	local rule = L.RUN_PAY_RULE:format(
 		ns.XP_EVENT[1],
 		ns.COINS_EVENT[1],
 		ns.XP_EVENT[2],
@@ -80,6 +81,15 @@ function ns.RunPayRule()
 		ns.XP_RUN,
 		ns.COINS_RUN
 	)
+	local tier, settle = ns.TICKETS_TIER3, ns.TICKETS_RUN
+	if tier > 0 and settle > 0 then
+		return rule .. L.RUN_PAY_RULE_REFRESH_BOTH:format(ns.CountText(tier, "REFRESH"), settle)
+	elseif tier > 0 then
+		return rule .. L.RUN_PAY_RULE_REFRESH_TIER:format(ns.CountText(tier, "REFRESH"))
+	elseif settle > 0 then
+		return rule .. L.RUN_PAY_RULE_REFRESH_RUN:format(ns.CountText(settle, "REFRESH"))
+	end
+	return rule
 end
 
 --- Server time `t` as a realm weekday and clock time, "Sat 17:00" (HNT-R50), whatever the day: a run's end or start
@@ -515,10 +525,12 @@ end
 ---@field fill number?             -- the ink bar toward the next threshold, 0–1; nil while updating
 ---@field window RunEntryWindow?   -- a Timed Hunt's, for a run on
 
---- One of the two pay boxes (HNT-R163): its label over its amount.
+--- One of the two pay boxes (HNT-R163): its label over its amount, and the Refreshes it pays beside its label
+--- (HNT-R117).
 ---@class RunEntryPay
 ---@field label string
 ---@field amount string
+---@field refresh string?   -- "+2 Refreshes"; nil where none are paid
 
 --- The time block (HNT-R163): the dial, then a line in the hand over a small one.
 ---@class RunEntryTime
@@ -573,22 +585,32 @@ local function chipsOf(event, input)
 	return chips
 end
 
--- What a run has paid so far (HNT-R110, HNT-R114): every tier its Hunts reached in it, and the settled run on top.
+-- What a run has paid so far (HNT-R110, HNT-R114, HNT-R117): every tier its Hunts reached in it, and the settled run
+-- on top.
 ---@param run HuntRun
 ---@return integer xp
 ---@return integer coins
+---@return integer tickets
 local function paidSoFar(run)
-	local xp, coins = 0, 0
+	local xp, coins, tickets = 0, 0, 0
 	for _, progress in pairs(run.hunts) do
 		for k in ipairs(progress.reached) do
 			xp = xp + ns.TierAmount(ns.XP_EVENT, k)
 			coins = coins + ns.TierAmount(ns.COINS_EVENT, k)
+			tickets = tickets + ns.TierTickets(k)
 		end
 	end
 	if run.completedAt then
-		xp, coins = xp + ns.XP_RUN, coins + ns.COINS_RUN
+		xp, coins, tickets = xp + ns.XP_RUN, coins + ns.COINS_RUN, tickets + ns.TICKETS_RUN
 	end
-	return xp, coins
+	return xp, coins, tickets
+end
+
+-- A pay box's Refreshes line, "+2 Refreshes" (HNT-R117), or nil for none: the box shows it beside its Coins.
+---@param n integer
+---@return string?
+local function refreshLine(n)
+	return n > 0 and ns.CountText(n, "PAY_REFRESH") or nil
 end
 
 -- The Casts made in a run's waters (HNT-R163): the most effort Casts any of its Hunts counted, as a Hunt whose spec
@@ -728,11 +750,14 @@ function ns.BuildRunEntry(input, shown)
 	end
 	local casts = castsIn(run)
 	entry.casts = L["RUN_CASTS_" .. (casts == 1 and "ONE" or "OTHER")]:format(casts, done, #event.hunts)
-	local xp, coins = paidSoFar(run)
+	local xp, coins, tickets = paidSoFar(run)
 	entry.pay = {
-		{ label = L.PAY_SO_FAR, amount = L.PAY_AMOUNT:format(xp, coins) },
-		settled and { label = L.PAY_SETTLED, amount = L.PAY_PAID_OUT }
-			or { label = L.PAY_SETTLE, amount = L.PAY_AMOUNT:format(ns.XP_RUN, ns.COINS_RUN) },
+		{ label = L.PAY_SO_FAR, amount = L.PAY_AMOUNT:format(xp, coins), refresh = refreshLine(tickets) },
+		settled and { label = L.PAY_SETTLED, amount = L.PAY_PAID_OUT } or {
+			label = L.PAY_SETTLE,
+			amount = L.PAY_AMOUNT:format(ns.XP_RUN, ns.COINS_RUN),
+			refresh = refreshLine(ns.TICKETS_RUN),
+		},
 	}
 	return entry
 end

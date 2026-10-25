@@ -68,6 +68,7 @@ local ns = select(2, ...)
 ---@field casts integer       -- Casts applied, for the Write-up heading
 ---@field coins integer       -- lifetime Pagle Coins earned (HNT-R110)
 ---@field xp integer          -- lifetime Activity XP earned (HNT-R115)
+---@field tickets integer     -- lifetime Refreshes earned (HNT-R116)
 ---@field runs table<string, HuntRun>   -- by run key, every known run (HNT-R150; logic/Runs.lua)
 ---@field defs table<string, { parts: integer, texts: table<integer, string> }>   -- pushed definitions' parts by event ID (HNT-R154)
 ---@field settled integer     -- the completed-run count (HNT-R148)

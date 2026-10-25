@@ -58,6 +58,14 @@ function ns.LadderTitle(step)
 	return ns.Lore(ns.L, "ladder." .. step .. ".title") or ("ladder." .. step)
 end
 
+--- The Refreshes a moment carries (HNT-R117, REF-R7): `n`, or nil for none, since a moment with no Refreshes has no
+--- `tickets` field.
+---@param n integer
+---@return integer?
+local function momentTickets(n)
+	return n > 0 and n or nil
+end
+
 --- The moment for tier `k` of event Hunt `hunt` in a run (HNT-R86): the first mark at tier 1, a further mark after;
 --- `huntTier` is the HuntTier that reached it, whose Catch's item is the icon (HNT-R55). No `cast`: the caller adds it.
 ---@param hunt HuntEventHunt
@@ -87,6 +95,7 @@ function ns.WagerMarkMoment(hunt, k, huntTier)
 		stamp = trim,
 		icon = ns.HuntMomentIcon(huntTier.itemID),
 		coins = ns.TierAmount(ns.COINS_EVENT, k),
+		tickets = momentTickets(ns.TierTickets(k)),
 	}
 end
 
@@ -103,6 +112,7 @@ function ns.WagerSettledMoment(event)
 		stamp = L.WAGER_SETTLED_STAMP,
 		icon = ns.EventMomentIcon(event),
 		coins = ns.COINS_RUN,
+		tickets = momentTickets(ns.TICKETS_RUN),
 	}
 end
 

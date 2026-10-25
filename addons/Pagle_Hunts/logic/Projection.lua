@@ -11,8 +11,9 @@ local ns = select(2, ...)
 -- Projection state (`HuntsState`, logic/Seams.lua); the runs' part of the fold is logic/Runs.lua.
 
 --- Tunables (hunts.md): the Hunts rules version, which rises whenever a rule changes what the projection holds
---- (HNT-R138): 1 before Hunt Events, 2 with runs, Activity XP and the ladder (HNT-R136), 3 for the retuned Coins (HNT-R110, #412).
-ns.HUNTS_RULES_VERSION = 3
+--- (HNT-R138): 1 before Hunt Events, 2 with runs, Activity XP and the ladder (HNT-R136), 3 for the retuned Coins (HNT-R110, #412),
+--- 4 with the Refreshes a run earns (HNT-R116).
+ns.HUNTS_RULES_VERSION = 4
 
 --- Tunables (hunts.md): the Coins paid when a Hunt completes, for each further tier, and for each set title
 --- (HNT-R110).
@@ -62,11 +63,12 @@ ns.outlets = {
 
 --- What the projection reads besides the Hunt list: Qualify's lookups (`HuntsLookups`, logic/Qualify.lua), and the
 --- log's records again (`M:IterateCatches`, LOG-R42), for a `run` record's earlier Casts (HNT-R149). What it does
---- outside its state: the Coins and Activity XP reports (`M:ReportCoinsEarned`, SHOP-R2; `M:ReportXPEarned`, AXP-R2)
---- and the server time `done` checks the set titles at (HNT-R23).
+--- outside its state: the Coins, Activity XP and Refresh reports (`M:ReportCoinsEarned`, SHOP-R2; `M:ReportXPEarned`,
+--- AXP-R2; `M:ReportTicketsEarned`, REF-R2) and the server time `done` checks the set titles at (HNT-R23).
 ---@class HuntsProjectionClient
 ---@field ReportCoinsEarned fun(total: integer)
 ---@field ReportXPEarned fun(total: integer)
+---@field ReportTicketsEarned fun(total: integer)
 ---@field IterateCatches (fun(afterSeq: integer): fun(): PagleRecord?)?
 ---@field ServerTime fun(): integer
 
@@ -77,6 +79,7 @@ function ns.NewHuntsState()
 		casts = 0,
 		coins = 0,
 		xp = 0,
+		tickets = 0,
 		runs = {},
 		defs = {},
 		settled = 0,
@@ -356,8 +359,8 @@ end
 --- logic/ alone, without adapter/ or locale/ (CORE-R7). Makes the Hunt list, Qualify's lookups, where each Hunt
 --- bites and the event pool as the adapter's OnInitialize does (ns.hunts, ns.lookups, ns.where, ns.events), then binds
 --- ns.ProjectionDef with `M:NewProjection` over a table of its own making, reading the log back through
---- `M:IterateCatches` as the client does. Coins and Activity XP aren't reported (the driver reads ns.CoinsEarned and
---- ns.ActivityXPEarned), and `done` checks the set titles at GetServerTime(), which the driver answers with its fold's
+--- `M:IterateCatches` as the client does. Coins, Activity XP and Refreshes aren't reported (the driver reads
+--- ns.CoinsEarned, ns.ActivityXPEarned and ns.TicketsEarned), and `done` checks the set titles at GetServerTime(), which the driver answers with its fold's
 --- time. Without locale/, the Hunt list has no text, which the fold never reads. The client's adapter never calls it.
 ---@param M PagleModuleHandle
 ---@return PagleProjection
@@ -371,6 +374,7 @@ function ns.BindProjections(M)
 	return M:NewProjection(ns.ProjectionDef({}, ns.lookups, {
 		ReportCoinsEarned = function() end,
 		ReportXPEarned = function() end,
+		ReportTicketsEarned = function() end,
 		IterateCatches = function(afterSeq)
 			return M:IterateCatches(afterSeq)
 		end,
@@ -394,6 +398,14 @@ end
 ---@return integer
 function ns.ActivityXPEarned(state)
 	return state.xp
+end
+
+--- A Hunts state's lifetime Refreshes earned (HNT-R116, REF-R2, REF-R9), as Hunts reports them with
+--- M:ReportTicketsEarned: for Pagle's backend, read after done.
+---@param state HuntsState
+---@return integer
+function ns.TicketsEarned(state)
+	return state.tickets
 end
 
 ---@class HuntsJournalHunt
@@ -491,7 +503,7 @@ function ns.ProjectionDef(global, lookups, client)
 		---@param record PagleRecord
 		---@param mode PagleApplyMode
 		apply = function(state, record, mode)
-			local coins, xp = state.coins, state.xp
+			local coins, xp, tickets = state.coins, state.xp, state.tickets
 			local live = mode == "live"
 			-- HNT-R137 step 4, live only: the moments for what is newly reached, then Coins and Activity XP if they
 			-- changed. A replay or rebuild only changes the state, which done reads after.
@@ -523,6 +535,9 @@ function ns.ProjectionDef(global, lookups, client)
 			if state.xp ~= xp then
 				client.ReportXPEarned(state.xp)
 			end
+			if state.tickets ~= tickets then
+				client.ReportTicketsEarned(state.tickets)
+			end
 			-- A set title or a completed run may earn a good (HNT-R122), noted once its rule holds.
 			if #reached.sets + #reached.settled > 0 then
 				noteGoods(state)
@@ -540,6 +555,7 @@ function ns.ProjectionDef(global, lookups, client)
 			end
 			client.ReportCoinsEarned(state.coins) -- after every catch-up or rebuild (HNT-R110, SHOP-R2)
 			client.ReportXPEarned(state.xp) -- on the same timing (HNT-R115, AXP-R2)
+			client.ReportTicketsEarned(state.tickets) -- and the Refreshes (HNT-R116, REF-R2)
 			ns.outlets.Done(state, info)
 			noteGoods(state)
 			ns.outlets.RefreshGoods() -- the earned goods, never mid-catch-up or mid-rebuild (HNT-R122, SHOP-R31)

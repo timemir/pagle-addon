@@ -205,6 +205,14 @@ function ns.AddDefPart(state, record)
 	return true
 end
 
+--- What an event Hunt reaching tier `k` of a run pays in Refreshes (HNT-R116): `ns.TICKETS_TIER3` at tier 3, nothing at
+--- any other tier, so a Hunt pays it once per run.
+---@param k integer
+---@return integer
+function ns.TierTickets(k)
+	return k == 3 and ns.TICKETS_TIER3 or 0
+end
+
 --- Credits one Cast to a known run on at its time (HNT-R144, HNT-R145, HNT-R137 step 2): for each Hunt of its event,
 --- in file order, the effort counter first (HNT-R25, HNT-R26: its condition spec, the event's zones included), then
 --- each qualifying Catch in loot-slot order, with the Coins and Activity XP each newly reached tier pays (HNT-R110,
@@ -228,6 +236,7 @@ function ns.CreditRunCast(state, on, event, cast, lookups, reached)
 		for _, k in ipairs(ns.CountQualifying(progress, hunt, cast, ns.MatchingCatches(hunt, cast, lookups))) do
 			state.coins = state.coins + ns.TierAmount(ns.COINS_EVENT, k)
 			state.xp = state.xp + ns.TierAmount(ns.XP_EVENT, k)
+			state.tickets = state.tickets + ns.TierTickets(k) -- tier 3 only, so once per Hunt per run (HNT-R116)
 			reached.marks[#reached.marks + 1] = { run = on.key, hunt = hunt.id, tier = k }
 		end
 		if progress.count > count then
@@ -264,6 +273,7 @@ function ns.SettleRun(state, on, event, reached)
 	state.settled = state.settled + 1
 	state.coins = state.coins + ns.COINS_RUN
 	state.xp = state.xp + ns.XP_RUN
+	state.tickets = state.tickets + ns.TICKETS_RUN -- once per run (HNT-R116)
 	reached.settled[#reached.settled + 1] = on.key
 	for _, step in ipairs(ns.LADDER_STEPS) do
 		if state.settled >= step and not state.ladder[step] then
