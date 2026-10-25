@@ -372,9 +372,9 @@ describe("The Ledger's fold", function()
 				assert.are.equal(20 + 200 + 2000, state.xp)
 				assert.are.same({
 					{ kind = "legend", cast = first.id, coins = 100, itemID = LEGEND },
-					{ kind = "levelUp", cast = first.id, coins = 20, levels = { 2 } },
+					{ kind = "levelUp", cast = first.id, coins = 40, levels = { 2 } },
 				}, earned)
-				assert.are.equal(100 + 20, state.coins)
+				assert.are.equal(100 + 40, state.coins)
 			end
 		)
 
@@ -430,7 +430,7 @@ describe("The Ledger's fold", function()
 			-- The family's first weight: no ruler from the Legend's 90 (LED-R61). The Legend's 2,020 XP reach level 2.
 			assert.are.same({ "legend", "levelUp", "trophyWeight" }, kinds(earned))
 			assert.is_nil(earned[3].old)
-			assert.are.equal(100 + 20 + 5, state.coins)
+			assert.are.equal(100 + 40 + 5, state.coins)
 		end)
 
 		it(
@@ -761,16 +761,16 @@ describe("The Ledger's fold", function()
 			assert.are.same({ 3, 3 }, { ns.Level(state), ns.PeakLevel(state) })
 		end)
 
-		it("raises one levelUp per entry, with every level it raised and 20 Coins each (LED-R97, LED-R88)", function()
+		it("raises one levelUp per entry, with every level it raised and 40 Coins each (LED-R97, LED-R88)", function()
 			local state = fold.reset()
 			state.xp = 1080 - 1
 			local cast = log.cast(T0, ELWYNN, { MACKEREL }) -- 820 XP: level 1 → 2, not yet 3 (2,240)
 			local _, earned = applyAll({ cast }, "live", state)
 
 			assert.are.equal(2, ns.Level(state))
-			assert.are.same({ kind = "levelUp", cast = cast.id, coins = 20, levels = { 2 } }, earned[2])
+			assert.are.same({ kind = "levelUp", cast = cast.id, coins = 40, levels = { 2 } }, earned[2])
 			assert.are.equal(2, #earned)
-			assert.are.equal(10 + 20, state.coins)
+			assert.are.equal(10 + 40, state.coins)
 		end)
 
 		it("raises one levelUp for two levels, after the entry's other achievements (LED-R97)", function()
@@ -780,9 +780,9 @@ describe("The Ledger's fold", function()
 			local _, earned = applyAll({ log.skill(T0, 160) }, "live", state)
 
 			assert.are.equal(4, ns.Level(state))
-			assert.are.same({ kind = "levelUp", coins = 40, levels = { 3, 4 } }, earned[3])
+			assert.are.same({ kind = "levelUp", coins = 80, levels = { 3, 4 } }, earned[3])
 			assert.are.equal(3, #earned)
-			assert.are.equal(40, state.coins)
+			assert.are.equal(80, state.coins)
 		end)
 
 		it("stops raising levels at 60 while the carried XP grows (LED-R30)", function()
@@ -791,7 +791,7 @@ describe("The Ledger's fold", function()
 			local _, earned = applyAll({ log.skill(T0, 300) }, "live", state)
 
 			assert.are.equal(60, ns.Level(state))
-			assert.are.same({ kind = "levelUp", coins = 20, levels = { 60 } }, earned[5])
+			assert.are.same({ kind = "levelUp", coins = 40, levels = { 60 } }, earned[5])
 			assert.are.equal(TO_60 - 1 + 4000, state.xp)
 			assert.are.same({ 60, 3999 }, { ns.ClimbOf(state.xp, 0) })
 		end)
@@ -945,9 +945,9 @@ describe("The Ledger's fold", function()
 		end)
 
 		it(
-			"is LEDGER_RULES_VERSION 10: 4 when ★ moved to the 5th Catch, 5 for the full Prestige cost and Activity XP in the climb, 6 for the varieties caught, 7 for the second round's counts, 8 for the crest times and record, 9 for the measures' rise times, 10 for the fish of each race and faction (LED-R4, LED-R30, LED-R37, VAR-R20, LED-R118, LED-R155, LED-R156, LED-R158, LED-R164, Tunables)",
+			"is LEDGER_RULES_VERSION 11: 4 when ★ moved to the 5th Catch, 5 for the full Prestige cost and Activity XP in the climb, 6 for the varieties caught, 7 for the second round's counts, 8 for the crest times and record, 9 for the measures' rise times, 10 for the fish of each race and faction, 11 for the retuned Coins (LED-R4, LED-R30, LED-R37, LED-R88, VAR-R20, LED-R118, LED-R155, LED-R156, LED-R158, LED-R164, Tunables)",
 			function()
-				assert.are.equal(10, ns.LEDGER_RULES_VERSION)
+				assert.are.equal(11, ns.LEDGER_RULES_VERSION)
 			end
 		)
 	end)

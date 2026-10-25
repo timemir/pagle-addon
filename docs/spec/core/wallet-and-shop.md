@@ -14,7 +14,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 
 ### Earning
 
-- **SHOP-R1** Coins reward achievements only, never raw volume. Core itself pays nothing: no Coins for Casts or Catches. Stats and QoL pay nothing.
+- **SHOP-R1** Coins reward progress and achievements. There is no payment per Catch. A level-up and a Prestige count as progress: each pays once, when it is reached. Nothing pays per Catch, per hour or per Session, and no trickle tops up a slow day. Core itself pays nothing: no Coins for Casts or Catches. Stats and QoL pay nothing.
 - **SHOP-R2** A paying Module keeps its own **lifetime Coins earned** in its projection (ADR 0004) and reports it with `M:ReportCoinsEarned(total)`: from its projection's `done` after every catch-up or rebuild (even when unchanged, so a lost `PagleDB` refills), and after each live entry that changes it. It never reports mid-rebuild.
 - **SHOP-R3** Core stores the last total each Module reported in `PagleDB.global.coins.earned[<def.name>]`. A Module that is disabled or uninstalled keeps its last total, so nothing it paid is lost. If `PagleDB` itself is lost, a disabled Module's total is gone until it is enabled and reports again. The totals belong to the log's `logId` (`PagleDB.global.coins.logId`): when `PagleLog.logId` differs from it (a new log, LOG-R18), Core empties them at `ADDON_LOADED` and takes the new `logId`, so a new log never inherits the old one's totals; each Module's report after its rebuild fills them in again (as AXP-R3 does for Activity XP, [#278](https://github.com/timemir/pagle-addon/issues/278)).
 - **SHOP-R4** Disabling a Module never lowers what it paid. Only a rebalance or data fix can recount a Module's total lower; then `earned` follows the new report, but the balance never goes below 0 (SHOP-R12) and nothing bought is taken back.
@@ -33,7 +33,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 - **SHOP-R21** Modules register their own slots and goods with `M:RegisterSlot` and `M:RegisterGood`, at any time after `RegisterModule`; Core registers its own. Slot and good IDs are `<def.name lowercased>.<name>` (`core.` for Core's), match `[%w_.]+`, and never change once shipped.
 - **SHOP-R22** Every good is exactly one of:
   - **default**: free and owned by everyone; each slot has exactly one
-  - **for sale**: price tier 1 to 5 (150, 400, 900, 2,000 or 5,000 Coins)
+  - **for sale**: price tier 1 to 6 (250, 400, 900, 3,000, 10,000 or 25,000 Coins). Tier 6 has no goods yet; an empty tier is fine (Tunables)
   - **earned**: not for sale (until a fallback date, if it has one: SHOP-R28); owned when its Module says so (`isEarned()`), with an `earnedText` saying how: a string ("Angler Level 30"), or a function the shop calls each time it draws the good while it isn't owned, returning the row's tag and, optionally, the stage's note ("Expert · 88%", "Earned when … Next: …"). An earned good may also have `progress()`, which the shop calls each time it draws the good on the stage while it isn't owned: a list of dots `{ color = { r, g, b }, filled = boolean }`, drawn on the stage (UI). Neither function's result is ever cached, and Core never calls either to decide ownership (SHOP-R30); one that raises is reported and its texts or dots are left out, and so is a dot without a colour of three numbers.
   - **crate only**: never for sale and never earned; owned when a Curio crate gives it (SHOP-R50). Only Core registers these, at most two in all (Tunables).
 - **SHOP-R23** Registration raises a Lua error and ignores the call for: a duplicate ID, an ID without the Module's prefix, an unknown slot, a slot registered by a different Module (or by Core, for a Module, except an earned good in a Core slot registered with `openToEarned = true`: `core.toaststyle`, `core.soundset`, `core.crest` and `core.binding`, SHOP-R25), a second default in a slot, a good with more than one of `default` / `tier` / `isEarned` / `crate`, or none of them, a `crate` good from a Module, a `fallbackTier` or `fallbackFrom` on a good that isn't earned, or one without the other (SHOP-R28), a `progress` on a good that isn't earned, a slot's `groups` that aren't a list of `{ key, name }` with distinct keys matching `[%w_]+` and non-empty names, and a good's `group` that isn't one of its slot's keys (SHOP-R27). At `ModulesChanged`, a slot with no default is reported through `geterrorhandler()`, and its first registered good acts as the default. Only `default = true` marks a default; `default` is `true` or `false`, and anything else is a mistake.
@@ -73,12 +73,12 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
   Each crest but Plain is a zone's, earned when that zone reaches Master in the Fish Journal (LED-R113, LED-R114), or a fish's, earned when all ten of its varieties are caught (VAR-R12): a zone's a gilt-and-enamel heater shield with a landmark of that zone over the same barry-wavy water at its foot, a fish's the fish on its water with a silver rim and ten gilt stars, original art (no faction or game crest). Its icon is its owner's texture (the Ledger's, `Interface\AddOns\Pagle_Ledger\media\crests\{key}`; Plain's and the fish crests' are Core's, `Interface\AddOns\Pagle\media\crests\plain` and `…\crests\fish\{speciesID}`), each 256 × 256, the shield 120:140 at its full height, centred, transparent around it, and every good in the slot is drawn as the shield wherever a crest's icon shows: the shop's row and bill (in place of the medallion, UI), the stage's bookplate (the slot's `preview`, which draws any crest it lists that has no preview of its own) and the Journal bookplate (LED-R146); Core's slot dropdown lists crests by name only (SET-R51). Plain's icon is the same shield as a dashed gilt outline, for the shop; the Journal draws nothing for Plain (LED-R112).
 - **SHOP-R26** Core caches every registered good in `PagleDB.global.goods`: name, slot, slot label and category, Module, icon, `default`, tier, `crate`, fallback tier and date, description and, for earned goods, the `isEarned()` result as of the last registration or `RefreshGoods` (SHOP-R31). The cache is never pruned for a good that is owned.
 - **SHOP-R27** A slot may declare ordered **groups** at registration, `groups = { { key, name }, … }`, `name` interface text, and a good of it may name one in `group`. The shop lists a grouped slot's goods with no group first, then each group's under a header with its name, in the slot's order, each group's goods in registration order (UI); a header with none of its goods left by the search, filter or chip isn't shown. A slot's groups are fixed when it registers, so a good can only name a group already there (SHOP-R23). A slot without groups lists its goods in registration order, as before. Groups order the list only: owned counts, filters and ownership ignore them. In a slot whose earned goods the shop hides (`hideEarned`, SHOP-R25), a group holding only earned goods never heads a row.
-- **SHOP-R28** **Fallback price.** An earned good may carry `fallbackTier` and `fallbackFrom` (a server time, Unix seconds). From `fallbackFrom` on, while it isn't owned, it can also be bought at that tier's price: the shop shows its earned tag and a price tag both, and the stage's note ends "Or buy it for N". Buying appends `U1` like any purchase (SHOP-R10), so the good is owned whatever its Module says; earning it later changes nothing. Only the second and third rounds' earned goods have one (the Ledger's toast styles and bindings of LED-R118, its race and faction styles of LED-R164, and Sonar Scope, SHOP-R29), which ship in one release: fallback tier 5, from 90 days after the release that ships them. Each owner's `logic/` holds that release's server time as a constant, `nil` until the release sets it; while it is `nil`, its goods register with neither field, and so have no fallback yet. An earned good from before the second round never gets one. A fallback never goes off sale again, so nothing is limited-time (SHOP-R24).
+- **SHOP-R28** **Fallback price.** An earned good may carry `fallbackTier` and `fallbackFrom` (a server time, Unix seconds). From `fallbackFrom` on, while it isn't owned, it can also be bought at that tier's price: the shop shows its earned tag and a price tag both, and the stage's note ends "Or buy it for N". Buying appends `U1` like any purchase (SHOP-R10), so the good is owned whatever its Module says; earning it later changes nothing. Only the second and third rounds' earned goods have one (the Ledger's toast styles and bindings of LED-R118, its race and faction styles of LED-R164, and Sonar Scope, SHOP-R29), which ship in one release: fallback tier 4, from 90 days after the release that ships them. Each owner's `logic/` holds that release's server time as a constant, `nil` until the release sets it; while it is `nil`, its goods register with neither field, and so have no fallback yet. An earned good from before the second round never gets one. A fallback never goes off sale again, so nothing is limited-time (SHOP-R24).
 - **SHOP-R29** **Sonar Scope** (`core.toaststyle.sonar`) is Core's one earned good, `earnedText` "Link the companion": its `isEarned()` is true once the wallet projection has applied a Companion entry (`K1`, LOG-R37), the mark that the companion's data addon passed its signature check ([pushed-content.md](pushed-content.md), PUSH-R13). Core refreshes it right after appending `K1` and from the wallet projection's `done`. Unlinking the companion later doesn't take it back.
 
 ### The Curio crate
 
-- **SHOP-R50** The **Curio crate** is sold on its own row at the very top of the shop's list, above every category's slots, under the label "Curio crate", at tier 4's price (2,000 Coins, Tunables). It belongs to no slot or category: it isn't a good (SHOP-R20), it is never owned, equipped or put away, and it stays at the top whichever category chip is on. Buying one appends `U1|<header>|core.crate|<price>` and opens it at once: it gives one good of the **crate pool** (Tunables: `core.toaststyle.foil`, `core.toaststyle.storm`, `core.binding.shagreenbone`, `core.toaststyle.arcane`) that the Angler doesn't own yet. It never gives a good already owned, so no crate is wasted. A good given by a crate is owned as a purchase is (SHOP-R30), never revoked, and shows in the shop as "From a crate": the row's tag of a crate-only good not owned yet, and a note on the stage of a good a crate gave. The row shows under every chip and filter; only a search its label doesn't match leaves it out.
+- **SHOP-R50** The **Curio crate** is sold on its own row at the very top of the shop's list, above every category's slots, under the label "Curio crate", at tier 4's price (3,000 Coins, Tunables). It belongs to no slot or category: it isn't a good (SHOP-R20), it is never owned, equipped or put away, and it stays at the top whichever category chip is on. Buying one appends `U1|<header>|core.crate|<price>` and opens it at once: it gives one good of the **crate pool** (Tunables: `core.toaststyle.foil`, `core.toaststyle.storm`, `core.binding.shagreenbone`, `core.toaststyle.arcane`) that the Angler doesn't own yet. It never gives a good already owned, so no crate is wasted. A good given by a crate is owned as a purchase is (SHOP-R30), never revoked, and shows in the shop as "From a crate": the row's tag of a crate-only good not owned yet, and a note on the stage of a good a crate gave. The row shows under every chip and filter; only a search its label doesn't match leaves it out.
   A pool good need not be registered (today's four all are; `core.binding.shagreenbone` registers in Core's binding slot, ADR 0015). The draw reads the log alone (SHOP-R51), so a crate can give a good before its slot registers, and it is owned from that crate on (`Pagle.IsOwned` is true by the log); the shop lists it, and Use can equip it, once it registers. Until then the stage names it from its lore in the odds, and a crate that gives it leaves the crate selected, the paper under its well reading "<name> is yours: it shows here once its slot arrives."
 - **SHOP-R51** **The draw is the log's.** The wallet projection works out each crate from the log, so every rebuild gives the same goods (ADR 0004): the **candidates** are the pool goods not owned by an earlier `U1` or crate, in pool order; each has a weight (Tunables: a crate-only good 1, any other 2); `u` is LOG-R66's frozen hash of the crate `U1`'s entry ID (LOG-R13) divided by 2^32; the crate gives the first candidate whose running share of the total weight is above `u`. Whether a good's Module is enabled doesn't change the candidates; a good of a disabled Module goes to "Put away" (SHOP-R35). A crate with no candidate (bought only by a race, as Buy is gone once the crate is empty, SHOP-R54) gives nothing; its price still counts (SHOP-R11).
 - **SHOP-R52** **Pity.** When the last 7 crates in a row gave no crate-only good and one is still unowned, the next crate's candidates are the unowned crate-only goods alone, so a crate-only good comes by the 8th crate at the latest. With today's pool a crate never repeats, so all three are owned by the third crate; the count matters once the pool grows.
@@ -130,7 +130,7 @@ Part of [Core](README.md). Core holds the Angler's **Pagle Coins** and runs the 
 ---@field description? string
 ---@field icon? integer|string
 ---@field default? boolean        -- SHOP-R22
----@field tier? 1|2|3|4|5         -- for sale
+---@field tier? 1|2|3|4|5|6       -- for sale
 ---@field isEarned? fun(): boolean -- earned
 ---@field crate? boolean          -- Core's only: given by a Curio crate alone (SHOP-R22, SHOP-R50)
 ---@field fallbackTier? 1|2|3|4|5 -- earned only, with fallbackFrom (SHOP-R28)
@@ -166,12 +166,12 @@ What each Module pays and registers, as designed so far (each Module's spec is a
 |---|---|
 | Tackle Board: Notice / Expedition | 10, 15 or 20 by difficulty / 60 |
 | Tackle Board: Campfire 7 / 30 / 100 / 365 days | 25 / 75 / 200 / 500 |
-| Ledger: Angler Level up / Prestige | 20 / 100 |
+| Ledger: Angler Level up / Prestige | 40 / 1,500 |
 | Ledger: new Species / new Sub-collection item | 10 / 5 |
 | Ledger: Zone Mastery rank | 2 × rank (Visitor 2 … Master 10) |
 | Ledger: Legend | 100 |
 | Hunts: a Standing Hunt completed / each further tier / set finished | 30 / 15 / 100 |
-| Hunts: a Hunt Event Hunt's tier 1 / each later tier / a completed run (paid again in every run) | 15 / 10 / 50 |
+| Hunts: a Hunt Event Hunt's tier 1 / each later tier / a completed run (paid again in every run) | 8 / 5 / 25 |
 
 Goods by Module: Ledger registers twenty earned bindings (the six level bindings, five more, the Iridescent Scale with the `complete.varieties` title, and the second round's nine, in Core's binding slot, LED-R110, LED-R116, LED-R118), the fifty-four zone crests (earned, in Core's crest slot, not listed in the shop, SHOP-R25) nineteen toast styles and two sound sets (earned, in Core's slots, LED-R117, LED-R118, LED-R164); Hunts registers three earned bindings (in Core's binding slot), frames for its tracker (one earned) and a sound set (earned, in Core's slot, HNT-R122, HNT-R123); Stats registers frames for its tracker; the Tackle Board registers frames for its tracker (one earned) and a toast style (earned, in Core's slot, TKB-R126).
 
@@ -217,13 +217,29 @@ The Look and Feel page holds one option per slot (equipped good; default: the sl
 
 | Name | Value | Rules |
 |---|---|---|
-| Price tiers | 150 / 400 / 900 / 2,000 / 5,000 | SHOP-R22 |
+| Price tiers | 250 / 400 / 900 / 3,000 / 10,000 / 25,000 (six tiers; a price is a casual Angler's average Coins per fishing hour, about 170, times the tier's target hours per item, [The pacing table](#the-pacing-table)) | SHOP-R22 |
 | Core goods' tiers | as SHOP-R25 | SHOP-R25 |
-| Fallback for the second and third rounds' earned goods | tier 5, 90 days after the release that ships them (its time `nil` until that release sets it) | SHOP-R28 |
-| Curio crate: price / pool / weights / pity | tier 4 (2,000) / `core.toaststyle.foil`, `core.toaststyle.storm`, `core.binding.shagreenbone`, `core.toaststyle.arcane` / crate only 1, others 2 / 8 | SHOP-R50–R52 |
+| Fallback for the second and third rounds' earned goods | tier 4, 90 days after the release that ships them (its time `nil` until that release sets it) | SHOP-R28 |
+| Curio crate: price / pool / weights / pity | tier 4 (3,000) / `core.toaststyle.foil`, `core.toaststyle.storm`, `core.binding.shagreenbone`, `core.toaststyle.arcane` / crate only 1, others 2 / 8 | SHOP-R50–R52 |
 | Crate-only goods, at most | 2 | SHOP-R22, SHOP-R53 |
-| Pacing target | first purchase in week 1; the base catalogue (tiers 1–3) in 6–12 months for a daily player; tiers 4–5 a long-term chase, 18 months or more | SHOP-R22 |
-| Income mix target (committed Angler, first 3 months) | Tackle Board ~55% / Ledger ~35% / Hunts ~10% | payout table |
+| Pacing | the pacing table below | SHOP-R22 |
+| Income mix (casual Angler, as modelled) | Tackle Board ~30% / Ledger ~60% / Hunts ~10% | payout table |
+
+### The pacing table
+
+The shop is paced for a **casual** Angler: 1.5 hours a day, 180 Catches an hour, earning about 170 Coins per fishing hour (the Refresh tickets of [#405](https://github.com/timemir/pagle-addon/issues/405) assumed). Hours below are hours fished.
+
+| Milestone | Target hours |
+|---|---|
+| First purchase | under 1 |
+| 25% of the items | about 40 |
+| 50% | about 100 |
+| 75% | about 200 |
+| Tiers 1–4 | about 430 |
+| Tiers 1–5 | about 720 |
+| First tier-6 good | about 870 |
+
+**Price rule:** a tier's price is the casual Angler's average Coins per fishing hour (about 170) times the target hours per item of that tier. A dedicated or min-max Angler may earn fewer Coins per fishing hour, but reaches each milestone sooner by the calendar. The payouts of the payout table above (and in each Module's spec) are the constants that make the table hold: `spec/coin_economy_spec.lua` pins them, with the prices, so a content or price change can't move the pacing silently. Tier 6 has no goods yet; its milestone is the target for the first one, once added. An empty tier 5 or 6 is valid: nothing iterates tiers and requires goods in them.
 
 ## Edge cases
 

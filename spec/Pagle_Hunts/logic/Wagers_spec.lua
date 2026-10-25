@@ -332,8 +332,8 @@ describe("a run's entry (HNT-R163)", function()
 
 		assert.are.equal("7 Casts in these waters this run · 1 of 3 first marks", entry.casts)
 		assert.are.same({
-			{ label = "Paid so far", amount = "+150 XP · 15 Coins" },
-			{ label = "Settle it", amount = "+250 XP · 50 Coins" },
+			{ label = "Paid so far", amount = "+150 XP · 8 Coins" },
+			{ label = "Settle it", amount = "+250 XP · 25 Coins" },
 		}, entry.pay)
 		assert.are.equal(ns.RunPayRule(), entry.payRule)
 	end)
@@ -352,8 +352,8 @@ describe("a run's entry (HNT-R163)", function()
 		assert.are.same({ word = "Settled", date = "10 Oct" }, entry.seal)
 		assert.are.same({ "settled", "settled, and still open" }, { entry.time.dial.kind, entry.time.hand })
 		assert.are.same({ label = "Settled", amount = "paid out" }, entry.pay[2])
-		-- three first marks and the settled run: 3 × 150 + 250 XP, 3 × 15 + 50 Coins
-		assert.are.same({ label = "Paid so far", amount = "+700 XP · 95 Coins" }, entry.pay[1])
+		-- three first marks and the settled run: 3 × 150 + 250 XP, 3 × 8 + 25 Coins
+		assert.are.same({ label = "Paid so far", amount = "+700 XP · 49 Coins" }, entry.pay[1])
 	end)
 
 	it("reads a run ahead's opening with the dashed dial, and has no Casts line and no boxes", function()

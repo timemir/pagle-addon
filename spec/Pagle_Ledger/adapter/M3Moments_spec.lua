@@ -461,7 +461,7 @@ end)
 
 -- Cove's whole story: Expert by the third Cast, Master with the light trophy, and the chest caught at zone 0 (no list
 -- has it). XP (LED-R20, Fresh Water doubling every Catch): 3,560 + 620 + 170 + 1,000 + 120 + 1,250 + 170 = 6,890,
--- level 6 (6,200). Coins (LED-R88): 4 Species 40, 2 curios 10, a trophy weight 5, ranks 2 × 15, 5 levels 100: 185.
+-- level 6 (6,200). Coins (LED-R88): 4 Species 40, 2 curios 10, a trophy weight 5, ranks 2 × 15, 5 levels 200: 285.
 local function wholeStory()
 	return {
 		cast(T0, { ANY_1, ANY_2, ANY_3 }),
@@ -501,7 +501,7 @@ describe("the Ledger's M3 done", function()
 					"Title: Warden of Cove Waters",
 					"Title: Collector of Boots",
 					"Title: Keeper of Lost Cargo",
-					"Pagle Coins +185",
+					"Pagle Coins +285",
 				},
 			}, writeUps(fake))
 			assert.are.same({}, fake.summarized)
@@ -537,7 +537,7 @@ describe("the Ledger's M3 done", function()
 					"1 curio",
 					"Title: Warden of Cove Waters",
 					"Title: Keeper of Lost Cargo",
-					"Pagle Coins +40",
+					"Pagle Coins +60",
 				},
 			}, writeUps(fake))
 			assert.are.same({}, fake.summarized)
@@ -550,7 +550,7 @@ describe("the Ledger's M3 done", function()
 
 		local fake = nextSession(last, lastLoaded, { history = { story[3] } })
 
-		-- Expert and the junk: 1,000 + 170 XP, from 4,180 past level 5 (4,800); Coins 8 + 5 + 20.
+		-- Expert and the junk: 1,000 + 170 XP, from 4,180 past level 5 (4,800); Coins 8 + 5 + 40.
 		assert.are.same({
 			{
 				"While the Ledger was off",
@@ -558,7 +558,7 @@ describe("the Ledger's M3 done", function()
 				"1 zone ranked",
 				"1 curio",
 				"Title: Collector of Boots", -- M4: the junk completes the Junk Museum (LED-R75, LED-R94)
-				"Pagle Coins +33",
+				"Pagle Coins +53",
 			},
 		}, writeUps(fake))
 	end)

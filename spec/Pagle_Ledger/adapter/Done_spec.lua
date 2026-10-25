@@ -19,7 +19,7 @@ local function cast(time, zone, itemIDs)
 end
 
 -- History before the first login: two Species in Badlands, a got-away Cast and a known Species in Blasted Lands. XP: 820 +
--- 620 + 320 = 1,760, level 2 (1,080); Coins 10 + 10 + 20 (LED-R20, LED-R22, LED-R30, LED-R88).
+-- 620 + 320 = 1,760, level 2 (1,080); Coins 10 + 10 + 40 (LED-R20, LED-R22, LED-R30, LED-R88).
 local HISTORY = {
 	cast(T0, BADLANDS, { MACKEREL, SMALLFISH }),
 	cast(T0 + 60, BADLANDS),
@@ -87,12 +87,12 @@ describe("the Ledger's done", function()
 					"Angler Level 2",
 					"2 Species",
 					"2 varieties",
-					"Pagle Coins +40",
+					"Pagle Coins +60",
 				},
 			}, writeUps(fake))
 			assert.are.same({}, fake.summarized)
 			assert.are.same({}, fake.announcements)
-			assert.are.same({ { module = "Ledger", total = 40 } }, fake.coinReports)
+			assert.are.same({ { module = "Ledger", total = 60 } }, fake.coinReports)
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
 			assert.are.same({
 				levels = { [0] = 2 },
@@ -113,7 +113,7 @@ describe("the Ledger's done", function()
 				-- no fish complete (VAR-R25).
 				varieties = { [MACKEREL] = { [2] = true }, [SMALLFISH] = { [1] = true } },
 				fishComplete = {},
-				coins = 40,
+				coins = 60,
 				logId = fake.catchLog.data.logId,
 			}, celebrated)
 			assert.are.same(
@@ -149,14 +149,14 @@ describe("the Ledger's done", function()
 					"Angler Level 2",
 					"2 Species",
 					"2 varieties",
-					"Pagle Coins +40",
+					"Pagle Coins +60",
 				},
 			}, writeUps(fake))
 			assert.are.same({}, fake.summarized)
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
 			assert.are.same({ [MACKEREL] = true, [SMALLFISH] = true }, celebrated.species)
 			assert.are.same({ [0] = 2 }, celebrated.levels)
-			assert.are.same({ fake.catchLog.data.logId, 40 }, { celebrated.logId, celebrated.coins })
+			assert.are.same({ fake.catchLog.data.logId, 60 }, { celebrated.logId, celebrated.coins })
 			assert.are_not.equal(oldLogId, celebrated.logId)
 		end
 	)
@@ -188,17 +188,17 @@ describe("the Ledger's done", function()
 			})
 
 			assert.are.same(
-				{ { "While the Ledger was off", "Angler Level 2 to 3", "1 Species", "2 varieties", "Pagle Coins +30" } },
+				{ { "While the Ledger was off", "Angler Level 2 to 3", "1 Species", "2 varieties", "Pagle Coins +50" } },
 				writeUps(fake)
 			)
 			assert.are.same({}, fake.summarized)
 			assert.are.same({}, fake.announcements)
-			assert.are.same({ { module = "Ledger", total = 70 } }, fake.coinReports)
+			assert.are.same({ { module = "Ledger", total = 110 } }, fake.coinReports)
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
 			assert.is_true(celebrated.species[OILY])
 			assert.is_true(celebrated.speciesZones["6291:4"])
 			assert.are.same({ [0] = 3 }, celebrated.levels)
-			assert.are.equal(70, celebrated.coins)
+			assert.are.equal(110, celebrated.coins)
 			assert.are.same(
 				{ ledger = "Ledger: Angler Level 3 · 1% complete" },
 				fake.global.summary.lines.Ledger.lines
@@ -231,7 +231,7 @@ describe("the Ledger's done", function()
 			-- 20 XP: still level 2. Uncharted, it raises only its Nod (LED-R97).
 			assert.are.same({ "uncharted" }, { last.summarized[1].kind, last.summarized[2] })
 
-			-- The release charts it as a Species: 500 + 100 XP more, past level 3 (2,240), and 10 + 20 Coins.
+			-- The release charts it as a Species: 500 + 100 XP more, past level 3 (2,240), and 10 + 40 Coins.
 			local fake, loaded = nextSession(last, lastLoaded, {}, function(next)
 				local getItem = next.Pagle.GetItem
 				next.Pagle.GetItem = function(itemID)
@@ -258,12 +258,12 @@ describe("the Ledger's done", function()
 			assert.are.same({
 				"newSpecies New Species / Item 99001 10 true true",
 				"elementStar In its element / Item 99001 nil true true",
-				"levelUp Angler Level 3 / nil 20 true true",
+				"levelUp Angler Level 3 / nil 40 true true",
 			}, raised)
 			fake.nextFrame()
 			assert.are.same({}, fake.announcements)
 			assert.are.same({}, fake.writeUps)
-			assert.are.same({ { module = "Ledger", total = 70 } }, fake.coinReports)
+			assert.are.same({ { module = "Ledger", total = 110 } }, fake.coinReports)
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
 			assert.is_true(celebrated.species[CHARTED_LATER])
 			assert.are.same({ [0] = 3 }, celebrated.levels)
@@ -278,7 +278,7 @@ describe("the Ledger's done", function()
 		assert.are.same({}, fake.writeUps)
 		assert.are.same({}, fake.summarized)
 		assert.are.same({}, fake.announcements)
-		assert.are.same({ { module = "Ledger", total = 40 } }, fake.coinReports)
+		assert.are.same({ { module = "Ledger", total = 60 } }, fake.coinReports)
 	end)
 
 	it("empties the set for a new, empty log, raising nothing: its achievements celebrate afresh (LED-R197)", function()

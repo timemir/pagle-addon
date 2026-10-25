@@ -95,11 +95,11 @@ local HEARTWOOD_RUN = 10
 --- Realm dates a zone must rest before its next first Catch of the day is a glass shard (LED-R119).
 local SHARD_REST_DAYS = 6
 
---- The fallback price of the second and third rounds' earned goods (SHOP-R28), which ship in the same release: tier 5,
+--- The fallback price of the second and third rounds' earned goods (SHOP-R28), which ship in the same release: tier 4,
 --- from 90 days after the release that ships them. That release sets its server time here; nil until then, and the goods register with no fallback.
 ---@type integer?
 ns.ROUND_TWO_RELEASE = nil
-local FALLBACK_TIER = 5
+local FALLBACK_TIER = 4
 local FALLBACK_DAYS = 90
 local SECONDS_PER_DAY = 86400
 
@@ -545,7 +545,7 @@ function ns.EarnedCountTexts(good, n, formatNumber)
 	return L.EARNED_COUNT:format(formatNumber(math.min(n, good.mark)), formatNumber(good.mark), unit), text
 end
 
---- The fallback the second round's earned goods register with (SHOP-R28): tier 5 from 90 days after
+--- The fallback the second round's earned goods register with (SHOP-R28): tier 4 from 90 days after
 --- `ns.ROUND_TWO_RELEASE`, or nothing while that is nil.
 ---@return integer? tier
 ---@return integer? from server time

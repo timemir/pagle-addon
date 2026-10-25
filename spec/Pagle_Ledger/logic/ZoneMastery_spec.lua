@@ -252,7 +252,7 @@ describe("Zone Mastery", function()
 				-- level 4 (3,480).
 				assert.are.equal(60 + 1800 + 200 + 1500, state.xp)
 				assert.are.same({ 2, 3, 4 }, levelUp.levels)
-				assert.are.equal(3 * 10 + 12 + 3 * 20, state.coins)
+				assert.are.equal(3 * 10 + 12 + 3 * 40, state.coins)
 			end
 		)
 

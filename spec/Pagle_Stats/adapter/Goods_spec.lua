@@ -67,7 +67,7 @@ describe("Stats' goods", function()
 		end
 	)
 
-	it("sell for 150, 400 and 900 Coins by their tiers in the Curio Shop, as Stats' (STA-R88, SHOP-R22)", function()
+	it("sell for 250, 400 and 900 Coins by their tiers in the Curio Shop, as Stats' (STA-R88, SHOP-R22)", function()
 		local _, fake = loggedIn()
 		local shop = fake.ns.ShopModel(tostring)
 
@@ -75,7 +75,7 @@ describe("Stats' goods", function()
 		for i = 2, #GOODS do
 			prices[i - 1] = shop:Entry(GOODS[i][1]).price
 		end
-		assert.are.same({ 150, 400, 150, 150, 400, 400, 900 }, prices)
+		assert.are.same({ 250, 400, 250, 250, 400, 400, 900 }, prices)
 		assert.are.equal("Stats", fake.Pagle.GetGood("stats.trackerframe.none").module)
 	end)
 

@@ -191,7 +191,7 @@ describe("the Ledger's climb at 1.0", function()
 			assert.are.equal("0 of 1,160.", barText(loaded))
 			assert.are.equal(raised, #fake.summarized)
 			assert.matches("^Ledger: Angler Level 2 ", fake.global.summary.lines.Ledger.lines.ledger)
-			assert.are.same({ 20, 0 }, {
+			assert.are.same({ 40, 0 }, {
 				fake.coinReports[#fake.coinReports - 1].total,
 				fake.coinReports[#fake.coinReports].total,
 			})
@@ -286,13 +286,13 @@ describe("the Ledger's climb at 1.0", function()
 				local raised = levelUps(fake)
 				assert.are.equal(1, #raised)
 				assert.are.same(
-					{ "Angler Level 2", true, 20 },
+					{ "Angler Level 2", true, 40 },
 					{ raised[1].title, raised[1].summaryOnly, raised[1].coins }
 				)
 				assert.is_nil(raised[1].cast)
 				assert.are.same({}, fake.announcements)
 				assert.are.equal(2, loaded.ns.SavedCelebrated().levels[0])
-				assert.are.equal(20, fake.coinReports[#fake.coinReports].total)
+				assert.are.equal(40, fake.coinReports[#fake.coinReports].total)
 			end
 		)
 	end
@@ -320,7 +320,7 @@ describe("the Ledger's climb at 1.0", function()
 		local raised = levelUps(fake)
 		assert.are.equal(1, #raised)
 		assert.are.same({ "Angler Level 2", true }, { raised[1].title, raised[1].summaryOnly })
-		assert.are.equal(20, fake.coinReports[#fake.coinReports].total)
+		assert.are.equal(40, fake.coinReports[#fake.coinReports].total)
 		assert.are.equal(2, loaded.ns.ShownLevel(stateOf(loaded), loaded.ns.SavedCelebrated()))
 	end)
 
@@ -358,10 +358,10 @@ describe("the Ledger's climb at 1.0", function()
 			})
 			assert.is_false(fake.Pagle.IsOwned("ledger.binding.level10"))
 
-			-- 12,600 XP reaches level 10 (LED-R30): 9 levels, 180 Coins (LED-R88).
+			-- 12,600 XP reaches level 10 (LED-R30): 9 levels, 360 Coins (LED-R88).
 			hunts:ReportXPEarned(12600)
 
-			assert.are.equal(180, fake.coinReports[#fake.coinReports].total)
+			assert.are.equal(360, fake.coinReports[#fake.coinReports].total)
 			assert.is_true(fake.Pagle.IsOwned("ledger.binding.level10"))
 			assert.is_false(fake.Pagle.IsOwned("ledger.binding.level20"))
 		end

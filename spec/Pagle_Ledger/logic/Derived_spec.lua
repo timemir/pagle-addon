@@ -202,10 +202,10 @@ describe("the Ledger's values for the backend (#223)", function()
 			assert.are.same({ "title:level1", "title:level10" }, journal.titles)
 		end)
 
-		it("pays 20 Coins for each level it adds above the climb's own (LED-R38, LED-R88)", function()
+		it("pays 40 Coins for each level it adds above the climb's own (LED-R38, LED-R88)", function()
 			local ns, state = ledgerOver({})
 
-			assert.are.equal(9 * 20, ns.CoinsEarned(state, TO_LEVEL_10))
+			assert.are.equal(9 * 40, ns.CoinsEarned(state, TO_LEVEL_10))
 			assert.are.equal(0, ns.CoinsEarned(state, 0))
 		end)
 	end)

@@ -10,7 +10,7 @@ local ns = select(2, ...)
 -- (adapter/Prestige.lua) asks the player and calls `M:RecordPrestige()`.
 
 --- Coins for each Prestige (LED-R88), paid through its `prestige` achievement.
-ns.PRESTIGE_COINS = 100
+ns.PRESTIGE_COINS = 1500
 
 -- Prestiges with an emblem (LED-R34, Tunables): I to X, one per rank; every rank above is a Master Prestige.
 local EMBLEMS = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" }

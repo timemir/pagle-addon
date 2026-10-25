@@ -161,17 +161,17 @@ describe("the climb at 1.0", function()
 	end)
 
 	describe("Coins for levels (LED-R38, LED-R88)", function()
-		it("pay 20 for each level the Activity XP adds above the climb's own, in the lifetime total", function()
+		it("pay 40 for each level the Activity XP adds above the climb's own, in the lifetime total", function()
 			-- 1,000 own XP from a Skill Milestone, which pays no Coins: level 1. With 1,240 Activity XP the climb is
 			-- 2,240, level 3 (LED-R30).
 			local state = applyLive(fold, { skill(80) })
 
 			assert.are.same({ 0, 0 }, { state.coins, ns.CoinsEarned(state, 0) })
-			assert.are.equal(40, ns.CoinsEarned(state, 1240))
+			assert.are.equal(80, ns.CoinsEarned(state, 1240))
 			total = 1240
-			assert.are.equal(40, ns.CoinsEarned(state))
+			assert.are.equal(80, ns.CoinsEarned(state))
 			-- A total recounted lower takes its levels' Coins back out of the total (SHOP-R4).
-			assert.are.equal(20, ns.CoinsEarned(state, 1000))
+			assert.are.equal(40, ns.CoinsEarned(state, 1000))
 		end)
 	end)
 
@@ -184,15 +184,15 @@ describe("the climb at 1.0", function()
 				local earned = fold.apply(live, record, "live", nil, 100)
 				local without = fold.apply(rebuilt, record, "rebuild")
 
-				-- 1,000 own XP and 100 Activity XP reach level 2 (LED-R30): its 20 Coins ride on the moment, and stay
+				-- 1,000 own XP and 100 Activity XP reach level 2 (LED-R30): its 40 Coins ride on the moment, and stay
 				-- out of the state, which holds only the own level's (LED-R88).
 				assert.are.same({
 					{ kind = "skillMilestone", coins = 0, threshold = 75 },
-					{ kind = "levelUp", coins = 20, levels = { 2 } },
+					{ kind = "levelUp", coins = 40, levels = { 2 } },
 				}, earned)
 				assert.are.same({ { kind = "skillMilestone", coins = 0, threshold = 75 } }, without)
 				assert.are.same(rebuilt, live)
-				assert.are.same({ 0, 20 }, { live.coins, ns.CoinsEarned(live, 100) })
+				assert.are.same({ 0, 40 }, { live.coins, ns.CoinsEarned(live, 100) })
 			end
 		)
 
@@ -219,12 +219,12 @@ describe("the climb at 1.0", function()
 				assert.are.same({ 1, 3000, 5000 }, { state.prestige, state.xp, state.prestigeActivityXP })
 				assert.are.same({ 3, 760, 1240 }, { ns.Climb(state) })
 				assert.are.same({
-					{ kind = "prestige", coins = 100, rank = 1 },
-					{ kind = "levelUp", coins = 40, levels = { 2, 3 } },
+					{ kind = "prestige", coins = 1500, rank = 1 },
+					{ kind = "levelUp", coins = 80, levels = { 2, 3 } },
 				}, earned)
-				-- The ending climb's level 60, which its Activity XP brought (20), the Prestige (100) and the new climb's
-				-- levels 2 and 3 (40), kept in the state now the snapshot fixes them (LED-R88).
-				assert.are.same({ 160, 160 }, { state.coins, ns.CoinsEarned(state) })
+				-- The ending climb's level 60, which its Activity XP brought (40), the Prestige (1,500) and the new climb's
+				-- levels 2 and 3 (80), kept in the state now the snapshot fixes them (LED-R88).
+				assert.are.same({ 1620, 1620 }, { state.coins, ns.CoinsEarned(state) })
 			end
 		)
 
@@ -248,7 +248,7 @@ describe("the climb at 1.0", function()
 				local _, earned = applyLive(fold, { prestige(1, 3240) }, state, "rebuild")
 
 				assert.are.same({ 3, 0, 1240 }, { ns.Climb(state, 3240) })
-				assert.are.same({ kind = "levelUp", coins = 40, levels = { 2, 3 } }, earned[2])
+				assert.are.same({ kind = "levelUp", coins = 80, levels = { 2, 3 } }, earned[2])
 				assert.is_nil(earned[2].cast)
 			end
 		)
@@ -278,14 +278,14 @@ describe("the climb at 1.0", function()
 	describe("the level-ups Activity XP brings (LED-R39)", function()
 		it("are one levelUp for the levels above the climb's own, with its rank and the Cast it rides on", function()
 			assert.are.same(
-				{ { kind = "levelUp", cast = "c-1", coins = 20, levels = { 2 }, rank = 1 } },
+				{ { kind = "levelUp", cast = "c-1", coins = 40, levels = { 2 }, rank = 1 } },
 				ns.ActivityLevelUps(stateAt(0, 1), 2000, "c-1")
 			)
 		end)
 
 		it("add Prestige ready when they reach 60 (LED-R97)", function()
 			assert.are.same({
-				{ kind = "levelUp", coins = 20, levels = { 60 }, rank = 0 },
+				{ kind = "levelUp", coins = 40, levels = { 60 }, rank = 0 },
 				{ kind = "prestigeReady", coins = 0, rank = 0 },
 			}, ns.ActivityLevelUps(stateAt(TO_60 - 10), 10))
 		end)
@@ -353,13 +353,13 @@ describe("the climb at 1.0", function()
 				assert.are.equal(1, #kept.moments)
 				local moment = kept.moments[1]
 				assert.are.same(
-					{ "levelUp", "Angler Level 2", "cast-7", 20 },
+					{ "levelUp", "Angler Level 2", "cast-7", 40 },
 					{ moment.kind, moment.title, moment.cast, moment.coins }
 				)
 				assert.is_nil(moment.summaryOnly)
-				assert.are.same({ 20 }, kept.coins)
+				assert.are.same({ 40 }, kept.coins)
 				assert.are.same({ "Ledger: Angler Level 2 · 0% complete" }, kept.lines)
-				assert.are.same({ 2, 20 }, { global.celebrated.levels[0], global.celebrated.coins })
+				assert.are.same({ 2, 40 }, { global.celebrated.levels[0], global.celebrated.coins })
 			end
 		)
 
@@ -433,9 +433,9 @@ describe("the climb at 1.0", function()
 			def.done(state, { rebuilt = true, replayed = 0 })
 
 			local moment = kept.moments[1]
-			assert.are.same({ "Angler Level 3", true, 40 }, { moment.title, moment.summaryOnly, moment.coins })
-			assert.are.same({ 3, 40 }, { global.celebrated.levels[0], global.celebrated.coins })
-			assert.are.same({ 40 }, kept.coins)
+			assert.are.same({ "Angler Level 3", true, 80 }, { moment.title, moment.summaryOnly, moment.coins })
+			assert.are.same({ 3, 80 }, { global.celebrated.levels[0], global.celebrated.coins })
+			assert.are.same({ 80 }, kept.coins)
 		end)
 
 		it("celebrates in its done the Activity XP that rose while it was updating, summary-only (LED-R39)", function()
@@ -445,7 +445,7 @@ describe("the climb at 1.0", function()
 			def.done(state, { replayed = 0 })
 
 			assert.are.same({ "levelUp", true }, { kept.moments[1].kind, kept.moments[1].summaryOnly })
-			assert.are.same({ 20 }, kept.coins)
+			assert.are.same({ 40 }, kept.coins)
 		end)
 
 		it("counts a catch-up's Activity XP levels in its Write-up (LED-R93, LED-R94)", function()
@@ -458,7 +458,7 @@ describe("the climb at 1.0", function()
 			-- 2,000 own XP and 300 Activity XP: level 3 (LED-R30).
 			assert.are.same({}, kept.moments)
 			assert.are.same({
-				{ "While the Ledger was off", "Angler Level 1 to 3", "1 Skill Milestone", "Pagle Coins +40" },
+				{ "While the Ledger was off", "Angler Level 1 to 3", "1 Skill Milestone", "Pagle Coins +80" },
 			}, kept.writeUps)
 		end)
 
@@ -466,7 +466,7 @@ describe("the climb at 1.0", function()
 			total = 1240
 			local _, _, _, _, global = built({ skill(80) })
 
-			assert.are.same({ 3, 40 }, { global.celebrated.levels[0], global.celebrated.coins })
+			assert.are.same({ 3, 80 }, { global.celebrated.levels[0], global.celebrated.coins })
 		end)
 
 		it("reports the live entry's Coins with the Activity XP's levels (LED-R89)", function()
@@ -476,7 +476,7 @@ describe("the climb at 1.0", function()
 			def.apply(state, skill(80), "live")
 
 			assert.are.same({ "skillMilestone", "levelUp" }, { kept.moments[1].kind, kept.moments[2].kind })
-			assert.are.same({ 20 }, kept.coins)
+			assert.are.same({ 40 }, kept.coins)
 		end)
 	end)
 end)

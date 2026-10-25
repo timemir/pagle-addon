@@ -11,8 +11,8 @@ local ns = select(2, ...)
 -- Projection state (`HuntsState`, logic/Seams.lua); the runs' part of the fold is logic/Runs.lua.
 
 --- Tunables (hunts.md): the Hunts rules version, which rises whenever a rule changes what the projection holds
---- (HNT-R138): 1 before Hunt Events, 2 with runs, Activity XP and the ladder (HNT-R136).
-ns.HUNTS_RULES_VERSION = 2
+--- (HNT-R138): 1 before Hunt Events, 2 with runs, Activity XP and the ladder (HNT-R136), 3 for the retuned Coins (HNT-R110, #412).
+ns.HUNTS_RULES_VERSION = 3
 
 --- Tunables (hunts.md): the Coins paid when a Hunt completes, for each further tier, and for each set title
 --- (HNT-R110).

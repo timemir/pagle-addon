@@ -517,17 +517,18 @@ end
 --- them, as they register.
 ---@return PagleBinding[]
 function ns.CoreBindings()
-	local list, byTier = {}, { {}, {}, {}, {}, {} }
+	local list, byTier, highest = {}, {}, 0
 	for _, binding in ipairs(ns.BINDINGS) do
 		if binding.default then
 			list[#list + 1] = binding
 		elseif binding.tier then
-			local tier = byTier[binding.tier]
-			tier[#tier + 1] = binding
+			byTier[binding.tier] = byTier[binding.tier] or {}
+			table.insert(byTier[binding.tier], binding)
+			highest = math.max(highest, binding.tier)
 		end
 	end
-	for _, tier in ipairs(byTier) do
-		for _, binding in ipairs(tier) do
+	for tier = 1, highest do
+		for _, binding in ipairs(byTier[tier] or {}) do
 			list[#list + 1] = binding
 		end
 	end

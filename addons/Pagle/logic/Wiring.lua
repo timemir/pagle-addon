@@ -656,7 +656,7 @@ function ns.WireGoods(host)
 	--- Registers one of the Module's goods in one of its slots (SHOP-R21, SHOP-R22), calling its isEarned() now if
 	--- it is earned (SHOP-R31). Raises an error at the Module's call, registering nothing, for each mistake SHOP-R23
 	--- lists: a duplicate ID or one without the Module's prefix, an unknown slot or another's, a second default, or
-	--- not exactly one of `default`, `tier` (1 to 5) and `isEarned`, or a `crate` (Core's only, SHOP-R22).
+	--- not exactly one of `default`, `tier` (1 to 6) and `isEarned`, or a `crate` (Core's only, SHOP-R22).
 	---@param good PagleGood
 	function ModuleHandle:RegisterGood(good)
 		local module = host.registry:ModuleCalling(self, "RegisterGood", "good")

@@ -88,7 +88,7 @@ describe("The Tackle Board's goods", function()
 	end)
 
 	it(
-		"sell for 150 Coins at tier 1 and 400 at tier 2 in the Curio Shop, as the Tackle Board's (TKB-R125, SHOP-R22)",
+		"sell for 250 Coins at tier 1 and 400 at tier 2 in the Curio Shop, as the Tackle Board's (TKB-R125, SHOP-R22)",
 		function()
 			local _, fake = loggedIn()
 			local shop = fake.ns.ShopModel(tostring)
@@ -97,7 +97,7 @@ describe("The Tackle Board's goods", function()
 			for _, name in ipairs({ "corkboard", "driftwood", "net", "bamboo", "tin", "bobber" }) do
 				prices[#prices + 1] = shop:Entry("tackleboard.trackerframe." .. name).price
 			end
-			assert.are.same({ 150, 400, 150, 150, 400, 400 }, prices)
+			assert.are.same({ 250, 400, 250, 250, 400, 400 }, prices)
 			assert.are.equal("TackleBoard", fake.Pagle.GetGood("tackleboard.trackerframe.none").module)
 		end
 	)

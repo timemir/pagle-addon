@@ -107,10 +107,10 @@ describe("Prestige", function()
 				assert.are.equal(3000, state.xp)
 				assert.are.same({ 3, 760, 1240 }, { ns.Climb(state) })
 				assert.are.same({
-					{ kind = "prestige", coins = 100, rank = 1 },
-					{ kind = "levelUp", coins = 40, levels = { 2, 3 } },
+					{ kind = "prestige", coins = 1500, rank = 1 },
+					{ kind = "levelUp", coins = 80, levels = { 2, 3 } },
 				}, earned)
-				assert.are.equal(coins + 100 + 40, state.coins)
+				assert.are.equal(coins + 1500 + 80, state.coins)
 			end
 		)
 
@@ -119,7 +119,7 @@ describe("Prestige", function()
 			local _, earned = applyAll({ log.prestige(T0, 1) }, "live", state)
 
 			assert.are.same({ 1, 0, 1 }, { ns.Level(state), state.xp, state.prestige })
-			assert.are.same({ { kind = "prestige", coins = 100, rank = 1 } }, earned)
+			assert.are.same({ { kind = "prestige", coins = 1500, rank = 1 } }, earned)
 		end)
 
 		it("climbs on from the carried XP: the climb's XP is what's earned since, plus it (LED-R31)", function()
@@ -129,7 +129,7 @@ describe("Prestige", function()
 			local _, earned = applyAll({ log.prestige(T0, 1), log.skill(T0 + 60, 160) }, "live", state)
 
 			assert.are.same({ 5, 200, 1400 }, { ns.Climb(state) })
-			assert.are.same({ kind = "levelUp", coins = 40, levels = { 4, 5 } }, earned[#earned])
+			assert.are.same({ kind = "levelUp", coins = 80, levels = { 4, 5 } }, earned[#earned])
 		end)
 
 		it("carries XP from a climb after a Prestige into the next Prestige's (LED-R30, LED-R32)", function()
@@ -173,7 +173,7 @@ describe("Prestige", function()
 					state.uncharted[99999].n,
 					state.uncharted[99999].zones,
 				})
-				assert.are.equal(coins + 100, state.coins)
+				assert.are.equal(coins + 1500, state.coins)
 			end
 		)
 
@@ -199,7 +199,7 @@ describe("Prestige", function()
 			local state = stateAt(TO_60 - 1)
 			local _, earned = applyAll({ log.skill(T0, 300) }, "live", state)
 
-			assert.are.same({ kind = "levelUp", coins = 20, levels = { 60 } }, earned[5])
+			assert.are.same({ kind = "levelUp", coins = 40, levels = { 60 } }, earned[5])
 			assert.are.same({ kind = "prestigeReady", coins = 0, rank = 0 }, earned[6])
 			assert.are.equal(6, #earned)
 		end)

@@ -74,6 +74,17 @@ describe("the bindings", function()
 		end
 	)
 
+	it("list a binding of the sixth price tier last, whatever tiers have none (SHOP-R22)", function()
+		local sixth = { id = "core.binding.spec_sixth", key = "spec_sixth", tier = 6 }
+		table.insert(ns.BINDINGS, sixth)
+		local ok, list = pcall(ns.CoreBindings)
+		table.remove(ns.BINDINGS)
+
+		assert(ok, tostring(list))
+		assert.are.equal("core.binding.spec_sixth", list[#list].id)
+		assert.are.equal("core.binding.trophycase", list[#list - 1].id)
+	end)
+
 	it(
 		"hold the Ledger's twenty earned bindings and Hunts' three, theirs to register, with Core's looks (LED-R110, LED-R118, HNT-R122, SHOP-R23)",
 		function()
