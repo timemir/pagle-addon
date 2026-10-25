@@ -31,10 +31,13 @@ end
 -- Core's fish crests (VAR-R12) among them, are neither listed nor counted (SHOP-R25).
 local CREST_LINES = { "Crests (1 of 1)", "  core.crest.plain In use" }
 
--- The Curio Shop expansion's toast styles and sound sets, and the bindings for sale (SHOP-R25), each slot's in its
--- order, with their tiers; the round two's Storm Front (ANN-R82) after its toast styles.
-local EXPANSION = {
+-- Core's toast styles, sound sets and bindings for sale (SHOP-R25), each slot's in the order the list shows them
+-- (SHOP-R27): cheapest tier first, goods of a tier in registration order, so the Curio Shop expansion's come after
+-- Ripple and Lanternglow, and the round two's Storm Front and the round three's after the older goods of their tier.
+local FOR_SALE = {
 	toaststyle = {
+		{ "ripple", 1 },
+		{ "lanternglow", 1 },
 		{ "ship", 1 },
 		{ "birch", 1 },
 		{ "tidepool", 1 },
@@ -45,9 +48,17 @@ local EXPANSION = {
 		{ "moon", 2 },
 		{ "leaf", 2 },
 		{ "bottle", 2 },
-		{ "rune", 3 },
 		{ "folio", 2 },
+		{ "rune", 3 },
+		{ "ooze", 3 },
+		{ "robot", 3 },
+		{ "spider", 3 },
+		{ "glacier", 3 },
+		{ "pirate", 3 },
 		{ "storm", 4 },
+		{ "hive", 4 },
+		{ "magma", 4 },
+		{ "arcane", 4 },
 	},
 	soundset = {
 		{ "rain", 1 },
@@ -55,6 +66,7 @@ local EXPANSION = {
 		{ "shipbell", 1 },
 		{ "squeaky", 1 },
 		{ "bubbleworks", 1 },
+		{ "gilded", 2 },
 		{ "kalimba", 2 },
 		{ "musicbox", 2 },
 		{ "glass", 2 },
@@ -113,72 +125,52 @@ local EXPANSION = {
 		{ "trophycase", 5 },
 	},
 }
--- The round two's Core toast styles that aren't for sale, after Storm Front, as the list outlines them not owned:
--- Sonar Scope, earned once the companion is linked (SHOP-R29), and Prize Foil, the Curio crate's alone (SHOP-R50).
+-- The toast styles that aren't for sale come after those that are, as the list outlines them not owned: Sonar Scope,
+-- earned once the companion is linked (SHOP-R29), and Prize Foil, the Curio crate's alone (SHOP-R50).
 local ROUND_TWO_UNOWNED = {
 	"  core.toaststyle.sonar Link the companion",
 	"  core.toaststyle.foil From a crate",
 }
 local ROUND_TWO_IDS = { "core.toaststyle.sonar", "core.toaststyle.foil" }
--- The round three's eight toast styles for sale (ANN-R84), after those, with their tiers; its ten race and faction
--- styles are the Ledger's.
-local ROUND_THREE = {
-	{ "hive", 4 },
-	{ "ooze", 3 },
-	{ "robot", 3 },
-	{ "spider", 3 },
-	{ "glacier", 3 },
-	{ "magma", 4 },
-	{ "arcane", 4 },
-	{ "pirate", 3 },
-}
-local ROUND_THREE_IDS = {}
-for i, good in ipairs(ROUND_THREE) do
-	ROUND_THREE_IDS[i] = "core.toaststyle." .. good[1]
-end
 
 -- Each tier's price (SHOP-R22), as the list prints it.
 local PRICES = { "250", "400", "900", "3,000", "10,000", "25,000" }
 local PRICE_VALUES = { 250, 400, 900, 3000, 10000, 25000 }
 
--- The expansion's goods of Core's slot `slot` ("toaststyle", "soundset" or "binding") as the list outlines them, none bought,
--- with a balance of `balance`: each priced, in red where the balance falls short.
+-- The goods for sale of Core's slot `slot` ("toaststyle", "soundset" or "binding") as the list outlines them, with a
+-- balance of `balance`: each priced, in red where the balance falls short, but for those `tags` gives another tag
+-- (by name): bought, in use. The toast styles go on with those that aren't for sale.
 ---@param slot string
 ---@param balance integer
+---@param tags? table<string, string>
 ---@return string[]
-local function expansionLines(slot, balance)
+local function saleLines(slot, balance, tags)
 	local lines = {}
-	for _, good in ipairs(EXPANSION[slot]) do
+	for _, good in ipairs(FOR_SALE[slot]) do
 		local tier = good[2]
+		local tag = tags and tags[good[1]]
 		lines[#lines + 1] = ("  core.%s.%s %s%s"):format(
 			slot,
 			good[1],
-			PRICES[tier],
-			PRICE_VALUES[tier] > balance and " [red]" or ""
+			tag or PRICES[tier],
+			not tag and PRICE_VALUES[tier] > balance and " [red]" or ""
 		)
 	end
 	if slot == "toaststyle" then
 		for _, line in ipairs(ROUND_TWO_UNOWNED) do
 			lines[#lines + 1] = line
 		end
-		for _, good in ipairs(ROUND_THREE) do
-			lines[#lines + 1] = ("  core.toaststyle.%s %s%s"):format(
-				good[1],
-				PRICES[good[2]],
-				PRICE_VALUES[good[2]] > balance and " [red]" or ""
-			)
-		end
 	end
 	return lines
 end
 
--- The expansion's goods of Core's slot `slot` the balance `balance` covers, by ID, in the list's order.
+-- The goods for sale of Core's slot `slot` the balance `balance` covers, by ID, in the list's order.
 ---@param slot string
 ---@param balance integer
 ---@return string[]
-local function expansionAffordable(slot, balance)
+local function saleAffordable(slot, balance)
 	local ids = {}
-	for _, good in ipairs(EXPANSION[slot]) do
+	for _, good in ipairs(FOR_SALE[slot]) do
 		if PRICE_VALUES[good[2]] <= balance then
 			ids[#ids + 1] = ("core.%s.%s"):format(slot, good[1])
 		end
@@ -190,7 +182,7 @@ end
 ---@param balance integer
 ---@return string[]
 local function bindingLines(balance)
-	return joined({ "Book binding (1 of 34)", "  core.binding.field In use" }, expansionLines("binding", balance))
+	return joined({ "Book binding (1 of 34)", "  core.binding.field In use" }, saleLines("binding", balance))
 end
 
 -- Core's own slots (SHOP-R25) as the list outlines them while nothing of Core's is bought and the balance is under
@@ -198,20 +190,8 @@ end
 local CORE_UNBOUGHT = joined(
 	joined(
 		joined(
-			joined(
-				joined({
-					"Toast style (1 of 26)",
-					"  core.toaststyle.page In use",
-					"  core.toaststyle.ripple 250" .. " [red]",
-					"  core.toaststyle.lanternglow 250" .. " [red]",
-				}, expansionLines("toaststyle", 0)),
-				{
-					"Sound set (1 of 27)",
-					"  core.soundset.driftwood In use",
-					"  core.soundset.gilded 400" .. " [red]",
-				}
-			),
-			expansionLines("soundset", 0)
+			joined({ "Toast style (1 of 26)", "  core.toaststyle.page In use" }, saleLines("toaststyle", 0)),
+			joined({ "Sound set (1 of 27)", "  core.soundset.driftwood In use" }, saleLines("soundset", 0))
 		),
 		CREST_LINES
 	),
@@ -456,17 +436,14 @@ describe("The Curio Shop's list", function()
 				joined(
 					joined(
 						joined(
-							joined({
-								"Toast style (2 of 26)",
-								"  core.toaststyle.page default",
-								"  core.toaststyle.ripple In use",
-								"  core.toaststyle.lanternglow 250", -- tier 1 now, so the 300 Coins cover it
-							}, expansionLines("toaststyle", 300)),
-							joined({
-								"Sound set (1 of 27)",
-								"  core.soundset.driftwood In use",
-								"  core.soundset.gilded 400" .. " [red]",
-							}, expansionLines("soundset", 300))
+							joined(
+								{ "Toast style (2 of 26)", "  core.toaststyle.page default" },
+								saleLines("toaststyle", 300, { ripple = "In use" })
+							),
+							joined(
+								{ "Sound set (1 of 27)", "  core.soundset.driftwood In use" },
+								saleLines("soundset", 300)
+							)
 						),
 						joined(CREST_LINES, bindingLines(300))
 					),
@@ -559,30 +536,22 @@ describe("The Curio Shop's list", function()
 			"ledger.binding.oak",
 			"hunts.cover.plain",
 		}, ids("owned"))
+		-- Ripple is bought; the toast styles that aren't for sale list after those that are
+		local toastStyles = saleAffordable("toaststyle", math.huge)
+		table.remove(toastStyles, 1)
 		local notOwned = joined(
-			joined(
-				joined(
-					joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", math.huge)),
-					ROUND_TWO_IDS
-				),
-				ROUND_THREE_IDS
-			),
-			joined({ "core.soundset.gilded" }, expansionAffordable("soundset", math.huge))
+			joined(joined(toastStyles, ROUND_TWO_IDS), saleAffordable("soundset", math.huge)),
+			saleAffordable("binding", math.huge)
 		)
-		notOwned = joined(notOwned, expansionAffordable("binding", math.huge))
 		assert.are.same(
 			joined(notOwned, { "ledger.binding.lapis", "hunts.cover.velvet", "hunts.cover.gold" }),
 			ids("notOwned")
 		)
+		local affordableStyles = saleAffordable("toaststyle", 550)
+		table.remove(affordableStyles, 1) -- Ripple is bought
 		assert.are.same(
 			joined(
-				joined(
-					joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", 550)),
-					joined(
-						joined({ "core.soundset.gilded" }, expansionAffordable("soundset", 550)),
-						expansionAffordable("binding", 550)
-					)
-				),
+				joined(affordableStyles, joined(saleAffordable("soundset", 550), saleAffordable("binding", 550))),
 				{ "hunts.cover.velvet" }
 			),
 			ids("canAfford")
@@ -709,6 +678,139 @@ describe("A grouped slot on the Curio Shop's list", function()
 			{ { key = "zone", name = "Zone crests" }, { key = "fish", name = "Fish crests" } },
 			assert(crest).groups
 		)
+	end)
+end)
+
+describe("The Curio Shop's list order within a slot", function()
+	-- Hunts' pennants, a slot whose registration order is not its tier order: Gale (tier 3), Dawn (earned), Plain (the
+	-- default), Reef (tier 1), Mist (tier 2), Dusk (tier 1), Storm (tier 6), Isle (tier 5), then Ember (earned, with a
+	-- fallback price, SHOP-R28), logged in.
+	local function pennants()
+		local fake, handles = coreWithModules()
+		local hunts = handles.Hunts
+		hunts:RegisterSlot({ id = "hunts.pennant", label = "Pennant", category = "Trackers" })
+		local function good(name, extra)
+			local registered = { id = "hunts.pennant." .. name:lower(), slot = "hunts.pennant", name = name }
+			for key, value in pairs(extra) do
+				registered[key] = value
+			end
+			hunts:RegisterGood(registered)
+		end
+		local never = function()
+			return false
+		end
+		good("Gale", { tier = 3 })
+		good("Dawn", { isEarned = never, earnedText = "Dawn text" })
+		good("Plain", { default = true })
+		good("Reef", { tier = 1 })
+		good("Mist", { tier = 2 })
+		good("Dusk", { tier = 1 })
+		good("Storm", { tier = 6 })
+		good("Isle", { tier = 5 })
+		good("Ember", { isEarned = never, earnedText = "Ember text", fallbackTier = 4, fallbackFrom = 2 ^ 31 })
+		fake.login()
+		return fake, handles
+	end
+
+	-- The last part of each row's ID in `group`, in order.
+	local function ids(group)
+		local list = {}
+		for i, row in ipairs(group.rows) do
+			list[i] = row.id:match("[^.]+$")
+		end
+		return list
+	end
+
+	it(
+		"lists the default first, then goods for sale cheapest tier first in registration order, then earned goods"
+			.. " (SHOP-R27)",
+		function()
+			local fake = pennants()
+
+			local group = model(fake):List({ category = "Trackers" })[1]
+
+			assert.are.same({ "plain", "reef", "dusk", "mist", "gale", "isle", "storm", "dawn", "ember" }, ids(group))
+		end
+	)
+
+	it("sorts a tier 6 good after every other good for sale (SHOP-R22, SHOP-R27)", function()
+		local fake = pennants()
+
+		local rows = model(fake):List({ category = "Trackers" })[1].rows
+
+		assert.are.same({ "storm", "25,000" }, { rows[7].id:match("[^.]+$"), rows[7].price })
+		assert.are.equal("Dawn text", rows[8].tag)
+	end)
+
+	it("counts over all the slot's goods and keeps the narrowed list in the same order (SHOP-R27)", function()
+		local fake = pennants()
+		local shop = model(fake)
+
+		assert.are.equal("1 of 9", shop:List({ category = "Trackers" })[1].count)
+		assert.are.same(
+			{ "reef", "dusk", "mist", "gale", "isle", "storm", "dawn", "ember" },
+			ids(shop:List({ category = "Trackers", filter = "notOwned" })[1])
+		)
+	end)
+
+	it("sorts a grouped slot's goods inside each group, the goods with no group first (SHOP-R27)", function()
+		local fake, handles = coreWithModules()
+		local hunts = handles.Hunts
+		hunts:RegisterSlot({
+			id = "hunts.flag",
+			label = "Flag",
+			category = "Trackers",
+			groups = { { key = "a", name = "A flags" }, { key = "b", name = "B flags" } },
+		})
+		local function good(name, extra)
+			local registered = { id = "hunts.flag." .. name, slot = "hunts.flag", name = name }
+			for key, value in pairs(extra) do
+				registered[key] = value
+			end
+			hunts:RegisterGood(registered)
+		end
+		local never = function()
+			return false
+		end
+		good("b3", { tier = 3, group = "b" })
+		good("b1", { tier = 1, group = "b" })
+		good("a2", { tier = 2, group = "a" })
+		good("a_earned", { isEarned = never, group = "a" })
+		good("a1", { tier = 1, group = "a" })
+		good("n4", { tier = 4 })
+		good("plain", { default = true, group = "b" })
+		good("n2", { tier = 2 })
+		good("b_earned", { isEarned = never, group = "b" })
+		good("b2", { tier = 2, group = "b" })
+		fake.login()
+
+		local group = model(fake):List({ category = "Trackers" })[1]
+
+		assert.are.same({ "n2", "n4", "a1", "a2", "a_earned", "plain", "b1", "b2", "b3", "b_earned" }, ids(group))
+		assert.are.same({ [3] = "A flags", [6] = "B flags" }, group.headings)
+		assert.are.equal("1 of 10", group.count)
+	end)
+
+	it("leaves Pagle.GetSlotGoods in registration order (SHOP-R21)", function()
+		local fake = pennants()
+
+		local registered = {}
+		for i, id in ipairs(fake.Pagle.GetSlotGoods("hunts.pennant")) do
+			registered[i] = id:match("[^.]+$")
+		end
+
+		assert.are.same({ "gale", "dawn", "plain", "reef", "mist", "dusk", "storm", "isle", "ember" }, registered)
+	end)
+
+	it("puts a default registered last first all the same (SHOP-R22)", function()
+		local fake, handles = coreWithModules()
+		handles.Hunts:RegisterSlot({ id = "hunts.pin", label = "Pin", category = "Trackers" })
+		handles.Hunts:RegisterGood({ id = "hunts.pin.two", slot = "hunts.pin", name = "Two", tier = 2 })
+		handles.Hunts:RegisterGood({ id = "hunts.pin.one", slot = "hunts.pin", name = "One", tier = 1 })
+		handles.Hunts:RegisterGood({ id = "hunts.pin.base", slot = "hunts.pin", name = "Base", default = true })
+		fake.login()
+
+		assert.are.same({ "base", "one", "two" }, ids(model(fake):List({ category = "Trackers" })[1]))
 	end)
 end)
 
@@ -1348,12 +1450,7 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 
 			assert.are.same(
 				joined(
-					joined({
-						"Toast style (2 of 28)",
-						"  core.toaststyle.page In use",
-						"  core.toaststyle.ripple 250" .. " [red]",
-						"  core.toaststyle.lanternglow 250" .. " [red]",
-					}, expansionLines("toaststyle", 0)),
+					joined({ "Toast style (2 of 28)", "  core.toaststyle.page In use" }, saleLines("toaststyle", 0)),
 					{
 						"  ledger.toaststyle.oak Owned",
 						"  ledger.toaststyle.sun Unfished",

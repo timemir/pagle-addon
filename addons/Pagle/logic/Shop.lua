@@ -396,27 +396,53 @@ end
 ---@field rows PagleShopRow[]
 ---@field headings? table<integer, string> -- a grouped slot's (SHOP-R27): a group's name, over the row at that index
 
+-- `goods` in the order the list shows them within a slot or a group (SHOP-R27): the slot's default (`defaultID`)
+-- first; then the goods for sale, cheapest tier first; then the rest (earned, crate only: no price), each kind in
+-- registration order. A good with a fallback price (SHOP-R28) is earned here, not for sale. A new list, as
+-- table.sort isn't stable: the position in `goods` breaks a tie.
+---@param goods PagleRegisteredGood[]
+---@param defaultID string?
+---@return PagleRegisteredGood[]
+local function byTier(goods, defaultID)
+	local rank, position = {}, {}
+	for i, good in ipairs(goods) do
+		position[good] = i
+		rank[good] = good.id == defaultID and 0 or good.tier or math.huge
+	end
+	local sorted = { unpack(goods) }
+	table.sort(sorted, function(a, b)
+		if rank[a] ~= rank[b] then
+			return rank[a] < rank[b]
+		end
+		return position[a] < position[b]
+	end)
+	return sorted
+end
+
 -- A slot's goods in the order the list shows them (SHOP-R27): for a slot with groups, the goods with none first, then
--- each group's in the slot's order, each in registration order; for one without, in registration order. With each,
--- the name of the group it opens, if it is the first of its group.
+-- each group's in the slot's order; for one without, all of them; each part ordered by tier (byTier). With each, the
+-- name of the group it opens, if it is the first of its group.
 ---@param slot PagleRegisteredSlot
 ---@param slotGoods PagleRegisteredGood[]
+---@param defaultID string?  -- the slot's default good
 ---@return PagleRegisteredGood[] ordered
 ---@return table<PagleRegisteredGood, string> opens
-local function inGroups(slot, slotGoods)
+local function inGroups(slot, slotGoods, defaultID)
 	if not slot.groups then
-		return slotGoods, {}
+		return byTier(slotGoods, defaultID), {}
 	end
 	local ordered, opens = {}, {}
 	local function add(key, name)
-		local first = true
+		local inGroup = {}
 		for _, good in ipairs(slotGoods) do
 			if good.group == key then
-				ordered[#ordered + 1] = good
-				if first and name then
-					opens[good] = name
-				end
-				first = false
+				inGroup[#inGroup + 1] = good
+			end
+		end
+		for i, good in ipairs(byTier(inGroup, defaultID)) do
+			ordered[#ordered + 1] = good
+			if i == 1 and name then
+				opens[good] = name
 			end
 		end
 	end
@@ -445,7 +471,7 @@ function Model:List(query)
 				slotGoods[#slotGoods + 1] = good
 			end
 		end
-		local ordered, opens = inGroups(slot, slotGoods)
+		local ordered, opens = inGroups(slot, slotGoods, goods:DefaultOf(slot.id))
 		local headings, heading
 		for _, good in ipairs(ordered) do
 			local entry = assert(self:Entry(good.id))
