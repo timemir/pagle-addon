@@ -110,7 +110,7 @@ describe("the Ledger's live moments", function()
 			-- Its Catch is the Yellowtail's Spotted, a Common variety (VAR-R3), caught for the first time.
 			assert.are.same({
 				"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
-				"newVariety New variety · Spotted / nil nil",
+				"newVariety New variety / Spotted nil",
 			}, momentsOf(announcement))
 			assert.are.same({ "New variety" }, announcement.stamps)
 			assert.are.same(
@@ -138,7 +138,7 @@ describe("the Ledger's live moments", function()
 		-- Its text carries the Catch's size, as a real Catch's does (LED-R81), and its variety rides on it (VAR-R25).
 		assert.are.same({
 			"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
-			"newVariety New variety · Spotted / nil nil",
+			"newVariety New variety / Spotted nil",
 		}, momentsOf(announcements[1]))
 	end)
 
@@ -182,7 +182,7 @@ describe("the Ledger's live moments", function()
 
 		-- Its variety is new, and headlines over the Nod (VAR-R25, ANN-R11).
 		assert.are.same(
-			{ "newVariety New variety · Slate / nil nil", "newInZone New here / Item 6308 in ... nil" },
+			{ "newVariety New variety / Slate nil", "newInZone New here / Item 6308 in ... nil" },
 			momentsOf(shown(fake)[1])
 		)
 	end)
@@ -217,7 +217,7 @@ describe("the Ledger's live moments", function()
 			assert.are.same({
 				"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
 				"zoneRank Zone rank: Visitor / Darkshore 2",
-				"newVariety New variety · Spotted / nil nil",
+				"newVariety New variety / Spotted nil",
 			}, momentsOf(shown(fake)[1]))
 			assert.are.same(
 				{ { module = "Ledger", total = 0 }, { module = "Ledger", total = 10 + 2 } },
@@ -386,7 +386,7 @@ describe("the Ledger's live moments", function()
 			{ "levelUp Angler Level 2 / nil 40" },
 			{
 				"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
-				"newVariety New variety · Spotted / nil nil",
+				"newVariety New variety / Spotted nil",
 			},
 		}, celebrated)
 

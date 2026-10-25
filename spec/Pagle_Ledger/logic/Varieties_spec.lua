@@ -373,26 +373,33 @@ describe("fish varieties in the Ledger", function()
 			return moments
 		end
 
-		it("gives a Common or Uncommon variety a toast.low New variety, riding on a New Species toast", function()
-			local first = log.cast({ { FISH, 1 } })
-			local moments = live(first)
-			-- The Species' first Catch is also its first variety: Core merges them, New Species the headline.
-			assert.are.same({ "newSpecies", "newVariety" }, kinds(moments))
+		it(
+			"gives a Common or Uncommon variety a toast.low New variety naming it on its own line, with its rarity,"
+				.. " riding on a New Species toast (#424)",
+			function()
+				local first = log.cast({ { FISH, 1 } })
+				local moments = live(first)
+				-- The Species' first Catch is also its first variety: Core merges them, New Species the headline.
+				assert.are.same({ "newSpecies", "newVariety" }, kinds(moments))
 
-			local second = log.cast({ { FISH_ALT, 6 } })
-			assert.are.same({
-				{
-					rung = "toast.low",
-					kind = "newVariety",
-					order = 120,
-					title = "New variety · Colour 6",
-					stamp = "New variety",
-					icon = FISH_ALT,
-					art = variety(FISH, 6).art,
-					cast = second.id,
-				},
-			}, live(second))
-		end)
+				local second = log.cast({ { FISH_ALT, 6 } })
+				assert.are.same({
+					{
+						rung = "toast.low",
+						kind = "newVariety",
+						order = 120,
+						title = "New variety",
+						text = "Colour 6",
+						stamp = "New variety",
+						icon = FISH_ALT,
+						art = variety(FISH, 6).art,
+						variety = { name = "Colour 6", rarity = "uncommon" },
+						cast = second.id,
+					},
+				}, live(second))
+				assert.are.same({ name = "Colour 1", rarity = "common" }, moments[2].variety)
+			end
+		)
 
 		it("gives a Rare variety a toast with its name and its art in the bezel", function()
 			live(log.cast({ { FISH, 1 } }))
@@ -407,6 +414,7 @@ describe("fish varieties in the Ledger", function()
 					text = "Colour 9",
 					icon = FISH,
 					art = variety(FISH, 9).art,
+					variety = { name = "Colour 9", rarity = "rare" },
 					cast = record.id,
 				},
 			}, live(record))
@@ -427,6 +435,7 @@ describe("fish varieties in the Ledger", function()
 				moments[1].cast,
 			})
 			assert.are.same(variety(FISH, 10).art, moments[1].art)
+			assert.are.same({ name = "Colour 10", rarity = "epic" }, moments[1].variety)
 			-- A copy: Core's list is shared (CORE-R18).
 			assert.are_not.equal(variety(FISH, 10).art, moments[1].art)
 			assert.is_nil(moments[1].coins)
@@ -482,6 +491,8 @@ describe("fish varieties in the Ledger", function()
 
 			assert.are.same({ ns.L.NAME_UNKNOWN }, { moment.text })
 			assert.is_nil(moment.art)
+			-- Its rarity is Core's own, so the toast still takes its colour.
+			assert.are.same({ name = ns.L.NAME_UNKNOWN, rarity = "rare" }, moment.variety)
 		end)
 
 		it("gives the last of all the complete.varieties title moment, as the other complete.* titles", function()

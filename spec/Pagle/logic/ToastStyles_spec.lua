@@ -442,6 +442,123 @@ describe("a catch Nod's variety", function()
 	end)
 end)
 
+describe("a toast's variety (#424, VAR-R25, VAR-R26)", function()
+	local ART = { texture = "Varieties1", left = 0.09375, right = 0.1875, top = 0, bottom = 0.046875 }
+	local FISH = 6291
+
+	-- A moment as Core holds it (PagleRaisedMoment): `order` doubles as when it was raised.
+	local function raised(rung, kind, order, fields)
+		local m = { rung = rung, kind = kind, order = order, title = kind, module = "Ledger", moduleOrder = 10 }
+		m.raised = order
+		for key, value in pairs(fields or {}) do
+			m[key] = value
+		end
+		return m
+	end
+
+	-- The Cast's size record, a toast.low with the fish as its icon and its text.
+	local function record()
+		return raised("toast.low", "sizeRecord", 100, {
+			text = "Raw Bristle Whisker Catfish",
+			stamp = "Record",
+			icon = FISH,
+			ruler = { old = 303, new = 304, unit = "length", label = "Tiddler" },
+		})
+	end
+
+	-- A first-catch variety's moment of `rung` and `kind` (VAR-R25), with its art and variety.
+	local function variety(rung, kind, order, rarity, fields)
+		local m = raised(rung, kind, order, {
+			text = "Coral",
+			stamp = "New variety",
+			icon = FISH,
+			art = ART,
+			variety = { name = "Coral", rarity = rarity },
+		})
+		for key, value in pairs(fields or {}) do
+			m[key] = value
+		end
+		return m
+	end
+
+	-- The look of the toast these moments make.
+	local function look(...)
+		return ns.ToastVarietyLook(ns.MakeAnnouncement({ ... }) --[[@as PagleAnnouncement]])
+	end
+
+	it(
+		"takes the variety, art and stamp from the moment riding on a size record's toast, writing it after the fish's"
+			.. " name",
+		function()
+			local found = look(record(), variety("toast.low", "newVariety", 120, "uncommon")) --[[@as PagleToastVarietyLook]]
+
+			assert.are.same(
+				{ "Coral", "uncommon", ART, "New variety", "Raw Bristle Whisker Catfish ·" },
+				{ found.name, found.rarity, found.art, found.stamp, found.before }
+			)
+			local uncommon = ns.VARIETY_RARITIES[2]
+			assert.are.same({ uncommon.color, uncommon.ink }, { found.color, found.ink })
+		end
+	)
+
+	it(
+		"tints the ring and gleams as the catch Nod's variety does: Common's ring plain, a gleam for Rare and Epic",
+		function()
+			local seen = {}
+			for _, rarity in ipairs(ns.VARIETY_RARITIES) do
+				local found = look(record(), variety("toast.low", "newVariety", 120, rarity.key)) --[[@as PagleToastVarietyLook]]
+				assert.are.same({ rarity.color, rarity.ink }, { found.color, found.ink })
+				seen[#seen + 1] = { found.ring ~= nil, found.gleam }
+			end
+
+			assert.are.same({ { false, false }, { true, false }, { true, true }, { true, true } }, seen)
+		end
+	)
+
+	it("writes only the name for a variety's own toast, which carries no stamp for itself", function()
+		local own = variety("toast", "rareVariety", 105, "rare")
+
+		local found = look(own, record()) --[[@as PagleToastVarietyLook]]
+
+		assert.are.same({ "", nil, ART }, { found.before, found.stamp, found.art })
+	end)
+
+	it("keeps the art and ring but writes no name on a toast about something else than the fish", function()
+		local rank = raised("toast", "zoneRank", 90, { text = "Elwynn Forest", stamp = "Rank up", icon = "Map" })
+
+		local found = look(rank, variety("toast.low", "newVariety", 120, "rare")) --[[@as PagleToastVarietyLook]]
+
+		assert.are.same({ nil, "New variety", ART, true }, { found.before, found.stamp, found.art, found.ring ~= nil })
+	end)
+
+	it("writes no name for a variety headline with no text line", function()
+		local found = look(variety("toast.low", "newVariety", 120, "common", { text = false })) --[[@as PagleToastVarietyLook]]
+
+		assert.is_nil(found.before)
+		assert.are.equal("Coral", found.name)
+	end)
+
+	it(
+		"is nil with no variety moment, for a banner, a Nod, a digest, an unknown rarity and the catch Nod's own",
+		function()
+			local nodLine = raised("nod", "catch", 100, {
+				catchNod = true,
+				variety = { name = "Coral", rarity = "rare", before = "Fish ·", after = "· Decent" },
+			})
+			local digest = ns.MakeAnnouncement({ record(), variety("toast.low", "newVariety", 120, "rare") }) --[[@as PagleAnnouncement]]
+			digest.fighting = { record() }
+			assert.are.same({}, {
+				look(record()),
+				look(variety("banner", "epicVariety", 97, "epic")),
+				look(nodLine),
+				look(record(), nodLine),
+				ns.ToastVarietyLook(digest),
+				look(record(), variety("toast.low", "newVariety", 120, "mythic")),
+			})
+		end
+	)
+end)
+
 describe("the art's capitals", function()
 	it("put a text in capitals, a link's words too, leaving texture, colour and link escapes as they are", function()
 		local star = "|TInterface\\Common\\ReputationStar:12:12:0:0:32:32:0:16:0:16|t"

@@ -363,6 +363,113 @@ describe("a Nod in a composed toast style", function()
 	)
 end)
 
+describe("a toast announcing a variety in a composed toast style (#424, VAR-R26, ANN-R80, ANN-R82)", function()
+	local ART = { texture = "Interface\\Varieties1", left = 0.09375, right = 0.1875, top = 0, bottom = 0.046875 }
+	local CAST = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
+
+	local function rgb(color)
+		return { color[1], color[2], color[3] }
+	end
+
+	-- The drawn slots of the medallion's back and front, whichever of them the style has.
+	local function medallionSlots(toast)
+		local slots = {}
+		for _, slot in ipairs(toast.toastLayers.active) do
+			if slot.layer.name == "mfront" or slot.layer.name == "mback" then
+				slots[#slots + 1] = slot
+			end
+		end
+		return slots
+	end
+
+	-- A size record and a first catch of a Rare variety on one Cast, as the Ledger raises them (LED-R97), and the
+	-- toast Core shows for them.
+	local function raiseRecord(loaded, M)
+		M:RaiseMoment({
+			rung = "toast.low",
+			kind = "sizeRecord",
+			order = 100,
+			title = "Size record",
+			text = "Raw Bristle Whisker Catfish",
+			stamp = "Record",
+			icon = 6291,
+			cast = CAST,
+			ruler = { old = 303, new = 304, unit = "length", label = "Tiddler" },
+		})
+		M:RaiseMoment({
+			rung = "toast.low",
+			kind = "newVariety",
+			order = 120,
+			title = "New variety",
+			text = "Coral",
+			stamp = "New variety",
+			icon = 6291,
+			cast = CAST,
+			art = ART,
+			variety = { name = "Coral", rarity = "rare" },
+		})
+		loaded.client.advance(0)
+		return loaded.ns.announcementFrames.toast
+	end
+
+	it(
+		"shows the art in the medallion, tints its front and back in the rarity's colour, writes the gem and name and"
+			.. " inks the stamp's plate and word, the band beside the ruler (VAR-R26, ANN-R22)",
+		function()
+			local loaded, M = composedCore()
+			equip(loaded, DEEP)
+			local rare = loaded.ns.VARIETY_RARITIES[3]
+
+			local toast = raiseRecord(loaded, M)
+
+			assert.are.same({ ART.texture, { loaded.ns.HeadCrop(ART) } }, { toast.icon.texture, toast.icon.texCoord })
+			local rings = medallionSlots(toast)
+			assert.is_true(#rings > 0)
+			for _, slot in ipairs(rings) do
+				assert.are.same(
+					{ true, rgb(rare.color) },
+					{ slot.texture.desaturated == true, rgb(slot.texture.vertexColor) }
+				)
+			end
+			assert.are.same({ "Raw Bristle Whisker Catfish ·", "Coral", true }, {
+				toast.text:GetText(),
+				toast.variety:GetText(),
+				toast.gem.shown,
+			})
+			assert.are.same(
+				{ rgb(rare.ink), rgb(rare.color) },
+				{ rgb(toast.variety.textColor), rgb(toast.gem.fill.color) }
+			)
+			local stamp = toast.stamps[1]
+			assert.are.same({ "NEW VARIETY", rgb(rare.ink) }, { stamp.label:GetText(), rgb(stamp.label.textColor) })
+			for _, slice in ipairs(stamp.plate) do
+				assert.are.same({ true, rgb(rare.ink) }, { slice.desaturated == true, rgb(slice.vertexColor) })
+			end
+			assert.are.equal("TIDDLER", toast.ruler.label:GetText())
+		end
+	)
+
+	it("leaves the next toast's medallion, gem and stamp plate as the style draws them (VAR-R27)", function()
+		local loaded, M = composedCore()
+		equip(loaded, DEEP)
+		local toast = raiseRecord(loaded, M)
+		loaded.client.advance(10)
+
+		raiseStamped(loaded, M)
+
+		assert.are.equal(toast, loaded.ns.announcementFrames.toast)
+		local rings = medallionSlots(toast)
+		assert.is_true(#rings > 0)
+		for _, slot in ipairs(rings) do
+			assert.are.same({ false, { 1, 1, 1 } }, { slot.texture.desaturated == true, rgb(slot.texture.vertexColor) })
+		end
+		assert.are.same({ false, false, false }, { toast.gem.shown, toast.variety.shown, toast.gleams })
+		for _, slice in ipairs(toast.stamps[1].plate) do
+			assert.are.same({ false, { 1, 1, 1 } }, { slice.desaturated == true, rgb(slice.vertexColor) })
+		end
+	end)
+end)
+
 describe("a composed toast style on the Curio Shop's stage", function()
 	it("draws its sample toast in its resting frame, standing still (ANN-R82, wallet-and-shop.md › UI)", function()
 		local loaded = composedCore()

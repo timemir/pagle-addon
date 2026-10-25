@@ -375,6 +375,60 @@ describe("while a projection updates", function()
 	end)
 end)
 
+-- A Cast that beat a size record and found a variety for the first time (#424), the moments the Ledger raises for it
+-- (LED-R97): a size record beside a Common variety's `newVariety`, both `toast.low`, the record first.
+local COLOUR_ART = { texture = "Varieties1", left = 0.09375, right = 0.1875, top = 0, bottom = 0.046875 }
+local function recordAndVariety(rarity)
+	return moment("toast.low", "Size record", {
+		kind = "sizeRecord",
+		order = 100,
+		text = "Raw Bristle Whisker Catfish",
+		stamp = "Record",
+		icon = 6291,
+		ruler = { old = 303, new = 304, unit = "length", label = "Tiddler" },
+	}),
+		moment("toast.low", "New variety", {
+			kind = "newVariety",
+			order = 120,
+			text = "Coral",
+			stamp = "New variety",
+			icon = 6291,
+			art = COLOUR_ART,
+			variety = { name = "Coral", rarity = rarity },
+		})
+end
+
+describe("a Cast's size record and new variety (#424, ANN-R11, VAR-R25)", function()
+	it("make one toast headlined by the record, the variety riding on it as a stamp with its art", function()
+		local world = newWorld()
+
+		local record, variety = recordAndVariety("common")
+		world.moments:Raise(LEDGER, record)
+		world.moments:Raise(LEDGER, variety)
+		world.frame()
+
+		-- The record outranks the variety on their shared rung (ANN-R2), so the variety's art isn't the headline's:
+		-- Core takes it from the moment riding as a stamp.
+		local shown = world.shown[1]
+		assert.are.same({ "sizeRecord", { "New variety" } }, { shown.headline.kind, shown.stamps })
+		assert.is_nil(shown.headline.art)
+		assert.are.same(COLOUR_ART, shown.moments[2].art)
+		assert.are.same({ name = "Coral", rarity = "common" }, shown.moments[2].variety)
+	end)
+
+	it("keep a Module's variety apart from the Module's table once raised (ANN-R3)", function()
+		local world = newWorld()
+		local record, variety = recordAndVariety("rare")
+
+		world.moments:Raise(LEDGER, record)
+		world.moments:Raise(LEDGER, variety)
+		variety.variety.name = "Changed"
+		world.frame()
+
+		assert.are.equal("Coral", world.shown[1].moments[2].variety.name)
+	end)
+end)
+
 describe("ns.MomentProblem", function()
 	it("refuses an unknown rung, a missing kind or a missing title, and takes every rung (ANN-R1)", function()
 		assert.matches("not a rung", ns.MomentProblem({ rung = "huge", kind = "k", title = "t" }))
@@ -397,6 +451,17 @@ describe("ns.MomentProblem", function()
 		assert.is_nil(ns.MomentProblem({ rung = "toast", kind = "k", title = "t", art = art }))
 		assert.matches("art", ns.MomentProblem({ rung = "toast", kind = "k", title = "t", art = "Varieties1" }))
 		assert.matches("art", ns.MomentProblem({ rung = "toast", kind = "k", title = "t", art = { texture = 1 } }))
+	end)
+
+	it("takes a variety that is a name and a rarity, and refuses any other (VAR-R25, VAR-R26)", function()
+		local function problem(variety)
+			return ns.MomentProblem({ rung = "toast", kind = "k", title = "t", variety = variety })
+		end
+		assert.is_nil(problem({ name = "Coral", rarity = "common" }))
+		assert.matches("variety", problem("Coral"))
+		assert.matches("variety", problem({ name = "Coral" }))
+		assert.matches("variety", problem({ name = "", rarity = "rare" }))
+		assert.matches("variety", problem({ name = "Coral", rarity = 3 }))
 	end)
 end)
 

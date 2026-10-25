@@ -26,7 +26,8 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 - Hover a stamp on a Species' page or a trophy family's (Caught, In its element, Regular; Any weight, Half the weights, The heaviest) to read what it asks for and how far along you are.
 - Fish you haven't caught stay nameless. A riddle sets the scene, and a plain hint is there when you'd rather just know.
 - Legends, the named catches you won't land on an ordinary day, arrive with a splash and a title to sign the Journal with.
-- Your longest of each Species is kept, from Tiddler to Monster.
+- Your longest of each Species is kept, from Tiddler to Monster. A size record's toast names the fish and writes its size band beside the ruler, so nothing is cut off.
+- A toast for a fish's new colour shows the colour in its medallion, in place of the fish's icon, with its name after a small gem. The stamp, the ring and the gem take the colour's rarity (white, green, blue, purple), and a Rare or Epic one gleams once. This holds whether the toast is the colour's own, a size record's or a New Species'.
 - Search the Journal for a fish or a water. `/pagle journal` opens it.
 
 ### Hunts

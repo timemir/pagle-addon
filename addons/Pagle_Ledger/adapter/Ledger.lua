@@ -145,9 +145,16 @@ function ns.ClientSizeText(size)
 	return ns.SizeText(size, Pagle.SIZE_BANDS, Pagle.FormatLength)
 end
 
+--- A Catch's or record's Size band's name in Core's band names (a size record's ruler label, ANN-R22).
+---@param size { length: integer, band: integer }?
+---@return string?
+function ns.ClientBandName(size)
+	return ns.BandName(size, Pagle.SIZE_BANDS)
+end
+
 --- Where the Ledger's moments, Write-up sections, Coins and summary line go, and what they read: the client's names
---- and numbers, the Angler's logId, the goods' refresh, Core's size text, a zone's crest, a variety's name and art and
---- a fish crest's name and icon (LED-R81, LED-R89, LED-R90, LED-R93–R95, LED-R97, LED-R111, VAR-R25).
+--- and numbers, the Angler's logId, the goods' refresh, Core's size text and band names, a zone's crest, a variety's
+--- name and art and a fish crest's name and icon (LED-R81, LED-R89, LED-R90, LED-R93–R95, LED-R97, LED-R111, VAR-R25).
 ---@param module PagleModuleHandle
 ---@return LedgerOutlets
 function ns.Outlets(module)
@@ -176,6 +183,7 @@ function ns.Outlets(module)
 			module:RefreshGoods()
 		end,
 		SizeText = ns.ClientSizeText,
+		BandName = ns.ClientBandName,
 		-- logic/ZoneCrests.lua's, read at each call (LED-R97, LED-R113).
 		ZoneCrest = function(areaID)
 			return ns.ZoneCrestOf(areaID)

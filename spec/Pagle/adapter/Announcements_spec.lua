@@ -1339,3 +1339,288 @@ describe("a catch Nod naming a variety on the client (VAR-R26)", function()
 		end
 	)
 end)
+
+describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, ANN-R22, ANN-R80)", function()
+	-- Bristle Whisker Catfish's Coral: a 192 × 96 rectangle of a 2048 atlas (VAR-R11).
+	local ART = {
+		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
+		left = 0.09375,
+		right = 0.1875,
+		top = 0,
+		bottom = 0.046875,
+	}
+	local ITEM = 6291
+	local FISH = "Raw Bristle Whisker Catfish"
+
+	local function rarityOf(loaded, key)
+		for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+			if rarity.key == key then
+				return rarity
+			end
+		end
+		error("no rarity " .. key)
+	end
+
+	local function rgb(color)
+		return { color[1], color[2], color[3] }
+	end
+
+	-- The Cast of the issue: a size record from 30.3 to 30.4 cm and a first catch of Coral, a variety of `rarity`, as
+	-- the Ledger raises them (LED-R97), the record first.
+	local function recordAndVariety(rarity)
+		local record = moment("toast.low", "Size record", {
+			kind = "sizeRecord",
+			order = 100,
+			text = FISH,
+			stamp = "Record",
+			icon = ITEM,
+			cast = CAST,
+			ruler = { old = 303, new = 304, unit = "length", label = "Tiddler" },
+		})
+		local variety = moment("toast.low", "New variety", {
+			kind = "newVariety",
+			order = 120,
+			text = "Coral",
+			stamp = "New variety",
+			icon = ITEM,
+			cast = CAST,
+			art = ART,
+			variety = { name = "Coral", rarity = rarity },
+		})
+		return record, variety
+	end
+
+	-- Raises the Cast's moments and returns the toast it shows.
+	local function raiseRecord(loaded, M, rarity)
+		raise(loaded, M, recordAndVariety(rarity))
+		return frameOf(loaded, "toast") --[[@as table]]
+	end
+
+	-- A toast's name ink, as its style and page give it.
+	local function nameInk(loaded, toast)
+		local display = toast.display
+		local inks = loaded.ns.ToastInks(loaded.ns.DisplayStyle(display), loaded.ns.ToastPage(display.announcement))
+		return rgb(loaded.ns.ANNOUNCE_COLORS[inks.name])
+	end
+
+	it(
+		"shows the variety's art cropped to the fish's head in the medallion in place of the item icon, its ring in the"
+			.. " rarity's colour but Common's the style's own (#424, VAR-R26)",
+		function()
+			local loaded, M = loadCore()
+			local seen = {}
+			for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+				local toast = raiseRecord(loaded, M, rarity.key)
+				assert.are.same(
+					{ ART.texture, { loaded.ns.HeadCrop(ART) } },
+					{ toast.icon.texture, toast.icon.texCoord }
+				)
+				seen[#seen + 1] = { toast.bezel.Ring.desaturated == true, rgb(toast.bezel.Ring.vertexColor) }
+				loaded.client.advance(TOAST + LEAVE_TOAST)
+			end
+
+			local expected = {}
+			for i, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+				expected[i] = { i > 1, i > 1 and rgb(rarity.color) or { 1, 1, 1 } }
+			end
+			assert.are.same(expected, seen)
+		end
+	)
+
+	it(
+		"names the fish alone, then the variety after a gem in its colour in its rarity's ink, the first half staying in"
+			.. " the style's ink (#424, VAR-R26, ANN-R80)",
+		function()
+			local loaded, M = loadCore()
+			local rare = rarityOf(loaded, "rare")
+
+			local toast = raiseRecord(loaded, M, "rare")
+
+			assert.are.same({ "SIZE RECORD", FISH .. " ·", "Coral" }, {
+				toast.title:GetText(),
+				toast.text:GetText(),
+				toast.variety:GetText(),
+			})
+			assert.are.same(
+				{ nameInk(loaded, toast), rgb(rare.ink) },
+				{ rgb(toast.text.textColor), rgb(toast.variety.textColor) }
+			)
+			-- The gem: a small square turned to a diamond, rimmed in the ink and filled with the colour.
+			assert.are.same({ true, rgb(rare.color), rgb(rare.ink), math.rad(45) }, {
+				toast.gem.shown,
+				rgb(toast.gem.fill.color),
+				rgb(toast.gem.rim.color),
+				toast.gem.fill.rotation,
+			})
+			-- In a row after the fish's name, no longer than the toast.
+			assert.are.same({ toast.text, toast.gem }, { toast.gem.points[1][2], toast.variety.points[1][2] })
+			assert.are.same({}, bounds.overflows(toast))
+		end
+	)
+
+	it(
+		"writes the size band at the ruler's bottom left in place of LENGTH, the title no longer holding it (#424)",
+		function()
+			local loaded, M = loadCore()
+
+			local toast = raiseRecord(loaded, M, "common")
+
+			local ruler = toast.ruler
+			assert.are.same(
+				{ true, "TIDDLER", "BOTTOMLEFT" },
+				{ ruler.shown, ruler.label:GetText(), ruler.label.points[1][1] }
+			)
+			assert.is_nil(toast.text:GetText():find("Tiddler", 1, true))
+		end
+	)
+
+	it("keeps every other ruler's own label (ANN-R22)", function()
+		local loaded, M = loadCore()
+
+		raise(
+			loaded,
+			M,
+			moment("toast", "Trophy weight", { ruler = { old = 10, new = 12, unit = "lb", label = "weight" } })
+		)
+
+		assert.are.equal("WEIGHT", frameOf(loaded, "toast").ruler.label:GetText())
+	end)
+
+	it(
+		"inks the New variety stamp and its border in the rarity's ink and no other stamp, and a toast after it in"
+			.. " the style's (#424, VAR-R26, ANN-R80)",
+		function()
+			local loaded, M = loadCore()
+			local epic = rarityOf(loaded, "epic")
+			local record, variety = recordAndVariety("epic")
+			local here = moment("nod", "New here", { cast = CAST, stamp = "New here" })
+
+			raise(loaded, M, record, variety, here)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+
+			local inked = {}
+			for _, stamp in ipairs(toast.stamps) do
+				if stamp.shown then
+					inked[stamp.label:GetText()] = {
+						rgb(stamp.label.textColor),
+						stamp.border.left.desaturated == true,
+						rgb(stamp.border.left.vertexColor),
+					}
+				end
+			end
+			local style = loaded.ns.DisplayStyle(toast.display)
+			assert.are.same({ rgb(epic.ink), true, rgb(epic.ink) }, inked["NEW VARIETY"])
+			assert.are.same({ rgb(loaded.ns.ANNOUNCE_COLORS[style.stampInk]), false, { 1, 1, 1 } }, inked["NEW HERE"])
+
+			-- The frame goes on to another toast: its stamps are inked as the style has them, whatever it was.
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+			raise(
+				loaded,
+				M,
+				moment("toast", "New Species", { text = "Nightfin Snapper", cast = CAST }),
+				moment("nod", "New variety", { stamp = "New variety", cast = CAST })
+			)
+			local after = frameOf(loaded, "toast") --[[@as table]]
+			assert.are.equal(toast, after)
+			local reset = {}
+			for _, stamp in ipairs(after.stamps) do
+				if stamp.shown then
+					reset[#reset + 1] = {
+						stamp.label:GetText(),
+						stamp.border.left.desaturated == true,
+						rgb(stamp.border.left.vertexColor),
+						rgb(stamp.label.textColor),
+					}
+				end
+			end
+			assert.are.same(
+				{ { "NEW VARIETY", false, { 1, 1, 1 }, rgb(loaded.ns.ANNOUNCE_COLORS[style.stampInk]) } },
+				reset
+			)
+		end
+	)
+
+	it(
+		"writes a Rare variety's own toast as the gem and name alone, the fish's name left to its icon (#424)",
+		function()
+			local loaded, M = loadCore()
+			local rare = rarityOf(loaded, "rare")
+			local variety = moment("toast", "Rare variety", {
+				kind = "rareVariety",
+				order = 105,
+				text = "Coral",
+				icon = ITEM,
+				cast = CAST,
+				art = ART,
+				variety = { name = "Coral", rarity = "rare" },
+			})
+
+			raise(loaded, M, variety)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+
+			assert.are.same({ "RARE VARIETY", "", "Coral", true, ART.texture }, {
+				toast.title:GetText(),
+				toast.text:GetText(),
+				toast.variety:GetText(),
+				toast.gem.shown,
+				toast.icon.texture,
+			})
+			assert.are.same(
+				{ rgb(rare.ink), rgb(rare.color) },
+				{ rgb(toast.variety.textColor), rgb(toast.bezel.Ring.vertexColor) }
+			)
+		end
+	)
+
+	it("names and colours no variety on a toast with no first-catch variety moment (VAR-R27)", function()
+		local loaded, M = loadCore()
+		raiseRecord(loaded, M, "rare")
+		loaded.client.advance(TOAST + LEAVE_TOAST)
+
+		raise(loaded, M, moment("toast.low", "Size record", { text = FISH, icon = ITEM }))
+
+		local toast = frameOf(loaded, "toast") --[[@as table]]
+		assert.are.same({ FISH, false, false, ITEM, false, { 1, 1, 1 } }, {
+			toast.text:GetText(),
+			toast.gem.shown,
+			toast.variety.shown,
+			toast.icon.texture,
+			toast.bezel.Ring.desaturated == true,
+			rgb(toast.bezel.Ring.vertexColor),
+		})
+		assert.are.same(nameInk(loaded, toast), rgb(toast.text.textColor))
+	end)
+
+	it(
+		"sweeps one gleam across a Rare or Epic variety's toast as it enters, in the rarity's colour, added on, then"
+			.. " gone; none for Common or Uncommon, nor with Animations off (VAR-R26)",
+		function()
+			local function sweep(rarity, motion)
+				local loaded, M = loadCore()
+				loaded.ns.db.profile.announcements.motion = motion
+				local toast = raiseRecord(loaded, M, rarity)
+				local peak, xs = toast.gleam.alpha or 0, {}
+				for _ = 1, 240 do
+					loaded.client.update(1 / 60)
+					peak = math.max(peak, toast.gleam.alpha or 0)
+					xs[#xs + 1] = toast.gleam.points[1] and toast.gleam.points[1][4]
+				end
+				return { peak = peak, xs = xs, gleam = toast.gleam, loaded = loaded }
+			end
+
+			for _, key in ipairs({ "rare", "epic" }) do
+				local seen = sweep(key, true)
+				assert.is_true(seen.peak > 0.5)
+				assert.are.same({ 0, "ADD", true, rgb(rarityOf(seen.loaded, key).color) }, {
+					seen.gleam.alpha,
+					seen.gleam.blendMode,
+					seen.gleam.desaturated,
+					rgb(seen.gleam.vertexColor),
+				})
+			end
+			for _, case in ipairs({ { "common", true }, { "uncommon", true }, { "rare", false } }) do
+				assert.are.equal(0, sweep(case[1], case[2]).peak)
+			end
+		end
+	)
+end)

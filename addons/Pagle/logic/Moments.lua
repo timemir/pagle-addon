@@ -27,7 +27,7 @@ local ns = select(2, ...)
 ---@field frameRank? integer     -- with seal "frame": the prestige rank whose Prestige frame shows (ANN-R83)
 ---@field crest? integer|string  -- with seal "crest": a crest good's icon shown in the seal's place (VAR-R25)
 ---@field art? PagleMomentArt    -- a texture rectangle drawn instead of `icon` where the headline shows (VAR-R25)
----@field variety? PagleNodVariety -- Core's catch Nod only: the variety its line names (VAR-R26)
+---@field variety? PagleNodVariety -- the variety a moment announces (VAR-R25, VAR-R26): a Module's first-catch variety moment gives its name and rarity; Core's catch Nod also its line's halves
 ---@field onClick? fun()         -- what clicking its toast or Nod does as it sends it away (ANN-R20); never stored
 
 --- A moment's art (announcements.md › Contracts): a texture and its texel rectangle as texture coordinates, a
@@ -40,14 +40,15 @@ local ns = select(2, ...)
 ---@field top number
 ---@field bottom number
 
---- The variety a catch Nod's line names (VAR-R26): its name and rarity, and the line cut either side of the name, so
---- the display draws the name as a segment of its own, in the rarity's ink after a gem in its colour. `title` keeps
+--- The variety a moment announces (VAR-R25, VAR-R26): its name and rarity, which colour the toast it rides on (the ring,
+--- the gem and name, the "New variety" stamp, ANN-R80). A catch Nod's also cuts its line either side of the name, so
+--- the display draws the name as a segment of its own, in the rarity's ink after a gem in its colour; `title` keeps
 --- the whole line as plain text.
 ---@class PagleNodVariety
 ---@field name string
 ---@field rarity "common"|"uncommon"|"rare"|"epic"
----@field before string          -- the line up to the name, trimmed ("Firefin Snapper ·")
----@field after string           -- the line after it, trimmed ("· Decent · 34.2 cm")
+---@field before? string         -- a catch Nod's: the line up to the name, trimmed ("Firefin Snapper ·")
+---@field after? string          -- a catch Nod's: the line after it, trimmed ("· Decent · 34.2 cm")
 
 ---@alias PagleRung "nod"|"toast.low"|"toast"|"toast.high"|"banner"|"splash"
 
@@ -123,6 +124,16 @@ function ns.MomentProblem(moment)
 			and type(art.bottom) == "number"
 		if not rectangle then
 			return "RaiseMoment: a moment's art is { texture, left, right, top, bottom }"
+		end
+	end
+	local variety = moment.variety
+	if variety ~= nil then
+		local named = type(variety) == "table"
+			and type(variety.name) == "string"
+			and variety.name ~= ""
+			and type(variety.rarity) == "string"
+		if not named then
+			return "RaiseMoment: a moment's variety is { name, rarity } (VAR-R25)"
 		end
 	end
 	if moment.onClick ~= nil and type(moment.onClick) ~= "function" then
@@ -345,7 +356,7 @@ local function copyOf(def, moment, raised)
 	for key, value in pairs(moment) do
 		copy[key] = value
 	end
-	for _, key in ipairs({ "ruler", "art" }) do
+	for _, key in ipairs({ "ruler", "art", "variety" }) do
 		if type(moment[key]) == "table" then
 			copy[key] = {}
 			for field, value in pairs(moment[key]) do

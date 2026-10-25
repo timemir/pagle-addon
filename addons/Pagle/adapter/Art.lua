@@ -626,3 +626,27 @@ function ns.SetStamp(stamp, text, style, page)
 	stamp:SetSize(width, 26)
 	stamp:Show()
 end
+
+--- Inks a rubber stamp ns.SetStamp has set in `color` (a variety's rarity ink, VAR-R26, ANN-R80): its word and its
+--- border or plate, greyed first so the colour shows true. With none it puts the border and plate back as drawn, the
+--- word's ink being SetStamp's own each time.
+---@param stamp PagleStamp
+---@param color number[]?
+function ns.TintStamp(stamp, color)
+	local border = stamp.border
+	local regions = { border.left, border.middle, border.right }
+	for _, slice in ipairs(stamp.plate or {}) do
+		regions[#regions + 1] = slice
+	end
+	for _, region in ipairs(regions) do
+		region:SetDesaturated(color ~= nil)
+		if color then
+			region:SetVertexColor(color[1], color[2], color[3])
+		else
+			region:SetVertexColor(1, 1, 1)
+		end
+	end
+	if color then
+		stamp.label:SetTextColor(color[1], color[2], color[3])
+	end
+end
