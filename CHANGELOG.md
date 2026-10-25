@@ -22,6 +22,7 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 
 - The Fish Journal keeps your life as an angler. Every Catch earns XP toward your Angler Level, doubled by Fresh Water after a break from fishing. At the top you can Prestige and climb again, each rank framing your portrait in a Prestige frame of its own, from the old jetty out to sea, down to the deep and up to the stars, the later ones moving.
 - Each Species earns up to three stars, and each zone a Zone Mastery rank from Visitor to Master. Master a zone and its bookplate crest is yours, fifty-four in all, to wear on the Journal. The Junk Museum, Treasures and the Trophy Room fill in as you go.
+- Hover a stamp on a Species' page or a trophy family's (Caught, In its element, Regular; Any weight, Half the weights, The heaviest) to read what it asks for and how far along you are.
 - Fish you haven't caught stay nameless. A riddle sets the scene, and a plain hint is there when you'd rather just know.
 - Legends, the named catches you won't land on an ordinary day, arrive with a splash and a title to sign the Journal with.
 - Your longest of each Species is kept, from Tiddler to Monster.
