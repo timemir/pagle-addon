@@ -19,16 +19,16 @@ local EXPANSION = {
 		{ "Ship's Log", 150 },
 		{ "Birch Scroll", 150 },
 		{ "Tidepool", 150 },
-		{ "Sea Chart", 400 },
-		{ "Frostbitten", 400 },
+		{ "Sea Chart", 150 },
+		{ "Frostbitten", 150 },
 		{ "Goblin Ticker", 400 },
-		{ "Kelp & Pearl", 900 },
-		{ "Moonlit Vellum", 900 },
-		{ "Pressed Leaf", 900 },
-		{ "Driftglass Bottle", 900 },
-		{ "Rune-Plate", 2000 },
-		{ "Illuminated Folio", 5000 },
-		{ STORM_NAME, 5000 },
+		{ "Kelp & Pearl", 400 },
+		{ "Moonlit Vellum", 400 },
+		{ "Pressed Leaf", 400 },
+		{ "Driftglass Bottle", 400 },
+		{ "Rune-Plate", 900 },
+		{ "Illuminated Folio", 400 },
+		{ STORM_NAME, 2000 },
 		-- The round two's not for sale (SHOP-R29, SHOP-R50): their row's tag, not a price.
 		{ "Sonar Scope", nil, "Link the companion" },
 		{ "Prize Foil", nil, "From a crate" },
@@ -37,9 +37,9 @@ local EXPANSION = {
 		{ "Ooze", 900 },
 		{ "Mechanical Angler", 900 },
 		{ "Widow's Web", 900 },
-		{ "Glacier Heart", 2000 },
+		{ "Glacier Heart", 900 },
 		{ "Magma Flow", 2000 },
-		{ "Arcane Sigil", 5000 },
+		{ "Arcane Sigil", 2000 },
 		{ "Black Flag", 900 },
 	},
 	soundset = {
@@ -108,7 +108,7 @@ end
 -- the crest slot with Plain alone: its earned crests, the Ledger's two zone crests and Core's fish crests, aren't
 -- listed or counted (SHOP-R25).
 local CORE_UNBOUGHT = concat({
-	withExpansion({ "TOAST STYLE 1 of 26", "Torn Page | IN USE", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle"),
+	withExpansion({ "TOAST STYLE 1 of 26", "Torn Page | IN USE", "Ripple | 150", "Lantern Glow | 150" }, "toaststyle"),
 	withExpansion({ "SOUND SET 1 of 27", "Driftwood | IN USE", "Gilded | 400" }, "soundset"),
 	{ "CRESTS 1 of 1", "Plain | IN USE" },
 })
@@ -697,7 +697,7 @@ describe("The Curio Shop's list", function()
 		filters.canAfford:Click()
 		assert.are.same(
 			concat({
-				withExpansion({ "TOAST STYLE 1 of 26", "Ripple | 150", "Lantern Glow | 400" }, "toaststyle", 500),
+				withExpansion({ "TOAST STYLE 1 of 26", "Ripple | 150", "Lantern Glow | 150" }, "toaststyle", 500),
 				withExpansion({ "SOUND SET 1 of 27", "Gilded | 400" }, "soundset", 500),
 				bindingsAtMost(500),
 				{ "NOTEBOOK COVER 1 of 2", "Velvet | 400" },
