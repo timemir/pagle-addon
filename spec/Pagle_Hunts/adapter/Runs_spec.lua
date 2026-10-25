@@ -158,9 +158,9 @@ describe("Hunt Events' runs in Hunts' projection", function()
 				{ 1, 1 },
 				{ second.hunts.fixture_shore_snapper.count, #second.hunts.fixture_shore_snapper.reached }
 			)
-			-- The Standing fixture_snapper completes once (30 Coins, 500 XP); the event's snapper pays 15 and 150 in each.
+			-- The Standing fixture_snapper completes once (30 Coins, 500 XP); the event's snapper pays 8 and 150 in each.
 			local state = loaded.ns.State()
-			assert.are.same({ 30 + 15 + 15, 500 + 150 + 150 }, { state.coins, state.xp })
+			assert.are.same({ 30 + 8 + 8, 500 + 150 + 150 }, { state.coins, state.xp })
 		end)
 
 		it(
@@ -458,9 +458,9 @@ describe("Hunt Events' runs in Hunts' projection", function()
 				castAt(S + 2 * HOUR, DAY_MINUTE, ELWYNN, { C.BLACKMOUTH, C.BLACKMOUTH }),
 			})
 		end
-		-- Standing: 30 + 15 Coins, 500 + 250 XP. The run: three tier 1s (15 Coins, 150 XP each), the Haul's tier 2 (10,
-		-- 100) and the completed run (50, 250).
-		local COINS = 30 + 15 + 3 * 15 + 10 + 50
+		-- Standing: 30 + 15 Coins, 500 + 250 XP. The run: three tier 1s (8 Coins, 150 XP each), the Haul's tier 2 (5,
+		-- 100) and the completed run (25, 250).
+		local COINS = 30 + 15 + 3 * 8 + 5 + 25
 		local XP = 500 + 250 + 3 * 150 + 100 + 250
 
 		it("sums them over every tier, completed run and title", function()
@@ -490,23 +490,26 @@ describe("Hunt Events' runs in Hunts' projection", function()
 		end)
 	end)
 
-	describe("rules version 2 and the fingerprint (HNT-R136, HNT-R138)", function()
-		it("is version 2, and rebuilds a projection stored under version 1", function()
-			local first, fake = login(function(fake)
-				append(fake, { cast(0, NIGHT, AUBERDINE, { C.NIGHTFIN }) })
-			end, {
-				prepare = function(l)
-					l.ns.HUNTS_RULES_VERSION = 1
-				end,
-			})
-			assert.are.equal(1, first.env.PagleHuntsDB.global.projection.rulesVersion)
+	describe("rules version 3 and the fingerprint (HNT-R136, HNT-R138)", function()
+		it(
+			"is version 3 (2 with runs, 3 for the retuned Coins), and rebuilds a projection stored under version 1",
+			function()
+				local first, fake = login(function(fake)
+					append(fake, { cast(0, NIGHT, AUBERDINE, { C.NIGHTFIN }) })
+				end, {
+					prepare = function(l)
+						l.ns.HUNTS_RULES_VERSION = 1
+					end,
+				})
+				assert.are.equal(1, first.env.PagleHuntsDB.global.projection.rulesVersion)
 
-			local info, state, next = again(fake, first)
+				local info, state, next = again(fake, first)
 
-			assert.are.equal(2, next.ns.HUNTS_RULES_VERSION)
-			assert.is_true(info.rebuilt)
-			assert.are.same({ 2, 500 }, { next.env.PagleHuntsDB.global.projection.rulesVersion, state.xp })
-		end)
+				assert.are.equal(3, next.ns.HUNTS_RULES_VERSION)
+				assert.is_true(info.rebuilt)
+				assert.are.same({ 3, 500 }, { next.env.PagleHuntsDB.global.projection.rulesVersion, state.xp })
+			end
+		)
 
 		it(
 			"stores the Hunt list's fingerprint joined with the event pool's, and rebuilds when the pool's changes",

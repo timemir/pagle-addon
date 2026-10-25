@@ -145,8 +145,8 @@ local ns = select(2, ...)
 --- moved to a Species' 5th Catch (LED-R45), 5 for the full Prestige cost and Activity XP in the climb (LED-R30–R32,
 --- LED-R37), 6 for the varieties caught (VAR-R20), 7 for the second round's counts (LED-R118, LED-R119), 8 for the
 --- times a zone reached Master and a variety was first caught, and the crest record (LED-R155, LED-R156), 9 for the
---- times the leaderboard measures last rose (LED-R158), 10 for the fish caught by each race and faction (LED-R164).
-ns.LEDGER_RULES_VERSION = 10
+--- times the leaderboard measures last rose (LED-R158), 10 for the fish caught by each race and faction (LED-R164), 11 for the retuned Coins (LED-R88, #412).
+ns.LEDGER_RULES_VERSION = 11
 
 -- XP (LED-R20, Tunables), M2's rows and M3's curio items and trophy weights.
 --- Catch XP, before Fresh Water (LED-R20); one Fresh Water doubles it (LED-R22), as the ink XP bar shows (LED-R145).
@@ -163,7 +163,7 @@ local TROPHY_WEIGHT_XP = 100
 local FRESH_WATER_MULTIPLIER = 2
 -- Coins (LED-R88), M2's rows and M3's curio items and trophy weights.
 --- Coins for each level-up (LED-R88); a levelUp moment pays them for the levels it raises (LED-R97).
-ns.LEVEL_UP_COINS = 20
+ns.LEVEL_UP_COINS = 40
 local NEW_SPECIES_COINS = 10
 local CURIO_COINS = 5
 local TROPHY_WEIGHT_COINS = 5

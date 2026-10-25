@@ -340,9 +340,9 @@ describe("the Pagle Wagers spread (HNT-R162)", function()
 			"Darkshore",
 			"1 Cast in these waters this run · 1 of 3 first marks",
 			"PAID SO FAR",
-			"+150 XP · 15 Coins",
+			"+150 XP · 8 Coins",
 			"SETTLE IT",
-			"+250 XP · 50 Coins",
+			"+250 XP · 25 Coins",
 		}) do
 			assert(has(texts, text), "the run's entry lacks " .. text)
 		end

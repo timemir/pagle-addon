@@ -52,7 +52,7 @@ ns.XP_EVENT, ns.XP_RUN = { 150, 100 }, 250
 
 --- Tunables (hunts.md): the Coins an event Hunt pays by tier position, `{ tier 1, each further tier }`, and a completed
 --- run, all paid again in every run (HNT-R110).
-ns.COINS_EVENT, ns.COINS_RUN = { 15, 10 }, 50
+ns.COINS_EVENT, ns.COINS_RUN = { 8, 5 }, 25
 
 --- Tunables (hunts.md): the completed-run counts that earn a ladder title, ascending (HNT-R148).
 ns.LADDER_STEPS = { 25, 50, 100 }

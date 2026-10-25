@@ -16,11 +16,11 @@ local STORM_NAME = readFile("addons/Pagle/data/Lore.lua"):match(
 -- with their tiers' prices (SHOP-R22); the round two's Storm Front after the toast styles.
 local EXPANSION = {
 	toaststyle = {
-		{ "Ship's Log", 150 },
-		{ "Birch Scroll", 150 },
-		{ "Tidepool", 150 },
-		{ "Sea Chart", 150 },
-		{ "Frostbitten", 150 },
+		{ "Ship's Log", 250 },
+		{ "Birch Scroll", 250 },
+		{ "Tidepool", 250 },
+		{ "Sea Chart", 250 },
+		{ "Frostbitten", 250 },
 		{ "Goblin Ticker", 400 },
 		{ "Kelp & Pearl", 400 },
 		{ "Moonlit Vellum", 400 },
@@ -28,26 +28,26 @@ local EXPANSION = {
 		{ "Driftglass Bottle", 400 },
 		{ "Rune-Plate", 900 },
 		{ "Illuminated Folio", 400 },
-		{ STORM_NAME, 2000 },
+		{ STORM_NAME, 3000 },
 		-- The round two's not for sale (SHOP-R29, SHOP-R50): their row's tag, not a price.
 		{ "Sonar Scope", nil, "Link the companion" },
 		{ "Prize Foil", nil, "From a crate" },
 		-- The round three's eight for sale (ANN-R84), after those; its ten race and faction styles are the Ledger's.
-		{ "Hive Chitin", 2000 },
+		{ "Hive Chitin", 3000 },
 		{ "Ooze", 900 },
 		{ "Mechanical Angler", 900 },
 		{ "Widow's Web", 900 },
 		{ "Glacier Heart", 900 },
-		{ "Magma Flow", 2000 },
-		{ "Arcane Sigil", 2000 },
+		{ "Magma Flow", 3000 },
+		{ "Arcane Sigil", 3000 },
 		{ "Black Flag", 900 },
 	},
 	soundset = {
-		{ "Rain on the Lake", 150 },
-		{ "Marimba Shore", 150 },
-		{ "Ship's Bell", 150 },
-		{ "Squeaky", 150 },
-		{ "Bubbleworks", 150 },
+		{ "Rain on the Lake", 250 },
+		{ "Marimba Shore", 250 },
+		{ "Ship's Bell", 250 },
+		{ "Squeaky", 250 },
+		{ "Bubbleworks", 250 },
 		{ "Kalimba Creek", 400 },
 		{ "Music Box", 400 },
 		{ "Glass Floats", 400 },
@@ -66,8 +66,8 @@ local EXPANSION = {
 		{ "Gnomish Laser", 900 },
 		{ "Silithid Swarm", 900 },
 		{ "Succubus' Whisper", 900 },
-		{ "War Drums", 2000 },
-		{ "Dragon's Roost", 2000 },
+		{ "War Drums", 3000 },
+		{ "Dragon's Roost", 3000 },
 	},
 }
 
@@ -104,11 +104,11 @@ local function concat(lists)
 	return all
 end
 
--- Core's own slots (SHOP-R25) as the list shows them while nothing of Core's is bought and the balance is under 150,
+-- Core's own slots (SHOP-R25) as the list shows them while nothing of Core's is bought and the balance is under 250,
 -- the crest slot with Plain alone: its earned crests, the Ledger's two zone crests and Core's fish crests, aren't
 -- listed or counted (SHOP-R25).
 local CORE_UNBOUGHT = concat({
-	withExpansion({ "TOAST STYLE 1 of 26", "Torn Page | IN USE", "Ripple | 150", "Lantern Glow | 150" }, "toaststyle"),
+	withExpansion({ "TOAST STYLE 1 of 26", "Torn Page | IN USE", "Ripple | 250", "Lantern Glow | 250" }, "toaststyle"),
 	withExpansion({ "SOUND SET 1 of 27", "Driftwood | IN USE", "Gilded | 400" }, "soundset"),
 	{ "CRESTS 1 of 1", "Plain | IN USE" },
 })
@@ -131,13 +131,13 @@ end
 local BOOK_BINDING = {
 	"BOOK BINDING 1 of 34",
 	"Field Leather | IN USE",
-	"Birch Bark | 150",
-	"Tide-Chart Linen | 150",
-	"Tarred Sailcloth | 150",
-	"Oilskin Yellow | 150",
-	"Canvas Field Pad | 150",
-	"Waxed Kraft | 150",
-	"Tartan Wool | 150",
+	"Birch Bark | 250",
+	"Tide-Chart Linen | 250",
+	"Tarred Sailcloth | 250",
+	"Oilskin Yellow | 250",
+	"Canvas Field Pad | 250",
+	"Waxed Kraft | 250",
+	"Tartan Wool | 250",
 	"Sea-Green Buckram | 400",
 	"Mossbound | 400",
 	"Driftwood Boards | 400",
@@ -159,11 +159,11 @@ local BOOK_BINDING = {
 	"Lacquered Red | 900",
 	"Bone & Rawhide | 900",
 	"Brass Hunter's Case | 900",
-	"Coral Inlay | 2,000",
-	"Scrimshaw Panel | 2,000",
-	"Shagreen and Bone | 2,000",
-	"Mother-of-Pearl | 5,000",
-	"Gilded Trophy Case | 5,000",
+	"Coral Inlay | 3,000",
+	"Scrimshaw Panel | 3,000",
+	"Shagreen and Bone | 3,000",
+	"Mother-of-Pearl | 10,000",
+	"Gilded Trophy Case | 10,000",
 }
 for _, line in ipairs(BOOK_BINDING) do
 	CORE_UNBOUGHT[#CORE_UNBOUGHT + 1] = line
@@ -583,7 +583,7 @@ describe("The Curio Shop's purse", function()
 
 		local frame = shopFrame(loaded)
 		assert.are.equal("200", frame.purse.balance:GetText())
-		assert.are.equal("Ripple | 150", listed(loaded)[3])
+		assert.are.equal("Ripple | 250", listed(loaded)[3])
 		for _, region in ipairs(loaded.client.frames) do
 			assert.falsy(tostring(region.text):find("Spent", 1, true))
 			for _, child in ipairs(region.children) do
@@ -625,6 +625,26 @@ describe("The Curio Shop's list", function()
 			local tornPage = rowOf(loaded, "core.toaststyle.page")
 			assert.is_true(tornPage.wax:IsShown()) -- In use has its wax dot
 			assert.is_false(tornPage.price:IsShown())
+		end
+	)
+
+	it(
+		"lists a good of the sixth price tier at 25,000 Coins, in red while the balance falls short (SHOP-R22)",
+		function()
+			local loaded, handles = shopCore()
+			handles.Hunts:RegisterGood({ id = "hunts.cover.regalia", slot = "hunts.cover", name = "Regalia", tier = 6 })
+
+			loaded.env.Pagle.OpenShop()
+
+			local regalia = rowOf(loaded, "hunts.cover.regalia")
+			assert.is_true(regalia.price:IsShown())
+			assert.are.equal("25,000", regalia.price.amount:GetText())
+			assert.are.same(
+				loaded.ns.SHOP_INKS.stamp,
+				{ unpack(regalia.price.amount.textColor, 1, 3) },
+				"a price the balance can't cover is in the stamp's red"
+			)
+			assert.is_true(regalia.price.coin:IsShown())
 		end
 	)
 
@@ -677,7 +697,7 @@ describe("The Curio Shop's list", function()
 		search:Type("RIP")
 
 		assert.is_false(search.Instructions:IsShown())
-		assert.are.same({ "TOAST STYLE 1 of 26", "Ripple | 150" }, listed(loaded))
+		assert.are.same({ "TOAST STYLE 1 of 26", "Ripple | 250" }, listed(loaded))
 		search:Type("nothing like it")
 		assert.are.same({}, listed(loaded))
 		assert.is_true(shopFrame(loaded).empty:IsShown())
@@ -697,7 +717,7 @@ describe("The Curio Shop's list", function()
 		filters.canAfford:Click()
 		assert.are.same(
 			concat({
-				withExpansion({ "TOAST STYLE 1 of 26", "Ripple | 150", "Lantern Glow | 150" }, "toaststyle", 500),
+				withExpansion({ "TOAST STYLE 1 of 26", "Ripple | 250", "Lantern Glow | 250" }, "toaststyle", 500),
 				withExpansion({ "SOUND SET 1 of 27", "Gilded | 400" }, "soundset", 500),
 				bindingsAtMost(500),
 				{ "NOTEBOOK COVER 1 of 2", "Velvet | 400" },
@@ -767,7 +787,7 @@ describe("The Curio Shop's list", function()
 				"GILT FRAMES",
 				"Gold leaf | 2 of 3 gilded",
 				"WOODEN FRAMES",
-				"Ash | 150",
+				"Ash | 250",
 			}, { unpack(shown, #shown - 5) })
 			local heading
 			for _, line in ipairs(shopFrame(loaded).lines) do
@@ -796,7 +816,7 @@ describe("The Curio Shop's list", function()
 
 		frame.search:Type("ash")
 
-		assert.are.same({ "FRAME 1 of 3", "WOODEN FRAMES", "Ash | 150" }, listed(loaded))
+		assert.are.same({ "FRAME 1 of 3", "WOODEN FRAMES", "Ash | 250" }, listed(loaded))
 		local looks = loaded.ns.ShopFirstLook()
 		assert.are.equal(rowOf(loaded, "hunts.frame.ash").bezel, looks.notes[2].target())
 	end)
@@ -1206,11 +1226,11 @@ describe("The bill of sale", function()
 	)
 
 	it(
-		"buys a 150-Coin good with 200 Coins: one U1, the balance reads 50, and it's In use at once (SHOP-R10,"
+		"buys a 250-Coin good with 300 Coins: one U1, the balance reads 50, and it's In use at once (SHOP-R10,"
 			.. " LOG-R39, wallet-and-shop.md › UI: Buy)",
 		function()
 			local loaded, handles = shopCore()
-			handles.Ledger:ReportCoinsEarned(200)
+			handles.Ledger:ReportCoinsEarned(300)
 			local entries = loaded.env.PagleLog.entries
 			local before = #entries
 			local bill = askToBuy(loaded, "core.toaststyle.ripple")
@@ -1220,7 +1240,7 @@ describe("The bill of sale", function()
 
 			assert.are.equal(before + 1, #entries)
 			-- The logged-in character is the saved log's second (LOG-R25).
-			assert.matches("^U1|2|%d+|%d+|core%.toaststyle%.ripple|150$", entries[#entries])
+			assert.matches("^U1|2|%d+|%d+|core%.toaststyle%.ripple|250$", entries[#entries])
 			assert.are.equal(50, loaded.env.Pagle.GetBalance().balance)
 			assert.are.equal("core.toaststyle.ripple", loaded.env.Pagle.GetEquipped("core.toaststyle"))
 			local frame = shopFrame(loaded)
@@ -1233,7 +1253,7 @@ describe("The bill of sale", function()
 
 	it("with Use it now unticked, buys the good owned but not in use (wallet-and-shop.md › UI: Buy)", function()
 		local loaded, handles = shopCore()
-		handles.Ledger:ReportCoinsEarned(600)
+		handles.Ledger:ReportCoinsEarned(700)
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
 		bill.useNow:Click()
@@ -1253,7 +1273,7 @@ describe("The bill of sale", function()
 
 	it("shows a crest as its shield on the bill and the flyer, and a medallion again after (SHOP-R25)", function()
 		local loaded, handles = shopCore()
-		handles.Ledger:ReportCoinsEarned(600)
+		handles.Ledger:ReportCoinsEarned(700)
 		-- No crest is for sale (SHOP-R25), but the bill draws any good of the slot as its shield: one of Core's here.
 		local CREST = "Interface\\AddOns\\Pagle\\media\\crests\\plain"
 		loaded.ns.RegisterCoreGood({
@@ -1281,7 +1301,7 @@ describe("The bill of sale", function()
 
 	it("buys nothing on Cancel or Esc; Esc closes only the bill, and other keys go on to the game", function()
 		local loaded, handles = shopCore()
-		handles.Ledger:ReportCoinsEarned(200)
+		handles.Ledger:ReportCoinsEarned(300)
 		local before = #loaded.env.PagleLog.entries
 
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
@@ -1300,13 +1320,13 @@ describe("The bill of sale", function()
 		assert.is_true(shopFrame(loaded):IsShown())
 		assert.are.equal(before, #loaded.env.PagleLog.entries)
 		assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
-		assert.are.equal(200, loaded.env.Pagle.GetBalance().balance)
+		assert.are.equal(300, loaded.env.Pagle.GetBalance().balance)
 	end)
 
 	it("does nothing when a projection starts updating between opening it and confirming (SHOP-R13)", function()
 		local loaded, handles = shopCore(nil, { entries = history(600) })
 		settle(loaded)
-		handles.Ledger:ReportCoinsEarned(200)
+		handles.Ledger:ReportCoinsEarned(300)
 		local before = #loaded.env.PagleLog.entries
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
@@ -1317,12 +1337,12 @@ describe("The bill of sale", function()
 		assert.is_false(bill:IsShown())
 		assert.are.equal(before, #loaded.env.PagleLog.entries)
 		assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
-		assert.are.equal(200, loaded.env.Pagle.GetBalance().balance)
+		assert.are.equal(300, loaded.env.Pagle.GetBalance().balance)
 	end)
 
 	it("raises no Announcement (ANN-R23)", function()
 		local loaded, handles = shopCore()
-		handles.Ledger:ReportCoinsEarned(200)
+		handles.Ledger:ReportCoinsEarned(300)
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
 		bill.buy:Click()
@@ -1334,7 +1354,7 @@ describe("The bill of sale", function()
 
 	it("closes with the shop: in combat, and when the shop closes (SHOP-R41, CORE-R33)", function()
 		local loaded, handles = shopCore()
-		handles.Ledger:ReportCoinsEarned(200)
+		handles.Ledger:ReportCoinsEarned(300)
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
 		setCombat(loaded, true)
@@ -1421,7 +1441,7 @@ describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion 
 
 	it("drops the bill of sale in over the dimming case, and lifts it away on Cancel", function()
 		local loaded, handles = shopCore()
-		handles.Ledger:ReportCoinsEarned(200)
+		handles.Ledger:ReportCoinsEarned(300)
 
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
@@ -1446,7 +1466,7 @@ describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion 
 			.. " down with the coin, then IN USE in the row and on the lid, the slot's old good stepping down",
 		function()
 			local loaded, handles = shopCore()
-			handles.Ledger:ReportCoinsEarned(200)
+			handles.Ledger:ReportCoinsEarned(300)
 			local bill = askToBuy(loaded, "core.toaststyle.ripple")
 			play(loaded, 0.5)
 			local frame = shopFrame(loaded)
@@ -1456,7 +1476,7 @@ describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion 
 
 			assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.ripple")) -- bought at once (SHOP-R10)
 			assert.are.same({ "5274 SFX", "865 SFX" }, shopSounds(loaded))
-			assert.are.equal("200", purse.balance:GetText()) -- the window shows it as the motion has it
+			assert.are.equal("300", purse.balance:GetText()) -- the window shows it as the motion has it
 			assert.is_true(stage.buy:IsShown())
 			play(loaded, 0.45)
 			assert.are.same({ "5274 SFX", "865 SFX", "1204 SFX" }, shopSounds(loaded))
@@ -1468,7 +1488,7 @@ describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion 
 			assert.are.same({ "5274 SFX", "865 SFX", "1204 SFX", "120 SFX" }, shopSounds(loaded))
 			play(loaded, 0.3) -- 1.25 s: the purse counts down
 			local counting = tonumber(purse.balance:GetText())
-			assert.is_true(counting > 50 and counting < 200)
+			assert.is_true(counting > 50 and counting < 300)
 			assert.is_false(bill:IsShown())
 			play(loaded, 0.4) -- 1.65 s: delivered
 			assert.are.equal("IN USE", row.tag:GetText())
@@ -1496,7 +1516,7 @@ describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion 
 	it("with Animations off, shows a purchase at once, with only Buy's sound (SET-R30)", function()
 		local loaded, handles = shopCore()
 		loaded.ns.db.profile.announcements.motion = false
-		handles.Ledger:ReportCoinsEarned(200)
+		handles.Ledger:ReportCoinsEarned(300)
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 		assert.are.same({ 1, 1 }, { bill.shade:GetAlpha(), bill.slip:GetAlpha() })
 
@@ -1511,7 +1531,7 @@ describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion 
 
 	it("settles a purchase the shop closes on: it opens again as bought", function()
 		local loaded, handles = shopCore()
-		handles.Ledger:ReportCoinsEarned(200)
+		handles.Ledger:ReportCoinsEarned(300)
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 		bill.buy:Click()
 		play(loaded, 0.9)
@@ -1661,7 +1681,7 @@ describe("The Curio crate in the window", function()
 					frame.chips[i]:Click()
 					local line = crateLine(loaded)
 					assert.is_true(line:IsShown(), frame.chips[i].label:GetText())
-					assert.are.same({ "Curio crate", "2,000", 0 }, {
+					assert.are.same({ "Curio crate", "3,000", 0 }, {
 						line.label:GetText(),
 						line.price.amount:GetText(),
 						topOf(line),
@@ -1672,13 +1692,13 @@ describe("The Curio crate in the window", function()
 			frame.chips[1]:Click()
 			frame.search:Type("ripple")
 			assert(not crateLine(loaded):IsShown(), "a search its label doesn't match")
-			assert.are.same({ "TOAST STYLE 1 of 26", "Ripple | 150" }, listed(loaded))
+			assert.are.same({ "TOAST STYLE 1 of 26", "Ripple | 250" }, listed(loaded))
 		end
 	)
 
 	it("shows its odds, struck through once owned, and its pity on the stage when picked (SHOP-R54)", function()
 		local loaded, handles = shopCore()
-		handles.Ledger:ReportCoinsEarned(2500)
+		handles.Ledger:ReportCoinsEarned(3500)
 		loaded.env.Pagle.OpenShop()
 
 		crateLine(loaded):Click()
@@ -1709,7 +1729,7 @@ describe("The Curio crate in the window", function()
 			.. " SHOP-R55)",
 		function()
 			local loaded, handles = shopCore()
-			handles.Ledger:ReportCoinsEarned(2500)
+			handles.Ledger:ReportCoinsEarned(3500)
 
 			local bill = askToBuy(loaded, "core.crate")
 
@@ -1717,7 +1737,7 @@ describe("The Curio crate in the window", function()
 			assert.are.same({
 				"Open a Curio crate?",
 				"One look you don't own yet, by chance; the chances are on the crate.",
-				"2,000",
+				"3,000",
 				"500",
 				true,
 			}, { shown.question, shown.fine, shown.price[2], shown.left[2], shown.shown })
@@ -1739,7 +1759,7 @@ describe("The Curio crate in the window", function()
 			end
 
 			-- The next bill for a good says what it always said.
-			handles.Ledger:ReportCoinsEarned(2650)
+			handles.Ledger:ReportCoinsEarned(3800)
 			local again = billShown(askToBuy(loaded, "core.toaststyle.ripple"))
 			assert.are.same({ "Buy Ripple?", "Looks are yours for good." }, { again.question, again.fine })
 		end
@@ -1747,14 +1767,14 @@ describe("The Curio crate in the window", function()
 end)
 
 describe("The Curio crate opening (SHOP-R55, wallet-and-shop.md › UI: Motion and sound)", function()
-	-- Core with 2,500 Coins and Storm Front and Shagreen and Bone owned, so the next crate can only give Prize Foil;
+	-- Core with 3,500 Coins and Storm Front and Shagreen and Bone owned, so the next crate can only give Prize Foil;
 	-- the shop open on the crate's bill, dropped in. Returns the loaded addon and the bill.
 	local function foilCrate(motionOff)
 		local loaded, handles = shopCore()
 		if motionOff then
 			loaded.ns.db.profile.announcements.motion = false
 		end
-		handles.Ledger:ReportCoinsEarned(2500)
+		handles.Ledger:ReportCoinsEarned(3500)
 		loaded.ns.RecordPurchase("core.toaststyle.storm", 0)
 		loaded.ns.RecordPurchase("core.binding.shagreenbone", 0)
 		local bill = askToBuy(loaded, "core.crate")
@@ -1802,7 +1822,7 @@ describe("The Curio crate opening (SHOP-R55, wallet-and-shop.md › UI: Motion a
 			assert.is_true(frame.catcher:IsShown())
 			assert.is_false(stage.swatch:IsShown()) -- the crate stands in its medallion's place
 			assert.are.equal("Curio crate", stage.name:GetText())
-			assert.are.equal("2,500", frame.purse.balance:GetText())
+			assert.are.equal("3,500", frame.purse.balance:GetText())
 			assert.are.same({ 0, -66 }, offset(opening.lid)) -- on the crate, in the middle of the well
 			assert.are.equal(1, opening.lid:GetAlpha())
 

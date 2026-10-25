@@ -30,7 +30,7 @@ describe("The Curio crate's pool", function()
 			assert.is_true(ns.CRATE_POOL[1].crateOnly)
 			assert.are.same({ crateOnly = 1, other = 2 }, ns.CRATE_WEIGHTS)
 			assert.are.equal(8, ns.CRATE_PITY)
-			assert.are.equal(2000, ns.TIER_PRICES[ns.CRATE_TIER])
+			assert.are.equal(3000, ns.TIER_PRICES[ns.CRATE_TIER])
 			assert.are.equal("core.crate", ns.CRATE_ID)
 			local crateOnly = 0
 			for _, good in ipairs(ns.CRATE_POOL) do

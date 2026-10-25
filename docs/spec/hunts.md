@@ -334,8 +334,8 @@ The board shows Hunt Events under the players' name, **Pagle Wagers**, in two pl
   - the event's note in handwriting;
   - for each of its Hunts, in definition order: its **shape glyph** (inked oxblood once it has its first mark), its name and, at the right, "{count} / {next threshold}"; its shape and target line ("Timed · Darkshore Grouper, 22:00–04:00", HNT-R54 and HNT-R53) and its tier diamonds (HNT-R64), each in its trim once reached; an ink bar toward the next threshold (oxblood once it has its first mark); and for a Timed Hunt its window's state in italic, "open now, until {time}" in green or "opens at {time}, in {duration}";
   - "{n} Casts in these waters this run · {done} of {count} first marks";
-  - two boxes: "Paid so far" with "+{xp} XP · {coins} Coins", and "Settle it" with "+250 XP · 50 Coins" (from Tunables), or "Settled" with "paid out" once settled. A run ahead has neither line nor boxes;
-  - the pay rule in small italic: "Each Hunt's first mark pays +150 XP and 15 Coins, each tier after it +100 XP and 10 Coins, and settling the wager +250 XP and 50 Coins more." (from Tunables).
+  - two boxes: "Paid so far" with "+{xp} XP · {coins} Coins", and "Settle it" with "+250 XP · 25 Coins" (from Tunables), or "Settled" with "paid out" once settled. A run ahead has neither line nor boxes;
+  - the pay rule in small italic: "Each Hunt's first mark pays +150 XP and 8 Coins, each tier after it +100 XP and 5 Coins, and settling the wager +250 XP and 25 Coins more." (from Tunables).
 
   An event Hunt has no pin toggle and no set line. The entry never scrolls: with five Hunts the rows tighten and the window lines are left out (each window stays in its target line); and laid top down, while it would end more than half the page's bottom margin below its drawable area, it leaves out the pay rule first (its words become the boxes' tooltip), then the Casts line, then the window lines. A typical run of four Hunts with a Timed one keeps everything but the pay rule. While the projection is updating, "Updating from your Catch log…" heads the rows, which show faded; the Casts line and the two boxes wait until it is done, as their numbers aren't current yet; and the tickets read "updating…" for their marks. With no run at all: "Nothing to read yet" and "When a wager goes up it will be written here: its waters, its Hunts and what it pays.", then the pay rule.
 
@@ -419,7 +419,7 @@ The board shows Hunt Events under the players' name, **Pagle Wagers**, in two pl
 - **HNT-R90** The **celebrated set** (LOG-R77), in `PagleHuntsDB.global.celebrated`, holds for each Standing Hunt the highest tier already shown and each set title already shown; for each run, by run key, each event Hunt's highest tier and whether its completion was shown (HNT-R92); each ladder title already shown; and each earned good once its rule held (HNT-R122). Core never touches it, and a rebuild never clears it.
 - **HNT-R91** In a live apply, a newly reached tier or title above the celebrated set raises its moment (HNT-R86) and is added to it. One already celebrated raises nothing.
 - **HNT-R92** The celebrated set's run entries grow by a few dozen bytes per run, so `done` drops the entries of runs that ended more than 30 days ago (Tunables). A rebuild raises nothing for a run that ended more than 30 days before now: what it earned counts in the totals only. *Decided while writing the spec (#289): the pruning age, so a content update's rebuild never floods the Session summary with old runs.*
-- **HNT-R110** Hunts pays Coins: for a Standing Hunt, 30 when it completes and 15 for each further tier; 100 for each set title; for an event Hunt, 15 at tier 1 and 10 for each further tier, and 50 for each completed run, all paid again in every run (HNT-R145). Ladder titles pay no Coins. Its lifetime total is the projection's `coins`, the sum over every reached tier, completed run and earned title, Retired Hunts and ended runs included. It reports the total with `M:ReportCoinsEarned` from `done` after every catch-up or rebuild, and after each live entry that changes it (SHOP-R2).
+- **HNT-R110** Hunts pays Coins: for a Standing Hunt, 30 when it completes and 15 for each further tier; 100 for each set title; for an event Hunt, 8 at tier 1 and 5 for each further tier, and 25 for each completed run, all paid again in every run (HNT-R145). Ladder titles pay no Coins. Its lifetime total is the projection's `coins`, the sum over every reached tier, completed run and earned title, Retired Hunts and ended runs included. It reports the total with `M:ReportCoinsEarned` from `done` after every catch-up or rebuild, and after each live entry that changes it (SHOP-R2).
 - **HNT-R113** Hunts pays **Activity XP** (ADR 0011, [core/activity-xp.md](core/activity-xp.md)): a Standing Hunt pays 500 XP at tier 1 and 250 for each further tier, once each, Retired Hunts included. Set titles pay none.
 - **HNT-R114** An event Hunt pays 150 XP at tier 1 and 100 for each further tier, and a completed run 250 more, all paid again in every run. Ladder titles pay none. Amounts are by tier position, from the Tunables, never per event, so a change is one row.
 - **HNT-R115** The lifetime total is the projection's `xp`, the sum of HNT-R113 and HNT-R114 over everything reached. Hunts reports it with `M:ReportXPEarned` on the same timing as Coins (HNT-R110, AXP-R2), and its `logic/` gives the same total from the state alone as `ActivityXPEarned(state)`, for Pagle's backend (AXP-R9). No moment shows XP; a level-up it brings is the Ledger's (LED-R39).
@@ -617,7 +617,7 @@ A `huntRun` whose event is neither pooled nor delivered as a `huntEvent` in the 
 
 **Moments raised:** HNT-R86 and HNT-R88. These match the Hunts rows of Core's rung table (announcements.md): completion and further tier `toast.high`, set title `banner`, window opened `nod` with `expiresAt`; and for Pagle Wagers a first mark `toast`, a further mark `toast.low`, a settled run `toast.high`, a ladder title `banner` and the companion hint `nod` (HNT-R86, HNT-R171).
 
-**Coins paid:** 30 per Standing Hunt completed, 15 per further tier, 100 per set title; for event Hunts 15 at tier 1, 10 per further tier and 50 per completed run, every run (HNT-R110).
+**Coins paid:** 30 per Standing Hunt completed, 15 per further tier, 100 per set title; for event Hunts 8 at tier 1, 5 per further tier and 25 per completed run, every run (HNT-R110).
 
 **Activity XP paid:** 500 per Standing Hunt completed and 250 per further tier; for event Hunts 150 at tier 1, 100 per further tier and 250 per completed run, every run (HNT-R113–R115).
 
@@ -657,7 +657,7 @@ A `huntRun` whose event is neither pooled nor delivered as a `huntEvent` in the 
 | Zone chips shown | 3 | HNT-R65 |
 | Tracker lines shown | 6 | HNT-R76 |
 | Coins: completed / further tier / set title | 30 / 15 / 100 | HNT-R110 |
-| Coins, event Hunts: tier 1 / further tier / completed run | 15 / 10 / 50 | HNT-R110 |
+| Coins, event Hunts: tier 1 / further tier / completed run | 8 / 5 / 25 | HNT-R110 |
 | Activity XP, Standing Hunts: tier 1 / further tier | 500 / 250 | HNT-R113 |
 | Activity XP, event Hunts: tier 1 / further tier / completed run | 150 / 100 / 250 | HNT-R114 |
 | Run length (default, and every fallback run) | 72 h | HNT-R142, HNT-R152 |
@@ -674,7 +674,7 @@ A `huntRun` whose event is neither pooled nor delivered as a `huntEvent` in the 
 | Pool authoring tier times: tier 1 / 2 / 3 | about 45 min / 2 h / 4 h fishing in the zone | Data, DATA-R99 |
 | Tier trims | bronze / silver / gold (tier 3 and up) | HNT-R18 |
 | Tracker frame tiers | inkwash 1, waxseal 2; slate 1, mapscrap 1, bounty 2, spyglass 3 | HNT-R121 |
-| Hunts rules version before 1.0 | 2 (1 before Hunt Events) | HNT-R136, HNT-R138 |
+| Hunts rules version before 1.0 | 3 (1 before Hunt Events, 2 with runs, 3 for the retuned Coins) | HNT-R136, HNT-R138 |
 | Module menu order, tracker order | 20, 10 (Core's tables) | HNT-R135, HNT-R75 |
 | Standing Hunt tiers | per Hunt, in the Standing list | Data |
 

@@ -294,7 +294,7 @@ describe("the Ledger's projection", function()
 		fake.enterWorld()
 
 		assert.are.same(rebuiltTo(fake, 5), applied)
-		assert.are.equal(1002, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+		assert.are.equal(1102, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 	end)
 
 	it(
@@ -309,7 +309,7 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(1002, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(1102, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 		end
 	)
 
@@ -325,7 +325,7 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(1002, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(1102, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 			assert.are.same(
 				{ 0, foldOfLog(fake, loaded.ns).lifetimeXP },
 				{ loaded.ns.projection:GetState().prestigeActivityXP, loaded.ns.projection:GetState().lifetimeXP }
@@ -345,7 +345,7 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(1002, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(1102, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 		end
 	)
 
@@ -361,7 +361,7 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(1002, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(1102, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 			-- Every sized Species Catch in the log has a variety (VAR-R1), which the rebuilt fold now keeps.
 			local varieties = loaded.ns.projection:GetState().varieties
 			assert.is_not_nil(next(varieties))
@@ -381,7 +381,7 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(1002, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(1102, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 			local state = loaded.ns.projection:GetState()
 			assert.are.same(foldOfLog(fake, loaded.ns), state)
 			local _, ofSpecies = next(state.varieties)
@@ -405,7 +405,7 @@ describe("the Ledger's projection", function()
 			fake.enterWorld()
 
 			assert.are.same(rebuiltTo(fake, 5), applied)
-			assert.are.equal(1002, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
+			assert.are.equal(1102, loaded.env.PagleLedgerDB.global.projection.rulesVersion)
 			local state = loaded.ns.projection:GetState()
 			assert.are.same(foldOfLog(fake, loaded.ns), state)
 			-- Oily, the history's last new Species, at T0 + 120; the live Smallfish was caught before.

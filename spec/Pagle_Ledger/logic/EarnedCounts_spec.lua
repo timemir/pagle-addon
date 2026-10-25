@@ -775,10 +775,10 @@ describe("the second round's earned goods", function()
 				end
 			end)
 
-			it("is tier 5 from 90 days after the release that sets its time", function()
+			it("is tier 4 from 90 days after the release that sets its time", function()
 				ns.ROUND_TWO_RELEASE = T0
 				for _, registered in ipairs(register({})) do
-					assert.are.same({ 5, T0 + 90 * DAY }, { registered.fallbackTier, registered.fallbackFrom })
+					assert.are.same({ 4, T0 + 90 * DAY }, { registered.fallbackTier, registered.fallbackFrom })
 				end
 			end)
 		end)

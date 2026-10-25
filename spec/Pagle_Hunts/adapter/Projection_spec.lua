@@ -400,23 +400,23 @@ describe("Hunts' projection", function()
 
 		it("rebuild from seq 0 to the same state when the rules version changes (HNT-R138)", function()
 			local info, state, before, loaded = rebuildOf(function(loaded)
-				loaded.ns.HUNTS_RULES_VERSION = 3
+				loaded.ns.HUNTS_RULES_VERSION = 4
 			end)
 
 			assert.are.same({ firstBuild = false, rebuilt = true, replayed = 0 }, info)
 			assert.are.same(before, state)
-			assert.are.equal(3, loaded.env.PagleHuntsDB.global.projection.rulesVersion)
+			assert.are.equal(4, loaded.env.PagleHuntsDB.global.projection.rulesVersion)
 		end)
 
 		it(
-			"store the rules version 2, and the Hunt list's and event pool's fingerprints after the content's (HNT-R136)",
+			"store the rules version 3, and the Hunt list's and event pool's fingerprints after the content's (HNT-R136)",
 			function()
 				local loaded, fake = login(withHistory)
 
 				local db = loaded.env.PagleHuntsDB.global.projection
-				assert.are.equal(2, loaded.ns.HUNTS_RULES_VERSION)
+				assert.are.equal(3, loaded.ns.HUNTS_RULES_VERSION)
 				assert.are.same(
-					{ 2, fake.Pagle.CONTENT_FINGERPRINT .. "+f1c7f1c7f1c7f1c7+e1e1e1e1e1e1e1e1", 6 },
+					{ 3, fake.Pagle.CONTENT_FINGERPRINT .. "+f1c7f1c7f1c7f1c7+e1e1e1e1e1e1e1e1", 6 },
 					{ db.rulesVersion, db.fingerprint, db.lastSeq }
 				)
 				assert.are.equal(loaded.ns.State(), db.projection)

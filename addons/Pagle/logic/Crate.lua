@@ -8,7 +8,7 @@ local ns = select(2, ...)
 --- The crate's purchase entries' good ID (SHOP-R11, SHOP-R50): `U1|<header>|core.crate|<price>`.
 ns.CRATE_ID = "core.crate"
 
---- The crate's price tier (Tunables): tier 4, 2,000 Coins.
+--- The crate's price tier (Tunables): tier 4, 3,000 Coins.
 ns.CRATE_TIER = 4
 
 --- One good of the crate pool (SHOP-R50, SHOP-R53).
