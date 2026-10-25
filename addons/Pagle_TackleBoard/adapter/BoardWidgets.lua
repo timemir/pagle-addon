@@ -201,21 +201,26 @@ function ns.NewBoardStamp(parent, text)
 end
 
 --- An empty pin (TKB-R105): a faint shade on the cork in a dashed outline, a lone tack, and its words by hand with the
---- time in brackets under them in italics. `SetEmpty` sets its words. It takes no mouse, so the board drags by it.
----@class TackleEmptyPinView: Frame
+--- time in brackets under them in italics. `SetEmpty` sets its words. It takes no mouse, so the board drags by it,
+--- unless a Refresh can post a goal on it (TKB-R58): `SetPostable` then makes it a button that asks (ns.Post) and says
+--- what a click does under the mouse.
+---@class TackleEmptyPinView: Button
 ---@field dashes Texture[]
 ---@field tack TackleSprite
 ---@field label FontString
 ---@field note FontString
+---@field goalType TackleGoalType?    -- the type a click posts, while it can
 ---@field SetEmpty fun(self: TackleEmptyPinView, text: string)
+---@field SetPostable fun(self: TackleEmptyPinView, goalType: TackleGoalType?)
 
 ---@param parent Frame
 ---@param width number
 ---@param height number
 ---@return TackleEmptyPinView
 function ns.NewBoardEmptyPin(parent, width, height)
-	local pin = CreateFrame("Frame", nil, parent) --[[@as TackleEmptyPinView]]
+	local pin = CreateFrame("Button", nil, parent) --[[@as TackleEmptyPinView]]
 	pin:SetSize(width, height)
+	pin:EnableMouse(false) -- a Button takes the mouse unless told not to
 	ns.BoardSolid(pin, "281204", 0.12, "BACKGROUND")
 	pin.dashes = ns.DashBox(pin, width, height, { hex = "2C1404", alpha = 0.62, thickness = 2, dash = 6, gap = 3 })
 	pin.tack = ns.NewBoardTack(pin)
@@ -233,6 +238,26 @@ function ns.NewBoardEmptyPin(parent, width, height)
 		local tall = self.label:GetStringHeight() + (note and 20 or 0)
 		self.label:ClearAllPoints()
 		self.label:SetPoint("TOP", self, "TOP", 0, -((height - tall) / 2 + 4))
+	end
+	-- Through ns at click time (logic/Seams.lua): ns.Post asks on the confirm and checks TKB-R58's conditions again.
+	pin:SetScript("OnClick", function(self)
+		if self.goalType then
+			ns.Post(self.goalType)
+		end
+	end)
+	pin:SetScript("OnEnter", function(self)
+		if self.goalType then
+			ns.BoardHover(self, ns.PostTip(self.goalType, ns.RefreshesHeld()), { cursor = true })
+		end
+	end)
+	pin:SetScript("OnLeave", ns.BoardHoverHide)
+	function pin.SetPostable(self, goalType)
+		local was = self.goalType
+		self.goalType = goalType
+		self:EnableMouse(goalType ~= nil)
+		if was and not goalType then
+			ns.BoardHoverHide() -- the pin it described is no longer one to click
+		end
 	end
 	return pin
 end

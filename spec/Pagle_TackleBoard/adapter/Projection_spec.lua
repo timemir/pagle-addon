@@ -50,6 +50,7 @@ local function unstarted(zones, caught)
 		tally = { notices = 0, expeditions = 0 },
 		coins = 0,
 		xp = 0,
+		ticketsSpent = 0,
 		flies = {},
 		titles = {},
 		fire = { count = 0, kindling = 0, longest = 0, milestones = {}, log = {} },
@@ -380,6 +381,147 @@ describe("the Tackle Board's projection", function()
 		end)
 	end)
 
+	describe("posts (TKB-R58)", function()
+		local post = board.post
+
+		it("pin a new goal on the first empty pin of its type, open and not re-posted", function()
+			local ns = built(withHistory(join(STARTED, { post(D0 + 7200, N4), post(D0 + 7201, E2) })))
+
+			local state = ns.State()
+			local notice, expedition = state.goals[idAt(D0 + 7200)], state.goals[idAt(D0 + 7201)]
+			-- STARTED fills Expedition pin 1 and Notice pins 1-3 (TKB-R101); TKB-R23: the goal's ID is its record's
+			assert.are.same({ 4, false, 0, 7200 }, { notice.pin, notice.reposted, notice.progress, notice.time - D0 })
+			assert.are.same({ 2, false }, { expedition.pin, expedition.reposted })
+			assert.are.same({ "n", "rarity", 5 }, { notice.type, notice.kind, notice.need })
+			assert.are.equal(idAt(D0 + 7200), state.pins.notices[4])
+			assert.are.equal(idAt(D0 + 7201), state.pins.expeditions[2])
+		end)
+
+		it("take the first empty pin whichever pin was freed, as an issue does (TKB-R101)", function()
+			local ns = built(withHistory(STARTED))
+			local state = ns.State()
+			local done = state.goals[idAt(D0 + 3603)]
+			done.doneDay = 0
+			ns.FreePin(state, done) -- Notice pin 2 is empty now
+
+			ns.Module:AppendRecord("post", N4)
+
+			assert.are.equal(2, state.goals[state.pins.notices[2]].pin)
+			assert.are.equal("rarity", state.goals[state.pins.notices[2]].kind)
+		end)
+
+		it("don't use up what the board owes (TKB-R20, TKB-R21)", function()
+			-- the start record owes 3 Notices and an Expedition; nothing is issued yet
+			local ns = built(withHistory({ start(D0 + 3600), post(D0 + 3601, N4), post(D0 + 3602, E1) }))
+
+			local state = ns.State()
+			assert.are.same({ notices = 3, expeditions = 1 }, state.owed)
+			assert.are.same({ idAt(D0 + 3601), false, false, false, false, false }, state.pins.notices)
+			assert.are.same({ idAt(D0 + 3602), false }, state.pins.expeditions)
+		end)
+
+		it("leave the next accrual with that much less to credit: it counts the open goals (TKB-R20)", function()
+			-- 3 Notices issued, 2 posted: 5 open of 6, so day 0's close owes 1, not 3
+			local ns = built(withHistory({
+				start(D0 + 3600),
+				issue(D0 + 3601, N1),
+				issue(D0 + 3602, N2),
+				issue(D0 + 3603, N3),
+				post(D0 + 3604, N4),
+				post(D0 + 3605, N5),
+				cast(D0 + DAY + 100, DUROTAR, { 6358 }), -- the first Cast of board day 1
+			}))
+
+			local state = ns.State()
+			assert.are.same({ 1, 1 }, { state.day, state.owed.notices })
+		end)
+
+		it("are dropped on a full board: never past the caps, nothing owed taken or spent (TKB-R57)", function()
+			local full = join(STARTED, {
+				issue(D0 + 3605, N4),
+				issue(D0 + 3606, N5),
+				issue(D0 + 3607, N6),
+				issue(D0 + 3608, E2),
+			})
+			local ns = built(withHistory(full))
+			local before = copy(ns.State())
+
+			ns.Module:AppendRecord("post", N7)
+			ns.Module:AppendRecord("post", E1)
+
+			assert.are.same(before, ns.State())
+			assert.are.equal(0, ns.State().ticketsSpent)
+			-- the same when the log is read back from the start
+			local rebuilt = built(withHistory(join(full, { post(D0 + 7200, N7), post(D0 + 7201, E1) })))
+			assert.are.same(before, rebuilt.State())
+		end)
+
+		it("are ignored before Start, like every record but the first start (TKB-R2)", function()
+			local ns = built(withHistory({ post(D0 + 100, N4) }))
+
+			assert.are.same(unstarted(), ns.State())
+		end)
+
+		it("are skipped when their payload can't be read, spending nothing (TKB-R80)", function()
+			local ns = built(withHistory(join(STARTED, { post(D0 + 7200, "n;haul;2;15;30"), post(D0 + 7201, "") })))
+
+			assert.are.equal(0, ns.State().ticketsSpent)
+			assert.are.equal(false, ns.State().pins.notices[4])
+		end)
+
+		it("count one Refresh spent each: only those applied (TKB-R58)", function()
+			local ns =
+				built(withHistory(join(STARTED, { post(D0 + 7200, N4), post(D0 + 7201, E2), post(D0 + 7202, N5) })))
+
+			assert.are.equal(3, ns.State().ticketsSpent)
+			assert.are.equal(3, ns.TicketsSpent(ns.State()))
+		end)
+
+		it("complete like an issued goal and keep what they pay", function()
+			local ns = built(withHistory(join(STARTED, {
+				post(D0 + 7200, "n;haul;3;20;1;14"),
+				cast(D0 + 7300, DUROTAR, { 6358 }),
+			})))
+
+			local state = ns.State()
+			-- the Catch also counts for the issued Haul (30 in Durotar), which needs 29 more
+			assert.is_not_nil(state.goals[idAt(D0 + 7200)].doneDay)
+			assert.are.same({ 20, 200, 1 }, { state.coins, state.xp, state.tally.notices })
+			assert.are.equal(1, state.ticketsSpent) -- a completed goal's Refresh stays spent
+			assert.are.equal(false, state.pins.notices[4])
+		end)
+
+		it("read back as they were written: a rebuild gives the same state as the live apply (TKB-R82)", function()
+			local fake = withHistory(STARTED)
+			local ns = built(fake)
+			ns.Module:AppendRecord("post", N4)
+			ns.Module:AppendRecord("post", E2)
+			local live = copy(ns.State())
+
+			ns.projection:Rebuild()
+
+			assert.are.same(live, ns.State())
+			assert.are.equal(2, ns.State().ticketsSpent)
+		end)
+
+		it("can be taken down once, like an issued goal: the re-post can't be (TKB-R55)", function()
+			local fake = withHistory(join(STARTED, { post(D0 + 7200, N4) }))
+			local ns = built(fake)
+			board.readSkill(fake)
+			local id = idAt(D0 + 7200)
+
+			assert.is_true(ns.CanTakeDown(id))
+			ns.TakeDown(id)
+
+			local state = ns.State()
+			local replacement = state.goals[state.pins.notices[4]]
+			assert.is_nil(state.goals[id])
+			assert.are.same({ true, 4 }, { replacement.reposted, replacement.pin })
+			assert.is_false(ns.CanTakeDown(replacement.id))
+			assert.are.equal(1, state.ticketsSpent) -- taking it down refunds nothing and spends nothing
+		end)
+	end)
+
 	describe("skipped records (TKB-R80)", function()
 		it("skip an unknown kind and an out-of-range payload", function()
 			local first = built(withHistory(STARTED)).State()
@@ -514,7 +656,7 @@ describe("the Tackle Board's projection", function()
 			local ns = nextLogin(log, global)
 
 			assert.are.equal(999, ns.State().coins)
-			assert.are.equal(4002, global.board.rulesVersion) -- TKB_RULES_VERSION 4 (Tunables) × 1000 + SESSION_RULES_VERSION
+			assert.are.equal(5002, global.board.rulesVersion) -- TKB_RULES_VERSION 5 (Tunables) × 1000 + SESSION_RULES_VERSION
 		end)
 
 		it("rebuilds to the same state when TKB_RULES_VERSION changes", function()
@@ -522,17 +664,20 @@ describe("the Tackle Board's projection", function()
 
 			local ns = nextLogin(log, global, {
 				prepare = function(loaded)
-					loaded.ns.TKB_RULES_VERSION = 5
+					loaded.ns.TKB_RULES_VERSION = 6
 				end,
 			})
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(5002, global.board.rulesVersion)
+			assert.are.equal(6002, global.board.rulesVersion)
 		end)
 
-		it("is at rules version 4, since the quality goal kind became rarity (TKB-R81, TKB-R80, Tunables)", function()
-			assert.are.equal(4, board.load().ns.TKB_RULES_VERSION)
-		end)
+		it(
+			"is at rules version 5, since a Refresh posts a goal with a post record (TKB-R58, TKB-R81, Tunables)",
+			function()
+				assert.are.equal(5, board.load().ns.TKB_RULES_VERSION)
+			end
+		)
 
 		it(
 			"rebuilds a stored version-1 projection, which had no Activity XP, filling it in from the log (TKB-R81)",
@@ -550,7 +695,7 @@ describe("the Tackle Board's projection", function()
 
 				assert.are.equal(200, first.xp)
 				assert.are.same(first, again.State())
-				assert.are.equal(4002, global.board.rulesVersion)
+				assert.are.equal(5002, global.board.rulesVersion)
 			end
 		)
 
@@ -562,7 +707,7 @@ describe("the Tackle Board's projection", function()
 			local ns = nextLogin(log, global, { sessionRules = sessionRules })
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(4000 + sessionRules, global.board.rulesVersion)
+			assert.are.equal(5000 + sessionRules, global.board.rulesVersion)
 		end)
 
 		it(
@@ -594,7 +739,7 @@ describe("the Tackle Board's projection", function()
 			assert.are.equal(ns.projection:GetState(), ns.State())
 		end)
 
-		it("done calls Done, ReportCoins, ReportXP, ScheduleLiveStep, then redraws, in order (TKB-R84)", function()
+		it("done calls Done, the three reports, ScheduleLiveStep, then redraws, in order (TKB-R84, TKB-R58)", function()
 			local calls = {}
 			local ns = built(withHistory(join(STARTED, { cast(D0 + 7200, DUROTAR, { 6358 }) })), {
 				prepare = function(loaded)
@@ -611,6 +756,9 @@ describe("the Tackle Board's projection", function()
 					seams.ReportXP = function()
 						calls[#calls + 1] = "ReportXP"
 					end
+					seams.ReportTickets = function()
+						calls[#calls + 1] = "ReportTickets"
+					end
 					seams.ScheduleLiveStep = function()
 						calls[#calls + 1] = "ScheduleLiveStep"
 					end
@@ -620,10 +768,14 @@ describe("the Tackle Board's projection", function()
 				end,
 			})
 
-			assert.are.same(
-				{ "Done true true", "ReportCoins", "ReportXP", "ScheduleLiveStep", "Redraw projection" },
-				calls
-			)
+			assert.are.same({
+				"Done true true",
+				"ReportCoins",
+				"ReportXP",
+				"ReportTickets",
+				"ScheduleLiveStep",
+				"Redraw projection",
+			}, calls)
 			assert.is_true(ns.IsStarted())
 		end)
 

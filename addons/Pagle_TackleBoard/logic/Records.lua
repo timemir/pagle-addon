@@ -9,7 +9,7 @@ local ns = select(2, ...)
 -- Fields are `;`-separated, numbers decimal, lists comma-separated and ascending:
 --
 --   start, day   dayStart;weekStart
---   issue        type;kind;tier;pay;need;target
+--   issue, post  type;kind;tier;pay;need;target
 --   reroll       oldGoalID;type;kind;tier;pay;need;target
 --
 -- A record kind it doesn't know, or a payload it can't parse or whose values are out of range, decodes to nil and is
@@ -17,10 +17,10 @@ local ns = select(2, ...)
 
 --- A decoded Module record of the Tackle Board's.
 ---@class TackleRecord
----@field kind "start"|"day"|"issue"|"reroll"
+---@field kind "start"|"day"|"issue"|"post"|"reroll"
 ---@field dayStart? integer           -- start, day
 ---@field weekStart? integer          -- start, day
----@field goal? TackleGoalDef         -- issue, reroll: the (new) goal's definition
+---@field goal? TackleGoalDef         -- issue, post, reroll: the (new) goal's definition
 ---@field old? string                 -- reroll: the entry ID of the goal it takes down (TKB-R23)
 
 -- How each kind's target is written (Data): "zone" an integer, "none" empty, "items" a Variety Expedition's
@@ -156,6 +156,13 @@ function ns.EncodeIssue(def)
 	return encodeGoal(def)
 end
 
+--- A `post` record's payload (TKB-R58): the goal's definition, written as an `issue`'s.
+---@param def TackleGoalDef
+---@return string
+function ns.EncodePost(def)
+	return encodeGoal(def)
+end
+
 --- A `reroll` record's payload: the taken-down goal's ID, then the new goal's definition (TKB-R55).
 ---@param oldGoalID string the entry ID of the record that issued the old goal (TKB-R23)
 ---@param def TackleGoalDef
@@ -177,9 +184,9 @@ function ns.DecodeRecord(recordKind, payload)
 			return nil
 		end
 		return { kind = recordKind, dayStart = dayStart, weekStart = weekStart }
-	elseif recordKind == "issue" then
+	elseif recordKind == "issue" or recordKind == "post" then
 		local goal = #parts == 6 and decodeGoal(parts, 1) or nil
-		return goal and { kind = "issue", goal = goal } or nil
+		return goal and { kind = recordKind, goal = goal } or nil
 	elseif recordKind == "reroll" then
 		local goal = #parts == 7 and parts[1] ~= "" and decodeGoal(parts, 2) or nil
 		return goal and { kind = "reroll", old = parts[1], goal = goal } or nil

@@ -26,6 +26,13 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 			assert.are.equal("n;wanderer;3;20;3;", payload)
 		end)
 
+		it("writes a post as an issue's payload: type;kind;tier;pay;need;target (Data, TKB-R58)", function()
+			local def = { type = "e", kind = "rarity", tier = 0, pay = 60, need = 8, target = 3 }
+
+			assert.are.equal("e;rarity;0;60;8;3", ns.EncodePost(def))
+			assert.are.equal(ns.EncodeIssue(def), ns.EncodePost(def))
+		end)
+
 		it("writes a reroll as the old goal's ID, then the new definition, Data's example (Data, TKB-R80)", function()
 			local payload =
 				ns.EncodeReroll(OLD_ID, { type = "n", kind = "rarity", tier = 1, pay = 10, need = 3, target = 2 })
@@ -94,6 +101,7 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 			}
 			for _, def in ipairs(defs) do
 				assert.are.same({ kind = "issue", goal = def }, ns.DecodeRecord("issue", ns.EncodeIssue(def)))
+				assert.are.same({ kind = "post", goal = def }, ns.DecodeRecord("post", ns.EncodePost(def)))
 				assert.are.same(
 					{ kind = "reroll", old = OLD_ID, goal = def },
 					ns.DecodeRecord("reroll", ns.EncodeReroll(OLD_ID, def))
@@ -111,6 +119,7 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 			function()
 				-- A beta log's Hefty Notice and Whopper Expedition (ADR 0014).
 				assert.is_nil(ns.DecodeRecord("issue", "n;size;1;10;3;3"))
+				assert.is_nil(ns.DecodeRecord("post", "n;size;1;10;3;3"))
 				assert.is_nil(ns.DecodeRecord("issue", "e;size;0;60;1;4"))
 				assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";n;size;1;10;3;3"))
 			end
@@ -130,6 +139,9 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 				{ "day", "1791730800;x" },
 				{ "day", "1791730800;1791557600;1" },
 				{ "issue", "n;haul;2;15;30" }, -- a field short
+				{ "post", "n;haul;2;15;30" },
+				{ "post", "n;haul;2;15;30;33;1" },
+				{ "post", "" },
 				{ "issue", "n;haul;2;15;30;33;1" }, -- a field over
 				{ "issue", "n;haul;2;15;30;" }, -- a zone goal without its zone
 				{ "issue", "n;lure;2;15;20;7" }, -- a kind without a target with one
@@ -156,6 +168,7 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 					"n;haul;2;15;0;33",
 				}) do
 					assert.is_nil(ns.DecodeRecord("issue", payload))
+					assert.is_nil(ns.DecodeRecord("post", payload))
 					assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";" .. payload))
 				end
 			end

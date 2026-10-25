@@ -1329,13 +1329,13 @@ describe("scripts/read-wtf.lua", function()
 		it(
 			"prints the projection's bookkeeping, current against the log, its rules version and the catalogue (LOG-R70, TKB-R81)",
 			function()
-				-- LOG-R70's stored values. TKB-R81: 1000 × TKB_RULES_VERSION 4 + Core's SESSION_RULES_VERSION 2 = 4002; the
+				-- LOG-R70's stored values. TKB-R81: 1000 × TKB_RULES_VERSION 5 + Core's SESSION_RULES_VERSION 2 = 5002; the
 				-- fingerprint is the catalogue's content fingerprint, with no extra.
 				assert.are.same({
-					"projection: lastSeq 54, logId 3c9e1a7f5b2d8046, fingerprint 0123456789abcdef, rulesVersion 4002",
+					"projection: lastSeq 54, logId 3c9e1a7f5b2d8046, fingerprint 0123456789abcdef, rulesVersion 5002",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (54 entries)",
-					"rulesVersion: the Tackle Board's, 4002 (TKB-R81)",
+					"rulesVersion: the Tackle Board's, 5002 (TKB-R81)",
 					"fingerprint: the catalogue's, " .. CATALOGUE .. " (LOG-R70)",
 				}, { unpack(lines, 15, 19) })
 			end
@@ -1429,7 +1429,8 @@ describe("scripts/read-wtf.lua", function()
 						.. GUID
 						.. '1792508702-0, Notice haul, "2 Catches in Area 12", pays 10, fly elwynn_royal',
 					"tally: 8 Notices, 1 Expedition (TKB-R61)",
-					"coins: 180 (TKB-R63), xp: 1550 (TKB-R65), equals Core's stored TackleBoard total (AXP-R3)",
+					"coins: 180 (TKB-R63), xp: 1550 (TKB-R65), Refreshes spent: 0 (TKB-R58),"
+						.. " equals Core's stored TackleBoard total (AXP-R3)",
 					"flies: 9 of 30 tied, in pattern order (TKB-R62):",
 					"  goldshire_gnat: day 5, goal " .. GUID .. "1792422301-0",
 					"  duskwood_shadow: day 0, goal " .. GUID .. "1791990602-0",
@@ -1524,7 +1525,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 3, logId 6f2a9c4e1b7d3580, fingerprint fedcba9876543210, rulesVersion 1000",
 				"logId: matches PagleLog's",
 				"lastSeq: differs from PagleLog's length (4 entries)",
-				"rulesVersion: 1000 DIFFERS from the Tackle Board's 4002 (1000 × TKB_RULES_VERSION 4 + Core's"
+				"rulesVersion: 1000 DIFFERS from the Tackle Board's 5002 (1000 × TKB_RULES_VERSION 5 + Core's"
 					.. " SESSION_RULES_VERSION 2), so Core rebuilds it at login (TKB-R81, LOG-R72)",
 				"fingerprint: DIFFERS from the catalogue's 0123456789abcdef, "
 					.. CATALOGUE

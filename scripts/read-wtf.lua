@@ -2092,7 +2092,7 @@ end
 -- or --catalogue's): the records decoded, the goals' text and need, stranded goals and today's board day.
 
 local BOARD_MODULE = "TackleBoard"
-local BOARD_RECORD_KINDS = { "start", "day", "issue", "reroll" }
+local BOARD_RECORD_KINDS = { "start", "day", "issue", "post", "reroll" }
 local GOAL_TYPES = { n = "Notice", e = "Expedition" }
 
 -- The Tackle Board's namespace with its strings and its logic: each locale/, data/ and logic/ file
@@ -2437,7 +2437,15 @@ local function printBoardState(board, state, context)
 		)
 		local xp = tonumber(state.xp) or 0
 		local againstCore = xpAgainstCore(xp, BOARD_MODULE, context.xpEarned)
-		print(("coins: %s (TKB-R63), xp: %d (TKB-R65), %s"):format(tostring(state.coins), xp, againstCore))
+		local spent = tonumber(state.ticketsSpent) or 0
+		print(
+			("coins: %s (TKB-R63), xp: %d (TKB-R65), Refreshes spent: %d (TKB-R58), %s"):format(
+				tostring(state.coins),
+				xp,
+				spent,
+				againstCore
+			)
+		)
 		printFliesAndTitles(board, tableOr(state.flies), tableOr(state.titles))
 		printFire(tableOr(state.fire))
 	end

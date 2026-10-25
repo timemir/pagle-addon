@@ -324,6 +324,145 @@ describe("the empty pins (TKB-R105)", function()
 	end)
 end)
 
+describe("the empty pins with a Refresh held (TKB-R58, TKB-R105)", function()
+	-- A board started today (its day 0 is the day the fake's clock is in, so nothing is owed or to be issued but what
+	-- the log holds): the Expedition on pin 1 and Notices on pins 1-3, the Angler's skill read. Notice pins 4-6 and
+	-- Expedition pin 2 are empty. The board is open after the login's live step.
+	local TODAY = board.DAILY_RESET
+	local TODAY_LOG = {
+		board.skill(TODAY + 30),
+		record("start", TODAY + 60, TODAY .. ";" .. W),
+		record("issue", TODAY + 61, EXPEDITION),
+		record("issue", TODAY + 62, HAUL_HERE),
+		record("issue", TODAY + 63, RARITY),
+		record("issue", TODAY + 64, LURE),
+	}
+
+	-- The board open on TODAY_LOG; the Angler holds `held` Refreshes when given: Hunts has earned that many, and Core
+	-- tells the board (TicketsChanged).
+	local function holding(held)
+		local loaded, fake, frame = board.opened(TODAY_LOG, {
+			names = { areas = { [DUROTAR] = "Durotar", [DARKSHORE] = "Darkshore" } },
+			step = true,
+		})
+		if held then
+			fake.setTickets("Hunts", held)
+			fake.fire("TicketsChanged", fake.Pagle.GetTickets())
+		end
+		return loaded, fake, frame
+	end
+
+	it("take no mouse while none is held, so the board drags by them, and have no hover", function()
+		local loaded, _, frame = holding()
+
+		for _, empty in ipairs({ notice(frame, 4).empty, expedition(frame, 2).empty }) do
+			assert.is_false(empty.mouseEnabled)
+			hover(empty)
+			assert.is_nil(loaded.ns.BoardHoverLines())
+		end
+	end)
+
+	it("become clickable once one is held, every empty pin of both types and no hung goal's", function()
+		local _, _, frame = holding(1)
+
+		for i = 4, 6 do
+			assert.is_true(notice(frame, i).empty.mouseEnabled)
+		end
+		assert.is_true(expedition(frame, 2).empty.mouseEnabled)
+		assert.is_false(visible(notice(frame, 1).empty, frame))
+		assert.is_false(notice(frame, 1).empty.mouseEnabled)
+	end)
+
+	it("say what a click does, what it costs and how many are held, under the mouse", function()
+		local loaded, _, frame = holding(3)
+
+		hover(notice(frame, 4).empty)
+		local forNotice = loaded.ns.BoardHoverLines()
+		hover(expedition(frame, 2).empty)
+		local forExpedition = loaded.ns.BoardHoverLines()
+		expedition(frame, 2).empty:GetScript("OnLeave")(expedition(frame, 2).empty)
+
+		assert.are.same({
+			"Post a Notice now",
+			"Click to pin a fresh Notice here instead of waiting for the next reset.",
+			"It uses 1 Refresh. You hold 3.",
+		}, forNotice)
+		assert.are.same({
+			"Post an Expedition now",
+			"Click to pin a fresh Expedition here instead of waiting for the weekly reset.",
+			"It uses 1 Refresh. You hold 3.",
+		}, forExpedition)
+		assert.is_nil(loaded.ns.BoardHoverLines())
+	end)
+
+	it("keep their words and countdown (TKB-R105)", function()
+		local _, _, frame = holding(1)
+
+		assert.are.same(
+			{ "A fresh Notice at reset", "(in 23h)" },
+			{ notice(frame, 4).empty.label:GetText(), notice(frame, 4).empty.note:GetText() }
+		)
+		assert.are.same(
+			{ "Next Expedition at the weekly reset", "(Tue)" },
+			{ expedition(frame, 2).empty.label:GetText(), expedition(frame, 2).empty.note:GetText() }
+		)
+	end)
+
+	it("ask on the confirm when clicked, for the type of the pin, and post nothing until it is answered", function()
+		local loaded, _, frame = holding(1)
+
+		notice(frame, 4).empty:Click()
+		local confirm = assert(loaded.ns.TakeDownConfirm())
+		local forNotice = confirm.title:GetText()
+		confirm.keep:Click()
+		expedition(frame, 2).empty:Click()
+
+		assert.are.equal("Post a new Notice?", forNotice)
+		assert.are.equal("Post a new Expedition?", confirm.title:GetText())
+		assert.are.equal(0, loaded.ns.State().ticketsSpent)
+	end)
+
+	it("post the goal on the first empty pin when answered, then fall quiet: no Refresh is left", function()
+		local loaded, _, frame = holding(1)
+
+		notice(frame, 6).empty:Click() -- whichever empty Notice pin is clicked, the goal takes the first
+		loaded.ns.TakeDownConfirm().accept:Click()
+
+		local state = loaded.ns.State()
+		assert.are.equal(1, state.ticketsSpent)
+		assert.is_not.equal(false, state.pins.notices[4])
+		assert.is_true(visible(notice(frame, 4).goal, frame))
+		assert.is_false(visible(notice(frame, 4).empty, frame))
+		assert.is_true(visible(notice(frame, 5).empty, frame))
+		for _, empty in ipairs({ notice(frame, 5).empty, notice(frame, 6).empty, expedition(frame, 2).empty }) do
+			assert.is_false(empty.mouseEnabled)
+		end
+	end)
+
+	it("go quiet again when the projection is updating (TKB-R108)", function()
+		local loaded, _, frame = holding(1)
+		loaded.ns.IsUpdating = function()
+			return true
+		end
+
+		loaded.ns.Redraw("projection")
+		notice(frame, 4).empty:Click()
+
+		assert.is_false(notice(frame, 4).empty.mouseEnabled)
+		assert.is_nil(loaded.ns.TakeDownConfirm())
+	end)
+
+	it("follow the count when Core reports a change while the board is open", function()
+		local _, fake, frame = holding(1)
+		assert.is_true(notice(frame, 4).empty.mouseEnabled)
+
+		fake.setTickets("TackleBoard", nil, 1)
+		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
+
+		assert.is_false(notice(frame, 4).empty.mouseEnabled)
+	end)
+end)
+
 describe("a pinned goal's hover (TKB-R102)", function()
 	it("shows its realm posted time and that only Catches since then count", function()
 		local loaded, _, frame = opened(startedLog(EXPEDITION, HAUL_HERE))
