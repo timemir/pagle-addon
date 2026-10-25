@@ -388,7 +388,7 @@
   function skip() {
     if (phase !== 'crate' && phase !== 'reel') return;
     clearTimers();
-    ov.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+    ov.getAnimations({ subtree: true }).forEach((a) => { if (!(a instanceof CSSAnimation)) a.cancel(); });
     stage.querySelectorAll('.fx').forEach((p) => p.remove());
     reveal(true);
   }
@@ -441,6 +441,8 @@
     const face = hold + dur * 0.8;
     at(face, () => {
       sfx.reveal(ti);
+      // the rays whip round as the face comes up, then settle into their steady turn
+      A($('#rays2'), [{ transform: `rotate(${-(60 + ti * 30)}deg)` }, { transform: 'rotate(0)' }], { duration: 1600 + ti * 100, easing: 'cubic-bezier(.1,.7,.2,1)', fill: 'none' });
       if (ti === 6) { flash(0.8); shake(10, 600); coinsBurst(563, 210, 46); sparks(563, 210, 70, t.c, 380); embers(t.c, 6000); return; }
       A(hero, [{ transform: 'scale(1.12)' }, { transform: 'scale(1)' }], { duration: 300, fill: 'none', composite: 'add' });
       if (ti >= 3) sparks(563, 210, 20 + ti * 12, C, 240 + ti * 30);
@@ -474,7 +476,7 @@
     clearTimers();
     phase = 'closing';
     const done = () => {
-      ov.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+      ov.getAnimations({ subtree: true }).forEach((a) => { if (!(a instanceof CSSAnimation)) a.cancel(); });
       stage.querySelectorAll('.fx').forEach((p) => p.remove());
       ['#hero', '#halo', '#rays2', '#tierName', '#itemName', '#itemSub', '#after', '#stamp', '#spin'].forEach((s) => $(s).removeAttribute('style'));
       reel.removeAttribute('style'); crate.removeAttribute('style'); track.removeAttribute('style');

@@ -137,10 +137,13 @@ body { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
 #reveal { position: absolute; inset: 0; pointer-events: none; }
 #reveal .halo { position: absolute; left: 50%; top: 210px; width: 900px; height: 900px; margin: -450px 0 0 -450px; opacity: 0; border-radius: 50%;
   background: radial-gradient(circle, rgb(var(--tc) / .55), rgb(var(--tc) / .12) 30%, transparent 60%); }
-#reveal .rays2 { position: absolute; left: 50%; top: 210px; width: 1100px; height: 1100px; margin: -550px 0 0 -550px; opacity: 0;
-  background: repeating-conic-gradient(rgb(var(--tc) / .28) 0 4deg, transparent 4deg 12deg);
+#reveal .raywrap { position: absolute; left: 50%; top: 210px; width: 1100px; height: 1100px; margin: -550px 0 0 -550px; opacity: 0; }
+#reveal .rays2 { position: absolute; inset: 0;
+  background: repeating-conic-gradient(rgb(var(--tc) / .3) 0 4deg, transparent 4deg 12deg);
   -webkit-mask: radial-gradient(circle, #000 0, rgba(0,0,0,.6) 18%, transparent 50%); mask: radial-gradient(circle, #000 0, rgba(0,0,0,.6) 18%, transparent 50%);
-  animation: spin 30s linear infinite; }
+  animation: spin 14s linear infinite; }
+#reveal .rays2.b { background: repeating-conic-gradient(from 3deg, rgb(var(--tc) / .16) 0 2deg, transparent 2deg 9deg); animation-duration: 22s; animation-direction: reverse;
+  -webkit-mask: radial-gradient(circle, #000 0, rgba(0,0,0,.5) 26%, transparent 56%); mask: radial-gradient(circle, #000 0, rgba(0,0,0,.5) 26%, transparent 56%); }
 #hero { position: absolute; left: 50%; top: 210px; width: 150px; height: 172px; margin: -86px 0 0 -75px; opacity: 0; perspective: 900px; }
 #hero .face { position: absolute; inset: 0; backface-visibility: hidden; }
 #hero .card { position: absolute; left: 0; top: 0; }
@@ -240,7 +243,7 @@ code { font: 13px/1 'Cutive Mono', ui-monospace, monospace; color: #e6cf8e; }
         </div>
       </div>
       <div id="reveal">
-        <div class="rays2" id="rays2"></div><div class="halo" id="halo"></div>
+        <div class="raywrap" id="rays2"><div class="rays2 a"></div><div class="rays2 b"></div></div><div class="halo" id="halo"></div>
         <div id="hero"><div class="spin" id="spin"><div class="face front" id="heroFront"></div><div class="face back" id="heroBack"></div></div>
           <div class="stamp" id="stamp">YOURS</div></div>
         <div class="tier" id="tierName">LEGENDARY</div>
