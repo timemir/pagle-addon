@@ -161,7 +161,17 @@ def fold(css):
         sx = math.hypot(a, b)
         rot = math.atan2(b, a)
     sy = det / sx if sx else 1.0
-    return e, f, math.degrees(rot), sx, sy, 0.0, 0.0
+    return e, f, unwound(math.degrees(rot), functions), sx, sy, 0.0, 0.0
+
+
+def unwound(angle, functions):
+    """The matrix's angle (-180 to 180) as the whole turns the list's rotate() arguments add up to: a spin from
+    rotate(0) to rotate(360deg) is the same matrix at both ends, but the client turns a layer by interpolating the
+    angle linearly between keys, so the 360 must survive (a 0 to 0 spin does not move). An angle that is not the
+    rotate() sum modulo a turn (a mirror before the rotation reverses it) is left as the matrix has it."""
+    turns = sum(px(args) for name, args in functions if name == "rotate")
+    whole = round((turns - angle) / 360)
+    return angle + 360 * whole if abs(turns - angle - 360 * whole) < 1e-6 else angle
 
 
 def tilt_of(matrix):

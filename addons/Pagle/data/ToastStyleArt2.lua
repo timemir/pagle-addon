@@ -150,7 +150,7 @@ ns.TOAST_STYLE_ART2["ledger.toaststyle.glass"] = {
 						origin = { x = 50, y = 50 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "under",
@@ -2121,7 +2121,7 @@ ns.TOAST_STYLE_ART2["ledger.toaststyle.ice"] = {
 						origin = { x = 484, y = 4 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "over",
@@ -2605,7 +2605,7 @@ ns.TOAST_STYLE_ART2["core.toaststyle.sonar"] = {
 						origin = { x = 50, y = 46 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "under",
@@ -2744,7 +2744,7 @@ ns.TOAST_STYLE_ART2["core.toaststyle.sonar"] = {
 						origin = { x = 54, y = 50 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "under",
@@ -2862,7 +2862,7 @@ ns.TOAST_STYLE_ART2["core.toaststyle.sonar"] = {
 						origin = { x = 36, y = 37 },
 						transform = {
 							{ 0, 0, 0, 0, 1, 1 },
-							{ 1, 0, 0, 0, 1, 1 },
+							{ 1, 0, 0, 360, 1, 1 },
 						},
 					},
 					host = "under",
