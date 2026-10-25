@@ -935,6 +935,82 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	describe("Refreshes", function()
+		-- A Module's handle on `fake`, with the order the roster gives it.
+		local function register(fake, name)
+			local order = { Ledger = 10, Hunts = 20, TackleBoard = 40 }
+			return fake.Pagle.RegisterModule({ name = name, title = name, order = order[name] })
+		end
+
+		it(
+			"stores earned and spent totals in fake.global.tickets by def.name, fires TicketsChanged once per change and"
+				.. " records each accepted report in fake.ticketReports (REF-R2, REF-R3, REF-R6)",
+			function()
+				local fake = newFakePagle()
+				local hunts, board = register(fake, "Hunts"), register(fake, "TackleBoard")
+				fake.login()
+				local fired = {}
+				fake.Pagle.RegisterCallback("spec", "TicketsChanged", function(_, tickets)
+					fired[#fired + 1] = tickets.tickets
+				end)
+
+				hunts:ReportTicketsEarned(5)
+				hunts:ReportTicketsEarned(5)
+				board:ReportTicketsSpent(2)
+
+				assert.are.same({ 5, 3 }, fired)
+				assert.are.same({ Hunts = 5 }, fake.global.tickets.earned)
+				assert.are.same({ TackleBoard = 2 }, fake.global.tickets.spent)
+				assert.are.equal(fake.catchLog.data.logId, fake.global.tickets.logId)
+				assert.are.same({
+					{ module = "Hunts", kind = "earned", total = 5 },
+					{ module = "Hunts", kind = "earned", total = 5 },
+					{ module = "TackleBoard", kind = "spent", total = 2 },
+				}, fake.ticketReports)
+				assert.are.same({ tickets = 3, earned = 5, spent = 2 }, fake.Pagle.GetTickets())
+			end
+		)
+
+		it("raises an error at the Module's call for a total Core refuses, recording nothing (REF-R2)", function()
+			local fake = newFakePagle()
+			local hunts = register(fake, "Hunts")
+
+			for _, total in ipairs({ -1, 1.5, "3" }) do
+				local ok, err = pcall(function()
+					hunts:ReportTicketsSpent(total)
+				end)
+				assert.is_false(ok)
+				assert.matches("fake_pagle_spec.lua:%d+: M:ReportTicketsSpent takes a whole number", tostring(err))
+			end
+
+			assert.are.same({}, fake.ticketReports)
+		end)
+
+		it(
+			"counts a stored total with no report, from fake.setTickets, and holds at 0 below spent (REF-R3, REF-R5)",
+			function()
+				local fake = newFakePagle()
+
+				fake.setTickets("Hunts", 4, 1)
+				assert.are.same({ tickets = 3, earned = 4, spent = 1 }, fake.Pagle.GetTickets())
+
+				fake.setTickets("TackleBoard", nil, 9)
+				assert.are.same({ tickets = 0, earned = 4, spent = 10 }, fake.Pagle.GetTickets())
+				assert.has_error(function()
+					fake.setTickets("Hunts", -5)
+				end)
+			end
+		)
+
+		it("hands out a read-only Tickets (CORE-R18)", function()
+			local fake = newFakePagle()
+
+			assert.has_error(function()
+				fake.Pagle.GetTickets().tickets = 5
+			end)
+		end)
+	end)
+
 	describe("pushed content", function()
 		---@class FakePagleListening: FakePagle
 		---@field fired PagleCompanionState[] each PushedContentReady's state, in order

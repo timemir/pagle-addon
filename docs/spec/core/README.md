@@ -9,6 +9,7 @@ Core is the `Pagle` addon. This file covers how Modules attach to it, the whole 
 | [catch-log.md](catch-log.md) | `LOG` | Observing fishing, the Catch log and its entries, conditions, Sessions, the content catalogue, projections |
 | [announcements.md](announcements.md) | `ANN` | Moments, the Announcement policy, toasts, sounds, the Session summary, the Write-up |
 | [wallet-and-shop.md](wallet-and-shop.md) | `SHOP` | Pagle Coins and the Curio Shop |
+| [refresh.md](refresh.md) | `REF` | Refreshes: the earned and spent totals Hunts and the Tackle Board report, the count held, and the "Refresh +N" stamp |
 | [field-report.md](field-report.md) | `REP` | `/pagle report` and the diagnostics it reads |
 | [paste-string.md](paste-string.md) | `PST` | The Paste string for the Pagle website: its upload documents and parts, the export window (`/pagle export`) and the last exported seq |
 | [varieties.md](varieties.md) | `VAR` | Fish varieties, their rarity, Core's variety projection and the fish crests |
@@ -25,6 +26,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - cutting Sessions
 - presenting every Announcement, the Session summary and the Write-up (ADR 0007)
 - Pagle Coins and the Curio Shop (ADR 0009)
+- the Refresh purse: the totals Hunts and the Tackle Board report and the count held (ADR 0017, [refresh.md](refresh.md))
 - the Field report
 - the Paste string and its export window ([paste-string.md](paste-string.md))
 - onboarding: the Letter, the Field guide, Margin notes, First looks and the First evening list ([onboarding.md](onboarding.md))
@@ -211,6 +213,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.OpenPasteExport()` | | [paste-string.md](paste-string.md#contracts) |
 | `Pagle.IsAnimationsOn()` | boolean, the Animations setting | [announcements.md](announcements.md#contracts) |
 | `Pagle.GetActivityXP()` | `ActivityXP` | [activity-xp.md](activity-xp.md#contracts) |
+| `Pagle.GetTickets()` | `Tickets`: `{ tickets, earned, spent }` | [refresh.md](refresh.md#contracts) |
 | `Pagle.GetCompanionState()`, `Pagle.GetPushedContent(kind)` | state string, items | [pushed-content.md](pushed-content.md#contracts) |
 | `Pagle.GetFollowedAnglers()` | `{ state, anglers }` | [anglers-in-game.md](anglers-in-game.md#contracts) |
 | `Pagle.Animate(owner, animations, onDone?)`, `Cue(owner, seconds, fn)`, `StopMotion(owner)`, `EASE`, `Bezier(x1, y1, x2, y2)` | Core's one motion driver | announcements.md |
@@ -232,6 +235,7 @@ Grouped by topic; the rules live in the linked file.
 | `M:RaiseMoment(moment)`, `M:SetSummaryLine(key, text)`, `M:RaiseWriteUp(section)` | [announcements.md](announcements.md#contracts) |
 | `M:ReportCoinsEarned(total)`, `M:RegisterSlot(slot)`, `M:RegisterGood(good)`, `M:RefreshGoods()` | wallet-and-shop.md |
 | `M:ReportXPEarned(total)` | activity-xp.md |
+| `M:ReportTicketsEarned(total)`, `M:ReportTicketsSpent(total)` | refresh.md |
 | `M:RegisterTracker{ id, order, frame }` | here |
 | `M:AddSetting(topic, setting)` | here |
 | `M:RegisterTourStop(id, label, show, hide)`: a stop for the dev screenshot tour (CORE-R65) | here |
@@ -330,7 +334,7 @@ A Legend's crest (ledger.md LED-R153) as a frame on `parent`, `width` units wide
 | `GuideOpened`, `GuideClosed` | none; `stepId` (ONB-R20, onboarding.md) |
 | `ClockFormatChanged` | `format: "24h"\|"12h"`, the format times now read in (CORE-R87) |
 
-Fishing, Session, wallet, Activity XP (`ActivityXPChanged`) and pushed-content (`PushedContentReady`) events are listed in their topic files.
+Fishing, Session, wallet, Activity XP (`ActivityXPChanged`), Refresh (`TicketsChanged`) and pushed-content (`PushedContentReady`) events are listed in their topic files.
 
 ## UI
 

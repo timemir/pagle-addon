@@ -71,6 +71,7 @@ logic\Tour.lua
 logic\Trailer.lua
 logic\Wallet.lua
 logic\ActivityXP.lua
+logic\Tickets.lua
 logic\Goods.lua
 logic\Crate.lua
 logic\Shop.lua
@@ -138,6 +139,7 @@ adapter\DevGlyphs.lua
 adapter\Slash.lua
 adapter\Wallet.lua
 adapter\ActivityXP.lua
+adapter\Tickets.lua
 adapter\PushedContent.lua
 adapter\AnglersInGame.lua
 adapter\Goods.lua

@@ -15,7 +15,7 @@ The dev's vision was one currency that many things pay into and that buys addon 
 
 ## Consequences
 
-- ADR 0001 now allows exactly one cross-Module effect: Coins paid into Core's wallet. Cross-Module rewards (Hunt completions granting Ledger XP) are still forbidden, and Modules still never see each other.
+- ADR 0001 allowed one cross-Module effect here: Coins paid into Core's wallet. Later ADRs added more (Activity XP in ADR 0011, pushed content in ADR 0013, Refreshes in [ADR 0017](0017-core-holds-the-refresh-purse-from-reported-totals.md), which lists all four). Modules still never see each other, and a Module's reward is still never another Module's call.
 - ADR 0007's "toast style and sound set are free choices" no longer holds: the defaults (and the Driftwood sound set) stay free, the rest are sold in the Curio Shop. Its reasoning still stands, because the purchase is Core's, not a Module's reward.
 - A purchase stores its price, so a later price change never moves a balance. Purchases are never revoked. If a rebuild or rebalance pushes earned below spent, the balance shows 0 and new income fills the gap before it moves again; there is never a negative balance or a "debt".
 - A disabled Module's goods leave the shop, but goods already bought stay owned. If `PagleDB` is lost, a disabled Module's earned total is lost with it until the Module is enabled again and rebuilds.

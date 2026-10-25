@@ -23,8 +23,8 @@ local OWNER = "Pagle announcements"
 
 local textureOf = ns.TextureOf
 
--- Stamp slots on a frame: the 4 stamps shown and the "+N" for the rest (ANN-R11).
-local STAMP_SLOTS = ns.MOMENT_STAMPS + 1
+-- Stamp slots on a frame: the 4 stamps shown, the "+N" for the rest (ANN-R11) and the "Refresh +N" (REF-R7).
+local STAMP_SLOTS = ns.MOMENT_STAMPS + 2
 -- Held headlines "While you were fighting" lists, a row each; "+N more" under them counts the rest.
 local DIGEST_ROWS = 3
 -- Its icon: crossed blades.
@@ -244,20 +244,24 @@ local function setLabel(label, text)
 	label:Show()
 end
 
--- Fills a frame's stamps from an Announcement: its stamp texts and "+N" for those beyond 4 (ANN-R11), each set by
--- `set`. Returns the ones showing, in order, for the frame to place.
+-- Fills a frame's stamps from an Announcement: its stamp texts, "+N" for those beyond 4 (ANN-R11) and "Refresh +N" for
+-- its tickets (REF-R7), each set by `set`. Returns the ones showing, in order, for the frame to place.
 ---@param frame PagleAnnouncementFrame
 ---@param announcement PagleAnnouncement
 ---@param set fun(stamp: PagleStamp, text: string)
 ---@return PagleStamp[]
 local function fillStamps(frame, announcement, set)
 	local showing = {}
+	local labels = { unpack(announcement.stamps) }
+	if announcement.more > 0 then
+		labels[#labels + 1] = L.ANNOUNCEMENT_STAMPS_MORE:format(announcement.more)
+	end
+	if (announcement.tickets or 0) > 0 then
+		labels[#labels + 1] = L.ANNOUNCEMENT_STAMP_REFRESH:format(announcement.tickets)
+	end
 	for i, stamp in ipairs(frame.stamps) do
 		stamp:ClearAllPoints()
-		local label = announcement.stamps[i]
-		if i == STAMP_SLOTS and announcement.more > 0 then
-			label = L.ANNOUNCEMENT_STAMPS_MORE:format(announcement.more)
-		end
+		local label = labels[i]
 		if label then
 			set(stamp, label)
 			showing[#showing + 1] = stamp
@@ -841,7 +845,7 @@ local function drawToast(frame, display, style)
 	frame.wax:SetShown(page.high == true)
 	tintWax(frame.wax --[[@as PagleSprite]], style)
 	local x = page.high and page.w - 96 or page.w - 30
-	local drops = { 2, 8, 4, 6, 3 }
+	local drops = { 2, 8, 4, 6, 3, 7 }
 	local stamps = fillStamps(frame, announcement, function(stamp, text)
 		ns.SetStamp(stamp, text, style)
 	end)

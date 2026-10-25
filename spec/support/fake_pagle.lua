@@ -10,14 +10,14 @@
 --   fake.setRestricted(true)
 --   fake.playCast("caught", { { itemID = 6358, quantity = 1 } }) -- CastStarted … Catch, CastEnded (LOG-R9)
 --   fake.nextFrame()                                        -- the frame after: the Cast's moments are one Announcement
---   fake.announcements[1].headline.title                    -- what Core would show (also .stamps, .more, .coins)
+--   fake.announcements[1].headline.title                    -- what Core would show (also .stamps, .more, .coins, .tickets)
 --
 -- A Module raises moments only for what is worth one: an ordinary Catch gets Core's own catch Nod (ANN-R13), which
 -- lands in fake.catchNods, so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
--- Sessions, moments, Session summary, cards, wallet, Activity XP, goods, wallet projection and tracker dock are built
+-- Sessions, moments, Session summary, cards, wallet, Activity XP, Refresh purse, goods, wallet projection and tracker dock are built
 -- and connected by logic/Wiring.lua, which Core's adapter runs too: the fake hands it a host over its fakes where
 -- Core's adapter hands it the client (adapter/Host.lua).
 -- Only the client is faked.
@@ -95,6 +95,13 @@
 --- holds it (fake.global.activityXP.earned), firing nothing: how a spec has a disabled or uninstalled Module's last
 --- total count (AXP-R3, AXP-R90), listed by Pagle.GetActivityXP with `enabled` false unless that Module registers.
 --- Raises an error for a total M:ReportXPEarned would refuse.
+---@field ticketReports { module: string, kind: "earned"|"spent", total: integer }[] Each M:ReportTicketsEarned and
+--- M:ReportTicketsSpent Core accepted, in order, an unchanged total too (REF-R2). A TicketsChanged fires only for a
+--- changed total.
+---@field setTickets fun(name: string, earned: integer?, spent: integer?) Stores a Module's lifetime Refreshes earned
+--- and/or spent as a saved PagleDB holds them (fake.global.tickets), firing nothing: how a spec has the Angler hold
+--- Refreshes with no report, or a disabled Module's last totals count (REF-R3, REF-R90). A nil argument leaves that
+--- total alone. Raises an error for a total M:ReportTicketsEarned would refuse.
 ---@field setPushedContent fun(content: { state: PagleCompanionState?, items: table[]?, keyId: string?, seq: integer?, data: any }) What the
 --- companion's data addon gives this login (core/pushed-content.md), before fake.login: `{ state, items }` is how
 --- the check ends, `items` in payload order (the kinds and versions Core passes on are kept, PUSH-R21), with the
@@ -1061,6 +1068,37 @@ part(function(fake, Pagle, ns, host)
 			error(problem, 2)
 		end
 		fake.global.activityXP.earned[name] = total
+	end
+end)
+
+-- The Refresh purse (REF-R2–R6, ADR 0017), on Core's wiring over fake.global.tickets: M:ReportTicketsEarned and
+-- M:ReportTicketsSpent on the handle, Pagle.GetTickets (read-only) and TicketsChanged. Each report Core accepts is also
+-- in fake.ticketReports. Its stored totals are opened here, tied to fake.catchLog's logId (REF-R3), as the Activity XP
+-- part above opens its own.
+part(function(fake, Pagle, ns, host)
+	fake.ticketReports = {}
+	ns.WireTickets(host)
+	ns.OpenTickets()
+	local tickets = ns.tickets
+	local report = tickets.Report
+	function tickets.Report(self, kind, name, total)
+		fake.ticketReports[#fake.ticketReports + 1] = { module = name, kind = kind, total = total }
+		report(self, kind, name, total)
+	end
+
+	function Pagle.GetTickets()
+		return readOnly(tickets:Get())
+	end
+
+	function fake.setTickets(name, earned, spent)
+		for kind, total in pairs({ earned = earned, spent = spent }) do
+			local problem =
+				ns.TicketTotalProblem(total, kind == "earned" and "ReportTicketsEarned" or "ReportTicketsSpent")
+			if problem then
+				error(problem, 2)
+			end
+			fake.global.tickets[kind][name] = total
+		end
 	end
 end)
 

@@ -16,6 +16,7 @@ local ns = select(2, ...)
 ---@field stamp? string          -- text when riding as a stamp ("New!"); defaults to title
 ---@field cast? string           -- the Cast's entry ID (ANN-R10)
 ---@field coins? integer         -- ANN-R23
+---@field tickets? integer       -- Refreshes earned (REF-R7)
 ---@field ruler? { old: number, new: number, unit: string, label: string }   -- ANN-R22; unit "length" = millimetres
 ---@field sound? boolean         -- default true
 ---@field expiresAt? integer     -- server time (ANN-R45)
@@ -68,6 +69,7 @@ local ns = select(2, ...)
 ---@field stamps string[]             -- at most MOMENT_STAMPS texts, highest ranked first, identical ones merged
 ---@field more integer                -- distinct stamp texts beyond those, shown as "+N"; 0 for none
 ---@field coins integer               -- the sum of its moments' coins, kept apart from the stamps (ANN-R23)
+---@field tickets? integer            -- the sum of its moments' tickets, apart from the stamps; nil for none (REF-R7)
 ---@field moments PagleRaisedMoment[] -- every moment in it, ranked (ANN-R2), the headline first
 ---@field fighting? PagleRaisedMoment[] -- the "While you were fighting" toast's held headlines, in order (ANN-R36)
 ---@field style? string                -- a sample's toast style, drawn in that, not the equipped one (ANN-R80)
@@ -150,7 +152,7 @@ function ns.RanksAbove(a, b)
 end
 
 --- The Announcement a set of moments makes (ANN-R11): the top-ranked one is the headline, the others ride as
---- stamps, and their coins are summed apart. Nil for no moments. Ticket #88's expiry calls it again on what is left.
+--- stamps, and their coins and tickets are summed apart. Nil for no moments. Ticket #88's expiry calls it again on what is left.
 ---@param moments PagleRaisedMoment[]
 ---@return PagleAnnouncement?
 function ns.MakeAnnouncement(moments)
@@ -175,6 +177,9 @@ function ns.MakeAnnouncement(moments)
 	local seen = {}
 	for i, moment in ipairs(ranked) do
 		announcement.coins = announcement.coins + (moment.coins or 0)
+		if (moment.tickets or 0) > 0 then
+			announcement.tickets = (announcement.tickets or 0) + moment.tickets
+		end
 		local text = moment.stamp or moment.title
 		if i > 1 and not seen[text] then
 			seen[text] = true
