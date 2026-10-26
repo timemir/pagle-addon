@@ -62,6 +62,94 @@ local function items(text)
 	return true
 end
 
+local function entryId(text)
+	local guid, time, tie = text:match("^(Player%-%d+%-[0-9A-F]+)%-([^%-]+)%-([^%-]+)$")
+	return guid ~= nil and number(time, 0) ~= nil and number(tie, 0) ~= nil
+end
+
+local function varietyTarget(text)
+	local zone, list = text:match("^([^:]+):([^:]+)$")
+	if not number(zone, 1) then
+		return false
+	end
+	local previous = 0
+	for _, item in ipairs(fields(list, ",")) do
+		local value = number(item, 1)
+		if not value or value <= previous then
+			return false
+		end
+		previous = value
+	end
+	return true
+end
+
+local function boardPayload(kind, payload)
+	local f = fields(payload, ";")
+	if kind == "start" or kind == "day" then
+		return #f == 2 and number(f[1], 0) ~= nil and number(f[2], 0) ~= nil
+	end
+	local at = kind == "issue" and 1 or kind == "reroll" and 2 or nil
+	if not at or #f ~= at + 5 or (at == 2 and not entryId(f[1])) then
+		return false
+	end
+	local goalType, goal, target = f[at], f[at + 1], f[at + 5]
+	local tier = number(f[at + 2], 0)
+	if
+		(goalType ~= "n" and goalType ~= "e")
+		or not tier
+		or tier > 3
+		or not number(f[at + 3], 0)
+		or not number(f[at + 4], 1)
+	then
+		return false
+	end
+	if goal == "haul" or goal == "quality" then
+		return number(target, 1) ~= nil
+	elseif goal == "species" then
+		return goalType == "n" and number(target, 1) ~= nil
+	elseif goal == "lure" then
+		return goalType == "n" and target == ""
+	elseif goal == "collector" then
+		return target == ""
+	elseif goal == "wanderer" then
+		return (goalType == "n" and target == "") or (goalType == "e" and number(target, 0) ~= nil)
+	elseif goal == "variety" then
+		return (goalType == "n" and number(target, 1) ~= nil) or (goalType == "e" and varietyTarget(target))
+	end
+	return false
+end
+
+local function huntPayload(kind, payload)
+	local f = fields(payload, "|")
+	if kind == "run" then
+		return #f == 4
+			and f[1]:find("^[%w_]+$") ~= nil
+			and number(f[2], 0) ~= nil
+			and number(f[3], 0) ~= nil
+			and (f[4] == "r" or f[4] == "p")
+	elseif kind == "def" and #f >= 3 and f[1]:find("^p_[%w_]+$") then
+		local part, total = f[2]:match("^([^/]+)/([^/]+)$")
+		local n, count = number(part, 1), number(total, 1)
+		return n ~= nil and count ~= nil and n <= count and table.concat(f, "|", 3) ~= ""
+	end
+	return false
+end
+
+local function modulePayload(module, kind, payload)
+	if module == "Ledger" then
+		if kind == "title" then
+			return payload == "" or payload:find("^[%w_.:]+$") ~= nil
+		elseif kind == "crest" then
+			return payload == "" or payload:find("^[%w_.]+$") ~= nil
+		end
+	elseif module == "TackleBoard" then
+		return boardPayload(kind, payload)
+	elseif module == "Hunts" then
+		return huntPayload(kind, payload)
+	end
+	return false
+end
+
 --- Checks Core's record envelope and payload. Module-owned payload schemas are checked by their owning validator.
 ---@param entry any
 ---@return string?
@@ -93,15 +181,18 @@ function ns.CanonicalRecordProblem(entry)
 		valid = number(f[5], 0) ~= nil and number(f[6], 0) ~= nil and number(f[7], -MAX, true) ~= nil
 	elseif tag == "P1" and #f == 6 then
 		valid = number(f[5], 1) ~= nil and number(f[6], 0) ~= nil
-	elseif tag == "B1" and #f == 6 then
-		valid = number(f[5], 0) ~= nil and f[6] ~= ""
+	elseif tag == "B1" and #f == 7 then
+		valid = number(f[5], 0) ~= nil and f[6] ~= "" and #f[7] <= 64 and f[7]:find("^[%w][%w_.%-]*$") ~= nil
 	elseif tag == "U1" and #f == 6 then
 		valid = f[5]:find("^[%w_.]+$") ~= nil and number(f[6], 0) ~= nil
 	elseif tag == "K1" and #f == 6 then
 		valid = f[5]:find("^[%w_.%-]+$") ~= nil and number(f[6], 0) ~= nil
 	elseif tag == "A1" and #f >= 7 then
 		local payload = table.concat(f, "|", 7)
-		valid = f[5]:find("^[%w_.]+$") ~= nil and f[6]:find("^[%w_.]+$") ~= nil and #payload <= 200
+		valid = f[5]:find("^[%w_.]+$") ~= nil
+			and f[6]:find("^[%w_.]+$") ~= nil
+			and #payload <= 200
+			and modulePayload(f[5], f[6], payload)
 	end
 	return not valid and "invalid or unsupported canonical record payload" or nil
 end

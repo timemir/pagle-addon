@@ -54,7 +54,7 @@ describe("Core's SavedVariables at load", function()
 	it("start an empty PagleLog and a PagleDB on a fresh install, silently (CORE-R5, LOG-R10)", function()
 		local loaded = login({})
 
-		assert.are.same({ format = 2, characters = {}, entries = {} }, loaded.env.PagleLog)
+		assert.are.same({ format = 3, characters = {}, entries = {} }, loaded.env.PagleLog)
 		assert.is_table(loaded.env.PagleDB)
 		assert.are.same({}, loaded.printed)
 	end)
@@ -101,7 +101,7 @@ describe("Core's SavedVariables at load", function()
 		local loaded = login({ PagleLog = savedLog({ "S1|1|1791731690|0|86|150|0" }, 1) })
 
 		local log = loaded.env.PagleLog
-		assert.are.equal(2, log.format)
+		assert.are.equal(3, log.format)
 		assert.are.equal(ADA, log.characters[1].guid)
 		assert.are.same({}, log.entries)
 		assert.are_not.equal("3f9a2c1e7b0d4a65", log.logId)
@@ -115,7 +115,7 @@ describe("Pagle.IterateCatches", function()
 	it("yields the typed records after afterSeq, in order (LOG-R42)", function()
 		local loaded = login({
 			PagleLog = savedLog({
-				"B1|1|1791731680|0|70338|1.60.1",
+				"B1|1|1791731680|0|70338|1.60.1|pagle-2026a",
 				"S1|1|1791731681|0|86|150|0",
 				"C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1",
 			}),
