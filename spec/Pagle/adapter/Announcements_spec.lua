@@ -362,11 +362,11 @@ describe("Announcement frames", function()
 			local ruler = { old = 1, new = 2, unit = "lb", label = "w" }
 			raise(loaded, M, moment("toast", "Size record", { ruler = ruler }))
 			loaded.client.advance(6)
-			for _ = 1, 20 do
+			for _ = 1, 40 do
 				raise(loaded, M, moment("toast", "Interruption"))
 				loaded.client.advance(6)
 			end
-			-- Past PagleDB's 20 per 5 minutes: a Nod (ANN-R31).
+			-- Past PagleDB's 40 per 5 minutes: a Nod (ANN-R31).
 			raise(loaded, M, moment("toast.low", "Size record", { ruler = ruler }))
 
 			local drawn = {}
@@ -549,17 +549,20 @@ describe("the announcements art", function()
 		)
 	end)
 
-	it("writes a headline with no text as its title alone in the Angler's hand, as a catch Nod's line", function()
-		local loaded, M = loadCore()
+	it(
+		"writes a headline with no text as its title alone in the Angler's hand, as a stepped-down catch toast's line",
+		function()
+			local loaded, M = loadCore()
 
-		raise(loaded, M, moment("nod", "Oily Blackmouth · Decent · 34.2 cm"))
+			raise(loaded, M, moment("nod", "Oily Blackmouth · Decent · 34.2 cm"))
 
-		local nod = frameOf(loaded, "nod")
-		assert.are.same(
-			{ "Oily Blackmouth · Decent · 34.2 cm", "PagleArtNodName", false },
-			{ nod.title:GetText(), nod.title.fontObject, nod.text.shown }
-		)
-	end)
+			local nod = frameOf(loaded, "nod")
+			assert.are.same(
+				{ "Oily Blackmouth · Decent · 34.2 cm", "PagleArtNodName", false },
+				{ nod.title:GetText(), nod.title.fontObject, nod.text.shown }
+			)
+		end
+	)
 
 	it(
 		"presses a banner's seal with the headline's number or mark, or shows the Prestige frame of its frameRank with"
@@ -956,10 +959,12 @@ describe("the Interruption budget on the client", function()
 	end
 
 	it(
-		"steps the 21st toast.low down to a Nod with a compact ruler, at PagleDB's 20 per 5 minutes (ANN-R31, ANN-R22)",
+		"steps the 41st toast.low down to a Nod with a compact ruler, at PagleDB's 40 per 5 minutes (ANN-R31, ANN-R22)",
 		function()
 			local loaded, M = loadCore()
-			interrupt(loaded, M, 20)
+			-- 40 toasts take over 5 minutes here: the longest window keeps them all in it.
+			loaded.ns.db.profile.announcements.budget.window = 900
+			interrupt(loaded, M, 40)
 
 			raise(
 				loaded,
@@ -985,7 +990,7 @@ describe("the Interruption budget on the client", function()
 	it("steps nothing down with the budget off in PagleDB (ANN-R32)", function()
 		local loaded, M = loadCore()
 		loaded.ns.db.profile.announcements.budget.on = false
-		interrupt(loaded, M, 20)
+		interrupt(loaded, M, 40)
 
 		raise(loaded, M, moment("toast.low", "Size record"))
 
@@ -1096,9 +1101,9 @@ describe("Announcement sounds on the client", function()
 	end)
 end)
 
-describe("The catch Nod on the client", function()
+describe("The catch toast on the client", function()
 	-- Core as loadCore makes it, with Oily Blackmouth's name cached, the Angler's unit in cm and, unless `firstTime`,
-	-- every one of its varieties caught before in Core's projection (VAR-R10), so its Nod may name any (VAR-R27).
+	-- every one of its varieties caught before in Core's projection (VAR-R10), so its toast may name any (VAR-R27).
 	---@param firstTime boolean?
 	local function catching(firstTime)
 		local loaded, M, summarized = loadCore()
@@ -1115,64 +1120,113 @@ describe("The catch Nod on the client", function()
 	end
 
 	it(
-		'draws an ordinary Catch as a silent Nod, "{item name} · {band} · {length}", for 3 s, never summarized'
-			.. " (ANN-R13, ANN-R20, ANN-R25)",
+		'draws an ordinary Catch as a toast.low, its kicker "{band} · {length}" over the fish named with its variety,'
+			.. " with the toast sound, for 4 s, never summarized (ANN-R13, ANN-R20, ANN-R25, ANN-R70)",
 		function()
 			local loaded, _, summarized = catching()
 
 			catchAndFlush(loaded)
 
-			assert.is_true(showing(loaded, "nod"))
-			local frame = frameOf(loaded, "nod") --[[@as table]]
-			-- Oily Blackmouth has varieties: its line names the Catch's, the name a segment of its own (VAR-R26).
-			assert.matches(
-				"^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d cm$",
-				frame.display.announcement.headline.title
-			)
-			assert.are.equal("Oily Blackmouth ·", frame.title:GetText())
+			assert.is_true(showing(loaded, "toast"))
+			local frame = frameOf(loaded, "toast") --[[@as table]]
+			local headline = frame.display.announcement.headline
+			assert.are.same({ "toast.low", "Oily Blackmouth" }, { headline.rung, headline.text })
+			assert.matches("^%u+ · %d+%.%d CM$", frame.title:GetText())
+			-- Oily Blackmouth has varieties: its text line is the fish's name, then a gem and the variety's (VAR-R26).
+			assert.are.equal("Oily Blackmouth ·", frame.text:GetText())
 			assert.matches("^[%a%- ]+$", frame.variety:GetText())
-			assert.matches("^· %a+ · %d+%.%d cm$", frame.tail:GetText())
+			assert.is_true(frame.gem.shown)
 			assert.are.same({}, stampsOf(frame))
-			assert.are.same({}, loaded.client.sounds)
+			assert.are.equal(DRIFTWOOD .. "toast_1.ogg SFX", loaded.client.sounds[1])
 			assert.are.same({}, summarized)
-			loaded.client.advance(NOD)
-			assert.is_false(showing(loaded, "nod"))
+			loaded.client.advance(4 + 2.7 - 0.1)
+			assert.is_true(showing(loaded, "toast"))
+			loaded.client.advance(0.2)
+			assert.is_false(showing(loaded, "toast"))
 		end
 	)
+
+	it('reads "CAUGHT" for its kicker when the Catch has no size (ANN-R13)', function()
+		local loaded = catching()
+		-- An Uncharted item has no Simulated Size (LOG-R55, LOG-R65).
+		loaded.client.itemNames[99001] = "Strange Flotsam"
+
+		catchOne(
+			loaded,
+			{ { link = "|cffffffff|Hitem:99001::::::::15:::::::::|h[Strange Flotsam]|h|r", quantity = 1 } }
+		)
+		loaded.client.advance(0)
+
+		local frame = frameOf(loaded, "toast") --[[@as table]]
+		assert.are.same({ "CAUGHT", "Strange Flotsam", false }, {
+			frame.title:GetText(),
+			frame.text:GetText(),
+			frame.gem.shown,
+		})
+	end)
 
 	it("names no variety caught for the first time: that Catch reads as one without (VAR-R27)", function()
 		local loaded = catching(true)
 
 		catchAndFlush(loaded)
 
-		local frame = frameOf(loaded, "nod") --[[@as table]]
-		assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", frame.display.announcement.headline.title)
+		local frame = frameOf(loaded, "toast") --[[@as table]]
 		assert.is_nil(frame.display.announcement.headline.variety)
+		assert.are.same({ "Oily Blackmouth", false }, { frame.text:GetText(), frame.gem.shown })
 	end)
 
-	it("never counts toward the Interruption budget (ANN-R13, ANN-R30, ANN-R31)", function()
-		local loaded, M = catching()
-		loaded.ns.db.profile.announcements.budget.count = 1
+	it(
+		"counts toward the Interruption budget and steps down, past it, to a Nod reading as the catch Nod did: no"
+			.. " sound, the old line (ANN-R13, ANN-R30, ANN-R31)",
+		function()
+			local loaded, M = catching()
+			loaded.ns.db.profile.announcements.budget.count = 1
+
+			catchAndFlush(loaded)
+			assert.is_true(showing(loaded, "toast"))
+			loaded.client.advance(TOAST)
+			local sounds = #loaded.client.sounds
+			catchAndFlush(loaded)
+
+			assert.is_false(showing(loaded, "toast"))
+			local nod = frameOf(loaded, "nod") --[[@as table]]
+			assert.is_true(showing(loaded, "nod"))
+			assert.are.equal("Oily Blackmouth ·", nod.title:GetText())
+			assert.matches("^[%a%- ]+$", nod.variety:GetText())
+			assert.matches("^· %a+ · %d+%.%d cm$", nod.tail:GetText())
+			assert.is_false(nod.text.shown)
+			assert.are.equal(sounds, #loaded.client.sounds)
+			raise(loaded, M, moment("toast", "New Species"))
+			assert.is_true(showing(loaded, "toast"))
+		end
+	)
+
+	it("steps down to its whole name and size line when it names no variety (ANN-R31)", function()
+		local loaded = catching(true)
+		loaded.ns.db.profile.announcements.budget.count = 0
 
 		catchAndFlush(loaded)
-		loaded.client.advance(3)
-		raise(loaded, M, moment("toast.low", "Size record"))
 
-		assert.is_true(showing(loaded, "toast"))
+		local nod = frameOf(loaded, "nod") --[[@as table]]
+		assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", nod.title:GetText())
+		assert.is_false(nod.variety.shown)
 	end)
 
-	it("is dropped, not held, in combat and in Cozy mode (ANN-R13, ANN-R35, ANN-R36, ANN-R40)", function()
+	it("is held in combat as a toast is, and shows once it ends; Cozy mode shows nothing (ANN-R35, ANN-R40)", function()
 		local loaded = catching()
 		setCombat(loaded, true)
 		catchAndFlush(loaded)
+		assert.is_nil(frameOf(loaded, "toast"))
 		setCombat(loaded, false)
 		loaded.client.advance(2)
-		assert.is_nil(frameOf(loaded, "nod"))
+		assert.is_true(showing(loaded, "toast"))
+		loaded.client.advance(TOAST)
 
 		loaded.ns.db.profile.announcements.cozy = true
 		catchAndFlush(loaded)
 
-		assert.is_nil(frameOf(loaded, "nod"))
+		assert.is_false(showing(loaded, "toast"))
+		assert.is_false(showing(loaded, "nod"))
 	end)
 
 	it('shows nothing for an ordinary Catch with "Show every catch" off (ANN-R13, SET-R30)', function()
@@ -1181,11 +1235,12 @@ describe("The catch Nod on the client", function()
 
 		catchAndFlush(loaded)
 
+		assert.is_nil(frameOf(loaded, "toast"))
 		assert.is_nil(frameOf(loaded, "nod"))
 	end)
 end)
 
-describe("a catch Nod naming a variety on the client (VAR-R26)", function()
+describe("a catch toast stepped down to a Nod naming a variety on the client (VAR-R26, ANN-R31)", function()
 	-- Firefin Snapper's Coral: a 192 × 96 rectangle at (192, 0) of a 2048 atlas (VAR-R11).
 	local ART = {
 		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
@@ -1205,19 +1260,26 @@ describe("a catch Nod naming a variety on the client (VAR-R26)", function()
 		error("no rarity " .. key)
 	end
 
-	-- Raises Core's catch Nod naming Coral as a variety of `rarity`, as ns.CatchNodMoment makes it, and runs the frame
-	-- it shows on. Returns the Nod's frame.
-	local function raiseVarietyNod(loaded, rarity)
-		loaded.ns.moments:RaiseCatchNod({
-			rung = "nod",
+	-- Core's catch toast naming Coral as a variety of `rarity`, as ns.CatchToastMoment makes it.
+	local function coralToast(rarity)
+		return {
+			rung = "toast.low",
 			kind = "catch",
-			title = "Firefin Snapper · Coral · Decent · 34.2 cm",
+			title = "Decent · 34.2 cm",
+			text = "Firefin Snapper",
+			nodLine = "Firefin Snapper · Coral · Decent · 34.2 cm",
 			icon = 6359,
 			cast = CAST,
-			sound = false,
 			variety = { name = "Coral", rarity = rarity, before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
 			art = ART,
-		})
+		}
+	end
+
+	-- Raises that catch toast with the budget spent, so it steps down to a Nod, and runs the frame it shows on.
+	-- Returns the Nod's frame.
+	local function raiseVarietyNod(loaded, rarity)
+		loaded.ns.db.profile.announcements.budget.count = 0
+		loaded.ns.moments:RaiseCatchToast(coralToast(rarity))
 		loaded.client.advance(0)
 		return frameOf(loaded, "nod") --[[@as table]]
 	end
@@ -1613,6 +1675,44 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			{ toast.stamps[1].label:GetText(), toast.stamps[2].label:GetText() }
 		)
 	end)
+
+	it(
+		"draws a catch toast's variety caught before like a first catch's: the art in the medallion, the ring and the"
+			.. " name in the rarity's colour and ink, a gleam for Rare, and no New variety stamp (#437, VAR-R28)",
+		function()
+			local loaded = loadCore()
+			local rare = rarityOf(loaded, "rare")
+
+			loaded.ns.moments:RaiseCatchToast({
+				rung = "toast.low",
+				kind = "catch",
+				title = "Decent · 34.2 cm",
+				text = FISH,
+				nodLine = FISH .. " · Coral · Decent · 34.2 cm",
+				icon = ITEM,
+				cast = CAST,
+				variety = { name = "Coral", rarity = "rare", before = FISH .. " ·", after = "· Decent · 34.2 cm" },
+				art = ART,
+			})
+			loaded.client.advance(0)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+
+			assert.are.same({ "DECENT · 34.2 CM", FISH .. " ·", "Coral" }, {
+				toast.title:GetText(),
+				toast.text:GetText(),
+				toast.variety:GetText(),
+			})
+			assert.are.same({ ART.texture, { loaded.ns.HeadCrop(ART) } }, { toast.icon.texture, toast.icon.texCoord })
+			assert.are.same(
+				{ true, rgb(rare.color) },
+				{ toast.bezel.Ring.desaturated == true, rgb(toast.bezel.Ring.vertexColor) }
+			)
+			assert.are.same({ true, rgb(rare.ink) }, { toast.gem.shown, rgb(toast.variety.textColor) })
+			assert.is_true(toast.gleams)
+			assert.are.same({}, stampsOf(toast))
+			assert.are.same({}, bounds.overflows(toast))
+		end
+	)
 
 	it(
 		"puts an opaque round disc, deep water tinted by the rarity, behind the art across the medallion's face, and"

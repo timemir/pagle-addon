@@ -71,7 +71,7 @@ end
 --- The three presets, in the order their cards show (ONB-R35's table). Lively is the defaults (ANN-R31).
 ---@type PagleGuidePreset[]
 ns.GUIDE_PRESETS = {
-	{ id = "lively", cozy = false, everyCatch = true, budget = { on = true, count = 20, window = 300 } },
+	{ id = "lively", cozy = false, everyCatch = true, budget = { on = true, count = 40, window = 300 } },
 	{ id = "quieter", cozy = false, everyCatch = false, budget = { on = true, count = 10, window = 300 } },
 	{ id = "cozy", cozy = true },
 }

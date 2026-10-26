@@ -143,7 +143,7 @@ describe("the Ledger's live moments", function()
 	end)
 
 	it(
-		"raise a New here Nod for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",
+		"raise a New here toast.low for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",
 		function()
 			-- Caught twice before in one Cast, with no zone (0), so the Casts stay below level 2. The live Catch is the
 			-- Yellowtail's Spotted (VAR-R3), celebrated already (LED-R91), so its variety isn't new either.
@@ -164,7 +164,7 @@ describe("the Ledger's live moments", function()
 			)
 			local headline = announcements[1].headline
 			assert.are.same(
-				{ "nod", 100, "New here", MACKEREL, record.id },
+				{ "toast.low", 100, "New here", MACKEREL, record.id },
 				{ headline.rung, headline.order, headline.stamp, headline.icon, headline.cast }
 			)
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
@@ -180,9 +180,10 @@ describe("the Ledger's live moments", function()
 
 		fake.playCast("caught", loot(TROUT))
 
-		-- Its variety is new, and headlines over the Nod (VAR-R25, ANN-R11).
+		-- Both are toast.low now (#437): New here, the lower order, headlines, and the new variety rides on it as a
+		-- stamp (VAR-R25, ANN-R11).
 		assert.are.same(
-			{ "newVariety New variety / Slate nil", "newInZone New here / Item 6308 in ... nil" },
+			{ "newInZone New here / Item 6308 in ... nil", "newVariety New variety / Slate nil" },
 			momentsOf(shown(fake)[1])
 		)
 	end)

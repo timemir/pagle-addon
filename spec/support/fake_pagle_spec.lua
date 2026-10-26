@@ -1610,7 +1610,7 @@ describe("FakePagle", function()
 		end)
 
 		it(
-			"show Core's catch Nod for a played caught Cast in fake.catchNods, apart from fake.announcements and"
+			"show Core's catch toast for a played caught Cast in fake.catchToasts, apart from fake.announcements and"
 				.. " never summarized (ANN-R13, ANN-R25)",
 			function()
 				local fake = newFakePagle()
@@ -1619,22 +1619,24 @@ describe("FakePagle", function()
 				fake.enterWorld()
 
 				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
-				assert.are.same({}, fake.catchNods)
+				assert.are.same({}, fake.catchToasts)
 				fake.nextFrame()
 
-				assert.are.equal(1, #fake.catchNods)
-				local nod = fake.catchNods[1]
-				assert.are.same({ "nod", cast.id, 6358 }, { nod.rung, nod.cast, nod.headline.icon })
+				assert.are.equal(1, #fake.catchToasts)
+				local toast = fake.catchToasts[1]
+				assert.are.same({ "toast.low", cast.id, 6358 }, { toast.rung, toast.cast, toast.headline.icon })
 				-- Its variety is a first: Core's projection folded the Cast before its CastEnded (LOG-R73), yet the
-				-- Nod doesn't count it, so it names none (VAR-R27).
-				assert.is_nil(nod.headline.variety)
-				assert.matches("^Oily Blackmouth · %a+ · %d+%.%d in$", nod.headline.title)
+				-- toast doesn't count it, so it names none (VAR-R27).
+				assert.is_nil(toast.headline.variety)
+				assert.matches("^%a+ · %d+%.%d in$", toast.headline.title)
+				assert.are.equal("Oily Blackmouth", toast.headline.text)
+				assert.matches("^Oily Blackmouth · %a+ · %d+%.%d in$", toast.headline.nodLine)
 				assert.are.same({}, fake.announcements)
 				assert.are.same({}, fake.summarized)
 			end
 		)
 
-		it("name a Catch's variety on its Nod once an earlier Cast caught it (VAR-R26, VAR-R27)", function()
+		it("name a Catch's variety on its toast once an earlier Cast caught it (VAR-R26, VAR-R27)", function()
 			local fake = newFakePagle()
 			fake.itemNames[6358] = "Oily Blackmouth"
 			fake.login()
@@ -1647,7 +1649,7 @@ describe("FakePagle", function()
 			for _ = 1, 30 do
 				local cast = assert(fake.playCast("caught", { { itemID = 6358, quantity = 1 } }))
 				fake.nextFrame()
-				local nod, index = fake.catchNods[#fake.catchNods], assert(cast.items[1].variety).index
+				local nod, index = fake.catchToasts[#fake.catchToasts], assert(cast.items[1].variety).index
 				if caught[index] then
 					named = { cast = cast, nod = nod }
 					break
@@ -1659,12 +1661,12 @@ describe("FakePagle", function()
 			named = assert(named)
 			local variety = assert(named.nod.headline.variety)
 			assert.are.same(assert(named.cast.items[1].variety).rarity, variety.rarity)
-			assert.are.equal(variety.before .. " " .. variety.name .. " " .. variety.after, named.nod.headline.title)
-			assert.matches("^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d in$", named.nod.headline.title)
+			assert.are.equal(variety.before .. " " .. variety.name .. " " .. variety.after, named.nod.headline.nodLine)
+			assert.matches("^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d in$", named.nod.headline.nodLine)
 		end)
 
 		it(
-			"name no first variety on a Nod while Core's projection updates, which folds the Cast after it, and a"
+			"name no first variety on a catch toast while Core's projection updates, which folds the Cast after it, and a"
 				.. " variety its stored state holds (VAR-R27, LOG-R72, LOG-R74)",
 			function()
 				local all = {}
@@ -1684,20 +1686,20 @@ describe("FakePagle", function()
 				fake.nextFrame()
 
 				local nods = {}
-				for _, nod in ipairs(fake.catchNods) do
+				for _, nod in ipairs(fake.catchToasts) do
 					nods[nod.cast] = nod
 				end
 				assert.is_nil(assert(nods[first.id]).headline.variety)
 				assert.is_table(assert(nods[stored.id]).headline.variety)
-				-- The projection folded that Cast only after its Nod was made.
+				-- The projection folded that Cast only after its toast was made.
 				assert.is_true(fake.Pagle.GetVarietiesCaught(6358)[assert(first.items[1].variety).index])
 			end
 		)
 
-		it("drop the catch Nod when a Module raises a moment for the Cast (ANN-R13)", function()
+		it("drop the catch toast when a Module raises a moment for the Cast (ANN-R13)", function()
 			local fake = newFakePagle()
 			raising(fake, "Ledger", 10, function(record)
-				return { rung = "nod", kind = "newInZone", title = "New in this zone", cast = record.id }
+				return { rung = "toast.low", kind = "newInZone", title = "New in this zone", cast = record.id }
 			end)
 			fake.login()
 			fake.enterWorld()
@@ -1705,13 +1707,13 @@ describe("FakePagle", function()
 			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 			fake.nextFrame()
 
-			assert.are.same({}, fake.catchNods)
+			assert.are.same({}, fake.catchToasts)
 			assert.are.same({ "New in this zone" }, { fake.announcements[1].headline.title })
 			assert.are.same({}, fake.announcements[1].stamps)
 		end)
 
 		it(
-			'raise no catch Nod for a got-away Cast, a replayed one, or with "Show every catch" off (ANN-R13, ANN-R4,'
+			'raise no catch toast for a got-away Cast, a replayed one, or with "Show every catch" off (ANN-R13, ANN-R4,'
 				.. " SET-R30)",
 			function()
 				local fake = newFakePagle()
@@ -1726,7 +1728,7 @@ describe("FakePagle", function()
 				fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 				fake.nextFrame()
 
-				assert.are.same({}, fake.catchNods)
+				assert.are.same({}, fake.catchToasts)
 			end
 		)
 	end)

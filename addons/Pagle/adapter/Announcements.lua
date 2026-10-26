@@ -33,13 +33,13 @@ local FIGHTING_ICON = "Interface\\Icons\\Ability_DualWield"
 local BANNER_TOP = 120
 -- A Nod's line at most, and the track of its compact ruler, which the number and the margin follow.
 local NOD_WIDTH, COMPACT_TRACK = 640, 90
--- A Nod's words: its title alone, and a catch Nod's whole line naming a variety (VAR-R26), whose first half is cut
--- short before it passes.
+-- A Nod's words: its title alone, and a stepped-down catch toast's whole line naming a variety (VAR-R26), whose first
+-- half is cut short before it passes.
 local NOD_TITLE, NOD_VARIETY_LINE = 300, 400
--- A catch Nod's gem (VAR-R26): its box, the side of its rim and of its fill (each a square turned to a diamond), and
+-- A variety's gem (VAR-R26): its box, the side of its rim and of its fill (each a square turned to a diamond), and
 -- the gaps before it and between it and the name; then the gap between the name and the line's second half.
 local GEM_BOX, GEM_RIM, GEM_FILL, GEM_GAP, GEM_NAME_GAP, NAME_GAP = 10, 7, 5, 6, 3, 6
--- A Rare or Epic catch Nod's gleam (VAR-R26): a soft glow stretched tall and leaning, swept once across the strip
+-- A Rare or Epic variety Nod's gleam (VAR-R26): a soft glow stretched tall and leaning, swept once across the strip
 -- from just past the medallion: its size and lean, when it starts and how long it takes, and its brightest.
 local GLEAM_WIDTH, GLEAM_HEIGHT, GLEAM_LEAN = 30, 64, math.rad(-20)
 local GLEAM_DELAY, GLEAM_SECONDS, GLEAM_PEAK = 0.1, 0.6, 0.9
@@ -77,7 +77,7 @@ local TICKS = 20
 ---@field elapsed number
 ---@field lengthUnit PagleLengthUnit
 
--- A catch Nod's gem (VAR-R26): a rim in the rarity's ink round a fill in its colour, both squares turned 45°.
+-- A variety's gem (VAR-R26): a rim in the rarity's ink round a fill in its colour, both squares turned 45°.
 ---@class PagleNodGem: Frame
 ---@field rim Texture
 ---@field fill Texture
@@ -117,7 +117,7 @@ local TICKS = 20
 ---@field variety FontString? a toast's or Nod's variety name, in the rarity's ink (VAR-R26)
 ---@field tail FontString? a Nod's line after the variety's name (VAR-R26)
 ---@field gleamClip Frame? the part of a Nod's strip or a toast's page its gleam sweeps across (VAR-R26)
----@field gleam PagleSprite? a Rare or Epic catch Nod's or variety toast's gleam (VAR-R26)
+---@field gleam PagleSprite? a Rare or Epic variety Nod's or toast's gleam (VAR-R26)
 ---@field gleams boolean? the Nod or toast drawn gleams as it enters
 ---@field gleamFrom number? where a toast's gleam starts from the page's left, and how far it travels
 ---@field gleamAcross number?
@@ -1091,10 +1091,10 @@ local function drawToast(frame, display, style)
 	end
 end
 
--- Writes a catch Nod's line naming its variety (VAR-R26) in the hand: the line's first half in the style's ink, a gem
--- in the rarity's colour rimmed in its ink, the name in the rarity's ink (the rarity replaces the style's ink there
--- alone, ANN-R80), then the second half in the style's ink. The first half is cut short with "..." when the whole
--- line would pass NOD_VARIETY_LINE. The line starts `left` from the frame's left, in `font` and the ink role `ink`.
+-- Writes a Nod's line naming its variety (a stepped-down catch toast's, VAR-R26) in the hand: the line's first half
+-- in the style's ink, a gem in the rarity's colour rimmed in its ink, the name in the rarity's ink (the rarity
+-- replaces the style's ink there alone, ANN-R80), then the second half in the style's ink. The first half is cut
+-- short with "..." when the whole line would pass NOD_VARIETY_LINE. The line starts `left` from the frame's left, in `font` and the ink role `ink`.
 -- Returns the line's right edge from the frame's left, and its last part.
 ---@param frame PagleAnnouncementFrame
 ---@param look PagleNodVarietyLook
@@ -1138,17 +1138,22 @@ local function writeVariety(frame, look, ink, left, font)
 end
 
 -- Draws a Nod: the medallion, then on a torn strip its words, a compact ruler, its stamps and its Coins, in a line
--- the strip is three-sliced to fit. A catch Nod naming a variety writes its line in parts, with the variety's art in
--- the medallion, its ring in the rarity's colour, and for a Rare or Epic one a gleam ready to sweep it (VAR-R26). A
--- composed style (ANN-R82) draws its Nod rung's layers instead of the strip, its body three-sliced to the line, the
--- icon in its icon box, the words from its text box in its inks, and its medallion tinted for a rarity.
+-- the strip is three-sliced to fit. A catch toast stepped down to a Nod reads as its old one line (ANN-R31); one naming
+-- a variety writes that line in parts, with the variety's art in the medallion, its ring in the rarity's colour, and
+-- for a Rare or Epic one a gleam ready to sweep it (VAR-R26). A composed style (ANN-R82) draws its Nod rung's layers
+-- instead of the strip, its body three-sliced to the line, the icon in its icon box, the words from its text box in
+-- its inks, and its medallion tinted for a rarity.
 ---@param frame PagleAnnouncementFrame
 ---@param display PagleDisplay
 ---@param style PagleToastStyle
 local function drawNod(frame, display, style)
 	local announcement = display.announcement
 	local headline = announcement.headline
-	local look = ns.CatchNodVarietyLook(headline)
+	local look = ns.CatchToastNodLook(headline)
+	-- A catch toast's words are its one line, not its kicker and name (ANN-R13, ANN-R31).
+	local words = headline.catchToast and {
+		title = headline.nodLine --[[@as string]],
+	} or headline
 	local bezel = frame.bezel --[[@as PagleBezel]]
 	local strip = frame.strip --[[@as PagleThreeSlice]]
 	local rung = style.layered and ns.ToastRungArt(style, nil)
@@ -1200,7 +1205,7 @@ local function drawNod(frame, display, style)
 		for _, part in ipairs({ frame.gem, frame.variety, frame.tail }) do
 			part:Hide()
 		end
-		writeHeadline(frame, headline, fonts, ns.ToastInks(style), NOD_TITLE)
+		writeHeadline(frame, words, fonts, ns.ToastInks(style), NOD_TITLE)
 		x = left + frame.title:GetWidth()
 		last = frame.title
 		if frame.text:IsShown() then
@@ -1406,7 +1411,7 @@ local BUILD = {
 		frame.bezel:SetPoint("LEFT")
 		frame.title:SetPoint("LEFT", frame, "LEFT", 72, 0)
 		frame.ruler = newRuler(frame.words, true)
-		-- A catch Nod's variety (VAR-R26): the gem, the name and the line after it, hidden until one names a variety.
+		-- A Nod's variety (VAR-R26): the gem, the name and the line after it, hidden until one names a variety.
 		frame.gem = newGem(frame.words)
 		frame.variety = ns.ArtText(frame.words, "NodName")
 		frame.variety:Hide()
@@ -1668,7 +1673,7 @@ local MOTION = {
 		end
 		ns.Animate(frame, animations)
 	end,
-	-- It fades in (0.3 s). A Rare or Epic catch Nod's gleam sweeps across its strip once as it does, left to right,
+	-- It fades in (0.3 s). A Rare or Epic variety Nod's gleam sweeps across its strip once as it does, left to right,
 	-- brightest midway and gone at the far end (VAR-R26); it plays nothing and holds nothing up.
 	nod = function(frame)
 		local animations = {

@@ -304,7 +304,7 @@ describe("the Ledger's M3 live moments", function()
 			assert.are.same({ old = 40, new = 60, unit = "lb", label = "weight" }, weight.ruler)
 			local family = moments.familyStar
 			assert.are.same({
-				"nod",
+				"toast.low",
 				130,
 				"Trophy family",
 				drawnSymbols("Snappers ★★★"),
@@ -366,7 +366,7 @@ describe("the Ledger's M3 live moments", function()
 			assert.are.same({ "uncharted Unknown catch, logged / Item 99001 Logged nil" }, momentsOf(announcements[1]))
 			local headline = announcements[1].headline
 			assert.are.same(
-				{ "nod", 140, UNKNOWN, record.id },
+				{ "toast.low", 140, UNKNOWN, record.id },
 				{ headline.rung, headline.order, headline.icon, headline.cast }
 			)
 			assert.is_true(loaded.env.PagleLedgerDB.global.celebrated.uncharted[UNKNOWN])
@@ -389,7 +389,7 @@ describe("the Ledger's M3 live moments", function()
 
 		local caught = byKind(shown(fake)[1]).caughtStar
 		assert.are.same(
-			{ "nod", 105, "Caught", "Cove Perch", drawnSymbols("★"), ANY_1, record.id },
+			{ "toast.low", 105, "Caught", "Cove Perch", drawnSymbols("★"), ANY_1, record.id },
 			{ caught.rung, caught.order, caught.title, caught.text, caught.stamp, caught.icon, caught.cast }
 		)
 		assert.is_true(loaded.env.PagleLedgerDB.global.celebrated.stars[ANY_1][1])
@@ -406,7 +406,7 @@ describe("the Ledger's M3 live moments", function()
 
 		local regular = byKind(shown(fake)[1]).regularStar
 		assert.are.same(
-			{ "nod", 120, "Regular", "Cove Perch", drawnSymbols("★★★"), ANY_1, record.id },
+			{ "toast.low", 120, "Regular", "Cove Perch", drawnSymbols("★★★"), ANY_1, record.id },
 			{ regular.rung, regular.order, regular.title, regular.text, regular.stamp, regular.icon, regular.cast }
 		)
 	end)

@@ -528,11 +528,12 @@ describe("the Moments step (ONB-R34, ONB-R35)", function()
 		for _, name in ipairs({ "A Nod", "A toast", "A banner" }) do
 			assert.is_true(reads(left, name))
 		end
-		assert.is_true(reads(left, "Every Catch. One line, gone in 3 seconds."))
+		assert.is_true(reads(left, "When Pagle’s said a lot lately. One line, gone in 3 seconds."))
+		assert.is_true(reads(left, "Every Catch, a new fish, a record, Coins earned."))
 		assert.is_true(
 			reads(
 				left,
-				"At most 20 pop-ups every 5 minutes: past that, small ones step down to a Nod. Everything lands on the"
+				"At most 40 pop-ups every 5 minutes: past that, small ones step down to a Nod. Everything lands on the"
 					.. " Session summary when you stop."
 			)
 		)
@@ -551,7 +552,7 @@ describe("the Moments step (ONB-R34, ONB-R35)", function()
 		assert.are.same({ true, false, false }, { cards[1].chosen, cards[2].chosen, cards[3].chosen })
 		assert.are.equal("as it comes", cards[1].tag.text)
 		assert.are.same(
-			{ "20 pop-ups in 5 minutes", "10 pop-ups in 5 minutes", "a Legend still shows, silently" },
+			{ "40 pop-ups in 5 minutes", "10 pop-ups in 5 minutes", "a Legend still shows, silently" },
 			{ cards[1].what.text, cards[2].what.text, cards[3].what.text }
 		)
 		assert.is_false(pages.ownMix.shown)
@@ -631,14 +632,14 @@ describe("the Moments step (ONB-R34, ONB-R35)", function()
 
 		cards[1]:Click()
 		assert.are.same(
-			{ cozy = false, everyCatch = true, motion = false, budget = { on = true, count = 20, window = 300 } },
+			{ cozy = false, everyCatch = true, motion = false, budget = { on = true, count = 40, window = 300 } },
 			settings(loaded)
 		)
 
 		settings(loaded).budget.on = false
 		cards[3]:Click()
 		assert.are.same(
-			{ cozy = true, everyCatch = true, motion = false, budget = { on = false, count = 20, window = 300 } },
+			{ cozy = true, everyCatch = true, motion = false, budget = { on = false, count = 40, window = 300 } },
 			settings(loaded)
 		)
 		assert.are.same({ false, false, true }, { cards[1].chosen, cards[2].chosen, cards[3].chosen })

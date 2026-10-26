@@ -767,8 +767,8 @@ function ns.SampleAnnouncement(styleID)
 end
 
 -- A variety's art cropped to the fish's head (core/varieties.md › UI): the art faces left, 192 × 96 texels, so the
--- head is a square at its left, inset from its snout (VAR-R26 crops the catch Nod's medallion the same way). As
--- shares of the art's width and height.
+-- head is a square at its left, inset from its snout (VAR-R26 crops a stepped-down catch toast's medallion the same
+-- way). As shares of the art's width and height.
 local HEAD_LEFT, HEAD_RIGHT = 0.03, 0.405
 local HEAD_TOP, HEAD_BOTTOM = 0.125, 0.875
 
@@ -784,9 +784,9 @@ function ns.HeadCrop(art)
 	return art.left + w * HEAD_LEFT, art.left + w * HEAD_RIGHT, art.top + h * HEAD_TOP, art.top + h * HEAD_BOTTOM
 end
 
---- How a variety is drawn on a toast or a catch Nod (VAR-R26): the colour for the gem before the name and its ink for
---- the name and a stamp (these alone leave the style's ink, ANN-R80), the colour for the medallion's ring, none for
---- Common, whose ring stays the style's, and whether it gleams as it enters.
+--- How a variety is drawn on a toast or a stepped-down catch toast's Nod (VAR-R26): the colour for the gem before
+--- the name and its ink for the name and a stamp (these alone leave the style's ink, ANN-R80), the colour for the
+--- medallion's ring, none for Common, whose ring stays the style's, and whether it gleams as it enters.
 ---@class PagleVarietyLook
 ---@field color number[]
 ---@field ink number[]
@@ -794,13 +794,15 @@ end
 ---@field gleam boolean
 ---@field backing number[]  -- the opaque disc behind its art in the medallion (ns.ArtBacking)
 
---- How a catch Nod draws the variety its line names (VAR-R26): the name and the line either side of it.
+--- How a catch toast stepped down to a Nod draws the variety its line names (VAR-R26): the name and the line either
+--- side of it.
 ---@class PagleNodVarietyLook: PagleVarietyLook
 ---@field name string
 ---@field before string
 ---@field after string
 
--- The rarities whose toast or catch Nod gleams as it enters (VAR-R26), and the one whose ring stays the style's.
+-- The rarities whose toast or stepped-down catch toast gleams as it enters (VAR-R26), and the one whose ring stays
+-- the style's.
 local GLEAMS = { rare = true, epic = true }
 local PLAIN_RING = "common"
 
@@ -838,12 +840,12 @@ local function rarityLook(key)
 	return nil
 end
 
---- A catch Nod's variety as it is drawn (VAR-R26), or nil for a headline that isn't Core's catch Nod naming one, or
---- one of a rarity Core doesn't know.
----@param headline { catchNod: true?, variety: PagleNodVariety? }
+--- The variety a catch toast stepped down to a Nod names, as the Nod draws it (VAR-R26), or nil for a headline that
+--- isn't Core's catch toast naming one, or one of a rarity Core doesn't know.
+---@param headline { catchToast: true?, variety: PagleNodVariety? }
 ---@return PagleNodVarietyLook?
-function ns.CatchNodVarietyLook(headline)
-	local variety = headline.catchNod and headline.variety
+function ns.CatchToastNodLook(headline)
+	local variety = headline.catchToast and headline.variety
 	if not variety then
 		return nil
 	end
@@ -867,8 +869,9 @@ end
 ---@field before string?        -- the name line's first half before the gem and the name ("" for the name alone); nil: no name
 
 --- The variety a toast announces, as it is drawn (VAR-R25, VAR-R26), or nil for an Announcement that isn't a toast, the
---- "While you were fighting" toast, one with no first-catch variety moment (Core's own catch Nod doesn't count,
---- VAR-R27: only a variety just caught is ever named) or one of a rarity Core doesn't know. The variety's moment may be
+--- "While you were fighting" toast, one with no variety moment or one of a rarity Core doesn't know. The moment is a
+--- Module's first-catch one (VAR-R25) or Core's catch toast naming a variety caught before (VAR-R26, VAR-R28), the
+--- only toast to name one that isn't just caught (VAR-R27), and the one with no stamp. The variety's moment may be
 --- the headline (a Rare variety's toast) or ride on another's (a size record's, a New Species'): its art then still
 --- fills the medallion and its stamp takes the rarity's ink. The name is written, after a gem, on the headline's text
 --- line only when that line is about the fish itself: the variety's own toast, or one whose `icon` is the variety
@@ -882,7 +885,7 @@ function ns.ToastVarietyLook(announcement)
 	end
 	local moment
 	for _, candidate in ipairs(announcement.moments) do
-		if candidate.variety and not candidate.catchNod then
+		if candidate.variety then
 			moment = candidate
 			break
 		end
@@ -898,6 +901,9 @@ function ns.ToastVarietyLook(announcement)
 		if headline.text and headline.icon ~= nil and headline.icon == moment.icon then
 			look.before = ns.L.TOAST_VARIETY_BEFORE:format(headline.text)
 		end
+	elseif headline.catchToast then
+		-- Core's catch toast: its text is the fish's name, with no stamp.
+		look.before = ns.L.TOAST_VARIETY_BEFORE:format(headline.text --[[@as string]])
 	elseif headline.text then
 		look.before = ""
 	end

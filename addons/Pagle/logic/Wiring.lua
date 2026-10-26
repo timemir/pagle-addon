@@ -297,7 +297,7 @@ function ns.WireMoments(host, show)
 	---@class PagleModuleHandle
 	local ModuleHandle = ns.ModuleHandle
 	--- Raises a moment (ANN-R1): see ns.RaiseMomentMethod. Raises an error for an unknown rung, or no kind or title.
-	--- A Module raises nothing for an ordinary Catch: Core's catch Nod is its (ANN-R13, ns.WireCatchNods).
+	--- A Module raises nothing for an ordinary Catch: Core's catch toast is its (ANN-R13, ns.WireCatchToasts).
 	ModuleHandle.RaiseMoment = ns.RaiseMomentMethod(host.registry, ns.moments)
 end
 
@@ -317,21 +317,21 @@ local function caughtBefore(variety, castId)
 	return ns.VarietyCaughtBefore ~= nil and ns.VarietyCaughtBefore(variety, castId)
 end
 
---- Core's catch Nod (ANN-R13) on ns.moments: at each live `CastEnded("caught", cast)` (LOG-R9), while
---- PagleDB.profile.announcements.everyCatch ("Show every catch") is on, the Cast's catch Nod (ns.CatchNodMoment) in
+--- Core's catch toast (ANN-R13) on ns.moments: at each live `CastEnded("caught", cast)` (LOG-R9), while
+--- PagleDB.profile.announcements.everyCatch ("Show every catch") is on, the Cast's catch toast (ns.CatchToastMoment) in
 --- the Angler's length unit, naming its Catch's variety from the catalogue (VAR-R26) once it was caught before this
 --- Cast (VAR-R27). Replays and rebuilds fire no CastEnded, so only live Casts get one (ANN-R4).
 ---@param host PagleHost
 ---@param itemName fun(itemID: integer): string? the client's name for an item, nil until it has cached it
-function ns.WireCatchNods(host, itemName)
+function ns.WireCatchToasts(host, itemName)
 	-- Its own owner on the bus, so no other registration replaces it.
-	host.listen("Pagle catch nod", "CastEnded", function(_, outcome, cast)
+	host.listen("Pagle catch toast", "CastEnded", function(_, outcome, cast)
 		if outcome ~= "caught" or not cast or not host.db().profile.announcements.everyCatch then
 			return
 		end
-		local moment = ns.CatchNodMoment(cast, itemName, ns.LengthUnit(), varietiesOf, caughtBefore)
+		local moment = ns.CatchToastMoment(cast, itemName, ns.LengthUnit(), varietiesOf, caughtBefore)
 		if moment then
-			ns.moments:RaiseCatchNod(moment)
+			ns.moments:RaiseCatchToast(moment)
 		end
 	end)
 end
@@ -1123,7 +1123,7 @@ function ns.WireVarietyProjection(host, Pagle)
 	end
 
 	-- The last live Cast that caught a variety for the first time, and those varieties (VAR-R27): what
-	-- ns.VarietyCaughtBefore leaves out, whether the projection folded that Cast before its Nod or will after.
+	-- ns.VarietyCaughtBefore leaves out, whether the projection folded that Cast before its catch toast or will after.
 	---@type { castId: string, ids: table<string, true> }?
 	local lastFirsts
 
@@ -1145,7 +1145,7 @@ function ns.WireVarietyProjection(host, Pagle)
 	end
 
 	--- Whether `variety` was caught before the Cast `castId` (VAR-R26, VAR-R27), in Core's projection as stored: the
-	--- catch Nod names only such a variety, so a Nod is never the first to show one. A position that Cast itself
+	--- catch toast names only such a variety, so it is never the first to show one. A position that Cast itself
 	--- caught first doesn't count, whether the projection has folded the Cast already (it is live before CastEnded,
 	--- LOG-R73) or folds it later (it was updating). Mid-rebuild it reads the last stored state (LOG-R72).
 	---@param variety PagleVariety
@@ -1742,8 +1742,8 @@ end
 --- Core's Margin notes (core/onboarding.md › Margin notes) as ns.marginNotes, with `M:ShowMarginNote` on every Module
 --- handle (ONB-R90, ONB-R92), the onboarding hooks' notes, `core.welcome` and `core.character` on Pagle's menu button
 --- (ONB-R2, ONB-R3), RestrictionChanged's hold (ONB-R51), and `/pagle dev onboarding note <id>` (ONB-R83). Each live
---- caught Cast with an Uncharted Catch is noted, so its Nod shows `core.uncharted` (ONB-R52): Core's adapter hands
---- what shows to ns.marginNotes:AnnouncementShown and :CardShown. Call it after ns.WireOnboarding.
+--- caught Cast with an Uncharted Catch is noted, so its toast or Nod shows `core.uncharted` (ONB-R52): Core's adapter
+--- hands what shows to ns.marginNotes:AnnouncementShown and :CardShown. Call it after ns.WireOnboarding.
 ---@param host PagleHost
 ---@param view PagleMarginNotesWiringView
 function ns.WireMarginNotes(host, view)

@@ -794,6 +794,76 @@ describe("Cozy mode in the lanes", function()
 	end)
 end)
 
+describe("the catch toast in the lanes (ANN-R13, #437)", function()
+	-- Core's catch toast of a Cast, as the collector hands it over.
+	local function catchToast(title)
+		return announcement("toast.low", title, { catchToast = true, text = "Oily Blackmouth", module = "Pagle" })
+	end
+
+	it("shows as a toast, playing the toast sound and counting toward the budget (ANN-R30, ANN-R70)", function()
+		local world = newWorld()
+		world.budget = { on = true, count = 2, window = 300 }
+
+		world.lanes:Push(catchToast("Catch 1"))
+		world.advance(LOW)
+		world.lanes:Push(catchToast("Catch 2"))
+		world.advance(LOW)
+
+		assert.are.same(
+			{ "show toast Catch 1", "hide toast Catch 1", "show toast Catch 2", "hide toast Catch 2" },
+			world.log
+		)
+		assert.are.same({ SOUNDS .. "driftwood\\toast_1.ogg", SOUNDS .. "driftwood\\toast_2.ogg" }, world.played)
+	end)
+
+	it("steps down to a Nod, silent and uncounted, once the budget is spent (ANN-R31)", function()
+		local world = newWorld()
+		world.budget = { on = true, count = 2, window = 300 }
+		world.lanes:Push(catchToast("Catch 1"))
+		world.advance(LOW)
+		world.lanes:Push(catchToast("Catch 2"))
+		world.advance(LOW)
+
+		world.lanes:Push(catchToast("Catch 3"))
+		world.advance(NOD)
+		world.lanes:Push(catchToast("Catch 4"))
+
+		assert.are.same({ "nod Catch 4" }, column(world))
+		assert.are.equal(2, #world.played)
+		assert.is_true(world.shown[3].announcement.headline.catchToast)
+		assert.are.same({ "toast", "toast", "nod", "nod" }, {
+			world.shown[1].form,
+			world.shown[2].form,
+			world.shown[3].form,
+			world.shown[4].form,
+		})
+	end)
+
+	it("is held through combat like any toast, and shows when the hold ends (ANN-R35, ANN-R36)", function()
+		local world = newWorld()
+		world.lanes:Hold()
+
+		world.lanes:Push(catchToast("Catch 1"))
+		assert.are.same({}, world.shown)
+		world.lanes:Release()
+		world.advance(2)
+
+		assert.are.same({ "toast Catch 1" }, column(world))
+		assert.are.equal(1, #world.played)
+	end)
+
+	it("goes nowhere in Cozy mode (ANN-R40)", function()
+		local world = newWorld()
+		world.cozy = true
+
+		world.lanes:Push(catchToast("Catch 1"))
+		world.advance(60)
+
+		assert.are.same({}, world.shown)
+		assert.are.same({}, world.played)
+	end)
+end)
+
 describe("expiry in the lanes", function()
 	-- A Cast's Announcement: `headline` with `stamps` riding on it, as logic/Moments.lua makes one.
 	local function cast(moments)

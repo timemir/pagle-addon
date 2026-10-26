@@ -288,34 +288,81 @@ describe("Core's first-moment notes", function()
 			coin
 	end
 
-	-- The catch Nod of a Cast, as Core holds it (ANN-R13).
-	local function catchNod()
-		return ns.MakeAnnouncement({ raised("Pagle", "catch", "nod", { catchNod = true, cast = "c1" }) }) --[[@as table]]
+	-- The catch toast of a Cast, as Core holds it (ANN-R13), and a Module's Nod.
+	local function catchToast()
+		return ns.MakeAnnouncement({ raised("Pagle", "catch", "toast.low", { catchToast = true, cast = "c1" }) }) --[[@as table]]
+	end
+	local function ledgerNod(kind, fields)
+		return ns.MakeAnnouncement({ raised("Ledger", kind, "nod", fields) }) --[[@as table]]
 	end
 
-	it("show core.nod beside the first catch Nod, once (ONB-R52)", function()
+	it("show core.nod beside the first Nod of any kind, once (ONB-R52)", function()
 		local notes, _, seen = margins()
 		local where, frame = targets()
 
-		notes:AnnouncementShown(catchNod(), "nod", where, false)
-		notes:AnnouncementShown(catchNod(), "nod", where, false)
+		-- Core's catch toast stepped down by the budget shows as a Nod, as does a Module's.
+		notes:AnnouncementShown(catchToast(), "nod", where, false)
+		notes:AnnouncementShown(ledgerNod("newInZone", { cast = "c2" }), "nod", where, false)
 
 		assert.are.same({ "core.nod" }, shownIds(seen))
 		assert.are.equal(ns.RedPencil(L.NOTE_NOD), seen.shown[1].text)
 		assert.are.equal(frame, seen.shown[1].target())
 	end)
 
-	it("show core.uncharted, not core.nod, beside an Uncharted Catch's Nod, a Module's or Core's (ONB-R52)", function()
+	it("show core.nod for a Module's Nod with no Cast too, but not for a toast (ONB-R52)", function()
+		local notes, _, seen = margins()
+		local where = targets()
+
+		notes:AnnouncementShown(catchToast(), "toast", where, false)
+		assert.are.same({}, shownIds(seen))
+
+		notes:AnnouncementShown(ledgerNod("windowOpened"), "nod", where, false)
+		assert.are.same({ "core.nod" }, shownIds(seen))
+	end)
+
+	it("show core.uncharted, not core.nod, beside an Uncharted Catch's Nod or toast (ONB-R52)", function()
 		local notes, state, seen = margins()
 		local where = targets()
-		local ledgers = ns.MakeAnnouncement({ raised("Ledger", "uncharted", "nod", { cast = "c2" }) }) --[[@as table]]
+		local toast = ns.MakeAnnouncement({ raised("Ledger", "uncharted", "toast.low", { cast = "c2" }) }) --[[@as table]]
 
-		notes:AnnouncementShown(ledgers, "nod", where, true)
-		notes:AnnouncementShown(catchNod(), "nod", where, true)
+		notes:AnnouncementShown(toast, "toast", where, true)
+		notes:AnnouncementShown(ledgerNod("uncharted", { cast = "c3" }), "nod", where, true)
+		notes:AnnouncementShown(catchToast(), "nod", where, true)
 
 		assert.are.same({ "core.uncharted" }, shownIds(seen))
 		assert.are.equal(ns.RedPencil(L.NOTE_UNCHARTED), seen.shown[1].text)
 		assert.is_nil(state.notesSeen["core.nod"])
+	end)
+
+	it("show core.uncharted for none of an Uncharted Cast's banners (ONB-R52)", function()
+		local notes, _, seen = margins()
+		local banner = ns.MakeAnnouncement({ raised("Ledger", "levelUp", "banner", { cast = "c2" }) }) --[[@as table]]
+
+		notes:AnnouncementShown(banner, "banner", targets(), true)
+
+		assert.are.same({}, shownIds(seen))
+	end)
+
+	it("prefix core.nod with the Nod's firstNote rather than show two notes on one frame (ONB-R53)", function()
+		local notes, state, seen = margins()
+		local first = "A Hunt opened."
+		local nod = ledgerNod("windowOpened", { firstNote = first })
+
+		notes:AnnouncementShown(nod, "nod", targets(), false)
+		notes:AnnouncementShown(nod, "nod", targets(), false)
+
+		assert.are.same({ "core.nod" }, shownIds(seen))
+		assert.are.equal(first .. " " .. ns.RedPencil(L.NOTE_NOD), seen.shown[1].text)
+		assert.is_true(state.notesSeen["ledger.windowOpened"])
+	end)
+
+	it("show a Nod's firstNote on its own once core.nod is seen (ONB-R53)", function()
+		local notes, _, seen = margins()
+		notes:AnnouncementShown(ledgerNod("newInZone"), "nod", targets(), false)
+
+		notes:AnnouncementShown(ledgerNod("windowOpened", { firstNote = "A Hunt opened." }), "nod", targets(), false)
+
+		assert.are.same({ "core.nod", "ledger.windowOpened" }, shownIds(seen))
 	end)
 
 	it("show core.toast at the coin of the first toast with Coins, and none for a Nod's Coins (ONB-R52)", function()
@@ -328,6 +375,8 @@ describe("Core's first-moment notes", function()
 			where,
 			false
 		)
+		assert.are.same({ "core.nod" }, shownIds(seen))
+		seen.shown = {}
 		notes:AnnouncementShown(
 			ns.MakeAnnouncement({ raised("Ledger", "sizeRecord", "toast", { coins = 5 }) }) --[[@as table]],
 			"toast",
@@ -397,8 +446,8 @@ describe("Core's first-moment notes", function()
 			raised("Ledger", "sizeRecord", "toast", { coins = 5, firstNote = "A record." }),
 		}) --[[@as table]]
 
-		notes:AnnouncementShown(catchNod(), "nod", where, false)
-		notes:AnnouncementShown(catchNod(), "nod", where, true)
+		notes:AnnouncementShown(catchToast(), "nod", where, false)
+		notes:AnnouncementShown(catchToast(), "nod", where, true)
 		notes:AnnouncementShown(toast, "toast", where, false)
 		notes:CardShown(
 			{ title = "Session", numbers = { casts = 3, catches = 2, gotAway = 1, seconds = 600 } },

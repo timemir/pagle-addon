@@ -275,13 +275,15 @@ end
 ---@field frame fun(): Region?
 ---@field coin fun(): Region?
 
---- An Announcement has shown (ONB-R52, ONB-R53): Core's first-moment notes for it. A Nod shows `core.uncharted` for an
---- Uncharted Catch (`uncharted`: its Cast caught an item no catalogue has), else `core.nod` for the catch Nod; the
---- first toast with Coins shows `core.toast` at its coin, prefixed by the `firstNote` of its first moment whose
---- `{module}.{kind}` note isn't seen yet, which it marks seen too; otherwise that moment's own note shows beside the
---- frame. Samples (`/pagle dev preview`'s, the Curio Shop's in their own style) and the "While you were fighting"
---- digest show none, nor does anything while a dev tour runs (MarginNotes:Show, CORE-R68). A moment held by Cozy
---- mode never shows, so it never gets here (ONB-R52).
+--- An Announcement has shown (ONB-R52, ONB-R53): Core's first-moment notes for it. `core.uncharted` shows for an
+--- Uncharted Catch (`uncharted`: its Cast caught an item no catalogue has) on its toast or its Nod, else `core.nod`
+--- for the first Nod of any kind (a toast stepped down by the budget, a Module's Nod, a login Nod). The first toast
+--- with Coins shows `core.toast` at its coin. Each of the three is prefixed by the `firstNote` of the Announcement's
+--- first moment whose `{module}.{kind}` note isn't seen yet, which it marks seen too, so one frame never carries two
+--- notes; with no Core note to show, that moment's own note shows beside the frame. Samples (`/pagle dev preview`'s,
+--- the Curio Shop's in their own style) and the "While you were fighting" digest show none, nor does anything while a
+--- dev tour runs (MarginNotes:Show, CORE-R68). A moment held by Cozy mode never shows, so it never gets here
+--- (ONB-R52).
 ---@param announcement PagleAnnouncement
 ---@param form PagleAnnouncementForm
 ---@param targets PagleAnnouncementTargets
@@ -291,13 +293,6 @@ function MarginNotes:AnnouncementShown(announcement, form, targets, uncharted)
 	if headline.kind == "devPreview" or announcement.style or announcement.fighting then
 		return
 	end
-	if form == "nod" then
-		if uncharted then
-			self:Show(ns.CoreMarginNote("core.uncharted", targets.frame))
-		elseif headline.catchNod then
-			self:Show(ns.CoreMarginNote("core.nod", targets.frame))
-		end
-	end
 	local onboarding = self.options.onboarding()
 	local first
 	for _, moment in ipairs(announcement.moments) do
@@ -306,13 +301,26 @@ function MarginNotes:AnnouncementShown(announcement, form, targets, uncharted)
 			break
 		end
 	end
-	if form == "toast" and announcement.coins > 0 and not onboarding:IsNoteSeen("core.toast") then
-		local note = ns.CoreMarginNote("core.toast", targets.coin)
+	-- Shows Core's note `id` at `target`, after `first`'s own note if there is one; whether it shows or waits.
+	local function showCore(id, target)
+		local note = ns.CoreMarginNote(id, target)
 		if first then
 			note.text = first.firstNote .. " " .. note.text
 			note.alsoSeen = { ns.MomentNoteId(first) }
 		end
-		if self:Show(note) then
+		return self:Show(note)
+	end
+	if uncharted and (form == "nod" or form == "toast") then
+		if showCore("core.uncharted", targets.frame) then
+			return
+		end
+	elseif form == "nod" then
+		if showCore("core.nod", targets.frame) then
+			return
+		end
+	end
+	if form == "toast" and announcement.coins > 0 and not onboarding:IsNoteSeen("core.toast") then
+		if showCore("core.toast", targets.coin) then
 			return
 		end
 	end
