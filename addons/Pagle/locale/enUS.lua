@@ -160,6 +160,8 @@ ns.L = {
 	-- A catch Nod naming its Catch's variety (VAR-R26): the Catch's name, the variety's name, the band and the length.
 	CATCH_NOD_VARIETY = "%s · %s · %s · %s",
 	CATCH_NOD_ITEM = "Item %d",
+	-- A toast announcing a variety (VAR-R26): the line's first half before the gem and the variety's name, the fish's.
+	TOAST_VARIETY_BEFORE = "%s ·",
 	-- The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
 	-- (ANN-R54), and the Write-up's (ANN-R61); Core's numbers (ANN-R53), time fished in MINUTES or hours and minutes;
 	-- the Coins line with its sum (ANN-R53); the close button (closing also takes Esc).

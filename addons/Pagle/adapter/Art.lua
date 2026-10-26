@@ -122,6 +122,20 @@ function ns.SetArtFont(fontString, key)
 	end
 end
 
+--- Puts a font string in the art's font `key` at `scale` of its size, never under 8: a toast's stamp row squeezed to fit
+--- beside its kicker (adapter/Announcements.lua). Its ink and shadow are SetArtFont's.
+---@param fontString FontString
+---@param key string
+---@param scale number
+function ns.SetArtFontScaled(fontString, key, scale)
+	ns.SetArtFont(fontString, key)
+	local def = FONTS[key]
+	local size = math.max(8, math.floor(def[2] * scale + 0.5))
+	if fontString:SetFont(FONT_DIR .. FACES[def[1]], size, "") == false then
+		fontString:SetFont(FALLBACK, size, "")
+	end
+end
+
 --- Puts a font string in a composed toast style's ink (ANN-R82): its face at its size (or `size`), its colour and
 --- its shadow, the first the kit gives with an offset (the client draws no blur).
 ---@param fontString FontString
@@ -503,6 +517,7 @@ end
 ---@field Ring PagleSprite
 ---@field Icon Texture
 ---@field Gloss PagleSprite
+---@field Back Texture? an opaque disc behind a variety's art, made on first use (ns.SetBezelBacking)
 
 -- The icon's width inside each medallion size.
 local INNER = { [84] = 62, [64] = 46, [34] = 26, [22] = 17 }
@@ -536,14 +551,47 @@ function ns.NewBezel(parent)
 	return bezel
 end
 
+--- Puts an opaque disc, `side` across and round, behind a medallion's icon in `color` ({ r, g, b }), made on first use:
+--- a variety's art is transparent round the fish, so without it the world shows through the medallion (#424). With no
+--- colour it hides the disc, so the item icon's medallion is as it was.
+---@param bezel PagleBezel
+---@param side number
+---@param color number[]?
+function ns.SetBezelBacking(bezel, side, color)
+	local back = bezel.Back
+	if not back then
+		if not color then
+			return
+		end
+		back = bezel:CreateTexture(nil, "ARTWORK", nil, -1)
+		back:SetPoint("CENTER")
+		local mask = bezel:CreateMaskTexture()
+		mask:SetTexture(
+			"Interface\\CharacterFrame\\TempPortraitAlphaMask",
+			"CLAMPTOBLACKADDITIVE",
+			"CLAMPTOBLACKADDITIVE"
+		)
+		mask:SetAllPoints(back)
+		back:AddMaskTexture(mask)
+		bezel.Back = back
+	end
+	if color then
+		back:SetSize(side, side)
+		back:SetColorTexture(color[1], color[2], color[3], 1)
+	end
+	back:SetShown(color ~= nil)
+end
+
 --- Sets a medallion's size (84, 64, 34 or 22), ring and icon, the icon's whole texture or `coords` of it ({ left,
---- right, top, bottom }: a variety's art cropped to the fish's head, VAR-R25).
+--- right, top, bottom }: a variety's art cropped to the fish's head, VAR-R25), with an opaque `backing` colour behind
+--- it when given (ns.SetBezelBacking).
 ---@param bezel PagleBezel
 ---@param size integer
 ---@param ring PagleBezelRing its toast style's, logic/ToastStyles.lua's ns.BezelRing
 ---@param icon integer|string
 ---@param coords number[]?
-function ns.SetBezel(bezel, size, ring, icon, coords)
+---@param backing number[]?
+function ns.SetBezel(bezel, size, ring, icon, coords, backing)
 	bezel:SetSize(size, size)
 	-- A composed style's medallion hides them (adapter/ToastLayers.lua).
 	bezel.Ring:Show()
@@ -551,6 +599,7 @@ function ns.SetBezel(bezel, size, ring, icon, coords)
 	ns.SetSprite(bezel.Ring, ring.atlas, ring.sprite)
 	ns.CenterSprite(bezel.Ring, bezel)
 	bezel.Icon:SetSize(INNER[size] - 2, INNER[size] - 2)
+	ns.SetBezelBacking(bezel, INNER[size], backing)
 	bezel.Icon:SetTexture(icon)
 	coords = coords or { 0, 1, 0, 1 }
 	bezel.Icon:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
@@ -611,18 +660,49 @@ end
 ---@param text string
 ---@param style PagleToastStyle
 ---@param page PagleToastPage?
-function ns.SetStamp(stamp, text, style, page)
+---@param scale number? of its word and its padding when the row is squeezed (1: as drawn)
+function ns.SetStamp(stamp, text, style, page, scale)
+	scale = scale or 1
 	if style.layered then
-		ns.SetLayeredStamp(stamp, text, style, page)
+		ns.SetLayeredStamp(stamp, text, style, page, scale)
 		return
 	end
 	if stamp.plate then
 		ns.ClearLayeredStamp(stamp)
 	end
+	if scale < 1 then
+		ns.SetArtFontScaled(stamp.label, "Stamp", scale)
+	else
+		ns.SetArtFont(stamp.label, "Stamp")
+	end
 	stamp.label:SetText(ns.Capitals(text))
 	ns.Ink(stamp.label, style.stampInk)
-	local width = stamp.label:GetStringWidth() + 18
+	local width = stamp.label:GetStringWidth() + 18 * scale
 	ns.SetThreeSlice(stamp.border, "Announce", style.stamp, width, 8, "ARTWORK")
 	stamp:SetSize(width, 26)
 	stamp:Show()
+end
+
+--- Inks a rubber stamp ns.SetStamp has set in `color` (a variety's rarity ink, VAR-R26, ANN-R80): its word and its
+--- border or plate, greyed first so the colour shows true. With none it puts the border and plate back as drawn, the
+--- word's ink being SetStamp's own each time.
+---@param stamp PagleStamp
+---@param color number[]?
+function ns.TintStamp(stamp, color)
+	local border = stamp.border
+	local regions = { border.left, border.middle, border.right }
+	for _, slice in ipairs(stamp.plate or {}) do
+		regions[#regions + 1] = slice
+	end
+	for _, region in ipairs(regions) do
+		region:SetDesaturated(color ~= nil)
+		if color then
+			region:SetVertexColor(color[1], color[2], color[3])
+		else
+			region:SetVertexColor(1, 1, 1)
+		end
+	end
+	if color then
+		stamp.label:SetTextColor(color[1], color[2], color[3])
+	end
 end

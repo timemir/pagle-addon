@@ -177,9 +177,11 @@ ns.L = {
 	CATCHES_OTHER = "%s Catches",
 	SIZE_RECORD_TITLE = "Size record",
 	SIZE_RECORD_STAMP = "Record",
-	-- A variety's first Catch (VAR-R25): a Common or Uncommon one's headline with the variety's name (lore, VAR-R11),
-	-- and its stamp riding on the Cast's toast; a Rare one's and an Epic one's titles, the name as their text.
-	NEW_VARIETY_TITLE = "New variety · %s",
+	-- A size record's ruler label when Core names no Size band for the Catch (ANN-R22).
+	RULER_LENGTH = "length",
+	-- A variety's first Catch (VAR-R25): a Common or Uncommon one's headline with the variety's name (lore, VAR-R11) as
+	-- its text, and its stamp riding on the Cast's toast; a Rare one's and an Epic one's titles, the name as their text.
+	NEW_VARIETY_TITLE = "New variety",
 	NEW_VARIETY_STAMP = "New variety",
 	RARE_VARIETY_TITLE = "Rare variety",
 	EPIC_VARIETY_TITLE = "Epic variety",

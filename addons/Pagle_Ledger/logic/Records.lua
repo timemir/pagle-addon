@@ -33,6 +33,15 @@ function ns.SizeText(size, bands, formatLength)
 	return ns.L.SIZE_TEXT:format(bands[size.band].name, formatLength(size.length))
 end
 
+--- A Catch's or record's Size band's name (Pagle.SIZE_BANDS), "Tiddler" to "Monster": the label of a size record's
+--- ruler (ANN-R22, LED-R97). Nil without a size.
+---@param size { length: integer, band: integer }? a Catch's `size` or a LedgerRecord
+---@param bands { key: string, name: string }[]
+---@return string?
+function ns.BandName(size, bands)
+	return size and bands[size.band].name or nil
+end
+
 --- A copy of a Catch's Simulated Size (LOG-R65), for an achievement's size text (LED-R81): records are shared
 --- (CORE-R18). Nil without one.
 ---@param size PagleSize?
