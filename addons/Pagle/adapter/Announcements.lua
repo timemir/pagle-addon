@@ -792,7 +792,7 @@ end
 ---@param headline { text: string? }
 ---@param fonts { what: PagleWordsFont, name: PagleWordsFont }
 ---@param top number
----@param fighting boolean?
+---@param fighting PagleRaisedMoment[]?
 ---@return number
 local function blockTop(page, headline, fonts, top, fighting)
 	if page.ruled or fighting then
@@ -814,7 +814,7 @@ local function readyToastGleam(frame, look, page)
 	local gleam = frame.gleam --[[@as PagleSprite]]
 	gleam:SetAlpha(0)
 	frame.gleams = look ~= nil and look.gleam
-	if frame.gleams then
+	if look and look.gleam then
 		local from = page.bx + page.bezel - GLEAM_WIDTH / 2
 		gleam:SetSize(GLEAM_WIDTH, page.h)
 		gleam:SetVertexColor(look.color[1], look.color[2], look.color[3])

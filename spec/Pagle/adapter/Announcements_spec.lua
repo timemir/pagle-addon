@@ -1599,7 +1599,8 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 		note(toast.ruler.record, toast.recordPivot)
 		assert.are.equal(2, shown)
 		table.sort(lefts)
-		assert.is_true(
+		assert.are.equal(
+			true,
 			lefts[1] >= kickerRight,
 			("the row starts at %.1f, the kicker ends at %.1f"):format(lefts[1], kickerRight)
 		)
