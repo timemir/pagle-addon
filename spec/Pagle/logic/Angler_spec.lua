@@ -127,7 +127,10 @@ describe("build entries", function()
 		assert.is_nil(angler:LogBuild(70338, "1.60.1", T))
 		assert.is_table(angler:LogBuild(70412, "1.60.2", T + 1))
 
-		assert.are.same({ "B1|1|1791731000|0|70338|1.60.1|pagle-2026a", "B1|1|1791731701|0|70412|1.60.2|pagle-2026a" }, catchLog.data.entries)
+		assert.are.same(
+			{ "B1|1|1791731000|0|70338|1.60.1|pagle-2026a", "B1|1|1791731701|0|70412|1.60.2|pagle-2026a" },
+			catchLog.data.entries
+		)
 		assert.are.same({ logId = LOG_ID, build = 70412, rules = "pagle-2026a" }, global.lastBuild)
 	end)
 
