@@ -26,7 +26,7 @@ end
 -- The document a Paste string holds, read back with the vendored LibDeflate (UPL-R50).
 local function unpaste(loaded, paste)
 	local LibDeflate = loaded.env.LibStub("LibDeflate")
-	assert.are.equal("!PGL1!", paste:sub(1, 6))
+	assert.are.equal("!PGL2!", paste:sub(1, 6))
 	assert(paste:sub(7):match("^[a-zA-Z0-9()]+$"), "one unbroken run of the print alphabet")
 	return assert(LibDeflate:DecompressDeflate(assert(LibDeflate:DecodeForPrint(paste:sub(7)))))
 end
@@ -166,6 +166,49 @@ describe("/pagle export and Pagle.OpenPasteExport (PST-R50, PST-R51, CORE-R61)",
 end)
 
 describe("The export window's parts (PST-R22, PST-R32, PST-R33)", function()
+	it("shows a cheap single-part export immediately while preparation stays within its frame budget", function()
+		local loaded = withCasts(130)
+		pagle(loaded, "export")
+		local frame = assert(window(loaded))
+		assert.is_true(frame.paste:IsShown())
+		assert.are.equal(#loaded.ns.catchLog.data.entries, read(unpaste(loaded, frame.paste:GetText())).count)
+	end)
+
+	it("prepares long prefixes across frames and retains the captured export while fishing continues", function()
+		local loaded = withCasts(130)
+		local profile = 0
+		loaded.env.debugprofilestop = function()
+			profile = profile + 0.125
+			return profile
+		end
+		local log = loaded.ns.catchLog.data
+		local total = #log.entries
+		marks(loaded)[LOG_ID] = total - 1
+		pagle(loaded, "export")
+		local frame = assert(window(loaded))
+		assert.is_true(frame.message:IsShown())
+		assert.are.equal("Preparing your Paste string…", frame.message:GetText())
+		assert.is_false(frame.paste:IsShown())
+		loaded.ns.catchLog.data.entries[total + 1] = "S1|1|" .. SERVER_TIME .. "|99|150|150|0"
+		loaded.ns.catchLog.data.characters[1].name = "Changed"
+		loaded.client.advance(5)
+		for _ = 1, 20 do
+			loaded.client.update(0.016)
+			if frame.paste:IsShown() then
+				break
+			end
+		end
+		local raw = unpaste(loaded, frame.paste:GetText())
+		local document = read(raw)
+		assert.are.equal(total, document.total)
+		assert.are.equal(total, document.from)
+		assert.are.equal(1, document.count)
+		assert.is_nil(raw:find("Changed", 1, true))
+		assert.are.equal(SERVER_TIME, document.asOf)
+		copy(loaded)
+		assert.are.equal(total, marks(loaded)[LOG_ID])
+	end)
+
 	it("shows Part 1 of k, pages between the parts, and every part shares the as-of and the total", function()
 		local loaded = withCasts(3)
 		loaded.ns.PASTE_PART_ENTRIES = 2
@@ -271,7 +314,7 @@ describe("The last exported seq (PST-R21, PST-R40)", function()
 		assert.are.equal(total + 1, document.from)
 		assert.are.equal(1, document.count)
 		assert.are.equal(loaded.ns.catchLog.data.entries[total + 1], document.entries[1])
-		assert(document.anchor:match("^Player%-%d+%-%x+%-%d+%-%d+$"), "anchored at the entry before")
+		assert(document.anchor:match("^[0-9a-f]+$") and #document.anchor == 64, "anchored to prefix content")
 	end)
 
 	it(
@@ -393,7 +436,7 @@ describe("/pagle dev pastetest (PST-R60)", function()
 		)
 
 		frame.choices.everything:Click()
-		assert.are.equal("!PGL1!", frame.paste:GetText():sub(1, 6), "a choice makes a real export again")
+		assert.are.equal("!PGL2!", frame.paste:GetText():sub(1, 6), "a choice makes a real export again")
 	end)
 
 	it("prints its usage without a size in range, and nothing with dev mode off", function()

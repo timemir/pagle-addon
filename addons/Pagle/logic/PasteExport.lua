@@ -16,6 +16,7 @@ ns.PASTE_CHOICES = { "new", "everything" }
 ---@field message string?          PST-R15's or PST-R21's line, shown instead of a string
 ---@field test string?             the copy test's string (PST-R60), shown as the one part
 ---@field testKB integer?          its size, in KB
+---@field pending thread?          client preparation, resumed between frames
 
 --- What the window shows for `choice` over `log` (a PagleLog table) now (PST-R20, PST-R21): an export from 1 for
 --- "everything", or from one after the log's last exported seq in `marks` (PagleDB.global.pasteExports) for "new",
@@ -25,8 +26,9 @@ ns.PASTE_CHOICES = { "new", "everything" }
 ---@param marks table? PagleDB.global.pasteExports
 ---@param choice PaglePasteChoice
 ---@param asOf integer GetServerTime() now
+---@param pause fun()?
 ---@return PaglePasteView
-function ns.PasteView(log, marks, choice, asOf)
+function ns.PasteView(log, marks, choice, asOf, pause)
 	local L = ns.L
 	local from = 1
 	if choice == "new" then
@@ -35,7 +37,7 @@ function ns.PasteView(log, marks, choice, asOf)
 			return { choice = choice, message = L.PASTE_NOTHING_NEW }
 		end
 	end
-	local export = ns.PasteExport(log, from, asOf)
+	local export = ns.PasteExport(log, from, asOf, nil, pause)
 	if not export then
 		return { choice = choice, message = L.PASTE_CANT_EXPORT }
 	end
