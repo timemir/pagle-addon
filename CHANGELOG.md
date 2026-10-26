@@ -11,6 +11,7 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 - Every Cast you make is written into one Catch log, shared by every character on your account. Everything the Modules show is read from it.
 - Open any of it from Pagle's entry in the addon compartment by the minimap, or with `/pagle`. Pagle's settings live in the game's own Settings panel, where its search finds every option.
 - When you earn something, Pagle says so in the moment: a toast writes the fish's name out in ink while its stamps come down, a banner drops its seal for a new Angler Level, and a Legend gets the whole screen. A Session that earned something ends with a summary card.
+- Every catch gets a toast: its size band and length over the fish's name, with a colour you've caught before drawn on it. Past your Interruption budget (40 every 5 minutes, which you can change) it steps down to a quiet one-line Nod, and a bigger moment for the same catch shows instead. "Show every catch" turns it off.
 - The Interruption budget keeps announcements from talking over your fishing, Cozy mode holds them all for the end of the Session, and the Animations setting stills the motion if you'd rather it kept still.
 - Pagle Coins are paid for progress and things achieved, never per Catch: a level-up pays 40 Coins and a Prestige 1,500. Spend them in the Curio Shop on looks: toast styles, sound sets, bindings and tracker frames. The stock never rotates, and nothing in it buys a title or a star.
 - The Curio Shop prices run in six tiers, from 250 Coins to 25,000. They are paced so that an angler fishing an hour and a half a day can afford a first look within the first hour, a quarter of the stock in about 40 hours of fishing and the whole of tiers 1 to 5 in about 720.
@@ -28,6 +29,7 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 - Legends, the named catches you won't land on an ordinary day, arrive with a splash and a title to sign the Journal with.
 - Your longest of each Species is kept, from Tiddler to Monster. A size record's toast names the fish and writes its size band beside the ruler, so nothing is cut off.
 - A toast for a fish's new colour shows the colour in its medallion, in place of the fish's icon, with its name after a small gem. The stamp, the ring and the gem take the colour's rarity (white, green, blue, purple), and a Rare or Epic one gleams once. This holds whether the toast is the colour's own, a size record's or a New Species'.
+- A fish new to a zone, a star, a trophy family's stars and an Uncharted catch show as toasts now, not Nods, so the more special catch is never smaller than a plain one.
 - Search the Journal for a fish or a water. `/pagle journal` opens it.
 
 ### Hunts

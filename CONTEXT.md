@@ -193,8 +193,12 @@ Pagle telling the player, in the moment, about something they just earned. One C
 _Avoid_: notification, alert, popup
 
 **Nod**:
-The quietest Announcement: one silent line, for minor moments, toasts stepped down by the Interruption budget, and the **catch Nod** Core shows for an ordinary Catch ("Mud Snapper · Decent · 34.2 cm") when nothing bigger came of it.
+The quietest Announcement: one silent line, for minor moments and for toasts stepped down by the Interruption budget (a **catch toast** that steps down reads "Mud Snapper · Decent · 34.2 cm").
 _Avoid_: mini toast, whisper
+
+**Catch toast**:
+The toast Core shows for an ordinary Catch when nothing bigger came of it: the size band and length ("DECENT · 34.2 CM") over the fish's name, with the toast sound. It counts toward the Interruption budget, and steps down to a Nod when the budget is spent. The player can switch it off with Show every catch.
+_Avoid_: catch Nod
 
 **Interruption budget**:
 The player's limit on how often Pagle may interrupt within a stretch of fishing. When it is spent, low-priority toasts step down to Nods; everything else still gets through. The player can switch it off.
