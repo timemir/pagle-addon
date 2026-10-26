@@ -166,8 +166,21 @@ describe("/pagle export and Pagle.OpenPasteExport (PST-R50, PST-R51, CORE-R61)",
 end)
 
 describe("The export window's parts (PST-R22, PST-R32, PST-R33)", function()
+	it("shows a cheap single-part export immediately while preparation stays within its frame budget", function()
+		local loaded = withCasts(130)
+		pagle(loaded, "export")
+		local frame = assert(window(loaded))
+		assert.is_true(frame.paste:IsShown())
+		assert.are.equal(#loaded.ns.catchLog.data.entries, read(unpaste(loaded, frame.paste:GetText())).count)
+	end)
+
 	it("prepares long prefixes across frames and retains the captured export while fishing continues", function()
 		local loaded = withCasts(130)
+		local profile = 0
+		loaded.env.debugprofilestop = function()
+			profile = profile + 0.125
+			return profile
+		end
 		local log = loaded.ns.catchLog.data
 		local total = #log.entries
 		marks(loaded)[LOG_ID] = total - 1

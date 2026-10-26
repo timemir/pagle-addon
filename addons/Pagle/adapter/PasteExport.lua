@@ -56,12 +56,12 @@ ns.pasteExportWindow = nil
 ---@param choice PaglePasteChoice
 ---@return PaglePasteView
 local function viewFor(choice)
-	local asOf, records = GetServerTime(), 0
+	local asOf, deadline = GetServerTime(), debugprofilestop() + 4
 	local pending = coroutine.create(function()
 		return ns.PasteView(ns.catchLog.data, ns.db.global.pasteExports, choice, asOf, function()
-			records = records + 1
-			if records % 32 == 0 then
+			if debugprofilestop() >= deadline then
 				coroutine.yield()
+				deadline = debugprofilestop() + 4
 			end
 		end)
 	end)
