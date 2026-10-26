@@ -276,6 +276,7 @@ ns.L = {
 	PASTE_CLOSE = "Close",
 	PASTE_NOTHING_NEW = "Nothing new since your last export.",
 	PASTE_CANT_EXPORT = "Pagle can't export this Catch log.",
+	PASTE_PREPARING = "Preparing your Paste string…",
 	PASTE_AFTER_COMBAT = "Pagle: the export window opens after combat.",
 	PASTE_TEST_LINE = "Copy test: %d KB",
 	-- The Settings root's Pagle website section (SET-R10 row 12): the export button's row label, caption and tooltip.
