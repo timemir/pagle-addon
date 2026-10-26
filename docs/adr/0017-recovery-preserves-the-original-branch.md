@@ -1,0 +1,7 @@
+# Recovery restores Accepted history while preserving the original branch
+
+A backup or edited local file can disagree with history already accepted by the backend. Recovery preserves the complete original local branch and restores the exact server-held prefix before ordinary addon initialization. This is the explicit active-log restoration exception to [ADR 0003](0003-catch-log-entries-are-tagged-strings.md); no original record is silently rewritten to fit.
+
+The package is signed by the backend and bound to the entire local snapshot, target log, checkpoint, and application identifier. Core rejects a changed snapshot, applies atomically without regenerating entry identities, and rebuilds every derived Core and Module view, extending [ADR 0004](0004-module-state-is-a-stored-projection.md). A stable completion marker prevents repeated application after later fishing. Compatible observations may survive with original IDs; invalid or incompatible choices remain staged in the preserved branch.
+
+Requiring a Companion or a client-side signature would not prove that a Catch happened. Manual Recovery remains available on Mac, and the Companion stages only a data addon without editing live SavedVariables. Package authentication establishes origin only. These trade-offs replace silent local-wins replacement with reviewable restoration. Source: [backend #302](https://github.com/timemir/pagle-backend/issues/302).
