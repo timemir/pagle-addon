@@ -68,6 +68,7 @@ describe("Pagle_Ledger with Core", function()
 			"/pagle shop: open or close the Curio Shop",
 			"/pagle report: open the Field report, to help chart the waters",
 			"/pagle export: copy your Catch log as a Paste string for the Pagle website",
+			"/pagle recovery: export a Recovery snapshot or inspect preserved records",
 			"/pagle guide: open the Field guide; /pagle guide notes shows the margin notes again",
 			"/pagle help: list these commands",
 			"/pagle journal: Open or close the Fish Journal",
@@ -224,7 +225,7 @@ describe("Pagle_Ledger with FakePagle", function()
 			local expected = labels(plain.menu())
 			table.insert(expected, 1, "Fish Journal")
 			assert.are.same(expected, labels(fake.menu()))
-			assert.are.same({ "/pagle journal: Open or close the Fish Journal" }, { unpack(fake.printed, 8) })
+			assert.are.same({ "/pagle journal: Open or close the Fish Journal" }, { unpack(fake.printed, 9) })
 			for _, topic in ipairs({ "fishing", "announcements", "trackers", "looks" }) do
 				assert.is_nil(fake.settingsPage(topic))
 			end

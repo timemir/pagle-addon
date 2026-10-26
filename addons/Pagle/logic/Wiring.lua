@@ -72,7 +72,10 @@ function ns.WireProjections(host)
 		logId = function()
 			return host.catchLog().data.logId
 		end,
-		fingerprint = host.fingerprint,
+		fingerprint = function()
+			local generation = host.db().global.recoveryGeneration
+			return generation and tostring(host.fingerprint()) .. "|recovery:" .. generation or host.fingerprint()
+		end,
 		clock = host.clock,
 		nextFrame = host.nextFrame,
 		call = host.call,

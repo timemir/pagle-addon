@@ -28,6 +28,10 @@ ns.coreSubcommands = ns.CoreSubcommands(Pagle)
 ---@param line string what the player typed after /pagle
 local function run(line)
 	local name, rest = ns.ParseSlash(line)
+	if ns.recoveryBlocked and name ~= "recovery" then
+		print("Pagle is paused for Recovery. Use /pagle recovery export, or remove Pagle_Recovery and reload.")
+		return
+	end
 	if name == "trailer" then
 		ns.RunTrailer(rest)
 		return
