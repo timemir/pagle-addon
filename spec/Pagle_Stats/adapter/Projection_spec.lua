@@ -193,7 +193,14 @@ describe("Stats' projection", function()
 				good = "core.toaststyle.ripple",
 				price = 1,
 			})
-			fake.catchLog:Append({ kind = "build", char = 1, time = T0 + 30, build = 70338, version = "1.60.1" })
+			fake.catchLog:Append({
+				kind = "build",
+				char = 1,
+				time = T0 + 30,
+				build = 70338,
+				version = "1.60.1",
+				rules = "pagle-2026a",
+			})
 			local reference = built(withHistory({ cast({ time = T0, rank = 150, mod = 25, items = { MACKEREL } }) }))
 
 			assert.are.same(reference.State(), built(fake).State())

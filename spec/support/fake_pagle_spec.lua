@@ -826,8 +826,8 @@ describe("FakePagle", function()
 				char = 1,
 				time = SERVER_TIME - 600,
 				module = "TackleBoard",
-				recordKind = "notice",
-				payload = "a",
+				recordKind = "day",
+				payload = "1;1",
 			})
 			board:NewProjection({
 				db = {},
@@ -851,7 +851,7 @@ describe("FakePagle", function()
 			fake.login()
 			fake.enterWorld()
 
-			local record = board:AppendRecord("notice", "b")
+			local record = board:AppendRecord("day", "2;1")
 
 			assert.are.same({ "none", record.id }, { fired[1].entry, fired[2].entry.id })
 			assert.are.same({ 100, 200 }, { fired[1].total, fired[2].total })
@@ -1794,6 +1794,7 @@ describe("FakePagle", function()
 					"/pagle shop: open or close the Curio Shop",
 					"/pagle report: open the Field report, to help chart the waters",
 					"/pagle export: copy your Catch log as a Paste string for the Pagle website",
+					"/pagle recovery: export a Recovery snapshot or inspect preserved records",
 					"/pagle guide: open the Field guide; /pagle guide notes shows the margin notes again",
 					"/pagle help: list these commands",
 					"/pagle qol: cycle Input",
@@ -1841,7 +1842,7 @@ describe("FakePagle", function()
 			fake.slash("help")
 
 			assert.are.same({ "Pagle: QoL's /pagle Report is skipped: Pagle reserves report" }, fake.reported)
-			assert.are.equal("/pagle qol: cycle Input", fake.printed[8])
+			assert.are.equal("/pagle qol: cycle Input", fake.printed[9])
 		end)
 	end)
 
@@ -1900,7 +1901,14 @@ describe("FakePagle", function()
 		local fake = newFakePagle()
 		fake.catchLog.data.characters[1] = { guid = PLAYER_GUID }
 		fake.catchLog:Append({ kind = "skill", char = 1, time = 1791731680, rank = 86, max = 150, mod = 0 })
-		fake.catchLog:Append({ kind = "build", char = 1, time = 1791731681, build = 70338, version = "1.60.1" })
+		fake.catchLog:Append({
+			kind = "build",
+			char = 1,
+			time = 1791731681,
+			build = 70338,
+			version = "1.60.1",
+			rules = "pagle-2026a",
+		})
 
 		local records = {}
 		for record in fake.Pagle.IterateCatches(1) do
@@ -2044,14 +2052,14 @@ describe("FakePagle", function()
 				fake.login()
 				fake.enterWorld()
 
-				local record = board:AppendRecord("issue", "n|haul;30")
+				local record = board:AppendRecord("issue", "n;haul;0;1;1;30")
 
-				assert.are.same({ "A1|1|1791731700|0|TackleBoard|issue|n|haul;30" }, fake.catchLog.data.entries)
+				assert.are.same({ "A1|1|1791731700|0|TackleBoard|issue|n;haul;0;1;1;30" }, fake.catchLog.data.entries)
 				assert.are.same({ "done", "1 issue live" }, boardSeen)
 				assert.are.same({ "done" }, ledgerSeen)
 				assert.are.equal(1, ledgerDb.lastSeq)
 				assert.are.same(
-					{ 1, PLAYER_GUID .. "-1791731700-0", "module", "TackleBoard", "issue", "n|haul;30" },
+					{ 1, PLAYER_GUID .. "-1791731700-0", "module", "TackleBoard", "issue", "n;haul;0;1;1;30" },
 					{ record.seq, record.id, record.kind, record.module, record.recordKind, record.payload }
 				)
 				assert.has_error(function()
@@ -2066,8 +2074,8 @@ describe("FakePagle", function()
 			local ledger = module(fake, "Ledger", {})
 			fake.login()
 			fake.enterWorld()
-			board:AppendRecord("start", "")
-			ledger:AppendRecord("note", "x")
+			board:AppendRecord("start", "1;1")
+			ledger:AppendRecord("title", "")
 
 			local function walk(iterate)
 				local seqs = {}
@@ -2086,7 +2094,7 @@ describe("FakePagle", function()
 			local board, seen = module(fake, "TackleBoard", {})
 			fake.login()
 
-			board:AppendRecord("start", "")
+			board:AppendRecord("start", "1;1")
 			fake.enterWorld()
 
 			assert.are.same({ "done", "1 start live" }, seen)

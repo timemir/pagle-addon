@@ -556,6 +556,7 @@ ns.L = {
 		{ name = "shop", help = "open or close the Curio Shop" },
 		{ name = "report", help = "open the Field report, to help chart the waters" },
 		{ name = "export", help = "copy your Catch log as a Paste string for the Pagle website" },
+		{ name = "recovery", help = "export a Recovery snapshot or inspect preserved records" },
 		{ name = "guide", help = "open the Field guide; /pagle guide notes shows the margin notes again" },
 		{ name = "help", help = "list these commands" },
 	},

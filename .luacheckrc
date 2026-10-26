@@ -451,3 +451,5 @@ local helperGlobals = {
 }
 files["spec/**"] = { std = "lua51+busted", read_globals = helperGlobals }
 files["spec/support/*.lua"] = { globals = helperGlobals }
+-- Backend-generated Recovery data fixture sets exactly the data addon's one global.
+files["spec/Pagle/fixtures/Recovery.lua"] = { globals = { "PagleRecoveryData" } }

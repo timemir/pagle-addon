@@ -15,12 +15,15 @@ describe("Pagle.toc", function()
 		assert.are.equal("1.0.2-release", LibDeflate._VERSION)
 	end)
 
-	it("lists PagleLog and PagleDB as account-wide SavedVariables, and nothing per character (CORE-R5)", function()
-		local fields = assert(loaded.client.addons.Pagle.metadata)
+	it(
+		"lists PagleLog, PagleDB and the Recovery archive as account-wide SavedVariables, and nothing per character (CORE-R5)",
+		function()
+			local fields = assert(loaded.client.addons.Pagle.metadata)
 
-		assert.are.equal("PagleLog, PagleDB", fields.SavedVariables)
-		assert.is_nil(fields.SavedVariablesPerCharacter)
-	end)
+			assert.are.equal("PagleLog, PagleDB, PagleRecovery", fields.SavedVariables)
+			assert.is_nil(fields.SavedVariablesPerCharacter)
+		end
+	)
 
 	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
 		local at = {}

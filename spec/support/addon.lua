@@ -94,7 +94,7 @@ local readToc = dofile("spec/support/toc.lua")
 ---@param name string The addon's folder under addons/, which is also its TOC's name.
 ---@param globals table<string, any>? Globals the client defines for this load, e.g. WOW_PROJECT_ID. They replace
 --- the fake client's stubs of the same name, e.g. InCombatLockdown for a load in combat.
----@param options { holdAddonLoaded: boolean?, dependencyLibsOnly: boolean?, replace: table<string, string>?, also: string[]?, beforeLoaded: table<string, fun(ns: table)>?, addonRoot: string? }?
+---@param options { holdAddonLoaded: boolean?, dependencyLibsOnly: boolean?, replace: table<string, string>?, also: string[]?, beforeLoaded: table<string, fun(ns: table, client: FakeClient, env: table)>?, addonRoot: string? }?
 --- addonRoot: folder containing the addon folders, for exercising the actual unpacked release.
 --- holdAddonLoaded: don't fire ADDON_LOADED(name); the spec fires it with loaded.client.fire, e.g. after adding a
 --- listener that must be there before it. dependencyLibsOnly: load only the libs/ files of each dependency, for a
@@ -184,7 +184,7 @@ function loadAddon(name, globals, options)
 		end
 		local before = options.beforeLoaded and options.beforeLoaded[addon]
 		if before then
-			before(ns)
+			before(ns, client, env)
 		end
 		if isDependency or not options.holdAddonLoaded then
 			client.fire("ADDON_LOADED", addon)

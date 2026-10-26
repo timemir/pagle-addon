@@ -13,6 +13,7 @@ local ns = select(2, ...)
 ---@field raceID integer
 ---@field faction string
 ---@field realmID integer
+---@field selfFound? boolean     -- preserved by full Recovery snapshots, including nil versus false
 ---@field hardcore? boolean      -- nil when the client has no C_GameRules.IsHardcoreActive
 ---@field firstSeen integer      -- server time
 ---@field lastSeen integer       -- server time
