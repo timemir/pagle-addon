@@ -134,7 +134,7 @@ describe("ns.AddWalletProjection", function()
 			world.enterWorld()
 
 			assert.are.same({ spent = 550, purchased = { [CRIMSON] = true, [SILVER] = true } }, world.db.projection)
-			assert.are.equal(1, world.db.rulesVersion) -- wallet-and-shop.md › Data: rules version 1
+			assert.are.equal(2, world.db.rulesVersion) -- wallet-and-shop.md › Data: rules version 2 (SHOP-R53)
 			assert.are.same({ true, true }, { world.goods:IsOwned(CRIMSON), world.goods:IsOwned(SILVER) })
 			assert.are.same({ balance = 50, held = false, earned = { Ledger = 600 } }, world.wallet:Get())
 		end
@@ -342,136 +342,228 @@ end)
 
 describe("The wallet projection's Curio crates", function()
 	local ADA = "Player-4618-0A1B2C3D" -- savedLog's character 1
-	local FOIL, STORM, SHAGREEN = "core.toaststyle.foil", "core.toaststyle.storm", "core.binding.shagreenbone"
-	local ARCANE = "core.toaststyle.arcane"
+	local FOIL = "core.toaststyle.foil"
+	local PRICE = 1500
+	local realHash, realPool = ns.SizeHash, ns.CRATE_POOL
 
 	-- A crate's U1 at server time `time` (SHOP-R50).
-	local function crateEntry(time)
-		return purchaseEntry(time, "core.crate", 2000)
+	local function crateEntry(time, price)
+		return purchaseEntry(time, "core.crate", price or PRICE)
 	end
 
-	-- The goods crates bought at `times` give, worked out with the draw over each one's entry ID (SHOP-R51).
-	local function drawn(times)
-		local owned, given, dry = {}, {}, 0
-		for i, time in ipairs(times) do
-			local good, crateOnly = ns.CrateDraw(("%s-%d-0"):format(ADA, time), owned, dry, time)
-			given[i] = good
-			if good then
-				owned[good] = true
-				dry = crateOnly and 0 or dry + 1
+	-- The crates' entry IDs hash as `tierHash[time]` says, and their good's hash to 0, in place of LOG-R66's.
+	local function stubHashes(tierHash)
+		ns.SizeHash = function(id)
+			if id:sub(-5) == "/good" then
+				return 0
 			end
+			return assert(tierHash[tonumber(id:match("%-(%d+)%-%d+$"))], "no hash for " .. id)
 		end
-		return given
 	end
 
-	-- `list` as a sorted copy.
-	local function sorted(list)
-		local copy = { unpack(list) }
-		table.sort(copy)
-		return copy
+	-- The pool of the stubbed crates: Crimson in tier 1, Silver in tier 2, Prize Foil crate only; tiers 3 to 6 empty.
+	local function stubPool()
+		ns.CRATE_POOL = {
+			{ id = CRIMSON, tier = 1, kind = "crest" },
+			{ id = SILVER, tier = 2, kind = "crest" },
+			{ id = FOIL, tier = "curio", kind = "toaststyle" },
+		}
 	end
 
-	local TIMES = { SERVER_TIME - 9000, SERVER_TIME - 8000, SERVER_TIME - 7000 }
+	-- The first hash of tier 2, 4 and Curio (SHOP-R51's thresholds), and tier 1's: 0.
+	local TIER_1, TIER_2, TIER_4, CURIO = 0, 1717986919, 3521873183, 4294967295
+
+	after_each(function()
+		ns.SizeHash, ns.CRATE_POOL = realHash, realPool
+	end)
+
+	-- `n` crates at server times SERVER_TIME - 90000 + 1 … n, each of tier 1 unless `tiers` says (by index).
+	local function crates(n, tiers, price)
+		local entries, hash = {}, {}
+		for i = 1, n do
+			local time = SERVER_TIME - 90000 + i
+			entries[i] = crateEntry(time, price)
+			hash[time] = (tiers and tiers[i]) or TIER_1
+		end
+		stubHashes(hash)
+		return entries
+	end
 
 	it(
-		"opens each crate from its U1's entry ID: every crate counts its 2,000, three crates give the three pool goods,"
-			.. " never one twice, each owned (SHOP-R11, SHOP-R50, SHOP-R51)",
+		"opens each crate from its U1's entry ID: a good, or its payback, in log order; every crate spends its price less"
+			.. " its payback, and a crate is never a good purchased (SHOP-R11, SHOP-R50, SHOP-R51)",
 		function()
-			local world =
-				newWorld({ crateEntry(TIMES[1]), castEntry(TIMES[1] + 1), crateEntry(TIMES[2]), crateEntry(TIMES[3]) })
-			world.wallet:Report("Ledger", 7000)
+			stubPool()
+			-- Crimson; tier 1 again, with it owned: pays 250; Silver; tier 2 again: pays 400; tier 4, no goods in it: pays
+			-- 1,500; Prize Foil; Curio again: pays 1,500.
+			local world = newWorld(crates(7, { TIER_1, TIER_1, TIER_2, TIER_2, TIER_4, CURIO, CURIO }))
+			world.wallet:Report("Ledger", 10000)
 
 			world.enterWorld()
 
 			local state = world.db.projection
-			assert.are.equal(6000, state.spent)
-			assert.are.same({}, state.purchased, "a crate is never a good purchased")
-			assert.are.same(drawn(TIMES), state.crates)
-			assert.are.same({ SHAGREEN, FOIL, STORM }, sorted(state.crates))
-			assert.are.same({ true, true }, { world.goods:IsOwned(FOIL), world.goods:IsOwned(STORM) })
-			assert(world.goods:IsOwned(SHAGREEN), "owned by the log, registered or not")
-			assert.are.equal(1000, world.wallet:Get().balance)
+			assert.are.same({ CRIMSON, 250, SILVER, 400, 1500, FOIL, 1500 }, state.crates)
+			assert.are.equal(7 * 1500 - (250 + 400 + 1500 + 1500), state.spent)
+			assert.are.same({}, state.purchased)
+			assert.are.same({ true, true, true }, {
+				world.goods:IsOwned(CRIMSON),
+				world.goods:IsOwned(SILVER),
+				world.goods:IsOwned(FOIL), -- by the log, registered or not
+			})
+			assert.are.equal(10000 - 6850, world.wallet:Get().balance)
 			local snapshot = world.snapshots[#world.snapshots]
 			assert.are.same(state.crates, snapshot.crates)
-			assert.are.same({ [FOIL] = true, [STORM] = true, [SHAGREEN] = true }, snapshot.owned)
+			assert.are.same({ [CRIMSON] = true, [SILVER] = true, [FOIL] = true }, snapshot.owned)
+			assert.are.equal(1, snapshot.dry)
 		end
 	)
 
-	it("counts a crate bought with nothing left to give, giving nothing (SHOP-R11, SHOP-R50)", function()
-		local world = newWorld({
-			crateEntry(TIMES[1]),
-			crateEntry(TIMES[2]),
-			crateEntry(TIMES[3]),
-			crateEntry(SERVER_TIME - 7000),
-			crateEntry(SERVER_TIME - 6000), -- only by a race: Buy is gone once the crate is empty (SHOP-R54)
-		})
+	it("counts a payback as the entry's price allows, never more than it cost (SHOP-R11, SHOP-R51)", function()
+		stubPool()
+		-- tier 4 pays min(3,000, 300) at a crate recorded at 300; tier 1 min(250, 200) at one at 200
+		local entries = {
+			crateEntry(SERVER_TIME - 9000, 300),
+			crateEntry(SERVER_TIME - 8000, 200),
+			crateEntry(SERVER_TIME - 7000, 2000),
+		}
+		stubHashes({ [SERVER_TIME - 9000] = TIER_4, [SERVER_TIME - 8000] = TIER_4, [SERVER_TIME - 7000] = TIER_4 })
+		local world = newWorld(entries)
 
 		world.enterWorld()
 
-		assert.are.equal(10000, world.db.projection.spent)
-		assert.are.equal(4, #world.db.projection.crates)
+		assert.are.same({ 300, 200, 2000 }, world.db.projection.crates)
+		assert.are.equal(
+			0,
+			world.db.projection.spent,
+			"each paid back all it cost: a tier's price is more than it cost"
+		)
 	end)
 
-	it("never gives a good bought before, and gives the same goods again on a rebuild (SHOP-R51, ADR 0004)", function()
-		local entries = { purchaseEntry(SERVER_TIME - 9500, STORM, 5000), crateEntry(TIMES[1]), crateEntry(TIMES[2]) }
-		local first = newWorld(entries)
-		first.enterWorld()
-		local crates = first.db.projection.crates
-		assert.are.same({ ARCANE, FOIL }, sorted(crates))
+	it("counts a Curio crate's payback as the crate's price (SHOP-R51)", function()
+		ns.CRATE_POOL = {}
+		local world = newWorld(crates(1, { CURIO }, 1500))
 
-		local world = newWorld(entries, first.db)
-		world.fingerprint = "a new release"
 		world.enterWorld()
 
-		assert.are.same(crates, world.db.projection.crates)
-		assert.are.equal(9000, world.db.projection.spent)
+		assert.are.same({ 1500 }, world.db.projection.crates)
+		assert.are.equal(0, world.db.projection.spent)
 	end)
 
-	it("opens a crate bought live at once: its good owned, the snapshot handed over (SHOP-R55)", function()
+	it("keeps `dry` as the crates since the last crate-only good: a good or a payback adds one (SHOP-R52)", function()
+		stubPool()
+		local world = newWorld(crates(4, { TIER_1, TIER_1, CURIO, TIER_1 }))
+
+		world.enterWorld()
+
+		assert.are.same({ CRIMSON, 250, FOIL, 250 }, world.db.projection.crates)
+		assert.are.equal(1, world.db.projection.dry)
+		local after = newWorld(crates(3, { TIER_1, TIER_1, CURIO }))
+		after.enterWorld()
+		assert(after.db.projection.dry == nil, "a crate-only good sets it back to 0, left out")
+	end)
+
+	it(
+		"makes the 100th crate in a row without a crate-only good a Curio crate, and not once none is left (SHOP-R52)",
+		function()
+			ns.CRATE_POOL = { { id = FOIL, tier = "curio", kind = "toaststyle" } }
+			local world = newWorld(crates(99))
+			world.enterWorld()
+			local state = world.db.projection
+			assert.are.equal(99, #state.crates)
+			assert.are.equal(99, state.dry)
+			for _, result in ipairs(state.crates) do
+				assert.are.equal(250, result, "tier 1 has no good: a payback")
+			end
+
+			local hundredth = newWorld(crates(100))
+			hundredth.enterWorld()
+			state = hundredth.db.projection
+			assert.are.equal(FOIL, state.crates[100], "the 100th is Curio whatever the hash says")
+			assert(state.dry == nil, "and a crate-only good sets the count back")
+
+			local past = newWorld(crates(400))
+			past.enterWorld()
+			state = past.db.projection
+			assert.are.equal(FOIL, state.crates[100])
+			for i = 101, 400 do
+				assert.are.equal(250, state.crates[i], "no crate-only good is left: no pity at crate " .. i)
+			end
+			assert.are.equal(300, state.dry)
+		end
+	)
+
+	it(
+		"never gives a good bought before, and gives the same results again on a rebuild (SHOP-R51, ADR 0004)",
+		function()
+			local entries = { purchaseEntry(SERVER_TIME - 9500, CRIMSON, 150) }
+			for i = 1, 12 do
+				entries[#entries + 1] = crateEntry(SERVER_TIME - 9000 + i * 10)
+			end
+			ns.CRATE_POOL = { { id = CRIMSON, tier = 1, kind = "crest" }, { id = SILVER, tier = 2, kind = "crest" } }
+			local first = newWorld(entries)
+			first.enterWorld()
+			local results = first.db.projection.crates
+			for _, result in ipairs(results) do
+				assert.are_not.equal(CRIMSON, result)
+			end
+			assert.are.equal(13, #entries)
+			assert.are.equal(12, #results)
+
+			local world = newWorld(entries, first.db)
+			world.fingerprint = "a new release"
+			world.enterWorld()
+
+			assert.are.same(results, world.db.projection.crates)
+			assert.are.equal(first.db.projection.dry, world.db.projection.dry)
+			assert.are.equal(first.db.projection.spent, world.db.projection.spent)
+		end
+	)
+
+	it("rebuilds a projection stored under rules version 1 into version 2's results (SHOP-R53, LOG-R72)", function()
+		local entries = { crateEntry(SERVER_TIME - 9000, 2000), crateEntry(SERVER_TIME - 8000, 2000) }
+		local old = stored(4000, {}, #entries)
+		old.rulesVersion = 1
+		old.projection.crates = { "core.toaststyle.storm", "core.toaststyle.foil" }
+		old.projection.dry = 3
+		local world = newWorld(entries, old)
+
+		world.enterWorld()
+
+		assert.are.equal(2, world.db.rulesVersion)
+		local state = world.db.projection
+		assert.are.equal(2, #state.crates)
+		local first = ns.CrateRoll(("%s-%d-0"):format(ADA, SERVER_TIME - 9000), {}, 0, SERVER_TIME - 9000, 2000)
+		assert.are.equal(first.good or first.payback, state.crates[1])
+	end)
+
+	it("opens a crate bought live at once: its result in, the snapshot handed over (SHOP-R55)", function()
 		local world = newWorld({})
 		world.wallet:Report("Ledger", 3000)
 		world.enterWorld()
 
-		world.live({ kind = "purchase", good = "core.crate", price = 2000 })
+		world.live({ kind = "purchase", good = "core.crate", price = PRICE })
 
-		local given = world.db.projection.crates[1]
-		assert.are.equal(drawn({ SERVER_TIME })[1], given)
-		assert.is_true(world.goods:IsOwned(given))
-		assert.are.equal(1000, world.wallet:Get().balance)
-		assert.are.same({ given }, world.snapshots[#world.snapshots].crates)
+		local roll = ns.CrateRoll(("%s-%d-0"):format(ADA, SERVER_TIME), {}, 0, SERVER_TIME, PRICE)
+		assert.are.equal(roll.good, world.db.projection.crates[1])
+		assert.is_true(world.goods:IsOwned(roll.good))
+		assert.are.equal(1500, world.wallet:Get().balance)
+		assert.are.same({ roll.good }, world.snapshots[#world.snapshots].crates)
 	end)
 
-	it(
-		"counts the crates in a row without a crate-only good, and gives one by the 8th at the latest (SHOP-R52)",
-		function()
-			local pool = ns.CRATE_POOL
-			-- A pool grown long, where a crate-only good is rare: one good in nineteen weights.
-			local grown = { { id = FOIL, crateOnly = true } }
-			for i = 1, 9 do
-				grown[#grown + 1] = { id = "core.toaststyle.extra" .. i }
-			end
-			ns.CRATE_POOL = grown
-			local ok, problem = pcall(function()
-				for start = 0, 40 do
-					local entries = {}
-					for i = 1, 8 do
-						entries[i] = crateEntry(SERVER_TIME - 90000 + start * 100 + i)
-					end
-					local world = newWorld(entries)
-					world.enterWorld()
-					local crates = world.db.projection.crates
-					local at
-					for i, good in ipairs(crates) do
-						at = at or (good == FOIL and i or nil)
-					end
-					assert(at and at <= 8, "a crate-only good by the 8th crate")
-					assert(world.db.projection.dry == (#crates > at and #crates - at or nil), "dry counts from it")
-				end
-			end)
-			ns.CRATE_POOL = pool
-			assert(ok, problem)
-		end
-	)
+	it("opens a crate that pays back live: the purse is out only the difference (SHOP-R11, SHOP-R55)", function()
+		ns.CRATE_POOL = {}
+		local world = newWorld({})
+		stubHashes({ [SERVER_TIME] = TIER_1 })
+		world.wallet:Report("Ledger", 3000)
+		world.enterWorld()
+
+		world.live({ kind = "purchase", good = "core.crate", price = PRICE })
+
+		assert.are.same({ 250 }, world.db.projection.crates)
+		assert.are.equal(1250, world.db.projection.spent)
+		assert.are.equal(3000 - 1250, world.wallet:Get().balance)
+		assert.are.same({ 250 }, world.snapshots[#world.snapshots].crates)
+	end)
 end)
 
 describe("The wallet projection's Companion entry", function()

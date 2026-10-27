@@ -45,14 +45,14 @@ local BOTH = { spent = 550, purchased = { [VELVET] = true, [SILK] = true } }
 
 describe("the wallet projection", function()
 	it(
-		"is Core's own, after the Field report's, bound to PagleDB.global.projections.wallet with rules version 1 and"
+		"is Core's own, after the Field report's, bound to PagleDB.global.projections.wallet with rules version 2 and"
 			.. " the content fingerprint alone (LOG-R70, LOG-R78)",
 		function()
 			local loaded = enterWorld(loadCore(purchases(2)))
 
 			local global = loaded.env.PagleDB.global
 			local db = global.projections.wallet
-			assert.are.same({ 1, loaded.env.Pagle.CONTENT_FINGERPRINT, LOG_ID, #loaded.env.PagleLog.entries }, {
+			assert.are.same({ 2, loaded.env.Pagle.CONTENT_FINGERPRINT, LOG_ID, #loaded.env.PagleLog.entries }, {
 				db.rulesVersion,
 				db.fingerprint,
 				db.logId,
