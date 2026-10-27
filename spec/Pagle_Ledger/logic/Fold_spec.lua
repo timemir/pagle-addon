@@ -674,18 +674,21 @@ describe("The Ledger's fold", function()
 			assert.are.equal(297, state.fresh)
 		end)
 
-		it("refills 10 an hour between Catches, back at the cap after a 30-hour gap (LED-R22)", function()
-			local state = fold.reset()
-			state.fresh = 0
-			applyAll({ log.cast(T0, ELWYNN, { OTHER }) }, "live", state)
-			assert.are.equal(0, state.fresh)
+		it(
+			"refills 10 an hour between Catches a real break apart, back at the cap after a 30-hour gap (LED-R22)",
+			function()
+				local state = fold.reset()
+				state.fresh = 0
+				applyAll({ log.cast(T0, ELWYNN, { OTHER }) }, "live", state)
+				assert.are.equal(0, state.fresh)
 
-			applyAll({ log.cast(T0 + HOUR, ELWYNN, { OTHER }) }, "live", state)
-			assert.are.equal(9, state.fresh)
+				applyAll({ log.cast(T0 + HOUR, ELWYNN, { OTHER }) }, "live", state)
+				assert.are.equal(9, state.fresh)
 
-			applyAll({ log.cast(T0 + 31 * HOUR, ELWYNN, { OTHER }) }, "live", state)
-			assert.are.equal(299, state.fresh)
-		end)
+				applyAll({ log.cast(T0 + 31 * HOUR, ELWYNN, { OTHER }) }, "live", state)
+				assert.are.equal(299, state.fresh)
+			end
+		)
 
 		it("doubles no Catch while F is below 1, as at 0.5 (LED-R22)", function()
 			local state = applyAll({ log.cast(T0, ELWYNN, { OTHER }) })
@@ -697,18 +700,128 @@ describe("The Ledger's fold", function()
 			assert.are.equal(0.5, state.fresh)
 		end)
 
-		it("shows floor(min(cap, F + rate × elapsed / 3,600)) now, the cap with no Catch yet (LED-R23)", function()
+		-- A state with Fresh Water 0 and its first Catch (a Cast of one) at T0 applied.
+		local function emptyAfterFirstCatch()
+			local state = fold.reset()
+			state.fresh = 0
+			applyAll({ log.cast(T0, ELWYNN, { OTHER }) }, "live", state)
+			return state
+		end
+
+		it("adds nothing at the first Catch ever, whatever the time (LED-R22)", function()
+			local state = fold.reset()
+			state.fresh = 0
+
+			applyAll({ log.cast(T0 + 100 * HOUR, ELWYNN, { OTHER }) }, "live", state)
+
+			assert.are.equal(0, state.fresh)
+			assert.is_nil(state.hadBreak)
+		end)
+
+		it("adds nothing for a gap under the minimum break, 59 minutes, and notes no break (LED-R22)", function()
+			local state = emptyAfterFirstCatch()
+
+			applyAll({ log.cast(T0 + HOUR - 60, ELWYNN, { OTHER }) }, "live", state)
+
+			assert.are.equal(0, state.fresh)
+			assert.is_nil(state.hadBreak)
+		end)
+
+		it("adds 10 at exactly the minimum break, the whole gap counting, and notes it (LED-R22)", function()
+			local state = emptyAfterFirstCatch()
+
+			applyAll({ log.cast(T0 + HOUR, ELWYNN, { OTHER }) }, "live", state)
+
+			assert.are.equal(9, state.fresh) -- 0 + 10, less this Catch's 1
+			assert.is_true(state.hadBreak)
+		end)
+
+		it("adds 25 for a gap of 2.5 hours, not 15 for the part past the first hour (LED-R22)", function()
+			local state = emptyAfterFirstCatch()
+
+			applyAll({ log.cast(T0 + 2.5 * HOUR, ELWYNN, { OTHER }) }, "live", state)
+
+			assert.are.equal(24, state.fresh)
+		end)
+
+		it("never goes past the cap (LED-R22)", function()
+			local state = emptyAfterFirstCatch()
+			state.fresh = 295
+
+			applyAll({ log.cast(T0 + 10 * HOUR, ELWYNN, { OTHER }) }, "live", state)
+
+			assert.are.equal(299, state.fresh)
+		end)
+
+		it("adds nothing for several short gaps that sum to more than the minimum break (LED-R22)", function()
+			local state = emptyAfterFirstCatch()
+
+			applyAll({
+				log.cast(T0 + 40 * 60, ELWYNN, { OTHER }),
+				log.cast(T0 + 80 * 60, ELWYNN, { OTHER }),
+				log.cast(T0 + 120 * 60, ELWYNN, { OTHER }),
+			}, "live", state)
+
+			assert.are.equal(0, state.fresh)
+			assert.is_nil(state.hadBreak)
+		end)
+
+		it("counts a gap from the last Catch of any character (LED-R22)", function()
+			local state = emptyAfterFirstCatch()
+
+			applyAll({ log.cast(T0 + HOUR, ELWYNN, { OTHER }, 2) }, "live", state)
+
+			assert.are.equal(9, state.fresh)
+		end)
+
+		it("gives the Catches of one Cast a gap of 0: only the break before the Cast refills (LED-R22)", function()
+			local state = emptyAfterFirstCatch()
+
+			applyAll({ log.cast(T0 + HOUR, ELWYNN, { OTHER, OTHER, OTHER }) }, "live", state)
+
+			assert.are.equal(10 - 3, state.fresh)
+		end)
+
+		it("keeps `hadBreak` once set: a later short gap doesn't clear it (LED-R22)", function()
+			local state = emptyAfterFirstCatch()
+			applyAll({ log.cast(T0 + HOUR, ELWYNN, { OTHER }) }, "live", state)
+
+			applyAll({ log.cast(T0 + HOUR + 60, ELWYNN, { OTHER }) }, "live", state)
+
+			assert.is_true(state.hadBreak)
+		end)
+
+		it(
+			"decides a real break once for the fold and the display: IsRealBreak at the minimum break (LED-R22)",
+			function()
+				assert.are.equal(3600, ns.FRESH_WATER_MIN_BREAK)
+				assert.is_false(ns.IsRealBreak(T0, T0 + 3599))
+				assert.is_true(ns.IsRealBreak(T0, T0 + 3600))
+				assert.is_false(ns.IsRealBreak(T0, T0 - HOUR))
+			end
+		)
+
+		it("shows the cap with no Catch yet, floor(F) under the minimum break, then jumps (LED-R23)", function()
 			local state = fold.reset()
 			assert.are.equal(300, ns.FreshWaterShown(state, T0))
 
-			state.fresh = 0
-			applyAll({ log.cast(T0, ELWYNN, { OTHER }) }, "live", state)
+			state = emptyAfterFirstCatch()
 			assert.are.equal(0, ns.FreshWaterShown(state, T0 + 359))
-			assert.are.equal(1, ns.FreshWaterShown(state, T0 + 360))
+			assert.are.equal(0, ns.FreshWaterShown(state, T0 + 360)) -- the old continuous refill gave 1 here
+			assert.are.equal(0, ns.FreshWaterShown(state, T0 + HOUR - 60)) -- 59 minutes
+			assert.are.equal(10, ns.FreshWaterShown(state, T0 + HOUR))
 			assert.are.equal(25, ns.FreshWaterShown(state, T0 + 2.5 * HOUR))
 			assert.are.equal(300, ns.FreshWaterShown(state, T0 + 100 * HOUR))
 			-- A server time before the last Catch adds nothing.
 			assert.are.equal(0, ns.FreshWaterShown(state, T0 - HOUR))
+		end)
+
+		it("shows the rounded-down F under the minimum break: 0.5 stays 0, 7.9 stays 7 (LED-R23)", function()
+			local state = emptyAfterFirstCatch()
+			state.fresh = 7.9
+
+			assert.are.equal(7, ns.FreshWaterShown(state, T0 + 3599))
+			assert.are.equal(17, ns.FreshWaterShown(state, T0 + HOUR))
 		end)
 	end)
 
@@ -945,9 +1058,9 @@ describe("The Ledger's fold", function()
 		end)
 
 		it(
-			"is LEDGER_RULES_VERSION 11: 4 when ★ moved to the 5th Catch, 5 for the full Prestige cost and Activity XP in the climb, 6 for the varieties caught, 7 for the second round's counts, 8 for the crest times and record, 9 for the measures' rise times, 10 for the fish of each race and faction, 11 for the retuned Coins (LED-R4, LED-R30, LED-R37, LED-R88, VAR-R20, LED-R118, LED-R155, LED-R156, LED-R158, LED-R164, Tunables)",
+			"is LEDGER_RULES_VERSION 12: 4 when ★ moved to the 5th Catch, 5 for the full Prestige cost and Activity XP in the climb, 6 for the varieties caught, 7 for the second round's counts, 8 for the crest times and record, 9 for the measures' rise times, 10 for the fish of each race and faction, 11 for the retuned Coins, 12 for Fresh Water after a real break only (LED-R4, LED-R22, LED-R30, LED-R37, LED-R88, VAR-R20, LED-R118, LED-R155, LED-R156, LED-R158, LED-R164, Tunables)",
 			function()
-				assert.are.equal(11, ns.LEDGER_RULES_VERSION)
+				assert.are.equal(12, ns.LEDGER_RULES_VERSION)
 			end
 		)
 	end)

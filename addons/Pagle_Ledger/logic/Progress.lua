@@ -15,14 +15,29 @@ ns.FRESH_WATER_CAP = 300
 -- Fresh Water's refill, per hour (LED-R22, Tunables).
 local FRESH_WATER_RATE = 10
 
---- Fresh Water `fresh`, as of time `from`, refilled up to time `to` (LED-R22, LED-R23): `min(cap, F + rate ×
---- max(0, to − from) / 3,600)`.
+--- The minimum break, in seconds (LED-R22, Tunables): a gap between Catches shorter than this refills no Fresh Water.
+ns.FRESH_WATER_MIN_BREAK = 3600
+
+--- Whether the time from `from` to `to` is a real break (LED-R22): at least the minimum break. The one test the fold's
+--- refill, the shown Fresh Water and `ledger.fresh`'s condition (ONB-R52) all use.
+---@param from integer server time
+---@param to integer server time
+---@return boolean
+function ns.IsRealBreak(from, to)
+	return to - from >= ns.FRESH_WATER_MIN_BREAK
+end
+
+--- Fresh Water `fresh`, as of time `from`, refilled up to time `to` (LED-R22, LED-R23): after a real break, `min(cap,
+--- F + rate × (to − from) / 3,600)`, the whole gap counting; after a shorter gap, `F`.
 ---@param fresh number
 ---@param from integer server time
 ---@param to integer server time
 ---@return number
 function ns.FreshWaterAt(fresh, from, to)
-	return math.min(ns.FRESH_WATER_CAP, fresh + FRESH_WATER_RATE * math.max(0, to - from) / 3600)
+	if not ns.IsRealBreak(from, to) then
+		return fresh
+	end
+	return math.min(ns.FRESH_WATER_CAP, fresh + FRESH_WATER_RATE * (to - from) / 3600)
 end
 
 --- Fresh Water shown at server time `now` (LED-R23): the cap before the first Catch, else the refilled F, rounded down.

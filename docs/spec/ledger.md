@@ -88,8 +88,8 @@ The Ledger is the `Pagle_Ledger` Module: the Angler's identity as an angler. It 
 
   A Catch earns every row that applies. Only Catch XP is ever doubled. Simulated Size, stars, titles, Catch Milestones and size records earn no XP. This table is the Ledger's own XP; other Modules' Activity XP comes through Core (LED-R37).
 - **LED-R21** "First" always means first in the log, any character. Discovery XP is earned once per thing for the Angler's whole history, across Prestiges.
-- **LED-R22** **Fresh Water** is a number `F`, equal to the cap before the Angler's first Catch. At each Catch, in log order, with `t` its Cast's time and `t0` the previous Catch's Cast time (any character): `F = min(cap, F + rate × max(0, t − t0) / 3,600)` (nothing is added at the first Catch ever); then, if `F ≥ 1`, that Catch's Catch XP is doubled and `F` drops by 1. The Catches of one Cast share `t`, so each spends one in turn. Rate and cap are Tunables.
-- **LED-R23** Fresh Water shown now is `floor(min(cap, F + rate × max(0, GetServerTime() − tLast) / 3,600))`, with `tLast` the last Catch's time (the cap with no Catch yet). On the XP bar it is a shaded stretch, like rested XP, starting at the current XP and covering `shown × 10` XP, clipped at the bar's end. At level 60 it isn't drawn.
+- **LED-R22** **Fresh Water** is a number `F`, equal to the cap before the Angler's first Catch. At each Catch, in log order, with `t` its Cast's time and `t0` the previous Catch's Cast time (any character), and `g = t − t0`: if `g ≥` the **minimum break**, `F = min(cap, F + rate × g / 3,600)`, the whole gap counting, not only the part past the minimum; a shorter gap adds nothing, however many follow one another (nothing is added at the first Catch ever either). Then, if `F ≥ 1`, that Catch's Catch XP is doubled and `F` drops by 1. The Catches of one Cast share `t` (`g = 0`), so each spends one in turn. A gap of at least the minimum break is a **real break**; the fold notes the first one in `hadBreak` (Data), which `ledger.fresh` waits for (ONB-R52). Rate, cap and minimum break are Tunables, and the test for a real break is one function in `logic/` (`IsRealBreak`) that the fold, LED-R23 and ONB-R52 all use.
+- **LED-R23** Fresh Water shown now is LED-R22's rule with `g = GetServerTime() − tLast`, `tLast` the last Catch's time: `floor(F)` while `g` is below the minimum break, `floor(min(cap, F + rate × g / 3,600))` from it on, so the number jumps by 10 at the minimum break and then keeps rising; the cap with no Catch yet. On the XP bar it is a shaded stretch, like rested XP, starting at the current XP and covering `shown × 10` XP, clipped at the bar's end. At level 60 it isn't drawn.
 
 ### Angler Level and Prestige
 
@@ -481,6 +481,7 @@ The Journal is a two-page book (UI). These rules say what it shows; [UI](#ui) sa
 ---@field prestige integer              -- prestige rank
 ---@field fresh number                  -- Fresh Water F after the last Catch (LED-R22)
 ---@field lastCatch? integer            -- time of the last Catch
+---@field hadBreak? true                -- set once two consecutive Catches lay a real break apart (LED-R22, ONB-R52); absent until then
 ---@field firstDate? { year: integer, month: integer, day: integer }  -- realm date of the first Catch of any class that has one (bookplate)
 ---@field firstTime? integer           -- server time of the first Catch of any class (bookplate, when no Catch has a realm date)
 ---@field coins integer                 -- lifetime Coins earned (LED-R88)
@@ -665,7 +666,7 @@ The Ledger adds no rows to any Settings page.
 | Discovery XP: new Species / Species in a zone / first Catch in a zone / curio item / trophy weight / Legend | 500 / 100 / 200 / 150 / 100 / 2,000 | LED-R20 |
 | Zone Mastery rank XP | 250 × rank | LED-R20 |
 | Skill Milestone XP | 1,000 | LED-R40 |
-| Fresh Water: multiplier / rate / cap (also its value before the first Catch) | ×2 / 10 per hour / 300 | LED-R22 |
+| Fresh Water: multiplier / rate / cap (also its value before the first Catch) / minimum break | ×2 / 10 per hour / 300 / 1 hour | LED-R22 |
 | Level cap | 60 | LED-R30 |
 | Level step cost | 1,000 + 80 × L | LED-R30 |
 | Prestige climb cost factor | 1 in every climb (0.5 after any Prestige before #279, `LEDGER_RULES_VERSION` 5) | LED-R30 |

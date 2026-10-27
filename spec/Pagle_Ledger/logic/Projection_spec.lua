@@ -51,10 +51,10 @@ describe("the Ledger's projection def", function()
 			-- second round's counts (LED-R118), 8 for the crest times and record (LED-R155, LED-R156), 9 for the
 			-- measures' rise times (LED-R158), 10 for the fish of each race and faction (LED-R164),
 			-- 11 for the retuned Coins (LED-R88).
-			assert.are.equal(1100, ns.RulesVersion(nil))
-			assert.are.equal(1102, ns.RulesVersion(2))
-			assert.are.equal(1100, ns.ProjectionDef({}, lookups, outlets, nil).rulesVersion)
-			assert.are.equal(1102, ns.ProjectionDef({}, lookups, outlets, 2).rulesVersion)
+			assert.are.equal(1200, ns.RulesVersion(nil))
+			assert.are.equal(1202, ns.RulesVersion(2))
+			assert.are.equal(1200, ns.ProjectionDef({}, lookups, outlets, nil).rulesVersion)
+			assert.are.equal(1202, ns.ProjectionDef({}, lookups, outlets, 2).rulesVersion)
 		end
 	)
 

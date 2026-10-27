@@ -16,15 +16,13 @@ function ns.RedPencilTerms(text)
 	return (text:gsub("%*(.-)%*", "|cff9a2a1a%1|r"))
 end
 
---- Whether the Angler has had a Session end, as `ledger.fresh` waits for (ONB-R52): the Catch log's first Cast
---- belongs to a Session that isn't open now. `firstSession` is that Cast's Session ID, Core's tag (LOG-R98), nil with
---- no Cast yet; `open` the ID of the Session open now (Pagle.GetSession, LOG-R64), nil with none. Sessions are Core's,
---- so nothing here cuts them.
----@param firstSession string?
----@param open string?
+--- Whether the Angler has had a real break, as `ledger.fresh` waits for (ONB-R52, LED-R22): two consecutive Catches lay
+--- one apart in the Catch log (the fold's `hadBreak`), or one has passed since the last Catch, at server time `now`.
+---@param state LedgerState
+---@param now integer server time
 ---@return boolean
-function ns.SessionHasEnded(firstSession, open)
-	return firstSession ~= nil and firstSession ~= open
+function ns.HadRealBreak(state, now)
+	return state.hadBreak == true or (state.lastCatch ~= nil and ns.IsRealBreak(state.lastCatch, now))
 end
 
 --- One line of the Your Ledger step's box of Skill Milestones (ONB-R36).
