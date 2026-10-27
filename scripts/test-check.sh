@@ -32,10 +32,10 @@ export PAGLE_NO_COVERAGE=1
 # Cases run at once, so each gate runs its busted shards one at a time (#254); the case that wants more sets its own.
 export GATE_JOBS=1
 
-# What one case's gate can take at its peak: its stages run at once, and a busted shard has reached 4.5 GB with
+# What one case's gate can take at its peak: its stages run at once, a busted shard up to 1.5 GB with
 # lua-language-server at 2.3 GB beside it. Cases past what MemAvailable holds get their busted OOM-killed, and fail;
 # in CI, the runner likely shuts down mid-run instead.
-case_memory_kb=$((7 * 1024 * 1024))
+case_memory_kb=$((4 * 1024 * 1024))
 max_jobs=${TEST_CHECK_JOBS:-$(nproc 2>/dev/null || sysctl -n hw.ncpu)}
 if [[ -z ${TEST_CHECK_JOBS:-} ]]; then
 	((max_jobs <= 8)) || max_jobs=8

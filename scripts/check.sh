@@ -5,10 +5,9 @@
 #   scripts/check.sh
 #   GATE_JOBS=8 scripts/check.sh    # busted shards at a time without coverage (default 4)
 #
-# A busted shard is the gate's memory: spec/Pagle_Ledger's alone peaks near 12 GB and spec/Pagle_Hunts' near 10, the
-# stages beside them under 3 GB. The 16 GB runner of CI shuts down (exit 143, "The runner has received a shutdown
-# signal") when a second shard is up at one of those peaks, so check.yml sets GATE_JOBS=1; a machine with the memory
-# keeps the default.
+# A busted shard peaks near its largest spec file, under 1.5 GB, since spec/support/addon.lua lets each file's blocks
+# go once it ends; before that, one shard kept every file it ran and spec/Pagle_Ledger's reached 12 GB, which shut down
+# CI's 16 GB runner (exit 143). CI runs the default 4 shards at once too, on its 4 vCPUs.
 #
 # Needs the pinned tools in .tools/ (run scripts/setup.sh once). Runs locally in WSL, natively on macOS (bash 3.2 and
 # up; every stage runs there too, so no stage is skipped) and in CI alike. A `git worktree` with no .tools/ of its own
