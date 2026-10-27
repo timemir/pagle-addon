@@ -213,7 +213,7 @@ end
 
 -- Core's namespace with its Catch log codec, as scripts/read-wtf.lua loads it.
 local function loadCodec()
-	return wtf.loadCore({ "logic/Conditions.lua", "logic/Sessions.lua", "logic/CatchLog.lua" })
+	return wtf.loadCore({ "logic/Conditions.lua", "logic/Sessions.lua", "logic/Integrity.lua", "logic/CatchLog.lua" })
 end
 
 -- The records Core's codec reads from `entries`, over the log's own characters and logId. It reads a copy, so the

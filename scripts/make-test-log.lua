@@ -354,6 +354,7 @@ local function loadGame(cataloguePath)
 		"logic/Variety.lua",
 		"logic/Conditions.lua",
 		"logic/Sessions.lua",
+		"logic/Integrity.lua",
 		"logic/CatchLog.lua",
 	})
 	local label = cataloguePath or "the repo's addons/Pagle/data/Catalogue.lua"
@@ -528,7 +529,7 @@ local function newLog(game, log, facts, time)
 	local header = {}
 	if facts.build then
 		local build = { kind = "build", char = facts.char, time = time }
-		build.build, build.version = facts.build.build, facts.build.version
+		build.build, build.version, build.rules = facts.build.build, facts.build.version, facts.build.rules
 		header[1] = build
 	end
 	for char = 1, #log.characters do
