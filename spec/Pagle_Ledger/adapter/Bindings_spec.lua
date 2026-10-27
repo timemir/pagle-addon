@@ -442,6 +442,11 @@ describe("the Ledger's expansion earned bindings", function()
 					end
 				end
 				assert.are.same({ "11 of 12 shards", "12 glass shards" }, { glass.earnedText() })
+				local progress = fake.Pagle.GetEarnedProgress("ledger.toaststyle.glass")
+				assert.are.same(
+					{ "11 of 12 shards", "12 glass shards", 11, 12 },
+					{ progress.tag, progress.note, progress.have, progress.need }
+				)
 
 				local later, reloaded = ledgerOver(release("first release"), nil, firstWaters(12))
 				assert.is_true(later.Pagle.IsOwned("ledger.toaststyle.glass"))

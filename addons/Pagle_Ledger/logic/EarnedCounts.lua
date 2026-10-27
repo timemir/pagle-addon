@@ -569,7 +569,8 @@ end
 --- LED-R160), by its ID while the name has no text (LED-R161), earned by `hooks.earnedBy`, with no preview (Core draws
 --- them, ANN-R82, SHOP-R25) and the fallback of ns.RoundTwoFallback. Its earnedText is a function (SHOP-R22): the
 --- count's texts, from the count as it stands, and while the projection updates, the texts it gave last (the plain
---- earned text before any).
+--- earned text before any). Its `earnedCount` gives (count, mark) for the Collection's ink bar (SHOP-R36), the count
+--- held at the mark as the tag's is, and nothing while the projection updates.
 ---@param hooks LedgerCountedHooks
 ---@return PagleGood[]
 function ns.CountedGoods(hooks)
@@ -593,6 +594,12 @@ function ns.CountedGoods(hooks)
 					lastTag, lastNote = ns.EarnedCountTexts(good, n, hooks.formatNumber)
 				end
 				return lastTag, lastNote
+			end,
+			earnedCount = function()
+				local n = hooks.count(good)
+				if n then
+					return math.min(n, good.mark), good.mark
+				end
 			end,
 			fallbackTier = tier,
 			fallbackFrom = from,

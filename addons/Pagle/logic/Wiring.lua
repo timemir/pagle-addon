@@ -41,6 +41,10 @@ local ns = select(2, ...)
 ---@field tickets PagleTicketPurse Core's Refresh purse (ns.WireTickets).
 ---@field goods PagleGoods Core's one goods registry (ns.WireGoods).
 ---@field shop PagleShop The Curio Shop's entry points (ns.WireShop).
+---@field CollectionOffered fun(): (fun(goodID: string?))? The first On Module's `def.collection` by def.order, or nil
+--- (ns.WireShop, CORE-R45).
+---@field OpenCollection fun(goodID: string?): boolean Opens the Collection through it, on `goodID` if given; false with
+--- none (ns.WireShop, CORE-R45).
 ---@field dock PagleDockWiring Core's tracker dock (ns.WireDock).
 ---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
 ---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
@@ -629,6 +633,7 @@ function ns.WireGoods(host)
 		fire = host.fire,
 		call = host.call,
 		report = host.report,
+		serverTime = host.serverTime,
 	})
 	ns.goods = goods
 	-- Raises `problem`, if any, at the call of the function that called this one (SHOP-R23).
@@ -693,13 +698,19 @@ function ns.WireGoods(host)
 	end
 end
 
+--- How big `Pagle.DrawGoodPreview` draws a good's look (SHOP-R36): the stage's 370 x 132 centred, or scaled to fit the
+--- frame.
+---@alias PagleGoodPreviewSize "stage"|"card"
+
 --- Publishes the goods registry's reads and its one write on `Pagle` (wallet-and-shop.md › Contracts):
---- `Pagle.IsOwned`, `GetEquipped`, `SetEquipped`, `GetGood` and `GetSlotGoods`, over ns.goods (ns.WireGoods), and
---- `Pagle.GetBindingLook`. `wrap` turns what GetGood returns into what Modules get: Core's adapter passes none,
---- FakePagle its read-only proxy (CORE-R18).
+--- `Pagle.IsOwned`, `GetEquipped`, `SetEquipped`, `GetGood`, `GetSlots`, `GetSlotGoods`, `GetEarnedProgress`,
+--- `GetPutAwayGoods` and `DrawGoodPreview`, over ns.goods (ns.WireGoods), and `Pagle.GetBindingLook`. `wrap` turns what
+--- a read returns into what Modules get: Core's adapter passes none, FakePagle its read-only proxy (CORE-R18). `draw`
+--- draws a good's look into a frame (adapter/GoodPreview.lua's), which FakePagle records instead: no window there.
 ---@param Pagle table
 ---@param wrap (fun(value: any): any)?
-function ns.PublishGoods(Pagle, wrap)
+---@param draw fun(frame: Frame, goodID: string, size: PagleGoodPreviewSize)?
+function ns.PublishGoods(Pagle, wrap, draw)
 	---@class Pagle
 	local api = Pagle
 	wrap = wrap or function(value)
@@ -731,17 +742,41 @@ function ns.PublishGoods(Pagle, wrap)
 		return ns.goods:SetEquipped(slot, goodID)
 	end
 
-	--- A good's name, slot, icon, Module and description as cached (SHOP-R26), and whether it is its slot's default
-	--- (`isDefault`, SHOP-R22), whether or not its Module is enabled; nil for a good never registered. A fresh copy
-	--- each call.
+	--- A good's cached fields (SHOP-R26), its slot's `category` among them, with what it is and what it costs (SHOP-R36): `kind`, `tier`, `price` now
+	--- (a fallback price from `fallbackFrom` on, SHOP-R28), `fallbackPrice`, `fallbackFrom`, `group`,
+	--- `purchased` (a U1 of the good itself), `fromCrate` and `ownedAt`, and whether it is its slot's default (`isDefault`, SHOP-R22), whether or not its
+	--- Module is enabled; nil for a good never registered. A fresh copy each call, never kept between calls.
 	---@param goodID string
 	---@return PagleGoodInfo?
 	function api.GetGood(goodID)
 		return wrap(ns.goods:GetGood(goodID))
 	end
 
-	--- The IDs of a slot's goods (SHOP-R21): in registration order, not the shop list's order by tier (SHOP-R27), another Module's in an open
-	--- Core slot only while that Module is On (SHOP-R35). Empty for a slot not registered. A fresh list each call.
+	--- Every slot registered by Core and by the Modules On, in the shop's order (SHOP-R36): Core's first, then by
+	--- def.order. A fresh list of fresh copies each call.
+	---@return PagleSlotInfo[]
+	function api.GetSlots()
+		local list = {}
+		for i, slot in ipairs(ns.goods:Slots()) do
+			local groups
+			for g, group in ipairs(slot.groups or {}) do
+				groups = groups or {}
+				groups[g] = { key = group.key, name = group.name }
+			end
+			list[i] = {
+				id = slot.id,
+				label = slot.label,
+				category = slot.category,
+				module = slot.module,
+				groups = groups,
+			}
+		end
+		return wrap(list)
+	end
+
+	--- The IDs of every good registered in a slot, earned ones included (SHOP-R21, SHOP-R36): in registration order,
+	--- not the shop list's order by tier (SHOP-R27), another Module's in an open Core slot only while that Module is
+	--- On. Empty for a slot not registered. A fresh list each call; the shop filters it itself (SHOP-R24).
 	---@param slot string
 	---@return string[]
 	function api.GetSlotGoods(slot)
@@ -750,6 +785,39 @@ function ns.PublishGoods(Pagle, wrap)
 			ids[i] = good.id
 		end
 		return ids
+	end
+
+	--- How far an earned good of a Module On, not yet owned, is (SHOP-R36): `{ tag, note, have, need }`, its earnedText
+	--- called now and its earnedCount() if it has one; nil for any other good, and when either call raises (reported,
+	--- SHOP-R22). Never cached.
+	---@param goodID string
+	---@return PagleEarnedProgress?
+	function api.GetEarnedProgress(goodID)
+		return wrap(ns.goods:EarnedProgress(goodID))
+	end
+
+	--- Every cached good of Modules that aren't On, owned or not (SHOP-R35, SHOP-R36), earned ones among them: in roster
+	--- order of their Module, then by ID; read each one's ownership with IsOwned. A fresh list each call.
+	---@return string[]
+	function api.GetPutAwayGoods()
+		return ns.goods:PutAway()
+	end
+
+	--- Draws a good's look into `frame` (SHOP-R36), as the Curio Shop's stage does: its preview, or its slot's, or its
+	--- icon in a medallion, at `size` "stage" (370 x 132, centred) or "card" (scaled to fit the frame), standing still.
+	--- Draws nothing for a good never registered. Returns nothing.
+	---@param frame Frame
+	---@param goodID string
+	---@param size PagleGoodPreviewSize
+	function api.DrawGoodPreview(frame, goodID, size)
+		if type(frame) ~= "table" then
+			error("Pagle.DrawGoodPreview takes a frame, got " .. type(frame), 2)
+		elseif size ~= "stage" and size ~= "card" then
+			error(('Pagle.DrawGoodPreview: size is "stage" or "card", got %s'):format(tostring(size)), 2)
+		end
+		if draw then
+			draw(frame, goodID, size)
+		end
 	end
 
 	--- The look of a binding (ADR 0015, logic/Bindings.lua), which every book wears: Field Leather's for an ID that
@@ -804,6 +872,32 @@ function ns.WireShop(host, seams)
 		})
 	end
 
+	--- The first On Module's `def.collection` by def.order, which opens its view of every look (CORE-R45); nil when
+	--- no On Module has one.
+	---@return (fun(goodID: string?))?
+	function ns.CollectionOffered()
+		for _, module in ipairs(host.registry:Modules()) do
+			if module.def.collection then
+				return module.def.collection
+			end
+		end
+		return nil
+	end
+
+	--- Opens the Collection (CORE-R45) on `goodID`, if given, through the first On Module's `def.collection`; one that
+	--- raises is reported through `call` (geterrorhandler()). Returns whether a Module offers one: with none nothing
+	--- opens.
+	---@param goodID string?
+	---@return boolean
+	function ns.OpenCollection(goodID)
+		local collection = ns.CollectionOffered()
+		if not collection then
+			return false
+		end
+		host.call(collection, goodID)
+		return true
+	end
+
 	--- Buys `goodID` if Buy is enabled for it now (SHOP-R13), checked again at the confirm: appends one purchase entry
 	--- with its ID and its price now, the purchase entry's only caller (LOG-R39, SHOP-R10), which the wallet projection
 	--- applies live, so the balance drops and the good is owned at once; then, with `useNow`, equips it (SHOP-R32). One
@@ -849,13 +943,20 @@ function ns.WireShop(host, seams)
 
 	---@param goodID string?
 	local function open(goodID)
+		local selection
+		if goodID ~= nil then
+			local model = ns.ShopModel()
+			selection = model:Select(goodID)
+			-- SHOP-R40: an earned good the shop doesn't list is the Collection's, even while restricted, as it opens
+			-- no shop (LED-R121); with none, the shop opens on nothing
+			if selection == nil and model:IsEarnedUnlisted(goodID) and ns.OpenCollection(goodID) then
+				return
+			end
+			selection = selection or false
+		end
 		if host.isRestricted() then
 			host.print(ns.L.SHOP_AFTER_COMBAT)
 			return
-		end
-		local selection
-		if goodID ~= nil then
-			selection = ns.ShopModel():Select(goodID) or false
 		end
 		seams.show(selection, goodID)
 		for _, opened in ipairs(openers) do

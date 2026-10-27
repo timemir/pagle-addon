@@ -268,6 +268,10 @@ _Avoid_: refund, cashback
 What a Hunt Event earns (players know it as a Pagle Wager) and the Tackle Board spends to post one new goal, a Notice or an Expedition at the Angler's choice, into an empty slot. It never takes the board past its caps and is not a reroll. Core holds the count (Hunts reports the Refreshes earned, the Tackle Board the ones spent), and there is no limit on how many can be held. The name is provisional: renaming it is a glossary and string change only.
 _Avoid_: ticket (the code's word, not the Angler's), reroll (which swaps an open goal and adds nothing), voucher, refill, token
 
+**Collection** (of looks):
+The Fish Journal's spread of every look in Pagle and every Ledger title: whether each is the Angler's, how to get it, and where to put it on. Earned looks live here, not in the Curio Shop, which only sells.
+_Avoid_: wardrobe, cosmetics, inventory, Look and Feel (Core's settings page of owned looks); not the fish the Ledger collects (Species, Sub-collections), which are never "the Collection"
+
 **Bookplate crest**:
 The look the Angler wears on the Fish Journal's bookplate, chosen in Look and Feel's Crests dropdown: a Zone crest, earned when that zone reaches Master, or a Fish crest, earned when all ten of its varieties are caught, pinned on the Prestige frame, or Plain, the default, which shows nothing. Earned crests are never listed in the Curio Shop, whose Crests category holds only the crests for sale and Plain.
 _Avoid_: crest (alone), emblem, medallion, Prestige crest

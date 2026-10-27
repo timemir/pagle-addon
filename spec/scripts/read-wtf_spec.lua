@@ -489,15 +489,15 @@ describe("scripts/read-wtf.lua", function()
 
 		it("prints the wallet projection and a balance held while earned < spent (SHOP-R11, SHOP-R12)", function()
 			-- 500 earned − (150 + 400) spent is −50: the balance shows 0, held (SHOP-R12). Each good counted once, the
-			-- wallet rules version 2 is Core's (wallet-and-shop.md › Data), and the projection is current (LOG-R72).
+			-- wallet rules version 3 is Core's (wallet-and-shop.md › Data), and the projection is current (LOG-R72).
 			assert.are.same({
 				"== Wallet (PagleDB.global.coins.earned): balance 0, held (500 earned − 550 spent = -50, SHOP-R12)",
 				"Ledger: 500",
 				"logId: none stored (a fresh log's, or no Module has reported since PagleLog had one)",
-				"projection: lastSeq 9, logId 8e1d4b7a2c6f0935, fingerprint 0123456789abcdef, rulesVersion 2",
+				"projection: lastSeq 9, logId 8e1d4b7a2c6f0935, fingerprint 0123456789abcdef, rulesVersion 3",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (9 entries)",
-				"rulesVersion: Core's wallet rules, 2",
+				"rulesVersion: Core's wallet rules, 3",
 				"spent: 550",
 				"purchased: 2 (core.soundset.gilded, core.toaststyle.ripple)",
 			}, section(out, "== Wallet"))

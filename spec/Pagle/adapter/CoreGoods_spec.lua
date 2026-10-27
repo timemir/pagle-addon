@@ -340,9 +340,15 @@ describe("Core's goods' names", function()
 		assert.are.same({
 			name = "core.toaststyle.lanternglow",
 			slot = "core.toaststyle",
+			category = "Announcements",
 			icon = "Interface\\Icons\\INV_Misc_Lantern_01",
 			module = "Core",
 			isDefault = false,
+			kind = "sale",
+			tier = 1,
+			price = 250,
+			purchased = false,
+			fromCrate = false,
 		}, loaded.env.Pagle.GetGood("core.toaststyle.lanternglow"))
 	end)
 

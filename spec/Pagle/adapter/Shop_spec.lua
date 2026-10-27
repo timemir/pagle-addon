@@ -40,8 +40,8 @@ local EXPANSION = {
 		{ "Hive Chitin", 3000 },
 		{ "Magma Flow", 3000 },
 		{ "Arcane Sigil", 3000 },
-		-- The round two's not for sale (SHOP-R29, SHOP-R50): their row's tag, not a price.
-		{ "Sonar Scope", nil, "Link the companion" },
+		-- The round two's not for sale (SHOP-R50): its row's tag, not a price. Sonar Scope, earned, has no fallback yet and
+		-- isn't listed (SHOP-R24, SHOP-R29).
 		{ "Prize Foil", nil, "From a crate" },
 	},
 	soundset = {
@@ -111,7 +111,7 @@ end
 -- the crest slot with Plain alone: its earned crests, the Ledger's two zone crests and Core's fish crests, aren't
 -- listed or counted (SHOP-R25).
 local CORE_UNBOUGHT = concat({
-	withExpansion({ "TOAST STYLE 1 of 26", "Torn Page | IN USE" }, "toaststyle"),
+	withExpansion({ "TOAST STYLE 1 of 25", "Torn Page | IN USE" }, "toaststyle"),
 	withExpansion({ "SOUND SET 1 of 27", "Driftwood | IN USE" }, "soundset"),
 	{ "CRESTS 1 of 1", "Plain | IN USE" },
 })
@@ -189,13 +189,14 @@ end
 -- Core with the Ledger and Hunts registered, Core's own goods, Hunts' covers and the Ledger's bindings and two zone
 -- crests in Core's crest slot (earned goods, their earnedText functions, SHOP-R22, SHOP-R23; the shop lists neither,
 -- SHOP-R25), logged in and in the world. `saved` is a PagleDB; `options.noHunts` leaves Hunts unregistered (off);
--- `options.preview` is Velvet's preview; `options.entries` is the saved log's entries. Returns the loaded addon and
--- the handles.
+-- `options.preview` is Velvet's preview; `options.entries` is the saved log's entries; `options.collection` is the
+-- Ledger's def.collection (CORE-R45). Returns the loaded addon and the handles.
 local function shopCore(saved, options)
 	options = options or {}
 	local loaded = loadCore(options.entries, saved)
 	local Pagle = loaded.env.Pagle
-	local ledger = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+	local ledger =
+		Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10, collection = options.collection })
 	ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Books" })
 	ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
 	ledger:RegisterGood({ id = "ledger.binding.lapis", slot = "ledger.binding", name = "Lapis", tier = 3 })
@@ -241,7 +242,7 @@ local function shopFrame(loaded)
 end
 
 -- The list as shown: each group header as "<label> <count or note>", a grouped slot's group header (SHOP-R27) as
--- "<name>", each row as "<name> | <tag or price>".
+-- "<name>", each row as "<name> | <tag or price>", "<name> | <price> | <tag>" for an earned good on sale (SHOP-R28).
 local function listed(loaded)
 	local lines = {}
 	for _, line in ipairs(shopFrame(loaded).lines) do
@@ -250,6 +251,12 @@ local function listed(loaded)
 				lines[#lines + 1] = line.label:GetText()
 			elseif line.header then
 				lines[#lines + 1] = ("%s %s"):format(line.label:GetText(), line.count:GetText())
+			elseif line.price:IsShown() and line.tag:IsShown() then
+				lines[#lines + 1] = ("%s | %s | %s"):format(
+					line.label:GetText(),
+					line.price.amount:GetText(),
+					line.tag:GetText()
+				)
 			elseif line.price:IsShown() then
 				lines[#lines + 1] = ("%s | %s"):format(line.label:GetText(), line.price.amount:GetText())
 			else
@@ -271,8 +278,9 @@ local function rowOf(loaded, goodID)
 end
 
 -- Hunts' frames on its handle, a grouped slot (SHOP-R27): Gilt frames then Wooden frames; Plain (default), Oak
--- (Ash, wooden, tier 1) and Gold leaf (gilt, earned never, "2 of 3 gilded", with `progress` as its progress).
-local function huntsFrames(hunts, progress)
+-- (Ash, wooden, tier 1) and Gold leaf (gilt, earned never, "2 of 3 gilded", with `progress` as its progress), which
+-- the shop lists from `fallbackFrom` on, at tier 2's price (SHOP-R24, SHOP-R28), never when that is nil.
+local function huntsFrames(hunts, progress, fallbackFrom)
 	hunts:RegisterSlot({
 		id = "hunts.frame",
 		label = "Frame",
@@ -293,6 +301,8 @@ local function huntsFrames(hunts, progress)
 			return "2 of 3 gilded", "Gild three frames."
 		end,
 		progress = progress,
+		fallbackTier = fallbackFrom and 2 or nil,
+		fallbackFrom = fallbackFrom,
 	})
 end
 
@@ -720,7 +730,7 @@ describe("The Curio Shop's list", function()
 		search:Type("RIP")
 
 		assert.is_false(search.Instructions:IsShown())
-		assert.are.same({ "TOAST STYLE 1 of 26", "Ripple | 250" }, listed(loaded))
+		assert.are.same({ "TOAST STYLE 1 of 25", "Ripple | 250" }, listed(loaded))
 		search:Type("nothing like it")
 		assert.are.same({}, listed(loaded))
 		assert.is_true(shopFrame(loaded).empty:IsShown())
@@ -740,7 +750,7 @@ describe("The Curio Shop's list", function()
 		filters.canAfford:Click()
 		assert.are.same(
 			concat({
-				withExpansion({ "TOAST STYLE 1 of 26" }, "toaststyle", 500),
+				withExpansion({ "TOAST STYLE 1 of 25" }, "toaststyle", 500),
 				withExpansion({ "SOUND SET 1 of 27" }, "soundset", 500),
 				bindingsAtMost(500),
 				{ "NOTEBOOK COVER 1 of 2", "Velvet | 400" },
@@ -753,7 +763,7 @@ describe("The Curio Shop's list", function()
 		assert.are.equal("PagleShopPill", filters.all.label.fontObject)
 		filters.owned:Click()
 		assert.are.same({
-			"TOAST STYLE 1 of 26",
+			"TOAST STYLE 1 of 25",
 			"Torn Page | IN USE",
 			"SOUND SET 1 of 27",
 			"Driftwood | IN USE",
@@ -767,9 +777,9 @@ describe("The Curio Shop's list", function()
 			"Plain | IN USE",
 		}, listed(loaded))
 		filters.notOwned:Click()
-		assert.are.equal(9 + 8 + 40 + 34, #listed(loaded))
+		assert.are.equal(9 + 8 + 40 + 33, #listed(loaded))
 		filters.all:Click()
-		assert.are.equal(15 + 8 + 40 + 35, #listed(loaded))
+		assert.are.equal(15 + 8 + 40 + 34, #listed(loaded))
 	end)
 
 	it(
@@ -790,7 +800,7 @@ describe("The Curio Shop's list", function()
 			assert.is_true(frame.chips[4].pressed)
 			assert.is_false(frame.chips[1].pressed)
 			frame.chips[1]:Click()
-			assert.are.equal(15 + 8 + 40 + 35, #listed(loaded))
+			assert.are.equal(15 + 8 + 40 + 34, #listed(loaded))
 		end
 	)
 
@@ -799,7 +809,7 @@ describe("The Curio Shop's list", function()
 			.. " wallet-and-shop.md › UI)",
 		function()
 			local loaded, handles = shopCore()
-			huntsFrames(handles.Hunts)
+			huntsFrames(handles.Hunts, nil, 1)
 
 			loaded.env.Pagle.OpenShop()
 
@@ -808,7 +818,7 @@ describe("The Curio Shop's list", function()
 				"FRAME 1 of 3",
 				"Plain | IN USE",
 				"GILT FRAMES",
-				"Gold leaf | 2 of 3 gilded",
+				"Gold leaf | 400 | 2 of 3 gilded",
 				"WOODEN FRAMES",
 				"Ash | 250",
 			}, { unpack(shown, #shown - 5) })
@@ -839,7 +849,7 @@ describe("The Curio Shop's list", function()
 
 		frame.search:Type("ash")
 
-		assert.are.same({ "FRAME 1 of 3", "WOODEN FRAMES", "Ash | 250" }, listed(loaded))
+		assert.are.same({ "FRAME 1 of 2", "WOODEN FRAMES", "Ash | 250" }, listed(loaded))
 		local looks = loaded.ns.ShopFirstLook()
 		assert.are.equal(rowOf(loaded, "hunts.frame.ash").bezel, looks.notes[2].target())
 	end)
@@ -970,7 +980,7 @@ describe("The Curio Shop's stage", function()
 			assert.are.equal("IN USE", stage.tags:GetText())
 			assert.is_false(stage.use:IsShown())
 			assert.are.same(
-				{ "TOAST STYLE 2 of 26", "Torn Page | default", "Ripple | IN USE" },
+				{ "TOAST STYLE 2 of 25", "Torn Page | default", "Ripple | IN USE" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
 		end
@@ -989,29 +999,39 @@ describe("The Curio Shop's stage", function()
 		assert.is_true(shopFrame(loaded).stage.use:IsShown())
 	end)
 
-	it("shows an earned good's earnedText and that it isn't for sale (wallet-and-shop.md › UI)", function()
-		local loaded = loadCore()
-		local ledger = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
-		ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Books" })
-		ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
-		ledger:RegisterGood({
-			id = "ledger.binding.level30",
-			slot = "ledger.binding",
-			name = "Level 30",
-			earnedText = "Angler Level 30",
-			isEarned = function()
-				return false
-			end,
-		})
-		enterWorld(loaded, 2)
+	it(
+		"shows an earned good on sale at its fallback price with its earnedText and Buy (SHOP-R28, wallet-and-shop.md › UI)",
+		function()
+			local loaded = loadCore()
+			local ledger = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Books" })
+			ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
+			ledger:RegisterGood({
+				id = "ledger.binding.level30",
+				slot = "ledger.binding",
+				name = "Level 30",
+				earnedText = "Angler Level 30",
+				isEarned = function()
+					return false
+				end,
+				fallbackTier = 2,
+				fallbackFrom = 1,
+			})
+			enterWorld(loaded, 2)
 
-		loaded.env.Pagle.OpenShop("ledger.binding.level30")
+			loaded.env.Pagle.OpenShop("ledger.binding.level30")
 
-		local stage = shopFrame(loaded).stage
-		assert.are.equal("Angler Level 30\nA Ledger reward, not for sale", stage.notes:GetText())
-		assert.is_false(stage.buy:IsShown())
-		assert.are.equal("Angler Level 30", rowOf(loaded, "ledger.binding.level30").tag:GetText())
-	end)
+			local stage = shopFrame(loaded).stage
+			assert.are.equal("Angler Level 30\nOr buy it for 400", stage.notes:GetText())
+			assert.is_true(stage.buy:IsShown())
+			local row = rowOf(loaded, "ledger.binding.level30")
+			assert.are.same(
+				{ "Angler Level 30", true, "400", row.price },
+				{ row.tag:GetText(), row.tag:IsShown(), row.price.amount:GetText(), row.price }
+			)
+			assert.is_true(row.price:IsShown()) -- the price tag, with the earned tag beside it
+		end
+	)
 
 	it("draws a crest with no preview of its own on the crest slot's bookplate (SHOP-R25)", function()
 		local loaded = shopCore()
@@ -1049,6 +1069,118 @@ describe("The Curio Shop's stage", function()
 	)
 
 	it(
+		"opens the Collection on an earned crest the shop doesn't list, through def.collection (SHOP-R40, CORE-R45)",
+		function()
+			local opened = {}
+			local loaded = shopCore(nil, {
+				collection = function(goodID)
+					opened[#opened + 1] = goodID
+				end,
+			})
+
+			loaded.env.Pagle.OpenShop("ledger.crest.elwynn")
+			loaded.env.Pagle.OpenShop("core.crest.fish.6359") -- one of Core's fish crests, earned and unlisted too
+
+			assert.are.same({ "ledger.crest.elwynn", "core.crest.fish.6359" }, opened)
+			assert.is_nil(shopFrame(loaded)) -- the shop never opened
+		end
+	)
+
+	it("opens the shop, not the Collection, for a good the shop lists, an unknown good or none (SHOP-R40)", function()
+		local opened = {}
+		local loaded = shopCore(nil, {
+			collection = function(goodID)
+				opened[#opened + 1] = goodID
+			end,
+		})
+
+		loaded.env.Pagle.OpenShop("hunts.cover.velvet")
+		loaded.env.Pagle.OpenShop("hunts.cover.none")
+		loaded.env.Pagle.OpenShop("core.toaststyle.page")
+		loaded.env.Pagle.OpenShop()
+
+		assert.are.same({}, opened)
+		assert.is_true(shopFrame(loaded):IsShown())
+	end)
+
+	it("opens the Collection for an earned good of a Module off, owned or not (SHOP-R35, SHOP-R40)", function()
+		local opened = {}
+		local loaded = shopCore({
+			global = {
+				goods = {
+					["hunts.cover.gold"] = {
+						name = "Gold",
+						slot = "hunts.cover",
+						slotLabel = "Notebook cover",
+						category = "Trackers",
+						module = "Hunts",
+						earned = true,
+					},
+				},
+			},
+		}, {
+			noHunts = true,
+			collection = function(goodID)
+				opened[#opened + 1] = goodID
+			end,
+		})
+
+		loaded.env.Pagle.OpenShop("hunts.cover.gold")
+
+		assert.are.same({ "hunts.cover.gold" }, opened)
+	end)
+
+	it(
+		"opens the Collection on an earned good the shop doesn't list even while restricted (SHOP-R40, LED-R121)",
+		function()
+			local opened = {}
+			local loaded = shopCore(nil, {
+				collection = function(goodID)
+					opened[#opened + 1] = goodID
+				end,
+			})
+			setCombat(loaded, true)
+
+			loaded.env.Pagle.OpenShop("ledger.crest.elwynn")
+
+			assert.are.same({ "ledger.crest.elwynn" }, opened)
+			assert.are.same({}, loaded.printed)
+			assert.is_nil(shopFrame(loaded))
+		end
+	)
+
+	it("prints SHOP-R41's line while restricted when the shop itself would open, and opens no Collection", function()
+		local opened = {}
+		local loaded = shopCore(nil, {
+			collection = function(goodID)
+				opened[#opened + 1] = goodID
+			end,
+		})
+		setCombat(loaded, true)
+
+		loaded.env.Pagle.OpenShop("hunts.cover.velvet") -- a listed good
+		loaded.env.Pagle.OpenShop("hunts.cover.none") -- unknown
+		loaded.env.Pagle.OpenShop()
+
+		assert.are.same({}, opened)
+		assert.are.same({ AFTER_COMBAT, AFTER_COMBAT, AFTER_COMBAT }, loaded.printed)
+		assert.is_nil(shopFrame(loaded))
+	end)
+
+	it(
+		"prints SHOP-R41's line for an unlisted earned good while restricted when no Module offers a Collection",
+		function()
+			local loaded = shopCore()
+			setCombat(loaded, true)
+
+			loaded.env.Pagle.OpenShop("ledger.crest.elwynn")
+
+			assert.are.same({ AFTER_COMBAT }, loaded.printed)
+			assert.is_nil(shopFrame(loaded))
+		end
+	)
+
+	it(
 		"shows an earned good's progress as dots under its description, filled or ringed in their colours, its note"
 			.. " under them (SHOP-R22, wallet-and-shop.md › UI)",
 		function()
@@ -1061,7 +1193,7 @@ describe("The Curio Shop's stage", function()
 					{ color = { 0.1, 0.4, 0.9 }, filled = false },
 					{ color = { 0.6, 0.3, 0.9 }, filled = false },
 				}
-			end)
+			end, 1)
 
 			loaded.env.Pagle.OpenShop("hunts.frame.leaf")
 
@@ -1070,7 +1202,7 @@ describe("The Curio Shop's stage", function()
 			assert.is_true(dots:IsShown())
 			assert.are.same({ "TOP", stage.description, "BOTTOM", 0, -8 }, { dots:GetPoint() })
 			assert.are.same({ "TOPLEFT", stage.description, "BOTTOMLEFT", 0, -26 }, { stage.notes:GetPoint() })
-			assert.are.equal("Gild three frames.\nA Hunts reward, not for sale", stage.notes:GetText())
+			assert.are.equal("Gild three frames.\nOr buy it for 400", stage.notes:GetText())
 			local shown = {}
 			for _, dot in ipairs(dots.dots) do
 				if dot:IsShown() then
@@ -1522,7 +1654,7 @@ describe("The Curio Shop's motion and sounds (wallet-and-shop.md › UI: Motion 
 
 			assert.are.equal("50", purse.balance:GetText())
 			assert.are.same(
-				{ "TOAST STYLE 2 of 26", "Torn Page | default", "Ripple | IN USE" },
+				{ "TOAST STYLE 2 of 25", "Torn Page | default", "Ripple | IN USE" },
 				{ listed(loaded)[1], listed(loaded)[2], listed(loaded)[3] }
 			)
 			assert.is_false(rowOf(loaded, "core.toaststyle.page").stepDown:IsShown())
@@ -1722,7 +1854,7 @@ describe("The Curio crate in the window", function()
 			frame.chips[1]:Click()
 			frame.search:Type("ripple")
 			assert(not crateLine(loaded):IsShown(), "a search its label doesn't match")
-			assert.are.same({ "TOAST STYLE 1 of 26", "Ripple | 250" }, listed(loaded))
+			assert.are.same({ "TOAST STYLE 1 of 25", "Ripple | 250" }, listed(loaded))
 		end
 	)
 

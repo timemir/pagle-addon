@@ -2693,10 +2693,11 @@ describe("FakePagle", function()
 
 				fake.enterWorld()
 
-				assert.are.same(
-					{ spent = 550, purchased = { ["hunts.cover.velvet"] = true, ["hunts.cover.silk"] = true } },
-					fake.global.projections.wallet.projection
-				)
+				assert.are.same({
+					spent = 550,
+					purchased = { ["hunts.cover.velvet"] = true, ["hunts.cover.silk"] = true },
+					ownedAt = { ["hunts.cover.velvet"] = SERVER_TIME - 699, ["hunts.cover.silk"] = SERVER_TIME - 698 },
+				}, fake.global.projections.wallet.projection)
 				assert.are.equal(50, fake.Pagle.GetBalance().balance)
 				assert.are.same(
 					{ true, true },
