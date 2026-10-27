@@ -546,66 +546,13 @@ describe("the Angler page's bookplate in M4", function()
 	end)
 end)
 
-describe("the Angler page's Signed As", function()
-	-- The fixture earns level 1's Minnow and, its one junk caught, Collector of Boots (LED-R75); the celebrated set
-	-- adds Dabbler, Returning Tide, a Legend's title with no lore text and a key naming no title (LED-R76).
-	local function signedPage()
-		local fake, loaded = anglerPage()
-		loaded.env.PagleLedgerDB.global.celebrated.titles = {
-			["title:level10"] = true,
-			["title:prestige1"] = true,
-			["legend:99999"] = true,
-			["title:bogus"] = true,
-		}
-		loaded.ns.journal:Draw()
-		return fake, loaded
-	end
+-- The state row drawn on the open Collection's right page: its button or seal.
+local function drawnUseRow(loaded)
+	return loaded.ns.journal.shown.right.drawn.useRow[1]
+end
 
-	it(
-		"lists Automatic, then the earned titles in LED-R75's order, leaving out one without lore text, Automatic marked (LED-R146, LED-R75, LED-R77, LED-R161)",
-		function()
-			local _, loaded = signedPage()
-
-			assert.are.same(
-				{ "Automatic", "Minnow", "Dabbler", "Returning Tide", "Collector of Boots" },
-				blockTexts(section(loaded, "Signed As"))
-			)
-			local picked = {}
-			for i, block in ipairs(section(loaded, "Signed As")) do
-				assert.are.same({ "link", "radio" }, { block.kind, block.style })
-				picked[i] = block.on
-			end
-			assert.are.same({ true, false, false, false, false }, picked)
-			-- Automatic: the highest level title earned (LED-R77).
-			assert.are.equal("Dabbler", blockOfKind(loaded.ns.journal.pages.left, "bookplate").signature)
-		end
-	)
-
-	it(
-		"makes the title picked the active one on the bookplate, and Automatic clears it (LED-R146, LED-R77, SET-R70)",
-		function()
-			local _, loaded = signedPage()
-			local profile = loaded.ns.db.profile
-
-			click(loaded, "right", "Returning Tide")
-
-			assert.are.equal("title:prestige1", profile.activeTitle)
-			assert.are.equal("Returning Tide", blockOfKind(loaded.ns.journal.pages.left, "bookplate").signature)
-			local picked = {}
-			for i, block in ipairs(section(loaded, "Signed As")) do
-				picked[i] = block.on
-			end
-			assert.are.same({ false, false, false, true, false }, picked)
-
-			click(loaded, "right", "Automatic")
-
-			assert.is_nil(profile.activeTitle)
-			assert.are.equal("Dabbler", blockOfKind(loaded.ns.journal.pages.left, "bookplate").signature)
-			assert.is_true(section(loaded, "Signed As")[1].on)
-		end
-	)
-
-	it("comes after Hands on the Rod and Milestones, and before Bindings (LED-R146, LED-R150)", function()
+describe("the Angler page's right page after the Collection (LED-R146, LED-R150, LED-R170)", function()
+	it("reads Hands on the Rod, Milestones and then Where your XP came from: no Signed As, no Bindings", function()
 		local _, loaded = anglerPage()
 		local titles = {}
 		for _, block in ipairs(loaded.ns.journal.pages.right) do
@@ -614,183 +561,44 @@ describe("the Angler page's Signed As", function()
 			end
 		end
 
-		assert.are.same(
-			{ "Hands on the Rod", "Milestones", "Signed As", "Bindings", "Where your XP came from" },
-			titles
-		)
-	end)
-end)
-
-describe("the Angler page's Bindings", function()
-	-- Each binding line: its name and its state.
-	local function lines(loaded)
-		local list = {}
-		for i, block in ipairs(section(loaded, "Bindings")) do
-			list[i] = { block.text, block.value }
+		assert.are.same({ "Hands on the Rod", "Milestones", "Where your XP came from" }, titles)
+		for _, block in ipairs(loaded.ns.journal.pages.right) do
+			assert.is_true(block.style ~= "radio" and block.kind ~= "link")
 		end
-		return list
-	end
-
-	-- Celebrated at level 10 before (LED-R90): Tanned Hide is earned (LED-R111).
-	local LEVEL_10 = { global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } }
+	end)
 
 	it(
-		"lists every binding in Core's slot in the shop's order: Field Leather in use, those for sale in the Curio Shop, then the Ledger's earned ones by how they are earned, the second round's last (LED-R146, SHOP-R25, LED-R110, LED-R116, LED-R118)",
+		"signs the bookplate with the title the Collection's Titles shelf picks, Automatic the highest level title (LED-R146, LED-R77)",
 		function()
 			local _, loaded = anglerPage()
+			loaded.env.PagleLedgerDB.global.celebrated.titles = { ["title:level10"] = true, ["title:prestige1"] = true }
+			loaded.ns.journal:Draw()
+			assert.are.equal("Dabbler", blockOfKind(loaded.ns.journal.pages.left, "bookplate").signature)
 
-			assert.are.same({
-				{ "Field Leather", "In use" },
-				{ "Birch Bark", "In the Curio Shop" },
-				{ "Tide-Chart Linen", "In the Curio Shop" },
-				{ "Tarred Sailcloth", "In the Curio Shop" },
-				{ "Oilskin Yellow", "In the Curio Shop" },
-				{ "Canvas Field Pad", "In the Curio Shop" },
-				{ "Waxed Kraft", "In the Curio Shop" },
-				{ "Tartan Wool", "In the Curio Shop" },
-				{ "Sea-Green Buckram", "In the Curio Shop" },
-				{ "Mossbound", "In the Curio Shop" },
-				{ "Driftwood Boards", "In the Curio Shop" },
-				{ "Eelskin", "In the Curio Shop" },
-				{ "Kodo Hide", "In the Curio Shop" },
-				{ "Frost-Tanned Hide", "In the Curio Shop" },
-				{ "Net over Cork", "In the Curio Shop" },
-				{ "Tooled Leather", "In the Curio Shop" },
-				{ "Map Linen", "In the Curio Shop" },
-				{ "Bound Planks", "In the Curio Shop" },
-				{ "Sharkskin", "In the Curio Shop" },
-				{ "Riveted Copper", "In the Curio Shop" },
-				{ "Night Velvet", "In the Curio Shop" },
-				{ "Turtle Shell", "In the Curio Shop" },
-				{ "Gilded Morocco", "In the Curio Shop" },
-				{ "Verdigris", "In the Curio Shop" },
-				{ "Snakeskin", "In the Curio Shop" },
-				{ "Stingray Shagreen", "In the Curio Shop" },
-				{ "Lacquered Red", "In the Curio Shop" },
-				{ "Bone & Rawhide", "In the Curio Shop" },
-				{ "Brass Hunter's Case", "In the Curio Shop" },
-				{ "Coral Inlay", "In the Curio Shop" },
-				{ "Scrimshaw Panel", "In the Curio Shop" },
-				{ "Shagreen and Bone", "In the Curio Shop" },
-				{ "Mother-of-Pearl", "In the Curio Shop" },
-				{ "Gilded Trophy Case", "In the Curio Shop" },
-				{ "Tanned Hide", "Angler Level 10" },
-				{ "Tidewater Blue", "Angler Level 20" },
-				{ "Reed Green", "Angler Level 30" },
-				{ "Oxblood", "Angler Level 40" },
-				{ "Storm Grey", "Angler Level 50" },
-				{ "Nat's Own", "Angler Level 60" },
-				{ "Three Gilt Fish", "Land all three Legends" },
-				{ "Monster Hide", "Land a Monster" },
-				{ "Abyssal Black", "Prestige X" },
-				{ "Keeper's Gold", "Complete the Ledger" },
-				{ "Iridescent Scale", "Every fish in every colour" },
-				{ "Breaking Wave", "300 catches at sea" },
-				{ "Captain's Logbook", "25 zones fished" },
-				{ "Carved Heartwood", "A catch after 10 got away" },
-				{ "Stormglass Reliquary", "Master in 10 zones" },
-				{ "Black Lacquer Koi", "30 days fished" },
-				{ "Cable Knit", "10,000 Casts" },
-				{ "Fly Wallet", "5 different lures" },
-				{ "Crab Carapace", "50 Big-mouth Clams" },
-				{ "Ember Scale", "Prestige VII" },
-			}, lines(loaded))
+			loaded.ns.journal:Open("shelf", { shelf = "titles", look = "title:prestige1" })
+			drawnUseRow(loaded).face:Click()
+			loaded.ns.journal:Open("angler")
+
+			assert.are.equal("title:prestige1", loaded.ns.db.profile.activeTitle)
+			assert.are.equal("Returning Tide", blockOfKind(loaded.ns.journal.pages.left, "bookplate").signature)
 		end
 	)
 
 	it(
-		"draws each line's closed book from its binding's atlas, an expansion one's from Bindings2, 11 wide, and none for a cover with no book of the Journal's (LED-R146, LED-R110)",
+		"lets a binding be worn from the Collection's Bindings shelf, the page itself drawing none (LED-R170)",
 		function()
-			local _, loaded = anglerPage()
-			local ns = loaded.ns
-			local books = {}
-			for _, widget in ipairs(ns.journal.shown.right.drawn.leader) do
-				if widget.swatch:IsShown() then
-					books[widget.label.text] = widget.swatch
-				end
-			end
+			local fake, loaded = anglerPage(
+				nil,
+				{ saved = { global = { celebrated = { coins = 0, levels = { [0] = 10 }, logId = "log" } } } }
+			)
 
-			local field, coral = books["Field Leather"], books["Coral Inlay"]
-			assert.is_nil(books["Verdigris"])
-			assert.is_nil(books["Lacquered Red"])
-			assert.is_truthy(books["Monster Hide"])
-			assert.are.equal(ns.JOURNAL_ATLASES.Bindings.file, field.texture)
-			assert.are.equal(ns.JOURNAL_ATLASES.Bindings2.file, coral.texture)
-			assert.are.same({ ns.JournalCoords("Bindings2", "swatch-coral") }, coral.texCoord)
-			assert.are.same({ 11, 11 }, { field.box[3], coral.box[3] })
-		end
-	)
-
-	it(
-		"offers Use for an expansion binding earned, its rule kept in the celebrated set (LED-R146, LED-R116)",
-		function()
-			local _, loaded = anglerPage(nil, {
-				saved = {
-					global = {
-						celebrated = {
-							coins = 0,
-							prestige = 10,
-							goods = { ["ledger.binding.monster"] = true },
-							logId = "log",
-						},
-					},
-				},
-			})
-
-			local list = lines(loaded)
-			assert.are.same({ "Monster Hide", "Use" }, list[42])
-			assert.are.same({ "Abyssal Black", "Use" }, list[43])
-			assert.are.same({ "Keeper's Gold", "Complete the Ledger" }, list[44])
-		end
-	)
-
-	it("offers Use for a level binding once its level is reached, and for one bought (LED-R146, LED-R111)", function()
-		local fake, loaded = anglerPage(nil, { saved = LEVEL_10 })
-		fake.setPurchased({ ["core.binding.birch"] = true })
-		loaded.ns.journal:Draw()
-
-		local list = lines(loaded)
-		assert.are.same({ "Tanned Hide", "Use" }, list[35])
-		assert.are.same({ "Tidewater Blue", "Angler Level 20" }, list[36])
-		assert.are.same({ "Birch Bark", "Use" }, list[2])
-	end)
-
-	it("opens the Curio Shop at a binding for sale (LED-R146, SHOP-R40)", function()
-		local fake, loaded = anglerPage()
-
-		-- The eighth of the lines reading so: Sea-Green Buckram's.
-		local widgets = {}
-		for _, widget in ipairs(loaded.ns.journal.shown.right.drawn.leader) do
-			if widget.value.text == "In the Curio Shop" then
-				widgets[#widgets + 1] = widget
-			end
-		end
-		widgets[8].scripts.OnClick(widgets[8])
-
-		assert.are.equal("core.binding.buckram", fake.shopsOpened[#fake.shopsOpened].goodID)
-	end)
-
-	it(
-		"equips a binding on Use, the book redrawn in it and the line reading In use (LED-R146, LED-R112, SHOP-R32)",
-		function()
-			local fake, loaded = anglerPage(nil, { saved = LEVEL_10 })
-
-			click(loaded, "right", "Tanned Hide")
+			loaded.ns.journal:Open("shelf", { shelf = "core.binding", look = "ledger.binding.level10" })
+			drawnUseRow(loaded).face:Click()
 
 			assert.are.equal("ledger.binding.level10", fake.Pagle.GetEquipped("core.binding"))
 			assert.are.same(fake.ns.BindingLook("ledger.binding.level10"), loaded.ns.journal.frame.binding:Look())
-			local list = lines(loaded)
-			assert.are.same({ { "Field Leather", "Use" }, { "Tanned Hide", "In use" } }, { list[1], list[35] })
 		end
 	)
-
-	it("follows a pick made elsewhere, as Look and Feel's (SHOP-R32, LED-R112)", function()
-		local fake, loaded = anglerPage(nil, { saved = LEVEL_10 })
-
-		assert.is_true(fake.Pagle.SetEquipped("core.binding", "ledger.binding.level10"))
-
-		assert.are.same({ "Tanned Hide", "In use" }, lines(loaded)[35])
-	end)
 end)
 
 -- The roster's Module order (CORE-R41), for the stub paying Modules.

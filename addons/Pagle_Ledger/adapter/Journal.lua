@@ -118,7 +118,6 @@ function ns.JournalGoods()
 		openShop = Pagle.OpenShop,
 		slotGoods = Pagle.GetSlotGoods,
 		getGood = Pagle.GetGood,
-		bindingLook = Pagle.GetBindingLook,
 		slots = Pagle.GetSlots,
 		earnedProgress = Pagle.GetEarnedProgress,
 		putAway = Pagle.GetPutAwayGoods,
@@ -150,7 +149,7 @@ function Journal:Context() -- luacheck: no self
 		angler = Pagle.GetAngler(),
 		openFieldReport = Pagle.OpenFieldReport,
 		sizeText = ns.ClientSizeText,
-		-- The Angler page's M4 parts (LED-R146): the crest, Prestige, the title pick and the bindings.
+		-- The Angler page's M4 parts (LED-R146): the crest and Prestige; the title pick is the Collection's (LED-R170).
 		crest = ns.CrestIcon(),
 		canPrestige = ns.CanPrestige(),
 		askPrestige = ns.AskPrestige,
@@ -185,7 +184,7 @@ function Journal:PagesAt(place)
 	-- every owned look and earned title not seen yet is noted, before any spread reads which are new (LED-R171)
 	if not context.updating then
 		ns.NoteCollection(context)
-		context.collection = ns.db.global.collection
+		context.collection = ns.db.global.collection or context.collection
 	end
 	self.context = context
 	self.pages = self.router:Pages(context)

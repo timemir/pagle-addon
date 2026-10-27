@@ -27,6 +27,15 @@ local function open(id, args, options)
 	options = options or {}
 	options.id, options.args, options.logId = id, args, options.logId or LOG
 	options.globals = options.globals or { BreakUpLargeNumbers = breakUpLargeNumbers }
+	-- The first noting waits a frame for the projections to be idle (LED-R171): `before` finds the Collection noted, as a
+	-- Journal opened some time after login would, so what it makes owned is new.
+	local before = options.before
+	options.before = function(loaded, fake)
+		loaded.client.runTimers()
+		if before then
+			before(loaded, fake)
+		end
+	end
 	return openJournal(options)
 end
 
@@ -1392,6 +1401,71 @@ describe("new and lately (LED-R171)", function()
 		assert.is_false(line.note:IsShown())
 	end)
 
+	-- Core's projections as the spec holds them: updating until `idle.now` is set, as a rebuild's wallet is until its done.
+	local function slowCore()
+		local idle = { now = false }
+		return idle,
+			function(fake)
+				local updating = fake.Pagle.IsUpdating
+				fake.Pagle.IsUpdating = function()
+					return not idle.now or updating()
+				end
+			end
+	end
+
+	it(
+		"waits for the projections to catch up before noting: a purchase handed over late after a first opening is not new (LED-R171)",
+		function()
+			local idle, slow = slowCore()
+			local fake, loaded = open("collection", nil, { building = true, id = false, modules = slow })
+			fake.enterWorld()
+			loaded.ns.journal:Open("collection")
+			loaded.client.runTimers()
+
+			-- the Journal opened and drew while Core's wallet was still catching up: nothing noted, nothing new
+			assert.is_nil(loaded.ns.db.global.collection)
+			assert.are.equal(0, loaded.ns.CollectionModel(loaded.ns.journal.context).new)
+
+			-- its done hands the purchases over, and the projections are idle: the first noting takes them as owned all along
+			fake.setPurchased({ [RIPPLE] = true }, { [RIPPLE] = SERVER_TIME - DAY })
+			idle.now = true
+			loaded.client.runTimers()
+
+			local collection = loaded.ns.db.global.collection
+			assert.are.same({ SERVER_TIME, true }, { collection.seen[RIPPLE], collection.looked[RIPPLE] })
+			assert.are.equal(0, loaded.ns.CollectionModel(loaded.ns.journal.context).new)
+			assert.is_true(loaded.ns.journal.pages.left[5].note == nil)
+		end
+	)
+
+	it("draws the open Journal again once it has noted, the looks it had no word of owned (LED-R171)", function()
+		local idle, slow = slowCore()
+		local fake, loaded = open("collection", nil, { building = true, id = false, modules = slow })
+		fake.enterWorld()
+		loaded.ns.journal:Open("collection")
+		local before = loaded.ns.CollectionModel(loaded.ns.journal.context).owned
+		fake.setPurchased({ [RIPPLE] = true }, { [RIPPLE] = SERVER_TIME - DAY })
+
+		idle.now = true
+		loaded.client.runTimers()
+
+		assert.are.equal(before + 1, loaded.ns.CollectionModel(loaded.ns.journal.context).owned)
+	end)
+
+	it("keeps a purchase made after the first noting new, as before (LED-R171)", function()
+		local idle, slow = slowCore()
+		local fake, loaded = open("collection", nil, { building = true, id = false, modules = slow })
+		fake.enterWorld()
+		idle.now = true
+		loaded.client.runTimers()
+
+		fake.setPurchased({ [RIPPLE] = true }, { [RIPPLE] = SERVER_TIME })
+		loaded.ns.journal:Open("collection")
+
+		assert.is_nil(loaded.ns.db.global.collection.looked[RIPPLE])
+		assert.are.equal(1, loaded.ns.CollectionModel(loaded.ns.journal.context).new)
+	end)
+
 	it("notes a title earned live as seen, new until the Titles shelf is drawn (LED-R171)", function()
 		local _, loaded = open("collection", nil, {
 			before = function(l)
@@ -1715,7 +1789,7 @@ describe("getting there (LED-R174)", function()
 			"Curios: junk, treasure, uncharted",
 			"Legends",
 			"The Collection: looks and titles",
-			"The Angler: hands, titles, bindings",
+			"The Angler: hands and milestones",
 			"Following",
 		}, lines)
 	end)

@@ -10,11 +10,29 @@ local ns = select(2, ...)
 -- collection` and Home's line. logic/Collection.lua is what it notes and opens; the Journal draws it (adapter/Journal.lua,
 -- adapter/JournalShelves.lua). Nothing here makes a secure frame, so all of it works while restricted (LED-R121).
 
+-- A retry is waiting for Core's projections to catch up.
+local waiting = false
+
 --- Notes every look and title the Angler owns and the Ledger hasn't seen yet in `PagleLedgerDB.global.collection`
 --- (LED-R171), with the time now: after each live entry and the projection's done, and at each drawing of any spread.
---- `context` is the Journal's context just read, when there is one; nothing while the projection updates (LOG-R74).
+--- `context` is the Journal's context just read, when there is one. It waits while any projection is updating (LOG-R74):
+--- the Ledger's own (nothing of the state before it, LED-R122) and Core's, the wallet's among them, whose purchases and
+--- crates `Pagle.IsOwned` holds back until its done. Noting early would take a first opening for a look that was owned
+--- all along, or a purchase handed over late for a new one; the frame after they are caught up it notes, and draws
+--- the open Journal again.
 ---@param context LedgerJournalContext?
 function ns.NoteCollection(context)
+	if Pagle.IsUpdating() then
+		if not waiting then
+			waiting = true
+			C_Timer.After(0, function()
+				waiting = false
+				ns.NoteCollection()
+				ns.journal:QueueDraw()
+			end)
+		end
+		return
+	end
 	context = context or ns.journal:Context()
 	if context.updating then
 		return

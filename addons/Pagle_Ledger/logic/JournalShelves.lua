@@ -105,7 +105,7 @@ local function effect(look)
 	local slot = look.slot --[[@as string]]
 	if L.COLLECTION_EFFECTS[slot] then
 		return L.COLLECTION_EFFECTS[slot]
-	elseif slot:find("%.trackerframe$") then
+	elseif look.category == "Trackers" then
 		return L.COLLECTION_EFFECT_TRACKER:format(ns.CollectionModuleName(look.module --[[@as string]]))
 	end
 	return nil

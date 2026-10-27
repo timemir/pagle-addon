@@ -104,6 +104,7 @@ describe("the Collection", function()
 			id = id,
 			name = name,
 			slot = slot,
+			category = slot:find("trackerframe", 1, true) and "Trackers" or "Announcements",
 			module = "Core",
 			isDefault = false,
 			kind = "sale",
@@ -406,6 +407,35 @@ describe("the Collection", function()
 
 				assert.are.same({ { "Hunts", 1, 1 }, { "Stats", 2, 2 }, { "Tackle Board", 1, 1 } }, groups)
 				assert.are.equal("putAway", model.byID["tackleboard.trackerframe.cork"].state)
+			end
+		)
+
+		it(
+			"put a put away look on Tracker frames by its slot's category, whatever its slot is called (SHOP-R36, LED-R172)",
+			function()
+				local model = ns.BuildCollection(contextOf({
+					goods = toasts(),
+					away = {
+						good(
+							"stats.frames.map",
+							"stats.frames",
+							"Map Scrap",
+							{ module = "Stats", category = "Trackers", owned = true }
+						),
+						good(
+							"stats.charms.one",
+							"stats.charms",
+							"A Charm",
+							{ module = "Stats", category = "Books", owned = true }
+						),
+					},
+				}))
+
+				assert.are.same({ "trackers", "Tracker frame" }, {
+					model.byID["stats.frames.map"].shelf,
+					model.byID["stats.frames.map"].slotName,
+				})
+				assert.is_nil(model.byID["stats.charms.one"])
 			end
 		)
 

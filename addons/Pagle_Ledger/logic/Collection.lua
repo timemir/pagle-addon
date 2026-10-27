@@ -24,8 +24,8 @@ ns.COLLECTION_LATELY = 4
 ns.COLLECTION_PENCIL = { sepia = 0.45, alpha = 0.5 }
 -- Search shows at most this many results (LED-R175 says "as LED-R148 does", which caps its two lists).
 local SEARCH_MAX = 10
--- A Tracker frame slot's ID ends so, in a Module that is off, whose slot Core no longer lists (SHOP-R35).
-local TRACKER_SLOT = "%.trackerframe$"
+-- The slot category whose slots share the Tracker frames shelf (LED-R167).
+local TRACKERS = "Trackers"
 
 --- Which of a shelf's looks the filter tabs keep (LED-R169), by the tab's key, in the tabs' order.
 ns.COLLECTION_TABS = { "all", "yours", "earn", "shop" }
@@ -51,6 +51,7 @@ ns.COLLECTION_TABS = { "all", "yours", "earn", "shop" }
 ---@field shelf string              -- its shelf's key
 ---@field slot string?              -- a good's slot
 ---@field slotName string           -- the slot's name, singular ("Toast style"); "Title" for a title
+---@field category string?          -- a good's slot's category
 ---@field module string?            -- a good's Module (def.name, "Core" for Core's)
 ---@field group string?             -- a title's group key; a good's group key
 ---@field state "inUse"|"owned"|"earn"|"shop"|"putAway"
@@ -97,13 +98,14 @@ ns.COLLECTION_TABS = { "all", "yours", "earn", "shop" }
 -- A slot's name, singular and plural (LED-R167): the locale's for Core's slots, else the slot's label and that with an "s".
 ---@param slotID string
 ---@param label string?
+---@param category string? the slot's category, which Core gives a good of a Module that is off too
 ---@return string singular
 ---@return string plural
-local function slotNames(slotID, label)
+local function slotNames(slotID, label, category)
 	local named = ns.L.COLLECTION_SLOT_NAMES[slotID]
 	if named then
 		return named[1], named[2]
-	elseif slotID:find(TRACKER_SLOT) then
+	elseif category == TRACKERS then
 		return ns.L.COLLECTION_TRACKER_FRAME, ns.L.COLLECTION_TRACKER_FRAMES
 	end
 	label = label or slotID
@@ -119,7 +121,7 @@ function ns.CollectionShelves(slots)
 	local L = ns.L
 	local shelves, trackers = {}, nil
 	for _, slot in ipairs(slots) do
-		if slot.category == "Trackers" then
+		if slot.category == TRACKERS then
 			if not trackers then
 				trackers = {
 					key = ns.COLLECTION_TRACKERS,
@@ -173,26 +175,25 @@ function ns.CollectionModuleName(module)
 	return ns.L.COLLECTION_MODULES[module] or module
 end
 
--- The shelf in `byKey`/`shelves` a good of slot `slotID` stands on: its slot's, or Tracker frames for a tracker slot
--- whose Module is off, so Core no longer lists it (SHOP-R35); nil for a slot nothing says.
+-- The shelf a good stands on: its slot's, or Tracker frames for a good of a tracker slot (GetGood's category) whose Module
+-- is off, so Core no longer lists its slot (SHOP-R35); nil for a slot nothing says.
 ---@param model { shelves: LedgerShelf[] }
----@param slotID string
+---@param info PagleGoodInfo
 ---@return LedgerShelf?
-local function shelfOfSlot(model, slotID)
+local function shelfOfGood(model, info)
 	for _, shelf in ipairs(model.shelves) do
 		for _, slot in ipairs(shelf.slots) do
-			if slot.id == slotID then
+			if slot.id == info.slot then
 				return shelf
 			end
 		end
 	end
-	if slotID:find(TRACKER_SLOT) then
+	if info.category == TRACKERS then
 		for _, shelf in ipairs(model.shelves) do
 			if shelf.kind == "trackers" then
 				return shelf
 			end
 		end
-		-- every tracker Module is off: the shelf is there for their put away looks
 	end
 	return nil
 end
@@ -208,7 +209,7 @@ function ns.CollectionShelfOf(goods, goodID)
 		return nil
 	end
 	local shelves = ns.CollectionShelves(goods.slots())
-	local shelf = shelfOfSlot({ shelves = shelves }, info.slot)
+	local shelf = shelfOfGood({ shelves = shelves }, info)
 	return shelf and shelf.key
 end
 
@@ -228,13 +229,14 @@ local function goodLook(context, id, shelf, equipped, labels, putAway, light)
 		return nil
 	end
 	local owned = goods.isOwned(id)
-	local singular = slotNames(info.slot, labels[info.slot])
+	local singular = slotNames(info.slot, labels[info.slot], info.category)
 	---@type LedgerLook
 	local look = {
 		id = id,
 		name = info.name,
 		shelf = shelf.key,
 		slot = info.slot,
+		category = info.category,
 		slotName = singular,
 		module = info.module,
 		group = info.group,
@@ -421,7 +423,7 @@ function ns.BuildCollection(context, light)
 	if not hasTrackers then
 		for _, id in ipairs(putAway) do
 			local info = goods.getGood(id)
-			if info and info.slot:find(TRACKER_SLOT) then
+			if info and info.category == TRACKERS then
 				table.insert(shelves, #shelves, {
 					key = ns.COLLECTION_TRACKERS,
 					kind = "trackers",
@@ -445,7 +447,7 @@ function ns.BuildCollection(context, light)
 	local away = {}
 	for _, id in ipairs(putAway) do
 		local info = goods.getGood(id)
-		local shelf = info and shelfOfSlot(model, info.slot)
+		local shelf = info and shelfOfGood(model, info)
 		if shelf then
 			away[shelf.key] = away[shelf.key] or {}
 			table.insert(away[shelf.key], id)

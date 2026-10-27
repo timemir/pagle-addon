@@ -294,7 +294,7 @@ ns.L = {
 	HOME_ANGLER_MARK = "»",
 	HOME_SEAL_WORD = "Ledger",
 	HOME_CURIOS = "Curios: junk, treasure, uncharted",
-	HOME_ANGLER = "The Angler: hands, titles, bindings",
+	HOME_ANGLER = "The Angler: hands and milestones",
 	BRASS_PLATE = "Lv %d · Ledger %d%%",
 	BRASS_PLATE_TITLE = "Lv %d · %s · Ledger %d%%",
 
@@ -460,17 +460,12 @@ ns.L = {
 	ANGLER_MILESTONE = "%s %d",
 	ANGLER_MILESTONE_SEPARATOR = "   ",
 	-- The Angler page's M4 parts (LED-R146): the next Catch Milestone after the Catches (LED-R42), the bookplate's
-	-- Prestige line and button (LED-R33, LED-R34), "Signed As" (LED-R77: the active pick marked) and "Bindings" with
-	-- each binding's state (LED-R110; "Angler Level {L}" is BINDING_EARNED).
+	-- Prestige line and button (LED-R33, LED-R34), and Automatic, the title signed with while none is picked (LED-R77), which
+	-- the Collection's Titles shelf lists first.
 	ANGLER_NEXT_MILESTONE = " · next milestone %s",
 	ANGLER_NO_PRESTIGE = "No Prestige yet",
 	ANGLER_PRESTIGE = BEGIN_A_NEW_LEDGER .. " (Prestige)",
-	ANGLER_SIGNED_AS = "Signed As",
 	ANGLER_AUTOMATIC = "Automatic",
-	ANGLER_BINDINGS = "Bindings",
-	ANGLER_BINDING_IN_USE = "In use",
-	ANGLER_BINDING_USE = "Use",
-	ANGLER_BINDING_SHOP = "In the Curio Shop",
 	-- "Where your XP came from" (LED-R150): its heading and its two columns.
 	ANGLER_XP_SOURCES = "Where your XP came from",
 	ANGLER_XP_CLIMB = "This climb",

@@ -38,8 +38,8 @@ local ns = select(2, ...)
 ---@field crest? integer|string          -- the equipped crest's icon (LED-R112, ns.CrestIcon); nil for none
 ---@field canPrestige? boolean           -- whether LED-R33 allows Prestige now (ns.CanPrestige)
 ---@field askPrestige? fun()             -- asks before Prestiging (ns.AskPrestige, LED-R33)
----@field pickTitle? fun(key: string?)   -- sets the active title and redraws (ns.PickActiveTitle, LED-R77)
----@field goods? LedgerJournalGoods      -- Core's goods calls, for the Angler page's Bindings (LED-R146)
+---@field pickTitle? fun(key: string?)   -- sets the active title and redraws (ns.PickActiveTitle, LED-R77), the Collection's
+---@field goods? LedgerJournalGoods      -- Core's goods calls, for the Collection (LED-R166)
 ---@field getVarieties? fun(speciesID: integer): PagleVarietyEntry[]? -- Pagle.GetVarieties (VAR-R11); nil while updating
 ---@field rarities? PagleVarietyRarity[] -- Pagle.VARIETY_RARITIES, Common to Epic (VAR-R11); nil while updating
 ---@field fishCrest? fun(speciesID: integer): LedgerFishCrest -- a Species' fish crest (VAR-R12, VAR-R24)
@@ -54,8 +54,7 @@ local ns = select(2, ...)
 ---@field icon integer|string
 ---@field name string?
 
---- Core's goods calls the Angler page's Bindings make (LED-R146, SHOP-R30–R34, SHOP-R40) and the Collection reads
---- (LED-R166, SHOP-R36).
+--- Core's goods calls the Collection makes (LED-R166–R173, SHOP-R30–R34, SHOP-R36, SHOP-R40).
 ---@class LedgerJournalGoods
 ---@field isOwned fun(goodID: string): boolean           -- Pagle.IsOwned
 ---@field getEquipped fun(slot: string): string?         -- Pagle.GetEquipped
@@ -63,7 +62,6 @@ local ns = select(2, ...)
 ---@field openShop fun(goodID: string?)                  -- Pagle.OpenShop
 ---@field slotGoods fun(slot: string): string[]           -- Pagle.GetSlotGoods
 ---@field getGood fun(goodID: string): PagleGoodInfo?     -- Pagle.GetGood
----@field bindingLook fun(goodID: string?): PagleBindingLook -- Pagle.GetBindingLook
 ---@field slots fun(): PagleSlotInfo[]                    -- Pagle.GetSlots
 ---@field earnedProgress fun(goodID: string): PagleEarnedProgress? -- Pagle.GetEarnedProgress
 ---@field putAway fun(): string[]                         -- Pagle.GetPutAwayGoods
@@ -172,9 +170,6 @@ local ns = select(2, ...)
 ---@field on? boolean            -- a radio's pick
 ---@field inked? boolean         -- a seal pressed (false: the empty ring)
 ---@field numeral? string        -- a contents line's numeral
----@field binding? string        -- a binding line's closed book
----@field bindingAtlas? "Bindings"|"Bindings2" -- and its atlas (LED-R110)
----@field state? "inUse"|"use"|"level"|"shop" -- a binding line's state
 ---@field columns? integer       -- tiles across
 ---@field rank? integer          -- a crest's prestige rank, or a row's Prestige emblem's (a Followed Angler's, LED-R163)
 ---@field note? string           -- the bookplate's Prestige words

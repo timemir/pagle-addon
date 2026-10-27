@@ -7,9 +7,9 @@ local ns = select(2, ...)
 
 -- The Fish Journal's Angler page (LED-R146): the bookplate on the left, with the Prestige frame (LED-R154) and the
 -- crest (LED-R112), the active title (LED-R77), the Prestige emblem and button (LED-R33, LED-R34) and the next Catch
--- Milestone (LED-R42); the hands on the rod, the Skill Milestones, "Signed As", "Bindings" and "Where your XP came
--- from" (LED-R150) on the right. Pure logic, everything read from the spread's context (CORE-R7); the book draws it
--- (adapter/Journal.lua).
+-- Milestone (LED-R42); the hands on the rod, the Skill Milestones and "Where your XP came from" (LED-R150) on the right.
+-- Its title and its binding are chosen in the Collection (LED-R169, LED-R170, logic/JournalShelves.lua). Pure logic,
+-- everything read from the spread's context (CORE-R7); the book draws it (adapter/Journal.lua).
 
 -- The Angler page is ns.JOURNAL_ANGLER, its place ns.JournalPlace.angler (logic/Journal.lua).
 
@@ -125,96 +125,6 @@ local function milestones(context, blocks)
 	blocks[#blocks + 1] = { kind = "text", text = table.concat(boxes, L.ANGLER_MILESTONE_SEPARATOR) }
 end
 
--- "Signed As" (LED-R146, LED-R77, SET-R70): "Automatic", then each earned title with lore text in LED-R75's order
--- (LED-R161), as a pick list; the stored pick marked, or Automatic when it is nil or not earned. Picking calls
--- context.pickTitle with the title key, Automatic with nil.
----@param context LedgerSpreadContext
----@param blocks LedgerBlock[]
-local function signedAs(context, blocks)
-	local L = ns.L
-	local pick = context.pickTitle
-	local stored = context.activeTitle
-	local titles, marked = {}, nil
-	local keys = ns.TitleKeys(context --[[@as LedgerTitleView]])
-	for _, key in ipairs(keys) do
-		local name = ns.TitleName(key, context.text)
-		if name then
-			titles[#titles + 1] = { key = key, name = name }
-			if key == stored then
-				marked = key
-			end
-		end
-	end
-	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_SIGNED_AS }
-	---@param key string?
-	---@param name string
-	local function line(key, name)
-		blocks[#blocks + 1] = {
-			kind = "link",
-			style = "radio",
-			on = key == marked,
-			text = name,
-			action = function()
-				pick(key)
-			end,
-		}
-	end
-	line(nil, L.ANGLER_AUTOMATIC)
-	for _, title in ipairs(titles) do
-		line(title.key, title.name)
-	end
-end
-
--- The atlases of the Journal's own closed books (data/JournalArt.lua), the kits' Bindings boards: a binding whose swatch
--- is in another (the covers' notebooks) shows none on the Angler page.
-local JOURNAL_SWATCHES = { Bindings = true, Bindings2 = true }
-
--- "Bindings" (LED-R146, ADR 0015): every binding in Core's binding slot as the Curio Shop lists it
--- (Pagle.GetSlotGoods), its closed book, its name and its state: "In use" for the equipped one, "Use" (equipping it,
--- SHOP-R32) when owned, the Ledger's own earned one's earnedText ("Angler Level {L}", LED-R111; "Land a Monster",
--- LED-R116; the second round's plain earned text, "25 zones fished", LED-R118) when it isn't earned yet, and "In the
--- Curio Shop" (opening the shop at it, SHOP-R40) for any other not
--- owned. Look and Feel picks the same setting, and every book wears it, so the page reads Pagle.GetEquipped at each
--- draw.
----@param context LedgerSpreadContext
----@param blocks LedgerBlock[]
-local function bindings(context, blocks)
-	local L = ns.L
-	local goods = context.goods
-	local equipped = goods.getEquipped(ns.BINDING_SLOT)
-	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_BINDINGS }
-	for _, id in ipairs(goods.slotGoods(ns.BINDING_SLOT)) do
-		local good, look = goods.getGood(id), goods.bindingLook(id)
-		local own, counted = ns.LedgerBinding(id), ns.CountedGood(id)
-		local atlas = look.swatchAtlas
-		---@type LedgerBlock
-		local line = {
-			kind = "leader",
-			text = good and good.name or id,
-			binding = JOURNAL_SWATCHES[atlas] and look.swatch or nil,
-			bindingAtlas = JOURNAL_SWATCHES[atlas] and atlas --[[@as "Bindings"|"Bindings2"]] or nil,
-		}
-		if id == equipped then
-			line.value, line.state = L.ANGLER_BINDING_IN_USE, "inUse"
-		elseif goods.isOwned(id) then
-			line.value, line.state = L.ANGLER_BINDING_USE, "use"
-			line.action = function()
-				goods.setEquipped(ns.BINDING_SLOT, id)
-			end
-		elseif own then
-			line.value, line.state = ns.BindingEarnedText(own), "level"
-		elseif counted then
-			line.value, line.state = L.EARNED_TEXT[counted.earn], "level"
-		else
-			line.value, line.state = L.ANGLER_BINDING_SHOP, "shop"
-			line.action = function()
-				goods.openShop(id)
-			end
-		end
-		blocks[#blocks + 1] = line
-	end
-end
-
 -- "Where your XP came from" (LED-R150): its heading, the columns' heads "This climb" and "All told", then the Ledger's
 -- own line and one per source in Core's Module order (ns.XPSourceLines), a disabled source's `off`: greyed and struck
 -- through, still counted (AXP-R90).
@@ -245,8 +155,6 @@ ns.RegisterJournalSpread(ns.JOURNAL_ANGLER, {
 		local right = {}
 		hands(context, right)
 		milestones(context, right)
-		signedAs(context, right)
-		bindings(context, right)
 		xpSources(context, right)
 		return { left = bookplate(context), right = right }
 	end,

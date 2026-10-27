@@ -317,7 +317,7 @@ describe("the Journal's Home, right page", function()
 			{
 				kind = "leader",
 				numeral = "v.",
-				text = "The Angler: hands, titles, bindings",
+				text = "The Angler: hands and milestones",
 				value = "»",
 				place = { id = "angler" },
 			},

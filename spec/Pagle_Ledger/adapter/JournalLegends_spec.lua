@@ -519,7 +519,7 @@ describe("Home's Legends line (LED-R132)", function()
 				"Curios: junk, treasure, uncharted",
 				"Legends",
 				"The Collection: looks and titles",
-				"The Angler: hands, titles, bindings",
+				"The Angler: hands and milestones",
 				"Following",
 			}, leaders)
 
