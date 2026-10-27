@@ -715,11 +715,11 @@ def test_deleting_any_one_good_s_description_fails_the_hunts_lore_check_naming_i
 
 
 def test_every_v1_hunt_and_set_has_its_text() -> None:
-    # HNT-R130, DATA-R105: a name for each of the 12 Standing Hunts, a name and a title for each of the 4 sets
+    # HNT-R130, DATA-R105: a name for each of the 16 Standing Hunts, a name and a title for each of the 5 sets
     # (hunts.md › Data), all passing the Hunts lore check (read_layers raises on any problem).
     hunts = _layers().hunts
     text = _hunts_text()
-    assert len(hunts.hunts) == 12 and len(hunts.sets) == 4
+    assert len(hunts.hunts) == 16 and len(hunts.sets) == 5
     for hunt in hunts.hunts:
         assert text[f"hunt.{hunt.id}.name"].strip()
     for hunt_set in hunts.sets:
@@ -744,7 +744,7 @@ def test_no_line_of_hunts_lore_names_the_addon_its_terms_or_shouts(key: str) -> 
     assert "!" not in text and "|" not in text, text
 
 
-SETS = ["round_the_clock", "turn_of_the_year", "sunday_showdown", "camp_hours"]  # hunts.md › Data
+SETS = ["home_waters", "round_the_clock", "turn_of_the_year", "sunday_showdown", "camp_hours"]  # hunts.md › Data
 
 
 @pytest.mark.parametrize("hunt_set", SETS)

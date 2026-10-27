@@ -15,8 +15,55 @@ ns.huntList = {
 		["quality.uncommon"] = { [6643] = true, [6645] = true, [6647] = true, [8366] = true, [13881] = true, [19803] = true, [19805] = true, [19806] = true, [21162] = true, [21164] = true, [21243] = true },
 		["species.any"] = { [1467] = true, [4603] = true, [6289] = true, [6291] = true, [6299] = true, [6303] = true, [6308] = true, [6317] = true, [6358] = true, [6359] = true, [6361] = true, [6362] = true, [6458] = true, [6522] = true, [6887] = true, [8365] = true, [12238] = true, [13422] = true, [13754] = true, [13755] = true, [13756] = true, [13757] = true, [13758] = true, [13759] = true, [13760] = true, [13888] = true, [13889] = true, [13890] = true, [13893] = true, [16967] = true, [16968] = true, [16969] = true, [16970] = true, [19803] = true, [19805] = true, [19806] = true, [19807] = true, [19975] = true, [21071] = true, [21153] = true, [251524] = true },
 	},
-	fingerprint = "354fa825eb2adb89",
+	fingerprint = "9c571696ab3ebcf7",
 	hunts = {
+		{
+			class = "species.any",
+			conditions = {
+				areas = { 1, 12, 14, 141, 215, 85, 40, 38, 148, 17, 130 },
+			},
+			id = "home_waters",
+			kind = "imposed",
+			set = "home_waters",
+			since = 1793750400,
+			tiers = { 1, 25, 100 },
+		},
+		{
+			class = "quality.uncommon",
+			conditions = {
+				areas = { 1, 12, 14, 141, 215, 85, 40, 38, 148, 17, 130 },
+			},
+			id = "bloated_luck",
+			kind = "imposed",
+			set = "home_waters",
+			since = 1793750400,
+			tiers = { 1, 3, 10 },
+		},
+		{
+			conditions = {
+				areas = { 1, 12, 14, 141, 215, 85, 40, 38, 148, 17, 130 },
+			},
+			id = "mackerel_run",
+			kind = "imposed",
+			set = "home_waters",
+			since = 1793750400,
+			species = 6303,
+			tiers = { 1, 10, 40 },
+		},
+		{
+			class = "species.any",
+			conditions = {
+				areas = { 1, 12, 14, 141, 215, 85, 40, 38, 148, 17, 130 },
+				time = {
+					{ 1260, 300 },
+				},
+			},
+			id = "lantern_hours",
+			kind = "imposed",
+			set = "home_waters",
+			since = 1793750400,
+			tiers = { 1, 10, 40 },
+		},
 		{
 			id = "night_run",
 			kind = "natural",
@@ -131,6 +178,7 @@ ns.huntList = {
 		},
 	},
 	sets = {
+		{ id = "home_waters" },
 		{ id = "round_the_clock" },
 		{ id = "turn_of_the_year" },
 		{ id = "sunday_showdown" },
