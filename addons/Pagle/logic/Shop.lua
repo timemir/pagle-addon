@@ -768,6 +768,7 @@ local function percent(permille)
 	local whole, tenth = math.floor(permille / 10), permille % 10
 	return ns.L.SHOP_CRATE_CHANCE:format(tenth == 0 and tostring(whole) or ("%d.%d"):format(whole, tenth))
 end
+ns.CratePercent = percent
 
 --- One crate tier on the crate's stage (SHOP-R54): its name, in its colour, its goods left or what it pays back, and
 --- its chance at the right.
@@ -848,32 +849,46 @@ function Model:CratePurchase()
 	}
 end
 
---- What a crate's opening ends on (SHOP-R55): the result card's words and buttons.
+--- What a crate's opening ends on (SHOP-R55): the card it turns over to, its words and buttons.
 ---@class PagleShopCrateResult
 ---@field payback? integer       -- the Coins paid back: the coin card, "+N Coins", and "Back to the shop" alone
 ---@field good? string           -- the good it gave
 ---@field kind? string           -- the good's kind (SHOP-R50), for the emblem of one the cache has nothing of
+---@field kindName? string       -- the good's kind as the reveal says it: "Toast style"
 ---@field title string           -- the good's name ("A new look" with no cache entry), or "+250 Coins"
 ---@field tier string            -- the crate tier's name
+---@field crateTier 1|2|3|4|5|6|"curio" -- the crate tier
 ---@field color number[]         -- the crate tier's colour
 ---@field icon integer|string    -- the card's medallion
 ---@field shield? true           -- a crest's: drawn as its shield
 ---@field line? string           -- "It shows here once its Module is on."
+---@field unseen? true           -- a good the cache has nothing of: its face is the kind's emblem, not its picture
+---@field face "kind"|"coin"|"curio" -- what the card shows before it turns over (ns.CrateResultCard)
+---@field emblem string          -- the emblem of its kind's, or the coin's
 ---@field canUse boolean         -- "Use it now" shows: the good is the Angler's, shown by the shop and not in use
 ---@field select string          -- what "Back to the shop" and "Use it now" leave selected: the good, or the crate
+---@field reveal PagleCrateReveal -- what its crate tier adds to the reveal (ns.CrateRevealOf)
+---@field stamp string           -- "Yours", or "Paid back"
 
 --- The result card for what a crate gave (SHOP-R50, SHOP-R55): a good named and shown from the goods registry or,
---- when its Module hasn't registered it, Core's cache; a good with no cache entry turns over to "A new look" and the
---- line "It shows here once its Module is on.", and leaves the crate selected. A payback is the coin card.
+--- when its Module hasn't registered it, Core's cache; a good with no cache entry turns over to its kind's emblem, "A
+--- new look" and the line "It shows here once its Module is on.", and leaves the crate selected. A payback is the coin
+--- card, with none of its tier's fanfare (ns.CrateRevealOf).
 ---@param result PagleCrateResult
 ---@return PagleShopCrateResult
 function Model:CrateResult(result)
 	local L = ns.L
+	local shown = ns.CrateResultCard(result)
 	local card = {
 		tier = L.SHOP_CRATE_TIERS[result.tier],
+		crateTier = result.tier,
 		color = ns.CRATE_TIER_COLORS[result.tier],
 		canUse = false,
 		select = ns.CRATE_ID,
+		face = shown.face,
+		emblem = ns.CrateEmblem(shown.kind),
+		reveal = ns.CrateRevealOf(result.tier, result.good == nil),
+		stamp = result.good and L.SHOP_CRATE_YOURS or L.SHOP_CRATE_PAID_BACK,
 	}
 	if not result.good then
 		card.payback = result.payback
@@ -881,13 +896,10 @@ function Model:CrateResult(result)
 		card.icon = ns.CRATE_COIN_ICON
 		return card
 	end
-	local good = result.good
+	local good = result.good --[[@as string]]
 	card.good = good
-	for _, row in ipairs(ns.CRATE_POOL) do
-		if row.id == good then
-			card.kind = row.kind
-		end
-	end
+	card.kind = ns.CrateKindOf(good)
+	card.kindName = L.SHOP_CRATE_KINDS[card.kind or ""]
 	local entry = self:Entry(good)
 	local cached = self.sources.cache[good]
 	if entry then
@@ -899,6 +911,16 @@ function Model:CrateResult(result)
 		card.shield = cached.slot == ns.CREST_SLOT or nil
 	else
 		card.title, card.icon, card.line = L.SHOP_CRATE_NEW_LOOK, ns.CRATE_NEW_LOOK_ICON, L.SHOP_CRATE_UNSHOWN
+		card.unseen = true
 	end
 	return card
+end
+
+--- The reel's 60 cards for a crate that gave `result` (SHOP-R55, ns.CrateReelCards), from what the Angler owns now and
+--- the server time; `rand(n)` is a whole number from 1 to n (math.random).
+---@param result PagleCrateResult
+---@param rand fun(n: integer): integer
+---@return PagleCrateCard[]
+function Model:CrateReel(result, rand)
+	return ns.CrateReelCards(result, walletOf(self.sources).owned, self.sources.now, rand)
 end

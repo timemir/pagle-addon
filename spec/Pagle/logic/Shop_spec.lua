@@ -2103,6 +2103,87 @@ describe("The Curio crate", function()
 		)
 	end)
 
+	describe("result card's reveal (SHOP-R55, wallet-and-shop.md › UI: Motion and sound)", function()
+		it(
+			"gives a good the card it turns over to, its kind named, its crate tier's reveal and the YOURS stamp",
+			function()
+				local fake = crated(3500)
+				local good = fake.ns.goods:Good("core.toaststyle.ship")
+				fake.ns.RecordPurchase(good.id, 0)
+
+				local card = model(fake):CrateResult({ tier = 2, good = good.id })
+
+				assert.are.same(
+					{ "kind", "toast", "toaststyle", "Toast style", "Yours", 2 },
+					{ card.face, card.emblem, card.kind, card.kindName, card.stamp, card.reveal.tier }
+				)
+				assert.is_false(card.reveal.payback)
+				assert.is_nil(card.unseen)
+			end
+		)
+
+		it("gives a crate-only good the Curio '?' card, still naming its kind for the reveal", function()
+			local fake = crated(3500)
+			fake.ns.RecordPurchase(FOIL, 0)
+
+			local card = model(fake):CrateResult({ tier = "curio", good = FOIL, crateOnly = true })
+
+			assert.are.same(
+				{ "curio", "Toast style", 7, "curio" },
+				{ card.face, card.kindName, card.reveal.tier, card.reveal.sting }
+			)
+		end)
+
+		it("gives a payback the coin card, none of its tier's fanfare, and the PAID BACK stamp", function()
+			local fake = crated(3500)
+
+			for _, tier in ipairs({ 1, 6, "curio" }) do
+				local card = model(fake):CrateResult({ tier = tier, payback = 250 })
+				assert.are.same(
+					{ "coin", "coin", "Paid back", true },
+					{ card.face, card.emblem, card.stamp, card.reveal.payback }
+				)
+				assert.are.same({ nil, nil, nil, nil, 0.76 }, {
+					card.reveal.sparks,
+					card.reveal.embers,
+					card.reveal.shake,
+					card.reveal.flash,
+					card.reveal.wait,
+				})
+				assert.is_nil(card.kindName)
+			end
+		end)
+
+		it("gives a good with no cache entry its kind's emblem as its face, marked unseen", function()
+			local fake = crated(3500)
+			local id = "stats.trackerframe.greenbar"
+			fake.ns.RecordPurchase(id, 0)
+
+			local card = model(fake):CrateResult({ tier = 1, good = id })
+
+			assert.are.same(
+				{ true, "kind", "tracker", "Tracker frame" },
+				{ card.unseen, card.face, card.emblem, card.kindName }
+			)
+		end)
+
+		it(
+			"draws the reel's 60 cards from what the Angler owns now and the server time, the result's the 53rd",
+			function()
+				local fake = crated(3500)
+				local good = fake.ns.goods:Good("core.toaststyle.ship")
+				fake.ns.RecordPurchase(good.id, 0)
+
+				local cards = model(fake):CrateReel({ tier = 1, good = good.id }, function(n)
+					return math.ceil(n / 2)
+				end)
+
+				assert.are.equal(60, #cards)
+				assert.are.same({ tier = 1, face = "kind", kind = "toaststyle" }, cards[53])
+			end
+		)
+	end)
+
 	it('lists Prize Foil as "From a crate", never for sale, until a crate gives it (SHOP-R22, SHOP-R50)', function()
 		local fake = crated(10000)
 		local shop = model(fake)

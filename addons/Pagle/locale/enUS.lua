@@ -359,6 +359,17 @@ ns.L = {
 	SHOP_CRATE_BACK = "Back to the shop",
 	SHOP_CRATE_NEW_LOOK = "A new look",
 	SHOP_CRATE_UNSHOWN = "It shows here once its Module is on.",
+	-- The opening's reveal: a good's kind (under its name, and on the reel's cards that show only the kind), and the
+	-- stamp on its card.
+	SHOP_CRATE_KINDS = {
+		toaststyle = "Toast style",
+		soundset = "Sound set",
+		binding = "Binding",
+		trackerframe = "Tracker frame",
+		crest = "Crest",
+	},
+	SHOP_CRATE_YOURS = "Yours",
+	SHOP_CRATE_PAID_BACK = "Paid back",
 	SHOP_CRATE_ONLY_NOTE = "Only in a Curio crate, never for sale",
 	SHOP_FROM_CRATE = "From a crate",
 	SHOP_SONAR_EARNED = "Link the companion",
