@@ -252,6 +252,18 @@ _Avoid_: currency (alone), points, gold, Tender (Retail's Trading Post currency)
 Core's shop where the Angler spends Pagle Coins on looks for Pagle's own views, such as toast styles, sound sets, bindings and tracker frames. It never sells meanings (titles, flies, stars, Legends) and its stock never rotates.
 _Avoid_: store, Trading Post, Bait Shop, shop (alone)
 
+**Curio crate**:
+A crate sold in the Curio Shop at a fixed price that gives one look by chance, by crate tier, never one already owned; a tier with nothing left for the Angler pays some of the price back.
+_Avoid_: loot box, lootbox, mystery box
+
+**Crate tier**:
+Where a look sits in the Curio crate's odds: Plain, Fine, Lively, Showpiece, Marvel or Heirloom, after its price tier, or Curio for a look only the crate holds.
+_Avoid_: rarity, quality
+
+**Payback**:
+The Coins a Curio crate returns when it rolls a crate tier the Angler has nothing left to get from.
+_Avoid_: refund, cashback
+
 **Refresh** (working name):
 What a Hunt Event earns (players know it as a Pagle Wager) and the Tackle Board spends to post one new goal, a Notice or an Expedition at the Angler's choice, into an empty slot. It never takes the board past its caps and is not a reroll. Core holds the count (Hunts reports the Refreshes earned, the Tackle Board the ones spent), and there is no limit on how many can be held. The name is provisional: renaming it is a glossary and string change only.
 _Avoid_: ticket (the code's word, not the Angler's), reroll (which swaps an open goal and adds nothing), voucher, refill, token

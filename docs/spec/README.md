@@ -13,7 +13,7 @@ This directory is Pagle's product spec. It describes the current state only, and
 | [core/README.md](core/README.md) | `CORE` | Packaging and load, attaching a Module, the `Pagle` API at a glance, the event bus, restriction state, the Settings root and topic pages, the compartment menu and minimap icon, `/pagle`, the tracker dock, releases | M0–M5, M8.5, M9 |
 | [core/catch-log.md](core/catch-log.md) | `LOG` | Observing fishing, the Catch log and its entry formats, characters and the Angler, Skill Readings, conditions and `NextWindow`, the content catalogue at runtime, Sessions, Simulated Size, projections, the diagnostics buffer | M1, M2, M3, M4, M7 |
 | [core/announcements.md](core/announcements.md) | `ANN` | Moments and the rung ladder, a Cast's Announcements, the display lanes, the Interruption budget, combat hold, Cozy mode, the Session summary, the Write-up, sounds and toast styles | M2, M4 |
-| [core/wallet-and-shop.md](core/wallet-and-shop.md) | `SHOP` | Pagle Coins (earning, spending, balance), goods and slots, owning and equipping, the Curio Shop window, the Look and Feel page | M2, M4 |
+| [core/wallet-and-shop.md](core/wallet-and-shop.md) | `SHOP` | Pagle Coins (earning, spending, balance), goods and slots, owning and equipping, the Curio crate, the Curio Shop window, the Look and Feel page | M2, M4 |
 | [core/refresh.md](core/refresh.md) | `REF` | Refreshes: the lifetime totals Hunts (earned) and the Tackle Board (spent) report, the count held, the "Refresh +N" stamp and the overview of who earns and spends | The coin economy ([#404](https://github.com/timemir/pagle-addon/issues/404), ADR 0017) |
 | [core/activity-xp.md](core/activity-xp.md) | `AXP` | Activity XP: the lifetime totals Modules other than the Ledger report toward the Angler Level, their snapshot in each Prestige entry, and the overview of what pays | M8 Hunt Events |
 | [core/pushed-content.md](core/pushed-content.md) | `PUSH` | The companion's `Pagle_Content` data addon: the signature check, the companion state, content by kind | M8 Hunt Events |
@@ -197,7 +197,7 @@ Every Core and Module file answers each of these with rules: a Module disabled a
 ### Status and Pending
 
 - **Done** means the file has no `Pending:` markers, every term is in `CONTEXT.md`, every number is in Tunables, and a **dry-run split** came back clean: a fresh agent with only the file, `CONTEXT.md` and the ADRs split it into build tickets and had nothing left to guess.
-- **Draft** means a `Pending: <ticket>` marker points at a ticket that is still open. Today every file is Done but `core/wallet-and-shop.md`, whose two `Pending:` markers wait on the price redesign's six tiers and the crate tiers' names.
+- **Draft** means a `Pending: <ticket>` marker points at a ticket that is still open. Today every file is Done.
 
 ### Words that mean one thing everywhere
 
