@@ -349,7 +349,7 @@ The board shows Hunt Events under the players' name, **Pagle Wagers**, in two pl
 ### The companion hint
 
 - **HNT-R170** The **companion hint** applies while the hint switch (Tunables) is on, the companion state (PUSH-R15) is `"missing"` or `"notRunning"`, and the player hasn't dismissed it (`PagleHuntsDB.profile.companionHint`). Its lines:
-  - missing: "New wagers are out there. The Pagle companion brings them: more XP, more Coins.", then "Installed it just now? Log out to character select once.";
+  - missing: "New wagers are out there. The Pagle companion brings them: more XP, more Coins, and the Sonar Scope toast style.", then "Installed it just now? Log out to character select once.";
   - not running: "The Pagle companion isn't running. Start it to get this week's wagers.";
   
   with **Get it**, which shows the companion's address in a copyable box (as the Field report's link, REP-R40), and **Dismiss**. It shows on the wager strip (HNT-R161) and as the hint slip on the Pagle Wagers spread (HNT-R162). Dismiss hides the hint and the Nod until Settings › Announcements turns "Remind me about the Pagle companion" back on (SET-R32).
@@ -609,7 +609,7 @@ The `huntEvent` and `huntRun` items of Core's pushed content (PUSH-R21), version
   id = "p_hallows_hollow_tide",            -- [%w_]+, starting p_
   zones = { 85, 10 },                      -- 1-2 zone areaIDs
   tags = { "hallows_end", "night" },       -- from data/hunts/tags.toml (DATA-R97)
-  skill = { 75, 150 },                     -- the skill range: lower and upper end
+  skill = { 75, 150 },                     -- the skill range: two integers, low <= high, either may be negative (DATA-R97)
   rotation = false,                        -- pushed events never enter the fallback rotation
   name = "...", note = "...",              -- lore, DATA-R99's limits
   hunts = {

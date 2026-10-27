@@ -19,7 +19,7 @@ local NOW = SERVER_TIME
 local SHORE_START, SHORE_END = NOW - DAY, NOW + 2 * DAY
 
 local MISSING = {
-	"New wagers are out there. The Pagle companion brings them: more XP, more Coins.",
+	"New wagers are out there. The Pagle companion brings them: more XP, more Coins, and the Sonar Scope toast style.",
 	"Installed it just now? Log out to character select once.",
 }
 local NOT_RUNNING = { "The Pagle companion isn't running. Start it to get this week's wagers." }
