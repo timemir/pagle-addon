@@ -1,0 +1,9 @@
+<!-- A spark (prototypes/curio-crate/index.html: .spark, as crate.js's sparks() styles it): a 6px dot with a 10px glow
+     (box-shadow 0 0 10px tier, 0 0 2px #fff), white here for the client to tint to the tier's colour. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -14 34 34" width="34" height="34">
+  <defs>
+    <filter id="g10" filterUnits="userSpaceOnUse" x="-14" y="-14" width="34" height="34"><feGaussianBlur stdDeviation="5"/></filter>
+    <filter id="g2" filterUnits="userSpaceOnUse" x="-14" y="-14" width="34" height="34"><feGaussianBlur stdDeviation="1"/></filter>
+  </defs>
+  <circle cx="3" cy="3" r="3" fill="#fff" filter="url(#g10)"/><circle cx="3" cy="3" r="3" fill="#fff" filter="url(#g2)"/><circle cx="3" cy="3" r="3" fill="#fff"/>
+</svg>

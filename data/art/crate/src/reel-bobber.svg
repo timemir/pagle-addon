@@ -1,0 +1,4 @@
+<!-- The bobber, verbatim from prototypes/curio-crate/index.html (#marker .bob), 26 x 40 px; it pivots on 13,40. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 34 48" width="34" height="48"><path d="M13 0 V12" stroke="#2a1a0a" stroke-width="2"/><circle cx="13" cy="25" r="11" fill="#1a0a04"/>
+            <path d="M3 25 a10 10 0 0 1 20 0z" fill="#d8341e"/><path d="M3 25 a10 10 0 0 0 20 0z" fill="#f6ead0"/><path d="M3 25 H23" stroke="#1a0a04" stroke-width="1.6"/>
+            <ellipse cx="9" cy="20" rx="3" ry="2" fill="#fff" opacity=".5"/></svg>

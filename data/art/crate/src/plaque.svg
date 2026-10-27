@@ -1,0 +1,8 @@
+<!-- The "CURIO CRATE" plaque's frame (prototypes/curio-crate/index.html: #ov .plaque): a 2px gilt border round #120c06,
+     and a 1px outline 3px outside it, 240 x 41 px here, its words left to the client's Marcellus. Cut into a cap and a
+     slice to stretch. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 252 53" width="252" height="53">
+  <rect x="0" y="0" width="240" height="41" fill="#120c06"/>
+  <rect x="1" y="1" width="238" height="39" fill="none" stroke="#c9a24a" stroke-width="2"/>
+  <rect x="-3.5" y="-3.5" width="247" height="48" fill="none" stroke="#3a2808" stroke-width="1"/>
+</svg>

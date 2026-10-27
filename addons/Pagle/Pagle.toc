@@ -21,6 +21,8 @@ data\ToastStyleArt2.lua
 data\ToastStyleArt3.lua
 data\PrestigeArt.lua
 data\ShopArt.lua
+data\CrateArt.lua
+data\CrateSounds.lua
 data\BindingArt.lua
 data\GuideArt.lua
 data\BookBindingArt.lua

@@ -1,0 +1,11 @@
+<!-- The puff of dust where the crate lands (prototypes/curio-crate/index.html: .dust): a 90 x 40 px ellipse of
+     radial-gradient(ellipse, rgba(210,180,130,.55), transparent 70%) (its radii 63.6 x 28.3 px, so clear at 44.5 x
+     19.8), blurred 2px. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 102 52" width="102" height="52">
+  <defs>
+    <radialGradient id="g" gradientUnits="userSpaceOnUse" cx="45" cy="20" r="1" gradientTransform="translate(45 20) scale(63.64 28.28) translate(-45 -20)">
+      <stop offset="0" stop-color="#d2b482" stop-opacity=".55"/><stop offset=".7" stop-color="#d2b482" stop-opacity="0"/></radialGradient>
+    <filter id="blur" filterUnits="userSpaceOnUse" x="-6" y="-6" width="102" height="52"><feGaussianBlur stdDeviation="2"/></filter>
+  </defs>
+  <ellipse cx="45" cy="20" rx="45" ry="20" fill="url(#g)" filter="url(#blur)"/>
+</svg>

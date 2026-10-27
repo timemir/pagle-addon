@@ -1,0 +1,10 @@
+<!-- The reel's marker (prototypes/curio-crate/index.html: #marker): the taut line, in the gold of its core with the warm
+     glow of its box-shadow (0 0 8px rgba(255,220,140,.9)); the tier's own glow is reel-line-glow. 2 x 220 px. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -14 30 248" width="30" height="248">
+  <defs>
+    <linearGradient id="ln" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff8e0"/><stop offset="1" stop-color="#f0cd6a"/></linearGradient>
+    <filter id="blur" filterUnits="userSpaceOnUse" x="-14" y="-14" width="30" height="248"><feGaussianBlur stdDeviation="4"/></filter>
+  </defs>
+  <rect x="-1" y="0" width="2" height="220" fill="#ffdc8c" fill-opacity=".9" filter="url(#blur)"/>
+  <rect x="-1" y="0" width="2" height="220" fill="url(#ln)"/>
+</svg>

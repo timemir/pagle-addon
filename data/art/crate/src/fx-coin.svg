@@ -1,0 +1,7 @@
+<!-- A flying gold coin (prototypes/curio-crate/index.html: .goldcoin): 18 px, radial-gradient(circle at 38% 30%, #fff3c0,
+     #e2bd55 35%, #a77d24 70%, #5e420c), ring 1px #3a2606. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 20 20" width="20" height="20">
+  <defs><radialGradient id="g" gradientUnits="userSpaceOnUse" cx="6.84" cy="5.4" r="16.83">
+    <stop offset="0" stop-color="#fff3c0"/><stop offset=".35" stop-color="#e2bd55"/><stop offset=".7" stop-color="#a77d24"/><stop offset="1" stop-color="#5e420c"/></radialGradient></defs>
+  <circle cx="9" cy="9" r="9.5" fill="#3a2606"/><circle cx="9" cy="9" r="9" fill="url(#g)"/>
+</svg>

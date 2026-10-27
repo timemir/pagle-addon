@@ -15,6 +15,12 @@ local ns = select(2, ...)
 ---@field w integer
 ---@field h integer
 ---@field box number[]
+---@field size number[]? its designed size in UI units, where it isn't w and h over the atlas's scale (data/CrateArt.lua)
+---@field at number[]? where its top left lies from its anchor, in UI units (data/CrateArt.lua)
+---@field anchor string? what `at` is from (data/CrateArt.lua)
+---@field use string? what the sprite is for: "tint", "add", "fixed", "cap", "mirror", "slice" (data/CrateArt.lua)
+---@field alpha number? the opacity to draw a sprite stored at full alpha at (data/CrateArt.lua)
+---@field tint number[]? the colour, 0 to 255, it is drawn in when not a tier's (data/CrateArt.lua)
 
 ---@class PagleAtlas
 ---@field file string
