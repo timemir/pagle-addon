@@ -125,7 +125,7 @@ local ns = select(2, ...)
 ---@field flair? boolean                      -- sizeRecord (LED-R82): the rare-record flair; old and new are its mm
 ---@field rank? integer                       -- prestigeReady: the climb's prestige rank; prestige: the new rank;
 --- levelUp in the scratch list: its climb's rank (logic/Projection.lua)
----@field size? PagleSize                     -- newSpecies, legend, sizeRecord: the Catch's Simulated Size (LED-R81)
+---@field size? PagleSize                     -- newSpecies, legend, sizeRecord, newVariety: the Catch's Simulated Size (LED-R81)
 
 --- The lookups the fold reads: Core's `Pagle.GetItem` (LOG-R55) and `Pagle.MatchesConditions` (LOG-R49), and the
 --- world index, which changes only with the catalogue, whose new fingerprint rebuilds the projection (LED-R10). The
@@ -431,7 +431,7 @@ function ns.NewLedgerFold(lookups)
 				-- Its variety, when Core decoded one (VAR-R1, VAR-R4).
 				local variety = catch.variety
 				if variety then
-					ns.CreditVariety(state, record, id, itemID, variety, earned, getItem)
+					ns.CreditVariety(state, record, id, itemID, variety, earned, getItem, catch.size)
 				end
 			end
 			ns.CreditSizeRecord(state, class, id, record, catch, earned)

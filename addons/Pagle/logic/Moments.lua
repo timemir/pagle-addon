@@ -27,6 +27,8 @@ local ns = select(2, ...)
 ---@field frameRank? integer     -- with seal "frame": the prestige rank whose Prestige frame shows (ANN-R83)
 ---@field crest? integer|string  -- with seal "crest": a crest good's icon shown in the seal's place (VAR-R25)
 ---@field art? PagleMomentArt    -- a texture rectangle drawn instead of `icon` where the headline shows (VAR-R25)
+---@field ownStamp? boolean     -- a first-catch variety's moment (VAR-R28): as the headline it shows its own stamp too, on the `toast` page, its `kicker` for kicker (ANN-R11)
+---@field kicker? string         -- with ownStamp, the toast's kicker in place of `title` (the Catch's size text); never stored
 ---@field variety? PagleNodVariety -- the variety a moment announces (VAR-R25, VAR-R26): a Module's first-catch variety moment gives its name and rarity; Core's catch toast also its Nod line's halves
 ---@field nodLine? string        -- Core's catch toast's: the one line it reads as when the budget steps it down to a Nod (ANN-R13, ANN-R31)
 ---@field onClick? fun()         -- what clicking its toast or Nod does as it sends it away (ANN-R20); never stored
@@ -50,6 +52,7 @@ local ns = select(2, ...)
 ---@field rarity "common"|"uncommon"|"rare"|"epic"
 ---@field before? string         -- a catch toast's Nod line up to the name, trimmed ("Firefin Snapper ·")
 ---@field after? string          -- a catch toast's Nod line after it, trimmed ("· Decent · 34.2 cm")
+---@field fish? string           -- a first-catch moment's with `ownStamp`: the fish's name, first on the toast's line (VAR-R28)
 
 ---@alias PagleRung "nod"|"toast.low"|"toast"|"toast.high"|"banner"|"splash"
 
@@ -164,7 +167,7 @@ function ns.RanksAbove(a, b)
 end
 
 --- The Announcement a set of moments makes (ANN-R11): the top-ranked one is the headline, the others ride as
---- stamps, and their coins and tickets are summed apart. Nil for no moments. Ticket #88's expiry calls it again on what is left.
+--- stamps (a headline with `ownStamp` shows its own first), and their coins and tickets are summed apart. Nil for no moments. Ticket #88's expiry calls it again on what is left.
 ---@param moments PagleRaisedMoment[]
 ---@return PagleAnnouncement?
 function ns.MakeAnnouncement(moments)
@@ -193,7 +196,7 @@ function ns.MakeAnnouncement(moments)
 			announcement.tickets = (announcement.tickets or 0) + moment.tickets
 		end
 		local text = moment.stamp or moment.title
-		if i > 1 and not seen[text] then
+		if (i > 1 or moment.ownStamp) and not seen[text] then
 			seen[text] = true
 			if #announcement.stamps < ns.MOMENT_STAMPS then
 				announcement.stamps[#announcement.stamps + 1] = text

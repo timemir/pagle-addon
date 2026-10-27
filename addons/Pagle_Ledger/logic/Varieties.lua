@@ -73,7 +73,8 @@ end
 
 --- A Species Catch with a variety (VAR-R4): its variety's count, and at its first Catch the first Catch's entry ID,
 --- realm date, zone and character, with a `newVariety` achievement (its rarity for the moment, VAR-R25); the one that
---- completes the Species' varieties adds a `fishComplete` (VAR-R20, VAR-R25). Neither pays Coins or XP (VAR-R25).
+--- completes the Species' varieties adds a `fishComplete` (VAR-R20, VAR-R25). Neither pays Coins or XP (VAR-R25). The
+--- `newVariety` carries the Catch's Simulated Size, which the variety's own toast shows as its kicker (VAR-R28).
 ---@param state LedgerState
 ---@param record PagleCast
 ---@param speciesID integer
@@ -81,7 +82,8 @@ end
 ---@param variety LedgerCatchVariety
 ---@param earned LedgerAchievement[]
 ---@param getItem fun(itemID: integer): PagleItem?
-function ns.CreditVariety(state, record, speciesID, itemID, variety, earned, getItem)
+---@param size PagleSize? the Catch's Simulated Size (VAR-R1: a variety's Catch has one)
+function ns.CreditVariety(state, record, speciesID, itemID, variety, earned, getItem, size)
 	local caught = state.varieties[speciesID]
 	if not caught then
 		caught = {}
@@ -111,6 +113,7 @@ function ns.CreditVariety(state, record, speciesID, itemID, variety, earned, get
 		itemID = itemID,
 		index = index,
 		rarity = variety.rarity,
+		size = ns.CopySize(size),
 	}
 	if ns.FishComplete(state, getItem, speciesID) then
 		earned[#earned + 1] =

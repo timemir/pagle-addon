@@ -1809,37 +1809,35 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 		end
 	)
 
-	it(
-		"writes a Rare variety's own toast as the gem and name alone, the fish's name left to its icon (#424)",
-		function()
-			local loaded, M = loadCore()
-			local rare = rarityOf(loaded, "rare")
-			local variety = moment("toast", "Rare variety", {
-				kind = "rareVariety",
-				order = 105,
-				text = "Coral",
-				icon = ITEM,
-				cast = CAST,
-				art = ART,
-				variety = { name = "Coral", rarity = "rare" },
-			})
+	it("writes a variety's toast with no fish's name to give as the gem and name alone (#424)", function()
+		local loaded, M = loadCore()
+		local rare = rarityOf(loaded, "rare")
+		local variety = moment("toast", "Rare variety", {
+			kind = "rareVariety",
+			order = 105,
+			text = "Coral",
+			icon = ITEM,
+			cast = CAST,
+			art = ART,
+			variety = { name = "Coral", rarity = "rare" },
+		})
 
-			raise(loaded, M, variety)
-			local toast = frameOf(loaded, "toast") --[[@as table]]
+		raise(loaded, M, variety)
+		local toast = frameOf(loaded, "toast") --[[@as table]]
 
-			assert.are.same({ "RARE VARIETY", "", "Coral", true, ART.texture }, {
-				toast.title:GetText(),
-				toast.text:GetText(),
-				toast.variety:GetText(),
-				toast.gem.shown,
-				toast.icon.texture,
-			})
-			assert.are.same(
-				{ rgb(rare.ink), rgb(rare.color) },
-				{ rgb(toast.variety.textColor), rgb(toast.bezel.Ring.vertexColor) }
-			)
-		end
-	)
+		assert.are.same({ "RARE VARIETY", "", "Coral", true, ART.texture }, {
+			toast.title:GetText(),
+			toast.text:GetText(),
+			toast.variety:GetText(),
+			toast.gem.shown,
+			toast.icon.texture,
+		})
+		assert.are.same(
+			{ rgb(rare.ink), rgb(rare.color) },
+			{ rgb(toast.variety.textColor), rgb(toast.bezel.Ring.vertexColor) }
+		)
+		assert.are.same({}, stampsOf(toast))
+	end)
 
 	it("names and colours no variety on a toast with no first-catch variety moment (VAR-R27)", function()
 		local loaded, M = loadCore()
@@ -1892,6 +1890,242 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			end
 		end
 	)
+end)
+
+describe("a new variety's own toast on the client (#422, VAR-R25, VAR-R28, ANN-R11)", function()
+	local ART = {
+		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
+		left = 0.09375,
+		right = 0.1875,
+		top = 0,
+		bottom = 0.046875,
+	}
+	local ITEM = 6291
+	local FISH = "Raw Bristle Whisker Catfish"
+	local KICKER = "Decent · 34.2 cm"
+
+	local function rarityOf(loaded, key)
+		for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+			if rarity.key == key then
+				return rarity
+			end
+		end
+		error("no rarity " .. key)
+	end
+
+	local function rgb(color)
+		return { color[1], color[2], color[3] }
+	end
+
+	-- The moment the Ledger raises for a first catch of Coral, a variety of `rarity` (LED-R97).
+	local function variety(rarity)
+		local rare = rarity == "rare"
+		return moment(rare and "toast" or "toast.low", rare and "Rare variety" or "New variety", {
+			kind = rare and "rareVariety" or "newVariety",
+			order = rare and 105 or 120,
+			text = "Coral",
+			stamp = not rare and "New variety" or nil,
+			icon = ITEM,
+			cast = CAST,
+			art = ART,
+			ownStamp = true,
+			kicker = KICKER,
+			variety = { name = "Coral", rarity = rarity, fish = FISH },
+		})
+	end
+
+	-- The stamps a toast shows as { text, ink, border tint }, by text.
+	local function inkedStamps(toast)
+		local inked = {}
+		for _, stamp in ipairs(toast.stamps) do
+			if stamp.shown then
+				inked[stamp.label:GetText()] = {
+					rgb(stamp.label.textColor),
+					stamp.border.left.desaturated == true,
+					rgb(stamp.border.left.vertexColor),
+				}
+			end
+		end
+		return inked
+	end
+
+	it(
+		"is drawn on the default toast page, the size as its kicker, the fish's name then the gem and the variety on its"
+			.. " line, and its stamp top right in the rarity's ink, all within the page (#422)",
+		function()
+			local loaded, M = loadCore()
+			for _, key in ipairs({ "common", "uncommon", "rare" }) do
+				local rarity = rarityOf(loaded, key)
+
+				raise(loaded, M, variety(key))
+				local toast = frameOf(loaded, "toast") --[[@as table]]
+				local page = loaded.ns.ToastPage(toast.display.announcement)
+
+				assert.are.same(
+					{ "toast", 464, 92, 84 },
+					{ page.page, toast:GetWidth(), toast:GetHeight(), page.bezel }
+				)
+				assert.are.same({ "DECENT · 34.2 CM", FISH .. " ·", "Coral" }, {
+					toast.title:GetText(),
+					toast.text:GetText(),
+					toast.variety:GetText(),
+				})
+				assert.are.same(
+					{ rgb(rarity.ink), rgb(rarity.color), true },
+					{ rgb(toast.variety.textColor), rgb(toast.gem.fill.color), toast.gem.shown }
+				)
+				assert.are.same(
+					{ ART.texture, { loaded.ns.HeadCrop(ART) } },
+					{ toast.icon.texture, toast.icon.texCoord }
+				)
+				-- Its one stamp, inked in the rarity's ink, hangs from the top right, clear of the kicker.
+				local word = key == "rare" and "RARE VARIETY" or "NEW VARIETY"
+				assert.are.same({ word }, stampsOf(toast))
+				assert.are.same({ [word] = { rgb(rarity.ink), true, rgb(rarity.ink) } }, inkedStamps(toast))
+				local x, y = select(4, toast.pivots[1]:GetPoint())
+				assert.is_true(x > page.w - 30 - toast.stamps[1]:GetWidth() - 1 and x <= page.w - 30)
+				assert.is_true(y > -20 and y < 0)
+				assert.is_true(x - toast.stamps[1]:GetWidth() / 2 >= page.tx + toast.title:GetWidth())
+				assert.are.same({}, bounds.overflows(toast))
+				-- The title still names the moment, for the Session summary and the cards.
+				assert.are.equal(
+					key == "rare" and "Rare variety" or "New variety",
+					toast.display.announcement.headline.title
+				)
+
+				loaded.client.advance(TOAST + LEAVE_TOAST)
+			end
+		end
+	)
+
+	it("holds for a toast page's 6 s, not a toast.low's 4 (#422, ANN-R20)", function()
+		local loaded, M = loadCore()
+
+		raise(loaded, M, variety("common"))
+		loaded.client.advance(TOAST - 0.1)
+		assert.is_true(showing(loaded, "toast"))
+		loaded.client.advance(0.1)
+
+		assert.is_false(showing(loaded, "toast"))
+	end)
+
+	it("keeps a Rare one's gleam, and none for Common or Uncommon (VAR-R28)", function()
+		local loaded, M = loadCore()
+		local gleams = {}
+		for _, key in ipairs({ "common", "uncommon", "rare" }) do
+			raise(loaded, M, variety(key))
+			gleams[#gleams + 1] = frameOf(loaded, "toast").gleams
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+		end
+
+		assert.are.same({ false, false, true }, gleams)
+	end)
+
+	it(
+		"shows the stamps of the moments riding on it beside its own, merging an identical one (#422, ANN-R11)",
+		function()
+			local loaded, M = loadCore()
+			local here = moment("nod", "New here", { cast = CAST, stamp = "New here" })
+			local twin = moment("nod", "New variety", { cast = CAST, stamp = "New variety" })
+			local stars = moment("nod", "Regular", { cast = CAST, stamp = "★★★", order = 130 })
+
+			raise(loaded, M, variety("uncommon"), here, twin, stars)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+
+			assert.are.same({ "NEW VARIETY", "NEW HERE", "★★★" }, stampsOf(toast))
+			local uncommon = rarityOf(loaded, "uncommon")
+			local inked = inkedStamps(toast)
+			assert.are.same(rgb(uncommon.ink), inked["NEW VARIETY"][1])
+			assert.are_not.same(rgb(uncommon.ink), inked["NEW HERE"][1])
+			assert.are.same({}, bounds.overflows(toast))
+		end
+	)
+
+	it("counts in the 4 stamps shown, the rest as +N (#422, ANN-R11)", function()
+		local loaded, M = loadCore()
+		local riding = {}
+		for i = 1, 4 do
+			riding[i] = moment("nod", "Rider " .. i, { cast = CAST, stamp = "R" .. i, order = 130 + i })
+		end
+
+		raise(loaded, M, variety("common"), unpack(riding))
+
+		assert.are.same({ "NEW VARIETY", "R1", "R2", "R3", "+1" }, stampsOf(frameOf(loaded, "toast")))
+	end)
+
+	it(
+		"draws the variety riding on a size record as it was: the record's page, title and kicker, the stamp riding (#424)",
+		function()
+			local loaded, M = loadCore()
+			local record = moment("toast.low", "Size record", {
+				kind = "sizeRecord",
+				order = 100,
+				text = FISH,
+				stamp = "Record",
+				icon = ITEM,
+				cast = CAST,
+				ruler = { old = 303, new = 304, unit = "length", label = "Tiddler" },
+			})
+
+			raise(loaded, M, record, variety("common"))
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+
+			assert.are.same({ "low-ruled", "SIZE RECORD", { "NEW VARIETY" } }, {
+				loaded.ns.ToastPage(toast.display.announcement).page,
+				toast.title:GetText(),
+				stampsOf(toast),
+			})
+			assert.are.equal(FISH .. " ·", toast.text:GetText())
+		end
+	)
+
+	it(
+		"steps a lone Common one down to its old Nod, with the budget spent: no kicker, no own stamp (#422, ANN-R31)",
+		function()
+			local loaded, M = loadCore()
+			loaded.ns.db.profile.announcements.budget.count = 0
+
+			raise(loaded, M, variety("common"))
+			local nod = frameOf(loaded, "nod") --[[@as table]]
+
+			assert.are.same({ "NEW VARIETY", "Coral", {} }, { nod.title:GetText(), nod.text:GetText(), stampsOf(nod) })
+		end
+	)
+
+	it("keeps its stamps beside a stepped-down Nod's riding ones only (#422)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.announcements.budget.count = 0
+		local stars = moment("nod", "Trophy family", { cast = CAST, stamp = "★★", order = 130 })
+
+		raise(loaded, M, variety("common"), stars)
+
+		assert.are.same({ "★★" }, stampsOf(frameOf(loaded, "nod")))
+	end)
+
+	it("goes to the Session summary as it was: its title, not its kicker (#422, ANN-R25)", function()
+		local loaded, M, summarized = loadCore()
+
+		raise(loaded, M, variety("common"))
+
+		assert.are.same({ "New variety", "Coral" }, { summarized[1].title, summarized[1].text })
+	end)
+
+	it("leaves a toast after it as the page has it: its kicker the title, no stamp of the variety's (#422)", function()
+		local loaded, M = loadCore()
+		raise(loaded, M, variety("common"))
+		loaded.client.advance(TOAST + LEAVE_TOAST)
+
+		raise(loaded, M, moment("toast", "New Species", { text = "Nightfin Snapper", icon = ITEM, cast = CAST }))
+		local toast = frameOf(loaded, "toast") --[[@as table]]
+
+		assert.are.same({ "NEW SPECIES", "Nightfin Snapper", {}, { 464, 92 } }, {
+			toast.title:GetText(),
+			toast.text:GetText(),
+			stampsOf(toast),
+			{ toast:GetWidth(), toast:GetHeight() },
+		})
+		assert.is_false(toast.gem.shown)
+	end)
 end)
 
 describe("moving the Toast column on the client (ANN-R98)", function()
