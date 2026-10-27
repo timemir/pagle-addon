@@ -128,6 +128,8 @@ Announce only once both listings show 1.0.0 publicly (Q14).
 
 **Group C, after the tag:** check 3 (rain), 14 (a pass only opens a feature ticket), 25 (the Paste copy test), Track P's exit steps 1–3, M8 step 7, #270, and a `WOW_API_COMMIT` bump.
 
+**Not a gate:** Track C (the Collection, [#400](https://github.com/timemir/pagle-addon/issues/400), PR [#450](https://github.com/timemir/pagle-addon/pull/450)) aims for RC1 and doesn't block the tag; if it isn't merged by the release commit, it ships in 1.0.1.
+
 **GO when all of these hold:**
 1. Every group-A check passes, or its fix is on the release commit and that check was re-run on it.
 2. No Pagle Lua error in any BugGrabber session read since the release commit was installed.
