@@ -341,8 +341,11 @@ local function loadCoreLogic()
 	return ns, env
 end
 
--- Read-only proxies (CORE-R18). Weak both ways, so one record has one proxy and neither keeps the other alive.
-local originalOf = setmetatable({}, { __mode = "k" }) -- proxy -> record
+-- Read-only proxies (CORE-R18). Weak both ways, so one record has one proxy and neither keeps the other alive; a
+-- proxy keeps its record through its metatable. originalOf must be weak in its values too: Lua 5.1 has no
+-- ephemerons, so a weak-keyed table's values are strong, and a record that reaches its own proxy (or any record
+-- holding a proxy) would keep both, and the whole load behind them, for the rest of the busted run.
+local originalOf = setmetatable({}, { __mode = "kv" }) -- proxy -> record
 local proxyOf = setmetatable({}, { __mode = "kv" }) -- record -> proxy
 
 ---@param value any

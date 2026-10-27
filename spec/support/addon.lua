@@ -223,6 +223,24 @@ return function(busted)
 		running = element.name
 		return nil, true
 	end)
+	-- busted keeps every file's describe, it and hook blocks for the whole run, each with the functions the file
+	-- passed it, and those hold the file's locals (its loaded addons, fake clients, logs) as upvalues; a file's own
+	-- globals stay in its env. Once a file has ended nothing runs them again, so they're let go, or one busted
+	-- process keeps every file it ran. The file's own run stays: busted reads its getTrace through the first file.
+	-- A full collection then hands the file's garbage back before the next file loads its own, so a shard peaks
+	-- near its largest file rather than the GC's pause above it; it costs no measurable time.
+	local function release(element)
+		for _, child in ipairs(busted.context.children(element)) do
+			release(child)
+			child.run, child.env = nil, nil
+		end
+	end
+	busted.subscribe({ "file", "end" }, function(file)
+		release(file)
+		file.env = nil
+		collectgarbage("collect")
+		return nil, true
+	end)
 	busted.executors.after_each(function()
 		local unread = errors.unasserted()
 		if #unread > 0 then
