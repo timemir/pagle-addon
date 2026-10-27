@@ -519,6 +519,9 @@ end
 ---@field Gloss PagleSprite
 ---@field Back Texture? an opaque disc behind a variety's art, made on first use (ns.SetBezelBacking)
 
+-- An item icon's own square border, cropped off each side before it is masked round.
+ns.ICON_CROP = 0.08
+
 -- The icon's width inside each medallion size.
 local INNER = { [84] = 62, [64] = 46, [34] = 26, [22] = 17 }
 
@@ -582,9 +585,9 @@ function ns.SetBezelBacking(bezel, side, color)
 	back:SetShown(color ~= nil)
 end
 
---- Sets a medallion's size (84, 64, 34 or 22), ring and icon, the icon's whole texture or `coords` of it ({ left,
---- right, top, bottom }: a variety's art cropped to the fish's head, VAR-R25), with an opaque `backing` colour behind
---- it when given (ns.SetBezelBacking).
+--- Sets a medallion's size (84, 64, 34 or 22), ring and icon, the icon's texture cropped of its own border or `coords`
+--- of it ({ left, right, top, bottom }: a variety's art cropped to the fish's head, VAR-R25), with an opaque `backing`
+--- colour behind it when given (ns.SetBezelBacking).
 ---@param bezel PagleBezel
 ---@param size integer
 ---@param ring PagleBezelRing its toast style's, logic/ToastStyles.lua's ns.BezelRing
@@ -601,7 +604,7 @@ function ns.SetBezel(bezel, size, ring, icon, coords, backing)
 	bezel.Icon:SetSize(INNER[size] - 2, INNER[size] - 2)
 	ns.SetBezelBacking(bezel, INNER[size], backing)
 	bezel.Icon:SetTexture(icon)
-	coords = coords or { 0, 1, 0, 1 }
+	coords = coords or { ns.ICON_CROP, 1 - ns.ICON_CROP, ns.ICON_CROP, 1 - ns.ICON_CROP }
 	bezel.Icon:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
 	ns.SetSprite(bezel.Gloss, "Announce", "gloss-" .. size)
 	ns.CenterSprite(bezel.Gloss, bezel)

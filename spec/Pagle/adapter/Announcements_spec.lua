@@ -711,7 +711,8 @@ describe("a variety's art and a fish crest on the client (VAR-R25)", function()
 
 			loaded.client.advance(TOAST + LEAVE_TOAST)
 			raise(loaded, M, moment("toast", "New Species", { icon = 136245 }))
-			assert.are.same({ 136245, { 0, 1, 0, 1 } }, { toast.icon.texture, toast.icon.texCoord })
+			local crop = loaded.ns.ICON_CROP
+			assert.are.same({ 136245, { crop, 1 - crop, crop, 1 - crop } }, { toast.icon.texture, toast.icon.texCoord })
 
 			raise(loaded, M, moment("nod", "New variety · Coral", { art = ART }))
 			local nod = frameOf(loaded, "nod")

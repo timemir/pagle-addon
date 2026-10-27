@@ -681,6 +681,26 @@ describe("The Curio Shop's list", function()
 		assert.is_false(ripple.Shield:IsShown())
 	end)
 
+	it(
+		"crops a good's item icon of its own square border, and leaves a crest's shield its own coords (#421)",
+		function()
+			local loaded = shopCore()
+			loaded.env.Pagle.OpenShop()
+			local bezel = rowOf(loaded, "core.crest.plain").bezel
+			local crop = loaded.ns.ICON_CROP
+			local cropped = { crop, 1 - crop, crop, 1 - crop }
+
+			loaded.ns.SetShopBezel(bezel, 136245)
+			assert.are.same(cropped, bezel.Icon.texCoord)
+
+			loaded.ns.SetShopBezel(bezel, nil)
+			assert.are.same(cropped, bezel.Icon.texCoord, "the question mark is an item icon too")
+
+			loaded.ns.SetShopBezel(bezel, 136245, false, true)
+			assert.are.same({ 0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1 }, bezel.Shield.texCoord)
+		end
+	)
+
 	it("greys a crest's shield as it would a medallion's icon (SHOP-R25, SHOP-R35)", function()
 		local loaded = shopCore()
 		loaded.env.Pagle.OpenShop()

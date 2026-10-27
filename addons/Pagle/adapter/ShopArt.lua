@@ -214,8 +214,9 @@ function ns.CropShield(texture)
 	texture:SetTexCoord(0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1)
 end
 
---- Sets a medallion's icon, greyed for a good put away. A crest's (`shield`, SHOP-R25) is its shield instead, square
---- with no ring, gloss or mask: 30 x 35 in a row's medallion, and as tall in proportion in a larger one.
+--- Sets a medallion's icon, cropped of its own border and greyed for a good put away. A crest's (`shield`, SHOP-R25)
+--- is its shield instead, square with no ring, gloss or mask: 30 x 35 in a row's medallion, and as tall in proportion
+--- in a larger one.
 ---@param bezel PagleShopBezel
 ---@param icon integer|string|nil
 ---@param greyed boolean?
@@ -238,6 +239,9 @@ function ns.SetShopBezel(bezel, icon, greyed, shield)
 	end
 	local texture = shield and bezel.Shield or bezel.Icon
 	texture:SetTexture(icon or NO_ICON)
+	if not shield then
+		texture:SetTexCoord(ns.ICON_CROP, 1 - ns.ICON_CROP, ns.ICON_CROP, 1 - ns.ICON_CROP)
+	end
 	texture:SetDesaturated(greyed == true)
 end
 

@@ -666,7 +666,7 @@ local function setComposedMedallion(bezel, size, headline, icon, art, backing)
 		bezel.Icon:SetTexCoord(ns.HeadCrop(art))
 	else
 		bezel.Icon:SetTexture(icon or textureOf((headline --[[@as PagleRaisedMoment]]).icon))
-		bezel.Icon:SetTexCoord(0, 1, 0, 1)
+		bezel.Icon:SetTexCoord(ns.ICON_CROP, 1 - ns.ICON_CROP, ns.ICON_CROP, 1 - ns.ICON_CROP)
 	end
 end
 
