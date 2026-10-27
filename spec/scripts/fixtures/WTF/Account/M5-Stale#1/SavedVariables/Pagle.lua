@@ -35,6 +35,12 @@ PagleDB = {
 },
 ["profiles"] = {
 ["Default"] = {
+["announcements"] = {
+["point"] = {
+["x"] = "left",
+["y"] = 500,
+},
+},
 ["dock"] = {
 ["point"] = {
 ["point"] = "TOPRIGHT",

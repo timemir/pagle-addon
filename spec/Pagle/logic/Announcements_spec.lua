@@ -1204,3 +1204,154 @@ describe("the record ruler", function()
 		)
 	end)
 end)
+
+describe("holding the Toast column while the Angler moves it (ANN-R98)", function()
+	it("stops every clock in the column, the pointer on it or not, and lets them go on at the drop", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "Older"))
+		world.advance(2)
+		world.lanes:Push(announcement("nod", "Newer"))
+		world.advance(1)
+
+		world.lanes:HoldColumn()
+		world.advance(60)
+		assert.are.same({ "nod Newer", "toast Older" }, column(world))
+		world.lanes:ReleaseColumn()
+
+		-- The Nod had 3.3 - 1 s left, the toast 8.7 - 3 s.
+		world.advance(2.3 - 0.01)
+		assert.are.same({ "nod Newer", "toast Older" }, column(world))
+		world.advance(0.01)
+		assert.are.same({ "toast Older" }, column(world))
+		world.advance(5.7 - 2.3 - 0.01)
+		assert.are.same({ "toast Older" }, column(world))
+		world.advance(0.01)
+		assert.are.same({}, column(world))
+	end)
+
+	it("lets nothing enter the column, then shows what waited once it is released", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "On screen"))
+
+		world.lanes:HoldColumn()
+		world.lanes:Push(announcement("toast", "Waits"))
+		world.lanes:Push(announcement("nod", "Waits too"))
+		world.advance(60)
+		assert.are.same({ "toast On screen" }, column(world))
+		assert.is_true(world.lanes:IsColumnHeld())
+
+		world.lanes:ReleaseColumn()
+
+		assert.is_false(world.lanes:IsColumnHeld())
+		assert.are.same({ "nod Waits too", "toast Waits", "toast On screen" }, column(world))
+	end)
+
+	it("lets nothing in the column leave while held: a click sends nothing away", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "Stays"))
+		world.lanes:HoldColumn()
+
+		world.lanes:Dismiss(displayOf(world, "Stays"))
+
+		assert.are.same({ "toast Stays" }, column(world))
+		world.lanes:ReleaseColumn()
+		world.lanes:Dismiss(displayOf(world, "Stays"))
+		assert.are.same({}, column(world))
+	end)
+
+	it("leaves the centre alone: a banner goes on with its time while the column is held", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("banner", "Level 12"))
+		world.lanes:Push(announcement("toast", "Held"))
+		world.lanes:HoldColumn()
+
+		world.advance(BANNER)
+
+		assert.is_nil(centre(world))
+		assert.are.same({ "toast Held" }, column(world))
+	end)
+
+	it("keeps a toast the pointer left mid-drag still, and a toast the pointer is still on until it leaves", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "Pointer left"))
+		world.lanes:Push(announcement("toast", "Pointer stays"))
+		world.advance(3)
+		world.lanes:Pause(displayOf(world, "Pointer left"))
+		world.lanes:Pause(displayOf(world, "Pointer stays"))
+		world.lanes:HoldColumn()
+
+		world.lanes:Resume(displayOf(world, "Pointer left"))
+		world.advance(60)
+		assert.are.same({ "toast Pointer stays", "toast Pointer left" }, column(world))
+		world.lanes:ReleaseColumn()
+
+		-- The one the pointer left goes on at the drop; the other waits for its pointer to leave.
+		world.advance(TOAST - 3 - 0.01)
+		assert.are.same({ "toast Pointer stays", "toast Pointer left" }, column(world))
+		world.advance(0.01)
+		assert.are.same({ "toast Pointer stays" }, column(world))
+		world.advance(60)
+		assert.are.same({ "toast Pointer stays" }, column(world))
+		world.lanes:Resume(displayOf(world, "Pointer stays"))
+		world.advance(TOAST - 3 - 0.01)
+		assert.are.same({ "toast Pointer stays" }, column(world))
+		world.advance(0.01)
+		assert.are.same({}, column(world))
+	end)
+
+	it(
+		"stays balanced: the pointer entering a held toast, and leaving it after the drop, change nothing wrong",
+		function()
+			local world = newWorld()
+			world.lanes:Push(announcement("toast", "Held"))
+			world.advance(3)
+			world.lanes:HoldColumn()
+
+			world.lanes:Pause(displayOf(world, "Held"))
+			world.lanes:ReleaseColumn()
+			world.advance(60)
+			assert.are.same({ "toast Held" }, column(world))
+			world.lanes:Resume(displayOf(world, "Held"))
+
+			world.advance(TOAST - 3 - 0.01)
+			assert.are.same({ "toast Held" }, column(world))
+			world.advance(0.01)
+			assert.are.same({}, column(world))
+		end
+	)
+
+	it("changes nothing when held twice, or released without a hold", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "Held"))
+		world.advance(3)
+		world.lanes:ReleaseColumn()
+
+		world.lanes:HoldColumn()
+		world.lanes:HoldColumn()
+		world.advance(60)
+		world.lanes:ReleaseColumn()
+		world.lanes:ReleaseColumn()
+
+		world.advance(TOAST - 3 - 0.01)
+		assert.are.same({ "toast Held" }, column(world))
+		world.advance(0.01)
+		assert.are.same({}, column(world))
+	end)
+
+	it("ends when the lanes hold: combat takes the column off screen and it is held no more (ANN-R35)", function()
+		local world = newWorld()
+		world.lanes:Push(announcement("toast", "Gone"))
+		world.lanes:HoldColumn()
+
+		world.lanes:Hold("combat")
+
+		assert.is_false(world.lanes:IsColumnHeld())
+		assert.are.same({}, column(world))
+		world.lanes:ReleaseColumn()
+		world.lanes:Release("combat")
+		world.advance(ns.AFTER_COMBAT_SECONDS)
+		world.lanes:Push(announcement("toast", "After"))
+		-- What the hold kept shows as itself, and the column takes new entries again.
+		assert.are.same({ "toast After", "toast Gone" }, column(world))
+	end)
+end)

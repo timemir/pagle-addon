@@ -32,7 +32,7 @@ local FIGHTING_ICON = "Interface\\Icons\\Ability_DualWield"
 -- A banner's top below the screen's (ANN-R20).
 local BANNER_TOP = 120
 -- A Nod's line at most, and the track of its compact ruler, which the number and the margin follow.
-local NOD_WIDTH, COMPACT_TRACK = 640, 90
+local NOD_WIDTH, COMPACT_TRACK = ns.NOD_WIDTH, 90
 -- A Nod's words: its title alone, and a stepped-down catch toast's whole line naming a variety (VAR-R26), whose first
 -- half is cut short before it passes.
 local NOD_TITLE, NOD_VARIETY_LINE = 300, 400
@@ -1871,10 +1871,85 @@ function ns.DrawStillAnnouncement(parent, form, announcement)
 	return frame
 end
 
--- The column's foot above the screen's bottom, where the canvas's board puts its toast (ANN-R20).
-local COLUMN_FOOT = 156
---- The toast column's foot, in UI units above the screen's bottom (ANN-R20): the Letter sits there too (ONB-R11).
-ns.ANNOUNCE_COLUMN_FOOT = COLUMN_FOOT
+-- The Toast column's foot (ANN-R98): one invisible anchor frame on UIParent, at the saved `announcements.point` or by
+-- default the middle of the screen's bottom (ANN-R20), that every toast and Nod is anchored to, so a Shift-drag of
+-- one moves the anchor and with it the whole column. Unnamed, so the client's layout cache never saves or restores
+-- it: `announcements.point` is the one place its position is kept.
+local columnAnchor = CreateFrame("Frame", nil, UIParent)
+columnAnchor:SetSize(1, 1)
+columnAnchor:SetMovable(true)
+columnAnchor:SetClampedToScreen(true)
+ns.columnAnchor = columnAnchor
+
+---@type table? the toast or Nod whose Shift-drag is moving the column, while one is
+local movingColumn
+-- The drag that moved the column ends with a mouse-up on the toast or Nod, which mustn't click it away (ANN-R20).
+local dragEndsClick = false
+
+--- The Toast column's foot now, in UI units from UIParent's bottom centre (ANN-R98): the saved one, or the default,
+--- moved to where a full column fits the screen as it is. The Letter sits there too (ONB-R11).
+---@return PagleColumnFoot
+function ns.AnnounceColumnFoot()
+	local saved = ns.db and ns.db.profile.announcements.point
+	return ns.ClampColumnFoot(ns.ColumnFoot(saved), UIParent:GetWidth(), UIParent:GetHeight())
+end
+
+-- Puts the anchor at the column's foot (ANN-R98), and keeps it there when the screen changes. Leaves it to the
+-- pointer during a drag.
+local function placeColumn()
+	if movingColumn then
+		return
+	end
+	local foot = ns.AnnounceColumnFoot()
+	columnAnchor:ClearAllPoints()
+	columnAnchor:SetPoint("BOTTOM", UIParent, "BOTTOM", foot.x, foot.y)
+end
+UIParent:HookScript("OnSizeChanged", placeColumn)
+
+-- A Shift-drag of `frame`, a toast or Nod, moves the column (ANN-R98): with Shift held and outside restriction, the
+-- lanes hold the column (every clock stops, nothing enters or leaves) and the anchor follows the pointer.
+---@param frame table
+local function startColumnMove(frame)
+	if movingColumn or not IsShiftKeyDown() or Pagle.IsRestricted() then
+		return
+	end
+	movingColumn, dragEndsClick = frame, true
+	ns.lanes:HoldColumn()
+	columnAnchor:StartMoving()
+end
+
+-- Ends a move in progress where the column is now: its foot kept, within where a full column fits (ANN-R98), is saved
+-- to `announcements.point`, and the lanes let go of the column. Nothing with no move in progress.
+local function endColumnMove()
+	if not movingColumn then
+		return
+	end
+	movingColumn = nil
+	columnAnchor:StopMovingOrSizing()
+	local x, bottom = columnAnchor:GetCenter(), columnAnchor:GetBottom()
+	if x and bottom then
+		local foot = ns.ClampColumnFoot(
+			{ x = x - UIParent:GetWidth() / 2, y = bottom },
+			UIParent:GetWidth(),
+			UIParent:GetHeight()
+		)
+		ns.db.profile.announcements.point = foot
+	end
+	placeColumn()
+	ns.lanes:ReleaseColumn()
+end
+
+--- The Announcements page's Reset (SET-R30, ANN-R98): clears `announcements.point` and puts the column back at the
+--- bottom of the screen, the toasts and Nods on screen with it. While restricted it does nothing. True when it did.
+---@return boolean
+function ns.ResetToastColumn()
+	if Pagle.IsRestricted() then
+		return false
+	end
+	ns.db.profile.announcements.point = nil
+	placeColumn()
+	return true
+end
 -- How a leaving toast or Nod eases: slow, then away.
 local EASE_IN = ns.Bezier(0.42, 0, 1, 1)
 
@@ -1902,7 +1977,7 @@ end
 
 -- A frame of `form` not in use, made if none is. The column's take the pointer: on one, its clock stands still, and a
 -- click sends it away, then runs its headline's `onClick` if it has one (ANN-R20), under securecallfunction so a
--- Module's failure is reported, not raised.
+-- Module's failure is reported, not raised; a Shift-drag moves the column instead (ANN-R98).
 ---@param form PagleAnnouncementForm
 ---@return PagleAnnouncementFrame
 local function acquire(form)
@@ -1925,8 +2000,23 @@ local function acquire(form)
 				ns.lanes:Resume(self.display)
 			end
 		end)
+		-- Shift with the left button held and dragged moves the whole column (ANN-R98).
+		frame:RegisterForDrag("LeftButton")
+		frame:SetScript("OnDragStart", function(self)
+			startColumnMove(self)
+		end)
+		frame:SetScript("OnDragStop", function()
+			endColumnMove()
+		end)
+		frame:SetScript("OnMouseDown", function()
+			dragEndsClick = false
+		end)
 		frame:SetScript("OnMouseUp", function(self)
 			local display = self.display
+			if dragEndsClick then
+				dragEndsClick = false
+				return
+			end
 			if display then
 				ns.lanes:Dismiss(display)
 				local onClick = display.announcement.headline.onClick
@@ -1940,17 +2030,18 @@ local function acquire(form)
 	return frame
 end
 
--- Puts a column frame `y` above the column's foot; a toast.high hangs its bookmark below that.
+-- Puts a column frame `y` above the column's foot (the anchor); a toast.high hangs its bookmark below that.
 ---@param frame PagleAnnouncementFrame
 ---@param y number
 local function placeAt(frame, y)
 	frame.slot = y
 	frame:ClearAllPoints()
-	frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, COLUMN_FOOT + y + (frame.ribbon or 0))
+	frame:SetPoint("BOTTOM", columnAnchor, "BOTTOM", 0, y + (frame.ribbon or 0))
 end
 
 -- Stacks the column, the newest at its foot; one that moves glides to its place (0.3 s).
 local function restack()
+	placeColumn()
 	local y = 0
 	for _, frame in ipairs(ns.columnFrames) do
 		local from, to = frame.slot, y
@@ -2057,6 +2148,9 @@ local function hide(display, atOnce)
 	if not frame then
 		return
 	end
+	if movingColumn == frame then
+		endColumnMove()
+	end
 	frame.display, frame.drawnRuler, frame.moved = nil, nil, nil
 	ns.StopMotion(frame)
 	-- A composed style's layers stop looping as their toast goes (ANN-R82), and the splash's crest as it goes (LED-R153).
@@ -2131,11 +2225,14 @@ ns.lanes = ns.NewLanes({
 })
 
 --- Holds Announcements for `reason` (ANN-R38): the lanes hold it (ns.lanes:Hold) and the card on screen goes off it
---- unclosed (ns.cards:Hold); cards wait while any reason holds (ANN-R55). The Field guide holds for "guide" while it
---- is open (ONB-R70); a second hold for a reason already holding changes nothing.
+--- unclosed (ns.cards:Hold); cards wait while any reason holds (ANN-R55); a Shift-drag of the toast column in progress
+--- ends where it is and is saved (ANN-R98). The Field guide holds for "guide" while it is open (ONB-R70); a second
+--- hold for a reason already holding changes nothing.
 ---@param reason PagleHoldReason
 function ns.HoldAnnouncements(reason)
 	ns.lanes:Hold(reason)
+	-- Taking the column off screen already ended a move of it (hide); this is for a move whose frames were gone.
+	endColumnMove()
 	ns.cards:Hold()
 end
 

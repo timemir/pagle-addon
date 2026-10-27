@@ -133,6 +133,12 @@ PagleDB = {
 },
 ["profiles"] = {
 ["Default"] = {
+["announcements"] = {
+["point"] = {
+["x"] = 200,
+["y"] = 500,
+},
+},
 ["appearance"] = {
 ["hunts.trackerframe"] = "hunts.trackerframe.inkwash",
 },

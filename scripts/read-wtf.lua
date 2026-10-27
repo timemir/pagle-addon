@@ -39,6 +39,7 @@
 --     totals belong to PagleLog's logId, and the last pushed-content seq Core accepted (PagleDB.global.pushed.seq);
 --   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
 --   - the tracker dock's saved place (PagleDB.profile.dock.point);
+--   - the Toast column's saved foot (PagleDB.profile.announcements.point);
 --   - each movable book's saved place (PagleDB.profile.books, BOOK-R5);
 --   - the cards: the Write-up waiting, the Session summary cards, the open summary and the pending moments;
 --   - the onboarding state (PagleDB.global.onboarding): the Letter, the guide's step, the Margin notes and First looks
@@ -2797,6 +2798,31 @@ local function printDock(pagle)
 	end
 end
 
+-- Prints the Toast column section (announcements.md › Data, ANN-R98): PagleDB.profile.announcements.point, the foot
+-- the Angler moved the column to, in UIParent's units from its bottom centre, or the default. Core's own
+-- logic/ColumnFoot.lua reads it, so a saved point Core can't read is said to be one. The screen's size isn't known
+-- here, so the clamp that keeps a full column on screen (ANN-R98) isn't applied. AceDB leaves a nil point out of the
+-- file.
+local function printToastColumn(pagle)
+	local _, why = pagleGlobal(pagle)
+	if why then
+		print("== Toast column: " .. why)
+		return
+	end
+	print("== Toast column (PagleDB.profile.announcements.point)")
+	local ns = wtf.loadCore({ "logic/ColumnFoot.lua" })
+	local saved = tableOr(tableOr(tableOr(pagle.saved.PagleDB.profiles).Default).announcements).point
+	local foot = ns.ColumnFoot(saved)
+	local place = ("x %s, y %s from the bottom centre"):format(tostring(foot.x), tostring(foot.y))
+	if saved == nil then
+		print("announcements.point: default (none saved): " .. place .. " (ANN-R20)")
+	elseif type(saved) == "table" and saved.x == foot.x and saved.y == foot.y then
+		print("announcements.point: " .. place .. " (moved by the player, ANN-R98)")
+	else
+		print("announcements.point: saved but not one Core reads, so the default: " .. place .. " (ANN-R20)")
+	end
+end
+
 -- Prints the Books section (core/book.md › Data, BOOK-R5): PagleDB.profile.books, each movable book's saved position
 -- by its id ("stats", the Journal's, the Hunts board's), in UIParent's units. A book with none saved opens centred.
 local function printBooks(pagle)
@@ -3581,6 +3607,7 @@ local function main(args)
 	printActivityXP(pagle, pagleLog(pagle.saved))
 	printLooks(pagle)
 	printDock(pagle)
+	printToastColumn(pagle)
 	printBooks(pagle)
 	printCards(pagle)
 	printOnboarding(pagle, pagleLog(pagle.saved))

@@ -87,6 +87,7 @@ logic\Announcements.lua
 logic\LayeredArt.lua
 logic\PrestigeFrames.lua
 logic\ToastStyles.lua
+logic\ColumnFoot.lua
 logic\Motion.lua
 logic\BookBinding.lua
 logic\Book.lua

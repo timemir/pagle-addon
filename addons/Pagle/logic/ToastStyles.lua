@@ -660,6 +660,12 @@ local PAGES = {
 	["digest"] = { page = "digest", w = 560, h = 176, bezel = 84, bx = 4, tx = 138, ty = 12, coin = 42, digest = true },
 }
 
+--- The widest toast page, in UI units: where the Toast column's foot may go (ANN-R98).
+ns.TOAST_WIDTH_MAX = 0
+for _, page in pairs(PAGES) do
+	ns.TOAST_WIDTH_MAX = math.max(ns.TOAST_WIDTH_MAX, page.w)
+end
+
 --- The page a toast is drawn on (announcements.md › UI): "While you were fighting" on the digest page; a headline with
 --- a record ruler on a ruled page (a toast.high's on toast's, the high page having no room for one); else by its
 --- rung, toast.low on the pencil page and toast.high on the gilt one.

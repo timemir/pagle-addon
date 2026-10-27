@@ -186,7 +186,7 @@ describe("Pagle_Ledger with Core", function()
 				look[i] = row.initializer:GetName()
 			end
 			assert.are.same({ "Pagle", "Announcements", "Look and Feel" }, names)
-			assert.are.equal(8, #settings.category("Announcements").layout.initializers) -- Core's own (SET-R30)
+			assert.are.equal(9, #settings.category("Announcements").layout.initializers) -- Core's own (SET-R30)
 			assert.are.same({ "Books", "Book binding", "Curio Shop" }, { look[7], look[8], look[9] })
 		end
 	)

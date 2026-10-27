@@ -817,6 +817,14 @@ describe("scripts/read-wtf.lua", function()
 			}, section(out, "== Tracker dock"))
 		end)
 
+		it("prints the moved Toast column's foot (ANN-R98)", function()
+			-- announcements.md › Data: announcements.point, in UIParent's units from its bottom centre.
+			assert.are.same({
+				"== Toast column (PagleDB.profile.announcements.point)",
+				"announcements.point: x 200, y 500 from the bottom centre (moved by the player, ANN-R98)",
+			}, section(out, "== Toast column"))
+		end)
+
 		it("prints the Hunts slots' looks, Hunts' Coins and Hunts' card lines (HNT-R89, HNT-R110, HNT-R120)", function()
 			-- SHOP-R32: the cover has no stored pick, so its default; the tracker frame's pick is stored. SHOP-R3:
 			-- Hunts' last reported total. HNT-R111: a "While Hunts was off" Write-up section.
@@ -919,6 +927,14 @@ describe("scripts/read-wtf.lua", function()
 				}, section(out, "== Hunts"))
 			end
 		)
+
+		it("reads a Toast column point Core can't read as the default (ANN-R20, ANN-R98)", function()
+			assert.are.same({
+				"== Toast column (PagleDB.profile.announcements.point)",
+				"announcements.point: saved but not one Core reads, so the default: x 0, y 156 from the bottom centre"
+					.. " (ANN-R20)",
+			}, section(out, "== Toast column"))
+		end)
 
 		it("reads a dock point Core can't read as the default (CORE-R70)", function()
 			assert.are.same({
@@ -1234,6 +1250,16 @@ describe("scripts/read-wtf.lua", function()
 			"== Tracker dock (PagleDB.profile.dock.point)",
 			"dock.point: default (none saved): TOPRIGHT of MinimapCluster's BOTTOMRIGHT, x 0, y -10 (CORE-R70)",
 		}, section(out, "== Tracker dock"))
+	end)
+
+	it("reads no Toast column point as the default (ANN-R20, ANN-R98)", function()
+		local out = run(ACCOUNTS .. "M4#1", "--catalogue", CATALOGUE)
+
+		-- announcements.md › Data: announcements.point is nil until the Angler moves the column.
+		assert.are.same({
+			"== Toast column (PagleDB.profile.announcements.point)",
+			"announcements.point: default (none saved): x 0, y 156 from the bottom centre (ANN-R20)",
+		}, section(out, "== Toast column"))
 	end)
 
 	it("prints an M3 Ledger's M4 lines as none yet, with the automatic title (LED-R35, LED-R77, LED-R80)", function()
