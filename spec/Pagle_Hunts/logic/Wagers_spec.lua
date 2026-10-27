@@ -200,6 +200,17 @@ describe('"needs skill {n}" (HNT-R156)', function()
 		assert.is_nil(ns.EventSkillNeed(event, 300))
 		assert.is_nil(ns.EventSkillNeed(event, nil))
 	end)
+
+	it("never shows a skill below 0: each bound is at least 0 and a range at or below 0 is no requirement", function()
+		local ns = load()
+
+		-- an Angler's best can't be below 0, but the clamp doesn't lean on that
+		assert.is_nil(ns.EventSkillNeed({ skill = { -70, -20 } }, -50))
+		assert.is_nil(ns.EventSkillNeed({ skill = { -20, -20 } }, 0))
+		assert.is_nil(ns.EventSkillNeed({ skill = { -20, 75 } }, -50))
+		assert.is_nil(ns.EventSkillNeed({ skill = { 0, 75 } }, -50))
+		assert.are.equal("needs skill 75", ns.EventSkillNeed({ skill = { 75, 150 } }, -50))
+	end)
 end)
 
 describe("a holiday run's tag (HNT-R162, HNT-R163)", function()
@@ -425,6 +436,24 @@ describe("a run's entry (HNT-R163)", function()
 		assert.is_nil(entry.chips[2].short) -- not the Hunt entry's red chip
 		assert.are.same({ "companion", "Sent by the companion" }, { entry.source, entry.kicker })
 		assert.are.equal("mark-charm-winter_veil", entry.mark[#entry.mark])
+	end)
+
+	it("shows no requirement on a run's entry chips or its row ahead for a skill below 0", function()
+		local ns = load()
+		for _, skill in ipairs({ { -70, -20 }, { -20, 75 } }) do
+			local input = wagersInput(ns, {})
+			input.best = -50
+			local entry = ns.BuildRunEntry(input, withEvent(shore(ns), { skill = skill }))
+			for _, chip in ipairs(entry.chips) do
+				assert.are_not.equal("skill", chip.kind)
+			end
+			local ahead = withEvent(shownRun(ns, "fixture_vale", NOW + 3 * HOUR, NOW + 3 * HOUR + 3 * DAY), {
+				skill = skill,
+			})
+			assert.is_nil(ns.BuildWagerStrip(wagersInput(ns, { ahead })).ahead.need)
+			input.runs = { ahead }
+			assert.is_nil(ns.BuildWagerStrip(input).ahead.need)
+		end
 	end)
 
 	it("reads a Timed Hunt's window: open now until its close, or when it opens and in how long", function()

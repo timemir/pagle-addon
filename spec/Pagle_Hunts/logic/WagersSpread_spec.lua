@@ -204,6 +204,16 @@ describe("the wager tickets (HNT-R162, HNT-R160)", function()
 		assert.are.equal("needs skill 276", spreadOf({ short }).tickets[1].need)
 	end)
 
+	it("show no requirement for a skill below 0, however low the Angler's best (HNT-R156)", function()
+		local ns = load()
+		for _, skill in ipairs({ { -70, -20 }, { -20, 75 } }) do
+			local input = wagersInput({ withEvent(shore(ns), { skill = skill }) })
+			input.best = -50
+			local spread = load().BuildWagersSpread(input, { settled = 0, ladder = {}, ended = {} })
+			assert.is_nil(spread.tickets[1].need)
+		end
+	end)
+
 	it("keep a run that ended this showing, greyed and closed, after the rest, never chosen (HNT-R143)", function()
 		local ns = load()
 		local ended = shownRun(ns, "fixture_shore", NOW - 3 * DAY, NOW - HOUR, {
