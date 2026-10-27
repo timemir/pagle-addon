@@ -23,6 +23,7 @@ local MISSING = {
 	"Installed it just now? Log out to character select once.",
 }
 local NOT_RUNNING = { "The Pagle companion isn't running. Start it to get this week's wagers." }
+local NOD = "New wagers are out there. The Pagle companion brings them: more XP, more Coins."
 local SETTING = "Remind me about the Pagle companion"
 local TOOLTIP = "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you new "
 	.. "wagers."
@@ -482,7 +483,7 @@ describe("the weekly Nod (HNT-R171, HNT-R86)", function()
 		assert.are.equal(1, #raised)
 		local nod = raised[1].headline
 		assert.are.same(
-			{ "nod", "companionHint", "Pagle Wagers", MISSING[1], MISSING[1], "Interface\\Icons\\Trade_Fishing" },
+			{ "nod", "companionHint", "Pagle Wagers", NOD, NOD, "Interface\\Icons\\Trade_Fishing" },
 			{ nod.rung, nod.kind, nod.title, nod.text, nod.pastText, nod.icon }
 		)
 		assert.is_nil(nod.cast) -- an Announcement of its own (ANN-R12)
@@ -508,7 +509,7 @@ describe("the weekly Nod (HNT-R171, HNT-R86)", function()
 		r.fake.nextFrame()
 
 		assert.are.equal(1, #nods(r))
-		assert.are.equal(MISSING[1], nods(r)[1].headline.text)
+		assert.are.equal(NOD, nods(r)[1].headline.text)
 	end)
 
 	it("waits for PushedContentReady when the world comes first", function()
