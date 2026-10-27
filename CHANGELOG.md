@@ -36,7 +36,7 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 
 - Sixteen Hunts for the catches worth planning for: a fish that bites by night, in one season or during an event, or a catch that only counts under conditions of its own, such as a grouper by moonlight.
 - The Hunts board, a leather notebook, lays them out on a timeline of what's biting now, what opens soon and what comes later.
-- Each Hunt completes in bronze, some go on to silver and gold, and each of the five themed sets earns its title once finished.
+- Each Hunt completes in bronze, some go on to silver and gold, and each of the five themed sets earns its title once finished. The first set, Home Waters, is made for new characters: four Hunts in the low-level zones.
 - The board counts your Casts at each Hunt without pretending to know the odds.
 - Pin the Hunts you're after: they follow you in a tracker under the minimap, and, if you like, a quiet Nod tells you when a pinned Hunt's window opens. `/pagle hunts` opens the board.
 

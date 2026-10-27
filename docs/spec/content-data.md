@@ -354,7 +354,7 @@ An imposed Hunt's `conditions` is an inline table with any of the LOG-R48 fields
 | `data/hunts/tags.toml` | DATA-R97 |
 | `data/lore/*.toml`, `manifest.toml`, `VOICE.md` | DATA-R100–R111 |
 | `data/art/prestige/` | The Prestige kit's sources for the web art: `art.json`, the lossless 32-bit atlases `tga/prestige/*.tga` and `tga/legends/*.tga`, and `wells/<legend>.svg` ([The web art](#the-web-art)) |
-| `data/art/books/` | The books' art sources, as the kits hand them back, 32-bit TGA with straight alpha, which `Pagle/media/books/` is encoded from: `tga/Covers2.tga` (the Covers2 atlas) and `tga/swatch-fiveseal.tga` (its Four-Set Seal cell alone, #374), and `tga/bindings/<key>.tga`, the material `bindings/<key>.blp` is encoded from, for each material whose art is back (#382, [book-binding.md](core/book-binding.md) BIND-R13) |
+| `data/art/books/` | The books' art sources, as the kits hand them back, 32-bit TGA with straight alpha, which `Pagle/media/books/` is encoded from: `tga/Covers2.tga` (the Covers2 atlas) and `tga/swatch-fiveseal.tga` (its Five-Set Seal cell alone, #374), and `tga/bindings/<key>.tga`, the material `bindings/<key>.blp` is encoded from, for each material whose art is back (#382, [book-binding.md](core/book-binding.md) BIND-R13) |
 | `data/art/crests/` | The zone crests' art sources, as the kits hand them back, 32-bit TGA with straight alpha, which `Pagle_Ledger/media/crests/` is encoded from: `tga/<key>.tga`, the crest `crests/<key>.blp` is encoded from, for each crest whose source is kept, today Hyjal Crater's alone (`hyjalcrater`, #373; LED-R113, DATA-R136) |
 
 Nothing here is a SavedVariable: the shipped data is read-only Lua (DATA-R80).

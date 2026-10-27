@@ -29,7 +29,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/readme/02-medallions.jpg" alt="35 Species, 53 zone crests, 12 Hunts, 24 Pagle Wagers, 3 Legends, 30 flies to tie" width="100%">
+  <img src="docs/readme/02-medallions.jpg" alt="35 Species, 53 zone crests, 16 Hunts, 24 Pagle Wagers, 3 Legends, 30 flies to tie" width="100%">
 </p>
 
 Every Cast you make is written into one log, shared by every character on your account, and everything Pagle shows is read from it. Open any of it from Pagle's entry in the addon compartment by the minimap, or with `/pagle`.

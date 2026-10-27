@@ -35,7 +35,7 @@ Fish you haven't caught stay nameless. A riddle sets the scene, and a plain hint
 
 ## Hunts
 
-Hunts are the catches worth planning for: a fish that bites by night, in one season or during an event, or a catch that only counts under conditions of its own, such as a grouper by moonlight. The Hunts board, a leather notebook, lays them out on a timeline of what's biting now, what opens soon and what comes later. Each Hunt completes in bronze, some go on to silver and gold, and finishing a themed set earns its title. The board counts your Casts at each Hunt without pretending to know the odds, and the Hunts you pin follow you in a tracker under the minimap.
+Hunts are the catches worth planning for: a fish that bites by night, in one season or during an event, or a catch that only counts under conditions of its own, such as a grouper by moonlight. The Hunts board, a leather notebook, lays them out on a timeline of what's biting now, what opens soon and what comes later. Each Hunt completes in bronze, some go on to silver and gold, and finishing a themed set earns its title. The first set, Home Waters, is made for new characters. The board counts your Casts at each Hunt without pretending to know the odds, and the Hunts you pin follow you in a tracker under the minimap.
 
 ## Stats
 
