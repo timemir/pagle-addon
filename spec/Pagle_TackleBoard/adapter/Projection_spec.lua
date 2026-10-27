@@ -615,12 +615,9 @@ describe("the Tackle Board's projection", function()
 			assert.are.equal(7002, global.board.rulesVersion)
 		end)
 
-		it(
-			"is at rules version 6 with Refresh posts and anchored calendar boundaries (TKB-R58, TKB-R81)",
-			function()
-				assert.are.equal(6, board.load().ns.TKB_RULES_VERSION)
-			end
-		)
+		it("is at rules version 6 with Refresh posts and anchored calendar boundaries (TKB-R58, TKB-R81)", function()
+			assert.are.equal(6, board.load().ns.TKB_RULES_VERSION)
+		end)
 
 		it(
 			"rebuilds a stored version-1 projection, which had no Activity XP, filling it in from the log (TKB-R81)",
