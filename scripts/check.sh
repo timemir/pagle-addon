@@ -188,56 +188,114 @@ stage_tests() {
 		echo "check: no coverage report (coverage never gates)"
 }
 
-# Without coverage, busted runs once per directory in spec/ that holds specs, and once for the specs at the top of
-# spec/, each without #slow, and the #slow pass is one more shard; GATE_JOBS run at a time (#254). Every shard's
-# output prints after they all finish, in that order, then whether it passed and its wall time; any shard that
-# doesn't pass fails tests. A coverage run stays one busted: luacov's stats file isn't shard-safe.
+# Without coverage, the specs run in shards, each one busted without #slow, and the #slow pass is one more shard;
+# GATE_JOBS run at a time (#254). A shard is a directory in spec/ that holds specs, or the specs at the top of spec/.
+# The directories in split_dirs run as one shard per directory in them plus one for their own top, as spec/ does;
+# those in halved_dirs as two shards of every other file by name. Shards then take about as long as each other, so the
+# stage ends near the busiest one's time: spec/Pagle alone took a quarter of it, and its adapter/ most of that. The
+# shards are checked to run every spec in spec/ once. The #slow pass, among the longest, starts first.
+# Every shard's output prints after they all finish, in order, then whether it passed and its wall time; any shard
+# that doesn't pass fails tests. A coverage run stays one busted: luacov's stats file isn't shard-safe.
+split_dirs=(spec spec/Pagle)
+halved_dirs=(spec/Pagle/adapter)
+
+# specs_in <dir> [top]: the spec files under dir, or at its top only, one per line, sorted.
+specs_in() {
+	if [[ -n ${2:-} ]]; then
+		find "$1" -maxdepth 1 -name '*_spec*.lua' | LC_ALL=C sort
+	else
+		find "$1" -name '*_spec*.lua' | LC_ALL=C sort
+	fi
+}
+
+# add_shard <name> <files, one per line>: one shard onto busted_shards' shard_names and shard_files, if it has files.
+add_shard() {
+	[[ -z $2 ]] || {
+		shard_names+=("$1")
+		shard_files+=("$2")
+	}
+}
+
+# add_shards <dir>: the shards of dir, as split_dirs and halved_dirs have it.
+add_shards() {
+	local dir=$1 listed sub files
+	for listed in "${halved_dirs[@]}"; do
+		if [[ $dir == "$listed" ]]; then
+			files=$(specs_in "$dir")
+			add_shard "$dir (1/2)" "$(awk 'NR % 2 == 1' <<<"$files")"
+			add_shard "$dir (2/2)" "$(awk 'NR % 2 == 0' <<<"$files")"
+			return 0
+		fi
+	done
+	for listed in "${split_dirs[@]}"; do
+		if [[ $dir == "$listed" ]]; then
+			for sub in "$dir"/*/; do
+				[[ -d $sub ]] && add_shards "${sub%/}"
+			done
+			add_shard "$dir" "$(specs_in "$dir" top)"
+			return 0
+		fi
+	done
+	add_shard "$dir" "$(specs_in "$dir")"
+}
+
 busted_shards() {
-	local jobs=${GATE_JOBS:-4} shards=() dir i running=0 status took failed=0
+	local jobs=${GATE_JOBS:-4} shard_names=() shard_files=() files=() file i running=0 status took failed=0 covered all
 	[[ $jobs =~ ^[1-9][0-9]*$ ]] || {
 		echo "tests: GATE_JOBS must be a whole number from 1, not '$jobs'" >&2
 		return 1
 	}
-	for dir in spec/*/; do
-		[[ -n $(find "$dir" -name '*_spec*.lua' -print -quit) ]] && shards+=("${dir%/}")
-	done
-	[[ -n $(find spec -maxdepth 1 -name '*_spec*.lua' -print -quit) ]] && shards+=(spec)
-	if ((${#shards[@]} == 0)); then
+	add_shards spec
+	if ((${#shard_names[@]} == 0)); then
 		echo "tests: no specs in spec/" >&2
 		return 1
 	fi
-	shards+=("#slow")
-	echo "tests: PAGLE_NO_COVERAGE=1, so the specs run without coverage, in ${#shards[@]} shards, $jobs at a time"
+	all=$(specs_in spec)
+	covered=$(printf '%s\n' "${shard_files[@]}" | LC_ALL=C sort)
+	if [[ $covered != "$all" ]]; then
+		echo "tests: the shards don't run each spec in spec/ once (< missing, > more than once):" >&2
+		diff <(echo "$all") <(echo "$covered") | grep '^[<>]' >&2
+		return 1
+	fi
+	shard_names+=("#slow")
+	shard_files+=("")
+	echo "tests: PAGLE_NO_COVERAGE=1, so the specs run without coverage, in ${#shard_names[@]} shards, $jobs at a time"
 	mkdir "$logs/shards" || return 1
-	for i in "${!shards[@]}"; do
+	local last=$((${#shard_names[@]} - 1)) order=()
+	order=("$last")
+	for ((i = 0; i < last; i++)); do
+		order+=("$i")
+	done
+	for i in "${order[@]}"; do
 		while ((running >= jobs)); do
 			wait_any
 			running=$(jobs -pr | wc -l)
 		done
-		# spec itself is the specs at its top: busted's own --no-recursive picks them, as its pattern would.
+		files=()
+		[[ -z ${shard_files[i]} ]] || while IFS= read -r file; do files+=("$file"); done <<<"${shard_files[i]}"
 		{
 			status=0 from=$SECONDS
-			case ${shards[i]} in
-			spec) "$bin/busted" --exclude-tags=slow --no-recursive spec || status=$? ;;
-			"#slow") "$bin/busted" --tags=slow || status=$? ;;
-			*) "$bin/busted" --exclude-tags=slow "${shards[i]}" || status=$? ;;
-			esac
+			if [[ ${shard_names[i]} == "#slow" ]]; then
+				"$bin/busted" --tags=slow || status=$?
+			else
+				"$bin/busted" --exclude-tags=slow "${files[@]}" || status=$?
+			fi
 			echo "$status $((SECONDS - from))" >"$logs/shards/$i.status"
 		} >"$logs/shards/$i.log" 2>&1 &
 		running=$((running + 1))
 	done
 	wait
-	for i in "${!shards[@]}"; do
+	for i in "${!shard_names[@]}"; do
 		cat "$logs/shards/$i.log"
 		read -r status took 2>/dev/null <"$logs/shards/$i.status" || status=none took=0
 		if [[ $status == 0 ]]; then
-			echo "tests: ${shards[i]} passed in ${took}s"
+			echo "tests: ${shard_names[i]} passed in ${took}s"
 		else
 			failed=1
 			if [[ $status =~ ^[0-9]+$ ]] && ((status > 128)); then
-				echo "tests: ${shards[i]} failed in ${took}s: busted was killed by signal $((status - 128))" >&2
+				echo "tests: ${shard_names[i]} failed in ${took}s: busted was killed by signal $((status - 128))" >&2
 			else
-				echo "tests: ${shards[i]} failed in ${took}s" >&2
+				echo "tests: ${shard_names[i]} failed in ${took}s" >&2
 			fi
 		fi
 	done
