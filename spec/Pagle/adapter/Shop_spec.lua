@@ -1130,7 +1130,26 @@ describe("The Curio Shop's stage", function()
 		assert.are.same({ "hunts.cover.gold" }, opened)
 	end)
 
-	it("prints SHOP-R41's line, and opens no Collection, while restricted (SHOP-R41, SHOP-R40)", function()
+	it(
+		"opens the Collection on an earned good the shop doesn't list even while restricted (SHOP-R40, LED-R121)",
+		function()
+			local opened = {}
+			local loaded = shopCore(nil, {
+				collection = function(goodID)
+					opened[#opened + 1] = goodID
+				end,
+			})
+			setCombat(loaded, true)
+
+			loaded.env.Pagle.OpenShop("ledger.crest.elwynn")
+
+			assert.are.same({ "ledger.crest.elwynn" }, opened)
+			assert.are.same({}, loaded.printed)
+			assert.is_nil(shopFrame(loaded))
+		end
+	)
+
+	it("prints SHOP-R41's line while restricted when the shop itself would open, and opens no Collection", function()
 		local opened = {}
 		local loaded = shopCore(nil, {
 			collection = function(goodID)
@@ -1139,11 +1158,27 @@ describe("The Curio Shop's stage", function()
 		})
 		setCombat(loaded, true)
 
-		loaded.env.Pagle.OpenShop("ledger.crest.elwynn")
+		loaded.env.Pagle.OpenShop("hunts.cover.velvet") -- a listed good
+		loaded.env.Pagle.OpenShop("hunts.cover.none") -- unknown
+		loaded.env.Pagle.OpenShop()
 
 		assert.are.same({}, opened)
-		assert.are.same({ AFTER_COMBAT }, loaded.printed)
+		assert.are.same({ AFTER_COMBAT, AFTER_COMBAT, AFTER_COMBAT }, loaded.printed)
+		assert.is_nil(shopFrame(loaded))
 	end)
+
+	it(
+		"prints SHOP-R41's line for an unlisted earned good while restricted when no Module offers a Collection",
+		function()
+			local loaded = shopCore()
+			setCombat(loaded, true)
+
+			loaded.env.Pagle.OpenShop("ledger.crest.elwynn")
+
+			assert.are.same({ AFTER_COMBAT }, loaded.printed)
+			assert.is_nil(shopFrame(loaded))
+		end
+	)
 
 	it(
 		"shows an earned good's progress as dots under its description, filled or ringed in their colours, its note"

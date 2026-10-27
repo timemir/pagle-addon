@@ -800,6 +800,7 @@ describe("ns.NewGoods", function()
 				tier = 1,
 				price = 250,
 				purchased = false,
+				fromCrate = false,
 			}, env.goods:GetGood("hunts.cover.tide"))
 		end)
 
@@ -843,6 +844,7 @@ describe("ns.NewGoods", function()
 				isDefault = false,
 				kind = "earned",
 				purchased = false,
+				fromCrate = false,
 			}, env.goods:GetGood("hunts.cover.gold"))
 			assert.is_nil(env.goods:GetGood("hunts.cover.none"))
 			assert.is_nil(env.goods:GetGood(nil))
@@ -1415,6 +1417,29 @@ describe("ns.NewGoods", function()
 		)
 
 		it(
+			"tells a good a crate gave from one bought: fromCrate, purchased only for a U1 of the good (SHOP-R36)",
+			function()
+				local env = newGoods()
+				pennants(env, nil, { value = false })
+				env.goods:SetPurchased(
+					{ ["hunts.pennant.reef"] = true, ["hunts.pennant.ember"] = true },
+					{ ["hunts.pennant.reef"] = NOW - 5, ["hunts.pennant.ember"] = NOW - 9 },
+					{ ["hunts.pennant.ember"] = true }
+				)
+
+				local reef, ember, plain =
+					env.goods:GetGood("hunts.pennant.reef"),
+					env.goods:GetGood("hunts.pennant.ember"),
+					env.goods:GetGood("hunts.pennant.plain")
+
+				assert.are.same({ true, false, NOW - 5 }, { reef.purchased, reef.fromCrate, reef.ownedAt })
+				assert.are.same({ false, true, NOW - 9 }, { ember.purchased, ember.fromCrate, ember.ownedAt })
+				assert.are.same({ false, false, nil }, { plain.purchased, plain.fromCrate, plain.ownedAt })
+				assert.is_true(env.goods:IsPurchased("hunts.pennant.ember")) -- a crate's good is owned as a purchase is
+			end
+		)
+
+		it(
 			"reads a good of a Module that is off from its cache, fallback fields and group too (SHOP-R26, SHOP-R36)",
 			function()
 				local env = newGoods({
@@ -1536,7 +1561,7 @@ describe("ns.NewGoods", function()
 		end)
 
 		it(
-			"lists the owned goods of Modules that aren't On from the cache: earned ones too, never a default (SHOP-R35, SHOP-R36)",
+			"lists every cached good of Modules that aren't On, owned or not, earned ones too, never a default (SHOP-R35, SHOP-R36)",
 			function()
 				local env = newGoods({
 					global = {
@@ -1584,12 +1609,23 @@ describe("ns.NewGoods", function()
 				env.on = { Ledger = 10 }
 				env.goods:SetPurchased({ ["hunts.pennant.reef"] = true })
 
-				assert.are.same({ "hunts.pennant.ember", "hunts.pennant.reef" }, env.goods:PutAway())
-				env.on = {}
 				assert.are.same(
-					{ "ledger.toaststyle.oak", "hunts.pennant.ember", "hunts.pennant.reef" },
+					{ "hunts.pennant.ember", "hunts.pennant.reef", "hunts.pennant.tide" },
 					env.goods:PutAway()
 				)
+				assert.are.same({ true, false, true }, { -- the cache says Ember is earned
+					env.goods:IsOwned("hunts.pennant.reef"),
+					env.goods:IsOwned("hunts.pennant.tide"),
+					env.goods:IsOwned("hunts.pennant.ember"),
+				})
+				env.on = {}
+				assert.are.same({
+					"ledger.toaststyle.oak",
+					"ledger.toaststyle.sun",
+					"hunts.pennant.ember",
+					"hunts.pennant.reef",
+					"hunts.pennant.tide",
+				}, env.goods:PutAway())
 				env.on = { Hunts = 20, Ledger = 10 }
 				assert.are.same({}, env.goods:PutAway())
 			end

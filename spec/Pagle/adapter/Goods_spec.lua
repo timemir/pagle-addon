@@ -270,6 +270,7 @@ describe("Pagle.GetGood", function()
 			tier = 2,
 			price = 400,
 			purchased = false,
+			fromCrate = false,
 		}, loaded.env.Pagle.GetGood("hunts.cover.velvet"))
 		assert.is_nil(loaded.env.Pagle.GetGood("hunts.cover.none"))
 	end)
@@ -447,7 +448,7 @@ describe("What a view of every good reads (SHOP-R36)", function()
 		end)
 
 		it(
-			"gives purchased and ownedAt from a purchase entry, and from the crate that gave a good (SHOP-R11, SHOP-R50)",
+			"gives purchased, fromCrate and ownedAt: a purchase entry sets the first, a crate that gave a good the second (SHOP-R11, SHOP-R50)",
 			function()
 				local entries = history(2)
 				entries[#entries + 1] = purchaseEntry(SERVER_TIME - 3000, "hunts.cover.velvet", 150)
@@ -463,11 +464,17 @@ describe("What a view of every good reads (SHOP-R36)", function()
 				local given = assert(loaded.ns.walletSnapshot.crates[1], "the crate gave a good")
 
 				local crated = Pagle.GetGood(given)
-				assert.are.same({ true, SERVER_TIME - 2000 }, { crated.purchased, crated.ownedAt })
+				assert.are.same(
+					{ false, true, SERVER_TIME - 2000 },
+					{ crated.purchased, crated.fromCrate, crated.ownedAt }
+				)
 				local bought = Pagle.GetGood("hunts.cover.velvet")
-				assert.are.same({ true, SERVER_TIME - 3000 }, { bought.purchased, bought.ownedAt })
+				assert.are.same(
+					{ true, false, SERVER_TIME - 3000 },
+					{ bought.purchased, bought.fromCrate, bought.ownedAt }
+				)
 				local plain = Pagle.GetGood("core.toaststyle.page")
-				assert.are.same({ false, nil }, { plain.purchased, plain.ownedAt })
+				assert.are.same({ false, false, nil }, { plain.purchased, plain.fromCrate, plain.ownedAt })
 			end
 		)
 	end)
@@ -520,27 +527,52 @@ describe("What a view of every good reads (SHOP-R36)", function()
 	end)
 
 	describe("Pagle.GetPutAwayGoods", function()
-		it("lists the owned goods of a Module that is off, earned ones too, never a default (SHOP-R35)", function()
-			local loaded = loadCore(nil, {
-				global = {
-					goods = {
-						["hunts.cover.plain"] = {
-							name = "Plain",
-							slot = "hunts.cover",
-							module = "Hunts",
-							default = true,
+		it(
+			"lists every cached good of a Module that is off, owned or not, never a default (SHOP-R35, SHOP-R36)",
+			function()
+				local loaded = loadCore(nil, {
+					global = {
+						goods = {
+							["hunts.cover.plain"] = {
+								name = "Plain",
+								slot = "hunts.cover",
+								module = "Hunts",
+								default = true,
+							},
+							["hunts.cover.velvet"] = {
+								name = "Velvet",
+								slot = "hunts.cover",
+								module = "Hunts",
+								tier = 2,
+							},
+							["hunts.cover.gold"] = {
+								name = "Gold",
+								slot = "hunts.cover",
+								module = "Hunts",
+								earned = true,
+							},
+							["hunts.cover.tide"] = { name = "Tide", slot = "hunts.cover", module = "Hunts", tier = 1 },
 						},
-						["hunts.cover.velvet"] = { name = "Velvet", slot = "hunts.cover", module = "Hunts", tier = 2 },
-						["hunts.cover.gold"] = { name = "Gold", slot = "hunts.cover", module = "Hunts", earned = true },
-						["hunts.cover.tide"] = { name = "Tide", slot = "hunts.cover", module = "Hunts", tier = 1 },
 					},
-				},
-			})
-			loaded.client.fire("PLAYER_LOGIN")
-			loaded.ns.goods:SetPurchased({ ["hunts.cover.velvet"] = true })
+				})
+				loaded.client.fire("PLAYER_LOGIN")
+				loaded.ns.goods:SetPurchased({ ["hunts.cover.velvet"] = true })
 
-			assert.are.same({ "hunts.cover.gold", "hunts.cover.velvet" }, loaded.env.Pagle.GetPutAwayGoods())
-		end)
+				local Pagle = loaded.env.Pagle
+				assert.are.same(
+					{ "hunts.cover.gold", "hunts.cover.tide", "hunts.cover.velvet" },
+					Pagle.GetPutAwayGoods()
+				)
+				assert.are.same(
+					{ true, false, true }, -- the cache says Gold is earned
+					{
+						Pagle.IsOwned("hunts.cover.gold"),
+						Pagle.IsOwned("hunts.cover.tide"),
+						Pagle.IsOwned("hunts.cover.velvet"),
+					}
+				)
+			end
+		)
 	end)
 
 	describe("Pagle.DrawGoodPreview", function()

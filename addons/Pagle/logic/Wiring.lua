@@ -744,7 +744,7 @@ function ns.PublishGoods(Pagle, wrap, draw)
 
 	--- A good's cached fields (SHOP-R26) with what it is and what it costs (SHOP-R36): `kind`, `tier`, `price` now
 	--- (a fallback price from `fallbackFrom` on, SHOP-R28), `fallbackPrice`, `fallbackFrom`, `group`,
-	--- `purchased` and `ownedAt`, and whether it is its slot's default (`isDefault`, SHOP-R22), whether or not its
+	--- `purchased` (a U1 of the good itself), `fromCrate` and `ownedAt`, and whether it is its slot's default (`isDefault`, SHOP-R22), whether or not its
 	--- Module is enabled; nil for a good never registered. A fresh copy each call, never kept between calls.
 	---@param goodID string
 	---@return PagleGoodInfo?
@@ -796,8 +796,8 @@ function ns.PublishGoods(Pagle, wrap, draw)
 		return wrap(ns.goods:EarnedProgress(goodID))
 	end
 
-	--- The owned goods of Modules that aren't On, from the cache (SHOP-R35, SHOP-R36), earned ones among them: in
-	--- roster order of their Module, then by ID. A fresh list each call.
+	--- Every cached good of Modules that aren't On, owned or not (SHOP-R35, SHOP-R36), earned ones among them: in roster
+	--- order of their Module, then by ID; read each one's ownership with IsOwned. A fresh list each call.
 	---@return string[]
 	function api.GetPutAwayGoods()
 		return ns.goods:PutAway()
@@ -943,19 +943,20 @@ function ns.WireShop(host, seams)
 
 	---@param goodID string?
 	local function open(goodID)
-		if host.isRestricted() then
-			host.print(ns.L.SHOP_AFTER_COMBAT)
-			return
-		end
 		local selection
 		if goodID ~= nil then
 			local model = ns.ShopModel()
 			selection = model:Select(goodID)
-			-- SHOP-R40: an earned good the shop doesn't list is the Collection's; with none, the shop opens on nothing
+			-- SHOP-R40: an earned good the shop doesn't list is the Collection's, even while restricted, as it opens
+			-- no shop (LED-R121); with none, the shop opens on nothing
 			if selection == nil and model:IsEarnedUnlisted(goodID) and ns.OpenCollection(goodID) then
 				return
 			end
 			selection = selection or false
+		end
+		if host.isRestricted() then
+			host.print(ns.L.SHOP_AFTER_COMBAT)
+			return
 		end
 		seams.show(selection, goodID)
 		for _, opened in ipairs(openers) do

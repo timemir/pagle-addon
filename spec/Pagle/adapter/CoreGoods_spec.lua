@@ -347,6 +347,7 @@ describe("Core's goods' names", function()
 			tier = 1,
 			price = 250,
 			purchased = false,
+			fromCrate = false,
 		}, loaded.env.Pagle.GetGood("core.toaststyle.lanternglow"))
 	end)
 

@@ -85,6 +85,7 @@ local ns = select(2, ...)
 ---@field private goods table<string, PagleRegisteredGood>  -- registered this session, by ID
 ---@field private purchased table<string, true>
 ---@field private ownedAt table<string, integer>  -- the server time of each purchased good's U1 or crate (SHOP-R36)
+---@field private crated table<string, true>      -- the goods a Curio crate gave (SHOP-R36)
 ---@field private registered integer  -- slots registered so far, for their order
 ---@field private shown table<string, string>? -- each slot's look as last noted; nil before Start
 local Goods = {}
@@ -95,7 +96,7 @@ Goods.__index = Goods
 ---@return PagleGoods
 function ns.NewGoods(options)
 	return setmetatable(
-		{ options = options, slots = {}, goods = {}, purchased = {}, ownedAt = {}, registered = 0 },
+		{ options = options, slots = {}, goods = {}, purchased = {}, ownedAt = {}, crated = {}, registered = 0 },
 		Goods
 	)
 end
@@ -516,9 +517,11 @@ end
 --- crate's goods among them (SHOP-R50: owned as a purchase is). Empty until the projection hands one over.
 ---@param purchased table<string, true>
 ---@param ownedAt table<string, integer>? the server time of each one's purchase entry or crate (SHOP-R36)
-function Goods:SetPurchased(purchased, ownedAt)
+---@param crated table<string, true>? the goods among them a Curio crate gave (SHOP-R36's `fromCrate`)
+function Goods:SetPurchased(purchased, ownedAt, crated)
 	self.purchased = purchased
 	self.ownedAt = ownedAt or {}
+	self.crated = crated or {}
 	self:Settle()
 end
 
@@ -644,14 +647,15 @@ function ns.SortsByRoster(a, b)
 	return a < b
 end
 
---- The owned goods of Modules that aren't On, from the cache (SHOP-R35, SHOP-R36): never a default, in roster order of
---- their Module, then by ID. Earned ones are among them, whether or not the shop lists them (SHOP-R24).
+--- Every cached good of Modules that aren't On, owned or not (SHOP-R35, SHOP-R36), for the Collection to draw put away
+--- (a view reads each one's ownership with IsOwned): never a default, in roster order of their Module, then by ID. Earned
+--- ones are among them, whether or not the shop lists them (SHOP-R24); the shop keeps the purchased ones.
 ---@return string[]
 function Goods:PutAway()
 	local on = self:OrderOn()
 	local ids = {}
 	for goodID, cached in pairs(self:Cache()) do
-		if type(cached) == "table" and not on[cached.module] and not cached.default and self:IsOwned(goodID) then
+		if type(cached) == "table" and not on[cached.module] and not cached.default then
 			ids[#ids + 1] = goodID
 		end
 	end
@@ -806,7 +810,8 @@ end
 ---@field fallbackPrice? integer   -- an earned good's fallback tier's price, reached or not (SHOP-R28)
 ---@field fallbackFrom? integer    -- the server time its fallback starts (SHOP-R28)
 ---@field group? string            -- the key of its slot's group (SHOP-R27)
----@field purchased boolean        -- a purchase entry or a Curio crate gave it (SHOP-R11, SHOP-R50)
+---@field purchased boolean        -- a purchase entry (U1) of the good itself gave it (SHOP-R11)
+---@field fromCrate boolean        -- a Curio crate gave it (SHOP-R50)
 ---@field ownedAt? integer         -- the server time of that entry or crate
 
 --- The kind of the good `entry` describes: a registered good or a cache entry, which carry the same fields.
@@ -847,7 +852,8 @@ function Goods:GetGood(goodID)
 		return nil
 	end
 	local now = self.options.serverTime and self.options.serverTime() or nil
-	local purchased = self.purchased[goodID] == true
+	local owned = self.purchased[goodID] == true
+	local fromCrate = owned and self.crated[goodID] == true
 	return {
 		name = cached.name,
 		slot = cached.slot,
@@ -861,8 +867,9 @@ function Goods:GetGood(goodID)
 		fallbackPrice = cached.fallbackTier and ns.TIER_PRICES[cached.fallbackTier] or nil,
 		fallbackFrom = cached.fallbackFrom,
 		group = cached.group,
-		purchased = purchased,
-		ownedAt = purchased and self.ownedAt[goodID] or nil,
+		purchased = owned and not fromCrate,
+		fromCrate = fromCrate,
+		ownedAt = owned and self.ownedAt[goodID] or nil,
 	}
 end
 

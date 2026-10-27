@@ -123,8 +123,9 @@
 --- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
 ---@field goodPreviews { frame: any, goodID: string, size: "stage"|"card" }[] Each Pagle.DrawGoodPreview call, in order
 --- (SHOP-R36). The fake draws nothing.
----@field setPurchased fun(purchased: table<string, true>, ownedAt: table<string, integer>?) Hands Core the purchased
+---@field setPurchased fun(purchased: table<string, true>, ownedAt: table<string, integer>?, crated: table<string, true>?) Hands Core the purchased
 --- goods, `{ [goodID] = true }`, and when each was bought, `{ [goodID] = serverTime }` (GetGood's `ownedAt`, SHOP-R36),
+--- and which a crate gave, `{ [goodID] = true }` (`fromCrate`),
 --- for a spec that doesn't care about the log; AppearanceChanged fires if a look changes (SHOP-R33). The wallet projection
 --- hands over the log's own set at enterWorld's done and on each live purchase (SHOP-R11), replacing it; a spec that
 --- wants its set kept hands it over after enterWorld. A U1 in fake.catchLog's history (helpers.lua's purchaseEntry, or
@@ -825,8 +826,8 @@ part(function(fake, Pagle, ns, host)
 		fake.goodPreviews[#fake.goodPreviews + 1] = { frame = frame, goodID = goodID, size = size }
 	end)
 
-	function fake.setPurchased(purchased, ownedAt)
-		ns.goods:SetPurchased(purchased, ownedAt)
+	function fake.setPurchased(purchased, ownedAt, crated)
+		ns.goods:SetPurchased(purchased, ownedAt, crated)
 	end
 end)
 
