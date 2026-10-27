@@ -1,0 +1,25 @@
+<!-- The reel's frame and window (prototypes/curio-crate/index.html: #reel .frame, .window, in 1060 x 212 px), drawn 400 wide:
+     scripts/crate-art.py cuts its left end for the cap and a slice of its middle to stretch. The window's centre glow
+     is its vertical profile alone (the radial's ellipse is 730 px wide, and the reel's end fades cover where it differs).
+     The frame is at 0,0; its drop shadow (0 18px 40px rgba(0,0,0,.65)) falls outside it. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -24 480 296" width="480" height="296">
+  <defs>
+    <linearGradient id="fb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c1a0c"/><stop offset="1" stop-color="#1a0f06"/></linearGradient>
+    <linearGradient id="win" gradientUnits="userSpaceOnUse" x1="0" y1="14" x2="0" y2="198">
+      <stop offset="0" stop-color="rgb(26,19,13)"/><stop offset=".4" stop-color="rgb(36,26,18)"/><stop offset="1" stop-color="rgb(20,15,10)"/></linearGradient>
+    <filter id="blur" filterUnits="userSpaceOnUse" x="-40" y="-24" width="480" height="296"><feGaussianBlur stdDeviation="20"/></filter>
+    <filter id="inset" filterUnits="userSpaceOnUse" x="0" y="0" width="400" height="212">
+      <feComponentTransfer in="SourceAlpha"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer>
+      <feGaussianBlur stdDeviation="7"/><feOffset dy="6"/>
+      <feComposite in2="SourceAlpha" operator="in" result="s"/>
+      <feFlood flood-color="#000" flood-opacity=".8"/><feComposite in2="s" operator="in" result="sh"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="sh"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="0" y="18" width="400" height="212" rx="6" fill="#000" fill-opacity=".65" filter="url(#blur)"/>
+  <rect x="0" y="0" width="400" height="212" rx="6" fill="url(#fb)"/>
+  <rect x="1" y="1" width="398" height="210" rx="5" fill="none" stroke="#c9a24a" stroke-width="2"/>
+  <rect x="3" y="3" width="394" height="206" rx="3" fill="none" stroke="#2a1606" stroke-width="2"/>
+  <rect x="4.5" y="4.5" width="391" height="203" rx="1.5" fill="none" stroke="#f0cd6a" stroke-opacity=".35" stroke-width="1"/>
+  <rect x="14" y="14" width="372" height="184" rx="3" fill="url(#win)" filter="url(#inset)"/>
+</svg>

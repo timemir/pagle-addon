@@ -1,0 +1,12 @@
+<!-- Verbatim from prototypes/curio-crate/crate-svg.js (spec/curio-crate-whole-shop @ 336f4ced), CRATE.sealL, with the xmlns the rasteriser needs. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 70" width="70" height="70" overflow="visible"><defs>
+      <radialGradient id="wax" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#ff8a6e"/><stop offset=".45" stop-color="#c8301c"/><stop offset="1" stop-color="#6a0e06"/></radialGradient>
+      <clipPath id="c-1"><path d="M0 0 H34 L30 18 L36 30 L31 44 L34 70 H0Z"/></clipPath></defs>
+      <g clip-path="url(#c-1)">
+        <path d="M35 4 C48 2 64 12 66 28 C69 44 60 64 40 66 C22 69 6 58 4 40 C2 22 18 5 35 4Z" fill="url(#wax)" stroke="#5a0a04" stroke-width="1"/>
+        <circle cx="35" cy="35" r="20" fill="none" stroke="#7a1208" stroke-width="2.4" opacity=".7"/>
+        <path d="M22 35 c6 -7 16 -8 22 -2 l6 -5 v14 l-6 -5 c-6 6 -16 5 -22 -2z" fill="#7a1208" opacity=".85"/>
+        <ellipse cx="27" cy="20" rx="9" ry="5" fill="#ffb8a0" opacity=".35"/>
+      </g>
+      <path d="M34 0 L30 18 L36 30 L31 44 L34 70" fill="none" stroke="#2a0402" stroke-width="1.4" class="crack"/>
+    </svg>

@@ -1,0 +1,12 @@
+<!-- A reel card's body (prototypes/curio-crate/index.html: .card), 150 x 172 px: the dark leather-brown gradient and the
+     faint highlight along its top (inset 0 1px 0 rgba(255,255,255,.08)), radius 8. The tier's colour is card-tint's,
+     the drop shadow card-shadow's. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 172" width="150" height="172">
+  <defs>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2e2620"/><stop offset="1" stop-color="#17120e"/></linearGradient>
+    <clipPath id="c"><rect x="0" y="0" width="150" height="172" rx="8"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="150" height="172" rx="8" fill="url(#b)"/>
+  <path clip-path="url(#c)" fill-rule="evenodd" fill="#fff" fill-opacity=".08"
+        d="M0 0 H150 V172 H0Z M8 1 H142 A7 7 0 0 1 150 8 V180 H0 V8 A7 7 0 0 1 8 1Z"/>
+</svg>

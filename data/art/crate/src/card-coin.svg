@@ -1,0 +1,34 @@
+<!-- The coin card: what a crate that pays Coins back turns over to. Not in the prototype; drawn in its style, a card
+     of the dark body (card-base's gradient) with a gold ring and foot, and a coin in the prototype's own .coin gold
+     (radial-gradient(circle at 38% 30%, #fff3c0, #e2bd55 35%, #a77d24 70%, #5e420c), ring #3a2606) milled at its rim and
+     struck with the fish of the crate's seal, over a soft gold glow. 150 x 172 px, in colour (no tint). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 172" width="150" height="172">
+  <defs>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2e2620"/><stop offset="1" stop-color="#17120e"/></linearGradient>
+    <radialGradient id="h" gradientUnits="userSpaceOnUse" cx="75" cy="76" r="78">
+      <stop offset="0" stop-color="#ffd04a" stop-opacity=".45"/><stop offset=".7" stop-color="#ffd04a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gc" gradientUnits="userSpaceOnUse" cx="65.4" cy="60" r="74.8">
+      <stop offset="0" stop-color="#fff3c0"/><stop offset=".35" stop-color="#e2bd55"/><stop offset=".7" stop-color="#a77d24"/><stop offset="1" stop-color="#5e420c"/></radialGradient>
+    <radialGradient id="ff" gradientUnits="userSpaceOnUse" cx="75" cy="185.76" r="1" gradientTransform="translate(75 185.76) scale(135 103.2) translate(-75 -185.76)">
+      <stop offset="0" stop-color="#ffd04a" stop-opacity=".55"/><stop offset=".7" stop-color="#ffd04a" stop-opacity="0"/></radialGradient>
+    <clipPath id="c"><rect x="0" y="0" width="150" height="172" rx="8"/></clipPath>
+    <filter id="blur" filterUnits="userSpaceOnUse" x="-20" y="130" width="190" height="60"><feGaussianBlur stdDeviation="7"/></filter>
+    <filter id="ds" filterUnits="userSpaceOnUse" x="0" y="0" width="150" height="172"><feDropShadow dx="0" dy="4" stdDeviation="2" flood-color="#000" flood-opacity=".6"/></filter>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect x="0" y="0" width="150" height="172" fill="url(#b)"/>
+    <rect x="0" y="0" width="150" height="172" fill="url(#ff)"/>
+    <rect x="0" y="0" width="150" height="172" fill="url(#h)"/>
+    <rect x="0" y="165" width="150" height="7" fill="#ffd04a" fill-opacity=".9" filter="url(#blur)"/>
+    <rect x="0" y="165" width="150" height="7" fill="#ffd04a"/>
+    <path fill-rule="evenodd" fill="#fff" fill-opacity=".08" d="M0 0 H150 V172 H0Z M8 1 H142 A7 7 0 0 1 150 8 V180 H0 V8 A7 7 0 0 1 8 1Z"/>
+  </g>
+  <rect x=".5" y=".5" width="149" height="171" rx="7.5" fill="none" stroke="#ffd04a" stroke-opacity=".55" stroke-width="1"/>
+  <g filter="url(#ds)">
+    <circle cx="75" cy="76" r="40" fill="url(#gc)" stroke="#3a2606" stroke-width="1.5"/>
+    <circle cx="75" cy="76" r="37" fill="none" stroke="#5e420c" stroke-width="2.4" stroke-dasharray="2.4 2.6" opacity=".55"/>
+    <circle cx="75" cy="76" r="31" fill="none" stroke="#7a5210" stroke-width="2" opacity=".75"/>
+    <path transform="translate(75 76) scale(1.4) translate(-31.5 -50)" d="M18 50 c5 -7 15 -8 21 -2 l6 -5 v14 l-6 -5 c-6 6 -16 5 -21 -2z" fill="#7a5210" opacity=".9"/>
+    <ellipse cx="60" cy="56" rx="13" ry="6" fill="#fff" opacity=".35" transform="rotate(-28 60 56)"/>
+  </g>
+</svg>

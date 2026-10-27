@@ -1,0 +1,5 @@
+<!-- The glow round the gilded cards (box-shadow 0 0 22px rgba(255,208,74,.6)), white to tint, for a 150 x 172 px card at 0,0. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -40 230 252" width="230" height="252">
+  <defs><filter id="blur" filterUnits="userSpaceOnUse" x="-40" y="-40" width="230" height="252"><feGaussianBlur stdDeviation="11"/></filter></defs>
+  <rect x="0" y="0" width="150" height="172" rx="8" fill="#fff" fill-opacity=".6" filter="url(#blur)"/>
+</svg>

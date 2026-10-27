@@ -1,0 +1,18 @@
+<!-- What a card takes of its tier's colour (prototypes/curio-crate/index.html: .card, .card::after), 150 x 172 px, in
+     white so SetVertexColor gives it the tier's: the glow rising from the foot (radial-gradient(ellipse 90% 60% at 50%
+     108%, tier/.55, transparent 70%)), the 1px ring (inset 0 0 0 1px tier/.55), and the 7px bar at the foot with its
+     14px glow (box-shadow 0 0 14px tier/.9), clipped to the card as its overflow: hidden clips them. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 172" width="150" height="172">
+  <defs>
+    <radialGradient id="g" gradientUnits="userSpaceOnUse" cx="75" cy="185.76" r="1" gradientTransform="translate(75 185.76) scale(135 103.2) translate(-75 -185.76)">
+      <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".7" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <clipPath id="c"><rect x="0" y="0" width="150" height="172" rx="8"/></clipPath>
+    <filter id="blur" filterUnits="userSpaceOnUse" x="-20" y="130" width="190" height="60"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect x="0" y="0" width="150" height="172" fill="url(#g)"/>
+    <rect x="0" y="165" width="150" height="7" fill="#fff" fill-opacity=".9" filter="url(#blur)"/>
+    <rect x="0" y="165" width="150" height="7" fill="#fff"/>
+  </g>
+  <rect x=".5" y=".5" width="149" height="171" rx="7.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1"/>
+</svg>

@@ -1,0 +1,9 @@
+<!-- The light that bursts from the open crate (prototypes/curio-crate/index.html: .burst): a 520 x 300 px ellipse of
+     radial-gradient(ellipse, rgba(255,240,190,.95), rgba(255,190,80,.45) 35%, transparent 70%), whose radii are 367.7 x
+     212.1 px (clear at 257 x 148), drawn with screen blending. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 300" width="520" height="300">
+  <defs><radialGradient id="g" gradientUnits="userSpaceOnUse" cx="260" cy="150" r="1" gradientTransform="translate(260 150) scale(367.7 212.1) translate(-260 -150)">
+    <stop offset="0" stop-color="#fff0be" stop-opacity=".95"/><stop offset=".35" stop-color="#ffbe50" stop-opacity=".45"/><stop offset=".7" stop-color="#ffbe50" stop-opacity="0"/></radialGradient>
+    <clipPath id="c"><ellipse cx="260" cy="150" rx="260" ry="150"/></clipPath></defs>
+  <rect clip-path="url(#c)" x="0" y="0" width="520" height="300" fill="url(#g)"/>
+</svg>

@@ -210,7 +210,7 @@ if stale wow-api "$key"; then
 fi
 
 # Python, pytest and mypy for the content generator (DATA-R60), numpy, soundfile and SciPy for render-sounds.py
-# (ANN-R74), and Pillow for export-web-art.py: one component, since the venv is built on that CPython. uv runs with no user config and its caches in $tmp, and leaves ~/.local/bin alone (--no-bin). The venv
+# (ANN-R74), Pillow for export-web-art.py and resvg-py for crate-art.py: one component, since the venv is built on that CPython. uv runs with no user config and its caches in $tmp, and leaves ~/.local/bin alone (--no-bin). The venv
 # hardcodes its paths, hence the prefix in the key.
 # shellcheck disable=SC2086
 packages=$(echo $PYTHON_PACKAGES)
@@ -275,8 +275,8 @@ echo "lua-language-server $("$tools/bin/lua-language-server" --version)"
 "$tools/bin/python" --version
 "$tools/bin/pytest" --version
 "$tools/bin/mypy" --version
-"$tools/bin/python" -c 'import numpy, scipy.signal, soundfile
-print("numpy", numpy.__version__, "soundfile", soundfile.__version__, "scipy", scipy.__version__)'
+"$tools/bin/python" -c 'import numpy, resvg_py, scipy.signal, soundfile
+print("numpy", numpy.__version__, "soundfile", soundfile.__version__, "scipy", scipy.__version__, "resvg-py", resvg_py.__version__)'
 
 # The pins this prefix now holds; check.sh refuses to run while they differ from scripts/tools.env.
 cp "$root/scripts/tools.env" "$tools/tools.env"
