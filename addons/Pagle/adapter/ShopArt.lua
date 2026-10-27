@@ -94,6 +94,7 @@ local FONTS = {
 	Meta = { "print", 13, "red", caps = true },
 	Desc = { "italic", 15.5, "desc" },
 	Notes = { "italic", 14, "note" },
+	Odds = { "italic", 11.5, "note" },
 	Tags = { "print", 14, "ink2", caps = true },
 	Need = { "handSemi", 20, "stamp" },
 	Button = { "gilt", 17, "gilt", shadow = true },

@@ -340,19 +340,25 @@ ns.L = {
 	SHOP_BUY_ACCEPT = "Buy",
 	SHOP_BUY_CANCEL = "Cancel",
 	SHOP_HELD = "Your balance is 0 while Pagle re-counts earlier Coins. New Coins fill that in first.",
-	-- The Curio crate (SHOP-R50–R55): its row's label and its tag once every pool good is owned; its stage's line under
-	-- the name; a pool good's chance as a percent, the pity count's line; the note for a crate's good the shop doesn't
-	-- show yet (its slot not registered); the bill's question and fine print. A crate-only good's row tag and stage
-	-- note, an owned good's note when a crate gave it, and Sonar Scope's earnedText (SHOP-R29).
+	-- The Curio crate (SHOP-R50–R55): its row's label; its stage's line under the name; its crate tiers' names, each one's
+	-- goods left or what it pays back, and its chance as a percent; the pity count's line; the bill's question and fine
+	-- print; the opening's result: the Coins paid back, "Back to the shop", and the card of a good the cache has nothing
+	-- of. A crate-only good's row tag and stage note, an owned good's note when a crate gave it, and Sonar Scope's
+	-- earnedText (SHOP-R29).
 	SHOP_CRATE = "Curio crate",
-	SHOP_CRATE_EMPTY = "Empty: you have it all",
 	SHOP_CRATE_KIND = "A crate of looks",
-	SHOP_CRATE_CHANCE = "%d%%",
-	SHOP_CRATE_PITY = "A crate-only look within %d more crates",
-	SHOP_CRATE_PITY_ONE = "A crate-only look in the next crate",
-	SHOP_CRATE_UNSHOWN = "%s is yours: it shows here once its slot arrives.",
+	SHOP_CRATE_TIERS = { "Plain", "Fine", "Lively", "Showpiece", "Marvel", "Heirloom", curio = "Curio" },
+	SHOP_CRATE_LEFT = "%d left",
+	SHOP_CRATE_PAYS_BACK = "pays back %s",
+	SHOP_CRATE_CHANCE = "%s%%",
+	SHOP_CRATE_PITY = "A Curio within %d more crates",
+	SHOP_CRATE_PITY_ONE = "A Curio in the next crate",
 	SHOP_CRATE_CONFIRM = "Open a Curio crate?",
 	SHOP_CRATE_FINE = "One look you don't own yet, by chance; the chances are on the crate.",
+	SHOP_CRATE_PAYBACK = "+%s Coins",
+	SHOP_CRATE_BACK = "Back to the shop",
+	SHOP_CRATE_NEW_LOOK = "A new look",
+	SHOP_CRATE_UNSHOWN = "It shows here once its Module is on.",
 	SHOP_CRATE_ONLY_NOTE = "Only in a Curio crate, never for sale",
 	SHOP_FROM_CRATE = "From a crate",
 	SHOP_SONAR_EARNED = "Link the companion",

@@ -3,12 +3,13 @@ local ns = select(2, ...)
 
 -- The wallet projection (ADR 0009, wallet-and-shop.md › Spending, SHOP-R10, SHOP-R11, LOG-R78): Core's second
 -- projection over the Catch log, keeping the Coins spent and the goods purchased from its purchase entries (U1), the
--- good each Curio crate gave (SHOP-R50–R52, logic/Crate.lua) and whether a Companion entry (K1) is in (SHOP-R29), and
+-- result of each Curio crate, a good or Coins paid back (SHOP-R50–R52, logic/Crate.lua) and whether a Companion entry (K1) is in (SHOP-R29), and
 -- handing them to the wallet and the goods registry. Pure logic, everything passed in (CORE-R7); logic/Wiring.lua
 -- binds Core's one.
 
---- The wallet rules version (wallet-and-shop.md › Data): a change rebuilds the projection (LOG-R72).
-ns.WALLET_RULES_VERSION = 1
+--- The wallet rules version (wallet-and-shop.md › Data): a change rebuilds the projection (LOG-R72). 2: the whole-shop
+--- crate, with its payback and Curio pity (SHOP-R53).
+ns.WALLET_RULES_VERSION = 2
 
 --- What the wallet projection stores in PagleDB.global.projections.wallet (wallet-and-shop.md › Data). The crate and
 --- companion fields are left out until a crate or a Companion entry sets them, so a state from before them reads the
@@ -16,14 +17,15 @@ ns.WALLET_RULES_VERSION = 1
 ---@class PagleWalletState
 ---@field spent integer                    -- the price paid in each counted purchase, summed
 ---@field purchased table<string, true>    -- every good purchased, by ID
----@field crates? string[]                 -- the good each crate gave, in log order (SHOP-R50, SHOP-R51)
----@field dry? integer                     -- crates in a row without a crate-only good (SHOP-R52); 0 when nil
+---@field crates? (string|integer)[]      -- each crate's result in log order: the good it gave, or the Coins it paid
+--- back (SHOP-R50, SHOP-R51)
+---@field dry? integer                     -- crates since the last that gave a crate-only good (SHOP-R52); 0 when nil
 ---@field companion? true                  -- a Companion entry is applied (SHOP-R29, LOG-R37)
 
 --- What the wallet projection hands Core besides the spent total and the owned set: the crates and the companion.
 ---@class PagleWalletSnapshot
----@field crates string[]                  -- the good each crate gave, in log order
----@field dry integer                      -- crates in a row without a crate-only good (SHOP-R52)
+---@field crates (string|integer)[]       -- each crate's result in log order: a good ID, or the Coins paid back
+---@field dry integer                      -- crates since the last that gave a crate-only good (SHOP-R52)
 ---@field owned table<string, true>        -- the goods purchases and crates gave (SHOP-R51's "owned")
 ---@field companion boolean                -- a Companion entry is applied (SHOP-R29)
 
@@ -64,21 +66,19 @@ local function ownedBy(state)
 	return owned
 end
 
--- Opens the crate `record` bought (SHOP-R50–R52): its price is spent, every crate's counting (SHOP-R11), and the good
--- the draw gives, if any is left, goes into `crates`, the pity's count of crates in a row without a crate-only good
--- going back to 0 or on by one.
+-- Opens the crate `record` bought (SHOP-R50–R52): its price less what it pays back is spent, every crate's counting
+-- (SHOP-R11), and the draw's result, the good or the Coins paid back, goes into `crates`, the pity's count of crates
+-- since the last crate-only good going back to 0 or on by one.
 ---@param state PagleWalletState
 ---@param record PaglePurchase
 local function openCrate(state, record)
-	state.spent = state.spent + record.price
 	local dry = state.dry or 0
-	local given, crateOnly = ns.CrateDraw(record.id, ownedBy(state), dry, record.time)
-	if given then
-		local crates = state.crates or {}
-		crates[#crates + 1] = given
-		state.crates = crates
-		state.dry = not crateOnly and dry + 1 or nil
-	end
+	local roll = ns.CrateRoll(record.id, ownedBy(state), dry, record.time, record.price)
+	state.spent = state.spent + record.price - (roll.payback or 0)
+	local crates = state.crates or {}
+	crates[#crates + 1] = roll.good or roll.payback
+	state.crates = crates
+	state.dry = not roll.crateOnly and dry + 1 or nil
 end
 
 -- Counts one record (SHOP-R10, SHOP-R11): the first U1 for a good adds the price it stores, the price paid, to
@@ -117,9 +117,9 @@ end
 function ns.WalletSnapshot(state)
 	local crates = {}
 	if type(state.crates) == "table" then
-		for _, good in ipairs(state.crates) do
-			if type(good) == "string" then
-				crates[#crates + 1] = good
+		for _, result in ipairs(state.crates) do
+			if type(result) == "string" or type(result) == "number" then
+				crates[#crates + 1] = result
 			end
 		end
 	end

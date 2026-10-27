@@ -164,7 +164,6 @@ end
 ---| "equipped" # owned and in use
 ---| "unearned" # earned, not yet
 ---| "crateOnly" # crate only, not owned yet: a Curio crate alone gives it (SHOP-R22, SHOP-R50)
----| "empty"    # the Curio crate's row with every pool good owned (SHOP-R54)
 ---| "putAway"  # owned, of a Module that isn't On (SHOP-R35)
 
 -- The states that count as owned.
@@ -521,13 +520,14 @@ function Model:List(query)
 end
 
 --- The good `goodID` names, if the shop shows it (SHOP-R40): a good of a live slot, or an owned good of a Module
---- that isn't On, under Put away; or the Curio crate's row, `core.crate` (SHOP-R50). Nil for any other: an unknown ID,
---- or a default or good for sale of a Module off.
+--- that isn't On, under Put away; or the Curio crate's row, `core.crate` (SHOP-R50), while it is in the list. Nil for
+--- any other: an unknown ID, or a default or good for sale of a Module off, or the crate once the Angler owns every
+--- pool good (SHOP-R54).
 ---@param goodID any
 ---@return string?
 function Model:Select(goodID)
 	if goodID == ns.CRATE_ID then
-		return goodID
+		return self:CrateOpen() and goodID or nil
 	end
 	return self:Entry(goodID) and goodID or nil
 end
@@ -554,10 +554,8 @@ end
 --- for sale"; "Yours to keep"
 ---@field progress? PagleProgressDot[] -- an earned good's dots while it isn't owned, from its progress (SHOP-R22)
 ---@field crate? true               -- the Curio crate's stage (Model:CrateStage)
----@field odds? PagleShopCrateOdds[] -- the crate's pool goods and their chances (SHOP-R54)
----@field pity? string              -- "A crate-only look within N more crates" (SHOP-R52, SHOP-R54)
----@field caption? string           -- the crate's line on the paper under the well: its last good is the Angler's but
---- the shop doesn't show it yet (SHOP-R50)
+---@field odds? PagleShopCrateOdds[] -- the crate's tiers and their chances (SHOP-R54)
+---@field pity? string              -- "A Curio within N more crates" (SHOP-R52, SHOP-R54)
 
 --- The stage for `goodID`, or nil when the shop doesn't show that good (Select).
 ---@param goodID any
@@ -693,52 +691,52 @@ end
 --- the crate has art of its own.
 ns.CRATE_ICON = "Interface\\Icons\\INV_Crate_02"
 
--- Whether the next crate has a good to give (SHOP-R54): a pool good in the pool by now that the log doesn't own.
+--- The coin card's medallion in a payback's result (SHOP-R55), and the one for a good the shop has no cache of.
+ns.CRATE_COIN_ICON = "Interface\\Icons\\INV_Misc_Coin_01"
+ns.CRATE_NEW_LOOK_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
+
+-- A colour from its 0xRRGGBB, as { r, g, b } of 0 to 1.
+---@param rgb integer
+---@return number[]
+local function hex(rgb)
+	return { math.floor(rgb / 65536) / 255, math.floor(rgb / 256) % 256 / 255, rgb % 256 / 255 }
+end
+
+--- The crate tiers' colours (Tunables): white, green, blue, purple, red, orange and Curio gold.
+---@type table<1|2|3|4|5|6|"curio", number[]>
+ns.CRATE_TIER_COLORS = {
+	hex(0xe9e6df),
+	hex(0x3ed35a),
+	hex(0x3b86ff),
+	hex(0xb05cff),
+	hex(0xec3a3f),
+	hex(0xff8a1c),
+	curio = hex(0xffd04a),
+}
+
+-- Whether the crate has a good to give (SHOP-R54): a pool good in the pool by now that the log doesn't own.
 ---@private
 ---@return boolean
 function Model:CrateOpen()
-	local wallet = walletOf(self.sources)
-	return #ns.CrateCandidates(wallet.owned, wallet.dry, self.sources.now) > 0
+	return ns.CrateHasCandidates(walletOf(self.sources).owned, self.sources.now)
 end
 
--- A pool good's name: as registered or cached, else its lore name, else its ID. A pool good need not be registered
--- (SHOP-R50): Shagreen and Bone waits for Core's binding slot.
----@param sources PagleShopSources
----@param goodID string
----@return string
-local function poolName(sources, goodID)
-	local good = sources.goods:Good(goodID)
-	if good then
-		return good.name
-	end
-	local cached = sources.cache[goodID]
-	if type(cached) == "table" and type(cached.name) == "string" then
-		return cached.name
-	end
-	local lore = rawget(ns.L, ("good.%s.name"):format(goodID))
-	return type(lore) == "string" and lore ~= "" and lore or goodID
-end
-
---- The Curio crate's row (SHOP-R50, SHOP-R54): "Curio crate" with its price, in red when the balance falls short,
---- or "Empty: you have it all" once the Angler owns every pool good. Its state is "forSale", "short" or "empty".
----@return PagleShopRow
+--- The Curio crate's row (SHOP-R50, SHOP-R54): "Curio crate" with its price, in red when the balance falls short; nil
+--- once the Angler owns every pool good, when the row leaves the list. Its state is "forSale" or "short".
+---@return PagleShopRow?
 function Model:CrateRow()
-	local L = ns.L
-	local row = { id = ns.CRATE_ID, name = L.SHOP_CRATE, icon = ns.CRATE_ICON }
 	if not self:CrateOpen() then
-		row.state = "empty"
-		row.tag = L.SHOP_CRATE_EMPTY
-		return row
+		return nil
 	end
-	local price = ns.TIER_PRICES[ns.CRATE_TIER]
-	row.state = self.sources.balance.balance >= price and "forSale" or "short"
-	row.price = self.format(price)
+	local row = { id = ns.CRATE_ID, name = ns.L.SHOP_CRATE, icon = ns.CRATE_ICON }
+	row.state = self.sources.balance.balance >= ns.CRATE_PRICE and "forSale" or "short"
+	row.price = self.format(ns.CRATE_PRICE)
 	row.short = row.state == "short" or nil
 	return row
 end
 
 --- The Curio crate's row as the list shows it at its very top (SHOP-R50): whichever chip and filter is on, but for a
---- search its label doesn't match, which leaves it out (nil).
+--- search its label doesn't match, which leaves it out (nil); nil too once every pool good is owned (SHOP-R54).
 ---@param query PagleShopQuery
 ---@return PagleShopRow?
 function Model:Crate(query)
@@ -749,22 +747,47 @@ function Model:Crate(query)
 	return self:CrateRow()
 end
 
---- One pool good on the crate's stage (SHOP-R54): its name and its chance of coming next ("40%"), or, owned already,
---- `owned` and no chance: the stage strikes it through.
----@class PagleShopCrateOdds
----@field id string
----@field name string
----@field owned? true
----@field chance? string
+--- What the shop selects for `goodID` after a redraw: `Select`'s, or, for the Curio crate once its row has left the
+--- list (SHOP-R54), the first good `query` lists; nil with none.
+---@param goodID any
+---@param query PagleShopQuery
+---@return string?
+function Model:Reselect(goodID, query)
+	local kept = self:Select(goodID)
+	if kept or goodID ~= ns.CRATE_ID then
+		return kept
+	end
+	local first = self:List(query)[1]
+	return first and first.rows[1] and first.rows[1].id or nil
+end
 
---- The crate's stage (SHOP-R54, SHOP-R55): the PagleShopStage fields, with `crate`, its pool goods' odds in pool order
---- (`odds`) and the pity count's line (`pity`, none once every crate-only good is owned). With every pool good owned
---- it reads "Empty: you have it all" and has no Buy. When the last crate gave a good the shop doesn't show yet (its slot
---- not registered), its caption says it is the Angler's.
----@return PagleShopStage
+-- A chance of `permille` per mille written as the stage's percent: "40%", "2.5%", "0.5%".
+---@param permille integer
+---@return string
+local function percent(permille)
+	local whole, tenth = math.floor(permille / 10), permille % 10
+	return ns.L.SHOP_CRATE_CHANCE:format(tenth == 0 and tostring(whole) or ("%d.%d"):format(whole, tenth))
+end
+
+--- One crate tier on the crate's stage (SHOP-R54): its name, in its colour, its goods left or what it pays back, and
+--- its chance at the right.
+---@class PagleShopCrateOdds
+---@field tier 1|2|3|4|5|6|"curio"
+---@field name string        -- "Plain", "Fine", … "Curio"
+---@field color number[]     -- { r, g, b }
+---@field detail string      -- "12 left", or "pays back 250" with none left
+---@field chance string      -- "40%", "2.5%"
+
+--- The crate's stage (SHOP-R54): the PagleShopStage fields, with `crate`, its crate tiers' odds in the draw's order
+--- (`odds`) and the pity count's line (`pity`, while a crate-only good is a candidate). Nil once every pool good is
+--- owned, when the crate has left the list.
+---@return PagleShopStage?
 function Model:CrateStage()
 	local L = ns.L
 	local row = self:CrateRow()
+	if not row then
+		return nil
+	end
 	local wallet = walletOf(self.sources)
 	local now = self.sources.now
 	local stage = {
@@ -778,57 +801,104 @@ function Model:CrateStage()
 		notes = {},
 		odds = {},
 	}
-	for i, odds in ipairs(ns.CrateOdds(wallet.owned, wallet.dry, now)) do
+	for i, odds in ipairs(ns.CrateOdds(wallet.owned, now)) do
 		stage.odds[i] = {
-			id = odds.id,
-			name = poolName(self.sources, odds.id),
-			owned = odds.owned or nil,
-			chance = not odds.owned and L.SHOP_CRATE_CHANCE:format(math.floor(odds.chance * 100 + 0.5)) or nil,
+			tier = odds.tier,
+			name = L.SHOP_CRATE_TIERS[odds.tier],
+			color = ns.CRATE_TIER_COLORS[odds.tier],
+			detail = odds.payback and L.SHOP_CRATE_PAYS_BACK:format(self.format(odds.payback))
+				or L.SHOP_CRATE_LEFT:format(odds.left),
+			chance = percent(odds.permille),
 		}
 	end
 	local left = ns.CratePityLeft(wallet.owned, wallet.dry, now)
 	if left then
 		stage.pity = left == 1 and L.SHOP_CRATE_PITY_ONE or L.SHOP_CRATE_PITY:format(left)
 	end
-	local last = wallet.crates[#wallet.crates]
-	if last and not self:Entry(last) then
-		stage.caption = L.SHOP_CRATE_UNSHOWN:format(poolName(self.sources, last))
-	end
-	if row.state == "empty" then
-		stage.tags[1] = L.SHOP_CRATE_EMPTY
-		return stage
-	end
-	local price = ns.TIER_PRICES[ns.CRATE_TIER]
-	stage.buy = L.SHOP_BUY:format(self.format(price))
+	stage.buy = L.SHOP_BUY:format(self.format(ns.CRATE_PRICE))
 	stage.canBuy = (row.state == "forSale" and not self.sources.updating) or nil
 	if row.state == "short" then
 		stage.short = true
-		stage.needed = L.SHOP_MORE_NEEDED:format(self.format(price - self.sources.balance.balance))
+		stage.needed = L.SHOP_MORE_NEEDED:format(self.format(ns.CRATE_PRICE - self.sources.balance.balance))
 	end
 	return stage
 end
 
 --- Opening a Curio crate as it would be now (SHOP-R54), or nil unless Buy is enabled for it: a pool good left to give,
---- the balance covering tier 4's price, no projection updating. Its bill asks "Open a Curio crate?" (`question`) with
---- its fine print (`fine`).
+--- the balance covering its price, no projection updating. Its bill asks "Open a Curio crate?" (`question`) with its
+--- fine print (`fine`) and has no "Use it now" (SHOP-R55).
 ---@private
 ---@return PagleShopPurchase?
 function Model:CratePurchase()
 	local row = self:CrateRow()
-	if row.state ~= "forSale" or self.sources.updating then
+	if not row or row.state ~= "forSale" or self.sources.updating then
 		return nil
 	end
 	local L = ns.L
-	local price = ns.TIER_PRICES[ns.CRATE_TIER]
 	return {
 		id = ns.CRATE_ID,
 		crate = true,
 		name = L.SHOP_CRATE,
 		icon = ns.CRATE_ICON,
-		price = price,
-		amount = self.format(price),
-		left = self.format(self.sources.balance.balance - price),
+		price = ns.CRATE_PRICE,
+		amount = self.format(ns.CRATE_PRICE),
+		left = self.format(self.sources.balance.balance - ns.CRATE_PRICE),
 		question = L.SHOP_CRATE_CONFIRM,
 		fine = L.SHOP_CRATE_FINE,
 	}
+end
+
+--- What a crate's opening ends on (SHOP-R55): the result card's words and buttons.
+---@class PagleShopCrateResult
+---@field payback? integer       -- the Coins paid back: the coin card, "+N Coins", and "Back to the shop" alone
+---@field good? string           -- the good it gave
+---@field kind? string           -- the good's kind (SHOP-R50), for the emblem of one the cache has nothing of
+---@field title string           -- the good's name ("A new look" with no cache entry), or "+250 Coins"
+---@field tier string            -- the crate tier's name
+---@field color number[]         -- the crate tier's colour
+---@field icon integer|string    -- the card's medallion
+---@field shield? true           -- a crest's: drawn as its shield
+---@field line? string           -- "It shows here once its Module is on."
+---@field canUse boolean         -- "Use it now" shows: the good is the Angler's, shown by the shop and not in use
+---@field select string          -- what "Back to the shop" and "Use it now" leave selected: the good, or the crate
+
+--- The result card for what a crate gave (SHOP-R50, SHOP-R55): a good named and shown from the goods registry or,
+--- when its Module hasn't registered it, Core's cache; a good with no cache entry turns over to "A new look" and the
+--- line "It shows here once its Module is on.", and leaves the crate selected. A payback is the coin card.
+---@param result PagleCrateResult
+---@return PagleShopCrateResult
+function Model:CrateResult(result)
+	local L = ns.L
+	local card = {
+		tier = L.SHOP_CRATE_TIERS[result.tier],
+		color = ns.CRATE_TIER_COLORS[result.tier],
+		canUse = false,
+		select = ns.CRATE_ID,
+	}
+	if not result.good then
+		card.payback = result.payback
+		card.title = L.SHOP_CRATE_PAYBACK:format(self.format(result.payback or 0))
+		card.icon = ns.CRATE_COIN_ICON
+		return card
+	end
+	local good = result.good
+	card.good = good
+	for _, row in ipairs(ns.CRATE_POOL) do
+		if row.id == good then
+			card.kind = row.kind
+		end
+	end
+	local entry = self:Entry(good)
+	local cached = self.sources.cache[good]
+	if entry then
+		card.title, card.icon, card.shield = entry.name, entry.icon, entry.shield
+		card.canUse = entry.state == "owned"
+		card.select = good
+	elseif type(cached) == "table" and type(cached.name) == "string" then
+		card.title, card.icon = cached.name, cached.icon
+		card.shield = cached.slot == ns.CREST_SLOT or nil
+	else
+		card.title, card.icon, card.line = L.SHOP_CRATE_NEW_LOOK, ns.CRATE_NEW_LOOK_ICON, L.SHOP_CRATE_UNSHOWN
+	end
+	return card
 end

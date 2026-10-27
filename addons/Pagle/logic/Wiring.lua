@@ -773,8 +773,8 @@ end
 ---@class PagleShop
 ---@field Open fun(goodID: string?) -- Pagle.OpenShop
 ---@field Toggle fun()              -- /pagle shop
----@field Buy fun(goodID: string, useNow: boolean): boolean, string? -- the bill of sale's Buy: true if it bought, and
---- the good a Curio crate gave
+---@field Buy fun(goodID: string, useNow: boolean): boolean, PagleCrateResult? -- the bill of sale's Buy: true if it
+--- bought, and what a Curio crate gave
 ---@field Use fun(goodID: string): boolean -- the stage's Use: true if it equipped the good
 ---@field OnOpen fun(fn: fun())     -- fn is called each time the shop opens (the First evening list's `shop`)
 
@@ -809,12 +809,12 @@ function ns.WireShop(host, seams)
 	--- applies live, so the balance drops and the good is owned at once; then, with `useNow`, equips it (SHOP-R32). One
 	--- good, one confirmation; no Announcement and no summary line follow (ANN-R23). Returns whether it bought.
 	--- The Curio crate (`core.crate`) buys the same way, one crate a confirmation, and opens at once (SHOP-R50,
-	--- SHOP-R55): its purchase entry is its draw, which the wallet projection makes as it applies it; the good it gave
-	--- is returned second, and with `useNow` equipped if it is registered.
+	--- SHOP-R55): its purchase entry is its draw, which the wallet projection makes as it applies it; what it gave, a
+	--- good or a payback, is returned second. A crate's bill has no "Use it now" (SHOP-R54): `useNow` is for a good.
 	---@param goodID string
 	---@param useNow boolean
 	---@return boolean bought
-	---@return string? given the good a crate gave
+	---@return PagleCrateResult? result what a crate gave
 	local function buy(goodID, useNow)
 		local purchase = ns.ShopModel():Purchase(goodID)
 		if not purchase then
@@ -827,15 +827,11 @@ function ns.WireShop(host, seams)
 			end
 			return true
 		end
-		local before = ns.walletSnapshot and #ns.walletSnapshot.crates or 0
-		ns.RecordPurchase(purchase.id, purchase.price)
-		local crates = ns.walletSnapshot and ns.walletSnapshot.crates or {}
-		local given = #crates > before and crates[#crates] or nil
-		local good = given and ns.goods:Good(given)
-		if useNow and good then
-			ns.goods:SetEquipped(good.slot, good.id)
-		end
-		return true, given
+		-- The roll the projection makes of this entry, worked again here from the state before it (SHOP-R51 draws
+		-- from the entry and that state alone), so its tier comes too: the log keeps only the good or the payback.
+		local before = ns.walletSnapshot or { owned = {}, dry = 0 }
+		local record = ns.RecordPurchase(purchase.id, purchase.price)
+		return true, ns.CrateRoll(record.id, before.owned, before.dry, record.time, record.price)
 	end
 
 	--- Equips `goodID` in its slot, if it is an owned good registered this session (SHOP-R32): the stage's Use.

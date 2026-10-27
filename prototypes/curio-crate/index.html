@@ -1,0 +1,297 @@
+<title>Curio Crate Opening</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Marcellus&display=swap">
+<style>
+/* One committed look: the shop's own night-lit leather and brass, single theme. Prototype on top, the design board below. */
+:root {
+  --bg: #0d0b09; --panel: #17110c; --line: #3a2c1c; --ink: #efe2c4; --muted: #b8a780; --gilt: #f0cd6a;
+  --display: 'Marcellus', Georgia, serif; --body: 'IM Fell English', Georgia, serif; --hand: 'Caveat', 'Segoe Print', cursive;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); overflow-x: hidden; }
+body { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
+#fitbox { overflow: hidden; max-width: 1225px; margin: 0 auto; }
+#fit { position: relative; width: 1225px; transform-origin: 0 0; }
+
+/* ---------- prototype bar ---------- */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 14px 4px 14px; }
+.bar h1 { margin: 0 8px 0 0; font: 400 26px/1 'Marcellus', serif; color: var(--gilt); letter-spacing: .03em; }
+.bar .grp { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.bar .lbl { font: 11px/1 'Marcellus', serif; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.chip { font: 13px/1 'IM Fell English', serif; color: var(--ink); background: #1e1813; border: 1px solid #4a3a26; border-radius: 999px;
+  padding: 7px 11px; cursor: pointer; min-height: 32px; display: inline-flex; align-items: center; gap: 6px; }
+.chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 6px var(--c); }
+.chip[aria-pressed="true"] { background: #3a2c18; border-color: var(--gilt); color: #fff4d0; }
+.chip:focus-visible, button:focus-visible { outline: 2px solid var(--gilt); outline-offset: 2px; }
+
+/* ---------- the shop window (the dev's capture, purse redrawn) ---------- */
+#win { position: relative; width: 1225px; height: 833px; background: url(img/shop-clean.webp) 0 0 / 1225px 833px; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 30px 70px rgba(0,0,0,.7); user-select: none; }
+#purse { position: absolute; left: 151px; top: 89px; font: 48px/1 'IM Fell English', serif; color: #f5dc94; letter-spacing: .01em;
+  text-shadow: 0 2px 0 #3a1e08, 0 0 14px rgba(0,0,0,.35); font-variant-numeric: lining-nums; }
+#purse.counting { color: #fff1c4; }
+
+/* the bill of sale, over the stage */
+#bill { position: absolute; left: 702px; top: 410px; width: 440px; padding: 26px 30px 24px; z-index: 30;
+  background: url(img/parchment.jpg) center / 700px; color: #3a2614; border-radius: 3px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.6), inset 0 0 40px rgba(120,80,30,.35); transform: rotate(-.6deg); transition: transform .25s ease-in, opacity .25s ease-in; }
+#bill.gone { transform: translateY(-60px) rotate(-3deg); opacity: 0; pointer-events: none; }
+#bill h2 { margin: 0 0 6px; font: 600 34px/1.05 'Caveat', cursive; color: #2a1608; }
+#bill p { margin: 0; font: italic 16px/1.4 'IM Fell English', serif; color: #5a4028; }
+#bill .price { display: flex; align-items: center; gap: 8px; margin: 12px 0 14px; font: 26px/1 'IM Fell English', serif; color: #3a2614; }
+.coin { width: 30px; height: 30px; border-radius: 50%; display: inline-block; background: radial-gradient(circle at 38% 30%, #fff3c0, #e2bd55 35%, #a77d24 70%, #5e420c);
+  box-shadow: 0 0 0 1.5px #3a2606, 0 2px 3px rgba(0,0,0,.5); }
+.btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.btn { font: 20px/1 'IM Fell English', serif; color: #f6e6c0; background: linear-gradient(#6a4220, #3e2410); border: 2px solid #c9a24a; border-radius: 6px;
+  padding: 12px 22px; min-height: 46px; cursor: pointer; box-shadow: 0 3px 0 #1e1006, inset 0 1px 0 rgba(255,220,160,.35); }
+.btn.quiet { background: transparent; color: #4a3018; border-color: #8a6a3a; box-shadow: none; }
+.btn:hover { filter: brightness(1.12); }
+
+/* ---------- the opening, over the case's interior ---------- */
+#ov { position: absolute; left: 62px; top: 160px; width: 1126px; height: 632px; border-radius: 10px; overflow: hidden; z-index: 20; pointer-events: none; }
+#ov.on { pointer-events: auto; cursor: pointer; }
+#ov .dim { position: absolute; inset: 0; opacity: 0; transition: opacity .35s ease-out;
+  background: radial-gradient(ellipse 70% 75% at 50% 46%, rgba(22,14,7,.97), rgba(5,3,1,.99)); }
+#ov.on .dim { opacity: 1; }
+#ov .floor { position: absolute; left: 0; right: 0; bottom: 0; height: 240px; opacity: 0; transition: opacity .6s;
+  background: radial-gradient(ellipse 45% 60% at 50% 100%, rgba(240,205,106,.10), transparent 70%); }
+#ov.on .floor { opacity: 1; }
+#ov .plaque { position: absolute; left: 50%; top: 26px; transform: translate(-50%, -14px); opacity: 0; transition: all .5s cubic-bezier(.2,.9,.3,1.2);
+  padding: 9px 26px 8px; border: 2px solid #c9a24a; outline: 1px solid #3a2808; outline-offset: 3px; background: #120c06;
+  font: 20px/1 'Marcellus', serif; letter-spacing: .32em; color: var(--gilt); white-space: nowrap; }
+#ov .plaque.in { opacity: 1; transform: translate(-50%, 0); }
+.skip { position: absolute; right: 16px; bottom: 12px; font: italic 14px/1 'IM Fell English', serif; color: #9a8a68; opacity: 0; transition: opacity .4s; }
+#ov.on .skip.in { opacity: .9; }
+
+/* rays and the light from the crate */
+.rays { position: absolute; left: 50%; top: 188px; width: 1300px; height: 1300px; margin: -650px 0 0 -650px; opacity: 0; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, rgba(var(--rc, 255,214,120), .16) 0 5deg, transparent 5deg 15deg);
+  -webkit-mask: radial-gradient(circle, #000 0, rgba(0,0,0,.6) 24%, transparent 55%); mask: radial-gradient(circle, #000 0, rgba(0,0,0,.6) 24%, transparent 55%);
+  animation: spin 40s linear infinite; }
+#stage { position: absolute; inset: 0; }
+.beam { position: absolute; left: 50%; top: -84px; width: 300px; height: 230px; margin-left: -150px; opacity: 0; pointer-events: none; transform-origin: 50% 100%;
+  background: linear-gradient(to top, rgba(255,226,150,.85), rgba(255,200,110,.25) 60%, transparent); clip-path: polygon(30% 100%, 70% 100%, 100% 0, 0 0); filter: blur(6px); mix-blend-mode: screen; }
+.burst { position: absolute; left: 50%; top: 188px; width: 520px; height: 300px; margin: -150px 0 0 -260px; border-radius: 50%; opacity: 0; pointer-events: none;
+  background: radial-gradient(ellipse, rgba(255,240,190,.95), rgba(255,190,80,.45) 35%, transparent 70%); mix-blend-mode: screen; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* the crate */
+#crate { position: absolute; left: 50%; top: 92px; width: 320px; height: 268px; margin-left: -160px; transform-origin: 50% 100%; opacity: 0; }
+#crate > div { position: absolute; left: 0; top: 0; width: 320px; height: 268px; }
+#crate .lid { transform-origin: 50% 80%; }
+#crate .seal { width: 70px; height: 70px; left: 125px; top: 62px; }
+#crate .ribbon { width: 70px; height: 60px; left: 125px; top: 108px; }
+#crate .glowseal { position: absolute; left: 112px; top: 50px; width: 96px; height: 96px; border-radius: 50%; opacity: 0;
+  background: radial-gradient(circle, rgba(255,140,90,.8), transparent 65%); mix-blend-mode: screen; }
+.dust { position: absolute; width: 90px; height: 40px; border-radius: 50%; opacity: 0; pointer-events: none;
+  background: radial-gradient(ellipse, rgba(210,180,130,.55), transparent 70%); filter: blur(2px); }
+.straw { position: absolute; width: 3px; height: 22px; border-radius: 2px; background: linear-gradient(#f4dc98, #b8903a); opacity: 0; pointer-events: none; }
+
+/* ---------- the reel ---------- */
+#reel { position: absolute; left: 50%; top: 216px; width: 1060px; height: 212px; margin-left: -530px; transform: scaleX(0); opacity: 0; }
+#reel .frame { position: absolute; inset: 0; border-radius: 6px;
+  background: linear-gradient(#2c1a0c, #1a0f06); box-shadow: 0 18px 40px rgba(0,0,0,.65), inset 0 0 0 2px #c9a24a, inset 0 0 0 4px #2a1606, inset 0 0 0 5px rgba(240,205,106,.35); }
+#reel .window { position: absolute; left: 14px; right: 14px; top: 14px; bottom: 14px; overflow: hidden; border-radius: 3px;
+  background: radial-gradient(ellipse at 50% 40%, #241a12, #0e0a07); box-shadow: inset 0 6px 14px rgba(0,0,0,.8); }
+#reel .track { position: absolute; left: 0; top: 6px; height: 172px; will-change: transform; }
+#reel .fade { position: absolute; top: 0; bottom: 0; width: 150px; pointer-events: none; z-index: 3; }
+#reel .fade.l { left: 0; background: linear-gradient(90deg, #0b0806, rgba(11,8,6,0)); }
+#reel .fade.r { right: 0; background: linear-gradient(-90deg, #0b0806, rgba(11,8,6,0)); }
+#reel .marker { position: absolute; left: 50%; top: -30px; bottom: -34px; width: 0; z-index: 5; }
+#reel .marker .line { position: absolute; left: -1px; top: 26px; bottom: 30px; width: 2px; background: linear-gradient(#fff8e0, #f0cd6a);
+  box-shadow: 0 0 8px rgba(255,220,140,.9), 0 0 18px rgb(var(--cur, 255 200 100) / .8); transition: box-shadow .12s; }
+#reel .under { position: absolute; left: 50%; top: 0; bottom: 0; width: 220px; margin-left: -110px; z-index: 2; pointer-events: none; mix-blend-mode: screen;
+  background: radial-gradient(ellipse 50% 60% at 50% 100%, rgb(var(--cur, 0 0 0) / .35), transparent 70%); transition: background .12s; }
+#reel .marker .bob { position: absolute; left: -13px; top: -6px; width: 26px; height: 40px; transform-origin: 13px 40px; }
+#reel .marker .hook { position: absolute; left: -11px; bottom: -6px; width: 22px; height: 38px; }
+#reel .rail { position: absolute; left: 30px; right: 30px; height: 2px; background: linear-gradient(90deg, transparent, rgba(240,205,106,.6), transparent); }
+
+.card { position: absolute; top: 0; width: 150px; height: 172px; border-radius: 8px; overflow: hidden;
+  background: radial-gradient(ellipse 90% 60% at 50% 108%, rgb(var(--tc) / .55), transparent 70%), linear-gradient(#2e2620, #17120e);
+  box-shadow: inset 0 0 0 1px rgb(var(--tc) / .55), inset 0 1px 0 rgba(255,255,255,.08), 0 6px 10px rgba(0,0,0,.5); transition: opacity .35s, filter .35s; }
+.card::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 7px; background: rgb(var(--tc)); box-shadow: 0 0 14px rgb(var(--tc) / .9); }
+.card .art { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -54%); max-width: 128px; max-height: 128px; filter: drop-shadow(0 6px 6px rgba(0,0,0,.6)); }
+.card .art.toast { width: 128px; max-height: none; }
+.card .kind { position: absolute; left: 8px; top: 8px; width: 18px; height: 18px; opacity: .55; }
+.card .sheen { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.1) 48%, transparent 60%); }
+.card.t7 { background: radial-gradient(circle at 50% 42%, #fff4c0, #f0c44a 30%, #a8761c 70%, #5a3a08); box-shadow: inset 0 0 0 2px #fff0b0, inset 0 0 0 4px #7a5210, 0 0 22px rgba(255,208,74,.6); }
+.card.t7 .q { position: absolute; inset: 0; display: grid; place-items: center; font: 104px/1 'Marcellus', serif; color: #7a4e0c;
+  text-shadow: 0 2px 0 rgba(255,244,200,.8), 0 -1px 0 rgba(60,30,0,.5); }
+.card.t7::before { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.65) 46%, transparent 58%);
+  background-size: 300% 100%; animation: gsheen 2.2s ease-in-out infinite; }
+@keyframes gsheen { 0% { background-position: 120% 0; } 70%, 100% { background-position: -40% 0; } }
+.card.type { background: radial-gradient(ellipse 90% 60% at 50% 108%, rgb(var(--tc) / .5), transparent 70%),
+  repeating-linear-gradient(45deg, rgb(var(--tc) / .06) 0 1px, transparent 1px 12px), repeating-linear-gradient(-45deg, rgb(var(--tc) / .06) 0 1px, transparent 1px 12px),
+  linear-gradient(#2e2620, #17120e); }
+.card .emblem { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); filter: drop-shadow(0 4px 4px rgba(0,0,0,.6)) drop-shadow(0 0 10px rgb(var(--tc) / .35)); }
+.card .klabel { position: absolute; left: 0; right: 0; bottom: 17px; text-align: center; font: 10px/1 'Marcellus', serif; letter-spacing: .2em; text-transform: uppercase; color: rgb(var(--tc)); opacity: .85; }
+.card.gilt { box-shadow: inset 0 0 0 2px #fff0b0, inset 0 0 0 4px #7a5210, 0 0 22px rgba(255,208,74,.6); }
+.card.win { z-index: 2; }
+#note { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); opacity: 0; padding: 8px 18px; border-radius: 6px; background: rgba(20,12,6,.9);
+  border: 1px solid #c9a24a; font: 17px/1 'IM Fell English', serif; color: #f6e6c0; white-space: nowrap; z-index: 40; pointer-events: none; }
+.track.settled .card:not(.win) { opacity: .22; filter: saturate(.25) brightness(.7); }
+
+/* ---------- the reveal ---------- */
+#reveal { position: absolute; inset: 0; pointer-events: none; }
+#reveal .halo { position: absolute; left: 50%; top: 210px; width: 900px; height: 900px; margin: -450px 0 0 -450px; opacity: 0; border-radius: 50%;
+  background: radial-gradient(circle, rgb(var(--tc) / .55), rgb(var(--tc) / .12) 30%, transparent 60%); }
+#reveal .raywrap { position: absolute; left: 50%; top: 210px; width: 1100px; height: 1100px; margin: -550px 0 0 -550px; opacity: 0; }
+#reveal .rays2 { position: absolute; inset: 0;
+  background: repeating-conic-gradient(rgb(var(--tc) / .3) 0 4deg, transparent 4deg 12deg);
+  -webkit-mask: radial-gradient(circle, #000 0, rgba(0,0,0,.6) 18%, transparent 50%); mask: radial-gradient(circle, #000 0, rgba(0,0,0,.6) 18%, transparent 50%);
+  animation: spin 14s linear infinite; }
+#reveal .rays2.b { background: repeating-conic-gradient(from 3deg, rgb(var(--tc) / .16) 0 2deg, transparent 2deg 9deg); animation-duration: 22s; animation-direction: reverse;
+  -webkit-mask: radial-gradient(circle, #000 0, rgba(0,0,0,.5) 26%, transparent 56%); mask: radial-gradient(circle, #000 0, rgba(0,0,0,.5) 26%, transparent 56%); }
+#hero { position: absolute; left: 50%; top: 210px; width: 150px; height: 172px; margin: -86px 0 0 -75px; opacity: 0; perspective: 900px; }
+#hero .face { position: absolute; inset: 0; backface-visibility: hidden; }
+#hero .card { position: absolute; left: 0; top: 0; }
+#hero .back { transform: rotateY(180deg); }
+#hero .spin { position: absolute; inset: 0; transform-style: preserve-3d; }
+#hero .stamp { position: absolute; right: -36px; top: -18px; padding: 5px 12px 4px; border: 3px solid #c8281c; border-radius: 4px; opacity: 0;
+  font: 18px/1 'Marcellus', serif; letter-spacing: .2em; color: #d8301e; background: rgba(255,240,220,.06); transform: rotate(12deg) scale(2.6);
+  text-shadow: 0 0 1px #c8281c; mix-blend-mode: screen; }
+#reveal .tier { position: absolute; left: 50%; top: 362px; transform: translateX(-50%); opacity: 0; white-space: nowrap;
+  font: 15px/1 'Marcellus', serif; letter-spacing: .42em; color: rgb(var(--tc)); text-shadow: 0 0 12px rgb(var(--tc) / .7), 0 1px 1px #000; }
+#reveal .tier::before, #reveal .tier::after { content: ""; display: inline-block; width: 60px; height: 1px; margin: 0 14px; vertical-align: middle;
+  background: linear-gradient(90deg, transparent, rgb(var(--tc))); }
+#reveal .tier::after { background: linear-gradient(-90deg, transparent, rgb(var(--tc))); }
+#reveal .name { position: absolute; left: 0; right: 0; top: 382px; text-align: center; opacity: 0; font: 600 54px/1.1 'Caveat', cursive; color: #fff4dc;
+  text-shadow: 0 2px 3px #000, 0 0 22px rgb(var(--tc) / .45); }
+#reveal .sub { position: absolute; left: 0; right: 0; top: 446px; text-align: center; opacity: 0; font: 15px/1 'IM Fell English SC', serif; letter-spacing: .12em; color: #c8b48a; }
+#reveal .btns { position: absolute; left: 0; right: 0; top: 484px; justify-content: center; opacity: 0; pointer-events: none; }
+#reveal .btns.in { pointer-events: auto; }
+#reveal .btn.quiet { color: #e8d8b0; border-color: #8a6a3a; }
+.spark { position: absolute; width: 6px; height: 6px; border-radius: 50%; pointer-events: none; background: #fff; box-shadow: 0 0 8px var(--sc, #fff); }
+.goldcoin { position: absolute; width: 18px; height: 18px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 38% 30%, #fff3c0, #e2bd55 35%, #a77d24 70%, #5e420c); box-shadow: 0 0 0 1px #3a2606; }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; mix-blend-mode: screen; }
+
+/* odds, on the crate */
+#odds { position: absolute; left: 0; right: 0; bottom: 34px; display: flex; justify-content: center; gap: 18px; opacity: 0; transition: opacity .5s; flex-wrap: wrap; }
+#odds.in { opacity: 1; }
+#odds span { font: 13px/1 'IM Fell English', serif; color: #b8a780; display: inline-flex; align-items: center; gap: 6px; }
+#odds i { width: 10px; height: 10px; border-radius: 2px; background: rgb(var(--tc)); box-shadow: 0 0 6px rgb(var(--tc) / .8); }
+
+.notes { max-width: 1225px; margin: 18px auto 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px 26px;
+  font: 15px/1.5 'IM Fell English', serif; color: var(--muted); }
+.notes b { font: 12px/1 'Marcellus', serif; letter-spacing: .16em; text-transform: uppercase; color: var(--gilt); display: block; margin-bottom: 6px; font-weight: normal; }
+@media (prefers-reduced-motion: reduce) { .rays, #reveal .rays2, .card.t7::before { animation: none; } }
+
+/* ---------- the design board ---------- */
+.board { max-width: 1225px; margin: 40px auto 0; display: grid; gap: 44px; }
+.board h2 { margin: 0 0 6px; font: 400 30px/1.1 var(--display); color: var(--gilt); letter-spacing: .02em; text-wrap: balance; }
+.board .lede { margin: 0 0 18px; max-width: 68ch; font-size: 17px; line-height: 1.5; color: var(--muted); }
+.beats { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 26px 20px; margin: 0; padding: 0; list-style: none; }
+.beats li { display: grid; gap: 8px; min-width: 0; }
+.beats img { width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--line); display: block; }
+.beats .when { font: 13px/1 var(--display); letter-spacing: .14em; color: var(--gilt); font-variant-numeric: tabular-nums; }
+.beats h3 { margin: 0; font: 600 25px/1.05 var(--hand); color: var(--ink); }
+.beats p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--muted); }
+.beats p em { color: #d9c79c; }
+.ladder { width: 100%; border-collapse: collapse; font-size: 15px; }
+.ladder-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.ladder th { text-align: left; font: 11px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); padding: 12px 14px; border-bottom: 1px solid var(--line); font-weight: normal; }
+.ladder td { padding: 11px 14px; border-bottom: 1px solid rgba(58,44,28,.6); vertical-align: top; line-height: 1.4; }
+.ladder tr:last-child td { border-bottom: 0; }
+.ladder .tn { white-space: nowrap; font: 17px/1 var(--display); color: rgb(var(--tc)); }
+.ladder .tn i { display: inline-block; width: 12px; height: 12px; margin-right: 10px; border-radius: 2px; background: rgb(var(--tc)); box-shadow: 0 0 8px rgb(var(--tc) / .8); vertical-align: -1px; }
+.ladder .num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; color: var(--ink); }
+.ladder .muted { color: var(--muted); }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px 32px; }
+.cols > div { min-width: 0; }
+.cols h3 { margin: 0 0 8px; font: 12px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--gilt); font-weight: normal; }
+.cols ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 15.5px; line-height: 1.45; color: var(--muted); }
+.cols li b { color: var(--ink); font-weight: normal; }
+code { font: 13px/1 'Cutive Mono', ui-monospace, monospace; color: #e6cf8e; }
+</style>
+<div id="fitbox"><div id="fit">
+  <div class="bar" role="toolbar" aria-label="Prototype controls">
+    <h1>Curio Crate · opening</h1>
+    <div class="grp" id="outcomes"><span class="lbl">Lands on</span></div>
+    <div class="grp"><span class="lbl">Sound</span><button class="chip" id="snd" aria-pressed="true">On</button>
+      <span class="lbl">Animations</span><button class="chip" id="anim" aria-pressed="true">On</button>
+      <button class="chip" id="slow" aria-pressed="false">Half speed</button></div>
+  </div>
+  <div id="win">
+    <div id="purse">49,905</div>
+    <div id="note" role="status"></div>
+    <div id="bill" role="dialog" aria-labelledby="billh">
+      <h2 id="billh">Open a Curio crate?</h2>
+      <div class="price"><span class="coin" aria-hidden="true"></span><span>2,000</span></div>
+      <p>One look you don't own yet, by chance; the chances are on the crate.</p>
+      <div class="btns"><button class="btn" id="open">Open it</button><button class="btn quiet" id="notnow">Not now</button></div>
+    </div>
+    <div id="ov" aria-live="polite">
+      <div class="dim"></div><div class="floor"></div>
+      <div id="stage">
+      <div class="rays" id="rays"></div><div class="beam" id="beam"></div><div class="burst" id="burst"></div>
+      <div class="plaque" id="plaque">CURIO CRATE</div>
+      <div id="crate" aria-hidden="true">
+        <div class="body"></div><div class="lid"></div><div class="glowseal"></div>
+        <div class="ribbon"></div><div class="seal sl"></div><div class="seal sr"></div>
+      </div>
+      <div id="reel" aria-hidden="true">
+        <div class="frame"></div>
+        <div class="window"><div class="track" id="track"></div><div class="under"></div><div class="fade l"></div><div class="fade r"></div></div>
+        <div class="marker" id="marker"><div class="line"></div>
+          <svg class="bob" viewBox="0 0 26 40"><path d="M13 0 V12" stroke="#2a1a0a" stroke-width="2"/><circle cx="13" cy="25" r="11" fill="#1a0a04"/>
+            <path d="M3 25 a10 10 0 0 1 20 0z" fill="#d8341e"/><path d="M3 25 a10 10 0 0 0 20 0z" fill="#f6ead0"/><path d="M3 25 H23" stroke="#1a0a04" stroke-width="1.6"/>
+            <ellipse cx="9" cy="20" rx="3" ry="2" fill="#fff" opacity=".5"/></svg>
+          <svg class="hook" viewBox="0 0 22 38"><path d="M11 0 V24 a7 7 0 0 1 -14 0 l3 -4" transform="translate(7 0)" fill="none" stroke="#f0cd6a" stroke-width="2.6" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div id="reveal">
+        <div class="raywrap" id="rays2"><div class="rays2 a"></div><div class="rays2 b"></div></div><div class="halo" id="halo"></div>
+        <div id="hero"><div class="spin" id="spin"><div class="face front" id="heroFront"></div><div class="face back" id="heroBack"></div></div>
+          <div class="stamp" id="stamp">YOURS</div></div>
+        <div class="tier" id="tierName">LEGENDARY</div>
+        <div class="name" id="itemName">Arcane Sigil</div>
+        <div class="sub" id="itemSub">Toast style · Pagle</div>
+        <div class="btns" id="after"><button class="btn" id="use">Use it now</button><button class="btn quiet" id="back">Back to the shop</button></div>
+      </div>
+      </div>
+      <div id="odds"></div>
+      <div id="flash"></div>
+      <div class="skip" id="skip">Click anywhere to skip</div>
+    </div>
+  </div>
+</div></div>
+<section class="board" aria-label="Design board">
+  <div>
+    <h2>The sequence</h2>
+    <p class="lede">From the moment <em>Open it</em> is pressed, it takes 9.7 seconds to land. The good shows at about 11.5 seconds for Common and 12.4 for Legendary. A click anywhere, or Esc, skips straight to the reveal. With motion off, the reveal shows at once.</p>
+    <ol class="beats"><li><img src="board/v2-01.jpg" alt="The crate drops in" loading="lazy" width="900" height="612"><span class="when">1.0 s</span><h3>The crate drops in</h3><p>The case darkens, the purse counts down, and the crate falls from above and squashes on landing. Dust puffs out, and the plaque and the odds appear. <em>Sound: a thud.</em></p></li><li><img src="board/v2-02.jpg" alt="Seal cracks, lid off" loading="lazy" width="900" height="612"><span class="when">2.4 s</span><h3>Seal cracks, lid off</h3><p>Three knocks, each harder, and the wax seal glows warmer each time. Then the seal splits, the straps snap and the lid flies off. Light pours out, straw sprays, and the reel opens out of the light. <em>Sound: knocks, a crack, snaps, a whoosh.</em></p></li><li><img src="board/v2-03.jpg" alt="The spin" loading="lazy" width="900" height="612"><span class="when">3.3–9.7 s</span><h3>The spin</h3><p>Cards run right to left in a 6.4-second ease-out. Each card shows only a tier and a kind: an emblem for toast styles, bindings or sound sets, struck in the tier&#39;s colour. The light under the line takes the colour of the card passing. <em>Sound: a tick per card, and the bobber dips.</em></p></li><li><img src="board/v2-04.jpg" alt="It lands" loading="lazy" width="900" height="612"><span class="when">9.7 s</span><h3>It lands</h3><p>The line stops wherever it falls inside the winning card, up to 60 px off centre. The other cards dim. By now the player knows the tier and the kind, but not the good. <em>Sound: a soft chime.</em></p></li><li><img src="board/v2-05.jpg" alt="The card lifts out" loading="lazy" width="900" height="612"><span class="when">10.4 s</span><h3>The card lifts out</h3><p>The card rises out of the reel to the centre at 1.5 times its size, still showing its emblem, and the reel drops away.</p></li><li><img src="board/v2-06.jpg" alt="The wait" loading="lazy" width="900" height="612"><span class="when">10.4–11.6 s</span><h3>The wait</h3><p>The card holds a moment, longer for higher tiers. From Epic up it trembles and its light swells.</p></li><li><img src="board/v2-07.jpg" alt="It turns over" loading="lazy" width="900" height="612"><span class="when">11.5–12.4 s</span><h3>It turns over</h3><p>The card turns over to the good itself: half a turn up to Rare, one and a half from Epic. The tier&#39;s effects fire as the face comes round. Then the name, the YOURS stamp, and <em>Use it now</em> or <em>Back to the shop</em>. <em>Sound: a whir per half turn, then the tier&#39;s chord.</em></p></li><li><img src="board/v2-08.jpg" alt="A gold card lands" loading="lazy" width="900" height="612"><span class="when">Curio</span><h3>A gold card lands</h3><p>A crate-only good shows on the reel, and when it lifts out, as a gilded question mark. Its kind stays hidden too.</p></li><li><img src="board/v2-09.jpg" alt="It turns over" loading="lazy" width="900" height="612"><span class="when">Curio</span><h3>It turns over</h3><p>Two and a half turns, then the good. Coins burst out and the gold light holds. <em>Sound: a bell and coins.</em></p></li></ol>
+  </div>
+  <div>
+    <h2>Tiers, odds and what each reveal adds</h2>
+    <p class="lede">The six tiers, plus gold for goods only the crate holds. The odds are a starting point, not a proposal, and the tier each good gets in this prototype is a stand-in too.</p>
+    <div class="ladder-wrap"><table class="ladder"><thead><tr><th>Tier</th><th style="text-align:right">Odds</th><th>On landing</th></tr></thead><tbody><tr style="--tc:233 230 223"><td class="tn"><i></i>Common</td><td class="num">40%</td><td class="muted">Turns over at once. A soft halo in the tier colour and a two-note chord.</td></tr><tr style="--tc:62 211 90"><td class="tn"><i></i>Uncommon</td><td class="num">26%</td><td class="muted">Turns over at once. Three-note chord; the rays turn a little brighter.</td></tr><tr style="--tc:59 134 255"><td class="tn"><i></i>Rare</td><td class="num">16%</td><td class="muted">Waits a moment, then turns over. Four-note chord; brighter rays.</td></tr><tr style="--tc:176 92 255"><td class="tn"><i></i>Epic</td><td class="num">10%</td><td class="muted">Trembles, then turns one and a half times. A burst of sparks, and a low note under the chord.</td></tr><tr style="--tc:236 58 63"><td class="tn"><i></i>Mythic</td><td class="num">5%</td><td class="muted">Trembles longer. More sparks, embers rising for five seconds, a short shake and a low boom.</td></tr><tr style="--tc:255 138 28"><td class="tn"><i></i>Legendary</td><td class="num">2.5%</td><td class="muted">Everything Mythic has, plus a white flash, a hard shake, full rays and glitter.</td></tr><tr style="--tc:255 208 74"><td class="tn"><i></i>Curio</td><td class="num">0.5%</td><td class="muted">A gold card with a question mark lands. It spins two and a half turns and turns over to show the good, with a bell and a shower of coins. Only the crate holds these goods.</td></tr></tbody></table></div>
+  </div>
+  <div class="cols">
+    <div><h3>How the draw works</h3><ul>
+      <li><b>Tier first, then a good.</b> The crate rolls a tier by its odds, then picks a good of that tier the player doesn&#39;t own. It never gives a good twice.</li>
+      <li><b>The result is fixed before anything moves,</b> by the log hash of the crate&#39;s entry, as now. The animation only shows it, so a reload mid-spin goes straight to the reveal.</li>
+      <li><b>The reel shows tier and kind, never the good.</b> Each card is an emblem for its kind in its tier&#39;s colour. A good added to the shop later needs nothing for the crate; a new kind of good needs one emblem.</li>
+      <li><b>The reel is honest.</b> Every other card is rolled the same way, from goods the player could still win, so its kinds and tiers are true to the pool. Near misses are never placed.</li>
+      <li><b>The odds are on the crate.</b> They stay under the reel for the whole spin.</li>
+    </ul></div>
+    <div><h3>For you to decide</h3><ul>
+      <li><b>A tier with nothing left.</b> Here that tier drops out and the other tiers&#39; odds are scaled up to fill the gap. Another option is to fall back to the next tier down. The spec needs one rule.</li>
+      <li><b>Pity.</b> Main&#39;s crate has a pity count (<code>CRATE_PITY = 8</code>) built for its four-good pool. With the whole shop in the pool it needs restating: what it guarantees, and whether the reel shows it.</li>
+      <li><b>Owning everything.</b> The crate could disappear, or show as sold out.</li>
+      <li><b>Length.</b> About 13 seconds to the buttons suits a first crate but is long for a tenth. Skip covers it, or later crates could spin shorter.</li>
+    </ul></div>
+    <div><h3>In the addon</h3><ul>
+      <li><b>Motion</b> is only translate, rotate, scale and alpha, plus additive light: the transforms the toast renderer already plays (ANN-R82). Nothing uses skew or blur.</li>
+      <li><b>The reel</b> is a horizontal ScrollFrame driven from OnUpdate, with about 60 pooled card frames. A card is one emblem texture per kind, tinted with the tier&#39;s colour (<code>SetVertexColor</code>), so the art is three textures plus the gold card.</li>
+      <li><b>The reveal</b> uses the good&#39;s own picture, which the shop already shows.</li>
+      <li><b>The turn-over</b> squashes the card&#39;s width and swaps faces at zero. It is not a 3D turn.</li>
+      <li><b>Sound</b> here is made in the browser. In the addon it would be the client&#39;s own sound kits through <code>PlaySound</code>, as the shop uses now. The IDs still have to be chosen and checked in the client.</li>
+      <li><b>It replaces</b> the current 1.1-second opening in the shop&#39;s Motion table.</li>
+    </ul></div>
+  </div>
+</section>
+<script src="crate-svg.js"></script>
+<script src="crate.js"></script>
