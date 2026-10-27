@@ -5,7 +5,8 @@ local ns = select(2, ...)
 -- stay outside these bytes and survive in the archived original branch.
 
 local MAX = 9007199254740991
-ns.RECOVERY_SNAPSHOT_CAP = 128 * 1024 * 1024
+ns.RECOVERY_SNAPSHOT_CAP = 16 * 1024 * 1024
+ns.RECOVERY_DATA_CAP = 24 * 1024 * 1024
 local HEADER = "PGL-SNAPSHOT|1\n"
 local ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
@@ -92,7 +93,7 @@ end
 ---@return fun(): string
 ---@return fun()
 function ns.RecoveryReader(bytes, header)
-	assert(type(bytes) == "string" and #bytes <= ns.RECOVERY_SNAPSHOT_CAP + 16 * 1024 * 1024, "Recovery data too large")
+	assert(type(bytes) == "string" and #bytes <= ns.RECOVERY_DATA_CAP, "Recovery data too large")
 	assert(bytes:sub(1, #header) == header, "invalid Recovery domain")
 	local at = #header + 1
 	local function read()
