@@ -12,7 +12,7 @@ ns.Ledger = LibStub("AceAddon-3.0"):NewAddon(addonName)
 --- AceAddon calls it once, at the Ledger's ADDON_LOADED, after Core's (CORE-R10).
 function ns.Ledger.OnInitialize()
 	--- The Ledger's Module handle: the calls that act for the Ledger (CORE-R12). Nil while the Ledger is inert.
-	ns.Module = Pagle.RegisterModule(ns.ModuleDef(ns.ToggleJournal))
+	ns.Module = Pagle.RegisterModule(ns.ModuleDef(ns.ToggleJournal, ns.OpenCollection))
 	-- An inert Module must stop (CORE-R13).
 	if not ns.Module then
 		return
@@ -84,6 +84,13 @@ function ns.Ledger.OnInitialize()
 		if slot == ns.CREST_SLOT then
 			ns.QueueChoiceRecords()
 		end
+		-- the Collection shows each look in use as the Curio Shop's Use and Look and Feel change it (LED-R173)
+		ns.journal:QueueDraw()
+	end)
+	-- A purchase or a crate opened from the Collection turns a look owned while its shelf is shown (LED-R170, ledger.md ›
+	-- UI): the Coins spent change the balance, and the open spread draws again.
+	Pagle.RegisterCallback(ns.Ledger, "BalanceChanged", function()
+		ns.journal:QueueDraw()
 	end)
 	-- Another Module's Activity XP changed the climb (LED-R39): the shown level is worked out again, then the Journal
 	-- redraws. While the projection updates, its done does it instead; one that already ran (the entries appended

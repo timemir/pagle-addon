@@ -306,9 +306,17 @@ describe("the Journal's Home, right page", function()
 				place = { id = "curios" },
 			},
 			{ kind = "leader", numeral = "iii.", text = "Legends", value = "0 / 0", place = { id = "legends" } },
+			-- the Collection's line (LED-R132, LED-R174): nothing is new on a first opening (LED-R171)
 			{
 				kind = "leader",
 				numeral = "iv.",
+				text = "The Collection: looks and titles",
+				value = right[10].value,
+				place = { id = "collection" },
+			},
+			{
+				kind = "leader",
+				numeral = "v.",
 				text = "The Angler: hands, titles, bindings",
 				value = "»",
 				place = { id = "angler" },
@@ -316,14 +324,14 @@ describe("the Journal's Home, right page", function()
 			-- Track V's line, last: no Pagle_Following here, so greyed (LED-R163)
 			{
 				kind = "leader",
-				numeral = "v.",
+				numeral = "vi.",
 				text = "Following",
 				value = "no Companion",
 				color = "faded",
 				place = { id = "following" },
 			},
-		}, { right[7], right[8], right[9], right[10], right[11] })
-		assert.are.equal(11, #right)
+		}, { right[7], right[8], right[9], right[10], right[11], right[12] })
+		assert.are.equal(12, #right)
 	end)
 
 	it(
@@ -403,7 +411,7 @@ describe("the Journal's Home, right page", function()
 		local _, loaded = openHome({ cast(ELWYNN, MACKEREL) })
 		local journal = loaded.ns.journal
 
-		journal.shown.right.drawn.leader[4]:Click()
+		journal.shown.right.drawn.leader[5]:Click()
 
 		assert.are.same({ id = "angler" }, journal.router:Place())
 		local labels = {}

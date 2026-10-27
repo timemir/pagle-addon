@@ -90,7 +90,18 @@ local function loggedIn(place, crestName)
 			local getGood = fake.Pagle.GetGood
 			fake.Pagle.GetGood = function(goodID)
 				if crestName and goodID == "core.crest.fish.6303" then
-					return { name = crestName, icon = CREST }
+					-- Core's own record with the name and icon this spec gives it (a read-only record has no pairs)
+					local info = getGood(goodID)
+					return {
+						name = crestName,
+						icon = CREST,
+						slot = info.slot,
+						module = info.module,
+						isDefault = info.isDefault,
+						kind = info.kind,
+						purchased = info.purchased,
+						fromCrate = info.fromCrate,
+					}
 				end
 				return getGood(goodID)
 			end

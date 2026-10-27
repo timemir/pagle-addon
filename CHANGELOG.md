@@ -32,6 +32,7 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 - A toast for a fish's new colour shows the colour in its medallion, in place of the fish's icon, with its name after a small gem. The stamp, the ring and the gem take the colour's rarity (white, green, blue, purple), and a Rare or Epic one gleams once. This holds whether the toast is the colour's own, a size record's or a New Species'. A Common, Uncommon or Rare colour that heads its catch's toast gets a full-size toast of its own: the catch's size over the fish's name and the colour, with its stamp, "New variety" or "Rare variety", at the top right.
 - A fish new to a zone, a star, a trophy family's stars and an Uncharted catch show as toasts now, not Nods, so the more special catch is never smaller than a plain one.
 - Search the Journal for a fish or a water. `/pagle journal` opens it.
+- The Collection is the Journal's spread of every look in Pagle and every title: a shelf each for toast styles, sound sets, bookplate crests, bindings, tracker frames and titles. What you have shows in ink and colour, what you don't in pencil, every one named, with how to earn it, how far along you are and what it costs. Choose a look and put it on from there; the Curio Shop only sells. It tells you what is new, which looks are within reach and which you added lately. Open it from Home's contents, from Look and Feel or with `/pagle collection`.
 
 ### Hunts
 

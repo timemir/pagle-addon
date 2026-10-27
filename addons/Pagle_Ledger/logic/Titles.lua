@@ -145,6 +145,35 @@ function ns.TitleKeys(view)
 	return ordered(set)
 end
 
+--- Every title there is (LED-R75), earned or not, in LED-R75's order: the level and Prestige titles, a `zonemaster`
+--- title for each charted zone, a Legend's for each Legend of the world (LED-R11) and the `complete.*` ones, with any
+--- earned key the table no longer lists (a zone no longer charted, LED-R54). The Collection's Titles shelf (LED-R167).
+---@param view LedgerTitleView
+---@return string[]
+function ns.TitleCatalogue(view)
+	local set = {}
+	for _, level in ipairs(LEVELS) do
+		set["title:level" .. level] = true
+	end
+	for _, rank in ipairs(PRESTIGES) do
+		set["title:prestige" .. rank] = true
+	end
+	for _, zone in ipairs(view.world.charted) do
+		set["zonemaster:" .. zone] = true
+	end
+	for _, itemID in ipairs(ns.CollectionWorlds(view.world, view.state or { species = {}, items = {} }).legends) do
+		set["legend:" .. itemID] = true
+	end
+	set["title:complete.ledger"] = true
+	for _, part in ipairs(TITLED_PARTS) do
+		set["title:complete." .. part] = true
+	end
+	for _, key in ipairs(ns.TitleKeys(view)) do
+		set[key] = true
+	end
+	return ordered(set)
+end
+
 --- The titles earned now that the celebrated set doesn't have yet (LED-R75, LED-R90), in LED-R75's order: what a
 --- state change newly earns, for the moments to raise ("Title: {title}" on the moment each rides on, a `completeTitle`
 --- per `complete.*`, LED-R97). Never `level1`, which is earned from the start and raises no moment (LED-R75).

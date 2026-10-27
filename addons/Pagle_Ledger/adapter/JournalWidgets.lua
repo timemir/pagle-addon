@@ -151,6 +151,9 @@ local function textStyle(block)
 	elseif block.style == "italic" then
 		-- a variety's words (VAR-R24)
 		return "italic", 16, INK.body
+	elseif block.style == "kicker" then
+		-- a look's slot and source under its name (LED-R170)
+		return "sc", 14, INK.kicker
 	end
 	return "print", 15, INK.body
 end
@@ -196,15 +199,31 @@ makers.kicker = function(parent)
 end
 
 -- A title: the print face's large size in the title ink, wrapping; a page's first title larger than its later ones.
+---@class LedgerTitleWidget: LedgerJournalWidget
+---@field note FontString
+
 makers.title = function(parent)
-	local widget = newWidget(parent)
+	local widget = newWidget(parent) --[[@as LedgerTitleWidget]]
 	widget.label = ns.JournalLabel(widget, "print", 27, INK.title, "", { wrap = true, spacing = 1 })
 	widget.label:SetPoint("TOPLEFT")
+	-- a count in the hand at its right ("11 of 46 yours", LED-R169), or "new!" in red (LED-R170)
+	widget.note = ns.JournalLabel(widget, "hand", 22, INK.hand, "", { justify = "RIGHT" })
+	widget.note:SetPoint("TOPRIGHT", 0, -6)
 	function widget.Fill(self, block, width, _, draw)
 		local size = draw.center and 27 or (draw.first and 29 or 25)
 		ns.JournalRestyle(self.label, "print", size, INK.title)
 		self.label:SetJustifyH(draw.center and "CENTER" or "LEFT")
-		self.label:SetWidth(width)
+		self.note:SetShown(block.value ~= nil)
+		self.note:SetText(block.value or "")
+		ns.JournalRestyle(
+			self.note,
+			"hand",
+			block.color == "red" and 20 or 22,
+			block.color == "red" and INK.red or INK.hand
+		)
+		local noteW = block.value and math.min(self.note:GetStringWidth() + 1, width * 0.5) or 0
+		self.note:SetWidth(math.max(1, noteW))
+		self.label:SetWidth(width - noteW - (noteW > 0 and 10 or 0))
 		self.label:SetText(block.text)
 		return math.max(size + 2, self.label:GetStringHeight() + 3)
 	end
@@ -361,6 +380,7 @@ end
 ---@class LedgerLeaderWidget: LedgerJournalWidget
 ---@field numeral FontString
 ---@field value FontString
+---@field note FontString
 ---@field state FontString
 ---@field swatch LedgerSpriteTexture
 ---@field dots LedgerDotLine
@@ -381,6 +401,8 @@ makers.leader = function(parent)
 	widget.label = ns.JournalLabel(widget, "print", 16, INK.body)
 	widget.value = ns.JournalLabel(widget, "print", 16, INK.small, "", { justify = "RIGHT" })
 	widget.value:SetPoint("TOPRIGHT", 0, -3)
+	-- a count of new things in red hand after the value ("4 new", LED-R132)
+	widget.note = ns.JournalLabel(widget, "hand", 17, INK.red, "", { justify = "RIGHT" })
 	widget.swatch = ns.JournalSprite(widget, "Bindings", "binding-field-leather", "ARTWORK", 0, 11)
 	widget.dots = ns.JournalDotLine(widget, INK.noteLight, 1)
 	widget.rule = ns.JournalTint(widget, INK.rule, 1)
@@ -428,7 +450,15 @@ makers.leader = function(parent)
 		ns.JournalRestyle(self.value, face, valueSize, hex)
 		self.value:SetText(block.value or "")
 		bound(self.value, width * 0.5)
-		local valueW = block.value and self.value:GetWidth() or 0
+		self.note:SetShown(block.note ~= nil)
+		self.note:SetText(block.note or "")
+		bound(self.note, width * 0.25)
+		local noteW = block.note and self.note:GetWidth() + 8 or 0
+		self.value:ClearAllPoints()
+		self.value:SetPoint("TOPRIGHT", -noteW, -3)
+		self.note:ClearAllPoints()
+		self.note:SetPoint("TOPRIGHT", 0, -2)
+		local valueW = (block.value and self.value:GetWidth() or 0) + noteW
 		bound(self.label, width - left - valueW - 12)
 		self.dots:Hide()
 		if not binding and not pair then
@@ -1112,6 +1142,7 @@ end
 
 ---@class LedgerTabView: LedgerJournalClickable
 ---@field label FontString
+---@field count FontString
 ---@field underline Texture
 
 ---@class LedgerTabsWidget: LedgerJournalWidget
@@ -1147,7 +1178,14 @@ makers.tabs = function(parent)
 			bound(tab.label, math.max(1, width - x))
 			tab.underline:SetShown(data.on)
 			tab.place, tab.open = data.place, open
-			local tabW = tab.label:GetWidth()
+			-- its count in small italic after its words (LED-R169)
+			tab.count = tab.count or ns.JournalLabel(tab, "italic", 12, INK.noteLight, "", { layer = "ARTWORK" })
+			tab.count:SetShown(data.count ~= nil)
+			tab.count:SetText(data.count or "")
+			tab.count:ClearAllPoints()
+			tab.count:SetPoint("TOPLEFT", tab.label:GetWidth() + 4, -5)
+			ns.JournalBound(tab.count, math.max(1, width - x - tab.label:GetWidth() - 4))
+			local tabW = tab.label:GetWidth() + (data.count and tab.count:GetWidth() + 4 or 0)
 			tab:SetSize(tabW, 25)
 			ns.JournalAt(tab, self, x, 0)
 			tab:Show()

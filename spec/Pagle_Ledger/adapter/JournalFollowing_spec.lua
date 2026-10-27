@@ -116,23 +116,23 @@ describe("Home's Following line (LED-R132, LED-R163)", function()
 		local block, drawn = followingLine(loaded)
 
 		assert.are.same(
-			{ kind = "leader", numeral = "v.", text = "Following", value = "4", place = { id = "following" } },
+			{ kind = "leader", numeral = "vi.", text = "Following", value = "4", place = { id = "following" } },
 			block
 		)
 		assert.are.equal(block, loaded.ns.journal.pages.right[#loaded.ns.journal.pages.right])
-		assert.are.same({ "v.", "Following", "4" }, shownTexts(drawn))
+		assert.are.same({ "vi.", "Following", "4" }, shownTexts(drawn))
 	end)
 
 	it('reads "0" with no one followed, in state none (LED-R163)', function()
 		local _, loaded = journalWith(file({}))
 
-		assert.are.same({ "v.", "Following", "0" }, shownTexts(select(2, followingLine(loaded))))
+		assert.are.same({ "vi.", "Following", "0" }, shownTexts(select(2, followingLine(loaded))))
 	end)
 
 	it('reads "—" once the file is a day old, in state expired (LED-R163)', function()
 		local _, loaded = journalWith(file(nil, DAY))
 
-		assert.are.same({ "v.", "Following", "—" }, shownTexts(select(2, followingLine(loaded))))
+		assert.are.same({ "vi.", "Following", "—" }, shownTexts(select(2, followingLine(loaded))))
 	end)
 
 	it('greys out as "no Companion" with no Pagle_Following, in state absent (LED-R163)', function()
@@ -142,13 +142,13 @@ describe("Home's Following line (LED-R132, LED-R163)", function()
 
 		assert.are.same({
 			kind = "leader",
-			numeral = "v.",
+			numeral = "vi.",
 			text = "Following",
 			value = "no Companion",
 			color = "faded",
 			place = { id = "following" },
 		}, block)
-		assert.are.same({ "v.", "Following", "no Companion" }, shownTexts(drawn))
+		assert.are.same({ "vi.", "Following", "no Companion" }, shownTexts(drawn))
 		-- the faded ink of the Journal's greyed lines, its words and its value
 		local faded = { 0x9a / 255, 0x80 / 255, 0x60 / 255 }
 		assert.are.same(faded, { unpack(drawn.label.textColor, 1, 3) })
