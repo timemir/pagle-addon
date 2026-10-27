@@ -419,7 +419,7 @@ local function positive(entry)
 end
 
 local function skillValue(entry)
-	return whole(entry, 0, nil)
+	return whole(entry, nil, nil)
 end
 
 local function knownTag(entry)

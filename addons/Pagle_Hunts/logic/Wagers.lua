@@ -412,13 +412,14 @@ function ns.EventHolidayName(event)
 end
 
 --- "needs skill {n}" (HNT-R156) for an event short of skill: its skill range's lower end above the Angler's
---- `bestBaseSkill` (as HNT-R33); nil otherwise, or with no best known.
+--- `bestBaseSkill` (as HNT-R33); nil otherwise, or with no best known. A skill below 0 is never shown: the bound is at
+--- least 0, and 0 is no requirement.
 ---@param event HuntEvent
 ---@param best integer?
 ---@return string?
 function ns.EventSkillNeed(event, best)
-	local need = event.skill and event.skill[1]
-	if need and best and need > best then
+	local need = event.skill and math.max(event.skill[1], 0)
+	if need and need > 0 and best and need > best then
 		return ns.L.NEEDS_SKILL:format(need)
 	end
 	return nil

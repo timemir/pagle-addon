@@ -111,6 +111,14 @@ describe("Pushed Hunt Events", function()
 			assert.is_nil(ns.HuntEventProblem(item(), ns.lookups))
 		end)
 
+		it("admits a skill range below zero, as the pool's (DATA-R97)", function()
+			local e = item()
+			e.skill = { -70, -20 }
+			assert.is_nil(ns.HuntEventProblem(e, ns.lookups))
+			e.skill = { -20, 75 }
+			assert.is_nil(ns.HuntEventProblem(e, ns.lookups))
+		end)
+
 		-- Each change to the passing item, and the start of the problem it makes.
 		local cases = {
 			{
@@ -187,6 +195,27 @@ describe("Pushed Hunt Events", function()
 				"a skill range upside down",
 				function(e)
 					e.skill = { 150, 75 }
+				end,
+				"its skill",
+			},
+			{
+				"a negative skill range upside down",
+				function(e)
+					e.skill = { -20, -70 }
+				end,
+				"its skill",
+			},
+			{
+				"a skill that isn't a whole number",
+				function(e)
+					e.skill = { -20.5, 75 }
+				end,
+				"its skill",
+			},
+			{
+				"a skill that isn't a number",
+				function(e)
+					e.skill = { "75", 150 }
 				end,
 				"its skill",
 			},
