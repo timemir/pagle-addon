@@ -263,6 +263,7 @@ describe("Pagle.GetGood", function()
 		assert.are.same({
 			name = "Velvet",
 			slot = "hunts.cover",
+			category = "Trackers",
 			icon = 134939,
 			module = "Hunts",
 			isDefault = false,
@@ -345,6 +346,7 @@ describe("What a view of every good reads (SHOP-R36)", function()
 				})
 
 				local slots = Pagle.GetSlots()
+				assert.are.equal(slots[6].category, Pagle.GetGood("hunts.cover.velvet").category)
 
 				local ids = {}
 				for i, slot in ipairs(slots) do
@@ -542,6 +544,7 @@ describe("What a view of every good reads (SHOP-R36)", function()
 							["hunts.cover.velvet"] = {
 								name = "Velvet",
 								slot = "hunts.cover",
+								category = "Trackers",
 								module = "Hunts",
 								tier = 2,
 							},
@@ -563,6 +566,7 @@ describe("What a view of every good reads (SHOP-R36)", function()
 					{ "hunts.cover.gold", "hunts.cover.tide", "hunts.cover.velvet" },
 					Pagle.GetPutAwayGoods()
 				)
+				assert.are.equal("Trackers", Pagle.GetGood("hunts.cover.velvet").category) -- from the cache, its Module off
 				assert.are.same(
 					{ true, false, true }, -- the cache says Gold is earned
 					{

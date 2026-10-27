@@ -742,7 +742,7 @@ function ns.PublishGoods(Pagle, wrap, draw)
 		return ns.goods:SetEquipped(slot, goodID)
 	end
 
-	--- A good's cached fields (SHOP-R26) with what it is and what it costs (SHOP-R36): `kind`, `tier`, `price` now
+	--- A good's cached fields (SHOP-R26), its slot's `category` among them, with what it is and what it costs (SHOP-R36): `kind`, `tier`, `price` now
 	--- (a fallback price from `fallbackFrom` on, SHOP-R28), `fallbackPrice`, `fallbackFrom`, `group`,
 	--- `purchased` (a U1 of the good itself), `fromCrate` and `ownedAt`, and whether it is its slot's default (`isDefault`, SHOP-R22), whether or not its
 	--- Module is enabled; nil for a good never registered. A fresh copy each call, never kept between calls.

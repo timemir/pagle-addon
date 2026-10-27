@@ -799,6 +799,7 @@ end
 ---@class PagleGoodInfo
 ---@field name string
 ---@field slot string
+---@field category "Announcements"|"Crests"|"Books"|"Trackers" -- its slot's category, as GetSlots gives it
 ---@field icon? integer|string
 ---@field module string           -- def.name, or "Core"
 ---@field description? string
@@ -857,6 +858,7 @@ function Goods:GetGood(goodID)
 	return {
 		name = cached.name,
 		slot = cached.slot,
+		category = cached.category,
 		icon = cached.icon,
 		module = cached.module,
 		description = cached.description,

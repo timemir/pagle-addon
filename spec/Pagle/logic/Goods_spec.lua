@@ -792,6 +792,7 @@ describe("ns.NewGoods", function()
 			assert.are.same({
 				name = "Tide",
 				slot = "hunts.cover",
+				category = "Trackers",
 				icon = 134939,
 				module = "Hunts",
 				description = "Blue as the Long Wash.",
@@ -831,7 +832,13 @@ describe("ns.NewGoods", function()
 			local env = newGoods({
 				global = {
 					goods = {
-						["hunts.cover.gold"] = { name = "Gold", slot = "hunts.cover", module = "Hunts", earned = true },
+						["hunts.cover.gold"] = {
+							name = "Gold",
+							slot = "hunts.cover",
+							category = "Trackers",
+							module = "Hunts",
+							earned = true,
+						},
 					},
 				},
 				profile = { appearance = {} },
@@ -840,6 +847,7 @@ describe("ns.NewGoods", function()
 			assert.are.same({
 				name = "Gold",
 				slot = "hunts.cover",
+				category = "Trackers",
 				module = "Hunts",
 				isDefault = false,
 				kind = "earned",
