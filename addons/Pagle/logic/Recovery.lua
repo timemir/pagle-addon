@@ -50,8 +50,7 @@ local function planFrom(data, keys)
 	)
 	local key = assert(keys[data.keyId], "unknown Recovery key")
 	assert(
-		type(data.payload) == "string"
-			and #data.payload <= 4 * math.ceil((ns.RECOVERY_SNAPSHOT_CAP + 16 * 1024 * 1024) / 3),
+		type(data.payload) == "string" and #data.payload <= 4 * math.ceil(ns.RECOVERY_DATA_CAP / 3),
 		"Recovery payload too large"
 	)
 	assert(type(data.sig) == "string" and #data.sig == 344, "invalid Recovery signature")

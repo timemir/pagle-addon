@@ -40,7 +40,36 @@ local function fixture()
 	return log
 end
 
-local originalBytes
+local function savedLiteral(value, seen)
+	local kind = type(value)
+	if kind == "nil" then
+		return "nil"
+	end
+	if kind == "string" then
+		return string.format("%q", value)
+	end
+	if kind == "number" or kind == "boolean" then
+		return tostring(value)
+	end
+	assert(kind == "table", "unsupported SavedVariables fixture value: " .. kind)
+	seen = seen or {}
+	assert(not seen[value], "cyclic SavedVariables fixture")
+	seen[value] = true
+	local keys, fields = {}, {}
+	for key in pairs(value) do
+		keys[#keys + 1] = key
+	end
+	table.sort(keys, function(a, b)
+		return type(a) .. tostring(a) < type(b) .. tostring(b)
+	end)
+	for _, key in ipairs(keys) do
+		fields[#fields + 1] = "[" .. savedLiteral(key, seen) .. "]=" .. savedLiteral(value[key], seen) .. ","
+	end
+	seen[value] = nil
+	return "{" .. table.concat(fields) .. "}"
+end
+
+local originalBytes, originalSaved
 local loaded = loadAddon(
 	"Pagle",
 	foreverWith({
@@ -54,13 +83,26 @@ local loaded = loadAddon(
 			or nil,
 		beforeLoaded = {
 			Pagle = function(ns, client, env)
-				if options.source then
+				if options["saved-variables-source"] then
+					-- Only a generated CI fixture is loaded, as the game loads its own SavedVariables.
+					---@diagnostic disable-next-line: undefined-global -- trusted fixture, never backend input
+					local readSaved = assert(loadfile(options["saved-variables-source"]))
+					local saved = {}
+					setfenv(readSaved, saved)
+					readSaved()
+					env.PagleLog, env.PagleRecovery = saved.PagleLog, saved.PagleRecovery
+					originalBytes = ns.RecoverySnapshot(env.PagleLog)
+					if options.source then
+						assert(originalBytes == ns.Base64Decode(readFile(options.source):gsub("%s+", "")))
+					end
+				elseif options.source then
 					originalBytes = assert(ns.Base64Decode(readFile(options.source):gsub("%s+", "")))
 					env.PagleLog = ns.RecoveryReadSnapshot(originalBytes)
 				else
 					env.PagleLog = fixture()
 					originalBytes = ns.RecoverySnapshot(env.PagleLog)
 				end
+				originalSaved = savedLiteral(env.PagleLog)
 				if options.mode == "apply" then
 					local package = assert(options.package, "--package is required")
 					local toc = readFile(package .. "/Pagle_Recovery.toc")
@@ -90,6 +132,7 @@ if options.mode == "apply" then
 	local completed = assert(saved.completed)
 	local archive = assert(saved.archives[completed.applicationId])
 	assert(loaded.ns.RecoverySnapshot(archive.original) == originalBytes, "archived source changed")
+	assert(savedLiteral(archive.original) == originalSaved, "complete original branch changed")
 	write(".application-id", completed.applicationId)
 	write(".archive.snapshot", loaded.ns.RecoveryExport(archive.original))
 	write(".replacement.snapshot", loaded.ns.RecoveryExport(loaded.env.PagleLog))
@@ -131,6 +174,14 @@ for part = 1, #export.parts do
 	end
 end
 write(".parts", tostring(#export.parts))
+write(
+	".saved-variables.lua",
+	"PagleLog = "
+		.. savedLiteral(loaded.env.PagleLog)
+		.. "\nPagleRecovery = "
+		.. savedLiteral(loaded.env.PagleRecovery)
+		.. "\n"
+)
 assert(#loaded.client.errors == 0, table.concat(loaded.client.errors, "\n"))
 print(
 	"actual addon " .. options.mode .. " complete; " .. #loaded.env.PagleLog.entries .. " entries; outputs " .. output

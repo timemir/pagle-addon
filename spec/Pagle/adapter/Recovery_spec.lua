@@ -418,6 +418,36 @@ describe("Recovery through the addon", function()
 		assert.is_true(loaded.ns.recoveryWindow == nil)
 		assert.is_truthy(loaded.printed[#loaded.printed]:find("export unavailable", 1, true))
 	end)
+	it("rejects a 16 MiB entry when the complete source or replacement snapshot exceeds the byte limit", function()
+		local log = original()
+		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }))
+		local entry = string.rep("x", 16 * 1024 * 1024)
+		local prefix = loaded.ns.RecoverySnapshot(log):match("^(.*)" .. #log.entries[1] .. ":")
+		local snapshot = assert(prefix) .. #entry .. ":" .. entry .. ","
+		log.entries[1] = entry
+		assert.has_error(function()
+			loaded.ns.RecoverySnapshot(log)
+		end, "snapshot too large")
+		assert.has_error(function()
+			loaded.ns.RecoveryReadSnapshot(snapshot)
+		end, "snapshot too large")
+		assert.are.equal(log, loaded.env.PagleLog)
+	end)
+	it("rejects packages above the 24 MiB DATA allowance before decoding or checking their signature", function()
+		local log = original()
+		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }))
+		local data = {
+			v = 1,
+			keyId = "testKey",
+			payload = string.rep("!", 32 * 1024 * 1024 + 4),
+			sig = string.rep("!", 344),
+		}
+		assert.has_error(function()
+			loaded.ns.RecoveryPrepare(data, { testKey = signing.testKey }, log, nil, nil)
+		end, "Recovery payload too large")
+		assert.are.equal(log, loaded.env.PagleLog)
+		assert.is_nil(loaded.env.PagleRecovery)
+	end)
 	it("preserves records held by the backend's recovery capacity limit", function()
 		local fixtures = assert(json.decode(readFile("spec/fixtures/recovery-signed-v1.json")))
 		local log = original()
