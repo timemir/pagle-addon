@@ -592,7 +592,9 @@ end
 -- `toast.low` "New variety" naming it on its own line, riding as "New variety" on the Cast's toast when there is one;
 -- a Rare one a `toast` "Rare variety" with its name, its art in the bezel; an Epic one a `banner` "Epic variety" with
 -- its name, its art on the seal's ribbon. Each carries the item caught as its icon, for where the art isn't drawn, its
--- `variety` (name and rarity, which colour the toast it rides on, VAR-R28) and no Coins.
+-- `variety` (name and rarity, which colour the toast it rides on, VAR-R28) and no Coins. A Common, Uncommon or Rare
+-- one that headlines a toast is drawn on its own toast (VAR-R28): `ownStamp` has it show its stamp itself, `kicker`
+-- is the Catch's size text for that toast's kicker, and `variety.fish` the fish's name for its line.
 function celebrate.newVariety(celebrated, _, earned, outlets)
 	local species = earned.species --[[@as integer]]
 	local index = earned.index --[[@as integer]]
@@ -621,6 +623,11 @@ function celebrate.newVariety(celebrated, _, earned, outlets)
 	else
 		moment.rung, moment.kind, moment.order = "toast.low", "newVariety", 120
 		moment.title, moment.text, moment.stamp = L.NEW_VARIETY_TITLE, name, L.NEW_VARIETY_STAMP
+	end
+	if rarity ~= "epic" then
+		moment.ownStamp = true
+		moment.kicker = outlets.SizeText(earned.size)
+		moment.variety.fish = itemName(outlets, earned.itemID --[[@as integer]])
 	end
 	return moment
 end

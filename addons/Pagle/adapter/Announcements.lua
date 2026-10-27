@@ -253,15 +253,17 @@ local function setLabel(label, text)
 	label:Show()
 end
 
--- Fills a frame's stamps from an Announcement: its stamp texts, "+N" for those beyond 4 (ANN-R11) and "Refresh +N" for
--- its tickets (REF-R7), each set by `set`. Returns the ones showing, in order, for the frame to place.
+-- Fills a frame's stamps from an Announcement: its stamp texts from the `from`th (the first), "+N" for those beyond 4
+-- (ANN-R11) and "Refresh +N" for its tickets (REF-R7), each set by `set`. Returns the ones showing, in order, for the
+-- frame to place.
 ---@param frame PagleAnnouncementFrame
 ---@param announcement PagleAnnouncement
 ---@param set fun(stamp: PagleStamp, text: string)
+---@param from integer?
 ---@return PagleStamp[]
-local function fillStamps(frame, announcement, set)
+local function fillStamps(frame, announcement, set, from)
 	local showing = {}
-	local labels = { unpack(announcement.stamps) }
+	local labels = { unpack(announcement.stamps, from or 1) }
 	if announcement.more > 0 then
 		labels[#labels + 1] = L.ANNOUNCEMENT_STAMPS_MORE:format(announcement.more)
 	end
@@ -888,7 +890,7 @@ local function drawComposedToast(frame, display, style)
 		frame.text:Hide()
 		drawDigest(frame, announcement.fighting, style, page.w - box.x - 34)
 	else
-		writeHeadline(frame, headline, fonts, inks, lineWidth)
+		writeHeadline(frame, { title = ns.ToastKicker(headline), text = headline.text }, fonts, inks, lineWidth)
 		drawDigest(frame, {}, style, 0)
 	end
 	local line = writeToastVariety(frame, look, fonts.name, lineWidth)
@@ -1025,7 +1027,7 @@ local function drawToast(frame, display, style)
 		frame.text:Hide()
 		drawDigest(frame, announcement.fighting, style, page.w - page.tx - 34)
 	else
-		writeHeadline(frame, headline, fonts, inks, lineWidth)
+		writeHeadline(frame, { title = ns.ToastKicker(headline), text = headline.text }, fonts, inks, lineWidth)
 		drawDigest(frame, {}, style, 0)
 	end
 	local line = writeToastVariety(frame, look, fonts.name, lineWidth)
@@ -1229,9 +1231,10 @@ local function drawNod(frame, display, style)
 		x = x + 9 + width
 		last = ruler
 	end
+	-- A variety's own stamp (VAR-R28) is a toast's, the first: its Nod reads as it always did.
 	local stamps = fillStamps(frame, announcement, function(stamp, text)
 		ns.SetStamp(stamp, text, style)
-	end)
+	end, headline.ownStamp and 2 or 1)
 	for _, stamp in ipairs(stamps) do
 		stamp:SetPoint("LEFT", last, "RIGHT", 6, 0)
 		x = x + 6 + stamp:GetWidth()

@@ -4,6 +4,9 @@
 -- the toast's landing while it shows, a sweep's strip scrolling through its mask's window, until it goes. Each frame's
 -- sprites, places and texture coordinates are asserted, not pixels.
 
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local bounds = dofile("spec/support/bounds.lua")
+
 local STORM = "core.toaststyle.storm"
 local DEEP = "ledger.toaststyle.deep"
 local GLASS = "ledger.toaststyle.glass"
@@ -491,6 +494,85 @@ describe("a toast announcing a variety in a composed toast style (#424, VAR-R26,
 		for _, slice in ipairs(toast.stamps[1].plate) do
 			assert.are.same({ false, { 1, 1, 1 } }, { slice.desaturated == true, rgb(slice.vertexColor) })
 		end
+	end)
+end)
+
+describe("a new variety's own toast in a composed toast style (#422, VAR-R28, ANN-R82)", function()
+	local ART = { texture = "Interface\\Varieties1", left = 0.09375, right = 0.1875, top = 0, bottom = 0.046875 }
+	local CAST = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
+	local FISH = "Raw Bristle Whisker Catfish"
+
+	local function rgb(color)
+		return { color[1], color[2], color[3] }
+	end
+
+	-- A first catch of Coral as the Ledger raises it (LED-R97), and the toast Core shows for it.
+	local function raiseVariety(loaded, M, rarity)
+		local rare = rarity == "rare"
+		M:RaiseMoment({
+			rung = rare and "toast" or "toast.low",
+			kind = rare and "rareVariety" or "newVariety",
+			order = rare and 105 or 120,
+			title = rare and "Rare variety" or "New variety",
+			text = "Coral",
+			stamp = not rare and "New variety" or nil,
+			icon = 6291,
+			cast = CAST,
+			art = ART,
+			ownStamp = true,
+			kicker = "Decent · 34.2 cm",
+			variety = { name = "Coral", rarity = rarity, fish = FISH },
+		})
+		loaded.client.advance(0)
+		return loaded.ns.announcementFrames.toast
+	end
+
+	it(
+		"is drawn on the style's toast rung: the size as the kicker, the fish then the gem and the variety, its stamp's"
+			.. " plate and word in the rarity's ink, within the page",
+		function()
+			local loaded, M = composedCore()
+			equip(loaded, DEEP)
+			for _, key in ipairs({ "common", "uncommon", "rare" }) do
+				local rarity = loaded.ns.VARIETY_RARITIES[({ common = 1, uncommon = 2, rare = 3 })[key]]
+
+				local toast = raiseVariety(loaded, M, key)
+				local page = loaded.ns.ToastPage(toast.display.announcement)
+
+				assert.are.same({ "toast", 464, 92 }, { page.page, toast:GetWidth(), toast:GetHeight() })
+				-- Set in the style's own face, as its other titles are.
+				assert.are.same({ "Decent · 34.2 cm", FISH .. " ·", "Coral" }, {
+					toast.title:GetText(),
+					toast.text:GetText(),
+					toast.variety:GetText(),
+				})
+				local stamp = toast.stamps[1]
+				assert.are.same(
+					{ key == "rare" and "RARE VARIETY" or "NEW VARIETY", rgb(rarity.ink), false },
+					{ stamp.label:GetText(), rgb(stamp.label.textColor), toast.stamps[2].shown == true }
+				)
+				for _, slice in ipairs(stamp.plate) do
+					assert.are.same({ true, rgb(rarity.ink) }, { slice.desaturated == true, rgb(slice.vertexColor) })
+				end
+				assert.are.same({}, bounds.overflows(toast))
+				assert.are.equal(key == "rare", toast.gleams)
+				loaded.client.advance(10)
+			end
+		end
+	)
+
+	it("steps down to the style's old Nod, with no own stamp, once the budget is spent", function()
+		local loaded, M = composedCore()
+		equip(loaded, DEEP)
+		loaded.ns.db.profile.announcements.budget.count = 0
+
+		raiseVariety(loaded, M, "common")
+		local nod = loaded.ns.announcementFrames.nod
+
+		assert.are.same(
+			{ "New variety", "Coral", false },
+			{ nod.title:GetText(), nod.text:GetText(), nod.stamps[1].shown == true }
+		)
 	end)
 end)
 

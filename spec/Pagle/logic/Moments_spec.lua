@@ -429,6 +429,93 @@ describe("a Cast's size record and new variety (#424, ANN-R11, VAR-R25)", functi
 	end)
 end)
 
+-- A first-catch variety's own toast (#422, VAR-R28): the moment the Ledger raises for a Common, Uncommon or Rare one.
+local function ownVariety(rung, kind, order, title, rarity)
+	return moment(rung, title, {
+		kind = kind,
+		order = order,
+		text = "Coral",
+		stamp = rarity == "common" and "New variety" or nil,
+		icon = 6291,
+		art = COLOUR_ART,
+		ownStamp = true,
+		kicker = "Decent · 34.2 cm",
+		variety = { name = "Coral", rarity = rarity, fish = "Raw Bristle Whisker Catfish" },
+	})
+end
+
+describe("a new variety's own stamp (#422, ANN-R11, VAR-R28)", function()
+	local function make(...)
+		return ns.MakeAnnouncement({ ... }) --[[@as PagleAnnouncement]]
+	end
+
+	it("is the headline's first stamp, its stamp text or else its title", function()
+		local common = make(ownVariety("toast.low", "newVariety", 120, "New variety", "common"))
+		local rare = make(ownVariety("toast", "rareVariety", 105, "Rare variety", "rare"))
+
+		assert.are.same({ { "New variety" }, { "Rare variety" } }, { common.stamps, rare.stamps })
+		assert.are.equal(0, common.more)
+	end)
+
+	it("comes before the stamps of the moments riding on it, and merges with an identical one", function()
+		local trophy = moment("toast.low", "Trophy family", { kind = "familyStar", order = 130, stamp = "★★" })
+		local variety = ownVariety("toast.low", "newVariety", 120, "New variety", "common")
+		local twin = moment("toast.low", "New variety", { kind = "other", order = 125, stamp = "New variety" })
+
+		local announcement = make(trophy, variety, twin)
+
+		assert.are.same({ "New variety", "★★" }, announcement.stamps)
+		assert.are.equal(variety, announcement.headline)
+	end)
+
+	it("counts toward the 4 stamps shown, the fifth distinct one beyond as +N", function()
+		local variety = ownVariety("toast.low", "newVariety", 120, "New variety", "common")
+		local riding = {}
+		for i = 1, 4 do
+			riding[i] = moment("toast.low", "Rider " .. i, { kind = "rider", order = 130 + i, stamp = "R" .. i })
+		end
+
+		local announcement = make(variety, unpack(riding))
+
+		assert.are.same({ { "New variety", "R1", "R2", "R3" }, 1 }, { announcement.stamps, announcement.more })
+	end)
+
+	it("is not shown when the variety rides on another headline, whose stamps are as they were", function()
+		local record = moment("toast.low", "Size record", { kind = "sizeRecord", order = 100, stamp = "Record" })
+		local variety = ownVariety("toast.low", "newVariety", 120, "New variety", "common")
+		local rare = ownVariety("toast", "rareVariety", 105, "Rare variety", "rare")
+
+		assert.are.same({ "New variety" }, make(record, variety).stamps)
+		assert.are.same({ "Rare variety" }, make(moment("toast", "New Species", { order = 100 }), rare).stamps)
+	end)
+
+	it("is for a moment that asks for it: other headlines, an Epic variety's banner among them, have none", function()
+		local epic = moment(
+			"banner",
+			"Epic variety",
+			{ kind = "epicVariety", order = 97, variety = { name = "X", rarity = "epic" } }
+		)
+		local species = moment("toast", "New Species", { kind = "newSpecies", stamp = "New!" })
+
+		assert.are.same({ {}, {} }, { make(epic).stamps, make(species).stamps })
+	end)
+
+	it("keeps the moment's title: the Session summary and the cards read it, whatever the toast's kicker", function()
+		local variety = ownVariety("toast.low", "newVariety", 120, "New variety", "common")
+		local world = newWorld()
+
+		world.moments:Raise(LEDGER, variety)
+		world.frame()
+
+		assert.are.same({ "New variety", "Decent · 34.2 cm", true }, {
+			world.summarized[1].title,
+			world.shown[1].headline.kicker,
+			world.shown[1].headline.ownStamp,
+		})
+		assert.are.equal("Raw Bristle Whisker Catfish", world.shown[1].headline.variety.fish)
+	end)
+end)
+
 describe("ns.MomentProblem", function()
 	it("refuses an unknown rung, a missing kind or a missing title, and takes every rung (ANN-R1)", function()
 		assert.matches("not a rung", ns.MomentProblem({ rung = "huge", kind = "k", title = "t" }))

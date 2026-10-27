@@ -328,6 +328,18 @@ describe("a toast's page", function()
 		)
 	end)
 
+	it(
+		"is toast's for a variety's own toast.low (ownStamp), whatever its rung says otherwise (#422, VAR-R28)",
+		function()
+			assert.are.same({ "toast", 92, 464, "toast" }, {
+				ns.ToastPage(announcement("toast.low", { ownStamp = true })).page,
+				ns.ToastPage(announcement("toast.low", { ownStamp = true })).h,
+				ns.ToastPage(announcement("toast.low", { ownStamp = true })).w,
+				ns.ToastPage(announcement("toast", { ownStamp = true })).page,
+			})
+		end
+	)
+
 	it("is ruled for a headline with a record ruler, toast.high's on the toast's ruled page (ANN-R22)", function()
 		assert.are.same({ "low-ruled", "toast-ruled", "toast-ruled" }, {
 			ns.ToastPage(announcement("toast.low", { ruler = RULER })).page,
@@ -533,12 +545,59 @@ describe("a toast's variety (#424, VAR-R25, VAR-R26)", function()
 		end
 	end)
 
-	it("writes only the name for a variety's own toast, which carries no stamp for itself", function()
+	it("writes only the name for a variety's toast that has no fish's name or stamp of its own", function()
 		local own = variety("toast", "rareVariety", 105, "rare")
 
 		local found = look(own, record()) --[[@as PagleToastVarietyLook]]
 
 		assert.are.same({ "", nil, ART }, { found.before, found.stamp, found.art })
+	end)
+
+	it(
+		"writes the fish's name before the name on a variety's own toast, and takes its own stamp's ink (#422)",
+		function()
+			local own = variety("toast.low", "newVariety", 120, "uncommon", {
+				ownStamp = true,
+				variety = { name = "Coral", rarity = "uncommon", fish = "Raw Bristle Whisker Catfish" },
+			})
+			local rare = variety("toast", "rareVariety", 105, "rare", {
+				title = "Rare variety",
+				stamp = false,
+				ownStamp = true,
+				variety = { name = "Coral", rarity = "rare", fish = "Raw Bristle Whisker Catfish" },
+			})
+
+			local found, foundRare = look(own), look(rare)
+
+			assert.are.same(
+				{ "Raw Bristle Whisker Catfish ·", "New variety", ART },
+				{ found.before, found.stamp, found.art }
+			)
+			assert.are.same({ "Raw Bristle Whisker Catfish ·", "Rare variety", true }, {
+				foundRare.before,
+				foundRare.stamp,
+				foundRare.gleam,
+			})
+		end
+	)
+
+	it("keeps a riding variety's stamp as it was when its moment has an own stamp it isn't showing (#422)", function()
+		local own = variety("toast.low", "newVariety", 120, "common", { ownStamp = true })
+
+		local found = look(record(), own) --[[@as PagleToastVarietyLook]]
+
+		assert.are.same({ "New variety", "Raw Bristle Whisker Catfish ·" }, { found.stamp, found.before })
+	end)
+
+	it("makes a variety's own toast's kicker its size text, else the title (#422)", function()
+		local sized = { ownStamp = true, kicker = "Decent · 34.2 cm", title = "New variety" }
+
+		assert.are.same({ "Decent · 34.2 cm", "New variety", "New variety", "Caught" }, {
+			ns.ToastKicker(sized),
+			ns.ToastKicker({ ownStamp = true, title = "New variety" }),
+			ns.ToastKicker({ kicker = "Decent · 34.2 cm", title = "New variety" }),
+			ns.ToastKicker({ title = "Caught" }),
+		})
 	end)
 
 	it("keeps the art and ring but writes no name on a toast about something else than the fish", function()

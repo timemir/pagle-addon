@@ -168,6 +168,20 @@ describe("the display queue", function()
 	)
 
 	it(
+		"holds a new variety's own toast.low as a toast's page does, 6 s, not a toast.low's 4 s (#422, ANN-R20)",
+		function()
+			local world = newWorld()
+
+			world.lanes:Push(announcement("toast.low", "New variety", { ownStamp = true }))
+			world.advance(TOAST - 0.01)
+			local before = #column(world)
+			world.advance(0.01)
+
+			assert.are.same({ 1, 0 }, { before, #column(world) })
+		end
+	)
+
+	it(
 		"stacks at most 3 toasts in the column, the newest at its foot; the rest wait in order, a Nod too, and come"
 			.. " in as room frees (ANN-R20)",
 		function()
@@ -351,6 +365,18 @@ describe("the Interruption budget", function()
 
 		assert.are.same({ "toast New Species" }, column(world))
 	end)
+
+	it(
+		"steps a new variety's own toast.low down to a Nod once the budget is spent, as any toast.low (#422, ANN-R31)",
+		function()
+			local world = newWorld()
+			interrupt(world, 4, "toast.low")
+
+			world.lanes:Push(announcement("toast.low", "New variety", { ownStamp = true }))
+
+			assert.are.same({ "nod New variety" }, column(world))
+		end
+	)
 
 	it("counts a Cast's banner and its toast, shown together, as 2 interruptions (ANN-R30, ANN-R31)", function()
 		local world = newWorld()

@@ -223,6 +223,16 @@ describe("fish varieties in the Ledger", function()
 			assert.are.equal(xp + 40, state.xp)
 		end)
 
+		it("carries the Catch's Simulated Size on newVariety, a copy, for the variety's own toast (VAR-R28)", function()
+			local record = log.cast({ { FISH, 1 } })
+			record.items[1].size = { length = 342, band = 3 }
+			local _, earned = applyLive(fold, { record })
+			local size = only(earned, { newVariety = true })[1].size
+
+			assert.are.same({ length = 342, band = 3 }, size)
+			assert.are_not.equal(record.items[1].size, size)
+		end)
+
 		it("earns fishComplete with the tenth variety of a Species, after its newVariety (VAR-R20, VAR-R25)", function()
 			local records = casts(log, FISH, 1, 9)
 			local state, earned = applyLive(fold, records)
@@ -391,13 +401,14 @@ describe("fish varieties in the Ledger", function()
 						title = "New variety",
 						text = "Colour 6",
 						stamp = "New variety",
+						ownStamp = true,
 						icon = FISH_ALT,
 						art = variety(FISH, 6).art,
-						variety = { name = "Colour 6", rarity = "uncommon" },
+						variety = { name = "Colour 6", rarity = "uncommon", fish = "Item 6360" },
 						cast = second.id,
 					},
 				}, live(second))
-				assert.are.same({ name = "Colour 1", rarity = "common" }, moments[2].variety)
+				assert.are.same({ name = "Colour 1", rarity = "common", fish = "Firefin Snapper" }, moments[2].variety)
 			end
 		)
 
@@ -412,9 +423,10 @@ describe("fish varieties in the Ledger", function()
 					order = 105,
 					title = "Rare variety",
 					text = "Colour 9",
+					ownStamp = true,
 					icon = FISH,
 					art = variety(FISH, 9).art,
-					variety = { name = "Colour 9", rarity = "rare" },
+					variety = { name = "Colour 9", rarity = "rare", fish = "Firefin Snapper" },
 					cast = record.id,
 				},
 			}, live(record))
@@ -492,7 +504,45 @@ describe("fish varieties in the Ledger", function()
 			assert.are.same({ ns.L.NAME_UNKNOWN }, { moment.text })
 			assert.is_nil(moment.art)
 			-- Its rarity is Core's own, so the toast still takes its colour.
-			assert.are.same({ name = ns.L.NAME_UNKNOWN, rarity = "rare" }, moment.variety)
+			assert.are.same({ name = ns.L.NAME_UNKNOWN, rarity = "rare", fish = "Firefin Snapper" }, moment.variety)
+		end)
+
+		it(
+			"gives a Common, Uncommon or Rare variety the Catch's size as its kicker, and an Epic one no own stamp (VAR-R28)",
+			function()
+				outlets.SizeText = function(size)
+					return size and ("Band %d · %d mm"):format(size.band, size.length) or nil
+				end
+				live(log.cast({ { FISH, 1 } }))
+				local function sized(index)
+					local record = log.cast({ { FISH, index } })
+					record.items[1].size = { length = 342, band = 3 }
+					return live(record)[1]
+				end
+
+				for _, index in ipairs({ 2, 5, 8 }) do
+					local moment = sized(index)
+					assert.are.same(
+						{ true, "Band 3 · 342 mm", "Firefin Snapper" },
+						{ moment.ownStamp, moment.kicker, moment.variety.fish }
+					)
+					-- The title still names it everywhere else (the Session summary, the Write-up).
+					assert.are.equal(index == 8 and "Rare variety" or "New variety", moment.title)
+				end
+				local epic = sized(10)
+				assert.are.same(
+					{ "epicVariety", nil, nil, nil },
+					{ epic.kind, epic.ownStamp, epic.kicker, epic.variety.fish }
+				)
+			end
+		)
+
+		it("leaves the kicker out for a Catch with no size, so the toast keeps its title", function()
+			live(log.cast({ { FISH, 1 } }))
+			local moment = live(log.cast({ { FISH, 2 } }))[1]
+
+			assert.is_true(moment.ownStamp)
+			assert.is_nil(moment.kicker)
 		end)
 
 		it("gives the last of all the complete.varieties title moment, as the other complete.* titles", function()

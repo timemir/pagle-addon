@@ -668,7 +668,8 @@ end
 
 --- The page a toast is drawn on (announcements.md › UI): "While you were fighting" on the digest page; a headline with
 --- a record ruler on a ruled page (a toast.high's on toast's, the high page having no room for one); else by its
---- rung, toast.low on the pencil page and toast.high on the gilt one.
+--- rung, toast.low on the pencil page and toast.high on the gilt one, except a variety's own toast (an `ownStamp`
+--- headline, VAR-R28), which is on toast's whatever its rung.
 ---@param announcement PagleAnnouncement
 ---@return PagleToastPage
 function ns.ToastPage(announcement)
@@ -676,7 +677,7 @@ function ns.ToastPage(announcement)
 		return PAGES.digest
 	end
 	local rung, ruled = announcement.headline.rung, announcement.headline.ruler ~= nil
-	if rung == "toast.low" then
+	if rung == "toast.low" and not announcement.headline.ownStamp then
 		return ruled and PAGES["low-ruled"] or PAGES.low
 	elseif rung == "toast.high" and not ruled then
 		return PAGES.high
@@ -871,7 +872,7 @@ end
 ---@field name string
 ---@field rarity string
 ---@field art PagleMomentArt?   -- the variety's, cropped to the fish's head in the medallion in place of the icon
----@field stamp string?         -- the text its moment rides as, which takes the rarity's ink; nil when it is the headline
+---@field stamp string?         -- the text its moment shows as a stamp, which takes the rarity's ink; nil for the headline with no stamp of its own
 ---@field before string?        -- the name line's first half before the gem and the name ("" for the name alone); nil: no name
 
 --- The variety a toast announces, as it is drawn (VAR-R25, VAR-R26), or nil for an Announcement that isn't a toast, the
@@ -910,8 +911,22 @@ function ns.ToastVarietyLook(announcement)
 	elseif headline.catchToast then
 		-- Core's catch toast: its text is the fish's name, with no stamp.
 		look.before = ns.L.TOAST_VARIETY_BEFORE:format(headline.text --[[@as string]])
+	elseif headline.ownStamp then
+		-- Its own toast (VAR-R28): the fish's name, then the variety's, and its own stamp.
+		look.stamp = headline.stamp or headline.title
+		local fish = moment.variety.fish
+		look.before = fish and ns.L.TOAST_VARIETY_BEFORE:format(fish) or ""
 	elseif headline.text then
 		look.before = ""
 	end
 	return look
+end
+
+--- A toast's kicker, the printed line over its name: its headline's title, or for a variety's own toast (an `ownStamp`
+--- headline, VAR-R28) the Catch's size text, "{band} · {length}", when the moment gives one (the title is then its
+--- stamp). Only a toast's is drawn this way: the title still names the moment everywhere else.
+---@param headline PagleRaisedMoment
+---@return string
+function ns.ToastKicker(headline)
+	return headline.ownStamp and headline.kicker or headline.title
 end
