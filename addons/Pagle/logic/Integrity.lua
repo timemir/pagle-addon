@@ -88,7 +88,7 @@ local function boardPayload(kind, payload)
 	if kind == "start" or kind == "day" then
 		return #f == 2 and number(f[1], 0) ~= nil and number(f[2], 0) ~= nil
 	end
-	local at = kind == "issue" and 1 or kind == "reroll" and 2 or nil
+	local at = (kind == "issue" or kind == "post") and 1 or kind == "reroll" and 2 or nil
 	if not at or #f ~= at + 5 or (at == 2 and not entryId(f[1])) then
 		return false
 	end
@@ -103,7 +103,7 @@ local function boardPayload(kind, payload)
 	then
 		return false
 	end
-	if goal == "haul" or goal == "quality" then
+	if goal == "haul" or goal == "quality" or goal == "rarity" then
 		return number(target, 1) ~= nil
 	elseif goal == "species" then
 		return goalType == "n" and number(target, 1) ~= nil
