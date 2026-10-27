@@ -3,7 +3,10 @@
 # the check gate's libs stage holds those files to (scripts/check.sh). Each script sets its own upstream, files and
 # paths, then calls vendor_main with its arguments. Sourced, never run.
 #
-# Needs bash, curl, tar, cmp, diff and sha256sum (WSL or Git Bash).
+# Needs bash, curl, tar, cmp, diff and sha256sum (WSL or Git Bash; on macOS tools.sh stands shasum in for it).
+
+# shellcheck source=tools.sh
+source "$(dirname "${BASH_SOURCE[0]}")/tools.sh"
 
 # vendor_sums <dir> <prefix> <file>...: sha256sum lines for each listed file in <dir>, sorted, each named by its path
 # in the repo (<prefix>/<file>), so check.sh can run sha256sum --check on them from the repo root. Only the listed
@@ -11,7 +14,7 @@
 vendor_sums() {
 	local dir=$1 prefix=$2
 	shift 2
-	(cd "$dir" && printf '%s\n' "$@" | LC_ALL=C sort | xargs -d '\n' sha256sum) | sed "s#  #  $prefix/#"
+	(cd "$dir" && printf '%s\n' "$@" | LC_ALL=C sort | tr '\n' '\0' | xargs -0 sha256sum) | sed "s#  #  $prefix/#"
 }
 
 # vendor_main <name> <upstream> <root> <record> <manifest> <dest> <file>... -- <args>: the script's whole run.

@@ -182,13 +182,15 @@ The Pagle Companion is an optional desktop app, outside the game. It uploads you
 
 ## Working on Pagle
 
-The six addons live under `addons/`, the generated content data under `data/` and the specs under `spec/`. The scripts run in WSL Ubuntu or any x86_64 Linux.
+The six addons live under `addons/`, the generated content data under `data/` and the specs under `spec/`. The scripts run in WSL Ubuntu, on any x86_64 Linux, or natively on macOS (Apple silicon or Intel, with the Xcode Command Line Tools: `xcode-select --install`; no Homebrew needed, and macOS's own bash 3.2 runs everything but `scripts/package.sh`, whose packager needs bash 4.3).
 
 ```sh
 scripts/setup.sh     # install the pinned toolchain into .tools/
 scripts/check.sh     # the full gate: format, lint, types, tests
 scripts/package.sh   # build the release zip the way the packager does (commit first)
 ```
+
+A `git worktree` needs no toolchain of its own: with no `.tools/` in it, the scripts use the main checkout's (run `scripts/setup.sh` there once). To run a tool by hand from a worktree, use the main checkout's path, such as `<main checkout>/.tools/bin/python`.
 
 On Windows, `scripts/link-addons.ps1` junctions each `addons/*` folder into your `Interface\AddOns` folder, so edits go live after `/reload`; on macOS, `scripts/link-addons.sh` symlinks them (and with `--retail` makes them loadable in the retail client for UI checks, see [docs/agents/in-game-verification.md](docs/agents/in-game-verification.md#linking-the-addons)).
 
