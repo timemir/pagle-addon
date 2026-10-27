@@ -76,6 +76,7 @@ logic\ActivityXP.lua
 logic\Tickets.lua
 logic\Goods.lua
 logic\Crate.lua
+logic\CrateReel.lua
 logic\Shop.lua
 logic\LookAndFeel.lua
 logic\Bindings.lua
@@ -171,7 +172,9 @@ adapter\FieldKit.lua
 adapter\FieldReportBox.lua
 adapter\PasteExport.lua
 adapter\ShopArt.lua
+adapter\ShopCrate.lua
 adapter\ShopMotion.lua
+adapter\ShopCrateMotion.lua
 adapter\Shop.lua
 adapter\GuideKit.lua
 adapter\GuideBindingField.lua
