@@ -78,7 +78,14 @@ local function catchLog(records)
 		elseif kind == "skill" then
 			log:Append({ kind = kind, char = char, time = time, rank = 85, max = 150, mod = 25 })
 		else
-			log:Append({ kind = kind, char = char, time = time, build = 70338, version = "1.60.1" })
+			log:Append({
+				kind = kind,
+				char = char,
+				time = time,
+				build = 70338,
+				version = "1.60.1",
+				rules = "pagle-2026a",
+			})
 		end
 	end
 	return log.data
@@ -145,7 +152,7 @@ describe("scripts/read-wtf.lua's Catch log and exit check", function()
 			assert.are.equal("", err)
 			assert.are.equal(0, code)
 			assert.are.equal(
-				("== Catch log (PagleLog): format 2, logId %s, 2 characters, 7 entries"):format(log.logId),
+				("== Catch log (PagleLog): format 3, logId %s, 2 characters, 7 entries"):format(log.logId),
 				line(out, "== Catch log")
 			)
 			assert.are.equal("entries by tag: B1 1, C1 5, S1 1", line(out, "entries by tag: "))
@@ -322,11 +329,11 @@ describe("scripts/read-wtf.lua's Catch log and exit check", function()
 			line(out, "== Catch log")
 		)
 		assert.are.equal(
-			"PagleLog is format 1, the codec reads format 2: Core starts a new log at login",
+			"PagleLog is format 1, the codec reads format 3: Core starts a new log at login",
 			line(out, "PagleLog is ")
 		)
 		assert.are.same(
-			{ "  FAIL  PagleLog is format 1, the codec reads format 2" },
+			{ "  FAIL  PagleLog is format 1, the codec reads format 3" },
 			block(out, "== Exit check (#75 steps 3 and 4): FAILED (1 of 1 checks)")
 		)
 		assert.are.equal(1, code)

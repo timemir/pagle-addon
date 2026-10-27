@@ -151,7 +151,7 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 					globalsOf(readFileOrNil(FIXTURE .. "/SavedVariables/Pagle.lua")).PagleLog.characters,
 					log.characters
 				)
-				assert.are.equal(2, log.format)
+				assert.are.equal(3, log.format)
 				assert.matches("^%x+$", log.logId)
 				assert.are.equal(16, #log.logId)
 				assert.are.equal(log.logId:lower(), log.logId)
@@ -225,12 +225,12 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 				local build, skills = {}, {}
 				for _, record in ipairs(records) do
 					if record.kind == "build" then
-						build[#build + 1] = { record.build, record.version }
+						build[#build + 1] = { record.build, record.version, record.rules }
 					elseif record.kind == "skill" then
 						skills[#skills + 1] = { record.char, record.rank, record.max, record.mod }
 					end
 				end
-				assert.are.same({ { 70412, "1.60.2" } }, build)
+				assert.are.same({ { 70412, "1.60.2", "pagle-2026a" } }, build)
 				assert.are.same({ { 1, 85, 150, 25 }, { 2, 160, 225, 0 } }, skills)
 			end
 		)

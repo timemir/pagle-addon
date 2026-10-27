@@ -8,10 +8,10 @@ PagleLog = {
 ["lastSeen"] = 1791800700,
 },
 },
-["format"] = 2,
+["format"] = 3,
 ["logId"] = "9b3e5c7a1d2f4086",
 ["entries"] = {
-"B1|1|1791800000|0|70338|1.60.1", -- [1]
+"B1|1|1791800000|0|70338|1.60.1|pagle-2026a", -- [1]
 "S1|1|1791800000|1|150|150|25", -- [2]
 "C1|1|1791800060|0|c|494|1439|1|12|0|150|25||||6303x1", -- [3]
 "U1|1|1791800100|0|hunts.notebookcover.leather|0", -- [4]
@@ -22,7 +22,7 @@ PagleLog = {
 "U1|1|1791800400|1|hunts.notebookcover.tooled|400", -- [9]
 "U1|1|1791800500|0|core.binding.tooled|400", -- [10]
 "C1|1|1791800560|0|g|497|1439|1|12|0|150|25||||", -- [11]
-"A1|1|1791800600|0|Hunts|note|U1|1|2|0|ledger.binding.birch|150", -- [12]
+"A1|1|1791800600|0|Hunts|def|p_note|1/1|U1|1|2|0|ledger.binding.birch|150", -- [12]
 },
 }
 PagleDB = {
@@ -37,7 +37,7 @@ PagleDB = {
 ["logId"] = "9b3e5c7a1d2f4086",
 ["rulesVersion"] = 1,
 ["seq"] = 12,
-["entry"] = "A1|1|1791800600|0|Hunts|note|U1|1|2|0|ledger.binding.birch|150",
+["entry"] = "A1|1|1791800600|0|Hunts|def|p_note|1/1|U1|1|2|0|ledger.binding.birch|150",
 ["counts"] = {
 [6303] = 1,
 [19803] = 1,
