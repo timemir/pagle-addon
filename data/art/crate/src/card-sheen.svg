@@ -1,0 +1,12 @@
+<!-- The diagonal sheen across a card (prototypes/curio-crate/index.html: .card .sheen): linear-gradient(115deg,
+     transparent 35%, rgba(255,255,255,.1) 48%, transparent 60%) over its 150 x 172 px; the peak is full here, to be
+     drawn at .1 (the Curio card's shimmer is the same band at .65). The gradient line is 208.6 px long, through the
+     centre, 25 degrees below the horizontal. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 172" width="150" height="172">
+  <defs>
+    <linearGradient id="s" gradientUnits="userSpaceOnUse" x1="22.7" y1="50.8" x2="127.3" y2="121.2">
+      <stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset=".48" stop-color="#fff" stop-opacity="1"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <clipPath id="c"><rect x="0" y="0" width="150" height="172" rx="8"/></clipPath>
+  </defs>
+  <rect clip-path="url(#c)" x="0" y="0" width="150" height="172" fill="url(#s)"/>
+</svg>

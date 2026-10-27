@@ -26,11 +26,18 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 			assert.are.equal("n;wanderer;3;20;3;", payload)
 		end)
 
+		it("writes a post as an issue's payload: type;kind;tier;pay;need;target (Data, TKB-R58)", function()
+			local def = { type = "e", kind = "rarity", tier = 0, pay = 60, need = 8, target = 3 }
+
+			assert.are.equal("e;rarity;0;60;8;3", ns.EncodePost(def))
+			assert.are.equal(ns.EncodeIssue(def), ns.EncodePost(def))
+		end)
+
 		it("writes a reroll as the old goal's ID, then the new definition, Data's example (Data, TKB-R80)", function()
 			local payload =
-				ns.EncodeReroll(OLD_ID, { type = "n", kind = "quality", tier = 1, pay = 10, need = 3, target = 2 })
+				ns.EncodeReroll(OLD_ID, { type = "n", kind = "rarity", tier = 1, pay = 10, need = 3, target = 2 })
 
-			assert.are.equal(OLD_ID .. ";n;quality;1;10;3;2", payload)
+			assert.are.equal(OLD_ID .. ";n;rarity;1;10;3;2", payload)
 		end)
 
 		it("writes a Variety Expedition's target as zone:items, comma-separated and ascending (Data)", function()
@@ -85,8 +92,8 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 				{ type = "e", kind = "variety", tier = 0, pay = 60, need = 4, target = 148, items = { 6358, 13893 } },
 				{ type = "n", kind = "wanderer", tier = 3, pay = 20, need = 3 },
 				{ type = "e", kind = "wanderer", tier = 0, pay = 60, need = 5, target = 0 },
-				{ type = "n", kind = "quality", tier = 1, pay = 10, need = 3, target = 2 },
-				{ type = "e", kind = "quality", tier = 0, pay = 60, need = 3, target = 3 },
+				{ type = "n", kind = "rarity", tier = 1, pay = 10, need = 3, target = 2 },
+				{ type = "e", kind = "rarity", tier = 0, pay = 60, need = 8, target = 3 },
 				{ type = "n", kind = "collector", tier = 2, pay = 15, need = 2 },
 				{ type = "e", kind = "collector", tier = 0, pay = 60, need = 3 },
 				{ type = "n", kind = "lure", tier = 3, pay = 20, need = 25 },
@@ -94,6 +101,7 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 			}
 			for _, def in ipairs(defs) do
 				assert.are.same({ kind = "issue", goal = def }, ns.DecodeRecord("issue", ns.EncodeIssue(def)))
+				assert.are.same({ kind = "post", goal = def }, ns.DecodeRecord("post", ns.EncodePost(def)))
 				assert.are.same(
 					{ kind = "reroll", old = OLD_ID, goal = def },
 					ns.DecodeRecord("reroll", ns.EncodeReroll(OLD_ID, def))
@@ -111,10 +119,18 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 			function()
 				-- A beta log's Hefty Notice and Whopper Expedition (ADR 0014).
 				assert.is_nil(ns.DecodeRecord("issue", "n;size;1;10;3;3"))
+				assert.is_nil(ns.DecodeRecord("post", "n;size;1;10;3;3"))
 				assert.is_nil(ns.DecodeRecord("issue", "e;size;0;60;1;4"))
 				assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";n;size;1;10;3;3"))
 			end
 		)
+
+		it("skips the old quality goal, issued or rerolled before the kind became rarity (TKB-R80)", function()
+			-- A dev test log's goals from before the Quality kind counted Variety rarity instead (nothing shipped).
+			assert.is_nil(ns.DecodeRecord("issue", "n;quality;1;10;3;2"))
+			assert.is_nil(ns.DecodeRecord("issue", "e;quality;0;60;3;3"))
+			assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";n;quality;1;10;3;2"))
+		end)
 
 		it("skips a payload it can't parse (TKB-R80)", function()
 			for _, case in ipairs({
@@ -123,6 +139,9 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 				{ "day", "1791730800;x" },
 				{ "day", "1791730800;1791557600;1" },
 				{ "issue", "n;haul;2;15;30" }, -- a field short
+				{ "post", "n;haul;2;15;30" },
+				{ "post", "n;haul;2;15;30;33;1" },
+				{ "post", "" },
 				{ "issue", "n;haul;2;15;30;33;1" }, -- a field over
 				{ "issue", "n;haul;2;15;30;" }, -- a zone goal without its zone
 				{ "issue", "n;lure;2;15;20;7" }, -- a kind without a target with one
@@ -149,6 +168,7 @@ describe("the board's records (TKB-R80, tackle-board.md › Data)", function()
 					"n;haul;2;15;0;33",
 				}) do
 					assert.is_nil(ns.DecodeRecord("issue", payload))
+					assert.is_nil(ns.DecodeRecord("post", payload))
 					assert.is_nil(ns.DecodeRecord("reroll", OLD_ID .. ";" .. payload))
 				end
 			end

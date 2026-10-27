@@ -11,6 +11,7 @@ local EVERY_CATCH = "Show every catch"
 local MOTION = "Animations"
 local TOAST_STYLE = "Toast style"
 local SOUND_SET = "Sound set"
+local TOAST_POSITION = "Toast position"
 
 -- Core, logged in on the fake client, its Settings registered. `modules` installs roster Modules by name, as
 -- Settings_spec's loadWith does; `extra` adds globals.
@@ -75,7 +76,8 @@ describe("The Announcements page", function()
 	end)
 
 	it(
-		"holds Core's eight rows in SET-R30's order, each found by its label, ending with the slot rows (SET-R30, SET-R5)",
+		"holds Core's nine rows in SET-R30's order, each found by its label, the Toast position button last (SET-R30,"
+			.. " SET-R5, ANN-R98)",
 		function()
 			local loaded = login(core())
 
@@ -83,7 +85,10 @@ describe("The Announcements page", function()
 			for i, initializer in ipairs(page(loaded).layout.initializers) do
 				names[i] = initializer:GetName()
 			end
-			assert.are.same({ COZY, BUDGET, COUNT, WINDOW, EVERY_CATCH, MOTION, TOAST_STYLE, SOUND_SET }, names)
+			assert.are.same(
+				{ COZY, BUDGET, COUNT, WINDOW, EVERY_CATCH, MOTION, TOAST_STYLE, SOUND_SET, TOAST_POSITION },
+				names
+			)
 		end
 	)
 
@@ -102,8 +107,9 @@ describe("The Announcements page", function()
 				row(loaded, BUDGET):GetTooltip()
 			)
 			assert.are.equal(
-				"A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows "
-					.. "instead. Greyed out in Cozy mode, which shows nothing.",
+				"A toast for each catch: its name, size band and length. A bigger moment for the same catch shows instead, "
+					.. "and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which "
+					.. "shows nothing.",
 				row(loaded, EVERY_CATCH):GetTooltip()
 			)
 			assert.is_nil(row(loaded, COUNT):GetTooltip())
@@ -153,12 +159,12 @@ describe("The Announcements page", function()
 	)
 
 	it(
-		"ranges Interruptions over 1–30 and Per over 1–15 min, each in steps of 1 (SET-R30, settings.md Tunables)",
+		"ranges Interruptions over 1–60 and Per over 1–15 min, each in steps of 1 (SET-R30, settings.md Tunables)",
 		function()
 			local loaded = login(core())
 
 			local count, window = row(loaded, COUNT).data.options, row(loaded, WINDOW).data.options
-			assert.are.same({ 1, 30, 29 }, { count.minValue, count.maxValue, count.steps })
+			assert.are.same({ 1, 60, 59 }, { count.minValue, count.maxValue, count.steps })
 			assert.are.same({ 1, 15, 14 }, { window.minValue, window.maxValue, window.steps })
 		end
 	)
@@ -182,13 +188,60 @@ describe("The Announcements page", function()
 
 		setCombat(loaded, false)
 
-		assert.are.equal(8, #page(loaded).layout.initializers)
+		assert.are.equal(9, #page(loaded).layout.initializers)
+	end)
+end)
+
+-- The Reset button of the Toast position row on the shown Announcements page, and the row's caption.
+local function toastReset(loaded)
+	for _, shown in ipairs(loaded.client.settings.show(page(loaded))) do
+		if shown.initializer:GetName() == TOAST_POSITION then
+			return loaded.client.settings.buttonsOf(shown.frame)[1]
+		end
+	end
+	error("no row " .. TOAST_POSITION)
+end
+
+describe("The Toast position row", function()
+	it('is a button "Reset" with the tooltip SET-R30 gives, never greyed out (SET-R30, ANN-R98)', function()
+		local loaded = login(core())
+
+		local reset = toastReset(loaded)
+
+		assert.are.equal("Reset", reset:GetText())
+		assert.are.equal(
+			"Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen.",
+			row(loaded, TOAST_POSITION):GetTooltip()
+		)
+		assert.are.same({}, row(loaded, TOAST_POSITION).modifyPredicates)
+		assert.is_true(reset:IsEnabled())
+	end)
+
+	it("clears the saved foot when pressed (SET-R30, ANN-R98)", function()
+		local loaded = login(core())
+		stored(loaded).point = { x = 120, y = 400 }
+
+		toastReset(loaded):Click()
+
+		assert.is_nil(stored(loaded).point)
+	end)
+
+	it("does nothing while restricted, though it isn't greyed out (SET-R93, ANN-R98)", function()
+		local loaded = login(core())
+		stored(loaded).point = { x = 120, y = 400 }
+		local reset = toastReset(loaded)
+		setCombat(loaded, true)
+
+		assert.is_true(reset:IsEnabled())
+		reset:Click()
+
+		assert.are.same({ x = 120, y = 400 }, stored(loaded).point)
 	end)
 end)
 
 describe("Core's Announcements rows", function()
 	it(
-		"start from the defaults: Cozy off, the budget on, 20 per 5 min, every catch shown, animations on, Torn Page and"
+		"start from the defaults: Cozy off, the budget on, 40 per 5 min, every catch shown, animations on, Torn Page and"
 			.. " Driftwood"
 			.. " (announcements.md Data, ANN-R13)",
 		function()
@@ -205,11 +258,11 @@ describe("Core's Announcements rows", function()
 				end
 			end
 			assert.are.same(
-				{ false, true, 20, 5, true, true, "core.toaststyle.page", "core.soundset.driftwood" },
+				{ false, true, 40, 5, true, true, "core.toaststyle.page", "core.soundset.driftwood" },
 				values
 			)
 			assert.are.same(
-				{ cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 20, window = 300 } },
+				{ cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 40, window = 300 } },
 				stored(loaded)
 			)
 		end
@@ -246,7 +299,7 @@ describe("Core's Announcements rows", function()
 		local loaded = login(core())
 		local shown = loaded.client.settings.show(page(loaded))
 
-		assert.are.same({ "20", "5 min" }, { shown[3].frame.valueLabel, shown[4].frame.valueLabel })
+		assert.are.same({ "40", "5 min" }, { shown[3].frame.valueLabel, shown[4].frame.valueLabel })
 		row(loaded, WINDOW):GetSetting():SetValue(1)
 		assert.are.equal("1 min", shown[4].frame.valueLabel)
 	end)
@@ -272,10 +325,10 @@ describe("Greying on the Announcements page", function()
 
 		assert.are.same({ true, false, false, false, false }, live(shown))
 		assert.are.same(
-			{ true, 20, 5, true },
+			{ true, 40, 5, true },
 			{ shown[2].frame.value, shown[3].frame.value, shown[4].frame.value, shown[5].frame.value }
 		)
-		assert.are.same({ on = true, count = 20, window = 300 }, stored(loaded).budget)
+		assert.are.same({ on = true, count = 40, window = 300 }, stored(loaded).budget)
 	end)
 
 	it(
@@ -330,11 +383,22 @@ describe("The Announcements page's Defaults button", function()
 			loaded.client.settings.defaults(page(loaded))
 
 			assert.are.same(
-				{ cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 20, window = 300 } },
+				{ cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 40, window = 300 } },
 				stored(loaded)
 			)
 		end
 	)
+
+	it("leaves the Toast column's saved foot alone (SET-R60, ANN-R98)", function()
+		local loaded = login(core())
+		stored(loaded).point = { x = 120, y = 400 }
+		row(loaded, MOTION):GetSetting():SetValue(false)
+
+		loaded.client.settings.defaults(page(loaded))
+
+		assert.is_true(stored(loaded).motion)
+		assert.are.same({ x = 120, y = 400 }, stored(loaded).point)
+	end)
 
 	it("leaves the root's reminder alone (SET-R60)", function()
 		local loaded = login(core())

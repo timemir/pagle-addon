@@ -39,6 +39,7 @@
 --     totals belong to PagleLog's logId, and the last pushed-content seq Core accepted (PagleDB.global.pushed.seq);
 --   - the looks: each slot's equipped good (PagleDB.profile.appearance), the goods cache and the length unit;
 --   - the tracker dock's saved place (PagleDB.profile.dock.point);
+--   - the Toast column's saved foot (PagleDB.profile.announcements.point);
 --   - each movable book's saved place (PagleDB.profile.books, BOOK-R5);
 --   - the cards: the Write-up waiting, the Session summary cards, the open summary and the pending moments;
 --   - the onboarding state (PagleDB.global.onboarding): the Letter, the guide's step, the Margin notes and First looks
@@ -2107,7 +2108,7 @@ end
 -- or --catalogue's): the records decoded, the goals' text and need, stranded goals and today's board day.
 
 local BOARD_MODULE = "TackleBoard"
-local BOARD_RECORD_KINDS = { "start", "day", "issue", "reroll" }
+local BOARD_RECORD_KINDS = { "start", "day", "issue", "post", "reroll" }
 local GOAL_TYPES = { n = "Notice", e = "Expedition" }
 
 -- The Tackle Board's namespace with its strings and its logic: each locale/, data/ and logic/ file
@@ -2246,9 +2247,12 @@ local function printBoardStored(board, core, stored, log, context)
 	end
 end
 
--- The seconds since the epoch the file at `path` was last written (`stat`, in WSL), or nil when it can't be read.
+-- The seconds since the epoch the file at `path` was last written (`stat`: GNU's in WSL, else the BSD one macOS has),
+-- or nil when it can't be read.
 local function fileWriteTime(path)
-	local ok, pipe = pcall(io.popen, "stat -c %Y -- '" .. path:gsub("'", "'\\''") .. "' 2>/dev/null")
+	local quoted = "'" .. path:gsub("'", "'\\''") .. "'"
+	local command = ("stat -c %%Y -- %s 2>/dev/null || stat -f %%m -- %s 2>/dev/null"):format(quoted, quoted)
+	local ok, pipe = pcall(io.popen, command)
 	if not ok or not pipe then
 		return nil
 	end
@@ -2452,7 +2456,15 @@ local function printBoardState(board, state, context)
 		)
 		local xp = tonumber(state.xp) or 0
 		local againstCore = xpAgainstCore(xp, BOARD_MODULE, context.xpEarned)
-		print(("coins: %s (TKB-R63), xp: %d (TKB-R65), %s"):format(tostring(state.coins), xp, againstCore))
+		local spent = tonumber(state.ticketsSpent) or 0
+		print(
+			("coins: %s (TKB-R63), xp: %d (TKB-R65), Refreshes spent: %d (TKB-R58), %s"):format(
+				tostring(state.coins),
+				xp,
+				spent,
+				againstCore
+			)
+		)
 		printFliesAndTitles(board, tableOr(state.flies), tableOr(state.titles))
 		printFire(tableOr(state.fire))
 	end
@@ -2801,6 +2813,31 @@ local function printDock(pagle)
 		print("dock.point: " .. place .. " (moved by the player, CORE-R71)")
 	else
 		print("dock.point: saved but not one Core reads, so the default: " .. place .. " (CORE-R70)")
+	end
+end
+
+-- Prints the Toast column section (announcements.md › Data, ANN-R98): PagleDB.profile.announcements.point, the foot
+-- the Angler moved the column to, in UIParent's units from its bottom centre, or the default. Core's own
+-- logic/ColumnFoot.lua reads it, so a saved point Core can't read is said to be one. The screen's size isn't known
+-- here, so the clamp that keeps a full column on screen (ANN-R98) isn't applied. AceDB leaves a nil point out of the
+-- file.
+local function printToastColumn(pagle)
+	local _, why = pagleGlobal(pagle)
+	if why then
+		print("== Toast column: " .. why)
+		return
+	end
+	print("== Toast column (PagleDB.profile.announcements.point)")
+	local ns = wtf.loadCore({ "logic/ColumnFoot.lua" })
+	local saved = tableOr(tableOr(tableOr(pagle.saved.PagleDB.profiles).Default).announcements).point
+	local foot = ns.ColumnFoot(saved)
+	local place = ("x %s, y %s from the bottom centre"):format(tostring(foot.x), tostring(foot.y))
+	if saved == nil then
+		print("announcements.point: default (none saved): " .. place .. " (ANN-R20)")
+	elseif type(saved) == "table" and saved.x == foot.x and saved.y == foot.y then
+		print("announcements.point: " .. place .. " (moved by the player, ANN-R98)")
+	else
+		print("announcements.point: saved but not one Core reads, so the default: " .. place .. " (ANN-R20)")
 	end
 end
 
@@ -3589,6 +3626,7 @@ local function main(args)
 	printActivityXP(pagle, pagleLog(pagle.saved))
 	printLooks(pagle)
 	printDock(pagle)
+	printToastColumn(pagle)
 	printBooks(pagle)
 	printCards(pagle)
 	printOnboarding(pagle, pagleLog(pagle.saved))

@@ -52,10 +52,15 @@ ns.XP_EVENT, ns.XP_RUN = { 150, 100 }, 250
 
 --- Tunables (hunts.md): the Coins an event Hunt pays by tier position, `{ tier 1, each further tier }`, and a completed
 --- run, all paid again in every run (HNT-R110).
-ns.COINS_EVENT, ns.COINS_RUN = { 15, 10 }, 50
+ns.COINS_EVENT, ns.COINS_RUN = { 8, 5 }, 25
 
 --- Tunables (hunts.md): the completed-run counts that earn a ladder title, ascending (HNT-R148).
 ns.LADDER_STEPS = { 25, 50, 100 }
+
+--- Tunables (hunts.md): the Refreshes a completed Pagle Wager run earns (TICKETS_RUN) and a Hunt of a run earns on
+--- reaching tier 3 (TICKETS_TIER3), both paid again in every run (HNT-R116). Starting values, up to 5 a run of 4
+--- Hunts; the calibration ticket (#402) sets the final ones.
+ns.TICKETS_RUN, ns.TICKETS_TIER3 = 1, 1
 
 --- Tunables (hunts.md): how long the celebrated set keeps a run's entry after the run ends, in seconds: 30 days
 --- (HNT-R92). A rebuild raises nothing for a run that ended longer ago than that.

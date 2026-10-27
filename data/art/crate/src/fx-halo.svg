@@ -1,0 +1,8 @@
+<!-- The halo behind the card that turns over (prototypes/curio-crate/index.html: #reveal .halo): radial-gradient(circle,
+     tier/.55, tier/.12 30%, transparent 60%) over a 900 px circle (the gradient's radius 636 px, so clear at 382 px),
+     white here to tint; the part inside 382 px. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-382 -382 764 764" width="764" height="764">
+  <defs><radialGradient id="g" gradientUnits="userSpaceOnUse" cx="0" cy="0" r="636.4">
+    <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".3" stop-color="#fff" stop-opacity=".12"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+  <rect x="-382" y="-382" width="764" height="764" fill="url(#g)"/>
+</svg>

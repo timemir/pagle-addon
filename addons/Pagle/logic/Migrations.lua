@@ -13,6 +13,7 @@ ns.PAGLEDB_DEFAULTS = {
 		dev = false, -- the /pagle dev switch (#247)
 		coins = { earned = {} }, -- SHOP-R3; `logId` too, no default (migration step 3)
 		activityXP = { earned = {} }, -- AXP-R3; `logId` too, no default (activity-xp.md › Data)
+		tickets = { earned = {}, spent = {} }, -- REF-R3; `logId` too, no default (refresh.md › Data)
 		pushed = {}, -- PUSH-R13: `seq`, the last accepted file's, no default (pushed-content.md › Data)
 		goods = {}, -- SHOP-R26: every registered good, by ID
 		-- announcements.md › Data: the open Session's summary, moments raised with no Session open, the stored
@@ -42,7 +43,8 @@ ns.PAGLEDB_DEFAULTS = {
 			cozy = false,
 			everyCatch = true,
 			motion = true,
-			budget = { on = true, count = 20, window = 300 },
+			budget = { on = true, count = 40, window = 300 },
+			point = nil, -- ANN-R98: the Toast column's saved foot, nil (no key) until the Angler moves it
 		},
 		-- core/README.md › Data: `dock.point`, the tracker dock's saved place, nil (no key) until the player moves it.
 		dock = { point = nil }, -- CORE-R70, CORE-R71

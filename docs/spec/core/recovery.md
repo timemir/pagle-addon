@@ -1,6 +1,6 @@
 # Core: Recovery
 
-> Status: Done · Source: [Catch log hardening #302](https://github.com/timemir/pagle-backend/issues/302) · ADR: [0017](../../adr/0017-recovery-preserves-the-original-branch.md)
+> Status: Done · Source: [Catch log hardening #302](https://github.com/timemir/pagle-backend/issues/302) · ADR: [0018](../../adr/0018-recovery-preserves-the-original-branch.md)
 
 Recovery restores server-held Accepted history into the active Catch log while preserving the complete original local branch. The backend owns prefix selection, salvage replay, conflict retention, and competitive approval. The addon owns the final local snapshot guard and early application. The exact cross-language wire format is [Recovery v1](https://github.com/timemir/pagle-backend/blob/main/docs/contracts/recovery-v1.md).
 

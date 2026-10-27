@@ -1,0 +1,61 @@
+# Dragon's Roost: a roar, a growl, wing flaps, a horn and a burst of fire. Parts are single sounds (ElevenLabs sound-effects prompts, requested length in seconds, shipped take
+# "a" or "b" in raw/<part>/take_<x>.mp3); each file is a mix of them laid on a timeline (see
+# scripts/pagle_data/generated_sounds.py).
+
+[part.roar]
+prompt = 'Large dragon roar, one deep monstrous bellow with a rasping growl, close'
+seconds = 2.0
+pick = "a"
+
+[part.growl]
+prompt = 'Deep creature growl, low rumbling throat vibration, slow, one-shot'
+seconds = 1.5
+pick = "a"
+
+[part.wingflap]
+prompt = 'Huge leathery wing flap, single heavy whoosh of air, one-shot'
+seconds = 1.0
+pick = "a"
+
+[part.horn]
+prompt = 'Deep brass war horn, one long low blast, resonant, outdoors'
+seconds = 2.0
+pick = "a"
+
+[part.firebreath]
+prompt = 'Flamethrower burst, short roaring whoosh of fire, one-shot'
+seconds = 1.2
+pick = "a"
+
+[file.toast_1]
+# A wing flap and the roar behind it.
+mix = [
+	{ part = "wingflap", start = 0, pick = "b" },
+	{ part = "roar", start = 0.15, length = 1.2 },
+]
+
+[file.toast_2]
+# A growl, then the horn.
+mix = [
+	{ part = "growl", start = 0, length = 0.9 },
+	{ part = "horn", start = 0.7, gain = 0.8, length = 0.9 },
+]
+
+[file.toast_3]
+# Three wing beats, each lower, with a roar under them.
+mix = [
+	{ part = "wingflap", start = 0, pick = "b" },
+	{ part = "wingflap", start = 0.35, semitones = -2, pick = "b" },
+	{ part = "wingflap", start = 0.7, semitones = -4, pick = "b" },
+	{ part = "roar", start = 0.3, semitones = -4, gain = 0.5, length = 1.0 },
+]
+
+[file.banner]
+# Wings, a burst of fire, the roar and the horn.
+mix = [
+	{ part = "wingflap", start = 0, pick = "b" },
+	{ part = "firebreath", start = 0.4, pick = "b" },
+	{ part = "roar", start = 0.5, length = 1.6 },
+	{ part = "horn", start = 1.5, gain = 0.8, length = 2.2 },
+	{ part = "wingflap", start = 2.2, semitones = -3, gain = 0.7, pick = "b" },
+]

@@ -31,37 +31,62 @@ end
 -- Core's fish crests (VAR-R12) among them, are neither listed nor counted (SHOP-R25).
 local CREST_LINES = { "Crests (1 of 1)", "  core.crest.plain In use" }
 
--- The Curio Shop expansion's toast styles and sound sets, and the bindings for sale (SHOP-R25), each slot's in its
--- order, with their tiers; the round two's Storm Front (ANN-R82) after its toast styles.
-local EXPANSION = {
+-- Core's toast styles, sound sets and bindings for sale (SHOP-R25), each slot's in the order the list shows them
+-- (SHOP-R27): cheapest tier first, goods of a tier in registration order, so the Curio Shop expansion's come after
+-- Ripple and Lanternglow, and the round two's Storm Front and the round three's after the older goods of their tier.
+local FOR_SALE = {
 	toaststyle = {
+		{ "ripple", 1 },
+		{ "lanternglow", 1 },
 		{ "ship", 1 },
 		{ "birch", 1 },
 		{ "tidepool", 1 },
-		{ "chart", 2 },
-		{ "frost", 2 },
+		{ "chart", 1 },
+		{ "frost", 1 },
 		{ "goblin", 2 },
-		{ "kelp", 3 },
-		{ "moon", 3 },
-		{ "leaf", 3 },
-		{ "bottle", 3 },
-		{ "rune", 4 },
-		{ "folio", 5 },
-		{ "storm", 5 },
+		{ "kelp", 2 },
+		{ "moon", 2 },
+		{ "leaf", 2 },
+		{ "bottle", 2 },
+		{ "folio", 2 },
+		{ "rune", 3 },
+		{ "ooze", 3 },
+		{ "robot", 3 },
+		{ "spider", 3 },
+		{ "glacier", 3 },
+		{ "pirate", 3 },
+		{ "storm", 4 },
+		{ "hive", 4 },
+		{ "magma", 4 },
+		{ "arcane", 4 },
 	},
 	soundset = {
 		{ "rain", 1 },
 		{ "marimba", 1 },
 		{ "shipbell", 1 },
+		{ "squeaky", 1 },
+		{ "bubbleworks", 1 },
+		{ "gilded", 2 },
 		{ "kalimba", 2 },
 		{ "musicbox", 2 },
 		{ "glass", 2 },
 		{ "steelpan", 2 },
 		{ "dulcimer", 2 },
+		{ "goblintill", 2 },
+		{ "kazoo", 2 },
+		{ "arcade", 2 },
+		{ "boing", 2 },
+		{ "slime", 2 },
 		{ "frost", 3 },
 		{ "harp", 3 },
 		{ "gizmo", 3 },
+		{ "mrglglgl", 3 },
+		{ "parrot", 3 },
+		{ "laser", 3 },
+		{ "silithid", 3 },
+		{ "succubus", 3 },
 		{ "wardrums", 4 },
+		{ "dragonroost", 4 },
 	},
 	-- Core's book binding's bindings for sale (ADR 0015), in the shop's order.
 	binding = {
@@ -100,32 +125,35 @@ local EXPANSION = {
 		{ "trophycase", 5 },
 	},
 }
--- The round two's Core toast styles that aren't for sale, after Storm Front, as the list outlines them not owned:
--- Sonar Scope, earned once the companion is linked (SHOP-R29), and Prize Foil, the Curio crate's alone (SHOP-R50).
+-- The toast styles that aren't for sale come after those that are, as the list outlines them not owned: Prize Foil,
+-- the Curio crate's alone (SHOP-R50). Sonar Scope, earned once the companion is linked (SHOP-R29), is no longer among
+-- them: an earned good is listed only from its fallback date on, and Sonar Scope has none yet (SHOP-R24, SHOP-R28).
 local ROUND_TWO_UNOWNED = {
-	"  core.toaststyle.sonar Link the companion",
 	"  core.toaststyle.foil From a crate",
 }
-local ROUND_TWO_IDS = { "core.toaststyle.sonar", "core.toaststyle.foil" }
+local ROUND_TWO_IDS = { "core.toaststyle.foil" }
 
 -- Each tier's price (SHOP-R22), as the list prints it.
-local PRICES = { "150", "400", "900", "2,000", "5,000" }
-local PRICE_VALUES = { 150, 400, 900, 2000, 5000 }
+local PRICES = { "250", "400", "900", "3,000", "10,000", "25,000" }
+local PRICE_VALUES = { 250, 400, 900, 3000, 10000, 25000 }
 
--- The expansion's goods of Core's slot `slot` ("toaststyle", "soundset" or "binding") as the list outlines them, none bought,
--- with a balance of `balance`: each priced, in red where the balance falls short.
+-- The goods for sale of Core's slot `slot` ("toaststyle", "soundset" or "binding") as the list outlines them, with a
+-- balance of `balance`: each priced, in red where the balance falls short, but for those `tags` gives another tag
+-- (by name): bought, in use. The toast styles go on with those that aren't for sale.
 ---@param slot string
 ---@param balance integer
+---@param tags? table<string, string>
 ---@return string[]
-local function expansionLines(slot, balance)
+local function saleLines(slot, balance, tags)
 	local lines = {}
-	for _, good in ipairs(EXPANSION[slot]) do
+	for _, good in ipairs(FOR_SALE[slot]) do
 		local tier = good[2]
+		local tag = tags and tags[good[1]]
 		lines[#lines + 1] = ("  core.%s.%s %s%s"):format(
 			slot,
 			good[1],
-			PRICES[tier],
-			PRICE_VALUES[tier] > balance and " [red]" or ""
+			tag or PRICES[tier],
+			not tag and PRICE_VALUES[tier] > balance and " [red]" or ""
 		)
 	end
 	if slot == "toaststyle" then
@@ -136,13 +164,13 @@ local function expansionLines(slot, balance)
 	return lines
 end
 
--- The expansion's goods of Core's slot `slot` the balance `balance` covers, by ID, in the list's order.
+-- The goods for sale of Core's slot `slot` the balance `balance` covers, by ID, in the list's order.
 ---@param slot string
 ---@param balance integer
 ---@return string[]
-local function expansionAffordable(slot, balance)
+local function saleAffordable(slot, balance)
 	local ids = {}
-	for _, good in ipairs(EXPANSION[slot]) do
+	for _, good in ipairs(FOR_SALE[slot]) do
 		if PRICE_VALUES[good[2]] <= balance then
 			ids[#ids + 1] = ("core.%s.%s"):format(slot, good[1])
 		end
@@ -154,7 +182,7 @@ end
 ---@param balance integer
 ---@return string[]
 local function bindingLines(balance)
-	return joined({ "Book binding (1 of 34)", "  core.binding.field In use" }, expansionLines("binding", balance))
+	return joined({ "Book binding (1 of 34)", "  core.binding.field In use" }, saleLines("binding", balance))
 end
 
 -- Core's own slots (SHOP-R25) as the list outlines them while nothing of Core's is bought and the balance is under
@@ -162,20 +190,8 @@ end
 local CORE_UNBOUGHT = joined(
 	joined(
 		joined(
-			joined(
-				joined({
-					"Toast style (1 of 18)",
-					"  core.toaststyle.page In use",
-					"  core.toaststyle.ripple 150" .. " [red]",
-					"  core.toaststyle.lanternglow 400" .. " [red]",
-				}, expansionLines("toaststyle", 0)),
-				{
-					"Sound set (1 of 14)",
-					"  core.soundset.driftwood In use",
-					"  core.soundset.gilded 400" .. " [red]",
-				}
-			),
-			expansionLines("soundset", 0)
+			joined({ "Toast style (1 of 25)", "  core.toaststyle.page In use" }, saleLines("toaststyle", 0)),
+			joined({ "Sound set (1 of 27)", "  core.soundset.driftwood In use" }, saleLines("soundset", 0))
 		),
 		CREST_LINES
 	),
@@ -195,8 +211,9 @@ local function afterCore(lines)
 end
 
 -- Hunts' notebook covers on its handle: Plain (default), Velvet (tier 2, icon 134939, a description) and Gold (earned
--- while `earned.value`, "Every Hunt done").
-local function huntsCovers(hunts, earned)
+-- while `earned.value`, "Every Hunt done"), which the shop lists only from `fallbackFrom` on, at tier 2's price
+-- (SHOP-R24, SHOP-R28): never when that is nil.
+local function huntsCovers(hunts, earned, fallbackFrom)
 	hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
 	hunts:RegisterGood({ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true })
 	hunts:RegisterGood({
@@ -215,6 +232,8 @@ local function huntsCovers(hunts, earned)
 		isEarned = function()
 			return earned.value
 		end,
+		fallbackTier = fallbackFrom and 2 or nil,
+		fallbackFrom = fallbackFrom,
 	})
 end
 
@@ -369,8 +388,9 @@ end
 
 -- Hunts' frames, a grouped slot (SHOP-R27): Gilt frames then Wooden frames, its goods registered out of that order:
 -- Plain (default), Oak (wooden, tier 1), Gold leaf (gilt, earned while `earned.value`, its texts a function's),
--- Velvet (tier 1, no group) and Birch (wooden, tier 2).
-local function huntsFrames(hunts, earned)
+-- Velvet (tier 1, no group) and Birch (wooden, tier 2). Gold leaf is listed only from `fallbackFrom` on, at tier 2's
+-- price (SHOP-R24, SHOP-R28), never when that is nil.
+local function huntsFrames(hunts, earned, fallbackFrom)
 	hunts:RegisterSlot({
 		id = "hunts.frame",
 		label = "Frame",
@@ -390,6 +410,8 @@ local function huntsFrames(hunts, earned)
 		earnedText = function()
 			return "2 of 3 gilded", "Gild 3 frames. 2 gilded so far."
 		end,
+		fallbackTier = fallbackFrom and 2 or nil,
+		fallbackFrom = fallbackFrom,
 	})
 	hunts:RegisterGood({ id = "hunts.frame.velvet", slot = "hunts.frame", name = "Velvet", tier = 1 })
 	hunts:RegisterGood({ id = "hunts.frame.birch", slot = "hunts.frame", name = "Birch", tier = 2, group = "wood" })
@@ -420,17 +442,14 @@ describe("The Curio Shop's list", function()
 				joined(
 					joined(
 						joined(
-							joined({
-								"Toast style (2 of 18)",
-								"  core.toaststyle.page default",
-								"  core.toaststyle.ripple In use",
-								"  core.toaststyle.lanternglow 400" .. " [red]",
-							}, expansionLines("toaststyle", 300)),
-							joined({
-								"Sound set (1 of 14)",
-								"  core.soundset.driftwood In use",
-								"  core.soundset.gilded 400" .. " [red]",
-							}, expansionLines("soundset", 300))
+							joined(
+								{ "Toast style (2 of 25)", "  core.toaststyle.page default" },
+								saleLines("toaststyle", 300, { ripple = "In use" })
+							),
+							joined(
+								{ "Sound set (1 of 27)", "  core.soundset.driftwood In use" },
+								saleLines("soundset", 300)
+							)
 						),
 						joined(CREST_LINES, bindingLines(300))
 					),
@@ -438,10 +457,9 @@ describe("The Curio Shop's list", function()
 						"Journal binding (1 of 2)",
 						"  ledger.binding.oak In use",
 						"  ledger.binding.lapis 900" .. " [red]",
-						"Notebook cover (1 of 3)",
+						"Notebook cover (1 of 2)",
 						"  hunts.cover.plain In use",
 						"  hunts.cover.velvet 400" .. " [red]",
-						"  hunts.cover.gold Every Hunt done",
 					}
 				),
 				outline(model(fake):List({}))
@@ -493,7 +511,7 @@ describe("The Curio Shop's list", function()
 		assert.are.same({
 			"Crests (1 of 1)",
 			"  core.crest.plain In use",
-			"Notebook cover (1 of 3)",
+			"Notebook cover (1 of 2)",
 			"  hunts.cover.plain In use",
 		}, outline(model(fake):List({ search = "plain" })))
 		assert.are.same({}, model(fake):List({ search = "binding" }), "names only, not the slot's label")
@@ -513,7 +531,7 @@ describe("The Curio Shop's list", function()
 			return list
 		end
 
-		assert.are.equal(11 + 27 + 34, #ids("all"))
+		assert.are.equal(25 + 27 + 1 + 34 + 2 + 2, #ids("all"))
 		assert.are.same({
 			"core.toaststyle.page",
 			"core.toaststyle.ripple",
@@ -523,27 +541,19 @@ describe("The Curio Shop's list", function()
 			"ledger.binding.oak",
 			"hunts.cover.plain",
 		}, ids("owned"))
+		-- Ripple is bought; the toast styles that aren't for sale list after those that are
+		local toastStyles = saleAffordable("toaststyle", math.huge)
+		table.remove(toastStyles, 1)
 		local notOwned = joined(
-			joined(
-				joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", math.huge)),
-				ROUND_TWO_IDS
-			),
-			joined({ "core.soundset.gilded" }, expansionAffordable("soundset", math.huge))
+			joined(joined(toastStyles, ROUND_TWO_IDS), saleAffordable("soundset", math.huge)),
+			saleAffordable("binding", math.huge)
 		)
-		notOwned = joined(notOwned, expansionAffordable("binding", math.huge))
-		assert.are.same(
-			joined(notOwned, { "ledger.binding.lapis", "hunts.cover.velvet", "hunts.cover.gold" }),
-			ids("notOwned")
-		)
+		assert.are.same(joined(notOwned, { "ledger.binding.lapis", "hunts.cover.velvet" }), ids("notOwned"))
+		local affordableStyles = saleAffordable("toaststyle", 550)
+		table.remove(affordableStyles, 1) -- Ripple is bought
 		assert.are.same(
 			joined(
-				joined(
-					joined({ "core.toaststyle.lanternglow" }, expansionAffordable("toaststyle", 550)),
-					joined(
-						joined({ "core.soundset.gilded" }, expansionAffordable("soundset", 550)),
-						expansionAffordable("binding", 550)
-					)
-				),
+				joined(affordableStyles, joined(saleAffordable("soundset", 550), saleAffordable("binding", 550))),
 				{ "hunts.cover.velvet" }
 			),
 			ids("canAfford")
@@ -573,9 +583,9 @@ describe("The Curio Shop's list", function()
 		end
 	)
 
-	it("counts an earned good owned once its Module says so (SHOP-R22, SHOP-R30)", function()
+	it("counts an earned good owned once its Module says so, from its fallback date on (SHOP-R22, SHOP-R24)", function()
 		local fake, handles = coreWithModules()
-		huntsCovers(handles.Hunts, { value = true })
+		huntsCovers(handles.Hunts, { value = true }, 1)
 		fake.login()
 
 		assert.are.same(
@@ -588,15 +598,53 @@ describe("The Curio Shop's list", function()
 			outline(model(fake):List({}))
 		)
 	end)
+
+	it("never lists an earned good before its fallback date, owned or not (SHOP-R24)", function()
+		for _, earned in ipairs({ false, true }) do
+			local fake, handles = coreWithModules()
+			huntsCovers(handles.Hunts, { value = earned }, fake.serverTime() + 86400)
+			fake.login()
+
+			assert.are.same(
+				afterCore({
+					"Notebook cover (1 of 2)",
+					"  hunts.cover.plain In use",
+					"  hunts.cover.velvet 400" .. " [red]",
+				}),
+				outline(model(fake):List({}))
+			)
+			assert.is_nil(model(fake):Entry("hunts.cover.gold"))
+		end
+	end)
+
+	it(
+		"lists an earned good from its fallback date on, at its fallback price beside its earned tag (SHOP-R24, SHOP-R28)",
+		function()
+			local fake, handles = coreWithModules()
+			huntsCovers(handles.Hunts, { value = false }, fake.serverTime() + 100)
+			fake.login()
+			handles.Ledger:ReportCoinsEarned(1000)
+
+			local before = model(fake):Row("hunts.cover.gold")
+			fake.wait(100)
+			local after = model(fake):Row("hunts.cover.gold")
+
+			assert.is_nil(before)
+			assert.are.same(
+				{ id = "hunts.cover.gold", name = "Gold", state = "forSale", price = "400", tag = "Every Hunt done" },
+				after
+			)
+		end
+	)
 end)
 
 describe("A grouped slot on the Curio Shop's list", function()
-	-- Hunts' frames alone of Hunts' (Gold leaf not yet earned), logged in, with a balance of 200.
+	-- Hunts' frames alone of Hunts' (Gold leaf not yet earned), logged in, with a balance of 300.
 	local function framing()
 		local fake, handles = coreWithModules()
-		huntsFrames(handles.Hunts, { value = false })
+		huntsFrames(handles.Hunts, { value = false }, 1)
 		fake.login()
-		handles.Ledger:ReportCoinsEarned(200)
+		handles.Ledger:ReportCoinsEarned(300)
 		return fake, handles
 	end
 
@@ -609,11 +657,11 @@ describe("A grouped slot on the Curio Shop's list", function()
 			assert.are.same({
 				"Frame (1 of 5)",
 				"  hunts.frame.plain In use",
-				"  hunts.frame.velvet 150",
+				"  hunts.frame.velvet 250",
 				"  -- Gilt frames",
-				"  hunts.frame.leaf 2 of 3 gilded",
+				"  hunts.frame.leaf 2 of 3 gilded [red]",
 				"  -- Wooden frames",
-				"  hunts.frame.oak 150",
+				"  hunts.frame.oak 250",
 				"  hunts.frame.birch 400" .. " [red]",
 			}, outline(model(fake):List({ category = "Trackers" })))
 		end
@@ -630,9 +678,9 @@ describe("A grouped slot on the Curio Shop's list", function()
 		}, outline(shop:List({ search = "birch", category = "Trackers" }))) -- Core's Birch Scroll is no Frame
 		assert.are.same({
 			"Frame (1 of 5)",
-			"  hunts.frame.velvet 150",
+			"  hunts.frame.velvet 250",
 			"  -- Wooden frames",
-			"  hunts.frame.oak 150",
+			"  hunts.frame.oak 250",
 		}, outline(shop:List({ category = "Trackers", filter = "canAfford" })))
 		assert.are.same(
 			{ "Frame (1 of 5)", "  hunts.frame.plain In use" },
@@ -640,9 +688,25 @@ describe("A grouped slot on the Curio Shop's list", function()
 		)
 	end)
 
+	it("never heads a group holding only goods the shop doesn't list (SHOP-R24, SHOP-R27)", function()
+		local fake, handles = coreWithModules()
+		huntsFrames(handles.Hunts, { value = true }, fake.serverTime() + 86400)
+		fake.login()
+		handles.Ledger:ReportCoinsEarned(300)
+
+		assert.are.same({
+			"Frame (1 of 4)",
+			"  hunts.frame.plain In use",
+			"  hunts.frame.velvet 250",
+			"  -- Wooden frames",
+			"  hunts.frame.oak 250",
+			"  hunts.frame.birch 400" .. " [red]",
+		}, outline(model(fake):List({ category = "Trackers" })))
+	end)
+
 	it("lists a slot with no groups as before, its goods in registration order (SHOP-R27)", function()
 		local fake, handles = coreWithModules()
-		huntsCovers(handles.Hunts, { value = false })
+		huntsCovers(handles.Hunts, { value = false }, 1)
 		fake.login()
 
 		local group = model(fake):List({ category = "Trackers" })[1]
@@ -673,8 +737,147 @@ describe("A grouped slot on the Curio Shop's list", function()
 	end)
 end)
 
+describe("The Curio Shop's list order within a slot", function()
+	-- Hunts' pennants, a slot whose registration order is not its tier order: Gale (tier 3), Dawn (earned, no fallback),
+	-- Plain (the default), Reef (tier 1), Mist (tier 2), Dusk (tier 1), Storm (tier 6), Isle (tier 5), Ember (earned,
+	-- its fallback price from a date past, SHOP-R28) and Wren (earned, its fallback from a date to come), logged in.
+	local function pennants()
+		local fake, handles = coreWithModules()
+		local hunts = handles.Hunts
+		hunts:RegisterSlot({ id = "hunts.pennant", label = "Pennant", category = "Trackers" })
+		local function good(name, extra)
+			local registered = { id = "hunts.pennant." .. name:lower(), slot = "hunts.pennant", name = name }
+			for key, value in pairs(extra) do
+				registered[key] = value
+			end
+			hunts:RegisterGood(registered)
+		end
+		local never = function()
+			return false
+		end
+		good("Gale", { tier = 3 })
+		good("Dawn", { isEarned = never, earnedText = "Dawn text" })
+		good("Plain", { default = true })
+		good("Reef", { tier = 1 })
+		good("Mist", { tier = 2 })
+		good("Dusk", { tier = 1 })
+		good("Storm", { tier = 6 })
+		good("Isle", { tier = 5 })
+		good("Ember", { isEarned = never, earnedText = "Ember text", fallbackTier = 4, fallbackFrom = 1 })
+		good("Wren", { isEarned = never, earnedText = "Wren text", fallbackTier = 4, fallbackFrom = 2 ^ 31 })
+		fake.login()
+		return fake, handles
+	end
+
+	-- The last part of each row's ID in `group`, in order.
+	local function ids(group)
+		local list = {}
+		for i, row in ipairs(group.rows) do
+			list[i] = row.id:match("[^.]+$")
+		end
+		return list
+	end
+
+	it(
+		"lists the default first, then goods for sale cheapest tier first in registration order, then the earned goods"
+			.. " on sale at their fallback price, none before its date (SHOP-R24, SHOP-R27)",
+		function()
+			local fake = pennants()
+
+			local group = model(fake):List({ category = "Trackers" })[1]
+
+			assert.are.same({ "plain", "reef", "dusk", "mist", "gale", "isle", "storm", "ember" }, ids(group))
+		end
+	)
+
+	it("sorts a tier 6 good after every other good for sale (SHOP-R22, SHOP-R27)", function()
+		local fake = pennants()
+
+		local rows = model(fake):List({ category = "Trackers" })[1].rows
+
+		assert.are.same({ "storm", "25,000" }, { rows[7].id:match("[^.]+$"), rows[7].price })
+		assert.are.same({ "ember", "3,000", "Ember text" }, { rows[8].id:match("[^.]+$"), rows[8].price, rows[8].tag })
+	end)
+
+	it("counts over all the slot's goods and keeps the narrowed list in the same order (SHOP-R27)", function()
+		local fake = pennants()
+		local shop = model(fake)
+
+		assert.are.equal("1 of 8", shop:List({ category = "Trackers" })[1].count)
+		assert.are.same(
+			{ "reef", "dusk", "mist", "gale", "isle", "storm", "ember" },
+			ids(shop:List({ category = "Trackers", filter = "notOwned" })[1])
+		)
+	end)
+
+	it("sorts a grouped slot's goods inside each group, the goods with no group first (SHOP-R27)", function()
+		local fake, handles = coreWithModules()
+		local hunts = handles.Hunts
+		hunts:RegisterSlot({
+			id = "hunts.flag",
+			label = "Flag",
+			category = "Trackers",
+			groups = { { key = "a", name = "A flags" }, { key = "b", name = "B flags" } },
+		})
+		local function good(name, extra)
+			local registered = { id = "hunts.flag." .. name, slot = "hunts.flag", name = name }
+			for key, value in pairs(extra) do
+				registered[key] = value
+			end
+			hunts:RegisterGood(registered)
+		end
+		local never = function()
+			return false
+		end
+		good("b3", { tier = 3, group = "b" })
+		good("b1", { tier = 1, group = "b" })
+		good("a2", { tier = 2, group = "a" })
+		good("a_earned", { isEarned = never, group = "a", fallbackTier = 2, fallbackFrom = 1 })
+		good("a1", { tier = 1, group = "a" })
+		good("n4", { tier = 4 })
+		good("plain", { default = true, group = "b" })
+		good("n2", { tier = 2 })
+		good("b_earned", { isEarned = never, group = "b" })
+		good("b2", { tier = 2, group = "b" })
+		fake.login()
+
+		local group = model(fake):List({ category = "Trackers" })[1]
+
+		assert.are.same({ "n2", "n4", "a1", "a2", "a_earned", "plain", "b1", "b2", "b3" }, ids(group))
+		assert.are.same({ [3] = "A flags", [6] = "B flags" }, group.headings)
+		assert.are.equal("1 of 9", group.count)
+	end)
+
+	it("leaves Pagle.GetSlotGoods in registration order (SHOP-R21)", function()
+		local fake = pennants()
+
+		local registered = {}
+		for i, id in ipairs(fake.Pagle.GetSlotGoods("hunts.pennant")) do
+			registered[i] = id:match("[^.]+$")
+		end
+
+		assert.are.same(
+			{ "gale", "dawn", "plain", "reef", "mist", "dusk", "storm", "isle", "ember", "wren" },
+			registered,
+			"every good, the earned ones the shop doesn't list too (SHOP-R36)"
+		)
+	end)
+
+	it("puts a default registered last first all the same (SHOP-R22)", function()
+		local fake, handles = coreWithModules()
+		handles.Hunts:RegisterSlot({ id = "hunts.pin", label = "Pin", category = "Trackers" })
+		handles.Hunts:RegisterGood({ id = "hunts.pin.two", slot = "hunts.pin", name = "Two", tier = 2 })
+		handles.Hunts:RegisterGood({ id = "hunts.pin.one", slot = "hunts.pin", name = "One", tier = 1 })
+		handles.Hunts:RegisterGood({ id = "hunts.pin.base", slot = "hunts.pin", name = "Base", default = true })
+		fake.login()
+
+		assert.are.same({ "base", "one", "two" }, ids(model(fake):List({ category = "Trackers" })[1]))
+	end)
+end)
+
 describe("An earned good's texts and progress in the Curio Shop", function()
-	-- Hunts' frames (Gold leaf earned while `earned.value`, with `progress` as its progress if given), logged in.
+	-- Hunts' frames (Gold leaf earned while `earned.value`, with `progress` as its progress if given, on sale at tier
+	-- 2's price from a fallback date past, SHOP-R28), logged in.
 	local function earning(earned, progress)
 		local fake, handles = coreWithModules()
 		handles.Hunts:RegisterSlot({ id = "hunts.frame", label = "Frame", category = "Trackers" })
@@ -690,6 +893,8 @@ describe("An earned good's texts and progress in the Curio Shop", function()
 				return ("%d of 3 gilded"):format(earned.gilded or 2), "Gild 3 frames."
 			end,
 			progress = progress,
+			fallbackTier = 2,
+			fallbackFrom = 1,
 		})
 		fake.login()
 		return fake, handles
@@ -707,9 +912,12 @@ describe("An earned good's texts and progress in the Curio Shop", function()
 			local earned = { value = false }
 			local fake = earning(earned)
 
-			assert.are.equal("2 of 3 gilded", assert(model(fake):Row("hunts.frame.leaf")).tag)
 			assert.are.same(
-				{ "Gild 3 frames.", "A Hunts reward, not for sale" },
+				{ "2 of 3 gilded", "400" },
+				{ assert(model(fake):Row("hunts.frame.leaf")).tag, model(fake):Row("hunts.frame.leaf").price }
+			)
+			assert.are.same(
+				{ "Gild 3 frames.", "Or buy it for 400" },
 				assert(model(fake):Stage("hunts.frame.leaf")).notes
 			)
 			earned.gilded = 1
@@ -739,7 +947,7 @@ describe("An earned good's texts and progress in the Curio Shop", function()
 			earned.value = true
 			handles.Hunts:RefreshGoods()
 			local owned = assert(model(fake):Stage("hunts.frame.leaf"))
-			assert.are.same({ "owned", { "A Hunts reward, not for sale" } }, { owned.state, owned.notes })
+			assert.are.same({ "owned", {} }, { owned.state, owned.notes })
 			assert.is_nil(owned.progress)
 			assert.are.equal(2, calls)
 		end
@@ -801,8 +1009,8 @@ describe("The Curio Shop's Put away group", function()
 	end
 
 	it(
-		"lists an off Module's bought and earned goods last, not its default or goods for sale, saying Yours to keep"
-			.. " (SHOP-R35)",
+		"lists an off Module's purchased goods last, not its default, goods for sale or earned goods, saying Yours to"
+			.. " keep (SHOP-R35, SHOP-R24)",
 		function()
 			local fake = huntsOff()
 
@@ -814,7 +1022,6 @@ describe("The Curio Shop's Put away group", function()
 					"  ledger.binding.oak In use",
 					"  ledger.binding.lapis 900" .. " [red]",
 					"Put away: Module off (Yours to keep)",
-					"  hunts.cover.gold Hunts is off",
 					"  hunts.cover.velvet Hunts is off",
 				}),
 				outline(groups)
@@ -823,7 +1030,7 @@ describe("The Curio Shop's Put away group", function()
 			assert.is_true(putAway.putAway)
 			assert.are.same(
 				{ id = "hunts.cover.velvet", name = "Velvet", icon = 134939, state = "putAway", tag = "Hunts is off" },
-				putAway.rows[2]
+				putAway.rows[1]
 			)
 			assert.are.same({
 				{ category = "Announcements", label = "Announcements" },
@@ -844,10 +1051,10 @@ describe("The Curio Shop's Put away group", function()
 		end
 
 		assert.are.equal(1, putAway({ search = "velv" }))
-		assert.are.equal(2, putAway({ filter = "owned" }))
+		assert.are.equal(1, putAway({ filter = "owned" }))
 		assert.are.equal(0, putAway({ filter = "notOwned" }))
 		assert.are.equal(0, putAway({ filter = "canAfford" }))
-		assert.are.equal(2, putAway({ category = "Trackers" }))
+		assert.are.equal(1, putAway({ category = "Trackers" }))
 		assert.are.equal(0, putAway({ category = "Books" }))
 	end)
 end)
@@ -862,6 +1069,7 @@ describe("Selecting a good", function()
 		assert.are.equal("hunts.cover.velvet", shop:Select("hunts.cover.velvet"))
 		assert.is_nil(shop:Select("hunts.cover.tide")) -- for sale, of a Module off
 		assert.is_nil(shop:Select("hunts.cover.plain")) -- a default of a Module off
+		assert.is_nil(shop:Select("hunts.cover.gold")) -- earned, owned, of a Module off: the Collection's (SHOP-R40)
 		assert.is_nil(shop:Select("nobody.nothing"))
 		assert.is_nil(shop:Select(42))
 		assert.is_nil(shop:Select(nil))
@@ -886,11 +1094,11 @@ describe("One good's row", function()
 end)
 
 describe("The Curio Shop's stage", function()
-	-- Core's own goods, Hunts' covers (Gold earned while `earned.value`) and the Ledger's bindings, logged in, with a
-	-- balance of `balance`.
+	-- Core's own goods, Hunts' covers (Gold earned while `earned.value`, on sale at its fallback price) and the
+	-- Ledger's bindings, logged in, with a balance of `balance`.
 	local function stageReady(balance, earned)
 		local fake, handles = coreWithModules()
-		huntsCovers(handles.Hunts, earned or { value = false })
+		huntsCovers(handles.Hunts, earned or { value = false }, 1)
 		ledgerBindings(handles.Ledger)
 		fake.login()
 		handles.Ledger:ReportCoinsEarned(balance)
@@ -962,27 +1170,38 @@ describe("The Curio Shop's stage", function()
 	)
 
 	it(
-		"shows an earned good's earnedText and that it isn't for sale, earned or not (wallet-and-shop.md › UI)",
+		'shows an earned good on sale at its fallback price with its earnedText, then "Or buy it for N", and Buy;'
+			.. " owned, it shows the earnedText and Use (SHOP-R24, SHOP-R28, wallet-and-shop.md › UI)",
 		function()
 			local earned = { value = false }
 			local fake, handles = stageReady(5000, earned)
 
 			local gold = assert(model(fake):Stage("hunts.cover.gold"))
 			assert.are.same(
-				{ "unearned", {}, { "Every Hunt done", "A Hunts reward, not for sale" } },
-				{ gold.state, gold.tags, gold.notes }
+				{ "forSale", {}, { "Every Hunt done", "Or buy it for 400" }, "Buy for 400" },
+				{ gold.state, gold.tags, gold.notes, gold.buy }
 			)
-			assert.is_nil(gold.buy)
 
 			earned.value = true
 			handles.Hunts:RefreshGoods()
 			gold = assert(model(fake):Stage("hunts.cover.gold"))
 			assert.are.same(
-				{ "owned", { "Owned" }, { "Every Hunt done", "A Hunts reward, not for sale" }, true },
+				{ "owned", { "Owned" }, { "Every Hunt done" }, true },
 				{ gold.state, gold.tags, gold.notes, gold.use }
 			)
+			assert.is_nil(gold.buy)
 		end
 	)
+
+	it("has no stage for an earned good before its fallback date (SHOP-R24)", function()
+		local fake, handles = coreWithModules()
+		huntsCovers(handles.Hunts, { value = false })
+		fake.login()
+
+		assert.is_nil(model(fake):Stage("hunts.cover.gold"))
+		assert.is_nil(model(fake):Entry("hunts.cover.gold"))
+		assert.is_nil(model(fake):Select("hunts.cover.gold"))
+	end)
 
 	it("hands over the good's preview and icon (wallet-and-shop.md › UI)", function()
 		local fake, handles = coreWithModules()
@@ -1038,7 +1257,7 @@ describe("Buy on the stage", function()
 	-- projection caught up, with the Ledger's `balance` Coins.
 	local function buyReady(balance, earned)
 		local fake, handles = coreWithModules()
-		huntsCovers(handles.Hunts, earned or { value = false })
+		huntsCovers(handles.Hunts, earned or { value = false }, 1)
 		ledgerBindings(handles.Ledger)
 		fake.login()
 		fake.enterWorld()
@@ -1058,7 +1277,8 @@ describe("Buy on the stage", function()
 	)
 
 	it(
-		"is disabled for an owned good, a default, an earned good, and a good the balance doesn't cover (SHOP-R13)",
+		"is disabled for an owned good, a default, and a good the balance doesn't cover, and enabled for an earned good"
+			.. " on sale at its fallback price until it is earned (SHOP-R13, SHOP-R28)",
 		function()
 			local earned = { value = false }
 			local fake, handles = buyReady(899, earned)
@@ -1068,11 +1288,12 @@ describe("Buy on the stage", function()
 			for _, goodID in ipairs({
 				"core.toaststyle.ripple", -- bought
 				"hunts.cover.plain", -- the default
-				"hunts.cover.gold", -- earned, not yet
 				"ledger.binding.lapis", -- 900, one more needed
 			}) do
 				assert.are.same({ goodID }, { goodID, assert(shop:Stage(goodID)).canBuy, shop:Purchase(goodID) })
 			end
+			assert.is_true(assert(shop:Stage("hunts.cover.gold")).canBuy) -- earned, not yet: 400 at its fallback
+			assert.are.equal(400, assert(shop:Purchase("hunts.cover.gold")).price)
 			earned.value = true
 			handles.Hunts:RefreshGoods()
 			assert.is_nil(model(fake):Purchase("hunts.cover.gold"))
@@ -1174,7 +1395,7 @@ describe("Buying", function()
 		"appends one U1 with the good and its price, the balance drops and it's owned; Use it now equips it (SHOP-R10,"
 			.. " SHOP-R13, LOG-R39, wallet-and-shop.md › UI: Buy)",
 		function()
-			local fake = readyToBuy(200)
+			local fake = readyToBuy(300)
 			local Pagle = fake.Pagle
 			local before = #fake.catchLog.data.entries
 			local changed = looks(fake)
@@ -1184,7 +1405,7 @@ describe("Buying", function()
 			local entries = fake.catchLog.data.entries
 			assert.are.equal(before + 1, #entries)
 			-- Ada at the fake's server time, tie 1 after the Cast in the same second (LOG-R12).
-			assert.are.equal(purchaseEntry(SERVER_TIME, "core.toaststyle.ripple", 150, 1), entries[#entries])
+			assert.are.equal(purchaseEntry(SERVER_TIME, "core.toaststyle.ripple", 250, 1), entries[#entries])
 			assert.are.equal(50, Pagle.GetBalance().balance)
 			assert.is_true(Pagle.IsOwned("core.toaststyle.ripple"))
 			assert.are.equal("core.toaststyle.ripple", Pagle.GetEquipped("core.toaststyle"))
@@ -1193,7 +1414,7 @@ describe("Buying", function()
 	)
 
 	it("leaves the look as it was without Use it now: owned, not equipped (wallet-and-shop.md › UI: Buy)", function()
-		local fake = readyToBuy(200)
+		local fake = readyToBuy(300)
 		local changed = looks(fake)
 
 		assert.is_true(fake.ns.shop.Buy("core.toaststyle.ripple", false))
@@ -1204,7 +1425,7 @@ describe("Buying", function()
 	end)
 
 	it("equips an owned good with Use, and nothing for a good not owned or not known (SHOP-R32)", function()
-		local fake = readyToBuy(200)
+		local fake = readyToBuy(300)
 		local changed = looks(fake)
 		fake.ns.shop.Buy("core.toaststyle.ripple", false)
 
@@ -1218,7 +1439,7 @@ describe("Buying", function()
 	end)
 
 	it("raises no Announcement and no Session summary line (ANN-R23, SHOP-R5)", function()
-		local fake = readyToBuy(200)
+		local fake = readyToBuy(300)
 		local announced, summarized = #fake.announcements, #fake.summarized
 
 		fake.ns.shop.Buy("core.toaststyle.ripple", true)
@@ -1234,7 +1455,7 @@ describe("Buying", function()
 		"does nothing once Buy isn't enabled any more: the balance short, the good owned, a projection updating"
 			.. " (SHOP-R13)",
 		function()
-			local fake, handles = readyToBuy(200)
+			local fake, handles = readyToBuy(300)
 			local before = #fake.catchLog.data.entries
 
 			assert.is_false(fake.ns.shop.Buy("hunts.cover.velvet", true)) -- 400, with 200
@@ -1263,7 +1484,8 @@ end)
 
 -- Two of the Ledger's earned goods in Core's toast style slot, open to earned goods (SHOP-R23): The Old Oak, earned
 -- while `earned.value`, and The Desert Sun, never; each earnedText a function giving `texts[id]` (the row's tag, then
--- the stage's note) and counting its calls in `texts.calls`. Neither has a preview of its own.
+-- the stage's note) and counting its calls in `texts.calls`. Neither has a preview of its own, and both are on sale at
+-- tier 2's price from a fallback date past (SHOP-R24, SHOP-R28), so the shop lists them.
 local function ledgerStyles(ledger, earned, texts)
 	texts = texts
 		or {
@@ -1282,6 +1504,8 @@ local function ledgerStyles(ledger, earned, texts)
 				local given = texts[id] or {}
 				return given[1], given[2]
 			end,
+			fallbackTier = 2,
+			fallbackFrom = 1,
 		})
 	end
 	style("ledger.toaststyle.oak", "The Old Oak", function()
@@ -1303,21 +1527,16 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 	end
 
 	it(
-		"lists them in the slot after its own, counted, each not yet earned with its earnedText function's first text (SHOP-R22, SHOP-R23)",
+		"lists them in the slot after its own, counted, each not yet earned with its earnedText function's first text beside its fallback price (SHOP-R22, SHOP-R23, SHOP-R28)",
 		function()
 			local fake = styled({ value = true })
 
 			assert.are.same(
 				joined(
-					joined({
-						"Toast style (2 of 20)",
-						"  core.toaststyle.page In use",
-						"  core.toaststyle.ripple 150" .. " [red]",
-						"  core.toaststyle.lanternglow 400" .. " [red]",
-					}, expansionLines("toaststyle", 0)),
+					joined({ "Toast style (2 of 27)", "  core.toaststyle.page In use" }, saleLines("toaststyle", 0)),
 					{
 						"  ledger.toaststyle.oak Owned",
-						"  ledger.toaststyle.sun Unfished",
+						"  ledger.toaststyle.sun Unfished [red]",
 					}
 				),
 				outline({ model(fake):List({ category = "Announcements" })[1] })
@@ -1326,19 +1545,19 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 	)
 
 	it(
-		"shows the function's second text on the stage, then whose reward it is, its owner the good's Module (SHOP-R22, SHOP-R23)",
+		"shows the function's second text on the stage, then \"Or buy it for N\", its owner the good's Module (SHOP-R22, SHOP-R23, SHOP-R28)",
 		function()
 			local fake = styled({ value = false })
 
 			local stage = model(fake):Stage("ledger.toaststyle.oak")
 
 			assert.are.same({
-				"unearned",
+				"short",
 				"Toast style · Ledger",
-				{ "Earned when Elwynn reaches Master.", "A Ledger reward, not for sale" },
+				{ "Earned when Elwynn reaches Master.", "Or buy it for 400" },
 				{},
-			}, { stage.state, stage.slotLine, stage.notes, stage.tags })
-			assert.is_nil(stage.buy)
+				"Buy for 400",
+			}, { stage.state, stage.slotLine, stage.notes, stage.tags, stage.buy })
 		end
 	)
 
@@ -1362,16 +1581,12 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 			local owned = model(fake):Stage("ledger.toaststyle.oak")
 
 			assert.are.equal(calls, texts.calls)
-			assert.are.same({ "owned", { "Owned" }, { "A Ledger reward, not for sale" } }, {
-				owned.state,
-				owned.tags,
-				owned.notes,
-			})
+			assert.are.same({ "owned", { "Owned" }, {} }, { owned.state, owned.tags, owned.notes })
 		end
 	)
 
 	it(
-		"has no stage note when the function gives none, and the reward line on the row when it gives no text (SHOP-R22)",
+		"has no earned note on the stage when the function gives none, nor a tag on the row when it gives no text (SHOP-R22, SHOP-R28)",
 		function()
 			local fake = styled({ value = false }, {
 				["ledger.toaststyle.oak"] = { "Expert · 88%" },
@@ -1379,8 +1594,8 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 			})
 			local shop = model(fake)
 
-			assert.are.same({ "A Ledger reward, not for sale" }, shop:Stage("ledger.toaststyle.oak").notes)
-			assert.are.equal("A Ledger reward, not for sale", shop:Row("ledger.toaststyle.sun").tag)
+			assert.are.same({ "Or buy it for 400" }, shop:Stage("ledger.toaststyle.oak").notes)
+			assert.is_nil(shop:Row("ledger.toaststyle.sun").tag)
 		end
 	)
 
@@ -1408,6 +1623,8 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 				isEarned = function()
 					return false
 				end,
+				fallbackTier = 2,
+				fallbackFrom = 1,
 			})
 			handles.Ledger:RegisterGood({
 				id = "ledger.plate.own",
@@ -1416,6 +1633,8 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 				isEarned = function()
 					return false
 				end,
+				fallbackTier = 2,
+				fallbackFrom = 1,
 				preview = own,
 			})
 			fake.login()
@@ -1428,28 +1647,35 @@ describe("Another Module's earned goods in a Core slot open to them", function()
 		end
 	)
 
-	it("puts an owned one away while its Module is off, and hides the rest (SHOP-R35)", function()
-		local fake = coreWithModules("Ledger")
-		for id, cached in pairs({
-			["ledger.toaststyle.oak"] = { name = "The Old Oak", earned = true },
-			["ledger.toaststyle.sun"] = { name = "The Desert Sun", earned = false },
-		}) do
-			cached.slot, cached.slotLabel, cached.category, cached.module =
-				"core.toaststyle", "Toast style", "Announcements", "Ledger"
-			fake.global.goods[id] = cached
+	it(
+		"lists none while its Module is off, owned or not, the Collection's to show put away (SHOP-R35, SHOP-R24)",
+		function()
+			local fake = coreWithModules("Ledger")
+			for id, cached in pairs({
+				["ledger.toaststyle.oak"] = { name = "The Old Oak", earned = true },
+				["ledger.toaststyle.sun"] = { name = "The Desert Sun", earned = false },
+			}) do
+				cached.slot, cached.slotLabel, cached.category, cached.module =
+					"core.toaststyle", "Toast style", "Announcements", "Ledger"
+				fake.global.goods[id] = cached
+			end
+			fake.login()
+			local shop = model(fake)
+
+			local groups = shop:List({ category = "Announcements" })
+
+			for _, group in ipairs(groups) do
+				assert.is_nil(group.putAway) -- no Put away group
+			end
+			assert.is_nil(shop:Select("ledger.toaststyle.oak"))
+			assert.is_nil(shop:Select("ledger.toaststyle.sun"))
+			assert.are.same(
+				{ true, true },
+				{ shop:IsEarnedUnlisted("ledger.toaststyle.oak"), shop:IsEarnedUnlisted("ledger.toaststyle.sun") }
+			)
+			assert.is_false(shop:IsEarnedUnlisted("core.toaststyle.page"))
 		end
-		fake.login()
-		local shop = model(fake)
-
-		local groups = shop:List({ category = "Announcements" })
-
-		assert.are.same(
-			{ "Put away: Module off (Yours to keep)", "  ledger.toaststyle.oak Ledger is off" },
-			outline({ groups[#groups] })
-		)
-		assert.is_nil(groups[#groups].rows[1].shield)
-		assert.is_nil(shop:Select("ledger.toaststyle.sun"))
-	end)
+	)
 end)
 
 describe("The earned crests, which Look and Feel equips and the Curio Shop doesn't list", function()
@@ -1545,8 +1771,8 @@ describe("The earned crests, which Look and Feel equips and the Curio Shop doesn
 end)
 
 describe("The Curio crate", function()
-	local CRATE, FOIL, STORM, SHAGREEN =
-		"core.crate", "core.toaststyle.foil", "core.toaststyle.storm", "core.binding.shagreenbone"
+	local CRATE, FOIL = "core.crate", "core.toaststyle.foil"
+	local TOP = 4294967295 -- the highest hash: a Curio crate
 
 	-- Core with Hunts' covers and the Ledger's bindings, logged in and in the world, with the Ledger's `balance` Coins,
 	-- and a Session open (one Cast), so a moment or a summary line would land in it. `owned` goods are bought first,
@@ -1566,6 +1792,34 @@ describe("The Curio crate", function()
 		return fake, handles
 	end
 
+	-- The pool's goods of crate tier `tier`.
+	local function poolOf(fake, tier)
+		local ids = {}
+		for _, row in ipairs(fake.ns.CRATE_POOL) do
+			if row.tier == tier then
+				ids[#ids + 1] = row.id
+			end
+		end
+		return ids
+	end
+
+	-- Every crate hashes to `h` from now on (the fake's ns is the one the draw reads), and the pool is `pool`.
+	local function rigged(fake, h, pool)
+		fake.ns.SizeHash = function()
+			return h
+		end
+		fake.ns.CRATE_POOL = pool
+	end
+
+	-- The odds lines as the stage writes them: name, goods left or payback, chance.
+	local function lines(stage)
+		local out = {}
+		for i, odds in ipairs(stage.odds) do
+			out[i] = { odds.name, odds.detail, odds.chance }
+		end
+		return out
+	end
+
 	it(
 		"has its own row, at the very top, whichever chip is on, never a slot's (SHOP-R50, wallet-and-shop.md › UI)",
 		function()
@@ -1576,7 +1830,7 @@ describe("The Curio crate", function()
 				name = "Curio crate",
 				icon = fake.ns.CRATE_ICON,
 				state = "short",
-				price = "2,000",
+				price = "1,500",
 				short = true,
 			}
 
@@ -1599,155 +1853,426 @@ describe("The Curio crate", function()
 		end
 	)
 
-	it("shows its price in white once the balance covers 2,000 (SHOP-R54)", function()
-		local fake = crated(2500)
+	it("shows its price in white once the balance covers 1,500 (SHOP-R50, SHOP-R54)", function()
+		local fake = crated(1500)
 
 		local row = model(fake):Crate({})
 
-		assert.are.same({ "forSale", "2,000" }, { row.state, row.price })
+		assert.are.same({ "forSale", "1,500" }, { row.state, row.price })
 		assert.is_nil(row.short)
 	end)
 
 	it(
-		"shows on the stage each pool good's chance of coming next, the pity count and Buy (SHOP-R52, SHOP-R54)",
+		"shows on the stage a line for each crate tier: its name and colour, the goods it has left, its chance (SHOP-R54)",
 		function()
-			local fake = crated(2500)
+			local fake = crated(3500)
 
 			local stage = model(fake):Stage(CRATE)
 
 			assert.are.same({
-				id = CRATE,
-				name = "Curio crate",
-				icon = fake.ns.CRATE_ICON,
-				slotLine = "A crate of looks · Pagle",
-				state = "forSale",
-				crate = true,
-				tags = {},
-				notes = {},
-				odds = {
-					{ id = FOIL, name = fake.ns.goods:Good(FOIL).name, chance = "20%" },
-					{ id = STORM, name = fake.ns.goods:Good(STORM).name, chance = "40%" },
-					{ id = SHAGREEN, name = "Shagreen and Bone", chance = "40%" },
-				},
-				pity = "A crate-only look within 8 more crates",
-				buy = "Buy for 2,000",
-				canBuy = true,
-			}, stage)
+				{ "Plain", "28 left", "40%" },
+				{ "Fine", "35 left", "26%" },
+				{ "Lively", "27 left", "16%" },
+				{ "Showpiece", "9 left", "10%" },
+				{ "Marvel", "2 left", "5%" },
+				{ "Heirloom", "pays back 1,500", "2.5%" },
+				{ "Curio", "1 left", "0.5%" },
+			}, lines(stage))
+			local colors = {}
+			for i, odds in ipairs(stage.odds) do
+				colors[i] = { odds.color[1] * 255, odds.color[2] * 255, odds.color[3] * 255 }
+				assert.are.equal(fake.ns.CRATE_TIERS[i], odds.tier)
+			end
+			assert.are.same({ 0xe9, 0xe6, 0xdf }, colors[1])
+			assert.are.same({ 0x3e, 0xd3, 0x5a }, colors[2])
+			assert.are.same({ 0x3b, 0x86, 0xff }, colors[3])
+			assert.are.same({ 0xb0, 0x5c, 0xff }, colors[4])
+			assert.are.same({ 0xec, 0x3a, 0x3f }, colors[5])
+			assert.are.same({ 0xff, 0x8a, 0x1c }, colors[6])
+			assert.are.same({ 0xff, 0xd0, 0x4a }, colors[7])
 		end
 	)
 
-	it("strikes an owned pool good out of the odds, the others sharing its chance (SHOP-R54)", function()
-		local fake = crated(2500, { STORM })
+	it(
+		"counts a tier's goods left as the Angler buys and wins them, and says what an empty one pays back (SHOP-R54)",
+		function()
+			local owned = poolOf(crated(0), 1)
+			for _, id in ipairs(poolOf(crated(0), 5)) do
+				owned[#owned + 1] = id
+			end
+			owned[#owned + 1] = FOIL
+			local fake = crated(3500, owned)
+			local first = poolOf(fake, 2)
+			fake.ns.RecordPurchase(first[1], 0)
 
-		local odds = model(fake):Stage(CRATE).odds
+			local stage = model(fake):Stage(CRATE)
 
-		assert.are.same({ "33%", true, "67%" }, { odds[1].chance, odds[2].owned, odds[3].chance })
-		assert.is_nil(odds[2].chance)
+			assert.are.same({
+				{ "Plain", "pays back 250", "40%" },
+				{ "Fine", "34 left", "26%" },
+				{ "Lively", "27 left", "16%" },
+				{ "Showpiece", "9 left", "10%" },
+				{ "Marvel", "pays back 1,500", "5%" },
+				{ "Heirloom", "pays back 1,500", "2.5%" },
+				{ "Curio", "pays back 1,500", "0.5%" },
+			}, lines(stage))
+			assert(stage.pity == nil, "no crate-only good is a candidate")
+		end
+	)
+
+	it("keeps the crate's stage as a name, a slot line, its odds and Buy, with no description (SHOP-R54)", function()
+		local fake = crated(3500)
+
+		local stage = model(fake):Stage(CRATE)
+
+		assert.are.same(
+			{ CRATE, "Curio crate", "A crate of looks · Pagle", "forSale", true, "Buy for 1,500", true },
+			{ stage.id, stage.name, stage.slotLine, stage.state, stage.crate, stage.buy, stage.canBuy }
+		)
+		assert.are.same({ {}, {} }, { stage.tags, stage.notes })
+		assert.is_nil(stage.description)
+		assert.is_nil(stage.caption)
 	end)
 
 	it(
-		'asks "Open a Curio crate?" on its bill, with the price, the Coins left and its fine print (SHOP-R54)',
+		'writes the pity line: "A Curio within N more crates", N a hundred less the crates since one (SHOP-R52, SHOP-R54)',
 		function()
-			local fake = crated(2500)
+			local fake = crated(300000)
+			rigged(fake, 0, { { id = FOIL, tier = "curio", kind = "toaststyle" } })
+			assert.are.equal("A Curio within 100 more crates", model(fake):Stage(CRATE).pity)
 
+			for _ = 1, 3 do
+				assert.is_true(fake.ns.shop.Buy(CRATE, false))
+			end
+			assert.are.equal("A Curio within 97 more crates", model(fake):Stage(CRATE).pity)
+			for _ = 1, 95 do
+				assert.is_true(fake.ns.shop.Buy(CRATE, false))
+			end
+			assert.are.equal("A Curio within 2 more crates", model(fake):Stage(CRATE).pity)
+			assert.is_true(fake.ns.shop.Buy(CRATE, false))
+			assert.are.equal("A Curio in the next crate", model(fake):Stage(CRATE).pity)
+			assert.are.equal(99, fake.ns.walletSnapshot.dry)
+
+			local bought, result = fake.ns.shop.Buy(CRATE, false) -- the 100th crate, whatever the hash says
+			assert.is_true(bought)
+			assert.are.same({ tier = "curio", good = FOIL, crateOnly = true }, result)
+			assert(model(fake):Stage(CRATE) == nil, "the pool is empty: the crate has left the shop")
+		end
+	)
+
+	it(
+		'enables Buy while a pool good is a candidate and the balance covers it; the bill has no "Use it now" (SHOP-R13, SHOP-R54)',
+		function()
+			local fake = crated(3500)
+			assert.is_true(model(fake):Stage(CRATE).canBuy)
 			assert.are.same({
 				id = CRATE,
 				crate = true,
 				name = "Curio crate",
 				icon = fake.ns.CRATE_ICON,
-				price = 2000,
-				amount = "2,000",
-				left = "500",
+				price = 1500,
+				amount = "1,500",
+				left = "2,000",
 				question = "Open a Curio crate?",
 				fine = "One look you don't own yet, by chance; the chances are on the crate.",
 			}, model(fake):Purchase(CRATE))
-			assert(model(crated(1999)):Purchase(CRATE) == nil, "the balance short")
+			assert(model(fake):Purchase(CRATE).slot == nil, "no slot to use it in: there is no Use it now")
+
+			local short = model(crated(1499)):Stage(CRATE)
+			assert.are.same({ true, "1 more Coins", nil }, { short.short, short.needed, short.canBuy })
+			assert(model(crated(1499)):Purchase(CRATE) == nil, "the balance short")
 		end
 	)
 
+	it("leaves the list once every pool good is owned, and comes back when the pool grows (SHOP-R54)", function()
+		local owned = {}
+		for _, row in ipairs(crated(0).ns.CRATE_POOL) do
+			owned[#owned + 1] = row.id
+		end
+		local fake = crated(5000, owned)
+		local shop = model(fake)
+
+		assert.is_nil(shop:Crate({}))
+		assert.is_nil(shop:Crate({ search = "crate" }))
+		assert.is_nil(shop:Row(CRATE))
+		assert.is_nil(shop:Select(CRATE))
+		assert.is_nil(shop:Stage(CRATE))
+		assert.is_nil(shop:Purchase(CRATE))
+		local first = shop:List({})[1].rows[1].id
+		assert.are.equal(first, shop:Reselect(CRATE, {}), "the stage shows the list's first good")
+		assert.are.equal(first, fake.ns.ShopModel():Reselect(CRATE, { filter = "all" }))
+		local before = #fake.catchLog.data.entries
+		assert.is_false(fake.ns.shop.Buy(CRATE, false))
+		assert.are.equal(before, #fake.catchLog.data.entries)
+
+		local pool = fake.ns.CRATE_POOL
+		local grown = { unpack(pool) }
+		grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = SERVER_TIME - 100 }
+		fake.ns.CRATE_POOL = grown
+		shop = model(fake)
+
+		assert.are.equal(CRATE, shop:Select(CRATE))
+		assert.is_not_nil(shop:Crate({}))
+		assert.are.same({ "Plain", "1 left", "40%" }, lines(shop:Stage(CRATE))[1])
+		assert.are.equal(CRATE, shop:Reselect(CRATE, {}))
+		fake.ns.CRATE_POOL = pool
+	end)
+
+	it("keeps the row for a pool good that joins later, only once its release has come (SHOP-R53)", function()
+		local owned = {}
+		for _, row in ipairs(crated(0).ns.CRATE_POOL) do
+			owned[#owned + 1] = row.id
+		end
+		local fake = crated(5000, owned)
+		local pool = fake.ns.CRATE_POOL
+		local grown = { unpack(pool) }
+		grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = SERVER_TIME + 1000 }
+		fake.ns.CRATE_POOL = grown
+
+		assert(model(fake):Crate({}) == nil, "a release not yet out adds no candidate")
+		fake.ns.CRATE_POOL = pool
+	end)
+
 	it(
-		"buys one crate with one U1 of core.crate at 2,000 and opens it at once: the good it gave is owned, and in"
-			.. " use with Use it now; no Announcement (SHOP-R10, SHOP-R50, SHOP-R51, SHOP-R55)",
+		"buys one crate with one U1 of core.crate at 1,500 and opens it at once: what it gave is owned, not in use,"
+			.. " whatever Use it now says; no Announcement (SHOP-R10, SHOP-R50, SHOP-R51, SHOP-R55)",
 		function()
-			local fake = crated(2500)
+			local fake = crated(3500)
 			local Pagle = fake.Pagle
 			local before, announced = #fake.catchLog.data.entries, #fake.announcements
+			local inUse = Pagle.GetEquipped("core.toaststyle")
 
-			local bought, given = fake.ns.shop.Buy(CRATE, true)
+			local bought, result = fake.ns.shop.Buy(CRATE, true)
 
 			assert.is_true(bought)
 			local entries = fake.catchLog.data.entries
 			assert.are.equal(before + 1, #entries)
-			assert.are.equal(purchaseEntry(SERVER_TIME, CRATE, 2000, 1), entries[#entries])
+			assert.are.equal(purchaseEntry(SERVER_TIME, CRATE, 1500, 1), entries[#entries])
 			local guid = fake.catchLog.data.characters[1].guid
-			assert.are.equal(fake.ns.CrateDraw(("%s-%d-1"):format(guid, SERVER_TIME), {}, 0, SERVER_TIME), given)
-			assert.is_true(Pagle.IsOwned(given))
-			assert.are.equal(500, Pagle.GetBalance().balance)
-			if given ~= SHAGREEN then
-				assert.are.equal(given, Pagle.GetEquipped(fake.ns.goods:Good(given).slot))
+			local entryID = ("%s-%d-1"):format(guid, SERVER_TIME)
+			assert.are.same(fake.ns.CrateRoll(entryID, {}, 0, SERVER_TIME, 1500), result)
+			local crates = fake.ns.walletSnapshot.crates
+			assert.are.same({ result.good or result.payback }, crates)
+			assert.are.equal(3500 - 1500 + (result.payback or 0), Pagle.GetBalance().balance)
+			if result.good then
+				assert.is_true(Pagle.IsOwned(result.good))
 			end
-			assert.are.same({ given }, fake.ns.walletSnapshot.crates)
+			assert.are.equal(inUse, Pagle.GetEquipped("core.toaststyle"))
 			fake.nextFrame()
 			assert.are.equal(announced, #fake.announcements)
 		end
 	)
 
-	it("never gives a good owned already: with two of three owned, it gives the third (SHOP-R50)", function()
-		local fake = crated(2500, { FOIL, STORM })
+	it(
+		"gives a payback of a tier with no good left, and the purse is out only the difference (SHOP-R11, SHOP-R51)",
+		function()
+			local fake = crated(3500)
+			-- the hash rolls tier 2, whose goods are all owned; tier 5 still has one
+			rigged(fake, 1717986919, { { id = "core.toaststyle.storm", tier = 5, kind = "toaststyle" } })
 
-		local bought, given = fake.ns.shop.Buy(CRATE, false)
+			local bought, result = fake.ns.shop.Buy(CRATE, false)
 
-		assert.are.same({ true, SHAGREEN }, { bought, given })
-		assert.is_true(fake.Pagle.IsOwned(SHAGREEN))
+			assert.is_true(bought)
+			assert.are.same({ tier = 2, payback = 400 }, result)
+			assert.are.same({ 400 }, fake.ns.walletSnapshot.crates)
+			assert.are.equal(3500 - 1100, fake.Pagle.GetBalance().balance)
+			assert(model(fake):Crate({}) ~= nil, "a payback gives no good: the row stays")
+		end
+	)
+
+	it(
+		"gives a crate-only good by Curio, and keeps a good it can't show on the card of the crate (SHOP-R50, SHOP-R55)",
+		function()
+			local fake = crated(3500)
+			rigged(fake, TOP, { { id = FOIL, tier = "curio", kind = "toaststyle" } })
+
+			local _, result = fake.ns.shop.Buy(CRATE, false)
+
+			assert.are.same({ tier = "curio", good = FOIL, crateOnly = true }, result)
+			assert.is_true(fake.Pagle.IsOwned(FOIL))
+		end
+	)
+
+	it("never gives a good owned already, with only one left it gives that one (SHOP-R50, SHOP-R51)", function()
+		local pool = crated(0).ns.CRATE_POOL
+		local owned = {}
+		for i = 2, #pool do
+			owned[#owned + 1] = pool[i].id
+		end
+		local fake = crated(5000, owned)
+		fake.ns.SizeHash = function(id)
+			return id:sub(-5) == "/good" and 12345 or 0
+		end
+		-- tier 1 is the hash's: its good, the pool's first, is the only one left
+		local first = pool[1]
+		assert.are.equal(1, first.tier)
+
+		local bought, result = fake.ns.shop.Buy(CRATE, false)
+
+		assert.is_true(bought)
+		assert.are.same({ tier = 1, good = first.id }, result)
+		assert.is_nil(model(fake):Crate({}))
 	end)
 
-	it(
-		"says on its stage that a good no slot has registered is the Angler's, and shows it once registered"
-			.. " (SHOP-R50)",
-		function()
-			-- Shagreen and Bone registers in Core's binding slot now (ADR 0015), so a stand-in pool good no slot
-			-- registers, with its lore name, joins the pool after the three, all owned.
-			local LATER = "core.binding.later"
-			local fake = crated(2500, { FOIL, STORM, SHAGREEN })
-			local pool = fake.ns.CRATE_POOL
-			fake.ns.CRATE_POOL = { pool[1], pool[2], pool[3], { id = LATER } }
-			rawset(fake.ns.L, "good." .. LATER .. ".name", "Later Binding")
-			fake.ns.shop.Buy(CRATE, true)
+	describe("result card", function()
+		it("shows a good as its name, its crate tier's name and colour, and offers Use it now (SHOP-R55)", function()
+			local fake = crated(3500)
+			local good = fake.ns.goods:Good("core.toaststyle.ship")
+			fake.ns.RecordPurchase(good.id, 0)
 
-			local stage = model(fake):Stage(CRATE)
-			fake.ns.CRATE_POOL = pool
+			local card = model(fake):CrateResult({ tier = 2, good = good.id })
 
-			assert.are.equal("Later Binding is yours: it shows here once its slot arrives.", stage.caption)
-			assert.is_nil(model(fake):Select(LATER))
-		end
-	)
+			assert.are.same(
+				{ good.name, "Fine", good.id, good.id, true, good.icon },
+				{ card.title, card.tier, card.good, card.select, card.canUse, card.icon }
+			)
+			assert.are.equal(0x3e / 255, card.color[1])
+			assert.is_nil(card.payback)
+			assert.is_nil(card.line)
+		end)
 
-	it(
-		'reads "Empty: you have it all" once every pool good is owned, with no Buy, and buys nothing (SHOP-R54)',
-		function()
-			local fake = crated(10000, { STORM })
-			assert.is_true(fake.ns.shop.Buy(CRATE, false))
-			assert.is_true(fake.ns.shop.Buy(CRATE, false))
-			local before = #fake.catchLog.data.entries
-			local shop = model(fake)
+		it('shows a payback as the coin card: "+N Coins", the tier\'s name, and no good to use (SHOP-R55)', function()
+			local fake = crated(3500)
 
-			assert.are.same({
-				id = CRATE,
-				name = "Curio crate",
-				icon = fake.ns.CRATE_ICON,
-				state = "empty",
-				tag = "Empty: you have it all",
-			}, shop:Crate({}))
-			local stage = shop:Stage(CRATE)
-			assert.are.same({ "Empty: you have it all" }, stage.tags)
-			assert.is_nil(stage.buy)
-			assert.is_nil(stage.pity)
-			assert.are.same({ true, true, true }, { stage.odds[1].owned, stage.odds[2].owned, stage.odds[3].owned })
-			assert.is_nil(shop:Purchase(CRATE))
-			assert.is_false(fake.ns.shop.Buy(CRATE, false))
-			assert.are.equal(before, #fake.catchLog.data.entries)
-		end
-	)
+			local card = model(fake):CrateResult({ tier = "curio", payback = 1500 })
+
+			assert.are.same(
+				{ "+1,500 Coins", "Curio", 1500, CRATE, false, fake.ns.CRATE_COIN_ICON },
+				{ card.title, card.tier, card.payback, card.select, card.canUse, card.icon }
+			)
+			local plain = model(fake):CrateResult({ tier = 1, payback = 250 })
+			assert.are.same({ "+250 Coins", "Plain" }, { plain.title, plain.tier })
+		end)
+
+		it(
+			'turns a good no Module has registered, with no cache entry, over to "A new look", the crate staying selected (SHOP-R50)',
+			function()
+				local fake = crated(3500)
+				local id = "stats.trackerframe.greenbar"
+				fake.ns.RecordPurchase(id, 0)
+
+				local card = model(fake):CrateResult({ tier = 1, good = id })
+
+				assert.are.same(
+					{ "A new look", "It shows here once its Module is on.", false, CRATE, "trackerframe" },
+					{ card.title, card.line, card.canUse, card.select, card.kind }
+				)
+				assert.are.equal(fake.ns.CRATE_NEW_LOOK_ICON, card.icon)
+			end
+		)
+
+		it(
+			"names a good from the cache when the shop can't list it yet, without Use it now (SHOP-R35, SHOP-R50)",
+			function()
+				local fake = crated(3500)
+				local id = "stats.trackerframe.greenbar"
+				fake.ns.RecordPurchase(id, 0)
+				local cache =
+					{ [id] = { name = "Green Bar", icon = "x", slot = "stats.trackerframe", module = "Stats" } }
+				local function shopWith(modules)
+					return fake.ns.NewShopModel({
+						goods = fake.ns.goods,
+						cache = cache,
+						modules = modules,
+						balance = fake.Pagle.GetBalance(),
+						updating = false,
+						wallet = fake.ns.walletSnapshot,
+						now = SERVER_TIME,
+					})
+				end
+
+				-- its Module on but the good not registered (its slot is yet to come): the cache names it
+				local card = shopWith({ { def = { name = "Stats" } } }):CrateResult({ tier = 1, good = id })
+				assert.are.same({ "Green Bar", "x", false, CRATE }, { card.title, card.icon, card.canUse, card.select })
+				assert.is_nil(card.line)
+
+				-- its Module off: the good is put away, owned, and selected there
+				card = shopWith({}):CrateResult({ tier = 1, good = id })
+				assert.are.same({ "Green Bar", false, id }, { card.title, card.canUse, card.select })
+			end
+		)
+	end)
+
+	describe("result card's reveal (SHOP-R55, wallet-and-shop.md › UI: Motion and sound)", function()
+		it(
+			"gives a good the card it turns over to, its kind named, its crate tier's reveal and the YOURS stamp",
+			function()
+				local fake = crated(3500)
+				local good = fake.ns.goods:Good("core.toaststyle.ship")
+				fake.ns.RecordPurchase(good.id, 0)
+
+				local card = model(fake):CrateResult({ tier = 2, good = good.id })
+
+				assert.are.same(
+					{ "kind", "toast", "toaststyle", "Toast style", "Yours", 2 },
+					{ card.face, card.emblem, card.kind, card.kindName, card.stamp, card.reveal.tier }
+				)
+				assert.is_false(card.reveal.payback)
+				assert.is_nil(card.unseen)
+			end
+		)
+
+		it("gives a crate-only good the Curio '?' card, still naming its kind for the reveal", function()
+			local fake = crated(3500)
+			fake.ns.RecordPurchase(FOIL, 0)
+
+			local card = model(fake):CrateResult({ tier = "curio", good = FOIL, crateOnly = true })
+
+			assert.are.same(
+				{ "curio", "Toast style", 7, "curio" },
+				{ card.face, card.kindName, card.reveal.tier, card.reveal.sting }
+			)
+		end)
+
+		it("gives a payback the coin card, none of its tier's fanfare, and the PAID BACK stamp", function()
+			local fake = crated(3500)
+
+			for _, tier in ipairs({ 1, 6, "curio" }) do
+				local card = model(fake):CrateResult({ tier = tier, payback = 250 })
+				assert.are.same(
+					{ "coin", "coin", "Paid back", true },
+					{ card.face, card.emblem, card.stamp, card.reveal.payback }
+				)
+				assert.are.same({ nil, nil, nil, nil, 0.76 }, {
+					card.reveal.sparks,
+					card.reveal.embers,
+					card.reveal.shake,
+					card.reveal.flash,
+					card.reveal.wait,
+				})
+				assert.is_nil(card.kindName)
+			end
+		end)
+
+		it("gives a good with no cache entry its kind's emblem as its face, marked unseen", function()
+			local fake = crated(3500)
+			local id = "stats.trackerframe.greenbar"
+			fake.ns.RecordPurchase(id, 0)
+
+			local card = model(fake):CrateResult({ tier = 1, good = id })
+
+			assert.are.same(
+				{ true, "kind", "tracker", "Tracker frame" },
+				{ card.unseen, card.face, card.emblem, card.kindName }
+			)
+		end)
+
+		it(
+			"draws the reel's 60 cards from what the Angler owns now and the server time, the result's the 53rd",
+			function()
+				local fake = crated(3500)
+				local good = fake.ns.goods:Good("core.toaststyle.ship")
+				fake.ns.RecordPurchase(good.id, 0)
+
+				local cards = model(fake):CrateReel({ tier = 1, good = good.id }, function(n)
+					return math.ceil(n / 2)
+				end)
+
+				assert.are.equal(60, #cards)
+				assert.are.same({ tier = 1, face = "kind", kind = "toaststyle" }, cards[53])
+			end
+		)
+	end)
 
 	it('lists Prize Foil as "From a crate", never for sale, until a crate gives it (SHOP-R22, SHOP-R50)', function()
 		local fake = crated(10000)
@@ -1765,8 +2290,7 @@ describe("The Curio crate", function()
 		assert.is_nil(stage.buy)
 		assert.is_nil(shop:Purchase(FOIL))
 
-		fake.ns.RecordPurchase(STORM, 0)
-		fake.ns.RecordPurchase(SHAGREEN, 0)
+		rigged(fake, TOP, { { id = FOIL, tier = "curio", kind = "toaststyle" } })
 		fake.ns.shop.Buy(CRATE, false)
 
 		local owned = model(fake):Stage(FOIL)
@@ -1774,17 +2298,20 @@ describe("The Curio crate", function()
 		assert.is_true(owned.use)
 	end)
 
-	it('lists Sonar Scope as earned, "Link the companion", until the companion is linked (SHOP-R29)', function()
-		local fake = crated(0)
+	it(
+		"doesn't list Sonar Scope, an earned good with no fallback yet, until it has one (SHOP-R24, SHOP-R29)",
+		function()
+			local fake = crated(0)
 
-		local stage = model(fake):Stage("core.toaststyle.sonar")
-
-		assert.are.equal("Link the companion", model(fake):Row("core.toaststyle.sonar").tag)
-		assert.are.same({ "unearned", { "Link the companion", "A Pagle reward, not for sale" } }, {
-			stage.state,
-			stage.notes,
-		})
-	end)
+			assert.is_nil(model(fake):Stage("core.toaststyle.sonar"))
+			assert.is_nil(model(fake):Row("core.toaststyle.sonar"))
+			assert.is_true(model(fake):IsEarnedUnlisted("core.toaststyle.sonar"))
+			assert.are.same(
+				{ tag = "Link the companion", note = "Link the companion" },
+				fake.Pagle.GetEarnedProgress("core.toaststyle.sonar")
+			)
+		end
+	)
 
 	it(
 		"owns Sonar Scope once a check ends connected with the file's keyId and seq, through K1 (SHOP-R29, LOG-R37)",

@@ -69,14 +69,15 @@ function ns.JournalStars(stars)
 end
 
 --- A set of stars as three ink stamps (LED-R140, LED-R143): each of `labels`, inked when its star is shown (LED-R48,
---- LED-R92).
+--- LED-R92), with its tooltip from `tips` (LED-R165) when given.
 ---@param stars LedgerStars
 ---@param labels string[] the three stamps' words
----@return { text: string, inked: boolean }[]
-function ns.JournalStamps(stars, labels)
+---@param tips LedgerStampTip[]? one per stamp (logic/JournalStampTips.lua)
+---@return { text: string, inked: boolean, tip: LedgerStampTip? }[]
+function ns.JournalStamps(stars, labels, tips)
 	local stamps = {}
 	for star, text in ipairs(labels) do
-		stamps[star] = { text = text, inked = stars[star] == true }
+		stamps[star] = { text = text, inked = stars[star] == true, tip = tips and tips[star] or nil }
 	end
 	return stamps
 end

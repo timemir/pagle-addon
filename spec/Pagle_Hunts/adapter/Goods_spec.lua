@@ -100,7 +100,7 @@ describe("Hunts' goods", function()
 		end
 	)
 
-	it("sell for 150, 400 and 900 Coins at tiers 1 to 3, in the Curio Shop (HNT-R121, SHOP-R22)", function()
+	it("sell for 250, 400 and 900 Coins at tiers 1 to 3, in the Curio Shop (HNT-R121, SHOP-R22)", function()
 		local _, fake = loggedIn()
 		local shop = fake.ns.ShopModel(tostring)
 
@@ -115,7 +115,7 @@ describe("Hunts' goods", function()
 		}) do
 			prices[#prices + 1] = shop:Entry(id).price
 		end
-		assert.are.same({ 150, 400, 150, 150, 400, 900 }, prices)
+		assert.are.same({ 250, 400, 250, 250, 400, 900 }, prices)
 		assert.are.same({ "Hunts", "Hunts" }, {
 			fake.Pagle.GetGood("hunts.trackerframe.inkwash").module,
 			fake.Pagle.GetGood("hunts.trackerframe.none").module,
@@ -461,7 +461,7 @@ describe("Hunts' earned goods, through the projection", function()
 	end)
 
 	it(
-		"own Pathfinder's Calf once a live Cast earns a set title, refreshed then, and not Four-Set Seal while other sets aren't (HNT-R122, SHOP-R31)",
+		"own Pathfinder's Calf once a live Cast earns a set title, refreshed then, and not Five-Set Seal while other sets aren't (HNT-R122, SHOP-R31)",
 		function()
 			local _, fake = hunts.login(oddity)
 			fishAt(fake, hunts.DAY, WESTFALL, { C.RACK_AURA })
@@ -481,7 +481,7 @@ describe("Hunts' earned goods, through the projection", function()
 		assert.is_false(fake.Pagle.IsOwned(FIVESEAL))
 	end)
 
-	it("own Four-Set Seal and Night Watch when every set's title is earned (HNT-R122, HNT-R123, HNT-R20)", function()
+	it("own Five-Set Seal and Night Watch when every set's title is earned (HNT-R122, HNT-R123, HNT-R20)", function()
 		local _, fake = hunts.login(wagersTitle, { prepare = wagersOnly })
 
 		assert.is_true(fake.Pagle.IsOwned(FIVESEAL))
@@ -523,7 +523,7 @@ describe("Hunts' earned goods, through the projection", function()
 	)
 
 	it(
-		"keep Four-Set Seal and Night Watch, earned by a live Cast, when a release adds a set not yet titled (HNT-R122, HNT-R20)",
+		"keep Five-Set Seal and Night Watch, earned by a live Cast, when a release adds a set not yet titled (HNT-R122, HNT-R20)",
 		function()
 			local loaded, fake = hunts.login(oddity, { prepare = wagersOnly })
 			fishAt(fake, hunts.DAY, WESTFALL, { C.RACK_AURA })
@@ -545,7 +545,7 @@ describe("Hunts' earned goods, through the projection", function()
 	)
 
 	it(
-		"keep Four-Set Seal and Night Watch, earned before login, when a release adds a set not yet titled (HNT-R122, HNT-R20)",
+		"keep Five-Set Seal and Night Watch, earned before login, when a release adds a set not yet titled (HNT-R122, HNT-R20)",
 		function()
 			local loaded, fake = hunts.login(wagersTitle, { prepare = wagersOnly })
 			-- Noted in done, where the rule first held.

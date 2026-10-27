@@ -21,6 +21,8 @@ ns.LEAVE_SECONDS = { toast = 0.4, nod = 0.3, banner = 0.5 }
 ns.COLUMN_ENTRIES, ns.COLUMN_TOASTS, ns.COLUMN_HEIGHT, ns.COLUMN_GAP = 4, 3, 300, 12
 --- A Nod's height in the column, and how far toast.high's bookmark hangs below its page.
 ns.NOD_HEIGHT, ns.RIBBON_HEIGHT = 40, 22
+--- A Nod's line at most; with its medallion it is 22 units wider (ANN-R98 keeps the widest entry on screen).
+ns.NOD_WIDTH = 640
 --- Held toasts that fold into one "While you were fighting" toast (ANN-R36): fewer show as themselves.
 ns.FIGHTING_DIGEST = 3
 --- Seconds after a restriction ends before Core shows what it held (ANN-R36; Tunables: Delay after combat).
@@ -110,6 +112,7 @@ end
 ---@field package endsAt number? when its time is up, while it isn't paused
 ---@field package left number? seconds it had left when it was paused
 ---@field package paused boolean? the pointer is on it: its clock stands still
+---@field package stilled boolean? the column is held while the Angler moves it (ANN-R98): its clock stands still
 ---@field package token integer? its timer's turn: a timer from an earlier turn does nothing
 
 --- What the lanes are fed. Every function is called when needed, never stored.
@@ -145,6 +148,8 @@ end
 ---@field package heldBig PagleAnnouncement[]   -- banners and splashes held: splashes first, then in order raised
 ---@field package releases integer              -- combat's Hold and Release calls so far: a wait that sees a newer
 --                                                 one ends
+---@field package columnHeld boolean?          -- the Angler is moving the column (ANN-R98): its clocks stand still and
+--                                                 nothing enters or leaves it
 local Lanes = {}
 Lanes.__index = Lanes
 
@@ -276,6 +281,8 @@ function Lanes:Hold(reason)
 	if holding then
 		return
 	end
+	-- The column goes off screen, and so does a move of it (ANN-R98): the Toast column is held no more.
+	self.columnHeld = false
 	local centre, column = self.centre, self.column
 	self.centre, self.column = nil, {}
 	if centre then
@@ -367,15 +374,16 @@ function Lanes:showHeld(fought)
 end
 
 -- The "While you were fighting" toast for the toasts held (ANN-R36): it lists each one's headline, carries their Coins
--- (ANN-R23), and is a plain `toast`, so it plays the toast sound once, counts as one interruption and never steps
+-- and Refreshes (ANN-R23, REF-R7), and is a plain `toast`, so it plays the toast sound once, counts as one interruption and never steps
 -- down (ANN-R31).
 ---@param toasts PagleAnnouncement[]
 ---@return PagleAnnouncement
 function whileFighting(toasts)
-	local headlines, coins = {}, 0
+	local headlines, coins, tickets = {}, 0, 0
 	for _, held in ipairs(toasts) do
 		headlines[#headlines + 1] = held.headline
 		coins = coins + held.coins
+		tickets = tickets + (held.tickets or 0)
 	end
 	---@type PagleRaisedMoment
 	local headline = {
@@ -393,16 +401,17 @@ function whileFighting(toasts)
 		stamps = {},
 		more = 0,
 		coins = coins,
+		tickets = tickets > 0 and tickets or nil,
 		moments = {},
 		fighting = headlines,
 	}
 end
 
 --- Takes a toast, a Nod or a splash off screen when it is clicked (ANN-R20). Does nothing for one no longer on
---- screen, or for a banner.
+--- screen, for a banner, or for a toast or Nod while the column is held (ANN-R98).
 ---@param display PagleDisplay
 function Lanes:Dismiss(display)
-	if display.form ~= "banner" then
+	if display.form ~= "banner" and not (self.columnHeld and display ~= self.centre) then
 		self:done(display)
 	end
 end
@@ -414,20 +423,69 @@ function Lanes:Pause(display)
 		return
 	end
 	display.paused = true
-	display.left = math.max(0, (display.endsAt or 0) - self.options.now())
-	display.token = (display.token or 0) + 1
+	if not display.stilled then
+		self:freeze(display)
+	end
 end
 
---- The pointer left a paused toast or Nod: its clock goes on from where it stood.
+--- The pointer left a paused toast or Nod: its clock goes on from where it stood, unless the column is held (ANN-R98),
+--- when it goes on at ReleaseColumn.
 ---@param display PagleDisplay
 function Lanes:Resume(display)
 	if not display.paused then
 		return
 	end
 	display.paused = false
-	if self:onScreen(display) then
+	if not display.stilled and self:onScreen(display) then
 		self:schedule(display, display.left or 0)
 	end
+end
+
+-- Stops `display`'s clock where it stands: the seconds it had left are kept, and the timer already running does nothing.
+---@package
+---@param display PagleDisplay
+function Lanes:freeze(display)
+	display.left = math.max(0, (display.endsAt or 0) - self.options.now())
+	display.token = (display.token or 0) + 1
+end
+
+--- The Angler started moving the column (ANN-R98): every toast and Nod in it has its clock stopped, whether the pointer
+--- is on it or not, and until ReleaseColumn nothing enters the column and nothing in it is sent away. It holds the
+--- column, not the lanes: the centre goes on. A second call changes nothing.
+function Lanes:HoldColumn()
+	if self.columnHeld then
+		return
+	end
+	self.columnHeld = true
+	for _, display in ipairs(self.column) do
+		if not display.paused then
+			self:freeze(display)
+		end
+		display.stilled = true
+	end
+end
+
+--- Whether the Angler is moving the column (ANN-R98): HoldColumn was called and not yet ReleaseColumn.
+---@return boolean
+function Lanes:IsColumnHeld()
+	return self.columnHeld == true
+end
+
+--- The Angler dropped the column (ANN-R98): each clock goes on from where it stood, except that of one the pointer is
+--- still on, which goes on when the pointer leaves (Resume); then what waits for the column enters. Does nothing if
+--- the column wasn't held.
+function Lanes:ReleaseColumn()
+	if not self.columnHeld then
+		return
+	end
+	self.columnHeld = false
+	for _, display in ipairs(self.column) do
+		display.stilled = nil
+		if not display.paused then
+			self:schedule(display, display.left or 0)
+		end
+	end
+	self:next()
 end
 
 --- Takes `announcement` back (a `/pagle dev tour` stop's hide, CORE-R68): off screen if it shows, out of its lane or
@@ -517,15 +575,15 @@ local function heightOf(announcement, form)
 	return page.h + (page.high and ns.RIBBON_HEIGHT or 0) + ns.COLUMN_GAP
 end
 
--- Whether the column takes `announcement` as `form` now (ANN-R20): no splash holds it back, it has fewer than
--- COLUMN_ENTRIES entries and, for a toast, fewer than COLUMN_TOASTS toasts, and it fits under COLUMN_HEIGHT (an empty
--- column takes anything).
+-- Whether the column takes `announcement` as `form` now (ANN-R20): the Angler isn't moving it (ANN-R98), no splash
+-- holds it back, it has fewer than COLUMN_ENTRIES entries and, for a toast, fewer than COLUMN_TOASTS toasts, and it
+-- fits under COLUMN_HEIGHT (an empty column takes anything).
 ---@package
 ---@param announcement PagleAnnouncement
 ---@param form "toast"|"nod"
 ---@return boolean
 function Lanes:columnTakes(announcement, form)
-	if self:splashHolds() or #self.column >= ns.COLUMN_ENTRIES then
+	if self.columnHeld or self:splashHolds() or #self.column >= ns.COLUMN_ENTRIES then
 		return false
 	end
 	local toasts, height = self:columnLoad()

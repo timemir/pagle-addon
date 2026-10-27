@@ -28,8 +28,8 @@ local SAT_15 = THU_11 + 2 * DAY + 4 * HOUR
 local AHEAD = { time = THU_11, minute = 13 * 60, date = { year = 2026, month = 10, day = 15, weekday = 5 } }
 local UTC = { time = THU_11, minute = 11 * 60, date = { year = 2026, month = 10, day = 15, weekday = 5 } }
 
-local RULE = "Each Hunt's first mark pays +150 XP and 15 Coins, each tier after it +100 XP and 10 Coins, and settling "
-	.. "the wager +250 XP and 50 Coins more."
+local RULE = "Each Hunt's first mark pays +150 XP and 8 Coins, each tier after it +100 XP and 5 Coins, and settling "
+	.. "the wager +250 XP and 25 Coins more. A Hunt's third mark also pays 1 Refresh, and settling the wager 1 more."
 
 -- The fixture pool with fixture_vale in the mid band (the header).
 local function pool(fixture)
@@ -483,9 +483,10 @@ describe("selecting a run (HNT-R67, HNT-R164)", function()
 			" / 1",
 			"1 Cast in these waters this run · 1 of 3 first marks",
 			"PAID SO FAR",
-			"+150 XP · 15 Coins",
+			"+150 XP · 8 Coins",
 			"SETTLE IT",
-			"+250 XP · 50 Coins",
+			"+250 XP · 25 Coins",
+			"+1 Refresh", -- what settling pays (HNT-R117)
 			RULE,
 		}) do
 			assert(has(texts, text), "the run's entry lacks " .. text)
@@ -556,8 +557,8 @@ describe("a run's entry (HNT-R163)", function()
 			})
 			assert.is_nil(entry.seal)
 			assert.are.same({
-				{ label = "Paid so far", amount = "+150 XP · 15 Coins" },
-				{ label = "Settle it", amount = "+250 XP · 50 Coins" },
+				{ label = "Paid so far", amount = "+150 XP · 8 Coins" },
+				{ label = "Settle it", amount = "+250 XP · 25 Coins", refresh = "+1 Refresh" },
 			}, entry.pay)
 			assert.are.same({ { kind = "zone", text = "Darkshore", here = true, badge = "you're here" } }, entry.chips)
 			local lines = {}
@@ -586,8 +587,8 @@ describe("a run's entry (HNT-R163)", function()
 
 		assert.are.same({ word = "Settled", date = "14 Oct" }, entry.seal)
 		-- Three first marks (the Deviate Fish is the Haul's second fish and the oddity's first) and the settled run:
-		-- 3 × 150 + 250 XP, 3 × 15 + 50 Coins.
-		assert.are.same({ label = "Paid so far", amount = "+700 XP · 95 Coins" }, entry.pay[1])
+		-- 3 × 150 + 250 XP, 3 × 8 + 25 Coins, and the run's Refresh.
+		assert.are.same({ label = "Paid so far", amount = "+700 XP · 49 Coins", refresh = "+1 Refresh" }, entry.pay[1])
 		assert.are.same({ label = "Settled", amount = "paid out" }, entry.pay[2])
 		r.ns.OpenBoard({ run = SHORE })
 		local texts = pageTexts(r, "right")

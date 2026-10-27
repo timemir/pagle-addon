@@ -79,6 +79,7 @@ local function wagers(fake)
 				stamp = moment.stamp,
 				icon = moment.icon,
 				coins = moment.coins,
+				tickets = moment.tickets,
 				cast = moment.cast,
 				summaryOnly = moment.summaryOnly,
 				seal = moment.seal,
@@ -129,7 +130,7 @@ local function mark(huntName, icon, castID)
 		text = huntName .. " · first mark",
 		stamp = "Mark",
 		icon = icon,
-		coins = 15,
+		coins = 8,
 		cast = castID,
 	}
 end
@@ -149,7 +150,7 @@ describe("Pagle Wagers' moments", function()
 			assert.are.same({ mark("fixture_vale_uncommon", C.UNCOMMON, live.id) }, wagers(fake))
 			-- One Announcement for the Cast, with the mark's Coins (ANN-R10, ANN-R23).
 			assert.are.equal(1, #fake.announcements)
-			assert.are.same({ live.id, 15 }, { fake.announcements[1].cast, fake.announcements[1].coins })
+			assert.are.same({ live.id, 8 }, { fake.announcements[1].cast, fake.announcements[1].coins })
 			-- The celebrated set's run entry, by run key, with the run's end (HNT-R90, HNT-R92).
 			assert.are.same({
 				["fixture_vale@" .. start] = { tiers = { fixture_vale_uncommon = 1 }, endsAt = start + 2 * HOUR },
@@ -198,7 +199,8 @@ describe("Pagle Wagers' moments", function()
 					stamp = "Settled",
 					-- The event's icon is its first Hunt's (HNT-R161): the Haul's, any fish, so Trade_Fishing (HNT-R55).
 					icon = TRADE_FISHING,
-					coins = 50,
+					coins = 25,
+					tickets = 1, -- TICKETS_RUN (HNT-R117)
 					cast = live.id,
 				},
 			}, wagers(fake))
@@ -243,11 +245,61 @@ describe("Pagle Wagers' moments", function()
 				text = "fixture_vale_haul · 3 caught",
 				stamp = "Silver",
 				icon = C.BLACKMOUTH,
-				coins = 10,
+				coins = 5,
 				cast = live.id,
 			}, moments[#moments])
 			assert.are.equal(2, celebrated(loaded).runs["fixture_vale@" .. start].tiers.fixture_vale_haul)
 		end)
+
+		it(
+			"carry the Refreshes: a third mark's and a settled run's, summed in the Cast's Announcement (REF-R7)",
+			function()
+				-- fixture_deep: a Haul with three tiers (1 / 2 / 3 Catches), a Named fish and a Quality Hunt, in Elwynn.
+				local loaded, fake = login(nil, {
+					events = function(list)
+						list.events[#list.events + 1] = {
+							id = "fixture_deep",
+							zones = { 12 },
+							tags = { "lake", "low" },
+							skill = { 25, 150 },
+							band = "low",
+							rotation = false,
+							hunts = {
+								{ id = "fixture_deep_haul", class = "species.any", tiers = { 1, 2, 3 } },
+								{ id = "fixture_deep_blackmouth", species = 6358, tiers = { 1 } },
+								{ id = "fixture_deep_uncommon", class = "quality.uncommon", tiers = { 1 } },
+							},
+						}
+						return list
+					end,
+				})
+				local start = SERVER_TIME - HOUR
+				loaded.ns.Module:AppendRecord("run", runPayload("fixture_deep", start, start + 3 * DAY))
+				fishAt(fake, DAY_MINUTE, ELWYNN)
+
+				local live = fake.playCast("caught", {
+					{ itemID = C.BLACKMOUTH, quantity = 1 },
+					{ itemID = C.BLACKMOUTH, quantity = 1 },
+					{ itemID = C.BLACKMOUTH, quantity = 1 },
+					{ itemID = C.UNCOMMON, quantity = 1 },
+				})
+				fake.nextFrame()
+
+				local byKind = {}
+				for _, moment in ipairs(wagers(fake)) do
+					byKind[moment.kind] = moment
+					assert.are.equal(live.id, moment.cast)
+				end
+				assert.are.same(
+					{ "Gold mark", loaded.ns.TICKETS_TIER3 },
+					{ byKind.wagerTier.title, byKind.wagerTier.tickets }
+				)
+				assert.are.equal(loaded.ns.TICKETS_RUN, byKind.wagerSettled.tickets)
+				assert.is_nil(byKind.wagerMark.tickets)
+				assert.are.equal(1, #fake.announcements)
+				assert.are.equal(loaded.ns.TICKETS_RUN + loaded.ns.TICKETS_TIER3, fake.announcements[1].tickets)
+			end
+		)
 
 		it("raise the ladder title at the 25th settled run as a banner with no Coins (HNT-R86, HNT-R148)", function()
 			-- 24 runs completed in March, then a 25th on now.
@@ -289,7 +341,7 @@ describe("Pagle Wagers' moments", function()
 				{ banner.headline.title, banner.headline.text, banner.headline.seal }
 			)
 			assert.are.equal(0, banner.coins or 0)
-			assert.are.equal(3 * 15 + 50, toast.coins)
+			assert.are.equal(3 * 8 + 25, toast.coins)
 			assert.are.same({ [25] = true }, celebrated(loaded).ladder)
 		end)
 
@@ -318,7 +370,8 @@ describe("Pagle Wagers' moments", function()
 					text = "fixture_vale",
 					stamp = "Settled",
 					icon = TRADE_FISHING,
-					coins = 50,
+					coins = 25,
+					tickets = 1, -- TICKETS_RUN (HNT-R117)
 					summaryOnly = true,
 				},
 			}, wagers(fake))
@@ -330,13 +383,13 @@ describe("Pagle Wagers' moments", function()
 
 	describe("from done (HNT-R92, HNT-R111, HNT-R112)", function()
 		it("writes a first build's settled runs and Angler XP, and raises no moment", function()
-			-- One fixture_vale run completed in March: three first marks (15 Coins, 150 XP each) and the run (50, 250).
+			-- One fixture_vale run completed in March: three first marks (8 Coins, 150 XP each) and the run (25, 250).
 			local loaded, fake = login(function(fake)
 				append(fake, valeRun(MARCH_1, MARCH_1 + DAY))
 			end)
 
 			assert.are.same({
-				{ "Your Hunts were written up from 1 Cast", "1 wager settled", "Pagle Coins +95", "Angler XP +700" },
+				{ "Your Hunts were written up from 1 Cast", "1 wager settled", "Pagle Coins +49", "Angler XP +700" },
 			}, writeUps(fake))
 			assert.are.same({}, wagers(fake))
 			-- The run ended more than 30 days ago, so it keeps no celebrated entry (HNT-R92).
@@ -355,7 +408,7 @@ describe("Pagle Wagers' moments", function()
 				nextLogin(last, lastLoaded, joined({ valeRun(first, first + DAY), valeRun(second, second + DAY) }))
 
 			assert.are.same({
-				{ "While Hunts was off", "2 wagers settled", "Pagle Coins +190", "Angler XP +1,400" },
+				{ "While Hunts was off", "2 wagers settled", "Pagle Coins +98", "Angler XP +1,400" },
 			}, writeUps(fake))
 			assert.are.same({ {}, {} }, { wagers(fake), fake.announcements })
 			local runs = celebrated(loaded).runs
@@ -468,7 +521,7 @@ describe("Pagle Wagers' moments", function()
 					"While Hunts was off",
 					"1 wager settled",
 					"Title: Bookmaker's Bane",
-					"Pagle Coins +95",
+					"Pagle Coins +49",
 					"Angler XP +700",
 				},
 			}, writeUps(fake))

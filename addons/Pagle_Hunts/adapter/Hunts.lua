@@ -48,6 +48,9 @@ function ns.Hunts.OnInitialize()
 		ReportXPEarned = function(total)
 			ns.Module:ReportXPEarned(total)
 		end,
+		ReportTicketsEarned = function(total)
+			ns.Module:ReportTicketsEarned(total)
+		end,
 		-- A run record's earlier Casts, read back from the log (HNT-R149, LOG-R42).
 		IterateCatches = function(afterSeq)
 			return ns.Module:IterateCatches(afterSeq)

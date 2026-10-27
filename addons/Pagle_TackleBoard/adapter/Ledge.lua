@@ -93,6 +93,9 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 ---@field label FontString
 ---@field pointer TackleSprite
 
+---@class TackleRefreshCount: Frame
+---@field label FontString   -- "3 Refreshes held"
+
 ---@class TackleCardDayCell: Frame
 ---@field cell TackleSprite
 ---@field icon TackleSprite
@@ -138,6 +141,7 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 ---@field box TackleFlyBoxButton
 ---@field plate TackleTallyPlate
 ---@field shop TackleShopLink
+---@field refresh TackleRefreshCount
 ---@field veil Frame?
 ---@field card TackleCampfireCardFrame?
 ---@field drawer TackleDrawerFrame?
@@ -798,8 +802,26 @@ local function buildShop(ledge)
 	ledge.shop = shop
 end
 
--- The "ledge" part (TKB-R106): the Campfire, the Fly Box, the tally plate and the shop card, and the card or the drawer
--- while one is open. The board's opening closes them.
+-- The Refresh count (TKB-R58, TKB-R106): the Refreshes held, in the ledge's light italics under the shop card, with a
+-- hover saying what they are for. Core's count (REF-R5), redrawn when it changes (adapter/Pins.lua listens).
+---@param ledge TackleLedgeFrame
+local function buildRefresh(ledge)
+	local refresh = CreateFrame("Frame", nil, ledge) --[[@as TackleRefreshCount]]
+	refresh:SetSize(128, 24)
+	refresh:SetPoint("TOPLEFT", 836, -120)
+	refresh:EnableMouse(true)
+	refresh.label = ns.ArtText(refresh, "Longest")
+	refresh.label:SetJustifyH("CENTER")
+	refresh.label:SetPoint("CENTER")
+	refresh:SetScript("OnEnter", function(self)
+		ns.BoardHover(self, { ns.L.REFRESH_TIP_TITLE, ns.L.REFRESH_TIP, ns.L.REFRESH_TIP_SOURCE }, { cursor = true })
+	end)
+	refresh:SetScript("OnLeave", ns.BoardHoverHide)
+	ledge.refresh = refresh
+end
+
+-- The "ledge" part (TKB-R106): the Campfire, the Fly Box, the tally plate and the shop card with the Refresh count under
+-- it, and the card or the drawer while one is open. The board's opening closes them.
 ---@param ledge TackleLedgeFrame
 ---@param draw TackleBoardDraw
 local function drawLedge(ledge, draw)
@@ -808,6 +830,7 @@ local function drawLedge(ledge, draw)
 		buildBox(ledge)
 		buildPlate(ledge)
 		buildShop(ledge)
+		buildRefresh(ledge)
 		-- The card and the drawer lie on the board, not the ledge: they close with it, as when a rebuild leaves the
 		-- cork bare (TKB-R108).
 		ledge:SetScript("OnHide", function()
@@ -832,6 +855,7 @@ local function drawLedge(ledge, draw)
 	ns.SetArtFont(plate.latest, tally.latest and "TallyTitle" or "TallyNone")
 	ns.LeanSprite(ledge.shop.card, ledge.shop, 0, 0, 2.5)
 	ns.LeanSprite(ledge.shop.pointer, ledge.shop, 77, 27, 2.5)
+	ledge.refresh.label:SetText(ns.Plural(ns.RefreshesHeld(), "REFRESHES_HELD"))
 	if ledge.card and ledge.card:IsShown() then
 		drawCard(ledge.card)
 	end

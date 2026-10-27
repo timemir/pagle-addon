@@ -41,8 +41,9 @@ describe("the goal text", function()
 			{ "Every Species of Feralas", goal("e", "variety", 3, FERALAS, { 4603, 13754, 13760 }) },
 			{ "Catches in 3 zones today", goal("n", "wanderer", 3) },
 			{ "Catches in 5 zones of Kalimdor", goal("e", "wanderer", 5, 1) },
-			{ "5 uncommon-or-better Catches", goal("n", "quality", 5, 2) },
-			{ "3 rare-or-better Catches", goal("e", "quality", 3, 3) },
+			{ "5 Catches of an uncommon variety or better", goal("n", "rarity", 5, 2) },
+			{ "8 Catches of a rare variety or better", goal("e", "rarity", 8, 3) },
+			{ "A Catch of an uncommon variety or better", goal("n", "rarity", 1, 2) },
 			{ "A junk item and a container today", goal("n", "collector", 2) },
 			{ "3 Sub-collection items you don't have", goal("e", "collector", 3) },
 			{ "20 Catches with a lure on", goal("n", "lure", 20) },
@@ -136,7 +137,7 @@ describe("the kind's label", function()
 		local ns = board.load().ns
 		local labels, icons, notIcons = {}, {}, {}
 
-		for _, kind in ipairs({ "haul", "variety", "wanderer", "quality", "collector", "lure", "species" }) do
+		for _, kind in ipairs({ "haul", "variety", "wanderer", "rarity", "collector", "lure", "species" }) do
 			labels[#labels + 1] = ns.KindLabel(kind)
 			local icon = ns.KIND_ICONS[kind]
 			icons[icon] = true
@@ -145,7 +146,7 @@ describe("the kind's label", function()
 			end
 		end
 
-		local kinds = { "Haul", "Variety", "Wanderer", "Quality", "Collector", "Lure", "Species" }
+		local kinds = { "Haul", "Variety", "Wanderer", "Rarity", "Collector", "Lure", "Species" }
 		assert.are.same(kinds, labels)
 		assert.are.same({}, notIcons, "every kind's icon is an in-client icon")
 		local distinct = 0
@@ -186,8 +187,8 @@ describe("where a goal is worked", function()
 			varietyExpedition = goal("e", "variety", 5, DARKSHORE, { 4603, 6303, 6358, 12238, 13754 }),
 			wanderer = goal("n", "wanderer", 3),
 			wandererExpedition = goal("e", "wanderer", 5, 1),
-			quality = goal("n", "quality", 5, 2),
-			qualityExpedition = goal("e", "quality", 3, 3),
+			rarity = goal("n", "rarity", 5, 2),
+			rarityExpedition = goal("e", "rarity", 8, 3),
 			collector = goal("n", "collector", 2),
 			collectorExpedition = goal("e", "collector", 3),
 			lure = goal("n", "lure", 20),
@@ -221,8 +222,8 @@ describe("where a goal is worked", function()
 			varietyExpedition = "Darkshore",
 			wanderer = "anywhere",
 			wandererExpedition = "Kalimdor",
-			quality = "anywhere",
-			qualityExpedition = "anywhere",
+			rarity = "anywhere",
+			rarityExpedition = "anywhere",
 			collector = "anywhere",
 			collectorExpedition = "anywhere",
 			lure = "anywhere",
@@ -239,8 +240,8 @@ describe("where a goal is worked", function()
 			varietyExpedition = true,
 			wanderer = false,
 			wandererExpedition = true,
-			quality = false,
-			qualityExpedition = false,
+			rarity = false,
+			rarityExpedition = false,
 			collector = false,
 			collectorExpedition = false,
 			lure = false,
@@ -359,8 +360,8 @@ describe("where a goal is worked", function()
 				varietyExpedition = never,
 				wanderer = always,
 				wandererExpedition = never,
-				quality = always,
-				qualityExpedition = always,
+				rarity = always,
+				rarityExpedition = always,
 				collector = always,
 				collectorExpedition = always,
 				lure = always,

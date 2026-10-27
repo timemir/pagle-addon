@@ -123,7 +123,7 @@ The small badge for a prestige rank, its Prestige frame in miniature with its nu
 _Avoid_: Prestige crest, seal, badge (alone), rank icon
 
 **Fresh Water**:
-Bonus XP on Catches made after a break from fishing, the Pagle counterpart to WoW's rested XP. It is a bonus, never a penalty.
+Bonus XP on Catches made after a real break from fishing, the Pagle counterpart to WoW's rested XP; a short pause between casts doesn't count. A new Angler starts with a full measure. It is a bonus, never a penalty.
 _Avoid_: rested XP, Rested Angler, diminishing returns
 
 **Zone Mastery**:
@@ -193,8 +193,16 @@ Pagle telling the player, in the moment, about something they just earned. One C
 _Avoid_: notification, alert, popup
 
 **Nod**:
-The quietest Announcement: one silent line, for minor moments, toasts stepped down by the Interruption budget, and the **catch Nod** Core shows for an ordinary Catch ("Mud Snapper · Decent · 34.2 cm") when nothing bigger came of it.
+The quietest Announcement: one silent line, for minor moments and for toasts stepped down by the Interruption budget (a **catch toast** that steps down reads "Mud Snapper · Decent · 34.2 cm").
 _Avoid_: mini toast, whisper
+
+**Catch toast**:
+The toast Core shows for an ordinary Catch when nothing bigger came of it: the size band and length ("DECENT · 34.2 CM") over the fish's name, with the toast sound. It counts toward the Interruption budget, and steps down to a Nod when the budget is spent. The player can switch it off with Show every catch.
+_Avoid_: catch Nod
+
+**Toast column**:
+Where toasts and Nods appear, stacked with the newest at the foot; the Angler can move it, and the Letter takes its place.
+_Avoid_: toast area, notification stack, lane
 
 **Interruption budget**:
 The player's limit on how often Pagle may interrupt within a stretch of fishing. When it is spent, low-priority toasts step down to Nods; everything else still gets through. The player can switch it off.
@@ -243,6 +251,26 @@ _Avoid_: currency (alone), points, gold, Tender (Retail's Trading Post currency)
 **Curio Shop**:
 Core's shop where the Angler spends Pagle Coins on looks for Pagle's own views, such as toast styles, sound sets, bindings and tracker frames. It never sells meanings (titles, flies, stars, Legends) and its stock never rotates.
 _Avoid_: store, Trading Post, Bait Shop, shop (alone)
+
+**Curio crate**:
+A crate sold in the Curio Shop at a fixed price that gives one look by chance, by crate tier, never one already owned; a tier with nothing left for the Angler pays some of the price back.
+_Avoid_: loot box, lootbox, mystery box
+
+**Crate tier**:
+Where a look sits in the Curio crate's odds: Plain, Fine, Lively, Showpiece, Marvel or Heirloom, after its price tier, or Curio for a look only the crate holds.
+_Avoid_: rarity, quality
+
+**Payback**:
+The Coins a Curio crate returns when it rolls a crate tier the Angler has nothing left to get from.
+_Avoid_: refund, cashback
+
+**Refresh** (working name):
+What a Hunt Event earns (players know it as a Pagle Wager) and the Tackle Board spends to post one new goal, a Notice or an Expedition at the Angler's choice, into an empty slot. It never takes the board past its caps and is not a reroll. Core holds the count (Hunts reports the Refreshes earned, the Tackle Board the ones spent), and there is no limit on how many can be held. The name is provisional: renaming it is a glossary and string change only.
+_Avoid_: ticket (the code's word, not the Angler's), reroll (which swaps an open goal and adds nothing), voucher, refill, token
+
+**Collection** (of looks):
+The Fish Journal's spread of every look in Pagle and every Ledger title: whether each is the Angler's, how to get it, and where to put it on. Earned looks live here, not in the Curio Shop, which only sells.
+_Avoid_: wardrobe, cosmetics, inventory, Look and Feel (Core's settings page of owned looks); not the fish the Ledger collects (Species, Sub-collections), which are never "the Collection"
 
 **Bookplate crest**:
 The look the Angler wears on the Fish Journal's bookplate, chosen in Look and Feel's Crests dropdown: a Zone crest, earned when that zone reaches Master, or a Fish crest, earned when all ten of its varieties are caught, pinned on the Prestige frame, or Plain, the default, which shows nothing. Earned crests are never listed in the Curio Shop, whose Crests category holds only the crests for sale and Plain.

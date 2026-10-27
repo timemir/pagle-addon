@@ -10,14 +10,14 @@
 --   fake.setRestricted(true)
 --   fake.playCast("caught", { { itemID = 6358, quantity = 1 } }) -- CastStarted … Catch, CastEnded (LOG-R9)
 --   fake.nextFrame()                                        -- the frame after: the Cast's moments are one Announcement
---   fake.announcements[1].headline.title                    -- what Core would show (also .stamps, .more, .coins)
+--   fake.announcements[1].headline.title                    -- what Core would show (also .stamps, .more, .coins, .tickets)
 --
--- A Module raises moments only for what is worth one: an ordinary Catch gets Core's own catch Nod (ANN-R13), which
--- lands in fake.catchNods, so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
+-- A Module raises moments only for what is worth one: an ordinary Catch gets Core's own catch toast (ANN-R13), which
+-- lands in fake.catchToasts, so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
--- Sessions, moments, Session summary, cards, wallet, Activity XP, goods, wallet projection and tracker dock are built
+-- Sessions, moments, Session summary, cards, wallet, Activity XP, Refresh purse, goods, wallet projection and tracker dock are built
 -- and connected by logic/Wiring.lua, which Core's adapter runs too: the fake hands it a host over its fakes where
 -- Core's adapter hands it the client (adapter/Host.lua).
 -- Only the client is faked.
@@ -95,6 +95,13 @@
 --- holds it (fake.global.activityXP.earned), firing nothing: how a spec has a disabled or uninstalled Module's last
 --- total count (AXP-R3, AXP-R90), listed by Pagle.GetActivityXP with `enabled` false unless that Module registers.
 --- Raises an error for a total M:ReportXPEarned would refuse.
+---@field ticketReports { module: string, kind: "earned"|"spent", total: integer }[] Each M:ReportTicketsEarned and
+--- M:ReportTicketsSpent Core accepted, in order, an unchanged total too (REF-R2). A TicketsChanged fires only for a
+--- changed total.
+---@field setTickets fun(name: string, earned: integer?, spent: integer?) Stores a Module's lifetime Refreshes earned
+--- and/or spent as a saved PagleDB holds them (fake.global.tickets), firing nothing: how a spec has the Angler hold
+--- Refreshes with no report, or a disabled Module's last totals count (REF-R3, REF-R90). A nil argument leaves that
+--- total alone. Raises an error for a total M:ReportTicketsEarned would refuse.
 ---@field setPushedContent fun(content: { state: PagleCompanionState?, items: table[]?, keyId: string?, seq: integer?, data: any }) What the
 --- companion's data addon gives this login (core/pushed-content.md), before fake.login: `{ state, items }` is how
 --- the check ends, `items` in payload order (the kinds and versions Core passes on are kept, PUSH-R21), with the
@@ -114,8 +121,12 @@
 ---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
 --- fires if the balance or held changes (SHOP-R12). The wallet projection sets the log's own at enterWorld's done and
 --- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
----@field setPurchased fun(purchased: table<string, true>) Hands Core the purchased goods, `{ [goodID] = true }`, for a
---- spec that doesn't care about the log; AppearanceChanged fires if a look changes (SHOP-R33). The wallet projection
+---@field goodPreviews { frame: any, goodID: string, size: "stage"|"card" }[] Each Pagle.DrawGoodPreview call, in order
+--- (SHOP-R36). The fake draws nothing.
+---@field setPurchased fun(purchased: table<string, true>, ownedAt: table<string, integer>?, crated: table<string, true>?) Hands Core the purchased
+--- goods, `{ [goodID] = true }`, and when each was bought, `{ [goodID] = serverTime }` (GetGood's `ownedAt`, SHOP-R36),
+--- and which a crate gave, `{ [goodID] = true }` (`fromCrate`),
+--- for a spec that doesn't care about the log; AppearanceChanged fires if a look changes (SHOP-R33). The wallet projection
 --- hands over the log's own set at enterWorld's done and on each live purchase (SHOP-R11), replacing it; a spec that
 --- wants its set kept hands it over after enterWorld. A U1 in fake.catchLog's history (helpers.lua's purchaseEntry, or
 --- fake.catchLog:Append) gives the spent total, the purchased set and the balance the way Core's log does.
@@ -130,12 +141,12 @@
 ---@field announcements PagleAnnouncement[] Each Announcement Core would hand the display, in order (ANN-R11): its
 --- headline, rung, stamps (at most 4), more ("+N"), coins and every moment, ranked. One per Cast, made on the frame
 --- after its moments were raised, or after the last projection finishes (ANN-R10); one per moment without a Cast.
---- Core's catch Nod is never here: it is in catchNods.
----@field catchNods PagleAnnouncement[] Each catch Nod Core would hand the display (ANN-R13): one per played caught
+--- Core's catch toast is never here: it is in catchToasts.
+---@field catchToasts PagleAnnouncement[] Each catch toast Core would hand the display (ANN-R13): one per played caught
 --- Cast for which no Module raised a moment, while `profile.announcements.everyCatch` is on, on the frame after.
---- Its headline's title is "{item name} · {band} · {length}", the name from `itemNames`, naming a variety only once
---- caught before its Cast (VAR-R27).
----@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch Nod and
+--- Its headline's title is "{band} · {length}" and its text the item's name, from `itemNames`; its `nodLine` is
+--- "{item name} · {band} · {length}", naming a variety only once caught before its Cast (VAR-R27).
+---@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch toast and
 --- the fish crests' fish (VAR-R12); a spec sets them. An item without one reads "Item {itemID}".
 ---@field itemArrived fun(itemID: integer) The client's GET_ITEM_INFO_RECEIVED for an item: renames its Species' fish
 --- crest from `itemNames` (SHOP-R26) when it had none at login.
@@ -786,7 +797,8 @@ end)
 -- Goods (SHOP-R20–R26, SHOP-R30–R33, SHOP-R90), on Core's wiring over fake.global.goods (the goods cache: every
 -- good registered, by ID, which a spec may fill before login as a saved PagleDB, SHOP-R26, SHOP-R90) and
 -- fake.profile.appearance: M:RegisterSlot, M:RegisterGood and M:RefreshGoods on the handle, Pagle.IsOwned,
--- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set comes
+-- GetEquipped, SetEquipped, GetGood, GetSlots, GetSlotGoods, GetEarnedProgress and GetPutAwayGoods (read-only), and
+-- AppearanceChanged from login on. Pagle.DrawGoodPreview only records: each call lands in fake.goodPreviews. The purchased set comes
 -- from the wallet projection part below (SHOP-R11), or from fake.setPurchased. Pagle.OpenShop runs Core's entry
 -- points (SHOP-R40, SHOP-R41) over a shop that only records: each opening lands in fake.shopsOpened, and
 -- fake.shopOpen says whether it is open; fake.ns.shop.Buy(goodID, useNow) buys as the bill of sale's Buy does
@@ -809,28 +821,31 @@ part(function(fake, Pagle, ns, host)
 			fake.shopOpen = false
 		end,
 	})
-	ns.PublishGoods(Pagle, readOnly)
+	fake.goodPreviews = {}
+	ns.PublishGoods(Pagle, readOnly, function(frame, goodID, size)
+		fake.goodPreviews[#fake.goodPreviews + 1] = { frame = frame, goodID = goodID, size = size }
+	end)
 
-	function fake.setPurchased(purchased)
-		ns.goods:SetPurchased(purchased)
+	function fake.setPurchased(purchased, ownedAt, crated)
+		ns.goods:SetPurchased(purchased, ownedAt, crated)
 	end
 end)
 
 -- Moments (ANN-R1–R4, ANN-R10–R12), on Core's wiring over fake.projections' seams: M:RaiseMoment validates and
 -- drops as Core does, and each Announcement Core would show lands in fake.announcements when fake.nextFrame runs the
--- frame after. A dropped moment's report is in fake.reported. Core's catch Nod (ANN-R13) runs on Core's wiring too,
--- naming items from fake.itemNames, and lands in fake.catchNods.
+-- frame after. A dropped moment's report is in fake.reported. Core's catch toast (ANN-R13) runs on Core's wiring too,
+-- naming items from fake.itemNames, and lands in fake.catchToasts.
 part(function(fake, _, ns, host)
 	fake.announcements = {}
-	fake.catchNods = {}
+	fake.catchToasts = {}
 	fake.itemNames = {}
 	local frame = {}
 	ns.WireMoments(host, function(announcement)
-		-- Core's own catch Nod (ANN-R13) goes apart, so a Module spec sees only what Modules raise.
-		local list = announcement.headline.catchNod and fake.catchNods or fake.announcements
+		-- Core's own catch toast (ANN-R13) goes apart, so a Module spec sees only what Modules raise.
+		local list = announcement.headline.catchToast and fake.catchToasts or fake.announcements
 		list[#list + 1] = announcement
 	end)
-	ns.WireCatchNods(host, function(itemID)
+	ns.WireCatchToasts(host, function(itemID)
 		return fake.itemNames[itemID]
 	end)
 
@@ -1061,6 +1076,37 @@ part(function(fake, Pagle, ns, host)
 			error(problem, 2)
 		end
 		fake.global.activityXP.earned[name] = total
+	end
+end)
+
+-- The Refresh purse (REF-R2–R6, ADR 0017), on Core's wiring over fake.global.tickets: M:ReportTicketsEarned and
+-- M:ReportTicketsSpent on the handle, Pagle.GetTickets (read-only) and TicketsChanged. Each report Core accepts is also
+-- in fake.ticketReports. Its stored totals are opened here, tied to fake.catchLog's logId (REF-R3), as the Activity XP
+-- part above opens its own.
+part(function(fake, Pagle, ns, host)
+	fake.ticketReports = {}
+	ns.WireTickets(host)
+	ns.OpenTickets()
+	local tickets = ns.tickets
+	local report = tickets.Report
+	function tickets.Report(self, kind, name, total)
+		fake.ticketReports[#fake.ticketReports + 1] = { module = name, kind = kind, total = total }
+		report(self, kind, name, total)
+	end
+
+	function Pagle.GetTickets()
+		return readOnly(tickets:Get())
+	end
+
+	function fake.setTickets(name, earned, spent)
+		for kind, total in pairs({ earned = earned, spent = spent }) do
+			local problem =
+				ns.TicketTotalProblem(total, kind == "earned" and "ReportTicketsEarned" or "ReportTicketsSpent")
+			if problem then
+				error(problem, 2)
+			end
+			fake.global.tickets[kind][name] = total
+		end
 	end
 end)
 

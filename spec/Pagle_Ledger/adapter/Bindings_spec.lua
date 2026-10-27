@@ -442,6 +442,11 @@ describe("the Ledger's expansion earned bindings", function()
 					end
 				end
 				assert.are.same({ "11 of 12 shards", "12 glass shards" }, { glass.earnedText() })
+				local progress = fake.Pagle.GetEarnedProgress("ledger.toaststyle.glass")
+				assert.are.same(
+					{ "11 of 12 shards", "12 glass shards", 11, 12 },
+					{ progress.tag, progress.note, progress.have, progress.need }
+				)
 
 				local later, reloaded = ledgerOver(release("first release"), nil, firstWaters(12))
 				assert.is_true(later.Pagle.IsOwned("ledger.toaststyle.glass"))
@@ -502,7 +507,7 @@ describe("the Ledger's goods in Core's open slots", function()
 	end
 
 	it(
-		"register LED-R117's four and LED-R118's seven toast styles in Core's toast style and sound set slots, the Ledger's, after Core's own (LED-R117, LED-R118, SHOP-R23, SHOP-R25)",
+		"register LED-R117's four, LED-R118's seven and LED-R164's ten toast styles in Core's toast style and sound set slots, the Ledger's, after Core's own (LED-R117, LED-R118, SHOP-R23, SHOP-R25)",
 		function()
 			local fake = ledger()
 			local goods = fake.ns.goods
@@ -531,6 +536,16 @@ describe("the Ledger's goods in Core's open slots", function()
 				{ "ledger.toaststyle.slate", "Fishmonger's Slate", "0 of 30 Species" },
 				{ "ledger.toaststyle.ice", "Through the Ice", "0 of 100 catches" },
 				{ "ledger.toaststyle.stitch", "Cross-Stitch Sampler", "0 of 20 fish" },
+				{ "ledger.toaststyle.crier", "Town Crier's Proclamation", "0 of 100 fish" },
+				{ "ledger.toaststyle.hall", "Mountain Hall", "0 of 100 fish" },
+				{ "ledger.toaststyle.glade", "Starlit Glade", "0 of 100 fish" },
+				{ "ledger.toaststyle.blueprint", "Tinker's Blueprint", "0 of 100 fish" },
+				{ "ledger.toaststyle.drum", "Clan Drum", "0 of 100 fish" },
+				{ "ledger.toaststyle.shroud", "Grave Shroud", "0 of 100 fish" },
+				{ "ledger.toaststyle.totem", "Plains Totem", "0 of 100 fish" },
+				{ "ledger.toaststyle.hex", "Jungle Hex", "0 of 100 fish" },
+				{ "ledger.toaststyle.lion", "Lion's Charter", "0 of 300 fish" },
+				{ "ledger.toaststyle.warband", "Iron Warband", "0 of 300 fish" },
 			}, ledgerGoods("core.toaststyle"))
 			assert.are.same({
 				{ "ledger.soundset.concertina", "Old Salt's Concertina", "Prestige I" },

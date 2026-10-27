@@ -17,8 +17,6 @@ local Pagle = Pagle
 local BOX, WELL = ns.LEGEND_CREST_BOX, ns.LEGEND_CREST_WELL
 -- The plaque's word is never smaller than this on screen, however small the crest is drawn.
 local LABEL_MIN = 9
--- An item icon's own border, cropped off each side before it is masked round.
-local ICON_CROP = 0.08
 -- The icon reaches a little under the well's ring, so no gap shows at its edge.
 local ICON_BLEED = 2
 -- The icon's sublevel on the ARTWORK layer: the well's z, 3 (adapter/ToastLayers.lua puts z 4 at 0).
@@ -41,7 +39,7 @@ local function draw(crest, look)
 	icon:SetShown(look.icon ~= nil)
 	if look.icon ~= nil then
 		icon:SetTexture(ns.TextureOf(look.icon))
-		icon:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
+		icon:SetTexCoord(ns.ICON_CROP, 1 - ns.ICON_CROP, ns.ICON_CROP, 1 - ns.ICON_CROP)
 		-- sepia, as the Journal's medallions
 		if icon.SetDesaturation then
 			icon:SetDesaturation(0.6)

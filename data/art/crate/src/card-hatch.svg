@@ -1,0 +1,11 @@
+<!-- The cross-hatching on a card that shows a kind but not the good (prototypes/curio-crate/index.html: .card.type): two
+     repeating gradients at 45 and -45 degrees, a 1px line every 12px in the tier's colour at .06; white here, full
+     strength, for the client to tint and draw at .06. 150 x 172 px. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 172" width="150" height="172">
+  <defs>
+    <pattern id="p1" patternUnits="userSpaceOnUse" width="12" height="12" patternTransform="rotate(45 75 86)"><rect x="0" y="0" width="12" height="1" fill="#fff"/></pattern>
+    <pattern id="p2" patternUnits="userSpaceOnUse" width="12" height="12" patternTransform="rotate(-45 75 86)"><rect x="0" y="0" width="12" height="1" fill="#fff"/></pattern>
+    <clipPath id="c"><rect x="0" y="0" width="150" height="172" rx="8"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)"><rect x="0" y="0" width="150" height="172" fill="url(#p1)"/><rect x="0" y="0" width="150" height="172" fill="url(#p2)"/></g>
+</svg>

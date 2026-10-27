@@ -38,6 +38,7 @@ logic\XPSources.lua
 logic\JournalText.lua
 logic\Journal.lua
 logic\JournalParts.lua
+logic\JournalStampTips.lua
 logic\JournalTile.lua
 logic\JournalSpecies.lua
 logic\JournalVarieties.lua

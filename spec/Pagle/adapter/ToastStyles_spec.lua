@@ -259,20 +259,23 @@ describe("the toast's and Nod's toast style", function()
 	end)
 
 	it(
-		"lays a catch Nod naming a variety out on each style's strip, sized to its longer line, the variety in its"
+		"lays a catch toast stepped down to a Nod naming a variety out on each style's strip, sized to its longer line, the variety in its"
 			.. " rarity's ink in every style and the rest in the style's (VAR-R26, ANN-R80)",
 		function()
 			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 			local bounds = dofile("spec/support/bounds.lua")
 			local loaded = styledCore()
 			local epic = loaded.ns.VARIETY_RARITIES[4]
-			loaded.ns.moments:RaiseCatchNod({
-				rung = "nod",
+			-- The budget is spent, so the catch toast steps down to a Nod (ANN-R31).
+			loaded.ns.db.profile.announcements.budget.count = 0
+			loaded.ns.moments:RaiseCatchToast({
+				rung = "toast.low",
 				kind = "catch",
-				title = "Firefin Snapper · Phoenix-fin · Monster · 61.4 cm",
+				title = "Monster · 61.4 cm",
+				text = "Firefin Snapper",
+				nodLine = "Firefin Snapper · Phoenix-fin · Monster · 61.4 cm",
 				icon = 6359,
 				cast = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME),
-				sound = false,
 				variety = {
 					name = "Phoenix-fin",
 					rarity = "epic",

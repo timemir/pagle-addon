@@ -39,6 +39,7 @@ ns.SHOP_INKS = {
 	cancel = rgb("5A3A1C"), -- Cancel on the bill
 	strike = rgb("C7503A"), -- the red line through a Module off's legend
 	paper = rgb("EADDBE"), -- the description card's paper, inside a ringed progress dot
+	crateInk = rgb("D8301E"), -- the YOURS and PAID BACK stamp on the reveal's card
 }
 
 local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
@@ -94,9 +95,21 @@ local FONTS = {
 	Meta = { "print", 13, "red", caps = true },
 	Desc = { "italic", 15.5, "desc" },
 	Notes = { "italic", 14, "note" },
+	Odds = { "italic", 11.5, "note" },
 	Tags = { "print", 14, "ink2", caps = true },
 	Need = { "handSemi", 20, "stamp" },
 	Button = { "gilt", 17, "gilt", shadow = true },
+	-- the Curio crate's opening, on the dark of the case's inside (wallet-and-shop.md › Motion and sound): the plaque, the
+	-- odds under the crate, a card's kind and its coins, the reveal's tier, good, kind and stamp, and a good's note
+	CratePlaque = { "gilt", 16, "gilt", shadow = true, caps = true },
+	CrateOdds = { "print", 10.4, "muted", shadow = true },
+	CardKind = { "gilt", 8, "chip", caps = true },
+	CardCoins = { "handBold", 22, "name", shadow = true },
+	CrateTier = { "gilt", 12, "gilt", shadow = true, caps = true },
+	CrateName = { "handSemi", 43, "name", shadow = true },
+	CrateKind = { "print", 12, "lab", shadow = true, caps = true },
+	CrateNote = { "italic", 14, "creamText", shadow = true },
+	CrateStamp = { "gilt", 14.4, "crateInk", caps = true },
 	-- the bill of sale
 	SlipHead = { "print", 15, "red", caps = true },
 	SlipQ = { "handBold", 40, "ink" },
@@ -214,8 +227,9 @@ function ns.CropShield(texture)
 	texture:SetTexCoord(0.5 - 60 / 140, 0.5 + 60 / 140, 0, 1)
 end
 
---- Sets a medallion's icon, greyed for a good put away. A crest's (`shield`, SHOP-R25) is its shield instead, square
---- with no ring, gloss or mask: 30 x 35 in a row's medallion, and as tall in proportion in a larger one.
+--- Sets a medallion's icon, cropped of its own border and greyed for a good put away. A crest's (`shield`, SHOP-R25)
+--- is its shield instead, square with no ring, gloss or mask: 30 x 35 in a row's medallion, and as tall in proportion
+--- in a larger one.
 ---@param bezel PagleShopBezel
 ---@param icon integer|string|nil
 ---@param greyed boolean?
@@ -238,6 +252,9 @@ function ns.SetShopBezel(bezel, icon, greyed, shield)
 	end
 	local texture = shield and bezel.Shield or bezel.Icon
 	texture:SetTexture(icon or NO_ICON)
+	if not shield then
+		texture:SetTexCoord(ns.ICON_CROP, 1 - ns.ICON_CROP, ns.ICON_CROP, 1 - ns.ICON_CROP)
+	end
 	texture:SetDesaturated(greyed == true)
 end
 

@@ -41,6 +41,27 @@ local COMPOSED = {
 	["core.toaststyle.foil"] = "Toasts2Foil",
 	["core.toaststyle.storm"] = "Toasts2Storm",
 }
+-- The round three's eighteen (ANN-R84), all Core's, in the same format.
+local ROUND_THREE = {
+	["core.toaststyle.hive"] = "Toasts2Hive",
+	["core.toaststyle.ooze"] = "Toasts2Ooze",
+	["core.toaststyle.robot"] = "Toasts2Robot",
+	["core.toaststyle.spider"] = "Toasts2Spider",
+	["ledger.toaststyle.lion"] = "Toasts2Lion",
+	["ledger.toaststyle.warband"] = "Toasts2Warband",
+	["ledger.toaststyle.crier"] = "Toasts2Crier",
+	["ledger.toaststyle.hall"] = "Toasts2Hall",
+	["ledger.toaststyle.glade"] = "Toasts2Glade",
+	["ledger.toaststyle.blueprint"] = "Toasts2Blueprint",
+	["ledger.toaststyle.drum"] = "Toasts2Drum",
+	["ledger.toaststyle.shroud"] = "Toasts2Shroud",
+	["ledger.toaststyle.totem"] = "Toasts2Totem",
+	["ledger.toaststyle.hex"] = "Toasts2Hex",
+	["core.toaststyle.glacier"] = "Toasts2Glacier",
+	["core.toaststyle.magma"] = "Toasts2Magma",
+	["core.toaststyle.arcane"] = "Toasts2Arcane",
+	["core.toaststyle.pirate"] = "Toasts2Pirate",
+}
 local PAGES = { "low", "low-ruled", "toast", "toast-ruled", "high", "digest" }
 
 -- The page `name` (logic/ToastStyles.lua's pages), from a headline on its rung.
@@ -58,14 +79,14 @@ end
 describe("the toast styles", function()
 	it(
 		"are Core's fifteen and the three earned in Core's slot by the Ledger and the Tackle Board, by SHOP-R25's good"
-			.. " IDs, and the round two's ten composed styles (ANN-R80, ANN-R81, ANN-R82, SHOP-R25)",
+			.. " IDs, the round two's ten composed styles and the round three's eighteen (ANN-R80, ANN-R81, ANN-R82, ANN-R84, SHOP-R25)",
 		function()
 			local ids, expected = {}, {}
 			for id, style in pairs(ns.TOAST_STYLES) do
 				ids[#ids + 1] = id
 				assert.are.equal(id, style.id)
 			end
-			for _, atlases in ipairs({ FIRST, RINGED, COMPOSED }) do
+			for _, atlases in ipairs({ FIRST, RINGED, COMPOSED, ROUND_THREE }) do
 				for id in pairs(atlases) do
 					expected[#expected + 1] = id
 				end
@@ -74,7 +95,7 @@ describe("the toast styles", function()
 			table.sort(expected)
 
 			assert.are.same(expected, ids)
-			assert.are.equal(28, #ids)
+			assert.are.equal(46, #ids)
 			assert.are.same({ "core.toaststyle", TORN_PAGE }, { ns.TOAST_STYLE_SLOT, ns.TOAST_STYLE_DEFAULT })
 		end
 	)
@@ -307,6 +328,18 @@ describe("a toast's page", function()
 		)
 	end)
 
+	it(
+		"is toast's for a variety's own toast.low (ownStamp), whatever its rung says otherwise (#422, VAR-R28)",
+		function()
+			assert.are.same({ "toast", 92, 464, "toast" }, {
+				ns.ToastPage(announcement("toast.low", { ownStamp = true })).page,
+				ns.ToastPage(announcement("toast.low", { ownStamp = true })).h,
+				ns.ToastPage(announcement("toast.low", { ownStamp = true })).w,
+				ns.ToastPage(announcement("toast", { ownStamp = true })).page,
+			})
+		end
+	)
+
 	it("is ruled for a headline with a record ruler, toast.high's on the toast's ruled page (ANN-R22)", function()
 		assert.are.same({ "low-ruled", "toast-ruled", "toast-ruled" }, {
 			ns.ToastPage(announcement("toast.low", { ruler = RULER })).page,
@@ -375,12 +408,14 @@ describe("a moment's art in a medallion", function()
 	)
 end)
 
-describe("a catch Nod's variety", function()
-	-- A catch Nod's headline naming a variety of `rarity` (VAR-R26), as Core raises it.
+describe("a stepped-down catch toast's variety", function()
+	-- A catch toast's headline naming a variety of `rarity` (VAR-R26), as Core raises it.
 	local function nod(rarity)
 		return {
-			catchNod = true,
-			title = "Firefin Snapper · Coral · Decent · 34.2 cm",
+			catchToast = true,
+			title = "Decent · 34.2 cm",
+			text = "Firefin Snapper",
+			nodLine = "Firefin Snapper · Coral · Decent · 34.2 cm",
 			variety = { name = "Coral", rarity = rarity, before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
 		}
 	end
@@ -391,7 +426,7 @@ describe("a catch Nod's variety", function()
 		function()
 			local looks = {}
 			for _, rarity in ipairs(ns.VARIETY_RARITIES) do
-				local look = ns.CatchNodVarietyLook(nod(rarity.key)) --[[@as PagleNodVarietyLook]]
+				local look = ns.CatchToastNodLook(nod(rarity.key)) --[[@as PagleNodVarietyLook]]
 				assert.are.same({ "Coral", "Firefin Snapper ·", "· Decent · 34.2 cm", rarity.color, rarity.ink }, {
 					look.name,
 					look.before,
@@ -403,22 +438,239 @@ describe("a catch Nod's variety", function()
 			end
 			assert.are.same({ { false, false }, { true, false }, { true, true }, { true, true } }, looks)
 			-- Common's ink is the parchment's own brown, so most catches stay calm (core/varieties.md › UI).
-			local common = ns.CatchNodVarietyLook(nod("common")) --[[@as PagleNodVarietyLook]]
+			local common = ns.CatchToastNodLook(nod("common")) --[[@as PagleNodVarietyLook]]
 			assert.are.same(ns.Rgb("6a5a44"), common.ink)
 		end
 	)
 
-	it("is nil for a headline that isn't a catch Nod naming a variety, or names an unknown rarity", function()
+	it("is nil for a headline that isn't a catch toast naming a variety, or names an unknown rarity", function()
 		local module = nod("rare")
-		module.catchNod = nil
+		module.catchToast = nil
 		local plain = nod("rare")
 		plain.variety = nil
 		assert.are.same({}, {
-			ns.CatchNodVarietyLook(module),
-			ns.CatchNodVarietyLook(plain),
-			ns.CatchNodVarietyLook(nod("mythic")),
+			ns.CatchToastNodLook(module),
+			ns.CatchToastNodLook(plain),
+			ns.CatchToastNodLook(nod("mythic")),
 		})
 	end)
+end)
+
+describe("a toast's variety (#424, VAR-R25, VAR-R26)", function()
+	local ART = { texture = "Varieties1", left = 0.09375, right = 0.1875, top = 0, bottom = 0.046875 }
+	local FISH = 6291
+
+	-- A moment as Core holds it (PagleRaisedMoment): `order` doubles as when it was raised.
+	local function raised(rung, kind, order, fields)
+		local m = { rung = rung, kind = kind, order = order, title = kind, module = "Ledger", moduleOrder = 10 }
+		m.raised = order
+		for key, value in pairs(fields or {}) do
+			m[key] = value
+		end
+		return m
+	end
+
+	-- The Cast's size record, a toast.low with the fish as its icon and its text.
+	local function record()
+		return raised("toast.low", "sizeRecord", 100, {
+			text = "Raw Bristle Whisker Catfish",
+			stamp = "Record",
+			icon = FISH,
+			ruler = { old = 303, new = 304, unit = "length", label = "Tiddler" },
+		})
+	end
+
+	-- A first-catch variety's moment of `rung` and `kind` (VAR-R25), with its art and variety.
+	local function variety(rung, kind, order, rarity, fields)
+		local m = raised(rung, kind, order, {
+			text = "Coral",
+			stamp = "New variety",
+			icon = FISH,
+			art = ART,
+			variety = { name = "Coral", rarity = rarity },
+		})
+		for key, value in pairs(fields or {}) do
+			m[key] = value
+		end
+		return m
+	end
+
+	-- The look of the toast these moments make.
+	local function look(...)
+		return ns.ToastVarietyLook(ns.MakeAnnouncement({ ... }) --[[@as PagleAnnouncement]])
+	end
+
+	it(
+		"takes the variety, art and stamp from the moment riding on a size record's toast, writing it after the fish's"
+			.. " name",
+		function()
+			local found = look(record(), variety("toast.low", "newVariety", 120, "uncommon")) --[[@as PagleToastVarietyLook]]
+
+			assert.are.same(
+				{ "Coral", "uncommon", ART, "New variety", "Raw Bristle Whisker Catfish ·" },
+				{ found.name, found.rarity, found.art, found.stamp, found.before }
+			)
+			local uncommon = ns.VARIETY_RARITIES[2]
+			assert.are.same({ uncommon.color, uncommon.ink }, { found.color, found.ink })
+		end
+	)
+
+	it(
+		"tints the ring and gleams as the stepped-down catch toast's variety does: Common's ring plain, a gleam for Rare"
+			.. " and Epic",
+		function()
+			local seen = {}
+			for _, rarity in ipairs(ns.VARIETY_RARITIES) do
+				local found = look(record(), variety("toast.low", "newVariety", 120, rarity.key)) --[[@as PagleToastVarietyLook]]
+				assert.are.same({ rarity.color, rarity.ink }, { found.color, found.ink })
+				seen[#seen + 1] = { found.ring ~= nil, found.gleam }
+			end
+
+			assert.are.same({ { false, false }, { true, false }, { true, true }, { true, true } }, seen)
+		end
+	)
+
+	it("backs the art with deep water, tinted a little by the rarity's colour (#424)", function()
+		-- 15% of the colour over the water (0.07, 0.12, 0.18): Common's white lifts it, Epic's purple reddens it.
+		assert.are.same({ 0.07, 0.12, 0.18 }, ns.ArtBacking())
+		local white = ns.ArtBacking({ 1, 1, 1 })
+		assert.are.same({ 0.2095, 0.252, 0.303 }, {
+			math.floor(white[1] * 1e4 + 0.5) / 1e4,
+			math.floor(white[2] * 1e4 + 0.5) / 1e4,
+			math.floor(white[3] * 1e4 + 0.5) / 1e4,
+		})
+		for _, rarity in ipairs(ns.VARIETY_RARITIES) do
+			local found = look(record(), variety("toast.low", "newVariety", 120, rarity.key)) --[[@as PagleToastVarietyLook]]
+			assert.are.same(ns.ArtBacking(rarity.color), found.backing)
+		end
+	end)
+
+	it("writes only the name for a variety's toast that has no fish's name or stamp of its own", function()
+		local own = variety("toast", "rareVariety", 105, "rare")
+
+		local found = look(own, record()) --[[@as PagleToastVarietyLook]]
+
+		assert.are.same({ "", nil, ART }, { found.before, found.stamp, found.art })
+	end)
+
+	it(
+		"writes the fish's name before the name on a variety's own toast, and takes its own stamp's ink (#422)",
+		function()
+			local own = variety("toast.low", "newVariety", 120, "uncommon", {
+				ownStamp = true,
+				variety = { name = "Coral", rarity = "uncommon", fish = "Raw Bristle Whisker Catfish" },
+			})
+			local rare = variety("toast", "rareVariety", 105, "rare", {
+				title = "Rare variety",
+				stamp = false,
+				ownStamp = true,
+				variety = { name = "Coral", rarity = "rare", fish = "Raw Bristle Whisker Catfish" },
+			})
+
+			local found, foundRare = look(own), look(rare)
+
+			assert.are.same(
+				{ "Raw Bristle Whisker Catfish ·", "New variety", ART },
+				{ found.before, found.stamp, found.art }
+			)
+			assert.are.same({ "Raw Bristle Whisker Catfish ·", "Rare variety", true }, {
+				foundRare.before,
+				foundRare.stamp,
+				foundRare.gleam,
+			})
+		end
+	)
+
+	it("keeps a riding variety's stamp as it was when its moment has an own stamp it isn't showing (#422)", function()
+		local own = variety("toast.low", "newVariety", 120, "common", { ownStamp = true })
+
+		local found = look(record(), own) --[[@as PagleToastVarietyLook]]
+
+		assert.are.same({ "New variety", "Raw Bristle Whisker Catfish ·" }, { found.stamp, found.before })
+	end)
+
+	it("makes a variety's own toast's kicker its size text, else the title (#422)", function()
+		local sized = { ownStamp = true, kicker = "Decent · 34.2 cm", title = "New variety" }
+
+		assert.are.same({ "Decent · 34.2 cm", "New variety", "New variety", "Caught" }, {
+			ns.ToastKicker(sized),
+			ns.ToastKicker({ ownStamp = true, title = "New variety" }),
+			ns.ToastKicker({ kicker = "Decent · 34.2 cm", title = "New variety" }),
+			ns.ToastKicker({ title = "Caught" }),
+		})
+	end)
+
+	it("keeps the art and ring but writes no name on a toast about something else than the fish", function()
+		local rank = raised("toast", "zoneRank", 90, { text = "Elwynn Forest", stamp = "Rank up", icon = "Map" })
+
+		local found = look(rank, variety("toast.low", "newVariety", 120, "rare")) --[[@as PagleToastVarietyLook]]
+
+		assert.are.same({ nil, "New variety", ART, true }, { found.before, found.stamp, found.art, found.ring ~= nil })
+	end)
+
+	it("writes no name for a variety headline with no text line", function()
+		local found = look(variety("toast.low", "newVariety", 120, "common", { text = false })) --[[@as PagleToastVarietyLook]]
+
+		assert.is_nil(found.before)
+		assert.are.equal("Coral", found.name)
+	end)
+
+	-- Core's catch toast of the fish (ANN-R13) naming a variety of `rarity` caught before (VAR-R26).
+	local function catchToast(rarity)
+		return raised("toast.low", "catch", 100, {
+			catchToast = true,
+			title = "Decent · 34.2 cm",
+			text = "Raw Bristle Whisker Catfish",
+			icon = FISH,
+			art = ART,
+			variety = {
+				name = "Coral",
+				rarity = rarity,
+				before = "Raw Bristle Whisker Catfish ·",
+				after = "· Decent · 34.2 cm",
+			},
+		})
+	end
+
+	it(
+		"draws the catch toast's variety as VAR-R28 does, its text line the fish's name then the gem and the name, and"
+			.. " no stamp (#437)",
+		function()
+			local seen = {}
+			for _, rarity in ipairs(ns.VARIETY_RARITIES) do
+				local found = look(catchToast(rarity.key)) --[[@as PagleToastVarietyLook]]
+				assert.are.same(
+					{ "Coral", "Raw Bristle Whisker Catfish ·", ART, nil, rarity.color, rarity.ink },
+					{ found.name, found.before, found.art, found.stamp, found.color, found.ink }
+				)
+				seen[#seen + 1] = { found.ring ~= nil, found.gleam }
+			end
+
+			assert.are.same({ { false, false }, { true, false }, { true, true }, { true, true } }, seen)
+		end
+	)
+
+	it(
+		"is nil with no variety moment, for a banner, a Nod, a digest, an unknown rarity and a catch toast without one",
+		function()
+			local nod = raised("nod", "catch", 100, {
+				variety = { name = "Coral", rarity = "rare", before = "Fish ·", after = "· Decent" },
+			})
+			local plain = catchToast("rare")
+			plain.variety, plain.art = nil, nil
+			local digest = ns.MakeAnnouncement({ record(), variety("toast.low", "newVariety", 120, "rare") }) --[[@as PagleAnnouncement]]
+			digest.fighting = { record() }
+			assert.are.same({}, {
+				look(record()),
+				look(variety("banner", "epicVariety", 97, "epic")),
+				look(nod),
+				look(plain),
+				ns.ToastVarietyLook(digest),
+				look(record(), variety("toast.low", "newVariety", 120, "mythic")),
+				look(catchToast("mythic")),
+			})
+		end
+	)
 end)
 
 describe("the art's capitals", function()
@@ -619,6 +871,103 @@ describe("the round two's composed toast styles", function()
 		end
 	)
 
+	it(
+		"skew a layer as CSS does, in the order rotate, skew, scale: a skewed layer says so, and gives the matrix it is drawn with (ANN-R84)",
+		function()
+			local box = { x = 0, y = 0, w = 20, h = 10 }
+			local function r(v)
+				return math.floor(v * 1000 + 0.5) / 1000
+			end
+			local function round(list)
+				local out = {}
+				for i, v in ipairs(list) do
+					out[i] = r(v)
+				end
+				return out
+			end
+
+			-- No skew, with or without its two angles: unskewed, and the old centre.
+			assert.is_false(ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 0, 1, 1 }).skewed)
+			assert.is_false(ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 0, 1, 1, 0, 0 }).skewed)
+			-- skewX(45deg) about the box's top left: x' = x + y, so its centre (10, 5) goes to (15, 5).
+			local x = ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 0, 1, 1, 45, 0 })
+			assert.is_true(x.skewed)
+			assert.are.same({ 15, 5, 20, 10 }, round({ x.cx, x.cy, x.w, x.h }))
+			assert.are.same({ 1, 0, 1, 1 }, round(x.matrix))
+			-- skewY(45deg) then scaleX(0.5), as the Black Flag's: y' = y + x, and x halved.
+			local y = ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 0, 0.5, 1, 0, 45 })
+			assert.are.same({ 0.5, 0.5, 0, 1 }, round(y.matrix))
+			assert.are.same({ 5, 10, 10, 10 }, round({ y.cx, y.cy, y.w, y.h }))
+			-- rotate(90deg) skewX(45deg): the skew first, then the turn, so x' = -y and y' = x + y.
+			local both = ns.TransformLayerBox(box, { x = 0, y = 0 }, { 0, 0, 90, 1, 1, 45, 0 })
+			assert.are.same({ 0, 1, -1, 1 }, round(both.matrix))
+		end
+	)
+
+	it("give a skewed layer the sprite's points its matrix puts at the region's corners (ANN-R84)", function()
+		local box = { x = 0, y = 0, w = 20, h = 10 }
+		local tc = { 0, 1, 0, 1 }
+		local function placed(t)
+			return ns.TransformLayerBox(box, { x = 0, y = 0 }, t)
+		end
+		local function round(list)
+			local out = {}
+			for i, v in ipairs(list) do
+				out[i] = math.floor(v * 1000 + 0.5) / 1000
+			end
+			return out
+		end
+
+		-- With nothing to do the whole sprite, corner to corner: upper left, lower left, upper right, lower right.
+		assert.are.same({ 0, 0, 0, 1, 1, 0, 1, 1 }, ns.SkewedTexCoords(placed({ 0, 0, 0, 1, 1, 0, 0 }), box, tc))
+		-- skewX(45deg) slides the top row left and the bottom row right by half the height each way.
+		assert.are.same(
+			{ 0.25, 0, -0.25, 1, 1.25, 0, 0.75, 1 },
+			round(ns.SkewedTexCoords(placed({ 0, 0, 0, 1, 1, 45, 0 }), box, tc))
+		)
+		-- A sprite that is not the whole atlas: the same, in its own corner of the atlas.
+		local small = ns.SkewedTexCoords(placed({ 0, 0, 0, 1, 1, 0, 0 }), box, { 0.5, 0.75, 0.25, 0.5 })
+		assert.are.same({ 0.5, 0.25, 0.5, 0.5, 0.75, 0.25, 0.75, 0.5 }, small)
+		-- A flat matrix has no inverse: the sprite whole.
+		assert.are.same(
+			{ 0, 0, 0, 1, 1, 0, 1, 1 },
+			ns.SkewedTexCoords({ w = 20, h = 10, matrix = { 0, 0, 0, 0 } }, box, tc)
+		)
+	end)
+
+	it("draw a skewed layer with eight texture coordinates and no rotation, any other as before (ANN-R84)", function()
+		local drawn = {}
+		local texture = {
+			SetAlpha = function() end,
+			SetSize = function() end,
+			ClearAllPoints = function() end,
+			SetPoint = function() end,
+			SetRotation = function(_, radians)
+				drawn.rotation = radians
+			end,
+			SetTexCoord = function(_, ...)
+				drawn.texCoord = { ... }
+			end,
+		}
+		local function slot(transform)
+			return {
+				texture = texture,
+				state = { transform = transform },
+				box = { x = 0, y = 0, w = 20, h = 10 },
+				origin = { x = 0, y = 0 },
+				scale = 1,
+				tc = { 0, 1, 0, 1 },
+			}
+		end
+
+		ns.CommitLayerSlot(slot({ 0, 0, 90, 1, 1 }), {})
+		assert.are.equal(4, #drawn.texCoord)
+		assert.is_true(math.abs(drawn.rotation + math.pi / 2) < 0.000001)
+		ns.CommitLayerSlot(slot({ 0, 0, 0, 1, 1, 45, 0 }), {})
+		assert.are.equal(8, #drawn.texCoord)
+		assert.are.equal(0, drawn.rotation)
+	end)
+
 	it("scroll a sweep's strip through its window as CSS's background-position does (ANN-R82)", function()
 		-- A window a quarter of its strip: at 0 the strip's start, at 1 its end, halfway its middle.
 		assert.are.same({ 0, 0.25, 0, 1 }, { ns.ScrollWindow(0.25, 1, 0, 0) })
@@ -669,4 +1018,116 @@ describe("the round two's composed toast styles", function()
 		assert.are.same({ body = true, mfront = true, fx1 = false, fx2 = false }, rests("core.toaststyle.storm"))
 		assert.are.same({ body = true, fx1 = false }, rests("ledger.toaststyle.glass"))
 	end)
+end)
+
+describe("the round three's composed toast styles", function()
+	it(
+		"are Core's, for sale, and draw as the round two's do: their own atlas, a rung each for toast, toast.high,"
+			.. " toast.low and the Nod, at 1.5 texels a unit, in a BLP the package ships (ANN-R84, ANN-R82)",
+		function()
+			for id, atlasName in pairs(ROUND_THREE) do
+				local style = ns.ToastStyleOf(id)
+				assert.are.same({ id, true, atlasName }, { style.id, style.layered, style.atlas })
+				local atlas = ns.ATLASES[atlasName]
+				assert.are.equal(1.5, atlas.scale)
+				assert.are.equal("Interface\\AddOns\\Pagle\\media\\announce\\" .. atlasName, atlas.file)
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+				local file = assert(io.open("addons/Pagle/media/announce/" .. atlasName .. ".blp", "rb"), atlasName)
+				assert.are.equal("BLP2", file:read(4))
+				file:close()
+				for _, rung in ipairs({ "toast", "high", "low", "nod" }) do
+					local art = style.art.rungs[rung]
+					assert(#art.layers > 0, id .. " " .. rung)
+					for _, layer in ipairs(art.layers) do
+						assert(type(atlas.sprites[layer.sprite]) == "table", layer.sprite)
+						assert.is_truthy(({ under = true, front = true, over = true })[layer.host])
+					end
+				end
+				assert(type(style.art.rungs.toast.stamp) == "table", id)
+				assert(type(style.art.rungs.nod.slice) == "table", id)
+			end
+		end
+	)
+end)
+
+-- A looping transform whose keys are all the same moves nothing: the layer is declared as moving and shows still. The
+-- generator once folded a full turn (rotate(360deg)) to 0, so every spin ran 0 to 0 (#409). Keyed "<style> <keyframes>",
+-- the layers whose keys are meant to be equal, each with its reason; none yet.
+local STILL_ON_PURPOSE = {}
+
+describe("the composed toast styles' looping transforms", function()
+	-- Every motion of every rung's layers and stamp, as { name = "<style> <rung> <layer> <keyframes>", motion }.
+	local function motions()
+		local out = {}
+		for id, art in pairs(ns.TOAST_STYLE_ART2) do
+			for rungName, rung in pairs(art.rungs) do
+				local layers = { unpack(rung.layers) }
+				layers[#layers + 1] = rung.stamp
+				for _, layer in ipairs(layers) do
+					if layer.motion then
+						out[#out + 1] = {
+							name = ("%s %s %s %s"):format(id, rungName, layer.name, layer.motion.keyframes),
+							style = id .. " " .. layer.motion.keyframes,
+							motion = layer.motion,
+						}
+					end
+				end
+			end
+		end
+		return out
+	end
+
+	local function allEqual(keys)
+		for i = 2, #keys do
+			for column = 2, #keys[1] do
+				if keys[i][column] ~= keys[1][column] then
+					return false
+				end
+			end
+		end
+		return true
+	end
+
+	it("move: no looping layer has a transform whose keys are all equal, bar those meant to (#409)", function()
+		local still = {}
+		for _, entry in ipairs(motions()) do
+			local motion = entry.motion
+			if
+				motion.loop
+				and motion.transform
+				and allEqual(motion.transform)
+				and not STILL_ON_PURPOSE[entry.style]
+			then
+				still[#still + 1] = entry.name
+			end
+		end
+		table.sort(still)
+		assert.are.same({}, still)
+	end)
+
+	it(
+		"turn a full circle where the style says it turns: its rotate key runs 0 to 360, or to -360 turning back (#409)",
+		function()
+			local function rotations(id, rung, name)
+				local keys = {}
+				for _, layer in ipairs(ns.TOAST_STYLE_ART2[id].rungs[rung].layers) do
+					if layer.name == name then
+						for i, key in ipairs(layer.motion.transform) do
+							keys[i] = key[4]
+						end
+					end
+				end
+				return keys
+			end
+
+			assert.are.same({ 0, 360 }, rotations("core.toaststyle.arcane", "toast", "back"))
+			assert.are.same({ 0, 360 }, rotations("core.toaststyle.arcane", "toast", "fx2"))
+			assert.are.same({ 0, 360 }, rotations("core.toaststyle.sonar", "toast", "fx1"))
+			assert.are.same({ 0, 360 }, rotations("ledger.toaststyle.blueprint", "toast", "fx1"))
+			assert.are.same({ 0, -360 }, rotations("ledger.toaststyle.blueprint", "toast", "fx2"))
+			assert.are.same({ 0, 360 }, rotations("ledger.toaststyle.glass", "high", "back"))
+			assert.are.same({ 0, 360 }, rotations("ledger.toaststyle.ice", "high", "after"))
+			assert.are.same({ 0, 360 }, rotations("ledger.toaststyle.totem", "high", "back"))
+		end
+	)
 end)

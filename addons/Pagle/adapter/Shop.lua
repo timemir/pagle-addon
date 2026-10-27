@@ -29,12 +29,17 @@ local FIND_Y, FILTER_Y, CHIP_Y, CONTROLS_W = 14, 59, 98, 438
 -- The goods: their inset in the tray, a row's width and height, a slot's header's height, and a grouped slot's group
 -- header's (SHOP-R27).
 local LIST_X, ROW_W, ROW_H, HEADER_H, GROUP_H = 16, 432, 44, 31, 26
+-- The room between an earned good's tag and the price tag's string it sits beside (SHOP-R28).
+local TAG_GAP = 22
 -- A group header's inset, at the medallions', and its rule's opacity, fainter than a slot's.
 local GROUP_X, GROUP_RULE_ALPHA = 8, 0.5
 -- The room under the Curio crate's row, before the first slot's header (SHOP-R50).
 local CRATE_GAP = 6
--- The crate's odds on the description card (SHOP-R54): each pool good's line height, and the room above them.
-local ODDS_H, ODDS_PAD = 16, 4
+-- The crate's odds on the description card (SHOP-R54): where they start, from the card's top, each crate tier's line
+-- height, the room above the pity line, and how far the Buy under them drops to make room for the seven lines and it.
+-- On each line the colour's pip, the name, and the goods left (or the payback) in a column of its own.
+local ODDS_Y, ODDS_H, ODDS_PAD, ODDS_FOOT_DROP = 72, 12, 2, 10
+local ODDS_PIP, ODDS_NAME_W, ODDS_DETAIL_X = 8, 78, 100
 -- An earned good's progress dots on the description card (SHOP-R22): each one's size and the room between them, and
 -- the room above and under their row.
 local DOT, DOT_GAP, DOT_PAD = 10, 8, 8
@@ -122,20 +127,24 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@class PagleShopDots: Frame
 ---@field dots PagleShopDot[]         pooled: the shown ones are the good's, in order
 
---- One pool good's line in the Curio crate's odds (SHOP-R54).
+--- One crate tier's line in the Curio crate's odds (SHOP-R54).
 ---@class PagleShopOddsLine: Frame
----@field label PagleShopFontString  the good's name
----@field chance PagleShopFontString "40%", none for one owned
----@field strike Texture             strikes an owned one through
+---@field edge Texture               the pip's ink rim
+---@field pip Texture                the crate tier's colour
+---@field label PagleShopFontString  the tier's name
+---@field detail PagleShopFontString "12 left", or "pays back 250"
+---@field chance PagleShopFontString "40%"
 
 --- The Curio crate's odds on the description card.
 ---@class PagleShopOdds: Frame
----@field lines PagleShopOddsLine[]  pooled: the shown ones are the pool's, in order
+---@field lines PagleShopOddsLine[]  pooled: the shown ones are the crate tiers', in order
 
 ---@class PagleShopStageFrame
 ---@field odds PagleShopOdds           the Curio crate's odds, where a good's description goes (SHOP-R54)
 ---@field pity PagleShopFontString     the crate's pity line under them
----@field caption PagleShopFontString  the crate's line on the paper under the well (SHOP-R50)
+---@field footParent Frame            what the foot is placed from
+---@field footX number                 the foot's left, and the foot's top: where Buy and Use sit
+---@field footY number
 ---@field card PagleSprite            the showcase card, its dark well at the top
 ---@field area Frame                  where previews draw, clipped to the card
 ---@field previews table<string, Frame> each good's own stage frame, made at its first preview
@@ -172,7 +181,7 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@field leftLabel PagleShopFontString
 ---@field left PagleShopFontString
 ---@field fine PagleShopFontString     "Looks are yours for good."
----@field useNow PagleShopCheck        "Use it now", ticked at each asking
+---@field useNow PagleShopCheck        "Use it now", ticked at each asking; a crate's bill has none (SHOP-R54)
 ---@field buy PagleShopPill
 ---@field cancel Button
 ---@field cancelLabel PagleShopFontString
@@ -206,17 +215,10 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@field stage PagleShopStageFrame
 ---@field bill PagleShopBill
 ---@field flyer PagleShopBezel        the medallion a purchase flies from the bill to its row
----@field opening PagleShopOpening?   a Curio crate opening on the stage's well, made at the first (SHOP-R55)
----@field catcher Frame               over the whole case while a crate opens: a click or Esc skips to its end
+---@field crate PagleCrateStage?      the Curio crate's opening over the case's inside, made at the first (SHOP-R55)
+---@field catcher Frame               over the whole case while a crate opens: a click or Esc skips to its reveal, and Esc
+--- there is "Back to the shop"
 ---@field listTop number              the list's top, from the case's
-
---- A Curio crate opening on the stage's well (SHOP-R55), drawn from the crate's medallion: its brass rim round a dark
---- inside, its face for the lid, straw, and the good's medallion rising out of it.
----@class PagleShopOpening: Frame
----@field crate Frame
----@field lid Frame
----@field straw Texture[]
----@field medal PagleShopBezel
 
 --- The window, made the first time it opens.
 ---@type PagleShopFrame?
@@ -229,9 +231,8 @@ local query = { filter = "all" }
 local selected
 -- A purchase whose motion is playing (adapter/ShopMotion.lua): the window redraws once it settles. `committing` while
 -- ns.shop.Buy runs, whose events would draw the settled state at once; any other redraw meanwhile settles it early.
--- A crate's opening (SHOP-R55) is `crate`, `staged` once its good is on the stage, whose look and words it fades in
--- (`faded`).
----@type { committing: true?, crate: true?, staged: true?, faded: Region[]? }?
+-- A crate's opening (SHOP-R55) is `crate`, what adapter/ShopCrateMotion.lua plays.
+---@type { committing: true?, crate: PagleShopCrateMotion? }?
 local playing
 
 local redraw, askToBuy, buy
@@ -283,25 +284,21 @@ end
 
 -- Settles a purchase's motion (adapter/ShopMotion.lua), where it stopped or, `finished`, once it has played out: what
 -- only the motion showed goes, and the next redraw draws the rest. Played out, nothing is stopped: the driver is
--- still walking what plays, and stopping an owner it no longer plays would add a key to the table it walks.
+-- still walking what plays, and stopping an owner it no longer plays would add a key to the table it walks. A crate's
+-- opening (SHOP-R55) settles on its reveal, whole, with its buttons (ns.SettleShopCrate); with the window closed it only stops.
 ---@param frame PagleShopFrame
 ---@param finished boolean?
+---@return boolean settled whether something was playing
 local function settlePurchase(frame, finished)
 	if not playing then
-		return
+		return false
 	end
 	local was = playing
 	playing = nil
-	if not finished then
+	if was.crate and frame:IsShown() and not finished then
+		ns.SettleShopCrate(frame, was.crate)
+	elseif not finished then
 		ns.StopMotion(frame)
-	end
-	-- A crate's opening (SHOP-R55): the crate and its straw go, and what it was fading in on the stage shows whole.
-	if frame.opening then
-		frame.opening:Hide()
-	end
-	frame.catcher:Hide()
-	for _, region in ipairs(was.faded or {}) do
-		region:SetAlpha(1)
 	end
 	local bill = frame.bill
 	bill.seal:Hide()
@@ -313,6 +310,7 @@ local function settlePurchase(frame, finished)
 	end
 	local coin = frame.purse.coin
 	coin:SetWidth(coin.w0 or coin:GetWidth())
+	return true
 end
 
 -- Closes the window and its bill of sale, giving back the keyboard: a hidden edit box would keep it.
@@ -685,8 +683,8 @@ local function drawRowTag(line, data)
 	line.wax:SetShown(inUse)
 end
 
--- Draws a row's right end from `data`: the price tag for a good for sale, in red when the balance doesn't cover it;
--- otherwise its tag. What a purchase's motion faded or added goes back to rest.
+-- Draws a row's right end from `data`: the price tag for a good for sale, in red when the balance doesn't cover it, with
+-- an earned good's tag to its left; otherwise its tag. What a purchase's motion faded or added goes back to rest.
 ---@param line PagleShopLine
 ---@param data PagleShopRow
 local function drawRowEnd(line, data)
@@ -707,11 +705,20 @@ local function drawRowEnd(line, data)
 		price:ClearAllPoints()
 		price:SetPoint("RIGHT", line, "RIGHT", -8, 0)
 		price:Show()
-		line.tag:Hide()
 		line.wax:Hide()
+		-- an earned good on sale at its fallback price keeps its earned tag beside the price tag (SHOP-R28)
+		line.tag:ClearAllPoints()
+		line.tag:SetPoint("RIGHT", price, "LEFT", -TAG_GAP, 0)
+		if data.tag then
+			ns.SetShopFont(line.tag, "Owned")
+			ns.SetShopText(line.tag, data.tag)
+		end
+		line.tag:SetShown(data.tag ~= nil)
 		return
 	end
 	price:Hide()
+	line.tag:ClearAllPoints()
+	line.tag:SetPoint("RIGHT", -8, 0)
 	drawRowTag(line, data)
 end
 
@@ -878,11 +885,6 @@ local function buildStage(frame)
 	stage.hint = ns.ShopText(stage.area, "Stage")
 	stage.hint:SetPoint("CENTER", stage.area, "TOP", 0, -WELL_H / 2)
 	ns.SetShopText(stage.hint, L.SHOP_PICK)
-	-- The Curio crate's caption on the paper under the well (SHOP-R50).
-	stage.caption = ns.ShopText(stage.area, "Notes")
-	stage.caption:SetWidth(STAGE_W - 40)
-	stage.caption:SetWordWrap(true)
-	stage.caption:SetPoint("TOP", stage.area, "TOP", 0, -(WELL_H + 10))
 
 	-- The description card, stretched from its designed 176 to INFO_H: it is plain paper.
 	local info = ns.ArtSprite(frame, "Papers", "info", "ARTWORK", 1)
@@ -911,13 +913,14 @@ local function buildStage(frame)
 	-- The Curio crate's odds, where a good's description goes, and its pity line under them (SHOP-R54).
 	stage.odds = CreateFrame("Frame", nil, frame) --[[@as PagleShopOdds]]
 	stage.odds:SetSize(width, ODDS_H)
-	at(stage.odds, frame, x, INFO_Y + 77)
+	at(stage.odds, frame, x, INFO_Y + ODDS_Y)
 	stage.odds.lines = {}
 	stage.odds:Hide()
-	stage.pity = ns.ShopText(frame, "Notes")
+	stage.pity = ns.ShopText(frame, "Odds")
 	stage.pity:SetWidth(width)
 
 	local footY = INFO_Y + INFO_H - 16 - 44
+	stage.footParent, stage.footX, stage.footY = frame, x, footY
 	stage.buy = ns.NewShopButton(frame, function()
 		askToBuy(frame, selected)
 	end)
@@ -1013,8 +1016,8 @@ local function drawDots(stage, progress)
 	stage.notes:SetPoint("TOPLEFT", stage.description, "BOTTOMLEFT", 0, -(DOT_PAD + DOT + DOT_PAD))
 end
 
--- The pooled odds line `i` (SHOP-R54): the pool good's name, its chance at the column's right, and the ink's line that
--- strikes an owned one through.
+-- The pooled odds line `i` (SHOP-R54): the crate tier's colour as a pip, its name, the goods left or the payback in a
+-- column, and the chance at the column's right.
 ---@param odds PagleShopOdds
 ---@param i integer
 ---@return PagleShopOddsLine
@@ -1025,34 +1028,39 @@ local function oddsLineAt(odds, i)
 	end
 	line = CreateFrame("Frame", nil, odds) --[[@as PagleShopOddsLine]]
 	line:SetSize(odds:GetWidth(), ODDS_H)
-	line.label = ns.ShopText(line, "Notes")
-	line.label:SetPoint("LEFT", 0, 0)
-	line.chance = ns.ShopText(line, "Notes")
+	local ink = ns.SHOP_INKS.ink
+	local rim = CreateFrame("Frame", nil, line)
+	rim:SetSize(ODDS_PIP, ODDS_PIP)
+	rim:SetPoint("LEFT", 0, 0)
+	line.edge = roundIn(rim, 0, 0)
+	line.edge:SetColorTexture(ink[1], ink[2], ink[3], 0.55)
+	line.pip = roundIn(rim, 1, 1)
+	line.label = ns.ShopText(line, "Odds")
+	line.label:SetWidth(ODDS_NAME_W)
+	line.label:SetPoint("LEFT", ODDS_PIP + 6, 0)
+	line.detail = ns.ShopText(line, "Odds")
+	line.detail:SetPoint("LEFT", ODDS_DETAIL_X, 0)
+	line.chance = ns.ShopText(line, "Odds")
 	line.chance:SetJustifyH("RIGHT")
 	line.chance:SetPoint("RIGHT", 0, 0)
-	local ink = ns.SHOP_INKS.ink
-	line.strike = solid(line, ink[1], ink[2], ink[3], 0.8, "OVERLAY")
-	line.strike:SetHeight(1)
-	line.strike:SetPoint("LEFT", line.label, "LEFT", -2, 0)
-	line.strike:SetPoint("RIGHT", line.label, "RIGHT", 2, 0)
 	odds.lines[i] = line
 	return line
 end
 
--- Draws the Curio crate's odds (SHOP-R54) where a good's description goes: each pool good's name and chance, an owned
--- one struck through and faded; then the pity line, and the notes under it.
+-- Draws the Curio crate's odds (SHOP-R54) where a good's description goes: each crate tier's colour, name, goods left
+-- or payback and chance; then the pity line, and the notes under it.
 ---@param stage PagleShopStageFrame
 ---@param data PagleShopStage
 local function drawOdds(stage, data)
 	local odds = stage.odds
-	for i, good in ipairs(data.odds) do
+	for i, tier in ipairs(data.odds) do
 		local line = oddsLineAt(odds, i)
 		line:ClearAllPoints()
 		line:SetPoint("TOPLEFT", odds, "TOPLEFT", 0, -(i - 1) * ODDS_H)
-		ns.SetShopText(line.label, good.name)
-		ns.SetShopText(line.chance, good.chance or "")
-		line.strike:SetShown(good.owned == true)
-		line:SetAlpha(good.owned and GREYED_ALPHA or 1)
+		line.pip:SetColorTexture(tier.color[1], tier.color[2], tier.color[3], 1)
+		ns.SetShopText(line.label, tier.name)
+		ns.SetShopText(line.detail, tier.detail)
+		ns.SetShopText(line.chance, tier.chance)
 		line:Show()
 	end
 	for i = #data.odds + 1, #odds.lines do
@@ -1081,7 +1089,6 @@ local function stageRegions(stage)
 		stage.dots,
 		stage.odds,
 		stage.pity,
-		stage.caption,
 		stage.tags,
 		stage.buy,
 		stage.needed,
@@ -1103,28 +1110,13 @@ end
 
 -- Shows `goodID`'s look on the stage: its own stage frame, made at its first preview and the same each time, handed
 -- to its preview through securecallfunction when `fresh`, so a preview that raises is reported and the rest still
--- shows; a good with no preview (or put away) shows its icon in a medallion instead.
+-- shows; a good with no preview (or put away) shows its icon in a medallion instead. The path
+-- Pagle.DrawGoodPreview draws by too (adapter/GoodPreview.lua).
 ---@param stage PagleShopStageFrame
 ---@param data PagleShopStage
 ---@param fresh boolean
 local function drawLook(stage, data, fresh)
-	local preview = data.preview
-	if not preview then
-		ns.SetShopBezel(stage.swatch, data.icon, data.greyed, data.shield)
-		stage.swatch:Show()
-		return
-	end
-	local own = stage.previews[data.id]
-	if not own then
-		own = CreateFrame("Frame", nil, stage.area)
-		own:SetAllPoints()
-		stage.previews[data.id] = own
-		fresh = true
-	end
-	own:Show()
-	if fresh then
-		securecallfunction(preview, own)
-	end
+	ns.DrawLook(stage.area, stage.previews, stage.swatch, data, fresh)
 end
 
 -- Draws the description card's foot from `data`: Buy, "N more Coins" or Use, and the tags beside them, each at rest.
@@ -1134,6 +1126,8 @@ local function drawFoot(stage, data)
 	for _, region in ipairs({ stage.buy, stage.needed, stage.short, stage.use }) do
 		region:Hide()
 	end
+	-- The crate's seven odds lines and its pity line take the room Buy has on any other stage.
+	at(stage.buy, stage.footParent, stage.footX, stage.footY + (data.crate and ODDS_FOOT_DROP or 0))
 	if data.buy then
 		ns.SetShopButton(stage.buy, data.buy, true, data.canBuy == true) -- SHOP-R13
 		stage.buy:Show()
@@ -1183,8 +1177,6 @@ local function drawStage(frame, data, fresh)
 	if data.odds then
 		drawOdds(stage, data)
 	end
-	ns.SetShopText(stage.caption, data.caption)
-	stage.caption:SetShown(data.caption ~= nil)
 	drawFoot(stage, data)
 end
 
@@ -1293,7 +1285,7 @@ local function buildBill(frame)
 	local buttonsY = y + 58 + 21 + 6 + 44 + 18
 	bill.buy = ns.NewShopButton(slip, function()
 		if bill.goodID then
-			buy(frame, bill.goodID, bill.useNow:GetChecked() == true)
+			buy(frame, bill.goodID, bill.useNow:IsShown() and bill.useNow:GetChecked() == true)
 		end
 	end)
 	ns.SetShopButton(bill.buy, L.SHOP_BUY_ACCEPT, false, true)
@@ -1346,8 +1338,29 @@ function askToBuy(frame, goodID)
 	ns.SetShopText(bill.price, purchase.amount)
 	ns.SetShopText(bill.left, purchase.left)
 	setChecked(bill.useNow, true)
+	bill.useNow:SetShown(not purchase.crate)
 	bill:Show()
 	ns.OpenShopBill(bill, BILL_X, BILL_Y)
+end
+
+-- Closes a crate's opening (SHOP-R55), wherever it is: what plays settles, and the inside goes. With `use`, equips the
+-- good it gave first ("Use it now"); either way the shop shows as it stands, the good or the crate selected already.
+---@param frame PagleShopFrame
+---@param use boolean?
+local function closeOpening(frame, use)
+	local stage = frame.crate
+	if not (stage and stage.root:IsShown()) then
+		return
+	end
+	local data = stage.data
+	settlePurchase(frame)
+	ns.CloseCrateStage(stage)
+	stage.data = nil
+	frame.catcher:Hide()
+	if use and data and data.good then
+		ns.shop.Use(data.good)
+	end
+	redraw(false)
 end
 
 -- The shown row for `goodID`, if the list shows it.
@@ -1504,148 +1517,82 @@ local function playPurchase(frame, goodID, was)
 	end)
 end
 
--- The straw's two colours, a wisp in each in turn, and a wisp's size: no texture of its own, a sliver of colour.
-local STRAW_INKS = { { 0.89, 0.75, 0.42 }, { 0.74, 0.57, 0.27 } }
-local STRAW_W, STRAW_H = 2.5, 10
-
--- The Curio crate opening on the stage's well (SHOP-R55), made the first time a crate opens: over the stage's previews,
--- clipped with them. The kit has no crate art, so the crate is its medallion taken apart: the Shop atlas's brass rim
--- (bezel-64) round a dark inside, its face (the crate's icon under the gloss-64 sprite, drawn round) for the lid; the
--- straw is slivers of colour; the good's medallion is a 64 shop medallion.
+-- Opens the Curio crate just bought (SHOP-R55) over the case's inside, ending on its reveal: the good, with "Use it now"
+-- and "Back to the shop", or the Coins paid back, with "Back to the shop" alone. `rolled` is what the draw gave, `was`
+-- the balance before the crate's price. With the Animations setting off the reveal shows at once; with it on, the crate
+-- drops, opens, the reel runs and the card turns over (adapter/ShopCrateMotion.lua), and the window redraws once the
+-- opening is closed.
 ---@param frame PagleShopFrame
----@return PagleShopOpening
-local function buildOpening(frame)
-	local area = frame.stage.area
-	local opening = CreateFrame("Frame", nil, area) --[[@as PagleShopOpening]]
-	opening:SetAllPoints()
-	opening:SetFrameLevel(area:GetFrameLevel() + 20)
-	local crate = CreateFrame("Frame", nil, opening)
-	crate:SetSize(64, 64)
-	ns.CenterSprite(ns.ArtSprite(crate, "Shop", "bezel-64", "ARTWORK", 0), crate)
-	roundIn(crate, 1, 10):SetColorTexture(0.07, 0.045, 0.025, 1)
-	opening.crate = crate
-	-- The straw flies over the crate's rim, under its lid and the medallion.
-	local puff = CreateFrame("Frame", nil, opening)
-	puff:SetAllPoints()
-	puff:SetFrameLevel(crate:GetFrameLevel() + 2)
-	opening.straw = {}
-	for i = 1, ns.SHOP_STRAW do
-		local ink = STRAW_INKS[i % 2 + 1]
-		local straw = solid(puff, ink[1], ink[2], ink[3], 1)
-		straw:SetSize(STRAW_W, STRAW_H)
-		opening.straw[i] = straw
+---@param rolled PagleCrateResult
+---@param was integer
+---@param moving boolean
+local function openCrate(frame, rolled, was, moving)
+	local model = ns.ShopModel(BreakUpLargeNumbers)
+	local data = model:CrateResult(rolled)
+	selected = model:Reselect(data.select, query)
+	local stage = frame.crate
+	if not stage then
+		stage = ns.BuildCrateStage(frame)
+		stage.onUse = function()
+			closeOpening(frame, true)
+		end
+		stage.onBack = function()
+			closeOpening(frame)
+		end
+		-- A click takes the opening to its reveal, which has its own buttons: the catcher over the case stops taking them.
+		stage.onPhase = function(phase)
+			frame.catcher:EnableMouse(phase ~= "reveal")
+		end
+		frame.crate = stage
 	end
-	local lid = CreateFrame("Frame", nil, opening)
-	lid:SetSize(44, 44)
-	lid:SetFrameLevel(crate:GetFrameLevel() + 3)
-	roundIn(lid, 1, 0):SetTexture(ns.CRATE_ICON)
-	local gloss = ns.ArtSprite(lid, "Shop", "gloss-64", "ARTWORK", 2)
-	gloss:ClearAllPoints()
-	gloss:SetPoint("TOPLEFT", lid, "TOPLEFT", -2, 2)
-	gloss:SetPoint("BOTTOMRIGHT", lid, "BOTTOMRIGHT", 2, -2)
-	opening.lid = lid
-	opening.medal = ns.NewShopBezel(opening, 64)
-	opening.medal:SetFrameLevel(crate:GetFrameLevel() + 4)
-	opening:Hide()
-	return opening
-end
-
--- Plays the opening of a Curio crate just bought (SHOP-R55, adapter/ShopMotion.lua) on the stage, which still shows
--- the crate: `given` is the good it gave, `was` the balance before and the good then in use in its slot. `selected`
--- is already the end's. The good lands on the stage at 1.1 s; the window redraws once it all settles, or at a click
--- or Esc on the case (the catcher), or as it closes.
----@param frame PagleShopFrame
----@param given string
----@param was { balance: integer, inUse: string? }
-local function playOpening(frame, given, was)
-	local stage, bill, purse = frame.stage, frame.bill, frame.purse
-	local opening = frame.opening or buildOpening(frame)
-	frame.opening = opening
-	-- The good's medallion: its icon as the shop shows it, or the question mark for one it doesn't show yet.
-	local look = ns.ShopModel(BreakUpLargeNumbers):Stage(given)
-	ns.SetShopBezel(opening.medal, look and look.icon, false, look and look.shield)
-	opening.medal:Hide()
-	opening.medal:SetScale(1)
-	for _, straw in ipairs(opening.straw) do
-		straw:Hide()
-	end
-	for _, region in ipairs({ opening.crate, opening.lid }) do
-		region:SetAlpha(1)
-	end
-	opening.lid:SetHeight(44)
-	stage.swatch:Hide() -- the crate stands in its place
-	opening:Show()
-	frame.catcher:Show()
-	local line = shownRow(frame, given)
-	ns.PlayShopCrate(frame, {
-		place = function(region, x, y, scale)
-			scale = scale or 1
-			region:ClearAllPoints()
-			region:SetPoint("CENTER", stage.area, "TOP", x / scale, -(WELL_H / 2 + y) / scale)
-		end,
-		crate = opening.crate,
-		lid = opening.lid,
-		straw = opening.straw,
-		medal = opening.medal,
+	ns.PrepareCrateStage(stage, data, model:CrateReel(rolled, ns.CrateRandom), ns.CrateReelOffset(ns.CrateRandom))
+	frame.search:ClearFocus()
+	frame.purse.tip:Hide()
+	local purse = frame.purse
+	local m = {
+		stage = stage,
+		reveal = data.reveal,
 		closeBill = function(owner)
-			ns.CloseShopBill(bill, BILL_X, BILL_Y, owner)
+			ns.CloseShopBill(frame.bill, BILL_X, BILL_Y, owner)
 		end,
-		balance = function(coins)
-			ns.SetShopText(purse.balance, BreakUpLargeNumbers(coins))
+		-- The purse pays the crate's price out, and a payback counts its Coins back.
+		pay = {
+			balance = function(coins)
+				ns.SetShopText(purse.balance, BreakUpLargeNumbers(coins))
+			end,
+			balanceFrom = was,
+			balanceTo = was - ns.CRATE_PRICE,
+			coin = purse.coin,
+		},
+		count = data.payback and {
+			balance = function(coins)
+				ns.SetShopText(purse.balance, BreakUpLargeNumbers(coins))
+			end,
+			balanceFrom = was - ns.CRATE_PRICE,
+			balanceTo = Pagle.GetBalance().balance,
+			coin = purse.coin,
+		} or nil,
+		settlePurse = function()
+			ns.SetShopText(purse.balance, BreakUpLargeNumbers(Pagle.GetBalance().balance))
 		end,
-		balanceFrom = was.balance,
-		balanceTo = Pagle.GetBalance().balance,
-		coin = purse.coin,
-		land = function()
-			-- The good takes the crate's place on the stage, and its row the gilt band.
-			local now = ns.ShopModel(BreakUpLargeNumbers)
-			drawStage(frame, now:Stage(selected), true)
-			local faded = {}
-			for _, region in ipairs(stageRegions(stage)) do
-				if region:IsShown() then
-					faded[#faded + 1] = region
-				end
-			end
-			local preview = stage.previews[selected or ""]
-			if preview and preview:IsShown() then
-				faded[#faded + 1] = preview
-			end
-			for _, region in ipairs(faded) do
-				region:SetAlpha(0)
-			end
-			if playing then
-				playing.staged, playing.faded = true, faded
-			end
-			frame.crateLine.selectedMark:SetShown(selected == ns.CRATE_ID)
-			if line then
-				line.selectedMark:SetShown(selected == given)
-			end
-			return faded
+		onDone = function()
+			settlePurchase(frame, true)
 		end,
-		row = function()
-			local now = ns.ShopModel(BreakUpLargeNumbers)
-			local data = now:Row(given)
-			if not (line and data and line.goodID == given) then
-				return nil
-			end
-			local out, into, glow = deliverTo(line, data)
-			local motion = { out = out, into = into, glow = glow }
-			local old = shownRow(frame, was.inUse)
-			local oldData = was.inUse and now:Row(was.inUse)
-			if old and oldData and oldData.state ~= "equipped" then
-				motion.stepOut, motion.stepIn = stepDown(old, oldData)
-			end
-			return motion
-		end,
-	}, function()
-		settlePurchase(frame, true)
-		redraw(false)
-	end)
+	}
+	frame.catcher:Show()
+	if not moving then
+		closeBill(frame)
+		redraw(true)
+		ns.SettleShopCrate(frame, m)
+		return
+	end
+	playing = { crate = m }
+	ns.PlayShopCrate(frame, m)
 end
 
 -- Buy on the bill of sale (wallet-and-shop.md › UI: Buy): buys `goodID` through ns.shop.Buy, which checks SHOP-R13
 -- again and buys nothing if it no longer holds. Bought, the window shows it at once with the Animations setting off;
--- with it on, the purchase plays first (playPurchase), or a crate opens on the stage (playOpening).
+-- with it on, the purchase plays first (playPurchase), or a crate opens (openCrate).
 ---@param frame PagleShopFrame
 ---@param goodID string
 ---@param useNow boolean
@@ -1653,28 +1600,20 @@ function buy(frame, goodID, useNow)
 	settlePurchase(frame)
 	local moving = ns.MotionOn()
 	if goodID == ns.CRATE_ID then
-		-- A Curio crate (SHOP-R55) ends with the good it gave selected on the stage, with Use, or in use with Use it
-		-- now; a good the shop doesn't show yet leaves the crate selected, its note saying so. With the Animations
-		-- setting off the bill goes and that shows at once; with it on, the crate opens on the stage first.
-		local listed = ns.ShopModel(BreakUpLargeNumbers):List(query)
 		local balance = Pagle.GetBalance().balance
 		frame.bill.goodID = nil
 		playing = moving and { committing = true } or nil
-		local bought, given = ns.shop.Buy(goodID, useNow)
+		local bought, rolled = ns.shop.Buy(goodID, false)
 		playing = nil
-		if bought then
-			ns.ShopSound("buy")
-			selected = given and ns.ShopModel(BreakUpLargeNumbers):Select(given) or ns.CRATE_ID
-		end
-		if not (bought and given and moving) then
+		if not (bought and rolled) then
 			closeBill(frame)
 			if bought then
 				redraw(true)
 			end
 			return
 		end
-		playing = { crate = true }
-		playOpening(frame, given, { balance = balance, inUse = inUseBeside(listed, given) })
+		ns.ShopSound("buy")
+		openCrate(frame, rolled, balance, moving)
 		return
 	end
 	local was = {
@@ -1767,29 +1706,35 @@ local function build()
 	frame.flyer:SetFrameStrata("DIALOG")
 	frame.flyer:SetFrameLevel(frame.bill:GetFrameLevel() + 50)
 	frame.flyer:Hide()
-	-- Over the whole case and its bill while a crate opens (SHOP-R55): any click, or Esc, skips to its end, the shop
-	-- staying open; every other key goes on to the game.
+	-- Over the whole case and its bill while a crate opens (SHOP-R55): a click anywhere, or Esc, during the crate or the
+	-- reel goes straight to the reveal; there it takes no click (the reveal's buttons do), and Esc is "Back to the shop"
+	-- (ns.CrateInput). The shop stays open, and every other key goes on to the game.
 	local catcher = CreateFrame("Frame", nil, frame)
 	catcher:SetAllPoints()
 	catcher:SetFrameStrata("DIALOG")
 	catcher:SetFrameLevel(frame.bill:GetFrameLevel() + 60)
 	catcher:EnableMouse(true)
 	catcher:EnableKeyboard(true)
-	local function skip()
-		if playing and playing.crate then
-			local staged = playing.staged
-			settlePurchase(frame)
-			redraw(not staged)
+	local function input(key)
+		local stage = frame.crate
+		local action = stage and ns.CrateInput(stage.phase, key)
+		if action == "skip" and playing and playing.crate then
+			closeBill(frame)
+			ns.SkipShopCrate(frame, playing.crate)
+		elseif action == "back" then
+			closeOpening(frame)
 		end
 	end
-	catcher:SetScript("OnMouseDown", skip)
+	catcher:SetScript("OnMouseDown", function()
+		input(nil)
+	end)
 	catcher:SetScript("OnKeyDown", function(self, key)
 		-- The client blocks the call in combat, when the shop is closed anyway (SHOP-R41).
 		if not InCombatLockdown() then
 			self:SetPropagateKeyboardInput(key ~= "ESCAPE")
 		end
 		if key == "ESCAPE" then
-			skip()
+			input(key)
 		end
 	end)
 	catcher:Hide()
@@ -1801,6 +1746,11 @@ local function build()
 	frame:SetScript("OnHide", function()
 		settlePurchase(frame)
 		closeBill(frame)
+		if frame.crate then
+			ns.CloseCrateStage(frame.crate)
+			frame.crate.data = nil
+		end
+		frame.catcher:Hide()
 		frame.search:ClearFocus()
 		frame.purse.tip:Hide()
 		ns.ShopSound("close")
@@ -1840,7 +1790,7 @@ function redraw(fresh)
 	placeList(frame, drawChips(frame, model:Chips()))
 	drawList(frame, model:List(query), model:Crate(query))
 	fitScrollBar(frame)
-	selected = model:Select(selected)
+	selected = model:Reselect(selected, query)
 	drawStage(frame, model:Stage(selected), fresh)
 end
 

@@ -7,7 +7,7 @@ local ns = loadAddon("Pagle", FOREVER_GLOBALS).ns
 
 -- The announcement settings as a new profile holds them (announcements.md › Data).
 local function defaults()
-	return { cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 20, window = 300 } }
+	return { cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 40, window = 300 } }
 end
 
 -- Registered Modules as the registry lists them (by def.order): `defs` are { name, title, order, guideBlurb? }.
@@ -86,7 +86,7 @@ describe("What's in the box (ONB-R31, ONB-R91, ONB-R102, ONB-R103)", function()
 end)
 
 describe("the Moments presets (ONB-R35)", function()
-	it("writes Lively: Cozy mode off, Show every catch on, the budget on at 20 per 5 min", function()
+	it("writes Lively: Cozy mode off, Show every catch on, the budget on at 40 per 5 min", function()
 		local announcements = defaults()
 		announcements.cozy, announcements.everyCatch = true, false
 		announcements.budget = { on = false, count = 3, window = 60 }
@@ -94,7 +94,7 @@ describe("the Moments presets (ONB-R35)", function()
 		ns.ApplyGuidePreset(announcements, "lively")
 
 		assert.are.same(
-			{ cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 20, window = 300 } },
+			{ cozy = false, everyCatch = true, motion = true, budget = { on = true, count = 40, window = 300 } },
 			announcements
 		)
 	end)
@@ -179,7 +179,7 @@ describe("the Moments presets (ONB-R35)", function()
 		end
 
 		assert.are.same({
-			{ "lively", "20 pop-ups in 5 minutes" },
+			{ "lively", "40 pop-ups in 5 minutes" },
 			{ "quieter", "10 pop-ups in 5 minutes" },
 			{ "cozy", "a Legend still shows, silently" },
 		}, cards)

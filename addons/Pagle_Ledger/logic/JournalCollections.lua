@@ -156,7 +156,14 @@ local function familyPage(context, family)
 	if name then
 		blocks[2] = { kind = "title", text = name }
 	end
-	blocks[#blocks + 1] = { kind = "stamps", stamps = ns.JournalStamps(stars, L.TROPHY_STAMPS) }
+	blocks[#blocks + 1] = {
+		kind = "stamps",
+		stamps = ns.JournalStamps(
+			stars,
+			L.TROPHY_STAMPS,
+			ns.FamilyStampTips(world, context.state, family.id, stars, format)
+		),
+	}
 	blocks[#blocks + 1] = { kind = "board", ticks = board(context, family) }
 	blocks[#blocks + 1] = { kind = "text", text = L.TROPHY_POUNDS, color = "faded" }
 	blocks[#blocks + 1] = { kind = "text", text = landed, hand = true }

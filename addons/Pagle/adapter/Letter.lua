@@ -94,12 +94,14 @@ local function scaleSeal(frame, scale)
 	seal:SetPoint("CENTER", frame, "TOPLEFT", LETTER.seal / 2 / scale, -(LETTER.sealY + LETTER.seal / 2) / scale)
 end
 
--- Puts the frame `drop` units below its place: its foot on the toast column's (ANN-R20), centred.
+-- Puts the frame `drop` units below its place: its foot on the Toast column's, wherever the Angler moved it
+-- (ANN-R98), centred on it.
 ---@param frame PagleLetterFrame
 ---@param drop number
 local function place(frame, drop)
+	local foot = ns.AnnounceColumnFoot()
 	frame:ClearAllPoints()
-	frame:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, ns.ANNOUNCE_COLUMN_FOOT - drop)
+	frame:SetPoint("BOTTOM", UIParent, "BOTTOM", foot.x, foot.y - drop)
 end
 
 -- The frame at rest: in its place, whole, its seal on.

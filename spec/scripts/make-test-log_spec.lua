@@ -1226,6 +1226,7 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 		local def = huntsNs.ProjectionDef({}, huntsNs.lookups, {
 			ReportCoinsEarned = function() end,
 			ReportXPEarned = function() end,
+			ReportTicketsEarned = function() end,
 			IterateCatches = function(afterSeq)
 				return catchLog:Iterate(afterSeq, "Hunts")
 			end,

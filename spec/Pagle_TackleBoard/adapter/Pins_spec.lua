@@ -15,11 +15,11 @@ local MACKEREL, BLACKMOUTH, MIGHTFISH, REMOVED_FISH = 6303, 6358, 13754, 92003
 
 -- Goal payloads (tackle-board.md › Data).
 local HAUL_HERE = "n;haul;2;15;30;148" -- 30 Catches in Darkshore, the fake's zone
-local QUALITY = "n;quality;1;10;3;2"
+local RARITY = "n;rarity;1;10;3;2"
 local COLLECTOR = "n;collector;2;15;2;" -- day-bound: 2 on one board day
 local LURE = "n;lure;3;20;25;"
 local STRANDED = "n;species;2;15;10;" .. REMOVED_FISH
-local EXPEDITION = "e;quality;0;60;3;3"
+local EXPEDITION = "e;rarity;0;60;8;3"
 local VARIETY = "e;variety;0;60;3;148:" .. MACKEREL .. "," .. BLACKMOUTH .. "," .. MIGHTFISH
 
 -- Each goal record's time: the start is at T, its goals one second apart after it.
@@ -101,7 +101,7 @@ end
 
 describe("a started board's pins (TKB-R101, TKB-R102)", function()
 	it('shows its Expedition on a poster with the "60" seal and its Notices on papers with their coins', function()
-		local loaded, _, frame = opened(startedLog(EXPEDITION, HAUL_HERE, QUALITY, LURE))
+		local loaded, _, frame = opened(startedLog(EXPEDITION, HAUL_HERE, RARITY, LURE))
 		local atlas = loaded.ns.BOARD_ATLASES.Board
 
 		local poster = expedition(frame, 1).goal
@@ -109,15 +109,15 @@ describe("a started board's pins (TKB-R101, TKB-R102)", function()
 		assert.are.equal(atlas.file, poster.paper.texture)
 		assert.are.equal("60", poster.seal.label:GetText())
 		assert.are.same({
-			"E X P E D I T I O N   ·   Q U A L I T Y",
-			"3 rare-or-better Catches",
-			"0 of 3",
+			"E X P E D I T I O N   ·   R A R I T Y",
+			"8 Catches of a rare variety or better",
+			"0 of 8",
 			"anywhere",
 			"pays 60 Coins",
 		}, reads(expedition(frame, 1)))
 		assert.are.same({ "HAUL", "30 Catches in Darkshore", "0 of 30", "I'm here", "pays" }, reads(notice(frame, 1)))
 		assert.are.same(
-			{ "QUALITY", "3 uncommon-or-better Catches", "0 of 3", "anywhere", "pays" },
+			{ "RARITY", "3 Catches of an uncommon variety or better", "0 of 3", "anywhere", "pays" },
 			reads(notice(frame, 2))
 		)
 		assert.are.same({ "LURE", "25 Catches with a lure on", "0 of 25", "anywhere", "pays" }, reads(notice(frame, 3)))
@@ -150,14 +150,14 @@ describe("a started board's pins (TKB-R101, TKB-R102)", function()
 	end)
 
 	it("closes up its Notice rows while the overflow strip shows (TKB-R101)", function()
-		local _, _, frame = opened(startedLog(EXPEDITION, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, LURE))
+		local _, _, frame = opened(startedLog(EXPEDITION, RARITY, RARITY, RARITY, RARITY, RARITY, RARITY, LURE))
 
 		assert.are.same({ "TOPLEFT", frame.parts.pins, "TOPLEFT", 26, -300 }, notice(frame, 4).points[1])
 		assert.are.same({ "TOPLEFT", frame.parts.pins, "TOPLEFT", 26, -8 }, expedition(frame, 1).points[1])
 	end)
 
 	it("draws no overflow strip, nor its twine over the bottom row, while every goal has a pin (TKB-R101)", function()
-		local loaded, _, frame = opened(startedLog(EXPEDITION, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY))
+		local loaded, _, frame = opened(startedLog(EXPEDITION, RARITY, RARITY, RARITY, RARITY, RARITY, RARITY))
 
 		assert.is_false(frame.parts.overflow:IsShown())
 		loaded.ns.Redraw("projection")
@@ -165,7 +165,7 @@ describe("a started board's pins (TKB-R101, TKB-R102)", function()
 	end)
 
 	it("hangs a goal with no empty pin in the overflow strip", function()
-		local _, _, frame = opened(startedLog(EXPEDITION, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, LURE))
+		local _, _, frame = opened(startedLog(EXPEDITION, RARITY, RARITY, RARITY, RARITY, RARITY, RARITY, LURE))
 
 		local chips = frame.parts.overflow.chips
 		assert.is_true(visible(chips[1], frame))
@@ -177,8 +177,7 @@ describe("a started board's pins (TKB-R101, TKB-R102)", function()
 	end)
 
 	it("shows the overflow goal's lines on its hover", function()
-		local loaded, _, frame =
-			opened(startedLog(EXPEDITION, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, QUALITY, LURE))
+		local loaded, _, frame = opened(startedLog(EXPEDITION, RARITY, RARITY, RARITY, RARITY, RARITY, RARITY, LURE))
 
 		hover(frame.parts.overflow.chips[1])
 
@@ -233,7 +232,7 @@ describe('"take it down", RE-POSTED and stranded goals (TKB-R44, TKB-R55, TKB-R1
 	-- The board with a re-posted goal and a stranded one, the real ns.CanTakeDown (TKB-R55) and a ns.TakeDown that
 	-- records each goal taken down.
 	local function withSeams()
-		local records = startedLog(EXPEDITION, QUALITY, STRANDED)
+		local records = startedLog(EXPEDITION, RARITY, STRANDED)
 		records[#records + 1] = record("reroll", T + 10, idAt(T + 2) .. ";" .. LURE)
 		local taken = {}
 		local loaded, fake, frame = opened(records, {
@@ -296,7 +295,7 @@ end)
 
 describe("the empty pins (TKB-R105)", function()
 	it("read the countdown and the weekly reset's realm weekday, with a dashed outline and a lone tack", function()
-		local _, _, frame = opened(startedLog(EXPEDITION, QUALITY))
+		local _, _, frame = opened(startedLog(EXPEDITION, RARITY))
 
 		local empty = notice(frame, 2).empty
 		assert.is_true(visible(empty, frame))
@@ -315,13 +314,152 @@ describe("the empty pins (TKB-R105)", function()
 	end)
 
 	it("refresh their countdown every 60 s while the board is open", function()
-		local loaded, fake, frame = opened(startedLog(EXPEDITION, QUALITY))
+		local loaded, fake, frame = opened(startedLog(EXPEDITION, RARITY))
 
 		fake.wait(3600)
 		assert.are.equal("(in 23h)", notice(frame, 2).empty.note:GetText())
 		loaded.client.advance(60)
 
 		assert.are.equal("(in 22h)", notice(frame, 2).empty.note:GetText())
+	end)
+end)
+
+describe("the empty pins with a Refresh held (TKB-R58, TKB-R105)", function()
+	-- A board started today (its day 0 is the day the fake's clock is in, so nothing is owed or to be issued but what
+	-- the log holds): the Expedition on pin 1 and Notices on pins 1-3, the Angler's skill read. Notice pins 4-6 and
+	-- Expedition pin 2 are empty. The board is open after the login's live step.
+	local TODAY = board.DAILY_RESET
+	local TODAY_LOG = {
+		board.skill(TODAY + 30),
+		record("start", TODAY + 60, TODAY .. ";" .. W),
+		record("issue", TODAY + 61, EXPEDITION),
+		record("issue", TODAY + 62, HAUL_HERE),
+		record("issue", TODAY + 63, RARITY),
+		record("issue", TODAY + 64, LURE),
+	}
+
+	-- The board open on TODAY_LOG; the Angler holds `held` Refreshes when given: Hunts has earned that many, and Core
+	-- tells the board (TicketsChanged).
+	local function holding(held)
+		local loaded, fake, frame = board.opened(TODAY_LOG, {
+			names = { areas = { [DUROTAR] = "Durotar", [DARKSHORE] = "Darkshore" } },
+			step = true,
+		})
+		if held then
+			fake.setTickets("Hunts", held)
+			fake.fire("TicketsChanged", fake.Pagle.GetTickets())
+		end
+		return loaded, fake, frame
+	end
+
+	it("take no mouse while none is held, so the board drags by them, and have no hover", function()
+		local loaded, _, frame = holding()
+
+		for _, empty in ipairs({ notice(frame, 4).empty, expedition(frame, 2).empty }) do
+			assert.is_false(empty.mouseEnabled)
+			hover(empty)
+			assert.is_nil(loaded.ns.BoardHoverLines())
+		end
+	end)
+
+	it("become clickable once one is held, every empty pin of both types and no hung goal's", function()
+		local _, _, frame = holding(1)
+
+		for i = 4, 6 do
+			assert.is_true(notice(frame, i).empty.mouseEnabled)
+		end
+		assert.is_true(expedition(frame, 2).empty.mouseEnabled)
+		assert.is_false(visible(notice(frame, 1).empty, frame))
+		assert.is_false(notice(frame, 1).empty.mouseEnabled)
+	end)
+
+	it("say what a click does, what it costs and how many are held, under the mouse", function()
+		local loaded, _, frame = holding(3)
+
+		hover(notice(frame, 4).empty)
+		local forNotice = loaded.ns.BoardHoverLines()
+		hover(expedition(frame, 2).empty)
+		local forExpedition = loaded.ns.BoardHoverLines()
+		expedition(frame, 2).empty:GetScript("OnLeave")(expedition(frame, 2).empty)
+
+		assert.are.same({
+			"Post a Notice now",
+			"Click to pin a fresh Notice here instead of waiting for the next reset.",
+			"It uses 1 Refresh. You hold 3.",
+		}, forNotice)
+		assert.are.same({
+			"Post an Expedition now",
+			"Click to pin a fresh Expedition here instead of waiting for the weekly reset.",
+			"It uses 1 Refresh. You hold 3.",
+		}, forExpedition)
+		assert.is_nil(loaded.ns.BoardHoverLines())
+	end)
+
+	it("keep their words and countdown (TKB-R105)", function()
+		local _, _, frame = holding(1)
+
+		assert.are.same(
+			{ "A fresh Notice at reset", "(in 23h)" },
+			{ notice(frame, 4).empty.label:GetText(), notice(frame, 4).empty.note:GetText() }
+		)
+		assert.are.same(
+			{ "Next Expedition at the weekly reset", "(Tue)" },
+			{ expedition(frame, 2).empty.label:GetText(), expedition(frame, 2).empty.note:GetText() }
+		)
+	end)
+
+	it("ask on the confirm when clicked, for the type of the pin, and post nothing until it is answered", function()
+		local loaded, _, frame = holding(1)
+
+		notice(frame, 4).empty:Click()
+		local confirm = assert(loaded.ns.TakeDownConfirm())
+		local forNotice = confirm.title:GetText()
+		confirm.keep:Click()
+		expedition(frame, 2).empty:Click()
+
+		assert.are.equal("Post a new Notice?", forNotice)
+		assert.are.equal("Post a new Expedition?", confirm.title:GetText())
+		assert.are.equal(0, loaded.ns.State().ticketsSpent)
+	end)
+
+	it("post the goal on the first empty pin when answered, then fall quiet: no Refresh is left", function()
+		local loaded, _, frame = holding(1)
+
+		notice(frame, 6).empty:Click() -- whichever empty Notice pin is clicked, the goal takes the first
+		loaded.ns.TakeDownConfirm().accept:Click()
+
+		local state = loaded.ns.State()
+		assert.are.equal(1, state.ticketsSpent)
+		assert.is_not.equal(false, state.pins.notices[4])
+		assert.is_true(visible(notice(frame, 4).goal, frame))
+		assert.is_false(visible(notice(frame, 4).empty, frame))
+		assert.is_true(visible(notice(frame, 5).empty, frame))
+		for _, empty in ipairs({ notice(frame, 5).empty, notice(frame, 6).empty, expedition(frame, 2).empty }) do
+			assert.is_false(empty.mouseEnabled)
+		end
+	end)
+
+	it("go quiet again when the projection is updating (TKB-R108)", function()
+		local loaded, _, frame = holding(1)
+		loaded.ns.IsUpdating = function()
+			return true
+		end
+
+		loaded.ns.Redraw("projection")
+		notice(frame, 4).empty:Click()
+
+		assert.is_false(notice(frame, 4).empty.mouseEnabled)
+		assert.is_nil(loaded.ns.TakeDownConfirm())
+	end)
+
+	it("follow the count when Core reports a change while the board is open", function()
+		local _, fake, frame = holding(1)
+		assert.is_true(notice(frame, 4).empty.mouseEnabled)
+
+		fake.setTickets("TackleBoard", nil, 1)
+		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
+
+		assert.is_false(notice(frame, 4).empty.mouseEnabled)
 	end)
 end)
 
@@ -338,7 +476,7 @@ describe("a pinned goal's hover (TKB-R102)", function()
 	end)
 
 	it("lists a Variety Expedition's Species, caught ones ticked", function()
-		local loaded, _, frame = opened(startedLog(VARIETY, QUALITY))
+		local loaded, _, frame = opened(startedLog(VARIETY, RARITY))
 		-- ns.CountCatch (logic/Progress.lua) counts a Mightfish, and the live apply redraws.
 		loaded.ns.State().goals[idAt(T + 1)].seen[MIGHTFISH] = true
 		loaded.ns.Redraw("projection")
@@ -357,7 +495,7 @@ end)
 
 describe("the highlight (TKB-R109)", function()
 	it("rings an open goal's pin for 2 s when the board opens on its ID", function()
-		local loaded, _, frame = opened(startedLog(EXPEDITION, QUALITY, LURE))
+		local loaded, _, frame = opened(startedLog(EXPEDITION, RARITY, LURE))
 		loaded.ns.board:Hide()
 
 		loaded.ns.OpenBoard(idAt(T + 3))
@@ -371,7 +509,7 @@ describe("the highlight (TKB-R109)", function()
 	end)
 
 	it("highlights nothing for a completed goal's ID", function()
-		local loaded, _, frame = opened(startedLog(EXPEDITION, QUALITY, LURE))
+		local loaded, _, frame = opened(startedLog(EXPEDITION, RARITY, LURE))
 		local ns = loaded.ns
 		local state = ns.State()
 		local done = state.goals[idAt(T + 3)]
@@ -399,7 +537,7 @@ describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
 	end
 
 	it("says what it does, by type, and that the new one can't be taken down in turn, at the cursor", function()
-		local loaded, _, frame = opened(startedLog(EXPEDITION, QUALITY))
+		local loaded, _, frame = opened(startedLog(EXPEDITION, RARITY))
 		loaded.client.cursor = { 300, 200 }
 
 		assert.are.same({
@@ -415,7 +553,7 @@ describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
 	end)
 
 	it("says why it waits while the board is updating", function()
-		local loaded, _, frame = opened(startedLog(EXPEDITION, QUALITY))
+		local loaded, _, frame = opened(startedLog(EXPEDITION, RARITY))
 		loaded.ns.IsUpdating = function()
 			return true
 		end
@@ -428,7 +566,7 @@ describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
 	end)
 
 	it("says a stranded goal is no longer catchable, re-posted or not", function()
-		local records = startedLog(EXPEDITION, QUALITY, STRANDED)
+		local records = startedLog(EXPEDITION, RARITY, STRANDED)
 		local loaded, _, frame = opened(records)
 
 		assert.are.equal(
@@ -481,7 +619,7 @@ describe("a pinned goal's tacks (TKB-R102)", function()
 		it(
 			"never sits on a pay: the posters' seals, the Notices' coins and their pay (lean " .. tostring(lean) .. ")",
 			function()
-				local loaded, _, frame = opened(startedLog(EXPEDITION, VARIETY, HAUL_HERE, QUALITY, LURE, COLLECTOR))
+				local loaded, _, frame = opened(startedLog(EXPEDITION, VARIETY, HAUL_HERE, RARITY, LURE, COLLECTOR))
 				loaded.ns.db.profile.lean = lean
 				loaded.ns.Redraw("projection")
 

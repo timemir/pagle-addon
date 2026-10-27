@@ -154,7 +154,7 @@ ns.KIND_ICONS = {
 	haul = icon("INV_Misc_Fish_02"), -- a fish: Catches in a zone
 	variety = icon("INV_Misc_Fish_09"), -- another fish: different Species
 	wanderer = icon("INV_Misc_Map_01"), -- a map: zones
-	quality = icon("INV_Misc_Gem_Pearl_02"), -- a pearl: uncommon or rare
+	rarity = icon("INV_Misc_Gem_Pearl_02"), -- a pearl: an uncommon or rare Variety
 	collector = icon("INV_Box_02"), -- a chest: junk, containers, Sub-collection items
 	lure = icon("INV_Misc_Orb_03"), -- Shiny Bauble: a lure on
 	species = icon("Trade_Fishing"), -- the rod: one Species
@@ -174,8 +174,8 @@ function ns.GoalText(goal)
 		fields.zone = ns.ZoneName(target)
 	elseif kind == "wanderer" and goal.type == "e" then
 		fields.continent = ns.ContinentName(target)
-	elseif kind == "quality" then
-		fields.quality = ns.L.QUALITY_NAMES[target] or ns.L.NAME_UNKNOWN
+	elseif kind == "rarity" then
+		fields.rarity = ns.L.RARITY_NAMES[target] or ns.L.NAME_UNKNOWN
 	elseif kind == "species" then
 		fields.species = ns.SpeciesName(target)
 	end

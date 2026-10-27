@@ -36,6 +36,16 @@ local ns = select(2, ...)
 --   ns.CanTakeDown(goalID)    Whether a goal's "take it down" shows (TKB-R55), whatever the projection's updating: the
 --                             pins grey it while ns.IsUpdating() (TKB-R108), and ns.TakeDown refuses then. Defined in
 --                             adapter/Reroll.lua.
+--   ns.Post(goalType)         Spends a Refresh on an empty slot (TKB-R58, TKB-R59): its confirm, then the `post` record.
+--                             adapter/Pins.lua calls it from an empty pin's click. Defined in adapter/Reroll.lua.
+--   ns.CanPost(goalType)      Whether a Refresh can post a goal of `goalType` now (TKB-R58): started, not updating, one
+--                             held and an empty pin of the type. The empty pins are clickable while it holds. Defined in
+--                             adapter/Reroll.lua.
+--   ns.RefreshesHeld()        The Refreshes held, `Pagle.GetTickets().tickets` (REF-R5): the pins' clicks and the ledge's
+--                             count (TKB-R58, TKB-R106) read it. Defined here.
+--   ns.ReportTickets()        Reports lifetime Refreshes spent with M:ReportTicketsSpent (TKB-R58, REF-R2): `done` calls
+--                             it after ns.ReportXP, and the projection's apply after a live entry that changes it.
+--                             Reports ns.State().ticketsSpent, 0 before Start. Defined in adapter/Moments.lua.
 --   ns.ScheduleLiveStep()     Schedules the live step for the next frame (TKB-R13, TKB-R84). The projection's `done`
 --                             calls it last. Defined in adapter/LiveStep.lua.
 --   ns.InLoginWindow()        Whether an advance now is "at login": from login until the login's first live step has
@@ -106,7 +116,7 @@ local ns = select(2, ...)
 ---@field pagle table                                    -- Core: GetArea, GetZones, GetZoneCatches, GetItem, GetAngler, GetConditions
 
 ---@alias TackleGoalType "n"|"e"                  -- Notice, Expedition
----@alias TackleGoalKind "haul"|"variety"|"wanderer"|"quality"|"collector"|"lure"|"species"
+---@alias TackleGoalKind "haul"|"variety"|"wanderer"|"rarity"|"collector"|"lure"|"species"
 ---@alias TackleDayLog "lit"|"burned"|"out"|"unlit"
 ---@alias TackleApplyMode "live"|"replay"|"rebuild"
 
@@ -120,7 +130,7 @@ local ns = select(2, ...)
 ---@field tier integer               -- 1–3 for a Notice, 0 for an Expedition (TKB-R34)
 ---@field pay integer                -- Coins (TKB-R34)
 ---@field need integer               -- TKB-R34
----@field target? integer            -- zone, continent, minimum quality, or representative item
+---@field target? integer            -- zone, continent, minimum Variety rarity rank, or representative item
 ---@field items? integer[]           -- Variety Expedition: representative items, ascending
 
 --- A goal on the board (tackle-board.md › Projection): its definition, from its record, and its progress.
@@ -151,6 +161,7 @@ local ns = select(2, ...)
 ---@field tally { notices: integer, expeditions: integer }
 ---@field coins integer               -- lifetime Coins earned (TKB-R63)
 ---@field xp integer                  -- lifetime Activity XP earned (TKB-R65)
+---@field ticketsSpent integer        -- lifetime Refreshes spent: the `post` records applied (TKB-R58)
 ---@field flies { [string]: { day: integer, time: integer, goal: TackleGoal } }  -- tied patterns, with a copy of the goal that tied it
 ---@field titles { [string]: { day: integer, cast: string } }  -- titleID -> board day and Cast entry ID it was earned on
 ---@field fire { count: integer, kindling: integer, longest: integer, milestones: { [integer]: { day: integer, cast: string } }, log: { [integer]: TackleDayLog } }  -- log keeps the last 28 days
@@ -187,6 +198,12 @@ end
 ---@return boolean
 function ns.IsStarted()
 	return ns.State().started ~= nil
+end
+
+--- The Refreshes the Angler holds now (REF-R5), from Core: `Pagle.GetTickets().tickets`, 0 or more.
+---@return integer
+function ns.RefreshesHeld()
+	return ns.api.pagle.GetTickets().tickets
 end
 
 local redrawn = {} -- the subscribed views' redraws, in subscription order

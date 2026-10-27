@@ -25,6 +25,8 @@ files = [
     "scripts/check-event.py",
     "scripts/pushed-content.py",
     "scripts/export-web-art.py",
+    "scripts/crate-art.py",
+    "scripts/render-crate-sounds.py",
     "scripts/launch.py",
 ]
 python_version = "3.12"
@@ -36,6 +38,11 @@ warn_unreachable = true
 [[tool.mypy.overrides]]
 module = "soundfile"
 follow_untyped_imports = true
+
+# resvg-py is one compiled module with no type information, which crate_art.py imports where it draws.
+[[tool.mypy.overrides]]
+module = "resvg_py"
+ignore_missing_imports = true
 
 # SciPy ships no type information (no py.typed; scipy-stubs would bring pins of its own). sounds.py uses three of its
 # filters, butter, sosfilt and lfilter, and annotates what they return.

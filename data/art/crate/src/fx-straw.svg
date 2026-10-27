@@ -1,0 +1,5 @@
+<!-- A sliver of straw (prototypes/curio-crate/index.html: .straw): 3 x 22 px, radius 2, linear-gradient(#f4dc98, #b8903a). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 5 24" width="5" height="24">
+  <defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4dc98"/><stop offset="1" stop-color="#b8903a"/></linearGradient></defs>
+  <rect x="0" y="0" width="3" height="22" rx="2" fill="url(#s)"/>
+</svg>

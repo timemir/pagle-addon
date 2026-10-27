@@ -47,8 +47,9 @@ local TIPS = {
 		.. "silently.",
 	budget = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their "
 		.. "ruler. Greyed out in Cozy mode, which holds everything anyway.",
-	everyCatch = "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch "
-		.. "shows instead. Greyed out in Cozy mode, which shows nothing.",
+	everyCatch = "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows "
+		.. "instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which "
+		.. "shows nothing.",
 	motion = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each "
 		.. "appears as it settles.",
 	windowMoments = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
@@ -61,6 +62,7 @@ local TIPS = {
 		.. "Companion.",
 	pasteExport = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion.",
 	trackerPosition = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
+	toastPosition = "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen.",
 	huntsTracker = "A small tracker under the minimap with the Hunts you've pinned on the board.",
 	statsTracker = "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell turns it on.",
 	watched = "Watch or stop watching from any fish's page in the Stats book.",
@@ -142,12 +144,13 @@ local EXPECTED = {
 		rows = {
 			{ "checkbox", "Cozy mode", tip = TIPS.cozy },
 			{ "checkbox", "Interruption budget", tip = TIPS.budget },
-			{ "slider", "Interruptions", under = true, range = { 1, 30, 1 } },
+			{ "slider", "Interruptions", under = true, range = { 1, 60, 1 } },
 			{ "slider", "Per", under = true, range = { 1, 15, 1 } },
 			{ "checkbox", "Show every catch", tip = TIPS.everyCatch },
 			{ "checkbox", "Animations", tip = TIPS.motion },
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
+			{ "button", "Toast position", caption = "Reset", tip = TIPS.toastPosition },
 			{ "header", "Hunts", of = "Hunts" },
 			{ "checkbox", "Tell me when a pinned Hunt's window opens", tip = TIPS.windowMoments, of = "Hunts" },
 			{ "checkbox", "Remind me about the Pagle companion", tip = TIPS.companionHint, of = "Hunts" },
@@ -172,7 +175,10 @@ local EXPECTED = {
 	{
 		name = "Look and Feel",
 		rows = {
-			{ "text", "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing." },
+			{
+				"text",
+				"Looks you own. Pick one here, in the Fish Journal's Collection or with Use in the Curio Shop; all of them change the same thing.",
+			},
 			{ "header", "Announcements" },
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
@@ -184,7 +190,7 @@ local EXPECTED = {
 			{ "slot", "Hunts tracker frame", of = "Hunts" },
 			{ "slot", "Stats tracker frame", of = "Stats" },
 			{ "slot", "Tackle Board tracker frame", of = "TackleBoard" },
-			{ "header", "Curio Shop" },
+			{ "header", "More looks" },
 			{ "button", "Buy more looks with Pagle Coins", caption = "Open the Curio Shop" },
 		},
 	},
@@ -915,7 +921,7 @@ describe("Each page's Defaults button", function()
 		assert.are.same({
 			["Cozy mode"] = false,
 			["Interruption budget"] = true,
-			["Interruptions"] = 20,
+			["Interruptions"] = 40,
 			["Per"] = 5,
 			["Show every catch"] = true,
 			["Animations"] = true,

@@ -1,0 +1,5 @@
+<!-- A card's drop shadow (0 6px 10px rgba(0,0,0,.5)), for a 150 x 172 px card at 0,0. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -14 190 210" width="190" height="210">
+  <defs><filter id="blur" filterUnits="userSpaceOnUse" x="-20" y="-14" width="190" height="210"><feGaussianBlur stdDeviation="5"/></filter></defs>
+  <rect x="0" y="6" width="150" height="172" rx="8" fill="#000" fill-opacity=".5" filter="url(#blur)"/>
+</svg>

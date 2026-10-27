@@ -1,0 +1,7 @@
+<!-- The light under the reel's line (prototypes/curio-crate/index.html: #reel .under): radial-gradient(ellipse 50% 60% at
+     50% 100%, tier/.35, transparent 70%) over 220 x 212 px (radii 110 x 127.2), white to tint, drawn with screen blending. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 212" width="220" height="212">
+  <defs><radialGradient id="g" gradientUnits="userSpaceOnUse" cx="110" cy="212" r="1" gradientTransform="translate(110 212) scale(110 127.2) translate(-110 -212)">
+    <stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".7" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+  <rect x="0" y="0" width="220" height="212" fill="url(#g)"/>
+</svg>

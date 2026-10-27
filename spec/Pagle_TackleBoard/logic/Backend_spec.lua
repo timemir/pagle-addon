@@ -1,5 +1,5 @@
--- The Tackle Board's projection for Pagle's backend (#223): ns.BindProjections, ns.CoinsEarned and
--- ns.ActivityXPEarned (logic/Projection.lua; #76 item 15), on FakePagle over the fixture catalogue. The backend's driver folds the Catch log through
+-- The Tackle Board's projection for Pagle's backend (#223): ns.BindProjections, ns.CoinsEarned,
+-- ns.ActivityXPEarned and ns.TicketsSpent (logic/Projection.lua; #76 item 15; REF-R9), on FakePagle over the fixture catalogue. The backend's driver folds the Catch log through
 -- logic/ alone (spec/logic_alone_spec.lua), so the binding must fold a started board as the client's projection does.
 
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
@@ -63,6 +63,28 @@ describe("the Tackle Board's projection for the backend (#223)", function()
 		local bound, ns = boundByBackend()
 
 		assert.are.equal(700, ns.ActivityXPEarned(bound:GetState() --[[@as TackleBoardState]]))
+	end)
+
+	it("gives the Refreshes spent: one for each post record, none before Start (TKB-R58, REF-R9)", function()
+		local bound, ns = boundByBackend(board.join(history(), {
+			board.post(T + 5, ONE),
+			board.post(T + 6, ONE_E),
+		}))
+		local none, nsNone = boundByBackend({})
+
+		assert.are.equal(2, ns.TicketsSpent(bound:GetState() --[[@as TackleBoardState]]))
+		assert.are.equal(0, nsNone.TicketsSpent(none:GetState() --[[@as TackleBoardState]]))
+	end)
+
+	it("gives the Refreshes spent the client reports to Core for the same log (REF-R2, REF-R9)", function()
+		local records = board.join(history(), { board.post(T + 5, ONE) })
+		local fake = withHistory(records)
+		built(fake)
+		local bound, ns = boundByBackend(records)
+
+		local state = bound:GetState() --[[@as TackleBoardState]]
+		assert.are.equal(1, fake.Pagle.GetTickets().spent)
+		assert.are.equal(fake.Pagle.GetTickets().spent, ns.TicketsSpent(state))
 	end)
 
 	it("gives the Activity XP the client reports to Core for the same log (AXP-R2, AXP-R9)", function()

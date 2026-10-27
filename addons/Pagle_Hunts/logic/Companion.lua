@@ -51,14 +51,15 @@ function ns.HintNodDue(hint, lastNod, now)
 	return hint ~= nil and now - (lastNod or 0) >= ns.HINT_NOD_INTERVAL
 end
 
---- The weekly Nod (HNT-R86's `companionHint` row, HNT-R171): a `nod` titled "Pagle Wagers" with the hint's first line
---- as its text and its `pastText`, Trade_Fishing for its icon, no `cast` (an Announcement of its own, ANN-R12) and no
---- Coins. Clicking it runs `open`, which opens the board on the Pagle Wagers spread.
+--- The weekly Nod (HNT-R86's `companionHint` row, HNT-R171): a `nod` titled "Pagle Wagers" with its text and its
+--- `pastText` the hint's first line, or, while the companion is missing, a shorter line of its own (the hint's names
+--- the Sonar Scope and wouldn't fit a Nod's one line), Trade_Fishing for its icon, no `cast` (an Announcement of its
+--- own, ANN-R12) and no Coins. Clicking it runs `open`, which opens the board on the Pagle Wagers spread.
 ---@param hint CompanionHint
 ---@param open fun() opens the board on the Pagle Wagers spread (ns.OpenWagers)
 ---@return PagleMoment
 function ns.HintNod(hint, open)
-	local text = hint.lines[1]
+	local text = hint.state == "missing" and ns.L.HINT_NOD or hint.lines[1]
 	return {
 		rung = "nod",
 		kind = "companionHint",

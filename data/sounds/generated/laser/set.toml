@@ -1,0 +1,44 @@
+# Gnomish Laser: gnome gadgets, laser zaps and a UFO; toast_1 and banner are whole takes. Parts are single sounds (ElevenLabs sound-effects prompts, requested length in seconds, shipped take
+# "a" or "b" in raw/<part>/take_<x>.mp3); each file is a mix of them laid on a timeline (see
+# scripts/pagle_data/generated_sounds.py).
+
+[part.whine]
+prompt = 'Electric charging whine rising steadily in pitch, short build-up, one-shot'
+seconds = 1.0
+pick = "a"
+
+[part.zap]
+prompt = 'Sci-fi laser blaster, single zap, sharp descending pew, one-shot'
+seconds = 0.6
+pick = "a"
+
+[part.ratchet]
+prompt = 'Clockwork gear ratchet, three quick metallic clicks, close-mic'
+seconds = 0.8
+pick = "a"
+
+[file.toast_2]
+# A charge-up whine, then the zap.
+mix = [
+	{ part = "whine", start = 0, length = 0.7 },
+	{ part = "zap", start = 0.7 },
+]
+
+[file.toast_3]
+# Three zaps climbing, a ratchet ticking under them.
+mix = [
+	{ part = "zap", start = 0 },
+	{ part = "zap", start = 0.18, semitones = 5, gain = 0.9 },
+	{ part = "zap", start = 0.36, semitones = 9, gain = 0.9 },
+	{ part = "ratchet", start = 0.05, gain = 0.5, length = 0.6 },
+]
+
+[file.toast_1]
+prompt = 'A single cartoonish sci-fi laser zap "pew!", a gnomish gadget with a clockwork tick, comedic'
+seconds = 0.8
+pick = "a"
+
+[file.banner]
+prompt = 'A big goofy gnome machine: a rising power charge, three laser zaps, a UFO wobble and a spectacular fizzing explosion of sparks and gears ending in a cheerful ding, steampunk sci-fi cartoon'
+seconds = 3.0
+pick = "a"

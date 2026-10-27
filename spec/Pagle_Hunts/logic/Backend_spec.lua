@@ -171,6 +171,27 @@ describe("Hunts' projection for the backend (#223)", function()
 		assert.are.equal(client.global.activityXP.earned.Hunts, ns.ActivityXPEarned(state))
 	end)
 
+	it(
+		"gives the lifetime Refreshes earned: none for Standing Hunts, a completed run's for a run (HNT-R116, REF-R9)",
+		function()
+			local standing, ns = boundByBackend()
+			assert.are.equal(0, ns.TicketsEarned(standing:GetState() --[[@as HuntsState]]))
+
+			-- fixture_shore's run is completed and none of its Hunts reaches a third tier.
+			local state, poolNs = foldByDriver(driverFake(poolRun))
+			assert.are.equal(poolNs.TICKETS_RUN, poolNs.TicketsEarned(state))
+		end
+	)
+
+	it("gives the Refreshes the client reports to Core for the same log (REF-R2, REF-R9)", function()
+		local _, client = login(poolRun)
+		local state, ns = foldByDriver(driverFake(poolRun))
+
+		local reported = client.global.tickets.earned.Hunts
+		assert.are.equal(reported, ns.TicketsEarned(state))
+		assert.is_true(reported > 0)
+	end)
+
 	it("counts a title a retirement completed by the server time, as the client's done does (HNT-R23)", function()
 		-- From 2026-06-01, fixture_dusk's only Hunt is fixture_snapper, which is done: its title a second time is no
 		-- new title, so only fixture_hefty_blackmouth's retirement can change the set.

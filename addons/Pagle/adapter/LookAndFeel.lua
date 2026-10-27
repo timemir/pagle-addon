@@ -171,9 +171,20 @@ local function shopRow()
 	end, nil, true)
 end
 
+-- The Collection row (SET-R50 item 3): pressing it closes the panel first, then opens the Collection through the first
+-- On Module's def.collection (CORE-R45); left out when no On Module offers one.
+---@return SettingsInitializer
+local function collectionRow()
+	return CreateSettingsButtonInitializer(L.SETTINGS_COLLECTION_ROW, L.SETTINGS_COLLECTION_BUTTON, function()
+		HideUIPanel(SettingsPanel)
+		ns.OpenCollection()
+	end, nil, true)
+end
+
 --- Builds Look and Feel (SET-R50) on its registered page, once, when Core registers its Settings (every enabled
 --- Module has registered by then): the paragraph, a header and the slot dropdowns for each slot category with a slot
---- of Core or of a Module On, then the Curio Shop row. Modules add no rows (CORE-R42).
+--- of Core or of a Module On, then "More looks" with the Collection row, when a Module On offers one, and the Curio
+--- Shop row. Modules add no rows (CORE-R42).
 ---@param page SettingsCategory
 ---@param layout SettingsLayout
 function ns.BuildLookAndFeel(page, layout)
@@ -184,6 +195,9 @@ function ns.BuildLookAndFeel(page, layout)
 			ns.SlotDropdown(page, layout, slot, "look")
 		end
 	end
-	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_SHOP))
+	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_MORE_LOOKS))
+	if ns.CollectionOffered() then
+		layout:AddInitializer(collectionRow())
+	end
 	layout:AddInitializer(shopRow())
 end

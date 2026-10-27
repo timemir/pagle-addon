@@ -1,0 +1,10 @@
+<!-- The beam that rises from the open crate (prototypes/curio-crate/index.html: .beam): 300 x 230 px of linear-gradient(to
+     top, rgba(255,226,150,.85), rgba(255,200,110,.25) 60%, transparent), clipped to polygon(30% 100%, 70% 100%, 100% 0,
+     0 0) and blurred 6px, drawn with screen blending. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-24 -24 348 278" width="348" height="278">
+  <defs>
+    <linearGradient id="g" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffe296" stop-opacity=".85"/><stop offset=".6" stop-color="#ffc86e" stop-opacity=".25"/><stop offset="1" stop-color="#ffc86e" stop-opacity="0"/></linearGradient>
+    <filter id="blur" filterUnits="userSpaceOnUse" x="-24" y="-24" width="348" height="278"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+  <polygon points="90,230 210,230 300,0 0,0" fill="url(#g)" filter="url(#blur)"/>
+</svg>

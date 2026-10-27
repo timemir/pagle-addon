@@ -87,8 +87,28 @@ function COUNT.wanderer(goal, cast, _, _, ctx)
 	return addDistinct(goal, zone)
 end
 
-function COUNT.quality(goal, _, _, item)
-	return item ~= nil and not item.noise and item.quality ~= nil and item.quality >= goal.target and addOne(goal)
+-- The rank of a Variety rarity key (VAR-R2): its place in Core's Pagle.VARIETY_RARITIES, Common 1 to Epic 4; nil for
+-- a key the list doesn't have.
+---@param pagle table
+---@param key string
+---@return integer?
+local function rarityRank(pagle, key)
+	for rank, rarity in ipairs(pagle.VARIETY_RARITIES) do
+		if rarity.key == key then
+			return rank
+		end
+	end
+	return nil
+end
+
+-- A Catch counts when the Variety its Cast item carries (VAR-R4) is of the target rank or rarer (TKB-R42). An item
+-- with no Variety, junk and containers among them, never counts; nor does Noise.
+function COUNT.rarity(goal, _, slot, item, ctx)
+	if item == nil or item.noise or slot.variety == nil then
+		return false
+	end
+	local rank = rarityRank(ctx.pagle, slot.variety.rarity)
+	return rank ~= nil and rank >= goal.target and addOne(goal)
 end
 
 -- The Collector Notice's two keys (TKB-R42): what each category counts as.
@@ -239,7 +259,8 @@ function ns.CountCatch(goal, cast, slot, ctx)
 		return false -- stranded (TKB-R44), or complete: later Catches don't count for it (TKB-R45)
 	end
 	local item = slot.itemID ~= 0 and ctx.pagle.GetItem(slot.itemID) or nil
-	return COUNT[goal.kind](goal, cast, slot, item, ctx)
+	local count = COUNT[goal.kind]
+	return count ~= nil and count(goal, cast, slot, item, ctx) -- a kind the board no longer knows counts nothing
 end
 
 --- The progress the board shows for a goal (TKB-R104): its progress, except that a day-bound goal (TKB-R41) shows 0

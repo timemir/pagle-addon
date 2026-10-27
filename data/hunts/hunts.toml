@@ -25,6 +25,12 @@
 # chip on the Hunt's entry (HNT-R65), so it says what the board doesn't.
 
 [[set]]
+id = "home_waters"
+name = "Home Waters"
+title = "Dockhand"
+note = "Your first waters, close to home."
+
+[[set]]
 id = "round_the_clock"
 name = "Round the Clock"
 title = "Clockwatcher"
@@ -50,6 +56,55 @@ title = "Hut Keeper"
 [[class]]
 id = "fixed.oddity"
 members = [6522, 251524]
+
+# Home Waters: the starter set, for a new character. Each Hunt names the same eleven low zones, where the skill base is
+# -20 or less, so none needs skill; a zone's subzones count (LOG-R48). Both factions can finish every one: Alliance in
+# 1 Dun Morogh, 12 Elwynn Forest, 141 Teldrassil, 40 Westfall, 38 Loch Modan and 148 Darkshore, Horde in 14 Durotar,
+# 215 Mulgore, 85 Tirisfal Glades, 17 The Barrens and 130 Silverpine Forest.
+
+[[hunt]]
+id = "home_waters"
+set = "home_waters"
+kind = "imposed"
+since = 2026-11-04
+class = "species.any"
+conditions = { areas = [1, 12, 14, 141, 215, 85, 40, 38, 148, 17, 130] }
+tiers = [1, 25, 100]
+name = "Home Waters"
+note = "Any fish will do. Everyone starts somewhere, and it's damp."
+
+[[hunt]]
+id = "bloated_luck"
+set = "home_waters"
+kind = "imposed"
+since = 2026-11-04
+class = "quality.uncommon" # the Bloated fish: 6643, 6645, 21162, 21164
+conditions = { areas = [1, 12, 14, 141, 215, 85, 40, 38, 148, 17, 130] }
+tiers = [1, 3, 10]
+name = "Bloated Luck"
+note = "Heavy for their size, and something rattles inside."
+
+[[hunt]]
+id = "mackerel_run"
+set = "home_waters"
+kind = "imposed"
+since = 2026-11-04
+species = 6303 # Raw Slitherskin Mackerel
+conditions = { areas = [1, 12, 14, 141, 215, 85, 40, 38, 148, 17, 130] }
+tiers = [1, 10, 40]
+name = "Mackerel Run"
+note = "Slippery, plentiful and found on every coast worth the name."
+
+[[hunt]]
+id = "lantern_hours"
+set = "home_waters"
+kind = "imposed"
+since = 2026-11-04
+class = "species.any"
+conditions = { areas = [1, 12, 14, 141, 215, 85, 40, 38, 148, 17, 130], time = [[1260, 300]] } # 21:00 to 05:00
+tiers = [1, 10, 40]
+name = "Lantern Hours"
+note = "Evening bell to the small hours: one lantern and a quiet shore."
 
 # Round the Clock: the day and night fish.
 

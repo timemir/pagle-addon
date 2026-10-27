@@ -248,7 +248,7 @@ describe("the Ledger's M4 live moments", function()
 	)
 
 	it(
-		"raise Prestige ready once with a climb's 60, then Prestige I with +100 and its title, and Prestige ready again at the next climb's 60 (LED-R32, LED-R34, LED-R90, LED-R97)",
+		"raise Prestige ready once with a climb's 60, then Prestige I with +1,500 and its title, and Prestige ready again at the next climb's 60 (LED-R32, LED-R34, LED-R90, LED-R97)",
 		function()
 			local fake, loaded = session({ history = { cast(T0, fishes(1, TO_60 - 1)) } })
 			local ns = loaded.ns
@@ -281,12 +281,12 @@ describe("the Ledger's M4 live moments", function()
 			assert.are.equal(1, #announcements)
 			local raised = announcements[1].headline
 			assert.are.same(
-				{ "banner", 90, "prestige", "Prestige I", "Title: Returning Tide", 100 },
+				{ "banner", 90, "prestige", "Prestige I", "Title: Returning Tide", 1500 },
 				{ raised.rung, raised.order, raised.kind, raised.title, raised.text, raised.coins }
 			)
 			assert.is_nil(raised.cast)
 			assert.are.equal("string", type(raised.icon))
-			assert.are.equal(100, announcements[1].coins)
+			assert.are.equal(1500, announcements[1].coins)
 			assert.are.equal(1, ns.db.global.celebrated.prestige)
 			seen = #fake.announcements
 
@@ -308,7 +308,7 @@ describe("the Ledger's M4 live moments", function()
 		fake.playCast("caught", loot(fishes(25, 1)))
 
 		local levelUp = byKind(shown(fake)).levelUp
-		assert.are.same({ "Angler Level 10", "Title: Dabbler", "Level 10", 20 }, {
+		assert.are.same({ "Angler Level 10", "Title: Dabbler", "Level 10", 40 }, {
 			levelUp.title,
 			levelUp.text,
 			levelUp.stamp,
@@ -345,7 +345,8 @@ describe("the Ledger's M4 live moments", function()
 	end)
 
 	it(
-		"raise a Size record at toast.low with the length ruler for a strictly longer Catch (LED-R82, LED-R97, ANN-R22)",
+		"raise a Size record at toast.low naming the item alone, with the length ruler labelled by the Catch's band for"
+			.. " a strictly longer Catch (LED-R82, LED-R97, ANN-R22, #424)",
 		function()
 			local fake, loaded, sizes = session({ history = { cast(T0, { PIKE }, 0) } })
 			local old = loaded.ns.projection:GetState().species[PIKE].record
@@ -358,11 +359,11 @@ describe("the Ledger's M4 live moments", function()
 				"toast.low",
 				100,
 				"Size record",
-				"Huge Cove Pike · " .. sizeText(fake, new),
+				"Huge Cove Pike",
 				"Record",
 				HUGE_PIKE,
 				record.id,
-				{ old = old.length, new = new.length, unit = "length", label = "length" },
+				{ old = old.length, new = new.length, unit = "length", label = fake.Pagle.SIZE_BANDS[new.band].name },
 			}, { size.rung, size.order, size.title, size.text, size.stamp, size.icon, size.cast, size.ruler })
 			assert.is_nil(size.coins)
 			-- Records are never in the celebrated set (LED-R84): the item beating it isn't noted anywhere in it.
@@ -500,7 +501,7 @@ describe("the Ledger's M4 done", function()
 					"21 Species",
 					"Title: Nat's Peer",
 					"Title: Returning Tide",
-					"Pagle Coins +490",
+					"Pagle Coins +2,070",
 				},
 			}, writeUps(fake))
 			assert.are.same({}, fake.announcements)

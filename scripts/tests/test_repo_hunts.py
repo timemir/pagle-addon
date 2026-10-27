@@ -28,11 +28,46 @@ def test_the_committed_list_emits_the_three_generated_classes_over_the_catalogue
         assert set(members) <= layers.items.keys()
 
 
-# hunts.md › Data, "The Standing Hunt list": the four sets and the 12 Hunts in table order, each as (id, set, kind,
+# hunts.md › Data, "The Standing Hunt list": the five sets and the 16 Hunts in table order, each as (id, set, kind,
 # target, window or conditions, tiers). Written from the table, not from hunts.toml, so the file can't drift from the
-# spec. House Wagers left the list and its four Hunts became pool events (#286).
-V1_SETS = ["round_the_clock", "turn_of_the_year", "sunday_showdown", "camp_hours"]
+# spec. House Wagers left the list and its four Hunts became pool events (#286); Home Waters, the starter set, joined
+# it (#430).
+V1_SETS = ["home_waters", "round_the_clock", "turn_of_the_year", "sunday_showdown", "camp_hours"]
+# Home Waters' eleven low zones (skill base -20 or less): Alliance and Horde ones, so both factions can finish it.
+HOME_WATERS_AREAS = [1, 12, 14, 141, 215, 85, 40, 38, 148, 17, 130]
 V1_HUNTS: list[tuple[str, str, str, tuple[str, object], tuple[str, object], list[int]]] = [
+    (
+        "home_waters",
+        "home_waters",
+        "imposed",
+        ("class", "species.any"),
+        ("conditions", {"areas": HOME_WATERS_AREAS}),
+        [1, 25, 100],
+    ),
+    (
+        "bloated_luck",
+        "home_waters",
+        "imposed",
+        ("class", "quality.uncommon"),
+        ("conditions", {"areas": HOME_WATERS_AREAS}),
+        [1, 3, 10],
+    ),
+    (
+        "mackerel_run",
+        "home_waters",
+        "imposed",
+        ("species", 6303),
+        ("conditions", {"areas": HOME_WATERS_AREAS}),
+        [1, 10, 40],
+    ),
+    (
+        "lantern_hours",
+        "home_waters",
+        "imposed",
+        ("class", "species.any"),
+        ("conditions", {"areas": HOME_WATERS_AREAS, "time": [[1260, 300]]}),
+        [1, 10, 40],
+    ),
     ("night_run", "round_the_clock", "natural", ("species", 13759), ("window", "night"), [1, 10, 40]),
     ("first_light", "round_the_clock", "natural", ("species", 13760), ("window", "day"), [1, 10, 40]),
     ("live_wire", "round_the_clock", "natural", ("species", 13757), ("window", "day"), [1, 10]),
@@ -59,7 +94,7 @@ PLACEHOLDER_SINCE = 1793750400
 
 def test_the_committed_list_is_hunts_md_v1_table_in_order() -> None:
     # hunts.md › Data (the Standing Hunt list), HNT-R1 (display order is file order), DATA-R87 and DATA-R93: the four
-    # sets and the 12 Hunts in table order, every since the pre-1.0 placeholder, none retired and none with a minBand.
+    # sets and the 16 Hunts in table order, every since the pre-1.0 placeholder, none retired and none with a minBand.
     hunt_list = hunt_list_of(read_layers(REPO))
     assert [entry["id"] for entry in hunt_list["sets"]] == V1_SETS
     expected = [
@@ -81,7 +116,7 @@ def test_the_committed_list_has_the_one_fixed_class_and_the_generated_classes() 
 
 # hunts.md › Data: "The M5 build ticket checks every item and area ID above against data/db2/ by its enUS name". Each
 # ID with its name as data/db2/ gives it (items.csv's Display_lang, areas.csv's AreaName_lang); hunts.md's bracketed
-# names are the intent. No Standing Hunt names an area since House Wagers left the list (#286).
+# names are the intent. Only Home Waters' Hunts name areas, the same eleven low zones (#286, #430).
 V1_ITEM_NAMES = {
     13759: "Raw Nightfin Snapper",
     13760: "Raw Sunscale Salmon",
@@ -95,8 +130,21 @@ V1_ITEM_NAMES = {
     19803: "Brownell's Blue Striped Racer",
     6522: "Deviate Fish",
     251524: "Whimsyfin",
+    6303: "Raw Slitherskin Mackerel",
 }
-V1_AREA_NAMES: dict[int, str] = {}
+V1_AREA_NAMES: dict[int, str] = {
+    1: "Dun Morogh",
+    12: "Elwynn Forest",
+    14: "Durotar",
+    141: "Teldrassil",
+    215: "Mulgore",
+    85: "Tirisfal Glades",
+    40: "Westfall",
+    38: "Loch Modan",
+    148: "Darkshore",
+    17: "The Barrens",
+    130: "Silverpine Forest",
+}
 # DATA-R39's aura list, as data/forever/lists.toml's comment names them, and DATA-R38's event list.
 V1_AURAS = {1280341: "Rack", 1280342: "Hut"}
 V1_EVENTS = {301}
@@ -195,3 +243,26 @@ def test_every_v1_hunt_can_be_completed_in_todays_catalogue() -> None:
     hunt_list = hunt_list_of(layers)
     hunts = hunt_list["hunts"]
     assert [record["id"] for record in hunts if not _reachable(record, layers, hunt_list["classes"])] == []
+
+
+ALLIANCE_ZONES = [1, 12, 141, 40, 38, 148]
+HORDE_ZONES = [14, 215, 85, 17, 130]
+
+
+def test_home_waters_is_a_starter_set_either_faction_can_finish() -> None:
+    # #430: Home Waters' eleven zones are real zones with a skill base of -20 or less (no skill needed), and each of its
+    # Hunts can be done in at least one Alliance zone and one Horde zone, each zone with its subzones (LOG-R48).
+    layers = read_layers(REPO)
+    hunt_list = hunt_list_of(layers)
+    assert sorted(ALLIANCE_ZONES + HORDE_ZONES) == sorted(HOME_WATERS_AREAS)
+    for zone in HOME_WATERS_AREAS:
+        assert layers.db2.areas[zone].parent == 0, zone
+        assert layers.catch_lists.skill_bases[zone] <= -20, zone
+    home = [record for record in hunt_list["hunts"] if record["set"] == "home_waters"]
+    assert len(home) == 4
+    for record in home:
+        conditions = record["conditions"]
+        assert isinstance(conditions, dict)
+        for side in (ALLIANCE_ZONES, HORDE_ZONES):
+            narrowed = record | {"conditions": conditions | {"areas": side}}
+            assert _reachable(narrowed, layers, hunt_list["classes"]), (record["id"], side)

@@ -18,8 +18,11 @@ data\Catalogue.lua
 data\AnnounceArt.lua
 data\ToastStyleArt.lua
 data\ToastStyleArt2.lua
+data\ToastStyleArt3.lua
 data\PrestigeArt.lua
 data\ShopArt.lua
+data\CrateArt.lua
+data\CrateSounds.lua
 data\BindingArt.lua
 data\GuideArt.lua
 data\BookBindingArt.lua
@@ -73,8 +76,10 @@ logic\Tour.lua
 logic\Trailer.lua
 logic\Wallet.lua
 logic\ActivityXP.lua
+logic\Tickets.lua
 logic\Goods.lua
 logic\Crate.lua
+logic\CrateReel.lua
 logic\Shop.lua
 logic\LookAndFeel.lua
 logic\Bindings.lua
@@ -88,6 +93,7 @@ logic\Announcements.lua
 logic\LayeredArt.lua
 logic\PrestigeFrames.lua
 logic\ToastStyles.lua
+logic\ColumnFoot.lua
 logic\Motion.lua
 logic\BookBinding.lua
 logic\Book.lua
@@ -140,6 +146,7 @@ adapter\DevGlyphs.lua
 adapter\Slash.lua
 adapter\Wallet.lua
 adapter\ActivityXP.lua
+adapter\Tickets.lua
 adapter\PushedContent.lua
 adapter\AnglersInGame.lua
 adapter\Goods.lua
@@ -168,7 +175,10 @@ adapter\FieldKit.lua
 adapter\FieldReportBox.lua
 adapter\PasteExport.lua
 adapter\ShopArt.lua
+adapter\GoodPreview.lua
+adapter\ShopCrate.lua
 adapter\ShopMotion.lua
+adapter\ShopCrateMotion.lua
 adapter\Shop.lua
 adapter\GuideKit.lua
 adapter\GuideBindingField.lua

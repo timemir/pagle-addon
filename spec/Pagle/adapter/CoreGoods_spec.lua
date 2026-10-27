@@ -74,22 +74,31 @@ describe("Core's slots and goods", function()
 					{
 						"core.toaststyle.page default",
 						"core.toaststyle.ripple tier 1",
-						"core.toaststyle.lanternglow tier 2",
+						"core.toaststyle.lanternglow tier 1",
 						"core.toaststyle.ship tier 1",
 						"core.toaststyle.birch tier 1",
 						"core.toaststyle.tidepool tier 1",
-						"core.toaststyle.chart tier 2",
-						"core.toaststyle.frost tier 2",
+						"core.toaststyle.chart tier 1",
+						"core.toaststyle.frost tier 1",
 						"core.toaststyle.goblin tier 2",
-						"core.toaststyle.kelp tier 3",
-						"core.toaststyle.moon tier 3",
-						"core.toaststyle.leaf tier 3",
-						"core.toaststyle.bottle tier 3",
-						"core.toaststyle.rune tier 4",
-						"core.toaststyle.folio tier 5",
-						"core.toaststyle.storm tier 5",
+						"core.toaststyle.kelp tier 2",
+						"core.toaststyle.moon tier 2",
+						"core.toaststyle.leaf tier 2",
+						"core.toaststyle.bottle tier 2",
+						"core.toaststyle.rune tier 3",
+						"core.toaststyle.folio tier 2",
+						"core.toaststyle.storm tier 4",
 						"core.toaststyle.sonar earned nil", -- once the companion is linked (SHOP-R29)
 						"core.toaststyle.foil crate only", -- the Curio crate's alone (SHOP-R50)
+						-- The round three's (ANN-R84).
+						"core.toaststyle.hive tier 4",
+						"core.toaststyle.ooze tier 3",
+						"core.toaststyle.robot tier 3",
+						"core.toaststyle.spider tier 3",
+						"core.toaststyle.glacier tier 3",
+						"core.toaststyle.magma tier 4",
+						"core.toaststyle.arcane tier 4",
+						"core.toaststyle.pirate tier 3",
 					},
 				},
 				{
@@ -103,15 +112,28 @@ describe("Core's slots and goods", function()
 						"core.soundset.rain tier 1",
 						"core.soundset.marimba tier 1",
 						"core.soundset.shipbell tier 1",
+						"core.soundset.squeaky tier 1",
+						"core.soundset.bubbleworks tier 1",
 						"core.soundset.kalimba tier 2",
 						"core.soundset.musicbox tier 2",
 						"core.soundset.glass tier 2",
 						"core.soundset.steelpan tier 2",
 						"core.soundset.dulcimer tier 2",
+						"core.soundset.goblintill tier 2",
+						"core.soundset.kazoo tier 2",
+						"core.soundset.arcade tier 2",
+						"core.soundset.boing tier 2",
+						"core.soundset.slime tier 2",
 						"core.soundset.frost tier 3",
 						"core.soundset.harp tier 3",
 						"core.soundset.gizmo tier 3",
+						"core.soundset.mrglglgl tier 3",
+						"core.soundset.parrot tier 3",
+						"core.soundset.laser tier 3",
+						"core.soundset.silithid tier 3",
+						"core.soundset.succubus tier 3",
 						"core.soundset.wardrums tier 4",
+						"core.soundset.dragonroost tier 4",
 					},
 				},
 				{
@@ -221,7 +243,7 @@ describe("Core's slots and goods", function()
 				end
 			end
 
-			assert.are.same({ 33 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
+			assert.are.same({ 54 + #FISH_CREST_SPECIES + 34, {} }, { count, without })
 		end
 	)
 end)
@@ -318,9 +340,15 @@ describe("Core's goods' names", function()
 		assert.are.same({
 			name = "core.toaststyle.lanternglow",
 			slot = "core.toaststyle",
+			category = "Announcements",
 			icon = "Interface\\Icons\\INV_Misc_Lantern_01",
 			module = "Core",
 			isDefault = false,
+			kind = "sale",
+			tier = 1,
+			price = 250,
+			purchased = false,
+			fromCrate = false,
 		}, loaded.env.Pagle.GetGood("core.toaststyle.lanternglow"))
 	end)
 

@@ -340,9 +340,9 @@ describe("the Pagle Wagers spread (HNT-R162)", function()
 			"Darkshore",
 			"1 Cast in these waters this run · 1 of 3 first marks",
 			"PAID SO FAR",
-			"+150 XP · 15 Coins",
+			"+150 XP · 8 Coins",
 			"SETTLE IT",
-			"+250 XP · 50 Coins",
+			"+250 XP · 25 Coins",
 		}) do
 			assert(has(texts, text), "the run's entry lacks " .. text)
 		end
@@ -667,6 +667,19 @@ describe("the run's entry on the spread (HNT-R163)", function()
 		assert.are.equal("opens at 18:00, in 5h", oddity.window.text)
 		assert.are.equal("mark-water-coast", view.mark.names[3])
 		assert.is_false(view.seal.shown)
+	end)
+
+	it("shows the Refreshes a box pays beside its label, and nothing where none are paid (HNT-R117)", function()
+		local r = oneOn()
+		r.ns.OpenWagers()
+		local page = r.ns.board:Page(place(r), "right")
+		local view = r.ns.RunEntryView(page)
+
+		-- Nothing is paid so far; settling the run pays TICKETS_RUN.
+		assert.is_false(view.pay[1].refresh.shown)
+		assert.is_true(view.pay[2].refresh.shown)
+		assert.are.equal("+1 Refresh", view.pay[2].refresh.text)
+		assert.are.same({}, bounds.overflows(page))
 	end)
 
 	it("keeps to the page by the fit rule: the pay rule first, its words the boxes' tooltip", function()

@@ -110,7 +110,7 @@ describe("the Ledger's live moments", function()
 			-- Its Catch is the Yellowtail's Spotted, a Common variety (VAR-R3), caught for the first time.
 			assert.are.same({
 				"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
-				"newVariety New variety · Spotted / nil nil",
+				"newVariety New variety / Spotted nil",
 			}, momentsOf(announcement))
 			assert.are.same({ "New variety" }, announcement.stamps)
 			assert.are.same(
@@ -138,12 +138,12 @@ describe("the Ledger's live moments", function()
 		-- Its text carries the Catch's size, as a real Catch's does (LED-R81), and its variety rides on it (VAR-R25).
 		assert.are.same({
 			"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
-			"newVariety New variety · Spotted / nil nil",
+			"newVariety New variety / Spotted nil",
 		}, momentsOf(announcements[1]))
 	end)
 
 	it(
-		"raise a New here Nod for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",
+		"raise a New here toast.low for a known Species in a new zone, and celebrate the pair and the zone (LED-R90, LED-R97)",
 		function()
 			-- Caught twice before in one Cast, with no zone (0), so the Casts stay below level 2. The live Catch is the
 			-- Yellowtail's Spotted (VAR-R3), celebrated already (LED-R91), so its variety isn't new either.
@@ -164,7 +164,7 @@ describe("the Ledger's live moments", function()
 			)
 			local headline = announcements[1].headline
 			assert.are.same(
-				{ "nod", 100, "New here", MACKEREL, record.id },
+				{ "toast.low", 100, "New here", MACKEREL, record.id },
 				{ headline.rung, headline.order, headline.stamp, headline.icon, headline.cast }
 			)
 			local celebrated = loaded.env.PagleLedgerDB.global.celebrated
@@ -180,9 +180,10 @@ describe("the Ledger's live moments", function()
 
 		fake.playCast("caught", loot(TROUT))
 
-		-- Its variety is new, and headlines over the Nod (VAR-R25, ANN-R11).
+		-- Both are toast.low now (#437): New here, the lower order, headlines, and the new variety rides on it as a
+		-- stamp (VAR-R25, ANN-R11).
 		assert.are.same(
-			{ "newVariety New variety · Slate / nil nil", "newInZone New here / Item 6308 in ... nil" },
+			{ "newInZone New here / Item 6308 in ... nil", "newVariety New variety / Slate nil" },
 			momentsOf(shown(fake)[1])
 		)
 	end)
@@ -217,7 +218,7 @@ describe("the Ledger's live moments", function()
 			assert.are.same({
 				"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
 				"zoneRank Zone rank: Visitor / Darkshore 2",
-				"newVariety New variety · Spotted / nil nil",
+				"newVariety New variety / Spotted nil",
 			}, momentsOf(shown(fake)[1]))
 			assert.are.same(
 				{ { module = "Ledger", total = 0 }, { module = "Ledger", total = 10 + 2 } },
@@ -234,12 +235,12 @@ describe("the Ledger's live moments", function()
 		fake.playCast("caught", loot(MACKEREL))
 		fake.playCast("caught", loot(SMALLFISH))
 
-		-- The second Species also takes the climb to level 2 (820 + 20 + 620 XP): 10, then 10 + 10 + 20.
+		-- The second Species also takes the climb to level 2 (820 + 20 + 620 XP): 10, then 10 + 10 + 40.
 		assert.are.same(
-			{ { module = "Ledger", total = 0 }, { module = "Ledger", total = 10 }, { module = "Ledger", total = 40 } },
+			{ { module = "Ledger", total = 0 }, { module = "Ledger", total = 10 }, { module = "Ledger", total = 60 } },
 			fake.coinReports
 		)
-		assert.are.equal(40, loaded.env.PagleLedgerDB.global.celebrated.coins)
+		assert.are.equal(60, loaded.env.PagleLedgerDB.global.celebrated.coins)
 	end)
 
 	-- Four new Species in a new zone in one Cast: 200 + 4 × (2 × 10 + 500 + 100) = 2,680 XP, past level 2 (1,080) and
@@ -247,7 +248,7 @@ describe("the Ledger's live moments", function()
 	local FOUR = { MACKEREL, SMALLFISH, BLACKMOUTH, TROUT }
 
 	it(
-		"raise one levelUp for the higher level of a Cast crossing two, with +2 levels and 40 Coins (LED-R97)",
+		"raise one levelUp for the higher level of a Cast crossing two, with +2 levels and 80 Coins (LED-R97)",
 		function()
 			local fake = session()
 
@@ -258,7 +259,7 @@ describe("the Ledger's live moments", function()
 			local announcements = shown(fake)
 			assert.are.equal(2, #announcements)
 			local announcement = announcements[1]
-			assert.are.same({ "levelUp Angler Level 3 / +2 levels 40" }, momentsOf(announcement))
+			assert.are.same({ "levelUp Angler Level 3 / +2 levels 80" }, momentsOf(announcement))
 			assert.are.equal(8, #announcements[2].moments)
 			local headline = announcement.headline
 			assert.are.same(
@@ -266,8 +267,8 @@ describe("the Ledger's live moments", function()
 				{ headline.rung, headline.order, headline.stamp, headline.cast }
 			)
 			assert.are.equal("string", type(headline.icon))
-			assert.are.same({ 40, 40 }, { announcement.coins, announcements[2].coins })
-			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 80 } }, fake.coinReports)
+			assert.are.same({ 80, 40 }, { announcement.coins, announcements[2].coins })
+			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 120 } }, fake.coinReports)
 		end
 	)
 
@@ -301,7 +302,7 @@ describe("the Ledger's live moments", function()
 			-- Plainback (the variety of the Catch here, VAR-R3) and level 2, which the two reach again (1,000 + 820
 			-- XP).
 			local celebrated = {
-				coins = 30,
+				coins = 50,
 				skill = { [75] = true },
 				species = { [MACKEREL] = true },
 				varieties = { [MACKEREL] = { [7] = true } },
@@ -314,8 +315,8 @@ describe("the Ledger's live moments", function()
 			fake.playCast("caught", loot(MACKEREL))
 
 			assert.are.same({}, shown(fake))
-			-- The Cast's level's 20 and new Species' 10 Coins still count, in the total only (LED-R97).
-			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 30 } }, fake.coinReports)
+			-- The Cast's level's 40 and new Species' 10 Coins still count, in the total only (LED-R97).
+			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 50 } }, fake.coinReports)
 		end
 	)
 
@@ -339,8 +340,8 @@ describe("the Ledger's live moments", function()
 			local state = loaded.ns.projection:GetState()
 			assert.are.equal(3, loaded.ns.Level(state))
 			assert.are.equal(9, loaded.ns.ShownLevel(state, loaded.env.PagleLedgerDB.global.celebrated))
-			-- Their 40 Coins count, in the total only (LED-R36).
-			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 80 } }, fake.coinReports)
+			-- Their 80 Coins count, in the total only (LED-R36).
+			assert.are.same({ { module = "Ledger", total = 0 }, { module = "Ledger", total = 120 } }, fake.coinReports)
 		end
 	)
 
@@ -350,7 +351,7 @@ describe("the Ledger's live moments", function()
 
 		fake.playCast("caught", loot(unpack(FOUR)))
 
-		assert.are.same({ "levelUp Angler Level 3 / nil 20" }, { momentsOf(shown(fake)[1])[1] })
+		assert.are.same({ "levelUp Angler Level 3 / nil 40" }, { momentsOf(shown(fake)[1])[1] })
 		assert.are.same({ [0] = 3 }, loaded.env.PagleLedgerDB.global.celebrated.levels)
 	end)
 
@@ -383,10 +384,10 @@ describe("the Ledger's live moments", function()
 		local announcements = shown(fake)
 		local celebrated = { momentsOf(announcements[1]), momentsOf(announcements[2]) }
 		assert.are.same({
-			{ "levelUp Angler Level 2 / nil 20" },
+			{ "levelUp Angler Level 2 / nil 40" },
 			{
 				"newSpecies New Species / Raw Spotted Yellowtail · Tiddler · 6.5 in 10",
-				"newVariety New variety · Spotted / nil nil",
+				"newVariety New variety / Spotted nil",
 			},
 		}, celebrated)
 

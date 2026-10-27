@@ -30,6 +30,21 @@ describe("the motion's easings", function()
 		assert.are.equal(0.25, ns.EASE.linear(0.25))
 	end)
 
+	it(
+		"ease in as CSS's ease-in does: slow to start, below the straight line all the way, from 0 to 1 (ANN-R84)",
+		function()
+			local ease = ns.EASE["in"]
+			local identity = ns.Bezier(0.42, 0, 1, 1)
+
+			assert.are.same({ 0, 1 }, { ease(0), ease(1) })
+			for _, t in ipairs({ 0.1, 0.25, 0.5, 0.75, 0.9 }) do
+				assert(ease(t) < t, "ease-in at " .. t .. " is not below the line")
+				assert.are.equal(identity(t), ease(t))
+			end
+			assert.is_true(ease(0.5) < ns.EASE.inOut(0.5) + 0.000001)
+		end
+	)
+
 	it("step in n jumps, the last at the end", function()
 		local steps = ns.Steps(4)
 

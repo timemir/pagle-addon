@@ -1,0 +1,60 @@
+# Boing!: a spring, a wet slap, a slide whistle, a splash and a cork. Parts are single sounds (ElevenLabs sound-effects prompts, requested length in seconds, shipped take
+# "a" or "b" in raw/<part>/take_<x>.mp3); each file is a mix of them laid on a timeline (see
+# scripts/pagle_data/generated_sounds.py).
+
+[part.boing]
+prompt = 'Single metal spring boing, one bouncy twang, resonant and rubbery, one-shot'
+seconds = 1.0
+pick = "a"
+
+[part.slap]
+prompt = 'Wet fish slapping against a wooden dock, single hit, one-shot'
+seconds = 0.6
+pick = "a"
+
+[part.whistle]
+prompt = 'Slide whistle sliding upward from low to high, single swoop, one-shot'
+seconds = 1.0
+pick = "a"
+
+[part.splash]
+prompt = 'Small stone dropped into a pond, single splash, close-mic, one-shot'
+seconds = 0.8
+pick = "a"
+
+[part.corkpop]
+prompt = 'Champagne cork popping out of a bottle, single pop, one-shot'
+seconds = 0.6
+pick = "a"
+
+[file.toast_1]
+# One boing.
+mix = [
+	{ part = "boing", start = 0, pick = "b" },
+]
+
+[file.toast_2]
+# A slap, then a boing on its heels.
+mix = [
+	{ part = "slap", start = 0 },
+	{ part = "boing", start = 0.12, semitones = 3, gain = 0.9, pick = "b" },
+]
+
+[file.toast_3]
+# A splash, then two boings climbing.
+mix = [
+	{ part = "splash", start = 0, pick = "b" },
+	{ part = "boing", start = 0.2, semitones = 4, pick = "b" },
+	{ part = "boing", start = 0.5, semitones = 9, gain = 0.8, pick = "b" },
+]
+
+[file.banner]
+# A whistle up, three boings climbing, a splash and the cork.
+mix = [
+	{ part = "whistle", start = 0 },
+	{ part = "boing", start = 0.85, semitones = -2, pick = "b" },
+	{ part = "boing", start = 1.15, semitones = 3, pick = "b" },
+	{ part = "boing", start = 1.4, semitones = 7, pick = "b" },
+	{ part = "splash", start = 1.8, pick = "b" },
+	{ part = "corkpop", start = 2.3, gain = 0.9 },
+]

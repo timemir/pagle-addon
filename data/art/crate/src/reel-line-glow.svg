@@ -1,0 +1,6 @@
+<!-- The tier-coloured glow along the reel's line (prototypes/curio-crate/index.html: #marker .line, box-shadow 0 0 18px
+     tier/.8), white to tint, round a 2 x 220 px line. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 62 280" width="62" height="280">
+  <defs><filter id="blur" filterUnits="userSpaceOnUse" x="-30" y="-30" width="62" height="280"><feGaussianBlur stdDeviation="9"/></filter></defs>
+  <rect x="-1" y="0" width="2" height="220" fill="#fff" fill-opacity=".8" filter="url(#blur)"/>
+</svg>

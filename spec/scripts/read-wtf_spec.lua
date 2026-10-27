@@ -161,8 +161,8 @@ describe("scripts/read-wtf.lua", function()
 		it("prints the Ledger's projection, state and celebrated set, with the level from its own logic", function()
 			-- LOG-R70's stored values; LED-R30's level: 2,310 XP = 1,080 (1→2) + 1,160 (2→3) + 70 into level 3,
 			-- whose step costs 1,000 + 80 × 3 = 1,240. ledger.md › Data for the state and the celebrated set. An M2
-			-- state has no items, Uncharted list or zone ranks, and M2's rules version, 100, isn't the Ledger's 902 (LED-R2:
-			-- LEDGER_RULES_VERSION 9 × 100 + Core's SIZE_RULES_VERSION 2, LOG-R68).
+			-- state has no items, Uncharted list or zone ranks, and M2's rules version, 100, isn't the Ledger's 1202 (LED-R2:
+			-- LEDGER_RULES_VERSION 12 × 100 + Core's SIZE_RULES_VERSION 2, LOG-R68).
 			-- Completion over the fixture catalogue's world (LED-R70, LED-R71): Species 6303 and 6358 caught, of 6291,
 			-- 6299, 6303 and 13759 listed and 6358 caught; nothing else; 2 of 11 is 18%. 148 and 1519 aren't charted.
 			assert.are.same({
@@ -170,7 +170,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 8, logId 5d2e8a0c4b1f7e93, fingerprint a1b2c3d4, rulesVersion 100",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (8 entries)",
-				"rulesVersion: 100 DIFFERS from the Ledger's 902, so Core rebuilds it at login (LED-R2, LOG-R72)",
+				"rulesVersion: 100 DIFFERS from the Ledger's 1202, so Core rebuilds it at login (LED-R2, LOG-R72)",
 				"world: "
 					.. CATALOGUE
 					.. ", fingerprint 0123456789abcdef (NOT the projection's: the lines computed below use it), 2 charted zones",
@@ -248,7 +248,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 8, logId 5d2e8a0c4b1f7e93, fingerprint a1b2c3d4, rulesVersion 100",
 				"logId: DIFFERS from PagleLog's 7c0b19e4d3a2f658, so Core rebuilds it at login (LOG-R72)",
 				"lastSeq: differs from PagleLog's length (1 entry)",
-				"rulesVersion: 100 DIFFERS from the Ledger's 902, so Core rebuilds it at login (LED-R2, LOG-R72)",
+				"rulesVersion: 100 DIFFERS from the Ledger's 1202, so Core rebuilds it at login (LED-R2, LOG-R72)",
 				"world: "
 					.. CATALOGUE
 					.. ", fingerprint 0123456789abcdef (NOT the projection's: the lines computed below use it), 2 charted zones",
@@ -317,7 +317,7 @@ describe("scripts/read-wtf.lua", function()
 			"prints M3's state and celebrated set, with ranks and completion from the Ledger's logic (LED-R4, LED-R5, LED-R30,"
 				.. " LED-R50, LED-R52, LED-R54, LED-R63, LED-R70, LED-R71, LED-R92)",
 			function()
-				-- ledger.md › Data for the state and the celebrated set; LED-R4: M3's rules version, 200, isn't the Ledger's 902.
+				-- ledger.md › Data for the state and the celebrated set; LED-R4: M3's rules version, 200, isn't the Ledger's 1202.
 				-- LED-R30: 4,560 XP = 1,080 + 1,160 + 1,240 to level 4, 1,080 into it, whose step costs
 				-- 1,000 + 80 × 4 = 1,320. LED-R5: 6309 is junk, a curio; 13901 a trophy; 999001 is in no catalogue.
 				-- LED-R50, LED-R54: Duskwood (10) has no data, so it isn't charted and shows rank 0; Elwynn (12) is computed Local (3) but celebrated Expert (4), and the
@@ -329,7 +329,7 @@ describe("scripts/read-wtf.lua", function()
 					"projection: lastSeq 11, logId 3f9a2c1e7b0d4a65, fingerprint 0123456789abcdef, rulesVersion 200",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (11 entries)",
-					"rulesVersion: 200 DIFFERS from the Ledger's 902, so Core rebuilds it at login (LED-R2, LOG-R72)",
+					"rulesVersion: 200 DIFFERS from the Ledger's 1202, so Core rebuilds it at login (LED-R2, LOG-R72)",
 					"world: " .. CATALOGUE .. ", fingerprint 0123456789abcdef (the projection's), 2 charted zones",
 					"state: 9 Casts, 8 Catches, 4560 XP (Angler Level 4, 1080 into it, next step 1320), 44 Coins, 2 Species",
 					"state curio items: 1 (6309 ×2)",
@@ -431,7 +431,7 @@ describe("scripts/read-wtf.lua", function()
 			"prints an M4 projection as one to rebuild, and leaves its Legend out of the curio and trophy items",
 			function()
 				-- LED-R2: 401 = LEDGER_RULES_VERSION 4 × 100 + Core's SIZE_RULES_VERSION 1 (LOG-R68), and the Ledger's is
-				-- 902 since the Reach, the varieties caught, the second round's counts, the crest times and the rise times (LED-R4, ADR 0014, VAR-R20, LED-R118, LED-R155, LED-R158). LED-R30 at prestige rank 1,
+				-- 1202 since the Reach, the varieties caught, the second round's counts, the crest times and the rise times, the fish of each race and faction, the retuned Coins and Fresh Water after a real break only (LED-R164, LED-R4, LED-R22, ADR 0014, VAR-R20, LED-R118, LED-R155, LED-R158). LED-R30 at prestige rank 1,
 				-- the Ledger's logic at the full cost: 1,080 to level 2, 920 into it, whose step costs 1,160. LED-R5:
 				-- 19803 is a Legend, neither curio nor trophy (LED-R63). LED-R70: Species 6291 and 6303 of 6291, 6299, 6303
 				-- and 13759 (19803, a Legend, is outside it), junk 1 of 1, treasure 0 of 1, trophy 1 of 2, no zone at
@@ -442,7 +442,7 @@ describe("scripts/read-wtf.lua", function()
 					"projection: lastSeq 9, logId 8e1d4b7a2c6f0935, fingerprint 0123456789abcdef, rulesVersion 401",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (9 entries)",
-					"rulesVersion: 401 DIFFERS from the Ledger's 902, so Core rebuilds it at login (LED-R2, LOG-R72)",
+					"rulesVersion: 401 DIFFERS from the Ledger's 1202, so Core rebuilds it at login (LED-R2, LOG-R72)",
 					"world: " .. CATALOGUE .. ", fingerprint 0123456789abcdef (the projection's), 2 charted zones",
 					"state: 1004 Casts, 1003 Catches, 2000 XP (Angler Level 2, 920 into it, next step 1160), 900 Coins,"
 						.. " 2 Species",
@@ -489,15 +489,15 @@ describe("scripts/read-wtf.lua", function()
 
 		it("prints the wallet projection and a balance held while earned < spent (SHOP-R11, SHOP-R12)", function()
 			-- 500 earned − (150 + 400) spent is −50: the balance shows 0, held (SHOP-R12). Each good counted once, the
-			-- wallet rules version 1 is Core's (wallet-and-shop.md › Data), and the projection is current (LOG-R72).
+			-- wallet rules version 3 is Core's (wallet-and-shop.md › Data), and the projection is current (LOG-R72).
 			assert.are.same({
 				"== Wallet (PagleDB.global.coins.earned): balance 0, held (500 earned − 550 spent = -50, SHOP-R12)",
 				"Ledger: 500",
 				"logId: none stored (a fresh log's, or no Module has reported since PagleLog had one)",
-				"projection: lastSeq 9, logId 8e1d4b7a2c6f0935, fingerprint 0123456789abcdef, rulesVersion 1",
+				"projection: lastSeq 9, logId 8e1d4b7a2c6f0935, fingerprint 0123456789abcdef, rulesVersion 3",
 				"logId: matches PagleLog's",
 				"lastSeq: equals PagleLog's length (9 entries)",
-				"rulesVersion: Core's wallet rules, 1",
+				"rulesVersion: Core's wallet rules, 3",
 				"spent: 550",
 				"purchased: 2 (core.soundset.gilded, core.toaststyle.ripple)",
 			}, section(out, "== Wallet"))
@@ -654,7 +654,7 @@ describe("scripts/read-wtf.lua", function()
 		it(
 			"prints the projection, state, titles, celebrated set, pins and profile (LOG-R70, HNT-R89, HNT-R136, DATA-R72)",
 			function()
-				-- LOG-R70's stored values; HNT-R136: Hunts' rules version is 2 with Hunt Events (Tunables); DATA-R72,
+				-- LOG-R70's stored values; HNT-R136: Hunts' rules version is 4 with the Refreshes (Tunables); DATA-R72,
 				-- DATA-R98: the stored fingerprint is the catalogue's plus the Hunt list's and the event pool's (the
 				-- --eventlist fixture's). hunts.md › Projection state for the state.
 				-- HNT-R2, HNT-R3: at --now night_run, first_light, rack_hour and dawn_trout are current, grouper_by_moonlight
@@ -669,10 +669,10 @@ describe("scripts/read-wtf.lua", function()
 					"== Hunts (PagleHuntsDB)",
 					"records: no Hunts A1 entries in PagleLog",
 					"projection: lastSeq 6, logId 6c2f9e0a1b3d5e77, fingerprint"
-						.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 2",
+						.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 4",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (6 entries)",
-					"rulesVersion: Hunts', 2 (HNT-R136)",
+					"rulesVersion: Hunts', 4 (HNT-R136)",
 					"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
 					"fingerprint: the catalogue's plus the Hunt list's and the event pool's (DATA-R72, DATA-R98)",
 					"summary line: Hunts: 3 of 4 done · 2 titles, at 2026-10-14 17:46:40 UTC (--now) (HNT-R89)",
@@ -817,6 +817,14 @@ describe("scripts/read-wtf.lua", function()
 			}, section(out, "== Tracker dock"))
 		end)
 
+		it("prints the moved Toast column's foot (ANN-R98)", function()
+			-- announcements.md › Data: announcements.point, in UIParent's units from its bottom centre.
+			assert.are.same({
+				"== Toast column (PagleDB.profile.announcements.point)",
+				"announcements.point: x 200, y 500 from the bottom centre (moved by the player, ANN-R98)",
+			}, section(out, "== Toast column"))
+		end)
+
 		it("prints the Hunts slots' looks, Hunts' Coins and Hunts' card lines (HNT-R89, HNT-R110, HNT-R120)", function()
 			-- SHOP-R32: the cover has no stored pick, so its default; the tracker frame's pick is stored. SHOP-R3:
 			-- Hunts' last reported total. HNT-R111: a "While Hunts was off" Write-up section.
@@ -889,7 +897,7 @@ describe("scripts/read-wtf.lua", function()
 						.. " rulesVersion 3",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (6 entries)",
-					"rulesVersion: 3 DIFFERS from Hunts' 2, so Core rebuilds it at login (HNT-R138, LOG-R72)",
+					"rulesVersion: 3 DIFFERS from Hunts' 4, so Core rebuilds it at login (HNT-R138, LOG-R72)",
 					"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
 					"fingerprint: DIFFERS from the catalogue's plus the Hunt list's and the event pool's,"
 						.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, so Core rebuilds it at login"
@@ -919,6 +927,14 @@ describe("scripts/read-wtf.lua", function()
 				}, section(out, "== Hunts"))
 			end
 		)
+
+		it("reads a Toast column point Core can't read as the default (ANN-R20, ANN-R98)", function()
+			assert.are.same({
+				"== Toast column (PagleDB.profile.announcements.point)",
+				"announcements.point: saved but not one Core reads, so the default: x 0, y 156 from the bottom centre"
+					.. " (ANN-R20)",
+			}, section(out, "== Toast column"))
+		end)
 
 		it("reads a dock point Core can't read as the default (CORE-R70)", function()
 			assert.are.same({
@@ -1236,6 +1252,16 @@ describe("scripts/read-wtf.lua", function()
 		}, section(out, "== Tracker dock"))
 	end)
 
+	it("reads no Toast column point as the default (ANN-R20, ANN-R98)", function()
+		local out = run(ACCOUNTS .. "M4#1", "--catalogue", CATALOGUE)
+
+		-- announcements.md › Data: announcements.point is nil until the Angler moves the column.
+		assert.are.same({
+			"== Toast column (PagleDB.profile.announcements.point)",
+			"announcements.point: default (none saved): x 0, y 156 from the bottom centre (ANN-R20)",
+		}, section(out, "== Toast column"))
+	end)
+
 	it("prints an M3 Ledger's M4 lines as none yet, with the automatic title (LED-R35, LED-R77, LED-R80)", function()
 		-- M3#1 has no prestige rank, milestones, Legends, records, titles or activeTitle. Level 4 (4,560 XP at rank
 		-- 0) earns level1, the automatic title; 6309 of the fixture's one junk item earns complete.junk (LED-R75). 6291
@@ -1329,13 +1355,13 @@ describe("scripts/read-wtf.lua", function()
 		it(
 			"prints the projection's bookkeeping, current against the log, its rules version and the catalogue (LOG-R70, TKB-R81)",
 			function()
-				-- LOG-R70's stored values. TKB-R81: 1000 × TKB_RULES_VERSION 4 + Core's SESSION_RULES_VERSION 2 = 4002; the
+				-- LOG-R70's stored values. TKB-R81: 1000 × TKB_RULES_VERSION 6 + Core's SESSION_RULES_VERSION 2 = 6002; the
 				-- fingerprint is the catalogue's content fingerprint, with no extra.
 				assert.are.same({
-					"projection: lastSeq 54, logId 3c9e1a7f5b2d8046, fingerprint 0123456789abcdef, rulesVersion 4002",
+					"projection: lastSeq 54, logId 3c9e1a7f5b2d8046, fingerprint 0123456789abcdef, rulesVersion 6002",
 					"logId: matches PagleLog's",
 					"lastSeq: equals PagleLog's length (54 entries)",
-					"rulesVersion: the Tackle Board's, 4002 (TKB-R81)",
+					"rulesVersion: the Tackle Board's, 6002 (TKB-R81)",
 					"fingerprint: the catalogue's, " .. CATALOGUE .. " (LOG-R70)",
 				}, { unpack(lines, 15, 19) })
 			end
@@ -1429,7 +1455,8 @@ describe("scripts/read-wtf.lua", function()
 						.. GUID
 						.. '1792508702-0, Notice haul, "2 Catches in Area 12", pays 10, fly elwynn_royal',
 					"tally: 8 Notices, 1 Expedition (TKB-R61)",
-					"coins: 180 (TKB-R63), xp: 1550 (TKB-R65), equals Core's stored TackleBoard total (AXP-R3)",
+					"coins: 180 (TKB-R63), xp: 1550 (TKB-R65), Refreshes spent: 0 (TKB-R58),"
+						.. " equals Core's stored TackleBoard total (AXP-R3)",
 					"flies: 9 of 30 tied, in pattern order (TKB-R62):",
 					"  goldshire_gnat: day 5, goal " .. GUID .. "1792422301-0",
 					"  duskwood_shadow: day 0, goal " .. GUID .. "1791990602-0",
@@ -1524,7 +1551,7 @@ describe("scripts/read-wtf.lua", function()
 				"projection: lastSeq 3, logId 6f2a9c4e1b7d3580, fingerprint fedcba9876543210, rulesVersion 1000",
 				"logId: matches PagleLog's",
 				"lastSeq: differs from PagleLog's length (4 entries)",
-				"rulesVersion: 1000 DIFFERS from the Tackle Board's 4002 (1000 × TKB_RULES_VERSION 4 + Core's"
+				"rulesVersion: 1000 DIFFERS from the Tackle Board's 6002 (1000 × TKB_RULES_VERSION 6 + Core's"
 					.. " SESSION_RULES_VERSION 2), so Core rebuilds it at login (TKB-R81, LOG-R72)",
 				"fingerprint: DIFFERS from the catalogue's 0123456789abcdef, "
 					.. CATALOGUE
@@ -1721,10 +1748,10 @@ describe("scripts/read-wtf.lua", function()
 						"records: 5 Hunts A1 entries in PagleLog: run 3, def 1, wager 1",
 						"records Hunts skips: 2 (seq 8, 9) (HNT-R150, HNT-R154)",
 						"projection: lastSeq 14, logId 9a4c2e6b8d1f3057, fingerprint"
-							.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 2",
+							.. " 0123456789abcdef+5eed5eed5eed5eed+e7e7e7e7e7e7e7e7, rulesVersion 4",
 						"logId: matches PagleLog's",
 						"lastSeq: equals PagleLog's length (14 entries)",
-						"rulesVersion: Hunts', 2 (HNT-R136)",
+						"rulesVersion: Hunts', 4 (HNT-R136)",
 						"Hunt list: " .. HUNTLIST .. ", fingerprint 5eed5eed5eed5eed, 6 Hunts in 3 sets",
 						"fingerprint: the catalogue's plus the Hunt list's and the event pool's (DATA-R72, DATA-R98)",
 						"summary line: Hunts: 0 of 5 done · 1 title · 25 wagers settled, at 2026-11-25 09:46:40 UTC (--now)"
@@ -1811,9 +1838,9 @@ describe("scripts/read-wtf.lua", function()
 				function()
 					-- LED-R37: the climb's Activity XP is Core's stored total, 17650 + 300, less the latest P1's 15000.
 					-- LED-R30, LED-R31: 1500 + 2950 = 4450 XP climbs steps of 1080, 1160 and 1240 to level 4 (1500 alone
-					-- reaches level 2); LED-R35: the peak is 60 after a Prestige. LED-R2: the Ledger's rules version 9.
+					-- reaches level 2); LED-R35: the peak is 60 after a Prestige. LED-R2: the Ledger's rules version 12.
 					local ledger = section(out, "== Ledger (")
-					assert.are.equal("rulesVersion: the Ledger's, 902 (LED-R2)", ledger[5])
+					assert.are.equal("rulesVersion: the Ledger's, 1202 (LED-R2)", ledger[5])
 					assert.are.equal(
 						"climb: prestige rank 1, 1500 XP of its own, Prestige snapshot 15000, the climb's Activity XP 2950"
 							.. " (Core's stored total 17950 − 15000, LED-R37), computed level 4, peak level 60",
