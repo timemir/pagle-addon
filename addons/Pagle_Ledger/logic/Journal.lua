@@ -38,13 +38,15 @@ local ns = select(2, ...)
 ---@field crest? integer|string          -- the equipped crest's icon (LED-R112, ns.CrestIcon); nil for none
 ---@field canPrestige? boolean           -- whether LED-R33 allows Prestige now (ns.CanPrestige)
 ---@field askPrestige? fun()             -- asks before Prestiging (ns.AskPrestige, LED-R33)
----@field pickTitle? fun(key: string?)   -- sets the active title and redraws (ns.PickActiveTitle, LED-R77)
----@field goods? LedgerJournalGoods      -- Core's goods calls, for the Angler page's Bindings (LED-R146)
+---@field pickTitle? fun(key: string?)   -- sets the active title and redraws (ns.PickActiveTitle, LED-R77), the Collection's
+---@field goods? LedgerJournalGoods      -- Core's goods calls, for the Collection (LED-R166)
 ---@field getVarieties? fun(speciesID: integer): PagleVarietyEntry[]? -- Pagle.GetVarieties (VAR-R11); nil while updating
 ---@field rarities? PagleVarietyRarity[] -- Pagle.VARIETY_RARITIES, Common to Epic (VAR-R11); nil while updating
 ---@field fishCrest? fun(speciesID: integer): LedgerFishCrest -- a Species' fish crest (VAR-R12, VAR-R24)
 ---@field followedAnglers? fun(): PagleFollowedAnglers -- Pagle.GetFollowedAnglers (VIEW-R11), called at each drawing
 ---                                     -- of Home's contents and the Following spread (LED-R132, LED-R163)
+---@field collection? LedgerCollectionDB -- PagleLedgerDB.global.collection: which looks were seen and looked at
+---                                     -- (LED-R171); never nil on a Journal context once the Collection has noted
 
 --- A Species' fish crest, as the varieties spread's foot shows it (VAR-R12, VAR-R24): its icon, and its name once Core
 --- has registered the crest's good (none before).
@@ -52,7 +54,7 @@ local ns = select(2, ...)
 ---@field icon integer|string
 ---@field name string?
 
---- Core's goods calls the Angler page's Bindings make (LED-R146, SHOP-R30–R34, SHOP-R40).
+--- Core's goods calls the Collection makes (LED-R166–R173, SHOP-R30–R34, SHOP-R36, SHOP-R40).
 ---@class LedgerJournalGoods
 ---@field isOwned fun(goodID: string): boolean           -- Pagle.IsOwned
 ---@field getEquipped fun(slot: string): string?         -- Pagle.GetEquipped
@@ -60,7 +62,10 @@ local ns = select(2, ...)
 ---@field openShop fun(goodID: string?)                  -- Pagle.OpenShop
 ---@field slotGoods fun(slot: string): string[]           -- Pagle.GetSlotGoods
 ---@field getGood fun(goodID: string): PagleGoodInfo?     -- Pagle.GetGood
----@field bindingLook fun(goodID: string?): PagleBindingLook -- Pagle.GetBindingLook
+---@field slots fun(): PagleSlotInfo[]                    -- Pagle.GetSlots
+---@field earnedProgress fun(goodID: string): PagleEarnedProgress? -- Pagle.GetEarnedProgress
+---@field putAway fun(): string[]                         -- Pagle.GetPutAwayGoods
+---@field balance fun(): integer                          -- Pagle.GetBalance().balance
 
 --- What a spread draws from: the Journal's context while the projection isn't updating, when every field is set (the
 --- router draws no spread while it updates, LED-R122). The router casts once; spreads and their parts take this.
@@ -83,6 +88,7 @@ local ns = select(2, ...)
 ---@field followedAnglers fun(): PagleFollowedAnglers
 ---@field activityXP? ActivityXP                     -- Pagle.GetActivityXP() (AXP-R6, LED-R150)
 ---@field prestigeSources? LedgerPrestigeSources     -- PagleLedgerDB.global.prestigeSources (LED-R150)
+---@field collection LedgerCollectionDB              -- PagleLedgerDB.global.collection (LED-R171)
 
 --- One thing drawn on a page, top to bottom, as data; adapter/JournalWidgets.lua draws each kind:
 --- - `kicker`, `title`, `text` (`text`, in the serif face; `hand` for the handwriting face, `color` "faded", "red" or
@@ -121,9 +127,19 @@ local ns = select(2, ...)
 ---   or "Undiscovered", its `rarity` as a pill, filled when `inked`, its count as `value`, `selected` banded, opening
 ---   `place`), `varietyArt` (its `art` large, drawn `look`) and `fishCrest` (the fish crest's `icon` small, its name as
 ---   `text` and the hand's `value`), drawn by adapter/JournalVarieties.lua (VAR-R24)
+--- - the Collection's own (LED-R168–R170), drawn by adapter/JournalShelves.lua: `shelfRow` (a shelf on the Collection's
+---   left page: its `lookArt`, `text` its name, `note` "{n} new" in red hand, `sub` what is worn in the hand, `value` its
+---   count and `fill` its ink bar, opening `place`), `reachRow` (a look within reach: `lookArt`, `text`, its shelf as
+---   `value`, `fill` and its count in the hand as `note`) and `latelyRow` (a look lately added: `lookArt`, `text`, how it
+---   came as `sub`, its shelf as `value` and "new!" as `note`), `shopFoot` (`text` and a link `value` calling
+---   `action`), `cards` (a shelf's looks, `cards` in `layout` "look", "speaker", "book", "shield" or "pick", the card
+---   chosen marked), `stage` (the chosen look's dark stage: `lookArt`, or a title's words `text` and `lines`, `note` at its
+---   foot), `useRow` (`seal` pressed, or a `button` calling `action`, then `text` in the hand and `sub` in italic),
+---   `price` (a coin and `value`) and `count` (an ink bar at `fill` with `text` in the hand). A `title` takes a `value`
+---   in the hand at its right (`color` "red" for "new!"), `tabs` a `count` each and a `leader` a red `note`.
 --- Any block with `foot` sits at its page's foot when the page has room above it (the varieties spread's fish crest).
 ---@class LedgerBlock
----@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"prestigeFrame"|"rule"|"map"|"variety"|"varietyArt"|"varietyCard"|"fishCrest"|"level"
+---@field kind "kicker"|"title"|"text"|"link"|"leader"|"seal"|"stamps"|"tiles"|"icon"|"xpBar"|"xpSource"|"tabs"|"bookplate"|"board"|"plinth"|"ladder"|"row"|"emblem"|"plate"|"button"|"prestigeFrame"|"rule"|"map"|"variety"|"varietyArt"|"varietyCard"|"fishCrest"|"level"|"shelfRow"|"reachRow"|"latelyRow"|"shopFoot"|"cards"|"stage"|"useRow"|"price"|"count"
 ---@field text? string
 ---@field hand? boolean
 ---@field color? "faded"|"red"|"blue"
@@ -139,7 +155,7 @@ local ns = select(2, ...)
 ---@field total? string          -- an xpSource line's all told
 ---@field off? boolean           -- an xpSource line struck through: its Module is off
 ---@field header? boolean        -- the xpSource columns' heads
----@field tabs? { text: string, on: boolean, place: LedgerJournalPlace }[]
+---@field tabs? { text: string, count: string?, on: boolean, place: LedgerJournalPlace }[]
 ---@field seal? string
 ---@field action? fun()
 ---@field ticks? LedgerBoardTick[]
@@ -150,13 +166,10 @@ local ns = select(2, ...)
 ---@field stars? LedgerStars
 ---@field selected? boolean
 ---@field lines? string[]
----@field style? "chart"|"button"|"radio"|"legend"|"pair"|"italic"|"ruled" -- a link's, icon's, text's or leader's look (adapter/JournalWidgets.lua)
+---@field style? "chart"|"button"|"radio"|"legend"|"pair"|"italic"|"ruled"|"kicker" -- a link's, icon's, text's or leader's look (adapter/JournalWidgets.lua)
 ---@field on? boolean            -- a radio's pick
 ---@field inked? boolean         -- a seal pressed (false: the empty ring)
 ---@field numeral? string        -- a contents line's numeral
----@field binding? string        -- a binding line's closed book
----@field bindingAtlas? "Bindings"|"Bindings2" -- and its atlas (LED-R110)
----@field state? "inUse"|"use"|"level"|"shop" -- a binding line's state
 ---@field columns? integer       -- tiles across
 ---@field rank? integer          -- a crest's prestige rank, or a row's Prestige emblem's (a Followed Angler's, LED-R163)
 ---@field note? string           -- the bookplate's Prestige words
@@ -167,6 +180,12 @@ local ns = select(2, ...)
 ---@field link? string          -- a varieties card's link words (VAR-R23)
 ---@field pips? { ink: number[], inked: boolean }[] -- a varieties card's ten, in their rarities' inks (VAR-R23)
 ---@field stamp? string          -- a row's ink stamp after its words (a Followed Angler's "HC", LED-R163)
+---@field lookArt? LedgerLookArt  -- a look's art (LED-R168–R170)
+---@field sub? string             -- a Collection row's or a useRow's second line
+---@field fill? number            -- an ink bar's fill, 0 to 1
+---@field cards? LedgerCard[]     -- a shelf's cards
+---@field layout? "look"|"speaker"|"book"|"shield"|"pick" -- how the cards are drawn
+---@field button? string          -- a useRow's button
 
 --- A variety's rarity as its pill shows it (VAR-R24, core/varieties.md › UI): its name, and its colour and its darker
 --- ink on parchment, each { r, g, b }.
@@ -241,6 +260,12 @@ ns.JOURNAL_LEGENDS = "legends"
 --- The Following spread's ID (LED-R163): its args may name an `angler` (its place in GetFollowedAnglers' order) to
 --- select. logic/JournalFollowing.lua registers it.
 ns.JOURNAL_FOLLOWING = "following"
+--- The Collection's ID (LED-R166, LED-R168). logic/JournalShelves.lua registers it.
+ns.JOURNAL_COLLECTION = "collection"
+--- A shelf's ID (LED-R166, LED-R169): its args are `{ shelf = key, look = id?, tab = "all"|"yours"|"earn"|"shop"? }`, the
+--- shelf's key (a slot's ID, `trackers` or `titles`, LED-R167) and the look or title key chosen. logic/JournalShelves.lua
+--- registers it.
+ns.JOURNAL_SHELF = "shelf"
 
 --- Every spread's place, one constructor per spread (LED-R125): each link, crumb, tile and note opens one. A place
 --- names its spread by ID, so a link to a spread that hasn't registered does nothing (Router:Open).
@@ -313,6 +338,22 @@ end
 ---@return LedgerJournalPlace
 function ns.JournalPlace.following(angler)
 	return { id = ns.JOURNAL_FOLLOWING, args = angler and { angler = angler } or nil }
+end
+
+--- The Collection (LED-R168): what Home's contents line, the compartment's `def.collection` and `/pagle collection` open.
+---@return LedgerJournalPlace
+function ns.JournalPlace.collection()
+	return { id = ns.JOURNAL_COLLECTION }
+end
+
+--- Shelf `shelf` of the Collection (LED-R169), with look `look` chosen and filter tab `tab` on when given: what a shelf's
+--- row, a card, a search result and `def.collection(goodID)` open.
+---@param shelf string
+---@param look string?
+---@param tab string?
+---@return LedgerJournalPlace
+function ns.JournalPlace.shelf(shelf, look, tab)
+	return { id = ns.JOURNAL_SHELF, args = { shelf = shelf, look = look, tab = tab } }
 end
 
 --- Adds the removed line to a caught item's entry `blocks` (LED-R12): "No longer found in Forever's waters." while

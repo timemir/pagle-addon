@@ -191,6 +191,8 @@ local EXPECTED = {
 			{ "slot", "Stats tracker frame", of = "Stats" },
 			{ "slot", "Tackle Board tracker frame", of = "TackleBoard" },
 			{ "header", "More looks" },
+			-- the Ledger's Collection (LED-R166, LED-R174, CORE-R45): offered while the Ledger is On
+			{ "button", "Every look, and how to earn it", caption = "Open the Collection", of = "Ledger" },
 			{ "button", "Buy more looks with Pagle Coins", caption = "Open the Curio Shop" },
 		},
 	},
@@ -1258,6 +1260,7 @@ local NAMES = {
 	Casts = true,
 	Catches = true,
 	Coins = true,
+	Collection = true,
 	Curio = true,
 	Dry = true,
 	Field = true,

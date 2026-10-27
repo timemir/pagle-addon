@@ -42,6 +42,7 @@ function ns.AttachJournalSearch(journal, box, frame)
 	drop.rows, drop.heads = {}, {}
 	drop.heads[1] = ns.JournalLabel(drop, "sc", 13, INK.kicker, ns.L.SEARCH_WATERS)
 	drop.heads[2] = ns.JournalLabel(drop, "sc", 13, INK.kicker, ns.L.SEARCH_FISH)
+	drop.heads[3] = ns.JournalLabel(drop, "sc", 13, INK.kicker, ns.L.COLLECTION_SEARCH_LOOKS)
 	drop.rule = ns.JournalTint(drop, INK.rule, 1)
 	drop.rule:SetSize(DROP_W - 14, 1)
 	drop:Hide()
@@ -118,15 +119,22 @@ function ns.AttachJournalSearch(journal, box, frame)
 			hint:SetShown(text == "")
 		end
 		local context = journal:Context()
-		local results = not context.updating and ns.JournalSearch(text, context --[[@as LedgerSpreadContext]]) or nil
+		-- on the Collection's spreads the slip finds looks (LED-R175), elsewhere waters and fish (LED-R148)
+		local at = journal:Place().id
+		local looking = at == ns.JOURNAL_COLLECTION or at == ns.JOURNAL_SHELF
+		local results = nil
+		if not context.updating then
+			results = (looking and ns.CollectionSearch or ns.JournalSearch)(text, context --[[@as LedgerSpreadContext]])
+		end
 		if not results then
 			drop:Hide()
 			return
 		end
 		---@cast context LedgerSpreadContext
-		local zones, fish = {}, {}
+		local zones, fish, looks = {}, {}, {}
 		for _, result in ipairs(results) do
-			table.insert(result.place.id == ns.JOURNAL_ZONE and zones or fish, result)
+			local id = result.place.id
+			table.insert(id == ns.JOURNAL_ZONE and zones or (id == ns.JOURNAL_SHELF and looks or fish), result)
 		end
 		local y = 9
 		local used = 0
@@ -140,7 +148,8 @@ function ns.AttachJournalSearch(journal, box, frame)
 			for _, result in ipairs(list) do
 				used = used + 1
 				local row = rowAt(used)
-				local isZone = result.place.id == ns.JOURNAL_ZONE
+				local isLook = result.place.id == ns.JOURNAL_SHELF
+				local isZone = result.place.id == ns.JOURNAL_ZONE or isLook
 				row:SetSize(DROP_W - 14, height)
 				ns.JournalAt(row, drop, 7, y)
 				ns.JournalRestyle(row.label, "print", 15, INK.body)
@@ -150,8 +159,10 @@ function ns.AttachJournalSearch(journal, box, frame)
 				row.medal:SetShown(not isZone)
 				row.note:SetShown(isZone)
 				if isZone then
-					local tile = ns.JournalZoneTile(result.place.args.zone, context)
-					row.note:SetText(tile.line or "")
+					-- a water's tile line, or the shelf a look stands on
+					row.note:SetText(
+						isLook and result.shelf or ns.JournalZoneTile(result.place.args.zone, context).line or ""
+					)
 					ns.JournalBound(row.note, 110)
 					ns.JournalBound(row.label, DROP_W - 14 - (INSET - 7) - row.note:GetWidth() - 16)
 				else
@@ -173,6 +184,7 @@ function ns.AttachJournalSearch(journal, box, frame)
 			y = y + 8
 		end
 		section(drop.heads[2], fish, FISH_H)
+		section(drop.heads[3], looks, ZONE_H)
 		if #results == 0 then
 			-- the no-match line, opening nothing
 			used = 1

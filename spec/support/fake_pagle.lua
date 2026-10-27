@@ -958,9 +958,12 @@ end)
 -- handle. login notes loginSeq (the log's length then); enterWorld is login step 3, running every catch-up and
 -- rebuild at once; each entry the fake appends afterwards (playCast, readSkill) is handed over live, before its events.
 -- Records reach apply read-only (CORE-R18). Module code that raises goes to fake.reported.
-part(function(fake, _, ns, host)
+part(function(fake, Pagle, ns, host)
 	ns.WireProjections(host)
 	fake.projections = ns.projections
+	function Pagle.IsUpdating()
+		return ns.projections:IsUpdating()
+	end
 	-- Every entry handed over live reaches apply read-only, whichever part or wiring appended it (CORE-R18).
 	local live = fake.projections.Live
 	function fake.projections.Live(self, record)
