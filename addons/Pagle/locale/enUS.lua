@@ -81,6 +81,10 @@ ns.L = {
 	SETTINGS_TRACKER_POSITION = "Tracker position",
 	SETTINGS_TRACKER_RESET = "Reset",
 	SETTINGS_TRACKER_RESET_TOOLTIP = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
+	-- The Announcements page's Toast position row (SET-R30, ANN-R98): its label, its button and the tooltip.
+	SETTINGS_TOAST_POSITION = "Toast position",
+	SETTINGS_TOAST_RESET = "Reset",
+	SETTINGS_TOAST_RESET_TOOLTIP = "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen.",
 	SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them.",
 	SETTINGS_MODULES = "Modules",
 	SETTINGS_MODULES_NOTE = "Turn Modules on or off in the AddOns list.",

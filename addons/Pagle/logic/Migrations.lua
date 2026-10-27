@@ -44,6 +44,7 @@ ns.PAGLEDB_DEFAULTS = {
 			everyCatch = true,
 			motion = true,
 			budget = { on = true, count = 40, window = 300 },
+			point = nil, -- ANN-R98: the Toast column's saved foot, nil (no key) until the Angler moves it
 		},
 		-- core/README.md › Data: `dock.point`, the tracker dock's saved place, nil (no key) until the player moves it.
 		dock = { point = nil }, -- CORE-R70, CORE-R71

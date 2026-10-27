@@ -746,9 +746,11 @@ describe("a variety's art and a fish crest on the client (VAR-R25)", function()
 end)
 
 describe("the column on the client", function()
-	-- A column frame's bottom above the screen's: its BOTTOM anchor's y.
+	-- A column frame's bottom above the screen's: its offset from the column's foot, the anchor it hangs from (ANN-R98),
+	-- plus the foot's own.
 	local function bottomOf(frame)
-		return select(5, frame:GetPoint(1))
+		local _, anchor, _, _, y = frame:GetPoint(1)
+		return y + select(5, anchor:GetPoint(1))
 	end
 
 	it(
@@ -1890,4 +1892,382 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			end
 		end
 	)
+end)
+
+describe("moving the Toast column on the client (ANN-R98)", function()
+	-- UIParent is 1920 × 1080 here, so its bottom centre is x 960.
+	local SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080
+
+	-- A column frame's offset from the column's foot, the anchor it hangs from.
+	local function offsetOf(frame)
+		local point, anchor, relativePoint, _, y = frame:GetPoint(1)
+		assert.are.same({ "BOTTOM", "BOTTOM" }, { point, relativePoint })
+		return y, anchor
+	end
+
+	-- Where the column's anchor is: its BOTTOM point's offsets from UIParent's bottom centre.
+	local function footOf(loaded)
+		local point, relativeTo, relativePoint, x, y = loaded.ns.columnAnchor:GetPoint(1)
+		assert.are.same({ "BOTTOM", loaded.env.UIParent, "BOTTOM" }, { point, relativeTo, relativePoint })
+		return { x = x, y = y }
+	end
+
+	-- A column frame's bottom above the screen's bottom: its offset plus the foot's.
+	local function bottomOf(loaded, frame)
+		local y, anchor = offsetOf(frame)
+		assert.are.equal(loaded.ns.columnAnchor, anchor)
+		return y + footOf(loaded).y
+	end
+
+	-- A press on `frame` that Shift-drags the column and is let go with its foot at (`x`, `y`) from UIParent's bottom
+	-- centre, as the client reports the anchor then. Returns whether the drag moved the anchor.
+	local function dragColumn(loaded, frame, x, y)
+		local anchor = loaded.ns.columnAnchor
+		frame.scripts.OnMouseDown(frame, "LeftButton")
+		frame.scripts.OnDragStart(frame)
+		local moved = anchor.moving == true
+		anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + x, y + 0.5 }, y
+		frame.scripts.OnDragStop(frame)
+		frame.scripts.OnMouseUp(frame, "LeftButton")
+		return moved
+	end
+
+	-- Core with a toast with an `onClick` and a Nod showing in the column, and the clicks `onClick` counted.
+	local function withColumn()
+		local loaded, M = loadCore()
+		-- The column settles at once, with no glide to wait out.
+		loaded.ns.db.profile.announcements.motion = false
+		local clicks = {}
+		raise(
+			loaded,
+			M,
+			moment("toast", "Toast", {
+				onClick = function()
+					clicks[#clicks + 1] = "toast"
+				end,
+			})
+		)
+		raise(
+			loaded,
+			M,
+			moment("nod", "Nod", {
+				onClick = function()
+					clicks[#clicks + 1] = "nod"
+				end,
+			})
+		)
+		return loaded, M, clicks, frameOf(loaded, "toast"), frameOf(loaded, "nod")
+	end
+
+	it("hangs every toast and Nod off one anchor, at the bottom of the screen with nothing saved", function()
+		local loaded, _, _, toast, nod = withColumn()
+
+		assert.are.same({ x = 0, y = 156 }, footOf(loaded))
+		assert.are.same({ 156 + 52, 156 }, { bottomOf(loaded, toast), bottomOf(loaded, nod) })
+		assert.are.same({ "LeftButton" }, toast.dragButtons)
+		assert.are.same({ "LeftButton" }, nod.dragButtons)
+	end)
+
+	it("Shift-dragging a toast moves the whole column with it and saves the foot (ANN-R98)", function()
+		local loaded, _, _, toast, nod = withColumn()
+		loaded.client.keysDown.SHIFT = true
+
+		assert.is_true(dragColumn(loaded, toast, 200, 500))
+
+		assert.are.same({ x = 200, y = 500 }, loaded.ns.db.profile.announcements.point)
+		assert.are.same({ x = 200, y = 500 }, footOf(loaded))
+		assert.are.same({ 500 + 52, 500 }, { bottomOf(loaded, toast), bottomOf(loaded, nod) })
+		assert.is_false(loaded.ns.columnAnchor.moving)
+	end)
+
+	it("Shift-dragging a Nod moves it too (ANN-R98)", function()
+		local loaded, _, _, _, nod = withColumn()
+		loaded.client.keysDown.SHIFT = true
+
+		dragColumn(loaded, nod, -300, 80)
+
+		assert.are.same({ x = -300, y = 80 }, loaded.ns.db.profile.announcements.point)
+	end)
+
+	it("never dismisses or runs onClick on the drag's mouse-up, but the next click does (ANN-R20, ANN-R98)", function()
+		local loaded, _, clicks, toast, nod = withColumn()
+		loaded.client.keysDown.SHIFT = true
+
+		dragColumn(loaded, toast, 200, 500)
+
+		assert.are.same({ "Nod", "Toast" }, columnTitles(loaded))
+		assert.are.same({}, clicks)
+		nod.scripts.OnMouseDown(nod, "LeftButton")
+		nod.scripts.OnMouseUp(nod, "LeftButton")
+		assert.are.same({ "Toast" }, columnTitles(loaded))
+		assert.are.same({ "nod" }, clicks)
+	end)
+
+	it("keeps the mouse-up from clicking when the client sends it before OnDragStop (ANN-R98)", function()
+		local loaded, _, clicks, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+
+		toast.scripts.OnMouseDown(toast, "LeftButton")
+		toast.scripts.OnDragStart(toast)
+		toast.scripts.OnMouseUp(toast, "LeftButton")
+		toast.scripts.OnDragStop(toast)
+
+		assert.are.same({ "Nod", "Toast" }, columnTitles(loaded))
+		assert.are.same({}, clicks)
+		assert.is_false(loaded.ns.lanes:IsColumnHeld())
+	end)
+
+	it(
+		"still dismisses and runs onClick for a plain click, and for a Shift-click that never dragged (ANN-R20)",
+		function()
+			local loaded, _, clicks, toast, nod = withColumn()
+
+			nod.scripts.OnMouseDown(nod, "LeftButton")
+			nod.scripts.OnMouseUp(nod, "LeftButton")
+			loaded.client.keysDown.SHIFT = true
+			toast.scripts.OnMouseDown(toast, "LeftButton")
+			toast.scripts.OnMouseUp(toast, "LeftButton")
+
+			assert.are.same({}, columnTitles(loaded))
+			assert.are.same({ "nod", "toast" }, clicks)
+			assert.is_nil(loaded.ns.db.profile.announcements.point)
+		end
+	)
+
+	it(
+		"moves nothing without Shift: the drag starts no move, and the pointer's let-go clicks as before (ANN-R98)",
+		function()
+			local loaded, _, clicks, toast = withColumn()
+
+			assert.is_false(dragColumn(loaded, toast, 200, 500))
+
+			assert.is_nil(loaded.ns.db.profile.announcements.point)
+			assert.are.same({ x = 0, y = 156 }, footOf(loaded))
+			assert.is_false(loaded.ns.lanes:IsColumnHeld())
+			assert.are.same({ "toast" }, clicks)
+		end
+	)
+
+	it("holds the whole column during the drag, hovered or not, and resumes on the drop (ANN-R98)", function()
+		local loaded, M, _, toast, nod = withColumn()
+		loaded.client.advance(1)
+		loaded.client.keysDown.SHIFT = true
+		toast.scripts.OnEnter(toast)
+		toast.scripts.OnMouseDown(toast, "LeftButton")
+		toast.scripts.OnDragStart(toast)
+		-- The pointer leaves the frame mid-drag.
+		toast.scripts.OnLeave(toast)
+
+		loaded.client.advance(60)
+		raise(loaded, M, moment("toast", "Waiting"))
+
+		assert.are.same({ "Nod", "Toast" }, columnTitles(loaded))
+		assert.is_true(loaded.ns.lanes:IsColumnHeld())
+
+		local anchor = loaded.ns.columnAnchor
+		anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + 100, 300.5 }, 300
+		toast.scripts.OnDragStop(toast)
+		toast.scripts.OnMouseUp(toast, "LeftButton")
+
+		assert.is_false(loaded.ns.lanes:IsColumnHeld())
+		-- What waited has entered the column, now where it was dropped.
+		assert.are.same({ "Waiting", "Nod", "Toast" }, columnTitles(loaded))
+		for _, frame in ipairs(loaded.ns.columnFrames) do
+			assert.is_true(bottomOf(loaded, frame) >= 300)
+		end
+		-- The clocks went on from where they stood: the Nod had 2.3 s left, the toast 7.7.
+		loaded.client.advance(2.3)
+		assert.is_false(nod.display ~= nil)
+		loaded.client.advance(5.4 - 0.01)
+		assert.is_true(toast.display ~= nil)
+		loaded.client.advance(0.01)
+		assert.is_false(toast.display ~= nil)
+	end)
+
+	it("keeps the dropped foot inside where a full column fits the screen (ANN-R98)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+
+		dragColumn(loaded, toast, 5000, 5000)
+		local right = loaded.ns.db.profile.announcements.point
+
+		-- 22 + 640 wide is the widest entry; its top is 300 + 22 under the screen's.
+		assert.are.same({ x = SCREEN_WIDTH / 2 - 331, y = SCREEN_HEIGHT - 322 }, right)
+		assert.are.same(right, footOf(loaded))
+		dragColumn(loaded, toast, -5000, -40)
+		assert.are.same({ x = -(SCREEN_WIDTH / 2 - 331), y = 0 }, loaded.ns.db.profile.announcements.point)
+	end)
+
+	it("starts no move while restricted (ANN-R98)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+		setCombat(loaded, true)
+
+		assert.is_false(dragColumn(loaded, toast, 200, 500))
+
+		assert.is_nil(loaded.ns.db.profile.announcements.point)
+		assert.is_false(loaded.ns.lanes:IsColumnHeld())
+	end)
+
+	it("stops a move where it is when restriction starts, and saves it (ANN-R98, ANN-R35)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+		toast.scripts.OnMouseDown(toast, "LeftButton")
+		toast.scripts.OnDragStart(toast)
+		local anchor = loaded.ns.columnAnchor
+		anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 - 150, 400.5 }, 400
+
+		setCombat(loaded, true)
+
+		assert.is_false(anchor.moving)
+		assert.are.same({ x = -150, y = 400 }, loaded.ns.db.profile.announcements.point)
+		assert.are.same({ x = -150, y = 400 }, footOf(loaded))
+		assert.is_false(loaded.ns.lanes:IsColumnHeld())
+		-- Letting go later changes nothing.
+		anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + 300, 100.5 }, 100
+		toast.scripts.OnDragStop(toast)
+		assert.are.same({ x = -150, y = 400 }, loaded.ns.db.profile.announcements.point)
+		-- And when it is over, what was held shows where the Angler dropped the column.
+		setCombat(loaded, false)
+		loaded.client.advance(2)
+		for _, frame in ipairs(loaded.ns.columnFrames) do
+			assert.is_true(bottomOf(loaded, frame) >= 400)
+		end
+	end)
+
+	it("stops a move when the dragged toast is taken back, and saves it (ANN-R98)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+		toast.scripts.OnMouseDown(toast, "LeftButton")
+		toast.scripts.OnDragStart(toast)
+		local anchor = loaded.ns.columnAnchor
+		anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + 50, 250.5 }, 250
+
+		loaded.ns.lanes:Withdraw(toast.display.announcement)
+
+		assert.is_false(anchor.moving)
+		assert.is_false(loaded.ns.lanes:IsColumnHeld())
+		assert.are.same({ x = 50, y = 250 }, loaded.ns.db.profile.announcements.point)
+	end)
+
+	it("places the column at the saved foot at the next login (ANN-R98, announcements.md › Data)", function()
+		local first, _, _, toast = withColumn()
+		first.client.keysDown.SHIFT = true
+		dragColumn(first, toast, 200, 500)
+
+		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog(), PagleDB = first.env.PagleDB }))
+		loaded.client.addons.Pagle_Ledger = { metadata = { ["X-Pagle-API"] = "1" } }
+		local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+		loaded.client.fire("PLAYER_LOGIN")
+		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
+		loaded.client.runTimers()
+		raise(loaded, M, moment("toast", "Placed"))
+
+		assert.are.same({ x = 200, y = 500 }, footOf(loaded))
+		assert.are.equal(500, bottomOf(loaded, frameOf(loaded, "toast")))
+	end)
+
+	it("places a saved foot the screen can't hold at the nearest that fits, without rewriting it (ANN-R98)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.announcements.point = { x = 5000, y = 5000 }
+
+		raise(loaded, M, moment("toast", "Clamped"))
+
+		assert.are.same({ x = SCREEN_WIDTH / 2 - 331, y = SCREEN_HEIGHT - 322 }, footOf(loaded))
+		assert.are.same({ x = 5000, y = 5000 }, loaded.ns.db.profile.announcements.point)
+	end)
+
+	it("reads a saved value it can't make sense of as the default (ANN-R98)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.announcements.point = "garbage"
+
+		raise(loaded, M, moment("toast", "Default"))
+
+		assert.are.same({ x = 0, y = 156 }, footOf(loaded))
+	end)
+
+	it("keeps the column on screen when the screen shrinks, and follows a bigger one back (ANN-R98)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.announcements.point = { x = 600, y = 700 }
+		raise(loaded, M, moment("toast", "Watched"))
+		assert.are.same({ x = 600, y = 700 }, footOf(loaded))
+
+		loaded.env.UIParent:SetSize(1366, 768)
+
+		assert.are.same({ x = 1366 / 2 - 331, y = 768 - 322 }, footOf(loaded))
+		assert.are.same({ x = 600, y = 700 }, loaded.ns.db.profile.announcements.point)
+		loaded.env.UIParent:SetSize(SCREEN_WIDTH, SCREEN_HEIGHT)
+		assert.are.same({ x = 600, y = 700 }, footOf(loaded))
+	end)
+
+	it("Reset clears the saved foot and puts the toasts and Nods on screen back at the bottom (ANN-R98)", function()
+		local loaded, _, _, toast, nod = withColumn()
+		loaded.client.keysDown.SHIFT = true
+		dragColumn(loaded, toast, 200, 500)
+
+		assert.is_true(loaded.ns.ResetToastColumn())
+
+		assert.is_nil(loaded.ns.db.profile.announcements.point)
+		assert.are.same({ x = 0, y = 156 }, footOf(loaded))
+		assert.are.same({ 156 + 52, 156 }, { bottomOf(loaded, toast), bottomOf(loaded, nod) })
+	end)
+
+	it("Reset does nothing while restricted (ANN-R98)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+		dragColumn(loaded, toast, 200, 500)
+		setCombat(loaded, true)
+
+		assert.is_false(loaded.ns.ResetToastColumn())
+
+		assert.are.same({ x = 200, y = 500 }, loaded.ns.db.profile.announcements.point)
+		assert.are.same({ x = 200, y = 500 }, footOf(loaded))
+	end)
+
+	it(
+		"moves and holds an ordinary Catch's toast, and a Nod it steps down to, with the column (ANN-R13, ANN-R98)",
+		function()
+			local loaded = loadCore()
+			loaded.client.itemNames[6358] = "Oily Blackmouth"
+			loaded.ns.db.profile.announcements.motion = false
+			catchAndFlush(loaded)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+			assert.are.same("toast.low", toast.display.announcement.headline.rung)
+			loaded.client.advance(1)
+			loaded.client.keysDown.SHIFT = true
+
+			toast.scripts.OnMouseDown(toast, "LeftButton")
+			toast.scripts.OnDragStart(toast)
+			-- The budget is spent mid-drag, and another Catch waits for the column, whose clocks stand still.
+			loaded.ns.db.profile.announcements.budget.count = 1
+			loaded.client.advance(60)
+			catchAndFlush(loaded)
+			assert.are.same({ toast }, loaded.ns.columnFrames)
+
+			local anchor = loaded.ns.columnAnchor
+			anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + 120, 350.5 }, 350
+			toast.scripts.OnDragStop(toast)
+			toast.scripts.OnMouseUp(toast, "LeftButton")
+
+			assert.are.same({ x = 120, y = 350 }, loaded.ns.db.profile.announcements.point)
+			assert.are.equal(2, #loaded.ns.columnFrames)
+			for _, frame in ipairs(loaded.ns.columnFrames) do
+				assert.is_true(bottomOf(loaded, frame) >= 350)
+			end
+			assert.are.same(
+				{ "toast", "nod" },
+				{ loaded.ns.columnFrames[2].display.form, loaded.ns.columnFrames[1].display.form }
+			)
+		end
+	)
+
+	it("leaves banners and the splash where they are (ANN-R98)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.announcements.point = { x = 200, y = 500 }
+
+		raise(loaded, M, moment("banner", "Level 12"), moment("toast", "Toast"))
+
+		local point, relativeTo, relativePoint, x, y = frameOf(loaded, "banner"):GetPoint(1)
+		assert.are.same({ "TOP", loaded.env.UIParent, "TOP", 0, -120 }, { point, relativeTo, relativePoint, x, y })
+	end)
 end)

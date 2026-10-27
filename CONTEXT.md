@@ -200,6 +200,10 @@ _Avoid_: mini toast, whisper
 The toast Core shows for an ordinary Catch when nothing bigger came of it: the size band and length ("DECENT · 34.2 CM") over the fish's name, with the toast sound. It counts toward the Interruption budget, and steps down to a Nod when the budget is spent. The player can switch it off with Show every catch.
 _Avoid_: catch Nod
 
+**Toast column**:
+Where toasts and Nods appear, stacked with the newest at the foot; the Angler can move it, and the Letter takes its place.
+_Avoid_: toast area, notification stack, lane
+
 **Interruption budget**:
 The player's limit on how often Pagle may interrupt within a stretch of fishing. When it is spent, low-priority toasts step down to Nods; everything else still gets through. The player can switch it off.
 _Avoid_: rate limit, throttle, cooldown
