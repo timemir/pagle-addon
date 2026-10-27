@@ -68,10 +68,12 @@ jobs:
           key: mypy-${{ runner.os }}-${{ hashFiles('scripts/setup.sh', 'scripts/tools.env', 'scripts/pyproject.toml') }}-${{ github.sha }}
           restore-keys: mypy-${{ runner.os }}-${{ hashFiles('scripts/setup.sh', 'scripts/tools.env', 'scripts/pyproject.toml') }}-
 
+      # One busted shard at a time: ubuntu-latest has 16 GB, and one shard peaks near 12 GB (spec/Pagle_Ledger's), so
+      # two at once got the runner shut down mid-run (exit 143) in about a third of the runs. See scripts/check.sh.
       - name: Run the check gate
         env:
           PAGLE_NO_COVERAGE: "1"
-          GATE_JOBS: "2"
+          GATE_JOBS: "1"
         run: /usr/bin/time -v bash scripts/check.sh
 
       - uses: actions/cache/save@v6
