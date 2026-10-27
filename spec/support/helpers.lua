@@ -162,7 +162,7 @@ FISH_CREST_SPECIES = {
 }
 
 --- The build entry the fake client's build matches, so login appends no B1.
-BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1|pagle-2026a"):format(SERVER_TIME - 5000)
+BUILD_ENTRY = ("B1|1|%d|0|70338|1.60.1|pagle-2026b"):format(SERVER_TIME - 5000)
 
 --- A caught Cast at server time `time`, as a PagleLog entry: in Darkshore (148) at realm 08:14, Fishing 86+25 with
 --- lure 263, catching one item. By default the item is Oily Blackmouth (6358), the subzone The Long Wash (453), and
