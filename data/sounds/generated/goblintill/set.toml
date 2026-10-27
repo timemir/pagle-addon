@@ -1,0 +1,28 @@
+# Goblin Till: a goblin cash register and gold coins. Each file's ElevenLabs sound-effects prompt, its requested
+# length in seconds and which raw take ships ("a" or "b"; the takes are in raw/<file>/take_<x>.mp3).
+
+[file.toast_1]
+prompt = 'A bright, cartoonish cash register "ka-ching!" with a ringing bell and a drawer slide, fantasy treasure feel, clean, no music'
+seconds = 1.5
+pick = "a"
+
+[file.toast_2]
+prompt = 'A handful of gold coins dropping into a leather pouch with a bright jingle and a tiny sparkle chime, fantasy treasure, clean, no music'
+seconds = 1.5
+pick = "a"
+
+[file.toast_3]
+prompt = 'An old mechanical cash register crank and a quick double bell ring "ding-ding!", clanky goblin-workshop machinery with a coin clink, clean, no music'
+seconds = 1.5
+pick = "a"
+
+[file.banner]
+# Takes a and b were a plainer prompt; c and d are this cartoon one. The shipped mix is take c with the game's
+# goblin laugh (WOW_SOUND_DIR/creature/goblin) landing as the coins pour, and again, higher and quieter, as its echo.
+prompt = 'Cartoon jackpot celebration: a goofy slot-machine win with springy boing sounds, a comical "ka-ching!" cash register, a zany rising xylophone run and a cascade of clinking coins ending with a playful pop and a sparkle, over-the-top cartoon style, no voices'
+seconds = 3.0
+mix = [
+	{ part = "banner", pick = "c", start = 0.0 },
+	{ clip = "creature/goblin/goblinstand3", start = 1.2, semitones = 3, gain = 0.8 },
+	{ clip = "creature/goblin/goblinstand3", start = 1.75, semitones = 8, gain = 0.45 },
+]

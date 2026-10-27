@@ -196,12 +196,15 @@ describe("the Ledger's onboarding", function()
 			assert.is_true(fake.onboarding:IsEveningItemDone("journal"))
 		end)
 
+		-- A Catch the logged-in Angler made two hours ago: a real break (LED-R22) has passed since it.
+		local TWO_HOURS_AGO = SERVER_TIME - 7200
+
 		it(
-			"shows ledger.fresh on the ink bar's blue part the first time it opens with Fresh Water once a Session has "
-				.. "ended, once (ONB-R52)",
+			"shows ledger.fresh on the ink bar's blue part the first time it opens with Fresh Water once a real break "
+				.. "has passed, once (ONB-R52)",
 			function()
-				-- A Session that ended before this login, 700 s ago (LOG-R60).
-				local fake, loaded = ledger({ castRecord({ time = T0, zone = ELWYNN, items = { MACKEREL } }) })
+				local fake, loaded =
+					ledger({ castRecord({ time = TWO_HOURS_AGO, zone = ELWYNN, items = { MACKEREL } }) })
 				local journal = loaded.ns.journal
 
 				journal:Toggle()
@@ -226,7 +229,8 @@ describe("the Ledger's onboarding", function()
 		it(
 			"waits for an opening that shows the blue part: a spread without the ink bar shows none (ONB-R52)",
 			function()
-				local fake, loaded = ledger({ castRecord({ time = T0, zone = ELWYNN, items = { MACKEREL } }) })
+				local fake, loaded =
+					ledger({ castRecord({ time = TWO_HOURS_AGO, zone = ELWYNN, items = { MACKEREL } }) })
 				local journal = loaded.ns.journal
 
 				journal:Open("zone", { zone = ELWYNN })
@@ -238,7 +242,7 @@ describe("the Ledger's onboarding", function()
 			end
 		)
 
-		it("shows no ledger.fresh to a new Angler before any Session, and marks it unseen (ONB-R52)", function()
+		it("shows no ledger.fresh to a new Angler before any Catch, and marks it unseen (ONB-R52)", function()
 			local fake, loaded = ledger()
 
 			loaded.ns.journal:Toggle()
@@ -248,20 +252,22 @@ describe("the Ledger's onboarding", function()
 			assert.is_nil(fake.global.onboarding.notesSeen["ledger.fresh"])
 		end)
 
-		it("shows no ledger.fresh while the first Session is still open (ONB-R52, LOG-R64)", function()
-			local fake, loaded =
-				ledger({ castRecord({ time = SERVER_TIME - 10, zone = ELWYNN, items = { MACKEREL } }) })
-			assert.is_not_nil(fake.Pagle.GetSession())
+		it(
+			"shows no ledger.fresh after a Session end alone: a Session that ended 700 s ago is no real break (ONB-R52)",
+			function()
+				local fake, loaded = ledger({ castRecord({ time = T0, zone = ELWYNN, items = { MACKEREL } }) })
 
-			loaded.ns.journal:Toggle()
+				loaded.ns.journal:Toggle()
 
-			assert.is_truthy(loaded.ns.JournalFreshPart(loaded.ns.journal))
-			assert.are.same({}, fake.notesShown)
-			assert.is_nil(fake.global.onboarding.notesSeen["ledger.fresh"])
-		end)
+				assert.is_truthy(loaded.ns.JournalFreshPart(loaded.ns.journal))
+				assert.are.same({}, fake.notesShown)
+				assert.is_nil(fake.global.onboarding.notesSeen["ledger.fresh"])
+			end
+		)
 
 		it(
-			"shows ledger.fresh at the first opening after the first Session's SessionEnded (ONB-R52, LOG-R62)",
+			"shows no ledger.fresh at the opening after a SessionEnded, but at the first one an hour after the last "
+				.. "Catch (ONB-R52, LED-R22)",
 			function()
 				local fake, loaded = ledger()
 				local journal = loaded.ns.journal
@@ -277,21 +283,67 @@ describe("the Ledger's onboarding", function()
 				fake.wait(300)
 				assert.is_true(ended)
 				journal:Toggle()
+				journal:Close()
+				assert.are.same({}, fake.notesShown)
+				assert.is_nil(fake.global.onboarding.notesSeen["ledger.fresh"])
+
+				-- The server clock reaches an hour after the Cast (the fake client's stands still).
+				loaded.env.GetServerTime = function()
+					return SERVER_TIME + 3600
+				end
+				journal:Toggle()
+				assert.are.same({ "ledger.fresh" }, { fake.notesShown[1] and fake.notesShown[1].id })
+			end
+		)
+
+		it(
+			"counts a logged gap of an hour between two Catches, though the last is recent (ONB-R52, LED-R22)",
+			function()
+				local fake, loaded = ledger({
+					castRecord({ time = SERVER_TIME - 3 * 3600, zone = ELWYNN, items = { MACKEREL } }),
+					castRecord({ time = SERVER_TIME - 2 * 3600, zone = ELWYNN, items = { MACKEREL } }),
+					castRecord({ time = SERVER_TIME - 10, zone = ELWYNN, items = { MACKEREL } }),
+				})
+
+				loaded.ns.journal:Toggle()
 
 				assert.are.same({ "ledger.fresh" }, { fake.notesShown[1] and fake.notesShown[1].id })
 			end
 		)
 
-		it("counts a Session ended before the one open now, from the Catch log (ONB-R52, LOG-R98)", function()
-			local fake, loaded = ledger({
-				castRecord({ time = T0, zone = ELWYNN, items = { MACKEREL } }),
+		it("counts a logged gap of exactly an hour, but not one of 59 minutes (ONB-R52, LED-R22)", function()
+			local short, shortLoaded = ledger({
+				castRecord({ time = SERVER_TIME - 3600, zone = ELWYNN, items = { MACKEREL } }),
+				castRecord({ time = SERVER_TIME - 3600 + 59 * 60, zone = ELWYNN, items = { MACKEREL } }),
 				castRecord({ time = SERVER_TIME - 10, zone = ELWYNN, items = { MACKEREL } }),
 			})
-			assert.is_not_nil(fake.Pagle.GetSession())
+			shortLoaded.ns.journal:Toggle()
+			assert.are.same({}, short.notesShown)
+
+			local exact, exactLoaded = ledger({
+				castRecord({ time = SERVER_TIME - 3600 - 10, zone = ELWYNN, items = { MACKEREL } }),
+				castRecord({ time = SERVER_TIME - 10, zone = ELWYNN, items = { MACKEREL } }),
+			})
+			exactLoaded.ns.journal:Toggle()
+			assert.are.same({ "ledger.fresh" }, { exact.notesShown[1] and exact.notesShown[1].id })
+		end)
+
+		it("shows no ledger.fresh with no Fresh Water, whatever the break, and marks it unseen (ONB-R52)", function()
+			-- 320 Catches in the latest Cast spend all 300 of the Fresh Water the two hours since the first refilled.
+			local flood = {}
+			for i = 1, 320 do
+				flood[i] = MACKEREL
+			end
+			local fake, loaded = ledger({
+				castRecord({ time = TWO_HOURS_AGO, zone = ELWYNN, items = { MACKEREL } }),
+				castRecord({ time = SERVER_TIME - 10, zone = ELWYNN, items = flood }),
+			})
 
 			loaded.ns.journal:Toggle()
 
-			assert.are.same({ "ledger.fresh" }, { fake.notesShown[1] and fake.notesShown[1].id })
+			assert.is_nil(loaded.ns.JournalFreshPart(loaded.ns.journal))
+			assert.are.same({}, fake.notesShown)
+			assert.is_nil(fake.global.onboarding.notesSeen["ledger.fresh"])
 		end)
 
 		it("shows no note while the Ledger is being written up (ONB-R52, LED-R122)", function()

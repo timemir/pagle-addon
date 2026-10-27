@@ -737,16 +737,57 @@ makers.seal = function(parent)
 	return widget
 end
 
+-- The height of the stamps' line, and of a stamp drawn as words.
+local STAMP_ROW = 30
+
+---@class LedgerStampHit: Frame
+---@field tip LedgerStampTip?
+
 ---@class LedgerStampsWidget: LedgerJournalWidget
 ---@field stamps LedgerSpriteTexture[]
 ---@field words FontString[]
+---@field hits LedgerStampHit[]
+
+-- A stamp's tooltip (LED-R165), over the stamp: its word in gilt as the Prestige frame's is (LED-R154), then its rule
+-- in white and where the Angler stands in grey.
+local STAMP_TIP_GILT = "f0cd6a"
+
+---@param hit LedgerStampHit
+local function showStampTip(hit)
+	local tip = hit.tip
+	if not tip then
+		return
+	end
+	GameTooltip:SetOwner(hit, "ANCHOR_RIGHT")
+	GameTooltip:SetText(tip.title, rgb(STAMP_TIP_GILT))
+	for i, line in ipairs(tip.lines) do
+		local shade = i == 1 and 1 or 0.8
+		GameTooltip:AddLine(line, shade, shade, shade, true)
+	end
+	GameTooltip:Show()
+end
+
+-- The frame over a stamp that takes the mouse, shown only for a stamp with a tip: the stamps are textures, which can't.
+---@param parent LedgerStampsWidget
+---@return LedgerStampHit
+local function newStampHit(parent)
+	local hit = CreateFrame("Frame", nil, parent) --[[@as LedgerStampHit]]
+	hit:EnableMouse(true)
+	hit:SetScript("OnEnter", showStampTip)
+	hit:SetScript("OnLeave", function(self)
+		if GameTooltip:IsOwned(self) then
+			GameTooltip:Hide()
+		end
+	end)
+	return hit
+end
 
 -- Ink stamps side by side (★ marks, LED-R140, LED-R143): the kit's stamps, red when inked and in ghost ink when not,
 -- tilted as the canvas tilts them. A stamp newly inked on the same page is pressed on, 1.6x to 1x, with the stamp
--- sound (MOTION.md › A trophy weight landed).
+-- sound (MOTION.md › A trophy weight landed). Hovering a stamp with a `tip` shows it (LED-R165).
 makers.stamps = function(parent)
 	local widget = newWidget(parent) --[[@as LedgerStampsWidget]]
-	widget.stamps, widget.words = {}, {}
+	widget.stamps, widget.words, widget.hits = {}, {}, {}
 	function widget.Fill(self, block, _, _, draw)
 		local list = block.stamps or {}
 		local inked = {}
@@ -762,11 +803,13 @@ makers.stamps = function(parent)
 				stamp = ns.JournalSprite(self, "Parts", "stamp-caught", "ARTWORK")
 				self.stamps[i] = stamp
 				self.words[i] = ns.JournalLabel(self, "sc", 13, INK.red, "", { justify = "CENTER" })
+				self.hits[i] = newStampHit(self)
 			end
 			local words = self.words[i]
 			words:SetShown(name == nil)
 			stamp:SetShown(name ~= nil)
 			local w
+			local h = STAMP_ROW
 			if name then
 				local sprite = ns.JOURNAL_ATLASES.Parts.sprites[name]
 				local atlas = ns.JOURNAL_ATLASES.Parts
@@ -775,7 +818,7 @@ makers.stamps = function(parent)
 				stamp:SetSize(sprite.w / atlas.scale, sprite.h / atlas.scale)
 				stamp.box = sprite.box
 				ns.JournalBoxAt(stamp, self, x, 0)
-				w = sprite.box[3]
+				w, h = sprite.box[3], sprite.box[4]
 				Pagle.StopMotion(stamp)
 				stamp:SetAlpha(1)
 				if same and before and data.inked and not before[i] and ns.MotionOn() then
@@ -808,13 +851,31 @@ makers.stamps = function(parent)
 				words:SetPoint("TOPLEFT", x, -6)
 				w = words:GetStringWidth() + 8
 			end
+			local hit = self.hits[i]
+			hit.tip = data.tip
+			hit:ClearAllPoints()
+			hit:SetPoint("TOPLEFT", self, "TOPLEFT", x, 0)
+			hit:SetSize(w, h)
+			hit:SetShown(data.tip ~= nil)
 			x = x + w + 10
 		end
 		for i = #list + 1, #self.stamps do
 			self.stamps[i]:Hide()
 			self.words[i]:Hide()
+			self.hits[i].tip = nil
+			self.hits[i]:Hide()
 		end
-		return 30
+		-- the tooltip, shown again with the new figures while the mouse is over a stamp as it redraws
+		for _, hit in ipairs(self.hits) do
+			if GameTooltip:IsOwned(hit) then
+				if hit.tip then
+					showStampTip(hit)
+				else
+					GameTooltip:Hide()
+				end
+			end
+		end
+		return STAMP_ROW
 	end
 	return widget
 end

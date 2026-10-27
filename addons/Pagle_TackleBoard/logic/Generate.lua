@@ -18,13 +18,13 @@ local OTHER_WEIGHT = 1 -- every other candidate zone (TKB-R30)
 local RECENT_WINDOW = 14 * ns.DAY_SECONDS -- seconds before now (TKB-R30)
 
 -- The kinds in the table's order (TKB-R32), which is the order weighted draws walk them in.
-local KINDS = { "haul", "variety", "wanderer", "quality", "collector", "lure", "species" }
+local KINDS = { "haul", "variety", "wanderer", "rarity", "collector", "lure", "species" }
 
 -- Each kind's weight by goal type (TKB-R32); a kind a type doesn't list is never drawn for it. There is no `size`
 -- kind: under a Reach a band goal is out of a new Angler's range and trivial for a veteran's (ADR 0014).
 local KIND_WEIGHTS = {
-	n = { haul = 2, variety = 2, wanderer = 1, quality = 1, collector = 1, lure = 1, species = 1 },
-	e = { haul = 1, variety = 1, wanderer = 1, quality = 1, collector = 1 },
+	n = { haul = 2, variety = 2, wanderer = 1, rarity = 1, collector = 1, lure = 1, species = 1 },
+	e = { haul = 1, variety = 1, wanderer = 1, rarity = 1, collector = 1 },
 }
 
 local VARIETY_NOTICE_MIN = 3 -- eligible Species a Variety Notice's zone has at least (TKB-R32)
@@ -40,7 +40,7 @@ ns.NOTICE_NEEDS = {
 	haul = { 20, 30, 40 },
 	variety = { 3, 4, 5 }, -- capped at the zone's eligible Species; the tier follows the need
 	wanderer = { [3] = 3 },
-	quality = { 3, 5, 8 },
+	rarity = { 3, 5, 8 }, -- Catches of an uncommon Variety or better
 	collector = { [2] = 2 },
 	lure = { 15, 20, 25 },
 	species = { 5, 10, 15 },
@@ -49,10 +49,10 @@ local NOTICE_NEEDS = ns.NOTICE_NEEDS
 local FIXED_TIERS = { wanderer = 3, collector = 2 } -- the Notice kinds whose tier the table fixes (TKB-R34)
 
 --- An Expedition's need by kind (TKB-R34); a Variety Expedition's is its stored Species.
-ns.EXPEDITION_NEEDS = { haul = 150, wanderer = 5, quality = 3, collector = 3 }
+ns.EXPEDITION_NEEDS = { haul = 150, wanderer = 5, rarity = 8, collector = 3 }
 local EXPEDITION_NEEDS = ns.EXPEDITION_NEEDS
 
-local QUALITY_TARGETS = { n = 2, e = 3 } -- uncommon for Notices, rare for Expeditions (TKB-R34)
+local RARITY_TARGETS = { n = 2, e = 3 } -- the Variety rarity rank: uncommon for Notices, rare for Expeditions (TKB-R34)
 
 -- The Sub-collection item categories (TKB-R46).
 local SUB_COLLECTION = { junk = true, container = true, treasure = true, trophy = true }
@@ -211,7 +211,7 @@ local OPTIONS = {
 	wanderer = function(found, goalType)
 		return goalType == "n" and ELIGIBLE or found.continents
 	end,
-	quality = function()
+	rarity = function()
 		return ELIGIBLE
 	end,
 	collector = function(found, goalType)
@@ -399,8 +399,8 @@ function ns.GenerateGoal(ctx, goalType, dropKind)
 		end
 	elseif kind == "wanderer" and goalType == "e" then
 		target = draw(ctx.random, avoiding(options, openSet(ctx, goalType, kind, "target"), itself), uniform) --[[@as integer]]
-	elseif kind == "quality" then
-		target = QUALITY_TARGETS[goalType]
+	elseif kind == "rarity" then
+		target = RARITY_TARGETS[goalType]
 	elseif kind == "species" then
 		target = drawSpecies(ctx, found, goalType, options).item
 	end

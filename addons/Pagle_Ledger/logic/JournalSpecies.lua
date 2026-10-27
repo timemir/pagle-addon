@@ -133,7 +133,11 @@ function ns.JournalSpeciesEntry(id, context, hint)
 		{ kind = "title", text = text:Item(id) },
 		{
 			kind = "stamps",
-			stamps = ns.JournalStamps(ns.ShownSpeciesStars(world, state, context.celebrated, id), L.ENTRY_STAMPS),
+			stamps = ns.JournalStamps(
+				ns.ShownSpeciesStars(world, state, context.celebrated, id),
+				L.ENTRY_STAMPS,
+				ns.SpeciesStampTips(world, state, id, text)
+			),
 		},
 		{ kind = "text", hand = true, text = first },
 	}

@@ -130,7 +130,7 @@ end
 local FIRST = {
   nod = { cell = { 60, 150 }, label = "First Catch", sub = "the Nod", draw = function(S, x, y)
     P.Sample(S, "nod-new", x, y + 44, 360, 36)
-    return P.Pointed(S, "That’s a *Nod*: one quiet line for every Catch. It’s gone in three seconds, and it’s in your Ledger for good.", x + 150, y + 108, 250, 1, x + 110 + 10, y + 82 + 4)
+    return P.Pointed(S, "That’s a *Nod*: when Pagle’s had a lot to say lately, the small news steps down to one quiet line. It’s gone in three seconds, and it’s in your Ledger for good.", x + 150, y + 108, 250, 1, x + 110 + 10, y + 82 + 4)
   end },
   toast = { cell = { 510, 150 }, label = "First new fish", sub = "a toast", draw = function(S, x, y)
     P.Sample(S, "toast", x, y + 40, 400, 82)

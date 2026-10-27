@@ -14,8 +14,12 @@ local ns = select(2, ...)
 --- The Tackle Board's rules version (Tunables, TKB-R81): rises whenever a progress, Campfire, Fly Box or
 --- pattern-order rule changes. Generation changes don't need it (TKB-R22). 2 since completions pay Activity XP
 --- (TKB-R65), so a version-1 projection rebuilds and its `xp` fills in from the log; 3 since the `size` goal kind was
---- dropped (ADR 0014): a beta log's `size` goals are skipped on the rebuild (TKB-R80).
-ns.TKB_RULES_VERSION = 4
+--- dropped (ADR 0014): a beta log's `size` goals are skipped on the rebuild (TKB-R80); 4 since the `quality` goal kind
+--- became `rarity`, counting Variety rarity: a dev log's `quality` goals are skipped on the rebuild (TKB-R80); 5 since
+--- a Refresh posts a goal with a `post` record (TKB-R58), so a stored projection rebuilds and its `ticketsSpent` is
+--- there.
+--- 6 combines Refresh posting with anchored calendar boundaries.
+ns.TKB_RULES_VERSION = 6
 
 -- Tunables (TKB-R20). The caps are the pin counts (ns.NOTICE_PINS, ns.EXPEDITION_PINS).
 --- Notices owed at each daily reset, up to the cap (TKB-R20, tackle-board.md › Tunables).
@@ -58,6 +62,7 @@ function ns.NewBoardState()
 		tally = { notices = 0, expeditions = 0 },
 		coins = 0,
 		xp = 0,
+		ticketsSpent = 0,
 		flies = {},
 		titles = {},
 		fire = { count = 0, kindling = 0, longest = 0, milestones = {}, log = {} },
@@ -230,16 +235,27 @@ local function post(state, record, def, reposted)
 	return goal
 end
 
+--- The first empty pin of a goal type (TKB-R101): where the next goal of that type hangs, and where a Refresh can post
+--- one (TKB-R58). Nil when every pin of the type is taken.
+---@param state TackleBoardState
+---@param goalType TackleGoalType
+---@return integer?
+function ns.EmptyPin(state, goalType)
+	for pin, id in ipairs(pinsOf(state, goalType)) do
+		if not id then
+			return pin
+		end
+	end
+	return nil
+end
+
 -- Puts a goal on the first empty pin of its type, or leaves it in the overflow strip (TKB-R101).
 ---@param state TackleBoardState
 ---@param goal TackleGoal
 local function pinFirstEmpty(state, goal)
-	local pins = pinsOf(state, goal.type)
-	for pin, id in ipairs(pins) do
-		if not id then
-			goal.pin, pins[pin] = pin, goal.id
-			return
-		end
+	local pin = ns.EmptyPin(state, goal.type)
+	if pin then
+		goal.pin, pinsOf(state, goal.type)[pin] = pin, goal.id
 	end
 end
 
@@ -287,6 +303,17 @@ local function applyRecord(state, record, decoded, day, mode)
 			ns.FreePin(state, old)
 			pinFirstEmpty(state, goal)
 		end
+		return true
+	end
+	if decoded.kind == "post" then
+		-- TKB-R58: a Refresh posts a goal into an empty slot without using up what the board owes; a board with no empty
+		-- pin of the goal's type (full since it was written) ignores the whole record, and so spends nothing
+		if ns.EmptyPin(state, decoded.goal.type) == nil then
+			return false
+		end
+		ns.AdvanceTo(state, day, mode)
+		pinFirstEmpty(state, post(state, record, decoded.goal, false))
+		state.ticketsSpent = state.ticketsSpent + 1
 		return true
 	end
 	ns.AdvanceTo(state, day, mode)
@@ -381,10 +408,10 @@ end
 
 --- The Tackle Board's projection def for `M:NewProjection` (TKB-R81) over `global.board` (made here if missing):
 --- rules version TKB_RULES_VERSION × 1000 + Core's Session rules version (SIZE_RULES_VERSION isn't folded). A live
---- apply that changes the state asks the views to redraw, after reporting the Coins or the Activity XP it changed and
---- refreshing the earned goods when it reached one's Campfire milestone (TKB-R126); `done` runs in TKB-R84's order:
---- ns.outlets.Done, ns.ReportCoins, ns.ReportXP, then ns.RefreshGoods (TKB-R126), ns.ScheduleLiveStep (TKB-R84), then
---- a redraw.
+--- apply that changes the state asks the views to redraw, after reporting the Coins, the Activity XP or the Refreshes
+--- spent it changed and refreshing the earned goods when it reached one's Campfire milestone (TKB-R126); `done` runs in
+--- TKB-R84's order: ns.outlets.Done, ns.ReportCoins, ns.ReportXP, ns.ReportTickets, then ns.RefreshGoods (TKB-R126),
+--- ns.ScheduleLiveStep (TKB-R84), then a redraw.
 ---@param global table PagleTackleBoardDB's global section
 ---@param sessionRulesVersion integer Pagle.SESSION_RULES_VERSION
 ---@return PagleProjectionDef
@@ -400,7 +427,7 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 			return ns.NewBoardState()
 		end,
 		apply = function(state, record, mode)
-			local coins, xp, reached = state.coins, state.xp, ns.GoodMilestonesReached(state)
+			local coins, xp, spent, reached = state.coins, state.xp, state.ticketsSpent, ns.GoodMilestonesReached(state)
 			local changed = ns.ApplyEntry(state, record, mode)
 			ns.CountForWriteUp(state, record, mode) -- TKB-R84: a first build's Casts (logic/Moments.lua)
 			if changed and mode == "live" then
@@ -413,6 +440,10 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 				if state.xp ~= xp then
 					ns.ReportXP()
 				end
+				-- TKB-R58, REF-R2: likewise the Refreshes spent
+				if state.ticketsSpent ~= spent then
+					ns.ReportTickets()
+				end
 				-- TKB-R126, SHOP-R31: an earned good's Campfire milestone reached, never mid-rebuild
 				if ns.GoodMilestonesReached(state) ~= reached then
 					ns.RefreshGoods()
@@ -424,6 +455,7 @@ function ns.ProjectionDef(global, sessionRulesVersion)
 			ns.outlets.Done(state, info)
 			ns.ReportCoins()
 			ns.ReportXP()
+			ns.ReportTickets() -- TKB-R58, REF-R2
 			ns.RefreshGoods() -- TKB-R126, SHOP-R31: the earned goods, once the build is done
 			ns.ScheduleLiveStep()
 			ns.Redraw("projection")
@@ -466,6 +498,15 @@ end
 ---@return integer
 function ns.ActivityXPEarned(state)
 	return state.xp
+end
+
+--- A Tackle Board state's lifetime Refreshes spent (TKB-R58, REF-R2, REF-R9): one for each `post` record applied, as the
+--- Tackle Board reports them with M:ReportTicketsSpent, 0 before Start: for Pagle's backend, which folds it from the
+--- Catch log as it does the Coins.
+---@param state TackleBoardState
+---@return integer
+function ns.TicketsSpent(state)
+	return state.ticketsSpent
 end
 
 --- The Tackle Board's Journal values for Pagle's backend (#223, the Angler page's Journal values): `flies`, the 30

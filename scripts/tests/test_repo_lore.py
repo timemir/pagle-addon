@@ -50,18 +50,39 @@ CORE_GOODS = [
     "core.soundset.rain",
     "core.soundset.marimba",
     "core.soundset.shipbell",
+    "core.soundset.squeaky",
+    "core.soundset.bubbleworks",
     "core.soundset.kalimba",
     "core.soundset.musicbox",
     "core.soundset.glass",
     "core.soundset.steelpan",
     "core.soundset.dulcimer",
+    "core.soundset.goblintill",
+    "core.soundset.kazoo",
+    "core.soundset.arcade",
+    "core.soundset.boing",
+    "core.soundset.slime",
     "core.soundset.frost",
     "core.soundset.harp",
     "core.soundset.gizmo",
+    "core.soundset.mrglglgl",
+    "core.soundset.parrot",
+    "core.soundset.laser",
+    "core.soundset.silithid",
+    "core.soundset.succubus",
     "core.soundset.wardrums",
+    "core.soundset.dragonroost",
     "core.toaststyle.sonar",
     "core.toaststyle.foil",
     "core.toaststyle.storm",
+    "core.toaststyle.hive",
+    "core.toaststyle.ooze",
+    "core.toaststyle.robot",
+    "core.toaststyle.spider",
+    "core.toaststyle.glacier",
+    "core.toaststyle.magma",
+    "core.toaststyle.arcane",
+    "core.toaststyle.pirate",
 ]
 # LED-R75: the title IDs, in its table's order.
 LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]
@@ -694,11 +715,11 @@ def test_deleting_any_one_good_s_description_fails_the_hunts_lore_check_naming_i
 
 
 def test_every_v1_hunt_and_set_has_its_text() -> None:
-    # HNT-R130, DATA-R105: a name for each of the 12 Standing Hunts, a name and a title for each of the 4 sets
+    # HNT-R130, DATA-R105: a name for each of the 16 Standing Hunts, a name and a title for each of the 5 sets
     # (hunts.md › Data), all passing the Hunts lore check (read_layers raises on any problem).
     hunts = _layers().hunts
     text = _hunts_text()
-    assert len(hunts.hunts) == 12 and len(hunts.sets) == 4
+    assert len(hunts.hunts) == 16 and len(hunts.sets) == 5
     for hunt in hunts.hunts:
         assert text[f"hunt.{hunt.id}.name"].strip()
     for hunt_set in hunts.sets:
@@ -723,7 +744,7 @@ def test_no_line_of_hunts_lore_names_the_addon_its_terms_or_shouts(key: str) -> 
     assert "!" not in text and "|" not in text, text
 
 
-SETS = ["round_the_clock", "turn_of_the_year", "sunday_showdown", "camp_hours"]  # hunts.md › Data
+SETS = ["home_waters", "round_the_clock", "turn_of_the_year", "sunday_showdown", "camp_hours"]  # hunts.md › Data
 
 
 @pytest.mark.parametrize("hunt_set", SETS)
@@ -1080,6 +1101,16 @@ LEDGER_GOODS = [
     "ledger.toaststyle.slate",
     "ledger.toaststyle.ice",
     "ledger.toaststyle.stitch",
+    "ledger.toaststyle.crier",
+    "ledger.toaststyle.hall",
+    "ledger.toaststyle.glade",
+    "ledger.toaststyle.blueprint",
+    "ledger.toaststyle.drum",
+    "ledger.toaststyle.shroud",
+    "ledger.toaststyle.totem",
+    "ledger.toaststyle.hex",
+    "ledger.toaststyle.lion",
+    "ledger.toaststyle.warband",
 ]
 
 

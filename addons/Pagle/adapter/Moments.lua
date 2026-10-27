@@ -16,8 +16,8 @@ ns.WireMoments(ns.host, function(announcement)
 	ns.lanes:Push(announcement)
 end)
 
---- Core's catch Nod for each live caught Cast (ANN-R13), named as the client has the item cached; a secret is never
+--- Core's catch toast for each live caught Cast (ANN-R13), named as the client has the item cached; a secret is never
 --- a name (CORE-R31).
-ns.WireCatchNods(ns.host, function(itemID)
+ns.WireCatchToasts(ns.host, function(itemID)
 	return ns.UnlessSecret(issecretvalue, (C_Item.GetItemNameByID(itemID)))
 end)

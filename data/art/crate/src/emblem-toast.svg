@@ -1,0 +1,7 @@
+<!-- The toast style's emblem, verbatim from prototypes/curio-crate/crate.js (EMBLEM.toast): FILL is the metal's
+     gradient, DARK its engraving; scripts/crate-art.py draws them in grey, for the client to tint (the highlight, the
+     lighter part of the metal, is the -hi layer). 100 x 100 units, drawn at 104 px on a card. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30 30 H86 a6 6 0 0 1 6 6 V40 L98 46 L92 52 V64 a6 6 0 0 1 -6 6 H30Z" fill="FILL" stroke="DARK" stroke-width="2.5"/>
+      <path d="M44 42 H82 M44 50 H76 M44 58 H80" stroke="DARK" stroke-width="2.5" stroke-linecap="round" opacity=".55"/>
+      <circle cx="30" cy="50" r="24" fill="FILL" stroke="DARK" stroke-width="2.5"/><circle cx="30" cy="50" r="17" fill="none" stroke="DARK" stroke-width="2" opacity=".6"/>
+      <path d="M18 50 c5 -7 15 -8 21 -2 l6 -5 v14 l-6 -5 c-6 6 -16 5 -21 -2z" fill="DARK"/></svg>

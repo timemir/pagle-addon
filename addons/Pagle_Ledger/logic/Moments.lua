@@ -40,6 +40,7 @@ local ns = select(2, ...)
 ---@field FormatNumber fun(n: integer): string          -- BreakUpLargeNumbers
 ---@field RefreshGoods fun()                            -- M:RefreshGoods (LED-R111)
 ---@field SizeText fun(size: PagleSize?): string?       -- ns.SizeText over Pagle.SIZE_BANDS and Pagle.FormatLength
+---@field BandName fun(size: PagleSize?): string?       -- ns.BandName over Pagle.SIZE_BANDS: a size record ruler's label
 ---@field ZoneCrest fun(areaID: integer): LedgerZoneCrest? -- the crest a zone's Master earns: ns.ZoneCrestOf (LED-R97)
 ---@field Variety fun(speciesID: integer, index: integer): LedgerVarietyLook? -- Pagle.GetVarieties(speciesID)[index]
 ---@field Good fun(goodID: string): { name: string?, icon: (integer|string)? }? -- Pagle.GetGood (a fish crest, VAR-R25)
@@ -238,7 +239,7 @@ function celebrate.newInZone(celebrated, _, earned, outlets)
 	celebrated.speciesZones[key] = true
 	local L = ns.L
 	return {
-		rung = "nod",
+		rung = "toast.low",
 		kind = "newInZone",
 		order = 100,
 		title = L.NEW_IN_ZONE_TITLE,
@@ -314,7 +315,7 @@ function celebrate.uncharted(celebrated, _, earned, outlets)
 	end
 	celebrated.uncharted[itemID] = true
 	local L = ns.L
-	return itemMoment("uncharted", "nod", 140, L.UNCHARTED_TITLE, L.UNCHARTED_STAMP, earned, outlets)
+	return itemMoment("uncharted", "toast.low", 140, L.UNCHARTED_TITLE, L.UNCHARTED_STAMP, earned, outlets)
 end
 
 -- A Species' ★ (`caughtStar`), ★★ (`elementStar`) or ★★★ (`regularStar`), each once (LED-R45, LED-R48).
@@ -329,7 +330,7 @@ local function speciesStar(star, kind, order, title)
 		then
 			return nil
 		end
-		return itemMoment(kind, "nod", order, ns.L[title], starsText(star), earned, outlets)
+		return itemMoment(kind, "toast.low", order, ns.L[title], starsText(star), earned, outlets)
 	end
 end
 speciesStar(1, "caughtStar", 105, "CAUGHT_STAR_TITLE")
@@ -348,7 +349,7 @@ function celebrate.familyStar(celebrated, _, earned)
 	local stars = starsText(new[#new])
 	local name = ns.FamilyName(family)
 	return {
-		rung = "nod",
+		rung = "toast.low",
 		kind = "familyStar",
 		order = 130,
 		title = L.FAMILY_STAR_TITLE,
@@ -545,8 +546,10 @@ function celebrate.catchMilestone(celebrated, _, earned, outlets)
 	}
 end
 
--- A Simulated Size record beaten live (LED-R82): `toast.low`, or `toast` with the rare-record flair, and the ruler
--- from the old length to the new, always (ANN-R22). Records are never in the celebrated set (LED-R84).
+-- A Simulated Size record beaten live (LED-R82): `toast.low`, or `toast` with the rare-record flair, naming the item
+-- alone, and the ruler from the old length to the new, always (ANN-R22), labelled with the Catch's Size band, which
+-- shows at the ruler's foot rather than in the title (#424; "length" when Core names no band). Records are never in the
+-- celebrated set (LED-R84).
 function celebrate.sizeRecord(_, _, earned, outlets)
 	local L = ns.L
 	return {
@@ -554,11 +557,16 @@ function celebrate.sizeRecord(_, _, earned, outlets)
 		kind = "sizeRecord",
 		order = 100,
 		title = L.SIZE_RECORD_TITLE,
-		text = itemWithSize(outlets, earned),
+		text = itemName(outlets, earned.itemID --[[@as integer]]),
 		stamp = L.SIZE_RECORD_STAMP,
 		icon = earned.itemID,
 		cast = earned.cast,
-		ruler = { old = earned.old, new = earned.new, unit = "length", label = "length" },
+		ruler = {
+			old = earned.old,
+			new = earned.new,
+			unit = "length",
+			label = outlets.BandName(earned.size) or L.RULER_LENGTH,
+		},
 	}
 end
 
@@ -581,9 +589,12 @@ local function copyArt(look)
 end
 
 -- A variety's first Catch (VAR-R25, VAR-R27), where its name and art are first shown: a Common or Uncommon one a
--- `toast.low` "New variety · {name}", riding as "New variety" on the Cast's toast when there is one; a Rare one a
--- `toast` "Rare variety" with its name, its art in the bezel; an Epic one a `banner` "Epic variety" with its name, its
--- art on the seal's ribbon. Each carries the item caught as its icon, for where the art isn't drawn, and no Coins.
+-- `toast.low` "New variety" naming it on its own line, riding as "New variety" on the Cast's toast when there is one;
+-- a Rare one a `toast` "Rare variety" with its name, its art in the bezel; an Epic one a `banner` "Epic variety" with
+-- its name, its art on the seal's ribbon. Each carries the item caught as its icon, for where the art isn't drawn, its
+-- `variety` (name and rarity, which colour the toast it rides on, VAR-R28) and no Coins. A Common, Uncommon or Rare
+-- one that headlines a toast is drawn on its own toast (VAR-R28): `ownStamp` has it show its stamp itself, `kicker`
+-- is the Catch's size text for that toast's kicker, and `variety.fish` the fish's name for its line.
 function celebrate.newVariety(celebrated, _, earned, outlets)
 	local species = earned.species --[[@as integer]]
 	local index = earned.index --[[@as integer]]
@@ -599,8 +610,10 @@ function celebrate.newVariety(celebrated, _, earned, outlets)
 	local L = ns.L
 	local look = outlets.Variety(species, index)
 	local name = look and look.name or L.NAME_UNKNOWN
-	local moment = { icon = earned.itemID, art = copyArt(look), cast = earned.cast }
-	local rarity = earned.rarity
+	local rarity = earned.rarity --[[@as string]]
+	-- Its rarity colours the toast it rides on (VAR-R26), whether or not Core names the variety.
+	local moment =
+		{ icon = earned.itemID, art = copyArt(look), variety = { name = name, rarity = rarity }, cast = earned.cast }
 	if rarity == "epic" then
 		moment.rung, moment.kind, moment.order = "banner", "epicVariety", 97
 		moment.title, moment.text = L.EPIC_VARIETY_TITLE, name
@@ -609,7 +622,12 @@ function celebrate.newVariety(celebrated, _, earned, outlets)
 		moment.title, moment.text = L.RARE_VARIETY_TITLE, name
 	else
 		moment.rung, moment.kind, moment.order = "toast.low", "newVariety", 120
-		moment.title, moment.stamp = L.NEW_VARIETY_TITLE:format(name), L.NEW_VARIETY_STAMP
+		moment.title, moment.text, moment.stamp = L.NEW_VARIETY_TITLE, name, L.NEW_VARIETY_STAMP
+	end
+	if rarity ~= "epic" then
+		moment.ownStamp = true
+		moment.kicker = outlets.SizeText(earned.size)
+		moment.variety.fish = itemName(outlets, earned.itemID --[[@as integer]])
 	end
 	return moment
 end

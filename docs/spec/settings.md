@@ -154,14 +154,15 @@ The rules below are authoritative; this sketch only summarises them.
   |---|---|---|---|---|
   | Cozy mode | checkbox | off (ANN-R40) | | "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently." |
   | Interruption budget | checkbox | on (ANN-R31, ANN-R32) | Cozy mode is on | "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway." |
-  | ↳ Interruptions | slider | 1–30, step 1 · 20 | Cozy mode is on, or the budget is off | |
+  | ↳ Interruptions | slider | 1–60, step 1 · 40 (20 and 1–30 before #437) | Cozy mode is on, or the budget is off | |
   | ↳ Per | slider, shown as "{n} min" | 1–15 min, step 1 min · 5 min (stored in seconds) | Cozy mode is on, or the budget is off | |
-  | Show every catch | checkbox | on (ANN-R13, `everyCatch`) | Cozy mode is on | "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing." |
+  | Show every catch | checkbox | on (ANN-R13, `everyCatch`) | Cozy mode is on | "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which shows nothing." |
   | Animations | checkbox | on ([announcements.md › Motion](core/announcements.md#motion), `motion`) | | "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles." |
   | Toast style | slot dropdown, `core.toaststyle` (SET-R51) | owned styles · `core.toaststyle.page` (ANN-R80) | | |
   | Sound set | slot dropdown, `core.soundset` (SET-R51) | owned sets · `core.soundset.driftwood` (ANN-R72) | | |
+  | Toast position | button "Reset" (SET-R34) | | | "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen." |
 
-  Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per. Show every catch arrives with the catch Nod ([#256](https://github.com/timemir/pagle-addon/issues/256)), Animations with the art kit's motion. Every row here is a native checkbox, slider or Core's own slot dropdown row (SET-R5, SET-R51), so nothing is written onto Blizzard's rows (SET-R6).
+  Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per and the Toast position button (SET-R34). Show every catch arrives with the catch Nod ([#256](https://github.com/timemir/pagle-addon/issues/256)), which [#437](https://github.com/timemir/pagle-addon/issues/437) made the catch toast, Animations with the art kit's motion. Every row here is a native checkbox, slider or Core's own slot dropdown row (SET-R5, SET-R51), so nothing is written onto Blizzard's rows (SET-R6).
 - **SET-R31** A greyed-out row keeps its value. Each row's greying is re-evaluated on its own condition (SET-R61): turning Cozy mode off makes Interruption budget and Show every catch live again, and Interruptions and Per too unless the budget is off.
 - **SET-R32** Hunts adds one section (from M5):
 
@@ -171,7 +172,8 @@ The rules below are authoritative; this sketch only summarises them.
   | | Remind me about the Pagle companion | checkbox | on (HNT-R170, HNT-R171, `PagleHuntsDB.profile.companionHint`) | "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you new wagers." |
 
   Neither is greyed out in Cozy mode: the Nod then goes to the Session summary (ANN-R40), as moments do. The second row is registered only while Hunts' companion hint switch is on (HNT-R172), which it is at 1.0, so 1.0's section has both rows. *Default chosen while building (#305): hunts.md › Settings put it on a "Hunts" page, which Settings doesn't have (SET-R1); it governs a reminder and its Nod, so it sits here after the window row. Dismissing the hint on the board turns it off; turning it on brings the hint and the Nod back.* No other Module adds rows to Announcements: the Ledger has no rows, Stats raises no moments (STA-R2), and the Tackle Board's and QoL's sections are on other pages.
-- **SET-R33** The Announcements page's Defaults button restores every row of SET-R30 and SET-R32 to its default, the two looks included (SET-R60), and so the companion row, while it is registered, to on.
+- **SET-R33** The Announcements page's Defaults button restores every row of SET-R30 and SET-R32 to its default, the two looks included (SET-R60), and so the companion row, while it is registered, to on. It leaves the Toast position button alone (SET-R34).
+- **SET-R34** The Announcements page ends Core's rows with "Toast position", a button "Reset" that clears the saved foot and puts the Toast column back at the bottom of the screen (ANN-R98). Tooltip: "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen." It is never greyed out; pressed while restricted, it does nothing, since the column never moves then (ANN-R98). It is a button, not a value row, so Defaults leaves it (SET-R60).
 
 ### Trackers
 
@@ -205,23 +207,23 @@ The rules below are authoritative; this sketch only summarises them.
 ### Look and Feel
 
 - **SET-R50** Core builds Look and Feel from the goods registry; Modules add no rows to it (CORE-R42, wallet-and-shop.md UI). It shows, in order:
-  1. a paragraph: "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing."
+  1. a paragraph: "Looks you own. Pick one here, in the Fish Journal's Collection or with Use in the Curio Shop; all of them change the same thing."
   2. for each slot category in the order Announcements, Crests, Books, Trackers, skipping a category with no slot shown: a header with the category's name, then one slot dropdown (SET-R51) per registered slot of Core or of an On Module, Core's slots first, then by `def.order`
-  3. a header "Curio Shop" and a button row "Buy more looks with Pagle Coins" with the caption "Open the Curio Shop", which closes the panel and calls `Pagle.OpenShop()` (SHOP-R40, SET-R12)
+  3. a header "More looks", then a button row "Every look, and how to earn it" with the caption "Open the Collection", which closes the panel and calls the first On Module's `def.collection()` (CORE-R45; the row is left out when no On Module offers one), then a button row "Buy more looks with Pagle Coins" with the caption "Open the Curio Shop", which closes the panel and calls `Pagle.OpenShop()` (SHOP-R40, SET-R12)
 
   The slots in 1.0:
 
   | Category | Slot (label) | Owner | Rule |
   |---|---|---|---|
   | Announcements | `core.toaststyle` (Toast style), `core.soundset` (Sound set) | Core | SHOP-R25 |
-  | Crests | `core.crest` (Crests), shown whatever Modules are On; its dropdown is where the earned zone and fish crests are equipped, as the Curio Shop doesn't list them | Core | SHOP-R25 |
+  | Crests | `core.crest` (Crests), shown whatever Modules are On; its dropdown and the Collection's Bookplate crests shelf are where the earned zone and fish crests are equipped, as the Curio Shop doesn't list them (SHOP-R24) | Core | SHOP-R25 |
   | Books | `core.binding` (Book binding), the one binding every book wears, shown whatever Modules are On; the Ledger's and Hunts' earned bindings are among its options while their Module is On (ADR 0015) | Core | SHOP-R25, LED-R110, HNT-R122 |
   | Trackers | `hunts.trackerframe` (Hunts tracker frame), `stats.trackerframe` (Stats tracker frame), `tackleboard.trackerframe` (Tackle Board tracker frame) | Hunts, Stats, Tackle Board | HNT-R120, STA-R88, TKB-R125 |
 
   The page, with its paragraph, its Curio Shop row and its first slots, arrives in M4; each later slot arrives with its Module's milestone. Core's one "Book binding" replaced the Ledger's "Journal binding" and Hunts' "Notebook cover" (#351).
 - **SET-R51** A **slot dropdown** is the same row wherever it appears (Look and Feel, and beside what it changes on Announcements or Trackers): its label is the slot's label, its options are the slot's owned goods by name (`Pagle.IsOwned`, SHOP-R30) in registration order, and its value is `Pagle.GetEquipped(slot)`. Picking one calls `Pagle.SetEquipped(slot, goodID)` (SHOP-R32). Under the dropdown, "{N} more in the Curio Shop" shows as plain text (not a link) while N, the slot's for-sale goods not owned, is above 0. Its `default` is the slot's default good, so a page's Defaults button restores it like any value row (SET-R60); on every page it appears, it reads and writes the same equipped setting. The options are read each time the dropdown opens and the value redraws on `AppearanceChanged`, so a purchase, a Use in the shop or a pick on the other page shows at once. It is never greyed out.
 - **SET-R52** The Look and Feel page's Defaults button sets every slot shown on it to the slot's default good (SET-R60). Slots of Modules that aren't On aren't shown, so their stored looks are left alone (SHOP-R32).
-- **SET-R53** The Ledger has no other rows anywhere: its "Open Fish Journal" is on the root, and its earned bindings are picked from Core's "Book binding" on Look and Feel ([ledger.md](ledger.md#settings)).
+- **SET-R53** The Ledger has no other rows anywhere: its "Open Fish Journal" is on the root, and its earned bindings are picked from Core's "Book binding" on Look and Feel or on the Collection's Bindings shelf ([ledger.md](ledger.md#settings)).
 
 ### Defaults and live rows
 
@@ -231,7 +233,7 @@ The rules below are authoritative; this sketch only summarises them.
 
 ### Options that aren't in Settings
 
-- **SET-R70** These are set in their own views and never appear in the tree: the Ledger's active title (the Journal's Angler page, "Signed As"), Hunts' "show completed", pins and tracker collapse (HNT-R77, HNT-R80–R82), the Tackle Board tracker's collapse, the Stats book's position, and adding a Dry spell watch (from the Stats book; stopping one works in both places). The next-action button and the tracker dock are moved by Shift-drag; Settings only resets them.
+- **SET-R70** These are set in their own views and never appear in the tree: the Ledger's active title (the Journal's Collection, its Titles shelf), Hunts' "show completed", pins and tracker collapse (HNT-R77, HNT-R80–R82), the Tackle Board tracker's collapse, the Stats book's position, and adding a Dry spell watch (from the Stats book; stopping one works in both places). The next-action button and the tracker dock are moved by Shift-drag; Settings only resets them.
 
 ### Entry points
 
@@ -257,6 +259,7 @@ This file adds no data. Each row's value lives with its owner:
 | Cozy mode, the budget, Show every catch, Animations | `PagleDB.profile.announcements` |
 | Every slot dropdown | `PagleDB.profile.appearance[slot]` (SHOP-R32) |
 | Tracker position | `PagleDB.profile.dock.point` (Core README Data) |
+| Toast position | `PagleDB.profile.announcements.point` (ANN-R98) |
 | Fishing | `PagleQoLDB` (qol.md Data), the fishing set per character in `global.gear[guid]` |
 | Hunts' rows | `PagleHuntsDB.profile.tracker.shown`, `profile.windowMoments`, `profile.companionHint` (only while its switch is on, HNT-R172) |
 | Stats' rows | `PagleStatsDB.profile.tracker`, `profile.watched` |
@@ -288,7 +291,7 @@ This file is the tree; the rules above place every option. Each option's values 
 
 | Name | Value | Rules |
 |---|---|---|
-| Interruptions slider | 1–30, step 1 (ANN Settings) | SET-R30 |
+| Interruptions slider | 1–60, step 1 (ANN Settings) | SET-R30 |
 | Per slider | 1–15 min, step 1 min (ANN Settings) | SET-R30 |
 | Watched Dry spells cap, shown as "{n} of 3" | Stats' Watches tunable (3) | SET-R42 |
 | Reminder step in the tooltip | LOG-R86's step (50 Casts) | SET-R10 |
@@ -298,7 +301,7 @@ This file is the tree; the rules above place every option. Each option's values 
 - **SET-R90 Module disabled, then enabled again.** While it is off, its rows, its section header and its slots vanish (SET-R4), a topic page left with no rows isn't registered (SET-R1), and the status list shows it as Off with no button. Its values stay in its own DB, and its stored looks stay in `PagleDB.profile.appearance` (SHOP-R32), so everything comes back as it was when it is enabled. Module state changes only with a `/reload`, so the tree is fixed for a session.
 - **SET-R91 Projection rebuild.** No row reads projection state except two: the Tackle Board's button and checkbox, which read whether the board is started (while its projection updates, "Start my board" only opens the board, TKB-R1), and the slot dropdowns, whose owned lists don't flicker during an update (SHOP-R34).
 - **SET-R92 First build over existing history.** Nothing in Settings changes; a late-enabled Module's rows appear with their defaults, and its status button is live at once.
-- **SET-R93 In combat.** Pages register only outside restriction; after a `/reload` in combat they register when it ends, with every Module's rows (CORE-R32). Opening Settings while restricted prints the chat line (SET-R75); a panel already open is Blizzard's to handle (CORE-R33). There, the dock's Reset does nothing (SET-R40), the root's buttons follow SET-R12, the Curio Shop button prints SHOP-R41's line, and QoL's keybinding rows grey out and take no click, since the client refuses `SetBinding` to addons in combat; a key waiting for a press stops waiting (SET-R20).
+- **SET-R93 In combat.** Pages register only outside restriction; after a `/reload` in combat they register when it ends, with every Module's rows (CORE-R32). Opening Settings while restricted prints the chat line (SET-R75); a panel already open is Blizzard's to handle (CORE-R33). There, the dock's Reset does nothing (SET-R40), nor does the Toast position's (SET-R34), the root's buttons follow SET-R12, the Curio Shop button prints SHOP-R41's line, and QoL's keybinding rows grey out and take no click, since the client refuses `SetBinding` to addons in combat; a key waiting for a press stops waiting (SET-R20).
 - **SET-R94 Crash mid-Session.** A setting changed since the last save is lost with the session, like everything in SavedVariables; nothing here needs repairing at the next login.
 - **SET-R95 Daily or weekly reset.** No row depends on it.
 - **SET-R96 Uncharted or unconfirmed Catch.** No row depends on it.

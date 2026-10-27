@@ -1,6 +1,6 @@
 -- The Ledger's onboarding as data, with no Core (core/onboarding.md): the Your Ledger step's live parts (ONB-R36,
 -- LED-R40, LED-R146) through ns.GuideLedgerPage, the Fish Journal's First look (ONB-R57) as ns.JOURNAL_FIRST_LOOK,
--- the red pencil a Margin note's term is written in (Contracts), and whether a Session has ended (ONB-R52).
+-- the red pencil a Margin note's term is written in (Contracts), and whether the Angler has had a real break (ONB-R52).
 
 describe("the Ledger's onboarding", function()
 	local ns = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns
@@ -189,19 +189,25 @@ describe("the Ledger's onboarding", function()
 		)
 	end)
 
-	describe("whether a Session has ended, as ledger.fresh waits for (ONB-R52)", function()
-		it("is false with no Cast yet, open Session or none", function()
-			assert.is_false(ns.SessionHasEnded(nil, nil))
-			assert.is_false(ns.SessionHasEnded(nil, "a"))
+	describe("whether the Angler has had a real break, as ledger.fresh waits for (ONB-R52, LED-R22)", function()
+		local HOUR = 3600
+
+		it(
+			"is false with no Catch yet, and with the last Catch 10 or 59 minutes ago, as after a Session end alone",
+			function()
+				assert.is_false(ns.HadRealBreak({}, SERVER_TIME))
+				assert.is_false(ns.HadRealBreak({ lastCatch = SERVER_TIME - 59 * 60 }, SERVER_TIME))
+				assert.is_false(ns.HadRealBreak({ lastCatch = SERVER_TIME - 10 * 60 }, SERVER_TIME))
+			end
+		)
+
+		it("is true once the log held a gap of the minimum break, even if the last Catch is recent", function()
+			assert.is_true(ns.HadRealBreak({ hadBreak = true, lastCatch = SERVER_TIME - 10 }, SERVER_TIME))
 		end)
 
-		it("is false while the first Cast's Session is the one open", function()
-			assert.is_false(ns.SessionHasEnded("a", "a"))
-		end)
-
-		it("is true once the first Cast's Session is no longer open: none open, or a later one (LOG-R64)", function()
-			assert.is_true(ns.SessionHasEnded("a", nil))
-			assert.is_true(ns.SessionHasEnded("a", "b"))
+		it("is true once the minimum break has passed since the last Catch, at exactly an hour", function()
+			assert.is_true(ns.HadRealBreak({ lastCatch = SERVER_TIME - HOUR }, SERVER_TIME))
+			assert.is_true(ns.HadRealBreak({ lastCatch = SERVER_TIME - 5 * HOUR }, SERVER_TIME))
 		end)
 	end)
 end)

@@ -2,8 +2,8 @@
 local ns = select(2, ...)
 
 -- Core's wiring (CORE-R18): how its projection machinery, Sessions, moments, Session summary, cards, wallet, Activity
--- XP, Prestige and purchase entries, goods, Field report and wallet projection are built and connected to each other, to
--- PagleDB and to the Module handle. Pure logic over a host (CORE-R7): Core's adapter builds its host over the WoW
+-- XP, Refresh purse, Prestige and purchase entries, goods, Field report and wallet projection are built and connected
+-- to each other, to PagleDB and to the Module handle. Pure logic over a host (CORE-R7): Core's adapter builds its host over the WoW
 -- client (adapter/Host.lua), and FakePagle builds one over its fakes, so both run this one wiring and the double can't
 -- drift from Core. What differs between them is only the host and the display each factory is handed.
 
@@ -38,8 +38,13 @@ local ns = select(2, ...)
 ---@field cards PagleCards Core's cards (ns.WireCards).
 ---@field wallet PagleWallet Core's one wallet (ns.WireWallet).
 ---@field activityXP PagleActivityXP Core's Activity XP totals (ns.WireActivityXP).
+---@field tickets PagleTicketPurse Core's Refresh purse (ns.WireTickets).
 ---@field goods PagleGoods Core's one goods registry (ns.WireGoods).
 ---@field shop PagleShop The Curio Shop's entry points (ns.WireShop).
+---@field CollectionOffered fun(): (fun(goodID: string?))? The first On Module's `def.collection` by def.order, or nil
+--- (ns.WireShop, CORE-R45).
+---@field OpenCollection fun(goodID: string?): boolean Opens the Collection through it, on `goodID` if given; false with
+--- none (ns.WireShop, CORE-R45).
 ---@field dock PagleDockWiring Core's tracker dock (ns.WireDock).
 ---@field fieldReport PagleFieldReportReaders? Core's Field report, from login step 1 on (ns.WireFieldReport).
 ---@field walletProjection PagleProjection? Core's wallet projection, from login step 1 (ns.WireWalletProjection).
@@ -299,7 +304,7 @@ function ns.WireMoments(host, show)
 	---@class PagleModuleHandle
 	local ModuleHandle = ns.ModuleHandle
 	--- Raises a moment (ANN-R1): see ns.RaiseMomentMethod. Raises an error for an unknown rung, or no kind or title.
-	--- A Module raises nothing for an ordinary Catch: Core's catch Nod is its (ANN-R13, ns.WireCatchNods).
+	--- A Module raises nothing for an ordinary Catch: Core's catch toast is its (ANN-R13, ns.WireCatchToasts).
 	ModuleHandle.RaiseMoment = ns.RaiseMomentMethod(host.registry, ns.moments)
 end
 
@@ -319,21 +324,21 @@ local function caughtBefore(variety, castId)
 	return ns.VarietyCaughtBefore ~= nil and ns.VarietyCaughtBefore(variety, castId)
 end
 
---- Core's catch Nod (ANN-R13) on ns.moments: at each live `CastEnded("caught", cast)` (LOG-R9), while
---- PagleDB.profile.announcements.everyCatch ("Show every catch") is on, the Cast's catch Nod (ns.CatchNodMoment) in
+--- Core's catch toast (ANN-R13) on ns.moments: at each live `CastEnded("caught", cast)` (LOG-R9), while
+--- PagleDB.profile.announcements.everyCatch ("Show every catch") is on, the Cast's catch toast (ns.CatchToastMoment) in
 --- the Angler's length unit, naming its Catch's variety from the catalogue (VAR-R26) once it was caught before this
 --- Cast (VAR-R27). Replays and rebuilds fire no CastEnded, so only live Casts get one (ANN-R4).
 ---@param host PagleHost
 ---@param itemName fun(itemID: integer): string? the client's name for an item, nil until it has cached it
-function ns.WireCatchNods(host, itemName)
+function ns.WireCatchToasts(host, itemName)
 	-- Its own owner on the bus, so no other registration replaces it.
-	host.listen("Pagle catch nod", "CastEnded", function(_, outcome, cast)
+	host.listen("Pagle catch toast", "CastEnded", function(_, outcome, cast)
 		if outcome ~= "caught" or not cast or not host.db().profile.announcements.everyCatch then
 			return
 		end
-		local moment = ns.CatchNodMoment(cast, itemName, ns.LengthUnit(), varietiesOf, caughtBefore)
+		local moment = ns.CatchToastMoment(cast, itemName, ns.LengthUnit(), varietiesOf, caughtBefore)
 		if moment then
-			ns.moments:RaiseCatchNod(moment)
+			ns.moments:RaiseCatchToast(moment)
 		end
 	end)
 end
@@ -483,6 +488,33 @@ function ns.WireActivityXP(host)
 	end
 end
 
+--- Core's Refresh purse as ns.tickets (REF-R2–R6), firing TicketsChanged on the bus, and `M:ReportTicketsEarned` and
+--- `M:ReportTicketsSpent` on every Module handle. It is empty until login step 1 opens the stored totals
+--- (ns.OpenTickets). The totals belong to the log's logId (PagleDB.global.tickets.logId), which each report takes
+--- (REF-R3).
+---@param host PagleHost
+function ns.WireTickets(host)
+	ns.tickets = ns.NewTickets({
+		fire = host.fire,
+		logId = function()
+			return host.catchLog().data.logId
+		end,
+	})
+	---@class PagleModuleHandle
+	local ModuleHandle = ns.ModuleHandle
+	--- Reports the Module's lifetime Refreshes earned (REF-R2): see ns.ReportTicketsMethod. Raises an error for
+	--- anything but a whole number, 0 or more.
+	ModuleHandle.ReportTicketsEarned = ns.ReportTicketsMethod(host.registry, ns.tickets, "earned")
+	--- Reports the Module's lifetime Refreshes spent (REF-R2): see ns.ReportTicketsMethod. Raises an error for
+	--- anything but a whole number, 0 or more.
+	ModuleHandle.ReportTicketsSpent = ns.ReportTicketsMethod(host.registry, ns.tickets, "spent")
+	--- Login step 1, once PagleDB is open: empties the stored totals if they belong to another log (REF-R3), then
+	--- the purse reads and writes them from now on.
+	function ns.OpenTickets()
+		ns.tickets:Open(host.db().global.tickets)
+	end
+end
+
 --- Prestige and purchase entries and Module records (LOG-R38–R40) as Core appends them: `M:RecordPrestige()` and
 --- `M:AppendRecord(kind, payload)` on every Module handle, and Core's own `ns.RecordPrestige()` and
 --- `ns.RecordPurchase(goodID, price)`. Each appends for the logged-in character at the server time and hands the
@@ -604,6 +636,7 @@ function ns.WireGoods(host)
 		fire = host.fire,
 		call = host.call,
 		report = host.report,
+		serverTime = host.serverTime,
 	})
 	ns.goods = goods
 	-- Raises `problem`, if any, at the call of the function that called this one (SHOP-R23).
@@ -631,7 +664,7 @@ function ns.WireGoods(host)
 	--- Registers one of the Module's goods in one of its slots (SHOP-R21, SHOP-R22), calling its isEarned() now if
 	--- it is earned (SHOP-R31). Raises an error at the Module's call, registering nothing, for each mistake SHOP-R23
 	--- lists: a duplicate ID or one without the Module's prefix, an unknown slot or another's, a second default, or
-	--- not exactly one of `default`, `tier` (1 to 5) and `isEarned`, or a `crate` (Core's only, SHOP-R22).
+	--- not exactly one of `default`, `tier` (1 to 6) and `isEarned`, or a `crate` (Core's only, SHOP-R22).
 	---@param good PagleGood
 	function ModuleHandle:RegisterGood(good)
 		local module = host.registry:ModuleCalling(self, "RegisterGood", "good")
@@ -668,13 +701,19 @@ function ns.WireGoods(host)
 	end
 end
 
+--- How big `Pagle.DrawGoodPreview` draws a good's look (SHOP-R36): the stage's 370 x 132 centred, or scaled to fit the
+--- frame.
+---@alias PagleGoodPreviewSize "stage"|"card"
+
 --- Publishes the goods registry's reads and its one write on `Pagle` (wallet-and-shop.md › Contracts):
---- `Pagle.IsOwned`, `GetEquipped`, `SetEquipped`, `GetGood` and `GetSlotGoods`, over ns.goods (ns.WireGoods), and
---- `Pagle.GetBindingLook`. `wrap` turns what GetGood returns into what Modules get: Core's adapter passes none,
---- FakePagle its read-only proxy (CORE-R18).
+--- `Pagle.IsOwned`, `GetEquipped`, `SetEquipped`, `GetGood`, `GetSlots`, `GetSlotGoods`, `GetEarnedProgress`,
+--- `GetPutAwayGoods` and `DrawGoodPreview`, over ns.goods (ns.WireGoods), and `Pagle.GetBindingLook`. `wrap` turns what
+--- a read returns into what Modules get: Core's adapter passes none, FakePagle its read-only proxy (CORE-R18). `draw`
+--- draws a good's look into a frame (adapter/GoodPreview.lua's), which FakePagle records instead: no window there.
 ---@param Pagle table
 ---@param wrap (fun(value: any): any)?
-function ns.PublishGoods(Pagle, wrap)
+---@param draw fun(frame: Frame, goodID: string, size: PagleGoodPreviewSize)?
+function ns.PublishGoods(Pagle, wrap, draw)
 	---@class Pagle
 	local api = Pagle
 	wrap = wrap or function(value)
@@ -706,17 +745,41 @@ function ns.PublishGoods(Pagle, wrap)
 		return ns.goods:SetEquipped(slot, goodID)
 	end
 
-	--- A good's name, slot, icon, Module and description as cached (SHOP-R26), and whether it is its slot's default
-	--- (`isDefault`, SHOP-R22), whether or not its Module is enabled; nil for a good never registered. A fresh copy
-	--- each call.
+	--- A good's cached fields (SHOP-R26), its slot's `category` among them, with what it is and what it costs (SHOP-R36): `kind`, `tier`, `price` now
+	--- (a fallback price from `fallbackFrom` on, SHOP-R28), `fallbackPrice`, `fallbackFrom`, `group`,
+	--- `purchased` (a U1 of the good itself), `fromCrate` and `ownedAt`, and whether it is its slot's default (`isDefault`, SHOP-R22), whether or not its
+	--- Module is enabled; nil for a good never registered. A fresh copy each call, never kept between calls.
 	---@param goodID string
 	---@return PagleGoodInfo?
 	function api.GetGood(goodID)
 		return wrap(ns.goods:GetGood(goodID))
 	end
 
-	--- The IDs of a slot's goods as the shop lists them (SHOP-R21): in registration order, another Module's in an open
-	--- Core slot only while that Module is On (SHOP-R35). Empty for a slot not registered. A fresh list each call.
+	--- Every slot registered by Core and by the Modules On, in the shop's order (SHOP-R36): Core's first, then by
+	--- def.order. A fresh list of fresh copies each call.
+	---@return PagleSlotInfo[]
+	function api.GetSlots()
+		local list = {}
+		for i, slot in ipairs(ns.goods:Slots()) do
+			local groups
+			for g, group in ipairs(slot.groups or {}) do
+				groups = groups or {}
+				groups[g] = { key = group.key, name = group.name }
+			end
+			list[i] = {
+				id = slot.id,
+				label = slot.label,
+				category = slot.category,
+				module = slot.module,
+				groups = groups,
+			}
+		end
+		return wrap(list)
+	end
+
+	--- The IDs of every good registered in a slot, earned ones included (SHOP-R21, SHOP-R36): in registration order,
+	--- not the shop list's order by tier (SHOP-R27), another Module's in an open Core slot only while that Module is
+	--- On. Empty for a slot not registered. A fresh list each call; the shop filters it itself (SHOP-R24).
 	---@param slot string
 	---@return string[]
 	function api.GetSlotGoods(slot)
@@ -725,6 +788,39 @@ function ns.PublishGoods(Pagle, wrap)
 			ids[i] = good.id
 		end
 		return ids
+	end
+
+	--- How far an earned good of a Module On, not yet owned, is (SHOP-R36): `{ tag, note, have, need }`, its earnedText
+	--- called now and its earnedCount() if it has one; nil for any other good, and when either call raises (reported,
+	--- SHOP-R22). Never cached.
+	---@param goodID string
+	---@return PagleEarnedProgress?
+	function api.GetEarnedProgress(goodID)
+		return wrap(ns.goods:EarnedProgress(goodID))
+	end
+
+	--- Every cached good of Modules that aren't On, owned or not (SHOP-R35, SHOP-R36), earned ones among them: in roster
+	--- order of their Module, then by ID; read each one's ownership with IsOwned. A fresh list each call.
+	---@return string[]
+	function api.GetPutAwayGoods()
+		return ns.goods:PutAway()
+	end
+
+	--- Draws a good's look into `frame` (SHOP-R36), as the Curio Shop's stage does: its preview, or its slot's, or its
+	--- icon in a medallion, at `size` "stage" (370 x 132, centred) or "card" (scaled to fit the frame), standing still.
+	--- Draws nothing for a good never registered. Returns nothing.
+	---@param frame Frame
+	---@param goodID string
+	---@param size PagleGoodPreviewSize
+	function api.DrawGoodPreview(frame, goodID, size)
+		if type(frame) ~= "table" then
+			error("Pagle.DrawGoodPreview takes a frame, got " .. type(frame), 2)
+		elseif size ~= "stage" and size ~= "card" then
+			error(('Pagle.DrawGoodPreview: size is "stage" or "card", got %s'):format(tostring(size)), 2)
+		end
+		if draw then
+			draw(frame, goodID, size)
+		end
 	end
 
 	--- The look of a binding (ADR 0015, logic/Bindings.lua), which every book wears: Field Leather's for an ID that
@@ -748,8 +844,8 @@ end
 ---@class PagleShop
 ---@field Open fun(goodID: string?) -- Pagle.OpenShop
 ---@field Toggle fun()              -- /pagle shop
----@field Buy fun(goodID: string, useNow: boolean): boolean, string? -- the bill of sale's Buy: true if it bought, and
---- the good a Curio crate gave
+---@field Buy fun(goodID: string, useNow: boolean): boolean, PagleCrateResult? -- the bill of sale's Buy: true if it
+--- bought, and what a Curio crate gave
 ---@field Use fun(goodID: string): boolean -- the stage's Use: true if it equipped the good
 ---@field OnOpen fun(fn: fun())     -- fn is called each time the shop opens (the First evening list's `shop`)
 
@@ -779,17 +875,43 @@ function ns.WireShop(host, seams)
 		})
 	end
 
+	--- The first On Module's `def.collection` by def.order, which opens its view of every look (CORE-R45); nil when
+	--- no On Module has one.
+	---@return (fun(goodID: string?))?
+	function ns.CollectionOffered()
+		for _, module in ipairs(host.registry:Modules()) do
+			if module.def.collection then
+				return module.def.collection
+			end
+		end
+		return nil
+	end
+
+	--- Opens the Collection (CORE-R45) on `goodID`, if given, through the first On Module's `def.collection`; one that
+	--- raises is reported through `call` (geterrorhandler()). Returns whether a Module offers one: with none nothing
+	--- opens.
+	---@param goodID string?
+	---@return boolean
+	function ns.OpenCollection(goodID)
+		local collection = ns.CollectionOffered()
+		if not collection then
+			return false
+		end
+		host.call(collection, goodID)
+		return true
+	end
+
 	--- Buys `goodID` if Buy is enabled for it now (SHOP-R13), checked again at the confirm: appends one purchase entry
 	--- with its ID and its price now, the purchase entry's only caller (LOG-R39, SHOP-R10), which the wallet projection
 	--- applies live, so the balance drops and the good is owned at once; then, with `useNow`, equips it (SHOP-R32). One
 	--- good, one confirmation; no Announcement and no summary line follow (ANN-R23). Returns whether it bought.
 	--- The Curio crate (`core.crate`) buys the same way, one crate a confirmation, and opens at once (SHOP-R50,
-	--- SHOP-R55): its purchase entry is its draw, which the wallet projection makes as it applies it; the good it gave
-	--- is returned second, and with `useNow` equipped if it is registered.
+	--- SHOP-R55): its purchase entry is its draw, which the wallet projection makes as it applies it; what it gave, a
+	--- good or a payback, is returned second. A crate's bill has no "Use it now" (SHOP-R54): `useNow` is for a good.
 	---@param goodID string
 	---@param useNow boolean
 	---@return boolean bought
-	---@return string? given the good a crate gave
+	---@return PagleCrateResult? result what a crate gave
 	local function buy(goodID, useNow)
 		local purchase = ns.ShopModel():Purchase(goodID)
 		if not purchase then
@@ -802,15 +924,11 @@ function ns.WireShop(host, seams)
 			end
 			return true
 		end
-		local before = ns.walletSnapshot and #ns.walletSnapshot.crates or 0
-		ns.RecordPurchase(purchase.id, purchase.price)
-		local crates = ns.walletSnapshot and ns.walletSnapshot.crates or {}
-		local given = #crates > before and crates[#crates] or nil
-		local good = given and ns.goods:Good(given)
-		if useNow and good then
-			ns.goods:SetEquipped(good.slot, good.id)
-		end
-		return true, given
+		-- The roll the projection makes of this entry, worked again here from the state before it (SHOP-R51 draws
+		-- from the entry and that state alone), so its tier comes too: the log keeps only the good or the payback.
+		local before = ns.walletSnapshot or { owned = {}, dry = 0 }
+		local record = ns.RecordPurchase(purchase.id, purchase.price)
+		return true, ns.CrateRoll(record.id, before.owned, before.dry, record.time, record.price)
 	end
 
 	--- Equips `goodID` in its slot, if it is an owned good registered this session (SHOP-R32): the stage's Use.
@@ -828,13 +946,20 @@ function ns.WireShop(host, seams)
 
 	---@param goodID string?
 	local function open(goodID)
+		local selection
+		if goodID ~= nil then
+			local model = ns.ShopModel()
+			selection = model:Select(goodID)
+			-- SHOP-R40: an earned good the shop doesn't list is the Collection's, even while restricted, as it opens
+			-- no shop (LED-R121); with none, the shop opens on nothing
+			if selection == nil and model:IsEarnedUnlisted(goodID) and ns.OpenCollection(goodID) then
+				return
+			end
+			selection = selection or false
+		end
 		if host.isRestricted() then
 			host.print(ns.L.SHOP_AFTER_COMBAT)
 			return
-		end
-		local selection
-		if goodID ~= nil then
-			selection = ns.ShopModel():Select(goodID) or false
 		end
 		seams.show(selection, goodID)
 		for _, opened in ipairs(openers) do
@@ -1098,7 +1223,7 @@ function ns.WireVarietyProjection(host, Pagle)
 	end
 
 	-- The last live Cast that caught a variety for the first time, and those varieties (VAR-R27): what
-	-- ns.VarietyCaughtBefore leaves out, whether the projection folded that Cast before its Nod or will after.
+	-- ns.VarietyCaughtBefore leaves out, whether the projection folded that Cast before its catch toast or will after.
 	---@type { castId: string, ids: table<string, true> }?
 	local lastFirsts
 
@@ -1120,7 +1245,7 @@ function ns.WireVarietyProjection(host, Pagle)
 	end
 
 	--- Whether `variety` was caught before the Cast `castId` (VAR-R26, VAR-R27), in Core's projection as stored: the
-	--- catch Nod names only such a variety, so a Nod is never the first to show one. A position that Cast itself
+	--- catch toast names only such a variety, so it is never the first to show one. A position that Cast itself
 	--- caught first doesn't count, whether the projection has folded the Cast already (it is live before CastEnded,
 	--- LOG-R73) or folds it later (it was updating). Mid-rebuild it reads the last stored state (LOG-R72).
 	---@param variety PagleVariety
@@ -1721,8 +1846,8 @@ end
 --- Core's Margin notes (core/onboarding.md › Margin notes) as ns.marginNotes, with `M:ShowMarginNote` on every Module
 --- handle (ONB-R90, ONB-R92), the onboarding hooks' notes, `core.welcome` and `core.character` on Pagle's menu button
 --- (ONB-R2, ONB-R3), RestrictionChanged's hold (ONB-R51), and `/pagle dev onboarding note <id>` (ONB-R83). Each live
---- caught Cast with an Uncharted Catch is noted, so its Nod shows `core.uncharted` (ONB-R52): Core's adapter hands
---- what shows to ns.marginNotes:AnnouncementShown and :CardShown. Call it after ns.WireOnboarding.
+--- caught Cast with an Uncharted Catch is noted, so its toast or Nod shows `core.uncharted` (ONB-R52): Core's adapter
+--- hands what shows to ns.marginNotes:AnnouncementShown and :CardShown. Call it after ns.WireOnboarding.
 ---@param host PagleHost
 ---@param view PagleMarginNotesWiringView
 function ns.WireMarginNotes(host, view)

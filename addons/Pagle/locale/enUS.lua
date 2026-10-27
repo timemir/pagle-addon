@@ -81,6 +81,10 @@ ns.L = {
 	SETTINGS_TRACKER_POSITION = "Tracker position",
 	SETTINGS_TRACKER_RESET = "Reset",
 	SETTINGS_TRACKER_RESET_TOOLTIP = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap.",
+	-- The Announcements page's Toast position row (SET-R30, ANN-R98): its label, its button and the tooltip.
+	SETTINGS_TOAST_POSITION = "Toast position",
+	SETTINGS_TOAST_RESET = "Reset",
+	SETTINGS_TOAST_RESET_TOOLTIP = "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen.",
 	SETTINGS_NO_MODULE = "Recording your Catches. Enable a Module to see them.",
 	SETTINGS_MODULES = "Modules",
 	SETTINGS_MODULES_NOTE = "Turn Modules on or off in the AddOns list.",
@@ -130,12 +134,15 @@ ns.L = {
 	SETTINGS_EVERY_CATCH = "Show every catch",
 	SETTINGS_MOTION = "Animations",
 	SETTINGS_MOTION_TOOLTIP = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles.",
-	SETTINGS_EVERY_CATCH_TOOLTIP = "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing.",
-	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the Curio Shop section's
-	-- header, row label and button caption. Its category headers are SHOP_CATEGORIES.
-	SETTINGS_LOOK_PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing.",
+	SETTINGS_EVERY_CATCH_TOOLTIP = "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which shows nothing.",
+	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the "More looks"
+	-- section's header and its two rows' labels and button captions (the Collection's, CORE-R45, then the Curio
+	-- Shop's). Its category headers are SHOP_CATEGORIES.
+	SETTINGS_LOOK_PARAGRAPH = "Looks you own. Pick one here, in the Fish Journal's Collection or with Use in the Curio Shop; all of them change the same thing.",
 	SETTINGS_SLOT_MORE = "%d more in the Curio Shop",
-	SETTINGS_SHOP = "Curio Shop",
+	SETTINGS_MORE_LOOKS = "More looks",
+	SETTINGS_COLLECTION_ROW = "Every look, and how to earn it",
+	SETTINGS_COLLECTION_BUTTON = "Open the Collection",
 	SETTINGS_SHOP_ROW = "Buy more looks with Pagle Coins",
 	SETTINGS_SHOP_BUTTON = "Open the Curio Shop",
 	-- A number of minutes: the budget's window (SET-R10) and a card's time fished (ANN-R53).
@@ -146,6 +153,7 @@ ns.L = {
 	ANNOUNCEMENT_MORE = "+%d more",
 	ANNOUNCEMENT_STAMPS_MORE = "+%d",
 	ANNOUNCEMENT_COINS = "+%s",
+	ANNOUNCEMENT_STAMP_REFRESH = "Refresh +%d",
 	ANNOUNCEMENT_NEW_RECORD = "New record",
 	ANNOUNCEMENT_SPLASH_HINT = "Click anywhere to continue",
 	ANNOUNCEMENT_SPLASH_RELOAD = "/reload to keep it safe",
@@ -154,11 +162,17 @@ ns.L = {
 	LEGEND_CREST_UNWRITTEN = "Unwritten",
 	-- The toast listing the toast headlines held through combat (ANN-R36).
 	ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting",
-	-- The catch Nod (ANN-R13): a Catch's name, its Size band and its length; an item the client hasn't named yet.
-	CATCH_NOD = "%s · %s · %s",
-	-- A catch Nod naming its Catch's variety (VAR-R26): the Catch's name, the variety's name, the band and the length.
-	CATCH_NOD_VARIETY = "%s · %s · %s · %s",
-	CATCH_NOD_ITEM = "Item %d",
+	-- The catch toast (ANN-R13): its kicker, the Catch's Size band and its length, or "Caught" for a Catch with no size;
+	-- an item the client hasn't named yet.
+	CATCH_TOAST_KICKER = "%s · %s",
+	CATCH_TOAST_CAUGHT = "Caught",
+	CATCH_TOAST_ITEM = "Item %d",
+	-- The catch toast stepped down to a Nod (ANN-R31): the Catch's name, its Size band and its length.
+	CATCH_TOAST = "%s · %s · %s",
+	-- That Nod naming its Catch's variety (VAR-R26): the Catch's name, the variety's name, the band and the length.
+	CATCH_TOAST_VARIETY = "%s · %s · %s · %s",
+	-- A toast announcing a variety (VAR-R26): the line's first half before the gem and the variety's name, the fish's.
+	TOAST_VARIETY_BEFORE = "%s ·",
 	-- The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
 	-- (ANN-R54), and the Write-up's (ANN-R61); Core's numbers (ANN-R53), time fished in MINUTES or hours and minutes;
 	-- the Coins line with its sum (ANN-R53); the close button (closing also takes Esc).
@@ -314,7 +328,7 @@ ns.L = {
 	SHOP_CORE = "Pagle",
 	SHOP_BUY = "Buy for %s",
 	SHOP_MORE_NEEDED = "%s more Coins",
-	SHOP_REWARD = "A %s reward, not for sale",
+	SHOP_OR_BUY = "Or buy it for %s",
 	SHOP_MODULE_OFF = "%s is off",
 	SHOP_PICK = "Pick a look to see it here.",
 	SHOP_USE = "Use",
@@ -330,19 +344,36 @@ ns.L = {
 	SHOP_BUY_ACCEPT = "Buy",
 	SHOP_BUY_CANCEL = "Cancel",
 	SHOP_HELD = "Your balance is 0 while Pagle re-counts earlier Coins. New Coins fill that in first.",
-	-- The Curio crate (SHOP-R50–R55): its row's label and its tag once every pool good is owned; its stage's line under
-	-- the name; a pool good's chance as a percent, the pity count's line; the note for a crate's good the shop doesn't
-	-- show yet (its slot not registered); the bill's question and fine print. A crate-only good's row tag and stage
-	-- note, an owned good's note when a crate gave it, and Sonar Scope's earnedText (SHOP-R29).
+	-- The Curio crate (SHOP-R50–R55): its row's label; its stage's line under the name; its crate tiers' names, each one's
+	-- goods left or what it pays back, and its chance as a percent; the pity count's line; the bill's question and fine
+	-- print; the opening's result: the Coins paid back, "Back to the shop", and the card of a good the cache has nothing
+	-- of. A crate-only good's row tag and stage note, an owned good's note when a crate gave it, and Sonar Scope's
+	-- earnedText (SHOP-R29).
 	SHOP_CRATE = "Curio crate",
-	SHOP_CRATE_EMPTY = "Empty: you have it all",
 	SHOP_CRATE_KIND = "A crate of looks",
-	SHOP_CRATE_CHANCE = "%d%%",
-	SHOP_CRATE_PITY = "A crate-only look within %d more crates",
-	SHOP_CRATE_PITY_ONE = "A crate-only look in the next crate",
-	SHOP_CRATE_UNSHOWN = "%s is yours: it shows here once its slot arrives.",
+	SHOP_CRATE_TIERS = { "Plain", "Fine", "Lively", "Showpiece", "Marvel", "Heirloom", curio = "Curio" },
+	SHOP_CRATE_LEFT = "%d left",
+	SHOP_CRATE_PAYS_BACK = "pays back %s",
+	SHOP_CRATE_CHANCE = "%s%%",
+	SHOP_CRATE_PITY = "A Curio within %d more crates",
+	SHOP_CRATE_PITY_ONE = "A Curio in the next crate",
 	SHOP_CRATE_CONFIRM = "Open a Curio crate?",
 	SHOP_CRATE_FINE = "One look you don't own yet, by chance; the chances are on the crate.",
+	SHOP_CRATE_PAYBACK = "+%s Coins",
+	SHOP_CRATE_BACK = "Back to the shop",
+	SHOP_CRATE_NEW_LOOK = "A new look",
+	SHOP_CRATE_UNSHOWN = "It shows here once its Module is on.",
+	-- The opening's reveal: a good's kind (under its name, and on the reel's cards that show only the kind), and the
+	-- stamp on its card.
+	SHOP_CRATE_KINDS = {
+		toaststyle = "Toast style",
+		soundset = "Sound set",
+		binding = "Binding",
+		trackerframe = "Tracker frame",
+		crest = "Crest",
+	},
+	SHOP_CRATE_YOURS = "Yours",
+	SHOP_CRATE_PAID_BACK = "Paid back",
 	SHOP_CRATE_ONLY_NOTE = "Only in a Curio crate, never for sale",
 	SHOP_FROM_CRATE = "From a crate",
 	SHOP_SONAR_EARNED = "Link the companion",
@@ -564,8 +595,8 @@ ns.L = {
 	GUIDE_NOTES_AGAIN = "Pagle: margin notes will show again, once each.",
 	-- Core's Margin notes on first moments (ONB-R2, ONB-R3, ONB-R52), verbatim from the spec: each *term* is pencilled
 	-- in red (ns.RedPencil). core.toast's follows the moment's firstNote, if it has one (ONB-R53).
-	NOTE_NOD = "That’s a *Nod*: one quiet line for every Catch. It’s gone in three seconds, and it’s in your Ledger"
-		.. " for good.",
+	NOTE_NOD = "That’s a *Nod*: when Pagle’s had a lot to say lately, the small news steps down to one quiet line. It’s"
+		.. " gone in three seconds, and it’s in your Ledger for good.",
 	NOTE_TOAST = "The coin is *Pagle Coins*: earned by doing things, never bought, spent on looks in the Curio Shop.",
 	NOTE_SUMMARY = "You stepped away five minutes, so the Session closed. Everything it earned is here, *even what"
 		.. " never popped up*.",
@@ -700,16 +731,16 @@ ns.L = {
 	-- (the Lively preset's count and minutes); the presets' cards, Your own mix, and the note under them.
 	GUIDE_MOMENTS_TEXT = "Pagle tells you, in one of three sizes. The bigger the moment, the bigger the note.",
 	GUIDE_MOMENTS_SAMPLES = {
-		nod = { "A Nod", "Every Catch. One line, gone in 3 seconds." },
-		toast = { "A toast", "A new fish, a record, Coins earned." },
+		nod = { "A Nod", "When Pagle’s said a lot lately. One line, gone in 3 seconds." },
+		toast = { "A toast", "Every Catch, a new fish, a record, Coins earned." },
 		banner = { "A banner", "A new Angler Level, and the title that comes with it." },
 	},
 	GUIDE_MOMENTS_BUDGET = "At most %d pop-ups every %d minutes: past that, small ones step down to a Nod. Everything lands on the Session summary when you stop.",
 	-- The samples' catch, in place of /pagle dev preview's "(a /pagle dev preview)" line.
 	GUIDE_MOMENTS_SAMPLE_TEXT = "Oily Blackmouth",
 	GUIDE_PRESETS = {
-		lively = { "Lively", "Every Catch gets its Nod; toasts and banners with sound.", "as it comes" },
-		quieter = { "Quieter", "No Nod for ordinary Catches, and fewer pop-ups. The big moments still show." },
+		lively = { "Lively", "A toast for every Catch; banners too, with sound.", "as it comes" },
+		quieter = { "Quieter", "No toast for ordinary Catches, and fewer pop-ups. The big moments still show." },
 		cozy = { "Cozy", "Nothing pops up and nothing plays. It all waits for your Session summary." },
 	},
 	-- A preset card's pencilled line: its budget's count and minutes; Cozy's.

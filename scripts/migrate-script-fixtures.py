@@ -31,14 +31,14 @@ for path in sorted(Path("spec/scripts/fixtures/WTF").rglob("Pagle.lua*")):
         print(path)
 
 path = Path("spec/scripts/fixtures/WTF/Account/M7#1/SavedVariables/Pagle_TackleBoard.lua")
-path.write_bytes(path.read_bytes().replace(b'["rulesVersion"] = 3002,', b'["rulesVersion"] = 4002,'))
+path.write_bytes(path.read_bytes().replace(b'["rulesVersion"] = 3002,', b'["rulesVersion"] = 6002,'))
 
 for name in ["make-test-log", "read-wtf", "read-wtf-exit-check", "rewrite-bindings"]:
     path = Path(f"spec/scripts/{name}_spec.lua")
     before = path.read_bytes()
     after = migrate(before).replace(b"format 2", b"format 3")
     after = after.replace(b"assert.are.equal(2, log.format)", b"assert.are.equal(3, log.format)")
-    after = after.replace(b"3002", b"4002").replace(b"TKB_RULES_VERSION 3", b"TKB_RULES_VERSION 4")
+    after = after.replace(b"3002", b"6002").replace(b"TKB_RULES_VERSION 3", b"TKB_RULES_VERSION 6")
     if after != before:
         path.write_bytes(after)
         print(path)

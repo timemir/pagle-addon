@@ -11,8 +11,6 @@ local ns = select(2, ...)
 ---@field label string           -- "Toast style"
 ---@field category "Announcements"|"Crests"|"Books"|"Trackers" -- ns.SLOT_CATEGORY_ORDER
 ---@field openToEarned? boolean  -- Core's slots only: any Module may add earned goods to it (SHOP-R23)
----@field hideEarned? boolean    -- Core's slots only: the shop lists none of its earned goods, which Look and Feel
---- equips (SHOP-R25, SHOP-R27)
 ---@field preview? fun(stage: Frame, good: PagleRegisteredGood) -- Core's slots only: draws a good of the slot that
 --- has no preview of its own on the shop's stage (an open slot's goods from other Modules, SHOP-R25)
 ---@field groups? PagleSlotGroup[] -- the slot's groups, in the order the shop lists them (SHOP-R27)
@@ -36,16 +34,28 @@ local ns = select(2, ...)
 ---@field description? string
 ---@field icon? integer|string
 ---@field default? boolean        -- SHOP-R22
----@field tier? 1|2|3|4|5         -- for sale
+---@field tier? 1|2|3|4|5|6       -- for sale
 ---@field isEarned? fun(): boolean -- earned
+---@field fallbackTier? 1|2|3|4|5|6 -- earned only, with fallbackFrom: its price from then on (SHOP-R28)
+---@field fallbackFrom? integer    -- earned only, with fallbackTier: the server time it can also be bought from (SHOP-R28)
 ---@field crate? true             -- Core's only: given by a Curio crate alone (SHOP-R22, SHOP-R50)
 ---@field earnedText? string|fun(): string?, string? -- earned: "Angler Level 30", or the row's tag and the stage's
 --- note, worked out each time the shop draws the good while it isn't owned (SHOP-R22)
+---@field earnedCount? fun(): integer?, integer? -- earned: how far toward it, as (have, need), asked each time the
+--- Collection draws it while it isn't owned (SHOP-R36); nothing while the count isn't known
 ---@field progress? fun(): PagleProgressDot[] -- earned: the dots the stage shows while it isn't owned (SHOP-R22)
 ---@field group? string           -- the key of one of its slot's groups (SHOP-R27)
 ---@field preview? fun(stage: Frame)   -- draws the look on the shop's preview stage
 
---- A registered slot, with who registered it. `openToEarned`, `hideEarned` and `preview` are kept for Core's slots only.
+--- What `Pagle.GetSlots` returns for each slot (SHOP-R36).
+---@class PagleSlotInfo
+---@field id string
+---@field label string
+---@field category "Announcements"|"Crests"|"Books"|"Trackers"
+---@field module string           -- def.name, or "Core"
+---@field groups? PagleSlotGroup[] -- its groups, in list order (SHOP-R27)
+
+--- A registered slot, with who registered it. `openToEarned` and `preview` are kept for Core's slots only.
 ---@class PagleRegisteredSlot: PagleSlot
 ---@field module string           -- def.name, or "Core"
 ---@field goods PagleRegisteredGood[] -- its goods, in registration order, another Module's in an open slot included
@@ -65,6 +75,8 @@ local ns = select(2, ...)
 ---@field modules fun(): PagleModule[]   -- the Modules On (registered), by def.order
 ---@field fire fun(event: "AppearanceChanged", slot: string, goodID: string) -- fires AppearanceChanged
 ---@field call fun(fn: function, ...: any): ... -- calls a Module's isEarned; an error is reported, not raised
+---@field serverTime? fun(): integer -- the server time now, for a fallback price's date (SHOP-R28); none: no fallback
+--- has been reached
 ---@field report fun(message: string)    -- reports a mistake and carries on (geterrorhandler())
 
 ---@class PagleGoods
@@ -72,6 +84,8 @@ local ns = select(2, ...)
 ---@field private slots table<string, PagleRegisteredSlot>  -- registered this session, by ID
 ---@field private goods table<string, PagleRegisteredGood>  -- registered this session, by ID
 ---@field private purchased table<string, true>
+---@field private ownedAt table<string, integer>  -- the server time of each purchased good's U1 or crate (SHOP-R36)
+---@field private crated table<string, true>      -- the goods a Curio crate gave (SHOP-R36)
 ---@field private registered integer  -- slots registered so far, for their order
 ---@field private shown table<string, string>? -- each slot's look as last noted; nil before Start
 local Goods = {}
@@ -81,7 +95,10 @@ Goods.__index = Goods
 ---@param options PagleGoodsOptions
 ---@return PagleGoods
 function ns.NewGoods(options)
-	return setmetatable({ options = options, slots = {}, goods = {}, purchased = {}, registered = 0 }, Goods)
+	return setmetatable(
+		{ options = options, slots = {}, goods = {}, purchased = {}, ownedAt = {}, crated = {}, registered = 0 },
+		Goods
+	)
 end
 
 --- An isolated view over the registered goods, for a recording with a disposable DB. Ownership and the last
@@ -213,7 +230,7 @@ function ns.SlotsByCategory(slots)
 end
 
 --- The price of each tier of goods for sale, in Pagle Coins (SHOP-R22, Tunables).
-ns.TIER_PRICES = { 150, 400, 900, 2000, 5000 }
+ns.TIER_PRICES = { 250, 400, 900, 3000, 10000, 25000 }
 
 --- Registers a slot for `module` (SHOP-R21). Returns why it can't (SHOP-R23), registering nothing, or nil.
 ---@param module string def.name, or "Core"
@@ -236,7 +253,6 @@ function Goods:RegisterSlot(module, slot)
 		label = slot.label,
 		category = slot.category,
 		openToEarned = core and slot.openToEarned == true or nil,
-		hideEarned = core and slot.hideEarned == true or nil,
 		preview = core and type(slot.preview) == "function" and slot.preview or nil,
 		groups = groups,
 		module = module,
@@ -314,7 +330,7 @@ function Goods:GoodProblem(module, good)
 			id
 		)
 	elseif good.tier ~= nil and not ns.TIER_PRICES[good.tier] then
-		return ("M:RegisterGood: %s's tier must be 1 to 5, got %s"):format(id, tostring(good.tier))
+		return ("M:RegisterGood: %s's tier must be 1 to %d, got %s"):format(id, #ns.TIER_PRICES, tostring(good.tier))
 	elseif good.isEarned ~= nil and type(good.isEarned) ~= "function" then
 		return ("M:RegisterGood: %s's isEarned must be a function"):format(id)
 	elseif good.default then
@@ -330,8 +346,25 @@ function Goods:GoodProblem(module, good)
 		return ("M:RegisterGood: %s's earnedText must be a string or a function"):format(id)
 	elseif good.progress ~= nil and (type(good.progress) ~= "function" or good.isEarned == nil) then
 		return ("M:RegisterGood: %s's progress must be a function, on an earned good"):format(id)
+	elseif good.earnedCount ~= nil and (type(good.earnedCount) ~= "function" or good.isEarned == nil) then
+		return ("M:RegisterGood: %s's earnedCount must be a function, on an earned good"):format(id)
 	elseif good.group ~= nil and not groupOf(slot, good.group) then
 		return ("M:RegisterGood: %s's slot %s has no group %s"):format(id, slot.id, tostring(good.group))
+	end
+	if good.fallbackTier ~= nil or good.fallbackFrom ~= nil then
+		if good.isEarned == nil then
+			return ("M:RegisterGood: %s's fallbackTier and fallbackFrom are for an earned good"):format(id)
+		elseif good.fallbackTier == nil or good.fallbackFrom == nil then
+			return ("M:RegisterGood: %s needs both fallbackTier and fallbackFrom, or neither"):format(id)
+		elseif not ns.TIER_PRICES[good.fallbackTier] then
+			return ("M:RegisterGood: %s's fallbackTier must be 1 to %d, got %s"):format(
+				id,
+				#ns.TIER_PRICES,
+				tostring(good.fallbackTier)
+			)
+		elseif type(good.fallbackFrom) ~= "number" then
+			return ("M:RegisterGood: %s's fallbackFrom must be a server time"):format(id)
+		end
 	end
 	if good.icon ~= nil and type(good.icon) ~= "string" and type(good.icon) ~= "number" then
 		return ("M:RegisterGood: %s's icon must be a texture path or file ID"):format(id)
@@ -370,6 +403,9 @@ function Goods:RegisterGood(module, good)
 		default = good.default or nil,
 		tier = good.tier,
 		crate = good.crate or nil,
+		fallbackTier = good.fallbackTier,
+		fallbackFrom = good.fallbackFrom,
+		group = good.group,
 		description = good.description,
 		earned = before and before.earned,
 	}
@@ -480,9 +516,21 @@ end
 --- The purchased goods, from the wallet projection (SHOP-R11): `{ [goodID] = true }`, kept as handed over, a Curio
 --- crate's goods among them (SHOP-R50: owned as a purchase is). Empty until the projection hands one over.
 ---@param purchased table<string, true>
-function Goods:SetPurchased(purchased)
+---@param ownedAt table<string, integer>? the server time of each one's purchase entry or crate (SHOP-R36)
+---@param crated table<string, true>? the goods among them a Curio crate gave (SHOP-R36's `fromCrate`)
+function Goods:SetPurchased(purchased, ownedAt, crated)
 	self.purchased = purchased
+	self.ownedAt = ownedAt or {}
+	self.crated = crated or {}
 	self:Settle()
+end
+
+--- Whether a purchase entry or a Curio crate gave the Angler `goodID` (SHOP-R11, SHOP-R50), whether it is registered
+--- this session or not.
+---@param goodID any
+---@return boolean
+function Goods:IsPurchased(goodID)
+	return type(goodID) == "string" and self.purchased[goodID] == true
 end
 
 -- The order of each Module On, by def.name: Core is 0, before every Module (wallet-and-shop.md › UI: Core's slots
@@ -551,6 +599,75 @@ function Goods:GoodsOf(slotID)
 		end
 	end
 	return list
+end
+
+--- A good's preview on a stage, as the Curio Shop and `Pagle.DrawGoodPreview` draw it (SHOP-R36): its own `preview`,
+--- else its slot's, when Core gave the slot one (the crest's bookplate, SHOP-R25), called with the good. Nil for a good
+--- with neither, or one not registered this session.
+---@param goodID any
+---@return (fun(stage: Frame))?
+function Goods:PreviewOf(goodID)
+	local good = self.goods[goodID]
+	if not good then
+		return nil
+	end
+	local slot = self.slots[good.slot]
+	local slotPreview = slot and slot.preview
+	if good.preview then
+		return good.preview
+	elseif slotPreview then
+		return function(stage)
+			slotPreview(stage, good)
+		end
+	end
+	return nil
+end
+
+-- Each roster Module's place in CORE-R1's order; a Module off the roster comes after them all.
+---@param name string
+---@return integer
+local function rosterIndex(name)
+	for i, roster in ipairs(ns.MODULE_ROSTER) do
+		if roster == name then
+			return i
+		end
+	end
+	return #ns.MODULE_ROSTER + 1
+end
+
+--- Sorts def.names in roster order, any other by name: the purse's segments and Put away.
+---@param a string
+---@param b string
+---@return boolean
+function ns.SortsByRoster(a, b)
+	local indexA, indexB = rosterIndex(a), rosterIndex(b)
+	if indexA ~= indexB then
+		return indexA < indexB
+	end
+	return a < b
+end
+
+--- Every cached good of Modules that aren't On, owned or not (SHOP-R35, SHOP-R36), for the Collection to draw put away
+--- (a view reads each one's ownership with IsOwned): never a default, in roster order of their Module, then by ID. Earned
+--- ones are among them, whether or not the shop lists them (SHOP-R24); the shop keeps the purchased ones.
+---@return string[]
+function Goods:PutAway()
+	local on = self:OrderOn()
+	local ids = {}
+	for goodID, cached in pairs(self:Cache()) do
+		if type(cached) == "table" and not on[cached.module] and not cached.default then
+			ids[#ids + 1] = goodID
+		end
+	end
+	local cache = self:Cache()
+	table.sort(ids, function(a, b)
+		local moduleA, moduleB = cache[a].module, cache[b].module
+		if moduleA ~= moduleB then
+			return ns.SortsByRoster(moduleA, moduleB)
+		end
+		return a < b
+	end)
+	return ids
 end
 
 --- A good registered this session, as registered (with its preview, isEarned and earnedText), or nil. Core's own;
@@ -673,17 +790,61 @@ function Goods:SetEquipped(slotID, goodID)
 	return true
 end
 
---- What `Pagle.GetGood` returns: a good's look as cached (SHOP-R26), registered this session or not.
+--- What kind of good a registration or its cache entry describes (SHOP-R22): "default", "sale" (a tier), "crate"
+--- (crate only) or "earned".
+---@alias PagleGoodKind "default"|"sale"|"earned"|"crate"
+
+--- What `Pagle.GetGood` returns: a good's look as cached (SHOP-R26), registered this session or not, with what it is
+--- and what it costs (SHOP-R36).
 ---@class PagleGoodInfo
 ---@field name string
 ---@field slot string
+---@field category "Announcements"|"Crests"|"Books"|"Trackers" -- its slot's category, as GetSlots gives it
 ---@field icon? integer|string
 ---@field module string           -- def.name, or "Core"
 ---@field description? string
 ---@field isDefault boolean        -- the slot's default (SHOP-R22), or the good standing in for one (SHOP-R23)
+---@field kind PagleGoodKind
+---@field tier? integer            -- a good for sale's tier
+---@field price? integer           -- what it costs now if the shop sells it now (the tier's price, or from `fallbackFrom`
+--- the fallback price, SHOP-R28), whether or not it is owned already; nil otherwise
+---@field fallbackPrice? integer   -- an earned good's fallback tier's price, reached or not (SHOP-R28)
+---@field fallbackFrom? integer    -- the server time its fallback starts (SHOP-R28)
+---@field group? string            -- the key of its slot's group (SHOP-R27)
+---@field purchased boolean        -- a purchase entry (U1) of the good itself gave it (SHOP-R11)
+---@field fromCrate boolean        -- a Curio crate gave it (SHOP-R50)
+---@field ownedAt? integer         -- the server time of that entry or crate
 
---- A good's name, slot, icon, Module and description, from the cache, and whether it is its slot's default, as a
---- fresh copy; nil for a good never cached.
+--- The kind of the good `entry` describes: a registered good or a cache entry, which carry the same fields.
+---@param entry { default?: boolean, tier?: integer, crate?: boolean }
+---@return PagleGoodKind
+function ns.GoodKind(entry)
+	if entry.default then
+		return "default"
+	elseif entry.tier then
+		return "sale"
+	elseif entry.crate then
+		return "crate"
+	end
+	return "earned"
+end
+
+--- What the shop sells the good `entry` describes for at the server time `now` (SHOP-R22, SHOP-R28): a good for sale's
+--- tier price, an earned good's fallback price from its `fallbackFrom` on, and nothing for any other.
+---@param entry { tier?: integer, fallbackTier?: integer, fallbackFrom?: integer }
+---@param now integer?
+---@return integer?
+function ns.GoodPrice(entry, now)
+	if entry.tier then
+		return ns.TIER_PRICES[entry.tier]
+	elseif entry.fallbackTier and entry.fallbackFrom and now and now >= entry.fallbackFrom then
+		return ns.TIER_PRICES[entry.fallbackTier]
+	end
+	return nil
+end
+
+--- A good's cached fields (SHOP-R26) and what it is and costs (SHOP-R36), as a fresh copy, whether or not its Module is
+--- On; nil for a good never cached. Never cached by the registry between calls: the price follows the server time now.
 ---@param goodID any
 ---@return PagleGoodInfo?
 function Goods:GetGood(goodID)
@@ -691,14 +852,76 @@ function Goods:GetGood(goodID)
 	if not cached then
 		return nil
 	end
+	local now = self.options.serverTime and self.options.serverTime() or nil
+	local owned = self.purchased[goodID] == true
+	local fromCrate = owned and self.crated[goodID] == true
 	return {
 		name = cached.name,
 		slot = cached.slot,
+		category = cached.category,
 		icon = cached.icon,
 		module = cached.module,
 		description = cached.description,
 		isDefault = self:DefaultOf(cached.slot) == goodID,
+		kind = ns.GoodKind(cached),
+		tier = cached.tier,
+		price = ns.GoodPrice(cached, now),
+		fallbackPrice = cached.fallbackTier and ns.TIER_PRICES[cached.fallbackTier] or nil,
+		fallbackFrom = cached.fallbackFrom,
+		group = cached.group,
+		purchased = owned and not fromCrate,
+		fromCrate = fromCrate,
+		ownedAt = owned and self.ownedAt[goodID] or nil,
 	}
+end
+
+--- What `Pagle.GetEarnedProgress` returns (SHOP-R36).
+---@class PagleEarnedProgress
+---@field tag? string    -- the row's text: its earnedText, or a function's first text
+---@field note? string   -- the stage's note: its earnedText, or a function's second text
+---@field have? number   -- its earnedCount(): how far toward it
+---@field need? number   -- and how far it takes
+
+--- How far an earned good of a Module On is, if it isn't owned (SHOP-R36): its earnedText's texts (EarnedTexts, called
+--- now) and its earnedCount()'s `have` and `need`, when it has one and gives two numbers with `need` above 0. Nil for a
+--- good that isn't registered, isn't earned, is owned, or whose Module isn't On; nil too when either call raises, which
+--- is reported (SHOP-R22). Nothing is cached.
+---@param goodID any
+---@return PagleEarnedProgress?
+function Goods:EarnedProgress(goodID)
+	local good = self.goods[goodID]
+	if not good or not good.isEarned or not self:OrderOn()[good.module] or self:IsOwned(goodID) then
+		return nil
+	end
+	local failed = false
+	local function ask(fn)
+		local first, second, returned
+		self.options.call(function()
+			first, second = fn()
+			returned = true
+		end)
+		failed = failed or not returned
+		return first, second
+	end
+	local tag, note, have, need
+	local earnedText = good.earnedText
+	if type(earnedText) == "string" then
+		tag, note = earnedText, earnedText
+	elseif type(earnedText) == "function" then
+		tag, note = ask(earnedText)
+		tag = textOf(tag)
+		note = tag and textOf(note)
+	end
+	if good.earnedCount then
+		have, need = ask(good.earnedCount)
+		if type(have) ~= "number" or type(need) ~= "number" or need <= 0 then
+			have, need = nil, nil
+		end
+	end
+	if failed then
+		return nil
+	end
+	return { tag = tag, note = note, have = have, need = need }
 end
 
 -- Every slot anything knows of: registered, cached, picked or shown, sorted so events fire in one order.

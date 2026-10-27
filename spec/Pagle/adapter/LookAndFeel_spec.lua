@@ -2,18 +2,25 @@
 -- and a fixture Ledger's "Books" slot (settings.md SET-R1, SET-R5, SET-R12, SET-R30, SET-R50–R53, SET-R60–R62;
 -- CORE-R40, CORE-R42, CORE-R43; wallet-and-shop.md › UI, SHOP-R32, SHOP-R35, SHOP-R40, SHOP-R41).
 
-local PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing."
+local PARAGRAPH =
+	"Looks you own. Pick one here, in the Fish Journal's Collection or with Use in the Curio Shop; all of them change the same thing."
 
 -- Core logged in and in the world with its own goods and a fixture Ledger (order 10) whose "Books" slot has
 -- Oak (default), Lapis (tier 3) and Ivy (tier 1), and with two zone crests in Core's crest slot, earned goods
 -- (SHOP-R23): The Old Oak, earned, and The Desert Sun, not. `options.saved` is a PagleDB; `options.noLedger` leaves the Ledger
--- unregistered (off); `options.hunts` registers Hunts (order 20) with a Trackers slot. Returns the loaded addon.
+-- unregistered (off); `options.hunts` registers Hunts (order 20) with a Trackers slot; `options.collection` is the
+-- Ledger's def.collection (CORE-R45). Returns the loaded addon.
 local function coreWithModules(options)
 	options = options or {}
 	local loaded = loadCore(nil, options.saved)
 	local Pagle = loaded.env.Pagle
 	if not options.noLedger then
-		local ledger = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+		local ledger = Pagle.RegisterModule({
+			name = "Ledger",
+			title = "Ledger",
+			order = 10,
+			collection = options.collection,
+		})
 		ledger:RegisterSlot({ id = "ledger.binding", label = "Journal binding", category = "Books" })
 		ledger:RegisterGood({ id = "ledger.binding.oak", slot = "ledger.binding", name = "Oak", default = true })
 		ledger:RegisterGood({ id = "ledger.binding.lapis", slot = "ledger.binding", name = "Lapis", tier = 3 })
@@ -91,7 +98,7 @@ describe("The Look and Feel page", function()
 	end)
 
 	it(
-		"shows the paragraph, Announcements, Crests and Books with their dropdowns, then the Curio Shop (SET-R50)",
+		"shows the paragraph, Announcements, Crests and Books with their dropdowns, then More looks with the Curio Shop (SET-R50)",
 		function()
 			local loaded = coreWithModules()
 
@@ -99,9 +106,9 @@ describe("The Look and Feel page", function()
 				PARAGRAPH,
 				"# Announcements",
 				"Toast style = core.toaststyle.page",
-				"  15 more in the Curio Shop",
+				"  23 more in the Curio Shop",
 				"Sound set = core.soundset.driftwood",
-				"  13 more in the Curio Shop",
+				"  26 more in the Curio Shop",
 				"# Crests",
 				"Crests = core.crest.plain",
 				"# Books",
@@ -109,9 +116,33 @@ describe("The Look and Feel page", function()
 				"  33 more in the Curio Shop",
 				"Journal binding = ledger.binding.oak",
 				"  2 more in the Curio Shop",
-				"# Curio Shop",
+				"# More looks",
 				"Buy more looks with Pagle Coins [Open the Curio Shop]",
 			}, lines(showLook(loaded), loaded.client.settings))
+		end
+	)
+
+	it("puts the Collection's row above the Curio Shop's while an On Module offers one (SET-R50, CORE-R45)", function()
+		local loaded = coreWithModules({ collection = function() end })
+
+		local shown = lines(showLook(loaded), loaded.client.settings)
+
+		assert.are.same({
+			"# More looks",
+			"Every look, and how to earn it [Open the Collection]",
+			"Buy more looks with Pagle Coins [Open the Curio Shop]",
+		}, { unpack(shown, #shown - 2) })
+	end)
+
+	it(
+		"leaves the Collection's row out while no On Module offers one, the Ledger being off (SET-R50, CORE-R45)",
+		function()
+			local loaded = coreWithModules({ noLedger = true, hunts = true })
+
+			local shown = table.concat(lines(showLook(loaded), loaded.client.settings), "\n")
+
+			assert.is_nil(shown:find("Open the Collection", 1, true))
+			assert.is_truthy(shown:find("# More looks\nBuy more looks with Pagle Coins [Open the Curio Shop]", 1, true))
 		end
 	)
 
@@ -124,7 +155,7 @@ describe("The Look and Feel page", function()
 
 			assert.is_false(table.concat(shown, "\n"):find("Journal binding", 1, true) ~= nil)
 			assert.are.same(
-				{ "# Trackers", "Hunts tracker frame = hunts.trackerframe.none", "# Curio Shop" },
+				{ "# Trackers", "Hunts tracker frame = hunts.trackerframe.none", "# More looks" },
 				{ shown[12], shown[13], shown[14] }
 			)
 		end
@@ -234,25 +265,29 @@ describe("A slot dropdown", function()
 end)
 
 describe("The Announcements page's slot rows", function()
-	it("end Core's rows with Toast style and Sound set, after Animations (SET-R30, CORE-R42)", function()
-		local loaded = coreWithModules()
+	it(
+		"follow Animations with Toast style and Sound set, then the Toast position button (SET-R30, CORE-R42)",
+		function()
+			local loaded = coreWithModules()
 
-		local names = {}
-		for i, row in ipairs(loaded.client.settings.show(loaded.client.settings.page("Announcements"))) do
-			names[i] = row.initializer:GetName()
+			local names = {}
+			for i, row in ipairs(loaded.client.settings.show(loaded.client.settings.page("Announcements"))) do
+				names[i] = row.initializer:GetName()
+			end
+
+			assert.are.same({
+				"Cozy mode",
+				"Interruption budget",
+				"Interruptions",
+				"Per",
+				"Show every catch",
+				"Animations",
+				"Toast style",
+				"Sound set",
+				"Toast position",
+			}, names)
 		end
-
-		assert.are.same({
-			"Cozy mode",
-			"Interruption budget",
-			"Interruptions",
-			"Per",
-			"Show every catch",
-			"Animations",
-			"Toast style",
-			"Sound set",
-		}, names)
-	end)
+	)
 
 	it("pick the same look Look and Feel shows (SET-R30, SET-R51)", function()
 		local loaded = coreWithModules()
@@ -351,6 +386,41 @@ describe("Defaults", function()
 			Pagle.GetEquipped("core.crest"),
 			Pagle.GetEquipped("ledger.binding"),
 		})
+	end)
+end)
+
+describe("The Collection button", function()
+	it(
+		"closes the Settings panel, then calls the first On Module's def.collection with no good (SET-R50, CORE-R45)",
+		function()
+			local calls = {}
+			local loaded
+			loaded = coreWithModules({
+				collection = function(goodID)
+					calls[#calls + 1] = { panelShown = loaded.client.settings.panel:IsShown(), goodID = goodID }
+				end,
+			})
+			loaded.env.Pagle.OpenSettings("look")
+			local row = loaded.client.settings.rowNamed(showLook(loaded), "Every look, and how to earn it")
+
+			loaded.client.settings.buttonsOf(row.frame)[1]:Click()
+
+			assert.are.same({ { panelShown = false } }, calls)
+		end
+	)
+
+	it("reports a def.collection that raises through the error handler (CORE-R45)", function()
+		local loaded = coreWithModules({
+			collection = function()
+				error("no Collection today")
+			end,
+		})
+		local row = loaded.client.settings.rowNamed(showLook(loaded), "Every look, and how to earn it")
+
+		loaded.client.settings.buttonsOf(row.frame)[1]:Click()
+
+		assert.are.equal(1, #loaded.client.errors)
+		assert.matches("no Collection today", loaded.client.errors[1])
 	end)
 end)
 

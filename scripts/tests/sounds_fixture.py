@@ -28,6 +28,26 @@ EXPANSION_SETS = [
     "choir",
     "nightwatch",
 ]
+# The generated sets (ANN-R74): ElevenLabs takes, Goblin Till's banner with the game's goblin laugh over it, and Mrglglgl,
+# the game's murloc clips reworked. Each has three toast variants and a banner like the expansion's. Mrglglgl has no
+# prompts: its sources are Blizzard's and aren't in the repo.
+GENERATED_SETS = [
+    "goblintill",
+    "mrglglgl",
+    "squeaky",
+    "bubbleworks",
+    "kazoo",
+    "arcade",
+    "boing",
+    "parrot",
+    "laser",
+    "dragonroost",
+    "slime",
+    "silithid",
+    "succubus",
+]
+# Every generated set but Mrglglgl, whose recipe is in code, has a set.toml of prompts and mixes.
+SOURCED_SETS = [folder for folder in GENERATED_SETS if folder != "mrglglgl"]
 LEGEND_ITEMS = [19803, 19805, 19806]
 ANN_R74_FILES = sorted(
     [
@@ -37,10 +57,17 @@ ANN_R74_FILES = sorted(
         "driftwood/toast_3.ogg",
         "gilded/banner.ogg",
         "gilded/toast_1.ogg",
-        *(f"{folder}/{name}.ogg" for folder in EXPANSION_SETS for name in ("banner", "toast_1", "toast_2", "toast_3")),
+        *(
+            f"{folder}/{name}.ogg"
+            for folder in [*EXPANSION_SETS, *GENERATED_SETS]
+            for name in ("banner", "toast_1", "toast_2", "toast_3")
+        ),
         *(f"legend/{item}.ogg" for item in LEGEND_ITEMS),
     ]
 )
+
+# What scripts/render-sounds.py renders: every file but the generated sets'.
+RENDERED_FILES = [name for name in ANN_R74_FILES if name.split("/")[0] not in GENERATED_SETS]
 
 
 def read_sound(path: Path | BinaryIO) -> Signal:

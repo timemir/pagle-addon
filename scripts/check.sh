@@ -5,7 +5,15 @@
 #   scripts/check.sh
 #   GATE_JOBS=8 scripts/check.sh    # busted shards at a time without coverage (default 4)
 #
-# Needs the pinned tools in .tools/ (run scripts/setup.sh once). Runs locally in WSL and in CI alike.
+# A busted shard is the gate's memory: spec/Pagle_Ledger's alone peaks near 12 GB and spec/Pagle_Hunts' near 10, the
+# stages beside them under 3 GB. The 16 GB runner of CI shuts down (exit 143, "The runner has received a shutdown
+# signal") when a second shard is up at one of those peaks, so check.yml sets GATE_JOBS=1; a machine with the memory
+# keeps the default.
+#
+# Needs the pinned tools in .tools/ (run scripts/setup.sh once). Runs locally in WSL, natively on macOS (bash 3.2 and
+# up; every stage runs there too, so no stage is skipped) and in CI alike. A `git worktree` with no .tools/ of its own
+# runs the main checkout's (scripts/lib/tools.sh), keeping only the coverage and mypy caches in its own .tools/cache/;
+# PAGLE_TOOLS=<absolute path> names another .tools/.
 #
 # setup and libs run first, in turn, and stop the gate at once. The numbered stages then all run at the same time,
 # each into its own log (#254). Their logs print in stage order, then each stage's wall time, then the verdict: the
@@ -15,7 +23,11 @@ set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$root"
-bin="$root/.tools/bin"
+# shellcheck source=lib/tools.sh
+source "$root/scripts/lib/tools.sh"
+tools=$(tools_dir "$root")
+export PAGLE_TOOLS=$tools
+bin="$tools/bin"
 started=$SECONDS
 
 stage() {
@@ -30,13 +42,16 @@ fail() {
 # The stages' logs, results and scratch (LuaLS's, the busted shards') live outside the repo, and go on any exit with
 # whatever stage is still running.
 logs=$(mktemp -d)
-declare -A pids=()
+stages=(format lint api types tests generator)
+pids=() # each stage's pid, at its place in stages
 # Stops every stage without a result yet, with all it started: each runs in its own process group, named by its pid.
 # A stage with a result is left alone, as its group may be gone and its number reused.
 stop_stages() {
-	local name
-	for name in "${!pids[@]}"; do
-		[[ -f $logs/$name.result ]] || kill -TERM -- "-${pids[$name]}" 2>/dev/null || true
+	local i
+	for i in "${!stages[@]}"; do
+		if [[ -n ${pids[i]:-} && ! -f $logs/${stages[i]}.result ]]; then
+			kill -TERM -- "-${pids[i]}" 2>/dev/null || true
+		fi
 	done
 }
 cleanup() {
@@ -49,8 +64,8 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 # setup.sh keeps a copy of the pins it installed; any difference means .tools/ is missing or out of date.
-if ! cmp -s scripts/tools.env .tools/tools.env; then
-	echo "check: .tools/ doesn't match scripts/tools.env; run scripts/setup.sh" >&2
+if ! cmp -s scripts/tools.env "$tools/tools.env"; then
+	echo "check: $tools doesn't match scripts/tools.env; run scripts/setup.sh" >&2
 	fail setup
 fi
 
@@ -104,7 +119,7 @@ stage_lint() {
 # --- 3. api (#47): every inventoried WoW API is in the pinned forever dump (BIR_COMMIT in scripts/tools.env), and
 # the inventory the addon ships for `/pagle dev probe` (addons/Pagle/data/ApiInventory.lua, #261) is .luacheckrc's.
 stage_api() {
-	"$bin/lua" scripts/api-presence.lua .luacheckrc .tools/bir/Resources || return 1
+	"$bin/lua" scripts/api-presence.lua .luacheckrc "$tools/bir/Resources" || return 1
 	"$bin/lua" scripts/api-inventory.lua --check .luacheckrc addons/Pagle/data/ApiInventory.lua || return 1
 }
 
@@ -122,9 +137,15 @@ stage_types() {
 	fi
 	# LuaLS's log and its generated meta files for the Lua builtins go outside the repo: .luarc.json ignores .tools/,
 	# and meta files under an ignored dir leave even `integer` undefined.
-	local luals="$logs/luals" luals_out
+	local luals="$logs/luals" luals_out luarc=.luarc.json luarc_text
 	mkdir "$luals" || return 1
-	if ! luals_out=$("$bin/lua-language-server" --check=. --checklevel=Warning --configpath=.luarc.json \
+	# .luarc.json names the annotations at .tools/wow-api; with the tools of another checkout, a copy names theirs.
+	if [[ $tools != "$root/.tools" ]]; then
+		luarc=$luals/luarc.json
+		luarc_text=$(<.luarc.json)
+		printf '%s\n' "${luarc_text//\".tools\/wow-api\//\"$tools/wow-api/}" >"$luarc" || return 1
+	fi
+	if ! luals_out=$("$bin/lua-language-server" --check=. --checklevel=Warning --configpath="$luarc" \
 		--logpath="$luals" --metapath="$luals/meta" --check_format=pretty 2>&1); then
 		echo "$luals_out"
 		return 1
@@ -190,10 +211,10 @@ busted_shards() {
 	echo "tests: PAGLE_NO_COVERAGE=1, so the specs run without coverage, in ${#shards[@]} shards, $jobs at a time"
 	mkdir "$logs/shards" || return 1
 	for i in "${!shards[@]}"; do
-		if ((running >= jobs)); then
-			wait -n || true
-			running=$((running - 1))
-		fi
+		while ((running >= jobs)); do
+			wait_any
+			running=$(jobs -pr | wc -l)
+		done
 		# spec itself is the specs at its top: busted's own --no-recursive picks them, as its pattern would.
 		{
 			status=0 from=$SECONDS
@@ -234,8 +255,6 @@ stage_generator() {
 	"$bin/mypy" --config-file scripts/pyproject.toml || return 1
 }
 
-stages=(format lint api types tests generator)
-
 # run_stage <name>: stage_<name> into its log; then its exit status and wall time, in that order, into its result.
 run_stage() {
 	local status=0 from=$SECONDS
@@ -248,9 +267,10 @@ run_stage() {
 # verdict: prints the first stage that failed, or pass, once every stage before that one has passed; fails while
 # that's still open. A stage whose process is gone without a result failed.
 verdict() {
-	local name result
-	for name in "${stages[@]}"; do
-		if ! kill -0 "${pids[$name]}" 2>/dev/null && [[ ! -f $logs/$name.result ]]; then
+	local i name result
+	for i in "${!stages[@]}"; do
+		name=${stages[i]}
+		if ! kill -0 "${pids[i]}" 2>/dev/null && [[ ! -f $logs/$name.result ]]; then
 			echo "1 0" >"$logs/$name.result"
 			echo "$name: stopped without a result" >>"$logs/$name.log"
 		fi
@@ -268,13 +288,13 @@ mkdir -p .tools/cache # luacov's stats and report, mypy's cache
 echo "check: running ${stages[*]} at once"
 # Job control only while they start: each stage gets its own process group, for stop_stages.
 set -m
-for name in "${stages[@]}"; do
-	run_stage "$name" &
-	pids[$name]=$!
+for i in "${!stages[@]}"; do
+	run_stage "${stages[i]}" &
+	pids[i]=$!
 done
 set +m
 until failed_at=$(verdict); do
-	wait -n 2>/dev/null || true
+	wait_any
 done
 stop_stages
 

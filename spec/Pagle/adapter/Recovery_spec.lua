@@ -218,6 +218,45 @@ describe("Recovery through the addon", function()
 		assert.are.same({}, second.client.errors)
 	end)
 
+	it("restores Refresh totals and Collection ownership from the restored history before Modules load", function()
+		local seeded = original()
+		seeded.entries[2] = "U1|1|1792422001|0|core.toaststyle.ripple|30"
+		local first = loadAddon("Pagle", foreverWith({ PagleLog = seeded }))
+		first.client.fire("PLAYER_LOGIN")
+		first.client.fire("PLAYER_ENTERING_WORLD")
+		first.client.advance(5)
+		assert.is_true(first.env.Pagle.IsOwned("core.toaststyle.ripple"))
+		assert.are.equal(1792422001, first.env.Pagle.GetGood("core.toaststyle.ripple").ownedAt)
+		local saved = first.env.PagleDB
+		saved.global.tickets = { logId = seeded.logId, earned = { absentModule = 9 }, spent = { absentModule = 4 } }
+		local restored = loadAddon("Pagle", foreverWith({ PagleLog = original(), PagleDB = saved }), {
+			beforeLoaded = {
+				Pagle = function(ns, client, env)
+					ns.PUSHED_KEYS.testKey = signing.testKey
+					client.addons.Pagle_Recovery = {
+						loaded = false,
+						load = function()
+							local file = assert(fixtureFile("spec/Pagle/fixtures/Recovery.lua"))
+							setfenv(file, env)
+							file()
+						end,
+					}
+				end,
+			},
+		})
+		assert.are.same({ tickets = 0, earned = 0, spent = 0 }, restored.env.Pagle.GetTickets())
+		assert.is_false(restored.env.Pagle.IsOwned("core.toaststyle.ripple"))
+		assert.is_nil(restored.env.Pagle.GetGood("core.toaststyle.ripple").ownedAt)
+		restored.client.fire("PLAYER_LOGIN")
+		restored.client.fire("PLAYER_ENTERING_WORLD")
+		restored.client.advance(5)
+		assert.are.same({ tickets = 0, earned = 0, spent = 0 }, restored.env.Pagle.GetTickets())
+		assert.is_false(restored.env.Pagle.IsOwned("core.toaststyle.ripple"))
+		assert.is_nil(restored.env.Pagle.GetGood("core.toaststyle.ripple").ownedAt)
+		assert.are.same({}, first.client.errors)
+		assert.are.same({}, restored.client.errors)
+	end)
+
 	it("rebuilds every enabled Module and invalidates caches for Modules enabled on a later login", function()
 		local modules = { "Pagle_Ledger", "Pagle_Hunts", "Pagle_TackleBoard", "Pagle_Stats" }
 		local seeded = original()

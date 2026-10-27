@@ -18,8 +18,10 @@
 # one the packager generated from the commits. Nothing else: no docs/, spec/, scripts/, probes/, prototypes/,
 # data/, no stray addons/ path and no empty folder.
 #
-# Needs the Lua test tools in .tools/ (scripts/setup.sh), bash >= 4.3, git, curl, unzip, zip and jq;
-# the packager builds the zip with zip and reads upload APIs with jq.
+# Run it in WSL or on macOS. Needs bash >= 4.3 (the packager's), git, curl, unzip, zip and jq (sudo apt-get install
+# zip jq); the packager builds the zip with zip and reads upload APIs with jq. macOS's own bash is 3.2, so there
+# `brew install bash jq` and have Homebrew's bash first on PATH; zip and unzip ship with macOS. The packager is
+# cached in the .tools/ that scripts/lib/tools.sh finds, so a worktree shares the main checkout's.
 set -euo pipefail
 
 case "${1:-}" in
@@ -38,8 +40,11 @@ esac
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 # shellcheck source=tools.env
 source "$root/scripts/tools.env"
+# shellcheck source=lib/tools.sh
+source "$root/scripts/lib/tools.sh"
 releasedir="$root/.release"
-packager="$root/.tools/packager/release-$PACKAGER_COMMIT.sh"
+tools=$(tools_dir "$root")
+packager="$tools/packager/release-$PACKAGER_COMMIT.sh"
 
 for tool in git curl unzip zip jq; do
 	if ! command -v "$tool" >/dev/null; then
@@ -134,6 +139,6 @@ fi
 mkdir "$work/addons"
 unzip -q "$zipfile" -d "$work/addons"
 cd "$root"
-PAGLE_RELEASE_ADDONS="$work/addons" "$root/.tools/bin/busted" --pattern=recording.lua spec/release
+PAGLE_RELEASE_ADDONS="$work/addons" "$tools/bin/busted" --pattern=recording.lua spec/release
 
 echo "OK: $(basename "$zipfile") holds only ${got_tops// //, }/, as built from addons/."

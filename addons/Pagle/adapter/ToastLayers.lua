@@ -144,7 +144,7 @@ function ns.DrawToastLayers(frame, host, style, page, width)
 end
 
 --- Tints a composed Nod's medallion (its back and front) in `color`, greyed first so the colour shows true, as a
---- catch Nod's ring takes its rarity's (VAR-R26); with none, leaves it as drawn.
+--- Nod's ring takes its rarity's (VAR-R26); with none, leaves it as drawn.
 ---@param frame PagleAnnouncementFrame
 ---@param color number[]?
 function ns.TintToastMedallion(frame, color)
@@ -218,7 +218,9 @@ end
 ---@param text string
 ---@param style PagleToastStyle
 ---@param page PagleToastPage?
-function ns.SetLayeredStamp(stamp, text, style, page)
+---@param scale number? of its word's size, when the stamp row is squeezed to fit (1: as the kit draws it)
+function ns.SetLayeredStamp(stamp, text, style, page, scale)
+	scale = scale or 1
 	local spec = ns.ToastStampArt(style, page)
 	local ink = ns.ToastInk(style, page, "stamp")
 	local atlas = ns.ATLASES[style.art.atlas]
@@ -234,10 +236,10 @@ function ns.SetLayeredStamp(stamp, text, style, page)
 	end
 	local label = stamp.label
 	if ink then
-		ns.SetInkFont(label, ink)
+		ns.SetInkFont(label, ink, scale < 1 and math.max(8, math.floor(ink.size * scale + 0.5)) or nil)
 		label:SetText(ink.caps and ns.Capitals(text) or text)
 	else
-		ns.SetArtFont(label, "Stamp")
+		ns.SetArtFontScaled(label, "Stamp", scale)
 		label:SetText(ns.Capitals(text))
 	end
 	local left, right = spec.slice.left, spec.slice.right

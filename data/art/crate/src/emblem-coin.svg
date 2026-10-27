@@ -1,0 +1,7 @@
+<!-- The coin emblem, for the reel's card of a crate that pays Coins back. Not in the prototype; drawn in the style of
+     its emblems (see emblem-toast.svg): a milled disc with the fish of the crate's seal struck in it. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="FILL" stroke="DARK" stroke-width="2.5"/>
+      <circle cx="50" cy="50" r="34" fill="none" stroke="DARK" stroke-width="3" stroke-dasharray="2.2 3" opacity=".45"/>
+      <circle cx="50" cy="50" r="27" fill="none" stroke="DARK" stroke-width="2" opacity=".6"/>
+      <path transform="translate(50 50) scale(1.25) translate(-31.5 -50)" d="M18 50 c5 -7 15 -8 21 -2 l6 -5 v14 l-6 -5 c-6 6 -16 5 -21 -2z" fill="DARK"/>
+      <path class="hl" d="M26 38 a26 26 0 0 1 14 -12" stroke="#fff" stroke-width="3" opacity=".35" fill="none" stroke-linecap="round"/></svg>

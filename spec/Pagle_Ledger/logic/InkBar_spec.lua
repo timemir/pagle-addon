@@ -81,14 +81,27 @@ describe("the ink XP bar", function()
 		assert.are.equal(" Fresh Water for 300 more Catches.", bar.freshText)
 	end)
 
-	it("shows Fresh Water refilled up to now, rounded down, and one Catch's in the singular (LED-R23)", function()
-		local state = stateAt(1580, 0.5)
-		state.lastCatch = NOW - 360 -- 0.5 + 10 × 360 / 3,600 = 1.5
+	it("shows Fresh Water rounded down, and one Catch's in the singular, under the minimum break (LED-R23)", function()
+		local state = stateAt(1580, 1.5)
+		state.lastCatch = NOW - 1800 -- under an hour: nothing refilled yet
 
 		local bar = ns.InkXpBar(state, celebratedAt(2), NOW, breakUpLargeNumbers)
 
 		assert.are.near(510 / 1160, bar.fresh.to, 1e-9)
 		assert.are.equal(" Fresh Water for 1 more Catch.", bar.freshText)
+	end)
+
+	it("shows Fresh Water refilled up to now, rounded down, once an hour has passed (LED-R23)", function()
+		local state = stateAt(1580, 0.5)
+
+		state.lastCatch = NOW - 3599 -- 0.5: nothing shown yet
+		assert.is_nil(ns.InkXpBar(state, celebratedAt(2), NOW, breakUpLargeNumbers).fresh)
+
+		state.lastCatch = NOW - 7200 -- 0.5 + 10 × 7,200 / 3,600 = 20.5
+		local bar = ns.InkXpBar(state, celebratedAt(2), NOW, breakUpLargeNumbers)
+
+		assert.are.near(700 / 1160, bar.fresh.to, 1e-9)
+		assert.are.equal(" Fresh Water for 20 more Catches.", bar.freshText)
 	end)
 
 	it("has no Fresh Water stretch or words while F is 0 (LED-R145)", function()

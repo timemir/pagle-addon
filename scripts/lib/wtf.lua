@@ -346,10 +346,13 @@ function wtf.loadInto(ns, env, path, addonName)
 end
 
 -- LuaBitOp, the `bit` library the client ships (LOG-R66): the one setup.sh pins in .tools/, which a plain `lua`
--- doesn't look in, or the one already on package.cpath (busted's). Nil when neither loads.
+-- doesn't look in, or the one already on package.cpath (busted's). Nil when neither loads. The .tools/ is
+-- $PAGLE_TOOLS, which the scripts that run this (scripts/lib/tools.sh) set to the one they use: the main checkout's, in
+-- a worktree without its own.
 function wtf.luaBitOp()
 	local cpath = package.cpath
-	package.cpath = ROOT .. "/.tools/lua/lib/lua/5.1/?.so;" .. cpath
+	local tools = os.getenv("PAGLE_TOOLS") or ROOT .. "/.tools"
+	package.cpath = tools .. "/lua/lib/lua/5.1/?.so;" .. cpath
 	local ok, bit = pcall(require, "bit")
 	package.cpath = cpath
 	return ok and bit or nil

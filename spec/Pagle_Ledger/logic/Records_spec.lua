@@ -354,4 +354,16 @@ describe("Simulated Size records", function()
 			assert.is_nil(ns.SizeText(nil, fake.Pagle.SIZE_BANDS, fake.Pagle.FormatLength))
 		end)
 	end)
+
+	describe("the band's name (ANN-R22, #424)", function()
+		local fake = newFakePagle()
+
+		it("is the Size band's own name, nil for a Catch without a size", function()
+			assert.are.same({ "Hefty", "Monster", nil }, {
+				ns.BandName({ length = 342, band = HEFTY }, fake.Pagle.SIZE_BANDS),
+				ns.BandName({ length = 540, band = MONSTER }, fake.Pagle.SIZE_BANDS),
+				ns.BandName(nil, fake.Pagle.SIZE_BANDS),
+			})
+		end)
+	end)
 end)

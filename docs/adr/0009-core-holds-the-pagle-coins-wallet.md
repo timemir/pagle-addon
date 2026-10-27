@@ -15,7 +15,7 @@ The dev's vision was one currency that many things pay into and that buys addon 
 
 ## Consequences
 
-- ADR 0001 now allows exactly one cross-Module effect: Coins paid into Core's wallet. Cross-Module rewards (Hunt completions granting Ledger XP) are still forbidden, and Modules still never see each other.
+- ADR 0001 allowed one cross-Module effect here: Coins paid into Core's wallet. Later ADRs added more (Activity XP in ADR 0011, pushed content in ADR 0013, Refreshes in [ADR 0017](0017-core-holds-the-refresh-purse-from-reported-totals.md), which lists all four). Modules still never see each other, and a Module's reward is still never another Module's call.
 - ADR 0007's "toast style and sound set are free choices" no longer holds: the defaults (and the Driftwood sound set) stay free, the rest are sold in the Curio Shop. Its reasoning still stands, because the purchase is Core's, not a Module's reward.
 - A purchase stores its price, so a later price change never moves a balance. Purchases are never revoked. If a rebuild or rebalance pushes earned below spent, the balance shows 0 and new income fills the gap before it moves again; there is never a negative balance or a "debt".
 - A disabled Module's goods leave the shop, but goods already bought stay owned. If `PagleDB` is lost, a disabled Module's earned total is lost with it until the Module is enabled again and rebuilds.
@@ -24,3 +24,7 @@ The dev's vision was one currency that many things pay into and that buys addon 
 ## Note: the Core spec
 
 The wallet and shop are specified in `docs/spec/core/wallet-and-shop.md` ([Write the Core spec](https://github.com/timemir/pagle-addon/issues/35)). A purchase entry carries the shared entry header, `U1|<char>|<time>|<tie>|<good>|<price>` (layout in `docs/spec/core/catch-log.md`). "Income only ever adds" means disabling a Module never lowers what it paid; a rebalance or data fix can still recount a Module's total lower, which the balance-held-at-0 rule above already covers.
+
+## Note: the coin economy is paced, and levels count as progress (25 Oct)
+
+The coin-economy map ([#393](https://github.com/timemir/pagle-addon/issues/393); [#397](https://github.com/timemir/pagle-addon/issues/397), [#399](https://github.com/timemir/pagle-addon/issues/399), [#402](https://github.com/timemir/pagle-addon/issues/402), [#403](https://github.com/timemir/pagle-addon/issues/403)) kept the volume principle above and made its wording exact: **Coins reward progress and achievements. There is no payment per Catch.** A level-up and a Prestige count as progress, because each pays once, when it is reached; no trickle per Catch, per hour or per Session exists to top up a slow day. SHOP-R1 says so. What the map changed is the numbers: payouts and prices are now set from a pacing table for a casual Angler (1.5 hours a day, 180 Catches an hour), with a sixth price tier, and the table lives in the wallet spec's Tunables (`docs/spec/core/wallet-and-shop.md`), pinned by `spec/coin_economy_spec.lua`. Nobody holds Coins before 1.0, so the Ledger's and Hunts' rules versions rose and their projections rebuild; a purchase still stores its price (above), so a later price change never moves a balance.

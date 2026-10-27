@@ -1,0 +1,8 @@
+<!-- The warmth that grows in the wax seal as the crate rattles (prototypes/curio-crate/index.html: .glowseal): a 96 px
+     circle of radial-gradient(circle, rgba(255,140,90,.8), transparent 65%) (radius 67.9 px, clear at 44 px), drawn with
+     screen blending. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <defs><radialGradient id="g" gradientUnits="userSpaceOnUse" cx="48" cy="48" r="67.88"><stop offset="0" stop-color="#ff8c5a" stop-opacity=".8"/><stop offset=".65" stop-color="#ff8c5a" stop-opacity="0"/></radialGradient>
+  <clipPath id="c"><circle cx="48" cy="48" r="48"/></clipPath></defs>
+  <rect clip-path="url(#c)" x="0" y="0" width="96" height="96" fill="url(#g)"/>
+</svg>

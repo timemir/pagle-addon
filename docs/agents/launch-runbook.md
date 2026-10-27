@@ -128,6 +128,8 @@ Announce only once both listings show 1.0.0 publicly (Q14).
 
 **Group C, after the tag:** check 3 (rain), 14 (a pass only opens a feature ticket), 25 (the Paste copy test), Track P's exit steps 1–3, M8 step 7, #270, and a `WOW_API_COMMIT` bump.
 
+**Not a gate:** Track C (the Collection, [#400](https://github.com/timemir/pagle-addon/issues/400), PR [#450](https://github.com/timemir/pagle-addon/pull/450)) aims for RC1 and doesn't block the tag; if it isn't merged by the release commit, it ships in 1.0.1.
+
 **GO when all of these hold:**
 1. Every group-A check passes, or its fix is on the release commit and that check was re-run on it.
 2. No Pagle Lua error in any BugGrabber session read since the release commit was installed.
@@ -216,7 +218,7 @@ BUILD=<build>
 ## 7. RC1 day checklist (Tue 3 Nov)
 
 1. **Main has all of Monday:** #381's PR (constants, project IDs, changelog, surface spec, the hint switch per Q13), the conflict-list PR (check 17), and the Q4 answer on #274. No `--lock` yet.
-2. **Spot-check the constants:** `grep -c '^since = 2026-11-05' data/hunts/hunts.toml` gives 12 (the 12 lines that read `2026-11-04` on 23 Oct) and none reads `2026-11-04`; `addons/Pagle_Hunts/logic/Rotation.lua` has `ns.ROTATION_ORIGIN = 1793890800`; `generate-data.py --check` is clean.
+2. **Spot-check the constants:** `grep -c '^since = 2026-11-05' data/hunts/hunts.toml` gives 16 (the 16 lines that read `2026-11-04` since #430 added Home Waters) and none reads `2026-11-04`; `addons/Pagle_Hunts/logic/Rotation.lua` has `ns.ROTATION_ORIGIN = 1793890800`; `generate-data.py --check` is clean.
 3. **The full check** on that head in WSL (`PAGLE_NO_COVERAGE=1 GATE_JOBS=2 scripts/check.sh`), and GitHub Actions green on `main`.
 4. **Package:** `scripts/package.sh` from the main checkout (it can't read a worktree). Record the zip's name and `sha256sum` on #380 with the commit SHA, and copy it to `Pagle-RC1.zip` in the scratchpad.
 5. **Check the zip:** `launch.py post-tag rc1 --zip <the zip>` (six folders, `LICENSE`, `NOTICE` and `CHANGELOG.md` in `Pagle/`); `unzip -p <zip> Pagle/Pagle.toc | head` shows both project IDs.

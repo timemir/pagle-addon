@@ -93,7 +93,7 @@ local ns = select(2, ...)
 ---   `color` "faded" greyed)
 --- - `button` (`text` on a button, calling `action`: the Angler page's Prestige, LED-R146)
 --- - `seal` (a wax seal reading `text`)
---- - `stamps` (`stamps`: ink stamps, each `{ text, inked }`)
+--- - `stamps` (`stamps`: ink stamps, each `{ text, inked, tip }`, the tip optional: a stamp's tooltip, LED-R165)
 --- - `tiles` (`tiles`: zone tiles, LedgerZoneTile)
 --- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette", `large` on an entry, LED-R140)
 --- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar; `tip`, its tooltip, ns.XPBarTip, LED-R145)
@@ -129,7 +129,7 @@ local ns = select(2, ...)
 ---@field color? "faded"|"red"|"blue"
 ---@field place? LedgerJournalPlace
 ---@field value? string
----@field stamps? { text: string, inked: boolean }[]
+---@field stamps? { text: string, inked: boolean, tip: LedgerStampTip? }[]
 ---@field tiles? LedgerZoneTile[]
 ---@field icon? integer|string
 ---@field look? "sepia"|"silhouette"

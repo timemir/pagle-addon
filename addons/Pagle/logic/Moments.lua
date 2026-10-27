@@ -16,6 +16,7 @@ local ns = select(2, ...)
 ---@field stamp? string          -- text when riding as a stamp ("New!"); defaults to title
 ---@field cast? string           -- the Cast's entry ID (ANN-R10)
 ---@field coins? integer         -- ANN-R23
+---@field tickets? integer       -- Refreshes earned (REF-R7)
 ---@field ruler? { old: number, new: number, unit: string, label: string }   -- ANN-R22; unit "length" = millimetres
 ---@field sound? boolean         -- default true
 ---@field expiresAt? integer     -- server time (ANN-R45)
@@ -26,7 +27,10 @@ local ns = select(2, ...)
 ---@field frameRank? integer     -- with seal "frame": the prestige rank whose Prestige frame shows (ANN-R83)
 ---@field crest? integer|string  -- with seal "crest": a crest good's icon shown in the seal's place (VAR-R25)
 ---@field art? PagleMomentArt    -- a texture rectangle drawn instead of `icon` where the headline shows (VAR-R25)
----@field variety? PagleNodVariety -- Core's catch Nod only: the variety its line names (VAR-R26)
+---@field ownStamp? boolean     -- a first-catch variety's moment (VAR-R28): as the headline it shows its own stamp too, on the `toast` page, its `kicker` for kicker (ANN-R11)
+---@field kicker? string         -- with ownStamp, the toast's kicker in place of `title` (the Catch's size text); never stored
+---@field variety? PagleNodVariety -- the variety a moment announces (VAR-R25, VAR-R26): a Module's first-catch variety moment gives its name and rarity; Core's catch toast also its Nod line's halves
+---@field nodLine? string        -- Core's catch toast's: the one line it reads as when the budget steps it down to a Nod (ANN-R13, ANN-R31)
 ---@field onClick? fun()         -- what clicking its toast or Nod does as it sends it away (ANN-R20); never stored
 
 --- A moment's art (announcements.md › Contracts): a texture and its texel rectangle as texture coordinates, a
@@ -39,14 +43,16 @@ local ns = select(2, ...)
 ---@field top number
 ---@field bottom number
 
---- The variety a catch Nod's line names (VAR-R26): its name and rarity, and the line cut either side of the name, so
---- the display draws the name as a segment of its own, in the rarity's ink after a gem in its colour. `title` keeps
---- the whole line as plain text.
+--- The variety a moment announces (VAR-R25, VAR-R26): its name and rarity, which colour the toast it rides on (the ring,
+--- the gem and name, the "New variety" stamp, ANN-R80). A catch toast's also cuts its Nod line either side of the name,
+--- so the display draws the name as a segment of its own, in the rarity's ink after a gem in its colour, when it steps
+--- down to a Nod; `nodLine` keeps the whole line as plain text.
 ---@class PagleNodVariety
 ---@field name string
 ---@field rarity "common"|"uncommon"|"rare"|"epic"
----@field before string          -- the line up to the name, trimmed ("Firefin Snapper ·")
----@field after string           -- the line after it, trimmed ("· Decent · 34.2 cm")
+---@field before? string         -- a catch toast's Nod line up to the name, trimmed ("Firefin Snapper ·")
+---@field after? string          -- a catch toast's Nod line after it, trimmed ("· Decent · 34.2 cm")
+---@field fish? string           -- a first-catch moment's with `ownStamp`: the fish's name, first on the toast's line (VAR-R28)
 
 ---@alias PagleRung "nod"|"toast.low"|"toast"|"toast.high"|"banner"|"splash"
 
@@ -57,7 +63,7 @@ local ns = select(2, ...)
 ---@field moduleTitle string     -- its def.title
 ---@field moduleOrder integer    -- its def.order
 ---@field raised integer         -- 1 for the first moment Core accepted this login, and so on (ANN-R2's last tie-break)
----@field catchNod? true         -- Core's own catch Nod (ANN-R13), never a Module's
+---@field catchToast? true       -- Core's own catch toast (ANN-R13), never a Module's
 
 --- One Announcement (ANN-R11): what the display shows for one side of a Cast's moments (its banners and splash, or
 --- its toasts and Nods), or for one moment without a Cast.
@@ -68,6 +74,7 @@ local ns = select(2, ...)
 ---@field stamps string[]             -- at most MOMENT_STAMPS texts, highest ranked first, identical ones merged
 ---@field more integer                -- distinct stamp texts beyond those, shown as "+N"; 0 for none
 ---@field coins integer               -- the sum of its moments' coins, kept apart from the stamps (ANN-R23)
+---@field tickets? integer            -- the sum of its moments' tickets, apart from the stamps; nil for none (REF-R7)
 ---@field moments PagleRaisedMoment[] -- every moment in it, ranked (ANN-R2), the headline first
 ---@field fighting? PagleRaisedMoment[] -- the "While you were fighting" toast's held headlines, in order (ANN-R36)
 ---@field style? string                -- a sample's toast style, drawn in that, not the equipped one (ANN-R80)
@@ -123,6 +130,16 @@ function ns.MomentProblem(moment)
 			return "RaiseMoment: a moment's art is { texture, left, right, top, bottom }"
 		end
 	end
+	local variety = moment.variety
+	if variety ~= nil then
+		local named = type(variety) == "table"
+			and type(variety.name) == "string"
+			and variety.name ~= ""
+			and type(variety.rarity) == "string"
+		if not named then
+			return "RaiseMoment: a moment's variety is { name, rarity } (VAR-R25)"
+		end
+	end
 	if moment.onClick ~= nil and type(moment.onClick) ~= "function" then
 		return "RaiseMoment: a moment's onClick is a function (ANN-R20)"
 	end
@@ -150,7 +167,7 @@ function ns.RanksAbove(a, b)
 end
 
 --- The Announcement a set of moments makes (ANN-R11): the top-ranked one is the headline, the others ride as
---- stamps, and their coins are summed apart. Nil for no moments. Ticket #88's expiry calls it again on what is left.
+--- stamps (a headline with `ownStamp` shows its own first), and their coins and tickets are summed apart. Nil for no moments. Ticket #88's expiry calls it again on what is left.
 ---@param moments PagleRaisedMoment[]
 ---@return PagleAnnouncement?
 function ns.MakeAnnouncement(moments)
@@ -175,8 +192,11 @@ function ns.MakeAnnouncement(moments)
 	local seen = {}
 	for i, moment in ipairs(ranked) do
 		announcement.coins = announcement.coins + (moment.coins or 0)
+		if (moment.tickets or 0) > 0 then
+			announcement.tickets = (announcement.tickets or 0) + moment.tickets
+		end
 		local text = moment.stamp or moment.title
-		if i > 1 and not seen[text] then
+		if (i > 1 or moment.ownStamp) and not seen[text] then
 			seen[text] = true
 			if #announcement.stamps < ns.MOMENT_STAMPS then
 				announcement.stamps[#announcement.stamps + 1] = text
@@ -192,18 +212,19 @@ end
 local BIG = { banner = true, splash = true }
 
 --- The Announcements a Cast's moments make (ANN-R11): a big one of its banner and splash moments, then a catch one of
---- its toast and Nod moments, each made by ns.MakeAnnouncement; one when every moment is on one side. Core's catch Nod
---- is dropped when a Module raised any moment for the Cast, so it never headlines or rides as a stamp then (ANN-R13).
+--- its toast and Nod moments, each made by ns.MakeAnnouncement; one when every moment is on one side. Core's catch
+--- toast is dropped when a Module raised any moment for the Cast, so it never headlines or rides as a stamp then
+--- (ANN-R13).
 ---@param moments PagleRaisedMoment[]
 ---@return PagleAnnouncement[]
 function ns.MakeCastAnnouncements(moments)
 	local bigger = false
 	for _, moment in ipairs(moments) do
-		bigger = bigger or not moment.catchNod
+		bigger = bigger or not moment.catchToast
 	end
 	local big, catch = {}, {}
 	for _, moment in ipairs(moments) do
-		if not (bigger and moment.catchNod) then
+		if not (bigger and moment.catchToast) then
 			local side = BIG[moment.rung] and big or catch
 			side[#side + 1] = moment
 		end
@@ -230,21 +251,24 @@ local function lookOf(variety, varieties)
 	return nil
 end
 
---- The catch Nod of a Cast (ANN-R13), or nil for a got-away Cast or one whose every item is item 0: a silent `nod` of
---- the Cast naming its first Catch with a Simulated Size, else its first that isn't item 0, as "{item name} · {band} ·
---- {length}" in `lengthUnit`, or by name alone for an item with no size. `itemName` is the client's name, nil until it
---- has cached it ("Item {itemID}" then). `cast` may be a read-only proxy, so its items are read by index.
---- A Catch with a variety that `varieties` (Pagle.GetVarieties) names reads "{item name} · {variety name} · {band} ·
---- {length}" (VAR-R26): the moment's `variety` cuts the line about the name, and its `art` is a copy of the variety's,
---- for the medallion. Only a Catch with a size has a variety (VAR-R1). With `caughtBefore`, it names only a variety
---- caught before this Cast (VAR-R27): a first one reads as a Catch without a variety, its moment the Ledger's.
+--- The catch toast of a Cast (ANN-R13), or nil for a got-away Cast or one whose every item is item 0: a `toast.low` of
+--- the Cast naming its first Catch with a Simulated Size, else its first that isn't item 0. Its title is the kicker
+--- "{band} · {length}" in `lengthUnit` and its text the item's name, or, for an item with no size, "Caught" over the
+--- name. `itemName` is the client's name, nil until it has cached it ("Item {itemID}" then). `cast` may be a read-only
+--- proxy, so its items are read by index.
+--- Its `nodLine` is what it reads as once the budget steps it down to a Nod (ANN-R31): "{item name} · {band} ·
+--- {length}", or the name alone for an item with no size. A Catch with a variety that `varieties`
+--- (Pagle.GetVarieties) names reads "{item name} · {variety name} · {band} · {length}" there (VAR-R26): the moment's
+--- `variety` cuts that line about the name, and its `art` is a copy of the variety's, for the medallion. Only a Catch
+--- with a size has a variety (VAR-R1). With `caughtBefore`, it names only a variety caught before this Cast
+--- (VAR-R27): a first one reads as a Catch without a variety, its moment the Ledger's.
 ---@param cast PagleCast
 ---@param itemName fun(itemID: integer): string?
 ---@param lengthUnit PagleLengthUnit
 ---@param varieties (fun(speciesID: integer): PagleVarietyEntry[]?)?
 ---@param caughtBefore (fun(variety: PagleVariety, castId: string): boolean)?
 ---@return PagleMoment?
-function ns.CatchNodMoment(cast, itemName, lengthUnit, varieties, caughtBefore)
+function ns.CatchToastMoment(cast, itemName, lengthUnit, varieties, caughtBefore)
 	if cast.outcome ~= "caught" then
 		return nil
 	end
@@ -266,26 +290,35 @@ function ns.CatchNodMoment(cast, itemName, lengthUnit, varieties, caughtBefore)
 	end
 	local L = ns.L
 	local itemID, size = named.itemID, named.size
-	local name = itemName(itemID) or L.CATCH_NOD_ITEM:format(itemID)
-	local moment = { rung = "nod", kind = "catch", title = name, icon = itemID, cast = cast.id, sound = false }
+	local name = itemName(itemID) or L.CATCH_TOAST_ITEM:format(itemID)
+	local moment = {
+		rung = "toast.low",
+		kind = "catch",
+		title = L.CATCH_TOAST_CAUGHT,
+		text = name,
+		nodLine = name,
+		icon = itemID,
+		cast = cast.id,
+	}
 	if not size then
 		return moment
 	end
 	local band, length = ns.SIZE_BANDS[size.band].name, ns.FormatLength(size.length, lengthUnit)
+	moment.title = L.CATCH_TOAST_KICKER:format(band, length)
 	local variety = named.variety
 	local look = variety
 		and varieties
 		and (not caughtBefore or caughtBefore(variety, cast.id))
 		and lookOf(variety, varieties)
 	if not look then
-		moment.title = L.CATCH_NOD:format(name, band, length)
+		moment.nodLine = L.CATCH_TOAST:format(name, band, length)
 		return moment
 	end
 	-- A look is found only for a variety.
 	---@cast variety PagleVariety
-	moment.title = L.CATCH_NOD_VARIETY:format(name, look.name, band, length)
+	moment.nodLine = L.CATCH_TOAST_VARIETY:format(name, look.name, band, length)
 	-- The line with a mark in the name's place, cut there: "\001" is in no name.
-	local before, after = L.CATCH_NOD_VARIETY:format(name, "\001", band, length):match("^(.-)%s*\001%s*(.*)$")
+	local before, after = L.CATCH_TOAST_VARIETY:format(name, "\001", band, length):match("^(.-)%s*\001%s*(.*)$")
 	moment.variety = { name = look.name, rarity = variety.rarity, before = before, after = after }
 	local art = look.art
 	if art then
@@ -340,7 +373,7 @@ local function copyOf(def, moment, raised)
 	for key, value in pairs(moment) do
 		copy[key] = value
 	end
-	for _, key in ipairs({ "ruler", "art" }) do
+	for _, key in ipairs({ "ruler", "art", "variety" }) do
 		if type(moment[key]) == "table" then
 			copy[key] = {}
 			for field, value in pairs(moment[key]) do
@@ -381,18 +414,18 @@ function Moments:Raise(module, moment)
 	self:queue(copy)
 end
 
--- Core itself, as the raiser of its catch Nod (ANN-R13): ahead of every Module, like "While you were fighting".
+-- Core itself, as the raiser of its catch toast (ANN-R13): ahead of every Module, like "While you were fighting".
 ---@type PagleModuleDef
 local CORE = { name = "Pagle", title = "Pagle", order = 0 }
 
---- Takes Core's catch Nod for a live caught Cast (ANN-R13), made by ns.CatchNodMoment: it waits for the next frame's
---- flush with the Cast's other moments, as theirs do (ANN-R10), never reaches the Session summary (ANN-R25), and is
---- dropped there if a Module raised any moment for the Cast (ns.MakeCastAnnouncements).
+--- Takes Core's catch toast for a live caught Cast (ANN-R13), made by ns.CatchToastMoment: it waits for the next
+--- frame's flush with the Cast's other moments, as theirs do (ANN-R10), never reaches the Session summary (ANN-R25),
+--- and is dropped there if a Module raised any moment for the Cast (ns.MakeCastAnnouncements).
 ---@param moment PagleMoment
-function Moments:RaiseCatchNod(moment)
+function Moments:RaiseCatchToast(moment)
 	self.raised = self.raised + 1
 	local copy = copyOf(CORE, moment, self.raised)
-	copy.catchNod = true
+	copy.catchToast = true
 	self:queue(copy)
 end
 

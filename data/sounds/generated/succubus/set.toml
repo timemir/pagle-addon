@@ -1,0 +1,32 @@
+# Succubus: the succubus's attack, wound and death cries, cackles and purrs. Made only of the game's own clips (WOW_SOUND_DIR, wow.export's sound/ folder), which are Blizzard's and
+# not in the repo; each file is a mix of them laid on a timeline (see scripts/pagle_data/generated_sounds.py).
+
+[file.toast_1]
+# A short attack cry.
+mix = [
+	{ clip = "creature/succubus/succubusattacka", start = 0, semitones = 2 },
+]
+
+[file.toast_2]
+# A wound cry, lower and slower.
+mix = [
+	{ clip = "creature/succubus/succubuswounda", start = 0, semitones = -2 },
+]
+
+[file.toast_3]
+# Two cries, the second answering a step up.
+mix = [
+	{ clip = "creature/succubus/succubuswoundc", start = 0 },
+	{ clip = "creature/succubus/succubusattacka", start = 0.55, semitones = 4, gain = 0.9 },
+]
+
+[file.banner]
+# The whole coven: cries at four pitches, the long wound, the death cry fading.
+mix = [
+	{ clip = "creature/succubus/succubusattacka", start = 0, semitones = -3 },
+	{ clip = "creature/succubus/succubuswoundcrita", start = 0.2 },
+	{ clip = "creature/succubus/succubuswounda", start = 0.5, semitones = 3 },
+	{ clip = "creature/succubus/succubuswoundc", start = 0.8, semitones = -5, gain = 0.8 },
+	{ clip = "creature/succubus/succubusstand2a", start = 0.9, gain = 0.5, length = 2.4 },
+	{ clip = "creature/succubus/succubusdeatha", start = 1.4, semitones = 2, gain = 0.8, length = 2.4 },
+]

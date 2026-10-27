@@ -1,0 +1,22 @@
+<!-- The Curio card (prototypes/curio-crate/index.html: .card.t7), 150 x 172 px: the gold radial-gradient(circle at 50%
+     42%, #fff4c0, #f0c44a 30%, #a8761c 70%, #5a3a08), its two rings (inset 2px #fff0b0, inset 4px #7a5210), and the
+     question mark in Marcellus 104px, #7a4e0c, with its text-shadows (0 2px 0 rgba(255,244,200,.8), 0 -1px 0
+     rgba(60,30,0,.5)). The glow outside it is card-glow; the shimmer, card-sheen. The question mark's baseline is 122.1
+     (the line box 34 to 138, Marcellus's ascent .975 em and descent .280 em, line-height 1). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 172" width="150" height="172">
+  <defs>
+    <radialGradient id="g" gradientUnits="userSpaceOnUse" cx="75" cy="72.24" r="124.8">
+      <stop offset="0" stop-color="#fff4c0"/><stop offset=".3" stop-color="#f0c44a"/><stop offset=".7" stop-color="#a8761c"/><stop offset="1" stop-color="#5a3a08"/></radialGradient>
+    <clipPath id="c"><rect x="0" y="0" width="150" height="172" rx="8"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect x="0" y="0" width="150" height="172" fill="url(#g)"/>
+    <rect x="1" y="1" width="148" height="170" rx="7" fill="none" stroke="#fff0b0" stroke-width="2"/>
+    <rect x="3" y="3" width="144" height="166" rx="5" fill="none" stroke="#7a5210" stroke-width="2"/>
+    <g font-family="Marcellus" font-size="104" text-anchor="middle">
+      <text x="75" y="124.1" fill="#fff4c8" fill-opacity=".8">?</text>
+      <text x="75" y="121.1" fill="#3c1e00" fill-opacity=".5">?</text>
+      <text x="75" y="122.1" fill="#7a4e0c">?</text>
+    </g>
+  </g>
+</svg>

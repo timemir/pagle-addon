@@ -11,10 +11,11 @@ local DAY = 86400
 local NOW = SERVER_TIME
 
 local MISSING = {
-	"New wagers are out there. The Pagle companion brings them: more XP, more Coins.",
+	"New wagers are out there. The Pagle companion brings them: more XP, more Coins, and the Sonar Scope toast style.",
 	"Installed it just now? Log out to character select once.",
 }
 local NOT_RUNNING = { "The Pagle companion isn't running. Start it to get this week's wagers." }
+local NOD = "New wagers are out there. The Pagle companion brings them: more XP, more Coins."
 
 describe("the companion hint (HNT-R170)", function()
 	it("is on at 1.0: the switch ships on, with the companion's download address (HNT-R172, HNT-R170)", function()
@@ -91,25 +92,29 @@ describe("the weekly Nod (HNT-R171)", function()
 		assert.is_false(ns.HintNodDue(nil, 0, NOW))
 	end)
 
-	it("is HNT-R86's companionHint nod: the first line, no cast and no Coins, opening the spread", function()
-		local opened = 0
-		local nod = ns.HintNod(hint, function()
-			opened = opened + 1
-		end)
+	it(
+		"is HNT-R86's companionHint nod: its own short line, not the hint's, no cast and no Coins, opening the spread",
+		function()
+			local opened = 0
+			local nod = ns.HintNod(hint, function()
+				opened = opened + 1
+			end)
 
-		local onClick = nod.onClick
-		nod.onClick = nil
-		assert.are.same({
-			rung = "nod",
-			kind = "companionHint",
-			title = "Pagle Wagers",
-			text = MISSING[1],
-			pastText = MISSING[1],
-			icon = "Interface\\Icons\\Trade_Fishing",
-		}, nod)
-		onClick()
-		assert.are.equal(1, opened)
-	end)
+			local onClick = nod.onClick
+			nod.onClick = nil
+			assert.are.same({
+				rung = "nod",
+				kind = "companionHint",
+				title = "Pagle Wagers",
+				text = NOD,
+				pastText = NOD,
+				icon = "Interface\\Icons\\Trade_Fishing",
+			}, nod)
+			onClick()
+			assert.are.equal(1, opened)
+			assert.are_not.equal(MISSING[1], nod.text) -- the hint's first line names the Sonar Scope; a Nod's one line is short
+		end
+	)
 
 	it("says the not-running line when the companion isn't running", function()
 		local nod = ns.HintNod(ns.CompanionHint(true, "notRunning", true), function() end)

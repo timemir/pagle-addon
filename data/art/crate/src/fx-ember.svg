@@ -1,0 +1,5 @@
+<!-- An ember (crate.js's embers(): a .spark with a 6px dot and an 8px glow, box-shadow 0 0 8px tier), white for the client to tint. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-14 -14 34 34" width="34" height="34">
+  <defs><filter id="g8" filterUnits="userSpaceOnUse" x="-14" y="-14" width="34" height="34"><feGaussianBlur stdDeviation="4"/></filter></defs>
+  <circle cx="3" cy="3" r="3" fill="#fff" filter="url(#g8)"/><circle cx="3" cy="3" r="3" fill="#fff"/>
+</svg>

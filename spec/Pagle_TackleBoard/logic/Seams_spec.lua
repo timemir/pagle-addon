@@ -58,6 +58,7 @@ describe("the Tackle Board's seams", function()
 					tally = { notices = 0, expeditions = 0 },
 					coins = 0,
 					xp = 0,
+					ticketsSpent = 0,
 					flies = {},
 					titles = {},
 					fire = { count = 0, kindling = 0, longest = 0, milestones = {}, log = {} },

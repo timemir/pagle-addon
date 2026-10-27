@@ -188,6 +188,35 @@ describe("the Letter's frame (ONB-R11)", function()
 		assert.are.same({ "Open the letter", "Later" }, { frame.open.label.text, frame.later.label.text })
 	end)
 
+	it(
+		"sits at the Toast column's foot wherever the Angler moved it, as the column's clamp has it (ONB-R11, ANN-R98)",
+		function()
+			local loaded = login()
+			stillness(loaded)
+			loaded.ns.db.profile.announcements.point = { x = 200, y = 500 }
+			loaded.client.advance(4)
+
+			assert.are.same({ "BOTTOM", loaded.env.UIParent, "BOTTOM", 200, 500 }, letterOf(loaded).points[1])
+		end
+	)
+
+	it(
+		"keeps to that foot as it rises, and takes the nearest foot a full column fits if the screen can't hold the saved one (ONB-R11, ANN-R98)",
+		function()
+			local loaded = login()
+			loaded.ns.db.profile.announcements.point = { x = 5000, y = 5000 }
+			loaded.client.advance(4)
+			local frame = letterOf(loaded)
+			local screen = loaded.env.UIParent
+
+			assert.are.same({ "BOTTOM", screen, "BOTTOM", 629, 758 - 30 }, frame.points[1])
+			play(loaded, 0.6)
+
+			assert.are.same({ "BOTTOM", screen, "BOTTOM", 629, 758 }, frame.points[1])
+			assert.are.same({ x = 5000, y = 5000 }, loaded.ns.db.profile.announcements.point)
+		end
+	)
+
 	it("is no Announcement: it counts no interruption and Esc doesn't close it (ONB-R11, ANN-R30)", function()
 		local loaded = arrived()
 

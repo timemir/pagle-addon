@@ -1,0 +1,22 @@
+# Kazoo Parade: a kazoo, a slide whistle and a party horn. Each file's ElevenLabs sound-effects prompt, its requested length in seconds and which raw take
+# ships ("a" or "b"; the takes are in raw/<file>/take_<x>.mp3).
+
+[file.toast_1]
+prompt = 'A single silly kazoo note, "bwaap!", cheeky and comedic, kazoo only, no other instruments'
+seconds = 1.0
+pick = "a"
+
+[file.toast_2]
+prompt = 'A quick slide whistle going up followed by a kazoo "bwa-bwaa", goofy circus style, no music'
+seconds = 1.5
+pick = "a"
+
+[file.toast_3]
+prompt = 'Two playful kazoo notes then a party horn toot, silly parade, comedic, no voices'
+seconds = 1.5
+pick = "a"
+
+[file.banner]
+prompt = 'A goofy kazoo fanfare with a slide whistle swoop and a party horn blast at the end, silly circus parade victory, comedic, no voices'
+seconds = 3.0
+pick = "a"

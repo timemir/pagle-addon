@@ -169,6 +169,7 @@ function ns.RecoveryPrepare(data, keys, log, archive, db)
 		"projections",
 		"coins",
 		"activityXP",
+		"tickets",
 		"goods",
 		"summary",
 		"pending",

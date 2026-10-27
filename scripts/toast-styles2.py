@@ -1,7 +1,9 @@
 """Writes addons/Pagle/data/ToastStyleArt2.lua from the Curio Shop round two kit's goods.json (ANN-R82): the ten
-composed toast styles' atlases and art data, keyed by good ID, for adapter/ToastLayers.lua to draw.
+composed toast styles' atlases and art data, keyed by good ID, for adapter/ToastLayers.lua to draw; and, with `--round
+3`, addons/Pagle/data/ToastStyleArt3.lua from the round three kit's (ANN-R84), the eighteen more in the same format.
 
     .tools/bin/python scripts/toast-styles2.py <kit>/goods.json addons/Pagle/data/ToastStyleArt2.lua
+    .tools/bin/python scripts/toast-styles2.py --round 3 <kit3>/goods.json addons/Pagle/data/ToastStyleArt3.lua
 
 then StyLua the file. The kit's data is copied as it is, with three changes made here once rather than in the client:
 each layer's CSS transform list is folded into one translate, rotation and scale (CSS applies a list right to left,
@@ -88,9 +90,8 @@ def px(value):
     return float(value.strip().rstrip("px").rstrip("deg") or 0)
 
 
-def fold(css):
-    """A CSS transform list folded to (x, y, rotate, sx, sy): its matrix's translation, then its 2 x 2 part as a
-    rotation of a scale (no skew: skew is dropped, the kit's `ignored`)."""
+def matrix_of(css):
+    """A CSS transform list as the matrix (a, b, c, d, e, f) it composes to, left to right as CSS does."""
     a, b, c, d, e, f = 1.0, 0.0, 0.0, 1.0, 0.0, 0.0
     for name, args in re.findall(r"(\w+)\(([^)]*)\)", css or ""):
         vals = [v for v in re.split(r"[,\s]+", args.strip()) if v]
@@ -109,8 +110,10 @@ def fold(css):
                 m = (1, 0, 0, s1, 0, 0)
             else:
                 m = (s1, 0, 0, float(vals[1]) if len(vals) > 1 else s1, 0, 0)
-        elif name.startswith("skew"):
-            continue
+        elif name == "skewX":
+            m = (1, 0, math.tan(math.radians(px(vals[0]))), 1, 0, 0)
+        elif name == "skewY":
+            m = (1, math.tan(math.radians(px(vals[0]))), 0, 1, 0, 0)
         else:
             raise ValueError(f"unknown transform {name}")
         # this matrix times m, as CSS composes a list left to right
@@ -122,6 +125,34 @@ def fold(css):
             a * m[4] + c * m[5] + e,
             b * m[4] + d * m[5] + f,
         )
+    return a, b, c, d, e, f
+
+
+def fold(css):
+    """A CSS transform list folded to (x, y, rotate, sx, sy, kx, ky): its matrix's translation, then its 2 x 2 part as
+    a rotation of a skew of a scale (the client draws R . K . S, ANN-R82). The skew angles kx and ky are in degrees,
+    0 for a list with none. A list with a skew must be rotations, then the skews, then scales, as the kit's three are;
+    anything else is an error rather than a guess."""
+    a, b, c, d, e, f = matrix_of(css)
+    functions = re.findall(r"(\w+)\(([^)]*)\)", css or "")
+    first = next((i for i, (name, _) in enumerate(functions) if name.startswith("skew")), None)
+    if first is not None:
+        text = lambda items: " ".join(f"{name}({args})" for name, args in items)  # noqa: E731
+        last = max(i for i, (name, _) in enumerate(functions) if name.startswith("skew"))
+        head, skews, tail = functions[:first], functions[first : last + 1], functions[last + 1 :]
+        if any(not name.startswith("skew") for name, _ in skews) or any(name != "rotate" for name, _ in head) or any(
+            name not in ("scale", "scaleX", "scaleY") for name, _ in tail
+        ):
+            raise ValueError(f"a skew must sit between rotations and scales: {css}")
+        kx = sum(px(args) for name, args in skews if name == "skewX")
+        ky = sum(px(args) for name, args in skews if name == "skewY")
+        rot = sum(px(args) for _, args in head)
+        scale = matrix_of(text(tail))
+        sx, sy = scale[0], scale[3]
+        skewed = matrix_of(f"rotate({rot}deg) skewX({kx}deg) skewY({ky}deg) scale({sx}, {sy})")
+        if any(abs(u - v) > 1e-6 for u, v in zip(skewed[:4], (a, b, c, d))):
+            raise ValueError(f"a skew list that is not rotate, skewX, skewY, scale: {css}")
+        return e, f, rot, sx, sy, kx, ky
     det = a * d - b * c
     if det < 0:
         sx = -math.hypot(a, b)
@@ -130,7 +161,17 @@ def fold(css):
         sx = math.hypot(a, b)
         rot = math.atan2(b, a)
     sy = det / sx if sx else 1.0
-    return e, f, math.degrees(rot), sx, sy
+    return e, f, unwound(math.degrees(rot), functions), sx, sy, 0.0, 0.0
+
+
+def unwound(angle, functions):
+    """The matrix's angle (-180 to 180) as the whole turns the list's rotate() arguments add up to: a spin from
+    rotate(0) to rotate(360deg) is the same matrix at both ends, but the client turns a layer by interpolating the
+    angle linearly between keys, so the 360 must survive (a 0 to 0 spin does not move). An angle that is not the
+    rotate() sum modulo a turn (a mirror before the rotation reverses it) is left as the matrix has it."""
+    turns = sum(px(args) for name, args in functions if name == "rotate")
+    whole = round((turns - angle) / 360)
+    return angle + 360 * whole if abs(turns - angle - 360 * whole) < 1e-6 else angle
 
 
 def tilt_of(matrix):
@@ -160,7 +201,16 @@ def tracks(motion):
                 keys.append([at] + value)
         if not keys:
             continue
-        base = {"alpha": [1.0], "transform": [0.0, 0.0, 0.0, 1.0, 1.0], "scroll": [0.0, 0.0]}[kind]
+        if kind == "transform":
+            # Skew angles (kx, ky) are kept only for a motion that has one: the others stay the five values.
+            skewed = any(key[6] or key[7] for key in keys)
+            if not skewed:
+                keys = [key[:6] for key in keys]
+        base = {
+            "alpha": [1.0],
+            "transform": [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0] if kind == "transform" and skewed else [0.0, 0.0, 0.0, 1.0, 1.0],
+            "scroll": [0.0, 0.0],
+        }[kind]
         keys.sort(key=lambda k: k[0])
         if keys[0][0] > 0:
             keys.insert(0, [0.0] + base)
@@ -325,14 +375,48 @@ ns.TOAST_STYLE_ART2 = {}
 '''
 
 
+HEADER3 = '''---@class PagleNS
+local ns = select(2, ...)
+
+-- The Curio Shop round three's eighteen composed toast styles (announcements.md › Toast styles, ANN-R84), as the round
+-- three kit's goods.json has them: written by scripts/toast-styles2.py --round 3, so change the kit and run it, not this
+-- file. The same format as data/ToastStyleArt2.lua (ANN-R82), which loads first and owns the tables. Eight are Core's,
+-- for sale; the ten race and faction styles are the Ledger's earned goods (LED-R164), keyed by their ledger.* IDs.
+
+local DIR = "Interface\\\\AddOns\\\\Pagle\\\\media\\\\announce\\\\"
+
+ns.ATLASES = ns.ATLASES or {}
+ns.TOAST_STYLE_ART2 = ns.TOAST_STYLE_ART2 or {}
+
+'''
+
+
+# Round three's ten race and faction styles, which the kit has as Core's: the Ledger earns them (LED-R164), so their
+# goods are the Ledger's, and the art is keyed by their IDs.
+ROUND3_LEDGER = {
+    f"core.toaststyle.{key}"
+    for key in ("crier", "hall", "glade", "blueprint", "drum", "shroud", "totem", "hex", "lion", "warband")
+}
+
+
+# The kit's names that Pagle's lore can't keep: "Notice" is one of Pagle's capitalised terms, which lore never uses
+# (DATA-R110), and the Ledger's lore is held to that.
+ROUND3_NAMES = {"core.toaststyle.crier": "Town Crier's Proclamation"}
+
+
 def main(argv):
+    header, ledger = HEADER, set()
+    if argv[:2] == ["--round", "3"]:
+        header, ledger, argv = HEADER3, ROUND3_LEDGER, argv[2:]
     if len(argv) != 2:
-        sys.exit("usage: toast-styles2.py <goods.json> <ToastStyleArt2.lua>")
+        sys.exit("usage: toast-styles2.py [--round 3] <goods.json> <ToastStyleArt2.lua>")
     data = json.load(open(argv[0], encoding="utf-8"))
-    out = HEADER
+    out = header
     for good in data["goods"]:
         if good["slot"] != "core.toaststyle":
             continue
+        if good["id"] in ledger:
+            good = {**good, "id": good["id"].replace("core.", "ledger.", 1), "name": ROUND3_NAMES.get(good["id"], good["name"])}
         atlas, entry, rungs = style_art(good)
         for sprite in entry["sprites"].values():
             scale = entry["scale"]

@@ -14,7 +14,7 @@ A first-time Angler gets a **letter**, which opens an eight-step **field guide**
 
 **Doesn't own:** what any control on a step does. Every control calls the owner's existing action: `Input` and the next-action button (QOL-R12, QOL-R70), the fishing set and Swap gear (QOL-R40–R46), the Announcement settings (announcements.md › Settings), Start my board (TKB-R5). The guide is a second door to settings that already exist, plus two new key-binding flows (ONB-R40–R44).
 
-**Uses from Core:** CORE-R12 (Module handle), CORE-R17, CORE-R19 (`ModulesChanged`), CORE-R30 (restriction), CORE-R40–R44 (Settings root), CORE-R50 (compartment menu labels, for the What's in the box step), CORE-R60–R62 (`/pagle`), CORE-R70–R73 (tracker dock), ANN-R4/R13/R20/R21/R40/R53 (moments, the catch Nod, lanes, cards, Cozy mode, the Session summary), LOG-R60–R63 (Sessions), `Pagle.IsAnimationsOn()`.
+**Uses from Core:** CORE-R12 (Module handle), CORE-R17, CORE-R19 (`ModulesChanged`), CORE-R30 (restriction), CORE-R40–R44 (Settings root), CORE-R50 (compartment menu labels, for the What's in the box step), CORE-R60–R62 (`/pagle`), CORE-R70–R73 (tracker dock), ANN-R4/R13/R20/R21/R40/R53 (moments, the catch toast, lanes, cards, Cozy mode, the Session summary), LOG-R60–R63 (Sessions), `Pagle.IsAnimationsOn()`.
 
 Modules still see only Core (ADR 0001): a Module's step never reads another Module, and Core's What's in the box step reads only the registered Modules' `def` fields.
 
@@ -83,10 +83,10 @@ Copy is verbatim from the canvas; the probe has every string. Layout per step is
 
   | Id | When | Target | Text | Owner |
   |---|---|---|---|---|
-  | `core.nod` | the first catch Nod shows (ANN-R13) | the Nod | "That’s a *Nod*: one quiet line for every Catch. It’s gone in three seconds, and it’s in your Ledger for good." | Core |
+  | `core.nod` | the first Nod of any kind shows (ANN-R31, #437) | the Nod | "That’s a *Nod*: when Pagle’s had a lot to say lately, the small news steps down to one quiet line. It’s gone in three seconds, and it’s in your Ledger for good." | Core |
   | `core.toast` | the first toast with Coins shows | the toast's coin | "… The coin is *Pagle Coins*: earned by doing things, never bought, spent on looks in the Curio Shop." prefixed by the moment's `firstNote` if it has one (Ledger's `newSpecies`: "A new Species for your Ledger.") | Core |
   | `core.summary` | the first Session summary card shows | the card | "You stepped away five minutes, so the Session closed. Everything it earned is here, *even what never popped up*." | Core |
-  | `core.uncharted` | the first Uncharted Catch's Nod | the Nod | "Pagle hasn’t charted this one yet. It’s kept, and credited the day it is. *Help chart the waters* in the Pagle menu copies it out, to share if you like." | Core |
+  | `core.uncharted` | the first Uncharted Catch's toast or Nod (#437) | the toast or Nod | "Pagle hasn’t charted this one yet. It’s kept, and credited the day it is. *Help chart the waters* in the Pagle menu copies it out, to share if you like." | Core |
   | `qol.lure` | the next-action button first shows "Lure" | the button | "Your pole has no lure on. Your next press puts the best one in your bags on. *Only that*; then you cast." | QoL |
   | `ledger.fresh` | the Fish Journal opens with Fresh Water above 0 for the first time | the ink bar's blue part | "You’ve been away, so your next Catches earn bonus XP. That’s *Fresh Water*, the blue in your bar. A rest is never a penalty." | Ledger |
 
@@ -113,7 +113,7 @@ Copy is verbatim from the canvas; the probe has every string. Layout per step is
   | Id | Text | Hint (shown under the next item) | Done when | Owner |
   |---|---|---|---|---|
   | `cast` | Make a Cast | press your Fishing key, or double right-click (QoL on) / right-click the water with Fishing (QoL off) | `CastStarted` | Core |
-  | `catch` | Land a Catch and see its Nod | | a catch Nod shows | Core |
+  | `catch` | Land a Catch and see its toast | | a catch toast shows (ANN-R13) | Core |
   | `journal` | Open the Fish Journal | Pagle menu by the minimap › Fish Journal | the Journal opens | Ledger |
   | `hunts` | See what’s biting on Hunts | Pagle menu › Hunts | the Hunts board opens | Hunts |
   | `session` | Finish a Session | step away 5 minutes for your summary | a Session summary card shows | Core |

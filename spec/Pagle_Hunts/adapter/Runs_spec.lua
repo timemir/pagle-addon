@@ -45,6 +45,17 @@ local function reports(list)
 	return totals
 end
 
+-- Each Refreshes-earned report Core accepted from Hunts, in order (REF-R2).
+local function tickets(fake)
+	local totals = {}
+	for _, report in ipairs(fake.ticketReports) do
+		if report.module == "Hunts" and report.kind == "earned" then
+			totals[#totals + 1] = report.total
+		end
+	end
+	return totals
+end
+
 -- The next login over the same log, `prepare`d (to change a fingerprint or the rules version): what its done was
 -- told, and its state.
 local function again(fake, loaded, prepare, events)
@@ -158,9 +169,9 @@ describe("Hunt Events' runs in Hunts' projection", function()
 				{ 1, 1 },
 				{ second.hunts.fixture_shore_snapper.count, #second.hunts.fixture_shore_snapper.reached }
 			)
-			-- The Standing fixture_snapper completes once (30 Coins, 500 XP); the event's snapper pays 15 and 150 in each.
+			-- The Standing fixture_snapper completes once (30 Coins, 500 XP); the event's snapper pays 8 and 150 in each.
 			local state = loaded.ns.State()
-			assert.are.same({ 30 + 15 + 15, 500 + 150 + 150 }, { state.coins, state.xp })
+			assert.are.same({ 30 + 8 + 8, 500 + 150 + 150 }, { state.coins, state.xp })
 		end)
 
 		it(
@@ -463,9 +474,9 @@ describe("Hunt Events' runs in Hunts' projection", function()
 				castAt(S + 2 * HOUR, DAY_MINUTE, ELWYNN, { C.BLACKMOUTH, C.BLACKMOUTH }),
 			})
 		end
-		-- Standing: 30 + 15 Coins, 500 + 250 XP. The run: three tier 1s (15 Coins, 150 XP each), the Haul's tier 2 (10,
-		-- 100) and the completed run (50, 250).
-		local COINS = 30 + 15 + 3 * 15 + 10 + 50
+		-- Standing: 30 + 15 Coins, 500 + 250 XP. The run: three tier 1s (8 Coins, 150 XP each), the Haul's tier 2 (5,
+		-- 100) and the completed run (25, 250).
+		local COINS = 30 + 15 + 3 * 8 + 5 + 25
 		local XP = 500 + 250 + 3 * 150 + 100 + 250
 
 		it("sums them over every tier, completed run and title", function()
@@ -495,8 +506,162 @@ describe("Hunt Events' runs in Hunts' projection", function()
 		end)
 	end)
 
-	describe("rules version 2 and the fingerprint (HNT-R136, HNT-R138)", function()
-		it("is version 2, and rebuilds a projection stored under version 1", function()
+	describe("Refreshes (HNT-R116, REF-R2)", function()
+		local S = MARCH_1
+
+		-- The fixture pool and one more event, off the rotation: fixture_deep in Elwynn (12), a Haul with three tiers
+		-- (1 / 2 / 3 Catches), a Named fish (Oily Blackmouth) and a Quality Hunt (1), so a Hunt of a run can reach tier 3.
+		local function withDeep(list)
+			list.events[#list.events + 1] = {
+				id = "fixture_deep",
+				zones = { 12 },
+				tags = { "lake", "low" },
+				skill = { 25, 150 },
+				band = "low",
+				rotation = false,
+				hunts = {
+					{ id = "fixture_deep_haul", class = "species.any", tiers = { 1, 2, 3 } },
+					{ id = "fixture_deep_blackmouth", species = 6358, tiers = { 1 } },
+					{ id = "fixture_deep_uncommon", class = "quality.uncommon", tiers = { 1 } },
+				},
+			}
+			return list
+		end
+
+		-- A login over `records`, with fixture_deep in the pool.
+		local function deep(records)
+			return login(function(fake)
+				append(fake, records)
+			end, { events = withDeep })
+		end
+
+		-- A Cast in Elwynn at `t` holding these items: a Blackmouth is a Catch of the Named fish and of the Haul, an uncommon
+		-- item one of the Quality Hunt (and not of the Haul, which counts species).
+		local function elwynn(t, ...)
+			return castAt(t, DAY_MINUTE, ELWYNN, { ... })
+		end
+
+		local function deepRun(start)
+			return runRecord("fixture_deep", start, start + 3 * DAY)
+		end
+
+		it("pays a completed run once, when its last Hunt reaches tier 1 (HNT-R116)", function()
+			local loaded = deep({
+				deepRun(S),
+				elwynn(S + HOUR, C.BLACKMOUTH), -- the Haul's and the Named fish's tier 1
+				elwynn(S + 2 * HOUR, C.UNCOMMON), -- the Quality Hunt's: the run is completed
+			})
+
+			local state = loaded.ns.State()
+			assert.are.same({ 1, loaded.ns.TICKETS_RUN }, { state.settled, state.tickets })
+		end)
+
+		it("pays nothing before the run is complete, nor for a Hunt's tier 1 or 2 (HNT-R116)", function()
+			local loaded = deep({
+				deepRun(S),
+				elwynn(S + HOUR, C.BLACKMOUTH, C.BLACKMOUTH), -- the Haul at tier 2, the Named fish at tier 1
+			})
+
+			local run = runOf(loaded, "fixture_deep", S)
+			assert.are.equal(2, #run.hunts.fixture_deep_haul.reached)
+			assert.is_nil(run.completedAt)
+			assert.are.equal(0, loaded.ns.State().tickets)
+		end)
+
+		it("pays a Hunt reaching tier 3 once, beside the completed run, and no more for a further Catch", function()
+			local loaded = deep({
+				deepRun(S),
+				elwynn(S + HOUR, C.BLACKMOUTH, C.BLACKMOUTH, C.BLACKMOUTH, C.UNCOMMON), -- tiers 1 to 3 of the Haul in one Cast
+				elwynn(S + 2 * HOUR, C.BLACKMOUTH), -- a fourth Catch: the Haul has no tier 4
+			})
+
+			local state = loaded.ns.State()
+			assert.are.equal(3, #runOf(loaded, "fixture_deep", S).hunts.fixture_deep_haul.reached)
+			assert.are.equal(loaded.ns.TICKETS_RUN + loaded.ns.TICKETS_TIER3, state.tickets)
+		end)
+
+		it("pays them again in every run, tier 3 and completion alike (HNT-R145, HNT-R116)", function()
+			local records = {}
+			for i = 0, 1 do
+				local start = S + 4 * i * DAY
+				records[#records + 1] = deepRun(start)
+				records[#records + 1] = elwynn(start + HOUR, C.BLACKMOUTH, C.BLACKMOUTH, C.BLACKMOUTH, C.UNCOMMON)
+			end
+			local loaded = deep(records)
+
+			assert.are.equal(2 * (loaded.ns.TICKETS_RUN + loaded.ns.TICKETS_TIER3), loaded.ns.State().tickets)
+		end)
+
+		it("pays a Standing Hunt nothing, however far it goes (REF-R1)", function()
+			-- The Rack at tier 2 and the night Nightfin's Standing Hunts, with no run at all.
+			local loaded = login(function(fake)
+				append(fake, {
+					cast(0, DAY_MINUTE, WESTFALL, { C.UNCOMMON, C.UNCOMMON, C.UNCOMMON }, { C.RACK_AURA }),
+					cast(0, NIGHT, AUBERDINE, { C.NIGHTFIN }),
+				})
+			end)
+
+			local state = loaded.ns.State()
+			assert.is_true(state.coins > 0)
+			assert.are.equal(0, state.tickets)
+		end)
+
+		it("credits the Casts a run record comes after, and reports them with the record (HNT-R149)", function()
+			local loaded, fake = deep({ elwynn(S + HOUR, C.BLACKMOUTH, C.BLACKMOUTH, C.BLACKMOUTH, C.UNCOMMON) })
+			assert.are.equal(0, loaded.ns.State().tickets)
+
+			loaded.ns.Module:AppendRecord("run", runPayload("fixture_deep", S, S + 3 * DAY))
+
+			local earned = loaded.ns.TICKETS_RUN + loaded.ns.TICKETS_TIER3
+			assert.are.equal(earned, loaded.ns.State().tickets)
+			assert.are.same({ 0, earned }, tickets(fake))
+		end)
+
+		it("folds to the same total applied live and rebuilt from the log (LOG-R72, HNT-R191)", function()
+			local loaded, fake =
+				deep({ deepRun(S), elwynn(S + HOUR, C.BLACKMOUTH, C.BLACKMOUTH, C.BLACKMOUTH, C.UNCOMMON) })
+			local before = loaded.ns.State().tickets
+
+			local info, state, _, nextFake = again(fake, loaded, function(l)
+				l.ns.huntList.fingerprint = "f1c7f1c7f1c70002"
+			end, withDeep)
+
+			assert.is_true(info.rebuilt)
+			assert.is_true(before > 0)
+			assert.are.equal(before, state.tickets)
+			assert.are.same({ before }, tickets(nextFake))
+		end)
+
+		it("reports from done, even at 0 and unchanged, and once per live entry that changes it (REF-R2)", function()
+			local loaded, fake = deep({})
+			assert.are.same({ 0 }, tickets(fake))
+
+			-- A run record that credits nothing, and a live Cast that earns no Refresh: no report. Then the Haul's
+			-- three Catches, which complete the run.
+			local start = SERVER_TIME - HOUR
+			loaded.ns.Module:AppendRecord("run", runPayload("fixture_deep", start, start + 3 * DAY))
+			fishAt(fake, DAY_MINUTE, ELWYNN)
+			fake.playCast("caught", { { itemID = C.NIGHTFIN, quantity = 1 } })
+			assert.are.same({ 0 }, tickets(fake))
+			fishAt(fake, DAY_MINUTE, ELWYNN)
+			fake.playCast("caught", {
+				{ itemID = C.BLACKMOUTH, quantity = 1 },
+				{ itemID = C.BLACKMOUTH, quantity = 1 },
+				{ itemID = C.BLACKMOUTH, quantity = 1 },
+				{ itemID = C.UNCOMMON, quantity = 1 },
+			})
+			local earned = loaded.ns.TICKETS_RUN + loaded.ns.TICKETS_TIER3
+			assert.are.same({ 0, earned }, tickets(fake))
+			assert.are.equal(earned, fake.Pagle.GetTickets().earned)
+
+			-- The next login: done reports the same total again, unchanged.
+			local _, _, _, nextFake = again(fake, loaded, nil, withDeep)
+			assert.are.same({ earned }, tickets(nextFake))
+		end)
+	end)
+
+	describe("rules version 4 and the fingerprint (HNT-R136, HNT-R138)", function()
+		it("is version 4 (3 before the Refreshes), and rebuilds a projection stored under version 1", function()
 			local first, fake = login(function(fake)
 				append(fake, { cast(0, NIGHT, AUBERDINE, { C.NIGHTFIN }) })
 			end, {
@@ -508,10 +673,35 @@ describe("Hunt Events' runs in Hunts' projection", function()
 
 			local info, state, next = again(fake, first)
 
-			assert.are.equal(2, next.ns.HUNTS_RULES_VERSION)
+			assert.are.equal(4, next.ns.HUNTS_RULES_VERSION)
 			assert.is_true(info.rebuilt)
-			assert.are.same({ 2, 500 }, { next.env.PagleHuntsDB.global.projection.rulesVersion, state.xp })
+			assert.are.same({ 4, 500 }, { next.env.PagleHuntsDB.global.projection.rulesVersion, state.xp })
 		end)
+
+		it(
+			"rebuilds a version 3 projection, which holds no Refreshes, to the ones its runs earned (HNT-R116)",
+			function()
+				local S = MARCH_1
+				local first, fake = login(function(fake)
+					append(fake, {
+						runRecord("fixture_vale", S, S + 3 * DAY),
+						castAt(S + HOUR, DAY_MINUTE, ELWYNN, { C.BLACKMOUTH, C.UNCOMMON }), -- completes the run
+					})
+				end, {
+					prepare = function(l)
+						l.ns.HUNTS_RULES_VERSION = 3
+					end,
+				})
+				-- What version 3 stored: a state with no Refreshes in it.
+				first.env.PagleHuntsDB.global.projection.projection.tickets = nil
+
+				local info, state, _, nextFake = again(fake, first)
+
+				assert.is_true(info.rebuilt)
+				assert.are.equal(first.ns.TICKETS_RUN, state.tickets)
+				assert.are.same({ first.ns.TICKETS_RUN }, tickets(nextFake))
+			end
+		)
 
 		it(
 			"stores the Hunt list's fingerprint joined with the event pool's, and rebuilds when the pool's changes",

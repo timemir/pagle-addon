@@ -8,7 +8,7 @@ describe("Hunts' seams", function()
 	-- The projection (logic/Projection.lua) binds both; adapter/Projection_spec.lua follows them through its builds.
 	describe("the projection's state before its first build (HNT-R136, LOG-R74)", function()
 		it(
-			"is an empty HuntsState: no Casts, Coins, XP, runs, Hunt progress or set titles (hunts.md › Data)",
+			"is an empty HuntsState: no Casts, Coins, XP, Refreshes, runs, Hunt progress or set titles (hunts.md › Data)",
 			function()
 				local ns = hunts.load().ns
 
@@ -16,6 +16,7 @@ describe("Hunts' seams", function()
 					casts = 0,
 					coins = 0,
 					xp = 0,
+					tickets = 0,
 					runs = {},
 					defs = {},
 					settled = 0,

@@ -329,6 +329,15 @@ ns.L = {
 	-- The pay rule, from the Tunables: tier 1's XP and Coins, a further tier's, then a settled run's.
 	RUN_PAY_RULE = "Each Hunt's first mark pays +%d XP and %d Coins, each tier after it +%d XP and %d Coins, and "
 		.. "settling the wager +%d XP and %d Coins more.",
+	-- The Refreshes a run pays (HNT-R117): a pay box's line beside its Coins, a count in the pay rule, and the rule's
+	-- last sentence by which of the two pay (a third mark, settling the wager, or both).
+	PAY_REFRESH_ONE = "+%s Refresh",
+	PAY_REFRESH_OTHER = "+%s Refreshes",
+	REFRESH_ONE = "%s Refresh",
+	REFRESH_OTHER = "%s Refreshes",
+	RUN_PAY_RULE_REFRESH_BOTH = " A Hunt's third mark also pays %s, and settling the wager %d more.",
+	RUN_PAY_RULE_REFRESH_TIER = " A Hunt's third mark also pays %s.",
+	RUN_PAY_RULE_REFRESH_RUN = " Settling the wager also pays %s.",
 	-- The right page on the Pagle Wagers spread with no run at all.
 	ENTRY_NONE_TITLE = "Nothing to read yet",
 	ENTRY_NONE_HAND = "When a wager goes up it will be written here: its waters, its Hunts and what it pays.",
@@ -393,8 +402,10 @@ ns.L = {
 	LOOK_AGAIN = "Show the notes for this page again",
 	-- The companion hint (HNT-R170–R172, HNT-R176): logic/Companion.lua and adapter/Companion.lua, shown only while the
 	-- hint switch is on. Interface text, not lore; as above, nothing here claims odds, a due fish or a chance
-	-- (HNT-R27). Missing, its two lines (the second for a first install, PUSH-R90); not running, its one.
-	HINT_MISSING = "New wagers are out there. The Pagle companion brings them: more XP, more Coins.",
+	-- (HNT-R27). Missing, its two lines (the second for a first install, PUSH-R90); not running, its one. The weekly
+	-- Nod's line is its own, shorter (HNT-R171).
+	HINT_MISSING = "New wagers are out there. The Pagle companion brings them: more XP, more Coins, and the Sonar Scope toast style.",
+	HINT_NOD = "New wagers are out there. The Pagle companion brings them: more XP, more Coins.",
 	HINT_FIRST_INSTALL = "Installed it just now? Log out to character select once.",
 	HINT_NOT_RUNNING = "The Pagle companion isn't running. Start it to get this week's wagers.",
 	HINT_GET_IT = "Get it",

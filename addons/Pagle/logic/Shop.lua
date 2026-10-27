@@ -15,7 +15,8 @@ local ns = select(2, ...)
 ---@field format? fun(value: number): string -- writes a number of Coins (BreakUpLargeNumbers); tostring by default
 ---@field wallet? PagleWalletSnapshot       -- the wallet projection's crates and owned set (ns.walletSnapshot); none
 --- before its first hand-over, read as nothing owned and no crate opened
----@field now? integer                      -- the server time, for the pool goods in the crate by now (SHOP-R53)
+---@field now? integer                      -- the server time, for the pool goods in the crate by now (SHOP-R53) and for an
+--- earned good's fallback date (SHOP-R28); with none, no fallback has been reached
 
 ---@class PagleShopModel
 ---@field private sources PagleShopSources
@@ -48,29 +49,7 @@ function ns.NewShopModel(sources)
 	}, Model)
 end
 
--- Each roster Module's place in CORE-R1's order, for the purse and Put away.
----@param name string
----@return integer
-local function rosterIndex(name)
-	for i, roster in ipairs(ns.MODULE_ROSTER) do
-		if roster == name then
-			return i
-		end
-	end
-	return #ns.MODULE_ROSTER + 1
-end
-
--- Sorts def.names in roster order, any other by name.
----@param a string
----@param b string
----@return boolean
-local function byRoster(a, b)
-	local indexA, indexB = rosterIndex(a), rosterIndex(b)
-	if indexA ~= indexB then
-		return indexA < indexB
-	end
-	return a < b
-end
+local byRoster = ns.SortsByRoster
 
 --- Whose good or Coins these are, as the shop names them: a Module's title (CORE-R41's names), or "Pagle" for Core.
 ---@param module string def.name, or "Core"
@@ -148,23 +127,23 @@ end
 ---@field category string
 ---@field module string             -- def.name, or "Core"
 ---@field preview? fun(stage: Frame) -- nil for a good put away: its Module isn't loaded
----@field earned boolean            -- an earned good (SHOP-R22), whether or not it is owned yet
+---@field earned boolean            -- an earned good (SHOP-R22), whether or not it is owned yet; the shop lists one from its
+--- fallback date on (SHOP-R24)
 ---@field earnedText? string        -- its row's tag: its earnedText, or a function's first text while not owned
 ---@field earnedNote? string        -- its stage's note: its earnedText, or a function's second text while not owned
 ---@field default boolean           -- its slot's default (SHOP-R22, SHOP-R23)
----@field price? integer            -- a good for sale's price (SHOP-R22)
+---@field price? integer            -- a good for sale's price, or an earned good's fallback price from its date (SHOP-R22,
+--- SHOP-R28)
 ---@field state PagleShopState
 ---@field fromCrate? true           -- a Curio crate gave it (SHOP-R50)
 
 --- A good's state in the shop (wallet-and-shop.md › UI: States on a row and the stage).
 ---@alias PagleShopState
----| "forSale"  # for sale, not owned, and the balance covers it
+---| "forSale"  # for sale (an earned good from its fallback date, SHOP-R28), not owned, and the balance covers it
 ---| "short"    # for sale, not owned, and the balance doesn't cover it
 ---| "owned"    # owned, not in use
 ---| "equipped" # owned and in use
----| "unearned" # earned, not yet
 ---| "crateOnly" # crate only, not owned yet: a Curio crate alone gives it (SHOP-R22, SHOP-R50)
----| "empty"    # the Curio crate's row with every pool good owned (SHOP-R54)
 ---| "putAway"  # owned, of a Module that isn't On (SHOP-R35)
 
 -- The states that count as owned.
@@ -173,7 +152,7 @@ local OWNED = { owned = true, equipped = true, putAway = true }
 -- The states each filter keeps (wallet-and-shop.md › UI).
 local FILTERS = {
 	owned = OWNED,
-	notOwned = { forSale = true, short = true, unearned = true, crateOnly = true },
+	notOwned = { forSale = true, short = true, crateOnly = true },
 	canAfford = { forSale = true },
 }
 
@@ -200,21 +179,21 @@ end
 --- The filters, in the order the list shows them.
 ns.SHOP_FILTERS = { "all", "owned", "notOwned", "canAfford" }
 
--- Whether the shop leaves out a good of `slot` that is earned (`earned`): the earned goods of a Core slot that hides
--- them, the crest slot's zone and fish crests, which Look and Feel equips instead (SHOP-R25).
----@param slot PagleRegisteredSlot?
----@param earned boolean
+-- Whether the shop lists the registered good `good` of a live slot whose Module is On (SHOP-R24): a default, a good for
+-- sale and a crate-only good always, an earned good only from its fallback date on (SHOP-R28), owned or not.
+---@param good PagleRegisteredGood
+---@param isDefault boolean its slot's default, or the good standing in for it (SHOP-R23)
 ---@return boolean
-local function hidden(slot, earned)
-	return earned and slot ~= nil and slot.hideEarned == true
+function Model:Lists(good, isDefault)
+	return good.isEarned == nil or isDefault or ns.GoodPrice(good, self.sources.now) ~= nil
 end
 
---- A good the shop can show, or nil: a good of a live slot (Core's or a Module On's) whose Module is On, or an owned
---- good of a Module that isn't On, from the cache (SHOP-R35). A default of a Module that isn't On is neither
---- (SHOP-R35), nor an earned good in a Core slot that hides them, its Module On or not (SHOP-R25). Its owner is the
---- good's Module, which in a Core slot open to earned goods may be another's (SHOP-R23); an earnedText function is
---- called here, for a good not owned (SHOP-R22). A good with no preview of its own takes its slot's, if Core gave the
---- slot one (the crest's bookplate, SHOP-R25).
+--- A good the shop can show, or nil: a good of a live slot (Core's or a Module On's) whose Module is On that the shop
+--- lists (SHOP-R24: never an earned good before its fallback date), or a purchased good of a Module that isn't On, from
+--- the cache (SHOP-R35: a default of a Module that isn't On is neither, and an earned good of one that is put away
+--- isn't listed). Its owner is the good's Module, which in a Core slot open to earned goods may be another's
+--- (SHOP-R23); an earnedText function is called here, for a good not owned (SHOP-R22). A good with no preview of its
+--- own takes its slot's, if Core gave the slot one (the crest's bookplate, SHOP-R25).
 ---@param goodID any
 ---@return PagleShopEntry?
 function Model:Entry(goodID)
@@ -223,30 +202,23 @@ function Model:Entry(goodID)
 	end
 	local goods = self.sources.goods
 	local good = goods:Good(goodID)
-	if good and hidden(self.slots[good.slot], good.isEarned ~= nil) then
-		return nil
-	end
 	local slot = good and self.on[good.module] and self.slots[good.slot]
+	local isDefault = slot and goods:DefaultOf(slot.id) == goodID or false
 	if good and slot then
-		local price = good.tier and ns.TIER_PRICES[good.tier]
+		if not self:Lists(good, isDefault) then
+			return nil
+		end
+		local price = ns.GoodPrice(good, self.sources.now)
 		local state
 		if goods:IsOwned(goodID) then
 			state = goods:GetEquipped(slot.id) == goodID and "equipped" or "owned"
-		elseif good.isEarned then
-			state = "unearned"
 		elseif good.crate then
 			state = "crateOnly"
 		else
-			state = self.sources.balance.balance >= price and "forSale" or "short"
-		end
-		local preview, slotPreview = good.preview, slot.preview
-		if not preview and slotPreview then
-			preview = function(stage)
-				slotPreview(stage, good)
-			end
+			state = self.sources.balance.balance >= assert(price) and "forSale" or "short"
 		end
 		local earnedText, earnedNote = goods:EarnedTexts(goodID)
-		local entry = {
+		return {
 			id = goodID,
 			name = good.name,
 			icon = good.icon,
@@ -255,24 +227,23 @@ function Model:Entry(goodID)
 			slotLabel = slot.label,
 			category = slot.category,
 			module = good.module,
-			preview = preview,
+			preview = goods:PreviewOf(goodID),
 			earned = good.isEarned ~= nil,
 			earnedText = earnedText,
 			earnedNote = earnedNote,
-			default = goods:DefaultOf(slot.id) == goodID,
+			default = isDefault,
 			price = price,
 			state = state,
 			fromCrate = fromCrate(self.sources, goodID) or nil,
 		}
-		return entry
 	end
-	-- A cached good that is neither a default nor for sale is earned (SHOP-R22, SHOP-R26).
+	-- A cached good that is neither a default nor for sale is earned (SHOP-R22, SHOP-R26); only a purchase is put away.
 	local cached = self.sources.cache[goodID]
 	if
 		type(cached) ~= "table"
 		or self.on[cached.module]
 		or cached.default
-		or hidden(self.slots[cached.slot], cached.tier == nil)
+		or not goods:IsPurchased(goodID)
 		or not goods:IsOwned(goodID)
 	then
 		return nil
@@ -325,8 +296,8 @@ end
 ---@field state PagleShopState
 ---@field price? string   -- a good for sale's price, written: the window draws the coin after it
 ---@field short? true     -- the balance doesn't cover the price: it shows in red
----@field tag? string     -- otherwise: "In use", "default", "Owned", its earnedText (a function's first text), or
---- "Hunts is off"
+---@field tag? string     -- otherwise: "In use", "default", "Owned" or "Hunts is off"; with a price, an earned good's
+--- earnedText (a function's first text, SHOP-R28)
 
 -- The row for `entry`.
 ---@private
@@ -339,12 +310,12 @@ function Model:RowOf(entry)
 	if state == "forSale" or state == "short" then
 		row.price = self.format(entry.price)
 		row.short = state == "short" or nil
+		-- an earned good on sale at its fallback price keeps its earned tag beside the price (SHOP-R28)
+		row.tag = entry.earnedText
 	elseif state == "equipped" then
 		row.tag = L.SHOP_IN_USE
 	elseif state == "owned" then
 		row.tag = entry.default and L.SHOP_DEFAULT or L.SHOP_OWNED
-	elseif state == "unearned" then
-		row.tag = entry.earnedText or L.SHOP_REWARD:format(ownerName(entry.module))
 	elseif state == "crateOnly" then
 		row.tag = L.SHOP_FROM_CRATE
 	else
@@ -396,27 +367,53 @@ end
 ---@field rows PagleShopRow[]
 ---@field headings? table<integer, string> -- a grouped slot's (SHOP-R27): a group's name, over the row at that index
 
+-- `goods` in the order the list shows them within a slot or a group (SHOP-R27): the slot's default (`defaultID`)
+-- first; then the goods for sale, cheapest tier first; then the rest (earned, crate only: no price), each kind in
+-- registration order. A good with a fallback price (SHOP-R28) is earned here, not for sale. A new list, as
+-- table.sort isn't stable: the position in `goods` breaks a tie.
+---@param goods PagleRegisteredGood[]
+---@param defaultID string?
+---@return PagleRegisteredGood[]
+local function byTier(goods, defaultID)
+	local rank, position = {}, {}
+	for i, good in ipairs(goods) do
+		position[good] = i
+		rank[good] = good.id == defaultID and 0 or good.tier or math.huge
+	end
+	local sorted = { unpack(goods) }
+	table.sort(sorted, function(a, b)
+		if rank[a] ~= rank[b] then
+			return rank[a] < rank[b]
+		end
+		return position[a] < position[b]
+	end)
+	return sorted
+end
+
 -- A slot's goods in the order the list shows them (SHOP-R27): for a slot with groups, the goods with none first, then
--- each group's in the slot's order, each in registration order; for one without, in registration order. With each,
--- the name of the group it opens, if it is the first of its group.
+-- each group's in the slot's order; for one without, all of them; each part ordered by tier (byTier). With each, the
+-- name of the group it opens, if it is the first of its group.
 ---@param slot PagleRegisteredSlot
 ---@param slotGoods PagleRegisteredGood[]
+---@param defaultID string?  -- the slot's default good
 ---@return PagleRegisteredGood[] ordered
 ---@return table<PagleRegisteredGood, string> opens
-local function inGroups(slot, slotGoods)
+local function inGroups(slot, slotGoods, defaultID)
 	if not slot.groups then
-		return slotGoods, {}
+		return byTier(slotGoods, defaultID), {}
 	end
 	local ordered, opens = {}, {}
 	local function add(key, name)
-		local first = true
+		local inGroup = {}
 		for _, good in ipairs(slotGoods) do
 			if good.group == key then
-				ordered[#ordered + 1] = good
-				if first and name then
-					opens[good] = name
-				end
-				first = false
+				inGroup[#inGroup + 1] = good
+			end
+		end
+		for i, good in ipairs(byTier(inGroup, defaultID)) do
+			ordered[#ordered + 1] = good
+			if i == 1 and name then
+				opens[good] = name
 			end
 		end
 	end
@@ -428,9 +425,10 @@ local function inGroups(slot, slotGoods)
 end
 
 --- The list (wallet-and-shop.md › UI, SHOP-R25, SHOP-R27, SHOP-R35): the goods `query` keeps, grouped by live slot
---- (Core's first, then by Module order), each with its owned count over the goods the shop shows (not a hidden earned
---- one, SHOP-R25), a grouped slot's goods under their groups' names; then the owned goods of Modules that aren't On,
---- from the cache, as the last group, "Put away: Module off". A group with no row left isn't listed, nor a slot's
+--- (Core's first, then by Module order), each with its owned count over the goods the shop lists (SHOP-R24: no earned
+--- good before its fallback date), a grouped slot's goods under their groups' names (a group with none listed has no
+--- header); then the purchased goods of Modules that aren't On, from the cache, as the last group, "Put away: Module
+--- off" (SHOP-R35). A group with no row left isn't listed, nor a slot's
 --- group's name with none of its rows left.
 ---@param query PagleShopQuery
 ---@return PagleShopGroup[]
@@ -440,12 +438,13 @@ function Model:List(query)
 	local groups = {}
 	for _, slot in ipairs(self.slotList) do
 		local rows, owned, slotGoods = {}, 0, {}
+		local defaultID = goods:DefaultOf(slot.id)
 		for _, good in ipairs(goods:GoodsOf(slot.id)) do
-			if not hidden(slot, good.isEarned ~= nil) then
+			if self:Lists(good, good.id == defaultID) then
 				slotGoods[#slotGoods + 1] = good
 			end
 		end
-		local ordered, opens = inGroups(slot, slotGoods)
+		local ordered, opens = inGroups(slot, slotGoods, goods:DefaultOf(slot.id))
 		local headings, heading
 		for _, good in ipairs(ordered) do
 			local entry = assert(self:Entry(good.id))
@@ -494,16 +493,34 @@ function Model:List(query)
 	return groups
 end
 
---- The good `goodID` names, if the shop shows it (SHOP-R40): a good of a live slot, or an owned good of a Module
---- that isn't On, under Put away; or the Curio crate's row, `core.crate` (SHOP-R50). Nil for any other: an unknown ID,
---- or a default or good for sale of a Module off.
+--- The good `goodID` names, if the shop shows it (SHOP-R40): a good of a live slot it lists (SHOP-R24), or a purchased
+--- or crate-given good of a Module that isn't On, under Put away; or the Curio crate's row, `core.crate` (SHOP-R50),
+--- while it is in the list. Nil for any other: an unknown ID, an earned good the shop doesn't list
+--- (`Model:IsEarnedUnlisted`), a default or good for sale of a Module off, or the crate once the Angler owns every
+--- pool good (SHOP-R54).
 ---@param goodID any
 ---@return string?
 function Model:Select(goodID)
 	if goodID == ns.CRATE_ID then
-		return goodID
+		return self:CrateOpen() and goodID or nil
 	end
 	return self:Entry(goodID) and goodID or nil
+end
+
+--- Whether `goodID` is an earned good, registered or cached, that the shop doesn't list (SHOP-R24, SHOP-R35): the
+--- goods `Pagle.OpenShop` sends to the Collection instead (SHOP-R40).
+---@param goodID any
+---@return boolean
+function Model:IsEarnedUnlisted(goodID)
+	if type(goodID) ~= "string" or self:Entry(goodID) then
+		return false
+	end
+	local good = self.sources.goods:Good(goodID)
+	if good then
+		return good.isEarned ~= nil
+	end
+	local cached = self.sources.cache[goodID]
+	return type(cached) == "table" and ns.GoodKind(cached) == "earned"
 end
 
 --- The selected good on the stage (wallet-and-shop.md › UI): its look, name, slot and owner, description, and what
@@ -528,10 +545,8 @@ end
 --- for sale"; "Yours to keep"
 ---@field progress? PagleProgressDot[] -- an earned good's dots while it isn't owned, from its progress (SHOP-R22)
 ---@field crate? true               -- the Curio crate's stage (Model:CrateStage)
----@field odds? PagleShopCrateOdds[] -- the crate's pool goods and their chances (SHOP-R54)
----@field pity? string              -- "A crate-only look within N more crates" (SHOP-R52, SHOP-R54)
----@field caption? string           -- the crate's line on the paper under the well: its last good is the Angler's but
---- the shop doesn't show it yet (SHOP-R50)
+---@field odds? PagleShopCrateOdds[] -- the crate's tiers and their chances (SHOP-R54)
+---@field pity? string              -- "A Curio within N more crates" (SHOP-R52, SHOP-R54)
 
 --- The stage for `goodID`, or nil when the shop doesn't show that good (Select).
 ---@param goodID any
@@ -590,10 +605,12 @@ function Model:Stage(goodID)
 		if entry.earnedNote then
 			stage.notes[#stage.notes + 1] = entry.earnedNote
 		end
-		stage.notes[#stage.notes + 1] = L.SHOP_REWARD:format(owner)
+		if entry.price and not OWNED[state] then
+			stage.notes[#stage.notes + 1] = L.SHOP_OR_BUY:format(self.format(entry.price))
+		end
 	end
 	-- Its progress, asked for only here, for the stage, and only while it isn't earned (SHOP-R22, Goods:Progress).
-	if state == "unearned" then
+	if entry.earned and not OWNED[state] then
 		stage.progress = wellMadeDots(self.sources.goods:Progress(entry.id))
 	end
 	return stage
@@ -667,52 +684,52 @@ end
 --- the crate has art of its own.
 ns.CRATE_ICON = "Interface\\Icons\\INV_Crate_02"
 
--- Whether the next crate has a good to give (SHOP-R54): a pool good in the pool by now that the log doesn't own.
+--- The coin card's medallion in a payback's result (SHOP-R55), and the one for a good the shop has no cache of.
+ns.CRATE_COIN_ICON = "Interface\\Icons\\INV_Misc_Coin_01"
+ns.CRATE_NEW_LOOK_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
+
+-- A colour from its 0xRRGGBB, as { r, g, b } of 0 to 1.
+---@param rgb integer
+---@return number[]
+local function hex(rgb)
+	return { math.floor(rgb / 65536) / 255, math.floor(rgb / 256) % 256 / 255, rgb % 256 / 255 }
+end
+
+--- The crate tiers' colours (Tunables): white, green, blue, purple, red, orange and Curio gold.
+---@type table<1|2|3|4|5|6|"curio", number[]>
+ns.CRATE_TIER_COLORS = {
+	hex(0xe9e6df),
+	hex(0x3ed35a),
+	hex(0x3b86ff),
+	hex(0xb05cff),
+	hex(0xec3a3f),
+	hex(0xff8a1c),
+	curio = hex(0xffd04a),
+}
+
+-- Whether the crate has a good to give (SHOP-R54): a pool good in the pool by now that the log doesn't own.
 ---@private
 ---@return boolean
 function Model:CrateOpen()
-	local wallet = walletOf(self.sources)
-	return #ns.CrateCandidates(wallet.owned, wallet.dry, self.sources.now) > 0
+	return ns.CrateHasCandidates(walletOf(self.sources).owned, self.sources.now)
 end
 
--- A pool good's name: as registered or cached, else its lore name, else its ID. A pool good need not be registered
--- (SHOP-R50): Shagreen and Bone waits for Core's binding slot.
----@param sources PagleShopSources
----@param goodID string
----@return string
-local function poolName(sources, goodID)
-	local good = sources.goods:Good(goodID)
-	if good then
-		return good.name
-	end
-	local cached = sources.cache[goodID]
-	if type(cached) == "table" and type(cached.name) == "string" then
-		return cached.name
-	end
-	local lore = rawget(ns.L, ("good.%s.name"):format(goodID))
-	return type(lore) == "string" and lore ~= "" and lore or goodID
-end
-
---- The Curio crate's row (SHOP-R50, SHOP-R54): "Curio crate" with its price, in red when the balance falls short,
---- or "Empty: you have it all" once the Angler owns every pool good. Its state is "forSale", "short" or "empty".
----@return PagleShopRow
+--- The Curio crate's row (SHOP-R50, SHOP-R54): "Curio crate" with its price, in red when the balance falls short; nil
+--- once the Angler owns every pool good, when the row leaves the list. Its state is "forSale" or "short".
+---@return PagleShopRow?
 function Model:CrateRow()
-	local L = ns.L
-	local row = { id = ns.CRATE_ID, name = L.SHOP_CRATE, icon = ns.CRATE_ICON }
 	if not self:CrateOpen() then
-		row.state = "empty"
-		row.tag = L.SHOP_CRATE_EMPTY
-		return row
+		return nil
 	end
-	local price = ns.TIER_PRICES[ns.CRATE_TIER]
-	row.state = self.sources.balance.balance >= price and "forSale" or "short"
-	row.price = self.format(price)
+	local row = { id = ns.CRATE_ID, name = ns.L.SHOP_CRATE, icon = ns.CRATE_ICON }
+	row.state = self.sources.balance.balance >= ns.CRATE_PRICE and "forSale" or "short"
+	row.price = self.format(ns.CRATE_PRICE)
 	row.short = row.state == "short" or nil
 	return row
 end
 
 --- The Curio crate's row as the list shows it at its very top (SHOP-R50): whichever chip and filter is on, but for a
---- search its label doesn't match, which leaves it out (nil).
+--- search its label doesn't match, which leaves it out (nil); nil too once every pool good is owned (SHOP-R54).
 ---@param query PagleShopQuery
 ---@return PagleShopRow?
 function Model:Crate(query)
@@ -723,22 +740,48 @@ function Model:Crate(query)
 	return self:CrateRow()
 end
 
---- One pool good on the crate's stage (SHOP-R54): its name and its chance of coming next ("40%"), or, owned already,
---- `owned` and no chance: the stage strikes it through.
----@class PagleShopCrateOdds
----@field id string
----@field name string
----@field owned? true
----@field chance? string
+--- What the shop selects for `goodID` after a redraw: `Select`'s, or, for the Curio crate once its row has left the
+--- list (SHOP-R54), the first good `query` lists; nil with none.
+---@param goodID any
+---@param query PagleShopQuery
+---@return string?
+function Model:Reselect(goodID, query)
+	local kept = self:Select(goodID)
+	if kept or goodID ~= ns.CRATE_ID then
+		return kept
+	end
+	local first = self:List(query)[1]
+	return first and first.rows[1] and first.rows[1].id or nil
+end
 
---- The crate's stage (SHOP-R54, SHOP-R55): the PagleShopStage fields, with `crate`, its pool goods' odds in pool order
---- (`odds`) and the pity count's line (`pity`, none once every crate-only good is owned). With every pool good owned
---- it reads "Empty: you have it all" and has no Buy. When the last crate gave a good the shop doesn't show yet (its slot
---- not registered), its caption says it is the Angler's.
----@return PagleShopStage
+-- A chance of `permille` per mille written as the stage's percent: "40%", "2.5%", "0.5%".
+---@param permille integer
+---@return string
+local function percent(permille)
+	local whole, tenth = math.floor(permille / 10), permille % 10
+	return ns.L.SHOP_CRATE_CHANCE:format(tenth == 0 and tostring(whole) or ("%d.%d"):format(whole, tenth))
+end
+ns.CratePercent = percent
+
+--- One crate tier on the crate's stage (SHOP-R54): its name, in its colour, its goods left or what it pays back, and
+--- its chance at the right.
+---@class PagleShopCrateOdds
+---@field tier 1|2|3|4|5|6|"curio"
+---@field name string        -- "Plain", "Fine", … "Curio"
+---@field color number[]     -- { r, g, b }
+---@field detail string      -- "12 left", or "pays back 250" with none left
+---@field chance string      -- "40%", "2.5%"
+
+--- The crate's stage (SHOP-R54): the PagleShopStage fields, with `crate`, its crate tiers' odds in the draw's order
+--- (`odds`) and the pity count's line (`pity`, while a crate-only good is a candidate). Nil once every pool good is
+--- owned, when the crate has left the list.
+---@return PagleShopStage?
 function Model:CrateStage()
 	local L = ns.L
 	local row = self:CrateRow()
+	if not row then
+		return nil
+	end
 	local wallet = walletOf(self.sources)
 	local now = self.sources.now
 	local stage = {
@@ -752,57 +795,125 @@ function Model:CrateStage()
 		notes = {},
 		odds = {},
 	}
-	for i, odds in ipairs(ns.CrateOdds(wallet.owned, wallet.dry, now)) do
+	for i, odds in ipairs(ns.CrateOdds(wallet.owned, now)) do
 		stage.odds[i] = {
-			id = odds.id,
-			name = poolName(self.sources, odds.id),
-			owned = odds.owned or nil,
-			chance = not odds.owned and L.SHOP_CRATE_CHANCE:format(math.floor(odds.chance * 100 + 0.5)) or nil,
+			tier = odds.tier,
+			name = L.SHOP_CRATE_TIERS[odds.tier],
+			color = ns.CRATE_TIER_COLORS[odds.tier],
+			detail = odds.payback and L.SHOP_CRATE_PAYS_BACK:format(self.format(odds.payback))
+				or L.SHOP_CRATE_LEFT:format(odds.left),
+			chance = percent(odds.permille),
 		}
 	end
 	local left = ns.CratePityLeft(wallet.owned, wallet.dry, now)
 	if left then
 		stage.pity = left == 1 and L.SHOP_CRATE_PITY_ONE or L.SHOP_CRATE_PITY:format(left)
 	end
-	local last = wallet.crates[#wallet.crates]
-	if last and not self:Entry(last) then
-		stage.caption = L.SHOP_CRATE_UNSHOWN:format(poolName(self.sources, last))
-	end
-	if row.state == "empty" then
-		stage.tags[1] = L.SHOP_CRATE_EMPTY
-		return stage
-	end
-	local price = ns.TIER_PRICES[ns.CRATE_TIER]
-	stage.buy = L.SHOP_BUY:format(self.format(price))
+	stage.buy = L.SHOP_BUY:format(self.format(ns.CRATE_PRICE))
 	stage.canBuy = (row.state == "forSale" and not self.sources.updating) or nil
 	if row.state == "short" then
 		stage.short = true
-		stage.needed = L.SHOP_MORE_NEEDED:format(self.format(price - self.sources.balance.balance))
+		stage.needed = L.SHOP_MORE_NEEDED:format(self.format(ns.CRATE_PRICE - self.sources.balance.balance))
 	end
 	return stage
 end
 
 --- Opening a Curio crate as it would be now (SHOP-R54), or nil unless Buy is enabled for it: a pool good left to give,
---- the balance covering tier 4's price, no projection updating. Its bill asks "Open a Curio crate?" (`question`) with
---- its fine print (`fine`).
+--- the balance covering its price, no projection updating. Its bill asks "Open a Curio crate?" (`question`) with its
+--- fine print (`fine`) and has no "Use it now" (SHOP-R55).
 ---@private
 ---@return PagleShopPurchase?
 function Model:CratePurchase()
 	local row = self:CrateRow()
-	if row.state ~= "forSale" or self.sources.updating then
+	if not row or row.state ~= "forSale" or self.sources.updating then
 		return nil
 	end
 	local L = ns.L
-	local price = ns.TIER_PRICES[ns.CRATE_TIER]
 	return {
 		id = ns.CRATE_ID,
 		crate = true,
 		name = L.SHOP_CRATE,
 		icon = ns.CRATE_ICON,
-		price = price,
-		amount = self.format(price),
-		left = self.format(self.sources.balance.balance - price),
+		price = ns.CRATE_PRICE,
+		amount = self.format(ns.CRATE_PRICE),
+		left = self.format(self.sources.balance.balance - ns.CRATE_PRICE),
 		question = L.SHOP_CRATE_CONFIRM,
 		fine = L.SHOP_CRATE_FINE,
 	}
+end
+
+--- What a crate's opening ends on (SHOP-R55): the card it turns over to, its words and buttons.
+---@class PagleShopCrateResult
+---@field payback? integer       -- the Coins paid back: the coin card, "+N Coins", and "Back to the shop" alone
+---@field good? string           -- the good it gave
+---@field kind? string           -- the good's kind (SHOP-R50), for the emblem of one the cache has nothing of
+---@field kindName? string       -- the good's kind as the reveal says it: "Toast style"
+---@field title string           -- the good's name ("A new look" with no cache entry), or "+250 Coins"
+---@field tier string            -- the crate tier's name
+---@field crateTier 1|2|3|4|5|6|"curio" -- the crate tier
+---@field color number[]         -- the crate tier's colour
+---@field icon integer|string    -- the card's medallion
+---@field shield? true           -- a crest's: drawn as its shield
+---@field line? string           -- "It shows here once its Module is on."
+---@field unseen? true           -- a good the cache has nothing of: its face is the kind's emblem, not its picture
+---@field face "kind"|"coin"|"curio" -- what the card shows before it turns over (ns.CrateResultCard)
+---@field emblem string          -- the emblem of its kind's, or the coin's
+---@field canUse boolean         -- "Use it now" shows: the good is the Angler's, shown by the shop and not in use
+---@field select string          -- what "Back to the shop" and "Use it now" leave selected: the good, or the crate
+---@field reveal PagleCrateReveal -- what its crate tier adds to the reveal (ns.CrateRevealOf)
+---@field stamp string           -- "Yours", or "Paid back"
+
+--- The result card for what a crate gave (SHOP-R50, SHOP-R55): a good named and shown from the goods registry or,
+--- when its Module hasn't registered it, Core's cache; a good with no cache entry turns over to its kind's emblem, "A
+--- new look" and the line "It shows here once its Module is on.", and leaves the crate selected. A payback is the coin
+--- card, with none of its tier's fanfare (ns.CrateRevealOf).
+---@param result PagleCrateResult
+---@return PagleShopCrateResult
+function Model:CrateResult(result)
+	local L = ns.L
+	local shown = ns.CrateResultCard(result)
+	local card = {
+		tier = L.SHOP_CRATE_TIERS[result.tier],
+		crateTier = result.tier,
+		color = ns.CRATE_TIER_COLORS[result.tier],
+		canUse = false,
+		select = ns.CRATE_ID,
+		face = shown.face,
+		emblem = ns.CrateEmblem(shown.kind),
+		reveal = ns.CrateRevealOf(result.tier, result.good == nil),
+		stamp = result.good and L.SHOP_CRATE_YOURS or L.SHOP_CRATE_PAID_BACK,
+	}
+	if not result.good then
+		card.payback = result.payback
+		card.title = L.SHOP_CRATE_PAYBACK:format(self.format(result.payback or 0))
+		card.icon = ns.CRATE_COIN_ICON
+		return card
+	end
+	local good = result.good --[[@as string]]
+	card.good = good
+	card.kind = ns.CrateKindOf(good)
+	card.kindName = L.SHOP_CRATE_KINDS[card.kind or ""]
+	local entry = self:Entry(good)
+	local cached = self.sources.cache[good]
+	if entry then
+		card.title, card.icon, card.shield = entry.name, entry.icon, entry.shield
+		card.canUse = entry.state == "owned"
+		card.select = good
+	elseif type(cached) == "table" and type(cached.name) == "string" then
+		card.title, card.icon = cached.name, cached.icon
+		card.shield = cached.slot == ns.CREST_SLOT or nil
+	else
+		card.title, card.icon, card.line = L.SHOP_CRATE_NEW_LOOK, ns.CRATE_NEW_LOOK_ICON, L.SHOP_CRATE_UNSHOWN
+		card.unseen = true
+	end
+	return card
+end
+
+--- The reel's 60 cards for a crate that gave `result` (SHOP-R55, ns.CrateReelCards), from what the Angler owns now and
+--- the server time; `rand(n)` is a whole number from 1 to n (math.random).
+---@param result PagleCrateResult
+---@param rand fun(n: integer): integer
+---@return PagleCrateCard[]
+function Model:CrateReel(result, rand)
+	return ns.CrateReelCards(result, walletOf(self.sources).owned, self.sources.now, rand)
 end

@@ -1162,9 +1162,11 @@ local function goalPairs(sim, goal, caught)
 		return pairsWhere(game, sim.pairs.all, function(item)
 			return representative ~= nil and item.species ~= nil and item.species == representative.species
 		end)
-	elseif kind == "quality" then
+	elseif kind == "rarity" then
+		-- Only a Catch of a sized Species has a Variety (VAR-R4), and each Catch's is the hash of its Catch ID
+		-- (VAR-R3): these Casts can only try, and `work` casts on until the Varieties come up.
 		return pairsWhere(game, sim.pairs.all, function(item)
-			return not item.noise and item.quality ~= nil and item.quality >= target
+			return item.species ~= nil and not item.legend and not item.noise
 		end)
 	elseif kind == "lure" then
 		return sim.pairs.all
@@ -1710,6 +1712,7 @@ local function huntsDef(hunts, catchLog, now)
 	return hunts.ProjectionDef({}, hunts.lookups, {
 		ReportCoinsEarned = function() end,
 		ReportXPEarned = function() end,
+		ReportTicketsEarned = function() end,
 		IterateCatches = function(afterSeq)
 			return catchLog:Iterate(afterSeq, "Hunts")
 		end,

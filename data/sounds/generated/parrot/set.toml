@@ -1,0 +1,45 @@
+# Pirate Parrot: the game's own parrot and pirate, with a cannon and a ship's bell. Parts are single sounds (ElevenLabs sound-effects prompts, requested length in seconds, shipped take
+# "a" or "b" in raw/<part>/take_<x>.mp3); each file is a mix of them laid on a timeline (see
+# scripts/pagle_data/generated_sounds.py).
+
+[part.cannon]
+prompt = 'Single cannon shot fired outdoors, deep boom with a short echo, one-shot'
+seconds = 1.5
+pick = "a"
+
+[part.bell]
+prompt = '''Ship's brass bell struck twice, clear ringing tones, close-mic'''
+seconds = 1.5
+pick = "a"
+
+[file.toast_1]
+# The parrot aggro, as it is.
+mix = [
+	{ clip = "creature/parrot/parrotaggro", start = 0 },
+]
+
+[file.toast_2]
+# A wound squawk and an attack squawk a step higher.
+mix = [
+	{ clip = "creature/parrot/parrotwounda", start = 0, semitones = 2 },
+	{ clip = "creature/parrot/parrotattacka", start = 0.38, semitones = 4 },
+]
+
+[file.toast_3]
+# A pre-aggro squawk, a bell and a second squawk over it.
+mix = [
+	{ clip = "creature/parrot/parrotpreaggro", start = 0 },
+	{ part = "bell", start = 0.5, gain = 0.5, length = 0.9 },
+	{ clip = "creature/parrot/parrotattackb", start = 0.55, semitones = 3 },
+]
+
+[file.banner]
+# A cannon, the pirate, a bell and the parrot cheering him on.
+mix = [
+	{ part = "cannon", start = 0, gain = 0.9 },
+	{ clip = "character/human/malenpc/humanmalepirate/humanmalepirateaggroa", start = 0.35 },
+	{ part = "bell", start = 1.2, gain = 0.5, length = 1.5 },
+	{ clip = "creature/parrot/parrotwoundcrita", start = 1.0, semitones = 2 },
+	{ clip = "creature/parrot/parrotaggro", start = 1.55, semitones = 4 },
+	{ clip = "creature/parrot/parrotattackb", start = 1.75, semitones = 5 },
+]

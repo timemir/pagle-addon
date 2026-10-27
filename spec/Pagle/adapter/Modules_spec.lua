@@ -76,6 +76,21 @@ describe("Pagle.RegisterModule", function()
 		end
 	)
 
+	it("takes an optional collection function, and raises an error at the caller for any other (CORE-R45)", function()
+		local loaded = loadWith({ QoL = {} })
+		local Pagle = loaded.env.Pagle
+
+		assert.matches(
+			"Modules_spec%.lua:%d+: .*def%.collection",
+			registerError(Pagle, qolDef({ collection = "open" }))
+		)
+		assert.matches("Modules_spec%.lua:%d+: .*def%.collection", registerError(Pagle, qolDef({ collection = {} })))
+
+		local collection = function() end
+		assert.is_table(Pagle.RegisterModule(qolDef({ collection = collection })))
+		assert.are.equal(collection, loaded.ns.Modules:Modules()[1].def.collection)
+	end)
+
 	it("raises an error at the caller for a second registration, keeping the first (CORE-R14)", function()
 		local Pagle = loadWith({ QoL = {} }).env.Pagle
 		Pagle.RegisterModule(qolDef())
@@ -249,5 +264,81 @@ describe("Core and a disabled Module", function()
 				end
 			end
 		end
+	end)
+end)
+
+describe("The Collection Core opens (CORE-R45)", function()
+	-- Core with the Ledger (order 10) and Hunts (order 20) registered, each with `collections`' function for its
+	-- def.collection if given.
+	local function withModules(collections)
+		local loaded = loadWith({ Ledger = {}, Hunts = {} })
+		local Pagle = loaded.env.Pagle
+		for _, def in ipairs({ { "Ledger", 10 }, { "Hunts", 20 } }) do
+			Pagle.RegisterModule({ name = def[1], title = def[1], order = def[2], collection = collections[def[1]] })
+		end
+		return loaded
+	end
+
+	it("calls the first On Module's def.collection by def.order, with the good given (CORE-R45)", function()
+		local calls = {}
+		local loaded = withModules({
+			Ledger = function(...)
+				calls[#calls + 1] = { "Ledger", ... }
+			end,
+			Hunts = function(...)
+				calls[#calls + 1] = { "Hunts", ... }
+			end,
+		})
+
+		assert.is_true(loaded.ns.OpenCollection("core.toaststyle.foil"))
+		assert.is_true(loaded.ns.OpenCollection())
+
+		assert.are.same({ { "Ledger", "core.toaststyle.foil" }, { "Ledger" } }, calls)
+	end)
+
+	it("skips a Module with none for the next, and opens nothing with none at all (CORE-R45)", function()
+		local calls = {}
+		local loaded = withModules({
+			Hunts = function(goodID)
+				calls[#calls + 1] = goodID
+			end,
+		})
+
+		assert.is_true(loaded.ns.OpenCollection("core.crest.plain"))
+		assert.are.same({ "core.crest.plain" }, calls)
+		assert.are.equal(loaded.ns.Modules:Modules()[2].def.collection, loaded.ns.CollectionOffered())
+
+		local none = withModules({})
+		assert.is_nil(none.ns.CollectionOffered())
+		assert.is_false(none.ns.OpenCollection("core.crest.plain"))
+	end)
+
+	it("leaves a Module that isn't On out, as it never registered: the next one is called (CORE-R45)", function()
+		local calls = {}
+		local loaded = loadWith({ Hunts = {} })
+		loaded.env.Pagle.RegisterModule({
+			name = "Hunts",
+			title = "Hunts",
+			order = 20,
+			collection = function(goodID)
+				calls[#calls + 1] = goodID
+			end,
+		})
+
+		assert.is_true(loaded.ns.OpenCollection("core.crest.plain")) -- the Ledger is off
+		assert.are.same({ "core.crest.plain" }, calls)
+	end)
+
+	it("reports a def.collection that raises through the error handler (CORE-R45)", function()
+		local loaded = withModules({
+			Ledger = function()
+				error("Collection broke")
+			end,
+		})
+
+		assert.is_true(loaded.ns.OpenCollection())
+
+		assert.are.equal(1, #loaded.client.errors)
+		assert.matches("Collection broke", loaded.client.errors[1])
 	end)
 end)

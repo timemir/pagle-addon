@@ -134,11 +134,15 @@ describe("the Journal's Trophy Room", function()
 				"Landed 2 of 4. Heaviest so far: 22 lb.",
 				"Found in Elwynn Forest.",
 			}, blockTexts(right))
+			local stamps = {}
+			for i, stamp in ipairs(right[3].stamps) do
+				stamps[i] = { text = stamp.text, inked = stamp.inked }
+			end
 			assert.are.same({
 				{ text = "Any weight", inked = true },
 				{ text = "Half the weights", inked = true },
 				{ text = "The heaviest", inked = false },
-			}, right[3].stamps)
+			}, stamps)
 			-- A tick per weight, placed along the board by its pounds (17 to 26), inked where landed.
 			assert.are.same({
 				{ text = "17", at = 0, inked = true },
@@ -149,6 +153,32 @@ describe("the Journal's Trophy Room", function()
 			assert.is_true(right[6].hand)
 		end
 	)
+
+	it("gives each of a family's stamps a tooltip: the rule and the weights landed (LED-R165, LED-R47)", function()
+		local _, loaded = spread({ "trophyRoom", 2 })
+		local stamps = loaded.ns.journal.pages.right[3].stamps
+
+		local tips = {}
+		for i, stamp in ipairs(stamps) do
+			tips[i] = { stamp.tip.title, unpack(stamp.tip.lines) }
+		end
+
+		-- Catfish lists four weights, 17 to 26 lb (the removed 30 not among them); 17 and 22 are landed.
+		assert.are.same({
+			{ "Any weight", "Land any weight of this family.", "2 of 4 weights landed." },
+			{ "Half the weights", "Land at least 2 of its 4 listed weights.", "2 of 4 weights landed." },
+			{ "The heaviest", "Land its heaviest listed weight, 26 lb.", "Not yet." },
+		}, tips)
+	end)
+
+	it("says when none of a family is landed, and takes the singular for one listed weight (LED-R165)", function()
+		local _, loaded = spread({ "trophyRoom" })
+		local stamps = loaded.ns.journal.pages.right[3].stamps
+
+		assert.are.same({ "Land any weight of this family.", "None landed yet." }, stamps[1].tip.lines)
+		assert.are.same({ "Land its one listed weight.", "0 of 1 weight landed." }, stamps[2].tip.lines)
+		assert.are.same({ "Land its heaviest listed weight, 10 lb.", "Not yet." }, stamps[3].tip.lines)
+	end)
 
 	it("opens on the first family by default, and says so when none of it is landed yet (LED-R143)", function()
 		local _, loaded = spread({ "trophyRoom" })

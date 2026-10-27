@@ -25,7 +25,6 @@ local ns = select(2, ...)
 ---@field label string
 ---@field category "Announcements"|"Crests"|"Books"
 ---@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): all four
----@field hideEarned? true          -- the shop lists none of its earned goods; Look and Feel equips them (SHOP-R25)
 ---@field groups? PagleSlotGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
@@ -81,25 +80,35 @@ ns.CORE_GOODS = {
 		goods = {
 			{ id = ns.TOAST_STYLE_DEFAULT, default = true, icon = ICONS .. "INV_Crate_01" },
 			{ id = "core.toaststyle.ripple", tier = 1, icon = ICONS .. "Ability_Shaman_WaterShield" },
-			{ id = "core.toaststyle.lanternglow", tier = 2, icon = ICONS .. "INV_Misc_Lantern_01" },
+			{ id = "core.toaststyle.lanternglow", tier = 1, icon = ICONS .. "INV_Misc_Lantern_01" },
 			-- The Curio Shop expansion's (ANN-R81).
 			{ id = "core.toaststyle.ship", tier = 1, icon = ICONS .. "INV_Misc_Spyglass_02" },
 			{ id = "core.toaststyle.birch", tier = 1, icon = ICONS .. "INV_Scroll_03" },
 			{ id = "core.toaststyle.tidepool", tier = 1, icon = ICONS .. "INV_Misc_Shell_01" },
-			{ id = "core.toaststyle.chart", tier = 2, icon = ICONS .. "INV_Misc_Map_01" },
-			{ id = "core.toaststyle.frost", tier = 2, icon = ICONS .. "Spell_Frost_FrostArmor02" },
+			{ id = "core.toaststyle.chart", tier = 1, icon = ICONS .. "INV_Misc_Map_01" },
+			{ id = "core.toaststyle.frost", tier = 1, icon = ICONS .. "Spell_Frost_FrostArmor02" },
 			{ id = "core.toaststyle.goblin", tier = 2, icon = ICONS .. "INV_Misc_Gear_01" },
-			{ id = "core.toaststyle.kelp", tier = 3, icon = ICONS .. "INV_Misc_Gem_Pearl_03" },
-			{ id = "core.toaststyle.moon", tier = 3, icon = ICONS .. "Spell_Nature_StarFall" },
-			{ id = "core.toaststyle.leaf", tier = 3, icon = ICONS .. "INV_Misc_Herb_10" },
-			{ id = "core.toaststyle.bottle", tier = 3, icon = ICONS .. "INV_Drink_07" },
-			{ id = "core.toaststyle.rune", tier = 4, icon = ICONS .. "INV_Misc_Rune_01" },
-			{ id = "core.toaststyle.folio", tier = 5, icon = ICONS .. "INV_Misc_Book_11" },
+			{ id = "core.toaststyle.kelp", tier = 2, icon = ICONS .. "INV_Misc_Gem_Pearl_03" },
+			{ id = "core.toaststyle.moon", tier = 2, icon = ICONS .. "Spell_Nature_StarFall" },
+			{ id = "core.toaststyle.leaf", tier = 2, icon = ICONS .. "INV_Misc_Herb_10" },
+			{ id = "core.toaststyle.bottle", tier = 2, icon = ICONS .. "INV_Drink_07" },
+			{ id = "core.toaststyle.rune", tier = 3, icon = ICONS .. "INV_Misc_Rune_01" },
+			{ id = "core.toaststyle.folio", tier = 2, icon = ICONS .. "INV_Misc_Book_11" },
 			-- The round two's (ANN-R82): Storm Front for sale (and in the Curio crate), Sonar Scope earned once the
 			-- companion is linked (SHOP-R29), Prize Foil the crate's alone (SHOP-R50).
-			{ id = "core.toaststyle.storm", tier = 5, icon = ICONS .. "Spell_Nature_Lightning" },
+			{ id = "core.toaststyle.storm", tier = 4, icon = ICONS .. "Spell_Nature_Lightning" },
 			{ id = "core.toaststyle.sonar", companion = true, icon = ICONS .. "Spell_Holy_MindVision" },
 			{ id = "core.toaststyle.foil", crate = true, icon = ICONS .. "INV_Misc_Gem_Opal_01" },
+			-- The round three's (ANN-R84): eight for sale; the other ten, the race and faction styles, are the Ledger's earned goods
+			-- (LED-R164).
+			{ id = "core.toaststyle.hive", tier = 4, icon = ICONS .. "Spell_Nature_InsectSwarm" },
+			{ id = "core.toaststyle.ooze", tier = 3, icon = ICONS .. "Spell_Nature_Acid_01" },
+			{ id = "core.toaststyle.robot", tier = 3, icon = ICONS .. "INV_Gizmo_02" },
+			{ id = "core.toaststyle.spider", tier = 3, icon = ICONS .. "INV_Misc_MonsterSpiderCarapace_01" },
+			{ id = "core.toaststyle.glacier", tier = 3, icon = ICONS .. "Spell_Frost_FrostNova" },
+			{ id = "core.toaststyle.magma", tier = 4, icon = ICONS .. "Spell_Fire_Volcano" },
+			{ id = "core.toaststyle.arcane", tier = 4, icon = ICONS .. "Spell_Holy_MagicalSentry" },
+			{ id = "core.toaststyle.pirate", tier = 3, icon = ICONS .. "INV_Misc_Coin_02" },
 		},
 	},
 	{
@@ -114,15 +123,28 @@ ns.CORE_GOODS = {
 			{ id = "core.soundset.rain", tier = 1, icon = ICONS .. "Spell_Nature_Tranquility" },
 			{ id = "core.soundset.marimba", tier = 1, icon = ICONS .. "INV_Misc_Drum_02" },
 			{ id = "core.soundset.shipbell", tier = 1, icon = ICONS .. "INV_Misc_Horn_01" },
+			{ id = "core.soundset.squeaky", tier = 1, icon = ICONS .. "INV_Misc_Toy_07" },
+			{ id = "core.soundset.bubbleworks", tier = 1, icon = ICONS .. "INV_Misc_Gem_Pearl_03" },
 			{ id = "core.soundset.kalimba", tier = 2, icon = ICONS .. "Spell_Frost_SummonWaterElemental" },
 			{ id = "core.soundset.musicbox", tier = 2, icon = ICONS .. "INV_Box_01" },
 			{ id = "core.soundset.glass", tier = 2, icon = ICONS .. "INV_Misc_Orb_01" },
 			{ id = "core.soundset.steelpan", tier = 2, icon = ICONS .. "INV_Misc_Drum_03" },
 			{ id = "core.soundset.dulcimer", tier = 2, icon = ICONS .. "INV_Drink_04" },
+			{ id = "core.soundset.goblintill", tier = 2, icon = ICONS .. "INV_Misc_Coin_02" },
+			{ id = "core.soundset.kazoo", tier = 2, icon = ICONS .. "INV_Misc_Horn_02" },
+			{ id = "core.soundset.arcade", tier = 2, icon = ICONS .. "INV_Misc_Coin_01" },
+			{ id = "core.soundset.boing", tier = 2, icon = ICONS .. "INV_Misc_Toy_10" },
+			{ id = "core.soundset.slime", tier = 2, icon = ICONS .. "INV_Misc_Slime_01" },
 			{ id = "core.soundset.frost", tier = 3, icon = ICONS .. "Spell_Frost_FrostNova" },
 			{ id = "core.soundset.harp", tier = 3, icon = ICONS .. "Spell_Nature_Regeneration" },
 			{ id = "core.soundset.gizmo", tier = 3, icon = ICONS .. "INV_Gizmo_BronzeFramework_01" },
+			{ id = "core.soundset.mrglglgl", tier = 3, icon = ICONS .. "INV_Misc_Head_Murloc_01" },
+			{ id = "core.soundset.parrot", tier = 3, icon = ICONS .. "INV_Misc_Bird_01" },
+			{ id = "core.soundset.laser", tier = 3, icon = ICONS .. "INV_Gizmo_02" },
+			{ id = "core.soundset.silithid", tier = 3, icon = ICONS .. "INV_Misc_AhnQirajTrinket_01" },
+			{ id = "core.soundset.succubus", tier = 3, icon = ICONS .. "Spell_Shadow_SummonSuccubus" },
 			{ id = "core.soundset.wardrums", tier = 4, icon = ICONS .. "Ability_Warrior_BattleShout" },
+			{ id = "core.soundset.dragonroost", tier = 4, icon = ICONS .. "INV_Misc_Head_Dragon_01" },
 		},
 	},
 	{
@@ -130,8 +152,7 @@ ns.CORE_GOODS = {
 		label = L.SLOT_CREST,
 		category = "Crests",
 		openToEarned = true,
-		hideEarned = true,
-		-- The Ledger's zone crests and Core's fish crests name these (SHOP-R27); the shop lists neither (hideEarned).
+		-- The Ledger's zone crests and Core's fish crests name these (SHOP-R27); the shop lists neither (SHOP-R24).
 		groups = {
 			{ key = "zone", name = L.SLOT_CREST_ZONES },
 			{ key = "fish", name = L.SLOT_CREST_FISH },
@@ -181,7 +202,6 @@ function ns.RegisterCoreGoods(previews)
 			category = slot.category,
 			groups = slot.groups,
 			openToEarned = slot.openToEarned,
-			hideEarned = slot.hideEarned,
 			preview = slot.openToEarned and previews and function(stage, good)
 				local draw = previews[slot.id]
 				if draw then

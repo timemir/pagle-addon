@@ -507,6 +507,8 @@ describe("the Session summary cards", function()
 			frames(loaded)
 			assert.is_nil(shownCard(loaded))
 
+			-- No catch toast: it would hold the card back as any toast does (ANN-R21).
+			loaded.ns.db.profile.announcements.everyCatch = false
 			catchAndFlush(loaded)
 			loaded.client.advance(299)
 			assert.is_nil(shownCard(loaded))

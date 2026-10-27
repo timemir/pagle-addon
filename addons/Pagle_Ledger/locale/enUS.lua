@@ -83,6 +83,17 @@ ns.L = {
 		flywallet = "5 different lures",
 		carapace = "50 Big-mouth Clams",
 		ember = "Prestige VII",
+		-- The third round's race and faction styles (LED-R164).
+		crier = "Catch 100 fish as a Human",
+		hall = "Catch 100 fish as a Dwarf",
+		glade = "Catch 100 fish as a Night Elf",
+		blueprint = "Catch 100 fish as a Gnome",
+		drum = "Catch 100 fish as an Orc",
+		shroud = "Catch 100 fish as an Undead",
+		totem = "Catch 100 fish as a Tauren",
+		hex = "Catch 100 fish as a Troll",
+		lion = "Catch 300 fish on Alliance characters",
+		warband = "Catch 300 fish on Horde characters",
 	},
 	-- A second-round good's row tag while it isn't earned (LED-R118): "{n} of {mark} {unit}", the unit by the good's
 	-- key; a good with no unit shows its EARNED_TEXT.
@@ -102,6 +113,16 @@ ns.L = {
 		knit = "Casts",
 		flywallet = "lures",
 		carapace = "clams",
+		crier = "fish",
+		hall = "fish",
+		glade = "fish",
+		blueprint = "fish",
+		drum = "fish",
+		shroud = "fish",
+		totem = "fish",
+		hex = "fish",
+		lion = "fish",
+		warband = "fish",
 	},
 
 	-- A zone crest not yet earned (LED-R115): the row's tag and the stage's note. The crests' names and descriptions
@@ -156,9 +177,11 @@ ns.L = {
 	CATCHES_OTHER = "%s Catches",
 	SIZE_RECORD_TITLE = "Size record",
 	SIZE_RECORD_STAMP = "Record",
-	-- A variety's first Catch (VAR-R25): a Common or Uncommon one's headline with the variety's name (lore, VAR-R11),
-	-- and its stamp riding on the Cast's toast; a Rare one's and an Epic one's titles, the name as their text.
-	NEW_VARIETY_TITLE = "New variety · %s",
+	-- A size record's ruler label when Core names no Size band for the Catch (ANN-R22).
+	RULER_LENGTH = "length",
+	-- A variety's first Catch (VAR-R25): a Common or Uncommon one's headline with the variety's name (lore, VAR-R11) as
+	-- its text, and its stamp riding on the Cast's toast; a Rare one's and an Epic one's titles, the name as their text.
+	NEW_VARIETY_TITLE = "New variety",
 	NEW_VARIETY_STAMP = "New variety",
 	RARE_VARIETY_TITLE = "Rare variety",
 	EPIC_VARIETY_TITLE = "Epic variety",
@@ -348,6 +371,19 @@ ns.L = {
 	LIST_LAST = " and ",
 	-- A Species' entry (LED-R140, LED-R141). "First landed {date} in {zone}, by {character}. {n} caught."
 	ENTRY_STAMPS = { CAUGHT, IN_ITS_ELEMENT, REGULAR },
+	-- The tooltips on those stamps (LED-R165): a rule, then where the Angler stands. A rule of "Land it {n} times."
+	-- serves ★ and ★★★; ★★ names its element windows (LED-R45) or counts different zones.
+	STAMP_TIP_LAND_ONE = "Land it %d time.",
+	STAMP_TIP_LAND_OTHER = "Land it %d times.",
+	STAMP_TIP_LANDED = "%d of %d landed.",
+	STAMP_TIP_ELEMENT_WINDOW = "Land it under its element window, in any zone.",
+	STAMP_TIP_ELEMENT_WINDOWS = "Land it under each of its %d element windows, in any zone.",
+	STAMP_TIP_ELEMENT_NEEDED = "%d of %d met. Still needed: %s.",
+	STAMP_TIP_ELEMENT_MET = "All met: %s.",
+	STAMP_TIP_ZONE = "Land it in any zone.",
+	STAMP_TIP_ZONES = "Land it in %d different zones.",
+	STAMP_TIP_ZONES_ONE = "In %d of %d zone.",
+	STAMP_TIP_ZONES_OTHER = "In %d of %d zones.",
 	ENTRY_FIRST = "First landed %s in %s, by %s. %s caught.",
 	ENTRY_FIRST_NO_ZONE = "First landed %s, by %s. %s caught.",
 	ENTRY_FOUND_IN = "Found in %s.",
@@ -498,6 +534,18 @@ ns.L = {
 	TROPHY_FAMILY_KICKER = "A trophy family",
 	TROPHY_HEAVIEST = "heaviest",
 	TROPHY_STAMPS = { "Any weight", "Half the weights", "The heaviest" },
+	-- The tooltips on a trophy family's stamps (LED-R165, LED-R47), after the same pattern. Weights are in pounds.
+	TROPHY_TIP_ANY = "Land any weight of this family.",
+	TROPHY_TIP_NONE_YET = "None landed yet.",
+	TROPHY_TIP_UNLISTED = "Landed, though not on this family's list.",
+	TROPHY_TIP_LANDED_ONE = "%d of %d weight landed.",
+	TROPHY_TIP_LANDED_OTHER = "%d of %d weights landed.",
+	TROPHY_TIP_HALF_ONE = "Land its one listed weight.",
+	TROPHY_TIP_HALF_OTHER = "Land at least %d of its %d listed weights.",
+	TROPHY_TIP_NO_WEIGHTS = "This family lists no weights yet.",
+	TROPHY_TIP_HEAVIEST = "Land its heaviest listed weight, %s lb.",
+	TROPHY_TIP_HEAVIEST_DONE = "Landed.",
+	TROPHY_TIP_HEAVIEST_TODO = "Not yet.",
 	TROPHY_POUNDS = "pounds",
 	TROPHY_LANDED = "Landed %s of %s. Heaviest so far: %s lb.",
 	TROPHY_NONE_LANDED = "Not one of this family yet.",

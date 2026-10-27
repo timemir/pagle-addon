@@ -125,6 +125,35 @@ describe("Announcement frames", function()
 	)
 
 	it(
+		'stamp the sum of a Cast\'s tickets as "Refresh +N" after the other stamps, outside the 4 and the +N, before'
+			.. " the Coins (ANN-R23, REF-R7)",
+		function()
+			local loaded, M = loadCore()
+			local moments =
+				{ moment("toast", "New Species", { text = "Nightfin Snapper", icon = 136245, cast = CAST }) }
+			for i, stamp in ipairs({ "New here", "Rank up", "Skill", "Trophy", "Extra" }) do
+				moments[#moments + 1] = moment("nod", "Moment " .. i, { stamp = stamp, cast = CAST, tickets = 1 })
+			end
+
+			raise(loaded, M, unpack(moments))
+
+			local toast = frameOf(loaded, "toast")
+			assert.are.same({ "NEW HERE", "RANK UP", "SKILL", "TROPHY", "+1", "REFRESH +5" }, stampsOf(toast))
+		end
+	)
+
+	it("stamps a banner's tickets the same way, and a toast with none shows no Refresh stamp (REF-R7)", function()
+		local loaded, M = loadCore()
+
+		raise(loaded, M, moment("banner", "Level 12", { cast = CAST, tickets = 2 }))
+		loaded.client.advance(BANNER + LEAVE_BANNER)
+		raise(loaded, M, moment("toast", "New Species", { cast = CAST }))
+
+		assert.are.same({ "REFRESH +2" }, stampsOf(frameOf(loaded, "banner")))
+		assert.are.same({}, stampsOf(frameOf(loaded, "toast")))
+	end)
+
+	it(
 		"show a banner in the centre for 5.9 s beside the column's 3 toasts, the 4th coming in as they leave (ANN-R20)",
 		function()
 			local loaded, M = loadCore()
@@ -333,11 +362,11 @@ describe("Announcement frames", function()
 			local ruler = { old = 1, new = 2, unit = "lb", label = "w" }
 			raise(loaded, M, moment("toast", "Size record", { ruler = ruler }))
 			loaded.client.advance(6)
-			for _ = 1, 20 do
+			for _ = 1, 40 do
 				raise(loaded, M, moment("toast", "Interruption"))
 				loaded.client.advance(6)
 			end
-			-- Past PagleDB's 20 per 5 minutes: a Nod (ANN-R31).
+			-- Past PagleDB's 40 per 5 minutes: a Nod (ANN-R31).
 			raise(loaded, M, moment("toast.low", "Size record", { ruler = ruler }))
 
 			local drawn = {}
@@ -520,17 +549,20 @@ describe("the announcements art", function()
 		)
 	end)
 
-	it("writes a headline with no text as its title alone in the Angler's hand, as a catch Nod's line", function()
-		local loaded, M = loadCore()
+	it(
+		"writes a headline with no text as its title alone in the Angler's hand, as a stepped-down catch toast's line",
+		function()
+			local loaded, M = loadCore()
 
-		raise(loaded, M, moment("nod", "Oily Blackmouth · Decent · 34.2 cm"))
+			raise(loaded, M, moment("nod", "Oily Blackmouth · Decent · 34.2 cm"))
 
-		local nod = frameOf(loaded, "nod")
-		assert.are.same(
-			{ "Oily Blackmouth · Decent · 34.2 cm", "PagleArtNodName", false },
-			{ nod.title:GetText(), nod.title.fontObject, nod.text.shown }
-		)
-	end)
+			local nod = frameOf(loaded, "nod")
+			assert.are.same(
+				{ "Oily Blackmouth · Decent · 34.2 cm", "PagleArtNodName", false },
+				{ nod.title:GetText(), nod.title.fontObject, nod.text.shown }
+			)
+		end
+	)
 
 	it(
 		"presses a banner's seal with the headline's number or mark, or shows the Prestige frame of its frameRank with"
@@ -679,7 +711,8 @@ describe("a variety's art and a fish crest on the client (VAR-R25)", function()
 
 			loaded.client.advance(TOAST + LEAVE_TOAST)
 			raise(loaded, M, moment("toast", "New Species", { icon = 136245 }))
-			assert.are.same({ 136245, { 0, 1, 0, 1 } }, { toast.icon.texture, toast.icon.texCoord })
+			local crop = loaded.ns.ICON_CROP
+			assert.are.same({ 136245, { crop, 1 - crop, crop, 1 - crop } }, { toast.icon.texture, toast.icon.texCoord })
 
 			raise(loaded, M, moment("nod", "New variety · Coral", { art = ART }))
 			local nod = frameOf(loaded, "nod")
@@ -713,9 +746,11 @@ describe("a variety's art and a fish crest on the client (VAR-R25)", function()
 end)
 
 describe("the column on the client", function()
-	-- A column frame's bottom above the screen's: its BOTTOM anchor's y.
+	-- A column frame's bottom above the screen's: its offset from the column's foot, the anchor it hangs from (ANN-R98),
+	-- plus the foot's own.
 	local function bottomOf(frame)
-		return select(5, frame:GetPoint(1))
+		local _, anchor, _, _, y = frame:GetPoint(1)
+		return y + select(5, anchor:GetPoint(1))
 	end
 
 	it(
@@ -927,10 +962,12 @@ describe("the Interruption budget on the client", function()
 	end
 
 	it(
-		"steps the 21st toast.low down to a Nod with a compact ruler, at PagleDB's 20 per 5 minutes (ANN-R31, ANN-R22)",
+		"steps the 41st toast.low down to a Nod with a compact ruler, at PagleDB's 40 per 5 minutes (ANN-R31, ANN-R22)",
 		function()
 			local loaded, M = loadCore()
-			interrupt(loaded, M, 20)
+			-- 40 toasts take over 5 minutes here: the longest window keeps them all in it.
+			loaded.ns.db.profile.announcements.budget.window = 900
+			interrupt(loaded, M, 40)
 
 			raise(
 				loaded,
@@ -956,7 +993,7 @@ describe("the Interruption budget on the client", function()
 	it("steps nothing down with the budget off in PagleDB (ANN-R32)", function()
 		local loaded, M = loadCore()
 		loaded.ns.db.profile.announcements.budget.on = false
-		interrupt(loaded, M, 20)
+		interrupt(loaded, M, 40)
 
 		raise(loaded, M, moment("toast.low", "Size record"))
 
@@ -1067,9 +1104,9 @@ describe("Announcement sounds on the client", function()
 	end)
 end)
 
-describe("The catch Nod on the client", function()
+describe("The catch toast on the client", function()
 	-- Core as loadCore makes it, with Oily Blackmouth's name cached, the Angler's unit in cm and, unless `firstTime`,
-	-- every one of its varieties caught before in Core's projection (VAR-R10), so its Nod may name any (VAR-R27).
+	-- every one of its varieties caught before in Core's projection (VAR-R10), so its toast may name any (VAR-R27).
 	---@param firstTime boolean?
 	local function catching(firstTime)
 		local loaded, M, summarized = loadCore()
@@ -1086,64 +1123,113 @@ describe("The catch Nod on the client", function()
 	end
 
 	it(
-		'draws an ordinary Catch as a silent Nod, "{item name} · {band} · {length}", for 3 s, never summarized'
-			.. " (ANN-R13, ANN-R20, ANN-R25)",
+		'draws an ordinary Catch as a toast.low, its kicker "{band} · {length}" over the fish named with its variety,'
+			.. " with the toast sound, for 4 s, never summarized (ANN-R13, ANN-R20, ANN-R25, ANN-R70)",
 		function()
 			local loaded, _, summarized = catching()
 
 			catchAndFlush(loaded)
 
-			assert.is_true(showing(loaded, "nod"))
-			local frame = frameOf(loaded, "nod") --[[@as table]]
-			-- Oily Blackmouth has varieties: its line names the Catch's, the name a segment of its own (VAR-R26).
-			assert.matches(
-				"^Oily Blackmouth · [%a%- ]+ · %a+ · %d+%.%d cm$",
-				frame.display.announcement.headline.title
-			)
-			assert.are.equal("Oily Blackmouth ·", frame.title:GetText())
+			assert.is_true(showing(loaded, "toast"))
+			local frame = frameOf(loaded, "toast") --[[@as table]]
+			local headline = frame.display.announcement.headline
+			assert.are.same({ "toast.low", "Oily Blackmouth" }, { headline.rung, headline.text })
+			assert.matches("^%u+ · %d+%.%d CM$", frame.title:GetText())
+			-- Oily Blackmouth has varieties: its text line is the fish's name, then a gem and the variety's (VAR-R26).
+			assert.are.equal("Oily Blackmouth ·", frame.text:GetText())
 			assert.matches("^[%a%- ]+$", frame.variety:GetText())
-			assert.matches("^· %a+ · %d+%.%d cm$", frame.tail:GetText())
+			assert.is_true(frame.gem.shown)
 			assert.are.same({}, stampsOf(frame))
-			assert.are.same({}, loaded.client.sounds)
+			assert.are.equal(DRIFTWOOD .. "toast_1.ogg SFX", loaded.client.sounds[1])
 			assert.are.same({}, summarized)
-			loaded.client.advance(NOD)
-			assert.is_false(showing(loaded, "nod"))
+			loaded.client.advance(4 + 2.7 - 0.1)
+			assert.is_true(showing(loaded, "toast"))
+			loaded.client.advance(0.2)
+			assert.is_false(showing(loaded, "toast"))
 		end
 	)
+
+	it('reads "CAUGHT" for its kicker when the Catch has no size (ANN-R13)', function()
+		local loaded = catching()
+		-- An Uncharted item has no Simulated Size (LOG-R55, LOG-R65).
+		loaded.client.itemNames[99001] = "Strange Flotsam"
+
+		catchOne(
+			loaded,
+			{ { link = "|cffffffff|Hitem:99001::::::::15:::::::::|h[Strange Flotsam]|h|r", quantity = 1 } }
+		)
+		loaded.client.advance(0)
+
+		local frame = frameOf(loaded, "toast") --[[@as table]]
+		assert.are.same({ "CAUGHT", "Strange Flotsam", false }, {
+			frame.title:GetText(),
+			frame.text:GetText(),
+			frame.gem.shown,
+		})
+	end)
 
 	it("names no variety caught for the first time: that Catch reads as one without (VAR-R27)", function()
 		local loaded = catching(true)
 
 		catchAndFlush(loaded)
 
-		local frame = frameOf(loaded, "nod") --[[@as table]]
-		assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", frame.display.announcement.headline.title)
+		local frame = frameOf(loaded, "toast") --[[@as table]]
 		assert.is_nil(frame.display.announcement.headline.variety)
+		assert.are.same({ "Oily Blackmouth", false }, { frame.text:GetText(), frame.gem.shown })
 	end)
 
-	it("never counts toward the Interruption budget (ANN-R13, ANN-R30, ANN-R31)", function()
-		local loaded, M = catching()
-		loaded.ns.db.profile.announcements.budget.count = 1
+	it(
+		"counts toward the Interruption budget and steps down, past it, to a Nod reading as the catch Nod did: no"
+			.. " sound, the old line (ANN-R13, ANN-R30, ANN-R31)",
+		function()
+			local loaded, M = catching()
+			loaded.ns.db.profile.announcements.budget.count = 1
+
+			catchAndFlush(loaded)
+			assert.is_true(showing(loaded, "toast"))
+			loaded.client.advance(TOAST)
+			local sounds = #loaded.client.sounds
+			catchAndFlush(loaded)
+
+			assert.is_false(showing(loaded, "toast"))
+			local nod = frameOf(loaded, "nod") --[[@as table]]
+			assert.is_true(showing(loaded, "nod"))
+			assert.are.equal("Oily Blackmouth ·", nod.title:GetText())
+			assert.matches("^[%a%- ]+$", nod.variety:GetText())
+			assert.matches("^· %a+ · %d+%.%d cm$", nod.tail:GetText())
+			assert.is_false(nod.text.shown)
+			assert.are.equal(sounds, #loaded.client.sounds)
+			raise(loaded, M, moment("toast", "New Species"))
+			assert.is_true(showing(loaded, "toast"))
+		end
+	)
+
+	it("steps down to its whole name and size line when it names no variety (ANN-R31)", function()
+		local loaded = catching(true)
+		loaded.ns.db.profile.announcements.budget.count = 0
 
 		catchAndFlush(loaded)
-		loaded.client.advance(3)
-		raise(loaded, M, moment("toast.low", "Size record"))
 
-		assert.is_true(showing(loaded, "toast"))
+		local nod = frameOf(loaded, "nod") --[[@as table]]
+		assert.matches("^Oily Blackmouth · %a+ · %d+%.%d cm$", nod.title:GetText())
+		assert.is_false(nod.variety.shown)
 	end)
 
-	it("is dropped, not held, in combat and in Cozy mode (ANN-R13, ANN-R35, ANN-R36, ANN-R40)", function()
+	it("is held in combat as a toast is, and shows once it ends; Cozy mode shows nothing (ANN-R35, ANN-R40)", function()
 		local loaded = catching()
 		setCombat(loaded, true)
 		catchAndFlush(loaded)
+		assert.is_nil(frameOf(loaded, "toast"))
 		setCombat(loaded, false)
 		loaded.client.advance(2)
-		assert.is_nil(frameOf(loaded, "nod"))
+		assert.is_true(showing(loaded, "toast"))
+		loaded.client.advance(TOAST)
 
 		loaded.ns.db.profile.announcements.cozy = true
 		catchAndFlush(loaded)
 
-		assert.is_nil(frameOf(loaded, "nod"))
+		assert.is_false(showing(loaded, "toast"))
+		assert.is_false(showing(loaded, "nod"))
 	end)
 
 	it('shows nothing for an ordinary Catch with "Show every catch" off (ANN-R13, SET-R30)', function()
@@ -1152,11 +1238,12 @@ describe("The catch Nod on the client", function()
 
 		catchAndFlush(loaded)
 
+		assert.is_nil(frameOf(loaded, "toast"))
 		assert.is_nil(frameOf(loaded, "nod"))
 	end)
 end)
 
-describe("a catch Nod naming a variety on the client (VAR-R26)", function()
+describe("a catch toast stepped down to a Nod naming a variety on the client (VAR-R26, ANN-R31)", function()
 	-- Firefin Snapper's Coral: a 192 × 96 rectangle at (192, 0) of a 2048 atlas (VAR-R11).
 	local ART = {
 		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
@@ -1176,19 +1263,26 @@ describe("a catch Nod naming a variety on the client (VAR-R26)", function()
 		error("no rarity " .. key)
 	end
 
-	-- Raises Core's catch Nod naming Coral as a variety of `rarity`, as ns.CatchNodMoment makes it, and runs the frame
-	-- it shows on. Returns the Nod's frame.
-	local function raiseVarietyNod(loaded, rarity)
-		loaded.ns.moments:RaiseCatchNod({
-			rung = "nod",
+	-- Core's catch toast naming Coral as a variety of `rarity`, as ns.CatchToastMoment makes it.
+	local function coralToast(rarity)
+		return {
+			rung = "toast.low",
 			kind = "catch",
-			title = "Firefin Snapper · Coral · Decent · 34.2 cm",
+			title = "Decent · 34.2 cm",
+			text = "Firefin Snapper",
+			nodLine = "Firefin Snapper · Coral · Decent · 34.2 cm",
 			icon = 6359,
 			cast = CAST,
-			sound = false,
 			variety = { name = "Coral", rarity = rarity, before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
 			art = ART,
-		})
+		}
+	end
+
+	-- Raises that catch toast with the budget spent, so it steps down to a Nod, and runs the frame it shows on.
+	-- Returns the Nod's frame.
+	local function raiseVarietyNod(loaded, rarity)
+		loaded.ns.db.profile.announcements.budget.count = 0
+		loaded.ns.moments:RaiseCatchToast(coralToast(rarity))
 		loaded.client.advance(0)
 		return frameOf(loaded, "nod") --[[@as table]]
 	end
@@ -1274,6 +1368,30 @@ describe("a catch Nod naming a variety on the client (VAR-R26)", function()
 	)
 
 	it(
+		"puts the same opaque disc behind a variety Nod's art across its medallion, and none behind an icon (#424)",
+		function()
+			local loaded, M = loadCore()
+
+			local nod = raiseVarietyNod(loaded, "epic")
+
+			-- The 34 medallion's face is 26 across.
+			local epic = rarityOf(loaded, "epic")
+			local expected = loaded.ns.ArtBacking(epic.color)
+			assert.are.same(
+				{ true, 26, 26, rgb(expected) },
+				{ nod.bezel.Back.shown, nod.bezel.Back.width, nod.bezel.Back.height, rgb(nod.bezel.Back.color) }
+			)
+
+			loaded.client.advance(NOD + LEAVE_NOD)
+			raise(loaded, M, moment("nod", "New here", { icon = 136245 }))
+			assert.are.same(
+				{ false, 136245 },
+				{ frameOf(loaded, "nod").bezel.Back.shown, frameOf(loaded, "nod").icon.texture }
+			)
+		end
+	)
+
+	it(
 		"sweeps one gleam across a Rare or Epic Nod's strip as it enters, in the rarity's colour, added on, then gone;"
 			.. " none for Common or Uncommon, nor with Animations off, and silent (VAR-R26, ANN-R13)",
 		function()
@@ -1309,4 +1427,1081 @@ describe("a catch Nod naming a variety on the client (VAR-R26)", function()
 			end
 		end
 	)
+end)
+
+describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, ANN-R22, ANN-R80)", function()
+	-- Bristle Whisker Catfish's Coral: a 192 × 96 rectangle of a 2048 atlas (VAR-R11).
+	local ART = {
+		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
+		left = 0.09375,
+		right = 0.1875,
+		top = 0,
+		bottom = 0.046875,
+	}
+	local ITEM = 6291
+	local FISH = "Raw Bristle Whisker Catfish"
+
+	local function rarityOf(loaded, key)
+		for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+			if rarity.key == key then
+				return rarity
+			end
+		end
+		error("no rarity " .. key)
+	end
+
+	local function rgb(color)
+		return { color[1], color[2], color[3] }
+	end
+
+	-- The Cast of the issue: a size record from 30.3 to 30.4 cm and a first catch of Coral, a variety of `rarity`, as
+	-- the Ledger raises them (LED-R97), the record first.
+	local function recordAndVariety(rarity)
+		local record = moment("toast.low", "Size record", {
+			kind = "sizeRecord",
+			order = 100,
+			text = FISH,
+			stamp = "Record",
+			icon = ITEM,
+			cast = CAST,
+			ruler = { old = 303, new = 304, unit = "length", label = "Tiddler" },
+		})
+		local variety = moment("toast.low", "New variety", {
+			kind = "newVariety",
+			order = 120,
+			text = "Coral",
+			stamp = "New variety",
+			icon = ITEM,
+			cast = CAST,
+			art = ART,
+			variety = { name = "Coral", rarity = rarity },
+		})
+		return record, variety
+	end
+
+	-- Raises the Cast's moments and returns the toast it shows.
+	local function raiseRecord(loaded, M, rarity)
+		raise(loaded, M, recordAndVariety(rarity))
+		return frameOf(loaded, "toast") --[[@as table]]
+	end
+
+	-- A toast's name ink, as its style and page give it.
+	local function nameInk(loaded, toast)
+		local display = toast.display
+		local inks = loaded.ns.ToastInks(loaded.ns.DisplayStyle(display), loaded.ns.ToastPage(display.announcement))
+		return rgb(loaded.ns.ANNOUNCE_COLORS[inks.name])
+	end
+
+	it(
+		"shows the variety's art cropped to the fish's head in the medallion in place of the item icon, its ring in the"
+			.. " rarity's colour but Common's the style's own (#424, VAR-R26)",
+		function()
+			local loaded, M = loadCore()
+			local seen = {}
+			for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+				local toast = raiseRecord(loaded, M, rarity.key)
+				assert.are.same(
+					{ ART.texture, { loaded.ns.HeadCrop(ART) } },
+					{ toast.icon.texture, toast.icon.texCoord }
+				)
+				seen[#seen + 1] = { toast.bezel.Ring.desaturated == true, rgb(toast.bezel.Ring.vertexColor) }
+				loaded.client.advance(TOAST + LEAVE_TOAST)
+			end
+
+			local expected = {}
+			for i, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+				expected[i] = { i > 1, i > 1 and rgb(rarity.color) or { 1, 1, 1 } }
+			end
+			assert.are.same(expected, seen)
+		end
+	)
+
+	it(
+		"names the fish alone, then the variety after a gem in its colour in its rarity's ink, the first half staying in"
+			.. " the style's ink (#424, VAR-R26, ANN-R80)",
+		function()
+			local loaded, M = loadCore()
+			local rare = rarityOf(loaded, "rare")
+
+			local toast = raiseRecord(loaded, M, "rare")
+
+			assert.are.same({ "SIZE RECORD", FISH .. " ·", "Coral" }, {
+				toast.title:GetText(),
+				toast.text:GetText(),
+				toast.variety:GetText(),
+			})
+			assert.are.same(
+				{ nameInk(loaded, toast), rgb(rare.ink) },
+				{ rgb(toast.text.textColor), rgb(toast.variety.textColor) }
+			)
+			-- The gem: a small square turned to a diamond, rimmed in the ink and filled with the colour.
+			assert.are.same({ true, rgb(rare.color), rgb(rare.ink), math.rad(45) }, {
+				toast.gem.shown,
+				rgb(toast.gem.fill.color),
+				rgb(toast.gem.rim.color),
+				toast.gem.fill.rotation,
+			})
+			-- In a row after the fish's name, no longer than the toast.
+			assert.are.same({ toast.text, toast.gem }, { toast.gem.points[1][2], toast.variety.points[1][2] })
+			assert.are.same({}, bounds.overflows(toast))
+		end
+	)
+
+	it(
+		"writes the size band at the ruler's bottom left in place of LENGTH, the title no longer holding it (#424)",
+		function()
+			local loaded, M = loadCore()
+
+			local toast = raiseRecord(loaded, M, "common")
+
+			local ruler = toast.ruler
+			local page = loaded.ns.ToastPage(toast.display.announcement)
+			-- In the toast's bottom left corner, at the text's margin and a little above its edge, not beside the track.
+			assert.are.same(
+				{ true, "TIDDLER", { "BOTTOMLEFT", toast.body, "BOTTOMLEFT", page.tx, 8 } },
+				{ ruler.shown, ruler.label:GetText(), { ruler.label:GetPoint() } }
+			)
+			assert.are.same({ "TOPLEFT", ruler, "TOPLEFT", 0, -16 }, { ruler.bar:GetPoint() })
+			assert.is_nil(toast.text:GetText():find("Tiddler", 1, true))
+		end
+	)
+
+	it(
+		"centres the kicker and name block down a toast with no ruler, as its medallion is, and leaves a ruled toast's"
+			.. " block where it was (#424)",
+		function()
+			local loaded, M = loadCore()
+			local variety = moment("toast", "Rare variety", {
+				kind = "rareVariety",
+				order = 105,
+				text = "Coral",
+				icon = ITEM,
+				cast = CAST,
+				art = ART,
+				variety = { name = "Coral", rarity = "rare" },
+			})
+			raise(loaded, M, variety)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+			local page = loaded.ns.ToastPage(toast.display.announcement)
+
+			-- The kicker's 13 units, a gap of 5 and the name's 31: a block of 49 about the page's middle, to a pixel.
+			local top = -select(5, toast.title:GetPoint())
+			assert.is_true(math.abs(top + (13 + 5 + 31) / 2 - page.h / 2) < 1)
+			assert.are.same({ "TOPLEFT", toast.title, "BOTTOMLEFT", 0, -5 }, { toast.text:GetPoint() })
+			-- The gem and the name sit on the name line's own middle, with no offset of their own.
+			assert.are.same({ "LEFT", toast.text, "RIGHT", 0, 0 }, { toast.gem:GetPoint() })
+			assert.are.same({ "LEFT", toast.gem, "RIGHT", 3, 0 }, { toast.variety:GetPoint() })
+			-- The gem grows with the name's font from the Nod's 10 units at its 22.
+			assert.is_true(math.abs(toast.gem.width - 10 * 31 / 22) < 0.01)
+			assert.is_true(math.abs(toast.gem.width - toast.gem.height) < 0.001)
+
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+			local ruled = raiseRecord(loaded, M, "common")
+			local ruledPage = loaded.ns.ToastPage(ruled.display.announcement)
+			assert.are.equal(ruledPage.ty, -select(5, ruled.title:GetPoint()))
+		end
+	)
+
+	it(
+		"keeps a ruled toast's name line clear of the ruler's numbers, cutting the fish's name before the variety's (#424)",
+		function()
+			local loaded, M = loadCore()
+			local record, variety = recordAndVariety("rare")
+			record.text = "Raw Bristle Whisker Catfish of the Deep Reaches"
+
+			raise(loaded, M, record, variety)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+
+			local page = loaded.ns.ToastPage(toast.display.announcement)
+			local natural = #toast.text:GetText() * 6
+			-- The fish's name is held short of its length; the variety's stays whole and the gem keeps its place.
+			assert.is_true(toast.text.width < natural)
+			assert.are.equal("Coral", toast.variety:GetText())
+			-- The whole line ends before the landed number, which stands at the track's 1/1.1.
+			local right = page.tx + toast.text.width + 6 + toast.gem.width + 3 + #"Coral" * 6
+			assert.is_true(right <= page.tx + toast.ruler.trackWidth / 1.1)
+		end
+	)
+
+	it("hangs three stamps and the New record stamp clear of the kicker, squeezing them to fit (#424)", function()
+		local loaded, M = loadCore()
+		local record, variety = recordAndVariety("common")
+		local here = moment("nod", "New here", { cast = CAST, stamp = "New here" })
+		raise(loaded, M, record, variety, here)
+		local toast = frameOf(loaded, "toast") --[[@as table]]
+		-- The fake client measures a word at a flat 6 units a letter; the client's grow with the font. Measure as it
+		-- does, so a smaller font makes a narrower stamp, and the kicker as wide as the print is.
+		local function measure(label)
+			label.GetStringWidth = function(self)
+				return #(self.text or "") * 0.62 * (self.font and self.font[2] or 11)
+			end
+		end
+		for _, stamp in ipairs(toast.stamps) do
+			measure(stamp.label)
+		end
+		measure(toast.ruler.record.label)
+		toast.title.GetStringWidth = function(self)
+			return #(self.text or "") * 8.5
+		end
+
+		loaded.ns.DrawAnnouncement(toast, toast.display)
+
+		local page = loaded.ns.ToastPage(toast.display.announcement)
+		local kickerRight = page.tx + toast.title:GetWidth()
+		local lefts, sizes = {}, {}
+		local function note(stamp, pivot)
+			local x = select(4, pivot:GetPoint())
+			lefts[#lefts + 1] = x - stamp:GetWidth() / 2
+			sizes[#sizes + 1] = stamp.label.font and stamp.label.font[2] or 11
+		end
+		local shown = 0
+		for i, stamp in ipairs(toast.stamps) do
+			if stamp.shown then
+				shown = shown + 1
+				note(stamp, toast.pivots[i])
+			end
+		end
+		note(toast.ruler.record, toast.recordPivot)
+		assert.are.equal(2, shown)
+		table.sort(lefts)
+		assert.are.equal(
+			true,
+			lefts[1] >= kickerRight,
+			("the row starts at %.1f, the kicker ends at %.1f"):format(lefts[1], kickerRight)
+		)
+		-- Squeezed, not dropped: every word still shows, in a smaller font.
+		for _, size in ipairs(sizes) do
+			assert.is_true(size < 11 and size >= 8)
+		end
+		assert.are.same(
+			{ "NEW VARIETY", "NEW HERE" },
+			{ toast.stamps[1].label:GetText(), toast.stamps[2].label:GetText() }
+		)
+	end)
+
+	it(
+		"draws a catch toast's variety caught before like a first catch's: the art in the medallion, the ring and the"
+			.. " name in the rarity's colour and ink, a gleam for Rare, and no New variety stamp (#437, VAR-R28)",
+		function()
+			local loaded = loadCore()
+			local rare = rarityOf(loaded, "rare")
+
+			loaded.ns.moments:RaiseCatchToast({
+				rung = "toast.low",
+				kind = "catch",
+				title = "Decent · 34.2 cm",
+				text = FISH,
+				nodLine = FISH .. " · Coral · Decent · 34.2 cm",
+				icon = ITEM,
+				cast = CAST,
+				variety = { name = "Coral", rarity = "rare", before = FISH .. " ·", after = "· Decent · 34.2 cm" },
+				art = ART,
+			})
+			loaded.client.advance(0)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+
+			assert.are.same({ "DECENT · 34.2 CM", FISH .. " ·", "Coral" }, {
+				toast.title:GetText(),
+				toast.text:GetText(),
+				toast.variety:GetText(),
+			})
+			assert.are.same({ ART.texture, { loaded.ns.HeadCrop(ART) } }, { toast.icon.texture, toast.icon.texCoord })
+			assert.are.same(
+				{ true, rgb(rare.color) },
+				{ toast.bezel.Ring.desaturated == true, rgb(toast.bezel.Ring.vertexColor) }
+			)
+			assert.are.same({ true, rgb(rare.ink) }, { toast.gem.shown, rgb(toast.variety.textColor) })
+			assert.is_true(toast.gleams)
+			assert.are.same({}, stampsOf(toast))
+			assert.are.same({}, bounds.overflows(toast))
+		end
+	)
+
+	it(
+		"puts an opaque round disc, deep water tinted by the rarity, behind the art across the medallion's face, and"
+			.. " takes it away for the next toast's item icon (#424)",
+		function()
+			local loaded, M = loadCore()
+
+			local toast = raiseRecord(loaded, M, "rare")
+
+			-- The 64 medallion of a toast.low's page has a face 46 across; the rare tint: 15% of its blue (0, 112, 221) over
+			-- the water.
+			local back = toast.bezel.Back
+			assert.are.same({ true, 46, 46 }, { back.shown, back.width, back.height })
+			assert.is_true(back.masks ~= nil and #back.masks == 1)
+			local expected = { 0.0595, 0.12 * 0.85 + (112 / 255) * 0.15, 0.18 * 0.85 + (221 / 255) * 0.15 }
+			for i = 1, 3 do
+				assert.is_true(math.abs(back.color[i] - expected[i]) < 0.001)
+			end
+			assert.are.equal(1, back.color[4])
+
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+			raise(loaded, M, moment("toast", "New Species", { text = "Nightfin Snapper", icon = ITEM }))
+			local after = frameOf(loaded, "toast") --[[@as table]]
+			assert.are.same({ toast, false, ITEM }, { after, after.bezel.Back.shown, after.icon.texture })
+		end
+	)
+
+	it("keeps every other ruler's own label (ANN-R22)", function()
+		local loaded, M = loadCore()
+
+		raise(
+			loaded,
+			M,
+			moment("toast", "Trophy weight", { ruler = { old = 10, new = 12, unit = "lb", label = "weight" } })
+		)
+
+		assert.are.equal("WEIGHT", frameOf(loaded, "toast").ruler.label:GetText())
+	end)
+
+	it(
+		"inks the New variety stamp and its border in the rarity's ink and no other stamp, and a toast after it in"
+			.. " the style's (#424, VAR-R26, ANN-R80)",
+		function()
+			local loaded, M = loadCore()
+			local epic = rarityOf(loaded, "epic")
+			local record, variety = recordAndVariety("epic")
+			local here = moment("nod", "New here", { cast = CAST, stamp = "New here" })
+
+			raise(loaded, M, record, variety, here)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+
+			local inked = {}
+			for _, stamp in ipairs(toast.stamps) do
+				if stamp.shown then
+					inked[stamp.label:GetText()] = {
+						rgb(stamp.label.textColor),
+						stamp.border.left.desaturated == true,
+						rgb(stamp.border.left.vertexColor),
+					}
+				end
+			end
+			local style = loaded.ns.DisplayStyle(toast.display)
+			assert.are.same({ rgb(epic.ink), true, rgb(epic.ink) }, inked["NEW VARIETY"])
+			assert.are.same({ rgb(loaded.ns.ANNOUNCE_COLORS[style.stampInk]), false, { 1, 1, 1 } }, inked["NEW HERE"])
+
+			-- The frame goes on to another toast: its stamps are inked as the style has them, whatever it was.
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+			raise(
+				loaded,
+				M,
+				moment("toast", "New Species", { text = "Nightfin Snapper", cast = CAST }),
+				moment("nod", "New variety", { stamp = "New variety", cast = CAST })
+			)
+			local after = frameOf(loaded, "toast") --[[@as table]]
+			assert.are.equal(toast, after)
+			local reset = {}
+			for _, stamp in ipairs(after.stamps) do
+				if stamp.shown then
+					reset[#reset + 1] = {
+						stamp.label:GetText(),
+						stamp.border.left.desaturated == true,
+						rgb(stamp.border.left.vertexColor),
+						rgb(stamp.label.textColor),
+					}
+				end
+			end
+			assert.are.same(
+				{ { "NEW VARIETY", false, { 1, 1, 1 }, rgb(loaded.ns.ANNOUNCE_COLORS[style.stampInk]) } },
+				reset
+			)
+		end
+	)
+
+	it("writes a variety's toast with no fish's name to give as the gem and name alone (#424)", function()
+		local loaded, M = loadCore()
+		local rare = rarityOf(loaded, "rare")
+		local variety = moment("toast", "Rare variety", {
+			kind = "rareVariety",
+			order = 105,
+			text = "Coral",
+			icon = ITEM,
+			cast = CAST,
+			art = ART,
+			variety = { name = "Coral", rarity = "rare" },
+		})
+
+		raise(loaded, M, variety)
+		local toast = frameOf(loaded, "toast") --[[@as table]]
+
+		assert.are.same({ "RARE VARIETY", "", "Coral", true, ART.texture }, {
+			toast.title:GetText(),
+			toast.text:GetText(),
+			toast.variety:GetText(),
+			toast.gem.shown,
+			toast.icon.texture,
+		})
+		assert.are.same(
+			{ rgb(rare.ink), rgb(rare.color) },
+			{ rgb(toast.variety.textColor), rgb(toast.bezel.Ring.vertexColor) }
+		)
+		assert.are.same({}, stampsOf(toast))
+	end)
+
+	it("names and colours no variety on a toast with no first-catch variety moment (VAR-R27)", function()
+		local loaded, M = loadCore()
+		raiseRecord(loaded, M, "rare")
+		loaded.client.advance(TOAST + LEAVE_TOAST)
+
+		raise(loaded, M, moment("toast.low", "Size record", { text = FISH, icon = ITEM }))
+
+		local toast = frameOf(loaded, "toast") --[[@as table]]
+		assert.are.same({ FISH, false, false, ITEM, false, { 1, 1, 1 } }, {
+			toast.text:GetText(),
+			toast.gem.shown,
+			toast.variety.shown,
+			toast.icon.texture,
+			toast.bezel.Ring.desaturated == true,
+			rgb(toast.bezel.Ring.vertexColor),
+		})
+		assert.are.same(nameInk(loaded, toast), rgb(toast.text.textColor))
+	end)
+
+	it(
+		"sweeps one gleam across a Rare or Epic variety's toast as it enters, in the rarity's colour, added on, then"
+			.. " gone; none for Common or Uncommon, nor with Animations off (VAR-R26)",
+		function()
+			local function sweep(rarity, motion)
+				local loaded, M = loadCore()
+				loaded.ns.db.profile.announcements.motion = motion
+				local toast = raiseRecord(loaded, M, rarity)
+				local peak, xs = toast.gleam.alpha or 0, {}
+				for _ = 1, 240 do
+					loaded.client.update(1 / 60)
+					peak = math.max(peak, toast.gleam.alpha or 0)
+					xs[#xs + 1] = toast.gleam.points[1] and toast.gleam.points[1][4]
+				end
+				return { peak = peak, xs = xs, gleam = toast.gleam, loaded = loaded }
+			end
+
+			for _, key in ipairs({ "rare", "epic" }) do
+				local seen = sweep(key, true)
+				assert.is_true(seen.peak > 0.5)
+				assert.are.same({ 0, "ADD", true, rgb(rarityOf(seen.loaded, key).color) }, {
+					seen.gleam.alpha,
+					seen.gleam.blendMode,
+					seen.gleam.desaturated,
+					rgb(seen.gleam.vertexColor),
+				})
+			end
+			for _, case in ipairs({ { "common", true }, { "uncommon", true }, { "rare", false } }) do
+				assert.are.equal(0, sweep(case[1], case[2]).peak)
+			end
+		end
+	)
+end)
+
+describe("a new variety's own toast on the client (#422, VAR-R25, VAR-R28, ANN-R11)", function()
+	local ART = {
+		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
+		left = 0.09375,
+		right = 0.1875,
+		top = 0,
+		bottom = 0.046875,
+	}
+	local ITEM = 6291
+	local FISH = "Raw Bristle Whisker Catfish"
+	local KICKER = "Decent · 34.2 cm"
+
+	local function rarityOf(loaded, key)
+		for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
+			if rarity.key == key then
+				return rarity
+			end
+		end
+		error("no rarity " .. key)
+	end
+
+	local function rgb(color)
+		return { color[1], color[2], color[3] }
+	end
+
+	-- The moment the Ledger raises for a first catch of Coral, a variety of `rarity` (LED-R97).
+	local function variety(rarity)
+		local rare = rarity == "rare"
+		return moment(rare and "toast" or "toast.low", rare and "Rare variety" or "New variety", {
+			kind = rare and "rareVariety" or "newVariety",
+			order = rare and 105 or 120,
+			text = "Coral",
+			stamp = not rare and "New variety" or nil,
+			icon = ITEM,
+			cast = CAST,
+			art = ART,
+			ownStamp = true,
+			kicker = KICKER,
+			variety = { name = "Coral", rarity = rarity, fish = FISH },
+		})
+	end
+
+	-- The stamps a toast shows as { text, ink, border tint }, by text.
+	local function inkedStamps(toast)
+		local inked = {}
+		for _, stamp in ipairs(toast.stamps) do
+			if stamp.shown then
+				inked[stamp.label:GetText()] = {
+					rgb(stamp.label.textColor),
+					stamp.border.left.desaturated == true,
+					rgb(stamp.border.left.vertexColor),
+				}
+			end
+		end
+		return inked
+	end
+
+	it(
+		"is drawn on the default toast page, the size as its kicker, the fish's name then the gem and the variety on its"
+			.. " line, and its stamp top right in the rarity's ink, all within the page (#422)",
+		function()
+			local loaded, M = loadCore()
+			for _, key in ipairs({ "common", "uncommon", "rare" }) do
+				local rarity = rarityOf(loaded, key)
+
+				raise(loaded, M, variety(key))
+				local toast = frameOf(loaded, "toast") --[[@as table]]
+				local page = loaded.ns.ToastPage(toast.display.announcement)
+
+				assert.are.same(
+					{ "toast", 464, 92, 84 },
+					{ page.page, toast:GetWidth(), toast:GetHeight(), page.bezel }
+				)
+				assert.are.same({ "DECENT · 34.2 CM", FISH .. " ·", "Coral" }, {
+					toast.title:GetText(),
+					toast.text:GetText(),
+					toast.variety:GetText(),
+				})
+				assert.are.same(
+					{ rgb(rarity.ink), rgb(rarity.color), true },
+					{ rgb(toast.variety.textColor), rgb(toast.gem.fill.color), toast.gem.shown }
+				)
+				assert.are.same(
+					{ ART.texture, { loaded.ns.HeadCrop(ART) } },
+					{ toast.icon.texture, toast.icon.texCoord }
+				)
+				-- Its one stamp, inked in the rarity's ink, hangs from the top right, clear of the kicker.
+				local word = key == "rare" and "RARE VARIETY" or "NEW VARIETY"
+				assert.are.same({ word }, stampsOf(toast))
+				assert.are.same({ [word] = { rgb(rarity.ink), true, rgb(rarity.ink) } }, inkedStamps(toast))
+				local x, y = select(4, toast.pivots[1]:GetPoint())
+				assert.is_true(x > page.w - 30 - toast.stamps[1]:GetWidth() - 1 and x <= page.w - 30)
+				assert.is_true(y > -20 and y < 0)
+				assert.is_true(x - toast.stamps[1]:GetWidth() / 2 >= page.tx + toast.title:GetWidth())
+				assert.are.same({}, bounds.overflows(toast))
+				-- The title still names the moment, for the Session summary and the cards.
+				assert.are.equal(
+					key == "rare" and "Rare variety" or "New variety",
+					toast.display.announcement.headline.title
+				)
+
+				loaded.client.advance(TOAST + LEAVE_TOAST)
+			end
+		end
+	)
+
+	it("holds for a toast page's 6 s, not a toast.low's 4 (#422, ANN-R20)", function()
+		local loaded, M = loadCore()
+
+		raise(loaded, M, variety("common"))
+		loaded.client.advance(TOAST - 0.1)
+		assert.is_true(showing(loaded, "toast"))
+		loaded.client.advance(0.1)
+
+		assert.is_false(showing(loaded, "toast"))
+	end)
+
+	it("keeps a Rare one's gleam, and none for Common or Uncommon (VAR-R28)", function()
+		local loaded, M = loadCore()
+		local gleams = {}
+		for _, key in ipairs({ "common", "uncommon", "rare" }) do
+			raise(loaded, M, variety(key))
+			gleams[#gleams + 1] = frameOf(loaded, "toast").gleams
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+		end
+
+		assert.are.same({ false, false, true }, gleams)
+	end)
+
+	it(
+		"shows the stamps of the moments riding on it beside its own, merging an identical one (#422, ANN-R11)",
+		function()
+			local loaded, M = loadCore()
+			local here = moment("nod", "New here", { cast = CAST, stamp = "New here" })
+			local twin = moment("nod", "New variety", { cast = CAST, stamp = "New variety" })
+			local stars = moment("nod", "Regular", { cast = CAST, stamp = "★★★", order = 130 })
+
+			raise(loaded, M, variety("uncommon"), here, twin, stars)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+
+			assert.are.same({ "NEW VARIETY", "NEW HERE", "★★★" }, stampsOf(toast))
+			local uncommon = rarityOf(loaded, "uncommon")
+			local inked = inkedStamps(toast)
+			assert.are.same(rgb(uncommon.ink), inked["NEW VARIETY"][1])
+			assert.are_not.same(rgb(uncommon.ink), inked["NEW HERE"][1])
+			assert.are.same({}, bounds.overflows(toast))
+		end
+	)
+
+	it("counts in the 4 stamps shown, the rest as +N (#422, ANN-R11)", function()
+		local loaded, M = loadCore()
+		local riding = {}
+		for i = 1, 4 do
+			riding[i] = moment("nod", "Rider " .. i, { cast = CAST, stamp = "R" .. i, order = 130 + i })
+		end
+
+		raise(loaded, M, variety("common"), unpack(riding))
+
+		assert.are.same({ "NEW VARIETY", "R1", "R2", "R3", "+1" }, stampsOf(frameOf(loaded, "toast")))
+	end)
+
+	it(
+		"draws the variety riding on a size record as it was: the record's page, title and kicker, the stamp riding (#424)",
+		function()
+			local loaded, M = loadCore()
+			local record = moment("toast.low", "Size record", {
+				kind = "sizeRecord",
+				order = 100,
+				text = FISH,
+				stamp = "Record",
+				icon = ITEM,
+				cast = CAST,
+				ruler = { old = 303, new = 304, unit = "length", label = "Tiddler" },
+			})
+
+			raise(loaded, M, record, variety("common"))
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+
+			assert.are.same({ "low-ruled", "SIZE RECORD", { "NEW VARIETY" } }, {
+				loaded.ns.ToastPage(toast.display.announcement).page,
+				toast.title:GetText(),
+				stampsOf(toast),
+			})
+			assert.are.equal(FISH .. " ·", toast.text:GetText())
+		end
+	)
+
+	it(
+		"steps a lone Common one down to its old Nod, with the budget spent: no kicker, no own stamp (#422, ANN-R31)",
+		function()
+			local loaded, M = loadCore()
+			loaded.ns.db.profile.announcements.budget.count = 0
+
+			raise(loaded, M, variety("common"))
+			local nod = frameOf(loaded, "nod") --[[@as table]]
+
+			assert.are.same({ "NEW VARIETY", "Coral", {} }, { nod.title:GetText(), nod.text:GetText(), stampsOf(nod) })
+		end
+	)
+
+	it("keeps its stamps beside a stepped-down Nod's riding ones only (#422)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.announcements.budget.count = 0
+		local stars = moment("nod", "Trophy family", { cast = CAST, stamp = "★★", order = 130 })
+
+		raise(loaded, M, variety("common"), stars)
+
+		assert.are.same({ "★★" }, stampsOf(frameOf(loaded, "nod")))
+	end)
+
+	it("goes to the Session summary as it was: its title, not its kicker (#422, ANN-R25)", function()
+		local loaded, M, summarized = loadCore()
+
+		raise(loaded, M, variety("common"))
+
+		assert.are.same({ "New variety", "Coral" }, { summarized[1].title, summarized[1].text })
+	end)
+
+	it("leaves a toast after it as the page has it: its kicker the title, no stamp of the variety's (#422)", function()
+		local loaded, M = loadCore()
+		raise(loaded, M, variety("common"))
+		loaded.client.advance(TOAST + LEAVE_TOAST)
+
+		raise(loaded, M, moment("toast", "New Species", { text = "Nightfin Snapper", icon = ITEM, cast = CAST }))
+		local toast = frameOf(loaded, "toast") --[[@as table]]
+
+		assert.are.same({ "NEW SPECIES", "Nightfin Snapper", {}, { 464, 92 } }, {
+			toast.title:GetText(),
+			toast.text:GetText(),
+			stampsOf(toast),
+			{ toast:GetWidth(), toast:GetHeight() },
+		})
+		assert.is_false(toast.gem.shown)
+	end)
+end)
+
+describe("moving the Toast column on the client (ANN-R98)", function()
+	-- UIParent is 1920 × 1080 here, so its bottom centre is x 960.
+	local SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080
+
+	-- A column frame's offset from the column's foot, the anchor it hangs from.
+	local function offsetOf(frame)
+		local point, anchor, relativePoint, _, y = frame:GetPoint(1)
+		assert.are.same({ "BOTTOM", "BOTTOM" }, { point, relativePoint })
+		return y, anchor
+	end
+
+	-- Where the column's anchor is: its BOTTOM point's offsets from UIParent's bottom centre.
+	local function footOf(loaded)
+		local point, relativeTo, relativePoint, x, y = loaded.ns.columnAnchor:GetPoint(1)
+		assert.are.same({ "BOTTOM", loaded.env.UIParent, "BOTTOM" }, { point, relativeTo, relativePoint })
+		return { x = x, y = y }
+	end
+
+	-- A column frame's bottom above the screen's bottom: its offset plus the foot's.
+	local function bottomOf(loaded, frame)
+		local y, anchor = offsetOf(frame)
+		assert.are.equal(loaded.ns.columnAnchor, anchor)
+		return y + footOf(loaded).y
+	end
+
+	-- A press on `frame` that Shift-drags the column and is let go with its foot at (`x`, `y`) from UIParent's bottom
+	-- centre, as the client reports the anchor then. Returns whether the drag moved the anchor.
+	local function dragColumn(loaded, frame, x, y)
+		local anchor = loaded.ns.columnAnchor
+		frame.scripts.OnMouseDown(frame, "LeftButton")
+		frame.scripts.OnDragStart(frame)
+		local moved = anchor.moving == true
+		anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + x, y + 0.5 }, y
+		frame.scripts.OnDragStop(frame)
+		frame.scripts.OnMouseUp(frame, "LeftButton")
+		return moved
+	end
+
+	-- Core with a toast with an `onClick` and a Nod showing in the column, and the clicks `onClick` counted.
+	local function withColumn()
+		local loaded, M = loadCore()
+		-- The column settles at once, with no glide to wait out.
+		loaded.ns.db.profile.announcements.motion = false
+		local clicks = {}
+		raise(
+			loaded,
+			M,
+			moment("toast", "Toast", {
+				onClick = function()
+					clicks[#clicks + 1] = "toast"
+				end,
+			})
+		)
+		raise(
+			loaded,
+			M,
+			moment("nod", "Nod", {
+				onClick = function()
+					clicks[#clicks + 1] = "nod"
+				end,
+			})
+		)
+		return loaded, M, clicks, frameOf(loaded, "toast"), frameOf(loaded, "nod")
+	end
+
+	it("hangs every toast and Nod off one anchor, at the bottom of the screen with nothing saved", function()
+		local loaded, _, _, toast, nod = withColumn()
+
+		assert.are.same({ x = 0, y = 156 }, footOf(loaded))
+		assert.are.same({ 156 + 52, 156 }, { bottomOf(loaded, toast), bottomOf(loaded, nod) })
+		assert.are.same({ "LeftButton" }, toast.dragButtons)
+		assert.are.same({ "LeftButton" }, nod.dragButtons)
+	end)
+
+	it("Shift-dragging a toast moves the whole column with it and saves the foot (ANN-R98)", function()
+		local loaded, _, _, toast, nod = withColumn()
+		loaded.client.keysDown.SHIFT = true
+
+		assert.is_true(dragColumn(loaded, toast, 200, 500))
+
+		assert.are.same({ x = 200, y = 500 }, loaded.ns.db.profile.announcements.point)
+		assert.are.same({ x = 200, y = 500 }, footOf(loaded))
+		assert.are.same({ 500 + 52, 500 }, { bottomOf(loaded, toast), bottomOf(loaded, nod) })
+		assert.is_false(loaded.ns.columnAnchor.moving)
+	end)
+
+	it("Shift-dragging a Nod moves it too (ANN-R98)", function()
+		local loaded, _, _, _, nod = withColumn()
+		loaded.client.keysDown.SHIFT = true
+
+		dragColumn(loaded, nod, -300, 80)
+
+		assert.are.same({ x = -300, y = 80 }, loaded.ns.db.profile.announcements.point)
+	end)
+
+	it("never dismisses or runs onClick on the drag's mouse-up, but the next click does (ANN-R20, ANN-R98)", function()
+		local loaded, _, clicks, toast, nod = withColumn()
+		loaded.client.keysDown.SHIFT = true
+
+		dragColumn(loaded, toast, 200, 500)
+
+		assert.are.same({ "Nod", "Toast" }, columnTitles(loaded))
+		assert.are.same({}, clicks)
+		nod.scripts.OnMouseDown(nod, "LeftButton")
+		nod.scripts.OnMouseUp(nod, "LeftButton")
+		assert.are.same({ "Toast" }, columnTitles(loaded))
+		assert.are.same({ "nod" }, clicks)
+	end)
+
+	it("keeps the mouse-up from clicking when the client sends it before OnDragStop (ANN-R98)", function()
+		local loaded, _, clicks, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+
+		toast.scripts.OnMouseDown(toast, "LeftButton")
+		toast.scripts.OnDragStart(toast)
+		toast.scripts.OnMouseUp(toast, "LeftButton")
+		toast.scripts.OnDragStop(toast)
+
+		assert.are.same({ "Nod", "Toast" }, columnTitles(loaded))
+		assert.are.same({}, clicks)
+		assert.is_false(loaded.ns.lanes:IsColumnHeld())
+	end)
+
+	it(
+		"still dismisses and runs onClick for a plain click, and for a Shift-click that never dragged (ANN-R20)",
+		function()
+			local loaded, _, clicks, toast, nod = withColumn()
+
+			nod.scripts.OnMouseDown(nod, "LeftButton")
+			nod.scripts.OnMouseUp(nod, "LeftButton")
+			loaded.client.keysDown.SHIFT = true
+			toast.scripts.OnMouseDown(toast, "LeftButton")
+			toast.scripts.OnMouseUp(toast, "LeftButton")
+
+			assert.are.same({}, columnTitles(loaded))
+			assert.are.same({ "nod", "toast" }, clicks)
+			assert.is_nil(loaded.ns.db.profile.announcements.point)
+		end
+	)
+
+	it(
+		"moves nothing without Shift: the drag starts no move, and the pointer's let-go clicks as before (ANN-R98)",
+		function()
+			local loaded, _, clicks, toast = withColumn()
+
+			assert.is_false(dragColumn(loaded, toast, 200, 500))
+
+			assert.is_nil(loaded.ns.db.profile.announcements.point)
+			assert.are.same({ x = 0, y = 156 }, footOf(loaded))
+			assert.is_false(loaded.ns.lanes:IsColumnHeld())
+			assert.are.same({ "toast" }, clicks)
+		end
+	)
+
+	it("holds the whole column during the drag, hovered or not, and resumes on the drop (ANN-R98)", function()
+		local loaded, M, _, toast, nod = withColumn()
+		loaded.client.advance(1)
+		loaded.client.keysDown.SHIFT = true
+		toast.scripts.OnEnter(toast)
+		toast.scripts.OnMouseDown(toast, "LeftButton")
+		toast.scripts.OnDragStart(toast)
+		-- The pointer leaves the frame mid-drag.
+		toast.scripts.OnLeave(toast)
+
+		loaded.client.advance(60)
+		raise(loaded, M, moment("toast", "Waiting"))
+
+		assert.are.same({ "Nod", "Toast" }, columnTitles(loaded))
+		assert.is_true(loaded.ns.lanes:IsColumnHeld())
+
+		local anchor = loaded.ns.columnAnchor
+		anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + 100, 300.5 }, 300
+		toast.scripts.OnDragStop(toast)
+		toast.scripts.OnMouseUp(toast, "LeftButton")
+
+		assert.is_false(loaded.ns.lanes:IsColumnHeld())
+		-- What waited has entered the column, now where it was dropped.
+		assert.are.same({ "Waiting", "Nod", "Toast" }, columnTitles(loaded))
+		for _, frame in ipairs(loaded.ns.columnFrames) do
+			assert.is_true(bottomOf(loaded, frame) >= 300)
+		end
+		-- The clocks went on from where they stood: the Nod had 2.3 s left, the toast 7.7.
+		loaded.client.advance(2.3)
+		assert.is_false(nod.display ~= nil)
+		loaded.client.advance(5.4 - 0.01)
+		assert.is_true(toast.display ~= nil)
+		loaded.client.advance(0.01)
+		assert.is_false(toast.display ~= nil)
+	end)
+
+	it("keeps the dropped foot inside where a full column fits the screen (ANN-R98)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+
+		dragColumn(loaded, toast, 5000, 5000)
+		local right = loaded.ns.db.profile.announcements.point
+
+		-- 22 + 640 wide is the widest entry; its top is 300 + 22 under the screen's.
+		assert.are.same({ x = SCREEN_WIDTH / 2 - 331, y = SCREEN_HEIGHT - 322 }, right)
+		assert.are.same(right, footOf(loaded))
+		dragColumn(loaded, toast, -5000, -40)
+		assert.are.same({ x = -(SCREEN_WIDTH / 2 - 331), y = 0 }, loaded.ns.db.profile.announcements.point)
+	end)
+
+	it("starts no move while restricted (ANN-R98)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+		setCombat(loaded, true)
+
+		assert.is_false(dragColumn(loaded, toast, 200, 500))
+
+		assert.is_nil(loaded.ns.db.profile.announcements.point)
+		assert.is_false(loaded.ns.lanes:IsColumnHeld())
+	end)
+
+	it("stops a move where it is when restriction starts, and saves it (ANN-R98, ANN-R35)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+		toast.scripts.OnMouseDown(toast, "LeftButton")
+		toast.scripts.OnDragStart(toast)
+		local anchor = loaded.ns.columnAnchor
+		anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 - 150, 400.5 }, 400
+
+		setCombat(loaded, true)
+
+		assert.is_false(anchor.moving)
+		assert.are.same({ x = -150, y = 400 }, loaded.ns.db.profile.announcements.point)
+		assert.are.same({ x = -150, y = 400 }, footOf(loaded))
+		assert.is_false(loaded.ns.lanes:IsColumnHeld())
+		-- Letting go later changes nothing.
+		anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + 300, 100.5 }, 100
+		toast.scripts.OnDragStop(toast)
+		assert.are.same({ x = -150, y = 400 }, loaded.ns.db.profile.announcements.point)
+		-- And when it is over, what was held shows where the Angler dropped the column.
+		setCombat(loaded, false)
+		loaded.client.advance(2)
+		for _, frame in ipairs(loaded.ns.columnFrames) do
+			assert.is_true(bottomOf(loaded, frame) >= 400)
+		end
+	end)
+
+	it("stops a move when the dragged toast is taken back, and saves it (ANN-R98)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+		toast.scripts.OnMouseDown(toast, "LeftButton")
+		toast.scripts.OnDragStart(toast)
+		local anchor = loaded.ns.columnAnchor
+		anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + 50, 250.5 }, 250
+
+		loaded.ns.lanes:Withdraw(toast.display.announcement)
+
+		assert.is_false(anchor.moving)
+		assert.is_false(loaded.ns.lanes:IsColumnHeld())
+		assert.are.same({ x = 50, y = 250 }, loaded.ns.db.profile.announcements.point)
+	end)
+
+	it("places the column at the saved foot at the next login (ANN-R98, announcements.md › Data)", function()
+		local first, _, _, toast = withColumn()
+		first.client.keysDown.SHIFT = true
+		dragColumn(first, toast, 200, 500)
+
+		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog(), PagleDB = first.env.PagleDB }))
+		loaded.client.addons.Pagle_Ledger = { metadata = { ["X-Pagle-API"] = "1" } }
+		local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+		loaded.client.fire("PLAYER_LOGIN")
+		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
+		loaded.client.runTimers()
+		raise(loaded, M, moment("toast", "Placed"))
+
+		assert.are.same({ x = 200, y = 500 }, footOf(loaded))
+		assert.are.equal(500, bottomOf(loaded, frameOf(loaded, "toast")))
+	end)
+
+	it("places a saved foot the screen can't hold at the nearest that fits, without rewriting it (ANN-R98)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.announcements.point = { x = 5000, y = 5000 }
+
+		raise(loaded, M, moment("toast", "Clamped"))
+
+		assert.are.same({ x = SCREEN_WIDTH / 2 - 331, y = SCREEN_HEIGHT - 322 }, footOf(loaded))
+		assert.are.same({ x = 5000, y = 5000 }, loaded.ns.db.profile.announcements.point)
+	end)
+
+	it("reads a saved value it can't make sense of as the default (ANN-R98)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.announcements.point = "garbage"
+
+		raise(loaded, M, moment("toast", "Default"))
+
+		assert.are.same({ x = 0, y = 156 }, footOf(loaded))
+	end)
+
+	it("keeps the column on screen when the screen shrinks, and follows a bigger one back (ANN-R98)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.announcements.point = { x = 600, y = 700 }
+		raise(loaded, M, moment("toast", "Watched"))
+		assert.are.same({ x = 600, y = 700 }, footOf(loaded))
+
+		loaded.env.UIParent:SetSize(1366, 768)
+
+		assert.are.same({ x = 1366 / 2 - 331, y = 768 - 322 }, footOf(loaded))
+		assert.are.same({ x = 600, y = 700 }, loaded.ns.db.profile.announcements.point)
+		loaded.env.UIParent:SetSize(SCREEN_WIDTH, SCREEN_HEIGHT)
+		assert.are.same({ x = 600, y = 700 }, footOf(loaded))
+	end)
+
+	it("Reset clears the saved foot and puts the toasts and Nods on screen back at the bottom (ANN-R98)", function()
+		local loaded, _, _, toast, nod = withColumn()
+		loaded.client.keysDown.SHIFT = true
+		dragColumn(loaded, toast, 200, 500)
+
+		assert.is_true(loaded.ns.ResetToastColumn())
+
+		assert.is_nil(loaded.ns.db.profile.announcements.point)
+		assert.are.same({ x = 0, y = 156 }, footOf(loaded))
+		assert.are.same({ 156 + 52, 156 }, { bottomOf(loaded, toast), bottomOf(loaded, nod) })
+	end)
+
+	it("Reset does nothing while restricted (ANN-R98)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.client.keysDown.SHIFT = true
+		dragColumn(loaded, toast, 200, 500)
+		setCombat(loaded, true)
+
+		assert.is_false(loaded.ns.ResetToastColumn())
+
+		assert.are.same({ x = 200, y = 500 }, loaded.ns.db.profile.announcements.point)
+		assert.are.same({ x = 200, y = 500 }, footOf(loaded))
+	end)
+
+	it(
+		"moves and holds an ordinary Catch's toast, and a Nod it steps down to, with the column (ANN-R13, ANN-R98)",
+		function()
+			local loaded = loadCore()
+			loaded.client.itemNames[6358] = "Oily Blackmouth"
+			loaded.ns.db.profile.announcements.motion = false
+			catchAndFlush(loaded)
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+			assert.are.same("toast.low", toast.display.announcement.headline.rung)
+			loaded.client.advance(1)
+			loaded.client.keysDown.SHIFT = true
+
+			toast.scripts.OnMouseDown(toast, "LeftButton")
+			toast.scripts.OnDragStart(toast)
+			-- The budget is spent mid-drag, and another Catch waits for the column, whose clocks stand still.
+			loaded.ns.db.profile.announcements.budget.count = 1
+			loaded.client.advance(60)
+			catchAndFlush(loaded)
+			assert.are.same({ toast }, loaded.ns.columnFrames)
+
+			local anchor = loaded.ns.columnAnchor
+			anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + 120, 350.5 }, 350
+			toast.scripts.OnDragStop(toast)
+			toast.scripts.OnMouseUp(toast, "LeftButton")
+
+			assert.are.same({ x = 120, y = 350 }, loaded.ns.db.profile.announcements.point)
+			assert.are.equal(2, #loaded.ns.columnFrames)
+			for _, frame in ipairs(loaded.ns.columnFrames) do
+				assert.is_true(bottomOf(loaded, frame) >= 350)
+			end
+			assert.are.same(
+				{ "toast", "nod" },
+				{ loaded.ns.columnFrames[2].display.form, loaded.ns.columnFrames[1].display.form }
+			)
+		end
+	)
+
+	it("leaves banners and the splash where they are (ANN-R98)", function()
+		local loaded, M = loadCore()
+		loaded.ns.db.profile.announcements.point = { x = 200, y = 500 }
+
+		raise(loaded, M, moment("banner", "Level 12"), moment("toast", "Toast"))
+
+		local point, relativeTo, relativePoint, x, y = frameOf(loaded, "banner"):GetPoint(1)
+		assert.are.same({ "TOP", loaded.env.UIParent, "TOP", 0, -120 }, { point, relativeTo, relativePoint, x, y })
+	end)
 end)
