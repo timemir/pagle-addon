@@ -27,6 +27,30 @@ The realm folder is `70` on the beta. Characters are `<Name>-<Surname>` folders 
 
 Values that exist only while the client runs, like `C_Spell.GetSpellName(7620)` or `Pagle.API_VERSION`, aren't in any file. They stay a dev `/dump`, except the facts `/pagle dev probe` saves for launch re-verification (Dev commands, below).
 
+## Linking the addons
+
+The game should load the repo's `addons/*` folders, so edits go live after `/reload`. Windows: `scripts/link-addons.ps1 -AddOnsPath <AddOns folder>` junctions each folder. macOS: `scripts/link-addons.sh <AddOns folder>` symlinks each, the same way (run it again to re-point the links at another checkout or worktree; a real folder or file with an addon's name is never touched, the script stops and names it):
+
+```sh
+scripts/link-addons.sh "/Applications/World of Warcraft/_classic_beta_/Interface/AddOns"
+```
+
+### Retail UI check (macOS)
+
+Retail shares Forever's client code, so the dev can look at Pagle's UI in the retail client, with `--retail`. Only the UI is meant for it: the game's own data and rules differ, and a spell, zone or item may be missing or other than on Forever. The repo's TOCs say `## Interface: 16001` and `## AllowLoadGameType: camelot` (CORE-R2) and can't load on retail, and the repo gets no retail TOCs. So with `--retail` each addon becomes a real folder in `Interface/AddOns` holding a symlink to every top-level entry of its `addons/<Addon>` folder but the TOC, and a generated `<Addon>.toc`: the repo's TOC with the retail interface number, `## AllowLoadGameType: standard` (retail's game type) and `dev` for `@project-version@`, under a first line that says it is generated. A `.pagle-dev-link` file marks the folder as the script's: a folder without it is never touched.
+
+```sh
+scripts/link-addons.sh "/Applications/World of Warcraft/_retail_/Interface/AddOns" --retail \
+    --source /path/to/main/checkout/addons    # default: the addons/ of the checkout the script is in
+scripts/link-addons.sh "/Applications/World of Warcraft/_retail_/Interface/AddOns" --unlink
+```
+
+- **The interface number** is `--interface N`, else the retail build's from the `.build.info` beside `_retail_` (`12.1.5.70575` is 120105, major × 10000 + minor × 100 + patch), else 120105 (the current value on [warcraft.wiki.gg › TOC format](https://warcraft.wiki.gg/wiki/TOC_format)). The first line it prints says which, and why. After a retail patch run it again; an out-of-date interface number makes the client list the addons as out of date.
+- **Edits.** Subfolders are linked whole, so an edit inside one (`logic/`, `adapter/`, `data/`) is live after `/reload`. A new or removed top-level file or folder, or a changed repo TOC, needs the script run again, then `/reload`. The AddOns folder must exist (the client makes it at its first login, or `mkdir -p` it), and the first run's new folders appear only at the character screen, so log out to it once (PUSH-R90). The AddOns list there must have them on; the interface number matches, so "Load out of date AddOns" isn't needed.
+- **`--unlink`** removes what a run made, and nothing else: the links to `--source`'s addons, and a generated folder with its TOC, shim and marker. A generated folder that holds other files, and a link to another checkout, are kept.
+- **Caveats.** The generated TOCs are only in the AddOns folder, never in git; don't edit them. Anything that needs Forever's game (its zones, Fishing as it is there, Forever's data and spells) won't work on retail. Core stops on a client that isn't Forever (CORE-R4, `adapter/Core.lua`), so Pagle's retail folder also gets a generated `PagleRetailDev.lua`, listed first in its `Pagle.toc`: it sets `WOW_PROJECT_CAMELOT` to `WOW_PROJECT_ID` while Pagle's files load, puts it back as the client had it at Pagle's `ADDON_LOADED`, and prints one chat line, "Pagle: retail UI-check build (dev link) — game data is Forever's; some things won't work." The script writes it again on every run and `--unlink` removes it; it is never in the repo or a release, and no addon code changes. Nothing else in `addons/` reads either global but `/pagle dev probe`, so its check 12 still reads the retail client's own values and fails on retail, as it should. A call that isn't on retail's 12.1.5, or is deprecated there, raises a Lua error in that view: `GetWeaponEnchantInfo()` (deprecated in 12.1.0, removed in 13.0; `adapter/LiveConditions.lua` reads the lure at login, and QoL's `adapter/Lures.lua` the same) works only while the client's deprecation fallbacks are on, and `MAX_EQUIPMENT_SETS_PER_PLAYER` (QoL's gear view) may be nil. A Lua error there is the retail client, not a bug in Pagle. SavedVariables are separate from the beta's: they're under `_retail_/WTF/Account/<ACCT>/SavedVariables`, empty until the first retail login, and nothing is shared with `_classic_beta_`.
+- **Reading the results.** `scripts/read-wtf.sh` reads a retail account the same way: point it at `/Applications/World of Warcraft/_retail_/WTF/Account/<ACCT>` (find `<ACCT>` with `ls`; the realm folder is the retail realm's, not `70`, so `ls` it for `--character`). The write timing below was checked on the beta; assume it for retail.
+
 ## The reader
 
 Run it in WSL, with the Lua 5.1 from `scripts/setup.sh`. `scripts/read-wtf.sh` runs it on that Lua from any directory:
