@@ -190,7 +190,7 @@ scripts/check.sh     # the full gate: format, lint, types, tests
 scripts/package.sh   # build the release zip the way the packager does (commit first)
 ```
 
-On Windows, `scripts/link-addons.ps1` junctions each `addons/*` folder into your `Interface\AddOns` folder, so edits go live after `/reload`.
+On Windows, `scripts/link-addons.ps1` junctions each `addons/*` folder into your `Interface\AddOns` folder, so edits go live after `/reload`; on macOS, `scripts/link-addons.sh` symlinks them (and with `--retail` makes them loadable in the retail client for UI checks, see [docs/agents/in-game-verification.md](docs/agents/in-game-verification.md#linking-the-addons)).
 
 The project's vocabulary is in [CONTEXT.md](CONTEXT.md), its decisions in [docs/adr](docs/adr) and its release notes in [CHANGELOG.md](CHANGELOG.md).
 
