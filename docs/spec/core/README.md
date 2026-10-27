@@ -116,6 +116,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   - A slot's dropdown also appears beside the thing it changes. A slot in the "Announcements" category ends Core's rows on Announcements; a slot in the "Trackers" category ends its Module's rows on Trackers.
 - **CORE-R43** `Pagle.OpenSettings(topic?)` opens the root, or the topic page named `topic`: `"fishing"`, `"announcements"`, `"trackers"` or `"look"`. It uses `Settings.OpenToCategory(category:GetID())`. An unknown topic, or one whose page isn't registered, opens the root.
 - **CORE-R44** Each On Module's row in the status list has one button: `def.settingsAction` if set, otherwise "Open {label}" for its first view. For example, the Tackle Board shows "Start my board" until the board is started, and QoL, which has no view, opens Fishing.
+- **CORE-R45** A Module may offer `def.collection(goodID?)`, a view of every look and how to get it (the Ledger's Collection, LED-R166): it opens that view, on `goodID` when given. Core calls the first On Module's that has one, by `def.order`, from Look and Feel's "Open the Collection" (SET-R50) and from `Pagle.OpenShop` on an earned good the shop doesn't list (SHOP-R40); with none, Look and Feel leaves the button out. A `collection` that raises is reported through `geterrorhandler()`.
 
 ### Compartment menu
 
@@ -254,6 +255,7 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ---@field views? { id: string, label: string|fun():string, open: fun() }[]   -- compartment menu views
 ---@field menu? { label: string|fun():string, onClick: fun() }[]             -- extra compartment entries
 ---@field slash? { name: string, fn: fun(args: string), help: string }[]     -- /pagle <name>
+---@field collection? fun(goodID?: string)  -- opens its view of every look (CORE-R45): the Ledger's Collection
 ---@field guideBlurb? string    -- its line on the Field guide's What's in the box page (ONB-R91)
 ```
 

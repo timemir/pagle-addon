@@ -9,7 +9,7 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 - **Nothing is published before 1.0.** 1.0 means every Module is implemented (Core, QoL, Ledger, Hunts, Stats, Tackle Board) and M9 is done. There are no target dates: work continues straight through, and scope is cut rather than quality.
 - **No backward compatibility before 1.0.** The log format, every `PagleDB` / `Pagle<Module>DB` shape, Module state and Hunt definitions change freely; a dev log whose format is outdated is replaced by a new one (LOG-R18). The freezes start at 1.0: LOG-R17, CORE-R15, DATA-R73, DATA-R95.
 - **One version for the whole package, and no git tags before 1.0.** The packager publishes only on a tag push, so nothing reaches CurseForge or Wago by accident.
-- **Milestones.** Each milestone below is one GitHub Milestone with the same name. Every build ticket belongs to exactly one. Milestones set the order of work, not dates: the riskiest and most shared Core pieces come first, and leaf work runs in parallel. **Track Q** runs in parallel from the end of M1, **Track V** alongside M8 onward, and **Track P** alongside M9; 1.0 doesn't wait for Track V, and waits for Track P.
+- **Milestones.** Each milestone below is one GitHub Milestone with the same name. Every build ticket belongs to exactly one. Milestones set the order of work, not dates: the riskiest and most shared Core pieces come first, and leaf work runs in parallel. **Track Q** runs in parallel from the end of M1, **Track V** alongside M8 onward, and **Track P** alongside M9, **Track C** after Track S; 1.0 doesn't wait for Track V, and waits for Track P. Track C aims for 1.0 and doesn't block it.
 - **Rules per milestone.** A rule listed under a milestone is built in it. A rule listed "for" or "without" something is built only in that part; the rest of it is listed where it lands. Every milestone and Track Q lists its rules file by file, and every rule ID in the spec is listed somewhere below. The Milestones line in each spec file's header summarises the same split; where the two differ, this file wins and the header is fixed.
 - **Rules that name later features.** A rule listed in full is built for what exists in its milestone; the parts that name a later feature (a Curio Shop row in CORE-R33, the next-action button in QOL-R93, a rebuild in LOG-R18) take effect when that feature lands, without being listed again. Edge-case rules (the "Edge cases" block of each file) are listed where their main feature lands and hold from then on.
 - **Exit checks.** A milestone is done when its tickets are closed and its exit check passes in the game. Exit checks run on the Forever beta until it launches (Nov 4, 2026), and on the live build after that.
@@ -451,6 +451,20 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 **Module rules:** Ledger: LED-R110 for the new bindings, LED-R116, LED-R117, LED-R160 for `ledgergood`. Hunts: HNT-R121 for the new covers and frames, HNT-R122, HNT-R123. Stats: STA-R88 for the new frames. Tackle Board: TKB-R125 for the new frames, TKB-R126
 
 **Exit check:** the Curio Shop lists every new good at its tier's price, with the earned ones showing their `earnedText`; buying and equipping a tier 4 toast style, a sound set, a binding, a cover and a frame of each tracker shows each look; catching each Legend plays its own sting; an earned Module good in a Core slot equips and plays like Core's own, and is put away with its Module off; `scripts/render-sounds.py` reproduces every committed set and sting; `scripts/check.sh` passes.
+
+## Track C: The Collection
+
+**Goal:** one place for every look ([#400](https://github.com/timemir/pagle-addon/issues/400)): the Curio Shop lists only what it can sell, and the Fish Journal's Collection shows every look and every Ledger title, with how to get each and where to put it on. Built after Track S, against its goods. It is built now, for testing time, and aims for 1.0 without blocking it: if it is not merged by the tag, it ships in 1.0.1.
+
+**Build order:** 1. Core's reads (SHOP-R36), `def.collection` (CORE-R45) and the shop's shorter list (SHOP-R24). 2. The Collection's spreads in the Journal. 3. Look and Feel's button, and the Angler page losing its pickers.
+
+**Core rules:** CORE-R45; SHOP-R24, SHOP-R25 for the crest slot, SHOP-R27, SHOP-R35, SHOP-R36, SHOP-R40; the shop's UI states
+
+**Ledger rules:** LED-R132 for its contents line, LED-R146 without its pickers, LED-R166–R175
+
+**Settings rules:** SET-R50 for its paragraph and "Open the Collection", SET-R53, SET-R70
+
+**Exit check:** the Curio Shop lists no earned good before its fallback date and lists the ones past it with their price; the Collection lists every look of every On Module, each owned one in colour and each other in pencil; "Use it" on a shelf, Use in the shop and a pick on Look and Feel each show on the other two at once; a look earned while the Journal is closed is "new" on its shelf and in the contents line until its shelf is opened; `Pagle.OpenShop` on an earned zone crest opens its shelf; with the Ledger off the shop still lists only what it sells, Look and Feel has no "Open the Collection", and owned earned looks are still equipped there; `scripts/check.sh` passes.
 
 ## Track P: Paste string
 
