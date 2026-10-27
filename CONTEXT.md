@@ -123,7 +123,7 @@ The small badge for a prestige rank, its Prestige frame in miniature with its nu
 _Avoid_: Prestige crest, seal, badge (alone), rank icon
 
 **Fresh Water**:
-Bonus XP on Catches made after a break from fishing, the Pagle counterpart to WoW's rested XP. It is a bonus, never a penalty.
+Bonus XP on Catches made after a real break from fishing, the Pagle counterpart to WoW's rested XP; a short pause between casts doesn't count. A new Angler starts with a full measure. It is a bonus, never a penalty.
 _Avoid_: rested XP, Rested Angler, diminishing returns
 
 **Zone Mastery**:
