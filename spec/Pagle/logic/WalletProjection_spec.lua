@@ -133,8 +133,12 @@ describe("ns.AddWalletProjection", function()
 
 			world.enterWorld()
 
-			assert.are.same({ spent = 550, purchased = { [CRIMSON] = true, [SILVER] = true } }, world.db.projection)
-			assert.are.equal(2, world.db.rulesVersion) -- wallet-and-shop.md › Data: rules version 2 (SHOP-R53)
+			assert.are.same({
+				spent = 550,
+				purchased = { [CRIMSON] = true, [SILVER] = true },
+				ownedAt = { [CRIMSON] = SERVER_TIME - 8000, [SILVER] = SERVER_TIME - 7000 },
+			}, world.db.projection)
+			assert.are.equal(3, world.db.rulesVersion) -- wallet-and-shop.md › Data: rules version 3 (SHOP-R53, SHOP-R36)
 			assert.are.same({ true, true }, { world.goods:IsOwned(CRIMSON), world.goods:IsOwned(SILVER) })
 			assert.are.same({ balance = 50, held = false, earned = { Ledger = 600 } }, world.wallet:Get())
 		end
@@ -151,7 +155,11 @@ describe("ns.AddWalletProjection", function()
 
 		world.live({ kind = "purchase", good = SILVER, price = 400 })
 
-		assert.are.same({ spent = 550, purchased = { [CRIMSON] = true, [SILVER] = true } }, world.db.projection)
+		assert.are.same({
+			spent = 550,
+			purchased = { [CRIMSON] = true, [SILVER] = true },
+			ownedAt = { [CRIMSON] = SERVER_TIME - 8000, [SILVER] = SERVER_TIME - 7000 },
+		}, world.db.projection) -- the first U1 gives the time, a later one for the good changes nothing
 		assert.are.equal(fired, #world.balances, "no BalanceChanged for a duplicate")
 	end)
 
@@ -223,7 +231,11 @@ describe("ns.AddWalletProjection", function()
 
 			world.runFrames()
 			assert.is_false(world.projection:IsUpdating())
-			assert.are.same({ spent = 550, purchased = { [CRIMSON] = true, [SILVER] = true } }, world.db.projection)
+			assert.are.same({
+				spent = 550,
+				purchased = { [CRIMSON] = true, [SILVER] = true },
+				ownedAt = { [CRIMSON] = SERVER_TIME - 7000, [SILVER] = SERVER_TIME - 9000 },
+			}, world.db.projection)
 			assert.are.same({}, world.looks, "the look never fell back to the default")
 		end
 	)
@@ -264,7 +276,11 @@ describe("ns.AddWalletProjection", function()
 
 		assert.are_not.equal(before, db.projection, "rebuilt into a fresh state")
 		assert.are.equal("a new release", db.fingerprint)
-		assert.are.same({ spent = 550, purchased = { [CRIMSON] = true, [SILVER] = true } }, db.projection)
+		assert.are.same({
+			spent = 550,
+			purchased = { [CRIMSON] = true, [SILVER] = true },
+			ownedAt = { [CRIMSON] = SERVER_TIME - 8000, [SILVER] = SERVER_TIME - 7000 },
+		}, db.projection)
 	end)
 
 	it(
@@ -318,7 +334,11 @@ describe("ns.AddWalletProjection", function()
 
 		world.enterWorld()
 
-		assert.are.same({ spent = 550, purchased = { [CRIMSON] = true, [SILVER] = true } }, world.db.projection)
+		assert.are.same({
+			spent = 550,
+			purchased = { [CRIMSON] = true, [SILVER] = true },
+			ownedAt = { [CRIMSON] = SERVER_TIME - 8 * 86400, [SILVER] = SERVER_TIME - 1 },
+		}, world.db.projection)
 	end)
 
 	it("leaves the wallet alone for Casts, Uncharted Catches included, and Prestiges (SHOP-R96)", function()

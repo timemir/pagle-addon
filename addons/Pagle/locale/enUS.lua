@@ -135,11 +135,14 @@ ns.L = {
 	SETTINGS_MOTION = "Animations",
 	SETTINGS_MOTION_TOOLTIP = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles.",
 	SETTINGS_EVERY_CATCH_TOOLTIP = "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which shows nothing.",
-	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the Curio Shop section's
-	-- header, row label and button caption. Its category headers are SHOP_CATEGORIES.
-	SETTINGS_LOOK_PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing.",
+	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the "More looks"
+	-- section's header and its two rows' labels and button captions (the Collection's, CORE-R45, then the Curio
+	-- Shop's). Its category headers are SHOP_CATEGORIES.
+	SETTINGS_LOOK_PARAGRAPH = "Looks you own. Pick one here, in the Fish Journal's Collection or with Use in the Curio Shop; all of them change the same thing.",
 	SETTINGS_SLOT_MORE = "%d more in the Curio Shop",
-	SETTINGS_SHOP = "Curio Shop",
+	SETTINGS_MORE_LOOKS = "More looks",
+	SETTINGS_COLLECTION_ROW = "Every look, and how to earn it",
+	SETTINGS_COLLECTION_BUTTON = "Open the Collection",
 	SETTINGS_SHOP_ROW = "Buy more looks with Pagle Coins",
 	SETTINGS_SHOP_BUTTON = "Open the Curio Shop",
 	-- A number of minutes: the budget's window (SET-R10) and a card's time fished (ANN-R53).
@@ -324,7 +327,7 @@ ns.L = {
 	SHOP_CORE = "Pagle",
 	SHOP_BUY = "Buy for %s",
 	SHOP_MORE_NEEDED = "%s more Coins",
-	SHOP_REWARD = "A %s reward, not for sale",
+	SHOP_OR_BUY = "Or buy it for %s",
 	SHOP_MODULE_OFF = "%s is off",
 	SHOP_PICK = "Pick a look to see it here.",
 	SHOP_USE = "Use",

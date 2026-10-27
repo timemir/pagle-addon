@@ -121,8 +121,11 @@
 ---@field setSpent fun(spent: integer) Sets the Coins spent, for a spec that doesn't care about the log: BalanceChanged
 --- fires if the balance or held changes (SHOP-R12). The wallet projection sets the log's own at enterWorld's done and
 --- on each live purchase (fake.global.projections.wallet, SHOP-R11), replacing it; set it after enterWorld to keep it.
----@field setPurchased fun(purchased: table<string, true>) Hands Core the purchased goods, `{ [goodID] = true }`, for a
---- spec that doesn't care about the log; AppearanceChanged fires if a look changes (SHOP-R33). The wallet projection
+---@field goodPreviews { frame: any, goodID: string, size: "stage"|"card" }[] Each Pagle.DrawGoodPreview call, in order
+--- (SHOP-R36). The fake draws nothing.
+---@field setPurchased fun(purchased: table<string, true>, ownedAt: table<string, integer>?) Hands Core the purchased
+--- goods, `{ [goodID] = true }`, and when each was bought, `{ [goodID] = serverTime }` (GetGood's `ownedAt`, SHOP-R36),
+--- for a spec that doesn't care about the log; AppearanceChanged fires if a look changes (SHOP-R33). The wallet projection
 --- hands over the log's own set at enterWorld's done and on each live purchase (SHOP-R11), replacing it; a spec that
 --- wants its set kept hands it over after enterWorld. A U1 in fake.catchLog's history (helpers.lua's purchaseEntry, or
 --- fake.catchLog:Append) gives the spent total, the purchased set and the balance the way Core's log does.
@@ -793,7 +796,8 @@ end)
 -- Goods (SHOP-R20–R26, SHOP-R30–R33, SHOP-R90), on Core's wiring over fake.global.goods (the goods cache: every
 -- good registered, by ID, which a spec may fill before login as a saved PagleDB, SHOP-R26, SHOP-R90) and
 -- fake.profile.appearance: M:RegisterSlot, M:RegisterGood and M:RefreshGoods on the handle, Pagle.IsOwned,
--- GetEquipped, SetEquipped and GetGood (read-only), and AppearanceChanged from login on. The purchased set comes
+-- GetEquipped, SetEquipped, GetGood, GetSlots, GetSlotGoods, GetEarnedProgress and GetPutAwayGoods (read-only), and
+-- AppearanceChanged from login on. Pagle.DrawGoodPreview only records: each call lands in fake.goodPreviews. The purchased set comes
 -- from the wallet projection part below (SHOP-R11), or from fake.setPurchased. Pagle.OpenShop runs Core's entry
 -- points (SHOP-R40, SHOP-R41) over a shop that only records: each opening lands in fake.shopsOpened, and
 -- fake.shopOpen says whether it is open; fake.ns.shop.Buy(goodID, useNow) buys as the bill of sale's Buy does
@@ -816,10 +820,13 @@ part(function(fake, Pagle, ns, host)
 			fake.shopOpen = false
 		end,
 	})
-	ns.PublishGoods(Pagle, readOnly)
+	fake.goodPreviews = {}
+	ns.PublishGoods(Pagle, readOnly, function(frame, goodID, size)
+		fake.goodPreviews[#fake.goodPreviews + 1] = { frame = frame, goodID = goodID, size = size }
+	end)
 
-	function fake.setPurchased(purchased)
-		ns.goods:SetPurchased(purchased)
+	function fake.setPurchased(purchased, ownedAt)
+		ns.goods:SetPurchased(purchased, ownedAt)
 	end
 end)
 

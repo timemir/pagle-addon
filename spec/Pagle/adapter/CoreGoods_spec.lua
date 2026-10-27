@@ -343,6 +343,10 @@ describe("Core's goods' names", function()
 			icon = "Interface\\Icons\\INV_Misc_Lantern_01",
 			module = "Core",
 			isDefault = false,
+			kind = "sale",
+			tier = 1,
+			price = 250,
+			purchased = false,
 		}, loaded.env.Pagle.GetGood("core.toaststyle.lanternglow"))
 	end)
 

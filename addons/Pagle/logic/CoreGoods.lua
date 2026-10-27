@@ -25,7 +25,6 @@ local ns = select(2, ...)
 ---@field label string
 ---@field category "Announcements"|"Crests"|"Books"
 ---@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): all four
----@field hideEarned? true          -- the shop lists none of its earned goods; Look and Feel equips them (SHOP-R25)
 ---@field groups? PagleSlotGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
@@ -153,8 +152,7 @@ ns.CORE_GOODS = {
 		label = L.SLOT_CREST,
 		category = "Crests",
 		openToEarned = true,
-		hideEarned = true,
-		-- The Ledger's zone crests and Core's fish crests name these (SHOP-R27); the shop lists neither (hideEarned).
+		-- The Ledger's zone crests and Core's fish crests name these (SHOP-R27); the shop lists neither (SHOP-R24).
 		groups = {
 			{ key = "zone", name = L.SLOT_CREST_ZONES },
 			{ key = "fish", name = L.SLOT_CREST_FISH },
@@ -204,7 +202,6 @@ function ns.RegisterCoreGoods(previews)
 			category = slot.category,
 			groups = slot.groups,
 			openToEarned = slot.openToEarned,
-			hideEarned = slot.hideEarned,
 			preview = slot.openToEarned and previews and function(stage, good)
 				local draw = previews[slot.id]
 				if draw then

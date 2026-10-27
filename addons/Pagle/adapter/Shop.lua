@@ -29,6 +29,8 @@ local FIND_Y, FILTER_Y, CHIP_Y, CONTROLS_W = 14, 59, 98, 438
 -- The goods: their inset in the tray, a row's width and height, a slot's header's height, and a grouped slot's group
 -- header's (SHOP-R27).
 local LIST_X, ROW_W, ROW_H, HEADER_H, GROUP_H = 16, 432, 44, 31, 26
+-- The room between an earned good's tag and the price tag's string it sits beside (SHOP-R28).
+local TAG_GAP = 22
 -- A group header's inset, at the medallions', and its rule's opacity, fainter than a slot's.
 local GROUP_X, GROUP_RULE_ALPHA = 8, 0.5
 -- The room under the Curio crate's row, before the first slot's header (SHOP-R50).
@@ -681,8 +683,8 @@ local function drawRowTag(line, data)
 	line.wax:SetShown(inUse)
 end
 
--- Draws a row's right end from `data`: the price tag for a good for sale, in red when the balance doesn't cover it;
--- otherwise its tag. What a purchase's motion faded or added goes back to rest.
+-- Draws a row's right end from `data`: the price tag for a good for sale, in red when the balance doesn't cover it, with
+-- an earned good's tag to its left; otherwise its tag. What a purchase's motion faded or added goes back to rest.
 ---@param line PagleShopLine
 ---@param data PagleShopRow
 local function drawRowEnd(line, data)
@@ -703,11 +705,20 @@ local function drawRowEnd(line, data)
 		price:ClearAllPoints()
 		price:SetPoint("RIGHT", line, "RIGHT", -8, 0)
 		price:Show()
-		line.tag:Hide()
 		line.wax:Hide()
+		-- an earned good on sale at its fallback price keeps its earned tag beside the price tag (SHOP-R28)
+		line.tag:ClearAllPoints()
+		line.tag:SetPoint("RIGHT", price, "LEFT", -TAG_GAP, 0)
+		if data.tag then
+			ns.SetShopFont(line.tag, "Owned")
+			ns.SetShopText(line.tag, data.tag)
+		end
+		line.tag:SetShown(data.tag ~= nil)
 		return
 	end
 	price:Hide()
+	line.tag:ClearAllPoints()
+	line.tag:SetPoint("RIGHT", -8, 0)
 	drawRowTag(line, data)
 end
 
@@ -1099,28 +1110,13 @@ end
 
 -- Shows `goodID`'s look on the stage: its own stage frame, made at its first preview and the same each time, handed
 -- to its preview through securecallfunction when `fresh`, so a preview that raises is reported and the rest still
--- shows; a good with no preview (or put away) shows its icon in a medallion instead.
+-- shows; a good with no preview (or put away) shows its icon in a medallion instead. The path
+-- Pagle.DrawGoodPreview draws by too (adapter/GoodPreview.lua).
 ---@param stage PagleShopStageFrame
 ---@param data PagleShopStage
 ---@param fresh boolean
 local function drawLook(stage, data, fresh)
-	local preview = data.preview
-	if not preview then
-		ns.SetShopBezel(stage.swatch, data.icon, data.greyed, data.shield)
-		stage.swatch:Show()
-		return
-	end
-	local own = stage.previews[data.id]
-	if not own then
-		own = CreateFrame("Frame", nil, stage.area)
-		own:SetAllPoints()
-		stage.previews[data.id] = own
-		fresh = true
-	end
-	own:Show()
-	if fresh then
-		securecallfunction(preview, own)
-	end
+	ns.DrawLook(stage.area, stage.previews, stage.swatch, data, fresh)
 end
 
 -- Draws the description card's foot from `data`: Buy, "N more Coins" or Use, and the tags beside them, each at rest.

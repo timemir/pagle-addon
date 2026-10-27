@@ -16,5 +16,8 @@ local Pagle = Pagle
 --- handle and ns.RegisterCoreSlot / ns.RegisterCoreGood for Core's own (logic/Wiring.lua).
 ns.WireGoods(ns.host)
 
---- Pagle.IsOwned, GetEquipped, SetEquipped and GetGood over ns.goods (logic/Wiring.lua).
-ns.PublishGoods(Pagle)
+--- Pagle.IsOwned, GetEquipped, SetEquipped, GetGood and the rest of SHOP-R36's reads over ns.goods, and
+--- Pagle.DrawGoodPreview over adapter/GoodPreview.lua's drawing (logic/Wiring.lua).
+ns.PublishGoods(Pagle, nil, function(frame, goodID, size)
+	ns.DrawGoodPreview(frame, goodID, size)
+end)

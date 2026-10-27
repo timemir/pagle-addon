@@ -15,7 +15,8 @@ local ns = select(2, ...)
 ---@field format? fun(value: number): string -- writes a number of Coins (BreakUpLargeNumbers); tostring by default
 ---@field wallet? PagleWalletSnapshot       -- the wallet projection's crates and owned set (ns.walletSnapshot); none
 --- before its first hand-over, read as nothing owned and no crate opened
----@field now? integer                      -- the server time, for the pool goods in the crate by now (SHOP-R53)
+---@field now? integer                      -- the server time, for the pool goods in the crate by now (SHOP-R53) and for an
+--- earned good's fallback date (SHOP-R28); with none, no fallback has been reached
 
 ---@class PagleShopModel
 ---@field private sources PagleShopSources
@@ -48,29 +49,7 @@ function ns.NewShopModel(sources)
 	}, Model)
 end
 
--- Each roster Module's place in CORE-R1's order, for the purse and Put away.
----@param name string
----@return integer
-local function rosterIndex(name)
-	for i, roster in ipairs(ns.MODULE_ROSTER) do
-		if roster == name then
-			return i
-		end
-	end
-	return #ns.MODULE_ROSTER + 1
-end
-
--- Sorts def.names in roster order, any other by name.
----@param a string
----@param b string
----@return boolean
-local function byRoster(a, b)
-	local indexA, indexB = rosterIndex(a), rosterIndex(b)
-	if indexA ~= indexB then
-		return indexA < indexB
-	end
-	return a < b
-end
+local byRoster = ns.SortsByRoster
 
 --- Whose good or Coins these are, as the shop names them: a Module's title (CORE-R41's names), or "Pagle" for Core.
 ---@param module string def.name, or "Core"
@@ -148,21 +127,22 @@ end
 ---@field category string
 ---@field module string             -- def.name, or "Core"
 ---@field preview? fun(stage: Frame) -- nil for a good put away: its Module isn't loaded
----@field earned boolean            -- an earned good (SHOP-R22), whether or not it is owned yet
+---@field earned boolean            -- an earned good (SHOP-R22), whether or not it is owned yet; the shop lists one from its
+--- fallback date on (SHOP-R24)
 ---@field earnedText? string        -- its row's tag: its earnedText, or a function's first text while not owned
 ---@field earnedNote? string        -- its stage's note: its earnedText, or a function's second text while not owned
 ---@field default boolean           -- its slot's default (SHOP-R22, SHOP-R23)
----@field price? integer            -- a good for sale's price (SHOP-R22)
+---@field price? integer            -- a good for sale's price, or an earned good's fallback price from its date (SHOP-R22,
+--- SHOP-R28)
 ---@field state PagleShopState
 ---@field fromCrate? true           -- a Curio crate gave it (SHOP-R50)
 
 --- A good's state in the shop (wallet-and-shop.md › UI: States on a row and the stage).
 ---@alias PagleShopState
----| "forSale"  # for sale, not owned, and the balance covers it
+---| "forSale"  # for sale (an earned good from its fallback date, SHOP-R28), not owned, and the balance covers it
 ---| "short"    # for sale, not owned, and the balance doesn't cover it
 ---| "owned"    # owned, not in use
 ---| "equipped" # owned and in use
----| "unearned" # earned, not yet
 ---| "crateOnly" # crate only, not owned yet: a Curio crate alone gives it (SHOP-R22, SHOP-R50)
 ---| "putAway"  # owned, of a Module that isn't On (SHOP-R35)
 
@@ -172,7 +152,7 @@ local OWNED = { owned = true, equipped = true, putAway = true }
 -- The states each filter keeps (wallet-and-shop.md › UI).
 local FILTERS = {
 	owned = OWNED,
-	notOwned = { forSale = true, short = true, unearned = true, crateOnly = true },
+	notOwned = { forSale = true, short = true, crateOnly = true },
 	canAfford = { forSale = true },
 }
 
@@ -199,21 +179,21 @@ end
 --- The filters, in the order the list shows them.
 ns.SHOP_FILTERS = { "all", "owned", "notOwned", "canAfford" }
 
--- Whether the shop leaves out a good of `slot` that is earned (`earned`): the earned goods of a Core slot that hides
--- them, the crest slot's zone and fish crests, which Look and Feel equips instead (SHOP-R25).
----@param slot PagleRegisteredSlot?
----@param earned boolean
+-- Whether the shop lists the registered good `good` of a live slot whose Module is On (SHOP-R24): a default, a good for
+-- sale and a crate-only good always, an earned good only from its fallback date on (SHOP-R28), owned or not.
+---@param good PagleRegisteredGood
+---@param isDefault boolean its slot's default, or the good standing in for it (SHOP-R23)
 ---@return boolean
-local function hidden(slot, earned)
-	return earned and slot ~= nil and slot.hideEarned == true
+function Model:Lists(good, isDefault)
+	return good.isEarned == nil or isDefault or ns.GoodPrice(good, self.sources.now) ~= nil
 end
 
---- A good the shop can show, or nil: a good of a live slot (Core's or a Module On's) whose Module is On, or an owned
---- good of a Module that isn't On, from the cache (SHOP-R35). A default of a Module that isn't On is neither
---- (SHOP-R35), nor an earned good in a Core slot that hides them, its Module On or not (SHOP-R25). Its owner is the
---- good's Module, which in a Core slot open to earned goods may be another's (SHOP-R23); an earnedText function is
---- called here, for a good not owned (SHOP-R22). A good with no preview of its own takes its slot's, if Core gave the
---- slot one (the crest's bookplate, SHOP-R25).
+--- A good the shop can show, or nil: a good of a live slot (Core's or a Module On's) whose Module is On that the shop
+--- lists (SHOP-R24: never an earned good before its fallback date), or a purchased good of a Module that isn't On, from
+--- the cache (SHOP-R35: a default of a Module that isn't On is neither, and an earned good of one that is put away
+--- isn't listed). Its owner is the good's Module, which in a Core slot open to earned goods may be another's
+--- (SHOP-R23); an earnedText function is called here, for a good not owned (SHOP-R22). A good with no preview of its
+--- own takes its slot's, if Core gave the slot one (the crest's bookplate, SHOP-R25).
 ---@param goodID any
 ---@return PagleShopEntry?
 function Model:Entry(goodID)
@@ -222,30 +202,23 @@ function Model:Entry(goodID)
 	end
 	local goods = self.sources.goods
 	local good = goods:Good(goodID)
-	if good and hidden(self.slots[good.slot], good.isEarned ~= nil) then
-		return nil
-	end
 	local slot = good and self.on[good.module] and self.slots[good.slot]
+	local isDefault = slot and goods:DefaultOf(slot.id) == goodID or false
 	if good and slot then
-		local price = good.tier and ns.TIER_PRICES[good.tier]
+		if not self:Lists(good, isDefault) then
+			return nil
+		end
+		local price = ns.GoodPrice(good, self.sources.now)
 		local state
 		if goods:IsOwned(goodID) then
 			state = goods:GetEquipped(slot.id) == goodID and "equipped" or "owned"
-		elseif good.isEarned then
-			state = "unearned"
 		elseif good.crate then
 			state = "crateOnly"
 		else
-			state = self.sources.balance.balance >= price and "forSale" or "short"
-		end
-		local preview, slotPreview = good.preview, slot.preview
-		if not preview and slotPreview then
-			preview = function(stage)
-				slotPreview(stage, good)
-			end
+			state = self.sources.balance.balance >= assert(price) and "forSale" or "short"
 		end
 		local earnedText, earnedNote = goods:EarnedTexts(goodID)
-		local entry = {
+		return {
 			id = goodID,
 			name = good.name,
 			icon = good.icon,
@@ -254,24 +227,23 @@ function Model:Entry(goodID)
 			slotLabel = slot.label,
 			category = slot.category,
 			module = good.module,
-			preview = preview,
+			preview = goods:PreviewOf(goodID),
 			earned = good.isEarned ~= nil,
 			earnedText = earnedText,
 			earnedNote = earnedNote,
-			default = goods:DefaultOf(slot.id) == goodID,
+			default = isDefault,
 			price = price,
 			state = state,
 			fromCrate = fromCrate(self.sources, goodID) or nil,
 		}
-		return entry
 	end
-	-- A cached good that is neither a default nor for sale is earned (SHOP-R22, SHOP-R26).
+	-- A cached good that is neither a default nor for sale is earned (SHOP-R22, SHOP-R26); only a purchase is put away.
 	local cached = self.sources.cache[goodID]
 	if
 		type(cached) ~= "table"
 		or self.on[cached.module]
 		or cached.default
-		or hidden(self.slots[cached.slot], cached.tier == nil)
+		or not goods:IsPurchased(goodID)
 		or not goods:IsOwned(goodID)
 	then
 		return nil
@@ -324,8 +296,8 @@ end
 ---@field state PagleShopState
 ---@field price? string   -- a good for sale's price, written: the window draws the coin after it
 ---@field short? true     -- the balance doesn't cover the price: it shows in red
----@field tag? string     -- otherwise: "In use", "default", "Owned", its earnedText (a function's first text), or
---- "Hunts is off"
+---@field tag? string     -- otherwise: "In use", "default", "Owned" or "Hunts is off"; with a price, an earned good's
+--- earnedText (a function's first text, SHOP-R28)
 
 -- The row for `entry`.
 ---@private
@@ -338,12 +310,12 @@ function Model:RowOf(entry)
 	if state == "forSale" or state == "short" then
 		row.price = self.format(entry.price)
 		row.short = state == "short" or nil
+		-- an earned good on sale at its fallback price keeps its earned tag beside the price (SHOP-R28)
+		row.tag = entry.earnedText
 	elseif state == "equipped" then
 		row.tag = L.SHOP_IN_USE
 	elseif state == "owned" then
 		row.tag = entry.default and L.SHOP_DEFAULT or L.SHOP_OWNED
-	elseif state == "unearned" then
-		row.tag = entry.earnedText or L.SHOP_REWARD:format(ownerName(entry.module))
 	elseif state == "crateOnly" then
 		row.tag = L.SHOP_FROM_CRATE
 	else
@@ -453,9 +425,10 @@ local function inGroups(slot, slotGoods, defaultID)
 end
 
 --- The list (wallet-and-shop.md › UI, SHOP-R25, SHOP-R27, SHOP-R35): the goods `query` keeps, grouped by live slot
---- (Core's first, then by Module order), each with its owned count over the goods the shop shows (not a hidden earned
---- one, SHOP-R25), a grouped slot's goods under their groups' names; then the owned goods of Modules that aren't On,
---- from the cache, as the last group, "Put away: Module off". A group with no row left isn't listed, nor a slot's
+--- (Core's first, then by Module order), each with its owned count over the goods the shop lists (SHOP-R24: no earned
+--- good before its fallback date), a grouped slot's goods under their groups' names (a group with none listed has no
+--- header); then the purchased goods of Modules that aren't On, from the cache, as the last group, "Put away: Module
+--- off" (SHOP-R35). A group with no row left isn't listed, nor a slot's
 --- group's name with none of its rows left.
 ---@param query PagleShopQuery
 ---@return PagleShopGroup[]
@@ -465,8 +438,9 @@ function Model:List(query)
 	local groups = {}
 	for _, slot in ipairs(self.slotList) do
 		local rows, owned, slotGoods = {}, 0, {}
+		local defaultID = goods:DefaultOf(slot.id)
 		for _, good in ipairs(goods:GoodsOf(slot.id)) do
-			if not hidden(slot, good.isEarned ~= nil) then
+			if self:Lists(good, good.id == defaultID) then
 				slotGoods[#slotGoods + 1] = good
 			end
 		end
@@ -519,9 +493,10 @@ function Model:List(query)
 	return groups
 end
 
---- The good `goodID` names, if the shop shows it (SHOP-R40): a good of a live slot, or an owned good of a Module
---- that isn't On, under Put away; or the Curio crate's row, `core.crate` (SHOP-R50), while it is in the list. Nil for
---- any other: an unknown ID, or a default or good for sale of a Module off, or the crate once the Angler owns every
+--- The good `goodID` names, if the shop shows it (SHOP-R40): a good of a live slot it lists (SHOP-R24), or a purchased
+--- or crate-given good of a Module that isn't On, under Put away; or the Curio crate's row, `core.crate` (SHOP-R50),
+--- while it is in the list. Nil for any other: an unknown ID, an earned good the shop doesn't list
+--- (`Model:IsEarnedUnlisted`), a default or good for sale of a Module off, or the crate once the Angler owns every
 --- pool good (SHOP-R54).
 ---@param goodID any
 ---@return string?
@@ -530,6 +505,22 @@ function Model:Select(goodID)
 		return self:CrateOpen() and goodID or nil
 	end
 	return self:Entry(goodID) and goodID or nil
+end
+
+--- Whether `goodID` is an earned good, registered or cached, that the shop doesn't list (SHOP-R24, SHOP-R35): the
+--- goods `Pagle.OpenShop` sends to the Collection instead (SHOP-R40).
+---@param goodID any
+---@return boolean
+function Model:IsEarnedUnlisted(goodID)
+	if type(goodID) ~= "string" or self:Entry(goodID) then
+		return false
+	end
+	local good = self.sources.goods:Good(goodID)
+	if good then
+		return good.isEarned ~= nil
+	end
+	local cached = self.sources.cache[goodID]
+	return type(cached) == "table" and ns.GoodKind(cached) == "earned"
 end
 
 --- The selected good on the stage (wallet-and-shop.md › UI): its look, name, slot and owner, description, and what
@@ -614,10 +605,12 @@ function Model:Stage(goodID)
 		if entry.earnedNote then
 			stage.notes[#stage.notes + 1] = entry.earnedNote
 		end
-		stage.notes[#stage.notes + 1] = L.SHOP_REWARD:format(owner)
+		if entry.price and not OWNED[state] then
+			stage.notes[#stage.notes + 1] = L.SHOP_OR_BUY:format(self.format(entry.price))
+		end
 	end
 	-- Its progress, asked for only here, for the stage, and only while it isn't earned (SHOP-R22, Goods:Progress).
-	if state == "unearned" then
+	if entry.earned and not OWNED[state] then
 		stage.progress = wellMadeDots(self.sources.goods:Progress(entry.id))
 	end
 	return stage

@@ -175,7 +175,10 @@ local EXPECTED = {
 	{
 		name = "Look and Feel",
 		rows = {
-			{ "text", "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing." },
+			{
+				"text",
+				"Looks you own. Pick one here, in the Fish Journal's Collection or with Use in the Curio Shop; all of them change the same thing.",
+			},
 			{ "header", "Announcements" },
 			{ "slot", "Toast style" },
 			{ "slot", "Sound set" },
@@ -187,7 +190,7 @@ local EXPECTED = {
 			{ "slot", "Hunts tracker frame", of = "Hunts" },
 			{ "slot", "Stats tracker frame", of = "Stats" },
 			{ "slot", "Tackle Board tracker frame", of = "TackleBoard" },
-			{ "header", "Curio Shop" },
+			{ "header", "More looks" },
 			{ "button", "Buy more looks with Pagle Coins", caption = "Open the Curio Shop" },
 		},
 	},

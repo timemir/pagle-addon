@@ -6,7 +6,8 @@ describe("ns.NewGoods", function()
 
 	-- A registry over a fresh PagleDB, with Hunts (order 20) and the Ledger (10) On. `env.on` is the Modules On, by
 	-- name, which a spec changes to turn one off; `env.fired` each AppearanceChanged as { slot, goodID }; `env.reported`
-	-- each report; `env.db` the PagleDB. `call` runs a Module's isEarned, by default as is.
+	-- each report; `env.db` the PagleDB; `env.now` the server time (SHOP-R28), nil until a spec sets it. `call` runs a
+	-- Module's isEarned, by default as is.
 	local function newGoods(db, call)
 		local env = {
 			db = db or { global = { goods = {} }, profile = { appearance = {} } },
@@ -36,6 +37,9 @@ describe("ns.NewGoods", function()
 			end,
 			report = function(message)
 				env.reported[#env.reported + 1] = message
+			end,
+			serverTime = function()
+				return env.now
 			end,
 		})
 		return env
@@ -792,6 +796,10 @@ describe("ns.NewGoods", function()
 				module = "Hunts",
 				description = "Blue as the Long Wash.",
 				isDefault = false,
+				kind = "sale",
+				tier = 1,
+				price = 250,
+				purchased = false,
 			}, env.goods:GetGood("hunts.cover.tide"))
 		end)
 
@@ -828,10 +836,14 @@ describe("ns.NewGoods", function()
 				profile = { appearance = {} },
 			})
 
-			assert.are.same(
-				{ name = "Gold", slot = "hunts.cover", module = "Hunts", isDefault = false },
-				env.goods:GetGood("hunts.cover.gold")
-			)
+			assert.are.same({
+				name = "Gold",
+				slot = "hunts.cover",
+				module = "Hunts",
+				isDefault = false,
+				kind = "earned",
+				purchased = false,
+			}, env.goods:GetGood("hunts.cover.gold"))
 			assert.is_nil(env.goods:GetGood("hunts.cover.none"))
 			assert.is_nil(env.goods:GetGood(nil))
 		end)
@@ -1239,5 +1251,463 @@ describe("ns.NewGoods", function()
 			assert.are.same({}, { env.goods:EarnedTexts("hunts.cover.velvet") })
 			assert.are.same({}, { env.goods:EarnedTexts("hunts.cover.none") })
 		end)
+	end)
+	describe("what a view of every good reads (SHOP-R36)", function()
+		local NOW = 1800000000
+		local DAY = 86400
+
+		-- Hunts' pennants: a default, a good for sale, a crate-free earned good with a fallback from `from`, one with
+		-- none, and a grouped earned good with a count and texts.
+		local function pennants(env, from, earned)
+			local goods = env.goods
+			assert.is_nil(goods:RegisterSlot("Hunts", {
+				id = "hunts.pennant",
+				label = "Pennant",
+				category = "Trackers",
+				groups = { { key = "gilt", name = "Gilt" } },
+			}))
+			assert.is_nil(
+				goods:RegisterGood(
+					"Hunts",
+					{ id = "hunts.pennant.plain", slot = "hunts.pennant", name = "Plain", default = true }
+				)
+			)
+			assert.is_nil(
+				goods:RegisterGood(
+					"Hunts",
+					{ id = "hunts.pennant.reef", slot = "hunts.pennant", name = "Reef", tier = 3 }
+				)
+			)
+			assert.is_nil(goods:RegisterGood("Hunts", {
+				id = "hunts.pennant.ember",
+				slot = "hunts.pennant",
+				name = "Ember",
+				group = "gilt",
+				isEarned = function()
+					return earned.value
+				end,
+				earnedText = function()
+					return "40 of 100 fish", "Land a hundred fish."
+				end,
+				earnedCount = function()
+					return 40, 100
+				end,
+				fallbackTier = from and 4 or nil,
+				fallbackFrom = from,
+			}))
+			assert.is_nil(goods:RegisterGood("Hunts", {
+				id = "hunts.pennant.dawn",
+				slot = "hunts.pennant",
+				name = "Dawn",
+				isEarned = function()
+					return false
+				end,
+				earnedText = "Rise early",
+			}))
+		end
+
+		it("tells each good's kind: default, sale, earned or crate (SHOP-R22, SHOP-R36)", function()
+			local env = newGoods()
+			pennants(env, nil, { value = false })
+			assert.is_nil(
+				env.goods:RegisterSlot(
+					"Core",
+					{ id = "core.toaststyle", label = "Toast style", category = "Announcements" }
+				)
+			)
+			assert.is_nil(
+				env.goods:RegisterGood(
+					"Core",
+					{ id = "core.toaststyle.foil", slot = "core.toaststyle", name = "Foil", crate = true }
+				)
+			)
+
+			assert.are.same({ "default", "sale", "earned", "earned", "crate" }, {
+				env.goods:GetGood("hunts.pennant.plain").kind,
+				env.goods:GetGood("hunts.pennant.reef").kind,
+				env.goods:GetGood("hunts.pennant.ember").kind,
+				env.goods:GetGood("hunts.pennant.dawn").kind,
+				env.goods:GetGood("core.toaststyle.foil").kind,
+			})
+		end)
+
+		it("prices a good for sale at its tier, and nothing else without a fallback (SHOP-R22, SHOP-R36)", function()
+			local env = newGoods()
+			env.now = NOW
+			pennants(env, nil, { value = false })
+
+			local reef, plain, ember =
+				env.goods:GetGood("hunts.pennant.reef"),
+				env.goods:GetGood("hunts.pennant.plain"),
+				env.goods:GetGood("hunts.pennant.ember")
+
+			assert.are.same({ 3, 900 }, { reef.tier, reef.price })
+			assert.are.same({ nil, nil, nil, nil }, { plain.tier, plain.price, ember.price, ember.fallbackPrice })
+		end)
+
+		it(
+			"gives an earned good's fallback price from its date on, and its fallback fields before (SHOP-R28, SHOP-R36)",
+			function()
+				local env = newGoods()
+				env.now = NOW
+				pennants(env, NOW + DAY, { value = false })
+
+				local before = env.goods:GetGood("hunts.pennant.ember")
+				env.now = NOW + DAY - 1
+				local justBefore = env.goods:GetGood("hunts.pennant.ember")
+				env.now = NOW + DAY
+				local from = env.goods:GetGood("hunts.pennant.ember")
+				env.now = NOW + 90 * DAY
+				local after = env.goods:GetGood("hunts.pennant.ember")
+
+				assert.are.same({ nil, 3000, NOW + DAY }, { before.price, before.fallbackPrice, before.fallbackFrom })
+				assert.is_nil(justBefore.price)
+				assert.are.same(
+					{ 3000, 3000, NOW + DAY, "earned" },
+					{ from.price, from.fallbackPrice, from.fallbackFrom, from.kind }
+				)
+				assert.are.equal(3000, after.price)
+			end
+		)
+
+		it("reads no fallback as reached while it has no server time (SHOP-R28)", function()
+			local env = newGoods()
+			pennants(env, 1, { value = false })
+			env.now = nil
+
+			assert.is_nil(env.goods:GetGood("hunts.pennant.ember").price)
+		end)
+
+		it("carries a good's group (SHOP-R27, SHOP-R36)", function()
+			local env = newGoods()
+			pennants(env, nil, { value = false })
+
+			assert.are.same(
+				{ "gilt", nil },
+				{ env.goods:GetGood("hunts.pennant.ember").group, env.goods:GetGood("hunts.pennant.reef").group }
+			)
+		end)
+
+		it(
+			"gives purchased and ownedAt from the purchase entry or crate the wallet projection handed over (SHOP-R11, SHOP-R36)",
+			function()
+				local env = newGoods()
+				pennants(env, nil, { value = true })
+				env.goods:SetPurchased({ ["hunts.pennant.reef"] = true, ["hunts.pennant.ember"] = true }, {
+					["hunts.pennant.reef"] = NOW - 5,
+					["hunts.pennant.ember"] = NOW - 9,
+				})
+
+				local reef, ember, plain =
+					env.goods:GetGood("hunts.pennant.reef"),
+					env.goods:GetGood("hunts.pennant.ember"),
+					env.goods:GetGood("hunts.pennant.plain")
+
+				assert.are.same({ true, NOW - 5 }, { reef.purchased, reef.ownedAt })
+				assert.are.same({ true, NOW - 9 }, { ember.purchased, ember.ownedAt })
+				assert.are.same({ false, nil }, { plain.purchased, plain.ownedAt }, "a default is owned, not purchased")
+				env.goods:SetPurchased({})
+				assert.are.same({ false, nil }, {
+					env.goods:GetGood("hunts.pennant.reef").purchased,
+					env.goods:GetGood("hunts.pennant.reef").ownedAt,
+				})
+			end
+		)
+
+		it(
+			"reads a good of a Module that is off from its cache, fallback fields and group too (SHOP-R26, SHOP-R36)",
+			function()
+				local env = newGoods({
+					global = {
+						goods = {
+							["hunts.pennant.ember"] = {
+								name = "Ember",
+								slot = "hunts.pennant",
+								module = "Hunts",
+								earned = true,
+								group = "gilt",
+								fallbackTier = 4,
+								fallbackFrom = NOW - 1,
+							},
+						},
+					},
+					profile = { appearance = {} },
+				})
+				env.on = {}
+				env.now = NOW
+
+				local ember = env.goods:GetGood("hunts.pennant.ember")
+
+				assert.are.same(
+					{ "earned", 3000, 3000, "gilt" },
+					{ ember.kind, ember.price, ember.fallbackPrice, ember.group }
+				)
+			end
+		)
+
+		it(
+			"gives an earned good's progress: its texts and its count, called now each time, nothing cached (SHOP-R22, SHOP-R36)",
+			function()
+				local env = newGoods()
+				local earned = { value = false }
+				pennants(env, nil, earned)
+				local have = 40
+				env.goods:Good("hunts.pennant.ember").earnedCount = function()
+					return have, 100
+				end
+
+				assert.are.same(
+					{ tag = "40 of 100 fish", note = "Land a hundred fish.", have = 40, need = 100 },
+					env.goods:EarnedProgress("hunts.pennant.ember")
+				)
+				have = 41
+				assert.are.equal(41, env.goods:EarnedProgress("hunts.pennant.ember").have)
+				assert.are.same(
+					{ tag = "Rise early", note = "Rise early" },
+					env.goods:EarnedProgress("hunts.pennant.dawn")
+				)
+			end
+		)
+
+		it(
+			"gives nothing for a good that isn't earned, is owned, is unknown or is of a Module that is off (SHOP-R36)",
+			function()
+				local env = newGoods()
+				local earned = { value = false }
+				pennants(env, nil, earned)
+
+				assert.is_nil(env.goods:EarnedProgress("hunts.pennant.reef"))
+				assert.is_nil(env.goods:EarnedProgress("hunts.pennant.plain"))
+				assert.is_nil(env.goods:EarnedProgress("hunts.pennant.none"))
+				assert.is_nil(env.goods:EarnedProgress(nil))
+				earned.value = true
+				env.goods:Refresh("Hunts")
+				assert.is_nil(env.goods:EarnedProgress("hunts.pennant.ember"))
+				earned.value = false
+				env.goods:Refresh("Hunts")
+				env.on.Hunts = nil
+				assert.is_nil(env.goods:EarnedProgress("hunts.pennant.ember"))
+			end
+		)
+
+		it("leaves the count out when the good has none, or gives nothing yet or nonsense (SHOP-R36)", function()
+			local env = newGoods()
+			pennants(env, nil, { value = false })
+			local ember = env.goods:Good("hunts.pennant.ember")
+			local function counting(fn)
+				ember.earnedCount = fn
+				return env.goods:EarnedProgress("hunts.pennant.ember")
+			end
+
+			assert.are.same({ tag = "40 of 100 fish", note = "Land a hundred fish." }, counting(function() end))
+			assert.is_nil(counting(function()
+				return "many", 100
+			end).have)
+			assert.is_nil(counting(function()
+				return 3, 0
+			end).need)
+			assert.are.same({}, env.reported)
+		end)
+
+		it("reports an earnedText or earnedCount that raises, and gives nothing (SHOP-R22, SHOP-R36)", function()
+			local env
+			env = newGoods(nil, function(fn, ...)
+				local ok, err = pcall(fn, ...)
+				if not ok then
+					env.reported[#env.reported + 1] = err
+				end
+			end)
+			pennants(env, nil, { value = false })
+			local ember = env.goods:Good("hunts.pennant.ember")
+
+			ember.earnedCount = function()
+				error("no count today")
+			end
+			assert.is_nil(env.goods:EarnedProgress("hunts.pennant.ember"))
+			assert.are.equal(1, #env.reported)
+			assert.matches("no count today", env.reported[1])
+
+			ember.earnedCount = nil
+			ember.earnedText = function()
+				error("no text today")
+			end
+			assert.is_nil(env.goods:EarnedProgress("hunts.pennant.ember"))
+			assert.matches("no text today", env.reported[2])
+		end)
+
+		it(
+			"lists the owned goods of Modules that aren't On from the cache: earned ones too, never a default (SHOP-R35, SHOP-R36)",
+			function()
+				local env = newGoods({
+					global = {
+						goods = {
+							["hunts.pennant.plain"] = {
+								name = "Plain",
+								slot = "hunts.pennant",
+								module = "Hunts",
+								default = true,
+							},
+							["hunts.pennant.reef"] = {
+								name = "Reef",
+								slot = "hunts.pennant",
+								module = "Hunts",
+								tier = 3,
+							},
+							["hunts.pennant.tide"] = {
+								name = "Tide",
+								slot = "hunts.pennant",
+								module = "Hunts",
+								tier = 1,
+							},
+							["hunts.pennant.ember"] = {
+								name = "Ember",
+								slot = "hunts.pennant",
+								module = "Hunts",
+								earned = true,
+							},
+							["ledger.toaststyle.oak"] = {
+								name = "Oak",
+								slot = "core.toaststyle",
+								module = "Ledger",
+								earned = true,
+							},
+							["ledger.toaststyle.sun"] = {
+								name = "Sun",
+								slot = "core.toaststyle",
+								module = "Ledger",
+								earned = false,
+							},
+						},
+					},
+					profile = { appearance = {} },
+				})
+				env.on = { Ledger = 10 }
+				env.goods:SetPurchased({ ["hunts.pennant.reef"] = true })
+
+				assert.are.same({ "hunts.pennant.ember", "hunts.pennant.reef" }, env.goods:PutAway())
+				env.on = {}
+				assert.are.same(
+					{ "ledger.toaststyle.oak", "hunts.pennant.ember", "hunts.pennant.reef" },
+					env.goods:PutAway()
+				)
+				env.on = { Hunts = 20, Ledger = 10 }
+				assert.are.same({}, env.goods:PutAway())
+			end
+		)
+
+		it("hands a good its own preview, else its slot's called with it, else none (SHOP-R25, SHOP-R36)", function()
+			local env = newGoods()
+			assert.is_nil(env.goods:RegisterSlot("Core", {
+				id = "core.plate",
+				label = "Plate",
+				category = "Announcements",
+				openToEarned = true,
+				preview = function(stage, good)
+					stage.drawn = good.id
+				end,
+			}))
+			local own = function(stage)
+				stage.drawn = "own"
+			end
+			assert.is_nil(
+				env.goods:RegisterGood(
+					"Core",
+					{ id = "core.plate.plain", slot = "core.plate", name = "Plain", default = true }
+				)
+			)
+			assert.is_nil(
+				env.goods:RegisterGood(
+					"Core",
+					{ id = "core.plate.fine", slot = "core.plate", name = "Fine", tier = 1, preview = own }
+				)
+			)
+			assert.is_nil(
+				env.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Cover", category = "Trackers" })
+			)
+			assert.is_nil(
+				env.goods:RegisterGood(
+					"Hunts",
+					{ id = "hunts.cover.plain", slot = "hunts.cover", name = "Plain", default = true }
+				)
+			)
+
+			local stage = {}
+			env.goods:PreviewOf("core.plate.plain")(stage)
+			assert.are.equal("core.plate.plain", stage.drawn)
+			assert.are.equal(own, env.goods:PreviewOf("core.plate.fine"))
+			assert.is_nil(env.goods:PreviewOf("hunts.cover.plain"))
+			assert.is_nil(env.goods:PreviewOf("nobody.nothing"))
+		end)
+	end)
+
+	describe("registering an earnedCount, a fallbackTier and a fallbackFrom (SHOP-R23, SHOP-R36)", function()
+		local function register(good)
+			local env = newGoods()
+			env.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Cover", category = "Trackers" })
+			local base = { id = "hunts.cover.gold", slot = "hunts.cover", name = "Gold" }
+			for key, value in pairs(good) do
+				base[key] = value
+			end
+			return env.goods:RegisterGood("Hunts", base), env
+		end
+		local earned = function()
+			return false
+		end
+
+		it("takes an earnedCount function on an earned good, and caches nothing of it", function()
+			local problem, env = register({
+				isEarned = earned,
+				earnedCount = function()
+					return 1, 2
+				end,
+			})
+
+			assert.is_nil(problem)
+			assert.is_nil(env.db.global.goods["hunts.cover.gold"].earnedCount)
+		end)
+
+		it("refuses an earnedCount that isn't a function, or is on a good that isn't earned", function()
+			assert.matches(
+				"earnedCount must be a function, on an earned good",
+				register({ isEarned = earned, earnedCount = 5 })
+			)
+			assert.matches(
+				"earnedCount must be a function, on an earned good",
+				register({ tier = 1, earnedCount = function() end })
+			)
+		end)
+
+		it("takes both fallback fields on an earned good, and caches them", function()
+			local problem, env = register({ isEarned = earned, fallbackTier = 4, fallbackFrom = 1800000000 })
+
+			assert.is_nil(problem)
+			assert.are.same({ 4, 1800000000 }, {
+				env.db.global.goods["hunts.cover.gold"].fallbackTier,
+				env.db.global.goods["hunts.cover.gold"].fallbackFrom,
+			})
+		end)
+
+		it(
+			"refuses a fallback on a good that isn't earned, one field without the other and a bad tier or time",
+			function()
+				assert.matches("are for an earned good", register({ tier = 1, fallbackTier = 4, fallbackFrom = 1 }))
+				assert.matches(
+					"needs both fallbackTier and fallbackFrom",
+					register({ isEarned = earned, fallbackTier = 4 })
+				)
+				assert.matches(
+					"needs both fallbackTier and fallbackFrom",
+					register({ isEarned = earned, fallbackFrom = 1 })
+				)
+				assert.matches(
+					"fallbackTier must be 1 to 6",
+					register({ isEarned = earned, fallbackTier = 7, fallbackFrom = 1 })
+				)
+				assert.matches(
+					"fallbackFrom must be a server time",
+					register({ isEarned = earned, fallbackTier = 4, fallbackFrom = "soon" })
+				)
+			end
+		)
 	end)
 end)

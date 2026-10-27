@@ -16,6 +16,7 @@ ns.MODULE_ROSTER = { "Ledger", "Hunts", "Stats", "TackleBoard", "QoL" }
 ---@field views? { id: string, label: string|(fun():string), open: fun() }[]   -- compartment menu views
 ---@field menu? { label: string|(fun():string), onClick: fun() }[]             -- extra compartment entries
 ---@field slash? { name: string, fn: fun(args: string), help: string }[]     -- /pagle <name>
+---@field collection? fun(goodID?: string)  -- opens its view of every look (CORE-R45): the Ledger's Collection
 ---@field guideBlurb? string    -- its line on the Field guide's What's in the box page (ONB-R91)
 
 --- A roster entry's state, as the Settings status list shows it (CORE-R41).
@@ -135,6 +136,11 @@ function Registry:Problem(def)
 	end
 	if type(def.order) ~= "number" then
 		return ("Pagle.RegisterModule: %s's def has no order"):format(name)
+	end
+	if def.collection ~= nil and type(def.collection) ~= "function" then
+		return ("Pagle.RegisterModule: %s's def.collection is a function, which opens its view of every look"):format(
+			name
+		)
 	end
 	if def.guideBlurb ~= nil and (type(def.guideBlurb) ~= "string" or def.guideBlurb == "") then
 		return ("Pagle.RegisterModule: %s's def.guideBlurb is a string, its line in the Field guide"):format(name)

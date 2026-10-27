@@ -741,6 +741,42 @@ describe("the second round's earned goods", function()
 			assert.are.same({ "<20> of <20> fish", "The sampler's 20 fish" }, { goods[7].earnedText() })
 		end)
 
+		it(
+			"give every counted good an earnedCount of its count and its mark, for the Collection's ink bar (SHOP-R36)",
+			function()
+				local goods = register({})
+				counts["ledger.toaststyle.glass"], counts["ledger.binding.logbook"], counts["ledger.toaststyle.crier"] =
+					7, 12, 40
+
+				assert.are.same({ 7, 12 }, { goods[1].earnedCount() })
+				assert.are.same({ 12, 25 }, { goods[19].earnedCount() })
+				assert.are.same({ 40, 100 }, { goods[8].earnedCount() })
+				for _, registered in ipairs(goods) do
+					assert.is_function(registered.earnedCount)
+				end
+				local needs, marks = {}, {}
+				for i, counted in ipairs(ns.COUNTED_GOODS) do
+					counts[counted.id] = 0
+					local _, need = goods[i].earnedCount()
+					needs[i], marks[i] = need, counted.mark
+				end
+				assert.are.equal(26, #needs)
+				assert.are.same(marks, needs)
+			end
+		)
+
+		it(
+			"hold the count at the mark, as the tag does, and give nothing while the projection updates (SHOP-R36)",
+			function()
+				local goods = register({})
+				counts["ledger.toaststyle.glass"] = 40
+				assert.are.same({ 12, 12 }, { goods[1].earnedCount() })
+
+				counts = nil
+				assert.are.same({}, { goods[1].earnedCount() })
+			end
+		)
+
 		it("keep the tag they gave last while the projection updates, the plain text before any", function()
 			local goods = register({})
 			counts = nil

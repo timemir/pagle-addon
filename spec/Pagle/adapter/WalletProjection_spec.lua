@@ -41,7 +41,11 @@ local function listen(loaded)
 end
 
 -- What the wallet projection stores after the purchases above.
-local BOTH = { spent = 550, purchased = { [VELVET] = true, [SILK] = true } }
+local BOTH = {
+	spent = 550,
+	purchased = { [VELVET] = true, [SILK] = true },
+	ownedAt = { [VELVET] = SERVER_TIME - 3000, [SILK] = SERVER_TIME - 2000 },
+}
 
 describe("the wallet projection", function()
 	it(
