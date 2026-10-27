@@ -1676,19 +1676,26 @@ describe("The Curio crate in the window", function()
 		return -y
 	end
 
-	-- The crate's odds on the stage as shown: "<name> <chance>", with " (struck)" for one struck through.
+	-- The crate's odds on the stage as shown: "<name> | <goods left or payback> | <chance>".
 	local function oddsShown(stage)
 		local lines = {}
 		for _, line in ipairs(stage.odds.lines) do
 			if line:IsShown() then
-				lines[#lines + 1] = ("%s %s%s"):format(
+				lines[#lines + 1] = ("%s | %s | %s"):format(
 					line.label:GetText(),
-					line.chance:GetText(),
-					line.strike:IsShown() and " (struck)" or ""
+					line.detail:GetText(),
+					line.chance:GetText()
 				)
 			end
 		end
 		return lines
+	end
+
+	-- Every pool good bought, at 0.
+	local function ownAll(loaded)
+		for _, row in ipairs(loaded.ns.CRATE_POOL) do
+			loaded.ns.RecordPurchase(row.id, 0)
+		end
 	end
 
 	it(
@@ -1704,7 +1711,7 @@ describe("The Curio crate in the window", function()
 					frame.chips[i]:Click()
 					local line = crateLine(loaded)
 					assert.is_true(line:IsShown(), frame.chips[i].label:GetText())
-					assert.are.same({ "Curio crate", "3,000", 0 }, {
+					assert.are.same({ "Curio crate", "1,500", 0 }, {
 						line.label:GetText(),
 						line.price.amount:GetText(),
 						topOf(line),
@@ -1719,37 +1726,82 @@ describe("The Curio crate in the window", function()
 		end
 	)
 
-	it("shows its odds, struck through once owned, and its pity on the stage when picked (SHOP-R54)", function()
-		local loaded, handles = shopCore()
-		handles.Ledger:ReportCoinsEarned(3500)
-		loaded.env.Pagle.OpenShop()
+	it(
+		"shows each crate tier's odds, its goods left or payback, and the pity on the stage when picked (SHOP-R54)",
+		function()
+			local loaded, handles = shopCore()
+			handles.Ledger:ReportCoinsEarned(3500)
+			loaded.env.Pagle.OpenShop()
 
-		crateLine(loaded):Click()
+			crateLine(loaded):Click()
 
-		local stage = shopFrame(loaded).stage
-		assert.are.equal("Curio crate", stage.name:GetText())
-		assert.are.same(
-			{ "Prize Foil 14%", STORM_NAME .. " 29%", "Shagreen and Bone 29%", "Arcane Sigil 29%" },
-			oddsShown(stage)
-		)
-		assert.are.same(
-			{ true, "A crate-only look within 8 more crates" },
-			{ stage.pity:IsShown(), stage.pity:GetText() }
-		)
-		assert.is_true(stage.buy:IsEnabled())
-		assert.is_true(crateLine(loaded).selectedMark:IsShown())
+			local stage = shopFrame(loaded).stage
+			assert.are.equal("Curio crate", stage.name:GetText())
+			assert.are.same({
+				"Plain | 28 left | 40%",
+				"Fine | 35 left | 26%",
+				"Lively | 27 left | 16%",
+				"Showpiece | 9 left | 10%",
+				"Marvel | 2 left | 5%",
+				"Heirloom | pays back 1,500 | 2.5%",
+				"Curio | 1 left | 0.5%",
+			}, oddsShown(stage))
+			assert.are.same({ true, "A Curio within 100 more crates" }, { stage.pity:IsShown(), stage.pity:GetText() })
+			assert.is_false(stage.description:IsShown() and stage.description:GetText() ~= "")
+			assert.is_true(stage.buy:IsEnabled())
+			assert.is_true(crateLine(loaded).selectedMark:IsShown())
+			local first, last = stage.odds.lines[1], stage.odds.lines[7]
+			assert.are.same({ 0xe9, 0xe6, 0xdf }, {
+				math.floor(first.pip.color[1] * 255 + 0.5),
+				math.floor(first.pip.color[2] * 255 + 0.5),
+				math.floor(first.pip.color[3] * 255 + 0.5),
+			})
+			assert.are.equal(0xff, math.floor(last.pip.color[1] * 255 + 0.5))
 
-		loaded.ns.RecordPurchase("core.toaststyle.storm", 0)
-		loaded.env.Pagle.OpenShop("core.crate")
-		assert.are.same(
-			{ "Prize Foil 20%", STORM_NAME .. "  (struck)", "Shagreen and Bone 40%", "Arcane Sigil 40%" },
-			oddsShown(shopFrame(loaded).stage)
-		)
-	end)
+			for _, row in ipairs(loaded.ns.CRATE_POOL) do
+				if row.tier == 5 then
+					loaded.ns.RecordPurchase(row.id, 0)
+				end
+			end
+			loaded.env.Pagle.OpenShop("core.crate")
+			assert.are.equal("Marvel | pays back 1,500 | 5%", oddsShown(shopFrame(loaded).stage)[5])
+		end
+	)
 
 	it(
-		'opens one from its bill, "Open a Curio crate?", and shows the good it gave on the stage (SHOP-R54,'
-			.. " SHOP-R55)",
+		"leaves the list once every pool good is owned, showing the list's first good, and returns when the pool grows (SHOP-R54)",
+		function()
+			local loaded, handles = shopCore()
+			handles.Ledger:ReportCoinsEarned(3500)
+			loaded.env.Pagle.OpenShop("core.crate")
+			local frame = shopFrame(loaded)
+			assert.are.equal("Curio crate", frame.stage.name:GetText())
+
+			ownAll(loaded)
+			loaded.env.Pagle.OpenShop() -- a redraw: the wallet's hand-over comes after the balance's event
+
+			assert.is_false(crateLine(loaded):IsShown())
+			assert.are.equal("Torn Page", frame.stage.name:GetText(), "the list's first good")
+			assert.are.equal(0, topOf(frame.lines[1]), "the first slot's header at the top")
+			loaded.env.Pagle.OpenShop("core.crate")
+			assert(frame.stage.hint:IsShown(), "OpenShop on the crate selects nothing now")
+			assert.are.equal(nil, frame.stage.buy:IsShown() and "buy" or nil)
+
+			local pool = loaded.ns.CRATE_POOL
+			local grown = { unpack(pool) }
+			grown[#grown + 1] = { id = "core.binding.later", tier = 1, kind = "binding", since = 1 }
+			loaded.ns.CRATE_POOL = grown
+			loaded.env.Pagle.OpenShop("core.crate")
+
+			assert.is_true(crateLine(loaded):IsShown())
+			assert.are.equal("Curio crate", frame.stage.name:GetText())
+			assert.are.equal("Plain | 1 left | 40%", oddsShown(frame.stage)[1])
+			loaded.ns.CRATE_POOL = pool
+		end
+	)
+
+	it(
+		'opens one from its bill, "Open a Curio crate?", with no "Use it now", and ends on its result (SHOP-R54, SHOP-R55)',
 		function()
 			local loaded, handles = shopCore()
 			handles.Ledger:ReportCoinsEarned(3500)
@@ -1760,85 +1812,108 @@ describe("The Curio crate in the window", function()
 			assert.are.same({
 				"Open a Curio crate?",
 				"One look you don't own yet, by chance; the chances are on the crate.",
-				"3,000",
-				"500",
+				"1,500",
+				"2,000",
 				true,
 			}, { shown.question, shown.fine, shown.price[2], shown.left[2], shown.shown })
+			assert.is_false(bill.useNow:IsShown())
 
 			bill.buy:Click()
 
-			local given = loaded.ns.walletSnapshot.crates[1]
-			assert.is_true(loaded.env.Pagle.IsOwned(given)) -- bought at the click
+			local result = loaded.ns.walletSnapshot.crates[1]
+			assert.is_true(type(result) == "string" or type(result) == "number")
+			if type(result) == "string" then
+				assert.is_true(loaded.env.Pagle.IsOwned(result)) -- bought at the click
+			end
 			play(loaded) -- the crate opens on the stage first
 			assert.is_false(bill:IsShown())
-			assert.are.equal("500", shopFrame(loaded).purse.balance:GetText())
-			local stage = shopFrame(loaded).stage
-			if not loaded.ns.goods:Good(given) then -- a pool good no slot registers yet (SHOP-R50)
-				assert.are.equal("Curio crate", stage.name:GetText())
-				assert.is_true(stage.caption:IsShown())
-			else
-				assert.are.equal(loaded.ns.goods:Good(given).name, stage.name:GetText())
-				assert.is_true(rowOf(loaded, given).selectedMark:IsShown())
-			end
+			assert.is_true(shopFrame(loaded).result:IsShown())
 
-			-- The next bill for a good says what it always said.
+			-- The next bill for a good says what it always said, and has its box.
+			shopFrame(loaded).result.back:Click()
 			handles.Ledger:ReportCoinsEarned(3800)
 			local again = billShown(askToBuy(loaded, "core.toaststyle.ripple"))
 			assert.are.same({ "Buy Ripple?", "Looks are yours for good." }, { again.question, again.fine })
+			assert.is_true(shopFrame(loaded).bill.useNow:IsShown())
 		end
 	)
 end)
 
 describe("The Curio crate opening (SHOP-R55, wallet-and-shop.md › UI: Motion and sound)", function()
-	-- Core with 3,500 Coins and Storm Front and Shagreen and Bone owned, so the next crate can only give Prize Foil;
-	-- the shop open on the crate's bill, dropped in. Returns the loaded addon and the bill.
-	local function foilCrate(motionOff)
+	local FOIL = "core.toaststyle.foil"
+
+	-- Core with 3,500 Coins and the next crate rigged: `good` has it roll Curio, giving Prize Foil (the only good in
+	-- its pool); otherwise tier 1, which has no good, so it pays back 250. The shop open on the crate's bill, dropped
+	-- in. Returns the loaded addon and the bill.
+	local function crate(good, motionOff)
 		local loaded, handles = shopCore()
 		if motionOff then
 			loaded.ns.db.profile.announcements.motion = false
 		end
 		handles.Ledger:ReportCoinsEarned(3500)
-		loaded.ns.RecordPurchase("core.toaststyle.storm", 0)
-		loaded.ns.RecordPurchase("core.binding.shagreenbone", 0)
+		loaded.ns.SizeHash = function()
+			return good and 4294967295 or 0
+		end
+		loaded.ns.CRATE_POOL = { { id = FOIL, tier = "curio", kind = "toaststyle" } }
 		local bill = askToBuy(loaded, "core.crate")
 		play(loaded, 0.5)
 		return loaded, bill
 	end
 
-	-- The end state SHOP-R55 asks for: Prize Foil bought, in use (Use it now was ticked) and selected on the stage, its
-	-- row in use and picked, the purse paid, the bill and every piece of the opening gone.
-	local function assertOpened(loaded)
+	-- The result of a crate that gave Prize Foil, as SHOP-R55 asks: the good bought and owned, selected on the stage
+	-- and its row picked, the purse paid, the bill and every piece of the opening gone, and the card over the case with
+	-- "Use it now" and "Back to the shop".
+	local function assertGoodResult(loaded)
 		local frame = shopFrame(loaded)
-		assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.foil"))
+		local result = frame.result
+		assert.is_true(loaded.env.Pagle.IsOwned(FOIL))
 		assert.is_false(frame.bill:IsShown())
-		assert.are.equal("500", frame.purse.balance:GetText())
+		assert.are.equal("2,000", frame.purse.balance:GetText())
+		assert.is_true(result:IsShown())
+		assert.are.same({ "Prize Foil", "Curio" }, { result.title:GetText(), result.tier:GetText() })
+		assert.are.same({ true, true }, { result.use:IsShown(), result.back:IsShown() })
+		assert.are.same(
+			{ "Use it now", "Back to the shop" },
+			{ result.use.label:GetText(), result.back.label:GetText() }
+		)
+		assert.is_false(result.line:IsShown())
 		assert.are.equal("Prize Foil", frame.stage.name:GetText())
 		assert.are.equal(1, frame.stage.name:GetAlpha())
-		assert.are.equal("IN USE", frame.stage.tags:GetText())
-		assert.are.equal(1, frame.stage.tags:GetAlpha())
-		assert.is_false(frame.stage.buy:IsShown())
-		local row = rowOf(loaded, "core.toaststyle.foil")
-		assert.are.equal("IN USE", row.tag:GetText())
-		assert.is_true(row.selectedMark:IsShown())
-		assert.is_false(frame.crateLine.selectedMark:IsShown())
-		assert.is_true(frame.stage.previews["core.toaststyle.foil"]:IsShown())
-		assert.are.equal(1, frame.stage.previews["core.toaststyle.foil"]:GetAlpha())
+		assert.is_true(rowOf(loaded, FOIL).selectedMark:IsShown())
+		assert(not frame.crateLine:IsShown(), "Prize Foil was the pool's last good: the crate has left the list")
 		assert.is_false(frame.opening ~= nil and frame.opening:IsShown())
 		assert.is_false(frame.catcher ~= nil and frame.catcher:IsShown())
 		assert.is_nil(next(loaded.ns.announcementFrames or {})) -- no Announcement (SHOP-R55)
 	end
 
+	-- The result of a crate that paid 250 back, as SHOP-R55 asks: the coin card, the purse paid and counted back, the
+	-- crate still selected, and "Back to the shop" alone.
+	local function assertPaybackResult(loaded)
+		local frame = shopFrame(loaded)
+		local result = frame.result
+		assert.is_false(loaded.env.Pagle.IsOwned(FOIL))
+		assert.is_true(result:IsShown())
+		assert.are.same({ "+250 Coins", "Plain" }, { result.title:GetText(), result.tier:GetText() })
+		assert.are.same({ false, true }, { result.use:IsShown(), result.back:IsShown() })
+		assert.are.equal("Back to the shop", result.back.label:GetText())
+		assert.are.equal(loaded.ns.CRATE_COIN_ICON, result.bezel.Icon:GetTexture())
+		assert.are.equal("Curio crate", frame.stage.name:GetText())
+		assert.is_true(frame.crateLine.selectedMark:IsShown())
+		assert.is_false(frame.opening ~= nil and frame.opening:IsShown())
+		assert.is_false(frame.catcher ~= nil and frame.catcher:IsShown())
+	end
+
 	it(
 		"opens the crate on the stage: the bill lifts away, the lid lifts, straw puffs out, the good's medallion rises"
-			.. " to the middle of the well growing from 34 to 64, then the good comes onto the stage and its row in",
+			.. " to the middle of the well growing from 34 to 64, then the good comes onto the stage, and its result follows",
 		function()
-			local loaded, bill = foilCrate()
+			local loaded, bill = crate(true)
 			local frame = shopFrame(loaded)
 			local stage = frame.stage
 
 			bill.buy:Click()
 
-			assert.is_true(loaded.env.Pagle.IsOwned("core.toaststyle.foil")) -- bought at the click
+			assert.is_true(loaded.env.Pagle.IsOwned(FOIL)) -- bought at the click
 			assert.are.same({ "5274 SFX", "865 SFX" }, shopSounds(loaded))
 			local opening = frame.opening
 			assert.is_true(opening:IsShown())
@@ -1848,6 +1923,7 @@ describe("The Curio crate opening (SHOP-R55, wallet-and-shop.md › UI: Motion a
 			assert.are.equal("3,500", frame.purse.balance:GetText())
 			assert.are.same({ 0, -66 }, offset(opening.lid)) -- on the crate, in the middle of the well
 			assert.are.equal(1, opening.lid:GetAlpha())
+			assert.is_false(frame.result ~= nil and frame.result:IsShown())
 
 			play(loaded, 0.3) -- 0.3 s: the bill gone, the lid lifting off the crate, set down in the well
 			assert.is_false(bill:IsShown())
@@ -1868,73 +1944,189 @@ describe("The Curio crate opening (SHOP-R55, wallet-and-shop.md › UI: Motion a
 			assert.is_true(scale > 34 / 64 and scale < 1)
 			local y = offset(medal)[2] * scale -- its anchor's offset is in its own scaled units
 			assert(y > offset(opening.crate)[2] and y < -66, "between the crate and the middle of the well")
-			assert.are.equal(loaded.ns.goods:Good("core.toaststyle.foil").icon, medal.Icon:GetTexture())
+			assert.are.equal(loaded.ns.goods:Good(FOIL).icon, medal.Icon:GetTexture())
 
-			play(loaded, 0.5) -- 1.2 s: the medallion in the middle at 64, the good on the stage, its row coming in
+			play(loaded, 0.5) -- 1.2 s: the medallion in the middle at 64, the good on the stage
 			assert.are.equal(1, medal:GetScale())
 			assert.are.same({ 0, -66 }, offset(medal))
 			assert.are.equal("Prize Foil", stage.name:GetText())
 			assert.is_true(stage.name:GetAlpha() < 1)
-			assert.are.equal("IN USE", rowOf(loaded, "core.toaststyle.foil").tag:GetText())
 			assert.are.same({ "5274 SFX", "865 SFX", "120 SFX", "1204 SFX" }, shopSounds(loaded))
+			assert(not (frame.result ~= nil and frame.result:IsShown()), "the result waits for the motion's end")
 
 			play(loaded)
 
-			assertOpened(loaded)
+			assertGoodResult(loaded)
 			assert.are.same({ "5274 SFX", "865 SFX", "120 SFX", "1204 SFX" }, shopSounds(loaded))
 		end
 	)
 
-	it("with Animations off, shows the good the crate gave at once, with only Buy's sound (SET-R30)", function()
-		local loaded, bill = foilCrate(true)
+	it(
+		'ends a good on "Use it now", which puts it in use and closes the card onto the shop with it selected',
+		function()
+			local loaded, bill = crate(true)
+			bill.buy:Click()
+			play(loaded)
+
+			shopFrame(loaded).result.use:Click()
+
+			local frame = shopFrame(loaded)
+			assert.is_false(frame.result:IsShown())
+			assert.is_true(frame:IsShown())
+			assert.are.equal(FOIL, loaded.env.Pagle.GetEquipped("core.toaststyle"))
+			assert.are.equal("Prize Foil", frame.stage.name:GetText())
+			assert.are.equal("IN USE", frame.stage.tags:GetText())
+			assert.are.equal("IN USE", rowOf(loaded, FOIL).tag:GetText())
+			assert.is_true(rowOf(loaded, FOIL).selectedMark:IsShown())
+		end
+	)
+
+	it('ends a good on "Back to the shop", which leaves it owned and selected, not in use', function()
+		local loaded, bill = crate(true)
+		bill.buy:Click()
+		play(loaded)
+
+		shopFrame(loaded).result.back:Click()
+
+		local frame = shopFrame(loaded)
+		assert.is_false(frame.result:IsShown())
+		assert.is_true(frame:IsShown())
+		assert.are_not.equal(FOIL, loaded.env.Pagle.GetEquipped("core.toaststyle"))
+		assert.are.equal("Prize Foil", frame.stage.name:GetText())
+		assert.are.equal("OWNED", frame.stage.tags:GetText())
+		assert.is_true(frame.stage.use:IsShown())
+		assert.is_true(rowOf(loaded, FOIL).selectedMark:IsShown())
+	end)
+
+	it(
+		"with Animations off, shows the good's result at once, with the same buttons and only Buy's sound (SET-R30)",
+		function()
+			local loaded, bill = crate(true, true)
+
+			bill.buy:Click()
+
+			assertGoodResult(loaded)
+			assert.are.same({ "5274 SFX", "865 SFX" }, shopSounds(loaded))
+		end
+	)
+
+	it(
+		'ends a payback on the coin card: "+250 Coins", the tier\'s name, the purse counting up, "Back to the shop" alone (SHOP-R51, SHOP-R55)',
+		function()
+			local loaded, bill = crate(false)
+			local frame = shopFrame(loaded)
+
+			bill.buy:Click()
+
+			assert.are.same({ 250 }, loaded.ns.walletSnapshot.crates)
+			assert.are.equal("3,500", frame.purse.balance:GetText())
+			while not (frame.result and frame.result:IsShown()) do
+				play(loaded, 0.05) -- the motion's end: the card comes, the purse back at the crate's price
+			end
+			local atStart = tonumber((frame.purse.balance:GetText():gsub(",", "")))
+			assert(atStart >= 2000 and atStart < 2050, "counting up from 2,000: " .. atStart)
+			play(loaded, 0.45)
+			local half = tonumber((frame.purse.balance:GetText():gsub(",", "")))
+			assert(half > atStart and half < 2250, "counting up by 250: " .. half)
+			play(loaded)
+
+			assertPaybackResult(loaded)
+			assert.are.equal("2,250", frame.purse.balance:GetText())
+			frame.result.back:Click()
+			assert.is_false(frame.result:IsShown())
+			assert.are.equal("Curio crate", frame.stage.name:GetText(), "the crate stays selected")
+			assert.are.equal("2,250", frame.purse.balance:GetText())
+		end
+	)
+
+	it("with Animations off, ends a payback on its card at once, the purse already at 2,250 (SET-R30)", function()
+		local loaded, bill = crate(false, true)
 
 		bill.buy:Click()
 
-		assertOpened(loaded)
+		assertPaybackResult(loaded)
+		assert.are.equal("2,250", shopFrame(loaded).purse.balance:GetText())
 		assert.are.same({ "5274 SFX", "865 SFX" }, shopSounds(loaded))
 	end)
 
-	it("skips to its end on a click anywhere on the case, and plays nothing after", function()
-		local loaded, bill = foilCrate()
+	it("skips to its end on a click anywhere on the case, then shows the result, and plays nothing after", function()
+		local loaded, bill = crate(true)
 		bill.buy:Click()
 		play(loaded, 0.4)
 
 		local catcher = shopFrame(loaded).catcher
 		catcher.scripts.OnMouseDown(catcher, "LeftButton")
 
-		assertOpened(loaded)
+		assertGoodResult(loaded)
 		play(loaded)
-		assertOpened(loaded)
+		assertGoodResult(loaded)
 		assert.are.same({ "5274 SFX", "865 SFX", "120 SFX" }, shopSounds(loaded))
 	end)
 
-	it("skips to its end on Esc, which leaves the shop open", function()
-		local loaded, bill = foilCrate()
+	it("skips to its end on Esc, which leaves the shop open, and Esc on the card is Back to the shop", function()
+		local loaded, bill = crate(true)
 		bill.buy:Click()
 		play(loaded, 0.6)
 
 		loaded.client.pressKey("ESCAPE")
 
 		assert.is_true(shopFrame(loaded):IsShown())
-		assertOpened(loaded)
+		assertGoodResult(loaded)
 		play(loaded)
-		assertOpened(loaded)
+		assertGoodResult(loaded)
+
+		loaded.client.pressKey("ESCAPE")
+
+		assert.is_true(shopFrame(loaded):IsShown())
+		assert.is_false(shopFrame(loaded).result:IsShown())
+		assert.are.equal("Prize Foil", shopFrame(loaded).stage.name:GetText())
 	end)
 
-	it("settles when the shop closes on it: nothing moves after, and it opens again on the good", function()
-		local loaded, bill = foilCrate()
-		bill.buy:Click()
-		play(loaded, 0.6)
-		local opening = shopFrame(loaded).opening
+	it(
+		"settles when the shop closes on it: nothing moves after, no card waits, and it opens again on the good",
+		function()
+			local loaded, bill = crate(true)
+			bill.buy:Click()
+			play(loaded, 0.6)
+			local opening = shopFrame(loaded).opening
 
-		shopFrame(loaded).CloseButton:Click()
+			shopFrame(loaded).CloseButton:Click()
 
-		assert.is_false(opening:IsShown())
-		local sounds = shopSounds(loaded)
-		play(loaded)
-		assert.are.same(sounds, shopSounds(loaded)) -- no beat after it closed
-		assert.is_false(opening:IsShown())
-		loaded.env.Pagle.OpenShop()
-		assertOpened(loaded)
-	end)
+			assert.is_false(opening:IsShown())
+			local sounds = shopSounds(loaded)
+			play(loaded)
+			assert.are.same(sounds, shopSounds(loaded)) -- no beat after it closed
+			assert.is_false(opening:IsShown())
+			loaded.env.Pagle.OpenShop()
+			assert.is_false(shopFrame(loaded).result ~= nil and shopFrame(loaded).result:IsShown())
+			assert.are.equal("Prize Foil", shopFrame(loaded).stage.name:GetText())
+		end
+	)
+
+	it(
+		'shows a good no Module has registered as "A new look", with its line, and leaves the crate selected (SHOP-R50)',
+		function()
+			local loaded, handles = shopCore()
+			handles.Ledger:ReportCoinsEarned(3500)
+			loaded.ns.SizeHash = function()
+				return 0
+			end
+			loaded.ns.CRATE_POOL = { { id = "stats.trackerframe.greenbar", tier = 1, kind = "trackerframe" } }
+			loaded.ns.db.profile.announcements.motion = false
+
+			askToBuy(loaded, "core.crate").buy:Click()
+
+			local frame = shopFrame(loaded)
+			assert.are.same({ "A new look", "Plain" }, { frame.result.title:GetText(), frame.result.tier:GetText() })
+			assert.are.same(
+				{ true, "It shows here once its Module is on." },
+				{ frame.result.line:IsShown(), frame.result.line:GetText() }
+			)
+			assert.is_false(frame.result.use:IsShown())
+			frame.result.back:Click()
+			assert(not frame.crateLine:IsShown(), "the pool is empty: the crate has left")
+			assert.are.equal("Torn Page", frame.stage.name:GetText())
+			assert.is_true(loaded.env.Pagle.IsOwned("stats.trackerframe.greenbar"))
+		end
+	)
 end)

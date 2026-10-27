@@ -253,7 +253,7 @@ describe("scripts/rewrite-bindings.lua (ADR 0015, #353)", function()
 				["core.binding"] = "ledger.binding.level10",
 			}, m4.profiles.Default.appearance)
 			assert.is_nil(m4.global.goods["ledger.binding.field"])
-			assert.are.equal(1, m4.global.projections.wallet.rulesVersion) -- its log has no old ID
+			assert.are.equal(2, m4.global.projections.wallet.rulesVersion) -- its log has no old ID
 			assert.are.equal(
 				before["./M4#1/SavedVariables/Pagle.lua"]:match("^(.-)PagleDB = "),
 				after["./M4#1/SavedVariables/Pagle.lua"]:match("^(.-)PagleDB = ")
