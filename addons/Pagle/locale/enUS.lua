@@ -130,7 +130,7 @@ ns.L = {
 	SETTINGS_EVERY_CATCH = "Show every catch",
 	SETTINGS_MOTION = "Animations",
 	SETTINGS_MOTION_TOOLTIP = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles.",
-	SETTINGS_EVERY_CATCH_TOOLTIP = "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing.",
+	SETTINGS_EVERY_CATCH_TOOLTIP = "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which shows nothing.",
 	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the Curio Shop section's
 	-- header, row label and button caption. Its category headers are SHOP_CATEGORIES.
 	SETTINGS_LOOK_PARAGRAPH = "Looks you own. Pick one here or with Use in the Curio Shop; both change the same thing.",
@@ -155,11 +155,15 @@ ns.L = {
 	LEGEND_CREST_UNWRITTEN = "Unwritten",
 	-- The toast listing the toast headlines held through combat (ANN-R36).
 	ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting",
-	-- The catch Nod (ANN-R13): a Catch's name, its Size band and its length; an item the client hasn't named yet.
-	CATCH_NOD = "%s · %s · %s",
-	-- A catch Nod naming its Catch's variety (VAR-R26): the Catch's name, the variety's name, the band and the length.
-	CATCH_NOD_VARIETY = "%s · %s · %s · %s",
-	CATCH_NOD_ITEM = "Item %d",
+	-- The catch toast (ANN-R13): its kicker, the Catch's Size band and its length, or "Caught" for a Catch with no size;
+	-- an item the client hasn't named yet.
+	CATCH_TOAST_KICKER = "%s · %s",
+	CATCH_TOAST_CAUGHT = "Caught",
+	CATCH_TOAST_ITEM = "Item %d",
+	-- The catch toast stepped down to a Nod (ANN-R31): the Catch's name, its Size band and its length.
+	CATCH_TOAST = "%s · %s · %s",
+	-- That Nod naming its Catch's variety (VAR-R26): the Catch's name, the variety's name, the band and the length.
+	CATCH_TOAST_VARIETY = "%s · %s · %s · %s",
 	-- A toast announcing a variety (VAR-R26): the line's first half before the gem and the variety's name, the fish's.
 	TOAST_VARIETY_BEFORE = "%s ·",
 	-- The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
@@ -563,8 +567,8 @@ ns.L = {
 	GUIDE_NOTES_AGAIN = "Pagle: margin notes will show again, once each.",
 	-- Core's Margin notes on first moments (ONB-R2, ONB-R3, ONB-R52), verbatim from the spec: each *term* is pencilled
 	-- in red (ns.RedPencil). core.toast's follows the moment's firstNote, if it has one (ONB-R53).
-	NOTE_NOD = "That’s a *Nod*: one quiet line for every Catch. It’s gone in three seconds, and it’s in your Ledger"
-		.. " for good.",
+	NOTE_NOD = "That’s a *Nod*: when Pagle’s had a lot to say lately, the small news steps down to one quiet line. It’s"
+		.. " gone in three seconds, and it’s in your Ledger for good.",
 	NOTE_TOAST = "The coin is *Pagle Coins*: earned by doing things, never bought, spent on looks in the Curio Shop.",
 	NOTE_SUMMARY = "You stepped away five minutes, so the Session closed. Everything it earned is here, *even what"
 		.. " never popped up*.",
@@ -699,16 +703,16 @@ ns.L = {
 	-- (the Lively preset's count and minutes); the presets' cards, Your own mix, and the note under them.
 	GUIDE_MOMENTS_TEXT = "Pagle tells you, in one of three sizes. The bigger the moment, the bigger the note.",
 	GUIDE_MOMENTS_SAMPLES = {
-		nod = { "A Nod", "Every Catch. One line, gone in 3 seconds." },
-		toast = { "A toast", "A new fish, a record, Coins earned." },
+		nod = { "A Nod", "When Pagle’s said a lot lately. One line, gone in 3 seconds." },
+		toast = { "A toast", "Every Catch, a new fish, a record, Coins earned." },
 		banner = { "A banner", "A new Angler Level, and the title that comes with it." },
 	},
 	GUIDE_MOMENTS_BUDGET = "At most %d pop-ups every %d minutes: past that, small ones step down to a Nod. Everything lands on the Session summary when you stop.",
 	-- The samples' catch, in place of /pagle dev preview's "(a /pagle dev preview)" line.
 	GUIDE_MOMENTS_SAMPLE_TEXT = "Oily Blackmouth",
 	GUIDE_PRESETS = {
-		lively = { "Lively", "Every Catch gets its Nod; toasts and banners with sound.", "as it comes" },
-		quieter = { "Quieter", "No Nod for ordinary Catches, and fewer pop-ups. The big moments still show." },
+		lively = { "Lively", "A toast for every Catch; banners too, with sound.", "as it comes" },
+		quieter = { "Quieter", "No toast for ordinary Catches, and fewer pop-ups. The big moments still show." },
 		cozy = { "Cozy", "Nothing pops up and nothing plays. It all waits for your Session summary." },
 	},
 	-- A preset card's pencilled line: its budget's count and minutes; Cozy's.

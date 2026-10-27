@@ -404,7 +404,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 **Core rules:**
 - ONB-R1–R3, ONB-R10–R14, ONB-R20–R27, ONB-R30, ONB-R31, ONB-R34, ONB-R35, ONB-R38, ONB-R40–R44, ONB-R50–R53, ONB-R55–R59, ONB-R60–R64, ONB-R70, ONB-R71, ONB-R80–R84, ONB-R90–R93, ONB-R100–R109 ([core/onboarding.md](core/onboarding.md))
 - CORE-R40 for Getting started and the Pagle menu section; CORE-R53–R56; CORE-R61 for `guide`; CORE-R70 for the First evening list's order
-- ANN-R31 for the default of 20 per 5 min; ANN-R38; ANN-R64; `PagleMoment.firstNote`
+- ANN-R31 for the default of 40 per 5 min; ANN-R38; ANN-R64; `PagleMoment.firstNote`
 
 **Module rules** (each Module builds its parts of onboarding's rules):
 - QoL: ONB-R32, ONB-R33 and the `qol.lure` note (ONB-R52)

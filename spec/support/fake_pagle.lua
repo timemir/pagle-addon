@@ -12,8 +12,8 @@
 --   fake.nextFrame()                                        -- the frame after: the Cast's moments are one Announcement
 --   fake.announcements[1].headline.title                    -- what Core would show (also .stamps, .more, .coins, .tickets)
 --
--- A Module raises moments only for what is worth one: an ordinary Catch gets Core's own catch Nod (ANN-R13), which
--- lands in fake.catchNods, so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
+-- A Module raises moments only for what is worth one: an ordinary Catch gets Core's own catch toast (ANN-R13), which
+-- lands in fake.catchToasts, so a Module spec playing an ordinary Cast expects fake.announcements to stay empty.
 --
 -- It is built on Core's real logic/: each FakePagle loads Pagle.toc's data/, locale/ and logic/ files (and the
 -- CallbackHandler bus) afresh, so what it validates, computes and refuses is what Core does. Core's projections,
@@ -137,12 +137,12 @@
 ---@field announcements PagleAnnouncement[] Each Announcement Core would hand the display, in order (ANN-R11): its
 --- headline, rung, stamps (at most 4), more ("+N"), coins and every moment, ranked. One per Cast, made on the frame
 --- after its moments were raised, or after the last projection finishes (ANN-R10); one per moment without a Cast.
---- Core's catch Nod is never here: it is in catchNods.
----@field catchNods PagleAnnouncement[] Each catch Nod Core would hand the display (ANN-R13): one per played caught
+--- Core's catch toast is never here: it is in catchToasts.
+---@field catchToasts PagleAnnouncement[] Each catch toast Core would hand the display (ANN-R13): one per played caught
 --- Cast for which no Module raised a moment, while `profile.announcements.everyCatch` is on, on the frame after.
---- Its headline's title is "{item name} · {band} · {length}", the name from `itemNames`, naming a variety only once
---- caught before its Cast (VAR-R27).
----@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch Nod and
+--- Its headline's title is "{band} · {length}" and its text the item's name, from `itemNames`; its `nodLine` is
+--- "{item name} · {band} · {length}", naming a variety only once caught before its Cast (VAR-R27).
+---@field itemNames table<integer, string> The names the fake's client has cached, by item ID, for the catch toast and
 --- the fish crests' fish (VAR-R12); a spec sets them. An item without one reads "Item {itemID}".
 ---@field itemArrived fun(itemID: integer) The client's GET_ITEM_INFO_RECEIVED for an item: renames its Species' fish
 --- crest from `itemNames` (SHOP-R26) when it had none at login.
@@ -825,19 +825,19 @@ end)
 
 -- Moments (ANN-R1–R4, ANN-R10–R12), on Core's wiring over fake.projections' seams: M:RaiseMoment validates and
 -- drops as Core does, and each Announcement Core would show lands in fake.announcements when fake.nextFrame runs the
--- frame after. A dropped moment's report is in fake.reported. Core's catch Nod (ANN-R13) runs on Core's wiring too,
--- naming items from fake.itemNames, and lands in fake.catchNods.
+-- frame after. A dropped moment's report is in fake.reported. Core's catch toast (ANN-R13) runs on Core's wiring too,
+-- naming items from fake.itemNames, and lands in fake.catchToasts.
 part(function(fake, _, ns, host)
 	fake.announcements = {}
-	fake.catchNods = {}
+	fake.catchToasts = {}
 	fake.itemNames = {}
 	local frame = {}
 	ns.WireMoments(host, function(announcement)
-		-- Core's own catch Nod (ANN-R13) goes apart, so a Module spec sees only what Modules raise.
-		local list = announcement.headline.catchNod and fake.catchNods or fake.announcements
+		-- Core's own catch toast (ANN-R13) goes apart, so a Module spec sees only what Modules raise.
+		local list = announcement.headline.catchToast and fake.catchToasts or fake.announcements
 		list[#list + 1] = announcement
 	end)
-	ns.WireCatchNods(host, function(itemID)
+	ns.WireCatchToasts(host, function(itemID)
 		return fake.itemNames[itemID]
 	end)
 

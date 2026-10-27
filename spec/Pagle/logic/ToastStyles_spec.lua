@@ -396,12 +396,14 @@ describe("a moment's art in a medallion", function()
 	)
 end)
 
-describe("a catch Nod's variety", function()
-	-- A catch Nod's headline naming a variety of `rarity` (VAR-R26), as Core raises it.
+describe("a stepped-down catch toast's variety", function()
+	-- A catch toast's headline naming a variety of `rarity` (VAR-R26), as Core raises it.
 	local function nod(rarity)
 		return {
-			catchNod = true,
-			title = "Firefin Snapper · Coral · Decent · 34.2 cm",
+			catchToast = true,
+			title = "Decent · 34.2 cm",
+			text = "Firefin Snapper",
+			nodLine = "Firefin Snapper · Coral · Decent · 34.2 cm",
 			variety = { name = "Coral", rarity = rarity, before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
 		}
 	end
@@ -412,7 +414,7 @@ describe("a catch Nod's variety", function()
 		function()
 			local looks = {}
 			for _, rarity in ipairs(ns.VARIETY_RARITIES) do
-				local look = ns.CatchNodVarietyLook(nod(rarity.key)) --[[@as PagleNodVarietyLook]]
+				local look = ns.CatchToastNodLook(nod(rarity.key)) --[[@as PagleNodVarietyLook]]
 				assert.are.same({ "Coral", "Firefin Snapper ·", "· Decent · 34.2 cm", rarity.color, rarity.ink }, {
 					look.name,
 					look.before,
@@ -424,20 +426,20 @@ describe("a catch Nod's variety", function()
 			end
 			assert.are.same({ { false, false }, { true, false }, { true, true }, { true, true } }, looks)
 			-- Common's ink is the parchment's own brown, so most catches stay calm (core/varieties.md › UI).
-			local common = ns.CatchNodVarietyLook(nod("common")) --[[@as PagleNodVarietyLook]]
+			local common = ns.CatchToastNodLook(nod("common")) --[[@as PagleNodVarietyLook]]
 			assert.are.same(ns.Rgb("6a5a44"), common.ink)
 		end
 	)
 
-	it("is nil for a headline that isn't a catch Nod naming a variety, or names an unknown rarity", function()
+	it("is nil for a headline that isn't a catch toast naming a variety, or names an unknown rarity", function()
 		local module = nod("rare")
-		module.catchNod = nil
+		module.catchToast = nil
 		local plain = nod("rare")
 		plain.variety = nil
 		assert.are.same({}, {
-			ns.CatchNodVarietyLook(module),
-			ns.CatchNodVarietyLook(plain),
-			ns.CatchNodVarietyLook(nod("mythic")),
+			ns.CatchToastNodLook(module),
+			ns.CatchToastNodLook(plain),
+			ns.CatchToastNodLook(nod("mythic")),
 		})
 	end)
 end)
@@ -502,7 +504,8 @@ describe("a toast's variety (#424, VAR-R25, VAR-R26)", function()
 	)
 
 	it(
-		"tints the ring and gleams as the catch Nod's variety does: Common's ring plain, a gleam for Rare and Epic",
+		"tints the ring and gleams as the stepped-down catch toast's variety does: Common's ring plain, a gleam for Rare"
+			.. " and Epic",
 		function()
 			local seen = {}
 			for _, rarity in ipairs(ns.VARIETY_RARITIES) do
@@ -553,22 +556,59 @@ describe("a toast's variety (#424, VAR-R25, VAR-R26)", function()
 		assert.are.equal("Coral", found.name)
 	end)
 
+	-- Core's catch toast of the fish (ANN-R13) naming a variety of `rarity` caught before (VAR-R26).
+	local function catchToast(rarity)
+		return raised("toast.low", "catch", 100, {
+			catchToast = true,
+			title = "Decent · 34.2 cm",
+			text = "Raw Bristle Whisker Catfish",
+			icon = FISH,
+			art = ART,
+			variety = {
+				name = "Coral",
+				rarity = rarity,
+				before = "Raw Bristle Whisker Catfish ·",
+				after = "· Decent · 34.2 cm",
+			},
+		})
+	end
+
 	it(
-		"is nil with no variety moment, for a banner, a Nod, a digest, an unknown rarity and the catch Nod's own",
+		"draws the catch toast's variety as VAR-R28 does, its text line the fish's name then the gem and the name, and"
+			.. " no stamp (#437)",
 		function()
-			local nodLine = raised("nod", "catch", 100, {
-				catchNod = true,
+			local seen = {}
+			for _, rarity in ipairs(ns.VARIETY_RARITIES) do
+				local found = look(catchToast(rarity.key)) --[[@as PagleToastVarietyLook]]
+				assert.are.same(
+					{ "Coral", "Raw Bristle Whisker Catfish ·", ART, nil, rarity.color, rarity.ink },
+					{ found.name, found.before, found.art, found.stamp, found.color, found.ink }
+				)
+				seen[#seen + 1] = { found.ring ~= nil, found.gleam }
+			end
+
+			assert.are.same({ { false, false }, { true, false }, { true, true }, { true, true } }, seen)
+		end
+	)
+
+	it(
+		"is nil with no variety moment, for a banner, a Nod, a digest, an unknown rarity and a catch toast without one",
+		function()
+			local nod = raised("nod", "catch", 100, {
 				variety = { name = "Coral", rarity = "rare", before = "Fish ·", after = "· Decent" },
 			})
+			local plain = catchToast("rare")
+			plain.variety, plain.art = nil, nil
 			local digest = ns.MakeAnnouncement({ record(), variety("toast.low", "newVariety", 120, "rare") }) --[[@as PagleAnnouncement]]
 			digest.fighting = { record() }
 			assert.are.same({}, {
 				look(record()),
 				look(variety("banner", "epicVariety", 97, "epic")),
-				look(nodLine),
-				look(record(), nodLine),
+				look(nod),
+				look(plain),
 				ns.ToastVarietyLook(digest),
 				look(record(), variety("toast.low", "newVariety", 120, "mythic")),
+				look(catchToast("mythic")),
 			})
 		end
 	)

@@ -177,7 +177,7 @@ step({ key = "moments", ribbon = "Moments", build = function(L, R, nav)
   P.SampleCut(L, "nod-new", 1, 0, 385, 54 / 0.556 > 54 and 54 or 54, 30, 137.6, 214, 30, true)
   P.SampleCut(L, "toast", 0, 0, 465, 95, 30, 189.3, 214, 62, true)
   P.SampleCut(L, "banner", 0, 0, 695, 290, 30, 261.3, 214, 104, true)
-  local smp = { { "A Nod", "Every Catch. One line, gone in 3 seconds.", 125.9 }, { "A toast", "A new fish, a record, Coins earned.", 193.6 }, { "A banner", "A new Angler Level, and the title that comes with it.", 286.6 } }
+  local smp = { { "A Nod", "When Pagle’s said a lot lately. One line, gone in 3 seconds.", 125.9 }, { "A toast", "Every Catch, a new fish, a record, Coins earned.", 193.6 }, { "A banner", "A new Angler Level, and the title that comes with it.", 286.6 } }
   for _, s in ipairs(smp) do
     P.T(L, "sc", 16, C.title, s[1], 256, s[3], 17.6)
     P.T(L, "italic", 13, "6A4A28", s[2], 256, s[3] + 19.6, 16.9, { wrap = true, width = 156 })
@@ -192,8 +192,8 @@ step({ key = "moments", ribbon = "Moments", build = function(L, R, nav)
     return b
   end
   local cards = {
-    card(81.3, 83.4, "Lively", "Every Catch gets its Nod; toasts and banners with sound.", "4 pop-ups in 5 minutes", true, "as it comes"),
-    card(172.6, 101.6, "Quieter", "No Nod for ordinary Catches, and fewer pop-ups. The big moments still show.", "2 pop-ups in 5 minutes", false),
+    card(81.3, 83.4, "Lively", "A toast for every Catch; banners too, with sound.", "4 pop-ups in 5 minutes", true, "as it comes"),
+    card(172.6, 101.6, "Quieter", "No toast for ordinary Catches, and fewer pop-ups. The big moments still show.", "2 pop-ups in 5 minutes", false),
     card(282.2, 101.6, "Cozy", "Nothing pops up and nothing plays. It all waits for your Session summary.", "a Legend still shows, silently", false) }
   P.ChoiceGroup(cards)
   note(R, "Each one only sets the switches in Settings › Announcements, where you can fine-tune them later.", 397.8)

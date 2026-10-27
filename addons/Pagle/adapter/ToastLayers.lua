@@ -144,7 +144,7 @@ function ns.DrawToastLayers(frame, host, style, page, width)
 end
 
 --- Tints a composed Nod's medallion (its back and front) in `color`, greyed first so the colour shows true, as a
---- catch Nod's ring takes its rarity's (VAR-R26); with none, leaves it as drawn.
+--- Nod's ring takes its rarity's (VAR-R26); with none, leaves it as drawn.
 ---@param frame PagleAnnouncementFrame
 ---@param color number[]?
 function ns.TintToastMedallion(frame, color)

@@ -1,5 +1,5 @@
 -- Margin notes on the client, through the real TOC and the fake client (core/onboarding.md › Margin notes, › UI,
--- › Motion): Core's first-moment notes beside the catch Nod, a toast's coin and the Session summary card, once per
+-- › Motion): Core's first-moment notes beside the first Nod, a toast's coin and the Session summary card, once per
 -- account (ONB-R50, ONB-R52), a moment's firstNote (ONB-R53), the welcome-back and other-character notes on Pagle's
 -- menu button (ONB-R2, ONB-R3, ONB-R108), the hold and the lifetime (ONB-R51), M:ShowMarginNote (ONB-R92), the arrow
 -- of Lines and its ring (core/onboarding.md › UI), the guide's illustrative arrows, and `/pagle dev onboarding note`
@@ -60,32 +60,42 @@ local function ledger(loaded)
 	return loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
 end
 
-describe("the first catch Nod's note (ONB-R52)", function()
-	it("shows core.nod beside the first catch Nod, playing noteIn, once (ONB-R50, ONB-R52)", function()
-		local loaded = newAngler()
+describe("the first Nod's note (ONB-R52, #437)", function()
+	-- A new Angler whose Interruption budget is spent, so each ordinary Catch's toast steps down to a Nod (ANN-R31).
+	local function spent(saved)
+		local loaded = newAngler(saved)
+		loaded.ns.db.profile.announcements.budget.count = 0
+		return loaded
+	end
 
-		catchAndFlush(loaded)
+	it(
+		"shows core.nod beside the first Nod, a catch toast stepped down, playing noteIn, once (ONB-R50, ONB-R52)",
+		function()
+			local loaded = spent()
 
-		assert.are.same({ "core.nod" }, onScreen(loaded))
-		assert.are.equal(loaded.ns.announcementFrames.nod, targetOf(loaded, "core.nod"))
-		assert.are.equal(
-			"That’s a |cff9a2a1aNod|r: one quiet line for every Catch. It’s gone in three seconds, and it’s in your"
-				.. " Ledger for good.",
-			noteFrame(loaded, "core.nod").text:GetText()
-		)
-		assert.are.same({ NOTE_IN }, loaded.client.sounds)
-		assert.is_true(state(loaded).notesSeen["core.nod"])
+			catchAndFlush(loaded)
 
-		loaded.client.advance(12)
-		catchAndFlush(loaded)
-		assert.are.same({}, onScreen(loaded))
-	end)
+			assert.are.same({ "core.nod" }, onScreen(loaded))
+			assert.are.equal(loaded.ns.announcementFrames.nod, targetOf(loaded, "core.nod"))
+			assert.are.equal(
+				"That’s a |cff9a2a1aNod|r: when Pagle’s had a lot to say lately, the small news steps down to one quiet line."
+					.. " It’s gone in three seconds, and it’s in your Ledger for good.",
+				noteFrame(loaded, "core.nod").text:GetText()
+			)
+			assert.are.same({ NOTE_IN }, loaded.client.sounds)
+			assert.is_true(state(loaded).notesSeen["core.nod"])
+
+			loaded.client.advance(12)
+			catchAndFlush(loaded)
+			assert.are.same({}, onScreen(loaded))
+		end
+	)
 
 	it("never shows again after a /reload, and /pagle guide notes brings it back (ONB-R50, ONB-R80)", function()
-		local first = newAngler()
+		local first = spent()
 		catchAndFlush(first)
 
-		local again = newAngler({ global = first.env.PagleDB.global })
+		local again = spent({ global = first.env.PagleDB.global })
 		catchAndFlush(again)
 		assert.are.same({}, onScreen(again))
 
@@ -95,8 +105,18 @@ describe("the first catch Nod's note (ONB-R52)", function()
 		assert.are.same({ "core.nod" }, onScreen(again))
 	end)
 
-	it("never shows with Margin notes off (ONB-R50, ONB-R81)", function()
+	it("shows no core.nod beside a catch toast that is still a toast (ONB-R52)", function()
 		local loaded = newAngler()
+
+		catchAndFlush(loaded)
+
+		assert.is_true(loaded.ns.announcementFrames.toast.shown)
+		assert.are.same({}, onScreen(loaded))
+		assert.are.same({}, state(loaded).notesSeen)
+	end)
+
+	it("never shows with Margin notes off (ONB-R50, ONB-R81)", function()
+		local loaded = spent()
 		state(loaded).notesOn = false
 
 		catchAndFlush(loaded)
@@ -105,22 +125,25 @@ describe("the first catch Nod's note (ONB-R52)", function()
 		assert.are.same({}, state(loaded).notesSeen)
 	end)
 
-	it("shows core.uncharted, not core.nod, beside an Uncharted Catch's Nod (ONB-R52)", function()
-		local loaded = newAngler()
-		loaded.client.itemNames[9999] = "Sickly Looking Fish"
+	it("shows core.uncharted, not core.nod, beside an Uncharted Catch's toast or its Nod (ONB-R52)", function()
+		for _, spentBudget in ipairs({ false, true }) do
+			local loaded = spentBudget and spent() or newAngler()
+			loaded.client.itemNames[9999] = "Sickly Looking Fish"
 
-		catchOne(
-			loaded,
-			{ { link = "|cffffffff|Hitem:9999::::::::15:::::::::|h[Sickly Looking Fish]|h|r", quantity = 1 } }
-		)
-		loaded.client.advance(0)
+			catchOne(
+				loaded,
+				{ { link = "|cffffffff|Hitem:9999::::::::15:::::::::|h[Sickly Looking Fish]|h|r", quantity = 1 } }
+			)
+			loaded.client.advance(0)
 
-		assert.are.same({ "core.uncharted" }, onScreen(loaded))
-		assert.is_nil(state(loaded).notesSeen["core.nod"])
+			assert.are.same({ "core.uncharted" }, onScreen(loaded))
+			assert.are.equal(spentBudget and "nod" or "toast", loaded.ns.AnnouncementFramesShowing()[1].display.form)
+			assert.is_nil(state(loaded).notesSeen["core.nod"])
+		end
 	end)
 
 	it("leaves with its Nod, and when clicked (ONB-R51)", function()
-		local loaded = newAngler()
+		local loaded = spent()
 		catchAndFlush(loaded)
 		local frame = noteFrame(loaded, "core.nod") --[[@as table]]
 		assert.is_true(frame.mouseEnabled)

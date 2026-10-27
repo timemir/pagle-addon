@@ -239,7 +239,7 @@ function celebrate.newInZone(celebrated, _, earned, outlets)
 	celebrated.speciesZones[key] = true
 	local L = ns.L
 	return {
-		rung = "nod",
+		rung = "toast.low",
 		kind = "newInZone",
 		order = 100,
 		title = L.NEW_IN_ZONE_TITLE,
@@ -315,7 +315,7 @@ function celebrate.uncharted(celebrated, _, earned, outlets)
 	end
 	celebrated.uncharted[itemID] = true
 	local L = ns.L
-	return itemMoment("uncharted", "nod", 140, L.UNCHARTED_TITLE, L.UNCHARTED_STAMP, earned, outlets)
+	return itemMoment("uncharted", "toast.low", 140, L.UNCHARTED_TITLE, L.UNCHARTED_STAMP, earned, outlets)
 end
 
 -- A Species' ★ (`caughtStar`), ★★ (`elementStar`) or ★★★ (`regularStar`), each once (LED-R45, LED-R48).
@@ -330,7 +330,7 @@ local function speciesStar(star, kind, order, title)
 		then
 			return nil
 		end
-		return itemMoment(kind, "nod", order, ns.L[title], starsText(star), earned, outlets)
+		return itemMoment(kind, "toast.low", order, ns.L[title], starsText(star), earned, outlets)
 	end
 end
 speciesStar(1, "caughtStar", 105, "CAUGHT_STAR_TITLE")
@@ -349,7 +349,7 @@ function celebrate.familyStar(celebrated, _, earned)
 	local stars = starsText(new[#new])
 	local name = ns.FamilyName(family)
 	return {
-		rung = "nod",
+		rung = "toast.low",
 		kind = "familyStar",
 		order = 130,
 		title = L.FAMILY_STAR_TITLE,

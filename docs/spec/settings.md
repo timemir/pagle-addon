@@ -154,14 +154,14 @@ The rules below are authoritative; this sketch only summarises them.
   |---|---|---|---|---|
   | Cozy mode | checkbox | off (ANN-R40) | | "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently." |
   | Interruption budget | checkbox | on (ANN-R31, ANN-R32) | Cozy mode is on | "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway." |
-  | ↳ Interruptions | slider | 1–30, step 1 · 20 | Cozy mode is on, or the budget is off | |
+  | ↳ Interruptions | slider | 1–60, step 1 · 40 (20 and 1–30 before #437) | Cozy mode is on, or the budget is off | |
   | ↳ Per | slider, shown as "{n} min" | 1–15 min, step 1 min · 5 min (stored in seconds) | Cozy mode is on, or the budget is off | |
-  | Show every catch | checkbox | on (ANN-R13, `everyCatch`) | Cozy mode is on | "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch shows instead. Greyed out in Cozy mode, which shows nothing." |
+  | Show every catch | checkbox | on (ANN-R13, `everyCatch`) | Cozy mode is on | "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which shows nothing." |
   | Animations | checkbox | on ([announcements.md › Motion](core/announcements.md#motion), `motion`) | | "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles." |
   | Toast style | slot dropdown, `core.toaststyle` (SET-R51) | owned styles · `core.toaststyle.page` (ANN-R80) | | |
   | Sound set | slot dropdown, `core.soundset` (SET-R51) | owned sets · `core.soundset.driftwood` (ANN-R72) | | |
 
-  Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per. Show every catch arrives with the catch Nod ([#256](https://github.com/timemir/pagle-addon/issues/256)), Animations with the art kit's motion. Every row here is a native checkbox, slider or Core's own slot dropdown row (SET-R5, SET-R51), so nothing is written onto Blizzard's rows (SET-R6).
+  Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per. Show every catch arrives with the catch Nod ([#256](https://github.com/timemir/pagle-addon/issues/256)), which [#437](https://github.com/timemir/pagle-addon/issues/437) made the catch toast, Animations with the art kit's motion. Every row here is a native checkbox, slider or Core's own slot dropdown row (SET-R5, SET-R51), so nothing is written onto Blizzard's rows (SET-R6).
 - **SET-R31** A greyed-out row keeps its value. Each row's greying is re-evaluated on its own condition (SET-R61): turning Cozy mode off makes Interruption budget and Show every catch live again, and Interruptions and Per too unless the budget is off.
 - **SET-R32** Hunts adds one section (from M5):
 
@@ -288,7 +288,7 @@ This file is the tree; the rules above place every option. Each option's values 
 
 | Name | Value | Rules |
 |---|---|---|
-| Interruptions slider | 1–30, step 1 (ANN Settings) | SET-R30 |
+| Interruptions slider | 1–60, step 1 (ANN Settings) | SET-R30 |
 | Per slider | 1–15 min, step 1 min (ANN Settings) | SET-R30 |
 | Watched Dry spells cap, shown as "{n} of 3" | Stats' Watches tunable (3) | SET-R42 |
 | Reminder step in the tooltip | LOG-R86's step (50 Casts) | SET-R10 |

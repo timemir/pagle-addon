@@ -47,8 +47,9 @@ local TIPS = {
 		.. "silently.",
 	budget = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their "
 		.. "ruler. Greyed out in Cozy mode, which holds everything anyway.",
-	everyCatch = "A quiet line for each catch: its name, size band and length. A toast or banner for the same catch "
-		.. "shows instead. Greyed out in Cozy mode, which shows nothing.",
+	everyCatch = "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows "
+		.. "instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which "
+		.. "shows nothing.",
 	motion = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each "
 		.. "appears as it settles.",
 	windowMoments = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
@@ -142,7 +143,7 @@ local EXPECTED = {
 		rows = {
 			{ "checkbox", "Cozy mode", tip = TIPS.cozy },
 			{ "checkbox", "Interruption budget", tip = TIPS.budget },
-			{ "slider", "Interruptions", under = true, range = { 1, 30, 1 } },
+			{ "slider", "Interruptions", under = true, range = { 1, 60, 1 } },
 			{ "slider", "Per", under = true, range = { 1, 15, 1 } },
 			{ "checkbox", "Show every catch", tip = TIPS.everyCatch },
 			{ "checkbox", "Animations", tip = TIPS.motion },
@@ -915,7 +916,7 @@ describe("Each page's Defaults button", function()
 		assert.are.same({
 			["Cozy mode"] = false,
 			["Interruption budget"] = true,
-			["Interruptions"] = 20,
+			["Interruptions"] = 40,
 			["Per"] = 5,
 			["Show every catch"] = true,
 			["Animations"] = true,

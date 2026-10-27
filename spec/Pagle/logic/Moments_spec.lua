@@ -486,24 +486,48 @@ local function itemName(itemID)
 	return NAMES[itemID]
 end
 
-describe("ns.CatchNodMoment", function()
-	it('reads "{item name} · {band} · {length}" in the Angler\'s unit, a silent Nod of the Cast (ANN-R13)', function()
-		local cast = caughtCast({ { 6289, { length = 342, band = 2 } } })
+describe("ns.CatchToastMoment", function()
+	it(
+		"is a toast.low of the Cast, its kicker \"{band} · {length}\" in the Angler's unit over the item's name"
+			.. " (ANN-R13)",
+		function()
+			local cast = caughtCast({ { 6289, { length = 342, band = 2 } } })
 
-		local nod = ns.CatchNodMoment(cast, itemName, "cm") --[[@as PagleMoment]]
+			local toast = ns.CatchToastMoment(cast, itemName, "cm") --[[@as PagleMoment]]
 
-		assert.are.same(
-			{ rung = "nod", kind = "catch", title = "Raw Longjaw Mud Snapper · Decent · 34.2 cm", icon = 6289 },
-			{ rung = nod.rung, kind = nod.kind, title = nod.title, icon = nod.icon }
-		)
-		assert.are.same({ CAST, false }, { nod.cast, nod.sound })
-		assert.is_nil(nod.text)
-		assert.is_nil(ns.MomentProblem(nod))
-		local monster = caughtCast({ { 6289, { length = 342, band = 5 } } })
-		assert.are.equal(
-			"Raw Longjaw Mud Snapper · Monster · 13.5 in",
-			(ns.CatchNodMoment(monster, itemName, "in") --[[@as PagleMoment]]).title
-		)
+			assert.are.same(
+				{ rung = "toast.low", kind = "catch", title = "Decent · 34.2 cm", text = "Raw Longjaw Mud Snapper" },
+				{ rung = toast.rung, kind = toast.kind, title = toast.title, text = toast.text }
+			)
+			assert.are.same({ 6289, CAST }, { toast.icon, toast.cast })
+			-- It plays the toast sound (ANN-R70): no `sound = false`.
+			assert.is_nil(toast.sound)
+			assert.is_nil(ns.MomentProblem(toast))
+			local monster = caughtCast({ { 6289, { length = 342, band = 5 } } })
+			assert.are.equal(
+				"Monster · 13.5 in",
+				(ns.CatchToastMoment(monster, itemName, "in") --[[@as PagleMoment]]).title
+			)
+		end
+	)
+
+	it(
+		'keeps the old Nod\'s line, "{item name} · {band} · {length}", for the step down (ANN-R13, ANN-R31)',
+		function()
+			local sized = caughtCast({ { 6289, { length = 342, band = 2 } } })
+			local nodLine = (ns.CatchToastMoment(sized, itemName, "cm") --[[@as PagleMoment]]).nodLine
+			assert.are.equal("Raw Longjaw Mud Snapper · Decent · 34.2 cm", nodLine)
+
+			local junk = ns.CatchToastMoment(caughtCast({ { 6358 } }), itemName, "cm") --[[@as PagleMoment]]
+			assert.are.equal("Oily Blackmouth", junk.nodLine)
+		end
+	)
+
+	it('reads "Caught" for its kicker when the Catch has no size (ANN-R13)', function()
+		local toast = ns.CatchToastMoment(caughtCast({ { 6358 } }), itemName, "cm") --[[@as PagleMoment]]
+
+		assert.are.same({ "Caught", "Oily Blackmouth", 6358 }, { toast.title, toast.text, toast.icon })
+		assert.is_nil(ns.MomentProblem(toast))
 	end)
 
 	it(
@@ -515,24 +539,22 @@ describe("ns.CatchNodMoment", function()
 				{ 6289, { length = 210, band = 1 } },
 				{ 6299, { length = 90, band = 3 } },
 			})
-			assert.are.equal(
-				"Raw Longjaw Mud Snapper · Tiddler · 21.0 cm",
-				(ns.CatchNodMoment(sized, itemName, "cm") --[[@as PagleMoment]]).title
-			)
+			local toast = ns.CatchToastMoment(sized, itemName, "cm") --[[@as PagleMoment]]
+			assert.are.same({ "Tiddler · 21.0 cm", "Raw Longjaw Mud Snapper" }, { toast.title, toast.text })
 
-			local junk = ns.CatchNodMoment(caughtCast({ { 0 }, { 6358 } }), itemName, "cm") --[[@as PagleMoment]]
-			assert.are.same({ "Oily Blackmouth", 6358 }, { junk.title, junk.icon })
+			local junk = ns.CatchToastMoment(caughtCast({ { 0 }, { 6358 } }), itemName, "cm") --[[@as PagleMoment]]
+			assert.are.same({ "Oily Blackmouth", 6358 }, { junk.text, junk.icon })
 		end
 	)
 
 	it('reads "Item {itemID}" for a name the client hasn\'t cached (ANN-R13)', function()
-		local nod = ns.CatchNodMoment(caughtCast({ { 99001 } }), itemName, "cm") --[[@as PagleMoment]]
-		assert.are.equal("Item 99001", nod.title)
+		local toast = ns.CatchToastMoment(caughtCast({ { 99001 } }), itemName, "cm") --[[@as PagleMoment]]
+		assert.are.same({ "Item 99001", "Item 99001" }, { toast.text, toast.nodLine })
 	end)
 
 	it("is nil for a got-away Cast and for one whose every item is item 0 (ANN-R13, LOG-R8)", function()
-		assert.is_nil(ns.CatchNodMoment(caughtCast({}, "gotAway"), itemName, "cm"))
-		assert.is_nil(ns.CatchNodMoment(caughtCast({ { 0 }, { 0 } }), itemName, "cm"))
+		assert.is_nil(ns.CatchToastMoment(caughtCast({}, "gotAway"), itemName, "cm"))
+		assert.is_nil(ns.CatchToastMoment(caughtCast({ { 0 }, { 0 } }), itemName, "cm"))
 	end)
 
 	-- Firefin Snapper's second variety, as Core lists it (VAR-R11), its art 192 × 96 at (192, 0) on a 2048 atlas.
@@ -547,23 +569,24 @@ describe("ns.CatchNodMoment", function()
 	local CORAL = { id = "6359.coral", index = 2, rarity = "common" }
 
 	it(
-		'names its Catch\'s variety, "{item name} · {variety name} · {band} · {length}", the name a segment of its'
-			.. " own with its rarity, and carries the variety's art (VAR-R26)",
+		"names its Catch's variety after the fish's name on its text, carries the Nod's line cut about the name and the"
+			.. " variety's art (VAR-R26)",
 		function()
 			local cast = caughtCast({ { 6359, { length = 342, band = 2 }, CORAL } })
 
-			local nod = ns.CatchNodMoment(cast, itemName, "cm", varieties) --[[@as PagleMoment]]
+			local toast = ns.CatchToastMoment(cast, itemName, "cm", varieties) --[[@as PagleMoment]]
 
-			assert.are.equal("Firefin Snapper · Coral · Decent · 34.2 cm", nod.title)
+			assert.are.same({ "Decent · 34.2 cm", "Firefin Snapper" }, { toast.title, toast.text })
+			assert.are.equal("Firefin Snapper · Coral · Decent · 34.2 cm", toast.nodLine)
 			assert.are.same(
 				{ name = "Coral", rarity = "common", before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
-				nod.variety
+				toast.variety
 			)
-			assert.are.same(CORAL_ART, nod.art)
+			assert.are.same(CORAL_ART, toast.art)
 			-- A copy: Core's lists are shared (CORE-R18).
-			assert.are_not.equal(CORAL_ART, nod.art)
-			assert.are.same({ 6359, "nod", false }, { nod.icon, nod.rung, nod.sound })
-			assert.is_nil(ns.MomentProblem(nod))
+			assert.are_not.equal(CORAL_ART, toast.art)
+			assert.are.same({ 6359, "toast.low", nil }, { toast.icon, toast.rung, toast.sound })
+			assert.is_nil(ns.MomentProblem(toast))
 		end
 	)
 
@@ -571,12 +594,12 @@ describe("ns.CatchNodMoment", function()
 		local cast = caughtCast({ { 6359, { length = 342, band = 2 }, { id = "6359.flame-finned", index = 1 } } })
 		cast.items[1].variety.rarity = "common"
 
-		local nod = ns.CatchNodMoment(cast, itemName, "cm", varieties) --[[@as PagleMoment]]
+		local toast = ns.CatchToastMoment(cast, itemName, "cm", varieties) --[[@as PagleMoment]]
 
 		assert.are.same({ "Firefin Snapper · Flame-finned · Decent · 34.2 cm", "Flame-finned", nil }, {
-			nod.title,
-			nod.variety.name,
-			nod.art,
+			toast.nodLine,
+			toast.variety.name,
+			toast.art,
 		})
 	end)
 
@@ -587,35 +610,54 @@ describe("ns.CatchNodMoment", function()
 		}
 		for _, list in ipairs({ false, {}, unnamed }) do
 			local cast = caughtCast({ { 6359, { length = 342, band = 2 }, CORAL } })
-			local nod = ns.CatchNodMoment(cast, itemName, "cm", function()
+			local toast = ns.CatchToastMoment(cast, itemName, "cm", function()
 				return list or nil
 			end) --[[@as PagleMoment]]
 
-			assert.are.same({ "Firefin Snapper · Decent · 34.2 cm" }, { nod.title, nod.variety, nod.art })
+			assert.are.same({ "Firefin Snapper · Decent · 34.2 cm" }, { toast.nodLine, toast.variety, toast.art })
 		end
 		local cast = caughtCast({ { 6359, { length = 342, band = 2 }, CORAL } })
-		local plain = ns.CatchNodMoment(cast, itemName, "cm") --[[@as PagleMoment]]
-		assert.are.same({ "Firefin Snapper · Decent · 34.2 cm" }, { plain.title, plain.variety, plain.art })
+		local plain = ns.CatchToastMoment(cast, itemName, "cm") --[[@as PagleMoment]]
+		assert.are.same({ "Firefin Snapper · Decent · 34.2 cm" }, { plain.nodLine, plain.variety, plain.art })
+	end)
+
+	it("names only a variety caught before this Cast, never the first (VAR-R27)", function()
+		local cast = caughtCast({ { 6359, { length = 342, band = 2 }, CORAL } })
+
+		local first = ns.CatchToastMoment(cast, itemName, "cm", varieties, function()
+			return false
+		end) --[[@as PagleMoment]]
+		local again = ns.CatchToastMoment(cast, itemName, "cm", varieties, function(variety, castId)
+			return variety.id == "6359.coral" and castId == CAST
+		end) --[[@as PagleMoment]]
+
+		assert.are.same({ "Decent · 34.2 cm", "Firefin Snapper", nil, nil }, {
+			first.title,
+			first.text,
+			first.variety,
+			first.art,
+		})
+		assert.are.equal("Coral", again.variety.name)
 	end)
 end)
 
-describe("the catch Nod", function()
-	-- Core's catch Nod for CAST, as ns.CatchNodMoment makes it.
-	local function catchNod()
-		return ns.CatchNodMoment(caughtCast({ { 6358 } }), itemName, "cm") --[[@as PagleMoment]]
+describe("the catch toast", function()
+	-- Core's catch toast for CAST, as ns.CatchToastMoment makes it.
+	local function catchToast()
+		return ns.CatchToastMoment(caughtCast({ { 6358 } }), itemName, "cm") --[[@as PagleMoment]]
 	end
 
 	it(
-		"shows alone as a Nod of its Cast on the next frame, and never reaches the summary (ANN-R13, ANN-R25)",
+		"shows alone as a toast.low of its Cast on the next frame, and never reaches the summary (ANN-R13, ANN-R25)",
 		function()
 			local world = newWorld()
 
-			world.moments:RaiseCatchNod(catchNod())
+			world.moments:RaiseCatchToast(catchToast())
 			assert.are.same({}, world.shown)
 			world.frame()
 
-			assert.are.same({ "Oily Blackmouth" }, headlines(world))
-			assert.are.same({ "nod", CAST, {}, 0 }, {
+			assert.are.same({ "Caught" }, headlines(world))
+			assert.are.same({ "toast.low", CAST, {}, 0 }, {
 				world.shown[1].rung,
 				world.shown[1].cast,
 				world.shown[1].stamps,
@@ -632,7 +674,7 @@ describe("the catch Nod", function()
 			for _, rung in ipairs({ "nod", "toast.low", "banner" }) do
 				local world = newWorld()
 
-				world.moments:RaiseCatchNod(catchNod())
+				world.moments:RaiseCatchToast(catchToast())
 				world.moments:Raise(LEDGER, moment(rung, "New in this zone"))
 				world.frame()
 
@@ -652,7 +694,7 @@ describe("the catch Nod", function()
 			local world = newWorld()
 			world.updating = true
 
-			world.moments:RaiseCatchNod(catchNod())
+			world.moments:RaiseCatchToast(catchToast())
 			world.frame()
 			assert.are.same({}, world.shown)
 			world.moments:Raise(LEDGER, moment("toast", "New Species"))

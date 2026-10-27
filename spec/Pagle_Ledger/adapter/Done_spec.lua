@@ -228,7 +228,7 @@ describe("the Ledger's done", function()
 		function()
 			local last, lastLoaded = session({ history = HISTORY })
 			local record = assert(last.playCast("caught", { { itemID = CHARTED_LATER, quantity = 1 } }))
-			-- 20 XP: still level 2. Uncharted, it raises only its Nod (LED-R97).
+			-- 20 XP: still level 2. Uncharted, it raises only its toast.low (LED-R97).
 			assert.are.same({ "uncharted" }, { last.summarized[1].kind, last.summarized[2] })
 
 			-- The release charts it as a Species: 500 + 100 XP more, past level 3 (2,240), and 10 + 40 Coins.

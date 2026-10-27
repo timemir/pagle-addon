@@ -7,13 +7,13 @@ if not Pagle then
 end
 
 -- Core's rows on the Announcements page (SET-R30): Cozy mode, Interruption budget, the budget's Interruptions and
--- Per, Show every catch (the catch Nod, ANN-R13) and Animations (announcements.md › Motion). Native controls on proxy settings over
+-- Per, Show every catch (the catch toast, ANN-R13) and Animations (announcements.md › Motion). Native controls on proxy settings over
 -- `PagleDB.profile.announcements` (announcements.md › Data), built when adapter/Settings.lua registers the page. Core's slots in the "Announcements" category, Toast style and Sound
 -- set, end them as slot dropdowns (CORE-R42, adapter/LookAndFeel.lua).
 local L = ns.L
 
 -- The sliders' ranges (settings.md › Tunables). Per is in minutes; the budget's window is stored in seconds.
-local COUNT_MIN, COUNT_MAX = 1, 30
+local COUNT_MIN, COUNT_MAX = 1, 60
 local WINDOW_MIN, WINDOW_MAX = 1, 15
 local STEP = 1
 local SECONDS_PER_MINUTE = 60
@@ -84,7 +84,7 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	local budget = Settings.CreateCheckbox(page, budgetOn, L.SETTINGS_BUDGET_TOOLTIP)
 	greys(budget, notCozy)
 
-	local countSetting = Settings.RegisterProxySetting(page, COUNT, Number, L.SETTINGS_BUDGET_COUNT, 20, function()
+	local countSetting = Settings.RegisterProxySetting(page, COUNT, Number, L.SETTINGS_BUDGET_COUNT, 40, function()
 		return stored().budget.count
 	end, function(value)
 		stored().budget.count = value
@@ -109,7 +109,7 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 	window:SetParentInitializer(budget)
 	greys(window, slidersLive)
 
-	-- The catch Nod (ANN-R13): greyed in Cozy mode, which drops it.
+	-- The catch toast (ANN-R13): greyed in Cozy mode, which shows nothing.
 	local everyCatch = Settings.RegisterProxySetting(
 		page,
 		EVERY_CATCH,
