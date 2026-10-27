@@ -438,6 +438,50 @@ describe("The wallet projection's Curio crates", function()
 		end
 	)
 
+	it(
+		"notes the time of the crate that gave a good, never of a payback, and hands the goods crates gave over as"
+			.. " fromCrate, purchased staying false for them (SHOP-R36, SHOP-R50)",
+		function()
+			stubPool()
+			local world = newWorld(crates(4, { TIER_1, TIER_1, TIER_2, TIER_2 }))
+			for _, id in ipairs({ CRIMSON, SILVER }) do
+				world.pagleDB.global.goods[id] = { name = id, slot = "core.crest", module = "Core", tier = 1 }
+			end
+
+			world.enterWorld()
+
+			-- Crimson at the first crate; the second pays 250; Silver at the third; the fourth pays 400
+			assert.are.same({ CRIMSON, 250, SILVER, 400 }, world.db.projection.crates)
+			assert.are.same(
+				{ [CRIMSON] = SERVER_TIME - 90000 + 1, [SILVER] = SERVER_TIME - 90000 + 3 },
+				world.db.projection.ownedAt
+			)
+			local crimson = assert(world.goods:GetGood(CRIMSON))
+			assert.are.same(
+				{ false, true, SERVER_TIME - 90000 + 1 },
+				{ crimson.purchased, crimson.fromCrate, crimson.ownedAt }
+			)
+			assert.is_true(world.goods:IsPurchased(SILVER))
+		end
+	)
+
+	it("notes no time and no good for a crate that pays back, and a bought good keeps its own (SHOP-R36)", function()
+		ns.CRATE_POOL = {}
+		local world = newWorld({
+			purchaseEntry(SERVER_TIME - 9000, SILVER, 400),
+			crateEntry(SERVER_TIME - 8000, 1500),
+		})
+		stubHashes({ [SERVER_TIME - 8000] = TIER_1 })
+		world.pagleDB.global.goods[SILVER] = { name = "Silver", slot = "core.crest", module = "Core", tier = 2 }
+
+		world.enterWorld()
+
+		assert.are.same({ 250 }, world.db.projection.crates)
+		assert.are.same({ [SILVER] = SERVER_TIME - 9000 }, world.db.projection.ownedAt)
+		local silver = assert(world.goods:GetGood(SILVER))
+		assert.are.same({ true, false }, { silver.purchased, silver.fromCrate })
+	end)
+
 	it("counts a payback as the entry's price allows, never more than it cost (SHOP-R11, SHOP-R51)", function()
 		stubPool()
 		-- tier 4 pays min(3,000, 300) at a crate recorded at 300; tier 1 min(250, 200) at one at 200
@@ -539,22 +583,25 @@ describe("The wallet projection's Curio crates", function()
 		end
 	)
 
-	it("rebuilds a projection stored under rules version 1 into version 2's results (SHOP-R53, LOG-R72)", function()
-		local entries = { crateEntry(SERVER_TIME - 9000, 2000), crateEntry(SERVER_TIME - 8000, 2000) }
-		local old = stored(4000, {}, #entries)
-		old.rulesVersion = 1
-		old.projection.crates = { "core.toaststyle.storm", "core.toaststyle.foil" }
-		old.projection.dry = 3
-		local world = newWorld(entries, old)
+	it(
+		"rebuilds a projection stored under rules version 1 into the current version's results (SHOP-R53, LOG-R72)",
+		function()
+			local entries = { crateEntry(SERVER_TIME - 9000, 2000), crateEntry(SERVER_TIME - 8000, 2000) }
+			local old = stored(4000, {}, #entries)
+			old.rulesVersion = 1
+			old.projection.crates = { "core.toaststyle.storm", "core.toaststyle.foil" }
+			old.projection.dry = 3
+			local world = newWorld(entries, old)
 
-		world.enterWorld()
+			world.enterWorld()
 
-		assert.are.equal(2, world.db.rulesVersion)
-		local state = world.db.projection
-		assert.are.equal(2, #state.crates)
-		local first = ns.CrateRoll(("%s-%d-0"):format(ADA, SERVER_TIME - 9000), {}, 0, SERVER_TIME - 9000, 2000)
-		assert.are.equal(first.good or first.payback, state.crates[1])
-	end)
+			assert.are.equal(3, world.db.rulesVersion)
+			local state = world.db.projection
+			assert.are.equal(2, #state.crates)
+			local first = ns.CrateRoll(("%s-%d-0"):format(ADA, SERVER_TIME - 9000), {}, 0, SERVER_TIME - 9000, 2000)
+			assert.are.equal(first.good or first.payback, state.crates[1])
+		end
+	)
 
 	it("opens a crate bought live at once: its result in, the snapshot handed over (SHOP-R55)", function()
 		local world = newWorld({})
