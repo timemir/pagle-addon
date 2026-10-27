@@ -12,14 +12,17 @@
 #   scripts/make-signing-fixtures.sh
 #
 # The private key is TEST ONLY and lives under spec/, which no release holds (scripts/package.sh zips addons/ only).
-# Needs openssl (3.x or later) and the pinned Python from scripts/setup.sh.
+# Needs openssl (3.x or later; on macOS Homebrew's, not the system LibreSSL) and the pinned Python from
+# scripts/setup.sh.
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 dir="$root/spec/Pagle/fixtures/signing"
 wyche="$root/spec/Pagle/fixtures/wycheproof/rsa_signature_2048_sha256_test.json"
 out="$root/spec/Pagle/fixtures/Signing.lua"
-python="$root/.tools/bin/python"
+# shellcheck source=lib/tools.sh
+source "$root/scripts/lib/tools.sh"
+python="$(tools_dir "$root")/bin/python"
 key="$dir/test-only-private-key.pem"
 data="$dir/random-64k.bin"
 

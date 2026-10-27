@@ -5,7 +5,8 @@
 #   scripts/test-check.sh
 #   TEST_CHECK_JOBS=1 scripts/test-check.sh    # one case at a time
 #
-# Needs the tools from scripts/setup.sh. Never touches the working tree, .tools/cache/ included.
+# Needs the tools from scripts/setup.sh (a worktree's are the main checkout's, scripts/lib/tools.sh). Never touches the
+# working tree, .tools/cache/ included. Runs on macOS too, in bash 3.2 and up, as scripts/check.sh does.
 #
 # A case is `copy`, its planted mistake under "$scratch/tree", then `expect`. Each case gets its own copy in
 # native tmp and runs the whole gate in the background, TEST_CHECK_JOBS at a time (default: the CPU count, at
@@ -16,6 +17,9 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+# shellcheck source=lib/tools.sh
+source "$root/scripts/lib/tools.sh"
+tools=$(tools_dir "$root")
 scratch=$(mktemp -d)
 # On an early exit, the running cases finish before their copies go.
 trap 'wait; rm -rf "$scratch"' EXIT
@@ -32,10 +36,14 @@ export GATE_JOBS=1
 # lua-language-server at 2.3 GB beside it. Cases past what MemAvailable holds get their busted OOM-killed, and fail;
 # in CI, the runner likely shuts down mid-run instead.
 case_memory_kb=$((7 * 1024 * 1024))
-max_jobs=${TEST_CHECK_JOBS:-$(nproc)}
+max_jobs=${TEST_CHECK_JOBS:-$(nproc 2>/dev/null || sysctl -n hw.ncpu)}
 if [[ -z ${TEST_CHECK_JOBS:-} ]]; then
 	((max_jobs <= 8)) || max_jobs=8
 	available_kb=$(awk '/^MemAvailable:/ { print $2 }' /proc/meminfo 2>/dev/null || true)
+	# No /proc/meminfo on macOS: the installed memory stands in for what's available.
+	if [[ -z $available_kb ]] && memory=$(sysctl -n hw.memsize 2>/dev/null); then
+		available_kb=$((memory / 1024))
+	fi
 	if [[ $available_kb =~ ^[0-9]+$ ]] && ((max_jobs > available_kb / case_memory_kb)); then
 		max_jobs=$((available_kb / case_memory_kb))
 	fi
@@ -51,7 +59,7 @@ base="$scratch/base"
 mkdir "$base" "$scratch/cases" "$scratch/results"
 tar -C "$root" --exclude=./.git --exclude=./.tools --exclude=./.release -cf - . | tar -C "$base" -xf -
 mkdir -p "$base/.tools/cache"
-for tool in "$root/.tools"/*; do
+for tool in "$tools"/*; do
 	[[ ${tool##*/} == cache ]] || ln -s "$tool" "$base/.tools/"
 done
 if [[ -d $root/.tools/cache/mypy ]]; then
@@ -89,7 +97,7 @@ copy() {
 # output names each text given. The case starts in the background once a job slot is free.
 expect() {
 	while (($(jobs -pr | wc -l) >= max_jobs)); do
-		wait -n || true
+		wait_any
 		report
 	done
 	run_case "$case_tree" "$scratch/results/$cases" "$@" &
@@ -136,7 +144,7 @@ report() {
 # Writes the inventory the addon ships (addons/Pagle/data/ApiInventory.lua) from the copy's .luacheckrc, as a commit
 # that changes the inventory does (#261): the api stage fails while it's stale.
 inventory_write() {
-	"$root/.tools/bin/lua" "$root/scripts/api-inventory.lua" "$scratch/tree/.luacheckrc" \
+	"$tools/bin/lua" "$root/scripts/api-inventory.lua" "$scratch/tree/.luacheckrc" \
 		"$scratch/tree/addons/Pagle/data/ApiInventory.lua" >/dev/null
 }
 
@@ -157,6 +165,13 @@ uses_create_frame() {
 # Writes a Lua file that calls the WoW global Logout, which Pagle never inventories (the dev tour took Screenshot).
 uses_logout() {
 	printf 'Logout()\n' >"$1"
+}
+
+# Puts a key dev.toml doesn't have on its first line (sed -i '1i' is GNU's).
+dev_toml_colour() {
+	local toml="$scratch/tree/data/observed/dev.toml"
+	{ echo 'colour = "red"'; cat "$toml"; } >"$toml.new"
+	mv "$toml.new" "$toml"
 }
 
 # Drops a file from Pagle.toc, or from the TOC given second.
@@ -182,8 +197,9 @@ echo "STYLUA_VERSION=0.0.0" >>"$scratch/tree/scripts/tools.env"
 expect "a pin changed since the last setup stops the gate" setup "run scripts/setup.sh"
 
 copy
-sed -i 's#BigWigsMods/packager@[0-9a-f]*#BigWigsMods/packager@0123456789abcdef0123456789abcdef01234567#' \
-	"$scratch/tree/.github/workflows/release.yml"
+sed 's#BigWigsMods/packager@[0-9a-f]*#BigWigsMods/packager@0123456789abcdef0123456789abcdef01234567#' \
+	"$scratch/tree/.github/workflows/release.yml" >"$scratch/release.yml"
+mv "$scratch/release.yml" "$scratch/tree/.github/workflows/release.yml"
 expect "a packager pin in release.yml that differs from tools.env stops the gate" setup \
 	"PACKAGER_COMMIT in scripts/tools.env"
 
@@ -241,8 +257,8 @@ expect "a WoW global anywhere but adapter/ fails lint, even when inventoried" li
 
 copy
 # The api stage counts what the tree inventories already, plus the 8 names added here.
-inventoried=$("$root/.tools/bin/lua" "$root/scripts/api-presence.lua" "$scratch/tree/.luacheckrc" \
-	"$root/.tools/bir/Resources" | grep -oE '[0-9]+ inventoried names')
+inventoried=$("$tools/bin/lua" "$root/scripts/api-presence.lua" "$scratch/tree/.luacheckrc" \
+	"$tools/bir/Resources" | grep -oE '[0-9]+ inventoried names')
 for name in CreateFrame hooksecurefunc ChatFrame1 LE_EXPANSION_CLASSIC Enum.ItemQuality FISHING; do
 	inventory_add "$name"
 done
@@ -375,7 +391,7 @@ expect "a lint error and a types error at once fail lint" lint "accessing undefi
 
 copy
 printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
-sed -i '1i colour = "red"' "$scratch/tree/data/observed/dev.toml"
+dev_toml_colour
 # generator finishes long before types, and still doesn't give the verdict.
 expect "a types error and a generator error at once fail types" types "assign-type-mismatch"
 
@@ -386,7 +402,7 @@ expect "a data/ change committed without its regenerated file fails generator" g
 	"addons/Pagle/data/Catalogue.lua is out of date with data/"
 
 copy
-sed -i '1i colour = "red"' "$scratch/tree/data/observed/dev.toml"
+dev_toml_colour
 expect "an unknown key in dev.toml fails generator" generator "data/observed/dev.toml: unknown key 'colour'"
 
 wait

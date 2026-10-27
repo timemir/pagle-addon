@@ -5,8 +5,16 @@
 #
 #   scripts/setup.sh
 #
-# Runs in WSL Ubuntu (or any x86_64 Linux) as a normal user. Its only prerequisites are the apt packages
-# SETUP_APT_PACKAGES in scripts/tools.env, which the Check workflow (.github/workflows/check.yml) installs too.
+# Runs as a normal user in WSL Ubuntu (or any x86_64 Linux), and natively on macOS (arm64 or x86_64), where it
+# installs the same pins as macOS builds: Lua and LuaRocks from source, the rocks, and the tools' macOS release assets.
+#   Linux  The apt packages SETUP_APT_PACKAGES in scripts/tools.env, which the Check workflow
+#          (.github/workflows/check.yml) installs too.
+#   macOS  The Xcode Command Line Tools (xcode-select --install: cc and make), and the curl, tar, unzip and
+#          shasum that macOS ships. No Homebrew needed. The scripts that run the tools work with macOS's bash 3.2.
+#
+# It installs into this checkout's .tools/, or, with PAGLE_TOOLS=<absolute path>, into that folder. A `git worktree`
+# needn't run it: its scripts use the main checkout's .tools/ unless it has one of its own (scripts/lib/tools.sh).
+# Run it in the main checkout; the rocks and the venv hardcode their paths, so .tools/ can't be copied elsewhere.
 #
 # Layout:
 #   .tools/lua/       Lua 5.1, LuaRocks and the rocks (luacheck, busted, luacov and its C hook cluacov)
@@ -22,15 +30,48 @@ set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 # shellcheck source=tools.env
 source "$root/scripts/tools.env"
-tools="$root/.tools"
+tools=${PAGLE_TOOLS:-$root/.tools}
+if [[ $tools != /* ]]; then
+	echo "setup: PAGLE_TOOLS must be an absolute path, not '$tools'" >&2
+	exit 1
+fi
+
+# The platform picks the release assets of the prebuilt tools: linux, macos-arm64 or macos-x64.
+case "$(uname -s)-$(uname -m)" in
+Linux-x86_64) platform=linux ;;
+Darwin-arm64) platform=macos-arm64 ;;
+Darwin-x86_64) platform=macos-x64 ;;
+*)
+	echo "setup: $(uname -s) $(uname -m) isn't supported; it needs x86_64 Linux (WSL), or macOS on arm64 or x86_64" >&2
+	exit 1
+	;;
+esac
 
 missing=()
-for cmd in gcc make unzip curl tar sha256sum; do
-	command -v "$cmd" >/dev/null || missing+=("$cmd")
-done
-if ((${#missing[@]})); then
-	echo "setup: missing ${missing[*]}; run: sudo apt-get install -y $SETUP_APT_PACKAGES" >&2
-	exit 1
+if [[ $platform == linux ]]; then
+	for cmd in gcc make unzip curl tar sha256sum; do
+		command -v "$cmd" >/dev/null || missing+=("$cmd")
+	done
+	if ((${#missing[@]})); then
+		echo "setup: missing ${missing[*]}; run: sudo apt-get install -y $SETUP_APT_PACKAGES" >&2
+		exit 1
+	fi
+else
+	# /usr/bin/cc and make exist on every Mac as stubs that offer to install the Command Line Tools, so ask xcode-select.
+	if ! xcode-select -p >/dev/null 2>&1; then
+		missing+=("the Xcode Command Line Tools (cc, make)")
+	fi
+	for cmd in unzip curl tar shasum; do
+		command -v "$cmd" >/dev/null || missing+=("$cmd")
+	done
+	if ((${#missing[@]})); then
+		echo "setup: missing ${missing[*]}; for the Command Line Tools run: xcode-select --install" >&2
+		exit 1
+	fi
+	# sha256sum -c, as fetch and the checks below use it.
+	sha256sum() {
+		shasum -a 256 "$@"
+	}
 fi
 
 mkdir -p "$tools/bin"
@@ -85,8 +126,13 @@ if stale lua "$key"; then
 	prefix="$tools/lua"
 	fetch "https://www.lua.org/ftp/lua-$LUA_VERSION.tar.gz" "$tmp/lua.tar.gz" "$LUA_SHA256"
 	tar -xzf "$tmp/lua.tar.gz" -C "$tmp"
-	# POSIX with dlopen (so C rocks load) and no readline; -Wl,-E exports the Lua API to those rocks.
-	quiet make -C "$tmp/lua-$LUA_VERSION/src" all MYCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-Wl,-E -ldl"
+	if [[ $platform == linux ]]; then
+		# POSIX with dlopen (so C rocks load) and no readline; -Wl,-E exports the Lua API to those rocks.
+		quiet make -C "$tmp/lua-$LUA_VERSION/src" all MYCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN" MYLIBS="-Wl,-E -ldl"
+	else
+		# Lua's own macosx target: POSIX with dlopen, and readline from the SDK (libedit).
+		quiet make -C "$tmp/lua-$LUA_VERSION" macosx
+	fi
 	quiet make -C "$tmp/lua-$LUA_VERSION" install INSTALL_TOP="$prefix"
 
 	fetch "https://luarocks.github.io/luarocks/releases/luarocks-$LUAROCKS_VERSION.tar.gz" "$tmp/luarocks.tar.gz" "$LUAROCKS_SHA256"
@@ -113,19 +159,29 @@ if stale lua "$key"; then
 	stamp lua "$key"
 fi
 
-key="stylua $STYLUA_VERSION $STYLUA_SHA256"
+case $platform in
+linux) stylua_asset=stylua-linux-x86_64-musl stylua_sha256=$STYLUA_SHA256 ;;
+macos-arm64) stylua_asset=stylua-macos-aarch64 stylua_sha256=$STYLUA_MACOS_ARM64_SHA256 ;;
+macos-x64) stylua_asset=stylua-macos-x86_64 stylua_sha256=$STYLUA_MACOS_X64_SHA256 ;;
+esac
+key="stylua $STYLUA_VERSION $stylua_sha256"
 if stale stylua "$key"; then
-	fetch "https://github.com/JohnnyMorganz/StyLua/releases/download/v$STYLUA_VERSION/stylua-linux-x86_64-musl.zip" \
-		"$tmp/stylua.zip" "$STYLUA_SHA256"
+	fetch "https://github.com/JohnnyMorganz/StyLua/releases/download/v$STYLUA_VERSION/$stylua_asset.zip" \
+		"$tmp/stylua.zip" "$stylua_sha256"
 	quiet unzip -o "$tmp/stylua.zip" -d "$tools/stylua"
 	chmod +x "$tools/stylua/stylua"
 	stamp stylua "$key"
 fi
 
-key="luals $LUALS_VERSION $LUALS_SHA256"
+case $platform in
+linux) luals_asset=linux-x64 luals_sha256=$LUALS_SHA256 ;;
+macos-arm64) luals_asset=darwin-arm64 luals_sha256=$LUALS_MACOS_ARM64_SHA256 ;;
+macos-x64) luals_asset=darwin-x64 luals_sha256=$LUALS_MACOS_X64_SHA256 ;;
+esac
+key="luals $LUALS_VERSION $luals_sha256"
 if stale luals "$key"; then
-	fetch "https://github.com/LuaLS/lua-language-server/releases/download/$LUALS_VERSION/lua-language-server-$LUALS_VERSION-linux-x64.tar.gz" \
-		"$tmp/luals.tar.gz" "$LUALS_SHA256"
+	fetch "https://github.com/LuaLS/lua-language-server/releases/download/$LUALS_VERSION/lua-language-server-$LUALS_VERSION-$luals_asset.tar.gz" \
+		"$tmp/luals.tar.gz" "$luals_sha256"
 	tar -xzf "$tmp/luals.tar.gz" -C "$tools/luals"
 	stamp luals "$key"
 fi
@@ -144,7 +200,12 @@ fi
 key="wow-api $WOW_API_COMMIT"
 if stale wow-api "$key"; then
 	fetch "https://codeload.github.com/Ketho/vscode-wow-api/tar.gz/$WOW_API_COMMIT" "$tmp/wow-api.tar.gz"
-	tar -xzf "$tmp/wow-api.tar.gz" -C "$tools/wow-api" --strip-components=1 --wildcards '*/Annotations/Core/*'
+	if [[ $platform == linux ]]; then
+		tar -xzf "$tmp/wow-api.tar.gz" -C "$tools/wow-api" --strip-components=1 --wildcards '*/Annotations/Core/*'
+	else
+		# bsdtar reads its member patterns as wildcards already, and has no --wildcards.
+		tar -xzf "$tmp/wow-api.tar.gz" -C "$tools/wow-api" --strip-components=1 '*/Annotations/Core/*'
+	fi
 	stamp wow-api "$key"
 fi
 
@@ -153,10 +214,15 @@ fi
 # hardcodes its paths, hence the prefix in the key.
 # shellcheck disable=SC2086
 packages=$(echo $PYTHON_PACKAGES)
-key="uv $UV_VERSION $UV_SHA256 python $PYTHON_VERSION packages $packages prefix $tools"
+case $platform in
+linux) uv_asset=x86_64-unknown-linux-musl uv_sha256=$UV_SHA256 ;;
+macos-arm64) uv_asset=aarch64-apple-darwin uv_sha256=$UV_MACOS_ARM64_SHA256 ;;
+macos-x64) uv_asset=x86_64-apple-darwin uv_sha256=$UV_MACOS_X64_SHA256 ;;
+esac
+key="uv $UV_VERSION $uv_sha256 python $PYTHON_VERSION packages $packages prefix $tools"
 if stale python "$key"; then
-	fetch "https://github.com/astral-sh/uv/releases/download/$UV_VERSION/uv-x86_64-unknown-linux-musl.tar.gz" \
-		"$tmp/uv.tar.gz" "$UV_SHA256"
+	fetch "https://github.com/astral-sh/uv/releases/download/$UV_VERSION/uv-$uv_asset.tar.gz" \
+		"$tmp/uv.tar.gz" "$uv_sha256"
 	tar -xzf "$tmp/uv.tar.gz" -C "$tools/python" --strip-components=1
 	export UV_NO_CONFIG=1 UV_CACHE_DIR="$tmp/uv-cache" UV_PYTHON_CACHE_DIR="$tmp/uv-python-cache" \
 		UV_PYTHON_INSTALL_DIR="$tools/python/cpython"
@@ -183,7 +249,15 @@ for tool in lua luarocks luacheck busted luacov; do
 	ln -sfn "../lua/bin/$tool" "$tools/bin/$tool"
 done
 ln -sfn ../stylua/stylua "$tools/bin/stylua"
-ln -sfn ../luals/bin/lua-language-server "$tools/bin/lua-language-server"
+if [[ $platform == linux ]]; then
+	ln -sfn ../luals/bin/lua-language-server "$tools/bin/lua-language-server"
+else
+	# On macOS LuaLS finds its main.lua beside the path it was started by, not the file a link points to, so
+	# lua-language-server is a script, as python is (rm first, for the same reason).
+	rm -f "$tools/bin/lua-language-server"
+	printf '#!/bin/sh\nexec "$(dirname "$0")/../luals/bin/lua-language-server" "$@"\n' >"$tools/bin/lua-language-server"
+	chmod +x "$tools/bin/lua-language-server"
+fi
 for tool in pytest mypy; do
 	ln -sfn "../python/venv/bin/$tool" "$tools/bin/$tool"
 done

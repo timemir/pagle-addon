@@ -17,7 +17,9 @@ set -euo pipefail
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 fixtures="$root/spec/Pagle/fixtures"
 out="$fixtures/Content.lua"
-python="$root/.tools/bin/python"
+# shellcheck source=lib/tools.sh
+source "$root/scripts/lib/tools.sh"
+python="$(tools_dir "$root")/bin/python"
 key="$fixtures/signing/test-only-private-key.pem"
 # spec/support/addon.lua's SERVER_TIME.
 server_time=1791731700

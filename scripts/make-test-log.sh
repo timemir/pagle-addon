@@ -15,10 +15,14 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-if [[ ! -x $root/.tools/bin/lua ]]; then
-	echo "make-test-log: no $root/.tools/bin/lua; run scripts/setup.sh" >&2
+# shellcheck source=lib/tools.sh
+source "$root/scripts/lib/tools.sh"
+tools=$(tools_dir "$root")
+if [[ ! -x $tools/bin/lua ]]; then
+	echo "make-test-log: no $tools/bin/lua; run scripts/setup.sh" >&2
 	exit 2
 fi
+export PAGLE_TOOLS=$tools
 for word in "$@"; do
 	if [[ $word == --install || $word == --restore ]] && command -v tasklist.exe >/dev/null 2>&1; then
 		if tasklist.exe 2>/dev/null | grep -qi '^wow'; then
@@ -27,4 +31,4 @@ for word in "$@"; do
 		fi
 	fi
 done
-exec "$root/.tools/bin/lua" "$root/scripts/make-test-log.lua" "$@"
+exec "$tools/bin/lua" "$root/scripts/make-test-log.lua" "$@"

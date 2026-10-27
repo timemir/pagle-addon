@@ -2232,9 +2232,12 @@ local function printBoardStored(board, core, stored, log, context)
 	end
 end
 
--- The seconds since the epoch the file at `path` was last written (`stat`, in WSL), or nil when it can't be read.
+-- The seconds since the epoch the file at `path` was last written (`stat`: GNU's in WSL, else the BSD one macOS has),
+-- or nil when it can't be read.
 local function fileWriteTime(path)
-	local ok, pipe = pcall(io.popen, "stat -c %Y -- '" .. path:gsub("'", "'\\''") .. "' 2>/dev/null")
+	local quoted = "'" .. path:gsub("'", "'\\''") .. "'"
+	local command = ("stat -c %%Y -- %s 2>/dev/null || stat -f %%m -- %s 2>/dev/null"):format(quoted, quoted)
+	local ok, pipe = pcall(io.popen, command)
 	if not ok or not pipe then
 		return nil
 	end

@@ -12,10 +12,14 @@
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-if [[ ! -x $root/.tools/bin/lua ]]; then
-	echo "rewrite-bindings: no $root/.tools/bin/lua; run scripts/setup.sh" >&2
+# shellcheck source=lib/tools.sh
+source "$root/scripts/lib/tools.sh"
+tools=$(tools_dir "$root")
+if [[ ! -x $tools/bin/lua ]]; then
+	echo "rewrite-bindings: no $tools/bin/lua; run scripts/setup.sh" >&2
 	exit 2
 fi
+export PAGLE_TOOLS=$tools
 dry_run=false
 for word in "$@"; do
 	[[ $word == --dry-run ]] && dry_run=true
@@ -31,4 +35,4 @@ if [[ $dry_run == false ]]; then
 			"fully closed, or the next logout writes over this rewrite." >&2
 	fi
 fi
-exec "$root/.tools/bin/lua" "$root/scripts/rewrite-bindings.lua" "$@"
+exec "$tools/bin/lua" "$root/scripts/rewrite-bindings.lua" "$@"
