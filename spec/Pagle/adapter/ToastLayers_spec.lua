@@ -366,6 +366,18 @@ describe("a Nod in a composed toast style", function()
 			assert.is_false(nod.strip.left ~= nil and nod.strip.left.shown)
 		end
 	)
+
+	it("crops an item icon's own square border off the medallion, as the standard medallion does (#421)", function()
+		local loaded, M = composedCore()
+		equip(loaded, STORM)
+
+		M:RaiseMoment({ rung = "nod", kind = "spec", title = "New here", text = "Oily Blackmouth", icon = 136245 })
+		loaded.client.advance(0)
+
+		local crop = loaded.ns.ICON_CROP
+		local icon = loaded.ns.announcementFrames.nod.icon
+		assert.are.same({ 136245, { crop, 1 - crop, crop, 1 - crop } }, { icon.texture, icon.texCoord })
+	end)
 end)
 
 describe("a toast announcing a variety in a composed toast style (#424, VAR-R26, ANN-R80, ANN-R82)", function()
