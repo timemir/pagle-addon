@@ -3,6 +3,7 @@
 # passes.
 #
 #   scripts/check.sh
+#   scripts/check.sh lint api     # only these stages, in gate order; setup and libs always run
 #   GATE_JOBS=8 scripts/check.sh    # busted shards at a time without coverage (default 4)
 #
 # A busted shard peaks near its largest spec file, under 1.5 GB, since spec/support/addon.lua lets each file's blocks
@@ -19,6 +20,29 @@
 # first failing stage in that order, whichever finished first, so a lint error that also breaks types fails at lint.
 # Once the verdict is known, the stages still running are stopped and their logs left out.
 set -euo pipefail
+
+stages=(format lint api types tests generator)
+if (($#)); then
+	for name in "$@"; do
+		case $name in
+		format | lint | api | types | tests | generator) ;;
+		*)
+			echo "check: unknown stage '$name'; choose from ${stages[*]}" >&2
+			exit 2
+			;;
+		esac
+	done
+	selected=()
+	for name in "${stages[@]}"; do
+		for requested in "$@"; do
+			if [[ $name == "$requested" ]]; then
+				selected+=("$name")
+				break
+			fi
+		done
+	done
+	stages=("${selected[@]}")
+fi
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$root"
@@ -41,7 +65,6 @@ fail() {
 # The stages' logs, results and scratch (LuaLS's, the busted shards') live outside the repo, and go on any exit with
 # whatever stage is still running.
 logs=$(mktemp -d)
-stages=(format lint api types tests generator)
 pids=() # each stage's pid, at its place in stages
 # Stops every stage without a result yet, with all it started: each runs in its own process group, named by its pid.
 # A stage with a result is left alone, as its group may be gone and its number reused.

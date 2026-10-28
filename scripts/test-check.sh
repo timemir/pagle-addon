@@ -9,11 +9,13 @@
 # working tree, .tools/cache/ included. Runs on macOS too, in bash 3.2 and up, as scripts/check.sh does.
 #
 # A case is `copy`, its planted mistake under "$scratch/tree", then `expect`. Each case gets its own copy in
-# native tmp and runs the whole gate in the background, TEST_CHECK_JOBS at a time (default: the CPU count, at
+# native tmp and runs its stages in the background, TEST_CHECK_JOBS at a time (default: the CPU count, at
 # most 8, and no more than the memory available holds; see case_memory_kb), without coverage but for the cases about
 # it. Verdicts print in the order the cases are written.
 #
 # CI runs this in its own job, only when the gate's own machinery changes (.github/workflows/check.yml).
+# One smoke case runs the whole gate. Mutations run the stages they exercise, including both stages when checking
+# failure order: unrelated LuaLS checks and Python suites otherwise dominate each case's time and memory.
 set -euo pipefail
 
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -57,7 +59,8 @@ echo "test-check: $max_jobs cases at a time"
 # of the working tree's, so no case checks cold.
 base="$scratch/base"
 mkdir "$base" "$scratch/cases" "$scratch/results"
-tar -C "$root" --exclude=./.git --exclude=./.tools --exclude=./.release -cf - . | tar -C "$base" -xf -
+tar -C "$root" --exclude=./.git --exclude=./.tools --exclude=./.release \
+	--exclude=./.claude --exclude=./.scratch -cf - . | tar -C "$base" -xf -
 mkdir -p "$base/.tools/cache"
 for tool in "$tools"/*; do
 	[[ ${tool##*/} == cache ]] || ln -s "$tool" "$base/.tools/"
@@ -93,8 +96,8 @@ copy() {
 	ln -sfn "$case_tree" "$scratch/tree"
 }
 
-# expect <case> <stage|pass> [text...]: runs the gate on the copy and checks where it stopped, and that its
-# output names each text given. The case starts in the background once a job slot is free.
+# expect <case> <stage|pass|usage> <stages|all> [text...]: runs the selected stages of the gate on the copy, checks where
+# it stopped and that its output names each text given. The case starts in the background once a job slot is free.
 expect() {
 	while (($(jobs -pr | wc -l) >= max_jobs)); do
 		wait_any
@@ -103,14 +106,20 @@ expect() {
 	run_case "$case_tree" "$scratch/results/$cases" "$@" &
 }
 
-# run_case <tree> <verdict file> <case> <stage|pass> [text...]: the gate on one copy, as expect describes.
+# run_case <tree> <verdict file> <case> <stage|pass|usage> <stages|all> [text...]: the gate on one copy.
 run_case() {
-	local tree=$1 verdict=$2 output status=0 ok=no text from=$SECONDS
+	local tree=$1 verdict=$2 output status=0 ok=no text from=$SECONDS selected=()
 	shift 2
-	output=$(bash "$tree/scripts/check.sh" 2>&1) || status=$?
-	if [[ $2 == pass && $status -eq 0 ]] || [[ $2 != pass && $status -ne 0 && $output == *"FAILED at $2"* ]]; then
+	if [[ $3 == all ]]; then
+		output=$(bash "$tree/scripts/check.sh" 2>&1) || status=$?
+	else
+		read -r -a selected <<<"$3"
+		output=$(bash "$tree/scripts/check.sh" "${selected[@]}" 2>&1) || status=$?
+	fi
+	if [[ $2 == pass && $status -eq 0 ]] || [[ $2 == usage && $status -eq 2 ]] ||
+		[[ $2 != pass && $status -ne 0 && $output == *"FAILED at $2"* ]]; then
 		ok=yes
-		for text in "${@:3}"; do
+		for text in "${@:4}"; do
 			[[ $output == *"$text"* ]] || ok=no
 		done
 	fi
@@ -123,7 +132,7 @@ run_case() {
 		} >"$verdict.part"
 	else
 		{
-			echo "FAIL $1: expected $2${3:+ naming$(printf ' "%s"' "${@:3}")}, got exit $status"
+			echo "FAIL $1: expected $2 naming$(printf ' "%s"' "${@:4}"), got exit $status"
 			sed 's/^/     | /' <<<"$output"
 		} >"$verdict.part"
 	fi
@@ -190,69 +199,73 @@ toc_move_after() {
 
 copy
 # Each stage's wall time prints before the verdict (#254).
-expect "the tree as it is passes" pass "check: times: libs "
+expect "the tree as it is passes" pass "all" "check: times: libs " \
+	"check: running format lint api types tests generator at once"
+
+copy
+expect "an unknown stage is rejected" usage "typo" "check: unknown stage 'typo'"
 
 copy
 echo "STYLUA_VERSION=0.0.0" >>"$scratch/tree/scripts/tools.env"
-expect "a pin changed since the last setup stops the gate" setup "run scripts/setup.sh"
+expect "a pin changed since the last setup stops the gate" setup "api" "run scripts/setup.sh"
 
 copy
 sed 's#BigWigsMods/packager@[0-9a-f]*#BigWigsMods/packager@0123456789abcdef0123456789abcdef01234567#' \
 	"$scratch/tree/.github/workflows/release.yml" >"$scratch/release.yml"
 mv "$scratch/release.yml" "$scratch/tree/.github/workflows/release.yml"
-expect "a packager pin in release.yml that differs from tools.env stops the gate" setup \
+expect "a packager pin in release.yml that differs from tools.env stops the gate" setup "all" \
 	"PACKAGER_COMMIT in scripts/tools.env"
 
 copy
 printf -- '-- edited by hand\n' >>"$addon/libs/AceDB-3.0/AceDB-3.0.lua"
-expect "a hand-edited vendored lib fails libs" libs "addons/Pagle/libs/AceDB-3.0/AceDB-3.0.lua: FAILED"
+expect "a hand-edited vendored lib fails libs" libs "tests" "addons/Pagle/libs/AceDB-3.0/AceDB-3.0.lua: FAILED"
 
 copy
 printf -- '-- edited by hand\n' >>"$addon/libs/LibDeflate/LibDeflate.lua"
-expect "a hand-edited LibDeflate fails libs" libs "addons/Pagle/libs/LibDeflate/LibDeflate.lua: FAILED"
+expect "a hand-edited LibDeflate fails libs" libs "all" "addons/Pagle/libs/LibDeflate/LibDeflate.lua: FAILED"
 
 copy
 printf 'return 1\n' >"$addon/libs/Stray.lua"
-expect "a file in libs/ that no update script vendored fails libs" libs "addons/Pagle/libs/Stray.lua"
+expect "a file in libs/ that no update script vendored fails libs" libs "all" "addons/Pagle/libs/Stray.lua"
 
 copy
 printf 'local t = {a=1}\nreturn t\n' >"$addon/logic/Badly.lua"
-expect "a badly formatted file fails format" format "Diff in addons/Pagle/logic/Badly.lua"
+expect "a badly formatted file fails format" format "format" "Diff in addons/Pagle/logic/Badly.lua"
 
 copy
 uses_create_frame "$addon/logic/Global.lua"
 inventory_add CreateFrame
-expect "a WoW global in logic/ fails lint, even when inventoried" lint "accessing undefined variable 'CreateFrame'"
+expect "a WoW global in logic/ fails lint, even when inventoried" lint "lint" "accessing undefined variable 'CreateFrame'"
 
 copy
 uses_create_frame "$addon/locale/Global.lua"
 inventory_add CreateFrame
-expect "a WoW global in locale/ fails lint, even when inventoried" lint "accessing undefined variable 'CreateFrame'"
+expect "a WoW global in locale/ fails lint, even when inventoried" lint "lint" "accessing undefined variable 'CreateFrame'"
 
 copy
 printf 'local item = Pagle.GetItem(6358)\nreturn item\n' >>"$scratch/tree/addons/Pagle_QoL/logic/Data.lua"
-expect "a Module's logic/ calling Pagle beyond its CORE-R11 guard fails lint" lint \
+expect "a Module's logic/ calling Pagle beyond its CORE-R11 guard fails lint" lint "lint" \
 	"accessing undefined variable 'Pagle'"
 
 copy
 printf 'local version = Pagle.API_VERSION\nreturn version\n' >>"$scratch/tree/addons/Pagle_QoL/locale/enUS.lua"
-expect "a Module's locale/ reading Pagle beyond its CORE-R11 guard fails lint" lint \
+expect "a Module's locale/ reading Pagle beyond its CORE-R11 guard fails lint" lint "lint" \
 	"accessing undefined variable 'Pagle'"
 
 copy
 uses_logout "$addon/adapter/Global.lua"
-expect "a WoW global in adapter/ fails lint until inventoried" lint "accessing undefined variable 'Logout'"
+expect "a WoW global in adapter/ fails lint until inventoried" lint "lint" "accessing undefined variable 'Logout'"
 
 copy
 uses_logout "$addon/adapter/Global.lua"
 inventory_add Logout
-expect "a WoW global in adapter/ passes once inventoried" pass
+expect "a WoW global in adapter/ passes once inventoried" pass "lint api"
 
 copy
 mkdir "$addon/ui"
 uses_create_frame "$addon/ui/Global.lua"
 inventory_add CreateFrame
-expect "a WoW global anywhere but adapter/ fails lint, even when inventoried" lint \
+expect "a WoW global anywhere but adapter/ fails lint, even when inventoried" lint "lint" \
 	"accessing undefined variable 'CreateFrame'"
 
 copy
@@ -264,61 +277,62 @@ for name in CreateFrame hooksecurefunc ChatFrame1 LE_EXPANSION_CLASSIC Enum.Item
 done
 echo 'stds.wow.read_globals.C_Weather = { fields = { "GetCurrentWeather" } }' >>"$scratch/tree/.luacheckrc"
 inventory_write
-expect "real names from each part of the dump pass api" pass "api: $((${inventoried%% *} + 8)) inventoried names"
+expect "real names from each part of the dump pass api" pass "api api" \
+	"check: running api at once" "api: $((${inventoried%% *} + 8)) inventoried names"
 
 copy
 echo 'table.insert(stds.wow_variables.read_globals, "CreateFrame")' >>"$scratch/tree/.luacheckrc"
-expect "a client variable the dump does list fails api" api "move it from stds.wow_variables"
+expect "a client variable the dump does list fails api" api "api" "move it from stds.wow_variables"
 
 copy
 inventory_add MadeUpApi
-expect "a made-up API in the inventory fails api" api "MadeUpApi is in stds.wow but not in the forever dump"
+expect "a made-up API in the inventory fails api" api "api" "MadeUpApi is in stds.wow but not in the forever dump"
 
 copy
 inventory_add C_Weather.MadeUp
-expect "a made-up function of a real namespace fails api" api "C_Weather.MadeUp is in stds.wow"
+expect "a made-up function of a real namespace fails api" api "api" "C_Weather.MadeUp is in stds.wow"
 
 copy
 printf 'read_globals = { "CreateFrame" }\n' >>"$scratch/tree/.luacheckrc"
-expect "a top-level read_globals (reaching logic/) fails api" api "top-level read_globals"
+expect "a top-level read_globals (reaching logic/) fails api" api "api" "top-level read_globals"
 
 copy
 toc_drop 'logic\Forever.lua'
-expect "a file dropped from Pagle.toc that Core needs fails tests" tests "attempt to call field 'IsForever'"
+expect "a file dropped from Pagle.toc that Core needs fails tests" tests "tests" "attempt to call field 'IsForever'"
 
 copy
 toc_drop 'libs\AceDB-3.0\AceDB-3.0.lua'
-expect "a vendored lib dropped from Pagle.toc fails tests" tests 'Cannot find a library instance of "AceDB-3.0"'
+expect "a vendored lib dropped from Pagle.toc fails tests" tests "tests" 'Cannot find a library instance of "AceDB-3.0"'
 
 copy
 toc_drop 'adapter\Bindings.lua' "$scratch/tree/addons/Pagle_QoL/Pagle_QoL.toc"
-expect "a file dropped from Pagle_QoL.toc fails tests" tests "lists every Lua file in the addon folder"
+expect "a file dropped from Pagle_QoL.toc fails tests" tests "tests" "lists every Lua file in the addon folder"
 
 copy
 toc_move_after 'logic\Forever.lua' 'adapter\Core.lua'
-expect "a file listed after the file that needs it fails tests" tests "adapter/Core.lua failed while loading"
+expect "a file listed after the file that needs it fails tests" tests "tests" "adapter/Core.lua failed while loading"
 
 copy
 toc_move_after 'libs\LibStub\LibStub.lua' 'libs\CallbackHandler-1.0\CallbackHandler-1.0.lua'
-expect "a vendored lib listed after the lib that needs it fails tests" tests \
+expect "a vendored lib listed after the lib that needs it fails tests" tests "tests" \
 	"CallbackHandler-1.0.lua failed while loading"
 
 copy
-PAGLE_NO_COVERAGE=0 expect "the tests stage reports coverage of addon code" pass "addons/Pagle/logic/Forever.lua"
+PAGLE_NO_COVERAGE=0 expect "the tests stage reports coverage of addon code" pass "tests" "addons/Pagle/logic/Forever.lua"
 
 copy
 printf 'local ns = select(2, ...)\n\nfunction ns.Untested()\n\treturn 1\nend\n' >"$addon/logic/Untested.lua"
 echo 'logic\Untested.lua' >>"$toc"
-PAGLE_NO_COVERAGE=0 expect "code no spec runs passes; coverage doesn't gate" pass "addons/Pagle/logic/Untested.lua"
+PAGLE_NO_COVERAGE=0 expect "code no spec runs passes; coverage doesn't gate" pass "tests" "addons/Pagle/logic/Untested.lua"
 
 copy
 rm "$scratch/tree/.luacov"
-PAGLE_NO_COVERAGE=0 expect "a coverage report that can't be made doesn't gate" pass "no coverage report"
+PAGLE_NO_COVERAGE=0 expect "a coverage report that can't be made doesn't gate" pass "tests" "no coverage report"
 
 copy
 # GATE_JOBS=1, as every case here has it: the shards run one after another (#254).
 PAGLE_NO_COVERAGE=1 expect "PAGLE_NO_COVERAGE=1 runs the specs without coverage, in shards one at a time, and passes" \
-	pass "PAGLE_NO_COVERAGE=1, so the specs run without coverage" "1 at a time" "tests: spec/Pagle passed" \
+	pass "tests" "PAGLE_NO_COVERAGE=1, so the specs run without coverage" "1 at a time" "tests: spec/Pagle passed" \
 	"tests: spec/Pagle/adapter (1/2) passed"
 
 copy
@@ -328,7 +342,7 @@ for spec in adapter/A_fails adapter/Co_fails logic/fails new/fails fails; do
 	mkdir -p "$scratch/tree/spec/Pagle/${spec%/*}"
 	printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/Pagle/${spec}_spec.lua"
 done
-PAGLE_NO_COVERAGE=1 GATE_JOBS=3 expect "every spec under a split or halved directory runs, in its own shard" tests \
+PAGLE_NO_COVERAGE=1 GATE_JOBS=3 expect "every spec under a split or halved directory runs, in its own shard" tests "tests" \
 	"tests: spec/Pagle/adapter (1/2) failed" "tests: spec/Pagle/adapter (2/2) failed" "tests: spec/Pagle/logic failed" \
 	"tests: spec/Pagle/new failed" "tests: spec/Pagle failed" "spec/Pagle/adapter/A_fails_spec.lua" \
 	"spec/Pagle/adapter/Co_fails_spec.lua" "spec/Pagle/new/fails_spec.lua" "spec/Pagle/fails_spec.lua"
@@ -336,26 +350,26 @@ PAGLE_NO_COVERAGE=1 GATE_JOBS=3 expect "every spec under a split or halved direc
 copy
 # A shard list that leaves a spec out fails tests before any shard runs, naming the spec.
 sed -i.bak '/add_shard "$dir" "$(specs_in "$dir" top)"/d' "$scratch/tree/scripts/check.sh"
-PAGLE_NO_COVERAGE=1 expect "shards that leave a spec out fail tests and name it" tests \
+PAGLE_NO_COVERAGE=1 expect "shards that leave a spec out fail tests and name it" tests "tests" \
 	"the shards don't run each spec in spec/ once" "< spec/Pagle/Pagle_toc_spec.lua"
 
 copy
 printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/fails_spec.lua"
-PAGLE_NO_COVERAGE=0 expect "a failing spec fails tests with coverage, as the gate runs by default" tests "fails_spec.lua"
+PAGLE_NO_COVERAGE=0 expect "a failing spec fails tests with coverage, as the gate runs by default" tests "tests" "fails_spec.lua"
 
 copy
 printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/fails_spec.lua"
-PAGLE_NO_COVERAGE=1 expect "a failing spec fails tests without coverage too" tests "fails_spec.lua"
+PAGLE_NO_COVERAGE=1 expect "a failing spec fails tests without coverage too" tests "tests" "fails_spec.lua"
 
 copy
 printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/Pagle_QoL/fails_spec.lua"
-PAGLE_NO_COVERAGE=1 GATE_JOBS=3 expect "a failing spec in one shard fails tests and names the spec" tests \
+PAGLE_NO_COVERAGE=1 GATE_JOBS=3 expect "a failing spec in one shard fails tests and names the spec" tests "tests" \
 	"spec/Pagle_QoL/fails_spec.lua" "tests: spec/Pagle_QoL failed" "tests: spec/Pagle passed"
 
 copy
 # The first pass leaves #slow specs out (--exclude-tags=slow); the second runs only them.
 printf 'it("fails #slow", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/slow_fails_spec.lua"
-PAGLE_NO_COVERAGE=1 expect "a failing spec tagged #slow fails tests in the #slow pass" tests "slow_fails_spec.lua"
+PAGLE_NO_COVERAGE=1 expect "a failing spec tagged #slow fails tests in the #slow pass" tests "tests" "slow_fails_spec.lua"
 
 # Plants a spec that kills the busted running it with SIGSEGV, as the coverage run has died on the dev's machine
 # (#149). With "coverage", only a busted running with luacov dies.
@@ -375,54 +389,54 @@ EOF
 
 copy
 kills_busted coverage
-PAGLE_NO_COVERAGE=0 expect "a coverage run killed by a signal doesn't gate; the specs run again without coverage" pass \
+PAGLE_NO_COVERAGE=0 expect "a coverage run killed by a signal doesn't gate; the specs run again without coverage" pass "tests" \
 	"killed by signal 11; running the specs again without coverage"
 
 copy
 kills_busted
-PAGLE_NO_COVERAGE=0 expect "specs that kill busted without coverage too fail tests" tests "killed by signal 11"
+PAGLE_NO_COVERAGE=0 expect "specs that kill busted without coverage too fail tests" tests "tests" "killed by signal 11"
 
 copy
 printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
-expect "a string assigned to Pagle.API_VERSION in Core fails types" types "assign-type-mismatch"
+expect "a string assigned to Pagle.API_VERSION in Core fails types" types "types" "assign-type-mismatch"
 
 copy
 line=$(($(wc -l <"$addon/adapter/Core.lua") + 1))
 printf -- '---@diagnostic disable\nPagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
-expect "a bare ---@diagnostic disable fails types" types "adapter/Core.lua:$line:---@diagnostic disable"
+expect "a bare ---@diagnostic disable fails types" types "types" "adapter/Core.lua:$line:---@diagnostic disable"
 
 copy
 printf -- '---@diagnostic disable-next-line: assign-type-mismatch\nPagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
-expect "a suppression without a reason fails types" types "each suppression must be"
+expect "a suppression without a reason fails types" types "types" "each suppression must be"
 
 copy
 printf 'do\n\t---@diagnostic disable-next-line: assign-type-mismatch, cast-local-type -- testing the gate\n' \
 	>>"$addon/adapter/Core.lua"
 printf '\tPagle.API_VERSION = "2"\nend\n' >>"$addon/adapter/Core.lua"
 # types lets it through; the stage after it, tests, still catches the string (CORE-R15).
-expect "an inline suppression with codes and a reason passes types" tests "API version 1 before 1.0 (CORE-R15)"
+expect "an inline suppression with codes and a reason passes types" tests "types tests" "API version 1 before 1.0 (CORE-R15)"
 
 # The stages after libs run at once, but the verdict is the first failing stage in their order (#254).
 copy
 uses_create_frame "$addon/logic/Global.lua"
 printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
-expect "a lint error and a types error at once fail lint" lint "accessing undefined variable 'CreateFrame'"
+expect "a lint error and a types error at once fail lint" lint "types lint" "accessing undefined variable 'CreateFrame'"
 
 copy
 printf 'Pagle.API_VERSION = "2"\n' >>"$addon/adapter/Core.lua"
 dev_toml_colour
 # generator finishes long before types, and still doesn't give the verdict.
-expect "a types error and a generator error at once fail types" types "assign-type-mismatch"
+expect "a types error and a generator error at once fail types" types "generator types" "assign-type-mismatch"
 
 copy
 # Keeps the auras data/hunts/hunts.toml names (Rack 1280341, Hut 1280342), which DATA-R39 checks before the catalogue.
 printf 'auras = [1280341, 1280342]\nfishingSpells = [7620]\n' >"$scratch/tree/data/forever/lists.toml"
-expect "a data/ change committed without its regenerated file fails generator" generator \
+expect "a data/ change committed without its regenerated file fails generator" generator "generator" \
 	"addons/Pagle/data/Catalogue.lua is out of date with data/"
 
 copy
 dev_toml_colour
-expect "an unknown key in dev.toml fails generator" generator "data/observed/dev.toml: unknown key 'colour'"
+expect "an unknown key in dev.toml fails generator" generator "generator" "data/observed/dev.toml: unknown key 'colour'"
 
 wait
 report
