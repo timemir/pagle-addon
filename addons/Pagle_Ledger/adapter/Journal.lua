@@ -102,9 +102,30 @@ end
 ---@field drawnPlate boolean?  -- whether the last drawing was a Legend's plate
 ---@field turnDirection ("fwd"|"back")? -- the next drawing turns the page this way (a Prestige)
 ---@field cacheKey string?     -- the place `pages` was read for in this drawing
+---@field context LedgerJournalContext? -- what `pages` was read from
 ---@field updatingView LedgerJournalUpdatingView? -- the "being written up" pages, from the first update shown (LED-R122)
 local Journal = {}
 Journal.__index = Journal
+
+--- Core's goods calls the Journal's pages make: the Angler page's Bindings (LED-R146) and the Collection (LED-R166, LED-R169,
+--- LED-R170). The Collection's `Pagle.GetBalance` is read when a page asks, never kept.
+---@return LedgerJournalGoods
+function ns.JournalGoods()
+	return {
+		isOwned = Pagle.IsOwned,
+		getEquipped = Pagle.GetEquipped,
+		setEquipped = Pagle.SetEquipped,
+		openShop = Pagle.OpenShop,
+		slotGoods = Pagle.GetSlotGoods,
+		getGood = Pagle.GetGood,
+		slots = Pagle.GetSlots,
+		earnedProgress = Pagle.GetEarnedProgress,
+		putAway = Pagle.GetPutAwayGoods,
+		balance = function()
+			return Pagle.GetBalance().balance
+		end,
+	}
+end
 
 --- What the spreads, and the search box, read now (LED-R122, LED-R123, LED-R148): nothing of the state while the
 --- projection is updating.
@@ -128,20 +149,13 @@ function Journal:Context() -- luacheck: no self
 		angler = Pagle.GetAngler(),
 		openFieldReport = Pagle.OpenFieldReport,
 		sizeText = ns.ClientSizeText,
-		-- The Angler page's M4 parts (LED-R146): the crest, Prestige, the title pick and the bindings.
+		-- The Angler page's M4 parts (LED-R146): the crest and Prestige; the title pick is the Collection's (LED-R170).
 		crest = ns.CrestIcon(),
 		canPrestige = ns.CanPrestige(),
 		askPrestige = ns.AskPrestige,
 		pickTitle = ns.PickActiveTitle,
-		goods = {
-			isOwned = Pagle.IsOwned,
-			getEquipped = Pagle.GetEquipped,
-			setEquipped = Pagle.SetEquipped,
-			openShop = Pagle.OpenShop,
-			slotGoods = Pagle.GetSlotGoods,
-			getGood = Pagle.GetGood,
-			bindingLook = Pagle.GetBindingLook,
-		},
+		goods = ns.JournalGoods(),
+		collection = ns.db.global.collection or { seen = {}, looked = {} },
 		-- The varieties (VAR-R23, VAR-R24): a Species' ten, the rarities and its fish crest.
 		getVarieties = Pagle.GetVarieties,
 		rarities = Pagle.VARIETY_RARITIES,
@@ -166,7 +180,14 @@ function Journal:PagesAt(place)
 	end
 	local at = fromBook(place)
 	self.router:Open(at.id, at.args)
-	self.pages = self.router:Pages(self:Context())
+	local context = self:Context()
+	-- every owned look and earned title not seen yet is noted, before any spread reads which are new (LED-R171)
+	if not context.updating then
+		ns.NoteCollection(context)
+		context.collection = ns.db.global.collection or context.collection
+	end
+	self.context = context
+	self.pages = self.router:Pages(context)
 	self.cacheKey = key
 	return self.pages
 end
@@ -391,6 +412,10 @@ local function afterDraw(journal, place, notice)
 	if not pages.updating then
 		journal.drawnDepth = #(pages.crumbs or {})
 	end
+	-- drawing a shelf's spread has the Angler look at every owned look on it (LED-R171)
+	if not notice and not pages.updating and place.page == ns.JOURNAL_SHELF then
+		ns.NoteShelfLookedNow(journal.context --[[@as LedgerSpreadContext]], place.args and place.args.shelf)
+	end
 end
 
 --- The Journal, on Home until it is first left (LED-R120): a login or `/reload` starts it afresh. Its book is made at
@@ -501,6 +526,11 @@ do
 			buildSearch(journal, anchor)
 		end
 		local hidden = notice ~= nil or plateOf(journal:PagesAt(place)) ~= nil
+		-- the slip asks for a look on the Collection's spreads, a fish or a water elsewhere (LED-R175)
+		journal.searchHint:SetText(
+			(place.page == ns.JOURNAL_COLLECTION or place.page == ns.JOURNAL_SHELF) and L.COLLECTION_SEARCH_HINT
+				or L.JOURNAL_SEARCH_HINT
+		)
 		local search = journal.search --[[@as EditBox]]
 		local drop = journal.searchDrop --[[@as Frame]]
 		search:SetShown(not hidden)
@@ -637,6 +667,8 @@ function ns.WithJournalRedraws(def)
 	wrapped.apply = function(state, record, mode)
 		apply(state, record, mode)
 		if mode == "live" then
+			-- a look this entry earned is seen now (LED-R171)
+			ns.NoteCollection()
 			ns.journal:LiveApplied()
 		end
 	end
@@ -644,6 +676,7 @@ function ns.WithJournalRedraws(def)
 		if done then
 			done(state, info)
 		end
+		ns.NoteCollection()
 		ns.journal:Draw()
 	end
 	return wrapped

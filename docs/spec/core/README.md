@@ -195,6 +195,7 @@ Grouped by topic; the rules live in the linked file.
 | `Pagle.IsRestricted()` | boolean | here |
 | `Pagle.OpenSettings(topic?)` | | here |
 | `Pagle.IterateCatches(afterSeq)` | iterator over Core records | [catch-log.md](catch-log.md#contracts) |
+| `Pagle.IsUpdating()` | boolean, true while any projection of Core's or a Module's is catching up or rebuilding (LOG-R102) | catch-log.md |
 | `Pagle.GetFishingState()` | `"idle"`, `"channeling"`, `"looting"` | catch-log.md |
 | `Pagle.GetAngler()` | `Angler` | catch-log.md |
 | `Pagle.GetConditions()` | `ConditionsSnapshot` | catch-log.md |

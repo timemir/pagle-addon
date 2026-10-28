@@ -29,16 +29,24 @@ describe("Pagle_Ledger with Core", function()
 		assert.are.equal("on", statesOf(core).Ledger)
 	end)
 
-	it("registers the Fish Journal view and /pagle journal, and no menu entry or settingsAction (LED-R1)", function()
-		local def = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns.ModuleDef()
+	it(
+		"registers the Fish Journal view, /pagle journal and /pagle collection, and no menu entry or settingsAction (LED-R1, LED-R174)",
+		function()
+			local def = loadAddon("Pagle_Ledger", FOREVER_GLOBALS).ns.ModuleDef()
 
-		assert.are.equal(1, #def.views)
-		assert.are.same({ "journal", "Fish Journal" }, { def.views[1].id, def.views[1].label })
-		assert.are.equal(1, #def.slash)
-		assert.are.same({ "journal", "Open or close the Fish Journal" }, { def.slash[1].name, def.slash[1].help })
-		assert.is_nil(def.menu)
-		assert.is_nil(def.settingsAction)
-	end)
+			assert.are.equal(1, #def.views)
+			assert.are.same({ "journal", "Fish Journal" }, { def.views[1].id, def.views[1].label })
+			assert.are.equal(2, #def.slash)
+			assert.are.same({ "journal", "Open or close the Fish Journal" }, { def.slash[1].name, def.slash[1].help })
+			assert.are.same(
+				{ "collection", "Open the Fish Journal's Collection" },
+				{ def.slash[2].name, def.slash[2].help }
+			)
+			assert.is_function(def.collection)
+			assert.is_nil(def.menu)
+			assert.is_nil(def.settingsAction)
+		end
+	)
 
 	it('shows On in the status list, with an "Open Fish Journal" button (SET-R11, CORE-R44, LED-R1)', function()
 		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
@@ -72,6 +80,7 @@ describe("Pagle_Ledger with Core", function()
 			"/pagle guide: open the Field guide; /pagle guide notes shows the margin notes again",
 			"/pagle help: list these commands",
 			"/pagle journal: Open or close the Fish Journal",
+			"/pagle collection: Open the Fish Journal's Collection",
 		}, loaded.printed)
 	end)
 
@@ -225,7 +234,10 @@ describe("Pagle_Ledger with FakePagle", function()
 			local expected = labels(plain.menu())
 			table.insert(expected, 1, "Fish Journal")
 			assert.are.same(expected, labels(fake.menu()))
-			assert.are.same({ "/pagle journal: Open or close the Fish Journal" }, { unpack(fake.printed, 9) })
+			assert.are.same({
+				"/pagle journal: Open or close the Fish Journal",
+				"/pagle collection: Open the Fish Journal's Collection",
+			}, { unpack(fake.printed, 9) })
 			for _, topic in ipairs({ "fishing", "announcements", "trackers", "looks" }) do
 				assert.is_nil(fake.settingsPage(topic))
 			end

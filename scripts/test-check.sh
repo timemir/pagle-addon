@@ -32,10 +32,10 @@ export PAGLE_NO_COVERAGE=1
 # Cases run at once, so each gate runs its busted shards one at a time (#254); the case that wants more sets its own.
 export GATE_JOBS=1
 
-# What one case's gate can take at its peak: its stages run at once, and a busted shard has reached 4.5 GB with
+# What one case's gate can take at its peak: its stages run at once, a busted shard up to 1.5 GB with
 # lua-language-server at 2.3 GB beside it. Cases past what MemAvailable holds get their busted OOM-killed, and fail;
 # in CI, the runner likely shuts down mid-run instead.
-case_memory_kb=$((7 * 1024 * 1024))
+case_memory_kb=$((4 * 1024 * 1024))
 max_jobs=${TEST_CHECK_JOBS:-$(nproc 2>/dev/null || sysctl -n hw.ncpu)}
 if [[ -z ${TEST_CHECK_JOBS:-} ]]; then
 	((max_jobs <= 8)) || max_jobs=8
@@ -318,7 +318,26 @@ PAGLE_NO_COVERAGE=0 expect "a coverage report that can't be made doesn't gate" p
 copy
 # GATE_JOBS=1, as every case here has it: the shards run one after another (#254).
 PAGLE_NO_COVERAGE=1 expect "PAGLE_NO_COVERAGE=1 runs the specs without coverage, in shards one at a time, and passes" \
-	pass "PAGLE_NO_COVERAGE=1, so the specs run without coverage" "1 at a time" "tests: spec/Pagle passed"
+	pass "PAGLE_NO_COVERAGE=1, so the specs run without coverage" "1 at a time" "tests: spec/Pagle passed" \
+	"tests: spec/Pagle/adapter (1/2) passed"
+
+copy
+# spec/Pagle is split (its directories and its top) and spec/Pagle/adapter halved, every other file by name: with
+# Core_spec.lua, A_fails is 1/2's and Co_fails 2/2's. A directory new to spec/Pagle gets its own shard.
+for spec in adapter/A_fails adapter/Co_fails logic/fails new/fails fails; do
+	mkdir -p "$scratch/tree/spec/Pagle/${spec%/*}"
+	printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/Pagle/${spec}_spec.lua"
+done
+PAGLE_NO_COVERAGE=1 GATE_JOBS=3 expect "every spec under a split or halved directory runs, in its own shard" tests \
+	"tests: spec/Pagle/adapter (1/2) failed" "tests: spec/Pagle/adapter (2/2) failed" "tests: spec/Pagle/logic failed" \
+	"tests: spec/Pagle/new failed" "tests: spec/Pagle failed" "spec/Pagle/adapter/A_fails_spec.lua" \
+	"spec/Pagle/adapter/Co_fails_spec.lua" "spec/Pagle/new/fails_spec.lua" "spec/Pagle/fails_spec.lua"
+
+copy
+# A shard list that leaves a spec out fails tests before any shard runs, naming the spec.
+sed -i.bak '/add_shard "$dir" "$(specs_in "$dir" top)"/d' "$scratch/tree/scripts/check.sh"
+PAGLE_NO_COVERAGE=1 expect "shards that leave a spec out fail tests and name it" tests \
+	"the shards don't run each spec in spec/ once" "< spec/Pagle/Pagle_toc_spec.lua"
 
 copy
 printf 'it("fails", function()\n\tassert.is_true(false)\nend)\n' >"$scratch/tree/spec/fails_spec.lua"

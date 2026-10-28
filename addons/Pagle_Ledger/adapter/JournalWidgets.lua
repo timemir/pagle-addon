@@ -151,6 +151,9 @@ local function textStyle(block)
 	elseif block.style == "italic" then
 		-- a variety's words (VAR-R24)
 		return "italic", 16, INK.body
+	elseif block.style == "kicker" then
+		-- a look's slot and source under its name (LED-R170)
+		return "sc", 14, INK.kicker
 	end
 	return "print", 15, INK.body
 end
@@ -196,15 +199,31 @@ makers.kicker = function(parent)
 end
 
 -- A title: the print face's large size in the title ink, wrapping; a page's first title larger than its later ones.
+---@class LedgerTitleWidget: LedgerJournalWidget
+---@field note FontString
+
 makers.title = function(parent)
-	local widget = newWidget(parent)
+	local widget = newWidget(parent) --[[@as LedgerTitleWidget]]
 	widget.label = ns.JournalLabel(widget, "print", 27, INK.title, "", { wrap = true, spacing = 1 })
 	widget.label:SetPoint("TOPLEFT")
+	-- a count in the hand at its right ("11 of 46 yours", LED-R169), or "new!" in red (LED-R170)
+	widget.note = ns.JournalLabel(widget, "hand", 22, INK.hand, "", { justify = "RIGHT" })
+	widget.note:SetPoint("TOPRIGHT", 0, -6)
 	function widget.Fill(self, block, width, _, draw)
 		local size = draw.center and 27 or (draw.first and 29 or 25)
 		ns.JournalRestyle(self.label, "print", size, INK.title)
 		self.label:SetJustifyH(draw.center and "CENTER" or "LEFT")
-		self.label:SetWidth(width)
+		self.note:SetShown(block.value ~= nil)
+		self.note:SetText(block.value or "")
+		ns.JournalRestyle(
+			self.note,
+			"hand",
+			block.color == "red" and 20 or 22,
+			block.color == "red" and INK.red or INK.hand
+		)
+		local noteW = block.value and math.min(self.note:GetStringWidth() + 1, width * 0.5) or 0
+		self.note:SetWidth(math.max(1, noteW))
+		self.label:SetWidth(width - noteW - (noteW > 0 and 10 or 0))
 		self.label:SetText(block.text)
 		return math.max(size + 2, self.label:GetStringHeight() + 3)
 	end
@@ -361,16 +380,14 @@ end
 ---@class LedgerLeaderWidget: LedgerJournalWidget
 ---@field numeral FontString
 ---@field value FontString
----@field state FontString
----@field swatch LedgerSpriteTexture
+---@field note FontString
 ---@field dots LedgerDotLine
 ---@field rule Texture
 ---@field ink string           -- its words' ink, back under the mouse's leaving
 
 -- A contents line (LED-R132): its numeral in small capitals, its words, a dotted leader and its value, the words
--- turning red under the mouse; or a binding's line (LED-R146): its closed book, its name and its state at the right
--- ("In use" in the hand, "Use" and "In the Curio Shop" as ink links calling `action`, "Angler Level {L}" in italic);
--- or with `style` "pair", words and a value with no leader (a hand on the rod, LED-R146), and "ruled" the same over
+-- turning red under the mouse, and "{n} new" in red hand after its value (LED-R132, LED-R171); or with `style` "pair",
+-- words and a value with no leader (a hand on the rod, LED-R146), and "ruled" the same over
 -- a rule (a Followed Angler's card, LED-R163). With `color` "faded" its words and value are greyed (Home's Following
 -- line with no Companion, LED-R163). It opens its place or calls its action.
 makers.leader = function(parent)
@@ -381,7 +398,8 @@ makers.leader = function(parent)
 	widget.label = ns.JournalLabel(widget, "print", 16, INK.body)
 	widget.value = ns.JournalLabel(widget, "print", 16, INK.small, "", { justify = "RIGHT" })
 	widget.value:SetPoint("TOPRIGHT", 0, -3)
-	widget.swatch = ns.JournalSprite(widget, "Bindings", "binding-field-leather", "ARTWORK", 0, 11)
+	-- a count of new things in red hand after the value ("4 new", LED-R132)
+	widget.note = ns.JournalLabel(widget, "hand", 17, INK.red, "", { justify = "RIGHT" })
 	widget.dots = ns.JournalDotLine(widget, INK.noteLight, 1)
 	widget.rule = ns.JournalTint(widget, INK.rule, 1)
 	widget.rule:SetHeight(1)
@@ -397,48 +415,43 @@ makers.leader = function(parent)
 	end)
 	function widget.Fill(self, block, width, open)
 		self.place, self.action, self.open = block.place, block.action, open
-		local binding = block.binding ~= nil
 		local ruled = block.style == "ruled"
 		local pair = block.style == "pair" or ruled
 		self.rule:SetShown(ruled)
 		local faded = block.color == "faded"
 		self.ink = faded and INK.faded or INK.body
-		self.swatch:SetShown(binding)
 		self.numeral:SetShown(block.numeral ~= nil)
 		self.numeral:SetText(block.numeral or "")
-		local left = block.numeral and 28 or (binding and 22 or 0)
-		local size = (binding or pair) and 14.5 or 16
+		local left = block.numeral and 28 or 0
+		local size = pair and 14.5 or 16
 		ns.JournalRestyle(self.label, "print", size, self.ink)
 		self.label:ClearAllPoints()
 		self.label:SetPoint("TOPLEFT", left, -3)
 		self.label:SetText(block.text)
-		-- the value: a state on a binding's line, a count or a mark on a contents line
+		-- the value: a count or a mark on a contents line
 		local face, valueSize, hex = "print", size, faded and INK.faded or INK.small
-		if binding then
-			ns.JournalResprite(self.swatch, block.bindingAtlas or "Bindings", block.binding, 11)
-			ns.JournalBoxAt(self.swatch, self, 1, 1)
-			if block.state == "inUse" then
-				face, valueSize, hex = "hand", 17, INK.green
-			elseif block.state == "level" then
-				face, valueSize, hex = "italic", 13, INK.note
-			else
-				face, valueSize, hex = "print", 13, INK.link
-			end
-		end
 		ns.JournalRestyle(self.value, face, valueSize, hex)
 		self.value:SetText(block.value or "")
 		bound(self.value, width * 0.5)
-		local valueW = block.value and self.value:GetWidth() or 0
+		self.note:SetShown(block.note ~= nil)
+		self.note:SetText(block.note or "")
+		bound(self.note, width * 0.25)
+		local noteW = block.note and self.note:GetWidth() + 8 or 0
+		self.value:ClearAllPoints()
+		self.value:SetPoint("TOPRIGHT", -noteW, -3)
+		self.note:ClearAllPoints()
+		self.note:SetPoint("TOPRIGHT", 0, -2)
+		local valueW = (block.value and self.value:GetWidth() or 0) + noteW
 		bound(self.label, width - left - valueW - 12)
 		self.dots:Hide()
-		if not binding and not pair then
+		if not pair then
 			local from = left + self.label:GetWidth() + 6
 			local to = width - valueW - 6
 			if to > from then
 				self.dots:Lay(from, 15, to - from)
 			end
 		end
-		return (binding or (pair and not ruled)) and 22 or 26
+		return (pair and not ruled) and 22 or 26
 	end
 	return widget
 end
@@ -1112,6 +1125,7 @@ end
 
 ---@class LedgerTabView: LedgerJournalClickable
 ---@field label FontString
+---@field count FontString
 ---@field underline Texture
 
 ---@class LedgerTabsWidget: LedgerJournalWidget
@@ -1147,7 +1161,14 @@ makers.tabs = function(parent)
 			bound(tab.label, math.max(1, width - x))
 			tab.underline:SetShown(data.on)
 			tab.place, tab.open = data.place, open
-			local tabW = tab.label:GetWidth()
+			-- its count in small italic after its words (LED-R169)
+			tab.count = tab.count or ns.JournalLabel(tab, "italic", 12, INK.noteLight, "", { layer = "ARTWORK" })
+			tab.count:SetShown(data.count ~= nil)
+			tab.count:SetText(data.count or "")
+			tab.count:ClearAllPoints()
+			tab.count:SetPoint("TOPLEFT", tab.label:GetWidth() + 4, -5)
+			ns.JournalBound(tab.count, math.max(1, width - x - tab.label:GetWidth() - 4))
+			local tabW = tab.label:GetWidth() + (data.count and tab.count:GetWidth() + 4 or 0)
 			tab:SetSize(tabW, 25)
 			ns.JournalAt(tab, self, x, 0)
 			tab:Show()

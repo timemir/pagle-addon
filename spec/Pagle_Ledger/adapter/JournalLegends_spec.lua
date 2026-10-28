@@ -503,30 +503,34 @@ describe("Legends in the Journal's search (LED-R148)", function()
 end)
 
 describe("Home's Legends line (LED-R132)", function()
-	it("reads Legends x / N between Curios and the Angler, and opens the Legends spread (LED-R132, LED-R63)", function()
-		local _, loaded = spread("home")
-		local journal = loaded.ns.journal
-		local leaders = {}
-		for _, block in ipairs(journal.pages.right) do
-			if block.kind == "leader" then
-				leaders[#leaders + 1] = block.text
+	it(
+		"reads Legends x / N between Curios and the Collection, and opens the Legends spread (LED-R132, LED-R63)",
+		function()
+			local _, loaded = spread("home")
+			local journal = loaded.ns.journal
+			local leaders = {}
+			for _, block in ipairs(journal.pages.right) do
+				if block.kind == "leader" then
+					leaders[#leaders + 1] = block.text
+				end
 			end
+			assert.are.same({
+				"The Trophy Room",
+				"Curios: junk, treasure, uncharted",
+				"Legends",
+				"The Collection: looks and titles",
+				"The Angler: hands and milestones",
+				"Following",
+			}, leaders)
+
+			local line = journal.shown.right.drawn.leader[3]
+			assert.are.same({ "iii.", "Legends", "1 / 3" }, shownTexts(line))
+			line:Click()
+
+			assert.are.same({ id = "legends" }, journal.router:Place())
+			assert.are.same({ "Home", "Legends" }, { journal.pages.crumbs[1].label, journal.pages.crumbs[2].label })
 		end
-		assert.are.same({
-			"The Trophy Room",
-			"Curios: junk, treasure, uncharted",
-			"Legends",
-			"The Angler: hands, titles, bindings",
-			"Following",
-		}, leaders)
-
-		local line = journal.shown.right.drawn.leader[3]
-		assert.are.same({ "iii.", "Legends", "1 / 3" }, shownTexts(line))
-		line:Click()
-
-		assert.are.same({ id = "legends" }, journal.router:Place())
-		assert.are.same({ "Home", "Legends" }, { journal.pages.crumbs[1].label, journal.pages.crumbs[2].label })
-	end)
+	)
 end)
 
 describe("never naming an uncaught Legend (LED-R124)", function()

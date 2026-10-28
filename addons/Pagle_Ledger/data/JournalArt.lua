@@ -18,6 +18,7 @@ local ns = select(2, ...)
 -- LED-R154): their atlas and its texture are gone, and the emblem's pixels stay in the parts texture unlisted.
 
 local CORE = "Interface\\AddOns\\Pagle\\media\\books\\"
+local SHOP = "Interface\\AddOns\\Pagle\\media\\shop\\"
 local OWN = "Interface\\AddOns\\Pagle_Ledger\\media\\journal\\"
 
 --- The book's whole textures: the page paper. The binding round it, and every binding's material, are Core's
@@ -122,6 +123,17 @@ ns.JOURNAL_ATLASES = {
 			["tile"] = { x = 766, y = 662, w = 248, h = 162, box = { 1, 1, 120, 76 } },
 			["tile-hover"] = { x = 766, y = 828, w = 248, h = 162, box = { 1, 1, 120, 76 } },
 			["tile-sel"] = { x = 766, y = 994, w = 248, h = 162, box = { 1, 1, 120, 76 } },
+		},
+	},
+	-- The Curio Shop's brass coin (Core's, wallet-and-shop.md › UI), the coin after a price on the Collection's cards and
+	-- right page (LED-R169, LED-R170).
+	Shop = {
+		file = SHOP .. "Shop",
+		width = 1024,
+		height = 512,
+		scale = 2,
+		sprites = {
+			["coin-small"] = { x = 390, y = 202, w = 56, h = 56, box = { 4, 4, 20, 20 } },
 		},
 	},
 	-- The ten bindings as closed books (LED-R110's swatches): each binding good's preview in the Curio Shop.

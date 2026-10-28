@@ -190,8 +190,8 @@ end
 
 -- The right page (LED-R132): the bookplate summary (the shown level in large numerals with the Prestige emblem and
 -- stars beside them, the active title in handwriting, Ledger completion's seal), the ink XP bar, Notes to self, and
--- In this Ledger's contents with M4's Legends line and Track V's Following line last, each line opening its spread
--- (LED-R4, LED-R163).
+-- In this Ledger's contents with M4's Legends line, the Collection's (LED-R174) and Track V's Following line last, each
+-- line opening its spread (LED-R4, LED-R163).
 ---@param context LedgerSpreadContext
 ---@return LedgerBlock[]
 local function rightPage(context)
@@ -245,14 +245,15 @@ local function rightPage(context)
 		value = countText(context.formatNumber, completion.legends),
 		place = ns.JournalPlace.legends(),
 	}
+	right[#right + 1] = ns.CollectionContentsLine(context, L.HOME_NUMERALS[4])
 	right[#right + 1] = {
 		kind = "leader",
-		numeral = L.HOME_NUMERALS[4],
+		numeral = L.HOME_NUMERALS[5],
 		text = L.HOME_ANGLER,
 		value = L.HOME_ANGLER_MARK,
 		place = ns.JournalPlace.angler(),
 	}
-	right[#right + 1] = ns.FollowingContentsLine(context, L.HOME_NUMERALS[5])
+	right[#right + 1] = ns.FollowingContentsLine(context, L.HOME_NUMERALS[6])
 	return right
 end
 
