@@ -1,6 +1,8 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
+local VERIFICATION_VERSION = 1
+
 local REASONS = {
 	action_requires_review = true,
 	source_invalid = true,
@@ -38,8 +40,8 @@ end
 
 ---@param data any
 ---@param keys table<string, PaglePushedKey>
----@return table
-local function planFrom(data, keys)
+---@return PaglePushedKey
+local function envelopeKey(data, keys)
 	assert(type(data) == "table" and getmetatable(data) == nil, "invalid Recovery envelope")
 	for key in pairs(data) do
 		assert(key == "v" or key == "keyId" or key == "payload" or key == "sig", "unknown Recovery field")
@@ -54,6 +56,13 @@ local function planFrom(data, keys)
 		"Recovery payload too large"
 	)
 	assert(type(data.sig) == "string" and #data.sig == 344, "invalid Recovery signature")
+	return key
+end
+
+---@param data table
+---@param key PaglePushedKey
+---@return table
+local function planFrom(data, key)
 	local payload = assert(ns.Base64Decode(data.payload))
 	local signature = assert(ns.Base64Decode(data.sig))
 	local signed = "PGL-RECOVERY|1|" .. data.keyId .. "|" .. #payload .. "|" .. payload
@@ -110,6 +119,72 @@ local function planFrom(data, keys)
 	return plan
 end
 
+-- SavedVariables retain the exact authenticated bytes: a digest alone would still require hashing the whole
+-- package on every login. Bump the receipt version if plan validation changes.
+---@param archive table
+---@param plan table
+---@param data table
+---@param key PaglePushedKey
+local function rememberVerified(archive, plan, data, key)
+	archive.applied = archive.applied or {}
+	archive.applied[plan.applicationId] = {
+		applicationId = plan.applicationId,
+		resultDigest = plan.resultDigest,
+		logId = plan.logId,
+		verified = {
+			version = VERIFICATION_VERSION,
+			applicationId = plan.applicationId,
+			resultDigest = plan.resultDigest,
+			logId = plan.logId,
+			format = plan.format,
+			envelope = copy(data),
+			key = copy(key),
+		},
+	}
+end
+
+---@param data table
+---@param key PaglePushedKey
+---@param archive any
+---@param log any
+---@return boolean
+local function verifiedCompletion(data, key, archive, log)
+	if type(archive) ~= "table" or type(archive.applied) ~= "table" then
+		return false
+	end
+	for id, completed in pairs(archive.applied) do
+		local verified = type(completed) == "table" and completed.verified
+		if
+			type(verified) == "table"
+			and verified.version == VERIFICATION_VERSION
+			and completed.applicationId == id
+			and completed.applicationId == verified.applicationId
+			and completed.resultDigest == verified.resultDigest
+			and completed.logId == verified.logId
+		then
+			local envelope, knownKey = verified.envelope, verified.key
+			if
+				type(envelope) == "table"
+				and envelope.v == data.v
+				and envelope.keyId == data.keyId
+				and envelope.payload == data.payload
+				and envelope.sig == data.sig
+				and type(knownKey) == "table"
+				and knownKey.n == key.n
+				and knownKey.rr == key.rr
+				and knownKey.n0inv == key.n0inv
+			then
+				assert(
+					type(log) == "table" and log.logId == completed.logId and log.format == verified.format,
+					"Recovery is for a different Catch log"
+				)
+				return true
+			end
+		end
+	end
+	return false
+end
+
 -- Builds every published table first. No append, yield or external call occurs during publication.
 ---@param data any
 ---@param keys table<string, PaglePushedKey>
@@ -117,8 +192,13 @@ end
 ---@param archive any
 ---@param db any
 ---@return {log: table, archive: table, db: table}?
+---@return table? verifiedArchive receipt upgrade for a completed plan, without restoring it again
 function ns.RecoveryPrepare(data, keys, log, archive, db)
-	local plan = planFrom(data, keys)
+	local key = envelopeKey(data, keys)
+	if verifiedCompletion(data, key, archive, log) then
+		return nil
+	end
+	local plan = planFrom(data, key)
 	assert(
 		type(log) == "table" and log.logId == plan.logId and log.format == plan.format,
 		"Recovery is for a different Catch log"
@@ -133,7 +213,9 @@ function ns.RecoveryPrepare(data, keys, log, archive, db)
 		and completed.resultDigest == plan.resultDigest
 		and completed.logId == plan.logId
 	then
-		return nil
+		local saved = copy(archive)
+		rememberVerified(saved, plan, data, key)
+		return nil, saved
 	end
 	assert(
 		ns.RecoveryDigest(ns.RecoverySnapshot(log)) == plan.expectedDigest,
@@ -155,8 +237,7 @@ function ns.RecoveryPrepare(data, keys, log, archive, db)
 		rules = plan.rules,
 	}
 	saved.completed = { applicationId = plan.applicationId, resultDigest = plan.resultDigest, logId = plan.logId }
-	saved.applied = saved.applied or {}
-	saved.applied[plan.applicationId] = copy(saved.completed)
+	rememberVerified(saved, plan, data, key)
 	local rebuilt = copy(type(db) == "table" and db or {})
 	rebuilt.global = type(rebuilt.global) == "table" and rebuilt.global or {}
 	local global = rebuilt.global

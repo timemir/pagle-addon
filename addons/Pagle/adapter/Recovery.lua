@@ -22,7 +22,7 @@ ns.recoveryBlocked = nil
 -- Recovery's data addon has no dependency on Pagle and must load before SavedVariables are opened.
 ---@return boolean
 function ns.StartRecovery()
-	local ok, prepared = pcall(function()
+	local ok, prepared, verifiedArchive = pcall(function()
 		local installedReason = select(5, C_AddOns.GetAddOnInfo("Pagle_Recovery"))
 		if installedReason == "MISSING" then
 			return nil
@@ -40,6 +40,9 @@ function ns.StartRecovery()
 				.. ". Your Catch log is unchanged. Remove Pagle_Recovery to resume, or export a new snapshot with /pagle recovery export."
 		)
 		return false
+	end
+	if verifiedArchive then
+		_G.PagleRecovery = verifiedArchive
 	end
 	if prepared then
 		_G.PagleLog, _G.PagleRecovery, _G.PagleDB = prepared.log, prepared.archive, prepared.db
@@ -71,6 +74,13 @@ local function windowFor(parts, labels, title, note)
 	local window = ns.recoveryWindow
 	if not window then
 		window = ns.NewFieldWindow("PagleRecoveryWindow", 520, 360, title, "Catch log Recovery", ns.L.PASTE_COPY_HINT) --[[@as PagleRecoveryWindow]]
+		window.closeCorner:SetScript("OnClick", function()
+			if ns.recoveryBlocked then
+				window:Hide()
+			else
+				ns.FieldFadeClose(window)
+			end
+		end)
 		ns.SetSprite(window.chart, "Chart", "chart")
 		ns.PlaceSprite(window.chart, window, 0, 0)
 		window.paste = ns.FieldTypedBox(window, "Type")

@@ -28,6 +28,14 @@ local function original()
 	}
 end
 
+local function forbidBulkVerification(loaded)
+	for _, name in ipairs({ "Base64Decode", "Sha256", "RecoveryReadSnapshot", "CheckpointNext" }) do
+		loaded.ns[name] = function()
+			error("completed Recovery repeated " .. name)
+		end
+	end
+end
+
 describe("Recovery through the addon", function()
 	it("exports the full local snapshot using the independent backend byte vectors", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
@@ -153,6 +161,10 @@ describe("Recovery through the addon", function()
 			assert.are.same({}, loaded.client.errors)
 			loaded.env.SlashCmdList.PAGLE("recovery export")
 			assert.is_true(loaded.ns.recoveryWindow:IsShown())
+			loaded.ns.recoveryWindow.closeCorner:Click()
+			assert.is_false(loaded.ns.recoveryWindow:IsShown())
+			assert.is_nil(loaded.ns.db)
+			assert.are.same({}, loaded.client.errors)
 		end
 	end)
 
@@ -187,7 +199,7 @@ describe("Recovery through the addon", function()
 
 	it("keeps a completed plan harmless after normal login entries and later reloads", function()
 		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-backend-v1.json")))
-		local function boot(globals)
+		local function boot(globals, completed)
 			local loaded = loadAddon("Pagle", foreverWith(globals), { holdAddonLoaded = true })
 			loaded.ns.PUSHED_KEYS.testKey = signing.testKey
 			loaded.client.addons.Pagle_Recovery = {
@@ -197,6 +209,9 @@ describe("Recovery through the addon", function()
 						{ v = 1, keyId = fixture.keyId, payload = fixture.payload, sig = fixture.signature }
 				end,
 			}
+			if completed then
+				forbidBulkVerification(loaded)
+			end
 			loaded.client.fire("ADDON_LOADED", "Pagle")
 			loaded.client.fire("PLAYER_LOGIN")
 			loaded.client.fire("PLAYER_ENTERING_WORLD")
@@ -210,12 +225,103 @@ describe("Recovery through the addon", function()
 			PagleLog = first.env.PagleLog,
 			PagleDB = first.env.PagleDB,
 			PagleRecovery = first.env.PagleRecovery,
-		})
+		}, true)
 		assert.is_nil(second.ns.recoveryBlocked)
 		assert.are.equal(archive, second.env.PagleRecovery.archives[fixture.applicationId])
 		assert.are.same(original(), archive.original)
 		assert.are.same({}, first.client.errors)
 		assert.are.same({}, second.client.errors)
+	end)
+
+	it("binds completed verification to the exact envelope, trusted key and target", function()
+		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-backend-v1.json")))
+		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
+		local data = { v = 1, keyId = fixture.keyId, payload = fixture.payload, sig = fixture.signature }
+		local keys = { [fixture.keyId] = signing.testKey }
+		local prepared = loaded.ns.RecoveryPrepare(data, keys, original(), nil, nil)
+		local log, archive = prepared.log, prepared.archive
+		local function prepare(envelope, trustedKeys, target, receipts)
+			return loaded.ns.RecoveryPrepare(
+				envelope or data,
+				trustedKeys or keys,
+				target or log,
+				receipts or archive,
+				nil
+			)
+		end
+		for _, change in ipairs({
+			function(envelope)
+				envelope.payload = "A" .. envelope.payload:sub(2)
+			end,
+			function(envelope)
+				envelope.sig = (envelope.sig:sub(1, 1) == "A" and "B" or "A") .. envelope.sig:sub(2)
+			end,
+			function(envelope)
+				envelope.keyId = "anotherKey"
+			end,
+			function(envelope)
+				envelope.v = 2
+			end,
+			function(envelope)
+				envelope.extra = true
+			end,
+		}) do
+			local changed = { v = data.v, keyId = data.keyId, payload = data.payload, sig = data.sig }
+			change(changed)
+			assert.has_error(function()
+				prepare(changed)
+			end)
+		end
+		assert.has_error(function()
+			prepare(nil, {})
+		end, "unknown Recovery key")
+		assert.has_error(function()
+			prepare(nil, { [fixture.keyId] = loaded.ns.PUSHED_KEYS["pagle-2026b"] })
+		end, "Recovery signature does not match")
+		for _, target in ipairs({ { logId = "another-log", format = 3 }, { logId = log.logId, format = 2 } }) do
+			assert.has_error(function()
+				prepare(nil, nil, target)
+			end, "Recovery is for a different Catch log")
+		end
+		-- The receipt owns its values; later edits to the installed data cannot change the verified bytes.
+		data.sig = "!" .. data.sig:sub(2)
+		assert.has_error(function()
+			prepare()
+		end)
+	end)
+
+	it("upgrades a legacy completion receipt once without restoring the log or rebuilding settings", function()
+		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-backend-v1.json")))
+		local data = { v = 1, keyId = fixture.keyId, payload = fixture.payload, sig = fixture.signature }
+		local keys = { [fixture.keyId] = signing.testKey }
+		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
+		local prepared = loaded.ns.RecoveryPrepare(data, keys, original(), nil, nil)
+		local log, archive = prepared.log, prepared.archive
+		archive.applied = nil
+		log.entries[#log.entries + 1] = "S1|1|1793000010|0|90|150|0"
+		local db = { global = { recoveryGeneration = fixture.applicationId, coins = { keep = true } } }
+		local later = loadAddon("Pagle", foreverWith({ PagleLog = log, PagleRecovery = archive, PagleDB = db }), {
+			holdAddonLoaded = true,
+		})
+		later.ns.PUSHED_KEYS.testKey = signing.testKey
+		later.client.addons.Pagle_Recovery = {
+			loaded = false,
+			load = function()
+				later.env.PagleRecoveryData = data
+			end,
+		}
+		assert.is_true(later.ns.StartRecovery())
+		assert.are.equal(log, later.env.PagleLog)
+		assert.are.equal(db, later.env.PagleDB)
+		assert.are.equal(0, #later.printed)
+		assert.is_nil(archive.applied)
+		local saved = later.env.PagleRecovery
+		assert.is_table(saved.applied[fixture.applicationId].verified)
+		forbidBulkVerification(later)
+		assert.is_true(later.ns.StartRecovery())
+		assert.are.equal(saved, later.env.PagleRecovery)
+		assert.are.equal(log, later.env.PagleLog)
+		assert.are.equal(db, later.env.PagleDB)
 	end)
 
 	it("restores Refresh totals and Collection ownership from the restored history before Modules load", function()
@@ -372,7 +478,7 @@ describe("Recovery through the addon", function()
 
 	it("keeps an old completed package harmless after a different Recovery", function()
 		local fixtures = assert(json.decode(readFile("spec/fixtures/recovery-signed-v1.json")))
-		local function boot(log, archive, name)
+		local function boot(log, archive, name, completed)
 			local loaded =
 				loadAddon("Pagle", foreverWith({ PagleLog = log, PagleRecovery = archive }), { holdAddonLoaded = true })
 			loaded.ns.PUSHED_KEYS.testKey = signing.testKey
@@ -383,6 +489,9 @@ describe("Recovery through the addon", function()
 					loaded.env.PagleRecoveryData = { v = 1, keyId = data.keyId, payload = data.payload, sig = data.sig }
 				end,
 			}
+			if completed then
+				forbidBulkVerification(loaded)
+			end
 			loaded.client.fire("ADDON_LOADED", "Pagle")
 			return loaded
 		end
@@ -392,7 +501,7 @@ describe("Recovery through the addon", function()
 		local first = boot(log, nil, "good")
 		local second = boot(first.env.PagleLog, first.env.PagleRecovery, "second")
 		assert.are.equal(fixtures.second.applicationId, second.env.PagleRecovery.completed.applicationId)
-		local later = boot(second.env.PagleLog, second.env.PagleRecovery, "good")
+		local later = boot(second.env.PagleLog, second.env.PagleRecovery, "good", true)
 		assert.is_true(later.ns.recoveryBlocked == nil)
 		assert.are.equal(fixtures.second.applicationId, later.env.PagleRecovery.completed.applicationId)
 		assert.are.same(original(), later.env.PagleLog)

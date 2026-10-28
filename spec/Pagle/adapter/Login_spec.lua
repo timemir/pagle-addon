@@ -119,6 +119,21 @@ describe("Core's login order", function()
 		}, loaded.env.PagleLog.entries)
 	end)
 
+	for _, event in ipairs({ "SKILL_LINES_CHANGED", "CHAT_MSG_SKILL" }) do
+		it("declares the active rules before " .. event .. " can append during startup", function()
+			local globals = fishingClient()
+			local loaded = loadAddon("Pagle", globals)
+			loaded.client.fire("PLAYER_LOGIN")
+			loaded.client.fire(event)
+			loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
+			local entries = loaded.env.PagleLog.entries
+			assert.are.equal(loaded.ns.RULE_SET_ID, entries[1]:match("^B1|.*|([^|]+)$"))
+			assert.matches("^S1|", entries[2])
+			assert.are.equal(2, #entries)
+			assert.are.same({}, loaded.client.errors)
+		end)
+	end
+
 	it("has Core's DBs loaded and its catalogue built when a Module's OnInitialize runs (CORE-R10)", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 		local env = loaded.env
