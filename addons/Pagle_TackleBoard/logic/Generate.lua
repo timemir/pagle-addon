@@ -514,7 +514,7 @@ function ns.GoalProblem(ctx, def, dropKind)
 		if not offered then
 			return "target"
 		end
-	elseif def.kind == "quality" and def.target ~= QUALITY_TARGETS[def.type] then
+	elseif def.kind == "rarity" and def.target ~= RARITY_TARGETS[def.type] then
 		return "target"
 	end
 	if def.type == "e" then

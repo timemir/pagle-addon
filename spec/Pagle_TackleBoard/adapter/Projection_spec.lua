@@ -97,7 +97,10 @@ describe("the Tackle Board's projection", function()
 
 			local state = ns.State()
 			assert.are.same({ seq = 1, time = D0 + 3600 }, state.started)
-			assert.are.same({ seq = 1, day = 0, week = 0, dayStart = D0, weekStart = W }, state.boundary)
+			assert.are.same(
+				{ seq = 1, day = 0, week = 0, dayStart = D0, weekStart = W, dayOrigin = D0, weekOrigin = W },
+				state.boundary
+			)
 			assert.are.same({ notices = 3, expeditions = 1 }, state.owed)
 			assert.are.same({ count = 0, kindling = 2, longest = 0, milestones = {}, log = {} }, state.fire)
 			assert.is_true(ns.IsStarted())
@@ -156,7 +159,10 @@ describe("the Tackle Board's projection", function()
 			-- day 0's close owes min(3, 6 − 3 open − 0 owed) = 3; days 1 and 2 add nothing more
 			assert.are.same({ notices = 3, expeditions = 0 }, state.owed)
 			assert.are.same({ 3, 0 }, { state.day, state.week })
-			assert.are.same({ seq = 6, day = 3, week = 0, dayStart = D0 + 3 * DAY, weekStart = W }, state.boundary)
+			assert.are.same(
+				{ seq = 6, day = 3, week = 0, dayStart = D0 + 3 * DAY, weekStart = W, dayOrigin = D0, weekOrigin = W },
+				state.boundary
+			)
 			-- no fire yet: each unlit day is "not lit", and the Kindling stays (TKB-R72)
 			assert.are.same({ [0] = "unlit", [1] = "unlit", [2] = "unlit" }, state.fire.log)
 			assert.are.equal(2, state.fire.kindling)
@@ -727,7 +733,9 @@ describe("the Tackle Board's projection", function()
 			end)
 
 			ns.Module:AppendRecord("start", D0 .. ";" .. W) -- ignored (TKB-R6)
-			ns.Module:AppendRecord("issue2", N4) -- skipped (TKB-R80)
+			assert.has_error(function()
+				ns.Module:AppendRecord("issue2", N4)
+			end) -- refused by the canonical boundary
 			ns.Module:AppendRecord("issue", N4)
 
 			assert.are.same({ "projection" }, redraws)

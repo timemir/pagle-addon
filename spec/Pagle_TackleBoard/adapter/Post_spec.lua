@@ -479,7 +479,9 @@ describe("posting a goal with a Refresh", function()
 			ns.Post("e")
 			ns.TakeDownConfirm().accept:Click()
 			ns.Module:AppendRecord("post", "e;haul;0;60;150;17") -- no Expedition pin left: dropped
-			ns.Module:AppendRecord("issue2", "e;haul;0;60;150;17") -- skipped (TKB-R80)
+			assert.has_error(function()
+				ns.Module:AppendRecord("issue2", "e;haul;0;60;150;17")
+			end) -- refused by the canonical boundary
 
 			assert.are.same({ { "TackleBoard", 0 }, { "TackleBoard", 1 } }, spentReports(fake))
 		end)
