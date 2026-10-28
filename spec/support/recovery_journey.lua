@@ -3,6 +3,7 @@
 -- --mode export --branch accepted|divergent --output /tmp/prefix [--log-id 16hex]
 -- --mode export --source /tmp/source.snapshot.b64 --output /tmp/prefix
 -- --mode apply --source /tmp/source.snapshot.b64 --package /tmp/Pagle_Recovery --output /tmp/prefix
+-- --now <server time> runs current-addon startup at the backend journey's clock, retaining old Catch identities.
 ---@diagnostic disable-next-line: undefined-global -- this CI helper runs on stock Lua 5.1
 local arguments = arg
 local options = {}
@@ -12,6 +13,7 @@ for at = 1, #arguments, 2 do
 end
 assert(options.mode == "export" or options.mode == "apply", "--mode export|apply is required")
 local output = assert(options.output, "--output is required")
+local serverTime = assert(tonumber(options.now or "1793100000"), "--now must be a server time")
 ---@diagnostic disable-next-line: undefined-global -- load the real TOC/fake client harness without invoking its Busted hook
 assert(dofile("spec/support/addon.lua"))
 
@@ -74,7 +76,7 @@ local loaded = loadAddon(
 	"Pagle",
 	foreverWith({
 		GetServerTime = function()
-			return 1791736000
+			return serverTime
 		end,
 	}),
 	{
