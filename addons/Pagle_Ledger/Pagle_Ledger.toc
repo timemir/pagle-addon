@@ -44,6 +44,8 @@ logic\JournalSpecies.lua
 logic\JournalVarieties.lua
 logic\Home.lua
 logic\JournalAngler.lua
+logic\Collection.lua
+logic\JournalShelves.lua
 logic\JournalCollections.lua
 logic\JournalLegends.lua
 logic\JournalFollowing.lua
@@ -54,6 +56,7 @@ adapter\JournalArt.lua
 adapter\JournalWidgets.lua
 adapter\JournalText.lua
 adapter\JournalCollections.lua
+adapter\JournalShelves.lua
 adapter\JournalLegends.lua
 adapter\JournalFollowing.lua
 adapter\JournalAngler.lua
@@ -64,6 +67,7 @@ adapter\Journal.lua
 adapter\Prestige.lua
 adapter\Bindings.lua
 adapter\Titles.lua
+adapter\Collection.lua
 adapter\Onboarding.lua
 adapter\Ledger.lua
 adapter\Trailer.lua

@@ -5,6 +5,8 @@ local ns = select(2, ...)
 if not Pagle then
 	return
 end
+---@class Pagle
+local Pagle = Pagle
 
 -- The projection machinery (LOG-R70–R78) on the client: logic/Wiring.lua's, over adapter/Host.lua's host, with
 -- frames through C_Timer.After, time through debugprofilestop and each Module function through securecallfunction
@@ -17,6 +19,14 @@ end
 --- "replay", "rebuild", "done" or nil), `:WhenIdle(fn)` (runs fn once none is updating) and `:Live(record)` (hands an
 --- appended entry over).
 ns.WireProjections(ns.host)
+
+--- Whether any projection is catching up or rebuilding, or login hasn't started them (LOG-R74): Core's own too, the
+--- wallet's among them, whose purchases and crates `Pagle.IsOwned` holds back until its done. A view that notes what the
+--- Angler owns waits for false (the Ledger's Collection, LED-R171).
+---@return boolean
+function Pagle.IsUpdating()
+	return ns.projections:IsUpdating()
+end
 
 --- Login step 3 (LOG-R1): starts every projection's catch-up or rebuild up to loginSeq (LOG-R71, LOG-R72).
 function ns.StartProjections()

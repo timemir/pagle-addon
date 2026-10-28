@@ -6,7 +6,7 @@ end
 local ns = select(2, ...)
 
 -- The active title on the client (LED-R77): logic/Titles.lua over the Ledger's projection, world and saved
--- celebrated set, stored in PagleLedgerDB.profile.activeTitle. The Journal's "Signed as" is its only caller (SET-R70).
+-- celebrated set, stored in PagleLedgerDB.profile.activeTitle. The Collection's Titles shelf is its only caller (LED-R170).
 
 --- What the titles read now: nothing of the state while the projection is updating (LOG-R74), so only celebrated
 --- titles count then; the celebrated set as saved (asking makes none of its keys, LED-R90).
@@ -32,7 +32,7 @@ function ns.SetActiveTitle(key)
 	return true
 end
 
---- "Signed As"'s pick (LED-R146, SET-R70): sets the active title, an earned key or nil for automatic, and redraws the
+--- The Collection's "Sign with it" (LED-R170, LED-R173): sets the active title, an earned key or nil for automatic, and redraws the
 --- open Journal in it (ns.SetActiveTitle draws nothing).
 ---@param key string?
 function ns.PickActiveTitle(key)

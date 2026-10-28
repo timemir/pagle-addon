@@ -221,29 +221,37 @@ describe("Recovery through the addon", function()
 	it("restores Refresh totals and Collection ownership from the restored history before Modules load", function()
 		local seeded = original()
 		seeded.entries[2] = "U1|1|1792422001|0|core.toaststyle.ripple|30"
-		local first = loadAddon("Pagle", foreverWith({ PagleLog = seeded }))
+		local first = loadAddon("Pagle", foreverWith({ PagleLog = seeded }), { also = { "Pagle_Ledger" } })
 		first.client.fire("PLAYER_LOGIN")
 		first.client.fire("PLAYER_ENTERING_WORLD")
 		first.client.advance(5)
 		assert.is_true(first.env.Pagle.IsOwned("core.toaststyle.ripple"))
 		assert.are.equal(1792422001, first.env.Pagle.GetGood("core.toaststyle.ripple").ownedAt)
+		first.ns.OpenCollection("core.toaststyle.ripple")
+		first.client.advance(1)
+		assert.is_nil(first.namespaces.Pagle_Ledger.journal.pages.right[1].note)
 		local saved = first.env.PagleDB
 		saved.global.tickets = { logId = seeded.logId, earned = { absentModule = 9 }, spent = { absentModule = 4 } }
-		local restored = loadAddon("Pagle", foreverWith({ PagleLog = original(), PagleDB = saved }), {
-			beforeLoaded = {
-				Pagle = function(ns, client, env)
-					ns.PUSHED_KEYS.testKey = signing.testKey
-					client.addons.Pagle_Recovery = {
-						loaded = false,
-						load = function()
-							local file = assert(fixtureFile("spec/Pagle/fixtures/Recovery.lua"))
-							setfenv(file, env)
-							file()
-						end,
-					}
-				end,
-			},
-		})
+		local restored = loadAddon(
+			"Pagle",
+			foreverWith({ PagleLog = original(), PagleDB = saved, PagleLedgerDB = first.env.PagleLedgerDB }),
+			{
+				also = { "Pagle_Ledger" },
+				beforeLoaded = {
+					Pagle = function(ns, client, env)
+						ns.PUSHED_KEYS.testKey = signing.testKey
+						client.addons.Pagle_Recovery = {
+							loaded = false,
+							load = function()
+								local file = assert(fixtureFile("spec/Pagle/fixtures/Recovery.lua"))
+								setfenv(file, env)
+								file()
+							end,
+						}
+					end,
+				},
+			}
+		)
 		assert.are.same({ tickets = 0, earned = 0, spent = 0 }, restored.env.Pagle.GetTickets())
 		assert.is_false(restored.env.Pagle.IsOwned("core.toaststyle.ripple"))
 		assert.is_nil(restored.env.Pagle.GetGood("core.toaststyle.ripple").ownedAt)
@@ -253,6 +261,13 @@ describe("Recovery through the addon", function()
 		assert.are.same({ tickets = 0, earned = 0, spent = 0 }, restored.env.Pagle.GetTickets())
 		assert.is_false(restored.env.Pagle.IsOwned("core.toaststyle.ripple"))
 		assert.is_nil(restored.env.Pagle.GetGood("core.toaststyle.ripple").ownedAt)
+		restored.ns.OpenCollection("core.toaststyle.ripple")
+		restored.client.advance(1)
+		local pages = restored.namespaces.Pagle_Ledger.journal.pages
+		assert.are.equal("A look before you have it", pages.right[1].note)
+		for _, block in ipairs(pages.right) do
+			assert.is_nil(block.sub and block.sub:find("Bought", 1, true))
+		end
 		assert.are.same({}, first.client.errors)
 		assert.are.same({}, restored.client.errors)
 	end)
