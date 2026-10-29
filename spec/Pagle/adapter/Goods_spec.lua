@@ -588,36 +588,58 @@ describe("What a view of every good reads (SHOP-R36)", function()
 			return frame, frame.children[1]
 		end
 
-		it("draws a good's preview at the stage's 370 x 132, centred, standing at its own scale", function()
-			local drawnOn = {}
-			local loaded, hunts = viewed({ noCovers = true })
-			hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
-			hunts:RegisterGood({
-				id = "hunts.cover.plain",
-				slot = "hunts.cover",
-				name = "Plain",
-				default = true,
-				preview = function(stage)
-					drawnOn[#drawnOn + 1] = stage
-				end,
-			})
+		it(
+			"draws a good's preview on the shop's whole stage, 390 x 190, from the frame's top, at its own scale",
+			function()
+				local drawnOn = {}
+				local loaded, hunts = viewed({ noCovers = true })
+				hunts:RegisterSlot({ id = "hunts.cover", label = "Notebook cover", category = "Trackers" })
+				hunts:RegisterGood({
+					id = "hunts.cover.plain",
+					slot = "hunts.cover",
+					name = "Plain",
+					default = true,
+					preview = function(stage)
+						drawnOn[#drawnOn + 1] = stage
+					end,
+				})
 
-			local _, box = drawn(loaded, "hunts.cover.plain", "stage")
+				local frame, box = drawn(loaded, "hunts.cover.plain", "stage")
 
-			assert.are.same({ 370, 132 }, { box:GetSize() })
-			assert.are.same({ "CENTER" }, { (box:GetPoint()) })
-			assert.are.equal(1, box:GetScale())
-			assert.are.equal(1, #drawnOn)
-			assert.are.equal(box, drawnOn[1]:GetParent())
-		end)
+				assert.are.same({ 390, 190 }, { box:GetSize() })
+				assert.are.same({ "TOP", frame, "TOP" }, { box:GetPoint() })
+				assert.are.equal(1, box:GetScale())
+				assert.are.equal(1, #drawnOn)
+				assert.are.equal(box, drawnOn[1]:GetParent())
+			end
+		)
 
-		it("scales the same stage to fit the frame at the card size", function()
+		it(
+			"scales the same stage to fit its well, 370 x 132, to the frame at the card size, the well centred in it",
+			function()
+				local loaded = viewed()
+
+				local frame, box = drawn(loaded, "hunts.cover.velvet", "card")
+
+				assert.are.same({ 390, 190 }, { box:GetSize() })
+				assert.are.equal(0.5, box:GetScale()) -- 185 x 66 over 370 x 132
+				-- the box's top is half the well's height above the frame's centre, in the box's own units
+				assert.are.same({ "TOP", frame, "CENTER", 0, 66 }, { box:GetPoint() })
+			end
+		)
+
+		it("puts a card's box back where its size says when the same frame is drawn at the other size", function()
 			local loaded = viewed()
+			local frame = loaded.env.CreateFrame("Frame")
+			frame:SetSize(185, 66)
 
-			local _, box = drawn(loaded, "hunts.cover.velvet", "card")
+			loaded.env.Pagle.DrawGoodPreview(frame, "hunts.cover.velvet", "card")
+			loaded.env.Pagle.DrawGoodPreview(frame, "hunts.cover.velvet", "stage")
 
-			assert.are.same({ 370, 132 }, { box:GetSize() })
-			assert.are.equal(0.5, box:GetScale()) -- 185 x 66 over 370 x 132
+			local box = frame.children[1]
+			assert.are.equal(1, #box.points)
+			assert.are.same({ "TOP", frame, "TOP" }, { box:GetPoint() })
+			assert.are.equal(1, box:GetScale())
 		end)
 
 		it("draws a good with no preview as its icon in a medallion (SHOP-R36)", function()

@@ -416,7 +416,7 @@ local function automaticName(context)
 end
 
 -- The stage (LED-R170): the chosen look drawn on a dark stage in its colours whatever its state, "A look before you have
--- it" at its foot while it isn't owned; a title is the words "Signed as", the title in the hand and the Angler's name and
+-- it" on the paper under it while it isn't owned; a title is the words "Signed as", the title in the hand and the Angler's name and
 -- level.
 ---@param context LedgerSpreadContext
 ---@param look LedgerLook

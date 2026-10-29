@@ -636,6 +636,87 @@ describe("Core's goods' previews", function()
 		end
 	)
 
+	describe("stay inside the stage the Curio Shop and the Collection draw them on (SHOP-R25, SHOP-R36)", function()
+		-- The shop's stage, 390 x 190: the well and the paper under it (adapter/GoodPreview.lua's GOOD_PREVIEW_AREA).
+		local AREA_H = 190
+
+		-- A preview's stage, as DrawGoodPreview's box is: 390 x 190.
+		---@return LoadedAddon loaded
+		---@return table stage
+		local function areaOf()
+			local loaded, stage = stageOf()
+			stage:SetSize(390, AREA_H)
+			return loaded, stage
+		end
+
+		-- How far down `root` a region's top and bottom fall, y down, following its first anchor as the client lays it
+		-- out: a scaled region's offsets and its height in its own units. A font string is as tall as it was given,
+		-- or `textHeight`, a line of small print.
+		---@param region table
+		---@param root table
+		---@param textHeight number
+		---@return number top
+		---@return number bottom
+		local function span(region, root, textHeight)
+			if region == root then
+				return 0, root:GetHeight()
+			end
+			local anchor = region.points[1]
+			local point, rel, relPoint, y = anchor[1], region.parent, anchor[1], anchor[3] or 0
+			if type(anchor[2]) == "table" then
+				rel, relPoint, y = anchor[2], anchor[3], anchor[5] or 0
+			end
+			local relTop, relBottom = span(rel, root, textHeight)
+			local at = relPoint:find("TOP") and relTop
+				or relPoint:find("BOTTOM") and relBottom
+				or (relTop + relBottom) / 2
+			local scale = region:GetScale()
+			local height = (region.height or (region.kind == "FontString" and textHeight) or 0) * scale
+			local pinned = at - y * scale
+			local top = point:find("TOP") and pinned or point:find("BOTTOM") and pinned - height or pinned - height / 2
+			return top, top + height
+		end
+
+		-- Whether the words `text` on `stage` end above its foot.
+		---@param stage table
+		---@param text string
+		---@param what string
+		local function endsInside(stage, text, what)
+			local _, bottom = span(assert(withText(stage, text), what), stage, 12)
+			assert(bottom <= AREA_H, ("%s ends %s down, past %s"):format(what, bottom, AREA_H))
+		end
+
+		it("draw a sound set's three buttons and its note above the stage's foot", function()
+			local loaded, stage = areaOf()
+
+			loaded.ns.goods:Good("core.soundset.gilded").preview(stage)
+
+			for _, text in ipairs({ "» Toast", "» Banner", "» Legend", "The Legend sting is the same in every set." }) do
+				endsInside(stage, text, text)
+			end
+		end)
+
+		it("draw a crest's bookplate and its note above the stage's foot", function()
+			local loaded, stage = areaOf()
+
+			loaded.ns.goods:Good("core.crest.plain").preview(stage)
+
+			endsInside(stage, "On the Fish Journal's bookplate.", "the crest's note")
+		end)
+
+		it("draw each of Core's bindings' closed book and its note above the stage's foot", function()
+			local loaded, stage = areaOf()
+			local bindings = loaded.ns.goods:GoodsOf("core.binding")
+			assert.is_true(#bindings > 20)
+
+			for _, good in ipairs(bindings) do
+				good.preview(stage)
+
+				endsInside(stage, "Every book of yours wears it.", good.id .. "'s note")
+			end
+		end)
+	end)
+
 	it("draw a toast style with the drawer its slot has when it is drawn, added after login (ANN-R80)", function()
 		local loaded, stage = stageOf()
 		local drawn = {}

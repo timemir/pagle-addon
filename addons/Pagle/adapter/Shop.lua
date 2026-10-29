@@ -47,7 +47,8 @@ local DOT, DOT_GAP, DOT_PAD = 10, 8, 8
 -- at its top, the paper round and under it; as wide as the toast styles' sample toast, 464 at 0.8, needs); the
 -- description card under the showcase card, stretched to INFO_H.
 local CARD_X, CARD_Y = 534, 159
-local STAGE_X, STAGE_Y, STAGE_W, STAGE_H, WELL_H = 6, 16, 390, 190, 132
+local STAGE_X, STAGE_Y = 6, 16
+local STAGE_W, STAGE_H, WELL_H = ns.GOOD_PREVIEW_AREA_W, ns.GOOD_PREVIEW_AREA_H, ns.GOOD_PREVIEW_H
 local INFO_Y, INFO_H, INFO_PAD = 385, 220, 20
 -- The purse: the coin, then the label over the balance; the bar's right end, 10 short of the "?" left of the close
 -- button (its 18 inset, 44 wide, the 6 between and the "?"'s 34), and its top with and without the held line under it.
