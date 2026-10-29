@@ -140,6 +140,7 @@ end
 ---@field bars BoardTimelineBarView[]
 ---@field note FontString
 ---@field margin FontString
+---@field marginRoom number  -- the margin label's room, from the track's end to the edge
 ---@field more Texture     -- a run's mark at the ruler's end (HNT-R161)
 ---@field huntID string?
 ---@field runKey string?   -- a run's row: its run key
@@ -213,7 +214,8 @@ local function newRow(view)
 	row.note:SetPoint("TOPLEFT", 4, -4)
 	row.margin = ns.BoardText(row, fonts.margin, LOOK.red)
 	row.margin:SetPoint("TOPRIGHT", -MARGIN_INSET, -4)
-	row.margin:SetWidth(view.width - TRACK_X - TRACK_WIDTH - 4 - MARGIN_INSET) -- from the track's end to the edge
+	row.marginRoom = view.width - TRACK_X - TRACK_WIDTH - 4 - MARGIN_INSET -- from the track's end to the edge
+	row.margin:SetWidth(row.marginRoom)
 	row.margin:SetWordWrap(false)
 	row.margin:SetJustifyH("RIGHT")
 	row:SetScript("OnClick", function(self)
@@ -528,7 +530,16 @@ local function drawRow(view, drawn, row, y, slide)
 	ns.BoardHideFrom(drawn.bars, #row.bars)
 	drawn.note:SetText(row.note or "")
 	drawn.note:SetShown(row.note ~= nil)
+	-- The kit drew the room for "until Sat 17:00". A run's "until Sat 3:58 PM" on a 12-hour clock is longer and was cut
+	-- short ("until Sat 3:58…"): a label past its room is set a size down, and only past that is it cut (HNT-R60).
+	local fonts = ns.BoardFonts()
+	drawn.margin:SetFontObject(fonts.margin)
+	drawn.margin:SetWidth(0)
 	drawn.margin:SetText(row.margin)
+	if drawn.margin:GetStringWidth() > drawn.marginRoom then
+		drawn.margin:SetFontObject(fonts.marginTight)
+	end
+	drawn.margin:SetWidth(drawn.marginRoom)
 	local ink = MARGIN_INK[row.tone]
 	drawn.margin:SetTextColor(ink[1], ink[2], ink[3])
 end

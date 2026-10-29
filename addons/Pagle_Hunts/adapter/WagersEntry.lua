@@ -19,10 +19,14 @@ local L = ns.L
 
 -- The measures (art.json › entry), in UI units down the right page: the source mark's size and the gap after it; the
 -- name's top, width and most lines; the event mark's size and its place from the page's top right; the seal's place
--- from the 321-unit page's left, its size and tilt, and its words' offsets from its centre.
-local SRC_MARK, SRC_GAP, NAME_Y, NAME_W, NAME_LINES = 13, 5, 17, 251, 3
-local MARK_SIZE, MARK_R, MARK_Y = 66, -4, -2
-local SEAL_X, SEAL_Y, SEAL_SIZE, SEAL_TILT, SEAL_WORD_Y, SEAL_DATE_Y = 272.9 - 321, 30.1, 66, -12, -8, 4
+-- (its right edge from the page's right, and its top), its size and tilt, and its words' offsets from its centre. The
+-- kit drew the seal's left at 272.9 of a 321-unit page, which put its right edge 18 units past the page and the mark's
+-- 4 past it too: the page's frame clips there, cutting the wax and its words ("SETTLEI / 29 Oc"). Here both stay on
+-- the page: the seal keeps the kit's height and its place at the mark's lower right (8 units right of the mark's left,
+-- where the kit's was 14), so the mark moved 14 units in and the name's width came in with it.
+local SRC_MARK, SRC_GAP, NAME_Y, NAME_W, NAME_LINES = 13, 5, 17, 237, 3
+local MARK_SIZE, MARK_R, MARK_Y = 66, 10, -2
+local SEAL_R, SEAL_Y, SEAL_SIZE, SEAL_TILT, SEAL_WORD_Y, SEAL_DATE_Y = 2, 30.1, 66, -12, -8, 4
 -- The heading's least height, and the gap under it (tighter with five Hunts); the time block's height, its dial's size
 -- and its words' places.
 local TOP_MIN, TOP_GAP, TOP_GAP_TIGHT = 70, 8, 5
@@ -479,7 +483,7 @@ local function lay(view, entry, drop)
 	view.mark:Show()
 	if entry.seal then
 		view.seal:ClearAllPoints()
-		view.seal:SetPoint("TOPLEFT", root, "TOPLEFT", width + SEAL_X, -SEAL_Y)
+		view.seal:SetPoint("TOPLEFT", root, "TOPLEFT", width - SEAL_SIZE - SEAL_R, -SEAL_Y)
 		ns.SetWagerWords(view.sealWord, entry.seal.word)
 		ns.SetWagerWords(view.sealDate, entry.seal.date)
 		view.sealWord:Show()

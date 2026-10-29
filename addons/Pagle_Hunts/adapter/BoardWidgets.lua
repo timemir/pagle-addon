@@ -166,6 +166,7 @@ local TEXTURES = ns.BOARD_TEXTURES
 ---@field hand Font      -- handwriting: effort, the set's title line (Caveat, 20)
 ---@field handLarge Font -- the window line (22)
 ---@field margin Font    -- the timeline's margin labels (15.5)
+---@field marginTight Font -- a margin label too long for its room, a size down (13)
 ---@field count Font     -- a group's count, "next 22h" (17)
 ---@field inkCount Font  -- the ink bar's words (19)
 ---@field pin Font       -- "Pinned" (18)
@@ -192,6 +193,7 @@ function ns.BoardFonts()
 			hand = font("hand", 20),
 			handLarge = font("hand", 22),
 			margin = font("hand", 15.5),
+			marginTight = font("hand", 13),
 			count = font("hand", 17),
 			inkCount = font("hand", 19),
 			pin = font("hand", 18),
