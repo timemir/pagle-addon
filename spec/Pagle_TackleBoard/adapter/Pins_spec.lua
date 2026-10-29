@@ -411,15 +411,18 @@ describe("the empty pins with a Refresh held (TKB-R58, TKB-R105)", function()
 		local forExpedition = loaded.ns.BoardHoverLines()
 		expedition(frame, 2).empty:GetScript("OnLeave")(expedition(frame, 2).empty)
 
+		-- The cost's line leads with the Refresh ticket's icon, an inline texture (#466).
+		local ticket = loaded.ns.TicketMarkup(14)
+		assert.is_truthy(ticket:find("^|T.-Pagle_TackleBoard.-Ticket:14:20:"))
 		assert.are.same({
 			"Post a Notice now",
 			"Click to pin a fresh Notice here instead of waiting for the next reset.",
-			"It uses 1 Refresh. You hold 3.",
+			ticket .. " It uses 1 Refresh. You hold 3.",
 		}, forNotice)
 		assert.are.same({
 			"Post an Expedition now",
 			"Click to pin a fresh Expedition here instead of waiting for the weekly reset.",
-			"It uses 1 Refresh. You hold 3.",
+			ticket .. " It uses 1 Refresh. You hold 3.",
 		}, forExpedition)
 		assert.is_nil(loaded.ns.BoardHoverLines())
 	end)

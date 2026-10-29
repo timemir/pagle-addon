@@ -37,6 +37,8 @@ local DAY_X, DAY_Y, DAY_STEP, DAY_SIZE = 84, 138, 42, 38
 -- The drawer's compartments: 6 across its 700 units, 74 high, 78 apart.
 local CELL_COLUMNS, CELL_X, CELL_Y, CELL_HEIGHT, CELL_ROW = 6, 24, 44, 74, 78
 local CELL_WIDTH = (728 - 8 - 20) / CELL_COLUMNS
+-- The Refresh ticket's icon beside the count of Refreshes held: its height in UI units, its width following (#466).
+local REFRESH_ICON = 16
 -- The Campfire on the ledge: its clickable box from the ledge's top left, holding the fire, its words and its sticks.
 local FIRE_X, FIRE_Y, FIRE_WIDTH, FIRE_HEIGHT = 20, 10, 290, 120
 -- The Campfire's stage (adapter/BoardMotion.lua's layers) by its flame's step (logic/Ledge.lua's CampfireView: 1 below
@@ -837,7 +839,7 @@ local function buildShop(ledge)
 	ledge.shop = shop
 end
 
--- The Refresh count (TKB-R58, TKB-R106): the Refreshes held, in the ledge's light italics under the shop card, with a
+-- The Refresh count (TKB-R58, TKB-R106): the Refreshes held, the Refresh ticket's icon before them (#466), in the ledge's light italics under the shop card, with a
 -- hover saying what they are for. Core's count (REF-R5), redrawn when it changes (adapter/Pins.lua listens).
 ---@param ledge TackleLedgeFrame
 local function buildRefresh(ledge)
@@ -890,7 +892,7 @@ local function drawLedge(ledge, draw)
 	ns.SetArtFont(plate.latest, tally.latest and "TallyTitle" or "TallyNone")
 	ns.LeanSprite(ledge.shop.card, ledge.shop, 0, 0, 2.5)
 	ns.LeanSprite(ledge.shop.pointer, ledge.shop, 77, 27, 2.5)
-	ledge.refresh.label:SetText(ns.Plural(ns.RefreshesHeld(), "REFRESHES_HELD"))
+	ledge.refresh.label:SetText(ns.TicketMarkup(REFRESH_ICON) .. " " .. ns.Plural(ns.RefreshesHeld(), "REFRESHES_HELD"))
 	if ledge.card and ledge.card:IsShown() then
 		drawCard(ledge.card)
 	end

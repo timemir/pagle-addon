@@ -564,11 +564,23 @@ describe("the shop card (TKB-R106, SHOP-R41, TKB-R193)", function()
 end)
 
 describe("the Refresh count (TKB-R106, REF-R5)", function()
+	-- The count's words, without the Refresh ticket's icon (an inline texture) before them.
+	local function words(label)
+		return (label:GetText():gsub("^|T[^|]*|t ", ""))
+	end
+
 	it("reads the Refreshes held under the shop card, 0 until one is earned", function()
 		local _, _, _, ledge = opened(FRESH)
 
-		assert.are.equal("0 Refreshes held", ledge.refresh.label:GetText())
+		assert.are.equal("0 Refreshes held", words(ledge.refresh.label))
 		assert.is_true(visible(ledge.refresh, ledge))
+	end)
+
+	it("draws the Refresh ticket's icon before the count (#466)", function()
+		local loaded, _, _, ledge = opened(FRESH)
+
+		assert.are.equal(loaded.ns.TicketMarkup(16) .. " 0 Refreshes held", ledge.refresh.label:GetText())
+		assert.is_truthy(ledge.refresh.label:GetText():find("^|T.-Pagle_TackleBoard.-Ticket:16:23:"))
 	end)
 
 	it("follows Core's count as Refreshes are earned and spent, with the singular for one", function()
@@ -576,17 +588,17 @@ describe("the Refresh count (TKB-R106, REF-R5)", function()
 
 		fake.setTickets("Hunts", 1)
 		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
-		local one = ledge.refresh.label:GetText()
+		local one = words(ledge.refresh.label)
 		fake.setTickets("Hunts", 5)
 		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
-		local five = ledge.refresh.label:GetText()
+		local five = words(ledge.refresh.label)
 		fake.setTickets("TackleBoard", nil, 2)
 		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
 
 		assert.are.same({ "1 Refresh held", "5 Refreshes held", "3 Refreshes held" }, {
 			one,
 			five,
-			ledge.refresh.label:GetText(),
+			words(ledge.refresh.label),
 		})
 	end)
 

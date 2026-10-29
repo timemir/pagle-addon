@@ -312,6 +312,26 @@ local function spriteOf(atlasName, name)
 	return atlas, sprite
 end
 
+--- The Refresh ticket's icon (#466) as an inline texture for a line of text, `height` units tall: it stands left of the
+--- words that count Refreshes, which a font string draws with them.
+---@param height integer
+---@return string
+function ns.TicketMarkup(height)
+	local atlas, sprite = spriteOf("Ticket", "ticket")
+	local width = math.floor(height * sprite.w / sprite.h + 0.5)
+	return ("|T%s:%d:%d:0:0:%d:%d:%d:%d:%d:%d|t"):format(
+		atlas.file,
+		height,
+		width,
+		atlas.width,
+		atlas.height,
+		sprite.x,
+		sprite.x + sprite.w,
+		sprite.y,
+		sprite.y + sprite.h
+	)
+end
+
 --- Shows sprite `name` of atlas `atlasName` in `texture`, at its designed size.
 ---@param texture Texture
 ---@param atlasName string

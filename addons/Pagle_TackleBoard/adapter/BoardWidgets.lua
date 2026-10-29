@@ -70,6 +70,9 @@ end
 ---@field goalID string?
 ---@field SetUsable fun(self: TackleTakeDownButton, usable: boolean)
 
+-- The Refresh ticket's icon on a post tooltip's cost line, its height in UI units (#466).
+local TIP_TICKET = 14
+
 -- The underline's dots: one every 3 units, a little over a unit wide, half see-through.
 local DOT_STEP, DOT_WIDTH, DOT_ALPHA = 3, 1.2, 0.5
 
@@ -247,7 +250,10 @@ function ns.NewBoardEmptyPin(parent, width, height)
 	end)
 	pin:SetScript("OnEnter", function(self)
 		if self.goalType then
-			ns.BoardHover(self, ns.PostTip(self.goalType, ns.RefreshesHeld()), { cursor = true })
+			-- The cost's line leads with the Refresh ticket's icon (#466).
+			local lines = ns.PostTip(self.goalType, ns.RefreshesHeld())
+			lines[#lines] = ns.TicketMarkup(TIP_TICKET) .. " " .. lines[#lines]
+			ns.BoardHover(self, lines, { cursor = true })
 		end
 	end)
 	pin:SetScript("OnLeave", ns.BoardHoverHide)

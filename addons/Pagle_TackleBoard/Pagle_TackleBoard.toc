@@ -12,6 +12,7 @@
 locale\enUS.lua
 data\Lore.lua
 data\BoardArt.lua
+data\TicketArt.lua
 logic\Data.lua
 logic\Days.lua
 logic\Module.lua
