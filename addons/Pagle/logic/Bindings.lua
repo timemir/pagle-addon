@@ -66,7 +66,6 @@ ns.BINDING_BOOK_ICON = ICONS .. "INV_Misc_Book_09"
 ---@field swatch? string
 ---@field cornerArt? string -- BindingParts2's corner piece (BIND-R17)
 ---@field clasp? string     -- BindingParts2's clasp (BIND-R14)
----@field claspX? number    -- the clasp's left edge from the frame's right edge, in UI units
 ---@field ribbon? string    -- BindingParts2's silk ribbon (BIND-R15)
 ---@field fillet? string    -- the fillet's colour (BIND-R16)
 
@@ -154,9 +153,8 @@ end
 -- One of the Curio Shop's second round's whole books (its kit's goods.json `art`, BIND-R14–R17): its material
 -- (`bindings3/<key>`, opaque, its base colour already under it) at its repeat, its band toned to that base at the shop
 -- expansion's gain, its crumb colour as the gilt, a brass plate unless `silver`, Field Leather's darkening toward the
--- foot, and its own parts in BindingParts2: its corner art, its clasp (its left edge `claspX` units from the frame's
--- right edge, the kit's x less the Journal's 920), its silk ribbon and its fillet colour; its closed cover in Bindings3,
--- `cover-<key>`, is the shop's preview. `art` is { key, tileW, tileH, base, crumb, fillet, claspX }.
+-- foot, and its own parts in BindingParts2: its corner art, its clasp (on the fore-edge, BIND-R14), its silk ribbon and
+-- its fillet colour; its closed cover in Bindings3, `cover-<key>`, is the shop's preview. `art` is { key, tileW, tileH, base, crumb, fillet }.
 ---@param owner "core"|"ledger"
 ---@param art table
 ---@param tier (1|2|3|4|5)?
@@ -177,7 +175,6 @@ local function wholeBook(owner, art, tier, silver)
 		bandGain = EXPANSION_BAND_GAIN,
 		gilt = art[5],
 		fillet = art[6],
-		claspX = art[7],
 		silver = silver == true,
 		foot = FIELD_FOOT,
 		cornerArt = "corner-" .. key,
@@ -493,16 +490,16 @@ ns.BINDINGS = {
 	cover("hunts", "wagersilk", 56, 56, "3a1450", "gold"),
 	-- The Curio Shop's second round's ten whole books (its kit's goods.json `art`): the Ledger's nine earned (LED-R118)
 	-- and Core's Shagreen and Bone, for sale at tier 4 and in the Curio crate (SHOP-R25, SHOP-R50).
-	wholeBook("ledger", { "wave", 96, 48, "1e3a6a", "f0cd6a", "f0cd6a", -40 }), -- Breaking Wave
-	wholeBook("ledger", { "logbook", 8, 8, "b8a478", "f0dca0", "4a2412", -52 }), -- Captain's Logbook
-	wholeBook("ledger", { "heartwood", 90, 180, "a8703a", "f4dca8", "5a3010", -30 }), -- Carved Heartwood
-	wholeBook("core", { "shagreenbone", 24, 24, "1e5a4e", "e6f4ec", "e6d8b8", -34 }, 4, true), -- Shagreen and Bone
-	wholeBook("ledger", { "stormglass", 80, 80, "2a2d32", "cfe6f4", "7a8a9a", -44 }, nil, true), -- Stormglass Reliquary
-	wholeBook("ledger", { "lacquer", 60, 60, "0c0808", "e8c25a", "c89a3a", -22 }), -- Black Lacquer Koi
-	wholeBook("ledger", { "knit", 16, 16, "cdbf9c", "5a3418", "7a4a2a", -32 }), -- Cable Knit
-	wholeBook("ledger", { "flywallet", 6, 6, "5a5c30", "f0e0a0", "5a3418", -40 }), -- Fly Wallet
-	wholeBook("ledger", { "carapace", 48, 48, "c8401e", "fff0e0", "fff0e0", -54 }), -- Crab Carapace
-	wholeBook("ledger", { "ember", 56, 46, "0a0605", "ffc060", "ff7a2a", -34 }), -- Ember Scale
+	wholeBook("ledger", { "wave", 96, 48, "1e3a6a", "f0cd6a", "f0cd6a" }), -- Breaking Wave
+	wholeBook("ledger", { "logbook", 8, 8, "b8a478", "f0dca0", "4a2412" }), -- Captain's Logbook
+	wholeBook("ledger", { "heartwood", 90, 180, "a8703a", "f4dca8", "5a3010" }), -- Carved Heartwood
+	wholeBook("core", { "shagreenbone", 24, 24, "1e5a4e", "e6f4ec", "e6d8b8" }, 4, true), -- Shagreen and Bone
+	wholeBook("ledger", { "stormglass", 80, 80, "2a2d32", "cfe6f4", "7a8a9a" }, nil, true), -- Stormglass Reliquary
+	wholeBook("ledger", { "lacquer", 60, 60, "0c0808", "e8c25a", "c89a3a" }), -- Black Lacquer Koi
+	wholeBook("ledger", { "knit", 16, 16, "cdbf9c", "5a3418", "7a4a2a" }), -- Cable Knit
+	wholeBook("ledger", { "flywallet", 6, 6, "5a5c30", "f0e0a0", "5a3418" }), -- Fly Wallet
+	wholeBook("ledger", { "carapace", 48, 48, "c8401e", "fff0e0", "fff0e0" }), -- Crab Carapace
+	wholeBook("ledger", { "ember", 56, 46, "0a0605", "ffc060", "ff7a2a" }), -- Ember Scale
 }
 
 -- Each binding by its good ID.
@@ -583,7 +580,6 @@ local PRESSED_EDGE = { 1, 0.96, 0.86, 0.6, 0, -1 }
 ---@field swatch? string         -- and its sprite there; nil where no kit drew one (Tooled, Verdigris)
 ---@field cornerArt? string      -- a whole book's own corner piece in BindingParts2, in place of `corners` (BIND-R17)
 ---@field clasp? string          -- a whole book's clasp on the fore-edge, in BindingParts2 (BIND-R14)
----@field claspX? number         -- its left edge from the frame's right edge, in UI units
 ---@field ribbon? string         -- a whole book's silk ribbon in BindingParts2 (BIND-R15)
 ---@field fillet? number[]       -- a whole book's fillet colour, { r, g, b } (BIND-R16)
 
@@ -632,7 +628,6 @@ function ns.BindingLook(goodID)
 		swatch = found.swatch,
 		cornerArt = found.cornerArt,
 		clasp = found.clasp,
-		claspX = found.claspX,
 		ribbon = found.ribbon,
 		fillet = found.fillet and hexTint(found.fillet),
 	}
