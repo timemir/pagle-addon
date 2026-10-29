@@ -2,6 +2,8 @@
 -- Catch log's format number and entry tags (LOG-R17, ADR 0003) and each DB's first schemaVersion (ADR 0003). Every
 -- list below is what 1.0 shipped. A name removed or changed fails here, naming the rule; one added passes, so the
 -- lists only ever grow (CORE-R15, LOG-R17: an additive change is a new name or a new tag, never an edit).
+-- `ns.RULE_SET_ID` is left out on purpose: it names the shipped rule set and changes with each shipped rule change
+-- (LOG-R36 logs a B1 when it does), so a release may bump it without breaking any log.
 
 -- Fails naming `rule` and every item in `broken`, or passes if there are none.
 local function expectNone(broken, rule, what)
@@ -127,7 +129,7 @@ local TAGS = {
 	},
 	{ tag = "S1", kind = "skill", entry = "S1|1|1791731750|0|86|150|0" },
 	{ tag = "P1", kind = "prestige", entry = "P1|1|1791731760|0|2|1850" },
-	{ tag = "B1", kind = "build", entry = "B1|1|1791731770|0|70338|1.60.1|pagle-2026c" },
+	{ tag = "B1", kind = "build", entry = "B1|1|1791731770|0|70338|1.60.1|pagle-2026d" },
 	{ tag = "U1", kind = "purchase", entry = "U1|1|1791731780|0|core.crest.plain|250" },
 	{ tag = "A1", kind = "module", entry = "A1|1|1791731790|0|Ledger|title|title:level1", reader = "Ledger" },
 	{ tag = "K1", kind = "companion", entry = "K1|1|1791731800|0|testKey|42", reader = "Core" },
