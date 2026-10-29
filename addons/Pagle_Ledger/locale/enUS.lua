@@ -653,6 +653,15 @@ ns.L = {
 	-- The Margin note the first time the Journal opens with Fresh Water (ONB-R52), verbatim; *term* in red.
 	NOTE_FRESH = "You’ve been away, so your next Catches earn bonus XP. That’s *Fresh Water*, the blue in your bar. A "
 		.. "rest is never a penalty.",
+	-- The Prestige letter (LED-R200–R202, ONB-R15): its kicker as the onboarding Letter's, its line in the hand, its two
+	-- buttons, and the Margin note on the Prestige button Show me leads to (*term* in red); the tour's label for it.
+	PRESTIGE_LETTER_KICKER = "A letter, left on the dock",
+	PRESTIGE_LETTER_TEXT = "Sixty: the top of the climb. Begin a new Ledger whenever you like. Your level starts again "
+		.. "from 1, a Prestige mark goes on your Ledger, and nothing you’ve earned is taken away. Or stay at sixty as "
+		.. "long as you please.",
+	PRESTIGE_LETTER_SHOW = "Show me",
+	PRESTIGE_LETTER_LATER = "Later",
+	NOTE_PRESTIGE = "*Begin a new Ledger* here, when you’re ready. No hurry.",
 	-- The Fish Journal's First look (ONB-R57), verbatim from the kit (board 12): the coach bar's window, its five
 	-- notes, *terms* in red; and the "?" beside the wax close that shows them again (ONB-R59).
 	FIRST_LOOK_TITLE = "the Fish Journal",

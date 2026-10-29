@@ -2969,10 +2969,10 @@ end
 
 -- Prints the Onboarding section (core/onboarding.md › Data): PagleDB.global.schemaVersion, whose step 2 adds the state
 -- (ONB-R1), then PagleDB.global.onboarding key by key: the Letter's state and what it means (ONB-R2, ONB-R12), the
--- guide's step and the steps seen (ONB-R22), done, skipped and reopen (ONB-R25, ONB-R26), the Margin notes setting
--- and the notes and First looks seen (ONB-R50, ONB-R55, ONB-R81), the First evening list (ONB-R60–R63) and the
--- characters' GUIDs (ONB-R3), each named from PagleLog's characters. The state isn't in AceDB's defaults, so it is
--- saved whole: a key the file lacks is said to be missing.
+-- Modules' letters' states when any were sent (ONB-R16), the guide's step and the steps seen (ONB-R22), done, skipped
+-- and reopen (ONB-R25, ONB-R26), the Margin notes setting and the notes and First looks seen (ONB-R50, ONB-R55,
+-- ONB-R81), the First evening list (ONB-R60–R63) and the characters' GUIDs (ONB-R3), each named from PagleLog's
+-- characters. The state isn't in AceDB's defaults, so it is saved whole: a key the file lacks is said to be missing.
 local function printOnboarding(pagle, log)
 	local global, why = pagleGlobal(pagle)
 	if not global then
@@ -2989,6 +2989,10 @@ local function printOnboarding(pagle, log)
 	local letter = state.letter
 	local meaning = LETTER_MEANINGS[letter] or "not a state Core knows, ONB-R12"
 	print(("letter: %s (%s)"):format(tostring(letter), meaning))
+	-- The Modules' letters (ONB-R16), each by id, made as the first is sent: absent until then.
+	if state.letters ~= nil then
+		print("letters: " .. idSet(state.letters))
+	end
 	print("guideStep: " .. (state.guideStep == nil and "none" or tostring(state.guideStep)))
 	print("stepsSeen: " .. idSet(state.stepsSeen))
 	print(

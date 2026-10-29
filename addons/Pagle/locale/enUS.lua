@@ -799,6 +799,8 @@ ns.L = {
 	LETTER_LATER = "Later",
 	LETTER_SEAL = "P",
 	DEV_TOUR_LETTER = "the Letter",
+	DEV_TOUR_LETTER_OF = "the letter %s",
+	DEV_LETTER_NONE = "Pagle dev: no letter %s; the letters are %s.",
 
 	-- Core's own slots (SHOP-R25): their labels. Their goods' names and descriptions are lore (DATA-R101), in
 	-- data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`, a binding's as `binding.<key>.name` and

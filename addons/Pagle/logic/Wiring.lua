@@ -1672,15 +1672,16 @@ end
 --- What the Letter's wiring needs from where Core runs, beyond the host: Core's adapter passes its frame and
 --- IsInInstance() (adapter/Letter.lua), FakePagle its records.
 ---@class PagleLetterView
----@field show fun()               -- the frame on screen, rising in with the `letter` sound (ONB-R11)
+---@field show fun(content: PagleLetterSpec) -- the frame on screen with these words, rising in with the `letter` sound (ONB-R11)
 ---@field hide fun()               -- the frame off screen, at once
 ---@field inInstance fun(): boolean -- IsInInstance()
 
---- The Letter (core/onboarding.md › The Letter) as ns.letter over ns.onboarding, ns.cards and ns.guide, with
---- `M:SetDialogOpen` on every Module handle (ONB-R100) and `/pagle dev onboarding letter` (ONB-R83). It checks again
---- on RestrictionChanged and as the cards settle (a card closing, the lanes emptying); the adapter adds
---- PLAYER_ENTERING_WORLD (Letter:EnteredWorld) and ZONE_CHANGED_NEW_AREA (ONB-R10). Call it after ns.WireCards,
---- ns.WireOnboarding and ns.WireGuide.
+--- The Letter (core/onboarding.md › The Letter) as ns.letter over ns.onboarding, ns.cards and ns.guide: the letters
+--- Core sends, the onboarding Letter's own and those a Module registers and sends (ONB-R15–R17), with
+--- `M:RegisterLetter` and `M:ShowLetter` and `M:SetDialogOpen` on every Module handle (ONB-R100) and `/pagle dev
+--- onboarding letter [id]` (ONB-R83). It checks again on RestrictionChanged, as the cards settle (a card closing, the
+--- lanes emptying) and as the guide closes; the adapter adds PLAYER_ENTERING_WORLD (Letter:EnteredWorld) and
+--- ZONE_CHANGED_NEW_AREA (ONB-R10). Call it after ns.WireCards, ns.WireOnboarding and ns.WireGuide.
 ---@param host PagleHost
 ---@param view PagleLetterView
 function ns.WireLetter(host, view)
@@ -1701,6 +1702,21 @@ function ns.WireLetter(host, view)
 			local first = ns.guideSteps:List()[1]
 			ns.guide:Open(first and first.step.id)
 		end,
+		-- ONB-R17: a Module's letter doesn't open over the guide.
+		guideOpen = function()
+			return ns.guide:IsOpen()
+		end,
+		call = host.call,
+		-- ANN-R10: a Cast's moments reach the lanes at the next frame's flush, once no projection is updating.
+		afterMoments = function(fn)
+			ns.projections:WhenIdle(function()
+				host.nextFrame(fn)
+			end)
+		end,
+		testLog = function()
+			local log = host.catchLog()
+			return log ~= nil and log.data.test == true
+		end,
 	})
 	ns.letter = letter
 
@@ -1719,6 +1735,37 @@ function ns.WireLetter(host, view)
 		letter:SetDialogOpen(module.def.name, open)
 	end
 
+	--- Declares a letter of the Module's own (ONB-R15): its id `<module>.<name>`, its `kicker`, `text`, `confirm`
+	--- and `later` words and the `onConfirm` function its confirm button calls, once Core has set the letter
+	--- `opened`. Call it in OnInitialize or OnEnable, and only `if M.RegisterLetter then`, so it runs on a Core without
+	--- it (ONB-R90). Raises an error at the Module's call, adding nothing, for a missing or mistyped field or an id
+	--- registered before (ns.LetterProblem). Core keeps a copy.
+	---@param id string
+	---@param spec PagleLetterSpec
+	function ModuleHandle:RegisterLetter(id, spec)
+		local module = host.registry:ModuleCalling(self, "RegisterLetter", "id")
+		local problem = letter:Register(id, spec, module.def.name)
+		if problem then
+			error(problem, 2)
+		end
+	end
+
+	--- Sends a letter the Module registered (ONB-R16, ONB-R17): Core keeps its state account-wide, `waiting` at the
+	--- first send, and shows it once this login when ONB-R10's conditions hold, after the onboarding Letter and one
+	--- letter at a time. A `declined` or `opened` letter, or one answered this login, shows nothing. Call it as often as
+	--- the Module's condition holds, and only `if M.ShowLetter then`, so it runs on a Core without it (ONB-R90).
+	--- Raises an error at the Module's call for a letter it hasn't registered. Returns whether the letter is waiting
+	--- to show or on screen.
+	---@param id string
+	---@return boolean
+	function ModuleHandle:ShowLetter(id)
+		local module = host.registry:ModuleCalling(self, "ShowLetter", "id")
+		if letter:OwnerOf(id) ~= module.def.name then
+			error(("ShowLetter: %s hasn't registered a letter %s"):format(module.def.name, tostring(id)), 2)
+		end
+		return letter:Send(id)
+	end
+
 	ns.cards:OnSettled(function()
 		letter:Check()
 	end)
@@ -1726,8 +1773,44 @@ function ns.WireLetter(host, view)
 	host.listen("Pagle letter", "RestrictionChanged", function()
 		letter:Check()
 	end)
-	ns.onboarding:AddDevCommand("letter", "letter", function()
-		letter:ShowNow()
+	host.listen("Pagle letter", "GuideClosed", function()
+		letter:Check()
+	end)
+
+	--- Adds a tour stop per registered Module letter to ns.tourStops (ONB-R84, CORE-R65): `core.onboarding.letter.<id>`,
+	--- which shows it as a sample writing nothing, whose hide puts things back (CORE-R68). Core's adapter calls it at
+	--- ModulesChanged, once every Module has registered its letters; the onboarding Letter's own stop is the adapter's.
+	function ns.AddLetterTourStops()
+		for _, id in ipairs(letter:Ids()) do
+			local problem = ns.tourStops:Add(
+				ns.TOUR_CORE,
+				"onboarding.letter." .. id,
+				ns.L.DEV_TOUR_LETTER_OF:format(id),
+				function()
+					letter:TourShow(id)
+				end,
+				function()
+					letter:TourHide()
+				end
+			)
+			if problem then
+				host.report(problem)
+			end
+		end
+	end
+
+	ns.onboarding:AddDevCommand("letter", "letter [id]", function(args)
+		local id = args:match("^%s*(%S*)")
+		if id == "" then
+			id = nil
+		end
+		if not letter:ShowNow(id) then
+			local ids = { ns.ONBOARDING_LETTER }
+			for _, known in ipairs(letter:Ids()) do
+				ids[#ids + 1] = known
+			end
+			host.print(ns.L.DEV_LETTER_NONE:format(id, table.concat(ids, ", ")))
+		end
 	end)
 end
 

@@ -244,6 +244,7 @@
 ---@field letter PagleLetter The Letter (core/onboarding.md › The Letter), Core's own on its wiring (ns.WireLetter):
 --- M:SetDialogOpen on the handle tells it a Module's dialog is open (ONB-R100), letter:IsDialogOpen() reads it.
 ---@field letterOnScreen boolean Whether the Letter's frame would be on screen now (ONB-R11).
+---@field letterContent PagleLetterSpec? The words and action of the letter it would show (ONB-R15); nil while none.
 ---@field inInstance boolean What IsInInstance() answers the Letter (ONB-R10); false unless a spec sets it.
 ---@field evening PagleEvening The First evening list (core/onboarding.md › The First evening list), Core's own on its
 --- wiring (ns.WireEvening): M:CompleteEveningItem on the handle marks a Module's own item, as Core's items tick on
@@ -1674,18 +1675,21 @@ part(function(fake, _, ns, host)
 	fake.guide, fake.guideSteps = ns.guide, ns.guideSteps
 end)
 
--- The Letter (core/onboarding.md › The Letter), on Core's wiring: M:SetDialogOpen on the handle (ONB-R100), the
--- checks on RestrictionChanged and the cards settling (ONB-R10, ONB-R14), and `/pagle dev onboarding letter`
--- (ONB-R83). The fake draws no frame: fake.letterOnScreen says whether it would show. A spec drives
+-- The Letter (core/onboarding.md › The Letter), on Core's wiring: M:SetDialogOpen, M:RegisterLetter and M:ShowLetter
+-- on the handle (ONB-R15, ONB-R100), the checks on RestrictionChanged, the cards settling and the guide closing
+-- (ONB-R10, ONB-R14, ONB-R17), and `/pagle dev onboarding letter` (ONB-R83). The fake draws no frame:
+-- fake.letterOnScreen says whether it would show and fake.letterContent whose words. A spec drives
 -- PLAYER_ENTERING_WORLD's part itself (fake.letter:EnteredWorld()) and sets fake.inInstance.
 part(function(fake, _, ns, host)
 	fake.letterOnScreen, fake.inInstance = false, false
 	ns.WireLetter(host, {
-		show = function()
+		show = function(content)
 			fake.letterOnScreen = true
+			fake.letterContent = content
 		end,
 		hide = function()
 			fake.letterOnScreen = false
+			fake.letterContent = nil
 		end,
 		inInstance = function()
 			return fake.inInstance

@@ -671,6 +671,8 @@ function ns.WithJournalRedraws(def)
 			-- a look this entry earned is seen now (LED-R171)
 			ns.NoteCollection()
 			ns.journal:LiveApplied()
+			-- the Cast may have brought the climb to 60 (LED-R201)
+			ns.NotePrestigeLetter()
 		end
 	end
 	wrapped.done = function(state, info)
@@ -679,6 +681,8 @@ function ns.WithJournalRedraws(def)
 		end
 		ns.NoteCollection()
 		ns.journal:Draw()
+		-- the climb at 60 as the projection is built: the login's check (LED-R201)
+		ns.NotePrestigeLetter()
 	end
 	return wrapped
 end
