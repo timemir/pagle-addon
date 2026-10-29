@@ -363,4 +363,32 @@ describe("/pagle dev probe", function()
 			assert.are.equal((line:gsub("; FAIL: .*", "")), line)
 		end
 	end)
+
+	-- The modern client's %d raises past 2^31 - 1 (spec/support/modern_format.lua), and three of LOG-R66's four size
+	-- hashes are above it: the report printed them with %d and raised in the game.
+	it("reports check 20's LOG-R66 vectors, their unsigned 32-bit hashes printed exactly (LOG-R66)", function()
+		local loaded = loadCore({ BUILD_ENTRY })
+		local vectors = loaded.ns.PROBE_SIZE_VECTORS
+		local check = { bit = true, vectors = {} }
+		for i, vector in ipairs(vectors) do
+			check.vectors[i] = { h = vector.h, band = vector.band }
+		end
+
+		local reports = loaded.ns.ProbeReport({ checks = { [20] = check } })
+
+		local report
+		for _, each in ipairs(reports) do
+			if each.check == 20 then
+				report = each
+			end
+		end
+		assert.are.equal("bit is there; 4 of 4 LOG-R66 vectors match", report.summary)
+		assert.are.same({
+			"Player-4395-0A1B2C3D-1791731747-0:1: h 2657620567 band 2, LOG-R66 says h 2657620567 band 2",
+			"Player-4395-0A1B2C3D-1791731747-0:2: h 4227872046 band 4, LOG-R66 says h 4227872046 band 4",
+			"Player-4395-0A1B2C3D-1791731762-1:1: h 1190098033 band 2, LOG-R66 says h 1190098033 band 2",
+			"Player-1-00000001-1700000000-0:1: h 3063819173 band 3, LOG-R66 says h 3063819173 band 3",
+		}, report.details)
+		assert.are.same({ { true, "bit is there and every LOG-R66 vector matches" } }, report.verdicts)
+	end)
 end)

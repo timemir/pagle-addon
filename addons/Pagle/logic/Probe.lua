@@ -525,7 +525,8 @@ REPORT[20] = function(check)
 		local got = (check.vectors or {})[i] or {}
 		local same = got.h == vector.h and got.band == vector.band
 		matched = matched + (same and 1 or 0)
-		details[i] = ("%s: h %s band %s, LOG-R66 says h %d band %d"):format(
+		-- h is unsigned 32-bit: the client's %d raises past 2^31 - 1, so %.0f prints it exactly.
+		details[i] = ("%s: h %s band %s, LOG-R66 says h %.0f band %d"):format(
 			vector.id,
 			tostring(got.h),
 			tostring(got.band),

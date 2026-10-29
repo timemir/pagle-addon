@@ -37,7 +37,9 @@ local function referenceCrc(bytes)
 			end
 		end
 	end
-	return ("%08x"):format(xor(crc, 0xFFFFFFFF))
+	-- Two halves of 16 bits: the client's %x raises past 2^31 - 1.
+	local final = xor(crc, 0xFFFFFFFF)
+	return ("%04x%04x"):format(math.floor(final / 65536), final % 65536)
 end
 
 -- A field the log lacks, in `character`'s fields: a table can't hold nil.

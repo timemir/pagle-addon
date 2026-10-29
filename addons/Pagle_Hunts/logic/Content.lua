@@ -271,7 +271,8 @@ function writeValue(out, value)
 		if value % 1 ~= 0 or math.abs(value) >= 2 ^ 53 then
 			error({ problem = "a number that isn't an integer" })
 		end
-		out[#out + 1] = ("%d"):format(value)
+		-- %.0f, not %d: the client's %d raises past 2^31 - 1, and a Content integer may reach 2^53.
+		out[#out + 1] = ("%.0f"):format(value)
 	elseif kind == "boolean" then
 		out[#out + 1] = tostring(value)
 	elseif kind == "table" then
