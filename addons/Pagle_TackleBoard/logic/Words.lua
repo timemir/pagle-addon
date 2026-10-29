@@ -63,13 +63,18 @@ function ns.ZoneName(areaID)
 	return ns.api.AreaName(areaID) or ns.Fill(ns.L.AREA_UNKNOWN, { id = areaID })
 end
 
---- A continent's name (TKB-R36): C_Map.GetMapInfo on its uiMapID (ns.CONTINENT_MAPS), or "Continent {id}" when the
---- client has none.
+--- A continent's name (TKB-R36): C_Map.GetMapInfo on its uiMapID (ns.CONTINENT_MAPS) when the client names it, else
+--- the locale's own (ns.L.CONTINENT_NAMES), which Forever's client needed for Kalimdor (#464); "Continent {id}" only
+--- for a continent the locale has none for either.
 ---@param continent integer the continent's ID, `GetArea().continent`
 ---@return string
 function ns.ContinentName(continent)
 	local uiMapID = ns.CONTINENT_MAPS[continent]
-	return uiMapID and ns.api.MapName(uiMapID) or ns.Fill(ns.L.CONTINENT_UNKNOWN, { id = continent })
+	local name = uiMapID and ns.api.MapName(uiMapID)
+	if name and name ~= "" then
+		return name
+	end
+	return ns.L.CONTINENT_NAMES[continent] or ns.Fill(ns.L.CONTINENT_UNKNOWN, { id = continent })
 end
 
 --- A Species' name: its representative item's, from C_Item.GetItemNameByID (TKB-R31, TKB-R36). Until the client has

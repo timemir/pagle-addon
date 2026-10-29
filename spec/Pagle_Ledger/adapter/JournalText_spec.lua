@@ -129,6 +129,16 @@ describe("the Journal's words on the client", function()
 		)
 	end)
 
+	it("label the continent tabs from the locale when the client names no map (LED-R126, #464)", function()
+		local _, loaded = loggedIn()
+		local text = loaded.ns.journalText
+
+		assert.are.same(
+			{ "Eastern Kingdoms", "Kalimdor", "Other waters" },
+			{ text:Continent(0), text:Continent(1), text:Continent(2) }
+		)
+	end)
+
 	it("name characters from Pagle.GetAngler().characters (LED-R126)", function()
 		local _, loaded = loggedIn()
 

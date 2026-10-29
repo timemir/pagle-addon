@@ -132,6 +132,7 @@ describe("the Journal's words", function()
 				now = MARCH_3 + 23 * HOUR + 50 * MINUTE,
 				minute = 1 * 60 + 50,
 				names = { [6303] = "Raw Slitherskin Mackerel" },
+				mapNames = { [1414] = "Kalimdor", [1415] = "Eastern Kingdoms" },
 				requested = {},
 				forecasts = 0,
 			}
@@ -148,7 +149,7 @@ describe("the Journal's words", function()
 						return ({ [148] = "Darkshore", [1519] = "Stormwind City" })[areaID]
 					end,
 					MapName = function(uiMapID)
-						return ({ [1414] = "Kalimdor", [1415] = "Eastern Kingdoms" })[uiMapID]
+						return client.mapNames[uiMapID]
 					end,
 					Characters = function()
 						return { { name = "Ada" }, { name = "Bo" } }
@@ -232,6 +233,15 @@ describe("the Journal's words", function()
 				assert.are.equal("Other waters", text:Continent(nil))
 			end
 		)
+
+		it("label the two continent tabs from the locale when the client's map has no name (LED-R126, #464)", function()
+			local client, text = newClient()
+
+			client.mapNames = { [1414] = "" }
+			assert.are.equal("Eastern Kingdoms", text:Continent(0))
+			assert.are.equal("Kalimdor", text:Continent(1))
+			assert.are.equal("Other waters", text:Continent(530))
+		end)
 
 		it('names characters by index from the Angler, and one it doesn\'t have as "…" (LED-R126)', function()
 			local _, text = newClient()
