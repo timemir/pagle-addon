@@ -788,37 +788,61 @@ local STAMP_SCALES = { 1, 0.9, 0.8, 0.7 }
 -- The gap between a toast's kicker and the stamp row.
 local STAMP_KICKER_GAP = 10
 
+-- The smallest a toast's kicker steps down to, to leave its stamp row room: the size it had before #467 (a composed
+-- style's own kit size).
+local KICKER_FLOOR = 13
+
 -- Sets a toast's stamps, and its New record stamp when a ruled toast has one, at the largest of STAMP_SCALES at which
--- the row, hung right to left from `x` with `gap` between them, still ends right of `limit` (the kicker's right
--- edge and a gap): the stamps' words and padding shrink together. At the smallest it stays as it is, which only a
--- row of four or more can need. `set` sets a stamp, `setRecord` the New record stamp, each at a scale. Returns the
--- stamps showing and the New record stamp's width.
+-- the row, hung right to left from `x` with `gap` between them, still ends right of the kicker's right edge and a gap
+-- (the kicker starting `left` from the body's left): the stamps' words and padding shrink together. If the row at the
+-- smallest scale still reaches the kicker (the larger 16 kicker of a size band and length, "TROPHY · 123.4 CM", beside
+-- a second stamp, or the New record stamp), the kicker's font steps down a unit at a time to `kicker.floor`, the size
+-- it had before #467, and the row is fitted again at each, `placeBlock` setting the words' block again for the
+-- kicker's new height. At that floor it stays as it is, which only a row of four or more can need. `set` sets a
+-- stamp, `setRecord` the New record stamp, each at a scale. Returns the stamps showing and the New record stamp's
+-- width.
 ---@param frame PagleAnnouncementFrame
 ---@param announcement PagleAnnouncement
 ---@param set fun(stamp: PagleStamp, text: string, scale: number)
 ---@param setRecord fun(scale: number)
 ---@param x number
 ---@param gap number
----@param limit number
+---@param left number
 ---@param withRecord boolean
+---@param kicker { font: PagleWordsFont, floor: number, ink: string }
+---@param placeBlock fun()
 ---@return PagleStamp[]
 ---@return number
-local function setStampRow(frame, announcement, set, setRecord, x, gap, limit, withRecord)
+local function setStampRow(frame, announcement, set, setRecord, x, gap, left, withRecord, kicker, placeBlock)
 	local ruler = frame.ruler --[[@as PagleRulerView]]
 	local stamps
-	for _, scale in ipairs(STAMP_SCALES) do
-		stamps = fillStamps(frame, announcement, function(stamp, text)
-			set(stamp, text, scale)
-		end)
-		setRecord(scale)
-		ruler.stampScale = scale
-		local total = withRecord and ruler.record:GetWidth() + gap or 0
-		for _, stamp in ipairs(stamps) do
-			total = total + stamp:GetWidth() + gap
+	local size = fontSize(kicker.font)
+	while true do
+		local limit = left + frame.title:GetWidth() + STAMP_KICKER_GAP
+		local fits
+		for _, scale in ipairs(STAMP_SCALES) do
+			stamps = fillStamps(frame, announcement, function(stamp, text)
+				set(stamp, text, scale)
+			end)
+			setRecord(scale)
+			ruler.stampScale = scale
+			local total = withRecord and ruler.record:GetWidth() + gap or 0
+			for _, stamp in ipairs(stamps) do
+				total = total + stamp:GetWidth() + gap
+			end
+			fits = x - (total - gap) >= limit
+			if fits then
+				break
+			end
 		end
-		if x - (total - gap) >= limit then
+		if fits or size <= kicker.floor then
 			break
 		end
+		size = math.max(kicker.floor, size - 1)
+		setFontAt(frame.title, kicker.font, size)
+		ns.Ink(frame.title, kicker.ink)
+		fit(frame.title, math.huge)
+		placeBlock()
 	end
 	return stamps, ruler.record:GetWidth()
 end
@@ -921,7 +945,10 @@ local function drawComposedToast(frame, display, style)
 	bezel:ClearAllPoints()
 	bezel:SetPoint("TOPLEFT", body, "TOPLEFT", icon.x, -icon.y)
 
+	-- The words start at the rung's own top on a taller page (a ruled one, the digest's): a text box whose middle is past
+	-- the rung's would else ride down with its lower half and leave the ruler no room (fitAxis, for the stamp or the lure).
 	local box = place(rung.text)
+	box.y = rung.text.y
 	local amt = rung.amt and place(rung.amt)
 	local width = box.w
 	if announcement.coins > 0 and amt then
@@ -945,15 +972,18 @@ local function drawComposedToast(frame, display, style)
 		drawDigest(frame, {}, style, 0)
 	end
 	local line = writeToastVariety(frame, look, fonts.name, inks.name, lineWidth)
-	-- The block is placed once written, by what the words measure.
-	frame.title:ClearAllPoints()
-	frame.title:SetPoint(
-		"TOPLEFT",
-		body,
-		"TOPLEFT",
-		box.x,
-		-blockTop(page, frame, headline, box.y, announcement.fighting)
-	)
+	-- The block is placed once written, by what the words measure (and again if the kicker steps down).
+	local function placeBlock()
+		frame.title:ClearAllPoints()
+		frame.title:SetPoint(
+			"TOPLEFT",
+			body,
+			"TOPLEFT",
+			box.x,
+			-blockTop(page, frame, headline, box.y, announcement.fighting)
+		)
+	end
+	placeBlock()
 	local clip = frame.nameClip --[[@as Frame]]
 	clip:ClearAllPoints()
 	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
@@ -988,12 +1018,27 @@ local function drawComposedToast(frame, display, style)
 	-- The stamps hang right to left from the style's stamp's top right, each by its centre from a pivot.
 	local spot = place(ns.ToastStampArt(style, page))
 	local x, y = spot.x + spot.w, spot.y + spot.h / 2
-	local stamps, record = setStampRow(frame, announcement, function(stamp, text, scale)
-		ns.SetStamp(stamp, text, style, page, scale)
-		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
-	end, function(scale)
-		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, page, scale)
-	end, x, 2, box.x + frame.title:GetWidth() + STAMP_KICKER_GAP, page.ruled == true)
+	local stamps, record = setStampRow(
+		frame,
+		announcement,
+		function(stamp, text, scale)
+			ns.SetStamp(stamp, text, style, page, scale)
+			ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
+		end,
+		function(scale)
+			ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, page, scale)
+		end,
+		x,
+		2,
+		box.x,
+		page.ruled == true,
+		{
+			font = fonts.what,
+			floor = (ns.ToastInk(style, page, "what") or { size = KICKER_FLOOR }).size,
+			ink = inks.what,
+		},
+		placeBlock
+	)
 	local pivots = frame.pivots --[[@as Frame[] ]]
 	for i, stamp in ipairs(stamps) do
 		local stampWidth = stamp:GetWidth()
@@ -1086,15 +1131,18 @@ local function drawToast(frame, display, style)
 		drawDigest(frame, {}, style, 0)
 	end
 	local line = writeToastVariety(frame, look, fonts.name, inks.name, lineWidth)
-	-- The block is placed once written, by what the words measure.
-	frame.title:ClearAllPoints()
-	frame.title:SetPoint(
-		"TOPLEFT",
-		body,
-		"TOPLEFT",
-		page.tx,
-		-blockTop(page, frame, headline, page.ty, announcement.fighting)
-	)
+	-- The block is placed once written, by what the words measure (and again if the kicker steps down).
+	local function placeBlock()
+		frame.title:ClearAllPoints()
+		frame.title:SetPoint(
+			"TOPLEFT",
+			body,
+			"TOPLEFT",
+			page.tx,
+			-blockTop(page, frame, headline, page.ty, announcement.fighting)
+		)
+	end
+	placeBlock()
 	-- The clip the name is written out in, round the name as written.
 	local clip = frame.nameClip --[[@as Frame]]
 	clip:ClearAllPoints()
@@ -1135,7 +1183,7 @@ local function drawToast(frame, display, style)
 		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
 	end, function(scale)
 		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, nil, scale)
-	end, x, 4, page.tx + frame.title:GetWidth() + STAMP_KICKER_GAP, page.ruled == true)
+	end, x, 4, page.tx, page.ruled == true, { font = fonts.what, floor = KICKER_FLOOR, ink = inks.what }, placeBlock)
 	-- Each stamp hangs by its centre from a pivot, so it slams down about its middle (adapter/Art.lua's ns.Pivot).
 	local pivots = frame.pivots --[[@as Frame[] ]]
 	for i, stamp in ipairs(stamps) do

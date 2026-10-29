@@ -1124,7 +1124,7 @@ describe("The catch toast on the client", function()
 
 	it(
 		'draws an ordinary Catch as a toast.low, its kicker "{band} · {length}" over the fish named with its variety,'
-			.. " with the toast sound, for 4 s, never summarized (ANN-R13, ANN-R20, ANN-R25, ANN-R70)",
+			.. " with the toast sound, for 6 s, never summarized (ANN-R13, ANN-R20, ANN-R25, ANN-R70)",
 		function()
 			local loaded, _, summarized = catching()
 
@@ -1142,7 +1142,7 @@ describe("The catch toast on the client", function()
 			assert.are.same({}, stampsOf(frame))
 			assert.are.equal(DRIFTWOOD .. "toast_1.ogg SFX", loaded.client.sounds[1])
 			assert.are.same({}, summarized)
-			loaded.client.advance(4 + 2.7 - 0.1)
+			loaded.client.advance(6 + 2.7 - 0.1)
 			assert.is_true(showing(loaded, "toast"))
 			loaded.client.advance(0.2)
 			assert.is_false(showing(loaded, "toast"))
@@ -1722,6 +1722,96 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			-- The whole line ends before the landed number, which stands at the track's 1/1.1.
 			local right = page.tx + toast.text.width + 6 + toast.gem.width + 3 + #"Coral" * 6
 			assert.is_true(right <= page.tx + toast.ruler.trackWidth / 1.1)
+		end
+	)
+
+	-- Measures the stamps' words and the kicker as the client does: a letter is 0.62 of the font's size wide, so a
+	-- larger font is wider and a smaller one narrower. Returns the toast, drawn again.
+	local function measuredBySize(loaded, toast)
+		local function measure(label)
+			label.GetStringWidth = function(self)
+				return #(self.text or "") * 0.62 * (self.font and self.font[2] or 11)
+			end
+		end
+		for _, stamp in ipairs(toast.stamps) do
+			measure(stamp.label)
+		end
+		measure(toast.ruler.record.label)
+		toast.title.GetStringWidth = function(self)
+			return #(self.text or "") * 0.62 * (self.font and self.font[2] or loaded.ns.ArtFontSize("What"))
+		end
+		loaded.ns.DrawAnnouncement(toast, toast.display)
+		return toast
+	end
+
+	it(
+		"steps the kicker down from 16 only as far as a stamp row needs, never letting the stamps reach it, for an own"
+			.. " stamp with a long size kicker and a second stamp, or a ruled toast with its New record stamp (#467)",
+		function()
+			local loaded, M = loadCore()
+			local function leftEdge(toast)
+				local lefts = {}
+				for i, stamp in ipairs(toast.stamps) do
+					if stamp.shown then
+						lefts[#lefts + 1] = select(4, toast.pivots[i]:GetPoint()) - stamp:GetWidth() / 2
+					end
+				end
+				if toast.ruler.record.shown ~= false and toast.display.announcement.headline.ruler then
+					lefts[#lefts + 1] = select(4, toast.recordPivot:GetPoint()) - toast.ruler.record:GetWidth() / 2
+				end
+				table.sort(lefts)
+				return lefts[1]
+			end
+			local function kickerRight(toast)
+				local page = loaded.ns.ToastPage(toast.display.announcement)
+				return page.tx + toast.title:GetWidth()
+			end
+
+			-- A Common variety's own toast, its kicker the size text, and a second stamp riding on it.
+			local own = moment("toast.low", "New variety", {
+				kind = "newVariety",
+				order = 120,
+				text = "Coral",
+				stamp = "New variety",
+				icon = ITEM,
+				cast = CAST,
+				ownStamp = true,
+				kicker = "Trophy · 123.4 cm",
+				variety = { name = "Coral", rarity = "common", fish = "Cat" },
+			})
+			raise(loaded, M, own, moment("nod", "New here", { cast = CAST, stamp = "New here" }))
+			local toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+			local size = toast.title.font[2]
+			assert.are.same({ "TROPHY · 123.4 CM", "NEW VARIETY", "NEW HERE" }, {
+				toast.title:GetText(),
+				toast.stamps[1].label:GetText(),
+				toast.stamps[2].label:GetText(),
+			})
+			assert(size < 16 and size >= 13, "the kicker is " .. size)
+			assert(
+				leftEdge(toast) >= kickerRight(toast) + 10,
+				("%.1f from %.1f"):format(leftEdge(toast), kickerRight(toast))
+			)
+			-- The block is still centred, for the kicker as it now is.
+			local page = loaded.ns.ToastPage(toast.display.announcement)
+			assert.is_true(math.abs(-select(5, toast.title:GetPoint()) - (page.h - (14 + 5 + 14)) / 2) < 0.01)
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+
+			-- Alone, the same kicker keeps its 16: the stamp has room.
+			raise(loaded, M, own)
+			toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+			assert.are.equal(16, toast.title.font and toast.title.font[2] or 16)
+			assert.is_true(leftEdge(toast) >= kickerRight(toast) + 10)
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+
+			-- A ruled toast: the size record's kicker with its New record stamp and a riding New variety.
+			local record, variety = recordAndVariety("common")
+			raise(loaded, M, record, variety)
+			toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+			assert(
+				leftEdge(toast) >= kickerRight(toast) + 10,
+				("%.1f from %.1f"):format(leftEdge(toast), kickerRight(toast))
+			)
 		end
 	)
 

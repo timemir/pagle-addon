@@ -277,6 +277,50 @@ describe("a toast in a composed toast style", function()
 		end
 	)
 
+	it(
+		"keeps a ruled toast's words at the rung's top in every composed style, so the ruler and its label end within"
+			.. " the page and clear the words, whatever the headline's rung (#468, ANN-R82)",
+		function()
+			local loaded, M = composedCore({ motion = false })
+			local ids = {}
+			for id in pairs(loaded.ns.TOAST_STYLE_ART2) do
+				ids[#ids + 1] = id
+			end
+			table.sort(ids)
+			assert.is_true(#ids >= 28)
+			for _, rungName in ipairs({ "toast.low", "toast", "toast.high" }) do
+				M:RaiseMoment({
+					rung = rungName,
+					kind = "spec",
+					title = "Size record",
+					text = "Raw Glossy Mightfish",
+					ruler = { old = 10, new = 12, unit = "lb", label = "weight" },
+				})
+				loaded.client.advance(0)
+				local toast = loaded.ns.announcementFrames.toast
+				local announcement = toast.display.announcement
+				local page = loaded.ns.ToastPage(announcement)
+				assert.is_true(page.ruled)
+				for _, id in ipairs(ids) do
+					announcement.style = id
+					loaded.ns.DrawAnnouncement(toast, toast.display)
+					local label = ("%s on %s"):format(id, rungName)
+					local rung = loaded.ns.ToastRungArt(loaded.ns.ToastStyleOf(id), page) --[[@as PagleToastRung]]
+					local titleTop = -select(5, toast.title:GetPoint())
+					local rulerTop = -select(5, toast.ruler:GetPoint())
+					-- The words from the rung's own top, not moved down with the page's lower half.
+					assert(titleTop == rung.text.y, label .. ": the words start at " .. titleTop)
+					-- The ruler is 28 tall (its track's foot is 26 down) and the label stands under it.
+					assert(rulerTop + 28 <= page.h, label .. ": the ruler ends at " .. rulerTop + 28)
+					-- It starts below the kicker, the gap and the name line, at their fonts' sizes.
+					local words = math.floor(rung.inks.what.size * 16 / 13 + 0.5) + 5 + rung.inks.name.size
+					assert(rulerTop >= titleTop + words, label .. ": the ruler starts at " .. rulerTop)
+				end
+				loaded.client.advance(10)
+			end
+		end
+	)
+
 	it("moves its layers from the toast's landing while it shows, and stops them as it goes (ANN-R82)", function()
 		local loaded, M = composedCore()
 		local Ledger = M
