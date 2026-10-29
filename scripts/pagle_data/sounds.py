@@ -34,6 +34,21 @@ BLOCK = SAMPLE_RATE // 100
 LEGEND_SECONDS = 3.0
 # The longest an expansion toast runs before it's cut and faded.
 TOAST_SECONDS = 1.6
+# Tunables, Sound onset (ANN-R74): a toast's or banner's main hit lands within ONSET_MAX seconds of the file's start, so
+# the sound comes in with the toast and not behind it. onset() measures it as the time the sound's ONSET_WINDOW mean-abs
+# envelope first reaches ONSET_LEVEL of its peak.
+ONSET_WINDOW = 0.01
+ONSET_LEVEL = 0.3
+ONSET_MAX = 0.03
+# The trim only touches a sound whose onset is later than ONSET_TRIM_ABOVE, which leaves headroom under ONSET_MAX; it
+# cuts the lead-in down to ONSET_PRE_ROLL before the onset, and fades the new start in over ONSET_FADE_IN.
+ONSET_TRIM_ABOVE = 0.02
+ONSET_PRE_ROLL = 0.01
+ONSET_FADE_IN = 0.003
+# The cut lands where the envelope first reaches ONSET_TRIM_LEVEL, a little over ONSET_LEVEL, so a flutter that only grazes
+# the gate's level early in a quiet lead-in doesn't set the cut, and the limiter's and the encoder's noise can't push the
+# cut sound's onset back past it.
+ONSET_TRIM_LEVEL = 0.36
 # Vorbis moves samples a little, so the render aims this far under the peak limit to stay under it once encoded.
 PEAK_MARGIN_DB = 0.3
 # The expansion's limiter aims a little further under it, since soft-limited peaks sit right at its ceiling.
@@ -480,14 +495,44 @@ def _trim(x: Signal) -> Signal:
     return x[: last + 1].copy()
 
 
+def _envelope(x: Signal) -> Signal:
+    window = int(ONSET_WINDOW * SAMPLE_RATE)
+    envelope: Signal = np.convolve(np.abs(x), np.full(window, 1 / window), mode="same")
+    return envelope
+
+
+def onset(x: Signal) -> float:
+    """A sound's onset in seconds (ANN-R74's sound onset): the time its mean-abs envelope, ONSET_WINDOW wide and
+    centred, first reaches ONSET_LEVEL of the envelope's peak."""
+    envelope = _envelope(x)
+    return int(np.argmax(envelope >= ONSET_LEVEL * envelope.max())) / SAMPLE_RATE
+
+
+def trim_onset(x: Signal) -> Signal:
+    """Cuts the lead-in off a sound whose onset is later than ONSET_TRIM_ABOVE (ANN-R74's sound onset), so its main hit
+    lands about ONSET_PRE_ROLL after the start, and fades the new start in over ONSET_FADE_IN so the cut doesn't click.
+    The cut is where the envelope first reaches ONSET_TRIM_LEVEL of its peak. A sound that already starts on time comes
+    back as it is. The sound after the cut is untouched: only what leads up to its onset goes, the dead air, or the
+    quiet build-up of a swell."""
+    if onset(x) <= ONSET_TRIM_ABOVE:
+        return x
+    envelope = _envelope(x)
+    start = int(np.argmax(envelope >= ONSET_TRIM_LEVEL * envelope.max()))
+    out = x[max(0, start - round(ONSET_PRE_ROLL * SAMPLE_RATE)) :].copy()
+    fade = int(ONSET_FADE_IN * SAMPLE_RATE)
+    out[:fade] *= np.linspace(0, 1, fade)
+    return out
+
+
 def _fade_out(x: Signal, seconds: float) -> None:
     fade = min(len(x), int(seconds * SAMPLE_RATE))
     x[-fade:] *= np.linspace(1, 0, fade)
 
 
 def _finish(x: Signal) -> Signal:
-    """Driftwood's and Gilded's finish: trims the trailing near-silence, fades out, then matches the loudness target."""
-    x = _trim(x)
+    """Driftwood's and Gilded's finish: trims the lead-in (trim_onset) and the trailing near-silence, fades out, then
+    matches the loudness target."""
+    x = _trim(trim_onset(x))
     _fade_out(x, 0.05)
     rms, peak = loudness(x)
     gain = TARGET_RMS_DB - rms
@@ -497,15 +542,9 @@ def _finish(x: Signal) -> Signal:
     return scaled
 
 
-def _finish_limited(x: Signal, longest: float) -> Signal:
-    """The expansion's finish: trims the trailing near-silence, cuts the sound at `longest` seconds with a 0.8 s fade
-    if it rings on past it, fades out, then matches the loudness target, soft-limiting the peaks (a tanh knee) until
-    the RMS target fits under the ceiling. The drums and drips are too spiky to fit otherwise."""
-    x = _trim(x)
-    if len(x) > longest * SAMPLE_RATE:
-        x = x[: int(longest * SAMPLE_RATE)]
-        _fade_out(x, 0.8)
-    _fade_out(x, 0.05)
+def match_loudness(x: Signal) -> Signal:
+    """Scales a sound to the loudness target, soft-limiting the peaks (a tanh knee) until the RMS target fits under the
+    ceiling. The drums and drips are too spiky to fit otherwise."""
     ceiling = 10 ** ((PEAK_DB - LIMITER_MARGIN_DB) / 20)
     for _ in range(8):
         rms, _peak = loudness(x)
@@ -514,6 +553,18 @@ def _finish_limited(x: Signal, longest: float) -> Signal:
             break
         x = np.tanh(x / ceiling * 0.95) * ceiling
     return x
+
+
+def _finish_limited(x: Signal, longest: float, lead_in: bool = True) -> Signal:
+    """The expansion's finish: trims the lead-in (trim_onset, unless `lead_in` is False, which a Legend sting's is) and
+    the trailing near-silence, cuts the sound at `longest` seconds with a 0.8 s fade if it rings on past it, fades out,
+    then matches the loudness target (match_loudness)."""
+    x = _trim(trim_onset(x) if lead_in else x)
+    if len(x) > longest * SAMPLE_RATE:
+        x = x[: int(longest * SAMPLE_RATE)]
+        _fade_out(x, 0.8)
+    _fade_out(x, 0.05)
+    return match_loudness(x)
 
 
 # Driftwood and Gilded (_Synth).
@@ -960,8 +1011,8 @@ def _own(seed: int, voice: Voice) -> Render:
     return lambda: _finish(voice(_Synth(seed)))
 
 
-def _expansion(seed: int, voice: PaletteVoice, longest: float) -> Render:
-    return lambda: _finish_limited(voice(_Palette(seed)), longest)
+def _expansion(seed: int, voice: PaletteVoice, longest: float, lead_in: bool = True) -> Render:
+    return lambda: _finish_limited(voice(_Palette(seed)), longest, lead_in)
 
 
 def _expansion_files() -> dict[str, Render]:
@@ -976,7 +1027,7 @@ def _expansion_files() -> dict[str, Render]:
         files[f"{folder}/banner.ogg"] = _expansion(seed, banner, LEGEND_SECONDS)
     for item, sting in LEGEND_STINGS.items():
         seed += 1
-        files[f"legend/{item}.ogg"] = _expansion(seed, sting, LEGEND_SECONDS)
+        files[f"legend/{item}.ogg"] = _expansion(seed, sting, LEGEND_SECONDS, lead_in=False)
     return files
 
 
