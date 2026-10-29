@@ -891,25 +891,45 @@ local function setStampRow(frame, announcement, set, setRecord, x, gap, left, wi
 	return stamps, ruler.record:GetWidth()
 end
 
+-- The toast page's red ruling line, which the Torn Page's art draws across the page under the kicker, and which every
+-- other style's page art that has one draws alike (measured from the textures: ToastsLedger, Ripple, Lantern and the
+-- rest, on the toast, ruled and gilt pages): it runs from 34 units down the page at the words' left (138) to 28 at 430,
+-- the widest a kicker reaches. The kicker's capitals stand on a baseline KICKER_CLEAR above its upper edge there, so
+-- the line is under every kicker, never through it.
+local TOAST_RULE, KICKER_CLEAR = 28, 3
+-- Where the print face's baseline is below the top of its line: its ascent (IM Fell English's hhea 1854 of 2048 units,
+-- which the client sets a line by), a share of its size.
+local KICKER_ASCENT = 1854 / 2048
+
+-- The top of a toast's kicker on a page with the ruling line: where its baseline, at the kicker's full size (a smaller
+-- one stands higher), is KICKER_CLEAR above the line's half-unit thickness at its highest. Not centred, nor measured,
+-- so it is the same for every name, size band and row of stamps.
+---@return number
+local function kickerTop()
+	return TOAST_RULE - 0.5 - KICKER_CLEAR - KICKER_ASCENT * ns.ArtFontSize("What")
+end
+
 -- Where a toast's kicker and name block is laid down its page: `top`, the page's own, if it is ruled or the digest's,
 -- else centred, as the medallion is. The block is the kicker, the gap and the name line, or the name line alone for a
 -- headline with no text, as the font strings measure after they are written (not by their fonts' nominal sizes: a
--- font's line is taller than its size). Returns the block's top as it is written, and the kicker's top: the same on a
--- ruled page, but on a centred one the block centred as it would be with the name line at its font's own size and the
--- kicker at its own, `natural`'s, so that the kicker stays where it is whether the name line stepped down to fit its
--- width or the kicker stepped down for the stamps, and clear of the page's ruling line (the name line stays where the
--- block as written puts it, a little below the kicker then).
+-- font's line is taller than its size). Returns the block's top as it is written, and the kicker's top: `fixed` for a
+-- headline with a kicker when it is given (a page with the ruling line, above it), else the same on a ruled page, but
+-- on a centred one the block centred as it would be with the name line at its font's own size and the kicker at its
+-- own, `natural`'s, so that the kicker stays where it is whether the name line stepped down to fit its width or the
+-- kicker stepped down for the stamps (the name line stays where the block as written puts it, a little below the
+-- kicker then).
 ---@param page { h: number, ruled: boolean? }
 ---@param frame PagleAnnouncementFrame
 ---@param headline { text: string? }
 ---@param top number
 ---@param fighting PagleRaisedMoment[]?
 ---@param natural PagleWordsHeights?
+---@param fixed number?
 ---@return number block
 ---@return number kicker
-local function blockTop(page, frame, headline, top, fighting, natural)
+local function blockTop(page, frame, headline, top, fighting, natural, fixed)
 	if page.ruled or fighting then
-		return top, top
+		return top, headline.text and not fighting and fixed or top
 	end
 	local block = frame.title:GetStringHeight()
 	if not headline.text then
@@ -924,6 +944,9 @@ local function blockTop(page, frame, headline, top, fighting, natural)
 	end
 	block = block + TOAST_LINE_GAP + height
 	local laid = (page.h - block) / 2
+	if fixed then
+		return laid, fixed
+	end
 	if not natural then
 		return laid, laid
 	end
@@ -931,7 +954,8 @@ local function blockTop(page, frame, headline, top, fighting, natural)
 end
 
 -- Places a toast's kicker and its name line by blockTop: the kicker's top left at `x` and the kicker's top, the name
--- line under it, the same gap below the block's own kicker as ever, or lower by what the kicker is lifted above it.
+-- line under it, the same gap below the block's own kicker as ever, or lower by what the kicker is lifted above it
+-- (never nearer than the gap).
 ---@param frame PagleAnnouncementFrame
 ---@param body Frame
 ---@param x number
@@ -940,12 +964,19 @@ end
 ---@param top number
 ---@param fighting PagleRaisedMoment[]?
 ---@param natural PagleWordsHeights?
-local function placeWords(frame, body, x, page, headline, top, fighting, natural)
-	local laid, kicker = blockTop(page, frame, headline, top, fighting, natural)
+---@param fixed number?
+local function placeWords(frame, body, x, page, headline, top, fighting, natural, fixed)
+	local laid, kicker = blockTop(page, frame, headline, top, fighting, natural, fixed)
 	frame.title:ClearAllPoints()
 	frame.title:SetPoint("TOPLEFT", body, "TOPLEFT", x, -kicker)
 	frame.text:ClearAllPoints()
-	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -(TOAST_LINE_GAP + laid - kicker))
+	frame.text:SetPoint(
+		"TOPLEFT",
+		frame.title,
+		"BOTTOMLEFT",
+		0,
+		-math.max(TOAST_LINE_GAP, TOAST_LINE_GAP + laid - kicker)
+	)
 end
 
 -- Readies a toast's gleam for `look` (VAR-R26): unseen, and swept as the toast enters when the variety is Rare or Epic,
@@ -1190,20 +1221,18 @@ local function drawToast(frame, display, style)
 	local lineWidth = page.ruled and math.min(width, rulerNameLimit(width - 6)) or width
 	frame.text:ClearAllPoints()
 	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -TOAST_LINE_GAP)
-	local natural
 	if announcement.fighting then
 		writeHeadline(frame, { title = headline.title, text = "" }, fonts, inks, width)
 		frame.text:Hide()
 		drawDigest(frame, announcement.fighting, style, page.w - page.tx - 34)
 	else
-		natural =
-			writeHeadline(frame, { title = ns.ToastKicker(headline), text = headline.text }, fonts, inks, lineWidth)
+		writeHeadline(frame, { title = ns.ToastKicker(headline), text = headline.text }, fonts, inks, lineWidth)
 		drawDigest(frame, {}, style, 0)
 	end
 	local line = writeToastVariety(frame, look, fonts.name, inks.name, lineWidth)
 	-- The block is placed once written, by what the words measure (and again if the kicker steps down).
 	local function placeBlock()
-		placeWords(frame, body, page.tx, page, headline, page.ty, announcement.fighting, natural)
+		placeWords(frame, body, page.tx, page, headline, page.ty, announcement.fighting, nil, kickerTop())
 	end
 	placeBlock()
 	-- The clip the name is written out in, round the name as written.
