@@ -59,6 +59,11 @@ end)
 describe("the Tackle Board's FNV-1a", function()
 	local ns = board.load().ns
 
+	-- A hash as 8 hex digits, in two halves: the client's %x raises past 2^31 - 1.
+	local function hex(hash)
+		return ("%04x%04x"):format(math.floor(hash / 65536), hash % 65536)
+	end
+
 	-- Core's FNV-1a test vectors (spec/Pagle/logic/FieldReportText_spec.lua): FNV-1a 32-bit's published vectors and
 	-- REP-R36's reporter keys, as integers.
 	local VECTORS = {
@@ -70,7 +75,7 @@ describe("the Tackle Board's FNV-1a", function()
 		{ "000000000000020a", 0x0071890c },
 	}
 	for _, vector in ipairs(VECTORS) do
-		it(("hashes %q to Core's %08x (TKB-R62, LOG-R66 step 1)"):format(vector[1], vector[2]), function()
+		it(("hashes %q to Core's %s (TKB-R62, LOG-R66 step 1)"):format(vector[1], hex(vector[2])), function()
 			assert.are.equal(vector[2], ns.Fnv1a(vector[1]))
 		end)
 	end
@@ -84,7 +89,7 @@ describe("the Tackle Board's FNV-1a", function()
 			"Player-4395-FFFFFFFF-2147483647-9",
 		}
 		for _, id in ipairs(ids) do
-			assert.are.equal(core.ReporterKey(id), ("%08x"):format(ns.Fnv1a(id)))
+			assert.are.equal(core.ReporterKey(id), hex(ns.Fnv1a(id)))
 		end
 	end)
 end)

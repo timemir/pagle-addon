@@ -23,8 +23,8 @@
 --
 -- The fake client is split by concern, one file each under spec/support/: client.lua (events, addons, loot and the
 -- base WoW API), widgets.lua, timers.lua, settings.lua (the Settings panel), menu.lua (slash commands and context
--- menus), fake_game.lua, fake_popup.lua, fake_tooltip.lua, toc.lua (the TOC reader), and errors.lua (the error lists
--- that fail a spec which never asserts what they got).
+-- menus), modern_format.lua (the modern client's string.format), fake_game.lua, fake_popup.lua, fake_tooltip.lua,
+-- toc.lua (the TOC reader), and errors.lua (the error lists that fail a spec which never asserts what they got).
 --
 -- Globals rather than a module: the types stage checks spec/ against the WoW client's Lua, which has no require.
 
@@ -49,6 +49,10 @@ PLAYER_GUID = "Player-1-00000001"
 --- The fake client's server time, as GetServerTime() returns it, and FakePagle's at its clock's 0: 2026-10-11
 --- 15:15:00 UTC, which is realm 08:15 on a US Pacific realm.
 SERVER_TIME = 1791731700
+
+-- The modern client's string.format, which raises for a %d past a signed 32-bit int (spec/support/modern_format.lua).
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+dofile("spec/support/modern_format.lua")
 
 -- The error lists the fake client and FakePagle keep, which fail a spec that never reads them (see the end).
 ---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile

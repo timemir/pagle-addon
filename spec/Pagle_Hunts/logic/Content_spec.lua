@@ -90,6 +90,14 @@ describe("Pushed Hunt Events", function()
 			end
 		end)
 
+		it("writes an integer past a signed 32-bit int in full, and reads it back (PUSH-R20)", function()
+			local text = assert(ns.WriteContentItem({ kind = "huntRun", v = 1, big = 4227872046, top = 2 ^ 53 - 1 }))
+
+			assert.truthy(text:find("big=4227872046,", 1, true))
+			assert.truthy(text:find("top=9007199254740991", 1, true))
+			assert.are.same({ kind = "huntRun", v = 1, big = 4227872046, top = 2 ^ 53 - 1 }, ns.ReadContentItem(text))
+		end)
+
 		it("refuses to write what the grammar can't hold", function()
 			for _, bad in ipairs({
 				{ kind = "huntEvent", v = 1, n = 1.5 },
