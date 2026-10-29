@@ -147,7 +147,7 @@ Announce only once both listings show 1.0.0 publicly (Q14).
 
 ## 4. How each kind of failure gets applied
 
-One PR per batch on main (A overnight, B in S2, then 1.0.1). Agents run targeted spec files; the orchestrator runs one full check per batch.
+One PR per batch on main (A overnight, B in S2, then 1.0.1). Agents run targeted spec files and the cheap stages; GitHub Actions runs the full check on each batch's PR, and it merges on green CI.
 
 | Kind | What the agent does | Full check? |
 |---|---|---|
@@ -160,6 +160,8 @@ One PR per batch on main (A overnight, B in S2, then 1.0.1). Agents run targeted
 | **4.7 The docs path swap** (#274) | The live install's folder and realm folder into in-game-verification.md and `probes/*/README.md`. | rides in the batch |
 
 After the tag, every fix ships as 1.0.1, and a data change needs `--lock` in the same commit (DATA-R73).
+
+**Before the tag, check every fix against the backend's ranked policy (§9):** a fix that changes a file `pagle-2026d`'s manifest hashes, after the 4 Nov 12:00 UTC candidate, ships in 1.0.1 unless it is launch-critical. 4.2's `## Interface` bump is the exception and never blocks the tag.
 
 ## 5. The prep items (P1–P8)
 
@@ -324,4 +326,9 @@ Pin this zip by its SHA-256 (your PRJ-R63) and fetch it from the GitHub Release 
 - **Signing:** pushed content is signed with `pagle-2026a` at launch, with no switch to `2026b` before 1.0.1.
 - **Live pushed-content check:** in S2 (5 Nov 12:00–21:00) on RC2, before GO. Tell pagle-backend's dev the time. In that window pagle-backend schedules an Operator run and a withdrawal for `/reload` checks: `/pagle dev content` reads `connected`, the pushed run shows on the board, and the withdrawal removes it.
 - **After the tag:** pagle-backend pins the 1.0 commit on 6 Nov, checks the zip's SHA-256, folds the dev's live log at the tag, and re-exports the web art, which includes `hyjalcrater` if #373 landed.
+- **The ranked policy (agreed 29 Oct, pagle-backend #364 and #59):** 1.0 declares `ns.RULE_SET_ID = "pagle-2026d"` (set in the release commit, #498). pagle-backend hashes about 215 addon files in its policy manifest: most `logic/` files, the TOCs, `Catalogue.lua`, `HuntList.lua` and more, not only the Catch log's files. It builds and reviews `pagle-2026d` from the **1.0 candidate**, the main commit after #498 merges on 2 Nov. Its `ci/ranked-policy.py` reads the source at a pinned commit, not the zip, so the tag must be that commit, or carry no hashed-file change after it. **The final candidate deadline is 4 Nov 12:00 UTC.** Send pagle-backend the candidate's hash as soon as it's fixed, and again for any later change. After the deadline:
+  - an `## Interface` bump (4.2, check 12) never blocks the tag: the backend hashes TOCs without their `## Interface` lines, and any other TOC change still counts;
+  - a rule fix to a hashed logic file goes out in **1.0.1** (about T+72h) with the next policy, unless it is launch-critical;
+  - a launch-critical fix: send pagle-backend the commit. It re-cuts `pagle-2026d` on the night from a prepared script with one full verify, about 1 hour, and the tag waits for it (the cost is a backend redeploy on the night);
+  - the API-dump pin (4.1): nothing is needed if it only changes files outside the manifest; if it touches a hashed file, it's one of the two cases above.
 - **Check 25 (6–7 Nov):** send the real 1.0 Paste strings and the largest size that survives the copy test, for its part cap.
