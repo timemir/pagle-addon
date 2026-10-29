@@ -728,8 +728,13 @@ end)
 
 -- ---------------------------------------------------------------- the chosen look's stage and state
 
--- The stage's size (LED-R170, ledger.md › UI): 360 x 156.
-local STAGE_W, STAGE_H = 360, 156
+-- The stage's size (LED-R170, ledger.md › UI): 380 wide, the page body's 382 less a hair, and the well as tall as
+-- Core's stage for a look: Pagle.DrawGoodPreview's "stage" is the shop's 390 x 190 (SHOP-R36), so the well is that and
+-- the 2 of its rim each side, 194; the preview's frame, inside the rim, is wide enough for the widest sample toast
+-- (464 at 0.8) and holds the whole stage, nothing of it past the well. A title's paper well is 156. Where the look
+-- isn't owned, "A look before you have it" is under the well on the paper, in a line of its own.
+local STAGE_W, LOOK_H, TITLE_H, RIM = 380, 194, 156, 2
+local CAPTION_GAP, CAPTION_H = 4, 18
 local STAGE_DARK, STAGE_RIM = "0d2a30", "e8c96a"
 
 ---@class LedgerStageWidget: LedgerJournalWidget
@@ -742,35 +747,38 @@ local STAGE_DARK, STAGE_RIM = "0d2a30", "e8c96a"
 ---@field foot FontString
 
 -- The stage of the chosen look: a dark well with a gilt rim, the look drawn into it by Core (Pagle.DrawGoodPreview,
--- "stage") in its colours whatever its state, "A look before you have it" at its foot while it isn't owned; a title is a
--- paper well with "Signed as", the title in the hand and the Angler's name and level.
+-- "stage") in its colours whatever its state, "A look before you have it" under the well while it isn't owned; a title
+-- is a paper well with "Signed as", the title in the hand and the Angler's name and level.
 ns.RegisterJournalWidget("stage", function(parent)
 	local widget = newWidget(parent) --[[@as LedgerStageWidget]]
 	widget.well = ns.JournalTint(widget, STAGE_DARK, 1, "BACKGROUND")
-	widget.well:SetSize(STAGE_W, STAGE_H)
-	widget.rim = ns.JournalOutline(widget, 0, 0, STAGE_W, STAGE_H, STAGE_RIM, 1, "BORDER", 2)
+	widget.rim = ns.JournalOutline(widget, 0, 0, STAGE_W, LOOK_H, STAGE_RIM, 1, "BORDER", RIM)
 	widget.preview = CreateFrame("Frame", nil, widget)
-	widget.preview:SetSize(STAGE_W - 4, STAGE_H - 4)
+	widget.preview:SetSize(STAGE_W - 2 * RIM, LOOK_H - 2 * RIM)
 	widget.preview:SetClipsChildren(true)
 	widget.signed = ns.JournalLabel(widget, "sc", 14, INK.kicker, "", { justify = "CENTER" })
 	widget.words =
 		ns.JournalLabel(widget, "hand", 34, INK.hand, "", { justify = "CENTER", wrap = true, width = STAGE_W - 30 })
 	widget.line = ns.JournalLabel(widget, "italic", 15, INK.note, "", { justify = "CENTER" })
-	widget.foot = ns.JournalLabel(widget, "italic", 13.5, INK.giltLight, "", { justify = "CENTER" })
+	widget.foot = ns.JournalLabel(widget, "italic", 13.5, INK.noteLight, "", { justify = "CENTER" })
 	function widget.Fill(self, block, width)
 		local x = math.max(0, (width - STAGE_W) / 2)
 		local title = block.lookArt == nil
+		local height = title and TITLE_H or LOOK_H
 		local well, rim = title and "efe0bb" or STAGE_DARK, title and INK.tileInk or STAGE_RIM
 		self.well:SetColorTexture(rgb(well))
+		self.well:SetSize(STAGE_W, height)
 		ns.JournalAt(self.well, self, x, 0)
 		for _, edge in ipairs(self.rim) do
 			local r, g, b = rgb(rim)
 			edge:SetColorTexture(r, g, b, 1)
 		end
+		self.rim[3]:SetHeight(height)
+		self.rim[4]:SetHeight(height)
 		ns.JournalAt(self.rim[1], self, x, 0)
-		ns.JournalAt(self.rim[2], self, x, STAGE_H - 2)
+		ns.JournalAt(self.rim[2], self, x, height - RIM)
 		ns.JournalAt(self.rim[3], self, x, 0)
-		ns.JournalAt(self.rim[4], self, x + STAGE_W - 2, 0)
+		ns.JournalAt(self.rim[4], self, x + STAGE_W - RIM, 0)
 		self.preview:SetShown(not title)
 		self.signed:SetShown(title)
 		self.words:SetShown(title)
@@ -785,19 +793,18 @@ ns.RegisterJournalWidget("stage", function(parent)
 			self.line:SetText((block.lines or {})[1] or "")
 			self.line:SetWidth(STAGE_W - 30)
 			self.line:ClearAllPoints()
-			self.line:SetPoint("TOP", self, "TOPLEFT", x + STAGE_W / 2, -(STAGE_H - 44))
+			self.line:SetPoint("TOP", self, "TOPLEFT", x + STAGE_W / 2, -(TITLE_H - 44))
 		else
 			self.preview:ClearAllPoints()
-			self.preview:SetPoint("TOPLEFT", self, "TOPLEFT", x + 2, -2)
+			self.preview:SetPoint("TOPLEFT", self, "TOPLEFT", x + RIM, -RIM)
 			Pagle.DrawGoodPreview(self.preview, block.lookArt.good, "stage")
 		end
-		ns.JournalRestyle(self.foot, "italic", 13.5, title and INK.noteLight or INK.giltLight)
 		self.foot:SetShown(block.note ~= nil)
 		self.foot:SetText(block.note or "")
 		self.foot:SetWidth(STAGE_W - 20)
 		self.foot:ClearAllPoints()
-		self.foot:SetPoint("BOTTOM", self, "TOPLEFT", x + STAGE_W / 2, -(STAGE_H - 8))
-		return STAGE_H
+		self.foot:SetPoint("TOP", self, "TOPLEFT", x + STAGE_W / 2, -(height + CAPTION_GAP))
+		return block.note and height + CAPTION_GAP + CAPTION_H or height
 	end
 	return widget
 end)
@@ -884,17 +891,23 @@ end)
 ---@field coin LedgerSpriteTexture
 ---@field label FontString
 
+-- The room the price's coin takes: its sprite, shadow's margin and all, and 4 before the figure.
+local COIN_ROOM = 32
+
 -- A look's price with the Curio Shop's coin (LED-R170).
 ns.RegisterJournalWidget("price", function(parent)
 	local widget = newWidget(parent) --[[@as LedgerPriceWidget]]
 	widget.coin = ns.JournalSprite(widget, "Shop", "coin-small", "ARTWORK", 0, 20)
 	widget.label = ns.JournalLabel(widget, "print", 21, INK.title)
 	function widget.Fill(self, block, width)
-		ns.JournalBoxAt(self.coin, self, 0, 3)
+		-- The coin's sprite has its shadow's margin round its 20 x 20 box: the box sits that far in, so the whole
+		-- sprite is on the page and none of it is clipped at the page body's left edge.
+		local margin = self.coin.box[1]
+		ns.JournalBoxAt(self.coin, self, margin, margin)
 		self.label:SetText(block.value or "")
 		self.label:ClearAllPoints()
-		self.label:SetPoint("TOPLEFT", 28, -1)
-		bound(self.label, width - 28)
+		self.label:SetPoint("TOPLEFT", COIN_ROOM, -2)
+		bound(self.label, width - COIN_ROOM)
 		return 28
 	end
 	return widget

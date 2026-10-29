@@ -912,6 +912,88 @@ describe("ink and pencil (LED-R170)", function()
 	)
 end)
 
+describe("the right page's stage and its price (LED-R170)", function()
+	-- Core's stage for a look, the shop's: 390 x 190, drawn from the preview frame's top (SHOP-R36), the widest sample
+	-- toast in it 464 at 0.8, 372 or so wide.
+	local AREA_H, TOAST_W = 190, 372
+
+	-- Where `region`'s top left is, from `rel`'s, y down.
+	local function at(region, rel)
+		local point, to, relPoint, x, y = region:GetPoint()
+		assert.are.same({ "TOPLEFT", rel, "TOPLEFT" }, { point, to, relPoint })
+		return x, -y
+	end
+
+	it("gives Core's stage a well all its own height, so no look is cut at the foot (LED-R170, SHOP-R36)", function()
+		local _, loaded = shelfOf("core.soundset", "core.soundset.gilded")
+		local widget = drawn(loaded, "right", "stage")[1]
+
+		local wellX, wellTop = at(widget.well, widget)
+		local wellW, wellH = widget.well:GetSize()
+		local previewX, previewY = at(widget.preview, widget)
+		local previewW, previewH = widget.preview:GetSize()
+
+		assert.are.equal(0, wellTop)
+		assert.are.same({ wellX + 2, 2 }, { previewX, previewY }) -- inside the rim, 2 each side
+		assert(previewH >= AREA_H, "the preview frame holds the whole 190")
+		assert(previewW >= TOAST_W, "the preview frame holds the widest sample toast")
+		assert.are.equal(wellH, previewY + previewH + 2, "and ends where the well does, less the rim")
+		assert(wellW <= 382, "the well fits the page body")
+		assert.is_true(widget.preview:IsShown())
+	end)
+
+	it("puts the caption on the paper under the well, in the paper's ink, for each kind of look (LED-R170)", function()
+		for _, case in ipairs({
+			{ "core.toaststyle", STORM },
+			{ "core.soundset", "core.soundset.gilded" },
+			{ "core.binding", "core.binding.birch" },
+			{ "core.crest", "ledger.crest.elwynn" },
+			{ "titles", "title:level30" },
+		}) do
+			local _, loaded = shelfOf(case[1], case[2])
+			local widget = drawn(loaded, "right", "stage")[1]
+			local what = case[2]
+
+			assert(widget.foot:IsShown(), what)
+			assert.are.equal("A look before you have it", widget.foot:GetText(), what)
+			local _, wellH = widget.well:GetSize()
+			local point, _, relPoint, _, y = widget.foot:GetPoint()
+			assert.are.same({ "TOP", "TOPLEFT" }, { point, relPoint }, what)
+			assert(-y > wellH, what .. ": the caption's top is under the well")
+			assert.are.same({ 0x8a / 255, 0x6a / 255, 0x40 / 255 }, {
+				widget.foot.textColor[1],
+				widget.foot.textColor[2],
+				widget.foot.textColor[3],
+			}, what .. ": in the paper's note ink")
+			assert(widget:GetHeight() > -y, what .. ": and the widget is as tall as the caption")
+		end
+	end)
+
+	it("keeps the title's paper well at its own 156, its caption under it (LED-R170)", function()
+		local _, loaded = shelfOf("titles", "title:level30")
+		local widget = drawn(loaded, "right", "stage")[1]
+
+		local _, wellH = widget.well:GetSize()
+		local _, _, _, _, y = widget.foot:GetPoint()
+
+		assert.are.equal(156, wellH)
+		assert.is_true(widget.foot:IsShown() and -y >= wellH)
+	end)
+
+	it("draws the coin with the whole of its sprite on the page, the price's figure beside it (LED-R170)", function()
+		local _, loaded = shelfOf("core.toaststyle", RIPPLE, { modules = balance(120) })
+		local widget = drawn(loaded, "right", "price")[1]
+
+		local x, y = at(widget.coin, widget)
+		local width, height = widget.coin:GetSize()
+		local labelX = select(2, widget.label:GetPoint())
+
+		assert(x >= 0 and y >= 0, "no margin of the sprite is left of the page or above the widget")
+		assert(y + height <= widget:GetHeight(), "or below it")
+		assert(labelX >= x + width, "and the figure starts where it ends")
+	end)
+end)
+
 describe("the right page by a look's state (LED-R170)", function()
 	it(
 		'reads a look in use: the wax seal "In use", what it does in the hand and how it came, "Free, and always yours." for the default',

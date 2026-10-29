@@ -698,8 +698,8 @@ function ns.WireGoods(host)
 	end
 end
 
---- How big `Pagle.DrawGoodPreview` draws a good's look (SHOP-R36): the stage's 370 x 132 centred, or scaled to fit the
---- frame.
+--- How big `Pagle.DrawGoodPreview` draws a good's look (SHOP-R36): the shop's whole stage, 390 x 190 from the frame's
+--- top, or its 370 x 132 well scaled to fit the frame.
 ---@alias PagleGoodPreviewSize "stage"|"card"
 
 --- Publishes the goods registry's reads and its one write on `Pagle` (wallet-and-shop.md › Contracts):
@@ -804,7 +804,8 @@ function ns.PublishGoods(Pagle, wrap, draw)
 	end
 
 	--- Draws a good's look into `frame` (SHOP-R36), as the Curio Shop's stage does: its preview, or its slot's, or its
-	--- icon in a medallion, at `size` "stage" (370 x 132, centred) or "card" (scaled to fit the frame), standing still.
+	--- icon in a medallion, at `size` "stage" (390 x 190 from the frame's top) or "card" (the 370 x 132 well scaled to fit the
+	--- frame), standing still.
 	--- Draws nothing for a good never registered. Returns nothing.
 	---@param frame Frame
 	---@param goodID string
