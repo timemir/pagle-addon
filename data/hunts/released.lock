@@ -1,4 +1,331 @@
 # The release lock (DATA-R95, ADR 0005): each released Hunt's hash and retired date, and the members of each class a
 # released Hunt targets. Written by scripts/generate-data.py --lock; don't edit it by hand.
-# Run --lock only when a release is tagged, from 1.0 on, and never before: this file stays empty until the 1.0 tag
+# Run --lock only when a release is tagged, from 1.0 on, and never before: the 1.0 release commit wrote the first
 # (DATA-R73). The generator fails when data/hunts/hunts.toml breaks it (DATA-R96).
+
+[hunt.alterac_dawn_trout_catfish]
+hash = "0ac7f768ed9011c9a508e0199e825033276056fa8ec0662bebd9055763277041"
+
+[hunt.alterac_dawn_trout_haul]
+hash = "23297bfc78415eded8ec14ab0340dbdb7851dc2243580b7e68f762f10269f1f5"
+
+[hunt.alterac_dawn_trout_smallfish]
+hash = "e267ed96a6fc56d37bf2eeba631758191ec8c2f7868b96cb76b865bbdff0ddcf"
+
+[hunt.alterac_dawn_trout_trout]
+hash = "6123010e71c9c0e8318021b5fef32c6d995290e073966b2989408c3e2db6b5a0"
+
+[hunt.armoured_after_dark]
+hash = "8115705a23d029d315ed0828152728a188407641256b07cdb03554240740da49"
+
+[hunt.azshara_lobster_haul]
+hash = "c52a6e5768cf2caaf0fb131319659cce019ca82504d16cf64bf4c8d4926764c9"
+
+[hunt.azshara_lobster_lobster]
+hash = "fd096fc09c428082f52043618ea3adc62842102ac6ee626f47bb651a6b312c76"
+
+[hunt.azshara_lobster_night]
+hash = "6a7c1eb28e7e6fd8215eb27bc193ae8f76609639da48a3166230311135166e76"
+
+[hunt.azshara_lobster_yellowtail]
+hash = "5af72b95556ba3eeb411577d5c0d98109a5762e529507feb67bc28a6252a3435"
+
+[hunt.barrens_oddities_albacore]
+hash = "28b58f91f198a1ab6a50248abed46f629dfbfe2e2f28df0d94062441cb2b2ca0"
+
+[hunt.barrens_oddities_haul]
+hash = "39fef28d961e35f79c6ee4ce9fdd017ea5fef898857d0a7d411293c8bc42351a"
+
+[hunt.barrens_oddities_oddity]
+hash = "51b4c8c362d71f48ac433e8865087fe4653d063fadd83ed40121181e565a83b3"
+
+[hunt.barrens_oddities_snapper]
+hash = "595c0b5ced7c286c937d525f7d95a5466ed003e3ff9bfd927d1c5dab4d964aef"
+
+[hunt.bloated_luck]
+hash = "abaa243d5b25c082fa55402e8e8b3f6e57f1d2a7ed0236c4cb05e4e83b63cc5b"
+
+[hunt.burning_steppes_salmon_haul]
+hash = "27c936f299f34b6edb6012577f9cc172005d9c9504653b6b83ccc43e267b188e"
+
+[hunt.burning_steppes_salmon_noon]
+hash = "080bbb53d20979b8f27a2382d08a2d5b8e1b5a15bd827ffc7094e6cde1987041"
+
+[hunt.burning_steppes_salmon_redgill]
+hash = "a7c85453fa6fbd93db69028bf712afcba79a09caf2e6b1ffbea608e12ab64bb5"
+
+[hunt.burning_steppes_salmon_salmon]
+hash = "7a7c86c857f161874b721a7e17c6196f1bf11a1cbc454b37e66b0620a47e74c7"
+
+[hunt.darkshore_moonlight_albacore]
+hash = "bd68dbb8d40e0ad4f923d32b46062ca5d8a9829e84e81c75866c5d9746c8b668"
+
+[hunt.darkshore_moonlight_grouper]
+hash = "ce9fb10428f2f5c82648ce0fdb53bd99580780b17934e6da9a076f097208869f"
+
+[hunt.darkshore_moonlight_haul]
+hash = "a1490874e5101a6addd8c23d634534c8f5eaee48663157c6809a9b69f0f8cc57"
+
+[hunt.darkshore_moonlight_snapper]
+hash = "81388332cdb7658793f9cf249600494cda3a94bd1c4b71029e5f52a3a0fa19a7"
+
+[hunt.deadwind_pass_night_haul]
+hash = "e6d1a2a157418e7f42dfa98a3562dce65ca3f9353d5496730722b05249dc6e0b"
+
+[hunt.deadwind_pass_night_salmon]
+hash = "38af3b53f607669f7b1a18ebe340547e91d9c2304e4881682ac10e9ada13b18a"
+
+[hunt.deadwind_pass_night_tower]
+hash = "750b899efd80b93244acab56be0caf6286e4794c0115b73f65b97ad1324813ac"
+
+[hunt.duskwood_witching_catfish]
+hash = "7d769d07e3f355118d3dffd18da766d19576ed86139cd9c939f2c47e7cb87007"
+
+[hunt.duskwood_witching_haul]
+hash = "ec827e42e9056497ad2180bf537f212898017466b3f88aab81ddfc40a502d0cd"
+
+[hunt.duskwood_witching_midnight]
+hash = "1ce273442ccc14865e8f076c327e118525b8ad2b25392f4970cf616d380a508d"
+
+[hunt.duskwood_witching_snapper]
+hash = "82bea485696ea4177a80f1e37cd249cfd7c94598b91f855865888c2defc47c9c"
+
+[hunt.dustwallow_marsh_night_haul]
+hash = "7fa450e80cb60681bde3735130833b60f1beb54a83b380380af577e280096ecd"
+
+[hunt.dustwallow_marsh_night_small_hours]
+hash = "c2307b709f2bdb2ba543803acf245805c39fcc4d123564866bbb4fc9672a608e"
+
+[hunt.dustwallow_marsh_night_trout]
+hash = "f02f6278106564cfa3b30eb479345098ef5b4b7874b7cedfe82c78b30e0b2d1e"
+
+[hunt.dustwallow_marsh_night_yellowtail]
+hash = "166f130bc728fdf4aedec1f72b4cdc562ad679b324a063b55f57fc55c214d5c7"
+
+[hunt.eastern_plaguelands_night_haul]
+hash = "6a73e670f3987be9959dc7c15e6d281e9bf253e16dcf6709b8c5d1c1f2d1608e"
+
+[hunt.eastern_plaguelands_night_midnight]
+hash = "50792bc2efea8bebab0fb58d871e23a66a298b0a1447c96296a63504b95e3ead"
+
+[hunt.eastern_plaguelands_night_salmon]
+hash = "1cc1526be98e293a02e7e7f9340344958930a2c968e3c734e2276157db5876aa"
+
+[hunt.eastern_plaguelands_redgill_haul]
+hash = "7755764235c047dd134d1aef2696d40a4e82b86605e528e20f41ff2ea5ee05ee"
+
+[hunt.eastern_plaguelands_redgill_redgill]
+hash = "1c90adb25461bad3d1b1648b8b277d3198862c4e08b9ea628e15ea0f9885b31d"
+
+[hunt.eastern_plaguelands_redgill_salmon]
+hash = "04bac66f8760062bb8a036bb59df5f0e830f84b9e01e45d3b118be798ee26859"
+
+[hunt.felwood_moonglade_haul]
+hash = "1572f07f2fd2ecee692421443710fd458354c45f4469e4173f25f76b49511869"
+
+[hunt.felwood_moonglade_redgill]
+hash = "628485ad5c51a91338cd4907562f75095539460f7545753deb860f4353a4c85f"
+
+[hunt.felwood_moonglade_trout]
+hash = "d0077bb184d8785ad8c40a999bd0e7e9ffcfee4142fed96958dff5908bab2ceb"
+
+[hunt.feralas_redgill_haul]
+hash = "1e77cf7b544bb7f0629dc7853727294b22cb7a1511570bd3e812162be0cb7668"
+
+[hunt.feralas_redgill_redgill]
+hash = "304407902b0938676e818c273b8de9e13311a088e171e822be653eb1f700c3e4"
+
+[hunt.feralas_redgill_trout]
+hash = "ccaf0c06fce225f8f6659044a2a8449705d141b9a733b523c3769da0f4e5484c"
+
+[hunt.feralas_redgill_yellowtail]
+hash = "67b83c8b3409ed031b5b73f475c4e3ee625aacbbf97f9c97765c64bd178f6309"
+
+[hunt.first_light]
+hash = "e5bcfb5dd8f06a3d54a056a8f44c88797134204d1e6da672b3cef136e31146d0"
+
+[hunt.hinterlands_coast_haul]
+hash = "eadcac4b2d2099451867078397e96489e449e6d956170d5ae662e1c8905b00f0"
+
+[hunt.hinterlands_coast_mightfish]
+hash = "90b6ee72ce333a693041a670179ff32963862dfbd71cd118b25255607070feff"
+
+[hunt.hinterlands_coast_morning]
+hash = "d2e50641dd9f44afab89c28cb78c0e8aa22cc83139f2f45ab112eedcad42f843"
+
+[hunt.hinterlands_coast_yellowtail]
+hash = "9f89bff4ff1403a63ec5cdbe87d73ad57e8a59f9c306d9d76c8529424be7a21a"
+
+[hunt.hinterlands_redgill_haul]
+hash = "2ce684b08300931ad63eae869b227bbd7ce949b6f293f9d3645413693a5e1e6e"
+
+[hunt.hinterlands_redgill_night]
+hash = "8855763e59ad4b49bf246e82870ea15e48c7882bfa18616fc0d027955f3b9d18"
+
+[hunt.hinterlands_redgill_redgill]
+hash = "1593ac7994bf816baf6e6aa08515c98bc4599a974215b489db4c32e1d2bc11aa"
+
+[hunt.hinterlands_redgill_trout]
+hash = "f1dec3d6c2f8310fb8b01c9037d286f8bf8994b37e5d215a79fd2e83bb47789e"
+
+[hunt.home_waters]
+hash = "580a189584f9e63cfd53b9e2cdf685972a2fea9747540376c98811a383bd3c66"
+
+[hunt.hut_hour]
+hash = "a7717205b815024bdae9da8e78b46a1e6c091b7dbcaa97a4bd2a49271ced59d4"
+
+[hunt.lantern_hours]
+hash = "a4f5e374f1e44e05c2c23c6856d55f249f930619943a38f0bbcf4c4df0394635"
+
+[hunt.live_wire]
+hash = "8be82efefdc101c422eeb8f54b1700ec059ab000a26e2fd2bf876fd52b33158c"
+
+[hunt.loch_modan_frenzy_frenzy]
+hash = "95b6b7a47430a0dc9a0a7e61f27c373ad65a80b71193b68712e5cb976abe0bec"
+
+[hunt.loch_modan_frenzy_haul]
+hash = "55a027cd229f5c560be5993521a6e73f4f1778cd866974098f5a5e36ac4445db"
+
+[hunt.loch_modan_frenzy_quality]
+hash = "efcb44abe2e768acd5d1aa72f01b8ba6f3f7d4406f4d1544334a9193c5bd7b36"
+
+[hunt.loch_modan_frenzy_snapper]
+hash = "e836186b92c7150465e2b41a16805cd299fc3e3c48d92b89529ec9894fccf598"
+
+[hunt.mackerel_run]
+hash = "510f3809163c8eb660a9a3233538ce03e48f64021edeb2ec1997cbb4c2e0ce2b"
+
+[hunt.night_run]
+hash = "6d7cf5a6799da3dfafc86e44cff171066951d6f0b4a77c4e22140f97c6d03b06"
+
+[hunt.rack_hour]
+hash = "e96336e12152405dbef105d526112075d99e2493076a73396fd9b4436abffeb0"
+
+[hunt.riggles_angelfish]
+hash = "31bd7b56c756c8e7860e7f475e0be5572c80ecdce916d79ea3a75a0ce35e25fa"
+
+[hunt.riggles_queenfish]
+hash = "370d89c396855ed2628034e4de84017b6d7745966524914716b3dff4bb82d025"
+
+[hunt.riggles_racer]
+hash = "e6d1d3f43067e79942c7ff793429d3dc712ab61beffe3a860a05ffc952303313"
+
+[hunt.silithus_coast_albacore]
+hash = "69d1c9308ea0e65a894f943bbbf332d3578416846491c81c65d50be6df0bc7b3"
+
+[hunt.silithus_coast_grouper]
+hash = "bd3ccaeac6f582e33985a0e79f009fb075eab5c54e0ac9662b565fe2393d1224"
+
+[hunt.silithus_coast_haul]
+hash = "2e3093612e156589586b4d5a97e97f3487cafd448977c6c03e5fc24f6acfecfa"
+
+[hunt.silithus_coast_mackerel]
+hash = "34d3c832a03c07058ac1a880f5b69f015ef93730ecebb2c191ace19ba3e49f90"
+
+[hunt.silithus_salmon_blackmouth]
+hash = "bcb64f235b11249c7626eb4990387776019777c0952315cf6b9371ed14c93fa2"
+
+[hunt.silithus_salmon_dusk]
+hash = "75def5413211db90561f37f801e56457edf5bc8f1453c29d571ca8bc06c1fdd3"
+
+[hunt.silithus_salmon_haul]
+hash = "297b2a1ca0884ebc701190a4c562d6eab12b6e30ea56b3c62404b9124ca7034e"
+
+[hunt.silithus_salmon_salmon]
+hash = "83ec1c8aac701e80220e0f30bbda010b598ca90f6d21a62112f167202c846872"
+
+[hunt.stranglethorn_coast_cod]
+hash = "33f57b0d5ebafa506423baaa47e0b6dd95b680e5b7847a1597076029ee891562"
+
+[hunt.stranglethorn_coast_haul]
+hash = "b257f858f227592eca20b5ede7a9436351150e67862a62ae3714c49e7139b128"
+
+[hunt.stranglethorn_coast_trout]
+hash = "5fabaec8d5bd9142d1c97b2ac4cc3d738d7788cb0646f5b54fc87f0f9e6f6b48"
+
+[hunt.stranglethorn_coast_yellowtail]
+hash = "309655452a3118a075c5c6974834a68f44d12cb712ea862b82b7f263958d6f9e"
+
+[hunt.summers_bass]
+hash = "1f8f212441637f2299ce7c3662f03e72b767448bbfc0d12fd999de66daaeab3e"
+
+[hunt.tanaris_yellowtail_cod]
+hash = "a84ae6d0f705f4ac4b6df8ce446fe422126f9576070031736162a4b22630237c"
+
+[hunt.tanaris_yellowtail_haul]
+hash = "120a99295aa76c2ee1a896314bd0384860811fe88e71667e7b25c984b23fc364"
+
+[hunt.tanaris_yellowtail_noon]
+hash = "dbd52d79867321843d05a36c61b844c42c74675d7a330802a11f6bdf47f0ab34"
+
+[hunt.tanaris_yellowtail_yellowtail]
+hash = "b652f916dfb758b189820e4751a2e44e9cb4a5b87d957c1b7529f0dd6cf706b7"
+
+[hunt.tastyfish_haul]
+hash = "ffb730ecb9064825e9c5a5e787999b8dde548b775fbb3ed5165dd8b0c14b9e51"
+
+[hunt.tirisfal_silverpine_dusk_haul]
+hash = "f5253246dfa90be0c9e7d9710fb339d4d954ef829f9047b068ff9e208b483ded"
+
+[hunt.tirisfal_silverpine_dusk_mackerel]
+hash = "20c9c5548e0e4e0c5658896ca8473a7d58fe49ab9a8f92650d55597130177dd5"
+
+[hunt.tirisfal_silverpine_dusk_smallfish]
+hash = "72c8808462fda0a9e1c5ebad3186263f94f0fc354e45ee3a6964124f1dbc4ee4"
+
+[hunt.tirisfal_silverpine_dusk_snapper]
+hash = "44b21306f5f854110202649c7db9a81105b691e297e4f6ad6528f48dc4942af8"
+
+[hunt.ungoro_redgill_dusk]
+hash = "785713ffbc154b967203cd27e908644fd00f2d51838b27165ad75977d41edbae"
+
+[hunt.ungoro_redgill_haul]
+hash = "3c340d154b05aeeb42e0dbc0bb40f331459e373533e23d6410b841ff628bfc85"
+
+[hunt.ungoro_redgill_redgill]
+hash = "8701d91bcefbd8d5eb8041a986d7b77f3f69d698784985e9664203867593cc71"
+
+[hunt.ungoro_redgill_trout]
+hash = "98d43c9df6f56855618acc0fda7de1c4667a5180cfa04b01688d51b46c465713"
+
+[hunt.western_plaguelands_lake_afternoon]
+hash = "6b56abe41bb77581a5413e9a75b069cb8b7e04a745522552a194276863eba970"
+
+[hunt.western_plaguelands_lake_haul]
+hash = "1668f383dd79d6b12ef8d77ff04c704cca25b3da8d273487f28da2bf51aa6556"
+
+[hunt.western_plaguelands_lake_redgill]
+hash = "bee48b7fb0593c28bf44f50f8d15a541ed6d101f857988a377dc48cd1dca5eed"
+
+[hunt.western_plaguelands_lake_trout]
+hash = "92600b93981c80c3e551107b3c04b8b06c0efaa68800fbcc69e9b01add0d52a2"
+
+[hunt.winters_squid]
+hash = "bc36146bafe85ca6e7c02715b22848d28c44a7b349cdd21098f6dc09c087ffeb"
+
+[hunt.winterspring_daylight_haul]
+hash = "ca197aa57dcf8b8ec566208f6436fa782673f2578bae49c3fe10ef90f688399a"
+
+[hunt.winterspring_daylight_morning]
+hash = "d75b83d22863173f742fd676fea30cc25ccedddb7d93cf670d6d10d863610df1"
+
+[hunt.winterspring_daylight_redgill]
+hash = "cc853115bba6d7fa77a12d8c0d9adfdbf56d3c6c025bf1bd1f152ba190797cec"
+
+[hunt.winterspring_salmon_evening]
+hash = "92f03d44dd6eab523461746b6b2eeb9b0ad08dfd1d17977ca5691b40ef58e10b"
+
+[hunt.winterspring_salmon_haul]
+hash = "342b4fce92f6ce28f8bad00630d711e5cc7f6948a9e1cfd6143d1e0e9fc93578"
+
+[hunt.winterspring_salmon_salmon]
+hash = "e7c700ed9f513246ee4a98206ba701d31096580d34427043529a9649b7c39e53"
+
+[class."fixed.oddity"]
+members = [6522, 251524]
+
+[class."quality.uncommon"]
+members = [6643, 6645, 6647, 8366, 13881, 19803, 19805, 19806, 21162, 21164, 21243]
+
+[class."species.any"]
+members = [1467, 4603, 6289, 6291, 6299, 6303, 6308, 6317, 6358, 6359, 6361, 6362, 6458, 6522, 6887, 8365, 12238, 13422, 13754, 13755, 13756, 13757, 13758, 13759, 13760, 13888, 13889, 13890, 13893, 16967, 16968, 16969, 16970, 19803, 19805, 19806, 19807, 19975, 21071, 21153, 251524]

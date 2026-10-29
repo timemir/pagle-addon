@@ -1,6 +1,6 @@
 # Pagle
 
-## 1.0.0 (unreleased)
+## 1.0.0 (2026-11-05)
 
 The first release. Pagle is a fishing addon for World of Warcraft: Forever, for progression and collection, with a few quality-of-life touches beside them. It watches what you catch and rewards it. It never fishes for you.
 
@@ -8,6 +8,7 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 
 ### Pagle
 
+- New to Pagle? A Letter arrives at your first login and opens a short Field guide. After that, notes appear beside each first moment and window, and a First evening list in the tracker shows what to try. `/pagle guide` opens the guide again.
 - Every Cast you make is written into one Catch log, shared by every character on your account. Everything the Modules show is read from it.
 - Open any of it from Pagle's entry in the addon compartment by the minimap, or with `/pagle`. Pagle's settings live in the game's own Settings panel, where its search finds every option.
 - When you earn something, Pagle says so in the moment: a toast writes the fish's name out in ink while its stamps come down, a banner drops its seal for a new Angler Level, and a Legend gets the whole screen. A Session that earned something ends with a summary card.
@@ -40,6 +41,7 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 - The Hunts board, a leather notebook, lays them out on a timeline of what's biting now, what opens soon and what comes later.
 - Each Hunt completes in bronze, some go on to silver and gold, and each of the five themed sets earns its title once finished. The first set, Home Waters, is made for new characters: four Hunts in the low-level zones.
 - The board counts your Casts at each Hunt without pretending to know the odds.
+- Pagle Wagers: a Hunt Event opens for about three days at a time, with Hunts in its waters. Land every Hunt's first mark before it closes to settle the wager for Coins and Angler XP, and climb the Wagers ladder to its titles. The Pagle companion, from https://pagle.app/download, brings more wagers than the addon carries itself, and a quiet hint on the board says so (Settings can turn the reminder off).
 - Pin the Hunts you're after: they follow you in a tracker under the minimap, and, if you like, a quiet Nod tells you when a pinned Hunt's window opens. `/pagle hunts` opens the board.
 
 ### Stats
@@ -86,6 +88,8 @@ Every window of Pagle's own is drawn as something an angler would keep.
 - `/pagle` or `/pagle settings`: Pagle's settings
 - `/pagle journal`, `/pagle hunts`, `/pagle stats`, `/pagle board`: open or close each Module's window
 - `/pagle shop`: the Curio Shop
+- `/pagle collection`: the Collection
+- `/pagle guide`: the Field guide
 - `/pagle report`: the Field report
 - `/pagle qol input key`, `click` or `both`: how you cast
 - `/pagle help`: list the commands

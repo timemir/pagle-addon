@@ -171,7 +171,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 - **DATA-R70** `CONTENT_FINGERPRINT` is the first 16 lowercase hex characters of the SHA-256 of the catalogue's **canonical JSON**: the catalogue table without its `fingerprint` field, as Python's `json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)` writes it, encoded as UTF-8. Integer map keys become decimal strings. Fields that are lists (`catches`, pool catches, `fishingSpells`, `auras`, `tiers`, the lists inside a condition spec) are JSON arrays, even when empty; every other table is a JSON object, even when empty. A gate's shared window spec is written out in full wherever it is used. Every catalogue value counts, `confirmed` flags, typical lengths and item quality included; lore is not in the catalogue, so it never counts.
 - **DATA-R71** A changed fingerprint makes every projection rebuild (LOG-R72). That is how Uncharted Catches are credited retroactively once a release classifies them (LOG-R96), and why nobody has to remember a version bump.
 - **DATA-R72** The Hunt list has its own fingerprint, computed the same way over the Hunt list without its `fingerprint` and without lore (DATA-R94). Pagle_Hunts passes it as `extraFingerprint` (LOG-R70), so a Hunt list change rebuilds only Hunts.
-- **DATA-R73** Before 1.0 the data changes freely, and `released.lock` and `varieties.lock` are empty (DATA-R95, DATA-R133). From 1.0, every tagged release ships whatever `data/` holds at the tag, with both locks updated in the same commit.
+- **DATA-R73** Before 1.0 the data changed freely, and `released.lock` and `varieties.lock` were empty (DATA-R95, DATA-R133); the 1.0 release commit wrote both. From 1.0, every tagged release ships whatever `data/` holds at the tag, with both locks updated in the same commit.
 
 ### What ships
 
@@ -195,7 +195,7 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
 
 - **DATA-R85** Hunt definitions live in `data/hunts/hunts.toml`: `[[set]]`, `[[class]]` and `[[hunt]]` tables, keys under [Data](#data). What each field means is `hunts.md`'s; this file fixes the format, the checks and the emitted shape. A Hunt's and a set's text (`name`, `title`, `note`) is lore that stays in this file (DATA-R105).
 - **DATA-R86** A Hunt is **natural** or **imposed** (`kind`). A natural Hunt has a `species` target and a `window` (one window ID, DATA-R35), read from the catalogue at runtime, so correcting a window never changes the Hunt. An imposed Hunt has a `species` or `class` target and its own `conditions`: a condition spec (LOG-R48) written in the definition, never naming a window.
-- **DATA-R87** `since` and the optional `retired` are dates (TOML `YYYY-MM-DD`), meaning 00:00 UTC on that day, emitted as server times. Before 1.0 every v1 Hunt's `since` is the pre-1.0 placeholder (Tunables), so dogfooding Casts count; the M9 checklist sets it to the real release day.
+- **DATA-R87** `since` and the optional `retired` are dates (TOML `YYYY-MM-DD`), meaning 00:00 UTC on that day, emitted as server times. Every v1 Hunt's `since` is 1.0's release day, 2026-11-05 (Tunables); a Cast before it counts toward no Hunt.
 - **DATA-R88** `tiers` is a list of strictly ascending positive integers; the first is completion.
 - **DATA-R89** `minBand` (optional, species targets only) is the lowest Simulated Size band (LOG-R67) that counts, 2 to 4. Monster (5) is never a target.
 - **DATA-R90** A `[[class]]` defines a **fixed class**: `id = "fixed.<name>"` with `<name>` matching `[%w_]+`, and `members`, a list of item IDs that must all ship (e.g. `fixed.oddity` = Deviate Fish and Whimsyfin).
@@ -478,7 +478,7 @@ None.
 | Draft catch rate | 180 Catches an hour (#279's baseline) | DATA-R99 |
 | An event Hunt's longest closed share of a run | half of 72 h (36 h), over a week of 15-minute steps | DATA-R99 |
 | An event Hunt's least open time in a run | 3 h in every 72 h run, over a week of 15-minute steps (the dev's decision, 22 Oct) | DATA-R99 |
-| Pre-1.0 `since` placeholder | 2026-11-04 (Forever's launch day) | DATA-R87 |
+| v1 Hunts' `since` | 2026-11-05 (1.0's release day) | DATA-R87 |
 | Fingerprint length | 16 hex characters of SHA-256 | DATA-R70, DATA-R72 |
 | Web crest sizes (zone, fish and shop crests), shield height in CSS px | 70, 42, 28, written at 2× | DATA-R136, DATA-R138 |
 | Lore limits | `riddle` 80, `blurb` 200, `plaque` 100, `name` 28, `title` and the `text` of a title 32, a variety's `description` 200; other fields unlimited | DATA-R107, DATA-R134 |

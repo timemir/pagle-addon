@@ -20,4 +20,4 @@ Core gives every Species Catch a Simulated Size computed from its Catch ID alone
 
 ## Note: "shipped" means released at 1.0 or later
 
-As with ADR 0005, nothing is published before 1.0, so the cut points and the hash can still change until then.
+As with ADR 0005, nothing was published before 1.0, so the cut points and the hash could change until then.

@@ -57,7 +57,7 @@
 --   lua scripts/read-wtf.lua <WTF/Account/<ACCT> folder> [--character <realm folder>/<Name-Surname>]
 --       [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] [--item <id>]...
 --       [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>]
---       [--skill N] [--now T] [--expect-casts N] [--since T]
+--       [--skill N] [--now T] [--origin T] [--expect-casts N] [--since T]
 --
 -- --cvar defaults to SoftTargetInteract and --addon to Pagle, Pagle_Ledger, Pagle_QoL, Pagle_Hunts, Pagle_Stats and
 -- Pagle_TackleBoard; naming one replaces its defaults.
@@ -73,7 +73,8 @@
 -- (current and retired Hunts, the summary line, the pins Hunts drops, whether each run is on, ahead or ended, the
 -- fallback slot, which runs ended more than 30 days ago, how long ago a Dry spell's last Catch was) at
 -- server time T instead of the reader's clock, and the Tackle Board's today at T instead of Pagle_TackleBoard.lua's
--- write time.
+-- write time. --origin T reads the fallback rotation (HNT-R152) from T, a server time, instead of Hunts' own
+-- ns.ROTATION_ORIGIN, to read an account whose runs began under another starting point.
 -- --stats-item <id> --area <areaID> prints Stats' reading of that item in that place (STA-R40–R54): its side, scope,
 -- Your odds and Dry spell. --skill N is the live effective skill (rank + modifier) it and the watches are read at;
 -- without it, each place's side with the most Casts (STA-R41).
@@ -88,7 +89,7 @@
 local USAGE = "usage: lua scripts/read-wtf.lua <WTF/Account/<ACCT> folder> [--character <realm>/<Name-Surname>]"
 	.. " [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] [--item <id>]..."
 	.. " [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>] [--hunt <id>]... [--stats-item <id> --area <areaID>]"
-	.. " [--skill N] [--now T] [--expect-casts N] [--since T]\n"
+	.. " [--skill N] [--now T] [--origin T] [--expect-casts N] [--since T]\n"
 
 -- The repo root, from this script's path: Core's and the Modules' logic/ and the catalogue are read from addons/.
 local ROOT = ((arg and arg[0] or ""):match("^(.*)[/\\]") or ".") .. "/.."
@@ -101,7 +102,8 @@ local count, readLines, loadSavedVariables = wtf.count, wtf.readLines, wtf.readS
 local function parseArgs(args)
 	local options = { cvars = {}, addons = {}, items = {}, hunts = {} }
 	local lists = { ["--cvar"] = options.cvars, ["--addon"] = options.addons, ["--hunt"] = options.hunts }
-	local numbers = { ["--expect-casts"] = "expectCasts", ["--since"] = "since", ["--now"] = "now" }
+	local numbers =
+		{ ["--expect-casts"] = "expectCasts", ["--since"] = "since", ["--now"] = "now", ["--origin"] = "origin" }
 	numbers["--stats-item"], numbers["--area"], numbers["--skill"] = "statsItem", "area", "skill"
 	local i = 1
 	while args[i] do
@@ -1753,6 +1755,9 @@ local function printHunts(account, log, options, facts, xpEarned)
 	end
 	print("== Hunts (PagleHuntsDB)")
 	local hunts, listErr = loadHuntsLogic(options.huntList, options.eventList)
+	if hunts and options.origin then
+		hunts.ROTATION_ORIGIN = options.origin
+	end
 	printHuntsRecords(hunts, log)
 	local now = options.now or os.time()
 	local global = tableOr(db.global)

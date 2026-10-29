@@ -1,4 +1,115 @@
 # The varieties lock (VAR-R5, DATA-R133): each shipped Species' ten variety keys, in their frozen order. Written by
 # scripts/generate-data.py --lock beside data/hunts/released.lock; don't edit it by hand.
-# Run --lock only when a release is tagged, from 1.0 on, and never before: this file stays empty until the 1.0 tag
+# Run --lock only when a release is tagged, from 1.0 on, and never before: the 1.0 release commit wrote the first
 # (DATA-R73). The generator fails when data/forever/varieties.toml changes, moves or drops a key it holds.
+
+[varieties.1467]
+keys = ["sunset-breasted", "pale-shallows", "copper-breasted", "peppered", "blue-cheeked", "barred", "ember-spotted", "golden", "midnight", "sunburst"]
+
+[varieties.4603]
+keys = ["classic", "gold-striped", "greenback", "silverside", "dusky", "leopard", "sunset-tailed", "all-gold", "ghost", "tidecaller"]
+
+[varieties.6289]
+keys = ["mudbank", "reedbed", "red-clay", "speckled", "blackjaw", "brindle", "lantern-eyed", "golden", "pale", "old-bootbiter"]
+
+[varieties.6291]
+keys = ["silver", "blue-striped", "greenback", "dotted", "redfin", "rainbow", "glass", "golden", "inkfin", "starlit"]
+
+[varieties.6299]
+keys = ["greyish", "greenish", "blotchy", "bony", "bilious", "bruised", "wheezing", "recovered", "ashen", "blighted"]
+
+[varieties.6303]
+keys = ["tiger-backed", "blueback", "spotted", "shallow-water", "emerald", "bronze", "plainback", "golden", "pearl", "sea-witch"]
+
+[varieties.6308]
+keys = ["mudback", "spotted", "slate", "yellowbelly", "marbled", "long-whiskered", "black-barbel", "calico", "albino", "riverbed-king"]
+
+[varieties.6317]
+keys = ["slate-backed", "redbelly", "peat-stained", "silverflank", "ironjaw", "ale-barred", "snowmelt", "ruby", "blackwater", "dam-breaker"]
+
+[varieties.6358]
+keys = ["black-gummed", "greenback", "bright-silver", "spotless", "rainbow-slicked", "redflank", "hooknose", "pearl", "tar-black", "lampblack"]
+
+[varieties.6359]
+keys = ["flame-finned", "coral", "ember-spotted", "goldfin", "deepwater", "flame-striped", "smouldering", "white-flame", "charred", "phoenix-fin"]
+
+[varieties.6361]
+keys = ["many-hued", "deep-blue", "barred", "silverflank", "sunset-finned", "violet", "longfin", "prism", "stormback", "aurora"]
+
+[varieties.6362]
+keys = ["rock-mottled", "kelp-green", "sandy", "harbour-grey", "red-rock", "leopard", "barnacled", "golden", "granite", "stoneheart"]
+
+[varieties.6458]
+keys = ["slicked", "rainbow-slick", "tarred", "muddy", "half-clean", "sulphur-stained", "rust-streaked", "somehow-clean", "black-gold", "still-burning"]
+
+[varieties.6522]
+keys = ["misshapen", "purple-finned", "two-tailed", "spined", "many-eyed", "glowgill", "lizard-scaled", "pale-nightmare", "crimson", "dreamers-spawn"]
+
+[varieties.8365]
+keys = ["bright-headed", "rainbow-banded", "brook-spotted", "steelhead", "red-spotted", "goldhead", "parr-marked", "golden", "ironhead", "quicksilver"]
+
+[varieties.12238]
+keys = ["coast-grey", "mottled", "brown", "moon-pale", "rust-spotted", "barred", "bigmouth", "night-dark", "silverscale", "moonkissed"]
+
+[varieties.13422]
+keys = ["pebble-scaled", "slate", "sandstone", "moray-spotted", "banded", "greenstone", "marble", "obsidian", "gold-veined", "bedrock-ancient"]
+
+[varieties.13754]
+keys = ["polished", "green-glass", "dappled", "bronzeback", "barred", "humpbacked", "mirror", "cobalt", "onyx", "tidemight"]
+
+[varieties.13755]
+keys = ["frost-pink", "blushing", "milky", "brindled", "long-armed", "ring-spotted", "blueflash", "crimson", "glassfrost", "frostlight"]
+
+[varieties.13756]
+keys = ["lateral-lined", "lily-pad", "bronze", "sun-bleached", "bucketmouth", "red-eyed", "tiger", "golden", "shadow", "midsummer"]
+
+[varieties.13757]
+keys = ["thunder-dark", "bolt-striped", "slate", "ember-bellied", "spark-spotted", "long", "ozone", "white-bolt", "blackout", "stormcaller"]
+
+[varieties.13758]
+keys = ["ember-gilled", "yellow", "olive", "spotted", "redfin", "cinder", "fire-gilled", "golden", "ghost", "fel-scarred"]
+
+[varieties.13759]
+keys = ["starfeeder", "dusk", "indigo", "star-speckled", "moonfin", "crescent-marked", "owl-eyed", "eclipse", "dawn-caught", "starsong"]
+
+[varieties.13760]
+keys = ["coin-scaled", "morning", "river-dark", "silverbright", "red-run", "hooknose", "noonday", "copper", "twilight", "sunfire"]
+
+[varieties.13888]
+keys = ["blue-black", "sea-green", "mud-brown", "barnacled", "red-banded", "bigclaw", "calico", "sapphire", "ghost", "abyssal"]
+
+[varieties.13889]
+keys = ["frost-white", "silverblue", "snowflake", "pearl", "spawn-blush", "hot-spring", "hooknose", "crystal", "ashen", "wintersheen"]
+
+[varieties.13890]
+keys = ["bony-backed", "bronze-plated", "iron-plated", "moss-backed", "spiked", "battle-scarred", "ring-plated", "gilded", "ore-plated", "ancient-bulwark"]
+
+[varieties.13893]
+keys = ["big-blue", "storm-grey", "barred", "sea-green", "old-scarback", "hump-shouldered", "spotted", "golden", "abyss-dark", "leviathans-get"]
+
+[varieties.16967]
+keys = ["yellowfin", "verdant", "feeding-barred", "silverflank", "sickle-fin", "gold-belted", "mossback", "imperial", "ghostfin", "leaf-lit"]
+
+[varieties.16968]
+keys = ["silver-barred", "sandstrand", "spotted", "greyback", "needlejaw", "bronze", "chevron", "blackback", "ghost", "bonecutter"]
+
+[varieties.16969]
+keys = ["spotted-sail", "barred", "violet-sail", "silver", "tall-sailed", "jungle-green", "sunset-sail", "royal", "white-sail", "skyleaper"]
+
+[varieties.16970]
+keys = ["dorado", "gold-flanked", "bluefin", "reed-green", "bull-headed", "barred", "fog-pale", "emerald", "sunfire", "marsh-lantern"]
+
+[varieties.19807]
+keys = ["contest-speckle", "silver-speckle", "olive", "big-spotted", "red-speckled", "gilded", "lucky-speckle", "pale", "black", "champions"]
+
+[varieties.19975]
+keys = ["slimeback", "skunk-striped", "jungle-mud", "spotted", "ochre", "long-whiskered", "masked", "bloodmud", "pale", "idol-touched"]
+
+[varieties.21071]
+keys = ["hillside", "silver-sage", "dark-sage", "banded", "lavender-finned", "thyme-spotted", "gold-sage", "frost-sage", "sweetgrass", "mindbright"]
+
+[varieties.21153]
+keys = ["full-grown", "moss-green", "silver", "bronze", "banded", "violet-finned", "bearded", "golden", "ashen", "elder-sage"]
+
+[varieties.251524]
+keys = ["whimsical", "mint", "lemon", "lilac", "polka-dotted", "swirled", "frill-finned", "rainbow", "murk-touched", "dreamfin"]
