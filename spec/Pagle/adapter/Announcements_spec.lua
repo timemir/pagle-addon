@@ -1682,8 +1682,8 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 	)
 
 	it(
-		"centres the kicker and name block down a toast with no ruler, as its medallion is, and leaves a ruled toast's"
-			.. " block where it was (#424)",
+		"centres the name line's block down a toast with no ruler, as its medallion is, with its kicker above the"
+			.. " page's ruling line, and leaves a ruled toast's block where it was (#424, #484)",
 		function()
 			local loaded, M = loadCore()
 			local variety = moment("toast", "Rare variety", {
@@ -1700,10 +1700,11 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			local page = loaded.ns.ToastPage(toast.display.announcement)
 
 			-- The kicker's and the name line's measured heights (the fake's are one flat 14) and a gap of 5: a block
-			-- about the page's middle, to a pixel.
+			-- about the page's middle, to a pixel, the name line at its lower half; the kicker above the ruling line.
 			local top = -select(5, toast.title:GetPoint())
-			assert.is_true(math.abs(top + (14 + 5 + 14) / 2 - page.h / 2) < 1)
-			assert.are.same({ "TOPLEFT", toast.title, "BOTTOMLEFT", 0, -5 }, { toast.text:GetPoint() })
+			local nameTop = top + 14 - select(5, toast.text:GetPoint())
+			assert.is_true(math.abs(nameTop - ((page.h - (14 + 5 + 14)) / 2 + 14 + 5)) < 1e-9)
+			assert.is_true(math.abs(top - (28 - 0.5 - 3 - 1854 / 2048 * loaded.ns.ArtFontSize("What"))) < 1e-9)
 			-- The gem and the name sit on the name line's own middle, with no offset of their own.
 			assert.are.same({ "LEFT", toast.text, "RIGHT", 0, 0 }, { toast.gem:GetPoint() })
 			assert.are.same({ "LEFT", toast.gem, "RIGHT", 3, 0 }, { toast.variety:GetPoint() })
@@ -1714,13 +1715,18 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			loaded.client.advance(TOAST + LEAVE_TOAST)
 			local ruled = raiseRecord(loaded, M, "common")
 			local ruledPage = loaded.ns.ToastPage(ruled.display.announcement)
-			assert.are.equal(ruledPage.ty, -select(5, ruled.title:GetPoint()))
+			-- The ruled toast's name line starts at the page's own top and the kicker's height and gap under it, as it did.
+			assert.is_true(
+				math.abs(
+					-select(5, ruled.title:GetPoint()) + 14 - select(5, ruled.text:GetPoint()) - (ruledPage.ty + 14 + 5)
+				) < 1e-9
+			)
 		end
 	)
 
 	it(
-		"sets the kicker in the same print face at 16, not 13, and centres the block by what its lines measure, not by"
-			.. " their fonts' sizes (#467)",
+		"sets the kicker in the same print face at 16, not 13, and lays the name line where the block is centred by what"
+			.. " its lines measure, not by their fonts' sizes (#467, #484)",
 		function()
 			local loaded, M = loadCore()
 			raise(loaded, M, moment("toast", "New Species", { text = "Nightfin Snapper", icon = ITEM, cast = CAST }))
@@ -1738,16 +1744,20 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 
 			assert.are.equal(loaded.ns.ART_FONTS.What, toast.title.fontObject)
 			assert.is_true(loaded.ns.ArtFontSize("What") >= 16 and loaded.ns.ArtFontSize("What") <= 17)
-			local top = -select(5, toast.title:GetPoint())
-			assert.is_true(math.abs(top - (page.h - (20 + 5 + 42)) / 2) < 0.01)
+			local nameTop = -select(5, toast.title:GetPoint()) + 20 - select(5, toast.text:GetPoint())
+			assert.is_true(math.abs(nameTop - ((page.h - (20 + 5 + 42)) / 2 + 20 + 5)) < 0.01)
 			-- Not where the nominal 16 + 5 + 31 would put it.
-			assert.is_true(math.abs(top - (page.h - (16 + 5 + 31)) / 2) > 1)
+			assert.is_true(math.abs(nameTop - ((page.h - (16 + 5 + 31)) / 2 + 16 + 5)) > 1)
 		end
 	)
 
-	-- Draws the toast `raised` has put up measured as the client does, its lines taller than their fonts' sizes and
-	-- growing with them (a kicker 1.25 a unit of its font, a name line 42/31), a kicker's letters 0.62 a unit wide, a
-	-- name's 0.4 and a stamp's 0.62. Returns it, drawn again, then leaves it.
+	-- The client's lines as the fonts' own metrics set them (hhea ascent + descent over the em): the print face
+	-- IM Fell English 1854 + 744 of 2048, so a kicker's line is 1.2686 a unit of its size; Caveat SemiBold 960 + 300
+	-- of 1000, so a name line is 1.26. The print face's baseline is 1854 / 2048 of its size below its line's top.
+	local KICKER_LINE, NAME_LINE, ASCENT = 2598 / 2048, 1.26, 1854 / 2048
+
+	-- Draws the toast `raised` has put up measured as the client does: those lines, a kicker's letters 0.62 a unit
+	-- wide, a name's 0.4 and a stamp's 0.62. Returns it, drawn again.
 	local function measuredToast(loaded)
 		local toast = frameOf(loaded, "toast") --[[@as table]]
 		local function size(fontString, nominal)
@@ -1755,14 +1765,14 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 		end
 		local nominal = loaded.ns.ArtFontSize
 		toast.title.GetStringHeight = function(self)
-			return 1.25 * size(self, nominal("What"))
+			return KICKER_LINE * size(self, nominal("What"))
 		end
 		toast.title.GetStringWidth = function(self)
 			return #(self.text or "") * 0.62 * size(self, nominal("What"))
 		end
 		for _, line in ipairs({ toast.text, toast.variety }) do
 			line.GetStringHeight = function(self)
-				return 42 / 31 * size(self, nominal("Name"))
+				return NAME_LINE * size(self, nominal("Name"))
 			end
 			line.GetStringWidth = function(self)
 				return #(self.text or "") * 0.4 * size(self, nominal("Name"))
@@ -1777,69 +1787,105 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 		return toast
 	end
 
-	-- Where the Torn Page's red ruling line runs down the toast page at the kicker (the ToastsLedger texture's rule:
-	-- 33.5 units from the page's top at the kicker's left, 31 at its right), and how far down its 20-unit line a
-	-- 16-unit kicker's letters stand, their baseline.
-	local TORN_RULE, BASELINE = 31, 15
+	-- The Torn Page's red ruling line, read off the ToastsLedger texture (the same line is on Ripple's, Lantern's and
+	-- the other styles' toast, ruled and gilt pages): its upper edge, in units down the page at `x` units from the
+	-- page's left, runs from 34 at 138 to 28 at 430, and is half a unit thick.
+	local function ruleAt(x)
+		return 34 - 6 * (x - 138) / 292 - 0.5
+	end
+
+	-- Draws a toast of `moments`, measured, and reads the kicker's glyph bottom (its baseline) and its left and right
+	-- edges, the name line's top and the stamps shown. Then clears the column.
+	local function kickerOf(loaded, M, ...)
+		raise(loaded, M, ...)
+		local toast = measuredToast(loaded)
+		local top = -select(5, toast.title:GetPoint())
+		local size = toast.title.font and toast.title.font[2] or loaded.ns.ArtFontSize("What")
+		local left = select(4, toast.title:GetPoint())
+		local read = {
+			top = top,
+			text = toast.title:GetText(),
+			size = size,
+			baseline = top + ASCENT * size,
+			left = left,
+			right = left + toast.title:GetWidth(),
+			nameTop = top + toast.title:GetStringHeight() - select(5, toast.text:GetPoint()),
+			name = toast.text.font and toast.text.font[2] or loaded.ns.ArtFontSize("Name"),
+			stamps = 0,
+		}
+		for _, stamp in ipairs(toast.stamps) do
+			read.stamps = read.stamps + (stamp.shown and 1 or 0)
+		end
+		loaded.client.advance(TOAST + LEAVE_TOAST)
+		return read
+	end
+
+	-- The kicker's capitals end on their baseline at least 3 units above the ruling line at the kicker's left and
+	-- right, and the name line starts under the line where it is lowest (its left).
+	local function standsAboveRule(read, label)
+		for _, x in ipairs({ read.left, read.right }) do
+			assert(
+				ruleAt(x) - read.baseline >= 3,
+				("%s: the baseline %.2f is %.2f from the rule at %d"):format(
+					label,
+					read.baseline,
+					ruleAt(x) - read.baseline,
+					x
+				)
+			)
+		end
+		assert(read.nameTop >= ruleAt(read.left) + 1, ("%s: the name line starts at %.2f"):format(label, read.nameTop))
+	end
 
 	it(
-		"keeps the kicker where it is on the toast page, its baseline above the page's ruling line, whether stamps ride"
-			.. " on the toast, its name line stepped down or its own font stepped down for the stamps, the name line"
-			.. " staying where the block as written puts it",
+		"sets the kicker's capitals at least 3 units above the page's ruling line, at its left and its right, at one top"
+			.. " whatever the name line, the size band, the stamps or the kicker's own step down (#484)",
 		function()
 			local loaded, M = loadCore()
-			local page = loaded.ns.ToastPage({ headline = { rung = "toast" } } --[[@as table]])
-			local What, Name = loaded.ns.ArtFontSize("What"), loaded.ns.ArtFontSize("Name")
-			-- Raises `moments`, draws their toast measured, and reads where its kicker and name line are.
-			local function drawn(...)
-				raise(loaded, M, ...)
-				local toast = measuredToast(loaded)
-				local top = -select(5, toast.title:GetPoint())
-				local read = {
-					toast = toast,
-					top = top,
-					kicker = toast.title.font and toast.title.font[2] or What,
-					name = toast.text.font and toast.text.font[2] or Name,
-					-- The name line's top down the page, from its anchor under the kicker's foot.
-					nameTop = top + toast.title:GetStringHeight() - select(5, toast.text:GetPoint()),
-					stamps = 0,
-				}
-				for _, stamp in ipairs(toast.stamps) do
-					read.stamps = read.stamps + (stamp.shown and 1 or 0)
-				end
-				loaded.client.advance(TOAST + LEAVE_TOAST)
-				return read
+			local top
+			local function same(read, label)
+				top = top or read.top
+				assert(read.top == top, ("%s: the kicker is at %.2f, not %.2f"):format(label, read.top, top))
+				standsAboveRule(read, label)
 			end
-			-- The page centres the kicker, 1.25 a unit of its font, over a name line of 42, as they measure.
-			local nominal = (page.h - (1.25 * What + 5 + 42)) / 2
-			local function standsClear(read)
-				assert(read.top + BASELINE <= TORN_RULE - 2, "the kicker's baseline is " .. read.top + BASELINE)
-			end
+			local long = "Raw Bristle Whisker Catfish of the Sunken Reach"
 
-			local alone = drawn(moment("toast", "New Species", { text = "Pike", icon = ITEM, cast = CAST }))
-			assert.are.same({ 0, What, Name }, { alone.stamps, alone.kicker, alone.name })
-			assert(math.abs(alone.top - nominal) < 1e-6, "the kicker is " .. alone.top)
-			assert.is_true(math.abs(alone.nameTop - (alone.top + 1.25 * What + 5)) < 1e-6)
-			standsClear(alone)
+			-- A short name, no stamps.
+			local short =
+				kickerOf(loaded, M, moment("toast", "New Species", { text = "Pike", icon = ITEM, cast = CAST }))
+			assert.are.same({ 0, 31 }, { short.stamps, short.name })
+			same(short, "short")
 
-			-- A long name that steps its line down to fit, with two stamps riding: the kicker has not moved. The name
-			-- line stays as the block as written is centred, lower than under the kicker by what the kicker is above it.
-			local long = "Raw Bristle Whisker Catfish"
-			local stamped = drawn(
+			-- A long name that steps its line down to the floor, with no stamps: as a plain catch.
+			local stepped =
+				kickerOf(loaded, M, moment("toast", "New Species", { text = long, icon = ITEM, cast = CAST }))
+			assert(stepped.name < 31, "the name line is " .. stepped.name)
+			same(stepped, "long name")
+
+			-- A size band and length for a kicker, the name long.
+			local size = kickerOf(
+				loaded,
+				M,
+				moment("toast.low", "Tiddler · 30.4 cm", { text = long, icon = ITEM, cast = CAST })
+			)
+			assert.are.equal("TIDDLER · 30.4 CM", size.text)
+			same(size, "size kicker")
+
+			-- Two stamps riding on a long name.
+			local stamped = kickerOf(
+				loaded,
+				M,
 				moment("toast", "New Species", { text = long, icon = ITEM, cast = CAST }),
 				moment("nod", "New variety", { cast = CAST, stamp = "New variety" }),
 				moment("nod", "Rank up", { cast = CAST, stamp = "Rank up" })
 			)
-			assert.are.same({ 2, What }, { stamped.stamps, stamped.kicker })
-			assert(stamped.name < Name and stamped.name >= 22, "the name line is " .. stamped.name)
-			assert.are.equal(alone.top, stamped.top)
-			standsClear(stamped)
-			local laid = (page.h - (1.25 * What + 5 + 42 / 31 * stamped.name)) / 2
-			assert.is_true(math.abs(stamped.nameTop - (laid + 1.25 * What + 5)) < 1e-6)
-			assert.is_true(stamped.nameTop > alone.nameTop)
+			assert.are.same({ 2 }, { stamped.stamps })
+			same(stamped, "stamps")
 
-			-- A long size kicker beside a second stamp steps the kicker's own font down: its top stays too.
-			local own = drawn(
+			-- A long size kicker beside a second stamp, so that the kicker's own font steps down.
+			local own = kickerOf(
+				loaded,
+				M,
 				moment("toast.low", "New variety", {
 					kind = "newVariety",
 					order = 120,
@@ -1853,13 +1899,13 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 				}),
 				moment("nod", "New here", { cast = CAST, stamp = "New here" })
 			)
-			assert(own.kicker < What and own.kicker >= 13, "the kicker is " .. own.kicker)
-			assert.are.equal(alone.top, own.top)
-			standsClear(own)
+			assert(own.size < loaded.ns.ArtFontSize("What"), "the kicker is " .. own.size)
+			same(own, "stepped down kicker")
 
-			-- A ruled toast's words start at the page's own top, as the same rule runs down its page.
-			local ruled = loaded.ns.ToastPage({ headline = { rung = "toast", ruler = {} } } --[[@as table]])
-			assert.is_true(ruled.ruled and ruled.ty + BASELINE <= TORN_RULE - 2)
+			-- A ruled toast (a size record's), on the page the same line runs down.
+			local record, variety = recordAndVariety("common")
+			local ruled = kickerOf(loaded, M, record, variety)
+			same(ruled, "ruled")
 		end
 	)
 
@@ -2047,9 +2093,10 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 				leftEdge(toast) >= kickerRight(toast) + 10,
 				("%.1f from %.1f"):format(leftEdge(toast), kickerRight(toast))
 			)
-			-- The block is still centred, for the kicker as it now is.
+			-- The name line is still where the block is centred, for the kicker as it now is.
 			local page = loaded.ns.ToastPage(toast.display.announcement)
-			assert.is_true(math.abs(-select(5, toast.title:GetPoint()) - (page.h - (14 + 5 + 14)) / 2) < 0.01)
+			local nameTop = -select(5, toast.title:GetPoint()) + 14 - select(5, toast.text:GetPoint())
+			assert.is_true(math.abs(nameTop - ((page.h - (14 + 5 + 14)) / 2 + 14 + 5)) < 0.01)
 			loaded.client.advance(TOAST + LEAVE_TOAST)
 
 			-- Alone, the same kicker keeps its 16: the stamp has room.
