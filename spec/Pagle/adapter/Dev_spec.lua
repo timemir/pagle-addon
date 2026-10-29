@@ -309,6 +309,38 @@ local function copy(value)
 	return result
 end
 
+describe("/pagle dev stage", function()
+	it("sets and clears the count the Folio's chart is drawn at, saving nothing (ANN-R85)", function()
+		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+		pagle(loaded, "dev on")
+		local saved = copy(loaded.env.PagleDB.global)
+
+		pagle(loaded, "dev stage 30")
+		assert.are.equal(30, loaded.ns.devStageCount)
+		pagle(loaded, "dev stage")
+		pagle(loaded, "dev stage OFF")
+
+		assert.is_nil(loaded.ns.devStageCount)
+		assert.are.same(saved, copy(loaded.env.PagleDB.global))
+		assert.are.same({
+			"Pagle dev: the Cartographer's Folio is drawn as if 30 zones were at Master, until /pagle dev stage off.",
+			"Pagle dev: the Cartographer's Folio is drawn as if 30 zones were at Master.",
+			"Pagle dev: the Cartographer's Folio is drawn at its real stage.",
+		}, { loaded.printed[2], loaded.printed[3], loaded.printed[4] })
+	end)
+
+	it("takes a whole number from 0 and says its usage for anything else", function()
+		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+		pagle(loaded, "dev on")
+
+		pagle(loaded, "dev stage -3")
+		pagle(loaded, "dev stage many")
+
+		assert.is_nil(loaded.ns.devStageCount)
+		assert.are.equal("Pagle dev: /pagle dev stage <count of zones at Master> | off", loaded.printed[2])
+	end)
+end)
+
 describe("/pagle dev preview", function()
 	for _, kind in ipairs({ "toast", "nod", "banner", "splash" }) do
 		it(
@@ -335,6 +367,60 @@ describe("/pagle dev preview", function()
 		)
 	end
 
+	it(
+		"draws a toast.high on its own page, with a variety of a rarity after it, for judging its gleam (ANN-R85)",
+		function()
+			local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+			pagle(loaded, "dev on")
+			local saved = copy(loaded.env.PagleDB.global)
+
+			pagle(loaded, "dev preview high")
+			local plain = loaded.ns.announcementFrames.toast
+			assert.is_true(plain.shown)
+			assert.is_true(loaded.ns.ToastPage(plain.display.announcement).high)
+			assert.is_nil(loaded.ns.ToastVarietyLook(plain.display.announcement))
+			loaded.client.advance(12)
+
+			pagle(loaded, "dev preview high EPIC")
+			local frame = loaded.ns.announcementFrames.toast
+			local look = loaded.ns.ToastVarietyLook(frame.display.announcement) --[[@as table]]
+			assert.are.same({ "epic", true }, { look.rarity, look.gleam })
+			assert.are.equal("Pagle dev: previewing a high epic.", loaded.printed[#loaded.printed])
+			assert.are.same(saved, copy(loaded.env.PagleDB.global))
+		end
+	)
+
+	it(
+		"applies a rarity to a toast or a toast.high, and to an Epic banner, and gives the usage line for the rest",
+		function()
+			local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+			pagle(loaded, "dev on")
+			local usage =
+				"Pagle dev: /pagle dev preview <kind>, where kind is one of toast, high, nod, banner, splash, card"
+
+			pagle(loaded, "dev preview toast RARE")
+			local toast = loaded.ns.announcementFrames.toast
+			local look = loaded.ns.ToastVarietyLook(toast.display.announcement) --[[@as table]]
+			assert.are.same({ "rare", true }, { look.rarity, look.gleam })
+			assert.are.equal("Pagle dev: previewing a toast rare.", loaded.printed[#loaded.printed])
+			loaded.client.advance(12)
+
+			pagle(loaded, "dev preview banner epic")
+			-- No Gala equipped: the banner, not a toast.high.
+			assert.are.equal("banner", loaded.ns.announcementFrames.banner.display.announcement.rung)
+			assert.are.equal("Pagle dev: previewing a banner epic.", loaded.printed[#loaded.printed])
+
+			local before = #loaded.printed
+			for _, args in ipairs({ "toast mythic", "nod rare", "banner rare", "splash epic", "card rare" }) do
+				pagle(loaded, "dev preview " .. args)
+			end
+			for i = before + 1, #loaded.printed do
+				assert.are.equal(usage, loaded.printed[i])
+			end
+			assert.are.equal(before + 5, #loaded.printed)
+		end
+	)
+
 	it("shows a sample Session summary card that closing removes nothing from (#247, ANN-R53)", function()
 		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
 		pagle(loaded, "dev on")
@@ -357,7 +443,8 @@ describe("/pagle dev preview", function()
 		pagle(loaded, "dev preview")
 		pagle(loaded, "dev preview whale")
 
-		local kinds = "Pagle dev: /pagle dev preview <kind>, where kind is one of toast, nod, banner, splash, card"
+		local kinds =
+			"Pagle dev: /pagle dev preview <kind>, where kind is one of toast, high, nod, banner, splash, card"
 		assert.are.same({ kinds, kinds }, { loaded.printed[2], loaded.printed[3] })
 	end)
 

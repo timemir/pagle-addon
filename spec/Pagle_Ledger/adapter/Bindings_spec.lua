@@ -500,6 +500,7 @@ describe("the Ledger's goods in Core's open slots", function()
 			"ledger.toaststyle.prestige",
 			"ledger.soundset.concertina",
 			"ledger.soundset.choir",
+			"ledger.toaststyle.gala",
 		}) do
 			list[i] = fake.Pagle.IsOwned(id)
 		end
@@ -507,7 +508,7 @@ describe("the Ledger's goods in Core's open slots", function()
 	end
 
 	it(
-		"register LED-R117's four, LED-R118's seven and LED-R164's ten toast styles in Core's toast style and sound set slots, the Ledger's, after Core's own (LED-R117, LED-R118, SHOP-R23, SHOP-R25)",
+		"register LED-R117's four, LED-R118's seven, LED-R164's ten and the epic Gala and Folio in Core's toast style and sound set slots, the Ledger's, after Core's own (LED-R117, LED-R118, ANN-R85, SHOP-R23, SHOP-R25)",
 		function()
 			local fake = ledger()
 			local goods = fake.ns.goods
@@ -529,6 +530,7 @@ describe("the Ledger's goods in Core's open slots", function()
 			assert.are.same({
 				{ "ledger.toaststyle.legend", "The Tall Tale", "Land a Legend" },
 				{ "ledger.toaststyle.prestige", "Oxblood Vellum", "Prestige V" },
+				{ "ledger.toaststyle.gala", "Extravaganza Gala", "Land all three Legends" },
 				{ "ledger.toaststyle.glass", "Chapel Glass", "0 of 12 shards" },
 				{ "ledger.toaststyle.deep", "The Deep Lure", "0 of 100 catches" },
 				{ "ledger.toaststyle.koi", "Ink and Koi", "0 of 25 pairs" },
@@ -546,18 +548,19 @@ describe("the Ledger's goods in Core's open slots", function()
 				{ "ledger.toaststyle.hex", "Jungle Hex", "0 of 100 fish" },
 				{ "ledger.toaststyle.lion", "Lion's Charter", "0 of 300 fish" },
 				{ "ledger.toaststyle.warband", "Iron Warband", "0 of 300 fish" },
+				{ "ledger.toaststyle.cartographer", "Cartographer's Folio", "0 of 5 zones" },
 			}, ledgerGoods("core.toaststyle"))
 			assert.are.same({
 				{ "ledger.soundset.concertina", "Old Salt's Concertina", "Prestige I" },
 				{ "ledger.soundset.choir", "Choir of the Deep", "Land all three Legends" },
 			}, ledgerGoods("core.soundset"))
-			assert.are.same({ false, false, false, false }, owned(fake))
+			assert.are.same({ false, false, false, false, false }, owned(fake))
 			assert.are.same({}, fake.reported)
 		end
 	)
 
 	it(
-		"own The Tall Tale from the first Legend's live entry and Choir of the Deep from the last's, and keep Choir through a rebuild with another Legend listed (LED-R117, LED-R63, SHOP-R31)",
+		"own The Tall Tale from the first Legend's live entry and Choir of the Deep and the Gala from the last's, and keep them through a rebuild with another Legend listed (LED-R117, LED-R63, SHOP-R31)",
 		function()
 			local fake = newFakePagle()
 			fake.setCatalogue(release("first release", false))
@@ -565,11 +568,11 @@ describe("the Ledger's goods in Core's open slots", function()
 			local loaded = fake.load("Pagle_Ledger")
 			fake.login()
 			fake.enterWorld()
-			assert.are.same({ false, false, false, false }, owned(fake))
+			assert.are.same({ false, false, false, false, false }, owned(fake))
 
 			fake.playCast("caught", { { itemID = RACER, quantity = 1 } })
 
-			assert.are.same({ true, false, false, true }, owned(fake))
+			assert.are.same({ true, false, false, true, true }, owned(fake))
 
 			local later = newFakePagle()
 			later.setCatalogue(release("second release", true))
@@ -579,7 +582,7 @@ describe("the Ledger's goods in Core's open slots", function()
 			later.login()
 			later.enterWorld()
 
-			assert.are.same({ true, false, false, true }, owned(later))
+			assert.are.same({ true, false, false, true, true }, owned(later))
 		end
 	)
 
@@ -594,9 +597,9 @@ describe("the Ledger's goods in Core's open slots", function()
 				return owned((openJournal({ entries = entries, id = false })))
 			end
 
-			assert.are.same({ false, false, true, false }, after(1))
-			assert.are.same({ false, false, true, false }, after(4))
-			assert.are.same({ false, true, true, false }, after(5))
+			assert.are.same({ false, false, true, false, false }, after(1))
+			assert.are.same({ false, false, true, false, false }, after(4))
+			assert.are.same({ false, true, true, false, false }, after(5))
 		end
 	)
 end)

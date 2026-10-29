@@ -62,6 +62,14 @@ local ROUND_THREE = {
 	["core.toaststyle.arcane"] = "Toasts2Arcane",
 	["core.toaststyle.pirate"] = "Toasts2Pirate",
 }
+-- The epic five (ANN-R85), all earned in Core's slot: Hunts' three and the Ledger's two, in the same format.
+local ROUND_FOUR = {
+	["ledger.toaststyle.cartographer"] = "Toasts2Cartographer",
+	["hunts.toaststyle.nightfin"] = "Toasts2Nightfin",
+	["hunts.toaststyle.trench"] = "Toasts2Trench",
+	["ledger.toaststyle.gala"] = "Toasts2Gala",
+	["hunts.toaststyle.study"] = "Toasts2Study",
+}
 local PAGES = { "toast", "toast-ruled", "high", "digest" }
 
 -- The page `name` (logic/ToastStyles.lua's pages), from a headline on its rung; "low" is toast.low's, which draws on
@@ -80,14 +88,15 @@ end
 describe("the toast styles", function()
 	it(
 		"are Core's fifteen and the three earned in Core's slot by the Ledger and the Tackle Board, by SHOP-R25's good"
-			.. " IDs, the round two's ten composed styles and the round three's eighteen (ANN-R80, ANN-R81, ANN-R82, ANN-R84, SHOP-R25)",
+			.. " IDs, the round two's ten composed styles, the round three's eighteen and the epic five (ANN-R80, ANN-R81,"
+			.. " ANN-R82, ANN-R84, ANN-R85, SHOP-R25)",
 		function()
 			local ids, expected = {}, {}
 			for id, style in pairs(ns.TOAST_STYLES) do
 				ids[#ids + 1] = id
 				assert.are.equal(id, style.id)
 			end
-			for _, atlases in ipairs({ FIRST, RINGED, COMPOSED, ROUND_THREE }) do
+			for _, atlases in ipairs({ FIRST, RINGED, COMPOSED, ROUND_THREE, ROUND_FOUR }) do
 				for id in pairs(atlases) do
 					expected[#expected + 1] = id
 				end
@@ -96,7 +105,7 @@ describe("the toast styles", function()
 			table.sort(expected)
 
 			assert.are.same(expected, ids)
-			assert.are.equal(46, #ids)
+			assert.are.equal(51, #ids)
 			assert.are.same({ "core.toaststyle", TORN_PAGE }, { ns.TOAST_STYLE_SLOT, ns.TOAST_STYLE_DEFAULT })
 		end
 	)
@@ -1035,6 +1044,26 @@ describe("the round two's composed toast styles", function()
 		assert.are.same({ body = true, mfront = true, fx1 = false, fx2 = false }, rests("core.toaststyle.storm"))
 		assert.are.same({ body = true, fx1 = false }, rests("ledger.toaststyle.glass"))
 	end)
+
+	it("rest without a cover that plays once and lifts off as the art lands (ANN-R85)", function()
+		local function layerOf(id, keyframes)
+			for _, layer in ipairs(ns.ToastStyleOf(id).art.rungs.toast.layers) do
+				if layer.motion and layer.motion.keyframes == keyframes then
+					return layer
+				end
+			end
+		end
+		local leaf = layerOf("ledger.toaststyle.cartographer", "carto-open")
+		local page = layerOf("hunts.toaststyle.study", "study-turn-toast")
+		local needle = layerOf("ledger.toaststyle.cartographer", "carto-needle")
+
+		assert.are.same({ true, false }, { ns.LayerRests(leaf), ns.LayerRests(leaf, true) })
+		assert.are.same({ true, false }, { ns.LayerRests(page), ns.LayerRests(page, true) })
+		assert.are.same({ true, true }, { ns.LayerRests(needle), ns.LayerRests(needle, true) })
+		for _, keyframes in ipairs({ "carto-open", "carto-route", "carto-needle", "study-turn-toast", "tr-depth" }) do
+			assert(ns.TOAST_MOTION_ONCE[keyframes] == true, keyframes)
+		end
+	end)
 end)
 
 describe("the round three's composed toast styles", function()
@@ -1065,6 +1094,239 @@ describe("the round three's composed toast styles", function()
 			end
 		end
 	)
+end)
+
+describe("the epic five composed toast styles", function()
+	it(
+		"are earned goods' art in Core's slot, keyed by their owners' IDs, and draw as the round two's do: their own"
+			.. " atlas, a rung each for toast, toast.high and the Nod, at 1.5 texels a unit, in a BLP the package ships"
+			.. " (ANN-R85, ANN-R82)",
+		function()
+			for id, atlasName in pairs(ROUND_FOUR) do
+				local style = ns.ToastStyleOf(id)
+				assert.are.same({ id, true, atlasName }, { style.id, style.layered, style.atlas })
+				local atlas = ns.ATLASES[atlasName]
+				assert.are.equal(1.5, atlas.scale)
+				assert.are.equal("Interface\\AddOns\\Pagle\\media\\announce\\" .. atlasName, atlas.file)
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+				local file = assert(io.open("addons/Pagle/media/announce/" .. atlasName .. ".blp", "rb"), atlasName)
+				assert.are.equal("BLP2", file:read(4))
+				file:close()
+				for _, rung in ipairs({ "toast", "high", "nod" }) do
+					local art = style.art.rungs[rung]
+					assert(#art.layers > 0, id .. " " .. rung)
+					for _, layer in ipairs(art.layers) do
+						assert(type(atlas.sprites[layer.sprite]) == "table", layer.sprite)
+						assert.is_truthy(({ under = true, front = true, over = true })[layer.host])
+						if layer.mask then
+							assert(type(atlas.sprites[layer.mask.sprite]) == "table", layer.mask.sprite)
+						end
+					end
+				end
+				assert(type(style.art.rungs.nod.slice) == "table", id)
+			end
+		end
+	)
+end)
+
+describe("the Cartographer's Folio's stages (ANN-R85)", function()
+	local ID = "ledger.toaststyle.cartographer"
+	local style = ns.ToastStyleOf(ID)
+	local atlas = ns.ATLASES[style.atlas]
+	local TOAST = ns.ToastPage({ headline = { rung = "toast" } })
+	local HIGH = ns.ToastPage({ headline = { rung = "toast.high" } })
+
+	-- The deco layer on a rung's drawn layers.
+	local function decoOf(layers)
+		for _, layer in ipairs(layers) do
+			if layer.name == "deco" then
+				return layer
+			end
+		end
+	end
+
+	it(
+		"has five stages, 1 at 5 zones at Master, 2 at 15, 3 at 30, 4 at 45 and 5 at all 54, sprites in its atlas",
+		function()
+			local mins = {}
+			for i, stage in ipairs(style.art.stages) do
+				mins[i] = stage.min
+				for _, rung in ipairs({ "toast", "high" }) do
+					assert(type(atlas.sprites[stage[rung].sprite]) == "table", stage[rung].sprite)
+				end
+			end
+			assert.are.same({ 5, 15, 30, 45, 54 }, mins)
+			-- Stage 4 is the rung's own deco.
+			assert.are.same(
+				{ "toast-deco", "high-deco" },
+				{ style.art.stages[4].toast.sprite, style.art.stages[4].high.sprite }
+			)
+			assert.are.equal("toast-deco", decoOf(style.art.rungs.toast.layers).sprite)
+			assert.are.equal("high-deco", decoOf(style.art.rungs.high.layers).sprite)
+		end
+	)
+
+	it("pick the last stage the count has reached, on the toast and the toast.high rung alike", function()
+		local expected = {
+			[5] = "st1",
+			[14] = "st1",
+			[15] = "st2",
+			[29] = "st2",
+			[30] = "st3",
+			[44] = "st3",
+			[45] = "deco",
+			[53] = "deco",
+			[54] = "st5",
+			[99] = "st5",
+		}
+		for count, stage in pairs(expected) do
+			local suffix = stage == "deco" and "" or "-" .. stage
+			assert.are.equal("toast-deco" .. suffix, ns.ToastStageDeco(style, TOAST, count).sprite, count)
+			assert.are.equal("high-deco" .. suffix, ns.ToastStageDeco(style, HIGH, count).sprite, count)
+			assert.are.equal("toast-deco" .. suffix, decoOf(ns.ToastDrawLayers(style, TOAST, { count = count })).sprite)
+			assert.are.equal("high-deco" .. suffix, decoOf(ns.ToastDrawLayers(style, HIGH, { count = count })).sprite)
+		end
+	end)
+
+	it("draw each stage at its own box: stage 5's is a little bigger than the others' (ANN-R85)", function()
+		local one = decoOf(ns.ToastDrawLayers(style, TOAST, { count = 5 }))
+		local five = decoOf(ns.ToastDrawLayers(style, TOAST, { count = 54 }))
+		local stage = style.art.stages
+		assert.are.same(
+			{ stage[1].toast.x, stage[1].toast.y, stage[1].toast.w, stage[1].toast.h },
+			{ one.x, one.y, one.w, one.h }
+		)
+		assert.are.same(
+			{ stage[5].toast.x, stage[5].toast.y, stage[5].toast.w, stage[5].toast.h },
+			{ five.x, five.y, five.w, five.h }
+		)
+		assert.is_true(five.w > one.w and five.h > one.h)
+	end)
+
+	it("draw the first stage below the first count, and with no count at all (ANN-R85)", function()
+		assert.are.equal("toast-deco-st1", ns.ToastStageDeco(style, TOAST, 0).sprite)
+		assert.are.equal("high-deco-st1", ns.ToastStageDeco(style, HIGH, 4).sprite)
+		assert.are.equal("toast-deco-st1", ns.ToastStageDeco(style, TOAST, nil).sprite)
+		assert.are.equal("high-deco-st1", ns.ToastStageDeco(style, HIGH, nil).sprite)
+		assert.are.equal("toast-deco-st1", decoOf(ns.ToastDrawLayers(style, TOAST, {})).sprite)
+	end)
+
+	it("draw the rung's own deco for a stage whose sprite the atlas lacks, and for a style with no stages", function()
+		local name = style.art.stages[5].toast.sprite
+		local sprite = atlas.sprites[name]
+		atlas.sprites[name] = nil
+		local ok, err = pcall(function()
+			assert.is_nil(ns.ToastStageDeco(style, TOAST, 54))
+			assert.are.equal("toast-deco", decoOf(ns.ToastDrawLayers(style, TOAST, { count = 54 })).sprite)
+			assert.are.equal("toast-deco-st3", ns.ToastStageDeco(style, TOAST, 31).sprite) -- the others still draw theirs
+		end)
+		atlas.sprites[name] = sprite
+		assert(ok, err)
+		assert.is_nil(ns.ToastStageDeco(ns.ToastStyleOf(TORN_PAGE), TOAST, 54))
+		assert.is_nil(ns.ToastStageDeco(ns.ToastStyleOf("hunts.toaststyle.study"), TOAST, 54))
+	end)
+
+	it("change only the deco layer, leave the Nod alone and never change the art's own layer", function()
+		local rung = style.art.rungs.toast
+		local drawn = ns.ToastDrawLayers(style, TOAST, { count = 20 })
+
+		assert.are.equal(#rung.layers, #drawn)
+		for i, layer in ipairs(rung.layers) do
+			if layer.name == "deco" then
+				assert.are.equal("toast-deco", layer.sprite)
+				assert.are.equal("toast-deco-st2", drawn[i].sprite)
+			else
+				assert.are.equal(layer, drawn[i])
+			end
+		end
+		-- The Nod has no stages: its layers are the rung's own.
+		local nod = ns.ToastDrawLayers(style, nil, { count = 54 })
+		assert.are.equal(#style.art.rungs.nod.layers, #nod)
+		for i, layer in ipairs(style.art.rungs.nod.layers) do
+			assert.are.equal(layer, nod[i])
+		end
+	end)
+end)
+
+describe("the Extravaganza Gala's burst of confetti (ANN-R85, VAR-R26)", function()
+	local ID = "ledger.toaststyle.gala"
+	local style = ns.ToastStyleOf(ID)
+	local HIGH = ns.ToastPage({ headline = { rung = "toast.high" } })
+	local TOAST = ns.ToastPage({ headline = { rung = "toast" } })
+
+	-- The layers' names by the keyframes of their motion, for the ones that move.
+	local function moving(layers)
+		local out = {}
+		for _, layer in ipairs(layers) do
+			if layer.motion then
+				out[#out + 1] = layer.motion.keyframes
+			end
+		end
+		return out
+	end
+
+	it(
+		"is one layer of toast.high's rung and one of the toast rung's, each playing once, and the Nod has none",
+		function()
+			local burst = {}
+			for _, rungName in ipairs({ "toast", "high", "nod" }) do
+				for _, layer in ipairs(style.art.rungs[rungName].layers) do
+					if layer.motion and ns.TOAST_GLEAM_ONLY[layer.motion.keyframes] then
+						burst[#burst + 1] = { rungName, layer.name, layer.motion.keyframes, layer.motion.loop }
+					end
+				end
+			end
+			-- The kit's on toast.high (`front`), and the same sprite and beat on the toast rung (`burst`, derived).
+			assert.are.same({
+				{ "toast", "burst", "gala-pop", false },
+				{ "high", "front", "gala-pop", false },
+			}, burst)
+			for id, art in pairs(ns.TOAST_STYLE_ART2) do
+				for rungName, rung in pairs(art.rungs) do
+					for _, layer in ipairs(rung.layers) do
+						if layer.motion and ns.TOAST_GLEAM_ONLY[layer.motion.keyframes] then
+							assert.are.equal(ID, id, rungName)
+						end
+					end
+				end
+			end
+		end
+	)
+
+	it("is drawn on the toast and toast.high pages when the toast's variety gleams, and on no other toast", function()
+		local rung = style.art.rungs.high
+		local plain = ns.ToastDrawLayers(style, HIGH, {})
+		local gleaming = ns.ToastDrawLayers(style, HIGH, { gleams = true })
+
+		assert.are.equal(#rung.layers, #gleaming)
+		assert.are.equal(#rung.layers - 1, #plain)
+		assert.are.equal(1, #moving(gleaming) - #moving(plain))
+		assert.is_true(table.concat(moving(gleaming), " "):find("gala-pop", 1, true) ~= nil)
+		assert.is_nil(table.concat(moving(plain), " "):find("gala-pop", 1, true))
+		-- The rest of the rung is the same layers in the same order either way.
+		local i = 0
+		for _, layer in ipairs(gleaming) do
+			if not (layer.motion and layer.motion.keyframes == "gala-pop") then
+				i = i + 1
+				assert.are.equal(layer, plain[i])
+			end
+		end
+		-- The toast page too, with the toast rung's own; the Nod never has it.
+		assert.are.equal(#style.art.rungs.toast.layers, #ns.ToastDrawLayers(style, TOAST, { gleams = true }))
+		assert.are.equal(#style.art.rungs.toast.layers - 1, #ns.ToastDrawLayers(style, TOAST, {}))
+		assert.are.equal(#style.art.rungs.nod.layers, #ns.ToastDrawLayers(style, nil, {}))
+		assert.are.equal(#style.art.rungs.nod.layers, #ns.ToastDrawLayers(style, nil, { gleams = true }))
+	end)
+
+	it("leaves every other style's layers as they are, gleam or not", function()
+		for id, other in pairs(ns.TOAST_STYLES) do
+			if other.layered and id ~= ID then
+				for _, page in ipairs({ TOAST, HIGH }) do
+					assert.are.equal(#ns.ToastRungArt(other, page).layers, #ns.ToastDrawLayers(other, page, {}), id)
+				end
+			end
+		end
+	end)
 end)
 
 -- A looping transform whose keys are all the same moves nothing: the layer is declared as moving and shows still. The

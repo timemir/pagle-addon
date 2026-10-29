@@ -108,6 +108,10 @@ function ns.RegisterBindings(module)
 				world = ns.world,
 			})
 		end,
+		-- The Folio's chart before the projection has finished once (a /reload, a catch-up): the celebrated zones at Master.
+		saved = function(good)
+			return ns.EarnedCount(good, { celebrated = ns.SavedCelebrated(), world = ns.world })
+		end,
 		formatNumber = BreakUpLargeNumbers,
 	})
 	for _, good in ipairs(countedGoods) do

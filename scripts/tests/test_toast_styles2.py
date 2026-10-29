@@ -3,6 +3,7 @@ A full turn must stay a full turn: the client interpolates a layer's rotation li
 runs rotate(0) to rotate(360deg) is keys 0 and 360, and 0 and 0 is a layer that does not move (#409)."""
 
 import importlib.util
+import json
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -110,3 +111,67 @@ def test_style_art_leaves_out_the_kits_slim_toast_rung_and_its_sprites() -> None
 
     assert list(rungs) == ["toast", "high", "nod"]
     assert list(atlas["sprites"]) == ["toast-body", "high-body", "nod-body"]
+
+
+def test_round_four_writes_the_epic_five_under_their_own_header_and_owners_ids(tmp_path: Path) -> None:
+    """`--round 4` writes data/ToastStyleArt4.lua (ANN-R85): its own header, which leaves the tables to
+    ToastStyleArt2.lua, and every style keyed by the ID its kit gives it (a Hunts' or the Ledger's earned good), never
+    renamed as round three's race styles are."""
+    goods = tmp_path / "goods.json"
+    out = tmp_path / "ToastStyleArt4.lua"
+    good = {
+        "id": "hunts.toaststyle.nightfin",
+        "slot": "core.toaststyle",
+        "name": "Nightfin Tide",
+        "art": {
+            "atlas": "Interface\\AddOns\\Pagle\\media\\announce\\Toasts2Nightfin",
+            "atlasSize": [2048, 1024],
+            "scale": 1.5,
+            "rungs": {name: _kit_rung(name) for name in ("toast", "high", "nod")},
+        },
+    }
+    goods.write_text(json.dumps({"goods": [good]}), encoding="utf-8")
+
+    toast_styles.main(["--round", "4", str(goods), str(out)])
+
+    text = out.read_text(encoding="utf-8")
+    assert "-- The epic five composed toast styles" in text
+    assert "ns.TOAST_STYLE_ART2 = ns.TOAST_STYLE_ART2 or {}" in text
+    assert 'ns.TOAST_STYLE_ART2["hunts.toaststyle.nightfin"]' in text
+    assert 'ns.ATLASES["Toasts2Nightfin"]' in text
+
+
+def test_stage_art_lists_each_stage_with_its_sprite_and_box_and_adds_the_kits_stage_sprites() -> None:
+    """The Cartographer's Folio's stages (ANN-R85): stage 4 is the rung's own deco, the others the kit's stage sprites,
+    each with its own box, and those sprites join the atlas."""
+    deco = {"name": "deco", "sprite": "toast-deco", "rect": {"x": 0, "y": 0, "w": 9, "h": 9}, "x": 20, "y": 14, "w": 400, "h": 60}
+    high = {**deco, "sprite": "high-deco", "w": 460}
+    extra = {"x": 19, "y": 14, "w": 401, "h": 61, "rect": {"x": 100, "y": 200, "w": 600, "h": 90}}
+    good = {
+        "art": {
+            "rungs": {"toast": {"layers": [deco]}, "high": {"layers": [high]}},
+            "stages": [
+                {"min": 5, "toast": "toast-deco-st1", "high": "high-deco-st1"},
+                {"min": 45, "toast": "toast-deco", "high": "high-deco"},
+            ],
+            "stageSprites": {"toast-deco-st1": extra, "high-deco-st1": {**extra, "w": 461}},
+        }
+    }
+    sprites: dict[str, Any] = {}
+
+    stages = toast_styles.stage_art(good, sprites)
+
+    assert stages == [
+        {
+            "min": 5,
+            "toast": {"sprite": "toast-deco-st1", "x": 19, "y": 14, "w": 401, "h": 61},
+            "high": {"sprite": "high-deco-st1", "x": 19, "y": 14, "w": 461, "h": 61},
+        },
+        {
+            "min": 45,
+            "toast": {"sprite": "toast-deco", "x": 20, "y": 14, "w": 400, "h": 60},
+            "high": {"sprite": "high-deco", "x": 20, "y": 14, "w": 460, "h": 60},
+        },
+    ]
+    assert sorted(sprites) == ["high-deco-st1", "toast-deco-st1"]
+    assert toast_styles.stage_art({"art": {"rungs": {}}}, {}) is None

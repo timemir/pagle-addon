@@ -343,13 +343,51 @@ describe("the expansion's earned goods", function()
 				{ "ledger.toaststyle.prestige", "core.toaststyle", "Oxblood Vellum", "Prestige V", false },
 				{ "ledger.soundset.concertina", "core.soundset", "Old Salt's Concertina", "Prestige I", true },
 				{ "ledger.soundset.choir", "core.soundset", "Choir of the Deep", "Land all three Legends", false },
+				{ "ledger.toaststyle.gala", "core.toaststyle", "Extravaganza Gala", "Land all three Legends", false },
 			}, rows)
 			assert.are.same({
 				"ledger.toaststyle.legend legend",
 				"ledger.toaststyle.prestige prestige5",
 				"ledger.soundset.concertina prestige1",
 				"ledger.soundset.choir legends",
+				"ledger.toaststyle.gala legends",
 			}, asked)
 		end
 	)
+
+	describe("the Extravaganza Gala (ANN-R85, LED-R118)", function()
+		local GALA = "ledger.toaststyle.gala"
+		-- Three Legends in the world, as Forever has: two listed in Lake and a third on its list too.
+		local THREE = { LEGEND, LEGEND_2, UNLISTED }
+
+		it("is earned with all three Legends caught, not with two (LED-R63)", function()
+			local two = state({ items = { LEGEND, LEGEND_2 } })
+			local three = state({ items = { LEGEND, LEGEND_2, UNLISTED } })
+
+			assert.is_false(owned(GALA, "legends", view(two, nil, THREE)))
+			assert.is_true(owned(GALA, "legends", view(three, nil, THREE)))
+		end)
+
+		it("counts a Legend the celebrated set holds, and one no longer in the game's waters not at all", function()
+			local two = state({ items = { LEGEND, LEGEND_2 } })
+
+			assert.is_true(owned(GALA, "legends", view(two, { items = { [UNLISTED] = true } }, THREE)))
+			-- The removed Legend is no Legend of the world (LED-R11, LED-R12): the two listed are all three need.
+			assert.is_true(owned(GALA, "legends", view(two, nil, { LEGEND, LEGEND_2, REMOVED })))
+		end)
+
+		it(
+			"is noted in the celebrated set once earned and kept when a release lists a Legend more (LED-R116)",
+			function()
+				local celebrated = {}
+				local all = state({ items = { LEGEND, LEGEND_2, UNLISTED } })
+				assert.is_true(ns.NoteEarnedGoods(celebrated, view(all, celebrated, THREE)))
+				assert.is_true(celebrated.goods[GALA])
+
+				local grown = view(all, celebrated, { LEGEND, LEGEND_2, UNLISTED, 19999 })
+				assert.is_true(owned(GALA, "legends", view(nil, celebrated, THREE)))
+				assert.is_true(owned(GALA, "legends", grown))
+			end
+		)
+	end)
 end)

@@ -76,7 +76,7 @@ end
 --@end-do-not-package@
 
 --- The kinds `/pagle dev preview` shows, in the order it lists them.
-ns.DEV_PREVIEW_KINDS = { "toast", "nod", "banner", "splash", "card" }
+ns.DEV_PREVIEW_KINDS = { "toast", "high", "nod", "banner", "splash", "card" }
 
 -- A sample moment as Core would hold it once raised (PagleRaisedMoment), from Core itself.
 ---@param moment table
@@ -90,22 +90,52 @@ end
 -- Oily Blackmouth, a sample icon.
 local ICON = 6358
 
---- The sample Announcement `/pagle dev preview <kind>` shows (#247), for a toast, Nod, banner or splash: a headline
---- of that rung, with stamps and Coins where the form shows them. Nil for another kind. With `text`, its headline's
---- text reads that instead of the dev preview's line (the Field guide's Moments samples, ONB-R34).
+--- The sample Announcement `/pagle dev preview <kind>` shows (#247), for a toast, a toast.high (`high`), Nod, banner
+--- or splash: a headline of that rung, with stamps and Coins where the form shows them. Nil for another kind. With
+--- `text`, its headline's text reads that instead of the dev preview's line (the Field guide's Moments samples,
+--- ONB-R34). A `toast` or `high` one with `rarity` (a rarity's key) announces a variety of it as well (VAR-R26), for
+--- judging the gleam and the Extravaganza Gala's burst (ANN-R85); a `banner` with "epic" is an Epic variety's moment,
+--- which is a toast.high with the Gala equipped (ns.MomentRung).
 ---@param kind string
 ---@param text string?
+---@param rarity string?
 ---@return PagleAnnouncement?
-function ns.DevPreviewAnnouncement(kind, text)
+function ns.DevPreviewAnnouncement(kind, text, rarity)
 	local L = ns.L
 	text = text or L.DEV_SAMPLE_TEXT
-	if kind == "toast" then
-		return ns.MakeAnnouncement({
-			sample({ rung = "toast", title = L.DEV_SAMPLE_TOAST, text = text, icon = ICON, coins = 10 }),
+	if kind == "toast" or kind == "high" then
+		local moments = {
+			sample({
+				rung = kind == "high" and "toast.high" or "toast",
+				title = L.DEV_SAMPLE_TOAST,
+				text = text,
+				icon = ICON,
+				coins = 10,
+			}),
 			sample({ rung = "toast.low", title = L.DEV_SAMPLE_STAMP, stamp = L.DEV_SAMPLE_STAMP, coins = 2 }),
-		})
+		}
+		if rarity and rarity ~= "" then
+			moments[3] = sample({
+				rung = "toast.low",
+				title = L.DEV_SAMPLE_VARIETY,
+				stamp = L.DEV_SAMPLE_VARIETY,
+				icon = ICON,
+				variety = { name = L.DEV_SAMPLE_VARIETY_NAME, rarity = rarity },
+			})
+		end
+		return ns.MakeAnnouncement(moments)
 	elseif kind == "nod" then
 		return ns.MakeAnnouncement({ sample({ rung = "nod", title = L.DEV_SAMPLE_NOD, text = text }) })
+	elseif kind == "banner" and rarity == "epic" then
+		local moment = sample({
+			rung = "banner",
+			title = L.DEV_SAMPLE_EPIC,
+			text = L.DEV_SAMPLE_VARIETY_NAME,
+			icon = ICON,
+			variety = { name = L.DEV_SAMPLE_VARIETY_NAME, rarity = "epic" },
+		})
+		moment.rung = ns.MomentRung(moment, ns.goods and ns.goods:GetEquipped(ns.TOAST_STYLE_SLOT) or nil)
+		return ns.MakeAnnouncement({ moment })
 	elseif kind == "banner" then
 		return ns.MakeAnnouncement({
 			sample({ rung = "banner", title = L.DEV_SAMPLE_BANNER, text = text, coins = 20 }),
@@ -169,14 +199,44 @@ end
 ---@param kind string
 local function preview(dev, kind)
 	local L, options = ns.L, dev.options
-	local announcement = ns.DevPreviewAnnouncement(kind)
+	local name, rarity = kind:match("^(%S+)%s*(%S*)$")
+	name = name or kind
+	-- A rarity goes with a toast or a toast.high (any of the four), or a banner (an Epic variety's); anything else, or a
+	-- rarity Core doesn't know, is the usage line.
+	local applies = rarity == ""
+	for _, entry in ipairs(ns.VARIETY_RARITIES) do
+		if entry.key == rarity then
+			applies = name == "toast" or name == "high" or (name == "banner" and rarity == "epic")
+		end
+	end
+	local announcement = applies and ns.DevPreviewAnnouncement(name, nil, rarity or nil) or nil
 	if announcement then
 		options.announce(announcement)
-		options.print(L.DEV_PREVIEWING:format(kind))
-	elseif kind == "card" then
+		options.print(L.DEV_PREVIEWING:format(rarity ~= "" and name .. " " .. rarity or name))
+	elseif kind == "card" and applies then
 		options.print(options.showCard(ns.DevPreviewCard()) and L.DEV_PREVIEWING:format(kind) or L.DEV_CARD_HELD)
 	else
 		options.print(L.DEV_PREVIEW_KINDS:format(table.concat(ns.DEV_PREVIEW_KINDS, ", ")))
+	end
+end
+
+-- `/pagle dev stage [<count> | off]` (ANN-R85): the Cartographer's Folio's chart is drawn at the stage its good's count of
+-- zones at Master gives, which a test log can't set; this draws it as if that count were `count` until `off` or the next
+-- login. It changes what is drawn and nothing else: no saved state, no ownership, no record.
+---@param dev PagleDevCommands
+---@param args string
+local function stage(dev, args)
+	local L, options = ns.L, dev.options
+	args = args:lower()
+	local count = tonumber(args)
+	if args == "off" then
+		ns.devStageCount = nil
+		options.print(L.DEV_STAGE_OFF)
+	elseif count and count >= 0 and count == math.floor(count) then
+		ns.devStageCount = count
+		options.print(L.DEV_STAGE_SET:format(count))
+	else
+		options.print(ns.devStageCount and L.DEV_STAGE_IS:format(ns.devStageCount) or L.DEV_STAGE_USAGE)
 	end
 end
 
@@ -354,6 +414,8 @@ function Dev:Run(args)
 	--@end-do-not-package@
 	elseif name == "preview" then
 		preview(self, rest:lower())
+	elseif name == "stage" then
+		stage(self, rest)
 	elseif name == "glyphs" then
 		local probe = ns.DevGlyphProbe()
 		options.print(L.DEV_GLYPHS_CHAT:format(probe))

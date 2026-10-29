@@ -333,6 +333,7 @@ end
 ---@field report fun(message: string)           -- reports an error and carries on (geterrorhandler())
 ---@field show fun(announcement: PagleAnnouncement) -- hands an Announcement to the display (ANN-R20)
 ---@field summarize fun(moment: PagleRaisedMoment) -- hands a moment to the Session summary (ANN-R25)
+---@field toastStyle? fun(): string? -- the equipped toast style's good ID, for ns.MomentRung (ANN-R85)
 
 --- The collector: the moments raised and not yet flushed.
 ---@class PagleMoments
@@ -383,6 +384,22 @@ local function copyOf(def, moment, raised)
 	return copy
 end
 
+--- The rung a Module's moment is raised at (ANN-R85, VAR-R25): its own, but for an Epic variety's moment (a banner
+--- with a `variety` of rarity "epic") while the Extravaganza Gala is the equipped toast style, which is a toast.high,
+--- drawn with the Gala's burst of confetti, in place of the banner. Every other style keeps the banner. The new rung is
+--- the moment's everywhere after it: its form, the budget, Cozy mode and the Session summary treat it as the toast.high
+--- it is.
+---@param moment PagleMoment
+---@param toastStyle string? the equipped toast style's good ID
+---@return PagleRung
+function ns.MomentRung(moment, toastStyle)
+	local variety = moment.variety
+	if moment.rung == "banner" and variety and variety.rarity == "epic" and toastStyle == ns.GALA_STYLE then
+		return "toast.high"
+	end
+	return moment.rung
+end
+
 --- Takes a moment a Module raised (ANN-R1, ANN-R4): dropped, and reported once per Module per login, when raised
 --- during a "replay" or "rebuild" apply, or from a done unless it is summaryOnly. Otherwise every moment goes to the
 --- Session summary now (ANN-R25), and one not summaryOnly waits for the next frame's flush (ANN-R10, ANN-R12). The
@@ -404,6 +421,7 @@ function Moments:Raise(module, moment)
 	end
 	self.raised = self.raised + 1
 	local copy = copyOf(module.def, moment, self.raised)
+	copy.rung = ns.MomentRung(copy, self.options.toastStyle and self.options.toastStyle() or nil)
 	self.options.summarize(copy)
 	if copy.summaryOnly then
 		return

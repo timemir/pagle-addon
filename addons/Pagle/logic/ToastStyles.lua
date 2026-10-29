@@ -396,9 +396,21 @@ end
 ---@field layers PagleToastLayer[]
 ---@field stamp? PagleToastStamp
 
+--- A stage's deco on one rung: its sprite in the style's atlas, and its box (UI units from the rung's top left).
+---@class PagleToastStageDeco: PagleArtBox
+---@field sprite string
+
+--- One stage of a style whose art grows with a count (ANN-R85): from `min` on, its deco layer draws `toast` on the toast
+--- rung and `high` on toast.high's, each at its own box.
+---@class PagleToastStage
+---@field min integer
+---@field toast PagleToastStageDeco
+---@field high PagleToastStageDeco
+
 ---@class PagleToastArt2
 ---@field atlas string
 ---@field rungs table<"toast"|"high"|"nod", PagleToastRung>
+---@field stages? PagleToastStage[] -- by `min`, rising: the Cartographer's Folio's five (ANN-R85)
 
 for id, art in pairs(ns.TOAST_STYLE_ART2 or {}) do
 	for rungName, rung in pairs(art.rungs) do
@@ -426,9 +438,56 @@ for id, art in pairs(ns.TOAST_STYLE_ART2 or {}) do
 end
 
 --- The kit's keyframes that play once in game, though the canvas loops them: a beat on the toast landing (Through the
---- Ice's tip-up flag springs up and settles). Every other layer's motion is the style's own weather, and loops while
---- its toast is on screen.
-ns.TOAST_MOTION_ONCE = { ["ice-flag"] = true }
+--- Ice's tip-up flag springs up and settles; the Cartographer's Folio's leaves open, its needle settles and its route
+--- inks itself with the ship sailing it; Nat's Study turns yesterday's page; the Deep Trench's gauge sinks to the red,
+--- ANN-R85). Every other layer's motion is the style's own weather, and loops while its toast is on screen.
+ns.TOAST_MOTION_ONCE = {
+	["ice-flag"] = true,
+	["carto-open"] = true,
+	["carto-needle"] = true,
+	["carto-route"] = true,
+	["carto-sail-toast"] = true,
+	["carto-sail-high"] = true,
+	["study-turn-toast"] = true,
+	["study-turn-high"] = true,
+	["tr-depth"] = true,
+}
+
+--- The layers that draw only on a toast whose variety gleams (VAR-R26: a Rare or Epic one), by the keyframes of their
+--- motion: the Extravaganza Gala's burst of confetti, which goes off once on toast.high (ANN-R85). On any other toast the
+--- style draws without it.
+ns.TOAST_GLEAM_ONLY = { ["gala-pop"] = true }
+
+--- The Extravaganza Gala's good ID (ANN-R85): its burst of confetti plays on a Rare variety's toast too, and an Epic
+--- variety's moment is a toast.high while it is equipped (ns.MomentRung), not the banner it would be.
+ns.GALA_STYLE = "ledger.toaststyle.gala"
+
+-- The kit draws the Gala's burst on toast.high alone. The plain toast rung, which a Rare variety's own toast is drawn on
+-- (VAR-R25), gets the same sprite and beat (`burst`, the layer's keyframes `gala-pop`, once), centred on the rung as
+-- toast.high's is on its own: the kit's layer shifted by the half of the width the rungs differ by, its motion's origin
+-- with it. Derived here, since the generated data carries only the kit's.
+do
+	local art = ns.TOAST_STYLE_ART2 and ns.TOAST_STYLE_ART2[ns.GALA_STYLE]
+	if art then
+		local toast, high = art.rungs.toast, art.rungs.high
+		for _, layer in ipairs(high.layers) do
+			if layer.motion and ns.TOAST_GLEAM_ONLY[layer.motion.keyframes] then
+				local shift = (toast.w - high.w) / 2
+				local burst = {}
+				for key, value in pairs(layer) do
+					burst[key] = value
+				end
+				burst.name, burst.x = "burst", layer.x + shift
+				burst.motion = {}
+				for key, value in pairs(layer.motion) do
+					burst.motion[key] = value
+				end
+				burst.motion.origin = { x = layer.motion.origin.x + shift, y = layer.motion.origin.y }
+				toast.layers[#toast.layers + 1] = burst
+			end
+		end
+	end
+end
 
 --- A layer's motion as animations (logic/LayeredArt.lua's ns.LayerAnimations), `landing` seconds in, a keyframe
 --- ns.TOAST_MOTION_ONCE names played once: the toast layers' rule, which the Legend crests' layered pieces share.
@@ -457,6 +516,69 @@ end
 ---@return PagleToastRung?
 function ns.ToastRungArt(style, page)
 	return style.art and style.art.rungs[ns.ToastRungKey(page)]
+end
+
+--- The stage deco a style's art draws at `count` (ANN-R85): on the rung `page` is drawn from, the last of its `stages`
+--- whose `min` the count has reached, the first when the count is below them all or there is none (the Folio is owned
+--- from its first stage on, so a count below it is a good the test log grants or a preview before it is earned, and no
+--- count at all is a Ledger that is off or hasn't counted yet). Nil for a style with no stages and for a stage whose
+--- sprite isn't in the style's atlas: the deco layer is then the rung's own, which is stage 4's.
+---@param style PagleToastStyle
+---@param page PagleToastPage?
+---@param count integer?
+---@return PagleToastStageDeco?
+function ns.ToastStageDeco(style, page, count)
+	local stages = style.art and style.art.stages
+	if not stages then
+		return nil
+	end
+	local chosen = stages[1]
+	for _, stage in ipairs(stages) do
+		if count ~= nil and count >= stage.min then
+			chosen = stage
+		end
+	end
+	local deco = chosen and chosen[ns.ToastRungKey(page)]
+	local atlas = ns.ATLASES[style.art.atlas]
+	if type(deco) ~= "table" or not (atlas and atlas.sprites[deco.sprite]) then
+		return nil
+	end
+	return deco
+end
+
+--- What a composed toast draws differently from its rung's own layers (ANN-R85).
+---@class PagleToastDrawing
+---@field gleams boolean? the toast's variety gleams (VAR-R26), so a layer in ns.TOAST_GLEAM_ONLY draws
+---@field count integer? the count the style's stages are picked by (ns.ToastStageDeco)
+
+--- The layers of a composed style's rung to draw for `page` (a Nod's with none): the rung's own, but for the layers
+--- ns.TOAST_GLEAM_ONLY keeps back unless the toast's variety gleams, and the deco layer of a style with stages drawn
+--- from its stage's sprite, at its stage's box (ns.ToastStageDeco). A Nod has neither.
+---@param style PagleToastStyle
+---@param page PagleToastPage?
+---@param drawing PagleToastDrawing?
+---@return PagleToastLayer[]
+function ns.ToastDrawLayers(style, page, drawing)
+	local rung = ns.ToastRungArt(style, page) --[[@as PagleToastRung]]
+	drawing = drawing or {}
+	local stage = page and ns.ToastStageDeco(style, page, drawing.count) or nil
+	local layers = {}
+	for _, layer in ipairs(rung.layers) do
+		local motion = layer.motion
+		-- A layer the toast's variety doesn't call for is left out.
+		if not (page and motion and ns.TOAST_GLEAM_ONLY[motion.keyframes] and not drawing.gleams) then
+			if stage and layer.name == "deco" then
+				local staged = {}
+				for key, value in pairs(layer) do
+					staged[key] = value
+				end
+				staged.sprite, staged.x, staged.y, staged.w, staged.h = stage.sprite, stage.x, stage.y, stage.w, stage.h
+				layer = staged
+			end
+			layers[#layers + 1] = layer
+		end
+	end
+	return layers
 end
 
 --- A composed style's ink `field` ("what", "name", "small", "amt" or "stamp") on a page, and its role in

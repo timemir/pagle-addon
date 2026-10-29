@@ -401,7 +401,7 @@ ns.L = {
 	DEV_ON = "Pagle dev: dev commands are on.",
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
-	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | glyphs"
+	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs"
 		.. " | tour [module | list | stop] | probe | onboarding <command> | content | views | pastetest <KB>",
 	-- /pagle dev pastetest <KB> (PST-R60): its usage, with the sizes it takes, and the line it prints once the window
 	-- shows the test string.
@@ -514,10 +514,18 @@ ns.L = {
 	DEV_PREVIEW_KINDS = "Pagle dev: /pagle dev preview <kind>, where kind is one of %s",
 	-- The kind.
 	DEV_PREVIEWING = "Pagle dev: previewing a %s.",
+	-- /pagle dev stage (ANN-R85): the Cartographer's Folio's chart drawn as if its count of zones at Master were a number.
+	DEV_STAGE_SET = "Pagle dev: the Cartographer's Folio is drawn as if %d zones were at Master, until /pagle dev stage off.",
+	DEV_STAGE_OFF = "Pagle dev: the Cartographer's Folio is drawn at its real stage.",
+	DEV_STAGE_IS = "Pagle dev: the Cartographer's Folio is drawn as if %d zones were at Master.",
+	DEV_STAGE_USAGE = "Pagle dev: /pagle dev stage <count of zones at Master> | off",
 	DEV_CARD_HELD = "Pagle dev: cards wait until combat ends; try again then.",
 	DEV_SAMPLE_TOAST = "New Species",
 	DEV_SAMPLE_STAMP = "Size record",
 	DEV_SAMPLE_NOD = "New here",
+	DEV_SAMPLE_VARIETY = "Rare variety",
+	DEV_SAMPLE_EPIC = "Epic variety",
+	DEV_SAMPLE_VARIETY_NAME = "Coral",
 	DEV_SAMPLE_BANNER = "Angler Level 12",
 	DEV_SAMPLE_SPLASH = "A Legend",
 	DEV_SAMPLE_TEXT = "Oily Blackmouth (a /pagle dev preview)",

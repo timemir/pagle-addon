@@ -439,49 +439,54 @@ describe("the second round's earned goods", function()
 			return ns.EarnedGoodOwned(goodID, good(goodID).earn, v)
 		end
 
-		it("are the twenty-six goods in LED-R118's and LED-R164's order, after LED-R116's and LED-R117's", function()
-			local ids = {}
-			for _, earnedGood in ipairs(ns.EarnedGoods()) do
-				ids[#ids + 1] = earnedGood.id
+		it(
+			"are the twenty-seven goods in LED-R118's and LED-R164's order, the epic Folio last, after LED-R116's and LED-R117's",
+			function()
+				local ids = {}
+				for _, earnedGood in ipairs(ns.EarnedGoods()) do
+					ids[#ids + 1] = earnedGood.id
+				end
+				assert.are.same({
+					"ledger.binding.legend",
+					"ledger.binding.monster",
+					"ledger.binding.abyssal",
+					"ledger.binding.keeper",
+					"ledger.binding.iridescent",
+					"ledger.toaststyle.legend",
+					"ledger.toaststyle.prestige",
+					"ledger.soundset.concertina",
+					"ledger.soundset.choir",
+					"ledger.toaststyle.gala",
+					"ledger.toaststyle.glass",
+					"ledger.toaststyle.deep",
+					"ledger.toaststyle.koi",
+					"ledger.toaststyle.trophy",
+					"ledger.toaststyle.slate",
+					"ledger.toaststyle.ice",
+					"ledger.toaststyle.stitch",
+					"ledger.toaststyle.crier",
+					"ledger.toaststyle.hall",
+					"ledger.toaststyle.glade",
+					"ledger.toaststyle.blueprint",
+					"ledger.toaststyle.drum",
+					"ledger.toaststyle.shroud",
+					"ledger.toaststyle.totem",
+					"ledger.toaststyle.hex",
+					"ledger.toaststyle.lion",
+					"ledger.toaststyle.warband",
+					"ledger.binding.wave",
+					"ledger.binding.logbook",
+					"ledger.binding.heartwood",
+					"ledger.binding.stormglass",
+					"ledger.binding.lacquer",
+					"ledger.binding.knit",
+					"ledger.binding.flywallet",
+					"ledger.binding.carapace",
+					"ledger.binding.ember",
+					"ledger.toaststyle.cartographer",
+				}, ids)
 			end
-			assert.are.same({
-				"ledger.binding.legend",
-				"ledger.binding.monster",
-				"ledger.binding.abyssal",
-				"ledger.binding.keeper",
-				"ledger.binding.iridescent",
-				"ledger.toaststyle.legend",
-				"ledger.toaststyle.prestige",
-				"ledger.soundset.concertina",
-				"ledger.soundset.choir",
-				"ledger.toaststyle.glass",
-				"ledger.toaststyle.deep",
-				"ledger.toaststyle.koi",
-				"ledger.toaststyle.trophy",
-				"ledger.toaststyle.slate",
-				"ledger.toaststyle.ice",
-				"ledger.toaststyle.stitch",
-				"ledger.toaststyle.crier",
-				"ledger.toaststyle.hall",
-				"ledger.toaststyle.glade",
-				"ledger.toaststyle.blueprint",
-				"ledger.toaststyle.drum",
-				"ledger.toaststyle.shroud",
-				"ledger.toaststyle.totem",
-				"ledger.toaststyle.hex",
-				"ledger.toaststyle.lion",
-				"ledger.toaststyle.warband",
-				"ledger.binding.wave",
-				"ledger.binding.logbook",
-				"ledger.binding.heartwood",
-				"ledger.binding.stormglass",
-				"ledger.binding.lacquer",
-				"ledger.binding.knit",
-				"ledger.binding.flywallet",
-				"ledger.binding.carapace",
-				"ledger.binding.ember",
-			}, ids)
-		end)
+		)
 
 		it("hold the marks of ledger.md's Tunables", function()
 			local marks = {}
@@ -515,6 +520,7 @@ describe("the second round's earned goods", function()
 				5,
 				50,
 				7,
+				5,
 			}, marks)
 		end)
 
@@ -606,6 +612,29 @@ describe("the second round's earned goods", function()
 			end
 		)
 
+		it(
+			"earn the Cartographer's Folio at five zones at Master, not four, the computed or the celebrated rank (ANN-R85, LED-R52)",
+			function()
+				local zones = {}
+				for zone = 1, 4 do
+					zones[zone] = { rank = 5 }
+				end
+				-- Expert is no Master: the fifth zone is one rank short.
+				zones[5] = { rank = 4 }
+				assert.is_false(owned("ledger.toaststyle.cartographer", view(stateWith(nil, { zones = zones }))))
+
+				-- Celebrated at Master over its computed Expert, it counts (LED-R114).
+				assert.is_true(
+					owned(
+						"ledger.toaststyle.cartographer",
+						view(stateWith(nil, { zones = zones }), { zones = { [5] = 5 } })
+					)
+				)
+				zones[5] = { rank = 5 }
+				assert.is_true(owned("ledger.toaststyle.cartographer", view(stateWith(nil, { zones = zones }))))
+			end
+		)
+
 		it("earn Ember Scale at Prestige VII, by the state or the highest celebrated rank (LED-R34)", function()
 			assert.is_false(owned("ledger.binding.ember", view(stateWith(nil, { prestige = 6 }))))
 			assert.is_true(owned("ledger.binding.ember", view(stateWith(nil, { prestige = 7 }))))
@@ -644,7 +673,7 @@ describe("the second round's earned goods", function()
 	end)
 
 	describe("registered in Core's toast style and binding slots (LED-R118, LED-R110, SHOP-R23, SHOP-R25)", function()
-		local counts
+		local counts, saved
 
 		-- The sixteen goods over hooks whose earnedBy names goods earned in `earned`, and whose count reads `counts`
 		-- (nil while updating).
@@ -656,6 +685,9 @@ describe("the second round's earned goods", function()
 				count = function(counted)
 					return counts and counts[counted.id]
 				end,
+				saved = function(counted)
+					return saved and saved[counted.id]
+				end,
 				formatNumber = function(n)
 					return "<" .. n .. ">"
 				end,
@@ -663,11 +695,11 @@ describe("the second round's earned goods", function()
 		end
 
 		before_each(function()
-			counts = {}
+			counts, saved = {}, nil
 		end)
 
 		it(
-			"are the seventeen toast styles then the nine bindings, named and described by lore, with an icon and no preview (LED-R160)",
+			"are the seventeen toast styles then the nine bindings and the epic Folio, named and described by lore, with an icon and no preview (LED-R160)",
 			function()
 				local rows = {}
 				for i, registered in
@@ -705,6 +737,7 @@ describe("the second round's earned goods", function()
 					{ "ledger.binding.flywallet", "core.binding", "Fly Wallet", false },
 					{ "ledger.binding.carapace", "core.binding", "Crab Carapace", true },
 					{ "ledger.binding.ember", "core.binding", "Ember Scale", false },
+					{ "ledger.toaststyle.cartographer", "core.toaststyle", "Cartographer's Folio", false },
 				}, rows)
 			end
 		)
@@ -722,6 +755,7 @@ describe("the second round's earned goods", function()
 				formatNumber = tostring,
 			})
 			assert.are.same({ false, true }, { goods[18].isEarned(), goods[26].isEarned() })
+			assert.are.equal(27, #goods)
 			assert.are.same({ { "ledger.binding.wave", "wave" }, { "ledger.binding.ember", "ember" } }, asked)
 		end)
 
@@ -760,7 +794,7 @@ describe("the second round's earned goods", function()
 					local _, need = goods[i].earnedCount()
 					needs[i], marks[i] = need, counted.mark
 				end
-				assert.are.equal(26, #needs)
+				assert.are.equal(27, #needs)
 				assert.are.same(marks, needs)
 			end
 		)
@@ -774,6 +808,51 @@ describe("the second round's earned goods", function()
 
 				counts = nil
 				assert.are.same({}, { goods[1].earnedCount() })
+			end
+		)
+
+		it(
+			"give the epic Folio, and no other good, a stageCount: its count of zones at Master unheld, the last it knew while the projection updates (ANN-R85)",
+			function()
+				local goods = register({})
+				local folio
+				for _, registered in ipairs(goods) do
+					if registered.id == "ledger.toaststyle.cartographer" then
+						folio = registered
+					else
+						assert(registered.stageCount == nil, registered.id)
+					end
+				end
+				assert.is_function(folio.stageCount)
+
+				counts = nil
+				assert.is_nil(folio.stageCount()) -- no count known yet, and none saved: Core draws its first stage
+				counts = { ["ledger.toaststyle.cartographer"] = 31 }
+				assert.are.equal(31, folio.stageCount())
+				counts = { ["ledger.toaststyle.cartographer"] = 54 }
+				assert.are.equal(54, folio.stageCount()) -- past the mark of 5, not held at it as the ink bar's count is
+				counts = nil
+				assert.are.equal(54, folio.stageCount())
+			end
+		)
+
+		it(
+			"give the Folio the celebrated set's count before the projection has counted, and the projection's after (ANN-R85)",
+			function()
+				local goods = register({})
+				local folio
+				for _, registered in ipairs(goods) do
+					folio = registered.id == "ledger.toaststyle.cartographer" and registered or folio
+				end
+
+				-- After a /reload, the projection updating: the celebrated zones at Master.
+				counts, saved = nil, { ["ledger.toaststyle.cartographer"] = 17 }
+				assert.are.equal(17, folio.stageCount())
+				-- Then its own finished count, which the saved one no longer matters beside.
+				counts = { ["ledger.toaststyle.cartographer"] = 22 }
+				assert.are.equal(22, folio.stageCount())
+				counts = nil
+				assert.are.equal(22, folio.stageCount()) -- the last it knew, not the saved 17
 			end
 		)
 
@@ -811,10 +890,15 @@ describe("the second round's earned goods", function()
 				end
 			end)
 
-			it("is tier 4 from 90 days after the release that sets its time", function()
+			it("is tier 4 from 90 days after the release that sets its time, but for the epic Folio's", function()
 				ns.ROUND_TWO_RELEASE = T0
 				for _, registered in ipairs(register({})) do
-					assert.are.same({ 4, T0 + 90 * DAY }, { registered.fallbackTier, registered.fallbackFrom })
+					if registered.id == "ledger.toaststyle.cartographer" then
+						-- Earned by the achievement alone, never for sale (#414).
+						assert.are.same({}, { registered.fallbackTier, registered.fallbackFrom })
+					else
+						assert.are.same({ 4, T0 + 90 * DAY }, { registered.fallbackTier, registered.fallbackFrom })
+					end
 				end
 			end)
 		end)

@@ -612,6 +612,103 @@ describe("Hunts' earned goods, through the projection", function()
 		end
 	)
 
+	it(
+		"own the epic styles from a live Cast that reaches a Hunt's tier in a run, refreshed then, before any run completes (HNT-R122, ANN-R85, SHOP-R31)",
+		function()
+			-- The fixture pool's Hunts stop at tier 2 or 3 and aren't the night events: Nightfin Tide's rule is pointed at a
+			-- fixture event and one Hunt's first tier, which a Blackmouth in a Vale run reaches without completing the run.
+			local NIGHTFIN = "hunts.toaststyle.nightfin"
+			local _, fake = hunts.login(function(fake)
+				append(fake, {
+					record(
+						"run",
+						runPayload("fixture_vale", SERVER_TIME - HOUR, SERVER_TIME + DAY),
+						SERVER_TIME - HOUR
+					),
+				})
+			end, {
+				prepare = function(loaded)
+					loaded.ns.TOP_TIER = 1
+					loaded.ns.NIGHT_TIDE_EVENTS = { fixture_vale = true }
+					loaded.ns.NIGHT_TIDE_HUNTS = 1
+				end,
+			})
+			assert.is_false(fake.Pagle.IsOwned(NIGHTFIN))
+			fishAt(fake, hunts.DAY, ELWYNN)
+
+			fake.playCast("caught", { { itemID = C.BLACKMOUTH, quantity = 1 } })
+			fake.nextFrame()
+
+			assert.is_true(fake.Pagle.IsOwned(NIGHTFIN))
+			assert.is_false(fake.Pagle.IsOwned("hunts.toaststyle.study"))
+			assert.is_false(fake.Pagle.IsOwned(WAGERSILK))
+		end
+	)
+
+	describe("refreshing Hunts' goods", function()
+		-- A fake that counts the refreshes of Hunts' earned goods (SHOP-R31).
+		local function counting()
+			local fake, refreshed = newFakePagle(), { n = 0 }
+			local goods = fake.ns.goods
+			local refresh = goods.Refresh
+			goods.Refresh = function(self, module)
+				if module == "Hunts" then
+					refreshed.n = refreshed.n + 1
+				end
+				return refresh(self, module)
+			end
+			return fake, refreshed
+		end
+		local function runOpen(fake)
+			append(fake, {
+				record("run", runPayload("fixture_vale", SERVER_TIME - HOUR, SERVER_TIME + DAY), SERVER_TIME - HOUR),
+			})
+		end
+
+		it("doesn't for a mark found while a log replays or rebuilds, only from done (HNT-R122, SHOP-R31)", function()
+			local baseFake, base = counting()
+			hunts.login(nil, { fake = baseFake })
+			local markedFake, marked = counting()
+			local loaded = hunts.login(completedRuns(2), { fake = markedFake })
+
+			-- The state has marks (the Hunts' first tiers), found by the catch-up: no refresh of theirs beyond done's.
+			local runs = loaded.ns.State().runs
+			local found = 0
+			for _, run in pairs(runs) do
+				for _, hunt in pairs(run.hunts) do
+					found = found + #hunt.reached
+				end
+			end
+			assert.is_true(found > 0)
+			assert.are.equal(base.n, marked.n)
+		end)
+
+		it("doesn't for a live Cast that reaches a Hunt's lower tier, and does for its last (HNT-R122)", function()
+			local fake, refreshed = counting()
+			hunts.login(runOpen, { fake = fake })
+			fishAt(fake, hunts.DAY, ELWYNN)
+			local before = refreshed.n
+
+			-- A Blackmouth reaches fixture_vale_blackmouth's only tier, 1: below ns.TOP_TIER (3).
+			fake.playCast("caught", { { itemID = C.BLACKMOUTH, quantity = 1 } })
+			fake.nextFrame()
+			assert.are.equal(before, refreshed.n)
+
+			local top, topRefreshed = counting()
+			hunts.login(runOpen, {
+				fake = top,
+				prepare = function(loaded)
+					loaded.ns.TOP_TIER = 1
+				end,
+			})
+			fishAt(top, hunts.DAY, ELWYNN)
+			local topBefore = topRefreshed.n
+			top.playCast("caught", { { itemID = C.BLACKMOUTH, quantity = 1 } })
+			top.nextFrame()
+			assert.is_true(topRefreshed.n > topBefore)
+		end)
+	end)
+
 	it("don't own them at nine (HNT-R122, HNT-R148)", function()
 		local _, fake = hunts.login(completedRuns(9))
 

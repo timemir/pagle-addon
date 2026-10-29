@@ -6,9 +6,9 @@ end
 local ns = select(2, ...)
 
 -- The Curio Shop expansion's earned goods (LED-R116, LED-R117): the five earned bindings and the Ledger's four goods in
--- Core's open slots, each owned by a rule over the projection's state and the celebrated set together (LED-R90), and
--- kept once earned; and the second round's, by their counts (LED-R118, logic/EarnedCounts.lua). Pure logic, everything
--- passed in (CORE-R7); adapter/Bindings.lua registers them.
+-- Core's open slots, with the epic Gala (ANN-R85), each owned by a rule over the projection's state and the celebrated
+-- set together (LED-R90), and kept once earned; and the second round's, by their counts (LED-R118,
+-- logic/EarnedCounts.lua). Pure logic, everything passed in (CORE-R7); adapter/Bindings.lua registers them.
 
 --- A rule an expansion good is earned by (LED-R116, LED-R117): `legend` its first Legend caught, `legends` every
 --- Legend item caught (LED-R63), `monster` a sized Catch in the Monster band (LED-R80), `prestige<R>` Prestige rank R
@@ -38,7 +38,7 @@ local ns = select(2, ...)
 
 local ICONS = "Interface\\Icons\\"
 
---- LED-R117's four goods, in its order.
+--- LED-R117's four goods, in its order, then the epic styles' Gala (ANN-R85).
 ---@type LedgerCoreSlotGood[]
 ns.LEDGER_CORE_SLOT_GOODS = {
 	{ id = "ledger.toaststyle.legend", slot = "core.toaststyle", earn = "legend", icon = ICONS .. "INV_Misc_Note_01" },
@@ -55,6 +55,13 @@ ns.LEDGER_CORE_SLOT_GOODS = {
 		icon = ICONS .. "INV_Misc_Drum_02",
 	},
 	{ id = "ledger.soundset.choir", slot = "core.soundset", earn = "legends", icon = ICONS .. "INV_Misc_Horn_01" },
+	-- The epic styles' Extravaganza Gala (ANN-R85): earned with every Legend, as the choir is.
+	{
+		id = "ledger.toaststyle.gala",
+		slot = "core.toaststyle",
+		earn = "legends",
+		icon = ICONS .. "INV_Misc_MissileSmall_Red",
+	},
 }
 
 --- How many Size bands Core has (LOG-R67), from `Pagle.SIZE_BANDS` as it hands them over: the last is the Monster

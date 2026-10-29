@@ -300,6 +300,9 @@ function ns.WireMoments(host, show)
 		summarize = function(moment)
 			host.call(ns.summary.Add, ns.summary, moment)
 		end,
+		toastStyle = function()
+			return ns.goods and ns.goods:GetEquipped(ns.TOAST_STYLE_SLOT) or nil
+		end,
 	})
 	---@class PagleModuleHandle
 	local ModuleHandle = ns.ModuleHandle

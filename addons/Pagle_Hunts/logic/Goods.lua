@@ -5,11 +5,11 @@ end
 ---@class PagleHuntsNS
 local ns = select(2, ...)
 
--- Hunts' goods (HNT-R120–R123): its slot and its goods as data, its earned bindings in Core's binding slot and Night
--- Watch in Core's sound set slot, each good's name and description from lore, when each earned good is owned, and the
--- goods to register made from them. Pure logic, everything passed in (CORE-R7): adapter/Goods.lua registers them, draws
--- each tracker frame's preview and holds the looks the tracker wears. Core draws the bindings and plays the sound set
--- (ADR 0015, SHOP-R25).
+-- Hunts' goods (HNT-R120–R123): its slot and its goods as data, its earned bindings in Core's binding slot, Night Watch
+-- in Core's sound set slot and its three toast styles in Core's toast style slot, each good's name and description from
+-- lore, when each earned good is owned, and the goods to register made from them. Pure logic, everything passed in
+-- (CORE-R7): adapter/Goods.lua registers them, draws each tracker frame's preview and holds the looks the tracker
+-- wears. Core draws the bindings and the styles and plays the sound set (ADR 0015, SHOP-R25, ANN-R85).
 
 --- The tracker frame slot (HNT-R120): the Hunts tracker's frame (HNT-R79).
 ns.TRACKER_FRAME_SLOT = "hunts.trackerframe"
@@ -18,6 +18,9 @@ ns.CORE_SOUND_SET_SLOT = "core.soundset"
 --- Core's binding slot (SHOP-R25), open to earned goods (SHOP-R23): Hunts' three earned bindings' (HNT-R122). Pagle's
 --- API doesn't name Core's slots, so Hunts names it.
 ns.CORE_BINDING_SLOT = "core.binding"
+--- Core's toast style slot (SHOP-R25), open to earned goods (SHOP-R23): Nightfin Tide, The Deep Trench and Nat's Study,
+--- the epic styles Hunts earns (HNT-R123, ANN-R85).
+ns.CORE_TOAST_STYLE_SLOT = "core.toaststyle"
 
 local ICONS = "Interface\\Icons\\"
 
@@ -25,9 +28,10 @@ local ICONS = "Interface\\Icons\\"
 --- also its good's icon (HNT-R123).
 local BINDING_TILES = "Interface\\AddOns\\Pagle\\media\\books\\bindings\\"
 
---- What earns an earned good (HNT-R122): any set's title, every set's title (HNT-R20), or ns.WAGER_GOODS_RUNS
---- completed runs (HNT-R148).
----@alias HuntsEarnedRule "anySetTitle"|"everySetTitle"|"wagerRuns"
+--- What earns an earned good (HNT-R122): any set's title, every set's title (HNT-R20), ns.WAGER_GOODS_RUNS completed
+--- runs (HNT-R148), ns.WAGER_STUDY_RUNS of them, `nightTide` three Hunts of the night events at tier 3, or `deepTrench` a
+--- run of the lobster event with every Hunt at tier 3.
+---@alias HuntsEarnedRule "anySetTitle"|"everySetTitle"|"wagerRuns"|"wagerCentury"|"nightTide"|"deepTrench"
 
 --- One of Hunts' goods, as data: exactly one of `default`, `tier` or `earned` (SHOP-R22, HNT-R122), and its icon, the
 --- shop's swatch for it (HNT-R121): an in-client texture, or an earned binding's material.
@@ -50,6 +54,26 @@ ns.NO_TRACKER_FRAME = "hunts.trackerframe.none"
 
 --- How many completed runs earn Winner's Brocade and Winner's Ribbon (HNT-R122): the completed-run count's (HNT-R148).
 ns.WAGER_GOODS_RUNS = 10
+--- How many earn Nat's Study (HNT-R122): the last step of the ladder (ns.LADDER_STEPS).
+ns.WAGER_STUDY_RUNS = 100
+--- The completed runs each counted rule takes, for its earned text.
+ns.EARNED_RUNS = { wagerRuns = ns.WAGER_GOODS_RUNS, wagerCentury = ns.WAGER_STUDY_RUNS }
+
+--- A Hunt's last tier: three in every event Hunt of the pool, so the top of its ladder (HNT-R15, HNT-R122).
+ns.TOP_TIER = 3
+--- The night Wager events Nightfin Tide counts Hunts of (HNT-R122), and how many different Hunts of them, each at its top
+--- tier in some run, earn it: two may come from the same event.
+ns.NIGHT_TIDE_EVENTS = {
+	darkshore_moonlight = true,
+	felwood_moonglade = true,
+	dustwallow_marsh_night = true,
+	deadwind_pass_night = true,
+	eastern_plaguelands_night = true,
+	tirisfal_silverpine_dusk = true,
+}
+ns.NIGHT_TIDE_HUNTS = 3
+--- The event whose every Hunt, at its top tier in one run, earns The Deep Trench (HNT-R122).
+ns.DEEP_TRENCH_EVENT = "azshara_lobster"
 
 -- An earned binding of Hunts' (HNT-R122, ADR 0015), `hunts.binding.<key>`, earned by `earned`; its icon its material.
 ---@param key string
@@ -80,8 +104,8 @@ ns.HUNTS_GOODS = {
 }
 
 --- Hunts' goods in Core's slots (HNT-R122, HNT-R123, SHOP-R23): its three earned bindings, then Night Watch, earned
---- with every set's title. Core draws the bindings (ADR 0015) and plays the sound set (ANN-R72), and previews each with
---- its slot's preview; Hunts only says when each is owned.
+--- with every set's title, then its three toast styles. Core draws the bindings (ADR 0015) and the styles (ANN-R85) and
+--- plays the sound set (ANN-R72), and previews each with its slot's preview; Hunts only says when each is owned.
 ---@type { slot: string, goods: HuntsGoodData[] }[]
 ns.HUNTS_CORE_GOODS = {
 	{
@@ -96,6 +120,18 @@ ns.HUNTS_CORE_GOODS = {
 		slot = ns.CORE_SOUND_SET_SLOT,
 		goods = {
 			{ id = "hunts.soundset.nightwatch", earned = "everySetTitle", icon = ICONS .. "INV_Misc_Lantern_01" },
+		},
+	},
+	{
+		slot = ns.CORE_TOAST_STYLE_SLOT,
+		goods = {
+			{ id = "hunts.toaststyle.nightfin", earned = "nightTide", icon = ICONS .. "Spell_Nature_Moonglow" },
+			{
+				id = "hunts.toaststyle.trench",
+				earned = "deepTrench",
+				icon = ICONS .. "Spell_Frost_SummonWaterElemental",
+			},
+			{ id = "hunts.toaststyle.study", earned = "wagerCentury", icon = ICONS .. "INV_Misc_Book_09" },
 		},
 	},
 }
@@ -146,8 +182,61 @@ function ns.CompletedRunCount(state, celebrated)
 	return count
 end
 
--- Each rule (HNT-R122) over the projection's state and the celebrated set together, and the Hunt list's sets.
----@type table<HuntsEarnedRule, fun(state: HuntsState?, celebrated: HuntsCelebrated, sets: { id: string }[]): boolean>
+--- The IDs of the Hunts of the pool's event `eventID`, in file order (HNT-R141), or nil for an event it doesn't have: the
+--- default for the rules that read an event's Hunts.
+---@param eventID string
+---@return string[]?
+function ns.EventHuntIDs(eventID)
+	local event = ns.events and ns.events:Event(eventID)
+	if not event then
+		return nil
+	end
+	local ids = {}
+	for i, hunt in ipairs(event.hunts) do
+		ids[i] = hunt.id
+	end
+	return ids
+end
+
+--- A run's key's event ID (HNT-R142: `<eventID>@<start>`).
+---@param key string
+---@return string?
+local function eventOfKey(key)
+	return key:match("^(.+)@%d+$")
+end
+
+-- Every run the projection and the celebrated set together know (HNT-R145, HNT-R90), by run key, with its event and the
+-- highest tier each of its Hunts reached: the most of the projection's and the celebrated run's, so a rebuild that no
+-- longer reaches a tier shown doesn't lower it.
+---@param state HuntsState?
+---@param celebrated HuntsCelebrated
+---@return table<string, { event: string?, tiers: table<string, integer> }>
+local function runTiers(state, celebrated)
+	local runs = {}
+	for key, run in pairs(state and state.runs or {}) do
+		local tiers = {}
+		for huntID, progress in pairs(run.hunts) do
+			tiers[huntID] = #progress.reached
+		end
+		runs[key] = { event = run.event, tiers = tiers }
+	end
+	for key, run in pairs(celebrated.runs or {}) do
+		local entry = runs[key]
+		if not entry then
+			entry = { event = eventOfKey(key), tiers = {} }
+			runs[key] = entry
+		end
+		for huntID, tier in pairs(run.tiers or {}) do
+			entry.tiers[huntID] = math.max(entry.tiers[huntID] or 0, tier)
+		end
+	end
+	return runs
+end
+
+-- Each rule (HNT-R122) over the projection's state and the celebrated set together, the Hunt list's sets, and the Hunts
+-- of an event (ns.EventHuntIDs).
+---@alias HuntsEventHunts fun(eventID: string): string[]?
+---@type table<HuntsEarnedRule, fun(state: HuntsState?, celebrated: HuntsCelebrated, sets: { id: string }[], huntsOf: HuntsEventHunts): boolean>
 local RULES = {
 	-- Any set's title (HNT-R20).
 	anySetTitle = function(state, celebrated)
@@ -166,17 +255,63 @@ local RULES = {
 	wagerRuns = function(state, celebrated)
 		return ns.CompletedRunCount(state, celebrated) >= ns.WAGER_GOODS_RUNS
 	end,
+	-- ns.WAGER_STUDY_RUNS completed runs (HNT-R148).
+	wagerCentury = function(state, celebrated)
+		return ns.CompletedRunCount(state, celebrated) >= ns.WAGER_STUDY_RUNS
+	end,
+	-- ns.NIGHT_TIDE_HUNTS different Hunts of the night events, each at its top tier in some run (HNT-R145): the same
+	-- Hunt in two runs counts once, and two Hunts of one event count twice.
+	nightTide = function(state, celebrated)
+		local hunts, count = {}, 0
+		for _, run in pairs(runTiers(state, celebrated)) do
+			if run.event and ns.NIGHT_TIDE_EVENTS[run.event] then
+				for huntID, tier in pairs(run.tiers) do
+					if tier >= ns.TOP_TIER and not hunts[huntID] then
+						hunts[huntID] = true
+						count = count + 1
+					end
+				end
+			end
+		end
+		return count >= ns.NIGHT_TIDE_HUNTS
+	end,
+	-- One run of ns.DEEP_TRENCH_EVENT with every one of the event's Hunts at its top tier within it (HNT-R145): the
+	-- Hunts of different runs don't add up.
+	deepTrench = function(state, celebrated, _, huntsOf)
+		local hunts = huntsOf(ns.DEEP_TRENCH_EVENT)
+		if not hunts or #hunts == 0 then
+			return false
+		end
+		for _, run in pairs(runTiers(state, celebrated)) do
+			if run.event == ns.DEEP_TRENCH_EVENT then
+				local all = true
+				for _, huntID in ipairs(hunts) do
+					if (run.tiers[huntID] or 0) < ns.TOP_TIER then
+						all = false
+						break
+					end
+				end
+				if all then
+					return true
+				end
+			end
+		end
+		return false
+	end,
 }
 
 --- Whether `rule` holds (HNT-R122) over the projection's `state` (nil before it is built, or while it updates) and
---- the celebrated set together: any set's title, every one of `sets`' titles, or ns.WAGER_GOODS_RUNS completed runs.
+--- the celebrated set together: any set's title, every one of `sets`' titles, ns.WAGER_GOODS_RUNS or ns.WAGER_STUDY_RUNS
+--- completed runs, three Hunts of the night events at tier 3, or the lobster event's run at tier 3 in every Hunt.
+--- `huntsOf` gives an event's Hunt IDs (the pool's, ns.EventHuntIDs, by default).
 ---@param rule HuntsEarnedRule
 ---@param state HuntsState?
 ---@param celebrated HuntsCelebrated
 ---@param sets { id: string }[] the Hunt list's sets (HNT-R1)
+---@param huntsOf HuntsEventHunts?
 ---@return boolean
-function ns.HuntsGoodEarned(rule, state, celebrated, sets)
-	return RULES[rule](state, celebrated, sets)
+function ns.HuntsGoodEarned(rule, state, celebrated, sets, huntsOf)
+	return RULES[rule](state, celebrated, sets, huntsOf or ns.EventHuntIDs)
 end
 
 --- Whether earned good `goodID`, earned by `rule`, is owned (HNT-R122): the celebrated set's goods have it, or the
@@ -186,14 +321,15 @@ end
 ---@param state HuntsState?
 ---@param celebrated HuntsCelebrated
 ---@param sets { id: string }[] the Hunt list's sets (HNT-R1)
+---@param huntsOf HuntsEventHunts?
 ---@return boolean
-function ns.HuntsGoodOwned(goodID, rule, state, celebrated, sets)
+function ns.HuntsGoodOwned(goodID, rule, state, celebrated, sets, huntsOf)
 	local goods = celebrated.goods
-	return (goods ~= nil and goods[goodID] == true) or ns.HuntsGoodEarned(rule, state, celebrated, sets)
+	return (goods ~= nil and goods[goodID] == true) or ns.HuntsGoodEarned(rule, state, celebrated, sets, huntsOf)
 end
 
 --- Every one of Hunts' earned goods (HNT-R122), as `{ id, earned }`: its own slots' in their order, then its goods in
---- Core's slots.
+--- Core's slots, its toast styles last.
 ---@return { id: string, earned: HuntsEarnedRule }[]
 function ns.HuntsEarnedGoods()
 	local list = {}
@@ -215,12 +351,13 @@ end
 ---@param celebrated HuntsCelebrated its `goods` made with the first good noted
 ---@param state HuntsState?
 ---@param sets { id: string }[] the Hunt list's sets (HNT-R1)
+---@param huntsOf HuntsEventHunts?
 ---@return boolean
-function ns.NoteHuntsGoods(celebrated, state, sets)
+function ns.NoteHuntsGoods(celebrated, state, sets, huntsOf)
 	local noted = false
 	for _, good in ipairs(ns.HuntsEarnedGoods()) do
 		local goods = celebrated.goods
-		if not (goods and goods[good.id]) and ns.HuntsGoodEarned(good.earned, state, celebrated, sets) then
+		if not (goods and goods[good.id]) and ns.HuntsGoodEarned(good.earned, state, celebrated, sets, huntsOf) then
 			if type(goods) ~= "table" then
 				goods = {}
 				celebrated.goods = goods
@@ -236,8 +373,8 @@ end
 ---@param rule HuntsEarnedRule
 ---@return string
 function ns.HuntsEarnedText(rule)
-	-- Only wagerRuns' text has a number in it: the completed runs it takes.
-	return ns.L.EARNED_TEXT[rule]:format(ns.WAGER_GOODS_RUNS)
+	-- Only a completed-run rule's text has a number in it: the runs it takes.
+	return ns.L.EARNED_TEXT[rule]:format(ns.EARNED_RUNS[rule] or 0)
 end
 
 --- A good's name (HNT-R121): its lore, `huntgood.<goodID>.name` (HNT-R130), or its ID while the key has no text.

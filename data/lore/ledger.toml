@@ -756,6 +756,16 @@ description = "Cut from the white stone of a harbour city that never stops build
 name = "Iron Warband"
 description = "Hammered out under a red sky in a city built of iron and grudges. The braziers burn for the clan; the claw-marks are for whoever doubted the catch."
 
+# The epic toast styles the Ledger earns in Core's toast style slot (LED-R118, ANN-R85).
+
+[ledgergood."ledger.toaststyle.cartographer"] # core.toaststyle, earned: Master in 5 zones
+name = "Cartographer's Folio"
+description = "A chart that is never finished. Every water you have learned by heart is inked in: coast, hills, the soundings offshore. The rest stays in pencil, waiting."
+
+[ledgergood."ledger.toaststyle.gala"] # core.toaststyle, earned: Land all three Legends
+name = "Extravaganza Gala"
+description = "The night of the great contest, when the whole harbour strings up its lights and nobody goes home before the fireworks. This one is for the anglers who brought back all three."
+
 # The Prestige frames (LED-R154): each frame's name and the line its tooltip carries.
 
 [prestigeframe.none] # No Prestige

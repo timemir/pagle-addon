@@ -1684,6 +1684,91 @@ describe("ns.NewGoods", function()
 		end)
 	end)
 
+	describe("a good's stage count (ANN-R85)", function()
+		-- Hunts' earned cover with a stageCount that gives `counts.value`.
+		local function staged(counts)
+			local env = newGoods()
+			env.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Cover", category = "Trackers" })
+			local good = {
+				id = "hunts.cover.gold",
+				slot = "hunts.cover",
+				name = "Gold",
+				isEarned = function()
+					return false
+				end,
+				stageCount = function()
+					return counts.value
+				end,
+			}
+			assert.is_nil(env.goods:RegisterGood("Hunts", good))
+			return env
+		end
+
+		it("is the function's result, asked each time, owned or not, and never cached", function()
+			local counts = { value = 5 }
+			local env = staged(counts)
+
+			assert.are.equal(5, env.goods:StageCount("hunts.cover.gold"))
+			counts.value = 31
+			assert.are.equal(31, env.goods:StageCount("hunts.cover.gold"))
+			counts.value = 0
+			assert.are.equal(0, env.goods:StageCount("hunts.cover.gold"))
+			assert.is_nil(env.db.global.goods["hunts.cover.gold"].stageCount)
+		end)
+
+		it("is nothing for a good with none, an unregistered good and a Module that is off", function()
+			local env = newGoods()
+			env.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Cover", category = "Trackers" })
+			assert.is_nil(env.goods:RegisterGood("Hunts", {
+				id = "hunts.cover.gold",
+				slot = "hunts.cover",
+				name = "Gold",
+				isEarned = function()
+					return false
+				end,
+			}))
+			assert.is_nil(env.goods:StageCount("hunts.cover.gold"))
+			assert.is_nil(env.goods:StageCount("hunts.cover.nothing"))
+			assert.is_nil(env.goods:StageCount(nil))
+
+			local on = staged({ value = 5 })
+			assert.are.equal(5, on.goods:StageCount("hunts.cover.gold"))
+			on.on.Hunts = nil
+			assert.is_nil(on.goods:StageCount("hunts.cover.gold"))
+		end)
+
+		it("is nothing for a result that isn't a whole number from 0, or from a function that raises", function()
+			local counts = { value = -1 }
+			local env = staged(counts)
+			for _, value in ipairs({ -1, 2.5, "7", false }) do
+				counts.value = value
+				assert(env.goods:StageCount("hunts.cover.gold") == nil, tostring(value))
+			end
+
+			-- `call` reports a mistake and carries on (SHOP-R22), so a raising function gives nothing.
+			local reported = 0
+			local raising = newGoods(nil, function(fn)
+				if not pcall(fn) then
+					reported = reported + 1
+				end
+			end)
+			raising.goods:RegisterSlot("Hunts", { id = "hunts.cover", label = "Cover", category = "Trackers" })
+			assert.is_nil(raising.goods:RegisterGood("Hunts", {
+				id = "hunts.cover.gold",
+				slot = "hunts.cover",
+				name = "Gold",
+				isEarned = function()
+					return false
+				end,
+				stageCount = function()
+					error("no count")
+				end,
+			}))
+			assert.is_nil(raising.goods:StageCount("hunts.cover.gold"))
+			assert.is_true(reported > 0)
+		end)
+	end)
+
 	describe("registering an earnedCount, a fallbackTier and a fallbackFrom (SHOP-R23, SHOP-R36)", function()
 		local function register(good)
 			local env = newGoods()
@@ -1718,6 +1803,29 @@ describe("ns.NewGoods", function()
 			assert.matches(
 				"earnedCount must be a function, on an earned good",
 				register({ tier = 1, earnedCount = function() end })
+			)
+		end)
+
+		it("takes a stageCount function on an earned good, and caches nothing of it (ANN-R85)", function()
+			local problem, env = register({
+				isEarned = earned,
+				stageCount = function()
+					return 12
+				end,
+			})
+
+			assert.is_nil(problem)
+			assert.is_nil(env.db.global.goods["hunts.cover.gold"].stageCount)
+		end)
+
+		it("refuses a stageCount that isn't a function, or is on a good that isn't earned (ANN-R85)", function()
+			assert.matches(
+				"stageCount must be a function, on an earned good",
+				register({ isEarned = earned, stageCount = 5 })
+			)
+			assert.matches(
+				"stageCount must be a function, on an earned good",
+				register({ tier = 1, stageCount = function() end })
 			)
 		end)
 
