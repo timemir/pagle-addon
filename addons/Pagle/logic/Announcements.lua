@@ -5,10 +5,10 @@ local ns = select(2, ...)
 -- logic, fed the Announcements logic/Moments.lua merges, a clock and the player's budget setting (CORE-R7).
 -- adapter/Announcements.lua draws what it shows in the announcements art and plays the sounds it picks.
 
---- Seconds an entry stays once it has settled (announcements.md › The display queue; Tunables): a toast by its page
---- (logic/ToastStyles.lua's ns.ToastPage), a Nod, and a banner. A splash stays SPLASH_SECONDS, or until clicked.
-ns.HOLD_SECONDS =
-	{ low = 4, ["low-ruled"] = 5, toast = 6, ["toast-ruled"] = 6, high = 8, digest = 8, nod = 3, banner = 4.5 }
+--- Seconds an entry stays once it has settled (announcements.md › The display queue; Tunables): a toast (6 s for every
+--- rung, ruled or not, as every toast is drawn full size; "While you were fighting" 8 s), a Nod, and a banner. A splash
+--- stays SPLASH_SECONDS, or until clicked.
+ns.HOLD_SECONDS = { toast = 6, digest = 8, nod = 3, banner = 4.5 }
 --- Seconds after it appears that each form's entry motion settles (announcements.md › Motion): its hold starts then.
 ns.SETTLE_SECONDS = { toast = 2.7, nod = 0.3, banner = 1.4 }
 --- Seconds a splash stays unless clicked (ANN-R20).
@@ -688,17 +688,12 @@ function Lanes:showCentre(announcement, form)
 	self:schedule(display, seconds)
 end
 
--- How long a toast holds once settled (ANN-R20): "While you were fighting" and a toast.high 8 s, whatever page it is
--- drawn on (a ruled toast.high is on the ruled toast page); any other toast its page's hold.
+-- How long a toast holds once settled (ANN-R20): "While you were fighting" 8 s, any other toast 6 s whatever its rung
+-- (a toast.low, the catch toast, a toast.high) or page.
 ---@param announcement PagleAnnouncement
 ---@return number
 local function toastHold(announcement)
-	if announcement.fighting then
-		return ns.HOLD_SECONDS.digest
-	elseif announcement.headline.rung == "toast.high" then
-		return ns.HOLD_SECONDS.high
-	end
-	return ns.HOLD_SECONDS[ns.ToastPage(announcement).page]
+	return announcement.fighting and ns.HOLD_SECONDS.digest or ns.HOLD_SECONDS.toast
 end
 
 -- Puts a toast or a Nod at the foot of the column until its time is up: it settles, then stays its hold, a toast's

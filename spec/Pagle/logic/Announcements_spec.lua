@@ -8,7 +8,7 @@ local newClock = dofile("spec/support/timers.lua").newClock
 local SOUNDS = "Interface\\AddOns\\Pagle\\media\\sounds\\"
 -- How long each entry stays from when it appears (its motion settles, then its hold): a toast on its page, a Nod and
 -- a banner, whose place frees LEAVE once it has left.
-local TOAST, LOW, HIGH, NOD, BANNER, LEAVE = 8.7, 6.7, 10.7, 3.3, 5.9, 0.5
+local TOAST, DIGEST, NOD, BANNER, LEAVE = 8.7, 10.7, 3.3, 5.9, 0.5
 
 -- Lanes over a fake clock. `world.visible` is what is on screen now, in the order it appeared; `world.log` every show
 -- and hide as "show <form> <title>" / "hide <form> <title>"; `world.played` each sound path. `world.budget` is the
@@ -143,43 +143,42 @@ describe("the display queue", function()
 	end)
 
 	it(
-		"holds a toast.low 4 s, a ruled one 5 s and a toast.high 8 s, ruled or not, once each has settled at 2.7 s"
-			.. " (ANN-R20)",
+		"holds every toast 6 s once it has settled at 2.7 s, whatever its rung, ruled or not: a toast.low, the catch"
+			.. " toast's, a toast and a toast.high alike (ANN-R20)",
 		function()
 			local RULER = { old = 1, new = 2, unit = "lb", label = "weight" }
 			local stays = {}
 			local cases = {
-				{ "toast.low", LOW },
-				{ "toast.low", LOW + 1, RULER },
-				{ "toast.high", HIGH },
-				{ "toast.high", HIGH, RULER }, -- drawn on the ruled toast page, held as its rung
+				{ "toast.low" },
+				{ "toast.low", RULER },
+				{ "toast" },
+				{ "toast", RULER },
+				{ "toast.high" },
+				{ "toast.high", RULER },
 			}
 			for _, case in ipairs(cases) do
 				local world = newWorld()
-				world.lanes:Push(announcement(case[1], "Toast", { ruler = case[3] }))
-				world.advance(case[2] - 0.01)
+				world.lanes:Push(announcement(case[1], "Toast", { ruler = case[2] }))
+				world.advance(TOAST - 0.01)
 				local before = #column(world)
 				world.advance(0.01)
 				stays[#stays + 1] = { before, #column(world) }
 			end
 
-			assert.are.same({ { 1, 0 }, { 1, 0 }, { 1, 0 }, { 1, 0 } }, stays)
+			assert.are.same({ { 1, 0 }, { 1, 0 }, { 1, 0 }, { 1, 0 }, { 1, 0 }, { 1, 0 } }, stays)
 		end
 	)
 
-	it(
-		"holds a new variety's own toast.low as a toast's page does, 6 s, not a toast.low's 4 s (#422, ANN-R20)",
-		function()
-			local world = newWorld()
+	it("holds a new variety's own toast.low 6 s, as every toast (#422, ANN-R20)", function()
+		local world = newWorld()
 
-			world.lanes:Push(announcement("toast.low", "New variety", { ownStamp = true }))
-			world.advance(TOAST - 0.01)
-			local before = #column(world)
-			world.advance(0.01)
+		world.lanes:Push(announcement("toast.low", "New variety", { ownStamp = true }))
+		world.advance(TOAST - 0.01)
+		local before = #column(world)
+		world.advance(0.01)
 
-			assert.are.same({ 1, 0 }, { before, #column(world) })
-		end
-	)
+		assert.are.same({ 1, 0 }, { before, #column(world) })
+	end)
 
 	it(
 		"stacks at most 3 toasts in the column, the newest at its foot; the rest wait in order, a Nod too, and come"
@@ -205,7 +204,7 @@ describe("the display queue", function()
 		end
 
 		assert.are.same({ "toast Hunt 2", "toast Hunt 1" }, column(world))
-		world.advance(HIGH)
+		world.advance(TOAST)
 		assert.are.same({ "toast Hunt 3" }, column(world))
 	end)
 
@@ -617,11 +616,11 @@ describe("the combat hold", function()
 		world.lanes:Push(announcement("nod", "New here"))
 		world.lanes:Release()
 		world.advance(2)
-		world.advance(HIGH) -- the digest holds as long as a toast.high
+		world.advance(DIGEST) -- the digest holds 8 s
 
 		world.lanes:Push(announcement("toast.low", "Size record"))
 		assert.are.same({ "toast Size record" }, column(world))
-		world.advance(LOW)
+		world.advance(TOAST)
 		world.lanes:Push(announcement("toast.low", "New junk"))
 
 		assert.are.same({ "nod New junk" }, column(world))
@@ -831,9 +830,9 @@ describe("the catch toast in the lanes (ANN-R13, #437)", function()
 		world.budget = { on = true, count = 2, window = 300 }
 
 		world.lanes:Push(catchToast("Catch 1"))
-		world.advance(LOW)
+		world.advance(TOAST)
 		world.lanes:Push(catchToast("Catch 2"))
-		world.advance(LOW)
+		world.advance(TOAST)
 
 		assert.are.same(
 			{ "show toast Catch 1", "hide toast Catch 1", "show toast Catch 2", "hide toast Catch 2" },
@@ -842,13 +841,36 @@ describe("the catch toast in the lanes (ANN-R13, #437)", function()
 		assert.are.same({ SOUNDS .. "driftwood\\toast_1.ogg", SOUNDS .. "driftwood\\toast_2.ogg" }, world.played)
 	end)
 
+	it(
+		"takes three full-size toasts to fill the column, each 6 s: a burst of catches queues the rest in turn, a Nod"
+			.. " behind them (ANN-R20)",
+		function()
+			local world = newWorld()
+			world.budget.on = false
+			for i = 1, 5 do
+				world.lanes:Push(catchToast("Catch " .. i))
+			end
+			world.lanes:Push(announcement("nod", "New here"))
+
+			-- 3 x 92 and their gaps are the 300 units: the 4th and 5th catch and the Nod wait their turn, in order.
+			assert.are.same({ "toast Catch 3", "toast Catch 2", "toast Catch 1" }, column(world))
+			world.advance(TOAST - 0.01)
+			assert.are.same({ "toast Catch 3", "toast Catch 2", "toast Catch 1" }, column(world))
+			-- The three came together, so they go together; the next two and the Nod follow them in, in order.
+			world.advance(0.01 + LEAVE)
+			assert.are.same({ "nod New here", "toast Catch 5", "toast Catch 4" }, column(world))
+			world.advance(TOAST + LEAVE)
+			assert.are.same({}, column(world))
+		end
+	)
+
 	it("steps down to a Nod, silent and uncounted, once the budget is spent (ANN-R31)", function()
 		local world = newWorld()
 		world.budget = { on = true, count = 2, window = 300 }
 		world.lanes:Push(catchToast("Catch 1"))
-		world.advance(LOW)
+		world.advance(TOAST)
 		world.lanes:Push(catchToast("Catch 2"))
-		world.advance(LOW)
+		world.advance(TOAST)
 
 		world.lanes:Push(catchToast("Catch 3"))
 		world.advance(NOD)

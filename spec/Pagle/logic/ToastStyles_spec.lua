@@ -62,9 +62,10 @@ local ROUND_THREE = {
 	["core.toaststyle.arcane"] = "Toasts2Arcane",
 	["core.toaststyle.pirate"] = "Toasts2Pirate",
 }
-local PAGES = { "low", "low-ruled", "toast", "toast-ruled", "high", "digest" }
+local PAGES = { "toast", "toast-ruled", "high", "digest" }
 
--- The page `name` (logic/ToastStyles.lua's pages), from a headline on its rung.
+-- The page `name` (logic/ToastStyles.lua's pages), from a headline on its rung; "low" is toast.low's, which draws on
+-- toast's page like any other (ANN-R80).
 local function pageOf(name)
 	local rung = ({ low = "toast.low", toast = "toast", high = "toast.high" })[name]
 	return ns.ToastPage({ headline = { rung = rung, title = "T" } })
@@ -101,8 +102,9 @@ describe("the toast styles", function()
 	)
 
 	it(
-		"each draw the toasts and Nods from an atlas of their own, which has every page and the strip, the expansion's"
-			.. " at 1.5 texels a unit with a medallion ring at each bezel size (ANN-R80, ANN-R81, Tunables)",
+		"each draw the toasts and Nods from an atlas of their own, which has every page and the strip but no slim"
+			.. " toast.low page, the expansion's at 1.5 texels a unit with a medallion ring at each bezel size (ANN-R80,"
+			.. " ANN-R81, Tunables)",
 		function()
 			for _, atlases in ipairs({ FIRST, RINGED }) do
 				for id, atlasName in pairs(atlases) do
@@ -113,6 +115,8 @@ describe("the toast styles", function()
 						assert.is_table(atlas.sprites["toast-" .. name])
 					end
 					assert.is_table(atlas.sprites["nod-strip"])
+					assert(atlas.sprites["toast-low"] == nil, id)
+					assert(atlas.sprites["toast-low-ruled"] == nil, id)
 					assert.are.equal(atlases == RINGED and 1.5 or 2, atlas.scale, id)
 					assert.are.equal(atlases == RINGED, style.ring == true, id)
 					if style.ring then
@@ -161,7 +165,7 @@ describe("the toast styles", function()
 				end
 				assert.is_table(ns.ATLASES.Announce.sprites[style.stamp])
 				local roles = { style.stampInk }
-				for _, page in ipairs({ pageOf("low"), pageOf("toast"), pageOf("high"), nil }) do
+				for _, page in ipairs({ pageOf("toast"), pageOf("high"), nil }) do
 					local inks = ns.ToastInks(style, page)
 					for _, role in ipairs({ inks.what, inks.name, inks.amt, inks.label, inks.value }) do
 						roles[#roles + 1] = role
@@ -212,7 +216,7 @@ describe("the toast styles", function()
 
 	it(
 		"ink the expansion's styles as the kit's goods.json has them: kicker, name, stamp and Coins, and its own"
-			.. " toast.high and toast.low inks where it has them (ANN-R81)",
+			.. " toast.high inks where it has them, a toast.low in the toast's inks (ANN-R81)",
 		function()
 			local ship = ns.ToastStyleOf("core.toaststyle.ship")
 			local moon = ns.ToastStyleOf("core.toaststyle.moon")
@@ -224,15 +228,14 @@ describe("the toast styles", function()
 
 			assert.are.same({ ns.Rgb("1F3A5A"), ns.Rgb("14202E"), ns.Rgb("7A5410") }, inksOf(ship, pageOf("toast")))
 			assert.are.same({ ns.Rgb("1F3A6A"), "stamp-blue" }, { ink(ship.stampInk), ship.stamp })
-			-- Ship's Log has no toast.high or toast.low inks of its own: the gilt kicker, and pencil.
-			assert.are.same({ ink("giltDeep"), ink("pencil"), ink("pencilName"), ink("amtLow") }, {
+			-- Ship's Log has no toast.high inks of its own: the gilt kicker. A toast.low is drawn on toast's page, in its
+			-- inks: no pencil.
+			assert.are.same({ ink("giltDeep"), inksOf(ship, pageOf("toast")) }, {
 				ink(ns.ToastInks(ship, pageOf("high")).what),
-				ink(ns.ToastInks(ship, pageOf("low")).what),
-				ink(ns.ToastInks(ship, pageOf("low")).name),
-				ink(ns.ToastInks(ship, pageOf("low")).amt),
+				inksOf(ship, pageOf("low")),
 			})
 			-- Moonlit Vellum writes in silver on night-blue: its own inks on every page, the Nod's too.
-			assert.are.same({ ns.Rgb("C8D0E8"), ns.Rgb("E8ECF8"), ns.Rgb("C8D0E8") }, inksOf(moon, pageOf("low")))
+			assert.are.same({ ns.Rgb("B8C8F0"), ns.Rgb("F2F4FF"), ns.Rgb("E8D080") }, inksOf(moon, pageOf("low")))
 			assert.are.same({ ns.Rgb("E8EEFF"), ns.Rgb("F2F4FF"), ns.Rgb("E8D080") }, inksOf(moon, pageOf("high")))
 			assert.are.same({ ns.Rgb("B8C8F0"), ns.Rgb("F2F4FF"), ns.Rgb("E8D080") }, inksOf(moon))
 			assert.are.same(ns.Rgb("E8B830"), ink(ns.ToastInks(folio, pageOf("high")).what))
@@ -247,7 +250,7 @@ describe("the toast styles", function()
 		function()
 			local function rulerInks(id)
 				local style, out = ns.ToastStyleOf(id), {}
-				for _, page in ipairs({ pageOf("low"), pageOf("toast"), pageOf("high") }) do
+				for _, page in ipairs({ pageOf("toast"), pageOf("high") }) do
 					local inks = ns.ToastInks(style, page)
 					out[#out + 1] = { ink(inks.label), ink(inks.value) }
 				end
@@ -256,7 +259,7 @@ describe("the toast styles", function()
 				return out
 			end
 			local function each(label, value)
-				return { { label, value }, { label, value }, { label, value }, { label, value } }
+				return { { label, value }, { label, value }, { label, value } }
 			end
 
 			-- Moonlit Vellum and Oxblood Vellum: light ink on a dark page.
@@ -316,32 +319,39 @@ describe("a toast's page", function()
 	end
 	local RULER = { old = 1, new = 2, unit = "lb", label = "w" }
 
-	it("is by rung: pencil for toast.low, the plain page for toast, gilt and wax for toast.high", function()
-		assert.are.same({ "low", "toast", "high" }, {
+	it("is by rung: the plain page for toast.low and toast, gilt and wax for toast.high (ANN-R80)", function()
+		assert.are.same({ "toast", "toast", "high" }, {
 			ns.ToastPage(announcement("toast.low")).page,
 			ns.ToastPage(announcement("toast")).page,
 			ns.ToastPage(announcement("toast.high")).page,
 		})
-		assert.are.same(
-			{ true, true },
-			{ ns.ToastPage(announcement("toast.low")).low, ns.ToastPage(announcement("toast.high")).high }
-		)
+		assert.is_true(ns.ToastPage(announcement("toast.high")).high)
 	end)
 
 	it(
-		"is toast's for a variety's own toast.low (ownStamp), whatever its rung says otherwise (#422, VAR-R28)",
+		"is full size for every toast.low, the catch toast included: 464 x 92 with the 84 medallion (ANN-R80)",
 		function()
-			assert.are.same({ "toast", 92, 464, "toast" }, {
-				ns.ToastPage(announcement("toast.low", { ownStamp = true })).page,
-				ns.ToastPage(announcement("toast.low", { ownStamp = true })).h,
-				ns.ToastPage(announcement("toast.low", { ownStamp = true })).w,
-				ns.ToastPage(announcement("toast", { ownStamp = true })).page,
-			})
+			for _, fields in ipairs({ {}, { kind = "catch", catchToast = true }, { ownStamp = true } }) do
+				local page = ns.ToastPage(announcement("toast.low", fields))
+				assert.are.same({ "toast", 464, 92, 84 }, { page.page, page.w, page.h, page.bezel })
+			end
 		end
 	)
 
+	it("has no slim page, and no pencil or toast.low inks to write on one (ANN-R80)", function()
+		for _, ruler in ipairs({ false, true }) do
+			assert.is_nil(ns.ToastPage(announcement("toast.low", { ruler = ruler and RULER or nil })).low)
+		end
+		for _, role in ipairs({ "pencilName", "amtLow" }) do
+			assert(ns.ANNOUNCE_COLORS[role] == nil, role)
+		end
+		for _, style in pairs(ns.TOAST_STYLES) do
+			assert(style.lowWhat == nil and style.lowName == nil and style.lowAmt == nil, style.id)
+		end
+	end)
+
 	it("is ruled for a headline with a record ruler, toast.high's on the toast's ruled page (ANN-R22)", function()
-		assert.are.same({ "low-ruled", "toast-ruled", "toast-ruled" }, {
+		assert.are.same({ "toast-ruled", "toast-ruled", "toast-ruled" }, {
 			ns.ToastPage(announcement("toast.low", { ruler = RULER })).page,
 			ns.ToastPage(announcement("toast", { ruler = RULER })).page,
 			ns.ToastPage(announcement("toast.high", { ruler = RULER })).page,
@@ -721,8 +731,8 @@ end)
 
 describe("the round two's composed toast styles", function()
 	it(
-		"draw from layers of their own atlas, keyed by good ID, a rung each for toast, toast.high, toast.low and the"
-			.. " Nod, at 1.5 texels a unit, in a BLP the package ships (ANN-R82)",
+		"draw from layers of their own atlas, keyed by good ID, a rung each for toast, toast.high and the Nod,"
+			.. " none for the slim toast.low, at 1.5 texels a unit, in a BLP the package ships (ANN-R82)",
 		function()
 			for id, atlasName in pairs(COMPOSED) do
 				local style = ns.ToastStyleOf(id)
@@ -734,7 +744,7 @@ describe("the round two's composed toast styles", function()
 				local file = assert(io.open("addons/Pagle/media/announce/" .. atlasName .. ".blp", "rb"), atlasName)
 				assert.are.equal("BLP2", file:read(4))
 				file:close()
-				for _, rung in ipairs({ "toast", "high", "low", "nod" }) do
+				for _, rung in ipairs({ "toast", "high", "nod" }) do
 					local art = style.art.rungs[rung]
 					assert(#art.layers > 0, id .. " " .. rung)
 					for _, layer in ipairs(art.layers) do
@@ -772,11 +782,11 @@ describe("the round two's composed toast styles", function()
 			local storm = ns.ToastStyleOf(STORM)
 
 			assert.are.same({
-				what = STORM .. ".low.what",
-				name = STORM .. ".low.name",
-				amt = STORM .. ".low.amt",
-				label = STORM .. ".low.small",
-				value = STORM .. ".low.small",
+				what = STORM .. ".toast.what",
+				name = STORM .. ".toast.name",
+				amt = STORM .. ".toast.amt",
+				label = STORM .. ".toast.small",
+				value = STORM .. ".toast.small",
 			}, ns.ToastInks(storm, pageOf("low")))
 			assert.are.same({
 				what = STORM .. ".nod.what",
@@ -793,12 +803,12 @@ describe("the round two's composed toast styles", function()
 	)
 
 	it(
-		"draw toast.low's pages from the low rung, toast.high's from the high, the rest from the toast's (ANN-R82)",
+		"draw toast.high's page from the high rung and every other, toast.low's included, from the toast's (ANN-R82)",
 		function()
 			local ruled = ns.ToastPage({ headline = { rung = "toast.low", title = "T", ruler = {} } })
 			local digest = ns.ToastPage({ fighting = {}, headline = { rung = "toast", title = "T" } })
 
-			assert.are.same({ "low", "toast", "high", "nod", "low", "toast" }, {
+			assert.are.same({ "toast", "toast", "high", "nod", "toast", "toast" }, {
 				ns.ToastRungKey(pageOf("low")),
 				ns.ToastRungKey(pageOf("toast")),
 				ns.ToastRungKey(pageOf("high")),
@@ -817,8 +827,15 @@ describe("the round two's composed toast styles", function()
 		assert.is_nil(deep.art.rungs.high.stamp)
 		assert.are.same({ toast.sprite, toast.y, toast.w }, { high.sprite, high.y, high.w })
 		assert.is_true(math.abs((464 - (toast.x + toast.w)) - (524 - (high.x + high.w))) < 1e-9)
-		local glass = ns.ToastStyleOf("ledger.toaststyle.glass")
-		assert.are.equal(glass.art.rungs.low.stamp, ns.ToastStampArt(glass, pageOf("low")))
+	end)
+
+	it("have no toast.low rung or `low-*` sprite: every toast is drawn full size (ANN-R80, ANN-R82)", function()
+		for id, art in pairs(ns.TOAST_STYLE_ART2) do
+			assert(art.rungs.low == nil, id)
+			for name in pairs(ns.ATLASES[art.atlas].sprites) do
+				assert(name:find("^low%-") == nil, id .. " " .. name)
+			end
+		end
 	end)
 
 	it(
@@ -1022,8 +1039,8 @@ end)
 
 describe("the round three's composed toast styles", function()
 	it(
-		"are Core's, for sale, and draw as the round two's do: their own atlas, a rung each for toast, toast.high,"
-			.. " toast.low and the Nod, at 1.5 texels a unit, in a BLP the package ships (ANN-R84, ANN-R82)",
+		"are Core's, for sale, and draw as the round two's do: their own atlas, a rung each for toast, toast.high"
+			.. " and the Nod, at 1.5 texels a unit, in a BLP the package ships (ANN-R84, ANN-R82)",
 		function()
 			for id, atlasName in pairs(ROUND_THREE) do
 				local style = ns.ToastStyleOf(id)
@@ -1035,7 +1052,7 @@ describe("the round three's composed toast styles", function()
 				local file = assert(io.open("addons/Pagle/media/announce/" .. atlasName .. ".blp", "rb"), atlasName)
 				assert.are.equal("BLP2", file:read(4))
 				file:close()
-				for _, rung in ipairs({ "toast", "high", "low", "nod" }) do
+				for _, rung in ipairs({ "toast", "high", "nod" }) do
 					local art = style.art.rungs[rung]
 					assert(#art.layers > 0, id .. " " .. rung)
 					for _, layer in ipairs(art.layers) do

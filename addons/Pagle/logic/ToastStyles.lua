@@ -32,10 +32,8 @@ ns.ANNOUNCE_COLORS = {
 	ink2 = rgb("5A3A1C"), -- a size after the name, a ruler's label
 	red = rgb("7A2A1A"), -- the printed kicker
 	stamp = rgb("B4281A"), -- the rubber stamps' ink, a ruler's gain
-	pencil = rgb("4A4844"), -- toast.low's kicker, the old record, "+N more"
-	pencilName = rgb("3E3C38"), -- toast.low's name
+	pencil = rgb("4A4844"), -- the old record, "+N more"
 	amt = rgb("7A5410"), -- the Coins beside a coin
-	amtLow = rgb("6A6458"), -- toast.low's Coins
 	gilt = rgb("F0CD6A"), -- over the world: banners, the card's head
 	giltDeep = rgb("B98A26"), -- toast.high's kicker
 	cream = rgb("EFE0BB"), -- a banner's handwritten line
@@ -55,8 +53,8 @@ ns.ANNOUNCE_COLORS = {
 
 --- A toast style: its toast and Nod atlas, its medallions' ring (the shared trim, a toast.high's own, or its own ring
 --- in its atlas), the rubber stamp sprite and its ink, and the page's inks, each a role in ns.ANNOUNCE_COLORS: the
---- kicker and name, the Coins', toast.high's kicker and toast.low's, the size ruler's label and number (`small`),
---- each the ledger's own where the style has none (ns.ToastInks), and the tint of toast.high's wax, over its grey with `waxDesaturated`.
+--- kicker and name, the Coins', toast.high's kicker, the size ruler's label and number (`small`), each the ledger's
+--- own where the style has none (ns.ToastInks), and the tint of toast.high's wax, over its grey with `waxDesaturated`.
 ---@class PagleToastStyle
 ---@field id string
 ---@field atlas string
@@ -71,9 +69,6 @@ ns.ANNOUNCE_COLORS = {
 ---@field name string
 ---@field amt? string
 ---@field highWhat? string
----@field lowWhat? string
----@field lowName? string
----@field lowAmt? string
 ---@field small? string                    -- the size ruler's label and number, for a dark page (ANN-R81)
 ---@field wax? string
 ---@field waxDesaturated? true
@@ -229,9 +224,6 @@ local RINGED = {
 			stampInk = "DFE6FF",
 			amt = "E8D080",
 			highWhat = "E8EEFF",
-			lowWhat = "C8D0E8",
-			lowName = "E8ECF8",
-			lowAmt = "C8D0E8",
 			small = "B0BCD8",
 			wax = "58A3FF",
 		},
@@ -278,9 +270,6 @@ local RINGED = {
 			stampInk = "3A1E06",
 			amt = "2A1404",
 			highWhat = "5A2A06",
-			lowWhat = "3A1E06",
-			lowName = "1E1004",
-			lowAmt = "3A1E06",
 			wax = "FF803C",
 			small = "3A1E06",
 		},
@@ -327,9 +316,6 @@ local RINGED = {
 			stampInk = "F0CD6A",
 			amt = "F0CD6A",
 			highWhat = "FFF1B8",
-			lowWhat = "E8C890",
-			lowName = "FBEFD0",
-			lowAmt = "E8C890",
 			small = "E0C8A0",
 			wax = "D9D9D9",
 		},
@@ -412,7 +398,7 @@ end
 
 ---@class PagleToastArt2
 ---@field atlas string
----@field rungs table<"toast"|"high"|"low"|"nod", PagleToastRung>
+---@field rungs table<"toast"|"high"|"nod", PagleToastRung>
 
 for id, art in pairs(ns.TOAST_STYLE_ART2 or {}) do
 	for rungName, rung in pairs(art.rungs) do
@@ -454,15 +440,15 @@ function ns.ToastLayerAnimations(motion, landing, apply)
 	return ns.LayerAnimations(motion, landing, apply, ns.TOAST_MOTION_ONCE[motion.keyframes])
 end
 
---- The rung of a composed style's art a page is drawn from (ANN-R82): toast.low's pages from its low rung, toast.high's
---- from its high one, every other page from its toast rung; with no page, the Nod's.
+--- The rung of a composed style's art a page is drawn from (ANN-R82): toast.high's page from its high rung, every other
+--- page from its toast rung (toast.low's toasts are drawn full size, ANN-R80); with no page, the Nod's.
 ---@param page PagleToastPage?
----@return "toast"|"high"|"low"|"nod"
+---@return "toast"|"high"|"nod"
 function ns.ToastRungKey(page)
 	if not page then
 		return "nod"
 	end
-	return page.low and "low" or page.high and "high" or "toast"
+	return page.high and "high" or "toast"
 end
 
 --- A composed style's rung for a page (ns.ToastRungKey), or nil for a style that isn't composed.
@@ -492,8 +478,8 @@ function ns.ToastInk(style, page, field)
 	return nil, nil
 end
 
---- A composed style's stamp on a rung (ANN-R82): its own, or its toast rung's kept as far from the right edge (the kit
---- gives only Chapel Glass a toast.low stamp of its own, and the Nod none).
+--- A composed style's stamp on a rung (ANN-R82): its own, or its toast rung's kept as far from the right edge (the Nod
+--- has none of its own).
 ---@param style PagleToastStyle
 ---@param page PagleToastPage?
 ---@return PagleToastStamp
@@ -573,9 +559,9 @@ function ns.BezelRing(style, size, high)
 end
 
 --- The inks a style writes in on `page` (ANN-R80, ANN-R81), each a role in ns.ANNOUNCE_COLORS: the kicker, the name,
---- the Coins, and the size ruler's label and number. toast.low is in pencil and toast.high's kicker gilt, unless the
---- style has its own; the ruler's label and number are in the style's `small` on every page, the Nod's number too, or
---- in the ledger's inks for a style without one. With no page, the Nod's.
+--- the Coins, and the size ruler's label and number. toast.high's kicker is gilt, unless the style has its own; the
+--- ruler's label and number are in the style's `small` on every page, the Nod's number too, or in the ledger's inks
+--- for a style without one. With no page, the Nod's.
 ---@param style PagleToastStyle
 ---@param page PagleToastPage?
 ---@return { what: string, name: string, amt: string, label: string, value: string }
@@ -595,15 +581,6 @@ function ns.ToastInks(style, page)
 		}
 	end
 	local label, value = style.small or "ink2", style.small or "ink"
-	if page and page.low then
-		return {
-			what = style.lowWhat or "pencil",
-			name = style.lowName or "pencilName",
-			amt = style.lowAmt or "amtLow",
-			label = label,
-			value = value,
-		}
-	end
 	return {
 		what = page and page.high and (style.highWhat or "giltDeep") or style.what,
 		name = style.name,
@@ -614,7 +591,7 @@ function ns.ToastInks(style, page)
 end
 
 --- A toast's page: its art (the sprite "toast-<page>" in the style's atlas) and its layout, in UI units: its size, the
---- medallion's size and left, the words' left and top, and the coin's size. `low` is pencil, `high` gilt and wax.
+--- medallion's size and left, the words' left and top, and the coin's size. `high` is gilt and wax.
 ---@class PagleToastPage
 ---@field page string
 ---@field w number
@@ -624,26 +601,12 @@ end
 ---@field tx number
 ---@field ty number
 ---@field coin number
----@field low boolean?
 ---@field high boolean?
 ---@field ruled boolean?
 ---@field digest boolean?
 
 ---@type table<string, PagleToastPage>
 local PAGES = {
-	["low"] = { page = "low", w = 404, h = 74, bezel = 64, bx = 6, tx = 86, ty = 10, coin = 30, low = true },
-	["low-ruled"] = {
-		page = "low-ruled",
-		w = 470,
-		h = 122,
-		bezel = 64,
-		bx = 6,
-		tx = 86,
-		ty = 10,
-		coin = 30,
-		low = true,
-		ruled = true,
-	},
 	["toast"] = { page = "toast", w = 464, h = 92, bezel = 84, bx = 4, tx = 138, ty = 12, coin = 42 },
 	["toast-ruled"] = {
 		page = "toast-ruled",
@@ -668,8 +631,7 @@ end
 
 --- The page a toast is drawn on (announcements.md › UI): "While you were fighting" on the digest page; a headline with
 --- a record ruler on a ruled page (a toast.high's on toast's, the high page having no room for one); else by its
---- rung, toast.low on the pencil page and toast.high on the gilt one, except a variety's own toast (an `ownStamp`
---- headline, VAR-R28), which is on toast's whatever its rung.
+--- rung, toast.high on the gilt page and every other toast, toast.low's (the catch toast's) included, on toast's.
 ---@param announcement PagleAnnouncement
 ---@return PagleToastPage
 function ns.ToastPage(announcement)
@@ -677,9 +639,7 @@ function ns.ToastPage(announcement)
 		return PAGES.digest
 	end
 	local rung, ruled = announcement.headline.rung, announcement.headline.ruler ~= nil
-	if rung == "toast.low" and not announcement.headline.ownStamp then
-		return ruled and PAGES["low-ruled"] or PAGES.low
-	elseif rung == "toast.high" and not ruled then
+	if rung == "toast.high" and not ruled then
 		return PAGES.high
 	end
 	return ruled and PAGES["toast-ruled"] or PAGES.toast

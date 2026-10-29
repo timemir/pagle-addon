@@ -656,8 +656,8 @@ describe("ns.CatchToastMoment", function()
 	local CORAL = { id = "6359.coral", index = 2, rarity = "common" }
 
 	it(
-		"names its Catch's variety after the fish's name on its text, carries the Nod's line cut about the name and the"
-			.. " variety's art (VAR-R26)",
+		"names its Catch's variety after the fish's name on its text and carries the Nod's line cut about the name, but"
+			.. " no art: its medallion keeps the item's icon (VAR-R26)",
 		function()
 			local cast = caughtCast({ { 6359, { length = 342, band = 2 }, CORAL } })
 
@@ -669,15 +669,14 @@ describe("ns.CatchToastMoment", function()
 				{ name = "Coral", rarity = "common", before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
 				toast.variety
 			)
-			assert.are.same(CORAL_ART, toast.art)
-			-- A copy: Core's lists are shared (CORE-R18).
-			assert.are_not.equal(CORAL_ART, toast.art)
+			-- The variety's art fills a medallion only on its own moment (VAR-R25, VAR-R26): the Catch's item shows here.
+			assert.is_nil(toast.art)
 			assert.are.same({ 6359, "toast.low", nil }, { toast.icon, toast.rung, toast.sound })
 			assert.is_nil(ns.MomentProblem(toast))
 		end
 	)
 
-	it("names a variety with no art by name alone, keeping the item's icon (VAR-R26)", function()
+	it("names a variety with no art by name alone, as it does one with art (VAR-R26)", function()
 		local cast = caughtCast({ { 6359, { length = 342, band = 2 }, { id = "6359.flame-finned", index = 1 } } })
 		cast.items[1].variety.rarity = "common"
 

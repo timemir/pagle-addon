@@ -163,16 +163,19 @@ describe("a toast in a composed toast style", function()
 			})
 			assert.are.same({ "TOPLEFT", toast.body, "TOPLEFT", rung.icon.x, -rung.icon.y }, { toast.bezel:GetPoint() })
 			assert.are.same({ rung.icon.w, rung.icon.w }, { toast.bezel.Icon.width, toast.bezel.Icon.height })
-			-- Its kicker and name block centred down the page, as the medallion is (#424).
-			local block = rung.inks.what.size + 5 + rung.inks.name.size
+			-- Its kicker and name block centred down the page, as the medallion is (#424), by what its two lines measure
+			-- (the fake's are a flat 14 each, with a gap of 5), not by their fonts' sizes (#467).
+			local block = 14 + 5 + 14
 			assert.are.same(
 				{ "TOPLEFT", toast.body, "TOPLEFT", rung.text.x, -(toast.body:GetHeight() - block) / 2 },
 				{ toast.title:GetPoint() }
 			)
-			-- Its kicker in its own small caps, as written; its name in its hand and ink.
+			-- Its kicker in its own small caps, as written, set 16/13 larger than the kit's as the ledger's is (#467); its
+			-- name in its hand and ink.
 			assert.are.equal("New Species", toast.title:GetText())
 			local what = rung.inks.what
-			assert.are.same({ loaded.ns.ArtFaceFont(what.face, what.size) }, { toast.title.fontObject })
+			local size = math.floor(what.size * 16 / 13 + 0.5)
+			assert.are.same({ loaded.ns.ArtFaceFont(what.face, size) }, { toast.title.fontObject })
 			local name = loaded.ns.ANNOUNCE_COLORS[STORM .. ".high.name"]
 			assert.are.same({ name[1], name[2], name[3] }, { unpack(toast.text.textColor, 1, 3) })
 			-- The stamp: the style's plate three-sliced round its word, tilted, at the stamp's top right.
@@ -271,6 +274,50 @@ describe("a toast in a composed toast style", function()
 			local layer = front.layer
 			assert.is_true(near(-(layer.y + grow / 2 + layer.h / 2), y))
 			assert.are.same({ layer.w, layer.h }, { front.texture.width, front.texture.height })
+		end
+	)
+
+	it(
+		"keeps a ruled toast's words at the rung's top in every composed style, so the ruler and its label end within"
+			.. " the page and clear the words, whatever the headline's rung (#468, ANN-R82)",
+		function()
+			local loaded, M = composedCore({ motion = false })
+			local ids = {}
+			for id in pairs(loaded.ns.TOAST_STYLE_ART2) do
+				ids[#ids + 1] = id
+			end
+			table.sort(ids)
+			assert.is_true(#ids >= 28)
+			for _, rungName in ipairs({ "toast.low", "toast", "toast.high" }) do
+				M:RaiseMoment({
+					rung = rungName,
+					kind = "spec",
+					title = "Size record",
+					text = "Raw Glossy Mightfish",
+					ruler = { old = 10, new = 12, unit = "lb", label = "weight" },
+				})
+				loaded.client.advance(0)
+				local toast = loaded.ns.announcementFrames.toast
+				local announcement = toast.display.announcement
+				local page = loaded.ns.ToastPage(announcement)
+				assert.is_true(page.ruled)
+				for _, id in ipairs(ids) do
+					announcement.style = id
+					loaded.ns.DrawAnnouncement(toast, toast.display)
+					local label = ("%s on %s"):format(id, rungName)
+					local rung = loaded.ns.ToastRungArt(loaded.ns.ToastStyleOf(id), page) --[[@as PagleToastRung]]
+					local titleTop = -select(5, toast.title:GetPoint())
+					local rulerTop = -select(5, toast.ruler:GetPoint())
+					-- The words from the rung's own top, not moved down with the page's lower half.
+					assert(titleTop == rung.text.y, label .. ": the words start at " .. titleTop)
+					-- The ruler is 28 tall (its track's foot is 26 down) and the label stands under it.
+					assert(rulerTop + 28 <= page.h, label .. ": the ruler ends at " .. rulerTop + 28)
+					-- It starts below the kicker, the gap and the name line, at their fonts' sizes.
+					local words = math.floor(rung.inks.what.size * 16 / 13 + 0.5) + 5 + rung.inks.name.size
+					assert(rulerTop >= titleTop + words, label .. ": the ruler starts at " .. rulerTop)
+				end
+				loaded.client.advance(10)
+			end
 		end
 	)
 
@@ -507,7 +554,7 @@ describe("a new variety's own toast in a composed toast style (#422, VAR-R28, AN
 	end
 
 	-- A first catch of Coral as the Ledger raises it (LED-R97), and the toast Core shows for it.
-	local function raiseVariety(loaded, M, rarity)
+	local function raiseVariety(loaded, M, rarity, fish)
 		local rare = rarity == "rare"
 		M:RaiseMoment({
 			rung = rare and "toast" or "toast.low",
@@ -521,7 +568,7 @@ describe("a new variety's own toast in a composed toast style (#422, VAR-R28, AN
 			art = ART,
 			ownStamp = true,
 			kicker = "Decent · 34.2 cm",
-			variety = { name = "Coral", rarity = rarity, fish = FISH },
+			variety = { name = "Coral", rarity = rarity, fish = fish or FISH },
 		})
 		loaded.client.advance(0)
 		return loaded.ns.announcementFrames.toast
@@ -558,6 +605,46 @@ describe("a new variety's own toast in a composed toast style (#422, VAR-R28, AN
 				assert.are.equal(key == "rare", toast.gleams)
 				loaded.client.advance(10)
 			end
+		end
+	)
+
+	it(
+		"fits the name line as the ledger's does: the font steps down before the variety's name is cut, and the fish's"
+			.. " name stays whole while it can (#467, VAR-R28)",
+		function()
+			local loaded, M = composedCore()
+			equip(loaded, DEEP)
+			local rung = loaded.ns.ToastStyleOf(DEEP).art.rungs.toast
+			local name = rung.inks.name
+			-- Raises the variety's toast over `fish`, its words measured as the client's grow with the font (0.4 a byte
+			-- a unit), and draws it again.
+			local function drawn(fish)
+				local toast = raiseVariety(loaded, M, "common", fish)
+				for _, fontString in ipairs({ toast.text, toast.variety }) do
+					fontString.GetStringWidth = function(self)
+						return #(self.text or "") * 0.4 * self.fontObject.font[2]
+					end
+				end
+				loaded.ns.DrawAnnouncement(toast, toast.display)
+				loaded.client.advance(10)
+				return toast
+			end
+
+			-- Whole at the ink's size: no step, nothing cut.
+			local toast = drawn("Cat")
+			assert.are.same(
+				{ name.size, name.size },
+				{ toast.text.fontObject.font[2], toast.variety.fontObject.font[2] }
+			)
+			assert.are.equal(#toast.text:GetText() * 0.4 * name.size, toast.text:GetWidth())
+
+			-- A long fish name steps the font down, by whole units to no less than 70%, before anything is cut.
+			toast = drawn(("F"):rep(14))
+			local size = toast.text.fontObject.font[2]
+			assert.is_true(size < name.size and size >= math.ceil(name.size * 0.7))
+			assert.are.equal(size, toast.variety.fontObject.font[2])
+			assert.are.equal(#toast.text:GetText() * 0.4 * size, toast.text:GetWidth())
+			assert.are.equal(#"Coral" * 0.4 * size, toast.variety:GetWidth())
 		end
 	)
 

@@ -7,7 +7,8 @@ local ns = select(2, ...)
 -- to Pagle's; don't edit by hand. Rectangles are in texels, `scale` texels per UI unit; `box` is the drawn element inside its
 -- sprite in UI units (x, y from the sprite's top left, then w, h), the rest being its shadow or glow. The kit's old
 -- `crest-prestige` (Announce) and `crest-legend` (Splash) are retired, the Prestige frame and the Legend's crest drawn
--- in their place (ANN-R83, LED-R153): their pixels stay in the textures unlisted.
+-- in their place (ANN-R83, LED-R153), and so are its `toast-low` and `toast-low-ruled` pages in every toast atlas, every
+-- toast being drawn full size (ANN-R80): their pixels stay in the textures unlisted.
 
 ---@class PagleAtlasSprite
 ---@field x integer
@@ -103,8 +104,6 @@ local ATLASES = {
 			["nod-strip"] = { x = 2, y = 1846, w = 1000, h = 120, box = { 10, 8, 480, 40 } },
 			["toast-digest"] = { x = 2, y = 2, w = 1224, h = 472, box = { 34, 30, 560, 176 } },
 			["toast-high"] = { x = 2, y = 1214, w = 1152, h = 320, box = { 34, 30, 524, 100 } },
-			["toast-low"] = { x = 1038, y = 1538, w = 912, h = 268, box = { 34, 30, 404, 74 } },
-			["toast-low-ruled"] = { x = 2, y = 478, w = 1044, h = 364, box = { 34, 30, 470, 122 } },
 			["toast-toast"] = { x = 2, y = 1538, w = 1032, h = 304, box = { 34, 30, 464, 92 } },
 			["toast-toast-ruled"] = { x = 2, y = 846, w = 1032, h = 364, box = { 34, 30, 464, 122 } },
 		},
@@ -118,8 +117,6 @@ local ATLASES = {
 			["nod-strip"] = { x = 2, y = 1846, w = 1000, h = 120, box = { 10, 8, 480, 40 } },
 			["toast-digest"] = { x = 2, y = 2, w = 1224, h = 472, box = { 34, 30, 560, 176 } },
 			["toast-high"] = { x = 2, y = 1214, w = 1152, h = 320, box = { 34, 30, 524, 100 } },
-			["toast-low"] = { x = 1038, y = 1538, w = 912, h = 268, box = { 34, 30, 404, 74 } },
-			["toast-low-ruled"] = { x = 2, y = 478, w = 1044, h = 364, box = { 34, 30, 470, 122 } },
 			["toast-toast"] = { x = 2, y = 1538, w = 1032, h = 304, box = { 34, 30, 464, 92 } },
 			["toast-toast-ruled"] = { x = 2, y = 846, w = 1032, h = 364, box = { 34, 30, 464, 122 } },
 		},
@@ -133,8 +130,6 @@ local ATLASES = {
 			["nod-strip"] = { x = 2, y = 1846, w = 1000, h = 120, box = { 10, 8, 480, 40 } },
 			["toast-digest"] = { x = 2, y = 2, w = 1260, h = 472, box = { 52, 30, 560, 176 } },
 			["toast-high"] = { x = 2, y = 1214, w = 1188, h = 320, box = { 52, 30, 524, 100 } },
-			["toast-low"] = { x = 1074, y = 1538, w = 948, h = 268, box = { 52, 30, 404, 74 } },
-			["toast-low-ruled"] = { x = 2, y = 478, w = 1080, h = 364, box = { 52, 30, 470, 122 } },
 			["toast-toast"] = { x = 2, y = 1538, w = 1068, h = 304, box = { 52, 30, 464, 92 } },
 			["toast-toast-ruled"] = { x = 2, y = 846, w = 1068, h = 364, box = { 52, 30, 464, 122 } },
 		},

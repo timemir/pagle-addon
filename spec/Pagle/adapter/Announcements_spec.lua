@@ -420,8 +420,8 @@ describe("the announcements art", function()
 	end
 
 	it(
-		"draws each toast rung on its own page: pencil for toast.low, ruled for a record, gilt and wax for toast.high"
-			.. " (announcements.md › UI)",
+		"draws every toast full size on the toast page, ruled for a record, toast.low's too, and toast.high's gilt with"
+			.. " wax; there is no slim page (ANN-R80, announcements.md › UI)",
 		function()
 			local loaded, M = loadCore()
 			loaded.ns.db.profile.announcements.budget.on = false
@@ -440,8 +440,8 @@ describe("the announcements art", function()
 			end
 
 			assert.are.same({
-				{ "toast-low", false, false },
-				{ "toast-low-ruled", false, false },
+				{ "toast-toast", false, true },
+				{ "toast-toast-ruled", false, true },
 				{ "toast-toast", false, true },
 				{ "toast-high", true, true },
 			}, pages)
@@ -1129,7 +1129,7 @@ describe("The catch toast on the client", function()
 
 	it(
 		'draws an ordinary Catch as a toast.low, its kicker "{band} · {length}" over the fish named with its variety,'
-			.. " with the toast sound, for 4 s, never summarized (ANN-R13, ANN-R20, ANN-R25, ANN-R70)",
+			.. " with the toast sound, for 6 s, never summarized (ANN-R13, ANN-R20, ANN-R25, ANN-R70)",
 		function()
 			local loaded, _, summarized = catching()
 
@@ -1147,7 +1147,7 @@ describe("The catch toast on the client", function()
 			assert.are.same({}, stampsOf(frame))
 			assert.are.equal(DRIFTWOOD .. "toast_1.ogg SFX", loaded.client.sounds[1])
 			assert.are.same({}, summarized)
-			loaded.client.advance(4 + 2.7 - 0.1)
+			loaded.client.advance(6 + 2.7 - 0.1)
 			assert.is_true(showing(loaded, "toast"))
 			loaded.client.advance(0.2)
 			assert.is_false(showing(loaded, "toast"))
@@ -1249,15 +1249,6 @@ describe("The catch toast on the client", function()
 end)
 
 describe("a catch toast stepped down to a Nod naming a variety on the client (VAR-R26, ANN-R31)", function()
-	-- Firefin Snapper's Coral: a 192 × 96 rectangle at (192, 0) of a 2048 atlas (VAR-R11).
-	local ART = {
-		texture = "Interface\\AddOns\\Pagle\\media\\varieties\\Varieties1",
-		left = 0.09375,
-		right = 0.1875,
-		top = 0,
-		bottom = 0.046875,
-	}
-
 	-- The rarity of `key`, as Core has it.
 	local function rarityOf(loaded, key)
 		for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
@@ -1279,7 +1270,6 @@ describe("a catch toast stepped down to a Nod naming a variety on the client (VA
 			icon = 6359,
 			cast = CAST,
 			variety = { name = "Coral", rarity = rarity, before = "Firefin Snapper ·", after = "· Decent · 34.2 cm" },
-			art = ART,
 		}
 	end
 
@@ -1337,7 +1327,7 @@ describe("a catch toast stepped down to a Nod naming a variety on the client (VA
 	)
 
 	it(
-		"shows the variety's art cropped to the fish's head in the medallion, its ring in the rarity's colour but"
+		"shows the Catch's item icon in the medallion, not the variety's art, its ring in the rarity's colour but"
 			.. " Common's the style's own, and a plain Nod after as before (VAR-R26)",
 		function()
 			local loaded, M = loadCore()
@@ -1345,7 +1335,7 @@ describe("a catch toast stepped down to a Nod naming a variety on the client (VA
 			for _, rarity in ipairs(loaded.ns.VARIETY_RARITIES) do
 				local nod = raiseVarietyNod(loaded, rarity.key)
 				rings[#rings + 1] = { nod.bezel.Ring.desaturated == true, nod.bezel.Ring.vertexColor }
-				assert.are.same({ ART.texture, { loaded.ns.HeadCrop(ART) } }, { nod.icon.texture, nod.icon.texCoord })
+				assert.are.equal(6359, nod.icon.texture)
 				loaded.client.advance(NOD + LEAVE_NOD)
 			end
 			local colors = {}
@@ -1373,26 +1363,14 @@ describe("a catch toast stepped down to a Nod naming a variety on the client (VA
 	)
 
 	it(
-		"puts the same opaque disc behind a variety Nod's art across its medallion, and none behind an icon (#424)",
+		"puts no opaque disc behind a variety Nod's medallion: it shows the item's icon, as the catch toast does"
+			.. " (#424, VAR-R26)",
 		function()
-			local loaded, M = loadCore()
+			local loaded = loadCore()
 
 			local nod = raiseVarietyNod(loaded, "epic")
 
-			-- The 34 medallion's face is 26 across.
-			local epic = rarityOf(loaded, "epic")
-			local expected = loaded.ns.ArtBacking(epic.color)
-			assert.are.same(
-				{ true, 26, 26, rgb(expected) },
-				{ nod.bezel.Back.shown, nod.bezel.Back.width, nod.bezel.Back.height, rgb(nod.bezel.Back.color) }
-			)
-
-			loaded.client.advance(NOD + LEAVE_NOD)
-			raise(loaded, M, moment("nod", "New here", { icon = 136245 }))
-			assert.are.same(
-				{ false, 136245 },
-				{ frameOf(loaded, "nod").bezel.Back.shown, frameOf(loaded, "nod").icon.texture }
-			)
+			assert.are.same({ false, 6359 }, { nod.bezel.Back ~= nil and nod.bezel.Back.shown, nod.icon.texture })
 		end
 	)
 
@@ -1589,9 +1567,10 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			local toast = frameOf(loaded, "toast") --[[@as table]]
 			local page = loaded.ns.ToastPage(toast.display.announcement)
 
-			-- The kicker's 13 units, a gap of 5 and the name's 31: a block of 49 about the page's middle, to a pixel.
+			-- The kicker's and the name line's measured heights (the fake's are one flat 14) and a gap of 5: a block
+			-- about the page's middle, to a pixel.
 			local top = -select(5, toast.title:GetPoint())
-			assert.is_true(math.abs(top + (13 + 5 + 31) / 2 - page.h / 2) < 1)
+			assert.is_true(math.abs(top + (14 + 5 + 14) / 2 - page.h / 2) < 1)
 			assert.are.same({ "TOPLEFT", toast.title, "BOTTOMLEFT", 0, -5 }, { toast.text:GetPoint() })
 			-- The gem and the name sit on the name line's own middle, with no offset of their own.
 			assert.are.same({ "LEFT", toast.text, "RIGHT", 0, 0 }, { toast.gem:GetPoint() })
@@ -1608,7 +1587,130 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 	)
 
 	it(
-		"keeps a ruled toast's name line clear of the ruler's numbers, cutting the fish's name before the variety's (#424)",
+		"sets the kicker in the same print face at 16, not 13, and centres the block by what its lines measure, not by"
+			.. " their fonts' sizes (#467)",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, moment("toast", "New Species", { text = "Nightfin Snapper", icon = ITEM, cast = CAST }))
+			local toast = frameOf(loaded, "toast") --[[@as table]]
+			local page = loaded.ns.ToastPage(toast.display.announcement)
+			-- The client's lines are taller than their fonts' sizes and differ by face: the kicker's 20 and the name's 42.
+			toast.title.GetStringHeight = function()
+				return 20
+			end
+			toast.text.GetStringHeight = function()
+				return 42
+			end
+
+			loaded.ns.DrawAnnouncement(toast, toast.display)
+
+			assert.are.equal(loaded.ns.ART_FONTS.What, toast.title.fontObject)
+			assert.is_true(loaded.ns.ArtFontSize("What") >= 16 and loaded.ns.ArtFontSize("What") <= 17)
+			local top = -select(5, toast.title:GetPoint())
+			assert.is_true(math.abs(top - (page.h - (20 + 5 + 42)) / 2) < 0.01)
+			-- Not where the nominal 16 + 5 + 31 would put it.
+			assert.is_true(math.abs(top - (page.h - (16 + 5 + 31)) / 2) > 1)
+		end
+	)
+
+	-- The width a font string measures at its font's size, as the client's grow with it: 0.4 a character a unit.
+	local function measureBySize(...)
+		for _, fontString in ipairs({ ... }) do
+			fontString.GetStringWidth = function(self)
+				return #(self.text or "") * 0.4 * (self.font and self.font[2] or 31)
+			end
+		end
+	end
+
+	-- Draws a catch toast naming `variety` after `fish`, its words measured by size, and returns its frame. Its name
+	-- line has 292 units: the page's 464, less the words' left (138) and a margin of 34.
+	local function drawCatch(loaded, fish, variety)
+		loaded.ns.moments:RaiseCatchToast({
+			rung = "toast.low",
+			kind = "catch",
+			title = "Decent · 34.2 cm",
+			text = fish,
+			nodLine = fish .. " · " .. variety,
+			icon = ITEM,
+			cast = CAST,
+			variety = { name = variety, rarity = "uncommon", before = fish .. " ·", after = "· Decent · 34.2 cm" },
+		})
+		loaded.client.advance(0)
+		local toast = frameOf(loaded, "toast") --[[@as table]]
+		measureBySize(toast.title, toast.text, toast.variety)
+		loaded.ns.DrawAnnouncement(toast, toast.display)
+		return toast
+	end
+
+	-- A font string's font size, for a name line's.
+	local function sizeOf(fontString)
+		return fontString.font[2]
+	end
+
+	it(
+		"steps the name line's font down before it cuts either name, the fish's name whole while sizes remain (#467,"
+			.. " VAR-R28)",
+		function()
+			local loaded = loadCore()
+
+			local toast = drawCatch(loaded, "Bristle Cat", "Longwhisker")
+
+			local fish, variety = toast.text, toast.variety
+			-- The fake counts bytes: "Bristle Cat ·" is 14 and "Longwhisker" 11, at 0.4 a unit a size. At the Name
+			-- font's 31 the two are 310 with the gem and its gaps on top, over the toast's 292 for words; 27 is the
+			-- largest size that fits.
+			assert.are.same({ 27, 27, "Bristle Cat ·" }, { sizeOf(fish), sizeOf(variety), fish:GetText() })
+			assert.are.equal(14 * 0.4 * 27, fish:GetWidth())
+			assert.are.equal(11 * 0.4 * 27, variety:GetWidth())
+			-- The gem shrank with the font.
+			assert.is_true(math.abs(toast.gem.width - 10 * 27 / 22) < 0.01)
+		end
+	)
+
+	it(
+		"keeps the fish's name whole at the smallest font and cuts the variety's name first when the line still"
+			.. " doesn't fit (#467, VAR-R28)",
+		function()
+			local loaded = loadCore()
+
+			local toast = drawCatch(loaded, ("F"):rep(19), ("V"):rep(20))
+
+			local fish, variety = toast.text, toast.variety
+			-- 22 is the floor of the Name font's 31 (70%).
+			assert.are.same({ 22, 22 }, { sizeOf(fish), sizeOf(variety) })
+			assert.are.equal(#fish:GetText() * 0.4 * 22, fish:GetWidth())
+			assert.is_true(variety:GetWidth() < 20 * 0.4 * 22 and variety:GetWidth() >= 48)
+			assert.is_true(fish:GetWidth() + 6 + toast.gem.width + 3 + variety:GetWidth() <= 292 + 0.01)
+		end
+	)
+
+	it(
+		"cuts the fish's name only as a last resort: when the variety's name is down to its floor and the line still"
+			.. " doesn't fit (#467, VAR-R28)",
+		function()
+			local loaded = loadCore()
+
+			local toast = drawCatch(loaded, ("F"):rep(30), ("V"):rep(14))
+
+			local fish, variety = toast.text, toast.variety
+			assert.are.equal(48, variety:GetWidth())
+			assert.is_true(fish:GetWidth() < #fish:GetText() * 0.4 * 22)
+			assert.is_true(fish:GetWidth() + 6 + toast.gem.width + 3 + variety:GetWidth() <= 292 + 0.01)
+		end
+	)
+
+	it("leaves a name line that fits at its font's full size, the Name font's 31 (#467)", function()
+		local loaded = loadCore()
+
+		local toast = drawCatch(loaded, "Coral", "Fin")
+
+		assert.are.same({ 31, 31 }, { sizeOf(toast.text), sizeOf(toast.variety) })
+		assert.are.equal(#toast.text:GetText() * 0.4 * 31, toast.text:GetWidth())
+	end)
+
+	it(
+		"keeps a ruled toast's name line clear of the ruler's numbers, cutting the fish's name when the variety's short"
+			.. " name has no room to give (#424, #467)",
 		function()
 			local loaded, M = loadCore()
 			local record, variety = recordAndVariety("rare")
@@ -1625,6 +1727,96 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			-- The whole line ends before the landed number, which stands at the track's 1/1.1.
 			local right = page.tx + toast.text.width + 6 + toast.gem.width + 3 + #"Coral" * 6
 			assert.is_true(right <= page.tx + toast.ruler.trackWidth / 1.1)
+		end
+	)
+
+	-- Measures the stamps' words and the kicker as the client does: a letter is 0.62 of the font's size wide, so a
+	-- larger font is wider and a smaller one narrower. Returns the toast, drawn again.
+	local function measuredBySize(loaded, toast)
+		local function measure(label)
+			label.GetStringWidth = function(self)
+				return #(self.text or "") * 0.62 * (self.font and self.font[2] or 11)
+			end
+		end
+		for _, stamp in ipairs(toast.stamps) do
+			measure(stamp.label)
+		end
+		measure(toast.ruler.record.label)
+		toast.title.GetStringWidth = function(self)
+			return #(self.text or "") * 0.62 * (self.font and self.font[2] or loaded.ns.ArtFontSize("What"))
+		end
+		loaded.ns.DrawAnnouncement(toast, toast.display)
+		return toast
+	end
+
+	it(
+		"steps the kicker down from 16 only as far as a stamp row needs, never letting the stamps reach it, for an own"
+			.. " stamp with a long size kicker and a second stamp, or a ruled toast with its New record stamp (#467)",
+		function()
+			local loaded, M = loadCore()
+			local function leftEdge(toast)
+				local lefts = {}
+				for i, stamp in ipairs(toast.stamps) do
+					if stamp.shown then
+						lefts[#lefts + 1] = select(4, toast.pivots[i]:GetPoint()) - stamp:GetWidth() / 2
+					end
+				end
+				if toast.ruler.record.shown ~= false and toast.display.announcement.headline.ruler then
+					lefts[#lefts + 1] = select(4, toast.recordPivot:GetPoint()) - toast.ruler.record:GetWidth() / 2
+				end
+				table.sort(lefts)
+				return lefts[1]
+			end
+			local function kickerRight(toast)
+				local page = loaded.ns.ToastPage(toast.display.announcement)
+				return page.tx + toast.title:GetWidth()
+			end
+
+			-- A Common variety's own toast, its kicker the size text, and a second stamp riding on it.
+			local own = moment("toast.low", "New variety", {
+				kind = "newVariety",
+				order = 120,
+				text = "Coral",
+				stamp = "New variety",
+				icon = ITEM,
+				cast = CAST,
+				ownStamp = true,
+				kicker = "Trophy · 123.4 cm",
+				variety = { name = "Coral", rarity = "common", fish = "Cat" },
+			})
+			raise(loaded, M, own, moment("nod", "New here", { cast = CAST, stamp = "New here" }))
+			local toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+			local size = toast.title.font[2]
+			assert.are.same({ "TROPHY · 123.4 CM", "NEW VARIETY", "NEW HERE" }, {
+				toast.title:GetText(),
+				toast.stamps[1].label:GetText(),
+				toast.stamps[2].label:GetText(),
+			})
+			assert(size < 16 and size >= 13, "the kicker is " .. size)
+			assert(
+				leftEdge(toast) >= kickerRight(toast) + 10,
+				("%.1f from %.1f"):format(leftEdge(toast), kickerRight(toast))
+			)
+			-- The block is still centred, for the kicker as it now is.
+			local page = loaded.ns.ToastPage(toast.display.announcement)
+			assert.is_true(math.abs(-select(5, toast.title:GetPoint()) - (page.h - (14 + 5 + 14)) / 2) < 0.01)
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+
+			-- Alone, the same kicker keeps its 16: the stamp has room.
+			raise(loaded, M, own)
+			toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+			assert.are.equal(16, toast.title.font and toast.title.font[2] or 16)
+			assert.is_true(leftEdge(toast) >= kickerRight(toast) + 10)
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+
+			-- A ruled toast: the size record's kicker with its New record stamp and a riding New variety.
+			local record, variety = recordAndVariety("common")
+			raise(loaded, M, record, variety)
+			toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+			assert(
+				leftEdge(toast) >= kickerRight(toast) + 10,
+				("%.1f from %.1f"):format(leftEdge(toast), kickerRight(toast))
+			)
 		end
 	)
 
@@ -1685,8 +1877,9 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 	end)
 
 	it(
-		"draws a catch toast's variety caught before like a first catch's: the art in the medallion, the ring and the"
-			.. " name in the rarity's colour and ink, a gleam for Rare, and no New variety stamp (#437, VAR-R28)",
+		"draws a catch toast's variety caught before with the item's icon in the medallion, not the art, and the ring"
+			.. " and name in the rarity's colour and ink, a gleam for Rare, and no New variety stamp (#437, #469, VAR-R26,"
+			.. " VAR-R28)",
 		function()
 			local loaded = loadCore()
 			local rare = rarityOf(loaded, "rare")
@@ -1700,7 +1893,6 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 				icon = ITEM,
 				cast = CAST,
 				variety = { name = "Coral", rarity = "rare", before = FISH .. " ·", after = "· Decent · 34.2 cm" },
-				art = ART,
 			})
 			loaded.client.advance(0)
 			local toast = frameOf(loaded, "toast") --[[@as table]]
@@ -1710,7 +1902,8 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 				toast.text:GetText(),
 				toast.variety:GetText(),
 			})
-			assert.are.same({ ART.texture, { loaded.ns.HeadCrop(ART) } }, { toast.icon.texture, toast.icon.texCoord })
+			-- The variety's art fills a medallion only on its own toast (VAR-R25): here the item, on no disc.
+			assert.are.same({ ITEM, false }, { toast.icon.texture, toast.bezel.Back ~= nil and toast.bezel.Back.shown })
 			assert.are.same(
 				{ true, rgb(rare.color) },
 				{ toast.bezel.Ring.desaturated == true, rgb(toast.bezel.Ring.vertexColor) }
@@ -1730,10 +1923,10 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 
 			local toast = raiseRecord(loaded, M, "rare")
 
-			-- The 64 medallion of a toast.low's page has a face 46 across; the rare tint: 15% of its blue (0, 112, 221) over
+			-- The 84 medallion of a toast's page has a face 62 across; the rare tint: 15% of its blue (0, 112, 221) over
 			-- the water.
 			local back = toast.bezel.Back
-			assert.are.same({ true, 46, 46 }, { back.shown, back.width, back.height })
+			assert.are.same({ true, 62, 62 }, { back.shown, back.width, back.height })
 			assert.is_true(back.masks ~= nil and #back.masks == 1)
 			local expected = { 0.0595, 0.12 * 0.85 + (112 / 255) * 0.15, 0.18 * 0.85 + (221 / 255) * 0.15 }
 			for i = 1, 3 do
@@ -2075,7 +2268,7 @@ describe("a new variety's own toast on the client (#422, VAR-R25, VAR-R28, ANN-R
 			raise(loaded, M, record, variety("common"))
 			local toast = frameOf(loaded, "toast") --[[@as table]]
 
-			assert.are.same({ "low-ruled", "SIZE RECORD", { "NEW VARIETY" } }, {
+			assert.are.same({ "toast-ruled", "SIZE RECORD", { "NEW VARIETY" } }, {
 				loaded.ns.ToastPage(toast.display.announcement).page,
 				toast.title:GetText(),
 				stampsOf(toast),

@@ -47,8 +47,13 @@ local GLEAM_INSET = 14
 -- A Rare or Epic variety's toast's gleam (VAR-R26) is the same glow as tall as the page, from where its medallion
 -- ends, starting as the page rises into place.
 local TOAST_GLEAM_DELAY = 0.7
--- A toast's variety name takes at most this share of its name line's width, the fish's name shrinking round it.
-local TOAST_NAME_SHARE = 0.6
+-- A toast's name line, "{fish} ◆ {variety}", steps its font down to this share of its size to fit (22 of the Name
+-- font's 31); if it still doesn't, the variety's name is cut short to a floor of VARIETY_FLOOR units, and only then the
+-- fish's, to a floor of FISH_FLOOR (VAR-R28).
+local NAME_FLOOR = 0.7
+local VARIETY_FLOOR, FISH_FLOOR = 48, 40
+-- A composed style's kicker is set this much larger than its kit draws it, as the ledger's grew from 13 to 16 (#467).
+local KICKER_SCALE = 16 / 13
 -- The ticks on a full ruler's track, every fourth one long.
 local TICKS = 20
 
@@ -514,6 +519,19 @@ local function shrink(fontString, font, width)
 	fontString:SetWidth(math.min(fontString:GetStringWidth(), width))
 end
 
+-- A toast's or Nod's font at `size` units, as the art's font `key` or a composed style's ink.
+---@param fontString FontString
+---@param font PagleWordsFont
+---@param size number
+local function setFontAt(fontString, font, size)
+	if type(font) == "table" then
+		ns.SetInkFont(fontString, font, size)
+	else
+		local key = font --[[@as string]]
+		ns.SetArtFontScaled(fontString, key, size / ns.ArtFontSize(key))
+	end
+end
+
 -- The headline's words at `x`, `y` from the frame's top left: its title printed in capitals, its text under it in the
 -- Angler's hand; or, with no text, the title alone in the hand. Each is held to `width`, the hand shrinking to fit
 -- first. `fonts` and `inks` give the printed and handwritten fonts and inks.
@@ -723,16 +741,19 @@ local function tintRing(bezel, color)
 end
 
 -- Writes a toast's name line when the toast announces a variety on it (VAR-R26, ANN-R80): the line's first half (the
--- fish's name) in the style's ink, as writeHeadline wrote it, then a gem in the rarity's colour rimmed in its ink and
--- the variety's name in its ink (the rarity replaces the style's ink there alone). The name is held to part of the
--- line, then the fish's name is cut short with "..." to what is left. Hides the gem and name for a toast with no such line. Returns the
--- line's width, nil for none.
+-- fish's name) in the style's ink `ink`, then a gem in the rarity's colour rimmed in its ink and the variety's name in
+-- its ink (the rarity replaces the style's ink there alone). The fish's name has priority over the variety's: when the
+-- whole line is wider than `width`, its font first steps down a unit at a time to NAME_FLOOR of its size; if it still
+-- doesn't fit, the variety's name is cut short with "..." (to VARIETY_FLOOR at least), and only then the fish's. The
+-- gem grows and shrinks with the font. Hides the gem and name for a toast with no such line. Returns the line's width,
+-- nil for none.
 ---@param frame PagleAnnouncementFrame
 ---@param look PagleToastVarietyLook?
 ---@param font PagleWordsFont the name line's
+---@param ink string the style's name ink, a role in ns.ANNOUNCE_COLORS
 ---@param width number
 ---@return number?
-local function writeToastVariety(frame, look, font, width)
+local function writeToastVariety(frame, look, font, ink, width)
 	local text = frame.text
 	local name = frame.variety --[[@as FontString]]
 	local gem = frame.gem --[[@as PagleNodGem]]
@@ -741,22 +762,37 @@ local function writeToastVariety(frame, look, font, width)
 		name:Hide()
 		return nil
 	end
-	setFont(name, font)
-	name:SetTextColor(look.ink[1], look.ink[2], look.ink[3])
 	name:SetText(look.name)
-	shrink(name, font, math.floor(width * TOAST_NAME_SHARE))
-	-- The gem grows with the name's font from the Nod's (its 10 units go with NodName's size).
-	local k = fontSize(font) / ns.ArtFontSize("NodName")
+	text:SetText(look.before)
+	local lead = look.before ~= "" and GEM_GAP or 0
+	-- The two names whole at `size`: the fish's width, the gem and its gaps, the variety's width, and the gem's scale
+	-- (its 10 units go with NodName's size).
+	local function measure(size)
+		setFontAt(text, font, size)
+		setFontAt(name, font, size)
+		text:SetWidth(0)
+		name:SetWidth(0)
+		local k = size / ns.ArtFontSize("NodName")
+		return text:GetStringWidth(), lead + GEM_BOX * k + GEM_NAME_GAP, name:GetStringWidth(), k
+	end
+	local size, least = fontSize(font), math.ceil(fontSize(font) * NAME_FLOOR)
+	local fish, fixed, variety, k = measure(size)
+	while fish + fixed + variety > width and size > least do
+		size = math.max(least, size - 1)
+		fish, fixed, variety, k = measure(size)
+	end
+	local over = fish + fixed + variety - width
+	local varietyWidth = over > 0 and math.max(variety - over, math.min(variety, VARIETY_FLOOR)) or variety
+	over = over - (variety - varietyWidth)
+	local fishWidth = over > 0 and math.max(fish - over, math.min(fish, FISH_FLOOR)) or fish
+	ns.Ink(text, ink)
+	name:SetTextColor(look.ink[1], look.ink[2], look.ink[3])
+	fit(text, fishWidth)
+	fit(name, varietyWidth)
+	text:Show()
 	gem:SetSize(GEM_BOX * k, GEM_BOX * k)
 	gem.rim:SetSize(GEM_RIM * k, GEM_RIM * k)
 	gem.fill:SetSize(GEM_FILL * k, GEM_FILL * k)
-	local lead = look.before ~= "" and GEM_GAP or 0
-	local rest = lead + GEM_BOX * k + GEM_NAME_GAP + name:GetWidth()
-	setFont(text, font)
-	text:SetText(look.before)
-	-- The fish's name gives way first, cut short with "..." at its size; the variety's name stays whole.
-	fit(text, math.max(width - rest, 40))
-	text:Show()
 	gem.rim:SetColorTexture(look.ink[1], look.ink[2], look.ink[3], 1)
 	gem.fill:SetColorTexture(look.color[1], look.color[2], look.color[3], 1)
 	gem:ClearAllPoints()
@@ -765,7 +801,7 @@ local function writeToastVariety(frame, look, font, width)
 	name:SetPoint("LEFT", gem, "RIGHT", GEM_NAME_GAP, 0)
 	gem:Show()
 	name:Show()
-	return text:GetWidth() + rest
+	return text:GetWidth() + lead + GEM_BOX * k + GEM_NAME_GAP + name:GetWidth()
 end
 
 -- The gap between a toast's kicker and its name line.
@@ -775,57 +811,89 @@ local STAMP_SCALES = { 1, 0.9, 0.8, 0.7 }
 -- The gap between a toast's kicker and the stamp row.
 local STAMP_KICKER_GAP = 10
 
+-- The smallest a toast's kicker steps down to, to leave its stamp row room: the size it had before #467 (a composed
+-- style's own kit size).
+local KICKER_FLOOR = 13
+
 -- Sets a toast's stamps, and its New record stamp when a ruled toast has one, at the largest of STAMP_SCALES at which
--- the row, hung right to left from `x` with `gap` between them, still ends right of `limit` (the kicker's right
--- edge and a gap): the stamps' words and padding shrink together. At the smallest it stays as it is, which only a
--- row of four or more can need. `set` sets a stamp, `setRecord` the New record stamp, each at a scale. Returns the
--- stamps showing and the New record stamp's width.
+-- the row, hung right to left from `x` with `gap` between them, still ends right of the kicker's right edge and a gap
+-- (the kicker starting `left` from the body's left): the stamps' words and padding shrink together. If the row at the
+-- smallest scale still reaches the kicker (the larger 16 kicker of a size band and length, "TROPHY · 123.4 CM", beside
+-- a second stamp, or the New record stamp), the kicker's font steps down a unit at a time to `kicker.floor`, the size
+-- it had before #467, and the row is fitted again at each, `placeBlock` setting the words' block again for the
+-- kicker's new height. At that floor it stays as it is, which only a row of four or more can need. `set` sets a
+-- stamp, `setRecord` the New record stamp, each at a scale. Returns the stamps showing and the New record stamp's
+-- width.
 ---@param frame PagleAnnouncementFrame
 ---@param announcement PagleAnnouncement
 ---@param set fun(stamp: PagleStamp, text: string, scale: number)
 ---@param setRecord fun(scale: number)
 ---@param x number
 ---@param gap number
----@param limit number
+---@param left number
 ---@param withRecord boolean
+---@param kicker { font: PagleWordsFont, floor: number, ink: string }
+---@param placeBlock fun()
 ---@return PagleStamp[]
 ---@return number
-local function setStampRow(frame, announcement, set, setRecord, x, gap, limit, withRecord)
+local function setStampRow(frame, announcement, set, setRecord, x, gap, left, withRecord, kicker, placeBlock)
 	local ruler = frame.ruler --[[@as PagleRulerView]]
 	local stamps
-	for _, scale in ipairs(STAMP_SCALES) do
-		stamps = fillStamps(frame, announcement, function(stamp, text)
-			set(stamp, text, scale)
-		end)
-		setRecord(scale)
-		ruler.stampScale = scale
-		local total = withRecord and ruler.record:GetWidth() + gap or 0
-		for _, stamp in ipairs(stamps) do
-			total = total + stamp:GetWidth() + gap
+	local size = fontSize(kicker.font)
+	while true do
+		local limit = left + frame.title:GetWidth() + STAMP_KICKER_GAP
+		local fits
+		for _, scale in ipairs(STAMP_SCALES) do
+			stamps = fillStamps(frame, announcement, function(stamp, text)
+				set(stamp, text, scale)
+			end)
+			setRecord(scale)
+			ruler.stampScale = scale
+			local total = withRecord and ruler.record:GetWidth() + gap or 0
+			for _, stamp in ipairs(stamps) do
+				total = total + stamp:GetWidth() + gap
+			end
+			fits = x - (total - gap) >= limit
+			if fits then
+				break
+			end
 		end
-		if x - (total - gap) >= limit then
+		if fits or size <= kicker.floor then
 			break
 		end
+		size = math.max(kicker.floor, size - 1)
+		setFontAt(frame.title, kicker.font, size)
+		ns.Ink(frame.title, kicker.ink)
+		fit(frame.title, math.huge)
+		placeBlock()
 	end
 	return stamps, ruler.record:GetWidth()
 end
 
--- Where a toast's kicker and name block starts down its page, `height` tall: centred, as the medallion is, unless the
+-- Where a toast's kicker and name block starts down its page: centred, as the medallion is, unless the
 -- page is ruled or the digest's, whose rows are laid from `top`, the page's own. The block is the kicker, the gap and
--- the name line, or the name line alone for a headline with no text.
+-- the name line, or the name line alone for a headline with no text, as the font strings measure after they are
+-- written (not by their fonts' nominal sizes: the name line may have stepped down, and a font's line is taller than
+-- its size).
 ---@param page { h: number, ruled: boolean? }
+---@param frame PagleAnnouncementFrame
 ---@param headline { text: string? }
----@param fonts { what: PagleWordsFont, name: PagleWordsFont }
 ---@param top number
 ---@param fighting PagleRaisedMoment[]?
 ---@return number
-local function blockTop(page, headline, fonts, top, fighting)
+local function blockTop(page, frame, headline, top, fighting)
 	if page.ruled or fighting then
 		return top
 	end
-	local block = fontSize(fonts.name)
+	local block = frame.title:GetStringHeight()
 	if headline.text then
-		block = block + fontSize(fonts.what) + TOAST_LINE_GAP
+		local line = frame.text
+		local height = line:GetStringHeight()
+		local variety = frame.variety --[[@as FontString]]
+		if variety:IsShown() then
+			height = math.max(height, variety:GetStringHeight())
+		end
+		block = block + TOAST_LINE_GAP + height
 	end
 	return (page.h - block) / 2
 end
@@ -845,6 +913,21 @@ local function readyToastGleam(frame, look, page)
 		gleam:SetVertexColor(look.color[1], look.color[2], look.color[3])
 		frame.gleamFrom, frame.gleamAcross = from, page.w - from
 	end
+end
+
+-- A composed style's kicker ink, set KICKER_SCALE larger than its kit's (the same face), or nil for a style with none.
+---@param ink PagleToastInk?
+---@return PagleToastInk?
+local function kickerInk(ink)
+	if not ink then
+		return nil
+	end
+	local larger = {}
+	for key, value in pairs(ink) do
+		larger[key] = value
+	end
+	larger.size = math.floor(ink.size * KICKER_SCALE + 0.5)
+	return larger
 end
 
 -- Draws a toast in a composed style (ANN-R82): its rung's layers (adapter/ToastLayers.lua) for the page, laid as
@@ -885,7 +968,10 @@ local function drawComposedToast(frame, display, style)
 	bezel:ClearAllPoints()
 	bezel:SetPoint("TOPLEFT", body, "TOPLEFT", icon.x, -icon.y)
 
+	-- The words start at the rung's own top on a taller page (a ruled one, the digest's): a text box whose middle is past
+	-- the rung's would else ride down with its lower half and leave the ruler no room (fitAxis, for the stamp or the lure).
 	local box = place(rung.text)
+	box.y = rung.text.y
 	local amt = rung.amt and place(rung.amt)
 	local width = box.w
 	if announcement.coins > 0 and amt then
@@ -893,19 +979,11 @@ local function drawComposedToast(frame, display, style)
 	end
 	local inks = ns.ToastInks(style, page)
 	local fonts = {
-		what = ns.ToastInk(style, page, "what") or "What",
+		what = kickerInk(ns.ToastInk(style, page, "what")) or "What",
 		name = ns.ToastInk(style, page, "name") or "Name",
 	}
 	-- A ruled toast's name line ends before the ruler's numbers.
 	local lineWidth = page.ruled and math.min(width, rulerNameLimit(width - 6)) or width
-	frame.title:ClearAllPoints()
-	frame.title:SetPoint(
-		"TOPLEFT",
-		body,
-		"TOPLEFT",
-		box.x,
-		-blockTop(page, headline, fonts, box.y, announcement.fighting)
-	)
 	frame.text:ClearAllPoints()
 	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -TOAST_LINE_GAP)
 	if announcement.fighting then
@@ -916,7 +994,19 @@ local function drawComposedToast(frame, display, style)
 		writeHeadline(frame, { title = ns.ToastKicker(headline), text = headline.text }, fonts, inks, lineWidth)
 		drawDigest(frame, {}, style, 0)
 	end
-	local line = writeToastVariety(frame, look, fonts.name, lineWidth)
+	local line = writeToastVariety(frame, look, fonts.name, inks.name, lineWidth)
+	-- The block is placed once written, by what the words measure (and again if the kicker steps down).
+	local function placeBlock()
+		frame.title:ClearAllPoints()
+		frame.title:SetPoint(
+			"TOPLEFT",
+			body,
+			"TOPLEFT",
+			box.x,
+			-blockTop(page, frame, headline, box.y, announcement.fighting)
+		)
+	end
+	placeBlock()
 	local clip = frame.nameClip --[[@as Frame]]
 	clip:ClearAllPoints()
 	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
@@ -929,7 +1019,10 @@ local function drawComposedToast(frame, display, style)
 	ns.Ink(ruler.value, inks.value)
 	ruler:ClearAllPoints()
 	if page.ruled then
-		local top = box.y + (frame.text:IsShown() and 18 or 0) + fontSize(fonts.name) + 4
+		local top = box.y
+			+ (frame.text:IsShown() and fontSize(fonts.what) + TOAST_LINE_GAP or 0)
+			+ fontSize(fonts.name)
+			+ 4
 		ruler:SetPoint("TOPLEFT", body, "TOPLEFT", box.x, -top)
 		layRuler(ruler, width - 6, headline.ruler.label, body, box.x)
 	end
@@ -948,12 +1041,27 @@ local function drawComposedToast(frame, display, style)
 	-- The stamps hang right to left from the style's stamp's top right, each by its centre from a pivot.
 	local spot = place(ns.ToastStampArt(style, page))
 	local x, y = spot.x + spot.w, spot.y + spot.h / 2
-	local stamps, record = setStampRow(frame, announcement, function(stamp, text, scale)
-		ns.SetStamp(stamp, text, style, page, scale)
-		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
-	end, function(scale)
-		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, page, scale)
-	end, x, 2, box.x + frame.title:GetWidth() + STAMP_KICKER_GAP, page.ruled == true)
+	local stamps, record = setStampRow(
+		frame,
+		announcement,
+		function(stamp, text, scale)
+			ns.SetStamp(stamp, text, style, page, scale)
+			ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
+		end,
+		function(scale)
+			ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, page, scale)
+		end,
+		x,
+		2,
+		box.x,
+		page.ruled == true,
+		{
+			font = fonts.what,
+			floor = (ns.ToastInk(style, page, "what") or { size = KICKER_FLOOR }).size,
+			ink = inks.what,
+		},
+		placeBlock
+	)
 	local pivots = frame.pivots --[[@as Frame[] ]]
 	for i, stamp in ipairs(stamps) do
 		local stampWidth = stamp:GetWidth()
@@ -981,7 +1089,7 @@ local function drawComposedToast(frame, display, style)
 		if coin then
 			coins:SetPoint("RIGHT", body, "TOPLEFT", coin.x + coin.w / 2 + size / 2, -(coin.y + coin.h / 2))
 		else
-			coins:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -2, page.low and 4 or -2)
+			coins:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -2, -2)
 		end
 		if amt then
 			label:ClearAllPoints()
@@ -1032,17 +1140,9 @@ local function drawToast(frame, display, style)
 
 	local width = page.w - page.tx - 34 - (announcement.coins > 0 and 34 or 0)
 	local inks = ns.ToastInks(style, page)
-	local fonts = { what = "What", name = page.low and "NameLow" or page.high and "NameHigh" or "Name" }
+	local fonts = { what = "What", name = page.high and "NameHigh" or "Name" }
 	-- A ruled toast's name line ends before the ruler's numbers.
 	local lineWidth = page.ruled and math.min(width, rulerNameLimit(width - 6)) or width
-	frame.title:ClearAllPoints()
-	frame.title:SetPoint(
-		"TOPLEFT",
-		body,
-		"TOPLEFT",
-		page.tx,
-		-blockTop(page, headline, fonts, page.ty, announcement.fighting)
-	)
 	frame.text:ClearAllPoints()
 	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -TOAST_LINE_GAP)
 	if announcement.fighting then
@@ -1053,7 +1153,19 @@ local function drawToast(frame, display, style)
 		writeHeadline(frame, { title = ns.ToastKicker(headline), text = headline.text }, fonts, inks, lineWidth)
 		drawDigest(frame, {}, style, 0)
 	end
-	local line = writeToastVariety(frame, look, fonts.name, lineWidth)
+	local line = writeToastVariety(frame, look, fonts.name, inks.name, lineWidth)
+	-- The block is placed once written, by what the words measure (and again if the kicker steps down).
+	local function placeBlock()
+		frame.title:ClearAllPoints()
+		frame.title:SetPoint(
+			"TOPLEFT",
+			body,
+			"TOPLEFT",
+			page.tx,
+			-blockTop(page, frame, headline, page.ty, announcement.fighting)
+		)
+	end
+	placeBlock()
 	-- The clip the name is written out in, round the name as written.
 	local clip = frame.nameClip --[[@as Frame]]
 	clip:ClearAllPoints()
@@ -1068,7 +1180,7 @@ local function drawToast(frame, display, style)
 	ruler:ClearAllPoints()
 	if page.ruled then
 		local nameSize = ns.ArtFontSize(fonts.name)
-		local top = page.ty + (frame.text:IsShown() and 18 or 0) + nameSize + 4
+		local top = page.ty + (frame.text:IsShown() and ns.ArtFontSize(fonts.what) + TOAST_LINE_GAP or 0) + nameSize + 4
 		ruler:SetPoint("TOPLEFT", body, "TOPLEFT", page.tx, -top)
 		layRuler(ruler, width - 6, headline.ruler.label, body, page.tx)
 	end
@@ -1094,7 +1206,7 @@ local function drawToast(frame, display, style)
 		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
 	end, function(scale)
 		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, nil, scale)
-	end, x, 4, page.tx + frame.title:GetWidth() + STAMP_KICKER_GAP, page.ruled == true)
+	end, x, 4, page.tx, page.ruled == true, { font = fonts.what, floor = KICKER_FLOOR, ink = inks.what }, placeBlock)
 	-- Each stamp hangs by its centre from a pivot, so it slams down about its middle (adapter/Art.lua's ns.Pivot).
 	local pivots = frame.pivots --[[@as Frame[] ]]
 	for i, stamp in ipairs(stamps) do
@@ -1111,7 +1223,7 @@ local function drawToast(frame, display, style)
 
 	frame.coins:ClearAllPoints()
 	if setCoins(frame.coins, announcement.coins, page.coin, false) > 0 then
-		frame.coins:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -2, page.low and 4 or -2)
+		frame.coins:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -2, -2)
 		ns.Ink(frame.coins.label, inks.amt)
 	end
 end
