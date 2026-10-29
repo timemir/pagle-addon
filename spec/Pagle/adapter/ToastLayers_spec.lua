@@ -321,6 +321,97 @@ describe("a toast in a composed toast style", function()
 		end
 	)
 
+	it(
+		"keeps the kicker's top where it is in every composed style, stamps riding or not, the name line short or long,"
+			.. " and keeps it clear of the stamp row and of the name line (ANN-R82)",
+		function()
+			local loaded, M = composedCore({ motion = false })
+			local ids = {}
+			for id in pairs(loaded.ns.TOAST_STYLE_ART2) do
+				ids[#ids + 1] = id
+			end
+			table.sort(ids)
+			assert.is_true(#ids >= 28)
+			-- The size a font string is set to, a composed style's ink as a font object, and the client's lines and
+			-- letters as they grow with it: a kicker 1.25 a unit and 0.62 wide, a name line 42/31 and 0.4.
+			local function sizeOf(fontString)
+				local font = fontString.font or (fontString.fontObject and fontString.fontObject.font)
+				return font and font[2] or 14
+			end
+			local function measure(toast)
+				toast.title.GetStringHeight = function(self)
+					return 1.25 * sizeOf(self)
+				end
+				toast.title.GetStringWidth = function(self)
+					return #(self.text or "") * 0.62 * sizeOf(self)
+				end
+				for _, line in ipairs({ toast.text, toast.variety }) do
+					line.GetStringHeight = function(self)
+						return 42 / 31 * sizeOf(self)
+					end
+					line.GetStringWidth = function(self)
+						return #(self.text or "") * 0.4 * sizeOf(self)
+					end
+				end
+				for _, stamp in ipairs(toast.stamps) do
+					stamp.label.GetStringWidth = function(self)
+						return #(self.text or "") * 0.62 * sizeOf(self)
+					end
+				end
+			end
+			local function leftEdge(toast)
+				local left = math.huge
+				for i, stamp in ipairs(toast.stamps) do
+					if stamp.shown then
+						left = math.min(left, select(4, toast.pivots[i]:GetPoint()) - stamp:GetWidth() / 2)
+					end
+				end
+				return left
+			end
+			-- Draws a toast named `text` in the style `id`, with the Nods `stamps` ride on it, and reads where its
+			-- kicker and name line are: the kicker's top, foot and right edge, the name line's top, the stamps' left.
+			local function read(id, text, stamps)
+				local cast = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
+				M:RaiseMoment({ rung = "toast", kind = "spec", title = "New Species", text = text, cast = cast })
+				for _, stamp in ipairs(stamps) do
+					M:RaiseMoment({ rung = "nod", kind = "spec", title = stamp, stamp = stamp, cast = cast })
+				end
+				loaded.client.advance(0)
+				local toast = loaded.ns.announcementFrames.toast
+				toast.display.announcement.style = id
+				measure(toast)
+				loaded.ns.DrawAnnouncement(toast, toast.display)
+				local top = -select(5, toast.title:GetPoint())
+				local where = {
+					top = top,
+					foot = top + toast.title:GetStringHeight(),
+					right = select(4, toast.title:GetPoint()) + toast.title:GetWidth(),
+					nameTop = top + toast.title:GetStringHeight() - select(5, toast.text:GetPoint()),
+					stamps = leftEdge(toast),
+					size = sizeOf(toast.text),
+				}
+				loaded.client.advance(10)
+				return where
+			end
+			for _, id in ipairs(ids) do
+				local alone = read(id, "Pike", {})
+				local stamped =
+					read(id, "Raw Bristle Whisker Catfish of the Sunken Reach", { "New variety", "Rank up" })
+				assert(
+					alone.top == stamped.top,
+					("%s: the kicker is at %s, then %s"):format(id, alone.top, stamped.top)
+				)
+				assert(stamped.size < alone.size, id .. ": the name line didn't step down")
+				assert(
+					stamped.stamps >= stamped.right,
+					("%s: stamps at %s, kicker to %s"):format(id, stamped.stamps, stamped.right)
+				)
+				assert(stamped.foot <= stamped.nameTop, id .. ": the kicker reaches the name line")
+				assert(alone.foot <= alone.nameTop, id .. ": the kicker reaches the name line")
+			end
+		end
+	)
+
 	it("moves its layers from the toast's landing while it shows, and stops them as it goes (ANN-R82)", function()
 		local loaded, M = composedCore()
 		local Ledger = M

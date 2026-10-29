@@ -477,6 +477,11 @@ end
 -- A toast's or Nod's font: the art's font key, or a composed style's ink (ANN-R82: its face, size and shadow).
 ---@alias PagleWordsFont string|PagleToastInk
 
+-- The heights a toast's kicker and name line measure at their fonts' own sizes (a font's line is taller than its size).
+---@class PagleWordsHeights
+---@field kicker number
+---@field name number
+
 ---@param fontString FontString
 ---@param font PagleWordsFont
 local function setFont(fontString, font)
@@ -534,24 +539,30 @@ end
 
 -- The headline's words at `x`, `y` from the frame's top left: its title printed in capitals, its text under it in the
 -- Angler's hand; or, with no text, the title alone in the hand. Each is held to `width`, the hand shrinking to fit
--- first. `fonts` and `inks` give the printed and handwritten fonts and inks.
+-- first. `fonts` and `inks` give the printed and handwritten fonts and inks. Returns the heights the kicker and the name
+-- line measure at their fonts' own sizes, before any shrink or step down (a toast's words are placed by them, see
+-- blockTop), or nothing for a title alone.
 ---@param frame PagleAnnouncementFrame
 ---@param headline { title: string, text: string? }
 ---@param fonts { what: PagleWordsFont, name: PagleWordsFont }
 ---@param inks { what: string, name: string }
 ---@param width number
+---@return PagleWordsHeights?
 local function writeHeadline(frame, headline, fonts, inks, width)
 	local title, text = frame.title, frame.text
 	if headline.text then
 		setFont(title, fonts.what)
 		ns.Ink(title, inks.what)
 		title:SetText(printed(fonts.what, headline.title))
+		local kicker = title:GetStringHeight()
 		fit(title, width)
 		setFont(text, fonts.name)
 		ns.Ink(text, inks.name)
 		text:SetText(headline.text)
+		local name = text:GetStringHeight()
 		shrink(text, fonts.name, width)
 		text:Show()
+		return { kicker = kicker, name = name }
 	else
 		setFont(title, fonts.name)
 		ns.Ink(title, inks.name)
@@ -870,32 +881,61 @@ local function setStampRow(frame, announcement, set, setRecord, x, gap, left, wi
 	return stamps, ruler.record:GetWidth()
 end
 
--- Where a toast's kicker and name block starts down its page: centred, as the medallion is, unless the
--- page is ruled or the digest's, whose rows are laid from `top`, the page's own. The block is the kicker, the gap and
--- the name line, or the name line alone for a headline with no text, as the font strings measure after they are
--- written (not by their fonts' nominal sizes: the name line may have stepped down, and a font's line is taller than
--- its size).
+-- Where a toast's kicker and name block is laid down its page: `top`, the page's own, if it is ruled or the digest's,
+-- else centred, as the medallion is. The block is the kicker, the gap and the name line, or the name line alone for a
+-- headline with no text, as the font strings measure after they are written (not by their fonts' nominal sizes: a
+-- font's line is taller than its size). Returns the block's top as it is written, and the kicker's top: the same on a
+-- ruled page, but on a centred one the block centred as it would be with the name line at its font's own size and the
+-- kicker at its own, `natural`'s, so that the kicker stays where it is whether the name line stepped down to fit its
+-- width or the kicker stepped down for the stamps, and clear of the page's ruling line (the name line stays where the
+-- block as written puts it, a little below the kicker then).
 ---@param page { h: number, ruled: boolean? }
 ---@param frame PagleAnnouncementFrame
 ---@param headline { text: string? }
 ---@param top number
 ---@param fighting PagleRaisedMoment[]?
----@return number
-local function blockTop(page, frame, headline, top, fighting)
+---@param natural PagleWordsHeights?
+---@return number block
+---@return number kicker
+local function blockTop(page, frame, headline, top, fighting, natural)
 	if page.ruled or fighting then
-		return top
+		return top, top
 	end
 	local block = frame.title:GetStringHeight()
-	if headline.text then
-		local line = frame.text
-		local height = line:GetStringHeight()
-		local variety = frame.variety --[[@as FontString]]
-		if variety:IsShown() then
-			height = math.max(height, variety:GetStringHeight())
-		end
-		block = block + TOAST_LINE_GAP + height
+	if not headline.text then
+		local laid = (page.h - block) / 2
+		return laid, laid
 	end
-	return (page.h - block) / 2
+	local line = frame.text
+	local height = line:GetStringHeight()
+	local variety = frame.variety --[[@as FontString]]
+	if variety:IsShown() then
+		height = math.max(height, variety:GetStringHeight())
+	end
+	block = block + TOAST_LINE_GAP + height
+	local laid = (page.h - block) / 2
+	if not natural then
+		return laid, laid
+	end
+	return laid, math.min(laid, (page.h - (natural.kicker + TOAST_LINE_GAP + natural.name)) / 2)
+end
+
+-- Places a toast's kicker and its name line by blockTop: the kicker's top left at `x` and the kicker's top, the name
+-- line under it, the same gap below the block's own kicker as ever, or lower by what the kicker is lifted above it.
+---@param frame PagleAnnouncementFrame
+---@param body Frame
+---@param x number
+---@param page { h: number, ruled: boolean? }
+---@param headline { text: string? }
+---@param top number
+---@param fighting PagleRaisedMoment[]?
+---@param natural PagleWordsHeights?
+local function placeWords(frame, body, x, page, headline, top, fighting, natural)
+	local laid, kicker = blockTop(page, frame, headline, top, fighting, natural)
+	frame.title:ClearAllPoints()
+	frame.title:SetPoint("TOPLEFT", body, "TOPLEFT", x, -kicker)
+	frame.text:ClearAllPoints()
+	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -(TOAST_LINE_GAP + laid - kicker))
 end
 
 -- Readies a toast's gleam for `look` (VAR-R26): unseen, and swept as the toast enters when the variety is Rare or Epic,
@@ -986,25 +1026,20 @@ local function drawComposedToast(frame, display, style)
 	local lineWidth = page.ruled and math.min(width, rulerNameLimit(width - 6)) or width
 	frame.text:ClearAllPoints()
 	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -TOAST_LINE_GAP)
+	local natural
 	if announcement.fighting then
 		writeHeadline(frame, { title = headline.title, text = "" }, fonts, inks, width)
 		frame.text:Hide()
 		drawDigest(frame, announcement.fighting, style, page.w - box.x - 34)
 	else
-		writeHeadline(frame, { title = ns.ToastKicker(headline), text = headline.text }, fonts, inks, lineWidth)
+		natural =
+			writeHeadline(frame, { title = ns.ToastKicker(headline), text = headline.text }, fonts, inks, lineWidth)
 		drawDigest(frame, {}, style, 0)
 	end
 	local line = writeToastVariety(frame, look, fonts.name, inks.name, lineWidth)
 	-- The block is placed once written, by what the words measure (and again if the kicker steps down).
 	local function placeBlock()
-		frame.title:ClearAllPoints()
-		frame.title:SetPoint(
-			"TOPLEFT",
-			body,
-			"TOPLEFT",
-			box.x,
-			-blockTop(page, frame, headline, box.y, announcement.fighting)
-		)
+		placeWords(frame, body, box.x, page, headline, box.y, announcement.fighting, natural)
 	end
 	placeBlock()
 	local clip = frame.nameClip --[[@as Frame]]
@@ -1145,25 +1180,20 @@ local function drawToast(frame, display, style)
 	local lineWidth = page.ruled and math.min(width, rulerNameLimit(width - 6)) or width
 	frame.text:ClearAllPoints()
 	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -TOAST_LINE_GAP)
+	local natural
 	if announcement.fighting then
 		writeHeadline(frame, { title = headline.title, text = "" }, fonts, inks, width)
 		frame.text:Hide()
 		drawDigest(frame, announcement.fighting, style, page.w - page.tx - 34)
 	else
-		writeHeadline(frame, { title = ns.ToastKicker(headline), text = headline.text }, fonts, inks, lineWidth)
+		natural =
+			writeHeadline(frame, { title = ns.ToastKicker(headline), text = headline.text }, fonts, inks, lineWidth)
 		drawDigest(frame, {}, style, 0)
 	end
 	local line = writeToastVariety(frame, look, fonts.name, inks.name, lineWidth)
 	-- The block is placed once written, by what the words measure (and again if the kicker steps down).
 	local function placeBlock()
-		frame.title:ClearAllPoints()
-		frame.title:SetPoint(
-			"TOPLEFT",
-			body,
-			"TOPLEFT",
-			page.tx,
-			-blockTop(page, frame, headline, page.ty, announcement.fighting)
-		)
+		placeWords(frame, body, page.tx, page, headline, page.ty, announcement.fighting, natural)
 	end
 	placeBlock()
 	-- The clip the name is written out in, round the name as written.
