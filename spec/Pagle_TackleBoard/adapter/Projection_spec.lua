@@ -97,7 +97,10 @@ describe("the Tackle Board's projection", function()
 
 			local state = ns.State()
 			assert.are.same({ seq = 1, time = D0 + 3600 }, state.started)
-			assert.are.same({ seq = 1, day = 0, week = 0, dayStart = D0, weekStart = W }, state.boundary)
+			assert.are.same(
+				{ seq = 1, day = 0, week = 0, dayStart = D0, weekStart = W, dayOrigin = D0, weekOrigin = W },
+				state.boundary
+			)
 			assert.are.same({ notices = 3, expeditions = 1 }, state.owed)
 			assert.are.same({ count = 0, kindling = 2, longest = 0, milestones = {}, log = {} }, state.fire)
 			assert.is_true(ns.IsStarted())
@@ -156,7 +159,10 @@ describe("the Tackle Board's projection", function()
 			-- day 0's close owes min(3, 6 − 3 open − 0 owed) = 3; days 1 and 2 add nothing more
 			assert.are.same({ notices = 3, expeditions = 0 }, state.owed)
 			assert.are.same({ 3, 0 }, { state.day, state.week })
-			assert.are.same({ seq = 6, day = 3, week = 0, dayStart = D0 + 3 * DAY, weekStart = W }, state.boundary)
+			assert.are.same(
+				{ seq = 6, day = 3, week = 0, dayStart = D0 + 3 * DAY, weekStart = W, dayOrigin = D0, weekOrigin = W },
+				state.boundary
+			)
 			-- no fire yet: each unlit day is "not lit", and the Kindling stays (TKB-R72)
 			assert.are.same({ [0] = "unlit", [1] = "unlit", [2] = "unlit" }, state.fire.log)
 			assert.are.equal(2, state.fire.kindling)
@@ -462,13 +468,6 @@ describe("the Tackle Board's projection", function()
 			assert.are.same(unstarted(), ns.State())
 		end)
 
-		it("are skipped when their payload can't be read, spending nothing (TKB-R80)", function()
-			local ns = built(withHistory(join(STARTED, { post(D0 + 7200, "n;haul;2;15;30"), post(D0 + 7201, "") })))
-
-			assert.are.equal(0, ns.State().ticketsSpent)
-			assert.are.equal(false, ns.State().pins.notices[4])
-		end)
-
 		it("count one Refresh spent each: only those applied (TKB-R58)", function()
 			local ns =
 				built(withHistory(join(STARTED, { post(D0 + 7200, N4), post(D0 + 7201, E2), post(D0 + 7202, N5) })))
@@ -522,69 +521,19 @@ describe("the Tackle Board's projection", function()
 		end)
 	end)
 
-	describe("skipped records (TKB-R80)", function()
-		it("skip an unknown kind and an out-of-range payload", function()
-			local first = built(withHistory(STARTED)).State()
-
-			local ns = built(withHistory(join(STARTED, {
-				record("issue2", D0 + 2 * DAY, N4),
-				issue(D0 + 2 * DAY + 1, "n;haul;7;15;30;14"),
-				record("day", D0 + 2 * DAY + 2, "x;1"),
-			})))
-
-			assert.are.same(first, ns.State())
-		end)
-
-		it("skip a dev log's old quality goals, whose Catches then count for nothing, without an error", function()
-			-- the kind that counted item quality, renamed rarity when it counted Variety rarity instead (#401)
-			local ns
-			assert.has_no_error(function()
-				ns = built(withHistory({
-					start(D0 + 3600),
-					issue(D0 + 3601, "e;quality;0;60;3;3"),
-					issue(D0 + 3602, "n;quality;1;10;3;2"),
-					issue(D0 + 3603, N1),
-					issue(D0 + 3604, N2),
-					issue(D0 + 3605, N3),
-					reroll(D0 + 7200, idAt(D0 + 3603), "n;quality;2;15;5;2"),
-					cast(D0 + 7300, DUROTAR, { 6358, 13757, 92032 }),
-				}))
-			end)
-
-			local state = ns.State()
-			assert.are.same({ notices = 0, expeditions = 1 }, state.owed) -- the Expedition issue stays owed; N1-N3 took the Notices
-			assert.is_nil(state.goals[idAt(D0 + 3601)])
-			assert.is_nil(state.goals[idAt(D0 + 3602)])
-			assert.is_nil(state.goals[idAt(D0 + 7200)])
-			assert.are.same(
-				{ "haul", "rarity" },
-				{ state.goals[idAt(D0 + 3603)].kind, state.goals[idAt(D0 + 3604)].kind }
-			)
-			assert.are.same({ 3, 0 }, { state.goals[idAt(D0 + 3603)].progress, state.goals[idAt(D0 + 3604)].progress })
-		end)
-
-		it(
-			"skip a beta log's size goals: the Expedition stays owed, and the Notice taken down for one stays",
-			function()
-				-- the kind dropped before 1.0 (ADR 0014): a Whopper Expedition issued, a Hefty Notice in N1's place
-				local ns = built(withHistory({
-					start(D0 + 3600),
-					issue(D0 + 3601, "e;size;0;60;1;4"),
-					issue(D0 + 3602, N1),
-					issue(D0 + 3603, N2),
-					issue(D0 + 3604, N3),
-					reroll(D0 + 7200, idAt(D0 + 3602), "n;size;1;10;3;3"),
-				}))
-
-				local state = ns.State()
-				assert.are.same({ notices = 0, expeditions = 1 }, state.owed)
-				assert.are.same({ false, false }, state.pins.expeditions)
-				assert.is_nil(state.goals[idAt(D0 + 3601)])
-				assert.is_nil(state.goals[idAt(D0 + 7200)])
-				local kept = state.goals[idAt(D0 + 3602)]
-				assert.are.same({ "haul", false, 1 }, { kept.kind, kept.reposted, kept.pin })
+	describe("canonical Module records", function()
+		it("refuses unsupported subtypes and retired goal schemas before replay", function()
+			for _, entry in ipairs({
+				record("issue2", D0 + DAY, N4),
+				issue(D0 + DAY, "n;haul;7;15;30;14"),
+				record("day", D0 + DAY, "x;1"),
+				issue(D0 + DAY, "e;size;0;60;1;4"),
+			}) do
+				assert.has_error(function()
+					withHistory(join(STARTED, { entry }))
+				end)
 			end
-		)
+		end)
 	end)
 
 	-- A history over three board weeks: Casts, a goal issued on day 1, a reroll on day 3, an Expedition on day 8.
@@ -656,7 +605,7 @@ describe("the Tackle Board's projection", function()
 			local ns = nextLogin(log, global)
 
 			assert.are.equal(999, ns.State().coins)
-			assert.are.equal(5002, global.board.rulesVersion) -- TKB_RULES_VERSION 5 (Tunables) × 1000 + SESSION_RULES_VERSION
+			assert.are.equal(6002, global.board.rulesVersion) -- TKB_RULES_VERSION 6 (Tunables) × 1000 + SESSION_RULES_VERSION
 		end)
 
 		it("rebuilds to the same state when TKB_RULES_VERSION changes", function()
@@ -664,20 +613,17 @@ describe("the Tackle Board's projection", function()
 
 			local ns = nextLogin(log, global, {
 				prepare = function(loaded)
-					loaded.ns.TKB_RULES_VERSION = 6
+					loaded.ns.TKB_RULES_VERSION = 7
 				end,
 			})
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(6002, global.board.rulesVersion)
+			assert.are.equal(7002, global.board.rulesVersion)
 		end)
 
-		it(
-			"is at rules version 5, since a Refresh posts a goal with a post record (TKB-R58, TKB-R81, Tunables)",
-			function()
-				assert.are.equal(5, board.load().ns.TKB_RULES_VERSION)
-			end
-		)
+		it("is at rules version 6 with Refresh posts and anchored calendar boundaries (TKB-R58, TKB-R81)", function()
+			assert.are.equal(6, board.load().ns.TKB_RULES_VERSION)
+		end)
 
 		it(
 			"rebuilds a stored version-1 projection, which had no Activity XP, filling it in from the log (TKB-R81)",
@@ -695,7 +641,7 @@ describe("the Tackle Board's projection", function()
 
 				assert.are.equal(200, first.xp)
 				assert.are.same(first, again.State())
-				assert.are.equal(5002, global.board.rulesVersion)
+				assert.are.equal(6002, global.board.rulesVersion)
 			end
 		)
 
@@ -707,7 +653,7 @@ describe("the Tackle Board's projection", function()
 			local ns = nextLogin(log, global, { sessionRules = sessionRules })
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(5000 + sessionRules, global.board.rulesVersion)
+			assert.are.equal(6000 + sessionRules, global.board.rulesVersion)
 		end)
 
 		it(
@@ -787,7 +733,9 @@ describe("the Tackle Board's projection", function()
 			end)
 
 			ns.Module:AppendRecord("start", D0 .. ";" .. W) -- ignored (TKB-R6)
-			ns.Module:AppendRecord("issue2", N4) -- skipped (TKB-R80)
+			assert.has_error(function()
+				ns.Module:AppendRecord("issue2", N4)
+			end) -- refused by the canonical boundary
 			ns.Module:AppendRecord("issue", N4)
 
 			assert.are.same({ "projection" }, redraws)

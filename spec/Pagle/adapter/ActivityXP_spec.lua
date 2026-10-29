@@ -174,7 +174,7 @@ describe("M:ReportXPEarned", function()
 		enterWorld(loaded)
 		local fired = listen(loaded)
 
-		local record = board:AppendRecord("notice", "n1")
+		local record = board:AppendRecord("issue", "n;haul;1;10;20;148")
 
 		assert.are.equal(1, #fired)
 		assert.are.equal(record.id, fired[1].entry.id)

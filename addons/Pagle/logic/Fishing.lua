@@ -216,6 +216,7 @@ function Fishing:Escaped(now)
 	end
 end
 
+--@do-not-package@
 --- `/pagle dev catch` (#247): records a synthetic caught Cast of `items` through the real append path, in `area` or
 --- the current one, and tells Modules as for a real Catch (LOG-R9 from step 1). No fishing signal is involved: no
 --- CastStarted, no state change, and a Cast in progress goes on. Returns the record, or nil before PLAYER_LOGIN.
@@ -229,6 +230,8 @@ function Fishing:RecordSynthetic(items, area)
 	end
 	return cast
 end
+
+--@end-do-not-package@
 
 --- The fishing state now (LOG-R2, LOG-R3). A Cast stays channeling through its grace time, until it ends.
 ---@return PagleFishingState
@@ -265,7 +268,8 @@ function ns.LootItem(isSecret, link, quantity, currencyID, isCoin)
 	if not itemID then
 		return nil
 	end
-	if isSecret(quantity) or type(quantity) ~= "number" then
+	-- A slot offers at least one, and the log's grammar holds no less (LOG-R8).
+	if isSecret(quantity) or type(quantity) ~= "number" or quantity < 1 or quantity % 1 ~= 0 then
 		quantity = 1
 	end
 	return { itemID = itemID, quantity = quantity }

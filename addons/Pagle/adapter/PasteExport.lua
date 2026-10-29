@@ -56,7 +56,21 @@ ns.pasteExportWindow = nil
 ---@param choice PaglePasteChoice
 ---@return PaglePasteView
 local function viewFor(choice)
-	return ns.PasteView(ns.catchLog.data, ns.db.global.pasteExports, choice, GetServerTime())
+	local asOf, deadline = GetServerTime(), debugprofilestop() + 4
+	local pending = coroutine.create(function()
+		return ns.PasteView(ns.catchLog.data, ns.db.global.pasteExports, choice, asOf, function()
+			if debugprofilestop() >= deadline then
+				coroutine.yield()
+				deadline = debugprofilestop() + 4
+			end
+		end, ns.db.global.pasteCheckpoints)
+	end)
+	local ok, view = coroutine.resume(pending)
+	assert(ok, view)
+	if coroutine.status(pending) == "dead" then
+		return view
+	end
+	return { choice = choice, message = L.PASTE_PREPARING, pending = pending }
 end
 
 -- Part `n`'s Paste string, built the first time it is asked for and kept while the view shows (PST-R30, PST-R33).
@@ -118,6 +132,7 @@ end
 ---@param frame PaglePasteWindow
 ---@param view PaglePasteView
 local function showView(frame, view)
+	frame:SetScript("OnUpdate", nil)
 	frame.view, frame.pastes = view, {}
 	showChoices(frame)
 	local hasString = view.message == nil
@@ -133,6 +148,15 @@ local function showView(frame, view)
 		for _, part in ipairs({ frame.note, frame.partLabel, frame.previous, frame.next }) do
 			part:Hide()
 		end
+	end
+	if view.pending then
+		frame:SetScript("OnUpdate", function()
+			local ok, ready = coroutine.resume(view.pending)
+			assert(ok, ready)
+			if coroutine.status(view.pending) == "dead" then
+				showView(frame, ready)
+			end
+		end)
 	end
 end
 

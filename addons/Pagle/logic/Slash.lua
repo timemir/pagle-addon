@@ -5,7 +5,7 @@ local ns = select(2, ...)
 -- logic, everything passed in (CORE-R7); adapter/Slash.lua registers the command and acts on what this resolves.
 
 --- Core's own subcommands, reserved for it (CORE-R61), and its hidden `dev` (#247), which help never lists.
-ns.SLASH_RESERVED = { "help", "settings", "shop", "report", "export", "guide", "dev" }
+ns.SLASH_RESERVED = { "help", "settings", "shop", "report", "export", "guide", "recovery", "dev" }
 
 --- Splits what follows `/pagle` into its subcommand, lowercased, and the rest of the line, trimmed (CORE-R62).
 ---@param line string
@@ -91,6 +91,7 @@ end
 ---@field shop fun()     opens or closes the Curio Shop (ns.shop.Toggle, SHOP-R40)
 ---@field report fun()   opens the Field report box (Pagle.OpenFieldReport)
 ---@field export fun()   opens the export window (Pagle.OpenPasteExport, PST-R50)
+---@field recovery fun(args: string) exports a full Recovery snapshot or inspects preserved records
 ---@field guide fun(args: string): "help"? `guide notes` shows Margin notes again; `guide` opens the Field guide, or
 --- returns "help" for the help list until the guide's book can open (ns.onboarding:Guide, ONB-R80)
 ---@field dev fun(args: string) the hidden dev commands (ns.dev, #247), which /pagle help never lists
@@ -111,6 +112,9 @@ function ns.CoreSubcommands(Pagle)
 		end,
 		export = function()
 			Pagle.OpenPasteExport()
+		end,
+		recovery = function(args)
+			ns.OpenRecovery(args)
 		end,
 		guide = function(args)
 			return ns.onboarding:Guide(args)

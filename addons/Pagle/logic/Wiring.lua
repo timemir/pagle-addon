@@ -77,7 +77,10 @@ function ns.WireProjections(host)
 		logId = function()
 			return host.catchLog().data.logId
 		end,
-		fingerprint = host.fingerprint,
+		fingerprint = function()
+			local generation = host.db().global.recoveryGeneration
+			return generation and tostring(host.fingerprint()) .. "|recovery:" .. generation or host.fingerprint()
+		end,
 		clock = host.clock,
 		nextFrame = host.nextFrame,
 		call = host.call,
@@ -1335,12 +1338,15 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 		global = function()
 			return host.db().global
 		end,
+		--@do-not-package@
 		testLog = function()
 			return host.catchLog().data.test == true
 		end,
+		--@end-do-not-package@
 		endSession = function()
 			return ns.sessions:EndNow()
 		end,
+		--@do-not-package@
 		area = function(areaID)
 			return ns.DevArea(ns.Catalogue, areaID)
 		end,
@@ -1348,6 +1354,7 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 			local area = zone and { zone = zone, subzone = subzone } or nil
 			return ns.fishing:RecordSynthetic({ { itemID = itemID, quantity = 1 } }, area)
 		end,
+		--@end-do-not-package@
 		announce = function(announcement)
 			host.call(show, announcement)
 		end,

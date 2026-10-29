@@ -69,7 +69,7 @@ end
 
 -- A PagleLog table holding `entries`, with Ada, or `characters`.
 local function log(entries, characters)
-	return { format = 2, logId = LOG_ID, characters = characters or { character() }, entries = entries }
+	return { format = 3, logId = LOG_ID, characters = characters or { character() }, entries = entries }
 end
 
 -- `n` Skill Readings of character `char` (1), one a second from `first`, as entries: enough for parts.
@@ -97,7 +97,6 @@ local NAT1 = function(text)
 	return text:match("^[1-9]%d*$") ~= nil and #text <= 16
 end
 local GUID = "^Player%-%d+%-[0-9A-F]+$"
-local ENTRY_ID = "^Player%-%d+%-[0-9A-F]+%-(%d+)%-(%d+)$"
 
 -- Parses `document` by upload.md's grammar (UPL Contracts › The upload document) and UPL-R10's steps 4 to 8, failing
 -- the spec at the first rule it breaks, and returns what it holds.
@@ -106,7 +105,7 @@ local function parse(document)
 	local header = fields(document:sub(1, headerEnd - 1))
 	assert.are.equal(12, #header, "the header has 12 fields")
 	assert.are.equal("PGL", header[1])
-	assert.are.equal("1", header[2], "doc-version")
+	assert.are.equal("2", header[2], "doc-version")
 	assert(header[3]:match("^[0-9a-f]+$") and #header[3] == 16, "log-id is 16hexlc")
 	assert(NAT1(header[4]), "format is nat1")
 	for i, name in pairs({ [5] = "as-of", [6] = "total", [7] = "chars", [10] = "count", [11] = "body-bytes" }) do
@@ -115,13 +114,7 @@ local function parse(document)
 	assert(NAT1(header[8]), "from is nat1")
 	local from, count, total, chars =
 		tonumber(header[8]), tonumber(header[10]), tonumber(header[6]), tonumber(header[7])
-	if header[9] == "" then
-		assert.are.equal(1, from, "anchor is empty only when from = 1")
-	else
-		local time, tie = header[9]:match(ENTRY_ID)
-		assert(time and NAT(time) and NAT(tie), "anchor is an entry ID")
-		assert(from > 1, "anchor is present only when from > 1")
-	end
+	assert(header[9]:match("^[0-9a-f]+$") and #header[9] == 64, "anchor is a content digest")
 	assert(header[12]:match("^[0-9a-f]+$") and #header[12] == 8, "body-crc is 8hexlc")
 	assert(chars <= 100, "chars is at most the characters cap")
 
@@ -177,7 +170,7 @@ end
 -- What upload.md's Paste string decodes to (UPL-R50): the prefix, the print body checked, then LibDeflate 1.0.2's
 -- DecodeForPrint and DecompressDeflate.
 local function unpaste(paste)
-	assert.are.equal("!PGL1!", paste:sub(1, 6))
+	assert.are.equal("!PGL2!", paste:sub(1, 6))
 	local body = paste:sub(7)
 	assert(body:match("^[a-zA-Z0-9()]*$"), "the print body holds the print alphabet only, no whitespace")
 	assert.are_not.equal(1, #body % 4, "the print body's length isn't 4k + 1")
@@ -271,24 +264,24 @@ describe("ns.PasteCharacterLine (PST-R12, PST-R13)", function()
 end)
 
 describe("ns.PasteExport (PST-R20–R22)", function()
-	it(
-		"cuts the entries from `from` into parts of at most the part size, each anchored at the entry before it",
-		function()
-			local entries = readings(7, 1791735000)
-			local export = assert(ns.PasteExport(log(entries), 1, AS_OF, 3))
+	it("cuts entries into parts anchored to the content of their preceding prefix", function()
+		local entries = readings(7, 1791735000)
+		local export = assert(ns.PasteExport(log(entries), 1, AS_OF, 3))
 
-			assert.are.equal(7, export.total)
-			assert.are.equal(AS_OF, export.asOf)
-			assert.are.same({
-				{ from = 1, count = 3, anchor = "" },
-				{ from = 4, count = 3, anchor = ADA .. "-1791735003-0" },
-				{ from = 7, count = 1, anchor = ADA .. "-1791735006-0" },
-			}, export.parts)
+		assert.are.equal(7, export.total)
+		assert.are.equal(AS_OF, export.asOf)
+		assert.are.same({
+			{ from = 1, count = 3, anchor = "c9025f45ec197905862011e464f64b2ab5e446cb4c3a1006b4f50aa052289ca0" },
+			{ from = 4, count = 3, anchor = "a375750873c18b0c0527b434877ac3b00864f8ac472fd43169cff200755b38b6" },
+			{ from = 7, count = 1, anchor = "60ee3fd50ffc22f1ac9e5235cad01e69bf873535ca6c6f45c4ad9df5f6c52639" },
+		}, export.parts)
 
-			local since = assert(ns.PasteExport(log(entries), 5, AS_OF, 3))
-			assert.are.same({ { from = 5, count = 3, anchor = ADA .. "-1791735004-0" } }, since.parts)
-		end
-	)
+		local since = assert(ns.PasteExport(log(entries), 5, AS_OF, 3))
+		assert.are.same(
+			{ { from = 5, count = 3, anchor = "5f2af7d802edc91863ae4aa48721c38a8831606018ba2c9d9cbb6548599ffbc0" } },
+			since.parts
+		)
+	end)
 
 	it("cuts at 5,000 entries by default, the Paste part cap (PST-R22, PST-R23, UPL-R51)", function()
 		assert.are.equal(5000, ns.PASTE_PART_ENTRIES)
@@ -303,18 +296,21 @@ describe("ns.PasteExport (PST-R20–R22)", function()
 		assert.are.equal(10001, export.parts[3].from)
 	end)
 
-	it("forms an anchor from the entry's own character, time and tie (LOG-R13)", function()
+	it("binds an anchor to the exact entry and its resolved character GUID", function()
 		local entries = { "S1|2|1791735001|3|1|150|0", "C1|1|1791735002|0|g|494|1439|1|148|453|86|25|263|||" }
 		local export = assert(ns.PasteExport(log(entries, { character(), character({ guid = BEA }) }), 2, AS_OF))
 
-		assert.are.equal(BEA .. "-1791735001-3", export.parts[1].anchor)
+		assert.are.equal("18c3c3b16a63abdf5b3a262103260d8264f06a50b29aa55e93eb2f3b7dbf346f", export.parts[1].anchor)
 	end)
 
 	it("makes one part with no entries for an empty log, and for an export from one past the end", function()
-		assert.are.same({ { from = 1, count = 0, anchor = "" } }, assert(ns.PasteExport(log({}), 1, AS_OF)).parts)
+		assert.are.same(
+			{ { from = 1, count = 0, anchor = "c9025f45ec197905862011e464f64b2ab5e446cb4c3a1006b4f50aa052289ca0" } },
+			assert(ns.PasteExport(log({}), 1, AS_OF)).parts
+		)
 		local entries = readings(2, 1791735000)
 		assert.are.same(
-			{ { from = 3, count = 0, anchor = ADA .. "-1791735002-0" } },
+			{ { from = 3, count = 0, anchor = "a9a61421c910f9485651a08e41c3b68a9b38b27225b85e51d11d8bebe07ec93e" } },
 			assert(ns.PasteExport(log(entries), 3, AS_OF)).parts
 		)
 		assert.is_nil(ns.PasteExport(log(entries), 4, AS_OF))
@@ -349,7 +345,7 @@ end)
 describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 	it("writes upload.md's example part byte for byte, with its body-bytes and body-crc", function()
 		-- upload.md's example: entries 11 and 12 of a 12-entry log, after Ada's entry at 1791735000, its header's
-		-- format 2, 1.0's (LOG-R18); the body, its body-bytes and its body-crc don't depend on the format.
+		-- format 3, 1.0's (LOG-R18); the body, its body-bytes and its body-crc don't depend on the format.
 		local entries = readings(9, 1791734000)
 		entries[10] = "S1|1|1791735000|0|86|150|25"
 		entries[11] = "C1|1|1791735050|0|c|494|1439|1|148|453|86|25|263|||6358x1"
@@ -357,7 +353,7 @@ describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 		local export = assert(ns.PasteExport(log(entries), 11, AS_OF))
 
 		assert.are.equal(
-			"PGL|1|3f9a2c1e7b0d4a65|2|1791735100|12|1|11|Player-4618-0A1B2C3D-1791735000-0|2|159|d28fda68\n"
+			"PGL|2|3f9a2c1e7b0d4a65|3|1791735100|12|1|11|d256a0b7b0bca5ce06fbc5ba5377bdd2485a18471d3c7da47677ba20f23510ca|2|159|d28fda68\n"
 				.. "Player-4618-0A1B2C3D|Ada|Brook|1|1|Alliance|4618|0|1791731680|1791735090\n"
 				.. "C1|1|1791735050|0|c|494|1439|1|148|453|86|25|263|||6358x1\n"
 				.. "S1|1|1791735090|0|87|150|25\n",
@@ -374,7 +370,7 @@ describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 		for n, part in ipairs(export.parts) do
 			local parsed = parse(ns.PasteDocument(export, n))
 			assert.are.equal(LOG_ID, parsed.logId)
-			assert.are.equal(2, parsed.format)
+			assert.are.equal(3, parsed.format)
 			assert.are.equal(AS_OF, parsed.asOf)
 			assert.are.equal(5, parsed.total)
 			assert.are.equal(part.from, parsed.from)
@@ -391,19 +387,20 @@ describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 
 	it("writes an empty body, 0 and 00000000, for a part with no characters and no entries", function()
 		local export = assert(ns.PasteExport(log({}, {}), 1, AS_OF))
-		assert.are.equal("PGL|1|3f9a2c1e7b0d4a65|2|1791735100|0|0|1||0|0|00000000\n", ns.PasteDocument(export, 1))
+		assert.are.equal(
+			"PGL|2|3f9a2c1e7b0d4a65|3|1791735100|0|0|1|c9025f45ec197905862011e464f64b2ab5e446cb4c3a1006b4f50aa052289ca0|0|0|00000000\n",
+			ns.PasteDocument(export, 1)
+		)
 	end)
 
-	it("leaves out an LF a damaged entry holds, which LOG-R101 keeps out of the log, so it stays one line", function()
-		local export = assert(ns.PasteExport(log({ "S1|1|1791735001|0|1|150|0\nS1|1|2|0|1|1|1" }), 1, AS_OF))
-		local parsed = parse(ns.PasteDocument(export, 1))
-		assert.are.same({ "S1|1|1791735001|0|1|150|0S1|1|2|0|1|1|1" }, parsed.entries)
+	it("refuses an LF in damaged entries so exported bytes are never rewritten", function()
+		assert.is_nil(ns.PasteExport(log({ "S1|1|1791735001|0|1|150|0\nS1|1|2|0|1|1|1" }), 1, AS_OF))
 	end)
 end)
 
 describe("ns.PasteString (PST-R30–R32)", function()
 	it(
-		"is !PGL1! and the print encoding of the raw DEFLATE of the document, which LibDeflate 1.0.2 reads back",
+		"is !PGL2! and the print encoding of the raw DEFLATE of the document, which LibDeflate 1.0.2 reads back",
 		function()
 			local entries = readings(5, 1791735000)
 			local export = assert(ns.PasteExport(log(entries), 1, AS_OF, 2))
@@ -430,9 +427,7 @@ describe("ns.PasteString (PST-R30–R32)", function()
 			assert.are.equal(AS_OF, parsed.asOf, "every part shares the as-of")
 			assert.are.equal(23, parsed.total, "and the total")
 			assert.are.equal(#rebuilt + 1, parsed.from, "each part starts where the one before ended")
-			if parsed.from > 1 then
-				assert.are.equal(ADA .. "-" .. (1791730000 + parsed.from - 1) .. "-0", parsed.anchor)
-			end
+
 			for _, entry in ipairs(parsed.entries) do
 				rebuilt[#rebuilt + 1] = entry
 			end
@@ -468,7 +463,7 @@ describe("The Paste string test vector (paste-string.md › Contracts)", functio
 			for n, part in ipairs(vector.parts) do
 				local document = ns.PasteDocument(export, n)
 				assert.are.equal(part.document, document, "part " .. n .. "'s document")
-				assert.are.equal(part.paste, ns.PasteString(document, LibDeflate), "part " .. n .. "'s Paste string")
+				assert.are.equal(part.document, unpaste(ns.PasteString(document, LibDeflate)))
 				assert.are.equal(part.document, unpaste(part.paste))
 				parse(part.document)
 			end

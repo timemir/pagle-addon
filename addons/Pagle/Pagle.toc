@@ -5,7 +5,7 @@
 ## Group: Pagle
 ## Category: Professions
 ## Version: @project-version@
-## SavedVariables: PagleLog, PagleDB
+## SavedVariables: PagleLog, PagleDB, PagleRecovery
 
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
@@ -40,8 +40,11 @@ logic\Restriction.lua
 logic\WorkQueue.lua
 logic\Base64.lua
 logic\Sha256.lua
+logic\Integrity.lua
 logic\Rsa.lua
 logic\PushedKeys.lua
+logic\RecoverySnapshot.lua
+logic\Recovery.lua
 logic\PushedPayload.lua
 logic\PushedContent.lua
 logic\AnglersInGame.lua
@@ -188,4 +191,5 @@ adapter\Evening.lua
 adapter\MarginNotes.lua
 adapter\FirstLooks.lua
 adapter\Trailer.lua
+adapter\Recovery.lua
 adapter\Login.lua

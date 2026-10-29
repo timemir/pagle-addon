@@ -8,7 +8,7 @@ local ns = select(2, ...)
 -- vendored copy). It loads in the backend's driver too (#223), which hosts `bit`; nothing there builds a Paste string.
 
 --- The upload document's version, in the header and the Paste string's prefix (PST-R10, PST-R30).
-ns.PASTE_DOCUMENT_VERSION = 1
+ns.PASTE_DOCUMENT_VERSION = 2
 --- What every Paste string starts with (UPL-R50, PST-R30).
 ns.PASTE_PREFIX = "!PGL" .. ns.PASTE_DOCUMENT_VERSION .. "!"
 --- The most entries one part holds: the Paste part cap of UPL Tunables, which it must never exceed (PST-R22, PST-R23).
@@ -21,8 +21,8 @@ ns.PASTE_URL = "https://pagle.app/me/paste"
 ns.PASTE_TEST_MIN_KB, ns.PASTE_TEST_MAX_KB = 1, 2048
 
 local bxor, rshift = bit.bxor, bit.rshift
-local byte, concat, find, floor, format, gsub, match, sub =
-	string.byte, table.concat, string.find, math.floor, string.format, string.gsub, string.match, string.sub
+local byte, concat, find, floor, format, match, sub =
+	string.byte, table.concat, string.find, math.floor, string.format, string.match, string.sub
 
 local TWO_32 = 4294967296
 
@@ -189,7 +189,7 @@ end
 ---@class PaglePastePart
 ---@field from integer
 ---@field count integer
----@field anchor string the entry ID at from − 1, "" when from is 1 (PST-R10)
+---@field anchor string content checkpoint at from − 1, including the initial digest at from 1
 
 --- An export (PST-R20): what its parts share, and the parts.
 ---@class PaglePasteExport
@@ -201,21 +201,44 @@ end
 ---@field entries string[]  PagleLog.entries itself: entries up to `total` never change (LOG-R14)
 ---@field parts PaglePastePart[]
 
--- The entry ID of `entry` (LOG-R13), with its character's GUID from `guids`; nil when its header can't be read or
+-- The resolved character GUID of `entry`; nil when its header can't be read or
 -- its character isn't in the table (PST-R15).
 ---@param entry any
 ---@param guids string[]
 ---@return string?
-local function entryID(entry, guids)
+local function entryGUID(entry, guids)
 	if type(entry) ~= "string" then
 		return nil
 	end
-	local char, time, tie = match(entry, "^%w+|([1-9]%d*)|(%d+)|(%d+)")
+	local char = match(entry, "^%w+|([1-9]%d*)|%d+|%d+|")
 	local guid = char and guids[tonumber(char)]
 	if not guid then
 		return nil
 	end
-	return guid .. "-" .. time .. "-" .. tie
+	return guid
+end
+
+-- The cached checkpoint to start hashing from for an anchor at `need` (PST-R42): the highest kept seq at or below it
+-- whose entry is still the one hashed there, and its digest; 0 and nil with none. A kept entry that differs (the log
+-- replaced under the same logId) drops every kept checkpoint.
+---@param cache table PagleDB.global.pasteCheckpoints, already for this log
+---@param entries string[]
+---@param need integer
+---@param stride integer
+---@return integer
+---@return string?
+local function cachedCheckpoint(cache, entries, need, stride)
+	for seq = need - need % stride, stride, -stride do
+		local kept = cache.at[seq]
+		if type(kept) == "table" then
+			if kept.entry == entries[seq] and type(kept.digest) == "string" then
+				return seq, kept.digest
+			end
+			cache.at = {}
+			return 0, nil
+		end
+	end
+	return 0, nil
 end
 
 --- The export of `log` (a PagleLog table) from `seq` `from` (PST-R20–R22): every entry from `from` to the log's
@@ -225,8 +248,10 @@ end
 ---@param from integer
 ---@param asOf integer GetServerTime() now
 ---@param partSize integer?
+---@param pause fun()? lets the client yield between records while preparing a captured export
+---@param checkpoints table? PagleDB.global.pasteCheckpoints, read and kept (PST-R42)
 ---@return PaglePasteExport?
-function ns.PasteExport(log, from, asOf, partSize)
+function ns.PasteExport(log, from, asOf, partSize, pause, checkpoints)
 	partSize = partSize or ns.PASTE_PART_ENTRIES
 	local logId, characters, entries = log.logId, log.characters, log.entries
 	if
@@ -241,7 +266,7 @@ function ns.PasteExport(log, from, asOf, partSize)
 		return nil
 	end
 	local total = #entries
-	if from < 1 or from > total + 1 then
+	if not nat(from) or from < 1 or from > total + 1 or not nat(asOf) or not nat(partSize) or partSize < 1 then
 		return nil
 	end
 	local lines, guids = {}, {}
@@ -252,19 +277,45 @@ function ns.PasteExport(log, from, asOf, partSize)
 		end
 		lines[i], guids[i] = line, character.guid
 	end
+	-- The entries exported are checked before any hashing; the prefix is checked as it is hashed.
+	for i = from, total do
+		if not entryGUID(entries[i], guids) or find(entries[i], "\n", 1, true) then
+			return nil
+		end
+		if pause then
+			pause()
+		end
+	end
+	-- Another log's or format's checkpoints are read as none, and replaced only once one is kept.
+	local stride, cache = ns.PASTE_PART_ENTRIES, checkpoints
+	local current = cache ~= nil and cache.logId == logId and cache.format == log.format and type(cache.at) == "table"
+	local seq, digest = 0, nil
+	if cache and current then
+		seq, digest = cachedCheckpoint(cache, entries, from - 1, stride)
+	end
+	digest = digest or ns.CheckpointInitial(logId, log.format)
 	local parts = {}
 	local start = from
 	repeat
-		local anchor = ""
-		if start > 1 then
-			local id = entryID(entries[start - 1], guids)
-			if not id then
+		while seq < start - 1 do
+			seq = seq + 1
+			local guid = entryGUID(entries[seq], guids)
+			if not guid or find(entries[seq], "\n", 1, true) then
 				return nil
 			end
-			anchor = id
+			digest = ns.CheckpointNext(digest, seq, guid, entries[seq])
+			if cache and seq % stride == 0 then
+				if not current then
+					cache.logId, cache.format, cache.at, current = logId, log.format, {}, true
+				end
+				cache.at[seq] = { digest = digest, entry = entries[seq] }
+			end
+			if pause then
+				pause()
+			end
 		end
 		local count = math.min(partSize, total - start + 1)
-		parts[#parts + 1] = { from = start, count = count, anchor = anchor }
+		parts[#parts + 1] = { from = start, count = count, anchor = digest }
 		start = start + count
 	until start > total
 	return {
@@ -279,8 +330,7 @@ function ns.PasteExport(log, from, asOf, partSize)
 end
 
 --- Part `n`'s upload document (PST-R10, PST-R11, PST-R14): the header, the character lines and its entries, each
---- line ending in one LF. An LF inside an entry is left out; no entry holds one (LOG-R101), so only a damaged log
---- has it.
+--- line ending in one LF. Entries are the exact bytes captured by the export.
 ---@param export PaglePasteExport
 ---@param n integer
 ---@return string
@@ -292,11 +342,7 @@ function ns.PasteDocument(export, n)
 	end
 	local entries = export.entries
 	for seq = part.from, part.from + part.count - 1 do
-		local entry = tostring(entries[seq])
-		if find(entry, "\n", 1, true) then
-			entry = gsub(entry, "\n", "")
-		end
-		lines[#lines + 1] = entry
+		lines[#lines + 1] = entries[seq]
 	end
 	local body = ""
 	if #lines > 0 then

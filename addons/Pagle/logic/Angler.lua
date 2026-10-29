@@ -13,6 +13,7 @@ local ns = select(2, ...)
 ---@field raceID integer
 ---@field faction string
 ---@field realmID integer
+---@field selfFound? boolean     -- preserved by full Recovery snapshots, including nil versus false
 ---@field hardcore? boolean      -- nil when the client has no C_GameRules.IsHardcoreActive
 ---@field firstSeen integer      -- server time
 ---@field lastSeen integer       -- server time
@@ -25,6 +26,7 @@ local ns = select(2, ...)
 ---@field current integer?       -- index of the logged-in character; nil before PLAYER_LOGIN
 ---@field skill { [integer]: PagleSkillReading }   -- latest Skill Reading per character index
 ---@field bestBaseSkill integer  -- highest skill rank among all characters (0 if none)
+---@field recoveryGeneration string? -- the Recovery application that last restored the log (RCV-R6), nil if none
 
 -- The display fields PLAYER_LOGIN refreshes on a known character (LOG-R26).
 local DISPLAY_FIELDS = { "name", "surname", "classID", "raceID", "faction", "realmID", "hardcore" }
@@ -129,15 +131,17 @@ function AnglerState:ReadSkill(reading, now)
 	return appended
 end
 
---- Appends a build entry for the current character when `build` differs from the last build entry in the log
---- (LOG-R36), and returns it. The last one is cached in `PagleDB.global.lastBuild` as `{ logId, build }`; a
+--- Appends a build entry when the game build or shipped rule-set ID differs from the last build entry
+--- (LOG-R36), and returns it. The last one is cached in `PagleDB.global.lastBuild` as `{ logId, build, rules }`; a
 --- missing cache, or one of another logId, is rebuilt by walking the log back to its last build entry. Appends
 --- nothing while no character is current.
 ---@param build integer the GetBuildInfo() build number
 ---@param version string e.g. "1.60.1"
 ---@param now integer server time
+---@param rules string? shipped rule-set ID; defaults to Core's current immutable rule set
 ---@return PagleBuild?
-function AnglerState:LogBuild(build, version, now)
+function AnglerState:LogBuild(build, version, now, rules)
+	rules = rules or ns.RULE_SET_ID
 	local char, data, global = self.current, self.catchLog.data, self.catchLog.global
 	if not char then
 		return nil
@@ -145,33 +149,42 @@ function AnglerState:LogBuild(build, version, now)
 	local cache = global.lastBuild
 	if type(cache) ~= "table" or cache.logId ~= data.logId then
 		local last = self.catchLog:Reverse("build")() --[[@as PagleBuild?]]
-		cache = { logId = data.logId, build = last and last.build }
+		cache = { logId = data.logId, build = last and last.build, rules = last and last.rules }
 		global.lastBuild = cache
 	end
-	if cache.build == build then
+	if cache.build == build and cache.rules == rules then
 		return nil
 	end
-	local appended = self.catchLog:Append({ kind = "build", char = char, time = now, build = build, version = version })
+	local appended = self.catchLog:Append({
+		kind = "build",
+		char = char,
+		time = now,
+		build = build,
+		version = version,
+		rules = rules,
+	})
 	---@cast appended PagleBuild
-	global.lastBuild = { logId = data.logId, build = build }
+	global.lastBuild = { logId = data.logId, build = build, rules = rules }
 	return appended
 end
 
 --- The Angler (LOG-R27): the log's logId and characters, the current character, each character's last Skill
---- Reading and the highest rank among them. Its tables are the log's own, shared and never copied (CORE-R18).
+--- Reading, the highest rank among them and the log's Recovery generation. Its tables are the log's own, shared and
+--- never copied (CORE-R18).
 ---@return Angler
 function AnglerState:Get()
 	local skill, best = latestSkills(self), 0
 	for _, reading in pairs(skill) do
 		best = math.max(best, reading.rank)
 	end
-	local data = self.catchLog.data
+	local data, global = self.catchLog.data, self.catchLog.global
 	return {
 		logId = data.logId,
 		characters = data.characters,
 		current = self.current,
 		skill = skill,
 		bestBaseSkill = best,
+		recoveryGeneration = global and global.recoveryGeneration,
 	}
 end
 

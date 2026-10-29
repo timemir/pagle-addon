@@ -37,7 +37,7 @@ local function ownerEntry(owner)
 		local frame = CreateFrame("Frame")
 		frame:Hide()
 		frame:SetScript("OnEvent", function(_, event, ...)
-			local handler = handlers[event]
+			local handler = not ns.recoveryBlocked and handlers[event]
 			if handler then
 				local ok, err = pcall(handler, event, ...)
 				if not ok then

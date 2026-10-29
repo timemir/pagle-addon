@@ -249,8 +249,14 @@ describe("the Ledger's projection", function()
 		local fake, loaded = firstSession()
 		local before = foldOfLog(fake, loaded.ns)
 		-- A build entry (LOG-R36) and a purchase (LOG-R39) through the log, each handed over live.
-		local build =
-			fake.catchLog:Append({ kind = "build", char = 1, time = T0 + 900, build = 66432, version = "1.60.1" })
+		local build = fake.catchLog:Append({
+			kind = "build",
+			char = 1,
+			time = T0 + 900,
+			build = 66432,
+			version = "1.60.1",
+			rules = "pagle-2026a",
+		})
 		fake.live(build)
 		fake.ns.RecordPurchase("core.toaststyle.ripple", 50)
 

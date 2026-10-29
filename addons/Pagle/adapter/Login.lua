@@ -33,6 +33,9 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	end
 	Pagle.UnregisterEvent(OWNER, "ADDON_LOADED")
 	local addonLoaded = debugprofilestop()
+	if not ns.StartRecovery() then
+		return
+	end
 	ns.OpenSavedVariables() -- checks PagleLog's format (LOG-R18)
 	ns.loginSeq = #ns.catchLog.data.entries
 	-- #262: with dev mode on, this login's load timings, before any projection starts.

@@ -18,7 +18,8 @@ local ns = select(2, ...)
 --- became `rarity`, counting Variety rarity: a dev log's `quality` goals are skipped on the rebuild (TKB-R80); 5 since
 --- a Refresh posts a goal with a `post` record (TKB-R58), so a stored projection rebuilds and its `ticketsSpent` is
 --- there.
-ns.TKB_RULES_VERSION = 5
+--- 6 combines Refresh posting with anchored calendar boundaries.
+ns.TKB_RULES_VERSION = 6
 
 -- Tunables (TKB-R20). The caps are the pin counts (ns.NOTICE_PINS, ns.EXPEDITION_PINS).
 --- Notices owed at each daily reset, up to the cap (TKB-R20, tackle-board.md › Tunables).
@@ -277,6 +278,8 @@ local function applyRecord(state, record, decoded, day, mode)
 			week = numbered.week,
 			dayStart = decoded.dayStart,
 			weekStart = decoded.weekStart,
+			dayOrigin = state.boundary.dayOrigin or state.boundary.dayStart - state.boundary.day * ns.DAY_SECONDS,
+			weekOrigin = state.boundary.weekOrigin or state.boundary.weekStart - state.boundary.week * ns.WEEK_SECONDS,
 		}
 		return true
 	end
@@ -339,6 +342,8 @@ local function start(state, record, decoded)
 		week = numbered.week,
 		dayStart = decoded.dayStart,
 		weekStart = decoded.weekStart,
+		dayOrigin = decoded.dayStart,
+		weekOrigin = decoded.weekStart,
 	}
 	state.day, state.week = numbered.day, numbered.week
 	state.owed.notices, state.owed.expeditions = START_NOTICES, START_EXPEDITIONS

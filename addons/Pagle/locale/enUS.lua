@@ -290,6 +290,7 @@ ns.L = {
 	PASTE_CLOSE = "Close",
 	PASTE_NOTHING_NEW = "Nothing new since your last export.",
 	PASTE_CANT_EXPORT = "Pagle can't export this Catch log.",
+	PASTE_PREPARING = "Preparing your Paste string…",
 	PASTE_AFTER_COMBAT = "Pagle: the export window opens after combat.",
 	PASTE_TEST_LINE = "Copy test: %d KB",
 	-- The Settings root's Pagle website section (SET-R10 row 12): the export button's row label, caption and tooltip.
@@ -400,7 +401,7 @@ ns.L = {
 	DEV_ON = "Pagle dev: dev commands are on.",
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
-	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | catch <itemID> [areaID] | glyphs"
+	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | glyphs"
 		.. " | tour [module | list | stop] | probe | onboarding <command> | content | views | pastetest <KB>",
 	-- /pagle dev pastetest <KB> (PST-R60): its usage, with the sizes it takes, and the line it prints once the window
 	-- shows the test string.
@@ -524,14 +525,17 @@ ns.L = {
 	DEV_SAMPLE_WRITE_UP = "Your Ledger was written up from 2,340 Casts",
 	DEV_SESSION_ENDED = "Pagle dev: the Session ended, as if its gap had passed.",
 	DEV_NO_SESSION = "Pagle dev: no Session is open.",
+	-- Packaged: /pagle dev onboarding reset prints it too.
+	DEV_NO_CHARACTER = "Pagle dev: no character is logged in yet.",
+	--@do-not-package@
 	DEV_CATCH_USAGE = "Pagle dev: /pagle dev catch <itemID> [areaID]",
 	DEV_REAL_LOG = "Pagle dev: catch writes to the Catch log, so it runs on a test log only (PagleLog.test); "
 		.. "this log is real, and nothing was added.",
 	-- The areaID as typed.
 	DEV_UNKNOWN_AREA = "Pagle dev: %s isn't an area in Pagle's catalogue.",
-	DEV_NO_CHARACTER = "Pagle dev: no character is logged in yet.",
 	-- The item ID, the zone areaID and the entry's seq.
 	DEV_CAUGHT = "Pagle dev: caught item %d in zone %d (entry %d).",
+	--@end-do-not-package@
 	-- /pagle dev glyphs (#248, CORE-R9): the probe line, then where the rest of it is.
 	DEV_GLYPHS_CHAT = "Pagle dev: the glyph probe in the chat font: %s",
 	DEV_GLYPHS_SHOWN = "Pagle dev: the same line in each font Pagle uses is on screen; a box is a character that font"
@@ -584,6 +588,7 @@ ns.L = {
 		{ name = "shop", help = "open or close the Curio Shop" },
 		{ name = "report", help = "open the Field report, to help chart the waters" },
 		{ name = "export", help = "copy your Catch log as a Paste string for the Pagle website" },
+		{ name = "recovery", help = "export a Recovery snapshot or inspect preserved records" },
 		{ name = "guide", help = "open the Field guide; /pagle guide notes shows the margin notes again" },
 		{ name = "help", help = "list these commands" },
 	},

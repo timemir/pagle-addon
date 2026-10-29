@@ -72,6 +72,7 @@ local SUB_COLLECTION = { junk = true, container = true, treasure = true, trophy 
 ---@field caught { [integer]: true }  -- the projection's every item ID ever caught (TKB-R46)
 ---@field open TackleGoalDef[]        -- the open goals of every type
 ---@field random fun(m: integer, n: integer): integer -- like math.random
+---@field rewards? { notice: integer[], expedition: integer } -- trusted historical reward schedule
 
 ---@class TackleCandidateZone
 ---@field zone integer                -- the zone's areaID
@@ -429,4 +430,113 @@ function ns.GenerateGoal(ctx, goalType, dropKind)
 		end
 	end
 	return { type = goalType, kind = kind, tier = tier, pay = ns.NOTICE_PAY[tier], need = need, target = target }
+end
+
+--- Whether a recorded goal could be generated under this trusted rule set and source context.
+---@param ctx TackleGenerationContext
+---@param def TackleGoalDef
+---@param dropKind TackleGoalKind?
+---@return string?
+function ns.GoalProblem(ctx, def, dropKind)
+	local found = survey(ctx)
+	local noticePay = ctx.rewards and ctx.rewards.notice or ns.NOTICE_PAY
+	local expeditionPay = ctx.rewards and ctx.rewards.expedition or ns.EXPEDITION_PAY
+	local weights = KIND_WEIGHTS[def.type]
+	if not weights then
+		return "type"
+	end
+	local allowed = {}
+	for _, kind in ipairs(KINDS) do
+		if weights[kind] and kind ~= dropKind and #OPTIONS[kind](found, def.type) > 0 then
+			allowed[#allowed + 1] = kind
+		end
+	end
+	allowed = avoiding(allowed, openSet(ctx, def.type, nil, "kind"), itself)
+	local permitted = false
+	for _, kind in ipairs(allowed) do
+		permitted = permitted or kind == def.kind
+	end
+	if not permitted then
+		return "kind"
+	end
+	local options = OPTIONS[def.kind](found, def.type)
+	local speciesCount
+	if def.kind == "haul" or def.kind == "variety" then
+		local zones = avoiding(options, openSet(ctx, def.type, def.kind, "target"), function(zone)
+			return zone.zone
+		end)
+		local offered = false
+		for _, zone in ipairs(zones) do
+			offered = offered or zone.zone == def.target
+		end
+		if not offered then
+			return "target"
+		end
+		if def.kind == "variety" then
+			local species = found.species[def.target]
+			speciesCount = #species
+			if def.type == "e" then
+				if not def.items or #def.items ~= #species then
+					return "items"
+				end
+				for i, item in ipairs(species) do
+					if def.items[i] ~= item.item then
+						return "items"
+					end
+				end
+			end
+		end
+	elseif def.kind == "species" then
+		local named, offered, fresh = {}, false, false
+		for item in pairs(openSet(ctx, def.type, "species", "target")) do
+			local known = ctx.pagle.GetItem(item)
+			if known then
+				named[known.species] = true
+			end
+		end
+		local target
+		for _, zone in ipairs(options) do
+			for _, item in ipairs(found.species[zone.zone]) do
+				fresh = fresh or not named[item.species]
+				if item.item == def.target then
+					offered, target = true, item.species
+				end
+			end
+		end
+		if not offered or (fresh and named[target]) then
+			return "target"
+		end
+	elseif def.kind == "wanderer" and def.type == "e" then
+		local offered = false
+		for _, continent in ipairs(avoiding(options, openSet(ctx, def.type, def.kind, "target"), itself)) do
+			offered = offered or continent == def.target
+		end
+		if not offered then
+			return "target"
+		end
+	elseif def.kind == "rarity" and def.target ~= RARITY_TARGETS[def.type] then
+		return "target"
+	end
+	if def.type == "e" then
+		return (def.tier ~= 0 or def.pay ~= expeditionPay or def.need ~= (speciesCount or EXPEDITION_NEEDS[def.kind]))
+				and "reward"
+			or nil
+	end
+	for tier = 1, NOTICE_TIERS do
+		if not FIXED_TIERS[def.kind] or tier == FIXED_TIERS[def.kind] then
+			local need, actualTier = NOTICE_NEEDS[def.kind][tier], tier
+			if speciesCount and need > speciesCount then
+				need = speciesCount
+				for t, n in pairs(NOTICE_NEEDS[def.kind]) do
+					if n == need then
+						actualTier = t
+					end
+				end
+			end
+			if def.tier == actualTier and def.need == need and def.pay == noticePay[actualTier] then
+				return nil
+			end
+		end
+	end
+	return "reward"
 end

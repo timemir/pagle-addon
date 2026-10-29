@@ -35,6 +35,7 @@ ns.GOOD_ID_PATTERN = "^[%w_.]+$"
 ---@class PagleBuild : PagleRecord
 ---@field build integer          -- the GetBuildInfo() build number
 ---@field version string         -- e.g. "1.60.1"
+---@field rules string           -- shipped immutable backend rule-set ID
 
 --- A Prestige (`P1`, LOG-R38): the Angler's new prestige rank, one more than the Prestiges before it, and Core's
 --- Activity XP total when it was recorded (AXP-R5), 0 for a pre-1.0 dev log's P1, which has none.
@@ -65,7 +66,8 @@ ns.COMPANION_READER = "Core"
 
 --- The PagleLog layout version (LOG-R18). 1.0 ships format 2, frozen from then on (LOG-R17); every beta or dev log
 --- is format 1, so it starts over at the first 1.0 login.
-ns.LOG_FORMAT = 2
+ns.LOG_FORMAT = 3
+ns.RULE_SET_ID = "pagle-2026c"
 
 --- The most bytes a Module record's payload may hold (LOG-R40, Tunables).
 ns.MODULE_RECORD_PAYLOAD_LIMIT = 200
@@ -94,41 +96,23 @@ function ns.ModuleRecordProblem(kind, payload)
 	return nil
 end
 
--- The fields of an entry string, split at every `|`. "a||b" is { "a", "", "b" }.
----@param entry string
----@return string[]
-local function splitFields(entry)
-	local fields = {}
-	local start = 1
-	while true do
-		local bar = string.find(entry, "|", start, true)
-		if not bar then
-			fields[#fields + 1] = string.sub(entry, start)
-			return fields
-		end
-		fields[#fields + 1] = string.sub(entry, start, bar - 1)
-		start = bar + 1
-	end
-end
-
 -- A decimal integer field, or nil if the field isn't one.
 ---@param field string
 ---@return integer?
 local function integer(field)
-	if string.find(field, "^%-?%d+$") then
-		return tonumber(field)
+	if field ~= "0" and not string.find(field, "^%-?[1-9]%d*$") then
+		return nil
 	end
-	return nil
+	local value = tonumber(field)
+	return value and math.abs(value) <= 9007199254740991 and value or nil
 end
 
 -- A whole number field, 0 or more (a rank, a price), or nil if the field isn't one.
 ---@param field string
 ---@return integer?
 local function wholeNumber(field)
-	if string.find(field, "^%d+$") then
-		return tonumber(field)
-	end
-	return nil
+	local value = integer(field)
+	return value and value >= 0 and value or nil
 end
 
 -- A field that may be empty: false if it holds something that isn't an integer, else the integer or nil.
@@ -200,7 +184,6 @@ local OUTCOME_FIELDS = { caught = "c", gotAway = "g" }
 ---@field kind string
 ---@field count integer
 ---@field rest? boolean
----@field optional? integer how many of the last fields an older entry may leave out; decode gets them as nil
 ---@field encode fun(record: table): string[]
 ---@field decode fun(record: table, f: string[]): boolean
 
@@ -292,26 +275,26 @@ local kinds = {
 
 	B1 = {
 		kind = "build",
-		count = 2,
+		count = 3,
 		encode = function(record)
-			return { integerField(record.build), record.version }
+			assert(type(record.rules) == "string", "missing build rule-set ID")
+			return { integerField(record.build), record.version, record.rules }
 		end,
 		decode = function(record, f)
-			record.build, record.version = integer(f[1]), f[2]
-			return record.build ~= nil and f[2] ~= ""
+			record.build, record.version, record.rules = integer(f[1]), f[2], f[3]
+			return record.build ~= nil and f[2] ~= "" and f[3] ~= nil
 		end,
 	},
 
 	P1 = {
 		kind = "prestige",
 		count = 2,
-		optional = 1, -- a pre-1.0 dev log's P1 has no activityXP, read as 0 (AXP-R5)
 		encode = function(record)
 			return { integerField(record.rank), integerField(record.activityXP or 0) }
 		end,
 		decode = function(record, f)
 			record.rank = wholeNumber(f[1])
-			record.activityXP = f[2] == nil and 0 or wholeNumber(f[2])
+			record.activityXP = wholeNumber(f[2])
 			return record.rank ~= nil and record.rank >= 1 and record.activityXP ~= nil
 		end,
 	},
@@ -400,10 +383,10 @@ end
 ---@param characters table[]
 ---@return PagleRecord?
 local function decode(entry, seq, characters)
-	if type(entry) ~= "string" then
+	local problem, f = ns.CanonicalRecordProblem(entry)
+	if problem or not f then
 		return nil
 	end
-	local f = splitFields(entry)
 	local codec = kinds[f[1]]
 	local char, time, tie = integer(f[2] or ""), integer(f[3] or ""), integer(f[4] or "")
 	if not codec or not char or not time or not tie then
@@ -416,7 +399,7 @@ local function decode(entry, seq, characters)
 			f[i] = nil
 		end
 	end
-	if #f ~= last and not (codec.optional and #f < last and #f >= last - codec.optional) then
+	if #f ~= last then
 		return nil
 	end
 	local character = characters[char]

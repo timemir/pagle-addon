@@ -128,7 +128,7 @@ function ns.NewTrailerHistory(catalogue, characters, char, snapshot, now)
 			local zone = day == 119 and zones[1] or zones[day % #zones + 1]
 			module("issue", "n;haul;1;10;5;" .. zone, at + 2)
 			module("issue", "n;variety;1;10;2;" .. zone, at + 3)
-			module("issue", "n;size;1;10;2;2", at + 4)
+			module("issue", "n;quality;1;10;3;2", at + 4)
 			if day % 7 == 0 then
 				module("issue", "e;haul;1;80;30;" .. zone, at + 5)
 			end

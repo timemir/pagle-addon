@@ -98,6 +98,7 @@ end
 --- Neither happens before PLAYER_LOGIN, when the character is known and the service started.
 function ns.ReadSkill()
 	if ns.angler and ns.angler.current then
+		ns.LogBuild() -- skill events can arrive before PLAYER_ENTERING_WORLD's declaration
 		local rank, max, mod = ns.ReadFishingSkill()
 		local reading = (rank and max and mod) and { rank = rank, max = max, mod = mod } or nil
 		local appended = ns.angler:ReadSkill(reading, GetServerTime())

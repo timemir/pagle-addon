@@ -229,9 +229,10 @@ describe("Core and a disabled Module", function()
 	it("never enables or loads one: no Core file names that client API (CORE-R16, CORE-R17)", function()
 		-- A disabled Module registers nothing because the client never loads it; Core must not load it either.
 		local forbidden = { "EnableAddOn", "EnableAllAddOns", "LoadAddOn", "ResetAddOns", "SaveAddOns" }
-		-- The one addon Core loads is the Companion's Pagle_Anglers, never a Module (VIEW-R3): its one call, the
-		-- inventory's name and the doc naming the call are taken out before the check.
-		local anglersLoad = {
+		-- Core explicitly loads only the Anglers data and an installed Recovery package, never a Module.
+		-- Only their fixed calls, the inventory and the docs naming those calls are taken out.
+		local allowedLoads = {
+			["adapter/Recovery.lua"] = 'C_AddOns.LoadAddOn("Pagle_Recovery")',
 			["adapter/AnglersInGame.lua"] = "pcall(C_AddOns.LoadAddOn, ANGLERS_ADDON)",
 			["data/ApiInventory.lua"] = '"C_AddOns.LoadAddOn",',
 			["logic/AnglersInGame.lua"] = 'C_AddOns.LoadAddOn("Pagle_Anglers")',
@@ -252,7 +253,7 @@ describe("Core and a disabled Module", function()
 			if not file:match("^libs/") then
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 				local source = assert(io.open("addons/Pagle/" .. file, "r")):read("*a")
-				local allowed = anglersLoad[file]
+				local allowed = allowedLoads[file]
 				if allowed then
 					local found
 					source, found = source:gsub(allowed:gsub("%p", "%%%0"), "")

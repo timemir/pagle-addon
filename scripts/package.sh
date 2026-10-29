@@ -43,7 +43,8 @@ source "$root/scripts/tools.env"
 # shellcheck source=lib/tools.sh
 source "$root/scripts/lib/tools.sh"
 releasedir="$root/.release"
-packager="$(tools_dir "$root")/packager/release-$PACKAGER_COMMIT.sh"
+tools=$(tools_dir "$root")
+packager="$tools/packager/release-$PACKAGER_COMMIT.sh"
 
 for tool in git curl unzip zip jq; do
 	if ! command -v "$tool" >/dev/null; then
@@ -133,5 +134,11 @@ if unzip -p "$zipfile" '*.toc' | grep -q '@project-version@'; then
 	echo "FAIL: a TOC in the zip still says @project-version@." >&2
 	exit 1
 fi
+
+# Exercise the shipped TOCs, startup and slash commands, rather than the development sources.
+mkdir "$work/addons"
+unzip -q "$zipfile" -d "$work/addons"
+cd "$root"
+PAGLE_RELEASE_ADDONS="$work/addons" "$tools/bin/busted" --pattern=recording.lua spec/release
 
 echo "OK: $(basename "$zipfile") holds only ${got_tops// //, }/, as built from addons/."

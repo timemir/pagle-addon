@@ -203,7 +203,7 @@ describe("/pagle guide (ONB-R80, CORE-R61)", function()
 		assert.are.equal("Pagle commands:", loaded.printed[1])
 		assert.are.equal(
 			"/pagle guide: open the Field guide; /pagle guide notes shows the margin notes again",
-			loaded.printed[6]
+			loaded.printed[7]
 		)
 		assert.are.same({}, openedNames(loaded))
 	end)

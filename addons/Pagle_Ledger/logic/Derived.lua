@@ -423,11 +423,23 @@ function ns.PickedTitle(record)
 	return record.payload
 end
 
+--- The log the Ledger's log-scoped state belongs to (LED-R90, LED-R157): the Angler's logId, followed by `:` and its
+--- Recovery generation once Recovery restored it (RCV-R6), so a restored history starts both afresh. Nil before the
+--- log has a logId.
+---@param angler { logId: string?, recoveryGeneration: string? } Pagle.GetAngler()
+---@return string?
+function ns.LedgerLogKey(angler)
+	if angler.logId and angler.recoveryGeneration then
+		return angler.logId .. ":" .. angler.recoveryGeneration
+	end
+	return angler.logId
+end
+
 --- The title record to append for the title "Signed as" picks now (LED-R157): its payload ("" for automatic), or nil
 --- when the last title record the Ledger logged to this log already names it. One it logged to another log
 --- (`logged.logId` isn't `logId`) counts as none, and with none, automatic counts as logged.
 ---@param logged { logId: string, key: string }? PagleLedgerDB.global.titleLogged
----@param logId string? the log's logId now (Pagle.GetAngler().logId)
+---@param logId string? the log's key now (ns.LedgerLogKey)
 ---@param activeTitle string? the stored pick (PagleLedgerDB.profile.activeTitle), nil for automatic
 ---@return string?
 function ns.TitleRecordFor(logged, logId, activeTitle)

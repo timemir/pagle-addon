@@ -154,7 +154,7 @@ describe("scripts/rewrite-bindings.lua (ADR 0015, #353)", function()
 				assert.are.equal(old[i], new[i])
 			end
 			assert.are.same({
-				'"B1|1|1791800000|0|70338|1.60.1", -- [1]',
+				'"B1|1|1791800000|0|70338|1.60.1|pagle-2026a", -- [1]',
 				'"S1|1|1791800000|1|150|150|25", -- [2]',
 				'"C1|1|1791800060|0|c|494|1439|1|12|0|150|25||||6303x1", -- [3]',
 				'"U1|1|1791800200|0|core.binding.birch|150", -- [4]',
@@ -163,7 +163,7 @@ describe("scripts/rewrite-bindings.lua (ADR 0015, #353)", function()
 				'"U1|1|1791800400|1|core.binding.tooled|400", -- [7]',
 				'"U1|1|1791800500|0|core.binding.tooled|400", -- [8]',
 				'"C1|1|1791800560|0|g|497|1439|1|12|0|150|25||||", -- [9]',
-				'"A1|1|1791800600|0|Hunts|note|U1|1|2|0|ledger.binding.birch|150", -- [10]',
+				'"A1|1|1791800600|0|Hunts|def|p_note|1/1|U1|1|2|0|ledger.binding.birch|150", -- [10]',
 				"},",
 				"}",
 				"PagleDB = {",

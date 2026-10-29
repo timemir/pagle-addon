@@ -11,7 +11,7 @@ local T = 1791731000
 
 -- A PagleLog holding Ada, Bram and these entries.
 local function log(entries)
-	return savedLog(entries, 2, {
+	return savedLog(entries, 3, {
 		{ guid = ADA, name = "Ada", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
 		{ guid = BRAM, name = "Bram", classID = 1, raceID = 3, faction = "Alliance", realmID = 4618 },
 	})
@@ -68,7 +68,7 @@ describe("cutting Sessions", function()
 			log({
 				cast(0),
 				cast(200, 2), -- Bram, on another login
-				"B1|2|1791731300|0|70338|1.60.1", -- a reload in between: a build entry
+				"B1|2|1791731300|0|70338|1.60.1|pagle-2026a", -- a reload in between: a build entry
 				cast(400, 2, 1519, 0), -- Stormwind
 				cast(650, 1),
 			}),
@@ -206,7 +206,7 @@ describe("the latest Session", function()
 		local catchLog = ns.OpenCatchLog(
 			log({
 				cast(0, 1, 148, 453, "6358x1"),
-				"B1|1|1791731100|0|70338|1.60.1",
+				"B1|1|1791731100|0|70338|1.60.1|pagle-2026a",
 				cast(200, 2, 1519, 0, "6358x5,6303x2,6299x1"), -- 3 Catches, 8 fish
 				gotAway(400),
 				cast(500, 1, 0, 0, "6358x1"), -- zone unresolved

@@ -108,6 +108,8 @@ end
 ---@field week integer
 ---@field dayStart integer
 ---@field weekStart integer
+---@field dayOrigin? integer -- the first boundary, preserved through clock and fallback changes
+---@field weekOrigin? integer
 
 --- `floor(x + 0.5)` (TKB-R12's round).
 ---@param x number
@@ -117,9 +119,8 @@ local function round(x)
 end
 
 --- The day and week a `start` or `day` record with these boundaries gets (TKB-R12): 0 and 0 for the `start` record
---- (`previous` nil); for a `day` record, the previous boundary record's plus the whole days and weeks its boundaries
---- moved, rounded, never lower than the previous record's (a clock step back or a switch to or from the fallback can't
---- number backwards).
+--- (`previous` nil); for a `day` record, elapsed whole days and weeks from the first boundary, rounded and never
+--- lower than the previous record's. Anchoring avoids cumulative advances from alternating reset observations.
 ---@param previous TackleBoundary? the latest earlier `start` or `day` record; nil for the `start` record
 ---@param dayStart integer
 ---@param weekStart integer
@@ -128,9 +129,11 @@ function ns.NumberBoundary(previous, dayStart, weekStart)
 	if not previous then
 		return { day = 0, week = 0 }
 	end
-	local days = round((dayStart - previous.dayStart) / ns.DAY_SECONDS)
-	local weeks = round((weekStart - previous.weekStart) / ns.WEEK_SECONDS)
-	return { day = previous.day + math.max(0, days), week = previous.week + math.max(0, weeks) }
+	local dayOrigin = previous.dayOrigin or previous.dayStart - previous.day * ns.DAY_SECONDS
+	local weekOrigin = previous.weekOrigin or previous.weekStart - previous.week * ns.WEEK_SECONDS
+	local days = round((dayStart - dayOrigin) / ns.DAY_SECONDS)
+	local weeks = round((weekStart - weekOrigin) / ns.WEEK_SECONDS)
+	return { day = math.max(previous.day, days), week = math.max(previous.week, weeks) }
 end
 
 --- The board day of an entry at server time `t` (TKB-R12), counted from `boundary`, the latest `start` or `day` record

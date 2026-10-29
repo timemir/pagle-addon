@@ -33,7 +33,7 @@ end
 local function anglerOver(characters, entries, global)
 	local saved
 	if characters or entries then
-		saved = { format = 2, logId = "3f9a2c1e7b0d4a65", characters = characters or {}, entries = entries or {} }
+		saved = { format = 3, logId = "3f9a2c1e7b0d4a65", characters = characters or {}, entries = entries or {} }
 	end
 	local catchLog = ns.OpenCatchLog(saved, global or {}, T)
 	return ns.NewAngler(catchLog), catchLog
@@ -114,29 +114,32 @@ describe("build entries", function()
 
 		local build = angler:LogBuild(70338, "1.60.1", T)
 
-		assert.are.same({ "B1|1|1791731700|0|70338|1.60.1" }, catchLog.data.entries)
+		assert.are.same({ "B1|1|1791731700|0|70338|1.60.1|pagle-2026c" }, catchLog.data.entries)
 		assert.are.same({ 1, "build", 70338, "1.60.1" }, { build.seq, build.kind, build.build, build.version })
-		assert.are.same({ logId = LOG_ID, build = 70338 }, global.lastBuild)
+		assert.are.same({ logId = LOG_ID, build = 70338, rules = "pagle-2026c" }, global.lastBuild)
 	end)
 
 	it("append nothing while the build is the cached one, and a B1 when it differs (LOG-R36)", function()
-		local global = { lastBuild = { logId = LOG_ID, build = 70338 } }
-		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1" }, global)
+		local global = { lastBuild = { logId = LOG_ID, build = 70338, rules = "pagle-2026c" } }
+		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1|pagle-2026c" }, global)
 		angler:SeeCharacter(ada(), T)
 
 		assert.is_nil(angler:LogBuild(70338, "1.60.1", T))
 		assert.is_table(angler:LogBuild(70412, "1.60.2", T + 1))
 
-		assert.are.same({ "B1|1|1791731000|0|70338|1.60.1", "B1|1|1791731701|0|70412|1.60.2" }, catchLog.data.entries)
-		assert.are.same({ logId = LOG_ID, build = 70412 }, global.lastBuild)
+		assert.are.same(
+			{ "B1|1|1791731000|0|70338|1.60.1|pagle-2026c", "B1|1|1791731701|0|70412|1.60.2|pagle-2026c" },
+			catchLog.data.entries
+		)
+		assert.are.same({ logId = LOG_ID, build = 70412, rules = "pagle-2026c" }, global.lastBuild)
 	end)
 
 	for name, cache in pairs({ missing = false, ["of another logId"] = { logId = "0000000000000000", build = 1 } }) do
 		it("rebuild a cache that is " .. name .. " by walking the log back to its last B1 (LOG-R36)", function()
 			local global = { lastBuild = cache or nil }
 			local angler, catchLog = anglerOver({ ada() }, {
-				"B1|1|1791731000|0|70000|1.60.0",
-				"B1|1|1791731100|0|70338|1.60.1",
+				"B1|1|1791731000|0|70000|1.60.0|pagle-2026c",
+				"B1|1|1791731100|0|70338|1.60.1|pagle-2026c",
 				"S1|1|1791731200|0|86|150|0",
 			}, global)
 			angler:SeeCharacter(ada(), T)
@@ -144,13 +147,21 @@ describe("build entries", function()
 			assert.is_nil(angler:LogBuild(70338, "1.60.1", T))
 
 			assert.are.equal(3, #catchLog.data.entries)
-			assert.are.same({ logId = LOG_ID, build = 70338 }, global.lastBuild)
+			assert.are.same({ logId = LOG_ID, build = 70338, rules = "pagle-2026c" }, global.lastBuild)
 		end)
 	end
 
+	it("records a shipped rule change even when the game build stays the same", function()
+		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1|pagle-2026b" })
+		angler:SeeCharacter(ada(), T)
+		local record = angler:LogBuild(70338, "1.60.1", T)
+		assert.are.equal("pagle-2026c", record.rules)
+		assert.are.equal(2, #catchLog.data.entries)
+	end)
+
 	it("trust a cache of this logId without reading the log (LOG-R36)", function()
-		local global = { lastBuild = { logId = LOG_ID, build = 70412 } }
-		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1" }, global)
+		local global = { lastBuild = { logId = LOG_ID, build = 70412, rules = "pagle-2026c" } }
+		local angler, catchLog = anglerOver({ ada() }, { "B1|1|1791731000|0|70338|1.60.1|pagle-2026c" }, global)
 		angler:SeeCharacter(ada(), T)
 
 		assert.is_nil(angler:LogBuild(70412, "1.60.2", T))
@@ -251,5 +262,13 @@ describe("the Angler", function()
 		assert.are.same({}, result.characters)
 		assert.are.same({}, result.skill)
 		assert.are.equal(0, result.bestBaseSkill)
+		assert.is_nil(result.recoveryGeneration)
+	end)
+
+	it("carries the Recovery generation that last restored the log (RCV-R6)", function()
+		local generation = string.rep("a", 64)
+		local result = anglerOver({}, {}, { recoveryGeneration = generation }):Get()
+
+		assert.are.equal(generation, result.recoveryGeneration)
 	end)
 end)

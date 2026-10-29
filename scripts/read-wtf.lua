@@ -214,6 +214,7 @@ local function loadCoreLogic()
 	return wtf.loadCore({
 		"logic/Conditions.lua",
 		"logic/Sessions.lua",
+		"logic/Integrity.lua",
 		"logic/CatchLog.lua",
 		"logic/FieldReport.lua",
 		"logic/FieldReportText.lua",
@@ -710,8 +711,8 @@ local function printStored(stored, log)
 	end
 end
 
--- A Module's records in PagleLog (LOG-R40, LOG-R41), in seq order, read as M:IterateCatches reads them with Core's
--- codec (`core`, loadCoreLogic's); or nil and the line saying why there are none to read.
+-- A Module's raw record envelopes in source order. Diagnostics keep malformed payloads visible even when Core's
+-- strict codec skips them. These records are only listed, never applied to a projection.
 local function moduleRecords(core, log, module)
 	if not log then
 		return nil, "records: no PagleLog to read"
@@ -720,9 +721,22 @@ local function moduleRecords(core, log, module)
 			("records: PagleLog is format %s, the codec reads format %d"):format(tostring(log.format), core.LOG_FORMAT)
 	end
 	local records = {}
-	for record in core.OpenCatchLog(log, { decodeErrors = 0 }, 0):Iterate(0, module) do
-		if record.kind == "module" then
-			records[#records + 1] = record
+	for seq, entry in ipairs(log.entries) do
+		if type(entry) == "string" then
+			local char, time, tie, owner, kind, payload = entry:match("^A1|(%d+)|(%d+)|(%d+)|([^|]+)|([^|]+)|(.*)$")
+			local character = char and log.characters[tonumber(char)]
+			if owner == module and type(character) == "table" and type(character.guid) == "string" then
+				records[#records + 1] = {
+					kind = "module",
+					seq = seq,
+					char = tonumber(char),
+					time = tonumber(time),
+					id = character.guid .. "-" .. time .. "-" .. tie,
+					module = owner,
+					recordKind = kind,
+					payload = payload,
+				}
+			end
 		end
 	end
 	return records
@@ -973,6 +987,7 @@ local function printSizes(log, catalogue)
 		"logic/Sessions.lua",
 		"logic/Size.lua",
 		"logic/Variety.lua",
+		"logic/Integrity.lua",
 		"logic/CatchLog.lua",
 	})
 	if log.format ~= core.LOG_FORMAT then
@@ -3469,6 +3484,7 @@ local function printReverify(pagle, options)
 	local ns = wtf.loadCore({
 		"logic/Conditions.lua",
 		"logic/Sessions.lua",
+		"logic/Integrity.lua",
 		"logic/CatchLog.lua",
 		"logic/FieldReport.lua",
 		"logic/LoadTimings.lua",

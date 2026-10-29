@@ -91,6 +91,7 @@ describe("Pagle_Stats with Core", function()
 			"/pagle shop: open or close the Curio Shop",
 			"/pagle report: open the Field report, to help chart the waters",
 			"/pagle export: copy your Catch log as a Paste string for the Pagle website",
+			"/pagle recovery: export a Recovery snapshot or inspect preserved records",
 			"/pagle guide: open the Field guide; /pagle guide notes shows the margin notes again",
 			"/pagle help: list these commands",
 			"/pagle stats: Open or close the Stats book.",
@@ -297,7 +298,7 @@ describe("Pagle_Stats with FakePagle", function()
 		local expected = labels(plain.menu())
 		table.insert(expected, 1, "Stats")
 		assert.are.same(expected, labels(fake.menu()))
-		assert.are.same({ "/pagle stats: Open or close the Stats book." }, { unpack(fake.printed, 8) })
+		assert.are.same({ "/pagle stats: Open or close the Stats book." }, { unpack(fake.printed, 9) })
 	end)
 
 	it(

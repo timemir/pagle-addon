@@ -44,7 +44,7 @@ describe("Core's login order", function()
 	it(
 		"at ADDON_LOADED checks the format, notes loginSeq, migrates PagleDB, then builds the catalogue (LOG-R1)",
 		function()
-			local log = savedLog({ "S1|1|1791731000|0|80|150|0", "B1|1|1791731001|0|70338|1.60.1" })
+			local log = savedLog({ "S1|1|1791731000|0|80|150|0", "B1|1|1791731001|0|70338|1.60.1|pagle-2026a" })
 			local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }), { holdAddonLoaded = true })
 			local ns = loaded.ns
 			local duringMigration
@@ -114,10 +114,25 @@ describe("Core's login order", function()
 		loaded.client.fire("PLAYER_ENTERING_WORLD", false, false)
 
 		assert.are.same({
-			"B1|1|1791731700|0|70338|1.60.1",
+			"B1|1|1791731700|0|70338|1.60.1|pagle-2026c",
 			"S1|1|1791731700|1|86|150|0",
 		}, loaded.env.PagleLog.entries)
 	end)
+
+	for _, event in ipairs({ "SKILL_LINES_CHANGED", "CHAT_MSG_SKILL" }) do
+		it("declares the active rules before " .. event .. " can append during startup", function()
+			local globals = fishingClient()
+			local loaded = loadAddon("Pagle", globals)
+			loaded.client.fire("PLAYER_LOGIN")
+			loaded.client.fire(event)
+			loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
+			local entries = loaded.env.PagleLog.entries
+			assert.are.equal(loaded.ns.RULE_SET_ID, entries[1]:match("^B1|.*|([^|]+)$"))
+			assert.matches("^S1|", entries[2])
+			assert.are.equal(2, #entries)
+			assert.are.same({}, loaded.client.errors)
+		end)
+	end
 
 	it("has Core's DBs loaded and its catalogue built when a Module's OnInitialize runs (CORE-R10)", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
@@ -136,7 +151,7 @@ describe("Core's login order", function()
 
 		loaded.client.fire("ADDON_LOADED", "Pagle_QoL")
 
-		assert.are.same({ log = 2, db = #loaded.ns.PAGLEDB_MIGRATIONS, catalogue = true }, found)
+		assert.are.same({ log = 3, db = #loaded.ns.PAGLEDB_MIGRATIONS, catalogue = true }, found)
 	end)
 end)
 
@@ -295,7 +310,8 @@ describe("Skill Readings from the client", function()
 	end)
 
 	it("are not taken again at login for a character whose last reading matches (LOG-R31)", function()
-		local loaded = loggedIn(savedLog({ "B1|1|1791731000|0|70338|1.60.1", "S1|1|1791731001|0|86|150|0" }))
+		local loaded =
+			loggedIn(savedLog({ "B1|1|1791731000|0|70338|1.60.1|pagle-2026c", "S1|1|1791731001|0|86|150|0" }))
 
 		assert.are.equal(2, #loaded.env.PagleLog.entries)
 	end)

@@ -122,9 +122,14 @@ end
 --- band.
 ---@param pool HuntEvent[]
 ---@param k integer
+---@param origin integer? trusted archived origin for backend validation
+---@param length integer? trusted archived run length
 ---@return HuntEvent[]
-function ns.RotationPicks(pool, k)
+function ns.RotationPicks(pool, k, origin, length)
 	local slot = ns.RotationSlot(k)
+	if origin and length then
+		slot.start = origin + length * k
+	end
 	local events = ns.RotationBand(pool, slot.band, slot.start)
 	local n = #events
 	local picks, seen, perms = {}, {}, {}
