@@ -441,6 +441,33 @@ describe("the WAGERS group (HNT-R161, HNT-R62, HNT-R63)", function()
 	end)
 end)
 
+describe("a WAGERS row's margin label on a 12-hour clock (HNT-R161, HNT-R60)", function()
+	it('is set a size down when it is past its room, so "until Sat 5:00 PM" isn\'t cut short', function()
+		local r = oneOn()
+		r.ns.ToggleBoard()
+		local fonts = r.ns.BoardFonts()
+		local function label()
+			local row = shownWith(r.ns.board:Page(place(r), "left"), "runKey")[1]
+			return row.margin, row.marginRoom
+		end
+
+		-- the 24-hour "until Sat 17:00" fits the room the kit drew, in the margin's own size
+		local margin, room = label()
+		assert.are.equal("until Sat 17:00", margin.text)
+		assert.is_true(margin:GetStringWidth() <= room)
+		assert.are.equal(fonts.margin, margin.fontObject)
+
+		r.fake.profile.clockFormat = "12h"
+		r.fake.noteClockFormat()
+
+		margin, room = label()
+		assert.are.equal("until Sat 5:00 PM", margin.text)
+		assert.are.equal(fonts.marginTight, margin.fontObject)
+		assert.are.equal(room, margin:GetWidth()) -- still bound to its room, cut only past even that
+		assert.are.same({}, bounds.overflows(r.ns.board:Page(place(r), "left")))
+	end)
+end)
+
 describe("selecting a run (HNT-R67, HNT-R164)", function()
 	it("still selects the first Hunt under Now when the board opens", function()
 		local r = oneOn()

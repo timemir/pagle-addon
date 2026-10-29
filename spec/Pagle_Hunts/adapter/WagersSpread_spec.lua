@@ -490,6 +490,47 @@ describe("the Pagle Wagers spread (HNT-R162)", function()
 		end
 	end)
 
+	it("keeps the settled entry's seal and its words whole on the page, on every page it draws (HNT-R163)", function()
+		-- The seal is pressed over the event mark's lower right; the page's frame clips whatever passes its right edge
+		-- (the dev saw "SETTLEI / 29 Oc"), so the wax's whole box and its words stay inside the page.
+		local function settled()
+			local history = onHistory()
+			history[#history + 1] = castAt(O + 3 * HOUR + 30 * 60, C.DARKSHORE, { C.DEVIATE })
+			history[#history].conditions.minute = 18 * 60 + 30
+			return oneOn({ history = history })
+		end
+		local function assertWhole(r, label)
+			local page = r.ns.board:Page(place(r), "right")
+			local view = r.ns.RunEntryView(page)
+			assert(view and view.seal.shown, label .. ": the seal doesn't show")
+			-- the seal is anchored TOPLEFT to the entry's root, which fills the page
+			local _, root, _, x, y = unpack(view.seal.points[1])
+			assert.are.equal(view.root, root, label)
+			assert(x >= 0, ("%s: the seal starts %g left of the page"):format(label, -x))
+			assert(
+				x + view.seal:GetWidth() <= page:GetWidth(),
+				("%s: the seal ends at %g, the page at %g"):format(label, x + view.seal:GetWidth(), page:GetWidth())
+			)
+			assert(
+				y <= 0 and -y + view.seal:GetHeight() <= page:GetHeight(),
+				label .. ": the seal leaves the page's height"
+			)
+			-- and it still presses over the event mark, in the mark's lower right
+			local markLeft = view.mark.points[1][4]
+			assert(x > markLeft and x < markLeft + view.mark:GetWidth(), label .. ": the seal has left the mark")
+			assert(markLeft + view.mark:GetWidth() <= page:GetWidth(), label .. ": the mark passes the page's edge")
+			assert.are.same({}, bounds.overflows(page), label)
+			assert(bounds.measured > 10, label .. ": only " .. bounds.measured .. " texts placed")
+		end
+
+		-- A settled run shows only while it is on (an ended run is no longer shown), on the spread and on the Board.
+		local r = settled()
+		r.ns.OpenWagers()
+		assertWhole(r, "spread, settled and open")
+		r.ns.OpenBoard({ run = SHORE })
+		assertWhole(r, "board, settled and open")
+	end)
+
 	it("puts the closing note in the margin within 3 hours of a run's end, its dial and words in red", function()
 		local r = oneOn({
 			now = SAT_15 - 42 * 60,
