@@ -137,7 +137,7 @@ local ns = select(2, ...)
 ---@class TackleGoal : TackleGoalDef
 ---@field id string                  -- TKB-R23: the entry ID of the record that issued it
 ---@field seq integer                -- seq of the record that issued it
----@field reposted boolean           -- issued by a `reroll`: it can't be taken down (TKB-R55)
+---@field reposted boolean           -- issued by a `reroll`; its `issuedDay` is then the day of the take-down, and it can't be taken down again that day (TKB-R55)
 ---@field pin? integer               -- index in pins of its type; nil while in the overflow strip (TKB-R101)
 ---@field issuedDay integer
 ---@field time integer               -- server time of its record

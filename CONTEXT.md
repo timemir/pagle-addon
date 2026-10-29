@@ -327,11 +327,11 @@ _Avoid_: occurrence, instance, edition
 ### Tackle Board
 
 **Notice**:
-One goal on the Tackle Board, such as "4 different Species in Feralas". It never expires, never needs a time window, counts only Catches made after it appeared, and can be rerolled once. Three arrive each day, up to a cap.
-_Avoid_: daily, quest, challenge, task
+One goal on the Tackle Board, such as "4 different Species in Feralas". It never expires, never needs a time window, counts only Catches made after it appeared, and can be taken down for a fresh one (rerolled) once per board day: the Notice a take-down re-posts can't be taken down again until the next daily reset, so no Notice you don't want sticks for more than a day. Three arrive each day, up to a cap.
+_Avoid_: daily (a Notice never expires and is no daily quest; only its take-down comes back each day), quest, challenge, task
 
 **Expedition**:
-The Tackle Board's larger weekly Notice. It never expires and banks like any Notice.
+The Tackle Board's larger weekly Notice. It never expires and banks like any Notice. It is taken down on the same daily reset as a Notice, not the weekly one.
 _Avoid_: weekly, weekly quest
 
 **Campfire**:

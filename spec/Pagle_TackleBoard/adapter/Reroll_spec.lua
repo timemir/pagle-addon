@@ -150,7 +150,7 @@ describe("taking a goal down", function()
 			ns.TakeDown(WANDERER)
 
 			assert.are.equal(
-				"Take down this Notice? Its progress (2/3) is lost, and the new one can't be taken down.",
+				"Take down this Notice? Its progress (2/3) is lost, and the new one can't be taken down again today.",
 				asked(ns)
 			)
 			assert.are.equal(0, #rerolls(ns))
@@ -158,7 +158,8 @@ describe("taking a goal down", function()
 	end)
 
 	describe("with progress (TKB-R56)", function()
-		local NOTICE_TEXT = "Take down this Notice? Its progress (12/30) is lost, and the new one can't be taken down."
+		local NOTICE_TEXT =
+			"Take down this Notice? Its progress (12/30) is lost, and the new one can't be taken down again today."
 
 		-- The board with the Haul Notice (need 30) at 12.
 		local function at12()
@@ -179,7 +180,7 @@ describe("taking a goal down", function()
 				confirm.keep.label:GetText(),
 			})
 			assert.are.equal(
-				"Its progress (|cff9A2A1A12/30|r) is lost, and the new one can't be taken down.",
+				"Its progress (|cff9A2A1A12/30|r) is lost, and the new one can't be taken down again today.",
 				confirm.text:GetText()
 			)
 			local drawn = confirm --[[@as table]] -- the fake client's frame keeps its name and its paper's texture
@@ -236,7 +237,7 @@ describe("taking a goal down", function()
 			ns.TakeDown(EXPEDITION)
 
 			assert.are.equal(
-				"Take down this Expedition? Its progress (1/8) is lost, and the new one can't be taken down.",
+				"Take down this Expedition? Its progress (1/8) is lost, and the new one can't be taken down again today.",
 				asked(ns)
 			)
 		end)
@@ -300,16 +301,14 @@ describe("taking a goal down", function()
 			assert.are.equal(0, #rerolls(ns))
 		end)
 
-		it("isn't allowed for a re-posted goal, unless it is stranded (TKB-R44)", function()
-			local rerolled = {
-				record("reroll", D0 + 3700, HAUL .. ";n;lure;1;10;15;"),
-				record("reroll", D0 + 3701, RARITY .. ";n;haul;1;10;20;" .. UNKNOWN_AREA), -- its zone is gone
-			}
-			local ns = started(rerolled)
-			local reposted, stranded = idAt(D0 + 3700), idAt(D0 + 3701)
+		it("isn't allowed for a goal re-posted today, unless it is stranded (TKB-R44, TKB-R55)", function()
+			local ns = started()
+			ns.TakeDown(HAUL)
+			ns.Module:AppendRecord("reroll", RARITY .. ";n;haul;1;10;20;" .. UNKNOWN_AREA) -- its zone is gone
+			local reposted, stranded = rerolls(ns)[1].id, rerolls(ns)[2].id
 
 			ns.TakeDown(reposted)
-			assert.are.equal(2, #rerolls(ns)) -- only the history's two
+			assert.are.equal(2, #rerolls(ns)) -- only the two above
 			ns.TakeDown(stranded)
 
 			assert.are.same({ false, false }, { ns.CanTakeDown(reposted), ns.CanTakeDown(stranded) })
@@ -346,5 +345,107 @@ describe("taking a goal down", function()
 			assert.is_nil(asked(ns))
 			assert.are.equal(0, #rerolls(ns))
 		end)
+	end)
+end)
+
+describe("taking a goal down once a board day (TKB-R55, TKB-R57, TKB-R82)", function()
+	local DAY = board.DAY
+
+	-- Whether each goal in `ids` can be taken down, in order.
+	local function can(ns, ids)
+		local answers = {}
+		for i, id in ipairs(ids) do
+			answers[i] = ns.CanTakeDown(id)
+		end
+		return answers
+	end
+
+	-- The board with the log read back from the start, as a rebuild does (TKB-R82): the same state, and so the same
+	-- answers.
+	local function rebuilt(ns)
+		local before = board.copy(ns.State())
+		ns.projection:Rebuild()
+		assert.are.same(before, ns.State())
+	end
+
+	it("lets a Notice come down again after the day record, and not before: the re-post waits for the reset", function()
+		local ns, loaded, fake = started()
+		ns.TakeDown(HAUL)
+		local first = rerolls(ns)[1].id
+
+		assert.is_false(ns.CanTakeDown(first)) -- the same board day
+		ns.TakeDown(first)
+		assert.are.equal(1, #rerolls(ns))
+
+		board.pass(loaded, fake, DAY) -- the daily reset: the live step appends a day record and advances
+		assert.is_true(ns.CanTakeDown(first))
+		ns.TakeDown(first)
+		local appended = rerolls(ns)
+		assert.are.equal(2, #appended)
+		assert.are.equal(first, ns.DecodeRecord("reroll", appended[2].payload).old)
+		local second = appended[2].id
+		assert.are.same(
+			{ second, true, 1 },
+			{ ns.State().pins.notices[1], ns.State().goals[second].reposted, ns.State().goals[second].pin }
+		)
+		assert.is_false(ns.CanTakeDown(second)) -- and the second re-post waits for the next one in turn
+		ns.TakeDown(second)
+		assert.are.equal(2, #rerolls(ns))
+	end)
+
+	it("lets an Expedition come down again at the next daily reset, not the weekly one", function()
+		local ns, loaded, fake = started()
+		ns.TakeDown(EXPEDITION)
+		local first = rerolls(ns)[1].id
+		assert.is_false(ns.CanTakeDown(first))
+
+		board.pass(loaded, fake, DAY)
+
+		assert.is_true(ns.CanTakeDown(first))
+		ns.TakeDown(first)
+		local second = rerolls(ns)[2].id
+		assert.are.equal(second, ns.State().pins.expeditions[1])
+		assert.is_false(ns.CanTakeDown(second))
+	end)
+
+	it("gives the same answers after a rebuild from the log, today and after the reset", function()
+		local ns, loaded, fake = started()
+		ns.TakeDown(HAUL)
+		ns.TakeDown(EXPEDITION)
+		local notice, expedition = rerolls(ns)[1].id, rerolls(ns)[2].id
+
+		rebuilt(ns)
+		assert.are.same({ false, false, true }, can(ns, { notice, expedition, RARITY }))
+
+		board.pass(loaded, fake, DAY)
+		assert.are.same({ true, true, true }, can(ns, { notice, expedition, RARITY }))
+		rebuilt(ns)
+		assert.are.same({ true, true, true }, can(ns, { notice, expedition, RARITY }))
+
+		ns.TakeDown(notice)
+		local again = rerolls(ns)[3].id
+		rebuilt(ns)
+		assert.are.same({ false, true, false }, can(ns, { notice, expedition, again }))
+	end)
+
+	it("reads a re-post's day from its record, not from the clock at the click or at the rebuild", function()
+		-- A reroll the log holds from an earlier board day is takeable now; one written today is not, and a login
+		-- afterwards rebuilds the same (TKB-R82).
+		local ns = started({ record("reroll", D0 + 3700, HAUL .. ";n;lure;1;10;15;") })
+		local earlier = idAt(D0 + 3700)
+
+		assert.is_true(ns.CanTakeDown(earlier))
+		ns.TakeDown(earlier)
+		local today = rerolls(ns)[2].id
+
+		assert.is_false(ns.CanTakeDown(today))
+		rebuilt(ns)
+		assert.are.same({ false, false }, { ns.CanTakeDown(earlier), ns.CanTakeDown(today) })
+	end)
+
+	it("takes a goal posted with a Refresh down on the day it was posted, like an issued one", function()
+		local ns = started({ record("post", D0 + 3700, "n;lure;1;10;15;") })
+
+		assert.is_true(ns.CanTakeDown(idAt(D0 + 3700)))
 	end)
 end)

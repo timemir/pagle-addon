@@ -141,13 +141,13 @@ describe("posting a goal with a Refresh", function()
 
 			local confirm = assert(ns.TakeDownConfirm())
 			assert.are.equal(
-				"Post a new Notice? This uses 1 Refresh, and it can't be undone. The new goal can be taken down once, like any other.",
+				"Post a new Notice? This uses 1 Refresh, and it can't be undone. The new goal can be taken down once a day, like any other.",
 				asked(ns)
 			)
 			assert.are.same({ "Post it", "Keep it" }, { confirm.accept.label:GetText(), confirm.keep.label:GetText() })
 			-- what it costs is inked in red, as the take-down inks what it loses
 			assert.are.equal(
-				"This uses |cff9A2A1A1 Refresh|r, and it can't be undone. The new goal can be taken down once, like any other.",
+				"This uses |cff9A2A1A1 Refresh|r, and it can't be undone. The new goal can be taken down once a day, like any other.",
 				confirm.text:GetText()
 			)
 			assert.are.equal(loaded.ns.BOARD_ATLASES.Board.file, (confirm --[[@as table]]).paper.texture)
@@ -160,7 +160,7 @@ describe("posting a goal with a Refresh", function()
 			ns.Post("e")
 
 			assert.are.equal(
-				"Post a new Expedition? This uses 1 Refresh, and it can't be undone. The new goal can be taken down once, like any other.",
+				"Post a new Expedition? This uses 1 Refresh, and it can't be undone. The new goal can be taken down once a day, like any other.",
 				asked(ns)
 			)
 		end)
@@ -221,7 +221,7 @@ describe("posting a goal with a Refresh", function()
 
 			assert.are.equal(first, ns.TakeDownConfirm())
 			assert.are.equal(
-				"Take down this Notice? Its progress (12/30) is lost, and the new one can't be taken down.",
+				"Take down this Notice? Its progress (12/30) is lost, and the new one can't be taken down again today.",
 				asked(ns)
 			)
 			assert.are.same({ "Take it down", "Keep it" }, {
@@ -430,8 +430,8 @@ describe("posting a goal with a Refresh", function()
 			assert.are.equal(1, #posts(ns))
 		end)
 
-		it("is a goal that can be taken down once and no more (TKB-R55)", function()
-			local ns = started(2)
+		it("is a goal that can be taken down once a day, and a take-down buys no Refresh back (TKB-R55)", function()
+			local ns, loaded, fake = started(2)
 			ns.Post("n")
 			ns.TakeDownConfirm().accept:Click()
 			local posted = posts(ns)[1].id
@@ -442,8 +442,14 @@ describe("posting a goal with a Refresh", function()
 			local state = ns.State()
 			local replacement = state.goals[state.pins.notices[4]]
 			assert.is_true(replacement.reposted)
-			assert.is_false(ns.CanTakeDown(replacement.id))
+			assert.is_false(ns.CanTakeDown(replacement.id)) -- not again today
 			assert.are.equal(1, state.ticketsSpent) -- no refund, no second spend
+
+			board.pass(loaded, fake, board.DAY) -- the daily reset
+			assert.is_true(ns.CanTakeDown(replacement.id))
+			ns.TakeDown(replacement.id)
+			assert.are.equal(1, ns.State().ticketsSpent)
+			assert.are.equal(1, fake.Pagle.GetTickets().tickets) -- the 2 held less the 1 spent, none given back
 		end)
 	end)
 

@@ -336,7 +336,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 1. Enable Pagle_TackleBoard: nothing shows and nothing is written; the Settings root's button reads "Start my board", and the Trackers checkbox is greyed out.
 2. Press Start my board: 3 Notices and 1 Expedition are pinned, the tracker lists the goals workable here, and after `/reload` `PagleLog` holds one `start` and four `issue` records.
 3. Complete a Notice: a "Notice complete" toast with its Coins stamp; the slip goes on the spike, the Fly Box reads "1 of 30 tied", and the Campfire is lit.
-4. Take down a Notice that has progress: the confirm asks once, and its replacement is stamped RE-POSTED with no "take it down". `/reload`: the board looks the same.
+4. Take down a Notice that has progress: the confirm asks once, and its replacement is stamped RE-POSTED with no "take it down" until the next daily reset. `/reload`: the board looks the same.
 5. Let a board day pass without a goal done (or use a test log): at the next login a Nod says Kindling was used, the Campfire count is unchanged, and the Notice pins have refilled, up to 6.
 6. Disable Pagle_TackleBoard, complete an open goal's need, re-enable: a "While Tackle Board was off" Write-up section lists it, and nothing pops up.
 7. `scripts/check.sh` passes with `tackleboard` in `data/checks.toml`'s `lore`.

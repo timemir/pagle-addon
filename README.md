@@ -103,7 +103,7 @@ Stats keeps your own numbers in the Stats book: every Session, your lifetime tot
 
 <img src="docs/readme/ribbon-tackle-board.png" alt="The Tackle Board" width="100%">
 
-The Tackle Board is opt-in: a cork board where three Notices go up each day and an Expedition each week, such as "4 different Species in Feralas". Fish where you like, and they fill in as you go. They never expire, so a missed day banks rather than vanishes, and each one can be taken down once for a fresh one of another kind. Each day with a goal done keeps your Campfire burning, Kindling carries it through a day you couldn't make, and your longest Campfire is kept for good. Every goal done ties a new fly in your Fly Box.
+The Tackle Board is opt-in: a cork board where three Notices go up each day and an Expedition each week, such as "4 different Species in Feralas". Fish where you like, and they fill in as you go. They never expire, so a missed day banks rather than vanishes, and each one can be taken down, once a day, for a fresh one of another kind. Each day with a goal done keeps your Campfire burning, Kindling carries it through a day you couldn't make, and your longest Campfire is kept for good. Every goal done ties a new fly in your Fly Box.
 
 <p align="center"><img src="docs/readme/gif-tackle-board.gif" alt="The Tackle Board, with its Campfire lit" width="100%"></p>
 

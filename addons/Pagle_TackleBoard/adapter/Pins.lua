@@ -170,7 +170,11 @@ function ns.NewGoalSlip(slot, poster)
 	button:SetScript("OnEnter", function(self)
 		local goal = self.goalID and ns.State().goals[self.goalID]
 		if goal then
-			ns.BoardHover(self, ns.TakeDownTip(goal, ns.board:IsUpdating(), ns.api.pagle), { cursor = true })
+			ns.BoardHover(
+				self,
+				ns.TakeDownTip(goal, ns.board:IsUpdating(), ns.api.pagle, ns.ResetCountdown(ns.api)),
+				{ cursor = true }
+			)
 		end
 	end)
 	button:SetScript("OnLeave", ns.BoardHoverHide)
@@ -288,12 +292,14 @@ end
 ---@return fun(goal: TackleGoal): TacklePinView
 local function viewer(draw)
 	local today, zone = ns.State().day, ns.CurrentZone()
+	local untilReset = ns.ResetCountdown(ns.api)
 	return function(goal)
 		return ns.PinView(goal, {
 			today = today,
 			zone = zone,
 			updating = draw.updating,
 			canTakeDown = ns.CanTakeDown(goal.id),
+			untilReset = untilReset,
 		})
 	end
 end

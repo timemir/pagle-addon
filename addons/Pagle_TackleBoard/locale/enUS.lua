@@ -88,14 +88,14 @@ ns.L = {
 	-- The reroll confirm (TKB-R56): its question by type, then what is lost ({progress}: the displayed progress over
 	-- the need, "12/30"), then the two buttons.
 	TAKE_DOWN_TITLE = { n = "Take down this Notice?", e = "Take down this Expedition?" },
-	TAKE_DOWN_TEXT = "Its progress ({progress}) is lost, and the new one can't be taken down.",
+	TAKE_DOWN_TEXT = "Its progress ({progress}) is lost, and the new one can't be taken down again today.",
 	TAKE_DOWN_PROGRESS = "{n}/{need}",
 	TAKE_DOWN_YES = "Take it down",
 	TAKE_DOWN_NO = "Keep it",
 	-- The post confirm (TKB-R59), the same paper: its question by type, then what it costs ({cost}: "1 Refresh", inked
-	-- red) and that the goal can be taken down once. Its answers are POST_YES and TAKE_DOWN_NO.
+	-- red) and that the goal can be taken down once a day. Its answers are POST_YES and TAKE_DOWN_NO.
 	POST_TITLE = { n = "Post a new Notice?", e = "Post a new Expedition?" },
-	POST_TEXT = "This uses {cost}, and it can't be undone. The new goal can be taken down once, like any other.",
+	POST_TEXT = "This uses {cost}, and it can't be undone. The new goal can be taken down once a day, like any other.",
 	POST_YES = "Post it",
 	-- An empty pin under the mouse while a Refresh can be used on it (TKB-R58, TKB-R105): what a click does by type, then
 	-- what it costs ({held}: the Refreshes held).
@@ -134,11 +134,15 @@ ns.L = {
 		n = "Pin a fresh Notice of another kind in its place. Any progress on this one is lost.",
 		e = "Pin a fresh Expedition of another kind in its place. Any progress on this one is lost.",
 	},
-	TAKE_DOWN_TIP_ONCE = "The new one can't be taken down in turn, unless it stops being catchable.",
+	TAKE_DOWN_TIP_ONCE = "The new one can't be taken down again until tomorrow's reset, unless it stops being catchable.",
+	TAKE_DOWN_TIP_ONCE_IN = "The new one can't be taken down again until the daily reset (in {time}), unless it stops being catchable.",
 	TAKE_DOWN_TIP_STRANDED = "This one is no longer catchable, so it can come down even though it was re-posted.",
 	TAKE_DOWN_TIP_STRANDED_FIRST = "This one is no longer catchable: it can never be finished where it hangs.",
 	TAKE_DOWN_TIP_UPDATING = "Not while the board is updating. It can come down once that's done.",
 	REPOSTED = "RE-POSTED",
+	-- Its hover, under the note (TKB-R55): it comes back at the daily reset, {time} the countdown to it when to hand.
+	REPOSTED_HOVER = "Re-posted today. It can be taken down again tomorrow.",
+	REPOSTED_HOVER_IN = "Re-posted today. It can be taken down again at the daily reset (in {time}).",
 	-- Its hover, under the posted time (POSTED).
 	ONLY_SINCE = "Only my Catches since then count",
 	ONLY_SINCE_TODAY = "Only my Catches since then count, all on one board day",
@@ -311,7 +315,7 @@ ns.L = {
 	GUIDE_FACTS = {
 		"Three Notices a day, and one bigger Expedition a week.",
 		"None of them expire. Away a while? Up to six Notices and two Expeditions wait for you.",
-		"Don’t fancy one? Take it down and another goes up, once each.",
+		"Don’t fancy one? Take it down and another goes up, once a day.",
 		"They pay Pagle Coins, {shop}",
 	},
 	GUIDE_FACT_SHOP = "which buy looks in the Curio Shop.",
@@ -322,7 +326,7 @@ ns.L = {
 	LOOK_TITLE = "the Tackle Board",
 	LOOK_NOTES = {
 		{ text = "{term} are the bigger weekly ones. They wait too, up to two.", term = "Expeditions" },
-		{ text = "A Notice {term}. Don’t fancy it? Take it down, once, for another.", term = "never expires" },
+		{ text = "A Notice {term}. Don’t fancy it? Take it down, once a day, for another.", term = "never expires" },
 		{ text = "Your {term}: days in a row with one done. A missed day burns Kindling instead.", term = "Campfire" },
 		{ text = "Each one done ties a fly for your {term}.", term = "Fly Box" },
 		{ text = "They pay {term}, spent on looks in the Curio Shop.", term = "Pagle Coins" },

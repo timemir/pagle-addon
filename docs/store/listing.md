@@ -43,7 +43,7 @@ Stats keeps your own numbers in the Stats book: every Session, your lifetime tot
 
 ## The Tackle Board
 
-The Tackle Board is opt-in: a cork board where three Notices go up each day and an Expedition each week, such as "4 different Species in Feralas". Fish where you like, and they fill in as you go. They never expire, so a missed day banks rather than vanishes, and each one can be taken down once for a fresh one of another kind. Each day with a goal done keeps your Campfire burning, Kindling carries it through a day you couldn't make, and your longest Campfire is kept for good. Every goal done ties a new fly in your Fly Box.
+The Tackle Board is opt-in: a cork board where three Notices go up each day and an Expedition each week, such as "4 different Species in Feralas". Fish where you like, and they fill in as you go. They never expire, so a missed day banks rather than vanishes, and each one can be taken down, once a day, for a fresh one of another kind. Each day with a goal done keeps your Campfire burning, Kindling carries it through a day you couldn't make, and your longest Campfire is kept for good. Every goal done ties a new fly in your Fly Box.
 
 ## QoL
 
@@ -137,7 +137,7 @@ Every claim in the description, in its order, with the rule or spec section it r
 | Three Notices a day, an Expedition a week; the example goal | TKB-R20, TKB-R36 |
 | Fish where you like, and they fill in | TKB-R40, TKB-R107 |
 | Never expire; a missed day banks | `CONTEXT.md` › Tackle Board, Notice; TKB-R20 |
-| Taken down once for a fresh one of another kind | TKB-R32, TKB-R55 |
+| Taken down once a day for a fresh one of another kind | TKB-R32, TKB-R55 |
 | Campfire, Kindling, the longest Campfire kept | TKB-R70–R74 |
 | A fly tied for every goal done | TKB-R62 |
 | The Fishing key: fishing set, lure, cast, reel, clam | QOL-R10, QOL-R20 |

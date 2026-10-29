@@ -193,6 +193,38 @@ describe('"take it down" and RE-POSTED (TKB-R55, TKB-R102, TKB-R108)', function(
 	end)
 end)
 
+describe("RE-POSTED lasts the board day (TKB-R55, TKB-R102)", function()
+	it("stamps a goal re-posted on the view's board day, and no longer on a later one", function()
+		local ns = loadNamed()
+		local reposted = goal("n", "lure", { need = 3, reposted = true, issuedDay = 0 })
+
+		assert.is_true(view(ns, reposted, { today = 0 }).stamp)
+		assert.is_false(view(ns, reposted, { today = 1 }).stamp)
+		assert.is_false(view(ns, goal("n", "lure", { need = 3 }), { today = 0 }).stamp)
+	end)
+
+	it("adds to the hover when it comes back: the countdown to the reset, or tomorrow without one", function()
+		local ns = loadNamed()
+		local reposted = goal("n", "lure", { need = 3, reposted = true })
+
+		local timed = view(ns, reposted, { untilReset = "13h" }).hover
+		local plain = view(ns, reposted).hover
+
+		assert.are.equal(3, #timed)
+		assert.are.equal("Re-posted today. It can be taken down again at the daily reset (in 13h).", timed[3])
+		assert.are.equal("Re-posted today. It can be taken down again tomorrow.", plain[3])
+		assert.are.equal(2, #view(ns, goal("n", "lure", { need = 3 })).hover)
+		assert.are.equal(2, #view(ns, reposted, { today = 1 }).hover)
+	end)
+
+	it("reads the countdown to the daily reset from the board day's start (TKB-R105)", function()
+		local ns = loadNamed()
+
+		-- the fake's clock is 15 minutes into the board day (spec header), so the next reset is 23 h 45 min away
+		assert.are.equal("23h", ns.ResetCountdown(ns.api))
+	end)
+end)
+
 describe("a stranded goal (TKB-R44)", function()
 	it('reads "no longer catchable", and a re-posted one still shows "take it down" when it can be', function()
 		local ns = loadNamed()

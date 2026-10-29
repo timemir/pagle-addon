@@ -202,7 +202,7 @@ describe("the Tackle Board's guide pages (ONB-R37)", function()
 			"Shall I put up a board?",
 			"Three Notices a day, and one bigger Expedition a week.",
 			"None of them expire. Away a while? Up to six Notices and two Expeditions wait for you.",
-			"Don’t fancy one? Take it down and another goes up, once each.",
+			"Don’t fancy one? Take it down and another goes up, once a day.",
 			"They pay Pagle Coins, |cff6a4a28which buy looks in the Curio Shop.|r",
 			"Or leave it for now. The board waits under Tackle Board in the Pagle menu, and in Settings.",
 		}) do

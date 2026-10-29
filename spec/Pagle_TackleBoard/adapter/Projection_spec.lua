@@ -337,7 +337,45 @@ describe("the Tackle Board's projection", function()
 			assert.are.same({ notices = 0, expeditions = 0 }, state.owed)
 		end)
 
-		it("apply even to a re-posted goal: the once rule is the button's (TKB-R57)", function()
+		it(
+			"issue the re-posted goal on the board day of the record, the day it can come down again from (TKB-R55)",
+			function()
+				local ns = built(withHistory(join(STARTED, {
+					reroll(D0 + 7200, idAt(D0 + 3603), N4), -- day 0
+					day(D0 + DAY + 60, D0 + DAY, W),
+					reroll(D0 + DAY + 7200, idAt(D0 + 7200), N5), -- day 1
+					day(D0 + 2 * DAY + 60, D0 + 2 * DAY, W),
+				})))
+
+				local state = ns.State()
+				assert.are.equal(2, state.day)
+				local second = state.goals[idAt(D0 + DAY + 7200)]
+				assert.are.same({ true, 1 }, { second.reposted, second.issuedDay })
+				-- today is day 2, so the re-post of day 1 may come down, and one of day 2 may not
+				assert.is_false(ns.IsRepostedToday(second, state.day))
+				assert.is_true(ns.IsRepostedToday(second, 1))
+			end
+		)
+
+		it("keep the same re-post day through a rebuild, with the day records after it (TKB-R55, TKB-R82)", function()
+			local ns = built(withHistory(join(STARTED, {
+				reroll(D0 + 7200, idAt(D0 + 3603), N4),
+				day(D0 + DAY + 60, D0 + DAY, W),
+				reroll(D0 + DAY + 7200, idAt(D0 + 7200), N5),
+				reroll(D0 + DAY + 7300, idAt(D0 + 3601), E2),
+			})))
+			local live = copy(ns.State())
+
+			ns.projection:Rebuild()
+
+			assert.are.same(live, ns.State())
+			assert.are.same({ 1, 1 }, {
+				ns.State().goals[idAt(D0 + DAY + 7200)].issuedDay,
+				ns.State().goals[idAt(D0 + DAY + 7300)].issuedDay,
+			})
+		end)
+
+		it("apply even to a re-posted goal: the once-a-day rule is the button's (TKB-R57)", function()
 			local ns = built(withHistory(join(STARTED, {
 				reroll(D0 + 7200, idAt(D0 + 3603), N4),
 				reroll(D0 + 7300, idAt(D0 + 7200), N5),
@@ -504,7 +542,7 @@ describe("the Tackle Board's projection", function()
 			assert.are.equal(2, ns.State().ticketsSpent)
 		end)
 
-		it("can be taken down once, like an issued goal: the re-post can't be (TKB-R55)", function()
+		it("can be taken down like an issued goal: the re-post can't be today (TKB-R55)", function()
 			local fake = withHistory(join(STARTED, { post(D0 + 7200, N4) }))
 			local ns = built(fake)
 			board.readSkill(fake)
