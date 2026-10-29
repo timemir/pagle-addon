@@ -140,6 +140,7 @@ function Journal:Context() -- luacheck: no self
 		state = state,
 		celebrated = ns.CelebratedSet(ns.db.global),
 		activeTitle = ns.db.profile.activeTitle,
+		ownsAll = Pagle.GetTestLogGrant("devGoods") == true,
 		now = GetServerTime(),
 		formatNumber = BreakUpLargeNumbers,
 		text = ns.journalText,

@@ -24,13 +24,18 @@ Wallet.__index = Wallet
 --- Activity XP (catch-log.md › Test logs). Always counted as On.
 ns.DEV_SOURCE = "Dev"
 
---- What a test log grants as `field` (catch-log.md › Test logs): its whole number, 0 or more, only on a log marked
---- `test = true`; nil on a player's log, or for anything else there.
+--- What a test log grants as `field` (catch-log.md › Test logs): a whole number, 0 or more, for `devCoins`, `devXP`
+--- and `devHuntsSince`, or `true` for `devGoods` (SHOP-R37); only on a log marked `test = true`, nil on a player's log,
+--- or for anything else there.
+---@overload fun(data: table, field: "devCoins"|"devXP"|"devHuntsSince"): integer?
 ---@param data table PagleLog
----@param field "devCoins"|"devXP"|"devHuntsSince"
----@return integer?
+---@param field "devGoods"
+---@return true?
 function ns.TestLogGrant(data, field)
 	local value = data.test == true and data[field] or nil
+	if field == "devGoods" then
+		return value == true or nil
+	end
 	if type(value) ~= "number" or value < 0 or value ~= math.floor(value) or value == math.huge then
 		return nil
 	end

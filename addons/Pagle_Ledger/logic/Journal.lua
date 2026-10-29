@@ -26,6 +26,7 @@ local ns = select(2, ...)
 ---@field state? LedgerState             -- nil while updating
 ---@field celebrated? LedgerCelebrated   -- nil while updating
 ---@field activeTitle? string            -- the stored active title (LED-R77), for ns.ActiveTitle; nil while updating
+---@field ownsAll? boolean              -- a test log's `devGoods` (SHOP-R37): every title counts as earned
 ---@field now integer                    -- GetServerTime()
 ---@field formatNumber fun(n: integer): string -- BreakUpLargeNumbers
 ---@field text LedgerJournalText         -- names, dates, window lines and lore (LED-R126, LED-R127, LED-R161)

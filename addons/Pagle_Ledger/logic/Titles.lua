@@ -22,6 +22,7 @@ local ns = select(2, ...)
 ---@field activeTitle? string                       -- the stored active title (LED-R77), for ns.ActiveTitle
 ---@field text? LedgerJournalText                   -- the Journal's words, for ns.ActiveTitle's name
 ---@field activityXPTotal? integer                  -- Core's Activity XP total, ns.ActivityXPTotal() when nil
+---@field ownsAll? boolean                          -- a test log's `devGoods` (SHOP-R37): every title counts as earned
 
 -- The level titles and the prestige titles (LED-R75, Tunables): `level<L>` once the peak level reaches L,
 -- `prestige<R>` once the prestige rank reaches R.
@@ -132,25 +133,11 @@ local function ordered(set)
 	return keys
 end
 
---- The earned title keys (LED-R75, LED-R76), in LED-R75's order: the ones computed now plus every key in the
---- celebrated set, so a title is never taken away (LED-R92), even when its zone stops being charted (LED-R54) or the
---- data grows (LED-R72).
+-- Every title there is, as a set: the level and Prestige titles, a `zonemaster` title for each charted zone, a Legend's
+-- for each Legend of the world and the `complete.*` ones.
 ---@param view LedgerTitleView
----@return string[]
-function ns.TitleKeys(view)
-	local set = view.state and computed(view, view.state) or {}
-	for key in pairs(view.celebrated.titles or {}) do
-		set[key] = true
-	end
-	return ordered(set)
-end
-
---- Every title there is (LED-R75), earned or not, in LED-R75's order: the level and Prestige titles, a `zonemaster`
---- title for each charted zone, a Legend's for each Legend of the world (LED-R11) and the `complete.*` ones, with any
---- earned key the table no longer lists (a zone no longer charted, LED-R54). The Collection's Titles shelf (LED-R167).
----@param view LedgerTitleView
----@return string[]
-function ns.TitleCatalogue(view)
+---@return { [string]: true }
+local function catalogue(view)
 	local set = {}
 	for _, level in ipairs(LEVELS) do
 		set["title:level" .. level] = true
@@ -168,6 +155,33 @@ function ns.TitleCatalogue(view)
 	for _, part in ipairs(TITLED_PARTS) do
 		set["title:complete." .. part] = true
 	end
+	return set
+end
+
+--- The earned title keys (LED-R75, LED-R76), in LED-R75's order: the ones computed now plus every key in the
+--- celebrated set, so a title is never taken away (LED-R92), even when its zone stops being charted (LED-R54) or the
+--- data grows (LED-R72). A view with `ownsAll` (a test log's `devGoods`, SHOP-R37) has every title there is, for display
+--- only: the projection, the celebrated set and the moments never read it.
+---@param view LedgerTitleView
+---@return string[]
+function ns.TitleKeys(view)
+	local set = view.ownsAll and catalogue(view) or {}
+	for key in pairs(view.state and computed(view, view.state) or {}) do
+		set[key] = true
+	end
+	for key in pairs(view.celebrated.titles or {}) do
+		set[key] = true
+	end
+	return ordered(set)
+end
+
+--- Every title there is (LED-R75), earned or not, in LED-R75's order: the level and Prestige titles, a `zonemaster`
+--- title for each charted zone, a Legend's for each Legend of the world (LED-R11) and the `complete.*` ones, with any
+--- earned key the table no longer lists (a zone no longer charted, LED-R54). The Collection's Titles shelf (LED-R167).
+---@param view LedgerTitleView
+---@return string[]
+function ns.TitleCatalogue(view)
+	local set = catalogue(view)
 	for _, key in ipairs(ns.TitleKeys(view)) do
 		set[key] = true
 	end

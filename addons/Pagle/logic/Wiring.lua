@@ -637,6 +637,11 @@ function ns.WireGoods(host)
 		call = host.call,
 		report = host.report,
 		serverTime = host.serverTime,
+		-- a test log's grant of every good (SHOP-R37); none before login step 1 has opened the log
+		ownsAll = function()
+			local log = host.catchLog()
+			return log ~= nil and ns.TestLogGrant(log.data, "devGoods") == true
+		end,
 	})
 	ns.goods = goods
 	-- Raises `problem`, if any, at the call of the function that called this one (SHOP-R23).

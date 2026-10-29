@@ -707,10 +707,14 @@ ns.CRATE_TIER_COLORS = {
 	curio = hex(0xffd04a),
 }
 
--- Whether the crate has a good to give (SHOP-R54): a pool good in the pool by now that the log doesn't own.
+-- Whether the crate has a good to give (SHOP-R54): a pool good in the pool by now that the log doesn't own. A test log
+-- that grants every good (SHOP-R37) owns every pool good, so the crate is gone and buys nothing.
 ---@private
 ---@return boolean
 function Model:CrateOpen()
+	if self.sources.goods:OwnsAll() then
+		return false
+	end
 	return ns.CrateHasCandidates(walletOf(self.sources).owned, self.sources.now)
 end
 

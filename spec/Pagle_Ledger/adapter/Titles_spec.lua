@@ -69,4 +69,21 @@ describe("the active title", function()
 		assert.is_true(ns.SetActiveTitle("zonemaster:148"))
 		assert.are.equal("zonemaster:148", (ns.ActiveTitle(ns.journal.Context())))
 	end)
+
+	it("takes any title on a test log with devGoods, and none more on one without it (SHOP-R37)", function()
+		local fake, loaded = ledger()
+		local ns = loaded.ns
+		assert.is_false(ns.SetActiveTitle("title:level60"))
+
+		fake.catchLog.data.test, fake.catchLog.data.devGoods = true, true
+
+		assert.is_true(ns.journal.Context().ownsAll)
+		assert.is_true(ns.SetActiveTitle("title:level60"))
+		assert.is_true(ns.SetActiveTitle("zonemaster:148"))
+		assert.are.equal("zonemaster:148", (ns.ActiveTitle(ns.journal.Context())))
+
+		fake.catchLog.data.devGoods = nil
+		assert.is_false(ns.journal.Context().ownsAll)
+		assert.is_false(ns.SetActiveTitle("title:level60"))
+	end)
 end)
