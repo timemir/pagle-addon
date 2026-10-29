@@ -24,6 +24,11 @@ local MARGIN, BODY_TILE = 62, 120
 local NUMBERS = { "casts", "catches", "gotAway", "seconds" }
 local NUMBER_LABELS = { L.CARD_CASTS, L.CARD_CATCHES, L.CARD_GOT_AWAY, L.CARD_TIME }
 local NUMBERS_HEIGHT = 90
+-- The grid's columns share the page's width past its margin by these weights: time fished is the wide one, as "1 h 05
+-- min" in the Angler's hand is about three times a count's width (ANN-R53). A value keeps NUMBER_PAD clear of its
+-- column's rules on each side, and steps down a size at a time to fit them, no further than NUMBER_FLOOR.
+local NUMBER_WEIGHTS = { 1, 1, 1, 1.8 }
+local NUMBER_PAD, NUMBER_FLOOR = 8, 22
 -- The close button's bottom, above the card's.
 local CLOSE_BOTTOM = 20
 -- Ruled lines shown before the list scrolls with the mouse wheel.
@@ -50,6 +55,7 @@ local DETAIL_SIZE = 20
 ---@field card PagleCard? the card on screen
 ---@field title FontString
 ---@field numbers PagleCardNumber[]
+---@field numberRooms number[] the width each number may take, between its column's rules and their padding
 ---@field numbersBox Frame
 ---@field body Frame the ruled page, its art tiled down it
 ---@field tiles PagleSprite[]
@@ -270,10 +276,21 @@ local function build()
 	frame.numbersBox:SetPoint("TOPLEFT", 0, -14)
 	frame.numbersBox:SetSize(WIDTH, NUMBERS_HEIGHT)
 	frame.numbers = {}
-	local column = (WIDTH - MARGIN - 10) / #NUMBERS
+	-- The columns' edges from the grid's left (MARGIN - 20), over the page's width past the margin.
+	local weights = 0
+	for _, weight in ipairs(NUMBER_WEIGHTS) do
+		weights = weights + weight
+	end
+	local edges, edge = { MARGIN - 20 }, MARGIN - 20
 	for i in ipairs(NUMBERS) do
+		edge = edge + (WIDTH - MARGIN - 10) * NUMBER_WEIGHTS[i] / weights
+		edges[i + 1] = edge
+	end
+	frame.numberRooms = {}
+	for i in ipairs(NUMBERS) do
+		frame.numberRooms[i] = edges[i + 1] - edges[i] - 2 * NUMBER_PAD
 		local value = ns.ArtText(frame.numbersBox, "CardNum")
-		value:SetPoint("CENTER", frame.numbersBox, "TOPLEFT", MARGIN - 20 + column * (i - 0.5), -38)
+		value:SetPoint("CENTER", frame.numbersBox, "TOPLEFT", (edges[i] + edges[i + 1]) / 2, -38)
 		local label = ns.ArtText(frame.numbersBox, "CardNumLabel")
 		label:SetPoint("TOP", value, "BOTTOM", 0, -2)
 		label:SetText(ns.Capitals(NUMBER_LABELS[i]))
@@ -282,7 +299,7 @@ local function build()
 			local rule = frame.numbersBox:CreateTexture(nil, "ARTWORK")
 			rule:SetColorTexture(0.706, 0.157, 0.102, 0.45)
 			rule:SetSize(1, 70)
-			rule:SetPoint("CENTER", frame.numbersBox, "TOPLEFT", MARGIN - 20 + column * (i - 1), -45)
+			rule:SetPoint("CENTER", frame.numbersBox, "TOPLEFT", edges[i], -45)
 		end
 		frame.numbers[i] = { value = value, label = label }
 	end
@@ -347,6 +364,28 @@ local function layBody(frame, height)
 	end
 end
 
+-- A number's `text` in its font string at the art's full size, or, when that is wider than `room`, the largest size
+-- down to NUMBER_FLOOR that fits it. The line keeps the height it has at full size, so the glyphs stay where they are
+-- and the label anchored under it stays on its line (ANN-R53).
+---@param value FontString
+---@param text string
+---@param room number
+local function setNumber(value, text, room)
+	value:SetHeight(0)
+	ns.SetArtFont(value, "CardNum")
+	value:SetText(text)
+	local full = ns.ArtFontSize("CardNum")
+	local height = value:GetHeight()
+	local size = full
+	while size > NUMBER_FLOOR and value:GetStringWidth() > room do
+		size = size - 1
+		ns.SetArtFontScaled(value, "CardNum", size / full)
+	end
+	if size < full then
+		value:SetHeight(height)
+	end
+end
+
 -- logic/Cards.lua's show: the card drawn in the frame, made on first use, and on screen (announcements.md › UI). The
 -- body is a whole number of ruled lines, so the torn foot meets them in step.
 ---@param card PagleCard
@@ -363,7 +402,7 @@ local function show(card)
 	if numbers then
 		for i, key in ipairs(NUMBERS) do
 			local value = key == "seconds" and ns.CardDuration(numbers.seconds) or BreakUpLargeNumbers(numbers[key])
-			frame.numbers[i].value:SetText(value)
+			setNumber(frame.numbers[i].value, value, frame.numberRooms[i])
 		end
 	end
 	-- ANN-R64: a section from a Module with a Field guide step ends with Show me around »
