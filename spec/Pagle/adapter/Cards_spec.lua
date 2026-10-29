@@ -536,6 +536,78 @@ describe("the Session summary cards", function()
 		end
 	)
 
+	it(
+		"hold each of the numbers inside its own column, between the rules and their padding: time fished in hours"
+			.. " and minutes and counts in the thousands step their size down to fit, short ones keep the art's full"
+			.. " size (ANN-R53)",
+		function()
+			-- The page's width past its margin, the columns' left, and the padding kept clear of a rule.
+			local PAGE_WIDTH, LEFT, PAD = 580 - 62 - 10, 62 - 20, 8
+			local FULL, FLOOR = 44, 22
+			-- A card whose Session fished `seconds` with `count` Casts and Catches and `away` got away.
+			local function numbered(count, away, seconds)
+				local card = storedCard(count, "Angler Level 8")
+				card.numbers = { casts = count, catches = count, gotAway = away, seconds = seconds }
+				return card
+			end
+			-- The long cases: "23 h 59 min" and a day-long stretch of "100 h 05 min", and counts of 4, 5 and 6 digits.
+			local cases = {
+				numbered(130, 0, 3900), -- "130", "130", "0", "1 h 05 min"
+				numbered(1234, 1234, 3900), -- "1,234", at the full size
+				numbered(12345, 12345, 86340), -- "12,345", "23 h 59 min"
+				numbered(123456, 99999, 360300), -- "123,456", "99,999", "100 h 05 min"
+			}
+			local loaded = loadCore(history(2), { global = { cards = { storedCard(1, "First"), unpack(cases) } } })
+			enterWorld(loaded)
+			frames(loaded)
+			local frame = loaded.ns.cardFrame
+			-- The width the client measures, 0.37 a character a unit (the art's "1 h 05 min" at 44 is about 162).
+			for _, number in ipairs(frame.numbers) do
+				number.value.GetStringWidth = function(self)
+					return #(self.text or "") * 0.37 * (self.font and self.font[2] or FULL)
+				end
+			end
+			-- Each number's { size, left edge, right edge } on the grid.
+			local function extents()
+				local laid = {}
+				for i, number in ipairs(frame.numbers) do
+					local value = number.value
+					local size = value.font and value.font[2] or FULL
+					local x = select(4, value:GetPoint())
+					laid[i] =
+						{ size = size, left = x - value:GetStringWidth() / 2, right = x + value:GetStringWidth() / 2 }
+				end
+				return laid
+			end
+
+			local sizes = {}
+			for n = 1, #cases do
+				close(loaded)
+				local laid = extents()
+				sizes[n] = {}
+				for i, number in ipairs(laid) do
+					sizes[n][i] = number.size
+					assert.is_true(number.size >= FLOOR)
+					-- Inside its own column, clear of both its rules by the padding.
+					assert.is_true(number.right - number.left <= frame.numberRooms[i])
+					if i > 1 then
+						assert.is_true(laid[i - 1].right + 2 * PAD <= number.left + 0.001)
+					end
+				end
+				assert.is_true(laid[1].left >= LEFT + PAD - 0.001)
+				assert.is_true(laid[#laid].right <= LEFT + PAGE_WIDTH - PAD + 0.001)
+			end
+
+			-- The short numbers and "1 h 05 min" keep the full size; every long one is stepped down, and a shorter
+			-- value after it goes back up (the frame is the same one).
+			assert.are.same({ FULL, FULL, FULL, FULL }, sizes[1])
+			assert.are.same({ FULL, FULL, FULL, FULL }, sizes[2])
+			assert.is_true(sizes[3][1] < FULL and sizes[3][4] < FULL)
+			assert.is_true(sizes[4][1] <= sizes[3][1] and sizes[4][4] <= sizes[3][4])
+			assert.are.same({ "123,456", "123,456", "99,999", "100 h 05 min" }, shownCard(loaded).numbers)
+		end
+	)
+
 	it("wait while a toast shows when the Session ends, and show once it goes (ANN-R21)", function()
 		local loaded = loadCore(history(2))
 		local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
