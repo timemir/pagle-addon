@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from sounds_fixture import EXPANSION_SETS, LEGEND_ITEMS, RENDERED_FILES, check_sound, read_sound
 
-from pagle_data.sounds import NOTES, SOUND_FILES, Signal, hz, loudness, render
+from pagle_data.sounds import NOTES, ONSET_MAX, SOUND_FILES, Signal, hz, loudness, onset, render, trim_onset
 
 
 @pytest.fixture(scope="module")
@@ -82,3 +82,45 @@ def test_each_legend_sting_lasts_about_3_seconds(rendered: Path, item: int) -> N
 def test_each_legend_has_a_sting_of_its_own(rendered: Path) -> None:
     # ANN-R72: "Each Legend has its own sting".
     assert _all_differ([read_sound(rendered / f"legend/{item}.ogg") for item in LEGEND_ITEMS])
+
+
+def _hit(seconds: float, lead: float, quiet: float = 0.0) -> Signal:
+    """A 440 Hz burst of `seconds` that starts after `lead` seconds of `quiet` (an amplitude, 0 for silence)."""
+    t = np.arange(int(seconds * 44100)) / 44100
+    x = 0.8 * np.sin(2 * np.pi * 440 * t)
+    return np.concatenate([quiet * np.sin(2 * np.pi * 220 * np.arange(int(lead * 44100)) / 44100), x])
+
+
+def test_the_onset_is_when_the_10_ms_envelope_first_reaches_30_percent_of_its_peak() -> None:
+    # ANN-R74, Tunables: Sound onset. Silence, then a burst: the envelope crosses 30% about half a window before the
+    # burst's own start (the window is centred), so the onset is the lead less a few milliseconds.
+    assert onset(_hit(0.5, 0.3)) == pytest.approx(0.3, abs=0.01)
+    assert onset(_hit(0.5, 0.0)) == pytest.approx(0.0, abs=0.005)
+
+
+def test_a_quiet_swell_before_the_main_hit_does_not_count_as_the_onset() -> None:
+    # ANN-R74: the main hit is what lands in time; a faint lead-in under 30% of the peak is not it.
+    assert onset(_hit(0.5, 0.4, quiet=0.1)) == pytest.approx(0.4, abs=0.01)
+
+
+@pytest.mark.parametrize("quiet", [0.0, 0.1])
+def test_trim_onset_cuts_the_lead_in_to_a_short_pre_roll_and_leaves_the_sound_after_it(quiet: float) -> None:
+    # ANN-R74: the dead air or the faint build-up goes; the burst itself comes through whole, after a short fade-in.
+    sound = _hit(0.5, 0.4, quiet=quiet)
+    trimmed = trim_onset(sound)
+    assert onset(trimmed) <= 0.02
+    assert len(trimmed) / 44100 == pytest.approx(0.5 + 0.01, abs=0.01)
+    assert np.allclose(trimmed[-int(0.4 * 44100) :], sound[-int(0.4 * 44100) :])
+    assert abs(trimmed[0]) < 0.01
+
+
+def test_trim_onset_leaves_a_sound_that_starts_on_time_as_it_is() -> None:
+    # ANN-R74: a sound within 20 ms of its start isn't touched, so the sets that were fine stay byte-for-byte.
+    sound = _hit(0.5, 0.01)
+    assert trim_onset(sound) is sound
+
+
+@pytest.mark.parametrize("name", [name for name in RENDERED_FILES if not name.startswith("legend/")])
+def test_each_rendered_toast_and_banner_comes_in_within_30_ms(rendered: Path, name: str) -> None:
+    # ANN-R74, Tunables: Sound onset.
+    assert onset(read_sound(rendered / name)) <= ONSET_MAX, name

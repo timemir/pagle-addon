@@ -11,7 +11,7 @@ import pytest
 import soundfile as sf
 from sounds_fixture import ANN_R74_FILES, GENERATED_SETS, SOURCED_SETS, check_sound, read_sound
 
-from pagle_data.sounds import SAMPLE_RATE, SOUND_FILES, Signal, loudness
+from pagle_data.sounds import ONSET_MAX, SAMPLE_RATE, SOUND_FILES, Signal, loudness, onset
 
 REPO = Path(__file__).resolve().parents[2]
 SOUNDS = REPO / "addons/Pagle/media/sounds"
@@ -30,6 +30,14 @@ def test_the_committed_sounds_are_exactly_the_files_ann_r74_lists() -> None:
 def test_each_committed_sound_is_mono_44_1_khz_ogg_vorbis_at_the_loudness_target(name: str) -> None:
     # ANN-R74: mono, 44.1 kHz, .ogg, loudness-matched; Tunables: -20 dBFS RMS, -1 dBFS peak.
     check_sound(SOUNDS / name)
+
+
+@pytest.mark.parametrize("name", [name for name in ANN_R74_FILES if not name.startswith("legend/")])
+def test_each_committed_toast_and_banner_sound_comes_in_within_30_ms(name: str) -> None:
+    # ANN-R74, Tunables: Sound onset. A sound that leads in with dead air or a slow swell plays behind the toast it
+    # belongs to, so every set's toast and banner reaches 30% of its peak (on a 10 ms mean-abs envelope) in 30 ms.
+    started = onset(read_sound(SOUNDS / name))
+    assert started <= ONSET_MAX, f"{name}: the onset is {started * 1000:.0f} ms, over {ONSET_MAX * 1000:.0f} ms"
 
 
 @pytest.mark.parametrize("name", sorted(SOUND_FILES))
