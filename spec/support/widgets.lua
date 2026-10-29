@@ -25,7 +25,6 @@ local LAYOUT_METHODS = {
 	"SetTextInsets",
 	"SetMaxLetters",
 	"SetMultiLine",
-	"SetClipsChildren",
 	"SetShadowColor",
 	"SetShadowOffset",
 	"SetSpacing",
@@ -542,6 +541,13 @@ function widgets.newWidget(kind, parent)
 	end
 	for _, method in ipairs(LAYOUT_METHODS) do
 		widget[method] = function() end
+	end
+	-- Whether the frame keeps its children inside it (nil until set), as GetClipsChildren says.
+	function widget:SetClipsChildren(clips)
+		self.clipsChildren = not not clips
+	end
+	function widget:GetClipsChildren()
+		return self.clipsChildren == true
 	end
 	function widget.GetParent()
 		return parent

@@ -112,7 +112,10 @@ function ns.NewJournalLookArt(parent, w, h)
 	view.preview:SetPoint("TOPLEFT")
 	view.preview:SetClipsChildren(true)
 	view.book = ns.JournalSprite(view, "Bindings", "binding-field-leather", "ARTWORK")
+	-- a live book's parts (its corner pieces, a whole book's clasp and ribbon) draw at their own sizes, so the frame keeps
+	-- them inside the art's box
 	view.live = CreateFrame("Frame", nil, view)
+	view.live:SetClipsChildren(true)
 	view.shield = ns.JournalCrisp(view:CreateTexture(nil, "ARTWORK"))
 	view.medal = ns.JournalMedal(view, math.min(w, h))
 	view.medal:SetPoint("CENTER")
@@ -123,15 +126,17 @@ function ns.NewJournalLookArt(parent, w, h)
 	return view
 end
 
--- The closed book of binding `goodID`: its swatch in the Journal's atlases, or a live book where no kit drew one, as
--- Core's stage draws it (BIND-R1).
+-- The closed book of binding `goodID`: its swatch in the Journal's atlases (every kit's: Bindings, Bindings2, Covers2
+-- and Bindings3), or a live book where no kit drew one (Tooled Leather, Verdigris), as Core's stage draws it (BIND-R1).
+-- A swatch's atlas missing here must not fall to the live book: a whole book's clasp and ribbon draw at their own sizes
+-- (BIND-R14, BIND-R15), not the thumbnail's, as Captain's Logbook's did.
 ---@param view LedgerLookArtView
 ---@param goodID string
 local function drawBook(view, goodID)
 	local look = Pagle.GetBindingLook(goodID)
 	local atlas = look.swatchAtlas
 	local width = math.min(view.w, view.h * BOOK_W / BOOK_H)
-	if look.swatch and (atlas == "Bindings" or atlas == "Bindings2") then
+	if look.swatch and atlas and ns.JOURNAL_ATLASES[atlas] then
 		ns.JournalResprite(view.book, atlas, look.swatch, width)
 		ns.JournalBoxAt(view.book, view, (view.w - width) / 2, 0)
 		view.book:Show()

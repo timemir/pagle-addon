@@ -29,9 +29,12 @@ local RULE_GILT = { 0xd8 / 255, 0xb6 / 255, 0x60 / 255 }
 -- A whole book's parts (BIND-R14–R17), at the corner pieces' 44: its own corner art's size and how far it stands out
 -- past each corner; the ribbon's top left across from the centre of the pages (or the frame), and how far up into the
 -- pages' foot it starts (or up from the frame's foot, without pages); and the fillet's inset, width and alpha. All from
--- the round-two kit's 920 × 600 Journal, its pages 884 × 546 at 18, 38.
+-- the round-two kit's 920 × 600 Journal, its pages 884 × 546 at 18, 38. The ribbon shows only its foot, the notched end:
+-- RIBBON_SHOWN units tall, so that from RIBBON_UP above the frame's foot only RIBBON_TAIL hangs below it, enough to read
+-- as a bookmark and no more on the screen under the book; the silk's upper end is cropped away.
 local CORNER_ART, CORNER_OUT = 76, 4
-local RIBBON_X, RIBBON_IN, RIBBON_UP = 60, 24, 40
+local RIBBON_X, RIBBON_IN, RIBBON_UP, RIBBON_TAIL = 60, 24, 40, 20
+local RIBBON_SHOWN = RIBBON_UP + RIBBON_TAIL
 local FILLET_INSET, FILLET_WIDTH, FILLET_ALPHA = 5, 1.6, 0.75
 -- The band's and the features' alpha through a dip, at the material's `alpha`: never below 0.4 (BIND-R20).
 local BAND_FLOOR = 0.4
@@ -249,6 +252,19 @@ function Regions:Dress(look)
 		self.clasp:SetPoint("LEFT", self.frame, "RIGHT", look.claspX or 0, 0)
 	end
 	part(self.ribbon, parts, look.ribbon)
+	local ribbon = look.ribbon and parts.sprites[look.ribbon]
+	if ribbon then
+		-- only its foot: the top of the sprite cropped away, the notch kept
+		local drawn = ribbon.box[4]
+		local top = ribbon.y + ribbon.h * (1 - RIBBON_SHOWN / drawn)
+		self.ribbon:SetTexCoord(
+			ribbon.x / parts.width,
+			(ribbon.x + ribbon.w) / parts.width,
+			top / parts.height,
+			(ribbon.y + ribbon.h) / parts.height
+		)
+		self.ribbon:SetSize(ribbon.box[3], RIBBON_SHOWN)
+	end
 	local fillet = look.fillet
 	for _, edge in ipairs(self.fillets) do
 		if fillet then

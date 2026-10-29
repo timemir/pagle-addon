@@ -2051,3 +2051,148 @@ describe("the Collection's motion (LED-R170, ledger.md › UI)", function()
 		end
 	)
 end)
+
+-- A look's art drawn at each size the Collection draws one: a card's, a shelf row's and a row within reach's or lately
+-- added's (LED-R168, LED-R169).
+local ART_SIZES = { { 70, 92 }, { 66, 44 }, { 60, 38 }, { 176, 54 }, { 56, 62 }, { 40, 40 } }
+local EPSILON = 0.01
+
+-- Where a sprite's drawn box sits in `view`, as { left, top, right, bottom } from its top left (y down): ns.JournalBoxAt
+-- anchors the texture by its margin, the box inside it.
+local function boxIn(texture)
+	local _, _, _, x, y = texture:GetPoint(1)
+	local box = texture.box
+	local left, top = x + box[1], -y + box[2]
+	return left, top, left + box[3], top + box[4]
+end
+
+-- The fittings of every part of `view` that is shown, as the names of those not inside its w × h: a closed book's drawn
+-- box, a live book's frame (which must clip what it draws), a shield, a speaker and Core's preview (a frame the size of
+-- the art that clips what it draws).
+local function strays(view)
+	local out = {}
+	local function inside(name, left, top, right, bottom)
+		if left < -EPSILON or top < -EPSILON or right > view.w + EPSILON or bottom > view.h + EPSILON then
+			out[#out + 1] = ("%s: %.1f,%.1f..%.1f,%.1f of %d x %d"):format(
+				name,
+				left,
+				top,
+				right,
+				bottom,
+				view.w,
+				view.h
+			)
+		end
+	end
+	if view.book:IsShown() then
+		inside("book", boxIn(view.book))
+	end
+	if view.live:IsShown() then
+		local _, _, _, x, y = view.live:GetPoint(1)
+		x, y = x or 0, y or 0
+		local half = view.live:GetWidth() / 2
+		-- anchored at its TOP, centred across the art
+		inside("live", view.w / 2 + x - half, -y, view.w / 2 + x + half, -y + view.live:GetHeight())
+		if not view.live:GetClipsChildren() then
+			out[#out + 1] = "live: its fittings aren't clipped to it"
+		end
+	end
+	if view.preview:IsShown() then
+		inside("preview", 0, 0, view.preview:GetWidth(), view.preview:GetHeight())
+		if not view.preview:GetClipsChildren() then
+			out[#out + 1] = "preview: Core's stage isn't clipped to it"
+		end
+	end
+	if view.shield:IsShown() then
+		local w, h = view.shield:GetSize()
+		inside("shield", (view.w - w) / 2, (view.h - h) / 2, (view.w + w) / 2, (view.h + h) / 2)
+	end
+	if view.medal:IsShown() then
+		local size = view.medal:GetWidth()
+		inside("medal", (view.w - size) / 2, (view.h - size) / 2, (view.w + size) / 2, (view.h + size) / 2)
+	end
+	return out
+end
+
+describe("a look's thumbnail in the Collection (LED-R168, LED-R169)", function()
+	it(
+		"draws every binding's closed book from its swatch, in a Journal atlas, inside the art's box at every size, none as a live book with its clasp and ribbon at full size",
+		function()
+			local fake, loaded = open("collection")
+			local parent = loaded.ns.journal.frame
+			local drawnLive = {}
+			for _, binding in ipairs(fake.ns.BINDINGS) do
+				local look = fake.Pagle.GetBindingLook(binding.id)
+				if look.swatch then
+					assert(loaded.ns.JOURNAL_ATLASES[look.swatchAtlas], binding.id .. ": " .. look.swatchAtlas)
+					assert(loaded.ns.JOURNAL_ATLASES[look.swatchAtlas].sprites[look.swatch], binding.id)
+				else
+					drawnLive[#drawnLive + 1] = binding.id
+				end
+				for _, size in ipairs(ART_SIZES) do
+					local view = loaded.ns.NewJournalLookArt(parent, size[1], size[2])
+					loaded.ns.SetJournalLookArt(view, { kind = "book", good = binding.id }, 0)
+					assert.are.same(
+						{ look.swatch ~= nil, look.swatch == nil },
+						{ view.book:IsShown(), view.live:IsShown() },
+						binding.id
+					)
+					assert.are.same({}, strays(view), binding.id)
+					-- a whole book has its clasp and ribbon in its swatch, none of its own to draw big
+					assert(not (look.clasp ~= nil and view.live:IsShown()), binding.id)
+					assert(not (look.ribbon ~= nil and view.live:IsShown()), binding.id)
+				end
+			end
+			-- Tooled Leather and Verdigris, the two no kit drew closed
+			assert.are.same({ "core.binding.tooled", "core.binding.verdigris" }, drawnLive)
+		end
+	)
+
+	it("leaves nothing of a binding behind when a row's art is reused for another look, or none (LED-R168)", function()
+		local fake, loaded = open("collection")
+		local view = loaded.ns.NewJournalLookArt(loaded.ns.journal.frame, 60, 38)
+		local function shown()
+			local list = {}
+			for _, name in ipairs({ "preview", "book", "live", "shield", "medal", "quill" }) do
+				if view[name]:IsShown() then
+					list[#list + 1] = name
+				end
+			end
+			return list
+		end
+
+		for _, step in ipairs({
+			{ { kind = "book", good = "core.binding.field" }, { "book" } },
+			{ { kind = "book", good = "core.binding.tooled" }, { "live" } },
+			{ { kind = "book", good = "ledger.binding.logbook" }, { "book" } },
+			{ { kind = "preview", good = PAGE }, { "preview" } },
+			{ { kind = "book", good = "ledger.binding.logbook" }, { "book" } },
+			{ { kind = "shield", good = "core.crest.plain", icon = 134939 }, { "shield" } },
+			{ { kind = "quill" }, { "quill" } },
+			{ { kind = "speaker", good = "core.soundset.driftwood", icon = 134939 }, { "medal" } },
+			{ nil, {} },
+		}) do
+			loaded.ns.SetJournalLookArt(view, step[1], 0)
+			assert.are.same(step[2], shown())
+			assert.are.same({}, strays(view))
+		end
+		assert.is_not_nil(fake)
+	end)
+
+	it("draws every row of the Collection's spread, on both pages, inside its art's box", function()
+		local fake, loaded = open("collection", nil, {
+			before = function(_, fake)
+				fake.setPurchased({ ["core.binding.driftwood"] = true })
+			end,
+		})
+		local count = 0
+		for _, kind in ipairs({ "shelfRow", "reachRow", "latelyRow" }) do
+			for _, widget in ipairs(drawn(loaded, kind == "shelfRow" and "left" or "right", kind)) do
+				count = count + 1
+				assert.are.same({}, strays(widget.art), kind)
+			end
+		end
+		assert.is_true(count > 0)
+		assert.is_not_nil(fake)
+	end)
+end)
