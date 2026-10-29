@@ -169,6 +169,8 @@ ids = [
 	"ledger.toaststyle.hex",
 	"ledger.toaststyle.lion",
 	"ledger.toaststyle.warband",
+	"ledger.toaststyle.cartographer",
+	"ledger.toaststyle.gala",
 ]
 
 # Core's book bindings (SHOP-R25, ADR 0015), each good core.binding.<key> with a name and a description: Field
@@ -707,6 +709,9 @@ ids = [
 	"hunts.trackerframe.bounty",
 	"hunts.trackerframe.spyglass",
 	"hunts.trackerframe.wagerribbon",
+	"hunts.toaststyle.nightfin",
+	"hunts.toaststyle.trench",
+	"hunts.toaststyle.study",
 ]
 
 # Hunts' ladder titles (HNT-R148, HNT-R130), each earned at a completed-run count: 25 with the event pool's content

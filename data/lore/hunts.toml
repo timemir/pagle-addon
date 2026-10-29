@@ -63,6 +63,20 @@ description = "Navy enamel between two brass rails, the eyepiece at the corner t
 name = "Winner's Ribbon"
 description = "A purple silk ribbon with a gold fringe, for anglers who keep beating the house at its own wagers."
 
+# The epic toast styles Hunts earns in Core's toast style slot (HNT-R123, ANN-R85).
+
+[huntgood."hunts.toaststyle.nightfin"] # core.toaststyle, earned: Tier 3 in three night Wager Hunts
+name = "Nightfin Tide"
+description = "Out past the headland, where the light ends, the nightfin run under a full moon. Hold still long enough and one jumps clean across it."
+
+[huntgood."hunts.toaststyle.trench"] # core.toaststyle, earned: Tier 3 in every Hunt of the lobster Wager
+name = "The Deep Trench"
+description = "Below where the sunlight gives up, and below where the anglerfish lanterns give up. Something very large lives down here, and it has noticed the line."
+
+[huntgood."hunts.toaststyle.study"] # core.toaststyle, earned: 100 Wager runs completed
+name = "Nat's Study"
+description = "A journal open on a desk, the lamp still lit and the ink uncapped, his best flies hanging in the warm air over the page. Nobody has ever caught him at it. Nobody has ever seen the desk empty, either."
+
 # The completed-run ladder (HNT-R148): a title at 25, 50 and 100 completed runs, listed in manifest.toml under
 # [hunts.ladder]. 25 is the spec's own; 50 and 100 are the event pool's lore batch (#307). Each is a bare epithet the
 # Angler signs with, like the set titles, and each is more of the same bet won.

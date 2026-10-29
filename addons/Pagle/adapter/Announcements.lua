@@ -1033,9 +1033,9 @@ local function drawComposedToast(frame, display, style)
 	body:SetSize(page.w, page.h)
 	frame.page:Hide()
 	frame.wax:Hide()
-	ns.DrawToastLayers(frame, body, style, page)
 	-- A toast announcing a variety shows its art and takes its rarity's colour (VAR-R26).
 	local look = not announcement.fighting and ns.ToastVarietyLook(announcement) or nil
+	ns.DrawToastLayers(frame, body, style, page, nil, look ~= nil and look.gleam)
 	ns.TintToastMedallion(frame, look and look.ring)
 	readyToastGleam(frame, look, page)
 

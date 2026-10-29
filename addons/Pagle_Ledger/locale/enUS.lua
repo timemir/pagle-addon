@@ -97,6 +97,8 @@ ns.L = {
 		hex = "Catch 100 fish as a Troll",
 		lion = "Catch 300 fish on Alliance characters",
 		warband = "Catch 300 fish on Horde characters",
+		-- The epic Folio (ANN-R85).
+		cartographer = "Master in 5 zones",
 	},
 	-- A second-round good's row tag while it isn't earned (LED-R118): "{n} of {mark} {unit}", the unit by the good's
 	-- key; a good with no unit shows its EARNED_TEXT.
@@ -126,6 +128,7 @@ ns.L = {
 		hex = "fish",
 		lion = "fish",
 		warband = "fish",
+		cartographer = "zones",
 	},
 
 	-- A zone crest not yet earned (LED-R115): the row's tag and the stage's note. The crests' names and descriptions

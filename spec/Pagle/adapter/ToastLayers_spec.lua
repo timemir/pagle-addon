@@ -287,7 +287,8 @@ describe("a toast in a composed toast style", function()
 				ids[#ids + 1] = id
 			end
 			table.sort(ids)
-			assert.is_true(#ids >= 28)
+			-- Round two's ten, round three's eighteen and the epic five (ANN-R85): every one is walked.
+			assert.are.equal(33, #ids)
 			for _, rungName in ipairs({ "toast.low", "toast", "toast.high" }) do
 				M:RaiseMoment({
 					rung = rungName,
@@ -331,7 +332,8 @@ describe("a toast in a composed toast style", function()
 				ids[#ids + 1] = id
 			end
 			table.sort(ids)
-			assert.is_true(#ids >= 28)
+			-- Round two's ten, round three's eighteen and the epic five (ANN-R85): every one is walked.
+			assert.are.equal(33, #ids)
 			-- The size a font string is set to, a composed style's ink as a font object, and the client's lines and
 			-- letters as they grow with it: a kicker 1.25 a unit and 0.62 wide, a name line 42/31 and 0.4.
 			local function sizeOf(fontString)
@@ -800,4 +802,263 @@ describe("a round one toast style after a composed one", function()
 			assert.are.equal(loaded.ns.ART_FONTS.Amt, toast.coins.label.fontObject)
 		end
 	)
+end)
+
+-- The epic five, earned in Core's toast style slot: Hunts' three and the Ledger's two (ANN-R85).
+local EPIC_FIVE = {
+	{ "Ledger", "ledger.toaststyle.cartographer" },
+	{ "Hunts", "hunts.toaststyle.nightfin" },
+	{ "Hunts", "hunts.toaststyle.trench" },
+	{ "Ledger", "ledger.toaststyle.gala" },
+	{ "Hunts", "hunts.toaststyle.study" },
+}
+local FOLIO, GALA = "ledger.toaststyle.cartographer", "ledger.toaststyle.gala"
+
+-- Core logged in on Forever with the Ledger and Hunts registered and the epic five earned in Core's slot. `stage` is the
+-- Folio's stageCount's count: the table's `value`, nil for none known.
+local function epicCore(stage)
+	local loaded = loadCore(history(2), {})
+	loaded.env.PagleDB.global.onboarding.notesOn = false
+	loaded.ns.db.profile.announcements.motion = false
+	local modules = {
+		Ledger = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 }),
+		Hunts = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 }),
+	}
+	for _, entry in ipairs(EPIC_FIVE) do
+		modules[entry[1]]:RegisterGood({
+			id = entry[2],
+			slot = "core.toaststyle",
+			name = entry[2],
+			isEarned = function()
+				return true
+			end,
+			earnedText = "Earned",
+			stageCount = entry[2] == FOLIO and function()
+				return stage and stage.value
+			end or nil,
+		})
+	end
+	enterWorld(loaded, 3)
+	loaded.client.runTimers()
+	return loaded, modules.Ledger
+end
+
+describe("the epic five on the client (ANN-R85)", function()
+	it(
+		"each draw a toast, a toast.high and a Nod from their own rungs with every word within the page (ANN-R82, ANN-R85)",
+		function()
+			local loaded, M = epicCore()
+			for _, entry in ipairs(EPIC_FIVE) do
+				local id = entry[2]
+				equip(loaded, id)
+				for _, rungName in ipairs({ "toast", "toast.high" }) do
+					raiseStamped(loaded, M, rungName)
+					local toast = loaded.ns.announcementFrames.toast
+					local page = loaded.ns.ToastPage(toast.display.announcement)
+					local rung, atlas = artOf(loaded, id, page.high and "high" or "toast")
+					assert.are.same({ page.w, page.h }, { toast.width, toast.height })
+					assert.are.same({ rung.w, rung.h }, { page.w, page.h })
+					assert(#toast.toastLayers.active > 0, id)
+					for _, slot in ipairs(toast.toastLayers.active) do
+						assert.are.equal(atlas.file, slot.texture.texture, id)
+					end
+					assert.are.same({}, bounds.overflows(toast), id .. " on " .. rungName)
+					loaded.client.advance(10)
+				end
+				-- A Nod, from the Nod rung, its body three-sliced to the line.
+				loaded.ns.moments:RaiseCatchToast({ rung = "nod", kind = "spec", title = "Rank up", text = "Lure" })
+				loaded.client.advance(0)
+				local nod = loaded.ns.announcementFrames.nod
+				if nod and nod.toastLayers then
+					assert.are.same({}, bounds.overflows(nod), id)
+				end
+				loaded.client.advance(10)
+			end
+		end
+	)
+
+	describe("the Extravaganza Gala's burst of confetti", function()
+		local CAST = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
+
+		-- Whether toast.high's page draws the burst layer (gala-pop), for a headline with a variety of `rarity` riding on
+		-- it, or none (nil).
+		local function bursts(loaded, M, rarity, rung)
+			M:RaiseMoment({
+				rung = rung or "toast.high",
+				kind = "spec",
+				title = "New Species",
+				text = "Raw Bristle Whisker Catfish",
+				icon = 6291,
+				cast = CAST,
+			})
+			if rarity then
+				M:RaiseMoment({
+					rung = "toast.low",
+					kind = "newVariety",
+					order = 120,
+					title = "New variety",
+					text = "Coral",
+					stamp = "New variety",
+					icon = 6291,
+					cast = CAST,
+					variety = { name = "Coral", rarity = rarity },
+				})
+			end
+			loaded.client.advance(0)
+			local toast = loaded.ns.announcementFrames.toast
+			local found = false
+			for _, slot in ipairs(toast.toastLayers.active) do
+				found = found or (slot.layer.motion ~= nil and slot.layer.motion.keyframes == "gala-pop")
+			end
+			local isHigh = loaded.ns.ToastPage(toast.display.announcement).high == true
+			loaded.client.advance(10)
+			return found, isHigh
+		end
+
+		it("plays on toast.high with a Rare or Epic variety, and on no other toast (ANN-R85, VAR-R26)", function()
+			local loaded, M = epicCore()
+			equip(loaded, GALA)
+
+			assert.are.same({ true, true }, { bursts(loaded, M, "rare") })
+			assert.are.same({ true, true }, { bursts(loaded, M, "epic") })
+			assert.are.same({ false, true }, { bursts(loaded, M, "common") })
+			assert.are.same({ false, true }, { bursts(loaded, M, "uncommon") })
+			assert.are.same({ false, true }, { bursts(loaded, M, nil) })
+			-- A toast page has no burst whatever the variety.
+			assert.are.same({ false, false }, { bursts(loaded, M, "rare", "toast") })
+		end)
+
+		it("is left off every other epic style, whatever the variety", function()
+			local loaded, M = epicCore()
+			for _, entry in ipairs(EPIC_FIVE) do
+				if entry[2] ~= GALA then
+					equip(loaded, entry[2])
+					assert.are.same({ false, true }, { bursts(loaded, M, "epic") }, entry[2])
+				end
+			end
+		end)
+
+		it("goes off once as the toast lands with Animations on, and is unseen before and after (ANN-R85)", function()
+			local loaded, M = epicCore()
+			loaded.ns.db.profile.announcements.motion = true
+			equip(loaded, GALA)
+			M:RaiseMoment({
+				rung = "toast.high",
+				kind = "spec",
+				title = "New Species",
+				text = "Pike",
+				icon = 6291,
+				cast = CAST,
+			})
+			M:RaiseMoment({
+				rung = "toast.low",
+				kind = "newVariety",
+				order = 120,
+				title = "New variety",
+				text = "Coral",
+				stamp = "New variety",
+				icon = 6291,
+				cast = CAST,
+				variety = { name = "Coral", rarity = "rare" },
+			})
+			loaded.client.advance(0)
+			local toast = loaded.ns.announcementFrames.toast
+			local burst = slotOf(toast, "front").texture
+			assert.are.equal(0, burst.alpha) -- it only flashes: unseen before it lands
+
+			-- Landing at 0.98 s and a beat (0.1 s) on, it blooms (alpha 1 by 12% of its 1.6 s) and fades out.
+			assert.is_not_nil(toast.toastLayers.playing)
+			loaded.client.nextFrame(0.5)
+			assert.are.equal(0, burst.alpha)
+			loaded.client.nextFrame(0.98 + 0.1 + 0.3 - 0.5) -- landed, a beat on, and past its bloom (12% of 1.6 s)
+			assert.is_true(burst.shown)
+			assert.is_true(burst.alpha > 0.9)
+			loaded.client.nextFrame(2) -- its 1.6 s over
+			assert.are.equal(0, burst.alpha)
+			-- Once: it doesn't come round again while the toast stays up.
+			loaded.client.nextFrame(1.5)
+			assert.are.equal(0, burst.alpha)
+		end)
+	end)
+
+	describe("the Cartographer's Folio's stages", function()
+		-- The Folio's deco on a `rung` toast, with the Ledger's count `value`: the layer drawn and its slot.
+		local function decoSlot(loaded, M, stage, value, rung)
+			stage.value = value
+			raiseStamped(loaded, M, rung)
+			local toast = loaded.ns.announcementFrames.toast
+			local slot = slotOf(toast, "deco")
+			local atlas = loaded.ns.ATLASES[loaded.ns.ToastStyleOf(FOLIO).atlas]
+			assert.are.same(coordsOf(atlas, slot.layer.sprite), slot.texture.texCoord)
+			local sprite, width, height = slot.layer.sprite, slot.texture.width, slot.texture.height
+			loaded.client.advance(10)
+			return sprite, width, height
+		end
+
+		it("draw the stage the Ledger's count of zones at Master gives, on toast and toast.high (ANN-R85)", function()
+			local stage = {}
+			local loaded, M = epicCore(stage)
+			equip(loaded, FOLIO)
+
+			for value, suffix in pairs({
+				[5] = "-st1",
+				[14] = "-st1",
+				[15] = "-st2",
+				[30] = "-st3",
+				[45] = "",
+				[54] = "-st5",
+			}) do
+				assert.are.equal("toast-deco" .. suffix, decoSlot(loaded, M, stage, value), value)
+				assert.are.equal("high-deco" .. suffix, decoSlot(loaded, M, stage, value, "toast.high"), value)
+			end
+		end)
+
+		it("draw the first stage below the first count, and the rung's own deco while no count is known", function()
+			local stage = {}
+			local loaded, M = epicCore(stage)
+			equip(loaded, FOLIO)
+
+			assert.are.equal("toast-deco-st1", decoSlot(loaded, M, stage, 2))
+			assert.are.equal("toast-deco", decoSlot(loaded, M, stage, nil))
+		end)
+
+		it("draw each stage at its own box, stage 5's a little bigger than the others' (ANN-R85)", function()
+			local stage = {}
+			local loaded, M = epicCore(stage)
+			equip(loaded, FOLIO)
+			local art = loaded.ns.ToastStyleOf(FOLIO).art.stages
+
+			local _, w1, h1 = decoSlot(loaded, M, stage, 5)
+			local _, w5, h5 = decoSlot(loaded, M, stage, 54)
+			assert.are.same({ art[1].toast.w, art[1].toast.h }, { w1, h1 })
+			assert.are.same({ art[5].toast.w, art[5].toast.h }, { w5, h5 })
+			assert.is_true(w5 > w1 and h5 > h1)
+		end)
+
+		it("draw as `/pagle dev stage` says, whatever the Ledger counts, until it is off (ANN-R85)", function()
+			local stage = { value = 54 }
+			local loaded, M = epicCore(stage)
+			equip(loaded, FOLIO)
+
+			loaded.ns.devStageCount = 16
+			assert.are.equal("toast-deco-st2", decoSlot(loaded, M, stage, 54))
+			loaded.ns.devStageCount = nil
+			assert.are.equal("toast-deco-st5", decoSlot(loaded, M, stage, 54))
+		end)
+
+		it("take the count from the good's stageCount through Core's registry, and a Nod has no stage", function()
+			local stage = { value = 31 }
+			local loaded, M = epicCore(stage)
+			equip(loaded, FOLIO)
+
+			assert.are.equal(31, loaded.ns.goods:StageCount(FOLIO))
+			assert.are.equal("toast-deco-st3", decoSlot(loaded, M, stage, 31))
+			loaded.ns.moments:RaiseCatchToast({ rung = "nod", kind = "spec", title = "Rank up", text = "Lure" })
+			loaded.client.advance(0)
+			local nod = loaded.ns.announcementFrames.nod
+			for _, slot in ipairs(nod.toastLayers.active) do
+				assert(slot.layer.sprite:find("^nod%-"), slot.layer.sprite)
+			end
+		end)
+	end)
 end)

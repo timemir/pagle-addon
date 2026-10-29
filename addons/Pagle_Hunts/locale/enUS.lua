@@ -21,11 +21,15 @@ ns.L = {
 	-- Its two Hunts ("Night Run · in 37m", "Rack Hour · on demand"), the name at the left and the label at the right.
 	PREVIEW_TRACKER_HUNTS = { { "Night Run", "in 37m" }, { "Rack Hour", "on demand" } },
 	-- What earns each earned good, its `earnedText` in the Curio Shop, by its rule (HNT-R122): a set title, every set
-	-- title, and ns.WAGER_GOODS_RUNS completed runs.
+	-- title, ns.WAGER_GOODS_RUNS and ns.WAGER_STUDY_RUNS completed runs, three night Wager Hunts at tier 3 and the
+	-- lobster Wager's every Hunt at tier 3.
 	EARNED_TEXT = {
 		anySetTitle = "Finish a Hunt set",
 		everySetTitle = "Finish every Hunt set",
 		wagerRuns = "%d Wager runs completed",
+		wagerCentury = "%d Wager runs completed",
+		nightTide = "Tier 3 in three night Wager Hunts",
+		deepTrench = "Tier 3 in every Hunt of the lobster Wager",
 	},
 	-- Window moments (HNT-R88) and their row on the Announcements page (SET-R32): logic/WindowMoments.lua.
 	WINDOW_MOMENTS_SETTING = "Tell me when a pinned Hunt's window opens",

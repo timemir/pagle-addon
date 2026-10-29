@@ -612,6 +612,39 @@ describe("Hunts' earned goods, through the projection", function()
 		end
 	)
 
+	it(
+		"own the epic styles from a live Cast that reaches a Hunt's tier in a run, refreshed then, before any run completes (HNT-R122, ANN-R85, SHOP-R31)",
+		function()
+			-- The fixture pool's Hunts stop at tier 2 or 3 and aren't the night events: Nightfin Tide's rule is pointed at a
+			-- fixture event and one Hunt's first tier, which a Blackmouth in a Vale run reaches without completing the run.
+			local NIGHTFIN = "hunts.toaststyle.nightfin"
+			local _, fake = hunts.login(function(fake)
+				append(fake, {
+					record(
+						"run",
+						runPayload("fixture_vale", SERVER_TIME - HOUR, SERVER_TIME + DAY),
+						SERVER_TIME - HOUR
+					),
+				})
+			end, {
+				prepare = function(loaded)
+					loaded.ns.TOP_TIER = 1
+					loaded.ns.NIGHT_TIDE_EVENTS = { fixture_vale = true }
+					loaded.ns.NIGHT_TIDE_HUNTS = 1
+				end,
+			})
+			assert.is_false(fake.Pagle.IsOwned(NIGHTFIN))
+			fishAt(fake, hunts.DAY, ELWYNN)
+
+			fake.playCast("caught", { { itemID = C.BLACKMOUTH, quantity = 1 } })
+			fake.nextFrame()
+
+			assert.is_true(fake.Pagle.IsOwned(NIGHTFIN))
+			assert.is_false(fake.Pagle.IsOwned("hunts.toaststyle.study"))
+			assert.is_false(fake.Pagle.IsOwned(WAGERSILK))
+		end
+	)
+
 	it("don't own them at nine (HNT-R122, HNT-R148)", function()
 		local _, fake = hunts.login(completedRuns(9))
 

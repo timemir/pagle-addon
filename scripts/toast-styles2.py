@@ -1,9 +1,12 @@
 """Writes addons/Pagle/data/ToastStyleArt2.lua from the Curio Shop round two kit's goods.json (ANN-R82): the ten
 composed toast styles' atlases and art data, keyed by good ID, for adapter/ToastLayers.lua to draw; and, with `--round
-3`, addons/Pagle/data/ToastStyleArt3.lua from the round three kit's (ANN-R84), the eighteen more in the same format.
+3`, addons/Pagle/data/ToastStyleArt3.lua from the round three kit's (ANN-R84), the eighteen more in the same format;
+and, with `--round 4`, addons/Pagle/data/ToastStyleArt4.lua from the epic five's kit (ANN-R85), keyed by the IDs the
+kit gives them.
 
     .tools/bin/python scripts/toast-styles2.py <kit>/goods.json addons/Pagle/data/ToastStyleArt2.lua
     .tools/bin/python scripts/toast-styles2.py --round 3 <kit3>/goods.json addons/Pagle/data/ToastStyleArt3.lua
+    .tools/bin/python scripts/toast-styles2.py --round 4 <kit4>/goods.json addons/Pagle/data/ToastStyleArt4.lua
 
 then StyLua the file. The kit's data is copied as it is, with three changes made here once rather than in the client:
 each layer's CSS transform list is folded into one translate, rotation and scale (CSS applies a list right to left,
@@ -328,6 +331,31 @@ def style_art(good):
     return atlas, atlas_entry, rungs
 
 
+def stage_art(good, sprites):
+    """A style's chart stages (the Cartographer's Folio, ANN-R85), or None for a style without: in order, each stage's
+    lowest count and, for toast and toast.high, the deco sprite it draws and that sprite's box (UI units from the rung's
+    top left). A stage's sprite is the rung's own deco (stage 4's) or one of the kit's stage sprites, added to `sprites`;
+    the Nod has no stages."""
+    art = good["art"]
+    if "stages" not in art:
+        return None
+    extra = art.get("stageSprites", {})
+    out = []
+    for stage in art["stages"]:
+        entry = {"min": stage["min"]}
+        for rung in ("toast", "high"):
+            name = stage[rung]
+            if name in extra:
+                found = extra[name]
+                rect = found["rect"]
+                sprites[name] = {"x": rect["x"], "y": rect["y"], "w": rect["w"], "h": rect["h"]}
+            else:
+                found = next(layer for layer in art["rungs"][rung]["layers"] if layer["sprite"] == name)
+            entry[rung] = {"sprite": name, "x": found["x"], "y": found["y"], "w": found["w"], "h": found["h"]}
+        out.append(entry)
+    return out
+
+
 KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
@@ -399,6 +427,23 @@ ns.TOAST_STYLE_ART2 = ns.TOAST_STYLE_ART2 or {}
 '''
 
 
+HEADER4 = '''---@class PagleNS
+local ns = select(2, ...)
+
+-- The epic five composed toast styles (announcements.md › Toast styles, ANN-R85), as their kit's goods.json has them:
+-- written by scripts/toast-styles2.py --round 4, so change the kit and run it, not this file. The same format as
+-- data/ToastStyleArt2.lua (ANN-R82), which loads first and owns the tables. Every one is an earned good in Core's slot,
+-- keyed by its owner's ID: Hunts' three (hunts.*) and the Ledger's two (ledger.*). The Cartographer's Folio's art also
+-- has `stages`: its chart by zones at Master, each stage's lowest count and its deco sprite and box per rung.
+
+local DIR = "Interface\\\\AddOns\\\\Pagle\\\\media\\\\announce\\\\"
+
+ns.ATLASES = ns.ATLASES or {}
+ns.TOAST_STYLE_ART2 = ns.TOAST_STYLE_ART2 or {}
+
+'''
+
+
 # Round three's ten race and faction styles, which the kit has as Core's: the Ledger earns them (LED-R164), so their
 # goods are the Ledger's, and the art is keyed by their IDs.
 ROUND3_LEDGER = {
@@ -416,8 +461,10 @@ def main(argv):
     header, ledger = HEADER, set()
     if argv[:2] == ["--round", "3"]:
         header, ledger, argv = HEADER3, ROUND3_LEDGER, argv[2:]
+    elif argv[:2] == ["--round", "4"]:
+        header, argv = HEADER4, argv[2:]
     if len(argv) != 2:
-        sys.exit("usage: toast-styles2.py [--round 3] <goods.json> <ToastStyleArt2.lua>")
+        sys.exit("usage: toast-styles2.py [--round 3|4] <goods.json> <ToastStyleArt2.lua>")
     data = json.load(open(argv[0], encoding="utf-8"))
     out = header
     for good in data["goods"]:
@@ -426,6 +473,7 @@ def main(argv):
         if good["id"] in ledger:
             good = {**good, "id": good["id"].replace("core.", "ledger.", 1), "name": ROUND3_NAMES.get(good["id"], good["name"])}
         atlas, entry, rungs = style_art(good)
+        stages = stage_art(good, entry["sprites"])
         for sprite in entry["sprites"].values():
             scale = entry["scale"]
             sprite["box"] = [0, 0, sprite["w"] / scale, sprite["h"] / scale]
@@ -433,7 +481,10 @@ def main(argv):
         body = lua(entry).replace("{\n", "{\n\tfile = DIR .. " + json.dumps(file) + ",\n", 1)
         out += f"-- {good['name']} ({good['id']})\n"
         out += f"ns.ATLASES[{json.dumps(atlas)}] = {body}\n"
-        out += f"ns.TOAST_STYLE_ART2[{json.dumps(good['id'])}] = {lua({'atlas': atlas, 'rungs': rungs})}\n\n"
+        art = {"atlas": atlas, "rungs": rungs}
+        if stages:
+            art["stages"] = stages
+        out += f"ns.TOAST_STYLE_ART2[{json.dumps(good['id'])}] = {lua(art)}\n\n"
     open(argv[1], "w", encoding="utf-8", newline="\n").write(out.rstrip("\n") + "\n")
 
 

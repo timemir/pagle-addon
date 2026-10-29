@@ -112,21 +112,25 @@ end
 --- Draws a composed style's layers for `page` (a Nod's with none, `width` long) on `frame` in their resting frame
 --- (ANN-R82): each sprite of its rung at its box fitted to the page (logic/ToastStyles.lua's ns.FitToastBox), on its
 --- host, in the rung's order, a sweep's strip under its mask; one that only flashes, and a sweep, unseen. The page's
---- and Nod strip's art of the round one styles is the caller's to hide.
+--- and Nod strip's art of the round one styles is the caller's to hide. The layers are ns.ToastDrawLayers': a
+--- style with stages draws its deco at the stage its good's count gives (the Folio's chart, `stageCount`), and the
+--- Gala's burst of confetti only when the toast's variety `gleams` (ANN-R85).
 ---@param frame PagleAnnouncementFrame
 ---@param host Frame the toast's body, or the Nod's frame
 ---@param style PagleToastStyle
 ---@param page PagleToastPage?
 ---@param width number? the Nod's
-function ns.DrawToastLayers(frame, host, style, page, width)
+---@param gleams boolean? the toast announces a Rare or Epic variety (VAR-R26)
+function ns.DrawToastLayers(frame, host, style, page, width, gleams)
 	local layers = layersOf(frame, host)
 	local rung = ns.ToastRungArt(style, page) --[[@as PagleToastRung]]
+	local count = page and style.art.stages and (ns.devStageCount or ns.goods:StageCount(style.id)) or nil
 	local atlas = ns.ATLASES[style.art.atlas]
 	local w, h = page and page.w or width or rung.w, page and page.h or rung.h
 	for _, texture in ipairs(layers.slices or {}) do
 		texture:Hide()
 	end
-	layers:Draw(atlas, rung.layers, {
+	layers:Draw(atlas, ns.ToastDrawLayers(style, page, { gleams = gleams, count = count }), {
 		-- The medallion's back and front stay centred down a taller page; a sweep's mask fits as its box does.
 		fit = function(box, layer, mask)
 			local centred = not mask and (layer.name == "mback" or layer.name == "mfront")

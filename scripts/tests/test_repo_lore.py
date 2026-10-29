@@ -494,6 +494,9 @@ HUNT_GOODS = [
     "hunts.trackerframe.bounty",
     "hunts.trackerframe.spyglass",
     "hunts.trackerframe.wagerribbon",
+    "hunts.toaststyle.nightfin",
+    "hunts.toaststyle.trench",
+    "hunts.toaststyle.study",
 ]
 
 
@@ -1112,6 +1115,8 @@ LEDGER_GOODS = [
     "ledger.toaststyle.hex",
     "ledger.toaststyle.lion",
     "ledger.toaststyle.warband",
+    "ledger.toaststyle.cartographer",
+    "ledger.toaststyle.gala",
 ]
 
 

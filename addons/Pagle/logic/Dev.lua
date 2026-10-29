@@ -76,7 +76,7 @@ end
 --@end-do-not-package@
 
 --- The kinds `/pagle dev preview` shows, in the order it lists them.
-ns.DEV_PREVIEW_KINDS = { "toast", "nod", "banner", "splash", "card" }
+ns.DEV_PREVIEW_KINDS = { "toast", "high", "nod", "banner", "splash", "card" }
 
 -- A sample moment as Core would hold it once raised (PagleRaisedMoment), from Core itself.
 ---@param moment table
@@ -90,13 +90,16 @@ end
 -- Oily Blackmouth, a sample icon.
 local ICON = 6358
 
---- The sample Announcement `/pagle dev preview <kind>` shows (#247), for a toast, Nod, banner or splash: a headline
---- of that rung, with stamps and Coins where the form shows them. Nil for another kind. With `text`, its headline's
---- text reads that instead of the dev preview's line (the Field guide's Moments samples, ONB-R34).
+--- The sample Announcement `/pagle dev preview <kind>` shows (#247), for a toast, a toast.high (`high`), Nod, banner
+--- or splash: a headline of that rung, with stamps and Coins where the form shows them. Nil for another kind. With
+--- `text`, its headline's text reads that instead of the dev preview's line (the Field guide's Moments samples,
+--- ONB-R34). A `high` one with `rarity` (a rarity's key) announces a variety of it as well (VAR-R26), for judging the
+--- gleam and the Extravaganza Gala's burst (ANN-R85).
 ---@param kind string
 ---@param text string?
+---@param rarity string?
 ---@return PagleAnnouncement?
-function ns.DevPreviewAnnouncement(kind, text)
+function ns.DevPreviewAnnouncement(kind, text, rarity)
 	local L = ns.L
 	text = text or L.DEV_SAMPLE_TEXT
 	if kind == "toast" then
@@ -104,6 +107,21 @@ function ns.DevPreviewAnnouncement(kind, text)
 			sample({ rung = "toast", title = L.DEV_SAMPLE_TOAST, text = text, icon = ICON, coins = 10 }),
 			sample({ rung = "toast.low", title = L.DEV_SAMPLE_STAMP, stamp = L.DEV_SAMPLE_STAMP, coins = 2 }),
 		})
+	elseif kind == "high" then
+		local moments = {
+			sample({ rung = "toast.high", title = L.DEV_SAMPLE_TOAST, text = text, icon = ICON, coins = 10 }),
+			sample({ rung = "toast.low", title = L.DEV_SAMPLE_STAMP, stamp = L.DEV_SAMPLE_STAMP, coins = 2 }),
+		}
+		if rarity and rarity ~= "" then
+			moments[3] = sample({
+				rung = "toast.low",
+				title = L.DEV_SAMPLE_VARIETY,
+				stamp = L.DEV_SAMPLE_VARIETY,
+				icon = ICON,
+				variety = { name = L.DEV_SAMPLE_VARIETY_NAME, rarity = rarity },
+			})
+		end
+		return ns.MakeAnnouncement(moments)
 	elseif kind == "nod" then
 		return ns.MakeAnnouncement({ sample({ rung = "nod", title = L.DEV_SAMPLE_NOD, text = text }) })
 	elseif kind == "banner" then
@@ -169,14 +187,38 @@ end
 ---@param kind string
 local function preview(dev, kind)
 	local L, options = ns.L, dev.options
-	local announcement = ns.DevPreviewAnnouncement(kind)
+	local name, rarity = kind:match("^(%S+)%s*(%S*)$")
+	local known = false
+	for _, entry in ipairs(ns.VARIETY_RARITIES) do
+		known = known or entry.key == rarity
+	end
+	local announcement = ns.DevPreviewAnnouncement(name or kind, nil, known and rarity or nil)
 	if announcement then
 		options.announce(announcement)
-		options.print(L.DEV_PREVIEWING:format(kind))
+		options.print(L.DEV_PREVIEWING:format(known and name .. " " .. rarity or name))
 	elseif kind == "card" then
 		options.print(options.showCard(ns.DevPreviewCard()) and L.DEV_PREVIEWING:format(kind) or L.DEV_CARD_HELD)
 	else
 		options.print(L.DEV_PREVIEW_KINDS:format(table.concat(ns.DEV_PREVIEW_KINDS, ", ")))
+	end
+end
+
+-- `/pagle dev stage [<count> | off]` (ANN-R85): the Cartographer's Folio's chart is drawn at the stage its good's count of
+-- zones at Master gives, which a test log can't set; this draws it as if that count were `count` until `off` or the next
+-- login. It changes what is drawn and nothing else: no saved state, no ownership, no record.
+---@param dev PagleDevCommands
+---@param args string
+local function stage(dev, args)
+	local L, options = ns.L, dev.options
+	local count = tonumber(args)
+	if args == "off" then
+		ns.devStageCount = nil
+		options.print(L.DEV_STAGE_OFF)
+	elseif count and count >= 0 and count == math.floor(count) then
+		ns.devStageCount = count
+		options.print(L.DEV_STAGE_SET:format(count))
+	else
+		options.print(ns.devStageCount and L.DEV_STAGE_IS:format(ns.devStageCount) or L.DEV_STAGE_USAGE)
 	end
 end
 
@@ -354,6 +396,8 @@ function Dev:Run(args)
 	--@end-do-not-package@
 	elseif name == "preview" then
 		preview(self, rest:lower())
+	elseif name == "stage" then
+		stage(self, rest)
 	elseif name == "glyphs" then
 		local probe = ns.DevGlyphProbe()
 		options.print(L.DEV_GLYPHS_CHAT:format(probe))

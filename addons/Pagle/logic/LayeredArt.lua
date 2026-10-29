@@ -145,16 +145,22 @@ local function easing(name)
 end
 
 --- Whether a layer shows in its resting frame (Animations off, or a preview standing still): as the kit drew it,
---- unmoved and opaque, unless it only flashes (its motion starts unseen: lightning, a ripple, a puff, a bubble) or is a
---- sweep's band of light.
+--- unmoved and opaque, unless it only flashes (its motion starts unseen: lightning, a ripple, a puff, a bubble), is a
+--- sweep's band of light, or plays `once` and ends unseen (a cover that lifts off as the art lands: the Cartographer's
+--- Folio's leaves, Nat's Study's turning page, ANN-R85).
 ---@param layer PagleArtLayer
+---@param once boolean? its motion plays once in game
 ---@return boolean
-function ns.LayerRests(layer)
+function ns.LayerRests(layer, once)
 	local motion = layer.motion
 	if not motion then
 		return true
 	end
-	return motion.scroll == nil and not (motion.alpha and motion.alpha[1][2] == 0)
+	local alpha = motion.alpha
+	if once and alpha and alpha[#alpha][2] == 0 then
+		return false
+	end
+	return motion.scroll == nil and not (alpha and alpha[1][2] == 0)
 end
 
 --- A layer's motion as animations for the motion player (logic/Motion.lua), one per property it moves, as CSS
@@ -395,7 +401,7 @@ function LayeredArt:Draw(atlas, layers, placing)
 				slot.mask:SetSize(at.w, at.h)
 			end
 			commit(slot, self.anchor)
-			texture:SetShown(ns.LayerRests(layer))
+			texture:SetShown(ns.LayerRests(layer, motion ~= nil and self.once[motion.keyframes] == true))
 			self.active[#self.active + 1] = slot
 		end
 	end

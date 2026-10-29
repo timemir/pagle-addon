@@ -44,6 +44,8 @@ local ns = select(2, ...)
 ---@field earnedCount? fun(): integer?, integer? -- earned: how far toward it, as (have, need), asked each time the
 --- Collection draws it while it isn't owned (SHOP-R36); nothing while the count isn't known
 ---@field progress? fun(): PagleProgressDot[] -- earned: the dots the stage shows while it isn't owned (SHOP-R22)
+---@field stageCount? fun(): integer? -- earned: the count its art's stages are picked by (ANN-R85), asked each time its
+--- art is drawn; nothing while the count isn't known
 ---@field group? string           -- the key of one of its slot's groups (SHOP-R27)
 ---@field preview? fun(stage: Frame)   -- draws the look on the shop's preview stage
 
@@ -355,6 +357,8 @@ function Goods:GoodProblem(module, good)
 		return ("M:RegisterGood: %s's progress must be a function, on an earned good"):format(id)
 	elseif good.earnedCount ~= nil and (type(good.earnedCount) ~= "function" or good.isEarned == nil) then
 		return ("M:RegisterGood: %s's earnedCount must be a function, on an earned good"):format(id)
+	elseif good.stageCount ~= nil and (type(good.stageCount) ~= "function" or good.isEarned == nil) then
+		return ("M:RegisterGood: %s's stageCount must be a function, on an earned good"):format(id)
 	elseif good.group ~= nil and not groupOf(slot, good.group) then
 		return ("M:RegisterGood: %s's slot %s has no group %s"):format(id, slot.id, tostring(good.group))
 	end
@@ -507,6 +511,28 @@ function Goods:Progress(goodID)
 		dots = progress()
 	end)
 	return dots
+end
+
+--- The count a good's art picks its stage by (ANN-R85): its `stageCount` function's result, called now, through `call`,
+--- every time the art is drawn, owned or not, never cached and never for ownership (SHOP-R30). Nothing for a good that
+--- isn't registered or whose Module isn't On, a good without one, a function that raises (reported), and a result that
+--- isn't a whole number from 0.
+---@param goodID any
+---@return integer?
+function Goods:StageCount(goodID)
+	local good = self.goods[goodID]
+	local stageCount = good and good.stageCount
+	if type(stageCount) ~= "function" or not self:OrderOn()[good.module] then
+		return nil
+	end
+	local count
+	self.options.call(function()
+		count = stageCount()
+	end)
+	if type(count) ~= "number" or count < 0 or count ~= math.floor(count) then
+		return nil
+	end
+	return count
 end
 
 --- `M:RefreshGoods()` for `module` (SHOP-R31): calls each of its earned goods' isEarned() and caches the results.

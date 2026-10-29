@@ -122,11 +122,13 @@ local SECONDS_PER_DAY = 86400
 ---@field slot? string         -- the toast styles' Core slot; the bindings' is Core's binding slot (LED-R110)
 ---@field icon? string         -- the toast styles' icon on the shop's row (Core draws the style itself, ANN-R82); the
 ---                               bindings' is the ledger book (ns.BINDING_ICON)
+---@field unsold? true         -- earned by the achievement alone: it registers with no fallback price (SHOP-R28, #414)
+---@field staged? true         -- its art grows with its count: it registers a `stageCount` (ANN-R85)
 
 local ICONS = "Interface\\Icons\\"
 
 --- LED-R118's goods, in its order: the seven toast styles, then the nine bindings; then LED-R164's ten toast styles, the
---- race styles and the faction styles.
+--- race styles and the faction styles; last, the epic styles' Cartographer's Folio (ANN-R85).
 ---@type LedgerCountedGood[]
 ns.COUNTED_GOODS = {
 	{
@@ -275,6 +277,18 @@ ns.COUNTED_GOODS = {
 	{ id = "ledger.binding.flywallet", earn = "flywallet", count = "lures", mark = 5 },
 	{ id = "ledger.binding.carapace", earn = "carapace", count = "clams", mark = 50 },
 	{ id = "ledger.binding.ember", earn = "ember", count = "prestige", mark = 7 },
+	-- The epic styles' Cartographer's Folio (ANN-R85): five zones at Master earn it, and its chart is drawn in the stage
+	-- the count of zones at Master gives. Earned by the achievement alone, so no fallback price (#414).
+	{
+		id = "ledger.toaststyle.cartographer",
+		earn = "cartographer",
+		count = "masters",
+		mark = 5,
+		slot = "core.toaststyle",
+		icon = ICONS .. "INV_Misc_Map_01",
+		unsold = true,
+		staged = true,
+	},
 }
 
 --- The second round's good of ID `goodID` (LED-R118), or nil for any other good.
@@ -545,8 +559,8 @@ function ns.EarnedCountTexts(good, n, formatNumber)
 	return L.EARNED_COUNT:format(formatNumber(math.min(n, good.mark)), formatNumber(good.mark), unit), text
 end
 
---- The fallback the second round's earned goods register with (SHOP-R28): tier 4 from 90 days after
---- `ns.ROUND_TWO_RELEASE`, or nothing while that is nil.
+--- The fallback the second round's earned goods register with (SHOP-R28), but for an `unsold` one: tier 4 from 90 days
+--- after `ns.ROUND_TWO_RELEASE`, or nothing while that is nil.
 ---@return integer? tier
 ---@return integer? from server time
 function ns.RoundTwoFallback()
@@ -567,10 +581,12 @@ end
 --- `core.toaststyle` slot, then the nine bindings in Core's `core.binding` slot (LED-R110, ADR 0015) with the ledger
 --- book's icon (ns.BINDING_ICON). Each is named and described by lore (`ledgergood.<goodID>.name`, `.description`,
 --- LED-R160), by its ID while the name has no text (LED-R161), earned by `hooks.earnedBy`, with no preview (Core draws
---- them, ANN-R82, SHOP-R25) and the fallback of ns.RoundTwoFallback. Its earnedText is a function (SHOP-R22): the
---- count's texts, from the count as it stands, and while the projection updates, the texts it gave last (the plain
---- earned text before any). Its `earnedCount` gives (count, mark) for the Collection's ink bar (SHOP-R36), the count
---- held at the mark as the tag's is, and nothing while the projection updates.
+--- them, ANN-R82, SHOP-R25) and the fallback of ns.RoundTwoFallback, but for an `unsold` one's (the epic styles', #414).
+--- Its earnedText is a function (SHOP-R22): the count's texts, from the count as it stands, and while the projection
+--- updates, the texts it gave last (the plain earned text before any). Its `earnedCount` gives (count, mark) for the
+--- Collection's ink bar (SHOP-R36), the count held at the mark as the tag's is, and nothing while the projection
+--- updates. A `staged` good's `stageCount` gives its count unheld (ANN-R85), the last it knew while the projection
+--- updates, and nothing before any.
 ---@param hooks LedgerCountedHooks
 ---@return PagleGood[]
 function ns.CountedGoods(hooks)
@@ -579,6 +595,7 @@ function ns.CountedGoods(hooks)
 	for _, good in ipairs(ns.COUNTED_GOODS) do
 		local id, earn = good.id, good.earn
 		local lastTag, lastNote = ns.L.EARNED_TEXT[earn], ns.L.EARNED_TEXT[earn]
+		local lastCount
 		goods[#goods + 1] = {
 			id = id,
 			slot = good.slot or ns.BINDING_SLOT,
@@ -601,8 +618,12 @@ function ns.CountedGoods(hooks)
 					return math.min(n, good.mark), good.mark
 				end
 			end,
-			fallbackTier = tier,
-			fallbackFrom = from,
+			stageCount = good.staged and function()
+				lastCount = hooks.count(good) or lastCount
+				return lastCount
+			end or nil,
+			fallbackTier = not good.unsold and tier or nil,
+			fallbackFrom = not good.unsold and from or nil,
 		}
 	end
 	return goods
