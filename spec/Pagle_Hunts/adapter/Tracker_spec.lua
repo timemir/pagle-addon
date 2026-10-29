@@ -298,6 +298,25 @@ describe("the Hunts tracker", function()
 			assert.are.equal("board", board.router:Place().mode)
 		end)
 
+		it('open the board from the empty line, "Pin a Hunt to keep it here." (HNT-R77)', function()
+			local run = start()
+			local board, view = run.ns.board, run.ns.tracker
+
+			assert.are.equal("Pin a Hunt to keep it here.", read(run).empty)
+			assert.is_true(view.emptyLine:IsShown())
+			assert.is_not_false(view.emptyLine.mouseEnabled)
+			assert.is_false(board:IsShown())
+
+			view.emptyLine:Click()
+
+			assert.is_true(board:IsShown())
+			assert.are.equal("board", board.router:Place().mode)
+
+			-- With a Hunt pinned, the empty line is gone.
+			run.ns.SetPinned("fixture_snapper", true)
+			assert.is_false(view.emptyLine:IsShown())
+		end)
+
 		it("collapse and expand the block from its header, saved, and still collapsed after a reload", function()
 			local run = start()
 			run.ns.SetPinned("fixture_snapper", true)

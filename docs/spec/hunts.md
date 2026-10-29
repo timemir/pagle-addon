@@ -378,7 +378,7 @@ The board shows Hunt Events under the players' name, **Pagle Wagers**, in two pl
   - second: the target line, "you're here" when the live zone is one of its zones, and its tier progress, "{count} / {next unreached threshold}" ("0 / 1" before completion), or "all tiers" once finished
   
   With nothing pinned it reads "Pin a Hunt to keep it here."
-- **HNT-R77** Clicking a Hunt's lines opens the board on that Hunt (HNT-R67); clicking "+N more" opens the board. Clicking the header collapses or expands it; the state is saved.
+- **HNT-R77** Clicking a Hunt's lines opens the board on that Hunt (HNT-R67); clicking "+N more" or the empty line ("Pin a Hunt to keep it here.") opens the board. Clicking the header collapses or expands it; the state is saved. A sample tracker (HNT-R121: the Curio Shop's and the Fish Journal Collection's previews) has none of these clicks and no mouse on any of its parts: a click on it reaches what is under it.
 - **HNT-R78** While the projection is updating, progress reads "updating…". While restricted, the tracker keeps its last grouping (HNT-R43).
 - **HNT-R79** The tracker's frame wears the equipped tracker frame (`Pagle.GetEquipped("hunts.trackerframe")`) and redraws on `AppearanceChanged` for that slot.
 

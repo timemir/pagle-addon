@@ -234,7 +234,8 @@ local DOT_SIZE, DIAL_SIZE, EXTRA_LINE, WAGERS_GAP = 8, 14, 20, 6
 ---@field chevron Texture[]      -- the collapse mark: two strokes, down while expanded, right while collapsed
 ---@field lines HuntsTrackerLineButton[]   -- one per shown Hunt, ns.TRACKER_SHOWN of them
 ---@field more HuntsTrackerMoreButton   -- "+N more", opens the board (HNT-R77)
----@field empty FontString       -- "Pin a Hunt to keep it here."
+---@field emptyLine Button      -- the empty line's button, opens the board (HNT-R77)
+---@field empty FontString       -- "Pin a Hunt to keep it here.", on `emptyLine`
 ---@field wagers HuntsTrackerWagersView   -- the Pagle Wagers block above the header (HNT-R175)
 ---@field look HuntsTrackerLook  -- the look it last drew in
 ---@field wearing string?        -- a tracker frame's good ID the dev tour dresses it in (adapter/Tour.lua); nil: the
@@ -321,8 +322,8 @@ local function newShade(parent)
 	return shade
 end
 
--- Hunt `i`'s lines, a button (the tracker opens the board on its Hunt, HNT-R77): its dot, its name and label, then
--- the target line and progress under them.
+-- Hunt `i`'s lines, a button (the tracker opens the board on its Hunt, HNT-R77, wiring the click itself): its dot,
+-- its name and label, then the target line and progress under them.
 ---@param block Frame
 ---@return HuntsTrackerLineButton
 local function buildLine(block)
@@ -338,9 +339,6 @@ local function buildLine(block)
 		return made
 	end
 	line.first, line.label, line.second = text("LEFT"), text("RIGHT"), text("LEFT")
-	line:SetScript("OnClick", function(self)
-		ns.OpenBoard(self.huntID)
-	end)
 	passDrags(line, block)
 	line:Hide()
 	return line
@@ -393,8 +391,8 @@ local function buildHeader(block)
 end
 
 --- The tracker's block on `parent` (HNT-R76): the header, the Hunts' line buttons, "+N more" and the empty line, all
---- hidden until drawn, on its look's paper. The tracker (adapter/Tracker.lua) wires its clicks; the Curio Shop's sample
---- (HNT-R121) draws two fixed Hunts in one.
+--- hidden until drawn, on its look's paper. The tracker (adapter/Tracker.lua) wires its clicks, so none of the parts
+--- opens anything as made; the Curio Shop's sample (HNT-R121) draws two fixed Hunts in one, made inert.
 ---@param parent Frame
 ---@return HuntsTrackerView
 function ns.NewTrackerBlock(parent)
@@ -410,9 +408,6 @@ function ns.NewTrackerBlock(parent)
 		lines[i] = buildLine(block)
 	end
 	local more = buildMore(block)
-	more:SetScript("OnClick", function()
-		ns.OpenBoard()
-	end)
 	local wagers = {}
 	wagers.header, wagers.title, wagers.chevron = buildHeader(block)
 	wagers.header:Hide()
@@ -422,7 +417,10 @@ function ns.NewTrackerBlock(parent)
 	end
 	wagers.more = buildMore(block)
 	wagers.hint = buildHint(block)
-	local empty = block:CreateFontString(nil, "OVERLAY")
+	local emptyLine = CreateFrame("Button", nil, block)
+	passDrags(emptyLine, block)
+	emptyLine:Hide()
+	local empty = emptyLine:CreateFontString(nil, "OVERLAY")
 	empty:SetJustifyH("LEFT")
 	empty:Hide() -- its words come with its look's font, at its draw
 	---@type HuntsTrackerView
@@ -434,6 +432,7 @@ function ns.NewTrackerBlock(parent)
 		chevron = chevron,
 		lines = lines,
 		more = more,
+		emptyLine = emptyLine,
 		empty = empty,
 		wagers = wagers,
 		look = LOOKS.native,
@@ -639,12 +638,16 @@ function ns.DrawTrackerBlock(view, look, content)
 	drawHeader(view.header, view.title, view.chevron, look, ns.L.TITLE, top, content.collapsed)
 	local y = drawLines(view.lines, content.hunts, look, top + look.first)
 	y = drawMore(view.more, look, content.more, y)
+	view.emptyLine:SetShown(content.empty)
 	view.empty:SetShown(content.empty)
 	if content.empty then
 		setFont(view.empty, look.sub)
 		view.empty:SetText(ns.L.TRACKER_EMPTY)
+		view.emptyLine:ClearAllPoints()
+		view.emptyLine:SetPoint("TOPLEFT", 0, -y)
+		view.emptyLine:SetSize(look.width, EXTRA_LINE)
 		view.empty:ClearAllPoints()
-		view.empty:SetPoint("TOPLEFT", look.x + 14, -(y + 2))
+		view.empty:SetPoint("TOPLEFT", look.x + 14, -2)
 		y = y + EXTRA_LINE
 	end
 	local height = ns.TrackerBlockHeight(look, top + look.first, y)
@@ -661,11 +664,29 @@ end
 ---@class HuntsSampleTracker: Frame
 ---@field view HuntsTrackerView
 
--- Builds a stage's sample tracker: the tracker's block, at the stage's top.
+-- Takes the mouse off every part of a tracker block, so a click on it reaches what is under it: a sample tracker is a
+-- picture of the tracker, never a way to the Hunts board (HNT-R121). The parts are made with no click handlers
+-- (adapter/Tracker.lua wires the live tracker's alone), and a part with the mouse off takes no drag either.
+---@param view HuntsTrackerView
+local function makeInert(view)
+	local parts = { view.header, view.more, view.emptyLine, view.wagers.header, view.wagers.more, view.wagers.hint.why }
+	for _, line in ipairs(view.lines) do
+		parts[#parts + 1] = line
+	end
+	for _, line in ipairs(view.wagers.lines) do
+		parts[#parts + 1] = line
+	end
+	for _, part in ipairs(parts) do
+		part:EnableMouse(false)
+	end
+end
+
+-- Builds a stage's sample tracker: the tracker's block, at the stage's top, with no mouse on it.
 ---@param stage Frame
 ---@return HuntsSampleTracker
 local function buildSampleTracker(stage)
 	local view = ns.NewTrackerBlock(stage)
+	makeInert(view)
 	local tracker = view.frame --[[@as HuntsSampleTracker]]
 	tracker.view = view
 	tracker:SetPoint("TOP", 0, -24)

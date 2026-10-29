@@ -349,6 +349,35 @@ describe("a tracker frame's preview", function()
 		assert.are.equal(look.slice.top + look.slice.foot, view.frame.height)
 	end)
 
+	it(
+		"makes the sample inert: no click handler and no mouse on any of its parts, so a click reaches the card under it (HNT-R77, HNT-R121)",
+		function()
+			local loaded, fake = loggedIn()
+
+			for _, row in ipairs(GOODS[FRAME]) do
+				local stage = loaded.env.CreateFrame("Frame")
+				fake.ns.goods:Good(row[1]).preview(stage)
+				local view = stage.children[1].view
+
+				local parts = { view.header, view.more, view.emptyLine, view.wagers.header, view.wagers.more }
+				parts[#parts + 1] = view.wagers.hint.why
+				for _, line in ipairs(view.lines) do
+					parts[#parts + 1] = line
+				end
+				for _, line in ipairs(view.wagers.lines) do
+					parts[#parts + 1] = line
+				end
+				local live = {}
+				for i, part in ipairs(parts) do
+					if part.scripts.OnClick ~= nil or part.mouseEnabled ~= false then
+						live[#live + 1] = row[1] .. " part " .. i
+					end
+				end
+				assert.are.same({}, live)
+			end
+		end
+	)
+
 	it("sets the sample's words in its look's inks: dark on the papers, gold and white over the world", function()
 		local loaded, fake = loggedIn()
 		local ns = loaded.ns
