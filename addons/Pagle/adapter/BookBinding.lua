@@ -33,6 +33,10 @@ local RULE_GILT = { 0xd8 / 255, 0xb6 / 255, 0x60 / 255 }
 -- RIBBON_SHOWN units tall, so that from RIBBON_UP above the frame's foot only RIBBON_TAIL hangs below it, enough to read
 -- as a bookmark and no more on the screen under the book; the silk's upper end is cropped away.
 local CORNER_ART, CORNER_OUT = 76, 4
+-- The clasp's right edge passes the frame's right edge by this much, the lip of its strap, so that it lies on the
+-- fore-edge, over the band and the cover, as the binding's own cover art shows it, and never stands out over the screen
+-- (BIND-R14). Its sprites differ in width (50 to 96 units), so it is its right edge that is anchored, not its left.
+local CLASP_LIP = 6
 local RIBBON_X, RIBBON_IN, RIBBON_UP, RIBBON_TAIL = 60, 24, 40, 20
 local RIBBON_SHOWN = RIBBON_UP + RIBBON_TAIL
 local FILLET_INSET, FILLET_WIDTH, FILLET_ALPHA = 5, 1.6, 0.75
@@ -249,7 +253,7 @@ function Regions:Dress(look)
 	part(self.clasp, parts, look.clasp)
 	if look.clasp then
 		self.clasp:ClearAllPoints()
-		self.clasp:SetPoint("LEFT", self.frame, "RIGHT", look.claspX or 0, 0)
+		self.clasp:SetPoint("RIGHT", self.frame, "RIGHT", CLASP_LIP, 0)
 	end
 	part(self.ribbon, parts, look.ribbon)
 	local ribbon = look.ribbon and parts.sprites[look.ribbon]

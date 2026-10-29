@@ -326,7 +326,6 @@ describe("the bindings", function()
 					silver = false,
 					cornerArt = "corner-wave",
 					clasp = "clasp-wave",
-					claspX = -40,
 					ribbon = "ribbon-wave",
 					fillet = rgb("f0cd6a"),
 					paperTint = { 1, 1, 1 },
@@ -343,7 +342,6 @@ describe("the bindings", function()
 					true,
 					"corner-shagreenbone",
 					"clasp-shagreenbone",
-					-34,
 					"ribbon-shagreenbone",
 					"cover-shagreenbone",
 				}, {
@@ -355,16 +353,12 @@ describe("the bindings", function()
 					bone.silver,
 					bone.cornerArt,
 					bone.clasp,
-					bone.claspX,
 					bone.ribbon,
 					bone.swatch,
 				})
 				-- Black Lacquer Koi is the Ledger's, apart from Core's Lacquered Red
 				local koi = ns.BindingLook("ledger.binding.lacquer")
-				assert.are.same(
-					{ BOOKS .. "bindings3\\lacquer", "cover-lacquer", -22 },
-					{ koi.texture, koi.swatch, koi.claspX }
-				)
+				assert.are.same({ BOOKS .. "bindings3\\lacquer", "cover-lacquer" }, { koi.texture, koi.swatch })
 				-- Cable Knit's dark brown crumbs are pressed in with a light edge (LED-R125)
 				assert.are.same({ 1, 0.96, 0.86, 0.6, 0, -1 }, ns.BindingLook("ledger.binding.knit").giltShadow)
 			end
@@ -377,12 +371,11 @@ describe("the bindings", function()
 				for _, binding in ipairs(ns.BINDINGS) do
 					local look = ns.BindingLook(binding.id)
 					local fields = (look.clasp and 1 or 0)
-						+ (look.claspX and 1 or 0)
 						+ (look.ribbon and 1 or 0)
 						+ (look.fillet and 1 or 0)
 						+ (look.cornerArt and 1 or 0)
-					assert(fields == 0 or fields == 5, binding.id)
-					if fields == 5 then
+					assert(fields == 0 or fields == 4, binding.id)
+					if fields == 4 then
 						whole[#whole + 1] = binding.id
 						assert(look.corners == nil, binding.id)
 						for _, sprite in ipairs({ look.cornerArt, look.clasp, look.ribbon }) do

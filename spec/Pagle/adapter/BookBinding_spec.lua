@@ -58,7 +58,6 @@ local LOOKS = {
 		silver = false,
 		cornerArt = "corner-wave",
 		clasp = "clasp-wave",
-		claspX = -40,
 		ribbon = "ribbon-wave",
 		fillet = { 0.9, 0.7, 0.3 },
 		paperTint = { 1, 1, 1 },
@@ -389,7 +388,8 @@ describe("Pagle.NewBookBinding's drawing", function()
 				clasp.texCoord,
 				{ clasp:GetSize() },
 			})
-			assert.are.same({ "LEFT", frame, "RIGHT", -40, 0 }, { clasp:GetPoint(1) })
+			-- by its right edge, 6 past the frame's (BIND-R14)
+			assert.are.same({ "RIGHT", frame, "RIGHT", 6, 0 }, { clasp:GetPoint(1) })
 			-- only its foot, the notch kept: 40 up into the book and 20 hanging below its foot
 			assert.are.same({ true, parts.file, ribbonFoot(parts, "ribbon-wave"), { 32, 60 } }, {
 				ribbon:IsShown(),
@@ -507,6 +507,9 @@ describe("Pagle.NewBookBinding through a change of binding", function()
 end)
 
 describe("Pagle.NewBookBinding's fittings, on Core's own catalogue of bindings (BIND-R14–R17)", function()
+	-- The most a clasp's right edge may pass the frame's right edge, the lip of its strap (BIND-R14); the renderer's is 6.
+	local CLASP_MAX_OUT = 8
+
 	-- Core logged in on Forever with its real bindings (ns.BindingLook is the catalogue's).
 	---@return LoadedAddon
 	local function catalogue()
@@ -562,12 +565,16 @@ describe("Pagle.NewBookBinding's fittings, on Core's own catalogue of bindings (
 						(regions.corners[1] --[[@as table]]).texCoord,
 						binding.id
 					)
-					-- on the frame: the fore-edge, 22 to 54 units in, 110 high; the silk ribbon's foot, 32 × 60, 40 up from the
-					-- frame's foot, so no more than 20 units of it hang below
-					assert.are.same({ 110, true }, { clasp:GetHeight(), clasp:GetWidth() <= 100 }, binding.id)
+					-- on the frame: the clasp on the fore-edge, 110 high and centred down it, its right edge anchored to the
+					-- frame's right edge and passing it by at most CLASP_MAX_OUT units, so that most of it lies on the book
+					-- and none stands out over the screen; the silk ribbon's foot, 32 × 60, 40 up from the frame's foot, so no
+					-- more than 20 units of it hang below
+					local width = clasp:GetWidth()
+					assert.are.same({ 110, true }, { clasp:GetHeight(), width <= 100 }, binding.id)
 					local point, relativeTo, relativePoint, x, y = clasp:GetPoint(1)
-					assert.are.same({ "LEFT", frame, "RIGHT", 0 }, { point, relativeTo, relativePoint, y }, binding.id)
-					assert(x >= -54 and x <= -22, binding.id)
+					assert.are.same({ "RIGHT", frame, "RIGHT", 0 }, { point, relativeTo, relativePoint, y }, binding.id)
+					assert(x >= 0 and x <= CLASP_MAX_OUT, binding.id)
+					assert(width - x > 3 * x, binding.id)
 					assert.are.same({ 32, 60 }, { ribbon:GetSize() }, binding.id)
 					assert.are.same({ "TOPLEFT", frame, "BOTTOM", 60, 40 }, { ribbon:GetPoint(1) }, binding.id)
 					local _, _, _, _, up = ribbon:GetPoint(1)
