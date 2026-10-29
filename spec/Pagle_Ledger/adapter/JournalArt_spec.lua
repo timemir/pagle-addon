@@ -54,7 +54,7 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 			assert.is_nil(atlases.Parts.sprites.emblem)
 			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
 			assert.is_nil(io.open("addons/Pagle_Ledger/media/journal/Crests.blp", "rb"))
-			for _, name in ipairs({ "Bindings", "Bindings2" }) do
+			for _, name in ipairs({ "Bindings", "Bindings2", "Covers2", "Bindings3" }) do
 				local file = atlases[name].file
 				assert.matches("^Interface\\AddOns\\Pagle\\media\\books\\", file)
 				assert(#readFile(path(file)) > 0, path(file))
@@ -62,6 +62,20 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 			for _, binding in ipairs(loaded.ns.BINDINGS) do
 				local look = fake.Pagle.GetBindingLook(loaded.ns.BindingID(binding))
 				assert(atlases[look.swatchAtlas].sprites[look.swatch], look.swatch)
+			end
+			-- every binding Core has, not the Ledger's alone: the Collection draws them all (LED-R169), each swatch in a Journal
+			-- atlas of the same rectangle as Core's
+			for _, binding in ipairs(fake.ns.BINDINGS) do
+				local look = fake.Pagle.GetBindingLook(binding.id)
+				if look.swatch then
+					local mine, core = atlases[look.swatchAtlas], fake.ns.ATLASES[look.swatchAtlas]
+					assert(mine and mine.sprites[look.swatch], binding.id)
+					assert.are.same(
+						{ core.file, core.width, core.height, core.scale },
+						{ mine.file, mine.width, mine.height, mine.scale }
+					)
+					assert.are.same(core.sprites[look.swatch], mine.sprites[look.swatch], binding.id)
+				end
 			end
 		end
 	)

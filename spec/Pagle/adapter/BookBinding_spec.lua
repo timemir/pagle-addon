@@ -476,3 +476,101 @@ describe("Pagle.NewBookBinding through a change of binding", function()
 		assert.are.same({ LOOKS["test.tooled"], LOOKS["test.field"] }, { hidden:Look(), pinned:Look() })
 	end)
 end)
+
+describe("Pagle.NewBookBinding's fittings, on Core's own catalogue of bindings (BIND-R14–R17)", function()
+	-- Core logged in on Forever with its real bindings (ns.BindingLook is the catalogue's).
+	---@return LoadedAddon
+	local function catalogue()
+		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = savedLog() }))
+		loaded.client.fire("PLAYER_LOGIN")
+		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
+		loaded.client.runTimers()
+		return loaded
+	end
+
+	-- The texcoords of `name` in `atlas`.
+	local function coords(atlas, name)
+		local sprite = atlas.sprites[name]
+		return {
+			sprite.x / atlas.width,
+			(sprite.x + sprite.w) / atlas.width,
+			sprite.y / atlas.height,
+			(sprite.y + sprite.h) / atlas.height,
+		}
+	end
+
+	it(
+		"hangs each whole book's own clasp, ribbon and corner art on its frame at the sizes the kit drew them, and no other binding's (BIND-R14, BIND-R15, BIND-R17)",
+		function()
+			local loaded = catalogue()
+			local ns = loaded.ns
+			local parts = ns.ATLASES.BindingParts2
+			local whole = 0
+			for _, binding in ipairs(ns.BINDINGS) do
+				local frame = bookFrame(loaded)
+				local book = loaded.env.Pagle.NewBookBinding(frame, { pinned = binding.id })
+				local regions = regionsOf(book)
+				local clasp = regions.clasp --[[@as table]]
+				local ribbon = regions.ribbon --[[@as table]]
+				local gilt = regions.gilt --[[@as table]]
+				local band = regions.band --[[@as table]]
+				if not binding.clasp then
+					-- a binding that isn't a whole book draws none of the fittings
+					assert.are.same({ false, false }, { clasp:IsShown(), ribbon:IsShown() }, binding.id)
+					for _, piece in ipairs(regions.corners) do
+						assert(not piece:IsShown() or piece:GetWidth() <= 44, binding.id)
+					end
+				else
+					whole = whole + 1
+					-- its own parts: the sprites named for its key, in no other binding's place
+					assert.are.equal("clasp-" .. binding.key, binding.clasp)
+					assert.are.equal("ribbon-" .. binding.key, binding.ribbon)
+					assert.are.equal("corner-" .. binding.key, binding.cornerArt)
+					assert.are.same(coords(parts, binding.clasp), clasp.texCoord, binding.id)
+					assert.are.same(coords(parts, binding.ribbon), ribbon.texCoord, binding.id)
+					assert.are.same(
+						coords(parts, binding.cornerArt),
+						(regions.corners[1] --[[@as table]]).texCoord,
+						binding.id
+					)
+					-- on the frame: the fore-edge, 22 to 54 units in, 110 high; the silk ribbon, 32 × 136 up from its foot
+					assert.are.same({ 110, true }, { clasp:GetHeight(), clasp:GetWidth() <= 100 }, binding.id)
+					local point, relativeTo, relativePoint, x, y = clasp:GetPoint(1)
+					assert.are.same({ "LEFT", frame, "RIGHT", 0 }, { point, relativeTo, relativePoint, y }, binding.id)
+					assert(x >= -54 and x <= -22, binding.id)
+					assert.are.same({ 32, 136 }, { ribbon:GetSize() }, binding.id)
+					assert.are.same({ "TOPLEFT", frame, "BOTTOM", 60, 40 }, { ribbon:GetPoint(1) }, binding.id)
+					for _, piece in ipairs(regions.corners) do
+						assert.are.same({ 76, 76 }, { piece:GetSize() }, binding.id)
+					end
+					-- both hang from the frame's own features, which fill it, so they move and scale with the book
+					assert.are.same({ regions.gilt, regions.gilt }, { clasp.parent, ribbon.parent }, binding.id)
+				end
+				assert.are.same(
+					{ { "TOPLEFT", frame, "TOPLEFT", 0, 0 }, { "BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0 } },
+					{ band.points[1], band.points[2] },
+					binding.id
+				)
+				assert.are.same({ regions.band, "TOPLEFT" }, { gilt.points[1][2], gilt.points[1][1] })
+			end
+			assert.are.equal(10, whole)
+		end
+	)
+
+	it("puts a whole book's fittings away when its book changes to another binding (BIND-R14, BIND-R15)", function()
+		local loaded = catalogue()
+		local frame = bookFrame(loaded)
+		local book = loaded.env.Pagle.NewBookBinding(frame, { pinned = "ledger.binding.logbook" })
+		local regions = regionsOf(book)
+		local before = { regions.clasp:IsShown(), regions.ribbon:IsShown(), regions.corners[1]:GetWidth() }
+
+		for _, goodID in ipairs({ "core.binding.field", "core.binding.tooled" }) do
+			book:SetLook(goodID)
+
+			assert.are.same({ false, false }, { regions.clasp:IsShown(), regions.ribbon:IsShown() }, goodID)
+			-- the corner art goes with it: a piece is hidden, or a metal's, 44 square
+			assert(not regions.corners[1]:IsShown() or regions.corners[1]:GetWidth() <= 44, goodID)
+		end
+		assert.are.same({ true, true, 76 }, before)
+	end)
+end)
