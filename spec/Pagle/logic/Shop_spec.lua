@@ -1397,12 +1397,12 @@ describe("Buying", function()
 		function()
 			local fake = readyToBuy(300)
 			local Pagle = fake.Pagle
-			local before = #fake.catchLog.data.entries
+			local before = fake.catchLog.data.count
 			local changed = looks(fake)
 
 			assert.is_true(fake.ns.shop.Buy("core.toaststyle.ripple", true))
 
-			local entries = fake.catchLog.data.entries
+			local entries = logEntries(fake.catchLog.data)
 			assert.are.equal(before + 1, #entries)
 			-- Ada at the fake's server time, tie 1 after the Cast in the same second (LOG-R12).
 			assert.are.equal(purchaseEntry(SERVER_TIME, "core.toaststyle.ripple", 250, 1), entries[#entries])
@@ -1456,7 +1456,7 @@ describe("Buying", function()
 			.. " (SHOP-R13)",
 		function()
 			local fake, handles = readyToBuy(300)
-			local before = #fake.catchLog.data.entries
+			local before = fake.catchLog.data.count
 
 			assert.is_false(fake.ns.shop.Buy("hunts.cover.velvet", true)) -- 400, with 200
 			assert.is_true(fake.ns.shop.Buy("core.toaststyle.ripple", false))
@@ -1475,7 +1475,7 @@ describe("Buying", function()
 			})
 
 			assert.is_false(during)
-			assert.are.equal(before + 1, #fake.catchLog.data.entries)
+			assert.are.equal(before + 1, fake.catchLog.data.count)
 			assert.is_false(fake.Pagle.IsOwned("core.toaststyle.lanternglow"))
 			assert.are.equal(50, fake.Pagle.GetBalance().balance)
 		end
@@ -2005,9 +2005,9 @@ describe("The Curio crate", function()
 		local first = shop:List({})[1].rows[1].id
 		assert.are.equal(first, shop:Reselect(CRATE, {}), "the stage shows the list's first good")
 		assert.are.equal(first, fake.ns.ShopModel():Reselect(CRATE, { filter = "all" }))
-		local before = #fake.catchLog.data.entries
+		local before = fake.catchLog.data.count
 		assert.is_false(fake.ns.shop.Buy(CRATE, false))
-		assert.are.equal(before, #fake.catchLog.data.entries)
+		assert.are.equal(before, fake.catchLog.data.count)
 
 		local pool = fake.ns.CRATE_POOL
 		local grown = { unpack(pool) }
@@ -2043,13 +2043,13 @@ describe("The Curio crate", function()
 		function()
 			local fake = crated(3500)
 			local Pagle = fake.Pagle
-			local before, announced = #fake.catchLog.data.entries, #fake.announcements
+			local before, announced = fake.catchLog.data.count, #fake.announcements
 			local inUse = Pagle.GetEquipped("core.toaststyle")
 
 			local bought, result = fake.ns.shop.Buy(CRATE, true)
 
 			assert.is_true(bought)
-			local entries = fake.catchLog.data.entries
+			local entries = logEntries(fake.catchLog.data)
 			assert.are.equal(before + 1, #entries)
 			assert.are.equal(purchaseEntry(SERVER_TIME, CRATE, 1500, 1), entries[#entries])
 			local guid = fake.catchLog.data.characters[1].guid
@@ -2329,7 +2329,7 @@ describe("The Curio crate", function()
 			fake.nextFrame()
 
 			assert.is_true(fake.Pagle.IsOwned("core.toaststyle.sonar"))
-			local entries = fake.catchLog.data.entries
+			local entries = logEntries(fake.catchLog.data)
 			assert.is_truthy(entries[#entries]:find("^K1|%d+|%d+|%d+|testKey|42$"))
 		end
 	)

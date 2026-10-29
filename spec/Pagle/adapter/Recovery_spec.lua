@@ -6,9 +6,9 @@ local signing = dofile("spec/Pagle/fixtures/Signing.lua")
 local fixtureFile = loadfile
 local vectors = assert(json.decode(readFile("spec/fixtures/recovery-snapshot-v1.json"))).vectors
 local function original()
-	return {
+	return setLogEntries({
 		logId = "0123456789abcdef",
-		format = 3,
+		format = 4,
 		characters = {
 			{
 				guid = "Player-4618-0A1B2C3D",
@@ -24,8 +24,7 @@ local function original()
 				selfFound = false,
 			},
 		},
-		entries = { "B1|1|1792422000|0|70338|1.60.1|pagle-2026a" },
-	}
+	}, { "B1|1|1792422000|0|70338|1.60.1|pagle-2026a" })
 end
 
 local function forbidBulkVerification(loaded)
@@ -55,11 +54,72 @@ describe("Recovery through the addon", function()
 			assert.are.equal("PGLR1|1|1|" .. vector.snapshot, loaded.ns.RecoveryExport(log))
 		end
 	end)
+	it(
+		"reads a snapshot back into the block layout of any log: blockSize entries to a block (LOG-R103, RCV-R4)",
+		function()
+			local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
+			local log = original()
+			local entries = {}
+			for i = 1, 600 do
+				entries[i] = ("S1|1|%d|0|%d|150|0"):format(1793000000 + i, i % 300)
+			end
+			setLogEntries(log, entries)
+
+			local restored = loaded.ns.RecoveryReadSnapshot(loaded.ns.RecoverySnapshot(log))
+
+			assert.are.equal(4, restored.format)
+			assert.are.equal(256, restored.blockSize)
+			assert.are.equal(600, restored.count)
+			assert.are.equal(3, #restored.blocks)
+			assert.are.same({ 256, 256, 88 }, {
+				select(2, restored.blocks[1]:gsub("\n", "\n")) + 1,
+				select(2, restored.blocks[2]:gsub("\n", "\n")) + 1,
+				select(2, restored.blocks[3]:gsub("\n", "\n")) + 1,
+			})
+			assert.is_nil(restored.entries)
+			assert.is_nil(loaded.ns.LogBlocks.Problem(restored))
+			assert.are.same(entries, logEntries(restored))
+			-- The snapshot owes nothing to the blocks' size: the same log in blocks of 7 snapshots to the same bytes.
+			assert.are.equal(
+				loaded.ns.RecoverySnapshot(log),
+				loaded.ns.RecoverySnapshot(setLogEntries(original(), entries, 7))
+			)
+		end
+	)
+
+	it("writes the restored log in blocks, whole, when a signed plan is applied (LOG-R103, RCV-R4)", function()
+		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-signed-v1.json")))
+		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
+		local source = original()
+		putLogEntry(source, 2, "S1|1|1793000001|0|80|150|0")
+		putLogEntry(source, 3, "U1|1|1793000002|0|some.good|25")
+		local prepared = loaded.ns.RecoveryPrepare(
+			{ v = 1, keyId = fixture.good.keyId, payload = fixture.good.payload, sig = fixture.good.sig },
+			{ [fixture.good.keyId] = signing.testKey },
+			source,
+			nil,
+			nil
+		)
+
+		local log = assert(prepared).log
+		assert.are.equal(4, log.format)
+		assert.are.equal(256, log.blockSize)
+		assert.are.equal(2, log.count)
+		assert.are.same({
+			"B1|1|1792422000|0|70338|1.60.1|pagle-2026a\nS1|1|1793000001|0|80|150|0",
+		}, log.blocks)
+		assert.is_nil(log.entries)
+		assert.is_nil(loaded.ns.CatchLogProblem(log))
+		-- The preserved original branch stays as it was: in blocks too.
+		local archive = prepared.archive.archives[fixture.good.applicationId]
+		assert.are.same(source, archive.original)
+	end)
+
 	it("loads staged Recovery before opening the log and preserves the original branch", function()
 		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-signed-v1.json")))
 		local log = original()
-		log.entries[2] = "S1|1|1793000001|0|80|150|0"
-		log.entries[3] = "U1|1|1793000002|0|some.good|25"
+		putLogEntry(log, 2, "S1|1|1793000001|0|80|150|0")
+		putLogEntry(log, 3, "U1|1|1793000002|0|some.good|25")
 		log.futureField = { nested = { "keep me" } }
 		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }), { holdAddonLoaded = true })
 		loaded.ns.PUSHED_KEYS.testKey = signing.testKey
@@ -96,7 +156,7 @@ describe("Recovery through the addon", function()
 			completed = { applicationId = "example" },
 			archives = {
 				example = {
-					original = { entries = { "raw|original|record" } },
+					original = savedLog({ "raw|original|record" }),
 					staged = { { seq = 1, reason = "source_invalid" } },
 				},
 			},
@@ -136,7 +196,7 @@ describe("Recovery through the addon", function()
 				log.characters[1].name = "Another name"
 			end,
 			function(log)
-				log.entries[2] = "S1|1|1793000001|0|80|150|0"
+				putLogEntry(log, 2, "S1|1|1793000001|0|80|150|0")
 			end,
 		}) do
 			local log = original()
@@ -178,8 +238,8 @@ describe("Recovery through the addon", function()
 			"unknownReason",
 		}) do
 			local log = original()
-			log.entries[2] = "S1|1|1793000001|0|80|150|0"
-			log.entries[3] = "U1|1|1793000002|0|some.good|25"
+			putLogEntry(log, 2, "S1|1|1793000001|0|80|150|0")
+			putLogEntry(log, 3, "U1|1|1793000002|0|some.good|25")
 			local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }), { holdAddonLoaded = true })
 			loaded.ns.PUSHED_KEYS.testKey = signing.testKey
 			loaded.client.addons.Pagle_Recovery = {
@@ -218,7 +278,7 @@ describe("Recovery through the addon", function()
 			return loaded
 		end
 		local first = boot({ PagleLog = original() })
-		assert.is_true(#first.env.PagleLog.entries > 1)
+		assert.is_true(first.env.PagleLog.count > 1)
 		local archive = first.env.PagleRecovery.archives[fixture.applicationId]
 		local second = boot({
 			PagleLog = first.env.PagleLog,
@@ -278,10 +338,10 @@ describe("Recovery through the addon", function()
 			prepare(nil, { [fixture.keyId] = loaded.ns.PUSHED_KEYS["pagle-2026b"] })
 		end, "Recovery signature does not match")
 		-- Spent, whatever log is active now; without the receipt, another log is passed over and another format refused.
-		for _, target in ipairs({ { logId = "fedcba9876543210", format = 3 }, { logId = log.logId, format = 2 } }) do
+		for _, target in ipairs({ { logId = "fedcba9876543210", format = 4 }, { logId = log.logId, format = 2 } }) do
 			assert.are.same({}, { prepare(nil, nil, target) })
 		end
-		assert.are.same({ nil, nil, true }, { prepare(nil, nil, { logId = "fedcba9876543210", format = 3 }, {}) })
+		assert.are.same({ nil, nil, true }, { prepare(nil, nil, { logId = "fedcba9876543210", format = 4 }, {}) })
 		assert.has_error(function()
 			prepare(nil, nil, { logId = log.logId, format = 2 }, {})
 		end, "Recovery is for a different Catch log format")
@@ -300,7 +360,7 @@ describe("Recovery through the addon", function()
 		local prepared = loaded.ns.RecoveryPrepare(data, keys, original(), nil, nil)
 		local log, archive = prepared.log, prepared.archive
 		archive.applied = nil
-		log.entries[#log.entries + 1] = "S1|1|1793000010|0|90|150|0"
+		putLogEntry(log, log.count + 1, "S1|1|1793000010|0|90|150|0")
 		local db = { global = { recoveryGeneration = fixture.applicationId, coins = { keep = true } } }
 		local later = loadAddon("Pagle", foreverWith({ PagleLog = log, PagleRecovery = archive, PagleDB = db }), {
 			holdAddonLoaded = true,
@@ -328,7 +388,7 @@ describe("Recovery through the addon", function()
 
 	it("restores Refresh totals and Collection ownership from the restored history before Modules load", function()
 		local seeded = original()
-		seeded.entries[2] = "U1|1|1792422001|0|core.toaststyle.ripple|30"
+		putLogEntry(seeded, 2, "U1|1|1792422001|0|core.toaststyle.ripple|30")
 		local first = loadAddon("Pagle", foreverWith({ PagleLog = seeded }), { also = { "Pagle_Ledger" } })
 		first.client.fire("PLAYER_LOGIN")
 		first.client.fire("PLAYER_ENTERING_WORLD")
@@ -426,7 +486,7 @@ describe("Recovery through the addon", function()
 	it("rebuilds every enabled Module and invalidates caches for Modules enabled on a later login", function()
 		local modules = { "Pagle_Ledger", "Pagle_Hunts", "Pagle_TackleBoard", "Pagle_Stats" }
 		local seeded = original()
-		seeded.entries[2] = castEntry(1792422001)
+		putLogEntry(seeded, 2, castEntry(1792422001))
 		local first = loadAddon("Pagle", foreverWith({ PagleLog = seeded }), { also = modules })
 		first.client.fire("PLAYER_LOGIN")
 		first.client.fire("PLAYER_ENTERING_WORLD")
@@ -537,7 +597,7 @@ describe("Recovery through the addon", function()
 			assert.is_table(loaded.env.Pagle)
 			assert.is_table(loaded.ns.db)
 			assert.are.equal(log, loaded.env.PagleLog)
-			assert.are.same(original().entries[1], loaded.env.PagleLog.entries[1])
+			assert.are.same(logEntries(original())[1], logEntries(loaded.env.PagleLog)[1])
 			local said
 			for _, line in ipairs(loaded.printed) do
 				if line:find("Pagle_Recovery didn't load", 1, true) then
@@ -614,8 +674,8 @@ describe("Recovery through the addon", function()
 			return loaded
 		end
 		local log = original()
-		log.entries[2] = "S1|1|1793000001|0|80|150|0"
-		log.entries[3] = "U1|1|1793000002|0|some.good|25"
+		putLogEntry(log, 2, "S1|1|1793000001|0|80|150|0")
+		putLogEntry(log, 3, "U1|1|1793000002|0|some.good|25")
 		local first = boot(log, nil, "good")
 		local second = boot(first.env.PagleLog, first.env.PagleRecovery, "second")
 		assert.are.equal(fixtures.second.applicationId, second.env.PagleRecovery.completed.applicationId)
@@ -628,9 +688,11 @@ describe("Recovery through the addon", function()
 	it("lets a Mac player copy every numbered part of a full snapshot", function()
 		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-signed-v1.json")))
 		local log = original()
+		local entries = {}
 		for i = 1, 1500 do
-			log.entries[i] = log.entries[1]
+			entries[i] = logEntries(log)[1]
 		end
+		setLogEntries(log, entries)
 		local loaded = loadAddon(
 			"Pagle",
 			foreverWith({
@@ -691,9 +753,11 @@ describe("Recovery through the addon", function()
 
 	it("rejects oversized local logs without offering a partial Recovery export", function()
 		local log = original()
-		for i = 2, 100001 do
-			log.entries[i] = log.entries[1]
+		local entries = {}
+		for i = 1, 100001 do
+			entries[i] = logEntries(log)[1]
 		end
+		setLogEntries(log, entries)
 		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }))
 		loaded.env.SlashCmdList.PAGLE("recovery export")
 		assert.is_true(loaded.ns.recoveryWindow == nil)
@@ -703,9 +767,9 @@ describe("Recovery through the addon", function()
 		local log = original()
 		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }))
 		local entry = string.rep("x", 16 * 1024 * 1024)
-		local prefix = loaded.ns.RecoverySnapshot(log):match("^(.*)" .. #log.entries[1] .. ":")
+		local prefix = loaded.ns.RecoverySnapshot(log):match("^(.*)" .. #logEntries(log)[1] .. ":")
 		local snapshot = assert(prefix) .. #entry .. ":" .. entry .. ","
-		log.entries[1] = entry
+		putLogEntry(log, 1, entry)
 		assert.has_error(function()
 			loaded.ns.RecoverySnapshot(log)
 		end, "snapshot too large")
@@ -732,8 +796,8 @@ describe("Recovery through the addon", function()
 	it("preserves records held by the backend's recovery capacity limit", function()
 		local fixtures = assert(json.decode(readFile("spec/fixtures/recovery-signed-v1.json")))
 		local log = original()
-		log.entries[2] = "S1|1|1793000001|0|80|150|0"
-		log.entries[3] = "U1|1|1793000002|0|some.good|25"
+		putLogEntry(log, 2, "S1|1|1793000001|0|80|150|0")
+		putLogEntry(log, 3, "U1|1|1793000002|0|some.good|25")
 		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }), { holdAddonLoaded = true })
 		loaded.ns.PUSHED_KEYS.testKey = signing.testKey
 		local data = fixtures.capacity
@@ -747,18 +811,18 @@ describe("Recovery through the addon", function()
 		assert.is_true(loaded.ns.recoveryBlocked == nil)
 		local archive = loaded.env.PagleRecovery.archives[data.applicationId]
 		assert.are.equal("capacity_limit", archive.staged[1].reason)
-		assert.are.equal(log.entries[3], archive.original.entries[3])
+		assert.are.equal(logEntries(log)[3], logEntries(archive.original)[3])
 	end)
 
 	it("exports exact opaque local record bytes for backend staging", function()
 		local fixtures = assert(json.decode(readFile("spec/fixtures/recovery-signed-v1.json")))
 		local log = original()
-		log.entries[2] = "Unknown|bad bytes"
+		putLogEntry(log, 2, "Unknown|bad bytes")
 		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }))
 		loaded.env.SlashCmdList.PAGLE("recovery export")
 		local encoded = assert(loaded.ns.recoveryWindow.paste:GetText():match("^PGLR1|1|1|(.+)$"))
 		local snapshot = assert(loaded.ns.Base64Decode(encoded))
 		assert.are.equal(fixtures.opaqueSnapshotSha256, loaded.ns.RecoveryDigest(snapshot))
-		assert.are.equal("Unknown|bad bytes", loaded.ns.RecoveryReadSnapshot(snapshot).entries[2])
+		assert.are.equal("Unknown|bad bytes", logEntries(loaded.ns.RecoveryReadSnapshot(snapshot))[2])
 	end)
 end)

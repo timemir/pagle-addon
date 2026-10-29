@@ -976,7 +976,7 @@ part(function(fake, Pagle, ns, host)
 	local loginSeq
 	local login = fake.login
 	function fake.login()
-		loginSeq = #fake.catchLog.data.entries
+		loginSeq = fake.catchLog.data.count
 		login()
 	end
 

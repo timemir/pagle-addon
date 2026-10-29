@@ -134,8 +134,8 @@ describe("a test log's devGoods (SHOP-R37)", function()
 			"spends no Coins and writes no entry: the log, the balance and the purchased set are as they were",
 			function()
 				local plain = login({ test = true })
-				assert.are.equal(#plain.ns.catchLog.data.entries, #loaded.ns.catchLog.data.entries)
-				for _, record in ipairs(loaded.ns.catchLog.data.entries) do
+				assert.are.equal(plain.ns.catchLog.data.count, loaded.ns.catchLog.data.count)
+				for _, record in ipairs(logEntries(loaded.ns.catchLog.data)) do
 					assert.is_nil(record:match("^U1|"))
 				end
 				assert.are.same({ balance = 0, held = false, earned = {} }, Pagle.GetBalance())

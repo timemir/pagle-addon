@@ -88,7 +88,7 @@ describe("/pagle dev", function()
 		local loaded = loadCore(testLog({ BUILD_ENTRY }))
 		enterWorld(loaded, 1)
 		catchOne(loaded)
-		local entries = #loaded.env.PagleLog.entries
+		local entries = loaded.env.PagleLog.count
 
 		for _, line in ipairs({ "dev", "dev endsession", "dev catch 6358", "dev preview banner", "dev glyphs" }) do
 			pagle(loaded, line)
@@ -98,7 +98,7 @@ describe("/pagle dev", function()
 		assert.are.same({ off, off, off, off, off }, loaded.printed)
 		assert.is_nil(loaded.ns.glyphProbeFrame)
 		assert.is_not_nil(loaded.env.Pagle.GetSession())
-		assert.are.equal(entries, #loaded.env.PagleLog.entries)
+		assert.are.equal(entries, loaded.env.PagleLog.count)
 	end)
 end)
 
@@ -117,7 +117,7 @@ describe("/pagle dev endsession", function()
 			loaded.env.Pagle.RegisterCallback(ended, "SessionEnded", function(_, session)
 				ended[#ended + 1] = session.id
 			end)
-			local entries = { unpack(loaded.env.PagleLog.entries) }
+			local entries = logEntries(loaded.env.PagleLog)
 			pagle(loaded, "dev on")
 
 			pagle(loaded, "dev endsession")
@@ -128,7 +128,7 @@ describe("/pagle dev endsession", function()
 			local frame = loaded.ns.cardFrame
 			assert.is_true(frame:IsShown())
 			assert.are.equal("Fishing session", frame.title:GetText())
-			assert.are.same(entries, loaded.env.PagleLog.entries)
+			assert.are.same(entries, logEntries(loaded.env.PagleLog))
 			assert.are.equal("Pagle dev: the Session ended, as if its gap had passed.", loaded.printed[2])
 		end
 	)
@@ -218,14 +218,14 @@ describe("/pagle dev catch", function()
 			local loaded = loadCore(testLog({ BUILD_ENTRY }))
 			local seen = moduleRaising(loaded)
 			enterWorld(loaded, 2)
-			local entries = #loaded.env.PagleLog.entries
+			local entries = loaded.env.PagleLog.count
 			pagle(loaded, "dev on")
 
 			pagle(loaded, "dev catch 6358")
 			loaded.client.advance(0)
 
 			local cast = lastRecord(loaded)
-			assert.are.equal(entries + 1, #loaded.env.PagleLog.entries)
+			assert.are.equal(entries + 1, loaded.env.PagleLog.count)
 			assert.are.same(
 				{ "cast", "caught", loaded.env.Pagle.GetAngler().current, 6358, 1 },
 				{ cast.kind, cast.outcome, cast.char, cast.items[1].itemID, cast.items[1].quantity }
@@ -259,12 +259,12 @@ describe("/pagle dev catch", function()
 
 	it("on a real log refuses with one line and appends nothing (#247)", function()
 		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
-		local entries = { unpack(loaded.env.PagleLog.entries) }
+		local entries = logEntries(loaded.env.PagleLog)
 		pagle(loaded, "dev on")
 
 		pagle(loaded, "dev catch 6358")
 
-		assert.are.same(entries, loaded.env.PagleLog.entries)
+		assert.are.same(entries, logEntries(loaded.env.PagleLog))
 		assert.are.equal(
 			"Pagle dev: catch writes to the Catch log, so it runs on a test log only (PagleLog.test); "
 				.. "this log is real, and nothing was added.",
@@ -275,24 +275,24 @@ describe("/pagle dev catch", function()
 	for _, args in ipairs({ "", "fish", "0", "6358 here", "-5" }) do
 		it(("prints its usage for /pagle dev catch %s, appending nothing (#247)"):format(args), function()
 			local loaded = enterWorld(loadCore(testLog({ BUILD_ENTRY })), 2)
-			local entries = #loaded.env.PagleLog.entries
+			local entries = loaded.env.PagleLog.count
 			pagle(loaded, "dev on")
 
 			pagle(loaded, "dev catch " .. args)
 
-			assert.are.equal(entries, #loaded.env.PagleLog.entries)
+			assert.are.equal(entries, loaded.env.PagleLog.count)
 			assert.are.equal("Pagle dev: /pagle dev catch <itemID> [areaID]", loaded.printed[2])
 		end)
 	end
 
 	it("refuses an areaID outside the catalogue, appending nothing (#247, LOG-R55)", function()
 		local loaded = enterWorld(loadCore(testLog({ BUILD_ENTRY })), 2)
-		local entries = #loaded.env.PagleLog.entries
+		local entries = loaded.env.PagleLog.count
 		pagle(loaded, "dev on")
 
 		pagle(loaded, "dev catch 6358 999999")
 
-		assert.are.equal(entries, #loaded.env.PagleLog.entries)
+		assert.are.equal(entries, loaded.env.PagleLog.count)
 		assert.are.equal("Pagle dev: 999999 isn't an area in Pagle's catalogue.", loaded.printed[2])
 	end)
 end)
@@ -642,7 +642,7 @@ describe("/pagle dev skill", function()
 		function()
 			local loaded = ready()
 			pagle(loaded, "dev on")
-			local entries = #loaded.env.PagleLog.entries
+			local entries = loaded.env.PagleLog.count
 
 			for _, args in ipairs({ "0", "301", "-5", "abc", "2.5", "100 99", "10 301", "10 20 30", "off 5" }) do
 				pagle(loaded, "dev skill " .. args)
@@ -655,7 +655,7 @@ describe("/pagle dev skill", function()
 				assert.are.equal(usage, loaded.printed[i])
 			end
 			assert.is_nil(loaded.env.PagleDB.global.devSkill)
-			assert.are.equal(entries, #loaded.env.PagleLog.entries)
+			assert.are.equal(entries, loaded.env.PagleLog.count)
 		end
 	)
 

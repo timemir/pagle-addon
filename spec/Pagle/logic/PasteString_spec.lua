@@ -71,7 +71,7 @@ end
 
 -- A PagleLog table holding `entries`, with Ada, or `characters`.
 local function log(entries, characters)
-	return { format = 3, logId = LOG_ID, characters = characters or { character() }, entries = entries }
+	return setLogEntries({ format = 4, logId = LOG_ID, characters = characters or { character() } }, entries)
 end
 
 -- `n` Skill Readings of character `char` (1), one a second from `first`, as entries: enough for parts.
@@ -273,14 +273,14 @@ describe("ns.PasteExport (PST-R20–R22)", function()
 		assert.are.equal(7, export.total)
 		assert.are.equal(AS_OF, export.asOf)
 		assert.are.same({
-			{ from = 1, count = 3, anchor = "c9025f45ec197905862011e464f64b2ab5e446cb4c3a1006b4f50aa052289ca0" },
-			{ from = 4, count = 3, anchor = "a375750873c18b0c0527b434877ac3b00864f8ac472fd43169cff200755b38b6" },
-			{ from = 7, count = 1, anchor = "60ee3fd50ffc22f1ac9e5235cad01e69bf873535ca6c6f45c4ad9df5f6c52639" },
+			{ from = 1, count = 3, anchor = "080ae791ce5a68d738650c428d71e02d49c400c1adc9a624ec077a29cf56d400" },
+			{ from = 4, count = 3, anchor = "6e4c4c6f4a242995e6e06308fd277d576da378a67e88dd981fec3ad6bd24405c" },
+			{ from = 7, count = 1, anchor = "a72b318ee4d07a6c194c40f336314756ac4b64b58680f70d0831ffae329c5a3b" },
 		}, export.parts)
 
 		local since = assert(ns.PasteExport(log(entries), 5, AS_OF, 3))
 		assert.are.same(
-			{ { from = 5, count = 3, anchor = "5f2af7d802edc91863ae4aa48721c38a8831606018ba2c9d9cbb6548599ffbc0" } },
+			{ { from = 5, count = 3, anchor = "8cd732dac370e24f105180c9ce1140154eb8eb791d2f94a7114b99a7ce7ac0b6" } },
 			since.parts
 		)
 	end)
@@ -302,17 +302,17 @@ describe("ns.PasteExport (PST-R20–R22)", function()
 		local entries = { "S1|2|1791735001|3|1|150|0", "C1|1|1791735002|0|g|494|1439|1|148|453|86|25|263|||" }
 		local export = assert(ns.PasteExport(log(entries, { character(), character({ guid = BEA }) }), 2, AS_OF))
 
-		assert.are.equal("18c3c3b16a63abdf5b3a262103260d8264f06a50b29aa55e93eb2f3b7dbf346f", export.parts[1].anchor)
+		assert.are.equal("ee060bf6f586cbdf9d97d442943ceba1b8e408a46c8c807aa57835132fbf66ee", export.parts[1].anchor)
 	end)
 
 	it("makes one part with no entries for an empty log, and for an export from one past the end", function()
 		assert.are.same(
-			{ { from = 1, count = 0, anchor = "c9025f45ec197905862011e464f64b2ab5e446cb4c3a1006b4f50aa052289ca0" } },
+			{ { from = 1, count = 0, anchor = "080ae791ce5a68d738650c428d71e02d49c400c1adc9a624ec077a29cf56d400" } },
 			assert(ns.PasteExport(log({}), 1, AS_OF)).parts
 		)
 		local entries = readings(2, 1791735000)
 		assert.are.same(
-			{ { from = 3, count = 0, anchor = "a9a61421c910f9485651a08e41c3b68a9b38b27225b85e51d11d8bebe07ec93e" } },
+			{ { from = 3, count = 0, anchor = "28994d5e21e2684f49cbf2da45d55c336048c79bacec23233cfc96e674621e44" } },
 			assert(ns.PasteExport(log(entries), 3, AS_OF)).parts
 		)
 		assert.is_nil(ns.PasteExport(log(entries), 4, AS_OF))
@@ -347,7 +347,8 @@ end)
 describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 	it("writes upload.md's example part byte for byte, with its body-bytes and body-crc", function()
 		-- upload.md's example: entries 11 and 12 of a 12-entry log, after Ada's entry at 1791735000, its header's
-		-- format 3, 1.0's (LOG-R18); the body, its body-bytes and its body-crc don't depend on the format.
+		-- format 4, 1.0's (LOG-R18), and so its anchor (the example's own is at format 3); the body, its body-bytes and its
+		-- body-crc don't depend on the format.
 		local entries = readings(9, 1791734000)
 		entries[10] = "S1|1|1791735000|0|86|150|25"
 		entries[11] = "C1|1|1791735050|0|c|494|1439|1|148|453|86|25|263|||6358x1"
@@ -355,7 +356,7 @@ describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 		local export = assert(ns.PasteExport(log(entries), 11, AS_OF))
 
 		assert.are.equal(
-			"PGL|2|3f9a2c1e7b0d4a65|3|1791735100|12|1|11|d256a0b7b0bca5ce06fbc5ba5377bdd2485a18471d3c7da47677ba20f23510ca|2|159|d28fda68\n"
+			"PGL|2|3f9a2c1e7b0d4a65|4|1791735100|12|1|11|c6ab466f2c48d95bc3eddd5f88c64a9759fe0c4352dd53baea3287239f6f65ac|2|159|d28fda68\n"
 				.. "Player-4618-0A1B2C3D|Ada|Brook|1|1|Alliance|4618|0|1791731680|1791735090\n"
 				.. "C1|1|1791735050|0|c|494|1439|1|148|453|86|25|263|||6358x1\n"
 				.. "S1|1|1791735090|0|87|150|25\n",
@@ -372,7 +373,7 @@ describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 		for n, part in ipairs(export.parts) do
 			local parsed = parse(ns.PasteDocument(export, n))
 			assert.are.equal(LOG_ID, parsed.logId)
-			assert.are.equal(3, parsed.format)
+			assert.are.equal(4, parsed.format)
 			assert.are.equal(AS_OF, parsed.asOf)
 			assert.are.equal(5, parsed.total)
 			assert.are.equal(part.from, parsed.from)
@@ -390,7 +391,7 @@ describe("ns.PasteDocument (PST-R10, PST-R11, PST-R14)", function()
 	it("writes an empty body, 0 and 00000000, for a part with no characters and no entries", function()
 		local export = assert(ns.PasteExport(log({}, {}), 1, AS_OF))
 		assert.are.equal(
-			"PGL|2|3f9a2c1e7b0d4a65|3|1791735100|0|0|1|c9025f45ec197905862011e464f64b2ab5e446cb4c3a1006b4f50aa052289ca0|0|0|00000000\n",
+			"PGL|2|3f9a2c1e7b0d4a65|4|1791735100|0|0|1|080ae791ce5a68d738650c428d71e02d49c400c1adc9a624ec077a29cf56d400|0|0|00000000\n",
 			ns.PasteDocument(export, 1)
 		)
 	end)
@@ -459,7 +460,13 @@ describe("The Paste string test vector (paste-string.md › Contracts)", functio
 	it(
 		"is what Core builds, byte for byte, for every part: the documents and the Paste strings pagle-backend decoded",
 		function()
-			local export = assert(ns.PasteExport(vector.log, 1, vector.asOf, vector.partSize))
+			local source = {}
+			for key, value in pairs(vector.log) do
+				source[key] = value
+			end
+			source.entries = nil
+			local export =
+				assert(ns.PasteExport(setLogEntries(source, vector.log.entries, 4), 1, vector.asOf, vector.partSize))
 
 			assert.are.equal(#vector.parts, #export.parts)
 			for n, part in ipairs(vector.parts) do

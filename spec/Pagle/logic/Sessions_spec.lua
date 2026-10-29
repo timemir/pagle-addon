@@ -11,7 +11,7 @@ local T = 1791731000
 
 -- A PagleLog holding Ada, Bram and these entries.
 local function log(entries)
-	return savedLog(entries, 3, {
+	return savedLog(entries, 4, {
 		{ guid = ADA, name = "Ada", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
 		{ guid = BRAM, name = "Bram", classID = 1, raceID = 3, faction = "Alliance", realmID = 4618 },
 	})
@@ -363,7 +363,7 @@ describe("the Session events", function()
 			assert.is_nil(seen.payloads[2].whileAway)
 			assert.are.equal(idAt(0), seen.global.lastEndedSession)
 			assert.is_nil(seen.tracker:Get(T + 60))
-			assert.are.equal(1, #seen.catchLog.data.entries)
+			assert.are.equal(1, seen.catchLog.data.count)
 		end)
 
 		it("ends nothing with no Session open (#247, LOG-R64)", function()

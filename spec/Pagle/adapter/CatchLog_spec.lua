@@ -56,7 +56,7 @@ describe("Core's SavedVariables at load", function()
 	it("start an empty PagleLog and a PagleDB on a fresh install, silently (CORE-R5, LOG-R10)", function()
 		local loaded = login({})
 
-		assert.are.same({ format = 3, characters = {}, entries = {} }, loaded.env.PagleLog)
+		assert.are.same({ format = 4, characters = {}, blockSize = 256, count = 0, blocks = {} }, loaded.env.PagleLog)
 		assert.is_table(loaded.env.PagleDB)
 		assert.are.same({}, loaded.printed)
 	end)
@@ -103,9 +103,9 @@ describe("Core's SavedVariables at load", function()
 		local loaded = login({ PagleLog = savedLog({ "S1|1|1791731690|0|86|150|0" }, 1) })
 
 		local log = loaded.env.PagleLog
-		assert.are.equal(3, log.format)
+		assert.are.equal(4, log.format)
 		assert.are.equal(ADA, log.characters[1].guid)
-		assert.are.same({}, log.entries)
+		assert.are.same({}, logEntries(log))
 		assert.are_not.equal("3f9a2c1e7b0d4a65", log.logId)
 		assert.are.matches("^%x+$", log.logId)
 		assert.are.same({ loaded.ns.L.LOG_FORMAT_CHANGED }, loaded.printed)
@@ -139,5 +139,68 @@ describe("Pagle.IterateCatches", function()
 		assert.are.equal(1, #catches(loaded.env.Pagle, 0))
 		assert.are.equal(1, #catches(loaded.env.Pagle, 0))
 		assert.are.equal(5, loaded.env.PagleDB.global.decodeErrors)
+	end)
+end)
+
+describe("Core's SavedVariables at load, a Catch log it can't read (LOG-R104)", function()
+	-- Copies a table, for comparing a log with what it was.
+	local function copy(value)
+		if type(value) ~= "table" then
+			return value
+		end
+		local made = {}
+		for key, item in pairs(value) do
+			made[key] = copy(item)
+		end
+		return made
+	end
+
+	local function entries()
+		return {
+			"B1|1|1791731690|0|70374|1.60.1|pagle-2026a",
+			"S1|1|1791731690|1|86|150|25",
+			"C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1",
+		}
+	end
+
+	for name, damage in pairs({
+		["a count that doesn't match its blocks"] = function(log)
+			log.count = log.count + 1
+		end,
+		["a block that starts with a reserved byte"] = function(log)
+			log.blocks[1] = "\1" .. log.blocks[1]
+		end,
+		["a missing blockSize"] = function(log)
+			log.blockSize = nil
+		end,
+	}) do
+		it(("stops with one line and leaves PagleLog exactly as it loaded, for %s"):format(name), function()
+			local log = setLogEntries(savedLog(), entries(), 2)
+			damage(log)
+			local before = copy(log)
+
+			local loaded = login({ PagleLog = log })
+
+			assert.are.equal(log, loaded.env.PagleLog)
+			assert.are.same(before, loaded.env.PagleLog)
+			assert.is_true(loaded.ns.recoveryBlocked)
+			assert.is_nil(loaded.ns.catchLog)
+			assert.is_nil(loaded.env.Pagle)
+			assert.are.equal(1, #loaded.printed)
+			assert.is_truthy(loaded.printed[1]:find("can't be read", 1, true))
+			assert.is_truthy(loaded.printed[1]:find("has not been changed", 1, true))
+			assert.are.same({}, loaded.client.errors)
+		end)
+	end
+
+	it("opens a readable log of several blocks and reads the same entries through Pagle.IterateCatches", function()
+		local log = setLogEntries(savedLog(), entries(), 2)
+
+		local loaded = login({ PagleLog = log })
+
+		assert.is_nil(loaded.ns.recoveryBlocked)
+		assert.are.equal(log, loaded.env.PagleLog)
+		assert.are.equal(3, loaded.ns.loginSeq)
+		assert.are.equal(3, loaded.env.PagleLog.count)
 	end)
 end)

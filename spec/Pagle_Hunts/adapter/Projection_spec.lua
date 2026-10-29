@@ -137,7 +137,7 @@ describe("Hunts' projection", function()
 		local loaded = login(function(fake)
 			append(fake, { cast(0, NIGHT, AUBERDINE) })
 			fake.catchLog:Append({ kind = "skill", char = 1, time = at(0, NIGHT + 1), rank = 150, max = 225, mod = 0 })
-			fake.catchLog.data.entries[#fake.catchLog.data.entries + 1] = BUILD_ENTRY
+			putLogEntry(fake.catchLog.data, fake.catchLog.data.count + 1, BUILD_ENTRY)
 		end)
 
 		local state = loaded.ns.State()
@@ -361,7 +361,7 @@ describe("Hunts' projection", function()
 		local function rebuildOf(prepare)
 			local first, firstFake = login(function(fake)
 				for _, entry in ipairs(history(3)) do
-					fake.catchLog.data.entries[#fake.catchLog.data.entries + 1] = entry
+					putLogEntry(fake.catchLog.data, fake.catchLog.data.count + 1, entry)
 				end
 				withHistory(fake)
 			end)

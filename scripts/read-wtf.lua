@@ -250,7 +250,7 @@ end
 -- PagleDB.global.sessionBreaks, so the Casts carry the Session IDs Core gives them (LOG-R99).
 local function readLog(ns, log, since, breaks)
 	local tags = {}
-	for _, entry in ipairs(log.entries) do
+	for _, entry in ns.LogBlocks.Iterate(log) do
 		local tag = type(entry) == "string" and entry:match("^(%u%d+)|") or "(no tag)"
 		tags[tag] = (tags[tag] or 0) + 1
 	end
@@ -415,13 +415,35 @@ local function exitChecks(facts, decodeErrors, expected)
 	return checks
 end
 
--- PagleLog from Pagle.lua's globals, or nil when it isn't a log with characters and entries.
+-- PagleLog from Pagle.lua's globals, or nil when it isn't a log with characters and entries (format 4's blocks, or an
+-- older format's `entries`).
 local function pagleLog(saved)
 	local log = saved and saved.PagleLog
-	if type(log) ~= "table" or type(log.entries) ~= "table" or type(log.characters) ~= "table" then
+	if type(log) ~= "table" or type(log.characters) ~= "table" then
+		return nil
+	end
+	if type(log.blocks) ~= "table" and type(log.entries) ~= "table" then
 		return nil
 	end
 	return log
+end
+
+-- How many entries `log` holds: format 4's `count`, or an older format's `entries` (which the codec doesn't read).
+local function logLength(log)
+	return tonumber(log.count) or (type(log.entries) == "table" and #log.entries or 0)
+end
+
+-- Whether Core's codec reads `log`: it is in the codec's format and its blocks pass Core's own check (LOG-R104), and
+-- if not, why. Core leaves a log it can't read as it is, so this only reports.
+local function readable(core, log)
+	if log.format ~= core.LOG_FORMAT then
+		return false, ("format %s, the codec reads format %d"):format(tostring(log.format), core.LOG_FORMAT)
+	end
+	local problem = core.CatchLogProblem(log)
+	if problem then
+		return false, "format " .. core.LOG_FORMAT .. " with unreadable blocks: " .. problem
+	end
+	return true
 end
 
 -- Prints the Catch log section from Pagle.lua (its globals, or nil and why not) and returns the exit check's checks
@@ -444,7 +466,7 @@ local function printCatchLog(pagle, expectCasts, since)
 			tostring(log.format),
 			tostring(log.logId),
 			count(#log.characters, "character"),
-			count(#log.entries, "entry", "entries")
+			count(logLength(log), "entry", "entries")
 		)
 	)
 	-- AceDB leaves out of the file every value equal to its default, so a PagleDB without decodeErrors means 0.
@@ -454,11 +476,16 @@ local function printCatchLog(pagle, expectCasts, since)
 	end
 	print(type(db) == "table" and "PagleDB.global.decodeErrors: " .. decodeErrors.text or "PagleDB: not in Pagle.lua")
 	local ns = loadCoreLogic()
-	if log.format ~= ns.LOG_FORMAT then
-		-- Opening it would set it aside for a new log (LOG-R18), so it isn't decoded at all.
-		local format = ("format %s, the codec reads format %d"):format(tostring(log.format), ns.LOG_FORMAT)
-		print("PagleLog is " .. format .. ": Core starts a new log at login")
-		return { { ok = false, line = "PagleLog is " .. format } }
+	local ok, why = readable(ns, log)
+	if not ok then
+		-- Opening an older format would set it aside for a new log (LOG-R18), and Core stops at one with unreadable
+		-- blocks and leaves it as it is (LOG-R104), so neither is decoded at all.
+		print(
+			"PagleLog is "
+				.. why
+				.. (log.format == ns.LOG_FORMAT and ": Core stops at login" or ": Core starts a new log at login")
+		)
+		return { { ok = false, line = "PagleLog is " .. why } }
 	end
 	local facts = readLog(ns, log, since, global.sessionBreaks)
 	printLog(log, facts, since)
@@ -705,8 +732,8 @@ local function printStored(stored, log)
 		print(("logId: DIFFERS from PagleLog's %s, so Core rebuilds it at login (LOG-R72)"):format(log.logId))
 	end
 	if log then
-		local entries = count(#log.entries, "entry", "entries")
-		local same = stored.lastSeq == #log.entries
+		local entries = count(logLength(log), "entry", "entries")
+		local same = stored.lastSeq == logLength(log)
 		print(("lastSeq: %s PagleLog's length (%s)"):format(same and "equals" or "differs from", entries))
 	end
 end
@@ -716,12 +743,13 @@ end
 local function moduleRecords(core, log, module)
 	if not log then
 		return nil, "records: no PagleLog to read"
-	elseif log.format ~= core.LOG_FORMAT then
-		return nil,
-			("records: PagleLog is format %s, the codec reads format %d"):format(tostring(log.format), core.LOG_FORMAT)
+	end
+	local ok, why = readable(core, log)
+	if not ok then
+		return nil, "records: PagleLog is " .. why
 	end
 	local records = {}
-	for seq, entry in ipairs(log.entries) do
+	for seq, entry in core.LogBlocks.Iterate(log) do
 		if type(entry) == "string" then
 			local char, time, tie, owner, kind, payload = entry:match("^A1|(%d+)|(%d+)|(%d+)|([^|]+)|([^|]+)|(.*)$")
 			local character = char and log.characters[tonumber(char)]
@@ -990,8 +1018,9 @@ local function printSizes(log, catalogue)
 		"logic/Integrity.lua",
 		"logic/CatchLog.lua",
 	})
-	if log.format ~= core.LOG_FORMAT then
-		print(("sizes: PagleLog is format %s, the codec reads format %d"):format(tostring(log.format), core.LOG_FORMAT))
+	local ok, why = readable(core, log)
+	if not ok then
+		print("sizes: PagleLog is " .. why)
 		return
 	end
 	local tally = tallySizes(core, log, items.GetItem)
@@ -3030,7 +3059,7 @@ end
 -- The P rows (REP-R22) Core builds in the game from the diagnostics buffer (LOG-R81) and the log's Casts, with its
 -- own ns.FieldReportPRows; none without a log the codec reads.
 local function pRows(ns, global, log)
-	if not log or log.format ~= ns.LOG_FORMAT then
+	if not log or not readable(ns, log) then
 		return {}
 	end
 	local buffer = type(global.diagnostics) == "table" and global.diagnostics or {}
@@ -3484,7 +3513,7 @@ local function printReverify(pagle, options)
 	local size = wtf.fileSize(pagle.path) or 0
 	print(
 		("check 2: PagleLog %s, Pagle.lua %s bytes (%.2f MiB)"):format(
-			log and many(#log.entries, "entry", "entries") or "missing",
+			log and many(logLength(log), "entry", "entries") or "missing",
 			thousands(size),
 			size / MIB
 		)
@@ -3498,7 +3527,7 @@ local function printReverify(pagle, options)
 		"logic/LoadTimings.lua",
 	})
 	printTimings(tableOr(global.probe).timings, ns)
-	if not log or log.format ~= ns.LOG_FORMAT then
+	if not log or not readable(ns, log) then
 		print("checks 4-7: no PagleLog Core's codec reads")
 		return
 	end

@@ -26,7 +26,7 @@ local function newWorld(entries, db, syncLimit)
 	}
 	world.projections = ns.NewProjections({
 		length = function()
-			return #catchLog.data.entries
+			return catchLog.data.count
 		end,
 		logId = function()
 			return catchLog.data.logId
@@ -91,7 +91,7 @@ local function newWorld(entries, db, syncLimit)
 
 	-- Login step 3: the catch-up or rebuild, run to its end unless `frames` limits the frames run.
 	function world.enterWorld(frames)
-		world.projections:Start(#catchLog.data.entries)
+		world.projections:Start(catchLog.data.count)
 		world.runFrames(frames)
 	end
 	function world.runFrames(limit)

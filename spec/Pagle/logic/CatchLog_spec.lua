@@ -10,7 +10,7 @@ local BRAM = "Player-4618-0F0E0D0C"
 
 -- A PagleLog as the client loads it from SavedVariables (savedLog), holding Ada, Bram and these entries.
 local function adaAndBramLog(entries)
-	return savedLog(entries, 3, {
+	return savedLog(entries, 4, {
 		{ guid = ADA, name = "Ada", classID = 1, raceID = 1, faction = "Alliance", realmID = 4618 },
 		{ guid = BRAM, name = "Bram", classID = 1, raceID = 3, faction = "Alliance", realmID = 4618 },
 	})
@@ -147,7 +147,7 @@ describe("the Catch log codec", function()
 
 			local appended = catchLog:Append(case.record)
 
-			assert.are.same({ case.entry }, catchLog.data.entries)
+			assert.are.same({ case.entry }, logEntries(catchLog.data))
 			local read = records(catchLog, 0)[1]
 			assert.are.same(appended, read)
 			assert.are.equal(case.record.kind, read.kind)
@@ -177,7 +177,7 @@ describe("the Catch log codec", function()
 
 		catchLog:Append({ kind = "skill", char = 1, time = 1791731680, rank = 86, max = 150, mod = 0 })
 
-		assert.are.same({ "S1|1|1791731680|0|86|150|0" }, catchLog.data.entries)
+		assert.are.same({ "S1|1|1791731680|0|86|150|0" }, logEntries(catchLog.data))
 		assert.are.same({
 			{
 				seq = 1,
@@ -204,7 +204,7 @@ describe("the Catch log codec", function()
 			rules = "pagle-2026a",
 		})
 
-		assert.are.same({ "B1|2|1791731681|0|70338|1.60.1|pagle-2026a" }, catchLog.data.entries)
+		assert.are.same({ "B1|2|1791731681|0|70338|1.60.1|pagle-2026a" }, logEntries(catchLog.data))
 		assert.are.same({
 			{
 				seq = 1,
@@ -224,7 +224,7 @@ describe("the Catch log codec", function()
 
 		catchLog:Append({ kind = "prestige", char = 1, time = 1791731682, rank = 2, activityXP = 1850 })
 
-		assert.are.same({ "P1|1|1791731682|0|2|1850" }, catchLog.data.entries)
+		assert.are.same({ "P1|1|1791731682|0|2|1850" }, logEntries(catchLog.data))
 		assert.are.same({
 			{
 				seq = 1,
@@ -243,7 +243,7 @@ describe("the Catch log codec", function()
 
 		local appended = catchLog:Append({ kind = "prestige", char = 1, time = 1791731682, rank = 1 })
 
-		assert.are.same({ "P1|1|1791731682|0|1|0" }, catchLog.data.entries)
+		assert.are.same({ "P1|1|1791731682|0|1|0" }, logEntries(catchLog.data))
 		assert.are.equal(0, appended.activityXP)
 	end)
 
@@ -258,7 +258,7 @@ describe("the Catch log codec", function()
 
 		catchLog:Append({ kind = "purchase", char = 2, time = 1791731683, good = "core.toaststyle.ripple", price = 150 })
 
-		assert.are.same({ "U1|2|1791731683|0|core.toaststyle.ripple|150" }, catchLog.data.entries)
+		assert.are.same({ "U1|2|1791731683|0|core.toaststyle.ripple|150" }, logEntries(catchLog.data))
 		assert.are.same({
 			{
 				seq = 1,
@@ -280,8 +280,8 @@ describe("the Catch log codec", function()
 
 			catchLog:Append({ kind = "companion", char = 1, time = 1791731683, keyId = "pagle-2026-a", pushedSeq = 42 })
 
-			assert.are.same({ "K1|1|1791731683|0|pagle-2026-a|42" }, catchLog.data.entries)
-			assert.are.equal(3, ns.LOG_FORMAT, "an additive kind: PagleLog.format stays (LOG-R18)")
+			assert.are.same({ "K1|1|1791731683|0|pagle-2026-a|42" }, logEntries(catchLog.data))
+			assert.are.equal(4, ns.LOG_FORMAT, "an additive kind: PagleLog.format stays (LOG-R18)")
 			assert.are.same(
 				{
 					{
@@ -332,7 +332,7 @@ describe("the Catch log codec", function()
 				payload = payload,
 			})
 
-			assert.are.same({ "A1|2|1791731684|0|Hunts|def|p_test|1/1|a|b;c" }, catchLog.data.entries)
+			assert.are.same({ "A1|2|1791731684|0|Hunts|def|p_test|1/1|a|b;c" }, logEntries(catchLog.data))
 			local read = {}
 			for record in catchLog:Iterate(0, "Hunts") do
 				read[#read + 1] = record
@@ -364,7 +364,7 @@ describe("the Catch log codec", function()
 			payload = "",
 		})
 
-		assert.are.same({ "A1|1|1791731685|0|Ledger|title|" }, catchLog.data.entries)
+		assert.are.same({ "A1|1|1791731685|0|Ledger|title|" }, logEntries(catchLog.data))
 		assert.are.same({ "module", "Ledger", "title", "" }, {
 			record.kind,
 			record.module,
@@ -420,7 +420,7 @@ describe("the Catch log codec", function()
 				catchLog:Append(record)
 			end)
 		end
-		assert.are.same({}, catchLog.data.entries)
+		assert.are.same({}, logEntries(catchLog.data))
 	end)
 
 	it("writes a carriage return as it is, the one line break an entry may hold (LOG-R101)", function()
@@ -445,7 +445,7 @@ describe("the Catch log codec", function()
 
 		assert.are.same(
 			{ "B1|1|1791731680|0|70338|1.60\r1|pagle-2026a", "A1|1|1791731680|1|Hunts|def|p_test|1/1|two\rlines" },
-			catchLog.data.entries
+			logEntries(catchLog.data)
 		)
 	end)
 end)
@@ -608,7 +608,7 @@ describe("iterating the log", function()
 			catchLog:Append({ kind = "skill", char = 1, time = 10 + record.seq, rank = 86, max = 150, mod = 0 })
 		end
 		assert.are.same({ 1, 2 }, seqs)
-		assert.are.equal(4, #catchLog.data.entries)
+		assert.are.equal(4, catchLog.data.count)
 	end)
 
 	it("gives each appended entry the next seq; the log only grows (LOG-R14)", function()
@@ -617,7 +617,7 @@ describe("iterating the log", function()
 		local appended = catchLog:Append({ kind = "skill", char = 1, time = 2, rank = 87, max = 150, mod = 0 })
 
 		assert.are.equal(2, appended.seq)
-		assert.are.same({ skillAt(1), "S1|1|2|0|87|150|0" }, catchLog.data.entries)
+		assert.are.same({ skillAt(1), "S1|1|2|0|87|150|0" }, logEntries(catchLog.data))
 	end)
 end)
 
@@ -627,7 +627,7 @@ describe("opening PagleLog", function()
 	it("starts an empty log on a fresh install, without a chat line (LOG-R10, LOG-R18)", function()
 		local catchLog, started = ns.OpenCatchLog(nil, {}, NOW)
 
-		assert.are.same({ format = 3, characters = {}, entries = {} }, catchLog.data)
+		assert.are.same({ format = 4, characters = {}, blockSize = 256, count = 0, blocks = {} }, catchLog.data)
 		assert.is_false(started)
 	end)
 
@@ -642,7 +642,7 @@ describe("opening PagleLog", function()
 		assert.is_false(started)
 	end)
 
-	for _, format in ipairs({ 0, 1, 2, 4, "nil" }) do
+	for _, format in ipairs({ 0, 1, 2, 3, "nil" }) do
 		it(("starts a new log from one in format %s, keeping the characters (LOG-R18)"):format(format), function()
 			local saved = adaAndBramLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" })
 			saved.format = tonumber(format)
@@ -653,8 +653,8 @@ describe("opening PagleLog", function()
 
 			assert.is_true(started)
 			assert.are.equal(characters, catchLog.data.characters)
-			assert.are.same({}, catchLog.data.entries)
-			assert.are.equal(3, catchLog.data.format)
+			assert.are.same({}, logEntries(catchLog.data))
+			assert.are.equal(4, catchLog.data.format)
 			assert.is_nil(catchLog.data.stale)
 			assert.are.matches("^[0-9a-f]+$", catchLog.data.logId)
 			assert.are.equal(16, #catchLog.data.logId)
@@ -720,7 +720,7 @@ describe("the tie counter", function()
 			"S1|1|1791731680|0|86|150|0",
 			"S1|1|1791731680|1|86|150|0",
 			"S1|1|1791731680|2|86|150|0",
-		}, catchLog.data.entries)
+		}, logEntries(catchLog.data))
 	end)
 
 	it("is 0 for a different character at the same second, and for the next second (LOG-R12)", function()
@@ -761,7 +761,7 @@ describe("the Simulated Size on decoded Casts", function()
 
 	-- A log of these entries by Vee (1), Oak (2) and Dee (3), opened over `items` (ITEMS by default) as its catalogue.
 	local function veeLog(entries, items)
-		return ns.OpenCatchLog(savedLog(entries, 3, { VEE, OAK, DEE }), {}, nil, function(itemID)
+		return ns.OpenCatchLog(savedLog(entries, 4, { VEE, OAK, DEE }), {}, nil, function(itemID)
 			return (items or ITEMS)[itemID]
 		end)
 	end
@@ -910,7 +910,7 @@ describe("the Simulated Size on decoded Casts", function()
 			-- A log over the fixture catalogue that counts the items it looks up.
 			local function counted()
 				local lookups = { n = 0 }
-				local catchLog = ns.OpenCatchLog(savedLog(entries, 3, { VEE, OAK, DEE }), {}, nil, function(itemID)
+				local catchLog = ns.OpenCatchLog(savedLog(entries, 4, { VEE, OAK, DEE }), {}, nil, function(itemID)
 					lookups.n = lookups.n + 1
 					return ITEMS[itemID]
 				end)
@@ -1028,7 +1028,7 @@ describe("the Simulated Size on decoded Casts", function()
 				earlier(2, 1791731060, "6358x1,6358x1,6358x1,6358x1,6358x1,6358x1"),
 			}
 			local global = {}
-			local saved = savedLog(entries, 3, { VEE, OAK, DEE })
+			local saved = savedLog(entries, 4, { VEE, OAK, DEE })
 			local catchLog = ns.OpenCatchLog(saved, global, nil, function(itemID)
 				return ITEMS[itemID]
 			end)
@@ -1048,6 +1048,7 @@ describe("the Simulated Size on decoded Casts", function()
 
 			-- The next login, with Vee's Cast of vectors A and B appended at the last, read from seq 2.
 			entries[3] = castOf("6358x1,6358x1", AB, "300")
+			putLogEntry(saved, 3, entries[3])
 			local function nextLogin(stored)
 				global.catchCounts = stored
 				local opened = ns.OpenCatchLog(saved, global, nil, function(itemID)
@@ -1075,7 +1076,7 @@ describe("the Simulated Size on decoded Casts", function()
 	)
 
 	it("gives no sizes when opened without a catalogue (LOG-R65)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6358x1") }, 3, { VEE }), {})
+		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6358x1") }, 4, { VEE }), {})
 
 		assert.are.same({ false }, sizes(records(catchLog, 0)[1]))
 	end)
@@ -1109,7 +1110,7 @@ describe("the variety on decoded Casts", function()
 
 	-- A log of Vee's entries, opened over `items` (ITEMS by default) as its catalogue.
 	local function veeLog(entries, items)
-		return ns.OpenCatchLog(savedLog(entries, 3, { VEE }), {}, nil, function(itemID)
+		return ns.OpenCatchLog(savedLog(entries, 4, { VEE }), {}, nil, function(itemID)
 			return (items or ITEMS)[itemID]
 		end)
 	end
@@ -1190,8 +1191,296 @@ describe("the variety on decoded Casts", function()
 	end)
 
 	it("gives no varieties when opened without a catalogue (VAR-R4)", function()
-		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6359x1") }, 3, { VEE }), {})
+		local catchLog = ns.OpenCatchLog(savedLog({ castOf("6359x1") }, 4, { VEE }), {})
 
 		assert.are.same({ false }, varieties(records(catchLog, 0)[1]))
 	end)
+end)
+
+-- Format 4's block storage (LOG-R103–R105): the layout is checked against setLogEntries and logEntries, the helpers'
+-- own reading of it, not Core's.
+describe("the block storage (LOG-R103–R105)", function()
+	local LogBlocks = ns.LogBlocks
+
+	-- `n` distinct Skill Reading entries of Ada's, one a second.
+	local function skills(n)
+		local entries = {}
+		for i = 1, n do
+			entries[i] = ("S1|1|%d|0|%d|150|0"):format(1791731000 + i, i)
+		end
+		return entries
+	end
+
+	-- A deep copy, to prove a log was not touched.
+	local function copy(value)
+		if type(value) ~= "table" then
+			return value
+		end
+		local made = {}
+		for key, item in pairs(value) do
+			made[key] = copy(item)
+		end
+		return made
+	end
+
+	-- The shape of a log by its blocks' line counts.
+	local function shape(data)
+		local lines = {}
+		for b, block in ipairs(data.blocks) do
+			lines[b] = select(2, block:gsub("\n", "\n")) + 1
+		end
+		return lines
+	end
+
+	it("starts a log with count 0, no blocks, and a blockSize of 256, never an empty block (LOG-R103)", function()
+		local catchLog = ns.OpenCatchLog(nil, {}, 1791731700)
+
+		assert.are.same({ format = 4, characters = {}, blockSize = 256, count = 0, blocks = {} }, catchLog.data)
+		assert.are.equal(256, ns.LOG_BLOCK_SIZE)
+		assert.is_nil(LogBlocks.Problem(catchLog.data))
+		assert.are.equal(0, catchLog:Count())
+		assert.is_nil(catchLog:Get(1))
+	end)
+
+	it("appends across a block boundary: 256 entries fill one block, the 257th opens the next (LOG-R103)", function()
+		local catchLog = ns.OpenCatchLog(adaAndBramLog(), {})
+		for i = 1, 256 do
+			catchLog:Append({ kind = "skill", char = 1, time = 1791731000 + i, rank = i, max = 300, mod = 0 })
+		end
+
+		assert.are.same({ 256 }, shape(catchLog.data))
+		assert.are.equal(256, catchLog.data.count)
+		local sealed = catchLog.data.blocks[1]
+
+		catchLog:Append({ kind = "skill", char = 1, time = 1791732000, rank = 257, max = 300, mod = 0 })
+
+		assert.are.same({ 256, 1 }, shape(catchLog.data))
+		assert.are.equal(257, catchLog.data.count)
+		assert.are.equal(sealed, catchLog.data.blocks[1], "a sealed block never changes")
+		assert.are.equal("S1|1|1791732000|0|257|300|0", catchLog.data.blocks[2], "no trailing line feed")
+		assert.are.equal(257, #logEntries(catchLog.data))
+		assert.is_nil(LogBlocks.Problem(catchLog.data))
+		-- Core's reads agree with the helpers' reading of the layout.
+		local all = logEntries(catchLog.data)
+		for _, seq in ipairs({ 1, 255, 256, 257 }) do
+			assert.are.equal(all[seq], catchLog:Get(seq))
+		end
+	end)
+
+	it("appends only into the open block, whatever blockSize the log records (LOG-R103)", function()
+		local data = setLogEntries(adaAndBramLog(), skills(4), 4)
+		local catchLog = ns.OpenCatchLog(data, {})
+		local first = data.blocks[1]
+
+		catchLog:Append({ kind = "skill", char = 1, time = 1791732000, rank = 5, max = 300, mod = 0 })
+		assert.are.same({ 4, 1 }, shape(data))
+		catchLog:Append({ kind = "skill", char = 1, time = 1791732001, rank = 6, max = 300, mod = 0 })
+		assert.are.same({ 4, 2 }, shape(data))
+		assert.are.equal(first, data.blocks[1])
+		assert.are.equal(6, data.count)
+		assert.are.equal(4, data.blockSize)
+	end)
+
+	it("reads any entry by Get at the edges of every block, as the helpers' layout holds it (LOG-R103)", function()
+		local entries = skills(10)
+		local data = setLogEntries(adaAndBramLog(), entries, 3)
+
+		for seq = 1, 10 do
+			assert.are.equal(entries[seq], LogBlocks.Get(data, seq))
+		end
+		assert.are.same({ 3, 3, 3, 1 }, shape(data))
+		assert.is_nil(LogBlocks.Get(data, 0))
+		assert.is_nil(LogBlocks.Get(data, 11))
+		assert.is_nil(LogBlocks.Get(data, 1.5))
+		assert.is_nil(LogBlocks.Get(data, nil))
+	end)
+
+	it("iterates from the start, from the middle of a block, from a block's first entry and past its end", function()
+		local entries = skills(10)
+		local data = setLogEntries(adaAndBramLog(), entries, 3)
+		local function walk(from, to)
+			local seqs, found = {}, {}
+			for seq, entry in LogBlocks.Iterate(data, from, to) do
+				seqs[#seqs + 1], found[#found + 1] = seq, entry
+			end
+			return seqs, found
+		end
+
+		local seqs, found = walk()
+		assert.are.same({ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }, seqs)
+		assert.are.same(entries, found)
+		seqs, found = walk(5)
+		assert.are.same({ 5, 6, 7, 8, 9, 10 }, seqs, "from the middle of the second block")
+		assert.are.same({ entries[5], entries[6], entries[7], entries[8], entries[9], entries[10] }, found)
+		assert.are.same({ 4, 5, 6 }, (walk(4, 6)), "a block's first entry to the next block's last")
+		assert.are.same({ 3, 4 }, (walk(3, 4)), "across the edge between two blocks")
+		assert.are.same({ 10 }, (walk(10)))
+		assert.are.same({}, (walk(11)))
+		assert.are.same({ 1, 2 }, (walk(-5, 2)))
+		assert.are.same({}, (walk(6, 5)))
+	end)
+
+	it("walks the records of the log from the middle of a block, with the same seqs as from the start", function()
+		local data = setLogEntries(adaAndBramLog(), skills(10), 4)
+		local catchLog = ns.OpenCatchLog(data, {})
+
+		local seqs = {}
+		for _, record in ipairs(records(catchLog, 5)) do
+			seqs[#seqs + 1] = record.seq
+		end
+		assert.are.same({ 6, 7, 8, 9, 10 }, seqs)
+		assert.are.equal(10, #records(catchLog, 0))
+		assert.are.equal(10, catchLog:Reverse("skill")().seq)
+	end)
+
+	it("sees a block the log holds now, never a stale cached one (LOG-R105)", function()
+		local data = setLogEntries(adaAndBramLog(), skills(6), 3)
+		assert.are.equal("S1|1|1791731002|0|2|150|0", LogBlocks.Get(data, 2))
+
+		data.blocks[1] = "S1|1|1791731001|0|1|150|0\nS1|1|1791731002|0|9|150|0\nS1|1|1791731003|0|3|150|0"
+
+		assert.are.equal("S1|1|1791731002|0|9|150|0", LogBlocks.Get(data, 2))
+	end)
+
+	it("treats a count that doesn't match the blocks as an unreadable log, and never rewrites it (LOG-R104)", function()
+		for _, count in ipairs({ 9, 11, 0, 4 }) do
+			local data = setLogEntries(adaAndBramLog(), skills(10), 3)
+			data.count = count
+			local before = copy(data)
+
+			assert.is_truthy(ns.CatchLogProblem(data))
+			assert.is_truthy(LogBlocks.Problem(data):find("count", 1, true))
+			assert.has_error(function()
+				ns.OpenCatchLog(data, {}, 1791731700)
+			end)
+			assert.are.same(before, data, "left exactly as it was")
+		end
+	end)
+
+	it("treats a block with too many or too few lines as unreadable, and never rewrites it (LOG-R104)", function()
+		local sealedShort = setLogEntries(adaAndBramLog(), skills(10), 3)
+		sealedShort.blocks[2] = "S1|1|1791731004|0|4|150|0\nS1|1|1791731005|0|5|150|0" -- a sealed block of 2 of 3
+		sealedShort.count = 9
+		local openFull = setLogEntries(adaAndBramLog(), skills(10), 3)
+		openFull.blocks[4] = openFull.blocks[4]
+			.. "\nS1|1|1791731011|0|11|150|0\nS1|1|1791731012|0|12|150|0\nS1|1|1791731013|0|13|150|0"
+		openFull.count = 13 -- an open block of 4 lines in blocks of 3
+		local emptyBlock = setLogEntries(adaAndBramLog(), skills(6), 3)
+		emptyBlock.blocks[3] = ""
+		for _, data in ipairs({ sealedShort, openFull, emptyBlock }) do
+			local before = copy(data)
+
+			assert.is_truthy(ns.CatchLogProblem(data))
+			assert.has_error(function()
+				ns.OpenCatchLog(data, {}, 1791731700)
+			end)
+			assert.are.same(before, data)
+		end
+	end)
+
+	it("treats a block whose first byte is below 0x20 as unreadable, and never rewrites it (LOG-R104)", function()
+		for _, byte in ipairs({ 0, 1, 8, 10, 31 }) do
+			local data = setLogEntries(adaAndBramLog(), skills(6), 3)
+			data.blocks[1] = string.char(byte) .. data.blocks[1]
+			local before = copy(data)
+
+			assert.is_truthy(LogBlocks.Problem(data):find("reserved", 1, true))
+			assert.is_truthy(ns.CatchLogProblem(data))
+			assert.has_error(function()
+				ns.OpenCatchLog(data, {}, 1791731700)
+			end)
+			assert.are.same(before, data)
+		end
+		-- 0x20 itself and every tag's uppercase letter are readable.
+		local data = setLogEntries(adaAndBramLog(), skills(6), 3)
+		assert.is_nil(ns.CatchLogProblem(data))
+	end)
+
+	it("treats a log without its block fields, or with the wrong types, as unreadable (LOG-R104)", function()
+		local fields = { "blockSize", "count", "blocks" }
+		for _, field in ipairs(fields) do
+			local data = setLogEntries(adaAndBramLog(), skills(3))
+			data[field] = nil
+			assert(ns.CatchLogProblem(data), field)
+		end
+		for _, size in ipairs({ 0, -1, 2.5, "256" }) do
+			local data = setLogEntries(adaAndBramLog(), skills(3))
+			data.blockSize = size
+			assert(ns.CatchLogProblem(data), tostring(size))
+		end
+		local sparse = setLogEntries(adaAndBramLog(), skills(6), 3)
+		sparse.blocks[4] = sparse.blocks[2]
+		assert.is_truthy(ns.CatchLogProblem(sparse))
+		-- A log in another format is for LOG-R18 to start over, not a problem.
+		assert.is_nil(ns.CatchLogProblem(savedLog(skills(3), 3)))
+		assert.is_nil(ns.CatchLogProblem(nil))
+	end)
+
+	it("still refuses an entry with a line feed, in the store and at Append, appending nothing (LOG-R101)", function()
+		local data = setLogEntries(adaAndBramLog(), skills(3), 3)
+		local before = copy(data)
+
+		assert.has_error(function()
+			LogBlocks.Append(data, "S1|1|1791731100|0|1|150|0\nS1|1|1791731101|0|2|150|0")
+		end)
+		assert.has_error(function()
+			LogBlocks.Append(data, 42)
+		end)
+		assert.has_error(function()
+			LogBlocks.Pack({ "S1|1|1|0|1|1|0", "a\nb" })
+		end)
+		assert.are.same(before, data)
+		local catchLog = ns.OpenCatchLog(data, {})
+		assert.has_error(function()
+			catchLog:Append({ kind = "build", char = 1, time = 1791731200, build = 70338, version = "1.60\n1" })
+		end)
+		assert.are.same(before, data)
+	end)
+
+	it("packs entries into blocks of blockSize, the last holding what is left (Recovery's layout)", function()
+		local entries = skills(7)
+
+		local blocks, count = LogBlocks.Pack(entries, 3)
+
+		assert.are.equal(7, count)
+		assert.are.same({
+			table.concat(entries, "\n", 1, 3),
+			table.concat(entries, "\n", 4, 6),
+			entries[7],
+		}, blocks)
+		assert.are.same({}, (LogBlocks.Pack({})))
+		assert.are.equal(0, select(2, LogBlocks.Pack({})))
+		assert.are.equal(1, #(LogBlocks.Pack(skills(256))))
+		assert.are.equal(2, #(LogBlocks.Pack(skills(257))))
+	end)
+
+	it(
+		"holds a log of 300,000 entries in about 1,200 strings, far below Lua 5.1's 262,143 constants (LOG-R103)",
+		function()
+			local entries = {}
+			for i = 1, 300000 do
+				entries[i] = ("S1|1|%d|0|%d|150|0"):format(1791000000 + i, i % 300)
+			end
+			local data = setLogEntries(adaAndBramLog(), {})
+			data.blocks, data.count = LogBlocks.Pack(entries)
+
+			assert.are.equal(1172, #data.blocks) -- ceil(300,000 / 256)
+			assert.is_true(#data.blocks < 262143 / 100)
+			assert.are.equal(300000, data.count)
+			assert.is_nil(LogBlocks.Problem(data))
+			assert.are.equal(entries[300000], LogBlocks.Get(data, 300000))
+			assert.are.equal(entries[256], LogBlocks.Get(data, 256))
+			assert.are.equal(entries[257], LogBlocks.Get(data, 257))
+			local seen = 0
+			for seq, entry in LogBlocks.Iterate(data, 299990) do
+				assert.are.equal(entries[seq], entry)
+				seen = seen + 1
+			end
+			assert.are.equal(11, seen)
+			-- Opening it needs no unpacking: the count check is all it reads whole.
+			local catchLog = ns.OpenCatchLog(data, {})
+			assert.are.equal(300000, catchLog:Count())
+			assert.are.equal(entries[150000], catchLog:Get(150000))
+		end
+	)
 end)

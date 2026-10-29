@@ -10,7 +10,7 @@ ns.GOOD_ID_PATTERN = "^[%w_.]+$"
 
 --- A record Core hands out for one Catch log entry (LOG-R42). Records are shared and immutable (CORE-R18).
 ---@class PagleRecord
----@field seq integer            -- index in PagleLog.entries (LOG-R14)
+---@field seq integer            -- the entry's 1-based place in the log (LOG-R14, LOG-R103)
 ---@field id string              -- entry ID: <character GUID>-<time>-<tie> (LOG-R13)
 ---@field kind "cast"|"skill"|"prestige"|"build"|"purchase"|"module"|"companion"
 ---@field char integer           -- index into Angler.characters
@@ -64,10 +64,234 @@ ns.COMPANION_READER = "Core"
 ---@field recordKind string      -- the Module's own kind, [%w_.]+
 ---@field payload string         -- the Module's string, verbatim: no line feed, at most 200 bytes when appended
 
---- The PagleLog layout version (LOG-R18). 1.0 ships format 2, frozen from then on (LOG-R17); every beta or dev log
---- is format 1, so it starts over at the first 1.0 login.
-ns.LOG_FORMAT = 3
+--- The PagleLog layout version (LOG-R18). 1.0 ships format 4, frozen from then on (LOG-R17); every beta or dev log
+--- is another format, so it starts over at the first 1.0 login.
+ns.LOG_FORMAT = 4
 ns.RULE_SET_ID = "pagle-2026c"
+
+--- The entries a new log packs into each block (LOG-R103). A log records its own `blockSize`, so a later Pagle may
+--- choose another for new logs without breaking old ones.
+ns.LOG_BLOCK_SIZE = 256
+
+-- The block store (LOG-R103–R105): format 4 keeps the entries in `PagleLog.blocks`, each block `blockSize` entries
+-- joined by a line feed, so a log of any length holds only about count / blockSize strings, far below the client's
+-- limit of 262,143 constants in the one chunk that loads Pagle.lua. Every reader of the entries goes through
+-- `ns.LogBlocks`: nothing is ever unpacked wholesale, so `_G.PagleLog` always holds the block form, which the client
+-- can write at any moment, after a crash included, and load again.
+---@class PagleLogBlocks
+local LogBlocks = {}
+ns.LogBlocks = LogBlocks
+
+local floor = math.floor
+local find, match, byte, sub = string.find, string.match, string.byte, string.sub
+
+-- Blocks decoded to their lines, by log (weak, so a log let go takes its cache with it): the open block in its own
+-- slot, and the others in a few slots by block number. A slot is only used while it holds the very string the log
+-- holds for that block, so a block replaced by anything (Recovery, a spec) is never read stale.
+local CACHE_SLOTS = 8
+---@type table<table, table>
+local caches = setmetatable({}, { __mode = "k" })
+
+-- The lines of block `b` of `data`, split once and kept, or nil if the log has no such block.
+---@param data table PagleLog
+---@param b integer
+---@return string[]?
+local function linesOf(data, b)
+	local blocks = data.blocks
+	local text = type(blocks) == "table" and blocks[b]
+	if type(text) ~= "string" then
+		return nil
+	end
+	local cache = caches[data]
+	if not cache then
+		cache = {}
+		caches[data] = cache
+	end
+	local open = cache.open
+	if open and open.index == b and open.text == text then
+		return open.lines
+	end
+	local slot = cache[b % CACHE_SLOTS]
+	if slot and slot.index == b and slot.text == text then
+		return slot.lines
+	end
+	local lines, n, at = {}, 0, 1
+	while true do
+		local stop = find(text, "\n", at, true)
+		n = n + 1
+		if not stop then
+			lines[n] = sub(text, at)
+			break
+		end
+		lines[n] = sub(text, at, stop - 1)
+		at = stop + 1
+	end
+	slot = { index = b, text = text, lines = lines }
+	if b == #blocks then
+		cache.open = slot
+	else
+		cache[b % CACHE_SLOTS] = slot
+	end
+	return lines
+end
+
+--- The number of entries in the log (`PagleLog.count`), trusted once the log has been opened (LogBlocks.Problem).
+---@param data table PagleLog
+---@return integer
+function LogBlocks.Count(data)
+	return data.count
+end
+
+--- Entry `seq` (1-based), or nil if the log has none. Entry `seq` is line `((seq - 1) % blockSize) + 1` of block
+--- `floor((seq - 1) / blockSize) + 1`.
+---@param data table PagleLog
+---@param seq integer
+---@return string?
+function LogBlocks.Get(data, seq)
+	local size = data.blockSize
+	if
+		type(seq) ~= "number"
+		or type(size) ~= "number"
+		or type(data.count) ~= "number"
+		or seq < 1
+		or seq > data.count
+		or seq % 1 ~= 0
+	then
+		return nil
+	end
+	local lines = linesOf(data, floor((seq - 1) / size) + 1)
+	return lines and lines[(seq - 1) % size + 1]
+end
+
+--- Walks the entries from seq `fromSeq` (1 if nil) to `toSeq` (the log's end when the walk began, if nil), yielding each
+--- as `seq, entry`. It splits one block at a time, so a walk of the whole log holds one block's lines at once.
+---@param data table PagleLog
+---@param fromSeq integer?
+---@param toSeq integer?
+---@return fun(): integer?, string?
+function LogBlocks.Iterate(data, fromSeq, toSeq)
+	local seq = math.max(fromSeq or 1, 1) - 1
+	local last = math.min(toSeq or data.count, data.count)
+	local size = data.blockSize
+	local lines
+	return function()
+		if seq >= last then
+			return nil
+		end
+		seq = seq + 1
+		local at = (seq - 1) % size + 1
+		if not lines or at == 1 then
+			lines = linesOf(data, floor((seq - 1) / size) + 1)
+		end
+		return seq, lines and lines[at]
+	end
+end
+
+--- Appends `entry` as the log's next entry: into the open block, or a new block when that one is full. Only the open
+--- block is ever rewritten (LOG-R14). Raises an error, appending nothing, for an entry that isn't a string or holds a
+--- line feed (LOG-R101), which would add a line to the block.
+---@param data table PagleLog
+---@param entry string
+function LogBlocks.Append(data, entry)
+	if type(entry) ~= "string" or find(entry, "\n", 1, true) then
+		error("a Catch log entry must be a string without a line feed", 2)
+	end
+	local blocks, count = data.blocks, data.count
+	local last = #blocks
+	local cache = caches[data]
+	if not cache then
+		cache = {}
+		caches[data] = cache
+	end
+	if last == 0 or count == last * data.blockSize then
+		blocks[last + 1] = entry
+		cache.open = { index = last + 1, text = entry, lines = { entry } }
+	else
+		local lines = linesOf(data, last) --[[@as string[] ]]
+		local text = blocks[last] .. "\n" .. entry
+		blocks[last] = text
+		lines[#lines + 1] = entry
+		cache.open = { index = last, text = text, lines = lines }
+	end
+	data.count = count + 1
+end
+
+--- The blocks that hold `entries`, `blockSize` to a block (the last may hold fewer), and their count: how a log is
+--- built whole (Recovery, the test-log tooling). Raises an error for an entry that isn't a string or holds a line
+--- feed.
+---@param entries string[]
+---@param blockSize integer? ns.LOG_BLOCK_SIZE if nil
+---@return string[] blocks
+---@return integer count
+function LogBlocks.Pack(entries, blockSize)
+	blockSize = blockSize or ns.LOG_BLOCK_SIZE
+	local blocks, count = {}, #entries
+	for first = 1, count, blockSize do
+		local last = math.min(first + blockSize - 1, count)
+		for seq = first, last do
+			local entry = entries[seq]
+			if type(entry) ~= "string" or find(entry, "\n", 1, true) then
+				error(("Catch log entry %d must be a string without a line feed"):format(seq), 2)
+			end
+		end
+		blocks[#blocks + 1] = table.concat(entries, "\n", first, last)
+	end
+	return blocks, count
+end
+
+--- Why the block store in `data` can't be read, or nil if it can (LOG-R104): `blockSize` a whole number of 1 or more,
+--- `count` a whole number of 0 or more, `blocks` an array of non-empty strings, none whose first byte is below 0x20
+--- (reserved for a later block encoding), every block but the last holding `blockSize` lines, the last 1 to
+--- `blockSize`, and `count` the lines they hold in all. Core checks it when it opens the log and never rewrites a log
+--- it fails; it only reads, so a failure leaves `data` as it was.
+---@param data table PagleLog
+---@return string?
+function LogBlocks.Problem(data)
+	local size, count, blocks = data.blockSize, data.count, data.blocks
+	if type(size) ~= "number" or size < 1 or size % 1 ~= 0 then
+		return "blockSize is not a whole number of 1 or more"
+	end
+	if type(count) ~= "number" or count < 0 or count % 1 ~= 0 then
+		return "count is not a whole number"
+	end
+	if type(blocks) ~= "table" then
+		return "blocks is not a table"
+	end
+	local held = 0
+	for key in pairs(blocks) do
+		if type(key) ~= "number" or key % 1 ~= 0 or key < 1 or key > #blocks then
+			return "blocks is not an array"
+		end
+	end
+	for b = 1, #blocks do
+		local text = blocks[b]
+		if type(text) ~= "string" or text == "" then
+			return ("block %d is not a string"):format(b)
+		end
+		if byte(text, 1) < 0x20 then
+			return ("block %d starts with a reserved byte"):format(b)
+		end
+		local lines, at = 1, 1
+		while true do
+			local stop = find(text, "\n", at, true)
+			if not stop then
+				break
+			end
+			lines, at = lines + 1, stop + 1
+			if lines > size then
+				return ("block %d holds more than blockSize lines"):format(b)
+			end
+		end
+		if lines ~= size and b < #blocks then
+			return ("block %d is sealed but holds %d of %d lines"):format(b, lines, size)
+		end
+		held = held + lines
+	end
+	if held ~= count then
+		return ("count is %d but the blocks hold %d entries"):format(count, held)
+	end
+	return nil
+end
 
 --- The most bytes a Module record's payload may hold (LOG-R40, Tunables).
 ns.MODULE_RECORD_PAYLOAD_LIMIT = 200
@@ -422,7 +646,6 @@ end
 -- The earlier Catch counts (LOG-R100): read from the raw entries, never decoded, so counting stays cheap and owes
 -- nothing to the catalogue. A `C1` entry counts when its last field, the items, reads as decode reads it; its other
 -- fields aren't looked at.
-local find, match, byte, sub = string.find, string.match, string.byte, string.sub
 local COMMA = 44
 
 --- The Angler's Catches of each item ID in the entries up to some seq (LOG-R100): one per slot, whatever its
@@ -483,7 +706,7 @@ local function storedCounts(stored, data)
 	if stored.rulesVersion ~= ns.SIZE_RULES_VERSION or type(seq) ~= "number" or type(stored.counts) ~= "table" then
 		return nil
 	end
-	if seq < 1 or data.entries[seq] == nil or data.entries[seq] ~= stored.entry then
+	if seq < 1 or LogBlocks.Get(data, seq) ~= stored.entry then
 		return nil
 	end
 	local counts = {}
@@ -503,12 +726,12 @@ end
 ---@param counts PagleCatchCounts
 local function storeCounts(catchLog, seq, counts)
 	local data = catchLog.data
-	if seq >= 1 and seq == #data.entries and data.logId ~= nil then
+	if seq >= 1 and seq == data.count and data.logId ~= nil then
 		catchLog.global.catchCounts = {
 			logId = data.logId,
 			rulesVersion = ns.SIZE_RULES_VERSION,
 			seq = seq,
-			entry = data.entries[seq],
+			entry = LogBlocks.Get(data, seq),
 			counts = counts,
 		}
 	end
@@ -528,14 +751,14 @@ end
 -- The tie for a new entry (LOG-R12): 0, or one more than the highest tie of an entry with the same character and
 -- time. Entries are appended in time order, so only the tail from that second on is read; an entry whose header
 -- doesn't parse is passed over.
----@param entries string[]
+---@param data table PagleLog
 ---@param char integer
 ---@param time integer
 ---@return integer
-local function nextTie(entries, char, time)
+local function nextTie(data, char, time)
 	local tie = 0
-	for seq = #entries, 1, -1 do
-		local entry = entries[seq]
+	for seq = data.count, 1, -1 do
+		local entry = LogBlocks.Get(data, seq)
 		local entryChar, entryTime, entryTie
 		if type(entry) == "string" then
 			entryChar, entryTime, entryTie = string.match(entry, "^[^|]*|(%d+)|(%d+)|(%d+)|")
@@ -613,8 +836,9 @@ end
 ---@param seq integer
 ---@return PagleCatchCounts
 local function countsAt(catchLog, seq)
-	local entries, kept, tail = catchLog.data.entries, catchLog.counts, catchLog.tailCounts
-	if tail and seq == #entries then
+	local data, kept, tail = catchLog.data, catchLog.counts, catchLog.tailCounts
+	local last = data.count
+	if tail and seq == last then
 		return copyCounts(tail)
 	end
 	if kept[seq] then
@@ -626,15 +850,15 @@ local function countsAt(catchLog, seq)
 			from, known = at, counts
 		end
 	end
-	if tail and #entries - seq < math.abs(from - seq) then
-		from, known = #entries, tail
+	if tail and last - seq < math.abs(from - seq) then
+		from, known = last, tail
 	end
 	local counts = copyCounts(known)
-	for at = from + 1, seq do
-		countEntry(counts, entries[at], 1)
+	for _, entry in LogBlocks.Iterate(data, from + 1, seq) do
+		countEntry(counts, entry, 1)
 	end
 	for at = from, seq + 1, -1 do
-		countEntry(counts, entries[at], -1)
+		countEntry(counts, LogBlocks.Get(data, at), -1)
 	end
 	kept[seq] = copyCounts(counts)
 	return counts
@@ -647,12 +871,9 @@ end
 ---@param seq integer
 ---@return integer?
 local function skillBefore(catchLog, char, seq)
-	local skills, entries = catchLog.skills, catchLog.data.entries
-	for at = skills.scanned + 1, seq - 1 do
-		local entry = entries[at]
-		local reading = type(entry) == "string"
-			and sub(entry, 1, 3) == "S1|"
-			and decode(entry, at, catchLog.data.characters) --[[@as PagleSkillReading?]]
+	local skills, data = catchLog.skills, catchLog.data
+	for at, entry in LogBlocks.Iterate(data, skills.scanned + 1, seq - 1) do
+		local reading = type(entry) == "string" and sub(entry, 1, 3) == "S1|" and decode(entry, at, data.characters) --[[@as PagleSkillReading?]]
 		if reading then
 			local own = skills[reading.char] or { seqs = {}, ranks = {} }
 			own.seqs[#own.seqs + 1], own.ranks[#own.ranks + 1] = at, reading.rank
@@ -724,8 +945,9 @@ end
 ---@param sized boolean
 ---@return fun(): PagleRecord?
 local function reverse(catchLog, kind, fromSeq, sized)
-	local entries, characters = catchLog.data.entries, catchLog.data.characters
-	local seq = math.min(fromSeq or #entries, #entries) + 1 -- past the end there is nothing to walk, nor to count
+	local data = catchLog.data
+	local characters = data.characters
+	local seq = math.min(fromSeq or data.count, data.count) + 1 -- past the end there is nothing to walk, nor to count
 	local counts -- the earlier Catch counts over the entries before `seq`, once the first Cast is asked for
 	sized = sized and kind == "cast" and catchLog.getItem ~= nil
 	return function()
@@ -734,7 +956,7 @@ local function reverse(catchLog, kind, fromSeq, sized)
 		end
 		while seq > 1 do
 			seq = seq - 1
-			local entry = entries[seq]
+			local entry = LogBlocks.Get(data, seq)
 			if counts then
 				countEntry(counts, entry, -1)
 			end
@@ -769,9 +991,9 @@ local function cutterAt(catchLog, afterSeq)
 	local first =
 		ns.SessionStartSeq(reverse(catchLog, "cast", afterSeq, false) --[[@as fun(): PagleCast?]], catchLog.breaks)
 	if first then
-		local entries, characters = catchLog.data.entries, catchLog.data.characters
-		for seq = first, afterSeq do
-			local record = decode(entries[seq], seq, characters)
+		local data = catchLog.data
+		for seq, entry in LogBlocks.Iterate(data, first, afterSeq) do
+			local record = decode(entry, seq, data.characters)
 			if record then
 				cutter:Add(record)
 			end
@@ -808,16 +1030,18 @@ end
 ---@param module string? the reading Module's def.name (M:IterateCatches)
 ---@return fun(): PagleRecord?
 function CatchLog:Iterate(afterSeq, module)
-	local entries, characters = self.data.entries, self.data.characters
+	local data = self.data
+	local characters = data.characters
 	local recentSeqs, recent = self.recentSeqs, self.recent
-	local last = #entries
+	local last = data.count
 	local seq = math.min(afterSeq or 0, last)
+	local lines = LogBlocks.Iterate(data, seq + 1, last) -- one block split at a time (LOG-R105)
 	local cutter = cutterAt(self, seq)
 	local counts = self.getItem and countsAt(self, seq) -- over the entries before the next
 	return function()
 		while seq < last do
-			seq = seq + 1
-			local entry = entries[seq]
+			local at, entry = lines()
+			seq = at --[[@as integer]]
 			local record
 			if recentSeqs[seq % RECENT_RECORDS] == seq then
 				record = recent[seq % RECENT_RECORDS] or nil
@@ -847,7 +1071,7 @@ function CatchLog:Iterate(afterSeq, module)
 		if not self.cutters[last] then
 			self.cutters[last] = cutter:Copy()
 		end
-		if counts and not self.counts[last] and not (self.tailCounts and last == #entries) then
+		if counts and not self.counts[last] and not (self.tailCounts and last == data.count) then
 			self.counts[last] = copyCounts(counts)
 			storeCounts(self, last, self.counts[last])
 		end
@@ -867,6 +1091,20 @@ function CatchLog:Reverse(kind, fromSeq)
 	return reverse(self, kind, fromSeq, true)
 end
 
+--- The number of entries in the log (LOG-R105).
+---@return integer
+function CatchLog:Count()
+	return self.data.count
+end
+
+--- Entry `seq` as it is stored, the raw string, or nil if the log has none (LOG-R105). Records come from `Iterate`
+--- and `Reverse`; this is for what reads the stored text itself.
+---@param seq integer
+---@return string?
+function CatchLog:Get(seq)
+	return LogBlocks.Get(self.data, seq)
+end
+
 --- Appends an entry for `record`, a typed record without `seq` and `id` (`{ kind = "cast", char, time, outcome,
 --- conditions, items = { { itemID, quantity } } }`, `{ kind = "skill", char, time, rank, max, mod }`,
 --- `{ kind = "build", char, time, build, version }`, `{ kind = "prestige", char, time, rank, activityXP }` (0 without
@@ -878,24 +1116,24 @@ end
 ---@param record table
 ---@return PagleRecord
 function CatchLog:Append(record)
-	local entries = self.data.entries
-	local seq = #entries + 1
+	local data = self.data
+	local seq = data.count + 1
 	local tail = self:tailCutter()
 	local counts = self.getItem and self:tailCatchCounts()
 	local tag = TAGS[record.kind]
 	local ok, entry = pcall(function()
 		local fields = kinds[tag].encode(record)
-		local tie = nextTie(entries, record.char, record.time)
+		local tie = nextTie(data, record.char, record.time)
 		local header = { tag, integerField(record.char), integerField(record.time), integerField(tie) }
 		return table.concat(header, "|") .. "|" .. table.concat(fields, "|")
 	end)
 	-- No entry ever holds a line feed (LOG-R101), whoever writes it and whatever its fields say.
-	local appended = ok and not string.find(entry, "\n", 1, true) and decode(entry, seq, self.data.characters)
+	local appended = ok and not find(entry, "\n", 1, true) and decode(entry, seq, data.characters)
 	if not appended then
 		error(("the Catch log can't write this %s record"):format(tostring(record.kind)), 2)
 	end
-	ensureLogId(self.data, record.time)
-	entries[seq] = entry
+	ensureLogId(data, record.time)
+	LogBlocks.Append(data, entry)
 	if counts then
 		stepCounts(self, counts, appended, entry)
 		storeCounts(self, seq, counts)
@@ -941,7 +1179,7 @@ end
 ---@return PagleSessionCutter
 function CatchLog:tailCutter()
 	if not self.tail then
-		self.tail = cutterAt(self, #self.data.entries)
+		self.tail = cutterAt(self, self.data.count)
 	end
 	return self.tail
 end
@@ -952,8 +1190,8 @@ end
 ---@return PagleCatchCounts
 function CatchLog:tailCatchCounts()
 	if not self.tailCounts then
-		self.tailCounts = countsAt(self, #self.data.entries)
-		storeCounts(self, #self.data.entries, self.tailCounts)
+		self.tailCounts = countsAt(self, self.data.count)
+		storeCounts(self, self.data.count, self.tailCounts)
 	end
 	return self.tailCounts
 end
@@ -983,12 +1221,31 @@ function CatchLog:EnsureLogId(now)
 	ensureLogId(self.data, now)
 end
 
---- Opens the Catch log stored in `saved`, the PagleLog SavedVariable (LOG-R10). A fresh install (`saved` nil)
---- starts an empty log. A log in another format than the codec's starts a new one, keeping its characters
---- (LOG-R18); `started` says so, for the chat line. The logId is created once the log has a first character
---- (LOG-R15). Every Cast it hands out sizes its Species items, and gives them their varieties, through `getItem`, the
---- catalogue's GetItem, asked at each decode, so a released catalogue sizes them from then on (LOG-R65, LOG-R96,
---- VAR-R4); without it, no item has a size or a variety.
+--- Why the Catch log stored in `saved` can't be opened, or nil if it can (LOG-R104): it is in the codec's format and
+--- its block store fails LogBlocks.Problem. A fresh install, and a log in another format (which starts over, LOG-R18),
+--- have no such problem. It reads `saved` and changes nothing.
+---@param saved any
+---@return string?
+function ns.CatchLogProblem(saved)
+	if type(saved) == "table" and saved.format == ns.LOG_FORMAT then
+		return LogBlocks.Problem(saved)
+	end
+	return nil
+end
+
+--- Opens the Catch log stored in `saved`, the PagleLog SavedVariable (LOG-R10), the one way in for Core, the
+--- backend's driver and the tooling alike. A fresh install (`saved` nil) starts an empty log. A log in another format
+--- than the codec's starts a new one, keeping its characters (LOG-R18); `started` says so, for the chat line. A log in
+--- the codec's format (4) whose block store can't be read (ns.CatchLogProblem, LOG-R104) is not opened: it raises an
+--- error, and leaves `saved` exactly as it was, since nothing may rewrite it; check first with ns.CatchLogProblem. The
+--- logId is created once
+--- the log has a first character (LOG-R15). Every Cast it hands out sizes its Species items, and gives them their
+--- varieties, through `getItem`, the catalogue's GetItem, asked at each decode, so a released catalogue sizes them from
+--- then on (LOG-R65, LOG-R96, VAR-R4); without it, no item has a size or a variety.
+---
+--- The table it expects: `format = 4`, `logId` (a string, once the log has a first character), `characters`
+--- (an array of tables), `blockSize` (a whole number, 1 or more), `count` (the entries held) and `blocks` (an array of
+--- strings, each `blockSize` entries joined by a line feed, the last holding 1 to `blockSize`). It needs no client API.
 ---@param saved table?
 ---@param global table PagleDB.global, where undecodable entries are counted (LOG-R16) and Session breaks kept (LOG-R99)
 ---@param now integer server time
@@ -999,14 +1256,20 @@ function ns.OpenCatchLog(saved, global, now, getItem)
 	local started = false
 	local data = saved
 	if type(data) ~= "table" then
-		data = { format = ns.LOG_FORMAT, characters = {}, entries = {} }
+		data = { format = ns.LOG_FORMAT, characters = {}, blockSize = ns.LOG_BLOCK_SIZE, count = 0, blocks = {} }
 	elseif data.format ~= ns.LOG_FORMAT then
 		local characters = data.characters or {}
 		for key in pairs(data) do
 			data[key] = nil
 		end
-		data.format, data.characters, data.entries = ns.LOG_FORMAT, characters, {}
+		data.format, data.characters = ns.LOG_FORMAT, characters
+		data.blockSize, data.count, data.blocks = ns.LOG_BLOCK_SIZE, 0, {}
 		started = true
+	else
+		local problem = LogBlocks.Problem(data)
+		if problem then
+			error("the Catch log can't be read: " .. problem, 2)
+		end
 	end
 	ensureLogId(data, now)
 	local catchLog = {

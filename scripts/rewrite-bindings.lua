@@ -209,6 +209,11 @@ local function literalValue(literal)
 	return ok and type(value) == "string" and value or nil
 end
 
+-- The format of the PagleLog this one-off rewrites: 3, one string per entry on its own line, which the client wrote
+-- before Core's format 4 (blocks, LOG-R103). Core starts a new log at the first login on any other format (LOG-R18),
+-- so there is nothing left to rewrite in a format-4 log.
+local REWRITTEN_FORMAT = 3
+
 -- The Catch log --------------------------------------------------------------------------------------------------------
 
 -- Core's namespace with its Catch log codec, as scripts/read-wtf.lua loads it.
@@ -219,7 +224,16 @@ end
 -- The records Core's codec reads from `entries`, over the log's own characters and logId. It reads a copy, so the
 -- codec's own bookkeeping (a logId it would create, the decode errors it counts) never reaches the file.
 local function decodeAll(core, log, entries)
-	local copy = { format = log.format, logId = log.logId, characters = log.characters, entries = entries }
+	-- Packed into the codec's blocks (LOG-R103) just to read them: the log being rewritten is a format-3 one.
+	local blocks, count = core.LogBlocks.Pack(entries)
+	local copy = {
+		format = core.LOG_FORMAT,
+		logId = log.logId,
+		characters = log.characters,
+		blockSize = core.LOG_BLOCK_SIZE,
+		count = count,
+		blocks = blocks,
+	}
 	local records = {}
 	for record in core.OpenCatchLog(copy, { decodeErrors = 0 }, 0):Iterate(0) do
 		records[#records + 1] = record
@@ -254,10 +268,10 @@ local function planLog(core, log, problems, notes)
 	if type(log) ~= "table" or type(log.entries) ~= "table" then
 		return {}
 	end
-	if log.format ~= core.LOG_FORMAT then
-		notes[#notes + 1] = ("PagleLog is in format %s, not the codec's %s: Core starts a new log at login, so its"):format(
+	if log.format ~= REWRITTEN_FORMAT then
+		notes[#notes + 1] = ("PagleLog is in format %s, not the %s this rewrites: Core starts a new log at login, so its"):format(
 			tostring(log.format),
-			tostring(core.LOG_FORMAT)
+			tostring(REWRITTEN_FORMAT)
 		) .. " purchases are left as they are"
 		return {}
 	end
@@ -629,11 +643,15 @@ local function planAccount(core, account)
 		end
 		-- Read back: the entries are the ones planned, and PagleDB is the one rewritten.
 		local back = wtf.loadSavedVariables(rewritten, "Pagle.lua")
-		local expected = changedEntries(log.entries, changes)
-		local entries = back and back.PagleLog and back.PagleLog.entries
-		local same = type(entries) == "table" and #entries == #expected
-		for seq = 1, same and #expected or 0 do
-			same = same and entries[seq] == expected[seq]
+		-- A log with no changes (a format-4 one, in blocks) is checked for PagleDB alone.
+		local same = true
+		if #changes > 0 then
+			local expected = changedEntries(log.entries, changes)
+			local entries = back and back.PagleLog and back.PagleLog.entries
+			same = type(entries) == "table" and #entries == #expected
+			for seq = 1, same and #expected or 0 do
+				same = same and entries[seq] == expected[seq]
+			end
 		end
 		if not same or (db and type(back.PagleDB) ~= "table") then
 			problems[#problems + 1] = "Pagle.lua: the rewritten file doesn't read back as planned"

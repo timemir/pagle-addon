@@ -143,7 +143,7 @@ describe("Pagle_Content", function()
 	-- The log's Companion entries (LOG-R37), as entry strings.
 	local function companionEntries(loaded)
 		local found = {}
-		for _, entry in ipairs(loaded.env.PagleLog.entries) do
+		for _, entry in ipairs(logEntries(loaded.env.PagleLog)) do
 			if entry:sub(1, 3) == "K1|" then
 				found[#found + 1] = entry
 			end

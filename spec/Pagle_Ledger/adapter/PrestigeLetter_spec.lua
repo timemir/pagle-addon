@@ -385,7 +385,7 @@ describe("Show me (LED-R202)", function()
 
 			showMe(fake)
 
-			for _, entry in ipairs(fake.catchLog.data.entries) do
+			for _, entry in ipairs(logEntries(fake.catchLog.data)) do
 				assert.is_not.equal("P1|", entry:sub(1, 3))
 			end
 			assert.are.equal(0, loaded.ns.projection:GetState().prestige)

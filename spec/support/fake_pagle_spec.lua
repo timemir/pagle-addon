@@ -930,7 +930,7 @@ describe("FakePagle", function()
 			assert.are.same({ 850, 1000 }, { first.activityXP, second.activityXP })
 			assert.are.same(
 				{ prestigeEntry(SERVER_TIME, 1, 0, 1, 850), prestigeEntry(SERVER_TIME, 2, 1, 1, 1000) },
-				fake.catchLog.data.entries
+				logEntries(fake.catchLog.data)
 			)
 		end)
 	end)
@@ -1803,7 +1803,7 @@ describe("FakePagle", function()
 				fake.slash("dev on")
 
 				fake.slash("dev catch 6358")
-				local refused = #fake.catchLog.data.entries
+				local refused = fake.catchLog.data.count
 				fake.catchLog.data.test = true
 				fake.slash("dev catch 6358 453")
 
@@ -2040,7 +2040,7 @@ describe("FakePagle", function()
 
 				assert.are.same(
 					{ prestigeEntry(SERVER_TIME, 1), prestigeEntry(SERVER_TIME, 2, 1) },
-					fake.catchLog.data.entries
+					logEntries(fake.catchLog.data)
 				)
 				assert.are.same(
 					{ "1 prestige live", "Prestige 1, writable false", "2 prestige live", "Prestige 2, writable false" },
@@ -2077,7 +2077,7 @@ describe("FakePagle", function()
 			assert.has_error(function()
 				M:RecordPrestige()
 			end)
-			assert.are.same({}, fake.catchLog.data.entries)
+			assert.are.same({}, logEntries(fake.catchLog.data))
 		end)
 
 		it("append a purchase only through Core's own ns.RecordPurchase, applied live (LOG-R39)", function()
@@ -2088,7 +2088,10 @@ describe("FakePagle", function()
 
 			fake.ns.RecordPurchase("core.toaststyle.ripple", 150)
 
-			assert.are.same({ purchaseEntry(SERVER_TIME, "core.toaststyle.ripple", 150) }, fake.catchLog.data.entries)
+			assert.are.same(
+				{ purchaseEntry(SERVER_TIME, "core.toaststyle.ripple", 150) },
+				logEntries(fake.catchLog.data)
+			)
 			assert.are.same({ "1 purchase live" }, seen)
 			assert.is_nil(fake.Pagle.RecordPurchase)
 		end)
@@ -2132,7 +2135,10 @@ describe("FakePagle", function()
 
 				local record = board:AppendRecord("issue", "n;haul;0;1;1;30")
 
-				assert.are.same({ "A1|1|1791731700|0|TackleBoard|issue|n;haul;0;1;1;30" }, fake.catchLog.data.entries)
+				assert.are.same(
+					{ "A1|1|1791731700|0|TackleBoard|issue|n;haul;0;1;1;30" },
+					logEntries(fake.catchLog.data)
+				)
 				assert.are.same({ "done", "1 issue live" }, boardSeen)
 				assert.are.same({ "done" }, ledgerSeen)
 				assert.are.equal(1, ledgerDb.lastSeq)
@@ -2199,7 +2205,7 @@ describe("FakePagle", function()
 				assert.is_false(ok)
 				assert.matches("fake_pagle_spec.lua:%d+:", tostring(err))
 				assert.are.same({ "rebuild true" }, raised)
-				assert.are.equal(1, #fake.catchLog.data.entries)
+				assert.are.equal(1, fake.catchLog.data.count)
 			end
 		)
 	end)
@@ -2231,7 +2237,7 @@ describe("FakePagle", function()
 				fake.login()
 				local fired = {}
 				fake.Pagle.RegisterCallback("Spec", "SkillChanged", function(_, reading)
-					fired[#fired + 1] = "SkillChanged " .. reading.rank .. ", entries " .. #fake.catchLog.data.entries
+					fired[#fired + 1] = "SkillChanged " .. reading.rank .. ", entries " .. fake.catchLog.data.count
 				end)
 				fake.Pagle.RegisterCallback("Spec", "ConditionsChanged", function(_, changedKeys)
 					fired[#fired + 1] = "ConditionsChanged " .. changedKeys[1]
@@ -2367,10 +2373,11 @@ describe("FakePagle", function()
 				-- does: by the earlier Catches and the skill in the log (LOG-R100).
 				local core = loadAddon("Pagle", FOREVER_GLOBALS).ns
 				local entries = {}
-				for seq, entry in ipairs(fake.catchLog.data.entries) do
+				for seq, entry in ipairs(logEntries(fake.catchLog.data)) do
 					entries[seq] = entry
 				end
-				local data = { format = core.LOG_FORMAT, characters = fake.catchLog.data.characters, entries = entries }
+				local data =
+					setLogEntries({ format = core.LOG_FORMAT, characters = fake.catchLog.data.characters }, entries)
 				local opened = core.OpenCatchLog(data, {}, nil, function(itemID)
 					return fake.ns.CatalogueItem(itemID)
 				end)
@@ -2920,7 +2927,7 @@ describe("FakePagle", function()
 			assert.are.same({ "channeling", "looting", "idle" }, { fired[2][2], fired[6][2], fired[7][2] })
 			assert.are.same(
 				{ "C1|1|1791731700|0|c|495|1439|1|148|453|86|25|263|||6358x1,6303x2" },
-				fake.catchLog.data.entries
+				logEntries(fake.catchLog.data)
 			)
 			assert.are.equal(PLAYER_GUID .. "-1791731700-0:2", fired[4][2].catchId)
 			assert.are.equal(2, fired[4][2].quantity)
@@ -2963,7 +2970,10 @@ describe("FakePagle", function()
 				fake.playCast("gotAway")
 				fake.playCast("interrupted")
 
-				assert.are.same({ "C1|1|1791731700|0|g|495|1439|1|148|453|86|25|263|||" }, fake.catchLog.data.entries)
+				assert.are.same(
+					{ "C1|1|1791731700|0|g|495|1439|1|148|453|86|25|263|||" },
+					logEntries(fake.catchLog.data)
+				)
 				assert.are.same({
 					"CastStarted",
 					"FishingStateChanged",
@@ -3025,7 +3035,7 @@ describe("FakePagle", function()
 			fake.wait(30)
 			fake.playCast("caught", { { itemID = 6358, quantity = 1 } })
 
-			assert.are.same({ "C1|1|1791731730|0|c|600|||148|0||||||6358x1" }, fake.catchLog.data.entries)
+			assert.are.same({ "C1|1|1791731730|0|c|600|||148|0||||||6358x1" }, logEntries(fake.catchLog.data))
 		end)
 
 		it("ignores a channel whose spell isn't on the fishing-spell list (LOG-R2)", function()

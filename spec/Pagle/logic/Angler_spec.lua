@@ -33,7 +33,7 @@ end
 local function anglerOver(characters, entries, global)
 	local saved
 	if characters or entries then
-		saved = { format = 3, logId = "3f9a2c1e7b0d4a65", characters = characters or {}, entries = entries or {} }
+		saved = setLogEntries({ format = 4, logId = "3f9a2c1e7b0d4a65", characters = characters or {} }, entries or {})
 	end
 	local catchLog = ns.OpenCatchLog(saved, global or {}, T)
 	return ns.NewAngler(catchLog), catchLog
@@ -114,7 +114,7 @@ describe("build entries", function()
 
 		local build = angler:LogBuild(70338, "1.60.1", T)
 
-		assert.are.same({ "B1|1|1791731700|0|70338|1.60.1|pagle-2026c" }, catchLog.data.entries)
+		assert.are.same({ "B1|1|1791731700|0|70338|1.60.1|pagle-2026c" }, logEntries(catchLog.data))
 		assert.are.same({ 1, "build", 70338, "1.60.1" }, { build.seq, build.kind, build.build, build.version })
 		assert.are.same({ logId = LOG_ID, build = 70338, rules = "pagle-2026c" }, global.lastBuild)
 	end)
@@ -129,7 +129,7 @@ describe("build entries", function()
 
 		assert.are.same(
 			{ "B1|1|1791731000|0|70338|1.60.1|pagle-2026c", "B1|1|1791731701|0|70412|1.60.2|pagle-2026c" },
-			catchLog.data.entries
+			logEntries(catchLog.data)
 		)
 		assert.are.same({ logId = LOG_ID, build = 70412, rules = "pagle-2026c" }, global.lastBuild)
 	end)
@@ -146,7 +146,7 @@ describe("build entries", function()
 
 			assert.is_nil(angler:LogBuild(70338, "1.60.1", T))
 
-			assert.are.equal(3, #catchLog.data.entries)
+			assert.are.equal(3, catchLog.data.count)
 			assert.are.same({ logId = LOG_ID, build = 70338, rules = "pagle-2026c" }, global.lastBuild)
 		end)
 	end
@@ -156,7 +156,7 @@ describe("build entries", function()
 		angler:SeeCharacter(ada(), T)
 		local record = angler:LogBuild(70338, "1.60.1", T)
 		assert.are.equal("pagle-2026c", record.rules)
-		assert.are.equal(2, #catchLog.data.entries)
+		assert.are.equal(2, catchLog.data.count)
 	end)
 
 	it("trust a cache of this logId without reading the log (LOG-R36)", function()
@@ -165,7 +165,7 @@ describe("build entries", function()
 		angler:SeeCharacter(ada(), T)
 
 		assert.is_nil(angler:LogBuild(70412, "1.60.2", T))
-		assert.are.equal(1, #catchLog.data.entries)
+		assert.are.equal(1, catchLog.data.count)
 	end)
 end)
 
@@ -176,7 +176,7 @@ describe("Skill Readings", function()
 
 		local reading = angler:ReadSkill({ rank = 86, max = 150, mod = 25 }, T)
 
-		assert.are.same({ "S1|1|1791731700|0|86|150|25" }, catchLog.data.entries)
+		assert.are.same({ "S1|1|1791731700|0|86|150|25" }, logEntries(catchLog.data))
 		assert.are.same(
 			{ seq = 1, id = ADA .. "-1791731700-0", kind = "skill", char = 1, time = T, rank = 86, max = 150, mod = 25 },
 			reading
@@ -195,7 +195,7 @@ describe("Skill Readings", function()
 			"S1|1|1791731700|0|86|150|0",
 			"S1|1|1791731701|0|87|150|0",
 			"S1|1|1791731702|0|87|225|0",
-		}, catchLog.data.entries)
+		}, logEntries(catchLog.data))
 	end)
 
 	it("append nothing for a change in modifier alone (LOG-R31)", function()
@@ -204,7 +204,7 @@ describe("Skill Readings", function()
 		angler:ReadSkill({ rank = 86, max = 150, mod = 0 }, T)
 
 		assert.is_nil(angler:ReadSkill({ rank = 86, max = 150, mod = 25 }, T + 1))
-		assert.are.equal(1, #catchLog.data.entries)
+		assert.are.equal(1, catchLog.data.count)
 	end)
 
 	it("compare with the character's last Skill Reading in the saved log, not another's (LOG-R31)", function()
@@ -219,7 +219,7 @@ describe("Skill Readings", function()
 		assert.is_nil(angler:ReadSkill({ rank = 86, max = 150, mod = 0 }, T))
 		angler:SeeCharacter(bram(), T + 1)
 		assert.is_table((angler:ReadSkill({ rank = 86, max = 150, mod = 0 }, T + 1)))
-		assert.are.equal(5, #catchLog.data.entries)
+		assert.are.equal(5, catchLog.data.count)
 	end)
 
 	it("read nothing while no character is current, or when the character has no fishing (LOG-R30)", function()
@@ -228,7 +228,7 @@ describe("Skill Readings", function()
 		assert.is_nil((angler:ReadSkill({ rank = 86, max = 150, mod = 0 }, T)))
 		angler:SeeCharacter(ada(), T)
 		assert.is_nil(angler:ReadSkill(nil, T))
-		assert.are.same({}, catchLog.data.entries)
+		assert.are.same({}, logEntries(catchLog.data))
 	end)
 end)
 

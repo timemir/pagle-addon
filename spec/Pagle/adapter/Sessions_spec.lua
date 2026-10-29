@@ -48,8 +48,8 @@ local function core(entries, saved)
 			if event == "SessionStarted" or event == "SessionEnded" then
 				note = note .. " " .. payload.id .. (payload.whileAway and " whileAway" or "")
 				seen.payloads[#seen.payloads + 1] = payload
-				-- Every event fires only after the entry is in PagleLog.entries (LOG-R9).
-				note = note .. " #" .. #loaded.env.PagleLog.entries
+				-- Every event fires only after the entry is in PagleLog (LOG-R9).
+				note = note .. " #" .. loaded.env.PagleLog.count
 			elseif event == "CastEnded" then
 				seen.cast = castEnded
 			end

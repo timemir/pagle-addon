@@ -36,8 +36,10 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	if not ns.StartRecovery() then
 		return
 	end
-	ns.OpenSavedVariables() -- checks PagleLog's format (LOG-R18)
-	ns.loginSeq = #ns.catchLog.data.entries
+	if not ns.OpenSavedVariables() then -- checks PagleLog's format (LOG-R18) and its blocks (LOG-R104)
+		return
+	end
+	ns.loginSeq = ns.catchLog:Count()
 	-- #262: with dev mode on, this login's load timings, before any projection starts.
 	ns.StartLoadTimings(ns.db.global, GetServerTime(), ns.loginSeq, {
 		filesLoaded = filesLoaded,

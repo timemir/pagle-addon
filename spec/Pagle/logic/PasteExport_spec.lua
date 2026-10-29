@@ -25,7 +25,7 @@ describe("ns.PasteView (PST-R20, PST-R21, PST-R15)", function()
 			assert.are.equal(AS_OF, export.asOf)
 			assert.are.equal(3, export.total)
 			assert.are.same(
-				{ { from = 1, count = 3, anchor = "c9025f45ec197905862011e464f64b2ab5e446cb4c3a1006b4f50aa052289ca0" } },
+				{ { from = 1, count = 3, anchor = "080ae791ce5a68d738650c428d71e02d49c400c1adc9a624ec077a29cf56d400" } },
 				export.parts
 			)
 		end
@@ -44,7 +44,7 @@ describe("ns.PasteView (PST-R20, PST-R21, PST-R15)", function()
 	it("says Nothing new for an empty log on New since, and makes one empty part for Everything", function()
 		assert.are.equal("Nothing new since your last export.", ns.PasteView(log(0), {}, "new", AS_OF).message)
 		assert.are.same(
-			{ { from = 1, count = 0, anchor = "c9025f45ec197905862011e464f64b2ab5e446cb4c3a1006b4f50aa052289ca0" } },
+			{ { from = 1, count = 0, anchor = "080ae791ce5a68d738650c428d71e02d49c400c1adc9a624ec077a29cf56d400" } },
 			assert(ns.PasteView(log(0), {}, "everything", AS_OF).export).parts
 		)
 	end)
@@ -60,7 +60,7 @@ describe("The lines under a part's string (PST-R51, PST-R60)", function()
 	it("give the part's entries of the total and its size in KB, rounded up, and the note with parts", function()
 		local view = ns.PasteView(log(12), {}, "everything", AS_OF)
 		assert(view.export).parts = {
-			{ from = 1, count = 5000, anchor = "c9025f45ec197905862011e464f64b2ab5e446cb4c3a1006b4f50aa052289ca0" },
+			{ from = 1, count = 5000, anchor = "080ae791ce5a68d738650c428d71e02d49c400c1adc9a624ec077a29cf56d400" },
 			{ from = 5001, count = 7, anchor = "x" },
 		}
 		view.export.total = 5007

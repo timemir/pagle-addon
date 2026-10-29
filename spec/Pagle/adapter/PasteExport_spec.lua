@@ -92,10 +92,10 @@ describe("/pagle export and Pagle.OpenPasteExport (PST-R50, PST-R51, CORE-R61)",
 			assert.are.equal("Everything", frame.choices.everything.label:GetText())
 
 			local document = read(unpaste(loaded, frame.paste:GetText()))
-			local total = #log.entries
+			local total = log.count
 			assert.are.equal(1, document.from, "no mark yet, so from the start (PST-R21)")
 			assert.are.equal(total, document.total)
-			assert.are.same(log.entries, document.entries)
+			assert.are.same(logEntries(log), document.entries)
 			assert.are.equal(loaded.env.GetServerTime(), document.asOf, "GetServerTime() as it opened (PST-R20)")
 			assert.are.equal(frame.paste, loaded.client.focus, "focused, so Ctrl+C copies it")
 			assert.are.same({ 0, -1 }, frame.paste.highlight, "all of it selected")
@@ -171,7 +171,7 @@ describe("The export window's parts (PST-R22, PST-R32, PST-R33)", function()
 		pagle(loaded, "export")
 		local frame = assert(window(loaded))
 		assert.is_true(frame.paste:IsShown())
-		assert.are.equal(#loaded.ns.catchLog.data.entries, read(unpaste(loaded, frame.paste:GetText())).count)
+		assert.are.equal(loaded.ns.catchLog.data.count, read(unpaste(loaded, frame.paste:GetText())).count)
 	end)
 
 	it("prepares long prefixes across frames and retains the captured export while fishing continues", function()
@@ -182,14 +182,14 @@ describe("The export window's parts (PST-R22, PST-R32, PST-R33)", function()
 			return profile
 		end
 		local log = loaded.ns.catchLog.data
-		local total = #log.entries
+		local total = log.count
 		marks(loaded)[LOG_ID] = total - 1
 		pagle(loaded, "export")
 		local frame = assert(window(loaded))
 		assert.is_true(frame.message:IsShown())
 		assert.are.equal("Preparing your Paste string…", frame.message:GetText())
 		assert.is_false(frame.paste:IsShown())
-		loaded.ns.catchLog.data.entries[total + 1] = "S1|1|" .. SERVER_TIME .. "|99|150|150|0"
+		loaded.ns.LogBlocks.Append(loaded.ns.catchLog.data, "S1|1|" .. SERVER_TIME .. "|99|150|150|0")
 		loaded.ns.catchLog.data.characters[1].name = "Changed"
 		loaded.client.advance(5)
 		for _ = 1, 20 do
@@ -213,7 +213,7 @@ describe("The export window's parts (PST-R22, PST-R32, PST-R33)", function()
 		local loaded = withCasts(3)
 		loaded.ns.PASTE_PART_ENTRIES = 2
 		local log = loaded.ns.catchLog.data
-		assert.are.equal(5, #log.entries, "3 Casts, the build entry and login's Skill Reading")
+		assert.are.equal(5, log.count, "3 Casts, the build entry and login's Skill Reading")
 
 		pagle(loaded, "export")
 
@@ -240,7 +240,7 @@ describe("The export window's parts (PST-R22, PST-R32, PST-R33)", function()
 				rebuilt[#rebuilt + 1] = entry
 			end
 		end
-		assert.are.same(log.entries, rebuilt)
+		assert.are.same(logEntries(log), rebuilt)
 		assert.is_false(frame.next:IsEnabled())
 		frame.previous:Click()
 		assert.are.equal("Part 2 of 3", frame.partLabel:GetText())
@@ -289,7 +289,7 @@ describe("The last exported seq (PST-R21, PST-R40)", function()
 
 	it("starts New since last export after the mark, and says Nothing new once every entry was copied", function()
 		local loaded = withCasts(4)
-		local total = #loaded.ns.catchLog.data.entries
+		local total = loaded.ns.catchLog.data.count
 		pagle(loaded, "export")
 		copy(loaded)
 		assert.are.equal(total, marks(loaded)[LOG_ID])
@@ -313,7 +313,7 @@ describe("The last exported seq (PST-R21, PST-R40)", function()
 		local document = read(unpaste(loaded, frame.paste:GetText()))
 		assert.are.equal(total + 1, document.from)
 		assert.are.equal(1, document.count)
-		assert.are.equal(loaded.ns.catchLog.data.entries[total + 1], document.entries[1])
+		assert.are.equal(logEntries(loaded.ns.catchLog.data)[total + 1], document.entries[1])
 		assert(document.anchor:match("^[0-9a-f]+$") and #document.anchor == 64, "anchored to prefix content")
 	end)
 
@@ -321,7 +321,7 @@ describe("The last exported seq (PST-R21, PST-R40)", function()
 		"exports from 1 for Everything, whatever the mark, and back to New since on the other choice (PST-R51)",
 		function()
 			local loaded = withCasts(4)
-			local total = #loaded.ns.catchLog.data.entries
+			local total = loaded.ns.catchLog.data.count
 			pagle(loaded, "export")
 			copy(loaded)
 			local frame = assert(window(loaded))
@@ -349,7 +349,7 @@ describe("The last exported seq (PST-R21, PST-R40)", function()
 		copy(loaded)
 
 		assert.are.equal(40, marks(loaded)["0123456789abcdef"])
-		assert.are.equal(#loaded.ns.catchLog.data.entries, marks(loaded)[LOG_ID])
+		assert.are.equal(loaded.ns.catchLog.data.count, marks(loaded)[LOG_ID])
 	end)
 end)
 

@@ -60,6 +60,10 @@ _Avoid_: fish (when junk/treasure is included), loot, drop
 The Angler's permanent, append-only history of Casts, Skill Readings, Prestiges, Curio Shop purchases and Module records, and of the game client builds they were recorded on, kept by Core. Everything the Modules show is derived from it.
 _Avoid_: history, database, event store
 
+**Block**:
+A run of up to 256 consecutive Catch log entries joined by line feeds into one string, how the log is stored (`PagleLog.blocks`, format 4), so that a log of any length stays far below the client's limit of 262,143 constants in the file it loads. Every block but the last is full; the last is the open block. Only Core's codec reads a block (`ns.LogBlocks`).
+_Avoid_: page, chunk, batch (a Paste string's part is a different cut, of the upload document)
+
 **Module record**:
 An entry a Module has Core append to the Catch log for something only that Module understands and the log couldn't otherwise rebuild, such as a Notice being issued or rerolled. Core stores it without reading it.
 _Avoid_: Module event, Module data, choice

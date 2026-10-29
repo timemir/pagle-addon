@@ -71,14 +71,14 @@ describe("M:AppendRecord", function()
 		function()
 			local loaded, board, seen, dbs = coreWithBoard(history(2))
 			local log = loaded.env.PagleLog
-			local before = #log.entries
+			local before = log.count
 			local boardSeen, ledgerSeen = #seen.board, #seen.ledger
 
 			local record = board:AppendRecord("issue", "n;haul;1;10;20;148")
 
 			assert.are.same(
 				{ ("A1|2|%d|0|TackleBoard|issue|n;haul;1;10;20;148"):format(NOW) },
-				{ unpack(log.entries, before + 1) }
+				{ unpack(logEntries(log), before + 1) }
 			)
 			assert.are.same({
 				seq = before + 1,
@@ -112,7 +112,7 @@ describe("M:AppendRecord", function()
 
 		assert.are.equal(PLAYER_GUID .. "-" .. NOW .. "-1", second.id)
 		assert.are.equal(first.seq + 1, second.seq)
-		assert.are.equal(("A1|2|%d|1|TackleBoard|day|0;0"):format(NOW), loaded.env.PagleLog.entries[second.seq])
+		assert.are.equal(("A1|2|%d|1|TackleBoard|day|0;0"):format(NOW), logEntries(loaded.env.PagleLog)[second.seq])
 	end)
 
 	local refused = {
@@ -128,7 +128,7 @@ describe("M:AppendRecord", function()
 	for _, case in ipairs(refused) do
 		it(("raises an error at the caller and appends nothing for %s (LOG-R40)"):format(case[1]), function()
 			local loaded, board = coreWithBoard(history(1))
-			local before = #loaded.env.PagleLog.entries
+			local before = loaded.env.PagleLog.count
 
 			local ok, err = pcall(function()
 				board:AppendRecord(case[2], case[3])
@@ -136,7 +136,7 @@ describe("M:AppendRecord", function()
 
 			assert.is_false(ok)
 			assert.matches("ModuleRecords_spec.lua:%d+:", tostring(err))
-			assert.are.equal(before, #loaded.env.PagleLog.entries)
+			assert.are.equal(before, loaded.env.PagleLog.count)
 		end)
 	end
 
@@ -152,7 +152,7 @@ describe("M:AppendRecord", function()
 	it("raises an error before PLAYER_LOGIN, appending nothing (LOG-R11, LOG-R40)", function()
 		local loaded = loadWithBoard(history(1))
 		local board = moduleWithProjection(loaded.env.Pagle, "TackleBoard", 40, {})
-		local before = #loaded.env.PagleLog.entries
+		local before = loaded.env.PagleLog.count
 
 		local ok, err = pcall(function()
 			board:AppendRecord("start", "0;0")
@@ -160,7 +160,7 @@ describe("M:AppendRecord", function()
 
 		assert.is_false(ok)
 		assert.matches("ModuleRecords_spec.lua:%d+:.*PLAYER_LOGIN", tostring(err))
-		assert.are.equal(before, #loaded.env.PagleLog.entries)
+		assert.are.equal(before, loaded.env.PagleLog.count)
 	end)
 
 	it("from inside a live apply, reaches the Module right after that apply returns (LOG-R40, LOG-R73)", function()
@@ -175,7 +175,7 @@ describe("M:AppendRecord", function()
 		})
 		board, seen = handle, notes
 		local count = #seen.board
-		local before = #loaded.env.PagleLog.entries
+		local before = loaded.env.PagleLog.count
 
 		catchOne(loaded)
 
@@ -194,7 +194,7 @@ describe("M:AppendRecord", function()
 			local board = moduleWithProjection(loaded.env.Pagle, "TackleBoard", 40, seen)
 			enterWorld(loaded)
 			assert.is_true(loaded.ns.projections:IsUpdating())
-			local before = #loaded.env.PagleLog.entries
+			local before = loaded.env.PagleLog.count
 
 			board:AppendRecord("start", "0;0")
 			catchOne(loaded)
@@ -259,7 +259,7 @@ describe("M:AppendRecord", function()
 				db.logId = loaded.env.PagleLog.logId
 				db.fingerprint = loaded.env.Pagle.CONTENT_FINGERPRINT
 			end
-			local logged = #loaded.env.PagleLog.entries
+			local logged = loaded.env.PagleLog.count
 
 			enterWorld(loaded)
 
@@ -267,8 +267,8 @@ describe("M:AppendRecord", function()
 			for _, line in ipairs(raised) do
 				assert.matches("^" .. mode .. " true .*" .. mode, line)
 			end
-			for seq = logged + 1, #loaded.env.PagleLog.entries do
-				assert.is_nil(loaded.env.PagleLog.entries[seq]:match("^A1"))
+			for seq = logged + 1, loaded.env.PagleLog.count do
+				assert.is_nil(logEntries(loaded.env.PagleLog)[seq]:match("^A1"))
 			end
 		end)
 	end
@@ -287,7 +287,7 @@ describe("M:AppendRecord", function()
 
 		assert.is_false(result[1])
 		assert.matches("done", result[2])
-		for _, entry in ipairs(loaded.env.PagleLog.entries) do
+		for _, entry in ipairs(logEntries(loaded.env.PagleLog)) do
 			assert.is_nil(entry:match("^A1"))
 		end
 	end)
@@ -347,7 +347,7 @@ describe("Module records in the log", function()
 				"9 skill live",
 			}, seen.ledger)
 			local global = loaded.env.PagleDB.global
-			local length = #loaded.env.PagleLog.entries
+			local length = loaded.env.PagleLog.count
 			assert.are.same({ length, length, length, length }, {
 				dbs.board.lastSeq,
 				dbs.ledger.lastSeq,
@@ -395,9 +395,9 @@ describe("a dev log written before Module records", function()
 		board:AppendRecord("start", "0;0")
 
 		local log = loaded.env.PagleLog
-		assert.are.same({ 3, "3f9a2c1e7b0d4a65" }, { log.format, log.logId })
-		assert.are.equal("C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1", log.entries[2])
-		assert.are.equal("A1", log.entries[#log.entries]:sub(1, 2))
+		assert.are.same({ 4, "3f9a2c1e7b0d4a65" }, { log.format, log.logId })
+		assert.are.equal("C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1", logEntries(log)[2])
+		assert.are.equal("A1", logEntries(log)[log.count]:sub(1, 2))
 		assert.are.same({}, loaded.printed)
 	end)
 end)

@@ -84,7 +84,7 @@ local function planFrom(data, key)
 		resultDigest = hex(read()),
 	}
 	assert(
-		plan.format == 3 and plan.rules ~= "" and #plan.rules <= 1024 and plan.rules:find("^[A-Za-z0-9_.%-]+$"),
+		plan.format == 4 and plan.rules ~= "" and #plan.rules <= 1024 and plan.rules:find("^[A-Za-z0-9_.%-]+$"),
 		"invalid Recovery rules or format"
 	)
 	local replacement = read()
@@ -94,9 +94,9 @@ local function planFrom(data, key)
 		plan.replacement.logId == plan.logId and plan.replacement.format == plan.format,
 		"Recovery target does not match"
 	)
-	assert(plan.seq <= #plan.replacement.entries, "Recovery prefix exceeds replacement")
+	assert(plan.seq <= plan.replacement.count, "Recovery prefix exceeds replacement")
 	local checkpoint = ns.CheckpointInitial(plan.logId, plan.format)
-	for seq, entry in ipairs(plan.replacement.entries) do
+	for seq, entry in ns.LogBlocks.Iterate(plan.replacement) do
 		assert(not ns.CanonicalRecordProblem(entry), "invalid Recovery record")
 		local index = tonumber(entry:match("^[^|]+|([0-9]+)|"))
 		local character = assert(plan.replacement.characters[index], "invalid Recovery character mapping")
@@ -240,7 +240,7 @@ function ns.RecoveryPrepare(data, keys, log, archive, db)
 		"Catch log changed; export a new Recovery snapshot"
 	)
 	for _, staged in ipairs(plan.staged) do
-		assert(staged.seq <= #log.entries, "staged Recovery record is outside original log")
+		assert(staged.seq <= log.count, "staged Recovery record is outside original log")
 	end
 	local saved = copy(type(archive) == "table" and archive or {})
 	saved.archives = saved.archives or {}

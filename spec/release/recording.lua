@@ -18,13 +18,13 @@ describe("the packaged release", function()
 	it("cannot synthesize Catches through slash commands, even on a test log with dev mode on", function()
 		local loaded = release()
 		loaded.env.SlashCmdList.PAGLE("dev on")
-		local before = { unpack(loaded.env.PagleLog.entries) }
+		local before = { unpack(logEntries(loaded.env.PagleLog)) }
 
 		loaded.env.SlashCmdList.PAGLE("dev catch 6358")
 		loaded.env.SlashCmdList.PAGLE("dev catch 6358 453")
 		loaded.env.SlashCmdList.PAGLE("DEV CATCH 6303")
 
-		assert.are.same(before, loaded.env.PagleLog.entries)
+		assert.are.same(before, logEntries(loaded.env.PagleLog))
 	end)
 
 	it("starts every shipped Module and records genuine fishing signals", function()
@@ -51,12 +51,12 @@ describe("the packaged release", function()
 	it("retains pushed-content diagnostics without changing the Catch log", function()
 		local loaded = release()
 		loaded.env.SlashCmdList.PAGLE("dev on")
-		local before = { unpack(loaded.env.PagleLog.entries) }
+		local before = { unpack(logEntries(loaded.env.PagleLog)) }
 
 		loaded.env.SlashCmdList.PAGLE("dev content")
 
 		assert.matches("Pagle dev: pushed content is missing:", loaded.printed[2], 1, true)
-		assert.are.same(before, loaded.env.PagleLog.entries)
+		assert.are.same(before, logEntries(loaded.env.PagleLog))
 		assert.are.same({}, loaded.client.errors)
 	end)
 
@@ -77,7 +77,7 @@ describe("the packaged release", function()
 	it("cannot override Fishing skill with /pagle dev skill, even with dev mode on (#465)", function()
 		local loaded = release()
 		loaded.env.SlashCmdList.PAGLE("dev on")
-		local before = { unpack(loaded.env.PagleLog.entries) }
+		local before = { unpack(logEntries(loaded.env.PagleLog)) }
 		local printed = #loaded.printed
 
 		loaded.env.SlashCmdList.PAGLE("dev skill 1")
@@ -94,7 +94,7 @@ describe("the packaged release", function()
 		assert.is_nil(loaded.env.PagleDB.global.devSkill)
 		assert.are.same(CLIENT_SKILL, skillReading(loaded))
 		assert.are.same({ 75, 0 }, conditionsSkill(loaded))
-		assert.are.same(before, loaded.env.PagleLog.entries)
+		assert.are.same(before, logEntries(loaded.env.PagleLog))
 		assert.are.same({}, loaded.client.errors)
 	end)
 

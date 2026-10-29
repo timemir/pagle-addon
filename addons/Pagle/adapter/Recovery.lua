@@ -194,7 +194,7 @@ function ns.OpenRecovery(args)
 		end
 		local parts, labels = {}, {}
 		for i, staged in ipairs(archive.staged) do
-			parts[i] = archive.original.entries[staged.seq]
+			parts[i] = ns.LogBlocks.Get(archive.original, staged.seq)
 			labels[i] = "Record " .. staged.seq .. " · " .. staged.reason
 		end
 		if #parts == 0 then

@@ -1386,13 +1386,13 @@ describe("The bill of sale", function()
 		function()
 			local loaded, handles = shopCore()
 			handles.Ledger:ReportCoinsEarned(300)
-			local entries = loaded.env.PagleLog.entries
-			local before = #entries
+			local before = loaded.env.PagleLog.count
 			local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
 			bill.buy:Click()
 			play(loaded)
 
+			local entries = logEntries(loaded.env.PagleLog)
 			assert.are.equal(before + 1, #entries)
 			-- The logged-in character is the saved log's second (LOG-R25).
 			assert.matches("^U1|2|%d+|%d+|core%.toaststyle%.ripple|250$", entries[#entries])
@@ -1457,7 +1457,7 @@ describe("The bill of sale", function()
 	it("buys nothing on Cancel or Esc; Esc closes only the bill, and other keys go on to the game", function()
 		local loaded, handles = shopCore()
 		handles.Ledger:ReportCoinsEarned(300)
-		local before = #loaded.env.PagleLog.entries
+		local before = loaded.env.PagleLog.count
 
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 		bill.cancel:Click()
@@ -1473,7 +1473,7 @@ describe("The bill of sale", function()
 		assert.is_false(bill:IsShown())
 		assert.is_false(bill.propagatesKeys)
 		assert.is_true(shopFrame(loaded):IsShown())
-		assert.are.equal(before, #loaded.env.PagleLog.entries)
+		assert.are.equal(before, loaded.env.PagleLog.count)
 		assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
 		assert.are.equal(300, loaded.env.Pagle.GetBalance().balance)
 	end)
@@ -1482,7 +1482,7 @@ describe("The bill of sale", function()
 		local loaded, handles = shopCore(nil, { entries = history(600) })
 		settle(loaded)
 		handles.Ledger:ReportCoinsEarned(300)
-		local before = #loaded.env.PagleLog.entries
+		local before = loaded.env.PagleLog.count
 		local bill = askToBuy(loaded, "core.toaststyle.ripple")
 
 		loaded.ns.walletProjection:Rebuild()
@@ -1490,7 +1490,7 @@ describe("The bill of sale", function()
 		settle(loaded)
 
 		assert.is_false(bill:IsShown())
-		assert.are.equal(before, #loaded.env.PagleLog.entries)
+		assert.are.equal(before, loaded.env.PagleLog.count)
 		assert.is_false(loaded.env.Pagle.IsOwned("core.toaststyle.ripple"))
 		assert.are.equal(300, loaded.env.Pagle.GetBalance().balance)
 	end)

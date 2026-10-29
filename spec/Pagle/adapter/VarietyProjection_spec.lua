@@ -39,7 +39,7 @@ describe("the variety projection", function()
 
 			local global = loaded.env.PagleDB.global
 			local db = global.projections.varieties
-			assert.are.same({ 1, loaded.env.Pagle.CONTENT_FINGERPRINT, LOG_ID, #loaded.env.PagleLog.entries }, {
+			assert.are.same({ 1, loaded.env.Pagle.CONTENT_FINGERPRINT, LOG_ID, loaded.env.PagleLog.count }, {
 				db.rulesVersion,
 				db.fingerprint,
 				db.logId,
@@ -100,7 +100,7 @@ describe("the variety projection", function()
 
 			catchOne(loaded) -- the first Oily Blackmouth: a new variety
 			local last
-			for record in Pagle.IterateCatches(#loaded.env.PagleLog.entries - 1) do
+			for record in Pagle.IterateCatches(loaded.env.PagleLog.count - 1) do
 				last = record
 			end
 			local variety = last.items[1].variety

@@ -530,7 +530,14 @@ end
 -- A new test log (`test = true`, catch-log.md › Data: /pagle dev catch appends only on one) with the dev's
 -- characters, its build entry and each character's last Skill Reading at `time`.
 local function newLog(game, log, facts, time)
-	local data = { format = game.core.LOG_FORMAT, characters = deepCopy(log.characters), entries = {}, test = true }
+	local data = {
+		format = game.core.LOG_FORMAT,
+		characters = deepCopy(log.characters),
+		blockSize = game.core.LOG_BLOCK_SIZE,
+		count = 0,
+		blocks = {},
+		test = true,
+	}
 	local catchLog = game.open(data, {}, time)
 	local header = {}
 	if facts.build then
@@ -563,7 +570,13 @@ end
 local function probe(game, facts, state, pair, time, level)
 	local fold = game.ledger.NewLedgerFold(game.lookups)
 	local copy = deepCopy(state)
-	local scratch = game.open({ format = game.core.LOG_FORMAT, characters = facts.characters, entries = {} }, {}, time)
+	local scratch = game.open({
+		format = game.core.LOG_FORMAT,
+		characters = facts.characters,
+		blockSize = game.core.LOG_BLOCK_SIZE,
+		count = 0,
+		blocks = {},
+	}, {}, time)
 	local firstXP
 	for n = 1, PROBE_CATCHES do
 		local before = copy.xp
@@ -656,7 +669,7 @@ local function check(game, facts, preset, data, probePair, now)
 		found.failures[#found.failures + 1] = line
 	end
 	-- Each entry's tag as Core's codec wrote it (catch-log.md › Entry formats).
-	for _, entry in ipairs(data.entries) do
+	for _, entry in game.core.LogBlocks.Iterate(data) do
 		local tag = entry:match("^(%u%d+)|") or "(no tag)"
 		found.tags[tag] = (found.tags[tag] or 0) + 1
 	end
@@ -829,7 +842,7 @@ local function checkBoard(game, board, facts, data, layout, now)
 	local state = board.NewBoardState()
 	-- Read without Simulated Sizes (LOG-R65): none of boardday's goals is a Size goal.
 	-- Each entry's tag as Core's codec wrote it (catch-log.md › Entry formats).
-	for _, entry in ipairs(data.entries) do
+	for _, entry in game.core.LogBlocks.Iterate(data) do
 		local tag = entry:match("^(%u%d+)|") or "(no tag)"
 		found.tags[tag] = (found.tags[tag] or 0) + 1
 	end
@@ -964,22 +977,28 @@ local function writeBig(game, facts, log, n, now)
 end
 
 -- How many Casts make the test Pagle.lua `bytes` long: the file with only the header (`base` bytes), plus each Cast's
--- line as the client writes it (`"<entry>", -- [<seq>]` and the line end), its entry as long as the average of a
--- sample of writeBig's.
+-- entry as the client writes it into its block (the entry and the `\n` that joins it to the next, two bytes in the file),
+-- and each new block's line (`"<block>", -- [<n>]` and the line end), its entry as long as the average of a sample of
+-- writeBig's.
 local function bigCasts(game, facts, log, original, bytes, now)
 	local header = newLog(game, log, facts, now)
 	local base = #replaceGlobal(original, "PagleLog", header)
 	local sample = writeBig(game, facts, log, 600, now)
 	local length = 0
-	for seq = #header.entries + 1, #sample.entries do
-		length = length + #sample.entries[seq]
+	for _, entry in game.core.LogBlocks.Iterate(sample, header.count + 1) do
+		length = length + #entry
 	end
-	local average = length / (#sample.entries - #header.entries)
+	local average = length / (sample.count - header.count)
 	local eol = original:find("\r\n", 1, true) and 2 or 1
+	local blockSize = header.blockSize
 	local size, n = base, 0
 	while size < bytes and n < BIG_MAX_CASTS do
 		n = n + 1
-		size = size + average + #'"", -- []' + #tostring(#header.entries + n) + eol
+		size = size + average + 2
+		local seq = header.count + n
+		if (seq - 1) % blockSize == 0 then
+			size = size + #'"", -- []' + #tostring((seq - 1) / blockSize + 1) + eol
+		end
 	end
 	return n
 end
@@ -992,7 +1011,7 @@ local function checkBig(game, facts, preset, data, text, now)
 	local function fail(line)
 		found.failures[#found.failures + 1] = line
 	end
-	for _, entry in ipairs(data.entries) do
+	for _, entry in game.core.LogBlocks.Iterate(data) do
 		local tag = entry:match("^(%u%d+)|") or "(no tag)"
 		found.tags[tag] = (found.tags[tag] or 0) + 1
 	end
@@ -1076,15 +1095,14 @@ local function printBigFold(found, log, data, preset, game)
 		chars[#chars + 1] = ("%d %s: %s"):format(char, characterName(log, char), thousands(found.chars[char] or 0))
 	end
 	print("Casts by character: " .. table.concat(chars, ", "))
-	if #data.entries > LUA_CONSTANTS then
-		print(
-			(
-				'note: its %s entries are more distinct strings than Lua 5.1 loads in one piece (%s: "constant table'
-				.. " overflow\"); this script loads it in parts. If the client can't either, its login says so: that"
-				.. " is check 2's answer for this size (LOG-R14)."
-			):format(thousands(#data.entries), thousands(LUA_CONSTANTS))
+	print(
+		("blocks: %s entries in %s of %d (LOG-R103), far below the %s distinct strings Lua 5.1 loads in one piece"):format(
+			thousands(data.count),
+			thousands(#data.blocks),
+			data.blockSize,
+			thousands(LUA_CONSTANTS)
 		)
-	end
+	)
 end
 
 -- What the dev should know before playing a big log: the login rebuilds every projection (check 10), timed only with
@@ -1468,7 +1486,7 @@ local function checkShowcase(game, board, facts, data, layout, sim, now)
 	local function fail(line)
 		found.failures[#found.failures + 1] = line
 	end
-	for _, entry in ipairs(data.entries) do
+	for _, entry in game.core.LogBlocks.Iterate(data) do
 		local tag = entry:match("^(%u%d+)|") or "(no tag)"
 		found.tags[tag] = (found.tags[tag] or 0) + 1
 	end
@@ -1873,7 +1891,7 @@ local function checkWagers(game, hunts, facts, data, layout, sim, now)
 	local function fail(line)
 		found.failures[#found.failures + 1] = line
 	end
-	for _, entry in ipairs(data.entries) do
+	for _, entry in game.core.LogBlocks.Iterate(data) do
 		local tag = entry:match("^(%u%d+)|") or "(no tag)"
 		found.tags[tag] = (found.tags[tag] or 0) + 1
 	end
@@ -2232,7 +2250,7 @@ local function checkVeteran(game, hunts, facts, data, layout, sim, now)
 	local function fail(line)
 		found.failures[#found.failures + 1] = line
 	end
-	for _, entry in ipairs(data.entries) do
+	for _, entry in game.core.LogBlocks.Iterate(data) do
 		local tag = entry:match("^(%u%d+)|") or "(no tag)"
 		found.tags[tag] = (found.tags[tag] or 0) + 1
 	end
@@ -2554,7 +2572,11 @@ local function makeTestLog(options, now)
 		refuse("can't read " .. sourceDir .. "/Pagle.lua: " .. tostring(err) .. "; nothing written")
 	end
 	local log = source.PagleLog
-	if type(log) ~= "table" or type(log.characters) ~= "table" or type(log.entries) ~= "table" then
+	if
+		type(log) ~= "table"
+		or type(log.characters) ~= "table"
+		or (type(log.blocks) ~= "table" and type(log.entries) ~= "table")
+	then
 		refuse("Pagle.lua holds no PagleLog with characters and entries; nothing written")
 	end
 	local game = loadGame(options.catalogue)
@@ -2565,6 +2587,10 @@ local function makeTestLog(options, now)
 				game.core.LOG_FORMAT
 			)
 		)
+	end
+	local unreadable = game.core.CatchLogProblem(log)
+	if unreadable then
+		refuse(("PagleLog's blocks can't be read (%s); nothing written"):format(unreadable))
 	end
 	local facts = readRealLog(game, log)
 	facts.log, facts.characters = log, deepCopy(log.characters)
@@ -2688,7 +2714,7 @@ local function makeTestLog(options, now)
 		("real log: %s/Pagle.lua, logId %s, %s"):format(
 			sourceDir,
 			tostring(log.logId),
-			count(#log.entries, "entry", "entries")
+			count(log.count, "entry", "entries")
 		)
 	)
 	local fishers = preset.bytes and "every character"
@@ -2697,7 +2723,7 @@ local function makeTestLog(options, now)
 		("test log: logId %s, %s, %s (%s), the Casts on %s"):format(
 			data.logId,
 			count(#data.characters, "character"),
-			count(#data.entries, "entry", "entries"),
+			count(data.count, "entry", "entries"),
 			table.concat(tags, ", "),
 			fishers
 		)

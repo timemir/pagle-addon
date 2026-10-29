@@ -32,7 +32,7 @@ end
 
 -- The log's entries after the first `n`.
 local function entriesAfter(loaded, n)
-	return { unpack(loaded.env.PagleLog.entries, n + 1) }
+	return { unpack(logEntries(loaded.env.PagleLog), n + 1) }
 end
 
 describe("M:RecordPrestige", function()
@@ -41,7 +41,7 @@ describe("M:RecordPrestige", function()
 			.. " (LOG-R38, LOG-R73)",
 		function()
 			local loaded, M, seen = coreWithLedger(history(2))
-			local before = #loaded.env.PagleLog.entries
+			local before = loaded.env.PagleLog.count
 			local count = #seen
 
 			local first = M:RecordPrestige()
@@ -109,7 +109,7 @@ describe("M:RecordPrestige", function()
 				end
 			end,
 		})
-		local logged = #loaded.env.PagleLog.entries
+		local logged = loaded.env.PagleLog.count
 
 		enterWorld(loaded)
 
@@ -123,7 +123,7 @@ end)
 describe("a purchase entry", function()
 	it("is appended by ns.RecordPurchase for the current character and applied live (LOG-R39, SHOP-R10)", function()
 		local loaded, _, seen = coreWithLedger(history(1))
-		local before = #loaded.env.PagleLog.entries
+		local before = loaded.env.PagleLog.count
 		local count = #seen
 
 		local record = loaded.ns.RecordPurchase("core.toaststyle.ripple", 150)
@@ -137,7 +137,7 @@ describe("a purchase entry", function()
 		"raises an error and appends nothing for a good ID outside [%w_.]+ or a price that isn't whole (LOG-R39)",
 		function()
 			local loaded = coreWithLedger(history(1))
-			local before = #loaded.env.PagleLog.entries
+			local before = loaded.env.PagleLog.count
 
 			for _, bad in ipairs({
 				{ "core.toast style", 150 },
@@ -148,7 +148,7 @@ describe("a purchase entry", function()
 					loaded.ns.RecordPurchase(bad[1], bad[2])
 				end)
 			end
-			assert.are.equal(before, #loaded.env.PagleLog.entries)
+			assert.are.equal(before, loaded.env.PagleLog.count)
 		end
 	)
 
@@ -176,8 +176,8 @@ describe("a dev log written before Prestige and purchase entries", function()
 
 		local log = loaded.env.PagleLog
 		assert.are.equal("3f9a2c1e7b0d4a65", log.logId)
-		assert.are.equal(cast, log.entries[3])
-		assert.are.equal("P1", log.entries[#log.entries]:sub(1, 2))
+		assert.are.equal(cast, logEntries(log)[3])
+		assert.are.equal("P1", logEntries(log)[log.count]:sub(1, 2))
 		assert.are.same({}, loaded.printed)
 	end)
 end)

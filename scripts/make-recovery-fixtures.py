@@ -24,12 +24,12 @@ source_entries = [old_entry, b"S1|1|1793000001|0|80|150|0", b"U1|1|1793000002|0|
 replacement_entries = source_entries[:2]
 source = head + field(3) + b"".join(map(field, source_entries))
 replacement = head + field(2) + b"".join(map(field, replacement_entries))
-checkpoint = digest(b"PGL-CHECKPOINT|1|0123456789abcdef|3\n")
+checkpoint = digest(b"PGL-CHECKPOINT|1|0123456789abcdef|4\n")
 guid = b"Player-4618-0A1B2C3D"
 checkpoint = digest(b"PGL-ENTRY|1|" + checkpoint.encode() + b"|1|" + str(len(guid)).encode() + b"|" + guid + b"|" + str(len(old_entry)).encode() + b"|" + old_entry + b"\n")
 
 def envelope(name, **changes):
-    values = dict(application="app.pagle.recovery", logId="0123456789abcdef", format=3, seq=1,
+    values = dict(application="app.pagle.recovery", logId="0123456789abcdef", format=4, seq=1,
                   checkpoint=checkpoint, revision=7, rules="pagle-ranked-1-" + hashlib.sha256(b"TEST ONLY rules version").hexdigest(), expected=digest(source),
                   resulting=digest(replacement), replacement=replacement, staged=1, originalSeq=3,
                   reason="action_requires_review")
