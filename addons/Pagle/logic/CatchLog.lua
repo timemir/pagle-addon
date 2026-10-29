@@ -67,7 +67,7 @@ ns.COMPANION_READER = "Core"
 --- The PagleLog layout version (LOG-R18). 1.0 ships format 2, frozen from then on (LOG-R17); every beta or dev log
 --- is format 1, so it starts over at the first 1.0 login.
 ns.LOG_FORMAT = 3
-ns.RULE_SET_ID = "pagle-2026b"
+ns.RULE_SET_ID = "pagle-2026c"
 
 --- The most bytes a Module record's payload may hold (LOG-R40, Tunables).
 ns.MODULE_RECORD_PAYLOAD_LIMIT = 200
