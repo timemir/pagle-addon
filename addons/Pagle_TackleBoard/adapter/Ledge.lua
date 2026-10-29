@@ -675,7 +675,13 @@ end
 ---@param ledge TackleLedgeFrame
 ---@param name "card"|"drawer"
 local function toggle(ledge, name)
-	local other = name == "card" and ledge.drawer or ledge.card
+	-- The other of the two (not `and`/`or`: with no drawer made yet that would name the card itself, and hide it before
+	-- the check below, so a second click on the Campfire would open it again, with its sound, instead of closing it).
+	---@type Frame?
+	local other = ledge.drawer
+	if name == "drawer" then
+		other = ledge.card
+	end
 	if other then
 		other:Hide()
 	end
@@ -690,6 +696,7 @@ local function toggle(ledge, name)
 	if name == "card" then
 		local card = ledge.card or buildCard(ledge)
 		card:Show()
+		ns.BoardSound("campfire")
 		drawCard(card)
 	else
 		local drawer = ledge.drawer or buildDrawer(ledge)

@@ -412,6 +412,33 @@ describe("the Campfire card (TKB-R106, TKB-R64)", function()
 		assert.is_true(card.days[26].icon:IsShown())
 	end)
 
+	it(
+		"plays its own crackling sound once each time it opens, on the SFX channel, and none when it closes (#473)",
+		function()
+			local loaded, _, _, ledge = opened(WENT_OUT)
+			local file = "Interface\\AddOns\\Pagle_TackleBoard\\media\\sounds\\Campfire.ogg SFX"
+			local function crackles()
+				local count = 0
+				for _, sound in ipairs(loaded.client.sounds) do
+					if sound == file then
+						count = count + 1
+					end
+				end
+				return count
+			end
+
+			assert.are.equal(0, crackles())
+			ledge.fire:Click() -- opens
+			assert.are.equal(1, crackles())
+			ledge.fire:Click() -- closes
+			assert.are.equal(1, crackles())
+			ledge.plate:Click() -- opens again, by the tally plate
+			assert.are.equal(2, crackles())
+			ledge.box:Click() -- the drawer takes the card's place: no crackle
+			assert.are.equal(2, crackles())
+		end
+	)
+
 	it("lists the milestones with their Coins and what is still to go, the titles not earned greyed", function()
 		local _, _, _, ledge = opened(WENT_OUT)
 
