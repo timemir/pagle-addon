@@ -92,35 +92,38 @@ describe("whether a goal can be taken down (TKB-R55, TKB-R44)", function()
 end)
 
 describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
-	it("says the new one waits for the daily reset, with the time to it when the board has it", function()
+	it("says the new one waits for the daily reset, with the time to it", function()
 		local ns, pagle = load()
-		local g = goal("n")
 
-		local plain = ns.TakeDownTip(g, false, pagle)
-		local timed = ns.TakeDownTip(g, false, pagle, "13h")
+		local tip = ns.TakeDownTip(goal("n"), 3, false, pagle, "13h")
 
-		assert.are.equal(ns.L.TAKE_DOWN_TIP_TITLE, plain[1])
-		assert.are.equal(
-			"The new one can't be taken down again until tomorrow's reset, unless it stops being catchable.",
-			plain[3]
-		)
+		assert.are.equal(ns.L.TAKE_DOWN_TIP_TITLE, tip[1])
 		assert.are.equal(
 			"The new one can't be taken down again until the daily reset (in 13h), unless it stops being catchable.",
-			timed[3]
+			tip[3]
 		)
 	end)
 
-	it("says the board is updating, or the goal no longer catchable, before anything about the reset", function()
+	it("says the board is updating before anything about the reset", function()
 		local ns, pagle = load()
-		local stranded = goal("n", { kind = "species", target = REMOVED_FISH, reposted = true })
 
-		assert.are.equal(ns.L.TAKE_DOWN_TIP_UPDATING, ns.TakeDownTip(goal("n"), true, pagle, "13h")[3])
-		assert.are.equal(ns.L.TAKE_DOWN_TIP_STRANDED, ns.TakeDownTip(stranded, false, pagle, "13h")[3])
-		assert.are.equal(
-			ns.L.TAKE_DOWN_TIP_STRANDED_FIRST,
-			ns.TakeDownTip({ type = "n", kind = "species", target = REMOVED_FISH, reposted = false }, false, pagle)[3]
-		)
+		assert.are.equal(ns.L.TAKE_DOWN_TIP_UPDATING, ns.TakeDownTip(goal("n"), 3, true, pagle, "13h")[3])
 	end)
+
+	it(
+		"says a stranded goal re-posted today comes down though re-posted, and any other stranded goal just that",
+		function()
+			local ns, pagle = load()
+			local today = goal("n", { kind = "species", target = REMOVED_FISH, reposted = true, issuedDay = 3 })
+			local yesterday = goal("n", { kind = "species", target = REMOVED_FISH, reposted = true, issuedDay = 2 })
+			local first = goal("n", { kind = "species", target = REMOVED_FISH, reposted = false, issuedDay = 3 })
+
+			assert.are.equal(ns.L.TAKE_DOWN_TIP_STRANDED, ns.TakeDownTip(today, 3, false, pagle, "13h")[3])
+			-- a re-post of an earlier day is no "even though it was re-posted": nothing held it back
+			assert.are.equal(ns.L.TAKE_DOWN_TIP_STRANDED_FIRST, ns.TakeDownTip(yesterday, 3, false, pagle, "13h")[3])
+			assert.are.equal(ns.L.TAKE_DOWN_TIP_STRANDED_FIRST, ns.TakeDownTip(first, 3, false, pagle, "13h")[3])
+		end
+	)
 end)
 
 describe("the confirm's question and the post's (TKB-R56, TKB-R59)", function()

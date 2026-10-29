@@ -604,6 +604,22 @@ describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
 		)
 	end)
 
+	it(
+		"says a stranded goal re-posted today comes down though re-posted, with no stamp and its button (TKB-R44, TKB-R55)",
+		function()
+			local records = startedLog(EXPEDITION, RARITY, STRANDED)
+			records[#records + 1] = record("reroll", T + 10, idAt(T + 3) .. ";" .. STRANDED) -- stranded again, re-posted
+			local loaded, _, frame = opened(records)
+
+			local slip = notice(frame, 2).goal
+			assert.is_false(slip.stamp:IsShown())
+			assert.is_true(slip.takeDown:IsShown())
+			assert.are.equal(loaded.ns.L.TAKE_DOWN_TIP_STRANDED, tip(loaded, notice(frame, 2))[3])
+			hover(slip)
+			assert.are.equal(2, #loaded.ns.BoardHoverLines())
+		end
+	)
+
 	it("keeps its words to the glyphs every font draws (CORE-R9)", function()
 		local ns = opened(startedLog(EXPEDITION)).ns
 		for _, line in ipairs({
@@ -611,9 +627,7 @@ describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
 			ns.L.TAKE_DOWN_TIP.n,
 			ns.L.TAKE_DOWN_TIP.e,
 			ns.L.TAKE_DOWN_TIP_ONCE,
-			ns.L.TAKE_DOWN_TIP_ONCE_IN,
 			ns.L.REPOSTED_HOVER,
-			ns.L.REPOSTED_HOVER_IN,
 			ns.L.TAKE_DOWN_TIP_STRANDED,
 			ns.L.TAKE_DOWN_TIP_STRANDED_FIRST,
 			ns.L.TAKE_DOWN_TIP_UPDATING,

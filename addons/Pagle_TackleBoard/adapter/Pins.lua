@@ -172,7 +172,7 @@ function ns.NewGoalSlip(slot, poster)
 		if goal then
 			ns.BoardHover(
 				self,
-				ns.TakeDownTip(goal, ns.board:IsUpdating(), ns.api.pagle, ns.ResetCountdown(ns.api)),
+				ns.TakeDownTip(goal, ns.State().day, ns.board:IsUpdating(), ns.api.pagle, ns.ResetCountdown(ns.api)),
 				{ cursor = true }
 			)
 		end

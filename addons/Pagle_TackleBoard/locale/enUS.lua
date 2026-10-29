@@ -134,15 +134,13 @@ ns.L = {
 		n = "Pin a fresh Notice of another kind in its place. Any progress on this one is lost.",
 		e = "Pin a fresh Expedition of another kind in its place. Any progress on this one is lost.",
 	},
-	TAKE_DOWN_TIP_ONCE = "The new one can't be taken down again until tomorrow's reset, unless it stops being catchable.",
-	TAKE_DOWN_TIP_ONCE_IN = "The new one can't be taken down again until the daily reset (in {time}), unless it stops being catchable.",
-	TAKE_DOWN_TIP_STRANDED = "This one is no longer catchable, so it can come down even though it was re-posted.",
+	TAKE_DOWN_TIP_ONCE = "The new one can't be taken down again until the daily reset (in {time}), unless it stops being catchable.",
+	TAKE_DOWN_TIP_STRANDED = "This one is no longer catchable, so it can come down even though it was re-posted today.",
 	TAKE_DOWN_TIP_STRANDED_FIRST = "This one is no longer catchable: it can never be finished where it hangs.",
 	TAKE_DOWN_TIP_UPDATING = "Not while the board is updating. It can come down once that's done.",
 	REPOSTED = "RE-POSTED",
-	-- Its hover, under the note (TKB-R55): it comes back at the daily reset, {time} the countdown to it when to hand.
-	REPOSTED_HOVER = "Re-posted today. It can be taken down again tomorrow.",
-	REPOSTED_HOVER_IN = "Re-posted today. It can be taken down again at the daily reset (in {time}).",
+	-- Its hover, under the note (TKB-R55): it comes back at the daily reset, {time} the countdown to it.
+	REPOSTED_HOVER = "Re-posted today. It can be taken down again at the daily reset (in {time}).",
 	-- Its hover, under the posted time (POSTED).
 	ONLY_SINCE = "Only my Catches since then count",
 	ONLY_SINCE_TODAY = "Only my Catches since then count, all on one board day",
@@ -315,7 +313,7 @@ ns.L = {
 	GUIDE_FACTS = {
 		"Three Notices a day, and one bigger Expedition a week.",
 		"None of them expire. Away a while? Up to six Notices and two Expeditions wait for you.",
-		"Don’t fancy one? Take it down and another goes up, once a day.",
+		"Don’t fancy one? Each can be taken down for a fresh one, once a day.",
 		"They pay Pagle Coins, {shop}",
 	},
 	GUIDE_FACT_SHOP = "which buy looks in the Curio Shop.",

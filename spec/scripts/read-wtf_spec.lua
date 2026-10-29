@@ -1376,7 +1376,7 @@ describe("scripts/read-wtf.lua", function()
 				-- TKB-R20: each reset owed what the pins could take, and the live steps issued it all. TKB-R101: seq 47 took
 				-- pin 1, freed on day 0; seq 48 found every Notice pin taken. TKB-R40: the Expedition counted day 6's two
 				-- Catches and day 8's junk in Elwynn; 6291 three times since seq 8. TKB-R44: item 999001 is Uncharted.
-				-- TKB-R41: the Collector counts only day 8's Catches, its junk. TKB-R55: seq 34 re-posted pin 3. TKB-R22:
+				-- TKB-R41: the Collector counts only day 8's Catches, its junk. TKB-R55: seq 34 re-posted pin 3 on day 4, before the processed day 9. TKB-R22:
 				-- each open goal's tier, pay and need are its record's.
 				assert.are.same({
 					"started: seq 5, realm 2026-10-14 08:10, server 2026-10-14 15:10:00 UTC (TKB-R6)",
@@ -1398,7 +1398,7 @@ describe("scripts/read-wtf.lua", function()
 					"  2. " .. GUID .. '1791990603-0: Notice species, "4 Item 6291", 3 of 4, tier 2, pays 15, need 4',
 					"  3. "
 						.. GUID
-						.. '1792336000-0: Notice haul, "5 Catches in Area 40", 0 of 5, tier 2, pays 15, need 5, re-posted'
+						.. '1792336000-0: Notice haul, "5 Catches in Area 40", 0 of 5, tier 2, pays 15, need 5, re-posted day 4'
 						.. " (TKB-R55)",
 					"  4. "
 						.. GUID
@@ -1416,6 +1416,30 @@ describe("scripts/read-wtf.lua", function()
 						.. GUID
 						.. '1792681510-0: Notice haul, "2 Catches in Area 12", 1 of 2, tier 1, pays 10, need 2',
 				}, { unpack(lines, 20, 36) })
+			end
+		)
+
+		it(
+			"marks a goal re-posted on the processed day, or later, as today: its button waits for the reset (TKB-R55)",
+			function()
+				-- A copy of the account whose seq 34 goal was re-posted on day 9, the processed day.
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no os
+				local os = os
+				local base = os.tmpname()
+				os.remove(base)
+				local account = base .. " Account#1"
+				assert(os.execute(("mkdir -p '%s' && cp -R '%sM7#1/.' '%s'"):format(account, ACCOUNTS, account)) == 0)
+				local file = account .. "/SavedVariables/Pagle_TackleBoard.lua"
+				local text = readFile(file)
+				local edited, n = text:gsub('(%["id"%] = "[^"]*1792336000%-0",\r?\n%["issuedDay"%] = )4', "%19")
+				assert.are.equal(1, n)
+				script.wtf.writeFile(file, edited)
+
+				local rerun = run(account, "--catalogue", CATALOGUE, "--now", NOW)
+				os.execute(("rm -rf '%s' "):format(account))
+
+				local line = lineStarting(section(rerun, "== Tackle Board"), "  3. ")
+				assert.is_truthy(line:find("need 5, re-posted day 9 (today) (TKB-R55)", 1, true))
 			end
 		)
 

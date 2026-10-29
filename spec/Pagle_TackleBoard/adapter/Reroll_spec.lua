@@ -443,6 +443,51 @@ describe("taking a goal down once a board day (TKB-R55, TKB-R57, TKB-R82)", func
 		assert.are.same({ false, false }, { ns.CanTakeDown(earlier), ns.CanTakeDown(today) })
 	end)
 
+	describe("with the confirm open across the daily reset", function()
+		-- The Haul Notice at 12, so "take it down" asks first; the question is left open, the reset passes and the player
+		-- then says yes. The record is the player's choice made after the reset, so the new goal belongs to the new day.
+		local function confirmedAfterReset(timerFires)
+			local ns, loaded, fake = started()
+			ns.State().goals[HAUL].progress = 12
+			local before = ns.State().day
+			ns.TakeDown(HAUL)
+			assert.is_truthy(asked(ns))
+
+			if timerFires then
+				board.pass(loaded, fake, DAY) -- the live step's day record advances the projection
+			else
+				fake.wait(DAY) -- the clock is past the reset before the timer ran
+			end
+			ns.TakeDownConfirm().accept:Click()
+			return ns, loaded, fake, before
+		end
+
+		for _, timerFires in ipairs({ true, false }) do
+			it(
+				"gives the new goal the new day's issuedDay, and no button until the reset after (timer ran: "
+					.. tostring(timerFires)
+					.. ")",
+				function()
+					local ns, loaded, fake, before = confirmedAfterReset(timerFires)
+
+					local appended = rerolls(ns)
+					assert.are.equal(1, #appended)
+					local state = ns.State()
+					local replacement = state.goals[appended[1].id]
+					assert.are.same({ before + 1, before + 1 }, { replacement.issuedDay, state.day })
+					assert.is_false(ns.CanTakeDown(replacement.id)) -- the new day's take-down is spent
+
+					ns.projection:Rebuild() -- and the log gives the same answer
+					assert.are.equal(before + 1, ns.State().goals[appended[1].id].issuedDay)
+					assert.is_false(ns.CanTakeDown(appended[1].id))
+
+					board.pass(loaded, fake, DAY) -- the reset after
+					assert.is_true(ns.CanTakeDown(appended[1].id))
+				end
+			)
+		end
+	end)
+
 	it("takes a goal posted with a Refresh down on the day it was posted, like an issued one", function()
 		local ns = started({ record("post", D0 + 3700, "n;lure;1;10;15;") })
 
