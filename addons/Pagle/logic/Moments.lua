@@ -421,7 +421,12 @@ function Moments:Raise(module, moment)
 	end
 	self.raised = self.raised + 1
 	local copy = copyOf(module.def, moment, self.raised)
-	copy.rung = ns.MomentRung(copy, self.options.toastStyle and self.options.toastStyle() or nil)
+	local rung = ns.MomentRung(copy, self.options.toastStyle and self.options.toastStyle() or nil)
+	if rung ~= copy.rung then
+		-- An Epic variety turned toast.high (ANN-R85) shows its own stamp, its title, as a Rare variety's toast does
+		-- (VAR-R28): "EPIC VARIETY", first in the stamp row, in the variety's ink.
+		copy.rung, copy.ownStamp = rung, true
+	end
 	self.options.summarize(copy)
 	if copy.summaryOnly then
 		return
