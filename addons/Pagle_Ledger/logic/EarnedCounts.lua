@@ -248,7 +248,7 @@ ns.COUNTED_GOODS = {
 		count = "race8",
 		mark = RACE_FISH,
 		slot = "core.toaststyle",
-		icon = ICONS .. "INV_Misc_Bone_TrollSkull_01",
+		icon = ICONS .. "INV_Misc_Head_Troll_01",
 	},
 	{
 		id = "ledger.toaststyle.lion",

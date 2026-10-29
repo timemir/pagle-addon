@@ -139,7 +139,7 @@ ns.CORE_GOODS = {
 			{ id = "core.soundset.harp", tier = 3, icon = ICONS .. "Spell_Nature_Regeneration" },
 			{ id = "core.soundset.gizmo", tier = 3, icon = ICONS .. "INV_Gizmo_BronzeFramework_01" },
 			{ id = "core.soundset.mrglglgl", tier = 3, icon = ICONS .. "INV_Misc_Head_Murloc_01" },
-			{ id = "core.soundset.parrot", tier = 3, icon = ICONS .. "INV_Misc_Bird_01" },
+			{ id = "core.soundset.parrot", tier = 3, icon = ICONS .. "INV_Box_BirdCage_01" },
 			{ id = "core.soundset.laser", tier = 3, icon = ICONS .. "INV_Gizmo_02" },
 			{ id = "core.soundset.silithid", tier = 3, icon = ICONS .. "INV_Misc_AhnQirajTrinket_01" },
 			{ id = "core.soundset.succubus", tier = 3, icon = ICONS .. "Spell_Shadow_SummonSuccubus" },
