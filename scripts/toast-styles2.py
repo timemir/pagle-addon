@@ -255,6 +255,11 @@ def box(values):
     return {"x": values[0], "y": values[1], "w": values[2], "h": values[3]} if values else None
 
 
+# The kit's rungs left out: its toast.low, a slim toast. Every toast is drawn full size, on the toast rung (ANN-R80), so
+# the rung and the sprites only it draws (named `low-*`) are not written.
+SKIPPED_RUNGS = ("low",)
+
+
 def style_art(good):
     art = good["art"]
     atlas = art["atlas"].split("\\")[-1]
@@ -267,6 +272,8 @@ def style_art(good):
         return name
 
     for rung_name, rung in art["rungs"].items():
+        if rung_name in SKIPPED_RUNGS:
+            continue
         layers, stamp = [], None
         ordered = sorted(enumerate(rung["layers"]), key=lambda p: (order_of(p[1])[0], p[0]))
         for _, layer in ordered:
@@ -358,12 +365,13 @@ local ns = select(2, ...)
 -- The Curio Shop round two's ten composed toast styles (announcements.md › Toast styles, ANN-R82), as the round two
 -- kit's goods.json has them: written by scripts/toast-styles2.py, so change the kit and run it, not this file. Each
 -- style's atlas joins ns.ATLASES by name (its sprites' boxes are the whole sprite, at 1.5 texels a unit); its art, by
--- good ID in ns.TOAST_STYLE_ART2, has a rung for toast, toast.high, toast.low and the Nod: its box, the medallion,
--- icon, text, coin and Coins boxes (UI units from the rung's top left), its inks (face, size, "RRGGBB" colour, capitals,
--- a shadow with an offset), its stamp (a sprite three-sliced at `slice` and tilted `tilt` degrees clockwise) and its
--- layers in draw order, each on the host it draws on (adapter/ToastLayers.lua). A layer's `motion` is its CSS
--- animation per property: `alpha` keys { at, alpha }, `transform` keys { at, x, y, rotate, sx, sy } about `origin`
--- (rung units), `scroll` keys { at, u, v } of a strip through its `window`; logic/ToastStyles.lua decides what loops.
+-- good ID in ns.TOAST_STYLE_ART2, has a rung for toast, toast.high and the Nod (the kit's toast.low rung is left out:
+-- every toast is drawn full size, on the toast rung, ANN-R80): its box, the medallion, icon, text, coin and Coins boxes
+-- (UI units from the rung's top left), its inks (face, size, "RRGGBB" colour, capitals, a shadow with an offset), its
+-- stamp (a sprite three-sliced at `slice` and tilted `tilt` degrees clockwise) and its layers in draw order, each on
+-- the host it draws on (adapter/ToastLayers.lua). A layer's `motion` is its CSS animation per property: `alpha` keys
+-- { at, alpha }, `transform` keys { at, x, y, rotate, sx, sy } about `origin` (rung units), `scroll` keys { at, u, v }
+-- of a strip through its `window`; logic/ToastStyles.lua decides what loops.
 -- Seven are the Ledger's (registered in Core's slot, LED-R118), three Core's.
 
 local DIR = "Interface\\\\AddOns\\\\Pagle\\\\media\\\\announce\\\\"

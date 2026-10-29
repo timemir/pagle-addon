@@ -197,7 +197,7 @@ The quietest Announcement: one silent line, for minor moments and for toasts ste
 _Avoid_: mini toast, whisper
 
 **Catch toast**:
-The toast Core shows for an ordinary Catch when nothing bigger came of it: the size band and length ("DECENT · 34.2 CM") over the fish's name, with the toast sound. It counts toward the Interruption budget, and steps down to a Nod when the budget is spent. The player can switch it off with Show every catch.
+The toast Core shows for an ordinary Catch when nothing bigger came of it: the size band and length ("DECENT · 34.2 CM") over the fish's name, with the toast sound, drawn full size like every toast (there is no slim toast). It counts toward the Interruption budget, and steps down to a Nod when the budget is spent. A variety caught before shows on it as a ring in the variety's colour, a gem and its name after the fish's, but the medallion keeps the item's icon: the variety's art fills it only on the variety's own first-catch toast. The player can switch it off with Show every catch.
 _Avoid_: catch Nod
 
 **Toast column**:

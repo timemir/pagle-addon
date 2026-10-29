@@ -137,8 +137,8 @@ describe("the toast's and Nod's toast style", function()
 	end)
 
 	it(
-		"draws Moonlit Vellum once bought and equipped: its night-blue page, its own ring and its silver inks, toast.low's"
-			.. " too (ANN-R81, SHOP-R25)",
+		"draws Moonlit Vellum once bought and equipped: its night-blue page, its own ring and its silver inks, a"
+			.. " toast.low's too, on the full page like any toast (ANN-R80, ANN-R81, SHOP-R25)",
 		function()
 			local MOON = "core.toaststyle.moon"
 			local loaded, M = styledCore()
@@ -149,13 +149,13 @@ describe("the toast's and Nod's toast style", function()
 
 			local toast = loaded.ns.announcementFrames.toast
 			assert.are.same({
-				page = "ToastsMoon toast-low",
-				trim = "ToastsMoon bezel-64",
+				page = "ToastsMoon toast-toast",
+				trim = "ToastsMoon bezel-84",
 				stamp = false,
-				title = ink(loaded, MOON .. ".lowWhat"),
-				text = ink(loaded, MOON .. ".lowName"),
+				title = ink(loaded, MOON .. ".what"),
+				text = ink(loaded, MOON .. ".name"),
 			}, lookOf(loaded, toast))
-			assert.are.same(ink(loaded, MOON .. ".lowAmt"), toast.coins.label.textColor)
+			assert.are.same(ink(loaded, MOON .. ".amt"), toast.coins.label.textColor)
 		end
 	)
 

@@ -33,9 +33,8 @@ local FALLBACK = "Fonts\\FRIZQT__.TTF"
 -- the world does; what is on the page doesn't).
 local FONTS = {
 	-- toasts
-	What = { "print", 13, "red" }, -- set in capitals: the client has no small caps
+	What = { "print", 16, "red" }, -- set in capitals: the client has no small caps
 	Name = { "handSemi", 31, "ink" },
-	NameLow = { "hand", 26, "pencilName" },
 	NameHigh = { "handSemi", 34, "ink" },
 	More = { "hand", 19, "pencil" },
 	Amt = { "handBold", 24, "amt" },

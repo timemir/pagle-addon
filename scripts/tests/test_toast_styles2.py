@@ -5,6 +5,7 @@ runs rotate(0) to rotate(360deg) is keys 0 and 360, and 0 and 0 is a layer that 
 import importlib.util
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 
 import pytest
 
@@ -73,3 +74,39 @@ def test_fold_does_not_invent_a_turn_when_the_angle_is_not_the_authored_one() ->
 )
 def test_fold_keeps_its_results_for_ordinary_transforms(css: str | None, expected: tuple[float, ...]) -> None:
     assert toast_styles.fold(css) == pytest.approx(expected, abs=1e-6)
+
+
+def _kit_rung(name: str) -> dict[str, Any]:
+    """A kit rung with one layer drawing the sprite `<name>-body`."""
+    box = {"x": 0, "y": 0, "w": 10, "h": 10}
+    return {
+        "w": 464,
+        "h": 92,
+        "med": [1, 1, 90, 90],
+        "icon": [15, 15, 62, 62],
+        "text": [115, 20, 285, 54],
+        "coin": None,
+        "amt": None,
+        "inks": {},
+        "layers": [
+            {"name": "body", "sprite": f"{name}-body", "rect": box, "x": 0, "y": 0, "w": 10, "h": 10, "z": 1, "blend": "BLEND"}
+        ],
+    }
+
+
+def test_style_art_leaves_out_the_kits_slim_toast_rung_and_its_sprites() -> None:
+    """Every toast is drawn full size (ANN-R80): the kit's toast.low rung and the `low-*` sprites only it draws are not
+    written, the others as they were."""
+    good = {
+        "art": {
+            "atlas": "Toasts2\\Glass",
+            "atlasSize": [2048, 1024],
+            "scale": 1.5,
+            "rungs": {name: _kit_rung(name) for name in ("toast", "high", "low", "nod")},
+        }
+    }
+
+    _, atlas, rungs = toast_styles.style_art(good)
+
+    assert list(rungs) == ["toast", "high", "nod"]
+    assert list(atlas["sprites"]) == ["toast-body", "high-body", "nod-body"]

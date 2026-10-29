@@ -259,9 +259,10 @@ end
 --- Its `nodLine` is what it reads as once the budget steps it down to a Nod (ANN-R31): "{item name} · {band} ·
 --- {length}", or the name alone for an item with no size. A Catch with a variety that `varieties`
 --- (Pagle.GetVarieties) names reads "{item name} · {variety name} · {band} · {length}" there (VAR-R26): the moment's
---- `variety` cuts that line about the name, and its `art` is a copy of the variety's, for the medallion. Only a Catch
---- with a size has a variety (VAR-R1). With `caughtBefore`, it names only a variety caught before this Cast
---- (VAR-R27): a first one reads as a Catch without a variety, its moment the Ledger's.
+--- `variety` cuts that line about the name. It carries no `art`: the medallion keeps the item's icon, and the variety's
+--- art fills it only on the variety's own moment (VAR-R25, VAR-R26). Only a Catch with a size has a variety (VAR-R1).
+--- With `caughtBefore`, it names only a variety caught before this Cast (VAR-R27): a first one reads as a Catch
+--- without a variety, its moment the Ledger's.
 ---@param cast PagleCast
 ---@param itemName fun(itemID: integer): string?
 ---@param lengthUnit PagleLengthUnit
@@ -320,10 +321,6 @@ function ns.CatchToastMoment(cast, itemName, lengthUnit, varieties, caughtBefore
 	-- The line with a mark in the name's place, cut there: "\001" is in no name.
 	local before, after = L.CATCH_TOAST_VARIETY:format(name, "\001", band, length):match("^(.-)%s*\001%s*(.*)$")
 	moment.variety = { name = look.name, rarity = variety.rarity, before = before, after = after }
-	local art = look.art
-	if art then
-		moment.art = { texture = art.texture, left = art.left, right = art.right, top = art.top, bottom = art.bottom }
-	end
 	return moment
 end
 
