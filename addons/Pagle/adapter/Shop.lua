@@ -39,7 +39,8 @@ local CRATE_GAP = 6
 -- tier's line height, and the room above the pity line. On each line the colour's pip, the name, and the goods left (or
 -- the payback) in a column of its own. The lore, the seven lines, the pity line and Buy take more than the card's 220
 -- units, so the crate's card reaches CRATE_RAISE units up over the showcase card's empty paper under the well (the
--- same card, stretched, its foot where every good's is): from the well's foot it leaves the rim the well has at its top.
+-- same card, stretched, its foot where every good's is), 8 units under the well's foot (the well has 16 of paper above it).
+-- It is drawn above the showcase card (sublevel 2 of its layer, the showcase card's 1), as they overlap.
 local ODDS_GAP, ODDS_H, ODDS_PAD, CRATE_RAISE = 4, 12, 2, 70
 local ODDS_PIP, ODDS_NAME_W, ODDS_DETAIL_X = 8, 78, 100
 -- An earned good's progress dots on the description card (SHOP-R22): each one's size and the room between them, and
@@ -913,7 +914,7 @@ local function buildStage(frame)
 	ns.SetShopText(stage.hint, L.SHOP_PICK)
 
 	-- The description card, stretched from its designed 176 to INFO_H: it is plain paper.
-	local info = ns.ArtSprite(frame, "Papers", "info", "ARTWORK", 1)
+	local info = ns.ArtSprite(frame, "Papers", "info", "ARTWORK", 2)
 	stage.infoDesigned = { box = { unpack(info.box) }, height = info:GetHeight() }
 	stage.info = info
 	local x, width = CARD_X + INFO_PAD, info.box[3] - 2 * INFO_PAD

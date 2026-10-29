@@ -30,17 +30,20 @@ local BREATH, TURN, RISE, FALL = 1.5, 36, 0.3, 0.2
 local WARM = { 1, 0.86, 0.5 }
 
 -- The sparks twinkling out of the seam: where along it each starts (from the box's left), how far it rises and drifts, how
--- many seconds it lives, and when it starts, in each cycle's order. Fixed, so the same twinkle plays every time.
+-- many seconds it lives, when it starts, and its size, in each cycle's order. Fixed, so the same twinkle plays every
+-- time. None rises past 66 units: the well's clip cuts the box at 6 units from its top, 76 above the seam, and a spark
+-- is gone (and at 15% of its size) by the time it is 66 up, so none is ever sliced by it.
 local SPARKS = {
 	{ 70, 62, -10, 1.8, 0.0, 1.0 },
-	{ 104, 84, 6, 2.2, 0.35, 0.8 },
-	{ 140, 70, -4, 1.7, 0.9, 1.1 },
-	{ 176, 90, 12, 2.4, 0.15, 0.9 },
-	{ 90, 76, 8, 2.0, 1.2, 0.7 },
+	{ 104, 66, 6, 2.2, 0.35, 0.8 },
+	{ 140, 64, -4, 1.7, 0.9, 1.1 },
+	{ 176, 66, 12, 2.4, 0.15, 0.9 },
+	{ 90, 60, 8, 2.0, 1.2, 0.7 },
 	{ 158, 58, -12, 1.6, 0.6, 1.0 },
-	{ 122, 96, 2, 2.6, 1.5, 0.8 },
-	{ 190, 66, -6, 1.9, 1.0, 0.7 },
+	{ 122, 66, 2, 2.6, 1.5, 0.8 },
+	{ 190, 64, -6, 1.9, 1.0, 0.7 },
 }
+local MAX_RISE = 66
 
 ---@class PagleCratePreviewSpark
 ---@field part PagleCratePart
@@ -72,8 +75,10 @@ local function place(p)
 	local crate, pose = p.crate, p.pose
 	crate.lid.own[2] = -LIFT * p.lift
 	ns.PoseCratePart(pose, crate.lid)
-	-- the glow rides the seam: the sprite's middle is a little above it, and the gap the lid opens takes it up
-	crate.glow.own = { 0, BOX.seamY - 78.4 - LIFT * p.lift * 0.5, 0, GLOW_W, GLOW_H }
+	-- the glow rides the seam: the sprite's middle is a little above it, and the gap the lid opens takes it up. Its pose
+	-- is set in place, as place runs every frame.
+	local glow = crate.glow.own
+	glow[2], glow[4], glow[5] = BOX.seamY - 78.4 - LIFT * p.lift * 0.5, GLOW_W, GLOW_H
 	ns.PoseCratePart(pose, crate.glow)
 	ns.FadeCratePart(pose, crate.glow, p.glow * p.pulse)
 	p.rays.own[3] = p.turn
@@ -90,13 +95,19 @@ local function clearSparks(p)
 	end
 end
 
--- Everything at rest: the lid down, no glow, no light, no sparks, nothing playing.
+-- Puts everything at rest: the lid down, no glow, no light, no sparks.
 ---@param p PagleCratePreview
-local function rest(p)
-	ns.StopMotion(p.view)
+local function settle(p)
 	p.glow, p.lift, p.pulse, p.turn, p.still = 0, 0, 1, 0, false
 	clearSparks(p)
 	place(p)
+end
+
+-- Everything at rest, and nothing playing.
+---@param p PagleCratePreview
+local function rest(p)
+	ns.StopMotion(p.view)
+	settle(p)
 end
 
 -- One spark's twinkle as an animation, looping: it grows out of its place on the seam, rises and drifts as it brightens,
@@ -106,6 +117,7 @@ end
 ---@return PagleAnimation
 local function twinkle(p, spark)
 	local x, rise, drift, dur, delay, size = unpack(spark.at)
+	rise = math.min(rise, MAX_RISE)
 	local y = BOX.seamY
 	local part = spark.part
 	local def = part.def
@@ -132,39 +144,31 @@ local function twinkle(p, spark)
 	}
 end
 
--- What plays while the pointer is over the crate, from wherever the glow and lid have got to: the rise of the lid and the
--- glow, the glow's breath, the rays' slow turn, and every spark's twinkle.
+-- What plays while the pointer is over the crate, from wherever the glow, lid and rays have got to: one clock (seconds
+-- since the pointer came, for a day) drives the rise of the lid and the glow, the glow's breath and the rays' slow turn,
+-- so each frame places the parts once; and every spark's twinkle. Its motion settles where a hidden owner's animations
+-- do (adapter/Motion.lua: the shop closed, the pointer never leaving), which for it is rest.
 ---@param p PagleCratePreview
 ---@return PagleAnimation[]
 local function hover(p)
+	local glow, lift, turn = p.glow, p.lift, p.turn
 	local animations = {
 		{
-			dur = RISE,
-			ease = ns.EASE.out,
-			keys = { { 0, { p.glow, p.lift } }, { 1, { 1, 1 } } },
-			apply = function(v)
-				p.glow, p.lift = v[1], v[2]
-				place(p)
-			end,
-		},
-		{
-			dur = BREATH,
-			iter = "infinite",
-			dir = "alternate",
-			ease = ns.EASE.inOut,
-			keys = { { 0, { 0.7 } }, { 1, { 1 } } },
-			apply = function(v)
-				p.pulse = v[1]
-				place(p)
-			end,
-		},
-		{
-			dur = TURN,
+			dur = 86400,
 			iter = "infinite",
 			ease = ns.EASE.linear,
-			keys = { { 0, { 0 } }, { 1, { 360 } } },
+			keys = { { 0, { 0 } }, { 1, { 86400 } } },
 			apply = function(v)
-				p.turn = v[1]
+				if not p.view:IsVisible() then
+					settle(p)
+					return
+				end
+				local t = v[1]
+				local u = ns.EASE.out(math.min(1, t / RISE))
+				p.glow, p.lift = glow + (1 - glow) * u, lift + (1 - lift) * u
+				-- the breath starts at its fullest, as the glow rests, and dips to 0.7 and back every 2 * BREATH
+				p.pulse = 0.85 + 0.15 * math.cos(math.pi * t / BREATH)
+				p.turn = (turn + 360 * t / TURN) % 360
 				place(p)
 			end,
 		},
@@ -287,6 +291,10 @@ local function build(frame)
 	end
 	view:SetScript("OnHide", hidden)
 	frame:SetScript("OnHide", hidden)
+	-- what is posed every frame keeps its origin, so that posing it allocates none
+	for _, part in ipairs({ p.rays, p.crate.glow }) do
+		part.origin = { x = part.x + part.w / 2, y = part.y + part.h / 2 }
+	end
 	for _, part in ipairs({ p.rays, p.beam }) do
 		ns.PoseCratePart(p.pose, part)
 	end
