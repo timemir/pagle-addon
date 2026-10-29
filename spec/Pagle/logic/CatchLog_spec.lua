@@ -1498,12 +1498,49 @@ describe("the block storage (LOG-R103–R105)", function()
 		end
 	)
 
-	it("makes the block check once for a log still as it passed, and again for anything else (LOG-R104)", function()
+	it(
+		"checks a log changed in place again: a block replaced, an extra key, a hand-set count then Append (LOG-R104)",
+		function()
+			-- A sealed block swapped for one of the wrong length, in the same blocks table.
+			local swapped = setLogEntries(adaAndBramLog(), skills(10), 3)
+			assert.is_nil(LogBlocks.Problem(swapped))
+			swapped.blocks[2] = "S1|1|1791731004|0|4|150|0\nS1|1|1791731005|0|5|150|0"
+			assert.is_truthy(LogBlocks.Problem(swapped))
+			assert.is_truthy(ns.CatchLogProblem(swapped))
+
+			-- A key that isn't an array index.
+			local keyed = setLogEntries(adaAndBramLog(), skills(10), 3)
+			assert.is_nil(LogBlocks.Problem(keyed))
+			keyed.blocks.extra = "S1|1|1791731999|0|9|150|0"
+			assert.is_truthy(LogBlocks.Problem(keyed))
+
+			-- A count set by hand, then an Append: the Append must not make the wrong count look checked.
+			local counted = setLogEntries(adaAndBramLog(), skills(10), 3)
+			assert.is_nil(LogBlocks.Problem(counted))
+			counted.count = 12
+			LogBlocks.Append(counted, "S1|1|1791732000|0|11|150|0")
+			assert.is_truthy(LogBlocks.Problem(counted))
+
+			-- And an Append to a log that matched keeps it checked, a block of three or the open one.
+			local fine = setLogEntries(adaAndBramLog(), skills(10), 3)
+			assert.is_nil(LogBlocks.Problem(fine))
+			LogBlocks.Append(fine, "S1|1|1791732000|0|11|150|0")
+			LogBlocks.Append(fine, "S1|1|1791732001|0|12|150|0")
+			LogBlocks.Append(fine, "S1|1|1791732002|0|13|150|0")
+			assert.is_nil(LogBlocks.Problem(fine))
+			fine.blocks[1] = "S1|1|1791731001|0|1|150|0"
+			assert.is_truthy(LogBlocks.Problem(fine))
+		end
+	)
+
+	it("keeps a log it passed through an Append, and checks anything else again (LOG-R104)", function()
 		local data = setLogEntries(adaAndBramLog(), skills(10), 3)
 		assert.is_nil(LogBlocks.Problem(data))
 
-		-- Passed: an extra line in a middle block isn't looked for again while the log stands as it was.
+		-- A block changed in place is found, the log no longer being as it passed.
 		data.blocks[2] = data.blocks[2] .. "\nS1|1|1791731999|0|9|150|0"
+		assert.is_truthy(LogBlocks.Problem(data))
+		data.blocks[2] = LogBlocks.Pack(skills(10), 3)[2]
 		assert.is_nil(LogBlocks.Problem(data))
 		-- Append keeps the passed record up to date, so a login that appends isn't checked again either.
 		LogBlocks.Append(data, "S1|1|1791732000|0|11|150|0")
@@ -1824,4 +1861,86 @@ describe("the tag scans and the kept Session cutter (LOG-R98, LOG-R105)", functi
 			assert.are.equal(23, catchLog.data.count)
 		end
 	)
+end)
+
+describe("the kept Session cutter, malformed (LOG-R98)", function()
+	local function sessions(n)
+		local entries, time = {}, 1791731000
+		for i = 1, n do
+			time = time + (i % 10 == 1 and 600 or 60)
+			entries[i] = ("C1|1|%d|0|c|494|1439|1|148|453|86|25|263|||6358x1"):format(time)
+		end
+		return entries
+	end
+
+	-- A login over 20 Casts whose PagleDB kept a cutter, changed by `change`: the Session it cuts.
+	local function sessionWith(change)
+		local entries = sessions(20)
+		local global = {}
+		local seed = setLogEntries(adaAndBramLog(), entries, 8)
+		ns.OpenCatchLog(seed, global):Session()
+		change(global.tailSession)
+		local data = setLogEntries(adaAndBramLog(), entries, 8)
+		data.logId = seed.logId
+		return ns.OpenCatchLog(data, global):Session()
+	end
+
+	it(
+		"cuts the log instead when the stored Session is missing, false for a log with Casts, or has a bad field",
+		function()
+			local expected = sessionWith(function() end)
+			assert.are.equal(10, expected.casts)
+			for name, change in pairs({
+				["missing"] = function(stored)
+					stored.session = nil
+				end,
+				["a string"] = function(stored)
+					stored.session = "none"
+				end,
+				["a count that isn't a number"] = function(stored)
+					stored.session.casts = "10"
+				end,
+				["a list holding junk"] = function(stored)
+					stored.session.zones = { "x" }
+				end,
+			}) do
+				assert.are.same(expected, sessionWith(change), name)
+			end
+		end
+	)
+
+	it("takes a stored seq only if it is a whole number the log can be at", function()
+		local expected = sessionWith(function() end)
+		for _, seq in ipairs({ 1.5, -1, 0.5, 20.0000001, "20", 1e300 }) do
+			assert.are.same(
+				expected,
+				sessionWith(function(stored)
+					stored.seq = seq
+				end),
+				tostring(seq)
+			)
+		end
+	end)
+
+	it("takes false as a log with no Cast yet only while the log has none", function()
+		local global = {}
+		local empty = setLogEntries(adaAndBramLog(), { "S1|1|1791731000|0|86|150|25" }, 8)
+		assert.is_nil(ns.OpenCatchLog(empty, global):Session())
+		assert.is_false(global.tailSession.session)
+		local again = setLogEntries(adaAndBramLog(), { "S1|1|1791731000|0|86|150|25" }, 8)
+		again.logId = empty.logId
+		assert.is_nil(ns.OpenCatchLog(again, global):Session())
+	end)
+
+	it("asks Has(kind) by tag, counting what it can't read, and never sizes anything", function()
+		local global = { decodeErrors = 0 }
+		local catchLog = ns.OpenCatchLog(setLogEntries(adaAndBramLog(), { "S1|1|1791731000|0|86|150|25" }, 8), global)
+		assert.is_false(catchLog:Has("cast"))
+		assert.is_true(catchLog:Has("skill"))
+		assert.is_false(catchLog:Has("prestige"))
+		local damaged = ns.OpenCatchLog(setLogEntries(adaAndBramLog(), { "C1|1|x" }, 8), global)
+		assert.is_false(damaged:Has("cast"))
+		assert.are.equal(1, global.decodeErrors)
+		assert.is_true(ns.OpenCatchLog(setLogEntries(adaAndBramLog(), sessions(3), 8), {}):Has("cast"))
+	end)
 end)

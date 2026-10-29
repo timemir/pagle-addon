@@ -62,7 +62,7 @@ function ns.AddOnboarding(global, catchLog)
 	if global.onboarding ~= nil then
 		return false
 	end
-	local hasCast = catchLog:Reverse("cast")() ~= nil
+	local hasCast = catchLog:Has("cast")
 	global.onboarding = ns.NewOnboardingState(hasCast and "returning" or "waiting")
 	return true
 end

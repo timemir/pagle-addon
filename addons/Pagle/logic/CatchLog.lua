@@ -91,12 +91,37 @@ local find, match, byte, sub = string.find, string.match, string.byte, string.su
 local CACHE_SLOTS = 8
 ---@type table<table, table>
 local caches = setmetatable({}, { __mode = "k" })
--- The logs LogBlocks.Problem has passed, by log (weak), with what it passed: the blocks table and its length, the last
--- block and the counts. The check reads every block, so it is done once a login: a log still as it was passed is
--- trusted without another look, and Append keeps the record up to date. Anything else (the blocks replaced, a
--- different count) is checked again.
+-- The logs LogBlocks.Problem has passed, by log (weak), with what it passed: the blocks table, a shallow copy of its
+-- array (strings are interned, so comparing it is a pointer compare per block), and the counts. The check reads every
+-- block's text, so it is done once a login: a log still exactly as it passed is trusted without another look, and
+-- Append keeps the record up to date only for a log that still matched it. Anything else (a block replaced in place,
+-- a key that isn't an array index, a different count) is checked in full.
 ---@type table<table, table>
 local verified = setmetatable({}, { __mode = "k" })
+
+-- Whether `data` is still exactly the log `seen` records.
+---@param seen table?
+---@param data table
+---@return boolean
+local function stillVerified(seen, data)
+	local blocks = data.blocks
+	if not seen or seen.blocks ~= blocks or seen.size ~= data.blockSize or seen.count ~= data.count then
+		return false
+	end
+	local copy, n, keys = seen.copy, seen.n, 0
+	if #blocks ~= n then
+		return false
+	end
+	for i = 1, n do
+		if copy[i] ~= blocks[i] then
+			return false
+		end
+	end
+	for _ in pairs(blocks) do
+		keys = keys + 1
+	end
+	return keys == n
+end
 
 -- The lines of block `b` of `data`, split once and kept, or nil if the log has no such block.
 ---@param data table PagleLog
@@ -317,6 +342,8 @@ function LogBlocks.Append(data, entry)
 	end
 	local blocks, count = data.blocks, data.count
 	local last = #blocks
+	local seen = verified[data]
+	local intact = stillVerified(seen, data) -- before it changes
 	local cache = caches[data]
 	if not cache then
 		cache = {}
@@ -333,10 +360,13 @@ function LogBlocks.Append(data, entry)
 		cache.open = { index = last, text = text, lines = lines }
 	end
 	data.count = count + 1
-	-- Still the log the check passed, with this one entry more.
-	local seen = verified[data]
-	if seen and seen.blocks == blocks then
-		seen.count, seen.size, seen.n, seen.last = data.count, data.blockSize, #blocks, blocks[#blocks]
+	-- A log that was exactly as the check passed it is, with this one entry more; any other is checked again.
+	if intact then
+		local n = #blocks
+		seen.copy[last], seen.copy[n] = blocks[last], blocks[n]
+		seen.count, seen.n = data.count, n
+	else
+		verified[data] = nil
 	end
 end
 
@@ -372,15 +402,7 @@ end
 ---@return string?
 function LogBlocks.Problem(data)
 	local size, count, blocks = data.blockSize, data.count, data.blocks
-	local seen = verified[data]
-	if
-		seen
-		and seen.blocks == blocks
-		and seen.size == size
-		and seen.count == count
-		and seen.n == #blocks
-		and seen.last == blocks[seen.n]
-	then
+	if stillVerified(verified[data], data) then
 		return nil
 	end
 	if type(size) ~= "number" or size < 1 or size % 1 ~= 0 then
@@ -425,7 +447,11 @@ function LogBlocks.Problem(data)
 	if held ~= count then
 		return ("count is %d but the blocks hold %d entries"):format(count, held)
 	end
-	verified[data] = { blocks = blocks, size = size, count = count, n = #blocks, last = blocks[#blocks] }
+	local copy = {}
+	for b = 1, #blocks do
+		copy[b] = blocks[b]
+	end
+	verified[data] = { blocks = blocks, copy = copy, size = size, count = count, n = #blocks }
 	return nil
 end
 
@@ -1008,12 +1034,24 @@ end
 ---@return integer?
 local function skillBefore(catchLog, char, seq)
 	local skills, data = catchLog.skills, catchLog.data
-	for at, entry in LogBlocks.Tagged(data, "S1", skills.scanned + 1, seq - 1) do
+	local function note(at, entry)
 		local reading = decode(entry, at, data.characters) --[[@as PagleSkillReading?]]
 		if reading then
 			local own = skills[reading.char] or { seqs = {}, ranks = {} }
 			own.seqs[#own.seqs + 1], own.ranks[#own.ranks + 1] = at, reading.rank
 			skills[reading.char] = own
+		end
+	end
+	if seq - 1 - skills.scanned < data.blockSize then
+		-- A rebuild asks Cast after Cast, a few entries apart: looking at those is cheaper than searching a block.
+		for at, entry in LogBlocks.Iterate(data, skills.scanned + 1, seq - 1) do
+			if sub(entry, 1, 3) == "S1|" then
+				note(at, entry)
+			end
+		end
+	else
+		for at, entry in LogBlocks.Tagged(data, "S1", skills.scanned + 1, seq - 1) do
+			note(at, entry)
 		end
 	end
 	skills.scanned = math.max(skills.scanned, math.min(seq - 1, data.count))
@@ -1079,11 +1117,12 @@ end
 ---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"
 ---@param fromSeq integer?
 ---@param sized boolean
+---@param byTag boolean? look at the entries of the kind's tag only, even for a Cast (never sized)
 ---@return fun(): PagleRecord?
-local function reverse(catchLog, kind, fromSeq, sized)
+local function reverse(catchLog, kind, fromSeq, sized, byTag)
 	local data = catchLog.data
 	local characters = data.characters
-	if kind ~= "cast" then
+	if kind ~= "cast" or byTag then
 		-- Only the entries of its tag are looked at (LogBlocks.TaggedBack), however long the log.
 		local walk = LogBlocks.TaggedBack(data, TAGS[kind], fromSeq)
 		return function()
@@ -1144,6 +1183,7 @@ local function storedCutter(catchLog, afterSeq)
 		or stored.logId ~= data.logId
 		or stored.rulesVersion ~= ns.SESSION_RULES_VERSION
 		or type(stored.seq) ~= "number"
+		or stored.seq % 1 ~= 0
 		or stored.seq < 0
 		or stored.seq > afterSeq
 		or (stored.seq == 0) ~= (stored.entry == nil)
@@ -1152,10 +1192,9 @@ local function storedCutter(catchLog, afterSeq)
 		return nil
 	end
 	local cutter = ns.NewSessionCutter(catchLog.breaks)
-	if stored.session then
-		if not ns.RestoreSessionCut(cutter, stored.session) then
-			return nil
-		end
+	-- `false` is a log with no Cast yet; anything else must read as a cutter's own Session.
+	if stored.session ~= false and not ns.RestoreSessionCut(cutter, stored.session) then
+		return nil
 	end
 	for seq, entry in LogBlocks.Iterate(data, stored.seq + 1, afterSeq) do
 		local record = decode(entry, seq, data.characters)
@@ -1306,6 +1345,15 @@ end
 ---@return integer
 function CatchLog:Count()
 	return self.data.count
+end
+
+--- Whether the log holds a record of `kind` the codec can read, found by its tag, newest first, without sizing or
+--- counting anything: how Core asks whether there is a Cast at all (ONB-R2). Entries of the kind it can't read are
+--- counted as Reverse counts them (LOG-R16).
+---@param kind "cast"|"skill"|"prestige"|"build"|"purchase"|"companion"
+---@return boolean
+function CatchLog:Has(kind)
+	return reverse(self, kind, nil, false, true)() ~= nil
 end
 
 --- Entry `seq` as it is stored, the raw string, or nil if the log has none (LOG-R105). Records come from `Iterate`

@@ -27,6 +27,7 @@ local PAGLEDB_KEYS = {
 		"pasteExports", -- paste-string.md › Data (PST-R40), from Track P
 		"pasteCheckpoints", -- paste-string.md › Data (PST-R42)
 		"tailSession", -- catch-log.md › Data (LOG-R98)
+		"catchCounts", -- catch-log.md › Data (LOG-R100)
 	},
 	profile = {
 		"reloadReminder",
@@ -189,7 +190,7 @@ describe("Core's SavedVariables at load, a Catch log it can't read (LOG-R104)", 
 			assert.is_nil(loaded.env.Pagle)
 			assert.are.equal(1, #loaded.printed)
 			assert.is_truthy(loaded.printed[1]:find("can't be read", 1, true))
-			assert.is_truthy(loaded.printed[1]:find("Before you log out", 1, true))
+			assert.is_truthy(loaded.printed[1]:find("Before you log out or reload", 1, true))
 			assert.are.same({}, loaded.client.errors)
 		end)
 	end
@@ -212,7 +213,11 @@ describe("Core's SavedVariables at load, a Catch log it can't read (LOG-R104)", 
 			assert.are.same(before, loaded.env.PagleLog)
 			assert.is_true(loaded.ns.recoveryBlocked)
 			assert.are.equal(1, #loaded.printed)
-			for _, text in ipairs({ "Before you log out", "Pagle.lua.bak", "github.com/timemir/pagle-addon/issues" }) do
+			for _, text in ipairs({
+				"Before you log out or reload",
+				"Pagle.lua.bak",
+				"github.com/timemir/pagle-addon/issues",
+			}) do
 				assert(loaded.printed[1]:find(text, 1, true), text)
 			end
 			-- /pagle says why, not that Recovery paused it.
