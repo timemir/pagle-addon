@@ -209,6 +209,101 @@ local function entryProblem(entry)
 	return nil
 end
 
+-- The entries of block `b` that start with `prefix` ("P1|"), as { seq, entry } in order, found by searching the
+-- block's text for "\n" .. prefix, which runs in C, and not by looking at every entry: the lines before a hit are
+-- counted only to give its seq, so a block with no hit costs one search.
+---@param data table PagleLog
+---@param b integer
+---@param prefix string
+---@return { [1]: integer, [2]: string }[]
+local function blockHits(data, b, prefix)
+	local blocks = data.blocks
+	local text = type(blocks) == "table" and blocks[b]
+	local hits = {}
+	if type(text) ~= "string" then
+		return hits
+	end
+	local before = (b - 1) * data.blockSize
+	local pos = sub(text, 1, #prefix) == prefix and 1 or nil
+	if not pos then
+		local at = find(text, "\n" .. prefix, 1, true)
+		pos = at and at + 1
+	end
+	local from, line = 1, 1 -- `line` is the line `from` is on
+	while pos do
+		if pos > from then
+			line = line + select(2, string.gsub(sub(text, from, pos - 1), "\n", "\n"))
+			from = pos
+		end
+		local stop = find(text, "\n", pos, true)
+		hits[#hits + 1] = { before + line, sub(text, pos, (stop or #text + 1) - 1) }
+		local at = find(text, "\n" .. prefix, pos, true)
+		pos = at and at + 1
+	end
+	return hits
+end
+
+--- Walks the entries whose tag is `tag` (they start with `tag .. "|"`) from seq `fromSeq` (1 if nil) to `toSeq` (the
+--- log's end if nil), yielding each as `seq, entry`: how Core finds the few Skill Readings, builds, Prestiges and other
+--- rare kinds in a log of any length without looking at every entry (LOG-R105).
+---@param data table PagleLog
+---@param tag string
+---@param fromSeq integer?
+---@param toSeq integer?
+---@return fun(): integer?, string?
+function LogBlocks.Tagged(data, tag, fromSeq, toSeq)
+	local size, prefix = data.blockSize, tag .. "|"
+	local from = math.max(fromSeq or 1, 1)
+	local last = math.min(toSeq or data.count, data.count)
+	local b, hits, at = floor((from - 1) / size), {}, 1
+	return function()
+		while true do
+			local hit = hits[at]
+			if hit then
+				at = at + 1
+				if hit[1] >= from and hit[1] <= last then
+					return hit[1], hit[2]
+				end
+			else
+				b = b + 1
+				if b * size - size >= last then
+					return nil
+				end
+				hits, at = blockHits(data, b, prefix), 1
+			end
+		end
+	end
+end
+
+--- Walks the entries whose tag is `tag` from seq `fromSeq` (the log's end if nil) back to the first, newest first,
+--- yielding each as `seq, entry`.
+---@param data table PagleLog
+---@param tag string
+---@param fromSeq integer?
+---@return fun(): integer?, string?
+function LogBlocks.TaggedBack(data, tag, fromSeq)
+	local size, prefix = data.blockSize, tag .. "|"
+	local from = math.min(fromSeq or data.count, data.count)
+	local b = from < 1 and 0 or floor((from - 1) / size) + 1
+	local hits, at = {}, 0
+	return function()
+		while true do
+			local hit = hits[at]
+			if hit then
+				at = at - 1
+				if hit[1] <= from then
+					return hit[1], hit[2]
+				end
+			elseif b < 1 then
+				return nil
+			else
+				hits = blockHits(data, b, prefix)
+				at, b = #hits, b - 1
+			end
+		end
+	end
+end
+
 --- Appends `entry` as the log's next entry: into the open block, or a new block when that one is full. Only the open
 --- block is ever rewritten (LOG-R14). Raises an error in the caller, appending nothing, for an entry that isn't a
 --- string, holds a line feed (LOG-R101), or is empty or starts with a byte below 0x20 (LOG-R104): the next login
@@ -913,15 +1008,15 @@ end
 ---@return integer?
 local function skillBefore(catchLog, char, seq)
 	local skills, data = catchLog.skills, catchLog.data
-	for at, entry in LogBlocks.Iterate(data, skills.scanned + 1, seq - 1) do
-		local reading = type(entry) == "string" and sub(entry, 1, 3) == "S1|" and decode(entry, at, data.characters) --[[@as PagleSkillReading?]]
+	for at, entry in LogBlocks.Tagged(data, "S1", skills.scanned + 1, seq - 1) do
+		local reading = decode(entry, at, data.characters) --[[@as PagleSkillReading?]]
 		if reading then
 			local own = skills[reading.char] or { seqs = {}, ranks = {} }
 			own.seqs[#own.seqs + 1], own.ranks[#own.ranks + 1] = at, reading.rank
 			skills[reading.char] = own
 		end
-		skills.scanned = at
 	end
+	skills.scanned = math.max(skills.scanned, math.min(seq - 1, data.count))
 	local own = skills[char]
 	if not own then
 		return nil
@@ -988,6 +1083,23 @@ end
 local function reverse(catchLog, kind, fromSeq, sized)
 	local data = catchLog.data
 	local characters = data.characters
+	if kind ~= "cast" then
+		-- Only the entries of its tag are looked at (LogBlocks.TaggedBack), however long the log.
+		local walk = LogBlocks.TaggedBack(data, TAGS[kind], fromSeq)
+		return function()
+			while true do
+				local seq, entry = walk()
+				if not seq then
+					return nil
+				end
+				local record = decode(entry --[[@as string]], seq, characters)
+				if record then
+					return record
+				end
+				countUndecodable(catchLog, seq)
+			end
+		end
+	end
 	local seq = math.min(fromSeq or data.count, data.count) + 1 -- past the end there is nothing to walk, nor to count
 	local counts -- the earlier Catch counts over the entries before `seq`, once the first Cast is asked for
 	sized = sized and kind == "cast" and catchLog.getItem ~= nil
@@ -1017,6 +1129,61 @@ local function reverse(catchLog, kind, fromSeq, sized)
 	end
 end
 
+-- The Session cutter PagleDB.global.tailSession kept from the last login, brought on to `afterSeq`, if it is this
+-- log's: the same logId and Session rules, ending at an entry this log holds at that seq, no later than `afterSeq`.
+-- The log only grows, so it still holds the Session it was cut with; the entries after it are fed as a read would.
+-- Nil when there is none to use, and the look-back finds the Session instead.
+---@param catchLog PagleCatchLog
+---@param afterSeq integer
+---@return PagleSessionCutter?
+local function storedCutter(catchLog, afterSeq)
+	local stored, data = catchLog.global.tailSession, catchLog.data
+	if
+		type(stored) ~= "table"
+		or data.logId == nil
+		or stored.logId ~= data.logId
+		or stored.rulesVersion ~= ns.SESSION_RULES_VERSION
+		or type(stored.seq) ~= "number"
+		or stored.seq < 0
+		or stored.seq > afterSeq
+		or (stored.seq == 0) ~= (stored.entry == nil)
+		or (stored.seq > 0 and LogBlocks.Get(data, stored.seq) ~= stored.entry)
+	then
+		return nil
+	end
+	local cutter = ns.NewSessionCutter(catchLog.breaks)
+	if stored.session then
+		if not ns.RestoreSessionCut(cutter, stored.session) then
+			return nil
+		end
+	end
+	for seq, entry in LogBlocks.Iterate(data, stored.seq + 1, afterSeq) do
+		local record = decode(entry, seq, data.characters)
+		if record then
+			cutter:Add(record)
+		end
+	end
+	return cutter
+end
+
+-- Keeps the log's tail cutter in PagleDB.global.tailSession for the next login: its Session as it is (the cutter's own
+-- table, so the Casts Append feeds it go with it), the seq it ends at and the entry there. A cache of the log, never a
+-- source: losing it changes nothing.
+---@param catchLog PagleCatchLog
+local function storeCutter(catchLog)
+	local data, tail = catchLog.data, catchLog.tail
+	if tail and data.logId ~= nil then
+		local seq = data.count
+		catchLog.global.tailSession = {
+			logId = data.logId,
+			rulesVersion = ns.SESSION_RULES_VERSION,
+			seq = seq,
+			entry = seq > 0 and LogBlocks.Get(data, seq) or nil,
+			session = tail:Session() or false,
+		}
+	end
+end
+
 -- A Session cutter fed every record up to `afterSeq` that the tags after it depend on: from the first Cast of the
 -- Session in progress at `afterSeq` (LOG-R98). That look-back decodes the open Session, so the cutter at each seq is
 -- kept for the login: the log only grows, so the entries up to a seq never change. Each caller gets its own copy.
@@ -1028,16 +1195,19 @@ local function cutterAt(catchLog, afterSeq)
 	if known then
 		return known:Copy()
 	end
-	local cutter = ns.NewSessionCutter(catchLog.breaks)
-	local first =
-		ns.SessionStartSeq(reverse(catchLog, "cast", afterSeq, false) --[[@as fun(): PagleCast?]], catchLog.breaks)
-	if first then
-		local data = catchLog.data
-		for seq, entry in LogBlocks.Iterate(data, first, afterSeq) do
-			local record = decode(entry, seq, data.characters)
-			if record then
-				cutter:Add(record)
-			end
+	local cutter = storedCutter(catchLog, afterSeq)
+	if not cutter then
+		cutter = ns.NewSessionCutter(catchLog.breaks)
+		-- The Casts of the Session in progress are decoded once, on the way back, and fed from its first: only Casts
+		-- change what a cutter holds (a Skill Reading is tagged, never counted).
+		local casts = {}
+		ns.SessionStartSeq(
+			reverse(catchLog, "cast", afterSeq, false) --[[@as fun(): PagleCast?]],
+			catchLog.breaks,
+			casts
+		)
+		for i = #casts, 1, -1 do
+			cutter:Add(casts[i])
 		end
 	end
 	catchLog.cutters[afterSeq] = cutter:Copy()
@@ -1160,7 +1330,9 @@ function CatchLog:Append(record)
 	local data = self.data
 	local seq = data.count + 1
 	local tail = self:tailCutter()
-	local counts = self.getItem and self:tailCatchCounts()
+	-- Counted on from the log's end only for a Cast, whose size needs the earlier Catches; any other entry leaves the
+	-- counts as they are, so a log that has none yet is not counted whole to append a Skill Reading or a build (LOG-R100).
+	local counts = self.getItem and (record.kind == "cast" and self:tailCatchCounts() or self.tailCounts)
 	local tag = TAGS[record.kind]
 	local ok, entry = pcall(function()
 		local fields = kinds[tag].encode(record)
@@ -1180,6 +1352,7 @@ function CatchLog:Append(record)
 		storeCounts(self, seq, counts)
 	end
 	tail:Add(appended)
+	storeCutter(self)
 	if appended.kind == "prestige" and self.prestiges then
 		self.prestiges = self.prestiges + 1
 	end
@@ -1221,6 +1394,7 @@ end
 function CatchLog:tailCutter()
 	if not self.tail then
 		self.tail = cutterAt(self, self.data.count)
+		storeCutter(self)
 	end
 	return self.tail
 end

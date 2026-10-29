@@ -261,6 +261,7 @@ function ns.RecoveryPrepare(data, keys, log, archive, db)
 	local global = rebuilt.global
 	for _, name in ipairs({
 		"catchCounts",
+		"tailSession",
 		"sessionBreaks",
 		"lastBuild",
 		"lastEndedSession",

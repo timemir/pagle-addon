@@ -1547,3 +1547,281 @@ describe("the block storage (LOG-R103–R105)", function()
 		end
 	)
 end)
+
+-- The scans that must not grow with the log (LOG-R98, LOG-R105): the entries of one tag, found without looking at every
+-- entry, and the Session cutter kept for the next login.
+describe("the tag scans and the kept Session cutter (LOG-R98, LOG-R105)", function()
+	local LogBlocks = ns.LogBlocks
+
+	-- A Skill Reading entry of Ada's at second `i`, a Cast entry, a Prestige entry and a Module record.
+	local function skill(i)
+		return ("S1|1|%d|0|%d|150|0"):format(1791731000 + i, i)
+	end
+	local function cast(i)
+		return ("C1|1|%d|0|c|494|1439|1|148|453|86|25|263|||6358x1"):format(1791731000 + i)
+	end
+	local function prestige(i)
+		return ("P1|1|%d|0|%d|1850"):format(1791731000 + i, i)
+	end
+
+	-- 20 entries in blocks of 4: Prestiges at 1, 4, 5 and 20, a Skill Reading at 8 and a lookalike (a tag "XP1") at 6.
+	local function mixed()
+		local entries = {}
+		for i = 1, 20 do
+			entries[i] = cast(i)
+		end
+		entries[1], entries[4], entries[5], entries[20] = prestige(1), prestige(4), prestige(5), prestige(20)
+		entries[8] = skill(8)
+		entries[6] = "XP1|1|1791731006|0|1|1850"
+		entries[7] = "A1|1|1791731007|0|Ledger|title|\\nP1|not a tag"
+		return setLogEntries(adaAndBramLog(), entries, 4), entries
+	end
+
+	local function collect(walk)
+		local seqs, found = {}, {}
+		for seq, entry in walk do
+			seqs[#seqs + 1], found[#found + 1] = seq, entry
+		end
+		return seqs, found
+	end
+
+	it("walks the entries of one tag forwards, by seq, whatever the blocks, and only that tag", function()
+		local data, entries = mixed()
+
+		local seqs, found = collect(LogBlocks.Tagged(data, "P1"))
+
+		assert.are.same({ 1, 4, 5, 20 }, seqs)
+		assert.are.same({ entries[1], entries[4], entries[5], entries[20] }, found)
+		assert.are.same({ 8 }, (collect(LogBlocks.Tagged(data, "S1"))))
+		assert.are.same({}, (collect(LogBlocks.Tagged(data, "K1"))))
+		assert.are.same({ 4, 5 }, (collect(LogBlocks.Tagged(data, "P1", 2, 19))))
+		assert.are.same({ 5, 20 }, (collect(LogBlocks.Tagged(data, "P1", 5))))
+		assert.are.same({ 1 }, (collect(LogBlocks.Tagged(data, "P1", nil, 3))))
+		assert.are.same({}, (collect(LogBlocks.Tagged(data, "P1", 6, 19))))
+	end)
+
+	it("walks the entries of one tag backwards from a seq, newest first", function()
+		local data, entries = mixed()
+
+		local seqs, found = collect(LogBlocks.TaggedBack(data, "P1"))
+
+		assert.are.same({ 20, 5, 4, 1 }, seqs)
+		assert.are.same({ entries[20], entries[5], entries[4], entries[1] }, found)
+		assert.are.same({ 5, 4, 1 }, (collect(LogBlocks.TaggedBack(data, "P1", 19))))
+		assert.are.same({ 4, 1 }, (collect(LogBlocks.TaggedBack(data, "P1", 4))))
+		assert.are.same({ 1 }, (collect(LogBlocks.TaggedBack(data, "P1", 3))))
+		assert.are.same({}, (collect(LogBlocks.TaggedBack(data, "P1", 0))))
+		assert.are.same({ 8 }, (collect(LogBlocks.TaggedBack(data, "S1", 100))))
+	end)
+
+	it("finds the same entries as a walk over every entry, on a log of many blocks", function()
+		local entries = {}
+		for i = 1, 3000 do
+			entries[i] = i % 97 == 0 and prestige(i) or cast(i)
+		end
+		local data = setLogEntries(adaAndBramLog(), entries, 7)
+		local expected = {}
+		for seq, entry in ipairs(entries) do
+			if entry:sub(1, 3) == "P1|" then
+				expected[#expected + 1] = seq
+			end
+		end
+
+		assert.are.same(expected, (collect(LogBlocks.Tagged(data, "P1"))))
+		local back = collect(LogBlocks.TaggedBack(data, "P1"))
+		for i = 1, #back do
+			assert.are.equal(expected[#expected + 1 - i], back[i])
+		end
+	end)
+
+	it(
+		"counts the Prestiges and finds the Companion entry and the last build and Skill Reading by their tags",
+		function()
+			local data = mixed()
+			local catchLog = ns.OpenCatchLog(data, { decodeErrors = 0 })
+
+			assert.are.equal(4, catchLog:Prestiges())
+			assert.is_false(catchLog:HasCompanion())
+			assert.are.equal(8, catchLog:Reverse("skill")().seq)
+			assert.is_nil(catchLog:Reverse("build")())
+			-- Newest first, from a seq, and an entry of the tag the codec can't read is counted once.
+			local seqs = {}
+			for record in catchLog:Reverse("prestige", 19) do
+				seqs[#seqs + 1] = record.seq
+			end
+			assert.are.same({ 5, 4, 1 }, seqs)
+			local damaged = setLogEntries(adaAndBramLog(), { cast(1), "P1|1|x", cast(3) }, 2)
+			local global = { decodeErrors = 0 }
+			local opened = ns.OpenCatchLog(damaged, global)
+			assert.is_nil(opened:Reverse("prestige")())
+			assert.is_nil(opened:Reverse("prestige")())
+			assert.are.equal(1, global.decodeErrors)
+		end
+	)
+
+	-- A log of one character with `n` Casts a minute apart, ten minutes between each ten: ten Casts a Session.
+	local function sessions(n)
+		local entries = {}
+		local time = 1791731000
+		for i = 1, n do
+			time = time + (i % 10 == 1 and 600 or 60)
+			entries[i] = ("C1|1|%d|0|c|494|1439|1|%d|453|86|25|263|||6358x1"):format(time, 148 + i % 3)
+		end
+		return entries
+	end
+
+	it(
+		"keeps the Session cutter for the next login, and a login whose stored cutter matches walks no Session back",
+		function()
+			local entries = sessions(95)
+			local global = {}
+			local first = ns.OpenCatchLog(setLogEntries(adaAndBramLog(), entries, 8), global)
+			local expected = first:Session()
+			assert.are.equal(5, expected.casts)
+			assert.are.same(
+				{ logId = first.data.logId, rulesVersion = ns.SESSION_RULES_VERSION, seq = 95, entry = entries[95] },
+				{
+					logId = global.tailSession.logId,
+					rulesVersion = global.tailSession.rulesVersion,
+					seq = global.tailSession.seq,
+					entry = global.tailSession.entry,
+				}
+			)
+			local walked = spy.on(ns, "SessionStartSeq")
+			finally(function()
+				walked:revert()
+			end)
+
+			-- The next login: the same log and the same PagleDB, as the client saved them.
+			local again = ns.OpenCatchLog(setLogEntries(adaAndBramLog(), entries, 8), global)
+			again.data.logId = first.data.logId
+			local session = again:Session()
+
+			assert.spy(walked).was.not_called()
+			assert.are.same(expected, session)
+			assert.are.same(first:Session(), again:Session())
+		end
+	)
+
+	it("brings a stored cutter on through the entries after it, as a walk would find the Session", function()
+		local entries = sessions(95)
+		local global = {}
+		local base = setLogEntries(adaAndBramLog(), { unpack(entries, 1, 93) }, 8)
+		ns.OpenCatchLog(base, global):Session()
+		assert.are.equal(93, global.tailSession.seq)
+
+		local whole = ns.OpenCatchLog(setLogEntries(adaAndBramLog(), entries, 8), {})
+		local expected = whole:Session()
+		local resumed = setLogEntries(adaAndBramLog(), entries, 8)
+		resumed.logId = base.logId
+		local onward = ns.OpenCatchLog(resumed, global)
+
+		assert.are.same(expected, onward:Session())
+		-- Every Cast tagged as a walk tags it, from any seq at or after the stored one.
+		for _, after in ipairs({ 93, 94, 95 }) do
+			assert.are.same(
+				(function()
+					local tagged = {}
+					for record in whole:Iterate(after) do
+						tagged[record.seq] = record.session
+					end
+					return tagged
+				end)(),
+				(function()
+					local tagged = {}
+					for record in onward:Iterate(after) do
+						tagged[record.seq] = record.session
+					end
+					return tagged
+				end)()
+			)
+		end
+	end)
+
+	it(
+		"walks the Session back instead when the stored cutter is another log's, an older rule's, or past the read",
+		function()
+			local entries = sessions(95)
+			local function opened(change)
+				local global = {}
+				local seed = setLogEntries(adaAndBramLog(), entries, 8)
+				ns.OpenCatchLog(seed, global):Session()
+				change(global.tailSession)
+				local data = setLogEntries(adaAndBramLog(), entries, 8)
+				data.logId = seed.logId
+				local walked = spy.on(ns, "SessionStartSeq")
+				local session = ns.OpenCatchLog(data, global):Session()
+				---@diagnostic disable-next-line: undefined-field -- luassert spies keep their calls
+				local calls = #walked.calls
+				walked:revert()
+				return calls, session
+			end
+			local _, expected = opened(function() end)
+			for name, change in pairs({
+				["another log's"] = function(stored)
+					stored.logId = "0000000000000000"
+				end,
+				["an older rule's"] = function(stored)
+					stored.rulesVersion = 0
+				end,
+				["of an entry the log doesn't hold there"] = function(stored)
+					stored.entry = "S1|1|1|0|1|1|0"
+				end,
+				["past the log's end"] = function(stored)
+					stored.seq = 500
+				end,
+				["without its Session's fields"] = function(stored)
+					stored.session = { casts = "many" }
+				end,
+			}) do
+				local calls, session = opened(change)
+				assert.are.equal(1, calls, name)
+				assert.are.same(expected, session, name)
+			end
+		end
+	)
+
+	it("reads each Cast of the Session in progress once on the way back, and tags the rest the same", function()
+		local entries = sessions(95)
+		local data = setLogEntries(adaAndBramLog(), entries, 8)
+		local catchLog = ns.OpenCatchLog(data, {})
+		local session = catchLog:Session()
+
+		assert.are.equal(5, session.casts)
+		assert.are.equal(91, session.firstSeq)
+		assert.are.same({ 1, 1 }, { session.characters[1], #session.characters })
+		assert.are.same({ 149, 150, 148 }, session.zones)
+	end)
+
+	it(
+		"doesn't count the log whole to append a Skill Reading or a build, only for the first Cast (LOG-R100)",
+		function()
+			local getItem = function()
+				return nil
+			end
+			local catchLog = ns.OpenCatchLog(setLogEntries(adaAndBramLog(), sessions(20), 8), {}, nil, getItem)
+
+			catchLog:Append({ kind = "skill", char = 1, time = 1791740000, rank = 1, max = 300, mod = 0 })
+			catchLog:Append({
+				kind = "build",
+				char = 1,
+				time = 1791740001,
+				build = 70338,
+				version = "1.60.1",
+				rules = "pagle-2026c",
+			})
+			assert.is_nil(catchLog.tailCounts)
+
+			catchLog:Append({
+				kind = "cast",
+				char = 1,
+				time = 1791740100,
+				outcome = "caught",
+				conditions = { minute = 494, zone = 148, subzone = 0, events = {}, auras = {} },
+				items = { { itemID = 6358, quantity = 1 } },
+			})
+			assert.is_table(catchLog.tailCounts)
+			assert.are.equal(23, catchLog.data.count)
+		end
+	)
+end)

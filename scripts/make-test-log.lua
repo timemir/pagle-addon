@@ -955,8 +955,11 @@ local function writeBig(game, facts, log, n, now)
 	end
 	local sessions = math.ceil(n / CASTS_PER_SESSION)
 	local length = CASTS_PER_SESSION * CAST_GAP
-	local gap = math.max(math.floor(BIG_SPAN / sessions), length + 120)
-	-- Session k starts in [first + k * gap, first + (k + 1) * gap - length - 120], so the last ends before now - END_GAP.
+	-- At least a Session gap and 2 minutes between one session's last Cast and the next's first (LOG-R60), however many
+	-- sessions: closer, the whole log would be one Session, which no player's is, and every login would cut it whole.
+	local apart = game.core.SESSION_GAP + 120
+	local gap = math.max(math.floor(BIG_SPAN / sessions), length + apart)
+	-- Session k starts in [first + k * gap, first + (k + 1) * gap - length - apart], so the last ends before now - END_GAP.
 	local first = now - END_GAP - sessions * gap
 	local data, catchLog = newLog(game, log, facts, first - 60)
 	local chars = #log.characters
@@ -964,7 +967,7 @@ local function writeBig(game, facts, log, n, now)
 	for i = 0, n - 1 do
 		local session, nth = math.floor(i / CASTS_PER_SESSION), i % CASTS_PER_SESSION
 		if nth == 0 then
-			start = first + session * gap + math.random(0, gap - length - 120)
+			start = first + session * gap + math.random(0, gap - length - apart)
 		end
 		local list = byZone[zones[math.floor(session / chars) % #zones + 1]]
 		local record = castRecord(game, facts, list[math.random(#list)], start + nth * CAST_GAP, session % chars + 1)

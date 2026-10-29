@@ -26,6 +26,7 @@ local PAGLEDB_KEYS = {
 		"onboarding", -- onboarding.md › Data (ONB-R1)
 		"pasteExports", -- paste-string.md › Data (PST-R40), from Track P
 		"pasteCheckpoints", -- paste-string.md › Data (PST-R42)
+		"tailSession", -- catch-log.md › Data (LOG-R98)
 	},
 	profile = {
 		"reloadReminder",
