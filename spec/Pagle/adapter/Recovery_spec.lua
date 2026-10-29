@@ -115,6 +115,27 @@ describe("Recovery through the addon", function()
 		assert.are.same(source, archive.original)
 	end)
 
+	it("says so, and shows nothing, for a preserved branch a beta Pagle kept in format 3's entries", function()
+		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
+		loaded.env.PagleRecovery = {
+			completed = { applicationId = "old" },
+			archives = {
+				old = {
+					original = { format = 3, entries = { "raw|original|record" } },
+					staged = { { seq = 1, reason = "source_invalid" } },
+				},
+			},
+		}
+
+		loaded.env.SlashCmdList.PAGLE("recovery inspect")
+
+		assert.is_nil(loaded.ns.recoveryWindow)
+		assert.are.same({
+			"Pagle Recovery: this archive was kept by an older Pagle, in a Catch log format this one can't show records from. It is still preserved.",
+		}, loaded.printed)
+		assert.are.equal("raw|original|record", loaded.env.PagleRecovery.archives.old.original.entries[1])
+	end)
+
 	it("loads staged Recovery before opening the log and preserves the original branch", function()
 		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-signed-v1.json")))
 		local log = original()

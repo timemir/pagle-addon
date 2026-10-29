@@ -188,7 +188,36 @@ describe("Core's SavedVariables at load, a Catch log it can't read (LOG-R104)", 
 			assert.is_nil(loaded.env.Pagle)
 			assert.are.equal(1, #loaded.printed)
 			assert.is_truthy(loaded.printed[1]:find("can't be read", 1, true))
-			assert.is_truthy(loaded.printed[1]:find("has not been changed", 1, true))
+			assert.is_truthy(loaded.printed[1]:find("Before you log out", 1, true))
+			assert.are.same({}, loaded.client.errors)
+		end)
+	end
+
+	for name, change in pairs({
+		["a newer format"] = function(log)
+			log.format = 5
+		end,
+		["a format that isn't a number"] = function(log)
+			log.format = "4"
+		end,
+	}) do
+		it(("leaves a log with %s exactly as it is, and stops with the advice (LOG-R104)"):format(name), function()
+			local log = setLogEntries(savedLog(), entries(), 2)
+			change(log)
+			local before = copy(log)
+
+			local loaded = login({ PagleLog = log })
+
+			assert.are.same(before, loaded.env.PagleLog)
+			assert.is_true(loaded.ns.recoveryBlocked)
+			assert.are.equal(1, #loaded.printed)
+			for _, text in ipairs({ "Before you log out", "Pagle.lua.bak", "github.com/timemir/pagle-addon/issues" }) do
+				assert(loaded.printed[1]:find(text, 1, true), text)
+			end
+			-- /pagle says why, not that Recovery paused it.
+			loaded.env.SlashCmdList.PAGLE("")
+			assert.is_truthy(loaded.printed[2]:find("Catch log can't be read", 1, true))
+			assert.is_nil(loaded.printed[2]:find("Recovery", 1, true))
 			assert.are.same({}, loaded.client.errors)
 		end)
 	end

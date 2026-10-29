@@ -91,6 +91,12 @@ local find, match, byte, sub = string.find, string.match, string.byte, string.su
 local CACHE_SLOTS = 8
 ---@type table<table, table>
 local caches = setmetatable({}, { __mode = "k" })
+-- The logs LogBlocks.Problem has passed, by log (weak), with what it passed: the blocks table and its length, the last
+-- block and the counts. The check reads every block, so it is done once a login: a log still as it was passed is
+-- trusted without another look, and Append keeps the record up to date. Anything else (the blocks replaced, a
+-- different count) is checked again.
+---@type table<table, table>
+local verified = setmetatable({}, { __mode = "k" })
 
 -- The lines of block `b` of `data`, split once and kept, or nil if the log has no such block.
 ---@param data table PagleLog
@@ -187,14 +193,32 @@ function LogBlocks.Iterate(data, fromSeq, toSeq)
 	end
 end
 
+-- Why `entry` can't be stored, or nil: it isn't a string, it holds a line feed (LOG-R101), which would add a line to
+-- its block, or it is empty or starts with a byte below 0x20, which would make its block unreadable at the next login
+-- (LOG-R104). Every tag starts with an uppercase letter, so no entry the codec writes is refused.
+---@param entry any
+---@return string?
+local function entryProblem(entry)
+	if type(entry) ~= "string" then
+		return "a Catch log entry must be a string"
+	elseif find(entry, "\n", 1, true) then
+		return "a Catch log entry can't hold a line feed"
+	elseif entry == "" or byte(entry, 1) < 0x20 then
+		return "a Catch log entry can't be empty or start with a byte below 0x20"
+	end
+	return nil
+end
+
 --- Appends `entry` as the log's next entry: into the open block, or a new block when that one is full. Only the open
---- block is ever rewritten (LOG-R14). Raises an error, appending nothing, for an entry that isn't a string or holds a
---- line feed (LOG-R101), which would add a line to the block.
+--- block is ever rewritten (LOG-R14). Raises an error in the caller, appending nothing, for an entry that isn't a
+--- string, holds a line feed (LOG-R101), or is empty or starts with a byte below 0x20 (LOG-R104): the next login
+--- would not read the block.
 ---@param data table PagleLog
 ---@param entry string
 function LogBlocks.Append(data, entry)
-	if type(entry) ~= "string" or find(entry, "\n", 1, true) then
-		error("a Catch log entry must be a string without a line feed", 2)
+	local refused = entryProblem(entry)
+	if refused then
+		error(refused, 2)
 	end
 	local blocks, count = data.blocks, data.count
 	local last = #blocks
@@ -214,11 +238,15 @@ function LogBlocks.Append(data, entry)
 		cache.open = { index = last, text = text, lines = lines }
 	end
 	data.count = count + 1
+	-- Still the log the check passed, with this one entry more.
+	local seen = verified[data]
+	if seen and seen.blocks == blocks then
+		seen.count, seen.size, seen.n, seen.last = data.count, data.blockSize, #blocks, blocks[#blocks]
+	end
 end
 
 --- The blocks that hold `entries`, `blockSize` to a block (the last may hold fewer), and their count: how a log is
---- built whole (Recovery, the test-log tooling). Raises an error for an entry that isn't a string or holds a line
---- feed.
+--- built whole (Recovery, the test-log tooling). Raises an error in the caller for an entry Append refuses.
 ---@param entries string[]
 ---@param blockSize integer? ns.LOG_BLOCK_SIZE if nil
 ---@return string[] blocks
@@ -230,8 +258,9 @@ function LogBlocks.Pack(entries, blockSize)
 		local last = math.min(first + blockSize - 1, count)
 		for seq = first, last do
 			local entry = entries[seq]
-			if type(entry) ~= "string" or find(entry, "\n", 1, true) then
-				error(("Catch log entry %d must be a string without a line feed"):format(seq), 2)
+			local refused = entryProblem(entry)
+			if refused then
+				error(("Catch log entry %d: %s"):format(seq, refused), 2)
 			end
 		end
 		blocks[#blocks + 1] = table.concat(entries, "\n", first, last)
@@ -248,6 +277,17 @@ end
 ---@return string?
 function LogBlocks.Problem(data)
 	local size, count, blocks = data.blockSize, data.count, data.blocks
+	local seen = verified[data]
+	if
+		seen
+		and seen.blocks == blocks
+		and seen.size == size
+		and seen.count == count
+		and seen.n == #blocks
+		and seen.last == blocks[seen.n]
+	then
+		return nil
+	end
 	if type(size) ~= "number" or size < 1 or size % 1 ~= 0 then
 		return "blockSize is not a whole number of 1 or more"
 	end
@@ -290,6 +330,7 @@ function LogBlocks.Problem(data)
 	if held ~= count then
 		return ("count is %d but the blocks hold %d entries"):format(count, held)
 	end
+	verified[data] = { blocks = blocks, size = size, count = count, n = #blocks, last = blocks[#blocks] }
 	return nil
 end
 
@@ -1221,13 +1262,23 @@ function CatchLog:EnsureLogId(now)
 	ensureLogId(self.data, now)
 end
 
---- Why the Catch log stored in `saved` can't be opened, or nil if it can (LOG-R104): it is in the codec's format and
---- its block store fails LogBlocks.Problem. A fresh install, and a log in another format (which starts over, LOG-R18),
---- have no such problem. It reads `saved` and changes nothing.
+--- Why the Catch log stored in `saved` can't be opened, or nil if it can (LOG-R104). It can't when it is in the codec's
+--- format and its block store fails LogBlocks.Problem, or when its format is newer than the codec's or not a number: a
+--- Pagle from the future wrote it, or something else did, and nothing here may empty it. A fresh install, and a log
+--- in an older format (which starts over, LOG-R18), have no such problem. It reads `saved` and changes nothing; the
+--- block check is done once for a log still as it was (LogBlocks.Problem).
 ---@param saved any
 ---@return string?
 function ns.CatchLogProblem(saved)
-	if type(saved) == "table" and saved.format == ns.LOG_FORMAT then
+	if type(saved) ~= "table" then
+		return nil
+	end
+	local format = saved.format
+	if type(format) ~= "number" then
+		return "its format is not a number"
+	elseif format > ns.LOG_FORMAT then
+		return ("it is format %s, newer than the %d this Pagle reads"):format(tostring(format), ns.LOG_FORMAT)
+	elseif format == ns.LOG_FORMAT then
 		return LogBlocks.Problem(saved)
 	end
 	return nil
@@ -1235,9 +1286,10 @@ end
 
 --- Opens the Catch log stored in `saved`, the PagleLog SavedVariable (LOG-R10), the one way in for Core, the
 --- backend's driver and the tooling alike. A fresh install (`saved` nil) starts an empty log. A log in another format
---- than the codec's starts a new one, keeping its characters (LOG-R18); `started` says so, for the chat line. A log in
---- the codec's format (4) whose block store can't be read (ns.CatchLogProblem, LOG-R104) is not opened: it raises an
---- error, and leaves `saved` exactly as it was, since nothing may rewrite it; check first with ns.CatchLogProblem. The
+--- than the codec's, an older one, starts a new one, keeping its characters (LOG-R18); `started` says so, for the chat
+--- line. A log that ns.CatchLogProblem finds unreadable (LOG-R104: a format-4 block store that fails its check, a format
+--- newer than the codec's, a format that isn't a number) is not opened: it raises an error, and leaves `saved` exactly
+--- as it was, since nothing may rewrite it; check first with ns.CatchLogProblem, which is cheap after the first call. The
 --- logId is created once
 --- the log has a first character (LOG-R15). Every Cast it hands out sizes its Species items, and gives them their
 --- varieties, through `getItem`, the catalogue's GetItem, asked at each decode, so a released catalogue sizes them from
@@ -1257,6 +1309,8 @@ function ns.OpenCatchLog(saved, global, now, getItem)
 	local data = saved
 	if type(data) ~= "table" then
 		data = { format = ns.LOG_FORMAT, characters = {}, blockSize = ns.LOG_BLOCK_SIZE, count = 0, blocks = {} }
+	elseif ns.CatchLogProblem(data) then
+		error("the Catch log can't be read: " .. ns.CatchLogProblem(data), 2)
 	elseif data.format ~= ns.LOG_FORMAT then
 		local characters = data.characters or {}
 		for key in pairs(data) do
@@ -1265,11 +1319,6 @@ function ns.OpenCatchLog(saved, global, now, getItem)
 		data.format, data.characters = ns.LOG_FORMAT, characters
 		data.blockSize, data.count, data.blocks = ns.LOG_BLOCK_SIZE, 0, {}
 		started = true
-	else
-		local problem = LogBlocks.Problem(data)
-		if problem then
-			error("the Catch log can't be read: " .. problem, 2)
-		end
 	end
 	ensureLogId(data, now)
 	local catchLog = {

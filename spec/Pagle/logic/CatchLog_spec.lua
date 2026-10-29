@@ -642,7 +642,7 @@ describe("opening PagleLog", function()
 		assert.is_false(started)
 	end)
 
-	for _, format in ipairs({ 0, 1, 2, 3, "nil" }) do
+	for _, format in ipairs({ 0, 1, 2, 3 }) do
 		it(("starts a new log from one in format %s, keeping the characters (LOG-R18)"):format(format), function()
 			local saved = adaAndBramLog({ "C1|1|1791731747|0|c|494|1439|1|148|453|86|25|263|||6358x1" })
 			saved.format = tonumber(format)
@@ -1452,6 +1452,69 @@ describe("the block storage (LOG-R103–R105)", function()
 		assert.are.equal(0, select(2, LogBlocks.Pack({})))
 		assert.are.equal(1, #(LogBlocks.Pack(skills(256))))
 		assert.are.equal(2, #(LogBlocks.Pack(skills(257))))
+	end)
+
+	it("leaves a log in a newer format, or one whose format isn't a number, exactly as it is (LOG-R104)", function()
+		for _, format in ipairs({ 5, 4.5, 99, "4", "nil", true }) do
+			local data = setLogEntries(adaAndBramLog(), skills(5), 3)
+			data.format = format ~= "nil" and format or nil
+			data.stale = true
+			local before = copy(data)
+
+			assert(ns.CatchLogProblem(data), tostring(format))
+			assert.has_error(function()
+				ns.OpenCatchLog(data, {}, 1791731700)
+			end)
+			assert.are.same(before, data, "a rolled-back Pagle must find the log as it was: " .. tostring(format))
+		end
+		-- Only an older number starts over (LOG-R18).
+		for _, format in ipairs({ 0, 1, 2, 3 }) do
+			local data = savedLog(skills(2), format)
+			assert.is_nil(ns.CatchLogProblem(data))
+			local _, started = ns.OpenCatchLog(data, {}, 1791731700)
+			assert.is_true(started)
+		end
+	end)
+
+	it(
+		"refuses an empty entry or one starting below 0x20 in the store and the packer, appending nothing (LOG-R104)",
+		function()
+			local data = setLogEntries(adaAndBramLog(), skills(3), 3)
+			local before = copy(data)
+			for _, entry in ipairs({ "", "\1S1|1|1|0|1|1|0", "\31S1", "\0", "\t" }) do
+				assert.has_error(function()
+					LogBlocks.Append(data, entry)
+				end)
+				assert.has_error(function()
+					LogBlocks.Pack({ "S1|1|1|0|1|1|0", entry })
+				end)
+			end
+			assert.are.same(before, data)
+			-- A space is the lowest byte an entry may start with; every tag starts with a capital.
+			LogBlocks.Append(data, " x")
+			LogBlocks.Append(data, "S1|1|1791731100|0|1|150|0")
+			assert.is_nil(LogBlocks.Problem(data))
+			assert.are.equal(5, data.count)
+		end
+	)
+
+	it("makes the block check once for a log still as it passed, and again for anything else (LOG-R104)", function()
+		local data = setLogEntries(adaAndBramLog(), skills(10), 3)
+		assert.is_nil(LogBlocks.Problem(data))
+
+		-- Passed: an extra line in a middle block isn't looked for again while the log stands as it was.
+		data.blocks[2] = data.blocks[2] .. "\nS1|1|1791731999|0|9|150|0"
+		assert.is_nil(LogBlocks.Problem(data))
+		-- Append keeps the passed record up to date, so a login that appends isn't checked again either.
+		LogBlocks.Append(data, "S1|1|1791732000|0|11|150|0")
+		assert.is_nil(LogBlocks.Problem(data))
+		-- A different count, or other blocks, is checked in full.
+		data.count = data.count + 1
+		assert.is_truthy(LogBlocks.Problem(data))
+		local fresh = setLogEntries(adaAndBramLog(), skills(10), 3)
+		assert.is_nil(LogBlocks.Problem(fresh))
+		fresh.blocks = { fresh.blocks[1] }
+		assert.is_truthy(LogBlocks.Problem(fresh))
 	end)
 
 	it(

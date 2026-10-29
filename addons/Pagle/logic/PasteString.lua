@@ -263,7 +263,9 @@ function ns.PasteExport(log, from, asOf, partSize, pause, checkpoints)
 		or type(characters) ~= "table"
 		or type(log.blocks) ~= "table"
 		or not nat(log.count)
-		or LogBlocks.Problem(log) ~= nil -- a log Core can't read exports nothing (LOG-R104); an LF in an entry is one
+		-- A log Core can't read exports nothing (LOG-R104); an LF in an entry is one. The check was made when Core opened
+		-- the log and is not made again for it as it stands (LogBlocks.Problem), so this costs nothing on each export.
+		or LogBlocks.Problem(log) ~= nil
 		or #characters > ns.PASTE_CHARACTERS_CAP
 	then
 		return nil
