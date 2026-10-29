@@ -26,6 +26,7 @@ local ns = select(2, ...)
 ---@field current integer?       -- index of the logged-in character; nil before PLAYER_LOGIN
 ---@field skill { [integer]: PagleSkillReading }   -- latest Skill Reading per character index
 ---@field bestBaseSkill integer  -- highest skill rank among all characters (0 if none)
+---@field recoveryGeneration string? -- the Recovery application that last restored the log (RCV-R6), nil if none
 
 -- The display fields PLAYER_LOGIN refreshes on a known character (LOG-R26).
 local DISPLAY_FIELDS = { "name", "surname", "classID", "raceID", "faction", "realmID", "hardcore" }
@@ -168,20 +169,22 @@ function AnglerState:LogBuild(build, version, now, rules)
 end
 
 --- The Angler (LOG-R27): the log's logId and characters, the current character, each character's last Skill
---- Reading and the highest rank among them. Its tables are the log's own, shared and never copied (CORE-R18).
+--- Reading, the highest rank among them and the log's Recovery generation. Its tables are the log's own, shared and
+--- never copied (CORE-R18).
 ---@return Angler
 function AnglerState:Get()
 	local skill, best = latestSkills(self), 0
 	for _, reading in pairs(skill) do
 		best = math.max(best, reading.rank)
 	end
-	local data = self.catchLog.data
+	local data, global = self.catchLog.data, self.catchLog.global
 	return {
 		logId = data.logId,
 		characters = data.characters,
 		current = self.current,
 		skill = skill,
 		bestBaseSkill = best,
+		recoveryGeneration = global and global.recoveryGeneration,
 	}
 end
 

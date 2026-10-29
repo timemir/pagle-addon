@@ -96,23 +96,6 @@ function ns.ModuleRecordProblem(kind, payload)
 	return nil
 end
 
--- The fields of an entry string, split at every `|`. "a||b" is { "a", "", "b" }.
----@param entry string
----@return string[]
-local function splitFields(entry)
-	local fields = {}
-	local start = 1
-	while true do
-		local bar = string.find(entry, "|", start, true)
-		if not bar then
-			fields[#fields + 1] = string.sub(entry, start)
-			return fields
-		end
-		fields[#fields + 1] = string.sub(entry, start, bar - 1)
-		start = bar + 1
-	end
-end
-
 -- A decimal integer field, or nil if the field isn't one.
 ---@param field string
 ---@return integer?
@@ -400,10 +383,10 @@ end
 ---@param characters table[]
 ---@return PagleRecord?
 local function decode(entry, seq, characters)
-	if ns.CanonicalRecordProblem(entry) then
+	local problem, f = ns.CanonicalRecordProblem(entry)
+	if problem or not f then
 		return nil
 	end
-	local f = splitFields(entry)
 	local codec = kinds[f[1]]
 	local char, time, tie = integer(f[2] or ""), integer(f[3] or ""), integer(f[4] or "")
 	if not codec or not char or not time or not tie then

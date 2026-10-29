@@ -16,7 +16,7 @@ Part of [Core](README.md). A **Paste string** is the no-install way to get the C
 
 ### General
 
-- **PST-R1** A Paste string carries `PagleLog` alone: its `logId`, `format`, `characters` and `entries`, in the upload document of UPL Contracts. Nothing from `PagleDB` or any Module's SavedVariables goes in. Building one writes nothing to `PagleLog`; the only thing it ever stores is the last exported seq (PST-R40).
+- **PST-R1** A Paste string carries `PagleLog` alone: its `logId`, `format`, `characters` and `entries`, in the upload document of UPL Contracts. Nothing from `PagleDB` or any Module's SavedVariables goes in. Building one writes nothing to `PagleLog`; the only things it ever stores are the last exported seq (PST-R40) and the content checkpoints kept for the next export (PST-R42).
 - **PST-R2** Only the export window builds Paste strings, when the Player opens it or picks a choice in it. Nothing about it pops up on its own, and nothing is built in the background.
 
 ### The upload document
@@ -30,7 +30,7 @@ Part of [Core](README.md). A **Paste string** is the no-install way to get the C
 
   The client never records such values (LOG-R25, LOG-R26, and LOG-R101 for a line feed); this keeps a damaged log exportable.
 - **PST-R14** Every entry line preserves the stored byte string exactly. An entry containing LF makes export fail rather than removing or repairing bytes. Export never changes record identities or authoritative history.
-- **PST-R15** Core refuses export when the log ID, characters, character GUIDs, entry headers, resolved indexes, or line boundaries cannot be represented correctly. It verifies every prefix entry needed for the content digest. The window shows **Pagle can't export this Catch log** and marks nothing. Backend canonical validation still checks every ranked field; a local export is not proof of valid gameplay.
+- **PST-R15** Core refuses export when the log ID, characters, character GUIDs, entry headers, resolved indexes, or line boundaries cannot be represented correctly. It verifies every exported entry, and every prefix entry it hashes for the content digest; a prefix entry before a kept checkpoint (PST-R42) was verified when that checkpoint was hashed. The window shows **Pagle can't export this Catch log** and marks nothing. Backend canonical validation still checks every ranked field; a local export is not proof of valid gameplay.
 ### Exports and parts
 
 - **PST-R20** An **export** is made each time the window opens and each time the Player picks a choice (PST-R51). Its **as-of** is `GetServerTime()` then and its **total** the log's length then, the same in every one of its parts (UPL-R52). Entries appended while the window stays open wait for the next export.
@@ -48,6 +48,7 @@ Part of [Core](README.md). A **Paste string** is the no-install way to get the C
 
 - **PST-R40** `PagleDB.global.pasteExports[logId]` is the log's **last exported seq**: the highest last `seq` (`from + count − 1`) of a part the Player has copied. A copy is Ctrl+C, or Cmd+C on a Mac, pressed in the string's box. Showing a part doesn't mark it, and a part with no entries marks nothing. The mark only rises. A mark for another `logId` is kept, for that log's return (a restored backup).
 - **PST-R41** Why a copy and not a showing: a part shown but never pasted would leave the next "New since last export" starting past entries the website never got, which it refuses as a gap (UPL-R31) until the Player exports Everything. A part copied but not pasted costs only a repeat, which the website takes as unchanged (UPL-R34).
+- **PST-R42** An export keeps the content checkpoint after every part-size-th entry it hashes (seq 5,000, 10,000, …) in `PagleDB.global.pasteCheckpoints`, with that entry's bytes, and the next export of the same log and format starts hashing from the highest kept checkpoint at or below its first anchor, so an export hashes at most one part size of entries before its first part, however long the log. A kept entry that is no longer the log's entry at its seq drops every kept checkpoint. Another log or format replaces them, and Recovery discards them (RCV-R6). A wrong checkpoint can only make the website refuse the anchor; it is never trusted as proof.
 
 ### The export window
 
@@ -75,6 +76,7 @@ Part of [Core](README.md). A **Paste string** is the no-install way to get the C
 | Key | Contents |
 |---|---|
 | `PagleDB.global.pasteExports` | `{ [logId] = seq }`, each log's last exported seq (PST-R40); default `{}` |
+| `PagleDB.global.pasteCheckpoints` | `{ logId, format, at = { [seq] = { digest, entry } } }`, the content checkpoints kept for the next export (PST-R42); default `{}` |
 
 No Paste string or document is stored (PST-R2).
 

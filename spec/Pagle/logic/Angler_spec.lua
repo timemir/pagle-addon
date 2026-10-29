@@ -262,5 +262,13 @@ describe("the Angler", function()
 		assert.are.same({}, result.characters)
 		assert.are.same({}, result.skill)
 		assert.are.equal(0, result.bestBaseSkill)
+		assert.is_nil(result.recoveryGeneration)
+	end)
+
+	it("carries the Recovery generation that last restored the log (RCV-R6)", function()
+		local generation = string.rep("a", 64)
+		local result = anglerOver({}, {}, { recoveryGeneration = generation }):Get()
+
+		assert.are.equal(generation, result.recoveryGeneration)
 	end)
 end)

@@ -32,7 +32,7 @@ Before step 1, Core explicitly loads and validates `Pagle_Recovery` as strict si
 - **LOG-R5** A fishing `LOOT_READY` with no channel seen (the player reloaded mid-cast) still ends a caught Cast.
 - **LOG-R6** A Cast ends **got away** when the game reports the fish escaped (`UI_INFO_MESSAGE` with the `ERR_FISH_ESCAPED` text, as Forever sends it during the channel; or the same text as a `UI_ERROR_MESSAGE` or a system message, kept as fallbacks) during the channel or within the grace time after it stops, with no fishing loot window. Verified on the live build during M1 dogfooding (#112); if Forever reports it differently, this rule is updated, not worked around.
 - **LOG-R7** When a channel stops (`UNIT_SPELLCAST_CHANNEL_STOP`), Core waits up to the grace time for a fishing `LOOT_READY` or the escaped message. If neither comes, or a new fishing channel starts first, the Cast was **interrupted** (moved, recast, cancelled, combat): `CastEnded("interrupted")` fires (before the new channel's `CastStarted`, on a recast), nothing is written, and the state returns to `"idle"` unless a new channel is running. A Cast ends exactly once; later signals for it are ignored. A fishing `LOOT_READY` that comes after the grace time has ended a Cast interrupted (a lag spike) is not lost: it is recorded as a new caught Cast with no channel seen (LOG-R5), and the interrupted Cast is never ended again.
-- **LOG-R8** **A Catch counts once offered** in a fishing loot window, whether or not it reaches the bags. Every offered item is a Catch, Uncharted items (unknown to the catalogue) included. An item whose ID is secret is recorded as item `0`; item `0` never matches the catalogue and is never credited later. A quantity that is secret or missing is recorded as `1`, the least a slot offers.
+- **LOG-R8** **A Catch counts once offered** in a fishing loot window, whether or not it reaches the bags. Every offered item is a Catch, Uncharted items (unknown to the catalogue) included. An item whose ID is secret is recorded as item `0`; item `0` never matches the catalogue and is never credited later. A quantity that is secret, missing, below 1 or not whole is recorded as `1`, the least a slot offers.
 - **LOG-R9** When a Cast ends caught or got away, Core, in this order:
   1. takes the Cast snapshot (LOG-R20)
   2. appends the Cast entry (LOG-R11)
@@ -322,6 +322,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.onboarding` | the onboarding state ([onboarding.md](onboarding.md#data)), added by migration step 2 (ONB-R1) |
 | `global.projections.*` | Core's own projections (LOG-R78): `fieldReport` ([field-report.md](field-report.md#data)), `wallet` ([wallet-and-shop.md](wallet-and-shop.md#data)), `varieties` ([varieties.md](varieties.md#data)) |
 | `global.pasteExports` | `{ [logId] = seq }`, each log's last exported seq for the Paste string ([paste-string.md](paste-string.md#data), PST-R40); default `{}` |
+| `global.pasteCheckpoints` | the content checkpoints kept for the next Paste export ([paste-string.md](paste-string.md#data), PST-R42); default `{}` |
 | `global.minimap` | the minimap icon's place and shown state (CORE-R53, CORE-R56): `angle`, degrees round the minimap counterclockwise from its right, to 0.1, default `225` (its bottom left); `hide`, default `false` |
 | `profile.reloadReminder` | boolean, the `/reload` reminder (LOG-R86); default `false` |
 | `profile.lengthUnit` | `"cm"`, `"in"`, or `nil` for the region default (LOG-R69); default `nil`. The Defaults button sets it back to `nil` (SET-R13). |
@@ -389,6 +390,7 @@ Each Module keeps one AceDB SavedVariable, `Pagle<Module>DB`, account-wide with 
 ---@field current integer?       -- index of the logged-in character; nil before PLAYER_LOGIN
 ---@field skill { [integer]: PagleSkillReading }   -- latest Skill Reading per character index
 ---@field bestBaseSkill integer  -- highest skill rank among all characters (0 if none)
+---@field recoveryGeneration string? -- the Recovery application that last restored the log (RCV-R6), nil if none
 
 ---@class PagleItem             -- Pagle.GetItem
 ---@field category "fish"|"questFish"|"trophy"|"container"|"treasure"|"junk"|"other"

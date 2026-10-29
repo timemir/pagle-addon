@@ -27,8 +27,9 @@ ns.PASTE_CHOICES = { "new", "everything" }
 ---@param choice PaglePasteChoice
 ---@param asOf integer GetServerTime() now
 ---@param pause fun()?
+---@param checkpoints table? PagleDB.global.pasteCheckpoints (PST-R42)
 ---@return PaglePasteView
-function ns.PasteView(log, marks, choice, asOf, pause)
+function ns.PasteView(log, marks, choice, asOf, pause, checkpoints)
 	local L = ns.L
 	local from = 1
 	if choice == "new" then
@@ -37,7 +38,7 @@ function ns.PasteView(log, marks, choice, asOf, pause)
 			return { choice = choice, message = L.PASTE_NOTHING_NEW }
 		end
 	end
-	local export = ns.PasteExport(log, from, asOf, nil, pause)
+	local export = ns.PasteExport(log, from, asOf, nil, pause, checkpoints)
 	if not export then
 		return { choice = choice, message = L.PASTE_CANT_EXPORT }
 	end

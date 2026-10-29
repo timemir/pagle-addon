@@ -63,7 +63,7 @@ local function viewFor(choice)
 				coroutine.yield()
 				deadline = debugprofilestop() + 4
 			end
-		end)
+		end, ns.db.global.pasteCheckpoints)
 	end)
 	local ok, view = coroutine.resume(pending)
 	assert(ok, view)

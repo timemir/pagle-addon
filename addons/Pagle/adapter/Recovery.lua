@@ -22,15 +22,32 @@ ns.recoveryBlocked = nil
 -- Recovery's data addon has no dependency on Pagle and must load before SavedVariables are opened.
 ---@return boolean
 function ns.StartRecovery()
-	local ok, prepared, verifiedArchive = pcall(function()
+	local unloaded
+	local ok, prepared, verifiedArchive, otherLog = pcall(function()
 		local installedReason = select(5, C_AddOns.GetAddOnInfo("Pagle_Recovery"))
 		if installedReason == "MISSING" then
 			return nil
 		end
+		-- A package the client won't load (unticked, or out of date after a patch) was never read, so it is no
+		-- package at all (RCV-R3): only one that loaded and failed verification stops Pagle.
 		local loaded, reason = C_AddOns.LoadAddOn("Pagle_Recovery")
-		assert(loaded, "Recovery addon could not load: " .. tostring(reason))
+		if not loaded then
+			unloaded = tostring(reason)
+			return nil
+		end
 		return ns.RecoveryPrepare(_G.PagleRecoveryData, ns.PUSHED_KEYS, _G.PagleLog, _G.PagleRecovery, _G.PagleDB)
 	end)
+	if ok and unloaded and unloaded ~= "DISABLED" then
+		print(
+			"Pagle Recovery: Pagle_Recovery didn't load ("
+				.. unloaded
+				.. "), so nothing was restored and your Catch log is unchanged. Remove Pagle_Recovery once Recovery is complete."
+		)
+	elseif ok and otherLog then
+		print(
+			"Pagle Recovery: Pagle_Recovery is for another Catch log, so nothing was restored here. Remove it once Recovery is complete."
+		)
+	end
 	if not ok then
 		ns.recoveryBlocked = true
 		_G.Pagle = nil
@@ -47,7 +64,7 @@ function ns.StartRecovery()
 	if prepared then
 		_G.PagleLog, _G.PagleRecovery, _G.PagleDB = prepared.log, prepared.archive, prepared.db
 		print(
-			"Pagle Recovery restored the Catch log. Original records are preserved; /pagle recovery inspect shows records held for review. Upload normally, then confirm Recovery on the website."
+			"Pagle Recovery restored the Catch log. Original records are preserved; /pagle recovery inspect shows records held for review. Upload normally, confirm Recovery on the website, then remove Pagle_Recovery."
 		)
 	end
 	return true

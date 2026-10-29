@@ -1,7 +1,7 @@
 ---@class PagleNS
 local ns = select(2, ...)
 
-local VERIFICATION_VERSION = 1
+local VERIFICATION_VERSION = 2
 
 local REASONS = {
 	action_requires_review = true,
@@ -119,8 +119,9 @@ local function planFrom(data, key)
 	return plan
 end
 
--- SavedVariables retain the exact authenticated bytes: a digest alone would still require hashing the whole
--- package on every login. Bump the receipt version if plan validation changes.
+-- The receipt names the verified package by its signature, key and payload length, never its bytes: a package that
+-- matches it can only be skipped, so a forged match changes nothing, while another payload can't carry the same
+-- signature. Bump the receipt version if plan validation changes.
 ---@param archive table
 ---@param plan table
 ---@param data table
@@ -137,18 +138,20 @@ local function rememberVerified(archive, plan, data, key)
 			resultDigest = plan.resultDigest,
 			logId = plan.logId,
 			format = plan.format,
-			envelope = copy(data),
+			keyId = data.keyId,
+			sig = data.sig,
+			payloadLength = #data.payload,
 			key = copy(key),
 		},
 	}
 end
 
+-- Whether `data` is a package this account already applied, to whatever log: a spent package changes nothing (RCV-R5).
 ---@param data table
 ---@param key PaglePushedKey
 ---@param archive any
----@param log any
 ---@return boolean
-local function verifiedCompletion(data, key, archive, log)
+local function verifiedCompletion(data, key, archive)
 	if type(archive) ~= "table" or type(archive.applied) ~= "table" then
 		return false
 	end
@@ -162,27 +165,36 @@ local function verifiedCompletion(data, key, archive, log)
 			and completed.resultDigest == verified.resultDigest
 			and completed.logId == verified.logId
 		then
-			local envelope, knownKey = verified.envelope, verified.key
+			local knownKey = verified.key
 			if
-				type(envelope) == "table"
-				and envelope.v == data.v
-				and envelope.keyId == data.keyId
-				and envelope.payload == data.payload
-				and envelope.sig == data.sig
+				verified.keyId == data.keyId
+				and verified.sig == data.sig
+				and verified.payloadLength == #data.payload
 				and type(knownKey) == "table"
 				and knownKey.n == key.n
 				and knownKey.rr == key.rr
 				and knownKey.n0inv == key.n0inv
 			then
-				assert(
-					type(log) == "table" and log.logId == completed.logId and log.format == verified.format,
-					"Recovery is for a different Catch log"
-				)
 				return true
 			end
 		end
 	end
 	return false
+end
+
+-- The logId a package names, read from its first bytes and verified by nothing; nil when they don't read. It only
+-- lets a package for another log be passed over without hashing it: a forged name can make a package skip itself,
+-- never apply.
+---@param data table
+---@return string?
+local function claimedLogId(data)
+	local ok, logId = pcall(function()
+		local read = ns.RecoveryReader(assert(ns.Base64Decode(data.payload:sub(1, 256))), "PGL-RECOVERY-DATA|1\n")
+		read()
+		assert(read() == "app.pagle.recovery")
+		return read()
+	end)
+	return ok and logId or nil
 end
 
 -- Builds every published table first. No append, yield or external call occurs during publication.
@@ -193,16 +205,22 @@ end
 ---@param db any
 ---@return {log: table, archive: table, db: table}?
 ---@return table? verifiedArchive receipt upgrade for a completed plan, without restoring it again
+---@return boolean? otherLog the package targets another Catch log (another account's, or a log since replaced)
 function ns.RecoveryPrepare(data, keys, log, archive, db)
 	local key = envelopeKey(data, keys)
-	if verifiedCompletion(data, key, archive, log) then
+	if verifiedCompletion(data, key, archive) then
 		return nil
 	end
+	local logId = type(log) == "table" and log.logId or nil
+	local claimed = claimedLogId(data)
+	if claimed and claimed ~= logId then
+		return nil, nil, true
+	end
 	local plan = planFrom(data, key)
-	assert(
-		type(log) == "table" and log.logId == plan.logId and log.format == plan.format,
-		"Recovery is for a different Catch log"
-	)
+	if plan.logId ~= logId then
+		return nil, nil, true
+	end
+	assert(log.format == plan.format, "Recovery is for a different Catch log format")
 	local completed = type(archive) == "table"
 			and type(archive.applied) == "table"
 			and archive.applied[plan.applicationId]
@@ -257,6 +275,7 @@ function ns.RecoveryPrepare(data, keys, log, archive, db)
 		"cards",
 		"writeUp",
 		"pasteExports",
+		"pasteCheckpoints",
 	}) do
 		global[name] = nil
 	end

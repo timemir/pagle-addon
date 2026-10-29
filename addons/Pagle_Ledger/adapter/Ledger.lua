@@ -57,7 +57,7 @@ function ns.Ledger.OnInitialize()
 		if payload then
 			ns.Module:AppendRecord(ns.CREST_RECORD, payload)
 		end
-		local logId = Pagle.GetAngler().logId
+		local logId = ns.LedgerLogKey(Pagle.GetAngler())
 		local title = ns.TitleRecordFor(ns.db.global.titleLogged, logId, ns.db.profile.activeTitle)
 		if title and logId then
 			ns.Module:AppendRecord(ns.TITLE_RECORD, title)
@@ -181,7 +181,7 @@ function ns.Outlets(module)
 			module:RaiseWriteUp(section)
 		end,
 		LogId = function()
-			return Pagle.GetAngler().logId
+			return ns.LedgerLogKey(Pagle.GetAngler())
 		end,
 		FormatNumber = function(n)
 			return BreakUpLargeNumbers(n)

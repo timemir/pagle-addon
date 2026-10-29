@@ -446,6 +446,13 @@ describe("a loot slot", function()
 		)
 	end)
 
+	it("counts a quantity below 1 or not whole as 1, which the log's grammar holds (LOG-R8)", function()
+		local link = "|Hitem:6358::|h[Oily Blackmouth]|h"
+		for _, quantity in ipairs({ 0, -2, 1.5 }) do
+			assert.are.same({ itemID = 6358, quantity = 1 }, ns.LootItem(isSecret, link, quantity, nil, false))
+		end
+	end)
+
 	it("skips a slot with no link to read an item from (LOG-R3)", function()
 		assert.is_nil(ns.LootItem(isSecret, nil, 1, nil, false))
 	end)

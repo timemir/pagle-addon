@@ -36,7 +36,7 @@ local ns = select(2, ...)
 ---@field ItemName fun(itemID: integer): string?        -- C_Item.GetItemNameByID
 ---@field AreaName fun(areaID: integer): string?    -- C_Map.GetAreaInfo
 ---@field RaiseWriteUp fun(section: PagleWriteUpSection) -- M:RaiseWriteUp
----@field LogId fun(): string?                          -- Pagle.GetAngler().logId
+---@field LogId fun(): string?                          -- ns.LedgerLogKey(Pagle.GetAngler())
 ---@field FormatNumber fun(n: integer): string          -- BreakUpLargeNumbers
 ---@field RefreshGoods fun()                            -- M:RefreshGoods (LED-R111)
 ---@field SizeText fun(size: PagleSize?): string?       -- ns.SizeText over Pagle.SIZE_BANDS and Pagle.FormatLength

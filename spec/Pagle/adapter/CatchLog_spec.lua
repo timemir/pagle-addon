@@ -25,6 +25,7 @@ local PAGLEDB_KEYS = {
 		"minimap", -- CORE-R53, from M8.5
 		"onboarding", -- onboarding.md › Data (ONB-R1)
 		"pasteExports", -- paste-string.md › Data (PST-R40), from Track P
+		"pasteCheckpoints", -- paste-string.md › Data (PST-R42)
 	},
 	profile = {
 		"reloadReminder",

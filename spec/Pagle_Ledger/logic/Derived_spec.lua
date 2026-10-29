@@ -279,6 +279,20 @@ describe("the Ledger's values for the backend (#223)", function()
 			)
 		end)
 
+		it("keys the log by its Recovery generation once Recovery restored it (LED-R90, RCV-R6)", function()
+			local ns = ledgerOver({})
+			local key = ns.LedgerLogKey({ logId = "log", recoveryGeneration = "gen" })
+
+			assert.are.equal("log", ns.LedgerLogKey({ logId = "log" }))
+			assert.are.equal("log:gen", key)
+			assert.is_nil(ns.LedgerLogKey({}))
+			-- A title logged before Recovery counts as none on the restored history.
+			assert.are.equal(
+				"title:level10",
+				ns.TitleRecordFor({ logId = "log", key = "title:level10" }, key, "title:level10")
+			)
+		end)
+
 		it("isn't due for the pick last logged, nor for automatic with none logged to this log (LED-R157)", function()
 			local ns = ledgerOver({})
 

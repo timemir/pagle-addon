@@ -168,11 +168,10 @@ describe("Recovery through the addon", function()
 		end
 	end)
 
-	it("refuses signed invalid domains, targets, digests, checkpoints and staged reasons without mutation", function()
+	it("refuses signed invalid domains, digests, checkpoints and staged reasons without mutation", function()
 		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-signed-v1.json")))
 		for _, name in ipairs({
 			"wrongDomain",
-			"wrongTarget",
 			"wrongDigest",
 			"wrongCheckpoint",
 			"trailing",
@@ -249,10 +248,10 @@ describe("Recovery through the addon", function()
 				nil
 			)
 		end
+		-- A package matching the receipt is spent: another payload under its signature is skipped, never applied.
+		local tampered = { v = data.v, keyId = data.keyId, payload = "A" .. data.payload:sub(2), sig = data.sig }
+		assert.are.same({}, { prepare(tampered) })
 		for _, change in ipairs({
-			function(envelope)
-				envelope.payload = "A" .. envelope.payload:sub(2)
-			end,
 			function(envelope)
 				envelope.sig = (envelope.sig:sub(1, 1) == "A" and "B" or "A") .. envelope.sig:sub(2)
 			end,
@@ -278,11 +277,14 @@ describe("Recovery through the addon", function()
 		assert.has_error(function()
 			prepare(nil, { [fixture.keyId] = loaded.ns.PUSHED_KEYS["pagle-2026b"] })
 		end, "Recovery signature does not match")
-		for _, target in ipairs({ { logId = "another-log", format = 3 }, { logId = log.logId, format = 2 } }) do
-			assert.has_error(function()
-				prepare(nil, nil, target)
-			end, "Recovery is for a different Catch log")
+		-- Spent, whatever log is active now; without the receipt, another log is passed over and another format refused.
+		for _, target in ipairs({ { logId = "fedcba9876543210", format = 3 }, { logId = log.logId, format = 2 } }) do
+			assert.are.same({}, { prepare(nil, nil, target) })
 		end
+		assert.are.same({ nil, nil, true }, { prepare(nil, nil, { logId = "fedcba9876543210", format = 3 }, {}) })
+		assert.has_error(function()
+			prepare(nil, nil, { logId = log.logId, format = 2 }, {})
+		end, "Recovery is for a different Catch log format")
 		-- The receipt owns its values; later edits to the installed data cannot change the verified bytes.
 		data.sig = "!" .. data.sig:sub(2)
 		assert.has_error(function()
@@ -374,6 +376,49 @@ describe("Recovery through the addon", function()
 		for _, block in ipairs(pages.right) do
 			assert.is_nil(block.sub and block.sub:find("Bought", 1, true))
 		end
+		assert.are.same({}, first.client.errors)
+		assert.are.same({}, restored.client.errors)
+	end)
+
+	it("starts the Ledger's celebrated set and logged title afresh on the restored history", function()
+		local first = loadAddon("Pagle", foreverWith({ PagleLog = original() }), { also = { "Pagle_Ledger" } })
+		first.client.fire("PLAYER_LOGIN")
+		first.client.fire("PLAYER_ENTERING_WORLD")
+		first.client.advance(5)
+		local ledgerDB = first.env.PagleLedgerDB
+		local celebrated = ledgerDB.global.celebrated
+		assert.are.equal(original().logId, celebrated.logId)
+		-- What the discarded branch earned: a level and a title the restored history doesn't hold.
+		celebrated.levels[0], celebrated.titles["title:discarded"] = 59, true
+		ledgerDB.global.titleLogged = { logId = original().logId, key = "title:discarded" }
+		local restored = loadAddon(
+			"Pagle",
+			foreverWith({ PagleLog = original(), PagleDB = first.env.PagleDB, PagleLedgerDB = ledgerDB }),
+			{
+				also = { "Pagle_Ledger" },
+				beforeLoaded = {
+					Pagle = function(ns, client, env)
+						ns.PUSHED_KEYS.testKey = signing.testKey
+						client.addons.Pagle_Recovery = {
+							loaded = false,
+							load = function()
+								local file = assert(fixtureFile("spec/Pagle/fixtures/Recovery.lua"))
+								setfenv(file, env)
+								file()
+							end,
+						}
+					end,
+				},
+			}
+		)
+		restored.client.fire("PLAYER_LOGIN")
+		restored.client.fire("PLAYER_ENTERING_WORLD")
+		restored.client.advance(5)
+		local generation = assert(restored.env.PagleDB.global.recoveryGeneration)
+		local fresh = restored.env.PagleLedgerDB.global.celebrated
+		assert.are.equal(original().logId .. ":" .. generation, fresh.logId)
+		assert.is_nil(fresh.titles["title:discarded"])
+		assert.is_true(restored.namespaces.Pagle_Ledger.HighestCelebratedLevel(fresh) < 59)
 		assert.are.same({}, first.client.errors)
 		assert.are.same({}, restored.client.errors)
 	end)
@@ -474,6 +519,79 @@ describe("Recovery through the addon", function()
 		assert.is_nil(loaded.env.PagleRecovery)
 		assert.is_nil(loaded.ns.db)
 		assert.are.same({}, loaded.client.errors)
+	end)
+
+	it("starts normally when the client won't load the package, saying why unless it was unticked", function()
+		for _, case in ipairs({
+			{ addon = { enabled = false }, says = nil },
+			{ addon = { refuse = "INTERFACE_VERSION" }, says = "INTERFACE_VERSION" },
+			{ addon = { refuse = "DEP_DISABLED" }, says = "DEP_DISABLED" },
+		}) do
+			local log = original()
+			local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }), { holdAddonLoaded = true })
+			loaded.client.addons.Pagle_Recovery = case.addon
+			loaded.client.fire("ADDON_LOADED", "Pagle")
+			loaded.client.fire("PLAYER_LOGIN")
+			loaded.client.fire("PLAYER_ENTERING_WORLD")
+			assert.is_nil(loaded.ns.recoveryBlocked)
+			assert.is_table(loaded.env.Pagle)
+			assert.is_table(loaded.ns.db)
+			assert.are.equal(log, loaded.env.PagleLog)
+			assert.are.same(original().entries[1], loaded.env.PagleLog.entries[1])
+			local said
+			for _, line in ipairs(loaded.printed) do
+				if line:find("Pagle_Recovery didn't load", 1, true) then
+					said = line
+				end
+			end
+			if case.says then
+				assert.is_truthy(said and said:find("(" .. case.says .. ")", 1, true))
+			else
+				assert.is_nil(said)
+			end
+			assert.are.same({}, loaded.client.errors)
+		end
+	end)
+
+	it("passes over a package for another Catch log without verifying it or blocking", function()
+		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-backend-v1.json")))
+		-- Another account on the same install: its own log, and no receipt for the package.
+		local log = original()
+		log.logId = "fedcba9876543210"
+		local loaded = loadAddon("Pagle", foreverWith({ PagleLog = log }), { holdAddonLoaded = true })
+		loaded.ns.PUSHED_KEYS.testKey = signing.testKey
+		loaded.client.addons.Pagle_Recovery = {
+			loaded = false,
+			load = function()
+				loaded.env.PagleRecoveryData =
+					{ v = 1, keyId = fixture.keyId, payload = fixture.payload, sig = fixture.signature }
+			end,
+		}
+		for _, name in ipairs({ "RsaVerify", "Sha256", "RecoveryReadSnapshot", "CheckpointNext" }) do
+			loaded.ns[name] = function()
+				error("another log's package was verified with " .. name)
+			end
+		end
+		assert.is_true(loaded.ns.StartRecovery())
+		assert.is_nil(loaded.ns.recoveryBlocked)
+		assert.are.equal(log, loaded.env.PagleLog)
+		assert.is_nil(loaded.env.PagleRecovery)
+		assert.are.equal(1, #loaded.printed)
+		assert.is_truthy(loaded.printed[1]:find("for another Catch log", 1, true))
+	end)
+
+	it("keeps only the package's signature in a receipt, never its payload", function()
+		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-backend-v1.json")))
+		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
+		local data = { v = 1, keyId = fixture.keyId, payload = fixture.payload, sig = fixture.signature }
+		local prepared = loaded.ns.RecoveryPrepare(data, { [fixture.keyId] = signing.testKey }, original(), nil, nil)
+		local verified = prepared.archive.applied[fixture.applicationId].verified
+		assert.is_nil(verified.envelope)
+		assert.are.equal(fixture.signature, verified.sig)
+		assert.are.equal(#fixture.payload, verified.payloadLength)
+		for _, value in pairs(verified) do
+			assert.is_not.equal(fixture.payload, value)
+		end
 	end)
 
 	it("keeps an old completed package harmless after a different Recovery", function()

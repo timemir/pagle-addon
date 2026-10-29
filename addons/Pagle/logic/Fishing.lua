@@ -268,7 +268,8 @@ function ns.LootItem(isSecret, link, quantity, currencyID, isCoin)
 	if not itemID then
 		return nil
 	end
-	if isSecret(quantity) or type(quantity) ~= "number" then
+	-- A slot offers at least one, and the log's grammar holds no less (LOG-R8).
+	if isSecret(quantity) or type(quantity) ~= "number" or quantity < 1 or quantity % 1 ~= 0 then
 		quantity = 1
 	end
 	return { itemID = itemID, quantity = quantity }

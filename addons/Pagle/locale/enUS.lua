@@ -525,13 +525,14 @@ ns.L = {
 	DEV_SAMPLE_WRITE_UP = "Your Ledger was written up from 2,340 Casts",
 	DEV_SESSION_ENDED = "Pagle dev: the Session ended, as if its gap had passed.",
 	DEV_NO_SESSION = "Pagle dev: no Session is open.",
+	-- Packaged: /pagle dev onboarding reset prints it too.
+	DEV_NO_CHARACTER = "Pagle dev: no character is logged in yet.",
 	--@do-not-package@
 	DEV_CATCH_USAGE = "Pagle dev: /pagle dev catch <itemID> [areaID]",
 	DEV_REAL_LOG = "Pagle dev: catch writes to the Catch log, so it runs on a test log only (PagleLog.test); "
 		.. "this log is real, and nothing was added.",
 	-- The areaID as typed.
 	DEV_UNKNOWN_AREA = "Pagle dev: %s isn't an area in Pagle's catalogue.",
-	DEV_NO_CHARACTER = "Pagle dev: no character is logged in yet.",
 	-- The item ID, the zone areaID and the entry's seq.
 	DEV_CAUGHT = "Pagle dev: caught item %d in zone %d (entry %d).",
 	--@end-do-not-package@

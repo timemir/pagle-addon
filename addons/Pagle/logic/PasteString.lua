@@ -218,6 +218,29 @@ local function entryGUID(entry, guids)
 	return guid
 end
 
+-- The cached checkpoint to start hashing from for an anchor at `need` (PST-R42): the highest kept seq at or below it
+-- whose entry is still the one hashed there, and its digest; 0 and nil with none. A kept entry that differs (the log
+-- replaced under the same logId) drops every kept checkpoint.
+---@param cache table PagleDB.global.pasteCheckpoints, already for this log
+---@param entries string[]
+---@param need integer
+---@param stride integer
+---@return integer
+---@return string?
+local function cachedCheckpoint(cache, entries, need, stride)
+	for seq = need - need % stride, stride, -stride do
+		local kept = cache.at[seq]
+		if type(kept) == "table" then
+			if kept.entry == entries[seq] and type(kept.digest) == "string" then
+				return seq, kept.digest
+			end
+			cache.at = {}
+			return 0, nil
+		end
+	end
+	return 0, nil
+end
+
 --- The export of `log` (a PagleLog table) from `seq` `from` (PST-R20–R22): every entry from `from` to the log's
 --- length now, in parts of at most `partSize` entries (PASTE_PART_ENTRIES by default). `from` may be one past the
 --- log's end, for a single part with no entries. Nil when Core can't export the log (PST-R15).
@@ -226,8 +249,9 @@ end
 ---@param asOf integer GetServerTime() now
 ---@param partSize integer?
 ---@param pause fun()? lets the client yield between records while preparing a captured export
+---@param checkpoints table? PagleDB.global.pasteCheckpoints, read and kept (PST-R42)
 ---@return PaglePasteExport?
-function ns.PasteExport(log, from, asOf, partSize, pause)
+function ns.PasteExport(log, from, asOf, partSize, pause, checkpoints)
 	partSize = partSize or ns.PASTE_PART_ENTRIES
 	local logId, characters, entries = log.logId, log.characters, log.entries
 	if
@@ -253,7 +277,8 @@ function ns.PasteExport(log, from, asOf, partSize, pause)
 		end
 		lines[i], guids[i] = line, character.guid
 	end
-	for i = 1, total do
+	-- The entries exported are checked before any hashing; the prefix is checked as it is hashed.
+	for i = from, total do
 		if not entryGUID(entries[i], guids) or find(entries[i], "\n", 1, true) then
 			return nil
 		end
@@ -261,9 +286,16 @@ function ns.PasteExport(log, from, asOf, partSize, pause)
 			pause()
 		end
 	end
+	-- Another log's or format's checkpoints are read as none, and replaced only once one is kept.
+	local stride, cache = ns.PASTE_PART_ENTRIES, checkpoints
+	local current = cache ~= nil and cache.logId == logId and cache.format == log.format and type(cache.at) == "table"
+	local seq, digest = 0, nil
+	if cache and current then
+		seq, digest = cachedCheckpoint(cache, entries, from - 1, stride)
+	end
+	digest = digest or ns.CheckpointInitial(logId, log.format)
 	local parts = {}
-	local start, seq = from, 0
-	local digest = ns.CheckpointInitial(logId, log.format)
+	local start = from
 	repeat
 		while seq < start - 1 do
 			seq = seq + 1
@@ -272,6 +304,12 @@ function ns.PasteExport(log, from, asOf, partSize, pause)
 				return nil
 			end
 			digest = ns.CheckpointNext(digest, seq, guid, entries[seq])
+			if cache and seq % stride == 0 then
+				if not current then
+					cache.logId, cache.format, cache.at, current = logId, log.format, {}, true
+				end
+				cache.at[seq] = { digest = digest, entry = entries[seq] }
+			end
 			if pause then
 				pause()
 			end

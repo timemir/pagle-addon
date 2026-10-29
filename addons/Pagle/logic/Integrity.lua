@@ -150,9 +150,13 @@ local function modulePayload(module, kind, payload)
 	return false
 end
 
---- Checks Core's record envelope and payload. Module-owned payload schemas are checked by their owning validator.
+--- Checks a record's envelope and payload against the canonical grammar, the backend's own. Core holds the payload
+--- grammar of every shipped Module's record kinds too: Recovery checks a replacement before any Module loads, and the
+--- backend refuses a kind it doesn't know, so a new kind is added here and there together (ADR 0008). Also returns the
+--- entry's fields, split at every `|`, for a reader that goes on to decode it.
 ---@param entry any
----@return string?
+---@return string? problem
+---@return string[]? fields
 function ns.CanonicalRecordProblem(entry)
 	if type(entry) ~= "string" or entry:find("\n", 1, true) then
 		return "record must be one line without LF"
@@ -194,7 +198,10 @@ function ns.CanonicalRecordProblem(entry)
 			and #payload <= 200
 			and modulePayload(f[5], f[6], payload)
 	end
-	return not valid and "invalid or unsupported canonical record payload" or nil
+	if not valid then
+		return "invalid or unsupported canonical record payload"
+	end
+	return nil, f
 end
 
 local function hex(bytes)
