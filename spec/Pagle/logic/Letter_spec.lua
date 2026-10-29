@@ -27,7 +27,7 @@ local function letterWith(letter)
 	local timers = {}
 	local now = 0
 	local seen = { shown = 0, hidden = 0, guides = 0, global = global, contents = {}, confirmed = {} }
-	seen.world = { restricted = false, instance = false, settled = true, guide = false }
+	seen.world = { restricted = false, instance = false, settled = true, guide = false, test = false }
 	function seen.clock(seconds)
 		now = now + seconds
 		for _, timer in ipairs({ unpack(timers) }) do
@@ -65,6 +65,16 @@ local function letterWith(letter)
 		end,
 		guideOpen = function()
 			return seen.world.guide
+		end,
+		afterMoments = function(fn)
+			if seen.world.moments then
+				seen.world.moments[#seen.world.moments + 1] = fn
+			else
+				fn()
+			end
+		end,
+		testLog = function()
+			return seen.world.test == true
 		end,
 	})
 	return made, seen
@@ -472,6 +482,38 @@ describe("the letters a Module sends (ONB-R15, ONB-R16)", function()
 		assert.are.same({ ["ledger.prestige"] = "waiting" }, seen.global.onboarding.letters)
 	end)
 
+	it(
+		"checks only after the moments raised so far have reached the lanes, not in the frame it was sent (ONB-R10)",
+		function()
+			local letter, seen = withModuleLetter()
+			seen.world.moments = {}
+
+			assert.is_true(letter:Send("ledger.prestige"))
+			assert.are.equal(0, seen.shown)
+			assert.are.equal("waiting", seen.global.onboarding.letters["ledger.prestige"])
+			-- the toast is in the lanes by the time the flush has run
+			seen.world.settled = false
+			for _, fn in ipairs(seen.world.moments) do
+				fn()
+			end
+			assert.are.equal(0, seen.shown)
+			seen.world.settled = true
+			letter:Check()
+
+			assert.are.equal(1, seen.shown)
+		end
+	)
+
+	it("is never sent on a test log, and no state is made for it (ONB-R16)", function()
+		local letter, seen = withModuleLetter()
+		seen.world.test = true
+
+		assert.is_false(letter:Send("ledger.prestige"))
+
+		assert.are.equal(0, seen.shown)
+		assert.is_nil(seen.global.onboarding.letters)
+	end)
+
 	it("sends nothing for a letter nobody registered (ONB-R15)", function()
 		local letter, seen = withModuleLetter()
 
@@ -747,6 +789,23 @@ describe("a Module's letter from /pagle dev onboarding letter and the tour (ONB-
 		assert.are.same({ "ledger.prestige" }, seen.confirmed)
 		assert.are.equal(0, seen.guides)
 	end)
+
+	it(
+		"ShowNow makes a Module letter's state waiting, so Later steps it, and leaves a state it has (ONB-R16, ONB-R83)",
+		function()
+			local letter, seen = letterWith("opened")
+			register(letter, seen, "ledger.prestige")
+			register(letter, seen, "ledger.other")
+			seen.global.onboarding.letters = { ["ledger.other"] = "declined" }
+
+			letter:ShowNow("ledger.prestige")
+			letter:Later()
+			assert.are.equal("later", seen.global.onboarding.letters["ledger.prestige"])
+			letter:ShowNow("ledger.other")
+
+			assert.are.equal("declined", seen.global.onboarding.letters["ledger.other"])
+		end
+	)
 
 	it(
 		"ShowNow shows another letter in place of the one on screen, and false for an id that is no letter (ONB-R83)",

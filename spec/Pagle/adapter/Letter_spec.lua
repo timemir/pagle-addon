@@ -396,6 +396,14 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 		return loaded, M, ran
 	end
 
+	-- The Module sends its letter; Core's check comes after the moments raised so far have reached the lanes, a frame on
+	-- (ANN-R10).
+	local function send(loaded, M)
+		local sent = M:ShowLetter("ledger.prestige")
+		loaded.client.advance(0)
+		return sent
+	end
+
 	-- The onboarding Letter answered, so the fixture's letter has the frame to itself.
 	local function opened()
 		return { global = { onboarding = { letter = "opened" } } }
@@ -408,7 +416,7 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 			loaded.client.advance(4)
 			assert.is_false(shows(loaded))
 
-			M:ShowLetter("ledger.prestige")
+			send(loaded, M)
 
 			assert.is_true(shows(loaded))
 			local frame = letterOf(loaded)
@@ -425,7 +433,7 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 		local loaded, M = withLetter(opened())
 		loaded.client.advance(4)
 
-		M:ShowLetter("ledger.prestige")
+		send(loaded, M)
 
 		local frame = letterOf(loaded)
 		assert.are.equal(#"Show me" * 6 + 36, frame.open:GetWidth())
@@ -439,7 +447,7 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 	it("grows the slip, and moves the buttons down, for a line longer than the kit's two (ONB-R15)", function()
 		local loaded, M = withLetter(opened())
 		loaded.client.advance(4)
-		M:ShowLetter("ledger.prestige")
+		send(loaded, M)
 		local frame = letterOf(loaded)
 		-- The client measures the line at five 30-unit lines where the two-line gauge measures its 14.
 		frame.line.GetStringHeight = function()
@@ -457,10 +465,31 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 		assert.are.equal(25 + 75, frame.sealY)
 	end)
 
+	it(
+		"keeps the kit's 132 for a line the client measures a fraction taller than the two-line gauge (ONB-R15)",
+		function()
+			local loaded, M = withLetter(opened())
+			loaded.client.advance(4)
+			send(loaded, M)
+			local frame = letterOf(loaded)
+			frame.line.GetStringHeight = function()
+				return 14.3
+			end
+
+			pagle(loaded, "dev on")
+			press(loaded, "Later")
+			pagle(loaded, "dev onboarding letter")
+
+			assert.are.same({ 534, 132 }, { frame.width, frame.height })
+			assert.are.same({ "TOPLEFT", frame.slip, "TOPLEFT", 34, -92 }, frame.open.points[1])
+			assert.are.equal(25, frame.sealY)
+		end
+	)
+
 	it("says A letter for you on the menu while it shows, as for the onboarding Letter (ONB-R13)", function()
 		local loaded, M = withLetter(opened())
 		loaded.client.advance(4)
-		M:ShowLetter("ledger.prestige")
+		send(loaded, M)
 
 		assert.is_true(loaded.ns.LetterShows())
 		press(loaded, "Later")
@@ -471,27 +500,27 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 	it("Later, then Later at the next login, declines it: shown twice, never a third time (ONB-R16)", function()
 		local first, M = withLetter(opened())
 		first.client.advance(4)
-		M:ShowLetter("ledger.prestige")
+		send(first, M)
 		press(first, "Later")
 		assert.are.equal("later", state(first).letters["ledger.prestige"])
 
 		local second, again = withLetter(first.env.PagleDB)
 		second.client.advance(4)
-		assert.is_true(again:ShowLetter("ledger.prestige"))
+		assert.is_true(send(second, again))
 		assert.is_true(shows(second))
 		press(second, "Later")
 		assert.are.equal("declined", state(second).letters["ledger.prestige"])
 
 		local third, last = withLetter(second.env.PagleDB)
 		third.client.advance(4)
-		assert.is_false(last:ShowLetter("ledger.prestige"))
+		assert.is_false(send(third, last))
 		assert.is_false(shows(third))
 	end)
 
 	it("runs the Module's onConfirm from its confirm button, and never shows again once opened (ONB-R16)", function()
 		local loaded, M, ran = withLetter(opened())
 		loaded.client.advance(4)
-		M:ShowLetter("ledger.prestige")
+		send(loaded, M)
 
 		press(loaded, "Show me")
 
@@ -499,7 +528,7 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 		assert.is_false(shows(loaded))
 		assert.is_false(loaded.ns.guide:IsOpen())
 		assert.are.equal("opened", state(loaded).letters["ledger.prestige"])
-		assert.is_false(M:ShowLetter("ledger.prestige"))
+		assert.is_false(send(loaded, M))
 	end)
 
 	it(
@@ -507,7 +536,7 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 		function()
 			local loaded, M = withLetter()
 			loaded.client.advance(4)
-			M:ShowLetter("ledger.prestige")
+			send(loaded, M)
 			local frame = letterOf(loaded)
 			assert.are.equal("Open the letter", frame.open.label.text)
 
@@ -526,7 +555,7 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 	it("hides as combat starts and comes back after it, its state untouched (ONB-R14)", function()
 		local loaded, M = withLetter(opened())
 		loaded.client.advance(4)
-		M:ShowLetter("ledger.prestige")
+		send(loaded, M)
 
 		setCombat(loaded, true)
 		assert.is_false(shows(loaded))
@@ -536,6 +565,67 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 		assert.is_true(shows(loaded))
 		assert.are.equal("waiting", state(loaded).letters["ledger.prestige"])
 	end)
+
+	it(
+		"comes after the toast of the Cast it was sent with: it waits until the lanes are empty (ONB-R10, ANN-R10)",
+		function()
+			local loaded, M = withLetter(opened())
+			loaded.client.advance(4)
+
+			-- A live Cast's moment is raised, and the letter sent in the same frame (the Ledger's level-up and its send).
+			M:RaiseMoment({
+				rung = "toast",
+				kind = "spec",
+				title = "Level 60",
+				text = "Angler Level",
+				cast = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME),
+			})
+			M:ShowLetter("ledger.prestige")
+			assert.is_false(shows(loaded))
+			loaded.client.advance(0)
+
+			-- The toast is in the lanes, and the letter still waits for it.
+			assert.is_false(loaded.ns.lanes:IsEmpty())
+			assert.is_false(shows(loaded))
+			loaded.client.advance(8)
+			assert.is_false(shows(loaded))
+			loaded.client.advance(2)
+
+			assert.is_true(loaded.ns.lanes:IsEmpty())
+			assert.is_true(shows(loaded))
+			assert.are.equal("Show me", letterOf(loaded).open.label.text)
+		end
+	)
+
+	it("is never sent on a test log: its Casts are no player's, so the letter isn't used up (ONB-R16)", function()
+		local loaded, M = withLetter(opened())
+		loaded.ns.catchLog.data.test = true
+		loaded.client.advance(4)
+
+		assert.is_false(send(loaded, M))
+
+		assert.is_false(shows(loaded))
+		assert.is_nil(state(loaded).letters)
+	end)
+
+	it(
+		"makes a letter's state as /pagle dev onboarding letter shows it, so Later steps it (ONB-R16, ONB-R83)",
+		function()
+			local loaded = withLetter(opened())
+			loaded.client.advance(4)
+			pagle(loaded, "dev on")
+			assert.is_nil(state(loaded).letters)
+
+			pagle(loaded, "dev onboarding letter ledger.prestige")
+			assert.are.equal("waiting", state(loaded).letters["ledger.prestige"])
+			press(loaded, "Later")
+			assert.are.equal("later", state(loaded).letters["ledger.prestige"])
+			pagle(loaded, "dev onboarding letter ledger.prestige")
+			press(loaded, "Later")
+
+			assert.are.equal("declined", state(loaded).letters["ledger.prestige"])
+		end
+	)
 
 	it(
 		"raises an error at the call for a letter the Module hasn't registered, or one that's malformed (ONB-R90's sense)",
@@ -608,7 +698,7 @@ describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", func
 	it("forgets Module letters on /pagle dev onboarding reset (ONB-R17, ONB-R83)", function()
 		local loaded, M = withLetter(opened())
 		loaded.client.advance(4)
-		M:ShowLetter("ledger.prestige")
+		send(loaded, M)
 		press(loaded, "Show me")
 		pagle(loaded, "dev on")
 

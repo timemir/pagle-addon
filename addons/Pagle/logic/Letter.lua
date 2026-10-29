@@ -36,6 +36,8 @@ ns.LETTER_DELAY = 4
 ---@field openGuide fun()                   -- opens the Field guide at its first step (ONB-R12, ONB-R20)
 ---@field guideOpen? fun(): boolean         -- the Field guide is open: a Module's letter waits (ONB-R17); none: never
 ---@field call? fun(fn: function, ...: any) -- calls a Module's function, an error reported and not raised (host.call)
+---@field afterMoments? fun(fn: fun())     -- runs fn once the moments raised so far have reached the lanes (the next frame's flush, ANN-R10); none: at once
+---@field testLog? fun(): boolean           -- the Catch log is a test log (`PagleLog.test`): no Module's letter is sent (ONB-R16); none: never
 
 --- Where the letters are: `waiting` for one to show, `shown` on screen, `away` hidden by a restriction or an instance
 --- to show again (ONB-R14).
@@ -300,14 +302,18 @@ end
 --- A Module sends its letter (M:ShowLetter, ONB-R16): a letter with no state yet becomes `waiting`, and one that is
 --- `waiting` or `later` and not answered this login joins the queue, to show as ONB-R10's conditions hold (ONB-R17).
 --- A `declined` or `opened` letter, one answered this login and one never registered are left alone, and sending a
---- letter again changes nothing. Returns whether the letter is queued or on screen.
+--- letter again changes nothing; nor does any send count on a test log, whose Casts are no player's (ONB-R16). The
+--- check that may show it waits for the moments raised so far to reach the lanes (ANN-R10), so a letter sent as a Cast
+--- is applied comes after that Cast's toasts and banners, not in the frame it was caught. Returns whether the letter
+--- is queued or on screen.
 ---@param id string
 ---@return boolean
 function Letter:Send(id)
-	if not self.letters[id] or self.answered[id] then
+	local options = self.options
+	if not self.letters[id] or self.answered[id] or (options.testLog and options.testLog()) then
 		return false
 	end
-	if not self.options.onboarding():RaiseLetter(id) then
+	if not options.onboarding():RaiseLetter(id) then
 		return false
 	end
 	local queued = false
@@ -317,7 +323,13 @@ function Letter:Send(id)
 	if not queued then
 		self.queue[#self.queue + 1] = id
 	end
-	self:Check()
+	if options.afterMoments then
+		options.afterMoments(function()
+			self:Check()
+		end)
+	else
+		self:Check()
+	end
 	return true
 end
 
@@ -393,6 +405,8 @@ function Letter:ShowNow(id)
 	if not spec then
 		return false
 	end
+	-- a Module's letter nobody sent has no state to step, so Later would write nothing (ONB-R16)
+	self.options.onboarding():RaiseLetter(id)
 	if self.preview == id then
 		self.preview = nil
 		self.current = id

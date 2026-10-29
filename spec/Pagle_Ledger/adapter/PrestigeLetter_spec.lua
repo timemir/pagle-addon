@@ -21,6 +21,15 @@ local function catalogue()
 	return catalogueWith({ items = items })
 end
 
+-- The fish `from` to `to` of the catalogue, by item ID.
+local function fishes(from, to)
+	local items = {}
+	for i = from, to do
+		items[#items + 1] = FIRST_FISH + i - 1
+	end
+	return items
+end
+
 -- A caught Cast by the player's character at `time`, of `count` of the fish from the first.
 local function cast(time, count)
 	local items = {}
@@ -38,7 +47,7 @@ end
 -- A Ledger on a fake over the catalogue, its log holding `records` (a Cast reaching 60 by default), logged in and in the
 -- world (the projection built) with the onboarding Letter's state `returning`, as a log that holds a Cast makes it.
 -- `letters` are the Module letters' states saved before login; `closed` leaves the Journal shut.
----@param options { records: table[]?, letters: table<string, string>?, closed: boolean?, updating: boolean? }?
+---@param options { records: table[]?, letters: table<string, string>?, closed: boolean?, updating: boolean?, test: boolean? }?
 ---@return FakePagle fake
 ---@return LoadedAddon loaded
 local function ledger(options)
@@ -49,6 +58,7 @@ local function ledger(options)
 		building = options.updating,
 		id = false,
 		modules = function(fake)
+			fake.catchLog.data.test = options.test
 			if options.letters then
 				fake.global.onboarding = fake.ns.NewOnboardingState("returning")
 				fake.global.onboarding.letters = options.letters
@@ -262,6 +272,62 @@ describe("when the Prestige letter comes (LED-R201)", function()
 		end
 	)
 
+	it("tries again the next frame for an entry applied while the projection is still updating (LED-R201)", function()
+		local _, loaded = ledger({ letters = { [LETTER] = "opened" } })
+		local sent = {}
+		loaded.ns.Module = {
+			ShowLetter = function(_, id)
+				sent[#sent + 1] = id
+			end,
+		}
+		local updating = true
+		loaded.ns.projection.IsUpdating = function()
+			return updating
+		end
+		-- The next frame's timers, run by hand.
+		local frames = {}
+		loaded.env.C_Timer.After = function(_, fn)
+			frames[#frames + 1] = fn
+		end
+		local function nextFrame()
+			local due = frames
+			frames = {}
+			for _, fn in ipairs(due) do
+				fn()
+			end
+		end
+
+		loaded.ns.NotePrestigeLetter()
+		loaded.ns.NotePrestigeLetter()
+		assert.are.same({}, sent)
+		assert.are.equal(1, #frames)
+		nextFrame()
+		assert.are.same({}, sent)
+		assert.are.equal(1, #frames)
+
+		updating = false
+		nextFrame()
+
+		assert.are.same({ LETTER }, sent)
+		assert.are.equal(0, #frames)
+	end)
+
+	it(
+		"is not sent on a test log, which no player fished: the letter stays unspent for the real Angler (LED-R201)",
+		function()
+			local fake, loaded = ledger({ test = true })
+			arrive(fake)
+
+			assert.are.equal(60, loaded.ns.Level(loaded.ns.projection:GetState()))
+			assert.is_false(fake.letterOnScreen)
+			assert.is_nil(fake.global.onboarding.letters)
+
+			fake.slash("dev on")
+			fake.slash("dev onboarding letter " .. LETTER)
+			assert.is_true(fake.letterOnScreen)
+		end
+	)
+
 	it("is raised once a login: after Later it doesn't come again until the next login (LED-R201, ONB-R10)", function()
 		local fake, loaded = ledger({ records = { cast(T0, TO_60_SPECIES - 1) } })
 		arrive(fake)
@@ -342,6 +408,37 @@ describe("Show me (LED-R202)", function()
 			assert.is_true(loaded.ns.journal:IsShown())
 			assert.are.equal(1, #fake.notesShown)
 			assert.is_not_nil(prestigeButton(loaded))
+		end
+	)
+
+	it(
+		"opens a closed Journal for the note alone: ledger.fresh and the First look wait for the next opening (LED-R202)",
+		function()
+			-- A real break (LED-R22) before the Cast that reaches 60, so Fresh Water has a note to raise on opening.
+			local fake, loaded = ledger({
+				records = {
+					cast(T0 - 7200, 1),
+					castRecord({ time = T0, zone = ZONE, items = fishes(2, TO_60_SPECIES) }),
+				},
+			})
+			assert.are.equal(60, loaded.ns.Level(loaded.ns.projection:GetState()))
+			arrive(fake)
+
+			showMe(fake)
+
+			local ids = {}
+			for i, note in ipairs(fake.notesShown) do
+				ids[i] = note.id
+			end
+			assert.are.same({ LETTER }, ids)
+			assert.is_nil(fake.global.onboarding.notesSeen["ledger.fresh"])
+			assert.is_nil(fake.global.onboarding.looksSeen["ledger.journal"])
+			assert.is_nil(loaded.ns.openedByLetter)
+
+			-- The next opening raises them as ever (ONB-R52, ONB-R55): Fresh Water's note is on Home's ink bar.
+			loaded.ns.journal:Close()
+			loaded.ns.journal:Open("home")
+			assert.is_true(fake.global.onboarding.looksSeen["ledger.journal"])
 		end
 	)
 

@@ -1707,6 +1707,16 @@ function ns.WireLetter(host, view)
 			return ns.guide:IsOpen()
 		end,
 		call = host.call,
+		-- ANN-R10: a Cast's moments reach the lanes at the next frame's flush, once no projection is updating.
+		afterMoments = function(fn)
+			ns.projections:WhenIdle(function()
+				host.nextFrame(fn)
+			end)
+		end,
+		testLog = function()
+			local log = host.catchLog()
+			return log ~= nil and log.data.test == true
+		end,
 	})
 	ns.letter = letter
 

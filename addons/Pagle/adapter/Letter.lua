@@ -179,7 +179,10 @@ end
 local function write(frame, content)
 	frame.kicker:SetText(content.kicker)
 	frame.line:SetText(content.text)
-	local extra = math.max(0, math.ceil(frame.line:GetStringHeight() - frame.gauge:GetStringHeight()))
+	-- Only a line taller than the gauge's two by more than half a unit grows it, so the onboarding Letter stays the
+	-- kit's 132 whatever the client's metrics make of a fraction.
+	local over = frame.line:GetStringHeight() - frame.gauge:GetStringHeight()
+	local extra = over > 0.5 and math.ceil(over) or 0
 	local height = LETTER.height + extra
 	frame:SetSize(LETTER.width, height)
 	frame.slip:SetSize(LETTER.slipWidth, height)

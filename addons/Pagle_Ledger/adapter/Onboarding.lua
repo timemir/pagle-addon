@@ -430,7 +430,7 @@ function ns.JournalOpened(journal)
 	if M.CompleteEveningItem then
 		M:CompleteEveningItem("journal")
 	end
-	if not journal.pages or journal.pages.updating then
+	if ns.openedByLetter or not journal.pages or journal.pages.updating then
 		return
 	end
 	local fresh = ns.JournalFreshPart(journal)
@@ -459,6 +459,11 @@ function ns.JournalPrestigeButton(journal)
 	return nil
 end
 
+--- Whether the Journal is being opened by the Prestige letter's Show me now (LED-R202): its opening raises no
+--- `ledger.fresh` note or First look.
+---@type boolean?
+ns.openedByLetter = nil
+
 --- "Show me" on the Prestige letter (LED-R202), once Core has set it `opened`: the Fish Journal opened on the Angler
 --- page, where the Prestige button is (LED-R146), and a Margin note on that button, once per account (ONB-R50): "Begin
 --- a new Ledger here, when you're ready. No hurry." Nothing is prestiged from here: the Journal's own confirm card stays
@@ -466,8 +471,13 @@ end
 --- page opens.
 function ns.ShowPrestigeLetterPage()
 	local journal = ns.journal
-	-- Still, so the page the note points at stands where it is drawn, whether the book was closed or open elsewhere.
-	if not journal:OpenPlace(ns.JournalPlace.angler(), "still") then
+	-- Still, so the page the note points at stands where it is drawn, whether the book was closed or open elsewhere;
+	-- and this opening is for the note, so the other first-opening notes (`ledger.fresh`, the First look) wait for the
+	-- next one rather than crowd it.
+	ns.openedByLetter = true
+	local opened = journal:OpenPlace(ns.JournalPlace.angler(), "still")
+	ns.openedByLetter = nil
+	if not opened then
 		return
 	end
 	local M = ns.Module
@@ -501,6 +511,9 @@ function ns.PrestigeLetterIsDue()
 	return ns.PrestigeLetterDue(state, state == nil)
 end
 
+-- Whether a try for a send is waiting for the next frame (the projection was updating).
+local noting = false
+
 --- Sends the Prestige letter if it is due now (LED-R201): the climb's computed level is 60 at prestige rank 0, with the
 --- projection built. Called as the climb may have reached 60 (a live entry, Activity XP arriving) and as the projection
 --- finishes catching up or rebuilding (the login's check). Core holds what the letter's state and ONB-R10's gates say, so
@@ -509,6 +522,19 @@ end
 function ns.NotePrestigeLetter()
 	local M = ns.Module
 	if not (M and M.ShowLetter) then
+		return
+	end
+	-- An entry applied while the projection is still updating (after `done`, with live entries deferred) is looked at
+	-- again the next frame, as the Activity XP's level is (adapter/Ledger.lua), until it is built.
+	local projection = ns.projection
+	if projection and projection:IsUpdating() then
+		if not noting then
+			noting = true
+			C_Timer.After(0, function()
+				noting = false
+				ns.NotePrestigeLetter()
+			end)
+		end
 		return
 	end
 	if ns.PrestigeLetterIsDue() then
