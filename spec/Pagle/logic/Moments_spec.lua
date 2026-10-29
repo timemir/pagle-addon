@@ -833,6 +833,26 @@ describe("an Epic variety's moment while the Extravaganza Gala is equipped (ANN-
 		assert.are.equal(1, #world.shown)
 	end)
 
+	it(
+		"shows its own stamp, its title, first in the stamp row, as a Rare variety's toast does; a banner has none",
+		function()
+			local world = newWorld()
+			world.style = GALA
+			world.moments:Raise(LEDGER, variety("epic"))
+			world.moments:Raise(LEDGER, moment("toast", "New Species", { stamp = "New!" }))
+			world.frame()
+
+			assert.is_true(world.shown[1].headline.ownStamp)
+			assert.are.same({ "Epic variety", "New!" }, world.shown[1].stamps)
+
+			local other = newWorld()
+			other.moments:Raise(LEDGER, variety("epic"))
+			other.frame()
+			assert.is_nil(other.shown[1].headline.ownStamp)
+			assert.are.same({}, other.shown[1].stamps)
+		end
+	)
+
 	it("is a banner with any other style equipped, or none", function()
 		for _, style in ipairs({ "core.toaststyle.page", "hunts.toaststyle.nightfin", false }) do
 			local world = newWorld()

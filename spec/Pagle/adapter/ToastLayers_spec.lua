@@ -998,6 +998,64 @@ describe("the epic five on the client (ANN-R85)", function()
 			end
 		)
 
+		it(
+			"gives that Epic toast an EPIC VARIETY stamp, first in the row and in the epic ink, as a Rare variety's toast has RARE VARIETY, with the kicker clear of it (ANN-R85, VAR-R28)",
+			function()
+				local loaded, M = epicCore()
+				equip(loaded, GALA)
+				-- Another moment on the Cast rides as a stamp behind it.
+				M:RaiseMoment({
+					rung = "toast",
+					kind = "spec",
+					title = "New Species",
+					stamp = "New!",
+					text = "Raw Bristle Whisker Catfish",
+					icon = 6291,
+					cast = CAST,
+				})
+				local toast = epic(loaded, M) --[[@as table]]
+
+				local stamps = {}
+				for i, stamp in ipairs(toast.stamps) do
+					if stamp.shown then
+						stamps[#stamps + 1] = { stamp.label:GetText(), i }
+					end
+				end
+				assert.are.same({ "EPIC VARIETY", "NEW!" }, { stamps[1][1], stamps[2][1] })
+				local epicInk = loaded.ns.VARIETY_RARITIES[4].ink
+				assert.are.same(
+					{ epicInk[1], epicInk[2], epicInk[3] },
+					{ unpack(toast.stamps[stamps[1][2]].label.textColor, 1, 3) }
+				)
+				-- The kicker, "Epic variety", ends before the leftmost stamp starts.
+				local left = math.huge
+				for i, stamp in ipairs(toast.stamps) do
+					if stamp.shown then
+						left = math.min(left, select(4, toast.pivots[i]:GetPoint()) - stamp:GetWidth() / 2)
+					end
+				end
+				local _, _, _, x = toast.title:GetPoint()
+				assert.are.equal("EPIC VARIETY", toast.stamps[stamps[1][2]].label:GetText())
+				assert.is_true(x + toast.title:GetStringWidth() <= left)
+				loaded.client.advance(20)
+
+				-- A Rare variety's own toast already has its stamp, from its title (VAR-R28).
+				M:RaiseMoment({
+					rung = "toast",
+					kind = "rareVariety",
+					ownStamp = true,
+					title = "Rare variety",
+					text = "Coral",
+					icon = 6291,
+					cast = CAST,
+					variety = { name = "Coral", rarity = "rare" },
+				})
+				loaded.client.advance(0)
+				local rare = loaded.ns.announcementFrames.toast
+				assert.are.equal("RARE VARIETY", rare.stamps[1].label:GetText())
+			end
+		)
+
 		it("keeps the banner for an Epic variety in every other style (VAR-R25)", function()
 			local loaded, M = epicCore()
 			for _, entry in ipairs(EPIC_FIVE) do
