@@ -17,6 +17,7 @@ local function titleView()
 		state = ns.StateNow(),
 		celebrated = ns.SavedCelebrated(),
 		getItem = Pagle.GetItem,
+		ownsAll = Pagle.GetTestLogGrant("devGoods") == true,
 	}
 end
 

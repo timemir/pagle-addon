@@ -1501,6 +1501,70 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 		end)
 	end)
 
+	describe("--preset collector at NOW (in-game-verification.md › Test logs)", function()
+		local ARGS = {
+			"--huntlist",
+			"spec/scripts/fixtures/TestLogVeteranHuntList.lua",
+			"--eventlist",
+			"spec/scripts/fixtures/TestLogEventList.lua",
+		}
+		local made = make("collector", NOW, nil, { loadfile = withOrigin(WAGERS_ORIGIN) }, nil, ARGS)
+		local veteran = make("veteran", NOW, nil, { loadfile = withOrigin(WAGERS_ORIGIN) }, nil, ARGS)
+		local log = made.stage and globalsOf(readFile(made.stage .. "/Pagle.lua")).PagleLog
+		local veteranLog = veteran.stage and globalsOf(readFile(veteran.stage .. "/Pagle.lua")).PagleLog
+
+		it("exits 0 and makes one dated test log for the account", function()
+			assert.are.equal("", made.err)
+			assert.are.equal(0, made.code)
+			assert.are.same({ "20261014-174640-collector" }, made.stages)
+		end)
+
+		it("is veteran's log with `devGoods = true` and nothing else different (catch-log.md › Data)", function()
+			assert.is_true(log.test)
+			assert.is_true(log.devGoods)
+			assert.is_nil(veteranLog.devGoods)
+			-- the logId is new each time; every other field, the entries and the grants, is veteran's
+			local same = {}
+			for key, value in pairs(log) do
+				if key ~= "devGoods" and key ~= "logId" then
+					same[key] = value
+				end
+			end
+			local expected = {}
+			for key, value in pairs(veteranLog) do
+				if key ~= "logId" then
+					expected[key] = value
+				end
+			end
+			assert.are.same(expected, same)
+		end)
+
+		it("keeps veteran's Prestige III, Coins and Hunts grants, and Core's codec decodes it whole", function()
+			local _, undecodable = decoded(log)
+			assert.are.equal(0, undecodable)
+			assert.are.equal(3 * 201000 + 60000, log.devXP)
+			assert.is_true(log.devCoins > 0 and log.devCoins <= 50000)
+			assert.are.equal(PREVIOUS - 22 * 86400, log.devHuntsSince)
+		end)
+
+		it("prints its aim and the goods grant, and keeps the current slot's end in stage.txt", function()
+			assert.are.equal(
+				"== Test log collector: Prestige 3, Hunts under way, a Pagle Wagers run on and 50,000 Coins to spend,"
+					.. " every good unlocked (a seasoned account with every good unlocked)",
+				made.lines[1]
+			)
+			assert.matches("Goods: devGoods", table.concat(made.lines, "\n"), 1, true)
+			assert.matches(("\nnextReset %d\n$"):format(CURRENT + SLOT), readFile(made.stage .. "/stage.txt"))
+		end)
+
+		it("refuses to --install after the current slot ends, as veteran does (HNT-R152)", function()
+			local err, code = modeRun(made, "--install", CURRENT + SLOT + 10)
+			assert.are.equal(1, code)
+			assert.matches("is a collector test log", err, 1, true)
+			assert.matches("that run is over", err, 1, true)
+		end)
+	end)
+
 	-- The wagers test log made at NOW, logged into on FakePagle at NOW with Hunts over the fixture catalogue, Hunt list
 	-- and pool, the origin moved, and no companion (Pagle_Content missing), as the dev does after --install: the first
 	-- build, then the live step once PushedContentReady has fired (HNT-R111, HNT-R151).
@@ -1826,7 +1890,7 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 			assert.are.equal(2, code)
 			assert.matches("no preset level99", err, 1, true)
 			assert.matches(
-				"the presets are level10, level60, catches1000, boardday, big5, big20, showcase, wagers",
+				"the presets are level10, level60, catches1000, boardday, big5, big20, showcase, wagers, veteran, collector",
 				err,
 				1,
 				true

@@ -406,4 +406,62 @@ describe("the Angler's titles", function()
 			end
 		)
 	end)
+
+	describe("a test log's devGoods (SHOP-R37)", function()
+		local everyTitle = {
+			"title:level1",
+			"title:level10",
+			"title:level20",
+			"title:level30",
+			"title:level40",
+			"title:level50",
+			"title:level60",
+			"title:prestige1",
+			"title:prestige5",
+			"title:prestige10",
+			"zonemaster:" .. LAKE,
+			"zonemaster:" .. COVE,
+			"legend:" .. LEGEND,
+			"title:complete.ledger",
+			"title:complete.junk",
+			"title:complete.treasure",
+			"title:complete.trophy",
+			"title:complete.varieties",
+		}
+
+		it("makes every title there is earned in a view that asks, with nothing earned yet", function()
+			local owning = view(state({}))
+			owning.ownsAll = true
+
+			assert.are.same(everyTitle, ns.TitleKeys(owning))
+			assert.are.same(everyTitle, ns.TitleCatalogue(owning))
+		end)
+
+		it("signs with the highest level title for Automatic, and takes any title as the pick (LED-R77)", function()
+			local owning = view(state({}))
+			owning.ownsAll = true
+
+			assert.are.equal("title:level60", (ns.ActiveTitle(owning)))
+			owning.activeTitle = "title:prestige10"
+			assert.are.equal("title:prestige10", (ns.ActiveTitle(owning)))
+			local profile = {}
+			assert.is_true(ns.StoreActiveTitle(profile, owning, "zonemaster:" .. COVE))
+			assert.are.equal("zonemaster:" .. COVE, profile.activeTitle)
+		end)
+
+		it(
+			"changes nothing in a view that doesn't ask: the state's own titles, as the projection folds them",
+			function()
+				local made = state({ xp = LEVEL_23 })
+				local keys = ns.TitleKeys(view(made))
+
+				assert.is_false(ns.StoreActiveTitle({}, view(made), "title:prestige10"))
+				-- what is newly earned (the moments') reads the state alone, ownsAll or not
+				local asking = view(made)
+				asking.ownsAll = true
+				assert.are.same(ns.NewTitles(view(made)), ns.NewTitles(asking))
+				assert.is_true(#ns.TitleKeys(asking) > #keys)
+			end
+		)
+	end)
 end)

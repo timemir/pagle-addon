@@ -78,6 +78,7 @@ local ns = select(2, ...)
 ---@field serverTime? fun(): integer -- the server time now, for a fallback price's date (SHOP-R28); none: no fallback
 --- has been reached
 ---@field report fun(message: string)    -- reports a mistake and carries on (geterrorhandler())
+---@field ownsAll? fun(): boolean        -- whether the log grants every good (`devGoods`, SHOP-R37); none: it never does
 
 ---@class PagleGoods
 ---@field private options PagleGoodsOptions
@@ -105,7 +106,13 @@ end
 --- drawn appearances are separate; the registered slots and native preview functions are shared read-only.
 ---@return PagleGoods
 function Goods:PreviewCopy()
-	local copy = ns.NewGoods(self.options)
+	-- the recording's disposable DB owns what it owns, never the test log's grant (SHOP-R37)
+	local options = {}
+	for key, value in pairs(self.options) do
+		options[key] = value
+	end
+	options.ownsAll = nil
+	local copy = ns.NewGoods(options)
 	copy.slots, copy.goods, copy.registered = self.slots, self.goods, self.registered
 	if self.shown then
 		copy.shown = {}
@@ -709,8 +716,17 @@ function Goods:DefaultOf(slotID)
 	return found
 end
 
+--- Whether the log grants every good (SHOP-R37): a test log with `devGoods`. Display and ownership only: it spends no
+--- Coins and writes no entry, and nothing the projections fold reads it.
+---@return boolean
+function Goods:OwnsAll()
+	local ownsAll = self.options.ownsAll
+	return ownsAll ~= nil and ownsAll() == true
+end
+
 --- Whether a good is owned (SHOP-R30): a registered slot's default, a purchased good, or an earned good whose cached
---- isEarned() result is true. It reads the cache only, never isEarned().
+--- isEarned() result is true; with the test log's `devGoods`, every good registered or cached (SHOP-R37). It reads the
+--- cache only, never isEarned().
 ---@param goodID any
 ---@return boolean
 function Goods:IsOwned(goodID)
@@ -718,6 +734,9 @@ function Goods:IsOwned(goodID)
 		return false
 	end
 	if self.purchased[goodID] then
+		return true
+	end
+	if self:OwnsAll() and (self.goods[goodID] ~= nil or type(self:Cache()[goodID]) == "table") then
 		return true
 	end
 	local cached = self:Cache()[goodID]

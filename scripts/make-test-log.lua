@@ -6,7 +6,7 @@
 -- Run it in WSL with the game fully closed.
 --
 --   lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder>
---       --preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers|veteran> [--out <folder>]
+--       --preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers|veteran|collector> [--out <folder>]
 --       [--catalogue <Catalogue.lua>] [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>]
 --   lua scripts/make-test-log.lua --account <folder> --install [--out <folder>]
 --   lua scripts/make-test-log.lua --account <folder> --restore [--out <folder>]
@@ -60,6 +60,10 @@
 -- when the Ledger is at Prestige 3 below level 60, a standing Hunt has a tier, the old run is settled and the current
 -- one is on.
 --
+-- collector is veteran's log (the same builder and checks) plus the test-log grant `devGoods = true`: every good the
+-- Curio Shop sells or a Module earns, and every Ledger title, counts as owned in the game (catch-log.md › Test logs),
+-- so the dev can look at all of them. Nothing is bought and no Coins are spent.
+--
 -- --install copies the newest stage's Pagle.lua into the account's SavedVariables, only when the account's Pagle.lua
 -- is the one backed up or another test log made here (a boardday one only before its board day ends, as the next
 -- reset would close day 2 unlit too, and a wagers one only before its current fallback slot ends). --restore puts back
@@ -71,7 +75,7 @@
 -- precompiled chunks are refused. Exits 2 on a usage error, 1 when it refuses (nothing is changed then), else 0.
 
 local USAGE = "usage: lua scripts/make-test-log.lua --account <WTF/Account/<ACCT> folder>"
-	.. " (--preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers|veteran> [--catalogue <Catalogue.lua>]"
+	.. " (--preset <level10|level60|catches1000|boardday|big5|big20|showcase|wagers|veteran|collector> [--catalogue <Catalogue.lua>]"
 	.. " [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>] | --install | --restore)"
 	.. " [--out <folder>]\n"
 
@@ -142,9 +146,11 @@ local PRESETS = {
 	wagers = { wagers = true, check = "M8", step = "7" },
 	-- A seasoned Angler to look around as: Prestige III, Hunts under way, Pagle Wagers live and Coins to spend.
 	veteran = { veteran = true, checks = "a seasoned account to play and look around as" },
+	-- veteran's log with every good owned, to look at them all (`devGoods`, SHOP-R37).
+	collector = { veteran = true, collector = true, checks = "a seasoned account with every good unlocked" },
 }
 local PRESET_NAMES =
-	{ "level10", "level60", "catches1000", "boardday", "big5", "big20", "showcase", "wagers", "veteran" }
+	{ "level10", "level60", "catches1000", "boardday", "big5", "big20", "showcase", "wagers", "veteran", "collector" }
 
 -- veteran's log: VETERAN_DAYS days of history before the last fallback slot, a session of VETERAN_SESSION Casts each
 -- evening in the next charted zone in turn, and a Prestige the evening of each of VETERAN_PRESTIGE_DAYS. Its test-log
@@ -2573,6 +2579,9 @@ local function makeTestLog(options, now)
 		data, sim = VETERAN.write(game, hunts, facts, log, veteran, now)
 		found = VETERAN.check(game, hunts, facts, data, veteran, sim, now)
 		VETERAN.grant(data, veteran, found)
+		if preset.collector then
+			data.devGoods = true
+		end
 	elseif preset.wagers then
 		hunts = loadHunts(game, options.huntlist, options.eventlist)
 		wagers = planWagers(hunts, now)
@@ -2663,7 +2672,7 @@ local function makeTestLog(options, now)
 		tags[#tags + 1] = tag .. " " .. n
 	end
 	table.sort(tags)
-	local aim = preset.veteran and VETERAN.aim()
+	local aim = preset.veteran and VETERAN.aim() .. (preset.collector and ", every good unlocked" or "")
 		or preset.wagers and "the last fallback slot's run settled, the current slot's not logged yet"
 		or preset.showcase and ("a Campfire of %d days or more lit on the board's day, and %s Coins or more to spend"):format(
 			SHOWCASE_FIRE,
@@ -2695,6 +2704,11 @@ local function makeTestLog(options, now)
 	)
 	if preset.veteran then
 		VETERAN.print(found, veteran, sim, hunts, game)
+		if preset.collector then
+			print(
+				"Goods: devGoods, so every good and every title counts as owned in the game; none bought, no Coins spent"
+			)
+		end
 	elseif preset.wagers then
 		printWagers(found, wagers, hunts, game)
 	elseif preset.showcase then
@@ -2722,7 +2736,11 @@ local function makeTestLog(options, now)
 				utc(veteran.current.end_)
 			)
 		)
-		print("  Its Coins and Activity XP grants count only on this test log (catch-log.md › Test logs): --restore")
+		print(
+			"  Its Coins and Activity XP grants"
+				.. (preset.collector and " and devGoods" or "")
+				.. " count only on this test log (catch-log.md › Test logs): --restore"
+		)
 		print("  puts your real log back, and with it the real totals.")
 	elseif preset.wagers then
 		print(
@@ -2788,7 +2806,7 @@ local function install(options, now)
 		local why = stage.preset == "showcase"
 				and "its last lit day's next day ended at %s, so it would burn a Kindling;"
 			or stage.preset == "wagers" and "its fallback slot ended at %s, so a later slot's event would be on;"
-			or stage.preset == "veteran" and "its current run's slot ended at %s, so that run is over;"
+			or (stage.preset == "veteran" or stage.preset == "collector") and "its current run's slot ended at %s, so that run is over;"
 			or "its board day ended at %s, so day 2 would close unlit too;"
 		refuse(
 			("%s is a %s test log and " .. why):format(stage.dir, stage.preset, utc(nextReset))
@@ -2811,7 +2829,7 @@ local function install(options, now)
 	local was = real and "the real log, as backed up" or ("test log %s (logId %s)"):format(other.preset, currentLogId)
 	print(("the Pagle.lua it replaced, %s, is kept in %s/"):format(was, kept))
 	local by = stage.preset == "showcase" and " before %s, when its Campfire's last lit day is followed by an unlit one"
-		or (stage.preset == "wagers" or stage.preset == "veteran") and " before %s, when its current fallback slot ends"
+		or (stage.preset == "wagers" or stage.preset == "veteran" or stage.preset == "collector") and " before %s, when its current fallback slot ends"
 		or " before the next daily reset, %s"
 	local before = nextReset and by:format(utc(nextReset)) or ""
 	print("Log in as " .. tostring(stage.character) .. before .. ".")
