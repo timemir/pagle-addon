@@ -5,15 +5,26 @@ end
 ---@class PagleTackleBoardNS
 local ns = select(2, ...)
 
--- Taking a goal down (TKB-R55, TKB-R56): whether a goal may be taken down, whether the player is asked first and
--- what. And spending a Refresh on an empty slot (TKB-R58, TKB-R59): whether a goal can be posted into one, and what
+-- Taking a goal down (TKB-R55, TKB-R56): whether a goal may be taken down (once per board day, for a re-posted goal
+-- from the next daily reset), whether the player is asked first and what. And spending a Refresh on an empty slot (TKB-R58, TKB-R59): whether a goal can be posted into one, and what
 -- the player is asked and told. Pure logic (CORE-R7): Core's catalogue calls, the board day now and the Refreshes held
 -- come in from adapter/Reroll.lua, which appends the `reroll` and `post` records (TKB-R80).
 
---- The goal `goalID` names, if it is one that can be taken down (TKB-R55): an open goal (not completed) issued by an
---- `issue` record, or a re-posted one only while it is stranded (TKB-R44). Nil otherwise, also for an ID the board
---- doesn't know. Whether the projection is updating (TKB-R108) is the caller's: the button shows greyed then, and
---- nothing is taken down.
+--- Whether a goal was re-posted by a take-down on board day `today` or later (TKB-R55): the goal a `reroll` posts is
+--- issued on the day the projection has reached for that record (TKB-R57), so its `issuedDay` is the day of the take-down,
+--- read from the log on every rebuild and never from the clock at the click. A goal that was not re-posted is never.
+---@param goal TackleGoal
+---@param today integer the board day now, the projection's day (TKB-R104)
+---@return boolean
+function ns.IsRepostedToday(goal, today)
+	return goal.reposted and goal.issuedDay >= today
+end
+
+--- The goal `goalID` names, if it is one that can be taken down (TKB-R55): an open goal (not completed) that was not
+--- re-posted by a take-down today, or a re-posted one while it is stranded (TKB-R44). A goal re-posted on an earlier
+--- board day can come down again, Notice and Expedition alike. Nil otherwise, also for an ID the board doesn't know.
+--- Whether the projection is updating (TKB-R108) is the caller's: the button shows greyed then, and nothing is taken
+--- down.
 ---@param state TackleBoardState
 ---@param goalID string
 ---@param pagle table Core's catalogue calls (LOG-R55), for ns.IsStranded
@@ -23,7 +34,7 @@ function ns.TakeDownGoal(state, goalID, pagle)
 	if not goal or goal.doneDay ~= nil then
 		return nil
 	end
-	if goal.reposted and not ns.IsStranded(goal, pagle) then
+	if ns.IsRepostedToday(goal, state.day) and not ns.IsStranded(goal, pagle) then
 		return nil
 	end
 	return goal
@@ -31,21 +42,23 @@ end
 
 --- What "take it down" says under the mouse (TKB-R55, TKB-R56, TKB-R44, TKB-R108): what it does for the goal's type,
 --- then the one rule that applies: while the projection is updating, that it waits; for a stranded goal, that it is no
---- longer catchable (and so can come down though re-posted); otherwise, that the new goal can't be taken down in turn
---- unless it stops being catchable.
+--- longer catchable (and so can come down even though it was re-posted today, when it was); otherwise, that the new
+--- goal can't be taken down again until the daily reset, in `untilReset`, unless it stops being catchable.
 ---@param goal TackleGoal
+---@param today integer the board day now, the projection's day (TKB-R104)
 ---@param updating boolean ns.IsUpdating() (TKB-R108)
 ---@param pagle table Core's catalogue calls (LOG-R55), for ns.IsStranded
+---@param untilReset string the countdown to the daily reset, ns.ResetCountdown (TKB-R105)
 ---@return string[] lines its title, what it does, the rule
-function ns.TakeDownTip(goal, updating, pagle)
+function ns.TakeDownTip(goal, today, updating, pagle, untilReset)
 	local L = ns.L
 	local rule
 	if updating then
 		rule = L.TAKE_DOWN_TIP_UPDATING
 	elseif ns.IsStranded(goal, pagle) then
-		rule = goal.reposted and L.TAKE_DOWN_TIP_STRANDED or L.TAKE_DOWN_TIP_STRANDED_FIRST
+		rule = ns.IsRepostedToday(goal, today) and L.TAKE_DOWN_TIP_STRANDED or L.TAKE_DOWN_TIP_STRANDED_FIRST
 	else
-		rule = L.TAKE_DOWN_TIP_ONCE
+		rule = ns.Fill(L.TAKE_DOWN_TIP_ONCE, { time = untilReset })
 	end
 	return { L.TAKE_DOWN_TIP_TITLE, L.TAKE_DOWN_TIP[goal.type], rule }
 end
@@ -54,7 +67,7 @@ end
 --- apart.
 ---@class TackleTakeDownQuestion
 ---@field title string      -- "Take down this Notice?"
----@field text string       -- "Its progress (12/30) is lost, and the new one can't be taken down."
+---@field text string       -- "Its progress (12/30) is lost, and the new one can't be taken down again today."
 ---@field progress string   -- "12/30", as it reads in `text`
 
 --- The confirm's question before a goal comes down (TKB-R56), or nil when it comes down at once: it asks only for a
@@ -105,7 +118,7 @@ end
 --- The confirm's question before a Refresh posts a goal (TKB-R59), which always asks: it cannot be undone.
 ---@class TacklePostQuestion
 ---@field title string      -- "Post a new Notice?"
----@field text string       -- "This uses 1 Refresh, and it can't be undone. The new goal can be taken down once, like any other."
+---@field text string       -- "This uses 1 Refresh, and it can't be undone. The new goal can be taken down once a day, like any other."
 ---@field cost string       -- "1 Refresh", as it reads in `text`, which the confirm inks apart
 
 ---@param goalType TackleGoalType

@@ -49,7 +49,7 @@ end
 -- What a pin shows for `g`, with the view's context: board day 0, in The Barrens, not updating, can't be taken down,
 -- unless `ctx` says otherwise.
 local function view(ns, g, ctx)
-	local context = { today = 0, zone = BARRENS, updating = false, canTakeDown = false }
+	local context = { today = 0, zone = BARRENS, updating = false, canTakeDown = false, untilReset = "13h" }
 	for key, value in pairs(ctx or {}) do
 		context[key] = value
 	end
@@ -193,6 +193,50 @@ describe('"take it down" and RE-POSTED (TKB-R55, TKB-R102, TKB-R108)', function(
 	end)
 end)
 
+describe("RE-POSTED lasts the board day (TKB-R55, TKB-R102)", function()
+	it("stamps a goal re-posted on the view's board day, and no longer on a later one", function()
+		local ns = loadNamed()
+		local reposted = goal("n", "lure", { need = 3, reposted = true, issuedDay = 0 })
+
+		assert.is_true(view(ns, reposted, { today = 0 }).stamp)
+		assert.is_false(view(ns, reposted, { today = 1 }).stamp)
+		assert.is_false(view(ns, goal("n", "lure", { need = 3 }), { today = 0 }).stamp)
+	end)
+
+	it("adds to the hover of a stamped goal when it comes back: the countdown to the reset", function()
+		local ns = loadNamed()
+		local reposted = goal("n", "lure", { need = 3, reposted = true })
+
+		local stamped = view(ns, reposted, { untilReset = "45m" }).hover
+
+		assert.are.equal(3, #stamped)
+		assert.are.equal("Re-posted today. It can be taken down again at the daily reset (in 45m).", stamped[3])
+		assert.are.equal(2, #view(ns, goal("n", "lure", { need = 3 })).hover)
+		assert.are.equal(2, #view(ns, reposted, { today = 1 }).hover)
+	end)
+
+	it(
+		"neither stamps nor says it must wait for a stranded goal re-posted today: its button is there (TKB-R44)",
+		function()
+			local ns = loadNamed()
+			local stranded = goal("n", "species", { need = 10, target = REMOVED_FISH, reposted = true, issuedDay = 0 })
+
+			local shown = view(ns, stranded, { today = 0, canTakeDown = true })
+
+			assert.is_false(shown.stamp)
+			assert.are.equal("enabled", shown.takeDown)
+			assert.are.equal(2, #shown.hover)
+		end
+	)
+
+	it("reads the countdown to the daily reset from the board day's start (TKB-R105)", function()
+		local ns = loadNamed()
+
+		-- the fake's clock is 15 minutes into the board day (spec header), so the next reset is 23 h 45 min away
+		assert.are.equal("23h", ns.ResetCountdown(ns.api))
+	end)
+end)
+
 describe("a stranded goal (TKB-R44)", function()
 	it('reads "no longer catchable", and a re-posted one still shows "take it down" when it can be', function()
 		local ns = loadNamed()
@@ -201,7 +245,6 @@ describe("a stranded goal (TKB-R44)", function()
 		local shown = view(ns, removed, { canTakeDown = true })
 
 		assert.are.equal("no longer catchable", shown.stranded)
-		assert.is_true(shown.stamp)
 		assert.are.equal("enabled", shown.takeDown)
 	end)
 

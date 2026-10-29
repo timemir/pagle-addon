@@ -17,6 +17,7 @@ local ns = select(2, ...)
 ---@field zone integer              -- the current zone, ns.CurrentZone() (TKB-R121)
 ---@field updating boolean          -- ns.IsUpdating() (TKB-R108)
 ---@field canTakeDown boolean       -- ns.CanTakeDown(goal.id) (TKB-R55)
+---@field untilReset string         -- the countdown to the daily reset, ns.ResetCountdown (TKB-R105)
 
 --- One Species of a Variety Expedition on its hover (TKB-R102).
 ---@class TackleHoverSpecies
@@ -33,7 +34,7 @@ local ns = select(2, ...)
 ---@field here boolean                  -- a goal tied to a place, workable here: "I'm here" replaces where (TKB-R121)
 ---@field pay string                    -- "pays N Coins"
 ---@field seal string?                  -- an Expedition's wax seal: its pay
----@field stamp boolean                 -- re-posted: stamped RE-POSTED (TKB-R55)
+---@field stamp boolean                 -- re-posted today and not stranded: stamped RE-POSTED until the daily reset (TKB-R55)
 ---@field stranded string?              -- "no longer catchable" (TKB-R44)
 ---@field takeDown "hidden"|"enabled"|"disabled"  -- the "take it down" button (TKB-R55, TKB-R108)
 ---@field hover string[]                -- the posted time and the note
@@ -71,7 +72,9 @@ end
 
 --- What a pinned goal shows (TKB-R102): its kind; its text; its displayed progress over its need (TKB-R104), "today"
 --- for a day-bound goal; where it can be worked, or "I'm here" for a goal tied to a place that is
---- workable here (TKB-R121); its pay, on a seal too for an Expedition; RE-POSTED for a re-posted goal; "no longer
+--- workable here (TKB-R121); its pay, on a seal too for an Expedition; RE-POSTED for a goal re-posted today (a stranded
+--- one can come down at once, so it isn't stamped), whose hover says it can come down again at the daily reset
+--- (TKB-R55); "no longer
 --- catchable" for a stranded one (TKB-R44); "take it down" (TKB-R55, TKB-R108); and its hover.
 ---@param goal TackleGoal
 ---@param ctx TacklePinContext
@@ -83,6 +86,12 @@ function ns.PinView(goal, ctx)
 	local bound = ns.IsDayBound(goal)
 	local isVarietyExpedition = goal.type == "e" and goal.kind == "variety"
 	local kicker, text = ns.KindLabel(goal.kind), ns.GoalText(goal)
+	local stranded = ns.IsStranded(goal, pagle)
+	local stamp = ns.IsRepostedToday(goal, ctx.today) and not stranded
+	local hover = { ns.PostedTime(goal.time), bound and L.ONLY_SINCE_TODAY or L.ONLY_SINCE }
+	if stamp then
+		hover[#hover + 1] = ns.Fill(L.REPOSTED_HOVER, { time = ctx.untilReset })
+	end
 	return {
 		kicker = kicker,
 		text = text,
@@ -93,10 +102,10 @@ function ns.PinView(goal, ctx)
 		here = ns.IsPlaceGoal(goal) and ns.IsWorkableHere(goal, ctx.zone),
 		pay = ns.Plural(goal.pay, "PAYS"),
 		seal = goal.type == "e" and tostring(goal.pay) or nil,
-		stamp = goal.reposted,
-		stranded = ns.IsStranded(goal, pagle) and L.NO_LONGER_CATCHABLE or nil,
+		stamp = stamp,
+		stranded = stranded and L.NO_LONGER_CATCHABLE or nil,
 		takeDown = takeDown(ctx),
-		hover = { ns.PostedTime(goal.time), bound and L.ONLY_SINCE_TODAY or L.ONLY_SINCE },
+		hover = hover,
 		species = isVarietyExpedition and hoverSpecies(goal, pagle) or nil,
 	}
 end
@@ -114,6 +123,15 @@ end
 ---@field notices TacklePin[]       -- the two rows of 3, left to right and top to bottom
 ---@field overflow TackleGoal[]     -- the open goals with no pin, by seq
 
+--- The countdown to the next daily reset (TKB-R105), read live from the current board day's start (TKB-R10): "13h",
+--- or "45m" below an hour. A re-posted goal's hover and "take it down"'s tooltip name it as when it comes back (TKB-R55).
+---@param api TackleResetAPI
+---@return string
+function ns.ResetCountdown(api)
+	local dayStart = ns.LiveBoundaries(api)
+	return ns.Countdown(dayStart + ns.DAY_SECONDS - api.GetServerTime())
+end
+
 -- The empty pins' texts, read live (TKB-R105): the countdown to the daily reset and the realm weekday of the next
 -- weekly reset, from the current board day's and week's starts (TKB-R10, TKB-R11).
 ---@param api TackleResetAPI
@@ -121,8 +139,8 @@ end
 ---@return string expedition the first empty Expedition pin's text
 local function emptyTexts(api)
 	local L = ns.L
-	local dayStart, weekStart = ns.LiveBoundaries(api)
-	local countdown = ns.Countdown(dayStart + ns.DAY_SECONDS - api.GetServerTime())
+	local weekStart = select(2, ns.LiveBoundaries(api))
+	local countdown = ns.ResetCountdown(api)
 	local weekday = ns.WeekdayName(weekStart + ns.WEEK_SECONDS)
 	return ns.Fill(L.EMPTY_NOTICE, { time = countdown }), ns.Fill(L.EMPTY_EXPEDITION, { weekday = weekday })
 end

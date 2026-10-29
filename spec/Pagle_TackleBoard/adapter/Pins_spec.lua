@@ -255,6 +255,35 @@ describe('"take it down", RE-POSTED and stranded goals (TKB-R44, TKB-R55, TKB-R1
 		assert.is_false(slip.takeDown:IsShown())
 	end)
 
+	it(
+		"says on the re-posted goal's hover that it can come down again at the daily reset (in 23h) (TKB-R55)",
+		function()
+			local loaded, _, frame = withSeams()
+
+			hover(notice(frame, 1).goal)
+
+			assert.are.same({
+				"Posted Wed 7 Oct, 09:00",
+				"Only my Catches since then count",
+				"Re-posted today. It can be taken down again at the daily reset (in 23h).",
+			}, loaded.ns.BoardHoverLines())
+		end
+	)
+
+	it("takes the stamp off and brings the button back once the day has gone by (TKB-R55)", function()
+		local loaded, _, frame, taken = withSeams()
+		loaded.ns.AdvanceTo(loaded.ns.State(), 1, "live")
+		loaded.ns.Redraw("projection")
+
+		local slip = notice(frame, 1).goal
+		assert.is_false(slip.stamp:IsShown())
+		assert.is_true(slip.takeDown:IsShown())
+		hover(slip)
+		assert.are.same({ "Posted Wed 7 Oct, 09:00", "Only my Catches since then count" }, loaded.ns.BoardHoverLines())
+		slip.takeDown:Click()
+		assert.are.same({ idAt(T + 10) }, taken)
+	end)
+
 	it('marks a stranded goal "no longer catchable", and it can be taken down', function()
 		local _, _, frame, taken = withSeams()
 
@@ -536,14 +565,14 @@ describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
 		return loaded.ns.BoardHoverLines()
 	end
 
-	it("says what it does, by type, and that the new one can't be taken down in turn, at the cursor", function()
+	it("says what it does, by type, and that the new one waits for the daily reset (in 23h), at the cursor", function()
 		local loaded, _, frame = opened(startedLog(EXPEDITION, RARITY))
 		loaded.client.cursor = { 300, 200 }
 
 		assert.are.same({
 			"Take it down",
 			"Pin a fresh Notice of another kind in its place. Any progress on this one is lost.",
-			"The new one can't be taken down in turn, unless it stops being catchable.",
+			"The new one can't be taken down again until the daily reset (in 23h), unless it stops being catchable.",
 		}, tip(loaded, notice(frame, 1)))
 		local shown = tip(loaded, expedition(frame, 1))
 		assert.are.equal(
@@ -575,6 +604,22 @@ describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
 		)
 	end)
 
+	it(
+		"says a stranded goal re-posted today comes down though re-posted, with no stamp and its button (TKB-R44, TKB-R55)",
+		function()
+			local records = startedLog(EXPEDITION, RARITY, STRANDED)
+			records[#records + 1] = record("reroll", T + 10, idAt(T + 3) .. ";" .. STRANDED) -- stranded again, re-posted
+			local loaded, _, frame = opened(records)
+
+			local slip = notice(frame, 2).goal
+			assert.is_false(slip.stamp:IsShown())
+			assert.is_true(slip.takeDown:IsShown())
+			assert.are.equal(loaded.ns.L.TAKE_DOWN_TIP_STRANDED, tip(loaded, notice(frame, 2))[3])
+			hover(slip)
+			assert.are.equal(2, #loaded.ns.BoardHoverLines())
+		end
+	)
+
 	it("keeps its words to the glyphs every font draws (CORE-R9)", function()
 		local ns = opened(startedLog(EXPEDITION)).ns
 		for _, line in ipairs({
@@ -582,6 +627,7 @@ describe('"take it down"\'s tooltip (TKB-R55, TKB-R44, TKB-R108)', function()
 			ns.L.TAKE_DOWN_TIP.n,
 			ns.L.TAKE_DOWN_TIP.e,
 			ns.L.TAKE_DOWN_TIP_ONCE,
+			ns.L.REPOSTED_HOVER,
 			ns.L.TAKE_DOWN_TIP_STRANDED,
 			ns.L.TAKE_DOWN_TIP_STRANDED_FIRST,
 			ns.L.TAKE_DOWN_TIP_UPDATING,

@@ -2271,9 +2271,10 @@ local function goalHead(board, goal)
 end
 
 -- An open goal's line (TKB-R101–R104): its ID, its text, its progress of its need (the board's own GoalNeed over the
--- catalogue, TKB-R44, or the record's without it), and whether it is re-posted (TKB-R55), stranded (TKB-R44) or
--- day-bound, with the board day its progress belongs to (TKB-R41).
-local function openGoalLine(board, goal, pagle)
+-- catalogue, TKB-R44, or the record's without it), and whether it is re-posted (TKB-R55) with the board day of its
+-- take-down, marked "today" while that is the processed day `today` or later, since the button waits for the next
+-- daily reset then, stranded (TKB-R44) or day-bound, with the board day its progress belongs to (TKB-R41).
+local function openGoalLine(board, goal, pagle, today)
 	local need = pagle and board.GoalNeed(goal, pagle) or goal.need
 	local line = ("%s: %s, %s of %s"):format(goal.id, goalHead(board, goal), tostring(goal.progress), tostring(need))
 	if not pagle then
@@ -2285,7 +2286,9 @@ local function openGoalLine(board, goal, pagle)
 		line = line .. (", need now %s (TKB-R44)"):format(tostring(need))
 	end
 	if goal.reposted then
-		line = line .. ", re-posted (TKB-R55)"
+		local day = tonumber(goal.issuedDay)
+		local posted = day and ("re-posted day %d%s"):format(day, day >= today and " (today)" or "") or "re-posted"
+		line = line .. ", " .. posted .. " (TKB-R55)"
 	end
 	if pagle and board.IsStranded(goal, pagle) then
 		line = line .. ", STRANDED (TKB-R44)"
@@ -2298,7 +2301,7 @@ local function openGoalLine(board, goal, pagle)
 end
 
 -- The pins of one type (TKB-R101), each with its goal or "empty".
-local function printPins(board, label, pins, goals, pagle)
+local function printPins(board, label, pins, goals, pagle, today)
 	print(label .. " pins:")
 	for i, id in ipairs(pins) do
 		local goal = id and goals[id]
@@ -2307,7 +2310,7 @@ local function printPins(board, label, pins, goals, pagle)
 		elseif not goal then
 			print(("  %d. %s: not in goals"):format(i, tostring(id)))
 		else
-			print(("  %d. %s"):format(i, openGoalLine(board, goal, pagle)))
+			print(("  %d. %s"):format(i, openGoalLine(board, goal, pagle, today)))
 		end
 	end
 end
@@ -2434,8 +2437,9 @@ local function printBoardState(board, state, context)
 		local notices, expeditions = tonumber(owed.notices) or 0, tonumber(owed.expeditions) or 0
 		print(("owed: %s, %s (TKB-R20)"):format(count(notices, "Notice"), count(expeditions, "Expedition")))
 		local pins, goals = tableOr(state.pins), state.goals
-		printPins(board, "Expedition", tableOr(pins.expeditions), goals, context.pagle)
-		printPins(board, "Notice", tableOr(pins.notices), goals, context.pagle)
+		local processed = tonumber(state.day) or 0
+		printPins(board, "Expedition", tableOr(pins.expeditions), goals, context.pagle, processed)
+		printPins(board, "Notice", tableOr(pins.notices), goals, context.pagle, processed)
 		local strip = {}
 		for _, goal in ipairs(board.BoardOrder(state)) do
 			if goal.pin == nil then
@@ -2444,7 +2448,7 @@ local function printBoardState(board, state, context)
 		end
 		print("overflow strip: " .. (#strip > 0 and #strip .. " (TKB-R101)" or "none"))
 		for _, goal in ipairs(strip) do
-			print("  " .. openGoalLine(board, goal, context.pagle))
+			print("  " .. openGoalLine(board, goal, context.pagle, processed))
 		end
 		printCompletedGoals(board, goals)
 		local tally = tableOr(state.tally)

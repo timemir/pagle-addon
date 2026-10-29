@@ -54,7 +54,7 @@ It comes as six addons in one download: Pagle itself and five Modules, the Ledge
 
 - Opt-in: start your board from Pagle's settings, or with `/pagle board`.
 - A cork board where three Notices go up each day and an Expedition each week. Fish where you like, and they fill in as you go.
-- Goals never expire, so a missed day banks rather than vanishes, and each one can be taken down once for a fresh one of another kind.
+- Goals never expire, so a missed day banks rather than vanishes, and each one can be taken down, once a day, for a fresh one of another kind.
 - Each day with a goal done keeps your Campfire burning. Kindling carries it through a day you couldn't make, and your longest Campfire is kept for good.
 - Every goal done ties a new fly in your Fly Box.
 

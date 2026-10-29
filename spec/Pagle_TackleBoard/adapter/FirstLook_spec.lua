@@ -85,7 +85,7 @@ describe("the board's First look (ONB-R55–R57)", function()
 		end
 		assert.are.same({
 			"|cff9a2a1aExpeditions|r are the bigger weekly ones. They wait too, up to two.",
-			"A Notice |cff9a2a1anever expires|r. Don’t fancy it? Take it down, once, for another.",
+			"A Notice |cff9a2a1anever expires|r. Don’t fancy it? Take it down, once a day, for another.",
 			"Your |cff9a2a1aCampfire|r: days in a row with one done. A missed day burns Kindling instead.",
 			"Each one done ties a fly for your |cff9a2a1aFly Box|r.",
 			"They pay |cff9a2a1aPagle Coins|r, spent on looks in the Curio Shop.",

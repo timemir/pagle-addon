@@ -79,8 +79,8 @@ local function takeable(goalID)
 	return ns.TakeDownGoal(ns.State(), goalID, ns.api.pagle)
 end
 
---- Whether a goal's "take it down" shows (TKB-R55): an open goal from an `issue` record, or a stranded re-posted
---- one. It doesn't read ns.IsUpdating(): the pins grey the button while the projection is updating (TKB-R108), and
+--- Whether a goal's "take it down" shows (TKB-R55): an open goal that no take-down re-posted on the current board day,
+--- or a stranded one whatever its day. It doesn't read ns.IsUpdating(): the pins grey the button while the projection is updating (TKB-R108), and
 --- ns.TakeDown refuses then.
 ---@param goalID string the entry ID of the record that issued it (TKB-R23)
 ---@return boolean
