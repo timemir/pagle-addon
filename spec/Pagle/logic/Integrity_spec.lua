@@ -6,9 +6,19 @@ local json = require("dkjson")
 local vectors = assert(json.decode(readFile("spec/fixtures/integrity-vectors.json")))
 
 describe("the canonical core record and checkpoint contract (#302)", function()
+	-- bytesHex carries records JSON text can't: lone or ill-formed UTF-8 bytes.
+	local function recordBytes(vector)
+		if vector.bytesHex == nil then
+			return vector.entry
+		end
+		return (vector.bytesHex:gsub("%x%x", function(pair)
+			return string.char(tonumber(pair, 16))
+		end))
+	end
+
 	for _, vector in ipairs(vectors.records) do
 		it("classifies " .. vector.name, function()
-			assert.are.equal(vector.valid, ns.CanonicalRecordProblem(vector.entry) == nil)
+			assert.are.equal(vector.valid, ns.CanonicalRecordProblem(recordBytes(vector)) == nil)
 		end)
 	end
 
