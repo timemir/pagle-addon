@@ -124,7 +124,7 @@ describe("The Announcements page", function()
 		local motion = row(loaded, MOTION)
 		assert.are.same({
 			"SettingsCheckboxControlTemplate",
-			"Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears "
+			"Toasts slide in and stamp themselves, banners drop their seal, and the rays behind a banner or a Legend turn. Off, each appears "
 				.. "as it settles.",
 			true,
 		}, { motion.template, motion:GetTooltip(), loaded.client.settings.show(page(loaded))[6].frame.enabled })

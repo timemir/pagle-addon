@@ -133,7 +133,7 @@ ns.L = {
 	SETTINGS_BUDGET_WINDOW = "Per",
 	SETTINGS_EVERY_CATCH = "Show every catch",
 	SETTINGS_MOTION = "Animations",
-	SETTINGS_MOTION_TOOLTIP = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles.",
+	SETTINGS_MOTION_TOOLTIP = "Toasts slide in and stamp themselves, banners drop their seal, and the rays behind a banner or a Legend turn. Off, each appears as it settles.",
 	SETTINGS_EVERY_CATCH_TOOLTIP = "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which shows nothing.",
 	-- Look and Feel (SET-R50, SET-R51): the paragraph, a slot dropdown's note with N, and the "More looks"
 	-- section's header and its two rows' labels and button captions (the Collection's, CORE-R45, then the Curio

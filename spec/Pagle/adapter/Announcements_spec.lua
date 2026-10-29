@@ -517,9 +517,141 @@ describe("the announcements art", function()
 
 			assert.are.same({ 2.2, true, true, 0 }, before)
 			assert.are.same(
-				{ 1, left.w0, right.w0, 1, 0 },
-				{ banner.sealFrame.scale, left:GetWidth(), right:GetWidth(), banner.rays.alpha, banner.rays.rotation }
+				{ 1, left.w0, right.w0, 1 },
+				{ banner.sealFrame.scale, left:GetWidth(), right:GetWidth(), banner.rays.alpha }
 			)
+		end
+	)
+
+	-- A banner's rays' angle in degrees, clockwise being negative as the client turns (rounded to a tenth).
+	local function turned(frame)
+		return math.floor(math.deg(frame.rays.rotation) * 10 + 0.5) / 10
+	end
+
+	it("turns a banner's rays clockwise once in 60 s while it shows, about the seal's centre (ANN-R100)", function()
+		local loaded, M = loadCore()
+		raise(loaded, M, moment("banner", "Angler Level 12", { seal = 12 }))
+		local banner = frameOf(loaded, "banner")
+		local before = turned(banner)
+
+		for _ = 1, 30 do
+			loaded.client.update(0.1)
+		end
+		local after3s = turned(banner)
+		for _ = 1, 20 do
+			loaded.client.update(0.1)
+		end
+
+		assert.are.same({ 0, -18, -30 }, { before, after3s, turned(banner) })
+		-- The seal's centre hangs from its row, the row from the banner's top: the rays' hub is on it.
+		local row = banner.sealFrame:GetParent()
+		local pivot = banner.sealFrame.points[1][2]
+		local rowDrop, sealDrop = row.points[1][3], pivot.points[1][5]
+		assert.are.same({ "CENTER", banner, "TOP", 0, rowDrop + sealDrop }, { unpack(banner.rays.points[1]) })
+	end)
+
+	it("stops a banner's rays as it goes, and ticks no more (ANN-R100)", function()
+		local loaded, M = loadCore()
+		raise(loaded, M, moment("banner", "Angler Level 12", { seal = 12 }))
+		local banner = frameOf(loaded, "banner")
+
+		loaded.client.advance(BANNER + LEAVE_BANNER + 1)
+		local gone = turned(banner)
+		loaded.client.advance(30)
+
+		assert.is_false(banner:IsShown())
+		assert.are.equal(gone, turned(banner))
+		for _, frame in ipairs(loaded.client.frames) do
+			assert.is_nil(frame.scripts.OnUpdate)
+		end
+		-- A banner after it starts again upright, not where the last one left its rays.
+		raise(loaded, M, moment("banner", "Angler Level 13", { seal = 13 }))
+		assert.are.equal(0, turned(frameOf(loaded, "banner")))
+	end)
+
+	it(
+		"leaves a banner's rays upright with Animations off, as its still sample has them (ANN-R100, SET-R30)",
+		function()
+			local loaded, M = loadCore()
+			loaded.ns.db.profile.announcements.motion = false
+			raise(loaded, M, moment("banner", "Angler Level 12", { seal = 12 }))
+			local banner = frameOf(loaded, "banner")
+
+			loaded.client.advance(3)
+			local still = loaded.ns.NewStillAnnouncementFrame(loaded.env.UIParent, "banner")
+
+			assert.are.same({ 0, 1 }, { banner.rays.rotation, banner.rays.alpha })
+			assert.is_nil(still.rays.rotation)
+			for _, frame in ipairs(loaded.client.frames) do
+				assert.is_nil(frame.scripts.OnUpdate)
+			end
+		end
+	)
+
+	it("keeps a banner's rotating rays inside their art: square, centred, drawn whole (ANN-R100)", function()
+		local loaded, M = loadCore()
+		raise(loaded, M, moment("banner", "Angler Level 12", { seal = 12 }))
+		local banner = frameOf(loaded, "banner")
+		local rays = banner.rays
+
+		-- A square sprite turned about its centre keeps its edges outside the art (its pixels fade to nothing inside
+		-- the inscribed circle: nothing past 280 of 380 texels), where a cropped or oblong one would swing a corner in.
+		assert.are.equal(rays:GetWidth(), rays:GetHeight())
+		assert.are.same({ 0, 0, rays:GetWidth(), rays:GetHeight() }, rays.box)
+		assert.are.same({ rays.tc[1], rays.tc[2], rays.tc[3], rays.tc[4] }, rays.texCoord)
+		-- The same art as the splash's, whole.
+		assert.are.same({ 760, rays.texture }, { rays:GetWidth(), loaded.ns.ATLASES.Splash.file })
+		assert.are.equal(rays.texture, frameOf(loaded, "banner").rays.texture)
+	end)
+
+	it(
+		"draws a banner's dark glow with no hard edge: its top fades in from nothing, from the banner's top (ANN-R99)",
+		function()
+			local loaded, M = loadCore()
+			local function glowOf(banner)
+				local fade, body = banner.glowFade, banner.glowBody
+				local fadeBottom = fade:GetHeight()
+				return {
+					-- Reaches the banner's top, so it sits behind the kicker too, and runs the art's whole width.
+					fade.points[1],
+					fade:GetWidth(),
+					-- Clear at its head, opaque at its foot: a texture's colour multiplies its alpha.
+					fade.gradient[1],
+					fade.gradient[2].a,
+					fade.gradient[3].a,
+					-- The body takes over where the fade ends, from the same texels, and nothing is left over.
+					body.points[1][5] == -fadeBottom,
+					fade.texCoord[4] == body.texCoord[3],
+					fade.texCoord[3] == fade.tc[3],
+					body.texCoord[4] == body.tc[4],
+					fade:GetHeight() + body:GetHeight(),
+					body.gradient,
+				}
+			end
+			raise(loaded, M, moment("banner", "Angler Level 12", { seal = 12 }))
+			local banner = frameOf(loaded, "banner")
+			local expected = {
+				{ "TOPLEFT", banner, "TOPLEFT", 0, 0 },
+				980,
+				"VERTICAL",
+				1,
+				0,
+				true,
+				true,
+				true,
+				true,
+				340,
+				nil,
+			}
+
+			assert.are.same(expected, glowOf(banner))
+			-- Each banner is the one frame redrawn (a number, a Prestige frame, a crest good), and the Curio Shop's sample
+			-- is built the same.
+			raise(loaded, M, moment("banner", "Prestige V", { seal = "frame", frameRank = 5 }))
+			assert.are.same(expected, glowOf(frameOf(loaded, "banner")))
+			local still = loaded.ns.NewStillAnnouncementFrame(loaded.env.UIParent, "banner")
+			expected[1][2] = still
+			assert.are.same(expected, glowOf(still))
 		end
 	)
 

@@ -31,6 +31,14 @@ local DIGEST_ROWS = 3
 local FIGHTING_ICON = "Interface\\Icons\\Ability_DualWield"
 -- A banner's top below the screen's (ANN-R20).
 local BANNER_TOP = 120
+-- A banner's row of tooling and seal hangs this far below its top, the seal's centre this far down the row (150 high).
+local BANNER_ROW_TOP, BANNER_SEAL_CENTRE = 29, 75
+-- A banner's dark glow (ANN-R99): the art's soft ellipse, 980 units wide and stretched to this tall from the banner's
+-- top, so it sits behind the kicker too; its top GLOW_FADE units are a second texture over the same texels, faded in
+-- from nothing, so no edge of it shows.
+local GLOW_WIDTH, GLOW_HEIGHT, GLOW_FADE = 980, 340, 130
+-- The rays turn once in this long, a banner's and the splash's alike (ANN-R100, LED-R153): slow and calm.
+local RAYS_TURN = 60
 -- A Nod's line at most, and the track of its compact ruler, which the number and the margin follow.
 local NOD_WIDTH, COMPACT_TRACK = ns.NOD_WIDTH, 90
 -- A Nod's words: its title alone, and a stepped-down catch toast's whole line naming a variety (VAR-R26), whose first
@@ -105,6 +113,8 @@ local TICKS = 20
 ---@field pivots Frame[]? the points a toast's stamps grow about
 ---@field recordPivot Frame? the point the ruler's New record stamp grows about
 ---@field rays PagleSprite? a banner's or the splash's
+---@field glowFade PagleSprite? a banner's dark glow's top, faded in from nothing (ANN-R99)
+---@field glowBody PagleSprite? the rest of a banner's dark glow, under it (ANN-R99)
 ---@field sealFrame Frame? a banner's seal, Prestige frame or crest, which drops in
 ---@field tools { sprite: PagleSprite, x: number, y: number, outward: boolean }[]? a banner's gilt tooling
 ---@field words Frame the frame its words, stamps and coins sit on, over the art
@@ -1610,15 +1620,31 @@ local BUILD = {
 		end
 		frame:SetSize(980, 330)
 		frame:SetFrameStrata("HIGH")
-		ns.PlaceSprite(ns.ArtSprite(frame, "Splash", "glow", "BACKGROUND", 0), frame, 0, 40)
+		-- The glow in two parts cut from one sprite at GLOW_FADE: the body as it is, the top a gradient from opaque at
+		-- its foot to clear at its head (a texture's colour multiplies its alpha), so the two read as one soft shape.
+		local body = ns.ArtSprite(frame, "Splash", "glow", "BACKGROUND", 0)
+		local fade = ns.ArtSprite(frame, "Splash", "glow", "BACKGROUND", 0)
+		local cut = fade.tc[3] + (fade.tc[4] - fade.tc[3]) * GLOW_FADE / GLOW_HEIGHT
+		fade:SetTexCoord(fade.tc[1], fade.tc[2], fade.tc[3], cut)
+		body:SetTexCoord(body.tc[1], body.tc[2], cut, body.tc[4])
+		fade:ClearAllPoints()
+		fade:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+		fade:SetSize(GLOW_WIDTH, GLOW_FADE)
+		fade:SetGradient("VERTICAL", CreateColor(1, 1, 1, 1), CreateColor(1, 1, 1, 0))
+		body:ClearAllPoints()
+		body:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -GLOW_FADE)
+		body:SetSize(GLOW_WIDTH, GLOW_HEIGHT - GLOW_FADE)
+		frame.glowFade, frame.glowBody = fade, body
+		-- The rays turn about the seal's centre (ANN-R100); their square art fades to nothing inside its inscribed
+		-- circle, so a turn shows no edge or corner of it.
 		frame.rays = ns.ArtSprite(frame, "Splash", "rays", "BACKGROUND", 1)
 		frame.rays:ClearAllPoints()
-		frame.rays:SetPoint("CENTER", frame, "TOP", 0, -128)
+		frame.rays:SetPoint("CENTER", frame, "TOP", 0, -(BANNER_ROW_TOP + BANNER_SEAL_CENTRE))
 		frame.title = ns.ArtText(frame, "Kick")
 		frame.title:SetPoint("TOP")
 		local row = CreateFrame("Frame", nil, frame)
 		row:SetSize(802, 150)
-		row:SetPoint("TOP", 0, -29)
+		row:SetPoint("TOP", 0, -BANNER_ROW_TOP)
 		-- The tooling draws out from the seal: the left's seal end is its right, the right's its left.
 		frame.tools = {
 			{ sprite = ns.ArtSprite(row, "Announce", "tool-left", "ARTWORK"), x = 0, y = 45, outward = false },
@@ -1631,7 +1657,7 @@ local BUILD = {
 		-- The seal hangs by its centre from the row's, so it drops in about its middle.
 		local centre = CreateFrame("Frame", nil, row)
 		centre:SetSize(150, 150)
-		centre:SetPoint("CENTER", ns.Pivot(row, row, 401, 75), "CENTER")
+		centre:SetPoint("CENTER", ns.Pivot(row, row, 401, BANNER_SEAL_CENTRE), "CENTER")
 		frame.sealFrame = centre
 		frame.seal = ns.ArtSprite(centre, "Announce", "seal", "ARTWORK", 1)
 		frame.sealNumber = ns.ArtText(centre, "SealNumber")
@@ -1876,7 +1902,8 @@ local MOTION = {
 		end
 		ns.Animate(frame, animations)
 	end,
-	-- The seal drops in, the gilt tooling draws out from it and the rays turn in: settled by 1.4 s.
+	-- The seal drops in, the gilt tooling draws out from it and the rays fade in: settled by 1.4 s. The rays turn
+	-- clockwise, once in RAYS_TURN, for as long as it shows (ANN-R100).
 	banner = function(frame)
 		local seal = frame.sealFrame --[[@as Frame]]
 		local rays = frame.rays --[[@as PagleSprite]]
@@ -1893,10 +1920,18 @@ local MOTION = {
 			{
 				dur = TIMELINE,
 				ease = ns.EASE.out,
-				keys = { { 0, { 0, -8 } }, { 0.05, { 0, -8 } }, { 0.2, { 1, 0 } }, { 1, { 1, 0 } } },
+				keys = { { 0, { 0 } }, { 0.05, { 0 } }, { 0.2, { 1 } }, { 1, { 1 } } },
 				apply = function(v)
 					rays:SetAlpha(v[1])
-					rays:SetRotation(math.rad(-v[2]))
+				end,
+			},
+			{
+				dur = RAYS_TURN,
+				ease = ns.EASE.linear,
+				iter = "infinite",
+				keys = { { 0, { 0 } }, { 1, { 360 } } },
+				apply = function(v)
+					rays:SetRotation(math.rad(-v[1]))
 				end,
 			},
 		}
@@ -1912,14 +1947,14 @@ local MOTION = {
 		end
 		ns.Animate(frame, animations)
 	end,
-	-- The rays turn clockwise once a minute for as long as it shows, and the Legend's crest moves (LED-R153).
+	-- The rays turn clockwise, once in RAYS_TURN, for as long as it shows, and the Legend's crest moves (LED-R153).
 	splash = function(frame)
 		local rays = frame.rays --[[@as PagleSprite]]
 		local crest = frame.legendCrest --[[@as PagleLegendCrestFrame]]
 		crest:Play()
 		ns.Animate(frame, {
 			{
-				dur = 60,
+				dur = RAYS_TURN,
 				ease = ns.EASE.linear,
 				iter = "infinite",
 				keys = { { 0, { 0 } }, { 1, { 360 } } },

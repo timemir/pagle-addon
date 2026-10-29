@@ -157,7 +157,7 @@ The rules below are authoritative; this sketch only summarises them.
   | ↳ Interruptions | slider | 1–60, step 1 · 40 (20 and 1–30 before #437) | Cozy mode is on, or the budget is off | |
   | ↳ Per | slider, shown as "{n} min" | 1–15 min, step 1 min · 5 min (stored in seconds) | Cozy mode is on, or the budget is off | |
   | Show every catch | checkbox | on (ANN-R13, `everyCatch`) | Cozy mode is on | "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which shows nothing." |
-  | Animations | checkbox | on ([announcements.md › Motion](core/announcements.md#motion), `motion`) | | "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each appears as it settles." |
+  | Animations | checkbox | on ([announcements.md › Motion](core/announcements.md#motion), `motion`) | | "Toasts slide in and stamp themselves, banners drop their seal, and the rays behind a banner or a Legend turn. Off, each appears as it settles." |
   | Toast style | slot dropdown, `core.toaststyle` (SET-R51) | owned styles · `core.toaststyle.page` (ANN-R80) | | |
   | Sound set | slot dropdown, `core.soundset` (SET-R51) | owned sets · `core.soundset.driftwood` (ANN-R72) | | |
   | Toast position | button "Reset" (SET-R34) | | | "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen." |

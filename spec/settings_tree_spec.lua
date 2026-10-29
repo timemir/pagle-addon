@@ -50,7 +50,7 @@ local TIPS = {
 	everyCatch = "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows "
 		.. "instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which "
 		.. "shows nothing.",
-	motion = "Toasts slide in and stamp themselves, banners drop their seal, and the Legend's rays turn. Off, each "
+	motion = "Toasts slide in and stamp themselves, banners drop their seal, and the rays behind a banner or a Legend turn. Off, each "
 		.. "appears as it settles.",
 	windowMoments = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes.",
 	companionHint = "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you "
