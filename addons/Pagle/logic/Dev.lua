@@ -21,6 +21,7 @@ local ns = select(2, ...)
 ---@field content fun(): string[]       -- `/pagle dev content`'s lines (PUSH-R14, logic/PushedContent.lua)
 ---@field views fun(): string[]         -- `/pagle dev views`' lines (VIEW-R12, logic/AnglersInGame.lua)
 ---@field showPaste fun(view: PaglePasteView) -- opens the export window with this view (PST-R60, logic/PasteExport.lua)
+---@field skillChanged fun()           -- reads Fishing skill again now, as after SKILL_LINES_CHANGED (#465, LOG-R31)
 ---@field print fun(line: string)      -- prints a chat line
 
 --- The dev commands.
@@ -249,8 +250,85 @@ ns.DEV_GLYPH_FONTS = {
 	{ file = ART_FONTS .. "IMFeENit28P.ttf", usedBy = "the Curio Shop's italic" },
 }
 
---- Runs `/pagle dev <args>`. `on` and `off` set `PagleDB.global.dev`; while it's off every other dev command prints
---- one line saying how to turn it on, and does nothing.
+--- The Fishing skill `/pagle dev skill` reports in place of the client's (#465): the rank and the max rank saved in
+--- `global.devSkill`, only while `global.dev` is on, and only when both are whole numbers with 1 <= rank <= max <=
+--- 300, so a hand-edited or stale value never applies. Nil, nil otherwise, and the client's reading stands. The one
+--- place the override is decided: ns.ReadFishingSkill (adapter/Angler.lua) and the diagnostics entry ask it. A
+--- packaged release has no override, so it is nil, nil there whatever a saved `devSkill` holds.
+---@param global table? PagleDB.global
+---@return integer? rank
+---@return integer? max
+function ns.DevSkillOverride(global)
+	--@do-not-package@
+	local saved = global and global.dev == true and global.devSkill
+	if type(saved) == "table" then
+		local rank, max = saved.rank, saved.max
+		if
+			type(rank) == "number"
+			and type(max) == "number"
+			and rank == math.floor(rank)
+			and max == math.floor(max)
+			and rank >= 1
+			and rank <= max
+			and max <= ns.DEV_SKILL_MAX
+		then
+			return rank, max
+		end
+	end
+	--@end-do-not-package@
+	return nil, nil
+end
+
+--@do-not-package@
+-- The highest Fishing skill the override takes: the 300 of ADR 0014's skill reach.
+ns.DEV_SKILL_MAX = 300
+
+-- `/pagle dev skill [<rank> [max] | off]` (#465): the retail UI check reports Fishing skill 1, where the skill reach
+-- (ADR 0014) lets every record grow by only a millimetre. With a rank, Core's one skill reader reports it (and the
+-- max, 300 unless given) while dev mode is on; `off` puts the client's reading back; alone it says which holds.
+-- Either change reads skill again at once, so a Skill Reading is logged and ConditionsChanged fires as for the
+-- client's own change (LOG-R31, LOG-R32).
+---@param dev PagleDevCommands
+---@param args string
+local function skill(dev, args)
+	local L, options = ns.L, dev.options
+	local global = options.global()
+	local first, second = args:lower():match("^(%S*)%s*(%S*)$")
+	if first == nil then
+		options.print(L.DEV_SKILL_USAGE)
+	elseif first == "" then
+		local rank, max = ns.DevSkillOverride(global)
+		options.print(rank and L.DEV_SKILL_REMINDER:format(rank, max) or L.DEV_SKILL_NOT_SET)
+	elseif first == "off" and second == "" then
+		global.devSkill = nil
+		options.skillChanged()
+		options.print(L.DEV_SKILL_CLEARED)
+	else
+		local rank = first:match("^%d+$") and tonumber(first)
+		local max = second == "" and ns.DEV_SKILL_MAX or second:match("^%d+$") and tonumber(second)
+		if not (rank and max and rank >= 1 and rank <= max and max <= ns.DEV_SKILL_MAX) then
+			options.print(L.DEV_SKILL_USAGE)
+			return
+		end
+		global.devSkill = { rank = rank, max = max }
+		options.skillChanged()
+		options.print(L.DEV_SKILL_SET:format(rank, max))
+	end
+end
+
+--- The login reminder (#465): one chat line while the skill override applies, nothing otherwise. Core's login calls
+--- it at the first PLAYER_ENTERING_WORLD, before the skill is read.
+function Dev:RemindSkill()
+	local rank, max = ns.DevSkillOverride(self.options.global())
+	if rank then
+		self.options.print(ns.L.DEV_SKILL_REMINDER:format(rank, max))
+	end
+end
+--@end-do-not-package@
+
+--- Runs `/pagle dev <args>`. `on` and `off` set `PagleDB.global.dev`, and `off` also clears the skill override (in the
+--- dev checkout), which never applies with dev mode off (#465); while it's off every other dev command prints one
+--- line saying how to turn it on, and does nothing.
 ---@param args string what follows `/pagle dev`
 function Dev:Run(args)
 	local L, options = ns.L, self.options
@@ -259,6 +337,13 @@ function Dev:Run(args)
 	if name == "on" or name == "off" then
 		global.dev = name == "on"
 		options.print(global.dev and L.DEV_ON or L.DEV_OFF)
+		--@do-not-package@
+		if not global.dev and global.devSkill ~= nil then
+			global.devSkill = nil
+			options.skillChanged()
+			options.print(L.DEV_SKILL_CLEARED)
+		end
+		--@end-do-not-package@
 	elseif not global.dev then
 		options.print(L.DEV_IS_OFF)
 	elseif name == "endsession" then
@@ -288,6 +373,10 @@ function Dev:Run(args)
 		for _, line in ipairs(options.views()) do
 			options.print(line)
 		end
+	--@do-not-package@
+	elseif name == "skill" then
+		skill(self, rest)
+	--@end-do-not-package@
 	elseif name == "pastetest" then
 		local view = rest:match("^%d+$") and ns.PasteTestView(tonumber(rest) --[[@as integer]])
 		if view then

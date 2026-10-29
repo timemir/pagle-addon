@@ -87,6 +87,7 @@ end
 ---@field locale string                     -- GetLocale()
 ---@field texts string[]                    -- hovered object texts, most recent first
 ---@field unresolved PagleUnresolvedAreas?  -- the zone and subzone texts, only when either didn't resolve
+---@field devSkill integer?                 -- the rank `/pagle dev skill` had overridden the Cast's skill to (#465)
 
 --- Adds `entry` at the end of the diagnostics buffer, dropping the oldest entries past `ns.DIAGNOSTICS_SIZE`
 --- (LOG-R81).

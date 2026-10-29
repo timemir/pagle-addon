@@ -87,7 +87,7 @@ Before step 1, Core explicitly loads and validates `Pagle_Recovery` as strict si
 
 ### Skill Readings
 
-- **LOG-R30** Core reads fishing skill with `GetProfessions()` then `GetProfessionInfo(index)` (skill line 356): rank, max rank and modifier.
+- **LOG-R30** Core reads fishing skill with `GetProfessions()` then `GetProfessionInfo(index)` (skill line 356): rank, max rank and modifier. With dev mode on, `/pagle dev skill <rank> [max]` makes this one reader report that rank and max instead (the modifier stays the client's), so Skill Readings, the conditions and every Cast follow it ([in-game verification › Dev commands](../../agents/in-game-verification.md#dev-commands)); it never applies with dev mode off, and a packaged release has no such command, so there the reader reports only the client's.
 - **LOG-R31** It reads skill at login (LOG-R1), on `SKILL_LINES_CHANGED` and on `CHAT_MSG_SKILL`. It appends a **Skill Reading** (`S1`) when the rank or max rank differs from that character's last Skill Reading, or the character has none. A change in modifier alone (a lure going on or off) writes no entry; the modifier is in every Cast snapshot.
 - **LOG-R32** `SkillChanged(reading)` fires after each Skill Reading is appended. Any change in rank or modifier also fires `ConditionsChanged({"skill"})`.
 
@@ -249,7 +249,7 @@ Core runs every Module's stored projection the same way (ADR 0004).
 ### The diagnostics buffer
 
 - **LOG-R80** Core keeps the text of world objects the player hovers, using `TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object, …)`: the tooltip's first line and `GetTime()`.
-- **LOG-R81** For each Cast it records, Core adds one entry to `PagleDB.global.diagnostics`: `{ id, zone, subzone, locale, texts, unresolved? }`, with the Cast's entry ID, its zone and subzone areaIDs, `GetLocale()`, up to 3 distinct object texts hovered in the 60 s before the channel started (most recent first), and the zone and subzone text when either didn't resolve (LOG-R22). The buffer keeps the last 500 entries and drops the oldest.
+- **LOG-R81** For each Cast it records, Core adds one entry to `PagleDB.global.diagnostics`: `{ id, zone, subzone, locale, texts, unresolved?, devSkill? }`, with the Cast's entry ID, its zone and subzone areaIDs, `GetLocale()`, up to 3 distinct object texts hovered in the 60 s before the channel started (most recent first), the zone and subzone text when either didn't resolve (LOG-R22), and `devSkill`, the rank, when `/pagle dev skill` set the Cast's skill (#465). The buffer keeps the last 500 entries and drops the oldest.
 - **LOG-R82** The diagnostics buffer is outside the sync rules: it isn't part of the Catch log, isn't uploaded, and may be dropped. Only the Field report reads it.
 
 ### Crashes
@@ -312,6 +312,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.decodeErrors` | count of entries the codec couldn't decode (LOG-R16) |
 | `global.catchCounts` | the earlier Catch counts at the log's end, for the next login (LOG-R100): `logId`, `rulesVersion` (`SIZE_RULES_VERSION`), `seq`, `entry` (the entry string at `seq`) and `counts` (`{ [itemID] = n }`); absent until Core has first counted to the log's end. A cache: losing it changes nothing. |
 | `global.dev` | boolean, the `/pagle dev` switch (#247); default `false`. Never shown to players. |
+| `global.devSkill` | `{ rank, max }`, the Fishing skill `/pagle dev skill` makes Core report in place of the client's (#465, LOG-R30); applies only while `global.dev` is on and only when `1 <= rank <= max <= 300`; cleared by `/pagle dev skill off` and `/pagle dev off`; absent by default. Never shown to players; a packaged release neither sets nor reads it. |
 | `global.diagnostics` | ring buffer of up to 500 entries (LOG-R81) |
 | `global.probe` | what `/pagle dev probe` saved for launch re-verification (#261): `time`, `build`, `locale`, `checks`; and `timings`, the load timings of the last login made with dev mode on (#262): `time`, `entries`, `budget`, `syncLimit`, `marks` (debugprofilestop ms at each login step) and `projections` (each catch-up or rebuild: `name`, `mode`, `started`, `finished`, `applied`, `frames`, `longest`). Absent until either is first saved; tooling only, never shown to players. |
 | `global.summary`, `global.pending`, `global.cards`, `global.writeUp` | Announcement data ([announcements.md](announcements.md#data)) |

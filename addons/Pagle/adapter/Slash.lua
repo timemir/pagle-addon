@@ -64,6 +64,10 @@ ns.WireDev(
 	-- `/pagle dev probe` (#261) looks up every API it tests by name, so only what Pagle uses is inventoried.
 	function()
 		return _G
+	end,
+	-- `/pagle dev skill` (#465) changes what ns.ReadFishingSkill reports, so skill is read again now.
+	function()
+		ns.ReadSkill()
 	end
 )
 

@@ -97,6 +97,9 @@ Pagle.RegisterEvent(OWNER, "PLAYER_ENTERING_WORLD", function()
 		end)
 	end
 	ns.LogBuild() -- LOG-R36
+	--@do-not-package@
+	ns.dev:RemindSkill() -- #465: a chat line while `/pagle dev skill` overrides the client's reading
+	--@end-do-not-package@
 	ns.ReadSkill() -- LOG-R31
 end)
 

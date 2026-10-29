@@ -1303,13 +1303,14 @@ end
 --- hands its probe line to `showGlyphs` (#248). `tour` runs ns.tour over ns.tourStops, Core's one registry of tour
 --- stops, which `M:RegisterTourStop` on every Module handle adds to (CORE-R65–R68). `probe` saves the client facts
 --- launch re-verification needs in PagleDB.global.probe (#261, logic/Probe.lua), reading each API it tests from
---- `globals`.
+--- `globals`. `skill` sets the Fishing skill override and has `skillChanged` read skill again (#465).
 ---@param host PagleHost
 ---@param show fun(announcement: PagleAnnouncement) hands an Announcement to the display (ANN-R20)
 ---@param showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) shows the probe line in each font
 ---@param tour PagleTourSeams what the tour reads from where Core runs
 ---@param globals fun(): table the client's globals (_G), where `/pagle dev probe` looks up each API it tests (#261)
-function ns.WireDev(host, show, showGlyphs, tour, globals)
+---@param skillChanged fun() reads Fishing skill again now (ns.ReadSkill), after `/pagle dev skill` changed what it reports
+function ns.WireDev(host, show, showGlyphs, tour, globals, skillChanged)
 	--- The Fishing channels seen while dev mode is on, for `/pagle dev probe`'s check 21 (LOG-R2): Core's fishing
 	--- adapter notes each player channel here.
 	ns.probeChannels = ns.NewProbeChannels()
@@ -1400,6 +1401,9 @@ function ns.WireDev(host, show, showGlyphs, tour, globals)
 				print = host.print,
 			})
 		end,
+		--@do-not-package@
+		skillChanged = skillChanged,
+		--@end-do-not-package@
 		print = host.print,
 	})
 end
