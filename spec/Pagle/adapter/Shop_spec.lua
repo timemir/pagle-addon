@@ -1879,7 +1879,11 @@ describe("The Curio crate in the window", function()
 				"Curio | 1 left | 0.5%",
 			}, oddsShown(stage))
 			assert.are.same({ true, "A Curio within 100 more crates" }, { stage.pity:IsShown(), stage.pity:GetText() })
-			assert.is_false(stage.description:IsShown() and stage.description:GetText() ~= "")
+			assert.are.same({ true, "A CRATE OF LOOKS" }, { stage.slotLine:IsShown(), stage.slotLine:GetText() })
+			assert.are.same({ true, loaded.ns.L["good.core.crate.description"] }, {
+				stage.description:IsShown(),
+				stage.description:GetText(),
+			})
 			assert.is_true(stage.buy:IsEnabled())
 			assert.is_true(crateLine(loaded).selectedMark:IsShown())
 			local first, last = stage.odds.lines[1], stage.odds.lines[7]
@@ -1931,6 +1935,288 @@ describe("The Curio crate in the window", function()
 			loaded.ns.CRATE_POOL = pool
 		end
 	)
+
+	-- The crate's stage as shown, its preview made: the stage and the crate's preview in the well.
+	local function crateStage(loaded, handles)
+		if not loaded then
+			loaded, handles = shopCore()
+		end
+		handles.Ledger:ReportCoinsEarned(3500)
+		loaded.env.Pagle.OpenShop("core.crate")
+		local stage = shopFrame(loaded).stage
+		return loaded, stage, stage.previews["core.crate"].cratePreview
+	end
+
+	it("draws the assembled crate at rest in the well, not the round medallion (SHOP-R54)", function()
+		local loaded, stage, preview = crateStage()
+
+		assert.is_true(stage.previews["core.crate"]:IsShown())
+		assert.is_false(stage.swatch:IsShown())
+		for _, name in ipairs({ "body", "lid", "ribbon", "sealLeft", "sealRight" }) do
+			local tex = preview.crate[name].tex
+			assert.are.equal("Interface\\AddOns\\Pagle\\media\\crate\\Crate", tex.texture, name)
+			assert(tex:IsShown(), name)
+			assert.are.equal(1, tex:GetAlpha(), name)
+		end
+		assert.are.same({ 0, 0 }, { preview.crate.lid.own[2], preview.crate.glow.tex:GetAlpha() })
+		for _, spark in ipairs(preview.sparks) do
+			assert.is_false(spark.part.tex:IsShown())
+		end
+		assert(preview.hit:GetScript("OnMouseUp") == nil, "a click on it does nothing new")
+
+		-- Another good takes the well: its icon in the medallion, the crate hidden; the crate's row brings it back.
+		loaded.env.Pagle.OpenShop("ledger.binding.lapis")
+		assert.are.same({ false, true }, { stage.previews["core.crate"]:IsShown(), stage.swatch:IsShown() })
+		loaded.env.Pagle.OpenShop("core.crate")
+		assert.are.same({ true, false }, { stage.previews["core.crate"]:IsShown(), stage.swatch:IsShown() })
+	end)
+
+	it("lifts the lid and lets a warm light twinkle out of the seam while the pointer is over it (SHOP-R54)", function()
+		local loaded, _, preview = crateStage()
+		local hit = preview.hit
+
+		hit:GetScript("OnEnter")(hit)
+		play(loaded, 0.6)
+
+		assert(preview.crate.lid.own[2] <= -9.9, "the lid up by its lift")
+		assert(preview.crate.glow.tex:GetAlpha() > 0.3, "the seam's glow")
+		assert(preview.rays.tex:GetAlpha() > 0, "the rays")
+		local twinkling = 0
+		for _, spark in ipairs(preview.sparks) do
+			if spark.part.tex:IsShown() then
+				twinkling = twinkling + 1
+			end
+		end
+		assert(twinkling >= 2, "sparks out of the seam")
+		local turn = preview.turn
+
+		-- it loops until the pointer leaves
+		play(loaded, 12)
+		assert(preview.turn ~= turn, "the rays keep turning")
+		assert.is_true(preview.crate.lid.own[2] <= -9.9)
+
+		hit:GetScript("OnLeave")(hit)
+		play(loaded, 0.5)
+		assert.are.same({ 0, 0 }, { preview.crate.lid.own[2], preview.crate.glow.tex:GetAlpha() })
+		assert.are.equal(0, preview.rays.tex:GetAlpha())
+		for _, spark in ipairs(preview.sparks) do
+			assert.is_false(spark.part.tex:IsShown())
+		end
+		local turned = preview.turn
+		play(loaded, 3)
+		assert.are.equal(turned, preview.turn, "nothing plays once it has left")
+	end)
+
+	it("with Animations off, shows a still glow and moves nothing (SHOP-R54, SET-R30)", function()
+		local loaded, handles = shopCore()
+		loaded.ns.db.profile.announcements.motion = false
+		local _, _, preview = crateStage(loaded, handles)
+		local hit = preview.hit
+
+		hit:GetScript("OnEnter")(hit)
+		play(loaded, 3)
+
+		assert(preview.crate.glow.tex:GetAlpha() > 0.5, "the glow")
+		assert.are.equal(0, preview.crate.lid.own[2], "the lid stays down")
+		assert.are.equal(0, preview.rays.tex:GetAlpha())
+		assert.are.equal(0, preview.turn)
+		for _, spark in ipairs(preview.sparks) do
+			assert.is_false(spark.part.tex:IsShown())
+		end
+
+		hit:GetScript("OnLeave")(hit)
+		assert.are.equal(0, preview.crate.glow.tex:GetAlpha())
+	end)
+
+	it("sets the crate back to rest when its stage hides mid-hover, so it shows still the next time", function()
+		local loaded, stage, preview = crateStage()
+		preview.hit:GetScript("OnEnter")(preview.hit)
+		play(loaded, 0.6)
+
+		stage.previews["core.crate"]:Hide()
+
+		assert.are.same({ 0, 0 }, { preview.crate.lid.own[2], preview.crate.glow.tex:GetAlpha() })
+		play(loaded, 1)
+		assert.are.equal(0, preview.crate.lid.own[2])
+	end)
+
+	-- The lore's lines as the client would wrap it, estimated: the shop's italic at CrateLore's 12.5 is about 0.4 of its size
+	-- wide a character (the odds' 11.5 italic measures 4.6 units in the client), a line 1.25 of its size tall, and a line
+	-- breaks at the last space that fits `width`.
+	local function loreLines(text, width)
+		local charW = 12.5 * 0.4
+		local lines, line = 1, 0
+		for word in text:gmatch("%S+") do
+			local w = (#word + 1) * charW
+			if line + w - charW > width then
+				lines, line = lines + 1, 0
+			end
+			line = line + w
+		end
+		return lines, lines * 12.5 * 1.25
+	end
+
+	-- Where the lore, the odds and the pity line end, and where Buy starts, in units down the case (from the anchors, as the
+	-- fake lays out nothing): the pity line's bottom and Buy's top.
+	local function crateBottom(stage, height)
+		local descriptionTop = -select(5, stage.description:GetPoint(1))
+		local oddsTop = descriptionTop + height + 4 -- ODDS_GAP under the lore
+		local pityBottom = oddsTop + #stage.odds.lines * 12 + 2 + 12
+		return pityBottom, -select(5, stage.buy:GetPoint(1))
+	end
+
+	it(
+		"fits the lore, the odds, the pity line and Buy on the description card, which reaches up over the showcase"
+			.. " card's paper, drawn above it, its foot where every good's is (SHOP-R54)",
+		function()
+			local loaded, stage = crateStage()
+			local function pointOf(region)
+				local _, relativeTo, _, x, y = region:GetPoint(1)
+				return relativeTo, x, y
+			end
+			local crateBuy = { pointOf(stage.buy) }
+
+			assert.is_true(stage.raised)
+			assert.are.equal(stage.description, (pointOf(stage.odds)), "the odds hang under the lore")
+			assert.are.equal(stage.odds, (pointOf(stage.pity)), "and the pity line under them")
+
+			-- the real lore wraps to 3 lines, and the pity line ends above Buy
+			local lines, height = loreLines(loaded.ns.L["good.core.crate.description"], stage.description:GetWidth())
+			assert.are.equal(3, lines)
+			local pityBottom, buyTop = crateBottom(stage, height)
+			assert(pityBottom <= buyTop, ("the pity line ends at %.1f, Buy starts at %d"):format(pityBottom, buyTop))
+
+			-- a 4-line lore would not fit: the check above is the one that would catch it
+			local longer = loaded.ns.L["good.core.crate.description"]
+				.. " They rattle when carried, and nobody has ever asked the docks why."
+			local longLines, longHeight = loreLines(longer, stage.description:GetWidth())
+			assert.are.equal(4, longLines)
+			local longBottom = crateBottom(stage, longHeight)
+			assert(longBottom > buyTop, "four lines of lore overlap Buy")
+
+			-- the card is drawn above the showcase card it overlaps, and its words above both
+			local _, cardLevel = stage.card:GetDrawLayer()
+			local infoLayer, infoLevel = stage.info:GetDrawLayer()
+			assert.are.equal("ARTWORK", infoLayer)
+			assert(infoLevel > cardLevel, "the description card over the showcase card")
+			assert.are.equal("OVERLAY", (stage.description:GetDrawLayer()))
+			assert.are.equal("OVERLAY", (stage.name:GetDrawLayer()))
+			assert.are.equal("OVERLAY", (stage.slotLine:GetDrawLayer()))
+
+			loaded.env.Pagle.OpenShop("ledger.binding.lapis")
+
+			assert.is_false(stage.raised)
+			assert.are.same(crateBuy, { pointOf(stage.buy) }, "Buy sits where it does for any good")
+		end
+	)
+
+	it("puts the description card, its font and its words back for the next good selected (SHOP-R54)", function()
+		local loaded, handles = shopCore()
+		handles.Ledger:ReportCoinsEarned(3500)
+		local function shown(stage)
+			return {
+				font = stage.description.shopFont,
+				descriptionTop = select(5, stage.description:GetPoint(1)),
+				nameTop = select(5, stage.name:GetPoint(1)),
+				cardTop = select(5, stage.info:GetPoint(1)),
+				cardHeight = stage.info:GetHeight(),
+				cardBox = stage.info.box[4],
+			}
+		end
+		loaded.env.Pagle.OpenShop("ledger.binding.lapis")
+		local stage = shopFrame(loaded).stage
+		local before = shown(stage)
+
+		loaded.env.Pagle.OpenShop("core.crate")
+		local raised = shown(stage)
+		loaded.env.Pagle.OpenShop("ledger.binding.lapis")
+
+		assert.are.equal("Desc", before.font)
+		assert.are.equal("CrateLore", raised.font)
+		assert(raised.cardHeight > before.cardHeight and raised.cardBox > before.cardBox, "the crate's card is taller")
+		assert.are.same(before, shown(stage))
+	end)
+
+	it(
+		"lets the pointer leave and come back during the fall without stacking, the rays carrying on (SHOP-R54)",
+		function()
+			local loaded, _, preview = crateStage()
+			local hit = preview.hit
+			hit:GetScript("OnEnter")(hit)
+			play(loaded, 1)
+			hit:GetScript("OnLeave")(hit)
+			play(loaded, 0.1) -- half way down
+			local lid, turn = preview.crate.lid.own[2], preview.turn
+			assert(lid < 0 and lid > -10, "the lid is part of the way down")
+
+			hit:GetScript("OnEnter")(hit)
+
+			assert.are.equal(turn, preview.turn, "the rays turn on from where they were, not from nothing")
+			assert.are.equal(lid, preview.crate.lid.own[2], "the lid goes up from where it is")
+			play(loaded, 0.6)
+			assert.are.equal(-10, preview.crate.lid.own[2], "no fall left playing against the rise")
+			assert(preview.crate.glow.tex:GetAlpha() > 0.6)
+			hit:GetScript("OnLeave")(hit)
+			play(loaded, 0.5)
+			assert.are.same({ 0, 0 }, { preview.crate.lid.own[2], preview.crate.glow.tex:GetAlpha() })
+		end
+	)
+
+	it("settles to rest when the shop closes with the pointer still over the crate (SHOP-R54)", function()
+		local loaded, _, preview = crateStage()
+		preview.hit:GetScript("OnEnter")(preview.hit)
+		play(loaded, 0.6)
+		assert(preview.crate.lid.own[2] < 0)
+
+		shopFrame(loaded):Hide()
+		play(loaded, 0.2)
+
+		assert.are.same({ 0, 0, 0 }, {
+			preview.crate.lid.own[2],
+			preview.crate.glow.tex:GetAlpha(),
+			preview.rays.tex:GetAlpha(),
+		})
+		for _, spark in ipairs(preview.sparks) do
+			assert.is_false(spark.part.tex:IsShown())
+		end
+
+		-- opened again, it draws at rest
+		loaded.env.Pagle.OpenShop("core.crate")
+		assert.are.same({ 0, 0 }, { preview.crate.lid.own[2], preview.crate.glow.tex:GetAlpha() })
+	end)
+
+	it("lets the Animations setting change between the pointer coming and going (SET-R30, SHOP-R54)", function()
+		-- off while it is over the crate: the lid comes down at once, the light gone
+		local loaded, _, preview = crateStage()
+		preview.hit:GetScript("OnEnter")(preview.hit)
+		play(loaded, 0.6)
+		loaded.ns.db.profile.announcements.motion = false
+
+		preview.hit:GetScript("OnLeave")(preview.hit)
+
+		assert.are.same({ 0, 0 }, { preview.crate.lid.own[2], preview.crate.glow.tex:GetAlpha() })
+		for _, spark in ipairs(preview.sparks) do
+			assert.is_false(spark.part.tex:IsShown())
+		end
+
+		-- on while a still glow shows: it fades out, as for any leaving
+		preview.hit:GetScript("OnEnter")(preview.hit)
+		assert(preview.crate.glow.tex:GetAlpha() > 0.5, "the still glow")
+		loaded.ns.db.profile.announcements.motion = true
+		preview.hit:GetScript("OnLeave")(preview.hit)
+		play(loaded, 0.5)
+		assert.are.same({ 0, 0 }, { preview.crate.lid.own[2], preview.crate.glow.tex:GetAlpha() })
+		assert.are.equal(0, preview.rays.tex:GetAlpha())
+	end)
+
+	it("keeps no spark past the well's clip, where it would be sliced (SHOP-R54)", function()
+		local _, _, preview = crateStage()
+		-- the clip cuts the crate's box 6 units from its top; a spark starts on the seam and is gone by the end of its rise
+		local seam, top = 82, 6
+		for _, spark in ipairs(preview.sparks) do
+			assert(seam - spark.at[2] >= top + 10, "a spark of rise " .. spark.at[2] .. " would reach the clip")
+		end
+	end)
 
 	it(
 		'opens one from its bill, "Open a Curio crate?", with no "Use it now", and ends on its result (SHOP-R54, SHOP-R55)',

@@ -178,6 +178,7 @@ adapter\PasteExport.lua
 adapter\ShopArt.lua
 adapter\GoodPreview.lua
 adapter\ShopCrate.lua
+adapter\ShopCratePreview.lua
 adapter\ShopMotion.lua
 adapter\ShopCrateMotion.lua
 adapter\Shop.lua

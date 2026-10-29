@@ -772,9 +772,10 @@ ns.CratePercent = percent
 ---@field detail string      -- "12 left", or "pays back 250" with none left
 ---@field chance string      -- "40%", "2.5%"
 
---- The crate's stage (SHOP-R54): the PagleShopStage fields, with `crate`, its crate tiers' odds in the draw's order
---- (`odds`) and the pity count's line (`pity`, while a crate-only good is a candidate). Nil once every pool good is
---- owned, when the crate has left the list.
+--- The crate's stage (SHOP-R54): the PagleShopStage fields, with its lore as the description (Core's, as a good's; its
+--- slot line is its kind alone, as it has no owner), `crate`, its crate tiers' odds in the draw's order (`odds`) and the
+--- pity count's line (`pity`, while a crate-only good is a candidate). Nil once every pool good is owned, when the
+--- crate has left the list. The window draws the assembled crate in the well, not `icon`.
 ---@return PagleShopStage?
 function Model:CrateStage()
 	local L = ns.L
@@ -788,7 +789,8 @@ function Model:CrateStage()
 		id = ns.CRATE_ID,
 		name = L.SHOP_CRATE,
 		icon = ns.CRATE_ICON,
-		slotLine = L.SHOP_SLOT_LINE:format(L.SHOP_CRATE_KIND, L.SHOP_CORE),
+		slotLine = L.SHOP_CRATE_KIND,
+		description = L["good.core.crate.description"],
 		state = row.state,
 		crate = true,
 		tags = {},

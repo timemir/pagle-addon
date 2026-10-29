@@ -35,10 +35,13 @@ local TAG_GAP = 22
 local GROUP_X, GROUP_RULE_ALPHA = 8, 0.5
 -- The room under the Curio crate's row, before the first slot's header (SHOP-R50).
 local CRATE_GAP = 6
--- The crate's odds on the description card (SHOP-R54): where they start, from the card's top, each crate tier's line
--- height, the room above the pity line, and how far the Buy under them drops to make room for the seven lines and it.
--- On each line the colour's pip, the name, and the goods left (or the payback) in a column of its own.
-local ODDS_Y, ODDS_H, ODDS_PAD, ODDS_FOOT_DROP = 72, 12, 2, 10
+-- The crate's lore and odds on the description card (SHOP-R54): the room under the lore before the odds, each crate
+-- tier's line height, and the room above the pity line. On each line the colour's pip, the name, and the goods left (or
+-- the payback) in a column of its own. The lore, the seven lines, the pity line and Buy take more than the card's 220
+-- units, so the crate's card reaches CRATE_RAISE units up over the showcase card's empty paper under the well (the
+-- same card, stretched, its foot where every good's is), 8 units under the well's foot (the well has 16 of paper above it).
+-- It is drawn above the showcase card (sublevel 2 of its layer, the showcase card's 1), as they overlap.
+local ODDS_GAP, ODDS_H, ODDS_PAD, CRATE_RAISE = 4, 12, 2, 70
 local ODDS_PIP, ODDS_NAME_W, ODDS_DETAIL_X = 8, 78, 100
 -- An earned good's progress dots on the description card (SHOP-R22): each one's size and the room between them, and
 -- the room above and under their row.
@@ -152,6 +155,9 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@field swatch PagleShopBezel       the good's icon in a medallion, for a good with no preview
 ---@field hint PagleShopFontString    "Pick a look to see it here." with nothing selected
 ---@field info PagleSprite            the description card
+---@field infoX number                 the description card's text column's left
+---@field infoDesigned { box: number[], height: number } the card sprite as designed, before it is stretched
+---@field raised boolean               the card is the crate's, raised over the showcase card's paper (CRATE_RAISE)
 ---@field name PagleShopFontString
 ---@field slotLine PagleShopFontString
 ---@field description PagleShopFontString
@@ -868,6 +874,27 @@ local function placeList(frame, top)
 	bar:SetPoint("BOTTOMRIGHT", frame, "TOPLEFT", TRAY_X + TRAY_W - 6, -(TRAY_Y + TRAY_H - 12))
 end
 
+-- Sets the description card and what sits on it for a crate's stage (`raised`, SHOP-R54) or any other good's: the card
+-- stretched from its designed 176 to its height (it is plain paper), from its top (INFO_Y, or CRATE_RAISE above it), and
+-- the name, slot line and description at their places on it. Its foot stays where it is, so Buy and Use never move.
+---@param stage PagleShopStageFrame
+---@param frame PagleShopFrame
+---@param raised boolean
+local function placeInfo(stage, frame, raised)
+	local info, x = stage.info, stage.infoX
+	local top, height = INFO_Y - (raised and CRATE_RAISE or 0), INFO_H + (raised and CRATE_RAISE or 0)
+	local designed = stage.infoDesigned
+	local k = height / designed.box[4]
+	info:SetHeight(designed.height * k)
+	info.box = { designed.box[1], designed.box[2] * k, designed.box[3], height }
+	ns.PlaceSprite(info, frame, CARD_X, top)
+	at(stage.name, frame, x, top + 14)
+	at(stage.slotLine, frame, x, top + 56)
+	at(stage.description, frame, x, top + (raised and 75 or 77))
+	ns.SetShopFont(stage.description, raised and "CrateLore" or "Desc")
+	stage.raised = raised
+end
+
 -- The stage (wallet-and-shop.md › UI) on the lid: the showcase card, its dark well and the paper under it where the
 -- good's preview draws, then the description card with the good's name, slot and owner, description and notes, and
 -- Buy or Use with its tags at the foot.
@@ -888,22 +915,18 @@ local function buildStage(frame)
 	ns.SetShopText(stage.hint, L.SHOP_PICK)
 
 	-- The description card, stretched from its designed 176 to INFO_H: it is plain paper.
-	local info = ns.ArtSprite(frame, "Papers", "info", "ARTWORK", 1)
-	local k = INFO_H / info.box[4]
-	info:SetHeight(info:GetHeight() * k)
-	info.box = { info.box[1], info.box[2] * k, info.box[3], INFO_H }
-	ns.PlaceSprite(info, frame, CARD_X, INFO_Y)
+	local info = ns.ArtSprite(frame, "Papers", "info", "ARTWORK", 2)
+	stage.infoDesigned = { box = { unpack(info.box) }, height = info:GetHeight() }
 	stage.info = info
 	local x, width = CARD_X + INFO_PAD, info.box[3] - 2 * INFO_PAD
+	stage.infoX = x
 	stage.name = ns.ShopText(frame, "GoodName")
 	stage.name:SetWidth(width)
-	at(stage.name, frame, x, INFO_Y + 14)
 	stage.slotLine = ns.ShopText(frame, "Meta")
-	at(stage.slotLine, frame, x, INFO_Y + 56)
 	stage.description = ns.ShopText(frame, "Desc")
 	stage.description:SetWidth(width)
 	stage.description:SetWordWrap(true)
-	at(stage.description, frame, x, INFO_Y + 77)
+	placeInfo(stage, frame, false)
 	stage.notes = ns.ShopText(frame, "Notes")
 	stage.notes:SetWidth(width)
 	stage.notes:SetWordWrap(true)
@@ -911,10 +934,9 @@ local function buildStage(frame)
 	stage.dots:SetHeight(DOT)
 	stage.dots.dots = {}
 	stage.dots:Hide()
-	-- The Curio crate's odds, where a good's description goes, and its pity line under them (SHOP-R54).
+	-- The Curio crate's odds, under its lore, and its pity line under them (SHOP-R54).
 	stage.odds = CreateFrame("Frame", nil, frame) --[[@as PagleShopOdds]]
 	stage.odds:SetSize(width, ODDS_H)
-	at(stage.odds, frame, x, INFO_Y + ODDS_Y)
 	stage.odds.lines = {}
 	stage.odds:Hide()
 	stage.pity = ns.ShopText(frame, "Odds")
@@ -1048,8 +1070,8 @@ local function oddsLineAt(odds, i)
 	return line
 end
 
--- Draws the Curio crate's odds (SHOP-R54) where a good's description goes: each crate tier's colour, name, goods left
--- or payback and chance; then the pity line, and the notes under it.
+-- Draws the Curio crate's odds (SHOP-R54) under its lore, where a good's description goes: each crate tier's colour,
+-- name, goods left or payback and chance; then the pity line, and the notes under it.
 ---@param stage PagleShopStageFrame
 ---@param data PagleShopStage
 local function drawOdds(stage, data)
@@ -1067,6 +1089,8 @@ local function drawOdds(stage, data)
 	for i = #data.odds + 1, #odds.lines do
 		odds.lines[i]:Hide()
 	end
+	odds:ClearAllPoints()
+	odds:SetPoint("TOPLEFT", stage.description, "BOTTOMLEFT", 0, -ODDS_GAP)
 	odds:Show()
 	local below = #data.odds * ODDS_H + ODDS_PAD
 	stage.pity:ClearAllPoints()
@@ -1117,7 +1141,9 @@ end
 ---@param data PagleShopStage
 ---@param fresh boolean
 local function drawLook(stage, data, fresh)
-	ns.DrawLook(stage.area, stage.previews, stage.swatch, data, fresh)
+	-- The Curio crate is no good with a preview of its own: it shows the crate itself, at rest (SHOP-R54).
+	local look = data.crate and { id = data.id, preview = ns.DrawCratePreview } or data
+	ns.DrawLook(stage.area, stage.previews, stage.swatch, look, fresh)
 end
 
 -- Draws the description card's foot from `data`: Buy, "N more Coins" or Use, and the tags beside them, each at rest.
@@ -1127,8 +1153,7 @@ local function drawFoot(stage, data)
 	for _, region in ipairs({ stage.buy, stage.needed, stage.short, stage.use }) do
 		region:Hide()
 	end
-	-- The crate's seven odds lines and its pity line take the room Buy has on any other stage.
-	at(stage.buy, stage.footParent, stage.footX, stage.footY + (data.crate and ODDS_FOOT_DROP or 0))
+	at(stage.buy, stage.footParent, stage.footX, stage.footY)
 	if data.buy then
 		ns.SetShopButton(stage.buy, data.buy, true, data.canBuy == true) -- SHOP-R13
 		stage.buy:Show()
@@ -1167,6 +1192,9 @@ local function drawStage(frame, data, fresh)
 		return
 	end
 	drawLook(stage, data, fresh)
+	if stage.raised ~= (data.crate == true) then
+		placeInfo(stage, frame, data.crate == true)
+	end
 	ns.SetShopText(stage.name, data.name)
 	ns.SetShopText(stage.slotLine, data.slotLine)
 	ns.SetShopText(stage.description, data.description)

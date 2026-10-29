@@ -1920,17 +1920,21 @@ describe("The Curio crate", function()
 		end
 	)
 
-	it("keeps the crate's stage as a name, a slot line, its odds and Buy, with no description (SHOP-R54)", function()
+	it("keeps the crate's stage as a name, its kind, its lore, its odds and Buy (SHOP-R54)", function()
 		local fake = crated(3500)
 
 		local stage = model(fake):Stage(CRATE)
 
 		assert.are.same(
-			{ CRATE, "Curio crate", "A crate of looks · Pagle", "forSale", true, "Buy for 1,500", true },
+			{ CRATE, "Curio crate", "A crate of looks", "forSale", true, "Buy for 1,500", true },
 			{ stage.id, stage.name, stage.slotLine, stage.state, stage.crate, stage.buy, stage.canBuy }
 		)
 		assert.are.same({ {}, {} }, { stage.tags, stage.notes })
-		assert.is_nil(stage.description)
+		assert.are.equal(
+			"Packed down at the docks by someone who never says what's in them. Nearly every crate holds one look you"
+				.. " don't yet own, rarer the deeper you dig. Straw, mostly.",
+			stage.description
+		)
 		assert.is_nil(stage.caption)
 	end)
 
