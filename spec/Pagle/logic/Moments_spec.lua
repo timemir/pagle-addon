@@ -38,6 +38,9 @@ local function newWorld()
 		summarize = function(moment)
 			world.summarized[#world.summarized + 1] = moment
 		end,
+		toastStyle = function()
+			return world.style
+		end,
 	})
 	function world.frame()
 		local steps = queued
@@ -791,4 +794,69 @@ describe("the catch toast", function()
 			assert.are.same({ "New Species" }, ranked(world.shown[1]))
 		end
 	)
+end)
+
+describe("an Epic variety's moment while the Extravaganza Gala is equipped (ANN-R85, VAR-R25)", function()
+	local GALA = "ledger.toaststyle.gala"
+	-- The Ledger's banner "Epic variety" (LED-R97), and a variety of another rarity as a banner would have it.
+	local function variety(rarity, rung)
+		return moment(rung or "banner", "Epic variety", {
+			kind = "epicVariety",
+			text = "Phoenix-fin",
+			variety = { name = "Phoenix-fin", rarity = rarity },
+		})
+	end
+
+	it("is a toast.high, only for an Epic variety's banner and only with the Gala", function()
+		assert.are.equal("toast.high", ns.MomentRung(variety("epic"), GALA))
+		assert.are.equal("banner", ns.MomentRung(variety("epic"), "core.toaststyle.page"))
+		assert.are.equal("banner", ns.MomentRung(variety("epic"), nil))
+		assert.are.equal("toast", ns.MomentRung(variety("rare", "toast"), GALA))
+		assert.are.equal("banner", ns.MomentRung(moment("banner", "Every colour of Pike"), GALA))
+		assert.are.equal("banner", ns.MomentRung(moment("banner", "Angler Level 12"), GALA))
+		assert.are.equal(
+			"splash",
+			ns.MomentRung(moment("splash", "A Legend", { variety = { name = "x", rarity = "epic" } }), GALA)
+		)
+	end)
+
+	it("is raised as a toast.high, to the display and the Session summary alike, and never as a banner", function()
+		local world = newWorld()
+		world.style = GALA
+
+		world.moments:Raise(LEDGER, variety("epic"))
+		world.frame()
+
+		assert.are.equal("toast.high", world.shown[1].rung)
+		assert.are.equal("toast.high", world.shown[1].headline.rung)
+		assert.are.equal("toast.high", world.summarized[1].rung)
+		assert.are.equal(1, #world.shown)
+	end)
+
+	it("is a banner with any other style equipped, or none", function()
+		for _, style in ipairs({ "core.toaststyle.page", "hunts.toaststyle.nightfin", false }) do
+			local world = newWorld()
+			world.style = style or nil
+
+			world.moments:Raise(LEDGER, variety("epic"))
+			world.frame()
+
+			assert.are.equal("banner", world.shown[1].rung)
+			assert.are.equal("banner", world.summarized[1].rung)
+		end
+	end)
+
+	it("joins the Cast's toasts on the catch side, the banner side of the Cast left to its own moments", function()
+		local world = newWorld()
+		world.style = GALA
+
+		world.moments:Raise(LEDGER, variety("epic"))
+		world.moments:Raise(LEDGER, moment("toast", "New Species"))
+		world.moments:Raise(LEDGER, moment("banner", "Angler Level 12"))
+		world.frame()
+
+		-- The level banner is the Cast's big one; the Epic variety headlines the toasts, over the New Species.
+		assert.are.same({ "Angler Level 12", "Epic variety" }, headlines(world))
+		assert.are.same({ "Epic variety", "New Species" }, ranked(world.shown[2]))
+	end)
 end)

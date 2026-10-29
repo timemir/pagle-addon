@@ -281,6 +281,23 @@ describe("Hunts' earned goods", function()
 			assert.is_true(holds("nightTide", state))
 		end)
 
+		it("doesn't count one Hunt that reached tier 3 in three different runs as three", function()
+			local state = stateWith(ns)
+			addRun(state, "darkshore_moonlight", 1000, { darkshore_moonlight_haul = 3 })
+			addRun(state, "darkshore_moonlight", 5000, { darkshore_moonlight_haul = 3 })
+			addRun(state, "darkshore_moonlight", 9000, { darkshore_moonlight_haul = 3 })
+			assert.is_false(holds("nightTide", state))
+			-- Nor in the celebrated set's runs, or one in each.
+			local set = celebrated({
+				runs = {
+					["darkshore_moonlight@1000"] = { tiers = { a = 3 }, endsAt = 1 },
+					["darkshore_moonlight@5000"] = { tiers = { a = 3 }, endsAt = 1 },
+					["felwood_moonglade@9000"] = { tiers = { a = 3 }, endsAt = 1 },
+				},
+			})
+			assert.is_false(holds("nightTide", nil, set))
+		end)
+
 		it("needs tier 3 itself, not tier 2, and an event of the six, not any other", function()
 			local state = stateWith(ns)
 			addRun(
@@ -384,6 +401,32 @@ describe("Hunts' earned goods", function()
 				end))
 			end
 		)
+
+		it("runs the whole rule over the real pool's azshara_lobster by default, with no lookup passed in", function()
+			-- The shipped event list, run as one of Hunts' files, in place of the fixture pool.
+			local real = {}
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
+			local chunk = assert(loadfile("addons/Pagle_Hunts/data/EventList.lua"))
+			---@diagnostic disable-next-line: undefined-global -- ditto
+			setfenv(chunk, { Pagle = true, select = select })
+			chunk("Pagle_Hunts", real)
+			local pool = hunts.load(nil, { events = real.eventList }).ns
+
+			local ids = pool.EventHuntIDs("azshara_lobster") --[[@as string[] ]]
+			table.sort(ids)
+			assert.are.same({
+				"azshara_lobster_haul",
+				"azshara_lobster_lobster",
+				"azshara_lobster_night",
+				"azshara_lobster_yellowtail",
+			}, ids)
+			local state = pool.NewHuntsState()
+			addRun(state, "azshara_lobster", 1000, ALL)
+			assert.is_true(pool.HuntsGoodEarned("deepTrench", state, celebrated(), {}))
+			addRun(state, "azshara_lobster", 5000, { azshara_lobster_haul = 3 })
+			state.runs[ns.RunKey("azshara_lobster", 1000)] = nil
+			assert.is_false(pool.HuntsGoodEarned("deepTrench", state, celebrated(), {}))
+		end)
 
 		it("reads the pool's event by default: its Hunts in file order", function()
 			assert.is_nil(ns.EventHuntIDs("azshara_lobster")) -- the fixture pool has no such event

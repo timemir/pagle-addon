@@ -458,6 +458,37 @@ ns.TOAST_MOTION_ONCE = {
 --- style draws without it.
 ns.TOAST_GLEAM_ONLY = { ["gala-pop"] = true }
 
+--- The Extravaganza Gala's good ID (ANN-R85): its burst of confetti plays on a Rare variety's toast too, and an Epic
+--- variety's moment is a toast.high while it is equipped (ns.MomentRung), not the banner it would be.
+ns.GALA_STYLE = "ledger.toaststyle.gala"
+
+-- The kit draws the Gala's burst on toast.high alone. The plain toast rung, which a Rare variety's own toast is drawn on
+-- (VAR-R25), gets the same sprite and beat (`burst`, the layer's keyframes `gala-pop`, once), centred on the rung as
+-- toast.high's is on its own: the kit's layer shifted by the half of the width the rungs differ by, its motion's origin
+-- with it. Derived here, since the generated data carries only the kit's.
+do
+	local art = ns.TOAST_STYLE_ART2 and ns.TOAST_STYLE_ART2[ns.GALA_STYLE]
+	if art then
+		local toast, high = art.rungs.toast, art.rungs.high
+		for _, layer in ipairs(high.layers) do
+			if layer.motion and ns.TOAST_GLEAM_ONLY[layer.motion.keyframes] then
+				local shift = (toast.w - high.w) / 2
+				local burst = {}
+				for key, value in pairs(layer) do
+					burst[key] = value
+				end
+				burst.name, burst.x = "burst", layer.x + shift
+				burst.motion = {}
+				for key, value in pairs(layer.motion) do
+					burst.motion[key] = value
+				end
+				burst.motion.origin = { x = layer.motion.origin.x + shift, y = layer.motion.origin.y }
+				toast.layers[#toast.layers + 1] = burst
+			end
+		end
+	end
+end
+
 --- A layer's motion as animations (logic/LayeredArt.lua's ns.LayerAnimations), `landing` seconds in, a keyframe
 --- ns.TOAST_MOTION_ONCE names played once: the toast layers' rule, which the Legend crests' layered pieces share.
 ---@param motion PagleArtMotion
@@ -488,22 +519,22 @@ function ns.ToastRungArt(style, page)
 end
 
 --- The stage deco a style's art draws at `count` (ANN-R85): on the rung `page` is drawn from, the last of its `stages`
---- whose `min` the count has reached, the first when the count is below them all (the Folio is owned from its first
---- stage on, so only a good the test log grants, or a preview before it is earned, is there). Nil for a style with no
---- stages, for a nil count (the Ledger hasn't counted yet) and for a stage whose sprite isn't in the style's atlas:
---- the deco layer is then the rung's own, which is stage 4's.
+--- whose `min` the count has reached, the first when the count is below them all or there is none (the Folio is owned
+--- from its first stage on, so a count below it is a good the test log grants or a preview before it is earned, and no
+--- count at all is a Ledger that is off or hasn't counted yet). Nil for a style with no stages and for a stage whose
+--- sprite isn't in the style's atlas: the deco layer is then the rung's own, which is stage 4's.
 ---@param style PagleToastStyle
 ---@param page PagleToastPage?
 ---@param count integer?
 ---@return PagleToastStageDeco?
 function ns.ToastStageDeco(style, page, count)
 	local stages = style.art and style.art.stages
-	if not stages or count == nil then
+	if not stages then
 		return nil
 	end
 	local chosen = stages[1]
 	for _, stage in ipairs(stages) do
-		if count >= stage.min then
+		if count ~= nil and count >= stage.min then
 			chosen = stage
 		end
 	end

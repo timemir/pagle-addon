@@ -575,6 +575,8 @@ end
 ---@class LedgerCountedHooks
 ---@field earnedBy fun(goodID: string, rule: string): boolean -- the good's rule or the celebrated set (LED-R118)
 ---@field count fun(good: LedgerCountedGood): integer?        -- its count now; nil while the projection updates
+---@field saved? fun(good: LedgerCountedGood): integer?        -- its count from the celebrated set alone (ANN-R85): what
+---                                                              a staged good's art falls back to before any finished count
 ---@field formatNumber fun(n: integer): string                -- BreakUpLargeNumbers
 
 --- LED-R118's sixteen goods to register, in its order (SHOP-R23, SHOP-R25): the seven toast styles in Core's
@@ -586,7 +588,7 @@ end
 --- updates, the texts it gave last (the plain earned text before any). Its `earnedCount` gives (count, mark) for the
 --- Collection's ink bar (SHOP-R36), the count held at the mark as the tag's is, and nothing while the projection
 --- updates. A `staged` good's `stageCount` gives its count unheld (ANN-R85), the last it knew while the projection
---- updates, and nothing before any.
+--- updates, else the count the celebrated set holds (`hooks.saved`), and nothing without either.
 ---@param hooks LedgerCountedHooks
 ---@return PagleGood[]
 function ns.CountedGoods(hooks)
@@ -620,7 +622,7 @@ function ns.CountedGoods(hooks)
 			end,
 			stageCount = good.staged and function()
 				lastCount = hooks.count(good) or lastCount
-				return lastCount
+				return lastCount or (hooks.saved and hooks.saved(good)) or nil
 			end or nil,
 			fallbackTier = not good.unsold and tier or nil,
 			fallbackFrom = not good.unsold and from or nil,

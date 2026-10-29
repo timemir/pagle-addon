@@ -43,7 +43,7 @@ ns.COINS_COMPLETED, ns.COINS_TIER, ns.COINS_TITLE = 30, 15, 100
 ---   StepDue()               from `done`, last: the run log's live step is due, on a later frame (HNT-R151, HNT-R155,
 ---                           LOG-R40). Stand-in: nothing; adapter/RunLog.lua replaces it.
 ---   RefreshGoods()          after a `"live"` entry that earned a set title, completed a run or reached an event
----                           Hunt's tier in a run, and from `done`, after
+---                           Hunt's last tier in a run (ns.TOP_TIER), and from `done`, after
 ---                           Done marks what it celebrates: `M:RefreshGoods()` for the earned goods (HNT-R122,
 ---                           SHOP-R31). Stand-in: nothing; adapter/Goods.lua replaces it.
 ns.outlets = {
@@ -539,9 +539,13 @@ function ns.ProjectionDef(global, lookups, client)
 			if state.tickets ~= tickets then
 				client.ReportTicketsEarned(state.tickets)
 			end
-			-- A set title, a completed run or an event Hunt's tier in a run may earn a good (HNT-R122), noted once its rule
-			-- holds.
-			if #reached.sets + #reached.settled + #reached.marks > 0 then
+			-- A set title, a completed run or an event Hunt's last tier in a run may earn a good (HNT-R122), noted once its
+			-- rule holds: the epic styles' rules read nothing below ns.TOP_TIER, so a lower tier earns nothing.
+			local top = false
+			for _, mark in ipairs(reached.marks) do
+				top = top or mark.tier >= ns.TOP_TIER
+			end
+			if #reached.sets + #reached.settled > 0 or top then
 				noteGoods(state)
 				ns.outlets.RefreshGoods()
 			end

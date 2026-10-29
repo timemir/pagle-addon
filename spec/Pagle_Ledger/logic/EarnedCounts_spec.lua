@@ -673,7 +673,7 @@ describe("the second round's earned goods", function()
 	end)
 
 	describe("registered in Core's toast style and binding slots (LED-R118, LED-R110, SHOP-R23, SHOP-R25)", function()
-		local counts
+		local counts, saved
 
 		-- The sixteen goods over hooks whose earnedBy names goods earned in `earned`, and whose count reads `counts`
 		-- (nil while updating).
@@ -685,6 +685,9 @@ describe("the second round's earned goods", function()
 				count = function(counted)
 					return counts and counts[counted.id]
 				end,
+				saved = function(counted)
+					return saved and saved[counted.id]
+				end,
 				formatNumber = function(n)
 					return "<" .. n .. ">"
 				end,
@@ -692,7 +695,7 @@ describe("the second round's earned goods", function()
 		end
 
 		before_each(function()
-			counts = {}
+			counts, saved = {}, nil
 		end)
 
 		it(
@@ -823,13 +826,33 @@ describe("the second round's earned goods", function()
 				assert.is_function(folio.stageCount)
 
 				counts = nil
-				assert.is_nil(folio.stageCount()) -- no count known yet: Core draws the chart as the atlas has it
+				assert.is_nil(folio.stageCount()) -- no count known yet, and none saved: Core draws its first stage
 				counts = { ["ledger.toaststyle.cartographer"] = 31 }
 				assert.are.equal(31, folio.stageCount())
 				counts = { ["ledger.toaststyle.cartographer"] = 54 }
 				assert.are.equal(54, folio.stageCount()) -- past the mark of 5, not held at it as the ink bar's count is
 				counts = nil
 				assert.are.equal(54, folio.stageCount())
+			end
+		)
+
+		it(
+			"give the Folio the celebrated set's count before the projection has counted, and the projection's after (ANN-R85)",
+			function()
+				local goods = register({})
+				local folio
+				for _, registered in ipairs(goods) do
+					folio = registered.id == "ledger.toaststyle.cartographer" and registered or folio
+				end
+
+				-- After a /reload, the projection updating: the celebrated zones at Master.
+				counts, saved = nil, { ["ledger.toaststyle.cartographer"] = 17 }
+				assert.are.equal(17, folio.stageCount())
+				-- Then its own finished count, which the saved one no longer matters beside.
+				counts = { ["ledger.toaststyle.cartographer"] = 22 }
+				assert.are.equal(22, folio.stageCount())
+				counts = nil
+				assert.are.equal(22, folio.stageCount()) -- the last it knew, not the saved 17
 			end
 		)
 

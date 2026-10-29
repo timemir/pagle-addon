@@ -318,7 +318,7 @@ describe("/pagle dev stage", function()
 		pagle(loaded, "dev stage 30")
 		assert.are.equal(30, loaded.ns.devStageCount)
 		pagle(loaded, "dev stage")
-		pagle(loaded, "dev stage off")
+		pagle(loaded, "dev stage OFF")
 
 		assert.is_nil(loaded.ns.devStageCount)
 		assert.are.same(saved, copy(loaded.env.PagleDB.global))
@@ -387,6 +387,37 @@ describe("/pagle dev preview", function()
 			assert.are.same({ "epic", true }, { look.rarity, look.gleam })
 			assert.are.equal("Pagle dev: previewing a high epic.", loaded.printed[#loaded.printed])
 			assert.are.same(saved, copy(loaded.env.PagleDB.global))
+		end
+	)
+
+	it(
+		"applies a rarity to a toast or a toast.high, and to an Epic banner, and gives the usage line for the rest",
+		function()
+			local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)
+			pagle(loaded, "dev on")
+			local usage =
+				"Pagle dev: /pagle dev preview <kind>, where kind is one of toast, high, nod, banner, splash, card"
+
+			pagle(loaded, "dev preview toast RARE")
+			local toast = loaded.ns.announcementFrames.toast
+			local look = loaded.ns.ToastVarietyLook(toast.display.announcement) --[[@as table]]
+			assert.are.same({ "rare", true }, { look.rarity, look.gleam })
+			assert.are.equal("Pagle dev: previewing a toast rare.", loaded.printed[#loaded.printed])
+			loaded.client.advance(12)
+
+			pagle(loaded, "dev preview banner epic")
+			-- No Gala equipped: the banner, not a toast.high.
+			assert.are.equal("banner", loaded.ns.announcementFrames.banner.display.announcement.rung)
+			assert.are.equal("Pagle dev: previewing a banner epic.", loaded.printed[#loaded.printed])
+
+			local before = #loaded.printed
+			for _, args in ipairs({ "toast mythic", "nod rare", "banner rare", "splash epic", "card rare" }) do
+				pagle(loaded, "dev preview " .. args)
+			end
+			for i = before + 1, #loaded.printed do
+				assert.are.equal(usage, loaded.printed[i])
+			end
+			assert.are.equal(before + 5, #loaded.printed)
 		end
 	)
 

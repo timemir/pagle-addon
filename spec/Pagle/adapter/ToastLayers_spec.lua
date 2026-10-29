@@ -915,17 +915,100 @@ describe("the epic five on the client (ANN-R85)", function()
 			return found, isHigh
 		end
 
-		it("plays on toast.high with a Rare or Epic variety, and on no other toast (ANN-R85, VAR-R26)", function()
-			local loaded, M = epicCore()
-			equip(loaded, GALA)
+		it(
+			"plays on toast.high and on the toast page with a Rare or Epic variety, and with none else (ANN-R85, VAR-R26)",
+			function()
+				local loaded, M = epicCore()
+				equip(loaded, GALA)
 
-			assert.are.same({ true, true }, { bursts(loaded, M, "rare") })
-			assert.are.same({ true, true }, { bursts(loaded, M, "epic") })
-			assert.are.same({ false, true }, { bursts(loaded, M, "common") })
-			assert.are.same({ false, true }, { bursts(loaded, M, "uncommon") })
-			assert.are.same({ false, true }, { bursts(loaded, M, nil) })
-			-- A toast page has no burst whatever the variety.
-			assert.are.same({ false, false }, { bursts(loaded, M, "rare", "toast") })
+				assert.are.same({ true, true }, { bursts(loaded, M, "rare") })
+				assert.are.same({ true, true }, { bursts(loaded, M, "epic") })
+				assert.are.same({ false, true }, { bursts(loaded, M, "common") })
+				assert.are.same({ false, true }, { bursts(loaded, M, "uncommon") })
+				assert.are.same({ false, true }, { bursts(loaded, M, nil) })
+				-- The toast page has it too, as a Rare variety's own toast is drawn on it (VAR-R25).
+				assert.are.same({ true, false }, { bursts(loaded, M, "rare", "toast") })
+				assert.are.same({ true, false }, { bursts(loaded, M, "epic", "toast") })
+				assert.are.same({ false, false }, { bursts(loaded, M, "common", "toast") })
+				assert.are.same({ false, false }, { bursts(loaded, M, nil, "toast") })
+			end
+		)
+
+		it("is the kit's toast.high burst on the toast rung too: its sprite and beat, centred on the rung", function()
+			local loaded = epicCore()
+			local style = loaded.ns.ToastStyleOf(GALA)
+			local function burstOf(rung)
+				for _, layer in ipairs(style.art.rungs[rung].layers) do
+					if layer.motion and layer.motion.keyframes == "gala-pop" then
+						return layer, style.art.rungs[rung]
+					end
+				end
+			end
+			local high, highRung = burstOf("high")
+			local toast, toastRung = burstOf("toast")
+
+			assert.are.same({ high.sprite, high.w, high.h, high.y }, { toast.sprite, toast.w, toast.h, toast.y })
+			assert.is_false(toast.motion.loop)
+			assert.are.same(high.motion.alpha, toast.motion.alpha)
+			assert.are.same(high.motion.transform, toast.motion.transform)
+			-- Centred on its rung as the kit's is on its: the same distance from the middle.
+			assert.is_true(near(high.x + high.w / 2 - highRung.w / 2, toast.x + toast.w / 2 - toastRung.w / 2))
+			assert.is_true(near(high.motion.origin.x - highRung.w / 2, toast.motion.origin.x - toastRung.w / 2))
+			assert.are_not.equal("front", toast.name)
+		end)
+
+		-- Raises an Epic variety's moment as the Ledger does (VAR-R25): a banner "Epic variety". Returns the toast and the
+		-- banner on screen, nil for one that isn't.
+		local function epic(loaded, M)
+			M:RaiseMoment({
+				rung = "banner",
+				kind = "epicVariety",
+				order = 97,
+				title = "Epic variety",
+				text = "Phoenix-fin",
+				icon = 6291,
+				cast = CAST,
+				variety = { name = "Phoenix-fin", rarity = "epic" },
+			})
+			loaded.client.advance(0)
+			local frames = loaded.ns.announcementFrames
+			local toast, banner = frames.toast, frames.banner
+			return toast and toast.shown and toast or nil, banner and banner.shown and banner or nil
+		end
+
+		it(
+			"shows an Epic variety as a toast.high with the burst while the Gala is equipped, not a banner (ANN-R85, VAR-R25)",
+			function()
+				local loaded, M = epicCore()
+				equip(loaded, GALA)
+
+				local toast, banner = epic(loaded, M)
+
+				assert.is_nil(banner)
+				assert.is_not_nil(toast)
+				local announcement = (toast --[[@as table]]).display.announcement
+				assert.are.same({ "toast.high", true }, { announcement.rung, loaded.ns.ToastPage(announcement).high })
+				local found = false
+				for _, slot in
+					ipairs((toast --[[@as table]]).toastLayers.active)
+				do
+					found = found or (slot.layer.motion ~= nil and slot.layer.motion.keyframes == "gala-pop")
+				end
+				assert.is_true(found)
+			end
+		)
+
+		it("keeps the banner for an Epic variety in every other style (VAR-R25)", function()
+			local loaded, M = epicCore()
+			for _, entry in ipairs(EPIC_FIVE) do
+				if entry[2] ~= GALA then
+					equip(loaded, entry[2])
+					local toast, banner = epic(loaded, M)
+					assert(toast == nil, entry[2])
+					assert(banner ~= nil, entry[2])
+					loaded.client.advance(20)
+				end
+			end
 		end)
 
 		it("is left off every other epic style, whatever the variety", function()
@@ -983,10 +1066,15 @@ describe("the epic five on the client (ANN-R85)", function()
 
 	describe("the Cartographer's Folio's stages", function()
 		-- The Folio's deco on a `rung` toast, with the Ledger's count `value`: the layer drawn and its slot.
-		local function decoSlot(loaded, M, stage, value, rung)
+		local function decoSlot(loaded, M, stage, value, rung, style)
 			stage.value = value
 			raiseStamped(loaded, M, rung)
 			local toast = loaded.ns.announcementFrames.toast
+			if style then
+				-- Not registered, so not equippable: drawn in the style as a sample of it is.
+				toast.display.announcement.style = style
+				loaded.ns.DrawAnnouncement(toast, toast.display)
+			end
 			local slot = slotOf(toast, "deco")
 			local atlas = loaded.ns.ATLASES[loaded.ns.ToastStyleOf(FOLIO).atlas]
 			assert.are.same(coordsOf(atlas, slot.layer.sprite), slot.texture.texCoord)
@@ -1013,14 +1101,30 @@ describe("the epic five on the client (ANN-R85)", function()
 			end
 		end)
 
-		it("draw the first stage below the first count, and the rung's own deco while no count is known", function()
+		it("draw the first stage below the first count, and while no count is known at all (ANN-R85)", function()
 			local stage = {}
 			local loaded, M = epicCore(stage)
 			equip(loaded, FOLIO)
 
 			assert.are.equal("toast-deco-st1", decoSlot(loaded, M, stage, 2))
-			assert.are.equal("toast-deco", decoSlot(loaded, M, stage, nil))
+			assert.are.equal("toast-deco-st1", decoSlot(loaded, M, stage, nil))
+			assert.are.equal("high-deco-st1", decoSlot(loaded, M, stage, nil, "toast.high"))
 		end)
+
+		it(
+			"draw the first stage with the Ledger off: the good isn't registered, so there is no count to ask",
+			function()
+				local loaded = loadCore(history(2), {})
+				loaded.env.PagleDB.global.onboarding.notesOn = false
+				loaded.ns.db.profile.announcements.motion = false
+				local M = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
+				enterWorld(loaded, 3)
+				loaded.client.runTimers()
+
+				assert.is_nil(loaded.ns.goods:StageCount(FOLIO))
+				assert.are.equal("toast-deco-st1", decoSlot(loaded, M, {}, nil, nil, FOLIO))
+			end
+		)
 
 		it("draw each stage at its own box, stage 5's a little bigger than the others' (ANN-R85)", function()
 			local stage = {}

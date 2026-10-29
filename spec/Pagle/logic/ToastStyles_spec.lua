@@ -1203,11 +1203,12 @@ describe("the Cartographer's Folio's stages (ANN-R85)", function()
 		assert.is_true(five.w > one.w and five.h > one.h)
 	end)
 
-	it("draw the first stage below the first count, and the rung's own deco with no count at all", function()
+	it("draw the first stage below the first count, and with no count at all (ANN-R85)", function()
 		assert.are.equal("toast-deco-st1", ns.ToastStageDeco(style, TOAST, 0).sprite)
 		assert.are.equal("high-deco-st1", ns.ToastStageDeco(style, HIGH, 4).sprite)
-		assert.is_nil(ns.ToastStageDeco(style, TOAST, nil))
-		assert.are.equal("toast-deco", decoOf(ns.ToastDrawLayers(style, TOAST, {})).sprite)
+		assert.are.equal("toast-deco-st1", ns.ToastStageDeco(style, TOAST, nil).sprite)
+		assert.are.equal("high-deco-st1", ns.ToastStageDeco(style, HIGH, nil).sprite)
+		assert.are.equal("toast-deco-st1", decoOf(ns.ToastDrawLayers(style, TOAST, {})).sprite)
 	end)
 
 	it("draw the rung's own deco for a stage whose sprite the atlas lacks, and for a style with no stages", function()
@@ -1264,28 +1265,35 @@ describe("the Extravaganza Gala's burst of confetti (ANN-R85, VAR-R26)", functio
 		return out
 	end
 
-	it("is one layer of toast.high's rung that plays once, and the toast rung has none", function()
-		local burst = {}
-		for _, rungName in ipairs({ "toast", "high", "nod" }) do
-			for _, layer in ipairs(style.art.rungs[rungName].layers) do
-				if layer.motion and ns.TOAST_GLEAM_ONLY[layer.motion.keyframes] then
-					burst[#burst + 1] = { rungName, layer.name, layer.motion.keyframes, layer.motion.loop }
+	it(
+		"is one layer of toast.high's rung and one of the toast rung's, each playing once, and the Nod has none",
+		function()
+			local burst = {}
+			for _, rungName in ipairs({ "toast", "high", "nod" }) do
+				for _, layer in ipairs(style.art.rungs[rungName].layers) do
+					if layer.motion and ns.TOAST_GLEAM_ONLY[layer.motion.keyframes] then
+						burst[#burst + 1] = { rungName, layer.name, layer.motion.keyframes, layer.motion.loop }
+					end
 				end
 			end
-		end
-		assert.are.same({ { "high", "front", "gala-pop", false } }, burst)
-		for id, art in pairs(ns.TOAST_STYLE_ART2) do
-			for rungName, rung in pairs(art.rungs) do
-				for _, layer in ipairs(rung.layers) do
-					if layer.motion and ns.TOAST_GLEAM_ONLY[layer.motion.keyframes] then
-						assert.are.equal(ID, id, rungName)
+			-- The kit's on toast.high (`front`), and the same sprite and beat on the toast rung (`burst`, derived).
+			assert.are.same({
+				{ "toast", "burst", "gala-pop", false },
+				{ "high", "front", "gala-pop", false },
+			}, burst)
+			for id, art in pairs(ns.TOAST_STYLE_ART2) do
+				for rungName, rung in pairs(art.rungs) do
+					for _, layer in ipairs(rung.layers) do
+						if layer.motion and ns.TOAST_GLEAM_ONLY[layer.motion.keyframes] then
+							assert.are.equal(ID, id, rungName)
+						end
 					end
 				end
 			end
 		end
-	end)
+	)
 
-	it("is drawn on toast.high when the toast's variety gleams, and on no other toast", function()
+	it("is drawn on the toast and toast.high pages when the toast's variety gleams, and on no other toast", function()
 		local rung = style.art.rungs.high
 		local plain = ns.ToastDrawLayers(style, HIGH, {})
 		local gleaming = ns.ToastDrawLayers(style, HIGH, { gleams = true })
@@ -1303,9 +1311,11 @@ describe("the Extravaganza Gala's burst of confetti (ANN-R85, VAR-R26)", functio
 				assert.are.equal(layer, plain[i])
 			end
 		end
-		-- The toast rung and the Nod never had it.
-		assert.are.equal(#style.art.rungs.toast.layers, #ns.ToastDrawLayers(style, TOAST, {}))
+		-- The toast page too, with the toast rung's own; the Nod never has it.
+		assert.are.equal(#style.art.rungs.toast.layers, #ns.ToastDrawLayers(style, TOAST, { gleams = true }))
+		assert.are.equal(#style.art.rungs.toast.layers - 1, #ns.ToastDrawLayers(style, TOAST, {}))
 		assert.are.equal(#style.art.rungs.nod.layers, #ns.ToastDrawLayers(style, nil, {}))
+		assert.are.equal(#style.art.rungs.nod.layers, #ns.ToastDrawLayers(style, nil, { gleams = true }))
 	end)
 
 	it("leaves every other style's layers as they are, gleam or not", function()

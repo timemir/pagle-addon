@@ -524,6 +524,7 @@ ns.L = {
 	DEV_SAMPLE_STAMP = "Size record",
 	DEV_SAMPLE_NOD = "New here",
 	DEV_SAMPLE_VARIETY = "Rare variety",
+	DEV_SAMPLE_EPIC = "Epic variety",
 	DEV_SAMPLE_VARIETY_NAME = "Coral",
 	DEV_SAMPLE_BANNER = "Angler Level 12",
 	DEV_SAMPLE_SPLASH = "A Legend",
