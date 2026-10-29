@@ -39,7 +39,8 @@ def _slice() -> Db2Layer:
 
 def test_the_db2_slice_is_from_wago_tools_for_a_named_forever_build() -> None:
     # DATA-R11, DATA-R12: build.toml names the one Forever build the slice describes, and the products searched,
-    # seeded with wow_classic_beta (DATA-R128). #56 took the beta's 1.60.1.70338; #312 refreshed it to 1.60.1.70450, #439 to 1.60.1.70532, then to 1.60.1.70685 with the live product wowf watched too.
+    # seeded with wow_classic_beta (DATA-R128). #56 took the beta's 1.60.1.70338; #312 refreshed it to 1.60.1.70450,
+    # #439 to 1.60.1.70532, then 1.60.1.70685, when the live product wowf joined the watch.
     layer = _slice()
     assert (layer.version, layer.build) == ("1.60.1", 70685)
     assert layer.products == ["wow_classic_beta", "wowf"]
