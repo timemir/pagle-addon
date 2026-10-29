@@ -3,11 +3,11 @@ one of the runbook's prepared steps, so the night only fills in numbers:
 
 - `watch` (P4): Ketho's BlizzardInterfaceResources `forever` dump and wago.tools' build list, fetched with
   unauthenticated curl, and whether the live build has appeared on either.
-- `interface <n>` (P2, runbook §3.2): the interface bump, CORE-R2's number in every place that states it.
-- `dump <commit> <version> <build>` (P6, runbook §3.1): the dump pin in scripts/tools.env.
+- `interface <n>` (P2, runbook §4.2): the interface bump, CORE-R2's number in every place that states it.
+- `dump <commit> <version> <build>` (P6, runbook §4.1): the dump pin in scripts/tools.env.
 - `angleur-stub <AddOns folder>` (P5, launch re-verification check 15): writes or removes the `Angleur` stub.
 - `post-tag <tag>` (P7): the GitHub Release zip's SHA-256 and contents, against the local package.sh zip.
-- `read <step>` (runbook §5.2): scripts/read-wtf.sh with a dev step's flags, cut to the step's sections.
+- `read <step>` (runbook §6): scripts/read-wtf.sh with a dev step's flags, cut to the step's sections.
 
 None of it runs in scripts/check.sh: the gate never touches the network or the client's folders.
 """
@@ -161,7 +161,7 @@ def run_interface(root: Path, new: int, dry_run: bool) -> int:
             print(f"  {line}")
     print(
         "next: run the TOC specs (spec/Pagle*/*_toc_spec.lua) and spec/scripts/read-wtf_spec.lua one at a time,"
-        " then the full check (runbook §3.2)"
+        " then the full check (runbook §4.2)"
     )
     return 0
 
@@ -204,7 +204,7 @@ def run_dump(root: Path, commit: str, version: str, build: int, annotations: str
     print(f"scripts/tools.env: BIR_COMMIT={commit}, the dump of build {version} ({build})")
     if annotations is not None:
         print(f"scripts/tools.env: WOW_API_COMMIT={annotations}")
-    print("next, in WSL (runbook §3.1): scripts/setup.sh, then the api stage alone:")
+    print("next, in WSL (runbook §4.1): scripts/setup.sh, then the api stage alone:")
     print("  .tools/bin/lua scripts/api-presence.lua .luacheckrc .tools/bir/Resources")
     print("  .tools/bin/lua scripts/api-inventory.lua --check .luacheckrc addons/Pagle/data/ApiInventory.lua")
     if annotations is not None:
@@ -447,7 +447,7 @@ def run_post_tag(tag: str, zip_path: Path | None, local: Path | None, fetch: Fet
     return 1 if problems else 0
 
 
-# --- The read-wtf checklist (runbook §5.2) --------------------------------------------------------------------------
+# --- The read-wtf checklist (runbook §6) ----------------------------------------------------------------------------
 
 LAUNCH_ENV = "~/pagle-launch.env"
 LEASED_CVARS = "addons/Pagle_QoL/logic/Stretch.lua"
@@ -483,7 +483,7 @@ STEPS: dict[str, Step] = {
                ("Lua errors", "Hunts", "Activity XP", "Ledger M4", "Wallet", "Tackle Board")),
     "fresh-install": Step("#276 steps 2-3: the release zip on a fresh install, then the real log back",
                           ("Lua errors", "Catch log", "Ledger", "Hunts", "Stats", "Tackle Board", "Wallet", "Varieties",
-                           "Field report", "Exit check"), casts=True),
+                           "Cards", "Field report", "Exit check"), casts=True),
 }
 
 _SECTION_START = re.compile(r"^== ")
@@ -633,7 +633,7 @@ def _parser() -> argparse.ArgumentParser:
     post.add_argument("tag")
     post.add_argument("--zip", type=Path, help="read this zip instead of downloading the release's")
     post.add_argument("--local", type=Path, help="compare with this zip, scripts/package.sh's")
-    read = sub.add_parser("read", help="read-wtf for one dev step, cut to its sections (runbook §5.2)")
+    read = sub.add_parser("read", help="read-wtf for one dev step, cut to its sections (runbook §6)")
     read.add_argument("step", nargs="?", default="reload")
     read.add_argument("--list", action="store_true", help="list the steps and their sections")
     read.add_argument("--env", help=f"launch.env (default $PAGLE_LAUNCH_ENV or {LAUNCH_ENV})")
