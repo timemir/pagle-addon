@@ -269,7 +269,7 @@ Legends, titles, Simulated Size with the typical-length check on, Catch Mileston
 **Content data rules:**
 - DATA-R72, DATA-R75 for `HuntList.lua`
 - DATA-R85–R94 (the Hunt list format, classes, the generator's Hunt checks and the emitted shape)
-- DATA-R95 and DATA-R96 as tooling only: `--lock` existed and was tested, but `released.lock` stayed empty until the 1.0 release commit
+- DATA-R95 and DATA-R96 as tooling only: `--lock` exists and is tested, but `released.lock` stays empty until the 1.0 tag
 - DATA-R60's `--lock` mode, DATA-R63 for the Hunt checks
 - DATA-R105, and DATA-R107 for the `hunts` lore ID (switched on in `data/checks.toml`), with `data/lore/hunts.toml` and its `[hunts.huntgood]` manifest entry
 
@@ -527,7 +527,7 @@ There is no check 22: it looked for a per-character Self-Found call, and the cha
 
 1. Set every Standing Hunt's `since` to the release day (DATA-R87), and the fallback rotation's starting point to the release day at 15:00 UTC (HNT-R152). The companion hint switch is on, and Get it's address is `https://pagle.app/download` (HNT-R170, HNT-R172).
 2. Run `scripts/generate-data.py --lock` for the first `released.lock`, in the release commit (DATA-R73, DATA-R95).
-3. From the tag on, the entry formats (LOG-R17), the `Pagle` API (CORE-R15: Activity XP, pushed content and fix A's motion API included) and each DB's first `schemaVersion` are frozen. `spec/surface_1_0_spec.lua` pins them: it fails, naming the rule, when a name, a tag, the format number or a first `schemaVersion` is removed or changed, and passes on an addition.
+3. From the tag on, the entry formats (LOG-R17), the `Pagle` API (CORE-R15: Activity XP, pushed content and fix A's motion API included) and each DB's first `schemaVersion` are frozen. `spec/surface_1_0_spec.lua` pins them: it fails, naming the rule, when a name, an event's payload, a tag's fields, the format number or a first `schemaVersion` is removed or changed, and passes on an addition to an entry tag, while an added `Pagle` name, Module handle method or event needs `Pagle.API_VERSION` above 1.
 
 ## After 1.0
 

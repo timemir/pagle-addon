@@ -1,7 +1,7 @@
 """The release lock (DATA-R95, ADR 0005): data/hunts/released.lock records each released Hunt's hash and retired
 date, Standing Hunts' and event Hunts' alike (DATA-R98), and the members of each class a released Hunt targets.
-scripts/generate-data.py --lock rewrites it when a release is tagged, from 1.0 on, and never before (DATA-R73): the 1.0
-release commit wrote the first committed lock.
+scripts/generate-data.py --lock rewrites it when a release is tagged, from 1.0 on, and never before (DATA-R73): until
+the 1.0 tag the committed lock stays empty.
 """
 
 import re
@@ -25,11 +25,11 @@ from pagle_data.universe import EVENTS_DIR, HUNTS_TOML
 
 LOCK = "data/hunts/released.lock"
 
-# The lock's header comment, the top of the committed file (DATA-R73).
+# The lock's header comment, the whole of the committed file until the 1.0 tag (DATA-R73).
 LOCK_HEADER = """\
 # The release lock (DATA-R95, ADR 0005): each released Hunt's hash and retired date, and the members of each class a
 # released Hunt targets. Written by scripts/generate-data.py --lock; don't edit it by hand.
-# Run --lock only when a release is tagged, from 1.0 on, and never before: the 1.0 release commit wrote the first
+# Run --lock only when a release is tagged, from 1.0 on, and never before: this file stays empty until the 1.0 tag
 # (DATA-R73). The generator fails when data/hunts/hunts.toml breaks it (DATA-R96).
 """
 _HASH = re.compile(r"[0-9a-f]{64}")

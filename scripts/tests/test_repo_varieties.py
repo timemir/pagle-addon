@@ -53,12 +53,10 @@ def test_every_item_of_a_species_ships_its_ten_keys() -> None:
     assert items[6887]["varieties"] == varieties[4603]
 
 
-def test_the_committed_lock_holds_every_variety_key_of_1_0() -> None:
-    # DATA-R73, DATA-R133: the 1.0 release commit ran --lock, so varieties.lock holds each Species' ten keys in
-    # varieties.toml's order; the generator's own check fails when one later moves or goes.
+def test_the_committed_lock_stays_empty_until_the_1_0_tag() -> None:
+    # DATA-R73, DATA-R133: like released.lock, varieties.lock holds only its header before 1.0.
     text = (REPO / "data" / "forever" / "varieties.lock").read_text(encoding="utf-8")
-    locked = {int(species): table["keys"] for species, table in tomllib.loads(text)["varieties"].items()}
-    assert locked == _varieties()
+    assert text.startswith("# ") and all(line.startswith("#") for line in text.splitlines())
 
 
 def test_the_manifest_lists_all_370_varieties_and_37_fish_crests() -> None:

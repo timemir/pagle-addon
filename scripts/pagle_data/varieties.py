@@ -26,11 +26,11 @@ VARIETY_COUNT = 10
 # VAR-R2: a key is lowercase letters and digits joined by single hyphens, so <speciesID>.<key> is one lore ID.
 _KEY = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
-# The lock's header comment, the top of the committed file (DATA-R73), as released.lock's.
+# The lock's header comment, the whole of the committed file until the 1.0 tag (DATA-R73), as released.lock's.
 LOCK_HEADER = f"""\
 # The varieties lock (VAR-R5, DATA-R133): each shipped Species' ten variety keys, in their frozen order. Written by
 # scripts/generate-data.py --lock beside data/hunts/released.lock; don't edit it by hand.
-# Run --lock only when a release is tagged, from 1.0 on, and never before: the 1.0 release commit wrote the first
+# Run --lock only when a release is tagged, from 1.0 on, and never before: this file stays empty until the 1.0 tag
 # (DATA-R73). The generator fails when {VARIETIES_TOML} changes, moves or drops a key it holds.
 """
 
