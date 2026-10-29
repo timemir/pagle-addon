@@ -114,6 +114,32 @@ local function regionsOf(binding)
 	return binding.skin --[[@as PagleBookBindingRegions]]
 end
 
+-- The texture coordinates of a ribbon's foot (BIND-R15): the sprite `name` of `atlas`, its top cropped away so that its
+-- bottom 60 units of the drawn 136 show, rounded to six places.
+local function ribbonFoot(atlas, name)
+	local sprite = atlas.sprites[name]
+	local top = sprite.y + sprite.h * (1 - 60 / sprite.box[4])
+	local coords = {
+		sprite.x / atlas.width,
+		(sprite.x + sprite.w) / atlas.width,
+		top / atlas.height,
+		(sprite.y + sprite.h) / atlas.height,
+	}
+	for i, value in ipairs(coords) do
+		coords[i] = math.floor(value * 1e6 + 0.5) / 1e6
+	end
+	return coords
+end
+
+-- The coordinates a texture was given, rounded to six places.
+local function rounded(texture)
+	local coords = {}
+	for i, value in ipairs(texture.texCoord) do
+		coords[i] = math.floor(value * 1e6 + 0.5) / 1e6
+	end
+	return coords
+end
+
 -- The page turns played since `from`.
 local function turnsSince(loaded, from)
 	local turns = 0
@@ -364,10 +390,11 @@ describe("Pagle.NewBookBinding's drawing", function()
 				{ clasp:GetSize() },
 			})
 			assert.are.same({ "LEFT", frame, "RIGHT", -40, 0 }, { clasp:GetPoint(1) })
-			assert.are.same({ true, parts.file, coords(parts, "ribbon-wave"), { 32, 136 } }, {
+			-- only its foot, the notch kept: 40 up into the book and 20 hanging below its foot
+			assert.are.same({ true, parts.file, ribbonFoot(parts, "ribbon-wave"), { 32, 60 } }, {
 				ribbon:IsShown(),
 				ribbon.texture,
-				ribbon.texCoord,
+				rounded(ribbon),
 				{ ribbon:GetSize() },
 			})
 			assert.are.same({ "TOPLEFT", frame, "BOTTOM", 60, 40 }, { ribbon:GetPoint(1) })
@@ -399,6 +426,8 @@ describe("Pagle.NewBookBinding's drawing", function()
 
 			-- the kit's own place on its 920 × 600 Journal: 520, 560 from the frame's top left
 			assert.are.same({ "TOPLEFT", frame, "TOPLEFT", 520, -560 }, { regionsOf(binding).ribbon:GetPoint(1) })
+			-- 60 tall from there, it hangs 20 below the 600-high frame's foot
+			assert.are.equal(20, 560 + regionsOf(binding).ribbon:GetHeight() - frame:GetHeight())
 		end
 	)
 
@@ -527,19 +556,22 @@ describe("Pagle.NewBookBinding's fittings, on Core's own catalogue of bindings (
 					assert.are.equal("ribbon-" .. binding.key, binding.ribbon)
 					assert.are.equal("corner-" .. binding.key, binding.cornerArt)
 					assert.are.same(coords(parts, binding.clasp), clasp.texCoord, binding.id)
-					assert.are.same(coords(parts, binding.ribbon), ribbon.texCoord, binding.id)
+					assert.are.same(ribbonFoot(parts, binding.ribbon), rounded(ribbon), binding.id)
 					assert.are.same(
 						coords(parts, binding.cornerArt),
 						(regions.corners[1] --[[@as table]]).texCoord,
 						binding.id
 					)
-					-- on the frame: the fore-edge, 22 to 54 units in, 110 high; the silk ribbon, 32 × 136 up from its foot
+					-- on the frame: the fore-edge, 22 to 54 units in, 110 high; the silk ribbon's foot, 32 × 60, 40 up from the
+					-- frame's foot, so no more than 20 units of it hang below
 					assert.are.same({ 110, true }, { clasp:GetHeight(), clasp:GetWidth() <= 100 }, binding.id)
 					local point, relativeTo, relativePoint, x, y = clasp:GetPoint(1)
 					assert.are.same({ "LEFT", frame, "RIGHT", 0 }, { point, relativeTo, relativePoint, y }, binding.id)
 					assert(x >= -54 and x <= -22, binding.id)
-					assert.are.same({ 32, 136 }, { ribbon:GetSize() }, binding.id)
+					assert.are.same({ 32, 60 }, { ribbon:GetSize() }, binding.id)
 					assert.are.same({ "TOPLEFT", frame, "BOTTOM", 60, 40 }, { ribbon:GetPoint(1) }, binding.id)
+					local _, _, _, _, up = ribbon:GetPoint(1)
+					assert(ribbon:GetHeight() - up <= 20, binding.id)
 					for _, piece in ipairs(regions.corners) do
 						assert.are.same({ 76, 76 }, { piece:GetSize() }, binding.id)
 					end

@@ -40,7 +40,7 @@ end
 
 -- BindingParts2 (1024 x 1024, 2 texels a unit, with mips): the Curio Shop's round-two bindings' own parts, from the
 -- round-two kit's goods.json (BIND-R14, BIND-R15, BIND-R17): each one's corner piece (76 square, the top-left one,
--- mirrored for the others), its clasp (110 high) and its silk ribbon (32 x 136). Shagreen and Bone's are the kit's
+-- mirrored for the others), its clasp (110 high) and its silk ribbon (32 x 136, of which the renderer shows the foot, BIND-R15). Shagreen and Bone's are the kit's
 -- `-shagreen` sprites.
 ns.ATLASES.BindingParts2 = {
 	file = "Interface\\AddOns\\Pagle\\media\\books\\BindingParts2",
