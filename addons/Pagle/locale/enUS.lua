@@ -535,6 +535,16 @@ ns.L = {
 	DEV_UNKNOWN_AREA = "Pagle dev: %s isn't an area in Pagle's catalogue.",
 	-- The item ID, the zone areaID and the entry's seq.
 	DEV_CAUGHT = "Pagle dev: caught item %d in zone %d (entry %d).",
+	-- /pagle dev skill (#465), in the dev checkout only like catch: its usage, then what it says when the override is
+	-- set (the rank and the max rank), is cleared, is asked about while set or not, and, at each login with it set,
+	-- the reminder.
+	DEV_SKILL_USAGE = "Pagle dev: /pagle dev skill <rank> [max], from 1 to 300 (max defaults to 300), "
+		.. "or /pagle dev skill off",
+	DEV_SKILL_SET = "Pagle dev: Fishing skill now reads %d/%d, whatever the client says. Casts and Skill Readings "
+		.. "record it. /pagle dev skill off puts the client's back.",
+	DEV_SKILL_CLEARED = "Pagle dev: Fishing skill reads as the client says again.",
+	DEV_SKILL_NOT_SET = "Pagle dev: Fishing skill reads as the client says; /pagle dev skill <rank> overrides it.",
+	DEV_SKILL_REMINDER = "Pagle dev: Fishing skill is overridden to %d/%d (/pagle dev skill off to clear it).",
 	--@end-do-not-package@
 	-- /pagle dev glyphs (#248, CORE-R9): the probe line, then where the rest of it is.
 	DEV_GLYPHS_CHAT = "Pagle dev: the glyph probe in the chat font: %s",

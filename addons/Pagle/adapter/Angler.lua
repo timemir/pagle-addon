@@ -66,11 +66,18 @@ end
 --- Fishing's rank, max rank and modifier (LOG-R30): `GetProfessions()`, then `GetProfessionInfo` on the index whose
 --- skill line is 356 (on build 70338 that's the 4th return). Each is nil while secret (CORE-R31), all three without
 --- the profession. The one skill reader: Skill Readings (LOG-R31) and the conditions' skill key (LOG-R20) use it.
+--- While dev mode is on and `/pagle dev skill` set a rank, the rank and max are that (#465, ns.DevSkillOverride), the
+--- modifier still the client's (0 without the profession), so Casts and Skill Readings record it as a real reading.
 ---@return integer? rank
 ---@return integer? max
 ---@return integer? mod
 function ns.ReadFishingSkill()
-	return readFishing(GetProfessions())
+	local rank, max, mod = readFishing(GetProfessions())
+	local devRank, devMax = ns.DevSkillOverride(ns.db and ns.db.global)
+	if devRank then
+		return devRank, devMax, mod or 0
+	end
+	return rank, max, mod
 end
 
 --- Login step 2 (LOG-R1): adds or updates the logged-in character (LOG-R25) and makes it the current one.

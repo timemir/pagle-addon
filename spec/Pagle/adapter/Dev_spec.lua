@@ -436,3 +436,192 @@ describe("/pagle dev glyphs", function()
 		assert.are.same(saved, copy(loaded.env.PagleDB.global))
 	end)
 end)
+
+-- /pagle dev skill (#465): the retail UI check reports Fishing skill 1, where the skill reach (ADR 0014) lets every
+-- record grow by a millimetre. The fake client's Fishing reads 75/150 with no modifier.
+describe("/pagle dev skill", function()
+	local CLIENT_SKILL = { 75, 150 }
+
+	-- The rank and max of the logged-in character's latest Skill Reading, as Core holds them.
+	local function reading(loaded)
+		local angler = loaded.env.Pagle.GetAngler()
+		local latest = angler.skill[angler.current]
+		return { latest.rank, latest.max }
+	end
+
+	-- The skill the Cast conditions hold now: rank and modifier.
+	local function conditionsSkill(loaded)
+		local conditions = loaded.env.Pagle.GetConditions()
+		return { conditions.skillRank, conditions.skillMod }
+	end
+
+	local function ready(saved)
+		local loaded = enterWorld(loadCore({ BUILD_ENTRY }, saved), 2)
+		loaded.client.advance(0)
+		return loaded
+	end
+
+	it(
+		"reports the rank and a max of 300 as Fishing skill, logs a Skill Reading and says so (#465, LOG-R31)",
+		function()
+			local loaded = ready()
+			pagle(loaded, "dev on")
+			assert.are.same(CLIENT_SKILL, reading(loaded))
+			local changed = {}
+			loaded.env.Pagle.RegisterCallback(changed, "SkillChanged", function(_, skill)
+				changed[#changed + 1] = { skill.rank, skill.max }
+			end)
+
+			pagle(loaded, "dev skill 1")
+
+			assert.are.same({ 1, 300 }, reading(loaded))
+			assert.are.same({ { 1, 300 } }, changed)
+			assert.are.same({ 1, 0 }, conditionsSkill(loaded))
+			assert.are.same({ rank = 1, max = 300 }, loaded.env.PagleDB.global.devSkill)
+			assert.are.equal(
+				"Pagle dev: Fishing skill now reads 1/300, whatever the client says. Casts and Skill Readings record it."
+					.. " /pagle dev skill off puts the client's back.",
+				loaded.printed[2]
+			)
+		end
+	)
+
+	it("takes a max rank too, and keeps the client's modifier (#465)", function()
+		local loaded = ready()
+		loaded.env.GetProfessionInfo = function(index)
+			if index == 8 then
+				return "Fishing", 136245, 75, 150, 2, 34, 356, 5, -1, 0, "Fishing"
+			end
+		end
+		pagle(loaded, "dev on")
+
+		pagle(loaded, "DEV SKILL 120 150")
+
+		assert.are.same({ 120, 150 }, reading(loaded))
+		assert.are.same({ 120, 5 }, conditionsSkill(loaded))
+	end)
+
+	it("records the Casts that follow at that skill, and marks their diagnostics entries (#465, LOG-R81)", function()
+		local loaded = ready()
+		pagle(loaded, "dev on")
+		pagle(loaded, "dev skill 40")
+
+		catchAndFlush(loaded)
+
+		local cast = lastRecord(loaded)
+		assert.are.same({ 40, 0 }, { cast.conditions.skillRank, cast.conditions.skillMod })
+		local entries = loaded.env.PagleDB.global.diagnostics
+		assert.are.equal(40, entries[#entries].devSkill)
+		pagle(loaded, "dev skill off")
+		catchAndFlush(loaded)
+		entries = loaded.env.PagleDB.global.diagnostics
+		assert.are.equal(75, lastRecord(loaded).conditions.skillRank)
+		assert.is_nil(entries[#entries].devSkill)
+	end)
+
+	it("off puts the client's reading back, logging it, and says so (#465)", function()
+		local loaded = ready()
+		pagle(loaded, "dev on")
+		pagle(loaded, "dev skill 1")
+
+		pagle(loaded, "dev skill off")
+
+		assert.are.same(CLIENT_SKILL, reading(loaded))
+		assert.are.same({ 75, 0 }, conditionsSkill(loaded))
+		assert.is_nil(loaded.env.PagleDB.global.devSkill)
+		assert.are.equal("Pagle dev: Fishing skill reads as the client says again.", loaded.printed[3])
+	end)
+
+	it("says which reading holds when asked with no argument (#465)", function()
+		local loaded = ready()
+		pagle(loaded, "dev on")
+
+		pagle(loaded, "dev skill")
+		pagle(loaded, "dev skill 30")
+		pagle(loaded, "dev skill")
+
+		assert.are.equal(
+			"Pagle dev: Fishing skill reads as the client says; /pagle dev skill <rank> overrides it.",
+			loaded.printed[2]
+		)
+		assert.are.equal(
+			"Pagle dev: Fishing skill is overridden to 30/300 (/pagle dev skill off to clear it).",
+			loaded.printed[4]
+		)
+	end)
+
+	it(
+		"refuses a rank or max outside 1 to 300, or a max below the rank, with its usage, changing nothing (#465)",
+		function()
+			local loaded = ready()
+			pagle(loaded, "dev on")
+			local entries = #loaded.env.PagleLog.entries
+
+			for _, args in ipairs({ "0", "301", "-5", "abc", "2.5", "100 99", "10 301", "10 20 30", "off 5" }) do
+				pagle(loaded, "dev skill " .. args)
+			end
+
+			local usage = "Pagle dev: /pagle dev skill <rank> [max], from 1 to 300 (max defaults to 300), "
+				.. "or /pagle dev skill off"
+			assert.are.equal(10, #loaded.printed)
+			for i = 2, 10 do
+				assert.are.equal(usage, loaded.printed[i])
+			end
+			assert.is_nil(loaded.env.PagleDB.global.devSkill)
+			assert.are.equal(entries, #loaded.env.PagleLog.entries)
+		end
+	)
+
+	it("is refused with one line while dev mode is off, and a saved override doesn't apply (#465)", function()
+		local loaded = ready({ global = { dev = false, devSkill = { rank = 1, max = 300 } } })
+
+		pagle(loaded, "dev skill 5")
+
+		assert.are.same({ "Pagle dev: dev commands are off; /pagle dev on turns them on." }, loaded.printed)
+		assert.are.same(CLIENT_SKILL, reading(loaded))
+		assert.are.same({ 75, 0 }, conditionsSkill(loaded))
+		assert.are.same({ rank = 1, max = 300 }, loaded.env.PagleDB.global.devSkill)
+	end)
+
+	it("is cleared by /pagle dev off, which reads the client's skill again (#465)", function()
+		local loaded = ready()
+		pagle(loaded, "dev on")
+		pagle(loaded, "dev skill 1")
+
+		pagle(loaded, "dev off")
+
+		assert.is_nil(loaded.env.PagleDB.global.devSkill)
+		assert.are.same(CLIENT_SKILL, reading(loaded))
+		assert.are.same({ 75, 0 }, conditionsSkill(loaded))
+		assert.are.same({
+			"Pagle dev: dev commands are off.",
+			"Pagle dev: Fishing skill reads as the client says again.",
+		}, { loaded.printed[3], loaded.printed[4] })
+	end)
+
+	it("persists across a login, reminds in chat and is the login's first Skill Reading (#465, LOG-R31)", function()
+		local loaded = ready({ global = { dev = true, devSkill = { rank = 1, max = 300 } } })
+
+		assert.are.same({ 1, 300 }, reading(loaded))
+		assert.are.same({ 1, 0 }, conditionsSkill(loaded))
+		assert.are.same(
+			{ "Pagle dev: Fishing skill is overridden to 1/300 (/pagle dev skill off to clear it)." },
+			loaded.printed
+		)
+	end)
+
+	it("ignores a saved override that is malformed, and says nothing at login (#465)", function()
+		for _, bad in ipairs({
+			"x",
+			{ rank = 0, max = 300 },
+			{ rank = 5, max = 301 },
+			{ rank = 9, max = 3 },
+			{ rank = 2.5, max = 9 },
+		}) do
+			local loaded = ready({ global = { dev = true, devSkill = bad } })
+
+			assert.are.same(CLIENT_SKILL, reading(loaded))
+			assert.are.same({}, loaded.printed)
+		end
+	end)
+end)

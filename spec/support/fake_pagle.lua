@@ -905,6 +905,8 @@ part(function(fake, Pagle, ns, host)
 	}, function()
 		-- /pagle dev probe (#261) reads the client by name: FakePagle has no client, so every name is a miss.
 		return {}
+	end, function()
+		-- /pagle dev skill (#465): FakePagle reads no client skill, so there is nothing to read again.
 	end)
 	function fake.slash(line)
 		commands:Run(line, core, fake.securecall, fake.print)
