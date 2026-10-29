@@ -69,6 +69,7 @@ INV_Misc_Horn_02
 INV_Misc_Lantern_01
 INV_Misc_LeatherScrap_02
 INV_Misc_Map_01
+INV_Misc_MissileSmall_Red
 INV_Misc_MonsterClaw_02
 INV_Misc_MonsterScales_03
 INV_Misc_MonsterSpiderCarapace_01
@@ -111,6 +112,7 @@ Spell_Holy_MindVision
 Spell_Nature_Acid_01
 Spell_Nature_InsectSwarm
 Spell_Nature_Lightning
+Spell_Nature_Moonglow
 Spell_Nature_Regeneration
 Spell_Nature_StarFall
 Spell_Nature_StrengthOfEarthTotem02
