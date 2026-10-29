@@ -28,7 +28,6 @@ local LAYOUT_METHODS = {
 	"SetShadowColor",
 	"SetShadowOffset",
 	"SetSpacing",
-	"SetGradient",
 	"SetHighlightColor",
 }
 
@@ -166,6 +165,11 @@ function widgets.newWidget(kind, parent)
 	end
 	function widget:GetTexture()
 		return self.texture
+	end
+	-- A texture's colour gradient (`gradient`, { orientation, minColor, maxColor }): the min colour at the bottom or
+	-- left, the max at the top or right, as the client's.
+	function widget:SetGradient(orientation, minColor, maxColor)
+		self.gradient = { orientation, minColor, maxColor }
 	end
 	-- A texture's rotation, in radians (nil until set).
 	function widget:SetRotation(radians)
