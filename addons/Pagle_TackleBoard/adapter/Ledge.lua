@@ -18,6 +18,12 @@ local ns = select(2, ...)
 -- The spike (the kit's): its slips hang from the nail's hole at 68, 12 of a slip whose top left is 7, 38; the label sits
 -- 20 under the stack, which reaches at most 250 below the first slip.
 local SLIP_X, SLIP_Y, SLIP_WIDTH, SLIP_HEIGHT, HOLE_X, HOLE_Y, STACK_ROOM = 7, 38, 136, 92, 68, 12, 250
+-- The lines of a done slip, from its top left (x 11 to 125, 114 wide): the kicker at 22, the goal text under it from
+-- 36, and the note by hand at 68; the paper (SLIP_HEIGHT) is written on down to 88. The goal text is set in the first
+-- of its fonts that fits between the kicker and the note, and cut by lines at the last (#471).
+local LINE_X, LINE_WIDTH, KICKER_Y, GOAL_Y, GOAL_GAP, NOTE_Y, TEXT_BOTTOM = 11, 114, 22, 36, 2, 68, 88
+local GOAL_FONTS = { "DoneGoal", "DoneGoalSmall", "DoneGoalTiny" }
+local GOAL_SPACING, GOAL_MOST_LINES = 1.3, 8
 -- The Campfire card and the Fly Box drawer: their top left on the cork and their size, and how dark the cork goes
 -- under them. They and the veil lie at their layers (ns.BOARD_LAYERS), over the parts, the nail and "Updating…".
 local CARD_X, CARD_Y, CARD_WIDTH, CARD_HEIGHT, CARD_LEAN = 76, 16, 800, 434, -0.5
@@ -175,10 +181,10 @@ local function newSpikedSlip(spike, i)
 	slip:EnableMouse(true)
 	slip.paper = ns.ArtSprite(slip, "Board", "done", "ARTWORK")
 	slip.kicker = ns.ArtText(slip, "DoneKind")
-	slip.kicker:SetWidth(114)
-	slip.label = ns.ArtWrap(slip, "DoneGoal", 114, 1.3)
+	slip.kicker:SetWidth(LINE_WIDTH)
+	slip.label = ns.ArtWrap(slip, GOAL_FONTS[1], LINE_WIDTH, GOAL_SPACING)
 	slip.note = ns.ArtText(slip, "DoneNote")
-	slip.note:SetWidth(114)
+	slip.note:SetWidth(LINE_WIDTH)
 	slip:SetScript("OnEnter", function(self)
 		if self.view then
 			ns.BoardHover(self, self.view.hover, { fly = self.view.fly })
@@ -186,6 +192,34 @@ local function newSpikedSlip(spike, i)
 	end)
 	slip:SetScript("OnLeave", ns.BoardHoverHide)
 	return slip
+end
+
+-- Lays out the lines of `slip`, its texts set (#471): where each line's top is on the paper, so that the goal text
+-- never runs over the kicker above it or the note below it, or past the paper. The kicker and the note keep their
+-- places (the note moves up from 68 only to stay on the paper, 88); the goal text, wrapped to the paper's width, takes
+-- the first of GOAL_FONTS whose height fits the room between them, and at the smallest is cut to the lines that do,
+-- with an ellipsis (the hover has the whole text). Measured as the client sets them, so it holds for any text.
+---@param slip TackleSpikedSlip
+---@return number[] tops  -- the kicker's, the goal text's and the note's
+local function layoutSlip(slip)
+	local goalY = math.max(GOAL_Y, KICKER_Y + slip.kicker:GetStringHeight() + GOAL_GAP)
+	local noteY = math.min(NOTE_Y, TEXT_BOTTOM - slip.note:GetStringHeight())
+	local room = noteY - goalY
+	local label = slip.label
+	label:SetMaxLines(0)
+	for _, key in ipairs(GOAL_FONTS) do
+		ns.SetArtFont(label, key)
+		if label:GetStringHeight() <= room then
+			break
+		end
+	end
+	for lines = GOAL_MOST_LINES, 1, -1 do
+		if label:GetStringHeight() <= room then
+			break
+		end
+		label:SetMaxLines(lines)
+	end
+	return { KICKER_Y, goalY, noteY }
 end
 
 -- Hangs `slip` at `y` on the spike, swung by `swing` degrees about the nail's hole.
@@ -202,9 +236,10 @@ local function hang(spike, slip, y, swing)
 	local width, height = slip.paper:GetSize()
 	local pivot = { px, py }
 	ns.Swing(slip.paper, spike, { SLIP_X - box[1], y - box[2], width, height }, swing, pivot)
-	for _, line in ipairs({ { slip.kicker, 22 }, { slip.label, 36 }, { slip.note, 68 } }) do
-		local fontString, down = line[1], line[2]
-		ns.Swing(fontString, spike, { SLIP_X + 11, y + down, 114, fontString:GetStringHeight() }, swing, pivot)
+	local tops = layoutSlip(slip)
+	for i, fontString in ipairs({ slip.kicker, slip.label, slip.note }) do
+		local lineBox = { SLIP_X + LINE_X, y + tops[i], LINE_WIDTH, fontString:GetStringHeight() }
+		ns.Swing(fontString, spike, lineBox, swing, pivot)
 	end
 end
 

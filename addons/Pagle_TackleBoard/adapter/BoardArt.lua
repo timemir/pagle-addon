@@ -62,6 +62,9 @@ ns.BOARD_FONTS = {
 	SpikeLabel = { "handSemi", 20, "2C1606" },
 	DoneKind = { "print", 9.5, "8A5A2A" },
 	DoneGoal = { "print", 13, "2A180A" },
+	-- the done slip's goal text where its 13 would run past the paper (adapter/Ledge.lua, #471)
+	DoneGoalSmall = { "print", 11.5, "2A180A" },
+	DoneGoalTiny = { "print", 10.5, "2A180A" },
 	DoneNote = { "handSemi", 16, "7A2A14" },
 	-- the overflow strip
 	Chip = { "print", 13.5, "2A180A" },

@@ -142,6 +142,180 @@ describe("the spike (TKB-R103)", function()
 	end)
 end)
 
+-- A done slip's lines against its paper (TKB-R103, #471). The fake measures no font, so each line is measured here:
+-- a character is 0.45 of its font's size wide, a line 1.15 times its size tall (the goal text's lines 1.3 apart, as
+-- ArtWrap sets them), the goal text wrapped at the words to its width and cut by its SetMaxLines.
+describe("a done slip's lines (TKB-R103)", function()
+	local PAPER_WIDTH, PAPER_HEIGHT = 136, 92
+	local STONETALON, PLAGUELANDS, CATFISH = 406, 139, 6308
+	-- A line's size and text, from the font the board set it in.
+	local function sizeOf(fontString)
+		return fontString.fontObject.font[2]
+	end
+	local function measure(fontString, width, wraps)
+		local size, lines, line = sizeOf(fontString), 1, ""
+		if not wraps then
+			return size * 1.15
+		end
+		for word in (fontString.text or ""):gmatch("%S+") do
+			local try = line == "" and word or line .. " " .. word
+			if #try * size * 0.45 > width and line ~= "" then
+				lines, line = lines + 1, word
+			else
+				line = try
+			end
+		end
+		if (fontString.maxLines or 0) > 0 then
+			lines = math.min(lines, fontString.maxLines)
+		end
+		return lines * size * 1.15 + (lines - 1) * 1.3
+	end
+
+	-- The Tackle Board's goal texts at their longest: every type and kind of ns.L.GOAL_TEXT, as one and as 150, with the
+	-- longest zone, continent, Species and fly names the shipped catalogue has (Stonetalon Mountains, Eastern
+	-- Plaguelands, Raw Bristle Whisker Catfish, the Eastern Kingdoms).
+	local function longestTexts(ns)
+		local texts, seen = {}, {}
+		local targets = { haul = STONETALON, variety = PLAGUELANDS, species = CATFISH, rarity = 2 }
+		for goalType, kinds in pairs(ns.L.GOAL_TEXT) do
+			for kind in pairs(kinds) do
+				local target = targets[kind]
+				if goalType == "e" and kind == "wanderer" then
+					target = 0
+				end
+				for _, need in ipairs({ 1, 150 }) do
+					local text = ns.GoalText({
+						type = goalType,
+						kind = kind,
+						tier = 1,
+						pay = 10,
+						need = need,
+						target = target,
+						items = { CATFISH },
+					})
+					if not seen[text] then
+						seen[text] = true
+						texts[#texts + 1] = text
+					end
+				end
+			end
+		end
+		table.sort(texts)
+		return texts
+	end
+
+	-- Draws one done slip of `text` with the kicker and note given, as the spike draws them, over the board's measures,
+	-- and returns each line's rect from the paper's top left: { left, top, right, bottom }, and the goal text's font.
+	local function slipOf(loaded, spike, text, kicker, note)
+		loaded.ns.SpikeView = function()
+			return { goals = { { id = "x", kicker = kicker, text = text, note = note, hover = { text } } }, label = "" }
+		end
+		loaded.ns.Redraw("projection")
+		local slip = spike.slips[1]
+		local rects = {}
+		for i, fontString in ipairs({ slip.kicker, slip.label, slip.note }) do
+			local height = measure(fontString, 114, fontString == slip.label)
+			local point = fontString.points[1]
+			local x, y = point[4] - slip.hangX, -point[5] - slip.hangY
+			rects[i] = { x - 57, y - height / 2, x + 57, y + height / 2 }
+		end
+		return rects, slip.label.fontObject.name
+	end
+
+	local function newSpike()
+		local loaded, _, spike = opened(TWO_DONE_TODAY)
+		loaded.ns.db.profile.lean = false -- straight, so a line's rect is its own
+		loaded.client.areaNames[STONETALON], loaded.client.areaNames[PLAGUELANDS] =
+			"Stonetalon Mountains", "Eastern Plaguelands"
+		loaded.client.itemNames[CATFISH] = "Raw Bristle Whisker Catfish"
+		loaded.client.mapNames[1415] = "Eastern Kingdoms"
+		for _, slip in ipairs(spike.slips) do
+			for _, fontString in ipairs({ slip.kicker, slip.label, slip.note }) do
+				fontString.GetStringHeight = function(self)
+					return measure(self, 114, self == slip.label)
+				end
+			end
+		end
+		return loaded, spike
+	end
+
+	it("sits every goal text's kicker, text and note on the paper without touching, at the longest (#471)", function()
+		local loaded, spike = newSpike()
+		local texts = longestTexts(loaded.ns)
+		local note = "+200 · Thicket Fern"
+
+		assert.is_true(#texts >= 15) -- every type and kind, in the one and the many forms
+		local problems = {}
+		for _, text in ipairs(texts) do
+			for _, kicker in ipairs({ "NOTICE DONE", "EXPEDITION DONE" }) do
+				local rects = slipOf(loaded, spike, text, kicker, note)
+				local what = text .. " / " .. kicker
+				for i, rect in ipairs(rects) do
+					if rect[1] < 0 or rect[3] > PAPER_WIDTH or rect[2] < 0 or rect[4] > PAPER_HEIGHT then
+						problems[#problems + 1] = what .. ": line " .. i .. " is off the paper"
+					end
+				end
+				if rects[1][4] > rects[2][2] + 0.001 then
+					problems[#problems + 1] = what .. ": the text is over the kicker"
+				end
+				if rects[2][4] > rects[3][2] + 0.001 then
+					problems[#problems + 1] = what .. ": the text is over the note"
+				end
+			end
+		end
+		assert.are.same({}, problems)
+	end)
+
+	it(
+		"keeps the slip as it was while the goal text fits at its size: 36 under the top, the note at 68 (#471)",
+		function()
+			local loaded, spike = newSpike()
+
+			local rects, font = slipOf(loaded, spike, "1 Catch in Durotar", "NOTICE DONE", "+10")
+
+			assert.are.equal("PagleTackleBoardDoneGoal", font)
+			for i, top in ipairs({ 22, 36, 68 }) do
+				assert.is.near(top, rects[i][2], 0.001)
+			end
+		end
+	)
+
+	it(
+		"sets a goal text that runs past the room in a smaller font, and cuts it by lines at the smallest (#471)",
+		function()
+			local loaded, spike = newSpike()
+
+			local _, small = slipOf(loaded, spike, "4 different Species in Stonetalon Mountains", "NOTICE DONE", "+10")
+			slipOf(
+				loaded,
+				spike,
+				"4 different Species in Stonetalon Mountains and then a great deal more",
+				"NOTICE DONE",
+				"+10"
+			)
+
+			assert.are_not.equal("PagleTackleBoardDoneGoal", small)
+			assert.is_true((spike.slips[1].label.maxLines or 0) > 0)
+		end
+	)
+
+	it("lets the next goal text have its font and every line back (#471)", function()
+		local loaded, spike = newSpike()
+		slipOf(
+			loaded,
+			spike,
+			"4 different Species in Stonetalon Mountains and then a great deal more",
+			"NOTICE DONE",
+			"+10"
+		)
+
+		local _, font = slipOf(loaded, spike, "1 Catch in Durotar", "NOTICE DONE", "+10")
+
+		assert.are.equal("PagleTackleBoardDoneGoal", font)
+		assert.are.equal(0, spike.slips[1].label.maxLines)
+	end)
+end)
+
 -- The Campfire's stage on the ledge, and its layers shown, sorted.
 local function fireLayers(fire)
 	local layers = {}
