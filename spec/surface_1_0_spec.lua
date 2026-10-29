@@ -103,6 +103,7 @@ local API = {
 	UnregisterCallback = "function",
 	UnregisterEvent = "function",
 	VARIETY_RARITIES = "table",
+	VERSION = "string",
 	WheelScroll = "function",
 }
 
@@ -462,6 +463,20 @@ describe("the 1.0 surface", function()
 			table.sort(added)
 			requireBumpFor(added, "Pagle")
 		end)
+
+		it(
+			"carries Core's TOC version as Pagle.VERSION, a string set when the API is built (core/README.md)",
+			function()
+				local tocLoad = loadAddon("Pagle", FOREVER_GLOBALS, { holdAddonLoaded = true })
+				assert(type(tocLoad.env.Pagle.VERSION) == "string", "CORE-R15: Pagle.VERSION is no string")
+				-- The fake client serves the TOC's own field, which a development checkout reads unfilled.
+				assert(
+					tocLoad.env.Pagle.VERSION == tocLoad.client.addons.Pagle.metadata.Version,
+					"CORE-R15: Pagle.VERSION is not the TOC's Version"
+				)
+				assert(tocLoad.env.Pagle.VERSION ~= "", "CORE-R15: Pagle.VERSION is empty")
+			end
+		)
 
 		it("is at API_VERSION 1 or later: it rises with each addition, never falls (CORE-R15)", function()
 			local version = Pagle.API_VERSION
