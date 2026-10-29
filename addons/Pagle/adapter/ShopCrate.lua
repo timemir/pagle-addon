@@ -332,13 +332,20 @@ local function layerOf(parent, base, above)
 	return frame
 end
 
--- The crate in parts, over its light: body, lid, the seal's glow, ribbon and the seal's two halves, in the prototype's
--- order, each carried by the group pose (the crate drops, rattles and sinks as one), the lid and the halves also with
--- a pose of their own about their middle (the lid about its foot, 80% of the way down the crate).
----@param stage PagleCrateStage
+--- The box the crate's parts are drawn in, and its seam: the lid's lower edge across the body, from its top, where the
+--- seal sits and the light comes out when it opens.
+ns.CRATE_BOX = { w = 256, h = CRATE_H, seamY = 82 }
+
+-- The crate in parts: body, lid, the seal's glow, ribbon and the seal's two halves, in the prototype's order, each with
+-- the group pose's flag (the crate drops, rattles and sinks as one) and a pose of its own, the lid's about its foot, 80% of
+-- the way down the crate. `ax`, `ay` is the top left of the 256 x 214 box the parts are drawn in, on `frame`; the
+-- opening's stage and the shop's well (adapter/ShopCratePreview.lua) both put the crate together here.
 ---@param frame Frame
-local function buildCrate(stage, frame)
-	local ax, ay = CRATE_X, CRATE_Y
+---@param ax number
+---@param ay number
+---@return table<string, PagleCratePart> crate body, lid, glow, ribbon, sealLeft, sealRight
+---@return PagleCratePart[] parts in drawing order
+function ns.AssembleCrate(frame, ax, ay)
 	local crate = {
 		body = newPart(frame, "crate-body", ax, ay, "ARTWORK", 0),
 		lid = newPart(frame, "crate-lid", ax, ay, "ARTWORK", 1),
@@ -347,12 +354,24 @@ local function buildCrate(stage, frame)
 		sealLeft = newPart(frame, "crate-seal-left", ax, ay, "ARTWORK", 4),
 		sealRight = newPart(frame, "crate-seal-right", ax, ay, "ARTWORK", 5),
 	}
-	crate.lid.origin = { x = CX, y = ay + CRATE_H * 0.8 }
-	stage.parts = { crate.body, crate.lid, crate.glow, crate.ribbon, crate.sealLeft, crate.sealRight }
-	for _, part in ipairs(stage.parts) do
+	crate.lid.origin = { x = ax + 128, y = ay + CRATE_H * 0.8 }
+	local parts = { crate.body, crate.lid, crate.glow, crate.ribbon, crate.sealLeft, crate.sealRight }
+	for _, part in ipairs(parts) do
 		part.group = true
 	end
-	stage.crate = crate
+	return crate, parts
+end
+
+--- A sprite of the crate kit on `parent`, as the opening's own parts are made (the light and the sparks of the shop's
+--- preview are): its top left where its `at` puts it from the anchor at `x`, `y`.
+ns.NewCratePart = newPart
+
+-- The crate at the inside's middle (the opening's stage).
+---@param stage PagleCrateStage
+---@param frame Frame
+local function buildCrate(stage, frame)
+	local ax, ay = CRATE_X, CRATE_Y
+	stage.crate, stage.parts = ns.AssembleCrate(frame, ax, ay)
 	stage.groupAlpha = 1
 	stage.group = { tx = 0, ty = 0, deg = 0, sx = 1, sy = 1, ox = CX, oy = ay + CRATE_H }
 end

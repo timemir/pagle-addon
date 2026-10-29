@@ -272,6 +272,7 @@ ids = [
 	"core.toaststyle.magma",
 	"core.toaststyle.arcane",
 	"core.toaststyle.pirate",
+	"core.crate",
 	{ id = "core.crest.fish.1467", placeholders = ["fish"] },
 	{ id = "core.crest.fish.4603", placeholders = ["fish"] },
 	{ id = "core.crest.fish.6289", placeholders = ["fish"] },

@@ -27,7 +27,7 @@ REPO = Path(__file__).resolve().parents[2]
 LEDGER_TOML = REPO / "data" / "lore" / "ledger.toml"
 
 
-# SHOP-R25: Core's goods, by slot, the Curio Shop expansion's after the first six; its crest slot's zone crests are the Ledger's (LED-R113).
+# SHOP-R25: Core's goods, by slot, the Curio Shop expansion's after the first six; its crest slot's zone crests are the Ledger's (LED-R113). The Curio crate's lore entry comes last (SHOP-R54).
 CORE_GOODS = [
     "core.toaststyle.page",
     "core.toaststyle.ripple",
@@ -83,6 +83,7 @@ CORE_GOODS = [
     "core.toaststyle.magma",
     "core.toaststyle.arcane",
     "core.toaststyle.pirate",
+    "core.crate",  # the Curio crate, no good (SHOP-R20): its description is the crate stage's lore (SHOP-R54)
 ]
 # LED-R75: the title IDs, in its table's order.
 LEVEL_TITLES = ["level1", "level10", "level20", "level30", "level40", "level50", "level60"]

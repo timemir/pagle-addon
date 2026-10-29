@@ -94,6 +94,8 @@ local FONTS = {
 	GoodName = { "handBold", 38, "ink" },
 	Meta = { "print", 13, "red", caps = true },
 	Desc = { "italic", 15.5, "desc" },
+	-- the Curio crate's lore: smaller than a good's description, to leave its odds the room (SHOP-R54)
+	CrateLore = { "italic", 12.5, "desc" },
 	Notes = { "italic", 14, "note" },
 	Odds = { "italic", 11.5, "note" },
 	Tags = { "print", 14, "ink2", caps = true },

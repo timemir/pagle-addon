@@ -2006,3 +2006,10 @@ description = "Dark purple, its dots dimmed. The only one of its kind that looks
 [variety."251524.dreamfin"] # Whimsyfin, Epic
 name = "Dreamfin"
 description = "Glows soft pink and blue, and leaves a faint shimmer in the water behind it. Small children are told it grants wishes. Nobody checks."
+
+# The Curio crate (SHOP-R50, SHOP-R54): not a good (SHOP-R20), but its stage reads its description like one's.
+# Nearly every crate gives a look not yet owned; a crate tier with nothing left pays back instead (SHOP-R51).
+
+[good."core.crate"] # the Curio crate, sold on its own row
+name = "Curio crate"
+description = "Packed down at the docks by someone who never says what's in them. Nearly every crate holds one look you don't yet own, rarer the deeper you dig. Straw, mostly."
