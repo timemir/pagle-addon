@@ -138,7 +138,11 @@ describe("Announcement frames", function()
 			raise(loaded, M, unpack(moments))
 
 			local toast = frameOf(loaded, "toast")
-			assert.are.same({ "NEW HERE", "RANK UP", "SKILL", "TROPHY", "+1", "REFRESH +5" }, stampsOf(toast))
+			local stamps = stampsOf(toast)
+			-- The Refresh stamp leads with the ticket's icon, an inline texture of Core's own atlas (#466).
+			assert.is_truthy(stamps[6]:find("^|T.-Pagle.media.ticket.Ticket:14:20:"))
+			stamps[6] = stamps[6]:gsub("^|T[^|]*|t ", "")
+			assert.are.same({ "NEW HERE", "RANK UP", "SKILL", "TROPHY", "+1", "REFRESH +5" }, stamps)
 		end
 	)
 
@@ -149,7 +153,8 @@ describe("Announcement frames", function()
 		loaded.client.advance(BANNER + LEAVE_BANNER)
 		raise(loaded, M, moment("toast", "New Species", { cast = CAST }))
 
-		assert.are.same({ "REFRESH +2" }, stampsOf(frameOf(loaded, "banner")))
+		local banner = stampsOf(frameOf(loaded, "banner"))
+		assert.are.same({ "REFRESH +2" }, { (banner[1]:gsub("^|T[^|]*|t ", "")) })
 		assert.are.same({}, stampsOf(frameOf(loaded, "toast")))
 	end)
 

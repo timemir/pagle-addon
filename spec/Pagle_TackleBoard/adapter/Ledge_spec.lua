@@ -142,6 +142,263 @@ describe("the spike (TKB-R103)", function()
 	end)
 end)
 
+-- A done slip's lines against its paper and its column (TKB-R103, #471). The fake measures no font, so each line is
+-- measured here, a little wider than the client's IM Fell (about 0.46 of its size a character, 0.5 here) and as tall as
+-- the client sets it (a line of the kicker and the goal text its font's size, the hand note 1.25 times): the goal text
+-- wrapped at the words to its width, its lines 1.3 apart as ArtWrap sets them, and cut by its SetMaxLines.
+describe("a done slip's lines (TKB-R103)", function()
+	local PAPER_WIDTH, PAPER_HEIGHT = 136, 92
+	local STONETALON, PLAGUELANDS, CATFISH = 406, 139, 6308
+	-- The Done today column, in the spike's own units from its top left: the cork's right edge is at 160 (the board's cork
+	-- is 952 wide, the spike at 792) and the Notice papers it stands beside end at 780, so -12; the heading "Done today"
+	-- is over the first slip, and the line "N done today..." under the last, down to the cork's bottom, 452.
+	local COLUMN_LEFT, COLUMN_RIGHT, COLUMN_BOTTOM = -12, 160, 452
+	local HOLE_X, HOLE_Y, STACK_ROOM = 68, 12, 250 -- the nail's hole in a slip, and the stack's room (adapter/Ledge.lua)
+	local function sizeOf(fontString)
+		return fontString.fontObject.font[2]
+	end
+	local function measure(fontString, wraps, tall)
+		local size, lines, line = sizeOf(fontString), 1, ""
+		if not wraps then
+			return size * tall
+		end
+		for word in (fontString.text or ""):gmatch("%S+") do
+			local try = line == "" and word or line .. " " .. word
+			if #try * size * 0.5 > fontString:GetWidth() and line ~= "" then
+				lines, line = lines + 1, word
+			else
+				line = try
+			end
+		end
+		if (fontString.maxLines or 0) > 0 then
+			lines = math.min(lines, fontString.maxLines)
+		end
+		return lines * size * tall + (lines - 1) * 1.3
+	end
+
+	-- The Tackle Board's goal texts: every type and kind of ns.L.GOAL_TEXT, as one, four, thirty and 150, with the longest
+	-- zone, continent, Species and fly names the shipped catalogue has (Stonetalon Mountains, Eastern Plaguelands, Raw
+	-- Bristle Whisker Catfish, the Eastern Kingdoms), so every text the generator can write is among them or shorter.
+	local function longestTexts(ns)
+		local texts, seen = {}, {}
+		local targets = { haul = STONETALON, variety = PLAGUELANDS, species = CATFISH, rarity = 2 }
+		for goalType, kinds in pairs(ns.L.GOAL_TEXT) do
+			for kind in pairs(kinds) do
+				for _, target in ipairs({ targets[kind] or 0, kind == "rarity" and 3 or targets[kind] or 1 }) do
+					for _, need in ipairs({ 1, 4, 30, 150 }) do
+						local text = ns.GoalText({
+							type = goalType,
+							kind = kind,
+							tier = 1,
+							pay = 10,
+							need = need,
+							target = target,
+							items = { CATFISH },
+						})
+						if not seen[text] then
+							seen[text] = true
+							texts[#texts + 1] = text
+						end
+					end
+				end
+			end
+		end
+		table.sort(texts)
+		return texts
+	end
+
+	-- Measures each line of every slip as the client would.
+	local function measured(spike)
+		for _, slip in ipairs(spike.slips) do
+			slip.kicker.GetStringHeight = function(self)
+				return measure(self, false, 1)
+			end
+			slip.label.GetStringHeight = function(self)
+				return measure(self, true, 1)
+			end
+			slip.note.GetStringHeight = function(self)
+				return measure(self, false, 1.25)
+			end
+		end
+	end
+
+	-- Draws done slips, one for each of `goals` ({ kicker, text, note }), as the spike draws them.
+	local function hang(loaded, goals)
+		loaded.ns.SpikeView = function()
+			local view = { goals = {}, label = "N done today. The fire's lit." }
+			for i, goal in ipairs(goals) do
+				view.goals[i] = { id = "g" .. i, kicker = goal[1], text = goal[2], note = goal[3], hover = { goal[2] } }
+			end
+			return view
+		end
+		loaded.ns.Redraw("projection")
+	end
+
+	-- Each line of `slip` as a rect from the paper's top left: { left, top, right, bottom }.
+	local function linesOf(slip)
+		local rects = {}
+		for i, fontString in ipairs({ slip.kicker, slip.label, slip.note }) do
+			local height = measure(fontString, fontString == slip.label, i == 3 and 1.25 or 1)
+			local width = fontString:GetWidth()
+			local point = fontString.points[1]
+			local x, y = point[4] - slip.hangX, -point[5] - slip.hangY
+			rects[i] = { x - width / 2, y - height / 2, x + width / 2, y + height / 2 }
+		end
+		return rects
+	end
+
+	local function newSpike(n)
+		local loaded, _, spike = opened(TWO_DONE_TODAY)
+		loaded.ns.db.profile.lean = false -- straight, so a line's rect is its own
+		loaded.client.areaNames[STONETALON], loaded.client.areaNames[PLAGUELANDS] =
+			"Stonetalon Mountains", "Eastern Plaguelands"
+		loaded.client.itemNames[CATFISH] = "Raw Bristle Whisker Catfish"
+		loaded.client.mapNames[1415] = "Eastern Kingdoms"
+		local goals = {}
+		for i = 1, n or 1 do
+			goals[i] = { "NOTICE DONE", "1 Catch in Durotar", "+10" }
+		end
+		hang(loaded, goals) -- makes the slips, which are then measured
+		measured(spike)
+		return loaded, spike
+	end
+
+	it("sets every goal text on the paper, in full, clear of the kicker and the note, at the longest (#471)", function()
+		local loaded, spike = newSpike()
+		local texts = longestTexts(loaded.ns)
+		local note = "+200 · Thicket Fern"
+
+		assert.is_true(#texts >= 15) -- every type and kind, in the one and the many forms
+		local problems, smallest = {}, 13
+		for _, text in ipairs(texts) do
+			for _, kicker in ipairs({ "NOTICE DONE", "EXPEDITION DONE" }) do
+				hang(loaded, { { kicker, text, note } })
+				local slip = spike.slips[1]
+				local rects, what = linesOf(slip), text .. " / " .. kicker
+				for i, rect in ipairs(rects) do
+					if rect[1] < 0 or rect[3] > PAPER_WIDTH or rect[2] < 0 or rect[4] > PAPER_HEIGHT then
+						problems[#problems + 1] = what .. ": line " .. i .. " is off the paper"
+					end
+				end
+				if rects[1][4] > rects[2][2] + 0.001 then
+					problems[#problems + 1] = what .. ": the text is over the kicker"
+				end
+				if rects[2][4] > rects[3][2] + 0.001 then
+					problems[#problems + 1] = what .. ": the text is over the note"
+				end
+				-- No ellipsis: the goal text isn't cut by lines.
+				if (slip.label.maxLines or 0) ~= 0 then
+					problems[#problems + 1] = what .. ": the text is cut to " .. slip.label.maxLines .. " lines"
+				end
+				smallest = math.min(smallest, sizeOf(slip.label))
+			end
+		end
+		assert.are.same({}, problems)
+		assert.is_true(smallest >= 10.5) -- no smaller than the smallest of its fonts
+	end)
+
+	it(
+		"keeps the slip as it was while the goal text fits at 13: the kicker at 22, the text at 36, the note at 68 (#471)",
+		function()
+			local loaded, spike = newSpike()
+
+			hang(loaded, { { "NOTICE DONE", "1 Catch in Durotar", "+10" } })
+			local rects = linesOf(spike.slips[1])
+
+			assert.are.equal("PagleTackleBoardDoneGoal", spike.slips[1].label.fontObject.name)
+			for i, top in ipairs({ 22, 36, 68 }) do
+				assert.is.near(top, rects[i][2], 0.001)
+			end
+		end
+	)
+
+	it(
+		"makes room for a longer goal text: the kicker up under the nail, the text the paper's width, a smaller font (#471)",
+		function()
+			local loaded, spike = newSpike()
+
+			hang(loaded, { { "NOTICE DONE", "3 Catches of an uncommon variety or better", "+10 · Thicket Fern" } })
+			local slip = spike.slips[1]
+			local rects = linesOf(slip)
+
+			assert.is_true(rects[1][2] < 22) -- the kicker has moved up
+			assert.is_true(slip.label:GetWidth() > 114) -- and the text runs wider
+			assert.are_not.equal("PagleTackleBoardDoneGoal", slip.label.fontObject.name)
+			assert.are.equal(0, slip.label.maxLines)
+		end
+	)
+
+	it(
+		"cuts a text no font can fit by lines, an ellipsis being the last resort, and lets the next one have its font back (#471)",
+		function()
+			local loaded, spike = newSpike()
+			local absurd = ("Catches in Stonetalon Mountains "):rep(8)
+
+			hang(loaded, { { "NOTICE DONE", absurd, "+10" } })
+			assert.is_true(spike.slips[1].label.maxLines > 0)
+			local rects = linesOf(spike.slips[1])
+			assert.is_true(rects[2][4] <= rects[3][2] + 0.001)
+
+			hang(loaded, { { "NOTICE DONE", "1 Catch in Durotar", "+10" } })
+			assert.are.equal("PagleTackleBoardDoneGoal", spike.slips[1].label.fontObject.name)
+			assert.are.equal(0, spike.slips[1].label.maxLines)
+		end
+	)
+
+	it(
+		"hangs every slip inside its column at the most it holds: clear of the Notices, the cork, the heading and the line under (#471)",
+		function()
+			local swings, count = {}, 30 -- far more than the 250 units of room holds at their step
+			local loaded, spike = newSpike(count)
+			local longest = "150 different Species in Eastern Plaguelands"
+			local goals = {}
+			for i = 1, count do
+				goals[i] = { "EXPEDITION DONE", longest, "+200 · Thicket Fern" }
+			end
+			hang(loaded, goals)
+
+			local left, right, top, bottom = math.huge, -math.huge, math.huge, -math.huge
+			for i = 1, count do
+				local slip = spike.slips[i]
+				swings[#swings + 1] = slip.swing
+				-- The paper's corners turned about the nail's hole (clockwise, y down), from the spike's top left.
+				local width, height = slip.paper.box[3], slip.paper.box[4]
+				local angle = math.rad(slip.swing)
+				for _, corner in ipairs({ { 0, 0 }, { width, 0 }, { 0, height }, { width, height } }) do
+					local dx, dy = corner[1] - HOLE_X, corner[2] - HOLE_Y
+					local x = slip.hangX + HOLE_X + dx * math.cos(angle) - dy * math.sin(angle)
+					local y = slip.hangY + HOLE_Y + dx * math.sin(angle) + dy * math.cos(angle)
+					left, right = math.min(left, x), math.max(right, x)
+					top, bottom = math.min(top, y), math.max(bottom, y)
+				end
+			end
+			local labelTop = -spike.label.points[1][5]
+
+			assert.is_true(count > STACK_ROOM / 12) -- the step has closed up
+			local problems = {}
+			if left < COLUMN_LEFT or right > COLUMN_RIGHT then
+				problems[#problems + 1] = ("across %.1f to %.1f, not inside %d to %d"):format(
+					left,
+					right,
+					COLUMN_LEFT,
+					COLUMN_RIGHT
+				)
+			end
+			if top < spike.head:GetStringHeight() then -- the heading is at 0
+				problems[#problems + 1] = ("up to %.1f, over the heading"):format(top)
+			end
+			if bottom > labelTop then
+				problems[#problems + 1] = ("down to %.1f, over the line under at %.1f"):format(bottom, labelTop)
+			end
+			if labelTop + 2 * 20 > COLUMN_BOTTOM then -- the line under, two lines tall, inside the cork
+				problems[#problems + 1] = "the line under runs off the cork"
+			end
+			assert.are.same({}, problems)
+			assert.is_true(#swings == count)
+		end
+	)
+end)
+
 -- The Campfire's stage on the ledge, and its layers shown, sorted.
 local function fireLayers(fire)
 	local layers = {}
@@ -237,6 +494,33 @@ describe("the Campfire card (TKB-R106, TKB-R64)", function()
 		assert.is_false(card.days[23].icon:IsShown())
 		assert.is_true(card.days[26].icon:IsShown())
 	end)
+
+	it(
+		"plays its own crackling sound once each time it opens, on the SFX channel, and none when it closes (#473)",
+		function()
+			local loaded, _, _, ledge = opened(WENT_OUT)
+			local file = "Interface\\AddOns\\Pagle_TackleBoard\\media\\sounds\\Campfire.ogg SFX"
+			local function crackles()
+				local count = 0
+				for _, sound in ipairs(loaded.client.sounds) do
+					if sound == file then
+						count = count + 1
+					end
+				end
+				return count
+			end
+
+			assert.are.equal(0, crackles())
+			ledge.fire:Click() -- opens
+			assert.are.equal(1, crackles())
+			ledge.fire:Click() -- closes
+			assert.are.equal(1, crackles())
+			ledge.plate:Click() -- opens again, by the tally plate
+			assert.are.equal(2, crackles())
+			ledge.box:Click() -- the drawer takes the card's place: no crackle
+			assert.are.equal(2, crackles())
+		end
+	)
 
 	it("lists the milestones with their Coins and what is still to go, the titles not earned greyed", function()
 		local _, _, _, ledge = opened(WENT_OUT)
@@ -390,11 +674,23 @@ describe("the shop card (TKB-R106, SHOP-R41, TKB-R193)", function()
 end)
 
 describe("the Refresh count (TKB-R106, REF-R5)", function()
+	-- The count's words, without the Refresh ticket's icon (an inline texture) before them.
+	local function words(label)
+		return (label:GetText():gsub("^|T[^|]*|t ", ""))
+	end
+
 	it("reads the Refreshes held under the shop card, 0 until one is earned", function()
 		local _, _, _, ledge = opened(FRESH)
 
-		assert.are.equal("0 Refreshes held", ledge.refresh.label:GetText())
+		assert.are.equal("0 Refreshes held", words(ledge.refresh.label))
 		assert.is_true(visible(ledge.refresh, ledge))
+	end)
+
+	it("draws the Refresh ticket's icon before the count (#466)", function()
+		local loaded, _, _, ledge = opened(FRESH)
+
+		assert.are.equal(loaded.ns.TicketMarkup(16) .. " 0 Refreshes held", ledge.refresh.label:GetText())
+		assert.is_truthy(ledge.refresh.label:GetText():find("^|T.-Pagle_TackleBoard.-Ticket:16:23:"))
 	end)
 
 	it("follows Core's count as Refreshes are earned and spent, with the singular for one", function()
@@ -402,17 +698,17 @@ describe("the Refresh count (TKB-R106, REF-R5)", function()
 
 		fake.setTickets("Hunts", 1)
 		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
-		local one = ledge.refresh.label:GetText()
+		local one = words(ledge.refresh.label)
 		fake.setTickets("Hunts", 5)
 		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
-		local five = ledge.refresh.label:GetText()
+		local five = words(ledge.refresh.label)
 		fake.setTickets("TackleBoard", nil, 2)
 		fake.fire("TicketsChanged", fake.Pagle.GetTickets())
 
 		assert.are.same({ "1 Refresh held", "5 Refreshes held", "3 Refreshes held" }, {
 			one,
 			five,
-			ledge.refresh.label:GetText(),
+			words(ledge.refresh.label),
 		})
 	end)
 

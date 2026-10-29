@@ -253,6 +253,27 @@ local function setLabel(label, text)
 	label:Show()
 end
 
+-- The Refresh ticket's icon (#466) as an inline texture `height` units tall, the stamp's own copy of the art (a Module
+-- reaches none of Core's files, ADR 0001): it leads the "Refresh +N" stamp's words, which Capitals leaves as they are.
+local STAMP_TICKET = 14
+---@param height integer
+---@return string
+local function ticketMarkup(height)
+	local atlas = ns.ATLASES.Ticket
+	local sprite = atlas.sprites.ticket
+	return ("|T%s:%d:%d:0:0:%d:%d:%d:%d:%d:%d|t"):format(
+		atlas.file,
+		height,
+		math.floor(height * sprite.w / sprite.h + 0.5),
+		atlas.width,
+		atlas.height,
+		sprite.x,
+		sprite.x + sprite.w,
+		sprite.y,
+		sprite.y + sprite.h
+	)
+end
+
 -- Fills a frame's stamps from an Announcement: its stamp texts from the `from`th (the first), "+N" for those beyond 4
 -- (ANN-R11) and "Refresh +N" for its tickets (REF-R7), each set by `set`. Returns the ones showing, in order, for the
 -- frame to place.
@@ -268,7 +289,9 @@ local function fillStamps(frame, announcement, set, from)
 		labels[#labels + 1] = L.ANNOUNCEMENT_STAMPS_MORE:format(announcement.more)
 	end
 	if (announcement.tickets or 0) > 0 then
-		labels[#labels + 1] = L.ANNOUNCEMENT_STAMP_REFRESH:format(announcement.tickets)
+		labels[#labels + 1] = ticketMarkup(STAMP_TICKET)
+			.. " "
+			.. L.ANNOUNCEMENT_STAMP_REFRESH:format(announcement.tickets)
 	end
 	for i, stamp in ipairs(frame.stamps) do
 		stamp:ClearAllPoints()

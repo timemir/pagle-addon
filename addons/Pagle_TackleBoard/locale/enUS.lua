@@ -32,6 +32,9 @@ ns.L = {
 	-- A zone or continent the client has no name for (TKB-R36): its area ID, or the continent's ID (GetArea().continent).
 	AREA_UNKNOWN = "Area {id}",
 	CONTINENT_UNKNOWN = "Continent {id}",
+	-- The two continents' own names (TKB-R36), for where the client's C_Map.GetMapInfo gives none (Forever's gave none
+	-- for Kalimdor, #464), by continent ID (GetArea().continent).
+	CONTINENT_NAMES = { [0] = "Eastern Kingdoms", [1] = "Kalimdor" },
 	-- A goal's text by type ("n" Notice, "e" Expedition) and kind (TKB-R36): {n} is its need.
 	GOAL_TEXT = {
 		n = {

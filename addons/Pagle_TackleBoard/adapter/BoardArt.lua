@@ -62,6 +62,9 @@ ns.BOARD_FONTS = {
 	SpikeLabel = { "handSemi", 20, "2C1606" },
 	DoneKind = { "print", 9.5, "8A5A2A" },
 	DoneGoal = { "print", 13, "2A180A" },
+	-- the done slip's goal text where its 13 would run past the paper (adapter/Ledge.lua, #471)
+	DoneGoalSmall = { "print", 11.5, "2A180A" },
+	DoneGoalTiny = { "print", 10.5, "2A180A" },
 	DoneNote = { "handSemi", 16, "7A2A14" },
 	-- the overflow strip
 	Chip = { "print", 13.5, "2A180A" },
@@ -307,6 +310,26 @@ local function spriteOf(atlasName, name)
 		error(("Pagle_TackleBoard: no sprite %s in the %s atlas"):format(tostring(name), tostring(atlasName)))
 	end
 	return atlas, sprite
+end
+
+--- The Refresh ticket's icon (#466) as an inline texture for a line of text, `height` units tall: it stands left of the
+--- words that count Refreshes, which a font string draws with them.
+---@param height integer
+---@return string
+function ns.TicketMarkup(height)
+	local atlas, sprite = spriteOf("Ticket", "ticket")
+	local width = math.floor(height * sprite.w / sprite.h + 0.5)
+	return ("|T%s:%d:%d:0:0:%d:%d:%d:%d:%d:%d|t"):format(
+		atlas.file,
+		height,
+		width,
+		atlas.width,
+		atlas.height,
+		sprite.x,
+		sprite.x + sprite.w,
+		sprite.y,
+		sprite.y + sprite.h
+	)
 end
 
 --- Shows sprite `name` of atlas `atlasName` in `texture`, at its designed size.

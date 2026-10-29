@@ -63,14 +63,35 @@ describe("the goal text", function()
 		assert.are.equal("150 Catches in Stranglethorn Vale", ns.GoalText(goal("e", "haul", 150, STRANGLETHORN)))
 	end)
 
-	it('shows a zone or continent the client has no name for by its ID, "Area {id}" (TKB-R36)', function()
+	it('shows a zone or continent nothing has a name for by its ID, "Area {id}" (TKB-R36)', function()
 		local ns = board.load().ns
 
-		assert.are.same({ "20 Catches in Area 14", "Catches in 5 zones of Continent 0", "Area 99999" }, {
+		assert.are.same({ "20 Catches in Area 14", "Catches in 5 zones of Continent 7", "Area 99999" }, {
 			ns.GoalText(goal("n", "haul", 20, DUROTAR)),
-			ns.GoalText(goal("e", "wanderer", 5, 0)),
+			ns.GoalText(goal("e", "wanderer", 5, 7)),
 			ns.ZoneName(99999),
 		})
+	end)
+
+	it(
+		"names each continent from the locale when the client's map has no name, never by its ID (TKB-R36, #464)",
+		function()
+			local loaded = board.load()
+			local ns = loaded.ns
+
+			assert.are.same({ "Eastern Kingdoms", "Kalimdor" }, { ns.ContinentName(0), ns.ContinentName(1) })
+			assert.are.equal("Catches in 5 zones of Kalimdor", ns.GoalText(goal("e", "wanderer", 5, 1)))
+			-- An empty name is no name either.
+			loaded.client.mapNames[1414] = ""
+			assert.are.equal("Kalimdor", ns.ContinentName(1))
+		end
+	)
+
+	it("prefers the client's own name for a continent, which is in the client's language (TKB-R36)", function()
+		local loaded = board.load()
+		loaded.client.mapNames[1414] = "Kalimdor (client)"
+
+		assert.are.equal("Kalimdor (client)", loaded.ns.ContinentName(1))
 	end)
 
 	describe("of a Species goal", function()

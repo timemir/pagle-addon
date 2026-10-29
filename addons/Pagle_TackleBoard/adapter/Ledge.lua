@@ -18,6 +18,23 @@ local ns = select(2, ...)
 -- The spike (the kit's): its slips hang from the nail's hole at 68, 12 of a slip whose top left is 7, 38; the label sits
 -- 20 under the stack, which reaches at most 250 below the first slip.
 local SLIP_X, SLIP_Y, SLIP_WIDTH, SLIP_HEIGHT, HOLE_X, HOLE_Y, STACK_ROOM = 7, 38, 136, 92, 68, 12, 250
+-- The lines of a done slip, from its top left, in the places it can set them (#471). The kit's: the kicker at 22, the goal
+-- text from 36 and the note at 68, all x 11 to 125 (114 wide). The roomier one, which the paper's art allows: the kicker
+-- at 18, under the nail's hole (it ends at 17), the goal text right under the kicker, the note down to 89 (the torn
+-- edge's top), and x 7 to 129 (122 wide), the paper being straight to 0 and 136. The goal text takes the first of these
+-- layouts and fonts whose height fits between the kicker and the note.
+local SLIP_LAYOUTS = {
+	{ x = 11, width = 114, kickerY = 22, goalY = 36, gap = 2, noteY = 68, bottom = 88 },
+	{ x = 7, width = 122, kickerY = 18, gap = 1, bottom = 89 },
+}
+-- Each candidate: the layout, then the goal text's font. The kit's look while the text fits in it at 13.
+local SLIP_FITS = {
+	{ 1, "DoneGoal" },
+	{ 2, "DoneGoal" },
+	{ 2, "DoneGoalSmall" },
+	{ 2, "DoneGoalTiny" },
+}
+local GOAL_SPACING, GOAL_MOST_LINES = 1.3, 8
 -- The Campfire card and the Fly Box drawer: their top left on the cork and their size, and how dark the cork goes
 -- under them. They and the veil lie at their layers (ns.BOARD_LAYERS), over the parts, the nail and "Updating…".
 local CARD_X, CARD_Y, CARD_WIDTH, CARD_HEIGHT, CARD_LEAN = 76, 16, 800, 434, -0.5
@@ -31,6 +48,8 @@ local DAY_X, DAY_Y, DAY_STEP, DAY_SIZE = 84, 138, 42, 38
 -- The drawer's compartments: 6 across its 700 units, 74 high, 78 apart.
 local CELL_COLUMNS, CELL_X, CELL_Y, CELL_HEIGHT, CELL_ROW = 6, 24, 44, 74, 78
 local CELL_WIDTH = (728 - 8 - 20) / CELL_COLUMNS
+-- The Refresh ticket's icon beside the count of Refreshes held: its height in UI units, its width following (#466).
+local REFRESH_ICON = 16
 -- The Campfire on the ledge: its clickable box from the ledge's top left, holding the fire, its words and its sticks.
 local FIRE_X, FIRE_Y, FIRE_WIDTH, FIRE_HEIGHT = 20, 10, 290, 120
 -- The Campfire's stage (adapter/BoardMotion.lua's layers) by its flame's step (logic/Ledge.lua's CampfireView: 1 below
@@ -175,10 +194,10 @@ local function newSpikedSlip(spike, i)
 	slip:EnableMouse(true)
 	slip.paper = ns.ArtSprite(slip, "Board", "done", "ARTWORK")
 	slip.kicker = ns.ArtText(slip, "DoneKind")
-	slip.kicker:SetWidth(114)
-	slip.label = ns.ArtWrap(slip, "DoneGoal", 114, 1.3)
+	slip.kicker:SetWidth(SLIP_LAYOUTS[1].width)
+	slip.label = ns.ArtWrap(slip, SLIP_FITS[1][2], SLIP_LAYOUTS[1].width, GOAL_SPACING)
 	slip.note = ns.ArtText(slip, "DoneNote")
-	slip.note:SetWidth(114)
+	slip.note:SetWidth(SLIP_LAYOUTS[1].width)
 	slip:SetScript("OnEnter", function(self)
 		if self.view then
 			ns.BoardHover(self, self.view.hover, { fly = self.view.fly })
@@ -186,6 +205,42 @@ local function newSpikedSlip(spike, i)
 	end)
 	slip:SetScript("OnLeave", ns.BoardHoverHide)
 	return slip
+end
+
+-- Lays out the lines of `slip`, its texts set (#471): where each line's top is on the paper and how far across it runs, so
+-- that the goal text never runs over the kicker above it or the note below it, or past the paper, and is never cut.
+-- It takes the first of SLIP_FITS whose goal text, wrapped to the layout's width and measured as the client sets it,
+-- is no taller than the room between the kicker and the note; so any text fits as far as the smallest font can make it.
+-- Only a text that fits in none (none the generator can write does, spec/Pagle_TackleBoard/adapter/Ledge_spec.lua) is
+-- cut by lines with an ellipsis at the smallest, the hover having the whole of it.
+---@param slip TackleSpikedSlip
+---@return number[] tops   -- the kicker's, the goal text's and the note's
+---@return number x        -- where the lines start, and how wide they are
+---@return number width
+local function layoutSlip(slip)
+	local label = slip.label
+	label:SetMaxLines(0)
+	local tops, layout
+	for _, fit in ipairs(SLIP_FITS) do
+		layout = SLIP_LAYOUTS[fit[1]]
+		slip.kicker:SetWidth(layout.width)
+		slip.note:SetWidth(layout.width)
+		label:SetWidth(layout.width)
+		ns.SetArtFont(label, fit[2])
+		local goalY = math.max(layout.goalY or 0, layout.kickerY + slip.kicker:GetStringHeight() + layout.gap)
+		local noteY = math.min(layout.noteY or math.huge, layout.bottom - slip.note:GetStringHeight())
+		tops = { layout.kickerY, goalY, noteY }
+		if label:GetStringHeight() <= noteY - goalY then
+			return tops, layout.x, layout.width
+		end
+	end
+	for lines = GOAL_MOST_LINES, 1, -1 do
+		if label:GetStringHeight() <= tops[3] - tops[2] then
+			break
+		end
+		label:SetMaxLines(lines)
+	end
+	return tops, layout.x, layout.width
 end
 
 -- Hangs `slip` at `y` on the spike, swung by `swing` degrees about the nail's hole.
@@ -202,9 +257,10 @@ local function hang(spike, slip, y, swing)
 	local width, height = slip.paper:GetSize()
 	local pivot = { px, py }
 	ns.Swing(slip.paper, spike, { SLIP_X - box[1], y - box[2], width, height }, swing, pivot)
-	for _, line in ipairs({ { slip.kicker, 22 }, { slip.label, 36 }, { slip.note, 68 } }) do
-		local fontString, down = line[1], line[2]
-		ns.Swing(fontString, spike, { SLIP_X + 11, y + down, 114, fontString:GetStringHeight() }, swing, pivot)
+	local tops, x, lineWidth = layoutSlip(slip)
+	for i, fontString in ipairs({ slip.kicker, slip.label, slip.note }) do
+		local lineBox = { SLIP_X + x, y + tops[i], lineWidth, fontString:GetStringHeight() }
+		ns.Swing(fontString, spike, lineBox, swing, pivot)
 	end
 end
 
@@ -638,7 +694,13 @@ end
 ---@param ledge TackleLedgeFrame
 ---@param name "card"|"drawer"
 local function toggle(ledge, name)
-	local other = name == "card" and ledge.drawer or ledge.card
+	-- The other of the two (not `and`/`or`: with no drawer made yet that would name the card itself, and hide it before
+	-- the check below, so a second click on the Campfire would open it again, with its sound, instead of closing it).
+	---@type Frame?
+	local other = ledge.drawer
+	if name == "drawer" then
+		other = ledge.card
+	end
 	if other then
 		other:Hide()
 	end
@@ -653,6 +715,7 @@ local function toggle(ledge, name)
 	if name == "card" then
 		local card = ledge.card or buildCard(ledge)
 		card:Show()
+		ns.BoardSound("campfire")
 		drawCard(card)
 	else
 		local drawer = ledge.drawer or buildDrawer(ledge)
@@ -802,7 +865,7 @@ local function buildShop(ledge)
 	ledge.shop = shop
 end
 
--- The Refresh count (TKB-R58, TKB-R106): the Refreshes held, in the ledge's light italics under the shop card, with a
+-- The Refresh count (TKB-R58, TKB-R106): the Refreshes held, the Refresh ticket's icon before them (#466), in the ledge's light italics under the shop card, with a
 -- hover saying what they are for. Core's count (REF-R5), redrawn when it changes (adapter/Pins.lua listens).
 ---@param ledge TackleLedgeFrame
 local function buildRefresh(ledge)
@@ -855,7 +918,7 @@ local function drawLedge(ledge, draw)
 	ns.SetArtFont(plate.latest, tally.latest and "TallyTitle" or "TallyNone")
 	ns.LeanSprite(ledge.shop.card, ledge.shop, 0, 0, 2.5)
 	ns.LeanSprite(ledge.shop.pointer, ledge.shop, 77, 27, 2.5)
-	ledge.refresh.label:SetText(ns.Plural(ns.RefreshesHeld(), "REFRESHES_HELD"))
+	ledge.refresh.label:SetText(ns.TicketMarkup(REFRESH_ICON) .. " " .. ns.Plural(ns.RefreshesHeld(), "REFRESHES_HELD"))
 	if ledge.card and ledge.card:IsShown() then
 		drawCard(ledge.card)
 	end
