@@ -193,9 +193,11 @@ After the tag, every fix ships as 1.0.1, and a data change needs `--lock` in the
 | `check16` | the set limit | Lua errors, Probe; `Pagle_QoL.lua`'s `PagleQoLDB.global.gear` by hand | – |
 | `onboarding` | M8.5 steps 3–16 | Lua errors, Onboarding | – |
 | `m8` | M8 steps 1–7 | Lua errors, Hunts, Activity XP, Ledger M4, Wallet, Tackle Board | `-- --now T` when needed |
-| `fresh-install` | #276 steps 2–3 | Lua errors, Catch log, Ledger, Hunts, Stats, Tackle Board, Wallet, Varieties, Field report, Exit check | `--expect-casts 10 --since <install time>` |
+| `fresh-install` | #276 steps 2–3 | Lua errors, Catch log, Ledger, Hunts, Stats, Tackle Board, Wallet, Varieties, Cards (the Write-up waiting, step 3), Field report, Exit check | `--expect-casts 10 --since <install time>` |
 
 **Rehearsed on 23 Oct** against the repo's fixtures under `spec/scripts/fixtures/WTF/Account/` (`--env /nonexistent --account <fixture>`), each step printing exactly its sections: `reload`, `check1`, `check15`, `check9` and `fresh-install` on `M1#1` (`--character 70/Ada-Brook`; check9 read all ten leased CVars, check15 `Angleur: disabled`), `first-login` and `onboarding` on `M8.5#1`, `probe` and `check16` on `M8-Probe#1` (7 of 9 checks FAIL, as the fixture plants) and on `M1#1` with `--expect-casts 4 --since 0` (exit 1, as planted), `big-log` and `places` on `M8-Reverify#1` with `-- --catalogue spec/scripts/fixtures/ReverifyCatalogue.lua`, and `m8` on `M8-Wagers#1` with the fixture catalogue, Hunt list and event pool. On launch night only `launch.env` changes.
+
+**Rehearsed on 29 Oct** on this Mac (#383), read-only. The beta WTF isn't on it: `_classic_beta_` holds only the launcher, and the `/mnt/g/...` path of step 7 below is the dev's PC. So every step ran through `--env` on copies of the nearest real files, a `_forever_`-shaped folder with `launch.env` naming `WOW`, `ACCT`, `REALM` and `CHAR`: the dev's real beta log from `~/pagle-test-logs/` (format 2, which the codec of format 3 refuses: read-wtf says so, the Catch log section's counts and every projection section still print, and the exit check FAILs on the format), and a copy of the retail account's `SavedVariables` (format 3, 1,167 entries, a TEST log) with a retail character's `AddOns.txt`. All twelve steps printed exactly their sections on both; `probe` and `fresh-install` exit 1 on the exit check, as a test log has not ten Casts. Not rehearsed on real files: the `!BugGrabber.lua` reader (neither client has !BugGrabber; the fixtures' file is the only one) and a stored Probe (no client has run `/pagle dev probe`). Both stay for the run on the beta WTF, which is §7 step 7.
 
 ### 6.1 launch.env
 
@@ -220,13 +222,13 @@ BUILD=<build>
 1. **Main has all of Monday:** #381's PR (constants, project IDs, changelog, surface spec, the hint switch per Q13), the conflict-list PR (check 17), and the Q4 answer on #274. No `--lock` yet.
 2. **Spot-check the constants:** `grep -c '^since = 2026-11-05' data/hunts/hunts.toml` gives 16 (the 16 lines that read `2026-11-04` since #430 added Home Waters) and none reads `2026-11-04`; `addons/Pagle_Hunts/logic/Rotation.lua` has `ns.ROTATION_ORIGIN = 1793890800`; `generate-data.py --check` is clean.
 3. **The full check** on that head in WSL (`PAGLE_NO_COVERAGE=1 GATE_JOBS=2 scripts/check.sh`), and GitHub Actions green on `main`.
-4. **Package:** `scripts/package.sh` from the main checkout (it can't read a worktree). Record the zip's name and `sha256sum` on #380 with the commit SHA, and copy it to `Pagle-RC1.zip` in the scratchpad.
+4. **Package:** `scripts/package.sh` (it clones the repo's git directory and builds the committed HEAD, so it also runs from a worktree: on 29 Oct it took 87 s on macOS, and needs Homebrew's bash 4.3 or later and GNU coreutils first on `PATH`). Record the zip's name and `sha256sum` on #380 with the commit SHA, and copy it to `Pagle-RC1.zip` in the scratchpad.
 5. **Check the zip:** `launch.py post-tag rc1 --zip <the zip>` (six folders, `LICENSE`, `NOTICE` and `CHANGELOG.md` in `Pagle/`); `unzip -p <zip> Pagle/Pagle.toc | head` shows both project IDs.
 6. **Rehearse the live fixes** on a throwaway branch: `launch.py interface 16100`, then `dump` with a fake hash; run the TOC specs one at a time; `git reset --hard` and delete the branch.
-7. **Rehearse the read steps** once more on the fixtures (§6) and, read-only, on the beta WTF folder: `launch.py read reload --account "/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>"`.
+7. **Rehearse the read steps** once more on the fixtures (§6) and, read-only, on the beta WTF folder (on the dev's PC, not the Mac): `launch.py read reload --account "/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>"`.
 8. **One watch poll:** `launch.py watch` reads both sources.
 9. **Dev:** confirm both secrets in Settings › Secrets and the project IDs in RC1's `Pagle.toc`; tick on #271.
-10. **Drafts ready:** the comment drafts for #272, #273, #274 and #276 (checkboxes with blanks for the build, values and verdicts) in the scratchpad, and §8's material up to date.
+10. **Drafts ready:** the comment drafts for #272–#276 are in [launch-drafts/](launch-drafts/) (`<ticket>.md`: the ticket's own checkboxes, each with a blank for the build, the value and the verdict, and the `launch.py read` step that fills it). Copy the part under the first line of dashes into a comment when the step is done. §8's material up to date.
 
 ## 8. Release material
 
@@ -318,7 +320,7 @@ Pin this zip by its SHA-256 (your PRJ-R63) and fetch it from the GitHub Release 
 
 - **Companion hint:** the Companion's first release (v0.1.0) is cut by 1 Nov. pagle-backend gives a firm yes or no on `https://pagle.app/download` before Mon 2 Nov. Yes ships `COMPANION_HINT_ON = true`; no ships it off until 1.0.1.
 - **Release candidates:** RC1 (3 Nov) and RC2 go to pagle-backend, each with its zip SHA-256 and commit. It dry-runs its 1.0 pin against RC1.
-- **Log format:** 1.0 ships `LOG_FORMAT` 2 (LOG-R18). pagle-backend accepts pre-1.0 logs until its launch (L). At L it wipes dev logs and refuses every format below 2 as `dev_log`. Send it the format-2 Paste vector (`spec/Pagle/fixtures/PasteString.lua`) with the commit that carries it.
+- **Log format:** 1.0 ships `LOG_FORMAT` 3 (LOG-R17, LOG-R18; it was 2 until the Recovery work of #302). pagle-backend accepts pre-1.0 logs until its launch (L). At L it wipes dev logs and refuses every format below 3 as `dev_log`. Send it the format-3 Paste vector (`spec/Pagle/fixtures/PasteString.lua`) with the commit that carries it.
 - **Signing:** pushed content is signed with `pagle-2026a` at launch, with no switch to `2026b` before 1.0.1.
 - **Live pushed-content check:** in S2 (5 Nov 12:00–21:00) on RC2, before GO. Tell pagle-backend's dev the time. In that window pagle-backend schedules an Operator run and a withdrawal for `/reload` checks: `/pagle dev content` reads `connected`, the pushed run shows on the board, and the withdrawal removes it.
 - **After the tag:** pagle-backend pins the 1.0 commit on 6 Nov, checks the zip's SHA-256, folds the dev's live log at the tag, and re-exports the web art, which includes `hyjalcrater` if #373 landed.

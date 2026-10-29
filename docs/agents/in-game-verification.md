@@ -63,7 +63,7 @@ scripts/read-wtf.sh "/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>"
     [--stats-item <id> --area <areaID>] [--skill N] [--now T] [--expect-casts N] [--since T]
 ```
 
-It prints eighteen sections, one more per `--hunt` and one more with `--stats-item`, and the exit check last with `--expect-casts`:
+It prints twenty-one sections, one more per `--hunt` and one more with `--stats-item`, and the exit check last with `--expect-casts`:
 
 - **Lua errors:** the latest !BugGrabber session's errors, each with its count and stack, or `0 errors`.
 - **Catch log:** `PagleLog` decoded with Core's own codec (`addons/Pagle/logic/CatchLog.lua`), so it reads entries exactly as Pagle does: the format, logId, character and entry counts, `PagleDB.global.decodeErrors`, the entries by tag, the entries the codec can't decode, repeated entry IDs, the `C1` Casts and their time span, by outcome, per character and per zone areaID, the Casts in zone areaID 0 by seq, `realm clock:` with the realm's UTC offset worked out from the latest Cast's realm minute (LOG-R49; "unknown" when no Cast read it), for placing a window in realm time, and the `B1` and `S1` entries. Then `P1:` and `U1:`, the count of Prestige and purchase entries (`none` without any), with one line per entry: a `P1`'s rank and Activity XP snapshot (0 for a pre-1.0 `P1` without one, AXP-R5), a `U1`'s good and price, each with its character and time. A log in another format than the codec's is reported, not decoded.

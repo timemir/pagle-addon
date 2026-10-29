@@ -99,7 +99,7 @@ def test_game_version_reads_the_interface_as_the_packager_does() -> None:
 
 
 def test_the_repo_reads_as_the_interface_bump_expects() -> None:
-    """Launch night's bump (runbook §3.2) finds every place it edits as it expects, on the repo as it stands."""
+    """Launch night's bump (runbook §4.2) finds every place it edits as it expects, on the repo as it stands."""
     old, edits = interface_edits(REPO, 16100)
 
     assert old == 16001
@@ -174,7 +174,7 @@ def test_dump_moves_the_annotations_when_asked() -> None:
 
 
 def test_the_repo_tools_env_reads_as_the_dump_expects() -> None:
-    """Launch night's dump bump (runbook §3.1) finds tools.env's pin and its build comment as it expects."""
+    """Launch night's dump bump (runbook §4.1) finds tools.env's pin and its build comment as it expects."""
     text = (REPO / "scripts" / "tools.env").read_text(encoding="utf-8")
 
     assert NEWER in dump_text(text, NEWER, "1.60.1", 70532, "f" * 40)
@@ -412,12 +412,38 @@ def test_cut_sections_keeps_the_named_ones_whole() -> None:
 
 
 def test_every_section_the_checklist_names_is_a_read_wtf_heading() -> None:
-    """The checklist (runbook §5.2) names only sections read-wtf.lua prints."""
+    """The checklist (runbook §6) names only sections read-wtf.lua prints."""
     source = (REPO / "scripts" / "read-wtf.lua").read_text(encoding="utf-8")
     headings = set(re.findall(r'"== ([A-Z][A-Za-z0-9 .-]*?)(?: \(|:|,|")', source))
     for name, step in STEPS.items():
         for section in step.sections:
             assert section in headings, f"{name}: {section}"
+
+
+def test_the_runbook_table_lists_every_step_with_its_sections() -> None:
+    """Runbook §6's table is what the agent reads on launch night: it names the same steps and sections as STEPS."""
+    text = (REPO / "docs" / "agents" / "launch-runbook.md").read_text(encoding="utf-8")
+    table: dict[str, list[str]] = {}
+    for name, cell in re.findall(r"^\| `([a-z0-9-]+)` \|[^|]*\| ([^|]*) \|", text, re.MULTILINE):
+        # What follows a ";" is a note on what read-wtf doesn't read, and a parenthesis is a gloss on a section.
+        listed = re.sub(r"\([^)]*\)", "", cell.split(";")[0])
+        table[name] = [section.strip() for section in listed.split(",")]
+    assert set(table) == set(STEPS)
+    for name, step in STEPS.items():
+        assert table[name] == list(step.sections), name
+
+
+@pytest.mark.parametrize("ticket", [272, 273, 274, 275, 276])
+def test_a_launch_draft_names_only_real_read_steps(ticket: int) -> None:
+    """The comment drafts (runbook §7) are comments with blanks: they open with the note to the poster, a line of
+    dashes, and then the comment; every `launch.py read <step>` in them is a step that exists, with its Cast count when
+    it needs one."""
+    text = (REPO / "docs" / "agents" / "launch-drafts" / f"{ticket}.md").read_text(encoding="utf-8")
+    note, rule, comment = text.partition("\n---\n")
+    assert note.startswith(f"> Draft of the comment for [#{ticket}]") and rule and "{" in comment
+    for step, rest in re.findall(r"launch\.py read ([a-z0-9-]+)([^`]*)`", text):
+        assert step in STEPS, step
+        assert ("--expect-casts" in rest) == STEPS[step].casts, step
 
 
 def test_check_9_reads_every_leased_cvar() -> None:
