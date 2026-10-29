@@ -242,7 +242,7 @@ Grouped by topic; the rules live in the linked file.
 | `M:RegisterTracker{ id, order, frame }` | here |
 | `M:AddSetting(topic, setting)` | here |
 | `M:RegisterTourStop(id, label, show, hide)`: a stop for the dev screenshot tour (CORE-R65) | here |
-| `M:RegisterGuideStep(step)`, `M:ShowMarginNote(note)`, `M:RegisterFirstLook(set)`, `M:ShowFirstLook(id, again?)`, `M:CompleteEveningItem(id)`, `M:SetDialogOpen(open)` | [onboarding.md](onboarding.md#contracts) |
+| `M:RegisterGuideStep(step)`, `M:ShowMarginNote(note)`, `M:RegisterFirstLook(set)`, `M:ShowFirstLook(id, again?)`, `M:CompleteEveningItem(id)`, `M:SetDialogOpen(open)`, `M:RegisterLetter(id, letter)`, `M:ShowLetter(id)` | [onboarding.md](onboarding.md#contracts) |
 
 ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so Core knows which Module wrote the record.
 

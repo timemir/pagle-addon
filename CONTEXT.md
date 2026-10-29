@@ -223,7 +223,7 @@ _Avoid_: catch-up toast, backfill, welcome screen
 ### Onboarding
 
 **Letter**:
-The note Pagle leaves a new Angler once, on arrival, that opens the Field guide. An Angler whose Catch log already holds Casts gets none.
+The note Pagle leaves a new Angler once, on arrival, that opens the Field guide. An Angler whose Catch log already holds Casts gets none. A Module can send a letter of its own through Core, in the same frame: the Ledger's **Prestige letter** arrives the first time the Angler's climb reaches level 60 and leads to the Journal's Prestige button. One letter shows at a time, the Letter first; each shows at most twice (Later, then Later again declines it) and never once opened.
 _Avoid_: welcome popup, splash (which is a Legend's Announcement)
 
 **Field guide**:

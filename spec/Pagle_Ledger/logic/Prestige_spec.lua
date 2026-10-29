@@ -276,6 +276,31 @@ describe("Prestige", function()
 		end)
 	end)
 
+	describe("when the Prestige letter is due (LED-R201)", function()
+		it("at level 60 in the first climb, with the projection built (LED-R201)", function()
+			assert.are.equal("ledger.prestige", ns.PRESTIGE_LETTER)
+			assert.is_true(ns.PrestigeLetterDue(stateAt(TO_60), false))
+			assert.is_true(ns.PrestigeLetterDue(stateAt(TO_60 + 5000), false))
+		end)
+
+		it("not below 60, nor while the projection is updating, nor with no state (LED-R201)", function()
+			assert.is_false(ns.PrestigeLetterDue(stateAt(TO_60 - 1), false))
+			assert.is_false(ns.PrestigeLetterDue(stateAt(TO_60), true))
+			assert.is_false(ns.PrestigeLetterDue(nil, true))
+			assert.is_false(ns.PrestigeLetterDue(nil, false))
+		end)
+
+		it(
+			"never after a Prestige, though Prestige is allowed again at 60: the first climb's top only (LED-R201)",
+			function()
+				for rank = 1, 12 do
+					assert.is_true(ns.PrestigeAllowed(stateAt(TO_60, rank), false))
+					assert.are.equal(false, ns.PrestigeLetterDue(stateAt(TO_60, rank), false), rank)
+				end
+			end
+		)
+	end)
+
 	describe("when Prestige is allowed (LED-R33)", function()
 		it("only while the climb's computed level is 60 and the projection isn't updating", function()
 			assert.is_false(ns.PrestigeAllowed(stateAt(TO_60 - 1), false))

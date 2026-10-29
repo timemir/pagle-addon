@@ -372,3 +372,249 @@ describe("/pagle dev onboarding letter and the tour stop (ONB-R83, ONB-R84)", fu
 		assert.are.equal("opened", state(loaded).letter)
 	end)
 end)
+
+describe("a Module's letter on the same frame (ONB-R15, ONB-R16, ONB-R17)", function()
+	local TEXT = "Sixty: the top of the climb."
+
+	-- A returning Angler's login (no onboarding Letter) with a fixture Ledger that registered its letter `ledger.prestige`
+	-- before login, in the world past the delay. Returns the Core, the Module's handle and what its confirm button ran.
+	local function withLetter(saved)
+		local loaded = loadCore({ BUILD_ENTRY }, saved)
+		stillness(loaded)
+		local M = loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+		local ran = { confirmed = 0 }
+		M:RegisterLetter("ledger.prestige", {
+			kicker = "A letter, left on the dock",
+			text = TEXT,
+			confirm = "Show me",
+			later = "Later",
+			onConfirm = function()
+				ran.confirmed = ran.confirmed + 1
+			end,
+		})
+		enterWorld(loaded, 3)
+		return loaded, M, ran
+	end
+
+	-- The onboarding Letter answered, so the fixture's letter has the frame to itself.
+	local function opened()
+		return { global = { onboarding = { letter = "opened" } } }
+	end
+
+	it(
+		"shows the letter's own words on the Letter's frame, 4 s after the world, once sent (ONB-R15, ONB-R16)",
+		function()
+			local loaded, M = withLetter(opened())
+			loaded.client.advance(4)
+			assert.is_false(shows(loaded))
+
+			M:ShowLetter("ledger.prestige")
+
+			assert.is_true(shows(loaded))
+			local frame = letterOf(loaded)
+			assert.are.same(
+				{ "A letter, left on the dock", TEXT, "Show me", "Later" },
+				{ frame.kicker.text, frame.line.text, frame.open.label.text, frame.later.label.text }
+			)
+			assert.are.same({ 534, 132 }, { frame.width, frame.height })
+			assert.are.same({ ["ledger.prestige"] = "waiting" }, state(loaded).letters)
+		end
+	)
+
+	it("sizes its buttons to their words, the second after the first (ONB-R15)", function()
+		local loaded, M = withLetter(opened())
+		loaded.client.advance(4)
+
+		M:ShowLetter("ledger.prestige")
+
+		local frame = letterOf(loaded)
+		assert.are.equal(#"Show me" * 6 + 36, frame.open:GetWidth())
+		assert.are.equal(#"Later" * 6 + 36, frame.later:GetWidth())
+		assert.are.same(
+			{ "TOPLEFT", frame.slip, "TOPLEFT", 34 + frame.open:GetWidth() + 14, -92 },
+			frame.later.points[1]
+		)
+	end)
+
+	it("grows the slip, and moves the buttons down, for a line longer than the kit's two (ONB-R15)", function()
+		local loaded, M = withLetter(opened())
+		loaded.client.advance(4)
+		M:ShowLetter("ledger.prestige")
+		local frame = letterOf(loaded)
+		-- The client measures the line at five 30-unit lines where the two-line gauge measures its 14.
+		frame.line.GetStringHeight = function()
+			return 150 + 14
+		end
+
+		pagle(loaded, "dev on")
+		pagle(loaded, "dev onboarding letter ledger.prestige")
+		frame.later:Click()
+		pagle(loaded, "dev onboarding letter ledger.prestige")
+
+		assert.are.same({ 534, 132 + 150 }, { frame.width, frame.height })
+		assert.are.equal(132 + 150, frame.slip.height)
+		assert.are.same({ "TOPLEFT", frame.slip, "TOPLEFT", 34, -(92 + 150) }, frame.open.points[1])
+		assert.are.equal(25 + 75, frame.sealY)
+	end)
+
+	it("says A letter for you on the menu while it shows, as for the onboarding Letter (ONB-R13)", function()
+		local loaded, M = withLetter(opened())
+		loaded.client.advance(4)
+		M:ShowLetter("ledger.prestige")
+
+		assert.is_true(loaded.ns.LetterShows())
+		press(loaded, "Later")
+
+		assert.is_false(loaded.ns.LetterShows())
+	end)
+
+	it("Later, then Later at the next login, declines it: shown twice, never a third time (ONB-R16)", function()
+		local first, M = withLetter(opened())
+		first.client.advance(4)
+		M:ShowLetter("ledger.prestige")
+		press(first, "Later")
+		assert.are.equal("later", state(first).letters["ledger.prestige"])
+
+		local second, again = withLetter(first.env.PagleDB)
+		second.client.advance(4)
+		assert.is_true(again:ShowLetter("ledger.prestige"))
+		assert.is_true(shows(second))
+		press(second, "Later")
+		assert.are.equal("declined", state(second).letters["ledger.prestige"])
+
+		local third, last = withLetter(second.env.PagleDB)
+		third.client.advance(4)
+		assert.is_false(last:ShowLetter("ledger.prestige"))
+		assert.is_false(shows(third))
+	end)
+
+	it("runs the Module's onConfirm from its confirm button, and never shows again once opened (ONB-R16)", function()
+		local loaded, M, ran = withLetter(opened())
+		loaded.client.advance(4)
+		M:ShowLetter("ledger.prestige")
+
+		press(loaded, "Show me")
+
+		assert.are.equal(1, ran.confirmed)
+		assert.is_false(shows(loaded))
+		assert.is_false(loaded.ns.guide:IsOpen())
+		assert.are.equal("opened", state(loaded).letters["ledger.prestige"])
+		assert.is_false(M:ShowLetter("ledger.prestige"))
+	end)
+
+	it(
+		"keeps the Module's letter off screen until the onboarding Letter is answered, and its guide closed (ONB-R17)",
+		function()
+			local loaded, M = withLetter()
+			loaded.client.advance(4)
+			M:ShowLetter("ledger.prestige")
+			local frame = letterOf(loaded)
+			assert.are.equal("Open the letter", frame.open.label.text)
+
+			press(loaded, "Open the letter")
+			loaded.client.advance(4)
+			assert.is_true(loaded.ns.guide:IsOpen())
+			assert.is_false(shows(loaded))
+
+			loaded.ns.guide:Close()
+
+			assert.is_true(shows(loaded))
+			assert.are.equal("Show me", frame.open.label.text)
+		end
+	)
+
+	it("hides as combat starts and comes back after it, its state untouched (ONB-R14)", function()
+		local loaded, M = withLetter(opened())
+		loaded.client.advance(4)
+		M:ShowLetter("ledger.prestige")
+
+		setCombat(loaded, true)
+		assert.is_false(shows(loaded))
+		setCombat(loaded, false)
+		loaded.client.advance(2)
+
+		assert.is_true(shows(loaded))
+		assert.are.equal("waiting", state(loaded).letters["ledger.prestige"])
+	end)
+
+	it(
+		"raises an error at the call for a letter the Module hasn't registered, or one that's malformed (ONB-R90's sense)",
+		function()
+			local loaded, M = withLetter(opened())
+			local other = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
+
+			local okSend, sendProblem = pcall(function()
+				M:ShowLetter("ledger.nothing")
+			end)
+			local okOwner, ownerProblem = pcall(function()
+				other:ShowLetter("ledger.prestige")
+			end)
+			local okRegister, registerProblem = pcall(function()
+				M:RegisterLetter("ledger.broken", { kicker = "k" })
+			end)
+
+			assert.is_false(okSend)
+			assert.matches("ShowLetter: Ledger hasn't registered a letter ledger%.nothing", tostring(sendProblem))
+			assert.is_false(okOwner)
+			assert.matches("ShowLetter: Hunts hasn't registered a letter ledger%.prestige", tostring(ownerProblem))
+			assert.is_false(okRegister)
+			assert.matches("letter ledger%.broken needs a text", tostring(registerProblem))
+		end
+	)
+
+	it(
+		"shows from /pagle dev onboarding letter <id>, an unknown id printing the letters there are (ONB-R83)",
+		function()
+			local loaded, _, ran = withLetter(opened())
+			loaded.client.advance(4)
+			pagle(loaded, "dev on")
+
+			pagle(loaded, "dev onboarding letter ledger.prestige")
+			assert.is_true(shows(loaded))
+			assert.are.equal("Show me", letterOf(loaded).open.label.text)
+			press(loaded, "Show me")
+			assert.are.equal(1, ran.confirmed)
+			local before = #loaded.printed
+			pagle(loaded, "dev onboarding letter ledger.nothing")
+
+			assert.are.same(
+				{ "Pagle dev: no letter ledger.nothing; the letters are core.onboarding, ledger.prestige." },
+				{ unpack(loaded.printed, before + 1) }
+			)
+		end
+	)
+
+	it("adds core.onboarding.letter.<id> to the tour, a sample that writes nothing (ONB-R84, CORE-R68)", function()
+		local loaded = withLetter(opened())
+		loaded.client.advance(4)
+		local stop
+		for _, listed in ipairs(loaded.ns.tourStops:List(loaded.ns.Modules:Modules(), "core")) do
+			if listed.name == "core.onboarding.letter.ledger.prestige" then
+				stop = listed
+			end
+		end
+
+		stop.show()
+		assert.is_true(shows(loaded))
+		assert.are.equal("Show me", letterOf(loaded).open.label.text)
+		press(loaded, "Show me")
+		stop.show()
+		stop.hide()
+
+		assert.is_false(shows(loaded))
+		assert.is_nil(state(loaded).letters)
+	end)
+
+	it("forgets Module letters on /pagle dev onboarding reset (ONB-R17, ONB-R83)", function()
+		local loaded, M = withLetter(opened())
+		loaded.client.advance(4)
+		M:ShowLetter("ledger.prestige")
+		press(loaded, "Show me")
+		pagle(loaded, "dev on")
+
+		pagle(loaded, "dev onboarding reset")
+
+		assert.is_nil(state(loaded).letters)
+		assert.are.equal("waiting", state(loaded).letter)
+	end)
+end)

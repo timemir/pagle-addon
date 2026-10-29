@@ -89,3 +89,17 @@ end
 function ns.PrestigeAllowed(state, updating)
 	return not updating and state ~= nil and ns.Level(state) >= ns.LEVEL_CAP
 end
+
+--- The id of the Prestige letter (LED-R200, ONB-R15) and of the Margin note on the Prestige button it leads to
+--- (LED-R202).
+ns.PRESTIGE_LETTER = "ledger.prestige"
+
+--- Whether the Prestige letter is due (LED-R201): Prestige is allowed (LED-R33: the computed level of the climb is 60
+--- and the projection isn't updating, no state while it is) and the prestige rank is 0, so only the first climb's top
+--- brings it and no Prestige ever takes it back. Core decides the rest: its state, once a login, the gates (ONB-R16).
+---@param state LedgerState?
+---@param updating boolean
+---@return boolean
+function ns.PrestigeLetterDue(state, updating)
+	return ns.PrestigeAllowed(state, updating) and (state --[[@as LedgerState]]).prestige == 0
+end

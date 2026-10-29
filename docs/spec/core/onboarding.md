@@ -8,9 +8,9 @@ Part of [Core](README.md). Every capitalised term means what `CONTEXT.md` says. 
 
 A new Angler gets a **Letter**, which opens an eight-page **Field guide** in a book like the Fish Journal's. After it, they learn by fishing: a **First evening list** in the tracker dock, a **Margin note** beside each first moment, and a **First look** (a set of notes) the first time each window opens, which the window's **"?"** shows again on request.
 
-**Core owns:** the Letter, the guide's book, its ribbons and navigation, the step registry, Core's own steps (Welcome, What's in the box, Moments, Off you go), the Margin note widget and its once-only bookkeeping, the First looks' display and coach bar, the First evening list, `/pagle guide`, the Getting started rows on the Settings root, the Write-up's "Show me around" link, and the onboarding state in `PagleDB.global.onboarding`.
+**Core owns:** the Letter and the letter service a Module's own letter goes through (ONB-R15–R17), the guide's book, its ribbons and navigation, the step registry, Core's own steps (Welcome, What's in the box, Moments, Off you go), the Margin note widget and its once-only bookkeeping, the First looks' display and coach bar, the First evening list, `/pagle guide`, the Getting started rows on the Settings root, the Write-up's "Show me around" link, and the onboarding state in `PagleDB.global.onboarding`.
 
-**Modules own:** their own guide steps (QoL: Casting and Fishing clothes; Ledger: Your Ledger; Tackle Board: the Tackle Board), the text of their Margin notes and First-look notes, which of their regions each note points at, their window's "?" button, and telling Core when one of their First evening items is done. A Module that is off registers nothing, so its steps, notes and items don't exist (CORE-R17). Hunts and Stats have no guide step: a row on What's in the box and their First look introduce them.
+**Modules own:** their own guide steps (QoL: Casting and Fishing clothes; Ledger: Your Ledger; Tackle Board: the Tackle Board), the text of their Margin notes and First-look notes, which of their regions each note points at, their window's "?" button, telling Core when one of their First evening items is done, and any letter of their own: its words, when it is due, and what its confirm button does (the Ledger's Prestige letter, [ledger.md](../ledger.md) LED-R200–R202). A Module that is off registers nothing, so its steps, notes and items don't exist (CORE-R17). Hunts and Stats have no guide step: a row on What's in the box and their First look introduce them.
 
 **Doesn't own:** what any control on a step does. Every control calls the owner's existing action: `Input` and the next-action button (QOL-R12, QOL-R70), the fishing set and Swap gear (QOL-R40–R46), the Announcement settings (announcements.md › Settings), Start my board (TKB-R5). The guide is a second door to settings that already exist, plus one new key-binding flow (ONB-R40–R44).
 
@@ -30,9 +30,12 @@ Modules still see only Core (ADR 0001): a Module's step never reads another Modu
 
 - **ONB-R10** While `letter` is `"waiting"` or `"later"`, Core shows the **Letter** once per login, when all of these hold: the login's held Announcements, Write-up and "Your last session" card have shown and closed (ANN-R21), QoL's conflict note isn't open (ONB-R100), `Pagle.IsRestricted()` is false, `IsInInstance()` is false, and 4 s have passed since `PLAYER_ENTERING_WORLD`. If a condition fails it waits and checks again on `RestrictionChanged`, `ZONE_CHANGED_NEW_AREA` and when a card or the conflict note closes.
 - **ONB-R11** The Letter is a frame of Core's own at the Toast column's foot (above the action bar, centred, unless the Angler moved the column: it sits wherever the foot is, clamped to the screen as the column is, ANN-R98), not an Announcement: it never counts as an interruption (ANN-R30), plays the `letter` sound, is never held by Cozy mode and has no expiry. It reads, kicker "A letter, left on the dock", hand "Pagle has arrived. Open it whenever you’re ready; it’ll keep.", with **Open the letter** and **Later** (board "1 · The letter arrives").
-- **ONB-R12** **Open the letter** sets `letter = "opened"`, hides the Letter and opens the guide at its first step (ONB-R20). **Later** hides it: from `"waiting"` it sets `letter = "later"`, and the next login shows it once more (ONB-R10); from `"later"` it sets `letter = "declined"`. A declined or opened Letter never shows again; the guide is then reached only from `/pagle guide` and the Settings root (ONB-R80, ONB-R81).
-- **ONB-R13** While the Letter shows, the tooltip of Pagle's menu (CORE-R55) adds the line "A letter for you".
+- **ONB-R12** **Open the letter** sets `letter = "opened"`, hides the Letter and opens the guide at its first step (ONB-R20) (the rule is every letter's, ONB-R16). **Later** hides it: from `"waiting"` it sets `letter = "later"`, and the next login shows it once more (ONB-R10); from `"later"` it sets `letter = "declined"`. A declined or opened Letter never shows again; the guide is then reached only from `/pagle guide` and the Settings root (ONB-R80, ONB-R81).
+- **ONB-R13** While a letter shows (the Letter, or any a Module sent, ONB-R15), the tooltip of Pagle's menu (CORE-R55) adds the line "A letter for you".
 - **ONB-R14** A restriction that starts while the Letter shows hides it; it shows again when the restriction ends (ONB-R10's checks).
+- **ONB-R15** **Letters from a Module.** The Letter is the first user of a letter service in Core: the same frame (ONB-R11: place, seal, slip, `letter` sound, motion, no Announcement, never held by Cozy mode, no expiry), buttons and gates (ONB-R10, ONB-R14) carry any letter. A letter is its `kicker`, its `text` in the hand, its `confirm` and `later` button labels and an `onConfirm` function (`PagleLetterSpec`, Contracts), and the frame is written afresh for each: the buttons size to their words, and the slip grows taller, its buttons moving down with it, when the text wraps past the two lines the Letter's own has, with the seal on the slip's middle. A Module declares each of its letters with `M:RegisterLetter(id, letter)`, its `id` `<module>.<name>` and a copy kept by Core, and sends it with `M:ShowLetter(id)` (a letter is sent whenever the Module's reason holds; Core decides whether it shows). The onboarding Letter is `core.onboarding`, its words ONB-R11's and its confirm button's action ONB-R12's.
+- **ONB-R16** **State.** Core keeps each letter's state account-wide in `PagleDB.global.onboarding`: the onboarding Letter's in `letter` (ONB-R2, ONB-R12, unchanged and in place, so no saved data changes for anyone), a Module letter's in `letters[id]` (Data), which is `waiting` as the Module first sends it, then `"later"`, `"declined"` or `"opened"`. ONB-R12's rule is every letter's: the confirm button sets `opened`, hides the letter and calls its `onConfirm`; **Later** hides it, from `waiting` setting `later` (shown once more at the next login, ONB-R10) and from `later` setting `declined`; a `declined` or `opened` letter never shows again, and `M:ShowLetter` for it does nothing. A letter shows at most once per login, so an answered one doesn't come back that login. A letter hidden by ONB-R14 stays unanswered and shows again.
+- **ONB-R17** **One at a time.** Only one letter shows at a time, with ONB-R10's gates (after the login's held Announcements, Write-up and cards close, with no restriction, not in an instance, 4 s after `PLAYER_ENTERING_WORLD`, and no dialog of a Module's open, ONB-R100). The onboarding Letter comes first while it is due; the Modules' letters follow in the order they were sent, each `LETTER_DELAY` (4 s) after the one before was answered, and none while the Field guide is open (it shows when `GuideClosed` fires). A letter may carry `isDue`, a function asked as it is about to show: while it says no the letter waits, so a reason that has passed (the Angler has Prestiged meanwhile) tells nothing. `/pagle dev onboarding reset` forgets every Module letter's state (ONB-R83), and the letter sent this login stays answered until `/reload`.
 
 ### The Field guide
 
@@ -90,6 +93,7 @@ Copy is the probe's, verbatim (`prototypes/onboarding-kit/PagleArtGuide/Guide.lu
   | `core.welcome` | a returning Angler (ONB-R2) | Pagle's menu button | ONB-R2's text | Core |
   | `core.character` | another character (ONB-R3) | Pagle's menu button | ONB-R3's text | Core |
   | `qol.lure` | the next-action button first shows "Lure" | the button | "Your pole has no lure on. Your next press puts the best one in your bags on. *Only that*; then you cast." | QoL |
+  | `ledger.prestige` | **Show me** on the Ledger's Prestige letter opens the Fish Journal at the Angler page while the Prestige button shows (LED-R202); not shown, and not marked seen, when it doesn't | the Prestige button | "Begin a new Ledger here, when you’re ready. No hurry." (*Begin a new Ledger* in red) | Ledger |
   | `ledger.fresh` | the Fish Journal opens with Fresh Water above 0 for the first time once the Angler has had a real break (LED-R22's minimum break, 1 hour): the Catch log holds a gap of at least that between two consecutive Catches, any character, or at least that has passed since the last Catch; a Session end alone isn't one. Until then it isn't shown and isn't marked seen, so a new Angler, whose Fresh Water starts at its cap, doesn't read it before ever being away | the ink bar's blue part | "You’ve been away, so your next Catches earn bonus XP. That’s *Fresh Water*, the blue in your bar. A rest is never a penalty." | Ledger |
 
   **Pagle's menu button** is the minimap icon while it shows (CORE-R53), else the Addon Compartment's button. A moment held by Cozy mode never shows its note; the note shows at its next first occurrence outside Cozy mode. Core tells an Uncharted Catch itself, from the catalogue (LOG-R55), as the Cast ends, whichever Module's toast or Nod shows it; that frame gets `core.uncharted`, not `core.nod`. One frame never carries two Core notes: `core.nod`, `core.uncharted` and `core.toast` are each prefixed by the `firstNote` of the Announcement's first moment that has one unseen, as `core.toast` is, and a toast with Coins that shows `core.uncharted` leaves `core.toast` for the next one. Samples (`/pagle dev preview`'s, the Curio Shop's toasts in their own style, a preview card) and the "While you were fighting" digest get no note. A Module shows its own with `M:ShowMarginNote(note)` (ONB-R92).
@@ -137,8 +141,8 @@ Copy is the probe's, verbatim (`prototypes/onboarding-kit/PagleArtGuide/Guide.lu
 - **ONB-R80** **`/pagle guide`** opens the guide (ONB-R22). **`/pagle guide notes`** clears `notesSeen` and `looksSeen` and prints "Pagle: margin notes will show again, once each." `guide` is a reserved Core subcommand (CORE-R61).
 - **ONB-R81** **Settings root.** A section **Getting started**, after the status list (SET-R10), with three rows: "Field guide", the line "The eight pages you saw on your first day." and the button **Show me around again**; the checkbox **Margin notes** ("Explain things the first time they happen.", `notesOn`) with the button **Show them again** (as `/pagle guide notes`); the checkbox **First evening list** ("{done} of {total} done"), shown only until the list's last item is done. The Pagle menu gets **no** new entry.
 - **ONB-R82** **A Module turned on later** gets no Letter and no guide shown on its own. Its First looks and Margin notes apply as usual, its step joins the guide, and its Write-up section (ANN-R60) carries the link **Show me around »** when the Module has a guide step: the link closes the card and opens the guide at that Module's first step (ANN-R64). A Module without a step (Hunts, Stats) gets no link; its First look introduces it.
-- **ONB-R83** **Dev commands** (dev mode only, [in-game-verification.md](../../agents/in-game-verification.md#dev-commands)): `/pagle dev onboarding reset` puts the state back as created for a new Angler (`letter = "waiting"`, everything else default, the current character in `characters`), whatever the Catch log holds; `letter` shows the Letter now; `step <id>` opens the guide at a step; `note <id>` shows one Margin note on its target (if shown); `look <id>` shows a First look (its window must be open); `evening` docks the list. None of them is reserved outside `/pagle dev`.
-- **ONB-R84** **Tour stops** (CORE-R65): Core adds `core.onboarding.letter`, one `core.onboarding.step.<id>` per registered step (Modules' included, since the step registry is Core's), `core.onboarding.evening`, and one `core.onboarding.look.<id>` per registered First look (opening its window through the Module's view, then showing the set). Each `hide` puts back the state its `show` changed (CORE-R68): it never marks a note or set seen and never writes `guideStep`.
+- **ONB-R83** **Dev commands** (dev mode only, [in-game-verification.md](../../agents/in-game-verification.md#dev-commands)): `/pagle dev onboarding reset` puts the state back as created for a new Angler (`letter = "waiting"`, everything else default, no Module letter's state, the current character in `characters`), whatever the Catch log holds; `letter [id]` shows a letter now (the Letter with no id, else the Module's letter of that id, such as `ledger.prestige`; an id that is no letter prints the letters there are); `step <id>` opens the guide at a step; `note <id>` shows one Margin note on its target (if shown); `look <id>` shows a First look (its window must be open); `evening` docks the list. None of them is reserved outside `/pagle dev`.
+- **ONB-R84** **Tour stops** (CORE-R65): Core adds `core.onboarding.letter`, one `core.onboarding.letter.<id>` per registered Module letter (the letter as a sample, its buttons only closing it), one `core.onboarding.step.<id>` per registered step (Modules' included, since the step registry is Core's), `core.onboarding.evening`, and one `core.onboarding.look.<id>` per registered First look (opening its window through the Module's view, then showing the set). Each `hide` puts back the state its `show` changed (CORE-R68): it never marks a note or set seen and never writes `guideStep`.
 
 ## Data
 
@@ -146,7 +150,8 @@ Copy is the probe's, verbatim (`prototypes/onboarding-kit/PagleArtGuide/Guide.lu
 
 | Key | Shape | Default |
 |---|---|---|
-| `letter` | `"waiting"`, `"later"`, `"declined"`, `"opened"`, `"returning"` | set by ONB-R2 |
+| `letter` | `"waiting"`, `"later"`, `"declined"`, `"opened"`, `"returning"`: the onboarding Letter's (ONB-R15) | set by ONB-R2 |
+| `letters` | `{ [letterId] = "waiting"\|"later"\|"declined"\|"opened" }`: each Module letter's (ONB-R16) | absent until a Module sends a letter; no migration |
 | `guideStep` | step id last shown | `nil` |
 | `stepsSeen` | `{ [stepId] = true }` (ONB-R24) | `{}` |
 | `guideDone`, `skipped`, `reopen` | boolean | `false` |
@@ -197,6 +202,16 @@ M:ShowMarginNote(note)          -- ONB-R50–R52; no-op if seen or notes are off
 M:RegisterFirstLook(set)        -- ONB-R56; once, before the window first shows (at OnInitialize or OnEnable to join Off you go's list and the tour)
 M:ShowFirstLook(id, again?)     -- from the window's OnShow; no-op if seen or notes are off, unless `again` (the "?", ONB-R59); returns whether it shows
 
+---@class PagleLetterSpec
+---@field kicker string         -- "A letter, left on the dock"
+---@field text string           -- the line in the hand
+---@field confirm string        -- the confirm button's label
+---@field later string          -- the second button's label
+---@field onConfirm fun()       -- called after Core sets the letter `opened` and hides it
+---@field isDue? fun(): boolean -- asked as it is about to show; false keeps it waiting
+M:RegisterLetter(id, letter)    -- ONB-R15; id "<module>.<name>"; once per id, in OnInitialize or OnEnable
+M:ShowLetter(id)                -- ONB-R16, ONB-R17; returns whether it is waiting to show or on screen
+
 M:CompleteEveningItem(id)       -- ONB-R61 ("journal" for the Ledger, "hunts" for Hunts)
 
 M:SetDialogOpen(open)           -- ONB-R100: a dialog of the Module's own that asks the player something opened (true)
@@ -242,8 +257,8 @@ See the kit's `SOUND.md`. New events: `letter` (TUTORIAL_POPUP), `noteIn` (IG_CH
 
 | Name | Value | Rules |
 |---|---|---|
-| Letter delay after `PLAYER_ENTERING_WORLD` | 4 s | ONB-R10 |
-| Letter showings before it's declined | 2 | ONB-R12 |
+| Letter delay after `PLAYER_ENTERING_WORLD`, and between one letter's answer and the next | 4 s | ONB-R10, ONB-R17 |
+| Letter showings before it's declined | 2 | ONB-R12, ONB-R16 |
 | Returning Angler's note delay | 20 s or first `SessionStarted` | ONB-R2 |
 | Margin note lifetime | 12 s | ONB-R51 |
 | Margin note gap from its target, inset from the screen's edge, default width | 40, 8, 270 units | core/onboarding.md › UI |
@@ -280,4 +295,5 @@ See the kit's `SOUND.md`. New events: `letter` (TUTORIAL_POPUP), `noteIn` (IG_CH
 11. Enter combat with the guide open: it closes; leave combat: it reopens at the same step. A toast raised while the guide was open shows when it closes.
 12. A second character: the "Same Ledger" note shows once on the minimap icon; with the icon hidden, it points at the compartment.
 13. UI scale 1.15 on 1366 x 768: guide and ribbons fit.
-14. read-wtf's Onboarding section shows the state after each step above.
+14. read-wtf's Onboarding section shows the state after each step above (its `letters` line shows a Module letter's).
+15. Module letters: `/pagle dev onboarding letter ledger.prestige` shows the Ledger's letter in the Letter's frame, taller for its longer line, with **Show me** and **Later**; the menu tooltip reads "A letter for you"; Later, `/reload`, the same command and Later write `later` and then `declined`; `/pagle dev onboarding reset` forgets both (the Letter's and the Module's letters' states). With the onboarding Letter due too, `/reload` shows the Letter first and the Module's letter 4 s after it is answered (ONB-R17).

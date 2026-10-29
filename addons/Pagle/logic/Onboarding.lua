@@ -11,10 +11,15 @@ local ns = select(2, ...)
 --- the second, `opened` once Open the letter is pressed, `returning` for an Angler whose Catch log already held a Cast.
 ---@alias PagleLetterState "waiting"|"later"|"declined"|"opened"|"returning"
 
+--- The id of the onboarding Letter among the letters Core sends (ONB-R15). Its state is `letter`; a Module's letter
+--- keeps its state in `letters[id]` (ONB-R16), the same four words (a returning Angler is only the onboarding Letter's).
+ns.ONBOARDING_LETTER = "core.onboarding"
+
 --- PagleDB.global.onboarding (core/onboarding.md › Data). It isn't in ns.PAGLEDB_DEFAULTS: AceDB would make it read
 --- as present before it is created (ONB-R1), so it is created whole, and saved whole.
 ---@class PagleOnboardingState
----@field letter PagleLetterState         -- ONB-R2, ONB-R12
+---@field letter PagleLetterState         -- ONB-R2, ONB-R12: the onboarding Letter's (ONB-R15)
+---@field letters? table<string, PagleLetterState> -- ONB-R16: each Module letter's, by id; made as the first is sent
 ---@field guideStep string?                -- the step id last shown (ONB-R22)
 ---@field stepsSeen table<string, true>    -- every step shown, by id (ONB-R22, ONB-R24)
 ---@field guideDone boolean                -- Off to the water was pressed (ONB-R26)
@@ -200,38 +205,74 @@ function Onboarding:SeeCharacter(guid, qolRegistered)
 	return false
 end
 
--- The Letter (ONB-R10, ONB-R12).
+-- The Letter (ONB-R10, ONB-R12) and the letters a Module sends (ONB-R15, ONB-R16). A letter's id is
+-- ns.ONBOARDING_LETTER for the onboarding Letter, whose state is `letter` (and is nil where an id is optional), or a
+-- Module's, whose state is `letters[id]`.
 
---- Where the Letter stands.
----@return PagleLetterState
-function Onboarding:Letter()
-	return self:State().letter
+-- Where letter `id`'s state is kept: the table and the key in it. A Module letter nobody has sent has no state yet.
+---@param onboarding PagleOnboarding
+---@param id string?
+---@return table holder
+---@return string key
+local function letterSlot(onboarding, id)
+	local state = onboarding:State()
+	if id == nil or id == ns.ONBOARDING_LETTER then
+		return state, "letter"
+	end
+	if type(state.letters) ~= "table" then
+		state.letters = {}
+	end
+	return state.letters, id
 end
 
---- Whether the Letter is still due, so ONB-R10 shows it once this login when its conditions hold: `waiting` or
---- `later`.
+--- Where the Letter stands (the onboarding Letter's by default); nil for a Module letter nobody has sent.
+---@param id string?
+---@return PagleLetterState?
+function Onboarding:Letter(id)
+	local holder, key = letterSlot(self, id)
+	return holder[key]
+end
+
+--- Whether letter `id` is still due, so ONB-R10 shows it once this login when its conditions hold: `waiting` or
+--- `later`. A Module's letter nobody has sent isn't: it becomes `waiting` as its Module sends it (ONB-R16).
+---@param id string?
 ---@return boolean
-function Onboarding:IsLetterDue()
-	local letter = self:Letter()
+function Onboarding:IsLetterDue(id)
+	local letter = self:Letter(id)
 	return letter == "waiting" or letter == "later"
 end
 
---- Open the letter (ONB-R12): `letter = "opened"`, so it never shows again.
-function Onboarding:OpenLetter()
-	self:State().letter = "opened"
+--- A Module sends letter `id` (ONB-R16): one with no state yet becomes `waiting`. Returns whether it is due, which a
+--- `declined` or `opened` letter never is.
+---@param id string
+---@return boolean due
+function Onboarding:RaiseLetter(id)
+	local holder, key = letterSlot(self, id)
+	if holder[key] == nil then
+		holder[key] = "waiting"
+	end
+	return self:IsLetterDue(id)
+end
+
+--- Open the letter (ONB-R12): `opened`, so it never shows again.
+---@param id string?
+function Onboarding:OpenLetter(id)
+	local holder, key = letterSlot(self, id)
+	holder[key] = "opened"
 end
 
 --- Later (ONB-R12): from `waiting` to `later`, so the next login shows it once more; from `later` to `declined`. Any
 --- other state stays. Returns the state after.
+---@param id string?
 ---@return PagleLetterState
-function Onboarding:LetterLater()
-	local state = self:State()
-	if state.letter == "waiting" then
-		state.letter = "later"
-	elseif state.letter == "later" then
-		state.letter = "declined"
+function Onboarding:LetterLater(id)
+	local holder, key = letterSlot(self, id)
+	if holder[key] == "waiting" then
+		holder[key] = "later"
+	elseif holder[key] == "later" then
+		holder[key] = "declined"
 	end
-	return state.letter
+	return holder[key]
 end
 
 -- The Field guide (ONB-R22, ONB-R25, ONB-R26).
@@ -415,7 +456,8 @@ end
 -- /pagle dev onboarding (ONB-R83).
 
 --- `/pagle dev onboarding reset` (ONB-R83): the state as created for a new Angler (`letter = "waiting"`, everything
---- else default), whatever the Catch log holds, with `guid`, the logged-in character's, in `characters`.
+--- else default, no Module letter sent yet, ONB-R17), whatever the Catch log holds, with `guid`, the logged-in
+--- character's, in `characters`.
 ---@param guid string
 function Onboarding:Reset(guid)
 	local state = ns.NewOnboardingState("waiting")

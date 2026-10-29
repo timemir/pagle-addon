@@ -109,6 +109,8 @@ function ns.Ledger.OnInitialize()
 			return
 		end
 		activityXPChanged(projection:GetState() --[[@as LedgerState]], entry)
+		-- The Activity XP may have brought the climb to 60 (LED-R201).
+		ns.NotePrestigeLetter()
 		ns.journal:QueueDraw()
 	end
 	Pagle.RegisterCallback(ns.Ledger, "ActivityXPChanged", function(_, entry)
@@ -120,6 +122,10 @@ function ns.Ledger.OnInitialize()
 	-- (ONB-R90).
 	if ns.Module.RegisterGuideStep then
 		ns.RegisterGuideLedgerStep(ns.Module)
+	end
+	-- The Prestige letter (LED-R200), on a Core that has the call (ONB-R90).
+	if ns.Module.RegisterLetter then
+		ns.RegisterPrestigeLetter(ns.Module)
 	end
 	-- The Fish Journal's First look (ONB-R56, ONB-R57), before the book first shows, on a Core that has it.
 	if ns.Module.RegisterFirstLook then

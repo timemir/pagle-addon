@@ -442,3 +442,76 @@ function ns.JournalOpened(journal)
 		M:ShowFirstLook(LOOK.id)
 	end
 end
+
+-- ---------------------------------------------------------------- the Prestige letter (LED-R200–R202)
+
+--- The Prestige button on the Journal's pages now (LED-R146), while it is drawn and shown: nil on any other spread, and
+--- while the projection updates or Prestige isn't allowed (LED-R33), when the Angler page draws none.
+---@param journal LedgerJournal
+---@return Frame?
+function ns.JournalPrestigeButton(journal)
+	for _, side in ipairs({ "right", "left" }) do
+		local widget = drawnOf(journal, side, "button")[1] --[[@as LedgerButtonWidget?]]
+		if widget and widget:IsShown() and widget.face:IsShown() then
+			return widget.face
+		end
+	end
+	return nil
+end
+
+--- "Show me" on the Prestige letter (LED-R202), once Core has set it `opened`: the Fish Journal opened on the Angler
+--- page, where the Prestige button is (LED-R146), and a Margin note on that button, once per account (ONB-R50): "Begin
+--- a new Ledger here, when you're ready. No hurry." Nothing is prestiged from here: the Journal's own confirm card stays
+--- the only way (LED-R33). With no button to point at (the projection updating, the level no longer 60), only the
+--- page opens.
+function ns.ShowPrestigeLetterPage()
+	local journal = ns.journal
+	-- Still, so the page the note points at stands where it is drawn, whether the book was closed or open elsewhere.
+	if not journal:OpenPlace(ns.JournalPlace.angler(), "still") then
+		return
+	end
+	local M = ns.Module
+	local button = ns.CanPrestige() and ns.JournalPrestigeButton(journal) or nil
+	if button and M and M.ShowMarginNote then
+		M:ShowMarginNote({ id = ns.PRESTIGE_LETTER, text = ns.RedPencilTerms(ns.L.NOTE_PRESTIGE), target = button })
+	end
+end
+
+--- Registers the Prestige letter with Core (LED-R200, ONB-R15), from OnInitialize. Called only when
+--- `M.RegisterLetter` exists (ONB-R90).
+---@param M PagleModuleHandle
+function ns.RegisterPrestigeLetter(M)
+	M:RegisterLetter(ns.PRESTIGE_LETTER, {
+		kicker = L.PRESTIGE_LETTER_KICKER,
+		text = L.PRESTIGE_LETTER_TEXT,
+		confirm = L.PRESTIGE_LETTER_SHOW,
+		later = L.PRESTIGE_LETTER_LATER,
+		onConfirm = ns.ShowPrestigeLetterPage,
+		-- The Angler may Prestige from the Journal before the letter shows (or the level fall below 60 again): then
+		-- there is nothing to tell them (LED-R201).
+		isDue = ns.PrestigeLetterIsDue,
+	})
+end
+
+--- Whether the Prestige letter's reason holds now (LED-R201): the climb's computed level is 60 at rank 0, the projection
+--- built.
+---@return boolean
+function ns.PrestigeLetterIsDue()
+	local state = ns.StateNow()
+	return ns.PrestigeLetterDue(state, state == nil)
+end
+
+--- Sends the Prestige letter if it is due now (LED-R201): the climb's computed level is 60 at prestige rank 0, with the
+--- projection built. Called as the climb may have reached 60 (a live entry, Activity XP arriving) and as the projection
+--- finishes catching up or rebuilding (the login's check). Core holds what the letter's state and ONB-R10's gates say, so
+--- a letter already `opened` or `declined`, or answered this login, shows nothing, and the call costs little at every
+--- entry. Only on a Core that has the call (ONB-R90).
+function ns.NotePrestigeLetter()
+	local M = ns.Module
+	if not (M and M.ShowLetter) then
+		return
+	end
+	if ns.PrestigeLetterIsDue() then
+		M:ShowLetter(ns.PRESTIGE_LETTER)
+	end
+end

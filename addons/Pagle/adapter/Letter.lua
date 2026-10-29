@@ -15,7 +15,9 @@ local Pagle = Pagle
 -- on leather and Later in the light. It is no Announcement: it never goes through the lanes, so it never counts as an
 -- interruption (ANN-R30), Cozy mode never holds it and it never expires. It rises in with its seal dropping (the
 -- kit's MOTION.md), settled at once with Animations off, and plays `letter` (SOUND.md). Esc doesn't close it: only its
--- two buttons answer it. PLAYER_ENTERING_WORLD and ZONE_CHANGED_NEW_AREA reach it here (ONB-R10); it is also the menu
+-- two buttons answer it. The one frame carries whichever letter shows (ONB-R15, ONB-R17): the words, buttons and
+-- action are the letter's, and the slip grows taller for a line that wraps past the two lines the onboarding Letter
+-- has, its buttons moving down with it. PLAYER_ENTERING_WORLD and ZONE_CHANGED_NEW_AREA reach it here (ONB-R10); it is also the menu
 -- tooltip's "A letter for you" (ns.LetterShows, ONB-R13), `/pagle dev onboarding letter` (ONB-R83, in the wiring) and
 -- the tour stop `core.onboarding.letter` (ONB-R84).
 
@@ -34,6 +36,8 @@ ns.LETTER = {
 	height = 132,
 	slipX = 64,
 	slipWidth = 470,
+	-- the nine-slice's corners kept as drawn, across and down, as the slip grows with a long line
+	slipCap = { 60, 40 },
 	seal = 82,
 	sealY = 25,
 	rise = 30,
@@ -52,6 +56,8 @@ local LETTER = ns.LETTER
 ---@field line FontString
 ---@field open PagleGuideButton
 ---@field later PagleGuideButton
+---@field gauge FontString  -- two lines of the letter's type, hidden: how tall the kit's slip has room for
+---@field sealY number      -- where the seal sits in the frame now (it keeps to the slip's middle as the slip grows)
 
 --- The Letter's frame, made the first time it shows.
 ---@type PagleLetterFrame?
@@ -91,7 +97,7 @@ local function scaleSeal(frame, scale)
 	local seal = frame.seal
 	seal:SetScale(scale)
 	seal:ClearAllPoints()
-	seal:SetPoint("CENTER", frame, "TOPLEFT", LETTER.seal / 2 / scale, -(LETTER.sealY + LETTER.seal / 2) / scale)
+	seal:SetPoint("CENTER", frame, "TOPLEFT", LETTER.seal / 2 / scale, -(frame.sealY + LETTER.seal / 2) / scale)
 end
 
 -- Puts the frame `drop` units below its place: its foot on the Toast column's, wherever the Angler moved it
@@ -131,13 +137,17 @@ local function frameOf()
 	local slip = CreateFrame("Frame", nil, frame)
 	slip:SetSize(LETTER.slipWidth, LETTER.height)
 	ns.GuideAt(slip, frame, LETTER.slipX, 0)
-	ns.PlaceSprite(ns.ArtSprite(slip, "GuideParts", "letter-slip", "BACKGROUND"), slip, 0, 0)
+	ns.NewNineSlice(slip, "GuideParts", "letter-slip", LETTER.slipCap)
 	frame.slip = slip
+	frame.sealY = LETTER.sealY
 	-- The kit's P.T: each line's box is its line height, the text in its middle.
 	frame.kicker = ns.GuideText(slip, "sc", 14, "kicker", L.LETTER_KICKER)
 	ns.GuideAt(frame.kicker, slip, 34, 12 + (18 - 14) / 2)
 	frame.line = ns.GuideText(slip, "hand", 25, "hand", L.LETTER_LINE, { wrap = true, width = 392, spacing = 2.5 })
 	ns.GuideAt(frame.line, slip, 34, 30 + (27.5 - 25) / 2)
+	-- what two lines of it measure, so a longer one can be told from the kit's
+	frame.gauge = ns.GuideText(slip, "hand", 25, "hand", "A\nA", { wrap = true, width = 392, spacing = 2.5 })
+	frame.gauge:SetAlpha(0)
 	frame.open = ns.NewGuideButton(slip, L.LETTER_OPEN, function()
 		ns.letter:Open()
 	end, nil, 28)
@@ -161,11 +171,35 @@ local function frameOf()
 	return frame
 end
 
--- The Letter's view (PagleLetterView): on screen with `letter` and its rise (0.5 s, ease-out, 30 units up and in)
--- and its seal's drop (from 1.6x, 0.15–0.55 s, overshooting a little); with Animations off it appears settled. In
+-- Writes letter `content` on the frame (ONB-R15): its kicker and line, its two buttons sized to their words with the
+-- second after the first, the slip as tall as its line needs (the kit's 132 holds two lines of it, so the onboarding
+-- Letter stays as drawn) with the buttons under the line, and the seal on the slip's middle.
+---@param frame PagleLetterFrame
+---@param content PagleLetterSpec
+local function write(frame, content)
+	frame.kicker:SetText(content.kicker)
+	frame.line:SetText(content.text)
+	local extra = math.max(0, math.ceil(frame.line:GetStringHeight() - frame.gauge:GetStringHeight()))
+	local height = LETTER.height + extra
+	frame:SetSize(LETTER.width, height)
+	frame.slip:SetSize(LETTER.slipWidth, height)
+	frame.sealY = LETTER.sealY + extra / 2
+	for _, button in ipairs({ frame.open, frame.later }) do
+		local label = button == frame.open and content.confirm or content.later
+		button.label:SetText(label)
+		button:SetWidth(math.ceil(button.label:GetStringWidth()) + 36)
+	end
+	ns.GuideAt(frame.open, frame.slip, 34, 92 + extra)
+	ns.GuideAt(frame.later, frame.slip, 34 + frame.open:GetWidth() + 14, 92 + extra)
+end
+
+-- The Letter's view (PagleLetterView): `content` on screen with `letter` and its rise (0.5 s, ease-out, 30 units up and
+-- in) and its seal's drop (from 1.6x, 0.15–0.55 s, overshooting a little); with Animations off it appears settled. In
 -- Cozy mode it arrives silently (onboarding.md › Sounds: only what the player clicks plays).
-local function show()
+---@param content PagleLetterSpec
+local function show(content)
 	local frame = frameOf()
+	write(frame, content)
 	settle(frame)
 	frame:Show()
 	if not ns.db.profile.announcements.cozy then
@@ -232,7 +266,8 @@ Pagle.RegisterEvent(OWNER, "PLAYER_LOGIN", function()
 	end)
 end)
 
--- ONB-R84: the Letter as a sample, whose hide puts back what its show changed (CORE-R68).
+-- ONB-R84: the Letter as a sample, whose hide puts back what its show changed (CORE-R68). Each Module letter gets a
+-- stop of its own once every Module has registered its letters (CORE-R19).
 local problem = ns.tourStops:Add(ns.TOUR_CORE, "onboarding.letter", L.DEV_TOUR_LETTER, function()
 	ns.letter:TourShow()
 end, function()
@@ -241,3 +276,6 @@ end)
 if problem then
 	error(problem)
 end
+Pagle.RegisterCallback("Pagle letter tour", "ModulesChanged", function()
+	ns.AddLetterTourStops()
+end)

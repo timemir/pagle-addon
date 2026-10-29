@@ -275,6 +275,96 @@ describe("ns.NewOnboarding", function()
 		end)
 	end)
 
+	describe("the letters a Module sends (ONB-R15, ONB-R16)", function()
+		local PRESTIGE = "ledger.prestige"
+
+		it(
+			"keeps the onboarding Letter's state in `letter` and a Module letter's in `letters`, made as one is sent (ONB-R16)",
+			function()
+				local global = created()
+				local onboarding = onboardingOver(global)
+
+				assert.are.equal("waiting", onboarding:Letter(ns.ONBOARDING_LETTER))
+				assert.is_nil(onboarding:Letter(PRESTIGE))
+				assert.is_false(onboarding:IsLetterDue(PRESTIGE))
+				assert.is_true(onboarding:RaiseLetter(PRESTIGE))
+
+				assert.are.same({ [PRESTIGE] = "waiting" }, global.onboarding.letters)
+				assert.are.equal("waiting", global.onboarding.letter)
+			end
+		)
+
+		it(
+			"leaves a saved state with no `letters` as it is while only the onboarding Letter is read or answered (ONB-R16)",
+			function()
+				local global = created()
+				local onboarding = onboardingOver(global)
+
+				onboarding:IsLetterDue()
+				onboarding:Letter(ns.ONBOARDING_LETTER)
+				onboarding:LetterLater(ns.ONBOARDING_LETTER)
+				onboarding:OpenLetter(ns.ONBOARDING_LETTER)
+
+				assert.is_nil(global.onboarding.letters)
+				assert.are.equal("opened", global.onboarding.letter)
+			end
+		)
+
+		it("is due while waiting or later, and never once declined or opened (ONB-R16)", function()
+			local global = created()
+			local onboarding = onboardingOver(global)
+			local due = {}
+			for _, state in ipairs({ "waiting", "later", "declined", "opened" }) do
+				global.onboarding.letters = { [PRESTIGE] = state }
+				due[state] = onboarding:RaiseLetter(PRESTIGE)
+			end
+
+			assert.are.same({ waiting = true, later = true, declined = false, opened = false }, due)
+			assert.are.equal("opened", global.onboarding.letters[PRESTIGE])
+		end)
+
+		it(
+			"goes waiting, then later, then declined with each Later, as the onboarding Letter does (ONB-R16)",
+			function()
+				local global = created()
+				local onboarding = onboardingOver(global)
+				onboarding:RaiseLetter(PRESTIGE)
+
+				assert.are.equal("later", onboarding:LetterLater(PRESTIGE))
+				assert.are.equal("declined", onboarding:LetterLater(PRESTIGE))
+				assert.are.equal("declined", onboarding:LetterLater(PRESTIGE))
+				assert.are.equal("declined", global.onboarding.letters[PRESTIGE])
+				assert.are.equal("waiting", global.onboarding.letter)
+			end
+		)
+
+		it("is opened by the confirm button from waiting or later, and Later leaves an opened one (ONB-R16)", function()
+			for _, state in ipairs({ "waiting", "later" }) do
+				local global = created()
+				global.onboarding.letters = { [PRESTIGE] = state }
+				local onboarding = onboardingOver(global)
+
+				onboarding:OpenLetter(PRESTIGE)
+				assert.are.equal("opened", onboarding:LetterLater(PRESTIGE))
+
+				assert.are.equal("opened", global.onboarding.letters[PRESTIGE])
+			end
+		end)
+
+		it("is forgotten by the dev reset, with the rest of the state (ONB-R17, ONB-R83)", function()
+			local global = created(ADA)
+			local onboarding = onboardingOver(global)
+			onboarding:RaiseLetter(PRESTIGE)
+			onboarding:OpenLetter(PRESTIGE)
+
+			onboarding:Reset(ADA)
+
+			assert.is_nil(global.onboarding.letters)
+			assert.is_false(onboarding:IsLetterDue(PRESTIGE))
+			assert.is_true(onboarding:RaiseLetter(PRESTIGE))
+		end)
+	end)
+
 	describe("the Field guide (ONB-R22, ONB-R25, ONB-R26)", function()
 		it("keeps the step last shown and every step seen (ONB-R22, ONB-R24)", function()
 			local global = created()
