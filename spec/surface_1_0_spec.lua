@@ -6,10 +6,10 @@
 -- `ns.RULE_SET_ID` is left out on purpose: it names the shipped rule set and changes with each shipped rule change
 -- (LOG-R36 logs a B1 when it does), so a release may bump it without breaking any log.
 
--- The Catch log's format number (LOG-R17, LOG-R18) is this one constant. A change of format (a new storage for the
--- entries) changes it and the stored form of GOLDEN's entries below (`stored`, `openLog` and `storedEntries`), never
--- the decoded fields.
-local LOG_FORMAT = 3
+-- The Catch log's format number (LOG-R17, LOG-R18) is this one constant: 1.0 ships format 4, the block store (LOG-R103).
+-- A later change of format changes it and `openLog` and `storedEntries` below, which hold the way the entries are
+-- stored; GOLDEN's `stored` entries are the entry encoding (LOG-R11), and the decoded fields stay.
+local LOG_FORMAT = 4
 
 -- Fails naming `rule` and every item in `broken`, or passes if there are none.
 local function expectNone(broken, rule, what)
@@ -411,14 +411,16 @@ local function coreSources()
 	return table.concat(raw, "\n"), table.concat(code, "\n")
 end
 
--- The log as the client loads it from SavedVariables, holding `entries` in its storage for LOG_FORMAT.
+-- The log as the client loads it from SavedVariables, holding `entries` in its storage for LOG_FORMAT (format 4's
+-- blocks, packed by savedLog).
 local function openLog(ns, entries)
 	return ns.OpenCatchLog(savedLog(entries, LOG_FORMAT), {})
 end
 
--- The entries a log holds in its storage, as a list of the strings GOLDEN's `stored` are.
+-- The entries a log holds in its storage, as a list of the strings GOLDEN's `stored` are: each block split at its line
+-- feeds.
 local function storedEntries(catchLog)
-	return catchLog.data.entries
+	return logEntries(catchLog.data)
 end
 
 describe("the 1.0 surface", function()
@@ -621,6 +623,82 @@ describe("the 1.0 surface", function()
 				end
 			end
 			expectNone(broken, "LOG-R17", "the entry tags and their fields")
+		end)
+	end)
+
+	describe("the block store of format 4 (LOG-R17, LOG-R103, LOG-R104, LOG-R105)", function()
+		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
+		local ns = loaded.ns
+		local E1, E2, E3 = "S1|1|1791731750|0|86|150|0", "S1|1|1791731751|0|87|150|0", "S1|1|1791731752|0|88|150|0"
+
+		-- A format 4 log written out by hand, the way the client would hand it back: three entries, two to a block.
+		local function ownLog()
+			return {
+				format = LOG_FORMAT,
+				logId = "3f9a2c1e7b0d4a65",
+				characters = savedLog().characters,
+				blockSize = 2,
+				count = 3,
+				blocks = { E1 .. "\n" .. E2, E3 },
+			}
+		end
+
+		it("keeps its entries in `blockSize`, `count` and `blocks`, line-feed-joined, as 1.0 wrote them", function()
+			local data = ownLog()
+			assert(ns.LogBlocks.Problem(data) == nil, "LOG-R103: a log laid out as 1.0 wrote it no longer opens")
+			local catchLog = ns.OpenCatchLog(data, {})
+			assert(
+				catchLog:Count() == 3 and catchLog:Get(1) == E1 and catchLog:Get(2) == E2 and catchLog:Get(3) == E3,
+				"LOG-R103: entry seq is line (seq - 1) % blockSize + 1 of block (seq - 1) // blockSize + 1, no longer"
+			)
+			assert.are.same({ E1, E2, E3 }, storedEntries(catchLog))
+		end)
+
+		it("appends into the open block with a line feed, then into a new block once it is full (LOG-R103)", function()
+			local data = ownLog()
+			local catchLog = ns.OpenCatchLog(data, {})
+			catchLog:Append({ kind = "skill", char = 1, time = 1791731753, rank = 89, max = 150, mod = 0 })
+			catchLog:Append({ kind = "skill", char = 1, time = 1791731754, rank = 90, max = 150, mod = 0 })
+			assert(
+				data.count == 5 and #data.blocks == 3 and data.blockSize == 2,
+				"LOG-R103: count, blockSize and blocks no longer move as 1.0's did"
+			)
+			assert(
+				data.blocks[2] == E3 .. "\nS1|1|1791731753|0|89|150|0"
+					and data.blocks[3] == "S1|1|1791731754|0|90|150|0",
+				"LOG-R103: blocks are no longer joined by a line feed with no trailing one"
+			)
+			assert(data.format == LOG_FORMAT, "LOG-R17: an append changed the log's format")
+		end)
+
+		it(
+			"reserves a first byte below 0x20 and refuses the entries that would leave a log unreadable (LOG-R104)",
+			function()
+				local reserved = ownLog()
+				reserved.blocks[2] = "\1" .. E3
+				assert(
+					ns.LogBlocks.Problem(reserved) ~= nil,
+					"LOG-R104: a block starting with a byte below 0x20 is readable"
+				)
+				local broken = {}
+				for what, entry in pairs({
+					["a line feed"] = E1 .. "\n" .. E2,
+					["nothing"] = "",
+					["a control byte"] = "\1" .. E1,
+				}) do
+					local data = ownLog()
+					if pcall(ns.LogBlocks.Append, data, entry) or data.count ~= 3 then
+						broken[#broken + 1] = ("an entry of %s is appended"):format(what)
+					end
+				end
+				expectNone(broken, "LOG-R104", "the block store's refusals")
+			end
+		)
+
+		it("packs a log whole with LogBlocks.Pack, `blockSize` to a block (LOG-R105)", function()
+			local blocks, count = ns.LogBlocks.Pack({ E1, E2, E3 }, 2)
+			assert.are.same({ E1 .. "\n" .. E2, E3 }, blocks)
+			assert.are.equal(3, count)
 		end)
 	end)
 
