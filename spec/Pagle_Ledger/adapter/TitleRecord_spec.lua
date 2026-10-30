@@ -177,7 +177,7 @@ describe("the Ledger's title record (LED-R157, #76 item 2)", function()
 		-- The title records in PagleLog, as entries (LOG-R40).
 		local function logged()
 			local found = {}
-			for _, entry in ipairs(log.entries) do
+			for _, entry in ipairs(logEntries(log)) do
 				if entry:find("^A1|%d+|%d+|%d+|Ledger|title|") then
 					found[#found + 1] = entry
 				end

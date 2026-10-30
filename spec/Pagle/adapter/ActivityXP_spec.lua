@@ -311,7 +311,7 @@ describe("The Prestige snapshot", function()
 
 		local prestige = ledger:RecordPrestige()
 
-		local entries = loaded.env.PagleLog.entries
+		local entries = logEntries(loaded.env.PagleLog)
 		assert.are.equal(prestigeEntry(SERVER_TIME + 60, 1, 0, 2, 850), entries[#entries])
 		assert.are.equal(850, prestige.activityXP)
 	end)
@@ -321,7 +321,7 @@ describe("The Prestige snapshot", function()
 		function()
 			local loaded = core(history(3), savedDB(core(), LOG_ID, { TackleBoard = 100 }, {}))
 			local board, ledger = register(loaded, "TackleBoard"), register(loaded, "Ledger")
-			local logged = #loaded.env.PagleLog.entries
+			local logged = loaded.env.PagleLog.count
 			board:NewProjection({
 				db = {},
 				rulesVersion = 1,
@@ -341,7 +341,7 @@ describe("The Prestige snapshot", function()
 
 			assert.are.equal(100, prestige.activityXP)
 			assert.are.equal(400, loaded.env.Pagle.GetActivityXP().total)
-			assert.is_truthy(loaded.env.PagleLog.entries[logged + 1]:match("^P1|.*|1|100$"))
+			assert.is_truthy(logEntries(loaded.env.PagleLog)[logged + 1]:match("^P1|.*|1|100$"))
 		end
 	)
 

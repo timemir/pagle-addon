@@ -60,7 +60,7 @@ describe("the Session summary on the client", function()
 			loaded.client.advance(60)
 			catchAndFlush(loaded)
 			local log = loaded.env.PagleLog
-			local entries = { unpack(log.entries) }
+			local entries = logEntries(log)
 
 			loaded.client.advance(300)
 
@@ -76,7 +76,7 @@ describe("the Session summary on the client", function()
 			}, cardMoments(cards))
 			assert.are.same({}, loaded.env.PagleDB.global.summary.moments)
 			assert.are.equal(log, loaded.env.PagleLog)
-			assert.are.same(entries, log.entries)
+			assert.are.same(entries, logEntries(log))
 		end
 	)
 

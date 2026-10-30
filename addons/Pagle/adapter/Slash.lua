@@ -29,7 +29,11 @@ ns.coreSubcommands = ns.CoreSubcommands(Pagle)
 local function run(line)
 	local name, rest = ns.ParseSlash(line)
 	if ns.recoveryBlocked and name ~= "recovery" then
-		print("Pagle is paused for Recovery. Use /pagle recovery export, or remove Pagle_Recovery and reload.")
+		if ns.logUnreadable then
+			print(ns.L.LOG_UNREADABLE_PAUSED) -- LOG-R104
+		else
+			print("Pagle is paused for Recovery. Use /pagle recovery export, or remove Pagle_Recovery and reload.")
+		end
 		return
 	end
 	if name == "trailer" then

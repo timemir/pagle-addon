@@ -66,7 +66,11 @@ end
 local function decoded(log)
 	local global = { decodeErrors = 0 }
 	local records = {}
-	for record in core.OpenCatchLog(log, global, NOW):Iterate() do
+	-- The fixture's log is format 3, one string an entry on its own line (what this one-off rewrites): packed into
+	-- the codec's blocks to read it.
+	local view = { format = core.LOG_FORMAT, logId = log.logId, characters = log.characters, blockSize = 256 }
+	view.blocks, view.count = core.LogBlocks.Pack(log.entries)
+	for record in core.OpenCatchLog(view, global, NOW):Iterate() do
 		records[#records + 1] = record
 	end
 	return records, global.decodeErrors

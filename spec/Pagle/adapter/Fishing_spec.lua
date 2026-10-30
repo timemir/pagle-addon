@@ -1,5 +1,5 @@
 -- Cast recording driven through the client's events (LOG-R2–R9, LOG-R43, LOG-R93, LOG-R96): scripted fishing
--- sequences against the fake client, read back from PagleLog.entries and Core's bus.
+-- sequences against the fake client, read back from PagleLog's blocks and Core's bus.
 
 local T = SERVER_TIME -- the fake client's GetServerTime(), 15:15 UTC: realm 08:15
 local DRAIN_LIFE = 689
@@ -29,12 +29,12 @@ local function fishingCore(extra)
 	return loaded, server
 end
 
--- Every fishing event Core fires, in order, as { event, ..., entries = #PagleLog.entries when it fired }.
+-- Every fishing event Core fires, in order, as { event, ..., entries = PagleLog.count when it fired }.
 local function recordEvents(loaded)
 	local fired = {}
 	for _, event in ipairs(EVENTS) do
 		loaded.env.Pagle.RegisterCallback("Spec " .. event, event, function(...)
-			fired[#fired + 1] = { entries = #loaded.env.PagleLog.entries, ... }
+			fired[#fired + 1] = { entries = loaded.env.PagleLog.count, ... }
 		end)
 	end
 	return fired
@@ -52,7 +52,7 @@ end
 -- The Cast entries in PagleLog, in order.
 local function casts(loaded)
 	local out = {}
-	for _, entry in ipairs(loaded.env.PagleLog.entries) do
+	for _, entry in ipairs(logEntries(loaded.env.PagleLog)) do
 		if entry:sub(1, 3) == "C1|" then
 			out[#out + 1] = entry
 		end
@@ -252,13 +252,13 @@ describe("an interrupted Cast", function()
 		local fired = recordEvents(loaded)
 		channel(loaded)
 		stop(loaded)
-		local entries = #loaded.env.PagleLog.entries
+		local entries = loaded.env.PagleLog.count
 
 		loaded.client.advance(1.9)
 		assert.are.equal("channeling", loaded.env.Pagle.GetFishingState())
 		loaded.client.advance(0.1)
 
-		assert.are.equal(entries, #loaded.env.PagleLog.entries)
+		assert.are.equal(entries, loaded.env.PagleLog.count)
 		assert.are.same({ "CastStarted", "FishingStateChanged", "CastEnded", "FishingStateChanged" }, names(fired))
 		assert.are.same({ "interrupted" }, { fired[3][2] })
 		assert.are.equal("idle", loaded.env.Pagle.GetFishingState())
@@ -311,13 +311,13 @@ describe("each Cast", function()
 	end)
 
 	it(
-		"fires every event after its entry is in PagleLog.entries, in LOG-R9's order, with the records"
+		"fires every event after its entry is in PagleLog, in LOG-R9's order, with the records"
 			.. " IterateCatches yields (LOG-R9, LOG-R43)",
 		function()
 			local loaded = fishingCore()
 			local fired = recordEvents(loaded)
 			channel(loaded)
-			local before = #loaded.env.PagleLog.entries
+			local before = loaded.env.PagleLog.count
 
 			lootReady(loaded, { { link = OILY_BLACKMOUTH, quantity = 1 }, { link = MACKEREL, quantity = 3 } })
 

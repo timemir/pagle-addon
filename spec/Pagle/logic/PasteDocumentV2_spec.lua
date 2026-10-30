@@ -8,12 +8,30 @@ local vectors = assert(json.decode(readFile("spec/fixtures/document-v2.json")))
 ---@diagnostic disable-next-line: undefined-global -- stock Lua fixture data is not shipped in the addon
 local source = dofile("spec/Pagle/fixtures/PasteString.lua")
 
+-- The fixture's PagleLog in format 4's blocks, four entries to a block so the export crosses block edges (LOG-R103).
+local function sourceLog()
+	local log = {}
+	for key, value in pairs(source.log) do
+		log[key] = value
+	end
+	local entries = log.entries
+	log.entries = nil
+	setLogEntries(log, entries, 4)
+	putLogEntry(log, 8, "S1|2|1791733200|0|86|150|0")
+	return log
+end
+
 describe("document-v2 Paste exports (#302, #316)", function()
 	it("emits the independently framed current-format documents and decodes every golden Paste string", function()
-		local log = source.log
-		log.entries[8] = "S1|2|1791733200|0|86|150|0"
+		local log = sourceLog()
 		local export = assert(ns.PasteExport(log, 1, source.asOf, source.partSize))
-		for n, part in ipairs(vectors.format3) do
+		-- Whatever the block size, the documents are the same lines.
+		local single = setLogEntries(sourceLog(), logEntries(log), 1)
+		local again = assert(ns.PasteExport(single, 1, source.asOf, source.partSize))
+		for n in ipairs(export.parts) do
+			assert.are.equal(ns.PasteDocument(export, n), ns.PasteDocument(again, n))
+		end
+		for n, part in ipairs(vectors.format4) do
 			local document = ns.PasteDocument(export, n)
 			assert.are.equal(part.document, document)
 			local paste = ns.PasteString(document, codec)
@@ -25,22 +43,17 @@ describe("document-v2 Paste exports (#302, #316)", function()
 
 	it("uses format-specific prefix digests for generic historical framing", function()
 		for format = 1, 2 do
-			local log = source.log
+			local log = sourceLog()
 			log.format = format
 			local export = assert(ns.PasteExport(log, 4, source.asOf, source.partSize))
 			for n = 1, 2 do
 				assert.are.equal(vectors["format" .. format][n + 1].document, ns.PasteDocument(export, n))
 			end
 		end
-		source.log.format = 3
 	end)
 
 	it("keeps checkpoints so a later export hashes no more than one part before its first anchor", function()
-		local log = { logId = source.log.logId, format = 3, characters = source.log.characters, entries = {} }
-		for seq, entry in ipairs(source.log.entries) do
-			log.entries[seq] = entry
-		end
-		log.entries[8] = log.entries[8] or "S1|2|1791733200|0|86|150|0"
+		local log = sourceLog()
 		local function anchors(export)
 			local out = {}
 			for n, part in ipairs(export.parts) do
@@ -80,7 +93,8 @@ describe("document-v2 Paste exports (#302, #316)", function()
 			assert.are.same(new, anchors(assert(ns.PasteExport(log, 6, source.asOf, 2, nil, cache))))
 			assert.are.equal(new[#new][1] - 1, hashed)
 			-- Another log starts them over.
-			local other = { logId = "fedcba9876543210", format = 3, characters = log.characters, entries = log.entries }
+			local other =
+				setLogEntries({ logId = "fedcba9876543210", format = 4, characters = log.characters }, logEntries(log))
 			assert.is_truthy(ns.PasteExport(other, 1, source.asOf, 2, nil, cache))
 			assert.are.equal("fedcba9876543210", cache.logId)
 		end)

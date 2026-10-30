@@ -49,6 +49,10 @@ ns.L = {
 	TRAILER_SUMMARY_TEXT = "Your record lives in the Fish Journal.",
 	-- LOG-R18: PagleLog was in another format, so Core started a new log.
 	LOG_FORMAT_CHANGED = "Pagle: dev log format changed; started a new log.",
+	-- LOG-R104: PagleLog is in the codec's format but its blocks can't be read, so Pagle stops and leaves it as it is.
+	LOG_UNREADABLE = "Pagle stopped: your Catch log can't be read (%s), and nothing has been changed. Before you log out or reload, copy Pagle.lua and Pagle.lua.bak from WTF/Account/<account>/SavedVariables somewhere safe, then report it at github.com/timemir/pagle-addon/issues.",
+	-- LOG-R104: what /pagle says while the log can't be read.
+	LOG_UNREADABLE_PAUSED = "Pagle is stopped: your Catch log can't be read, and nothing has been changed. The line at login says what to do.",
 	NOT_FOREVER = "Pagle: this isn't World of Warcraft: Forever, so Pagle stays off.",
 	-- LOG-R67: the Size band names, Tiddler to Monster, in band order (Pagle.SIZE_BANDS), signed off for 1.0 (#264).
 	SIZE_BANDS = { "Tiddler", "Decent", "Hefty", "Whopper", "Monster" },

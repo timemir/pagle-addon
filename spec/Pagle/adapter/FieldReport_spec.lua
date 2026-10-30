@@ -55,7 +55,7 @@ describe("the Field report projection", function()
 			assert.are.equal(2, db.rulesVersion) -- field-report.md › Tunables
 			assert.are.equal(Pagle.CONTENT_FINGERPRINT, db.fingerprint)
 			assert.are.equal(LOG_ID, db.logId)
-			assert.are.equal(#loaded.env.PagleLog.entries, db.lastSeq, "up to date, login's Skill Reading too")
+			assert.are.equal(loaded.env.PagleLog.count, db.lastSeq, "up to date, login's Skill Reading too")
 		end
 	)
 

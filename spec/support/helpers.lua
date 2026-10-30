@@ -82,20 +82,60 @@ function characterRecord(guid, name, classID, raceID)
 	}
 end
 
---- A PagleLog as SavedVariables hand it back (catch-log.md › Data), holding `entries`. Its characters are
---- `characters`, or by default Ada (Player-4618-0A1B2C3D), first and last seen at 1791700000. Each call makes a
---- fresh table, which Core may change.
+--- Writes `entries` into the PagleLog `data` as format 4's block store (LOG-R103), by this file's own reading of the
+--- layout and not Core's: `blockSize` entries to a block (256 unless given), joined by a line feed, and `count`. The
+--- specs read the layout back the same way (logEntries), so they check Core's codec against it.
+---@param data table
+---@param entries string[]
+---@param blockSize integer?
+---@return table data
+function setLogEntries(data, entries, blockSize)
+	blockSize = blockSize or data.blockSize or 256
+	local blocks = {}
+	for first = 1, #entries, blockSize do
+		blocks[#blocks + 1] = table.concat(entries, "\n", first, math.min(first + blockSize - 1, #entries))
+	end
+	data.blockSize, data.count, data.blocks = blockSize, #entries, blocks
+	return data
+end
+
+--- Every entry of the PagleLog `data` (format 4's block store) as an array, each block split at its line feeds.
+---@param data table
+---@return string[]
+function logEntries(data)
+	local entries = {}
+	for _, block in ipairs(data.blocks) do
+		for line in (block .. "\n"):gmatch("([^\n]*)\n") do
+			entries[#entries + 1] = line
+		end
+	end
+	return entries
+end
+
+--- Sets entry `seq` of the PagleLog `data` to `entry` (appending when `seq` is one past the end), as a spec that
+--- builds a log by hand does; the layout is kept (setLogEntries).
+---@param data table
+---@param seq integer
+---@param entry string
+function putLogEntry(data, seq, entry)
+	local entries = logEntries(data)
+	entries[seq] = entry
+	setLogEntries(data, entries)
+end
+
+--- A PagleLog as SavedVariables hand it back (catch-log.md › Data), holding `entries` in format 4's blocks. Its
+--- characters are `characters`, or by default Ada (Player-4618-0A1B2C3D), first and last seen at 1791700000. Each call
+--- makes a fresh table, which Core may change.
 ---@param entries string[]?
----@param format integer? Default 3, the codec's (LOG-R18).
+---@param format integer? Default 4, the codec's (LOG-R18).
 ---@param characters table[]?
 ---@return table
 function savedLog(entries, format, characters)
-	return {
-		format = format or 3,
+	return setLogEntries({
+		format = format or 4,
 		logId = "3f9a2c1e7b0d4a65",
 		characters = characters or { characterRecord() },
-		entries = entries or {},
-	}
+	}, entries or {})
 end
 
 --- Loads Core on Forever, with the errors its default handler gets (loaded.client.errors), for a spec that asserts
@@ -652,7 +692,7 @@ function openJournal(options)
 		fake.catchLog.data.logId = options.logId
 	end
 	if options.entries then
-		fake.catchLog.data.entries = options.entries
+		setLogEntries(fake.catchLog.data, options.entries)
 	end
 	for _, record in ipairs(options.log or {}) do
 		fake.catchLog:Append(record)

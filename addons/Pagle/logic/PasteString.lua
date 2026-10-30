@@ -198,7 +198,7 @@ end
 ---@field asOf integer      GetServerTime() when the export was made
 ---@field total integer     the log's length then
 ---@field characters string[] the character lines (PST-R12)
----@field entries string[]  PagleLog.entries itself: entries up to `total` never change (LOG-R14)
+---@field log table        the PagleLog itself, read through ns.LogBlocks: entries up to `total` never change (LOG-R14)
 ---@field parts PaglePastePart[]
 
 -- The resolved character GUID of `entry`; nil when its header can't be read or
@@ -222,16 +222,16 @@ end
 -- whose entry is still the one hashed there, and its digest; 0 and nil with none. A kept entry that differs (the log
 -- replaced under the same logId) drops every kept checkpoint.
 ---@param cache table PagleDB.global.pasteCheckpoints, already for this log
----@param entries string[]
+---@param log table PagleLog
 ---@param need integer
 ---@param stride integer
 ---@return integer
 ---@return string?
-local function cachedCheckpoint(cache, entries, need, stride)
+local function cachedCheckpoint(cache, log, need, stride)
 	for seq = need - need % stride, stride, -stride do
 		local kept = cache.at[seq]
 		if type(kept) == "table" then
-			if kept.entry == entries[seq] and type(kept.digest) == "string" then
+			if kept.entry == ns.LogBlocks.Get(log, seq) and type(kept.digest) == "string" then
 				return seq, kept.digest
 			end
 			cache.at = {}
@@ -253,19 +253,24 @@ end
 ---@return PaglePasteExport?
 function ns.PasteExport(log, from, asOf, partSize, pause, checkpoints)
 	partSize = partSize or ns.PASTE_PART_ENTRIES
-	local logId, characters, entries = log.logId, log.characters, log.entries
+	local logId, characters = log.logId, log.characters
+	local LogBlocks = ns.LogBlocks
 	if
 		type(logId) ~= "string"
 		or not match(logId, "^[0-9a-f]+$")
 		or #logId ~= 16
 		or not (nat(log.format) and log.format >= 1)
 		or type(characters) ~= "table"
-		or type(entries) ~= "table"
+		or type(log.blocks) ~= "table"
+		or not nat(log.count)
+		-- A log Core can't read exports nothing (LOG-R104); an LF in an entry is one. The check was made when Core opened
+		-- the log and is not made again for it as it stands (LogBlocks.Problem), so this costs nothing on each export.
+		or LogBlocks.Problem(log) ~= nil
 		or #characters > ns.PASTE_CHARACTERS_CAP
 	then
 		return nil
 	end
-	local total = #entries
+	local total = log.count
 	if not nat(from) or from < 1 or from > total + 1 or not nat(asOf) or not nat(partSize) or partSize < 1 then
 		return nil
 	end
@@ -278,8 +283,8 @@ function ns.PasteExport(log, from, asOf, partSize, pause, checkpoints)
 		lines[i], guids[i] = line, character.guid
 	end
 	-- The entries exported are checked before any hashing; the prefix is checked as it is hashed.
-	for i = from, total do
-		if not entryGUID(entries[i], guids) or find(entries[i], "\n", 1, true) then
+	for _, entry in LogBlocks.Iterate(log, from, total) do
+		if not entryGUID(entry, guids) then
 			return nil
 		end
 		if pause then
@@ -291,24 +296,26 @@ function ns.PasteExport(log, from, asOf, partSize, pause, checkpoints)
 	local current = cache ~= nil and cache.logId == logId and cache.format == log.format and type(cache.at) == "table"
 	local seq, digest = 0, nil
 	if cache and current then
-		seq, digest = cachedCheckpoint(cache, entries, from - 1, stride)
+		seq, digest = cachedCheckpoint(cache, log, from - 1, stride)
 	end
+	local walk = LogBlocks.Iterate(log, seq + 1, total) -- the prefix, one block split at a time
 	digest = digest or ns.CheckpointInitial(logId, log.format)
 	local parts = {}
 	local start = from
 	repeat
 		while seq < start - 1 do
-			seq = seq + 1
-			local guid = entryGUID(entries[seq], guids)
-			if not guid or find(entries[seq], "\n", 1, true) then
+			local at, entry = walk()
+			seq, entry = assert(at), assert(entry)
+			local guid = entryGUID(entry, guids)
+			if not guid then
 				return nil
 			end
-			digest = ns.CheckpointNext(digest, seq, guid, entries[seq])
+			digest = ns.CheckpointNext(digest, seq, guid, entry)
 			if cache and seq % stride == 0 then
 				if not current then
 					cache.logId, cache.format, cache.at, current = logId, log.format, {}, true
 				end
-				cache.at[seq] = { digest = digest, entry = entries[seq] }
+				cache.at[seq] = { digest = digest, entry = entry }
 			end
 			if pause then
 				pause()
@@ -324,7 +331,7 @@ function ns.PasteExport(log, from, asOf, partSize, pause, checkpoints)
 		asOf = asOf,
 		total = total,
 		characters = lines,
-		entries = entries,
+		log = log,
 		parts = parts,
 	}
 end
@@ -340,9 +347,8 @@ function ns.PasteDocument(export, n)
 	for i, line in ipairs(export.characters) do
 		lines[i] = line
 	end
-	local entries = export.entries
-	for seq = part.from, part.from + part.count - 1 do
-		lines[#lines + 1] = entries[seq]
+	for _, entry in ns.LogBlocks.Iterate(export.log, part.from, part.from + part.count - 1) do
+		lines[#lines + 1] = entry
 	end
 	local body = ""
 	if #lines > 0 then

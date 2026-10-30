@@ -57,7 +57,9 @@ function ns.NewTrailerHistory(catalogue, characters, char, snapshot, now)
 		logId = "pagle-trailer",
 		test = true,
 		characters = ns.TrailerCopy(characters),
-		entries = {},
+		blockSize = ns.LOG_BLOCK_SIZE,
+		count = 0,
+		blocks = {},
 	}
 	local log = ns.OpenCatchLog(data, {}, now, catalogue.GetItem)
 	local zones, seen, pairsByZone = {}, {}, {}

@@ -36,7 +36,7 @@ local function fixture()
 	if options.branch == "divergent" then
 		entries[4] = castEntry(1791735023, 6358)
 	end
-	local log = savedLog(entries, 3, { character })
+	local log = savedLog(entries, 4, { character })
 	log.logId = options["log-id"] or "9387f1ead054bc62"
 	log.futureField = { retained = { "original unknown field" } }
 	return log
@@ -140,7 +140,7 @@ if options.mode == "apply" then
 	write(".replacement.snapshot", loaded.ns.RecoveryExport(loaded.env.PagleLog))
 	local staged = {}
 	for _, held in ipairs(archive.staged) do
-		staged[#staged + 1] = held.seq .. "\t" .. held.reason .. "\t" .. archive.original.entries[held.seq]
+		staged[#staged + 1] = held.seq .. "\t" .. held.reason .. "\t" .. logEntries(archive.original)[held.seq]
 	end
 	write(".staged", table.concat(staged, "\n"))
 	loaded.client.fire("PLAYER_LOGIN")
@@ -185,6 +185,4 @@ write(
 		.. "\n"
 )
 assert(#loaded.client.errors == 0, table.concat(loaded.client.errors, "\n"))
-print(
-	"actual addon " .. options.mode .. " complete; " .. #loaded.env.PagleLog.entries .. " entries; outputs " .. output
-)
+print("actual addon " .. options.mode .. " complete; " .. loaded.env.PagleLog.count .. " entries; outputs " .. output)

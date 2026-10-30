@@ -34,7 +34,7 @@ function ns.PasteView(log, marks, choice, asOf, pause, checkpoints)
 	local from = 1
 	if choice == "new" then
 		from = ns.PasteNewFrom(marks, log.logId)
-		if type(log.entries) == "table" and from > #log.entries then
+		if type(log.count) == "number" and from > log.count then
 			return { choice = choice, message = L.PASTE_NOTHING_NEW }
 		end
 	end

@@ -152,7 +152,7 @@ describe("scripts/read-wtf.lua's Catch log and exit check", function()
 			assert.are.equal("", err)
 			assert.are.equal(0, code)
 			assert.are.equal(
-				("== Catch log (PagleLog): format 3, logId %s, 2 characters, 7 entries"):format(log.logId),
+				("== Catch log (PagleLog): format 4, logId %s, 2 characters, 7 entries"):format(log.logId),
 				line(out, "== Catch log")
 			)
 			assert.are.equal("entries by tag: B1 1, C1 5, S1 1", line(out, "entries by tag: "))
@@ -260,8 +260,8 @@ describe("scripts/read-wtf.lua's Catch log and exit check", function()
 			{ "cast", 1, 60, "caught", 148 },
 			{ "cast", 1, 120, "caught", nil },
 		})
-		log.entries[3] = log.entries[2]
-		log.entries[4] = "C1|1|1791731900|0|x"
+		putLogEntry(log, 3, logEntries(log)[2])
+		putLogEntry(log, 4, "C1|1|1791731900|0|x")
 		local folder = savedVariables({ PagleLog = log, PagleDB = { global = { decodeErrors = 2 } } })
 
 		it("prints the Casts in zone areaID 0 by seq", function()
@@ -329,11 +329,11 @@ describe("scripts/read-wtf.lua's Catch log and exit check", function()
 			line(out, "== Catch log")
 		)
 		assert.are.equal(
-			"PagleLog is format 1, the codec reads format 3: Core starts a new log at login",
+			"PagleLog is format 1, the codec reads format 4: Core starts a new log at login",
 			line(out, "PagleLog is ")
 		)
 		assert.are.same(
-			{ "  FAIL  PagleLog is format 1, the codec reads format 3" },
+			{ "  FAIL  PagleLog is format 1, the codec reads format 4" },
 			block(out, "== Exit check (#75 steps 3 and 4): FAILED (1 of 1 checks)")
 		)
 		assert.are.equal(1, code)

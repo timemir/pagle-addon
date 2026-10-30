@@ -208,7 +208,7 @@ describe("the diagnostics buffer", function()
 
 		local log = loaded.env.PagleLog
 		assert.is_nil(log.diagnostics)
-		for _, entry in ipairs(log.entries) do
+		for _, entry in ipairs(logEntries(log)) do
 			assert.is_nil(entry:find("Oily Blackmouth School", 1, true))
 			assert.is_nil(entry:find("Nowhere", 1, true))
 			assert.is_nil(entry:find("enUS", 1, true))

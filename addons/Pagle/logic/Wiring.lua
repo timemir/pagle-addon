@@ -72,7 +72,7 @@ local ns = select(2, ...)
 function ns.WireProjections(host)
 	ns.projections = ns.NewProjections({
 		length = function()
-			return #host.catchLog().data.entries
+			return host.catchLog():Count()
 		end,
 		logId = function()
 			return host.catchLog().data.logId

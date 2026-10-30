@@ -8,6 +8,9 @@ local MAX = 9007199254740991
 ns.RECOVERY_SNAPSHOT_CAP = 16 * 1024 * 1024
 ns.RECOVERY_DATA_CAP = 24 * 1024 * 1024
 local HEADER = "PGL-SNAPSHOT|1\n"
+-- The Catch log format a snapshot and a Recovery plan name (LOG-R17): 1.0's, 4. The snapshot's records are the same
+-- whatever the log's storage, so its bytes owe nothing to the blocks (LOG-R103).
+local FORMAT = 4
 local ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
 local function natural(value)
@@ -132,7 +135,8 @@ end
 ---@param log table
 ---@return string
 function ns.RecoverySnapshot(log)
-	assert(type(log) == "table" and log.format == 3, "Recovery requires Catch log format 3")
+	assert(type(log) == "table" and log.format == FORMAT, "Recovery requires Catch log format " .. FORMAT)
+	assert(not ns.CatchLogProblem(log), "Recovery requires a readable Catch log")
 	assert(
 		type(log.logId) == "string" and #log.logId == 16 and log.logId:find("^[0-9a-f]+$"),
 		"invalid snapshot log ID"
@@ -146,7 +150,7 @@ function ns.RecoverySnapshot(log)
 		out[#out + 1] = framed
 	end
 	add(log.logId)
-	add("3")
+	add(tostring(FORMAT))
 	add(nullable(log.test))
 	add(natural(dense(log.characters, 100)))
 	for _, c in ipairs(log.characters) do
@@ -162,8 +166,9 @@ function ns.RecoverySnapshot(log)
 		add(natural(c.lastSeen))
 		add(nullable(c.selfFound))
 	end
-	add(natural(dense(log.entries, 100000)))
-	for _, entry in ipairs(log.entries) do
+	assert(log.count <= 100000, "invalid snapshot array")
+	add(natural(log.count))
+	for _, entry in ns.LogBlocks.Iterate(log) do
 		assert(type(entry) == "string", "missing snapshot entry")
 		add(entry)
 	end
@@ -175,8 +180,7 @@ end
 function ns.RecoveryReadSnapshot(bytes)
 	assert(#bytes <= ns.RECOVERY_SNAPSHOT_CAP, "snapshot too large")
 	local read, finish = ns.RecoveryReader(bytes, HEADER)
-	local log =
-		{ logId = read(), format = ns.RecoveryNatural(read()), test = boolean(read()), characters = {}, entries = {} }
+	local log = { logId = read(), format = ns.RecoveryNatural(read()), test = boolean(read()), characters = {} }
 	local count = ns.RecoveryNatural(read())
 	assert(count <= 100, "too many Recovery characters")
 	for i = 1, count do
@@ -198,10 +202,14 @@ function ns.RecoveryReadSnapshot(bytes)
 	end
 	count = ns.RecoveryNatural(read())
 	assert(count <= 100000, "too many Recovery entries")
+	local entries = {}
 	for i = 1, count do
-		log.entries[i] = read()
+		entries[i] = read()
 	end
 	finish()
+	-- The restored log is written whole in blocks, the layout every log has (LOG-R103).
+	log.blockSize = ns.LOG_BLOCK_SIZE
+	log.blocks, log.count = ns.LogBlocks.Pack(entries, log.blockSize)
 	assert(ns.RecoverySnapshot(log) == bytes, "noncanonical Recovery snapshot")
 	return log
 end

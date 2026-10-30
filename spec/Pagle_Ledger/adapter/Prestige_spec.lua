@@ -66,7 +66,7 @@ end
 ---@return string[]
 local function prestiges(fake)
 	local found = {}
-	for _, entry in ipairs(fake.catchLog.data.entries) do
+	for _, entry in ipairs(logEntries(fake.catchLog.data)) do
 		if entry:sub(1, 3) == "P1|" then
 			found[#found + 1] = entry
 		end
@@ -293,7 +293,7 @@ describe("Prestiging (LED-R33)", function()
 	it("is allowed again after a crash that lost the P1: the climb is still at 60 (LED-R194)", function()
 		local before = ledger()
 		local saved = {}
-		for i, entry in ipairs(before.catchLog.data.entries) do
+		for i, entry in ipairs(logEntries(before.catchLog.data)) do
 			saved[i] = entry
 		end
 		local _, crashed = ledger()

@@ -30,7 +30,7 @@ local function machinery(entries)
 	local world = { now = 0, frames = {}, fingerprint = FINGERPRINT, catchLog = catchLog, reported = {} }
 	world.projections = ns.NewProjections({
 		length = function()
-			return #catchLog.data.entries
+			return catchLog.data.count
 		end,
 		logId = function()
 			return catchLog.data.logId

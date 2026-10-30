@@ -139,6 +139,45 @@ function Cutter:Copy()
 	return copy
 end
 
+--- Puts `cut`, a Session as a cutter kept it (PagleDB.global.tailSession), in `cutter` as the latest Session fed so
+--- far, a copy of it that shares nothing. False, changing nothing, unless every field reads as a cutter's own would.
+---@param cutter PagleSessionCutter
+---@param cut any
+---@return boolean
+function ns.RestoreSessionCut(cutter, cut)
+	if type(cut) ~= "table" then
+		return false
+	end
+	for _, key in ipairs({ "startTime", "endTime", "firstSeq", "lastSeq", "casts", "catches", "gotAway" }) do
+		if type(cut[key]) ~= "number" then
+			return false
+		end
+	end
+	if type(cut.id) ~= "string" or type(cut.lastID) ~= "string" then
+		return false
+	end
+	local copy = {}
+	for key, value in pairs(cut) do
+		if type(value) ~= "table" then
+			copy[key] = value
+		end
+	end
+	for _, list in ipairs({ "characters", "zones", "seenCharacters", "seenZones" }) do
+		if type(cut[list]) ~= "table" then
+			return false
+		end
+		copy[list] = {}
+		for key, value in pairs(cut[list]) do
+			if type(value) ~= "number" and value ~= true then
+				return false
+			end
+			copy[list][key] = value
+		end
+	end
+	cutter.session = copy
+	return true
+end
+
 --- The latest Session fed so far, open or ended, or nil before the first Cast. It is the cutter's own table, which
 --- changes as Casts join it: copy it (ns.SessionPayload) before handing it out.
 ---@return PagleSessionCut?
@@ -152,17 +191,24 @@ end
 --- from seq 0.
 ---@param reverseCasts fun(): PagleCast?
 ---@param breaks PagleSessionBreaks? where Sessions ended early (LOG-R99)
+---@param into PagleCast[]? filled with the Session's Casts it walked, newest first, so the caller need not read them again
 ---@return integer?
-function ns.SessionStartSeq(reverseCasts, breaks)
+function ns.SessionStartSeq(reverseCasts, breaks, into)
 	local first = reverseCasts()
 	if not first then
 		return nil
+	end
+	if into then
+		into[1] = first
 	end
 	for cast in reverseCasts do
 		if first.time - cast.time >= ns.SESSION_GAP or (breaks ~= nil and breaks(cast.id)) then
 			break
 		end
 		first = cast
+		if into then
+			into[#into + 1] = cast
+		end
 	end
 	return first.seq
 end

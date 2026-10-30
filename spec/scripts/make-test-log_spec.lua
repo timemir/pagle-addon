@@ -146,12 +146,12 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 			function()
 				local records, undecodable = decoded(log)
 				assert.are.equal(0, undecodable)
-				assert.are.equal(#log.entries, #records)
+				assert.are.equal(log.count, #records)
 				assert.are.same(
 					globalsOf(readFileOrNil(FIXTURE .. "/SavedVariables/Pagle.lua")).PagleLog.characters,
 					log.characters
 				)
-				assert.are.equal(3, log.format)
+				assert.are.equal(4, log.format)
 				assert.matches("^%x+$", log.logId)
 				assert.are.equal(16, #log.logId)
 				assert.are.equal(log.logId:lower(), log.logId)
@@ -201,7 +201,7 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 			"prints each entry tag's count, as Core's codec tagged the entries (catch-log.md › Entry formats)",
 			function()
 				local tags = {}
-				for _, entry in ipairs(log.entries) do
+				for _, entry in ipairs(logEntries(log)) do
 					local tag = entry:match("^(%u%d)|")
 					tags[tag] = (tags[tag] or 0) + 1
 				end
@@ -380,8 +380,9 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 
 	-- The big presets (#262): a Pagle.lua of about 5 or 20 MiB for launch re-verification checks 2 and 10. Each builds
 	-- its log in full, so they're #slow, out of the default run.
-	-- big20's log holds more distinct strings than Lua 5.1 loads in one piece (`split`), so it's read back in parts.
-	local bigPresets = { { preset = "big5", mib = 5, split = false }, { preset = "big20", mib = 20, split = true } }
+	-- big20's log would hold more distinct strings than Lua 5.1 loads in one piece in format 3; in format 4 it is about
+	-- 1,300 blocks (`blocks`), and the reader can still load a file in parts.
+	local bigPresets = { { preset = "big5", mib = 5, blocks = 390 }, { preset = "big20", mib = 20, blocks = 1540 } }
 	for _, big in ipairs(bigPresets) do
 		describe(("--preset %s on the fixture account (#262, the presets table) #slow"):format(big.preset), function()
 			local made = make(big.preset)
@@ -418,7 +419,7 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 
 			it("writes a test log Core's codec decodes whole, with a new logId (LOG-R15, LOG-R16)", function()
 				assert.are.equal(0, global.decodeErrors)
-				assert.are.equal(#log.entries, seen.records)
+				assert.are.equal(log.count, seen.records)
 				assert.is_true(log.test)
 				assert.are.equal(16, #log.logId)
 				assert.are_not.equal(ORIGINAL_LOG_ID, log.logId)
@@ -438,19 +439,26 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 				end
 			)
 
-			it("says when Lua 5.1 can load it only in parts: more distinct strings than 262,143", function()
-				local note
-				for _, line in ipairs(made.lines) do
-					note = note or (line:sub(1, 10) == "note: its " and line or nil)
+			it(
+				"holds the log in about its entries / 256 blocks, far below Lua 5.1's 262,143 constants (LOG-R103)",
+				function()
+					local blocks = math.ceil(log.count / 256)
+					assert.are.equal(4, log.format)
+					assert.are.equal(256, log.blockSize)
+					assert.are.equal(blocks, #log.blocks)
+					assert.is_nil(log.entries)
+					assert.is_true(#log.blocks < 262143 / 100)
+					assert.is_nil(core.CatchLogProblem(log))
+					-- Over the fixture catalogue, whose entries are short, big5 holds some 100,000 entries and big20 some
+					-- 390,000; over the retail catalogue's, 84,000 and 335,000: about 330 and 1,300 blocks.
+					assert.is_true(math.abs(#log.blocks - big.blocks) <= 0.1 * big.blocks, #log.blocks)
+					local note
+					for _, line in ipairs(made.lines) do
+						note = note or (line:sub(1, 8) == "blocks: " and line or nil)
+					end
+					assert.matches("^blocks: [%d,]+ entries in [%d,]+ of 256 %(LOG%-R103%)", note)
 				end
-				assert.are.equal(big.split, #log.entries > 262143)
-				if big.split then
-					local says = 'more distinct strings than Lua 5.1 loads in one piece (262,143: "constant'
-					assert.matches(says, note, 1, true)
-				else
-					assert.is_nil(note)
-				end
-			end)
+			)
 
 			it("keeps PagleDB and the rest of Pagle.lua byte for byte (the intro)", function()
 				local fixture = readFileOrNil(FIXTURE .. "/SavedVariables/Pagle.lua")
@@ -531,7 +539,7 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 			local records, undecodable = decoded(log)
 			assert.are.equal(0, undecodable)
 			-- Pagle.IterateCatches' read yields no Module record (LOG-R42); the board's own read yields its 5
-			assert.are.equal(#log.entries, #records + #boardRecords(log))
+			assert.are.equal(log.count, #records + #boardRecords(log))
 			assert.is_true(log.test)
 			assert.are.equal(16, #log.logId)
 			assert.are_not.equal(ORIGINAL_LOG_ID, log.logId)
@@ -1268,7 +1276,7 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 		it("writes a test log Core's codec decodes whole, with a new logId (LOG-R15, LOG-R16)", function()
 			local records, undecodable = decoded(log)
 			assert.are.equal(0, undecodable)
-			assert.are.equal(#log.entries, #records + #huntsRecords(log))
+			assert.are.equal(log.count, #records + #huntsRecords(log))
 			assert.is_true(log.test)
 			assert.are.equal(16, #log.logId)
 			assert.are_not.equal(ORIGINAL_LOG_ID, log.logId)
@@ -1452,7 +1460,7 @@ describe("scripts/make-test-log.lua (#172, in-game-verification.md › Test logs
 		it("writes a test log Core's codec decodes whole, with its grants (catch-log.md › Data)", function()
 			local records, undecodable = decoded(log)
 			assert.are.equal(0, undecodable)
-			assert.are.equal(#log.entries, #records + #huntsRecords(log))
+			assert.are.equal(log.count, #records + #huntsRecords(log))
 			assert.is_true(log.test)
 			assert.are.equal(3 * 201000 + 60000, log.devXP)
 			assert.is_true(log.devCoins > 0 and log.devCoins <= 50000)

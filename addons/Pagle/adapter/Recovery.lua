@@ -192,9 +192,17 @@ function ns.OpenRecovery(args)
 			)
 			return
 		end
+		-- A branch a beta Pagle kept is in format 3's entries, which this Pagle can't read records from (LOG-R18).
+		local original = archive.original
+		if type(original) ~= "table" or original.format ~= ns.LOG_FORMAT or type(original.blocks) ~= "table" then
+			print(
+				"Pagle Recovery: this archive was kept by an older Pagle, in a Catch log format this one can't show records from. It is still preserved."
+			)
+			return
+		end
 		local parts, labels = {}, {}
 		for i, staged in ipairs(archive.staged) do
-			parts[i] = archive.original.entries[staged.seq]
+			parts[i] = ns.LogBlocks.Get(original, staged.seq) or "(this record is not in the preserved log)"
 			labels[i] = "Record " .. staged.seq .. " · " .. staged.reason
 		end
 		if #parts == 0 then

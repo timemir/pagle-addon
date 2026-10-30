@@ -107,7 +107,7 @@ describe("Core's login order", function()
 		local globals, skill, build = fishingClient()
 		local loaded = loadAddon("Pagle", globals)
 		loaded.client.fire("PLAYER_LOGIN")
-		assert.are.same({}, loaded.env.PagleLog.entries)
+		assert.are.same({}, logEntries(loaded.env.PagleLog))
 
 		loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
 		skill.rank, build.number = 87, "70412"
@@ -116,7 +116,7 @@ describe("Core's login order", function()
 		assert.are.same({
 			"B1|1|1791731700|0|70338|1.60.1|pagle-2026c",
 			"S1|1|1791731700|1|86|150|0",
-		}, loaded.env.PagleLog.entries)
+		}, logEntries(loaded.env.PagleLog))
 	end)
 
 	for _, event in ipairs({ "SKILL_LINES_CHANGED", "CHAT_MSG_SKILL" }) do
@@ -126,7 +126,7 @@ describe("Core's login order", function()
 			loaded.client.fire("PLAYER_LOGIN")
 			loaded.client.fire(event)
 			loaded.client.fire("PLAYER_ENTERING_WORLD", true, false)
-			local entries = loaded.env.PagleLog.entries
+			local entries = logEntries(loaded.env.PagleLog)
 			assert.are.equal(loaded.ns.RULE_SET_ID, entries[1]:match("^B1|.*|([^|]+)$"))
 			assert.matches("^S1|", entries[2])
 			assert.are.equal(2, #entries)
@@ -151,7 +151,7 @@ describe("Core's login order", function()
 
 		loaded.client.fire("ADDON_LOADED", "Pagle_QoL")
 
-		assert.are.same({ log = 3, db = #loaded.ns.PAGLEDB_MIGRATIONS, catalogue = true }, found)
+		assert.are.same({ log = 4, db = #loaded.ns.PAGLEDB_MIGRATIONS, catalogue = true }, found)
 	end)
 end)
 
@@ -244,7 +244,7 @@ describe("Skill Readings from the client", function()
 				local log = loaded.env.PagleLog
 				local fired = {}
 				loaded.env.Pagle.RegisterCallback("Spec", "SkillChanged", function(_, reading)
-					fired[#fired + 1] = { "SkillChanged", reading.rank, reading.seq, #log.entries }
+					fired[#fired + 1] = { "SkillChanged", reading.rank, reading.seq, log.count }
 				end)
 				loaded.env.Pagle.RegisterCallback("Spec", "ConditionsChanged", function(_, changedKeys)
 					fired[#fired + 1] = { "ConditionsChanged", changedKeys[1], #changedKeys }
@@ -253,7 +253,7 @@ describe("Skill Readings from the client", function()
 				skill.rank = 87
 				loaded.client.fire(event)
 
-				assert.are.equal("S1|1|1791731700|2|87|150|0", log.entries[3])
+				assert.are.equal("S1|1|1791731700|2|87|150|0", logEntries(log)[3])
 				assert.are.same({ { "SkillChanged", 87, 3, 3 }, { "ConditionsChanged", "skill", 1 } }, fired)
 			end
 		)
@@ -267,7 +267,7 @@ describe("Skill Readings from the client", function()
 		loaded.client.fire("SKILL_LINES_CHANGED")
 		loaded.client.fire("SKILL_LINES_CHANGED")
 
-		assert.are.equal(2, #loaded.env.PagleLog.entries)
+		assert.are.equal(2, loaded.env.PagleLog.count)
 		assert.are.equal(1, #fired)
 		assert.are.same({ "skill" }, fired[1][2])
 	end)
@@ -283,7 +283,7 @@ describe("Skill Readings from the client", function()
 			loaded.client.fire("SKILL_LINES_CHANGED")
 			loaded.client.fire("CHAT_MSG_SKILL")
 
-			assert.are.equal(3, #loaded.env.PagleLog.entries)
+			assert.are.equal(3, loaded.env.PagleLog.count)
 			assert.are.same({ "SkillChanged", "ConditionsChanged" }, { fired[1][1], fired[2][1] })
 			assert.are.equal(2, #fired)
 			assert.are.same({ "skill" }, fired[2][2])
@@ -313,7 +313,7 @@ describe("Skill Readings from the client", function()
 		local loaded =
 			loggedIn(savedLog({ "B1|1|1791731000|0|70338|1.60.1|pagle-2026c", "S1|1|1791731001|0|86|150|0" }))
 
-		assert.are.equal(2, #loaded.env.PagleLog.entries)
+		assert.are.equal(2, loaded.env.PagleLog.count)
 	end)
 end)
 

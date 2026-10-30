@@ -420,7 +420,7 @@ describe("Stats' projection", function()
 				assert.are.same({ n = 3, at = 6, last = T0 + 600 }, ns.State().hits["148:hi#6303"])
 				assert.are.equal(11, ns.State().sessions[1].casts) -- still Session 1: 60 s after Cast 10
 				assert.are.same({}, fake.writeUps) -- nothing earned, so no Write-up
-				assert.are.equal(#log.entries, global.projection.lastSeq)
+				assert.are.equal(log.count, global.projection.lastSeq)
 			end
 		)
 
@@ -459,12 +459,12 @@ describe("Stats' projection", function()
 
 		it("rebuilds when lastSeq is beyond the log, as after a crash (STA-R94)", function()
 			local log, global, first = savedMarked()
-			global.projection.lastSeq = #log.entries + 5
+			global.projection.lastSeq = log.count + 5
 
 			local ns = nextLogin(log, global)
 
 			assert.are.same(first, ns.State())
-			assert.are.equal(#log.entries, global.projection.lastSeq)
+			assert.are.equal(log.count, global.projection.lastSeq)
 		end)
 
 		it("builds a lost PagleStatsDB from the whole log, as a first build (STA-R92)", function()

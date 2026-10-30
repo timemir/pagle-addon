@@ -56,7 +56,7 @@ describe("the wallet projection", function()
 
 			local global = loaded.env.PagleDB.global
 			local db = global.projections.wallet
-			assert.are.same({ 3, loaded.env.Pagle.CONTENT_FINGERPRINT, LOG_ID, #loaded.env.PagleLog.entries }, {
+			assert.are.same({ 3, loaded.env.Pagle.CONTENT_FINGERPRINT, LOG_ID, loaded.env.PagleLog.count }, {
 				db.rulesVersion,
 				db.fingerprint,
 				db.logId,

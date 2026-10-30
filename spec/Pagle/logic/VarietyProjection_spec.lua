@@ -96,7 +96,7 @@ local function newWorld(entries, db, syncLimit)
 	world.catchLog = catchLog
 	world.projections = ns.NewProjections({
 		length = function()
-			return #catchLog.data.entries
+			return catchLog.data.count
 		end,
 		logId = function()
 			return catchLog.data.logId
@@ -137,7 +137,7 @@ local function newWorld(entries, db, syncLimit)
 
 	-- Login step 3: the catch-up or rebuild, run to its end unless `frames` limits the frames run.
 	function world.enterWorld(frames)
-		world.projections:Start(#catchLog.data.entries)
+		world.projections:Start(catchLog.data.count)
 		world.runFrames(frames)
 	end
 	function world.runFrames(limit)
@@ -157,7 +157,7 @@ local function newWorld(entries, db, syncLimit)
 		end
 		catchLog:Append(record)
 		-- Live entries reach projections decoded, as Pagle.IterateCatches hands them out (LOG-R73).
-		world.projections:Live(catchLog:Iterate(#catchLog.data.entries - 1)())
+		world.projections:Live(catchLog:Iterate(catchLog.data.count - 1)())
 	end
 	return world
 end

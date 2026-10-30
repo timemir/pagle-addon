@@ -138,18 +138,20 @@ PagleDB = {
 },
 }
 PagleLog = {
-["format"] = 3,
-["logId"] = "8c1d5e2f9a3b7c40",
-["characters"] = {
-{
-["guid"] = "Player-4618-0A1B2C3D",
-["name"] = "Ada",
-["surname"] = "Brook",
-["firstSeen"] = 1793789000,
-["lastSeen"] = 1793790000,
-}, -- [1]
-},
-["entries"] = {
+["blockSize"] = 256,
+["blocks"] = {
 "B1|1|1793789000|0|71002|1.61.0|pagle-2026a", -- [1]
 },
+["characters"] = {
+{
+["firstSeen"] = 1793789000,
+["guid"] = "Player-4618-0A1B2C3D",
+["lastSeen"] = 1793790000,
+["name"] = "Ada",
+["surname"] = "Brook",
+}, -- [1]
+},
+["count"] = 1,
+["format"] = 4,
+["logId"] = "8c1d5e2f9a3b7c40",
 }
