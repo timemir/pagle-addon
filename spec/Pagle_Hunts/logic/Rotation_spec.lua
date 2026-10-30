@@ -90,11 +90,11 @@ describe("the fallback rotation", function()
 			)
 		end)
 
-		it("start from the placeholder origin, Monday 19 October 2026 at 15:00 UTC (Tunables)", function()
-			assert.are.equal(1792422000, ORIGIN)
+		it("start from the release-day origin, Thursday 5 November 2026 at 15:00 UTC (Tunables)", function()
+			assert.are.equal(1793890800, ORIGIN)
 			assert.are.equal(15 * 3600, ORIGIN % DAY)
-			-- 1 January 1970 was a Thursday: day 4 of a week starting Monday is a Monday here.
-			assert.are.equal(4, math.floor(ORIGIN / DAY) % 7)
+			-- 1 January 1970 was a Thursday: day 0 of a week starting Thursday, so a multiple of 7 days is a Thursday.
+			assert.are.equal(0, math.floor(ORIGIN / DAY) % 7)
 			assert.are.equal(72 * 3600, ns.RUN_LENGTH)
 		end)
 
