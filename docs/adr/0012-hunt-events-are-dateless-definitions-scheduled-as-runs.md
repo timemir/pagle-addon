@@ -4,7 +4,7 @@ A **Hunt Event** is defined without dates. It is one or two zones, its Hunts and
 
 When and how often an event is on is decided apart from the definition, as **runs**. A run is `(event, start, end)` in exact UTC moments, 3 days by default, identified by the event ID plus its start:
 - **Who decides:** the backend's schedule, delivered by the companion. It may pick at random, by hand or for a game holiday, with no limit on how many runs are on at once.
-- **Without the companion:** the addon's **fallback rotation**. Back-to-back 72-hour runs from 1.0's release day at 15:00 UTC, each picked by a seeded shuffle of the shipped pool, so every Angler without the companion sees the same event.
+- **Without the companion:** the addon's **fallback rotation**. Back-to-back 72-hour runs from launch day (Forever's first UTC day live) at 15:00 UTC, each picked by a seeded shuffle of the shipped pool, so every Angler without the companion sees the same event.
 
 An event Hunt is always imposed: it counts a Catch only in its event's zones and during the run. Each run starts fresh and pays again, and its completed count feeds the titles at 25, 50 and 100.
 
