@@ -693,7 +693,7 @@ describe("scripts/read-wtf.lua", function()
 					"ladder: 0 of 3 steps (25 / 50 / 100) (HNT-R148)",
 					"coins: 305 (HNT-R110), xp: 0 (HNT-R115), Core stores no Hunts total (AXP-R3)",
 					"runs: none known (HNT-R150)",
-					"rotation: no slot before its starting point, 2026-10-19 15:00:00 UTC (HNT-R152, HNT-R204)",
+					"rotation: no slot before its starting point, 2026-11-05 15:00:00 UTC (HNT-R152, HNT-R204)",
 					"celebrated tiers: 3 (dawn_trout 1, night_run 1, rack_hour 1)",
 					"celebrated titles: 1 (camp_hours)",
 					"celebrated runs: none",
@@ -910,7 +910,7 @@ describe("scripts/read-wtf.lua", function()
 					"coins: 0 (HNT-R110), xp: 0 (HNT-R115), DIFFERS from Core's stored Hunts total 150: the next report"
 						.. " sets it (AXP-R3)",
 					"runs: none known (HNT-R150)",
-					"rotation: no slot before its starting point, 2026-10-19 15:00:00 UTC (HNT-R152, HNT-R204)",
+					"rotation: no slot before its starting point, 2026-11-05 15:00:00 UTC (HNT-R152, HNT-R204)",
 					"celebrated tiers: none",
 					"celebrated titles: none",
 					"celebrated runs: none",
@@ -1728,8 +1728,11 @@ describe("scripts/read-wtf.lua", function()
 		"on an account after the M8 Hunt Events exit check's steps (#309, roadmap.md › M8 Hunt Events)",
 		function()
 			local NOW = "1795600000"
-			local function read(now)
-				return run(
+			-- The fixture's runs were logged under the starting point of 2026-10-19 15:00 UTC, the placeholder before 1.0's
+			-- release day; --origin reads its rotation from that (the shipped one is 2026-11-05 15:00 UTC, below).
+			local FIXTURE_ORIGIN = "1792422000"
+			local function read(now, origin)
+				local args = {
 					ACCOUNTS .. "M8-Wagers#1",
 					"--catalogue",
 					CATALOGUE,
@@ -1738,8 +1741,13 @@ describe("scripts/read-wtf.lua", function()
 					"--eventlist",
 					EVENTLIST,
 					"--now",
-					now
-				)
+					now,
+				}
+				if origin ~= false then
+					args[#args + 1] = "--origin"
+					args[#args + 1] = origin or FIXTURE_ORIGIN
+				end
+				return run(unpack(args))
 			end
 			local out, err, code = read(NOW)
 			local SECOND = "  darkshore_moonlight@1793199600: darkshore_moonlight, source r (the rotation), "
@@ -1820,6 +1828,21 @@ describe("scripts/read-wtf.lua", function()
 						"companionHint: true (not saved: the default)",
 						"lastHintNod: 1793200000 (2026-10-28 15:06:40 UTC)",
 					}, section(out, "== Hunts"))
+				end
+			)
+
+			it(
+				"reads the rotation from Hunts' own starting point without --origin: 5 November 2026 15:00 UTC (HNT-R152)",
+				function()
+					assert.are.equal(
+						"rotation: slot 6 (low), 2026-11-23 15:00:00 UTC to 2026-11-26 15:00:00 UTC, pick darkshore_moonlight,"
+							.. " no logged run covers it, ends in 1 d 5 h 13 min (HNT-R152, HNT-R153)",
+						lineStarting(section(read(NOW, false), "== Hunts"), "rotation:")
+					)
+					assert.are.equal(
+						"rotation: no slot before its starting point, 2026-11-05 15:00:00 UTC (HNT-R152, HNT-R204)",
+						lineStarting(section(read("1793300000", false), "== Hunts"), "rotation:")
+					)
 				end
 			)
 

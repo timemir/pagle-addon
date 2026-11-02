@@ -6,9 +6,9 @@ This file sets the order in which Pagle is built. It assigns spec rules to miles
 
 ## How the roadmap works
 
-- **Nothing is published before 1.0.** 1.0 means every Module is implemented (Core, QoL, Ledger, Hunts, Stats, Tackle Board) and M9 is done. There are no target dates: work continues straight through, and scope is cut rather than quality.
-- **No backward compatibility before 1.0.** The log format, every `PagleDB` / `Pagle<Module>DB` shape, Module state and Hunt definitions change freely; a dev log whose format is outdated is replaced by a new one (LOG-R18). The freezes start at 1.0: LOG-R17, CORE-R15, DATA-R73, DATA-R95.
-- **One version for the whole package, and no git tags before 1.0.** The packager publishes only on a tag push, so nothing reaches CurseForge or Wago by accident.
+- **Nothing was published before 1.0.** 1.0 meant every Module was implemented (Core, QoL, Ledger, Hunts, Stats, Tackle Board) and M9 done. There were no target dates: work continued straight through, and scope was cut rather than quality.
+- **No backward compatibility before 1.0.** The log format, every `PagleDB` / `Pagle<Module>DB` shape, Module state and Hunt definitions changed freely; a dev log whose format was outdated was replaced by a new one (LOG-R18). The freezes started at 1.0 and now hold: LOG-R17, CORE-R15, DATA-R73, DATA-R95.
+- **One version for the whole package, and no git tags before 1.0.** The packager publishes only on a tag push, so nothing reached CurseForge or Wago by accident before 1.0.
 - **Milestones.** Each milestone below is one GitHub Milestone with the same name. Every build ticket belongs to exactly one. Milestones set the order of work, not dates: the riskiest and most shared Core pieces come first, and leaf work runs in parallel. **Track Q** runs in parallel from the end of M1, **Track V** alongside M8 onward, and **Track P** alongside M9, **Track C** after Track S; 1.0 doesn't wait for Track V, and waits for Track P. Track C aims for 1.0 and doesn't block it.
 - **Rules per milestone.** A rule listed under a milestone is built in it. A rule listed "for" or "without" something is built only in that part; the rest of it is listed where it lands. Every milestone and Track Q lists its rules file by file, and every rule ID in the spec is listed somewhere below. The Milestones line in each spec file's header summarises the same split; where the two differ, this file wins and the header is fixed.
 - **Rules that name later features.** A rule listed in full is built for what exists in its milestone; the parts that name a later feature (a Curio Shop row in CORE-R33, the next-action button in QOL-R93, a rebuild in LOG-R18) take effect when that feature lands, without being listed again. Edge-case rules (the "Edge cases" block of each file) are listed where their main feature lands and hold from then on.
@@ -527,7 +527,7 @@ There is no check 22: it looked for a per-character Self-Found call, and the cha
 
 1. Set every Standing Hunt's `since` to the release day (DATA-R87), and the fallback rotation's starting point to the release day at 15:00 UTC (HNT-R152). The companion hint switch is on, and Get it's address is `https://pagle.app/download` (HNT-R170, HNT-R172).
 2. Run `scripts/generate-data.py --lock` for the first `released.lock`, in the release commit (DATA-R73, DATA-R95).
-3. From the tag on, the entry formats (LOG-R17), the `Pagle` API (CORE-R15: Activity XP, pushed content and fix A's motion API included) and each DB's first `schemaVersion` are frozen.
+3. From the tag on, the entry formats (LOG-R17), the `Pagle` API (CORE-R15: Activity XP, pushed content and fix A's motion API included) and each DB's first `schemaVersion` are frozen. `spec/surface_1_0_spec.lua` pins them: it fails, naming the rule, when a name, an event's payload, a tag's fields, the format number or a first `schemaVersion` is removed or changed, and passes on an addition to an entry tag, while an added `Pagle` name, Module handle method or event needs `Pagle.API_VERSION` above 1.
 
 ## After 1.0
 

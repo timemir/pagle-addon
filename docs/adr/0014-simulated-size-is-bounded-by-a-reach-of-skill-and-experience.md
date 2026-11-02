@@ -30,4 +30,4 @@ Every input is in the log as recorded (the Catch ID, the Cast's skill, the earli
 
 ## Note: "shipped" means released at 1.0 or later
 
-As with ADR 0005 and ADR 0010, nothing is published before 1.0. Beta logs rebuild under these rules through `SIZE_RULES_VERSION`, with no migration.
+As with ADR 0005 and ADR 0010, nothing was published before 1.0. Beta logs rebuild under these rules through `SIZE_RULES_VERSION`, with no migration.

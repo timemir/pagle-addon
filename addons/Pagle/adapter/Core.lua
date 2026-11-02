@@ -8,11 +8,23 @@ if not ns.IsForever(WOW_PROJECT_ID, WOW_PROJECT_CAMELOT) then
 	return
 end
 
+--- Core's TOC version, from the client's addon metadata: `C_AddOns.GetAddOnMetadata`, else the older global.
+---@return string?
+local function tocVersion()
+	-- The older global is read by name: a client without it simply has no fallback to give.
+	local metadata = C_AddOns and C_AddOns.GetAddOnMetadata or rawget(_G, "GetAddOnMetadata")
+	return metadata and metadata("Pagle", "Version")
+end
+
 --- Core's public API: the one object Modules reach Core through (ADR 0001).
 ---@class Pagle
 ---@field API_VERSION integer Rises by one with each addition from 1.0 on; stays 1 before 1.0 (CORE-R15).
+---@field VERSION string Core's TOC version (core/README.md › Contracts): the packager's version in a release, the TOC's
+--- own `@project-version@` in a development checkout, "" where the client gives none.
 local Pagle = {
 	API_VERSION = 1,
+	-- Set once, as the table is built.
+	VERSION = tocVersion() or "",
 }
 -- Built as a local, then published: the types stage checks writes to a class only through a typed local.
 _G.Pagle = Pagle

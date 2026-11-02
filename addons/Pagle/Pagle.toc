@@ -6,6 +6,8 @@
 ## Category: Professions
 ## Version: @project-version@
 ## SavedVariables: PagleLog, PagleDB, PagleRecovery
+## X-Curse-Project-ID: 1742678
+## X-Wago-ID: qGZA7bKd
 
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.lua

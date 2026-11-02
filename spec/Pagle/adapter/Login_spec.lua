@@ -114,7 +114,7 @@ describe("Core's login order", function()
 		loaded.client.fire("PLAYER_ENTERING_WORLD", false, false)
 
 		assert.are.same({
-			"B1|1|1791731700|0|70338|1.60.1|pagle-2026c",
+			"B1|1|1791731700|0|70338|1.60.1|pagle-2026d",
 			"S1|1|1791731700|1|86|150|0",
 		}, logEntries(loaded.env.PagleLog))
 	end)
@@ -311,7 +311,7 @@ describe("Skill Readings from the client", function()
 
 	it("are not taken again at login for a character whose last reading matches (LOG-R31)", function()
 		local loaded =
-			loggedIn(savedLog({ "B1|1|1791731000|0|70338|1.60.1|pagle-2026c", "S1|1|1791731001|0|86|150|0" }))
+			loggedIn(savedLog({ "B1|1|1791731000|0|70338|1.60.1|pagle-2026d", "S1|1|1791731001|0|86|150|0" }))
 
 		assert.are.equal(2, loaded.env.PagleLog.count)
 	end)

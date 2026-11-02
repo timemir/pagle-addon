@@ -12,10 +12,9 @@ local ns = select(2, ...)
 -- of "<band>:<pass>", drawn from a 32-bit linear congruential generator. Which slot gets logged, and when, is the run
 -- log's (logic/RunLog.lua, HNT-R151, HNT-R153).
 
---- Tunables (hunts.md): the rotation's starting point, 15:00 UTC. Before 1.0 a placeholder in the past so dogfooding
---- has runs: Monday 19 October 2026 15:00 UTC, the Monday before #300 landed. #275's checklist sets it to 1.0's
---- release day.
-ns.ROTATION_ORIGIN = 1792422000
+--- Tunables (hunts.md): the rotation's starting point, 15:00 UTC on 1.0's release day: Thursday 5 November 2026. The
+--- backend's auto-run grid starts from the same value, so a change here is a change there.
+ns.ROTATION_ORIGIN = 1793890800
 
 --- Tunables (hunts.md): every fallback run's length, and the default run length (HNT-R142, HNT-R152): 72 hours.
 ns.RUN_LENGTH = 72 * 3600

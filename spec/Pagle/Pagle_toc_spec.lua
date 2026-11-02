@@ -25,6 +25,13 @@ describe("Pagle.toc", function()
 		end
 	)
 
+	it("names its CurseForge and Wago projects, so the tag's release uploads to both (CORE-R74)", function()
+		local fields = assert(loaded.client.addons.Pagle.metadata)
+
+		assert.are.equal("1742678", fields["X-Curse-Project-ID"])
+		assert.are.equal("qGZA7bKd", fields["X-Wago-ID"])
+	end)
+
 	it("lists its generated Lore.lua right after locale/enUS.lua, the file that creates ns.L (DATA-R75)", function()
 		local at = {}
 		for index, file in ipairs(addonFiles("Pagle")) do

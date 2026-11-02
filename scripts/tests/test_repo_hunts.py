@@ -88,17 +88,17 @@ V1_HUNTS: list[tuple[str, str, str, tuple[str, object], tuple[str, object], list
     ),
     ("hut_hour", "camp_hours", "imposed", ("class", "species.any"), ("conditions", {"auras": [1280342]}), [1, 5, 15]),
 ]
-# DATA-R87, Tunables: every v1 `since` is the pre-1.0 placeholder 2026-11-04, 00:00 UTC (`date -u -d 2026-11-04 +%s`).
-PLACEHOLDER_SINCE = 1793750400
+# DATA-R87, Tunables: every v1 `since` is 1.0's release day, 2026-11-05, 00:00 UTC (`date -u -d 2026-11-05 +%s`).
+RELEASE_SINCE = 1793836800
 
 
 def test_the_committed_list_is_hunts_md_v1_table_in_order() -> None:
     # hunts.md › Data (the Standing Hunt list), HNT-R1 (display order is file order), DATA-R87 and DATA-R93: the four
-    # sets and the 16 Hunts in table order, every since the pre-1.0 placeholder, none retired and none with a minBand.
+    # sets and the 16 Hunts in table order, every since the release day, none retired and none with a minBand.
     hunt_list = hunt_list_of(read_layers(REPO))
     assert [entry["id"] for entry in hunt_list["sets"]] == V1_SETS
     expected = [
-        {"id": hunt_id, "set": set_id, "kind": kind, "since": PLACEHOLDER_SINCE, target[0]: target[1], spec[0]: spec[1]}
+        {"id": hunt_id, "set": set_id, "kind": kind, "since": RELEASE_SINCE, target[0]: target[1], spec[0]: spec[1]}
         | {"tiers": tiers}
         for hunt_id, set_id, kind, target, spec, tiers in V1_HUNTS
     ]

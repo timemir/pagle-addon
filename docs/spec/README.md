@@ -98,7 +98,7 @@ Pagle's knowledge of the fishing world is built in the repo, not in the game ([c
 | `PagleLedgerDB`, `PagleHuntsDB`, `PagleStatsDB`, `PagleTackleBoardDB` | each Module (AceDB) | its settings, its projection table and its celebrated set (Stats has none) |
 | `PagleQoLDB` | QoL (AceDB) | its settings, the fishing set per character, and leased CVars |
 
-Everything is account-wide, per WoW game account; per-character facts are keyed by character GUID (CORE-R5). A Module never reads `PagleLog`, `PagleDB` or another Module's DB ([catch-log.md](core/catch-log.md#module-savedvariables)). Nothing needs backward compatibility before 1.0 ([roadmap.md](roadmap.md#how-the-roadmap-works)).
+Everything is account-wide, per WoW game account; per-character facts are keyed by character GUID (CORE-R5). A Module never reads `PagleLog`, `PagleDB` or another Module's DB ([catch-log.md](core/catch-log.md#module-savedvariables)). Nothing needed backward compatibility before 1.0 ([roadmap.md](roadmap.md#how-the-roadmap-works)).
 
 ### Standing product rules
 
@@ -214,7 +214,7 @@ Every Core and Module file answers each of these with rules: a Module disabled a
 
 ### From the spec to build tickets
 
-[roadmap.md](roadmap.md) assigns every rule ID to a milestone (M0–M9) or to Track Q, and each milestone has an in-game exit check. A build ticket belongs to one milestone and cites the rules it builds; a test cites the rule it checks. Rules that name a later feature take effect when that feature lands (roadmap.md, How the roadmap works). Nothing is published before 1.0, and nothing needs backward compatibility until then.
+[roadmap.md](roadmap.md) assigns every rule ID to a milestone (M0–M9) or to Track Q, and each milestone has an in-game exit check. A build ticket belongs to one milestone and cites the rules it builds; a test cites the rule it checks. Rules that name a later feature take effect when that feature lands (roadmap.md, How the roadmap works). Nothing was published before 1.0, and nothing needed backward compatibility until then.
 
 ### Changing the spec
 
