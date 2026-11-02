@@ -88,7 +88,7 @@ V1_HUNTS: list[tuple[str, str, str, tuple[str, object], tuple[str, object], list
     ),
     ("hut_hour", "camp_hours", "imposed", ("class", "species.any"), ("conditions", {"auras": [1280342]}), [1, 5, 15]),
 ]
-# DATA-R87, Tunables: every v1 `since` is 1.0's release day, 2026-11-05, 00:00 UTC (`date -u -d 2026-11-05 +%s`).
+# DATA-R87, Tunables: every v1 `since` is launch day, Forever's first UTC day live, 2026-11-05, 00:00 UTC (`date -u -d 2026-11-05 +%s`).
 RELEASE_SINCE = 1793836800
 
 

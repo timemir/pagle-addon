@@ -1,6 +1,6 @@
 # Pagle
 
-## 1.0.0 (2026-11-05)
+## 1.0.0 (2026-11-04)
 
 The first release. Pagle is a fishing addon for World of Warcraft: Forever, for progression and collection, with a few quality-of-life touches beside them. It watches what you catch and rewards it. It never fishes for you.
 
