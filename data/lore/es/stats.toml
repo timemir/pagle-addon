@@ -1,0 +1,49 @@
+# Stats' lore in Spanish (Spain), over data/lore/stats.toml (DATA-R113).
+
+[statsgood."stats.trackerframe.none"]
+name = "Sin marco"
+# EN: No Frame
+description = "Las cifras a solas, sin borde. Nada que pulir y nada que se moje."
+# EN: The figures on their own, with no border. Nothing to polish, and nothing to get wet.
+
+[statsgood."stats.trackerframe.logbook"]
+name = "Cuaderno de bitácora"
+# EN: Logbook
+description = "Pergamino rayado en columnas tenues, como el diario de un capitán de puerto. Cada cifra respeta su línea."
+# EN: Parchment ruled in faint columns, like a harbourmaster's log. Every figure keeps to its line.
+
+[statsgood."stats.trackerframe.brass"]
+name = "Latón de navío"
+# EN: Ship's Brass
+description = "Un fino borde de latón, remachado en cada esquina como la brújula de un barco. Conserva el brillo con cualquier tiempo."
+# EN: A thin brass rim, riveted at each corner like a ship's compass. It keeps its shine in any weather.
+
+[statsgood."stats.trackerframe.greenbar"]
+name = "Papel de listas verdes"
+# EN: Green-Bar Paper
+description = "Papel de recuento a bandas de verde pálido, para que una columna larga de números nunca pierda el hilo."
+# EN: Tally paper banded in pale green, so a long column of numbers never loses its place.
+
+[statsgood."stats.trackerframe.chalkboard"]
+name = "Pizarra"
+# EN: Chalkboard
+description = "Una pizarra verde de escuela en marco de pino, con las marcas de recuento de alguien aún en la esquina."
+# EN: A green schoolroom board in a pine frame, with somebody’s tally marks still in the corner.
+
+[statsgood."stats.trackerframe.tidegauge"]
+name = "Escala de mareas"
+# EN: Tide Gauge
+description = "Cristal azul mar tras una regla de latón, marcada para que las cifras suban y bajen como el agua."
+# EN: Sea-blue glass behind a brass tide staff, marked off so the numbers rise and fall like water.
+
+[statsgood."stats.trackerframe.abacus"]
+name = "Ábaco"
+# EN: Abacus
+description = "Un marco de contar con las cuentas arrinconadas a los extremos y la suma escrita a las claras entre ellas."
+# EN: A counting frame with the beads pushed to the ends, and the sum written plainly between them.
+
+[statsgood."stats.trackerframe.astrolabe"]
+name = "Astrolabio"
+# EN: Astrolabe
+description = "Un mapa de estrellas en azul profundo bajo aros de latón, para el pescador que calcula las probabilidades por el cielo."
+# EN: A star map in deep blue under brass rings, for an angler who reckons the odds by the sky.

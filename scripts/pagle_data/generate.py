@@ -36,7 +36,15 @@ from pagle_data.hunts import (
 from pagle_data.hunt_windows import check_hunt_windows
 from pagle_data.items import ITEMS_TOML, ItemLayer, Record, item_records, read_item_layer
 from pagle_data.lock import Lock, check_lock, check_locked_members, read_lock
-from pagle_data.lore import LoreLayer, catalogue_ids, check_glyphs, check_lore, lore_outputs, read_lore
+from pagle_data.lore import (
+    LoreLayer,
+    catalogue_ids,
+    check_glyphs,
+    check_lore,
+    check_translations,
+    lore_outputs,
+    read_lore,
+)
 from pagle_data.lua import to_lua
 from pagle_data.observed import (
     MINIMUM_CONFIRMING_BUILD,
@@ -212,6 +220,7 @@ def read_layers(
         check_lock(lock, hunts, events, problems)
     varieties = read_varieties(root, problems)
     check_glyphs(lore, problems)  # CORE-R9, DATA-R107's glyph: every lore file, its check on or off
+    check_translations(lore, problems)  # DATA-R113: each translation against its English text
     items: dict[int, Record] = {}
     catch_lists = CatchLists()
     pools: dict[str, list[int]] = {}

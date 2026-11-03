@@ -5,6 +5,7 @@ addons/Pagle/data/Catalogue.lua
 addons/Pagle_Hunts/data/HuntList.lua
 addons/Pagle_Hunts/data/EventList.lua
 addons/*/data/Lore.lua
+addons/*/data/Lore.esES.lua
 spec/Pagle_Ledger/fixtures/Lore.lua
 # WTF fixtures are written the way the WoW client writes them, not formatted by us.
 spec/scripts/fixtures/

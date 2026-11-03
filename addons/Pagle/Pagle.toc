@@ -38,6 +38,7 @@ data\ApiInventory.lua
 locale\enUS.lua
 data\Lore.lua
 locale\esES.lua
+data\Lore.esES.lua
 logic\Forever.lua
 logic\Secrets.lua
 logic\ReportOnce.lua

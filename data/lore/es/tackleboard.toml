@@ -1,0 +1,207 @@
+# The Tackle Board's lore in Spanish (Spain), over data/lore/tackleboard.toml (DATA-R113).
+
+[fly.murloc_nymph] # common 1
+name = "Ninfa múrloc"
+# EN: Murloc Nymph
+
+[fly.westfall_wheatwing] # common 2, was "Westfall Wheatwing"
+name = "Ala de trigo de siega"
+# EN: Harvest Wheatwing
+
+[fly.goldshire_gnat] # common 3, was "Goldshire Gnat"
+name = "Jején de musgo de tumba"
+# EN: Gravemoss Gnat
+
+[fly.duskwood_shadow] # common 4, was "Duskwood Shadow"
+name = "Sombra crepuscular"
+# EN: Gloaming Shadow
+
+[fly.redridge_ember] # common 5, was "Redridge Ember"
+name = "Ascua de roca roja"
+# EN: Red Rock Ember
+
+[fly.barrens_dun] # common 6, was "Barrens Dun"
+name = "Efímera de sabana"
+# EN: Savanna Dun
+
+[fly.mudsnout_woolly] # common 7
+name = "Lanuda morro de barro"
+# EN: Mudsnout Woolly
+
+[fly.gnomish_whirligig] # common 8
+name = "Molinillo gnómico"
+# EN: Gnomish Whirligig
+
+[fly.tarnished_spoon] # common 9
+name = "Cucharilla deslustrada"
+# EN: Tarnished Spoon
+
+[fly.ashenvale_olive] # common 10, was "Ashenvale Olive"
+name = "Oliva de bosque viejo"
+# EN: Old-Growth Olive
+
+[fly.kodo_hair_caddis] # common 11, was "Kodo-hair Caddis"
+name = "Tricóptero de pelo de kodo"
+# EN: Kodo-Hair Caddis
+
+[fly.elwynn_royal] # common 12, was "Elwynn Royal"
+name = "Real del bosque verde"
+# EN: Greenwood Royal
+
+[fly.swamp_midge] # common 13
+name = "Mosquito de ciénaga"
+# EN: Swamp Midge
+
+[fly.raptor_quill] # common 14
+name = "Pluma de raptor"
+# EN: Raptor Quill
+
+[fly.silverpine_spinner] # common 15, was "Silverpine Spinner"
+name = "Imago de pino gris"
+# EN: Grey Pine Spinner
+
+[fly.lakeshire_coachman] # common 16, was "Lakeshire Coachman"
+name = "Cochero de caravana"
+# EN: Caravan Coachman
+
+[fly.bloodsail_streamer] # common 17
+name = "Streamer Velasangre"
+# EN: Bloodsail Streamer
+
+[fly.booty_bay_bucktail] # common 18, was "Booty Bay Bucktail"
+name = "Cola de ciervo bucanera"
+# EN: Buccaneer Bucktail
+
+[fly.desolace_drifter] # common 19, was "Desolace Drifter"
+name = "Derivante reseca"
+# EN: Bone-Dry Drifter
+
+[fly.grimtotem_hackle] # common 20
+name = "Collar Tótem Siniestro"
+# EN: Grimtotem Hackle
+
+[fly.needles_ant] # common 21, was "Needles Ant"
+name = "Hormiga de meseta"
+# EN: Mesa Ant
+
+[fly.feralas_fern] # common 22, was "Feralas Fern"
+name = "Helecho de espesura"
+# EN: Thicket Fern
+
+[fly.tanaris_sandfly] # common 23, was "Tanaris Sandfly"
+name = "Mosca de arena Bonvapor"
+# EN: Steamwheedle Sandfly
+
+[fly.darkshore_dun] # common 24, was "Darkshore Dun"
+name = "Efímera de bruma marina"
+# EN: Sea-Mist Dun
+
+[fly.nats_golden_doctor] # rare 1
+name = "Doctor dorado de Nat"
+# EN: Nat's Golden Doctor
+
+[fly.kraken_ink_streamer] # rare 2
+name = "Streamer de tinta de kraken"
+# EN: Kraken Ink Streamer
+
+[fly.phoenix_hackle] # rare 3
+name = "Collar de fénix"
+# EN: Phoenix Hackle
+
+[fly.moonwell_silverwing] # rare 4, was "Moonwell Silverwing"
+name = "Ala de plata lunar"
+# EN: Moonlight Silverwing
+
+[fly.thunderhead_tiger] # rare 5
+name = "Tigre de nubarrón"
+# EN: Thunderhead Tiger
+
+[fly.deepwater_duchess] # rare 6
+name = "Duquesa de aguas hondas"
+# EN: Deepwater Duchess
+
+[boardtitle.tally_25] # 25 goals done, was "the Dependable"
+text = "Manitas"
+# EN: Odd-Jobber
+
+[boardtitle.tally_100] # 100 goals done, was "the Tireless"
+text = "Pulso firme"
+# EN: Steady Hand
+
+[boardtitle.tally_500] # 500 goals done, was "Pillar of the Board"
+text = "Pilar del muelle"
+# EN: Pillar of the Pier
+
+[boardtitle.campfire_7] # a Campfire of 7 days
+text = "Prendefuegos"
+# EN: Kindler
+
+[boardtitle.campfire_30] # a Campfire of 30 days
+text = "Guardián del fuego"
+# EN: Firekeeper
+
+[boardtitle.campfire_100] # a Campfire of 100 days
+text = "Celador del hogar"
+# EN: Hearthwarden
+
+[boardtitle.campfire_365] # a Campfire of 365 days
+text = "Custodio de la larga lumbre"
+# EN: Keeper of the Long Fire
+
+[boardtitle.flybox] # every Fly Box pattern tied, was "the Fly-Tier"
+text = "Montador de moscas"
+# EN: Fly-Tier
+
+[boardgood."tackleboard.trackerframe.none"] # Tracker frame, the default, was "No frame"
+name = "Sin marco"
+# EN: No Frame
+description = "La lista a solas, sin nada clavado detrás. Nunca se comba con la humedad."
+# EN: The list on its own, with nothing pinned behind it. It never warps in the damp.
+
+[boardgood."tackleboard.trackerframe.corkboard"] # Tracker frame, tier 1
+name = "Tablero de corcho"
+# EN: Corkboard
+description = "Una plancha de corcho, picada de agujeros de trabajos acabados hace tiempo. Siempre cabe uno más."
+# EN: A slab of cork, pocked with pinholes from jobs long finished. There is always room for one more.
+
+[boardgood."tackleboard.trackerframe.driftwood"] # Tracker frame, tier 2, was "Driftwood Plank"
+name = "Tabla curtida por la marea"
+# EN: Tideworn Plank
+description = "Una tabla gris como el mar, alisada por la marea y clavada junto al muelle. Ha viajado más lejos que muchos barcos."
+# EN: A sea-grey plank, worn smooth by the tide and nailed up by the dock. It has travelled further than most boats.
+
+[boardgood."tackleboard.toaststyle.ember"] # core.toaststyle, earned: Campfire: 100 days
+name = "Ascua del hogar"
+# EN: Hearth Ember
+description = "Una página que estuvo a punto de ser yesca. Los bordes aún brillan cuando entra un buen pez."
+# EN: A page that was nearly kindling once. The edges still glow when a good fish comes in.
+
+[boardgood."tackleboard.trackerframe.net"] # tackleboard.trackerframe, tier 1
+name = "Red de pesca"
+# EN: Fishing Net
+description = "Un trozo de red vieja colgado sobre las líneas, con los corchos aún atados a lo largo del borde de arriba."
+# EN: A square of old net hung over the lines, its cork floats still tied along the top.
+
+[boardgood."tackleboard.trackerframe.bamboo"] # tackleboard.trackerframe, tier 1
+name = "Listones de bambú"
+# EN: Bamboo Slats
+description = "Listones de bambú atados con cordel, de esos que se enrollan y se meten a presión en la bolsa de aparejos."
+# EN: Bamboo slats lashed with cord, the sort of thing you roll up and stuff in the tackle bag.
+
+[boardgood."tackleboard.trackerframe.tin"] # tackleboard.trackerframe, tier 2
+name = "Lata de aparejos"
+# EN: Tackle Tin
+description = "Una lata de aparejos de esmalte verde, abollada y desconchada, con la tapa repujada y la bisagra algo oxidada."
+# EN: A green enamel tackle tin, dented and chipped, its lid embossed and its hinge a little rusty.
+
+[boardgood."tackleboard.trackerframe.bobber"] # tackleboard.trackerframe, tier 2
+name = "Boya"
+# EN: Bobber
+description = "Rojo sobre blanco, como una buena boya, y con una flotando en la esquina, sedal incluido."
+# EN: Red over white like a good bobber, with one floating at the corner, line and all.
+
+[boardgood."tackleboard.trackerframe.embers"] # tackleboard.trackerframe, earned: Campfire: 365 days
+name = "Brasas vivas"
+# EN: Live Embers
+description = "Madera de deriva carbonizada, con el fuego aún vivo en las grietas. Hizo falta un año de hogueras."
+# EN: Charred driftwood with the fire still living in its cracks. A year of fires went into this one.

@@ -365,6 +365,8 @@ files["addons/Pagle/logic/Variety.lua"] = { read_globals = { bit = stds.wow.read
 files["addons/Pagle/logic/PasteString.lua"] = { read_globals = { bit = stds.wow.read_globals.bit } }
 -- Each locale/esES.lua reads GetLocale once, in its first lines, to stay out of every other client locale (CORE-R8).
 files["addons/*/locale/esES.lua"] = { read_globals = { "GetLocale" } }
+-- The same for each generated Lore.esES.lua (DATA-R113).
+files["addons/*/data/Lore.esES.lua"] = { read_globals = { "GetLocale" } }
 -- Only Core's adapter creates the Pagle global.
 files["addons/Pagle/adapter/**"] = { globals = { "Pagle" } }
 -- /pagle's name (CORE-R60).

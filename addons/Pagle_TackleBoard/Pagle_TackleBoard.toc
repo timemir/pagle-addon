@@ -12,6 +12,7 @@
 locale\enUS.lua
 data\Lore.lua
 locale\esES.lua
+data\Lore.esES.lua
 data\BoardArt.lua
 data\TicketArt.lua
 logic\Data.lua

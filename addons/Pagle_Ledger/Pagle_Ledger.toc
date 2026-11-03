@@ -12,6 +12,7 @@
 locale\enUS.lua
 data\Lore.lua
 locale\esES.lua
+data\Lore.esES.lua
 data\JournalArt.lua
 logic\Data.lua
 logic\Module.lua

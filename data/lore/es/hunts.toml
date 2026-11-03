@@ -1,0 +1,715 @@
+# Hunts' lore in Spanish (Spain), over data/lore/hunts.toml, data/hunts/hunts.toml and data/hunts/events/ (DATA-R113).
+
+[event."alterac_dawn_trout"]
+name = "Truchas al alba"
+# EN: Dawn Trout
+note = "Lagos fríos entre las cumbres. La apuesta es trucha antes del desayuno, y la escarcha en el sedal va de regalo."
+# EN: Cold lakes high among the peaks. The wager is trout before breakfast, and the frost on the line comes free.
+
+[event."azshara_lobster"]
+name = "Langosta a la luz del farol"
+# EN: Lobster by Lamplight
+note = "Una costa rota de piedra caída y grandeza marchita. Las langostas no se apartan de las rocas, y las colas amarillas guardan las distancias."
+# EN: A broken coast of fallen stone and faded grandeur. The lobster keep close to the rocks, and the yellowtail keep their distance.
+
+[event."barrens_oddities"]
+name = "Bichos raros al ocaso"
+# EN: Oddity at Dusk
+note = "Las charcas de las llanuras secas dan algún pez extraño. Revísalos al ponerse el sol, y piénsatelo dos veces antes de cocinar ninguno."
+# EN: The pools of the dry plains turn out some strange fish. Look them over at sundown, and think twice before cooking any.
+
+[event."burning_steppes_salmon"]
+name = "Salmón bajo la ceniza"
+# EN: Salmon under Ash
+note = "Colinas negras, ceniza en el agua y salmones debajo. Trae un sombrero de ala ancha."
+# EN: Black hills, ash on the water and salmon under it. Bring a hat with a wide brim.
+
+[event."darkshore_moonlight"]
+name = "Meros bajo la luna"
+# EN: Grouper by Moonlight
+note = "Una larga costa gris bajo árboles viejos y oscuros. La apuesta es mero con la luna ya alta, y allí las noches son largas."
+# EN: A long grey coast under old, dark trees. The wager is grouper once the moon is up, and the nights there are long.
+
+[event."deadwind_pass_night"]
+name = "Paso frío, noche larga"
+# EN: Cold Pass, Long Night
+note = "Un paso frío donde nada crece, y una vieja torre vigilando el camino. A los salmones les trae sin cuidado."
+# EN: A cold pass where nothing grows, and an old tower keeping watch over the road. The salmon pay it no attention.
+
+[event."duskwood_witching"]
+name = "La hora de las brujas"
+# EN: Witching Hour
+note = "Ríos negros y lentos entre bosques donde nunca acaba de hacerse de día. Pasada la medianoche pican los peces, y todo lo demás también."
+# EN: Slow black rivers through woods where it never quite gets light. After midnight the fish bite, and so does everything else.
+
+[event."dustwallow_marsh_night"]
+name = "Noche cerrada en la ciénaga"
+# EN: Late on the Marsh
+note = "Una costa cálida y húmeda que zumba toda la noche. Truchas en los arroyos, colas amarillas frente a la orilla y siempre algo picándote en el cuello."
+# EN: A warm, wet coast that hums all night. Trout in the creeks, yellowtail off the shore, and something always biting your neck.
+
+[event."eastern_plaguelands_night"]
+name = "Medianoche en el este muerto"
+# EN: Midnight in the Dead East
+note = "Nadie pesca en el este muerto de noche si puede evitarlo. Los salmones ya cuentan con ello."
+# EN: Nobody fishes the dead east after dark if they can help it. The salmon have come to count on that.
+
+[event."eastern_plaguelands_redgill"]
+name = "Lagos lúgubres del este"
+# EN: Grim Lakes of the East
+note = "Lúgubres por fuera y generosos por dentro, como casi todos los buenos lagos y algunos pescadores viejos."
+# EN: Grim to look at and generous underneath, like most good lakes and some old anglers.
+
+[event."felwood_moonglade"]
+name = "Bosque corrupto, lago claro"
+# EN: Tainted Woods, Clear Lake
+note = "Arroyos enfermizos bajo los árboles corruptos, y más allá un lago claro y tranquilo. A las agallarrojas no parece importarles la diferencia."
+# EN: Sickly streams under the tainted trees, and a clear, quiet lake beyond them. The redgill don't seem to notice the difference.
+
+[event."feralas_redgill"]
+name = "Agallarrojas bajo la lluvia"
+# EN: Redgill in the Rain
+note = "Agallarrojas río arriba, colas amarillas frente a la costa y lluvia sobre ambas. El bosque nunca acaba de secarse."
+# EN: Redgill up the rivers, yellowtail off the coast, and rain over both. The forest never quite dries.
+
+[event."hinterlands_coast"]
+name = "Colinas hasta el mar"
+# EN: Where the Hills Meet the Sea
+note = "Colinas salvajes, grifos en el cielo y un mar tranquilo al fondo de todo. Lo que nada allá abajo compensa la bajada."
+# EN: Wild hill country, gryphons overhead, and a quiet sea at the bottom of it all. The mightfish are worth the climb down.
+
+[event."hinterlands_redgill"]
+name = "Ríos fríos, noches largas"
+# EN: Cold Rivers, Late Nights
+note = "Ríos claros y fríos entre las colinas salvajes. Las agallarrojas trasnochan, así que trae otra manta."
+# EN: Clear, cold rivers through the wild hills. The redgill keep late hours, so bring a second blanket.
+
+[event."loch_modan_frenzy"]
+name = "Aguas de frenesí"
+# EN: Frenzy Water
+note = "Un lago ancho y frío en tierra de enanos, donde los peces pelean por encima de su tamaño. De vez en cuando sale con ellos algo más fino."
+# EN: A wide, cold lake in dwarf country, where the fish fight above their size. Now and then something finer comes up with them.
+
+[event."silithus_coast"]
+name = "Arena hasta la orilla"
+# EN: Sand to the Water's Edge
+note = "Arena hasta el agua, y algo zumbando en las dunas de atrás. Pasado el oleaje, todo es pescado de mar honrado."
+# EN: Sand all the way down to the water, and something buzzing in the dunes behind. Past the surf it's honest sea fish.
+
+[event."silithus_salmon"]
+name = "Salmones en la arena"
+# EN: Salmon in the Sand
+note = "Un salmón de escama blanca tan al sur sorprende a todos, empezando por el salmón. Aprovecha mientras dure la luz."
+# EN: Whitescale this far south is a surprise to everyone, the salmon included. Take them while the light lasts.
+
+[event."stranglethorn_coast"]
+name = "Orilla de la selva"
+# EN: Jungle Shore
+note = "Agua templada, playas largas y un bacalao bajo cada roca. No pierdas de vista la linde de la selva."
+# EN: Warm water, long beaches and a cod under every rock. Keep one eye on the treeline.
+
+[event."tanaris_yellowtail"]
+name = "Mediodía en la costa árida"
+# EN: Noon on the Desert Coast
+note = "Arena hasta la marea y ni una pizca de sombra. A las colas amarillas no les molesta el calor; al pescador, quizá sí."
+# EN: Sand to the tideline and not a scrap of shade. The yellowtail don't mind the heat; the angler might.
+
+[event."tirisfal_silverpine_dusk"]
+name = "Aguas grises al anochecer"
+# EN: Grey Waters at Dusk
+note = "Agua fría bajo los bosques grises del norte, tranquila como un camposanto. Aquí nadie tiene prisa, y los peces menos que nadie."
+# EN: Cold water under grey northern woods, quiet as a churchyard. Nobody here is in a hurry, least of all the fish.
+
+[event."ungoro_redgill"]
+name = "Anochecer en el cráter"
+# EN: Dusk in the Crater
+note = "Charcas humeantes al fondo del cráter, llenas de agallarrojas. Algo más grande vigila siempre desde los helechos."
+# EN: Steaming pools at the bottom of the crater, thick with redgill. Something larger is always watching from the ferns.
+
+[event."western_plaguelands_lake"]
+name = "Una tarde en la plaga"
+# EN: An Afternoon in the Blight
+note = "Tierras muertas, un cielo enfermo y un lago lleno de agallarrojas sanas. Nadie les ha hablado de la peste."
+# EN: Dead fields, a sick sky and a lake full of healthy redgill. Nobody has told them about the plague.
+
+[event."winterspring_daylight"]
+name = "Días cortos en la nieve"
+# EN: Short Days in the Snow
+note = "Allá en la nieve los días son cortos y los lagos, fríos. Gasta la luz en el agua y la oscuridad junto al fuego."
+# EN: Up in the snow the days are short and the lakes are cold. Spend the light on the water, and the dark by a fire.
+
+[event."winterspring_salmon"]
+name = "Salmón entre nieves"
+# EN: Snowbound Salmon
+note = "Agua fría, salmones blancos y tardes que oscurecen pronto. Cuidado con el hielo de vuelta a casa."
+# EN: Cold water, white salmon and the evenings drawing in early. Mind the ice on the way home.
+
+[hunt."alterac_dawn_trout_catfish"]
+name = "Bigotes en el deshielo"
+# EN: Whiskers in the Snowmelt
+
+[hunt."alterac_dawn_trout_haul"]
+name = "Una cesta fría"
+# EN: A Cold Creel
+
+[hunt."alterac_dawn_trout_smallfish"]
+name = "Pececitos a puñados"
+# EN: Smallfish by the Handful
+
+[hunt."alterac_dawn_trout_trout"]
+name = "Antes del desayuno"
+# EN: Before Breakfast
+
+[hunt."armoured_after_dark"]
+name = "Acorazados tras el ocaso"
+# EN: Armoured After Dark
+
+[hunt."azshara_lobster_haul"]
+name = "Cesta de la costa rota"
+# EN: Broken-Coast Basket
+
+[hunt."azshara_lobster_lobster"]
+name = "Langosta junto a las rocas"
+# EN: Lobster by the Rocks
+
+[hunt."azshara_lobster_night"]
+name = "Hacia la medianoche"
+# EN: Toward Midnight
+
+[hunt."azshara_lobster_yellowtail"]
+name = "Colas amarillas a distancia"
+# EN: Yellowtail at a Distance
+
+[hunt."barrens_oddities_albacore"]
+name = "Albacoras frente al muelle"
+# EN: Albacore off the Docks
+
+[hunt."barrens_oddities_haul"]
+name = "Rebusca en el oasis"
+# EN: Oasis Pickings
+
+[hunt."barrens_oddities_oddity"]
+name = "Cosas raras al ocaso"
+# EN: Strange Things at Sundown
+
+[hunt."barrens_oddities_snapper"]
+name = "Pargos en las charcas"
+# EN: Snappers in the Pools
+
+[hunt."bloated_luck"]
+name = "Suerte hinchada"
+# EN: Bloated Luck
+note = "Pesan más de la cuenta, y algo suena por dentro."
+# EN: Heavy for their size, and something rattles inside.
+
+[hunt."burning_steppes_salmon_haul"]
+name = "Una cesta cenicienta"
+# EN: An Ashen Basket
+
+[hunt."burning_steppes_salmon_noon"]
+name = "Las horas de más calor"
+# EN: The Hottest Hours
+
+[hunt."burning_steppes_salmon_redgill"]
+name = "Brasas y agallarrojas"
+# EN: Embers and Redgill
+
+[hunt."burning_steppes_salmon_salmon"]
+name = "Salmón entre el hollín"
+# EN: Salmon through the Soot
+
+[hunt."darkshore_moonlight_albacore"]
+name = "Albacoras mar adentro"
+# EN: Albacore Further Out
+
+[hunt."darkshore_moonlight_grouper"]
+name = "Luna sobre el agua"
+# EN: Moon over the Water
+
+[hunt."darkshore_moonlight_haul"]
+name = "Una nasa bajo la luna"
+# EN: A Moonlit Keepnet
+
+[hunt."darkshore_moonlight_snapper"]
+name = "Pargos bajo los árboles"
+# EN: Snappers under the Trees
+
+[hunt."deadwind_pass_night_haul"]
+name = "Aún pica algo"
+# EN: Something Still Bites
+
+[hunt."deadwind_pass_night_salmon"]
+name = "Escama blanca en el paso"
+# EN: Whitescale in the Pass
+
+[hunt."deadwind_pass_night_tower"]
+name = "Bajo la vieja torre"
+# EN: Under the Old Tower
+
+[hunt."duskwood_witching_catfish"]
+name = "Bigotes en la oscuridad"
+# EN: Whiskers in the Dark
+
+[hunt."duskwood_witching_haul"]
+name = "Cesta a la luz del farol"
+# EN: Lantern-Light Basket
+
+[hunt."duskwood_witching_midnight"]
+name = "Tras la duodécima campanada"
+# EN: After the Twelfth Bell
+
+[hunt."duskwood_witching_snapper"]
+name = "Pargos de agua negra"
+# EN: Black-Water Snappers
+
+[hunt."dustwallow_marsh_night_haul"]
+name = "Cubo de agua de ciénaga"
+# EN: Bog-Water Bucket
+
+[hunt."dustwallow_marsh_night_small_hours"]
+name = "Altas horas"
+# EN: Small Hours
+
+[hunt."dustwallow_marsh_night_trout"]
+name = "Truchas entre juncos"
+# EN: Trout in the Reeds
+
+[hunt."dustwallow_marsh_night_yellowtail"]
+name = "Colas amarillas del pantano"
+# EN: Yellowtail off the Marsh
+
+[hunt."eastern_plaguelands_night_haul"]
+name = "Una cesta valiente"
+# EN: A Brave Basket
+
+[hunt."eastern_plaguelands_night_midnight"]
+name = "Salmón pasada la medianoche"
+# EN: Salmon after Midnight
+
+[hunt."eastern_plaguelands_night_salmon"]
+name = "Salmón pálido, río oscuro"
+# EN: Pale Salmon, Dark River
+
+[hunt."eastern_plaguelands_redgill_haul"]
+name = "Generoso por dentro"
+# EN: Generous Underneath
+
+[hunt."eastern_plaguelands_redgill_redgill"]
+name = "Agallarrojas de lo turbio"
+# EN: Redgill from the Murk
+
+[hunt."eastern_plaguelands_redgill_salmon"]
+name = "Salmón de aguas lúgubres"
+# EN: Grim-Water Salmon
+
+[hunt."felwood_moonglade_haul"]
+name = "Agua turbia, agua limpia"
+# EN: Foul Water, Fair Water
+
+[hunt."felwood_moonglade_redgill"]
+name = "Agallarrojas, impasibles"
+# EN: Redgill, Unbothered
+
+[hunt."felwood_moonglade_trout"]
+name = "Truchas del lago claro"
+# EN: Clear-Lake Trout
+
+[hunt."feralas_redgill_haul"]
+name = "Lluvia en la cesta"
+# EN: Rain in the Basket
+
+[hunt."feralas_redgill_redgill"]
+name = "Agallarrojas río arriba"
+# EN: Redgill up the Rivers
+
+[hunt."feralas_redgill_trout"]
+name = "Truchas bajo la fronda"
+# EN: Trout under the Canopy
+
+[hunt."feralas_redgill_yellowtail"]
+name = "Colas amarillas de la costa"
+# EN: Yellowtail off the Coast
+
+[hunt."first_light"]
+name = "Primera luz"
+# EN: First Light
+note = "El alba es solo el principio: el salmón pica hasta bien entrada la noche."
+# EN: Dawn is only the start: the salmon bites well into the evening.
+
+[hunt."hinterlands_coast_haul"]
+name = "Bajando de las colinas"
+# EN: Down from the Hills
+
+[hunt."hinterlands_coast_mightfish"]
+name = "Merece la bajada"
+# EN: Worth the Climb
+
+[hunt."hinterlands_coast_morning"]
+name = "Marea de media mañana"
+# EN: Late-Morning Tide
+
+[hunt."hinterlands_coast_yellowtail"]
+name = "Cola amarilla de mar quieto"
+# EN: Quiet-Sea Yellowtail
+
+[hunt."hinterlands_redgill_haul"]
+name = "Una cesta de ribera"
+# EN: A Riverbank Basket
+
+[hunt."hinterlands_redgill_night"]
+name = "A deshoras"
+# EN: Late Hours
+
+[hunt."hinterlands_redgill_redgill"]
+name = "Agallarrojas de las colinas"
+# EN: Hill-River Redgill
+
+[hunt."hinterlands_redgill_trout"]
+name = "Truchas en los rápidos"
+# EN: Trout in the Riffles
+
+[hunt."home_waters"]
+name = "Aguas de casa"
+# EN: Home Waters
+note = "Vale cualquier pez. Todo el mundo empieza en algún sitio, y ese sitio está mojado."
+# EN: Any fish will do. Everyone starts somewhere, and it's damp.
+
+[hunt."hut_hour"]
+name = "Hora de la cabaña"
+# EN: Hut Hour
+
+[hunt."lantern_hours"]
+name = "Horas de farol"
+# EN: Lantern Hours
+note = "Del toque de vísperas a altas horas: un farol y una orilla tranquila."
+# EN: Evening bell to the small hours: one lantern and a quiet shore.
+
+[hunt."live_wire"]
+name = "Echando chispas"
+# EN: Live Wire
+
+[hunt."loch_modan_frenzy_frenzy"]
+name = "Frenesí de pelea"
+# EN: Fighting Frenzy
+
+[hunt."loch_modan_frenzy_haul"]
+name = "Cesta de las tierras altas"
+# EN: Highland Basket
+
+[hunt."loch_modan_frenzy_quality"]
+name = "Algo más fino"
+# EN: Something Finer
+
+[hunt."loch_modan_frenzy_snapper"]
+name = "Bajíos de pargos"
+# EN: Snapper Shallows
+
+[hunt."mackerel_run"]
+name = "Paso de la caballa"
+# EN: Mackerel Run
+note = "Escurridiza, abundante y presente en toda costa digna de ese nombre."
+# EN: Slippery, plentiful and found on every coast worth the name.
+
+[hunt."night_run"]
+name = "Ronda nocturna"
+# EN: Night Run
+
+[hunt."rack_hour"]
+name = "Hora punta"
+# EN: Rack Hour
+
+[hunt."riggles_angelfish"]
+name = "El pez ángel del juez"
+# EN: Riggle's Angelfish
+
+[hunt."riggles_queenfish"]
+name = "El pez reina del juez"
+# EN: Riggle's Queenfish
+
+[hunt."riggles_racer"]
+name = "El corredor del juez"
+# EN: Riggle's Racer
+
+[hunt."silithus_coast_albacore"]
+name = "Albacoras frente a la arena"
+# EN: Albacore off the Sand
+
+[hunt."silithus_coast_grouper"]
+name = "Meros tras el oleaje"
+# EN: Grouper past the Surf
+
+[hunt."silithus_coast_haul"]
+name = "Pescado de mar honrado"
+# EN: Honest Sea Fish
+
+[hunt."silithus_coast_mackerel"]
+name = "Caballas junto a las dunas"
+# EN: Dune-Shore Mackerel
+
+[hunt."silithus_salmon_blackmouth"]
+name = "Tipos grasientos"
+# EN: Oily Customers
+
+[hunt."silithus_salmon_dusk"]
+name = "Mientras dure la luz"
+# EN: While the Light Lasts
+
+[hunt."silithus_salmon_haul"]
+name = "Muy al sur"
+# EN: A Long Way South
+
+[hunt."silithus_salmon_salmon"]
+name = "Salmón sorprendido"
+# EN: Surprised Salmon
+
+[hunt."stranglethorn_coast_cod"]
+name = "Un bacalao bajo cada roca"
+# EN: A Cod under Every Rock
+
+[hunt."stranglethorn_coast_haul"]
+name = "Cesta bajo las palmeras"
+# EN: Palm-Shade Basket
+
+[hunt."stranglethorn_coast_trout"]
+name = "Truchas de río selvático"
+# EN: Jungle River Trout
+
+[hunt."stranglethorn_coast_yellowtail"]
+name = "Colas amarillas en el bajío"
+# EN: Yellowtail in the Shallows
+
+[hunt."summers_bass"]
+name = "La lubina del estío"
+# EN: Summer's Bass
+
+[hunt."tanaris_yellowtail_cod"]
+name = "Bacalao de las rocas"
+# EN: Cod off the Rocks
+
+[hunt."tanaris_yellowtail_haul"]
+name = "Cesta tostada al sol"
+# EN: Sun-Baked Basket
+
+[hunt."tanaris_yellowtail_noon"]
+name = "Sin sombra a mediodía"
+# EN: No Shade at Noon
+
+[hunt."tanaris_yellowtail_yellowtail"]
+name = "Cola amarilla a pie de marea"
+# EN: Yellowtail by the Tideline
+
+[hunt."tastyfish_haul"]
+name = "Botín sabroso"
+# EN: Tastyfish Haul
+
+[hunt."tirisfal_silverpine_dusk_haul"]
+name = "Un cubo tranquilo"
+# EN: A Quiet Bucket
+
+[hunt."tirisfal_silverpine_dusk_mackerel"]
+name = "Caballas de agua fría"
+# EN: Cold-Water Mackerel
+
+[hunt."tirisfal_silverpine_dusk_smallfish"]
+name = "Un brillo de pececitos"
+# EN: A Glint of Smallfish
+
+[hunt."tirisfal_silverpine_dusk_snapper"]
+name = "Pargos al encender faroles"
+# EN: Snappers at Lamplighting
+
+[hunt."ungoro_redgill_dusk"]
+name = "Vigilados desde los helechos"
+# EN: Watched from the Ferns
+
+[hunt."ungoro_redgill_haul"]
+name = "Cesta del fondo del cráter"
+# EN: A Crater-Floor Basket
+
+[hunt."ungoro_redgill_redgill"]
+name = "Agallarrojas de agua cálida"
+# EN: Warm-Water Redgill
+
+[hunt."ungoro_redgill_trout"]
+name = "Truchas de charca humeante"
+# EN: Steam-Pool Trout
+
+[hunt."western_plaguelands_lake_afternoon"]
+name = "Una tarde larga"
+# EN: Long Afternoon
+
+[hunt."western_plaguelands_lake_haul"]
+name = "Una cesta, pese a todo"
+# EN: A Basket Despite It All
+
+[hunt."western_plaguelands_lake_redgill"]
+name = "Agallarrojas en plena forma"
+# EN: Redgill in Good Health
+
+[hunt."western_plaguelands_lake_trout"]
+name = "Truchas en la plaga"
+# EN: Trout in the Blight
+
+[hunt."winters_squid"]
+name = "El calamar del invierno"
+# EN: Winter's Squid
+
+[hunt."winterspring_daylight_haul"]
+name = "Una cesta escarchada"
+# EN: A Frostbitten Basket
+
+[hunt."winterspring_daylight_morning"]
+name = "Sol sobre la nieve"
+# EN: Sun on the Snow
+
+[hunt."winterspring_daylight_redgill"]
+name = "Agallarrojas en la nieve"
+# EN: Redgill in the Snow
+
+[hunt."winterspring_salmon_evening"]
+name = "Tardes que se acortan"
+# EN: Evenings Drawing In
+
+[hunt."winterspring_salmon_haul"]
+name = "Hielo en el sedal"
+# EN: Ice on the Line
+
+[hunt."winterspring_salmon_salmon"]
+name = "Pez blanco, colinas blancas"
+# EN: White Fish, White Hills
+
+[huntgood."hunts.binding.fiveseal"]
+description = "Cuero negro con sellos de lacre estampados, uno por cada serie de cazas que existe. Este no lo falsifica nadie."
+# EN: Black leather with wax seals pressed into it, one for every set of hunts there is. Nobody fakes this one.
+name = "Sello de cinco series"
+# EN: Five-Set Seal
+
+[huntgood."hunts.binding.pathfinder"]
+description = "Suave piel de becerro con una rosa de los vientos estampada. Para pescadores que llevaron una serie de cazas entera hasta el final."
+# EN: Soft calfskin pressed with a compass rose. Handed to anglers who saw a whole set of hunts through to the end.
+name = "Becerro del explorador"
+# EN: Pathfinder's Calf
+
+[huntgood."hunts.binding.wagersilk"]
+description = "Brocado de seda morada tejido con monedas y peces, cruzado por una banda roja. Para pescadores que no paran de ganar las apuestas de la casa."
+# EN: Purple silk brocade woven with coins and fish, a red sash across it. Given to anglers who keep winning the house’s bets.
+name = "Brocado del ganador"
+# EN: Winner's Brocade
+
+[huntgood."hunts.soundset.nightwatch"]
+description = "Una campana grave para la guardia nocturna, un farol que zumba y un búho que ha visto cada pieza que has sacado."
+# EN: A low bell for the night watch, a lantern humming and an owl who has seen every catch you ever made.
+name = "Guardia nocturna"
+# EN: Night Watch
+
+[huntgood."hunts.toaststyle.nightfin"]
+description = "Más allá del cabo, donde acaba la luz, los peces de la noche nadan bajo la luna llena. Quédate quieto el tiempo suficiente y uno la cruza de un salto."
+# EN: Out past the headland, where the light ends, the nightfin run under a full moon. Hold still long enough and one jumps clean across it.
+name = "Aletas bajo la luna"
+# EN: Nightfin Tide
+
+[huntgood."hunts.toaststyle.study"]
+description = "Un cuaderno abierto sobre un escritorio, la lámpara aún encendida y el tintero destapado, sus mejores moscas colgadas en el aire tibio sobre la página. Nadie lo ha pillado nunca en ello. Tampoco nadie ha visto nunca el escritorio vacío."
+# EN: A journal open on a desk, the lamp still lit and the ink uncapped, his best flies hanging in the warm air over the page. Nobody has ever caught him at it. Nobody has ever seen the desk empty, either.
+name = "El estudio de Nat"
+# EN: Nat's Study
+
+[huntgood."hunts.toaststyle.trench"]
+description = "Por debajo de donde se rinde la luz del sol, y por debajo de donde se rinden los faroles de los rapes. Aquí abajo vive algo muy grande, y se ha fijado en el sedal."
+# EN: Below where the sunlight gives up, and below where the anglerfish lanterns give up. Something very large lives down here, and it has noticed the line.
+name = "La fosa profunda"
+# EN: The Deep Trench
+
+[huntgood."hunts.trackerframe.bounty"]
+description = "Clavado en la caseta del muelle, con las esquinas rizadas. El pez tiene precio, y el precio no deja de subir."
+# EN: Nailed up at the dock house, edges curling. The fish on it has a price, and the price is going up.
+name = "Cartel de recompensa"
+# EN: Bounty Poster
+
+[huntgood."hunts.trackerframe.inkwash"]
+description = "Una hoja escrita con tinta azul, la aguada algo corrida, como una página a la que le saltó la espuma."
+# EN: A sheet of paper written in blue ink, the wash run a little, like a page that caught the spray.
+name = "Aguada de tinta"
+# EN: Ink Wash
+
+[huntgood."hunts.trackerframe.mapscrap"]
+description = "Una esquina arrancada de un mapa de caza: un sendero punteado, una brújula y el cerco del café de alguien."
+# EN: A corner torn off a hunting map: a dotted trail, a compass, and somebody’s coffee ring.
+name = "Trozo de mapa"
+# EN: Map Scrap
+
+[huntgood."hunts.trackerframe.none"]
+description = "Solo las líneas, sin nada dibujado alrededor."
+# EN: Only the lines themselves, with nothing drawn around them.
+name = "Sin marco"
+# EN: No Frame
+
+[huntgood."hunts.trackerframe.slate"]
+description = "Una pizarra en un marco atado con cuerda, escrita con tiza cada mañana y emborronada a mediodía."
+# EN: A slate in a rope-bound frame, chalked fresh each morning and smudged by noon.
+name = "Pizarra de tiza"
+# EN: Chalk Slate
+
+[huntgood."hunts.trackerframe.spyglass"]
+description = "Esmalte azul marino entre dos rieles de latón, con el ocular de la esquina vuelto hacia la próxima caza."
+# EN: Navy enamel between two brass rails, the eyepiece at the corner turned toward the next hunt.
+name = "Borde de catalejo"
+# EN: Spyglass Rim
+
+[huntgood."hunts.trackerframe.wagerribbon"]
+description = "Una cinta de seda morada con fleco dorado, para pescadores que no paran de ganarle a la casa en sus propias apuestas."
+# EN: A purple silk ribbon with a gold fringe, for anglers who keep beating the house at its own wagers.
+name = "Cinta del ganador"
+# EN: Winner's Ribbon
+
+[huntgood."hunts.trackerframe.waxseal"]
+description = "Pergamino con una línea roja en el margen y un sello de lacre en la esquina, como si la lista fuera oficial."
+# EN: Parchment with a red rule down its margin and a wax seal pressed in the corner, as if the list were official.
+name = "Sello de lacre"
+# EN: Wax Seal
+
+[ladder."100"]
+title = "Retiro de la banca"
+# EN: Bookmaker's Retirement
+
+[ladder."25"]
+title = "Azote de la banca"
+# EN: Bookmaker's Bane
+
+[ladder."50"]
+title = "Ruina de la banca"
+# EN: Bookmaker's Ruin
+
+[set."camp_hours"]
+name = "Horas de campamento"
+# EN: Camp Hours
+title = "Guarda de la cabaña"
+# EN: Hut Keeper
+
+[set."home_waters"]
+name = "Aguas de casa"
+# EN: Home Waters
+note = "Tus primeras aguas, cerca de casa."
+# EN: Your first waters, close to home.
+title = "Mozo de muelle"
+# EN: Dockhand
+
+[set."round_the_clock"]
+name = "Las veinticuatro horas"
+# EN: Round the Clock
+title = "Vigilante del reloj"
+# EN: Clockwatcher
+
+[set."sunday_showdown"]
+name = "Duelo dominical"
+# EN: Sunday Showdown
+note = "El gran concurso, solo para personajes de nivel 60."
+# EN: The Extravaganza, for level 60 characters only.
+title = "Aspirante de la selva"
+# EN: Jungle Contender
+
+[set."turn_of_the_year"]
+name = "El giro del año"
+# EN: Turn of the Year
+title = "Curtido en toda estación"
+# EN: All-Seasons Hand
