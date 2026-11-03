@@ -11,6 +11,7 @@
 
 locale\enUS.lua
 data\Lore.lua
+locale\esES.lua
 logic\Data.lua
 logic\Module.lua
 logic\Seams.lua
