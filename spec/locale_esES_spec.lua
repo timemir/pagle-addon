@@ -72,8 +72,10 @@ local function compare(english, spanish, path, problems)
 				compare(english[key], value, path .. "." .. tostring(key), problems)
 			end
 		end
+		-- A top-level key left out keeps enUS's value; a key left out of a table esES replaces is gone.
+		local top = path == "L"
 		for key in pairs(english) do
-			if spanish[key] == nil and type(english[key]) == "table" then
+			if spanish[key] == nil and (type(english[key]) == "table" or not top) then
 				problems[#problems + 1] = path .. "." .. tostring(key) .. ": missing"
 			end
 		end

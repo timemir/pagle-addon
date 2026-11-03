@@ -1,7 +1,5 @@
 # Core's lore in Spanish (Spain), over data/lore/core.toml (DATA-R113).
 
-# esES lore for data/lore/core.toml: Core's goods, bindings and the Curio crate (DATA-R113).
-
 [good."core.toaststyle.page"]
 name = "Página arrancada"
 # EN: Torn Page

@@ -511,7 +511,7 @@ def check_translations(layer: LoreLayer, problems: Problems) -> None:
         english = layer.english(lore_id)
         for key in sorted(texts, key=lambda key: key.encode("utf-8")):
             text, at = texts[key], At(es_file(lore_id), key)
-            if key not in english:
+            if key not in english or not has_text(english[key].value):
                 problems.add(at, "orphan: no English text for this key (DATA-R113)")
             elif not has_text(text.value):
                 problems.add(at, "missing: empty; leave the key out to show the English (DATA-R113)")
@@ -586,19 +586,14 @@ def lore_lua_text(lore_id: str, texts: Mapping[str, Text], header: str, locale: 
 
 
 def retired_lore(present: Callable[[str], bool], outputs: Collection[str]) -> dict[str, str]:
-    """Each Lore.lua present (by present(path)) that outputs doesn't give, by path, with the lore file it was
-    generated from: that file is gone, so the Lore.lua is stale (DATA-R60) and the generator removes it."""
-    retired = {
-        lore_lua(lore_id): lore_file(lore_id)
+    """Each Lore.lua and Lore.esES.lua present (by present(path)) that outputs doesn't give, by path, with the lore
+    file it was generated from: that file is gone, so the Lua file is stale (DATA-R60) and the generator removes it."""
+    return {
+        lua(lore_id): source(lore_id)
+        for lua, source in ((lore_lua, lore_file), (es_lua, es_file))
         for lore_id in ADDONS
-        if lore_lua(lore_id) not in outputs and present(lore_lua(lore_id))
+        if lua(lore_id) not in outputs and present(lua(lore_id))
     }
-    retired |= {
-        es_lua(lore_id): es_file(lore_id)
-        for lore_id in ADDONS
-        if es_lua(lore_id) not in outputs and present(es_lua(lore_id))
-    }
-    return retired
 
 
 def lore_outputs(layer: LoreLayer, header_of: Callable[[str], str]) -> dict[str, str]:

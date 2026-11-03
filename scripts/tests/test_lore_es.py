@@ -43,12 +43,13 @@ L["title.zonemaster.text"] = "Maestro de {zone}"
 )
 
 
-def write_es_tree(root: Path, spanish: str | None = SPANISH) -> Path:
-    """The lore fixture tree (test_lore's ITEMS, LEDGER and MANIFEST) plus data/lore/es/ledger.toml when given."""
+def write_es_tree(root: Path, spanish: str | None = SPANISH, english: str = LEDGER) -> Path:
+    """The lore fixture tree (test_lore's ITEMS, english as ledger.toml, and MANIFEST) plus data/lore/es/ledger.toml
+    when given."""
     write_tree(root, ITEMS, families=FAMILIES, checks=OFF)
     directory = root / "data" / "lore"
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / "ledger.toml").write_text(LEDGER, encoding="utf-8")
+    (directory / "ledger.toml").write_text(english, encoding="utf-8")
     (directory / "manifest.toml").write_text(MANIFEST, encoding="utf-8")
     if spanish is not None:
         (directory / "es").mkdir()
@@ -94,6 +95,11 @@ def test_a_bad_translation_fails_naming_its_file_and_key(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], spanish: str, problem: str
 ) -> None:
     fails(write_es_tree(tmp_path, spanish), capsys, problem)
+
+
+def test_a_translation_of_an_empty_english_text_fails(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    english = LEDGER.replace('name = "Groupers"', 'name = ""')
+    fails(write_es_tree(tmp_path, english=english), capsys, "family.1.name: orphan: no English text")
 
 
 def test_a_translation_file_that_is_no_lore_id_s_fails(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
