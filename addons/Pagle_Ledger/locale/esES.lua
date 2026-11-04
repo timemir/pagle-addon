@@ -143,6 +143,7 @@ ns.Locale("esES", function(L)
 	L.ENTRY_FOUND_IN = "Se encuentra en {joinAnd}."
 	L.ENTRY_HINT_LINK = "Leer la pista sencilla »"
 	L.ENTRY_LARGEST = "El más grande que he sacado: {size}"
+	L.ENTRY_ONLY_BY = " Solo de {joinAnd}."
 	L.ENTRY_REMOVED = "Ya no está en las aguas de Forever."
 	L.ENTRY_STAMPS = { "Capturado", "En su elemento", "Habitual" }
 	L.ENTRY_UNKNOWN = "Un pez desconocido"
@@ -213,8 +214,10 @@ ns.Locale("esES", function(L)
 	L.HOME_KICKER = "Las aguas"
 	L.HOME_LEVEL = "Nivel de Pescador"
 	L.HOME_NOTES = "Notas para mí"
+	L.HOME_NOTE_CAUGHT_STAR = "{name}: {home_note_caught_star_2:0} para |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
 	L.HOME_NOTE_NEW = "{zone}: {home_note_new_2:0} por descubrir"
 	L.HOME_NOTE_NONE = "¡A pescar!"
+	L.HOME_NOTE_STAR = "{name}: {home_note_star_2:0} para |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
 	L.HOME_TITLE = "Donde he pescado"
 	L.ITEM_FALLBACK = "Objeto {itemID}"
 	L.JOURNAL = "Diario de peces"
@@ -347,6 +350,7 @@ ns.Locale("esES", function(L)
 	L.WRITE_UP_WHILE_OFF = "Mientras el Libro estaba desactivado"
 	L.WRITE_UP_WITH_PRESTIGE = "{line} · Prestigio {rank:0}"
 	L.WRITE_UP_ZONES = { many = "{count:0} zonas con rango", one = "{count:0} zona con rango", other = "{count:0} zonas con rango" }
+	L.XP_BAR_FRESH = { many = " Agua fresca para {count:0} Capturas más.", one = " Agua fresca para {count:0} Captura más.", other = " Agua fresca para {count:0} Capturas más." }
 	L.XP_BAR_SET_ASIDE = "{carried} XP reservada para el próximo Prestigio"
 	L.XP_BAR_TEXT = "{into} de {cost}."
 	L.XP_BAR_TIP_NOTE = "por fuente, aproximado"
