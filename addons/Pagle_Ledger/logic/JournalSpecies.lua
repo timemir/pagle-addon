@@ -136,6 +136,7 @@ function ns.JournalSpeciesEntry(id, context, hint)
 			stamps = ns.JournalStamps(
 				ns.ShownSpeciesStars(world, state, context.celebrated, id),
 				L.ENTRY_STAMPS,
+				ns.ENTRY_STAMP_KEYS,
 				ns.SpeciesStampTips(world, state, id, text)
 			),
 		},

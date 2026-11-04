@@ -129,7 +129,7 @@ local function standing(context, zone, blocks)
 	blocks[#blocks + 1] = { kind = "seal", text = L.ZONE_RANKS[shown] or L.UNFISHED, inked = shown >= 1 }
 	local rungs = {}
 	for rank, name in ipairs(L.ZONE_RANKS) do
-		rungs[rank] = { text = name, inked = rank <= shown, circled = rank == shown }
+		rungs[rank] = { text = name, rank = rank, inked = rank <= shown, circled = rank == shown }
 	end
 	blocks[#blocks + 1] = { kind = "ladder", rungs = rungs }
 	local next = ns.NextRequirement(world, state, celebrated, zone) --[[@as string]]

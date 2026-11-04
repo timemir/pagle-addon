@@ -16,12 +16,17 @@ local rgb = ns.JournalRGB
 -- The ladder's rung words and dots, and its height.
 local RUNG_SIZE, LADDER_HEIGHT = 15, 24
 
--- The kit's circle for a rank's words, by the words lowercased.
----@param words string
+-- The kit's circles by the rank they go round, Visitor to Master (the order of ns.L.ZONE_RANKS). The words ns.L gives a rank
+-- are only what is drawn inside it; they never choose the circle.
+local RANK_RINGS = { "rank-visitor", "rank-regular", "rank-local", "rank-expert", "rank-master" }
+
+-- The kit's circle for rank `rank`, nil in a language other than English, whose rank words the circle's size was not
+-- drawn to (ns.JournalArtFitsWords): the rank is then drawn in red without it, as a rank with no circle is.
+---@param rank integer
 ---@return string?
-local function ringOf(words)
-	local name = "rank-" .. words:lower():gsub("[^a-z0-9]+", "-")
-	return ns.JOURNAL_ATLASES.Parts.sprites[name] and name or nil
+local function ringOf(rank)
+	local name = ns.JournalArtFitsWords() and RANK_RINGS[rank]
+	return name and ns.JOURNAL_ATLASES.Parts.sprites[name] and name or nil
 end
 
 ---@class LedgerLadderRungView
@@ -68,7 +73,7 @@ ns.RegisterJournalWidget("ladder", function(parent)
 				x = x + 6 + 3.4 + 6
 			end
 			rung.text:SetText(data.text)
-			local ringName = data.circled and ringOf(data.text)
+			local ringName = data.circled and ringOf(data.rank)
 			if ringName then
 				if not rung.ring then
 					rung.ring = ns.JournalSprite(self, "Parts", ringName, "ARTWORK")

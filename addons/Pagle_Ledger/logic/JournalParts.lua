@@ -68,16 +68,23 @@ function ns.JournalStars(stars)
 	return table.concat(marks)
 end
 
+--- The three stamps of a caught Species' entry (LED-R140) and of a trophy family's (LED-R143), by key: which stamp each
+--- is, whatever words ns.L gives it. The kit's stamp art is looked up by this key (adapter/JournalArt.lua), never by the
+--- words, which are only what is drawn when there is no art for them.
+ns.ENTRY_STAMP_KEYS = { "caught", "in-its-element", "regular" }
+ns.TROPHY_STAMP_KEYS = { "any-weight", "half-the-weights", "the-heaviest" }
+
 --- A set of stars as three ink stamps (LED-R140, LED-R143): each of `labels`, inked when its star is shown (LED-R48,
---- LED-R92), with its tooltip from `tips` (LED-R165) when given.
+--- LED-R92), with its tooltip from `tips` (LED-R165) when given, and its `key` from `keys`.
 ---@param stars LedgerStars
 ---@param labels string[] the three stamps' words
+---@param keys string[] the three stamps' keys (ns.ENTRY_STAMP_KEYS, ns.TROPHY_STAMP_KEYS)
 ---@param tips LedgerStampTip[]? one per stamp (logic/JournalStampTips.lua)
----@return { text: string, inked: boolean, tip: LedgerStampTip? }[]
-function ns.JournalStamps(stars, labels, tips)
+---@return { text: string, key: string, inked: boolean, tip: LedgerStampTip? }[]
+function ns.JournalStamps(stars, labels, keys, tips)
 	local stamps = {}
 	for star, text in ipairs(labels) do
-		stamps[star] = { text = text, inked = stars[star] == true, tip = tips and tips[star] or nil }
+		stamps[star] = { text = text, key = keys[star], inked = stars[star] == true, tip = tips and tips[star] or nil }
 	end
 	return stamps
 end

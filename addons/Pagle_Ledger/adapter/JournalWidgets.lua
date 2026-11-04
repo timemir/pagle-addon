@@ -810,7 +810,7 @@ makers.stamps = function(parent)
 		local same, before = remember(self, draw, "stamps:" .. #list .. ":" .. (list[1] and list[1].text or ""), inked)
 		local x = 0
 		for i, data in ipairs(list) do
-			local name = ns.JournalStampSprite(data.text, data.inked)
+			local name = ns.JournalStampSprite(data.key, data.inked)
 			local stamp = self.stamps[i]
 			if not stamp then
 				stamp = ns.JournalSprite(self, "Parts", "stamp-caught", "ARTWORK")

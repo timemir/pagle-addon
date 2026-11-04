@@ -692,24 +692,33 @@ function ns.JournalInkBarWidth(bar, width)
 	bar:Set(bar.pct or 0, bar.freshPct)
 end
 
--- The kit's stamps by their words, lowercased: inked red, or in ghost ink when not earned.
+--- Whether the kit's art that was drawn to the English words may be used: only when Pagle is read in English (LED-R135,
+--- LED-R140). The stamps carry their English word in the picture, and the ladder's circles are sized to the English
+--- ranks, so in another language the words are drawn as plain text instead, which both widgets already do for a rank or
+--- stamp with no art. Added in 1.1; English is unchanged.
+---@return boolean
+function ns.JournalArtFitsWords()
+	return Pagle.GetLanguage() == "enUS"
+end
+
+-- The kit's stamps by their key (ns.ENTRY_STAMP_KEYS, ns.TROPHY_STAMP_KEYS): inked red, or in ghost ink when not earned.
 local STAMPS = {
 	["caught"] = "stamp-caught",
-	["in its element"] = "stamp-in-its-element",
+	["in-its-element"] = "stamp-in-its-element",
 	["regular"] = "stamp-regular",
-	["any weight"] = "stamp-any-weight",
-	["half the weights"] = "stamp-half-the-weights",
-	["the heaviest"] = "stamp-the-heaviest",
-	["whopper"] = "stamp-whopper",
+	["any-weight"] = "stamp-any-weight",
+	["half-the-weights"] = "stamp-half-the-weights",
+	["the-heaviest"] = "stamp-the-heaviest",
 }
 
---- The kit's stamp sprite for a stamp's words (LED-R140, LED-R143), inked or in ghost ink; nil for words it has none
---- for.
----@param words string
+--- The kit's stamp sprite for a stamp's key (LED-R140, LED-R143), inked or in ghost ink; nil for a key it has none for,
+--- and in a language other than English, whose words the art does not carry (ns.JournalArtFitsWords). The words ns.L
+--- gives the stamp never choose the sprite.
+---@param key string?
 ---@param inked boolean
 ---@return string?
-function ns.JournalStampSprite(words, inked)
-	local name = STAMPS[words:lower()]
+function ns.JournalStampSprite(key, inked)
+	local name = key and ns.JournalArtFitsWords() and STAMPS[key]
 	return name and (inked and name or name .. "-off") or nil
 end
 
