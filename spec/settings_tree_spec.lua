@@ -1098,20 +1098,25 @@ local function everyString()
 end
 
 -- A Lua pattern matching what `format` draws once filled, capturing each filled part, and each part's specifier
--- ("d" or "s"), in order; nil for a string with no %d or %s.
+-- ("d" or "s"), in order; nil for a string with no field. A field is `{name}`, a string, or `{name:0}`, `{name:n}` and
+-- so on, a number (CORE-R8's text helper); `{{` and `}}` are the braces themselves.
 ---@param format string
 ---@return string?
 ---@return string[]
 local function patternOf(format)
 	local pattern, kinds, at = "^", {}, 1
+	local function literal(text)
+		return (text:gsub("{{", "{"):gsub("}}", "}"):gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0"))
+	end
 	while true do
-		local from, to, kind = format:find("%%[%d%.]*([ds])", at)
-		local literal = format:sub(at, (from or #format + 1) - 1)
-		pattern = pattern .. literal:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")
+		local from, to, spec = format:find("{[%w_]+:?(%w*)}", at)
+		pattern = pattern .. literal(format:sub(at, (from or #format + 1) - 1))
 		if not from then
 			break
 		end
-		pattern = pattern .. (kind == "d" and "(%-?%d+)" or "(.+)")
+		-- A string that is one bare field is a number a call wrote (RULER_HOUR's two digits), like the old "%02d".
+		local kind = (spec ~= "" or format:find("^{[%w_]+}$")) and "d" or "s"
+		pattern = pattern .. (kind == "d" and "(%-?[%d,%.]+)" or "(.+)")
 		kinds[#kinds + 1] = kind
 		at = to + 1
 	end
@@ -1140,7 +1145,7 @@ local function stringTables(loads)
 	return found
 end
 
--- Whether `text` is a string from a string table, or one of its formats filled with numbers and, for each %s, a
+-- Whether `text` is a string from a string table, or one of its formats filled with numbers and, for each {field}, a
 -- string from a string table itself ("Open %s" with "Hunts").
 ---@param text string
 ---@param tables string[]
