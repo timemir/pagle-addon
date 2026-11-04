@@ -6,11 +6,12 @@
 ## Category: Professions
 ## Version: @project-version@
 ## Dependencies: Pagle
-## X-Pagle-API: 1
+## X-Pagle-API: 2
 ## SavedVariables: PagleTackleBoardDB
 
 locale\enUS.lua
 data\Lore.lua
+locale\Locales.xml
 data\BoardArt.lua
 data\TicketArt.lua
 logic\Data.lua

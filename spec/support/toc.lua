@@ -25,11 +25,28 @@ local function readToc(tocPath)
 end
 
 --- The files addons/<name>/<name>.toc lists, in order, relative to the addon folder with forward slashes
---- ("logic/Modules.lua").
+--- ("logic/Modules.lua"). An XML file is followed by the Lua files its `<Script file="…"/>` lines load, in order and
+--- relative to its own folder, as the client loads them: locale/Locales.xml, whose scripts the TOC never names (ADR 0019).
 ---@param name string
 ---@return string[]
 function addonFiles(name)
-	return (readToc("addons/" .. name .. "/" .. name .. ".toc"))
+	local dir = "addons/" .. name .. "/"
+	local listed = readToc(dir .. name .. ".toc")
+	local files = {}
+	for _, file in ipairs(listed) do
+		files[#files + 1] = file
+		if file:match("%.xml$") then
+			local folder = file:match("^(.*)/[^/]*$")
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+			local xml = assert(io.open(dir .. file, "r"))
+			local text = xml:read("*a"):gsub("<!%-%-.-%-%->", "")
+			xml:close()
+			for script in text:gmatch('<Script%s+file="([^"]+)"') do
+				files[#files + 1] = (folder and folder .. "/" or "") .. script:gsub("\\", "/")
+			end
+		end
+	end
+	return files
 end
 
 return readToc

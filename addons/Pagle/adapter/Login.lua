@@ -33,6 +33,9 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	end
 	Pagle.UnregisterEvent(OWNER, "ADDON_LOADED")
 	local addonLoaded = debugprofilestop()
+	-- The Language first (CORE-R8, ADR 0019): from the raw PagleDB, before AceDB wraps it, so every line below that reads
+	-- ns.L, the Size and Variety names and LOG_UNREADABLE among them, is already in the chosen language.
+	ns.ApplyLanguage()
 	-- What Modules read of Size and Varieties (LOG-R67, VAR-R11), whose names come from ns.L: published here, not as
 	-- adapter/Size.lua and adapter/Variety.lua load (CORE-R8). Before anything can fail, so the API is always there.
 	ns.PublishSizeAtLogin()

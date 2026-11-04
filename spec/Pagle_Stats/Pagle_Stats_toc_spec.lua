@@ -49,11 +49,14 @@ describe("Pagle_Stats.toc", function()
 		assert.are.same({ "Pagle_Stats.toc" }, filesIn({ "toc" }))
 	end)
 
-	it("depends on Pagle, declares X-Pagle-API 1 and loads normally, not on demand (CORE-R3)", function()
-		assert.are.equal("Pagle", fields.Dependencies)
-		assert.are.equal("1", fields["X-Pagle-API"])
-		assert.is_nil(fields.LoadOnDemand)
-	end)
+	it(
+		"depends on Pagle, declares X-Pagle-API 2 (it calls Pagle.GetLanguage, CORE-R8) and loads normally, not on demand (CORE-R3)",
+		function()
+			assert.are.equal("Pagle", fields.Dependencies)
+			assert.are.equal("2", fields["X-Pagle-API"])
+			assert.is_nil(fields.LoadOnDemand)
+		end
+	)
 
 	it("is titled Pagle Stats, as the Ledger's is Pagle Ledger and Hunts' Pagle Hunts (CORE-R2)", function()
 		assert.are.equal("Pagle Stats", fields.Title)

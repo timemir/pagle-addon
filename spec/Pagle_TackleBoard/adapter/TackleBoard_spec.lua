@@ -428,29 +428,31 @@ describe("Pagle_TackleBoard without Pagle", function()
 	-- A broken install: no Pagle, and nothing else either. Each file must stop at its first line, so it reads no
 	-- global but Pagle and writes none.
 	for _, file in ipairs(addonFiles("Pagle_TackleBoard")) do
-		it(file .. " starts with the Core guard and does nothing without Pagle (CORE-R11)", function()
-			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
-			local chunk = assert(loadfile("addons/Pagle_TackleBoard/" .. file))
-			local touched = {}
-			setfenv(
-				chunk,
-				setmetatable({}, {
-					__index = function(_, key)
-						if key ~= "Pagle" then
-							touched[#touched + 1] = "read " .. key
-						end
-					end,
-					__newindex = function(_, key)
-						touched[#touched + 1] = "wrote " .. key
-					end,
-				})
-			)
-			local ns = {}
+		if file:match("%.lua$") then
+			it(file .. " starts with the Core guard and does nothing without Pagle (CORE-R11)", function()
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
+				local chunk = assert(loadfile("addons/Pagle_TackleBoard/" .. file))
+				local touched = {}
+				setfenv(
+					chunk,
+					setmetatable({}, {
+						__index = function(_, key)
+							if key ~= "Pagle" then
+								touched[#touched + 1] = "read " .. key
+							end
+						end,
+						__newindex = function(_, key)
+							touched[#touched + 1] = "wrote " .. key
+						end,
+					})
+				)
+				local ns = {}
 
-			chunk("Pagle_TackleBoard", ns)
+				chunk("Pagle_TackleBoard", ns)
 
-			assert.are.same({}, touched)
-			assert.are.same({}, ns)
-		end)
+				assert.are.same({}, touched)
+				assert.are.same({}, ns)
+			end)
+		end
 	end
 end)

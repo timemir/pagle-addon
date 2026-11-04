@@ -11,3 +11,88 @@ local Pagle = Pagle
 -- The text helper (CORE-R8, logic/Text.lua): named {fields}, CLDR plurals and number separators. Here Core gives it to
 -- Modules as Pagle.Text.
 ns.PublishText(Pagle)
+
+-- The Language (CORE-R8, SET-R10 row 9b, ADR 0019). Core applies it first in its ADDON_LOADED (adapter/Login.lua), before
+-- the Size and Variety names are published and before anything prints; a Module applies Core's choice as its files load
+-- (locale/Apply.lua).
+
+--- The Language setting's key in the account-wide `PagleDB.global` (SET-R10 row 9b).
+ns.LANGUAGE_KEY = "language"
+--- The setting's value for "Game default", and what a missing, unreadable or wrongly typed setting counts as.
+ns.LANGUAGE_GAME_DEFAULT = "default"
+-- English is the base every Locale overlays (ADR 0019); it has no registration.
+local ENGLISH = "enUS"
+--- A client Locale that has no Locale of its own yet and is served by another, on "Game default" only: an esMX client
+--- reads esES until a separate esMX registers (ADR 0019). A registered, listed esMX wins.
+local SERVED_BY = { esMX = "esES" }
+
+--- The Language setting out of the raw `_G.PagleDB`, before AceDB wraps it: `PagleDB.global.language`. Anything that is
+--- not a non-empty string there, however it came to be (no `PagleDB`, not a table, no `global`, a number), is
+--- "Game default" (LANGUAGE_GAME_DEFAULT). It never raises.
+---@param saved any The raw PagleDB the client loaded, or nil on a first login.
+---@return string
+function ns.ReadLanguageSetting(saved)
+	local ok, value = pcall(function()
+		return rawget(rawget(saved, "global"), ns.LANGUAGE_KEY)
+	end)
+	if ok and type(value) == "string" and value ~= "" then
+		return value
+	end
+	return ns.LANGUAGE_GAME_DEFAULT
+end
+
+--- Whether `code` is a registered Locale that is listed.
+---@param code any
+---@return boolean
+local function listed(code)
+	local info = ns.LocaleInfo(code)
+	return info ~= nil and info.listed
+end
+
+--- The Locale to apply, as its code: "enUS" for English. A setting that names a Locale gives it when it is registered and
+--- listed, else English. "Game default" gives the client's own Locale when that is registered and listed, else the one
+--- that serves it (esMX: esES), else English. An unlisted Locale never applies by either road.
+---@param setting string The Language setting (ReadLanguageSetting).
+---@param clientLocale any The client's `GetLocale()`.
+---@return string code
+function ns.ResolveLanguage(setting, clientLocale)
+	if setting ~= ns.LANGUAGE_GAME_DEFAULT then
+		return listed(setting) and setting or ENGLISH
+	end
+	if listed(clientLocale) then
+		return clientLocale
+	end
+	local served = SERVED_BY[clientLocale]
+	if served and listed(served) then
+		return served
+	end
+	return ENGLISH
+end
+
+--- The Locale applied this session, as its code: "enUS" until `ApplyLanguage` has run, and when the Locale it chose
+--- applied nothing.
+---@type string
+ns.language = ENGLISH
+
+--- Core's first step at ADDON_LOADED (CORE-R8, LOG-R1): reads the setting from the raw `_G.PagleDB`, resolves it, overlays
+--- `ns.L` with the chosen Locale (its fallback first), hands the text helper the merged record and records the code
+--- `Pagle.GetLanguage` answers with. A function of the Locale that raises is reported through the error handler and
+--- skipped: the strings it would have written stay English, and login goes on.
+function ns.ApplyLanguage()
+	local setting = ns.ReadLanguageSetting(rawget(_G, "PagleDB"))
+	local code = ns.ResolveLanguage(setting, GetLocale())
+	local record, errors = ns.ApplyLocale(code)
+	for _, err in ipairs(errors) do
+		geterrorhandler()(err)
+	end
+	ns.SetTextLocale(record)
+	ns.language = record and code or ENGLISH
+end
+
+--- The Locale Core applied this session, as its code ("enUS" for English): what a Module applies from its own
+--- registrations as its files load (CORE-R8, locale/Apply.lua). Right once Core's ADDON_LOADED has run, which every
+--- Module's files follow (CORE-R10). Added in API version 2.
+---@return string
+function Pagle.GetLanguage()
+	return ns.language
+end

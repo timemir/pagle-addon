@@ -1,0 +1,7 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<!-- A test fixture, never shipped: the same as Locales.xml, plus a separate esMX registered after esES. -->
+	<Script file="Registry.lua"/>
+	<Script file="Fixture.lua"/>
+	<Script file="EsMX.lua"/>
+	<Script file="Apply.lua"/>
+</Ui>

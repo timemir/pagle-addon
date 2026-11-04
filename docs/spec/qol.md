@@ -33,7 +33,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 ### Packaging and attaching
 
-- **QOL-R1** `Pagle_QoL` follows CORE-R1–R3 and CORE-R11, with `## X-Pagle-API: 1`. Its SavedVariable is `PagleQoLDB` (AceDB, account-wide, one shared profile; see [Data](#data)). It ships a `Bindings.xml` with the two bindings in QOL-R10 and QOL-R46 under the header "Pagle" (`category="ADDONS"`, with `BINDING_HEADER_PAGLE` and the `BINDING_NAME_*` globals defined), so a disabled QoL leaves no binding entries behind.
+- **QOL-R1** `Pagle_QoL` follows CORE-R1–R3 and CORE-R11, with `## X-Pagle-API: 2` (from 1.1, for `Pagle.GetLanguage`, CORE-R8; 1 in 1.0). Its SavedVariable is `PagleQoLDB` (AceDB, account-wide, one shared profile; see [Data](#data)). It ships a `Bindings.xml` with the two bindings in QOL-R10 and QOL-R46 under the header "Pagle" (`category="ADDONS"`, with `BINDING_HEADER_PAGLE` and the `BINDING_NAME_*` globals defined), so a disabled QoL leaves no binding entries behind.
 - **QOL-R2** In `OnInitialize`, QoL calls `Pagle.RegisterModule` with:
 
   ```lua
