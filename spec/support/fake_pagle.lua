@@ -942,6 +942,12 @@ part(function(fake, Pagle, ns, host)
 	ns.PublishSize(Pagle, host, readOnly)
 end)
 
+-- The text helper as Core publishes it (CORE-R8): Pagle.Text, on Core's real logic/Text.lua, in English until a spec sets
+-- another Locale's record with fake.ns.SetTextLocale.
+part(function(_, Pagle, ns)
+	ns.PublishText(Pagle)
+end)
+
 -- The clock format as Core publishes it (CORE-R87): Pagle.FormatClock, in fake.profile.clockFormat or the game's
 -- clock, fake.militaryTime. A spec changes either and calls fake.noteClockFormat() for ClockFormatChanged, as the
 -- Clock row and CVAR_UPDATE do on the client.
