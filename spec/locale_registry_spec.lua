@@ -150,7 +150,7 @@ describe("the locale line of every addon (ADR 0019)", function()
 			chunk(addon, ns)
 
 			local info = assert(ns.LocaleInfo("esES"), addon)
-			assert.is_false(info.listed, addon)
+			assert.are.equal(false, info.listed, addon)
 			assert.are.equal("Español", info.name, addon)
 		end
 		-- No other language is shipped: the one code a locale file or a Lore file may carry is esES.
