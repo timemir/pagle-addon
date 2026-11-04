@@ -251,7 +251,7 @@ function ns.DrawGoalSlip(slip, goal, view, lean)
 	if slip.poster then
 		slip.kicker:SetText(ns.Spaced(ns.L.EXPEDITION) .. "   ·   " .. ns.Spaced(view.kicker))
 	else
-		slip.kicker:SetText(view.kicker:upper())
+		slip.kicker:SetText(Pagle.Upper(view.kicker))
 	end
 	slip.text:SetText(view.text)
 	slip.progress:SetText(view.progress)

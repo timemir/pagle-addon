@@ -341,7 +341,7 @@ local function layOut(row, line, style, n, last)
 		row.slip:SetShown(style.slips == true and kind == "goal")
 		row.tack:SetShown(style.slips == true and kind == "goal")
 	end
-	text:SetText(kind == "header" and style.caps and line.text:upper() or line.text)
+	text:SetText(kind == "header" and style.caps and Pagle.Upper(line.text) or line.text)
 	if kind == "header" then
 		local height = last and style.header + HEADER_HEIGHT or style.top
 		ns.SetArtFont(text, style.title)

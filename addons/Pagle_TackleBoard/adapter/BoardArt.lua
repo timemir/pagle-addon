@@ -268,7 +268,7 @@ end
 ---@return string
 function ns.Spaced(text)
 	local words = {}
-	for word in text:upper():gmatch("%S+") do
+	for word in Pagle.Upper(text):gmatch("%S+") do
 		local letters = {}
 		for letter in word:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
 			letters[#letters + 1] = letter

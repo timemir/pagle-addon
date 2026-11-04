@@ -16,6 +16,23 @@ function ns.Text(source, fields)
 	return pagle.Text(source, fields)
 end
 
+--- Core's search fold, `Pagle.FoldCase` (CORE-R8): `text` in lower case without the accents of Latin letters, so that a
+--- plain query finds an accented name. Both the query and the name go through it; it is for matching, never for drawing.
+---@param text string
+---@return string
+function ns.FoldCase(text)
+	local pagle = Pagle -- luacheck: read globals Pagle (CORE-R8: the one read of Core in logic/ besides the guard)
+	return pagle.FoldCase(text)
+end
+
+--- Core's lower case, `Pagle.Lower` (CORE-R8): `text` in lower case, UTF-8 aware.
+---@param text string
+---@return string
+function ns.Lower(text)
+	local pagle = Pagle -- luacheck: read globals Pagle (CORE-R8: the one read of Core in logic/ besides the guard)
+	return pagle.Lower(text)
+end
+
 -- What the Ledger registers with Core (LED-R1): pure logic, everything passed in (CORE-R7).
 
 --- The Ledger's def for `Pagle.RegisterModule` (LED-R1): its one view, the Fish Journal, and `/pagle journal`, both

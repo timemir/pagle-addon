@@ -16,6 +16,15 @@ function ns.Text(source, fields)
 	return pagle.Text(source, fields)
 end
 
+--- Core's search fold, `Pagle.FoldCase` (CORE-R8): `text` in lower case without the accents of Latin letters, so that a
+--- plain query finds an accented name. Both the query and the name go through it; it is for matching, never for drawing.
+---@param text string
+---@return string
+function ns.FoldCase(text)
+	local pagle = Pagle -- luacheck: read globals Pagle (CORE-R8: the one read of Core in logic/ besides the guard)
+	return pagle.FoldCase(text)
+end
+
 -- What Stats registers with Core (STA-R4): pure logic, everything passed in (CORE-R7).
 
 --- Stats' def for `Pagle.RegisterModule` (STA-R4): its one view, the Stats book, and `/pagle stats`, both toggling

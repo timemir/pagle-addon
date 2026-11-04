@@ -156,6 +156,10 @@ describe("the Journal's search", function()
 		assert.are.same({ "Lake 5" }, labels(ns.JournalSearch("e 5", context)))
 	end)
 
+	it("folds accents and case on both sides, so a plain query finds an accented name (#520)", function()
+		assert.are.same({ "Lake 5" }, labels(ns.JournalSearch("LÁKE 5", context)))
+	end)
+
 	it("finds nothing for a name not loaded yet, nor for an empty box (LED-R148, LED-R126)", function()
 		assert.are.same({}, ns.JournalSearch("...", context))
 		assert.is_nil(ns.JournalSearch("", context))

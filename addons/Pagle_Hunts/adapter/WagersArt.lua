@@ -122,7 +122,7 @@ function ns.SetWagerInk(text, name)
 	shown:SetSpacing(math.max(0, ns.WagerLineHeight(name) - ink.size))
 	shown.ink = name
 	if shown.words then
-		shown:SetText((ink.caps or ink.upper) and shown.words:upper() or shown.words)
+		shown:SetText((ink.caps or ink.upper) and Pagle.Upper(shown.words) or shown.words)
 	end
 	return shown
 end
@@ -144,7 +144,7 @@ end
 function ns.SetWagerWords(text, words)
 	local ink = inkOf(text.ink)
 	text.words = words
-	text:SetText((ink.caps or ink.upper) and words:upper() or words)
+	text:SetText((ink.caps or ink.upper) and Pagle.Upper(words) or words)
 end
 
 --- Puts `text` with its line's top `y` down from `relative`'s top and its left `x` in (or, with `right`, its right `x`

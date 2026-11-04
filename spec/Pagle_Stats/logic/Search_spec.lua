@@ -78,6 +78,35 @@ describe("search (STA-R76)", function()
 		assert.are.same({ page = "item", item = FIREFIN }, found.results[1].target)
 	end)
 
+	it(
+		"folds accents and the case of other scripts on both sides, so a plain query finds an accented name (#520)",
+		function()
+			local accented = {
+				item = function(id)
+					return id == FIREFIN and "Firefín Snapper" or NAMES.item(id)
+				end,
+				area = NAMES.area,
+			}
+
+			assert.are.same({ "Firefín Snapper (fish)" }, lines(ns.Search("FIREFIN", fished(), accented)))
+			assert.are.same({ "Firefín Snapper (fish)" }, lines(ns.Search("refín", fished(), accented)))
+			local cyrillic = {
+				item = function(id)
+					return id == FIREFIN and "Огненный Плавник" or NAMES.item(id)
+				end,
+				area = NAMES.area,
+			}
+			assert.are.same(
+				{ "Огненный Плавник (fish)" },
+				lines(ns.Search("плав", fished(), cyrillic))
+			)
+			assert.are.same(
+				{ "Огненный Плавник (fish)" },
+				lines(ns.Search("ПЛАВ", fished(), cyrillic))
+			)
+		end
+	)
+
 	it("labels a zone 'zone' and a subzone with its zone's name, and opens its place page", function()
 		local found = ns.Search("ther", fished(), NAMES)
 

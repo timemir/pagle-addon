@@ -119,14 +119,15 @@ local function fishPlace(context)
 end
 
 -- What the search stop types (LED-R148): the first three letters of the most-caught Species' name, lowercased, which
--- matches it and often others; "a" while its name isn't loaded, or before any Catch.
+-- matches it and often others; "a" while its name isn't loaded, or before any Catch. A letter is an ASCII letter or any
+-- one UTF-8 character past ASCII, so a name that opens with "É" or a Cyrillic letter gives its first three as well.
 ---@param context LedgerSpreadContext
 ---@return string
 local function searchText(context)
 	local species = mostCaught(context.state, context.state.species)
 	local name = species and context.text:Item(species) or ""
-	local start = name:match("^%a%a%a")
-	return start and start:lower() or "a"
+	local start = name:match("^[%a\194-\244][\128-\191]*[%a\194-\244][\128-\191]*[%a\194-\244][\128-\191]*")
+	return start and ns.Lower(start) or "a"
 end
 
 --- The Journal's tour stops, in tour order (CORE-R68).

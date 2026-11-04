@@ -187,7 +187,7 @@ local SEARCH_ZONES, SEARCH_FISH = 4, 6
 local function addMatches(names, query, limit, placeOf, results)
 	local found = {}
 	for id, name in pairs(names) do
-		if name ~= ns.L.NAME_UNKNOWN and name:lower():find(query, 1, true) then
+		if name ~= ns.L.NAME_UNKNOWN and ns.FoldCase(name):find(query, 1, true) then
 			found[#found + 1] = id
 		end
 	end
@@ -214,7 +214,7 @@ function ns.JournalSearch(query, context)
 	if query == "" then
 		return nil
 	end
-	query = query:lower()
+	query = ns.FoldCase(query)
 	local text = context.text
 	local zones, fish = {}, {}
 	for _, zone in ipairs(ns.HomeZones(context)) do

@@ -300,7 +300,7 @@ local function drawSpike(spike)
 		slip:SetShown(goal ~= nil)
 		slip.view = goal
 		if goal then
-			slip.kicker:SetText(goal.kicker:upper())
+			slip.kicker:SetText(Pagle.Upper(goal.kicker))
 			slip.label:SetText(goal.text)
 			slip.note:SetText(goal.note)
 			hang(spike, slip, SLIP_Y + (i - 1) * step, swings[i])
@@ -364,7 +364,7 @@ end
 local function cardHeading(card, x, y, width, title, note)
 	local head = ns.ArtText(card, "CardHead")
 	head:SetPoint("TOPLEFT", x, -(y + 3))
-	head:SetText(title:upper())
+	head:SetText(Pagle.Upper(title))
 	local small = ns.ArtText(card, "CardNote")
 	small:SetJustifyH("RIGHT")
 	small:SetPoint("TOPRIGHT", card, "TOPLEFT", x + width, -(y + 2))
@@ -571,7 +571,7 @@ local function drawCard(card)
 	}))
 	local view = ns.CampfireCard(state, celebratedTitles())
 	for i, head in ipairs(card.heads) do
-		head:SetText(view.heads[i]:upper())
+		head:SetText(Pagle.Upper(view.heads[i]))
 	end
 	for i, week in ipairs(card.weeks) do
 		week:SetText(view.weeks[i])

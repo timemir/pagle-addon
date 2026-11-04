@@ -827,11 +827,11 @@ function ns.CollectionSearch(query, context)
 	if query == "" then
 		return nil
 	end
-	query = query:lower()
+	query = ns.FoldCase(query)
 	local found = {}
 	for _, shelf in ipairs(ns.CollectionModel(context).shelves) do
 		for _, look in ipairs(shelf.looks) do
-			if (not look.title or look.owned) and look.name:lower():find(query, 1, true) then
+			if (not look.title or look.owned) and ns.FoldCase(look.name):find(query, 1, true) then
 				found[#found + 1] = { look = look, shelf = shelf }
 			end
 		end

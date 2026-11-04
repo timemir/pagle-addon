@@ -709,6 +709,19 @@ describe("the art's capitals", function()
 		})
 	end)
 
+	it("put the letters of other languages in capitals too, leaving the escapes as they are (#520)", function()
+		assert.are.same({
+			"SEÑOR |cff00ff00ÜBER|r ŁÓDŹ",
+			"РЫБАЛКА",
+			"釣り",
+		}, {
+			ns.Capitals("señor |cff00ff00über|r łódź"),
+			ns.Capitals("рыбалка"),
+			ns.Capitals("釣り"),
+		})
+		assert.are.equal("Ñ A N D Ú    Ж", ns.SpacedCaps("ñandú ж"))
+	end)
+
 	it(
 		"space a banner's title letter by letter, four spaces between words, a character of several bytes kept whole",
 		function()
