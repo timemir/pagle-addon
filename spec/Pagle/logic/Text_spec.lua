@@ -173,19 +173,16 @@ describe("a counted string", function()
 		local function word(n)
 			return ns.RenderText(forms, { count = n })
 		end
-		assert.are.same(
-			{
-				"1 рыба",
-				"2 рыбы",
-				"5 рыб",
-				"11 рыб",
-				"21 рыба",
-				"24 рыбы",
-				"112 рыб",
-				"1.5 рыбы",
-			},
-			{ word(1), word(2), word(5), word(11), word(21), word(24), word(112), word(1.5) }
-		)
+		assert.are.same({
+			"1 рыба",
+			"2 рыбы",
+			"5 рыб",
+			"11 рыб",
+			"21 рыба",
+			"24 рыбы",
+			"112 рыб",
+			"1.5 рыбы",
+		}, { word(1), word(2), word(5), word(11), word(21), word(24), word(112), word(1.5) })
 	end)
 
 	it("selects Arabic from zero to other", function()
