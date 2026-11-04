@@ -185,7 +185,6 @@ local function viewOf(frame)
 	for i = 1, 4 do
 		view.records[i] = ns.NewBookLine(frame, recordWidth)
 	end
-	view.about:SetText(L.ODDS_ABOUT)
 	frame.entryView = view
 	return view
 end
@@ -198,12 +197,11 @@ end
 ---@return number
 local function drawHeadline(view, data, y)
 	local learning = data.bar ~= nil
-	local headline = data.headline
-	local lead = L.ODDS_ABOUT .. " "
-	local about = not learning and headline:sub(1, #lead) == lead
+	local headline = data.bigHeadline
+	local about = data.about ~= nil
+	view.about:SetText(data.about or "")
 	view.about:SetShown(about)
 	if about then
-		headline = headline:sub(#lead + 1)
 		put(view.about, y + ABOUT_DROP)
 	end
 	local ink = learning and LOOK.hand or LOOK.big

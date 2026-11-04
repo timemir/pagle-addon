@@ -451,6 +451,10 @@ describe("the Journal's Home, the bookplate's title and Prestige (LED-R132, LED-
 		-- the seal reads the Ledger's completion under its word
 		local texts = shownTexts(drawnBookplate(loaded))
 		assert.are.same({ "12", "Angler Level", "Minnow", "Ledger\n14%" }, texts)
+		-- its words and order are the Language's (#520)
+		loaded.ns.L.HOME_SEAL = "{completion} im\nBuch"
+		loaded.ns.journal:Draw()
+		assert.are.same({ "12", "Angler Level", "Minnow", "14% im\nBuch" }, shownTexts(drawnBookplate(loaded)))
 	end)
 
 	it(

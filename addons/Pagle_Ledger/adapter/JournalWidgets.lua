@@ -566,7 +566,7 @@ makers.bookplate = function(parent)
 		if home then
 			self.seal:ClearAllPoints()
 			self.seal:SetPoint("CENTER", self, "TOPLEFT", width - 38, -38)
-			ns.JournalSetSeal(self.seal, ns.L.HOME_SEAL_WORD .. "\n" .. block.seal, true)
+			ns.JournalSetSeal(self.seal, ns.Text(ns.L.HOME_SEAL, { completion = block.seal }), true)
 			right = width - 80
 		end
 		local mark = block.mark

@@ -100,6 +100,7 @@ ns.L = {
 	LINE_ANY_TIME = "Open any time.",
 	LINE_BACK = "Back in {monthOf}.",
 	LINE_CLOSES = "Open now. Closes in {duration}, at {realmWhen}.",
+	LINE_JOIN = " ",
 	LINE_LURE = "A lure gets me there.",
 	LINE_NEEDS = "Needs {need:0}; my best is {best:0}.",
 	LINE_NO_DATE = "No date known.",

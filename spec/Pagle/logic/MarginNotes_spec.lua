@@ -356,6 +356,17 @@ describe("Core's first-moment notes", function()
 		assert.is_true(state.notesSeen["ledger.windowOpened"])
 	end)
 
+	it("sets the firstNote and core.nod's note side by side with the Language's own join (#520)", function()
+		local notes, _, seen = margins()
+		local nod = ledgerNod("windowOpened", { firstNote = "A Hunt opened." })
+		L.NOTES_JOIN = "  "
+
+		notes:AnnouncementShown(nod, "nod", targets(), false)
+
+		L.NOTES_JOIN = " "
+		assert.are.equal("A Hunt opened.  " .. ns.RedPencil(L.NOTE_NOD), seen.shown[1].text)
+	end)
+
 	it("show a Nod's firstNote on its own once core.nod is seen (ONB-R53)", function()
 		local notes, _, seen = margins()
 		notes:AnnouncementShown(ledgerNod("newInZone"), "nod", targets(), false)

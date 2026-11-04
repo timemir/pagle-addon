@@ -84,14 +84,14 @@ function ns.TranslatorCredits(clientLocale)
 		if info and info.listed and info.translators and ns.CanRenderLanguage(code, clientLocale) then
 			entries[#entries + 1] = ns.RenderText(
 				L.SETTINGS_TRANSLATIONS_ENTRY,
-				{ language = info.name, names = table.concat(info.translators, ", ") }
+				{ language = info.name, names = table.concat(info.translators, L.SETTINGS_TRANSLATIONS_NAMES_JOIN) }
 			)
 		end
 	end
 	if #entries == 0 then
 		return nil
 	end
-	return ns.RenderText(L.SETTINGS_TRANSLATIONS, { credits = table.concat(entries, "; ") })
+	return ns.RenderText(L.SETTINGS_TRANSLATIONS, { credits = table.concat(entries, L.SETTINGS_TRANSLATIONS_JOIN) })
 end
 
 --- The Language setting out of the raw `_G.PagleDB`, before AceDB wraps it: `PagleDB.global.language`. Anything that is

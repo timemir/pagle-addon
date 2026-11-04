@@ -19,9 +19,11 @@ local ns = select(2, ...)
 ---@return string
 local function catchesLine(catches, format)
 	local L = ns.L
-	local text = ns.Text(L.ANGLER_CATCHES, { count = catches })
 	local next = ns.NextCatchMilestone(catches)
-	return next and text .. ns.Text(L.ANGLER_NEXT_MILESTONE, { angler_next_milestone = format(next) }) or text
+	if next then
+		return ns.Text(L.ANGLER_CATCHES_NEXT, { count = catches, milestone = format(next) })
+	end
+	return ns.Text(L.ANGLER_CATCHES, { count = catches })
 end
 
 -- The bookplate (LED-R146): the Prestige frame (LED-R154) with the equipped crest (LED-R112), "Ex Libris", "The

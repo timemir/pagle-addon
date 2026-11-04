@@ -342,6 +342,9 @@ SETTINGS_PASTE_TOOLTIP = "Copy your Catch log as a Paste string, to paste on the
 # {credits} is the entries, {language} is a language's own name and {names} its translators' GitHub names.
 SETTINGS_TRANSLATIONS = "Translations: {credits}"
 SETTINGS_TRANSLATIONS_ENTRY = "{language} by {names}"
+# What joins a language's translators' names inside an entry ("Ana, Luis"), and the entries inside the line ("; ").
+SETTINGS_TRANSLATIONS_NAMES_JOIN = ", "
+SETTINGS_TRANSLATIONS_JOIN = "; "
 # The Curio Shop (wallet-and-shop.md › UI; its "Curio Shop" trade label is drawn in the case's art): the chat line
 # its entry points print while restricted (SHOP-R41); the purse (its label, a Module's legend entry with its total,
 # the segment's tooltip lines); the list (the search slip's hint, the filters, the category
@@ -658,6 +661,8 @@ SLASH_CORE_HELP = [
 ]
 # /pagle guide notes (ONB-R80): every Margin note and First look shows again, once each.
 GUIDE_NOTES_AGAIN = "Pagle: margin notes will show again, once each."
+# What sets a moment's own first note and core.toast's note side by side in one Margin note (ONB-R53).
+NOTES_JOIN = " "
 # Core's Margin notes on first moments (ONB-R2, ONB-R3, ONB-R52), verbatim from the spec: each *term* is pencilled
 # in red (ns.RedPencil). core.toast's follows the moment's firstNote, if it has one (ONB-R53).
 NOTE_NOD = "That’s a *Nod*: when Pagle’s had a lot to say lately, the small news steps down to one quiet line. It’s gone in three seconds, and it’s in your Ledger for good."

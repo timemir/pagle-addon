@@ -124,6 +124,7 @@ ns.L = {
 	SLASH_HELP = "input key|click|both: choose how you cast",
 	SLASH_USAGE = "Pagle: /pagle qol input key|click|both",
 	TITLE = "QoL",
+	TITLES_JOIN = ", ",
 	TOUR_NOTES = "samples of the conflict note and the Reload now note",
 	TOUR_NUDGE = "a sample swap-back Nudge",
 	TOUR_SETTINGS = "QoL's rows on the Fishing page",

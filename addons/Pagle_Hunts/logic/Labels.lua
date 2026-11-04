@@ -344,9 +344,9 @@ function ns.HuntWindowLine(c, sources)
 		line = L.LINE_NO_DATE
 	end
 	if c.short then
-		line = line .. " " .. ns.Text(L.LINE_NEEDS, { need = c.need, best = c.best or 0 })
+		line = line .. L.LINE_JOIN .. ns.Text(L.LINE_NEEDS, { need = c.need, best = c.best or 0 })
 		if c.lureGetsThere then
-			line = line .. " " .. L.LINE_LURE
+			line = line .. L.LINE_JOIN .. L.LINE_LURE
 		end
 	end
 	return line

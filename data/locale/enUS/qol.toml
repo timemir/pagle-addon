@@ -60,6 +60,8 @@ CONFLICT_USE_PAGLE = "Use Pagle"
 CONFLICT_USE_THAT_ADDON = "Use {title}"
 CONFLICT_USE_THOSE_ADDONS = "Use the others"
 CONFLICT_TURNED_OFF = "Pagle: turned off {titles}. Type /reload to finish."
+# What joins the other addons' titles in CONFLICT_TURNED_OFF and GUIDE_RESTING: "Angleur, Fishing Buddy".
+TITLES_JOIN = ", "
 CONFLICT_TURNED_OFF_QOL = "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches."
 # The Reload now popup after a choice (QOL-R83).
 CONFLICT_RELOAD_TEXT = "Reload the interface now to finish?"

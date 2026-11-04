@@ -154,4 +154,12 @@ describe("The Translations line on the Settings root (SET-R10 row 13)", function
 
 		assert.are.equal("Max: Deutsch; Ana, Luis: Español (translators)", loaded.ns.TranslatorCredits("enUS"))
 	end)
+
+	it("joins the names, and the entries, with the Locale's own separators (#520)", function()
+		local loaded = core("enUS", FIXTURES)
+		loaded.ns.L.SETTINGS_TRANSLATIONS_NAMES_JOIN = " & "
+		loaded.ns.L.SETTINGS_TRANSLATIONS_JOIN = " | "
+
+		assert.are.equal("Translations: Deutsch by Max | Español by Ana & Luis", loaded.ns.TranslatorCredits("enUS"))
+	end)
 end)
