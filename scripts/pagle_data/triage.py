@@ -11,6 +11,7 @@ importer's upsert and change list, run in memory, DATA-R119–R121) and the P ro
 """
 
 import argparse
+import hashlib
 import json
 import re
 from collections.abc import Iterable, Sequence
@@ -32,6 +33,20 @@ POSTED_NOTHING = "posted nothing"
 
 # The hidden marker the comment starts with; the workflow edits the Action's comment that carries it (DATA-R117).
 MARKER = "<!-- pagle-field-report-triage -->"
+# The second hidden line: a digest of the issue body the comment was written from. The scheduled run (DATA-R117)
+# triages an issue again only when its body no longer matches, so an unchanged report costs no download.
+_INPUT = re.compile(r"^<!-- pagle-triage-input: ([0-9a-f]{16}) -->$", re.MULTILINE)
+
+
+def input_digest(body: str | None) -> str:
+    """The first 16 hex digits of the SHA-256 of an issue body (an empty body for none)."""
+    return hashlib.sha256((body or "").encode("utf-8")).hexdigest()[:16]
+
+
+def input_line(body: str | None) -> str:
+    return f"<!-- pagle-triage-input: {input_digest(body)} -->"
+
+
 # The account GITHUB_TOKEN comments as: only its comment with the marker is edited, never one a person wrote.
 BOT_LOGIN = "github-actions[bot]"
 
@@ -115,6 +130,13 @@ def _comments(document: object) -> list[object]:
 def read_comment(path: Path, problems: Problems) -> int | None:
     """The ID of the comment the Action posted on an earlier run (the bot's, starting with the marker), to edit in
     place (DATA-R117); None when there's none yet. A comment someone else wrote is never the Action's, marker or not."""
+    found = read_action_comment(path, problems)
+    return found[0] if found is not None else None
+
+
+def read_action_comment(path: Path, problems: Problems) -> tuple[int, str | None] | None:
+    """The Action's earlier comment (read_comment): its ID and the input digest it was written from, None for a
+    comment from before the digest line existed; None when there's no such comment."""
     document = _load(path, problems)
     if document is not None and not isinstance(document, list):
         problems.add(At(str(path)), "expected the issue's comments as a JSON array")
@@ -124,7 +146,8 @@ def read_comment(path: Path, problems: Problems) -> int | None:
         user, body, number = comment.get("user"), comment.get("body"), comment.get("id")
         login = user.get("login") if isinstance(user, dict) else None
         if login == BOT_LOGIN and isinstance(body, str) and body.startswith(MARKER) and isinstance(number, int):
-            return number
+            digest = _INPUT.search(body)
+            return number, digest.group(1) if digest else None
     return None
 
 
@@ -365,6 +388,7 @@ def triage(
     """The comment for issue (DATA-R117), given the repo's open field-report issues and the default branch at root."""
     intro = [
         MARKER,
+        input_line(issue.body),
         "### Field report triage",
         "",
     ]
@@ -372,7 +396,8 @@ def triage(
         "",
         "---",
         "_The triage Action (DATA-R117) wrote this from the paste and the default branch, and changed nothing: the dev"
-        " imports reports with `scripts/import-field-report.py`. It updates this comment when the issue is edited._",
+        " imports reports with `scripts/import-field-report.py`. It looks every 30 minutes and updates this comment"
+        " when the issue is edited._",
     ]
     problems = Problems()
     text = report_field(issue.body)
@@ -439,6 +464,12 @@ def _parser() -> argparse.ArgumentParser:
         help="the issue's comments, as `gh api --paginate --slurp repos/<repo>/issues/<n>/comments` prints them",
     )
     parser.add_argument("--out", required=True, type=Path, help="the folder to write comment.md and result.json into")
+    parser.add_argument(
+        "--skip-if-current",
+        action="store_true",
+        help="write only result.json with skip true, and download nothing, when the Action's comment was written"
+        " from this same issue body (the scheduled run, DATA-R117)",
+    )
     return parser
 
 
@@ -454,9 +485,15 @@ def main(argv: Sequence[str], root: Path, fetch: Fetch = download) -> int:
         return fail(PROG, problems, POSTED_NOTHING)
     issue = read_event(args.event, problems)
     open_issues = read_issues(args.open_issues, problems)
-    comment = read_comment(args.comments, problems)
+    earlier = read_action_comment(args.comments, problems)
+    comment = earlier[0] if earlier is not None else None
     if problems or issue is None:
         return fail(PROG, problems, POSTED_NOTHING)
+    if args.skip_if_current and earlier is not None and earlier[1] == input_digest(issue.body):
+        (out / COMMENT_FILE).unlink(missing_ok=True)  # an earlier run's comment.md would read as this run's
+        write_atomic(out / RESULT_FILE, (json.dumps({"comment": comment, "skip": True}) + "\n").encode("utf-8"))
+        print(f"{PROG}: #{issue.number}: comment {comment} is current, nothing to do")
+        return 0
 
     found = triage(issue, open_issues, root, fetch)
     result = {"comment": comment, "needsInfo": found.needs_info}

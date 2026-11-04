@@ -79,12 +79,18 @@ def test_the_recorded_issue_bodies_have_the_forms_fields() -> None:
 
 
 def test_the_workflow_runs_on_field_report_issues_with_the_token_alone() -> None:
-    # DATA-R117: on issues labelled field-report, when opened or edited; GITHUB_TOKEN only, with issues: write and
-    # contents: read; it runs the triage script and creates the field-report and needs-info labels if missing.
+    # DATA-R117: every 30 minutes and on demand, never on an issues event (GitHub can't filter those by label, so an
+    # issues trigger starts a run for every issue); over the open issues labelled field-report, skipping unchanged
+    # ones; GITHUB_TOKEN only, with issues: write and contents: read; it runs the triage script and creates the
+    # field-report and needs-info labels if missing.
     text = WORKFLOW.read_text(encoding="utf-8")
-    assert "on:\n  issues:\n    types: [opened, edited]\n" in text
+    on = text.split("\non:\n", 1)[1].split("\npermissions:\n", 1)[0]
+    assert "  schedule:\n" in on and "  workflow_dispatch:\n" in on
+    assert "issues:" not in on and "issue_comment" not in on
+    assert re.search(r'cron: "\d+,\d+ \* \* \* \*"', on)
     assert "permissions:\n  contents: read\n  issues: write" in text
-    assert "if: contains(github.event.issue.labels.*.name, 'field-report')" in text
+    assert "--label field-report --state open" in text
+    assert "--skip-if-current" in text
     assert "secrets." not in text
     assert "python scripts/triage-field-report.py" in text
     assert "gh label create field-report" in text and "gh label create needs-info" in text
