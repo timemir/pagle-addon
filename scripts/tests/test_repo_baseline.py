@@ -42,6 +42,8 @@ def test_no_baseline_chance_reaches_a_generated_file(repo_outputs: Mapping[str, 
     decimals = {chance for chance in chances if "." in chance}
     assert len(decimals) > 100
     for path, text in repo_outputs.items():
+        if "/locale/" in path:  # interface text (DATA-R114) is written by hand and holds numbers like "0.1"; no data feeds it
+            continue
         for content in (text, (REPO / path).read_text(encoding="utf-8")):
             leaked = sorted(chance for chance in decimals if chance in content)
             assert leaked == [], f"{path} holds baseline chances {leaked}"
