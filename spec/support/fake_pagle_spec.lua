@@ -30,7 +30,7 @@ describe("FakePagle", function()
 
 		it("leaves a Module with an incompatible X-Pagle-API inert, with Core's chat line (CORE-R13)", function()
 			local fake = newFakePagle()
-			fake.addons.Pagle_Hunts.metadata["X-Pagle-API"] = "2"
+			fake.addons.Pagle_Hunts.metadata["X-Pagle-API"] = "3"
 
 			assert.is_nil(fake.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 }))
 			assert.are.same({ "Pagle: Pagle Hunts needs a newer Pagle." }, fake.printed)

@@ -265,7 +265,18 @@ Terms are used as `CONTEXT.md` defines them. "The catalogue" is what the generat
   - **Checks.** The generator fails on, naming the key and the Locale: **missing** (a UI key with no text, for any Locale it lists; a Lore key is never missing, it falls back); **orphan** (a key English does not have); **placeholder** (a `{field}` set that differs from the English text's); **newline**; **length** (a Lore field over its English limit, DATA-R107, plus 30%, counted in code points); **glyph** (a character outside the Locale's range in `data/glyphs.toml`, CORE-R9, named by its code point, the file and the Locale), and **coverage** (a Locale marked `listed` below 100% of the interface). **Drift** (an `en` snapshot that no longer matches the English text) is not a failure.
   - **Drift.** A stale string whose `{field}` set is unchanged keeps showing, and a spec warns and a script lists it; a string whose field set changed is dropped from the Locale by a script in the maintainer's PR, so English shows. Drift never fails the gate on an English change.
   - **Listing.** A Locale is listed only at 100% of the interface; the maintainer flips `listed`, and it stays listed. The Language setting (SET-R10) offers listed Locales only, and only those the client can render.
-  - **Text helper.** Interface strings use named `{fields}` (Core's helper, CORE-R8); `%s`, `ns.Fill`, `ns.Plural` and `_ONE`/`_OTHER` pairs are gone.
+  - **Text helper.** Interface strings use named `{fields}` through Core's one helper, `Pagle.Text(source, fields?)` (CORE-R8); `%s`, `ns.Fill`, `ns.Plural` and `_ONE`/`_OTHER` pairs are gone. The field syntax is `{name}` (the value as it is), `{name:0}`, `{name:1}`, `{name:2}` (a number to that many decimals) and `{name:n}` (a number as it is), with `{{` and `}}` for literal braces; the count of a counted string is the field `count`. A counted string is a table of plural categories with `other` required. The generator's **placeholder** check compares `{name}` sets only, never specs.
+  - **Locale data record.** What a Locale gives the helper is exactly this record, which its locale file passes to Core's internal setter `ns.SetTextLocale(record)` (CORE-R8) and the generator writes from the TOML:
+
+    ```lua
+    {
+        plural = function(n) return "other" end, -- CLDR category of the count's absolute value
+        decimal = ",",                           -- the decimal separator: a non-empty string
+        thousands = ".",                         -- the thousands separator: a string, "" for none
+    }
+    ```
+
+    `plural` is a Lua function, not a table of numbers, because CLDR rules are tests on the operands (`n`, its integer part `i`, its visible fraction digits `v`; the helper hands over the number alone, so `v` is the count's own digits and `1.0` is `1`); the generator emits one function per language from the CLDR rule, over `n` alone, taking `i = math.floor(n)` where the rule needs it, and returns one of `zero`, `one`, `two`, `few`, `many`, `other`. It uses only Lua 5.1's operators and `math`, as it runs under the same pure-Lua rule as `logic/`. Separators may be several bytes (the no-break space `\194\160`, the narrow no-break space `\226\128\175`). A record that is not whole raises in the setter and changes nothing; no part of it is optional, and a fallback chain (esMX to esES, SET-R10) is resolved by the registration before it calls the setter, not by the helper. English is the built-in record: `one` for exactly 1, else `other`, `.` and `,`.
 
 ### Field report intake
 

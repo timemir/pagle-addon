@@ -313,7 +313,7 @@ describe("The Fishing stretch", function()
 
 		it("leaves the lease alone while QoL is inert: it runs no code (QOL-R90, CORE-R13)", function()
 			local fake, loaded = loadWithLease(leftover(), { SoftTargetInteract = "3", SoftTargetInteractRange = "15" })
-			fake.addons.Pagle_QoL.metadata["X-Pagle-API"] = "2"
+			fake.addons.Pagle_QoL.metadata["X-Pagle-API"] = "3"
 
 			loaded.client.fire("ADDON_LOADED", "Pagle_QoL")
 

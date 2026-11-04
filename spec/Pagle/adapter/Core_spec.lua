@@ -2,8 +2,8 @@ describe("Core loaded through Pagle.toc", function()
 	describe("on Forever", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 
-		it("creates the Pagle global at API version 1 before 1.0 (CORE-R15)", function()
-			assert.are.equal(1, loaded.env.Pagle.API_VERSION)
+		it("creates the Pagle global at API version 2, the version that added Pagle.Text (CORE-R15)", function()
+			assert.are.equal(2, loaded.env.Pagle.API_VERSION)
 		end)
 
 		it("prints nothing to chat (CORE-R4)", function()

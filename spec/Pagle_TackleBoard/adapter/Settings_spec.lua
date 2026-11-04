@@ -86,7 +86,7 @@ describe("The Tackle Board's section on Trackers, as Core gets it", function()
 
 	it("is gone while the Tackle Board is inert: no rows, so no Trackers page (CORE-R13, CORE-R42)", function()
 		local fake = newFakePagle()
-		fake.addons.Pagle_TackleBoard.metadata["X-Pagle-API"] = "2"
+		fake.addons.Pagle_TackleBoard.metadata["X-Pagle-API"] = "3"
 		board.load(fake)
 		fake.login()
 

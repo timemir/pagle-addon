@@ -942,6 +942,12 @@ part(function(fake, Pagle, ns, host)
 	ns.PublishSize(Pagle, host, readOnly)
 end)
 
+-- The text helper as Core publishes it (CORE-R8): Pagle.Text, on Core's real logic/Text.lua, in English until a spec sets
+-- another Locale's record with fake.ns.SetTextLocale.
+part(function(_, Pagle, ns)
+	ns.PublishText(Pagle)
+end)
+
 -- The clock format as Core publishes it (CORE-R87): Pagle.FormatClock, in fake.profile.clockFormat or the game's
 -- clock, fake.militaryTime. A spec changes either and calls fake.noteClockFormat() for ClockFormatChanged, as the
 -- Clock row and CVAR_UPDATE do on the client.
@@ -1820,7 +1826,7 @@ function newFakePagle()
 	-- tables behave as the stock ones.
 	env.pairs, env.ipairs, env.next = proxyPairs, proxyIpairs, proxyNext
 	-- Pagle.API_VERSION as adapter/Core.lua sets it; fake_pagle_spec.lua checks they agree.
-	local Pagle = { API_VERSION = 1 }
+	local Pagle = { API_VERSION = 2 }
 	local fake = { Pagle = Pagle, ns = ns, printed = {}, readOnly = readOnly }
 	-- PagleDB as login step 1 opens it: Core's defaults, and nothing saved. A spec seeds fake.global's keys and
 	-- fake.profile's before login, as a saved PagleDB would hold them.

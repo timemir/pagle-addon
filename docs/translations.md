@@ -59,6 +59,14 @@ Strings take named fields in braces, such as `{count}` or `{fish}`. Write the fi
 
 A string with a count has one form for each plural category your language uses, following the CLDR rules. English has `one` and `other`; Spanish has `one`, `many` and `other`; Russian has `one`, `few`, `many` and `other`. Your language's rule, and its decimal and thousands separators, are declared in your language's file, so a new language never needs a code change. Write every category your language needs for each counted string.
 
+How the helper reads a string:
+
+- `{count}` is the field that holds the number a counted string is about. Keep it in every form. The helper picks the form by your language's rule applied to `count`, and uses `other` where you leave a category out, so `other` is always required.
+- `{name}` writes the value as it is. A number that should read with your language's separators is written `{name:n}` (as it is), or `{name:0}`, `{name:1}`, `{name:2}` for a fixed number of decimal places. Keep the spec the English uses, unless your language needs a different number of decimals; the check compares field names, not specs.
+- To write a literal brace, double it: `{{` and `}}`. Reorder fields freely.
+- A field the helper has no value for shows as written, so a typo in a name is visible in the game rather than blank.
+- The decimal and thousands separators are the ones your language declares (`1.234,5` where the decimal is `,` and thousands `.`), never the player's client's.
+
 ## Length
 
 The interface has little room. Keep a translation close to the English length. From 1.1 a development pseudo-locale (the English padded by about 40%, with accents and Cyrillic, in brackets) shows whether a layout holds.
