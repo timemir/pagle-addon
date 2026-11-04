@@ -650,8 +650,9 @@ _XML_HEAD = """\
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
 	<!-- Every addon's one locale line (ADR 0019, DATA-R114): the TOC names this file once, after locale\\enUS.lua and
 	data\\Lore.lua, and never a language. The scripts run in this order: the registration call, then one generated file
-	for each language this addon has (the generator writes that list), then the step that applies the Language. Paths
-	are relative to this file. A new language adds a line here and none in the TOC. -->
+	for each language this addon has, each followed by that language's Lore file when it has one (the generator writes
+	that list), then the step that applies the Language. Paths are relative to this file. A new language adds a line
+	here and none in the TOC. -->
 	<Script file="Registry.lua"/>
 """
 _XML_TAIL = """\
@@ -660,10 +661,16 @@ _XML_TAIL = """\
 """
 
 
-def locales_xml_text(codes: list[str]) -> str:
+def locales_xml_text(codes: list[str], lore: Collection[str] = ()) -> str:
     """Locales.xml for an addon whose interface languages (never enUS, which the TOC loads) are `codes`, already in
-    the order they load."""
-    return _XML_HEAD + "".join(f'\t<Script file="{code}.lua"/>\n' for code in codes) + _XML_TAIL
+    the order they load. A language in `lore` has a Lore file (DATA-R104), listed right after its interface file: the
+    file sits in data/, a folder up from this XML, and registers as a second function for the code."""
+    lines = ""
+    for code in codes:
+        lines += f'\t<Script file="{code}.lua"/>\n'
+        if code in lore:
+            lines += f'\t<Script file="..\\data\\Lore.{code}.lua"/>\n'
+    return _XML_HEAD + lines + _XML_TAIL
 
 
 def _load_order(layer: LocaleLayer, codes: list[str]) -> list[str]:
@@ -671,9 +678,10 @@ def _load_order(layer: LocaleLayer, codes: list[str]) -> list[str]:
     return sorted(codes, key=lambda code: (len(_chain(code, layer.headers)), code))
 
 
-def locale_outputs(layer: LocaleLayer) -> dict[str, str]:
+def locale_outputs(layer: LocaleLayer, lore: Mapping[str, Collection[str]] | None = None) -> dict[str, str]:
     """Every locale file and Locales.xml by path, for a layer that is present (empty otherwise). A file of an addon
-    whose Locale has no header is not written; the problem was reported on the way in."""
+    whose Locale has no header is not written; the problem was reported on the way in. lore is the codes that have a
+    Lore.<code>.lua, by addon folder, which Locales.xml lists after the interface file of the same code."""
     if not layer.present:
         return {}
     outputs: dict[str, str] = {}
@@ -688,7 +696,7 @@ def locale_outputs(layer: LocaleLayer) -> dict[str, str]:
             else:
                 outputs[locale_lua(addon, code)] = translation_lua(addon, header, files[file_id])
                 languages.append(code)
-        outputs[locales_xml(addon)] = locales_xml_text(_load_order(layer, languages))
+        outputs[locales_xml(addon)] = locales_xml_text(_load_order(layer, languages), (lore or {}).get(addon, ()))
     return outputs
 
 

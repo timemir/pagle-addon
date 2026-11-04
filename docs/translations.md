@@ -21,7 +21,7 @@ data/locale/<code>/<addon>.toml   interface text, one file per addon
 data/lore/<code>/*.toml           Lore, one file per addon
 ```
 
-The addon files are `core`, `hunts`, `ledger`, `qol`, `stats` and `tackleboard`. The English files in `data/locale/enUS/` are the source of everything else. Copy the ones you translate into your directory and translate them. Lore files copy from `data/lore/*.toml`.
+The addon files are `core`, `hunts`, `ledger`, `qol`, `stats` and `tackleboard`. The English files in `data/locale/enUS/` are the source of everything else. Copy the ones you translate into your directory and translate them. Lore files copy from `data/lore/*.toml` and are named by lore ID (`core`, `ledger`, `hunts`, `stats`, `tackleboard`; QoL has no Lore). A Lore file only works beside the interface file of the same addon: `data/lore/esES/ledger.toml` needs `data/locale/esES/ledger.toml` (and the header), because the interface file is what registers your language for that addon.
 
 **The header** (`locale.toml`) says who the language is:
 
@@ -54,6 +54,24 @@ en.other = "{count} fishes"
 
 A value is text, or a list of text (`value = ["Pequeño", "Grande"]`), or a table of text (`value.0 = "Reinos del Este"`, the `0` being the key the code reads). Whatever English has at a key, you have the same: a list of the same length, a table with the same keys. The entry replaces English's whole, so a list missing an item would leave a hole in the game.
 
+**Lore** keeps English's tables and field names, and each field is its own table with `value` and `en`, so a field that changes in English is flagged on its own:
+
+```toml
+[species.6362.blurb]
+value = "Un sargo que trasnocha."
+en = "A snapper that keeps late hours."
+
+[species.6362.riddle]
+value = "Pica donde el agua corre perezosa."
+en = "Bites where the water runs lazy."
+
+[good."core.toaststyle.page".name]
+value = "Página rasgada"
+en = "Torn Page"
+```
+
+An ID with dots is quoted, as in the English file. A bare `blurb = "…"` is a shape error. Leave out any key you have not translated: it shows English. Lore text is plain text, never an array or a count. Hunts, Hunt sets and Hunt Events keep their English text beside their definitions in `data/hunts/`, but you translate all of it in `data/lore/<code>/hunts.toml` under the same keys the game uses (`hunt.<id>.name`, `set.<id>.title`, `event.<id>.note`, `huntgood.<id>.description`); look the keys up in `addons/Pagle_Hunts/data/Lore.lua`.
+
 The generator reads these and writes the Lua files the game loads (`addons/<Addon>/locale/<code>.lua`, `addons/<Addon>/locale/Locales.xml` and `addons/<Addon>/data/Lore.<code>.lua`). Never edit the generated files by hand. Put your name in the header; it is carried into the generated file and into the credits.
 
 ## Running the generator
@@ -76,12 +94,13 @@ The generator fails with the key and the check name. Fix the TOML, never the che
 |---|---|
 | missing | a value is present but empty (interface text; Lore only where you chose to translate it). A key you have not translated at all is not a failure; it is a gap, and shows English |
 | orphan | you translated a key that does not exist in English, or that belongs to another addon's file |
-| length | a Lore field is more than the English limit plus 30%, counted in code points (see below) |
-| newline | a text has a different number of line breaks than the English text: keep the breaks English has, and add none |
-| placeholder | a `{field}` is not one the English text has, or one the English text has is missing |
+| length | a Lore field is more than the English limit plus 30%, counted in code points (see Length) |
+| newline | a text has a different number of line breaks than the English text: keep the breaks English has, and add none (Lore has none at all) |
+| placeholder | a `{field}` is not one the English text has, or one the English text has is missing. In Lore the fields are `{zone}` and `{fish}` only, and any other `{` or `}` fails |
 | plural | a counted string lacks `other` or a category your language's rule uses, or has one the rule never gives |
 | shape | an entry is not `value` and `en`, or its list or table is not the shape of English's |
 | glyph | a character is outside what the client's fonts can draw for your script |
+| registration | a Lore file has no interface file for the same addon (and the header) in `data/locale/<code>/` to register your language |
 | header | the header has an unknown or missing field, a plural rule that is not in the table, equal separators, or a fallback that does not exist |
 | coverage | your language is marked `listed`, was not listed on the branch you are merging into, and is below 100% of the interface |
 
@@ -105,7 +124,7 @@ How the helper reads a string:
 
 The interface has little room. Keep a translation close to the English length. From 1.1 a development pseudo-locale (the English padded by about 40%, with accents and Cyrillic, in brackets) shows whether a layout holds.
 
-A Lore field may be at most the English limit plus 30%. Count code points, not bytes: "ñ" is one. The limits are in `data/lore/VOICE.md`.
+A Lore field may be at most the English limit plus 30%. Count code points, not bytes: "ñ" is one. The limits are in `data/lore/VOICE.md`. The allowance is the limit times 13, divided by 10, with the fraction dropped: a name (28) may be 36 characters, a title (32) 41, a riddle (80) 104, a plaque (100) 130 and a blurb (200) 260. A field English leaves unlimited has no limit in your language either.
 
 ## Scripts and fonts
 
@@ -124,7 +143,7 @@ A language that is not listed is not offered. A player whose game language is un
 
 ## Drift and the stale issue
 
-When the English text changes, your translation is stale. What happens next depends on the change:
+When the English text changes, your translation is stale; in Lore, that is a field whose `en` is no longer the English text. What happens next depends on the change:
 
 - **The `{fields}` are the same.** Your translation keeps showing. A spec warns and a script lists it. Update the value and the `en` snapshot together.
 - **The `{fields}` changed.** The maintainer's PR drops your translation by script, so the player sees English until you translate it again.
