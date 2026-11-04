@@ -2,7 +2,7 @@ if not Pagle then -- luacheck: read globals Pagle (CORE-R11: the one read of Cor
 	return
 end
 
----@class PagleNS
+---@class PagleQoLNS
 local ns = select(2, ...)
 
 -- The last stable entry of locale/Locales.xml (ADR 0019): a Module applies the Language Core has already chosen. Core's

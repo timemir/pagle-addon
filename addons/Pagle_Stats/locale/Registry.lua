@@ -2,7 +2,7 @@ if not Pagle then -- luacheck: read globals Pagle (CORE-R11: the one read of Cor
 	return
 end
 
----@class PagleNS
+---@class PagleStatsNS
 local ns = select(2, ...)
 
 -- Locale registration (DATA-R114, ADR 0019): the first stable entry of locale/Locales.xml, ahead of the generated locale
@@ -12,18 +12,8 @@ local ns = select(2, ...)
 
 local ENGLISH = "enUS"
 
----@class PagleLocaleEntry
----@field name string?
----@field listed boolean?
----@field fallback string?
----@field plural (fun(n: number): string)?
----@field decimal string?
----@field thousands string?
----@field whole boolean `opts` have been given for this code: only then is it registered.
----@field functions (fun(L: table))[]
-
 --- The registered Locales by code, for this addon.
----@type table<string, PagleLocaleEntry>
+---@type table<string, { name: string?, listed: boolean?, fallback: string?, plural: (fun(n: number): string)?, decimal: string?, thousands: string?, whole: boolean, functions: (fun(L: table))[] }>
 local entries = {}
 
 --- Whether `value` is a string with something in it.
@@ -111,13 +101,8 @@ function ns.LocaleInfo(code)
 	return { code = code, name = entry.name, listed = entry.listed, fallback = entry.fallback }
 end
 
----@class PagleTextRecord
----@field plural fun(n: number): string
----@field decimal string
----@field thousands string
-
 local applied = false
----@type PagleTextRecord?
+---@type { plural: fun(n: number): string, decimal: string, thousands: string }?
 local appliedRecord
 ---@type string[]
 local appliedErrors = {}
@@ -130,7 +115,7 @@ local appliedErrors = {}
 --- that never gives a plural rule and both separators, applies nothing. A function that raises is skipped and its
 --- message returned.
 ---@param code any
----@return PagleTextRecord? record The chain's merged plural rule and separators, the Locale's over its fallback's; nil when nothing was applied.
+---@return { plural: fun(n: number): string, decimal: string, thousands: string }? record The chain's merged plural rule and separators, the Locale's over its fallback's; nil when nothing was applied.
 ---@return string[] errors One message for each function that raised.
 function ns.ApplyLocale(code)
 	if applied then

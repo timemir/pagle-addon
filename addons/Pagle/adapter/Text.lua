@@ -85,6 +85,7 @@ function ns.ApplyLanguage()
 	for _, err in ipairs(errors) do
 		geterrorhandler()(err)
 	end
+	---@cast record PagleTextLocale?
 	ns.SetTextLocale(record)
 	ns.language = record and code or ENGLISH
 end

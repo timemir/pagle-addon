@@ -84,20 +84,20 @@ describe("the locale line of every addon (ADR 0019)", function()
 				assert.is_nil(toc:find("Notes%-%a%a"))
 				for line in toc:gmatch("[^\r\n]+") do
 					local code = line:match("^locale\\(%l%l%u%u)%.lua")
-					assert.is_true(code == nil or code == "enUS", line)
-					assert.is_nil(line:match("^data\\Lore%.%a+%.lua"), line)
+					assert(code == nil or code == "enUS", line)
+					assert(line:match("^data\\Lore%.%a+%.lua") == nil, line)
 				end
 			end)
 
 			it("ships Core's Registry.lua, Apply.lua and Locales.xml, a Module's behind the CORE-R11 guard", function()
 				-- Every Module file starts with the guard; Core's cannot, as `Pagle` does not exist while Core loads.
+				-- Its class is its own too: no two addons' `ns` share a type for the types stage to merge.
 				local guard = addon == "Pagle" and "" or GUARD
+				local class = addon == "Pagle" and "PagleNS" or (addon:gsub("_", "") .. "NS")
 				for _, file in ipairs({ "Registry.lua", "Apply.lua" }) do
-					assert.are.equal(
-						guard .. read("addons/Pagle/locale/" .. file),
-						read(dir .. "locale/" .. file),
-						file
-					)
+					local core =
+						read("addons/Pagle/locale/" .. file):gsub("%-%-%-@class PagleNS", "---@class " .. class)
+					assert.are.equal(guard .. core, read(dir .. "locale/" .. file), file)
 				end
 				assert.are.equal(read("addons/Pagle/locale/Locales.xml"), read(dir .. "locale/Locales.xml"))
 			end)
@@ -395,7 +395,7 @@ describe("ns.ApplyLocale (DATA-R114)", function()
 
 				local record, errors = ns.ApplyLocale(code)
 
-				assert.is_nil(record, code)
+				assert(record == nil, code)
 				assert.are.same({}, errors)
 				assert.are.equal("Hello", ns.L.GREETING, code)
 			end
@@ -483,7 +483,7 @@ describe("locale/Apply.lua", function()
 				end,
 			}
 
-			assert.has_no.errors(function()
+			assert.has_no_error(function()
 				apply(ns, nil)
 				apply(ns, {})
 				apply(ns, "Pagle")
