@@ -108,7 +108,7 @@ Coverage is the only check that depends on where you are merging. A language tha
 
 ## Plural categories and `{fields}`
 
-Strings take named fields in braces, such as `{count}` or `{fish}`. Write the field exactly as the English does, and put it where your language needs it. Never use `%s` or positional arguments. Do not add a field the English text does not have. (Until the English strings are converted to fields, some still hold `%s` or `%d`: keep each of those, in the same order, as the English has it.)
+Strings take named fields in braces, such as `{count}` or `{fish}`. Write the field exactly as the English does, and put it where your language needs it. Never use `%s` or positional arguments. Do not add a field the English text does not have.
 
 A string with a count has one form for each plural category your language uses, following the CLDR rules. English has `one` and `other`; Spanish has `one`, `many` and `other`; Russian has `one`, `few`, `many` and `other`. Your language's rule, and its decimal and thousands separators, are declared in your language's header, so a new language never needs a change to the game's code. The rule is a name from the generator's table, `scripts/pagle_data/plural.py`: `other` (Japanese, Korean, Chinese), `one_other` (English, German, Dutch), `one_many_other` (Spanish, Italian), `one_many_other_01` (French, Portuguese) and `one_few_many_other` (Russian, Ukrainian). A language the table lacks needs a new rule added there, with a test; ask in your pull request. Write every category your language needs for each counted string, and `other` always.
 
