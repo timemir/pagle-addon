@@ -47,6 +47,25 @@ describe("FakePagle", function()
 		end)
 	end)
 
+	it("serves Pagle.FaceFile and Pagle.SetFace on Core's font table, following fake.language (CORE-R9)", function()
+		local fake = newFakePagle()
+		local font = {
+			SetFont = function(self, file, size, flags)
+				self.font = { file, size, flags }
+				return true
+			end,
+		}
+
+		assert.are.equal(
+			"Interface\\AddOns\\Pagle\\media\\fonts\\Caveat-Medium.ttf",
+			fake.Pagle.FaceFile("Caveat-Medium.ttf")
+		)
+		fake.language = "zhTW"
+		fake.Pagle.SetFace(font, "Caveat-Medium.ttf", 20)
+
+		assert.are.same({ "Fonts\\bKAI00M.ttf", 20, "" }, font.font)
+	end)
+
 	it("fires ModulesChanged once at login (CORE-R19)", function()
 		local fake = newFakePagle()
 		local fired = 0
