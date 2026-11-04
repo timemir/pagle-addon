@@ -291,7 +291,11 @@ def test_base_names_the_branch_the_coverage_rule_compares_with(
     code, out = run(root, capsys, "--base", "topic")  # already listed at the merge base: the gap only warns
     assert code == 0 and "warning: data/locale/esES/locale.toml: listed: coverage:" in out
     code, out = run(root, capsys, "--base", "no-such-branch")
-    assert code == 1 and "--base no-such-branch" in out
+    assert code == 1 and "base for the coverage rule, no-such-branch" in out
+    # The pull request's base from the environment: in a checkout that cannot find it, an error and not a warning...
+    monkeypatch.setenv("GITHUB_BASE_REF", "gone")
+    code, out = run(root, capsys)
+    assert code == 1 and "base for the coverage rule, origin/gone" in out
 
 
 def test_an_unknown_locale_header_key_check_runs_with_the_other_layers(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -299,3 +303,12 @@ def test_an_unknown_locale_header_key_check_runs_with_the_other_layers(tmp_path:
     (root / "data" / "locale" / "enUS" / "locale.toml").write_text('name = "English"\n', encoding="utf-8")
     code, out = run(root, capsys)
     assert code == 1 and "missing key 'plural'" in out
+
+
+def test_a_copy_of_the_tree_that_is_not_a_checkout_has_no_base_to_ask(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """scripts/test-check.sh runs the gate on a copy; GITHUB_BASE_REF is set there too, and there is no git to ask."""
+    monkeypatch.setenv("GITHUB_BASE_REF", "i18n/1.1")
+    root = tree(tmp_path, {"enUS": english(), "esES": spanish()})
+    assert run(root, capsys)[0] == 0

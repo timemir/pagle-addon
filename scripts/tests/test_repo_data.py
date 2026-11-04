@@ -68,6 +68,10 @@ OWN_TEXT = {
         "Camp": "the set Camp Hours (set.camp_hours.name, DATA-R105), for the Rack and the Hut",
         "Night Run": "the Hunt Night Run (hunt.night_run.name, DATA-R105), a night window's run",
     },
+    # Interface text is Pagle's own too (DATA-R114), in any Locale: only a name that really is in a file is excused.
+    "addons/Pagle_Hunts/locale/enUS.lua": {
+        "Night Run": "the sample Hunt of the tracker frame's preview (PREVIEW_TRACKER_HUNTS, HNT-R121), the Hunt Night Run",
+    },
 }
 
 
@@ -97,8 +101,6 @@ def test_no_name_from_areas_csv_appears_in_any_generated_file(repo_outputs: Mapp
     names = {area.name for area in _slice().areas.values() if area.name}
     assert len(names) > 1000
     for path, text in repo_outputs.items():
-        if "/locale/" in path:  # interface text (DATA-R114) is written by hand: a sample Hunt may be called "Night Run"
-            continue
         allowed = OWN_TEXT.get(path, {})
         for content in (text, (REPO / path).read_text(encoding="utf-8")):
             content = _without_own_lore(path, content)

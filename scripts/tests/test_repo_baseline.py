@@ -32,6 +32,15 @@ def test_the_committed_baseline_matches_its_hashes_and_the_research_counts() -> 
     assert [event.event for event in layer.events] == [14, 15, 40, 45, 46, 47, 48]
 
 
+# DATA-R4: a number in Pagle's own interface text (DATA-R114, in any Locale) that is spelled like a baseline chance, by
+# the generated file it is in, with the text that does: not a chance taken from the dump.
+OWN_NUMBERS = {
+    "addons/Pagle/locale/enUS.lua": {
+        "0.1": "a length margin, \"+<0.1 cm\" (LENGTH_MARGIN_UNDER, LOG-R69)",
+    },
+}
+
+
 def test_no_baseline_chance_reaches_a_generated_file(repo_outputs: Mapping[str, str]) -> None:
     # DATA-R4: the baseline's chances stay in data/baseline/. A chance with a decimal point (the dump's own
     # spelling, e.g. 38.747) appears in no generated file, as generated or as committed.
@@ -42,8 +51,20 @@ def test_no_baseline_chance_reaches_a_generated_file(repo_outputs: Mapping[str, 
     decimals = {chance for chance in chances if "." in chance}
     assert len(decimals) > 100
     for path, text in repo_outputs.items():
-        if "/locale/" in path:  # interface text (DATA-R114) is written by hand and holds numbers like "0.1"; no data feeds it
-            continue
+        allowed = OWN_NUMBERS.get(path, {})
         for content in (text, (REPO / path).read_text(encoding="utf-8")):
-            leaked = sorted(chance for chance in decimals if chance in content)
+            leaked = sorted(chance for chance in decimals if chance in content and chance not in allowed)
             assert leaked == [], f"{path} holds baseline chances {leaked}"
+
+
+def test_every_chance_allowed_as_own_text_is_still_a_chance_and_in_its_file() -> None:
+    # DATA-R4: OWN_NUMBERS only excuses a coincidence that is really there, so a stale entry can't hide a later leak.
+    chances: set[str] = set()
+    for name in ("area_loot.csv", "reference_loot.csv", "pool_loot.csv"):
+        lines = (REPO / "data" / "baseline" / name).read_text(encoding="utf-8").splitlines()[1:]
+        chances |= {line.split(",")[2] for line in lines}
+    for path, allowed in OWN_NUMBERS.items():
+        content = (REPO / path).read_text(encoding="utf-8")
+        for number in allowed:
+            assert number in chances, number
+            assert number in content, number

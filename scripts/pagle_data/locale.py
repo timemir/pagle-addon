@@ -24,7 +24,7 @@ from pathlib import Path
 from pagle_data.errors import At, Problems
 from pagle_data.glyphs import ENGLISH, glyphs_for
 from pagle_data.lore import CORE_GUARD, check_text_glyphs
-from pagle_data.lua import to_lua
+from pagle_data.lua import KEYWORDS, to_lua
 from pagle_data.plural import CATEGORIES, RULES, plural_lua
 from pagle_data.toml_reader import check_keys, describe, read_toml
 
@@ -157,8 +157,10 @@ def _read_entries(root: Path, code: str, file_id: str, problems: Problems) -> di
     entries: dict[str, Entry] = {}
     for key, raw in document.items():
         at = At(file, key)
-        if not _NAME.fullmatch(key):
-            problems.add(at, "shape: a key is a Lua name: letters, digits and _, not starting with a digit (DATA-R114)")
+        if not _NAME.fullmatch(key) or key in KEYWORDS:
+            problems.add(
+                at, "shape: a key is a Lua name: letters, digits and _, not starting with a digit, not a keyword (DATA-R114)"
+            )
             continue
         if code == ENGLISH:
             value = _value(raw, at, problems)
