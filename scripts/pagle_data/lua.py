@@ -11,7 +11,7 @@ import re
 from collections.abc import Iterator, Mapping
 
 _IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
-_KEYWORDS = frozenset(
+KEYWORDS = frozenset(
     "and break do else elseif end false for function if in local nil not or repeat return then true until while".split()
 )
 
@@ -77,7 +77,7 @@ def _key(key: object) -> str:
         raise TypeError(f"a Lua map key must be an integer or a string, not {key!r}")
     if isinstance(key, int):
         return f"[{key}]"
-    if _IDENTIFIER.fullmatch(key) and key not in _KEYWORDS:
+    if _IDENTIFIER.fullmatch(key) and key not in KEYWORDS:
         return key
     return f"[{_string(key)}]"
 

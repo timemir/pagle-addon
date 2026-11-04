@@ -48,6 +48,11 @@ describe("the generated enUS.lua of each addon (DATA-R114)", function()
 				assert.is_table(after)
 				assert.are.same(before, after)
 			end)
+		elseif exists("data/locale/enUS/locale.toml") then
+			-- Converted, but the reference copy is gone: that must not pass quietly.
+			it(title, function()
+				error("no " .. REFERENCE .. addon .. ".lua: run scripts/convert-enus-locale.py again")
+			end)
 		else
 			-- No reference copy: the conversion has not run on this tree.
 			pending(title, function() end)

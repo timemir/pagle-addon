@@ -376,6 +376,8 @@ def test_an_unknown_file_in_a_locale_directory_fails(tmp_path: Path) -> None:
 def test_a_key_is_a_lua_name_and_a_nested_key_any_text_or_a_whole_number(tmp_path: Path) -> None:
     found, _, _ = checked(tmp_path, {"enUS": english(CORE + '"bad-key" = "x"\n')})
     assert any("bad-key" in message and "shape" in message for message in found)
+    found, _, _ = checked(tmp_path / "kw", {"enUS": english(CORE + 'end = "x"\n')})
+    assert any(": end: shape:" in message and "keyword" in message for message in found)
     found, _, layer = checked(tmp_path / "n", {"enUS": english(CORE + 'T."core.binding" = "x"\nT."12h" = "y"\nT.5 = "z"\n')})
     assert found == []
     assert layer.files["enUS"]["core"]["T"].value == {"core.binding": "x", "12h": "y", 5: "z"}

@@ -10,6 +10,7 @@ before (DATA-R73).
 
 import argparse
 import os
+import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -160,21 +161,27 @@ def _warn(layers: Layers) -> None:
         print(f"{PROG}: warning: {warning}", file=sys.stderr)
 
 
+def _in_git(root: Path) -> bool:
+    done = subprocess.run(["git", "-C", str(root), "rev-parse", "--git-dir"], capture_output=True, check=False)
+    return done.returncode == 0
+
+
 def _listed_before(root: Path, base: str | None) -> dict[str, bool] | None:
     """Each Locale's `listed` at the merge base with the pull request's base branch (DATA-R114's coverage rule), or None
-    where there is no base. A base given with --base that git cannot find is an error; one that only the environment
-    names (GITHUB_BASE_REF) and is not there leaves it unknown, so a gap warns."""
+    where there is no base to ask: neither --base nor GITHUB_BASE_REF, or a tree that is not a git checkout (a copy of
+    it). A base that is named, by --base or by GITHUB_BASE_REF in a checkout, and that git cannot find or merge with is
+    an error, so a broken CI fetch cannot quietly turn a failure into a warning."""
     ref = base
     if ref is None and os.environ.get("GITHUB_BASE_REF"):
+        if not _in_git(root):
+            return None
         ref = f"origin/{os.environ['GITHUB_BASE_REF']}"
     if ref is None:
         return None
     try:
         return listed_at_base(root, ref)
     except LookupError as error:
-        if base is not None:
-            raise DataError([f"--base {base}: {error}"]) from error
-        return None
+        raise DataError([f"the base for the coverage rule, {ref}: {error}"]) from error
 
 
 def main(argv: Sequence[str], root: Path) -> int:
