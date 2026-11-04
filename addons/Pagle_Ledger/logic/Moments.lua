@@ -516,7 +516,7 @@ function celebrate.prestige(celebrated, _, earned)
 end
 
 -- A Catch Milestone (LED-R42): "{N} Catches" as its title and stamp, N with BreakUpLargeNumbers.
-function celebrate.catchMilestone(celebrated, _, earned, outlets)
+function celebrate.catchMilestone(celebrated, _, earned)
 	local n = earned.n --[[@as integer]]
 	if celebrated.milestones[n] then
 		return nil

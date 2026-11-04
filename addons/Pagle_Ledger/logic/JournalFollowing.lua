@@ -57,11 +57,11 @@ end
 -- name, IGV-R31), each row the Angler's name, an "HC" stamp for a Hardcore Angler and its level, Prestige and Ledger
 -- completion at the right with its Prestige emblem's rank (LED-R152; none at rank 0), selecting it; the selected one
 -- is marked.
----@param context LedgerSpreadContext
+---@param _ LedgerSpreadContext
 ---@param anglers PagleFollowedAngler[]
 ---@param selected integer
 ---@return LedgerBlock[]
-local function index(context, anglers, selected)
+local function index(_, anglers, selected)
 	local L = ns.L
 	local count = ns.Text(L.FOLLOWING_COUNT, { count = #anglers })
 	local blocks = {
