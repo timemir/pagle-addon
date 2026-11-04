@@ -31,6 +31,8 @@ local store = {
 
 --- AceAddon calls it once, at QoL's ADDON_LOADED, after Core's (CORE-R10).
 function ns.QoL.OnInitialize()
+	-- The Key Bindings panel's names (QOL-R1), which the client reads when the panel opens.
+	ns.NameBindings()
 	--- QoL's Module handle: the calls that act for QoL (CORE-R12). Nil while QoL is inert.
 	ns.Module = Pagle.RegisterModule(ns.ModuleDef(function(topic)
 		Pagle.OpenSettings(topic)

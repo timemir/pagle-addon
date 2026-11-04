@@ -824,7 +824,11 @@ local function build(book)
 		back:SetFrameLevel(frame.papers.left:GetFrameLevel() + 20)
 		back.label = text(back, "hand", 20, INKS.back)
 		back.label:SetPoint("LEFT")
-		back.label:SetText(options.back.text)
+		local words = options.back.text
+		if type(words) == "function" then
+			words = words()
+		end
+		back.label:SetText(words)
 		back:SetSize(back.label:GetStringWidth() + 4, 24)
 		back:SetPoint("BOTTOMLEFT", pad.x, 4)
 		back:SetScript("OnEnter", function(self)
@@ -874,7 +878,11 @@ local function build(book)
 		book:Close()
 	end)
 	if options.help then
-		frame.help = newHelp(frame, options.help.tooltip)
+		local tooltip = options.help.tooltip
+		if type(tooltip) == "function" then
+			tooltip = tooltip()
+		end
+		frame.help = newHelp(frame, tooltip)
 		frame.help:SetPoint("RIGHT", frame.close, "LEFT", -WAX_GAP, 0)
 		frame.help:SetFrameLevel(frame:GetFrameLevel() + OVER)
 		frame.help:SetScript("OnClick", function()

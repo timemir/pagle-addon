@@ -22,7 +22,6 @@ local WIDTH, HEAD, FOOT, LINE = 580, 62, 40, 30
 local MARGIN, BODY_TILE = 62, 120
 -- The numbers grid (ANN-R53): Casts, Catches, got away, time fished.
 local NUMBERS = { "casts", "catches", "gotAway", "seconds" }
-local NUMBER_LABELS = { L.CARD_CASTS, L.CARD_CATCHES, L.CARD_GOT_AWAY, L.CARD_TIME }
 local NUMBERS_HEIGHT = 90
 -- The grid's columns share the page's width past its margin by these weights: time fished is the wide one, as "1 h 05
 -- min" in the Angler's hand is about three times a count's width (ANN-R53). A value keeps NUMBER_PAD clear of its
@@ -276,6 +275,8 @@ local function build()
 	frame.numbersBox:SetPoint("TOPLEFT", 0, -14)
 	frame.numbersBox:SetSize(WIDTH, NUMBERS_HEIGHT)
 	frame.numbers = {}
+	-- The labels are read here, when the card is built, not when the file loads (CORE-R8).
+	local numberLabels = { L.CARD_CASTS, L.CARD_CATCHES, L.CARD_GOT_AWAY, L.CARD_TIME }
 	-- The columns' edges from the grid's left (MARGIN - 20), over the page's width past the margin.
 	local weights = 0
 	for _, weight in ipairs(NUMBER_WEIGHTS) do
@@ -293,7 +294,7 @@ local function build()
 		value:SetPoint("CENTER", frame.numbersBox, "TOPLEFT", (edges[i] + edges[i + 1]) / 2, -38)
 		local label = ns.ArtText(frame.numbersBox, "CardNumLabel")
 		label:SetPoint("TOP", value, "BOTTOM", 0, -2)
-		label:SetText(ns.Capitals(NUMBER_LABELS[i]))
+		label:SetText(ns.Capitals(numberLabels[i]))
 		if i > 1 then
 			-- A red rule between the numbers, as the margin line is ruled.
 			local rule = frame.numbersBox:CreateTexture(nil, "ARTWORK")

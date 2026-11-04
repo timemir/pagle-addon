@@ -15,7 +15,7 @@ local Pagle = Pagle
 
 -- Adds one of Core's stops; a mistake here is Core's own, so it's raised.
 ---@param id string
----@param label string
+---@param label fun(): string read when `/pagle dev tour list` writes it, not when this file loads (CORE-R8)
 ---@param show fun()
 ---@param hide fun()
 local function add(id, label, show, hide)
@@ -30,7 +30,9 @@ end
 for _, kind in ipairs({ "toast", "nod", "banner", "splash" }) do
 	---@type PagleAnnouncement?
 	local sample
-	add("announce." .. kind, ns.L.DEV_TOUR_ANNOUNCE:format(kind), function()
+	add("announce." .. kind, function()
+		return ns.L.DEV_TOUR_ANNOUNCE:format(kind)
+	end, function()
 		sample = ns.DevPreviewAnnouncement(kind)
 		if sample then
 			ns.lanes:Push(sample)
@@ -49,7 +51,9 @@ end
 local function card(kind, make)
 	---@type PagleCard?
 	local shown
-	add("card." .. kind, ns.L.DEV_TOUR_CARD:format(kind), function()
+	add("card." .. kind, function()
+		return ns.L.DEV_TOUR_CARD:format(kind)
+	end, function()
 		shown = make()
 		ns.cards:Preview(shown)
 	end, function()
@@ -63,7 +67,7 @@ card("writeup", ns.DevPreviewWriteUp)
 
 -- A window stop: `open` shows it, and the hide closes it with `close` unless `isShown` said it was open already.
 ---@param id string
----@param label string
+---@param label fun(): string
 ---@param isShown fun(): boolean
 ---@param open fun()
 ---@param close fun()
@@ -79,7 +83,9 @@ local function window(id, label, isShown, open, close)
 	end)
 end
 
-window("shop", ns.L.DEV_TOUR_SHOP, function()
+window("shop", function()
+	return ns.L.DEV_TOUR_SHOP
+end, function()
 	return ns.shopFrame ~= nil and ns.shopFrame:IsShown()
 end, function()
 	Pagle.OpenShop()
@@ -87,7 +93,9 @@ end, function()
 	ns.shop.Toggle()
 end)
 
-window("fieldreport", ns.L.DEV_TOUR_FIELD_REPORT, function()
+window("fieldreport", function()
+	return ns.L.DEV_TOUR_FIELD_REPORT
+end, function()
 	return ns.fieldReportBox ~= nil and ns.fieldReportBox:IsShown()
 end, function()
 	Pagle.OpenFieldReport()
@@ -98,7 +106,9 @@ end, function()
 	end
 end)
 
-window("export", ns.L.DEV_TOUR_EXPORT, function()
+window("export", function()
+	return ns.L.DEV_TOUR_EXPORT
+end, function()
 	return ns.pasteExportWindow ~= nil and ns.pasteExportWindow:IsShown()
 end, function()
 	Pagle.OpenPasteExport()
@@ -109,7 +119,9 @@ end, function()
 	end
 end)
 
-window("glyphs", ns.L.DEV_TOUR_GLYPHS, function()
+window("glyphs", function()
+	return ns.L.DEV_TOUR_GLYPHS
+end, function()
 	return ns.glyphProbeFrame ~= nil and ns.glyphProbeFrame:IsShown()
 end, function()
 	ns.ShowGlyphProbe(ns.DEV_GLYPH_FONTS, ns.DevGlyphProbe())

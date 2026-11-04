@@ -23,7 +23,7 @@ ns.TOUR_GAP_SECONDS = 0.3
 ---@class PagleTourStop
 ---@field module string -- "core", or the Module's def.name lowercased
 ---@field name string   -- "<module>.<id>", as the tour's chat lines name it: "ledger.journal.home"
----@field label string  -- what it shows, for `/pagle dev tour list`
+---@field label string|fun(): string -- what it shows, for `/pagle dev tour list`; a function is called when it is listed
 ---@field show fun()    -- puts the surface on screen, in a representative state
 ---@field hide fun()    -- puts back everything show changed
 
@@ -41,10 +41,12 @@ end
 
 --- Adds a stop for `module` ("core", or a Module's def.name lowercased). Returns why it can't, adding nothing: an ID
 --- that isn't [%w_.]+, one the module registered before, no label, or a show or hide that isn't a function. The
---- reason names the stop's owner: `owner`, or Core for "core".
+--- reason names the stop's owner: `owner`, or Core for "core". A label is a string, or a function that returns one,
+--- for a label read from `ns.L`: it is called when the stop is listed, never when the file that adds it loads
+--- (CORE-R8).
 ---@param module string
 ---@param id any
----@param label any
+---@param label any a non-empty string, or a function returning one
 ---@param show any
 ---@param hide any
 ---@param owner string? the Module's def.name
@@ -56,7 +58,7 @@ function Stops:Add(module, id, label, show, hide, owner)
 		return ("%s's tour stop ID %s isn't [%%w_.]+"):format(owner, tostring(id))
 	elseif self.names[name] then
 		return ("%s's tour stop %s is already registered"):format(owner, id)
-	elseif type(label) ~= "string" or label == "" then
+	elseif type(label) ~= "function" and (type(label) ~= "string" or label == "") then
 		return ("%s's tour stop %s has no label"):format(owner, id)
 	elseif type(show) ~= "function" or type(hide) ~= "function" then
 		return ("%s's tour stop %s needs a show and a hide function"):format(owner, id)
@@ -258,7 +260,11 @@ local function list(tour, module)
 	local stops = options.stops:List(options.modules(), module)
 	options.print(#stops == 1 and L.DEV_TOUR_LIST_ONE or L.DEV_TOUR_LIST:format(#stops))
 	for _, stop in ipairs(stops) do
-		options.print(L.DEV_TOUR_LIST_LINE:format(stop.name, stop.label))
+		local label = stop.label
+		if type(label) == "function" then
+			label = label()
+		end
+		options.print(L.DEV_TOUR_LIST_LINE:format(stop.name, label))
 	end
 end
 

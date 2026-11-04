@@ -180,7 +180,8 @@ end
 --- Publishes Simulated Size on `Pagle` (LOG-R67–R69): `Pagle.SIZE_BANDS`, the bands in order as `{ key, name }`, a
 --- copy of Core's own so a Module can't change Core's; `Pagle.SIZE_RULES_VERSION`; and `Pagle.FormatLength(mm)` on
 --- ns.WireLength. `wrap` turns the band list into what Modules get: Core's adapter passes none, FakePagle its
---- read-only proxy (CORE-R18).
+--- read-only proxy (CORE-R18). The names are read from ns.L here, so it runs once the Language is applied: Core's
+--- login step 1, never while a file loads (CORE-R8).
 ---@param Pagle table
 ---@param host PagleHost
 ---@param wrap (fun(value: any): any)?
@@ -189,7 +190,7 @@ function ns.PublishSize(Pagle, host, wrap)
 	local api = Pagle
 	local bands = {}
 	for band, entry in ipairs(ns.SIZE_BANDS) do
-		bands[band] = { key = entry.key, name = entry.name }
+		bands[band] = { key = entry.key, name = ns.SizeBandName(band) }
 	end
 	--- The Size bands in order, `{ key, name }`, Tiddler to Monster (LOG-R67). Names signed off for 1.0 (#264).
 	---@type { key: string, name: string }[]
@@ -254,8 +255,9 @@ end
 
 --- Publishes the variety rarities on `Pagle` (VAR-R11): `Pagle.VARIETY_RARITIES`, Common to Epic, each
 --- `{ key, name, weight, color, ink }`, a copy of Core's own so a Module can't change Core's. `wrap` turns the list
---- into what Modules get: Core's adapter passes none, FakePagle its read-only proxy (CORE-R18). Pagle.GetVarieties
---- comes with the catalogue (adapter/Catalogue.lua).
+--- into what Modules get: Core's adapter passes none, FakePagle its read-only proxy (CORE-R18). The names are read
+--- from ns.L here, so it runs once the Language is applied: Core's login step 1, never while a file loads (CORE-R8).
+--- Pagle.GetVarieties comes with the catalogue (adapter/Catalogue.lua).
 ---@param Pagle table
 ---@param wrap (fun(value: any): any)?
 function ns.PublishVarieties(Pagle, wrap)
@@ -265,7 +267,7 @@ function ns.PublishVarieties(Pagle, wrap)
 	for rarity, entry in ipairs(ns.VARIETY_RARITIES) do
 		rarities[rarity] = {
 			key = entry.key,
-			name = entry.name,
+			name = ns.VarietyRarityName(rarity),
 			weight = entry.weight,
 			color = { unpack(entry.color) },
 			ink = { unpack(entry.ink) },
