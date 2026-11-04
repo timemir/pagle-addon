@@ -574,14 +574,6 @@ en = "Notes to self"
 value = "{zone}: {home_note_new_2:0} por descubrir"
 en = "{zone}: {home_note_new_2:0} new to find"
 
-[HOME_NOTE_CAUGHT_STAR]
-value = '{name}: {home_note_caught_star_2:0} para |TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
-en = '%s: %d to |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
-
-[HOME_NOTE_STAR]
-value = '{name}: {home_note_star_2:0} para |TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
-en = '%s: %d to |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
-
 [HOME_NOTE_NONE]
 value = "¡A pescar!"
 en = "Go fishing!"
@@ -684,13 +676,6 @@ en = "back in {months}"
 value = "{into} de {cost}."
 en = "{into} of {cost}."
 
-[XP_BAR_FRESH]
-value.one = " Agua fresca para {count:0} Captura más."
-value.many = " Agua fresca para {count:0} Capturas más."
-value.other = " Agua fresca para {count:0} Capturas más."
-en.one = "\" Fresh Water for %d more Catch.\""
-en.other = "\" Fresh Water for %d more Catches.\""
-
 [XP_BAR_SET_ASIDE]
 value = "{carried} XP reservada para el próximo Prestigio"
 en = "{carried} XP set aside for the next Prestige"
@@ -772,10 +757,6 @@ en = "First landed {date}, by {character}. {caught} caught."
 [ENTRY_FOUND_IN]
 value = "Se encuentra en {joinAnd}."
 en = "Found in {joinAnd}."
-
-[ENTRY_ONLY_BY]
-value = " Solo de {joinAnd}."
-en = "\" Only by %s.\""
 
 [ENTRY_LARGEST]
 value = "El más grande que he sacado: {size}"
