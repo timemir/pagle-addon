@@ -21,11 +21,9 @@ local INKS = {
 	red = { 0x7A, 0x2A, 0x1A }, -- "POST IT AT", "PASTE IT AT"
 	gilt = { 0xF0, 0xCD, 0x6A }, -- Close on the leather
 }
-local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
--- What draws if a bundled face won't load: the client's own.
-local FALLBACK = "Fonts\\FRIZQT__.TTF"
--- Each font: its face (media/fonts/OFL-*.txt), size and ink, and whether it has a shadow (Close on the leather does;
--- what is on the chart doesn't). Cutive Mono types the text, as a typewriter would.
+-- Each font: its face (a bundled file in media/fonts, OFL-*.txt; ns.faces gives the file that draws it, CORE-R9), size
+-- and ink, and whether it has a shadow (Close on the leather does; what is on the chart doesn't). Cutive Mono types the
+-- text, as a typewriter would.
 local FONTS = {
 	Title = { "IMFeENrm28P.ttf", 26, "sea" },
 	Privacy = { "IMFeENit28P.ttf", 14, "note" },
@@ -41,7 +39,7 @@ local FONTS = {
 -- The font objects, made the first time each is asked for: PagleField<key>.
 ---@type table<string, table>
 local fonts = {}
--- The file each font object loaded: its bundled face, or the fallback.
+-- The file each font object loaded: its face in the Pagle language applied, or the fallback.
 ---@type table<string, string>
 local fontFiles = {}
 
@@ -62,11 +60,7 @@ function ns.FieldFont(key)
 	if not fonts[key] then
 		local def = FONTS[key]
 		local made = CreateFont("PagleField" .. key)
-		fontFiles[key] = FONT_DIR .. def[1]
-		if made:SetFont(fontFiles[key], def[2], "") == false then
-			fontFiles[key] = FALLBACK
-			made:SetFont(FALLBACK, def[2], "")
-		end
+		fontFiles[key] = ns.faces:Set(made, def[1], def[2])
 		made:SetTextColor(ns.FieldInk(def[3]))
 		if def[4] then
 			made:SetShadowColor(0, 0, 0, 0.95)

@@ -89,15 +89,15 @@ local function listed(code)
 	return info ~= nil and info.listed
 end
 
---- The Locale to apply, as its code: "enUS" for English. A setting that names a Locale gives it when it is registered and
---- listed, else English. "Game default" gives the client's own Locale when that is registered and listed, else the one
+--- The Locale to apply, as its code: "enUS" for English. A setting that names a Locale gives it when it is registered,
+--- listed and renderable on this client (ns.CanRenderLanguage), else English. "Game default" gives the client's own Locale when that is registered and listed, else the one
 --- that serves it (esMX: esES), else English. An unlisted Locale never applies by either road.
 ---@param setting string The Language setting (ReadLanguageSetting).
 ---@param clientLocale any The client's `GetLocale()`.
 ---@return string code
 function ns.ResolveLanguage(setting, clientLocale)
 	if setting ~= ns.LANGUAGE_GAME_DEFAULT then
-		return listed(setting) and setting or ENGLISH
+		return listed(setting) and ns.CanRenderLanguage(setting, clientLocale) and setting or ENGLISH
 	end
 	if listed(clientLocale) then
 		return clientLocale
@@ -115,9 +115,10 @@ end
 ns.language = ENGLISH
 
 --- Core's first step at ADDON_LOADED (CORE-R8, LOG-R1): reads the setting from the raw `_G.PagleDB`, resolves it, overlays
---- `ns.L` with the chosen Locale (its fallback first), hands the text helper the merged record and records the code
---- `Pagle.GetLanguage` answers with. A function of the Locale that raises is reported through the error handler and
---- skipped: the strings it would have written stay English, and login goes on.
+--- `ns.L` with the chosen Locale (its fallback first), hands the text helper the merged record, records the code
+--- `Pagle.GetLanguage` answers with and sets Core's font objects again in that language's faces (CORE-R9). A function of
+--- the Locale that raises is reported through the error handler and skipped: the strings it would have written stay
+--- English, and login goes on.
 function ns.ApplyLanguage()
 	local setting = ns.ReadLanguageSetting(rawget(_G, "PagleDB"))
 	local code = ns.ResolveLanguage(setting, GetLocale())
@@ -128,6 +129,8 @@ function ns.ApplyLanguage()
 	---@cast record PagleTextLocale?
 	ns.SetTextLocale(record)
 	ns.language = record and code or ENGLISH
+	-- Core's font objects were made as its files loaded, in the bundled faces (adapter/Fonts.lua).
+	ns.faces:Refit()
 end
 
 --- The Locale Core applied this session, as its code ("enUS" for English): what a Module applies from its own

@@ -60,7 +60,6 @@ local rgb = ns.JournalRGB
 
 -- ---------------------------------------------------------------- fonts
 
-local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 -- The faces (Pagle/media/fonts/OFL-*.txt): IM Fell English for print, its italic for notes and its small capitals
 -- for kickers, group headings, tabs and stamps; Caveat for the Angler's handwriting; Marcellus for gilt, wax and brass.
 local FACES = {
@@ -72,16 +71,14 @@ local FACES = {
 	handSemi = "Caveat-SemiBold.ttf",
 	handBold = "Caveat-Bold.ttf",
 }
--- What draws if a bundled face won't load: the client's own.
-local FALLBACK = "Fonts\\FRIZQT__.TTF"
 
 ---@alias LedgerArtFace "print"|"italic"|"sc"|"gilt"|"hand"|"handSemi"|"handBold"
 
---- A face's file, for a spec or a probe to read.
+--- A face's file in the Pagle language applied, for a spec or a probe to read.
 ---@param face LedgerArtFace
 ---@return string
 function ns.JournalFontFile(face)
-	return FONT_DIR .. assert(FACES[face], "the Ledger kit has no face " .. tostring(face))
+	return Pagle.FaceFile(assert(FACES[face], "the Ledger kit has no face " .. tostring(face)))
 end
 
 ---@type table<string, Font>
@@ -99,9 +96,7 @@ function ns.JournalFont(face, size, shadow)
 	if not font then
 		local name = ("PagleLedgerArt_%s_%s%s"):format(face, (tostring(size):gsub("%.", "_")), shadow and "_s" or "")
 		font = CreateFont(name)
-		if font:SetFont(ns.JournalFontFile(face), size, "") == false then
-			font:SetFont(FALLBACK, size, "")
-		end
+		Pagle.SetFace(font, assert(FACES[face], "the Ledger kit has no face " .. tostring(face)), size)
 		if shadow then
 			font:SetShadowColor(0, 0, 0, 0.95)
 			font:SetShadowOffset(0, -1)

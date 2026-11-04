@@ -72,7 +72,15 @@ ns.WireDev(
 	-- `/pagle dev skill` (#465) changes what ns.ReadFishingSkill reports, so skill is read again now.
 	function()
 		ns.ReadSkill()
-	end
+	end,
+	-- `/pagle dev fonts` (#522) tries font files on a hidden font string and draws its panel.
+	{
+		meter = ns.DevFontMeter,
+		language = function()
+			return ns.language
+		end,
+		show = ns.ShowFontProbe,
+	}
 )
 
 SLASH_PAGLE1 = "/pagle"

@@ -415,7 +415,7 @@ ns.L = {
 	DEV_OFF = "Pagle dev: dev commands are off.",
 	DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on.",
 	DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs"
-		.. " | tour [module | list | stop] | probe | onboarding <command> | content | views | pastetest <KB>",
+		.. " | tour [module | list | stop] | probe | fonts | onboarding <command> | content | views | pastetest <KB>",
 	-- /pagle dev pastetest <KB> (PST-R60): its usage, with the sizes it takes, and the line it prints once the window
 	-- shows the test string.
 	DEV_PASTE_TEST_USAGE = "Pagle dev: /pagle dev pastetest <KB>, from %d to %d; the check copies 64, 128, 256 and 512.",
@@ -577,6 +577,11 @@ ns.L = {
 	-- API names and values, then the last line.
 	DEV_PROBE_LINE = "Pagle dev: %s",
 	DEV_PROBE_SAVED = "Pagle dev: Probe saved; /reload to write it.",
+	-- /pagle dev fonts (#522): one line per client font file tried (its path, "failed" or "ok" and by script how many of the
+	-- sample's characters are not the box's width), then the saved line (fonts loaded, paths tried, GetLocale()).
+	DEV_FONTS_LINE = "Pagle dev: font %s: %s",
+	DEV_FONTS_SAVED = "Pagle dev: %d of %d client fonts load on this %s client; the sample in each is on screen (a box is a"
+		.. " character that font lacks; click it or press Esc to close). Fonts saved; /reload to write them.",
 	-- /pagle dev tour (CORE-R65–R68): how many stops, as DEV_TOUR_START puts it.
 	DEV_TOUR_ONE_STOP = "1 stop",
 	-- The number of stops.

@@ -194,6 +194,9 @@
 --- (#248) adds { fonts, probe } to fake.glyphProbes. `"dev tour"` (CORE-R66) tours the stops registered with
 --- M:RegisterTourStop and ns.tourStops on the fake's clock, so fake.wait moves it on; shots go to fake.tourShots.
 ---@field glyphProbes { fonts: PagleDevGlyphFont[], probe: string }[] Each `/pagle dev glyphs` probe shown, in order.
+---@field fontProbes { fonts: PagleDevGlyphFont[], probe: string }[] Each `/pagle dev fonts` panel shown, in order (#522).
+---@field clientFonts table<string, fun(text: string): number> The client font files the fake has (`/pagle dev fonts`),
+--- each a function that measures a text; none by default, so no path loads.
 ---@field tourShots string[]? `/pagle dev tour`'s screenshots (CORE-R66): "shot" for each, in order; a spec may set it
 --- to its own list, to read shots in order with what its stops do. Nil: the client has no Screenshot(). Empty at
 --- first. The tour's clock reads 12:00:00.
@@ -882,6 +885,9 @@ part(function(fake, Pagle, ns, host)
 
 	-- /pagle dev (#247), on Core's wiring: the same switch in fake.global, Sessions and fishing as Core's.
 	fake.glyphProbes = {}
+	fake.fontProbes = {}
+	---@type table<string, fun(text: string): number>
+	fake.clientFonts = {}
 	fake.tourShots = {}
 	ns.WireDev(host, function(announcement)
 		fake.announcements[#fake.announcements + 1] = announcement
@@ -907,7 +913,21 @@ part(function(fake, Pagle, ns, host)
 		return {}
 	end, function()
 		-- /pagle dev skill (#465): FakePagle reads no client skill, so there is nothing to read again.
-	end)
+	end, {
+		-- /pagle dev fonts (#522): FakePagle has no client fonts, so no path loads; a spec sets fake.clientFonts (path to
+		-- a function that measures a text) to give it some, and reads the rows shown in fake.fontProbes.
+		meter = function()
+			return function(path)
+				return fake.clientFonts[path]
+			end
+		end,
+		language = function()
+			return fake.language
+		end,
+		show = function(fonts, probe)
+			fake.fontProbes[#fake.fontProbes + 1] = { fonts = fonts, probe = probe }
+		end,
+	})
 	function fake.slash(line)
 		commands:Run(line, core, fake.securecall, fake.print)
 	end
@@ -954,6 +974,16 @@ part(function(fake, Pagle)
 	function Pagle.GetLanguage()
 		return fake.language
 	end
+end)
+
+-- The faces as Core publishes them (CORE-R9): Pagle.FaceFile and Pagle.SetFace, on Core's real logic/Fonts.lua, in the
+-- bundled faces until a spec sets fake.language to one of ruRU, koKR, zhCN and zhTW.
+part(function(fake, Pagle, ns)
+	-- ns.faces is also what Core's adapter files the fake loads (adapter/Art.lua) ask.
+	ns.faces = ns.NewFaces(function()
+		return fake.language
+	end)
+	ns.PublishFaces(Pagle, ns.faces)
 end)
 
 -- The clock format as Core publishes it (CORE-R87): Pagle.FormatClock, in fake.profile.clockFormat or the game's

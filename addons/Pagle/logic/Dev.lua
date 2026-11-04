@@ -17,6 +17,7 @@ local ns = select(2, ...)
 ---@field showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) -- shows `probe` once in each of `fonts`
 ---@field tour fun(args: string)        -- runs `/pagle dev tour <args>` (CORE-R66–R68, logic/Tour.lua)
 ---@field probe fun()                   -- runs `/pagle dev probe` (#261, logic/Probe.lua)
+---@field fonts fun()                   -- runs `/pagle dev fonts` (#522, logic/DevFonts.lua)
 ---@field onboarding fun(args: string)  -- runs `/pagle dev onboarding <args>` (ONB-R83, logic/Onboarding.lua)
 ---@field content fun(): string[]       -- `/pagle dev content`'s lines (PUSH-R14, logic/PushedContent.lua)
 ---@field views fun(): string[]         -- `/pagle dev views`' lines (VIEW-R12, logic/AnglersInGame.lua)
@@ -262,10 +263,10 @@ local GLYPH_CODE_POINTS = {
 	0x2713,
 }
 
--- The UTF-8 bytes of code point `point`, below U+10000.
+-- The UTF-8 bytes of code point `point`, below U+10000. Also builds the font probe's samples (logic/DevFonts.lua).
 ---@param point integer
 ---@return string
-local function utf8(point)
+function ns.DevUtf8(point)
 	if point < 0x80 then
 		return string.char(point)
 	elseif point < 0x800 then
@@ -280,34 +281,34 @@ end
 function ns.DevGlyphProbe()
 	local items = {}
 	for i, point in ipairs(GLYPH_CODE_POINTS) do
-		items[i] = ("%04X %s"):format(point, utf8(point))
+		items[i] = ("%04X %s"):format(point, ns.DevUtf8(point))
 	end
 	return table.concat(items, "  ")
 end
 
---- A font Pagle draws text in: a font object by name (`object`), or a font file (`file`), with what uses it.
+--- A font Pagle draws text in: a font object by name (`object`), or one of Core's faces (`face`, a bundled file's name:
+--- the file that draws it in the Pagle language applied, CORE-R9), or a client font file (`file`), with what uses it.
 ---@class PagleDevGlyphFont
 ---@field object string?  -- a font object's name, such as "GameFontHighlight"
----@field file string?    -- a font file, such as Core's bundled faces, for a face no font object has
+---@field face string?    -- a bundled face's file name, for a face no font object has
+---@field file string?    -- a client font file, such as `/pagle dev fonts` shows (logic/DevFonts.lua)
 ---@field usedBy string   -- what draws with it, for the probe's label
-
--- Where Core's bundled fonts are (adapter/Art.lua).
-local ART_FONTS = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 
 --- Every font Pagle draws text in (#248), for `/pagle dev glyphs`: Core's frames and Settings rows (GameFont*, all
 --- FRIZQT__ in enUS), chat and the Field report's text, QoL's key label, the Fish Journal's small capitals, and the
---- announcements' bundled faces (Caveat's other cuts have the same characters), which the art kits share.
+--- announcements' bundled faces (Caveat's other cuts have the same characters), which the art kits share. A face draws
+--- in the client's own font in ruRU, koKR, zhCN and zhTW (CORE-R9), so the panel names the file it resolves to.
 ---@type PagleDevGlyphFont[]
 ns.DEV_GLYPH_FONTS = {
 	{ object = "GameFontHighlight", usedBy = "Core's frames" },
 	{ object = "ChatFontNormal", usedBy = "chat, the Field report's text" },
 	{ object = "NumberFontNormalSmallGray", usedBy = "QoL's key label" },
-	{ file = ART_FONTS .. "IMFeENsc28P.ttf", usedBy = "the Fish Journal's small capitals" },
-	{ file = ART_FONTS .. "IMFeENrm28P.ttf", usedBy = "the announcements' print" },
-	{ file = ART_FONTS .. "Caveat-SemiBold.ttf", usedBy = "the announcements' hand" },
-	{ file = ART_FONTS .. "Marcellus-Regular.ttf", usedBy = "the announcements' gilt and stamps" },
+	{ face = "IMFeENsc28P.ttf", usedBy = "the Fish Journal's small capitals" },
+	{ face = "IMFeENrm28P.ttf", usedBy = "the announcements' print" },
+	{ face = "Caveat-SemiBold.ttf", usedBy = "the announcements' hand" },
+	{ face = "Marcellus-Regular.ttf", usedBy = "the announcements' gilt and stamps" },
 	-- The Curio Shop's own face beside those three, which it shares (adapter/ShopArt.lua).
-	{ file = ART_FONTS .. "IMFeENit28P.ttf", usedBy = "the Curio Shop's italic" },
+	{ face = "IMFeENit28P.ttf", usedBy = "the Curio Shop's italic" },
 }
 
 --- The Fishing skill `/pagle dev skill` reports in place of the client's (#465): the rank and the max rank saved in
@@ -425,6 +426,8 @@ function Dev:Run(args)
 		options.tour(rest)
 	elseif name == "probe" then
 		options.probe()
+	elseif name == "fonts" then
+		options.fonts()
 	elseif name == "onboarding" then
 		options.onboarding(rest)
 	elseif name == "content" then

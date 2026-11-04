@@ -6,7 +6,7 @@
 -- #146). M4#1 holds what the M4 exit check reads (#173, #174). M5#1 and M5-Stale#1 hold a Pagle_Hunts.lua, for what
 -- the M5 exit check reads (#199, #200). M6#1, M6-Stale#1 and M6-New#1 hold a Pagle_Stats.lua, for what the M6 exit
 -- check reads (#219, #221), and M6-Break#1 a Session break (#258). M7#1, M7-Stale#1 and M7-New#1 hold a Pagle_TackleBoard.lua, for what the M7 exit check
--- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261), and M8-Reverify#1 what the Re-verification section reads (#262), and M8.5#1 an onboarding state for the Onboarding section (#320), and M8-XP#1 Activity XP totals and a P1 with its snapshot, for the Activity XP section (#291), and M8-Wagers#1 Hunts' runs, records and ladder, a Ledger climb past a Prestige snapshot and a pushed seq, for what the M8 Hunt Events exit check reads (#309). The Ledger, Stats and Tackle Board runs read their catalogue from
+-- reads (#242, #245). M8#1 holds a test log for the Simulated Size gate (#267), and M8-Probe#1 a `/pagle dev probe` with a miss in most checks, for the Probe section (#261), and M8-Fonts#1 a `/pagle dev fonts` from a koKR client, for the Fonts section (#522), and M8-Reverify#1 what the Re-verification section reads (#262), and M8.5#1 an onboarding state for the Onboarding section (#320), and M8-XP#1 Activity XP totals and a P1 with its snapshot, for the Activity XP section (#291), and M8-Wagers#1 Hunts' runs, records and ladder, a Ledger climb past a Prestige snapshot and a pushed seq, for what the M8 Hunt Events exit check reads (#309). The Ledger, Stats and Tackle Board runs read their catalogue from
 -- spec/scripts/fixtures/Catalogue.lua (--catalogue) and the Hunts runs their Hunt list from
 -- spec/scripts/fixtures/HuntList.lua (--huntlist), so the lines the Modules' logic computes are counted by hand, and
 -- don't move with the generated data.
@@ -1662,6 +1662,66 @@ describe("scripts/read-wtf.lua", function()
 			section(run(ACCOUNTS .. "M1#1"), "== Probe")
 		)
 		assert.are.same({ "== Probe: can't read Pagle.lua: missing" }, section(run(ACCOUNTS .. "M0#1"), "== Probe"))
+	end)
+
+	-- M8-Fonts#1 holds a `/pagle dev fonts` from a koKR client (#522, in-game-verification.md › Fonts): five of the sixteen
+	-- known client fonts load, and Core's font table is judged against them.
+	describe("on an account after a /pagle dev fonts (#522, in-game-verification.md › Fonts)", function()
+		local out, err, code = run(ACCOUNTS .. "M8-Fonts#1")
+
+		it("prints the client, each font file tried with its scripts, and Core's font table against them", function()
+			assert.are.equal("", err)
+			assert.are.equal(0, code)
+			assert.are.same({
+				"== Fonts (PagleDB.global.fontProbe): 2026-11-04 11:00:00 UTC, build 1.61.0 71002 (Nov  3 2026),"
+					.. " interface 16100, client koKR, Pagle language koKR",
+				"global DAMAGE_TEXT_FONT = Fonts\\K_Damage.TTF",
+				"global STANDARD_TEXT_FONT = Fonts\\2002.ttf",
+				"global UNIT_NAME_FONT = Fonts\\2002B.ttf",
+				"Fonts\\FRIZQT__.TTF: ok; latin 2/2, cyrillic 0/2, hangul 0/2, hanzi 0/4; box 10",
+				"Fonts\\FRIZQT___CYR.TTF: failed",
+				"Fonts\\ARIALN.TTF: ok; latin 2/2, cyrillic 2/2, hangul 0/2, hanzi 0/4; box 10",
+				"Fonts\\skurri.ttf: failed",
+				"Fonts\\MORPHEUS.TTF: failed",
+				"Fonts\\ARKai_T.ttf: failed",
+				"Fonts\\ARKai_C.ttf: failed",
+				"Fonts\\ARHei.ttf: failed",
+				"Fonts\\bHEI00M.ttf: failed",
+				"Fonts\\bHEI01B.ttf: failed",
+				"Fonts\\bKAI00M.ttf: failed",
+				"Fonts\\bLEI00D.ttf: failed",
+				"Fonts\\2002.ttf: ok; latin 2/2, cyrillic 0/2, hangul 2/2, hanzi 0/4; box 10",
+				"Fonts\\2002B.ttf: ok; latin 2/2, cyrillic 0/2, hangul 2/2, hanzi 0/4; box 10",
+				"Fonts\\K_Damage.TTF: failed",
+				"Fonts\\K_Pagetext.TTF: ok; latin 2/2, cyrillic 0/2, hangul 2/2, hanzi 4/4; box 10",
+				"fonts: 5 of 16 client font files load on this koKR client",
+				"  ok      koKR body Fonts\\2002.ttf: ok; latin 2/2, cyrillic 0/2, hangul 2/2, hanzi 0/4",
+				"  ok      koKR heading Fonts\\2002B.ttf: ok; latin 2/2, cyrillic 0/2, hangul 2/2, hanzi 0/4",
+				"  ok      koKR hand Fonts\\K_Pagetext.TTF: ok; latin 2/2, cyrillic 0/2, hangul 2/2, hanzi 4/4",
+				"  ok      koKR mono Fonts\\2002.ttf: ok; latin 2/2, cyrillic 0/2, hangul 2/2, hanzi 0/4",
+				"  absent  ruRU body Fonts\\FRIZQT___CYR.TTF: failed",
+				"  absent  ruRU heading Fonts\\FRIZQT___CYR.TTF: failed",
+				"  absent  ruRU hand Fonts\\FRIZQT___CYR.TTF: failed",
+				"  ok      ruRU mono Fonts\\ARIALN.TTF: ok; latin 2/2, cyrillic 2/2, hangul 0/2, hanzi 0/4",
+				"  absent  zhCN body Fonts\\ARKai_T.ttf: failed",
+				"  absent  zhCN heading Fonts\\ARKai_T.ttf: failed",
+				"  absent  zhCN hand Fonts\\ARKai_C.ttf: failed",
+				"  absent  zhCN mono Fonts\\ARKai_T.ttf: failed",
+				"  absent  zhTW body Fonts\\bHEI00M.ttf: failed",
+				"  absent  zhTW heading Fonts\\bHEI01B.ttf: failed",
+				"  absent  zhTW hand Fonts\\bKAI00M.ttf: failed",
+				"  absent  zhTW mono Fonts\\bHEI00M.ttf: failed",
+				"font table: every path of the client's own language (koKR) loads",
+			}, section(out, "== Fonts"))
+		end)
+
+		it("says so when no font probe is stored, or Pagle.lua can't be read", function()
+			assert.are.same(
+				{ "== Fonts (PagleDB.global.fontProbe)", "fonts: none stored (/pagle dev fonts, then /reload)" },
+				section(run(ACCOUNTS .. "M1#1"), "== Fonts")
+			)
+			assert.are.same({ "== Fonts: can't read Pagle.lua: missing" }, section(run(ACCOUNTS .. "M0#1"), "== Fonts"))
+		end)
 	end)
 
 	-- M8-XP#1 holds Activity XP totals of PagleLog's logId, a Prestige whose P1 carries their sum, and Coins totals of

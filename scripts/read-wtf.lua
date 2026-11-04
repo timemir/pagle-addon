@@ -47,6 +47,8 @@
 --   - the Field report projection (PagleDB.global.projections.fieldReport), its row count and the reporter key;
 --   - the probe `/pagle dev probe` saved (PagleDB.global.probe, #261): each launch re-verification check's facts and
 --     an ok or FAIL line, judged by Core's own logic/Probe.lua;
+--   - the fonts `/pagle dev fonts` saved (PagleDB.global.fontProbe, #522): which client font files load and draw which
+--     scripts, and Core's font table against them;
 --   - what launch re-verification checks 2, 4-7 and 10 read (#262): PagleLog's entry count and Pagle.lua's size, the
 --     load timings (PagleDB.global.probe.timings), the night Casts and the Casts with no realm minute, the
 --     diagnostics buffer's hovered texts (as the P rows group them) and unresolved texts, and the Casts per zone and
@@ -3192,6 +3194,89 @@ local function printProbe(pagle)
 	)
 end
 
+-- Prints the Fonts section (#522, CORE-R9): what `/pagle dev fonts` saved in PagleDB.global.fontProbe on a client of
+-- one language (#523): the client's locale and font globals, then each client font file tried, ok or failed, with the
+-- box character's width and, by script, how many of the sample's characters measure other than the box (a font that
+-- lacks a script draws every character as the box; a monospaced CJK font may draw the box as wide as a real
+-- character, so the panel is the last word for Hangul and Han). Then Core's font table (logic/Fonts.lua, the same
+-- table the game reads) against what loaded: one line per language and role, `ok` for a path this client loads and
+-- `absent` for one it lacks. An absent path of the client's own language is a FAIL (Core would draw FRIZQT__ there);
+-- the other languages' paths are the evidence for #523: whether a client of one language carries another's fonts.
+local function printFonts(pagle)
+	local global, why = pagleGlobal(pagle)
+	if why then
+		print("== Fonts: " .. why)
+		return
+	end
+	local probe = global.fontProbe
+	if type(probe) ~= "table" or type(probe.fonts) ~= "table" then
+		print("== Fonts (PagleDB.global.fontProbe)")
+		print("fonts: none stored (/pagle dev fonts, then /reload)")
+		return
+	end
+	local build = tableOr(probe.build)
+	print(
+		("== Fonts (PagleDB.global.fontProbe): %s, build %s %s (%s), interface %s, client %s, Pagle language %s"):format(
+			type(probe.time) == "number" and utc(probe.time) or "no time",
+			tostring(build.version),
+			tostring(build.build),
+			tostring(build.date),
+			tostring(build.interface),
+			tostring(probe.locale),
+			tostring(probe.language)
+		)
+	)
+	local names = {}
+	for name in pairs(tableOr(probe.globals)) do
+		names[#names + 1] = name
+	end
+	table.sort(names)
+	for _, name in ipairs(names) do
+		print(("global %s = %s"):format(name, tostring(probe.globals[name])))
+	end
+	local ns = wtf.loadCore({ "logic/Fonts.lua", "logic/DevFonts.lua" })
+	local loaded = 0
+	for _, font in ipairs(probe.fonts) do
+		if type(font) == "table" then
+			local line = ("%s: %s"):format(tostring(font.path), ns.FontProbeSummary(font))
+			if font.ok then
+				loaded = loaded + 1
+				line = line .. ("; box %s"):format(tostring(font.box))
+			end
+			print(line)
+		end
+	end
+	print(
+		("fonts: %d of %d client font files load on this %s client"):format(
+			loaded,
+			#probe.fonts,
+			tostring(probe.locale)
+		)
+	)
+	local failed = 0
+	for _, row in ipairs(ns.FontProbeTableReport(probe)) do
+		local verdict = row.loaded and "  ok      " or (row.language == probe.locale and "  FAIL    " or "  absent  ")
+		if not row.loaded and row.language == probe.locale then
+			failed = failed + 1
+		end
+		print(("%s%s %s %s: %s"):format(verdict, row.language, row.role, row.path, row.summary))
+	end
+	local own = tostring(probe.locale)
+	if not ns.CLIENT_FONTS[probe.locale] then
+		print(
+			("font table: %s draws the bundled faces; the rows show which of the other languages' paths it carries"):format(
+				own
+			)
+		)
+	elseif failed == 0 then
+		print(("font table: every path of the client's own language (%s) loads"):format(own))
+	else
+		print(
+			("font table: %d of %s's paths don't load on this client: Core draws FRIZQT__ for them"):format(failed, own)
+		)
+	end
+end
+
 -- Re-verification (#262) ------------------------------------------------------------------------------------------
 
 local MIB = 1024 * 1024
@@ -3679,6 +3764,7 @@ local function main(args)
 	printOnboarding(pagle, pagleLog(pagle.saved))
 	printFieldReport(pagle, pagleLog(pagle.saved))
 	printProbe(pagle)
+	printFonts(pagle)
 	printReverify(pagle, options)
 	printCVars(options.account, options.character, options.cvars)
 	printAddons(options.account, options.character, options.addons)

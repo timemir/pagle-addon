@@ -34,7 +34,6 @@ ns.FIELD_INKS = {
 	hairline = rgb("C9A24A"), -- the tooltip's gilt edge
 }
 
-local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 -- The faces, which Core bundles (Pagle/media/fonts/OFL-*.txt): IM Fell English for print, its italic for notes and
 -- its small caps (IM Fell English SC) for kickers, Caveat for the Angler's handwriting, Marcellus for gilt and keys.
 local FACES = {
@@ -45,8 +44,6 @@ local FACES = {
 	hand = "Caveat-Medium.ttf",
 	handSemi = "Caveat-SemiBold.ttf",
 }
--- What draws if a bundled face won't load: the client's own.
-local FALLBACK = "Fonts\\FRIZQT__.TTF"
 -- Each font: its face, size and ink, and whether it has a shadow (the leather button's words do; what is on paper or
 -- brass doesn't).
 local FONTS = {
@@ -73,9 +70,7 @@ function ns.ArtText(frame, key, layer)
 	if not fonts[key] then
 		local def = FONTS[key]
 		local font = CreateFont("PagleQoL" .. key)
-		if font:SetFont(FONT_DIR .. FACES[def[1]], def[2], "") == false then
-			font:SetFont(FALLBACK, def[2], "")
-		end
+		Pagle.SetFace(font, FACES[def[1]], def[2])
 		local ink = ns.FIELD_INKS[def[3]]
 		font:SetTextColor(ink[1], ink[2], ink[3])
 		if def[4] then
@@ -107,9 +102,7 @@ function ns.FaceFont(face, size)
 	local key = face .. "_" .. (tostring(size):gsub("%.", "_"))
 	if not faceFonts[key] then
 		local font = CreateFont("PagleQoLFace_" .. key)
-		if font:SetFont(FONT_DIR .. assert(FACES[face], "no face " .. face), size, "") == false then
-			font:SetFont(FALLBACK, size, "")
-		end
+		Pagle.SetFace(font, assert(FACES[face], "no face " .. face), size)
 		font:SetShadowOffset(0, 0)
 		faceFonts[key] = font
 	end

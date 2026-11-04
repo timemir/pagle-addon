@@ -62,6 +62,7 @@ logic\Size.lua
 logic\Variety.lua
 logic\Length.lua
 logic\Text.lua
+logic\Fonts.lua
 logic\Clock.lua
 logic\CatchLog.lua
 logic\Projections.lua
@@ -77,6 +78,7 @@ logic\Settings.lua
 logic\Slash.lua
 logic\Dev.lua
 logic\Probe.lua
+logic\DevFonts.lua
 logic\LoadTimings.lua
 logic\Tour.lua
 logic\Trailer.lua
@@ -133,6 +135,7 @@ adapter\Host.lua
 adapter\CatchLog.lua
 adapter\Size.lua
 adapter\Text.lua
+adapter\Fonts.lua
 adapter\Clock.lua
 adapter\LanguageRow.lua
 adapter\Variety.lua
@@ -151,6 +154,7 @@ adapter\AnnouncementSettings.lua
 adapter\Dock.lua
 adapter\LookAndFeel.lua
 adapter\DevGlyphs.lua
+adapter\DevFonts.lua
 adapter\Slash.lua
 adapter\Wallet.lua
 adapter\ActivityXP.lua

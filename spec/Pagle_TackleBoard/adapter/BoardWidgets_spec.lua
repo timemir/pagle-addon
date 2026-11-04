@@ -38,8 +38,8 @@ describe("the board art kit's atlases (tackle-board.md › UI)", function()
 			assert(shipped(atlas.file .. ".blp"), name)
 		end
 		assert.is_true(shipped(ns.CORK_TEXTURE .. ".blp"))
-		for face, path in pairs(ns.BOARD_FONT_FACES) do
-			assert(shipped(path), face)
+		for face, file in pairs(ns.BOARD_FONT_FACES) do
+			assert(shipped("Interface\\AddOns\\Pagle\\media\\fonts\\" .. file), face)
 		end
 	end)
 
