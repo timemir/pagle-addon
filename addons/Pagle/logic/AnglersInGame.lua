@@ -128,7 +128,10 @@ local function drawable(text)
 	return type(text) == "string" and (text:gsub("|", "||")) or text
 end
 
--- A copy of a Followed Angler's line, its full card's fields only (VIEW-R11), its guids a fresh array.
+-- A copy of a Followed Angler's line, its full card's fields only (VIEW-R11), its guids a fresh array. The Ledger
+-- percent is whole (Lua 5.1's `%d` truncated a pushed 99.6 to 99, and the text helper's `{ledger:0}` would round it to
+-- 100), so a fractional one is floored here, where it comes in; a value that is not a number is left for the caller's
+-- check of the card.
 ---@param line any
 ---@return PagleFollowedAngler
 local function copyAngler(line)
@@ -146,7 +149,7 @@ local function copyAngler(line)
 		title = line.title,
 		level = line.level,
 		prestige = line.prestige,
-		ledger = line.ledger,
+		ledger = type(line.ledger) == "number" and floor(line.ledger) or line.ledger,
 		legends = line.legends,
 		legendsTotal = line.legendsTotal,
 		waters = line.waters,

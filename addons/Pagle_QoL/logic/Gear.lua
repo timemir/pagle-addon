@@ -72,7 +72,7 @@ function ns.SlotsMessage(free, needFishing, needPrevious)
 			{ fishingSetName = ns.FISHING_SET_NAME, previousSetName = ns.PREVIOUS_SET_NAME }
 		)
 	end
-	return ns.Text(ns.L.GEAR_NEEDS_SLOT, { needFishing = needFishing and ns.FISHING_SET_NAME or ns.PREVIOUS_SET_NAME })
+	return ns.Text(ns.L.GEAR_NEEDS_SLOT, { setName = needFishing and ns.FISHING_SET_NAME or ns.PREVIOUS_SET_NAME })
 end
 
 --- Whether the gear step is ready (QOL-R43): a fishing set is chosen, no fishing pole is in hand, the set's main

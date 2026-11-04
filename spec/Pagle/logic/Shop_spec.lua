@@ -1893,6 +1893,25 @@ describe("The Curio crate", function()
 		end
 	)
 
+	it("writes a tier's chance with the decimal separator of the chosen language (SHOP-R54, CORE-R8)", function()
+		local fake = crated(3500)
+		fake.ns.SetTextLocale({
+			plural = function()
+				return "other"
+			end,
+			decimal = ",",
+			thousands = ".",
+		})
+
+		local chances = {}
+		for i, odds in ipairs(model(fake):Stage(CRATE).odds) do
+			chances[i] = odds.chance
+		end
+		fake.ns.SetTextLocale(nil)
+
+		assert.are.same({ "40%", "26%", "16%", "10%", "5%", "2,5%", "0,5%" }, chances)
+	end)
+
 	it(
 		"counts a tier's goods left as the Angler buys and wins them, and says what an empty one pays back (SHOP-R54)",
 		function()
