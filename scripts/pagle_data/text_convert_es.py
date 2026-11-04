@@ -189,12 +189,26 @@ def _english_comment(text: str) -> Json:
     return text
 
 
+def _unescaped(text: str) -> list[str]:
+    """The readings of an `-- EN:` comment's text: as it stands, as the body of a Lua string (the translator wrote the
+    comment with the escapes the source file had, `\\\\` for a backslash and `\\"` for a quote), and, when the whole is quoted
+    (a text with a space at its ends was written `" and "`), the quoted text."""
+    readings = [text]
+    quoted = len(text) >= 2 and text.startswith('"') and text.endswith('"')
+    readings.append(_decode(text if quoted else f'"{text}"'))
+    return readings
+
+
 def _same(comment: Json | None, english: Json) -> bool:
-    """Whether the old `-- EN:` comment is the old English text (a newline may be written `\\n`)."""
+    """Whether the old `-- EN:` comment is the old English text. The comment is the English as the translator wrote it
+    into a Lua comment: a newline may be written `\\n`, and a backslash, a quote or the quotes around a text with a space
+    at its ends are escaped as in a Lua string (so `\\\\` in the comment is one backslash of the English)."""
     if comment is None:
         return False
     if isinstance(comment, str) and isinstance(english, str):
-        return comment == english or comment == english.replace("\n", "\\n")
+        return english in _unescaped(comment) or comment == english.replace("\n", "\\n")
+    if isinstance(comment, dict) and isinstance(english, dict):
+        return comment.keys() == english.keys() and all(_same(comment[key], english[key]) for key in english)
     return comment == english
 
 
