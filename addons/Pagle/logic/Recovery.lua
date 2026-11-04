@@ -220,7 +220,9 @@ function ns.RecoveryPrepare(data, keys, log, archive, db)
 	if plan.logId ~= logId then
 		return nil, nil, true
 	end
-	assert(log.format == plan.format, "Recovery is for a different Catch log format")
+	if log.format ~= plan.format then
+		error(ns.RecoveryProblem("format_differs"))
+	end
 	local completed = type(archive) == "table"
 			and type(archive.applied) == "table"
 			and archive.applied[plan.applicationId]
@@ -235,10 +237,9 @@ function ns.RecoveryPrepare(data, keys, log, archive, db)
 		rememberVerified(saved, plan, data, key)
 		return nil, saved
 	end
-	assert(
-		ns.RecoveryDigest(ns.RecoverySnapshot(log)) == plan.expectedDigest,
-		"Catch log changed; export a new Recovery snapshot"
-	)
+	if ns.RecoveryDigest(ns.RecoverySnapshot(log)) ~= plan.expectedDigest then
+		error(ns.RecoveryProblem("log_changed"))
+	end
 	for _, staged in ipairs(plan.staged) do
 		assert(staged.seq <= log.count, "staged Recovery record is outside original log")
 	end

@@ -19,6 +19,19 @@ ns.recoveryWindow = nil
 ---@type boolean?
 ns.recoveryBlocked = nil
 
+--- What went wrong, as the player reads it (#525). A reason logic/ raises by code (`ns.RecoveryProblem`) is Core's text
+--- for it in the Language applied; anything else is a diagnostic of the package's parser or a raw Lua error, and stays
+--- as it was raised, English (ADR 0019, "What stays English"). It goes into the sentence as the value of `{reason}`.
+---@param err any
+---@return string
+local function reasonText(err)
+	if type(err) == "table" and err.problem then
+		local text = ns.L.RECOVERY_PROBLEMS[err.problem]
+		return text and ns.RenderText(text, err.fields) or tostring(err.problem)
+	end
+	return tostring(err)
+end
+
 -- Recovery's data addon has no dependency on Pagle and must load before SavedVariables are opened.
 ---@return boolean
 function ns.StartRecovery()
@@ -38,24 +51,14 @@ function ns.StartRecovery()
 		return ns.RecoveryPrepare(_G.PagleRecoveryData, ns.PUSHED_KEYS, _G.PagleLog, _G.PagleRecovery, _G.PagleDB)
 	end)
 	if ok and unloaded and unloaded ~= "DISABLED" then
-		print(
-			"Pagle Recovery: Pagle_Recovery didn't load ("
-				.. unloaded
-				.. "), so nothing was restored and your Catch log is unchanged. Remove Pagle_Recovery once Recovery is complete."
-		)
+		print(ns.RenderText(ns.L.RECOVERY_NOT_LOADED, { reason = unloaded }))
 	elseif ok and otherLog then
-		print(
-			"Pagle Recovery: Pagle_Recovery is for another Catch log, so nothing was restored here. Remove it once Recovery is complete."
-		)
+		print(ns.L.RECOVERY_OTHER_LOG)
 	end
 	if not ok then
 		ns.recoveryBlocked = true
 		_G.Pagle = nil
-		print(
-			"Pagle Recovery stopped: "
-				.. tostring(prepared)
-				.. ". Your Catch log is unchanged. Remove Pagle_Recovery to resume, or export a new snapshot with /pagle recovery export."
-		)
+		print(ns.RenderText(ns.L.RECOVERY_STOPPED, { reason = reasonText(prepared) }))
 		return false
 	end
 	if verifiedArchive then
@@ -63,9 +66,7 @@ function ns.StartRecovery()
 	end
 	if prepared then
 		_G.PagleLog, _G.PagleRecovery, _G.PagleDB = prepared.log, prepared.archive, prepared.db
-		print(
-			"Pagle Recovery restored the Catch log. Original records are preserved; /pagle recovery inspect shows records held for review. Upload normally, confirm Recovery on the website, then remove Pagle_Recovery."
-		)
+		print(ns.L.RECOVERY_RESTORED)
 	end
 	return true
 end
@@ -90,7 +91,14 @@ end
 local function windowFor(parts, labels, title, note)
 	local window = ns.recoveryWindow
 	if not window then
-		window = ns.NewFieldWindow("PagleRecoveryWindow", 520, 360, title, "Catch log Recovery", ns.L.PASTE_COPY_HINT) --[[@as PagleRecoveryWindow]]
+		window = ns.NewFieldWindow(
+			"PagleRecoveryWindow",
+			520,
+			360,
+			title,
+			ns.L.RECOVERY_WINDOW_CAPTION,
+			ns.L.PASTE_COPY_HINT
+		) --[[@as PagleRecoveryWindow]]
 		window.closeCorner:SetScript("OnClick", function()
 			if ns.recoveryBlocked then
 				window:Hide()
@@ -151,7 +159,7 @@ function ns.OpenRecovery(args)
 	if action == "export" then
 		local ok, snapshot = pcall(ns.RecoveryExport, _G.PagleLog)
 		if not ok then
-			print("Pagle Recovery export unavailable: " .. tostring(snapshot))
+			print(ns.RenderText(ns.L.RECOVERY_EXPORT_UNAVAILABLE, { reason = reasonText(snapshot) }))
 			return
 		end
 		local parts, labels = {}, {}
@@ -159,14 +167,9 @@ function ns.OpenRecovery(args)
 			parts[#parts + 1] = line
 		end
 		for i = 1, #parts do
-			labels[i] = "Recovery snapshot · part " .. i .. " of " .. #parts
+			labels[i] = ns.RenderText(ns.L.RECOVERY_SNAPSHOT_PART, { part = i, parts = #parts })
 		end
-		windowFor(
-			parts,
-			labels,
-			"Recovery snapshot",
-			"Copy every numbered part. Paste them together on your Catch log's Recovery page at pagle.app. On Mac, use Cmd+C."
-		)
+		windowFor(parts, labels, ns.L.RECOVERY_SNAPSHOT_TITLE, ns.L.RECOVERY_SNAPSHOT_NOTE)
 	elseif action == "archives" then
 		local saved = _G.PagleRecovery
 		local ids = {}
@@ -175,10 +178,10 @@ function ns.OpenRecovery(args)
 		end
 		table.sort(ids)
 		for _, archiveId in ipairs(ids) do
-			print("Pagle Recovery archive: " .. archiveId)
+			print(ns.RenderText(ns.L.RECOVERY_ARCHIVE_LINE, { id = archiveId }))
 		end
 		if #ids == 0 then
-			print("Pagle Recovery: no preserved branches.")
+			print(ns.L.RECOVERY_NO_BRANCHES)
 		end
 	elseif action == "inspect" then
 		local saved = _G.PagleRecovery
@@ -187,38 +190,28 @@ function ns.OpenRecovery(args)
 		end
 		local archive = saved and saved.archives and saved.archives[id]
 		if not archive then
-			print(
-				"Pagle Recovery: no preserved branch found. Use /pagle recovery inspect <application ID> for an older archive."
-			)
+			print(ns.L.RECOVERY_NO_BRANCH_FOUND)
 			return
 		end
 		-- A branch a beta Pagle kept is in format 3's entries, which this Pagle can't read records from (LOG-R18).
 		local original = archive.original
 		if type(original) ~= "table" or original.format ~= ns.LOG_FORMAT or type(original.blocks) ~= "table" then
-			print(
-				"Pagle Recovery: this archive was kept by an older Pagle, in a Catch log format this one can't show records from. It is still preserved."
-			)
+			print(ns.L.RECOVERY_OLD_ARCHIVE)
 			return
 		end
 		local parts, labels = {}, {}
 		for i, staged in ipairs(archive.staged) do
-			parts[i] = ns.LogBlocks.Get(original, staged.seq) or "(this record is not in the preserved log)"
-			labels[i] = "Record " .. staged.seq .. " · " .. staged.reason
+			parts[i] = ns.LogBlocks.Get(original, staged.seq) or ns.L.RECOVERY_RECORD_MISSING
+			-- The reason is the stable code PagleRecovery holds; a Language may word it, and a code it lacks shows as it is.
+			local reason = ns.L.RECOVERY_REASONS[staged.reason] or staged.reason
+			labels[i] = ns.RenderText(ns.L.RECOVERY_RECORD_LABEL, { seq = staged.seq, reason = reason })
 		end
 		if #parts == 0 then
-			print("Pagle Recovery: this archive has no records held for review.")
+			print(ns.L.RECOVERY_NO_STAGED)
 			return
 		end
-		windowFor(
-			parts,
-			labels,
-			"Recovery records",
-			"Preserved original records held for review. They have not been appended to your restored Catch log. Original branch: "
-				.. id
-		)
+		windowFor(parts, labels, ns.L.RECOVERY_RECORDS_TITLE, ns.RenderText(ns.L.RECOVERY_RECORDS_NOTE, { id = id }))
 	else
-		print(
-			"Pagle Recovery: /pagle recovery export copies a complete local snapshot; /pagle recovery inspect [application ID] shows records held for review."
-		)
+		print(ns.L.RECOVERY_USAGE)
 	end
 end
