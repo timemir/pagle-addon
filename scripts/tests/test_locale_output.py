@@ -72,7 +72,7 @@ def test_a_translation_is_one_locale_call_with_its_options(tmp_path: Path) -> No
     assert "-- Translators: Ana, Luis.\n" in text
     assert text.endswith(
         'ns.Locale("esES", function(L)\n\tL.HUNTS_ONLY = "Cacerías"\nend, {\n\tname = "Español",\n\tlisted = false,\n'
-        '\tplural = function(n)\n\t\tif n == 1 then\n\t\t\treturn "one"\n\t\tend\n'
+        '\ttranslators = { "Ana", "Luis" },\n\tplural = function(n)\n\t\tif n == 1 then\n\t\t\treturn "one"\n\t\tend\n'
         "\t\tif n ~= 0 and n == math.floor(n) and n % 1000000 == 0 then\n\t\t\treturn \"many\"\n\t\tend\n"
         '\t\treturn "other"\n\tend,\n\tdecimal = ",",\n\tthousands = ".",\n})\n'
     )

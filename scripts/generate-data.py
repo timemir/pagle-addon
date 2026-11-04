@@ -10,6 +10,12 @@
     .tools/bin/python scripts/generate-data.py --explain <itemID|areaID>
                                                           write nothing; print every layer's value for it and
                                                           which won
+    .tools/bin/python scripts/generate-data.py --translators
+                                                          write nothing; print the CHANGELOG's TRANSLATORS block
+                                                          from the listed Locales' headers
+    .tools/bin/python scripts/generate-data.py --check-changelog <version>
+                                                          write nothing; fail if that release's CHANGELOG entry
+                                                          lacks the TRANSLATORS block
     .tools/bin/python scripts/generate-data.py --lock     rewrite data/hunts/released.lock from the Hunt list and
                                                           nothing else; only when a release is tagged, from 1.0 on
 

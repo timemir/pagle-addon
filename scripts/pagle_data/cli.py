@@ -2,7 +2,9 @@
 removes a Lore.lua whose lore file is gone; --check writes nothing and fails if any generated file would change. The
 read-only modes write nothing and print no warning: --propose-aliases prints the alias candidates not yet committed
 (DATA-R32), --min-build <n> the facts that would lose confirmation if only builds >= n counted (DATA-R57), and
---explain <id> every layer's value for an item or an area and which won. --lock rewrites data/hunts/released.lock
+--explain <id> every layer's value for an item or an area and which won, --translators the CHANGELOG's TRANSLATORS block
+from the Locales' headers and --check-changelog <version> whether that release's entry has it (DATA-R114,
+docs/translations.md › Credits). --lock rewrites data/hunts/released.lock
 from the Hunt list and data/forever/varieties.lock from varieties.toml, and writes nothing else (DATA-R95,
 DATA-R133); it is run when a release is tagged, from 1.0 on, and never
 before (DATA-R73).
@@ -17,8 +19,9 @@ from pathlib import Path
 
 from pagle_data.aliases import proposal_toml
 from pagle_data.baseline import AREA_LOOT
+from pagle_data.credits import CHANGELOG, check_changelog, translators_block
 from pagle_data.db2 import AREAS
-from pagle_data.errors import DataError
+from pagle_data.errors import DataError, Problems
 from pagle_data.explain import explain
 from pagle_data.files import write_atomic
 from pagle_data.forever import ALIASES
@@ -68,6 +71,18 @@ def _parser() -> argparse.ArgumentParser:
         type=int,
         metavar="ID",
         help="write nothing; print every layer's value for an item or an area (or both) and which won (DATA-R60)",
+    )
+    modes.add_argument(
+        "--translators",
+        action="store_true",
+        help="write nothing; print the TRANSLATORS block for a release's CHANGELOG entry: one line for each listed"
+        " Locale with translators, from the headers in data/locale/ (DATA-R114)",
+    )
+    modes.add_argument(
+        "--check-changelog",
+        metavar="VERSION",
+        help=f"write nothing; fail if {CHANGELOG}'s entry for VERSION ships a listed Locale with translators and lacks"
+        " the TRANSLATORS block, or a line of it (DATA-R114); run it before the tag",
     )
     modes.add_argument(
         "--lock",
@@ -200,6 +215,21 @@ def main(argv: Sequence[str], root: Path) -> int:
         return _print_min_build(root, layers, args.min_build)
     if args.explain is not None:
         return _print_explain(layers, args.explain)
+    if args.translators:
+        block = translators_block(layers.locale.headers)
+        if not block:
+            print(f"{PROG}: no listed Locale has translators; the entry needs no TRANSLATORS block", file=sys.stderr)
+        print(block, end="")
+        return 0
+    if args.check_changelog is not None:
+        problems = Problems()
+        check_changelog(root, layers.locale.headers, args.check_changelog, problems)
+        if problems.found:
+            for problem in problems.found:
+                print(f"{PROG}: {problem}", file=sys.stderr)
+            return 1
+        print(f"{PROG}: {CHANGELOG}'s entry for {args.check_changelog} credits the translators (DATA-R114)")
+        return 0
     if args.lock:
         write_atomic(root / LOCK, lock_toml(hunt_list_of(layers), event_list_of(layers)).encode("utf-8"))
         print(f"{PROG}: wrote {LOCK}")

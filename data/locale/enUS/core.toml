@@ -337,6 +337,10 @@ PASTE_TEST_LINE = "Copy test: %d KB"
 SETTINGS_PASTE_ROW = "Catch log"
 SETTINGS_PASTE_BUTTON = "Copy for the website"
 SETTINGS_PASTE_TOOLTIP = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion."
+# The Translations line below it (SET-R10 row 13): the line, and one entry of it for each language that has translators.
+# {credits} is the entries, {language} is a language's own name and {names} its translators' GitHub names.
+SETTINGS_TRANSLATIONS = "Translations: {credits}"
+SETTINGS_TRANSLATIONS_ENTRY = "{language} by {names}"
 # The Curio Shop (wallet-and-shop.md › UI; its "Curio Shop" trade label is drawn in the case's art): the chat line
 # its entry points print while restricted (SHOP-R41); the purse (its label, a Module's legend entry with its total,
 # the segment's tooltip lines); the list (the search slip's hint, the filters, the category

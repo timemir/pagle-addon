@@ -27,7 +27,7 @@ The addon files are `core`, `hunts`, `ledger`, `qol`, `stats` and `tackleboard`.
 
 ```toml
 name = "Español"                  # the language's own name, shown in the Language setting
-translators = ["Ana", "Luis"]     # carried into the generated file and the credits
+translators = ["Ana", "Luis"]     # your GitHub names; carried into the generated file and the credits
 listed = false                    # the maintainer flips this (see "Getting your language listed")
 plural = "one_many_other"         # the CLDR plural rule, by name (see Plural categories)
 decimal = ","
@@ -152,4 +152,17 @@ A listed language stays listed. Gaps show English, and a "translations stale" is
 
 ## Credits
 
-Your name goes in your TOML file's header. Each release's CHANGELOG has a TRANSLATORS section, and a "Translations" line on Pagle's Settings root credits the translators.
+Translators are credited in three places, all from the `translators` array in your language's header. Give your GitHub name, the one you commit under: names are held to your language's glyph range (the generator fails a name the game's fonts would draw as boxes), and GitHub names are plain ASCII, which every language has.
+
+- **The generated file.** The generator writes the names into `addons/<Addon>/locale/<code>.lua`, as a comment and in the registration (`ns.LocaleInfo(code).translators`).
+- **The Settings root.** A "Translations" line after the Catch log row, from 1.1, reads "Translations: Deutsch by Max; Español by Ana, Luis". It lists the translators of each listed language, by the language's own name, in the order of the client codes. It credits a language only where the client can render it (the same rule as the Language dropdown), so a Russian translator is credited on a Russian client, and the line is not there at all while no listed language has translators. A language that is not listed is not credited.
+- **The CHANGELOG.** Each release entry that ships a listed language with translators has a `### TRANSLATORS` block, after the entry's introduction and before its first addon section, one line per language, in the order of the client codes:
+
+  ```md
+  ### TRANSLATORS
+
+  - Deutsch: Max
+  - Español: Ana, Luis
+  ```
+
+  The release author does not write it by hand. `.tools/bin/python scripts/generate-data.py --translators` prints it from the headers, and the author pastes it into the entry. Before the tag, `.tools/bin/python scripts/generate-data.py --check-changelog <version>` fails the entry for that version if it lacks the block or a language's line; an entry that ships no listed language with translators needs none. It judges the one entry it is given, never a past one, and is run by hand at release (the gate does not run it, since the entry is written only when the release is). Past entries are never edited when a translator joins: the next release's block carries the new names.

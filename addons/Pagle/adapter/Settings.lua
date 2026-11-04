@@ -306,6 +306,11 @@ local function pagleWebsiteSection(category, layout)
 		Pagle.OpenPasteExport()
 	end, L.SETTINGS_PASTE_TOOLTIP, true)
 	layout:AddInitializer(export)
+	-- SET-R10 row 13: the Translations line, only while a listed language the client can render has translators.
+	local credits = ns.TranslatorCredits(GetLocale())
+	if credits then
+		layout:AddInitializer(textRow(credits))
+	end
 end
 
 -- A row's label, at the status list's name column.
@@ -407,7 +412,7 @@ end
 
 -- The root's rows (SET-R10): the paragraph while no Module is On, the status list under "Modules", the note, the
 -- Getting started section, the Field report section, then Saving's reminder checkbox and the Units section, whose
--- defaults the root's Defaults button restores (SET-R13), the Pagle menu section and last the Pagle website section.
+-- defaults the root's Defaults button restores (SET-R13), the Pagle menu section and last the Pagle website section, which ends with the Translations line (row 13) when there is one.
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 ---@param anyModuleOn boolean
