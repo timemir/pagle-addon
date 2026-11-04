@@ -9,7 +9,7 @@ local ns = select(2, ...)
 local ENGLISH = "enUS"
 
 --- The registered Locales by code, for this addon.
----@type table<string, { name: string?, listed: boolean?, fallback: string?, plural: (fun(n: number): string)?, decimal: string?, thousands: string?, whole: boolean, functions: (fun(L: table))[] }>
+---@type table<string, { name: string?, listed: boolean?, translators: string[]?, fallback: string?, plural: (fun(n: number): string)?, decimal: string?, thousands: string?, whole: boolean, functions: (fun(L: table))[] }>
 local entries = {}
 
 --- Whether `value` is a string with something in it.
@@ -31,6 +31,16 @@ local function checkOptions(code, opts)
 	end
 	if type(opts.listed) ~= "boolean" then
 		error("Locale " .. code .. ": listed is true or false", 3)
+	end
+	if opts.translators ~= nil then
+		if type(opts.translators) ~= "table" then
+			error("Locale " .. code .. ": translators is an array of names", 3)
+		end
+		for _, translator in ipairs(opts.translators) do
+			if not text(translator) then
+				error("Locale " .. code .. ": translators is an array of names", 3)
+			end
+		end
 	end
 	local fallback = opts.fallback
 	if fallback ~= nil and (not text(fallback) or fallback == code or fallback == ENGLISH) then
@@ -55,7 +65,7 @@ end
 --- for the same code adds another function and takes no `opts`. A bad call raises and registers nothing.
 ---@param code string The full client code, "esES"; never "enUS", which is built in.
 ---@param fn fun(L: table) Writes this Locale's strings into `L`.
----@param opts { name: string, listed: boolean, fallback: string?, plural: (fun(n: number): string)?, decimal: string?, thousands: string? }? Required on the first call per code, refused after.
+---@param opts { name: string, listed: boolean, translators: string[]?, fallback: string?, plural: (fun(n: number): string)?, decimal: string?, thousands: string? }? Required on the first call per code, refused after.
 function ns.Locale(code, fn, opts)
 	if not text(code) then
 		error("Locale: the code is a non-empty string", 2)
@@ -81,20 +91,35 @@ function ns.Locale(code, fn, opts)
 	if opts ~= nil then
 		entry.whole = true
 		entry.name, entry.listed, entry.fallback = opts.name, opts.listed, opts.fallback
+		entry.translators = opts.translators
 		entry.plural, entry.decimal, entry.thousands = opts.plural, opts.decimal, opts.thousands
 	end
 end
 
 --- What is registered under `code`, or nil when nothing is, or when only Lore was (no `opts` yet): a fresh table of
---- `{ code, name, listed, fallback }`. enUS is never registered.
+--- `{ code, name, listed, translators, fallback }`, with `translators` (a copy of the names, GitHub names) left out when
+--- the header gave none. enUS is never registered.
 ---@param code any
----@return { code: string, name: string, listed: boolean, fallback: string? }?
+---@return { code: string, name: string, listed: boolean, translators: string[]?, fallback: string? }?
 function ns.LocaleInfo(code)
 	local entry = type(code) == "string" and entries[code] or nil
 	if not entry or not entry.whole then
 		return nil
 	end
-	return { code = code, name = entry.name, listed = entry.listed, fallback = entry.fallback }
+	local translators
+	if entry.translators and #entry.translators > 0 then
+		translators = {}
+		for index, translator in ipairs(entry.translators) do
+			translators[index] = translator
+		end
+	end
+	return {
+		code = code,
+		name = entry.name,
+		listed = entry.listed,
+		translators = translators,
+		fallback = entry.fallback,
+	}
 end
 
 local applied = false

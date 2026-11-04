@@ -327,6 +327,8 @@ def _check_headers(layer: LocaleLayer, problems: Problems) -> None:
                     message = f"header: English is built in as {expected!r} here (logic/Text.lua), got {getattr(header, name)!r}"
                     problems.add(at / name, f"{message} (DATA-R114)")
         check_text_glyphs(at / "name", header.name, code, problems, "DATA-R114")
+        for index, translator in enumerate(header.translators, 1):
+            check_text_glyphs(_item(at / "translators", index), translator, code, problems, "DATA-R114")
         fallback = header.fallback
         if fallback is None:
             continue
@@ -631,6 +633,8 @@ def translation_lua(addon: str, header: Header, entries: Mapping[str, Entry]) ->
     keys = sorted(entries, key=lambda name: name.encode("utf-8"))
     body = "".join(f"\tL.{key} = {to_lua(entries[key].value, 1)}\n" for key in keys)
     options = [f"\tname = {to_lua(header.name)},", f"\tlisted = {to_lua(header.listed)},"]
+    if header.translators:
+        options.append(f"\ttranslators = {to_lua(list(header.translators))},")
     if header.fallback is not None:
         options.append(f"\tfallback = {to_lua(header.fallback)},")
     if header.plural is not None:

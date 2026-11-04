@@ -66,6 +66,30 @@ function ns.LanguageChoices(clientLocale)
 	return choices
 end
 
+--- The Settings root's Translations line (SET-R10 row 13, ADR 0019, Credits): the translators of each registered, listed
+--- Locale that the client can render (ns.CanRenderLanguage), one entry for each, by the Locale's own name, in the order
+--- of ns.LANGUAGE_CODES; nil when no such Locale has translators. A Locale the client cannot render is left out whole,
+--- as its name and its translators' names would draw as boxes (CORE-R9).
+---@param clientLocale any The client's `GetLocale()`.
+---@return string?
+function ns.TranslatorCredits(clientLocale)
+	local L = ns.L
+	local entries = {}
+	for _, code in ipairs(ns.LANGUAGE_CODES) do
+		local info = ns.LocaleInfo(code)
+		if info and info.listed and info.translators and ns.CanRenderLanguage(code, clientLocale) then
+			entries[#entries + 1] = ns.RenderText(
+				L.SETTINGS_TRANSLATIONS_ENTRY,
+				{ language = info.name, names = table.concat(info.translators, ", ") }
+			)
+		end
+	end
+	if #entries == 0 then
+		return nil
+	end
+	return ns.RenderText(L.SETTINGS_TRANSLATIONS, { credits = table.concat(entries, "; ") })
+end
+
 --- The Language setting out of the raw `_G.PagleDB`, before AceDB wraps it: `PagleDB.global.language`. Anything that is
 --- not a non-empty string there, however it came to be (no `PagleDB`, not a table, no `global`, a number), is
 --- "Game default" (LANGUAGE_GAME_DEFAULT). It never raises.

@@ -142,6 +142,26 @@ describe("ns.Locale (DATA-R114)", function()
 		assert.is_nil(ns.LocaleInfo(12))
 	end)
 
+	it("reports the translators the opts gave, as a copy, and none when it gave none", function()
+		local ns = registry()
+		local opts = whole()
+		opts.translators = { "Ana", "Luis" }
+		ns.Locale("esES", function() end, opts)
+		ns.Locale("deDE", function() end, whole())
+		ns.Locale(
+			"frFR",
+			function() end,
+			{ name = "F", listed = true, translators = {}, plural = opts.plural, decimal = ",", thousands = "." }
+		)
+
+		local info = assert(ns.LocaleInfo("esES"))
+		assert.are.same({ "Ana", "Luis" }, info.translators)
+		info.translators[1] = "Changed"
+		assert.are.same({ "Ana", "Luis" }, ns.LocaleInfo("esES").translators)
+		assert.is_nil(ns.LocaleInfo("deDE").translators)
+		assert.is_nil(ns.LocaleInfo("frFR").translators)
+	end)
+
 	it("takes a second call for the same code as another function, with no opts", function()
 		local ns = registry()
 		ns.Locale("deDE", function(L)
@@ -245,6 +265,16 @@ describe("ns.Locale (DATA-R114)", function()
 			["thousands that is not a string"] = function(ns)
 				local opts = whole()
 				opts.thousands = 1
+				ns.Locale("deDE", function() end, opts)
+			end,
+			["translators that is not a table"] = function(ns)
+				local opts = whole()
+				opts.translators = "Ana"
+				ns.Locale("deDE", function() end, opts)
+			end,
+			["a translator that is not a name"] = function(ns)
+				local opts = whole()
+				opts.translators = { "Ana", "" }
 				ns.Locale("deDE", function() end, opts)
 			end,
 			["no plural rule and no fallback"] = function(ns)

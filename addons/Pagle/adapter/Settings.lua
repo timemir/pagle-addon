@@ -306,6 +306,11 @@ local function pagleWebsiteSection(category, layout)
 		Pagle.OpenPasteExport()
 	end, L.SETTINGS_PASTE_TOOLTIP, true)
 	layout:AddInitializer(export)
+	-- SET-R10 row 13: the Translations line, only while a listed language the client can render has translators.
+	local credits = ns.TranslatorCredits(GetLocale())
+	if credits then
+		layout:AddInitializer(textRow(credits))
+	end
 end
 
 -- A row's label, at the status list's name column.
