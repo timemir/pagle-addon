@@ -25,7 +25,7 @@ from pagle_data.forever import ALIASES
 from pagle_data.generate import Layers, event_list_of, hunt_list_of, outputs, read_layers
 from pagle_data.lock import LOCK, lock_toml
 from pagle_data.locale import listed_at_base, retired_locale
-from pagle_data.lore import retired_lore
+from pagle_data.lore import retired_lore, retired_translations
 from pagle_data.min_build import lost
 from pagle_data.observed import OBSERVED
 from pagle_data.pools import POOLS_TOML
@@ -157,7 +157,8 @@ def _warn(layers: Layers) -> None:
     if proposals:
         listing = "run scripts/generate-data.py --propose-aliases to list them"
         print(f"{PROG}: warning: {len(proposals)} uncommitted alias proposals; {listing}", file=sys.stderr)
-    for warning in layers.locale.warnings:  # DATA-R114: drift, and the gaps of a Locale already listed
+    # DATA-R114: drift, and the gaps of a Locale already listed
+    for warning in (*layers.locale.warnings, *layers.lore.warnings):
         print(f"{PROG}: warning: {warning}", file=sys.stderr)
 
 
@@ -211,6 +212,7 @@ def main(argv: Sequence[str], root: Path) -> int:
     stale = [path for path, content in contents.items() if _current(root / path) != content]
     retired = retired_lore(lambda path: (root / path).is_file(), contents)
     retired |= retired_locale(root, contents, layers.locale)
+    retired |= retired_translations(root, contents)
 
     if args.check:
         for path in stale:

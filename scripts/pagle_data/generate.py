@@ -23,6 +23,7 @@ from pagle_data.events import (
     read_events,
 )
 from pagle_data.forever import ForeverLayer, read_forever
+from pagle_data.glyphs import ENGLISH
 from pagle_data.hunts import (
     HUNT_LIST_LUA,
     HuntLayer,
@@ -37,7 +38,17 @@ from pagle_data.hunt_windows import check_hunt_windows
 from pagle_data.items import ITEMS_TOML, ItemLayer, Record, item_records, read_item_layer
 from pagle_data.lock import Lock, check_lock, check_locked_members, read_lock
 from pagle_data.locale import LocaleLayer, check_locale, locale_outputs, read_locale
-from pagle_data.lore import LoreLayer, catalogue_ids, check_glyphs, check_lore, lore_outputs, read_lore
+from pagle_data.lore import (
+    LoreLayer,
+    catalogue_ids,
+    check_glyphs,
+    check_lore,
+    check_registration,
+    check_translations,
+    lore_outputs,
+    read_lore,
+    translated_codes,
+)
 from pagle_data.lua import to_lua
 from pagle_data.observed import (
     MINIMUM_CONFIRMING_BUILD,
@@ -220,6 +231,9 @@ def read_layers(
     check_glyphs(lore, problems)  # CORE-R9, DATA-R107's glyph: every lore file, its check on or off
     locale = read_locale(root, problems)  # DATA-R114: the interface text of every Locale, enUS included
     check_locale(locale, problems, listed_before)
+    # DATA-R114: a Locale's Lore against English's keys, limits and placeholders, and the registration it relies on.
+    check_translations(lore, problems)
+    check_registration(lore, registered_locales(locale), problems)
     items: dict[int, Record] = {}
     catch_lists = CatchLists()
     pools: dict[str, list[int]] = {}
@@ -330,17 +344,29 @@ def event_list_of(layers: Layers) -> EventList:
     return build_event_list(layers.events, layers.catch_lists.skill_bases)
 
 
+def registered_locales(locale: LocaleLayer) -> dict[str, set[str]]:
+    """The codes each lore ID's addon registers with ns.Locale (DATA-R114): the Locales that have a header and an
+    interface file for the addon, which a Lore file of the same code needs."""
+    registered: dict[str, set[str]] = {}
+    for code, files in locale.files.items():
+        if code != ENGLISH and code in locale.headers:
+            for file_id in files:
+                registered.setdefault(file_id, set()).add(code)
+    return registered
+
+
 def outputs(layers: Layers) -> dict[str, str]:
     """Every generated file's path (relative to the repo root) and content."""
     # HuntList.lua's generated classes come from the item records, and EventList.lua's skills from the skill bases,
     # so each names the layers too (DATA-R6).
     hunt_sources = ", ".join((HUNTS_TOML, *LAYERS))
     event_sources = ", ".join((f"{EVENTS_DIR}/", *LAYERS))
+    translators = {code: locale_header.translators for code, locale_header in layers.locale.headers.items()}
     return {
         CATALOGUE_LUA: catalogue_lua(catalogue_of(layers)),
         HUNT_LIST_LUA: hunt_list_lua(hunt_list_of(layers), header(hunt_sources)),
         EVENT_LIST_LUA: event_list_lua(event_list_of(layers), header(event_sources)),
-    } | lore_outputs(layers.lore, header) | locale_outputs(layers.locale)
+    } | lore_outputs(layers.lore, header, translators) | locale_outputs(layers.locale, translated_codes(layers.lore))
 
 
 def generate(root: Path) -> dict[str, str]:

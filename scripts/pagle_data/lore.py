@@ -2,6 +2,10 @@
 
 Lore is display text only. It is never in the catalogue or its fingerprint and changes no count (DATA-R109), so
 nothing here feeds the catalogue: the lore check reads the item records and the families, never the other way round.
+
+From 1.1 a translation of Lore (DATA-R104, DATA-R114) is data/lore/<code>/<lore ID>.toml, read into LoreLayer.translations
+and nowhere else: no English check, no English Lore.lua and no catalogue ever sees it. Each translated field is a table
+of `value` and `en` (the EN snapshot), and the generator writes it as addons/<Addon>/data/Lore.<code>.lua.
 """
 
 import re
@@ -88,6 +92,10 @@ _KIND = re.compile(r"[a-z]+")
 _FIELD = re.compile(r"[a-z][A-Za-z0-9]*")
 # DATA-R108: the placeholders: {zone}, and {fish} in a fish crest's name (VAR-R12, DATA-R134).
 PLACEHOLDERS = ("zone", "fish")
+_PLACEHOLDER = re.compile("|".join(re.escape("{" + name + "}") for name in PLACEHOLDERS))
+# DATA-R114: a Locale's code is the client's full one, and English Lore is data/lore/*.toml, not a directory.
+_CODE = re.compile(r"[a-z]{2}[A-Z]{2}")
+ENGLISH_CODE = "enUS"
 
 
 def lore_file(lore_id: str) -> str:
@@ -97,6 +105,16 @@ def lore_file(lore_id: str) -> str:
 def lore_lua(lore_id: str) -> str:
     """The Lore.lua a lore ID's text is emitted into (DATA-R75)."""
     return f"addons/{ADDONS[lore_id]}/data/Lore.lua"
+
+
+def translation_file(code: str, lore_id: str) -> str:
+    """A Locale's translation of a lore ID's file (DATA-R114)."""
+    return f"{LORE}/{code}/{lore_id}.toml"
+
+
+def translation_lua(code: str, lore_id: str) -> str:
+    """The Lore.<code>.lua a translated lore file is emitted into (DATA-R75, DATA-R114)."""
+    return f"addons/{ADDONS[lore_id]}/data/Lore.{code}.lua"
 
 
 @dataclass(frozen=True)
@@ -123,6 +141,15 @@ class ManifestKind:
 
 
 @dataclass
+class Translation:
+    """One translated lore file, data/lore/<code>/<lore ID>.toml (DATA-R114): the translated texts by key, and beside
+    each the EN snapshot, the English it was translated from."""
+
+    texts: dict[str, Text] = field(default_factory=dict)
+    snapshots: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class LoreLayer:
     """data/lore/ as read: each lore file present, by lore ID, with its texts by key, and the manifest's kinds by
     lore ID and kind. hunts holds the Hunt and set text of data/hunts/hunts.toml by key (DATA-R105), and events each
@@ -134,16 +161,36 @@ class LoreLayer:
     unreadable: set[str] = field(default_factory=set)  # lore IDs whose file isn't valid TOML
     hunts: dict[str, Text] = field(default_factory=dict)
     events: dict[str, dict[str, Text]] = field(default_factory=dict)
+    translations: dict[str, dict[str, Translation]] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)
 
     def hunts_sources(self) -> list[tuple[str, dict[str, Text]]]:
         """Pagle_Hunts' lore kept beside its definitions, by file: hunts.toml's, then each event file's in order."""
         return [(HUNTS_TOML, self.hunts), *sorted(self.events.items())]
 
 
-def _read_texts(root: Path, lore_id: str, problems: Problems) -> dict[str, Text] | None:
+def _translated(value: object, at: At, problems: Problems) -> tuple[str, str] | None:
+    """A translated field (DATA-R114): a table of exactly `value`, the translation, and `en`, the EN snapshot, both
+    strings; or None with a problem."""
+    if not isinstance(value, dict) or set(value) != {"value", "en"}:
+        shown = describe(value) if not isinstance(value, dict) else "a table with " + ", ".join(sorted(value))
+        want = "a translated field is a table with `value` and `en` (the EN snapshot)"
+        problems.add(at, f"shape: {want}, got {shown} (DATA-R114)")
+        return None
+    for name in ("value", "en"):
+        if not isinstance(value[name], str):
+            problems.add(at / name, f"shape: expected a string, got {describe(value[name])} (DATA-R114)")
+            return None
+    return value["value"], value["en"]
+
+
+def _read_texts(
+    root: Path, file: str, problems: Problems, snapshots: dict[str, str] | None = None
+) -> dict[str, Text] | None:
     """A lore file's tables, one per <kind>.<id>, each holding its fields as strings (DATA-R101), or None when it
-    isn't valid TOML. Only the shape is checked here; what the text says is the lore check's (DATA-R107)."""
-    file = lore_file(lore_id)
+    isn't valid TOML. Only the shape is checked here; what the text says is the lore check's (DATA-R107). With
+    snapshots, the file is a Locale's (DATA-R114): each field is a table of `value` and `en`, and the EN snapshots are
+    put into snapshots by key."""
     document = read_toml(root, file, problems)
     if document is None:
         return None
@@ -164,6 +211,12 @@ def _read_texts(root: Path, lore_id: str, problems: Problems) -> dict[str, Text]
                 at = At(file, f"{kind}.{id_}.{name}")
                 if not _FIELD.fullmatch(name):
                     problems.add(at, f"a field is a lowercase name without dots (DATA-R101), got '{name}'")
+                elif snapshots is not None:
+                    pair = _translated(value, at, problems)
+                    if pair is not None:
+                        text = Text(kind, id_, name, pair[0])
+                        texts[text.key] = text
+                        snapshots[text.key] = pair[1]
                 elif not isinstance(value, str):
                     problems.add(at, f"expected a string, got {describe(value)}")
                 else:
@@ -263,10 +316,43 @@ def _read_manifest(root: Path, problems: Problems) -> dict[str, dict[str, Manife
     return manifest
 
 
+def _read_translations(root: Path, layer: LoreLayer, problems: Problems) -> None:
+    """root/data/lore/<code>/<lore ID>.toml for each Locale directory (DATA-R114) into layer.translations. A directory
+    that is not a Locale's code, English's, one with no glyph range, or a file in it that is not a lore ID's, is a
+    problem."""
+    for directory in sorted(path for path in (root / LORE).iterdir() if path.is_dir()):
+        code = directory.name
+        at = At(f"{LORE}/{code}")
+        if code == ENGLISH_CODE:
+            problems.add(at, f"English Lore is {LORE}/*.toml, never a directory of its own (DATA-R104, DATA-R114)")
+            continue
+        if not _CODE.fullmatch(code):
+            problems.add(at, "a Locale's directory is its full client code, like esES (DATA-R114)")
+            continue
+        try:
+            glyphs_for(code)
+        except ValueError as error:
+            problems.add(at, f"no range for the Locale (CORE-R9, DATA-R114): {error}")
+            continue
+        known = {f"{lore_id}.toml" for lore_id in ADDONS}
+        for path in sorted(directory.iterdir()):
+            if path.name not in known:
+                named = f"a Locale's lore files are named by lore ID ({', '.join(ADDONS)})"
+                problems.add(At(f"{LORE}/{code}/{path.name}"), f"not a lore file; {named} (DATA-R114)")
+        for lore_id in ADDONS:
+            file = translation_file(code, lore_id)
+            if (root / file).is_file():
+                translation = Translation()
+                texts = _read_texts(root, file, problems, translation.snapshots)
+                if texts is not None:
+                    translation.texts = texts
+                    layer.translations.setdefault(code, {})[lore_id] = translation
+
+
 def read_lore(root: Path, problems: Problems) -> LoreLayer:
     """root/data/lore/: each lore ID's file that exists, and the manifest. Each problem in a file's shape goes into
     problems (DATA-R63); the layer read is returned either way. A .toml file there that is neither a lore ID's nor
-    the manifest is a problem too."""
+    the manifest is a problem too. A directory there is a Locale's translation (DATA-R114)."""
     layer = LoreLayer(manifest=_read_manifest(root, problems))
     directory = root / LORE
     if not directory.is_dir():
@@ -278,11 +364,12 @@ def read_lore(root: Path, problems: Problems) -> LoreLayer:
             problems.add(At(f"{LORE}/{path.name}"), f"not a lore file; {named}")
     for lore_id in ADDONS:
         if (root / lore_file(lore_id)).exists():
-            texts = _read_texts(root, lore_id, problems)
+            texts = _read_texts(root, lore_file(lore_id), problems)
             if texts is None:
                 layer.unreadable.add(lore_id)
             else:
                 layer.files[lore_id] = texts
+    _read_translations(root, layer, problems)
     return layer
 
 
@@ -336,6 +423,13 @@ KIND_FIELD_LIMITS = {("title", "text"): 32, ("boardtitle", "text"): 32, ("variet
 def limit(kind: str, name: str) -> int | None:
     """A field's length limit (Tunables), or None for an unlimited one."""
     return KIND_FIELD_LIMITS.get((kind, name), FIELD_LIMITS.get(name))
+
+
+def translated_limit(english: int) -> int:
+    """The most a translated field may be (DATA-R107, DATA-R114): the English limit plus 30%, in whole code points, the
+    fraction dropped. Integer arithmetic, so the rounding is the same everywhere: 28 gives 36, 32 gives 41, 80 gives
+    104, 100 gives 130, 200 gives 260."""
+    return english * 13 // 10
 
 
 def _catalogue_orphan(kind: str, id_: str, ids: CatalogueIds) -> str | None:
@@ -482,12 +576,103 @@ def check_glyphs(layer: LoreLayer, problems: Problems, locale: str = ENGLISH) ->
     CORE-R9's range for locale, named by its code point once per text, since the client's fonts draw it as a box.
     The range is data/glyphs.toml's (pagle_data/glyphs.py): English lore, the default, gets the base set. The Hunt
     and set text of hunts.toml (DATA-R105) and each event file's text (DATA-R97) are Pagle_Hunts' lore, so they are
-    checked too."""
+    checked too. A Locale's translations (DATA-R114) are each held to their own Locale's range, whatever locale is:
+    the translated value is checked, never its EN snapshot, which is English."""
     sources = [(lore_file(lore_id), texts) for lore_id, texts in sorted(layer.files.items())]
     sources.extend(layer.hunts_sources())
     for file, texts in sources:
         for key in sorted(texts, key=lambda key: key.encode("utf-8")):
             check_text_glyphs(At(file, key), texts[key].value, locale, problems)
+    for code, files in sorted(layer.translations.items()):
+        for lore_id, translation in sorted(files.items()):
+            for key in sorted(translation.texts, key=lambda key: key.encode("utf-8")):
+                at = At(translation_file(code, lore_id), key)
+                check_text_glyphs(at, translation.texts[key].value, code, problems, "DATA-R114")
+
+
+def _english(layer: LoreLayer, lore_id: str) -> dict[str, Text]:
+    """Every key English has for a lore ID, whatever its check says (DATA-R114's orphan): its lore file's, and for
+    Pagle_Hunts the Hunt, set and event text beside the definitions (DATA-R105, DATA-R97)."""
+    texts = dict(layer.files.get(lore_id, {}))
+    if lore_id == HUNTS_OWNER:
+        texts |= layer.hunts
+        for event_texts in layer.events.values():
+            texts |= event_texts
+    return texts
+
+
+def _placeholders(text: str) -> set[str]:
+    return {found[1:-1] for found in _PLACEHOLDER.findall(text)}
+
+
+def _check_translated(
+    code: str, lore_id: str, key: str, text: Text, english: Text, snapshot: str, layer: LoreLayer, problems: Problems
+) -> None:
+    """DATA-R114's missing, length, newline and placeholder checks on one translated text, and its drift."""
+    file = translation_file(code, lore_id)
+
+    def fail(check: str, detail: str) -> None:
+        problems.add(At(file, key), f"{check}: {detail} ({code}, DATA-R107, DATA-R114)")
+
+    if not has_text(text.value):
+        fail("missing", "empty; leave a key you have not translated out, and it shows English")
+    else:
+        most = limit(english.kind, english.field)
+        if most is not None and len(text.value) > translated_limit(most):
+            allowed = translated_limit(most)
+            over = f"over {_possessive(english.field)} limit of {most} plus 30%, {allowed}"
+            fail("length", f"{len(text.value)} code points, {over}")
+        if text.value.splitlines() != [text.value]:
+            fail("newline", "a line break")
+        wanted, found = _placeholders(english.value), _placeholders(text.value)
+        if wanted != found:
+            lacks = ", ".join("{" + name + "}" for name in sorted(wanted - found))
+            extra = ", ".join("{" + name + "}" for name in sorted(found - wanted))
+            detail = "; ".join(part for part in (f"lacks {lacks}" if lacks else "", f"adds {extra}" if extra else "") if part)
+            fail("placeholder", f"the placeholders differ from the English text's: {detail}")
+        bare = _PLACEHOLDER.sub("", text.value)
+        if "{" in bare or "}" in bare:
+            fail("placeholder", "{ or } outside {zone} and {fish}")
+    if snapshot != english.value:
+        old, new = _placeholders(snapshot), _placeholders(english.value)
+        detail = "the placeholders are the same, so it keeps showing" if old == new else "the placeholders changed"
+        layer.warnings.append(
+            f"{file}: {key}: drift: the EN snapshot is not the English text now ({code}); {detail}"
+        )
+
+
+def check_translations(layer: LoreLayer, problems: Problems) -> None:
+    """DATA-R114's checks on every Locale's lore file, each problem naming the file, the key, the check and the Locale:
+    orphan (a key English lacks, or has in another addon's file), missing (an empty value), length, newline and
+    placeholder; glyph is check_glyphs'. A key a translation lacks is no problem: it shows English. Drift (an EN
+    snapshot that is not today's English) goes to layer.warnings and never fails."""
+    for code in sorted(layer.translations):
+        for lore_id, translation in sorted(layer.translations[code].items()):
+            english = _english(layer, lore_id)
+            for key in sorted(translation.texts, key=lambda key: key.encode("utf-8")):
+                source = english.get(key)
+                if source is None:
+                    elsewhere = [other for other in ADDONS if other != lore_id and key in _english(layer, other)]
+                    detail = f"belongs to {elsewhere[0]}.toml, not {lore_id}.toml" if elsewhere else "English has no such key"
+                    problems.add(At(translation_file(code, lore_id), key), f"orphan: {detail} ({code}, DATA-R114)")
+                    continue
+                _check_translated(
+                    code, lore_id, key, translation.texts[key], source, translation.snapshots[key], layer, problems
+                )
+
+
+def check_registration(layer: LoreLayer, registered: Mapping[str, Collection[str]], problems: Problems) -> None:
+    """DATA-R114's registration check: a Locale's lore file is a second function for its code, which the interface file
+    of the same addon registers with `opts` (Registry.lua never applies a code that only Lore registered). registered
+    is, by lore ID, the codes whose Locale has a header and an interface file for that addon."""
+    for code in sorted(layer.translations):
+        for lore_id in sorted(layer.translations[code]):
+            if code not in registered.get(lore_id, ()):
+                why = (
+                    f"{translation_file(code, lore_id)} needs data/locale/{code}/locale.toml and"
+                    f" data/locale/{code}/{lore_id}.toml, which register {code} for this addon with ns.Locale"
+                )
+                problems.add(At(translation_file(code, lore_id)), f"registration: {why} (DATA-R114)")
 
 
 # CORE-R11: every file of a Module starts with Core's guard, as the hand-written ones do, so a broken install without
@@ -523,10 +708,27 @@ def retired_lore(present: Callable[[str], bool], outputs: Collection[str]) -> di
     }
 
 
-def lore_outputs(layer: LoreLayer, header_of: Callable[[str], str]) -> dict[str, str]:
+def retired_translations(root: Path, outputs: Collection[str]) -> dict[str, str]:
+    """Each Lore.<code>.lua present under root that outputs doesn't give, by path, with the lore file it was generated
+    from (DATA-R114): that file is gone, so the Lore.<code>.lua is stale (DATA-R60) and the generator removes it."""
+    retired: dict[str, str] = {}
+    for lore_id, addon in ADDONS.items():
+        for path in sorted((root / "addons" / addon / "data").glob("Lore.[a-z][a-z][A-Z][A-Z].lua")):
+            code = path.name.split(".")[1]
+            relative = translation_lua(code, lore_id)
+            if relative not in outputs:
+                retired[relative] = translation_file(code, lore_id)
+    return retired
+
+
+def lore_outputs(
+    layer: LoreLayer, header_of: Callable[[str], str], translators: Mapping[str, tuple[str, ...]] | None = None
+) -> dict[str, str]:
     """Each Lore.lua by path: one for every lore ID with a lore file, and Pagle_Hunts' too when hunts.toml has Hunt or
     set text (DATA-R105) or an event file has text (DATA-R97), emitted whether or not its check is on (DATA-R104).
-    Pagle_Hunts' one Lore.lua holds all its sources. header_of gives DATA-R6's header for a file's sources."""
+    Pagle_Hunts' one Lore.lua holds all its sources. header_of gives DATA-R6's header for a file's sources. Each
+    Locale's lore file with text is a Lore.<code>.lua beside them (DATA-R114); translators gives each Locale's names,
+    carried into a comment. The English Lore.lua never reads a translation."""
     outputs: dict[str, str] = {}
     events = {key: text for texts in layer.events.values() for key, text in texts.items()}
     for lore_id in ADDONS:
@@ -538,4 +740,52 @@ def lore_outputs(layer: LoreLayer, header_of: Callable[[str], str]) -> dict[str,
         sources += [f"{EVENTS_DIR}/"] if lore_id == HUNTS_OWNER and events else []
         sources += [lore_file(lore_id)] if texts is not None else []
         outputs[lore_lua(lore_id)] = lore_lua_text(lore_id, (texts or {}) | hunts, header_of(", ".join(sources)))
+    for code, lore_id, texts in emitted_translations(layer):
+        names = () if translators is None else translators.get(code, ())
+        outputs[translation_lua(code, lore_id)] = translation_lua_text(code, lore_id, texts, names)
     return outputs
+
+
+def emitted_translations(layer: LoreLayer) -> list[tuple[str, str, dict[str, Text]]]:
+    """Each Locale's lore file that writes a Lore.<code>.lua (DATA-R114), as (code, lore ID, its texts that have text),
+    in code and lore ID order. A file with no text writes none: there is nothing for a second function to say."""
+    emitted: list[tuple[str, str, dict[str, Text]]] = []
+    for code in sorted(layer.translations):
+        for lore_id in ADDONS:
+            translation = layer.translations[code].get(lore_id)
+            texts = {key: text for key, text in (translation.texts if translation else {}).items() if has_text(text.value)}
+            if texts:
+                emitted.append((code, lore_id, texts))
+    return emitted
+
+
+def translated_codes(layer: LoreLayer) -> dict[str, list[str]]:
+    """The Locales that have a Lore.<code>.lua, by addon folder, in code order: what locale/Locales.xml lists after the
+    interface file of the same code (DATA-R114)."""
+    codes: dict[str, list[str]] = {}
+    for code, lore_id, _ in emitted_translations(layer):
+        codes.setdefault(ADDONS[lore_id], []).append(code)
+    return codes
+
+
+def translation_lua_text(code: str, lore_id: str, texts: Mapping[str, Text], translators: tuple[str, ...] = ()) -> str:
+    """A Locale's Lore.<code>.lua (DATA-R114): one `ns.Locale` call with no `opts`, a second function for the code,
+    which the interface file registered, whose plain assignments to L go by key, sorted by byte (DATA-R62). A Module's
+    starts with Core's guard (CORE-R11), and the file has the header comment, the translators' names and the addon's
+    `ns` class, as the interface's locale file does."""
+    source = translation_file(code, lore_id)
+    comment = [
+        f"-- Generated by scripts/generate-data.py from {source}. Do not edit by hand: edit data/ and run the generator.",
+        "-- GPL-3.0-or-later.",
+    ]
+    if translators:
+        comment.append(f"-- Translators: {', '.join(translators)}.")
+    guard = "" if lore_id == "core" else CORE_GUARD + "\n"
+    namespace = ADDONS[lore_id].replace("_", "") + "NS"
+    keys = sorted(texts, key=lambda key: key.encode("utf-8"))
+    body = "".join(f"\tL[{to_lua(key)}] = {to_lua(texts[key].value)}\n" for key in keys)
+    header = "\n".join(comment)
+    return (
+        f"{guard}{header}\n\n---@class {namespace}\nlocal ns = select(2, ...)\n\n"
+        f"ns.Locale({to_lua(code)}, function(L)\n{body}end)\n"
+    )

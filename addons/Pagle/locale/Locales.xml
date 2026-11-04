@@ -1,8 +1,9 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/">
 	<!-- Every addon's one locale line (ADR 0019, DATA-R114): the TOC names this file once, after locale\enUS.lua and
 	data\Lore.lua, and never a language. The scripts run in this order: the registration call, then one generated file
-	for each language this addon has (the generator writes that list), then the step that applies the Language. Paths
-	are relative to this file. A new language adds a line here and none in the TOC. -->
+	for each language this addon has, each followed by that language's Lore file when it has one (the generator writes
+	that list), then the step that applies the Language. Paths are relative to this file. A new language adds a line
+	here and none in the TOC. -->
 	<Script file="Registry.lua"/>
 	<Script file="Apply.lua"/>
 </Ui>
