@@ -271,7 +271,9 @@ end)
 
 -- ONB-R84: the Letter as a sample, whose hide puts back what its show changed (CORE-R68). Each Module letter gets a
 -- stop of its own once every Module has registered its letters (CORE-R19).
-local problem = ns.tourStops:Add(ns.TOUR_CORE, "onboarding.letter", L.DEV_TOUR_LETTER, function()
+local problem = ns.tourStops:Add(ns.TOUR_CORE, "onboarding.letter", function()
+	return L.DEV_TOUR_LETTER
+end, function()
 	ns.letter:TourShow()
 end, function()
 	ns.letter:TourHide()

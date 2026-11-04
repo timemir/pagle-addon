@@ -304,7 +304,7 @@ function ns.CatchToastMoment(cast, itemName, lengthUnit, varieties, caughtBefore
 	if not size then
 		return moment
 	end
-	local band, length = ns.SIZE_BANDS[size.band].name, ns.FormatLength(size.length, lengthUnit)
+	local band, length = ns.SizeBandName(size.band), ns.FormatLength(size.length, lengthUnit)
 	moment.title = L.CATCH_TOAST_KICKER:format(band, length)
 	local variety = named.variety
 	local look = variety

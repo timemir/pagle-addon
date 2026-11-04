@@ -36,13 +36,20 @@ for band, edge in ipairs({ 0.16, 0.44, 0.60, 0.80 }) do
 	EDGE_CUBES[band + 1] = edge * edge * edge
 end
 
---- The Size bands in order, as `{ key, name }` (LOG-R67). The names are interface text, signed off for 1.0 (#264).
---- logic/ also loads without locale/, in the backend's driver (#223), and then the bands have no names.
----@type { key: string, name: string }[]
+--- The Size bands in order, as `{ key }` (LOG-R67). The names are interface text, signed off for 1.0 (#264), and are not
+--- read here: logic/ loads without locale/ in the backend's driver (#223), and a Language is applied after a file has
+--- loaded (CORE-R8). ns.SizeBandName gives one, and Pagle.SIZE_BANDS carries them as `{ key, name }`.
+---@type { key: string }[]
 ns.SIZE_BANDS = {}
-local bandNames = ns.L and ns.L.SIZE_BANDS or {}
 for band, key in ipairs({ "tiddler", "typical", "hefty", "whopper", "monster" }) do
-	ns.SIZE_BANDS[band] = { key = key, name = bandNames[band] }
+	ns.SIZE_BANDS[band] = { key = key }
+end
+
+--- A Size band's name (LOG-R67), from ns.L when it is asked. Never called while the Catch log folds.
+---@param band integer
+---@return string?
+function ns.SizeBandName(band)
+	return ns.L.SIZE_BANDS[band]
 end
 
 local TWO_32 = 4294967296

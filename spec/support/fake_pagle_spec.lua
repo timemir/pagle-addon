@@ -2337,7 +2337,9 @@ describe("FakePagle", function()
 			assert.has_error(function()
 				fake.Pagle.SIZE_BANDS[1].name = "Minnow"
 			end)
-			assert.are.equal("Tiddler", fake.ns.SIZE_BANDS[1].name)
+			assert.are.equal("Tiddler", fake.Pagle.SIZE_BANDS[1].name)
+			assert.are.equal("Tiddler", fake.ns.SizeBandName(1))
+			assert.is_nil(fake.ns.SIZE_BANDS[1].name)
 		end)
 
 		it(
@@ -2418,7 +2420,9 @@ describe("FakePagle", function()
 			assert.has_error(function()
 				fake.Pagle.VARIETY_RARITIES[1].name = "Plain"
 			end)
-			assert.are.equal("Common", fake.ns.VARIETY_RARITIES[1].name)
+			assert.are.equal("Common", fake.Pagle.VARIETY_RARITIES[1].name)
+			assert.are.equal("Common", fake.ns.VarietyRarityName(1))
+			assert.is_nil(fake.ns.VARIETY_RARITIES[1].name)
 		end)
 
 		it(

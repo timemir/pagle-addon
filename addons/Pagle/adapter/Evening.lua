@@ -64,14 +64,16 @@ frame.body = body
 frame.paper = ns.NewNineSlice(body, "GuideParts", "trk", { 8, 8 }, "BACKGROUND")
 frame.rows = {}
 
-frame.head = ns.GuideText(body, "sc", 15, "title", L.EVENING_TITLE)
+-- The title and the close mark's words are set at the first draw: L is read when the list is shown, not when this
+-- file loads, so the Language Core applies after it (CORE-R8) is the one they show.
+frame.head = ns.GuideText(body, "sc", 15, "title", "")
 ns.GuideAt(frame.head, body, 24, 8 + 2.5)
 
 -- The close mark (ONB-R63), at the header's right: × in the print face, red under the mouse.
 local close = CreateFrame("Button", nil, body)
 close:SetSize(16, 18)
 close:SetPoint("TOPRIGHT", body, "TOPLEFT", WIDTH - 6, -8)
-local mark = ns.GuideText(close, "print", 16, "kicker", L.EVENING_CLOSE, { justify = "CENTER" })
+local mark = ns.GuideText(close, "print", 16, "kicker", "", { justify = "CENTER" })
 mark:SetPoint("CENTER", close, "CENTER", 0, 0)
 close:SetScript("OnEnter", function()
 	local red = ns.GUIDE_INKS.red
@@ -160,11 +162,19 @@ local function settle()
 	body:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
 end
 
+-- Whether the title and the close mark have their words yet (the first draw sets them).
+local labelled = false
+
 -- The view the list drives (PagleEveningView): `draw` lays the list out and shows it, docked.
 ---@param list PagleEveningList
 ---@param ticked string?
 local function draw(list, ticked)
 	settle()
+	if not labelled then
+		labelled = true
+		frame.head:SetText(L.EVENING_TITLE)
+		mark:SetText(L.EVENING_CLOSE)
+	end
 	frame.count:SetText(L.EVENING_COUNT:format(list.done, list.total))
 	local y = TOP
 	for i, line in ipairs(list.lines) do

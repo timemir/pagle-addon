@@ -84,6 +84,24 @@ describe("M:RegisterTourStop (CORE-R65)", function()
 	end)
 end)
 
+describe("a stop's label as a function (CORE-R8)", function()
+	it("is called when the stop is listed, not when it is added", function()
+		local fake, _, _, seen = touring()
+		local calls = 0
+		local show, hide = noting(seen, "later")
+		assert.is_nil(fake.ns.tourStops:Add(fake.ns.TOUR_CORE, "later", function()
+			calls = calls + 1
+			return "read late"
+		end, show, hide))
+		assert.are.equal(0, calls)
+
+		fake.slash("dev tour list")
+
+		assert.are.equal(1, calls)
+		assert.are.same({ "Pagle dev: 1 tour stop:", "  core.later: read late" }, fake.printed)
+	end)
+end)
+
 describe("/pagle dev tour (CORE-R66)", function()
 	it("shows each stop in Module order, Core first, in register order, shooting it before it hides", function()
 		local fake, ledger, qol, seen = touring()

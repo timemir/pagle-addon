@@ -455,7 +455,9 @@ do
 		end,
 		-- "« back" on the left page, one crumb up (LED-R125)
 		back = {
-			text = L.JOURNAL_BACK,
+			text = function()
+				return L.JOURNAL_BACK
+			end,
 			target = function(place)
 				local back = journal:PagesAt(place).back
 				return back and toBook(back) or nil
@@ -465,7 +467,9 @@ do
 		plate = { x = -12, y = HEIGHT - 18 },
 		-- the "?" beside the wax close, while the Journal's First look is registered (ONB-R59)
 		help = {
-			tooltip = L.FIRST_LOOK_AGAIN,
+			tooltip = function()
+				return L.FIRST_LOOK_AGAIN
+			end,
 			onClick = function()
 				ns.ShowJournalLookAgain()
 			end,

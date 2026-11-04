@@ -38,7 +38,7 @@ local ns = select(2, ...)
 --- colour and its darker ink on parchment (UI), each { r, g, b } from 0 to 1.
 ---@class PagleVarietyRarity
 ---@field key "common"|"uncommon"|"rare"|"epic"
----@field name string?           -- interface text; nil where logic/ loads without locale/
+---@field name string?           -- interface text: on Pagle.VARIETY_RARITIES only, not on ns.VARIETY_RARITIES (CORE-R8)
 ---@field weight integer         -- one of its varieties' Catches per 10,000 of its Species (VAR-R3)
 ---@field color number[]
 ---@field ink number[]
@@ -55,11 +55,11 @@ local RARITY_OF = { 1, 1, 1, 1, 2, 2, 2, 3, 3, 4 }
 --- The rarities in order, Common to Epic (VAR-R2, VAR-R11). `weight` is one variety's odds, so a page can say "About
 --- one Catch in {round(10000 / weight)}" (VAR-R24): Uncommon's is 733, as two of its three are (the third's 734
 --- rounds to the same one in 14). The colours are the game's own quality colours, the inks the darker ones Pagle uses
---- on parchment (UI). The names are interface text; logic/ also loads without locale/, in the backend's driver
---- (#223), and then the rarities have no names.
+--- on parchment (UI). The names are interface text and are not read here: logic/ loads without locale/, in the
+--- backend's driver (#223), and a Language is applied after a file has loaded (CORE-R8). ns.VarietyRarityName gives
+--- one, and Pagle.VARIETY_RARITIES carries them.
 ---@type PagleVarietyRarity[]
 ns.VARIETY_RARITIES = {}
-local rarityNames = ns.L and ns.L.VARIETY_RARITIES or {}
 for rarity, entry in ipairs({
 	{ key = "common", weight = 1750, color = { 1, 1, 1 }, ink = { 0x6a / 255, 0x5a / 255, 0x44 / 255 } },
 	{ key = "uncommon", weight = 733, color = { 0x1e / 255, 1, 0 }, ink = { 0x2f / 255, 0x6a / 255, 0x2a / 255 } },
@@ -71,8 +71,15 @@ for rarity, entry in ipairs({
 		ink = { 0x7a / 255, 0x2f / 255, 0x8a / 255 },
 	},
 }) do
-	entry.name = rarityNames[rarity]
 	ns.VARIETY_RARITIES[rarity] = entry
+end
+
+--- A rarity's name (VAR-R2), by its position in ns.VARIETY_RARITIES, from ns.L when it is asked. Never called while
+--- the Catch log folds.
+---@param rarity integer
+---@return string?
+function ns.VarietyRarityName(rarity)
+	return ns.L.VARIETY_RARITIES[rarity]
 end
 
 --- The rarity of a variety position (VAR-R2): its ns.VARIETY_RARITIES entry, nil for a position outside 1–10.

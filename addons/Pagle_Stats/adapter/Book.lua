@@ -228,7 +228,9 @@ ns.book.shell = Pagle.NewBook({
 	ribbonsLeft = RIBBONS_LEFT,
 	-- the "?": the First look's notes again (ONB-R59, adapter/Look.lua); none on a Core without First looks (ONB-R90)
 	help = {
-		tooltip = L.LOOK_AGAIN,
+		tooltip = function()
+			return L.LOOK_AGAIN
+		end,
 		onClick = function()
 			ns.ShowBookLookAgain()
 		end,

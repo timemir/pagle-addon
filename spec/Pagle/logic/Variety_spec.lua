@@ -203,7 +203,7 @@ describe("ns.VarietyOf", function()
 end)
 
 describe("the variety rarities", function()
-	it("lists Common to Epic with their names, one variety's weight and the UI's colours (VAR-R2, VAR-R11)", function()
+	it("lists Common to Epic by key, weight and colours, with no names (VAR-R2, CORE-R8)", function()
 		local function rgb(hex)
 			return {
 				tonumber(hex:sub(1, 2), 16) / 255,
@@ -212,11 +212,19 @@ describe("the variety rarities", function()
 			}
 		end
 		assert.are.same({
-			{ key = "common", name = "Common", weight = 1750, color = rgb("ffffff"), ink = rgb("6a5a44") },
-			{ key = "uncommon", name = "Uncommon", weight = 733, color = rgb("1eff00"), ink = rgb("2f6a2a") },
-			{ key = "rare", name = "Rare", weight = 350, color = rgb("0070dd"), ink = rgb("23407a") },
-			{ key = "epic", name = "Epic", weight = 100, color = rgb("a335ee"), ink = rgb("7a2f8a") },
+			{ key = "common", weight = 1750, color = rgb("ffffff"), ink = rgb("6a5a44") },
+			{ key = "uncommon", weight = 733, color = rgb("1eff00"), ink = rgb("2f6a2a") },
+			{ key = "rare", weight = 350, color = rgb("0070dd"), ink = rgb("23407a") },
+			{ key = "epic", weight = 100, color = rgb("a335ee"), ink = rgb("7a2f8a") },
 		}, ns.VARIETY_RARITIES)
+	end)
+
+	it("names each from ns.L when asked, not when the file loads (VAR-R2, CORE-R8)", function()
+		local names = {}
+		for rarity in ipairs(ns.VARIETY_RARITIES) do
+			names[rarity] = ns.VarietyRarityName(rarity)
+		end
+		assert.are.same({ "Common", "Uncommon", "Rare", "Epic" }, names)
 	end)
 
 	it("gives each rarity's odds as VAR-R24's one Catch in 6, 14, 29 and 100 (VAR-R3, VAR-R24)", function()

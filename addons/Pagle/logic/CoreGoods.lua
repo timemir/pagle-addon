@@ -19,21 +19,27 @@ local ns = select(2, ...)
 ---@field variants? integer         -- a sound set's toast variants, if not three (ANN-R74; Tunables): Gilded's one
 ---@field lore? string              -- its lore keys' `<kind>.<id>` (DATA-R101): `good.<goodID>` without one
 
+--- One of a Core slot's groups on the shop's list (SHOP-R27), its name as a key of ns.L.
+---@class PagleCoreGroup
+---@field key string
+---@field nameKey string
+
 --- One of Core's slots, with its goods in the order the shop lists them.
 ---@class PagleCoreSlot
 ---@field id string
----@field label string
+---@field labelKey string          -- the slot's label as a key of ns.L, read when the slot registers (CORE-R8)
 ---@field category "Announcements"|"Crests"|"Books"
 ---@field openToEarned? true        -- other Modules may add earned goods to it (SHOP-R23): all four
----@field groups? PagleSlotGroup[]  -- its groups on the shop's list (SHOP-R27)
+---@field groups? PagleCoreGroup[]  -- its groups on the shop's list (SHOP-R27)
 ---@field goods PagleCoreGood[]
 
 local ICONS = "Interface\\Icons\\"
 -- Plain's own texture (SHOP-R25): 256 x 256, the dashed shield 120:140 at its full height, centred. The zone crests'
 -- are the Ledger's (LED-R113).
 local CRESTS = "Interface\\AddOns\\Pagle\\media\\crests\\"
--- The slots' labels. logic/ also loads without locale/, in the backend's driver (#223), and then they have none.
-local L = ns.L or {}
+-- No text is read from ns.L while this file loads: logic/ also loads without locale/, in the backend's driver (#223),
+-- and a Language is applied after a file has loaded (CORE-R8). The slots and their groups name their texts by key, and
+-- the functions below read ns.L when they run, on the client.
 
 --- Core's toast style slot (SHOP-R25, ANN-R80).
 ns.TOAST_STYLE_SLOT = "core.toaststyle"
@@ -74,7 +80,7 @@ end
 ns.CORE_GOODS = {
 	{
 		id = ns.TOAST_STYLE_SLOT,
-		label = L.SLOT_TOAST_STYLE,
+		labelKey = "SLOT_TOAST_STYLE",
 		category = "Announcements",
 		openToEarned = true,
 		goods = {
@@ -113,7 +119,7 @@ ns.CORE_GOODS = {
 	},
 	{
 		id = ns.SOUND_SET_SLOT,
-		label = L.SLOT_SOUND_SET,
+		labelKey = "SLOT_SOUND_SET",
 		category = "Announcements",
 		openToEarned = true,
 		goods = {
@@ -149,13 +155,13 @@ ns.CORE_GOODS = {
 	},
 	{
 		id = ns.CREST_SLOT,
-		label = L.SLOT_CREST,
+		labelKey = "SLOT_CREST",
 		category = "Crests",
 		openToEarned = true,
 		-- The Ledger's zone crests and Core's fish crests name these (SHOP-R27); the shop lists neither (SHOP-R24).
 		groups = {
-			{ key = "zone", name = L.SLOT_CREST_ZONES },
-			{ key = "fish", name = L.SLOT_CREST_FISH },
+			{ key = "zone", nameKey = "SLOT_CREST_ZONES" },
+			{ key = "fish", nameKey = "SLOT_CREST_FISH" },
 		},
 		goods = {
 			{ id = "core.crest.plain", default = true, icon = CRESTS .. "plain" },
@@ -163,7 +169,7 @@ ns.CORE_GOODS = {
 	},
 	{
 		id = ns.BINDING_SLOT,
-		label = L.SLOT_BOOK_BINDING,
+		labelKey = "SLOT_BOOK_BINDING",
 		category = "Books",
 		openToEarned = true,
 		goods = BINDING_GOODS,
@@ -195,12 +201,19 @@ end
 --- open to earned goods takes the same drawer as its `preview`, for the goods other Modules add without one (SHOP-R25).
 ---@param previews table<string, PagleCorePreview>?
 function ns.RegisterCoreGoods(previews)
+	local L = ns.L
 	for _, slot in ipairs(ns.CORE_GOODS) do
+		---@type PagleSlotGroup[]?
+		local groups
+		for g, group in ipairs(slot.groups or {}) do
+			groups = groups or {}
+			groups[g] = { key = group.key, name = L[group.nameKey] }
+		end
 		ns.RegisterCoreSlot({
 			id = slot.id,
-			label = slot.label,
+			label = L[slot.labelKey],
 			category = slot.category,
-			groups = slot.groups,
+			groups = groups,
 			openToEarned = slot.openToEarned,
 			preview = slot.openToEarned and previews and function(stage, good)
 				local draw = previews[slot.id]
@@ -285,7 +298,7 @@ function ns.FishCrestName(speciesID, fish)
 	if not pattern then
 		return id
 	end
-	fish = fish or L.FISH_CREST_ITEM:format(speciesID)
+	fish = fish or ns.L.FISH_CREST_ITEM:format(speciesID)
 	return (pattern:gsub("{fish}", function()
 		return fish
 	end))
@@ -304,6 +317,18 @@ local function countCaught(caught)
 	return n
 end
 
+-- A rarity's name from ns.L by its key (ns.VarietyRarityName takes the position), or nil for a key Core doesn't know.
+---@param key string
+---@return string?
+local function rarityName(key)
+	for position, rarity in ipairs(ns.VARIETY_RARITIES) do
+		if rarity.key == key then
+			return ns.VarietyRarityName(position)
+		end
+	end
+	return nil
+end
+
 --- A fish crest's texts while it isn't earned (VAR-R13, VAR-R14): the row's tag, "{n} of 10 varieties", and the
 --- stage's note, "{n} of 10 {fish} varieties. Still out there: {the count of each rarity uncaught, Common first}.".
 --- It counts the uncaught by rarity only, never naming one (VAR-R27).
@@ -312,6 +337,7 @@ end
 ---@return string row
 ---@return string note
 function ns.FishCrestTexts(caught, fish)
+	local L = ns.L
 	local n = countCaught(caught)
 	local counts, order = {}, {}
 	for index = 1, VARIETIES do
@@ -325,7 +351,7 @@ function ns.FishCrestTexts(caught, fish)
 	end
 	local parts = {}
 	for i, rarity in ipairs(order) do
-		parts[i] = L.FISH_CREST_UNCAUGHT:format(counts[rarity.key], rarity.name or rarity.key)
+		parts[i] = L.FISH_CREST_UNCAUGHT:format(counts[rarity.key], rarityName(rarity.key) or rarity.key)
 	end
 	local row = L.FISH_CREST_ROW:format(n)
 	if #parts == 0 then
@@ -369,7 +395,7 @@ function ns.FishCrestGoods(hooks)
 				return hooks.owned(id) or countCaught(hooks.caught(speciesID)) >= VARIETIES
 			end,
 			earnedText = function()
-				local fish = ns.FishCrestFish(hooks, speciesID) or L.FISH_CREST_ITEM:format(speciesID)
+				local fish = ns.FishCrestFish(hooks, speciesID) or ns.L.FISH_CREST_ITEM:format(speciesID)
 				return ns.FishCrestTexts(hooks.caught(speciesID), fish)
 			end,
 			progress = function()

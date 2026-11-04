@@ -33,6 +33,10 @@ Pagle.RegisterEvent(OWNER, "ADDON_LOADED", function(_, loadedName)
 	end
 	Pagle.UnregisterEvent(OWNER, "ADDON_LOADED")
 	local addonLoaded = debugprofilestop()
+	-- What Modules read of Size and Varieties (LOG-R67, VAR-R11), whose names come from ns.L: published here, not as
+	-- adapter/Size.lua and adapter/Variety.lua load (CORE-R8). Before anything can fail, so the API is always there.
+	ns.PublishSizeAtLogin()
+	ns.PublishVarietiesAtLogin()
 	if not ns.StartRecovery() then
 		return
 	end
