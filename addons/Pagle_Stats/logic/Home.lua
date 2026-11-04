@@ -140,7 +140,7 @@ local function whereText(conditions, places)
 		return ns.Text(L.HOME_FISHING, { where = where })
 	end
 	local when = places:InWindow("night", conditions) and "night" or "day"
-	return ns.Text(L.HOME_FISHING_WHEN, { where = where, windowNames = L.WINDOW_NAMES[when] })
+	return ns.Text(L.HOME_FISHING_WHEN, { where = where, window = L.WINDOW_NAMES[when] })
 end
 
 -- "Skill {effective}, past the no-junk line ({line})." on side hi, "… below …" on lo, nil on na (STA-R13).

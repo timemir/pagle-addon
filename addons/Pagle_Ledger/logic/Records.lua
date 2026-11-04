@@ -30,7 +30,7 @@ function ns.SizeText(size, bands, formatLength)
 	if not size then
 		return nil
 	end
-	return ns.Text(ns.L.SIZE_TEXT, { name = bands[size.band].name, formatLength = formatLength(size.length) })
+	return ns.Text(ns.L.SIZE_TEXT, { name = bands[size.band].name, length = formatLength(size.length) })
 end
 
 --- A Catch's or record's Size band's name (Pagle.SIZE_BANDS), "Tiddler" to "Monster": the label of a size record's
