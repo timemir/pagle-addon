@@ -2,12 +2,19 @@
 -- draws a box for ❧, ☚, ☆, ☑, ☐ and ▸. On 2026-10-15 `/pagle dev glyphs` showed every font Pagle uses
 -- (GameFontHighlight, ChatFontNormal, NumberFontNormalSmallGray, Fonts\MORPHEUS.TTF) drawing the en and em dashes, the
 -- ellipsis, curly single and double quotes, the bullet and the Latin-1 characters tried (· « » ×); a box for ★ and ✓
--- in all four, and for → in GameFontHighlight and MORPHEUS. The allowed set is ASCII, Latin-1 (U+00A0–U+00FF) and
--- – — ‘ ’ “ ” • … (U+2013, U+2014, U+2018, U+2019, U+201C, U+201D, U+2022, U+2026). Checked over every file the
--- package ships outside libs/: each Lua string literal (locale files, generated data such as Lore.lua, and code),
--- decoded as Lua reads it, so a byte escape counts as the character it spells; XML outside comments; TOC lines
--- outside comments. Comments are never drawn, so they may hold anything. The generator checks lore on the way in
--- (DATA-R107).
+-- in all four, and for → in GameFontHighlight and MORPHEUS. The base set is ASCII, Latin-1 (U+00A0–U+00FF) and
+-- – — ‘ ’ “ ” • … (U+2013, U+2014, U+2018, U+2019, U+201C, U+201D, U+2022, U+2026). From 1.1 the set is per file
+-- kind and locale (ADR 0019): `logic/`, `adapter/`, TOC and XML files and the enUS files keep the base set, and a
+-- generated `locale/<code>.lua` or `data/Lore.<code>.lua` gets the range of the code in its name, which is the base
+-- set plus its script's. The ranges are data/glyphs.toml's, which the generator reads too (scripts/pagle_data/glyphs.py).
+-- Checked over every file the package ships outside libs/: each Lua string literal (locale files, generated data such as
+-- Lore.lua, and code), decoded as Lua reads it, so a byte escape counts as the character it spells; XML outside
+-- comments; TOC lines outside comments. Comments are never drawn, so they may hold anything. The generator checks
+-- lore on the way in (DATA-R107).
+--
+-- The pseudo-locale (#524) is not a file: it is a runtime transform of the English ns.L in Core's dev code, so it
+-- ships no `locale/<code>.lua` and needs no range, and this spec has nothing to exempt. A file named for a code that
+-- data/glyphs.toml lacks fails (glyphsOutside raises), so a pseudo-locale file added later must add its line there.
 
 -- Each code point in a text outside CORE-R9's set (spec/support/helpers.lua).
 local outside = glyphsOutside
@@ -78,14 +85,23 @@ local function literals(code)
 	return found
 end
 
--- Each character `path`'s text `text` draws outside CORE-R9's set, as "<path>:<line>: U+XXXX".
+-- The Locale a shipped file belongs to, from its name: addons/<Addon>/locale/<code>.lua or
+-- addons/<Addon>/data/Lore.<code>.lua. Every other file (Lore.lua, code, TOC, XML) is nil, which gets the base set.
+---@param path string
+---@return string?
+local function localeOf(path)
+	return path:match("/locale/(%w+)%.lua$") or path:match("/data/Lore%.(%w+)%.lua$")
+end
+
+-- Each character `path`'s text `text` draws outside CORE-R9's range for the file, as "<path>:<line>: U+XXXX".
 ---@param path string
 ---@param text string
 ---@return string[]
 local function offences(path, text)
 	local found = {}
+	local code = localeOf(path)
 	local function add(line, value)
-		for _, what in ipairs(outside(value)) do
+		for _, what in ipairs(outside(value, code)) do
 			found[#found + 1] = ("%s:%d: %s"):format(path, line, what)
 		end
 	end
@@ -150,10 +166,99 @@ describe("Every string the package draws (CORE-R9)", function()
 	end)
 
 	for _, path in ipairs(files) do
-		it(path .. " uses only ASCII, Latin-1 and the allowed punctuation", function()
-			assert.are.same({}, offences(path, readFile(path)))
-		end)
+		local code = localeOf(path)
+		it(
+			path
+				.. " uses only "
+				.. (code and ("the range of " .. code) or "ASCII, Latin-1 and the allowed punctuation"),
+			function()
+				assert.are.same({}, offences(path, readFile(path)))
+			end
+		)
 	end
+
+	describe("per locale (data/glyphs.toml)", function()
+		-- Fixture files: a path and the text it holds. The same text is checked under different paths.
+		local SPANISH = 'L.FISH = "El pez de río, ¿dónde pica? Año nuevo: ¡qué vida!"'
+		local LATIN_A = 'L.FISH = "Œuvre de Łódź, ő, ž, ā"'
+		local RUSSIAN = 'L.FISH = "Жёлтая рыба — «Ёрш»"'
+		local CYRILLIC = 'L.FISH = "El pez de río Ж"'
+
+		it("passes a Spanish file with accents", function()
+			assert.are.same({}, offences("addons/Pagle/locale/esES.lua", SPANISH))
+			assert.are.same({}, offences("addons/Pagle/locale/esMX.lua", SPANISH))
+			assert.are.same({}, offences("addons/Pagle_Ledger/data/Lore.esES.lua", SPANISH))
+			assert.are.same({}, offences("addons/Pagle/locale/frFR.lua", LATIN_A))
+		end)
+
+		it("fails the same file with a Cyrillic letter, naming the character and the file", function()
+			assert.are.same(
+				{ "addons/Pagle/locale/esES.lua:1: U+0416" },
+				offences("addons/Pagle/locale/esES.lua", CYRILLIC)
+			)
+			assert.are.same(
+				{ "addons/Pagle_Ledger/data/Lore.deDE.lua:1: U+0416" },
+				offences("addons/Pagle_Ledger/data/Lore.deDE.lua", CYRILLIC)
+			)
+		end)
+
+		it("passes a Russian file with Cyrillic, but not a Latin Extended-A letter", function()
+			assert.are.same({}, offences("addons/Pagle/locale/ruRU.lua", RUSSIAN))
+			assert.are.same({}, offences("addons/Pagle_Ledger/data/Lore.ruRU.lua", RUSSIAN))
+			assert.are.same(
+				{ "addons/Pagle/locale/ruRU.lua:1: U+0151" },
+				offences("addons/Pagle/locale/ruRU.lua", RUSSIAN:gsub("Ёрш", "ő"))
+			)
+		end)
+
+		it("fails a logic/ file, an adapter/ file and the enUS files with the same Cyrillic letter", function()
+			for _, path in ipairs({
+				"addons/Pagle/logic/Fish.lua",
+				"addons/Pagle/adapter/Fish.lua",
+				"addons/Pagle/locale/enUS.lua",
+				"addons/Pagle/data/Lore.lua",
+			}) do
+				assert.are.same({ path .. ":1: U+0416" }, offences(path, CYRILLIC))
+			end
+			assert.are.same({ "x.xml:1: U+0416" }, offences("x.xml", "<Ui>Ж</Ui>"))
+			assert.are.same({ "x.toc:1: U+0416" }, offences("x.toc", "## Title: Ж"))
+			assert.are.same(
+				{ "addons/Pagle/logic/Fish.lua:1: U+0152" },
+				offences("addons/Pagle/logic/Fish.lua", 'a = "Œ"')
+			)
+		end)
+
+		it("gives Hangul and CJK only to their own locales", function()
+			assert.are.same({}, offences("addons/Pagle/locale/koKR.lua", 'L.A = "붉은 물고기"'))
+			assert.are.same({}, offences("addons/Pagle/locale/zhCN.lua", 'L.A = "红色的鱼，「你好」。"'))
+			assert.are.same({}, offences("addons/Pagle/locale/zhTW.lua", 'L.A = "紅色的魚　《你好》"'))
+			assert.are.same(
+				{ "addons/Pagle/locale/deDE.lua:1: U+7EA2" },
+				offences("addons/Pagle/locale/deDE.lua", 'L.A = "红"')
+			)
+			assert.are.same(
+				{ "addons/Pagle/locale/koKR.lua:1: U+7EA2" },
+				offences("addons/Pagle/locale/koKR.lua", 'L.A = "红"')
+			)
+		end)
+
+		it("keeps the base set in every locale, and nothing a font lacks", function()
+			for _, code in ipairs(glyphLocales()) do
+				assert.are.same({}, outside("Café × 3 · » — … “x” ‘y’ •", code))
+				assert.are.same({ "U+2192", "U+2605" }, outside("→ ★", code))
+			end
+		end)
+
+		it("has a range for the eleven client locales, and fails a file named for another code", function()
+			assert.are.same(
+				{ "deDE", "enUS", "esES", "esMX", "frFR", "itIT", "koKR", "ptBR", "ruRU", "zhCN", "zhTW" },
+				glyphLocales()
+			)
+			assert.has_error(function()
+				offences("addons/Pagle/locale/xxXX.lua", 'L.A = "x"')
+			end)
+		end)
+	end)
 
 	describe("catches", function()
 		local planted = {

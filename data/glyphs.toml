@@ -1,0 +1,60 @@
+# The characters each Locale's generated files may draw (CORE-R9, DATA-R107, DATA-R114): the one table that
+# spec/glyphs_spec.lua (through spec/support/helpers.lua) and the generator (scripts/pagle_data/glyphs.py) both read.
+#
+# A Locale's range is the base set plus the ranges of the scripts [locale] lists for it. The base set is the whole
+# range of logic/, adapter/, TOC and XML files and of the enUS files, and it is part of every Locale's range.
+# A script's range is what the fonts Pagle draws that Locale with have: Pagle's bundled faces cover Latin-1 and Latin
+# Extended-A, and Core swaps every face to the client's own for ruRU, koKR, zhCN and zhTW (ADR 0019, "Scripts and
+# fonts"). The ranges of the non-Latin scripts are provisional until a translator of that language checks them in game
+# with `/pagle dev glyphs`: widening one is a one-line change here, with no code change.
+#
+# The file stays in the small TOML subset spec/support/helpers.lua parses: "[name]" tables, `key = [ ... ]` arrays of
+# strings (one line or many), and "#" comments. A range is "U+XXXX" or "U+XXXX-U+YYYY", both ends included.
+
+[base]
+ranges = [
+	"U+0000-U+007F", # ASCII
+	"U+00A0-U+00FF", # Latin-1
+	"U+2013-U+2014", # the en and em dashes
+	"U+2018-U+2019", # curly single quotes
+	"U+201C-U+201D", # curly double quotes
+	"U+2022",        # the bullet
+	"U+2026",        # the ellipsis
+]
+
+[script.latin]
+ranges = [
+	"U+0100-U+017F", # Latin Extended-A
+]
+
+[script.cyrillic]
+ranges = [
+	"U+0400-U+045F", # the basic Cyrillic letters, Ё and ё among them
+]
+
+[script.hangul]
+ranges = [
+	"U+AC00-U+D7A3", # Hangul syllables
+]
+
+[script.cjk]
+ranges = [
+	"U+4E00-U+9FFF", # CJK unified ideographs
+	"U+3000-U+303F", # CJK punctuation: the ideographic space, 、 。 「 」 《 》
+	"U+FF01-U+FF5E", # the fullwidth forms of ASCII punctuation and digits: ， ： ； ！ ？ （ ）
+]
+
+# Every Locale the client has, by its full client code. A file named for a code not listed here fails the glyph check,
+# so a new Locale starts by adding its line.
+[locale]
+enUS = []
+deDE = ["latin"]
+esES = ["latin"]
+esMX = ["latin"]
+frFR = ["latin"]
+itIT = ["latin"]
+ptBR = ["latin"]
+ruRU = ["cyrillic"]
+koKR = ["hangul"]
+zhCN = ["cjk"]
+zhTW = ["cjk"]
