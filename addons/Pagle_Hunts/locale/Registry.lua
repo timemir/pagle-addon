@@ -110,6 +110,7 @@ function ns.LocaleInfo(code)
 	if not entry or not entry.whole then
 		return nil
 	end
+	---@type string[]?
 	local translators
 	if entry.translators and #entry.translators > 0 then
 		translators = {}

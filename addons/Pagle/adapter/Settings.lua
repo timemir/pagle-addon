@@ -412,7 +412,7 @@ end
 
 -- The root's rows (SET-R10): the paragraph while no Module is On, the status list under "Modules", the note, the
 -- Getting started section, the Field report section, then Saving's reminder checkbox and the Units section, whose
--- defaults the root's Defaults button restores (SET-R13), the Pagle menu section and last the Pagle website section.
+-- defaults the root's Defaults button restores (SET-R13), the Pagle menu section and last the Pagle website section, which ends with the Translations line (row 13) when there is one.
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 ---@param anyModuleOn boolean

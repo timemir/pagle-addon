@@ -275,6 +275,8 @@ The 1.0.1 skeleton, for `CHANGELOG.md` above 1.0.0:
 - {a rule changed by a live check, and what it now does} (#{n})
 ```
 
+From 1.1, once a listed language has translators, a release's entry also carries a `### TRANSLATORS` block: paste what `.tools/bin/python scripts/generate-data.py --translators` prints, and run `.tools/bin/python scripts/generate-data.py --check-changelog <version>` before the tag (docs/translations.md › Credits). Neither applies to 1.0.0 or 1.0.1.
+
 ### 8.2 Before GO
 
 The orchestrator records on #380: the release commit's SHA and subject, its Actions run, the zip's name and SHA-256 from `package.sh`, and each group-A check's result link.

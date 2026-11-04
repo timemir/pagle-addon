@@ -156,7 +156,7 @@ Translators are credited in three places, all from the `translators` array in yo
 
 - **The generated file.** The generator writes the names into `addons/<Addon>/locale/<code>.lua`, as a comment and in the registration (`ns.LocaleInfo(code).translators`).
 - **The Settings root.** A "Translations" line after the Catch log row, from 1.1, reads "Translations: Deutsch by Max; Español by Ana, Luis". It lists the translators of each listed language, by the language's own name, in the order of the client codes. It credits a language only where the client can render it (the same rule as the Language dropdown), so a Russian translator is credited on a Russian client, and the line is not there at all while no listed language has translators. A language that is not listed is not credited.
-- **The CHANGELOG.** Each release entry that ships a listed language with translators has a `### TRANSLATORS` block, one line per language, in the order of the client codes:
+- **The CHANGELOG.** Each release entry that ships a listed language with translators has a `### TRANSLATORS` block, after the entry's introduction and before its first addon section, one line per language, in the order of the client codes:
 
   ```md
   ### TRANSLATORS
