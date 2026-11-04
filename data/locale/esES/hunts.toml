@@ -795,18 +795,6 @@ value.other = "{count} Renovaciones"
 en.one = "{count} Refresh"
 en.other = "{count} Refreshes"
 
-[RUN_PAY_RULE_REFRESH_BOTH]
-value = " La tercera marca de una Caza también paga {countText}, y liquidar la apuesta {settle:0} más."
-en = "\" A Hunt's third mark also pays %s, and settling the wager %d more.\""
-
-[RUN_PAY_RULE_REFRESH_TIER]
-value = " La tercera marca de una Caza también paga {countText}."
-en = "\" A Hunt's third mark also pays %s.\""
-
-[RUN_PAY_RULE_REFRESH_RUN]
-value = " Liquidar la apuesta también paga {countText}."
-en = "\" Settling the wager also pays %s.\""
-
 [ENTRY_NONE_TITLE]
 value = "Nada que leer aún"
 en = "Nothing to read yet"

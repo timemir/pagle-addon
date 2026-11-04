@@ -409,10 +409,6 @@ en = "Got away"
 value = "Tiempo pescando"
 en = "Time fished"
 
-[CARD_COINS]
-value = 'Monedas Pagle +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
-en = 'Pagle Coins +%s |TInterface\\MoneyFrame\\UI-GoldIcon:0|t'
-
 [CARD_CLOSE]
 value = "Cerrar"
 en = "Close"
@@ -526,10 +522,6 @@ en = "Open {label}"
 [MENU_SETTINGS]
 value = "Ajustes"
 en = "Settings"
-
-[MENU_CURIO_SHOP]
-value = 'Tienda de Curiosidades  {balance} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
-en = 'Curio Shop  %s |TInterface\\MoneyFrame\\UI-GoldIcon:0|t'
 
 [HELP_CHART]
 value = "Ayuda a catalogar las aguas"
