@@ -2,7 +2,7 @@
 
 This guide is for translators. The design behind it is [ADR 0019](adr/0019-languages-are-locale-files-outside-the-manifest.md).
 
-Pagle is English only in 1.0. Translations arrive in 1.1. Where this guide says "from 1.1", the tooling does not exist yet, and nothing here is a command you can run today. This guide changes as the tooling lands.
+Pagle is English only in 1.0. Translations arrive in 1.1. The tooling this guide describes is part of the 1.1 work: the commands below run on the `i18n/1.1` branch, and on `main` once 1.1 has merged. Where this guide says "from 1.1", it is not in the 1.0 release.
 
 ## What you translate
 
@@ -13,31 +13,60 @@ These stay English: the names the game supplies (items, zones, item quality, gam
 
 ## File layout
 
-From 1.1, each language has a directory of TOML files named by its full client code (`esES`, `deDE`, `ruRU`), never a short form:
+From 1.1, each language has a directory named by its full client code (`esES`, `deDE`, `ruRU`), never a short form:
 
 ```
-data/locale/<code>/*.toml     interface text, one file per addon
-data/lore/<code>/*.toml       Lore, one file per addon
+data/locale/<code>/locale.toml    the language's header
+data/locale/<code>/<addon>.toml   interface text, one file per addon
+data/lore/<code>/*.toml           Lore, one file per addon
 ```
 
-The English files are the source of everything else. Copy the `enUS` interface files into your directory and translate them. Lore files copy from `data/lore/*.toml`.
+The addon files are `core`, `hunts`, `ledger`, `qol`, `stats` and `tackleboard`. The English files in `data/locale/enUS/` are the source of everything else. Copy the ones you translate into your directory and translate them. Lore files copy from `data/lore/*.toml`.
 
-Next to each translated string sit two fields:
+**The header** (`locale.toml`) says who the language is:
 
-- **the value**, your translation;
-- **`en`**, a snapshot of the English text you translated from. Copy it as it is in the English file at that moment. Do not translate it.
+```toml
+name = "Español"                  # the language's own name, shown in the Language setting
+translators = ["Ana", "Luis"]     # carried into the generated file and the credits
+listed = false                    # the maintainer flips this (see "Getting your language listed")
+plural = "one_many_other"         # the CLDR plural rule, by name (see Plural categories)
+decimal = ","
+thousands = "."
+fallback = "esES"                 # optional: a language that falls back to another (esMX to esES)
+```
 
-The generator reads these and writes the Lua files the game loads (`addons/<Addon>/locale/<code>.lua` and `addons/<Addon>/data/Lore.<code>.lua`). Never edit the generated files by hand. Put your name in the header of your TOML file; it is carried into the generated file and into the credits.
+With a `fallback`, give only the fields that differ: the rest come from the language it falls back to.
+
+**A translated string** is a table with the translation and, beside it, `en`, a snapshot of the English text you translated from. Copy `en` as it is in the English file at that moment. Do not translate it.
+
+```toml
+[BOARD]
+value = "Cacerías"
+en = "Hunts"
+
+[FISH_COUNT]
+value.one = "{count} pez"
+value.many = "{count} de peces"
+value.other = "{count} peces"
+en.one = "{count} fish"
+en.other = "{count} fishes"
+```
+
+A value is text, or a list of text (`value = ["Pequeño", "Grande"]`), or a table of text (`value.0 = "Reinos del Este"`, the `0` being the key the code reads). Whatever English has at a key, you have the same: a list of the same length, a table with the same keys. The entry replaces English's whole, so a list missing an item would leave a hole in the game.
+
+The generator reads these and writes the Lua files the game loads (`addons/<Addon>/locale/<code>.lua`, `addons/<Addon>/locale/Locales.xml` and `addons/<Addon>/data/Lore.<code>.lua`). Never edit the generated files by hand. Put your name in the header; it is carried into the generated file and into the credits.
 
 ## Running the generator
 
-From 1.1, run the data generator after every change to your files:
+Run the data generator after every change to your files:
 
 ```
 .tools/bin/python scripts/generate-data.py
 ```
 
-(`.tools` is the toolchain that `scripts/setup.sh` installs.) It validates your files and rewrites the generated Lua. `--check` writes nothing and fails if a generated file is out of date. Commit your TOML and the generated files together.
+(`.tools` is the toolchain that `scripts/setup.sh` installs.) It validates your files and rewrites the generated Lua. `--check` writes nothing and fails if a generated file is out of date, or if a check below fails. Commit your TOML and the generated files together. Warnings (stale snapshots, gaps in a language that is already listed) print and do not fail.
+
+The coverage check compares your language with the branch your pull request merges into. In CI that is automatic; to run it yourself, add `--base origin/main` (or whichever branch you are merging into).
 
 ## Checks that must pass
 
@@ -45,23 +74,28 @@ The generator fails with the key and the check name. Fix the TOML, never the che
 
 | Check | It fails when |
 |---|---|
-| missing | a required key has no text, or an empty one (interface text; Lore only where you chose to translate it) |
-| orphan | you translated a key that does not exist in English, or that belongs to another addon |
+| missing | a value is present but empty (interface text; Lore only where you chose to translate it). A key you have not translated at all is not a failure; it is a gap, and shows English |
+| orphan | you translated a key that does not exist in English, or that belongs to another addon's file |
 | length | a Lore field is more than the English limit plus 30%, counted in code points (see below) |
-| newline | a field holds a line break |
+| newline | a text has a different number of line breaks than the English text: keep the breaks English has, and add none |
 | placeholder | a `{field}` is not one the English text has, or one the English text has is missing |
+| plural | a counted string lacks `other` or a category your language's rule uses, or has one the rule never gives |
+| shape | an entry is not `value` and `en`, or its list or table is not the shape of English's |
 | glyph | a character is outside what the client's fonts can draw for your script |
-| coverage | the interface is below 100% and the language is marked `listed` |
+| header | the header has an unknown or missing field, a plural rule that is not in the table, equal separators, or a fallback that does not exist |
+| coverage | your language is marked `listed`, was not listed on the branch you are merging into, and is below 100% of the interface |
+
+Coverage is the only check that depends on where you are merging. A language that is already listed and falls below 100% because English added a string only gets a warning, so an English change never waits for a translator.
 
 ## Plural categories and `{fields}`
 
-Strings take named fields in braces, such as `{count}` or `{fish}`. Write the field exactly as the English does, and put it where your language needs it. Never use `%s` or positional arguments. Do not add a field the English text does not have.
+Strings take named fields in braces, such as `{count}` or `{fish}`. Write the field exactly as the English does, and put it where your language needs it. Never use `%s` or positional arguments. Do not add a field the English text does not have. (Until the English strings are converted to fields, some still hold `%s` or `%d`: keep each of those, in the same order, as the English has it.)
 
-A string with a count has one form for each plural category your language uses, following the CLDR rules. English has `one` and `other`; Spanish has `one`, `many` and `other`; Russian has `one`, `few`, `many` and `other`. Your language's rule, and its decimal and thousands separators, are declared in your language's file, so a new language never needs a code change. Write every category your language needs for each counted string.
+A string with a count has one form for each plural category your language uses, following the CLDR rules. English has `one` and `other`; Spanish has `one`, `many` and `other`; Russian has `one`, `few`, `many` and `other`. Your language's rule, and its decimal and thousands separators, are declared in your language's header, so a new language never needs a change to the game's code. The rule is a name from the generator's table, `scripts/pagle_data/plural.py`: `other` (Japanese, Korean, Chinese), `one_other` (English, German, Dutch), `one_many_other` (Spanish, Italian), `one_many_other_01` (French, Portuguese) and `one_few_many_other` (Russian, Ukrainian). A language the table lacks needs a new rule added there, with a test; ask in your pull request. Write every category your language needs for each counted string, and `other` always.
 
 How the helper reads a string:
 
-- `{count}` is the field that holds the number a counted string is about. Keep it in every form. The helper picks the form by your language's rule applied to `count`, and uses `other` where you leave a category out, so `other` is always required.
+- `{count}` is the field that holds the number a counted string is about. Keep it in every form. The helper picks the form by your language's rule applied to `count`, and uses `other` where a form is missing, so `other` is always required.
 - `{name}` writes the value as it is. A number that should read with your language's separators is written `{name:n}` (as it is), or `{name:0}`, `{name:1}`, `{name:2}` for a fixed number of decimal places. Keep the spec the English uses, unless your language needs a different number of decimals; the check compares field names, not specs.
 - To write a literal brace, double it: `{{` and `}}`. Reorder fields freely.
 - A field the helper has no value for shows as written, so a typo in a name is visible in the game rather than blank.
@@ -79,10 +113,10 @@ Pagle bundles fonts for Latin scripts (Latin-1 and Latin Extended-A, with Cyrill
 
 ## Getting your language listed
 
-1. Translate 100% of the interface. A language is first listed at 100% and not before.
+1. Translate 100% of the interface, every key of every addon's file. A language is first listed at 100% and not before: the coverage check fails a pull request that marks a language `listed` below it.
 2. Open a pull request with your TOML files and the generated files.
 3. **One native speaker of your language who did not write it must approve the PR.** The maintainer then checks the structure only: the checks pass and the files are in the right place. The maintainer does not judge the translation.
-4. The maintainer flips the language's `listed` flag. From then on players can choose it in Pagle's Language setting.
+4. The maintainer flips the language's `listed` flag in `locale.toml`, in a pull request of its own. From then on players can choose it in Pagle's Language setting.
 
 A language that is not listed is not offered. A player whose game language is unlisted sees English when the setting is "Game default".
 
@@ -95,7 +129,7 @@ When the English text changes, your translation is stale. What happens next depe
 - **The `{fields}` are the same.** Your translation keeps showing. A spec warns and a script lists it. Update the value and the `en` snapshot together.
 - **The `{fields}` changed.** The maintainer's PR drops your translation by script, so the player sees English until you translate it again.
 
-A listed language stays listed. Gaps show English, and a "translations stale" issue for the language tracks them. A change to English never waits for a translator.
+A listed language stays listed. Gaps show English, and a "translations stale" issue for the language tracks them. A change to English never waits for a translator: the generator only warns about the gaps of a language that is already listed.
 
 ## Credits
 

@@ -461,26 +461,33 @@ def check_hunts_texts(file: str, texts: Mapping[str, Text], problems: Problems) 
         _check_hunt_text(file, texts[key], problems)
 
 
+def check_text_glyphs(at: At, text: str, locale: str, problems: Problems, reference: str = "DATA-R107") -> None:
+    """The glyph check of one text: each character outside CORE-R9's range for locale, named by its code point once
+    per text, since the client's fonts draw it as a box. The one loop lore and the interface text (DATA-R114) share;
+    the range is data/glyphs.toml's (pagle_data/glyphs.py), English getting the base set."""
+    glyphs = glyphs_for(locale)
+    seen: set[str] = set()
+    for char in text:
+        if not glyphs.has(char) and char not in seen:
+            seen.add(char)
+            where = "set" if locale == ENGLISH else f"range for {locale}"
+            problems.add(
+                at,
+                f"glyph: U+{ord(char):04X} outside CORE-R9's {where}: {glyphs.description} (CORE-R9, {reference})",
+            )
+
+
 def check_glyphs(layer: LoreLayer, problems: Problems, locale: str = ENGLISH) -> None:
     """DATA-R107's glyph check over every lore file read, whether or not its check is on: each character outside
     CORE-R9's range for locale, named by its code point once per text, since the client's fonts draw it as a box.
     The range is data/glyphs.toml's (pagle_data/glyphs.py): English lore, the default, gets the base set. The Hunt
     and set text of hunts.toml (DATA-R105) and each event file's text (DATA-R97) are Pagle_Hunts' lore, so they are
     checked too."""
-    glyphs = glyphs_for(locale)
     sources = [(lore_file(lore_id), texts) for lore_id, texts in sorted(layer.files.items())]
     sources.extend(layer.hunts_sources())
     for file, texts in sources:
         for key in sorted(texts, key=lambda key: key.encode("utf-8")):
-            seen: set[str] = set()
-            for char in texts[key].value:
-                if not glyphs.has(char) and char not in seen:
-                    seen.add(char)
-                    where = "set" if locale == ENGLISH else f"range for {locale}"
-                    problems.add(
-                        At(file, key),
-                        f"glyph: U+{ord(char):04X} outside CORE-R9's {where}: {glyphs.description} (CORE-R9, DATA-R107)",
-                    )
+            check_text_glyphs(At(file, key), texts[key].value, locale, problems)
 
 
 # CORE-R11: every file of a Module starts with Core's guard, as the hand-written ones do, so a broken install without

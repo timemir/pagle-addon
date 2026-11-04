@@ -9,6 +9,7 @@ before (DATA-R73).
 """
 
 import argparse
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -22,6 +23,7 @@ from pagle_data.files import write_atomic
 from pagle_data.forever import ALIASES
 from pagle_data.generate import Layers, event_list_of, hunt_list_of, outputs, read_layers
 from pagle_data.lock import LOCK, lock_toml
+from pagle_data.locale import listed_at_base, retired_locale
 from pagle_data.lore import retired_lore
 from pagle_data.min_build import lost
 from pagle_data.observed import OBSERVED
@@ -35,6 +37,13 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="scripts/generate-data.py",
         description="Generate Pagle's content data files from data/ (docs/spec/content-data.md).",
+    )
+    parser.add_argument(
+        "--base",
+        metavar="REF",
+        help="the branch a pull request merges into (default: origin/$GITHUB_BASE_REF, if set): a Locale newly marked"
+        " `listed` against its merge base with REF must cover 100% of the interface (DATA-R114); with no base, a"
+        " coverage gap only warns",
     )
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument(
@@ -147,13 +156,32 @@ def _warn(layers: Layers) -> None:
     if proposals:
         listing = "run scripts/generate-data.py --propose-aliases to list them"
         print(f"{PROG}: warning: {len(proposals)} uncommitted alias proposals; {listing}", file=sys.stderr)
+    for warning in layers.locale.warnings:  # DATA-R114: drift, and the gaps of a Locale already listed
+        print(f"{PROG}: warning: {warning}", file=sys.stderr)
+
+
+def _listed_before(root: Path, base: str | None) -> dict[str, bool] | None:
+    """Each Locale's `listed` at the merge base with the pull request's base branch (DATA-R114's coverage rule), or None
+    where there is no base. A base given with --base that git cannot find is an error; one that only the environment
+    names (GITHUB_BASE_REF) and is not there leaves it unknown, so a gap warns."""
+    ref = base
+    if ref is None and os.environ.get("GITHUB_BASE_REF"):
+        ref = f"origin/{os.environ['GITHUB_BASE_REF']}"
+    if ref is None:
+        return None
+    try:
+        return listed_at_base(root, ref)
+    except LookupError as error:
+        if base is not None:
+            raise DataError([f"--base {base}: {error}"]) from error
+        return None
 
 
 def main(argv: Sequence[str], root: Path) -> int:
     """Runs the command line on the repo at root; returns the exit code."""
     args = _parser().parse_args(argv)
     try:
-        layers = read_layers(root)
+        layers = read_layers(root, listed_before=_listed_before(root, args.base))
     except DataError as error:
         return _failed(error)
 
@@ -175,6 +203,7 @@ def main(argv: Sequence[str], root: Path) -> int:
     contents = {path: text.encode("utf-8") for path, text in sorted(outputs(layers).items())}
     stale = [path for path, content in contents.items() if _current(root / path) != content]
     retired = retired_lore(lambda path: (root / path).is_file(), contents)
+    retired |= retired_locale(root, contents, layers.locale)
 
     if args.check:
         for path in stale:
