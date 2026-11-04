@@ -100,7 +100,8 @@ local ns = select(2, ...)
 ---   `color` "faded" greyed)
 --- - `button` (`text` on a button, calling `action`: the Angler page's Prestige, LED-R146)
 --- - `seal` (a wax seal reading `text`)
---- - `stamps` (`stamps`: ink stamps, each `{ text, inked, tip }`, the tip optional: a stamp's tooltip, LED-R165)
+--- - `stamps` (`stamps`: ink stamps, each `{ text, key, inked, tip }`, `key` which stamp it is (ns.ENTRY_STAMP_KEYS,
+---   ns.TROPHY_STAMP_KEYS), the tip optional: a stamp's tooltip, LED-R165)
 --- - `tiles` (`tiles`: zone tiles, LedgerZoneTile)
 --- - `icon` (`icon`, an item ID or texture, drawn `look` "sepia" or "silhouette", `large` on an entry, LED-R140)
 --- - `xpBar` (`bar`: the ink XP bar, ns.InkXpBar; `tip`, its tooltip, ns.XPBarTip, LED-R145)
@@ -114,7 +115,8 @@ local ns = select(2, ...)
 --- - `level` (a Followed Angler's Angler Level in large numerals under its caption `value`, its Prestige words `note`
 ---   under them, and a wax seal reading `seal`, LED-R163), drawn by adapter/JournalFollowing.lua
 --- - `emblem` (`mark`: a prestige rank's emblem and stars, ns.PrestigeMark; nothing drawn without an emblem)
---- - `ladder` (`rungs` side by side, each `{ text, inked, circled }`: Zone Mastery's ranks, LED-R135) and `row` (a list
+--- - `ladder` (`rungs` side by side, each `{ text, rank, inked, circled }`, `rank` its place in the ladder: Zone Mastery's
+---   ranks, LED-R135) and `row` (a list
 ---   row: a small `icon` drawn `look`, `text` in `color`, its `margin` notes in handwriting, its `stars`, a `value` at
 ---   the right, a `stamp` after its words, `selected` marked, opening `place`; LED-R136, LED-R137, LED-R163), drawn
 ---   by adapter/JournalZone.lua
@@ -146,7 +148,7 @@ local ns = select(2, ...)
 ---@field color? "faded"|"red"|"blue"
 ---@field place? LedgerJournalPlace
 ---@field value? string
----@field stamps? { text: string, inked: boolean, tip: LedgerStampTip? }[]
+---@field stamps? { text: string, key: string?, inked: boolean, tip: LedgerStampTip? }[]
 ---@field tiles? LedgerZoneTile[]
 ---@field icon? integer|string
 ---@field look? "sepia"|"silhouette"
@@ -162,7 +164,7 @@ local ns = select(2, ...)
 ---@field ticks? LedgerBoardTick[]
 ---@field mark? LedgerPrestigeMark
 ---@field signature? string
----@field rungs? { text: string, inked: boolean, circled: boolean }[]
+---@field rungs? { text: string, rank: integer, inked: boolean, circled: boolean }[]
 ---@field margin? string[]
 ---@field stars? LedgerStars
 ---@field selected? boolean

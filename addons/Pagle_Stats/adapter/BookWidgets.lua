@@ -146,7 +146,7 @@ end
 ---@param text string
 ---@return string
 function ns.BookSmallCaps(text)
-	return text:upper()
+	return Pagle.Upper(text)
 end
 
 --- A solid tint filling `frame`, or the part its points give.

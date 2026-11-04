@@ -41,14 +41,14 @@ function ns.FishingKeyFieldGreyed(input, standingDown)
 end
 
 --- The Casting step's resting line while QoL stands down (ONB-R100), naming the other fishing-key addons by title,
---- joined by ", "; nil while it doesn't.
+--- joined by ns.L.TITLES_JOIN, ", " in English; nil while it doesn't.
 ---@param titles string[] the titles QoL stands down for, empty while it doesn't
 ---@return string?
 function ns.RestingLine(titles)
 	if #titles == 0 then
 		return nil
 	end
-	return ns.Text(ns.L.GUIDE_RESTING, { titles = table.concat(titles, ", ") })
+	return ns.Text(ns.L.GUIDE_RESTING, { titles = table.concat(titles, ns.L.TITLES_JOIN) })
 end
 
 --- One press of the next-action sequence the Casting step draws (ONB-R32): its action, which the button's look names

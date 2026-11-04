@@ -60,15 +60,16 @@ end
 -- The matches among `ids` by their names, alphabetical (ties by ID), at most `limit`.
 ---@param ids integer[]
 ---@param nameOf fun(id: integer): string?
----@param query string the query, in lower case
+---@param query string the query, folded (ns.FoldCase)
 ---@param limit integer
 ---@return { id: integer, name: string }[]
 local function matching(ids, nameOf, query, limit)
 	local found = {}
 	for _, id in ipairs(ids) do
 		local name = nameOf(id)
-		if name and name:lower():find(query, 1, true) then
-			found[#found + 1] = { id = id, name = name, key = name:lower() }
+		local key = name and ns.FoldCase(name)
+		if key and key:find(query, 1, true) then
+			found[#found + 1] = { id = id, name = name, key = key }
 		end
 	end
 	table.sort(found, function(a, b)
@@ -96,7 +97,7 @@ function ns.Search(query, state, names, places)
 	if query == "" then
 		return nil
 	end
-	local L, lowered = ns.L, query:lower()
+	local L, lowered = ns.L, ns.FoldCase(query)
 	local results = {} ---@type StatsSearchResult[]
 	for _, item in ipairs(matching(ns.SearchItems(state, places), names.item, lowered, ns.SEARCH_FISH_RESULTS)) do
 		results[#results + 1] = { name = item.name, label = L.SEARCH_FISH, target = { page = "item", item = item.id } }

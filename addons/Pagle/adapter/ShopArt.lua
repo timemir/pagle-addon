@@ -164,7 +164,7 @@ end
 ---@param text string?
 function ns.SetShopText(fontString, text)
 	if text and FONTS[fontString.shopFont].caps then
-		text = text:upper()
+		text = ns.Upper(text)
 	end
 	fontString:SetText(text or "")
 end

@@ -270,11 +270,11 @@ describe("the Journal's zone spread", function()
 
 			local ladder = loaded.ns.journal.pages.left[4]
 			assert.are.same({
-				{ text = "Visitor", inked = true, circled = false },
-				{ text = "Regular", inked = true, circled = false },
-				{ text = "Local", inked = true, circled = true },
-				{ text = "Expert", inked = false, circled = false },
-				{ text = "Master", inked = false, circled = false },
+				{ text = "Visitor", rank = 1, inked = true, circled = false },
+				{ text = "Regular", rank = 2, inked = true, circled = false },
+				{ text = "Local", rank = 3, inked = true, circled = true },
+				{ text = "Expert", rank = 4, inked = false, circled = false },
+				{ text = "Master", rank = 5, inked = false, circled = false },
 			}, ladder.rungs)
 		end)
 
@@ -369,6 +369,33 @@ describe("the Journal's zone spread", function()
 			assert.are.same({ false, false, true, false, false }, circled)
 			-- the kit's circle drawn for Local
 			assert.are.same({ loaded.ns.JournalCoords("Parts", "rank-local") }, ladder.rungs[3].ring.texCoord)
+		end)
+	end)
+
+	describe("the ladder's circles (LED-R135, #520)", function()
+		it("are chosen by the rank, so words nobody has ever seen still get the right circle", function()
+			local _, loaded = zoneSpread(DARKSHORE)
+
+			loaded.ns.L.ZONE_RANKS = { "Aaaa", "Bbbb", "Cccc", "Dddd", "Eeee" }
+			loaded.ns.journal:Draw()
+
+			local ladder = loaded.ns.journal.shown.left.drawn.ladder[1]
+			assert.are.equal("Cccc", ladder.rungs[3].text.text)
+			assert.are.same({ loaded.ns.JournalCoords("Parts", "rank-local") }, ladder.rungs[3].ring.texCoord)
+			assert.is_true(ladder.rungs[3].ring.shown)
+		end)
+
+		it("go round the shown rank in English only: another language's words are drawn in red without one", function()
+			local fake, loaded = zoneSpread(DARKSHORE)
+
+			fake.language = "deDE"
+			loaded.ns.L.ZONE_RANKS = { "Besucher", "Stammgast", "Einheimischer", "Experte", "Meister" }
+			loaded.ns.journal:Draw()
+
+			local ladder = loaded.ns.journal.shown.left.drawn.ladder[1]
+			assert.are.equal("Einheimischer", ladder.rungs[3].text.text)
+			assert.is_true(ladder.rungs[3].ring == nil or not ladder.rungs[3].ring.shown)
+			assert.is_true(ladder.rungs[3].text:IsShown())
 		end)
 	end)
 

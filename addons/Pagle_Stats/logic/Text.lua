@@ -19,7 +19,7 @@ local MINUTE, HOUR, DAY = 60, 3600, 86400
 --- The client's reads Stats' words need, passed in (CORE-R7). adapter/Text.lua passes the game's.
 ---@class StatsTextClient
 ---@field BreakUpLargeNumbers fun(n: number): string   -- the client's thousands separators
----@field Date fun(format: string, time: integer): string   -- `date`, the player's local clock
+---@field Date fun(format: string, time: integer): string   -- `date`, the player's local clock: only its numbers (%d %m %w %Y %H %M)
 ---@field FormatClock fun(hour: integer, minute: integer): string   -- Pagle.FormatClock, Core's clock format (CORE-R87)
 ---@field ServerTime fun(): integer                    -- GetServerTime()
 ---@field ItemName fun(itemID: integer): string?       -- C_Item.GetItemNameByID
@@ -150,20 +150,40 @@ function ns.Time(time)
 	)
 end
 
---- A date in the player's local clock (STA-R59): "{day} {%b} {%Y}", "5 Oct 2026".
+-- The month of the year (1 to 12) in the player's local clock. The numbers come from the client, the names from ns.L:
+-- the client's `date` names a month in the C library's language, not Pagle's (#520).
+---@param time integer
+---@return integer
+local function monthOf(time)
+	return tonumber(client.Date("%m", time)) --[[@as integer]]
+end
+
+-- The day of the week (1 = Sunday to 7) in the player's local clock.
+---@param time integer
+---@return integer
+local function weekdayOf(time)
+	return tonumber(client.Date("%w", time)) + 1 --[[@as integer]]
+end
+
+--- A date in the player's local clock (STA-R59): "{day} {month} {year}", "5 Oct 2026", the month's abbreviation from
+--- ns.L.MONTHS_SHORT.
 ---@param time integer server time
 ---@return string
 function ns.Date(time)
-	return ns.Text(ns.L.DATE, { dayOf = dayOf(time), date = client.Date("%b", time), date_3 = client.Date("%Y", time) })
+	return ns.Text(
+		ns.L.DATE,
+		{ day = dayOf(time), month = ns.L.MONTHS_SHORT[monthOf(time)], year = client.Date("%Y", time) }
+	)
 end
 
---- A Session's heading by a time in it, in the player's local clock (STA-R59): "{%A} {day} {%B}", "Monday 5 October".
+--- A Session's heading by a time in it, in the player's local clock (STA-R59): "{weekday} {day} {month}", "Monday 5
+--- October", the names from ns.L.WEEKDAYS and ns.L.MONTHS.
 ---@param time integer server time
 ---@return string
 function ns.SessionHeading(time)
 	return ns.Text(
 		ns.L.SESSION_HEADING,
-		{ date = client.Date("%A", time), dayOf = dayOf(time), session_heading_3 = client.Date("%B", time) }
+		{ weekday = ns.L.WEEKDAYS[weekdayOf(time)], day = dayOf(time), month = ns.L.MONTHS[monthOf(time)] }
 	)
 end
 

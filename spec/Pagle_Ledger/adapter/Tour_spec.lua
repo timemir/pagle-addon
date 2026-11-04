@@ -68,11 +68,12 @@ end
 -- no First evening item done.
 ---@param id string? the spread the book is open on, closed without
 ---@param fresh boolean?
-local function ledger(id, fresh)
+---@param names table<integer, string>? the item names the client serves, NAMES by default
+local function ledger(id, fresh, names)
 	local fake, loaded = openJournal({
 		catalogue = fixture(),
 		log = LOG,
-		itemNames = NAMES,
+		itemNames = names or NAMES,
 		areaNames = ZONES,
 		id = id or false,
 		modules = fresh and function(f)
@@ -138,6 +139,21 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 
 		assert.is_true(journal.searchDrop:IsShown())
 		assert.are.equal("Raw Brilliant Smallfish", journal.searchDrop.rows[1].label:GetText())
+	end)
+
+	it("types the first three letters of a name that opens with an accented or Cyrillic letter (#520)", function()
+		for name, typed in pairs({ ["Éclat Doré"] = "écl", ["Рыба Огня"] = "рыб" }) do
+			local names = copy(NAMES)
+			names[MACKEREL] = name
+			local fake, loaded = ledger(nil, nil, names)
+			local journal = loaded.ns.journal
+
+			fake.slash("dev tour ledger")
+			fake.wait(1.6 + 7 * STOP)
+
+			assert.are.equal(typed, journal.search:GetText())
+			assert(journal.searchDrop:IsShown(), name)
+		end
 	end)
 
 	it("leave the book closed, on Home, when it was closed (LED-R120)", function()

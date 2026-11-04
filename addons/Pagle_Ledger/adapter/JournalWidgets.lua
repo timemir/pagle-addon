@@ -566,7 +566,7 @@ makers.bookplate = function(parent)
 		if home then
 			self.seal:ClearAllPoints()
 			self.seal:SetPoint("CENTER", self, "TOPLEFT", width - 38, -38)
-			ns.JournalSetSeal(self.seal, ns.L.HOME_SEAL_WORD .. "\n" .. block.seal, true)
+			ns.JournalSetSeal(self.seal, ns.Text(ns.L.HOME_SEAL, { completion = block.seal }), true)
 			right = width - 80
 		end
 		local mark = block.mark
@@ -810,7 +810,7 @@ makers.stamps = function(parent)
 		local same, before = remember(self, draw, "stamps:" .. #list .. ":" .. (list[1] and list[1].text or ""), inked)
 		local x = 0
 		for i, data in ipairs(list) do
-			local name = ns.JournalStampSprite(data.text, data.inked)
+			local name = ns.JournalStampSprite(data.key, data.inked)
 			local stamp = self.stamps[i]
 			if not stamp then
 				stamp = ns.JournalSprite(self, "Parts", "stamp-caught", "ARTWORK")

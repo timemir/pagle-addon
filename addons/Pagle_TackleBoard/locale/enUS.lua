@@ -73,7 +73,10 @@ ns.L = {
 		e = {
 			collector = { one = "A Sub-collection item you don't have", other = "{count} Sub-collection items you don't have" },
 			haul = { one = "{count} Catch in {zone}", other = "{count} Catches in {zone}" },
-			rarity = { one = "A Catch of {rarity} variety or better", other = "{count} Catches of {rarity} variety or better" },
+			rarity = {
+				[2] = { one = "A Catch of an uncommon variety or better", other = "{count} Catches of an uncommon variety or better" },
+				[3] = { one = "A Catch of a rare variety or better", other = "{count} Catches of a rare variety or better" },
+			},
 			variety = "Every Species of {zone}",
 			wanderer = { one = "Catches in {count} zone of {continent}", other = "Catches in {count} zones of {continent}" },
 		},
@@ -81,7 +84,10 @@ ns.L = {
 			collector = "A junk item and a container today",
 			haul = { one = "{count} Catch in {zone}", other = "{count} Catches in {zone}" },
 			lure = { one = "A Catch with a lure on", other = "{count} Catches with a lure on" },
-			rarity = { one = "A Catch of {rarity} variety or better", other = "{count} Catches of {rarity} variety or better" },
+			rarity = {
+				[2] = { one = "A Catch of an uncommon variety or better", other = "{count} Catches of an uncommon variety or better" },
+				[3] = { one = "A Catch of a rare variety or better", other = "{count} Catches of a rare variety or better" },
+			},
 			species = "{count} {species}",
 			variety = { one = "{count} Species in {zone}", other = "{count} different Species in {zone}" },
 			wanderer = { one = "Catches in {count} zone today", other = "Catches in {count} zones today" },
@@ -142,7 +148,6 @@ ns.L = {
 	POST_YES = "Post it",
 	PROGRESS = "{n} of {need}",
 	PROGRESS_TODAY = "{n} of {need} today",
-	RARITY_NAMES = { [2] = "an uncommon", [3] = "a rare" },
 	REFRESHES = { one = "{count} Refresh", other = "{count} Refreshes" },
 	REFRESHES_HELD = { one = "{count} Refresh held", other = "{count} Refreshes held" },
 	REFRESH_TIP = "Each one posts a fresh Notice or Expedition in an empty slot on the board. Click an empty slot to use one.",

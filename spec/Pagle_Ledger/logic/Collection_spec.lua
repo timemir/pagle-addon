@@ -227,14 +227,28 @@ describe("the Collection", function()
 				{ id = "core.soundset", label = "Sound set", category = "Announcements", module = "Core" },
 				{ id = "core.binding", label = "Book binding", category = "Books", module = "Core" },
 				{ id = "later.charm", label = "Charm", category = "Books", module = "Later" },
-				{ id = "later.sparks", label = "Sparks", category = "Books", module = "Later" },
 			})
 
 			assert.are.same(
-				{ "Sound sets", "Bindings", "Charms", "Sparks", "Titles" },
-				{ shelves[1].label, shelves[2].label, shelves[3].label, shelves[4].label, shelves[5].label }
+				{ "Sound sets", "Bindings", "Charms", "Titles" },
+				{ shelves[1].label, shelves[2].label, shelves[3].label, shelves[4].label }
 			)
+			assert.are.equal("Charm", shelves[3].singular)
 		end)
+
+		it(
+			"make the plural of a slot no table names from the Language's counted string, not by adding an s (#520)",
+			function()
+				local was = ns.L.COLLECTION_SLOT_FALLBACK
+				ns.L.COLLECTION_SLOT_FALLBACK = { one = "{label}", other = "{label}-Sets" }
+				local shelves = ns.CollectionShelves({
+					{ id = "later.charm", label = "Charm", category = "Books", module = "Later" },
+				})
+				ns.L.COLLECTION_SLOT_FALLBACK = was
+
+				assert.are.same({ "Charm-Sets", "Charm" }, { shelves[1].label, shelves[1].singular })
+			end
+		)
 
 		it("put the Tracker frames shelf where its first slot stands, and none without a tracker slot", function()
 			local without = ns.CollectionShelves({ SLOTS[1], SLOTS[2] })

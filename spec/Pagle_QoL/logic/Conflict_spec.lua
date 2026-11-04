@@ -62,6 +62,26 @@ describe("The popup's words", function()
 		assert.are.equal("Use the others", ns.UseOtherLabel({ angleur, buddy }))
 	end)
 
+	it(
+		"joins the titles by the Language's own separator, in the chat line and the Fishing step's resting line (#520)",
+		function()
+			local ns = qol()
+			ns.L.TITLES_JOIN = " + "
+
+			assert.are.equal(
+				"Pagle: turned off Angleur + Fishing Buddy (Forever). Type /reload to finish.",
+				ns.TurnedOffMessage({
+					{ name = "Angleur", title = "Angleur" },
+					{ name = "FishingBuddy", title = "Fishing Buddy (Forever)" },
+				})
+			)
+			assert.is_truthy(
+				ns.RestingLine({ "Angleur", "Fishing Buddy (Forever)" })
+					:find("Angleur + Fishing Buddy (Forever)", 1, true)
+			)
+		end
+	)
+
 	it("says which addons Use Pagle turned off, titles joined by commas (QOL-R83)", function()
 		local ns = qol()
 

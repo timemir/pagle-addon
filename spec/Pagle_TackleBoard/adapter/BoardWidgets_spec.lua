@@ -118,6 +118,7 @@ describe("the board's fonts", function()
 
 		assert.are.equal("T A C K L E   B O A R D", ns.Spaced("Tackle Board"))
 		assert.are.equal("F L Y   B O X", ns.Spaced("Fly box"))
+		assert.are.equal("Ñ A N D Ú   Ж", ns.Spaced("ñandú ж"))
 	end)
 end)
 

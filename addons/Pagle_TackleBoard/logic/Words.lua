@@ -139,12 +139,18 @@ function ns.GoalText(goal)
 		fields.zone = ns.ZoneName(target)
 	elseif kind == "wanderer" and goal.type == "e" then
 		fields.continent = ns.ContinentName(target)
-	elseif kind == "rarity" then
-		fields.rarity = ns.L.RARITY_NAMES[target] or ns.L.NAME_UNKNOWN
 	elseif kind == "species" then
 		fields.species = ns.SpeciesName(target)
 	end
-	return ns.Text(ns.L.GOAL_TEXT[goal.type][kind], fields)
+	local template = ns.L.GOAL_TEXT[goal.type][kind]
+	if kind == "rarity" then
+		-- a whole sentence for each rank, not an article and a name put into one (#520); a rank it has none for is unknown
+		template = template[target]
+		if not template then
+			return ns.L.NAME_UNKNOWN
+		end
+	end
+	return ns.Text(template, fields)
 end
 
 -- Where a goal is worked (TKB-R41, TKB-R102, TKB-R122).

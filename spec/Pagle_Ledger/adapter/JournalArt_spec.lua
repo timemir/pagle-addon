@@ -84,7 +84,7 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 		local _, loaded = openJournal()
 		local seal = loaded.ns.JournalSeal(loaded.ns.journal.frame, 76, 13)
 
-		loaded.ns.JournalSetSeal(seal, loaded.ns.L.HOME_SEAL_WORD .. "\n62%", true)
+		loaded.ns.JournalSetSeal(seal, loaded.ns.Text(loaded.ns.L.HOME_SEAL, { completion = "62%" }), true)
 
 		assert.is_true(seal.label.wordWrap)
 		assert.are.equal("Ledger\n62%", seal.label.text)

@@ -12,6 +12,10 @@ local Pagle = Pagle
 -- Modules as Pagle.Text.
 ns.PublishText(Pagle)
 
+-- The case helper (CORE-R8, logic/Case.lua): upper and lower case and a search fold for UTF-8 text. Here Core gives it to
+-- Modules as Pagle.Upper, Pagle.Lower and Pagle.FoldCase.
+ns.PublishCase(Pagle)
+
 -- The Language (CORE-R8, SET-R10 row 9b, ADR 0019). Core applies it first in its ADDON_LOADED (adapter/Login.lua), before
 -- the Size and Variety names are published and before anything prints; a Module applies Core's choice as its files load
 -- (locale/Apply.lua).
@@ -80,14 +84,14 @@ function ns.TranslatorCredits(clientLocale)
 		if info and info.listed and info.translators and ns.CanRenderLanguage(code, clientLocale) then
 			entries[#entries + 1] = ns.RenderText(
 				L.SETTINGS_TRANSLATIONS_ENTRY,
-				{ language = info.name, names = table.concat(info.translators, ", ") }
+				{ language = info.name, names = table.concat(info.translators, L.SETTINGS_TRANSLATIONS_NAMES_JOIN) }
 			)
 		end
 	end
 	if #entries == 0 then
 		return nil
 	end
-	return ns.RenderText(L.SETTINGS_TRANSLATIONS, { credits = table.concat(entries, "; ") })
+	return ns.RenderText(L.SETTINGS_TRANSLATIONS, { credits = table.concat(entries, L.SETTINGS_TRANSLATIONS_JOIN) })
 end
 
 --- The Language setting out of the raw `_G.PagleDB`, before AceDB wraps it: `PagleDB.global.language`. Anything that is

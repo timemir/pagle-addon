@@ -93,6 +93,8 @@ LINE_OPENS_ON = "Opens {realmWhen}."
 LINE_BACK = "Back in {monthOf}."
 LINE_NO_DATE = "No date known."
 LINE_NEEDS = "Needs {need:0}; my best is {best:0}."
+# What sets the window line's sentences one after another: its row, then LINE_NEEDS, then LINE_LURE (HNT-R52).
+LINE_JOIN = " "
 LINE_LURE = "A lure gets me there."
 # The conditions line (HNT-R53): fields joined by " · ", ranges by ", ", areas, events and auras by " or ".
 JOIN_FIELDS = " · "

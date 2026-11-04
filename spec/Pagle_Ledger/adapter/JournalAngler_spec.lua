@@ -390,6 +390,18 @@ describe("the Angler page's bookplate in M4", function()
 		end
 	)
 
+	it("writes the Catches and the next milestone as one sentence the Language can reorder (#520)", function()
+		local _, loaded = anglerPage({ cast(1, T0, MACKEREL) })
+		loaded.ns.L.ANGLER_CATCHES_NEXT = {
+			one = "Nächster Meilenstein {milestone}: {count} Fang",
+			other = "Nächster Meilenstein {milestone}: {count} Fänge",
+		}
+		loaded.ns.journal:Draw()
+		local left = loaded.ns.journal.pages.left
+
+		assert.are.equal("Nächster Meilenstein 1,000: 1 Fang", left[#left].text)
+	end)
+
 	it("reads 1 Catch · next milestone 1,000 at one Catch (LED-R146, LED-R42)", function()
 		local _, loaded = anglerPage({ cast(1, T0, MACKEREL) })
 		local left = loaded.ns.journal.pages.left

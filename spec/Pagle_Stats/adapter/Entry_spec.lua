@@ -97,6 +97,20 @@ describe("an item's entry (stats.md › UI › Place spread)", function()
 			assert.are.equal("Pagle hasn't confirmed it bites here yet.", shown(view.notes))
 		end)
 
+		it(
+			"sets the first word of a known reading from ODDS_ABOUT, whatever the Language puts around it (#520)",
+			function()
+				local ns = ready(darkshore())
+				ns.L.ODDS_ABOUT = "etwa"
+				ns.L.ODDS_KNOWN = "{nice} etwa"
+				ns.L.ODDS_KNOWN_SHORT = "1 zu {nice}"
+
+				local view = entry(ns, DARKSHORE, SMALLFISH)
+
+				assert.are.same({ "etwa", "1 zu 30" }, { shown(view.about), shown(view.headline) })
+			end
+		)
+
 		it("follows the sentence with each extra sentence that applies, and none when none does", function()
 			local ns = ready(darkshore())
 

@@ -151,6 +151,12 @@ describe("a caught Species' entry (LED-R140)", function()
 			{ text = "In its element", inked = false },
 			{ text = "Regular", inked = false },
 		}, stampWords(left))
+		-- which stamp each is, for the kit's art (#520)
+		local keys = {}
+		for i, stamp in ipairs(blockOfKind(left, "stamps").stamps) do
+			keys[i] = stamp.key
+		end
+		assert.are.same({ "caught", "in-its-element", "regular" }, keys)
 		assert.are.same({
 			"First landed 3 Oct in Westfall, by Angler. 2 caught.",
 			"Slippery enough to earn the name.",

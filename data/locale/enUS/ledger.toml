@@ -273,10 +273,11 @@ HOME_NOTE_NONE = "Go fishing!"
 HOME_LEVEL = "Angler Level"
 HOME_PERCENT = "{percent:0}%"
 HOME_CONTENTS = "In this Ledger"
-# The contents' numerals, the Angler line's mark, and the word over the completion on Home's seal.
+# The contents' numerals and the Angler line's mark.
 HOME_NUMERALS = ["i.", "ii.", "iii.", "iv.", "v.", "vi."]
 HOME_ANGLER_MARK = "»"
-HOME_SEAL_WORD = "Ledger"
+# The Home page's wax seal, two lines: its word, then the Ledger's completion (HOME_PERCENT).
+HOME_SEAL = "Ledger\n{completion}"
 HOME_CURIOS = "Curios: junk, treasure, uncharted"
 HOME_ANGLER = "The Angler: hands and milestones"
 BRASS_PLATE = "Lv {level:0} · Ledger {percent:0}%"
@@ -431,16 +432,17 @@ ANGLER_PARTS.zones = "Zones mastered"
 ANGLER_PART_COUNT = "{angler_part_count_1} of {angler_part_count_2}"
 ANGLER_CATCHES.one = "{count:n} Catch"
 ANGLER_CATCHES.other = "{count:n} Catches"
+# The same with the next Catch Milestone after it, while one is left (LED-R42).
+ANGLER_CATCHES_NEXT.one = "{count:n} Catch · next milestone {milestone}"
+ANGLER_CATCHES_NEXT.other = "{count:n} Catches · next milestone {milestone}"
 ANGLER_HANDS = "Hands on the Rod"
 ANGLER_HAND = "skill {rank:0} / {max:0}"
 # The Skill Milestones (LED-R40): CHECK_ON credited, CHECK_OFF not yet, then the threshold: "☑ 75".
 ANGLER_MILESTONES = "Milestones"
 ANGLER_MILESTONE = "{done} {threshold:0}"
 ANGLER_MILESTONE_SEPARATOR = "   "
-# The Angler page's M4 parts (LED-R146): the next Catch Milestone after the Catches (LED-R42), the bookplate's
-# Prestige line and button (LED-R33, LED-R34), and Automatic, the title signed with while none is picked (LED-R77), which
-# the Collection's Titles shelf lists first.
-ANGLER_NEXT_MILESTONE = " · next milestone {angler_next_milestone}"
+# The Angler page's M4 parts (LED-R146): the bookplate's Prestige line and button (LED-R33, LED-R34), and Automatic, the
+# title signed with while none is picked (LED-R77), which the Collection's Titles shelf lists first.
 ANGLER_NO_PRESTIGE = "No Prestige yet"
 ANGLER_PRESTIGE = "Begin a new Ledger (Prestige)"
 ANGLER_AUTOMATIC = "Automatic"
@@ -684,7 +686,11 @@ COLLECTION_TAG_YOURS = "Yours"
 COLLECTION_TAG_DEFAULT = "The default"
 COLLECTION_TAG_CRATE = "Curio crate"
 COLLECTION_TAG_PUT_AWAY = "Put away"
-# The slots' names, singular then plural, by slot ID (LED-R167): a slot not here reads its label, and that and "s".
+# The slots' names, singular then plural, by slot ID (LED-R167). A slot not here (a Module's own: its registered label
+# is a singular noun) reads its label through COLLECTION_SLOT_FALLBACK, a counted string: {label} is the slot's label
+# and {count} is 1 for a look's slot name and 2 for the shelf's heading.
+COLLECTION_SLOT_FALLBACK.one = "{label}"
+COLLECTION_SLOT_FALLBACK.other = "{label}s"
 COLLECTION_SLOT_NAMES."core.binding" = ["Binding", "Bindings"]
 COLLECTION_SLOT_NAMES."core.crest" = ["Bookplate crest", "Bookplate crests"]
 COLLECTION_SLOT_NAMES."core.soundset" = ["Sound set", "Sound sets"]

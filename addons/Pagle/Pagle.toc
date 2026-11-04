@@ -62,6 +62,7 @@ logic\Size.lua
 logic\Variety.lua
 logic\Length.lua
 logic\Text.lua
+logic\Case.lua
 logic\Fonts.lua
 logic\Clock.lua
 logic\CatchLog.lua

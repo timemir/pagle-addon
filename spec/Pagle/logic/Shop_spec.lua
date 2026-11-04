@@ -517,6 +517,18 @@ describe("The Curio Shop's list", function()
 		assert.are.same({}, model(fake):List({ search = "binding" }), "names only, not the slot's label")
 	end)
 
+	it("folds accents and case on both sides of the search, so a plain query finds an accented name (#520)", function()
+		local fake = shopping()
+
+		assert.are.same({
+			"Journal binding (1 of 2)",
+			"  ledger.binding.lapis 900" .. " [red]",
+		}, outline(model(fake):List({ search = "LÁPÍ" })))
+		assert.are.same({}, model(fake):List({ search = "lapiz" }))
+		local crate = model(fake):Crate({ search = "CÚRIO" })
+		assert.is_not_nil(crate)
+	end)
+
 	it("filters All, Owned, Not owned and Can afford (wallet-and-shop.md › UI)", function()
 		local fake, handles = shopping()
 		handles.Ledger:ReportCoinsEarned(700)

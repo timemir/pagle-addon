@@ -12,6 +12,7 @@ local ns = select(2, ...)
 ns.L = {
 	ANGLER_AUTOMATIC = "Automatic",
 	ANGLER_CATCHES = { one = "{count:n} Catch", other = "{count:n} Catches" },
+	ANGLER_CATCHES_NEXT = { one = "{count:n} Catch · next milestone {milestone}", other = "{count:n} Catches · next milestone {milestone}" },
 	ANGLER_COMPLETE = "{percent:0}% of the Ledger complete ({angler_complete_2} of {angler_complete_3})",
 	ANGLER_CRUMB = "The Angler",
 	ANGLER_EX_LIBRIS = "Ex Libris",
@@ -22,7 +23,6 @@ ns.L = {
 	ANGLER_MILESTONE = "{done} {threshold:0}",
 	ANGLER_MILESTONES = "Milestones",
 	ANGLER_MILESTONE_SEPARATOR = "   ",
-	ANGLER_NEXT_MILESTONE = " · next milestone {angler_next_milestone}",
 	ANGLER_NO_PRESTIGE = "No Prestige yet",
 	ANGLER_PARTS = { junk = "Junk Museum", species = "Species", treasure = "Treasures", trophy = "Trophy Room weights", varieties = "Varieties", zones = "Zones mastered" },
 	ANGLER_PART_COUNT = "{angler_part_count_1} of {angler_part_count_2}",
@@ -93,6 +93,7 @@ ns.L = {
 	COLLECTION_SIGNED = "Signed “{name}”",
 	COLLECTION_SIGNED_AS = "Signed as",
 	COLLECTION_SLASH_HELP = "Open the Fish Journal's Collection",
+	COLLECTION_SLOT_FALLBACK = { one = "{label}", other = "{label}s" },
 	COLLECTION_SLOT_NAMES = {
 		["core.binding"] = { "Binding", "Bindings" },
 		["core.crest"] = { "Bookplate crest", "Bookplate crests" },
@@ -246,7 +247,7 @@ ns.L = {
 	HOME_NOTE_STAR = "{name}: {home_note_star_2:0} to |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t",
 	HOME_NUMERALS = { "i.", "ii.", "iii.", "iv.", "v.", "vi." },
 	HOME_PERCENT = "{percent:0}%",
-	HOME_SEAL_WORD = "Ledger",
+	HOME_SEAL = "Ledger\n{completion}",
 	HOME_TITLE = "Where I've Fished",
 	ITEM_FALLBACK = "Item {itemID}",
 	ITEM_SIZE = "{name} · {size}",

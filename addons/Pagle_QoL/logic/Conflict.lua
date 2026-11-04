@@ -48,7 +48,7 @@ function ns.UseOtherLabel(found)
 	return ns.L.CONFLICT_USE_THOSE_ADDONS
 end
 
---- The chat line after "Use Pagle", the titles joined by ", " (QOL-R83).
+--- The chat line after "Use Pagle", the titles joined by ns.L.TITLES_JOIN, ", " in English (QOL-R83).
 ---@param found PagleQoLConflict[]
 ---@return string
 function ns.TurnedOffMessage(found)
@@ -56,5 +56,5 @@ function ns.TurnedOffMessage(found)
 	for i, conflict in ipairs(found) do
 		titles[i] = conflict.title
 	end
-	return ns.Text(ns.L.CONFLICT_TURNED_OFF, { titles = table.concat(titles, ", ") })
+	return ns.Text(ns.L.CONFLICT_TURNED_OFF, { titles = table.concat(titles, ns.L.TITLES_JOIN) })
 end

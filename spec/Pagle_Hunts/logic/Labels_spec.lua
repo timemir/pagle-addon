@@ -133,6 +133,13 @@ describe("Labels in realm time", function()
 					"Opens in 37m, at 08:52. Needs 225; my best is 125. A lure gets me there.",
 					ns.HuntWindowLine(c, auraNames)
 				)
+				-- the sentences are set side by side by the Language's own join (#520)
+				ns.L.LINE_JOIN = "\n"
+				assert.are.equal(
+					"Opens in 37m, at 08:52.\nNeeds 225; my best is 125.\nA lure gets me there.",
+					ns.HuntWindowLine(c, auraNames)
+				)
+				ns.L.LINE_JOIN = " "
 			end
 		)
 

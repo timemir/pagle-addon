@@ -16,6 +16,8 @@ local ns = select(2, ...)
 ---@field reading StatsReading
 ---@field kicker string          -- "Your odds · {place}", plus ", {window name}" with a window
 ---@field headline string        -- Your odds in large ink: "about 1 in 30", "Learning…", "not seen yet"
+---@field about string?          -- a known reading's first word, set in the hand before the big odds ("about"); nil otherwise
+---@field bigHeadline string       -- the odds in large ink after `about`: "1 in 30" for a known reading, else `headline`
 ---@field bar number?            -- the learning bar's share, n / 100, only while learning
 ---@field range string?          -- the range (STA-R45), only when known
 ---@field sentence string        -- the scope line when known; the learning or unseen sentence otherwise
@@ -54,6 +56,8 @@ function ns.Entry(state, item, area, live, places)
 		reading = reading,
 		kicker = kicker,
 		headline = ns.OddsHeadline(reading),
+		about = reading.state == "known" and L.ODDS_ABOUT or nil,
+		bigHeadline = reading.state == "known" and ns.OddsShort(reading) or ns.OddsHeadline(reading),
 		bar = reading.state == "learning" and reading.n / ns.ODDS_THRESHOLD or nil,
 		range = ns.OddsRange(reading),
 		sentence = ns.OddsSentence(reading),

@@ -409,10 +409,11 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 				stamps = {
 					{
 						text = "Caught",
+						key = "caught",
 						inked = false,
 						tip = { title = "Caught", lines = { "Land it 5 times.", "3 of 5 landed." } },
 					},
-					{ text = "Regular", inked = false },
+					{ text = "Regular", key = "regular", inked = false },
 				},
 			},
 		})
@@ -496,7 +497,13 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 			{ kind = "link", text = "Home", place = { id = "home" } },
 			{ kind = "leader", text = "The Trophy Room", value = "3 / 40", place = { id = "home" } },
 			{ kind = "seal", text = "Local" },
-			{ kind = "stamps", stamps = { { text = "Caught", inked = true }, { text = "Regular", inked = false } } },
+			{
+				kind = "stamps",
+				stamps = {
+					{ text = "Caught", key = "caught", inked = true },
+					{ text = "Regular", key = "regular", inked = false },
+				},
+			},
 			{
 				kind = "tiles",
 				tiles = {
@@ -524,6 +531,66 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 		-- the stamps are the kit's, inked or in ghost ink
 		local stamps = loaded.ns.journal.shown.left.drawn.stamps[1].stamps
 		assert.are.same({ "stamp-caught", "stamp-regular-off" }, { stamps[1].sprite, stamps[2].sprite })
+	end)
+
+	describe("a stamp's art (LED-R140, LED-R143, #520)", function()
+		-- Opens a spread whose left page is one stamps block, in Pagle language `language`.
+		local function stamped(language, stamps)
+			local fake, loaded = loggedIn()
+			fake.language = language
+			loaded.ns.RegisterJournalSpread("widgets", {
+				crumbs = function()
+					return { { label = "Widgets", place = { id = "widgets" } } }
+				end,
+				draw = function()
+					return { left = { { kind = "stamps", stamps = stamps } }, right = {} }
+				end,
+			})
+			loaded.ns.journal:Open("widgets")
+			return loaded.ns.journal.shown.left.drawn.stamps[1]
+		end
+
+		it("is the kit's stamp for the stamp's key, whatever words it is given", function()
+			local widget = stamped("enUS", {
+				{ text = "Zxq", key = "caught", inked = true },
+				{ text = "Regular", key = "in-its-element", inked = false },
+				{ text = "Heaviest", key = "the-heaviest", inked = true },
+			})
+
+			assert.are.same(
+				{ "stamp-caught", "stamp-in-its-element-off", "stamp-the-heaviest" },
+				{ widget.stamps[1].sprite, widget.stamps[2].sprite, widget.stamps[3].sprite }
+			)
+			assert.is_false(widget.words[1]:IsShown())
+		end)
+
+		it("is none for a stamp with no key the kit knows: its words are drawn instead", function()
+			local widget = stamped(
+				"enUS",
+				{ { text = "Caught", key = "unheard-of", inked = true }, { text = "Caught", inked = true } }
+			)
+
+			assert.is_true(widget.words[1]:IsShown())
+			assert.are.equal("Caught", widget.words[1]:GetText())
+			assert.is_true(widget.words[2]:IsShown())
+		end)
+
+		it(
+			"is none in a language other than English, whose words the art does not carry: the words are drawn",
+			function()
+				local widget = stamped("deDE", {
+					{ text = "Gefangen", key = "caught", inked = true },
+					{ text = "Regelmaessig", key = "regular", inked = false },
+				})
+
+				assert.is_false(widget.stamps[1]:IsShown())
+				assert.are.same(
+					{ "Gefangen", "Regelmaessig" },
+					{ widget.words[1]:GetText(), widget.words[2]:GetText() }
+				)
+				assert.are.same({ true, true }, { widget.words[1]:IsShown(), widget.words[2]:IsShown() })
+			end
+		)
 	end)
 
 	it("draws a sepia icon round in its ring, warmed toward sepia (ledger.md › UI)", function()

@@ -174,6 +174,7 @@ local function familyPage(context, family)
 		stamps = ns.JournalStamps(
 			stars,
 			L.TROPHY_STAMPS,
+			ns.TROPHY_STAMP_KEYS,
 			ns.FamilyStampTips(world, context.state, family.id, stars, format)
 		),
 	}

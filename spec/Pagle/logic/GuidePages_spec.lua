@@ -38,12 +38,25 @@ describe("Welcome's count of parts (ONB-R30)", function()
 		)
 	end)
 
-	it("writes small counts in words and larger ones in figures", function()
+	it("writes small counts as a whole noun phrase and larger ones in figures", function()
 		assert.are.same(
-			{ "no", "one", "two", "five" },
-			{ ns.GuideCountWord(0), ns.GuideCountWord(1), ns.GuideCountWord(2), ns.GuideCountWord(5) }
+			{ "no parts", "one part", "two parts", "five parts" },
+			{ ns.GuideParts(0), ns.GuideParts(1), ns.GuideParts(2), ns.GuideParts(5) }
 		)
-		assert.are.same({ "ten", "11" }, { ns.GuideCountWord(10), ns.GuideCountWord(11) })
+		assert.are.same({ "ten parts", "11 parts" }, { ns.GuideParts(10), ns.GuideParts(11) })
+	end)
+
+	it("takes the count's words from the Language whole, so a number word and its noun can agree (#520)", function()
+		local L = ns.L
+		local was = { L.GUIDE_PARTS[5], L.GUIDE_WELCOME_PARTS, L.GUIDE_BOX_PARTS }
+		L.GUIDE_PARTS[5] = "cinco partes"
+		L.GUIDE_WELCOME_PARTS = "Pagle consta de {parts}."
+		L.GUIDE_BOX_PARTS = "{parts}, y una tienda"
+
+		local line, kicker = ns.GuidePartsLine(5), ns.GuideBoxKicker(5)
+
+		L.GUIDE_PARTS[5], L.GUIDE_WELCOME_PARTS, L.GUIDE_BOX_PARTS = was[1], was[2], was[3]
+		assert.are.same({ "Pagle consta de cinco partes.", "Cinco partes, y una tienda" }, { line, kicker })
 	end)
 end)
 

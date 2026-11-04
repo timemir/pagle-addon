@@ -305,7 +305,7 @@ function MarginNotes:AnnouncementShown(announcement, form, targets, uncharted)
 	local function showCore(id, target)
 		local note = ns.CoreMarginNote(id, target)
 		if first then
-			note.text = first.firstNote .. " " .. note.text
+			note.text = first.firstNote .. ns.L.NOTES_JOIN .. note.text
 			note.alsoSeen = { ns.MomentNoteId(first) }
 		end
 		return self:Show(note)

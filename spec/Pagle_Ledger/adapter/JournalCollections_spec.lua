@@ -136,12 +136,12 @@ describe("the Journal's Trophy Room", function()
 			}, blockTexts(right))
 			local stamps = {}
 			for i, stamp in ipairs(right[3].stamps) do
-				stamps[i] = { text = stamp.text, inked = stamp.inked }
+				stamps[i] = { text = stamp.text, key = stamp.key, inked = stamp.inked }
 			end
 			assert.are.same({
-				{ text = "Any weight", inked = true },
-				{ text = "Half the weights", inked = true },
-				{ text = "The heaviest", inked = false },
+				{ text = "Any weight", key = "any-weight", inked = true },
+				{ text = "Half the weights", key = "half-the-weights", inked = true },
+				{ text = "The heaviest", key = "the-heaviest", inked = false },
 			}, stamps)
 			-- A tick per weight, placed along the board by its pounds (17 to 26), inked where landed.
 			assert.are.same({

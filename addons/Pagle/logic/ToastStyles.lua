@@ -800,10 +800,10 @@ function ns.Capitals(text)
 	while i <= #text do
 		local bar = text:find("|", i, true)
 		if not bar then
-			out[#out + 1] = text:sub(i):upper()
+			out[#out + 1] = ns.Upper(text:sub(i))
 			break
 		end
-		out[#out + 1] = text:sub(i, bar - 1):upper()
+		out[#out + 1] = ns.Upper(text:sub(i, bar - 1))
 		local kind = text:sub(bar + 1, bar + 1)
 		local last = bar + 1
 		if ESCAPE_ENDS[kind] then
@@ -827,7 +827,7 @@ function ns.SpacedCaps(text)
 		return ns.Capitals(text)
 	end
 	local out = {}
-	for char in text:upper():gmatch("[%z\1-\127\194-\244][\128-\191]*") do
+	for char in ns.Upper(text):gmatch("[%z\1-\127\194-\244][\128-\191]*") do
 		out[#out + 1] = char == " " and "  " or char
 	end
 	return table.concat(out, " ")

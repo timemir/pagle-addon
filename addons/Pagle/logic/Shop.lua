@@ -347,8 +347,8 @@ end
 ---@param query PagleShopQuery
 ---@return boolean
 local function matches(entry, query)
-	local search = query.search and query.search:lower() or ""
-	if search ~= "" and not entry.name:lower():find(search, 1, true) then
+	local search = query.search and ns.FoldCase(query.search) or ""
+	if search ~= "" and not ns.FoldCase(entry.name):find(search, 1, true) then
 		return false
 	end
 	local states = FILTERS[query.filter]
@@ -740,8 +740,8 @@ end
 ---@param query PagleShopQuery
 ---@return PagleShopRow?
 function Model:Crate(query)
-	local search = query and query.search and query.search:lower() or ""
-	if search ~= "" and not ns.L.SHOP_CRATE:lower():find(search, 1, true) then
+	local search = query and query.search and ns.FoldCase(query.search) or ""
+	if search ~= "" and not ns.FoldCase(ns.L.SHOP_CRATE):find(search, 1, true) then
 		return nil
 	end
 	return self:CrateRow()
