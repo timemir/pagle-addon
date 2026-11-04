@@ -86,15 +86,18 @@ describe("Stats' words", function()
 			assert.are.equal("412", ns.Number(412))
 		end)
 
-		it("go through the client's BreakUpLargeNumbers, read when they're written (a count, through the helper)", function()
-			local loaded = stats.load()
-			loaded.env.BreakUpLargeNumbers = function(n)
-				return ("<%d>"):format(n)
-			end
+		it(
+			"go through the client's BreakUpLargeNumbers, read when they're written (a count, through the helper)",
+			function()
+				local loaded = stats.load()
+				loaded.env.BreakUpLargeNumbers = function(n)
+					return ("<%d>"):format(n)
+				end
 
-			assert.are.equal("1,000 Casts", loaded.ns.Count(1000, "Casts"))
-			assert.are.equal("<1400>", loaded.ns.Nice(1447))
-		end)
+				assert.are.equal("1,000 Casts", loaded.ns.Count(1000, "Casts"))
+				assert.are.equal("<1400>", loaded.ns.Nice(1447))
+			end
+		)
 	end)
 
 	describe("durations (STA-R59)", function()
