@@ -819,13 +819,18 @@ end
 -- rules versions (logic/WalletProjection.lua, logic/VarietyProjection.lua). Nothing here hashes a Catch ID, so it
 -- reads the same without LuaBitOp.
 local function loadCoreRules()
-	return wtf.loadCore({
+	local core = wtf.loadCore({
 		"locale/enUS.lua",
 		"logic/Size.lua",
 		"logic/Wallet.lua",
 		"logic/WalletProjection.lua",
 		"logic/VarietyProjection.lua",
 	})
+	-- logic/ names a band only on request (CORE-R8); the reader's lines print the names, as Pagle.SIZE_BANDS carries them.
+	for band, entry in ipairs(core.SIZE_BANDS) do
+		entry.name = core.SizeBandName(band)
+	end
+	return core
 end
 
 -- The Ledger M4 section's lines (#173): what M4 adds to the Ledger (ledger.md › Data), with the climb, the earned
@@ -1040,7 +1045,7 @@ local function printSizes(log, catalogue)
 	)
 	print("sizes by band: Catches (their share), each bounded by its Reach (LOG-R67)")
 	for band, n in ipairs(tally.bands) do
-		print(("  %d %s: %d (%.1f%%)"):format(band, tostring(core.SIZE_BANDS[band].name), n, 100 * n / tally.total))
+		print(("  %d %s: %d (%.1f%%)"):format(band, tostring(core.SizeBandName(band)), n, 100 * n / tally.total))
 	end
 	print("sizes per Species: Catches, shortest–longest, typical length (DATA-R20)")
 	for _, id in ipairs(species) do
