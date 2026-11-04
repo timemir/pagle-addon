@@ -105,7 +105,7 @@ Everything is account-wide, per WoW game account; per-character facts are keyed 
 These hold everywhere and come from the map's settled Notes:
 - **Observe and reward.** Pagle never plays for the player. QoL does at most one game action per keypress and never acts on its own (QOL-R5).
 - **Forever only.** No Retail, no other game type (CORE-R2, CORE-R4).
-- **Language-independent.** Items, places and spells are identified by ID; names resolve at runtime. 1.0 is enUS, with every string in `ns.L` (CORE-R8, DATA-R3).
+- **Language-independent.** Items, places and spells are identified by ID; names resolve at runtime. 1.0 is enUS, with every string in `ns.L` (CORE-R8, DATA-R3); more languages are 1.1's (ADR 0019, DATA-R114).
 - **Native look**, with four exceptions in one leather-and-parchment language: three books (the Fish Journal, the Hunts board, the Stats book) and the Tackle Board's cork board. HUD trackers stay native.
 - **Sync-ready data**, so a future backend or social layer can read the log from SavedVariables (LOG-R13–R15).
 
@@ -146,7 +146,7 @@ Core's rung table ([announcements.md](core/announcements.md#rungs-modules-use-so
 | Uncharted and unconfirmed Catches | LOG-R8, LOG-R96 | DATA-R45–R57; REP-R10; each Module's last edge-case rule |
 | Windows, time and seasons | LOG-R46–R50, DATA-R35–R38 | HNT-R40–R53 (the board); LED-R127; STA-R14–R15 |
 | Simulated Size | LOG-R65–R69, LOG-R100, ADR 0014 | LED-R80–R85 (records); HNT-R10 (`minBand`); TKB-R32 (no Size goals) |
-| Lore and display text | DATA-R100–R112 | each Module's Lore rule; CORE-R8 for interface text |
+| Lore and display text | DATA-R100–R112, DATA-R114 (languages, from 1.1) | each Module's Lore rule; CORE-R8 for interface text |
 | Settings | CORE-R40–R44 (mechanism) | [settings.md](settings.md) (layout); each file's Settings section (values) |
 
 ## How to read the spec
@@ -210,7 +210,7 @@ Every Core and Module file answers each of these with rules: a Module disabled a
 | `"live"`, `"replay"`, `"rebuild"` | how a projection is being fed an entry; only `"live"` may raise moments | LOG-R75 |
 | server time / realm time | `GetServerTime()` / the realm's clock from `GetGameTime()`; windows and labels use realm time | LOG-R20, LOG-R49 |
 | item `0` | a Catch whose item ID was secret; it counts as a Catch and is never credited | LOG-R8 |
-| interface text / lore | strings in `ns.L` written in code / invented names and flavour from `data/lore/` | CORE-R8, DATA-R100 |
+| interface text / lore | strings in `ns.L` written in code (from 1.1, generated from `data/locale/`) / invented names and flavour from `data/lore/` | CORE-R8, DATA-R100, DATA-R114 |
 
 ### From the spec to build tickets
 
