@@ -78,7 +78,7 @@ describe("Pagle_Stats.toc", function()
 		"splits code into logic/ and adapter/, strings in locale/, only generated files in data/ (CORE-R7, CORE-R8)",
 		function()
 			-- DATA-R107: the generator writes data/Lore.lua from the M6 lore batch on.
-			local generated = { ["data/Lore.lua"] = true }
+			local generated = { ["data/Lore.lua"] = true, ["data/Lore.esES.lua"] = true } -- the second is a Locale's Lore (DATA-R104)
 			local folders, handWrittenData = {}, {}
 			for _, file in ipairs(filesIn({ "lua" })) do
 				local folder = file:match("^([^/]+)/")

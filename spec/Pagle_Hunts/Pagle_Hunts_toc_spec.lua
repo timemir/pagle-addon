@@ -77,7 +77,12 @@ describe("Pagle_Hunts.toc", function()
 		"splits its code into logic/ and adapter/, its strings in locale/, generated files in data/ (CORE-R7, CORE-R8, DATA-R75)",
 		function()
 			-- The generator writes data/HuntList.lua, data/EventList.lua (DATA-R98) and, from the lore batch, data/Lore.lua.
-			local generated = { ["data/HuntList.lua"] = true, ["data/EventList.lua"] = true, ["data/Lore.lua"] = true }
+			local generated = {
+				["data/HuntList.lua"] = true,
+				["data/EventList.lua"] = true,
+				["data/Lore.lua"] = true,
+				["data/Lore.esES.lua"] = true, -- a Locale's Lore (DATA-R104), beside its interface file
+			}
 			local folders, handWrittenData = {}, {}
 			for _, file in ipairs(filesIn({ "lua" })) do
 				local folder = file:match("^([^/]+)/")

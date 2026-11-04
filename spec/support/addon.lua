@@ -181,7 +181,9 @@ function loadAddon(name, globals, options)
 				end
 				local folder = published:match("^(.*)/[^/]*$")
 				for script in text:gmatch('<Script%s+file="([^"]+)"') do
-					local err = loadFile((folder and folder .. "/" or "") .. script:gsub("\\", "/"))
+					-- `..\data\Lore.esES.lua` from locale/ is the addon's `data/Lore.esES.lua`, by the name `replace` uses.
+					local path = ((folder and folder .. "/" or "") .. script:gsub("\\", "/")):gsub("[^/]+/%.%./", "")
+					local err = loadFile(path)
 					if err then
 						return err
 					end
