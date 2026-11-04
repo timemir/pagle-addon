@@ -444,6 +444,21 @@ describe("the Companion's data files", function()
 			assert.are.same({ state = "ok", anglers = { ADA } }, ns.FollowedAnglers(file, FOLLOWING_AT))
 		end)
 
+		it(
+			"floor a Ledger percent the file pushes with a fraction, as %d did, and leave one that isn't a number (VIEW-R11)",
+			function()
+				local data = anglerFileExamples().following
+				data.anglers[1].ledger = 99.6
+				data.anglers[2] = { name = "Bea", ledger = "37", guids = {} }
+				data.count = 2
+
+				local anglers = ns.FollowedAnglers(ns.ReadFollowingFile(data), FOLLOWING_AT).anglers
+
+				assert.are.equal(99, anglers[1].ledger)
+				assert.are.equal("37", anglers[2].ledger)
+			end
+		)
+
 		it("keep the file's order (VIEW-R11, IGV-R31)", function()
 			local data = anglerFileExamples().following
 			data.anglers[2] = { name = "Bea", more = 0, title = "", guids = {} }
@@ -545,6 +560,26 @@ describe("the Companion's data files", function()
 				end
 			end
 		end
+
+		it("writes a pushed Ledger percent of 99.6 as 99%, not 100% (VIEW-R21)", function()
+			local data = anglerFileExamples().following
+			data.anglers[1].ledger = 99.6
+			local card = ns.LookUpAngler(
+				ns.ReadFollowingFile(data),
+				ns.ReadAnglersFile(anglerFileExamples().anglers),
+				"Player-4618-0A1B2C3D",
+				FOLLOWING_AT
+			)
+
+			local shown
+			for _, line in ipairs(ns.AnglerTooltipLines(card)) do
+				if line.left == "Ledger" then
+					shown = line.right
+				end
+			end
+
+			assert.are.equal("99%", shown)
+		end)
 
 		it("writes a Followed Angler's lines, Following at the header's right (VIEW-R21, VIEW-R93)", function()
 			local card = ns.LookUpAngler(

@@ -761,15 +761,12 @@ function Model:Reselect(goodID, query)
 	return first and first.rows[1] and first.rows[1].id or nil
 end
 
--- A chance of `permille` per mille written as the stage's percent: "40%", "2.5%", "0.5%".
+-- A chance of `permille` per mille written as the stage's percent: "40%", "2.5%", "0.5%". The number goes into the
+-- string as it is (`{chance:n}`), so a Locale writes its own decimal separator.
 ---@param permille integer
 ---@return string
 local function percent(permille)
-	local whole, tenth = math.floor(permille / 10), permille % 10
-	return ns.RenderText(
-		ns.L.SHOP_CRATE_CHANCE,
-		{ shop_crate_chance = tenth == 0 and tostring(whole) or ("%d.%d"):format(whole, tenth) }
-	)
+	return ns.RenderText(ns.L.SHOP_CRATE_CHANCE, { chance = permille / 10 })
 end
 ns.CratePercent = percent
 
