@@ -134,6 +134,7 @@ adapter\CatchLog.lua
 adapter\Size.lua
 adapter\Text.lua
 adapter\Clock.lua
+adapter\LanguageRow.lua
 adapter\Variety.lua
 adapter\Projections.lua
 adapter\Angler.lua

@@ -71,6 +71,8 @@ local FONTS = {
 	CardDetail = { "hand", 20, "ink2" },
 	CardGroup = { "print", 13, "red" },
 	Button = { "gilt", 17, "gilt", true },
+	-- the Reload now note's question (adapter/LanguageRow.lua)
+	NoteHead = { "print", 26, "ink" },
 	-- the books' kicker over a page's title (the Field guide's, ONB-R30), in IM Fell English SC: the client has no
 	-- small caps of its own
 	SmallCaps = { "sc", 14, "kicker" },

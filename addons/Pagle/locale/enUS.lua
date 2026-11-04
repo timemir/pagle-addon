@@ -120,6 +120,15 @@ ns.L = {
 		["24h"] = "24-hour (18:30)",
 		["12h"] = "12-hour (6:30 PM)",
 	},
+	-- The Units section's Language row (SET-R10 row 9b, CORE-R8): its label, tooltip and the two choices every client has
+	-- ("English" is the language's own name), and the Reload now note a change asks with (adapter/LanguageRow.lua).
+	SETTINGS_LANGUAGE = "Language",
+	SETTINGS_LANGUAGE_TOOLTIP = "The language Pagle is written in, on every character. A change takes effect after a /reload. Names the game supplies, such as items, zones and item quality, stay in the game's language.",
+	SETTINGS_LANGUAGE_GAME_DEFAULT = "Game default",
+	SETTINGS_LANGUAGE_ENGLISH = "English",
+	LANGUAGE_RELOAD_TEXT = "Reload the interface to change the language?",
+	LANGUAGE_RELOAD_NOW = "Reload now",
+	LANGUAGE_RELOAD_LATER = "Later",
 	-- The root's Pagle menu section (SET-R10 row 10): its header, the checkbox's label and its tooltip (CORE-R56).
 	SETTINGS_PAGLE_MENU = "Pagle menu",
 	SETTINGS_MINIMAP_ICON = "Show the minimap icon",

@@ -34,6 +34,8 @@ local TIPS = {
 		.. "only what you see.",
 	clock = "How Pagle writes a time of day, such as the realm time at the top of the Hunts board. Following the game "
 		.. "uses the minimap clock's 24-hour mode.",
+	language = "The language Pagle is written in, on every character. A change takes effect after a /reload. Names the "
+		.. "game supplies, such as items, zones and item quality, stay in the game's language.",
 	castWith = "Also on the compartment menu and /pagle qol input.",
 	fishingKey = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed.",
 	fishingSet = "The Fishing key puts it on when no pole is in hand. Double-click skips this.",
@@ -110,6 +112,7 @@ local EXPECTED = {
 			{ "header", "Units" },
 			{ "dropdown", "Length unit", tip = TIPS.lengthUnit },
 			{ "dropdown", "Clock", tip = TIPS.clock },
+			{ "dropdown", "Language", tip = TIPS.language },
 			{ "header", "Pagle menu" },
 			{ "checkbox", "Show the minimap icon", tip = TIPS.minimapIcon },
 			{ "header", "Pagle website" },
@@ -822,13 +825,14 @@ describe("Each page's Defaults button", function()
 
 	it(
 		"on the root restores the reminder to off, the length unit to the region's and the Clock to the game's,"
-			.. " leaving Show the minimap icon and Show other Anglers on player tooltips (SET-R13, LOG-R69, CORE-R87,"
-			.. " CORE-R56, VIEW-R30)",
+			.. " leaving the Language, Show the minimap icon and Show other Anglers on player tooltips (SET-R13,"
+			.. " LOG-R69, CORE-R87, CORE-R56, VIEW-R30)",
 		function()
 			local loaded = ready()
 			setRow(loaded, "Pagle", "Remind me to /reload when Casts are unsaved", true)
 			setRow(loaded, "Pagle", "Length unit", "cm")
 			setRow(loaded, "Pagle", "Clock", "12h")
+			setRow(loaded, "Pagle", "Language", "enUS")
 			setRow(loaded, "Pagle", "Show the minimap icon", false)
 			setRow(loaded, "Pagle", "Show other Anglers on player tooltips", false)
 
@@ -838,11 +842,13 @@ describe("Each page's Defaults button", function()
 				["Remind me to /reload when Casts are unsaved"] = false,
 				["Length unit"] = "in", -- the fake client's realm is a US one
 				["Clock"] = "game",
+				["Language"] = "enUS", -- no default: a Defaults click never asks for a reload (SET-R13)
 				["Show the minimap icon"] = false,
 				["Show other Anglers on player tooltips"] = false,
 			}, valuesOn(loaded, "Pagle"))
 			assert.is_nil(loaded.namespaces.Pagle.db.profile.lengthUnit) -- following the region (SET-R13)
 			assert.is_nil(loaded.namespaces.Pagle.db.profile.clockFormat) -- following the game's clock (SET-R13)
+			assert.are.equal("enUS", loaded.namespaces.Pagle.db.global.language) -- left as it was (SET-R13)
 		end
 	)
 
