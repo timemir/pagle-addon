@@ -435,7 +435,7 @@ function ns.HuntConditionsLine(spec, windowID, now, snapshot, sources)
 		local ranges = joined(spec.time, function(range)
 			return L.TIME_RANGE:format(ns.FormatClock(range[1]), ns.FormatClock(range[2]))
 		end, L.JOIN_RANGES)
-		parts[#parts + 1] = L[TIME_WINDOWS[windowID] or "CONDITION_TIME"]:format(ranges)
+		parts[#parts + 1] = ns.Text(L[TIME_WINDOWS[windowID] or "CONDITION_TIME"], { ranges = ranges })
 	end
 	if spec.season then
 		local ranges = joined(spec.season, function(range)

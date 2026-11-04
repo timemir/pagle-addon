@@ -244,7 +244,7 @@ local function check(self, pause)
 	end)
 	if not items then
 		---@cast reason string
-		return absent(L.PUSHED_PARSE_ERROR:format(at, L[reason]:format(tostring(arg))))
+		return absent(L.PUSHED_PARSE_ERROR:format(at, ns.RenderText(L[reason], { value = arg })))
 	end
 	-- Accepted: its seq is the last accepted from now on (PUSH-R13).
 	if type(global.pushed) ~= "table" then

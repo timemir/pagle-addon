@@ -174,7 +174,7 @@ ns.KIND_ICONS = {
 function ns.GoalText(goal)
 	-- Every kind that reads its target has one (tackle-board.md › Data).
 	local kind, target = goal.kind, goal.target --[[@as integer]]
-	local fields = { n = goal.need }
+	local fields = { count = goal.need }
 	if kind == "haul" or kind == "variety" then
 		fields.zone = ns.ZoneName(target)
 	elseif kind == "wanderer" and goal.type == "e" then
@@ -184,7 +184,7 @@ function ns.GoalText(goal)
 	elseif kind == "species" then
 		fields.species = ns.SpeciesName(target)
 	end
-	return ns.Fill(pick(ns.L.GOAL_TEXT[goal.type][kind], goal.need), fields)
+	return ns.Text(ns.L.GOAL_TEXT[goal.type][kind], fields)
 end
 
 -- Where a goal is worked (TKB-R41, TKB-R102, TKB-R122).

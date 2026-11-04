@@ -267,8 +267,7 @@ local function firstBuild(celebrated, state, coinsBefore, outlets, lookups)
 	local lines = { withPrestige(L.WRITE_UP_LEVEL:format(ns.ShownLevel(state, celebrated)), state.prestige) }
 	addLines(lines, stateCounts(celebrated, state, lookups), outlets)
 	addCoinsLine(lines, ns.CoinsEarned(state) - coinsBefore, outlets)
-	local heading = state.casts == 1 and L.WRITE_UP_FIRST_BUILD_ONE or L.WRITE_UP_FIRST_BUILD_OTHER
-	outlets.RaiseWriteUp({ heading = heading:format(outlets.FormatNumber(state.casts)), lines = lines })
+	outlets.RaiseWriteUp({ heading = ns.Text(L.WRITE_UP_FIRST_BUILD, { count = state.casts }), lines = lines })
 end
 
 -- The scratch list's achievements with each climb's level-ups merged into one, at that climb's last one's place:

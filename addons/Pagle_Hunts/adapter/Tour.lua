@@ -176,7 +176,7 @@ function ns.RegisterTourStops(M)
 	for _, stop in ipairs(ns.HUNTS_TOUR) do
 		local label = ns.L[stop.label]
 		if stop.good then
-			label = label:format(ns.HuntsGoodName(stop.good))
+			label = ns.Text(label, { good = ns.HuntsGoodName(stop.good) })
 		end
 		if stop.place then
 			boardStop(M, stop, label)

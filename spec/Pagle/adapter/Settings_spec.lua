@@ -353,7 +353,7 @@ describe("M:AddSetting", function()
 		M:AddSetting("look", { kind = "toggle" })
 
 		assert.are.equal(2, #reported)
-		local late = loaded.ns.L.SETTING_TOO_LATE:format("QoL")
+		local late = "Pagle: QoL's AddSetting came after ModulesChanged, so the row is dropped"
 		assert.are.same({ late, late }, reported)
 		assert.are.equal("Pagle: QoL's AddSetting came after ModulesChanged, so the row is dropped", late)
 		assert.are.same({ "Casting", "Fishing key" }, rowNames(loaded.client.settings.category("Fishing")))

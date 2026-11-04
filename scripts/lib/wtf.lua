@@ -385,9 +385,15 @@ end
 -- ("Pagle_Ledger", ns) as the client calls an addon's files (spec/support/addon.lua loads them the same way). Their
 -- CORE-R11 guard reads the Pagle global, so it's a table here; logic/ is plain Lua 5.1 (CORE-R7) and reads nothing
 -- else of Core's at load. Raises when one can't be loaded.
+-- The Pagle global a Module's logic/ reads once it has loaded: the text helper Core publishes as Pagle.Text (CORE-R8),
+-- on Core's own logic/Text.lua, so the reader writes the Modules' lines in English as the game does.
+function wtf.pagleStub()
+	return { Text = wtf.loadCore({ "logic/Text.lua" }).RenderText }
+end
+
 function wtf.loadLedgerLogic()
 	local ns = {}
-	local env = setmetatable({ Pagle = {} }, { __index = _G })
+	local env = setmetatable({ Pagle = wtf.pagleStub() }, { __index = _G })
 	local dir = ROOT .. "/addons/Pagle_Ledger/"
 	for _, file in ipairs(wtf.tocEntries("Pagle_Ledger")) do
 		if file:match("^logic/[^/]+%.lua$") then

@@ -179,11 +179,10 @@ describe("A Module's /pagle subcommand", function()
 			assert.are.same({ "Hunts board", "QoL qol" }, ran)
 			assert.are.same({ "Pagle" }, openedNames(loaded))
 			assert.are.equal(3, #reported)
-			local L = loaded.ns.L
 			assert.are.same({
-				L.SLASH_SKIPPED_RESERVED:format("Hunts", "report", "report"),
-				L.SLASH_SKIPPED_RESERVED:format("QoL", "Settings", "settings"),
-				L.SLASH_SKIPPED_TAKEN:format("QoL", "BOARD", "Hunts"),
+				"Pagle: Hunts's /pagle report is skipped: Pagle reserves report",
+				"Pagle: QoL's /pagle Settings is skipped: Pagle reserves settings",
+				"Pagle: QoL's /pagle BOARD is skipped: Hunts already uses it",
 			}, reported)
 		end
 	)
@@ -212,10 +211,6 @@ describe("A Module's /pagle subcommand", function()
 		pagle(loaded, "qol")
 
 		assert.are.equal(1, ran)
-		assert.are.same({
-			loaded.ns.L.SLASH_SKIPPED_NO_NAME:format("QoL", "two words"),
-			loaded.ns.L.SLASH_SKIPPED_NO_FN:format("QoL", "input"),
-		}, reported)
 		assert.are.same({
 			"Pagle: QoL's /pagle entry two words has no one-word name; it is skipped",
 			"Pagle: QoL's /pagle input has no fn; it is skipped",

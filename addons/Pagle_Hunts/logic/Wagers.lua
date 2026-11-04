@@ -750,7 +750,7 @@ function ns.BuildRunEntry(input, shown)
 		return entry
 	end
 	local casts = castsIn(run)
-	entry.casts = L["RUN_CASTS_" .. (casts == 1 and "ONE" or "OTHER")]:format(casts, done, #event.hunts)
+	entry.casts = ns.Text(L.RUN_CASTS, { count = casts, done = done, total = #event.hunts })
 	local xp, coins, tickets = paidSoFar(run)
 	entry.pay = {
 		{ label = L.PAY_SO_FAR, amount = L.PAY_AMOUNT:format(xp, coins), refresh = refreshLine(tickets) },
