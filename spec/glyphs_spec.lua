@@ -90,7 +90,9 @@ end
 ---@param path string
 ---@return string?
 local function localeOf(path)
-	return path:match("/locale/(%w+)%.lua$") or path:match("/data/Lore%.(%w+)%.lua$")
+	-- A client code is two lower-case letters and two upper-case (esES); locale/Registry.lua and Apply.lua are code.
+	local code = path:match("/locale/(%w+)%.lua$") or path:match("/data/Lore%.(%w+)%.lua$")
+	return code and code:match("^%l%l%u%u$") and code or nil
 end
 
 -- Each character `path`'s text `text` draws outside CORE-R9's range for the file, as "<path>:<line>: U+XXXX".

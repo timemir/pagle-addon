@@ -14,7 +14,7 @@ Part of [Core](README.md). This file covers what Core observes, how it is stored
 
 ### Login order
 
-Before step 1, Core explicitly loads and validates `Pagle_Recovery` as strict signed data, if installed. It compares the complete live local snapshot before opening or mutating SavedVariables. An invalid or stale package leaves the log unchanged and blocks ordinary initialization until the Player removes it or supplies a matching package (RCV-R3).
+Before step 1, Core applies the player's Language (CORE-R8, SET-R10): it reads `PagleDB.global.language` from the raw `PagleDB` and overlays `ns.L` before anything that prints or publishes interface text, `StartRecovery()` and `OpenSavedVariables()` included, so a line such as `L.LOG_UNREADABLE` is already in the chosen language. It cannot fail login. Then Core explicitly loads and validates `Pagle_Recovery` as strict signed data, if installed. It compares the complete live local snapshot before opening or mutating SavedVariables. An invalid or stale package leaves the log unchanged and blocks ordinary initialization until the Player removes it or supplies a matching package (RCV-R3).
 
 - **LOG-R1** At load and login, Core runs in this order:
   1. `ADDON_LOADED` (Core): check the `PagleLog` format (LOG-R18), note **`loginSeq`** (the log's length before anything is appended this session), migrate `PagleDB`, build the catalogue, read the starting restriction state (CORE-R30).
@@ -324,6 +324,7 @@ The ADR 0003 and ADR 0008 notes sketch `B1`, `U1` and `A1` without the shared he
 | `global.decodeErrors` | count of entries the codec couldn't decode (LOG-R16) |
 | `global.tailSession` | the Session cutter at the log's end, for the next login (LOG-R98): `logId`, `rulesVersion` (`SESSION_RULES_VERSION`), `seq`, `entry` (the entry string at `seq`) and `session` (the latest Session as the cutter holds it, `false` before the first Cast); absent until Core has first cut the log's Sessions. A cache: losing it changes nothing, the look-back finds the Session instead. |
 | `global.catchCounts` | the earlier Catch counts at the log's end, for the next login (LOG-R100): `logId`, `rulesVersion` (`SIZE_RULES_VERSION`), `seq`, `entry` (the entry string at `seq`) and `counts` (`{ [itemID] = n }`); absent until Core has first counted to the log's end. A cache: losing it changes nothing. |
+| `global.language` | the Language setting (SET-R10 row 9b, CORE-R8), from 1.1: `"default"` for Game default, or a Locale code (`"enUS"`, `"esES"`). Read from the raw table before AceDB wraps it, so a missing, corrupt or wrongly typed value counts as `"default"`; written only by the Settings dropdown; default `"default"`, no schema step |
 | `global.dev` | boolean, the `/pagle dev` switch (#247); default `false`. Never shown to players. |
 | `global.devSkill` | `{ rank, max }`, the Fishing skill `/pagle dev skill` makes Core report in place of the client's (#465, LOG-R30); applies only while `global.dev` is on and only when `1 <= rank <= max <= 300`; cleared by `/pagle dev skill off` and `/pagle dev off`; absent by default. Never shown to players; a packaged release neither sets nor reads it. |
 | `global.diagnostics` | ring buffer of up to 500 entries (LOG-R81) |

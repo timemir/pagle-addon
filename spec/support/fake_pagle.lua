@@ -40,6 +40,8 @@
 ---@field clientEnv table? The globals of the first client `load` gave a Module: Pagle.Animate's driver is a frame of
 --- it, so that client's update steps every animation, and Pagle.FitToScreen fits to its UIParent.
 ---@field ns table Core's logic/ (with `ns.L` and `ns.catalogue`), loaded for this fake alone.
+---@field language string What Pagle.GetLanguage answers: "enUS" unless a spec sets another before it loads a Module, whose
+--- locale/Apply.lua then applies that Locale from the registrations the spec made in the Module's ns (CORE-R8).
 ---@field registry PagleModuleRegistry Core's real Module registry; `registry:ModuleOf(handle)` finds a Module.
 ---@field addons table<string, FakeAddOn> The roster Modules' addons by folder name, as the client reports them.
 --- By default each is installed, enabled, loaded and declares `X-Pagle-API` = API_VERSION. Set one to nil to
@@ -327,12 +329,9 @@ local function loadCoreLogic()
 	end
 	local ns = {}
 	for _, file in ipairs(addonFiles("Pagle")) do
-		local wanted = file:match("^logic/")
-			or file:match("^locale/")
-			or file:match("^data/")
-			or file:match("^libs/LibStub/")
-			or file:match("^libs/CallbackHandler")
-		if wanted then
+		local wanted = (file:match("^logic/") or file:match("^locale/") or file:match("^data/"))
+			and file:match("%.lua$")
+		if wanted or file:match("^libs/LibStub/") or file:match("^libs/CallbackHandler") then
 			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
 			local chunk = assert(loadfile("addons/Pagle/" .. file))
 			setfenv(chunk, env)
@@ -946,6 +945,15 @@ end)
 -- another Locale's record with fake.ns.SetTextLocale.
 part(function(_, Pagle, ns)
 	ns.PublishText(Pagle)
+end)
+
+-- The Language as Core publishes it (CORE-R8): Pagle.GetLanguage, "enUS" until a spec sets fake.language. A Module
+-- loaded on the fake applies that Locale from its own registrations, as locale/Apply.lua does on Core.
+part(function(fake, Pagle)
+	fake.language = "enUS"
+	function Pagle.GetLanguage()
+		return fake.language
+	end
 end)
 
 -- The clock format as Core publishes it (CORE-R87): Pagle.FormatClock, in fake.profile.clockFormat or the game's

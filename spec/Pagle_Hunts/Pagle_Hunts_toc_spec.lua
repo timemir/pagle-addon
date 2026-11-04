@@ -45,11 +45,14 @@ describe("Pagle_Hunts.toc", function()
 		assert.are.same({ "Pagle_Hunts.toc" }, filesIn({ "toc" }))
 	end)
 
-	it("depends on Pagle, declares X-Pagle-API 1 and loads normally, not on demand (CORE-R3)", function()
-		assert.are.equal("Pagle", fields.Dependencies)
-		assert.are.equal("1", fields["X-Pagle-API"])
-		assert.is_nil(fields.LoadOnDemand)
-	end)
+	it(
+		"depends on Pagle, declares X-Pagle-API 2 (it calls Pagle.GetLanguage, CORE-R8) and loads normally, not on demand (CORE-R3)",
+		function()
+			assert.are.equal("Pagle", fields.Dependencies)
+			assert.are.equal("2", fields["X-Pagle-API"])
+			assert.is_nil(fields.LoadOnDemand)
+		end
+	)
 
 	it("is titled Pagle Hunts, as the Ledger's is Pagle Ledger (CORE-R2)", function()
 		assert.are.equal("Pagle Hunts", fields.Title)
@@ -60,12 +63,15 @@ describe("Pagle_Hunts.toc", function()
 		assert.is_nil(fields.SavedVariablesPerCharacter)
 	end)
 
-	it("lists every Lua file in the addon folder, so none is left out of the load (CORE-R2)", function()
-		local listed = addonFiles("Pagle_Hunts")
-		table.sort(listed)
+	it(
+		"lists every Lua and XML file in the addon folder, the Lua files a listed XML loads included, so none is left out of the load (CORE-R2)",
+		function()
+			local listed = addonFiles("Pagle_Hunts")
+			table.sort(listed)
 
-		assert.are.same(filesIn({ "lua" }), listed)
-	end)
+			assert.are.same(filesIn({ "lua", "xml" }), listed)
+		end
+	)
 
 	it(
 		"splits its code into logic/ and adapter/, its strings in locale/, generated files in data/ (CORE-R7, CORE-R8, DATA-R75)",

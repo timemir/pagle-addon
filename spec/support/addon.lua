@@ -158,32 +158,52 @@ function loadAddon(name, globals, options)
 		end
 		local ns = {}
 		namespaces[addon] = ns
-		for _, file in ipairs(files) do
-			if file:match("%.xml$") then
+		--- Loads one file of the addon, as `ns`'s: a Lua file runs; an XML file has its virtual templates recorded, and
+		--- each `<Script file="…"/>` it names loaded in order, relative to the XML's own folder as the client resolves it.
+		--- `published` is the path the TOC (or the XML) lists, forward slashes, relative to the addon folder; `replace`
+		--- maps it to another source. Returns why it failed, or nil.
+		local function loadFile(published)
+			local source = (not isDependency and (options.replace or {})[published]) or dir .. published
+			if published:match("%.xml$") then
 				-- The client builds an XML file's frames; specs need only its virtual templates, by name.
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
-				local xml = io.open(dir .. file, "r")
+				local xml = io.open(source, "r")
 				if not xml then
-					return ("%s lists %s, which doesn't exist"):format(toc, file)
+					return ("%s lists %s, which doesn't exist"):format(toc, published)
 				end
-				for attributes in xml:read("*a"):gsub("<!%-%-.-%-%->", ""):gmatch("<Frame%s([^>]*)>") do
+				local text = xml:read("*a"):gsub("<!%-%-.-%-%->", "")
+				xml:close()
+				for attributes in text:gmatch("<Frame%s([^>]*)>") do
 					local template = attributes:match('name="([^"]+)"')
 					if template and attributes:match('virtual="true"') then
 						client.templates[template] = { mixin = attributes:match('mixin="([^"]+)"') }
 					end
 				end
-				xml:close()
-			elseif not (isDependency and options.dependencyLibsOnly) or file:match("^libs/") then
+				local folder = published:match("^(.*)/[^/]*$")
+				for script in text:gmatch('<Script%s+file="([^"]+)"') do
+					local err = loadFile((folder and folder .. "/" or "") .. script:gsub("\\", "/"))
+					if err then
+						return err
+					end
+				end
+			elseif not (isDependency and options.dependencyLibsOnly) or published:match("^libs/") then
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
-				local chunk, loadErr = loadfile((not isDependency and (options.replace or {})[file]) or dir .. file)
+				local chunk, loadErr = loadfile(source)
 				if not chunk then
-					return ("%s lists %s, which doesn't load: %s"):format(toc, file, loadErr)
+					return ("%s lists %s, which doesn't load: %s"):format(toc, published, loadErr)
 				end
 				setfenv(chunk, env)
 				local ok, runErr = pcall(chunk, addon, ns)
 				if not ok then
-					return ("%s: %s failed while loading: %s"):format(toc, file, tostring(runErr))
+					return ("%s: %s failed while loading: %s"):format(toc, published, tostring(runErr))
 				end
+			end
+			return nil
+		end
+		for _, file in ipairs(files) do
+			local err = loadFile(file)
+			if err then
+				return err
 			end
 		end
 		local before = options.beforeLoaded and options.beforeLoaded[addon]

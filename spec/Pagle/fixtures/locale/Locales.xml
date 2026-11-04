@@ -1,0 +1,7 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<!-- A test fixture, never shipped (spec/Pagle/adapter/Language_spec.lua): locale/Locales.xml as the generator
+	will write it, with made-up Locales between the two stable entries. Paths are relative to the addon's locale/. -->
+	<Script file="Registry.lua"/>
+	<Script file="Fixture.lua"/>
+	<Script file="Apply.lua"/>
+</Ui>

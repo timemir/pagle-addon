@@ -6,10 +6,11 @@
 ## Category: Professions
 ## Version: @project-version@
 ## Dependencies: Pagle
-## X-Pagle-API: 1
+## X-Pagle-API: 2
 ## SavedVariables: PagleQoLDB
 
 locale\enUS.lua
+locale\Locales.xml
 data\lures.lua
 data\clams.lua
 data\FieldArt.lua

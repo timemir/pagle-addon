@@ -1,0 +1,7 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<!-- A test fixture, never shipped (spec/Pagle/adapter/Language_spec.lua): the Ledger's locale/Locales.xml with a
+	made-up Locale between the two stable entries. -->
+	<Script file="Registry.lua"/>
+	<Script file="Fixture.lua"/>
+	<Script file="Apply.lua"/>
+</Ui>

@@ -38,11 +38,14 @@ describe("Pagle_QoL.toc", function()
 		assert.are.same({ "Pagle_QoL.toc" }, filesIn({ "toc" }))
 	end)
 
-	it("depends on Pagle, declares X-Pagle-API 1 and loads normally, not on demand (CORE-R3, QOL-R1)", function()
-		assert.are.equal("Pagle", fields.Dependencies)
-		assert.are.equal("1", fields["X-Pagle-API"])
-		assert.is_nil(fields.LoadOnDemand)
-	end)
+	it(
+		"depends on Pagle, declares X-Pagle-API 2 (it calls Pagle.GetLanguage, CORE-R8) and loads normally, not on demand (CORE-R3, QOL-R1)",
+		function()
+			assert.are.equal("Pagle", fields.Dependencies)
+			assert.are.equal("2", fields["X-Pagle-API"])
+			assert.is_nil(fields.LoadOnDemand)
+		end
+	)
 
 	it("is titled Pagle QoL, the name QOL-R83's chat lines use", function()
 		assert.are.equal("Pagle QoL", fields.Title)
@@ -53,10 +56,19 @@ describe("Pagle_QoL.toc", function()
 		assert.is_nil(fields.SavedVariablesPerCharacter)
 	end)
 
-	it("lists every Lua file in the addon folder, so none is left out of the load (CORE-R2)", function()
-		local listed = addonFiles("Pagle_QoL")
-		table.sort(listed)
+	it(
+		"lists every Lua file in the addon folder, the ones locale/Locales.xml loads included, so none is left out of the load (CORE-R2)",
+		function()
+			-- The XML itself is listed too; Bindings.xml is not, as the client reads it by name (QOL-R1).
+			local listed = {}
+			for _, file in ipairs(addonFiles("Pagle_QoL")) do
+				if file:match("%.lua$") then
+					listed[#listed + 1] = file
+				end
+			end
+			table.sort(listed)
 
-		assert.are.same(filesIn({ "lua" }), listed)
-	end)
+			assert.are.same(filesIn({ "lua" }), listed)
+		end
+	)
 end)

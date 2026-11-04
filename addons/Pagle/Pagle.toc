@@ -37,6 +37,7 @@ data\ApiInventory.lua
 
 locale\enUS.lua
 data\Lore.lua
+locale\Locales.xml
 logic\Forever.lua
 logic\Secrets.lua
 logic\ReportOnce.lua
