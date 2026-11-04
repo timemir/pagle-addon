@@ -10,19 +10,20 @@
 local TRANSLATED = { key = "CARD_CASTS", english = "Casts", spanish = "Lances" }
 local UNTRANSLATED = { key = "LANGUAGE_RELOAD_NOW", english = "Reload now" }
 
----@diagnostic disable: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io, os or loadfile
-
 -- The shipped Core locale file with `listed = false` changed to `listed = true`, in a temporary file; it is removed.
 ---@param action fun(path: string)
 local function withListedCopy(action)
 	local text = readFile("addons/Pagle/locale/esES.lua")
 	local listed, count = text:gsub("listed = false", "listed = true")
 	assert.are.equal(1, count, "the shipped header says listed = false once")
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io or os
 	local path = os.tmpname()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io or os
 	local file = assert(io.open(path, "w"))
 	file:write(listed)
 	file:close()
 	local ok, err = pcall(action, path)
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io or os
 	os.remove(path)
 	assert(ok, err)
 end
@@ -53,7 +54,8 @@ describe("esES as shipped, unlisted", function()
 		for _, choice in ipairs(loaded.ns.LanguageChoices("esES")) do
 			assert.are_not.equal("esES", choice.value)
 		end
-		assert.is_nil(loaded.ns.TranslatorCredits("esES"), "an unlisted Locale is not credited either")
+		-- An unlisted Locale is not credited either.
+		assert.is_nil(loaded.ns.TranslatorCredits("esES"))
 	end)
 
 	it("applies when ApplyLocale is driven directly: Spanish where it has text, English where it has none", function()
