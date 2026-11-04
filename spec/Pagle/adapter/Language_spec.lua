@@ -35,10 +35,15 @@ local function login(setting, client, extra, replace)
 end
 
 describe("the shipped locale list", function()
-	it("registers no Locale: English is the only language until one is generated", function()
+	it("registers esES unlisted: English is the only language a player can have until it is listed", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 
-		assert.is_nil(loaded.ns.LocaleInfo("esES"))
+		-- fmartingr's Spanish (#510, #528): registered with its header, and never applied while `listed` is false.
+		assert.are.same(
+			{ code = "esES", name = "Español", listed = false, translators = { "fmartingr" } },
+			loaded.ns.LocaleInfo("esES")
+		)
+		assert.is_nil(loaded.ns.LocaleInfo("deDE"))
 		assert.are.equal("enUS", loaded.env.Pagle.GetLanguage())
 		assert.are.equal("A collection worth keeping", loaded.ns.L.TRAILER_CAPTION_JOURNAL)
 	end)

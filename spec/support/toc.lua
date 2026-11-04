@@ -42,7 +42,9 @@ function addonFiles(name)
 			local text = xml:read("*a"):gsub("<!%-%-.-%-%->", "")
 			xml:close()
 			for script in text:gmatch('<Script%s+file="([^"]+)"') do
-				files[#files + 1] = (folder and folder .. "/" or "") .. script:gsub("\\", "/")
+				-- A Lore file is listed as `..\data\Lore.esES.lua`, from locale/: the path is the addon's `data/…`.
+				local path = ((folder and folder .. "/" or "") .. script:gsub("\\", "/")):gsub("[^/]+/%.%./", "")
+				files[#files + 1] = path
 			end
 		end
 	end

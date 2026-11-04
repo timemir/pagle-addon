@@ -40,6 +40,31 @@ local function registry()
 	return ns
 end
 
+-- The `<Script file>` entries of a Locales.xml, in order, comments removed.
+---@param xml string
+---@return string[]
+local function locales(xml)
+	local scripts = {}
+	for script in xml:gsub("<!%-%-.-%-%->", ""):gmatch('<Script%s+file="([^"]+)"') do
+		scripts[#scripts + 1] = script
+	end
+	return scripts
+end
+
+-- A file's text, or nil when there is none.
+---@param path string
+---@return string?
+local function readFileOrNil(path)
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+	local file = io.open(path, "r")
+	if not file then
+		return nil
+	end
+	local text = file:read("*a")
+	file:close()
+	return text
+end
+
 -- The three fields a Locale gives the text helper.
 ---@param decimal string?
 ---@return table
@@ -89,7 +114,7 @@ describe("the locale line of every addon (ADR 0019)", function()
 				end
 			end)
 
-			it("ships Core's Registry.lua, Apply.lua and Locales.xml, a Module's behind the CORE-R11 guard", function()
+			it("ships Core's Registry.lua and Apply.lua, a Module's behind the CORE-R11 guard", function()
 				-- Every Module file starts with the guard; Core's cannot, as `Pagle` does not exist while Core loads.
 				-- Its class is its own too: no two addons' `ns` share a type for the types stage to merge.
 				local guard = addon == "Pagle" and "" or GUARD
@@ -99,19 +124,42 @@ describe("the locale line of every addon (ADR 0019)", function()
 						read("addons/Pagle/locale/" .. file):gsub("%-%-%-@class PagleNS", "---@class " .. class)
 					assert.are.equal(guard .. core, read(dir .. "locale/" .. file), file)
 				end
-				assert.are.equal(read("addons/Pagle/locale/Locales.xml"), read(dir .. "locale/Locales.xml"))
+			end)
+
+			it("lists esES's locale file, and its Lore where it has one, between Registry.lua and Apply.lua", function()
+				-- The generator writes the list from the files an addon has (DATA-R114), so the Lore entry is there
+				-- exactly where `data/Lore.esES.lua` is: the files differ by addon, and QoL has no Lore.
+				local expected = { "Registry.lua", "esES.lua" }
+				if readFileOrNil(dir .. "data/Lore.esES.lua") then
+					expected[#expected + 1] = "..\\data\\Lore.esES.lua"
+				end
+				expected[#expected + 1] = "Apply.lua"
+
+				assert.are.same(expected, locales(read(dir .. "locale/Locales.xml")))
 			end)
 		end)
 	end
 
-	it("lists no language yet: the registration call first, the step that applies the Language last", function()
-		local xml = read("addons/Pagle/locale/Locales.xml"):gsub("<!%-%-.-%-%->", "")
-		local scripts = {}
-		for script in xml:gmatch('<Script%s+file="([^"]+)"') do
-			scripts[#scripts + 1] = script
-		end
+	it("lists no language as listed: esES is shipped and registers unlisted in every addon", function()
+		for _, addon in ipairs(ADDONS) do
+			local ns = registry()
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
+			local chunk = assert(loadfile("addons/" .. addon .. "/locale/esES.lua"))
+			setfenv(chunk, setmetatable({ Pagle = {} }, { __index = _G }))
 
-		assert.are.same({ "Registry.lua", "Apply.lua" }, scripts)
+			chunk(addon, ns)
+
+			local info = assert(ns.LocaleInfo("esES"), addon)
+			assert.is_false(info.listed, addon)
+			assert.are.equal("Español", info.name, addon)
+		end
+		-- No other language is shipped: the one code a locale file or a Lore file may carry is esES.
+		for _, addon in ipairs(ADDONS) do
+			for _, script in ipairs(locales(read("addons/" .. addon .. "/locale/Locales.xml"))) do
+				local code = script:match("(%a%a%u%u)%.lua$")
+				assert(code == nil or code == "esES", script)
+			end
+		end
 	end)
 end)
 

@@ -1,0 +1,6 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<!-- A test fixture, never shipped: locale/Locales.xml with no language between the two stable entries, for a spec
+	that registers its own Locales under real client codes (esES ships, so the shipped list would register it twice). -->
+	<Script file="Registry.lua"/>
+	<Script file="Apply.lua"/>
+</Ui>

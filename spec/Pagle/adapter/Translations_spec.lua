@@ -1,7 +1,10 @@
 -- The Settings root's Translations line (SET-R10 row 13, ADR 0019, Credits): one line after the Catch log row crediting
 -- the translators of each listed language the client can render, and no row at all when none has translators. The
--- Locales are fixtures registered under real client codes, as spec/Pagle/adapter/LanguageRow_spec.lua does; none ships
--- in this build.
+-- Locales are fixtures registered under real client codes, as spec/Pagle/adapter/LanguageRow_spec.lua does; none that
+-- ships is listed, and the shipped esES is left out of these loads.
+
+-- The shipped esES registers itself (unlisted); a spec that registers its own under a real code loads Core without it.
+local NO_LOCALES = { ["locale/Locales.xml"] = "spec/Pagle/fixtures/locale/LocalesNone.xml" }
 
 local PLURAL = function()
 	return "other"
@@ -44,7 +47,8 @@ local function core(client, fixtures)
 			GetLocale = function()
 				return client or "enUS"
 			end,
-		})
+		}),
+		{ replace = NO_LOCALES }
 	)
 	for _, fixture in ipairs(fixtures or {}) do
 		register(loaded.ns, fixture[1], fixture[2], fixture[3], fixture[4])
