@@ -274,8 +274,8 @@ describe("Core's pseudo-locale at ADDON_LOADED", function()
 
 	it("keeps counted strings counted, with the helper still on English's rule", function()
 		local ns = login(ON).ns
-		local counted = ns.L.GUIDE_BOX_PARTS
-		local fields = { words = "WORDS" }
+		local counted = ns.L.GUIDE_PARTS_MORE
+		local fields = {}
 
 		assert.is_table(counted)
 		assert.is_truthy(counted.one:find("^%["))
