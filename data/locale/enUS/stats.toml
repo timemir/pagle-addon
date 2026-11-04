@@ -108,10 +108,28 @@ AGO_NOW = "just now"
 AGO_MINUTES = "{minutes:0}m ago"
 AGO_HOURS = "{hours:0}h ago"
 AGO_DAYS = "{ago_days:0}d ago"
-# A date, "5 Oct 2026": the day without a leading zero, the month's abbreviation and the year, as `date` gives them.
-DATE = "{dayOf:0} {date} {date_3}"
-# A Session's heading, "Monday 5 October": the weekday, the day without a leading zero and the month.
-SESSION_HEADING = "{date} {dayOf:0} {session_heading_3}"
+# A date, "5 Oct 2026": the day without a leading zero, the month's abbreviation (MONTHS_SHORT) and the year.
+DATE = "{day:0} {month} {year}"
+# A Session's heading, "Monday 5 October": the weekday (WEEKDAYS), the day without a leading zero and the month (MONTHS).
+SESSION_HEADING = "{weekday} {day:0} {month}"
+# The names of the months, by the month's number, and of the weekdays, by the weekday's number with 1 = Sunday. Pagle's
+# own, so that a date reads in Pagle's language whatever the client's is (the client's `date` is the C library's).
+MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+MONTHS = [
+	"January",
+	"February",
+	"March",
+	"April",
+	"May",
+	"June",
+	"July",
+	"August",
+	"September",
+	"October",
+	"November",
+	"December",
+]
+WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 # Names (ns.Item, ns.AreaName, ns.CharacterName, ns.QualityName) and their fallbacks.
 ITEM_FALLBACK = "Item {itemID}"
 AREA_FALLBACK = "Area {areaID}"

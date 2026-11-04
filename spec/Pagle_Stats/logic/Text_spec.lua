@@ -203,6 +203,45 @@ describe("Stats' words", function()
 			assert.are.equal("Monday 5 October", ns.SessionHeading(late))
 		end)
 
+		it("name the month and the weekday from Pagle's own names, not the client's (#520)", function()
+			local loaded = stats.load()
+			-- A German client: its C library names the months and the weekdays in German.
+			local german = {
+				["%b"] = "Okt",
+				["%B"] = "Oktober",
+				["%A"] = "Montag",
+				["%a"] = "Mo",
+			}
+			local english = loaded.env.date
+			loaded.env.date = function(format, time)
+				return german[format] or english(format, time)
+			end
+			local ns = loaded.ns
+
+			assert.are.equal("5 Oct 2026", ns.Date(MONDAY_5_OCTOBER + 9 * 3600))
+			assert.are.equal("Monday 5 October", ns.SessionHeading(MONDAY_5_OCTOBER + 9 * 3600))
+			ns.L.MONTHS_SHORT =
+				{ "Jan.", "Feb.", "Mar.", "Apr.", "Mai", "Jun.", "Jul.", "Aug.", "Sep.", "Okt.", "Nov.", "Dez." }
+			ns.L.MONTHS = {
+				"Januar",
+				"Februar",
+				"Maerz",
+				"April",
+				"Mai",
+				"Juni",
+				"Juli",
+				"August",
+				"September",
+				"Oktober",
+				"November",
+				"Dezember",
+			}
+			ns.L.WEEKDAYS = { "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag" }
+			assert.are.equal("5 Okt. 2026", ns.Date(MONDAY_5_OCTOBER + 9 * 3600))
+			assert.are.equal("Montag 5 Oktober", ns.SessionHeading(MONDAY_5_OCTOBER + 9 * 3600))
+			assert.are.equal("Sonntag 11 Oktober", ns.SessionHeading(SERVER_TIME))
+		end)
+
 		it("read a realm-time window bound, a minute of the realm's day, as HH:MM", function()
 			local ns = stats.load().ns
 
