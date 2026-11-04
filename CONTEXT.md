@@ -360,6 +360,38 @@ _Avoid_: drop rate, loot chance (which are the game's own numbers), catch rate
 The Casts an Angler has made, in the scope where an item can be caught, since they last caught it. It is shown with how unusual that wait is, never as a promise that the item is due.
 _Avoid_: pity, overdue, bad-luck streak
 
+### Languages
+
+From 1.1 (ADR 0019).
+
+**Locale**:
+One language Pagle can be read in, named by its full client code (`esES`, `deDE`). It holds the translated interface text and, optionally, the translated Lore, and the language's own plural rule, number separators and fallback. English (`enUS`) is the Locale every other one falls back to, string by string.
+_Avoid_: translation (which is the text, not the language), language pack, lang
+
+**Locale file**:
+The generated file that registers one Locale's text for one addon. It is written from the translators' TOML and never edited by hand.
+_Avoid_: translation file, strings file, language file
+
+**Language setting**:
+The one account-wide choice of the language Pagle is read in: Game default, English, or a Listed language. It is independent of the game client's own language, and changing it asks for a `/reload`. Game default follows the client's language if that is a Listed language, and is English if not.
+_Avoid_: locale setting, client language, language option
+
+**Listed language**:
+A Locale whose whole interface is translated and that the maintainer has opened to players. It stays listed once it is, and any string it later lacks shows in English.
+_Avoid_: supported language, released language, enabled language
+
+**EN snapshot**:
+The English text a translated string was translated from, kept beside it so that a change to the English can be seen.
+_Avoid_: source text, original, English comment
+
+**Stale translation**:
+A translated string whose English has changed since its EN snapshot. It keeps showing if its `{fields}` are the same, and is dropped, so that English shows, if they changed.
+_Avoid_: outdated string, drifted string, broken translation
+
+**Pseudo-locale**:
+A development-only Locale that pads text by about 40% and wraps it in brackets, to show where a layout would break before a real language is offered. Players never see it.
+_Avoid_: test locale, fake language
+
 ### The website
 
 **Companion**:
