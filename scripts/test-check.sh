@@ -414,7 +414,7 @@ printf 'do\n\t---@diagnostic disable-next-line: assign-type-mismatch, cast-local
 	>>"$addon/adapter/Core.lua"
 printf '\tPagle.API_VERSION = "2"\nend\n' >>"$addon/adapter/Core.lua"
 # types lets it through; the stage after it, tests, still catches the string (CORE-R15).
-expect "an inline suppression with codes and a reason passes types" tests "types tests" "API version 1 before 1.0 (CORE-R15)"
+expect "an inline suppression with codes and a reason passes types" tests "types tests" "API version 2, the version that added Pagle.Text (CORE-R15)"
 
 # The stages after libs run at once, but the verdict is the first failing stage in their order (#254).
 copy
