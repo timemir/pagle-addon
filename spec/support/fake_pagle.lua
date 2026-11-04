@@ -967,6 +967,12 @@ part(function(_, Pagle, ns)
 	ns.PublishText(Pagle)
 end)
 
+-- The case helper as Core publishes it (CORE-R8): Pagle.Upper, Pagle.Lower and Pagle.FoldCase, on Core's real
+-- logic/Case.lua.
+part(function(_, Pagle, ns)
+	ns.PublishCase(Pagle)
+end)
+
 -- The Language as Core publishes it (CORE-R8): Pagle.GetLanguage, "enUS" until a spec sets fake.language. A Module
 -- loaded on the fake applies that Locale from its own registrations, as locale/Apply.lua does on Core.
 part(function(fake, Pagle)

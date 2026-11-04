@@ -12,6 +12,10 @@ local Pagle = Pagle
 -- Modules as Pagle.Text.
 ns.PublishText(Pagle)
 
+-- The case helper (CORE-R8, logic/Case.lua): upper and lower case and a search fold for UTF-8 text. Here Core gives it to
+-- Modules as Pagle.Upper, Pagle.Lower and Pagle.FoldCase.
+ns.PublishCase(Pagle)
+
 -- The Language (CORE-R8, SET-R10 row 9b, ADR 0019). Core applies it first in its ADDON_LOADED (adapter/Login.lua), before
 -- the Size and Variety names are published and before anything prints; a Module applies Core's choice as its files load
 -- (locale/Apply.lua).
