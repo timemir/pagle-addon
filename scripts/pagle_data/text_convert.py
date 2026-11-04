@@ -49,7 +49,9 @@ RENDER_CORE = "ns.RenderText"
 RENDER_MODULE = "ns.Text"
 
 # A field named like one of these is an identifier, not a quantity: `%d` of it is written as it is, never grouped.
-_PLAIN_NUMBER = re.compile(r"(?:^|[a-z])(?:ID|Id)$|^(?:id|key|seq|version|index|year|v)$")
+_PLAIN_NUMBER = re.compile(r"(?:^|[a-z])(?:ID|Id)$|^(?:id|key|seq|version|index|year|v|item|spell|area|zone)$")
+# Text only a developer reads (/pagle dev …, the pushed content check, the Views reader): numbers in it are not grouped.
+_DIAGNOSTIC = re.compile(r"^(?:DEV|PUSHED|PAYLOAD|VIEWS|PROBE|EVENT|LOG)_")
 # Calls that only change how a value is written: the field is named after what they are given.
 _WRAPPERS = frozenset(
     "tostring shown decimal formatNumber breakUpLargeNumbers BreakUpLargeNumbers Number Round floor ceil listed "
@@ -58,7 +60,8 @@ _WRAPPERS = frozenset(
 # Wrappers that put a count in digits as it is: `{count}`, not `{count:n}`.
 _PLAIN_WRAPPERS = frozenset({"tostring", "tonumber", "floor", "ceil", "abs"})
 _NOT_A_NAME = frozenset(
-    "format self ns L Pagle string math table lower upper rep sub gsub unpack select pairs ipairs next type".split()
+    "format self ns L Pagle string math table lower upper rep sub gsub unpack select pairs ipairs next type "
+    "renderText text".split()
 )
 _BINARY = frozenset({"+", "-", "*", "/", "%", "..", "==", "~=", "<", ">", "<=", ">="})
 
@@ -955,6 +958,8 @@ def convert_text(text: str, plan: KeyPlan) -> str:
         name = plan.names[position]
         if position == plan.count_at:
             suffix = ":n" if plan.wrapped else (":0" if spec.kind == "d" else spec.suffix(name))
+        elif spec.kind == "d" and _DIAGNOSTIC.match(plan.key):
+            suffix = ""
         else:
             suffix = spec.suffix(name)
         out.append("{" + name + suffix + "}")
