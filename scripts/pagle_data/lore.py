@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from pagle_data.errors import At, Problems
+from pagle_data.glyphs import ENGLISH, glyphs_for
 from pagle_data.items import Record
 from pagle_data.lua import to_lua
 from pagle_data.toml_reader import check_keys, describe, expect_table, read_toml
@@ -460,34 +461,25 @@ def check_hunts_texts(file: str, texts: Mapping[str, Text], problems: Problems) 
         _check_hunt_text(file, texts[key], problems)
 
 
-# CORE-R9's punctuation outside Latin-1, which every font Pagle uses drew in game on 2026-10-15 (#248): the en and em
-# dashes, curly single and double quotes, the bullet and the ellipsis.
-PUNCTUATION = frozenset("–—‘’“”•…")
-GLYPHS = "ASCII, Latin-1, the en and em dashes, curly quotes, the bullet and the ellipsis"
-
-
-def drawable(char: str) -> bool:
-    """Whether the client's fonts have char (CORE-R9): ASCII, Latin-1 (U+00A0-U+00FF) or PUNCTUATION."""
-    point = ord(char)
-    return point < 0x80 or 0xA0 <= point <= 0xFF or char in PUNCTUATION
-
-
-def check_glyphs(layer: LoreLayer, problems: Problems) -> None:
+def check_glyphs(layer: LoreLayer, problems: Problems, locale: str = ENGLISH) -> None:
     """DATA-R107's glyph check over every lore file read, whether or not its check is on: each character outside
-    CORE-R9's set, named by its code point once per text, since the client's fonts draw it as a box. The Hunt and
-    set text of hunts.toml (DATA-R105) and each event file's text (DATA-R97) are Pagle_Hunts' lore, so they are
+    CORE-R9's range for locale, named by its code point once per text, since the client's fonts draw it as a box.
+    The range is data/glyphs.toml's (pagle_data/glyphs.py): English lore, the default, gets the base set. The Hunt
+    and set text of hunts.toml (DATA-R105) and each event file's text (DATA-R97) are Pagle_Hunts' lore, so they are
     checked too."""
+    glyphs = glyphs_for(locale)
     sources = [(lore_file(lore_id), texts) for lore_id, texts in sorted(layer.files.items())]
     sources.extend(layer.hunts_sources())
     for file, texts in sources:
         for key in sorted(texts, key=lambda key: key.encode("utf-8")):
             seen: set[str] = set()
             for char in texts[key].value:
-                if not drawable(char) and char not in seen:
+                if not glyphs.has(char) and char not in seen:
                     seen.add(char)
+                    where = "set" if locale == ENGLISH else f"range for {locale}"
                     problems.add(
                         At(file, key),
-                        f"glyph: U+{ord(char):04X} outside CORE-R9's set: {GLYPHS} (CORE-R9, DATA-R107)",
+                        f"glyph: U+{ord(char):04X} outside CORE-R9's {where}: {glyphs.description} (CORE-R9, DATA-R107)",
                     )
 
 

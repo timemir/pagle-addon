@@ -444,6 +444,7 @@ local helperGlobals = {
 	"pageScroll",
 	"scrollPage",
 	"openJournal",
+	"glyphLocales",
 	"glyphsOutside",
 	"fromHex",
 	"toHex",

@@ -728,31 +728,106 @@ function openJournal(options)
 	return fake, loaded
 end
 
--- The punctuation outside Latin-1 that CORE-R9 allows, by code point.
-local GLYPH_PUNCTUATION = {
-	[0x2013] = true,
-	[0x2014] = true,
-	[0x2018] = true,
-	[0x2019] = true,
-	[0x201C] = true,
-	[0x201D] = true,
-	[0x2022] = true,
-	[0x2026] = true,
-}
-
--- Whether code point `cp` is in CORE-R9's set.
----@param cp integer
----@return boolean
-local function glyphAllowed(cp)
-	return cp < 0x80 or (cp >= 0xA0 and cp <= 0xFF) or GLYPH_PUNCTUATION[cp] == true
+-- CORE-R9's ranges, from data/glyphs.toml, the one table the generator reads too (scripts/pagle_data/glyphs.py). The file
+-- stays in the small TOML subset read here: "[name]" tables, `key = [ ... ]` arrays of strings (one line or many) and
+-- "#" comments. Returns { base = {{lo, hi}, ...}, scripts = { name = {{lo, hi}, ...} }, locales = { code = { name } } }.
+---@return table
+local function readGlyphTable()
+	local table_ = { base = {}, scripts = {}, locales = {} }
+	local section, key, open
+	for row in (readFile("data/glyphs.toml") .. "\n"):gmatch("([^\n]*)\n") do
+		local line = (row:gsub("%s*#.*$", "")):match("^%s*(.-)%s*$")
+		if line ~= "" then
+			local rest = line
+			if not open then
+				local header = line:match("^%[([%w%.]+)%]$")
+				if header then
+					section, rest = header, nil
+				else
+					local name, after = line:match("^(%w+)%s*=%s*%[(.*)$")
+					assert(name and section, "data/glyphs.toml: unreadable line: " .. row)
+					key, open, rest = name, {}, after
+				end
+			end
+			if rest then
+				for item in rest:gmatch('"([^"]*)"') do
+					open[#open + 1] = item
+				end
+				if rest:find("]", 1, true) then
+					local script = section:match("^script%.(%w+)$")
+					if section == "base" and key == "ranges" then
+						table_.base = open
+					elseif script and key == "ranges" then
+						table_.scripts[script] = open
+					elseif section == "locale" then
+						table_.locales[key] = open
+					else
+						error("data/glyphs.toml: unexpected key '" .. key .. "' in [" .. section .. "]")
+					end
+					open = nil
+				end
+			end
+		end
+	end
+	assert(not open, "data/glyphs.toml: an array is never closed")
+	local function parse(ranges)
+		local parsed = {}
+		for _, item in ipairs(ranges) do
+			local low, high = item:match("^U%+(%x+)%-U%+(%x+)$")
+			low, high = low or item:match("^U%+(%x+)$"), high or item:match("^U%+(%x+)$")
+			assert(low, "data/glyphs.toml: not a range: " .. item)
+			parsed[#parsed + 1] = { tonumber(low, 16), tonumber(high, 16) }
+		end
+		return parsed
+	end
+	table_.base = parse(table_.base)
+	for name, ranges in pairs(table_.scripts) do
+		table_.scripts[name] = parse(ranges)
+	end
+	return table_
 end
 
---- Each code point in `text` outside CORE-R9's set, as "U+XXXX": what spec/glyphs_spec.lua checks every shipped
---- string with, and spec/settings_tree_spec.lua every Settings string. Bytes that spell no UTF-8 character are skipped:
---- they are byte patterns such as FieldReportText's "[^\128-\191]", never drawn.
----@param text string
+local glyphRanges = {} -- each Locale's ranges by client code, read on first use
+
+-- Locale `code`'s ranges (CORE-R9): the base set, then its scripts'. A code the table lacks is an error.
+---@param code string
+---@return integer[][]
+local function glyphRangesFor(code)
+	if not glyphRanges[code] then
+		local data = readGlyphTable()
+		local scripts = data.locales[code]
+		assert(scripts, ("data/glyphs.toml: no range for the Locale '%s' (CORE-R9): add it to [locale]"):format(code))
+		local ranges = { unpack(data.base) }
+		for _, name in ipairs(scripts) do
+			for _, range in ipairs(data.scripts[name]) do
+				ranges[#ranges + 1] = range
+			end
+		end
+		glyphRanges[code] = ranges
+	end
+	return glyphRanges[code]
+end
+
+--- Every Locale's code in data/glyphs.toml, sorted.
 ---@return string[]
-function glyphsOutside(text)
+function glyphLocales()
+	local codes = {}
+	for code in pairs(readGlyphTable().locales) do
+		codes[#codes + 1] = code
+	end
+	table.sort(codes)
+	return codes
+end
+
+--- Each code point in `text` outside CORE-R9's range for Locale `code` (enUS, the base set, when none is given), as
+--- "U+XXXX": what spec/glyphs_spec.lua checks every shipped string with, and spec/settings_tree_spec.lua every Settings
+--- string. Bytes that spell no UTF-8 character are skipped: they are byte patterns such as FieldReportText's
+--- "[^\128-\191]", never drawn.
+---@param text string
+---@param code? string
+---@return string[]
+function glyphsOutside(text, code)
+	local ranges = glyphRangesFor(code or "enUS")
 	local found, i = {}, 1
 	while i <= #text do
 		local byte = text:byte(i)
@@ -777,7 +852,14 @@ function glyphsOutside(text)
 		if not size then
 			i = i + 1
 		else
-			if not glyphAllowed(cp) then
+			local allowed = false
+			for _, range in ipairs(ranges) do
+				if cp >= range[1] and cp <= range[2] then
+					allowed = true
+					break
+				end
+			end
+			if not allowed then
 				found[#found + 1] = ("U+%04X"):format(cp)
 			end
 			i = i + size
