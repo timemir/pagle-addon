@@ -1,0 +1,83 @@
+# The "translations stale" issues (DATA-R114, ADR 0019, docs/agents/translations-stale.md): every Monday at 06:30 UTC,
+# and by hand from the Actions tab, writes one issue for each listed Locale from the TOML on the default branch: the
+# strings whose English has changed since they were translated, and the keys it has no text for. Only
+# scripts/generate-data.py reads the files and writes the body (scripts/tests/test_drift.py tests it); this file lists
+# the Locales, finds each Locale's issue by its title and calls gh. It never edits data/ and never pushes, and it
+# never creates a label: if the repo has a `translations-stale` label it puts it on a new issue, and if not it does
+# without (the label is the maintainer's to create). It runs on a schedule or by hand and on nothing else: an event
+# trigger such as `issues` would start a run for every issue.
+name: Translations stale
+
+on:
+  schedule:
+    - cron: "30 6 * * 1" # Monday, 06:30 UTC, after the DB2 watch
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write # find, open, edit, close and reopen the Locales' issues
+
+concurrency:
+  group: translations-stale # two runs at once could both open the same Locale's issue
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false # the job never pushes
+
+      # PYTHON_VERSION in scripts/tools.env, the generator's Python; the listing needs nothing beyond its standard
+      # library. A `with:` can't read that file, so this step hands the pin over.
+      - name: Read the Python pin
+        id: pins
+        run: |
+          source scripts/tools.env
+          echo "python=$PYTHON_VERSION" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ steps.pins.outputs.python }}
+
+      - name: Write the issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          codes=$(python scripts/generate-data.py --stale --json | jq -r '.locales | to_entries[] | select(.value.listed) | .key')
+          if [[ -z "$codes" ]]; then
+            echo "translations-stale: no listed Locale"
+            exit 0
+          fi
+          labels=$(gh label list --repo "$GITHUB_REPOSITORY" --limit 1000 --json name --jq '.[].name')
+          for code in $codes; do
+            python scripts/generate-data.py --stale-issue "$code" --json > "$RUNNER_TEMP/$code.json"
+            title=$(jq -r .title "$RUNNER_TEMP/$code.json")
+            jq -r .body "$RUNNER_TEMP/$code.json" > "$RUNNER_TEMP/$code.md"
+            open=$(jq '.fields_changed + .same_fields + .missing_interface' "$RUNNER_TEMP/$code.json")
+            # Every issue whose title could be this Locale's, open or closed; the exact title picks it.
+            found=$(gh issue list --repo "$GITHUB_REPOSITORY" --state all --limit 100 --search "in:title \"$title\"" \
+              --json number,title,state --jq "[.[] | select(.title == \"$title\")] | first // empty | \"\(.number) \(.state)\"")
+            if [[ -z "$found" ]]; then
+              if [[ "$open" -eq 0 ]]; then
+                echo "translations-stale: $code has nothing stale or missing, and no issue"
+                continue
+              fi
+              args=(--repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$RUNNER_TEMP/$code.md")
+              if grep -qxF translations-stale <<<"$labels"; then
+                args+=(--label translations-stale)
+              fi
+              gh issue create "${args[@]}"
+              continue
+            fi
+            number=${found%% *}
+            state=${found##* }
+            gh issue edit "$number" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/$code.md"
+            if [[ "$state" == "CLOSED" && "$open" -gt 0 ]]; then
+              gh issue reopen "$number" --repo "$GITHUB_REPOSITORY" --comment "English has moved on again: see the list."
+            elif [[ "$state" == "OPEN" && "$open" -eq 0 ]]; then
+              gh issue close "$number" --repo "$GITHUB_REPOSITORY" --comment "Nothing is stale or missing now."
+            fi
+          done
