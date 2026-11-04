@@ -406,7 +406,8 @@ local function gettingStarted(layout)
 		rowCheck(own, evening:IsShowing(), function(checked)
 			evening:SetShown(checked)
 		end)
-		rowLine(own, LINE_X, L.SETTINGS_EVENING_LINE:format(evening:Count()))
+		local done, total = evening:Count()
+		rowLine(own, LINE_X, L.SETTINGS_EVENING_LINE:format(done, total))
 	end, L.SETTINGS_EVENING))
 end
 

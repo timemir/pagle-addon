@@ -25,7 +25,7 @@ end
 ---@param n integer
 ---@return string
 function ns.GuidePartsLine(n)
-	return ns.L.GUIDE_WELCOME_PARTS:format(ns.GuideCountWord(n))
+	return ns.RenderText(ns.L.GUIDE_WELCOME_PARTS, { words = ns.GuideCountWord(n) })
 end
 
 --- What's in the box's right kicker (ONB-R31): "Five parts, and a shop", `n` the registered Modules, in words.
@@ -33,7 +33,7 @@ end
 ---@return string
 function ns.GuideBoxKicker(n)
 	local L = ns.L
-	return capitalised((n == 1 and L.GUIDE_BOX_PART or L.GUIDE_BOX_PARTS):format(ns.GuideCountWord(n)))
+	return capitalised(ns.RenderText(L.GUIDE_BOX_PARTS, { count = n, words = ns.GuideCountWord(n) }))
 end
 
 --- Each Module's icon on What's in the box: a sprite of the guide's atlas (GuideParts), by roster name.

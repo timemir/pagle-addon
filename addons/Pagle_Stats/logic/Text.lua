@@ -87,8 +87,7 @@ end
 ---@param noun "Casts"|"Catches"|"Sessions"|"waters"|"anglers"
 ---@return string
 function ns.Count(n, noun)
-	local forms = ns.L.COUNTS[noun]
-	return (n == 1 and forms.one or forms.other):format(ns.Number(n))
+	return ns.Text(ns.L.COUNTS[noun], { count = n })
 end
 
 --- A length of time (STA-R59): under a minute "under 1m", under an hour "21m", otherwise "1h 05m", hours unbounded.

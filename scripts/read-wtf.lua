@@ -1182,7 +1182,7 @@ end
 -- and why the Hunt list can't be loaded.
 local function loadHuntsLogic(huntListPath, eventListPath)
 	local ns = {}
-	local env = setmetatable({ Pagle = {} }, { __index = _G })
+	local env = setmetatable({ Pagle = wtf.pagleStub() }, { __index = _G })
 	local dir = ROOT .. "/addons/Pagle_Hunts/"
 	local listErr
 	for _, file in ipairs(wtf.tocEntries("Pagle_Hunts")) do
@@ -1808,7 +1808,7 @@ end
 -- client's reads: no item or area names (so "Item {id}", "Area {id}"), the log's characters and the clock at `now`.
 local function loadStatsLogic(log, now)
 	local ns = {}
-	local env = setmetatable({ Pagle = {} }, { __index = _G })
+	local env = setmetatable({ Pagle = wtf.pagleStub() }, { __index = _G })
 	local dir = ROOT .. "/addons/Pagle_Stats/"
 	for _, line in ipairs(assert(readLines(dir .. "Pagle_Stats.toc"))) do
 		local file = line:match("^%s*(.-)%s*$"):gsub("\\", "/")
@@ -2162,7 +2162,7 @@ local GOAL_TYPES = { n = "Notice", e = "Expedition" }
 -- over `catalogue` (nil when it can't load) with Core's Size bands.
 local function loadBoardLogic(catalogue)
 	local ns = {}
-	local env = setmetatable({ Pagle = {}, bit = wtf.luaBitOp() or {} }, { __index = _G })
+	local env = setmetatable({ Pagle = wtf.pagleStub(), bit = wtf.luaBitOp() or {} }, { __index = _G })
 	local dir = ROOT .. "/addons/Pagle_TackleBoard/"
 	for _, file in ipairs(wtf.tocEntries("Pagle_TackleBoard")) do
 		if file:match("^locale/[^/]+%.lua$") or file:match("^data/[^/]+%.lua$") or file:match("^logic/[^/]+%.lua$") then

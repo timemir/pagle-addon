@@ -143,8 +143,8 @@ function ns.CollectionShelves(slots)
 		key = ns.COLLECTION_TITLES,
 		kind = "titles",
 		slots = {},
-		label = L.COLLECTION_TITLE_OTHER,
-		singular = L.COLLECTION_TITLE_ONE,
+		label = L.COLLECTION_TITLES_NOUN,
+		singular = L.COLLECTION_TITLE_NOUN,
 	}
 	return shelves
 end
@@ -333,7 +333,7 @@ local function titleLooks(context, shelf)
 			name = name,
 			title = true,
 			shelf = shelf.key,
-			slotName = L.COLLECTION_TITLE_ONE,
+			slotName = L.COLLECTION_TITLE_NOUN,
 			group = group,
 			state = id == inUse and "inUse" or (owned and "owned" or "earn"),
 			owned = owned,

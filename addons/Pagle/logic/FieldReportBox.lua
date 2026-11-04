@@ -61,7 +61,7 @@ end
 ---@return string
 local function counted(count, label, labelWithCount)
 	if count > 0 then
-		return labelWithCount:format(count)
+		return ns.RenderText(labelWithCount, { count = count })
 	end
 	return label
 end

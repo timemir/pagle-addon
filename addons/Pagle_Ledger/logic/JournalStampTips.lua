@@ -15,16 +15,6 @@ local ns = select(2, ...)
 ---@field title string
 ---@field lines string[]
 
---- The singular form `one` when `n` is 1, else `other`, either one formatted with `...`.
----@param n integer
----@param one string
----@param other string
----@param ... any
----@return string
-local function counted(n, one, other, ...)
-	return (n == 1 and one or other):format(...)
-end
-
 --- "Land it {n} times." and "{have} of {n} landed.", for the stars that count Catches (LED-R45): ★ and ★★★.
 ---@param title string
 ---@param species LedgerSpecies
@@ -35,7 +25,7 @@ local function landTip(title, species, need)
 	return {
 		title = title,
 		lines = {
-			counted(need, L.STAMP_TIP_LAND_ONE, L.STAMP_TIP_LAND_OTHER, need),
+			ns.Text(L.STAMP_TIP_LAND, { count = need }),
 			L.STAMP_TIP_LANDED:format(math.min(species.n, need), need),
 		},
 	}
@@ -59,15 +49,15 @@ local function elementLines(listing, species, text)
 				missing[#missing + 1] = label
 			end
 		end
-		local rule = need == 1 and L.STAMP_TIP_ELEMENT_WINDOW or L.STAMP_TIP_ELEMENT_WINDOWS:format(need)
+		local rule = ns.Text(L.STAMP_TIP_ELEMENT_WINDOWS, { count = need })
 		if #missing > 0 then
 			return { rule, L.STAMP_TIP_ELEMENT_NEEDED:format(have, need, ns.JoinAnd(missing)) }
 		end
 		return { rule, L.STAMP_TIP_ELEMENT_MET:format(ns.JoinAnd(all)) }
 	end
 	return {
-		need == 1 and L.STAMP_TIP_ZONE or L.STAMP_TIP_ZONES:format(need),
-		counted(need, L.STAMP_TIP_ZONES_ONE, L.STAMP_TIP_ZONES_OTHER, have, need),
+		ns.Text(L.STAMP_TIP_ZONES, { count = need }),
+		ns.Text(L.STAMP_TIP_ZONES_PROGRESS, { count = need, have = have }),
 	}
 end
 
@@ -112,7 +102,7 @@ function ns.FamilyStampTips(world, state, family, stars, formatNumber)
 		end
 	end
 	local function landedLine()
-		return counted(total, L.TROPHY_TIP_LANDED_ONE, L.TROPHY_TIP_LANDED_OTHER, done, total)
+		return ns.Text(L.TROPHY_TIP_LANDED, { count = total, done = done })
 	end
 	local any = { L.TROPHY_TIP_ANY }
 	if done > 0 then

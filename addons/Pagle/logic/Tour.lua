@@ -170,7 +170,7 @@ end
 ---@param n integer
 ---@return string
 local function count(n)
-	return n == 1 and ns.L.DEV_TOUR_ONE_STOP or ns.L.DEV_TOUR_STOPS:format(n)
+	return ns.RenderText(ns.L.DEV_TOUR_STOPS, { count = n })
 end
 
 -- Ends the tour: done, ended by `tour stop`, or by a restriction.
@@ -248,7 +248,7 @@ local function start(tour, module)
 	local shoot = options.canScreenshot()
 	tour.run = { stops = stops, index = 0, stopping = false, shoot = shoot }
 	local from = (shoot and L.DEV_TOUR_START or L.DEV_TOUR_START_MANUAL)
-	options.print(from:format(count(#stops), options.clock()))
+	options.print(ns.RenderText(from, { stops = count(#stops), clock = options.clock() }))
 	nextStop(tour)
 end
 

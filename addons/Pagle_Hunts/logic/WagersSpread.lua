@@ -78,9 +78,7 @@ function ns.BuildWagersLadder(settled, ladder, updating)
 		}
 	end
 	local function count(marked)
-		return ns.CountText(settled, "WAGERS_SETTLED", marked and function()
-			return "\1"
-		end or nil)
+		return ns.Text(L.WAGERS_SETTLED, { count = settled, shown = marked and "\1" or settled })
 	end
 	local line, marked
 	if next then
@@ -204,10 +202,8 @@ end
 ---@return string
 local function noteOf(on, firstAhead, input)
 	local L = ns.L
-	if on > 1 then
-		return L.SPREAD_NOTE_MANY:format(on)
-	elseif on == 1 then
-		return L.SPREAD_NOTE_ONE
+	if on >= 1 then
+		return ns.Text(L.SPREAD_NOTE, { count = on })
 	elseif firstAhead then
 		return L.SPREAD_NOTE_AHEAD:format(ns.RealmWeekdayClock(firstAhead.run.start, input.snapshot))
 	end

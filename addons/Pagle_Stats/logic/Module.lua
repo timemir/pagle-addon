@@ -5,6 +5,17 @@ end
 ---@class PagleStatsNS
 local ns = select(2, ...)
 
+--- Core's text helper, `Pagle.Text` (CORE-R8): a string of ns.L with its named `{fields}` filled, a counted string by the
+--- plural form `fields.count` picks in the chosen language. Every use of ns.L as a template goes through it. `Pagle` is
+--- read at each call, so that logic/ holds no Core (CORE-R7) and the fold, which builds no text, never reaches it.
+---@param source string|table<string, string> a string of ns.L, or a counted one
+---@param fields table<string, any>?
+---@return string
+function ns.Text(source, fields)
+	local pagle = Pagle -- luacheck: read globals Pagle (CORE-R8: the one read of Core in logic/ besides the guard)
+	return pagle.Text(source, fields)
+end
+
 -- What Stats registers with Core (STA-R4): pure logic, everything passed in (CORE-R7).
 
 --- Stats' def for `Pagle.RegisterModule` (STA-R4): its one view, the Stats book, and `/pagle stats`, both toggling

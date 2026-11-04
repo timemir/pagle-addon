@@ -35,12 +35,12 @@ local TITLE_MOMENTS = {
 	flybox = { kind = "flyBoxComplete", order = 30, icon = "flyBox", seal = "book" },
 }
 
--- ns.L's template at `key`, its `{name}` fields filled from `fields` (a count in `fields.n` picks its form).
+-- ns.L's template at `key`, its `{name}` fields filled from `fields`.
 ---@param key string
 ---@param fields table<string, any>?
 ---@return string
 local function say(key, fields)
-	return ns.Plural(fields and tonumber(fields.n) or 0, key, fields)
+	return ns.Text(ns.L[key], fields)
 end
 
 -- A count of days in words: "1 day", "7 days".
@@ -347,10 +347,7 @@ function ns.outlets.Done(state, info)
 		end
 		celebrateScratch()
 		if #scratch.goals > 0 then
-			raiseWriteUp(
-				ns.Plural(scratch.casts, "WRITE_UP_FIRST", { n = ns.api.FormatNumber(scratch.casts) }),
-				writeUpLines(state)
-			)
+			raiseWriteUp(ns.Text(ns.L.WRITE_UP_FIRST, { count = scratch.casts }), writeUpLines(state))
 		end
 	elseif (info.replayed or 0) > 0 then
 		if #scratch.goals > 0 or #scratch.titles > 0 or scratch.burned > 0 or scratch.wentOut then

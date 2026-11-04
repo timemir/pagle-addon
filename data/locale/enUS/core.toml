@@ -101,9 +101,9 @@ LENGTH_MARGIN_UNDER.cm = "+<0.1 cm"
 LENGTH_MARGIN_UNDER.in = "+<0.1 in"
 # CORE-R87: a clock time in each clock format: 24-hour "18:05", 12-hour "6:05 PM", as the game writes them
 # (TIMEMANAGER_TICKER_12HOUR's hour without a leading zero, then TIMEMANAGER_AM or TIMEMANAGER_PM).
-CLOCK."12h".am = "%d:%02d AM"
-CLOCK."12h".pm = "%d:%02d PM"
-CLOCK."24h" = "%02d:%02d"
+CLOCK."12h".am = "{hour}:{minute} AM"
+CLOCK."12h".pm = "{hour}:{minute} PM"
+CLOCK."24h" = "{hour}:{minute}"
 # Error reports (CORE-R23): owner, event, the error.
 EVENT_REGISTER_FAILED = "Pagle: %s couldn't register the event %s: %s"
 EVENT_HANDLER_FAILED = "Pagle: %s's handler for the event %s failed: %s"
@@ -289,7 +289,7 @@ MENU_CURIO_SHOP = 'Curio Shop  %s |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 # Its Field report entry (CORE-R50, REP-R43), which is also the box's title (REP-R40) and the Settings root's
 # section header (SET-R10 row 4); the entry adds the count while it is above 0.
 HELP_CHART = "Help chart the waters"
-HELP_CHART_COUNT = "Help chart the waters (%d)"
+HELP_CHART_COUNT = "Help chart the waters ({count:0})"
 
 # The Field report box (field-report.md › The box and its entry points), titled HELP_CHART (REP-R40): the privacy
 # line above the text (REP-R37), the hint beside it and the label before the URL (the field art kit's chart), the
@@ -307,7 +307,7 @@ FIELD_REPORT_AFTER_COMBAT = "Pagle: the Field report opens after combat."
 # while it is above 0, and the tooltip.
 SETTINGS_FIELD_REPORT_ROW = "Field report"
 SETTINGS_FIELD_REPORT_BUTTON = "Open Field report"
-SETTINGS_FIELD_REPORT_BUTTON_COUNT = "Open Field report (%d)"
+SETTINGS_FIELD_REPORT_BUTTON_COUNT = "Open Field report ({count:0})"
 SETTINGS_FIELD_REPORT_TOOLTIP = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form."
 # The export window (paste-string.md › The export window): its title, the privacy line and the copy hint, the two
 # choices, the lines under a part's string (its entries and size, joined; the note when there are parts), the label
@@ -489,21 +489,21 @@ PUSHED_EXPIRED = "expired at %s, and the server time is %s"
 PUSHED_PARSE_ERROR = "a parse error at byte %d: %s"
 PUSHED_CHECK_FAILED = "the check itself failed (see the Lua error)"
 # A payload parse error (PUSH-R20), after PUSHED_PARSE_ERROR's byte. Some name what was found or expected.
-PAYLOAD_EXPECTED = "expected %s"
+PAYLOAD_EXPECTED = "expected {value}"
 PAYLOAD_EXPECTED_FIELD = "expected a field name"
 PAYLOAD_EXPECTED_ITEM = "expected an item, a table"
 PAYLOAD_BAD_ITEM = "an item that doesn't start kind = \"…\", v = <integer>"
 PAYLOAD_BAD_NAME = "a field name that isn't a name"
-PAYLOAD_UNEXPECTED = "an unexpected character, %s"
-PAYLOAD_NAME_AS_VALUE = "a name, %s, where a value goes"
+PAYLOAD_UNEXPECTED = "an unexpected character, {value}"
+PAYLOAD_NAME_AS_VALUE = "a name, {value}, where a value goes"
 PAYLOAD_NOT_INTEGER = "a number that isn't a decimal integer"
-PAYLOAD_TOO_LARGE = "an integer of more than %s digits"
+PAYLOAD_TOO_LARGE = "an integer of more than {value} digits"
 PAYLOAD_UNENDED_STRING = "a string that doesn't end"
 PAYLOAD_LINE_IN_STRING = "a line end inside a string"
 PAYLOAD_BAD_ESCAPE = 'an escape other than \\, \" or \n'
-PAYLOAD_DUPLICATE = "a field given twice, %s"
+PAYLOAD_DUPLICATE = "a field given twice, {value}"
 PAYLOAD_MIXED = "a field in a list of values"
-PAYLOAD_TOO_DEEP = "tables nested more than %s deep"
+PAYLOAD_TOO_DEEP = "tables nested more than {value} deep"
 PAYLOAD_ENDED = "the payload ends too soon"
 PAYLOAD_AFTER_TABLE = "more after the payload's table"
 # /pagle dev views (VIEW-R12): each data file's state, by its folder name: live; absent, with the first reason
@@ -611,12 +611,12 @@ DEV_PROBE_SAVED = "Pagle dev: Probe saved; /reload to write it."
 DEV_FONTS_LINE = "Pagle dev: font %s: %s"
 DEV_FONTS_SAVED = "Pagle dev: %d of %d client fonts load on this %s client; the sample in each is on screen (a box is a character that font lacks; click it or press Esc to close). Fonts saved; /reload to write them."
 # /pagle dev tour (CORE-R65–R68): how many stops, as DEV_TOUR_START puts it.
-DEV_TOUR_ONE_STOP = "1 stop"
 # The number of stops.
-DEV_TOUR_STOPS = "%d stops"
+DEV_TOUR_STOPS.one = "1 stop"
+DEV_TOUR_STOPS.other = "{count} stops"
 # How many stops (DEV_TOUR_STOPS), the local time screenshot files are named by.
-DEV_TOUR_START = "Pagle dev: touring %s from %s; a screenshot of each goes to the Screenshots folder."
-DEV_TOUR_START_MANUAL = "Pagle dev: touring %s from %s; this client can't take screenshots, so press Print Screen as each stop's line appears."
+DEV_TOUR_START = "Pagle dev: touring {stops} from {clock}; a screenshot of each goes to the Screenshots folder."
+DEV_TOUR_START_MANUAL = "Pagle dev: touring {stops} from {clock}; this client can't take screenshots, so press Print Screen as each stop's line appears."
 # The stop's number, how many stops, its name ("ledger.journal.home"): one line per stop, as it shows.
 DEV_TOUR_STOP = "Pagle dev: tour %d/%d: %s"
 # The local time.
@@ -768,14 +768,14 @@ GUIDE_WELCOME_PROMISES = [
 	["III", "Every part is optional."],
 ]
 # The third promise's line: the roster's size in words (ONB-R30).
-GUIDE_WELCOME_PARTS = "Pagle comes in %s parts. Turn any of them off in the AddOns list and it leaves no trace."
+GUIDE_WELCOME_PARTS = "Pagle comes in {words} parts. Turn any of them off in the AddOns list and it leaves no trace."
 # What's in the box (ONB-R31, board 3): the paragraph (Pagle in the title's ink), the menu drawing's header and
 # its note, the right page's kicker (the registered Modules in words), the Curio Shop's row, and ONB-R103's line.
 GUIDE_BOX_TEXT = "Pagle is a small kit, not one big window. Each part has its own place, and every one of them opens from the |cff3e220cPagle|r entry under the addons button by your minimap."
 GUIDE_BOX_MENU = "Pagle"
 GUIDE_BOX_MENU_NOTE = "Click a name to open it. */pagle* opens Settings."
-GUIDE_BOX_PARTS = "%s parts, and a shop"
-GUIDE_BOX_PART = "%s part, and a shop"
+GUIDE_BOX_PARTS.one = "{words} part, and a shop"
+GUIDE_BOX_PARTS.other = "{words} parts, and a shop"
 GUIDE_BOX_SHOP = "Curio Shop"
 GUIDE_BOX_SHOP_BLURB = "Pagle Coins come from things you achieve, and buy looks, never power."
 GUIDE_BOX_NONE = "Turn parts on in the AddOns list."

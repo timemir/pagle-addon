@@ -32,21 +32,21 @@ end
 --- name in printed red (`em`).
 ---@alias PagleQoLNudgePart string|{ key: string }|{ em: string }
 
---- A Nudge's line as pieces (QOL-R75): `template` split at its one `%s`, with `value` there as a `kind` piece ("key" or
---- "em"); the template alone when it has no `%s` or there is no value. The words either side lose the spaces next to
+--- A Nudge's line as pieces (QOL-R75): `template` split at its one `{field}`, with `value` there as a `kind` piece ("key"
+--- or "em"); the template alone when it has no field or there is no value. The words either side lose the spaces next to
 --- the value, which the layout puts back as gaps.
 ---@param template string
 ---@param value string?
 ---@param kind "key"|"em"
 ---@return PagleQoLNudgePart[]
 function ns.NudgeParts(template, value, kind)
-	local at = template:find("%s", 1, true)
-	if not at or not value then
+	local at, close = template:find("{[%w_]+}")
+	if not at or not close or not value then
 		return { template }
 	end
 	local parts = {}
 	local before = template:sub(1, at - 1):match("^(.-)%s*$")
-	local after = template:sub(at + 2):match("^%s*(.-)$")
+	local after = template:sub(close + 1):match("^%s*(.-)$")
 	if before ~= "" then
 		parts[#parts + 1] = before
 	end

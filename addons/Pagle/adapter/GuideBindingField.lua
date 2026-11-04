@@ -262,7 +262,7 @@ end
 ---@return PagleGuideBindingField
 function ns.NewGuideBindingField(parent, action, label)
 	assert(
-		L.GUIDE_BIND_ASK[action],
+		action == "PAGLE_FISHING_KEY" or action == "PAGLE_SWAP_GEAR",
 		"a binding field binds PAGLE_FISHING_KEY or PAGLE_SWAP_GEAR, not " .. tostring(action)
 	)
 	local field = CreateFrame("Button", nil, parent) --[[@as PagleGuideBindingField]]

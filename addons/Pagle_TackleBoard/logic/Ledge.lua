@@ -249,7 +249,7 @@ function ns.CampfireCard(state, celebrated)
 		tally = state.tally.notices + state.tally.expeditions,
 		flybox = tied,
 	}
-	local more = { campfire = "CARD_MORE_CAMPFIRE", tally = "CARD_MORE_TALLY", flybox = "CARD_MORE_FLYBOX" }
+	local more = { campfire = ns.L.CARD_MORE_CAMPFIRE, tally = ns.L.CARD_MORE_TALLY, flybox = ns.L.CARD_MORE_FLYBOX }
 	local coins = {}
 	for _, milestone in ipairs(ns.CAMPFIRE_MILESTONES) do
 		coins[milestone.title] = milestone.coins
@@ -263,7 +263,8 @@ function ns.CampfireCard(state, celebrated)
 		}
 		card.marks[title.id] = {
 			label = ns.Fill(L.CARD_LABELS[title.source], { n = title.need }),
-			more = not row.earned and ns.Plural(math.max(1, title.need - reached[title.source]), more[title.source])
+			more = not row.earned
+					and ns.Text(more[title.source], { count = math.max(1, title.need - reached[title.source]) })
 				or nil,
 			paid = coins[title.id],
 		}

@@ -423,20 +423,6 @@ describe("the Collection's spread (LED-R168)", function()
 		assert.are.equal(forSale(none) - 1, forSale(bought))
 	end)
 
-	it('says "1 look" for one', function()
-		local _, loaded = open("collection")
-		local L = loaded.ns.L
-
-		assert.are.equal(
-			"1 look for sale you don't have yet.",
-			loaded.ns.CountText(1, L.COLLECTION_FOR_SALE_ONE, L.COLLECTION_FOR_SALE_OTHER)
-		)
-		assert.are.equal(
-			"2 looks for sale you don't have yet.",
-			loaded.ns.CountText(2, L.COLLECTION_FOR_SALE_ONE, L.COLLECTION_FOR_SALE_OTHER)
-		)
-	end)
-
 	it("keeps its words on the parchment at the default size (LED-R168, CORE-R65)", function()
 		local _, loaded = open("collection", nil, {
 			modules = function(fake)

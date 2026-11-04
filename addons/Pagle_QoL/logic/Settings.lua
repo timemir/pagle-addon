@@ -136,7 +136,7 @@ function ns.AddSettings(M, store)
 			return {
 				{ value = "off", label = L.SETTINGS_LURES_OFF },
 				{ value = "best", label = L.SETTINGS_LURES_BEST },
-				{ value = "one", label = L.SETTINGS_LURES_ONE },
+				{ value = "one", label = L.SETTINGS_LURES_THIS },
 			}
 		end,
 	})

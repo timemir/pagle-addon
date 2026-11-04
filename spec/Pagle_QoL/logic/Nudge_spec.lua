@@ -23,13 +23,13 @@ describe("QoL's Nudge logic", function()
 	end)
 
 	describe("ns.NudgeParts", function()
-		it("splits the line at its %s, the value a key or red words, the spaces round it dropped (QOL-R75)", function()
+		it("splits the line at its {field}, the value a key or red words, the spaces round it dropped (QOL-R75)", function()
 			assert.are.same(
 				{ "Press", { key = "G" }, "to swap back." },
-				ns.NudgeParts("Press %s to swap back.", "G", "key")
+				ns.NudgeParts("Press {key} to swap back.", "G", "key")
 			)
-			assert.are.same({ "Bind", { em = "Pagle: Swap gear" } }, ns.NudgeParts("Bind %s", "Pagle: Swap gear", "em"))
-			assert.are.same({ { key = "G" }, "first." }, ns.NudgeParts("%s first.", "G", "key"))
+			assert.are.same({ "Bind", { em = "Pagle: Swap gear" } }, ns.NudgeParts("Bind {binding}", "Pagle: Swap gear", "em"))
+			assert.are.same({ { key = "G" }, "first." }, ns.NudgeParts("{key} first.", "G", "key"))
 		end)
 
 		it("is the line alone with no %s or no value (QOL-R75)", function()

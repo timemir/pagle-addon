@@ -37,8 +37,8 @@ function ns.FormatClock(hour, minute, format)
 	hour = hour % 24
 	local clock = ns.L.CLOCK
 	if format ~= "12h" then
-		return clock["24h"]:format(hour, minute)
+		return ns.RenderText(clock["24h"], { hour = ("%02d"):format(hour), minute = ("%02d"):format(minute) })
 	end
 	local half = clock["12h"][hour < 12 and "am" or "pm"]
-	return half:format((hour - 1) % 12 + 1, minute)
+	return ns.RenderText(half, { hour = (hour - 1) % 12 + 1, minute = ("%02d"):format(minute) })
 end

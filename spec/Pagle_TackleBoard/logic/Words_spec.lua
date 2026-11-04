@@ -178,27 +178,6 @@ describe("the kind's label", function()
 	end)
 end)
 
-describe("ns.Plural", function()
-	it("takes the singular form for 1 and the plural otherwise, with {n} filled (CORE-R8)", function()
-		local ns = board.load().ns
-
-		assert.are.same({ "1 Catch", "0 Catches", "30 Catches", "1 Coin", "60 Coins" }, {
-			ns.Plural(1, "CATCHES"),
-			ns.Plural(0, "CATCHES"),
-			ns.Plural(30, "CATCHES"),
-			ns.Plural(1, "COINS"),
-			ns.Plural(60, "COINS"),
-		})
-	end)
-
-	it("fills any other field it is given (CORE-R8)", function()
-		local ns = board.load().ns
-		ns.L.TEST_COUNT = { one = "{n} Catch in {zone}", other = "{n} Catches in {zone}" }
-
-		assert.are.equal("2 Catches in Feralas", ns.Plural(2, "TEST_COUNT", { zone = "Feralas" }))
-	end)
-end)
-
 describe("where a goal is worked", function()
 	-- One goal of each kind and type that has a where of its own, on the fixture's zones.
 	local function goals()

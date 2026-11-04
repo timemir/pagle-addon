@@ -42,10 +42,7 @@ end
 ---@param found PagleQoLConflict[] at least one
 ---@return string
 function ns.UseOtherLabel(found)
-	if #found > 1 then
-		return ns.L.CONFLICT_USE_OTHERS
-	end
-	return ns.L.CONFLICT_USE_OTHER:format(found[1].title)
+	return ns.Text(ns.L.CONFLICT_USE_OTHER_ADDONS, { count = #found, title = found[1].title })
 end
 
 --- The chat line after "Use Pagle", the titles joined by ", " (QOL-R83).
