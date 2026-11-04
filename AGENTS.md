@@ -18,4 +18,4 @@ Read in-game results (Lua errors, the Catch log, CVars, addon state) from the cl
 
 ### Launch runbook
 
-The plan from Forever's live release (5 Nov 2026) to the 1.0.0 tag and 1.0.1: who does what when, what blocks the tag, how each failure gets applied, and the kit in `scripts/launch.py`. See `docs/agents/launch-runbook.md`.
+The plan for the 1.0.0 tag on 4 Nov 2026, before Forever's live release, and 1.0.1, the live-data update after it: who does what when, what blocks the tag, how each failure gets applied, and the kit in `scripts/launch.py`. See `docs/agents/launch-runbook.md`.

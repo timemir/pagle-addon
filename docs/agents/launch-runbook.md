@@ -1,6 +1,8 @@
-# Launch runbook: 1.0 on Forever's live build, 5 Nov 2026
+# Launch runbook: 1.0 on 4 Nov 2026, then 1.0.1 on Forever's live build
 
 The plan from Forever's live release to the `1.0.0` tag and the 1.0.1 window. The dev decided it on [#380](https://github.com/timemir/pagle-addon/issues/380) (23 Oct; map #369), and #383 prepared the kit. Times are German time (CET, UTC+1 after DST ends on 25 Oct), with UTC in brackets where the date matters.
+
+**Changed 2 Nov (the dev): 1.0.0 is released on Wed 4 Nov at about 14:00 CET (13:00 UTC), before Forever goes live, and the live-data update follows as 1.0.1 as soon as the live build is out.** The live sessions below (S1, S2) still run, but they verify the released 1.0.0 and feed 1.0.1. Read every "RC2", "release commit", "GO" and "tag" in S1, S2, batches A and B and §3 as 1.0.1's. 1.0.1 ships as soon as group A passes on the live build and the DB2 slice is refreshed, not at T+72h. Where this note and an older line disagree, this note wins. The 4 Nov release itself is "Wed 4 Nov: the 1.0 release" below.
 
 **T** is the dev's first successful live login. Forever opens on 5 Nov at 00:00 CET (4 Nov 23:00 UTC). If queues or a delayed launch push the login back, every T-offset below moves with it. With no login by 02:00 CET, the dev sleeps, S1 runs in the morning before S2, and the tag moves to about the evening of 6 Nov. The release-day constants stay as they are.
 
@@ -15,22 +17,22 @@ The plan from Forever's live release to the `1.0.0` tag and the 1.0.1 window. Th
 
 | # | Question | Decision |
 |---|---|---|
-| Q1 | The tag | 5 Nov at about 21:00 CET (20:00 UTC, T+21h), still 5 Nov in UTC. Hard limit T+48h. |
-| Q2 | Release-day constants | `since = 2026-11-05` for every v1 Hunt, and `ns.ROTATION_ORIGIN = 1793890800` (5 Nov 15:00 UTC). Both are fixed in RC1 on 2 Nov by #381, whatever the tag's minute. `--lock` comes in the release commit, after the last data change. |
+| Q1 | The tag | **4 Nov at about 14:00 CET (13:00 UTC)**, before Forever's live start (the dev, 2 Nov; it was 5 Nov 21:00 CET). The 1.0.1 tag follows the live build as soon as group A passes. |
+| Q2 | Release-day constants | `since = 2026-11-05` for every v1 Hunt, and `ns.ROTATION_ORIGIN = 1793890800` (5 Nov 15:00 UTC). Both are fixed in RC1 on 2 Nov by #381, whatever the tag's minute, and keep their values with the 4 Nov tag: they mark launch day, Forever's first UTC day live. `--lock` is in the tag commit, #508, merged just before the tag. |
 | Q3 | "First live build" (`--min-build`, the DB2 slice) | The build of the first live login (the probe's `GetBuildInfo()`). A day-1 client hotfix goes to 1.0.1 through the DB2 watch. |
-| Q4 | Does the DB2 refresh block the tag? | No, unless the 2 Nov check shows that a refresh after the lock can change a locked class's `members` (DATA-R95/R96). If it does, the release waits for wago.tools to list the build. |
+| Q4 | Does the DB2 refresh block the tag? | No. Checked on 2 Nov (#274): a refresh after the lock changes only `Catalogue.lua` and never trips DATA-R96. The live slice goes into 1.0.1. |
 | Q5 | Does the dump pin (`BIR_COMMIT`) block the tag? | No. The live probe's check 11 is the authority. Bump the pin when Ketho publishes, by 1.0.1 at the latest. |
-| Q6 | Which in-game gates block the tag? | Only M8 steps 1–3 (#311) and M8.5 steps 1–2 (#335). The rest of M8 and M8.5, and the Settings UX pass (#266), run before the tag without blocking it; their fixes may follow in 1.0.1. Screenshots (#270) come after the tag. #270 and #266 are off #276's blocked-by list (#383). |
+| Q6 | Which in-game gates block the tag? | **None for 1.0.0**: no live client exists before the 4 Nov tag. For 1.0.1: only M8 steps 1–3 (#311) and M8.5 steps 1–2 (#335). The rest of M8 and M8.5, and the Settings UX pass (#266), run before the tag without blocking it; their fixes may follow in 1.0.1. Screenshots (#270) come after the tag. #270 and #266 are off #276's blocked-by list (#383). |
 | Q7 | deDE (check 7) | Not blocking. Run it in S2; it goes into 1.0 if the fix takes under about 2 h. |
 | Q8 | Character | A fresh one near a Fishing trainer, a pole vendor and water. Checks 5, 6 and 13 move to T+24–72h. |
 | Q9 | Queues or a delay | T is the first successful login (above). |
-| Q10 | First login | From the RC1 zip, not junctions: the only truly fresh install. Junctions from S2 on. |
-| Q11 | Who tags | The dev, from their own git, after the orchestrator's GO comment naming the SHA. Agents never push. |
+| Q10 | First login | From the released 1.0.0 zip, not junctions: the only truly fresh install. Junctions from S2 on. |
+| Q11 | Who tags | **The agent** pushes the tag (the dev, 2 Nov), once the tag commit's GitHub Actions run is green. |
 | Q12 | Full checks | One per batch: A overnight, B in S2, and the release commit's own. Targeted specs in between. |
 | Q13 | Companion hint switch (HNT-R170/R172) | On only if pagle-backend confirms `https://pagle.app/download` resolves by the tag. Ask by 2 Nov. Otherwise off at 1.0 and on in 1.0.1. |
 | Q14 | Announce | Only once CurseForge and Wago both list 1.0.0 publicly; moderation of a first file can lag by hours. |
 | Q15 | A blocker past T+48h | Hold. No `-beta` tag; a reduced 1.0 needs its own decision. |
-| Q16 | 1.0.1 | About T+72h, as one bundle, if a tier-2 fix or a meaningful player bug has landed. |
+| Q16 | 1.0.1 | **The live-data update, as soon as the live build is out:** the DB2 slice and `--min-build` (§4.4), the interface bump (§4.2), the dump pin if published (§4.1), and group-A fixes from S1. It needs pagle-backend's `pagle-2026e` if it changes a hashed file (§9). Tier-2 fixes follow in 1.0.2 if they miss it. |
 | Q17 | Dev hours | S1 about 3½ h, S2 about 9 h. If S2 runs short, cut group B in this order: #266, M8.5 steps 3–13, deDE, then the rest. |
 
 ## 2. Timeline
@@ -57,12 +59,24 @@ The plan from Forever's live release to the `1.0.0` tag and the 1.0.1 window. Th
 
 See §7, the RC1 day checklist.
 
-### Wed 4 Nov (staging)
+### Wed 4 Nov: the 1.0 release
+
+| When (UTC) | Who | Step |
+|---|---|---|
+| morning | Agent | #508 (the first locks, `CHANGELOG.md` dated 2026-11-04) is up to date with main and green in Actions. Its tree must still pass pagle-backend's `ci/ranked-policy.py --policy current`: no hashed-file change after the 1.0 candidate `1f437157`. Merge it. |
+| ~13:00 | Agent | **The tag:** `1.0.0` on #508's merge commit (§8.3), once that commit's Actions run is green. |
+| +0–15 min | Workflow | The packager uploads to CurseForge and Wago and creates the GitHub Release. |
+| at the tag | pagle-backend | **L** (pagle-backend #364): it deploys `pagle-2026d` and format 4, releases the Companion, turns the pre-launch flag off, wipes dev logs, scales up and opens the site. |
+| after | Agent | #276 step 4 and step 5 (`generate-data.py --check`, the surface spec), `launch.py post-tag 1.0.0` and the hand-off to pagle-backend (§8.5). |
+| once listed | Dev | Announce once both CurseForge and Wago list 1.0.0 (Q14). |
+| 23:00 | – | Forever goes live; S1 starts with the dev's first login. |
+
+### Wed 4 Nov (staging, after the release)
 
 | When | Who | Step |
 |---|---|---|
 | when the pre-download opens | Dev | Install or patch the live client. Post the live install's folder name and the WTF account folder on #272. The realm folder appears only after the first login. |
-| afternoon | Dev | Put BugSack and !BugGrabber into the live `Interface/AddOns/`. Unzip **RC1's zip** there, with no junctions (Q10). Tick "Load out-of-date AddOns" in case the interface number moved. |
+| afternoon | Dev | Put BugSack and !BugGrabber into the live `Interface/AddOns/`. Unzip **the 1.0.0 release zip** there, with no junctions (Q10). Tick "Load out-of-date AddOns" in case the interface number moved. |
 | afternoon | Agent | Fill `~/pagle-launch.env` (§6.1) with the install folder and account. |
 | afternoon | Dev | Plan the character (Q8): realm, faction and race near a trainer, a pole vendor and water. |
 | 22:00 | Agent | Start the watcher in a WSL terminal: `.tools/bin/python scripts/launch.py watch --every 600` (§5, P4). Restart it with `--live-build <BUILD>` once the probe names the build. |
@@ -267,7 +281,7 @@ The orchestrator records on #380: the release commit's SHA and subject, its Acti
 
 ### 8.3 The tag
 
-The dev, from their own git, after the GO comment (Q11). Lightweight, the bare version (release.yml, CORE-R74):
+The agent, once the tag commit's Actions run is green (Q11; for 1.0.1 also after the GO comment). Lightweight, the bare version (release.yml, CORE-R74):
 
 ```sh
 git fetch origin
@@ -324,8 +338,9 @@ Pin this zip by its SHA-256 (your PRJ-R63) and fetch it from the GitHub Release 
 - **Release candidates:** RC1 (3 Nov) and RC2 go to pagle-backend, each with its zip SHA-256 and commit. It dry-runs its 1.0 pin against RC1.
 - **Log format:** 1.0 ships `LOG_FORMAT` 4 (LOG-R17, LOG-R18, LOG-R103: block storage; it was 3 until the 262,143-constant limit of Lua 5.1 showed on a 335,000-entry log). pagle-backend accepts pre-1.0 logs until its launch (L). At L it wipes dev logs and refuses every format below 4 as `dev_log`. Send it the format-4 Paste vector (`spec/Pagle/fixtures/PasteString.lua`) with the commit that carries it.
 - **Signing:** pushed content is signed with `pagle-2026a` at launch, with no switch to `2026b` before 1.0.1.
-- **Live pushed-content check:** in S2 (5 Nov 12:00–21:00) on RC2, before GO. Tell pagle-backend's dev the time. In that window pagle-backend schedules an Operator run and a withdrawal for `/reload` checks: `/pagle dev content` reads `connected`, the pushed run shows on the board, and the withdrawal removes it.
+- **Live pushed-content check:** in S2 (5 Nov 12:00–21:00) on the installed 1.0.0. Tell pagle-backend's dev the time. In that window pagle-backend schedules an Operator run and a withdrawal for `/reload` checks: `/pagle dev content` reads `connected`, the pushed run shows on the board, and the withdrawal removes it.
 - **After the tag:** pagle-backend pins the 1.0 commit on 6 Nov, checks the zip's SHA-256, folds the dev's live log at the tag, and re-exports the web art, which includes `hyjalcrater` if #373 landed.
+- **Since 2 Nov:** 1.0.0 is tagged on 4 Nov from #508's merge commit, which carries no hashed-file change after the 1.0 candidate `1f437157`. pagle-backend deploys `pagle-2026d` at the tag (its L moved to 4 Nov). From then on, **any 1.0.1 change to a hashed file needs `pagle-2026e`**. That includes the live DB2 slice when it changes `Catalogue.lua`, but not an `## Interface`-only bump. 1.0.1's release commit sets `ns.RULE_SET_ID = "pagle-2026e"`, and pagle-backend gets that commit before the tag, so it can cut, verify and deploy 2026e before or with 1.0.1.
 - **The ranked policy (agreed 29 Oct, pagle-backend #364 and #59):** 1.0 declares `ns.RULE_SET_ID = "pagle-2026d"` (set in the release commit, #498). pagle-backend hashes about 215 addon files in its policy manifest: most `logic/` files, the TOCs, `Catalogue.lua`, `HuntList.lua` and more, not only the Catch log's files. It builds and reviews `pagle-2026d` from the **1.0 candidate**, the main commit after #498 merges on 2 Nov. Its `ci/ranked-policy.py` reads the source at a pinned commit, not the zip, so the tag must be that commit, or carry no hashed-file change after it. **The final candidate deadline is 4 Nov 12:00 UTC.** Send pagle-backend the candidate's hash as soon as it's fixed, and again for any later change. After the deadline:
   - an `## Interface` bump (4.2, check 12) never blocks the tag: since pagle-backend #371 (merged 29 Oct), policies from `pagle-2026d` on hash TOCs without their `## Interface:` / `## Interface-*:` lines. Any other TOC change (the file list, load order, `X-` fields) still counts;
   - a rule fix to a hashed logic file goes out in **1.0.1** (about T+72h) with the next policy, unless it is launch-critical;
