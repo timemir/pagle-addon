@@ -1,0 +1,1934 @@
+# Pagle's interface text in Spanish (Spain), converted from PR #510 by scripts/convert-text.py (DATA-R114).
+# `value` is the translation, `en` the English it was translated from.
+
+[TRAILER_CAPTION_CATCH]
+value = "Cada pieza cuenta una historia"
+en = "Every catch tells a story"
+
+[TRAILER_CAPTION_JOURNAL]
+value = "Una colección que merece la pena"
+en = "A collection worth keeping"
+
+[TRAILER_CAPTION_VARIETIES]
+value = "No hay dos iguales"
+en = "No two quite alike"
+
+[TRAILER_CAPTION_ANGLER]
+value = "Crece con cada captura"
+en = "Grow with every catch"
+
+[TRAILER_CAPTION_XP]
+value = "Tener empeño suma"
+en = "Every pursuit adds up"
+
+[TRAILER_CAPTION_WAGERS]
+value = "Compite en los eventos de la semana"
+en = "Race the week's events"
+
+[TRAILER_CAPTION_CRESTS]
+value = "Domina las aguas"
+en = "Master your waters"
+
+[TRAILER_CAPTION_COLLECTIONS]
+value = "Guarda los más memorables"
+en = "Keep the memorable ones"
+
+[TRAILER_CAPTION_STATS]
+value = "Conoce las aguas"
+en = "Know your waters"
+
+[TRAILER_CAPTION_HUNTS]
+value = "Encuentra tu próxima aventura"
+en = "Find your next adventure"
+
+[TRAILER_CAPTION_BOARD]
+value = "Un motivo para lanzar otra vez"
+en = "A reason for another cast"
+
+[TRAILER_CAPTION_SHOP]
+value = "Hazlo tuyo"
+en = "Make it yours"
+
+[TRAILER_CAPTION_COZY]
+value = "Disfruta de la calma"
+en = "Enjoy the quiet"
+
+[TRAILER_CAPTION_REPORT]
+value = "Comparte lo que descubras"
+en = "Share what you discover"
+
+[TRAILER_CAPTION_END]
+value = "Pagle: cada captura, por escrito."
+en = "Pagle: Every catch, written down."
+
+[TRAILER_LENGTH_NOTE]
+value = "Longitudes simuladas por Pagle"
+en = "Lengths simulated by Pagle"
+
+[TRAILER_ACTIVE]
+value = "Pagle: el tráiler ya está activo. /pagle trailer stop lo cancela."
+en = "Pagle: trailer already active. /pagle trailer stop cancels it."
+
+[TRAILER_STOPPED]
+value = "Pagle: tráiler detenido. Tus datos del addon están restaurados."
+en = "Pagle: trailer stopped. Your addon data is restored."
+
+[TRAILER_COMPLETE]
+value = "Pagle: tráiler completado. Tus datos del addon están restaurados."
+en = "Pagle: trailer complete. Your addon data is restored."
+
+[TRAILER_ERROR]
+value = "Pagle: tráiler detenido tras un error; tus datos del addon están restaurados."
+en = "Pagle: trailer stopped after an error; your addon data is restored."
+
+[TRAILER_COMBAT]
+value = "Pagle: tráiler detenido por un combate. Tus datos del addon están restaurados."
+en = "Pagle: trailer stopped for combat. Your addon data is restored."
+
+[TRAILER_NEW_CAST]
+value = "Pagle: tráiler detenido por un nuevo lance. Tus datos del addon están restaurados."
+en = "Pagle: trailer stopped for a new cast. Your addon data is restored."
+
+[TRAILER_STATUS]
+value = "Tráiler de Pagle: {state}"
+en = "Pagle trailer: {state}"
+
+[TRAILER_AFTER_COMBAT]
+value = "El tráiler de Pagle empieza tras el combate."
+en = "The Pagle trailer starts after combat."
+
+[TRAILER_NEEDS_ANGLER]
+value = "El tráiler de Pagle necesita un Pescador conectado."
+en = "The Pagle trailer needs a logged-in Angler."
+
+[TRAILER_WAIT_HISTORY]
+value = "Espera a que Pagle termine de leer tu Registro de capturas."
+en = "Wait for Pagle to finish reading your Catch log."
+
+[TRAILER_WAIT_ANNOUNCEMENTS]
+value = "Espera a que terminen los anuncios de Pagle antes de preparar el tráiler."
+en = "Wait for Pagle's announcements to finish before arming the trailer."
+
+[TRAILER_ENABLE_MODULE]
+value = "Activa Pagle {name} antes de grabar el tráiler completo."
+en = "Enable Pagle {name} before recording the full trailer."
+
+[TRAILER_SUMMARY_LINE]
+value = "Un récord personal, nuevos descubrimientos y avances hacia tu próximo Nivel de Pescador."
+en = "A personal best, new discoveries, and progress towards your next Angler Level."
+
+[TRAILER_SUMMARY_TITLE]
+value = "Una pieza que merece la pena"
+en = "A catch worth keeping"
+
+[TRAILER_SUMMARY_TEXT]
+value = "Tu récord queda en el Diario de peces."
+en = "Your record lives in the Fish Journal."
+
+[LOG_FORMAT_CHANGED]
+value = "Pagle: el formato del registro de desarrollo cambió; se empezó un registro nuevo."
+en = "Pagle: dev log format changed; started a new log."
+
+[NOT_FOREVER]
+value = "Pagle: esto no es World of Warcraft: Forever, así que Pagle se queda desactivado."
+en = "Pagle: this isn't World of Warcraft: Forever, so Pagle stays off."
+
+[SIZE_BANDS]
+value = ["Pececillo", "Decente", "Robusto", "Descomunal", "Monstruo"]
+en = ["Tiddler", "Decent", "Hefty", "Whopper", "Monster"]
+
+[VARIETY_RARITIES]
+value = ["Común", "Poco común", "Raro", "Épico"]
+en = ["Common", "Uncommon", "Rare", "Epic"]
+
+[LENGTH]
+value.cm = "{length:1} cm"
+value.in = "{length:1} pulg."
+en.cm = "{length:1} cm"
+en.in = "{length:1} in"
+
+[LENGTH_MARGIN_UNDER]
+value.cm = "+<0.1 cm"
+value.in = "+<0.1 pulg."
+en.cm = "+<0.1 cm"
+en.in = "+<0.1 in"
+
+[EVENT_REGISTER_FAILED]
+value = "Pagle: {owner} no pudo registrar el evento {event}: {registered}"
+en = "Pagle: {owner} couldn't register the event {event}: {registered}"
+
+[EVENT_HANDLER_FAILED]
+value = "Pagle: el controlador de {owner} para el evento {event} falló: {err}"
+en = "Pagle: {owner}'s handler for the event {event} failed: {err}"
+
+[MODULE_NEEDS_NEWER_PAGLE]
+value = "Pagle: Pagle {title} necesita un Pagle más reciente."
+en = "Pagle: Pagle {title} needs a newer Pagle."
+
+[SETTING_TOO_LATE]
+value = "Pagle: el AddSetting de {name} llegó después de ModulesChanged, así que la fila se descarta"
+en = "Pagle: {name}'s AddSetting came after ModulesChanged, so the row is dropped"
+
+[SETTINGS_PAGES]
+value.announcements = "Anuncios"
+value.fishing = "Pesca"
+value.look = "Apariencia"
+value.trackers = "Rastreadores"
+en.announcements = "Announcements"
+en.fishing = "Fishing"
+en.look = "Look and Feel"
+en.trackers = "Trackers"
+
+[SETTINGS_TRACKER_POSITION]
+value = "Posición de los rastreadores"
+en = "Tracker position"
+
+[SETTINGS_TRACKER_RESET]
+value = "Restablecer"
+en = "Reset"
+
+[SETTINGS_TOAST_POSITION]
+value = "Posición de los avisos emergentes"
+en = "Toast position"
+
+[SETTINGS_TOAST_RESET]
+value = "Restablecer"
+en = "Reset"
+
+[SETTINGS_NO_MODULE]
+value = "Registrando tus Capturas. Activa un Módulo para verlas."
+en = "Recording your Catches. Enable a Module to see them."
+
+[SETTINGS_MODULES]
+value = "Módulos"
+en = "Modules"
+
+[SETTINGS_MODULES_NOTE]
+value = "Activa o desactiva Módulos en la lista de accesorios."
+en = "Turn Modules on or off in the AddOns list."
+
+[SETTINGS_GETTING_STARTED]
+value = "Primeros pasos"
+en = "Getting started"
+
+[SETTINGS_FIELD_GUIDE]
+value = "Guía de campo"
+en = "Field guide"
+
+[SETTINGS_FIELD_GUIDE_LINE]
+value = "Las ocho páginas que viste el primer día."
+en = "The eight pages you saw on your first day."
+
+[SETTINGS_SHOW_ME_AROUND]
+value = "Enséñamelo todo otra vez"
+en = "Show me around again"
+
+[SETTINGS_MARGIN_NOTES]
+value = "Notas al margen"
+en = "Margin notes"
+
+[SETTINGS_MARGIN_NOTES_TOOLTIP]
+value = "Explica las cosas la primera vez que pasan."
+en = "Explain things the first time they happen."
+
+[SETTINGS_SHOW_NOTES_AGAIN]
+value = "Mostrarlas otra vez"
+en = "Show them again"
+
+[SETTINGS_EVENING]
+value = "Lista de la Primera tarde"
+en = "First evening list"
+
+[SETTINGS_EVENING_LINE]
+value = "{done:0} de {total:0} hechas"
+en = "{done:0} of {total:0} done"
+
+[SETTINGS_SAVING]
+value = "Guardado"
+en = "Saving"
+
+[SETTINGS_RELOAD_REMINDER]
+value = "Recuérdame hacer /reload cuando haya Lances sin guardar"
+en = "Remind me to /reload when Casts are unsaved"
+
+[SETTINGS_UNITS]
+value = "Unidades"
+en = "Units"
+
+[SETTINGS_LENGTH_UNIT]
+value = "Unidad de longitud"
+en = "Length unit"
+
+[SETTINGS_LENGTH_UNITS]
+value.cm = "Centímetros"
+value.in = "Pulgadas"
+en.cm = "Centimetres"
+en.in = "Inches"
+
+[SETTINGS_CLOCK]
+value = "Reloj"
+en = "Clock"
+
+[SETTINGS_CLOCK_CHOICES]
+value."12h" = "12 horas (6:30 PM)"
+value."24h" = "24 horas (18:30)"
+value.game = "Seguir el reloj del juego"
+en."12h" = "12-hour (6:30 PM)"
+en."24h" = "24-hour (18:30)"
+en.game = "Follow the game's clock"
+
+[SETTINGS_PAGLE_MENU]
+value = "Menú de Pagle"
+en = "Pagle menu"
+
+[SETTINGS_MINIMAP_ICON]
+value = "Mostrar el icono del minimapa"
+en = "Show the minimap icon"
+
+[SETTINGS_PAGLE_WEBSITE]
+value = "Web de Pagle"
+en = "Pagle website"
+
+[SETTINGS_ANGLER_TOOLTIPS]
+value = "Mostrar otros Pescadores en el tooltip de los jugadores"
+en = "Show other Anglers on player tooltips"
+
+[SETTINGS_COZY]
+value = "Modo acogedor"
+en = "Cozy mode"
+
+[SETTINGS_BUDGET]
+value = "Presupuesto de interrupciones"
+en = "Interruption budget"
+
+[SETTINGS_BUDGET_COUNT]
+value = "Interrupciones"
+en = "Interruptions"
+
+[SETTINGS_BUDGET_WINDOW]
+value = "Cada"
+en = "Per"
+
+[SETTINGS_EVERY_CATCH]
+value = "Mostrar cada captura"
+en = "Show every catch"
+
+[SETTINGS_MOTION]
+value = "Animaciones"
+en = "Animations"
+
+[SETTINGS_SLOT_MORE]
+value = "{more:0} más en la Tienda de Curiosidades"
+en = "{more:0} more in the Curio Shop"
+
+[SETTINGS_MORE_LOOKS]
+value = "Más aspectos"
+en = "More looks"
+
+[SETTINGS_COLLECTION_ROW]
+value = "Cada aspecto y cómo conseguirlo"
+en = "Every look, and how to earn it"
+
+[SETTINGS_COLLECTION_BUTTON]
+value = "Abrir la Colección"
+en = "Open the Collection"
+
+[SETTINGS_SHOP_ROW]
+value = "Compra más aspectos con Monedas Pagle"
+en = "Buy more looks with Pagle Coins"
+
+[SETTINGS_SHOP_BUTTON]
+value = "Abrir la Tienda de Curiosidades"
+en = "Open the Curio Shop"
+
+[ANNOUNCEMENT_MORE]
+value = "+{beyond:0} más"
+en = "+{beyond:0} more"
+
+[ANNOUNCEMENT_STAMP_REFRESH]
+value = "Renovación +{tickets:0}"
+en = "Refresh +{tickets:0}"
+
+[ANNOUNCEMENT_NEW_RECORD]
+value = "Nuevo récord"
+en = "New record"
+
+[ANNOUNCEMENT_SPLASH_HINT]
+value = "Haz clic en cualquier sitio para continuar"
+en = "Click anywhere to continue"
+
+[ANNOUNCEMENT_SPLASH_RELOAD]
+value = "/reload para ponerla a salvo"
+en = "/reload to keep it safe"
+
+[LEGEND_CREST_LEGEND]
+value = "Leyenda"
+en = "Legend"
+
+[LEGEND_CREST_UNWRITTEN]
+value = "Por escribir"
+en = "Unwritten"
+
+[ANNOUNCEMENT_WHILE_FIGHTING]
+value = "Mientras combatías"
+en = "While you were fighting"
+
+[CATCH_TOAST_CAUGHT]
+value = "Capturada"
+en = "Caught"
+
+[CATCH_TOAST_ITEM]
+value = "Objeto {itemID}"
+en = "Item {itemID}"
+
+[CARD_SESSION]
+value = "Sesión de pesca"
+en = "Fishing session"
+
+[CARD_LAST_SESSION]
+value = "Tu última sesión"
+en = "Your last session"
+
+[CARD_WRITE_UP]
+value = "Reseña"
+en = "Write-up"
+
+[CARD_CASTS]
+value = "Lances"
+en = "Casts"
+
+[CARD_CATCHES]
+value = "Capturas"
+en = "Catches"
+
+[CARD_GOT_AWAY]
+value = "Escapados"
+en = "Got away"
+
+[CARD_TIME]
+value = "Tiempo pescando"
+en = "Time fished"
+
+[CARD_COINS]
+value = 'Monedas Pagle +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+en = 'Pagle Coins +%s |TInterface\\MoneyFrame\\UI-GoldIcon:0|t'
+
+[CARD_CLOSE]
+value = "Cerrar"
+en = "Close"
+
+[TOAST_SAMPLE_TITLE]
+value = "Nueva Especie"
+en = "New Species"
+
+[TOAST_SAMPLE_TEXT]
+value = "Un aviso emergente de muestra"
+en = "A sample toast"
+
+[TOAST_SAMPLE_STAMP]
+value = "Nuevo aquí"
+en = "New here"
+
+[TOAST_SHOW_ON_SCREEN]
+value = "Mostrar en pantalla"
+en = "Show on screen"
+
+[RELOAD_REMINDER]
+value = "Pagle: {reload_reminder:0} Lances sin guardar. Haz /reload para ponerlos a salvo."
+en = "Pagle: {reload_reminder:0} Casts not yet saved. /reload to keep them safe."
+
+[SETTINGS_AFTER_COMBAT]
+value = "Pagle: los ajustes se abren tras el combate."
+en = "Pagle: settings open after combat."
+
+[SETTINGS_KEY_NOT_BOUND]
+value = "Sin asignar"
+en = "Not Bound"
+
+[SETTINGS_KEY_WAITING]
+value = "Pulsa una tecla"
+en = "Press a key"
+
+[GUIDE_BIND_CLICK]
+value = "clic para asignar"
+en = "click to bind"
+
+[GUIDE_BIND_DEFAULT]
+value = "por defecto: no hay nada asignado"
+en = "default: nothing is bound"
+
+[GUIDE_BIND_LISTEN]
+value = "pulsa una tecla…"
+en = "press a key…"
+
+[GUIDE_BIND_ESC]
+value = "Esc la deja como estaba"
+en = "Esc leaves it as it was"
+
+[GUIDE_BIND_BOUND]
+value = "Asignada"
+en = "Bound"
+
+[GUIDE_BIND_PICK]
+value = "Elige otra tecla"
+en = "Pick another key"
+
+[GUIDE_BIND_KEPT]
+value = "el uso anterior queda anotado, nunca se pierde sin avisar"
+en = "the old use is listed, never silently lost"
+
+[GUIDE_BIND_ASK]
+value.PAGLE_FISHING_KEY = "ya hace {guide_bind_ask}. ¿Usarla para pescar?"
+value.PAGLE_SWAP_GEAR = "ya hace {guide_bind_ask}. ¿Usarla para cambiar de equipo?"
+en.PAGLE_FISHING_KEY = "already does {guide_bind_ask}. Use it for fishing instead?"
+en.PAGLE_SWAP_GEAR = "already does {guide_bind_ask}. Use it to swap gear instead?"
+
+[GUIDE_BIND_USE]
+value.PAGLE_FISHING_KEY = "Usar {bindingText} para pescar"
+value.PAGLE_SWAP_GEAR = "Usar {bindingText} para cambiar de equipo"
+en.PAGLE_FISHING_KEY = "Use {bindingText} for fishing"
+en.PAGLE_SWAP_GEAR = "Use {bindingText} to swap gear"
+
+[GUIDE_BIND_TOLD]
+value.PAGLE_FISHING_KEY = "Pagle: {bindingText} ahora lanza. Antes hacía {oldName}; reasígnalo en Asignación de teclas si lo necesitas."
+value.PAGLE_SWAP_GEAR = "Pagle: {bindingText} ahora cambia tu equipo. Antes hacía {oldName}; reasígnalo en Asignación de teclas si lo necesitas."
+en.PAGLE_FISHING_KEY = "Pagle: {bindingText} now casts. It used to do {oldName}; rebind that in Key Bindings if you need it."
+en.PAGLE_SWAP_GEAR = "Pagle: {bindingText} now swaps your gear. It used to do {oldName}; rebind that in Key Bindings if you need it."
+
+[MODULE_NAMES]
+value.Hunts = "Cazas"
+value.Ledger = "Libro de registro"
+value.QoL = "Comodidades"
+value.Stats = "Estadísticas"
+value.TackleBoard = "Tablón de aparejos"
+en.Hunts = "Hunts"
+en.Ledger = "Ledger"
+en.QoL = "QoL"
+en.Stats = "Stats"
+en.TackleBoard = "Tackle Board"
+
+[MODULE_STATES]
+value.failedToStart = "No pudo iniciarse"
+value.needsNewerPagle = "Necesita un Pagle más reciente"
+value.notInstalled = "No instalado"
+value.off = "Desactivado"
+value.on = "Activado"
+en.failedToStart = "Failed to start"
+en.needsNewerPagle = "Needs a newer Pagle"
+en.notInstalled = "Not installed"
+en.off = "Off"
+en.on = "On"
+
+[OPEN_VIEW]
+value = "Abrir {label}"
+en = "Open {label}"
+
+[MENU_SETTINGS]
+value = "Ajustes"
+en = "Settings"
+
+[MENU_CURIO_SHOP]
+value = 'Tienda de Curiosidades  {balance} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+en = 'Curio Shop  %s |TInterface\\MoneyFrame\\UI-GoldIcon:0|t'
+
+[HELP_CHART]
+value = "Ayuda a catalogar las aguas"
+en = "Help chart the waters"
+
+[HELP_CHART_COUNT]
+value = "Ayuda a catalogar las aguas ({count:0})"
+en = "Help chart the waters ({count:0})"
+
+[FIELD_REPORT_PRIVACY]
+value = "Esto se publicará a la vista de todos. No contiene nombres de personajes."
+en = "This will be posted publicly. It contains no character names."
+
+[FIELD_REPORT_COPY_HINT]
+value = "Ctrl+C para copiar"
+en = "Ctrl+C to copy"
+
+[FIELD_REPORT_POST_AT]
+value = "PUBLÍCALO EN"
+en = "POST IT AT"
+
+[FIELD_REPORT_PART]
+value = "Parte {field_report_part_1:0} de {field_report_part_2:0}"
+en = "Part {field_report_part_1:0} of {field_report_part_2:0}"
+
+[FIELD_REPORT_CLOSE]
+value = "Cerrar"
+en = "Close"
+
+[FIELD_REPORT_NOTHING]
+value = "Nada que informar. ¡Gracias por comprobarlo!"
+en = "Nothing to report. Thanks for checking!"
+
+[FIELD_REPORT_UPDATING]
+value = "Actualizando... inténtalo de nuevo en un momento."
+en = "Updating... try again in a moment."
+
+[FIELD_REPORT_AFTER_COMBAT]
+value = "Pagle: el Informe de campo se abre tras el combate."
+en = "Pagle: the Field report opens after combat."
+
+[SETTINGS_FIELD_REPORT_ROW]
+value = "Informe de campo"
+en = "Field report"
+
+[SETTINGS_FIELD_REPORT_BUTTON]
+value = "Abrir el Informe de campo"
+en = "Open Field report"
+
+[SETTINGS_FIELD_REPORT_BUTTON_COUNT]
+value = "Abrir el Informe de campo ({count:0})"
+en = "Open Field report ({count:0})"
+
+[PASTE_TITLE]
+value = "Exportar para la web"
+en = "Export for the website"
+
+[PASTE_PRIVACY]
+value = "Contiene los nombres de tus personajes. Pégalo solo en la web de Pagle."
+en = "Holds your characters' names. Paste it only on the Pagle website."
+
+[PASTE_COPY_HINT]
+value = "Ctrl+C para copiar"
+en = "Ctrl+C to copy"
+
+[PASTE_CHOICE_NEW]
+value = "Lo nuevo desde la última exportación"
+en = "New since last export"
+
+[PASTE_CHOICE_EVERYTHING]
+value = "Todo"
+en = "Everything"
+
+[PASTE_ENTRIES]
+value = "Entradas {from}–{paste_entries_2} de {total}"
+en = "Entries {from}–{paste_entries_2} of {total}"
+
+[PASTE_NO_ENTRIES]
+value = "Sin entradas"
+en = "No entries"
+
+[PASTE_IN_ORDER]
+value = "Pega cada parte por separado, en orden."
+en = "Paste each part on its own, in order."
+
+[PASTE_AT]
+value = "PÉGALO EN"
+en = "PASTE IT AT"
+
+[PASTE_PART]
+value = "Parte {paste_part_1:0} de {paste_part_2:0}"
+en = "Part {paste_part_1:0} of {paste_part_2:0}"
+
+[PASTE_CLOSE]
+value = "Cerrar"
+en = "Close"
+
+[PASTE_NOTHING_NEW]
+value = "Nada nuevo desde tu última exportación."
+en = "Nothing new since your last export."
+
+[PASTE_CANT_EXPORT]
+value = "Pagle no puede exportar este Registro de capturas."
+en = "Pagle can't export this Catch log."
+
+[PASTE_PREPARING]
+value = "Preparando tu Cadena de pegado…"
+en = "Preparing your Paste string…"
+
+[PASTE_AFTER_COMBAT]
+value = "Pagle: la ventana de exportación se abre tras el combate."
+en = "Pagle: the export window opens after combat."
+
+[PASTE_TEST_LINE]
+value = "Prueba de copia: {testKB:0} KB"
+en = "Copy test: {testKB:0} KB"
+
+[SETTINGS_PASTE_ROW]
+value = "Registro de capturas"
+en = "Catch log"
+
+[SETTINGS_PASTE_BUTTON]
+value = "Copiar para la web"
+en = "Copy for the website"
+
+[SHOP_AFTER_COMBAT]
+value = "Pagle: la Tienda de Curiosidades se abre tras el combate."
+en = "Pagle: the Curio Shop opens after combat."
+
+[SHOP_COINS]
+value = "Monedas Pagle"
+en = "Pagle Coins"
+
+[SHOP_ALL_TIME]
+value = "{shop_all_time} Monedas en total"
+en = "{shop_all_time} Coins all time"
+
+[SHOP_OFF_NOTE]
+value = "Desactivado: no paga nada nuevo, conserva lo que pagó."
+en = "Off: pays nothing new, keeps what it paid."
+
+[SHOP_SEARCH]
+value = "Busca un aspecto…"
+en = "Find a look…"
+
+[SHOP_FILTERS]
+value.all = "Todos"
+value.canAfford = "Asequibles"
+value.notOwned = "Por conseguir"
+value.owned = "Tuyos"
+en.all = "All"
+en.canAfford = "Can afford"
+en.notOwned = "Not owned"
+en.owned = "Owned"
+
+[SHOP_ALL_CATEGORIES]
+value = "Todos"
+en = "All"
+
+[SHOP_CATEGORIES]
+value.Announcements = "Anuncios"
+value.Books = "Libros"
+value.Crests = "Blasones"
+value.Trackers = "Rastreadores"
+en.Announcements = "Announcements"
+en.Books = "Books"
+en.Crests = "Crests"
+en.Trackers = "Trackers"
+
+[SHOP_OWNED_COUNT]
+value = "{owned:0} de {slotGoods:0}"
+en = "{owned:0} of {slotGoods:0}"
+
+[SHOP_PUT_AWAY]
+value = "Guardados: Módulo desactivado"
+en = "Put away: Module off"
+
+[SHOP_KEEP]
+value = "Tuyo para siempre"
+en = "Yours to keep"
+
+[SHOP_NO_MATCH]
+value = "Ningún aspecto coincide."
+en = "No looks match."
+
+[SHOP_OWNED]
+value = "Tuyo"
+en = "Owned"
+
+[SHOP_IN_USE]
+value = "En uso"
+en = "In use"
+
+[SHOP_DEFAULT]
+value = "por defecto"
+en = "default"
+
+[SHOP_BUY]
+value = "Comprar por {shop_buy}"
+en = "Buy for {shop_buy}"
+
+[SHOP_MORE_NEEDED]
+value = "Faltan {shop_more_needed} Monedas"
+en = "{shop_more_needed} more Coins"
+
+[SHOP_OR_BUY]
+value = "O cómpralo por {shop_or_buy}"
+en = "Or buy it for {shop_or_buy}"
+
+[SHOP_MODULE_OFF]
+value = "{ownerName} está desactivado"
+en = "{ownerName} is off"
+
+[SHOP_PICK]
+value = "Elige un aspecto para verlo aquí."
+en = "Pick a look to see it here."
+
+[SHOP_USE]
+value = "Usar"
+en = "Use"
+
+[SHOP_BILL_HEAD]
+value = "C U R I O S I D A D E S"
+en = "C U R I O   S H O P"
+
+[SHOP_BUY_CONFIRM]
+value = "¿Comprar {name}?"
+en = "Buy {name}?"
+
+[SHOP_PRICE_LINE]
+value = "Precio"
+en = "Price"
+
+[SHOP_LEFT_AFTER]
+value = "Monedas Pagle restantes"
+en = "Pagle Coins left after"
+
+[SHOP_FOR_GOOD]
+value = "Los aspectos son tuyos para siempre."
+en = "Looks are yours for good."
+
+[SHOP_USE_NOW]
+value = "Usarlo ya"
+en = "Use it now"
+
+[SHOP_BUY_ACCEPT]
+value = "Comprar"
+en = "Buy"
+
+[SHOP_BUY_CANCEL]
+value = "Cancelar"
+en = "Cancel"
+
+[SHOP_HELD]
+value = "Tu saldo es 0 mientras Pagle vuelve a contar Monedas anteriores. Las Monedas nuevas cubren eso primero."
+en = "Your balance is 0 while Pagle re-counts earlier Coins. New Coins fill that in first."
+
+[SHOP_CRATE]
+value = "Cofre de curiosidades"
+en = "Curio crate"
+
+[SHOP_CRATE_KIND]
+value = "Un cofre de aspectos"
+en = "A crate of looks"
+
+[SHOP_CRATE_TIERS]
+value.1 = "Sencillo"
+value.2 = "Fino"
+value.3 = "Vivaz"
+value.4 = "Vistoso"
+value.5 = "Maravilla"
+value.6 = "Reliquia"
+value.curio = "Curiosidad"
+en.1 = "Plain"
+en.2 = "Fine"
+en.3 = "Lively"
+en.4 = "Showpiece"
+en.5 = "Marvel"
+en.6 = "Heirloom"
+en.curio = "Curio"
+
+[SHOP_CRATE_LEFT]
+value = "quedan {left:0}"
+en = "{left:0} left"
+
+[SHOP_CRATE_PAYS_BACK]
+value = "reembolsa {shop_crate_pays_back}"
+en = "pays back {shop_crate_pays_back}"
+
+[SHOP_CRATE_PITY]
+value.one = "Una Curiosidad en el próximo cofre"
+value.many = "Una Curiosidad en {count:0} cofres como mucho"
+value.other = "Una Curiosidad en {count:0} cofres como mucho"
+en.one = "A Curio in the next crate"
+en.other = "A Curio within {count:0} more crates"
+
+[SHOP_CRATE_CONFIRM]
+value = "¿Abrir un Cofre de curiosidades?"
+en = "Open a Curio crate?"
+
+[SHOP_CRATE_FINE]
+value = "Un aspecto que aún no tienes, al azar; las probabilidades están en el cofre."
+en = "One look you don't own yet, by chance; the chances are on the crate."
+
+[SHOP_CRATE_PAYBACK]
+value = "+{shop_crate_payback} Monedas"
+en = "+{shop_crate_payback} Coins"
+
+[SHOP_CRATE_BACK]
+value = "Volver a la tienda"
+en = "Back to the shop"
+
+[SHOP_CRATE_NEW_LOOK]
+value = "Un aspecto nuevo"
+en = "A new look"
+
+[SHOP_CRATE_UNSHOWN]
+value = "Se mostrará aquí cuando su Módulo esté activado."
+en = "It shows here once its Module is on."
+
+[SHOP_CRATE_KINDS]
+value.binding = "Encuadernación"
+value.crest = "Blasón"
+value.soundset = "Juego de sonidos"
+value.toaststyle = "Estilo de aviso emergente"
+value.trackerframe = "Marco de rastreador"
+en.binding = "Binding"
+en.crest = "Crest"
+en.soundset = "Sound set"
+en.toaststyle = "Toast style"
+en.trackerframe = "Tracker frame"
+
+[SHOP_CRATE_YOURS]
+value = "Tuyo"
+en = "Yours"
+
+[SHOP_CRATE_PAID_BACK]
+value = "Reembolsado"
+en = "Paid back"
+
+[SHOP_CRATE_ONLY_NOTE]
+value = "Solo en un Cofre de curiosidades, nunca a la venta"
+en = "Only in a Curio crate, never for sale"
+
+[SHOP_FROM_CRATE]
+value = "De un cofre"
+en = "From a crate"
+
+[SHOP_SONAR_EARNED]
+value = "Vincula el Companion"
+en = "Link the companion"
+
+[COMPARTMENT_WAITING]
+value = "Pagle · {waiting:0} en espera"
+en = "Pagle · {waiting:0} waiting"
+
+[MENU_TOOLTIP_WAITING]
+value = "{waiting:0} en espera"
+en = "{waiting:0} waiting"
+
+[MENU_TOOLTIP_LETTER]
+value = "Una carta para ti"
+en = "A letter for you"
+
+[SLASH_HELP_HEADER]
+value = "Comandos de Pagle:"
+en = "Pagle commands:"
+
+[SLASH_SKIPPED_NO_NAME]
+value = "Pagle: {module} tiene una entrada de /pagle, {name}, sin nombre de una palabra; se omite"
+en = "Pagle: {module}'s /pagle entry {name} has no one-word name; it is skipped"
+
+[SLASH_SKIPPED_NO_FN]
+value = "Pagle: {module} define /pagle {name} sin fn; se omite"
+en = "Pagle: {module}'s /pagle {name} has no fn; it is skipped"
+
+[SLASH_SKIPPED_RESERVED]
+value = "Pagle: {module} define /pagle {name}, que se omite: Pagle reserva {key}"
+en = "Pagle: {module}'s /pagle {name} is skipped: Pagle reserves {key}"
+
+[SLASH_SKIPPED_TAKEN]
+value = "Pagle: {module} define /pagle {name}, que se omite: {owners} ya lo usa"
+en = "Pagle: {module}'s /pagle {name} is skipped: {owners} already uses it"
+
+[DEV_ON]
+value = "Pagle dev: los comandos de desarrollo están activados."
+en = "Pagle dev: dev commands are on."
+
+[DEV_OFF]
+value = "Pagle dev: los comandos de desarrollo están desactivados."
+en = "Pagle dev: dev commands are off."
+
+[DEV_IS_OFF]
+value = "Pagle dev: los comandos de desarrollo están desactivados; /pagle dev on los activa."
+en = "Pagle dev: dev commands are off; /pagle dev on turns them on."
+
+[DEV_USAGE]
+value = "Pagle dev: /pagle dev on | off | endsession | preview <tipo> | stage <número> | glyphs | tour [module | list | stop] | probe | onboarding <comando> | content | views | pastetest <KB>"
+en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | onboarding <command> | content | views | pastetest <KB>"
+
+[DEV_PASTE_TEST_USAGE]
+value = "Pagle dev: /pagle dev pastetest <KB>, de {pasteTestMinKb} a {pasteTestMaxKb}; la comprobación copia 64, 128, 256 y 512."
+en = "Pagle dev: /pagle dev pastetest <KB>, from {pasteTestMinKb} to {pasteTestMaxKb}; the check copies 64, 128, 256 and 512."
+
+[DEV_CONTENT_STATE]
+value = "Pagle dev: el contenido enviado está {state}."
+en = "Pagle dev: pushed content is {state}."
+
+[DEV_CONTENT_ABSENT]
+value = "Pagle dev: falta el contenido enviado: {reason}."
+en = "Pagle dev: pushed content is missing: {reason}."
+
+[DEV_CONTENT_KINDS]
+value = "Pagle dev: tipos entregados: {counts}."
+en = "Pagle dev: kinds handed out: {counts}."
+
+[DEV_CONTENT_DROPPED]
+value = "Pagle dev: tipos descartados por desconocidos: {dropped}."
+en = "Pagle dev: kinds dropped as unknown: {dropped}."
+
+[DEV_CONTENT_NONE]
+value = "ninguno"
+en = "none"
+
+[PUSHED_NOT_INSTALLED]
+value = "sin archivo (Pagle_Content no está instalado)"
+en = "no file (Pagle_Content isn't installed)"
+
+[PUSHED_NOT_LOADED]
+value = "sin archivo (Pagle_Content no se cargó: {reason})"
+en = "no file (Pagle_Content didn't load: {reason})"
+
+[PUSHED_NO_DATA]
+value = "sin archivo (Pagle_Content se cargó pero no definió PagleContentData)"
+en = "no file (Pagle_Content loaded but set no PagleContentData)"
+
+[PUSHED_NOT_TABLE]
+value = "PagleContentData no es una tabla"
+en = "PagleContentData isn't a table"
+
+[PUSHED_MISSING_FIELD]
+value = "falta un campo, {name}"
+en = "a missing field, {name}"
+
+[PUSHED_NOT_INTEGER]
+value = "{name} no es un número entero"
+en = "{name} isn't a whole number"
+
+[PUSHED_NOT_STRING]
+value = "{name} no es una cadena"
+en = "{name} isn't a string"
+
+[PUSHED_BAD_KEY_ID]
+value = "un keyId que no es de 1 a 32 caracteres de A-Z, a-z, 0-9, _ y -"
+en = "a keyId that isn't 1 to 32 of A-Z, a-z, 0-9, _ and -"
+
+[PUSHED_UNKNOWN_VERSION]
+value = "un formato de archivo desconocido, v {pushed_unknown_version}"
+en = "an unknown file format, v {pushed_unknown_version}"
+
+[PUSHED_UNKNOWN_KEY]
+value = "un keyId desconocido, {keyId}"
+en = "an unknown keyId, {keyId}"
+
+[PUSHED_NOT_BASE64]
+value = "{pushed_not_base64_1} no es Base64 ({why})"
+en = "{pushed_not_base64_1} isn't Base64 ({why})"
+
+[PUSHED_OVER_CAP]
+value = "por encima del límite de tamaño, {bytes} bytes decodificados de {pushedSizeCap} como máximo"
+en = "over the size cap, {bytes} bytes decoded of {pushedSizeCap} at most"
+
+[PUSHED_BAD_SIGNATURE]
+value = "una firma no válida ({problem})"
+en = "a bad signature ({problem})"
+
+[PUSHED_LOWER_SEQ]
+value = "un seq menor, {seq}, por debajo del último aceptado, {last}"
+en = "a lower seq, {seq}, below the last accepted {last}"
+
+[PUSHED_EXPIRED]
+value = "caducado en {expires}, y la hora del servidor es {now}"
+en = "expired at {expires}, and the server time is {now}"
+
+[PUSHED_PARSE_ERROR]
+value = "un error de análisis en el byte {pushed_parse_error_1}: {pushed_parse_error_2}"
+en = "a parse error at byte {pushed_parse_error_1}: {pushed_parse_error_2}"
+
+[PUSHED_CHECK_FAILED]
+value = "la propia comprobación falló (mira el error de Lua)"
+en = "the check itself failed (see the Lua error)"
+
+[PAYLOAD_EXPECTED]
+value = "se esperaba {value}"
+en = "expected {value}"
+
+[PAYLOAD_EXPECTED_FIELD]
+value = "se esperaba un nombre de campo"
+en = "expected a field name"
+
+[PAYLOAD_EXPECTED_ITEM]
+value = "se esperaba un elemento, una tabla"
+en = "expected an item, a table"
+
+[PAYLOAD_BAD_ITEM]
+value = "un elemento que no empieza por kind = \"…\", v = <entero>"
+en = "an item that doesn't start kind = \\\"…\\\", v = <integer>"
+
+[PAYLOAD_BAD_NAME]
+value = "un nombre de campo que no es un nombre"
+en = "a field name that isn't a name"
+
+[PAYLOAD_UNEXPECTED]
+value = "un carácter inesperado, {value}"
+en = "an unexpected character, {value}"
+
+[PAYLOAD_NAME_AS_VALUE]
+value = "un nombre, {value}, donde va un valor"
+en = "a name, {value}, where a value goes"
+
+[PAYLOAD_NOT_INTEGER]
+value = "un número que no es un entero decimal"
+en = "a number that isn't a decimal integer"
+
+[PAYLOAD_TOO_LARGE]
+value = "un entero de más de {value} dígitos"
+en = "an integer of more than {value} digits"
+
+[PAYLOAD_UNENDED_STRING]
+value = "una cadena que no termina"
+en = "a string that doesn't end"
+
+[PAYLOAD_LINE_IN_STRING]
+value = "un salto de línea dentro de una cadena"
+en = "a line end inside a string"
+
+[PAYLOAD_BAD_ESCAPE]
+value = 'un escape distinto de \\, \" o \n'
+en = 'an escape other than \\\\, \\\" or \\n'
+
+[PAYLOAD_DUPLICATE]
+value = "un campo repetido, {value}"
+en = "a field given twice, {value}"
+
+[PAYLOAD_MIXED]
+value = "un campo en una lista de valores"
+en = "a field in a list of values"
+
+[PAYLOAD_TOO_DEEP]
+value = "tablas anidadas a más de {value} niveles"
+en = "tables nested more than {value} deep"
+
+[PAYLOAD_ENDED]
+value = "la carga termina antes de tiempo"
+en = "the payload ends too soon"
+
+[PAYLOAD_AFTER_TABLE]
+value = "algo más tras la tabla de la carga"
+en = "more after the payload's table"
+
+[DEV_VIEWS_LIVE]
+value = "Pagle dev: {name} está activo."
+en = "Pagle dev: {name} is live."
+
+[DEV_VIEWS_ABSENT]
+value = "Pagle dev: {name} no está: {reason}."
+en = "Pagle dev: {name} is absent: {reason}."
+
+[DEV_VIEWS_EXPIRED]
+value = "Pagle dev: {name} ha caducado: se generó hace {age} s, la edad de caducidad es {viewExpiryAge} s."
+en = "Pagle dev: {name} is expired: generated {age} s ago, the expiry age is {viewExpiryAge} s."
+
+[DEV_VIEWS_FOLLOWING]
+value = "Pagle dev: generatedAt de Pagle_Following {generatedAt}, Pescadores {dev_views_following_2}."
+en = "Pagle dev: Pagle_Following's generatedAt {generatedAt}, Anglers {dev_views_following_2}."
+
+[DEV_VIEWS_ANGLERS]
+value = "Pagle dev: generatedAt de Pagle_Anglers {generatedAt}, bloques {dev_views_anglers_2}."
+en = "Pagle dev: Pagle_Anglers' generatedAt {generatedAt}, blocks {dev_views_anglers_2}."
+
+[DEV_VIEWS_LOADED]
+value = "Pagle dev: Pagle_Anglers se ha cargado en esta sesión."
+en = "Pagle dev: Pagle_Anglers has loaded this login."
+
+[DEV_VIEWS_NOT_LOADED]
+value = "Pagle dev: Pagle_Anglers no se ha cargado en esta sesión."
+en = "Pagle dev: Pagle_Anglers hasn't loaded this login."
+
+[DEV_VIEWS_NONE]
+value = "ninguno"
+en = "none"
+
+[VIEWS_NOT_READ]
+value = "aún sin leer (Pagle lo lee al iniciar sesión)"
+en = "not read yet (Pagle reads it at login)"
+
+[VIEWS_NOT_LOADED_YET]
+value = "aún sin cargar (se carga con el primer tooltip de jugador mientras Pagle no está restringido, con el ajuste del tooltip activado)"
+en = "not loaded yet (it loads at the first player tooltip while Pagle isn't restricted, with the tooltip setting on)"
+
+[VIEWS_NOT_INSTALLED]
+value = "sin archivo ({name} no está instalado)"
+en = "no file ({name} isn't installed)"
+
+[VIEWS_DID_NOT_LOAD]
+value = "sin archivo ({name} no se cargó: {reason})"
+en = "no file ({name} didn't load: {reason})"
+
+[VIEWS_NO_DATA]
+value = "sin archivo ({name} se cargó pero no definió {global})"
+en = "no file ({name} loaded but set no {global})"
+
+[VIEWS_NOT_TABLE]
+value = "{global} no es una tabla"
+en = "{global} isn't a table"
+
+[VIEWS_NOT_OK]
+value = "ok no es true"
+en = "ok isn't true"
+
+[VIEWS_UNKNOWN_VERSION]
+value = "un formato de archivo desconocido, v {views_unknown_version}"
+en = "an unknown file format, v {views_unknown_version}"
+
+[VIEWS_NOT_NUMBER]
+value = "{field} no es un número"
+en = "{field} isn't a number"
+
+[VIEWS_WRONG_COUNT]
+value = "count es {views_wrong_count_1}, pero {listName} contiene {list}"
+en = "count is {views_wrong_count_1}, but {listName} holds {list}"
+
+[VIEWS_BLOCK_NOT_TABLE]
+value = "el bloque {views_block_not_table} no es una tabla"
+en = "block {views_block_not_table} isn't a table"
+
+[VIEWS_BLOCK_NOT_NUMBER]
+value = "en el bloque {views_block_not_number_1}, {field} no es un número"
+en = "block {views_block_not_number_1}'s {field} isn't a number"
+
+[VIEWS_BLOCK_NOT_TITLES]
+value = "en el bloque {views_block_not_titles}, titles no es una tabla"
+en = "block {views_block_not_titles}'s titles isn't a table"
+
+[VIEWS_BLOCK_LENGTH]
+value = "en el bloque {views_block_length_1}, {packed} no mide {views_block_length_3} bytes"
+en = "block {views_block_length_1}'s {packed} isn't {views_block_length_3} bytes long"
+
+[ANGLER_TIP_HEADER]
+value = "Pescador de Pagle"
+en = "Pagle Angler"
+
+[ANGLER_TIP_FOLLOWING]
+value = "Siguiendo"
+en = "Following"
+
+[ANGLER_TIP_LEVEL]
+value = "Nivel de Pescador"
+en = "Angler Level"
+
+[ANGLER_TIP_PRESTIGE]
+value = "{level:0} · {emblem} Prestigio {prestigeNumerals}"
+en = "{level:0} · {emblem} Prestige {prestigeNumerals}"
+
+[ANGLER_TIP_MASTER_PRESTIGE]
+value = "{level:0} · {emblem} Prestigio de Maestro {angler_tip_master_prestige_3:0}"
+en = "{level:0} · {emblem} Master Prestige {angler_tip_master_prestige_3:0}"
+
+[PRESTIGE_FRAME_MASTER]
+value = "Maestro"
+en = "Master"
+
+[ANGLER_TIP_LEDGER]
+value = "Libro de registro"
+en = "Ledger"
+
+[ANGLER_TIP_LEGENDS]
+value = "Leyendas"
+en = "Legends"
+
+[ANGLER_TIP_LEGENDS_VALUE]
+value = "{legends:0} de {legendsTotal:0}"
+en = "{legends:0} of {legendsTotal:0}"
+
+[ANGLER_TIP_HARDCORE]
+value = "Pescador Hardcore"
+en = "Hardcore Angler"
+
+[DEV_ONBOARDING_RESET]
+value = "Pagle dev: la introducción vuelve a ser la de un Pescador nuevo, con la Carta esperando; haz /reload para empezar desde ahí."
+en = "Pagle dev: onboarding is back as a new Angler's, with the Letter waiting; /reload to start from there."
+
+[DEV_PREVIEW_KINDS]
+value = "Pagle dev: /pagle dev preview <tipo>, donde tipo es uno de {devPreviewKinds}"
+en = "Pagle dev: /pagle dev preview <kind>, where kind is one of {devPreviewKinds}"
+
+[DEV_PREVIEWING]
+value = "Pagle dev: vista previa de {kind}."
+en = "Pagle dev: previewing a {kind}."
+
+[DEV_STAGE_OFF]
+value = "Pagle dev: el Cartographer's Folio se dibuja en su etapa real."
+en = "Pagle dev: the Cartographer's Folio is drawn at its real stage."
+
+[DEV_STAGE_IS]
+value = "Pagle dev: el Cartographer's Folio se dibuja como si {devStageCount} zonas estuvieran en Maestro."
+en = "Pagle dev: the Cartographer's Folio is drawn as if {devStageCount} zones were at Master."
+
+[DEV_STAGE_USAGE]
+value = "Pagle dev: /pagle dev stage <número de zonas en Maestro> | off"
+en = "Pagle dev: /pagle dev stage <count of zones at Master> | off"
+
+[DEV_CARD_HELD]
+value = "Pagle dev: las tarjetas esperan a que acabe el combate; inténtalo entonces."
+en = "Pagle dev: cards wait until combat ends; try again then."
+
+[DEV_SAMPLE_TOAST]
+value = "Nueva Especie"
+en = "New Species"
+
+[DEV_SAMPLE_STAMP]
+value = "Récord de tamaño"
+en = "Size record"
+
+[DEV_SAMPLE_NOD]
+value = "Nuevo aquí"
+en = "New here"
+
+[DEV_SAMPLE_VARIETY]
+value = "Variedad rara"
+en = "Rare variety"
+
+[DEV_SAMPLE_EPIC]
+value = "Variedad épica"
+en = "Epic variety"
+
+[DEV_SAMPLE_BANNER]
+value = "Nivel de Pescador 12"
+en = "Angler Level 12"
+
+[DEV_SAMPLE_SPLASH]
+value = "Una Leyenda"
+en = "A Legend"
+
+[DEV_SAMPLE_TEXT]
+value = "Oily Blackmouth (una vista previa de /pagle dev)"
+en = "Oily Blackmouth (a /pagle dev preview)"
+
+[DEV_SAMPLE_LINE]
+value = "Una línea de resumen de muestra"
+en = "A sample summary line"
+
+[DEV_SAMPLE_WRITE_UP]
+value = "Tu Libro de registro se redactó a partir de 2.340 Lances"
+en = "Your Ledger was written up from 2,340 Casts"
+
+[DEV_SESSION_ENDED]
+value = "Pagle dev: la Sesión terminó, como si hubiera pasado su pausa."
+en = "Pagle dev: the Session ended, as if its gap had passed."
+
+[DEV_NO_SESSION]
+value = "Pagle dev: no hay ninguna Sesión abierta."
+en = "Pagle dev: no Session is open."
+
+[DEV_NO_CHARACTER]
+value = "Pagle dev: aún no hay ningún personaje conectado."
+en = "Pagle dev: no character is logged in yet."
+
+[DEV_REAL_LOG]
+value = "Pagle dev: catch escribe en el Registro de capturas, así que solo funciona en un registro de prueba (PagleLog.test); este registro es real y no se ha añadido nada."
+en = "Pagle dev: catch writes to the Catch log, so it runs on a test log only (PagleLog.test); this log is real, and nothing was added."
+
+[DEV_UNKNOWN_AREA]
+value = "Pagle dev: {areaText} no es un área del catálogo de Pagle."
+en = "Pagle dev: {areaText} isn't an area in Pagle's catalogue."
+
+[DEV_CAUGHT]
+value = "Pagle dev: objeto {itemID} capturado en la zona {zone} (entrada {seq})."
+en = "Pagle dev: caught item {itemID} in zone {zone} (entry {seq})."
+
+[DEV_SKILL_USAGE]
+value = "Pagle dev: /pagle dev skill <rango> [máx], de 1 a 300 (máx es 300 por defecto), o /pagle dev skill off"
+en = "Pagle dev: /pagle dev skill <rank> [max], from 1 to 300 (max defaults to 300), or /pagle dev skill off"
+
+[DEV_SKILL_SET]
+value = "Pagle dev: la habilidad de Pesca marca ahora {rank}/{max}, diga lo que diga el cliente. Los Lances y las Lecturas de habilidad lo registran. /pagle dev skill off devuelve la del cliente."
+en = "Pagle dev: Fishing skill now reads {rank}/{max}, whatever the client says. Casts and Skill Readings record it. /pagle dev skill off puts the client's back."
+
+[DEV_SKILL_CLEARED]
+value = "Pagle dev: la habilidad de Pesca vuelve a marcar lo que dice el cliente."
+en = "Pagle dev: Fishing skill reads as the client says again."
+
+[DEV_GLYPHS_CHAT]
+value = "Pagle dev: la prueba de glifos en la fuente del chat: {probe}"
+en = "Pagle dev: the glyph probe in the chat font: {probe}"
+
+[DEV_GLYPHS_SHOWN]
+value = "Pagle dev: la misma línea en cada fuente que usa Pagle está en pantalla; un cuadro es un carácter que le falta a esa fuente. Haz clic o pulsa Esc para cerrar."
+en = "Pagle dev: the same line in each font Pagle uses is on screen; a box is a character that font lacks. Click it or press Esc to close."
+
+[DEV_PROBE_SAVED]
+value = "Pagle dev: sonda guardada; haz /reload para escribirla."
+en = "Pagle dev: Probe saved; /reload to write it."
+
+[DEV_TOUR_START_MANUAL]
+value = "Pagle dev: recorriendo {stops} desde {clock}; este cliente no puede hacer capturas de pantalla, así que pulsa Impr Pant cuando aparezca la línea de cada parada."
+en = "Pagle dev: touring {stops} from {clock}; this client can't take screenshots, so press Print Screen as each stop's line appears."
+
+[DEV_TOUR_STOP]
+value = "Pagle dev: recorrido {index}/{stops}: {name}"
+en = "Pagle dev: tour {index}/{stops}: {name}"
+
+[DEV_TOUR_DONE]
+value = "Pagle dev: el recorrido terminó a las {clock}."
+en = "Pagle dev: the tour is done at {clock}."
+
+[DEV_TOUR_STOPPED]
+value = "Pagle dev: el recorrido se detuvo en {index}/{stops}."
+en = "Pagle dev: the tour stopped at {index}/{stops}."
+
+[DEV_TOUR_RESTRICTED_STOPPED]
+value = "Pagle dev: el recorrido se detuvo en {index}/{stops}: empezó un combate."
+en = "Pagle dev: the tour stopped at {index}/{stops}: combat started."
+
+[DEV_TOUR_STOPPING]
+value = "Pagle dev: el recorrido se detiene cuando se oculte esta parada."
+en = "Pagle dev: the tour stops once this stop hides."
+
+[DEV_TOUR_NOT_RUNNING]
+value = "Pagle dev: no hay ningún recorrido en marcha."
+en = "Pagle dev: no tour is running."
+
+[DEV_TOUR_RUNNING]
+value = "Pagle dev: hay un recorrido en marcha; /pagle dev tour stop lo termina."
+en = "Pagle dev: a tour is running; /pagle dev tour stop ends it."
+
+[DEV_TOUR_RESTRICTED]
+value = "Pagle dev: el recorrido espera a que acabe el combate; inténtalo entonces."
+en = "Pagle dev: the tour waits until combat ends; try again then."
+
+[DEV_TOUR_NO_STOPS]
+value = "Pagle dev: no hay paradas de recorrido registradas."
+en = "Pagle dev: no tour stops are registered."
+
+[DEV_TOUR_NO_STOPS_FOR]
+value = "Pagle dev: no hay paradas para {dev_tour_no_stops_for_1}; hay paradas registradas para {known}."
+en = "Pagle dev: no tour stops for {dev_tour_no_stops_for_1}; stops are registered for {known}."
+
+[DEV_TOUR_LIST]
+value.one = "Pagle dev: 1 parada del recorrido:"
+value.many = "Pagle dev: {count:0} paradas del recorrido:"
+value.other = "Pagle dev: {count:0} paradas del recorrido:"
+en.one = "Pagle dev: 1 tour stop:"
+en.other = "Pagle dev: {count:0} tour stops:"
+
+[DEV_TOUR_ANNOUNCE]
+value = "un {kind} de muestra"
+en = "a sample {kind}"
+
+[DEV_TOUR_CARD]
+value = "una tarjeta {kind} de muestra"
+en = "a sample {kind} card"
+
+[DEV_TOUR_SHOP]
+value = "la Tienda de Curiosidades"
+en = "the Curio Shop"
+
+[DEV_TOUR_FIELD_REPORT]
+value = "la ventana del Informe de campo"
+en = "the Field report box"
+
+[DEV_TOUR_EXPORT]
+value = "la ventana de exportación"
+en = "the export window"
+
+[DEV_TOUR_GLYPHS]
+value = "el panel de prueba de glifos"
+en = "the glyph probe panel"
+
+[DEV_TOUR_SETTINGS]
+value = "Ajustes: {topic}"
+en = "Settings: {topic}"
+
+[SLASH_CORE_HELP]
+value = [
+	{ help = "abre los ajustes de Pagle (también /pagle solo)", name = "settings" },
+	{ help = "abre o cierra la Tienda de Curiosidades", name = "shop" },
+	{ help = "abre el Informe de campo, para ayudar a catalogar las aguas", name = "report" },
+	{ help = "copia tu Registro de capturas como Cadena de pegado para la web de Pagle", name = "export" },
+	{ help = "exporta una instantánea de recuperación o revisa los registros conservados", name = "recovery" },
+	{ help = "abre la Guía de campo; /pagle guide notes vuelve a mostrar las notas al margen", name = "guide" },
+	{ help = "muestra estos comandos", name = "help" },
+]
+en = [
+	{ help = "open Pagle's settings (also /pagle on its own)", name = "settings" },
+	{ help = "open or close the Curio Shop", name = "shop" },
+	{ help = "open the Field report, to help chart the waters", name = "report" },
+	{ help = "copy your Catch log as a Paste string for the Pagle website", name = "export" },
+	{ help = "export a Recovery snapshot or inspect preserved records", name = "recovery" },
+	{ help = "open the Field guide; /pagle guide notes shows the margin notes again", name = "guide" },
+	{ help = "list these commands", name = "help" },
+]
+
+[GUIDE_NOTES_AGAIN]
+value = "Pagle: las notas al margen se volverán a mostrar, una vez cada una."
+en = "Pagle: margin notes will show again, once each."
+
+[NOTE_NOD]
+value = "Eso es un *Gesto*: cuando Pagle ha tenido mucho que decir últimamente, las noticias pequeñas se quedan en una línea discreta. Desaparece en tres segundos, y queda en tu Libro de registro para siempre."
+en = "That’s a *Nod*: when Pagle’s had a lot to say lately, the small news steps down to one quiet line. It’s gone in three seconds, and it’s in your Ledger for good."
+
+[NOTE_SUMMARY]
+value = "Te ausentaste cinco minutos, así que la Sesión se cerró. Todo lo que ganó está aquí, *incluso lo que nunca saltó*."
+en = "You stepped away five minutes, so the Session closed. Everything it earned is here, *even what never popped up*."
+
+[NOTE_UNCHARTED]
+value = "Pagle aún no ha catalogado este. Queda guardado, y se te acreditará el día que lo haga. *Ayuda a catalogar las aguas* en el menú de Pagle lo copia, para compartirlo si quieres."
+en = "Pagle hasn’t charted this one yet. It’s kept, and credited the day it is. *Help chart the waters* in the Pagle menu copies it out, to share if you like."
+
+[NOTE_WELCOME]
+value = "Bienvenido de nuevo. */pagle guide* te lo enseña todo, si quieres el recorrido."
+en = "Welcome back. */pagle guide* shows you around, if you want the tour."
+
+[NOTE_CHARACTER]
+value = "El mismo Libro de registro en cada personaje. Solo tu *ropa de pesca* es por personaje."
+en = "Same Ledger on every character. Only your *fishing clothes* are per character."
+
+[DEV_NOTE_NONE]
+value = "Pagle dev: no hay nota al margen {dev_note_none_1}; las notas son {ids}."
+en = "Pagle dev: no margin note {dev_note_none_1}; the notes are {ids}."
+
+[DEV_NOTE_NO_TARGET]
+value = "Pagle dev: la nota al margen {dev_note_no_target} no tiene nada en pantalla a lo que señalar ahora."
+en = "Pagle dev: margin note {dev_note_no_target} has nothing on screen to point at now."
+
+[LOOK_BAR_TITLE]
+value = "Primer vistazo · {title}"
+en = "First look · {title}"
+
+[LOOK_BAR_COUNT]
+value.one = "1 nota, se muestra una vez"
+value.many = "{count:0} notas, se muestran una vez"
+value.other = "{count:0} notas, se muestran una vez"
+en.one = "1 note, shown once"
+en.other = "{count:0} notes, shown once"
+
+[LOOK_BAR_DONE]
+value = "Entendido, guarda las notas"
+en = "Got it, put the notes away"
+
+[LOOK_AGAIN]
+value = "Volver a mostrar las notas de esta página"
+en = "Show the notes for this page again"
+
+[LOOK_SHOP_TITLE]
+value = "la Tienda de Curiosidades"
+en = "the Curio Shop"
+
+[LOOK_SHOP_COINS]
+value = "Las Monedas solo salen de cosas que has hecho. La barra muestra qué las pagó."
+en = "Coins come only from things you’ve done. The bar shows what paid them."
+
+[LOOK_SHOP_SHOW]
+value = "*Mostrar en pantalla* lo reproduce de verdad antes de que compres."
+en = "*Show on screen* plays it for real before you buy."
+
+[LOOK_SHOP_STOCK]
+value = "El surtido *nunca rota*. Lo que hay hoy seguirá aquí el mes que viene."
+en = "The stock *never rotates*. What’s here today is here next month."
+
+[DEV_LOOK_NONE]
+value = "Pagle dev: no hay Primer vistazo {dev_look_none_1}; los conjuntos son {ids}."
+en = "Pagle dev: no First look {dev_look_none_1}; the sets are {ids}."
+
+[DEV_LOOK_CLOSED]
+value = "Pagle dev: la ventana del Primer vistazo {dev_look_closed} no está abierta; ábrela primero."
+en = "Pagle dev: First look {dev_look_closed}'s window isn't open; open it first."
+
+[DEV_LOOK_EMPTY]
+value = "Pagle dev: el Primer vistazo {dev_look_empty} no tiene nada en pantalla a lo que señalar ahora."
+en = "Pagle dev: First look {dev_look_empty} has nothing on screen to point at now."
+
+[DEV_TOUR_LOOK]
+value = "el Primer vistazo en {title}"
+en = "the First look on {title}"
+
+[GUIDE_CRUMB_GUIDE]
+value = "Una guía de campo"
+en = "A field guide"
+
+[GUIDE_COUNT]
+value = "|cfff6e3a8{index}|r de {guide_count_2:0}"
+en = "|cfff6e3a8{index}|r of {guide_count_2:0}"
+
+[GUIDE_SKIP]
+value = "Saltar el resto"
+en = "Skip the rest"
+
+[GUIDE_NEXT]
+value = "Siguiente »"
+en = "Next »"
+
+[GUIDE_BACK]
+value = "« atrás"
+en = "« back"
+
+[GUIDE_OFF]
+value = "¡Al agua!"
+en = "Off to the water"
+
+[GUIDE_AFTER_COMBAT]
+value = "Pagle: la Guía de campo se abre tras el combate."
+en = "Pagle: the Field guide opens after combat."
+
+[GUIDE_SHOW_ME_AROUND]
+value = "Enséñamelo todo »"
+en = "Show me around »"
+
+[DEV_GUIDE_NO_STEP]
+value = "Pagle dev: no hay paso de guía {dev_guide_no_step_1}; los pasos son {ids}."
+en = "Pagle dev: no guide step {dev_guide_no_step_1}; the steps are {ids}."
+
+[DEV_TOUR_GUIDE_STEP]
+value = "la Guía de campo en su paso {dev_tour_guide_step}"
+en = "the Field guide at its {dev_tour_guide_step} step"
+
+[EVENING_TITLE]
+value = "Primera tarde"
+en = "First evening"
+
+[EVENING_COUNT]
+value = "{done:0} de {total:0}"
+en = "{done:0} of {total:0}"
+
+[EVENING_CAST]
+value = "Haz un Lance"
+en = "Make a Cast"
+
+[EVENING_CAST_HINT]
+value = "pulsa tu Tecla de pesca, o doble clic derecho"
+en = "press your Fishing key, or double right-click"
+
+[EVENING_CAST_HINT_NO_QOL]
+value = "clic derecho en el agua con Pesca"
+en = "right-click the water with Fishing"
+
+[EVENING_CATCH]
+value = "Consigue una Captura"
+en = "Land a Catch"
+
+[EVENING_JOURNAL]
+value = "Abre el Diario de peces"
+en = "Open the Fish Journal"
+
+[EVENING_JOURNAL_HINT]
+value = "Menú de Pagle junto al minimapa » Diario de peces"
+en = "Pagle menu by the minimap » Fish Journal"
+
+[EVENING_HUNTS]
+value = "Mira qué pica en Cazas"
+en = "See what’s biting on Hunts"
+
+[EVENING_HUNTS_HINT]
+value = "Menú de Pagle » Cazas"
+en = "Pagle menu » Hunts"
+
+[EVENING_SESSION]
+value = "Termina una Sesión"
+en = "Finish a Session"
+
+[EVENING_SESSION_HINT]
+value = "aléjate 5 minutos para ver tu resumen"
+en = "step away 5 minutes for your summary"
+
+[EVENING_SHOP]
+value = "Echa un vistazo a la Tienda de Curiosidades"
+en = "Peek into the Curio Shop"
+
+[EVENING_SHOP_HINT]
+value = "Menú de Pagle » Tienda de Curiosidades"
+en = "Pagle menu » Curio Shop"
+
+[DEV_TOUR_EVENING]
+value = "la lista de la Primera tarde"
+en = "the First evening list"
+
+[GUIDE_RIBBON_WELCOME]
+value = "Bienvenida"
+en = "Welcome"
+
+[GUIDE_RIBBON_BOX]
+value = "Qué hay en la caja"
+en = "What’s in the box"
+
+[GUIDE_RIBBON_MOMENTS]
+value = "Momentos"
+en = "Moments"
+
+[GUIDE_RIBBON_OFF]
+value = "¡A pescar!"
+en = "Off you go"
+
+[GUIDE_WELCOME_SKIP]
+value = "Ya me apaño solo"
+en = "I’ll find my own way"
+
+[GUIDE_WELCOME_NEXT]
+value = "Enséñamelo todo »"
+en = "Show me around »"
+
+[GUIDE_WELCOME_KICKER]
+value = "Una carta, dejada en el muelle"
+en = "A letter, left on the dock"
+
+[GUIDE_WELCOME_TITLE]
+value = "Querido Pescador:"
+en = "Dear Angler,"
+
+[GUIDE_WELCOME_RIGHT_KICKER]
+value = "Antes que nada"
+en = "Before anything else"
+
+[GUIDE_WELCOME_RIGHT_TITLE]
+value = "Tres promesas"
+en = "Three promises"
+
+[GUIDE_BOX_KICKER]
+value = "El equipo"
+en = "The kit"
+
+[GUIDE_BOX_TITLE]
+value = "Lo que venía en la caja"
+en = "What came in the box"
+
+[GUIDE_MOMENTS_KICKER]
+value = "Momentos"
+en = "Moments"
+
+[GUIDE_MOMENTS_TITLE]
+value = "Cuando pasa algo bueno"
+en = "When something good happens"
+
+[GUIDE_MOMENTS_RIGHT_KICKER]
+value = "Tú eliges"
+en = "Your choice"
+
+[GUIDE_MOMENTS_RIGHT_TITLE]
+value = "¿Cuánto debe hablar Pagle?"
+en = "How chatty should Pagle be?"
+
+[GUIDE_OFF_KICKER]
+value = "Eso es todo por ahora"
+en = "That’s all for now"
+
+[GUIDE_OFF_TITLE]
+value = "El resto se aprende pescando"
+en = "The rest you learn by fishing"
+
+[GUIDE_OFF_RIGHT_KICKER]
+value = "Tu primera tarde"
+en = "Your first evening"
+
+[GUIDE_OFF_RIGHT_TITLE]
+value = "Una lista corta, si quieres"
+en = "A short list, if you like"
+
+[GUIDE_OFF_AGAIN]
+value = "|cff3e220c/pagle guide|r vuelve a abrir esta guía."
+en = "|cff3e220c/pagle guide|r opens this guide again."
+
+[GUIDE_LIST_AND]
+value = " y "
+en = "\" and \""
+
+[GUIDE_WELCOME_LETTER]
+value = [
+	"A partir de ahora, cada pez que saques del agua queda anotado: dónde, cuándo, de qué tamaño y lo que costó sacarlo.",
+	"Pesca lo suficiente y el agua empieza a contarte cosas: qué pica solo de noche, qué peces se te siguen escapando, cuánto has avanzado.",
+	"Deja que te lo enseñe todo. Son dos minutos, y puedes cambiarlo todo más tarde.",
+]
+en = [
+	"From now on, every fish you pull out of the water gets written down: where, when, how big, and what it took to land it.",
+	"Fish long enough and the water starts telling you things: what bites only at night, which fish you keep missing, how far you’ve come.",
+	"Let me show you around. It takes two minutes, and you can change everything later.",
+]
+
+[GUIDE_WELCOME_FOOT]
+value = "Todo esto también está en Opciones » Accesorios » Pagle."
+en = "Everything here is also in Options » AddOns » Pagle."
+
+[GUIDE_WELCOME_PROMISES]
+value = [
+	["I", "Nunca pesco por ti.", "Pagle observa y lo apunta todo. Cada pulsación hace una cosa como mucho, y quien pesca son tus manos."],
+	["II", "Nada caduca.", "No hay diarias que perderse. Los objetivos te esperan, y un día fuera no te cuesta nada."],
+	["III", "Cada parte es opcional."],
+]
+en = [
+	["I", "I never fish for you.", "Pagle watches and writes things down. Every key press does one thing at most, and your hands do the fishing."],
+	["II", "Nothing expires.", "There are no dailies to miss. Goals wait for you, and a day away costs you nothing."],
+	["III", "Every part is optional."],
+]
+
+[GUIDE_WELCOME_PARTS]
+value = "Pagle viene en {parts} partes. Desactiva cualquiera en la lista de accesorios y no deja rastro."
+en = "Pagle comes in {parts}. Turn any of them off in the AddOns list and it leaves no trace."
+
+[GUIDE_BOX_MENU_NOTE]
+value = "Haz clic en un nombre para abrirlo. */pagle* abre los Ajustes."
+en = "Click a name to open it. */pagle* opens Settings."
+
+[GUIDE_BOX_PARTS]
+value = "{parts} partes y una tienda"
+en = "{parts}, and a shop"
+
+[GUIDE_BOX_SHOP]
+value = "Tienda de Curiosidades"
+en = "Curio Shop"
+
+[GUIDE_BOX_SHOP_BLURB]
+value = "Las Monedas Pagle salen de lo que logras, y compran aspectos, nunca poder."
+en = "Pagle Coins come from things you achieve, and buy looks, never power."
+
+[GUIDE_BOX_NONE]
+value = "Activa partes en la lista de accesorios."
+en = "Turn parts on in the AddOns list."
+
+[GUIDE_MOMENTS_TEXT]
+value = "Pagle te avisa, en uno de tres tamaños. Cuanto mayor el momento, mayor la nota."
+en = "Pagle tells you, in one of three sizes. The bigger the moment, the bigger the note."
+
+[GUIDE_MOMENTS_SAMPLES]
+value.banner = ["Un estandarte", "Un nuevo Nivel de Pescador y el título que lo acompaña."]
+value.nod = ["Un Gesto", "Cuando Pagle ha hablado mucho últimamente. Una línea, que desaparece en 3 segundos."]
+value.toast = ["Un aviso emergente", "Cada Captura, un pez nuevo, un récord, Monedas ganadas."]
+en.banner = ["A banner", "A new Angler Level, and the title that comes with it."]
+en.nod = ["A Nod", "When Pagle’s said a lot lately. One line, gone in 3 seconds."]
+en.toast = ["A toast", "Every Catch, a new fish, a record, Coins earned."]
+
+[GUIDE_PRESETS]
+value.cozy = ["Acogedor", "No salta ni suena nada. Todo espera a tu Resumen de sesión."]
+value.lively = ["Animado", "Un aviso emergente por cada Captura; estandartes también, con sonido.", "según llega"]
+value.quieter = [
+	"Más tranquilo",
+	"Sin aviso emergente para las Capturas normales y menos interrupciones. Los grandes momentos se siguen viendo.",
+]
+en.cozy = ["Cozy", "Nothing pops up and nothing plays. It all waits for your Session summary."]
+en.lively = ["Lively", "A toast for every Catch; banners too, with sound.", "as it comes"]
+en.quieter = ["Quieter", "No toast for ordinary Catches, and fewer pop-ups. The big moments still show."]
+
+[GUIDE_PRESET_POPUPS]
+value = "{guide_preset_popups_1:0} interrupciones en {guide_preset_popups_2:0} minutos"
+en = "{guide_preset_popups_1:0} pop-ups in {guide_preset_popups_2:0} minutes"
+
+[GUIDE_PRESET_COZY_WHAT]
+value = "una Leyenda sigue mostrándose, en silencio"
+en = "a Legend still shows, silently"
+
+[GUIDE_PRESET_OWN]
+value = "Tu propia mezcla, tal como está."
+en = "Your own mix, kept as it is."
+
+[GUIDE_MOMENTS_NOTE]
+value = "Cada uno solo ajusta los interruptores de Ajustes » Anuncios, donde puedes afinarlos luego."
+en = "Each one only sets the switches in Settings » Announcements, where you can fine-tune them later."
+
+[GUIDE_OFF_NOD_NOTE]
+value = "Eso es un *Gesto*: cada pieza tiene uno. Desaparece en tres segundos."
+en = "That’s a *Nod*: every Catch gets one. It’s gone in three seconds."
+
+[GUIDE_OFF_LIST_TEXT]
+value = "Se coloca bajo tus misiones y se va tachando sola. Ciérrala cuando quieras."
+en = "It sits under your quests and ticks itself off. Close it whenever you like."
+
+[GUIDE_EVENING_TITLE]
+value = "Primera tarde"
+en = "First evening"
+
+[GUIDE_EVENING_COUNT]
+value = "{done:0} de {rows:0}"
+en = "{done:0} of {rows:0}"
+
+[GUIDE_EVENING_ITEMS]
+value.cast = "Haz un Lance"
+value.catch = "Consigue una Captura"
+value.hunts = "Mira qué pica en Cazas"
+value.journal = "Abre el Diario de peces"
+value.session = "Termina una Sesión"
+value.shop = "Echa un vistazo a la Tienda de Curiosidades"
+en.cast = "Make a Cast"
+en.catch = "Land a Catch"
+en.hunts = "See what’s biting on Hunts"
+en.journal = "Open the Fish Journal"
+en.session = "Finish a Session"
+en.shop = "Peek into the Curio Shop"
+
+[GUIDE_EVENING_HINTS]
+value.cast = "pulsa tu Tecla de pesca, o doble clic derecho"
+value.castNoQoL = "clic derecho en el agua con Pesca"
+value.session = "aléjate 5 minutos para ver tu resumen"
+en.cast = "press your Fishing key, or double right-click"
+en.castNoQoL = "right-click the water with Fishing"
+en.session = "step away 5 minutes for your summary"
+
+[LETTER_KICKER]
+value = "Una carta, dejada en el muelle"
+en = "A letter, left on the dock"
+
+[LETTER_LINE]
+value = "Pagle ha llegado. Ábrela cuando quieras; puede esperar."
+en = "Pagle has arrived. Open it whenever you’re ready; it’ll keep."
+
+[LETTER_OPEN]
+value = "Abrir la carta"
+en = "Open the letter"
+
+[LETTER_LATER]
+value = "Más tarde"
+en = "Later"
+
+[DEV_TOUR_LETTER]
+value = "la Carta"
+en = "the Letter"
+
+[DEV_TOUR_LETTER_OF]
+value = "la carta {dev_tour_letter_of}"
+en = "the letter {dev_tour_letter_of}"
+
+[DEV_LETTER_NONE]
+value = "Pagle dev: no hay carta {dev_letter_none_1}; las cartas son {ids}."
+en = "Pagle dev: no letter {dev_letter_none_1}; the letters are {ids}."
+
+[SLOT_TOAST_STYLE]
+value = "Estilo de aviso emergente"
+en = "Toast style"
+
+[SLOT_SOUND_SET]
+value = "Juego de sonidos"
+en = "Sound set"
+
+[SLOT_CREST]
+value = "Blasones"
+en = "Crests"
+
+[SLOT_BOOK_BINDING]
+value = "Encuadernación"
+en = "Book binding"
+
+[SLOT_CREST_ZONES]
+value = "Blasones de zona"
+en = "Zone crests"
+
+[SLOT_CREST_FISH]
+value = "Blasones de pez"
+en = "Fish crests"
+
+[FISH_CREST_ITEM]
+value = "Objeto {speciesID}"
+en = "Item {speciesID}"
+
+[FISH_CREST_ROW]
+value = "{fish_crest_row:0} de 10 variedades"
+en = "{fish_crest_row:0} of 10 varieties"
+
+[FISH_CREST_NOTE]
+value = "{fish_crest_note_1:0} de 10 variedades de {fish}. Aún por ahí: {parts}."
+en = "{fish_crest_note_1:0} of 10 {fish} varieties. Still out there: {parts}."
+
+[FISH_CREST_NOTE_ALL]
+value = "{fish_crest_note_all_1:0} de 10 variedades de {fish}."
+en = "{fish_crest_note_all_1:0} of 10 {fish} varieties."
+
+[FISH_CREST_UNCAUGHT]
+value = "{rarityName} ×{counts:0}"
+en = "{counts:0} {rarityName}"
+
+[PREVIEW_TOAST]
+value = "» Aviso"
+en = "» Toast"
+
+[PREVIEW_BANNER]
+value = "» Estandarte"
+en = "» Banner"
+
+[PREVIEW_LEGEND]
+value = "» Leyenda"
+en = "» Legend"
+
+[PREVIEW_STING_SHARED]
+value = "La sintonía de Leyenda es la misma en todos los juegos."
+en = "The Legend sting is the same in every set."
+
+[PREVIEW_EX_LIBRIS]
+value = "Ex libris"
+en = "Ex Libris"
+
+[PREVIEW_CREST_NOTE]
+value = "En el Ex libris del Diario de peces."
+en = "On the Fish Journal's bookplate."
+
+[PREVIEW_BINDING_NOTE]
+value = "Todos tus libros la llevan."
+en = "Every book of yours wears it."
