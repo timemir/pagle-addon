@@ -1223,7 +1223,9 @@ def main(argv: list[str], root: Path) -> int:
         if stylua is None:
             print(f"convert-text: no StyLua at {candidates[0]}; run scripts/setup.sh", file=sys.stderr)
             return 1
-        subprocess.run([stylua, *lua_changed], cwd=root, check=True)
+        # StyLua settles a nested call in two passes, so the second makes the first stable.
+        for _ in range(2):
+            subprocess.run([stylua, *lua_changed], cwd=root, check=True)
     if result.files and not args.no_generate:
         from pagle_data.cli import main as generate
 
