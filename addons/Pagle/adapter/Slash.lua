@@ -32,7 +32,7 @@ local function run(line)
 		if ns.logUnreadable then
 			print(ns.L.LOG_UNREADABLE_PAUSED) -- LOG-R104
 		else
-			print("Pagle is paused for Recovery. Use /pagle recovery export, or remove Pagle_Recovery and reload.")
+			print(ns.L.SLASH_PAUSED_FOR_RECOVERY)
 		end
 		return
 	end

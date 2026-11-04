@@ -10,6 +10,22 @@ ns.Locale("xxXX", function(L)
 	L.SIZE_BANDS = { "Aa", "Bb", "Cc", "Dd", "Ee" }
 	L.VARIETY_RARITIES = { "Va", "Vb", "Vc", "Vd" }
 	L.FIXTURE_COUNTED = { few = "{count} fews", other = "{count} others" }
+	-- Recovery and the paused /pagle line (#525).
+	L.RECOVERY_NOT_LOADED = "[xx] not loaded: {reason}"
+	L.RECOVERY_OTHER_LOG = "[xx] other log"
+	L.RECOVERY_STOPPED = "[xx] stopped: {reason}"
+	L.RECOVERY_RESTORED = "[xx] restored"
+	L.RECOVERY_EXPORT_UNAVAILABLE = "[xx] export unavailable: {reason}"
+	L.RECOVERY_WINDOW_CAPTION = "[xx] caption"
+	L.RECOVERY_SNAPSHOT_TITLE = "[xx] snapshot"
+	L.RECOVERY_SNAPSHOT_PART = "[xx] part {part}/{parts}"
+	L.RECOVERY_SNAPSHOT_NOTE = "[xx] copy it"
+	L.RECOVERY_RECORDS_TITLE = "[xx] records"
+	L.RECOVERY_RECORDS_NOTE = "[xx] held, from {id}"
+	L.RECOVERY_RECORD_LABEL = "[xx] record {seq}: {reason}"
+	L.RECOVERY_REASONS = { source_invalid = "[xx] invalid source" }
+	L.RECOVERY_PROBLEMS = { log_changed = "[xx] log changed", needs_format = "[xx] needs format {format}" }
+	L.SLASH_PAUSED_FOR_RECOVERY = "[xx] paused"
 end, {
 	name = "Xxxx",
 	listed = true,

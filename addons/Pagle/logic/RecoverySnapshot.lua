@@ -13,6 +13,17 @@ local HEADER = "PGL-SNAPSHOT|1\n"
 local FORMAT = 4
 local ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
+-- A reason a player is meant to read (ADR 0019, "What stays English"), raised by its code, with the fields its text
+-- fills: adapter/Recovery.lua turns it into Core's text for the player's Language. logic/ names no text and reads no
+-- ns.L (it folds with no locale loaded). Every other message in logic/Recovery*.lua is a diagnostic of the strict
+-- parser (a bad digest, a forged or damaged package) and stays the English string it raises.
+---@param code "log_changed"|"format_differs"|"needs_format"|"needs_readable"|"snapshot_too_large"
+---@param fields table<string, any>?
+---@return {problem: string, fields: table<string, any>?}
+function ns.RecoveryProblem(code, fields)
+	return { problem = code, fields = fields }
+end
+
 local function natural(value)
 	assert(type(value) == "number" and value >= 0 and value <= MAX and value % 1 == 0, "invalid snapshot integer")
 	return ("%.0f"):format(value)
@@ -135,8 +146,12 @@ end
 ---@param log table
 ---@return string
 function ns.RecoverySnapshot(log)
-	assert(type(log) == "table" and log.format == FORMAT, "Recovery requires Catch log format " .. FORMAT)
-	assert(not ns.CatchLogProblem(log), "Recovery requires a readable Catch log")
+	if type(log) ~= "table" or log.format ~= FORMAT then
+		error(ns.RecoveryProblem("needs_format", { format = FORMAT }))
+	end
+	if ns.CatchLogProblem(log) then
+		error(ns.RecoveryProblem("needs_readable"))
+	end
 	assert(
 		type(log.logId) == "string" and #log.logId == 16 and log.logId:find("^[0-9a-f]+$"),
 		"invalid snapshot log ID"
@@ -146,7 +161,9 @@ function ns.RecoverySnapshot(log)
 	local function add(value)
 		local framed = frame(value)
 		size = size + #framed
-		assert(size <= ns.RECOVERY_SNAPSHOT_CAP, "snapshot too large")
+		if size > ns.RECOVERY_SNAPSHOT_CAP then
+			error(ns.RecoveryProblem("snapshot_too_large"))
+		end
 		out[#out + 1] = framed
 	end
 	add(log.logId)
@@ -178,7 +195,9 @@ end
 ---@param bytes string
 ---@return table
 function ns.RecoveryReadSnapshot(bytes)
-	assert(#bytes <= ns.RECOVERY_SNAPSHOT_CAP, "snapshot too large")
+	if #bytes > ns.RECOVERY_SNAPSHOT_CAP then
+		error(ns.RecoveryProblem("snapshot_too_large"))
+	end
 	local read, finish = ns.RecoveryReader(bytes, HEADER)
 	local log = { logId = read(), format = ns.RecoveryNatural(read()), test = boolean(read()), characters = {} }
 	local count = ns.RecoveryNatural(read())

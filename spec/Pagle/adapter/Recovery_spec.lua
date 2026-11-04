@@ -363,9 +363,8 @@ describe("Recovery through the addon", function()
 			assert.are.same({}, { prepare(nil, nil, target) })
 		end
 		assert.are.same({ nil, nil, true }, { prepare(nil, nil, { logId = "fedcba9876543210", format = 4 }, {}) })
-		assert.has_error(function()
-			prepare(nil, nil, { logId = log.logId, format = 2 }, {})
-		end, "Recovery is for a different Catch log format")
+		local _, refused = pcall(prepare, nil, nil, { logId = log.logId, format = 2 }, {})
+		assert.are.same({ problem = "format_differs" }, refused)
 		-- The receipt owns its values; later edits to the installed data cannot change the verified bytes.
 		data.sig = "!" .. data.sig:sub(2)
 		assert.has_error(function()
@@ -791,12 +790,8 @@ describe("Recovery through the addon", function()
 		local prefix = loaded.ns.RecoverySnapshot(log):match("^(.*)" .. #logEntries(log)[1] .. ":")
 		local snapshot = assert(prefix) .. #entry .. ":" .. entry .. ","
 		putLogEntry(log, 1, entry)
-		assert.has_error(function()
-			loaded.ns.RecoverySnapshot(log)
-		end, "snapshot too large")
-		assert.has_error(function()
-			loaded.ns.RecoveryReadSnapshot(snapshot)
-		end, "snapshot too large")
+		assert.are.same({ problem = "snapshot_too_large" }, select(2, pcall(loaded.ns.RecoverySnapshot, log)))
+		assert.are.same({ problem = "snapshot_too_large" }, select(2, pcall(loaded.ns.RecoveryReadSnapshot, snapshot)))
 		assert.are.equal(log, loaded.env.PagleLog)
 	end)
 	it("rejects packages above the 24 MiB DATA allowance before decoding or checking their signature", function()
@@ -845,5 +840,197 @@ describe("Recovery through the addon", function()
 		local snapshot = assert(loaded.ns.Base64Decode(encoded))
 		assert.are.equal(fixtures.opaqueSnapshotSha256, loaded.ns.RecoveryDigest(snapshot))
 		assert.are.equal("Unknown|bad bytes", logEntries(loaded.ns.RecoveryReadSnapshot(snapshot))[2])
+	end)
+end)
+
+-- Recovery's text in the player's Language (#525, CORE-R8, ADR 0019). StartRecovery prints before SavedVariables are
+-- opened, so its lines come from the Language Core applied first, read from the raw PagleDB. The Locales here are
+-- the made-up fixtures of spec/Pagle/fixtures/locale/, never shipped.
+describe("Recovery's text in the player's Language", function()
+	local FIXTURES = "spec/Pagle/fixtures/locale/"
+	local WITH_FIXTURES = {
+		["locale/Locales.xml"] = FIXTURES .. "Locales.xml",
+		["locale/Fixture.lua"] = FIXTURES .. "Fixture.lua",
+	}
+
+	-- Core over `log`, with the fixture Locales and the Language `setting` in PagleDB, ready for ADDON_LOADED.
+	-- `dbAtPrint` collects what ns.db was at each line printed, to show the line came before SavedVariables opened.
+	---@param setting any
+	---@param log table
+	---@return LoadedAddon loaded
+	---@return any[] dbAtPrint
+	local function held(setting, log)
+		local globals =
+			foreverWith({ PagleLog = log, PagleDB = setting ~= nil and { global = { language = setting } } or nil })
+		local loaded = loadAddon("Pagle", globals, { replace = WITH_FIXTURES, holdAddonLoaded = true })
+		local dbAtPrint = {}
+		local print = loaded.env.print
+		loaded.env.print = function(...)
+			dbAtPrint[#dbAtPrint + 1] = loaded.ns.db or false
+			print(...)
+		end
+		return loaded, dbAtPrint
+	end
+
+	-- A package of the backend's fixture for `original()`'s log, to be read at ADDON_LOADED.
+	---@param loaded LoadedAddon
+	---@param withKey boolean? whether the shipped key ring knows the package's key (it does not by default)
+	local function installPackage(loaded, withKey)
+		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-backend-v1.json")))
+		if withKey then
+			loaded.ns.PUSHED_KEYS.testKey = signing.testKey
+		end
+		loaded.client.addons.Pagle_Recovery = {
+			loaded = false,
+			load = function()
+				loaded.env.PagleRecoveryData =
+					{ v = 1, keyId = fixture.keyId, payload = fixture.payload, sig = fixture.signature }
+			end,
+		}
+	end
+
+	it("prints a package the client won't load in the Language, before PagleDB is wrapped", function()
+		local loaded, dbAtPrint = held("xxXX", original())
+		loaded.client.addons.Pagle_Recovery = { refuse = "INTERFACE_VERSION" }
+
+		loaded.client.fire("ADDON_LOADED", "Pagle")
+
+		assert.are.same({ "[xx] not loaded: INTERFACE_VERSION" }, loaded.printed)
+		assert.are.same({ false }, dbAtPrint)
+	end)
+
+	it("prints a package for another Catch log in the Language", function()
+		local log = original()
+		log.logId = "fedcba9876543210"
+		local loaded, dbAtPrint = held("xxXX", log)
+		installPackage(loaded, true)
+
+		loaded.client.fire("ADDON_LOADED", "Pagle")
+
+		assert.are.same({ "[xx] other log" }, loaded.printed)
+		assert.are.same({ false }, dbAtPrint)
+	end)
+
+	it("prints the restored Catch log in the Language", function()
+		local fixture = assert(json.decode(readFile("spec/fixtures/recovery-signed-v1.json")))
+		local log = original()
+		putLogEntry(log, 2, "S1|1|1793000001|0|80|150|0")
+		putLogEntry(log, 3, "U1|1|1793000002|0|some.good|25")
+		local loaded, dbAtPrint = held("xxXX", log)
+		loaded.ns.PUSHED_KEYS.testKey = signing.testKey
+		loaded.client.addons.Pagle_Recovery = {
+			loaded = false,
+			load = function()
+				loaded.env.PagleRecoveryData =
+					{ v = 1, keyId = fixture.good.keyId, payload = fixture.good.payload, sig = fixture.good.sig }
+			end,
+		}
+
+		loaded.client.fire("ADDON_LOADED", "Pagle")
+
+		assert.are.same({ "[xx] restored" }, loaded.printed)
+		assert.are.same({ false }, dbAtPrint)
+	end)
+
+	it("words a reason logic/ names by code, and leaves a diagnostic and a raw Lua error in English", function()
+		-- A log that changed since the snapshot: logic/ raises the code log_changed, the Language words it.
+		local changed = original()
+		putLogEntry(changed, 2, "S1|1|1793000001|0|80|150|0")
+		local loaded, dbAtPrint = held("xxXX", changed)
+		installPackage(loaded, true)
+		loaded.client.fire("ADDON_LOADED", "Pagle")
+		assert.are.same({ "[xx] stopped: [xx] log changed" }, loaded.printed)
+		assert.are.same({ false }, dbAtPrint)
+		assert.is_true(loaded.ns.recoveryBlocked)
+		-- While Recovery has stopped Pagle, /pagle says so in the Language (Slash.lua).
+		loaded.env.SlashCmdList.PAGLE("settings")
+		assert.are.equal("[xx] paused", loaded.printed[#loaded.printed])
+
+		-- A key the ring lacks: the parser's own diagnostic, English as raised, inside the translated sentence.
+		local unknownKey = held("xxXX", original())
+		installPackage(unknownKey, false)
+		unknownKey.client.fire("ADDON_LOADED", "Pagle")
+		assert.matches("^%[xx%] stopped: .*unknown Recovery key$", unknownKey.printed[1])
+		assert.are.equal(1, #unknownKey.printed)
+
+		-- A raw Lua error from the client's load of the package goes in as the value of {reason}, untouched.
+		local interrupted = held("xxXX", original())
+		interrupted.client.addons.Pagle_Recovery = {
+			loaded = false,
+			load = function()
+				error("interrupted data file", 0)
+			end,
+		}
+		interrupted.client.fire("ADDON_LOADED", "Pagle")
+		assert.matches("^%[xx%] stopped: .*interrupted data file$", interrupted.printed[1])
+	end)
+
+	it("prints English when the Language cannot be read, as before 1.1", function()
+		for _, saved in pairs({
+			["a Language no Locale has"] = "yyYY",
+			["no Language"] = false,
+			["a Language of the wrong type"] = 5,
+		}) do
+			local loaded = held(saved or nil, original())
+			loaded.client.addons.Pagle_Recovery = { refuse = "INTERFACE_VERSION" }
+
+			loaded.client.fire("ADDON_LOADED", "Pagle")
+
+			assert.matches(
+				"^Pagle Recovery: Pagle_Recovery didn't load %(INTERFACE_VERSION%), so nothing",
+				loaded.printed[1]
+			)
+		end
+
+		-- A PagleDB that is not a table reads as no Language at all: the Language applies, and the line is English.
+		local junk = held(nil, original())
+		junk.env.PagleDB = 42
+		junk.client.addons.Pagle_Recovery = { refuse = "INTERFACE_VERSION" }
+		junk.ns.ApplyLanguage()
+		assert.is_true(junk.ns.StartRecovery())
+		assert.matches("^Pagle Recovery: Pagle_Recovery didn't load %(INTERFACE_VERSION%), so nothing", junk.printed[1])
+	end)
+
+	it("words the export window, its parts and the staged records in the Language", function()
+		local loaded =
+			loadAddon("Pagle", foreverWith({ PagleLog = original(), PagleDB = { global = { language = "xxXX" } } }), {
+				replace = WITH_FIXTURES,
+			})
+
+		loaded.env.SlashCmdList.PAGLE("recovery export")
+		local window = loaded.ns.recoveryWindow
+		assert.are.equal("[xx] snapshot", window.title:GetText())
+		assert.are.equal("[xx] caption", window.privacy:GetText())
+		assert.are.equal("[xx] part 1/1", window.line:GetText())
+		assert.are.equal("[xx] copy it", window.instructions:GetText())
+
+		loaded.env.PagleRecovery = {
+			completed = { applicationId = "example" },
+			archives = {
+				example = {
+					original = savedLog({ "raw|original|record" }),
+					staged = { { seq = 1, reason = "source_invalid" }, { seq = 2, reason = "mystery_code" } },
+				},
+			},
+		}
+		loaded.env.SlashCmdList.PAGLE("recovery inspect")
+		assert.are.equal("[xx] records", window.title:GetText())
+		assert.are.equal("[xx] held, from example", window.instructions:GetText())
+		assert.are.equal("[xx] record 1: [xx] invalid source", window.line:GetText())
+		window.next:Click()
+		assert.are.equal(
+			"[xx] record 2: mystery_code",
+			window.line:GetText(),
+			"a code the Language lacks shows as it is"
+		)
+
+		-- A Catch log that is not format 4 can't be exported: the code, with its field, is worded in the Language.
+		local old =
+			loadAddon("Pagle", foreverWith({ PagleLog = savedLog({}), PagleDB = { global = { language = "xxXX" } } }), {
+				replace = WITH_FIXTURES,
+			})
+		old.env.PagleLog.format = 3
+		old.env.SlashCmdList.PAGLE("recovery export")
+		assert.are.equal("[xx] export unavailable: [xx] needs format 4", old.printed[#old.printed])
 	end)
 end)
