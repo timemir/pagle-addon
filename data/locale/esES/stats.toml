@@ -1,0 +1,851 @@
+# Pagle_Stats's interface text in Spanish (Spain), converted from PR #510 by scripts/convert-text.py (DATA-R114).
+# `value` is the translation, `en` the English it was translated from.
+
+[TITLE]
+value = "Estadísticas"
+en = "Stats"
+
+[BOOK]
+value = "Estadísticas"
+en = "Stats"
+
+[BOOK_SLASH_HELP]
+value = "Abre o cierra el libro de Estadísticas."
+en = "Open or close the Stats book."
+
+[BOOK_ROOT]
+value = "Estadísticas"
+en = "Stats"
+
+[BOOK_WHERE_I_AM]
+value = "Dónde estoy"
+en = "Where I am"
+
+[BOOK_THIS_SESSION]
+value = "Esta Sesión"
+en = "This Session"
+
+[BOOK_LAST_SESSION]
+value = "Mi última Sesión"
+en = "My last Session"
+
+[BOOK_LIFETIME]
+value = "Historial"
+en = "Lifetime"
+
+[BOOK_SESSIONS]
+value = "Sesiones"
+en = "Sessions"
+
+[BOOK_NAMEPLATE]
+value = "{book_nameplate_1} · {sessions} · desde {date}"
+en = "{book_nameplate_1} · {sessions} · since {date}"
+
+[BOOK_NO_CASTS]
+value = "Aún no hay Lances"
+en = "No Casts yet"
+
+[BOOK_LIVE_LINE]
+value = "Sesión: {book_live_line_1} · {book_live_line_2} · {duration}"
+en = "Session: {book_live_line_1} · {book_live_line_2} · {duration}"
+
+[BOOK_UPDATING]
+value = "Actualizando mis registros…"
+en = "Updating my records…"
+
+[GUIDE_BLURB]
+value = "Tus propios números: tus probabilidades, de tus propios Lances, y cuánto llevas esperando. Nunca salen solas."
+en = "Your own numbers: your odds, from your own Casts, and how long you’ve waited. It never pops up."
+
+[LOOK_TITLE]
+value = "Estadísticas"
+en = "Stats"
+
+[LOOK_ODDS_SINCE]
+value = "Cada pez de este caladero: tus probabilidades y cuántos Lances desde tu última captura."
+en = "Every fish of this water: your odds, and how many Casts since you last caught it."
+
+[LOOK_YOUR_ODDS]
+value = "*Tus probabilidades* salen solo de tus propios Lances, y siempre dicen de cuántos."
+en = "*Your odds* come only from your own Casts, and always say how many."
+
+[LOOK_DRY_SPELL]
+value = "Una *Racha seca* es cuánto llevas esperando. Mala suerte no es un fallo: no se te debe nada."
+en = "A *Dry spell* is how long you’ve waited. Unlucky isn’t broken: nothing is owed."
+
+[LOOK_WATCH]
+value = "*Vigila* hasta tres peces para tener sus Rachas secas en tu rastreador."
+en = "*Watch* up to three fish to keep their Dry spells on your tracker."
+
+[LOOK_NEVER_POPS_UP]
+value = "Las Estadísticas *nunca salen solas* ni anuncian nada. Están aquí cuando las pides."
+en = "Stats *never pops up* and never announces. It’s here when you ask."
+
+[LOOK_AGAIN]
+value = "Volver a mostrar las notas de esta página"
+en = "Show the notes for this page again"
+
+[SESSION_NUMBERED]
+value = "Sesión {index}"
+en = "Session {index}"
+
+[SESSION_SPAN]
+value = "De {time} a {live}, {duration} junto al agua."
+en = "{time} to {live}, {duration} at the water."
+
+[SESSION_NOW]
+value = "ahora"
+en = "now"
+
+[SESSION_CASTS]
+value = "Lances"
+en = "Casts"
+
+[SESSION_CATCHES]
+value = "Capturas"
+en = "Catches"
+
+[SESSION_GOT_AWAY]
+value = "Escapados"
+en = "Got away"
+
+[SESSION_PER_HOUR]
+value = "Capturas por hora"
+en = "Catches per hour"
+
+[SESSION_SKILL]
+value = "Habilidad ganada"
+en = "Skill gained"
+
+[SESSION_BY_QUALITY]
+value = "Por calidad"
+en = "By quality"
+
+[SESSION_WHERE_AND_WHO]
+value = "Dónde y quién"
+en = "Where and who"
+
+[SESSIONS_BEFORE_THAT]
+value = "Antes de eso"
+en = "Before that"
+
+[SESSIONS_EARLIER]
+value = "Sesiones anteriores"
+en = "Earlier Sessions"
+
+[SESSIONS_EVERY]
+value = "Todas las Sesiones"
+en = "Every Session"
+
+[SESSIONS_STARTED]
+value = "Inicio"
+en = "Started"
+
+[SESSIONS_WHERE]
+value = "Dónde"
+en = "Where"
+
+[SESSIONS_LENGTH]
+value = "Duración"
+en = "Length"
+
+[SESSIONS_CASTS]
+value = "Lances"
+en = "Casts"
+
+[SESSIONS_CATCHES]
+value = "Capturas"
+en = "Catches"
+
+[SESSIONS_NOTE]
+value = "Una Sesión termina tras {sessions_note:0} minutos sin un Lance."
+en = "A Session ends after {sessions_note:0} minutes without a Cast."
+
+[SESSIONS_LATER]
+value = "más recientes"
+en = "later"
+
+[SESSIONS_EARLIER_PAGE]
+value = "anteriores"
+en = "earlier"
+
+[SESSIONS_PAGE]
+value = "página {page:0} de {pages:0}"
+en = "page {page:0} of {pages:0}"
+
+[NO_SESSIONS]
+value = "Aún no hay Sesiones."
+en = "No Sessions yet."
+
+[NOTHING_IS_OWED]
+value = "Cada Lance es su propia tirada; no se te debe nada."
+en = "Every Cast is its own roll; nothing is owed."
+
+[COUNTS]
+value.Casts.one = "{count} Lance"
+value.Casts.many = "{count} Lances"
+value.Casts.other = "{count} Lances"
+value.Catches.one = "{count} Captura"
+value.Catches.many = "{count} Capturas"
+value.Catches.other = "{count} Capturas"
+value.Sessions.one = "{count} Sesión"
+value.Sessions.many = "{count} Sesiones"
+value.Sessions.other = "{count} Sesiones"
+value.anglers.one = "{count} pescador de cada 100 espera"
+value.anglers.many = "{count} pescadores de cada 100 esperan"
+value.anglers.other = "{count} pescadores de cada 100 esperan"
+value.waters.one = "{count} caladero"
+value.waters.many = "{count} caladeros"
+value.waters.other = "{count} caladeros"
+en.Casts.one = "{count:n} Cast"
+en.Casts.other = "{count:n} Casts"
+en.Catches.one = "{count:n} Catch"
+en.Catches.other = "{count:n} Catches"
+en.Sessions.one = "{count:n} Session"
+en.Sessions.other = "{count:n} Sessions"
+en.anglers.one = "{count:n} angler in 100 waits"
+en.anglers.other = "{count:n} anglers in 100 wait"
+en.waters.one = "{count:n} water"
+en.waters.other = "{count:n} waters"
+
+[DURATION_UNDER_MINUTE]
+value = "menos de 1m"
+en = "under 1m"
+
+[AGO_NOW]
+value = "ahora mismo"
+en = "just now"
+
+[AGO_MINUTES]
+value = "hace {minutes:0}m"
+en = "{minutes:0}m ago"
+
+[AGO_HOURS]
+value = "hace {hours:0}h"
+en = "{hours:0}h ago"
+
+[AGO_DAYS]
+value = "hace {ago_days:0}d"
+en = "{ago_days:0}d ago"
+
+[ITEM_FALLBACK]
+value = "Objeto {itemID}"
+en = "Item {itemID}"
+
+[AREA_FALLBACK]
+value = "Área {areaID}"
+en = "Area {areaID}"
+
+[CHARACTER_FALLBACK]
+value = "Personaje {index}"
+en = "Character {index}"
+
+[QUALITY_FALLBACK]
+value = "Calidad {quality:0}"
+en = "Quality {quality:0}"
+
+[ODDS_HEADING]
+value = "Tus probabilidades"
+en = "Your odds"
+
+[ODDS_LEARNING_SHORT]
+value = "aprendiendo {odds_learning_short_1:0}/{oddsThreshold:0}"
+en = "learning {odds_learning_short_1:0}/{oddsThreshold:0}"
+
+[ODDS_LEARNING]
+value = "Aprendiendo…"
+en = "Learning…"
+
+[ODDS_UNSEEN]
+value = "aún no visto"
+en = "not seen yet"
+
+[ODDS_KNOWN_SHORT]
+value = "1 de {nice}"
+en = "1 in {nice}"
+
+[ODDS_KNOWN]
+value = "aprox. 1 de cada {nice}"
+en = "about 1 in {nice}"
+
+[ODDS_ABOUT]
+value = "aprox."
+en = "about"
+
+[ODDS_HERE]
+value = "aquí"
+en = "here"
+
+[ODDS_ACROSS]
+value = "en toda la zona de {areaName}"
+en = "across {areaName}"
+
+[ODDS_SIDE_HI]
+value = "con habilidad {line:0} o más"
+en = "at or above {line:0} skill"
+
+[ODDS_SIDE_LO]
+value = "con habilidad menor de {line:0}"
+en = "below {line:0} skill"
+
+[ODDS_LEARNING_SENTENCE]
+value = "{odds_learning_sentence_1} de los {oddsThreshold:0} Lances que necesito {restsOn} antes de que Tus probabilidades den un número."
+en = "{odds_learning_sentence_1} of the {oddsThreshold:0} Casts I need {restsOn} before Your odds show a number."
+
+[ODDS_SCOPE_LINE]
+value = "Según {odds_scope_line_1} de mis Lances {restsOn}; capturas: {odds_scope_line_3}."
+en = "From {odds_scope_line_1} of my Casts {restsOn}; {odds_scope_line_3} caught."
+
+[ODDS_UNSEEN_SENTENCE]
+value = "En {odds_unseen_sentence_1} Lances {restsOn}: más raro que 1 de cada {nice} o así, si es que pica aquí."
+en = "In {odds_unseen_sentence_1} Casts {restsOn}: rarer than about 1 in {nice}, if it bites here at all."
+
+[ODDS_RANGE]
+value = "Probablemente entre 1 de cada {likelier} y 1 de cada {rarer} (95%)."
+en = "Likely between 1 in {likelier} and 1 in {rarer} (95%)."
+
+[ODDS_RANGE_ROUNDING]
+value = "Dentro del redondeo de 1 de cada {nice} (95%)."
+en = "Within rounding of 1 in {nice} (95%)."
+
+[ODDS_NOTE_ENTRY]
+value = "Pagle aún no ha confirmado que pique aquí."
+en = "Pagle hasn't confirmed it bites here yet."
+
+[ODDS_NOTE_WINDOW]
+value = "La ventana aún no está confirmada."
+en = "The window isn't confirmed yet."
+
+[ODDS_NOTE_LINE]
+value = "La línea sin basura aún no está confirmada."
+en = "The no-junk line isn't confirmed yet."
+
+[ODDS_NOTE_POOL]
+value = "Aguas abiertas y bancos juntos: no hay datos de bancos."
+en = "Open water and pools combined: there is no pool data."
+
+[WINDOW_NAMES]
+value.autumn = "en otoño"
+value.day = "de día"
+value.event = "durante su evento"
+value.night = "de noche"
+value.other = "en su ventana"
+value.spring = "en primavera"
+value.summer = "en verano"
+value.winter = "en invierno"
+en.autumn = "in autumn"
+en.day = "by day"
+en.event = "during its event"
+en.night = "by night"
+en.other = "in its window"
+en.spring = "in spring"
+en.summer = "in summer"
+en.winter = "in winter"
+
+[DRY_NONE_YET]
+value = "{dry_none_yet_1} {where}, y aún nada."
+en = "{dry_none_yet_1} {where}, none yet."
+
+[DRY_SINCE_ENTRY]
+value = "{dry_since_entry_1} desde el último, {timeAgo}."
+en = "{dry_since_entry_1} since my last one, {timeAgo}."
+
+[DRY_SINCE_TRACKER]
+value = "{dry_since_tracker_1} desde mi última captura de {item}."
+en = "{dry_since_tracker_1} since my last {item}."
+
+[DRY_CAUGHT_LAST]
+value = "Lo pesqué en mi último Lance {where}."
+en = "Caught one on my last Cast {where}."
+
+[DRY_LEARNING]
+value = "La suerte se mide cuando Tus probabilidades tengan un número."
+en = "A luck reading comes once Your odds have a number."
+
+[LUCK_NOTHING_UNUSUAL]
+value = "Nada raro."
+en = "Nothing unusual."
+
+[LUCK_ABOUT]
+value = "Cerca de {luck_about} tanto. Nada raro."
+en = "About {luck_about} this long. Nothing unusual."
+
+[LUCK_LONG_WAIT]
+value = "Más o menos 1 pescador de cada {nice} espera tanto. Una espera larga, pero dentro de la suerte normal."
+en = "Roughly 1 angler in {nice} waits this long. A long wait, but well within normal luck."
+
+[LUCK_UNLUCKY]
+value = "Más o menos 1 pescador de cada {nice} espera tanto. Mala suerte, no un fallo."
+en = "Roughly 1 angler in {nice} waits this long. Unlucky, not broken."
+
+[LUCK_VERY_UNLUCKY]
+value = "Solo 1 pescador de cada {nice}, más o menos, espera tanto. {luckVeryUnluckyRoll}"
+en = "Only about 1 angler in {nice} waits this long. {luckVeryUnluckyRoll}"
+
+[LUCK_UNDER_A_MILLION]
+value = "Menos de 1 pescador por millón espera tanto. {luckVeryUnluckyRoll}"
+en = "Fewer than 1 angler in a million waits this long. {luckVeryUnluckyRoll}"
+
+[LUCK_VERY_UNLUCKY_ROLL]
+value = "Muy mala suerte, y cada Lance sigue siendo su propia tirada."
+en = "Very unlucky, and every Cast is still its own roll."
+
+[BANDS]
+value.normal = "normal"
+value.unlucky = "mala suerte"
+value.veryUnlucky = "muy mala suerte"
+en.normal = "normal"
+en.unlucky = "unlucky"
+en.veryUnlucky = "very unlucky"
+
+[DRY_SHORT_SINCE]
+value = "{since} en seco"
+en = "{since} since"
+
+[DRY_JUST_NOW]
+value = "ahora mismo"
+en = "just now"
+
+[DRY_WATCH_SINCE]
+value = "{since} en seco{unluckySuffix}."
+en = "{since} since the last{unluckySuffix}."
+
+[DRY_WATCH_CAUGHT_LAST]
+value = "pescado en mi último Lance."
+en = "caught on my last Cast."
+
+[DRY_WATCH_NONE_YET]
+value = "{dry_watch_none_yet}, y aún nada."
+en = "{dry_watch_none_yet}, none yet."
+
+[GROUPS]
+value.added.heading = "También pescado aquí"
+value.added.note = "no está en la carta de Pagle de estos caladeros"
+value.any.heading = "A cualquier hora"
+value.any.note = "Tus probabilidades · Racha seca"
+value.pools.heading = "Bancos"
+value.pools.note = "aguas abiertas y bancos juntos"
+value.window.heading = "En su ventana"
+value.window.note = "solo Lances en su ventana"
+en.added.heading = "Also caught here"
+en.added.note = "not on Pagle's chart for these waters"
+en.any.heading = "Any time"
+en.any.note = "Your odds · Dry spell"
+en.pools.heading = "Pools"
+en.pools.note = "open water and pools combined"
+en.window.heading = "In their window"
+en.window.note = "only Casts in their window"
+
+[PLACE_ZONE_KICKER]
+value = "Caladeros"
+en = "Waters"
+
+[PLACE_HERE]
+value = "Estoy aquí"
+en = "I'm here"
+
+[PLACE_CASTS]
+value = "Llevo {record} aquí."
+en = "{record} of my Casts here."
+
+[PLACE_NO_JUNK]
+value = "Sin basura desde {line:0}."
+en = "No junk from {line:0}."
+
+[PLACE_NO_JUNK_PAST]
+value = "Sin basura desde {line:0}; con {live:0} ya lo paso, así que solo cuentan esos Lances."
+en = "No junk from {line:0}; at {live:0} I'm past it, so only those Casts count."
+
+[PLACE_NO_JUNK_BELOW]
+value = "Sin basura desde {line:0}; con {live:0} no llego, así que solo cuentan mis Lances por debajo."
+en = "No junk from {line:0}; at {live:0} I'm below it, so only my Casts below it count."
+
+[PLACE_NO_CHART]
+value = "Pagle aún no tiene carta de estos caladeros."
+en = "Pagle has no chart of these waters yet."
+
+[PLACE_WATERS]
+value = "Sus caladeros"
+en = "Its waters"
+
+[PLACE_WATERS_NOTE]
+value = "mis Lances"
+en = "my Casts"
+
+[PLACE_ACROSS_ZONE]
+value = "Los peces con menos de {oddsThreshold:0} Lances en {areaName} usan toda la zona de {place_across_zone_3} hasta entonces."
+en = "Fish with fewer than {oddsThreshold:0} Casts in {areaName} use all of {place_across_zone_3} until then."
+
+[PLACE_ABOUT]
+value = "Sobre estos caladeros"
+en = "About these waters"
+
+[PLACE_CASTS_LABEL]
+value = "Lances"
+en = "Casts"
+
+[PLACE_CATCHES_LABEL]
+value = "Capturas"
+en = "Catches"
+
+[PLACE_GOT_AWAY_LABEL]
+value = "Escapados"
+en = "Got away"
+
+[PLACE_PICK]
+value = "Elige un pez a la izquierda para ver sus probabilidades y su Racha seca."
+en = "Pick a fish on the left for its odds and its Dry spell."
+
+[ENTRY_KICKER]
+value = "Tus probabilidades · {areaName}"
+en = "Your odds · {areaName}"
+
+[ENTRY_WATCH]
+value = "vigilar"
+en = "watch"
+
+[ENTRY_WATCHING]
+value = "vigilando"
+en = "watching"
+
+[ENTRY_DRY]
+value = "Racha seca"
+en = "Dry spell"
+
+[ENTRY_DRY_NOTE]
+value = "contada como las probabilidades de arriba"
+en = "counted like the odds above"
+
+[RULER_TICKS]
+value = ["todos", "1 de 10", "1 de 100", "1 de 1k", "1 de 10k", "1 de 100k", "1 de 1M"]
+en = ["all", "1 in 10", "1 in 100", "1 in 1k", "1 in 10k", "1 in 100k", "1 in 1M"]
+
+[RULER_ME]
+value = "yo"
+en = "me"
+
+[ENTRY_RECORDS]
+value = "En mis registros"
+en = "In my records"
+
+[ENTRY_CAUGHT_HERE]
+value = "Pescado en este recuento"
+en = "Caught in this count"
+
+[ENTRY_CAUGHT_ANYWHERE]
+value = "Pescado en cualquier sitio"
+en = "Caught anywhere"
+
+[ENTRY_ITEM_PAGE]
+value = "Todos los caladeros donde pica"
+en = "Every water it bites in"
+
+[HOME_KICKER]
+value = "Los caladeros"
+en = "The waters"
+
+[HOME_TITLE]
+value = "Dónde he pescado"
+en = "Where I've fished"
+
+[HOME_INTRO]
+value = "Tus probabilidades y Rachas secas salen solo de mis propios Lances, nunca de datos del juego."
+en = "Your odds and Dry spells come only from my own Casts, never from game data."
+
+[HOME_TILE_NOT_FISHED]
+value = "aún sin pescar"
+en = "not fished yet"
+
+[HOME_HERE]
+value = "Estoy aquí"
+en = "I'm here"
+
+[HOME_WATCHING]
+value = "vigilando {watching:0}"
+en = "watching {watching:0}"
+
+[HOME_NOT_FISHED]
+value = "Aún no he pescado en ningún sitio."
+en = "Not fished anywhere yet."
+
+[HOME_RIGHT_NOW]
+value = "Ahora mismo"
+en = "Right now"
+
+[HOME_FISHING]
+value = "Pescando en {where}."
+en = "Fishing {where}."
+
+[HOME_FISHING_WHEN]
+value = "Pescando en {where}, {window}."
+en = "Fishing {where}, {window}."
+
+[HOME_NOWHERE]
+value = "No sé dónde estoy."
+en = "I can't tell where I am."
+
+[HOME_SKILL_HI]
+value = "Habilidad {skill:0}, por encima de la línea sin basura ({line:0})."
+en = "Skill {skill:0}, past the no-junk line ({line:0})."
+
+[HOME_SKILL_LO]
+value = "Habilidad {skill:0}, por debajo de la línea sin basura ({line:0})."
+en = "Skill {skill:0}, below the no-junk line ({line:0})."
+
+[HOME_SESSION]
+value = "Esta Sesión: {home_session_1}, {home_session_2}, escapados {gotAway}, {duration} hasta ahora."
+en = "This Session: {home_session_1}, {home_session_2}, {gotAway} got away, {duration} so far."
+
+[HOME_LAST_SESSION]
+value = "Ahora no hay Sesión. La última terminó {timeAgo}."
+en = "No Session right now. The last one ended {timeAgo}."
+
+[HOME_NO_SESSION]
+value = "Aún no hay Sesión."
+en = "No Session yet."
+
+[HOME_WATCHED]
+value = "Rachas secas que vigilo"
+en = "Dry spells I'm watching"
+
+[HOME_WATCHED_NOTE]
+value = "también en el rastreador en vivo"
+en = "also on the live tracker"
+
+[HOME_NO_WATCHES]
+value = "Nada aún. Vigila una Racha seca desde la página de cualquier pez."
+en = "Nothing yet. Watch a Dry spell from any fish's page."
+
+[HOME_CONTENTS]
+value = "En este libro"
+en = "In this book"
+
+[HOME_WHERE_I_AM]
+value = "Dónde estoy: {areaName}"
+en = "Where I am: {areaName}"
+
+[HOME_WHERE_UNKNOWN]
+value = "Dónde estoy: no lo sé"
+en = "Where I am: unknown"
+
+[HOME_EVERY_SESSION]
+value = "Todas las Sesiones"
+en = "Every Session"
+
+[ITEM_KICKER]
+value = "Un pez"
+en = "A fish"
+
+[ITEM_BITES_ANY]
+value = "Pica a cualquier hora."
+en = "Bites at any hour."
+
+[ITEM_BITES_ONLY]
+value = "Solo pica {windowName}."
+en = "Bites only {windowName}."
+
+[ITEM_BITES_ONLY_TIMED]
+value = "Solo pica {windowName} ({ranges}, hora del reino)."
+en = "Bites only {windowName} ({ranges} realm time)."
+
+[ITEM_POOL]
+value = "También en bancos; sin datos de bancos, se cuentan juntos."
+en = "Also in pools; with no pool data, both are counted together."
+
+[ITEM_CAUGHT]
+value = "Pescado"
+en = "Caught"
+
+[ITEM_FIRST_CAUGHT]
+value = "Primera captura"
+en = "First caught"
+
+[ITEM_LAST_CAUGHT]
+value = "Última captura"
+en = "Last caught"
+
+[ITEM_HERE_SINCE]
+value = "{short}; {since} en seco."
+en = "{short}; {since} since the last."
+
+[ITEM_HERE_CAUGHT_LAST]
+value = "{short}; pescado en mi último Lance."
+en = "{short}; caught on my last Cast."
+
+[ITEM_HERE_NONE_YET]
+value = "{short}; aún nada."
+en = "{short}; none yet."
+
+[ITEM_OPEN_HERE]
+value = "Abrir su página aquí"
+en = "Open its page here"
+
+[ITEM_WATERS_KICKER]
+value = "Sus caladeros"
+en = "Its waters"
+
+[ITEM_WATERS_TITLE]
+value = "Dónde lo he buscado"
+en = "Where I've fished for it"
+
+[ITEM_NO_WATERS]
+value = "No he pescado en ningún sitio donde pique."
+en = "I haven't fished anywhere it bites."
+
+[SEARCH_HINT]
+value = "Busca un pez o un caladero…"
+en = "Find a fish or a water…"
+
+[SEARCH_FISH]
+value = "pez"
+en = "fish"
+
+[SEARCH_ZONE]
+value = "zona"
+en = "zone"
+
+[SEARCH_NONE]
+value = "Nada con ese nombre en mis registros."
+en = "Nothing by that name in my records."
+
+[LIFETIME_TITLE]
+value = "Cada Lance que he hecho"
+en = "Every Cast I've made"
+
+[LIFETIME_CASTS]
+value = "Lances"
+en = "Casts"
+
+[LIFETIME_CATCHES]
+value = "Capturas"
+en = "Catches"
+
+[LIFETIME_GOT_AWAY]
+value = "Escapados"
+en = "Got away"
+
+[LIFETIME_SESSIONS]
+value = "Sesiones"
+en = "Sessions"
+
+[LIFETIME_TIME_AT_THE_WATER]
+value = "Tiempo junto al agua"
+en = "Time at the water"
+
+[LIFETIME_BESTS]
+value = "Récords"
+en = "Bests"
+
+[LIFETIME_LONGEST]
+value = "Sesión más larga, {date}"
+en = "Longest Session, {date}"
+
+[LIFETIME_BEST_RATE]
+value = "Más Capturas por hora, {date}"
+en = "Most Catches per hour, {date}"
+
+[LIFETIME_BY_SKILL]
+value = "Escapados, por habilidad"
+en = "Got away, by skill"
+
+[LIFETIME_BY_SKILL_NOTE]
+value = "frente a la línea sin basura de cada caladero"
+en = "against each water's no-junk line"
+
+[LIFETIME_MARGIN_NAMES]
+value.hi0 = "0–24 por encima"
+value.hi25 = "25+ por encima"
+value.lo1 = "1–49 por debajo"
+value.lo50 = "50+ por debajo"
+en.hi0 = "0–24 over"
+en.hi25 = "25+ over"
+en.lo1 = "below by 1–49"
+en.lo50 = "below by 50+"
+
+[LIFETIME_MARGIN_VALUE]
+value = "{gotAwayRate:0}% de {lifetime_margin_value_2}"
+en = "{gotAwayRate:0}% of {lifetime_margin_value_2}"
+
+[LIFETIME_CHARACTERS]
+value = "Personajes"
+en = "Characters"
+
+[LIFETIME_CHARACTER_VALUE]
+value = "{lifetime_character_value_1} · {lifetime_character_value_2} · escapados {gotAway}"
+en = "{lifetime_character_value_1} · {lifetime_character_value_2} · {gotAway} got away"
+
+[LIFETIME_CATCH_KICKER]
+value = "Las capturas"
+en = "The catch"
+
+[LIFETIME_EVERY_FISH]
+value = "Todos los peces"
+en = "Every fish"
+
+[LIFETIME_INDEX_NOTE]
+value = "Cuántos he pescado. Pasa el ratón para ver primera y última; haz clic para sus caladeros."
+en = "How many I've caught. Hover for first and last; click for its waters."
+
+[LIFETIME_FIRST_LAST]
+value = "Primera {date}, última {lifetime_first_last_2}"
+en = "First {date}, last {lifetime_first_last_2}"
+
+[WATCH_FULL]
+value = "Puedes vigilar hasta {maxWatches:0} Rachas secas. Deja de vigilar una antes."
+en = "You can watch up to {maxWatches:0} Dry spells. Stop watching one first."
+
+[WATCH_TRACKER_ON]
+value = "Pagle: rastreador en vivo activado para mostrar tus Rachas secas vigiladas."
+en = "Pagle: live tracker turned on to show your watched Dry spells."
+
+[SETTINGS_TRACKER]
+value = "Mostrar el rastreador en vivo"
+en = "Show the live tracker"
+
+[SETTINGS_TRACKER_TOOLTIP]
+value = "Muestra esta Sesión y tus Rachas secas vigiladas bajo el minimapa. Vigilar una Racha seca lo activa."
+en = "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell turns it on."
+
+[SETTINGS_WATCHED]
+value = "Rachas secas vigiladas"
+en = "Watched Dry spells"
+
+[SETTINGS_WATCHED_TOOLTIP]
+value = "Vigila o deja de vigilar desde la página de cualquier pez en el libro de Estadísticas."
+en = "Watch or stop watching from any fish's page in the Stats book."
+
+[SETTINGS_WATCHED_COUNT]
+value = "{watches:0} de {maxWatches:0}"
+en = "{watches:0} of {maxWatches:0}"
+
+[SETTINGS_WATCHED_NONE]
+value = "Vigila una Racha seca desde la página de cualquier pez en el libro de Estadísticas."
+en = "Watch a Dry spell from any fish's page in the Stats book."
+
+[SETTINGS_STOP_WATCHING]
+value = "Dejar de vigilar"
+en = "Stop watching"
+
+[SLOT_TRACKER_FRAME]
+value = "Marco del rastreador de Estadísticas"
+en = "Stats tracker frame"
+
+[TRACKER_SESSION]
+value = "Sesión · {duration}"
+en = "Session · {duration}"
+
+[TRACKER_COUNTS]
+value = "{tracker_counts_1} · {tracker_counts_2} · escapados {gotAway}"
+en = "{tracker_counts_1} · {tracker_counts_2} · {gotAway} got away"
+
+[TRACKER_PER_HOUR]
+value = "{perHour} por hora · habilidad +{skill}"
+en = "{perHour} per hour · skill +{skill}"
+
+[TRACKER_NO_SESSION]
+value = "sin Sesión"
+en = "no Session"
+
+[TRACKER_UPDATING]
+value = "actualizando"
+en = "updating"
