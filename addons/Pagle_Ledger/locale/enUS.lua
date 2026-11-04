@@ -93,6 +93,7 @@ ns.L = {
 	COLLECTION_SIGNED = "Signed “{name}”",
 	COLLECTION_SIGNED_AS = "Signed as",
 	COLLECTION_SLASH_HELP = "Open the Fish Journal's Collection",
+	COLLECTION_SLOT_FALLBACK = { one = "{label}", other = "{label}s" },
 	COLLECTION_SLOT_NAMES = {
 		["core.binding"] = { "Binding", "Bindings" },
 		["core.crest"] = { "Bookplate crest", "Bookplate crests" },

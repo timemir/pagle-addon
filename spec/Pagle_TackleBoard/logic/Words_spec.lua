@@ -57,6 +57,20 @@ describe("the goal text", function()
 		assert.are.same(expected, texts)
 	end)
 
+	it(
+		"writes a rarity goal as a whole sentence for its rank, no article put into another sentence (TKB-R36, #520)",
+		function()
+			local ns = loadNamed().ns
+			ns.L.GOAL_TEXT.n.rarity[2] = { one = "Une prise rare", other = "{count} prises rares" }
+
+			assert.are.same({ "Une prise rare", "5 prises rares", "…" }, {
+				ns.GoalText(goal("n", "rarity", 1, 2)),
+				ns.GoalText(goal("n", "rarity", 5, 2)),
+				ns.GoalText(goal("n", "rarity", 5, 9)),
+			})
+		end
+	)
+
 	it("reads an Expedition's Haul like a Notice's, with its own need (TKB-R36, TKB-R34)", function()
 		local ns = loadNamed().ns
 

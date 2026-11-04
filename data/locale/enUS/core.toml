@@ -756,8 +756,22 @@ GUIDE_OFF_TITLE = "The rest you learn by fishing"
 GUIDE_OFF_RIGHT_KICKER = "Your first evening"
 GUIDE_OFF_RIGHT_TITLE = "A short list, if you like"
 GUIDE_OFF_AGAIN = "|cff3e220c/pagle guide|r opens this guide again."
-# A count on the pages in words, from 0 (ns.GuideCountWord); past ten, in figures. A list's joins.
-GUIDE_COUNT_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
+# The count of Pagle's parts on the pages, as a whole noun phrase for each count from 0 to 10 ("five parts"), so that the
+# number word and the noun agree in the Language (ns.GuideParts); past ten, GUIDE_PARTS_MORE writes it in figures.
+# A list's joins.
+GUIDE_PARTS.0 = "no parts"
+GUIDE_PARTS.1 = "one part"
+GUIDE_PARTS.2 = "two parts"
+GUIDE_PARTS.3 = "three parts"
+GUIDE_PARTS.4 = "four parts"
+GUIDE_PARTS.5 = "five parts"
+GUIDE_PARTS.6 = "six parts"
+GUIDE_PARTS.7 = "seven parts"
+GUIDE_PARTS.8 = "eight parts"
+GUIDE_PARTS.9 = "nine parts"
+GUIDE_PARTS.10 = "ten parts"
+GUIDE_PARTS_MORE.one = "{count} part"
+GUIDE_PARTS_MORE.other = "{count} parts"
 GUIDE_LIST_COMMA = ", "
 GUIDE_LIST_AND = " and "
 # Welcome (ONB-R30, board 2): the letter in the hand, its signature and foot, then the three promises.
@@ -773,15 +787,14 @@ GUIDE_WELCOME_PROMISES = [
 	["II", "Nothing expires.", "There are no dailies to miss. Goals wait for you, and a day away costs you nothing."],
 	["III", "Every part is optional."],
 ]
-# The third promise's line: the roster's size in words (ONB-R30).
-GUIDE_WELCOME_PARTS = "Pagle comes in {words} parts. Turn any of them off in the AddOns list and it leaves no trace."
+# The third promise's line: {parts} is the roster's size (GUIDE_PARTS) (ONB-R30).
+GUIDE_WELCOME_PARTS = "Pagle comes in {parts}. Turn any of them off in the AddOns list and it leaves no trace."
 # What's in the box (ONB-R31, board 3): the paragraph (Pagle in the title's ink), the menu drawing's header and
-# its note, the right page's kicker (the registered Modules in words), the Curio Shop's row, and ONB-R103's line.
+# its note, the right page's kicker ({parts}: the registered Modules, GUIDE_PARTS, set in capitals at its first letter), the Curio Shop's row, and ONB-R103's line.
 GUIDE_BOX_TEXT = "Pagle is a small kit, not one big window. Each part has its own place, and every one of them opens from the |cff3e220cPagle|r entry under the addons button by your minimap."
 GUIDE_BOX_MENU = "Pagle"
 GUIDE_BOX_MENU_NOTE = "Click a name to open it. */pagle* opens Settings."
-GUIDE_BOX_PARTS.one = "{words} part, and a shop"
-GUIDE_BOX_PARTS.other = "{words} parts, and a shop"
+GUIDE_BOX_PARTS = "{parts}, and a shop"
 GUIDE_BOX_SHOP = "Curio Shop"
 GUIDE_BOX_SHOP_BLURB = "Pagle Coins come from things you achieve, and buy looks, never power."
 GUIDE_BOX_NONE = "Turn parts on in the AddOns list."

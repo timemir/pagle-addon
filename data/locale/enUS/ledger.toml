@@ -686,7 +686,11 @@ COLLECTION_TAG_YOURS = "Yours"
 COLLECTION_TAG_DEFAULT = "The default"
 COLLECTION_TAG_CRATE = "Curio crate"
 COLLECTION_TAG_PUT_AWAY = "Put away"
-# The slots' names, singular then plural, by slot ID (LED-R167): a slot not here reads its label, and that and "s".
+# The slots' names, singular then plural, by slot ID (LED-R167). A slot not here (a Module's own: its registered label
+# is a singular noun) reads its label through COLLECTION_SLOT_FALLBACK, a counted string: {label} is the slot's label
+# and {count} is 1 for a look's slot name and 2 for the shelf's heading.
+COLLECTION_SLOT_FALLBACK.one = "{label}"
+COLLECTION_SLOT_FALLBACK.other = "{label}s"
 COLLECTION_SLOT_NAMES."core.binding" = ["Binding", "Bindings"]
 COLLECTION_SLOT_NAMES."core.crest" = ["Bookplate crest", "Bookplate crests"]
 COLLECTION_SLOT_NAMES."core.soundset" = ["Sound set", "Sound sets"]

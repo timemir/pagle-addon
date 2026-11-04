@@ -95,7 +95,8 @@ ns.COLLECTION_TABS = { "all", "yours", "earn", "shop" }
 ---@field new integer
 ---@field forSale integer            -- looks the Curio Shop sells now that the Angler doesn't have (LED-R168)
 
--- A slot's name, singular and plural (LED-R167): the locale's for Core's slots, else the slot's label and that with an "s".
+-- A slot's name, singular and plural (LED-R167): the locale's for Core's slots, else the slot's label through the
+-- counted string COLLECTION_SLOT_FALLBACK (English adds an "s"; another language writes its own plural).
 ---@param slotID string
 ---@param label string?
 ---@param category string? the slot's category, which Core gives a good of a Module that is off too
@@ -109,7 +110,8 @@ local function slotNames(slotID, label, category)
 		return ns.L.COLLECTION_TRACKER_FRAME, ns.L.COLLECTION_TRACKER_FRAMES
 	end
 	label = label or slotID
-	return label, label:sub(-1) == "s" and label or label .. "s"
+	local fallback = ns.L.COLLECTION_SLOT_FALLBACK
+	return ns.Text(fallback, { label = label, count = 1 }), ns.Text(fallback, { label = label, count = 2 })
 end
 
 --- The shelves of `slots` (Pagle.GetSlots, LED-R167), empty and in their order: one per slot, in GetSlots' order, except

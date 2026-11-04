@@ -7,25 +7,20 @@ local ns = select(2, ...)
 -- First evening list as it will look (ONB-R38, ONB-R61). Pure logic over what it's handed (CORE-R7): the pages are
 -- adapter/GuidePages.lua's. It reads only the registered Modules' def fields, never a Module (ADR 0001).
 
---- `n` in words, as the pages write a count: "five"; past ten, in figures.
+--- `n` parts as the pages write the count, a whole noun phrase the Language gives for 0 to 10: "five parts"; past ten,
+--- GUIDE_PARTS_MORE in figures: "11 parts".
 ---@param n integer
 ---@return string
-function ns.GuideCountWord(n)
-	return ns.L.GUIDE_COUNT_WORDS[n + 1] or tostring(n)
-end
-
--- `text` with its first letter in capitals.
----@param text string
----@return string
-local function capitalised(text)
-	return (text:gsub("^%l", string.upper))
+function ns.GuideParts(n)
+	local L = ns.L
+	return L.GUIDE_PARTS[n] or ns.RenderText(L.GUIDE_PARTS_MORE, { count = n })
 end
 
 --- The third promise's line (ONB-R30): "Pagle comes in five parts. …", `n` the roster's size.
 ---@param n integer
 ---@return string
 function ns.GuidePartsLine(n)
-	return ns.RenderText(ns.L.GUIDE_WELCOME_PARTS, { words = ns.GuideCountWord(n) })
+	return ns.RenderText(ns.L.GUIDE_WELCOME_PARTS, { parts = ns.GuideParts(n) })
 end
 
 --- What's in the box's right kicker (ONB-R31): "Five parts, and a shop", `n` the registered Modules, in words.
@@ -33,7 +28,7 @@ end
 ---@return string
 function ns.GuideBoxKicker(n)
 	local L = ns.L
-	return capitalised(ns.RenderText(L.GUIDE_BOX_PARTS, { count = n, words = ns.GuideCountWord(n) }))
+	return ns.UpperFirst(ns.RenderText(L.GUIDE_BOX_PARTS, { parts = ns.GuideParts(n) }))
 end
 
 --- Each Module's icon on What's in the box: a sprite of the guide's atlas (GuideParts), by roster name.
@@ -182,7 +177,7 @@ end
 ---@return string
 function ns.GuideLooksLine(windows)
 	local L = ns.L
-	return ns.RenderText(L.GUIDE_OFF_LOOKS, { count = #windows, guideListOf = capitalised(ns.GuideListOf(windows)) })
+	return ns.RenderText(L.GUIDE_OFF_LOOKS, { count = #windows, guideListOf = ns.UpperFirst(ns.GuideListOf(windows)) })
 end
 
 --- One line of the First evening list as Off you go draws it: its id, its text, and its hint where the list shows one.
