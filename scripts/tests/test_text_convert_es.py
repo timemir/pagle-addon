@@ -4,8 +4,10 @@ import shutil
 import tomllib
 from pathlib import Path
 
+import pytest
+
 from pagle_data.text_convert import convert
-from pagle_data.text_convert_es import EsEntry, convert_es, parse_es_lua
+from pagle_data.text_convert_es import EsEntry, convert_es, evaluate_es, parse_es_lua
 from test_text_convert import apply, build
 
 STATS = (
@@ -39,20 +41,26 @@ SPANISH = (
 LORE = '[statsgood."stats.trackerframe.none"]\nname = "Sin marco"\n# EN: No Frame\n'
 
 
+LUA_BIN = Path(__file__).resolve().parents[2] / ".tools" / "bin" / "lua"
+needs_lua = pytest.mark.skipif(not LUA_BIN.exists(), reason="no .tools/bin/lua")
+
+
+@needs_lua
 def test_a_spanish_file_is_read_with_its_english_comments() -> None:
     source = (
         'L.A = "uno " .. "dos"\n-- EN: one two\n'
         'L.T = {\n\tx = { one = "a\\nb", other = "c" },\n\t"list",\n}\n-- EN: { x = { one = "a", other = "c" } }\n'
     )
 
-    entries = parse_es_lua(source)
+    entries = parse_es_lua(source, evaluate_es(LUA_BIN, 'local ns = select(2, ...)\nlocal L = ns.L\n' + source))
 
     assert entries == [
         EsEntry("A", "uno dos", "one two"),
-        EsEntry("T", {"x": {"one": "a\nb", "other": "c"}, "2": "list"}, {"x": {"one": "a", "other": "c"}}),
+        EsEntry("T", {"1": "list", "x": {"one": "a\nb", "other": "c"}}, {"x": {"one": "a", "other": "c"}}),
     ]
 
 
+@needs_lua
 def test_the_spanish_strings_become_fields_counted_strings_and_snapshots(tmp_path: Path) -> None:
     root = tmp_path / "now"
     build(root, {"Pagle_Stats": STATS}, {"addons/Pagle_Stats/logic/Say.lua": LUA})
@@ -64,7 +72,7 @@ def test_the_spanish_strings_become_fields_counted_strings_and_snapshots(tmp_pat
         "data/lore/es/stats.toml": LORE,
     }
 
-    report = convert_es(root, before, files.get, list(files))
+    report = convert_es(root, before, files.get, list(files), LUA_BIN)
 
     parsed = tomllib.loads(report.files["data/locale/esES/stats.toml"])
     assert parsed["HI"] == {"value": "Hola {name}", "en": "Hi {name}"}
