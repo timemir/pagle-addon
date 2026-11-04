@@ -349,7 +349,9 @@ describe("the helper on its own", function()
 		own.PublishText(Pagle)
 		assert.are.equal(own.RenderText, Pagle.Text)
 		for _, name in ipairs(read) do
-			assert.is_not_nil(given[name], name .. " is not a pure Lua 5.1 function")
+			if given[name] == nil then
+				error(name .. " is not a pure Lua 5.1 function")
+			end
 		end
 	end)
 end)
