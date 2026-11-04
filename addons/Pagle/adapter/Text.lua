@@ -148,8 +148,14 @@ ns.language = ENGLISH
 --- the Locale that raises is reported through the error handler and skipped: the strings it would have written stay
 --- English, and login goes on.
 function ns.ApplyLanguage()
-	local setting = ns.ReadLanguageSetting(rawget(_G, "PagleDB"))
-	local code = ns.ResolveLanguage(setting, GetLocale())
+	local saved = rawget(_G, "PagleDB")
+	-- The development pseudo-locale (#524, adapter/DevPseudo.lua) stands in for the Language while it is on: it pads the
+	-- English, so the Language setting is not read and Pagle.GetLanguage stays "enUS".
+	ns.pseudo = ns.ReadPseudoSetting(saved)
+	local code = ENGLISH
+	if not ns.pseudo then
+		code = ns.ResolveLanguage(ns.ReadLanguageSetting(saved), GetLocale())
+	end
 	local record, errors = ns.ApplyLocale(code)
 	for _, err in ipairs(errors) do
 		geterrorhandler()(err)
@@ -157,6 +163,9 @@ function ns.ApplyLanguage()
 	---@cast record PagleTextLocale?
 	ns.SetTextLocale(record)
 	ns.language = record and code or ENGLISH
+	if ns.pseudo then
+		ns.PseudoLocalize(ns.L)
+	end
 	-- Core's font objects were made as its files loaded, in the bundled faces (adapter/Fonts.lua).
 	ns.faces:Refit()
 end

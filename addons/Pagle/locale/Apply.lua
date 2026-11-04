@@ -9,4 +9,8 @@ local ns = select(2, ...)
 local core = rawget(_G, "Pagle")
 if type(core) == "table" and type(core.GetLanguage) == "function" then
 	ns.ApplyLocale(core.GetLanguage())
+	-- The development pseudo-locale (#524) pads the English this addon has, when Core has it on this session.
+	if type(core.ApplyPseudoLocale) == "function" then
+		core.ApplyPseudoLocale(ns.L)
+	end
 end

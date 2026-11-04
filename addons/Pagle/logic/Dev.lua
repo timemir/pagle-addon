@@ -395,9 +395,27 @@ function Dev:RemindSkill()
 end
 --@end-do-not-package@
 
---- Runs `/pagle dev <args>`. `on` and `off` set `PagleDB.global.dev`, and `off` also clears the skill override (in the
---- dev checkout), which never applies with dev mode off (#465); while it's off every other dev command prints one
---- line saying how to turn it on, and does nothing.
+-- `/pagle dev pseudo on | off` (#524): saves the development pseudo-locale's flag in `PagleDB.global.devPseudo`, which Core
+-- reads at the next ADDON_LOADED (adapter/Text.lua's ns.ApplyLanguage), so the text changes at the next /reload. Changes
+-- nothing in this session. The Language setting is left alone and comes back with the flag off.
+---@param dev PagleDevCommands
+---@param args string
+local function pseudo(dev, args)
+	local L, options = ns.L, dev.options
+	if args == "on" then
+		options.global().devPseudo = true
+		options.print(L.DEV_PSEUDO_ON)
+	elseif args == "off" then
+		options.global().devPseudo = nil
+		options.print(L.DEV_PSEUDO_OFF)
+	else
+		options.print(L.DEV_PSEUDO_USAGE)
+	end
+end
+
+--- Runs `/pagle dev <args>`. `on` and `off` set `PagleDB.global.dev`, and `off` also clears the pseudo-locale (#524) and the
+--- skill override (in the dev checkout), which never apply with dev mode off (#465); while it's off every other dev
+--- command prints one line saying how to turn it on, and does nothing.
 ---@param args string what follows `/pagle dev`
 function Dev:Run(args)
 	local L, options = ns.L, self.options
@@ -406,6 +424,10 @@ function Dev:Run(args)
 	if name == "on" or name == "off" then
 		global.dev = name == "on"
 		options.print(global.dev and L.DEV_ON or L.DEV_OFF)
+		if not global.dev and global.devPseudo ~= nil then
+			global.devPseudo = nil
+			options.print(L.DEV_PSEUDO_OFF)
+		end
 		--@do-not-package@
 		if not global.dev and global.devSkill ~= nil then
 			global.devSkill = nil
@@ -436,6 +458,8 @@ function Dev:Run(args)
 		options.probe()
 	elseif name == "fonts" then
 		options.fonts()
+	elseif name == "pseudo" then
+		pseudo(self, rest:lower())
 	elseif name == "onboarding" then
 		options.onboarding(rest)
 	elseif name == "content" then

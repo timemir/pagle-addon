@@ -393,7 +393,7 @@ A translated string whose English has changed since its EN snapshot. It keeps sh
 _Avoid_: outdated string, drifted string, broken translation
 
 **Pseudo-locale**:
-A development-only Locale that pads text by about 40% and wraps it in brackets, to show where a layout would break before a real language is offered. Players never see it.
+A development-only transform of the English text that pads it by about 40%, swaps its letters for accented and Cyrillic look-alikes and wraps it in brackets, to show where a layout would break before a real language is offered. It is switched by `/pagle dev pseudo on` and a `/reload`, never registered as a Locale, never offered in the Language setting. Players never see it.
 _Avoid_: test locale, fake language
 
 ### The website
