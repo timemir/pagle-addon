@@ -72,6 +72,9 @@ OWN_TEXT = {
     "addons/Pagle_Hunts/locale/enUS.lua": {
         "Night Run": "the sample Hunt of the tracker frame's preview (PREVIEW_TRACKER_HUNTS, HNT-R121), the Hunt Night Run",
     },
+    "addons/Pagle_TackleBoard/locale/enUS.lua": {
+        "Camp": "the start of Campfire (TKB-R106), the Tackle Board's own word for its streak",
+    },
 }
 
 
