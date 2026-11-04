@@ -454,7 +454,12 @@ SLASH_SKIPPED_TAKEN = "Pagle: {module}'s /pagle {name} is skipped: {owners} alre
 DEV_ON = "Pagle dev: dev commands are on."
 DEV_OFF = "Pagle dev: dev commands are off."
 DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on."
-DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | onboarding <command> | content | views | pastetest <KB>"
+DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
+# /pagle dev pseudo on | off (#524): the development pseudo-locale, its usage and the line it prints once the flag is
+# saved; the text changes at the next /reload. Dev text stays English, pseudo-locale on or off.
+DEV_PSEUDO_USAGE = "Pagle dev: /pagle dev pseudo on | off"
+DEV_PSEUDO_ON = "Pagle dev: pseudo-locale on; /reload to see every string padded, accented and in brackets."
+DEV_PSEUDO_OFF = "Pagle dev: pseudo-locale off; /reload to go back to your language."
 # /pagle dev pastetest <KB> (PST-R60): its usage, with the sizes it takes, and the line it prints once the window
 # shows the test string.
 DEV_PASTE_TEST_USAGE = "Pagle dev: /pagle dev pastetest <KB>, from {pasteTestMinKb} to {pasteTestMaxKb}; the check copies 64, 128, 256 and 512."
