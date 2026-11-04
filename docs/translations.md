@@ -82,7 +82,7 @@ Run the data generator after every change to your files:
 .tools/bin/python scripts/generate-data.py
 ```
 
-(`.tools` is the toolchain that `scripts/setup.sh` installs.) It validates your files and rewrites the generated Lua. `--check` writes nothing and fails if a generated file is out of date, or if a check below fails. Commit your TOML and the generated files together. Warnings (stale snapshots, gaps in a language that is already listed) print and do not fail.
+(`.tools` is the toolchain that `scripts/setup.sh` installs.) It validates your files and rewrites the generated Lua. `--check` writes nothing and fails if a generated file is out of date, or if a check below fails. Commit your TOML and the generated files together. Warnings (stale snapshots, gaps in a language that is already listed) print and do not fail; `--stale` lists the stale ones (see Drift).
 
 The coverage check compares your language with the branch your pull request merges into. In CI that is automatic; to run it yourself, add `--base origin/main` (or whichever branch you are merging into).
 
@@ -146,9 +146,15 @@ A language that is not listed is not offered. A player whose game language is un
 When the English text changes, your translation is stale; in Lore, that is a field whose `en` is no longer the English text. What happens next depends on the change:
 
 - **The `{fields}` are the same.** Your translation keeps showing. A spec warns and a script lists it. Update the value and the `en` snapshot together.
-- **The `{fields}` changed.** The maintainer's PR drops your translation by script, so the player sees English until you translate it again.
+- **The `{fields}` changed.** The maintainer's PR drops your translation by script, so the player sees English until you translate it again. The same goes for an English change that makes your text fail the line-break or shape check (English gained a line break, or became an array): the generator would fail it, and an English change never waits for a translator.
 
 A listed language stays listed. Gaps show English, and a "translations stale" issue for the language tracks them. A change to English never waits for a translator: the generator only warns about the gaps of a language that is already listed.
+
+**Listing the stale strings.** `.tools/bin/python scripts/generate-data.py --stale` writes nothing and exits 0. For each language it lists every translated string (interface and Lore) whose `en` is no longer today's English, first the ones whose fields changed and then the ones that keep showing, each with the English you translated from (`was`) and the English now (`now`). `--stale --json` prints the same as JSON for a script. It reads the TOML directly, so it works on a tree where the generator itself fails because of a stale string. A spec (`scripts/tests/test_repo_stale.py`) raises one pytest warning for each, and never fails.
+
+**Dropping the strings whose fields changed.** The maintainer's PR that changes English runs `.tools/bin/python scripts/generate-data.py --drop-stale`. It removes the `value` and the `en` of every translation whose fields changed, from the language's TOML, then regenerates like a plain run, so the PR is green without waiting for a translator and `--check` passes. Until it runs, a plain generator run fails the placeholder check for such a string and says to run it. The edit is by line: it deletes the entry's lines and nothing else, so comments (including one that was about the dropped entry), order and line endings stay, and it checks its own result against the original and stops rather than write a file it cannot prove. Running it a second time changes nothing. Strings with the same fields stay, stale, and are what the issue below tracks.
+
+**The stale issue.** Each listed language has one issue, "Translations stale: esES", that tracks what its translators owe: the counts, the stale strings by kind and the interface keys it has no text for, each as a checklist item (Lore gaps only as counts, since Lore is optional). `.tools/bin/python scripts/generate-data.py --stale-issue esES` prints its body, and `--json` adds the title and the counts. The "Translations stale" workflow writes these issues every Monday and on request from the Actions tab: it opens the issue for a language that has something to track, rewrites it from the files each time, closes it when nothing is stale or missing, and reopens it when English moves again. It puts the `translations-stale` label on a new issue only if the repository has that label; creating it is the maintainer's call. To fix a string, update its `value` and `en` in the file the issue names; it leaves the list at the next run. How the process works for the maintainer and for an agent is in [docs/agents/translations-stale.md](agents/translations-stale.md).
 
 ## Credits
 

@@ -563,6 +563,35 @@ def _chain(code: str, headers: Mapping[str, Header]) -> list[str]:
     return chain
 
 
+def fallback_chain(code: str, headers: Mapping[str, Header]) -> list[str]:
+    """code, then its fallback, and so on: the Locales whose text counts toward code's coverage (DATA-R114)."""
+    return _chain(code, headers)
+
+
+class _Probe(_Judge):
+    """A _Judge that keeps the names of the checks a value fails, and nothing else."""
+
+    def __init__(self, code: str, categories: frozenset[str]) -> None:
+        super().__init__(code, categories, Problems())
+        self.checks: list[str] = []
+
+    def fail(self, file: str, key: str, check: str, detail: str) -> None:
+        self.checks.append(check)
+
+
+# The checks an English change can break in a translation that was fine before it (DATA-R114's drift): the {field} set,
+# the line breaks and the shape. missing, glyph and plural depend on the translation and its Locale alone.
+DRIFT_CHECKS = ("placeholder", "newline", "shape")
+
+
+def broken_by_english(code: str, categories: frozenset[str], english: Value, translated: Value) -> list[str]:
+    """The names, among DRIFT_CHECKS, of the checks that `translated` fails against `english` as it is now, each once and
+    in the order found. Empty when the translation still fits the English text it stands beside (DATA-R114)."""
+    probe = _Probe(code, categories)
+    probe.value("", "", english, translated)
+    return [check for check in DRIFT_CHECKS if check in probe.checks]
+
+
 # --- the merge base --------------------------------------------------------------------------------------------------
 
 

@@ -641,6 +641,16 @@ def _check_translated(
         )
 
 
+def english_texts(layer: LoreLayer, lore_id: str) -> dict[str, Text]:
+    """Every key English has for a lore ID, by key: the keys a translation of that lore ID may use (DATA-R114)."""
+    return _english(layer, lore_id)
+
+
+def placeholders(text: str) -> set[str]:
+    """The Lore placeholders ({zone}, {fish}) a text uses (DATA-R107)."""
+    return _placeholders(text)
+
+
 def check_translations(layer: LoreLayer, problems: Problems) -> None:
     """DATA-R114's checks on every Locale's lore file, each problem naming the file, the key, the check and the Locale:
     orphan (a key English lacks, or has in another addon's file), missing (an empty value), length, newline and

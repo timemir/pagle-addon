@@ -16,6 +16,16 @@
     .tools/bin/python scripts/generate-data.py --check-changelog <version>
                                                           write nothing; fail if that release's CHANGELOG entry
                                                           lacks the TRANSLATORS block
+    .tools/bin/python scripts/generate-data.py --stale    write nothing; list, per Locale, every translated string
+                                                          (interface and Lore) whose EN snapshot is not today's English,
+                                                          as same fields or fields changed; --json for a script
+    .tools/bin/python scripts/generate-data.py --drop-stale
+                                                          remove the fields-changed strings from the Locales' TOML so
+                                                          English shows for them, then regenerate; run it in the PR
+                                                          that changes English
+    .tools/bin/python scripts/generate-data.py --stale-issue <code>
+                                                          write nothing; print the body of that Locale's "translations
+                                                          stale" issue (--json adds the title and the counts)
     .tools/bin/python scripts/generate-data.py --lock     rewrite data/hunts/released.lock from the Hunt list and
                                                           nothing else; only when a release is tagged, from 1.0 on
 
