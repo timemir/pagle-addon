@@ -117,7 +117,7 @@ function ns.TrackerHeaderRight(fire, open)
 	if fire == nil then
 		return count
 	end
-	return ns.Text(ns.L.TRACKER_FIRE_OPEN, { count = fire, fire = fire, open = count })
+	return ns.Text(ns.L.TRACKER_FIRE_OPEN, { fire = fire, open = count })
 end
 
 --- A goal line's count (TKB-R122): its displayed progress over its need ("12/30").
