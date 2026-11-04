@@ -85,7 +85,9 @@ def test_the_spanish_strings_become_fields_counted_strings_and_snapshots(tmp_pat
     assert parsed["FANCY"] == {"value": "{a} luego {b:0}", "en": "{a} then {b}"}
     assert "ORPHAN" not in parsed
     assert tomllib.loads(report.files["data/locale/esES/locale.toml"])["plural"] == "one_many_other"
-    assert report.files["data/lore/esES/stats.toml"] == LORE
+    assert report.files["data/lore/esES/stats.toml"] == (
+        '[statsgood."stats.trackerframe.none"]\nname.value = "Sin marco"\nname.en = "No Frame"\n'
+    )
     assert report.refreshed == ["Pagle_Stats HI", "Pagle_Stats CATCHES", "Pagle_Stats COUNTS", "Pagle_Stats FANCY"]
     assert report.stale == ["Pagle_Stats BOOK"]
     assert report.many == ["Pagle_Stats CATCHES", "Pagle_Stats COUNTS"]
