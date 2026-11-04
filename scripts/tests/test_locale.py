@@ -373,12 +373,24 @@ def test_an_unknown_file_in_a_locale_directory_fails(tmp_path: Path) -> None:
     assert any("data/locale/enUS/extra.toml" in message for message in found)
 
 
-def test_keys_are_lua_names_and_nested_keys_names_or_whole_numbers(tmp_path: Path) -> None:
+def test_a_key_is_a_lua_name_and_a_nested_key_any_text_or_a_whole_number(tmp_path: Path) -> None:
     found, _, _ = checked(tmp_path, {"enUS": english(CORE + '"bad-key" = "x"\n')})
     assert any("bad-key" in message and "shape" in message for message in found)
-    found, _, _ = checked(tmp_path / "n", {"enUS": english(CORE + 'T."my key" = "x"\n')})
-    assert any("my key" in message and "shape" in message for message in found)
-    found, _, _ = checked(tmp_path / "e", {"enUS": english(CORE + "T = []\n")})
+    found, _, layer = checked(tmp_path / "n", {"enUS": english(CORE + 'T."core.binding" = "x"\nT."12h" = "y"\nT.5 = "z"\n')})
+    assert found == []
+    assert layer.files["enUS"]["core"]["T"].value == {"core.binding": "x", "12h": "y", 5: "z"}
+    found, _, _ = checked(tmp_path / "e", {"enUS": english(CORE + 'T."" = "x"\n')})
+    assert any("empty key" in message for message in found)
+    found, _, _ = checked(tmp_path / "a", {"enUS": english(CORE + "T = []\n")})
     assert any("empty array" in message for message in found)
     found, _, _ = checked(tmp_path / "t", {"enUS": english(CORE + "T = 5\n")})
     assert any("expected text, an array or a table, got an integer" in message for message in found)
+
+
+def test_an_empty_text_english_has_may_be_empty_in_a_translation(tmp_path: Path) -> None:
+    """A separator that is "" in English (ANGLER_MILESTONE_SEPARATOR) is not missing when a translation keeps it empty."""
+    english_core = english(CORE + 'JOIN = ""\n')
+    found, _, _ = checked(tmp_path, {"enUS": english_core, "esES": spanish(SPANISH_CORE + '\n[JOIN]\nvalue = ""\nen = ""\n')})
+    assert found == []
+    found, _, _ = checked(tmp_path / "x", {"enUS": english_core, "esES": spanish(SPANISH_CORE + '\n[JOIN]\nvalue = "y"\nen = ""\n')})
+    assert found == []  # a translation may add a word to a blank, and the snapshot is what warns
