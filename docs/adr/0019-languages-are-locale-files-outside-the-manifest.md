@@ -36,6 +36,11 @@ The backend's ranked manifest hashes the addon's `logic/` files, three `data/` f
 
 A translation PR then changes only unhashed files, and a release that ships one needs no policy of its own.
 
+pagle-backend confirmed this on 4 Nov against its production main (9da97ac). Its replay and Lore loading add two constraints:
+
+- **`logic/` folds with no locale loaded.** The backend's replay driver loads each TOC's `logic/` files and three data files (`Catalogue.lua`, `HuntList.lua`, `EventList.lua`). It runs them on Lua 5.1's pure functions plus `bit`, and reading any other global is an error (PRJ-R2). The text helper may be defined in `logic/`. Nothing on the fold path may call it, read `ns.L`, or need a plural rule from `locale/`, either at load time or during Fold and Iterate. Making the top-level `L` reads lazy has to keep that true.
+- **`data/Lore.lua` stays English and self-contained.** The backend's Lore mode (PRJ-R18) runs each addon's `data/Lore.lua` on its own, with `ns = { L = {} }`, a `Pagle = {}` global and plain Lua 5.1 globals. No `GetLocale` exists there and no `locale/` file loads first. The website's Lore tables come from it. The English Lore file keeps its name and path, is never locale-switched, and depends on no other file. Translations go only into `data/Lore.<code>.lua`, which the backend ignores.
+
 ## The text helper
 
 Core owns one text helper and exposes it on its Module API (ADR 0001). It takes **named fields** (`{fish}`, `{count}`), never `%s` or positional arguments, so a translator can reorder them. It also does:
