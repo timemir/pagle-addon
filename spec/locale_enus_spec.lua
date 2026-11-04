@@ -39,17 +39,19 @@ end
 
 describe("the generated enUS.lua of each addon (DATA-R114)", function()
 	for _, addon in ipairs(ADDONS) do
-		it(addon .. " builds the ns.L the hand-written file built", function()
-			if not exists(REFERENCE .. addon .. ".lua") then
-				pending("no reference copy: the conversion has not run on this tree")
-				return
-			end
-			local before = build(REFERENCE .. addon .. ".lua")
-			local after = build("addons/" .. addon .. "/locale/enUS.lua")
+		local title = addon .. " builds the ns.L the hand-written file built"
+		if exists(REFERENCE .. addon .. ".lua") then
+			it(title, function()
+				local before = build(REFERENCE .. addon .. ".lua")
+				local after = build("addons/" .. addon .. "/locale/enUS.lua")
 
-			assert.is_table(after)
-			assert.are.same(before, after)
-		end)
+				assert.is_table(after)
+				assert.are.same(before, after)
+			end)
+		else
+			-- No reference copy: the conversion has not run on this tree.
+			pending(title, function() end)
+		end
 	end
 
 	it("is generated, so its header says so and a Module's starts with the CORE-R11 guard", function()
@@ -59,7 +61,7 @@ describe("the generated enUS.lua of each addon (DATA-R114)", function()
 				if addon ~= "Pagle" then
 					assert.are.equal("if not Pagle then", text:sub(1, 17), addon)
 				end
-				assert.is_truthy(text:find("data/locale/enUS/", 1, true), addon)
+				assert.is_true(text:find("data/locale/enUS/", 1, true) ~= nil)
 			end
 		end
 	end)
