@@ -5,6 +5,8 @@ addons/Pagle/data/Catalogue.lua
 addons/Pagle_Hunts/data/HuntList.lua
 addons/Pagle_Hunts/data/EventList.lua
 addons/*/data/Lore.lua
+# One generated file per Locale and addon (DATA-R114): enUS.lua and, from 1.1, a file named for each other client code.
+addons/*/locale/[a-z][a-z][A-Z][A-Z].lua
 spec/Pagle_Ledger/fixtures/Lore.lua
 # WTF fixtures are written the way the WoW client writes them, not formatted by us.
 spec/scripts/fixtures/

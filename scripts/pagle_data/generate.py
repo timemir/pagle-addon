@@ -36,6 +36,7 @@ from pagle_data.hunts import (
 from pagle_data.hunt_windows import check_hunt_windows
 from pagle_data.items import ITEMS_TOML, ItemLayer, Record, item_records, read_item_layer
 from pagle_data.lock import Lock, check_lock, check_locked_members, read_lock
+from pagle_data.locale import LocaleLayer, check_locale, locale_outputs, read_locale
 from pagle_data.lore import LoreLayer, catalogue_ids, check_glyphs, check_lore, lore_outputs, read_lore
 from pagle_data.lua import to_lua
 from pagle_data.observed import (
@@ -148,6 +149,7 @@ class Layers:
     lock: Lock  # data/hunts/released.lock as read; the Hunt list is checked against it (DATA-R95, DATA-R96)
     events: EventLayer  # data/hunts/tags.toml and data/hunts/events/ as read and checked (DATA-R97-R99)
     varieties: VarietyLayer  # data/forever/varieties.toml and varieties.lock as read and checked (DATA-R131-R133)
+    locale: LocaleLayer  # data/locale/ as read and checked (DATA-R114); inert while the directory is absent
 
     def fishing_areas(self) -> set[int]:
         """The areas with a catch list (DATA-R32)."""
@@ -180,12 +182,16 @@ class Layers:
 
 
 def read_layers(
-    root: Path, minimum_build: int = MINIMUM_CONFIRMING_BUILD, observed: ObservedLayer | None = None
+    root: Path,
+    minimum_build: int = MINIMUM_CONFIRMING_BUILD,
+    observed: ObservedLayer | None = None,
+    listed_before: Mapping[str, bool] | None = None,
 ) -> Layers:
     """Every source layer under root/data/, with only observations on builds at or above minimum_build counting for
     confirming (DATA-R46; --min-build asks what a higher one would lose, DATA-R57). observed, when given, stands in
     for data/observed/ as read: the importer and the triage Action judge an upserted layer in memory (DATA-R119).
-    Raises DataError listing every problem found (DATA-R63)."""
+    listed_before is each Locale's `listed` at the merge base, which DATA-R114's coverage rule compares with the tree's;
+    None where no base is known (a gap then only warns). Raises DataError listing every problem found (DATA-R63)."""
     problems = Problems()
     # DATA-R9: a hand-edited baseline CSV fails, and nothing is built from a baseline that didn't read cleanly.
     baseline = read_baseline(root, problems)
@@ -212,6 +218,8 @@ def read_layers(
         check_lock(lock, hunts, events, problems)
     varieties = read_varieties(root, problems)
     check_glyphs(lore, problems)  # CORE-R9, DATA-R107's glyph: every lore file, its check on or off
+    locale = read_locale(root, problems)  # DATA-R114: the interface text of every Locale, enUS included
+    check_locale(locale, problems, listed_before)
     items: dict[int, Record] = {}
     catch_lists = CatchLists()
     pools: dict[str, list[int]] = {}
@@ -294,6 +302,7 @@ def read_layers(
         lock,
         events,
         varieties,
+        locale,
     )
 
 
@@ -331,7 +340,7 @@ def outputs(layers: Layers) -> dict[str, str]:
         CATALOGUE_LUA: catalogue_lua(catalogue_of(layers)),
         HUNT_LIST_LUA: hunt_list_lua(hunt_list_of(layers), header(hunt_sources)),
         EVENT_LIST_LUA: event_list_lua(event_list_of(layers), header(event_sources)),
-    } | lore_outputs(layers.lore, header)
+    } | lore_outputs(layers.lore, header) | locale_outputs(layers.locale)
 
 
 def generate(root: Path) -> dict[str, str]:

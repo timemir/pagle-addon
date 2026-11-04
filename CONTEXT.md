@@ -369,7 +369,7 @@ One language Pagle can be read in, named by its full client code (`esES`, `deDE`
 _Avoid_: translation (which is the text, not the language), language pack, lang
 
 **Locale file**:
-The generated file that registers one Locale's text for one addon. It is written from the translators' TOML and never edited by hand.
+The generated file that holds one Locale's text for one addon, `addons/<Addon>/locale/<code>.lua`. For a language other than English it registers the text (`ns.Locale`); English's, `enUS.lua`, fills the addon's string table as it loads. It is written from the translators' TOML (`data/locale/<code>/`) and never edited by hand.
 _Avoid_: translation file, strings file, language file
 
 **Language setting**:
