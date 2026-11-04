@@ -112,16 +112,16 @@ describe("every string the addons ship, through the pseudo-locale", function()
 
 			it("keeps every key and the shape of every counted string", function()
 				for path, source in pairs(plain) do
-					assert.is_string(pseudo[path], path)
+					assert(type(pseudo[path]) == "string", path)
 					assert.is_string(source)
 				end
 				for path in pairs(pseudo) do
-					assert.is_string(plain[path], path)
+					assert(type(plain[path]) == "string", path)
 				end
 				for path, forms in pairs(plainCounted) do
-					assert.is_table(pseudoCounted[path], path)
+					assert(type(pseudoCounted[path]) == "table", path)
 					for category in pairs(forms) do
-						assert.is_string(pseudoCounted[path][category], path .. " " .. category)
+						assert(type(pseudoCounted[path][category]) == "string", path .. " " .. category)
 					end
 				end
 				assert.is_true(#paths > 50)
@@ -205,6 +205,6 @@ describe("every string the addons ship, through the pseudo-locale", function()
 	end
 
 	it("went through every addon's table: well over a thousand strings", function()
-		assert.is_true(seen > 1000, tostring(seen))
+		assert(seen > 1000, tostring(seen))
 	end)
 end)

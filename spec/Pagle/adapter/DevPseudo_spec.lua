@@ -61,14 +61,15 @@ describe("the pseudo-locale's transform of one string", function()
 		local text = pseudo("Copy the Pagle scope")
 
 		assert.is_nil(text:sub(2):gsub("%]$", ""):find("[aeiouAEIOU]"))
-		assert.is_truthy(text:find("[\208\209]"), "some letter is Cyrillic")
-		assert.is_truthy(text:find("[\195-\197]"), "some letter is a Latin-1 or Latin Extended-A letter")
+		assert(text:find("[\208\209]"), "some letter is Cyrillic")
+		assert(text:find("[\195-\197]"), "some letter is a Latin-1 or Latin Extended-A letter")
 	end)
 
 	it("writes the Cyrillic and accents from code points, so the Lua source holds no such character", function()
 		-- CORE-R9: the pseudo-locale ships no file and needs no glyph range, so adapter/DevPseudo.lua stays in the
 		-- base set (spec/glyphs_spec.lua checks it with every other file).
-		local at = io.open("addons/Pagle/adapter/DevPseudo.lua", "rb") ---@diagnostic disable-line: undefined-field
+		---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io
+		local at = io.open("addons/Pagle/adapter/DevPseudo.lua", "rb")
 		assert(at, "adapter/DevPseudo.lua")
 		local source = at:read("*a")
 		at:close()
@@ -260,7 +261,7 @@ describe("Core's pseudo-locale at ADDON_LOADED", function()
 			["pseudo only"] = { global = { devPseudo = true } },
 			["pseudo a string"] = { global = { dev = true, devPseudo = "yes" } },
 		}) do
-			assert.is_false(ns.ReadPseudoSetting(saved or nil), name)
+			assert(ns.ReadPseudoSetting(saved or nil) == false, name)
 		end
 		assert.is_true(ns.ReadPseudoSetting(ON))
 	end)
