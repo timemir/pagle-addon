@@ -136,6 +136,7 @@ adapter\Host.lua
 adapter\CatchLog.lua
 adapter\Size.lua
 adapter\Text.lua
+adapter\DevPseudo.lua
 adapter\Fonts.lua
 adapter\Clock.lua
 adapter\LanguageRow.lua
