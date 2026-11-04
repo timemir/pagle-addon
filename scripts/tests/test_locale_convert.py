@@ -194,13 +194,16 @@ def test_the_converted_tree_generates_an_enus_that_builds_the_same_ns_l(tmp_path
     written = convert(root)
     assert "data/locale/enUS/locale.toml" in written
     assert {f"data/locale/enUS/{file_id}.toml" for file_id in FILES} <= set(written)
-    assert {f"spec/fixtures/enUS-handwritten/{addon}.lua" for addon in ADDON_IDS} <= set(written)
+    assert not any("enUS-handwritten" in path for path in written)
+    handwritten = {addon: root / "addons" / addon / "locale" / "enUS.lua" for addon in ADDON_IDS}
+    kept = {addon: tmp_path / f"{addon}.handwritten.lua" for addon in ADDON_IDS}
+    for addon, path in handwritten.items():
+        kept[addon].write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
     assert run(root, capsys)[0] == 0
     assert run(root, capsys, "--check")[0] == 0
     for addon in ADDON_IDS:
-        reference = root / "spec" / "fixtures" / "enUS-handwritten" / f"{addon}.lua"
-        assert reference.read_text(encoding="utf-8") == mini(addon)
-        lua_equal(reference, root / "addons" / addon / "locale" / "enUS.lua")
+        assert kept[addon].read_text(encoding="utf-8") == mini(addon)
+        lua_equal(kept[addon], handwritten[addon])
 
 
 def test_the_toml_keeps_the_order_the_comments_and_the_exact_text(tmp_path: Path) -> None:
@@ -228,11 +231,11 @@ def test_the_toml_keeps_the_order_the_comments_and_the_exact_text(tmp_path: Path
 
 
 def snapshot(root: Path) -> dict[Path, bytes]:
-    """Every file the conversion and the generator leave in locale directories, the TOML and the reference copies."""
+    """Every file the conversion and the generator leave in locale directories, the TOML included."""
     return {
         path: path.read_bytes()
         for path in sorted(root.rglob("*"))
-        if path.is_file() and ("locale" in path.parts or "enUS-handwritten" in path.parts) and ".partial" not in path.name
+        if path.is_file() and "locale" in path.parts and ".partial" not in path.name
     }
 
 

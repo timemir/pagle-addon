@@ -1,12 +1,11 @@
 """The one-time conversion of each addon's hand-written locale/enUS.lua into data/locale/enUS/*.toml (DATA-R114, #517).
 
     .tools/bin/python scripts/convert-enus-locale.py              convert, then run the generator
-    .tools/bin/python scripts/convert-enus-locale.py --no-generate   write the TOML and the reference copies only
+    .tools/bin/python scripts/convert-enus-locale.py --no-generate   write the TOML only
 
-It writes data/locale/enUS/ (the header and one file per addon) and copies each hand-written file to
-spec/fixtures/enUS-handwritten/, which spec/locale_enus_spec.lua compares the generated enUS.lua with. The generator then
-writes addons/<Addon>/locale/enUS.lua and Locales.xml. The conversion is repeatable: after English changes on main, drop
-the conversion commit, rebase, and run this again.
+It writes data/locale/enUS/ (the header and one file per addon). The generator then writes
+addons/<Addon>/locale/enUS.lua and Locales.xml. The conversion is repeatable: after English changes on main, drop the
+conversion commit, rebase, and run this again.
 
 Runs on the pinned Python in .tools/ (scripts/setup.sh); it needs the Lua 5.1 there too.
 """
