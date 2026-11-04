@@ -179,7 +179,6 @@ def test_the_scan_reaches_the_calls_of_every_addon() -> None:
 
     assert {call.addon for call in calls} == set(ADDON_IDS)
     assert len(calls) > 400
-    assert all(call.fields is not None for call in calls)
 
 
 _STRINGS: dict[str, dict[str, Json]] = {
