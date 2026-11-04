@@ -122,7 +122,7 @@ How the helper reads a string:
 
 ## Length
 
-The interface has little room. Keep a translation close to the English length. From 1.1 a development pseudo-locale (the English padded by about 40%, with accents and Cyrillic, in brackets) shows whether a layout holds.
+The interface has little room. Keep a translation close to the English length. From 1.1 a development pseudo-locale (the English padded by about 40%, with accents and Cyrillic, in brackets) shows whether a layout holds: `/pagle dev on`, `/pagle dev pseudo on`, then `/reload`. Fields, colour codes and textures are left as they are.
 
 A Lore field may be at most the English limit plus 30%. Count code points, not bytes: "ñ" is one. The limits are in `data/lore/VOICE.md`. The allowance is the limit times 13, divided by 10, with the fraction dropped: a name (28) may be 36 characters, a title (32) 41, a riddle (80) 104, a plaque (100) 130 and a blurb (200) 260. A field English leaves unlimited has no limit in your language either.
 
