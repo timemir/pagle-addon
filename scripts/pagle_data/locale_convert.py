@@ -322,11 +322,14 @@ thousands = ","
 def convert(root: Path, lua: Path | None = None) -> list[str]:
     """Converts every addon's enUS.lua under root; returns the paths written. Raises ConvertError for a tree that is
     already converted or a file that cannot be."""
-    interpreter = lua or root / ".tools" / "bin" / "lua"
-    if not interpreter.exists():
-        found = shutil.which("lua")
+    interpreter = lua
+    if interpreter is None:
+        # The tree's own toolchain, then the one this script runs from (a copy of the tree in a test has none), then PATH.
+        here = Path(__file__).resolve().parents[2]
+        candidates = [root / ".tools" / "bin" / "lua", here / ".tools" / "bin" / "lua"]
+        found = next((path for path in candidates if path.exists()), None) or shutil.which("lua")
         if found is None:
-            raise ConvertError(f"no Lua 5.1 at {interpreter}; run scripts/setup.sh")
+            raise ConvertError(f"no Lua 5.1 at {candidates[0]}; run scripts/setup.sh")
         interpreter = Path(found)
     target = root / LOCALE_DIR / "enUS"
     if target.exists():
