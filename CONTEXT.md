@@ -389,7 +389,7 @@ The English text a translated string was translated from, kept beside it so that
 _Avoid_: source text, original, English comment
 
 **Stale translation**:
-A translated string whose English has changed since its EN snapshot. It keeps showing if its `{fields}` are the same, and is dropped, so that English shows, if they changed.
+A translated string whose English has changed since its EN snapshot. It keeps showing if its `{fields}` are the same, and is dropped, so that English shows, if they changed (or if it no longer fits English's line breaks or shape, which the generator would fail just the same).
 _Avoid_: outdated string, drifted string, broken translation
 
 **Pseudo-locale**:
