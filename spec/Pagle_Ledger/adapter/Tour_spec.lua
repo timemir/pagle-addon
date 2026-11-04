@@ -152,7 +152,7 @@ describe("the Fish Journal's tour stops (CORE-R65, CORE-R68)", function()
 			fake.wait(1.6 + 7 * STOP)
 
 			assert.are.equal(typed, journal.search:GetText())
-			assert.is_true(journal.searchDrop:IsShown(), name)
+			assert(journal.searchDrop:IsShown(), name)
 		end
 	end)
 
