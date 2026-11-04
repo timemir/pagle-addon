@@ -14,6 +14,7 @@ files = [
     "scripts/pagle_data",
     "scripts/tests",
     "scripts/generate-data.py",
+    "scripts/convert-enus-locale.py",
     "scripts/extract-baseline.py",
     "scripts/update-db2.py",
     "scripts/db2-watch.py",

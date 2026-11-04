@@ -7,7 +7,7 @@ source: its files hold `KEY = "text"`. Another Locale's files hold, for each key
 `[KEY]` with `value` (the translation) and `en` (the EN snapshot, the English it was translated from); both have
 English's shape.
 
-A value is a string, an array of values, or a table of values (whose keys are names, or whole numbers, which TOML
+A value is a string, an array of values, or a table of values (whose keys are any text, or whole numbers, which TOML
 writes as the bare keys `0`, `2`). A table whose keys are all plural categories is a counted string. An entry replaces
 English's whole at runtime, so a translation has English's shape: the same array length, the same keys.
 
@@ -133,10 +133,10 @@ def _value(raw: object, at: At, problems: Problems) -> Value | None:
             key: str | int
             if _NUMBER.fullmatch(name):
                 key = int(name)
-            elif _NAME.fullmatch(name):
+            elif name:
                 key = name
             else:
-                problems.add(at, f"shape: '{name}' is not a name or a whole number (DATA-R114)")
+                problems.add(at, "shape: an empty key (DATA-R114)")
                 ok = False
                 continue
             value = _value(item, _sub(at, name), problems)
@@ -361,8 +361,6 @@ def _check_english(layer: LocaleLayer, problems: Problems) -> None:
             continue
         for key, entry in entries.items():
             for path, text in leaves(entry.value):
-                if not text.strip():
-                    problems.add(At(file, key + path), f"missing: empty text ({ENGLISH}, DATA-R114)")
                 check_text_glyphs(At(file, key + path), text, ENGLISH, problems, "DATA-R114")
             for path, table in _counted(entry.value, ""):
                 names = {name for name in table if isinstance(name, str)}
@@ -391,13 +389,17 @@ class _Judge:
         self.code = code
         self.categories = categories
         self.problems = problems
+        self.top = ""  # the key of the entry being judged
+        self.empty: set[tuple[str, str]] = set()  # (file, key) of each entry with an empty text English fills
 
     def fail(self, file: str, key: str, check: str, detail: str) -> None:
         self.problems.add(At(file, key), f"{check}: {detail} ({self.code}, DATA-R114)")
 
     def text(self, file: str, key: str, english: str, translated: str) -> None:
         if not translated.strip():
-            self.fail(file, key, "missing", "the text is empty")
+            if english.strip():  # English's own empty text (a separator) may be empty here too
+                self.fail(file, key, "missing", "the text is empty")
+                self.empty.add((file, self.top))
             return
         wanted, found = fields_of(english), fields_of(translated)
         if wanted != found:
@@ -506,16 +508,17 @@ def check_locale(layer: LocaleLayer, problems: Problems, listed_before: Mapping[
         file_id: {key: entry.value for key, entry in entries.items()} for file_id, entries in english.items()
     }
     total = sum(len(keys) for keys in english_keys.values())
+    empties: dict[str, set[tuple[str, str]]] = {}
     for code in sorted(layer.headers):
         if code == ENGLISH:
             continue
-        header = layer.headers[code]
         rules = effective(code, layer.headers)
         rule = RULES.get(rules.plural or "")
         judge = _Judge(code, frozenset(rule.categories if rule else CATEGORIES), problems)
         for file_id, entries in layer.files.get(code, {}).items():
             file = locale_file(code, file_id)
             for key, entry in entries.items():
+                judge.top = key
                 if key not in english_keys.get(file_id, {}):
                     elsewhere = [other for other, keys in english_keys.items() if key in keys]
                     detail = f"belongs to {elsewhere[0]}.toml, not {file_id}.toml" if elsewhere else "English has no such key"
@@ -525,13 +528,17 @@ def check_locale(layer: LocaleLayer, problems: Problems, listed_before: Mapping[
                     judge.value(file, key, english_keys[file_id][key], entry.value)
                 if entry.en is not None:
                     _drift(code, file, key, english_keys[file_id][key], entry, layer.warnings)
+        empties[code] = judge.empty
+    for code in sorted(layer.headers):
+        if code == ENGLISH:
+            continue
         covered, gaps = 0, []
         chain = _chain(code, layer.headers)
         for file_id, keys in english_keys.items():
             for key in keys:
                 have = any(
                     key in layer.files.get(link, {}).get(file_id, {})
-                    and all(text.strip() for _, text in leaves(layer.files[link][file_id][key].value))
+                    and (locale_file(link, file_id), key) not in empties.get(link, set())
                     for link in chain
                 )
                 if have:
@@ -539,7 +546,7 @@ def check_locale(layer: LocaleLayer, problems: Problems, listed_before: Mapping[
                 else:
                     gaps.append(f"{file_id}.{key}")
         before = None if listed_before is None else listed_before.get(code, False)
-        judge_coverage(code, header.listed, before, covered, total, gaps, problems, layer.warnings)
+        judge_coverage(code, layer.headers[code].listed, before, covered, total, gaps, problems, layer.warnings)
 
 
 def _chain(code: str, headers: Mapping[str, Header]) -> list[str]:
