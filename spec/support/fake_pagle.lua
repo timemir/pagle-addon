@@ -1826,7 +1826,7 @@ function newFakePagle()
 	-- tables behave as the stock ones.
 	env.pairs, env.ipairs, env.next = proxyPairs, proxyIpairs, proxyNext
 	-- Pagle.API_VERSION as adapter/Core.lua sets it; fake_pagle_spec.lua checks they agree.
-	local Pagle = { API_VERSION = 1 }
+	local Pagle = { API_VERSION = 2 }
 	local fake = { Pagle = Pagle, ns = ns, printed = {}, readOnly = readOnly }
 	-- PagleDB as login step 1 opens it: Core's defaults, and nothing saved. A spec seeds fake.global's keys and
 	-- fake.profile's before login, as a saved PagleDB would hold them.

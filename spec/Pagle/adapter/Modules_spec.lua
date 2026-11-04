@@ -110,8 +110,8 @@ end
 
 describe("A Module whose X-Pagle-API this Core can't serve", function()
 	it("gets nil, one chat line naming it, and reads Needs a newer Pagle (CORE-R13, CORE-R41)", function()
-		-- Pagle.API_VERSION is 1 before 1.0 (CORE-R15).
-		for _, metadata in ipairs({ {}, { ["X-Pagle-API"] = "one" }, { ["X-Pagle-API"] = "2" } }) do
+		-- Pagle.API_VERSION is 2 (CORE-R15), so a Module that declares 3 is too new.
+		for _, metadata in ipairs({ {}, { ["X-Pagle-API"] = "one" }, { ["X-Pagle-API"] = "3" } }) do
 			local loaded = loadWith({ Hunts = { metadata = metadata } })
 
 			local handle = loaded.env.Pagle.RegisterModule({ name = "Hunts", title = "Hunts", order = 20 })
