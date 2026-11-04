@@ -91,15 +91,15 @@ function ns.LuckWording(P)
 		if P >= ns.NOTHING_UNUSUAL_FROM then
 			return L.LUCK_NOTHING_UNUSUAL
 		elseif P >= ns.ANGLERS_IN_100_FROM then
-			return L.LUCK_ABOUT:format(ns.Count(ns.Round(P * 100), "anglers"))
+			return ns.Text(L.LUCK_ABOUT, { luck_about = ns.Count(ns.Round(P * 100), "anglers") })
 		end
-		return L.LUCK_LONG_WAIT:format(ns.Nice(1 / P))
+		return ns.Text(L.LUCK_LONG_WAIT, { nice = ns.Nice(1 / P) })
 	elseif band == "unlucky" then
-		return L.LUCK_UNLUCKY:format(ns.Nice(1 / P))
+		return ns.Text(L.LUCK_UNLUCKY, { nice = ns.Nice(1 / P) })
 	elseif P < ns.UNDER_A_MILLION_BELOW then
-		return L.LUCK_UNDER_A_MILLION:format(L.LUCK_VERY_UNLUCKY_ROLL)
+		return ns.Text(L.LUCK_UNDER_A_MILLION, { luckVeryUnluckyRoll = L.LUCK_VERY_UNLUCKY_ROLL })
 	end
-	return L.LUCK_VERY_UNLUCKY:format(ns.Nice(1 / P), L.LUCK_VERY_UNLUCKY_ROLL)
+	return ns.Text(L.LUCK_VERY_UNLUCKY, { nice = ns.Nice(1 / P), luckVeryUnluckyRoll = L.LUCK_VERY_UNLUCKY_ROLL })
 end
 
 --- A reading's Dry spell in words (STA-R50, STA-R53, STA-R54): the first sentence and what follows it, or nil.
@@ -117,15 +117,18 @@ function ns.DrySpellText(reading, item)
 	local L = ns.L
 	local dry = ns.DrySpell(reading)
 	if not dry.caught then
-		return L.DRY_NONE_YET:format(ns.Count(dry.since, "Casts"), reading.where), nil
+		return ns.Text(L.DRY_NONE_YET, { dry_none_yet_1 = ns.Count(dry.since, "Casts"), where = reading.where }), nil
 	elseif dry.since == 0 then
-		return L.DRY_CAUGHT_LAST:format(reading.where), nil
+		return ns.Text(L.DRY_CAUGHT_LAST, { where = reading.where }), nil
 	end
 	local first
 	if item then
-		first = L.DRY_SINCE_TRACKER:format(ns.Count(dry.since, "Casts"), item)
+		first = ns.Text(L.DRY_SINCE_TRACKER, { dry_since_tracker_1 = ns.Count(dry.since, "Casts"), item = item })
 	else
-		first = L.DRY_SINCE_ENTRY:format(ns.Count(dry.since, "Casts"), ns.TimeAgo(reading.hit.last))
+		first = ns.Text(
+			L.DRY_SINCE_ENTRY,
+			{ dry_since_entry_1 = ns.Count(dry.since, "Casts"), timeAgo = ns.TimeAgo(reading.hit.last) }
+		)
 	end
 	if dry.P then
 		return first, ns.LuckWording(dry.P)
@@ -152,7 +155,7 @@ end
 ---@return string?
 local function unluckySuffix(dry)
 	if ns.IsUnlucky(dry.band) then
-		return ns.L.DRY_SHORT_BAND:format(ns.BandWord(dry.band))
+		return ns.Text(ns.L.DRY_SHORT_BAND, { bandWord = ns.BandWord(dry.band) })
 	end
 	return nil
 end
@@ -170,7 +173,7 @@ function ns.DrySpellShort(reading)
 	elseif dry.since == 0 then
 		return ns.L.DRY_JUST_NOW
 	end
-	return ns.L.DRY_SHORT_SINCE:format(ns.Number(dry.since)), unluckySuffix(dry)
+	return ns.Text(ns.L.DRY_SHORT_SINCE, { since = ns.Number(dry.since) }), unluckySuffix(dry)
 end
 
 --- The end of a home spread watch line, after "✎ {item}, {place}: " (stats.md › UI, Home spread): "212 since the
@@ -181,11 +184,11 @@ function ns.DrySpellWatchText(reading)
 	local L = ns.L
 	local dry = ns.DrySpell(reading)
 	if not dry.caught then
-		return L.DRY_WATCH_NONE_YET:format(ns.Count(dry.since, "Casts"))
+		return ns.Text(L.DRY_WATCH_NONE_YET, { dry_watch_none_yet = ns.Count(dry.since, "Casts") })
 	elseif dry.since == 0 then
 		return L.DRY_WATCH_CAUGHT_LAST
 	end
-	return L.DRY_WATCH_SINCE:format(ns.Number(dry.since), unluckySuffix(dry) or "")
+	return ns.Text(L.DRY_WATCH_SINCE, { since = ns.Number(dry.since), unluckySuffix = unluckySuffix(dry) or "" })
 end
 
 --- A watch's count on the tracker (STA-R82): the Dry spell, the bare `n` when never caught in the scope, "just now"

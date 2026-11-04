@@ -89,7 +89,7 @@ local function draw(view)
 	local wagers = wagersContent(view)
 	ns.DrawTrackerBlock(view, look, {
 		hunts = hunts,
-		more = not collapsed and lines.more > 0 and ns.L.TRACKER_MORE:format(lines.more) or nil,
+		more = not collapsed and lines.more > 0 and ns.Text(ns.L.TRACKER_MORE, { more = lines.more }) or nil,
 		empty = not collapsed and lines.empty,
 		collapsed = collapsed,
 		wagers = wagers,

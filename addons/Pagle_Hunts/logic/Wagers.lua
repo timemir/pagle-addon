@@ -61,11 +61,12 @@ function ns.EventHuntLine(hunt, list, sources)
 	if time then
 		local ranges = {}
 		for i, range in ipairs(time) do
-			ranges[i] = L.TIME_RANGE:format(ns.FormatClock(range[1]), ns.FormatClock(range[2]))
+			ranges[i] =
+				ns.Text(L.TIME_RANGE, { clock = ns.FormatClock(range[1]), time_range_2 = ns.FormatClock(range[2]) })
 		end
-		target = L.RUN_TARGET_TIME:format(target, table.concat(ranges, L.JOIN_RANGES))
+		target = ns.Text(L.RUN_TARGET_TIME, { target = target, ranges = table.concat(ranges, L.JOIN_RANGES) })
 	end
-	return L.RUN_HUNT_LINE:format(L.SHAPES[ns.EventHuntShape(hunt)], target)
+	return ns.Text(L.RUN_HUNT_LINE, { shapes = L.SHAPES[ns.EventHuntShape(hunt)], target = target })
 end
 
 --- The pay rule under a run's entry (HNT-R163), from the Tunables (HNT-R110, HNT-R114, HNT-R117): what a first mark, a
@@ -73,21 +74,25 @@ end
 ---@return string
 function ns.RunPayRule()
 	local L = ns.L
-	local rule = L.RUN_PAY_RULE:format(
-		ns.XP_EVENT[1],
-		ns.COINS_EVENT[1],
-		ns.XP_EVENT[2],
-		ns.COINS_EVENT[2],
-		ns.XP_RUN,
-		ns.COINS_RUN
-	)
+	local rule = ns.Text(L.RUN_PAY_RULE, {
+		xpEvent = ns.XP_EVENT[1],
+		coinsEvent = ns.COINS_EVENT[1],
+		run_pay_rule_3 = ns.XP_EVENT[2],
+		run_pay_rule_4 = ns.COINS_EVENT[2],
+		xpRun = ns.XP_RUN,
+		coinsRun = ns.COINS_RUN,
+	})
 	local tier, settle = ns.TICKETS_TIER3, ns.TICKETS_RUN
 	if tier > 0 and settle > 0 then
-		return rule .. L.RUN_PAY_RULE_REFRESH_BOTH:format(ns.CountText(tier, "REFRESH"), settle)
+		return rule
+			.. ns.Text(
+				L.RUN_PAY_RULE_REFRESH_BOTH,
+				{ countText = ns.Text(ns.L.REFRESH, { count = tier }), settle = settle }
+			)
 	elseif tier > 0 then
-		return rule .. L.RUN_PAY_RULE_REFRESH_TIER:format(ns.CountText(tier, "REFRESH"))
+		return rule .. ns.Text(L.RUN_PAY_RULE_REFRESH_TIER, { countText = ns.Text(ns.L.REFRESH, { count = tier }) })
 	elseif settle > 0 then
-		return rule .. L.RUN_PAY_RULE_REFRESH_RUN:format(ns.CountText(settle, "REFRESH"))
+		return rule .. ns.Text(L.RUN_PAY_RULE_REFRESH_RUN, { countText = ns.Text(ns.L.REFRESH, { count = settle }) })
 	end
 	return rule
 end
@@ -99,7 +104,7 @@ end
 ---@return string
 function ns.RealmWeekdayClock(t, snapshot)
 	local clock = ns.RealmClockAt(t, snapshot)
-	return ns.L.WEEKDAY_CLOCK:format(ns.FormatWeekday(clock.date), ns.FormatClock(clock.minute))
+	return ns.Text(ns.L.WEEKDAY_CLOCK, { weekday = ns.FormatWeekday(clock.date), time = ns.FormatClock(clock.minute) })
 end
 
 --- An event's name, a pushed definition's own or the pool's lore (ns.events, HNT-R140).
@@ -189,7 +194,7 @@ function ns.BuildWagerStrip(input)
 	strip.name = eventName(first.event)
 	strip.zones = ns.EventZonesText(first.event, input.sources)
 	strip.settled = settled
-	strip.closes = L.STRIP_CLOSES:format(ns.FormatDuration(run.end_ - input.now))
+	strip.closes = ns.Text(L.STRIP_CLOSES, { duration = ns.FormatDuration(run.end_ - input.now) })
 	strip.urgent = dial.urgent
 	if input.updating then
 		strip.updating = L.TICKET_UPDATING -- as the tickets read it (HNT-R163)
@@ -204,7 +209,7 @@ function ns.BuildWagerStrip(input)
 		on = on + (shown.on and 1 or 0)
 	end
 	if on > 1 then
-		strip.more = L.STRIP_MORE:format(on - 1)
+		strip.more = ns.Text(L.STRIP_MORE, { strip_more = on - 1 })
 	end
 	return strip
 end
@@ -292,7 +297,7 @@ local function runRow(shown, ruler, input)
 		mark = ns.EventMarkLayers(event.tags), -- in the place of a Hunt's icon (HNT-R166)
 		trim = nil,
 		pinned = false,
-		margin = shown.on and ns.L.LABEL_UNTIL:format(when) or when,
+		margin = shown.on and ns.Text(ns.L.LABEL_UNTIL, { realmWhen = when }) or when,
 		tone = "wagers",
 		bars = bars,
 		more = run.end_ > ruler.to,
@@ -392,8 +397,8 @@ function ns.WagerAheadRow(shown, input)
 		name = eventName(event),
 		zones = ns.EventZonesText(event, input.sources),
 		need = ns.EventSkillNeed(event, input.best),
-		opens = L.AHEAD_OPENS:format(ns.RealmWeekdayClock(run.start, input.snapshot)),
-		length = L.AHEAD_FOR:format(ns.FormatDuration(run.end_ - run.start)),
+		opens = ns.Text(L.AHEAD_OPENS, { realmWeekdayClock = ns.RealmWeekdayClock(run.start, input.snapshot) }),
+		length = ns.Text(L.AHEAD_FOR, { duration = ns.FormatDuration(run.end_ - run.start) }),
 	}
 end
 
@@ -420,7 +425,7 @@ end
 function ns.EventSkillNeed(event, best)
 	local need = event.skill and math.max(event.skill[1], 0)
 	if need and need > 0 and best and need > best then
-		return ns.L.NEEDS_SKILL:format(need)
+		return ns.Text(ns.L.NEEDS_SKILL, { need = need })
 	end
 	return nil
 end
@@ -611,7 +616,7 @@ end
 ---@param n integer
 ---@return string?
 local function refreshLine(n)
-	return n > 0 and ns.CountText(n, "PAY_REFRESH") or nil
+	return n > 0 and ns.Text(ns.L.PAY_REFRESH, { count = n }) or nil
 end
 
 -- The Casts made in a run's waters (HNT-R163): the most effort Casts any of its Hunts counted, as a Hunt whose spec
@@ -647,11 +652,14 @@ local function windowOf(hunt, input)
 		return ns.FormatClock(ns.RealmClockAt(t, input.snapshot).minute)
 	end
 	if window.openNow and window.closesAt then
-		return { open = true, text = L.RUN_WINDOW_OPEN:format(clock(window.closesAt)) }
+		return { open = true, text = ns.Text(L.RUN_WINDOW_OPEN, { clock = clock(window.closesAt) }) }
 	elseif window.opensAt and window.opensAt > input.now then
 		return {
 			open = false,
-			text = L.RUN_WINDOW_SHUT:format(clock(window.opensAt), ns.FormatDuration(window.opensAt - input.now)),
+			text = ns.Text(
+				L.RUN_WINDOW_SHUT,
+				{ clock = clock(window.opensAt), duration = ns.FormatDuration(window.opensAt - input.now) }
+			),
 		}
 	end
 	return nil
@@ -689,7 +697,8 @@ local function huntRow(hunt, shown, input)
 	local bar = ladder.bar --[[@as { fill: number, label: string }]]
 	row.fill = bar.fill
 	local count = tostring(progress and progress.count or 0)
-	local text = next and L.RUN_HUNT_PROGRESS:format("\1", next) or L.RUN_HUNT_CAUGHT:format("\1")
+	local text = next and ns.Text(L.RUN_HUNT_PROGRESS, { run_hunt_progress_1 = "\1", run_hunt_progress_2 = next })
+		or ns.Text(L.RUN_HUNT_CAUGHT, { run_hunt_caught = "\1" })
 	local before, after = text:match("^(.-)\1(.*)$")
 	row.count = { count = before .. count, rest = after }
 	return row
@@ -711,22 +720,23 @@ function ns.BuildRunEntry(input, shown)
 	if shown.on then
 		time = {
 			dial = ns.WagerDial(shown, input.now, settled, false),
-			hand = settled and L.RUN_SETTLED_OPEN or L.STRIP_CLOSES:format(ns.FormatDuration(run.end_ - input.now)),
+			hand = settled and L.RUN_SETTLED_OPEN
+				or ns.Text(L.STRIP_CLOSES, { duration = ns.FormatDuration(run.end_ - input.now) }),
 			ahead = false,
-			small = L.RUN_UNTIL_ALL:format(untilWhen, length),
+			small = ns.Text(L.RUN_UNTIL_ALL, { untilWhen = untilWhen, length = length }),
 		}
 	else
 		time = {
 			dial = ns.WagerDial(shown, input.now, false, false),
-			hand = L.RUN_OPENS:format(ns.RealmWeekdayClock(run.start, input.snapshot)),
+			hand = ns.Text(L.RUN_OPENS, { realmWeekdayClock = ns.RealmWeekdayClock(run.start, input.snapshot) }),
 			ahead = true,
-			small = L.RUN_UNTIL_TABLE:format(untilWhen, length),
+			small = ns.Text(L.RUN_UNTIL_TABLE, { untilWhen = untilWhen, length = length }),
 		}
 	end
 	local entry = {
 		key = shown.key,
 		source = pushed and "companion" or "rotation",
-		kicker = pushed and L.RUN_KICKER_PUSHED or L.RUN_KICKER_ROTATION:format(L.BANDS[event.band]),
+		kicker = pushed and L.RUN_KICKER_PUSHED or ns.Text(L.RUN_KICKER_ROTATION, { bands = L.BANDS[event.band] }),
 		name = eventName(event),
 		mark = ns.EventMarkLayers(event.tags),
 		time = time,
@@ -753,10 +763,14 @@ function ns.BuildRunEntry(input, shown)
 	entry.casts = ns.Text(L.RUN_CASTS, { count = casts, done = done, total = #event.hunts })
 	local xp, coins, tickets = paidSoFar(run)
 	entry.pay = {
-		{ label = L.PAY_SO_FAR, amount = L.PAY_AMOUNT:format(xp, coins), refresh = refreshLine(tickets) },
+		{
+			label = L.PAY_SO_FAR,
+			amount = ns.Text(L.PAY_AMOUNT, { xpRun = xp, coins = coins }),
+			refresh = refreshLine(tickets),
+		},
 		settled and { label = L.PAY_SETTLED, amount = L.PAY_PAID_OUT } or {
 			label = L.PAY_SETTLE,
-			amount = L.PAY_AMOUNT:format(ns.XP_RUN, ns.COINS_RUN),
+			amount = ns.Text(L.PAY_AMOUNT, { xpRun = ns.XP_RUN, coins = ns.COINS_RUN }),
 			refresh = refreshLine(ns.TICKETS_RUN),
 		},
 	}

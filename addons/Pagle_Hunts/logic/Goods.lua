@@ -374,7 +374,7 @@ end
 ---@return string
 function ns.HuntsEarnedText(rule)
 	-- Only a completed-run rule's text has a number in it: the runs it takes.
-	return ns.L.EARNED_TEXT[rule]:format(ns.EARNED_RUNS[rule] or 0)
+	return ns.Text(ns.L.EARNED_TEXT[rule], { earnedRuns = ns.EARNED_RUNS[rule] or 0 })
 end
 
 --- A good's name (HNT-R121): its lore, `huntgood.<goodID>.name` (HNT-R130), or its ID while the key has no text.

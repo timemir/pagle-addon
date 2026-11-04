@@ -101,9 +101,12 @@ function ns.Duration(seconds)
 	end
 	local minutes = ns.Round(seconds / MINUTE)
 	if minutes < 60 then
-		return L.DURATION_MINUTES:format(minutes)
+		return ns.Text(L.DURATION_MINUTES, { minutes = minutes })
 	end
-	return L.DURATION_HOURS:format(math.floor(minutes / 60), minutes % 60)
+	return ns.Text(
+		L.DURATION_HOURS,
+		{ duration_hours_1 = math.floor(minutes / 60), duration_hours_2 = ("%02d"):format(minutes % 60) }
+	)
 end
 
 --- How long ago a server time was (STA-R59): under a minute "just now", under an hour "21m ago", under a day "3h ago",
@@ -120,13 +123,13 @@ function ns.TimeAgo(time, now)
 	end
 	local minutes = ns.Round(ago / MINUTE)
 	if minutes < 60 then
-		return L.AGO_MINUTES:format(minutes)
+		return ns.Text(L.AGO_MINUTES, { minutes = minutes })
 	end
 	local hours = ns.Round(ago / HOUR)
 	if hours < 24 then
-		return L.AGO_HOURS:format(hours)
+		return ns.Text(L.AGO_HOURS, { hours = hours })
 	end
-	return L.AGO_DAYS:format(ns.Round(ago / DAY))
+	return ns.Text(L.AGO_DAYS, { ago_days = ns.Round(ago / DAY) })
 end
 
 -- The day of the month in the player's local clock, without a leading zero.
@@ -151,14 +154,17 @@ end
 ---@param time integer server time
 ---@return string
 function ns.Date(time)
-	return ns.L.DATE:format(dayOf(time), client.Date("%b", time), client.Date("%Y", time))
+	return ns.Text(ns.L.DATE, { dayOf = dayOf(time), date = client.Date("%b", time), date_3 = client.Date("%Y", time) })
 end
 
 --- A Session's heading by a time in it, in the player's local clock (STA-R59): "{%A} {day} {%B}", "Monday 5 October".
 ---@param time integer server time
 ---@return string
 function ns.SessionHeading(time)
-	return ns.L.SESSION_HEADING:format(client.Date("%A", time), dayOf(time), client.Date("%B", time))
+	return ns.Text(
+		ns.L.SESSION_HEADING,
+		{ date = client.Date("%A", time), dayOf = dayOf(time), session_heading_3 = client.Date("%B", time) }
+	)
 end
 
 --- A window's bound, in realm time (STA-R59): a minute of the realm's day in Core's clock format (CORE-R87), "18:00"
@@ -179,7 +185,7 @@ end
 function ns.Item(itemID)
 	local name = client.ItemName(itemID)
 	if not name then
-		return ns.L.ITEM_FALLBACK:format(itemID), ns.QUESTION_MARK_ICON, false
+		return ns.Text(ns.L.ITEM_FALLBACK, { itemID = itemID }), ns.QUESTION_MARK_ICON, false
 	end
 	return name, client.ItemIcon(itemID) or ns.QUESTION_MARK_ICON, true
 end
@@ -190,7 +196,7 @@ end
 function ns.AreaName(areaID)
 	local name = client.AreaName(areaID)
 	if not name or name == "" then
-		return ns.L.AREA_FALLBACK:format(areaID)
+		return ns.Text(ns.L.AREA_FALLBACK, { areaID = areaID })
 	end
 	return name
 end
@@ -202,10 +208,10 @@ end
 function ns.CharacterName(index)
 	local character = client.Characters()[index]
 	if not character then
-		return ns.L.CHARACTER_FALLBACK:format(index)
+		return ns.Text(ns.L.CHARACTER_FALLBACK, { index = index })
 	end
 	if character.surname then
-		return ns.L.CHARACTER_NAME:format(character.name, character.surname)
+		return ns.Text(ns.L.CHARACTER_NAME, { name = character.name, surname = character.surname })
 	end
 	return character.name
 end
@@ -215,7 +221,7 @@ end
 ---@param quality integer
 ---@return string
 function ns.QualityName(quality)
-	return client.QualityName(quality) or ns.L.QUALITY_FALLBACK:format(quality)
+	return client.QualityName(quality) or ns.Text(ns.L.QUALITY_FALLBACK, { quality = quality })
 end
 
 local WHITE = { r = 1, g = 1, b = 1, hex = "|cffffffff" }

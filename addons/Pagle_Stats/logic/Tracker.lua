@@ -39,19 +39,22 @@ local function sessionLines(input, lines)
 	local shown = not input.updating and ns.CurrentSession(input.state.sessions, live) or nil
 	local record = shown and shown.kind == "current" and shown.record or nil
 	local session = record or live ---@type StatsSession|PagleSession
-	lines[1].right = L.TRACKER_SESSION:format(ns.Duration(ns.TimeFished(session, input.now)))
+	lines[1].right = ns.Text(L.TRACKER_SESSION, { duration = ns.Duration(ns.TimeFished(session, input.now)) })
 	lines[#lines + 1] = {
 		kind = "line",
-		text = L.TRACKER_COUNTS:format(
-			ns.Count(session.casts, "Casts"),
-			ns.Count(session.catches, "Catches"),
-			ns.Number(session.gotAway)
-		),
+		text = ns.Text(L.TRACKER_COUNTS, {
+			tracker_counts_1 = ns.Count(session.casts, "Casts"),
+			tracker_counts_2 = ns.Count(session.catches, "Catches"),
+			gotAway = ns.Number(session.gotAway),
+		}),
 	}
 	if record then
 		lines[#lines + 1] = {
 			kind = "line",
-			text = L.TRACKER_PER_HOUR:format(ns.Number(ns.CatchesPerHour(record, input.now)), ns.Number(record.skill)),
+			text = ns.Text(
+				L.TRACKER_PER_HOUR,
+				{ perHour = ns.Number(ns.CatchesPerHour(record, input.now)), skill = ns.Number(record.skill) }
+			),
 			dim = true,
 		}
 	end

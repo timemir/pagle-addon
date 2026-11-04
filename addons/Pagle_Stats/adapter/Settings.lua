@@ -148,7 +148,7 @@ function PagleStatsWatchedRowMixin:Draw()
 	local watches = ns.Watches()
 	own.label:SetText(L.SETTINGS_WATCHED)
 	own.label:Show()
-	own.count:SetText(L.SETTINGS_WATCHED_COUNT:format(#watches, ns.MAX_WATCHES))
+	own.count:SetText(ns.Text(L.SETTINGS_WATCHED_COUNT, { watches = #watches, maxWatches = ns.MAX_WATCHES }))
 	own.count:Show()
 	if #watches == 0 then
 		own.none:SetText(L.SETTINGS_WATCHED_NONE)
@@ -158,7 +158,9 @@ function PagleStatsWatchedRowMixin:Draw()
 		local line = own.lines[i]
 		if line then
 			local item, area = watch.item, watch.area
-			line.text:SetText(L.SETTINGS_WATCHED_LINE:format(itemName(item), ns.AreaName(area)))
+			line.text:SetText(
+				ns.Text(L.SETTINGS_WATCHED_LINE, { itemName = itemName(item), areaName = ns.AreaName(area) })
+			)
 			line.text:Show()
 			line.button:SetText(L.SETTINGS_STOP_WATCHING)
 			line.button:SetScript("OnClick", function()

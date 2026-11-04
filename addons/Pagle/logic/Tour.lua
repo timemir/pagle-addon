@@ -180,11 +180,11 @@ local function finish(tour, why)
 	local L, options, run = ns.L, tour.options, tour.run --[[@as PagleTourRun]]
 	tour.run = nil
 	if why == "done" then
-		options.print(L.DEV_TOUR_DONE:format(options.clock()))
+		options.print(ns.RenderText(L.DEV_TOUR_DONE, { clock = options.clock() }))
 	elseif why == "stopped" then
-		options.print(L.DEV_TOUR_STOPPED:format(run.index, #run.stops))
+		options.print(ns.RenderText(L.DEV_TOUR_STOPPED, { index = run.index, stops = #run.stops }))
 	else
-		options.print(L.DEV_TOUR_RESTRICTED_STOPPED:format(run.index, #run.stops))
+		options.print(ns.RenderText(L.DEV_TOUR_RESTRICTED_STOPPED, { index = run.index, stops = #run.stops }))
 	end
 end
 
@@ -199,7 +199,7 @@ local function nextStop(tour)
 		finish(tour, "done")
 		return
 	end
-	options.print(ns.L.DEV_TOUR_STOP:format(run.index, #run.stops, stop.name))
+	options.print(ns.RenderText(ns.L.DEV_TOUR_STOP, { index = run.index, stops = #run.stops, name = stop.name }))
 	options.call(stop.show)
 	options.after(ns.TOUR_SHOW_SECONDS, function()
 		local ending = run.stopping and "stopped" or options.isRestricted() and "restricted" or nil
@@ -242,7 +242,14 @@ local function start(tour, module)
 	local stops = options.stops:List(modules, module)
 	if #stops == 0 then
 		local known = table.concat(options.stops:Modules(modules), ", ")
-		options.print(module and L.DEV_TOUR_NO_STOPS_FOR:format(module:lower(), known) or L.DEV_TOUR_NO_STOPS)
+		options.print(
+			module
+					and ns.RenderText(
+						L.DEV_TOUR_NO_STOPS_FOR,
+						{ dev_tour_no_stops_for_1 = module:lower(), known = known }
+					)
+				or L.DEV_TOUR_NO_STOPS
+		)
 		return
 	end
 	local shoot = options.canScreenshot()
@@ -258,13 +265,13 @@ end
 local function list(tour, module)
 	local L, options = ns.L, tour.options
 	local stops = options.stops:List(options.modules(), module)
-	options.print(#stops == 1 and L.DEV_TOUR_LIST_ONE or L.DEV_TOUR_LIST:format(#stops))
+	options.print(ns.RenderText(L.DEV_TOUR_LIST, { count = #stops }))
 	for _, stop in ipairs(stops) do
 		local label = stop.label
 		if type(label) == "function" then
 			label = label()
 		end
-		options.print(L.DEV_TOUR_LIST_LINE:format(stop.name, label))
+		options.print(ns.RenderText(L.DEV_TOUR_LIST_LINE, { name = stop.name, label = label }))
 	end
 end
 

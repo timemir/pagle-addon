@@ -58,7 +58,10 @@ local function everyFish(items)
 		entries[i] = {
 			item = itemID,
 			count = ns.Number(total.n),
-			hover = L.LIFETIME_FIRST_LAST:format(ns.Date(total.first), ns.Date(total.last)),
+			hover = ns.Text(
+				L.LIFETIME_FIRST_LAST,
+				{ date = ns.Date(total.first), lifetime_first_last_2 = ns.Date(total.last) }
+			),
 		}
 	end
 	return entries
@@ -74,14 +77,14 @@ local function bests(sessions)
 	local longest = ns.LongestSession(sessions)
 	if longest then
 		figures[#figures + 1] = {
-			label = L.LIFETIME_LONGEST:format(ns.Date(ns.SessionDate(longest))),
+			label = ns.Text(L.LIFETIME_LONGEST, { date = ns.Date(ns.SessionDate(longest)) }),
 			value = ns.Duration(ns.TimeFished(longest)),
 		}
 	end
 	local best, rate = ns.BestCatchesPerHour(sessions)
 	if best and rate then
 		figures[#figures + 1] = {
-			label = L.LIFETIME_BEST_RATE:format(ns.Date(ns.SessionDate(best))),
+			label = ns.Text(L.LIFETIME_BEST_RATE, { date = ns.Date(ns.SessionDate(best)) }),
 			value = ns.Number(rate),
 		}
 	end
@@ -102,7 +105,10 @@ local function byMargin(margins)
 		if margin and margin.casts > 0 then
 			figures[#figures + 1] = {
 				label = L.LIFETIME_MARGIN_NAMES[bucket],
-				value = L.LIFETIME_MARGIN_VALUE:format(ns.GotAwayRate(margin), ns.Count(margin.casts, "Casts")),
+				value = ns.Text(
+					L.LIFETIME_MARGIN_VALUE,
+					{ gotAwayRate = ns.GotAwayRate(margin), lifetime_margin_value_2 = ns.Count(margin.casts, "Casts") }
+				),
 			}
 		end
 	end
@@ -131,11 +137,11 @@ local function characters(chars)
 		local counts = char.counts
 		figures[i] = {
 			label = char.name,
-			value = L.LIFETIME_CHARACTER_VALUE:format(
-				ns.Count(counts.casts, "Casts"),
-				ns.Count(counts.catches, "Catches"),
-				ns.Number(counts.gotAway)
-			),
+			value = ns.Text(L.LIFETIME_CHARACTER_VALUE, {
+				lifetime_character_value_1 = ns.Count(counts.casts, "Casts"),
+				lifetime_character_value_2 = ns.Count(counts.catches, "Catches"),
+				gotAway = ns.Number(counts.gotAway),
+			}),
 		}
 	end
 	return figures
@@ -166,7 +172,10 @@ function ns.Lifetime(state)
 			{ label = L.LIFETIME_CATCHES, value = ns.Number(totals.catches) },
 			{
 				label = L.LIFETIME_GOT_AWAY,
-				value = L.LIFETIME_GOT_AWAY_VALUE:format(ns.Number(totals.gotAway), ns.GotAwayRate(totals)),
+				value = ns.Text(
+					L.LIFETIME_GOT_AWAY_VALUE,
+					{ gotAway = ns.Number(totals.gotAway), gotAwayRate = ns.GotAwayRate(totals) }
+				),
 			},
 			{ label = L.LIFETIME_SESSIONS, value = ns.Number(#sessions) },
 			{ label = L.LIFETIME_TIME_AT_THE_WATER, value = ns.Duration(ns.TimeAtTheWater(sessions)) },

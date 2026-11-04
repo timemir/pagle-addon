@@ -71,23 +71,15 @@ function ns.FormatDuration(seconds)
 	local L = ns.L
 	local minutes = math.max(0, math.floor(seconds / 60))
 	if minutes < 60 then
-		return L.DURATION_MINUTES:format(minutes)
+		return ns.Text(L.DURATION_MINUTES, { minutes = minutes })
 	elseif minutes < MINUTES_PER_DAY then
 		local hours, rest = math.floor(minutes / 60), minutes % 60
-		return rest == 0 and L.DURATION_HOURS:format(hours) or L.DURATION_HOURS_MINUTES:format(hours, rest)
+		return rest == 0 and ns.Text(L.DURATION_HOURS, { hours = hours })
+			or ns.Text(L.DURATION_HOURS_MINUTES, { hours = hours, rest = rest })
 	end
 	local days, hours = math.floor(minutes / MINUTES_PER_DAY), math.floor(minutes % MINUTES_PER_DAY / 60)
-	return hours == 0 and L.DURATION_DAYS:format(days) or L.DURATION_DAYS_HOURS:format(days, hours)
-end
-
---- A count in its singular or plural string, `L[key .. "_ONE"]` or `L[key .. "_OTHER"]`, with its number written by
---- `format` (tostring by default): "1 title", "3 Hunts completed".
----@param n integer
----@param key string
----@param format (fun(n: integer): string)?
----@return string
-function ns.CountText(n, key, format)
-	return ns.L[key .. (n == 1 and "_ONE" or "_OTHER")]:format((format or tostring)(n))
+	return hours == 0 and ns.Text(L.DURATION_DAYS, { days = days })
+		or ns.Text(L.DURATION_DAYS_HOURS, { days = days, hours = hours })
 end
 
 --- A minute of day as a clock time in Core's clock format (HNT-R50, CORE-R87): "06:00" 24-hour, "6:00 AM" 12-hour.
@@ -105,9 +97,9 @@ end
 function ns.FormatRulerHour(hour)
 	local L = ns.L
 	if ns.ClockFormat() ~= "12h" then
-		return L.RULER_HOUR:format(hour)
+		return ns.Text(L.RULER_HOUR, { hour = ("%02d"):format(hour) })
 	end
-	return L.RULER_HOUR_12[hour < 12 and "am" or "pm"]:format((hour - 1) % 12 + 1)
+	return ns.Text(L.RULER_HOUR_12[hour < 12 and "am" or "pm"], { ruler_hour_12 = (hour - 1) % 12 + 1 })
 end
 
 --- A date's weekday, "Sun" (HNT-R50).
@@ -121,14 +113,14 @@ end
 ---@param date { month: integer, day: integer }
 ---@return string
 function ns.FormatShortDate(date)
-	return ns.L.DATE_SHORT:format(date.day, ns.L.MONTHS_SHORT[date.month])
+	return ns.Text(ns.L.DATE_SHORT, { day = date.day, monthsShort = ns.L.MONTHS_SHORT[date.month] })
 end
 
 --- A full date, "12 Oct 2026" (HNT-R50): seals, the nameplate's tooltip, a retired entry.
 ---@param date { year: integer, month: integer, day: integer }
 ---@return string
 function ns.FormatFullDate(date)
-	return ns.L.DATE_FULL:format(ns.FormatShortDate(date), date.year)
+	return ns.Text(ns.L.DATE_FULL, { shortDate = ns.FormatShortDate(date), year = date.year })
 end
 
 --- A month's name, "March" (HNT-R50).
@@ -167,7 +159,7 @@ function ns.FormatRealmWhen(t, now, snapshot)
 	if sameDate(clock.date, ns.RealmClockAt(now, snapshot).date) then
 		return time
 	end
-	return ns.L.WEEKDAY_CLOCK:format(ns.FormatWeekday(clock.date), time)
+	return ns.Text(ns.L.WEEKDAY_CLOCK, { weekday = ns.FormatWeekday(clock.date), time = time })
 end
 
 -- Tunables: the month wording beyond (HNT-R51). The Soon horizon (HNT-R40) and the lure reach (HNT-R33) are the
@@ -282,7 +274,7 @@ function ns.HuntLabels(c)
 	local L = ns.L
 	local row, window = rowOf(c, false), c.window or {}
 	if row == "short" then
-		return L.LABEL_NEED:format(c.need), L.TRACKER_NEED:format(c.need)
+		return ns.Text(L.LABEL_NEED, { need = c.need }), ns.Text(L.TRACKER_NEED, { need = c.need })
 	elseif row == "auraUp" then
 		return L.LABEL_UP_NOW, L.LABEL_UP_NOW
 	elseif row == "onDemand" then
@@ -292,19 +284,19 @@ function ns.HuntLabels(c)
 	elseif row == "whileEvent" then
 		return L.LABEL_WHILE_EVENT, L.TRACKER_NOW
 	elseif row == "closes" then
-		return L.LABEL_UNTIL:format(ns.FormatRealmWhen(window.closesAt, c.now, c.snapshot)),
-			L.TRACKER_ENDS_IN:format(ns.FormatDuration(window.closesAt - c.now))
+		return ns.Text(L.LABEL_UNTIL, { realmWhen = ns.FormatRealmWhen(window.closesAt, c.now, c.snapshot) }),
+			ns.Text(L.TRACKER_ENDS_IN, { duration = ns.FormatDuration(window.closesAt - c.now) })
 	elseif row == "closesLater" then
-		local label = L.LABEL_UNTIL:format(monthOf(window.closesAt, c))
+		local label = ns.Text(L.LABEL_UNTIL, { realmWhen = monthOf(window.closesAt, c) })
 		return label, label
 	elseif row == "soon" then
-		local label = L.LABEL_IN:format(ns.FormatDuration(window.opensAt - c.now))
+		local label = ns.Text(L.LABEL_IN, { duration = ns.FormatDuration(window.opensAt - c.now) })
 		return label, label
 	elseif row == "opens" then
 		local label = ns.FormatRealmWhen(window.opensAt, c.now, c.snapshot)
 		return label, label
 	elseif row == "opensLater" then
-		local label = L.LABEL_BACK_IN:format(monthOf(window.opensAt, c))
+		local label = ns.Text(L.LABEL_BACK_IN, { monthOf = monthOf(window.opensAt, c) })
 		return label, label
 	end
 	return L.LABEL_NO_DATE, L.LABEL_NO_DATE
@@ -323,35 +315,36 @@ function ns.HuntWindowLine(c, sources)
 		line = L.LINE_UP_NOW
 	elseif row == "onDemand" then
 		local aura = c.spec and c.spec.auras and c.spec.auras[1]
-		line = L.LINE_ON_DEMAND:format(aura and sources.AuraName(aura) or L.NAME_UNKNOWN)
+		line = ns.Text(L.LINE_ON_DEMAND, { aura = aura and sources.AuraName(aura) or L.NAME_UNKNOWN })
 	elseif row == "always" then
 		line = L.LINE_ANY_TIME
 	elseif row == "whileEvent" then
 		line = L.LINE_WHILE_EVENT
 	elseif row == "closes" then
-		line = L.LINE_CLOSES:format(
-			ns.FormatDuration(window.closesAt - c.now),
-			ns.FormatRealmWhen(window.closesAt, c.now, c.snapshot)
-		)
+		line = ns.Text(L.LINE_CLOSES, {
+			duration = ns.FormatDuration(window.closesAt - c.now),
+			realmWhen = ns.FormatRealmWhen(window.closesAt, c.now, c.snapshot),
+		})
 	elseif row == "closesLater" then
-		line = L.LINE_UNTIL:format(monthOf(window.closesAt, c))
+		line = ns.Text(L.LINE_UNTIL, { monthOf = monthOf(window.closesAt, c) })
 	elseif row == "soon" then
-		line = L.LINE_SOON:format(
-			ns.FormatDuration(window.opensAt - c.now),
-			ns.FormatRealmWhen(window.opensAt, c.now, c.snapshot)
-		)
+		line = ns.Text(L.LINE_SOON, {
+			duration = ns.FormatDuration(window.opensAt - c.now),
+			realmWhen = ns.FormatRealmWhen(window.opensAt, c.now, c.snapshot),
+		})
 	elseif row == "opens" then
 		local sameDay = ns.IsSameRealmDay(window.opensAt, c.now, c.snapshot)
-		line = (sameDay and L.LINE_OPENS_AT or L.LINE_OPENS_ON):format(
-			ns.FormatRealmWhen(window.opensAt, c.now, c.snapshot)
+		line = ns.Text(
+			sameDay and L.LINE_OPENS_AT or L.LINE_OPENS_ON,
+			{ realmWhen = ns.FormatRealmWhen(window.opensAt, c.now, c.snapshot) }
 		)
 	elseif row == "opensLater" then
-		line = L.LINE_BACK:format(monthOf(window.opensAt, c))
+		line = ns.Text(L.LINE_BACK, { monthOf = monthOf(window.opensAt, c) })
 	else
 		line = L.LINE_NO_DATE
 	end
 	if c.short then
-		line = line .. " " .. L.LINE_NEEDS:format(c.need, c.best or 0)
+		line = line .. " " .. ns.Text(L.LINE_NEEDS, { need = c.need, best = c.best or 0 })
 		if c.lureGetsThere then
 			line = line .. " " .. L.LINE_LURE
 		end
@@ -407,12 +400,12 @@ local function eventText(eventID, now, snapshot, sources)
 		return name
 	end
 	local opens = ns.RealmClockAt(window.opensAt, snapshot)
-	return L.CONDITION_EVENT:format(
-		name,
-		L.WEEKDAYS_PLURAL[opens.date.weekday],
-		ns.FormatClock(opens.minute),
-		ns.FormatDuration(window.closesAt - window.opensAt)
-	)
+	return ns.Text(L.CONDITION_EVENT, {
+		name = name,
+		weekdaysPlural = L.WEEKDAYS_PLURAL[opens.date.weekday],
+		clock = ns.FormatClock(opens.minute),
+		duration = ns.FormatDuration(window.closesAt - window.opensAt),
+	})
 end
 
 --- A board spec's conditions line (HNT-R53): its fields in plain words, in the order time, season, events, areas,
@@ -433,16 +426,16 @@ function ns.HuntConditionsLine(spec, windowID, now, snapshot, sources)
 	local parts = {}
 	if spec.time then
 		local ranges = joined(spec.time, function(range)
-			return L.TIME_RANGE:format(ns.FormatClock(range[1]), ns.FormatClock(range[2]))
+			return ns.Text(L.TIME_RANGE, { clock = ns.FormatClock(range[1]), time_range_2 = ns.FormatClock(range[2]) })
 		end, L.JOIN_RANGES)
 		parts[#parts + 1] = ns.Text(L[TIME_WINDOWS[windowID] or "CONDITION_TIME"], { ranges = ranges })
 	end
 	if spec.season then
 		local ranges = joined(spec.season, function(range)
-			return L.SEASON_RANGE:format(dayOfYear(range.from), dayOfYear(range.to))
+			return ns.Text(L.SEASON_RANGE, { dayOfYear = dayOfYear(range.from), season_range_2 = dayOfYear(range.to) })
 		end, L.JOIN_RANGES)
 		local season = windowID and L.SEASONS[windowID]
-		parts[#parts + 1] = season and L.CONDITION_SEASON:format(season, ranges) or ranges
+		parts[#parts + 1] = season and ns.Text(L.CONDITION_SEASON, { season = season, ranges = ranges }) or ranges
 	end
 	if spec.events then
 		parts[#parts + 1] = joined(spec.events, function(eventID)
@@ -450,20 +443,24 @@ function ns.HuntConditionsLine(spec, windowID, now, snapshot, sources)
 		end, L.JOIN_OR)
 	end
 	if spec.areas then
-		parts[#parts + 1] = L.CONDITION_AREAS:format(joined(spec.areas, function(areaID)
-			return sources.AreaName(areaID) or L.NAME_UNKNOWN
-		end, L.JOIN_OR))
+		parts[#parts + 1] = ns.Text(L.CONDITION_AREAS, {
+			joined = joined(spec.areas, function(areaID)
+				return sources.AreaName(areaID) or L.NAME_UNKNOWN
+			end, L.JOIN_OR),
+		})
 	end
 	if spec.auras then
-		parts[#parts + 1] = L.CONDITION_AURAS:format(joined(spec.auras, function(spellID)
-			return sources.AuraName(spellID) or L.NAME_UNKNOWN
-		end, L.JOIN_OR))
+		parts[#parts + 1] = ns.Text(L.CONDITION_AURAS, {
+			joined = joined(spec.auras, function(spellID)
+				return sources.AuraName(spellID) or L.NAME_UNKNOWN
+			end, L.JOIN_OR),
+		})
 	end
 	if spec.lure then
 		parts[#parts + 1] = L.CONDITION_LURE
 	end
 	if spec.skill then
-		parts[#parts + 1] = L.CONDITION_SKILL:format(spec.skill.min)
+		parts[#parts + 1] = ns.Text(L.CONDITION_SKILL, { min = spec.skill.min })
 	end
 	return table.concat(parts, L.JOIN_FIELDS)
 end
@@ -517,7 +514,7 @@ function ns.HuntTargetLine(hunt, list, sources)
 		line = joined(membersOf(hunt, list), itemName, L.JOIN_OR)
 	end
 	if hunt.minBand then
-		line = L.TARGET_MIN_BAND:format(line, sources.BandName(hunt.minBand) or L.NAME_UNKNOWN)
+		line = ns.Text(L.TARGET_MIN_BAND, { line = line, bandName = sources.BandName(hunt.minBand) or L.NAME_UNKNOWN })
 	end
 	return line
 end

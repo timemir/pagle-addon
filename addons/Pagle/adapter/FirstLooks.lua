@@ -158,8 +158,8 @@ end
 ---@param n integer
 local function drawBar(bar, set, n)
 	local L = ns.L
-	bar.title:SetText(L.LOOK_BAR_TITLE:format(set.title))
-	bar.count:SetText(n == 1 and L.LOOK_BAR_COUNT_ONE or L.LOOK_BAR_COUNT:format(n))
+	bar.title:SetText(ns.RenderText(L.LOOK_BAR_TITLE, { title = set.title }))
+	bar.count:SetText(ns.RenderText(L.LOOK_BAR_COUNT, { count = n }))
 	local wa = math.ceil(bar.title:GetStringWidth())
 	local wb = math.ceil(bar.count:GetStringWidth())
 	local wc = math.ceil(bar.doneLabel:GetStringWidth())

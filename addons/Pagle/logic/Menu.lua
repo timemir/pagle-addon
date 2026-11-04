@@ -10,7 +10,7 @@ local ns = select(2, ...)
 ---@return string
 function ns.CompartmentText(waiting)
 	if waiting > 0 then
-		return ns.L.COMPARTMENT_WAITING:format(waiting)
+		return ns.RenderText(ns.L.COMPARTMENT_WAITING, { waiting = waiting })
 	end
 	return ns.L.COMPARTMENT
 end
@@ -24,7 +24,7 @@ end
 function ns.MenuTooltipLines(waiting, letterShows)
 	local lines = { ns.L.MENU_NAME }
 	if waiting > 0 then
-		lines[#lines + 1] = ns.L.MENU_TOOLTIP_WAITING:format(waiting)
+		lines[#lines + 1] = ns.RenderText(ns.L.MENU_TOOLTIP_WAITING, { waiting = waiting })
 	end
 	if letterShows then
 		lines[#lines + 1] = ns.L.MENU_TOOLTIP_LETTER
@@ -53,7 +53,10 @@ end
 ---@param open fun()
 ---@return PagleMenuEntry
 function ns.CurioShopMenuEntry(balance, breakUpLargeNumbers, open)
-	return { label = ns.L.MENU_CURIO_SHOP:format(breakUpLargeNumbers(balance.balance)), onClick = open }
+	return {
+		label = ns.RenderText(ns.L.MENU_CURIO_SHOP, { balance = breakUpLargeNumbers(balance.balance) }),
+		onClick = open,
+	}
 end
 
 --- The compartment menu's entries, read now, as each opening reads them (CORE-R50, CORE-R52): for each registered

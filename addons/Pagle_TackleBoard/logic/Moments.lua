@@ -47,7 +47,7 @@ end
 ---@param n integer
 ---@return string
 local function days(n)
-	return ns.Plural(n, "DAYS")
+	return ns.Text(ns.L.DAYS, { count = n })
 end
 
 -- The celebrated set (TKB-R83, ns.Celebrated), which only grows: there whenever the projection runs, which an inert
@@ -149,8 +149,9 @@ local function setSummaryLine()
 		end
 	end
 	local count = state.fire.count
-	local campfire = count > 0 and ns.Plural(count, "CAMPFIRE_DAYS") or ns.L.CAMPFIRE_NOT_LIT
-	local line = done > 0 and say("SUMMARY_LINE", { done = ns.Plural(done, "DONE_TODAY"), campfire = campfire })
+	local campfire = count > 0 and ns.Text(ns.L.CAMPFIRE_DAYS, { count = count }) or ns.L.CAMPFIRE_NOT_LIT
+	local line = done > 0
+			and say("SUMMARY_LINE", { done = ns.Text(ns.L.DONE_TODAY, { count = done }), campfire = campfire })
 		or say("SUMMARY_LINE_NOTHING_DONE", { campfire = campfire })
 	ns.SetSummaryLine(line)
 end
@@ -213,12 +214,13 @@ local function writeUpLines(state)
 	if notices > 0 and expeditions > 0 then
 		lines[#lines + 1] = say("GOALS_DONE", {
 			goals = say("GOALS_AND", {
-				notices = ns.Plural(notices, "NOTICES"),
-				expeditions = ns.Plural(expeditions, "EXPEDITIONS"),
+				notices = ns.Text(ns.L.NOTICES, { count = notices }),
+				expeditions = ns.Text(ns.L.EXPEDITIONS, { count = expeditions }),
 			}),
 		})
 	elseif notices > 0 or expeditions > 0 then
-		local goals = notices > 0 and ns.Plural(notices, "NOTICES") or ns.Plural(expeditions, "EXPEDITIONS")
+		local goals = notices > 0 and ns.Text(ns.L.NOTICES, { count = notices })
+			or ns.Text(ns.L.EXPEDITIONS, { count = expeditions })
 		lines[#lines + 1] = say("GOALS_DONE", { goals = goals })
 	end
 	if scratch.coins > 0 then
@@ -228,7 +230,7 @@ local function writeUpLines(state)
 		lines[#lines + 1] = say("XP_LINE", { xp = ns.api.FormatNumber(scratch.xp) })
 	end
 	if scratch.flies > 0 then
-		lines[#lines + 1] = ns.Plural(scratch.flies, "FLIES_TIED")
+		lines[#lines + 1] = ns.Text(ns.L.FLIES_TIED, { count = scratch.flies })
 	end
 	for _, titleID in ipairs(scratch.titles) do
 		lines[#lines + 1] = say("TITLE_LINE", { title = ns.TitleName(titleID) })
@@ -237,7 +239,7 @@ local function writeUpLines(state)
 	if fire.count == 0 and scratch.wentOut then
 		lines[#lines + 1] = say("CAMPFIRE_WENT_OUT", { longest = days(fire.longest) })
 	elseif fire.count > 0 then
-		local campfire = ns.Plural(fire.count, "CAMPFIRE_DAYS")
+		local campfire = ns.Text(ns.L.CAMPFIRE_DAYS, { count = fire.count })
 		if scratch.burned > 0 then
 			campfire = say("CAMPFIRE_BURNED", { campfire = campfire, k = scratch.burned })
 		end

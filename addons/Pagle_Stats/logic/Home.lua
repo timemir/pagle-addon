@@ -95,10 +95,12 @@ function ns.HomeWaters(state, conditions, watched, places)
 		tiles[#tiles + 1] = {
 			zone = zone,
 			name = ns.AreaName(zone),
-			line = n and L.HOME_TILE_LINE:format(ns.Count(n, "Casts"), ns.Count(waters[zone] or 0, "waters"))
-				or L.HOME_TILE_NOT_FISHED,
+			line = n and ns.Text(
+				L.HOME_TILE_LINE,
+				{ home_tile_line_1 = ns.Count(n, "Casts"), home_tile_line_2 = ns.Count(waters[zone] or 0, "waters") }
+			) or L.HOME_TILE_NOT_FISHED,
 			here = zone == here and L.HOME_HERE or nil,
-			note = watching[zone] and L.HOME_WATCHING:format(watching[zone]) or nil,
+			note = watching[zone] and ns.Text(L.HOME_WATCHING, { watching = watching[zone] }) or nil,
 			target = { page = "place", area = zone },
 		}
 	end
@@ -132,13 +134,13 @@ local function whereText(conditions, places)
 	end
 	local where = ns.AreaName(zone)
 	if subzone ~= 0 then
-		where = L.HOME_PLACE:format(ns.AreaName(subzone), where)
+		where = ns.Text(L.HOME_PLACE, { areaName = ns.AreaName(subzone), where = where })
 	end
 	if conditions.minute == nil then
-		return L.HOME_FISHING:format(where)
+		return ns.Text(L.HOME_FISHING, { where = where })
 	end
 	local when = places:InWindow("night", conditions) and "night" or "day"
-	return L.HOME_FISHING_WHEN:format(where, L.WINDOW_NAMES[when])
+	return ns.Text(L.HOME_FISHING_WHEN, { where = where, windowNames = L.WINDOW_NAMES[when] })
 end
 
 -- "Skill {effective}, past the no-junk line ({line})." on side hi, "… below …" on lo, nil on na (STA-R13).
@@ -153,9 +155,9 @@ local function skillText(conditions, places)
 	local line = places:NoJunkLine(zone)
 	local side = ns.SkillSide(skill, line)
 	if side == "hi" then
-		return ns.L.HOME_SKILL_HI:format(skill, line)
+		return ns.Text(ns.L.HOME_SKILL_HI, { skill = skill, line = line })
 	elseif side == "lo" then
-		return ns.L.HOME_SKILL_LO:format(skill, line)
+		return ns.Text(ns.L.HOME_SKILL_LO, { skill = skill, line = line })
 	end
 	return nil
 end
@@ -170,15 +172,15 @@ local function sessionText(shown, now)
 	if shown == nil then
 		return L.HOME_NO_SESSION
 	elseif shown.kind == "last" then
-		return L.HOME_LAST_SESSION:format(ns.TimeAgo(shown.record.endTime, now))
+		return ns.Text(L.HOME_LAST_SESSION, { timeAgo = ns.TimeAgo(shown.record.endTime, now) })
 	end
 	local session = shown.record or shown.live --[[@as StatsSession|PagleSession]]
-	return L.HOME_SESSION:format(
-		ns.Count(session.casts, "Casts"),
-		ns.Count(session.catches, "Catches"),
-		ns.Number(session.gotAway),
-		ns.Duration(ns.TimeFished(session, now))
-	)
+	return ns.Text(L.HOME_SESSION, {
+		home_session_1 = ns.Count(session.casts, "Casts"),
+		home_session_2 = ns.Count(session.catches, "Catches"),
+		gotAway = ns.Number(session.gotAway),
+		duration = ns.Duration(ns.TimeFished(session, now)),
+	})
 end
 
 -- A watch's line: its reading on the reading side of the moment (STA-R64), its Dry spell's home spread ending.
@@ -197,12 +199,15 @@ local function watchLine(state, watch, live, places, pending)
 	local dry = ns.DrySpell(reading)
 	local red
 	if dry.caught and dry.since > 0 and ns.IsUnlucky(dry.band) then
-		red = ns.L.DRY_SHORT_BAND:format(ns.BandWord(dry.band))
+		red = ns.Text(ns.L.DRY_SHORT_BAND, { bandWord = ns.BandWord(dry.band) })
 	end
 	return {
 		item = watch.item,
 		area = watch.area,
-		text = ns.L.HOME_WATCH:format(name, ns.AreaName(watch.area), ns.DrySpellWatchText(reading)),
+		text = ns.Text(
+			ns.L.HOME_WATCH,
+			{ name = name, areaName = ns.AreaName(watch.area), drySpellWatchText = ns.DrySpellWatchText(reading) }
+		),
 		red = red,
 		target = { page = "place", area = watch.area, item = watch.item },
 	}
@@ -237,7 +242,7 @@ function ns.HomeRightNow(state, conditions, live, watched, now, places)
 		noWatches = #watches == 0 and L.HOME_NO_WATCHES or nil,
 		contents = {
 			{
-				label = here and L.HOME_WHERE_I_AM:format(ns.AreaName(here)) or L.HOME_WHERE_UNKNOWN,
+				label = here and ns.Text(L.HOME_WHERE_I_AM, { areaName = ns.AreaName(here) }) or L.HOME_WHERE_UNKNOWN,
 				target = ns.WhereIAm(conditions),
 			},
 			{

@@ -90,17 +90,17 @@ function ns.PinView(goal, ctx)
 	local stamp = ns.IsRepostedToday(goal, ctx.today) and not stranded
 	local hover = { ns.PostedTime(goal.time), bound and L.ONLY_SINCE_TODAY or L.ONLY_SINCE }
 	if stamp then
-		hover[#hover + 1] = ns.Fill(L.REPOSTED_HOVER, { time = ctx.untilReset })
+		hover[#hover + 1] = ns.Text(L.REPOSTED_HOVER, { time = ctx.untilReset })
 	end
 	return {
 		kicker = kicker,
 		text = text,
-		chip = ns.Fill(L.OVERFLOW_CHIP, { kind = kicker, text = text }),
-		progress = ns.Fill(bound and L.PROGRESS_TODAY or L.PROGRESS, { n = progress, need = need }),
+		chip = ns.Text(L.OVERFLOW_CHIP, { kind = kicker, text = text }),
+		progress = ns.Text(bound and L.PROGRESS_TODAY or L.PROGRESS, { n = progress, need = need }),
 		fill = need > 0 and math.min(1, progress / need) or 0,
 		where = ns.GoalWhere(goal),
 		here = ns.IsPlaceGoal(goal) and ns.IsWorkableHere(goal, ctx.zone),
-		pay = ns.Plural(goal.pay, "PAYS"),
+		pay = ns.Text(ns.L.PAYS, { count = goal.pay }),
 		seal = goal.type == "e" and tostring(goal.pay) or nil,
 		stamp = stamp,
 		stranded = stranded and L.NO_LONGER_CATCHABLE or nil,
@@ -142,7 +142,7 @@ local function emptyTexts(api)
 	local weekStart = select(2, ns.LiveBoundaries(api))
 	local countdown = ns.ResetCountdown(api)
 	local weekday = ns.WeekdayName(weekStart + ns.WEEK_SECONDS)
-	return ns.Fill(L.EMPTY_NOTICE, { time = countdown }), ns.Fill(L.EMPTY_EXPEDITION, { weekday = weekday })
+	return ns.Text(L.EMPTY_NOTICE, { time = countdown }), ns.Text(L.EMPTY_EXPEDITION, { weekday = weekday })
 end
 
 -- A row of pins: each pin's open goal, or the empty pin's text, `first` for the first `firstCount` empty pins and
@@ -194,7 +194,7 @@ end
 ---@param n integer the goals it stands for
 ---@return string
 function ns.OverflowMore(n)
-	return ns.Fill(ns.L.OVERFLOW_MORE, { n = n })
+	return ns.Text(ns.L.OVERFLOW_MORE, { n = n })
 end
 
 --- The goal the board highlights when opened with `goalID` (TKB-R109): that goal while it is open, else none.

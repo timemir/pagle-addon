@@ -48,9 +48,9 @@ local function rowValue(followed)
 	local L = ns.L
 	local emblem = ns.PrestigeMark(followed.prestige).emblem
 	if emblem then
-		return L.FOLLOWING_ROW:format(followed.level, emblem, followed.ledger)
+		return ns.Text(L.FOLLOWING_ROW, { level = followed.level, emblem = emblem, ledger = followed.ledger })
 	end
-	return L.FOLLOWING_ROW_NO_PRESTIGE:format(followed.level, followed.ledger)
+	return ns.Text(L.FOLLOWING_ROW_NO_PRESTIGE, { level = followed.level, ledger = followed.ledger })
 end
 
 -- The left page in state `ok` (LED-R163): kicker, title, the count, then the index in GetFollowedAnglers' order (by
@@ -63,7 +63,7 @@ end
 ---@return LedgerBlock[]
 local function index(context, anglers, selected)
 	local L = ns.L
-	local count = ns.CountText(#anglers, L.FOLLOWING_COUNT_ONE, L.FOLLOWING_COUNT_OTHER, context.formatNumber)
+	local count = ns.Text(L.FOLLOWING_COUNT, { count = #anglers })
 	local blocks = {
 		{ kind = "kicker", text = L.FOLLOWING_KICKER },
 		{ kind = "title", text = L.FOLLOWING_TITLE },
@@ -112,7 +112,7 @@ local function card(context, followed)
 		blocks[#blocks + 1] = {
 			kind = "text",
 			color = "faded",
-			text = ns.CountText(followed.more, L.FOLLOWING_MORE_ONE, L.FOLLOWING_MORE_OTHER, format),
+			text = ns.Text(L.FOLLOWING_MORE, { count = followed.more }),
 		}
 	end
 	if followed.title ~= "" then
@@ -123,9 +123,12 @@ local function card(context, followed)
 		text = tostring(followed.level),
 		value = L.HOME_LEVEL,
 		note = ns.PrestigeName(followed.prestige) or L.ANGLER_NO_PRESTIGE,
-		seal = L.FOLLOWING_SEAL:format(followed.ledger),
+		seal = ns.Text(L.FOLLOWING_SEAL, { ledger = followed.ledger }),
 	}
-	local legends = L.FOLLOWING_LEGENDS_COUNT:format(format(followed.legends), format(followed.legendsTotal))
+	local legends = ns.Text(L.FOLLOWING_LEGENDS_COUNT, {
+		following_legends_count_1 = format(followed.legends),
+		following_legends_count_2 = format(followed.legendsTotal),
+	})
 	for _, row in ipairs({
 		{ L.FOLLOWING_LEGENDS, legends },
 		{ L.FOLLOWING_WATERS, format(followed.waters) },
@@ -136,7 +139,7 @@ local function card(context, followed)
 	blocks[#blocks + 1] = {
 		kind = "text",
 		color = "faded",
-		text = L.FOLLOWING_AS_OF:format(asOfDate(context, followed.asOf)),
+		text = ns.Text(L.FOLLOWING_AS_OF, { asOfDate = asOfDate(context, followed.asOf) }),
 	}
 	return blocks
 end

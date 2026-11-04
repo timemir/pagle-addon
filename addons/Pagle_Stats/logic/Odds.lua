@@ -85,11 +85,11 @@ function ns.Reading(state, item, area, live, places)
 	local line = places:NoJunkLine(reading.zone)
 	local L = ns.L
 	if reading.side == "hi" then
-		reading.sideText = L.ODDS_SIDE_HI:format(line)
+		reading.sideText = ns.Text(L.ODDS_SIDE_HI, { line = line })
 	elseif reading.side == "lo" then
-		reading.sideText = L.ODDS_SIDE_LO:format(line)
+		reading.sideText = ns.Text(L.ODDS_SIDE_LO, { line = line })
 	end
-	reading.where = reading.viaZone and L.ODDS_ACROSS:format(ns.AreaName(reading.zone)) or L.ODDS_HERE
+	reading.where = reading.viaZone and ns.Text(L.ODDS_ACROSS, { areaName = ns.AreaName(reading.zone) }) or L.ODDS_HERE
 	reading.windowName = reading.window and ns.WindowName(reading.window)
 	return reading
 end
@@ -149,10 +149,10 @@ end
 local function restsOn(reading)
 	local L, text = ns.L, reading.where
 	if reading.windowName then
-		text = L.ODDS_WITH_WINDOW:format(text, reading.windowName)
+		text = ns.Text(L.ODDS_WITH_WINDOW, { odds_with_window_1 = text, windowName = reading.windowName })
 	end
 	if reading.sideText then
-		text = L.ODDS_WITH_SIDE:format(text, reading.sideText)
+		text = ns.Text(L.ODDS_WITH_SIDE, { odds_with_side_1 = text, sideText = reading.sideText })
 	end
 	return text
 end
@@ -164,11 +164,11 @@ end
 function ns.OddsShort(reading)
 	local L = ns.L
 	if reading.state == "learning" then
-		return L.ODDS_LEARNING_SHORT:format(reading.n, ns.ODDS_THRESHOLD)
+		return ns.Text(L.ODDS_LEARNING_SHORT, { odds_learning_short_1 = reading.n, oddsThreshold = ns.ODDS_THRESHOLD })
 	elseif reading.state == "unseen" then
 		return L.ODDS_UNSEEN
 	end
-	return L.ODDS_KNOWN_SHORT:format(ns.Nice(reading.n / reading.k))
+	return ns.Text(L.ODDS_KNOWN_SHORT, { nice = ns.Nice(reading.n / reading.k) })
 end
 
 --- Your odds in large ink on an item's entry (UI › Place spread): "Learning…", "not seen yet" or "about 1 in
@@ -182,7 +182,7 @@ function ns.OddsHeadline(reading)
 	elseif reading.state == "unseen" then
 		return L.ODDS_UNSEEN
 	end
-	return L.ODDS_KNOWN:format(ns.Nice(reading.n / reading.k))
+	return ns.Text(L.ODDS_KNOWN, { nice = ns.Nice(reading.n / reading.k) })
 end
 
 --- The sentence under the headline (STA-R43, STA-R46, UI › Place spread): while learning "{n} of the 100 Casts I need
@@ -194,11 +194,21 @@ end
 function ns.OddsSentence(reading)
 	local L, n = ns.L, reading.n
 	if reading.state == "learning" then
-		return L.ODDS_LEARNING_SENTENCE:format(ns.Number(n), ns.ODDS_THRESHOLD, restsOn(reading))
+		return ns.Text(
+			L.ODDS_LEARNING_SENTENCE,
+			{ odds_learning_sentence_1 = ns.Number(n), oddsThreshold = ns.ODDS_THRESHOLD, restsOn = restsOn(reading) }
+		)
 	elseif reading.state == "unseen" then
-		return L.ODDS_UNSEEN_SENTENCE:format(ns.Number(n), restsOn(reading), ns.Nice(n / ns.NEVER_CAUGHT_BOUND))
+		return ns.Text(L.ODDS_UNSEEN_SENTENCE, {
+			odds_unseen_sentence_1 = ns.Number(n),
+			restsOn = restsOn(reading),
+			nice = ns.Nice(n / ns.NEVER_CAUGHT_BOUND),
+		})
 	end
-	return L.ODDS_SCOPE_LINE:format(ns.Number(n), restsOn(reading), ns.Number(reading.k))
+	return ns.Text(
+		L.ODDS_SCOPE_LINE,
+		{ odds_scope_line_1 = ns.Number(n), restsOn = restsOn(reading), odds_scope_line_3 = ns.Number(reading.k) }
+	)
 end
 
 --- The confidence for the range (stats.md › Tunables): 95%, z = 1.96.
@@ -231,9 +241,9 @@ function ns.OddsRange(reading)
 	local lo, hi = ns.Wilson(reading.k, reading.n)
 	local likelier, rarer = ns.Nice(1 / hi), ns.Nice(1 / lo)
 	if likelier == rarer then
-		return L.ODDS_RANGE_ROUNDING:format(ns.Nice(reading.n / reading.k))
+		return ns.Text(L.ODDS_RANGE_ROUNDING, { nice = ns.Nice(reading.n / reading.k) })
 	end
-	return L.ODDS_RANGE:format(likelier, rarer)
+	return ns.Text(L.ODDS_RANGE, { likelier = likelier, rarer = rarer })
 end
 
 --- Whether every catch entry behind an item's row in a place is unconfirmed (STA-R46): on a subzone, its entries in

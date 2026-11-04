@@ -132,7 +132,7 @@ end
 function ns.BindingEarnedText(binding)
 	local L = ns.L
 	if binding.level then
-		return L.BINDING_EARNED:format(binding.level)
+		return ns.Text(L.BINDING_EARNED, { level = binding.level })
 	end
 	return L.EARNED_TEXT[binding.earn]
 end

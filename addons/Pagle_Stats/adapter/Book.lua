@@ -168,8 +168,15 @@ local function plateWords(updating)
 	end
 	local sessions = ns.Count(#state.sessions, "Sessions")
 	local first = ns.FirstCastTime(state.sessions)
-	return first and L.BOOK_NAMEPLATE:format(ns.Count(casts, "Casts"), sessions, ns.Date(first))
-		or L.BOOK_NAMEPLATE_UNDATED:format(ns.Count(casts, "Casts"), sessions)
+	return first
+			and ns.Text(
+				L.BOOK_NAMEPLATE,
+				{ book_nameplate_1 = ns.Count(casts, "Casts"), sessions = sessions, date = ns.Date(first) }
+			)
+		or ns.Text(
+			L.BOOK_NAMEPLATE_UNDATED,
+			{ book_nameplate_undated_1 = ns.Count(casts, "Casts"), sessions = sessions }
+		)
 end
 
 -- The live line (STA-R75): the glowing green dot and its gilt words at the foot band's right, opening This Session.
@@ -437,13 +444,11 @@ function Book:DrawLive()
 			session = shown.record --[[@as StatsSession]]
 		end
 	end
-	line.label:SetText(
-		L.BOOK_LIVE_LINE:format(
-			ns.Count(session.casts, "Casts"),
-			ns.Count(session.catches, "Catches"),
-			ns.Duration(ns.TimeFished(session, GetServerTime()))
-		)
-	)
+	line.label:SetText(ns.Text(L.BOOK_LIVE_LINE, {
+		book_live_line_1 = ns.Count(session.casts, "Casts"),
+		book_live_line_2 = ns.Count(session.catches, "Catches"),
+		duration = ns.Duration(ns.TimeFished(session, GetServerTime())),
+	}))
 	line:SetWidth(line.label:GetStringWidth() + 18)
 	line:Show()
 	-- a Cast rewrites the line, its ink fading up (the kit's MOTION.md)

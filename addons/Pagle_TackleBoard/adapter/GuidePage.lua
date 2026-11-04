@@ -212,7 +212,7 @@ local function drawFire(page, nav, sample)
 	days:SetText(tostring(sample.fireDays))
 	local word = ns.ArtText(inner, "FireWord")
 	word:SetPoint("BOTTOMLEFT", days, "BOTTOMRIGHT", 5, 2)
-	word:SetText(ns.Plural(sample.fireDays, "DAYS_WORD"))
+	word:SetText(ns.Text(ns.L.DAYS_WORD, { count = sample.fireDays }))
 	for i = 1, ns.KINDLING_CAP do
 		local stick = ns.ArtSprite(inner, "Board", "kindling", "ARTWORK")
 		ns.PlaceSprite(stick, inner, onLedge(176 + (i - 1) * 44, 79))
@@ -293,12 +293,12 @@ local function buildLeft(left, nav)
 		fire = drawFire(left, nav, sample),
 		box = drawBox(left, nav, sample),
 	}
-	local campfire = ns.Fill(L.GUIDE_CAMPFIRE, {
+	local campfire = ns.Text(L.GUIDE_CAMPFIRE, {
 		campfire = inked(TERM_INK, L.GUIDE_CAMPFIRE_TERM),
 		kindling = inked(TERM_INK, L.GUIDE_KINDLING_TERM),
 	})
 	write(left, "GuideSide", campfire, 184, 271.5, 18.9, 228)
-	write(left, "GuideSide", ns.Fill(L.GUIDE_FLY_BOX, { flybox = inked(TERM_INK, L.FLY_BOX) }), 184, 366.9, 18.9, 228)
+	write(left, "GuideSide", ns.Text(L.GUIDE_FLY_BOX, { flybox = inked(TERM_INK, L.FLY_BOX) }), 184, 366.9, 18.9, 228)
 	return page --[[@as TackleGuidePage]]
 end
 
@@ -319,7 +319,7 @@ local function buildRight(right, nav, page)
 		coin:ClearAllPoints()
 		coin:SetPoint("CENTER", right, "TOPLEFT", 33 + 4, -(y + 11 + 4))
 		page.bullets[i] = coin
-		write(right, "GuideFact", ns.Fill(fact, { shop = inked(ASIDE_INK, L.GUIDE_FACT_SHOP) }), 52, y + 5, 19.575, 360)
+		write(right, "GuideFact", ns.Text(fact, { shop = inked(ASIDE_INK, L.GUIDE_FACT_SHOP) }), 52, y + 5, 19.575, 360)
 		if FACT_Y[i + 1] then
 			dots(right, COLUMN_X, FACT_Y[i + 1] - 1, COLUMN_WIDTH)
 		end

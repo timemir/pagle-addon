@@ -85,23 +85,26 @@ end
 local function absentReason(data, global, listName)
 	local L = ns.L
 	if type(data) ~= "table" then
-		return L.VIEWS_NOT_TABLE:format(global)
+		return ns.RenderText(L.VIEWS_NOT_TABLE, { global = global })
 	elseif data.ok ~= true then
 		return L.VIEWS_NOT_OK
 	elseif not ns.VIEW_FILE_VERSIONS[data.v] then
-		return L.VIEWS_UNKNOWN_VERSION:format(shown(data.v))
+		return ns.RenderText(L.VIEWS_UNKNOWN_VERSION, { views_unknown_version = shown(data.v) })
 	end
 	for _, field in ipairs({ "generatedAt", "count" }) do
 		if type(data[field]) ~= "number" then
-			return L.VIEWS_NOT_NUMBER:format(field)
+			return ns.RenderText(L.VIEWS_NOT_NUMBER, { field = field })
 		end
 	end
 	-- `count` is the number of elements of the list, which a list that isn't a table can't hold.
 	local list = data[listName]
 	if type(list) ~= "table" then
-		return L.VIEWS_NOT_TABLE:format(listName)
+		return ns.RenderText(L.VIEWS_NOT_TABLE, { global = listName })
 	elseif data.count ~= #list then
-		return L.VIEWS_WRONG_COUNT:format(shown(data.count), listName, #list)
+		return ns.RenderText(
+			L.VIEWS_WRONG_COUNT,
+			{ views_wrong_count_1 = shown(data.count), listName = listName, list = #list }
+		)
 	end
 	return nil
 end
@@ -188,20 +191,23 @@ end
 local function blockReason(block, i)
 	local L = ns.L
 	if type(block) ~= "table" then
-		return L.VIEWS_BLOCK_NOT_TABLE:format(i)
+		return ns.RenderText(L.VIEWS_BLOCK_NOT_TABLE, { views_block_not_table = i })
 	end
 	for _, field in ipairs({ "cardCount", "keyCount" }) do
 		if type(block[field]) ~= "number" then
-			return L.VIEWS_BLOCK_NOT_NUMBER:format(i, field)
+			return ns.RenderText(L.VIEWS_BLOCK_NOT_NUMBER, { views_block_not_number_1 = i, field = field })
 		end
 	end
 	if type(block.titles) ~= "table" then
-		return L.VIEWS_BLOCK_NOT_TITLES:format(i)
+		return ns.RenderText(L.VIEWS_BLOCK_NOT_TITLES, { views_block_not_titles = i })
 	end
 	for _, packed in ipairs({ { "cards", CARD_WIDTH * block.cardCount }, { "keys", KEY_WIDTH * block.keyCount } }) do
 		local value = block[packed[1]]
 		if type(value) ~= "string" or #value ~= packed[2] then
-			return L.VIEWS_BLOCK_LENGTH:format(i, packed[1], shown(packed[2]))
+			return ns.RenderText(
+				L.VIEWS_BLOCK_LENGTH,
+				{ views_block_length_1 = i, packed = packed[1], views_block_length_3 = shown(packed[2]) }
+			)
 		end
 	end
 	return nil
@@ -429,10 +435,16 @@ local function levelText(level, rank)
 	local L = ns.L
 	if rank > #L.PRESTIGE_NUMERALS then
 		local emblem = ns.PrestigeEmblemMarkup(rank, EMBLEM_SIZE)
-		return L.ANGLER_TIP_MASTER_PRESTIGE:format(level, emblem, rank - #L.PRESTIGE_NUMERALS)
+		return ns.RenderText(
+			L.ANGLER_TIP_MASTER_PRESTIGE,
+			{ level = level, emblem = emblem, angler_tip_master_prestige_3 = rank - #L.PRESTIGE_NUMERALS }
+		)
 	elseif rank >= 1 then
 		local emblem = ns.PrestigeEmblemMarkup(rank, EMBLEM_SIZE)
-		return L.ANGLER_TIP_PRESTIGE:format(level, emblem, L.PRESTIGE_NUMERALS[floor(rank)])
+		return ns.RenderText(
+			L.ANGLER_TIP_PRESTIGE,
+			{ level = level, emblem = emblem, prestigeNumerals = L.PRESTIGE_NUMERALS[floor(rank)] }
+		)
 	end
 	return ("%d"):format(level)
 end
@@ -463,8 +475,11 @@ function ns.AnglerTooltipLines(card)
 		lines[#lines + 1] = { left = name, leftColor = "parchment", right = value, rightColor = "white" }
 	end
 	stat(L.ANGLER_TIP_LEVEL, levelText(card.level, card.prestige))
-	stat(L.ANGLER_TIP_LEDGER, L.ANGLER_TIP_LEDGER_VALUE:format(card.ledger))
-	stat(L.ANGLER_TIP_LEGENDS, L.ANGLER_TIP_LEGENDS_VALUE:format(card.legends, card.legendsTotal))
+	stat(L.ANGLER_TIP_LEDGER, ns.RenderText(L.ANGLER_TIP_LEDGER_VALUE, { ledger = card.ledger }))
+	stat(
+		L.ANGLER_TIP_LEGENDS,
+		ns.RenderText(L.ANGLER_TIP_LEGENDS_VALUE, { legends = card.legends, legendsTotal = card.legendsTotal })
+	)
 	if card.hardcore == true then
 		lines[#lines + 1] = { left = L.ANGLER_TIP_HARDCORE, leftColor = "red" }
 	end
@@ -542,11 +557,11 @@ end
 local function noFile(name, global, presence)
 	local L = ns.L
 	if not presence.installed then
-		return L.VIEWS_NOT_INSTALLED:format(name)
+		return ns.RenderText(L.VIEWS_NOT_INSTALLED, { name = name })
 	elseif presence.loaded then
-		return L.VIEWS_NO_DATA:format(name, global)
+		return ns.RenderText(L.VIEWS_NO_DATA, { name = name, global = global })
 	end
-	return L.VIEWS_DID_NOT_LOAD:format(name, presence.reason or "?")
+	return ns.RenderText(L.VIEWS_DID_NOT_LOAD, { name = name, reason = presence.reason or "?" })
 end
 
 --- Login step 2 (VIEW-R1): reads PagleFollowingData once; Pagle_Following loaded before Core's PLAYER_LOGIN, after
@@ -616,11 +631,14 @@ local function stateLine(name, file, now)
 	local L = ns.L
 	local state, age = ns.ViewFileState(file, now)
 	if state == "absent" then
-		return L.DEV_VIEWS_ABSENT:format(name, file.reason)
+		return ns.RenderText(L.DEV_VIEWS_ABSENT, { name = name, reason = file.reason })
 	elseif state == "expired" then
-		return L.DEV_VIEWS_EXPIRED:format(name, shown(age), shown(ns.VIEW_EXPIRY_AGE))
+		return ns.RenderText(
+			L.DEV_VIEWS_EXPIRED,
+			{ name = name, age = shown(age), viewExpiryAge = shown(ns.VIEW_EXPIRY_AGE) }
+		)
 	end
-	return L.DEV_VIEWS_LIVE:format(name)
+	return ns.RenderText(L.DEV_VIEWS_LIVE, { name = name })
 end
 
 --- `/pagle dev views` (VIEW-R12): each file's state now (live, absent with the first reason IGV-R44 found, or expired
@@ -632,9 +650,15 @@ function AnglerViews:Report()
 	local following, anglers = self.following, self.anglers
 	return {
 		stateLine(FOLLOWING_ADDON, following, now),
-		L.DEV_VIEWS_FOLLOWING:format(shown(following.generatedAt), shown(following.count)),
+		ns.RenderText(
+			L.DEV_VIEWS_FOLLOWING,
+			{ generatedAt = shown(following.generatedAt), dev_views_following_2 = shown(following.count) }
+		),
 		stateLine(ANGLERS_ADDON, anglers, now),
-		L.DEV_VIEWS_ANGLERS:format(shown(anglers.generatedAt), shown(anglers.count)),
+		ns.RenderText(
+			L.DEV_VIEWS_ANGLERS,
+			{ generatedAt = shown(anglers.generatedAt), dev_views_anglers_2 = shown(anglers.count) }
+		),
 		self.loaded and L.DEV_VIEWS_LOADED or L.DEV_VIEWS_NOT_LOADED,
 	}
 end

@@ -56,13 +56,16 @@ end
 local function milestonesTitle(thresholds)
 	local L = ns.L
 	if #thresholds == 1 then
-		return L.GUIDE_MILESTONE:format(thresholds[1])
+		return ns.Text(L.GUIDE_MILESTONE, { threshold = thresholds[1] })
 	end
 	local head = {}
 	for i = 1, #thresholds - 1 do
 		head[i] = tostring(thresholds[i])
 	end
-	return L.GUIDE_MILESTONES:format(table.concat(head, L.GUIDE_MILESTONE_JOIN), thresholds[#thresholds])
+	return ns.Text(
+		L.GUIDE_MILESTONES,
+		{ head = table.concat(head, L.GUIDE_MILESTONE_JOIN), thresholds = thresholds[#thresholds] }
+	)
 end
 
 --- The Your Ledger step's live parts (ONB-R36, LED-R40, LED-R146): the bookplate reads the logged-in character's
@@ -85,14 +88,14 @@ function ns.GuideLedgerPage(view)
 	local page = {
 		name = name,
 		prestige = state and state.prestige or 0,
-		heading = L.GUIDE_HEADING:format(name, rank),
+		heading = ns.Text(L.GUIDE_HEADING, { name = name, rank = rank }),
 		rows = {},
 	}
 	if state then
 		local since = state.firstDate and text:Date(state.firstDate) or state.firstTime and text:DateAt(state.firstTime)
-		page.since = since and L.ANGLER_KEPT_SINCE:format(since) or L.GUIDE_KEPT_NONE
+		page.since = since and ns.Text(L.ANGLER_KEPT_SINCE, { since = since }) or L.GUIDE_KEPT_NONE
 	end
-	local xp = L.GUIDE_XP:format(view.formatNumber(ns.SKILL_MILESTONE_XP))
+	local xp = ns.Text(L.GUIDE_XP, { skillMilestoneXp = view.formatNumber(ns.SKILL_MILESTONE_XP) })
 	local rest, nextShown = {}, false
 	for _, threshold in ipairs(ns.SKILL_MILESTONES) do
 		local time = state and state.skill[threshold]
@@ -103,11 +106,11 @@ function ns.GuideLedgerPage(view)
 			local first = state and state.firstTime
 			local line = L.GUIDE_REACHED_BEFORE
 			if time and first and time > first then
-				line = L.GUIDE_REACHED:format(text:DateAt(time))
+				line = ns.Text(L.GUIDE_REACHED, { dateAt = text:DateAt(time) })
 			end
 			page.rows[#page.rows + 1] = {
 				credited = true,
-				title = L.GUIDE_MILESTONE:format(threshold),
+				title = ns.Text(L.GUIDE_MILESTONE, { threshold = threshold }),
 				line = line,
 				xp = xp,
 			}
@@ -115,8 +118,8 @@ function ns.GuideLedgerPage(view)
 			nextShown = true
 			page.rows[#page.rows + 1] = {
 				credited = false,
-				title = L.GUIDE_MILESTONE:format(threshold),
-				line = L.GUIDE_TO_GO:format(math.max(0, threshold - rank)),
+				title = ns.Text(L.GUIDE_MILESTONE, { threshold = threshold }),
+				line = ns.Text(L.GUIDE_TO_GO, { max = math.max(0, threshold - rank) }),
 				xp = xp,
 			}
 		else

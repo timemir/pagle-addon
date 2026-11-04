@@ -51,7 +51,7 @@ function ns.FieldReportPartLabel(n, m)
 	if m <= 1 then
 		return nil
 	end
-	return ns.L.FIELD_REPORT_PART:format(n, m)
+	return ns.RenderText(ns.L.FIELD_REPORT_PART, { field_report_part_1 = n, field_report_part_2 = m })
 end
 
 --- `label`, or `labelWithCount` filled with `count` while it is above 0 (CORE-R50, SET-R10).

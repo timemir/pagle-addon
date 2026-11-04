@@ -32,7 +32,7 @@ end
 ---@param unit PagleLengthUnit
 ---@return string
 function ns.FormatLength(mm, unit)
-	return ns.L.LENGTH[unit]:format(mm / MILLIMETRES[unit])
+	return ns.RenderText(ns.L.LENGTH[unit], { length = mm / MILLIMETRES[unit] })
 end
 
 --- A size record's margin of `mm` millimetres in `unit` (ANN-R22): "+4.2 cm", or "+<0.1 cm" when it rounds to zero

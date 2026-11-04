@@ -20,7 +20,7 @@ local reminder = ns.NewReloadReminder({
 	end,
 	isRestricted = Pagle.IsRestricted,
 	show = function(count)
-		print(ns.L.RELOAD_REMINDER:format(count))
+		print(ns.RenderText(ns.L.RELOAD_REMINDER, { reload_reminder = count }))
 	end,
 })
 

@@ -169,7 +169,7 @@ local function show(page, how)
 	local made = bookOf()
 	local book = made.book
 	ns.SetGuideRibbons(made, page.ribbons)
-	state.count = L.GUIDE_COUNT:format(page.index, page.count)
+	state.count = ns.RenderText(L.GUIDE_COUNT, { index = page.index, guide_count_2 = page.count })
 	if state.following then
 		-- the shell is turning there already
 		if not state.turning then

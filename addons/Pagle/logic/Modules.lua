@@ -250,7 +250,7 @@ function ns.ModuleRegistrar(registry, readAPI, print)
 			error(problem, 2)
 		end
 		if not handle then
-			print(ns.L.MODULE_NEEDS_NEWER_PAGLE:format(def.title))
+			print(ns.RenderText(ns.L.MODULE_NEEDS_NEWER_PAGLE, { title = def.title }))
 		end
 		return handle
 	end

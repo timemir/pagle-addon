@@ -360,7 +360,8 @@ function ns.BuildTimeline(input)
 	local title = L.TIMELINE_TITLE
 	local set = input.set
 	if set then
-		title = (set.earned and L.SET_HEADING_EARNED or L.SET_HEADING_EARNS):format(set.name, set.title)
+		title =
+			ns.Text(set.earned and L.SET_HEADING_EARNED or L.SET_HEADING_EARNS, { name = set.name, title = set.title })
 	end
 	local empty
 	if next(input.current) == nil then
@@ -415,14 +416,14 @@ function ns.TimelineClock(t, snapshot, season, paused)
 	local clock = ns.RealmClockAt(t, snapshot)
 	local parts = {
 		ns.FormatClock(clock.minute),
-		L.WEEKDAY_DATE:format(ns.FormatWeekday(clock.date), ns.FormatShortDate(clock.date)),
+		ns.Text(L.WEEKDAY_DATE, { weekday = ns.FormatWeekday(clock.date), shortDate = ns.FormatShortDate(clock.date) }),
 	}
 	if season then
 		parts[#parts + 1] = L.SEASONS[season]
 	end
 	local line = table.concat(parts, L.JOIN_FIELDS)
 	if paused then
-		line = L.CLOCK_PAUSED:format(line)
+		line = ns.Text(L.CLOCK_PAUSED, { line = line })
 	end
 	return line
 end

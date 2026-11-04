@@ -31,7 +31,7 @@ for _, kind in ipairs({ "toast", "nod", "banner", "splash" }) do
 	---@type PagleAnnouncement?
 	local sample
 	add("announce." .. kind, function()
-		return ns.L.DEV_TOUR_ANNOUNCE:format(kind)
+		return ns.RenderText(ns.L.DEV_TOUR_ANNOUNCE, { kind = kind })
 	end, function()
 		sample = ns.DevPreviewAnnouncement(kind)
 		if sample then
@@ -52,7 +52,7 @@ local function card(kind, make)
 	---@type PagleCard?
 	local shown
 	add("card." .. kind, function()
-		return ns.L.DEV_TOUR_CARD:format(kind)
+		return ns.RenderText(ns.L.DEV_TOUR_CARD, { kind = kind })
 	end, function()
 		shown = make()
 		ns.cards:Preview(shown)

@@ -96,7 +96,7 @@ function Model:Purse()
 		local total = balance.earned[name]
 		local title = ownerName(name)
 		local off = not self.on[name]
-		local tooltip = { title, L.SHOP_ALL_TIME:format(self.format(total)) }
+		local tooltip = { title, ns.RenderText(L.SHOP_ALL_TIME, { shop_all_time = self.format(total) }) }
 		if off then
 			tooltip[3] = L.SHOP_OFF_NOTE
 		end
@@ -104,7 +104,7 @@ function Model:Purse()
 			module = name,
 			share = sum > 0 and total / sum or 0,
 			off = off,
-			legend = L.SHOP_LEGEND:format(title, self.format(total)),
+			legend = ns.RenderText(L.SHOP_LEGEND, { title = title, shop_legend_2 = self.format(total) }),
 			tooltip = tooltip,
 		}
 	end
@@ -319,7 +319,7 @@ function Model:RowOf(entry)
 	elseif state == "crateOnly" then
 		row.tag = L.SHOP_FROM_CRATE
 	else
-		row.tag = L.SHOP_MODULE_OFF:format(ownerName(entry.module))
+		row.tag = ns.RenderText(L.SHOP_MODULE_OFF, { ownerName = ownerName(entry.module) })
 	end
 	return row
 end
@@ -464,7 +464,7 @@ function Model:List(query)
 		if #rows > 0 then
 			groups[#groups + 1] = {
 				label = slot.label,
-				count = L.SHOP_OWNED_COUNT:format(owned, #slotGoods),
+				count = ns.RenderText(L.SHOP_OWNED_COUNT, { owned = owned, slotGoods = #slotGoods }),
 				rows = rows,
 				headings = headings,
 			}
@@ -569,7 +569,7 @@ function Model:Stage(goodID)
 		icon = entry.icon,
 		shield = entry.shield,
 		preview = entry.preview,
-		slotLine = L.SHOP_SLOT_LINE:format(entry.slotLabel, owner),
+		slotLine = ns.RenderText(L.SHOP_SLOT_LINE, { slotLabel = entry.slotLabel, owner = owner }),
 		description = entry.description,
 		state = state,
 		tags = {},
@@ -577,11 +577,14 @@ function Model:Stage(goodID)
 	}
 	if state == "forSale" or state == "short" then
 		local price = assert(entry.price)
-		stage.buy = L.SHOP_BUY:format(self.format(price))
+		stage.buy = ns.RenderText(L.SHOP_BUY, { shop_buy = self.format(price) })
 		stage.canBuy = self:CanBuy(entry) or nil
 		if state == "short" then
 			stage.short = true
-			stage.needed = L.SHOP_MORE_NEEDED:format(self.format(price - self.sources.balance.balance))
+			stage.needed = ns.RenderText(
+				L.SHOP_MORE_NEEDED,
+				{ shop_more_needed = self.format(price - self.sources.balance.balance) }
+			)
 		end
 	elseif state == "equipped" then
 		stage.tags[1] = L.SHOP_IN_USE
@@ -593,7 +596,7 @@ function Model:Stage(goodID)
 		stage.use = true
 	elseif state == "putAway" then
 		stage.greyed = true
-		stage.tags[1] = L.SHOP_MODULE_OFF:format(owner)
+		stage.tags[1] = ns.RenderText(L.SHOP_MODULE_OFF, { ownerName = owner })
 		stage.notes[1] = L.SHOP_KEEP
 	elseif state == "crateOnly" then
 		stage.notes[1] = L.SHOP_CRATE_ONLY_NOTE
@@ -606,7 +609,7 @@ function Model:Stage(goodID)
 			stage.notes[#stage.notes + 1] = entry.earnedNote
 		end
 		if entry.price and not OWNED[state] then
-			stage.notes[#stage.notes + 1] = L.SHOP_OR_BUY:format(self.format(entry.price))
+			stage.notes[#stage.notes + 1] = ns.RenderText(L.SHOP_OR_BUY, { shop_or_buy = self.format(entry.price) })
 		end
 	end
 	-- Its progress, asked for only here, for the stage, and only while it isn't earned (SHOP-R22, Goods:Progress).
@@ -763,7 +766,10 @@ end
 ---@return string
 local function percent(permille)
 	local whole, tenth = math.floor(permille / 10), permille % 10
-	return ns.L.SHOP_CRATE_CHANCE:format(tenth == 0 and tostring(whole) or ("%d.%d"):format(whole, tenth))
+	return ns.RenderText(
+		ns.L.SHOP_CRATE_CHANCE,
+		{ shop_crate_chance = tenth == 0 and tostring(whole) or ("%d.%d"):format(whole, tenth) }
+	)
 end
 ns.CratePercent = percent
 
@@ -806,20 +812,24 @@ function Model:CrateStage()
 			tier = odds.tier,
 			name = L.SHOP_CRATE_TIERS[odds.tier],
 			color = ns.CRATE_TIER_COLORS[odds.tier],
-			detail = odds.payback and L.SHOP_CRATE_PAYS_BACK:format(self.format(odds.payback))
-				or L.SHOP_CRATE_LEFT:format(odds.left),
+			detail = odds.payback
+					and ns.RenderText(L.SHOP_CRATE_PAYS_BACK, { shop_crate_pays_back = self.format(odds.payback) })
+				or ns.RenderText(L.SHOP_CRATE_LEFT, { left = odds.left }),
 			chance = percent(odds.permille),
 		}
 	end
 	local left = ns.CratePityLeft(wallet.owned, wallet.dry, now)
 	if left then
-		stage.pity = left == 1 and L.SHOP_CRATE_PITY_ONE or L.SHOP_CRATE_PITY:format(left)
+		stage.pity = ns.RenderText(L.SHOP_CRATE_PITY, { count = left })
 	end
-	stage.buy = L.SHOP_BUY:format(self.format(ns.CRATE_PRICE))
+	stage.buy = ns.RenderText(L.SHOP_BUY, { shop_buy = self.format(ns.CRATE_PRICE) })
 	stage.canBuy = (row.state == "forSale" and not self.sources.updating) or nil
 	if row.state == "short" then
 		stage.short = true
-		stage.needed = L.SHOP_MORE_NEEDED:format(self.format(ns.CRATE_PRICE - self.sources.balance.balance))
+		stage.needed = ns.RenderText(
+			L.SHOP_MORE_NEEDED,
+			{ shop_more_needed = self.format(ns.CRATE_PRICE - self.sources.balance.balance) }
+		)
 	end
 	return stage
 end
@@ -891,7 +901,7 @@ function Model:CrateResult(result)
 	}
 	if not result.good then
 		card.payback = result.payback
-		card.title = L.SHOP_CRATE_PAYBACK:format(self.format(result.payback or 0))
+		card.title = ns.RenderText(L.SHOP_CRATE_PAYBACK, { shop_crate_payback = self.format(result.payback or 0) })
 		card.icon = ns.CRATE_COIN_ICON
 		return card
 	end

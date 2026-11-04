@@ -30,7 +30,7 @@ function ns.OpenSavedVariables()
 		ns.recoveryBlocked = true
 		ns.logUnreadable = problem
 		_G.Pagle = nil
-		print(ns.L.LOG_UNREADABLE:format(problem))
+		print(ns.RenderText(ns.L.LOG_UNREADABLE, { problem = problem }))
 		return false
 	end
 	local catchLog, started = ns.OpenCatchLog(_G.PagleLog, ns.db.global, GetServerTime(), ns.CatalogueItem)

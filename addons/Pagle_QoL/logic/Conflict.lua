@@ -53,5 +53,5 @@ function ns.TurnedOffMessage(found)
 	for i, conflict in ipairs(found) do
 		titles[i] = conflict.title
 	end
-	return ns.L.CONFLICT_TURNED_OFF:format(table.concat(titles, ", "))
+	return ns.Text(ns.L.CONFLICT_TURNED_OFF, { titles = table.concat(titles, ", ") })
 end

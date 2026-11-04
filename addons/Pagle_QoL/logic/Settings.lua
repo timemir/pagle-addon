@@ -158,7 +158,7 @@ function ns.AddSettings(M, store)
 			for i, lure in ipairs(ns.LURES) do
 				options[i] = {
 					value = lure.itemID,
-					label = store.itemName(lure.itemID) or L.SETTINGS_LURE_UNNAMED:format(lure.itemID),
+					label = store.itemName(lure.itemID) or ns.Text(L.SETTINGS_LURE_UNNAMED, { item = lure.itemID }),
 				}
 			end
 			return options

@@ -127,7 +127,7 @@ end
 ---@return boolean? late
 function Rows:Add(name, topic, setting)
 	if self.closed then
-		return ns.L.SETTING_TOO_LATE:format(name), true
+		return ns.RenderText(ns.L.SETTING_TOO_LATE, { name = name }), true
 	end
 	self.sections[name] = self.sections[name] or {}
 	local section = self.sections[name][topic]
@@ -238,7 +238,8 @@ function ns.StatusButton(def, call)
 		return label and { label = label, onClick = action.onClick, closesPanel = view ~= nil }
 	elseif view then
 		local label = ns.ReadLabel(view.label, call)
-		return label and { label = ns.L.OPEN_VIEW:format(label), onClick = view.open, closesPanel = true }
+		return label
+			and { label = ns.RenderText(ns.L.OPEN_VIEW, { label = label }), onClick = view.open, closesPanel = true }
 	end
 	return nil
 end

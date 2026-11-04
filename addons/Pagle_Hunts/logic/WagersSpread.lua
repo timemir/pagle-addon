@@ -83,9 +83,15 @@ function ns.BuildWagersLadder(settled, ladder, updating)
 	local line, marked
 	if next then
 		local title = ns.LadderTitle(next)
-		line = L.WAGERS_LADDER_LINE:format(count(), next - settled, title)
+		line = ns.Text(
+			L.WAGERS_LADDER_LINE,
+			{ wagers_ladder_line_1 = count(), wagers_ladder_line_2 = next - settled, title = title }
+		)
 		marked = ns.InkRuns(
-			L.WAGERS_LADDER_LINE:format(count(true), next - settled, "\2"),
+			ns.Text(
+				L.WAGERS_LADDER_LINE,
+				{ wagers_ladder_line_1 = count(true), wagers_ladder_line_2 = next - settled, title = "\2" }
+			),
 			"line",
 			{ ["\1"] = { tostring(settled), "count" }, ["\2"] = { title, "title" } }
 		)
@@ -140,10 +146,10 @@ local function ticketOf(shown, input, closed)
 		dial = ns.WagerDial(shown, input.now, settled, closed),
 		name = ns.events and ns.events:EventName(event) or event.id,
 		holiday = ns.EventHolidayName(event),
-		line = L.TICKET_LINE:format(
-			ns.EventZonesText(event, input.sources),
-			(closed and L.TICKET_CLOSED_AT or L.LABEL_UNTIL):format(ends)
-		),
+		line = ns.Text(L.TICKET_LINE, {
+			eventZonesText = ns.EventZonesText(event, input.sources),
+			ticket_line_2 = ns.Text(closed and L.TICKET_CLOSED_AT or L.LABEL_UNTIL, { realmWhen = ends }),
+		}),
 		need = ns.EventSkillNeed(event, input.best),
 	}
 	if input.updating then
@@ -158,7 +164,7 @@ local function ticketOf(shown, input, closed)
 		ticket.pips[i] = ns.HuntDone(run.hunts[hunt.id])
 		done = done + (ticket.pips[i] and 1 or 0)
 	end
-	ticket.marks = L.TICKET_MARKS:format(done, #event.hunts)
+	ticket.marks = ns.Text(L.TICKET_MARKS, { done = done, hunts = #event.hunts })
 	return ticket
 end
 
@@ -205,7 +211,10 @@ local function noteOf(on, firstAhead, input)
 	if on >= 1 then
 		return ns.Text(L.SPREAD_NOTE, { count = on })
 	elseif firstAhead then
-		return L.SPREAD_NOTE_AHEAD:format(ns.RealmWeekdayClock(firstAhead.run.start, input.snapshot))
+		return ns.Text(
+			L.SPREAD_NOTE_AHEAD,
+			{ realmWeekdayClock = ns.RealmWeekdayClock(firstAhead.run.start, input.snapshot) }
+		)
 	end
 	return L.SPREAD_NOTE_NONE
 end
@@ -222,7 +231,10 @@ local function closingOf(tickets, shownByKey, input)
 		local shown = shownByKey[ticket.run]
 		if shown and not ticket.closed and not ticket.settled and ns.ClosingSoon(shown.run.end_ - input.now) then
 			local name = ticket.name:match("^([^,]*)") or ticket.name
-			return ns.L.SPREAD_CLOSING:format(name, ns.FormatDuration(shown.run.end_ - input.now))
+			return ns.Text(
+				ns.L.SPREAD_CLOSING,
+				{ name = name, duration = ns.FormatDuration(shown.run.end_ - input.now) }
+			)
 		end
 	end
 	return nil

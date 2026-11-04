@@ -73,7 +73,7 @@ function ns.BuildRibbons(input, place)
 			wagers = true,
 			text = L.WAGERS_KICKER,
 			name = L.WAGERS_KICKER,
-			count = runsOn > 0 and L.RIBBON_ON:format(runsOn) or nil,
+			count = runsOn > 0 and ns.Text(L.RIBBON_ON, { runsOn = runsOn }) or nil,
 			chosen = onWagers,
 			place = { mode = "wagers" },
 		},
@@ -159,16 +159,18 @@ function ns.BuildNameplate(input)
 	for _, set in ipairs(input.list:Sets()) do
 		local earned = input.state.sets[set.id]
 		if earned then
-			titles[#titles + 1] =
-				ns.L.NAMEPLATE_TITLE:format(input.list:SetTitle(set.id), ns.FormatFullDate(earned.date))
+			titles[#titles + 1] = ns.Text(
+				ns.L.NAMEPLATE_TITLE,
+				{ title = input.list:SetTitle(set.id), fullDate = ns.FormatFullDate(earned.date) }
+			)
 		end
 	end
 	local ladder = input.state.ladder or {}
 	for _, step in ipairs(ns.LADDER_STEPS) do
 		if ladder[step] then
-			titles[#titles + 1] = ns.L.NAMEPLATE_TITLE:format(
-				ns.LadderTitle(step),
-				ns.FormatFullDate(ladderDate(input.state, ladder[step]))
+			titles[#titles + 1] = ns.Text(
+				ns.L.NAMEPLATE_TITLE,
+				{ title = ns.LadderTitle(step), fullDate = ns.FormatFullDate(ladderDate(input.state, ladder[step])) }
 			)
 		end
 	end
@@ -178,10 +180,10 @@ function ns.BuildNameplate(input)
 			done = done + 1
 		end
 	end
-	local text = ns.L.NAMEPLATE:format(
-		ns.CountText(ns.TitlesEarned(input.state), "SUMMARY_TITLES"),
-		ns.CountText(done, "NAMEPLATE_DONE")
-	)
+	local text = ns.Text(ns.L.NAMEPLATE, {
+		countText = ns.Text(ns.L.SUMMARY_TITLES, { count = ns.TitlesEarned(input.state) }),
+		nameplate_2 = ns.Text(ns.L.NAMEPLATE_DONE, { count = done }),
+	})
 	return { text = text, titles = titles }
 end
 
@@ -219,8 +221,8 @@ function ns.BuildSetPage(input, setID, trackerLabel)
 	local earned = not input.updating and state.sets[setID] or nil
 	local page = {
 		name = list:SetName(setID),
-		titleLine = (earned and L.SET_PAGE_EARNED or L.SET_PAGE_EARNS):format(list:SetTitle(setID)),
-		seal = earned and L.SET_SEAL:format(ns.FormatFullDate(earned.date)) or nil,
+		titleLine = ns.Text(earned and L.SET_PAGE_EARNED or L.SET_PAGE_EARNS, { title = list:SetTitle(setID) }),
+		seal = earned and ns.Text(L.SET_SEAL, { fullDate = ns.FormatFullDate(earned.date) }) or nil,
 		sealLines = earned and { L.SET_SEAL_WORD, ns.FormatShortDate(earned.date), tostring(earned.date.year) } or nil,
 		line = L.SET_RULE,
 		note = list:SetNote(setID),
@@ -245,7 +247,10 @@ function ns.BuildSetPage(input, setID, trackerLabel)
 	if input.updating then
 		page.progress = { fill = 0, label = L.UPDATING }
 	else
-		page.progress = { fill = current > 0 and done / current or 0, label = L.SET_PROGRESS:format(done, current) }
+		page.progress = {
+			fill = current > 0 and done / current or 0,
+			label = ns.Text(L.SET_PROGRESS, { done = done, current = current }),
+		}
 	end
 	return page
 end

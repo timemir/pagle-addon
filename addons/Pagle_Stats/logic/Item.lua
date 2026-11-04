@@ -72,12 +72,16 @@ local function bitesText(zone, item, places)
 	local spec = places.lookups.GetWindowSpec(window)
 	local ranges = {}
 	for i, range in ipairs(spec and spec.time or {}) do
-		ranges[i] = L.ITEM_RANGE:format(ns.WindowTime(range[1]), ns.WindowTime(range[2]))
+		ranges[i] =
+			ns.Text(L.ITEM_RANGE, { windowTime = ns.WindowTime(range[1]), item_range_2 = ns.WindowTime(range[2]) })
 	end
 	if #ranges == 0 then
-		return L.ITEM_BITES_ONLY:format(ns.WindowName(window))
+		return ns.Text(L.ITEM_BITES_ONLY, { windowName = ns.WindowName(window) })
 	end
-	return L.ITEM_BITES_ONLY_TIMED:format(ns.WindowName(window), table.concat(ranges, L.ITEM_RANGES_JOIN))
+	return ns.Text(
+		L.ITEM_BITES_ONLY_TIMED,
+		{ windowName = ns.WindowName(window), ranges = table.concat(ranges, L.ITEM_RANGES_JOIN) }
+	)
 end
 
 -- Whether `item` is on `rows`.
@@ -111,11 +115,11 @@ local function hereOf(state, item, conditions, places)
 	local short, dry = ns.OddsShort(reading), ns.DrySpell(reading)
 	local text
 	if not dry.caught then
-		text = L.ITEM_HERE_NONE_YET:format(short)
+		text = ns.Text(L.ITEM_HERE_NONE_YET, { short = short })
 	elseif dry.since == 0 then
-		text = L.ITEM_HERE_CAUGHT_LAST:format(short)
+		text = ns.Text(L.ITEM_HERE_CAUGHT_LAST, { short = short })
 	else
-		text = L.ITEM_HERE_SINCE:format(short, ns.Number(dry.since))
+		text = ns.Text(L.ITEM_HERE_SINCE, { short = short, since = ns.Number(dry.since) })
 	end
 	return {
 		area = area,
@@ -149,7 +153,9 @@ function ns.ItemFacts(state, item, conditions, now, places)
 		pool = record and record.pool and L.ITEM_POOL or nil,
 		caught = ns.Number(total and total.n or 0),
 		first = total and ns.Date(total.first) or L.ITEM_NEVER,
-		last = total and L.ITEM_LAST_VALUE:format(ns.Date(total.last), ns.TimeAgo(total.last, now)) or L.ITEM_NEVER,
+		last = total
+				and ns.Text(L.ITEM_LAST_VALUE, { date = ns.Date(total.last), timeAgo = ns.TimeAgo(total.last, now) })
+			or L.ITEM_NEVER,
 		here = hereOf(state, item, conditions, places),
 	}
 end
@@ -183,12 +189,12 @@ local function tileOf(state, item, area, conditions, places)
 	local dry = ns.DrySpell(reading)
 	local note
 	if ns.IsUnlucky(dry.band) then
-		note = L.DRY_SHORT_SINCE:format(ns.Number(dry.since))
+		note = ns.Text(L.DRY_SHORT_SINCE, { since = ns.Number(dry.since) })
 	end
 	return {
 		area = area,
 		name = ns.AreaName(area),
-		line = zone == area and short or L.ITEM_TILE_LINE:format(ns.AreaName(zone), short),
+		line = zone == area and short or ns.Text(L.ITEM_TILE_LINE, { areaName = ns.AreaName(zone), short = short }),
 		here = ns.CurrentPlace(conditions) == area and L.HOME_HERE or nil,
 		note = note,
 		target = { page = "place", area = area, item = item },

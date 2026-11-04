@@ -72,7 +72,7 @@ local function speciesRow(context, zone, id, listing, selected)
 	elseif here then
 		row.text = context.text:Item(id)
 	else
-		row.text = L.ZONE_CAUGHT_ELSEWHERE:format(context.text:Item(id))
+		row.text = ns.Text(L.ZONE_CAUGHT_ELSEWHERE, { item = context.text:Item(id) })
 	end
 	if listing then
 		local margin = {}
@@ -98,11 +98,11 @@ end
 ---@param note string?
 ---@return LedgerBlock
 local function header(group, done, total, note)
-	local count = ns.L.ZONE_GROUP_COUNT:format(done, total)
+	local count = ns.Text(ns.L.ZONE_GROUP_COUNT, { done = done, total = total })
 	return {
 		kind = "kicker",
 		text = ns.L.ZONE_GROUPS[group],
-		value = note and ns.L.ZONE_GROUP_NOTE:format(note, count) or count,
+		value = note and ns.Text(ns.L.ZONE_GROUP_NOTE, { note = note, zone_group_note_2 = count }) or count,
 	}
 end
 
@@ -112,7 +112,10 @@ end
 ---@return LedgerBlock
 local function ticked(text, met)
 	local L = ns.L
-	return { kind = "text", text = L.ZONE_REQUIREMENT:format(met and L.CHECK_ON or L.CHECK_OFF, text) }
+	return {
+		kind = "text",
+		text = ns.Text(L.ZONE_REQUIREMENT, { met = met and L.CHECK_ON or L.CHECK_OFF, zone_requirement_2 = text }),
+	}
 end
 
 -- The seal, the rank ladder, the next requirement and new to find (LED-R135, LED-R52, LED-R134).
@@ -130,14 +133,14 @@ local function standing(context, zone, blocks)
 	end
 	blocks[#blocks + 1] = { kind = "ladder", rungs = rungs }
 	local next = ns.NextRequirement(world, state, celebrated, zone) --[[@as string]]
-	blocks[#blocks + 1] = { kind = "text", text = L.ZONE_NEXT:format(next) }
+	blocks[#blocks + 1] = { kind = "text", text = ns.Text(L.ZONE_NEXT, { zone_next = next }) }
 	local newToFind = ns.NewToFind(world, state, celebrated, zone)
 	if newToFind > 0 then
 		blocks[#blocks + 1] = {
 			kind = "text",
 			hand = true,
 			color = "red",
-			text = ns.CountText(newToFind, L.ZONE_NEW_HERE_ONE, L.ZONE_NEW_HERE_OTHER),
+			text = ns.Text(L.ZONE_NEW_HERE, { count = newToFind }),
 		}
 	end
 end
@@ -180,7 +183,8 @@ local function catches(context, zone, selected, blocks)
 		for _, family in ipairs(families) do
 			local name = context.text:FamilyName(family)
 			if name then
-				blocks[#blocks + 1] = ticked(L.ZONE_TROPHY:format(name), zoneState.families[family] == true)
+				blocks[#blocks + 1] =
+					ticked(ns.Text(L.ZONE_TROPHY, { name = name }), zoneState.families[family] == true)
 			end
 		end
 	end
@@ -242,7 +246,8 @@ local function weightsByFamily(context)
 	local weights = {}
 	for _, family in ipairs(ns.TrophyFamilies(context.world, context.state)) do
 		local format = context.formatNumber
-		weights[family.id] = ns.L.COUNT_OF:format(format(family.count.done), format(family.count.total))
+		weights[family.id] =
+			ns.Text(ns.L.COUNT_OF, { count_of_1 = format(family.count.done), count_of_2 = format(family.count.total) })
 	end
 	return weights
 end
@@ -262,13 +267,20 @@ local function about(context, zone)
 	}
 	local skill = world.skillBase[zone]
 	if skill then
-		blocks[#blocks + 1] = { kind = "text", text = skill > 0 and L.ZONE_SKILL:format(skill) or L.ZONE_ANY_SKILL }
+		blocks[#blocks + 1] =
+			{ kind = "text", text = skill > 0 and ns.Text(L.ZONE_SKILL, { skill = skill }) or L.ZONE_ANY_SKILL }
 	end
 	local counts = ns.ZoneCounts(world, state, zone) --[[@as LedgerZoneCounts]]
 	local completion = ns.ZoneCompletion(world, state, zone) --[[@as integer]]
 	blocks[#blocks + 1] = {
 		kind = "text",
-		text = L.ZONE_KNOWN:format(completion, counts.fishKnown, counts.fish, counts.landed, counts.families),
+		text = ns.Text(L.ZONE_KNOWN, {
+			completion = completion,
+			fishKnown = counts.fishKnown,
+			fish = counts.fish,
+			landed = counts.landed,
+			families = counts.families,
+		}),
 	}
 	local families = ns.SortedKeys(world.zones[zone].families)
 	if #families > 0 then
@@ -288,7 +300,8 @@ local function about(context, zone)
 		end
 	end
 	local title = ns.TitleName("zonemaster:" .. zone, context.text)
-	blocks[#blocks + 1] = { kind = "text", text = title and L.ZONE_REWARD_TITLE:format(title) or L.ZONE_REWARD }
+	blocks[#blocks + 1] =
+		{ kind = "text", text = title and ns.Text(L.ZONE_REWARD_TITLE, { title = title }) or L.ZONE_REWARD }
 	blocks[#blocks + 1] = { kind = "text", hand = true, text = L.ZONE_PICK }
 	return blocks
 end
@@ -330,8 +343,14 @@ local function loosePages(context, zone)
 	for _, itemID in ipairs(ns.SortedKeys(state.uncharted)) do
 		local count = state.uncharted[itemID].zones and state.uncharted[itemID].zones[zone]
 		if count then
-			loose[#loose + 1] =
-				{ kind = "text", hand = true, text = L.ZONE_LOOSE_ITEM:format(context.text:Item(itemID, true), count) }
+			loose[#loose + 1] = {
+				kind = "text",
+				hand = true,
+				text = ns.Text(
+					L.ZONE_LOOSE_ITEM,
+					{ item = context.text:Item(itemID, true), zone_loose_item_2 = count }
+				),
+			}
 		end
 	end
 	if #loose > 0 then

@@ -58,7 +58,7 @@ function ns.TakeDownTip(goal, today, updating, pagle, untilReset)
 	elseif ns.IsStranded(goal, pagle) then
 		rule = ns.IsRepostedToday(goal, today) and L.TAKE_DOWN_TIP_STRANDED or L.TAKE_DOWN_TIP_STRANDED_FIRST
 	else
-		rule = ns.Fill(L.TAKE_DOWN_TIP_ONCE, { time = untilReset })
+		rule = ns.Text(L.TAKE_DOWN_TIP_ONCE, { time = untilReset })
 	end
 	return { L.TAKE_DOWN_TIP_TITLE, L.TAKE_DOWN_TIP[goal.type], rule }
 end
@@ -82,10 +82,10 @@ function ns.TakeDownQuestion(goal, today, pagle)
 	if progress <= 0 then
 		return nil
 	end
-	local shown = ns.Fill(L.TAKE_DOWN_PROGRESS, { n = progress, need = ns.GoalNeed(goal, pagle) })
+	local shown = ns.Text(L.TAKE_DOWN_PROGRESS, { n = progress, need = ns.GoalNeed(goal, pagle) })
 	return {
 		title = L.TAKE_DOWN_TITLE[goal.type],
-		text = ns.Fill(L.TAKE_DOWN_TEXT, { progress = shown }),
+		text = ns.Text(L.TAKE_DOWN_TEXT, { progress = shown }),
 		progress = shown,
 	}
 end
@@ -112,7 +112,7 @@ end
 ---@return string[] lines its title, what it does, what it costs
 function ns.PostTip(goalType, held)
 	local L = ns.L
-	return { L.POST_TIP_TITLE[goalType], L.POST_TIP[goalType], ns.Fill(L.POST_TIP_COST, { held = held }) }
+	return { L.POST_TIP_TITLE[goalType], L.POST_TIP[goalType], ns.Text(L.POST_TIP_COST, { held = held }) }
 end
 
 --- The confirm's question before a Refresh posts a goal (TKB-R59), which always asks: it cannot be undone.
@@ -125,6 +125,6 @@ end
 ---@return TacklePostQuestion
 function ns.PostQuestion(goalType)
 	local L = ns.L
-	local cost = ns.Plural(1, "REFRESHES")
-	return { title = L.POST_TITLE[goalType], text = ns.Fill(L.POST_TEXT, { cost = cost }), cost = cost }
+	local cost = ns.Text(ns.L.REFRESHES, { count = 1 })
+	return { title = L.POST_TITLE[goalType], text = ns.Text(L.POST_TEXT, { cost = cost }), cost = cost }
 end

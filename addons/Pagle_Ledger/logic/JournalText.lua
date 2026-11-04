@@ -73,11 +73,11 @@ function ns.FormatJournalDate(date, currentYear)
 	if not date then
 		return L.NAME_UNKNOWN
 	end
-	local short = L.DATE_SHORT:format(date.day, L.MONTHS_SHORT[date.month])
+	local short = ns.Text(L.DATE_SHORT, { day = date.day, monthsShort = L.MONTHS_SHORT[date.month] })
 	if date.year == currentYear then
 		return short
 	end
-	return L.DATE_WITH_YEAR:format(short, date.year)
+	return ns.Text(L.DATE_WITH_YEAR, { short = short, year = date.year })
 end
 
 --- A window's label (LED-R127): `day`, `night`, the seasons, `event.301` "Extravaganza", any other `event.<id>`
@@ -111,11 +111,11 @@ function ns.WindowState(window, now, offset)
 	end
 	local away = opensAt - now
 	if away < 3600 then
-		return L.WINDOW_BACK_MINUTES:format(math.ceil(away / 60))
+		return ns.Text(L.WINDOW_BACK_MINUTES, { window_back_minutes = math.ceil(away / 60) })
 	elseif away < FORECAST_HOURS * 3600 then
-		return L.WINDOW_BACK_HOURS:format(math.ceil(away / 3600))
+		return ns.Text(L.WINDOW_BACK_HOURS, { window_back_hours = math.ceil(away / 3600) })
 	end
-	return L.WINDOW_BACK_MONTH:format(L.MONTHS[ns.RealmDateAt(opensAt, offset).month])
+	return ns.Text(L.WINDOW_BACK_MONTH, { months = L.MONTHS[ns.RealmDateAt(opensAt, offset).month] })
 end
 
 -- Tunables: the continent name map (LED-R126, LED-R130). Every other ContinentID is "Other waters".
@@ -180,7 +180,7 @@ function Text:Item(itemID, numbered)
 		self.requested[itemID] = true
 		self.client.RequestItem(itemID)
 	end
-	return numbered and ns.L.ITEM_FALLBACK:format(itemID) or ns.L.NAME_UNKNOWN
+	return numbered and ns.Text(ns.L.ITEM_FALLBACK, { itemID = itemID }) or ns.L.NAME_UNKNOWN
 end
 
 --- GET_ITEM_INFO_RECEIVED's `itemID` and `success` (LED-R126): true when an item this asked for has arrived, so
@@ -285,7 +285,7 @@ function Text:WindowLine(windowID)
 	end
 	local now = self.client.ServerTime()
 	local state = ns.WindowState(self.client.NextWindow(spec, now), now, offsetAt(self.client, now))
-	return state and ns.L.WINDOW_LINE:format(label, state) or label
+	return state and ns.Text(ns.L.WINDOW_LINE, { label = label, state = state }) or label
 end
 
 --- A trophy family's name from lore (`family.<id>.name`, LED-R160): the Journal's spreads and the familyStar moment

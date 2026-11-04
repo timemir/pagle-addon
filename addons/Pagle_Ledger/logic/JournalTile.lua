@@ -43,18 +43,18 @@ function ns.JournalZoneTile(zone, context)
 		if not skill then
 			tile.line = L.UNFISHED
 		else
-			tile.line = skill > 0 and L.TILE_UNFISHED_SKILL:format(skill) or L.TILE_UNFISHED_ANY_SKILL
+			tile.line = skill > 0 and ns.Text(L.TILE_UNFISHED_SKILL, { skill = skill }) or L.TILE_UNFISHED_ANY_SKILL
 		end
 		tile.faded = true
 	else
 		local celebrated = context.celebrated
 		local rank = ns.ShownZoneRank(world, state, celebrated, zone)
 		local completion = ns.ZoneCompletion(world, state, zone) --[[@as integer]]
-		tile.line = L.TILE_RANK:format(L.ZONE_RANKS[rank] or L.UNFISHED, completion)
+		tile.line = ns.Text(L.TILE_RANK, { zoneRanks = L.ZONE_RANKS[rank] or L.UNFISHED, completion = completion })
 		tile.bar = completion / 100
 		tile.seal = rank == ns.ZONE_MASTER and L.ZONE_RANKS[rank] or nil
 		local newToFind = ns.NewToFind(world, state, celebrated, zone)
-		tile.note = newToFind > 0 and L.TILE_NEW:format(newToFind) or nil
+		tile.note = newToFind > 0 and ns.Text(L.TILE_NEW, { newToFind = newToFind }) or nil
 	end
 	return tile
 end

@@ -63,11 +63,11 @@ function ns.SpikeView(state)
 	local goals = {}
 	for i, goal in ipairs(done) do
 		local text = ns.GoalText(goal)
-		local hover = { text, ns.Plural(goal.pay, "SPIKE_COINS") }
-		local note = ns.Fill(L.SPIKE_NOTE_PLAIN, { coins = goal.pay })
+		local hover = { text, ns.Text(ns.L.SPIKE_COINS, { count = goal.pay }) }
+		local note = ns.Text(L.SPIKE_NOTE_PLAIN, { coins = goal.pay })
 		if goal.fly then
-			hover[#hover + 1] = ns.Fill(L.SPIKE_FLY, { fly = ns.FlyName(goal.fly) })
-			note = ns.Fill(L.SPIKE_NOTE, { coins = goal.pay, fly = ns.FlyName(goal.fly) })
+			hover[#hover + 1] = ns.Text(L.SPIKE_FLY, { fly = ns.FlyName(goal.fly) })
+			note = ns.Text(L.SPIKE_NOTE, { coins = goal.pay, fly = ns.FlyName(goal.fly) })
 		end
 		goals[i] = {
 			id = goal.id,
@@ -80,7 +80,7 @@ function ns.SpikeView(state)
 	end
 	return {
 		goals = goals,
-		label = #goals > 0 and ns.Fill(L.SPIKE_DONE, { n = #goals }) or L.SPIKE_EMPTY,
+		label = #goals > 0 and ns.Text(L.SPIKE_DONE, { n = #goals }) or L.SPIKE_EMPTY,
 	}
 end
 
@@ -125,7 +125,7 @@ function ns.CampfireView(fire)
 	local view = {
 		kindling = fire.kindling,
 		kindlingCap = ns.KINDLING_CAP,
-		longest = ns.Fill(L.CAMPFIRE_LONGEST, { n = fire.longest }),
+		longest = ns.Text(L.CAMPFIRE_LONGEST, { n = fire.longest }),
 		step = 0,
 		bright = 0,
 	}
@@ -134,7 +134,7 @@ function ns.CampfireView(fire)
 		view.text = fire.longest > 0 and L.CAMPFIRE_OUT or L.CAMPFIRE_UNLIT
 		return view
 	end
-	view.state, view.text = "lit", ns.Plural(count, "DAYS")
+	view.state, view.text = "lit", ns.Text(ns.L.DAYS, { count = count })
 	local reached, previous, nextDays = 0, 0, nil
 	for _, milestone in ipairs(ns.CAMPFIRE_MILESTONES) do
 		if count >= milestone.days then
@@ -160,7 +160,7 @@ local function realmDay(serverTime)
 	local L = ns.L
 	local date = ns.RealmDate(serverTime)
 	local weekday = L.WEEKDAYS[date.weekday]
-	return ns.Fill(L.CARD_DATE, { weekday = weekday, day = date.day, month = L.MONTHS[date.month] }), date.day, weekday
+	return ns.Text(L.CARD_DATE, { weekday = weekday, day = date.day, month = L.MONTHS[date.month] }), date.day, weekday
 end
 
 --- The board day the `start` record numbers 0 (TKB-R12, ns.NumberBoundary): the board's first day. Earlier days are
@@ -236,7 +236,7 @@ function ns.CampfireCard(state, celebrated)
 		end
 		if i % 7 == 1 then
 			local realm = ns.RealmDate(start)
-			card.weeks[#card.weeks + 1] = ns.Fill(L.CARD_SHORT_DATE, { day = realm.day, month = L.MONTHS[realm.month] })
+			card.weeks[#card.weeks + 1] = ns.Text(L.CARD_SHORT_DATE, { day = realm.day, month = L.MONTHS[realm.month] })
 		end
 	end
 	-- How far each kind of title has come: the current fire, the goals done for life, the patterns tied.
@@ -258,11 +258,11 @@ function ns.CampfireCard(state, celebrated)
 		local row = {
 			id = title.id,
 			name = ns.TitleName(title.id),
-			need = ns.Fill(L.CARD_NEEDS[title.source], { n = title.need }),
+			need = ns.Text(L.CARD_NEEDS[title.source], { n = title.need }),
 			earned = state.titles[title.id] ~= nil or celebrated[title.id] == true,
 		}
 		card.marks[title.id] = {
-			label = ns.Fill(L.CARD_LABELS[title.source], { n = title.need }),
+			label = ns.Text(L.CARD_LABELS[title.source], { n = title.need }),
 			more = not row.earned
 					and ns.Text(more[title.source], { count = math.max(1, title.need - reached[title.source]) })
 				or nil,
@@ -270,7 +270,7 @@ function ns.CampfireCard(state, celebrated)
 		}
 		local list = card.tally
 		if title.source == "campfire" then
-			row.coins, list = ns.Plural(coins[title.id], "COINS"), card.milestones
+			row.coins, list = ns.Text(ns.L.COINS, { count = coins[title.id] }), card.milestones
 		elseif title.source == "flybox" then
 			list = card.flybox
 		end
@@ -325,8 +325,8 @@ function ns.FlyBoxView(flies)
 			cell.icon = pattern.icon
 			cell.hover = {
 				name,
-				ns.Fill(L.FLY_TIED, { date = (realmDay(fly.time)) }),
-				ns.Fill(L.FLY_GOAL, { goal = ns.GoalText(fly.goal) }),
+				ns.Text(L.FLY_TIED, { date = (realmDay(fly.time)) }),
+				ns.Text(L.FLY_GOAL, { goal = ns.GoalText(fly.goal) }),
 			}
 		else
 			cell.hover = { name, L.FLY_UNTIED }
@@ -336,7 +336,7 @@ function ns.FlyBoxView(flies)
 		end
 		cells[i] = cell
 	end
-	return { label = ns.Fill(L.FLY_BOX_TIED, { n = tied, total = #ns.FLY_PATTERNS }), cells = cells }
+	return { label = ns.Text(L.FLY_BOX_TIED, { n = tied, total = #ns.FLY_PATTERNS }), cells = cells }
 end
 
 -- The tally plate (TKB-R61, TKB-R64, TKB-R106).
@@ -369,9 +369,9 @@ end
 function ns.TallyView(state)
 	local latest = latestTitle(state.titles)
 	return {
-		counts = ns.Fill(ns.L.TALLY_PLATE, {
-			notices = ns.Plural(state.tally.notices, "NOTICES"),
-			expeditions = ns.Plural(state.tally.expeditions, "EXPEDITIONS"),
+		counts = ns.Text(ns.L.TALLY_PLATE, {
+			notices = ns.Text(ns.L.NOTICES, { count = state.tally.notices }),
+			expeditions = ns.Text(ns.L.EXPEDITIONS, { count = state.tally.expeditions }),
 		}),
 		latest = latest and ns.TitleName(latest),
 	}

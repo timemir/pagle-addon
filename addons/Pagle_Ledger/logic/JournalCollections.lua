@@ -63,7 +63,13 @@ local function trophyIndex(context, families, chosen)
 	local blocks = {
 		{ kind = "kicker", text = L.TROPHY_KICKER },
 		{ kind = "title", text = L.TROPHY_TITLE },
-		{ kind = "text", text = L.TROPHY_WEIGHTS:format(format(count.done), format(count.total)) },
+		{
+			kind = "text",
+			text = ns.Text(
+				L.TROPHY_WEIGHTS,
+				{ trophy_weights_1 = format(count.done), trophy_weights_2 = format(count.total) }
+			),
+		},
 		{ kind = "kicker", text = L.TROPHY_FAMILIES, value = L.TROPHY_FAMILIES_NOTE },
 	}
 	for _, family in ipairs(families) do
@@ -73,7 +79,10 @@ local function trophyIndex(context, families, chosen)
 				kind = "row",
 				text = name,
 				stars = ns.ShownFamilyStars(context.world, context.state, context.celebrated, family.id),
-				value = L.COUNT_OF:format(format(family.count.done), format(family.count.total)),
+				value = ns.Text(
+					L.COUNT_OF,
+					{ count_of_1 = format(family.count.done), count_of_2 = format(family.count.total) }
+				),
 				selected = family.id == chosen or nil,
 				place = ns.JournalPlace.trophyRoom(family.id),
 			}
@@ -148,7 +157,11 @@ local function familyPage(context, family)
 	local stars = ns.ShownFamilyStars(world, context.state, context.celebrated, family.id)
 	local heaviest = heaviestLanded(context, family)
 	local landed = heaviest
-			and L.TROPHY_LANDED:format(format(family.count.done), format(family.count.total), format(heaviest))
+			and ns.Text(L.TROPHY_LANDED, {
+				trophy_landed_1 = format(family.count.done),
+				trophy_landed_2 = format(family.count.total),
+				trophy_landed_3 = format(heaviest),
+			})
 		or L.TROPHY_NONE_LANDED
 	---@type LedgerBlock[]
 	local blocks = { { kind = "kicker", text = L.TROPHY_FAMILY_KICKER } }
@@ -174,7 +187,7 @@ local function familyPage(context, family)
 		end
 	end
 	if #zones > 0 then
-		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_FOUND_IN:format(ns.JoinAnd(zones)) }
+		blocks[#blocks + 1] = { kind = "text", text = ns.Text(L.ENTRY_FOUND_IN, { joinAnd = ns.JoinAnd(zones) }) }
 	end
 	return blocks
 end
@@ -224,7 +237,13 @@ local function junkMuseum(context, worlds, completion)
 	local blocks = {
 		{ kind = "kicker", text = L.CURIOS_JUNK_KICKER },
 		{ kind = "title", text = L.CURIOS_JUNK_TITLE },
-		{ kind = "text", text = L.CURIOS_EXHIBITS:format(format(completion.junk.done), format(completion.junk.total)) },
+		{
+			kind = "text",
+			text = ns.Text(
+				L.CURIOS_EXHIBITS,
+				{ curios_exhibits_1 = format(completion.junk.done), curios_exhibits_2 = format(completion.junk.total) }
+			),
+		},
 	}
 	for _, itemID in ipairs(worlds.junk) do
 		if caught[itemID] then
@@ -261,7 +280,13 @@ local function treasures(context, worlds, completion, blocks)
 	local count = completion.treasure
 	blocks[#blocks + 1] = { kind = "kicker", text = L.CURIOS_TREASURES_KICKER }
 	blocks[#blocks + 1] = { kind = "title", text = L.CURIOS_TREASURES_TITLE }
-	blocks[#blocks + 1] = { kind = "text", text = L.CURIOS_OPENED:format(format(count.done), format(count.total)) }
+	blocks[#blocks + 1] = {
+		kind = "text",
+		text = ns.Text(
+			L.CURIOS_OPENED,
+			{ curios_opened_1 = format(count.done), curios_opened_2 = format(count.total) }
+		),
+	}
 	for _, itemID in ipairs(worlds.treasure) do
 		if caught[itemID] then
 			blocks[#blocks + 1] = { kind = "text", text = context.text:Item(itemID) }
@@ -309,12 +334,12 @@ local function loosePages(context, blocks)
 		blocks[#blocks + 1] = {
 			kind = "text",
 			hand = true,
-			text = L.CURIOS_LOOSE_PAGE:format(
-				context.text:Item(itemID, true),
-				format(entry.n),
-				where,
-				context.text:Date(entry.date)
-			),
+			text = ns.Text(L.CURIOS_LOOSE_PAGE, {
+				item = context.text:Item(itemID, true),
+				curios_loose_page_2 = format(entry.n),
+				where = where,
+				date = context.text:Date(entry.date),
+			}),
 		}
 	end
 	if #ids == 0 then

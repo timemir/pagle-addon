@@ -53,7 +53,7 @@ function ns.PlainHint(world, id, text)
 	for i = 1, math.min(HINT_ZONES, #zones) do
 		local name = text:Zone(zones[i])
 		if i == HINT_ZONES and #zones > HINT_ZONES then
-			name = L.HINT_MORE:format(name, #zones - HINT_ZONES)
+			name = ns.Text(L.HINT_MORE, { name = name, hint_more_2 = #zones - HINT_ZONES })
 		end
 		parts[#parts + 1] = name
 		local base = world.skillBase[zones[i]]
@@ -62,7 +62,7 @@ function ns.PlainHint(world, id, text)
 		end
 	end
 	if skill then
-		parts[#parts + 1] = skill > 0 and L.HINT_SKILL:format(skill) or L.HINT_ANY_SKILL
+		parts[#parts + 1] = skill > 0 and ns.Text(L.HINT_SKILL, { skill = skill }) or L.HINT_ANY_SKILL
 	end
 	return table.concat(parts, L.HINT_SEPARATOR)
 end
@@ -80,9 +80,9 @@ local function foundIn(listing, text)
 	for i, window in ipairs(elementWindows(listing)) do
 		labels[i] = text:WindowLabel(window)
 	end
-	local line = #zones > 0 and L.ENTRY_FOUND_IN:format(ns.JoinAnd(zones)) or ""
+	local line = #zones > 0 and ns.Text(L.ENTRY_FOUND_IN, { joinAnd = ns.JoinAnd(zones) }) or ""
 	if #labels > 0 then
-		line = line .. L.ENTRY_ONLY_BY:format(ns.JoinAnd(labels))
+		line = line .. ns.Text(L.ENTRY_ONLY_BY, { joinAnd = ns.JoinAnd(labels) })
 	end
 	if line == "" then
 		return nil
@@ -117,7 +117,7 @@ function ns.JournalSpeciesEntry(id, context, hint)
 		}
 		local riddle = text:Lore(("species.%d.riddle"):format(id))
 		if riddle then
-			blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_RIDDLE:format(riddle) }
+			blocks[#blocks + 1] = { kind = "text", text = ns.Text(L.ENTRY_RIDDLE, { riddle = riddle }) }
 		end
 		if hint.open then
 			blocks[#blocks + 1] = { kind = "text", hand = true, text = ns.PlainHint(world, id, text) }
@@ -155,7 +155,7 @@ function ns.JournalSpeciesEntry(id, context, hint)
 	end
 	local size = context.sizeText(species.record)
 	if size then
-		blocks[#blocks + 1] = { kind = "text", text = L.ENTRY_LARGEST:format(size) }
+		blocks[#blocks + 1] = { kind = "text", text = ns.Text(L.ENTRY_LARGEST, { size = size }) }
 	end
 	return ns.AddJournalRemovedLine(blocks, context, id)
 end
@@ -281,13 +281,17 @@ local function waters(id, context)
 		local caught = ns.CAUGHT_STAR_CATCHES
 		blocks[#blocks + 1] = {
 			kind = "text",
-			text = L.FISH_CAUGHT:format(box(1), math.min(species.n, caught), caught),
+			text = ns.Text(L.FISH_CAUGHT, { box = box(1), min = math.min(species.n, caught), caught = caught }),
 		}
 		local have, need = ns.ElementProgress(listing, species)
-		blocks[#blocks + 1] = { kind = "text", text = L.FISH_ELEMENT:format(box(2), have, need) }
+		blocks[#blocks + 1] =
+			{ kind = "text", text = ns.Text(L.FISH_ELEMENT, { box = box(2), have = have, need = need }) }
 		blocks[#blocks + 1] = {
 			kind = "text",
-			text = L.FISH_REGULAR:format(box(3), math.min(species.n, ns.REGULAR_CATCHES), ns.REGULAR_CATCHES),
+			text = ns.Text(
+				L.FISH_REGULAR,
+				{ box = box(3), min = math.min(species.n, ns.REGULAR_CATCHES), regularCatches = ns.REGULAR_CATCHES }
+			),
 		}
 	end
 	return blocks

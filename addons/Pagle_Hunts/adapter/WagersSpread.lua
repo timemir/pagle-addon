@@ -895,7 +895,7 @@ local function drawSpread(page, place)
 	laySection(page, view.onNow, onNowTop and data.onNow or nil, onNowTop or 0)
 	laySection(page, view.ahead, aheadTop and data.ahead or nil, aheadTop or 0)
 	if shown < #items then
-		ns.FitWagerText(view.more, ns.L.STRIP_MORE:format(#items - shown), width)
+		ns.FitWagerText(view.more, ns.Text(ns.L.STRIP_MORE, { strip_more = #items - shown }), width)
 		ns.PlaceWagerText(view.more, page, 0, tops[shown + 1] + (MORE_H - ns.WagerLineHeight("more")) / 2)
 	else
 		view.more:Hide()

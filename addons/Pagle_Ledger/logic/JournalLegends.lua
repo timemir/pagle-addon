@@ -27,7 +27,7 @@ end
 ---@return string?
 local function titleLine(context, itemID)
 	local title = legendLore(context, itemID, "title")
-	return title and ns.L.TITLE_LINE:format(title)
+	return title and ns.Text(ns.L.TITLE_LINE, { name = title })
 end
 
 -- A first Catch as "{date}, {zone}, {character}" (LED-R147), the zone left out for zone 0 (LED-R6).
@@ -53,7 +53,13 @@ local function index(context, legends, chosen)
 	local blocks = {
 		{ kind = "kicker", text = L.LEGENDS_KICKER },
 		{ kind = "title", text = L.LEGENDS_TITLE },
-		{ kind = "text", text = L.LEGENDS_COUNT:format(format(count.done), format(count.total)) },
+		{
+			kind = "text",
+			text = ns.Text(
+				L.LEGENDS_COUNT,
+				{ legends_count_1 = format(count.done), legends_count_2 = format(count.total) }
+			),
+		},
 		{ kind = "kicker", text = L.LEGENDS_INDEX },
 	}
 	for _, itemID in ipairs(legends) do

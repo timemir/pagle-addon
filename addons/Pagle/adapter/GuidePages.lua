@@ -526,7 +526,14 @@ local MOMENTS = {
 			text(left, "italic", 13, "line", words[2], 256, at.name + 19.6, 16.9, { wrap = true, width = 156 })
 		end
 		local lively = ns.GUIDE_PRESETS[1].budget --[[@as table]]
-		small(left, L.GUIDE_MOMENTS_BUDGET:format(lively.count, lively.window / 60), 377.3)
+		small(
+			left,
+			ns.RenderText(
+				L.GUIDE_MOMENTS_BUDGET,
+				{ guide_moments_budget_1 = lively.count, guide_moments_budget_2 = lively.window / 60 }
+			),
+			377.3
+		)
 
 		ns.NewGuideKicker(right, L.GUIDE_MOMENTS_RIGHT_KICKER)
 		ns.NewGuideTitle(right, L.GUIDE_MOMENTS_RIGHT_TITLE, 25)
@@ -612,7 +619,7 @@ local function tickEvening(list)
 		row.strike:SetShown(row.done)
 		hue(row.words, row.done and "itemDone" or "item")
 	end
-	list.count:SetText(L.GUIDE_EVENING_COUNT:format(done, #list.rows))
+	list.count:SetText(ns.RenderText(L.GUIDE_EVENING_COUNT, { done = done, rows = #list.rows }))
 end
 
 --- Off you go (ONB-R38, board 9): the paragraph, the sample Nod with margin note 1, the margin-notes paragraph naming

@@ -88,7 +88,7 @@ local function draw(frame, slot)
 	own.label:SetText(slot.label)
 	own.dropdown:SetupMenu(menu(slot.id))
 	local more = ns.SlotMoreInShop(ns.goods, slot.id)
-	own.note:SetText(L.SETTINGS_SLOT_MORE:format(more))
+	own.note:SetText(ns.RenderText(L.SETTINGS_SLOT_MORE, { more = more }))
 	own.note:SetShown(more > 0)
 end
 

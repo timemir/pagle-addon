@@ -173,8 +173,8 @@ function ns.NoJunkSentence(area, live, places)
 	end
 	local L = ns.L
 	if live == nil then
-		return L.PLACE_NO_JUNK:format(line)
+		return ns.Text(L.PLACE_NO_JUNK, { line = line })
 	end
 	local side = ns.SkillSide(live, line)
-	return (side == "hi" and L.PLACE_NO_JUNK_PAST or L.PLACE_NO_JUNK_BELOW):format(line, live)
+	return ns.Text(side == "hi" and L.PLACE_NO_JUNK_PAST or L.PLACE_NO_JUNK_BELOW, { line = line, live = live })
 end

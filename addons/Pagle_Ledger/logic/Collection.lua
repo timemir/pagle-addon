@@ -274,14 +274,17 @@ local function earnLine(context, key, earned)
 	local L = ns.L
 	local kind, n = ns.TitleKind(key)
 	if kind == "level" then
-		return L.LEVEL_UP_TITLE:format(n)
+		return ns.Text(L.LEVEL_UP_TITLE, { top = n })
 	elseif kind == "prestige" then
 		return ns.PrestigeName(n --[[@as integer]]) or L.ANGLER_NO_PRESTIGE
 	elseif kind == "zonemaster" then
-		return L.COLLECTION_EARN_MASTER:format(context.text:Zone(n --[[@as integer]]))
+		return ns.Text(L.COLLECTION_EARN_MASTER, {
+			zone = context.text:Zone(n --[[@as integer]]),
+		})
 	elseif kind == "legend" then
-		return earned and L.COLLECTION_EARN_LEGEND:format(context.text:Item(n --[[@as integer]]))
-			or L.EARNED_TEXT.legend
+		return earned and ns.Text(L.COLLECTION_EARN_LEGEND, {
+			item = context.text:Item(n --[[@as integer]]),
+		}) or L.EARNED_TEXT.legend
 	end
 	local part = n
 	if part == "ledger" or part == "varieties" then
@@ -501,7 +504,7 @@ function ns.BuildCollection(context, light)
 			for _, module in ipairs(order) do
 				local name = ns.CollectionModuleName(module)
 				shelf.groups[#shelf.groups + 1] = {
-					name = shelf.kind == "trackers" and name or L.COLLECTION_PUT_AWAY:format(name),
+					name = shelf.kind == "trackers" and name or ns.Text(L.COLLECTION_PUT_AWAY, { name = name }),
 					looks = byModule[module],
 					owned = 0,
 				}
@@ -576,10 +579,10 @@ function ns.CollectionWear(context, shelf)
 	if shelf.kind == "titles" then
 		-- Automatic in use signs with the highest level title earned (LED-R77)
 		local _, name = ns.ActiveTitle(context --[[@as LedgerTitleView]])
-		shelf.wearing = name and L.COLLECTION_SIGNED:format(name) or nil
+		shelf.wearing = name and ns.Text(L.COLLECTION_SIGNED, { name = name }) or nil
 	elseif #names > 0 then
 		shelf.wearing = shelf.kind == "trackers" and table.concat(names, L.COLLECTION_FRAMES_JOIN)
-			or L.COLLECTION_WEARING:format(names[1])
+			or ns.Text(L.COLLECTION_WEARING, { names = names[1] })
 	end
 end
 
@@ -864,8 +867,8 @@ function ns.CollectionContentsLine(context, numeral)
 		kind = "leader",
 		numeral = numeral,
 		text = L.COLLECTION_CONTENTS,
-		value = L.COUNT_OF:format(format(model.owned), format(model.total)),
-		note = model.new > 0 and L.COLLECTION_NEW_COUNT:format(format(model.new)) or nil,
+		value = ns.Text(L.COUNT_OF, { count_of_1 = format(model.owned), count_of_2 = format(model.total) }),
+		note = model.new > 0 and ns.Text(L.COLLECTION_NEW_COUNT, { collection_new_count = format(model.new) }) or nil,
 		place = ns.JournalPlace.collection(),
 	}
 end

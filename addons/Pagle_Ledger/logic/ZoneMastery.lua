@@ -258,13 +258,13 @@ function ns.NextRequirement(world, state, celebrated, zone)
 	if shown == 0 then
 		line = L.ZONE_NEXT_VISITOR
 	elseif shown == VISITOR and missing[REGULAR] > 0 then
-		line = ns.CountText(missing[REGULAR], L.ZONE_NEXT_REGULAR_ONE, L.ZONE_NEXT_REGULAR_OTHER)
+		line = ns.Text(L.ZONE_NEXT_REGULAR, { count = missing[REGULAR] })
 	elseif shown == REGULAR and missing[LOCAL] > 0 then
-		line = ns.CountText(missing[LOCAL], L.ZONE_NEXT_LOCAL_ONE, L.ZONE_NEXT_LOCAL_OTHER)
+		line = ns.Text(L.ZONE_NEXT_LOCAL, { count = missing[LOCAL] })
 	elseif shown == LOCAL and missing[EXPERT] > 0 then
 		local parts = {}
 		if needs.gated > 0 then
-			parts[#parts + 1] = ns.CountText(needs.gated, L.ZONE_NEXT_GATED_ONE, L.ZONE_NEXT_GATED_OTHER)
+			parts[#parts + 1] = ns.Text(L.ZONE_NEXT_GATED, { count = needs.gated })
 		end
 		if needs.junk then
 			parts[#parts + 1] = L.ZONE_NEXT_JUNK
@@ -272,14 +272,14 @@ function ns.NextRequirement(world, state, celebrated, zone)
 		if needs.treasure then
 			parts[#parts + 1] = L.ZONE_NEXT_TREASURE
 		end
-		line = L.ZONE_NEXT_EXPERT:format(table.concat(parts, L.ZONE_NEXT_SEPARATOR))
+		line = ns.Text(L.ZONE_NEXT_EXPERT, { parts = table.concat(parts, L.ZONE_NEXT_SEPARATOR) })
 	elseif shown == EXPERT and missing[MASTER] > 0 then
-		line = ns.CountText(missing[MASTER], L.ZONE_NEXT_MASTER_ONE, L.ZONE_NEXT_MASTER_OTHER)
+		line = ns.Text(L.ZONE_NEXT_MASTER, { count = missing[MASTER] })
 	end
 	local newToFind = ns.NewToFind(world, state, celebrated, zone)
 	if newToFind > 0 then
-		local found = ns.CountText(newToFind, L.ZONE_NEW_TO_FIND_ONE, L.ZONE_NEW_TO_FIND_OTHER)
-		return line and L.ZONE_NEXT_WITH_NEW:format(line, found) or found
+		local found = ns.Text(L.ZONE_NEW_TO_FIND, { count = newToFind })
+		return line and ns.Text(L.ZONE_NEXT_WITH_NEW, { line = line, found = found }) or found
 	end
 	return line or L.ZONE_NEXT_MASTERED
 end

@@ -1659,7 +1659,7 @@ function ns.WireGuide(host, view)
 			local problem = ns.tourStops:Add(
 				ns.TOUR_CORE,
 				"onboarding.step." .. id,
-				ns.L.DEV_TOUR_GUIDE_STEP:format(id),
+				ns.RenderText(ns.L.DEV_TOUR_GUIDE_STEP, { dev_tour_guide_step = id }),
 				function()
 					guide:TourShow(id)
 				end,
@@ -1689,7 +1689,12 @@ function ns.WireGuide(host, view)
 		for i, entry in ipairs(steps:List()) do
 			ids[i] = entry.step.id
 		end
-		host.print(ns.L.DEV_GUIDE_NO_STEP:format(id ~= "" and id or "<id>", table.concat(ids, ", ")))
+		host.print(
+			ns.RenderText(
+				ns.L.DEV_GUIDE_NO_STEP,
+				{ dev_guide_no_step_1 = id ~= "" and id or "<id>", ids = table.concat(ids, ", ") }
+			)
+		)
 	end)
 end
 
@@ -1809,7 +1814,7 @@ function ns.WireLetter(host, view)
 			local problem = ns.tourStops:Add(
 				ns.TOUR_CORE,
 				"onboarding.letter." .. id,
-				ns.L.DEV_TOUR_LETTER_OF:format(id),
+				ns.RenderText(ns.L.DEV_TOUR_LETTER_OF, { dev_tour_letter_of = id }),
 				function()
 					letter:TourShow(id)
 				end,
@@ -1833,7 +1838,7 @@ function ns.WireLetter(host, view)
 			for _, known in ipairs(letter:Ids()) do
 				ids[#ids + 1] = known
 			end
-			host.print(ns.L.DEV_LETTER_NONE:format(id, table.concat(ids, ", ")))
+			host.print(ns.RenderText(ns.L.DEV_LETTER_NONE, { dev_letter_none_1 = id, ids = table.concat(ids, ", ") }))
 		end
 	end)
 end
@@ -2069,12 +2074,17 @@ function ns.WireMarginNotes(host, view)
 					ids[#ids + 1] = moduleId
 				end
 				table.sort(ids)
-				host.print(ns.L.DEV_NOTE_NONE:format(id ~= "" and id or "<id>", table.concat(ids, ", ")))
+				host.print(
+					ns.RenderText(
+						ns.L.DEV_NOTE_NONE,
+						{ dev_note_none_1 = id ~= "" and id or "<id>", ids = table.concat(ids, ", ") }
+					)
+				)
 				return
 			end
 		end
 		if not note or not view.isShown(note) then
-			host.print(ns.L.DEV_NOTE_NO_TARGET:format(id))
+			host.print(ns.RenderText(ns.L.DEV_NOTE_NO_TARGET, { dev_note_no_target = id }))
 			return
 		end
 		notes:ShowNow(note)
@@ -2104,7 +2114,7 @@ function ns.WireFirstLooks(host, view)
 	---@param set PagleFirstLook
 	local function addTourStop(set)
 		local id = set.id
-		local label = ns.L.DEV_TOUR_LOOK:format(set.title)
+		local label = ns.RenderText(ns.L.DEV_TOUR_LOOK, { title = set.title })
 		local problem = ns.tourStops:Add(ns.TOUR_CORE, "onboarding.look." .. id, label, function()
 			looks:TourShow(id)
 		end, function()
@@ -2191,11 +2201,16 @@ function ns.WireFirstLooks(host, view)
 			for i, record in ipairs(looks:List()) do
 				ids[i] = record.set.id
 			end
-			host.print(ns.L.DEV_LOOK_NONE:format(id ~= "" and id or "<id>", table.concat(ids, ", ")))
+			host.print(
+				ns.RenderText(
+					ns.L.DEV_LOOK_NONE,
+					{ dev_look_none_1 = id ~= "" and id or "<id>", ids = table.concat(ids, ", ") }
+				)
+			)
 		elseif shown == "closed" then
-			host.print(ns.L.DEV_LOOK_CLOSED:format(id))
+			host.print(ns.RenderText(ns.L.DEV_LOOK_CLOSED, { dev_look_closed = id }))
 		elseif shown == "empty" then
-			host.print(ns.L.DEV_LOOK_EMPTY:format(id))
+			host.print(ns.RenderText(ns.L.DEV_LOOK_EMPTY, { dev_look_empty = id }))
 		end
 	end)
 end

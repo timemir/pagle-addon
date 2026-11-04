@@ -103,17 +103,6 @@ function ns.CelebratedSet(global)
 	return celebrated
 end
 
---- `n` with the singular or the plural form, as every count in the Ledger has both (LED-R94): `%d` in each, or `%s`
---- with `format`, which writes the number (the client's BreakUpLargeNumbers, LED-R146).
----@param n integer
----@param one string
----@param other string
----@param format? fun(n: integer): string
----@return string
-function ns.CountText(n, one, other, format)
-	return (n == 1 and one or other):format(format and format(n) or n)
-end
-
 --- The shown level (LED-R36, LED-R92): the higher of the computed level, its Activity XP included (LED-R38), and the
 --- highest celebrated in this climb.
 ---@param state LedgerState
@@ -134,9 +123,9 @@ function ns.SummaryLine(state, celebrated, lookups)
 	local percent = ns.LedgerCompletion(lookups.world, state).percent
 	local level = ns.ShownLevel(state, celebrated)
 	if state.prestige > 0 then
-		return ns.L.SUMMARY_LINE_PRESTIGE:format(state.prestige, level, percent)
+		return ns.Text(ns.L.SUMMARY_LINE_PRESTIGE, { prestige = state.prestige, level = level, percent = percent })
 	end
-	return ns.L.SUMMARY_LINE:format(level, percent)
+	return ns.Text(ns.L.SUMMARY_LINE, { level = level, percent = percent })
 end
 
 -- An item's name, or "Item {id}" when the client doesn't have it yet (LED-R97).
@@ -144,7 +133,7 @@ end
 ---@param itemID integer
 ---@return string
 local function itemName(outlets, itemID)
-	return outlets.ItemName(itemID) or ns.L.ITEM_FALLBACK:format(itemID)
+	return outlets.ItemName(itemID) or ns.Text(ns.L.ITEM_FALLBACK, { itemID = itemID })
 end
 
 -- A Catch moment's "{item} · {size text}" (LED-R81, LED-R97): the item alone, with no separator, when the Catch has
@@ -155,7 +144,7 @@ end
 local function itemWithSize(outlets, earned)
 	local name = itemName(outlets, earned.itemID --[[@as integer]])
 	local size = outlets.SizeText(earned.size)
-	return size and ns.L.ITEM_SIZE:format(name, size) or name
+	return size and ns.Text(ns.L.ITEM_SIZE, { name = name, size = size }) or name
 end
 
 --- Adds `stars` to the celebrated stars of `key` (a Species or a trophy family, LED-R90), returning those that weren't
@@ -243,10 +232,10 @@ function celebrate.newInZone(celebrated, _, earned, outlets)
 		kind = "newInZone",
 		order = 100,
 		title = L.NEW_IN_ZONE_TITLE,
-		text = L.NEW_IN_ZONE_TEXT:format(
-			itemName(outlets, earned.itemID --[[@as integer]]),
-			outlets.AreaName(earned.zone --[[@as integer]]) or L.NAME_UNKNOWN
-		),
+		text = ns.Text(L.NEW_IN_ZONE_TEXT, {
+			itemName = itemName(outlets, earned.itemID --[[@as integer]]),
+			areaName = outlets.AreaName(earned.zone --[[@as integer]]) or L.NAME_UNKNOWN,
+		}),
 		stamp = L.NEW_IN_ZONE_STAMP,
 		icon = earned.itemID,
 		cast = earned.cast,
@@ -353,7 +342,7 @@ function celebrate.familyStar(celebrated, _, earned)
 		kind = "familyStar",
 		order = 130,
 		title = L.FAMILY_STAR_TITLE,
-		text = name and L.FAMILY_STAR_TEXT:format(name, stars) or stars,
+		text = name and ns.Text(L.FAMILY_STAR_TEXT, { name = name, stars = stars }) or stars,
 		stamp = stars,
 		icon = FAMILY_STAR_ICON,
 		cast = earned.cast,
@@ -373,7 +362,7 @@ function celebrate.skillMilestone(celebrated, _, earned)
 		kind = "skillMilestone",
 		order = 130,
 		title = L.SKILL_MILESTONE_TITLE,
-		text = L.SKILL_MILESTONE_TEXT:format(threshold),
+		text = ns.Text(L.SKILL_MILESTONE_TEXT, { threshold = threshold }),
 		icon = SKILL_ICON,
 	}
 end
@@ -401,9 +390,9 @@ function celebrate.levelUp(celebrated, state, earned)
 		rung = "banner",
 		kind = "levelUp",
 		order = 100,
-		title = L.LEVEL_UP_TITLE:format(top),
-		text = raised > 1 and ns.CountText(raised, L.LEVELS_RAISED_ONE, L.LEVELS_RAISED_OTHER) or nil,
-		stamp = L.LEVEL_UP_STAMP:format(top),
+		title = ns.Text(L.LEVEL_UP_TITLE, { top = top }),
+		text = raised > 1 and ns.Text(L.LEVELS_RAISED, { count = raised }) or nil,
+		stamp = ns.Text(L.LEVEL_UP_STAMP, { top = top }),
 		icon = LEVEL_ICON,
 		cast = earned.cast,
 		coins = ns.LEVEL_UP_COINS * raised,
@@ -449,7 +438,7 @@ function celebrate.zoneRank(celebrated, _, earned, outlets)
 		rung = "toast",
 		kind = "zoneRank",
 		order = 120,
-		title = L.ZONE_RANK_TITLE:format(L.ZONE_RANKS[top]),
+		title = ns.Text(L.ZONE_RANK_TITLE, { zoneRanks = L.ZONE_RANKS[top] }),
 		text = name,
 		stamp = L.ZONE_RANK_STAMP,
 		icon = ZONE_RANK_ICON,
@@ -517,7 +506,8 @@ function celebrate.prestige(celebrated, _, earned)
 		rung = "banner",
 		kind = "prestige",
 		order = 90,
-		title = mark.stars > 0 and L.MASTER_PRESTIGE_TITLE:format(mark.stars) or L.PRESTIGE_TITLE:format(mark.emblem),
+		title = mark.stars > 0 and ns.Text(L.MASTER_PRESTIGE_TITLE, { stars = mark.stars })
+			or ns.Text(L.PRESTIGE_TITLE, { emblem = mark.emblem }),
 		icon = PRESTIGE_ICON,
 		coins = earned.coins,
 		seal = "frame",
@@ -533,7 +523,7 @@ function celebrate.catchMilestone(celebrated, _, earned, outlets)
 	end
 	celebrated.milestones[n] = true
 	local L = ns.L
-	local catches = (n == 1 and L.CATCHES_ONE or L.CATCHES_OTHER):format(outlets.FormatNumber(n))
+	local catches = ns.Text(L.CATCHES, { count = n })
 	return {
 		rung = "banner",
 		kind = "catchMilestone",
@@ -647,8 +637,8 @@ function celebrate.fishComplete(celebrated, _, earned, outlets)
 		rung = "banner",
 		kind = "everyColour",
 		order = 95,
-		title = L.EVERY_COLOUR_TITLE:format(itemName(outlets, species)),
-		text = crest and crest.name and L.CREST_EARNED:format(crest.name) or nil,
+		title = ns.Text(L.EVERY_COLOUR_TITLE, { itemName = itemName(outlets, species) }),
+		text = crest and crest.name and ns.Text(L.CREST_EARNED, { name = crest.name }) or nil,
 		stamp = L.EVERY_COLOUR_STAMP,
 		icon = earned.itemID,
 		cast = earned.cast,
@@ -733,7 +723,7 @@ local function celebrateTitles(celebrated, state, moments, achievements, outlets
 				order = 140,
 				title = L.TITLE_EARNED,
 				text = name,
-				stamp = L.TITLE_LINE:format(name),
+				stamp = ns.Text(L.TITLE_LINE, { name = name }),
 				icon = TITLE_ICON,
 				cast = cast,
 				seal = "quill",
@@ -745,7 +735,7 @@ local function celebrateTitles(celebrated, state, moments, achievements, outlets
 					carries(moments[i], achievements[i], kind, n --[[@as integer|string]])
 				then
 					riding[i] = riding[i] or {}
-					table.insert(riding[i], L.TITLE_LINE:format(name))
+					table.insert(riding[i], ns.Text(L.TITLE_LINE, { name = name }))
 					break
 				end
 			end
@@ -757,7 +747,7 @@ local function celebrateTitles(celebrated, state, moments, achievements, outlets
 		if moment.kind == "levelUp" or moment.kind == "prestige" then
 			moment.text = titles
 		else
-			moment.text = L.TEXT_WITH_TITLE:format(moment.text, titles)
+			moment.text = ns.Text(L.TEXT_WITH_TITLE, { text_with_title_1 = moment.text, titles = titles })
 		end
 	end
 	return keys
@@ -772,7 +762,10 @@ local function addCrestLines(moments, achievements, outlets)
 	for i, moment in ipairs(moments) do
 		local crest = moment.kind == "zoneMaster" and outlets.ZoneCrest(achievements[i].zone --[[@as integer]])
 		if crest then
-			moment.text = ns.L.TEXT_WITH_TITLE:format(moment.text, ns.L.CREST_EARNED:format(crest.name))
+			moment.text = ns.Text(
+				ns.L.TEXT_WITH_TITLE,
+				{ text_with_title_1 = moment.text, titles = ns.Text(ns.L.CREST_EARNED, { name = crest.name }) }
+			)
 		end
 	end
 end

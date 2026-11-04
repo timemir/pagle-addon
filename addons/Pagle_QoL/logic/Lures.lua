@@ -128,7 +128,7 @@ end
 ---@return string
 function ns.OutOfLuresText(mode, lureName)
 	if mode == "one" then
-		return ns.L.NUDGE_OUT_OF_LURE:format(lureName or "")
+		return ns.Text(ns.L.NUDGE_OUT_OF_LURE, { lureName = lureName or "" })
 	end
 	return ns.L.NUDGE_OUT_OF_LURES
 end

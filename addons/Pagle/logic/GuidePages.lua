@@ -136,7 +136,10 @@ end
 ---@return string
 function ns.GuidePresetWhat(preset)
 	if preset.budget then
-		return ns.L.GUIDE_PRESET_POPUPS:format(preset.budget.count, preset.budget.window / 60)
+		return ns.RenderText(
+			ns.L.GUIDE_PRESET_POPUPS,
+			{ guide_preset_popups_1 = preset.budget.count, guide_preset_popups_2 = preset.budget.window / 60 }
+		)
 	end
 	return ns.L.GUIDE_PRESET_COZY_WHAT
 end
@@ -179,7 +182,7 @@ end
 ---@return string
 function ns.GuideLooksLine(windows)
 	local L = ns.L
-	return (#windows == 1 and L.GUIDE_OFF_LOOKS_ONE or L.GUIDE_OFF_LOOKS):format(capitalised(ns.GuideListOf(windows)))
+	return ns.RenderText(L.GUIDE_OFF_LOOKS, { count = #windows, guideListOf = capitalised(ns.GuideListOf(windows)) })
 end
 
 --- One line of the First evening list as Off you go draws it: its id, its text, and its hint where the list shows one.
