@@ -1183,6 +1183,10 @@ def main(argv: list[str], root: Path) -> int:
     import subprocess
     import sys
 
+    if argv[:1] == ["es"]:
+        from pagle_data.text_convert_es import main as convert_es_main
+
+        return convert_es_main(argv[1:], root)
     parser = argparse.ArgumentParser(
         prog="scripts/convert-text.py",
         description="Rewrite Pagle's English interface text and its call sites to the text helper (CORE-R8, #519).",
