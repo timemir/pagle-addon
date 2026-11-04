@@ -226,9 +226,9 @@ local function fieldReportRow()
 end
 
 -- The Units section (CORE-R40, SET-R10 row 9): the length unit's dropdown, showing the unit in use (LOG-R69), then
--- the Clock row (adapter/Clock.lua). The length unit's default, which the root's Defaults button restores
--- (SET-R13), is the region's unit, and picking the region's unit stores none: so Defaults leaves
--- PagleDB.profile.lengthUnit nil, following the region.
+-- the Clock row (adapter/Clock.lua) and the Language row (adapter/LanguageRow.lua). The length unit's default, which
+-- the root's Defaults button restores (SET-R13), is the region's unit, and picking the region's unit stores none: so
+-- Defaults leaves PagleDB.profile.lengthUnit nil, following the region.
 ---@param category SettingsCategory
 ---@param layout SettingsLayout
 local function unitsSection(category, layout)
@@ -253,6 +253,7 @@ local function unitsSection(category, layout)
 		return container:GetData()
 	end, L.SETTINGS_LENGTH_UNIT_TOOLTIP)
 	ns.ClockRow(category)
+	ns.LanguageRow(category)
 end
 
 -- The Pagle menu section (CORE-R40, SET-R10 row 10): Show the minimap icon, on unless PagleDB.global.minimap.hide

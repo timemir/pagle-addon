@@ -134,8 +134,8 @@ stds.wow = {
 		"GetCVar",
 		"SetCVar",
 		"IsMounted",
-		-- QoL's Reload now note (QOL-R83): ReloadUI is unprotected on build 70338 (QOL-R102), and the QoL boundary spec
-		-- allows that one call.
+		-- QoL's Reload now note (QOL-R83) and Core's, for a changed Language (SET-R14): ReloadUI is unprotected on build
+		-- 70338 (QOL-R102). The QoL boundary spec allows QoL's one call, spec/Pagle/adapter/LanguageRow_spec.lua Core's.
 		"ReloadUI",
 		-- QoL's Nudges: a frame on the screen (UIParent, below), below the game's error text (QOL-R75); its colour is in
 		-- stds.wow_variables. Stats refuses a 4th watched Dry spell in that red error text (STA-R61).

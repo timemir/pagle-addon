@@ -26,6 +26,46 @@ local ENGLISH = "enUS"
 --- reads esES until a separate esMX registers (ADR 0019). A registered, listed esMX wins.
 local SERVED_BY = { esMX = "esES" }
 
+--- The Locale codes a Pagle Locale can be registered under (ADR 0019: always the full client code), in the order the
+--- Language dropdown lists them (SET-R10 row 9b). enUS is built in and is the dropdown's own "English" choice.
+---@type string[]
+ns.LANGUAGE_CODES = { "deDE", "esES", "esMX", "frFR", "itIT", "koKR", "ptBR", "ruRU", "zhCN", "zhTW" }
+
+--- The Locales in a script the bundled faces don't cover (CORE-R9: Cyrillic, Korean and Chinese draw with the client's
+--- own fonts). Until the font probe (#522) shows which fonts a client carries, each is offered on its own client only.
+---@type table<string, true>
+local OWN_CLIENT_ONLY = { koKR = true, ruRU = true, zhCN = true, zhTW = true }
+
+--- Whether the current client can render the Locale `code` (SET-R10 row 9b): a Latin-script Locale always, one of
+--- OWN_CLIENT_ONLY only when `clientLocale` is its own code. The one place the font probe's result changes the
+--- dropdown's offer (ADR 0019, Q25).
+---@param code string
+---@param clientLocale any The client's `GetLocale()`.
+---@return boolean
+function ns.CanRenderLanguage(code, clientLocale)
+	return not OWN_CLIENT_ONLY[code] or code == clientLocale
+end
+
+--- What the Language dropdown offers on a client of `clientLocale`, in its order (SET-R10 row 9b): "Game default",
+--- English, then each registered Locale that is listed and that the client can render, by its own name. Always the first
+--- two, with no Locale registered.
+---@param clientLocale any The client's `GetLocale()`.
+---@return { value: string, label: string }[]
+function ns.LanguageChoices(clientLocale)
+	local L = ns.L
+	local choices = {
+		{ value = ns.LANGUAGE_GAME_DEFAULT, label = L.SETTINGS_LANGUAGE_GAME_DEFAULT },
+		{ value = ENGLISH, label = L.SETTINGS_LANGUAGE_ENGLISH },
+	}
+	for _, code in ipairs(ns.LANGUAGE_CODES) do
+		local info = ns.LocaleInfo(code)
+		if info and info.listed and ns.CanRenderLanguage(code, clientLocale) then
+			choices[#choices + 1] = { value = code, label = info.name }
+		end
+	end
+	return choices
+end
+
 --- The Language setting out of the raw `_G.PagleDB`, before AceDB wraps it: `PagleDB.global.language`. Anything that is
 --- not a non-empty string there, however it came to be (no `PagleDB`, not a table, no `global`, a number), is
 --- "Game default" (LANGUAGE_GAME_DEFAULT). It never raises.

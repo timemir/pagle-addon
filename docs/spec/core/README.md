@@ -368,6 +368,7 @@ Fishing, Session, wallet, Activity XP (`ActivityXPChanged`), Refresh (`TicketsCh
 |---|---|---|
 | Tracker position (Trackers page, SET-R40) | button "Reset": puts the dock back at its default place (CORE-R71) | |
 | Clock (`profile.clockFormat`, the root's Units section, SET-R10) | Follow the game's clock / 24-hour / 12-hour | Follow the game's clock (CORE-R87) |
+| Language (`global.language`, the root's Units section, SET-R10 row 9b; from 1.1) | Game default / English / each listed language the client can render | Game default (CORE-R8); the root's Defaults button leaves it (SET-R13) |
 
 The other Core options are in each topic file's Settings section.
 
