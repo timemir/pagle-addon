@@ -184,7 +184,7 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
   - a row on a place page chooses that item, whose entry fills the right page
   - search opens an item page or a place page
 - **STA-R75** On the leather, during a current Session, a gilt **live line** reads "● Session: 51 Casts · 46 Catches · 21m" and opens *This Session*.
-- **STA-R76** Search ("Find a fish or a water…") updates as the player types, from the first character, in a dropdown under the box; an empty box hides the dropdown. It matches, case-insensitively anywhere in the name:
+- **STA-R76** Search ("Find a fish or a water…") updates as the player types, from the first character, in a dropdown under the box; an empty box hides the dropdown. It matches, case-insensitively anywhere in the name: *From 1.1 (#520):* the match is on the fold of both the query and the name (`Pagle.FoldCase`, CORE-R8: case and accents), and the results are sorted by that fold.
   - items: every item in the rows (STA-R17) of any zone with my Casts, plus every item in `items`, by `C_Item.GetItemNameByID` (names not yet loaded are requested when the book opens, and match once loaded)
   - places: every zone and subzone in `places`, by `C_Map.GetAreaInfo`
 

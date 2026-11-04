@@ -203,7 +203,7 @@ Set titles are Standing Hunts' only. Hunt Events have the completed-run titles i
   | Later, opens within 7 days | "21:00" (same realm day) or "Sun 14:00" | the same |
   | Later, opens later | "back in March" | the same |
   | Later, `nil` | "no date known" | the same |
-- **HNT-R52** The selected Hunt's **window line** (right page, handwriting), by the same cases as HNT-R51, ignoring skill:
+- **HNT-R52** The selected Hunt's **window line** (right page, handwriting), by the same cases as HNT-R51, ignoring skill: *From 1.1 (#520):* the sentences of the line are set one after another by `ns.L.LINE_JOIN` (" " in English), not by a literal space.
 
   | Case | Window line |
   |---|---|
