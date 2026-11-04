@@ -1,0 +1,8 @@
+# English, the source of every Locale (DATA-R114). Its plural rule and separators are the text helper's built-in
+# English (addons/Pagle/logic/Text.lua), and the generator checks that the two agree. English is always listed and
+# falls back to nothing, so it has no `listed` and no `fallback`.
+
+name = "English"
+plural = "one_other"
+decimal = "."
+thousands = ","
