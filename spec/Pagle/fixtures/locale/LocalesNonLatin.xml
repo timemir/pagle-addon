@@ -1,0 +1,6 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<!-- A test fixture, never shipped: Locales.xml with ruRU, koKR, zhCN and zhTW registered (NonLatin.lua). -->
+	<Script file="Registry.lua"/>
+	<Script file="NonLatin.lua"/>
+	<Script file="Apply.lua"/>
+</Ui>

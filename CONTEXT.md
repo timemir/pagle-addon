@@ -380,6 +380,10 @@ _Avoid_: locale setting, client language, language option
 A Locale whose whole interface is translated and that the maintainer has opened to players. It stays listed once it is, and any string it later lacks shows in English.
 _Avoid_: supported language, released language, enabled language
 
+**Font table**:
+Core's one per-locale table of which file draws each bundled face (logic/Fonts.lua). A Latin language draws the bundled faces; ruRU, koKR, zhCN and zhTW draw the client's own fonts, one per role (body, heading, hand, mono), because Pagle bundles no fonts for those scripts. Its paths are candidates until `/pagle dev fonts` shows which a client carries. Modules read it through `Pagle.FaceFile` and `Pagle.SetFace`.
+_Avoid_: font map, font list
+
 **EN snapshot**:
 The English text a translated string was translated from, kept beside it so that a change to the English can be seen.
 _Avoid_: source text, original, English comment

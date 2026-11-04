@@ -247,9 +247,11 @@ describe("A Nudge", function()
 		end
 
 		assert.is_false(frame.shown)
-		-- Its fade reads the Animations setting (QOL-R75), and nothing else of Core's.
+		-- Its fade reads the Animations setting (QOL-R75), and its fonts ask Core for their faces (CORE-R9, Pagle.SetFace
+		-- makes no Announcement); nothing else of Core's.
+		local allowed = { ["Pagle.IsAnimationsOn"] = true, ["Pagle.SetFace"] = true }
 		for _, call in ipairs(coreCalls) do
-			assert.are.equal("Pagle.IsAnimationsOn", call)
+			assert(allowed[call], call)
 		end
 		assert.are.same({}, sounds)
 		assert.are.same({}, fake.printed)

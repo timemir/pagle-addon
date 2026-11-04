@@ -12,20 +12,17 @@ local ns = select(2, ...)
 -- atlases, as a Module reaches none of Core's code (ADR 0001). The fonts are Core's files in Pagle/media/fonts (Core is
 -- a required dependency, CORE-R3).
 
-local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 --- The faces (Pagle/media/fonts/OFL-*.txt): IM Fell English and its italic for print, its small caps for the Field
 --- guide page's kickers, Caveat for the Angler's handwriting, Marcellus for gilt and brass.
 ns.BOARD_FONT_FACES = {
-	print = FONT_DIR .. "IMFeENrm28P.ttf",
-	italic = FONT_DIR .. "IMFeENit28P.ttf",
-	sc = FONT_DIR .. "IMFeENsc28P.ttf",
-	gilt = FONT_DIR .. "Marcellus-Regular.ttf",
-	hand = FONT_DIR .. "Caveat-Medium.ttf",
-	handSemi = FONT_DIR .. "Caveat-SemiBold.ttf",
-	handBold = FONT_DIR .. "Caveat-Bold.ttf",
+	print = "IMFeENrm28P.ttf",
+	italic = "IMFeENit28P.ttf",
+	sc = "IMFeENsc28P.ttf",
+	gilt = "Marcellus-Regular.ttf",
+	hand = "Caveat-Medium.ttf",
+	handSemi = "Caveat-SemiBold.ttf",
+	handBold = "Caveat-Bold.ttf",
 }
--- What draws if a bundled face won't load: the client's own.
-local FALLBACK = "Fonts\\FRIZQT__.TTF"
 
 --- Each of the board's fonts, from the kit (PagleArtBoard's Board.lua, Overlays.lua, Tracker.lua): its face, size and
 --- ink ("RRGGBB"), and whether it has a shadow (words on the dark frame, the drawer and the trackers do).
@@ -207,9 +204,7 @@ function ns.ArtFont(key)
 	end
 	local def = assert(ns.BOARD_FONTS[key], "the Tackle Board has no font " .. tostring(key))
 	font = CreateFont("PagleTackleBoard" .. key)
-	if font:SetFont(ns.BOARD_FONT_FACES[def[1]], def[2], "") == false then
-		font:SetFont(FALLBACK, def[2], "")
-	end
+	Pagle.SetFace(font, ns.BOARD_FONT_FACES[def[1]], def[2])
 	local color = ns.BoardHex(def[3])
 	font:SetTextColor(color[1], color[2], color[3])
 	if def[4] then

@@ -1307,20 +1307,29 @@ function ns.FieldReportTextFunction(host, client)
 	end
 end
 
+--- What `/pagle dev fonts` takes from where Core runs: the client's SetFont and GetStringWidth (`meter`, ns.DevFontMeter),
+--- the Pagle language applied, and the panel (`show`, ns.ShowFontProbe).
+---@class PagleFontProbeSeams
+---@field meter fun(): PagleFontMeter
+---@field language fun(): string
+---@field show fun(fonts: PagleDevGlyphFont[], probe: string)
+
 --- Core's `/pagle dev` commands as ns.dev (#247), over PagleDB.global's `dev` switch, Core's Sessions, the
 --- catalogue's areas and the Cast state machine (ns.fishing). `catch` runs only on a test log (`PagleLog.test`).
 --- `preview` hands its samples to `show`, the display (as ns.WireMoments' is), and its card to ns.cards; `glyphs`
 --- hands its probe line to `showGlyphs` (#248). `tour` runs ns.tour over ns.tourStops, Core's one registry of tour
 --- stops, which `M:RegisterTourStop` on every Module handle adds to (CORE-R65–R68). `probe` saves the client facts
 --- launch re-verification needs in PagleDB.global.probe (#261, logic/Probe.lua), reading each API it tests from
---- `globals`. `skill` sets the Fishing skill override and has `skillChanged` read skill again (#465).
+--- `globals`. `skill` sets the Fishing skill override and has `skillChanged` read skill again (#465). `fonts` saves which client
+--- font files load and draw which scripts in PagleDB.global.fontProbe (#522, logic/DevFonts.lua), over `fonts`.
 ---@param host PagleHost
 ---@param show fun(announcement: PagleAnnouncement) hands an Announcement to the display (ANN-R20)
 ---@param showGlyphs fun(fonts: PagleDevGlyphFont[], probe: string) shows the probe line in each font
 ---@param tour PagleTourSeams what the tour reads from where Core runs
 ---@param globals fun(): table the client's globals (_G), where `/pagle dev probe` looks up each API it tests (#261)
 ---@param skillChanged fun() reads Fishing skill again now (ns.ReadSkill), after `/pagle dev skill` changed what it reports
-function ns.WireDev(host, show, showGlyphs, tour, globals, skillChanged)
+---@param fonts PagleFontProbeSeams what `/pagle dev fonts` needs of the client (#522, logic/DevFonts.lua)
+function ns.WireDev(host, show, showGlyphs, tour, globals, skillChanged, fonts)
 	--- The Fishing channels seen while dev mode is on, for `/pagle dev probe`'s check 21 (LOG-R2): Core's fishing
 	--- adapter notes each player channel here.
 	ns.probeChannels = ns.NewProbeChannels()
@@ -1408,6 +1417,19 @@ function ns.WireDev(host, show, showGlyphs, tour, globals, skillChanged)
 					}
 				end,
 				after = host.after,
+				print = host.print,
+			})
+		end,
+		fonts = function()
+			ns.RunFontProbe({
+				globals = globals,
+				global = function()
+					return host.db().global
+				end,
+				meter = fonts.meter,
+				serverTime = host.serverTime,
+				language = fonts.language,
+				show = fonts.show,
 				print = host.print,
 			})
 		end,

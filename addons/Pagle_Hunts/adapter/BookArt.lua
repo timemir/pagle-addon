@@ -30,7 +30,6 @@ local ns = select(2, ...)
 ---@class HuntsSpriteTexture: Texture
 ---@field box number[]
 
-local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 -- The faces (Pagle/media/fonts/OFL-*.txt): IM Fell English for print and its italic for notes, Caveat for the
 -- Angler's handwriting, Marcellus for gilt, ribbons and brass.
 local FACES = {
@@ -41,16 +40,14 @@ local FACES = {
 	handSemi = "Caveat-SemiBold.ttf",
 	handBold = "Caveat-Bold.ttf",
 }
--- What draws if a bundled face won't load: the client's own.
-local FALLBACK = "Fonts\\FRIZQT__.TTF"
 
 ---@alias HuntsArtFace "print"|"italic"|"gilt"|"hand"|"handSemi"|"handBold"
 
---- A face's file, for a spec or a probe to read.
+--- A face's file in the Pagle language applied, for a spec or a probe to read.
 ---@param face HuntsArtFace
 ---@return string
 function ns.ArtFontFile(face)
-	return FONT_DIR .. assert(FACES[face], "the books kit has no face " .. tostring(face))
+	return Pagle.FaceFile(assert(FACES[face], "the books kit has no face " .. tostring(face)))
 end
 
 -- Each font object made, by face, size and shadow.
@@ -68,9 +65,7 @@ function ns.ArtFont(face, size, shadow)
 	local font = fonts[key]
 	if not font then
 		font = CreateFont(("PagleHuntsArt_%s_%s%s"):format(face, tostring(size):gsub("%.", "_"), shadow and "_s" or ""))
-		if font:SetFont(ns.ArtFontFile(face), size, "") == false then
-			font:SetFont(FALLBACK, size, "")
-		end
+		Pagle.SetFace(font, assert(FACES[face], "the books kit has no face " .. tostring(face)), size)
 		if shadow then
 			font:SetShadowColor(0, 0, 0, 0.95)
 			font:SetShadowOffset(0, -1)

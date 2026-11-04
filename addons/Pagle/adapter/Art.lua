@@ -12,10 +12,10 @@ end
 -- size is the canvas's CSS pixel, a UI unit. Each piece is made once and set again for each Announcement, so a frame
 -- reused by the lanes redraws in place.
 
-local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 -- The faces (media/fonts/OFL-*.txt): IM Fell English for print, its italic for notes and its small caps (IM Fell
 -- English SC) for kickers, Caveat for the Angler's handwriting, Marcellus for gilt, stamps and labels; Cutive Mono for
--- a composed toast style's typewriter (ANN-R82: Sonar Scope).
+-- a composed toast style's typewriter (ANN-R82: Sonar Scope). Each is a bundled file's name; the file that draws it, in
+-- the Pagle language applied, is ns.faces' (CORE-R9: ruRU, koKR, zhCN and zhTW draw with the client's own fonts).
 local FACES = {
 	print = "IMFeENrm28P.ttf",
 	italic = "IMFeENit28P.ttf",
@@ -26,8 +26,6 @@ local FACES = {
 	handBold = "Caveat-Bold.ttf",
 	mono = "CutiveMono-Regular.ttf",
 }
--- What draws if a bundled face won't load: the client's own.
-local FALLBACK = "Fonts\\FRIZQT__.TTF"
 
 -- Each font: its face, size and ink (a role in ns.ANNOUNCE_COLORS), and whether it has a shadow (what is drawn over
 -- the world does; what is on the page doesn't).
@@ -84,9 +82,7 @@ ns.ART_FONTS = {}
 for key, def in pairs(FONTS) do
 	local name = "PagleArt" .. key
 	local font = CreateFont(name)
-	if font:SetFont(FONT_DIR .. FACES[def[1]], def[2], "") == false then
-		font:SetFont(FALLBACK, def[2], "")
-	end
+	ns.faces:Track(font, FACES[def[1]], def[2])
 	local color = ns.ANNOUNCE_COLORS[def[3]]
 	font:SetTextColor(color[1], color[2], color[3])
 	if def[4] then
@@ -132,9 +128,7 @@ function ns.SetArtFontScaled(fontString, key, scale)
 	ns.SetArtFont(fontString, key)
 	local def = FONTS[key]
 	local size = math.max(8, math.floor(def[2] * scale + 0.5))
-	if fontString:SetFont(FONT_DIR .. FACES[def[1]], size, "") == false then
-		fontString:SetFont(FALLBACK, size, "")
-	end
+	ns.faces:Set(fontString, FACES[def[1]], size)
 end
 
 --- Puts a font string in a composed toast style's ink (ANN-R82): its face at its size (or `size`), its colour and
@@ -181,9 +175,7 @@ function ns.ArtFaceFont(face, size, shadow)
 	if not font then
 		local file = assert(FACES[face], "the art has no face " .. tostring(face))
 		font = CreateFont("PagleArtFace_" .. key)
-		if font:SetFont(FONT_DIR .. file, size, "") == false then
-			font:SetFont(FALLBACK, size, "")
-		end
+		ns.faces:Track(font, file, size)
 		if shadow then
 			font:SetShadowColor(0, 0, 0, 0.95)
 			font:SetShadowOffset(0, -1)
@@ -238,9 +230,7 @@ function ns.ShrinkToFit(fontString, key, width)
 	if natural > width then
 		local def = FONTS[key]
 		local size = math.max(math.ceil(def[2] * SHRINK_FLOOR), math.floor(def[2] * width / natural))
-		if fontString:SetFont(FONT_DIR .. FACES[def[1]], size, "") == false then
-			fontString:SetFont(FALLBACK, size, "")
-		end
+		ns.faces:Set(fontString, FACES[def[1]], size)
 	end
 	fontString:SetWidth(math.min(fontString:GetStringWidth(), width))
 end

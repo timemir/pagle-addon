@@ -42,7 +42,6 @@ ns.SHOP_INKS = {
 	crateInk = rgb("D8301E"), -- the YOURS and PAID BACK stamp on the reveal's card
 }
 
-local FONT_DIR = "Interface\\AddOns\\Pagle\\media\\fonts\\"
 -- The faces (media/fonts/OFL-*.txt): IM Fell English and its italic for print, Caveat for the Angler's handwriting,
 -- Marcellus for gilt and labels.
 local FACES = {
@@ -53,8 +52,6 @@ local FACES = {
 	handSemi = "Caveat-SemiBold.ttf",
 	handBold = "Caveat-Bold.ttf",
 }
--- What draws if a bundled face won't load: the client's own.
-local FALLBACK = "Fonts\\FRIZQT__.TTF"
 
 --- One of the shop's fonts: its face, size and ink (a role in ns.SHOP_INKS), whether it has a shadow (what is on the
 --- leather and velvet does; what is on paper doesn't), and whether its words are set in capitals (the client has no
@@ -133,9 +130,7 @@ ns.SHOP_FONTS = {}
 for key, def in pairs(FONTS) do
 	local name = "PagleShop" .. key
 	local font = CreateFont(name)
-	if font:SetFont(FONT_DIR .. FACES[def[1]], def[2], "") == false then
-		font:SetFont(FALLBACK, def[2], "")
-	end
+	ns.faces:Track(font, FACES[def[1]], def[2])
 	local ink = ns.SHOP_INKS[def[3]]
 	font:SetTextColor(ink[1], ink[2], ink[3])
 	if def.shadow then
