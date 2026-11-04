@@ -41,7 +41,7 @@ end
 function ns.InputMenuLabel(input)
 	local L = ns.L
 	local names = { key = L.INPUT_KEY, click = L.INPUT_CLICK, both = L.INPUT_BOTH }
-	return L.MENU_INPUT:format(names[input] or L.INPUT_BOTH)
+	return ns.Text(L.MENU_INPUT, { names = names[input] or L.INPUT_BOTH })
 end
 
 --- What `/pagle qol` acts through.

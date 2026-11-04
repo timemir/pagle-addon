@@ -162,11 +162,11 @@ local function check(self, pause)
 		local name, kind = field[1], field[2]
 		local value = data[name]
 		if value == nil then
-			return absent(L.PUSHED_MISSING_FIELD:format(name))
+			return absent(ns.RenderText(L.PUSHED_MISSING_FIELD, { name = name }))
 		elseif kind == "integer" and not isInteger(value) then
-			return absent(L.PUSHED_NOT_INTEGER:format(name))
+			return absent(ns.RenderText(L.PUSHED_NOT_INTEGER, { name = name }))
 		elseif kind == "string" and type(value) ~= "string" then
-			return absent(L.PUSHED_NOT_STRING:format(name))
+			return absent(ns.RenderText(L.PUSHED_NOT_STRING, { name = name }))
 		end
 		file[name] = value
 	end
@@ -174,16 +174,16 @@ local function check(self, pause)
 		return absent(L.PUSHED_BAD_KEY_ID)
 	end
 	if not ns.PUSHED_FILE_VERSIONS[file.v] then
-		return absent(L.PUSHED_UNKNOWN_VERSION:format(decimal(file.v)))
+		return absent(ns.RenderText(L.PUSHED_UNKNOWN_VERSION, { pushed_unknown_version = decimal(file.v) }))
 	end
 	local key = options.keys()[file.keyId]
 	if not key then
-		return absent(L.PUSHED_UNKNOWN_KEY:format(file.keyId))
+		return absent(ns.RenderText(L.PUSHED_UNKNOWN_KEY, { keyId = file.keyId }))
 	end
 	-- Base64, the payload in steps (PUSH-R2).
 	local signature, why = ns.Base64Decode(file.sig)
 	if not signature then
-		return absent(L.PUSHED_NOT_BASE64:format("sig", why))
+		return absent(ns.RenderText(L.PUSHED_NOT_BASE64, { pushed_not_base64_1 = "sig", why = why }))
 	end
 	local decode = ns.Base64DecodeSteps(file.payload)
 	local decoded, bytes
@@ -192,11 +192,11 @@ local function check(self, pause)
 		decoded, bytes = decode()
 	until decoded ~= nil
 	if not decoded then
-		return absent(L.PUSHED_NOT_BASE64:format("payload", bytes))
+		return absent(ns.RenderText(L.PUSHED_NOT_BASE64, { pushed_not_base64_1 = "payload", why = bytes }))
 	end
 	---@cast bytes string
 	if #bytes > ns.PUSHED_SIZE_CAP then
-		return absent(L.PUSHED_OVER_CAP:format(#bytes, ns.PUSHED_SIZE_CAP))
+		return absent(ns.RenderText(L.PUSHED_OVER_CAP, { bytes = #bytes, pushedSizeCap = ns.PUSHED_SIZE_CAP }))
 	end
 	-- The signature (PUSH-R11): SHA-256 over the canonical header and the payload's bytes, then RSA, both in steps.
 	local hash ---@type PagleSha256
@@ -226,17 +226,17 @@ local function check(self, pause)
 		verified, problem = verify()
 	until verified ~= nil
 	if not verified then
-		return absent(L.PUSHED_BAD_SIGNATURE:format(problem))
+		return absent(ns.RenderText(L.PUSHED_BAD_SIGNATURE, { problem = problem }))
 	end
 	-- The last accepted seq, then expiry (PUSH-R13, PUSH-R92).
 	local global = options.global()
 	local last = type(global.pushed) == "table" and global.pushed.seq or nil
 	if type(last) == "number" and file.seq < last then
-		return absent(L.PUSHED_LOWER_SEQ:format(decimal(file.seq), decimal(last)))
+		return absent(ns.RenderText(L.PUSHED_LOWER_SEQ, { seq = decimal(file.seq), last = decimal(last) }))
 	end
 	local now = options.serverTime()
 	if now >= file.expires then
-		return absent(L.PUSHED_EXPIRED:format(decimal(file.expires), decimal(now)))
+		return absent(ns.RenderText(L.PUSHED_EXPIRED, { expires = decimal(file.expires), now = decimal(now) }))
 	end
 	-- The payload (PUSH-R20).
 	local items, at, reason, arg = ns.ParsePayload(bytes, function()
@@ -244,7 +244,12 @@ local function check(self, pause)
 	end)
 	if not items then
 		---@cast reason string
-		return absent(L.PUSHED_PARSE_ERROR:format(at, ns.RenderText(L[reason], { value = arg })))
+		return absent(
+			ns.RenderText(
+				L.PUSHED_PARSE_ERROR,
+				{ pushed_parse_error_1 = at, pushed_parse_error_2 = ns.RenderText(L[reason], { value = arg }) }
+			)
+		)
 	end
 	-- Accepted: its seq is the last accepted from now on (PUSH-R13).
 	if type(global.pushed) ~= "table" then
@@ -269,7 +274,7 @@ local function noFile(presence)
 	elseif presence.loaded then
 		return L.PUSHED_NO_DATA
 	end
-	return L.PUSHED_NOT_LOADED:format(presence.reason or "?")
+	return ns.RenderText(L.PUSHED_NOT_LOADED, { reason = presence.reason or "?" })
 end
 
 --- Login step 2, after ModulesChanged (PUSH-R10): reads PagleContentData once and checks it, from the next frame on,
@@ -399,7 +404,7 @@ local function listed(counts)
 	end
 	table.sort(names)
 	for i, name in ipairs(names) do
-		names[i] = ns.L.DEV_CONTENT_KIND:format(name, counts[name])
+		names[i] = ns.RenderText(ns.L.DEV_CONTENT_KIND, { name = name, counts = counts[name] })
 	end
 	return #names > 0 and concat(names, ", ") or ns.L.DEV_CONTENT_NONE
 end
@@ -412,32 +417,34 @@ function PushedContent:Report()
 	local L = ns.L
 	local lines = {}
 	if self.state == MISSING then
-		lines[1] = L.DEV_CONTENT_ABSENT:format(self.reason or L.DEV_CONTENT_NONE)
+		lines[1] = ns.RenderText(L.DEV_CONTENT_ABSENT, { reason = self.reason or L.DEV_CONTENT_NONE })
 	else
-		lines[1] = L.DEV_CONTENT_STATE:format(self.state)
+		lines[1] = ns.RenderText(L.DEV_CONTENT_STATE, { state = self.state })
 	end
 	local data = type(self.data) == "table" and self.data or {}
 	if self.data ~= nil then
-		lines[#lines + 1] = L.DEV_CONTENT_HEADER:format(
-			shown(data.generatedAt),
-			shown(data.keyId),
-			shown(data.seq),
-			shown(data.expires)
-		)
+		lines[#lines + 1] = ns.RenderText(L.DEV_CONTENT_HEADER, {
+			generatedAt = shown(data.generatedAt),
+			keyId = shown(data.keyId),
+			seq = shown(data.seq),
+			expires = shown(data.expires),
+		})
 	end
 	if self.kept then
 		local counts = {}
 		for kind, items in pairs(self.kept) do
 			counts[kind] = #items
 		end
-		lines[#lines + 1] = L.DEV_CONTENT_KINDS:format(listed(counts))
+		lines[#lines + 1] = ns.RenderText(L.DEV_CONTENT_KINDS, { counts = listed(counts) })
 		if next(self.dropped) then
-			lines[#lines + 1] = L.DEV_CONTENT_DROPPED:format(listed(self.dropped))
+			lines[#lines + 1] = ns.RenderText(L.DEV_CONTENT_DROPPED, { dropped = listed(self.dropped) })
 		end
 	end
 	if self.frames > 0 then
-		lines[#lines + 1] =
-			L.DEV_CONTENT_FRAMES:format(self.frames, self.longest, self.options.budget or ns.PUSHED_CHECK_BUDGET)
+		lines[#lines + 1] = ns.RenderText(
+			L.DEV_CONTENT_FRAMES,
+			{ frames = self.frames, longest = self.longest, budget = self.options.budget or ns.PUSHED_CHECK_BUDGET }
+		)
 	end
 	return lines
 end

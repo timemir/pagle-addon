@@ -64,15 +64,15 @@ local function sampleNotice(goal, progress, here)
 		view = {
 			kicker = kicker,
 			text = text,
-			chip = ns.Fill(L.OVERFLOW_CHIP, { kind = kicker, text = text }),
-			progress = ns.Fill(
+			chip = ns.Text(L.OVERFLOW_CHIP, { kind = kicker, text = text }),
+			progress = ns.Text(
 				ns.IsDayBound(goal) and L.PROGRESS_TODAY or L.PROGRESS,
 				{ n = progress, need = goal.need }
 			),
 			fill = progress / goal.need,
 			where = ns.GoalWhere(goal),
 			here = here,
-			pay = ns.Plural(goal.pay, "PAYS"),
+			pay = ns.Text(ns.L.PAYS, { count = goal.pay }),
 			stamp = false,
 			takeDown = "enabled",
 			hover = {},
@@ -91,7 +91,7 @@ function ns.GuideSample()
 		},
 		fire = ns.CampfireView(SAMPLE_FIRE),
 		fireDays = SAMPLE_FIRE.count,
-		flies = ns.Fill(ns.L.FLY_BOX_TIED, { n = math.min(SAMPLE_TIED, #ns.FLY_PATTERNS), total = #ns.FLY_PATTERNS }),
+		flies = ns.Text(ns.L.FLY_BOX_TIED, { n = math.min(SAMPLE_TIED, #ns.FLY_PATTERNS), total = #ns.FLY_PATTERNS }),
 	}
 end
 
@@ -131,7 +131,7 @@ function ns.BoardLookNotes()
 	for i, note in ipairs(ns.L.LOOK_NOTES) do
 		local place = LOOK_PLACES[i]
 		notes[i] = {
-			text = ns.Fill(note.text, { term = RED .. note.term .. "|r" }),
+			text = ns.Text(note.text, { term = RED .. note.term .. "|r" }),
 			x = place.x,
 			y = place.y,
 			w = place.w,

@@ -310,7 +310,7 @@ end
 ---@return string where
 ---@return string here "" when there is none
 local function splitHere(where)
-	local suffix = ns.Fill(ns.L.WHERE_HERE, { where = "" })
+	local suffix = ns.Text(ns.L.WHERE_HERE, { where = "" })
 	if suffix ~= "" and where:sub(-#suffix) == suffix then
 		return where:sub(1, #where - #suffix), suffix
 	end

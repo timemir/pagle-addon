@@ -217,11 +217,11 @@ trailer = ns.NewTrailer({
 		end
 		for _, name in ipairs(ORDER) do
 			if not (factories[name] and active[name]) then
-				return L.TRAILER_ENABLE_MODULE:format(name)
+				return ns.RenderText(L.TRAILER_ENABLE_MODULE, { name = name })
 			end
 		end
 		if not active.QoL then
-			return L.TRAILER_ENABLE_MODULE:format("QoL")
+			return ns.RenderText(L.TRAILER_ENABLE_MODULE, { name = "QoL" })
 		end
 	end,
 	prepare = function(restores)
@@ -230,7 +230,7 @@ trailer = ns.NewTrailer({
 		assert(not ns.projections:IsUpdating(), L.TRAILER_WAIT_HISTORY)
 		assert(ns.lanes:IsEmpty(), L.TRAILER_WAIT_ANNOUNCEMENTS)
 		for _, name in ipairs(ORDER) do
-			assert(factories[name], L.TRAILER_ENABLE_MODULE:format(name))
+			assert(factories[name], ns.RenderText(L.TRAILER_ENABLE_MODULE, { name = name }))
 		end
 		context = ns.NewTrailerHistory(
 			ns.Catalogue,
@@ -382,7 +382,7 @@ function ns.RunTrailer(args)
 	if command == "stop" then
 		trailer:Stop(L.TRAILER_STOPPED)
 	elseif command == "status" then
-		print(L.TRAILER_STATUS:format(trailer.state))
+		print(ns.RenderText(L.TRAILER_STATUS, { state = trailer.state }))
 	elseif command == "" then
 		trailer:Arm()
 	else

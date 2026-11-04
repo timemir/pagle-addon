@@ -74,14 +74,14 @@ function ns.WindowNod(info)
 	local pastText
 	if closesAt then
 		local to = ns.FormatClock(ns.RealmClockAt(closesAt, info.snapshot).minute)
-		pastText = L.WINDOW_OPENED_UNTIL:format(info.name, from, to)
+		pastText = ns.Text(L.WINDOW_OPENED_UNTIL, { name = info.name, from = from, window_opened_until_3 = to })
 	else
-		pastText = L.WINDOW_OPENED:format(info.name, from)
+		pastText = ns.Text(L.WINDOW_OPENED, { name = info.name, from = from })
 	end
 	return {
 		rung = "nod",
 		kind = "huntWindow",
-		title = L.WINDOW_OPEN:format(info.name),
+		title = ns.Text(L.WINDOW_OPEN, { name = info.name }),
 		text = info.label,
 		icon = info.icon,
 		expiresAt = closesAt,

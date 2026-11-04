@@ -5,8 +5,9 @@
 # keys (fly patterns, titles, goods) are added by the generated data/Lore.lua from the M7 lore batch on (TKB-R130,
 # DATA-R107).
 #
-# Converted from the hand-written enUS.lua by scripts/convert-enus-locale.py: the strings are as they were,
-# `%s`, `_ONE`/`_OTHER` pairs and all. A key is `KEY = "text"`; an array is `KEY = [...]`; a table is dotted keys
+# Converted from the hand-written enUS.lua by scripts/convert-enus-locale.py, then rewritten to the text helper's
+# named fields by scripts/convert-text.py (CORE-R8): `%s` and `%d` became `{name}` and `{name:0}`, and a
+# `_ONE`/`_OTHER` pair one counted string. A key is `KEY = "text"`; an array is `KEY = [...]`; a table is dotted keys
 # (`KEY.sub = "text"`), a whole-number key being the Lua integer key (`CONTINENT_NAMES.0`), and a table of plural
 # categories is a counted string. The shape is in DATA-R114 (docs/spec/content-data.md).
 
@@ -104,24 +105,24 @@ POST_TIP_COST = "It uses 1 Refresh. You hold {held}."
 # Counts (ns.Plural).
 CATCHES.one = "{n} Catch"
 CATCHES.other = "{n} Catches"
-REFRESHES.one = "{n} Refresh"
-REFRESHES.other = "{n} Refreshes"
+REFRESHES.one = "{count} Refresh"
+REFRESHES.other = "{count} Refreshes"
 # The ledge's Refresh count under the shop card (TKB-R106) and its hover.
-REFRESHES_HELD.one = "{n} Refresh held"
-REFRESHES_HELD.other = "{n} Refreshes held"
+REFRESHES_HELD.one = "{count} Refresh held"
+REFRESHES_HELD.other = "{count} Refreshes held"
 REFRESH_TIP_TITLE = "Refreshes"
 REFRESH_TIP = "Each one posts a fresh Notice or Expedition in an empty slot on the board. Click an empty slot to use one."
 REFRESH_TIP_SOURCE = "Pagle Wagers earn them."
-COINS.one = "{n} Coin"
-COINS.other = "{n} Coins"
+COINS.one = "{count} Coin"
+COINS.other = "{count} Coins"
 
 # The pins (TKB-R44, TKB-R55, TKB-R102, TKB-R105; logic/Pins.lua).
 # A pinned goal: its handwritten progress over its need (TKB-R104), its pay, "I'm here", a stranded goal's mark,
 # the button and the stamp.
 PROGRESS = "{n} of {need}"
 PROGRESS_TODAY = "{n} of {need} today"
-PAYS.one = "pays {n} Coin"
-PAYS.other = "pays {n} Coins"
+PAYS.one = "pays {count} Coin"
+PAYS.other = "pays {count} Coins"
 # A Notice's pay, its Coins on the coin after it.
 PAYS_WORD = "pays"
 # An Expedition poster's header, before its kind.
@@ -160,8 +161,8 @@ SPIKE_HEAD = "Done today"
 SPIKE_NOTE = "+{coins} · {fly}"
 SPIKE_NOTE_PLAIN = "+{coins}"
 # A done goal's hover: its Coins and the fly it tied.
-SPIKE_COINS.one = "Paid {n} Coin"
-SPIKE_COINS.other = "Paid {n} Coins"
+SPIKE_COINS.one = "Paid {count} Coin"
+SPIKE_COINS.other = "Paid {count} Coins"
 SPIKE_FLY = "Tied for your Fly Box: {fly}"
 
 # The Campfire on the ledge (TKB-R106): its count (DAYS, with the moments' below), or a fire gone out, or none
@@ -198,7 +199,7 @@ SHOP_LINK = "Coins go to the Curio Shop"
 # The Campfire card's and the Fly Box drawer's headings.
 CARD_TITLE = "The Campfire"
 CARD_FIRE = "{fire} · {longest} · {kindling}"
-KINDLING = "{n} Kindling"
+KINDLING = "{count} Kindling"
 FLY_BOX = "Fly Box"
 # The card's sections: the four-week log (its weeks headed by their first day's date, CARD_SHORT_DATE), the
 # milestones and the titles, each with a note; each title's threshold, and what is still to go.
@@ -223,8 +224,8 @@ CLOSE_MARK = "×"
 
 # The moments, the Write-up and the summary line (TKB-R85–R87; logic/Moments.lua). {fly} and {title} are lore
 # names (TKB-R130).
-DAYS.one = "{n} day"
-DAYS.other = "{n} days"
+DAYS.one = "{count} day"
+DAYS.other = "{count} days"
 # A done goal's toast: its title, its text with the fly it tied, and its stamp when it rides on another
 # Announcement (ANN-R11).
 NOTICE_COMPLETE = "Notice complete"
@@ -247,24 +248,24 @@ FIRE_OUT = "Your Campfire went out. Your longest, {longest}, is kept for good. A
 WRITE_UP_FIRST.one = "Your Tackle Board was written up from {count:n} Cast"
 WRITE_UP_FIRST.other = "Your Tackle Board was written up from {count:n} Casts"
 WRITE_UP_WHILE_OFF = "While Tackle Board was off"
-NOTICES.one = "{n} Notice"
-NOTICES.other = "{n} Notices"
-EXPEDITIONS.one = "{n} Expedition"
-EXPEDITIONS.other = "{n} Expeditions"
+NOTICES.one = "{count} Notice"
+NOTICES.other = "{count} Notices"
+EXPEDITIONS.one = "{count} Expedition"
+EXPEDITIONS.other = "{count} Expeditions"
 GOALS_AND = "{notices} and {expeditions}"
 GOALS_DONE = "{goals} done"
 COINS_LINE = "Pagle Coins +{coins}"
 XP_LINE = "Angler XP +{xp}"
-FLIES_TIED.one = "{n} fly tied for your Fly Box"
-FLIES_TIED.other = "{n} flies tied for your Fly Box"
-CAMPFIRE_DAYS.one = "Campfire {n} day"
-CAMPFIRE_DAYS.other = "Campfire {n} days"
+FLIES_TIED.one = "{count} fly tied for your Fly Box"
+FLIES_TIED.other = "{count} flies tied for your Fly Box"
+CAMPFIRE_DAYS.one = "Campfire {count} day"
+CAMPFIRE_DAYS.other = "Campfire {count} days"
 CAMPFIRE_BURNED = "{campfire} · {k} Kindling burned"
 CAMPFIRE_WENT_OUT = "Your Campfire went out; your longest, {longest}, is kept"
 # The summary line: {done} the goals done today, {campfire} the Campfire's days or CAMPFIRE_NOT_LIT.
 SUMMARY_LINE = "Tackle Board: {done} · {campfire}"
 SUMMARY_LINE_NOTHING_DONE = "Tackle Board: {campfire}"
-DONE_TODAY = "{n} done today"
+DONE_TODAY = "{count} done today"
 CAMPFIRE_NOT_LIT = "Campfire not lit"
 
 # The goods and the tracker block (TKB-R122, TKB-R125; logic/Goods.lua, adapter/TrackerBlock.lua).
@@ -275,10 +276,10 @@ SLOT_TRACKER_FRAME = "Tackle Board tracker frame"
 GOOD_EARNED_CAMPFIRE = "Campfire: {days} days"
 # The tracker's header, right of the title: the Campfire's days by the flame, then the open goals; or the open
 # goals alone with no fire lit.
-TRACKER_OPEN = "{n} open"
+TRACKER_OPEN = "{count} open"
 TRACKER_FIRE_OPEN = "{fire} · {open}"
 # A goal line's count (TKB-R122): its displayed progress over its need.
-TRACKER_COUNT = "{n}/{need}"
+TRACKER_COUNT = "{count}/{need}"
 # The live tracker's lines (TKB-R122, TKB-R123; logic/Tracker.lua): an Expedition's text, the line for the open
 # goals not workable here, the line with nothing open, and a goal completed live, flashing in its count's place.
 # While the projection is updating it reads UPDATING (TKB-R124).

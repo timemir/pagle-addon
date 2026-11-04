@@ -37,7 +37,7 @@ ns.TRACKER_FLASH = 3
 local function goalText(goal)
 	local text = ns.GoalText(goal)
 	if goal.type == "e" then
-		return ns.Fill(ns.L.TRACKER_EXPEDITION, { text = text })
+		return ns.Text(ns.L.TRACKER_EXPEDITION, { text = text })
 	end
 	return text
 end
@@ -120,7 +120,7 @@ function ns.TrackerView(input)
 	if #open == 0 then
 		lines[#lines + 1] = { kind = "line", text = L.TRACKER_ALL_DONE }
 	elseif elsewhere > 0 then
-		lines[#lines + 1] = { kind = "line", text = ns.Fill(L.TRACKER_MORE, { n = elsewhere }), board = true }
+		lines[#lines + 1] = { kind = "line", text = ns.Text(L.TRACKER_MORE, { n = elsewhere }), board = true }
 	end
 	return view
 end

@@ -26,7 +26,7 @@ local function landTip(title, species, need)
 		title = title,
 		lines = {
 			ns.Text(L.STAMP_TIP_LAND, { count = need }),
-			L.STAMP_TIP_LANDED:format(math.min(species.n, need), need),
+			ns.Text(L.STAMP_TIP_LANDED, { min = math.min(species.n, need), need = need }),
 		},
 	}
 end
@@ -51,9 +51,12 @@ local function elementLines(listing, species, text)
 		end
 		local rule = ns.Text(L.STAMP_TIP_ELEMENT_WINDOWS, { count = need })
 		if #missing > 0 then
-			return { rule, L.STAMP_TIP_ELEMENT_NEEDED:format(have, need, ns.JoinAnd(missing)) }
+			return {
+				rule,
+				ns.Text(L.STAMP_TIP_ELEMENT_NEEDED, { have = have, need = need, joinAnd = ns.JoinAnd(missing) }),
+			}
 		end
-		return { rule, L.STAMP_TIP_ELEMENT_MET:format(ns.JoinAnd(all)) }
+		return { rule, ns.Text(L.STAMP_TIP_ELEMENT_MET, { joinAnd = ns.JoinAnd(all) }) }
 	end
 	return {
 		ns.Text(L.STAMP_TIP_ZONES, { count = need }),
@@ -118,13 +121,13 @@ function ns.FamilyStampTips(world, state, family, stars, formatNumber)
 	else
 		local need = math.ceil(total / 2)
 		half = {
-			total == 1 and L.TROPHY_TIP_HALF_ONE or L.TROPHY_TIP_HALF_OTHER:format(need, total),
+			ns.Text(L.TROPHY_TIP_HALF, { count = total, need = need }),
 			landedLine(),
 		}
 		local format = formatNumber or tostring
 		local weight = world.getItem(listed.heaviest).weight or 0
 		heaviest = {
-			L.TROPHY_TIP_HEAVIEST:format(format(weight)),
+			ns.Text(L.TROPHY_TIP_HEAVIEST, { trophy_tip_heaviest = format(weight) }),
 			(state.items[listed.heaviest] or stars[3]) and L.TROPHY_TIP_HEAVIEST_DONE or L.TROPHY_TIP_HEAVIEST_TODO,
 		}
 	end

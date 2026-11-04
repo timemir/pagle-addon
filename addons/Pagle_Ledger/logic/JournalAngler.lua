@@ -19,9 +19,9 @@ local ns = select(2, ...)
 ---@return string
 local function catchesLine(catches, format)
 	local L = ns.L
-	local text = ns.CountText(catches, L.ANGLER_CATCHES_ONE, L.ANGLER_CATCHES_OTHER, format)
+	local text = ns.Text(L.ANGLER_CATCHES, { count = catches })
 	local next = ns.NextCatchMilestone(catches)
-	return next and text .. L.ANGLER_NEXT_MILESTONE:format(format(next)) or text
+	return next and text .. ns.Text(L.ANGLER_NEXT_MILESTONE, { angler_next_milestone = format(next) }) or text
 end
 
 -- The bookplate (LED-R146): the Prestige frame (LED-R154) with the equipped crest (LED-R112), "Ex Libris", "The
@@ -44,7 +44,7 @@ local function bookplate(context)
 	local since = state.firstDate and context.text:Date(state.firstDate)
 		or state.firstTime and context.text:DateAt(state.firstTime)
 	if since then
-		blocks[#blocks + 1] = { kind = "text", color = "faded", text = L.ANGLER_KEPT_SINCE:format(since) }
+		blocks[#blocks + 1] = { kind = "text", color = "faded", text = ns.Text(L.ANGLER_KEPT_SINCE, { since = since }) }
 	end
 	-- the shown level with "Angler Level" and the active title beside it, and the Prestige emblem and its words
 	local _, title = ns.ActiveTitle(context --[[@as LedgerTitleView]])
@@ -69,7 +69,11 @@ local function bookplate(context)
 	blocks[#blocks + 1] = {
 		kind = "kicker",
 		text = L.ANGLER_TALLY,
-		value = L.ANGLER_COMPLETE:format(completion.percent, format(completion.done), format(completion.total)),
+		value = ns.Text(L.ANGLER_COMPLETE, {
+			percent = completion.percent,
+			angler_complete_2 = format(completion.done),
+			angler_complete_3 = format(completion.total),
+		}),
 	}
 	for _, part in ipairs(ns.COMPLETION_PARTS) do
 		local count = completion[part]
@@ -77,7 +81,10 @@ local function bookplate(context)
 			kind = "leader",
 			style = "pair",
 			text = L.ANGLER_PARTS[part],
-			value = L.ANGLER_PART_COUNT:format(format(count.done), format(count.total)),
+			value = ns.Text(
+				L.ANGLER_PART_COUNT,
+				{ angler_part_count_1 = format(count.done), angler_part_count_2 = format(count.total) }
+			),
 		}
 	end
 	blocks[#blocks + 1] = { kind = "text", text = catchesLine(state.catches, format) }
@@ -103,7 +110,7 @@ local function hands(context, blocks)
 			kind = "leader",
 			style = "pair",
 			text = context.text:Character(index),
-			value = L.ANGLER_HAND:format(reading.rank, reading.max),
+			value = ns.Text(L.ANGLER_HAND, { rank = reading.rank, max = reading.max }),
 		}
 	end
 end
@@ -119,7 +126,7 @@ local function milestones(context, blocks)
 	local boxes = {}
 	for i, threshold in ipairs(ns.SKILL_MILESTONES) do
 		local done = credited[threshold] ~= nil or celebrated[threshold] ~= nil
-		boxes[i] = L.ANGLER_MILESTONE:format(done and L.CHECK_ON or L.CHECK_OFF, threshold)
+		boxes[i] = ns.Text(L.ANGLER_MILESTONE, { done = done and L.CHECK_ON or L.CHECK_OFF, threshold = threshold })
 	end
 	blocks[#blocks + 1] = { kind = "kicker", text = L.ANGLER_MILESTONES }
 	blocks[#blocks + 1] = { kind = "text", text = table.concat(boxes, L.ANGLER_MILESTONE_SEPARATOR) }

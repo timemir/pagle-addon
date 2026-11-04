@@ -77,7 +77,7 @@ function ns.PastePartLabel(n, m)
 	if m <= 1 then
 		return nil
 	end
-	return ns.L.PASTE_PART:format(n, m)
+	return ns.RenderText(ns.L.PASTE_PART, { paste_part_1 = n, paste_part_2 = m })
 end
 
 --- The lines under part `n`'s string (PST-R51): "Entries 1–5,000 of 12,345 · 131 KB" ("No entries" for a part with
@@ -91,19 +91,24 @@ end
 function ns.PastePartLines(view, n, length, formatNumber)
 	local L = ns.L
 	if view.test then
-		return { L.PASTE_TEST_LINE:format(view.testKB) }
+		return { ns.RenderText(L.PASTE_TEST_LINE, { testKB = view.testKB }) }
 	end
 	local export = assert(view.export)
 	local part = export.parts[n]
 	local entries = L.PASTE_NO_ENTRIES
 	if part.count > 0 then
-		entries = L.PASTE_ENTRIES:format(
-			formatNumber(part.from),
-			formatNumber(part.from + part.count - 1),
-			formatNumber(export.total)
-		)
+		entries = ns.RenderText(L.PASTE_ENTRIES, {
+			from = formatNumber(part.from),
+			paste_entries_2 = formatNumber(part.from + part.count - 1),
+			total = formatNumber(export.total),
+		})
 	end
-	local lines = { L.PASTE_PART_LINE:format(entries, L.PASTE_SIZE:format(math.ceil(length / 1024))) }
+	local lines = {
+		ns.RenderText(L.PASTE_PART_LINE, {
+			entries = entries,
+			paste_part_line_2 = ns.RenderText(L.PASTE_SIZE, { paste_size = math.ceil(length / 1024) }),
+		}),
+	}
 	if #export.parts > 1 then
 		lines[2] = L.PASTE_IN_ORDER
 	end

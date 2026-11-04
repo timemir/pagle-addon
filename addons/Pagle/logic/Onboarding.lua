@@ -500,5 +500,5 @@ function Onboarding:RunDev(args)
 	for i, command in ipairs(self.devCommands) do
 		usages[i] = command.usage
 	end
-	self.options.print(ns.L.DEV_ONBOARDING_USAGE:format(table.concat(usages, " | ")))
+	self.options.print(ns.RenderText(ns.L.DEV_ONBOARDING_USAGE, { usages = table.concat(usages, " | ") }))
 end

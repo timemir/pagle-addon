@@ -62,13 +62,13 @@ local function catch(dev, args)
 	if areaID then
 		zone, subzone = options.area(areaID)
 		if not zone then
-			options.print(L.DEV_UNKNOWN_AREA:format(areaText))
+			options.print(ns.RenderText(L.DEV_UNKNOWN_AREA, { areaText = areaText }))
 			return
 		end
 	end
 	local cast = options.catch(itemID, zone, subzone)
 	if cast then
-		options.print(L.DEV_CAUGHT:format(itemID, cast.conditions.zone, cast.seq))
+		options.print(ns.RenderText(L.DEV_CAUGHT, { itemID = itemID, zone = cast.conditions.zone, seq = cast.seq }))
 	else
 		options.print(L.DEV_NO_CHARACTER)
 	end
@@ -213,11 +213,16 @@ local function preview(dev, kind)
 	local announcement = applies and ns.DevPreviewAnnouncement(name, nil, rarity or nil) or nil
 	if announcement then
 		options.announce(announcement)
-		options.print(L.DEV_PREVIEWING:format(rarity ~= "" and name .. " " .. rarity or name))
+		options.print(ns.RenderText(L.DEV_PREVIEWING, { kind = rarity ~= "" and name .. " " .. rarity or name }))
 	elseif kind == "card" and applies then
-		options.print(options.showCard(ns.DevPreviewCard()) and L.DEV_PREVIEWING:format(kind) or L.DEV_CARD_HELD)
+		options.print(
+			options.showCard(ns.DevPreviewCard()) and ns.RenderText(L.DEV_PREVIEWING, { kind = kind })
+				or L.DEV_CARD_HELD
+		)
 	else
-		options.print(L.DEV_PREVIEW_KINDS:format(table.concat(ns.DEV_PREVIEW_KINDS, ", ")))
+		options.print(
+			ns.RenderText(L.DEV_PREVIEW_KINDS, { devPreviewKinds = table.concat(ns.DEV_PREVIEW_KINDS, ", ") })
+		)
 	end
 end
 
@@ -235,9 +240,12 @@ local function stage(dev, args)
 		options.print(L.DEV_STAGE_OFF)
 	elseif count and count >= 0 and count == math.floor(count) then
 		ns.devStageCount = count
-		options.print(L.DEV_STAGE_SET:format(count))
+		options.print(ns.RenderText(L.DEV_STAGE_SET, { dev_stage_set = count }))
 	else
-		options.print(ns.devStageCount and L.DEV_STAGE_IS:format(ns.devStageCount) or L.DEV_STAGE_USAGE)
+		options.print(
+			ns.devStageCount and ns.RenderText(L.DEV_STAGE_IS, { devStageCount = ns.devStageCount })
+				or L.DEV_STAGE_USAGE
+		)
 	end
 end
 
@@ -359,7 +367,7 @@ local function skill(dev, args)
 		options.print(L.DEV_SKILL_USAGE)
 	elseif first == "" then
 		local rank, max = ns.DevSkillOverride(global)
-		options.print(rank and L.DEV_SKILL_REMINDER:format(rank, max) or L.DEV_SKILL_NOT_SET)
+		options.print(rank and ns.RenderText(L.DEV_SKILL_REMINDER, { rank = rank, max = max }) or L.DEV_SKILL_NOT_SET)
 	elseif first == "off" and second == "" then
 		global.devSkill = nil
 		options.skillChanged()
@@ -373,7 +381,7 @@ local function skill(dev, args)
 		end
 		global.devSkill = { rank = rank, max = max }
 		options.skillChanged()
-		options.print(L.DEV_SKILL_SET:format(rank, max))
+		options.print(ns.RenderText(L.DEV_SKILL_SET, { rank = rank, max = max }))
 	end
 end
 
@@ -382,7 +390,7 @@ end
 function Dev:RemindSkill()
 	local rank, max = ns.DevSkillOverride(self.options.global())
 	if rank then
-		self.options.print(ns.L.DEV_SKILL_REMINDER:format(rank, max))
+		self.options.print(ns.RenderText(ns.L.DEV_SKILL_REMINDER, { rank = rank, max = max }))
 	end
 end
 --@end-do-not-package@
@@ -419,7 +427,7 @@ function Dev:Run(args)
 		stage(self, rest)
 	elseif name == "glyphs" then
 		local probe = ns.DevGlyphProbe()
-		options.print(L.DEV_GLYPHS_CHAT:format(probe))
+		options.print(ns.RenderText(L.DEV_GLYPHS_CHAT, { probe = probe }))
 		options.showGlyphs(ns.DEV_GLYPH_FONTS, probe)
 		options.print(L.DEV_GLYPHS_SHOWN)
 	elseif name == "tour" then
@@ -446,9 +454,14 @@ function Dev:Run(args)
 		local view = rest:match("^%d+$") and ns.PasteTestView(tonumber(rest) --[[@as integer]])
 		if view then
 			options.showPaste(view)
-			options.print(L.DEV_PASTE_TEST_SHOWN:format(view.testKB))
+			options.print(ns.RenderText(L.DEV_PASTE_TEST_SHOWN, { testKB = view.testKB }))
 		else
-			options.print(L.DEV_PASTE_TEST_USAGE:format(ns.PASTE_TEST_MIN_KB, ns.PASTE_TEST_MAX_KB))
+			options.print(
+				ns.RenderText(
+					L.DEV_PASTE_TEST_USAGE,
+					{ pasteTestMinKb = ns.PASTE_TEST_MIN_KB, pasteTestMaxKb = ns.PASTE_TEST_MAX_KB }
+				)
+			)
 		end
 	else
 		options.print(L.DEV_USAGE)

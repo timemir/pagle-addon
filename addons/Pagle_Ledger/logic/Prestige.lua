@@ -42,7 +42,8 @@ function ns.PrestigeName(rank)
 		return nil
 	end
 	local L = ns.L
-	return mark.stars > 0 and L.MASTER_PRESTIGE_TITLE:format(mark.stars) or L.PRESTIGE_TITLE:format(mark.emblem)
+	return mark.stars > 0 and ns.Text(L.MASTER_PRESTIGE_TITLE, { stars = mark.stars })
+		or ns.Text(L.PRESTIGE_TITLE, { emblem = mark.emblem })
 end
 
 --- The bookplate's Prestige frame's tooltip (LED-R154): the frame's name and description, lore

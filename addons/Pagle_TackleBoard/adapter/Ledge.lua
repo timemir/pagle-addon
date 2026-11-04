@@ -564,10 +564,10 @@ local function drawCard(card)
 	local state = ns.State()
 	local fire = ns.CampfireView(state.fire)
 	ns.LeanSprite(card.paper, card, 0, 0, CARD_LEAN)
-	card.fire:SetText(ns.Fill(ns.L.CARD_FIRE, {
+	card.fire:SetText(ns.Text(ns.L.CARD_FIRE, {
 		fire = fire.text,
 		longest = fire.longest,
-		kindling = ns.Plural(fire.kindling, "KINDLING"),
+		kindling = ns.Text(ns.L.KINDLING, { count = fire.kindling }),
 	}))
 	local view = ns.CampfireCard(state, celebratedTitles())
 	for i, head in ipairs(card.heads) do
@@ -795,7 +795,7 @@ local function drawFire(fire, view, count)
 	end
 	if lit then
 		fire.days:SetText(tostring(count))
-		fire.word:SetText(ns.Plural(count, "DAYS_WORD"))
+		fire.word:SetText(ns.Text(ns.L.DAYS_WORD, { count = count }))
 	end
 	fire.text:SetText(view.text)
 	for i, stick in ipairs(fire.sticks) do
@@ -918,7 +918,9 @@ local function drawLedge(ledge, draw)
 	ns.SetArtFont(plate.latest, tally.latest and "TallyTitle" or "TallyNone")
 	ns.LeanSprite(ledge.shop.card, ledge.shop, 0, 0, 2.5)
 	ns.LeanSprite(ledge.shop.pointer, ledge.shop, 77, 27, 2.5)
-	ledge.refresh.label:SetText(ns.TicketMarkup(REFRESH_ICON) .. " " .. ns.Plural(ns.RefreshesHeld(), "REFRESHES_HELD"))
+	ledge.refresh.label:SetText(
+		ns.TicketMarkup(REFRESH_ICON) .. " " .. ns.Text(ns.L.REFRESHES_HELD, { count = ns.RefreshesHeld() })
+	)
 	if ledge.card and ledge.card:IsShown() then
 		drawCard(ledge.card)
 	end

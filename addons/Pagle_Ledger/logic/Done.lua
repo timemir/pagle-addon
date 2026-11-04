@@ -121,10 +121,10 @@ local function addTitleLines(lines, keys, outlets)
 	local L = ns.L
 	local names = ns.TitleNames(keys, outlets)
 	for i = 1, math.min(#names, TITLE_LINES) do
-		lines[#lines + 1] = L.TITLE_LINE:format(names[i])
+		lines[#lines + 1] = ns.Text(L.TITLE_LINE, { name = names[i] })
 	end
 	if #names > TITLE_LINES then
-		lines[#lines + 1] = ns.CountText(#names - TITLE_LINES, L.WRITE_UP_MORE_TITLES_ONE, L.WRITE_UP_MORE_TITLES_OTHER)
+		lines[#lines + 1] = ns.Text(L.WRITE_UP_MORE_TITLES, { count = #names - TITLE_LINES })
 	end
 end
 
@@ -137,40 +137,41 @@ end
 local function addLines(lines, counts, outlets)
 	local L = ns.L
 	if counts.species > 0 then
-		lines[#lines + 1] = ns.CountText(counts.species, L.WRITE_UP_SPECIES_ONE, L.WRITE_UP_SPECIES_OTHER)
+		lines[#lines + 1] = ns.Text(L.WRITE_UP_SPECIES, { count = counts.species })
 	end
 	-- "{n} varieties · {m} fish in every colour", either part alone when the other is 0 (VAR-R91).
-	local colours = counts.colours > 0
-		and ns.CountText(counts.colours, L.WRITE_UP_EVERY_COLOUR_ONE, L.WRITE_UP_EVERY_COLOUR_OTHER)
+	local colours = counts.colours > 0 and ns.Text(L.WRITE_UP_EVERY_COLOUR, { count = counts.colours })
 	if counts.varieties > 0 then
-		local varieties = ns.CountText(counts.varieties, L.WRITE_UP_VARIETIES_ONE, L.WRITE_UP_VARIETIES_OTHER)
-		lines[#lines + 1] = colours and L.WRITE_UP_VARIETIES_COLOURS:format(varieties, colours) or varieties
+		local varieties = ns.Text(L.WRITE_UP_VARIETIES, { count = counts.varieties })
+		lines[#lines + 1] = colours
+				and ns.Text(L.WRITE_UP_VARIETIES_COLOURS, { varieties = varieties, colours = colours })
+			or varieties
 	elseif colours then
 		lines[#lines + 1] = colours
 	end
 	if counts.zones > 0 then
-		local zones = ns.CountText(counts.zones, L.WRITE_UP_ZONES_ONE, L.WRITE_UP_ZONES_OTHER)
+		local zones = ns.Text(L.WRITE_UP_ZONES, { count = counts.zones })
 		if counts.mastered > 0 then
-			local mastered = ns.CountText(counts.mastered, L.WRITE_UP_MASTERED_ONE, L.WRITE_UP_MASTERED_OTHER)
-			zones = L.WRITE_UP_ZONES_MASTERED:format(zones, mastered)
+			local mastered = ns.Text(L.WRITE_UP_MASTERED, { count = counts.mastered })
+			zones = ns.Text(L.WRITE_UP_ZONES_MASTERED, { zones = zones, mastered = mastered })
 		end
 		lines[#lines + 1] = zones
 	end
 	if counts.trophy > 0 then
-		lines[#lines + 1] = ns.CountText(counts.trophy, L.WRITE_UP_TROPHY_ONE, L.WRITE_UP_TROPHY_OTHER)
+		lines[#lines + 1] = ns.Text(L.WRITE_UP_TROPHY, { count = counts.trophy })
 	end
 	if counts.curio > 0 then
-		lines[#lines + 1] = ns.CountText(counts.curio, L.WRITE_UP_CURIO_ONE, L.WRITE_UP_CURIO_OTHER)
+		lines[#lines + 1] = ns.Text(L.WRITE_UP_CURIO, { count = counts.curio })
 	end
 	if counts.legends > 0 then
-		lines[#lines + 1] = ns.CountText(counts.legends, L.WRITE_UP_LEGENDS_ONE, L.WRITE_UP_LEGENDS_OTHER)
+		lines[#lines + 1] = ns.Text(L.WRITE_UP_LEGENDS, { count = counts.legends })
 	end
 	if counts.skill > 0 then
-		lines[#lines + 1] = ns.CountText(counts.skill, L.WRITE_UP_SKILL_ONE, L.WRITE_UP_SKILL_OTHER)
+		lines[#lines + 1] = ns.Text(L.WRITE_UP_SKILL, { count = counts.skill })
 	end
 	if counts.catches > 0 then
 		local n = counts.catches
-		lines[#lines + 1] = (n == 1 and L.CATCHES_ONE or L.CATCHES_OTHER):format(outlets.FormatNumber(n))
+		lines[#lines + 1] = ns.Text(L.CATCHES, { count = n })
 	end
 	addTitleLines(lines, counts.titles, outlets)
 end
@@ -180,7 +181,7 @@ end
 ---@param rank integer
 ---@return string
 local function withPrestige(line, rank)
-	return rank > 0 and ns.L.WRITE_UP_WITH_PRESTIGE:format(line, rank) or line
+	return rank > 0 and ns.Text(ns.L.WRITE_UP_WITH_PRESTIGE, { line = line, rank = rank }) or line
 end
 
 -- The Coins line (LED-R94), last: the Coins earned since the celebrated total, only when above 0.
@@ -189,7 +190,7 @@ end
 ---@param outlets LedgerOutlets
 local function addCoinsLine(lines, coins, outlets)
 	if coins > 0 then
-		lines[#lines + 1] = ns.L.WRITE_UP_COINS:format(outlets.FormatNumber(coins))
+		lines[#lines + 1] = ns.Text(ns.L.WRITE_UP_COINS, { number = outlets.FormatNumber(coins) })
 	end
 end
 
@@ -264,7 +265,8 @@ local function firstBuild(celebrated, state, coinsBefore, outlets, lookups)
 		return
 	end
 	local L = ns.L
-	local lines = { withPrestige(L.WRITE_UP_LEVEL:format(ns.ShownLevel(state, celebrated)), state.prestige) }
+	local lines =
+		{ withPrestige(ns.Text(L.WRITE_UP_LEVEL, { shownLevel = ns.ShownLevel(state, celebrated) }), state.prestige) }
 	addLines(lines, stateCounts(celebrated, state, lookups), outlets)
 	addCoinsLine(lines, ns.CoinsEarned(state) - coinsBefore, outlets)
 	outlets.RaiseWriteUp({ heading = ns.Text(L.WRITE_UP_FIRST_BUILD, { count = state.casts }), lines = lines })
@@ -415,9 +417,9 @@ local function catchUp(celebrated, state, scratch, coinsBefore, outlets, lookups
 	local lines = {}
 	local shown = ns.ShownLevel(state, celebrated)
 	if levelUp then
-		lines[1] = withPrestige(L.WRITE_UP_LEVEL_ROSE:format(before, shown), rank)
+		lines[1] = withPrestige(ns.Text(L.WRITE_UP_LEVEL_ROSE, { before = before, shown = shown }), rank)
 	elseif prestige then
-		lines[1] = withPrestige(L.WRITE_UP_LEVEL:format(shown), rank)
+		lines[1] = withPrestige(ns.Text(L.WRITE_UP_LEVEL, { shownLevel = shown }), rank)
 	end
 	addLines(lines, counts, outlets)
 	addCoinsLine(lines, ns.CoinsEarned(state) - coinsBefore, outlets)

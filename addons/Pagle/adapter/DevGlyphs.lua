@@ -99,7 +99,12 @@ local function show(panel, fonts, probe)
 	for i, font in ipairs(fonts) do
 		local row = frame.rows[i]
 		if row then
-			row:SetText(ns.L.DEV_GLYPHS_ROW:format(font.object or fileOf(font), font.usedBy, probe))
+			row:SetText(
+				ns.RenderText(
+					ns.L.DEV_GLYPHS_ROW,
+					{ object = font.object or fileOf(font), usedBy = font.usedBy, probe = probe }
+				)
+			)
 		end
 	end
 	frame:Show()

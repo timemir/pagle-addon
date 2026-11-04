@@ -67,9 +67,12 @@ function ns.SlotsMessage(free, needFishing, needPrevious)
 	if free >= needed then
 		return nil
 	elseif needed == 2 then
-		return ns.L.GEAR_NEEDS_TWO_SLOTS:format(ns.FISHING_SET_NAME, ns.PREVIOUS_SET_NAME)
+		return ns.Text(
+			ns.L.GEAR_NEEDS_TWO_SLOTS,
+			{ fishingSetName = ns.FISHING_SET_NAME, previousSetName = ns.PREVIOUS_SET_NAME }
+		)
 	end
-	return ns.L.GEAR_NEEDS_SLOT:format(needFishing and ns.FISHING_SET_NAME or ns.PREVIOUS_SET_NAME)
+	return ns.Text(ns.L.GEAR_NEEDS_SLOT, { needFishing = needFishing and ns.FISHING_SET_NAME or ns.PREVIOUS_SET_NAME })
 end
 
 --- Whether the gear step is ready (QOL-R43): a fishing set is chosen, no fishing pole is in hand, the set's main

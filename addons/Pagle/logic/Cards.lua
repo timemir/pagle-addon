@@ -312,7 +312,7 @@ end
 function ns.CardRows(card, formatNumber, hasStep)
 	local rows = {}
 	if (card.coins or 0) > 0 then
-		rows[#rows + 1] = { kind = "line", text = ns.L.CARD_COINS:format(formatNumber(card.coins)) }
+		rows[#rows + 1] = { kind = "line", text = ns.RenderText(ns.L.CARD_COINS, { coins = formatNumber(card.coins) }) }
 	end
 	for _, group in ipairs(card.lines or {}) do
 		for _, line in ipairs(group.lines) do
@@ -347,7 +347,10 @@ end
 function ns.CardDuration(seconds)
 	local minutes = math.max(1, math.floor(seconds / 60 + 0.5))
 	if minutes < 60 then
-		return ns.L.MINUTES:format(minutes)
+		return ns.RenderText(ns.L.MINUTES, { value = minutes })
 	end
-	return ns.L.CARD_HOURS:format(math.floor(minutes / 60), minutes % 60)
+	return ns.RenderText(
+		ns.L.CARD_HOURS,
+		{ card_hours_1 = math.floor(minutes / 60), card_hours_2 = ("%02d"):format(minutes % 60) }
+	)
 end

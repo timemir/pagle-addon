@@ -66,8 +66,8 @@ function ns.HuntTierMoment(hunt, k, huntTier)
 	return {
 		rung = "toast.high",
 		kind = "huntTier",
-		title = L.HUNT_TIER:format(trim),
-		text = L.HUNT_TIER_TEXT:format(name, hunt.tiers[k]),
+		title = ns.Text(L.HUNT_TIER, { trim = trim }),
+		text = ns.Text(L.HUNT_TIER_TEXT, { name = name, tiers = hunt.tiers[k] }),
 		stamp = trim,
 		icon = ns.HuntMomentIcon(huntTier.itemID),
 		coins = ns.COINS_TIER,
@@ -183,25 +183,25 @@ local function writeUpLines(counts, coins, xp, format)
 	local L = ns.L
 	local lines = {}
 	if counts.completed > 0 then
-		lines[#lines + 1] = ns.CountText(counts.completed, "WRITE_UP_COMPLETED", format)
+		lines[#lines + 1] = ns.Text(ns.L.WRITE_UP_COMPLETED, { count = counts.completed })
 	end
 	if counts.further > 0 then
-		lines[#lines + 1] = ns.CountText(counts.further, "WRITE_UP_FURTHER", format)
+		lines[#lines + 1] = ns.Text(ns.L.WRITE_UP_FURTHER, { count = counts.further })
 	end
 	if counts.settled > 0 then
-		lines[#lines + 1] = ns.CountText(counts.settled, "WRITE_UP_SETTLED", format)
+		lines[#lines + 1] = ns.Text(ns.L.WRITE_UP_SETTLED, { count = counts.settled })
 	end
 	for _, setID in ipairs(counts.titles) do
-		lines[#lines + 1] = L.WRITE_UP_TITLE:format(ns.hunts:SetTitle(setID))
+		lines[#lines + 1] = ns.Text(L.WRITE_UP_TITLE, { title = ns.hunts:SetTitle(setID) })
 	end
 	for _, step in ipairs(counts.ladder) do
-		lines[#lines + 1] = L.WRITE_UP_TITLE:format(ns.LadderTitle(step))
+		lines[#lines + 1] = ns.Text(L.WRITE_UP_TITLE, { title = ns.LadderTitle(step) })
 	end
 	if coins > 0 then
-		lines[#lines + 1] = L.WRITE_UP_COINS:format(format(coins))
+		lines[#lines + 1] = ns.Text(L.WRITE_UP_COINS, { write_up_coins = format(coins) })
 	end
 	if xp > 0 then
-		lines[#lines + 1] = L.WRITE_UP_XP:format(format(xp))
+		lines[#lines + 1] = ns.Text(L.WRITE_UP_XP, { write_up_xp = format(xp) })
 	end
 	return lines
 end
@@ -324,7 +324,7 @@ function ns.CelebrateHuntsDone(celebrated, state, info, client)
 		local counts = countsOf(all, titles, allWagers)
 		if earnedAny(counts) then
 			client.RaiseWriteUp({
-				heading = ns.CountText(state.casts, "WRITE_UP_FIRST_BUILD", format),
+				heading = ns.Text(ns.L.WRITE_UP_FIRST_BUILD, { count = state.casts }),
 				lines = writeUpLines(counts, state.coins, state.xp, format),
 			})
 		end
@@ -377,13 +377,18 @@ end
 function ns.HuntsSummaryLine(state, now, format)
 	local L = ns.L
 	local done, current = ns.DoneOfCurrent(ns.hunts, state, now)
-	local titles = ns.CountText(ns.TitlesEarned(state), "SUMMARY_TITLES", format)
+	local titles = ns.Text(ns.L.SUMMARY_TITLES, { count = ns.TitlesEarned(state) })
 	local settled = state.settled or 0
 	if settled > 0 then
-		local runs = ns.CountText(settled, "SUMMARY_SETTLED", format)
-		return L.SUMMARY_LINE_SETTLED:format(format(done), format(current), titles, runs)
+		local runs = ns.Text(ns.L.SUMMARY_SETTLED, { count = settled })
+		return ns.Text(L.SUMMARY_LINE_SETTLED, {
+			summary_line_settled_1 = format(done),
+			summary_line_settled_2 = format(current),
+			titles = titles,
+			runs = runs,
+		})
 	end
-	return L.SUMMARY_LINE:format(format(done), format(current), titles)
+	return ns.Text(L.SUMMARY_LINE, { summary_line_1 = format(done), summary_line_2 = format(current), titles = titles })
 end
 
 ---@class HuntsMoments

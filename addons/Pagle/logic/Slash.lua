@@ -49,15 +49,15 @@ function Commands:Problem(module, entry)
 	local L = ns.L
 	local name = type(entry) == "table" and entry.name
 	if type(name) ~= "string" or not name:match("^%S+$") then
-		return L.SLASH_SKIPPED_NO_NAME:format(module, tostring(name))
+		return ns.RenderText(L.SLASH_SKIPPED_NO_NAME, { module = module, name = tostring(name) })
 	elseif type(entry.fn) ~= "function" then
-		return L.SLASH_SKIPPED_NO_FN:format(module, name)
+		return ns.RenderText(L.SLASH_SKIPPED_NO_FN, { module = module, name = name })
 	end
 	local key = name:lower()
 	if self.reserved[key] then
-		return L.SLASH_SKIPPED_RESERVED:format(module, name, key)
+		return ns.RenderText(L.SLASH_SKIPPED_RESERVED, { module = module, name = name, key = key })
 	elseif self.owners[key] then
-		return L.SLASH_SKIPPED_TAKEN:format(module, name, self.owners[key])
+		return ns.RenderText(L.SLASH_SKIPPED_TAKEN, { module = module, name = name, owners = self.owners[key] })
 	end
 	return nil
 end
@@ -155,10 +155,10 @@ function Commands:HelpLines()
 	local L = ns.L
 	local lines = { L.SLASH_HELP_HEADER }
 	for _, core in ipairs(L.SLASH_CORE_HELP) do
-		lines[#lines + 1] = L.SLASH_HELP_LINE:format(core.name, core.help)
+		lines[#lines + 1] = ns.RenderText(L.SLASH_HELP_LINE, { name = core.name, help = core.help })
 	end
 	for _, command in ipairs(self.list) do
-		lines[#lines + 1] = L.SLASH_HELP_LINE:format(command.name, command.help)
+		lines[#lines + 1] = ns.RenderText(L.SLASH_HELP_LINE, { name = command.name, help = command.help })
 	end
 	return lines
 end

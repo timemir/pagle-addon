@@ -11,46 +11,6 @@ local ns = select(2, ...)
 
 -- Templates and counts.
 
---- A template with `{name}` fields filled from `fields`; a field with no value stays as written. The board's one
---- filler: every `{name}` template of ns.L is filled through it (ns.Plural for a count).
----@param template string
----@param fields table<string, any>
----@return string
-function ns.Fill(template, fields)
-	return (
-		template:gsub("{(%w+)}", function(name)
-			local value = fields[name]
-			return value ~= nil and tostring(value) or nil
-		end)
-	)
-end
-
---- The form of `forms` for a count: `forms.one` for 1, `forms.other` otherwise; a plain string is both.
----@param forms string|{ one: string, other: string }
----@param n integer
----@return string
-local function pick(forms, n)
-	if type(forms) == "string" then
-		return forms
-	end
-	return n == 1 and forms.one or forms.other
-end
-
---- A count in words (CORE-R8): `ns.L[key]`'s singular form for 1 and its plural otherwise, with `{n}`
---- filled by `n` and any other field by `fields`. `ns.Plural(1, "CATCHES")` is "1 Catch", `ns.Plural(30, "CATCHES")`
---- "30 Catches".
----@param n integer
----@param key string a key of ns.L holding `{ one = …, other = … }`
----@param fields table<string, any>?
----@return string
-function ns.Plural(n, key, fields)
-	local values = { n = n }
-	for name, value in pairs(fields or {}) do
-		values[name] = value
-	end
-	return ns.Fill(pick(ns.L[key], n), values)
-end
-
 -- Names (TKB-R36).
 
 local requested = {} -- items asked of the client and not yet arrived: { [itemID] = true }
@@ -60,7 +20,7 @@ local requested = {} -- items asked of the client and not yet arrived: { [itemID
 ---@param areaID integer
 ---@return string
 function ns.ZoneName(areaID)
-	return ns.api.AreaName(areaID) or ns.Fill(ns.L.AREA_UNKNOWN, { id = areaID })
+	return ns.api.AreaName(areaID) or ns.Text(ns.L.AREA_UNKNOWN, { id = areaID })
 end
 
 --- A continent's name (TKB-R36): C_Map.GetMapInfo on its uiMapID (ns.CONTINENT_MAPS) when the client names it, else
@@ -74,7 +34,7 @@ function ns.ContinentName(continent)
 	if name and name ~= "" then
 		return name
 	end
-	return ns.L.CONTINENT_NAMES[continent] or ns.Fill(ns.L.CONTINENT_UNKNOWN, { id = continent })
+	return ns.L.CONTINENT_NAMES[continent] or ns.Text(ns.L.CONTINENT_UNKNOWN, { id = continent })
 end
 
 --- A Species' name: its representative item's, from C_Item.GetItemNameByID (TKB-R31, TKB-R36). Until the client has
@@ -222,10 +182,10 @@ end
 function ns.TrackerWhere(goal, here)
 	local where = ns.GoalWhere(goal)
 	if ns.IsDayBound(goal) then
-		where = ns.Fill(ns.L.WHERE_TODAY, { where = where })
+		where = ns.Text(ns.L.WHERE_TODAY, { where = where })
 	end
 	if here and ns.IsPlaceGoal(goal) then
-		where = ns.Fill(ns.L.WHERE_HERE, { where = where })
+		where = ns.Text(ns.L.WHERE_HERE, { where = where })
 	end
 	return where
 end
@@ -370,7 +330,7 @@ end
 ---@return string
 function ns.PostedTime(serverTime)
 	local date = ns.RealmDate(serverTime)
-	return ns.Fill(ns.L.POSTED, {
+	return ns.Text(ns.L.POSTED, {
 		weekday = ns.L.WEEKDAYS[date.weekday],
 		day = date.day,
 		month = ns.L.MONTHS[date.month],
@@ -384,7 +344,7 @@ end
 ---@return string
 function ns.Countdown(seconds)
 	if seconds >= 3600 then
-		return ns.Fill(ns.L.HOURS_LEFT, { n = math.floor(seconds / 3600) })
+		return ns.Text(ns.L.HOURS_LEFT, { n = math.floor(seconds / 3600) })
 	end
-	return ns.Fill(ns.L.MINUTES_LEFT, { n = math.floor(math.max(seconds, 0) / 60) })
+	return ns.Text(ns.L.MINUTES_LEFT, { n = math.floor(math.max(seconds, 0) / 60) })
 end

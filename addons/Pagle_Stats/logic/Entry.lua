@@ -43,9 +43,9 @@ function ns.Entry(state, item, area, live, places)
 	local L = ns.L
 	local reading = ns.Reading(state, item, area, live, places)
 	local notes = ns.OddsNotes(reading, places)
-	local kicker = L.ENTRY_KICKER:format(ns.AreaName(area))
+	local kicker = ns.Text(L.ENTRY_KICKER, { areaName = ns.AreaName(area) })
 	if reading.windowName then
-		kicker = L.ENTRY_KICKER_WINDOW:format(kicker, reading.windowName)
+		kicker = ns.Text(L.ENTRY_KICKER_WINDOW, { kicker = kicker, windowName = reading.windowName })
 	end
 	local dryFirst, dryAfter = ns.DrySpellText(reading)
 	local dry = ns.DrySpell(reading)

@@ -40,7 +40,7 @@ function ns.ReadLures(poleInHand)
 	local lure = ns.ChooseLure(settings.mode, settings.item, isAvailable)
 	if lures:OutOfLures(enchanted, ns.RunningStretch(), settings.mode, lure) then
 		-- The lure's name from C_Item (adapter/Items.lua); its ID stands in until the client has loaded it (QOL-R54).
-		local name = ns.ItemName(settings.item) or ns.L.SETTINGS_LURE_UNNAMED:format(settings.item)
+		local name = ns.ItemName(settings.item) or ns.Text(ns.L.SETTINGS_LURE_UNNAMED, { item = settings.item })
 		ns.ShowNudge(ns.OutOfLuresText(settings.mode, name))
 	end
 	return lure, lured

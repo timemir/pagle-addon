@@ -1361,7 +1361,7 @@ function askToBuy(frame, goodID)
 	frame.purse.tip:Hide()
 	bill.goodID = purchase.id
 	-- A Curio crate's bill asks to open one, with its own fine print (SHOP-R54).
-	ns.SetShopText(bill.question, purchase.question or L.SHOP_BUY_CONFIRM:format(purchase.name))
+	ns.SetShopText(bill.question, purchase.question or ns.RenderText(L.SHOP_BUY_CONFIRM, { name = purchase.name }))
 	ns.SetShopText(bill.fine, purchase.fine or L.SHOP_FOR_GOOD)
 	ns.SetShopBezel(bill.bezel, purchase.icon, false, purchase.shield)
 	ns.SetShopText(bill.price, purchase.amount)

@@ -82,7 +82,9 @@ function ns.ReadPushedSnapshot(companion, eventItems, runItems, lookups)
 			end
 		end
 		if problem then
-			ns.outlets.Diagnostic(ns.L.RUN_LOG_EVENT_IGNORED:format(tostring(id), problem))
+			ns.outlets.Diagnostic(
+				ns.Text(ns.L.RUN_LOG_EVENT_IGNORED, { run_log_event_ignored_1 = tostring(id), problem = problem })
+			)
 		else
 			---@cast id string -- checked: an ID starting p_ (ns.HuntEventProblem)
 			events[id] = {
@@ -97,7 +99,7 @@ function ns.ReadPushedSnapshot(companion, eventItems, runItems, lookups)
 		if type(event) == "string" and event:find("^[%w_]+$") and whole(start) and whole(end_) and start < end_ then
 			runs[#runs + 1] = { event = event, start = start, end_ = end_ }
 		else
-			ns.outlets.Diagnostic(ns.L.RUN_LOG_RUN_IGNORED:format(tostring(event)))
+			ns.outlets.Diagnostic(ns.Text(ns.L.RUN_LOG_RUN_IGNORED, { event = tostring(event) }))
 		end
 	end
 	return { companion = companion, events = events, runs = runs }

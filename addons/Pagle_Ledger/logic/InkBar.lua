@@ -30,16 +30,17 @@ function ns.InkXpBar(state, celebrated, now, formatNumber)
 	local shown = ns.ShownLevel(state, celebrated)
 	if shown >= ns.LEVEL_CAP then
 		local carried = level >= ns.LEVEL_CAP and into or 0
-		return { fill = 1, text = L.XP_BAR_SET_ASIDE:format(formatNumber(carried)) }
+		return { fill = 1, text = ns.Text(L.XP_BAR_SET_ASIDE, { carried = formatNumber(carried) }) }
 	end
 	if shown > level or not cost then
 		into, cost = 0, ns.StepCost(shown)
 	end
-	local bar = { fill = into / cost, text = L.XP_BAR_TEXT:format(formatNumber(into), formatNumber(cost)) }
+	local bar =
+		{ fill = into / cost, text = ns.Text(L.XP_BAR_TEXT, { into = formatNumber(into), cost = formatNumber(cost) }) }
 	local fresh = ns.FreshWaterShown(state, now)
 	if fresh > 0 then
 		bar.fresh = { from = bar.fill, to = math.min(1, (into + fresh * ns.CATCH_XP) / cost) }
-		bar.freshText = ns.CountText(fresh, L.XP_BAR_FRESH_ONE, L.XP_BAR_FRESH_OTHER)
+		bar.freshText = ns.Text(L.XP_BAR_FRESH, { count = fresh })
 	end
 	return bar
 end

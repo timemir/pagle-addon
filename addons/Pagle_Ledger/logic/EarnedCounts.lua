@@ -556,7 +556,11 @@ function ns.EarnedCountTexts(good, n, formatNumber)
 	if not unit then
 		return text, text
 	end
-	return L.EARNED_COUNT:format(formatNumber(math.min(n, good.mark)), formatNumber(good.mark), unit), text
+	return ns.Text(
+		L.EARNED_COUNT,
+		{ min = formatNumber(math.min(n, good.mark)), mark = formatNumber(good.mark), unit = unit }
+	),
+		text
 end
 
 --- The fallback the second round's earned goods register with (SHOP-R28), but for an `unsold` one: tier 4 from 90 days

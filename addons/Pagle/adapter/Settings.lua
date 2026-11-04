@@ -407,7 +407,7 @@ local function gettingStarted(layout)
 			evening:SetShown(checked)
 		end)
 		local done, total = evening:Count()
-		rowLine(own, LINE_X, L.SETTINGS_EVENING_LINE:format(done, total))
+		rowLine(own, LINE_X, ns.RenderText(L.SETTINGS_EVENING_LINE, { done = done, total = total }))
 	end, L.SETTINGS_EVENING))
 end
 
@@ -443,7 +443,11 @@ local function buildRoot(category, layout, anyModuleOn)
 			ns.db.profile.reloadReminder = value
 		end
 	)
-	Settings.CreateCheckbox(category, reminder, L.SETTINGS_RELOAD_REMINDER_TOOLTIP:format(ns.RELOAD_REMINDER_STEP))
+	Settings.CreateCheckbox(
+		category,
+		reminder,
+		ns.RenderText(L.SETTINGS_RELOAD_REMINDER_TOOLTIP, { reloadReminderStep = ns.RELOAD_REMINDER_STEP })
+	)
 	unitsSection(category, layout)
 	pagleMenuSection(category, layout)
 	pagleWebsiteSection(category, layout)
@@ -598,7 +602,8 @@ local function addTourStops()
 	topics[#topics + 1] = "look"
 	for _, topic in ipairs(topics) do
 		local id = topic and "settings." .. topic or "settings"
-		local label = L.DEV_TOUR_SETTINGS:format(topic and L.SETTINGS_PAGES[topic] or L.SETTINGS_CATEGORY)
+		local label =
+			ns.RenderText(L.DEV_TOUR_SETTINGS, { topic = topic and L.SETTINGS_PAGES[topic] or L.SETTINGS_CATEGORY })
 		ns.tourStops:Add(ns.TOUR_CORE, id, label, function()
 			Pagle.OpenSettings(topic or nil)
 		end, function()

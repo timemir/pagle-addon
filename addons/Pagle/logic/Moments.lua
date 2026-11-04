@@ -291,7 +291,7 @@ function ns.CatchToastMoment(cast, itemName, lengthUnit, varieties, caughtBefore
 	end
 	local L = ns.L
 	local itemID, size = named.itemID, named.size
-	local name = itemName(itemID) or L.CATCH_TOAST_ITEM:format(itemID)
+	local name = itemName(itemID) or ns.RenderText(L.CATCH_TOAST_ITEM, { itemID = itemID })
 	local moment = {
 		rung = "toast.low",
 		kind = "catch",
@@ -305,21 +305,27 @@ function ns.CatchToastMoment(cast, itemName, lengthUnit, varieties, caughtBefore
 		return moment
 	end
 	local band, length = ns.SizeBandName(size.band), ns.FormatLength(size.length, lengthUnit)
-	moment.title = L.CATCH_TOAST_KICKER:format(band, length)
+	moment.title = ns.RenderText(L.CATCH_TOAST_KICKER, { band = band, length = length })
 	local variety = named.variety
 	local look = variety
 		and varieties
 		and (not caughtBefore or caughtBefore(variety, cast.id))
 		and lookOf(variety, varieties)
 	if not look then
-		moment.nodLine = L.CATCH_TOAST:format(name, band, length)
+		moment.nodLine = ns.RenderText(L.CATCH_TOAST, { name = name, band = band, length = length })
 		return moment
 	end
 	-- A look is found only for a variety.
 	---@cast variety PagleVariety
-	moment.nodLine = L.CATCH_TOAST_VARIETY:format(name, look.name, band, length)
+	moment.nodLine = ns.RenderText(
+		L.CATCH_TOAST_VARIETY,
+		{ name = name, catch_toast_variety_2 = look.name, band = band, length = length }
+	)
 	-- The line with a mark in the name's place, cut there: "\001" is in no name.
-	local before, after = L.CATCH_TOAST_VARIETY:format(name, "\001", band, length):match("^(.-)%s*\001%s*(.*)$")
+	local before, after = ns.RenderText(
+		L.CATCH_TOAST_VARIETY,
+		{ name = name, catch_toast_variety_2 = "\001", band = band, length = length }
+	):match("^(.-)%s*\001%s*(.*)$")
 	moment.variety = { name = look.name, rarity = variety.rarity, before = before, after = after }
 	return moment
 end

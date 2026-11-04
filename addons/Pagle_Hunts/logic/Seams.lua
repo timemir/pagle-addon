@@ -124,7 +124,7 @@ end
 ---@param minute integer 0–59
 ---@return string
 function ns.ClockTime(hour, minute)
-	return ns.L.CLOCK:format(hour, minute)
+	return ns.Text(ns.L.CLOCK, { hour = ("%02d"):format(hour), minute = ("%02d"):format(minute) })
 end
 
 --- Core's clock format (HNT-R62): this stand-in's "24h" until adapter/Names.lua puts `Pagle.GetClockFormat` here

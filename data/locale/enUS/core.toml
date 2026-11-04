@@ -3,8 +3,9 @@
 #
 # Core's string table (CORE-R8). Every user-facing string goes through ns.L; enUS only in 1.0.
 #
-# Converted from the hand-written enUS.lua by scripts/convert-enus-locale.py: the strings are as they were,
-# `%s`, `_ONE`/`_OTHER` pairs and all. A key is `KEY = "text"`; an array is `KEY = [...]`; a table is dotted keys
+# Converted from the hand-written enUS.lua by scripts/convert-enus-locale.py, then rewritten to the text helper's
+# named fields by scripts/convert-text.py (CORE-R8): `%s` and `%d` became `{name}` and `{name:0}`, and a
+# `_ONE`/`_OTHER` pair one counted string. A key is `KEY = "text"`; an array is `KEY = [...]`; a table is dotted keys
 # (`KEY.sub = "text"`), a whole-number key being the Lua integer key (`CONTINENT_NAMES.0`), and a table of plural
 # categories is a counted string. The shape is in DATA-R114 (docs/spec/content-data.md).
 
@@ -33,20 +34,20 @@ TRAILER_COMPLETE = "Pagle: trailer complete. Your addon data is restored."
 TRAILER_ERROR = "Pagle: trailer stopped after an error; your addon data is restored."
 TRAILER_COMBAT = "Pagle: trailer stopped for combat. Your addon data is restored."
 TRAILER_NEW_CAST = "Pagle: trailer stopped for a new cast. Your addon data is restored."
-TRAILER_STATUS = "Pagle trailer: %s"
+TRAILER_STATUS = "Pagle trailer: {state}"
 TRAILER_USAGE = "Pagle: /pagle trailer arms a recording; /pagle trailer stop cancels; /pagle trailer status shows its state."
 TRAILER_AFTER_COMBAT = "The Pagle trailer starts after combat."
 TRAILER_NEEDS_ANGLER = "The Pagle trailer needs a logged-in Angler."
 TRAILER_WAIT_HISTORY = "Wait for Pagle to finish reading your Catch log."
 TRAILER_WAIT_ANNOUNCEMENTS = "Wait for Pagle's announcements to finish before arming the trailer."
-TRAILER_ENABLE_MODULE = "Enable Pagle %s before recording the full trailer."
+TRAILER_ENABLE_MODULE = "Enable Pagle {name} before recording the full trailer."
 TRAILER_SUMMARY_LINE = "A personal best, new discoveries, and progress towards your next Angler Level."
 TRAILER_SUMMARY_TITLE = "A catch worth keeping"
 TRAILER_SUMMARY_TEXT = "Your record lives in the Fish Journal."
 # LOG-R18: PagleLog was in another format, so Core started a new log.
 LOG_FORMAT_CHANGED = "Pagle: dev log format changed; started a new log."
 # LOG-R104: PagleLog is in the codec's format but its blocks can't be read, so Pagle stops and leaves it as it is.
-LOG_UNREADABLE = "Pagle stopped: your Catch log can't be read (%s), and nothing has been changed. Before you log out or reload, copy Pagle.lua and Pagle.lua.bak from WTF/Account/<account>/SavedVariables somewhere safe, then report it at github.com/timemir/pagle-addon/issues."
+LOG_UNREADABLE = "Pagle stopped: your Catch log can't be read ({problem}), and nothing has been changed. Before you log out or reload, copy Pagle.lua and Pagle.lua.bak from WTF/Account/<account>/SavedVariables somewhere safe, then report it at github.com/timemir/pagle-addon/issues."
 # LOG-R104: what /pagle says while the log can't be read.
 LOG_UNREADABLE_PAUSED = "Pagle is stopped: your Catch log can't be read, and nothing has been changed. The line at login says what to do."
 # RCV-R3, RCV-R5, RCV-R8, #525: Recovery's lines (adapter/Recovery.lua), which print before PagleDB is wrapped, in the
@@ -95,8 +96,8 @@ SIZE_BANDS = ["Tiddler", "Decent", "Hefty", "Whopper", "Monster"]
 # VAR-R2: the variety rarity names, Common to Epic, in rarity order (Pagle.VARIETY_RARITIES).
 VARIETY_RARITIES = ["Common", "Uncommon", "Rare", "Epic"]
 # LOG-R69: a length in each length unit, to 0.1 of it; ANN-R22: a size record's margin that rounds to zero.
-LENGTH.cm = "%.1f cm"
-LENGTH.in = "%.1f in"
+LENGTH.cm = "{length:1} cm"
+LENGTH.in = "{length:1} in"
 LENGTH_MARGIN_UNDER.cm = "+<0.1 cm"
 LENGTH_MARGIN_UNDER.in = "+<0.1 in"
 # CORE-R87: a clock time in each clock format: 24-hour "18:05", 12-hour "6:05 PM", as the game writes them
@@ -105,13 +106,13 @@ CLOCK."12h".am = "{hour}:{minute} AM"
 CLOCK."12h".pm = "{hour}:{minute} PM"
 CLOCK."24h" = "{hour}:{minute}"
 # Error reports (CORE-R23): owner, event, the error.
-EVENT_REGISTER_FAILED = "Pagle: %s couldn't register the event %s: %s"
-EVENT_HANDLER_FAILED = "Pagle: %s's handler for the event %s failed: %s"
+EVENT_REGISTER_FAILED = "Pagle: {owner} couldn't register the event {event}: {registered}"
+EVENT_HANDLER_FAILED = "Pagle: {owner}'s handler for the event {event} failed: {err}"
 # An inert Module (CORE-R13): its def.title.
-MODULE_NEEDS_NEWER_PAGLE = "Pagle: Pagle %s needs a newer Pagle."
+MODULE_NEEDS_NEWER_PAGLE = "Pagle: Pagle {title} needs a newer Pagle."
 
 # CORE-R42: a Module's AddSetting after ModulesChanged, reported and dropped; the Module's def.name.
-SETTING_TOO_LATE = "Pagle: %s's AddSetting came after ModulesChanged, so the row is dropped"
+SETTING_TOO_LATE = "Pagle: {name}'s AddSetting came after ModulesChanged, so the row is dropped"
 
 # Settings (CORE-R40–R44, settings.md SET-R10, SET-R11). The category, then its topic pages by topic.
 SETTINGS_CATEGORY = "Pagle"
@@ -140,11 +141,11 @@ SETTINGS_MARGIN_NOTES = "Margin notes"
 SETTINGS_MARGIN_NOTES_TOOLTIP = "Explain things the first time they happen."
 SETTINGS_SHOW_NOTES_AGAIN = "Show them again"
 SETTINGS_EVENING = "First evening list"
-SETTINGS_EVENING_LINE = "%d of %d done"
+SETTINGS_EVENING_LINE = "{done:0} of {total:0} done"
 # The root's Saving section (SET-R10 row 5): its header, the reminder's label, and its tooltip with LOG-R86's step.
 SETTINGS_SAVING = "Saving"
 SETTINGS_RELOAD_REMINDER = "Remind me to /reload when Casts are unsaved"
-SETTINGS_RELOAD_REMINDER_TOOLTIP = "A chat line every %d Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them."
+SETTINGS_RELOAD_REMINDER_TOOLTIP = "A chat line every {reloadReminderStep:0} Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them."
 # The root's Units section (SET-R10 row 6): its header, the dropdown's label, tooltip and options (LOG-R69).
 SETTINGS_UNITS = "Units"
 SETTINGS_LENGTH_UNIT = "Length unit"
@@ -189,21 +190,21 @@ SETTINGS_EVERY_CATCH_TOOLTIP = "A toast for each catch: its name, size band and 
 # section's header and its two rows' labels and button captions (the Collection's, CORE-R45, then the Curio
 # Shop's). Its category headers are SHOP_CATEGORIES.
 SETTINGS_LOOK_PARAGRAPH = "Looks you own. Pick one here, in the Fish Journal's Collection or with Use in the Curio Shop; all of them change the same thing."
-SETTINGS_SLOT_MORE = "%d more in the Curio Shop"
+SETTINGS_SLOT_MORE = "{more:0} more in the Curio Shop"
 SETTINGS_MORE_LOOKS = "More looks"
 SETTINGS_COLLECTION_ROW = "Every look, and how to earn it"
 SETTINGS_COLLECTION_BUTTON = "Open the Collection"
 SETTINGS_SHOP_ROW = "Buy more looks with Pagle Coins"
 SETTINGS_SHOP_BUTTON = "Open the Curio Shop"
 # A number of minutes: the budget's window (SET-R10) and a card's time fished (ANN-R53).
-MINUTES = "%d min"
+MINUTES = "{value:0} min"
 # The Announcement frames (announcements.md › UI): "While you were fighting"'s headlines past its rows (ANN-R36), stamps beyond the 4 shown
 # (ANN-R11), the Coins beside the drawn coin with their sum (ANN-R23), the record ruler's stamp (ANN-R22), the
 # splash's hint and its line to save the Legend (ANN-R97).
-ANNOUNCEMENT_MORE = "+%d more"
-ANNOUNCEMENT_STAMPS_MORE = "+%d"
-ANNOUNCEMENT_COINS = "+%s"
-ANNOUNCEMENT_STAMP_REFRESH = "Refresh +%d"
+ANNOUNCEMENT_MORE = "+{beyond:0} more"
+ANNOUNCEMENT_STAMPS_MORE = "+{more:0}"
+ANNOUNCEMENT_COINS = "+{amount}"
+ANNOUNCEMENT_STAMP_REFRESH = "Refresh +{tickets:0}"
 ANNOUNCEMENT_NEW_RECORD = "New record"
 ANNOUNCEMENT_SPLASH_HINT = "Click anywhere to continue"
 ANNOUNCEMENT_SPLASH_RELOAD = "/reload to keep it safe"
@@ -214,15 +215,15 @@ LEGEND_CREST_UNWRITTEN = "Unwritten"
 ANNOUNCEMENT_WHILE_FIGHTING = "While you were fighting"
 # The catch toast (ANN-R13): its kicker, the Catch's Size band and its length, or "Caught" for a Catch with no size;
 # an item the client hasn't named yet.
-CATCH_TOAST_KICKER = "%s · %s"
+CATCH_TOAST_KICKER = "{band} · {length}"
 CATCH_TOAST_CAUGHT = "Caught"
-CATCH_TOAST_ITEM = "Item %d"
+CATCH_TOAST_ITEM = "Item {itemID}"
 # The catch toast stepped down to a Nod (ANN-R31): the Catch's name, its Size band and its length.
-CATCH_TOAST = "%s · %s · %s"
+CATCH_TOAST = "{name} · {band} · {length}"
 # That Nod naming its Catch's variety (VAR-R26): the Catch's name, the variety's name, the band and the length.
-CATCH_TOAST_VARIETY = "%s · %s · %s · %s"
+CATCH_TOAST_VARIETY = "{name} · {catch_toast_variety_2} · {band} · {length}"
 # A toast announcing a variety (VAR-R26): the line's first half before the gem and the variety's name, the fish's.
-TOAST_VARIETY_BEFORE = "%s ·"
+TOAST_VARIETY_BEFORE = "{fish} ·"
 # The cards (announcements.md › UI): a Session summary's title, "Your last session" for one that ended while away
 # (ANN-R54), and the Write-up's (ANN-R61); Core's numbers (ANN-R53), time fished in MINUTES or hours and minutes;
 # the Coins line with its sum (ANN-R53); the close button (closing also takes Esc).
@@ -233,8 +234,8 @@ CARD_CASTS = "Casts"
 CARD_CATCHES = "Catches"
 CARD_GOT_AWAY = "Got away"
 CARD_TIME = "Time fished"
-CARD_HOURS = "%d h %02d min"
-CARD_COINS = 'Pagle Coins +%s |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+CARD_HOURS = "{card_hours_1:0} h {card_hours_2} min"
+CARD_COINS = 'Pagle Coins +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 CARD_CLOSE = "Close"
 # A toast style's sample on the Curio Shop's preview stage (wallet-and-shop.md › UI, ANN-R80): its headline, its
 # one stamp, and the button that shows it through the lanes.
@@ -243,7 +244,7 @@ TOAST_SAMPLE_TEXT = "A sample toast"
 TOAST_SAMPLE_STAMP = "New here"
 TOAST_SHOW_ON_SCREEN = "Show on screen"
 # LOG-R86: the unsaved-Casts reminder, with the number of Casts recorded since load.
-RELOAD_REMINDER = "Pagle: %d Casts not yet saved. /reload to keep them safe."
+RELOAD_REMINDER = "Pagle: {reload_reminder:0} Casts not yet saved. /reload to keep them safe."
 # CORE-R33: Settings opened while restricted.
 SETTINGS_AFTER_COMBAT = "Pagle: settings open after combat."
 # A Module's keybinding row (SET-R20): a key slot with no key, and the slot waiting for the next key press.
@@ -259,12 +260,12 @@ GUIDE_BIND_ESC = "Esc leaves it as it was"
 GUIDE_BIND_BOUND = "Bound"
 GUIDE_BIND_PICK = "Pick another key"
 GUIDE_BIND_KEPT = "the old use is listed, never silently lost"
-GUIDE_BIND_ASK.PAGLE_FISHING_KEY = "already does %s. Use it for fishing instead?"
-GUIDE_BIND_ASK.PAGLE_SWAP_GEAR = "already does %s. Use it to swap gear instead?"
-GUIDE_BIND_USE.PAGLE_FISHING_KEY = "Use %s for fishing"
-GUIDE_BIND_USE.PAGLE_SWAP_GEAR = "Use %s to swap gear"
-GUIDE_BIND_TOLD.PAGLE_FISHING_KEY = "Pagle: %s now casts. It used to do %s; rebind that in Key Bindings if you need it."
-GUIDE_BIND_TOLD.PAGLE_SWAP_GEAR = "Pagle: %s now swaps your gear. It used to do %s; rebind that in Key Bindings if you need it."
+GUIDE_BIND_ASK.PAGLE_FISHING_KEY = "already does {guide_bind_ask}. Use it for fishing instead?"
+GUIDE_BIND_ASK.PAGLE_SWAP_GEAR = "already does {guide_bind_ask}. Use it to swap gear instead?"
+GUIDE_BIND_USE.PAGLE_FISHING_KEY = "Use {bindingText} for fishing"
+GUIDE_BIND_USE.PAGLE_SWAP_GEAR = "Use {bindingText} to swap gear"
+GUIDE_BIND_TOLD.PAGLE_FISHING_KEY = "Pagle: {bindingText} now casts. It used to do {oldName}; rebind that in Key Bindings if you need it."
+GUIDE_BIND_TOLD.PAGLE_SWAP_GEAR = "Pagle: {bindingText} now swaps your gear. It used to do {oldName}; rebind that in Key Bindings if you need it."
 # The status list (CORE-R41): each roster Module's name, by def.name, and each state.
 MODULE_NAMES.Hunts = "Hunts"
 MODULE_NAMES.Ledger = "Ledger"
@@ -280,12 +281,12 @@ MODULE_STATES.on = "On"
 # packaged (CORE-R2, CORE-R41, ns.ShownVersion). Short: the version column is 64 pixels.
 MODULE_VERSION_DEV = "dev"
 # A status button for a Module's first view (CORE-R44): its label.
-OPEN_VIEW = "Open %s"
+OPEN_VIEW = "Open {label}"
 
 # The compartment menu's last entry (CORE-R50).
 MENU_SETTINGS = "Settings"
 # Its Curio Shop entry (CORE-R50): the balance as BreakUpLargeNumbers writes it, then a coin icon.
-MENU_CURIO_SHOP = 'Curio Shop  %s |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+MENU_CURIO_SHOP = 'Curio Shop  {balance} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 # Its Field report entry (CORE-R50, REP-R43), which is also the box's title (REP-R40) and the Settings root's
 # section header (SET-R10 row 4); the entry adds the count while it is above 0.
 HELP_CHART = "Help chart the waters"
@@ -298,7 +299,7 @@ HELP_CHART_COUNT = "Help chart the waters ({count:0})"
 FIELD_REPORT_PRIVACY = "This will be posted publicly. It contains no character names."
 FIELD_REPORT_COPY_HINT = "Ctrl+C to copy"
 FIELD_REPORT_POST_AT = "POST IT AT"
-FIELD_REPORT_PART = "Part %d of %d"
+FIELD_REPORT_PART = "Part {field_report_part_1:0} of {field_report_part_2:0}"
 FIELD_REPORT_CLOSE = "Close"
 FIELD_REPORT_NOTHING = "Nothing to report. Thanks for checking!"
 FIELD_REPORT_UPDATING = "Updating... try again in a moment."
@@ -319,20 +320,20 @@ PASTE_COPY_HINT = "Ctrl+C to copy"
 PASTE_CHOICE_NEW = "New since last export"
 PASTE_CHOICE_EVERYTHING = "Everything"
 # The choice the window shows, after a bullet.
-PASTE_CHOICE_PICKED = "• %s"
-PASTE_ENTRIES = "Entries %s–%s of %s"
+PASTE_CHOICE_PICKED = "• {word}"
+PASTE_ENTRIES = "Entries {from}–{paste_entries_2} of {total}"
 PASTE_NO_ENTRIES = "No entries"
-PASTE_SIZE = "%d KB"
-PASTE_PART_LINE = "%s  ·  %s"
+PASTE_SIZE = "{paste_size:0} KB"
+PASTE_PART_LINE = "{entries}  ·  {paste_part_line_2}"
 PASTE_IN_ORDER = "Paste each part on its own, in order."
 PASTE_AT = "PASTE IT AT"
-PASTE_PART = "Part %d of %d"
+PASTE_PART = "Part {paste_part_1:0} of {paste_part_2:0}"
 PASTE_CLOSE = "Close"
 PASTE_NOTHING_NEW = "Nothing new since your last export."
 PASTE_CANT_EXPORT = "Pagle can't export this Catch log."
 PASTE_PREPARING = "Preparing your Paste string…"
 PASTE_AFTER_COMBAT = "Pagle: the export window opens after combat."
-PASTE_TEST_LINE = "Copy test: %d KB"
+PASTE_TEST_LINE = "Copy test: {testKB:0} KB"
 # The Settings root's Pagle website section (SET-R10 row 12): the export button's row label, caption and tooltip.
 SETTINGS_PASTE_ROW = "Catch log"
 SETTINGS_PASTE_BUTTON = "Copy for the website"
@@ -349,8 +350,8 @@ SETTINGS_TRANSLATIONS_ENTRY = "{language} by {names}"
 # still needed, an earned good's line, a Module off, the hint with nothing selected, Use).
 SHOP_AFTER_COMBAT = "Pagle: the Curio Shop opens after combat."
 SHOP_COINS = "Pagle Coins"
-SHOP_LEGEND = "%s %s"
-SHOP_ALL_TIME = "%s Coins all time"
+SHOP_LEGEND = "{title} {shop_legend_2}"
+SHOP_ALL_TIME = "{shop_all_time} Coins all time"
 SHOP_OFF_NOTE = "Off: pays nothing new, keeps what it paid."
 SHOP_SEARCH = "Find a look…"
 SHOP_FILTERS.all = "All"
@@ -362,26 +363,26 @@ SHOP_CATEGORIES.Announcements = "Announcements"
 SHOP_CATEGORIES.Books = "Books"
 SHOP_CATEGORIES.Crests = "Crests"
 SHOP_CATEGORIES.Trackers = "Trackers"
-SHOP_OWNED_COUNT = "%d of %d"
+SHOP_OWNED_COUNT = "{owned:0} of {slotGoods:0}"
 SHOP_PUT_AWAY = "Put away: Module off"
 SHOP_KEEP = "Yours to keep"
 SHOP_NO_MATCH = "No looks match."
 SHOP_OWNED = "Owned"
 SHOP_IN_USE = "In use"
 SHOP_DEFAULT = "default"
-SHOP_SLOT_LINE = "%s · %s"
+SHOP_SLOT_LINE = "{slotLabel} · {owner}"
 SHOP_CORE = "Pagle"
-SHOP_BUY = "Buy for %s"
-SHOP_MORE_NEEDED = "%s more Coins"
-SHOP_OR_BUY = "Or buy it for %s"
-SHOP_MODULE_OFF = "%s is off"
+SHOP_BUY = "Buy for {shop_buy}"
+SHOP_MORE_NEEDED = "{shop_more_needed} more Coins"
+SHOP_OR_BUY = "Or buy it for {shop_or_buy}"
+SHOP_MODULE_OFF = "{ownerName} is off"
 SHOP_PICK = "Pick a look to see it here."
 SHOP_USE = "Use"
 # Buying (wallet-and-shop.md › UI: Buy): the bill of sale's head (spaced out: the client has no letter spacing),
 # its question with the good's name, its two lines, its fine print, its checkbox and buttons; and SHOP-R12's held
 # line under the purse, which never mentions debt or a negative number.
 SHOP_BILL_HEAD = "C U R I O   S H O P"
-SHOP_BUY_CONFIRM = "Buy %s?"
+SHOP_BUY_CONFIRM = "Buy {name}?"
 SHOP_PRICE_LINE = "Price"
 SHOP_LEFT_AFTER = "Pagle Coins left after"
 SHOP_FOR_GOOD = "Looks are yours for good."
@@ -403,14 +404,14 @@ SHOP_CRATE_TIERS.4 = "Showpiece"
 SHOP_CRATE_TIERS.5 = "Marvel"
 SHOP_CRATE_TIERS.6 = "Heirloom"
 SHOP_CRATE_TIERS.curio = "Curio"
-SHOP_CRATE_LEFT = "%d left"
-SHOP_CRATE_PAYS_BACK = "pays back %s"
-SHOP_CRATE_CHANCE = "%s%%"
-SHOP_CRATE_PITY = "A Curio within %d more crates"
-SHOP_CRATE_PITY_ONE = "A Curio in the next crate"
+SHOP_CRATE_LEFT = "{left:0} left"
+SHOP_CRATE_PAYS_BACK = "pays back {shop_crate_pays_back}"
+SHOP_CRATE_CHANCE = "{shop_crate_chance}%"
+SHOP_CRATE_PITY.one = "A Curio in the next crate"
+SHOP_CRATE_PITY.other = "A Curio within {count:0} more crates"
 SHOP_CRATE_CONFIRM = "Open a Curio crate?"
 SHOP_CRATE_FINE = "One look you don't own yet, by chance; the chances are on the crate."
-SHOP_CRATE_PAYBACK = "+%s Coins"
+SHOP_CRATE_PAYBACK = "+{shop_crate_payback} Coins"
 SHOP_CRATE_BACK = "Back to the shop"
 SHOP_CRATE_NEW_LOOK = "A new look"
 SHOP_CRATE_UNSHOWN = "It shows here once its Module is on."
@@ -429,23 +430,23 @@ SHOP_SONAR_EARNED = "Link the companion"
 
 # The compartment entry's label (CORE-R51): Pagle, with the moments Cozy mode holds for a summary (ANN-R42).
 COMPARTMENT = "Pagle"
-COMPARTMENT_WAITING = "Pagle · %d waiting"
+COMPARTMENT_WAITING = "Pagle · {waiting:0} waiting"
 # The tooltip of Pagle's menu (CORE-R55), on the minimap icon and the compartment entry: its first line, then
 # the waiting count (CORE-R51) and the Letter's line (ONB-R13).
 MENU_NAME = "Pagle"
-MENU_TOOLTIP_WAITING = "%d waiting"
+MENU_TOOLTIP_WAITING = "{waiting:0} waiting"
 MENU_TOOLTIP_LETTER = "A letter for you"
 
 # /pagle help (CORE-R60, CORE-R61): the header, then a line per command (its name, its help). Core lists the
 # reserved commands.
 SLASH_HELP_HEADER = "Pagle commands:"
-SLASH_HELP_LINE = "/pagle %s: %s"
+SLASH_HELP_LINE = "/pagle {name}: {help}"
 # CORE-R62: a Module's /pagle entry skipped, reported. Each takes the Module's def.name and the entry's name, then
 # the reserved name, or the def.name of the Module that already uses it.
-SLASH_SKIPPED_NO_NAME = "Pagle: %s's /pagle entry %s has no one-word name; it is skipped"
-SLASH_SKIPPED_NO_FN = "Pagle: %s's /pagle %s has no fn; it is skipped"
-SLASH_SKIPPED_RESERVED = "Pagle: %s's /pagle %s is skipped: Pagle reserves %s"
-SLASH_SKIPPED_TAKEN = "Pagle: %s's /pagle %s is skipped: %s already uses it"
+SLASH_SKIPPED_NO_NAME = "Pagle: {module}'s /pagle entry {name} has no one-word name; it is skipped"
+SLASH_SKIPPED_NO_FN = "Pagle: {module}'s /pagle {name} has no fn; it is skipped"
+SLASH_SKIPPED_RESERVED = "Pagle: {module}'s /pagle {name} is skipped: Pagle reserves {key}"
+SLASH_SKIPPED_TAKEN = "Pagle: {module}'s /pagle {name} is skipped: {owners} already uses it"
 # /pagle dev (#247): hidden dev commands, never in the help list.
 DEV_ON = "Pagle dev: dev commands are on."
 DEV_OFF = "Pagle dev: dev commands are off."
@@ -453,40 +454,40 @@ DEV_IS_OFF = "Pagle dev: dev commands are off; /pagle dev on turns them on."
 DEV_USAGE = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | onboarding <command> | content | views | pastetest <KB>"
 # /pagle dev pastetest <KB> (PST-R60): its usage, with the sizes it takes, and the line it prints once the window
 # shows the test string.
-DEV_PASTE_TEST_USAGE = "Pagle dev: /pagle dev pastetest <KB>, from %d to %d; the check copies 64, 128, 256 and 512."
-DEV_PASTE_TEST_SHOWN = "Pagle dev: a %d KB test string is in the export window; copy it and check its length."
+DEV_PASTE_TEST_USAGE = "Pagle dev: /pagle dev pastetest <KB>, from {pasteTestMinKb} to {pasteTestMaxKb}; the check copies 64, 128, 256 and 512."
+DEV_PASTE_TEST_SHOWN = "Pagle dev: a {testKB} KB test string is in the export window; copy it and check its length."
 # /pagle dev content (PUSH-R14): the companion state, or for an absent file the first reason PUSH-R13 found; the
 # header fields as read (generatedAt, keyId, seq, expires; each "none" when missing); the kinds handed out and
 # those dropped, each "kind count", comma-separated; and the frames the check took, its longest frame in ms and
 # the budget.
-DEV_CONTENT_STATE = "Pagle dev: pushed content is %s."
-DEV_CONTENT_ABSENT = "Pagle dev: pushed content is missing: %s."
-DEV_CONTENT_HEADER = "Pagle dev: generatedAt %s, keyId %s, seq %s, expires %s."
-DEV_CONTENT_KINDS = "Pagle dev: kinds handed out: %s."
-DEV_CONTENT_DROPPED = "Pagle dev: kinds dropped as unknown: %s."
-DEV_CONTENT_KIND = "%s %d"
+DEV_CONTENT_STATE = "Pagle dev: pushed content is {state}."
+DEV_CONTENT_ABSENT = "Pagle dev: pushed content is missing: {reason}."
+DEV_CONTENT_HEADER = "Pagle dev: generatedAt {generatedAt}, keyId {keyId}, seq {seq}, expires {expires}."
+DEV_CONTENT_KINDS = "Pagle dev: kinds handed out: {counts}."
+DEV_CONTENT_DROPPED = "Pagle dev: kinds dropped as unknown: {dropped}."
+DEV_CONTENT_KIND = "{name} {counts}"
 DEV_CONTENT_NONE = "none"
-DEV_CONTENT_FRAMES = "Pagle dev: frames the check ran in: %d, the longest %.2f ms (budget %d ms)."
+DEV_CONTENT_FRAMES = "Pagle dev: frames the check ran in: {frames}, the longest {longest:2} ms (budget {budget} ms)."
 # Why Pagle_Content is absent (PUSH-R13), the first that holds, as /pagle dev content names it: no file, then the
 # check's steps in order. A field's name; Base64's reason after the field; the decoded size and the cap; the
 # signature check's reason; the file's seq and the last accepted; expires and the server time; the byte a parse
 # error is at and what it is (a PAYLOAD_* line).
 PUSHED_NOT_INSTALLED = "no file (Pagle_Content isn't installed)"
-PUSHED_NOT_LOADED = "no file (Pagle_Content didn't load: %s)"
+PUSHED_NOT_LOADED = "no file (Pagle_Content didn't load: {reason})"
 PUSHED_NO_DATA = "no file (Pagle_Content loaded but set no PagleContentData)"
 PUSHED_NOT_TABLE = "PagleContentData isn't a table"
-PUSHED_MISSING_FIELD = "a missing field, %s"
-PUSHED_NOT_INTEGER = "%s isn't a whole number"
-PUSHED_NOT_STRING = "%s isn't a string"
+PUSHED_MISSING_FIELD = "a missing field, {name}"
+PUSHED_NOT_INTEGER = "{name} isn't a whole number"
+PUSHED_NOT_STRING = "{name} isn't a string"
 PUSHED_BAD_KEY_ID = "a keyId that isn't 1 to 32 of A-Z, a-z, 0-9, _ and -"
-PUSHED_UNKNOWN_VERSION = "an unknown file format, v %s"
-PUSHED_UNKNOWN_KEY = "an unknown keyId, %s"
-PUSHED_NOT_BASE64 = "%s isn't Base64 (%s)"
-PUSHED_OVER_CAP = "over the size cap, %d bytes decoded of %d at most"
-PUSHED_BAD_SIGNATURE = "a bad signature (%s)"
-PUSHED_LOWER_SEQ = "a lower seq, %s, below the last accepted %s"
-PUSHED_EXPIRED = "expired at %s, and the server time is %s"
-PUSHED_PARSE_ERROR = "a parse error at byte %d: %s"
+PUSHED_UNKNOWN_VERSION = "an unknown file format, v {pushed_unknown_version}"
+PUSHED_UNKNOWN_KEY = "an unknown keyId, {keyId}"
+PUSHED_NOT_BASE64 = "{pushed_not_base64_1} isn't Base64 ({why})"
+PUSHED_OVER_CAP = "over the size cap, {bytes} bytes decoded of {pushedSizeCap} at most"
+PUSHED_BAD_SIGNATURE = "a bad signature ({problem})"
+PUSHED_LOWER_SEQ = "a lower seq, {seq}, below the last accepted {last}"
+PUSHED_EXPIRED = "expired at {expires}, and the server time is {now}"
+PUSHED_PARSE_ERROR = "a parse error at byte {pushed_parse_error_1}: {pushed_parse_error_2}"
 PUSHED_CHECK_FAILED = "the check itself failed (see the Lua error)"
 # A payload parse error (PUSH-R20), after PUSHED_PARSE_ERROR's byte. Some name what was found or expected.
 PAYLOAD_EXPECTED = "expected {value}"
@@ -509,11 +510,11 @@ PAYLOAD_AFTER_TABLE = "more after the payload's table"
 # /pagle dev views (VIEW-R12): each data file's state, by its folder name: live; absent, with the first reason
 # IGV-R44 found (a VIEWS_* line); or expired, with its age and the expiry age in seconds. Then its generatedAt and
 # count as read (each "none" when missing), and whether Pagle_Anglers has loaded this login.
-DEV_VIEWS_LIVE = "Pagle dev: %s is live."
-DEV_VIEWS_ABSENT = "Pagle dev: %s is absent: %s."
-DEV_VIEWS_EXPIRED = "Pagle dev: %s is expired: generated %s s ago, the expiry age is %s s."
-DEV_VIEWS_FOLLOWING = "Pagle dev: Pagle_Following's generatedAt %s, Anglers %s."
-DEV_VIEWS_ANGLERS = "Pagle dev: Pagle_Anglers' generatedAt %s, blocks %s."
+DEV_VIEWS_LIVE = "Pagle dev: {name} is live."
+DEV_VIEWS_ABSENT = "Pagle dev: {name} is absent: {reason}."
+DEV_VIEWS_EXPIRED = "Pagle dev: {name} is expired: generated {age} s ago, the expiry age is {viewExpiryAge} s."
+DEV_VIEWS_FOLLOWING = "Pagle dev: Pagle_Following's generatedAt {generatedAt}, Anglers {dev_views_following_2}."
+DEV_VIEWS_ANGLERS = "Pagle dev: Pagle_Anglers' generatedAt {generatedAt}, blocks {dev_views_anglers_2}."
 DEV_VIEWS_LOADED = "Pagle dev: Pagle_Anglers has loaded this login."
 DEV_VIEWS_NOT_LOADED = "Pagle dev: Pagle_Anglers hasn't loaded this login."
 DEV_VIEWS_NONE = "none"
@@ -523,18 +524,18 @@ DEV_VIEWS_NONE = "none"
 # field's name and the length it should have.
 VIEWS_NOT_READ = "not read yet (Pagle reads it at login)"
 VIEWS_NOT_LOADED_YET = "not loaded yet (it loads at the first player tooltip while Pagle isn't restricted, with the tooltip setting on)"
-VIEWS_NOT_INSTALLED = "no file (%s isn't installed)"
-VIEWS_DID_NOT_LOAD = "no file (%s didn't load: %s)"
-VIEWS_NO_DATA = "no file (%s loaded but set no %s)"
-VIEWS_NOT_TABLE = "%s isn't a table"
+VIEWS_NOT_INSTALLED = "no file ({name} isn't installed)"
+VIEWS_DID_NOT_LOAD = "no file ({name} didn't load: {reason})"
+VIEWS_NO_DATA = "no file ({name} loaded but set no {global})"
+VIEWS_NOT_TABLE = "{global} isn't a table"
 VIEWS_NOT_OK = "ok isn't true"
-VIEWS_UNKNOWN_VERSION = "an unknown file format, v %s"
-VIEWS_NOT_NUMBER = "%s isn't a number"
-VIEWS_WRONG_COUNT = "count is %s, but %s holds %d"
-VIEWS_BLOCK_NOT_TABLE = "block %d isn't a table"
-VIEWS_BLOCK_NOT_NUMBER = "block %d's %s isn't a number"
-VIEWS_BLOCK_NOT_TITLES = "block %d's titles isn't a table"
-VIEWS_BLOCK_LENGTH = "block %d's %s isn't %s bytes long"
+VIEWS_UNKNOWN_VERSION = "an unknown file format, v {views_unknown_version}"
+VIEWS_NOT_NUMBER = "{field} isn't a number"
+VIEWS_WRONG_COUNT = "count is {views_wrong_count_1}, but {listName} holds {list}"
+VIEWS_BLOCK_NOT_TABLE = "block {views_block_not_table} isn't a table"
+VIEWS_BLOCK_NOT_NUMBER = "block {views_block_not_number_1}'s {field} isn't a number"
+VIEWS_BLOCK_NOT_TITLES = "block {views_block_not_titles}'s titles isn't a table"
+VIEWS_BLOCK_LENGTH = "block {views_block_length_1}'s {packed} isn't {views_block_length_3} bytes long"
 # The Pagle block on a player's tooltip (VIEW-R21), in its order: the header, then "Following" at its right for a
 # Followed Angler; the Angler Level line, with the level and its Prestige, its emblem's inline texture before its
 # words (LED-R34: I to X by PRESTIGE_NUMERALS, then a Master Prestige's rank − 10, in words as the bookplate writes
@@ -543,27 +544,27 @@ VIEWS_BLOCK_LENGTH = "block %d's %s isn't %s bytes long"
 ANGLER_TIP_HEADER = "Pagle Angler"
 ANGLER_TIP_FOLLOWING = "Following"
 ANGLER_TIP_LEVEL = "Angler Level"
-ANGLER_TIP_PRESTIGE = "%d · %s Prestige %s"
-ANGLER_TIP_MASTER_PRESTIGE = "%d · %s Master Prestige %d"
+ANGLER_TIP_PRESTIGE = "{level:0} · {emblem} Prestige {prestigeNumerals}"
+ANGLER_TIP_MASTER_PRESTIGE = "{level:0} · {emblem} Master Prestige {angler_tip_master_prestige_3:0}"
 PRESTIGE_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
 # The Master's Prestige frame's label, before its star stamps (LED-R154); the others read their numeral.
 PRESTIGE_FRAME_MASTER = "Master"
 ANGLER_TIP_LEDGER = "Ledger"
-ANGLER_TIP_LEDGER_VALUE = "%d%%"
+ANGLER_TIP_LEDGER_VALUE = "{ledger:0}%"
 ANGLER_TIP_LEGENDS = "Legends"
-ANGLER_TIP_LEGENDS_VALUE = "%d of %d"
+ANGLER_TIP_LEGENDS_VALUE = "{legends:0} of {legendsTotal:0}"
 ANGLER_TIP_HARDCORE = "Hardcore Angler"
 # /pagle dev onboarding (ONB-R83): its subcommands' usages, " | " between them, in the order added.
-DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding %s"
+DEV_ONBOARDING_USAGE = "Pagle dev: /pagle dev onboarding {usages}"
 DEV_ONBOARDING_RESET = "Pagle dev: onboarding is back as a new Angler's, with the Letter waiting; /reload to start from there."
 # The kinds, comma-separated.
-DEV_PREVIEW_KINDS = "Pagle dev: /pagle dev preview <kind>, where kind is one of %s"
+DEV_PREVIEW_KINDS = "Pagle dev: /pagle dev preview <kind>, where kind is one of {devPreviewKinds}"
 # The kind.
-DEV_PREVIEWING = "Pagle dev: previewing a %s."
+DEV_PREVIEWING = "Pagle dev: previewing a {kind}."
 # /pagle dev stage (ANN-R85): the Cartographer's Folio's chart drawn as if its count of zones at Master were a number.
-DEV_STAGE_SET = "Pagle dev: the Cartographer's Folio is drawn as if %d zones were at Master, until /pagle dev stage off."
+DEV_STAGE_SET = "Pagle dev: the Cartographer's Folio is drawn as if {dev_stage_set} zones were at Master, until /pagle dev stage off."
 DEV_STAGE_OFF = "Pagle dev: the Cartographer's Folio is drawn at its real stage."
-DEV_STAGE_IS = "Pagle dev: the Cartographer's Folio is drawn as if %d zones were at Master."
+DEV_STAGE_IS = "Pagle dev: the Cartographer's Folio is drawn as if {devStageCount} zones were at Master."
 DEV_STAGE_USAGE = "Pagle dev: /pagle dev stage <count of zones at Master> | off"
 DEV_CARD_HELD = "Pagle dev: cards wait until combat ends; try again then."
 DEV_SAMPLE_TOAST = "New Species"
@@ -585,31 +586,31 @@ DEV_NO_CHARACTER = "Pagle dev: no character is logged in yet."
 DEV_CATCH_USAGE = "Pagle dev: /pagle dev catch <itemID> [areaID]"
 DEV_REAL_LOG = "Pagle dev: catch writes to the Catch log, so it runs on a test log only (PagleLog.test); this log is real, and nothing was added."
 # The areaID as typed.
-DEV_UNKNOWN_AREA = "Pagle dev: %s isn't an area in Pagle's catalogue."
+DEV_UNKNOWN_AREA = "Pagle dev: {areaText} isn't an area in Pagle's catalogue."
 # The item ID, the zone areaID and the entry's seq.
-DEV_CAUGHT = "Pagle dev: caught item %d in zone %d (entry %d)."
+DEV_CAUGHT = "Pagle dev: caught item {itemID} in zone {zone} (entry {seq})."
 # /pagle dev skill (#465), in the dev checkout only like catch: its usage, then what it says when the override is
 # set (the rank and the max rank), is cleared, is asked about while set or not, and, at each login with it set,
 # the reminder.
 DEV_SKILL_USAGE = "Pagle dev: /pagle dev skill <rank> [max], from 1 to 300 (max defaults to 300), or /pagle dev skill off"
-DEV_SKILL_SET = "Pagle dev: Fishing skill now reads %d/%d, whatever the client says. Casts and Skill Readings record it. /pagle dev skill off puts the client's back."
+DEV_SKILL_SET = "Pagle dev: Fishing skill now reads {rank}/{max}, whatever the client says. Casts and Skill Readings record it. /pagle dev skill off puts the client's back."
 DEV_SKILL_CLEARED = "Pagle dev: Fishing skill reads as the client says again."
 DEV_SKILL_NOT_SET = "Pagle dev: Fishing skill reads as the client says; /pagle dev skill <rank> overrides it."
-DEV_SKILL_REMINDER = "Pagle dev: Fishing skill is overridden to %d/%d (/pagle dev skill off to clear it)."
+DEV_SKILL_REMINDER = "Pagle dev: Fishing skill is overridden to {rank}/{max} (/pagle dev skill off to clear it)."
 #@end-do-not-package@
 # /pagle dev glyphs (#248, CORE-R9): the probe line, then where the rest of it is.
-DEV_GLYPHS_CHAT = "Pagle dev: the glyph probe in the chat font: %s"
+DEV_GLYPHS_CHAT = "Pagle dev: the glyph probe in the chat font: {probe}"
 DEV_GLYPHS_SHOWN = "Pagle dev: the same line in each font Pagle uses is on screen; a box is a character that font lacks. Click it or press Esc to close."
 # A probe row: the font (its object's name or its file), what uses it, the probe line.
-DEV_GLYPHS_ROW = "%s (%s): %s"
+DEV_GLYPHS_ROW = "{object} ({usedBy}): {probe}"
 # /pagle dev probe (#261): one check's line ("probe 19: GetCurrentRegion() = 1"), built in logic/Probe.lua from
 # API names and values, then the last line.
-DEV_PROBE_LINE = "Pagle dev: %s"
+DEV_PROBE_LINE = "Pagle dev: {probeLine}"
 DEV_PROBE_SAVED = "Pagle dev: Probe saved; /reload to write it."
 # /pagle dev fonts (#522): one line per client font file tried (its path, "failed" or "ok" and by script how many of the
 # sample's characters are not the box's width), then the saved line (fonts loaded, paths tried, GetLocale()).
-DEV_FONTS_LINE = "Pagle dev: font %s: %s"
-DEV_FONTS_SAVED = "Pagle dev: %d of %d client fonts load on this %s client; the sample in each is on screen (a box is a character that font lacks; click it or press Esc to close). Fonts saved; /reload to write them."
+DEV_FONTS_LINE = "Pagle dev: font {path}: {fontProbeSummary}"
+DEV_FONTS_SAVED = "Pagle dev: {loaded} of {paths} client fonts load on this {locale} client; the sample in each is on screen (a box is a character that font lacks; click it or press Esc to close). Fonts saved; /reload to write them."
 # /pagle dev tour (CORE-R65–R68): how many stops, as DEV_TOUR_START puts it.
 # The number of stops.
 DEV_TOUR_STOPS.one = "1 stop"
@@ -618,34 +619,34 @@ DEV_TOUR_STOPS.other = "{count} stops"
 DEV_TOUR_START = "Pagle dev: touring {stops} from {clock}; a screenshot of each goes to the Screenshots folder."
 DEV_TOUR_START_MANUAL = "Pagle dev: touring {stops} from {clock}; this client can't take screenshots, so press Print Screen as each stop's line appears."
 # The stop's number, how many stops, its name ("ledger.journal.home"): one line per stop, as it shows.
-DEV_TOUR_STOP = "Pagle dev: tour %d/%d: %s"
+DEV_TOUR_STOP = "Pagle dev: tour {index}/{stops}: {name}"
 # The local time.
-DEV_TOUR_DONE = "Pagle dev: the tour is done at %s."
+DEV_TOUR_DONE = "Pagle dev: the tour is done at {clock}."
 # The stop on screen's number, how many stops.
-DEV_TOUR_STOPPED = "Pagle dev: the tour stopped at %d/%d."
-DEV_TOUR_RESTRICTED_STOPPED = "Pagle dev: the tour stopped at %d/%d: combat started."
+DEV_TOUR_STOPPED = "Pagle dev: the tour stopped at {index}/{stops}."
+DEV_TOUR_RESTRICTED_STOPPED = "Pagle dev: the tour stopped at {index}/{stops}: combat started."
 DEV_TOUR_STOPPING = "Pagle dev: the tour stops once this stop hides."
 DEV_TOUR_NOT_RUNNING = "Pagle dev: no tour is running."
 DEV_TOUR_RUNNING = "Pagle dev: a tour is running; /pagle dev tour stop ends it."
 DEV_TOUR_RESTRICTED = "Pagle dev: the tour waits until combat ends; try again then."
 DEV_TOUR_NO_STOPS = "Pagle dev: no tour stops are registered."
 # The name typed, the names with stops, comma-separated.
-DEV_TOUR_NO_STOPS_FOR = "Pagle dev: no tour stops for %s; stops are registered for %s."
+DEV_TOUR_NO_STOPS_FOR = "Pagle dev: no tour stops for {dev_tour_no_stops_for_1}; stops are registered for {known}."
 # How many stops.
-DEV_TOUR_LIST = "Pagle dev: %d tour stops:"
-DEV_TOUR_LIST_ONE = "Pagle dev: 1 tour stop:"
+DEV_TOUR_LIST.one = "Pagle dev: 1 tour stop:"
+DEV_TOUR_LIST.other = "Pagle dev: {count:0} tour stops:"
 # Core's own stops' labels (CORE-R68). The Announcement form: toast, nod, banner or splash.
-DEV_TOUR_ANNOUNCE = "a sample %s"
+DEV_TOUR_ANNOUNCE = "a sample {kind}"
 # The card: session or writeup.
-DEV_TOUR_CARD = "a sample %s card"
+DEV_TOUR_CARD = "a sample {kind} card"
 DEV_TOUR_SHOP = "the Curio Shop"
 DEV_TOUR_FIELD_REPORT = "the Field report box"
 DEV_TOUR_EXPORT = "the export window"
 DEV_TOUR_GLYPHS = "the glyph probe panel"
 # The Settings page's name.
-DEV_TOUR_SETTINGS = "Settings: %s"
+DEV_TOUR_SETTINGS = "Settings: {topic}"
 # A stop's name and label.
-DEV_TOUR_LIST_LINE = "  %s: %s"
+DEV_TOUR_LIST_LINE = "  {name}: {label}"
 SLASH_CORE_HELP = [
 	{ help = "open Pagle's settings (also /pagle on its own)", name = "settings" },
 	{ help = "open or close the Curio Shop", name = "shop" },
@@ -667,14 +668,14 @@ NOTE_WELCOME = "Welcome back. */pagle guide* shows you around, if you want the t
 NOTE_CHARACTER = "Same Ledger on every character. Only your *fishing clothes* are per character."
 # /pagle dev onboarding note <id> (ONB-R83): an id no note has, with the ones it knows; a note whose target isn't
 # on screen now.
-DEV_NOTE_NONE = "Pagle dev: no margin note %s; the notes are %s."
-DEV_NOTE_NO_TARGET = "Pagle dev: margin note %s has nothing on screen to point at now."
+DEV_NOTE_NONE = "Pagle dev: no margin note {dev_note_none_1}; the notes are {ids}."
+DEV_NOTE_NO_TARGET = "Pagle dev: margin note {dev_note_no_target} has nothing on screen to point at now."
 # First looks (ONB-R55, ONB-R57, ONB-R59): the coach bar under the window ("First look · {title}", how many notes,
 # one or more, and its link), the "?" button's tooltip, and the Curio Shop's set, verbatim from the canvas (board
 # "First look · the Curio Shop"); each *term* is pencilled in red (ns.RedPencil).
-LOOK_BAR_TITLE = "First look · %s"
-LOOK_BAR_COUNT = "%d notes, shown once"
-LOOK_BAR_COUNT_ONE = "1 note, shown once"
+LOOK_BAR_TITLE = "First look · {title}"
+LOOK_BAR_COUNT.one = "1 note, shown once"
+LOOK_BAR_COUNT.other = "{count:0} notes, shown once"
 LOOK_BAR_DONE = "Got it, put the notes away"
 LOOK_AGAIN = "Show the notes for this page again"
 LOOK_SHOP_TITLE = "the Curio Shop"
@@ -684,14 +685,14 @@ LOOK_SHOP_SHOW = "*Show on screen* plays it for real before you buy."
 LOOK_SHOP_STOCK = "The stock *never rotates*. What’s here today is here next month."
 # /pagle dev onboarding look <id> (ONB-R83): an id no set has, with the registered ones; a set whose window isn't
 # open; one none of whose targets shows now. The tour stop's label (ONB-R84).
-DEV_LOOK_NONE = "Pagle dev: no First look %s; the sets are %s."
-DEV_LOOK_CLOSED = "Pagle dev: First look %s's window isn't open; open it first."
-DEV_LOOK_EMPTY = "Pagle dev: First look %s has nothing on screen to point at now."
-DEV_TOUR_LOOK = "the First look on %s"
+DEV_LOOK_NONE = "Pagle dev: no First look {dev_look_none_1}; the sets are {ids}."
+DEV_LOOK_CLOSED = "Pagle dev: First look {dev_look_closed}'s window isn't open; open it first."
+DEV_LOOK_EMPTY = "Pagle dev: First look {dev_look_empty} has nothing on screen to point at now."
+DEV_TOUR_LOOK = "the First look on {title}"
 # The Field guide's book (ONB-R20): its strip's crumbs and its count, "{n} of {m}" with n in brighter gilt.
 GUIDE_CRUMB_PAGLE = "Pagle"
 GUIDE_CRUMB_GUIDE = "A field guide"
-GUIDE_COUNT = "|cfff6e3a8%d|r of %d"
+GUIDE_COUNT = "|cfff6e3a8{index}|r of {guide_count_2:0}"
 # Each step's foot (ONB-R23): the skip link's default label, Next, « back, and Off to the water (ONB-R38). » and «
 # are Latin-1; the client's fonts have no › (CORE-R9).
 GUIDE_SKIP = "Skip the rest"
@@ -703,14 +704,14 @@ GUIDE_AFTER_COMBAT = "Pagle: the Field guide opens after combat."
 # A Write-up section's link, from a Module with a guide step (ANN-R64, ONB-R82).
 GUIDE_SHOW_ME_AROUND = "Show me around »"
 # /pagle dev onboarding step <id> (ONB-R83): a step that isn't registered, and the registered ones' ids.
-DEV_GUIDE_NO_STEP = "Pagle dev: no guide step %s; the steps are %s."
+DEV_GUIDE_NO_STEP = "Pagle dev: no guide step {dev_guide_no_step_1}; the steps are {ids}."
 # A tour stop per guide step (ONB-R84): its label for /pagle dev tour list.
-DEV_TOUR_GUIDE_STEP = "the Field guide at its %s step"
+DEV_TOUR_GUIDE_STEP = "the Field guide at its {dev_tour_guide_step} step"
 # The First evening list (ONB-R60, ONB-R61): its header, "{done} of {total}", its close mark (ONB-R63, × is
 # Latin-1), each item and the hint shown under the next one, verbatim from onboarding.md; the cast hint by QoL on
 # or off (ONB-R101).
 EVENING_TITLE = "First evening"
-EVENING_COUNT = "%d of %d"
+EVENING_COUNT = "{done:0} of {total:0}"
 EVENING_CLOSE = "×"
 EVENING_CAST = "Make a Cast"
 EVENING_CAST_HINT = "press your Fishing key, or double right-click"
@@ -785,14 +786,14 @@ GUIDE_MOMENTS_TEXT = "Pagle tells you, in one of three sizes. The bigger the mom
 GUIDE_MOMENTS_SAMPLES.banner = ["A banner", "A new Angler Level, and the title that comes with it."]
 GUIDE_MOMENTS_SAMPLES.nod = ["A Nod", "When Pagle’s said a lot lately. One line, gone in 3 seconds."]
 GUIDE_MOMENTS_SAMPLES.toast = ["A toast", "Every Catch, a new fish, a record, Coins earned."]
-GUIDE_MOMENTS_BUDGET = "At most %d pop-ups every %d minutes: past that, small ones step down to a Nod. Everything lands on the Session summary when you stop."
+GUIDE_MOMENTS_BUDGET = "At most {guide_moments_budget_1:0} pop-ups every {guide_moments_budget_2:0} minutes: past that, small ones step down to a Nod. Everything lands on the Session summary when you stop."
 # The samples' catch, in place of /pagle dev preview's "(a /pagle dev preview)" line.
 GUIDE_MOMENTS_SAMPLE_TEXT = "Oily Blackmouth"
 GUIDE_PRESETS.cozy = ["Cozy", "Nothing pops up and nothing plays. It all waits for your Session summary."]
 GUIDE_PRESETS.lively = ["Lively", "A toast for every Catch; banners too, with sound.", "as it comes"]
 GUIDE_PRESETS.quieter = ["Quieter", "No toast for ordinary Catches, and fewer pop-ups. The big moments still show."]
 # A preset card's pencilled line: its budget's count and minutes; Cozy's.
-GUIDE_PRESET_POPUPS = "%d pop-ups in %d minutes"
+GUIDE_PRESET_POPUPS = "{guide_preset_popups_1:0} pop-ups in {guide_preset_popups_2:0} minutes"
 GUIDE_PRESET_COZY_WHAT = "a Legend still shows, silently"
 GUIDE_PRESET_OWN = "Your own mix, kept as it is."
 GUIDE_MOMENTS_NOTE = "Each one only sets the switches in Settings » Announcements, where you can fine-tune them later."
@@ -800,12 +801,12 @@ GUIDE_MOMENTS_NOTE = "Each one only sets the switches in Settings » Announcemen
 # windows with First looks (one, or a list), the right page's line, and the First evening list as it will look.
 GUIDE_OFF_TEXT = "The first time something new happens (your first Nod, your first new fish, your first Session summary) I’ll leave a note beside it. Once. After that the margins stay clean."
 GUIDE_OFF_NOD_NOTE = "That’s a *Nod*: every Catch gets one. It’s gone in three seconds."
-GUIDE_OFF_LOOKS = "Don’t want notes? Turn off Margin notes in Settings. %s each get a short set the first time you open them."
-GUIDE_OFF_LOOKS_ONE = "Don’t want notes? Turn off Margin notes in Settings. %s gets a short set the first time you open it."
+GUIDE_OFF_LOOKS.one = "Don’t want notes? Turn off Margin notes in Settings. {guideListOf} gets a short set the first time you open it."
+GUIDE_OFF_LOOKS.other = "Don’t want notes? Turn off Margin notes in Settings. {guideListOf} each get a short set the first time you open them."
 GUIDE_OFF_LIST_TEXT = "It sits under your quests and ticks itself off. Close it whenever you like."
 # The First evening list (ONB-R61): its header, "{done} of {total}", each item and the hints the board shows.
 GUIDE_EVENING_TITLE = "First evening"
-GUIDE_EVENING_COUNT = "%d of %d"
+GUIDE_EVENING_COUNT = "{done:0} of {rows:0}"
 GUIDE_EVENING_ITEMS.cast = "Make a Cast"
 GUIDE_EVENING_ITEMS.catch = "Land a Catch"
 GUIDE_EVENING_ITEMS.hunts = "See what’s biting on Hunts"
@@ -824,8 +825,8 @@ LETTER_OPEN = "Open the letter"
 LETTER_LATER = "Later"
 LETTER_SEAL = "P"
 DEV_TOUR_LETTER = "the Letter"
-DEV_TOUR_LETTER_OF = "the letter %s"
-DEV_LETTER_NONE = "Pagle dev: no letter %s; the letters are %s."
+DEV_TOUR_LETTER_OF = "the letter {dev_tour_letter_of}"
+DEV_LETTER_NONE = "Pagle dev: no letter {dev_letter_none_1}; the letters are {ids}."
 
 # Core's own slots (SHOP-R25): their labels. Their goods' names and descriptions are lore (DATA-R101), in
 # data\Lore.lua as `good.<goodID>.name` and `good.<goodID>.description`, a binding's as `binding.<key>.name` and
@@ -842,12 +843,12 @@ SLOT_CREST_FISH = "Fish crests"
 # the prefix an enUS client's fish names carry ("Raw Spotted Yellowtail") that the crest's name drops, read on an
 # enUS client only; and, while it isn't earned, the row's tag and the stage's note (VAR-R13, VAR-R14), the count
 # still out there of each rarity, rarest last, joined with ", ".
-FISH_CREST_ITEM = "Item %d"
+FISH_CREST_ITEM = "Item {speciesID}"
 FISH_CREST_DROP_PREFIX = "Raw "
-FISH_CREST_ROW = "%d of 10 varieties"
-FISH_CREST_NOTE = "%d of 10 %s varieties. Still out there: %s."
-FISH_CREST_NOTE_ALL = "%d of 10 %s varieties."
-FISH_CREST_UNCAUGHT = "%d %s"
+FISH_CREST_ROW = "{fish_crest_row:0} of 10 varieties"
+FISH_CREST_NOTE = "{fish_crest_note_1:0} of 10 {fish} varieties. Still out there: {parts}."
+FISH_CREST_NOTE_ALL = "{fish_crest_note_all_1:0} of 10 {fish} varieties."
+FISH_CREST_UNCAUGHT = "{counts:0} {rarityName}"
 FISH_CREST_UNCAUGHT_JOIN = ", "
 # A sound set's preview on the Curio Shop's stage (wallet-and-shop.md › UI): a button per sound, and a note. » is
 # Latin-1: the client's fonts have no ▶ (CORE-R9, #248).

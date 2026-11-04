@@ -154,13 +154,11 @@ local function drawEntry(view, record, kicker, live)
 	local now = live and GetServerTime() or nil
 	view.kicker:SetText(kicker)
 	view.title:SetText(ns.SessionHeading(ns.SessionDate(record)))
-	view.span:SetText(
-		L.SESSION_SPAN:format(
-			ns.Time(record.startTime),
-			live and L.SESSION_NOW or ns.Time(record.endTime),
-			ns.Duration(ns.TimeFished(record, now))
-		)
-	)
+	view.span:SetText(ns.Text(L.SESSION_SPAN, {
+		time = ns.Time(record.startTime),
+		live = live and L.SESSION_NOW or ns.Time(record.endTime),
+		duration = ns.Duration(ns.TimeFished(record, now)),
+	}))
 	local y = KICKER + TITLE
 	at(view.span, y)
 	y = y + math.max(SPAN, view.span:GetStringHeight() + 4)
@@ -173,9 +171,15 @@ local function drawEntry(view, record, kicker, live)
 	end
 	line(L.SESSION_CASTS, ns.Number(record.casts))
 	line(L.SESSION_CATCHES, ns.Number(record.catches))
-	line(L.SESSION_GOT_AWAY, L.SESSION_GOT_AWAY_VALUE:format(ns.Number(record.gotAway), ns.GotAwayRate(record) or 0))
+	line(
+		L.SESSION_GOT_AWAY,
+		ns.Text(
+			L.SESSION_GOT_AWAY_VALUE,
+			{ gotAway = ns.Number(record.gotAway), gotAwayRate = ns.GotAwayRate(record) or 0 }
+		)
+	)
 	line(L.SESSION_PER_HOUR, ns.Number(ns.CatchesPerHour(record, now)))
-	line(L.SESSION_SKILL, L.SESSION_SKILL_VALUE:format(ns.Number(record.skill)))
+	line(L.SESSION_SKILL, ns.Text(L.SESSION_SKILL_VALUE, { skill = ns.Number(record.skill) }))
 
 	local function heading(headingView, text)
 		y = y + HEADING_GAP
@@ -241,7 +245,7 @@ local function ledgerRow(record, live, target)
 	end
 	return {
 		cells = {
-			L.SESSIONS_STARTED_AT:format(ns.Date(record.startTime), ns.Time(record.startTime)),
+			ns.Text(L.SESSIONS_STARTED_AT, { date = ns.Date(record.startTime), time = ns.Time(record.startTime) }),
 			table.concat(zones, L.SESSIONS_WHERE_JOIN),
 			ns.Duration(ns.TimeFished(record, live and GetServerTime() or nil)),
 			ns.Number(record.casts),
@@ -299,7 +303,7 @@ local function newSessionsLedger(frame, width)
 	local view = newLedgerPage(frame, width, true)
 	view.kicker:SetText(L.BOOK_SESSIONS)
 	-- Core's Session gap (LOG-R60, LOG-R61), read from Core so the note follows it.
-	view.note:SetText(L.SESSIONS_NOTE:format(math.floor(Pagle.SESSION_GAP / 60)))
+	view.note:SetText(ns.Text(L.SESSIONS_NOTE, { sessions_note = math.floor(Pagle.SESSION_GAP / 60) }))
 	local pager = CreateFrame("Frame", nil, frame) --[[@as StatsSessionPagerView]]
 	pager:SetSize(width, PAGER)
 	pager.later = CreateFrame("Button", nil, pager) --[[@as Button]]
@@ -380,7 +384,7 @@ ns.book:RegisterPage("sessions", "left", function(content, place)
 	pager.later:SetScript("OnClick", function()
 		ns.OpenBook({ page = "sessions", session = place.session, ledgerPage = ledger.page - 1 })
 	end)
-	pager.page:SetText(L.SESSIONS_PAGE:format(ledger.page, ledger.pages))
+	pager.page:SetText(ns.Text(L.SESSIONS_PAGE, { page = ledger.page, pages = ledger.pages }))
 	pager.earlier:SetLink(L.SESSIONS_EARLIER_PAGE, function()
 		ns.OpenBook({ page = "sessions", session = place.session, ledgerPage = ledger.page + 1 })
 	end)
@@ -396,6 +400,6 @@ ns.book:RegisterPage("sessions", "right", function(content, place)
 		return nil
 	end
 	local index = ns.FindSession(sessions, place.session) or #sessions
-	local kicker = L.SESSION_NUMBERED:format(ns.Number(index))
+	local kicker = ns.Text(L.SESSION_NUMBERED, { index = ns.Number(index) })
 	return drawEntry(view, sessions[index], kicker, index == currentIndex(shown))
 end)

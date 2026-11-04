@@ -55,7 +55,7 @@ function ns.TrackerProgress(hunt, progress, updating)
 		return L.TRACKER_ALL_TIERS
 	end
 	local reached = progress and #progress.reached or 0
-	return L.TRACKER_PROGRESS:format(progress and progress.count or 0, hunt.tiers[reached + 1])
+	return ns.Text(L.TRACKER_PROGRESS, { progress = progress and progress.count or 0, tiers = hunt.tiers[reached + 1] })
 end
 
 -- Whether `zone` is one of `zones` (HNT-R31's zones, ascending).
@@ -88,7 +88,7 @@ local function huntLines(row, input)
 	return {
 		id = row.id,
 		dot = row.group,
-		first = L.TRACKER_FIRST:format(input.list:HuntName(row.id), label),
+		first = ns.Text(L.TRACKER_FIRST, { huntName = input.list:HuntName(row.id), label = label }),
 		name = input.list:HuntName(row.id),
 		label = label,
 		second = table.concat(second, L.TRACKER_JOIN),
@@ -166,16 +166,20 @@ local function runLines(shown, input, state)
 	if settled then
 		line.label = L.TRACKER_SETTLED
 	else
-		line.label = L.TRACKER_ENDS_IN:format(ns.FormatDuration(run.end_ - input.now))
+		line.label = ns.Text(L.TRACKER_ENDS_IN, { duration = ns.FormatDuration(run.end_ - input.now) })
 	end
 	if input.updating then
 		line.second = L.TRACKER_UPDATING
 		return line
 	end
 	local progress = ns.RunProgress(run, state)
-	local second = { L.TRACKER_FIRST_MARKS:format(progress.done, progress.total) }
+	local second = { ns.Text(L.TRACKER_FIRST_MARKS, { done = progress.done, total = progress.total }) }
 	if progress.closest then
-		second[2] = L.TRACKER_CLOSEST:format(ns.events:HuntName(progress.closest), progress.count, progress.of)
+		second[2] = ns.Text(L.TRACKER_CLOSEST, {
+			huntName = ns.events:HuntName(progress.closest),
+			tracker_closest_2 = progress.count,
+			tracker_closest_3 = progress.of,
+		})
 	end
 	line.second = table.concat(second, L.TRACKER_JOIN)
 	return line
@@ -221,5 +225,5 @@ end
 ---@param more integer
 ---@return string
 function ns.TrackerWagersMore(more)
-	return ns.L.TRACKER_WAGERS_MORE:format(more)
+	return ns.Text(ns.L.TRACKER_WAGERS_MORE, { more = more })
 end

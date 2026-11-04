@@ -267,7 +267,7 @@ local function drawLeft(content, place)
 	local y = KICKER + TITLE
 
 	local record = state.places[area]
-	local text = L.PLACE_CASTS:format(ns.Number(record and record.casts or 0))
+	local text = ns.Text(L.PLACE_CASTS, { record = ns.Number(record and record.casts or 0) })
 	local sentence = ns.NoJunkSentence(area, live)
 	view.casts:SetText(sentence and (text .. ns.L.SENTENCE_JOIN .. sentence) or text)
 	put(view.casts, y)
@@ -299,7 +299,11 @@ local function drawLeft(content, place)
 	view.marginsArea, view.margins = area, margins
 
 	if not isZone and ns.ReadsAcrossZone(groups) then
-		view.across:SetText(L.PLACE_ACROSS_ZONE:format(ns.ODDS_THRESHOLD, ns.AreaName(area), ns.AreaName(zone)))
+		view.across:SetText(ns.Text(L.PLACE_ACROSS_ZONE, {
+			oddsThreshold = ns.ODDS_THRESHOLD,
+			areaName = ns.AreaName(area),
+			place_across_zone_3 = ns.AreaName(zone),
+		}))
 		y = y + HEADING_GAP
 		put(view.across, y)
 		y = y + view.across:GetStringHeight()
@@ -390,7 +394,7 @@ local function drawRight(content, place)
 		{
 			view.gotAway,
 			L.PLACE_GOT_AWAY_LABEL,
-			rate and L.PLACE_GOT_AWAY:format(ns.Number(gotAway), rate) or L.PLACE_NONE,
+			rate and ns.Text(L.PLACE_GOT_AWAY, { gotAway = ns.Number(gotAway), rate = rate }) or L.PLACE_NONE,
 		},
 	}) do
 		line[1]:SetLine({ label = line[2], value = line[3] })

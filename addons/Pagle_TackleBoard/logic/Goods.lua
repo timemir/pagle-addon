@@ -113,11 +113,11 @@ end
 ---@param open integer the open goals
 ---@return string
 function ns.TrackerHeaderRight(fire, open)
-	local count = ns.Plural(open, "TRACKER_OPEN")
+	local count = ns.Text(ns.L.TRACKER_OPEN, { count = open })
 	if fire == nil then
 		return count
 	end
-	return ns.Plural(fire, "TRACKER_FIRE_OPEN", { fire = fire, open = count })
+	return ns.Text(ns.L.TRACKER_FIRE_OPEN, { count = fire, fire = fire, open = count })
 end
 
 --- A goal line's count (TKB-R122): its displayed progress over its need ("12/30").
@@ -125,7 +125,7 @@ end
 ---@param need integer
 ---@return string
 function ns.TrackerCount(progress, need)
-	return ns.Plural(progress, "TRACKER_COUNT", { need = need })
+	return ns.Text(ns.L.TRACKER_COUNT, { count = progress, need = need })
 end
 
 --- The sample tracker each preview draws (TKB-R125): a Campfire of 5 days, then TKB-R125's two fixed goal lines, a
@@ -194,7 +194,7 @@ function ns.BoardGoods(hooks)
 			isEarned = days and function()
 				return hooks.reached(days)
 			end,
-			earnedText = days and ns.Fill(ns.L.GOOD_EARNED_CAMPFIRE, { days = days }),
+			earnedText = days and ns.Text(ns.L.GOOD_EARNED_CAMPFIRE, { days = days }),
 			preview = not good.slot and function(stage)
 				hooks.preview(stage, goodID)
 			end or nil,

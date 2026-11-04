@@ -41,7 +41,14 @@ local function ownerEntry(owner)
 			if handler then
 				local ok, err = pcall(handler, event, ...)
 				if not ok then
-					report(owner, event, L.EVENT_HANDLER_FAILED:format(tostring(owner), event, tostring(err)))
+					report(
+						owner,
+						event,
+						ns.RenderText(
+							L.EVENT_HANDLER_FAILED,
+							{ owner = tostring(owner), event = event, err = tostring(err) }
+						)
+					)
 				end
 			end
 		end)
@@ -64,7 +71,14 @@ local function register(owner, event, fn, ...)
 	if ok and registered ~= false then
 		entry.handlers[event] = fn
 	else
-		report(owner, event, L.EVENT_REGISTER_FAILED:format(tostring(owner), event, tostring(registered)))
+		report(
+			owner,
+			event,
+			ns.RenderText(
+				L.EVENT_REGISTER_FAILED,
+				{ owner = tostring(owner), event = event, registered = tostring(registered) }
+			)
+		)
 	end
 end
 

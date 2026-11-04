@@ -183,12 +183,14 @@ function ns.RunFontProbe(options)
 	end
 	options.global().fontProbe = probe
 	for _, font in ipairs(probe.fonts) do
-		options.print(L.DEV_FONTS_LINE:format(font.path, ns.FontProbeSummary(font)))
+		options.print(
+			ns.RenderText(L.DEV_FONTS_LINE, { path = font.path, fontProbeSummary = ns.FontProbeSummary(font) })
+		)
 	end
 	if #shown > 0 then
 		options.show(shown, ns.DevFontProbeLine())
 	end
-	options.print(L.DEV_FONTS_SAVED:format(loaded, #paths, probe.locale))
+	options.print(ns.RenderText(L.DEV_FONTS_SAVED, { loaded = loaded, paths = #paths, locale = probe.locale }))
 end
 
 --- A font's facts in one line: "failed" for a path that did not load, else "ok" and, by script, how many of its sample's

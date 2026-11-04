@@ -97,7 +97,7 @@ local function showChoices(frame)
 		local button = frame.choices[choice]
 		local word = choice == "new" and L.PASTE_CHOICE_NEW or L.PASTE_CHOICE_EVERYTHING
 		local picked = frame.view.choice == choice
-		button.label:SetText(picked and L.PASTE_CHOICE_PICKED:format(word) or word)
+		button.label:SetText(picked and ns.RenderText(L.PASTE_CHOICE_PICKED, { word = word }) or word)
 		button.label:SetTextColor(ns.FieldInk(picked and "sea" or "hint"))
 		button:SetSize(button.label:GetStringWidth(), 24)
 	end

@@ -106,11 +106,11 @@ function ns.ButtonTooltip(action, name)
 	elseif action == "reel" then
 		return L.BUTTON_TOOLTIP_REEL
 	elseif action == "gear" then
-		return name and L.BUTTON_TOOLTIP_GEAR:format(name)
+		return name and ns.Text(L.BUTTON_TOOLTIP_GEAR, { name = name })
 	elseif action == "lure" then
-		return name and L.BUTTON_TOOLTIP_LURE:format(name)
+		return name and ns.Text(L.BUTTON_TOOLTIP_LURE, { name = name })
 	elseif action == "clam" then
-		return name and L.BUTTON_TOOLTIP_CLAM:format(name)
+		return name and ns.Text(L.BUTTON_TOOLTIP_CLAM, { name = name })
 	end
 	return L.BUTTON_TOOLTIP_NOTHING
 end

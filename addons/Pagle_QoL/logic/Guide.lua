@@ -48,7 +48,7 @@ function ns.RestingLine(titles)
 	if #titles == 0 then
 		return nil
 	end
-	return ns.L.GUIDE_RESTING:format(table.concat(titles, ", "))
+	return ns.Text(ns.L.GUIDE_RESTING, { titles = table.concat(titles, ", ") })
 end
 
 --- One press of the next-action sequence the Casting step draws (ONB-R32): its action, which the button's look names

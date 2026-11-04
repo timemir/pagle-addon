@@ -170,17 +170,21 @@ local NO_STATE = { zones = {} }
 function ns.ZoneCrestTexts(world, state, celebrated, areaID, zoneName)
 	local L = ns.L
 	if not world.zones[areaID] then
-		return L.CREST_UNCHARTED, L.CREST_NOTE_UNCHARTED:format(zoneName)
+		return L.CREST_UNCHARTED, ns.Text(L.CREST_NOTE_UNCHARTED, { zoneName = zoneName })
 	end
 	state = state or NO_STATE
 	local shown = ns.ShownZoneRank(world, state, celebrated, areaID)
 	if shown == 0 then
-		return L.CREST_UNFISHED, L.CREST_NOTE_UNFISHED:format(zoneName)
+		return L.CREST_UNFISHED, ns.Text(L.CREST_NOTE_UNFISHED, { zoneName = zoneName })
 	end
 	local rank = L.ZONE_RANKS[shown]
 	local completion = ns.ZoneCompletion(world, state, areaID) or 0
 	local nextLine = ns.NextRequirement(world, state, celebrated, areaID) or ""
-	return L.CREST_PROGRESS:format(rank, completion), L.CREST_NOTE_PROGRESS:format(zoneName, rank, completion, nextLine)
+	return ns.Text(L.CREST_PROGRESS, { rank = rank, completion = completion }),
+		ns.Text(
+			L.CREST_NOTE_PROGRESS,
+			{ zoneName = zoneName, rank = rank, completion = completion, nextLine = nextLine }
+		)
 end
 
 --- Whether a live entry's achievements raise a zone to Master (LED-R114): a `zoneRank` reaching it, the moment the

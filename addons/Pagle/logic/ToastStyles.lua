@@ -988,16 +988,16 @@ function ns.ToastVarietyLook(announcement)
 	if moment ~= headline then
 		look.stamp = moment.stamp or moment.title
 		if headline.text and headline.icon ~= nil and headline.icon == moment.icon then
-			look.before = ns.L.TOAST_VARIETY_BEFORE:format(headline.text)
+			look.before = ns.RenderText(ns.L.TOAST_VARIETY_BEFORE, { fish = headline.text })
 		end
 	elseif headline.catchToast then
 		-- Core's catch toast: its text is the fish's name, with no stamp.
-		look.before = ns.L.TOAST_VARIETY_BEFORE:format(headline.text --[[@as string]])
+		look.before = ns.RenderText(ns.L.TOAST_VARIETY_BEFORE, { fish = headline.text })
 	elseif headline.ownStamp then
 		-- Its own toast (VAR-R28): the fish's name, then the variety's, and its own stamp.
 		look.stamp = headline.stamp or headline.title
 		local fish = moment.variety.fish
-		look.before = fish and ns.L.TOAST_VARIETY_BEFORE:format(fish) or ""
+		look.before = fish and ns.RenderText(ns.L.TOAST_VARIETY_BEFORE, { fish = fish }) or ""
 	elseif headline.text then
 		look.before = ""
 	end

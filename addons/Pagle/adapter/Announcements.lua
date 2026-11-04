@@ -229,7 +229,7 @@ local function setCoins(coins, amount, size, coinFirst)
 		coins:Hide()
 		return 0
 	end
-	coins.label:SetText(L.ANNOUNCEMENT_COINS:format(BreakUpLargeNumbers(amount)))
+	coins.label:SetText(ns.RenderText(L.ANNOUNCEMENT_COINS, { amount = BreakUpLargeNumbers(amount) }))
 	local coin = ns.SetCoin(coins.coin, size)
 	local width = size + 8 + coins.label:GetStringWidth()
 	coins:SetSize(width, size)
@@ -301,12 +301,12 @@ local function fillStamps(frame, announcement, set, from)
 	local showing = {}
 	local labels = { unpack(announcement.stamps, from or 1) }
 	if announcement.more > 0 then
-		labels[#labels + 1] = L.ANNOUNCEMENT_STAMPS_MORE:format(announcement.more)
+		labels[#labels + 1] = ns.RenderText(L.ANNOUNCEMENT_STAMPS_MORE, { more = announcement.more })
 	end
 	if (announcement.tickets or 0) > 0 then
 		labels[#labels + 1] = ticketMarkup(STAMP_TICKET)
 			.. " "
-			.. L.ANNOUNCEMENT_STAMP_REFRESH:format(announcement.tickets)
+			.. ns.RenderText(L.ANNOUNCEMENT_STAMP_REFRESH, { tickets = announcement.tickets })
 	end
 	for i, stamp in ipairs(frame.stamps) do
 		stamp:ClearAllPoints()
@@ -1105,7 +1105,7 @@ local function drawComposedToast(frame, display, style)
 
 	local more = frame.more --[[@as FontString]]
 	local beyond = announcement.fighting and #announcement.fighting - DIGEST_ROWS or 0
-	more:SetText(L.ANNOUNCEMENT_MORE:format(beyond))
+	more:SetText(ns.RenderText(L.ANNOUNCEMENT_MORE, { beyond = beyond }))
 	more:SetShown(beyond > 0)
 	more:ClearAllPoints()
 	if page.ruled or announcement.fighting then
@@ -1257,7 +1257,7 @@ local function drawToast(frame, display, style)
 	local more = frame.more --[[@as FontString]]
 	-- "While you were fighting" counts the held headlines past its rows (ANN-R36).
 	local beyond = announcement.fighting and #announcement.fighting - DIGEST_ROWS or 0
-	more:SetText(L.ANNOUNCEMENT_MORE:format(beyond))
+	more:SetText(ns.RenderText(L.ANNOUNCEMENT_MORE, { beyond = beyond }))
 	more:SetShown(beyond > 0)
 	more:ClearAllPoints()
 	if page.ruled or announcement.fighting then

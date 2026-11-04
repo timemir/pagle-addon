@@ -662,7 +662,7 @@ function ns.RunProbe(options)
 	options.after(ns.PROBE_QUEST_SECONDS, function()
 		ns.ProbeQuestAgain(probe, globals)
 		for _, report in ipairs(ns.ProbeReport(probe)) do
-			options.print(L.DEV_PROBE_LINE:format(ns.ProbeLine(report)))
+			options.print(ns.RenderText(L.DEV_PROBE_LINE, { probeLine = ns.ProbeLine(report) }))
 		end
 		options.print(L.DEV_PROBE_SAVED)
 	end)

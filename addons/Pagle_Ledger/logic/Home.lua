@@ -99,11 +99,11 @@ local function nextRankNote(context, zones)
 	if not best then
 		return nil
 	end
-	local line = ns.L.HOME_NOTE_RANK:format(
-		context.text:Zone(best),
-		ns.L.ZONE_RANKS[bestRank],
-		ns.NextRequirement(world, state, celebrated, best)
-	)
+	local line = ns.Text(ns.L.HOME_NOTE_RANK, {
+		zone = context.text:Zone(best),
+		zoneRanks = ns.L.ZONE_RANKS[bestRank],
+		nextRequirement = ns.NextRequirement(world, state, celebrated, best),
+	})
 	return { kind = "link", text = line, hand = true, place = ns.JournalPlace.zone(best) }
 end
 
@@ -115,7 +115,7 @@ local function newToFindNote(context, zones)
 	for _, zone in ipairs(zones) do
 		local count = ns.NewToFind(context.world, context.state, context.celebrated, zone)
 		if count > 0 then
-			local line = ns.L.HOME_NOTE_NEW:format(context.text:Zone(zone), count)
+			local line = ns.Text(ns.L.HOME_NOTE_NEW, { zone = context.text:Zone(zone), home_note_new_2 = count })
 			return { kind = "link", text = line, hand = true, place = ns.JournalPlace.zone(zone) }
 		end
 	end
@@ -145,9 +145,12 @@ local function nextStarNote(context)
 	local name = context.text:Item(best)
 	local line
 	if ns.ShownSpeciesStars(world, state, celebrated, best)[1] then
-		line = ns.L.HOME_NOTE_STAR:format(name, ns.REGULAR_CATCHES - bestN)
+		line = ns.Text(ns.L.HOME_NOTE_STAR, { name = name, home_note_star_2 = ns.REGULAR_CATCHES - bestN })
 	else
-		line = ns.L.HOME_NOTE_CAUGHT_STAR:format(name, ns.CAUGHT_STAR_CATCHES - bestN)
+		line = ns.Text(
+			ns.L.HOME_NOTE_CAUGHT_STAR,
+			{ name = name, home_note_caught_star_2 = ns.CAUGHT_STAR_CATCHES - bestN }
+		)
 	end
 	return { kind = "link", text = line, hand = true, place = ns.JournalPlace.fish(best) }
 end
@@ -185,7 +188,7 @@ local function countText(format, ...)
 	for _, count in ipairs({ ... }) do
 		done, total = done + count.done, total + count.total
 	end
-	return ns.L.COUNT_OF:format(format(done), format(total))
+	return ns.Text(ns.L.COUNT_OF, { count_of_1 = format(done), count_of_2 = format(total) })
 end
 
 -- The right page (LED-R132): the bookplate summary (the shown level in large numerals with the Prestige emblem and
@@ -204,7 +207,7 @@ local function rightPage(context)
 			kind = "bookplate",
 			text = tostring(ns.ShownLevel(state, celebrated)),
 			value = L.HOME_LEVEL,
-			seal = L.HOME_PERCENT:format(completion.percent),
+			seal = ns.Text(L.HOME_PERCENT, { percent = completion.percent }),
 			mark = ns.PrestigeMark(state.prestige),
 			signature = title,
 		},
@@ -267,9 +270,9 @@ function ns.BrassPlate(context)
 	local percent = ns.LedgerCompletion(context.world, state).percent
 	local _, title = ns.ActiveTitle(context --[[@as LedgerTitleView]])
 	if title then
-		return ns.L.BRASS_PLATE_TITLE:format(level, title, percent)
+		return ns.Text(ns.L.BRASS_PLATE_TITLE, { level = level, title = title, percent = percent })
 	end
-	return ns.L.BRASS_PLATE:format(level, percent)
+	return ns.Text(ns.L.BRASS_PLATE, { level = level, percent = percent })
 end
 
 --- Home as a spread (LED-R130–R133): no crumbs of its own; its args' `tab` chooses a continent tab. The tab last

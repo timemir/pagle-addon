@@ -113,7 +113,7 @@ function ns.JournalFishVarieties(id, context)
 		{
 			kind = "varietyCard",
 			text = L.FISH_VARIETIES,
-			value = L.FISH_VARIETIES_COUNT:format(caughtCount(list, caught), sizeOf(list)),
+			value = ns.Text(L.FISH_VARIETIES_COUNT, { caughtCount = caughtCount(list, caught), sizeOf = sizeOf(list) }),
 			link = L.FISH_VARIETIES_LINK,
 			art = caught[selected] and list[selected].art or nil,
 			pips = pips,
@@ -152,8 +152,11 @@ local function leftPage(id, context, list, caught, selected)
 	if not list then
 		return blocks
 	end
-	blocks[#blocks + 1] =
-		{ kind = "text", hand = true, text = L.VARIETIES_CAUGHT:format(caughtCount(list, caught), sizeOf(list)) }
+	blocks[#blocks + 1] = {
+		kind = "text",
+		hand = true,
+		text = ns.Text(L.VARIETIES_CAUGHT, { caughtCount = caughtCount(list, caught), sizeOf = sizeOf(list) }),
+	}
 	for index, entry in ipairs(list) do
 		local record = caught[index]
 		---@type LedgerBlock
@@ -167,7 +170,7 @@ local function leftPage(id, context, list, caught, selected)
 		}
 		if record then
 			row.text = entry.name or L.NAME_UNKNOWN
-			row.value = L.VARIETY_COUNT:format(context.formatNumber(record.count))
+			row.value = ns.Text(L.VARIETY_COUNT, { variety_count = context.formatNumber(record.count) })
 		else
 			-- never its name (VAR-R27)
 			row.look = "silhouette"
@@ -217,8 +220,10 @@ local function rightPage(id, context, list, caught, selected)
 		blocks[#blocks + 1] = { kind = "title", text = L.VARIETY_NOT_DISCOVERED }
 		blocks[#blocks + 1] = { kind = "varietyArt", art = entry.art, look = "silhouette" }
 		if rarity then
-			blocks[#blocks + 1] =
-				{ kind = "text", text = L.VARIETY_ODDS:format(context.formatNumber(oneIn(rarity.weight))) }
+			blocks[#blocks + 1] = {
+				kind = "text",
+				text = ns.Text(L.VARIETY_ODDS, { oneIn = context.formatNumber(oneIn(rarity.weight)) }),
+			}
 		end
 	end
 	local crest = context.fishCrest(id)
@@ -227,7 +232,7 @@ local function rightPage(id, context, list, caught, selected)
 		kind = "fishCrest",
 		icon = crest.icon,
 		text = crest.name,
-		value = left == 0 and L.VARIETY_ALL_TEN or L.VARIETY_TO_GO:format(left),
+		value = left == 0 and L.VARIETY_ALL_TEN or ns.Text(L.VARIETY_TO_GO, { left = left }),
 		foot = true,
 	}
 	return blocks

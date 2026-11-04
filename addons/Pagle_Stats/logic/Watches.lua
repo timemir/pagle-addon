@@ -76,7 +76,7 @@ function ns.Watch(item, area)
 		return true
 	end
 	if #watched >= ns.MAX_WATCHES then
-		client.UIError(ns.L.WATCH_FULL:format(ns.MAX_WATCHES), ERROR_RED.r, ERROR_RED.g, ERROR_RED.b)
+		client.UIError(ns.Text(ns.L.WATCH_FULL, { maxWatches = ns.MAX_WATCHES }), ERROR_RED.r, ERROR_RED.g, ERROR_RED.b)
 		return false
 	end
 	watched[#watched + 1] = { item = item, area = area }

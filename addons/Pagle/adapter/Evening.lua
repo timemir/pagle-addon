@@ -175,7 +175,7 @@ local function draw(list, ticked)
 		frame.head:SetText(L.EVENING_TITLE)
 		mark:SetText(L.EVENING_CLOSE)
 	end
-	frame.count:SetText(L.EVENING_COUNT:format(list.done, list.total))
+	frame.count:SetText(ns.RenderText(L.EVENING_COUNT, { done = list.done, total = list.total }))
 	local y = TOP
 	for i, line in ipairs(list.lines) do
 		local row = rowAt(i)

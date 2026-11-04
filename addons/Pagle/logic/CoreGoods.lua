@@ -298,7 +298,7 @@ function ns.FishCrestName(speciesID, fish)
 	if not pattern then
 		return id
 	end
-	fish = fish or ns.L.FISH_CREST_ITEM:format(speciesID)
+	fish = fish or ns.RenderText(ns.L.FISH_CREST_ITEM, { speciesID = speciesID })
 	return (pattern:gsub("{fish}", function()
 		return fish
 	end))
@@ -351,13 +351,20 @@ function ns.FishCrestTexts(caught, fish)
 	end
 	local parts = {}
 	for i, rarity in ipairs(order) do
-		parts[i] = L.FISH_CREST_UNCAUGHT:format(counts[rarity.key], rarityName(rarity.key) or rarity.key)
+		parts[i] = ns.RenderText(
+			L.FISH_CREST_UNCAUGHT,
+			{ counts = counts[rarity.key], rarityName = rarityName(rarity.key) or rarity.key }
+		)
 	end
-	local row = L.FISH_CREST_ROW:format(n)
+	local row = ns.RenderText(L.FISH_CREST_ROW, { fish_crest_row = n })
 	if #parts == 0 then
-		return row, L.FISH_CREST_NOTE_ALL:format(n, fish)
+		return row, ns.RenderText(L.FISH_CREST_NOTE_ALL, { fish_crest_note_all_1 = n, fish = fish })
 	end
-	return row, L.FISH_CREST_NOTE:format(n, fish, table.concat(parts, L.FISH_CREST_UNCAUGHT_JOIN))
+	return row,
+		ns.RenderText(
+			L.FISH_CREST_NOTE,
+			{ fish_crest_note_1 = n, fish = fish, parts = table.concat(parts, L.FISH_CREST_UNCAUGHT_JOIN) }
+		)
 end
 
 --- A fish crest's progress (VAR-R14, SHOP-R22): ten dots in variety order, each in its rarity's colour, filled when
@@ -395,7 +402,8 @@ function ns.FishCrestGoods(hooks)
 				return hooks.owned(id) or countCaught(hooks.caught(speciesID)) >= VARIETIES
 			end,
 			earnedText = function()
-				local fish = ns.FishCrestFish(hooks, speciesID) or ns.L.FISH_CREST_ITEM:format(speciesID)
+				local fish = ns.FishCrestFish(hooks, speciesID)
+					or ns.RenderText(ns.L.FISH_CREST_ITEM, { speciesID = speciesID })
 				return ns.FishCrestTexts(hooks.caught(speciesID), fish)
 			end,
 			progress = function()

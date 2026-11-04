@@ -79,7 +79,7 @@ local function sealOf(progress)
 		local first = (progress --[[@as HuntProgress]]).reached[1]
 		local date = first.date
 		return {
-			text = L.SEAL_HUNTED:format(ns.FormatFullDate(date)),
+			text = ns.Text(L.SEAL_HUNTED, { fullDate = ns.FormatFullDate(date) }),
 			filled = true,
 			lines = { L.SEAL_HUNTED_WORD, ns.FormatShortDate(date), tostring(date.year) },
 		}
@@ -97,7 +97,7 @@ local function whenOf(reached, sources)
 	if reached.zone == 0 then
 		return date
 	end
-	return L.LADDER_WHEN_ZONE:format(date, sources.AreaName(reached.zone) or L.NAME_UNKNOWN)
+	return ns.Text(L.LADDER_WHEN_ZONE, { date = date, areaName = sources.AreaName(reached.zone) or L.NAME_UNKNOWN })
 end
 
 --- The tier ladder (HNT-R64, HNT-R18's trims are the board's): one step per tier, then the ink bar toward the next
@@ -120,9 +120,12 @@ function ns.HuntLadder(hunt, progress, sources)
 	end
 	local bar
 	if next then
-		bar = { fill = math.min(1, count / next), label = L.LADDER_PROGRESS:format(count, next) }
+		bar = {
+			fill = math.min(1, count / next),
+			label = ns.Text(L.LADDER_PROGRESS, { ladder_progress_1 = count, ladder_progress_2 = next }),
+		}
 	else
-		bar = { fill = 1, label = L.LADDER_CAUGHT:format(count) }
+		bar = { fill = 1, label = ns.Text(L.LADDER_CAUGHT, { ladder_caught = count }) }
 	end
 	return { tiers = tiers, bar = bar }
 end
@@ -134,12 +137,12 @@ end
 local function effortOf(progress)
 	local L = ns.L
 	local effort = progress and progress.effort or 0
-	local casts = ns.CountText(effort, "EFFORT_CASTS")
+	local casts = ns.Text(ns.L.EFFORT_CASTS, { count = effort })
 	local text
 	if progress and progress.caught then
-		text = L.EFFORT_SINCE:format(casts, progress.sinceLast)
+		text = ns.Text(L.EFFORT_SINCE, { casts = casts, sinceLast = progress.sinceLast })
 	else
-		text = L.EFFORT:format(casts)
+		text = ns.Text(L.EFFORT, { casts = casts })
 	end
 	return { text = text, odds = L.EFFORT_ODDS }
 end
@@ -184,7 +187,7 @@ local function addZoneChips(input, chips)
 		end
 	end
 	if #rest > 0 then
-		chips[#chips + 1] = { kind = "more", text = L.CHIP_MORE:format(#rest), tooltip = rest }
+		chips[#chips + 1] = { kind = "more", text = ns.Text(L.CHIP_MORE, { rest = #rest }), tooltip = rest }
 	end
 end
 
@@ -202,9 +205,10 @@ local function chipsOf(input)
 	local need = where.skillNeed
 	if need then
 		if ns.SkillShortfall(need, input.best) then
-			chips[#chips + 1] = { kind = "skill", text = L.CHIP_SHORT:format(need, input.best), short = true }
+			chips[#chips + 1] =
+				{ kind = "skill", text = ns.Text(L.CHIP_SHORT, { need = need, best = input.best }), short = true }
 		else
-			chips[#chips + 1] = { kind = "skill", text = L.CHIP_SKILL:format(need) }
+			chips[#chips + 1] = { kind = "skill", text = ns.Text(L.CHIP_SKILL, { need = need }) }
 		end
 	end
 	if where.boardSpec and where.boardSpec.lure then
@@ -231,8 +235,9 @@ local function setLineOf(input)
 	local L, list, setID = ns.L, input.list, input.hunt.set
 	local done, current = ns.DoneOfCurrent(list, input.state, input.now, setID)
 	local title = list:SetTitle(setID)
-	local earned = input.state.sets[setID] and L.SET_EARNED:format(title) or L.SET_EARNS:format(title)
-	return L.SET_LINE:format(list:SetName(setID), done, current, earned)
+	local earned = input.state.sets[setID] and ns.Text(L.SET_EARNED, { title = title })
+		or ns.Text(L.SET_EARNS, { title = title })
+	return ns.Text(L.SET_LINE, { name = list:SetName(setID), done = done, current = current, earned = earned })
 end
 
 -- What is drawn from the projection's state (HNT-R69): the seal, the tier ladder, the effort counter and the set's
@@ -248,7 +253,7 @@ local function progressOf(input)
 		return { text = L.UPDATING, filled = false },
 			{ updating = L.UPDATING },
 			{ text = L.UPDATING, odds = L.EFFORT_ODDS },
-			L.SET_LINE_UPDATING:format(input.list:SetName(hunt.set), L.UPDATING)
+			ns.Text(L.SET_LINE_UPDATING, { name = input.list:SetName(hunt.set), updating = L.UPDATING })
 	end
 	local progress = input.state.hunts[hunt.id]
 	return sealOf(progress), ns.HuntLadder(hunt, progress, input.sources), effortOf(progress), setLineOf(input)
@@ -273,16 +278,18 @@ function ns.HuntEntry(input)
 		setLine = setLine,
 	}
 	if input.fromSet then
-		entry.back, entry.backSet = L.ENTRY_BACK:format(list:SetName(input.fromSet)), input.fromSet
+		entry.back, entry.backSet = ns.Text(L.ENTRY_BACK, { name = list:SetName(input.fromSet) }), input.fromSet
 	end
 	if input.retired then
 		-- A retired date is a UTC day (DATA-R87), as a title from a retirement is dated (HNT-R23).
-		entry.retiredLine = L.ENTRY_RETIRED:format(ns.FormatFullDate(ns.UtcDate(hunt.retired --[[@as integer]])))
+		entry.retiredLine = ns.Text(L.ENTRY_RETIRED, {
+			fullDate = ns.FormatFullDate(ns.UtcDate(hunt.retired --[[@as integer]])),
+		})
 		entry.setLine = nil
 		return entry
 	end
 	local kind = hunt.kind == "natural" and L.ENTRY_NATURAL or L.ENTRY_IMPOSED
-	entry.kicker = L.ENTRY_KICKER:format(list:SetName(hunt.set), kind)
+	entry.kicker = ns.Text(L.ENTRY_KICKER, { name = list:SetName(hunt.set), kind = kind })
 	entry.pin = { pinned = input.pinned }
 	entry.window = windowOf(input)
 	entry.conditions = ns.HuntConditionsLine(

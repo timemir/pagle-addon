@@ -86,18 +86,25 @@ ns.SAMPLE_TRACKER = {
 function ns.SampleTrackerLines()
 	local L, sample = ns.L, ns.SAMPLE_TRACKER
 	local lines = {
-		{ kind = "header", text = L.TITLE, right = L.TRACKER_SESSION:format(ns.Duration(sample.seconds)) },
 		{
-			kind = "line",
-			text = L.TRACKER_COUNTS:format(
-				ns.Count(sample.casts, "Casts"),
-				ns.Count(sample.catches, "Catches"),
-				ns.Number(sample.gotAway)
-			),
+			kind = "header",
+			text = L.TITLE,
+			right = ns.Text(L.TRACKER_SESSION, { duration = ns.Duration(sample.seconds) }),
 		},
 		{
 			kind = "line",
-			text = L.TRACKER_PER_HOUR:format(ns.Number(sample.perHour), ns.Number(sample.skill)),
+			text = ns.Text(L.TRACKER_COUNTS, {
+				tracker_counts_1 = ns.Count(sample.casts, "Casts"),
+				tracker_counts_2 = ns.Count(sample.catches, "Catches"),
+				gotAway = ns.Number(sample.gotAway),
+			}),
+		},
+		{
+			kind = "line",
+			text = ns.Text(
+				L.TRACKER_PER_HOUR,
+				{ perHour = ns.Number(sample.perHour), skill = ns.Number(sample.skill) }
+			),
 			dim = true,
 		},
 	}

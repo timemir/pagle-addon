@@ -131,8 +131,12 @@ local function draw(field)
 		setKeyCap(box.keyCap, box.keyWords, "key", shortText(pending.key), 24, 12, 6)
 		ns.GuideAt(box.question, box, 12 + box.keyCap:GetWidth() + 6, 12 + 2.25)
 		box.question:SetWidth(WIDTH - 12 - (12 + box.keyCap:GetWidth() + 6))
-		box.question:SetText(L.GUIDE_BIND_ASK[field.action]:format(RED:format(GetBindingName(pending.old))))
-		box.use.label:SetText(L.GUIDE_BIND_USE[field.action]:format(GetBindingText(pending.key)))
+		box.question:SetText(
+			ns.RenderText(L.GUIDE_BIND_ASK[field.action], { guide_bind_ask = RED:format(GetBindingName(pending.old)) })
+		)
+		box.use.label:SetText(
+			ns.RenderText(L.GUIDE_BIND_USE[field.action], { bindingText = GetBindingText(pending.key) })
+		)
 		box.use:SetWidth(math.ceil(box.use.label:GetStringWidth()) + 36)
 	end
 	field.state = listening and "listening" or (pending and "conflict" or (key and "bound" or "unbound"))
@@ -193,7 +197,9 @@ local function use(field)
 	field.mode, field.pending = "rest", nil
 	local oldName = GetBindingName(pending.old)
 	ns.BindKey(field.action, 1, pending.key)
-	print(L.GUIDE_BIND_TOLD[field.action]:format(GetBindingText(pending.key), oldName))
+	print(
+		ns.RenderText(L.GUIDE_BIND_TOLD[field.action], { bindingText = GetBindingText(pending.key), oldName = oldName })
+	)
 	draw(field)
 end
 

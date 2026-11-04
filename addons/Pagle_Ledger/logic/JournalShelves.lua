@@ -25,9 +25,16 @@ local function countLine(context, look)
 	local counted = ns.CountedGood(look.id)
 	local unit = counted and L.EARNED_UNIT[counted.earn]
 	if unit then
-		return L.COLLECTION_COUNT_UNIT:format(format(progress.have), format(progress.need), unit)
+		return ns.Text(L.COLLECTION_COUNT_UNIT, {
+			collection_count_unit_1 = format(progress.have),
+			collection_count_unit_2 = format(progress.need),
+			unit = unit,
+		})
 	end
-	return L.COLLECTION_COUNT:format(format(progress.have), format(progress.need))
+	return ns.Text(
+		L.COLLECTION_COUNT,
+		{ collection_count_1 = format(progress.have), collection_count_2 = format(progress.need) }
+	)
 end
 
 -- The earning line of an owned good, as "Earned {date}: {line}." says it (LED-R170): the Ledger's own goods' (LED-R111,
@@ -52,7 +59,7 @@ local function earnedLine(context, look)
 	end
 	for _, crest in ipairs(ns.ZONE_CRESTS) do
 		if ns.ZoneCrestID(crest) == look.id then
-			return L.COLLECTION_EARN_MASTER:format(context.text:Zone(crest.areaID))
+			return ns.Text(L.COLLECTION_EARN_MASTER, { zone = context.text:Zone(crest.areaID) })
 		end
 	end
 	return nil
@@ -67,7 +74,9 @@ end
 local function howCame(context, look)
 	local L = ns.L
 	if look.title then
-		return look.id ~= ns.COLLECTION_AUTOMATIC and L.COLLECTION_HOW_EARNED_LINE:format(look.earnLine) or nil
+		return look.id ~= ns.COLLECTION_AUTOMATIC
+				and ns.Text(L.COLLECTION_HOW_EARNED_LINE, { earnLine = look.earnLine })
+			or nil
 	end
 	local source = ns.CollectionSource(look)
 	local time = ns.CollectionLookTime(look, context.collection)
@@ -76,22 +85,22 @@ local function howCame(context, look)
 	if source == "default" then
 		return L.COLLECTION_HOW_DEFAULT
 	elseif source == "crate" then
-		return date and L.COLLECTION_HOW_CRATE:format(date) or nil
+		return date and ns.Text(L.COLLECTION_HOW_CRATE, { date = date }) or nil
 	elseif source == "bought" then
 		local price = info.price or info.fallbackPrice
 		if not date then
 			return nil
 		end
-		return price and L.COLLECTION_HOW_BOUGHT:format(date, context.formatNumber(price))
-			or L.COLLECTION_HOW_BOUGHT_FREE:format(date)
+		return price and ns.Text(L.COLLECTION_HOW_BOUGHT, { date = date, price = context.formatNumber(price) })
+			or ns.Text(L.COLLECTION_HOW_BOUGHT_FREE, { date = date })
 	end
 	local line = earnedLine(context, look)
 	if date and line then
-		return L.COLLECTION_HOW_EARNED:format(date, line)
+		return ns.Text(L.COLLECTION_HOW_EARNED, { date = date, line = line })
 	elseif date then
-		return L.COLLECTION_HOW_EARNED_DATE:format(date)
+		return ns.Text(L.COLLECTION_HOW_EARNED_DATE, { date = date })
 	end
-	return line and L.COLLECTION_HOW_EARNED_LINE:format(line) or nil
+	return line and ns.Text(L.COLLECTION_HOW_EARNED_LINE, { earnLine = line }) or nil
 end
 
 -- What a look in use does (LED-R170), by its slot.
@@ -106,7 +115,9 @@ local function effect(look)
 	if L.COLLECTION_EFFECTS[slot] then
 		return L.COLLECTION_EFFECTS[slot]
 	elseif look.category == "Trackers" then
-		return L.COLLECTION_EFFECT_TRACKER:format(ns.CollectionModuleName(look.module --[[@as string]]))
+		return ns.Text(L.COLLECTION_EFFECT_TRACKER, {
+			collectionModuleName = ns.CollectionModuleName(look.module --[[@as string]]),
+		})
 	end
 	return nil
 end
@@ -137,7 +148,9 @@ local function source(context, look)
 	if info.kind == "sale" then
 		return L.COLLECTION_SOURCE_SHOP
 	end
-	return L.COLLECTION_SOURCE_REWARD:format(ns.CollectionModuleName(look.module --[[@as string]]))
+	return ns.Text(L.COLLECTION_SOURCE_REWARD, {
+		collectionModuleName = ns.CollectionModuleName(look.module --[[@as string]]),
+	})
 end
 
 -- What "Use it" does (LED-R170, LED-R173): a title sets the active title (nil for Automatic, LED-R77), any other look
@@ -180,9 +193,12 @@ local function shelfRow(shelf, format)
 		kind = "shelfRow",
 		lookArt = shelf.worn and ns.CollectionArt(shelf.worn) or nil,
 		text = shelf.label,
-		note = shelf.new > 0 and L.COLLECTION_NEW_COUNT:format(format(shelf.new)) or nil,
+		note = shelf.new > 0 and ns.Text(L.COLLECTION_NEW_COUNT, { collection_new_count = format(shelf.new) }) or nil,
 		sub = shelf.wearing,
-		value = L.COLLECTION_OF:format(format(shelf.owned), format(#shelf.looks)),
+		value = ns.Text(
+			L.COLLECTION_OF,
+			{ collection_of_1 = format(shelf.owned), collection_of_2 = format(#shelf.looks) }
+		),
 		fill = #shelf.looks > 0 and shelf.owned / #shelf.looks or 0,
 		place = ns.JournalPlace.shelf(shelf.key),
 	}
@@ -198,7 +214,14 @@ local function collectionLeft(context, model)
 	local blocks = {
 		{ kind = "kicker", text = L.HOME_CONTENTS },
 		{ kind = "title", text = L.COLLECTION_TITLE },
-		{ kind = "seal", text = L.COLLECTION_SEAL:format(format(model.owned), format(model.total)), inked = true },
+		{
+			kind = "seal",
+			text = ns.Text(
+				L.COLLECTION_SEAL,
+				{ collection_seal_1 = format(model.owned), collection_seal_2 = format(model.total) }
+			),
+			inked = true,
+		},
 		{ kind = "text", text = L.COLLECTION_LINE },
 	}
 	for _, shelf in ipairs(model.shelves) do
@@ -241,10 +264,10 @@ local function collectionRight(context, model)
 				kind = "latelyRow",
 				lookArt = ns.CollectionArt(look),
 				text = look.name,
-				sub = L.COLLECTION_ADDED:format(
-					words[ns.CollectionSource(look)] or L.COLLECTION_ADDED_EARNED,
-					context.text:DateAt(found.time)
-				),
+				sub = ns.Text(L.COLLECTION_ADDED, {
+					words = words[ns.CollectionSource(look)] or L.COLLECTION_ADDED_EARNED,
+					dateAt = context.text:DateAt(found.time),
+				}),
 				value = look.slotName,
 				note = look.new and L.COLLECTION_NEW_MARK or nil,
 				place = ns.JournalPlace.shelf(look.shelf, look.id),
@@ -255,12 +278,7 @@ local function collectionRight(context, model)
 	blocks[#blocks + 1] = {
 		kind = "shopFoot",
 		foot = true,
-		text = ns.CountText(
-			model.forSale,
-			L.COLLECTION_FOR_SALE_ONE,
-			L.COLLECTION_FOR_SALE_OTHER,
-			context.formatNumber
-		),
+		text = ns.Text(L.COLLECTION_FOR_SALE, { count = model.forSale }),
 		value = L.COLLECTION_OPEN_SHOP,
 		action = function()
 			goods.openShop()
@@ -382,7 +400,10 @@ local function shelfLeft(context, shelf, chosen, tab)
 		{
 			kind = "title",
 			text = shelf.label,
-			value = L.COLLECTION_YOURS_COUNT:format(format(shelf.owned), format(#shelf.looks)),
+			value = ns.Text(
+				L.COLLECTION_YOURS_COUNT,
+				{ collection_yours_count_1 = format(shelf.owned), collection_yours_count_2 = format(#shelf.looks) }
+			),
 		},
 		{ kind = "tabs", tabs = tabs },
 	}
@@ -397,7 +418,10 @@ local function shelfLeft(context, shelf, chosen, tab)
 				blocks[#blocks + 1] = {
 					kind = "kicker",
 					text = group.name,
-					value = L.COLLECTION_OF:format(format(group.owned), format(#group.looks)),
+					value = ns.Text(
+						L.COLLECTION_OF,
+						{ collection_of_1 = format(group.owned), collection_of_2 = format(#group.looks) }
+					),
 				}
 			end
 			blocks[#blocks + 1] = { kind = "cards", cards = cards, layout = layout }
@@ -432,10 +456,10 @@ local function stage(context, look)
 			sub = L.COLLECTION_SIGNED_AS,
 			text = name,
 			lines = {
-				L.COLLECTION_STAGE_LINE:format(
-					context.text:Character(angler.current or 1),
-					ns.ShownLevel(context.state, context.celebrated)
-				),
+				ns.Text(L.COLLECTION_STAGE_LINE, {
+					character = context.text:Character(angler.current or 1),
+					shownLevel = ns.ShownLevel(context.state, context.celebrated),
+				}),
 			},
 			note = note,
 		}
@@ -488,10 +512,10 @@ local function state(context, look, blocks)
 				blocks[#blocks + 1] = {
 					kind = "text",
 					color = "faded",
-					text = L.COLLECTION_FALLBACK:format(
-						context.text:DateAt(info.fallbackFrom),
-						format(info.fallbackPrice)
-					),
+					text = ns.Text(L.COLLECTION_FALLBACK, {
+						dateAt = context.text:DateAt(info.fallbackFrom),
+						collection_fallback_2 = format(info.fallbackPrice),
+					}),
 				}
 			end
 		end
@@ -519,14 +543,19 @@ local function state(context, look, blocks)
 		blocks[#blocks + 1] = {
 			kind = "text",
 			color = "faded",
-			text = balance >= price and L.COLLECTION_ENOUGH:format(format(balance))
-				or L.COLLECTION_SHORT:format(format(balance), format(price - balance)),
+			text = balance >= price and ns.Text(L.COLLECTION_ENOUGH, { collection_enough = format(balance) })
+				or ns.Text(
+					L.COLLECTION_SHORT,
+					{ collection_short_1 = format(balance), collection_short_2 = format(price - balance) }
+				),
 		}
 	else
 		blocks[#blocks + 1] = {
 			kind = "text",
 			color = "faded",
-			text = L.COLLECTION_PUT_AWAY:format(ns.CollectionModuleName(look.module --[[@as string]])),
+			text = ns.Text(L.COLLECTION_PUT_AWAY, {
+				name = ns.CollectionModuleName(look.module --[[@as string]]),
+			}),
 		}
 	end
 end
@@ -544,7 +573,11 @@ local function shelfRight(context, look)
 	local blocks = {
 		stage(context, look),
 		{ kind = "title", text = look.name, value = look.new and L.COLLECTION_NEW_MARK or nil, color = "red" },
-		{ kind = "text", style = "kicker", text = L.COLLECTION_KICKER:format(look.slotName, source(context, look)) },
+		{
+			kind = "text",
+			style = "kicker",
+			text = ns.Text(L.COLLECTION_KICKER, { slotName = look.slotName, source = source(context, look) }),
+		},
 	}
 	if description then
 		blocks[#blocks + 1] = { kind = "text", style = "italic", text = description }
