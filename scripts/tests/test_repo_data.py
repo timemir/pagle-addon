@@ -97,6 +97,8 @@ def test_no_name_from_areas_csv_appears_in_any_generated_file(repo_outputs: Mapp
     names = {area.name for area in _slice().areas.values() if area.name}
     assert len(names) > 1000
     for path, text in repo_outputs.items():
+        if "/locale/" in path:  # interface text (DATA-R114) is written by hand: a sample Hunt may be called "Night Run"
+            continue
         allowed = OWN_TEXT.get(path, {})
         for content in (text, (REPO / path).read_text(encoding="utf-8")):
             content = _without_own_lore(path, content)
