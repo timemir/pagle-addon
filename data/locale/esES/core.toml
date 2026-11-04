@@ -409,6 +409,10 @@ en = "Got away"
 value = "Tiempo pescando"
 en = "Time fished"
 
+[CARD_COINS]
+value = 'Monedas Pagle +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+en = 'Pagle Coins +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+
 [CARD_CLOSE]
 value = "Cerrar"
 en = "Close"
@@ -522,6 +526,10 @@ en = "Open {label}"
 [MENU_SETTINGS]
 value = "Ajustes"
 en = "Settings"
+
+[MENU_CURIO_SHOP]
+value = 'Tienda de Curiosidades  {balance} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+en = 'Curio Shop  {balance} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 
 [HELP_CHART]
 value = "Ayuda a catalogar las aguas"
@@ -1028,7 +1036,7 @@ en = "expected an item, a table"
 
 [PAYLOAD_BAD_ITEM]
 value = "un elemento que no empieza por kind = \"…\", v = <entero>"
-en = "an item that doesn't start kind = \\\"…\\\", v = <integer>"
+en = "an item that doesn't start kind = \"…\", v = <integer>"
 
 [PAYLOAD_BAD_NAME]
 value = "un nombre de campo que no es un nombre"
@@ -1060,7 +1068,7 @@ en = "a line end inside a string"
 
 [PAYLOAD_BAD_ESCAPE]
 value = 'un escape distinto de \\, \" o \n'
-en = 'an escape other than \\\\, \\\" or \\n'
+en = 'an escape other than \\, \" or \n'
 
 [PAYLOAD_DUPLICATE]
 value = "un campo repetido, {value}"
@@ -1694,7 +1702,7 @@ en = "|cff3e220c/pagle guide|r opens this guide again."
 
 [GUIDE_LIST_AND]
 value = " y "
-en = "\" and \""
+en = " and "
 
 [GUIDE_WELCOME_LETTER]
 value = [

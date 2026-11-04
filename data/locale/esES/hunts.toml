@@ -195,7 +195,7 @@ en = "A lure gets me there."
 
 [JOIN_OR]
 value = " o "
-en = "\" or \""
+en = " or "
 
 [CONDITION_NIGHT]
 value = "Noche {ranges}"
@@ -628,7 +628,7 @@ en = "Not yet seen biting only in this window."
 
 [ENTRY_ALL_DONE]
 value = "Todas las Cazas de aquí están hechas. Marca \"mostrar completadas\" para verlas otra vez."
-en = 'Every Hunt here is done. Tick \"show completed\" to see them again.'
+en = "Every Hunt here is done. Tick \"show completed\" to see them again."
 
 [RIBBON_BOARD]
 value = "Tablero"
@@ -687,7 +687,7 @@ en = "Pagle Wagers"
 
 [JOIN_ZONES]
 value = " y "
-en = "\" & \""
+en = " & "
 
 [STRIP_CLOSES]
 value = "cierra en {duration}"
@@ -794,6 +794,18 @@ value.many = "{count} Renovaciones"
 value.other = "{count} Renovaciones"
 en.one = "{count} Refresh"
 en.other = "{count} Refreshes"
+
+[RUN_PAY_RULE_REFRESH_BOTH]
+value = " La tercera marca de una Caza también paga {countText}, y liquidar la apuesta {settle:0} más."
+en = " A Hunt's third mark also pays {countText}, and settling the wager {settle:0} more."
+
+[RUN_PAY_RULE_REFRESH_TIER]
+value = " La tercera marca de una Caza también paga {countText}."
+en = " A Hunt's third mark also pays {countText}."
+
+[RUN_PAY_RULE_REFRESH_RUN]
+value = " Liquidar la apuesta también paga {countText}."
+en = " Settling the wager also pays {countText}."
 
 [ENTRY_NONE_TITLE]
 value = "Nada que leer aún"
