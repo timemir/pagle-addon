@@ -13,8 +13,10 @@ local ns = select(2, ...)
 local INK = ns.JOURNAL_INK
 local rgb = ns.JournalRGB
 
--- The ladder's rung words and dots, and its height.
+-- The ladder's rung words and dots, and its height; the size a ladder too wide for its page steps down to at most, and
+-- the space either side of a dot.
 local RUNG_SIZE, LADDER_HEIGHT = 15, 24
+local RUNG_SIZE_FLOOR, DOT_GAP = 11, 6
 
 -- The kit's circles by the rank they go round, Visitor to Master (the order of ns.L.ZONE_RANKS). The words ns.L gives a rank
 -- are only what is drawn inside it; they never choose the circle.
@@ -48,7 +50,7 @@ ns.RegisterJournalWidget("ladder", function(parent)
 		if not rung then
 			rung = { text = ns.JournalLabel(widget, "sc", RUNG_SIZE, INK.ghost, "", { justify = "CENTER" }) }
 			if i > 1 then
-				rung.dot = ns.JournalLabel(widget, "sc", RUNG_SIZE, INK.rule, ns.L.ZONE_LADDER_SEPARATOR)
+				rung.dot = ns.JournalLabel(widget, "sc", RUNG_SIZE, INK.rule)
 			end
 			widget.rungs[i] = rung
 		end
@@ -63,16 +65,40 @@ ns.RegisterJournalWidget("ladder", function(parent)
 			end
 		end
 		local same, before = ns.JournalRemember(self, draw, "ladder", circled)
+		-- the words and dots at `size`, and the ladder's width at it: a circled rank in the kit's circle is the circle's
+		local function setIn(size)
+			local natural = 0
+			for i, data in ipairs(list) do
+				local rung = rungAt(i)
+				ns.JournalRestyle(rung.text, "sc", size, INK.ghost)
+				rung.text:SetWidth(0)
+				rung.text:SetText(data.text)
+				local ringName = data.circled and ringOf(data.rank)
+				natural = natural
+					+ (ringName and ns.JOURNAL_ATLASES.Parts.sprites[ringName].box[3] or rung.text:GetStringWidth())
+				if rung.dot then
+					ns.JournalRestyle(rung.dot, "sc", size, INK.rule)
+					rung.dot:SetText(ns.L.ZONE_LADDER_SEPARATOR)
+					natural = natural + DOT_GAP + rung.dot:GetStringWidth() + DOT_GAP
+				end
+			end
+			return natural
+		end
+		-- a ladder wider than its page (a longer language's ranks) is set smaller to fit, down to RUNG_SIZE_FLOOR
+		local natural = setIn(RUNG_SIZE)
+		if natural > width then
+			setIn(math.max(RUNG_SIZE_FLOOR, math.floor(RUNG_SIZE * width / natural * 2) / 2))
+		end
 		local x = 0
 		for i, data in ipairs(list) do
 			local rung = rungAt(i)
 			if rung.dot then
+				-- as wide as the language's separator (ruRU's dot is wider than English's), a space either side (#560)
 				rung.dot:ClearAllPoints()
-				rung.dot:SetPoint("TOPLEFT", x + 6, -2)
+				rung.dot:SetPoint("TOPLEFT", x + DOT_GAP, -2)
 				rung.dot:Show()
-				x = x + 6 + 3.4 + 6
+				x = x + DOT_GAP + rung.dot:GetStringWidth() + DOT_GAP
 			end
-			rung.text:SetText(data.text)
 			local ringName = data.circled and ringOf(data.rank)
 			if ringName then
 				if not rung.ring then

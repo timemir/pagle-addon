@@ -644,6 +644,36 @@ describe("the Fish Journal's widgets (ledger.md › UI)", function()
 	end)
 end)
 
+describe("a Journal page's ink scrollbar (LED-R123, ledger.md › UI)", function()
+	-- The book's scroll frame over each side is its body, and a scroll frame clips what it holds to itself: the page's
+	-- rail and thumb, drawn past the page's right edge, must still land inside the book's body, or the client clips
+	-- them and a page that overflows shows no sign that it scrolls (the Curios list, 16 of 24 shown, #560).
+	it("led_r123 draws its rail and thumb inside the book's body, where the client shows them", function()
+		local _, loaded = loggedIn()
+		local journal = loaded.ns.journal
+		journal:Toggle()
+		for _, side in ipairs({ "left", "right" }) do
+			local page = journal.shown[side]
+			local body = journal.frame.bodies[side]
+			page.contentH = page.height + 400
+			loaded.ns.ScrollJournalPage(page, 0)
+			for _, mark in ipairs({ page.rail, page.thumb }) do
+				local right
+				for _, anchor in ipairs(mark.points) do
+					if anchor[1] == "TOPRIGHT" then
+						right = page.width + (anchor[4] or 0)
+					end
+				end
+				assert(right, "the mark is anchored by its right")
+				assert(
+					right <= body:GetWidth(),
+					("%s's mark ends %d past the body's %d"):format(side, right, body:GetWidth())
+				)
+			end
+		end
+	end)
+end)
+
 describe("a Journal page's mouse wheel (ledger.md › UI › Motion)", function()
 	it("glides a third of the page a notch, quick notches adding up, to the content's foot", function()
 		local _, loaded = openJournal({ id = false, motion = true })

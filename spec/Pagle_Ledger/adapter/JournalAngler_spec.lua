@@ -689,6 +689,25 @@ describe("the Angler page's Where your XP came from", function()
 		end
 	)
 
+	-- A longer language's column heads were cut to "Est…" in their 84 (#560): a head too wide for its column is set
+	-- smaller, and only cut past the smallest size.
+	it(
+		"led_r150 sets column heads too wide for their column smaller, both alike, and the kit's at the kit's size",
+		function()
+			local _, loaded = anglerPage()
+			local head = loaded.ns.journal.shown.right.drawn.xpSource[1]
+			assert.are.equal(12.5, head.climb.fontObject.font[2])
+
+			loaded.ns.L.ANGLER_XP_CLIMB = "Ŧĥîš çļîɱƀ šô ƒàŕ"
+			loaded.ns.journal:Draw()
+
+			head = loaded.ns.journal.shown.right.drawn.xpSource[1]
+			local size = head.climb.fontObject.font[2]
+			assert(size < 12.5 and size >= 9, ("set smaller, to %s"):format(size))
+			assert.are.equal(size, head.total.fontObject.font[2], "the other head is set alike")
+		end
+	)
+
 	it("shows only the Ledger's own line with no source reported yet (LED-R150)", function()
 		local _, loaded = anglerPage()
 

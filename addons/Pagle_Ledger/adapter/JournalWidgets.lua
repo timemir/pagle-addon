@@ -461,8 +461,10 @@ end
 ---@field total FontString
 ---@field strikes Texture[]
 
--- The width of each of "Where your XP came from"'s two figure columns, at the line's right.
+-- The width of each of "Where your XP came from"'s two figure columns, at the line's right, and the smallest its
+-- columns' heads are set to fit them.
 local XP_COLUMN_W = 84
+local XP_HEAD_FLOOR = 9
 
 -- A line of "Where your XP came from" (LED-R150): its source's name, then this climb's XP and all told's in two
 -- columns at the right; with `header`, the columns' heads in small capitals; with `off` (its Module is off, AXP-R90),
@@ -498,6 +500,20 @@ makers.xpSource = function(parent)
 		self.total:SetText(block.total or "")
 		-- the columns from the right: all told at the edge, this climb before it, the name in what is left
 		local column = math.min(XP_COLUMN_W, width / 4)
+		if header then
+			-- heads too wide for their column (a longer language's) are set smaller, both alike, to XP_HEAD_FLOOR; past
+			-- it the client cuts them (#560)
+			local widest = 0
+			for _, head in ipairs({ self.climb, self.total }) do
+				head:SetWidth(0)
+				widest = math.max(widest, head:GetStringWidth())
+			end
+			if widest > column - 6 then
+				local fit = math.max(XP_HEAD_FLOOR, math.floor(size * (column - 6) / widest * 2) / 2)
+				ns.JournalRestyle(self.climb, face, fit, figure)
+				ns.JournalRestyle(self.total, face, fit, figure)
+			end
+		end
 		self.total:ClearAllPoints()
 		self.total:SetPoint("TOPRIGHT", self, "TOPLEFT", width, header and -4 or -3)
 		self.climb:ClearAllPoints()
@@ -1067,7 +1083,15 @@ local function fillTile(tile, data, open)
 	tile.line:ClearAllPoints()
 	tile.line:SetPoint("TOPLEFT", 10, -lineY)
 	tile.line:SetText(data.line or "")
-	bound(tile.line, w - 20 - (line2 and 80 or 0))
+	-- "caught" and its check as wide as its words, to at most a little over half the row (a longer language's is cut there by the
+	-- client), and the rank line in what it leaves (#560: it ran out of the tile's left edge, over the rank line)
+	tile.line2:SetText(data.line2 or "")
+	local line2W = 0
+	if line2 then
+		bound(tile.line2, (w - 20) * 0.55)
+		line2W = tile.line2:GetWidth() + 6
+	end
+	bound(tile.line, w - 20 - line2W)
 	tile.line2:ClearAllPoints()
 	tile.line2:SetPoint("TOPRIGHT", -8, -(lineY - 5))
 	ns.JournalAt(tile.barCase, tile, 10, lineY + 20)
@@ -1082,7 +1106,6 @@ local function fillTile(tile, data, open)
 	tile.note:SetPoint("TOPRIGHT", -7, data.seal and -36 or -4)
 	tile.note:SetText(data.note or "")
 	tile.line2:SetShown(line2)
-	tile.line2:SetText(data.line2 or "")
 	tile:SetAlpha(data.faded and 0.85 or 1)
 	tile.place, tile.open = data.place, open
 	tile:Show()
@@ -1276,6 +1299,10 @@ end
 local PAGE_END = 8
 -- Kinds a float (an entry's medallion) leaves room beside; any other kind starts under it.
 local BESIDE = { kicker = true, title = true }
+-- How far right of a page body its ink scrollbar ends: its 4 wide, 2 clear of the words. Whoever holds the page leaves
+-- it this room, since the book's scroll frame clips what it holds to the book's body: a rail drawn past it, as it was
+-- at 12, never showed, and a page that scrolled gave no sign of it (LED-R123, #560).
+ns.JOURNAL_RAIL_ROOM = 6
 -- Kinds drawn two to a row (the Junk Museum's plinths, Signed As' radios), and the gap between the two.
 local PAIRED = { plinth = true }
 
@@ -1309,7 +1336,7 @@ local function placeThumb(page)
 	page.thumb:SetHeight(thumbH)
 	local at = (page.scroll:GetVerticalScroll() or 0) / range
 	page.thumb:ClearAllPoints()
-	page.thumb:SetPoint("TOPRIGHT", page, "TOPRIGHT", 12, -at * (page.height - thumbH))
+	page.thumb:SetPoint("TOPRIGHT", page, "TOPRIGHT", ns.JOURNAL_RAIL_ROOM, -at * (page.height - thumbH))
 end
 
 --- Scrolls `page` to `offset` as drawn, its thumb following: a page drawn on the book's other leaf takes up the scroll
@@ -1339,8 +1366,8 @@ function ns.NewJournalPage(parent, width, height)
 	page.scroll:SetScrollChild(page.content)
 	page.rail = ns.JournalTint(page, INK.tileInk, 0.15)
 	page.rail:SetWidth(4)
-	page.rail:SetPoint("TOPRIGHT", page, "TOPRIGHT", 12, 0)
-	page.rail:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", 12, 0)
+	page.rail:SetPoint("TOPRIGHT", page, "TOPRIGHT", ns.JOURNAL_RAIL_ROOM, 0)
+	page.rail:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", ns.JOURNAL_RAIL_ROOM, 0)
 	page.thumb = ns.JournalTint(page, INK.kicker, 1)
 	page.thumb:SetWidth(4)
 	page.scroll:EnableMouseWheel(true)
