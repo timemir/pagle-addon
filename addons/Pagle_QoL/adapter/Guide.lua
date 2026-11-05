@@ -139,7 +139,7 @@ end
 
 -- Holds a one-line `text` in the kit's `face` at `size`, in ink `ink`, to `room`: a text too wide is set smaller, in
 -- half-unit steps down to FIT_FLOOR of its size, and then held to `room`, so one still too wide is cut short by the
--- client's "..." instead of running into what is beside it. Returns whether it fits whole.
+-- client's "..." instead of running into what is beside it; its ink set again. Returns whether it fits whole.
 ---@param text FontString
 ---@param face string
 ---@param size number
@@ -151,9 +151,10 @@ local function fit(text, face, size, ink, room)
 	if width > room then
 		local floor = math.ceil(size * FIT_FLOOR * 2) / 2
 		text:SetFontObject(ns.FaceFont(face, math.max(floor, math.floor(size * room / width * 2) / 2)))
-		local color = INKS[ink]
-		text:SetTextColor(color[1], color[2], color[3])
 	end
+	-- its ink again, as a font object set on it (here, or by its caller) brings its own
+	local color = INKS[ink]
+	text:SetTextColor(color[1], color[2], color[3])
 	text:SetWidth(room)
 	return width * FIT_FLOOR <= room
 end
