@@ -142,6 +142,24 @@ end
 ---@type string
 ns.language = ENGLISH
 
+-- What waits for the Language (CORE-R8): wiring a file would run as it loads, which copies strings out of `ns.L` and
+-- so would keep them English all session. `ns.ApplyLanguage` runs them in the order given, once it has applied the
+-- Language; one given after that runs at once. nil once they have run.
+---@type (fun())[]?
+local afterLanguage = {}
+
+--- Runs `fn` once the Language is applied (CORE-R8): at the end of `ns.ApplyLanguage`, first thing in Core's
+--- ADDON_LOADED and so before any Module's OnInitialize, or at once when it already has. For a file whose wiring, run
+--- as it loads, would read `ns.L` (adapter/Guide.lua, adapter/FirstLooks.lua, adapter/AnglersInGame.lua).
+---@param fn fun()
+function ns.AfterLanguage(fn)
+	if afterLanguage then
+		afterLanguage[#afterLanguage + 1] = fn
+	else
+		fn()
+	end
+end
+
 --- Core's first step at ADDON_LOADED (CORE-R8, LOG-R1): reads the setting from the raw `_G.PagleDB`, resolves it, overlays
 --- `ns.L` with the chosen Locale (its fallback first), hands the text helper the merged record, records the code
 --- `Pagle.GetLanguage` answers with and sets Core's font objects again in that language's faces (CORE-R9). A function of
@@ -168,6 +186,12 @@ function ns.ApplyLanguage()
 	end
 	-- Core's font objects were made as its files loaded, in the bundled faces (adapter/Fonts.lua).
 	ns.faces:Refit()
+	-- Then the wiring that reads ns.L, now in the chosen language.
+	local waiting = afterLanguage or {}
+	afterLanguage = nil
+	for _, fn in ipairs(waiting) do
+		fn()
+	end
 end
 
 --- The Locale Core applied this session, as its code ("enUS" for English): what a Module applies from its own

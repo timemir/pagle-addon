@@ -349,6 +349,22 @@ describe("a tracker frame's preview", function()
 		assert.are.equal(look.slice.top + look.slice.foot, view.frame.height)
 	end)
 
+	it("keeps a line's name when its label runs long: the label takes at most half the line (CORE-R8)", function()
+		local loaded = loggedIn()
+		local ns = loaded.ns
+
+		local view = ns.NewTrackerBlock(loaded.env.CreateFrame("Frame"))
+		local look = ns.TRACKER_FRAMES["hunts.trackerframe.slate"]
+		local label = "[íñ 2 ĥ 30 ɱíñ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~]"
+		local entries = { { dot = "now", name = "Booty Bay Overflow", label = label } }
+		ns.DrawTrackerBlock(view, look, { hunts = entries, empty = false, collapsed = false })
+
+		local line = view.lines[1]
+		local room = look.right - look.x - 14 - 6
+		assert.are.equal(room * 0.5, line.label.width)
+		assert.are.equal(room - room * 0.5, line.first.width)
+	end)
+
 	it(
 		"makes the sample inert: no click handler and no mouse on any of its parts, so a click reaches the card under it (HNT-R77, HNT-R121)",
 		function()

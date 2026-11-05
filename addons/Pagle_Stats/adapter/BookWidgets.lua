@@ -812,6 +812,9 @@ end
 local ROW_HEIGHT, ROW_ICON, ROW_ICON_X, ROW_NAME_X, ROW_ODDS_END, ROW_MARGIN_END, ROW_STAR = 25, 16, 5, 32, 140, 12, 12
 -- The least room between the name (or its star) and the odds.
 local ROW_NAME_GAP = 8
+-- The most of the room left of the odds' end that the odds may take, so a long reading in a longer language is cut
+-- short with an ellipsis and the name keeps the rest (CORE-R8: a Language's words run longer than English's).
+local ROW_ODDS_SHARE = 0.5
 -- The dashed outline's dash and gap.
 local DASH, DASH_GAP = 3, 2
 
@@ -886,11 +889,14 @@ function ns.NewBookRow(parent, width)
 		self.odds:ClearAllPoints()
 		self.odds:SetPoint("TOPRIGHT", -oddsEnd, data.oddsState == "learning" and -3 or -5)
 		-- The name stops before the odds, less the star when it shows: a longer one is cut short with an ellipsis, as
-		-- the client cuts a font string that doesn't wrap.
-		local room = width - oddsEnd - self.odds:GetStringWidth() - ROW_NAME_GAP - ROW_NAME_X
+		-- the client cuts a font string that doesn't wrap. The odds take at most their share of the room, so the name
+		-- always keeps the rest.
+		local room = width - oddsEnd - ROW_NAME_GAP - ROW_NAME_X
 		if data.watched then
 			room = room - ROW_STAR - 5
 		end
+		bound(self.odds, room * ROW_ODDS_SHARE)
+		room = room - self.odds:GetWidth()
 		self.name:SetText(data.name)
 		self.name:SetTextColor(data.ink[1], data.ink[2], data.ink[3])
 		self.name:SetWidth(math.max(1, math.min(self.name:GetStringWidth() + 1, room)))
