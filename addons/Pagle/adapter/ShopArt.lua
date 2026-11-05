@@ -188,7 +188,7 @@ function ns.FitShopText(fontString, room, floor, lines)
 	local wraps = (lines or 1) > 1
 	fontString:SetWordWrap(wraps)
 	if wraps then
-		fontString:SetMaxLines(lines)
+		fontString:SetMaxLines(lines --[[@as integer]])
 	end
 	fontString:SetWidth(room)
 end

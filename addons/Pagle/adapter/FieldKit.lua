@@ -112,7 +112,7 @@ function ns.FieldFitText(label, key, room, floor, lines)
 	local wraps = (lines or 1) > 1
 	label:SetWordWrap(wraps)
 	if wraps then
-		label:SetMaxLines(lines)
+		label:SetMaxLines(lines --[[@as integer]])
 	end
 	label:SetWidth(room)
 	return scale
