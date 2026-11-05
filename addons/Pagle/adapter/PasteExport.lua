@@ -261,19 +261,10 @@ local function build()
 	return frame
 end
 
--- Lays out the URL line as the Field report box does (ns.FieldReportUrlLine): "PASTE IT AT" at its font's size, set
--- smaller if the client draws it too wide to end before the chart's URL field, and the URL's box after it.
+-- Lays out the URL line (ns.FieldUrlLine), so the label and the URL never overlap.
 ---@param frame PaglePasteWindow
 local function layOutUrlLine(frame)
-	local label = frame.pasteAt
-	label:SetFontObject(ns.FieldFont("PostAt"))
-	local scale, urlX = ns.FieldReportUrlLine(label:GetStringWidth())
-	if scale < 1 then
-		ns.FieldScaleFont(label, "PostAt", scale)
-	end
-	frame.url:ClearAllPoints()
-	frame.url:SetPoint("LEFT", frame, "TOPLEFT", urlX, -URL_Y)
-	frame.url:SetWidth(WIDTH - 42 - urlX)
+	ns.FieldUrlLine(frame, frame.pasteAt, frame.url, WIDTH, URL_Y)
 end
 
 --- Opens the export window with `view` (PST-R51): opening, it fades in; already open, it shows `view` in place.

@@ -262,6 +262,50 @@ function ns.ArtWrap(frame, key, width, spacing)
 	return fontString
 end
 
+-- How far a board text may shrink to fit its room, as a share of its font's size; past it the client cuts the line with
+-- "..." (Core's art holds its lines the same way).
+local SHRINK_FLOOR = 0.7
+
+--- Holds a one-line font string in the board's font `key`, its text already set, to `width`: back in its font, a text
+--- too wide for `width` (measured unbounded, as the client sets it) shrinks to fit, down to SHRINK_FLOOR of the font's
+--- size, and one still too wide is cut by the client with "...". The text is never rewritten. Returns the width it now
+--- takes.
+---@param fontString FontString
+---@param key string
+---@param width number
+---@return number
+function ns.FitArtText(fontString, key, width)
+	ns.SetArtFont(fontString, key)
+	fontString:SetWidth(0)
+	local natural = fontString:GetStringWidth()
+	if natural > width then
+		local def = ns.BOARD_FONTS[key]
+		local size = math.max(def[2] * SHRINK_FLOOR, math.floor(def[2] * width / natural * 2) / 2)
+		Pagle.SetFace(fontString, ns.BOARD_FONT_FACES[def[1]], size)
+	end
+	local fitted = math.min(fontString:GetStringWidth(), width)
+	fontString:SetWidth(fitted)
+	return fitted
+end
+
+--- Holds two one-line font strings side by side in `width`, `gap` apart, each in its font (`leftKey`, `rightKey`) and
+--- its text already set: both as they are while they fit; else the left keeps as much as the right leaves it, and at
+--- least half, and each shrinks to its share (ns.FitArtText).
+---@param left FontString
+---@param leftKey string
+---@param right FontString
+---@param rightKey string
+---@param width number
+---@param gap number
+function ns.FitArtPair(left, leftKey, right, rightKey, width, gap)
+	ns.SetArtFont(right, rightKey)
+	right:SetWidth(0)
+	local room = width - gap
+	local wanted = right:GetStringWidth()
+	local leftWidth = ns.FitArtText(left, leftKey, math.max(room / 2, room - wanted))
+	ns.FitArtText(right, rightKey, room - leftWidth)
+end
+
 --- Capitals with a space between letters and three between words: the kit's letter-spaced capitals, as the client
 --- has no tracking.
 ---@param text string
@@ -662,8 +706,9 @@ function ns.LeanSprite(sprite, relativeTo, x, y, degrees)
 end
 
 --- Swings a region by `degrees` about `pivot` ({ x, y }), its unturned `box` ({ x, y, width, height }), both from
---- `relativeTo`'s top left (y down): a done slip and its words on the spike's nail. Straight while the papers don't
---- lean.
+--- `relativeTo`'s top left (y down): a done slip and its words on the spike's nail. Words the client can't turn swing
+--- with their slip all the same, straight (tackle-board.md › UI: "their words stay straight but on the spike"). Straight
+--- and in place while the papers don't lean.
 ---@param region Region
 ---@param relativeTo Region
 ---@param box number[]
@@ -672,7 +717,8 @@ end
 function ns.Swing(region, relativeTo, box, degrees, pivot)
 	local cx, cy = box[1] + box[3] / 2, box[2] + box[4] / 2
 	local px, py = pivot[1], pivot[2]
-	local angle = turn(region, degrees)
+	turn(region, degrees)
+	local angle = (degrees ~= 0 and ns.Leans()) and math.rad(degrees) or 0
 	if angle ~= 0 then
 		local dx, dy = cx - px, cy - py
 		cx = px + dx * math.cos(angle) - dy * math.sin(angle)

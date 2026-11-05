@@ -43,8 +43,10 @@ local BAR_Y, BAR_Y_TIGHT, BAR_H, WINDOW_Y = 33.8, 32.8, 5, 41.8
 local ROW_PLAIN, ROW_TIMED, ROW_TIGHT = 49.8, 66.6, 44.8
 -- The Casts line's gap; the pay boxes' gap above, height, gap between and words' places; the pay rule's gap above.
 local CASTS_GAP, PAY_GAP, PAY_H, PAY_BETWEEN, PAY_X, PAY_LABEL_Y, PAY_AMOUNT_Y, RULE_GAP = 6, 6, 40, 6, 7, 5, 19, 5
--- The Refreshes a box pays sit on the label row, at the right of the box (HNT-R117).
-local PAY_REFRESH_Y = 4
+-- The Refreshes a box pays sit on the label row, at the right of the box (HNT-R117); where a longer language's label
+-- leaves them no room there, at the right of the amount's row, on its foot, or else on a row of their own under the
+-- amount, the boxes growing by it. The least gap between words on a row; the amount's least size before it is cut.
+local PAY_REFRESH_Y, PAY_REFRESH_LOW_Y, PAY_GAP_X, PAY_AMOUNT_FLOOR = 4, 22, 6, 12
 -- With no run: the title's and the hand's tops.
 local NONE_TITLE_Y, NONE_HAND_Y = 17, 55
 -- How far below its drawable area the entry may end (HNT-R163's fit rule): the kit's 512 on its 500-unit area, half
@@ -456,6 +458,39 @@ local function layRow(view, i, data, y, entry, dropWindows)
 	return height, window
 end
 
+-- Lays a pay box's words within `inner`, its width inside its padding (HNT-R117, CORE-R8): the label, and the amount
+-- under it, a size or two smaller where it is wider; the Refreshes it pays at the label row's right where both fit, as
+-- the kit drew them, else at the amount row's right, else on a row of their own under the amount. Each is measured
+-- whole first, so none is drawn over another. Returns the height the box needs.
+---@param box RunEntryPayView
+---@param data { label: string, amount: string, refresh: string? }
+---@param inner number
+---@return number
+local function layPay(box, data, inner)
+	local amount = ns.ShrinkWagerText(box.amount, data.amount, inner, PAY_AMOUNT_FLOOR)
+	ns.PlaceWagerText(box.amount, box, PAY_X, PAY_AMOUNT_Y)
+	if not data.refresh then
+		box.refresh:Hide()
+		ns.FitWagerText(box.label, data.label, inner)
+		ns.PlaceWagerText(box.label, box, PAY_X, PAY_LABEL_Y)
+		return PAY_H
+	end
+	local refresh = ns.FitWagerText(box.refresh, data.refresh, inner)
+	local label = ns.FitWagerText(box.label, data.label, inner)
+	ns.PlaceWagerText(box.label, box, PAY_X, PAY_LABEL_Y)
+	if label + PAY_GAP_X + refresh <= inner then
+		ns.PlaceWagerText(box.refresh, box, PAY_X, PAY_REFRESH_Y, true)
+		return PAY_H
+	elseif amount + PAY_GAP_X + refresh <= inner then
+		ns.PlaceWagerText(box.refresh, box, PAY_X, PAY_REFRESH_LOW_Y, true)
+		return PAY_H
+	end
+	local below = PAY_AMOUNT_Y + ns.WagerLineHeight("payAmount")
+	box.refresh:SetJustifyH("LEFT")
+	ns.PlaceWagerText(box.refresh, box, PAY_X, below)
+	return below + ns.WagerLineHeight("payRefresh") + (PAY_H - PAY_AMOUNT_Y - ns.WagerLineHeight("payAmount"))
+end
+
 -- Lays `entry` top down on `view`, leaving out what `drop` says (HNT-R163's fit rule); returns where it ends and the
 -- room each part the fit rule weighs takes.
 ---@param view RunEntryView
@@ -539,25 +574,19 @@ local function lay(view, entry, drop)
 	if entry.pay then
 		y = y + PAY_GAP
 		local boxWidth = (width - PAY_BETWEEN) / 2
+		local height = PAY_H
 		for i, data in ipairs(entry.pay) do
 			local box = view.pay[i]
 			box:ClearAllPoints()
 			box:SetPoint("TOPLEFT", root, "TOPLEFT", (i - 1) * (boxWidth + PAY_BETWEEN), -y)
-			box:SetSize(boxWidth, PAY_H)
-			ns.FitWagerText(box.label, data.label, boxWidth - 2 * PAY_X)
-			ns.PlaceWagerText(box.label, box, PAY_X, PAY_LABEL_Y)
-			ns.FitWagerText(box.amount, data.amount, boxWidth - 2 * PAY_X)
-			ns.PlaceWagerText(box.amount, box, PAY_X, PAY_AMOUNT_Y)
-			if data.refresh then
-				ns.FitWagerText(box.refresh, data.refresh, boxWidth - 2 * PAY_X)
-				ns.PlaceWagerText(box.refresh, box, PAY_X, PAY_REFRESH_Y, true)
-			else
-				box.refresh:Hide()
-			end
+			height = math.max(height, layPay(box, data, boxWidth - 2 * PAY_X))
 			box.tooltip = drop.rule and { data.label, entry.payRule } or nil
 			box:Show()
 		end
-		y = y + PAY_H
+		for i = 1, #entry.pay do
+			view.pay[i]:SetSize(boxWidth, height)
+		end
+		y = y + height
 	end
 	sizes.rule = RULE_GAP + layWrapped(view.payRule, entry.payRule, 0, y + RULE_GAP, root)
 	if drop.rule then

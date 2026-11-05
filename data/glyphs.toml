@@ -50,6 +50,12 @@ ranges = [
 # font's cmap or `/pagle dev glyphs` in game. ruRU: the Russian client's FRIZQT___CYR.TTF (the body, heading and hand)
 # has every Latin-1 character but the middle dot, and no Ѐ or ѐ (cmap of build 1.60.1.70790, read 5 Nov 2026, and the
 # ruRU probe agree); its ARIALN.TTF (the mono) has all three. Its separator is "•" (U+2022), which both draw.
+# The other clients' faces, read from the client's CASC font files (unchanged since 6.0.1; not yet seen in game, so
+# none is listed below): koKR's 2002.ttf and 2002B.ttf have the whole base set, K_Pagetext.TTF (its hand) lacks – — •;
+# zhCN's ARKai_T.ttf and ARKai_C.ttf lack « » ¥ ¦ © ¬ ® µ and U+00A0; zhTW's bHEI00M.ttf, bHEI01B.ttf and bKAI00M.ttf lack
+# « » and every Latin-1 letter and most of its signs. Pagle's English and Spanish drawn in those faces take a stand-in
+# for what the strings use of that (adapter/Fonts.lua's ns.CLIENT_GLYPHS: "·" as "•" on ruRU, « » as < > on zhCN and
+# zhTW); a Locale of those clients lists its gaps here once a translator checks them in game.
 [without]
 ruRU = [
 	"U+00B7", # the middle dot "·", every Latin face's separator

@@ -527,7 +527,8 @@ describe("QoL's Fishing page with Core", function()
 			end
 		end
 		local save, swap = initializers[at + 1], initializers[at + 2]
-		assert.are.equal("SettingButtonControlTemplate", save.template)
+		-- Core's own row (SET-R5): the button as wide as its label.
+		assert.are.equal("PagleSettingsRowTemplate", save.template)
 		assert.are.equal(set, save:GetParentInitializer())
 		assert.are.equal("PagleSettingsKeyRowTemplate", swap.template)
 		assert.are.equal("PAGLE_SWAP_GEAR", swap:GetData().binding)
@@ -545,7 +546,7 @@ describe("QoL's Fishing page with Core", function()
 	it("draws Swap gear live at once after Save what I'm wearing chooses a set (SET-R20, QOL-R41)", function()
 		local loaded, fishing = fishingPage()
 		loaded.client.mainHand = 6256
-		local save = initializerOf(fishing, "")
+		local save = initializerOf(fishing, "Save what I'm wearing as my fishing set")
 		local swap
 		for i, initializer in ipairs(fishing.layout.initializers) do
 			if initializer == save then

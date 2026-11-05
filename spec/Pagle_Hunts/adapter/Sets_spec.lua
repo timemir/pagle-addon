@@ -576,4 +576,19 @@ describe("a set's page on the board (HNT-R66)", function()
 
 		assert.are.equal("Updating from your Catch log…", texts[5])
 	end)
+
+	it("shortens the ink bar so a longer language's progress reads whole beside it (HNT-R66)", function()
+		local run = start()
+		run.ns.L.SET_PROGRESS = "Выполнено {done:0} из {current:0}" -- ruRU's: 27 bytes, 162 px in the fake
+		opened(run, { mode = "set", set = "fixture_dusk" })
+
+		local page = rightPage(run)
+		local bar = page.view.bar
+		local label = bar.label:GetText()
+		assert.are.equal("Выполнено 0 из 2", label)
+		-- the words whole, the bar what's left of the page beside them
+		assert.are.equal(#label * 6 + 1, bar.label.width)
+		assert.are.equal(page:GetWidth(), bar.width + 10 + bar.label.width)
+		assert.are.same({ "LEFT", bar, "RIGHT", 10, 1 }, bar.label.points[1])
+	end)
 end)

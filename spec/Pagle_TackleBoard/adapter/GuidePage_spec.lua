@@ -215,6 +215,81 @@ describe("the Tackle Board's guide pages (ONB-R37)", function()
 	end)
 end)
 
+describe("the Tackle Board's step in a longer language (ONB-R37)", function()
+	-- The font string under `widget` reading `text`, depth first.
+	local function find(widget, text)
+		for _, child in ipairs(widget.children) do
+			if child.text == text then
+				return child
+			end
+			local found = find(child, text)
+			if found then
+				return found
+			end
+		end
+		return nil
+	end
+
+	-- Has the board's wrapped font strings measure `lines[text]` lines (one when unlisted) of `size` with the
+	-- spacing ns.ArtWrap gave them, as the client wraps them (the fake's GetStringHeight is one 14-unit line).
+	local function measure(loaded, lines)
+		local ArtWrap = loaded.ns.ArtWrap
+		loaded.ns.ArtWrap = function(frame, key, width, spacing)
+			local fontString = ArtWrap(frame, key, width, spacing)
+			local size = loaded.ns.BOARD_FONTS[key][2]
+			fontString.GetStringHeight = function(self)
+				local n = lines[self.text] or 1
+				return n * size + (n - 1) * (spacing or 0)
+			end
+			return fontString
+		end
+	end
+
+	-- A region's top on its page, as `at` put it.
+	local function top(region)
+		return -region.points[1][5]
+	end
+
+	it("holds the sample Fly Box's name to the box, set smaller, never cut by the sample's edge (TKB-R106)", function()
+		local loaded, fake = loggedIn(nil, nil)
+		loaded.ns.L.FLY_BOX = "Коробка мушек"
+		local pages = atStep(loaded, fake)
+
+		local name = find(pages.left, loaded.ns.Spaced("Коробка мушек"))
+		assert(name, "the Fly Box's name on the sample")
+		assert.are.equal(170, name.width)
+		assert.is_true(name.font[2] < loaded.ns.BOARD_FONTS.BoxLabel[2])
+	end)
+
+	it("starts each fact under the one above when it wraps longer, and Start my board under the last", function()
+		local loaded, fake = loggedIn()
+		local facts = loaded.ns.L.GUIDE_FACTS
+		local first = loaded.ns.Text(facts[1], { shop = "" })
+		measure(loaded, { [first] = 4 })
+		local pages, page = atStep(loaded, fake)
+
+		-- the first fact's four lines (14.5 with 5.075 between) from 88.3 end at 166.5: the second starts 5 under
+		local second = find(pages.right, facts[2])
+		assert(second, "the second fact")
+		assert.is.near(166.5 + 5 + 5, top(second) - (19.575 - 14.5) / 2, 0.1)
+		-- the last fact's coin, and so its line, moved down by as much: Start my board is under it
+		local lastFact = top(page.bullets[4]) - 15
+		assert.is_true(lastFact > 214.1)
+		assert.is_true(top(page.start) >= lastFact + 5 + 14 + 6)
+	end)
+
+	it("starts the sample strip under the paragraph when it wraps longer than the kit's", function()
+		local loaded, fake = loggedIn()
+		measure(loaded, { [loaded.ns.L.GUIDE_BODY] = 4 })
+		local pages, page = atStep(loaded, fake)
+
+		-- four lines of 15 with 5.7 between, from 86.25, end at 166.5 (and the half-leading): the strip starts 10 under
+		local body = assert(find(pages.left, loaded.ns.L.GUIDE_BODY))
+		local strip = page.notices[1]:GetParent():GetParent():GetParent()
+		assert.is_true(top(strip) >= top(body) + body:GetStringHeight() + 10)
+	end)
+end)
+
 describe("the Tackle Board's step on Core's own guide (ONB-R21, ONB-R37, ONB-R92)", function()
 	it("is 4 of 5 with Core alone beside it, and draws its pages in Core's book with the guide's coin", function()
 		local loaded = loadAddon("Pagle_TackleBoard", FOREVER_GLOBALS)

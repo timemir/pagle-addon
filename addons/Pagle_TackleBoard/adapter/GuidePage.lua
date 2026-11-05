@@ -32,6 +32,14 @@ local FACT_Y, COIN_SIZE = { 83.3, 113.8, 163.9, 214.1 }, 13 * 8 / 11
 local START_Y = 264.6
 -- The terms printed in the title's ink in the lines by the samples, and the Curio Shop's aside in a lighter one.
 local TERM_INK, ASIDE_INK = "3E220C", "6A4A28"
+-- The least room under a paragraph before what follows it, between two facts, and before Start my board: what
+-- follows a text that can wrap is laid from its measured foot, so a longer translation pushes it down instead of
+-- running into it. The facts and Start my board keep the kit's places while their words are the kit's length.
+local BODY_GAP, FACT_GAP, START_GAP = 10, 5, 6
+-- How small a line held to its room may be set, as a share of its size: past that the client cuts it short with "...".
+local FIT_FLOOR = 0.75
+-- The room the Fly Box's name keeps on the box's plate, centred on it (the box is 214 wide).
+local BOX_NAME_ROOM = 170
 
 --- The page as its build drew it, for its refreshes and the specs: Start my board, the coin bullets, and the sample's
 --- Notices, Campfire and Fly Box.
@@ -78,6 +86,36 @@ local function write(page, key, text, x, y, lineHeight, width)
 	local fontString = width and ns.ArtWrap(page, key, width, lineHeight - size) or ns.ArtText(page, key)
 	fontString:SetText(text)
 	at(fontString, page, x, y + (lineHeight - size) / 2)
+	return fontString
+end
+
+-- Where a text `write` set at `y` in a line box `lineHeight` high ends: its measured height as the client wraps it and
+-- the half-leading above its first line and below its last.
+---@param fontString FontString
+---@param key string
+---@param y number
+---@param lineHeight number
+---@return number
+local function below(fontString, key, y, lineHeight)
+	return y + fontString:GetStringHeight() + (lineHeight - ns.BOARD_FONTS[key][2])
+end
+
+-- Holds a one-line `fontString` in the board's font `key` to `room`: measured unbounded, a text too wide is set
+-- smaller (Pagle.SetFace on the string), in half-unit steps down to FIT_FLOOR of the font's size, and then held to
+-- `room`, so one still too wide is cut short by the client's "..." instead of running past its place.
+---@param fontString FontString
+---@param key string
+---@param room number
+---@return FontString
+local function fit(fontString, key, room)
+	fontString:SetWidth(0)
+	local natural = fontString:GetStringWidth()
+	if natural > room then
+		local def = ns.BOARD_FONTS[key]
+		local size = math.max(math.ceil(def[2] * FIT_FLOOR * 2) / 2, math.floor(def[2] * room / natural * 2) / 2)
+		Pagle.SetFace(fontString, ns.BOARD_FONT_FACES[def[1]], size)
+	end
+	fontString:SetWidth(room)
 	return fontString
 end
 
@@ -155,9 +193,10 @@ end
 ---@param page Frame
 ---@param nav PagleGuideNav
 ---@param sample TackleGuideSample
+---@param down number how far under the kit's place the paragraph over the samples puts them
 ---@return TackleGoalSlipView[]
-local function drawNotices(page, nav, sample)
-	local cork = sampleFrame(page, nav, COLUMN_X, STRIP_Y, STRIP_WIDTH, STRIP_HEIGHT, STRIP_SCALE)
+local function drawNotices(page, nav, sample, down)
+	local cork = sampleFrame(page, nav, COLUMN_X, STRIP_Y + down, STRIP_WIDTH, STRIP_HEIGHT, STRIP_SCALE)
 	local tile = cork:CreateTexture(nil, "BACKGROUND", nil, -8)
 	tile:SetTexture(ns.CORK_TEXTURE, "REPEAT", "REPEAT")
 	tile:SetAllPoints()
@@ -183,9 +222,11 @@ end
 ---@param page Frame
 ---@param nav PagleGuideNav
 ---@param sample TackleGuideSample
+---@param down number how far under the kit's place the paragraph over the samples puts them
 ---@return { ledge: Texture, burning: TackleBoardFire }
-local function drawFire(page, nav, sample)
-	local inner = sampleFrame(page, nav, COLUMN_X, FIRE_Y, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLE_WIDTH / SAMPLE_CUT)
+local function drawFire(page, nav, sample, down)
+	local inner =
+		sampleFrame(page, nav, COLUMN_X, FIRE_Y + down, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLE_WIDTH / SAMPLE_CUT)
 	local cutX, cutY = FIRE_CUT[1], FIRE_CUT[2]
 	local ledge = ns.SetSpriteCut(
 		inner:CreateTexture(nil, "BACKGROUND"),
@@ -228,9 +269,10 @@ end
 ---@param page Frame
 ---@param nav PagleGuideNav
 ---@param sample TackleGuideSample
+---@param down number how far under the kit's place the paragraph over the samples puts them
 ---@return { ledge: Texture }
-local function drawBox(page, nav, sample)
-	local inner = sampleFrame(page, nav, COLUMN_X, BOX_Y, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLE_WIDTH / SAMPLE_CUT)
+local function drawBox(page, nav, sample, down)
+	local inner = sampleFrame(page, nav, COLUMN_X, BOX_Y + down, SAMPLE_WIDTH, SAMPLE_HEIGHT, SAMPLE_WIDTH / SAMPLE_CUT)
 	local cutX, cutY = BOX_CUT[1], BOX_CUT[2]
 	local ledge = ns.SetSpriteCut(
 		inner:CreateTexture(nil, "BACKGROUND"),
@@ -248,6 +290,8 @@ local function drawBox(page, nav, sample)
 	title:SetJustifyH("CENTER")
 	title:SetPoint("TOP", inner, "TOPLEFT", x + 107, -(y + 35))
 	title:SetText(ns.Spaced(ns.L.FLY_BOX))
+	-- held to the box's plate, set smaller when longer, so it is never cut by the sample's edge (TKB-R106)
+	fit(title, "BoxLabel", BOX_NAME_ROOM)
 	local count = ns.ArtText(inner, "BoxCount")
 	count:SetJustifyH("CENTER")
 	count:SetPoint("TOP", inner, "TOPLEFT", x + 107, -(y + 50))
@@ -284,21 +328,24 @@ end
 ---@return TackleGuidePage
 local function buildLeft(left, nav)
 	local L = ns.L
-	write(left, "GuideKicker", L.GUIDE_KICKER, COLUMN_X, 24, 14)
-	write(left, "GuideTitle", L.GUIDE_TITLE, COLUMN_X, 41, 29 * 1.05)
-	write(left, "GuideBody", L.GUIDE_BODY, COLUMN_X, 83.4, 20.7, COLUMN_WIDTH)
+	fit(write(left, "GuideKicker", L.GUIDE_KICKER, COLUMN_X, 24, 14), "GuideKicker", COLUMN_WIDTH)
+	fit(write(left, "GuideTitle", L.GUIDE_TITLE, COLUMN_X, 41, 29 * 1.05), "GuideTitle", COLUMN_WIDTH)
+	local body = write(left, "GuideBody", L.GUIDE_BODY, COLUMN_X, 83.4, 20.7, COLUMN_WIDTH)
+	-- the samples and their lines move down together when the paragraph wraps longer than the kit's
+	local down = math.max(0, below(body, "GuideBody", 83.4, 20.7) + BODY_GAP - STRIP_Y)
 	local sample = ns.GuideSample()
 	local page = {
-		notices = drawNotices(left, nav, sample),
-		fire = drawFire(left, nav, sample),
-		box = drawBox(left, nav, sample),
+		notices = drawNotices(left, nav, sample, down),
+		fire = drawFire(left, nav, sample, down),
+		box = drawBox(left, nav, sample, down),
 	}
 	local campfire = ns.Text(L.GUIDE_CAMPFIRE, {
 		campfire = inked(TERM_INK, L.GUIDE_CAMPFIRE_TERM),
 		kindling = inked(TERM_INK, L.GUIDE_KINDLING_TERM),
 	})
-	write(left, "GuideSide", campfire, 184, 271.5, 18.9, 228)
-	write(left, "GuideSide", ns.Text(L.GUIDE_FLY_BOX, { flybox = inked(TERM_INK, L.FLY_BOX) }), 184, 366.9, 18.9, 228)
+	write(left, "GuideSide", campfire, 184, 271.5 + down, 18.9, 228)
+	local flyBox = ns.Text(L.GUIDE_FLY_BOX, { flybox = inked(TERM_INK, L.FLY_BOX) })
+	write(left, "GuideSide", flyBox, 184, 366.9 + down, 18.9, 228)
 	return page --[[@as TackleGuidePage]]
 end
 
@@ -309,24 +356,28 @@ end
 ---@param page TackleGuidePage
 local function buildRight(right, nav, page)
 	local L = ns.L
-	write(right, "GuideKicker", L.GUIDE_ASK_KICKER, COLUMN_X, 24, 14)
-	write(right, "GuideAsk", L.GUIDE_ASK_TITLE, COLUMN_X, 41, 25 * 1.05)
+	fit(write(right, "GuideKicker", L.GUIDE_ASK_KICKER, COLUMN_X, 24, 14), "GuideKicker", COLUMN_WIDTH)
+	fit(write(right, "GuideAsk", L.GUIDE_ASK_TITLE, COLUMN_X, 41, 25 * 1.05), "GuideAsk", COLUMN_WIDTH)
 	page.bullets = {}
+	-- each fact at the kit's place, or FACT_GAP under the one above when that wraps longer, its dotted rule between
+	local y, under = FACT_Y[1], 0
 	for i, fact in ipairs(L.GUIDE_FACTS) do
-		local y = FACT_Y[i]
+		y = math.max(FACT_Y[i] or y, under + FACT_GAP)
+		if i > 1 then
+			dots(right, COLUMN_X, y - 1, COLUMN_WIDTH)
+		end
 		local coin = nav.Part(right, "coin")
 		coin:SetSize(COIN_SIZE, COIN_SIZE)
 		coin:ClearAllPoints()
 		coin:SetPoint("CENTER", right, "TOPLEFT", 33 + 4, -(y + 11 + 4))
 		page.bullets[i] = coin
-		write(right, "GuideFact", ns.Text(fact, { shop = inked(ASIDE_INK, L.GUIDE_FACT_SHOP) }), 52, y + 5, 19.575, 360)
-		if FACT_Y[i + 1] then
-			dots(right, COLUMN_X, FACT_Y[i + 1] - 1, COLUMN_WIDTH)
-		end
+		local words = ns.Text(fact, { shop = inked(ASIDE_INK, L.GUIDE_FACT_SHOP) })
+		under = below(write(right, "GuideFact", words, 52, y + 5, 19.575, 360), "GuideFact", y + 5, 19.575)
 	end
+	local startY = math.max(START_Y, under + START_GAP)
 	page.start = ns.NewBoardButton(right, L.START_MY_BOARD, COLUMN_WIDTH, "GuideButton", start)
-	at(page.start, right, COLUMN_X, START_Y)
-	local leave = write(right, "GuideNote", L.GUIDE_LEAVE, COLUMN_X, 322.6, 17.55, COLUMN_WIDTH)
+	at(page.start, right, COLUMN_X, startY)
+	local leave = write(right, "GuideNote", L.GUIDE_LEAVE, COLUMN_X, startY + 322.6 - START_Y, 17.55, COLUMN_WIDTH)
 	leave:SetJustifyH("CENTER")
 end
 

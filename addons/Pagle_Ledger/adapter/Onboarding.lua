@@ -43,6 +43,30 @@ local function text(parent, face, size, hex, words, x, y, options)
 	return label
 end
 
+-- How small a heading held to the column may be set, as a share of its size: past that it is cut short with "...".
+local FIT_FLOOR = 0.75
+
+-- Holds a one-line `label` in the Ledger's `face` at `size`, ink `hex`, to `room`: measured unbounded, a text too wide
+-- is set smaller, in half-unit steps down to FIT_FLOOR of its size, then held to `room`, so one still too wide is cut
+-- short by the client's "..." instead of running into the spine.
+---@param label FontString
+---@param face LedgerArtFace
+---@param size number
+---@param hex string
+---@param room number
+---@return FontString
+local function fit(label, face, size, hex, room)
+	label:SetWidth(0)
+	local natural = label:GetStringWidth()
+	if natural > room then
+		local at = math.max(math.ceil(size * FIT_FLOOR * 2) / 2, math.floor(size * room / natural * 2) / 2)
+		label:SetFontObject(ns.JournalFont(face, at))
+		label:SetTextColor(ns.JournalRGB(hex))
+	end
+	label:SetWidth(room)
+	return label
+end
+
 -- Places a guide part (a sprite of the guide's atlas, `nav.Part`'s) so its drawn element's top left is at (x, y).
 ---@param part Texture
 ---@param parent Frame
@@ -62,6 +86,12 @@ local CREST_SCALE = 0.59
 local CREST_TOP = 207 - 11
 -- The box of Skill Milestones (the kit's): its top, a row's height, and a row's height when four share it.
 local BOX_Y, ROW_H, ROW_H_FOUR = 125.7, 50, 40
+-- What follows a text that can wrap is laid from its measured foot, so a longer translation pushes it down instead of
+-- running into it: the box at least BODY_GAP under the paragraph over it; the note NOTE_DROP under the account
+-- paragraph's top (the kit's, for its two lines), or NOTE_GAP under its foot when it wraps longer. The right page's
+-- words end above FOOT_TOP, clear of Core's foot (the skip link and Next », ONB-R23): a note that would pass it is
+-- written across the column instead, fewer lines, and lifted to end there if it still would.
+local BODY_GAP, NOTE_DROP, NOTE_GAP, FOOT_TOP = 8, 46.3, 14, 486
 
 --- One line of the box: its mark, title, line and XP, and the dots under it.
 ---@class LedgerGuideRowView
@@ -86,7 +116,9 @@ local BOX_Y, ROW_H, ROW_H_FOUR = 125.7, 50, 40
 ---@field edges Texture[]
 ---@field rows LedgerGuideRowView[]
 ---@field account FontString
----@field note Frame
+---@field note Frame the note as the kit draws it, 290 wide from 70
+---@field wideNote Frame the same note across the column, shown in its place when that one would reach the foot
+---@field boxY number the box's top: the kit's, or under the paragraph over it when that wraps longer
 
 -- The step's live parts now (logic/Onboarding.lua).
 ---@return LedgerGuidePage
@@ -127,15 +159,16 @@ local function fillBox(view, page)
 	view.fill:SetSize(W, height)
 	view.shadow:SetSize(W, height)
 	-- its 1-unit edges: top, bottom, left, right
+	local boxY = view.boxY
 	local top, bottom, left, side = unpack(view.edges)
 	top:SetSize(W, 1)
-	ns.JournalAt(top, right, 30, BOX_Y)
+	ns.JournalAt(top, right, 30, boxY)
 	bottom:SetSize(W, 1)
-	ns.JournalAt(bottom, right, 30, BOX_Y + height - 1)
+	ns.JournalAt(bottom, right, 30, boxY + height - 1)
 	left:SetSize(1, height)
-	ns.JournalAt(left, right, 30, BOX_Y)
+	ns.JournalAt(left, right, 30, boxY)
 	side:SetSize(1, height)
-	ns.JournalAt(side, right, 30 + W - 1, BOX_Y)
+	ns.JournalAt(side, right, 30 + W - 1, boxY)
 	for i, row in ipairs(view.rows) do
 		local data = page.rows[i]
 		local shown = data ~= nil
@@ -144,7 +177,7 @@ local function fillBox(view, page)
 		end
 		row.dots:Hide()
 		if data then
-			local y = BOX_Y + 37 + (i - 1) * pitch
+			local y = boxY + 37 + (i - 1) * pitch
 			row.tick:SetShown(data.credited)
 			row.ring:SetShown(not data.credited)
 			place(row.tick, right, 46, y + 10)
@@ -162,9 +195,14 @@ local function fillBox(view, page)
 			end
 		end
 	end
-	local below = BOX_Y + height + 16
+	local below = boxY + height + 16
 	ns.JournalAt(view.account, right, 30, below)
-	ns.JournalAt(view.note, right, 70, below + 46.3)
+	local noteY = below + math.max(NOTE_DROP, view.account:GetStringHeight() + NOTE_GAP)
+	local note, wide = view.note, view.wideNote
+	local shown = noteY + note:GetHeight() <= FOOT_TOP and note or wide
+	note:SetShown(shown == note)
+	wide:SetShown(shown == wide)
+	ns.JournalAt(shown, right, shown == note and 70 or 30, math.min(noteY, FOOT_TOP - shown:GetHeight()))
 end
 
 -- Fills the step from the Ledger's state now: the crest, kept since, the box (ONB-R36).
@@ -186,8 +224,8 @@ end
 ---@param nav PagleGuideNav
 ---@return LedgerGuideStepView
 function ns.DrawGuideLedgerStep(left, right, nav)
-	text(left, "sc", 14, INK.kicker, L.GUIDE_KICKER, 30, 24)
-	text(left, "print", 29, INK.title, L.GUIDE_TITLE, 30, 41)
+	fit(text(left, "sc", 14, INK.kicker, L.GUIDE_KICKER, 30, 24), "sc", 14, INK.kicker, W)
+	fit(text(left, "print", 29, INK.title, L.GUIDE_TITLE, 30, 41), "print", 29, INK.title, W)
 	text(left, "print", 15, INK.body, L.GUIDE_BODY, 30, 85.4, { width = W })
 	place(nav.Part(left, "plate"), left, 96, 160)
 	text(left, "sc", 13, INK.red, L.ANGLER_EX_LIBRIS, 221, 186.6, { center = true })
@@ -203,22 +241,23 @@ function ns.DrawGuideLedgerStep(left, right, nav)
 	ns.JournalAt(rule, left, 113, 342.5)
 	local since = text(left, "hand", 18, SINCE_INK, "", 221, 351, { center = true })
 
-	text(right, "sc", 14, INK.kicker, L.GUIDE_RIGHT_KICKER, 30, 24)
-	text(right, "print", 25, INK.title, L.GUIDE_RIGHT_TITLE, 30, 41)
-	text(right, "print", 13.5, INK.small, L.GUIDE_RIGHT_BODY, 30, 75.3, { width = W })
+	fit(text(right, "sc", 14, INK.kicker, L.GUIDE_RIGHT_KICKER, 30, 24), "sc", 14, INK.kicker, W)
+	fit(text(right, "print", 25, INK.title, L.GUIDE_RIGHT_TITLE, 30, 41), "print", 25, INK.title, W)
+	local body = text(right, "print", 13.5, INK.small, L.GUIDE_RIGHT_BODY, 30, 75.3, { width = W })
+	local boxY = math.max(BOX_Y, 75.3 + body:GetStringHeight() + BODY_GAP)
 	local shadow = ns.JournalTint(right, INK.body, 0.1, "BACKGROUND")
-	ns.JournalAt(shadow, right, 32, BOX_Y + 3)
+	ns.JournalAt(shadow, right, 32, boxY + 3)
 	local fill = ns.JournalTint(right, BOX_INK, 0.6, "BORDER")
-	ns.JournalAt(fill, right, 30, BOX_Y)
+	ns.JournalAt(fill, right, 30, boxY)
 	local edges = {}
 	for i = 1, 4 do
 		edges[i] = ns.JournalTint(right, INK.rule, 1, "BORDER", 1)
 	end
-	local heading = text(right, "sc", 15, INK.title, "", 45, BOX_Y + 15.3)
-	text(right, "italic", 12.5, RULE_INK, L.GUIDE_READ_NOW, 397, BOX_Y + 16, { right = true })
+	local heading = text(right, "sc", 15, INK.title, "", 45, boxY + 15.3)
+	text(right, "italic", 12.5, RULE_INK, L.GUIDE_READ_NOW, 397, boxY + 16, { right = true })
 	local hr = ns.JournalTint(right, INK.rule, 1)
 	hr:SetSize(352, 1)
-	ns.JournalAt(hr, right, 45, BOX_Y + 36.3)
+	ns.JournalAt(hr, right, 45, boxY + 36.3)
 	local rows = {}
 	for i = 1, #ns.SKILL_MILESTONES do
 		rows[i] = {
@@ -245,6 +284,8 @@ function ns.DrawGuideLedgerStep(left, right, nav)
 		rows = rows,
 		account = text(right, "print", 13.5, INK.small, L.GUIDE_ACCOUNT, 30, 0, { width = W }),
 		note = nav.Note(right, L.GUIDE_NOTE, 70, 0, 290),
+		wideNote = nav.Note(right, L.GUIDE_NOTE, 30, 0, W),
+		boxY = boxY,
 	}
 	refresh(view)
 	return view

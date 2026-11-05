@@ -751,12 +751,16 @@ function ns.JournalSetStars(view, stars)
 	end
 end
 
+-- The smallest a seal's words are set to fit it (ns.JournalSetSeal).
+local SEAL_TEXT_FLOOR = 7.5
+
 --- A wax seal with its words, tilted (LED-R132, LED-R135): the wax disc, or the empty ring for "not yet".
 ---@class LedgerSeal: Frame
 ---@field wax Texture
 ---@field empty Texture
 ---@field label FontString
 ---@field size number
+---@field textSize number its words' size, before they are set smaller to fit
 
 ---@param parent Frame
 ---@param size number
@@ -766,6 +770,7 @@ function ns.JournalSeal(parent, size, textSize)
 	local seal = CreateFrame("Frame", nil, parent) --[[@as LedgerSeal]]
 	seal:SetSize(size, size)
 	seal.size = size
+	seal.textSize = textSize or 12
 	seal.wax = ns.JournalPiece(seal, "Book", "seal", "ARTWORK", 0)
 	seal.wax:SetAllPoints()
 	seal.empty = ns.JournalPiece(seal, "Book", "seal-empty", "ARTWORK", 0)
@@ -791,8 +796,28 @@ end
 function ns.JournalSetSeal(seal, text, earned)
 	seal.wax:SetShown(earned)
 	seal.empty:SetShown(not earned)
-	seal.label:SetTextColor(rgb(earned and INK.wax or "9a8060"))
-	seal.label:SetText(text)
+	local label, room = seal.label, seal.size - 10
+	-- its words wrap across the seal, but a word wider than it can't (a long Russian rank ran past the wax, #560): they are
+	-- set smaller until the widest word fits across and the lines down, to SEAL_TEXT_FLOOR
+	local size = seal.textSize
+	ns.JournalRestyle(label, "gilt", size, INK.wax)
+	label:SetWidth(0)
+	local widest = 0
+	for word in tostring(text):gmatch("%S+") do
+		label:SetText(word)
+		widest = math.max(widest, label:GetStringWidth())
+	end
+	if widest > room then
+		size = math.max(SEAL_TEXT_FLOOR, math.floor(size * room / widest * 2) / 2)
+		ns.JournalRestyle(label, "gilt", size, INK.wax)
+	end
+	label:SetWidth(room)
+	label:SetText(text)
+	while size > SEAL_TEXT_FLOOR and label:GetStringHeight() > room do
+		size = math.max(SEAL_TEXT_FLOOR, size - 0.5)
+		ns.JournalRestyle(label, "gilt", size, INK.wax)
+	end
+	label:SetTextColor(rgb(earned and INK.wax or "9a8060"))
 end
 
 --- A page button on the leather's ink (LED-R146's Prestige, "Open the plate", "Help chart the waters"): its words in

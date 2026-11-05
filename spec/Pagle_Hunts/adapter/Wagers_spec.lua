@@ -327,6 +327,55 @@ describe("the wager strip (HNT-R161)", function()
 		assert.are.same({ "fixture_shore@" .. SAT_15 }, asked)
 	end)
 
+	it(
+		"keeps a longer language's time whole on the strip up to half its width, a little smaller past it (HNT-R161, CORE-R8)",
+		function()
+			local r = oneOn()
+			r.ns.L.STRIP_CLOSES = "закроется через {duration}"
+			r.ns.ToggleBoard()
+			local page = r.ns.board:Page(place(r), "left")
+			local strip = shownWith(page, "stripRun")[1]
+			local width = page:GetWidth()
+
+			-- 6 units a byte in the fake: wider than the third it was held to, within half
+			local closes = textOf(strip, "закроется через 2d 4h")
+			local whole = #closes.text * 6 + 1
+			assert.is_true(whole > width / 3 and whole <= width / 2)
+			assert.are.equal(whole, closes.width)
+			assert.are.equal(r.ns.ArtFont("hand", 17), closes.fontObject)
+			-- the name keeps what's left, whole here
+			assert.are.equal(#"Shore Wager" * 6 + 1, textOf(strip, "Shore Wager").width)
+
+			-- past half the strip, a size or two smaller first (the fake never measures it narrower, so down to the
+			-- floor), then cut there
+			r.ns.L.STRIP_CLOSES = "закроется через {duration}, а потом ещё долго-долго"
+			r.ns.board:Draw()
+			closes = textOf(strip, "закроется через 2d 4h, а потом ещё долго-долго")
+			assert.are.equal(r.ns.ArtFont("hand", 15), closes.fontObject)
+			assert.are.equal(width / 2, closes.width)
+		end
+	)
+
+	it(
+		"keeps a longer language's opening time whole on the dashed row ahead, the name taking the rest (HNT-R162, CORE-R8)",
+		function()
+			local r = start({ origin = SAT_15 - 3 * SLOT, clock = UTC })
+			r.ns.L.AHEAD_OPENS = "откроется в {realmWeekdayClock}"
+			r.ns.ToggleBoard()
+			local page = r.ns.board:Page(place(r), "left")
+			local row = shownWith(page, "aheadRun")[1]
+
+			-- wider than the 92 units the row kept at its right: whole now
+			local opens = textOf(row, "откроется в Sat 15:00")
+			local whole = #opens.text * 6 + 1
+			assert.is_true(whole > 92)
+			assert.are.equal(whole, opens.width)
+			-- the name and zones end before it
+			local name = textOf(row, "Shore Wager")
+			assert.is_true(41 + name.width <= row:GetWidth() - 9 - whole)
+		end
+	)
+
 	it("is left out before the rotation's starting point with no pushed run, and so is the group (HNT-R204)", function()
 		local r = start({ now = SERVER_TIME, clock = hunts.SUNDAY })
 

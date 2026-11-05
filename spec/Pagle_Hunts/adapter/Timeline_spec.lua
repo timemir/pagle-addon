@@ -277,6 +277,62 @@ describe("the timeline's ruler and washes (HNT-R62)", function()
 		assert.are.same({ "15", "18", "21", "00", "03", "06", "09" }, labels) -- 12 is half an hour off
 	end)
 
+	-- The ruler's drawn parts on the Board's left page.
+	local function rulerView(run)
+		return assert(run.ns.TimelinePageView(run.ns.board:Page({ mode = "board" }, "left")))
+	end
+
+	it(
+		'sets "next 22h" in the ruler\'s left column above "Realm time", clear of the hours, in a longer language too'
+			.. " (HNT-R62)",
+		function()
+			local run = hunts.start({
+				prepare = function(loaded)
+					loaded.ns.L.RULER_NEXT = "на {ruler_next:0} ч вперёд" -- ruRU's, 25 bytes: 150 px in the fake
+				end,
+			})
+			run.ns.ToggleBoard()
+
+			local view = rulerView(run)
+			local ahead, realmTime = view.ahead, view.realmTime
+			assert.are.equal("на 22 ч вперёд", ahead:GetText()) -- whole: bound by its width, never rewritten
+			-- left of the track (178), short of where an hour label centred on its first tick could reach
+			assert.are.same({ "TOPLEFT", view.top, "TOPLEFT", 0, -48 }, ahead.points[1])
+			assert(ahead.width > 0 and ahead.width <= 178 - 24, "the label stays in the left column")
+			assert.are.same({ "TOPLEFT", view.top, "TOPLEFT", 0, -65 }, realmTime.points[1])
+			assert(realmTime.width > 0 and realmTime.width <= 178 - 24, "Realm time stays in the left column")
+		end
+	)
+
+	it(
+		"draws an hour label only where it clears the one before it, in a language whose hours run long (HNT-R62)",
+		function()
+			local run = hunts.start({
+				prepare = function(loaded)
+					loaded.ns.L.RULER_HOUR = "{hour} h 00" -- 7 bytes: 42 px in the fake, past the ticks' 23.75 apart
+				end,
+			})
+			run.ns.ToggleBoard()
+
+			local shown = {}
+			for _, tick in ipairs(rulerView(run).ticks) do
+				if tick.label.shown then
+					local x = tick.label.points[1][4]
+					local half = #tick.label:GetText() * 6 / 2
+					shown[#shown + 1] = { left = x - half, right = x + half, text = tick.label:GetText() }
+				end
+			end
+			local texts = {}
+			for i, label in ipairs(shown) do
+				texts[i] = label.text
+			end
+			assert.are.same({ "12 h 00", "18 h 00", "00 h 00", "06 h 00" }, texts) -- every other one, 47.5 apart
+			for i = 2, #shown do
+				assert(shown[i].left > shown[i - 1].right, shown[i - 1].text .. " and " .. shown[i].text .. " meet")
+			end
+		end
+	)
+
 	it("washes the next 3 hours (Soon) and the spans the night window holds", function()
 		local run = start()
 		local now = SERVER_TIME
@@ -668,6 +724,27 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 		assert.are.same({ "08:25 · Sun 11 Oct · Autumn" }, shownTexts(run.ns.board.book.anchors.clock))
 	end)
 
+	it(
+		'keeps the date on one line and "show completed" short of the book\'s ? and × seals, a size down at a time'
+			.. " (HNT-R61)",
+		function()
+			local run = start({ catalogue = withSeasons() })
+			run.ns.L.SHOW_COMPLETED = "mostrar también las Cazas completadas" -- 37 bytes: 222 px in the fake
+			run.ns.ToggleBoard()
+
+			local anchors = run.ns.board.book.anchors
+			local clock = anchors.clock.children[1]
+			assert.are.same({ "08:15 · Sun 11 Oct · Autumn", false }, { clock:GetText(), clock:CanWordWrap() })
+			assert.are.equal(anchors.clock:GetWidth(), clock.width)
+			local label = anchors.completed.children[1].Text
+			assert.are.equal("mostrar también las Cazas completadas", label:GetText()) -- never rewritten
+			-- the anchor's 150 less the box (14), its gap (7) and the seals' 32 over the anchor's right end
+			assert.are.equal(150 - 14 - 7 - 32, label.width)
+			assert.are.equal(run.ns.ArtFont("italic", 11, true), label.fontObject)
+			assert.is_false(label:CanWordWrap())
+		end
+	)
+
 	it('saves "show completed" from its checkbox and redraws (HNT-R82)', function()
 		local run = start({ list = extraList({ ALWAYS, ALWAYS }) })
 		useState(run, { extra_1 = reached(1) })
@@ -708,6 +785,55 @@ describe("a set's page, drawn (HNT-R66)", function()
 		walk(run.ns.board:Page(run.ns.board.router:Place(), "left"))
 
 		assert.are.same({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }, place(run))
+	end)
+
+	it(
+		"sets a long heading a size down at a time, to 16, before the client cuts it short (HNT-R66, CORE-R8)",
+		function()
+			local run = start()
+			run.ns.L["set.fixture_dusk.name"] = "Часы в лагере"
+			run.ns.L["set.fixture_dusk.title"] = "Хранитель хижины у тихой лесной воды" -- past the page in the fake
+			run.ns.board:Open({ mode = "set", set = "fixture_dusk" })
+
+			local page = run.ns.board:Page(place(run), "left")
+			local title = assert(run.ns.TimelinePageView(page)).title
+			assert.are.equal(
+				"Часы в лагере: earns Хранитель хижины у тихой лесной воды",
+				title:GetText()
+			) -- never rewritten
+			assert(#title:GetText() * 6 > page:GetWidth(), "the heading runs past the page in the fake")
+			assert.are.equal(run.ns.ArtFont("print", 16), title.fontObject)
+			assert.are.equal(page:GetWidth(), title.width)
+
+			-- a short one stays in the kit's size
+			run.ns.board:Open({ mode = "board" })
+			local board = assert(run.ns.TimelinePageView(run.ns.board:Page(place(run), "left"))).title
+			assert.are.equal(run.ns.BoardFonts().heading, board.fontObject)
+		end
+	)
+
+	it("wraps the legend to a row above where a longer language's runs past the page (HNT-R62)", function()
+		local run = start()
+		run.ns.L.LEGEND_ITEMS.camp = "ваш лагерь разбит" -- ruRU's: 32 bytes
+		run.ns.board:Open({ mode = "board" })
+
+		local view = assert(run.ns.TimelinePageView(run.ns.board:Page(place(run), "left")))
+		local rows, texts = {}, {}
+		for i, text in ipairs(view.legendTexts) do
+			local point = text.points[1]
+			local x, y = point[4], -point[5]
+			texts[i] = text:GetText()
+			-- each item's words whole, within the page, on the foot's row or the one above it
+			assert.are.equal(#text:GetText() * 6, text:GetStringWidth())
+			assert(x + text:GetStringWidth() <= view.width, text:GetText() .. " runs past the page")
+			assert(y == 498 - 1 or y == 498 - 1 - 16, text:GetText() .. " sits at " .. y)
+			rows[y] = (rows[y] or 0) + 1
+			-- its bar on its row, before it
+			local stroke = view.legendBars[i].points[1]
+			assert.are.same({ x - 18 - 5, -(y + 1) }, { stroke[4], stroke[5] })
+		end
+		assert.are.same({ "open", "window unconfirmed", "needs more skill", "ваш лагерь разбит" }, texts)
+		assert.are.same({ [497] = 1, [481] = 3 }, rows) -- the last one wraps, at the fake's 6 px a byte
 	end)
 end)
 

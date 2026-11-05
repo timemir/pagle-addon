@@ -240,9 +240,7 @@ local function newView(page)
 	view.pin = newPin(page)
 	view.window = text(fonts.handLarge, LOOK.hand, width, 2)
 	view.conditions = text(fonts.small, LOOK.small, width, 4)
-	view.bar = ns.NewBoardInkBar(page, BAR_WIDTH)
-	view.bar.label:SetWidth(width - BAR_WIDTH - 10)
-	view.bar.label:SetWordWrap(false)
+	view.bar = ns.NewBoardInkBar(page, BAR_WIDTH, width)
 	view.ladderUpdating = text(fonts.hand, LOOK.note, width, 2)
 	view.effort = text(fonts.hand, LOOK.ink, width, 2)
 	view.odds = text(fonts.note, ns.BoardTint("7a5a30"), width, 4)
@@ -394,7 +392,38 @@ local function layLadder(view, ladder, y, same)
 	return y
 end
 
--- Draws `entry` (logic/Entry.lua's HuntEntry) of Hunt `huntID` on its page, top to bottom.
+-- Lays out the entry's foot from `y` down: the effort counter, the pointer to Stats and the set line under its rule;
+-- returns the y under the last. `compact` (the entry would end past the page's foot, as a language's longer lines run
+-- it, and the page cuts what passes it) leaves the pointer out and sets the counter small, in the note's italic.
+---@param view EntryView
+---@param entry HuntEntry
+---@param y number
+---@param compact boolean
+---@return number
+local function layFoot(view, entry, y, compact)
+	local fonts = ns.BoardFonts()
+	view.effort:SetFontObject(compact and fonts.note or fonts.hand)
+	inkText(view.effort, LOOK.ink)
+	y = line(view.effort, entry.effort.text, y, 3)
+	view.odds:Hide()
+	if not compact then
+		y = line(view.odds, entry.effort.odds, y)
+	end
+	if entry.setLine then
+		-- at the kit's place, or higher where its words wrap past the page's foot, but never over what is above it
+		view.setLine:SetText(entry.setLine)
+		local foot = view.page:GetHeight() - SET_WORDS_GAP - view.setLine:GetStringHeight()
+		local ruleY = math.max(math.min(SET_RULE_Y, foot), y + 12)
+		view.rule:ClearAllPoints()
+		view.rule:SetPoint("TOPLEFT", 0, -ruleY)
+		view.rule:Show()
+		y = line(view.setLine, entry.setLine, ruleY + SET_WORDS_GAP)
+	end
+	return y
+end
+
+-- Draws `entry` (logic/Entry.lua's HuntEntry) of Hunt `huntID` on its page, top to bottom; its foot compact when it
+-- would end past the page's (layFoot).
 ---@param view EntryView
 ---@param entry HuntEntry
 ---@param huntID string
@@ -436,14 +465,8 @@ local function draw(view, entry, huntID)
 	y = line(view.conditions, entry.conditions, y)
 	y = layChips(view, entry.chips, y + GAP, width) + 14
 	y = layLadder(view, entry.ladder, y, same) + GAP
-	y = line(view.effort, entry.effort.text, y, 3)
-	y = line(view.odds, entry.effort.odds, y)
-	if entry.setLine then
-		local ruleY = math.max(SET_RULE_Y, y + 12)
-		view.rule:ClearAllPoints()
-		view.rule:SetPoint("TOPLEFT", 0, -ruleY)
-		view.rule:Show()
-		line(view.setLine, entry.setLine, ruleY + SET_WORDS_GAP)
+	if layFoot(view, entry, y, false) > view.page:GetHeight() then
+		layFoot(view, entry, y, true)
 	end
 end
 

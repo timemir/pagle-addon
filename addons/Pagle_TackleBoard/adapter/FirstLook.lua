@@ -17,12 +17,17 @@ local ns = select(2, ...)
 -- The "?": beside the close mark (26 × 26 at 958, 15), 4 to its left, and its pin's size.
 local HELP_X, HELP_Y, HELP_SIZE, PIN_SIZE = 928, 15, 26, 22
 
+---@class TackleBoardFrame
+---@field lookKeepClear (fun(): Region[])? what Core's notes over the board leave in sight (ONB-R58)
+
 ---@class TackleBoardHelp: Button
 ---@field pin TackleSprite
 ---@field mark FontString
 
 -- Whether the set is registered with Core, so the board asks for it and has a "?".
 local registered = false
+-- What the board's notes over the cork leave in sight (below).
+local keepClear
 
 -- What each note points at on the board's frame, read as the set shows (ONB-R56): nil while it isn't laid out.
 ---@type table<string, fun(frame: TackleBoardFrame): Region?>
@@ -139,12 +144,32 @@ local function newHelp(frame)
 	return help
 end
 
+-- What the set's note over the cork (the fourth, as drawn) must leave in sight (ONB-R58; Core reads it as
+-- `frame.lookKeepClear`): every pinned Expedition and Notice shown. With the cork full its drawn place would hide the
+-- second row's middle Notice, so Core slides it clear.
+---@return Region[]
+function keepClear()
+	local frame = ns.board.frame
+	local pins = frame and frame.parts.pins --[[@as TacklePinsFrame?]]
+	local papers = {}
+	for _, kind in ipairs({ "expeditions", "notices" }) do
+		for _, slot in ipairs(pins and pins.slots[kind] or {}) do
+			---@cast slot TacklePinSlot
+			if slot.goal and slot.goal:IsShown() then
+				papers[#papers + 1] = slot.goal
+			end
+		end
+	end
+	return papers
+end
+
 --- Gives the board's frame, as it is made (adapter/Board.lua), its "?" beside the close mark (ONB-R59), hidden until a
 --- started board shows: only with the set registered.
 ---@param frame TackleBoardFrame
 function ns.AddBoardLook(frame)
 	if registered then
 		frame.help = newHelp(frame)
+		frame.lookKeepClear = keepClear
 	end
 end
 

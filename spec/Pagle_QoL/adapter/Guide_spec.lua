@@ -316,6 +316,21 @@ describe("The Casting step (ONB-R32)", function()
 		end
 	)
 
+	it("holds each sample face's label to its share of the row, so two never run together (ONB-R32)", function()
+		local fake = start(function(_, _, loaded)
+			loaded.ns.L.BUTTON_GEAR = "Экипировка"
+			loaded.ns.L.BUTTON_LURE = "Приманка"
+		end)
+
+		local left = open(fake, "casting")
+
+		-- 97.6 apart, less 8 between two slips and the slip's own 20 round its words: 69 whole units
+		for _, label in ipairs({ textReading(left, "Экипировка"), textReading(left, "Приманка") }) do
+			assert.are.equal(69, label.width)
+			assert.is_true(label.parent.width <= 97.6 - 8)
+		end
+	end)
+
 	it("shows no key on the caps under Double right-click, as the button shows none then (QOL-R70)", function()
 		local fake, _, loaded = start()
 		loaded.ns.SetInput("click")
@@ -863,6 +878,38 @@ describe("The Fishing clothes step (ONB-R33)", function()
 		fake.guide:Back()
 
 		assert.is_false(showing(setList(right)))
+	end)
+
+	it(
+		"puts 'or use a set you made' on its own line, the field under it, when it can't sit beside it (ONB-R33)",
+		function()
+			local words = "o usa un conjunto de equipo que ya tengas guardado"
+			local fake = start(function(_, _, loaded)
+				loaded.ns.L.GUIDE_SAVE_OR = words
+			end)
+
+			local _, right = open(fake, "clothes")
+
+			local orLine, dropdown = textReading(right, words), setField(right)
+			-- across the column on its own, wrapped, and the field 4 under it, Swap gear and the rest as far down
+			assert.are.same({ 382, true }, { orLine.width, orLine.wordWrap })
+			local orBottom = placeOf(orLine)[2] + orLine:GetStringHeight()
+			assert.is_true(placeOf(dropdown)[2] >= orBottom)
+			local shift = placeOf(dropdown)[2] - 181.7
+			assert.is_true(shift > 0)
+			assert.is.near(231.7 + shift, placeOf(field(right, "PAGLE_SWAP_GEAR"))[2], 0.001)
+		end
+	)
+
+	it("keeps 'or use a set you made' beside the field, set smaller, when a little long (ONB-R33)", function()
+		local fake = start()
+
+		local _, right = open(fake, "clothes")
+
+		-- the fake's 6 a character makes the English 126 wide: set smaller, it keeps to the 101.2 left of the field
+		local orLine = textReading(right, "or use a set you made")
+		assert.are.equal(139.2 - 8 - 30, orLine.width)
+		assert.are.same({ 139.2, 181.7 }, placeOf(setField(right)))
 	end)
 
 	it("binds Swap gear through Core's field (ONB-R33, ONB-R40)", function()

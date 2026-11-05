@@ -45,6 +45,7 @@ local drawn = setmetatable({}, { __mode = "k" })
 ---@field step number
 ---@field second number
 ---@field foot number          -- the room under the last line
+---@field clear number?        -- how far down the frame's corner ornament reaches: a block's lines start under it
 ---@field shade boolean        -- the native look's fading shade behind each line
 ---@field paper boolean        -- dots in ink on paper, not bright over the world
 ---@field caps boolean         -- "Hunts" in small caps
@@ -135,7 +136,11 @@ local LOOKS = ns.TRACKER_LOOKS
 -- The expansion's tracker frames (HNT-R123), from the Curio Shop expansion kit's goods.json: each a three-slice of its
 -- TrackerFrames2 sprite, 262 wide, its words inside the text insets, in its inks (header, text, dim, accent), set in
 -- the kit's type: "Hunts" in Marcellus, the lines in IM Fell. A dark panel takes bright dots, a paper inked ones.
----@type { key: string, insets: number[], slice: number[], inks: string[], paper: boolean }[]
+-- Three have an ornament at the top right, beside the header: the map scrap's compass (down to 58 units), the
+-- spyglass's orb (50) and the wager ribbon's coin (54). The first lines start under it (`clear`, its foot less the 3
+-- units a line's words sit below its top), so it is never drawn over a time, and the lines take the frame's width to
+-- the 16-unit inset, where before the spyglass and the ribbon kept 46 clear all the way down for it.
+---@type { key: string, insets: number[], slice: number[], inks: string[], paper: boolean, clear: number? }[]
 local KIT_FRAMES = {
 	{
 		key = "slate",
@@ -150,6 +155,7 @@ local KIT_FRAMES = {
 		slice = { 50, 24 },
 		inks = { "5a1a0a", "2a1a0a", "6a5030", "9a2a1a" },
 		paper = true,
+		clear = 55,
 	},
 	{
 		key = "bounty",
@@ -160,17 +166,19 @@ local KIT_FRAMES = {
 	},
 	{
 		key = "spyglass",
-		insets = { 16, 46, 18, 18 },
+		insets = { 16, 16, 18, 18 },
 		slice = { 48, 14 },
 		inks = { "f0cd6a", "e8eef8", "a8b4c8", "f0cd6a" },
 		paper = false,
+		clear = 47,
 	},
 	{
 		key = "wagerribbon",
-		insets = { 16, 46, 14, 22 },
+		insets = { 16, 16, 14, 22 },
 		slice = { 48, 26 },
 		inks = { "f0cd6a", "f4e8ff", "c0a8d8", "f0cd6a" },
 		paper = false,
+		clear = 51,
 	},
 }
 -- Their width, the header's height under its inset, and each Hunt's lines, as the kit's canvas sets them.
@@ -191,6 +199,7 @@ for _, kit in ipairs(KIT_FRAMES) do
 		step = KIT_STEP,
 		second = KIT_SECOND,
 		foot = foot,
+		clear = kit.clear,
 		shade = false,
 		paper = kit.paper,
 		caps = false,
@@ -264,6 +273,8 @@ local DOT_SIZE, DIAL_SIZE, EXTRA_LINE, WAGERS_GAP = 8, 14, 20, 6
 ---@field first FontString       -- the Hunt's name, or the run's event's
 ---@field label FontString       -- its tracker label, at the right
 ---@field second FontString
+---@field count FontString       -- the second line's last part, after its last join, while the line is too long: whole
+--- at the right, over the end the client cuts from `second`
 ---@field huntID string?
 ---@field runKey string?         -- a run's lines (HNT-R175)
 
@@ -338,7 +349,7 @@ local function buildLine(block)
 		made:SetWordWrap(false)
 		return made
 	end
-	line.first, line.label, line.second = text("LEFT"), text("RIGHT"), text("LEFT")
+	line.first, line.label, line.second, line.count = text("LEFT"), text("RIGHT"), text("LEFT"), text("RIGHT")
 	passDrags(line, block)
 	line:Hide()
 	return line
@@ -519,6 +530,50 @@ local function labelShare(room, name, label)
 	end
 	return room * label / (name + label)
 end
+
+-- Where the last part of a second line starts in `text`, at its last `join` ("5 / 12" after " · "), or nil with none.
+---@param text string
+---@param join string
+---@return integer?
+local function lastJoin(text, join)
+	local last
+	local at = text:find(join, 1, true)
+	while at do
+		last = at
+		at = text:find(join, at + #join, true)
+	end
+	return last
+end
+
+-- Fits a second line `line.second` (its text set, in its look's font `sub`) to `room`: a little smaller first, as any
+-- long line; still too long, its last part, after the last join, is drawn whole by `line.count` at the right (CORE-R8:
+-- a Language's words run longer, and the count is what the line is for), and `line.second` keeps its whole text but
+-- only the room before it, so the client cuts it short with an ellipsis just where the count starts. Only widths
+-- change: what it reads is the line's text. The two share the room as a line's name and label do (labelShare).
+---@param line HuntsTrackerLineButton
+---@param text string
+---@param sub HuntsTrackerFont
+---@param room number
+local function fitSecond(line, text, sub, room)
+	local size = ns.FitText(line.second, sub[1], sub[2], room, sub[2] - 2, sub[4], sub[3])
+	line.second:SetWidth(0) -- measured unbounded
+	local whole = line.second:GetStringWidth()
+	local at = whole > room and lastJoin(text, ns.L.TRACKER_JOIN)
+	line.count:SetShown(at and at > 1 or false)
+	if not at or at <= 1 then
+		line.second:SetWidth(room)
+		return
+	end
+	local count = line.count
+	count:SetFontObject(ns.ArtFont(sub[1], size, sub[4]))
+	count:SetTextColor(sub[3][1], sub[3][2], sub[3][3])
+	count:SetText(text:sub(at))
+	count:SetWidth(0)
+	local countWhole = count:GetStringWidth() + 1
+	local countWidth = labelShare(room, whole - countWhole + 2, countWhole)
+	count:SetWidth(math.max(1, countWidth))
+	line.second:SetWidth(math.max(1, room - countWidth))
+end
 -- Draws each of `entries` (a Hunt's or a run's two lines) on `lines` from `y` down, after a run's time dial or a dot
 -- of its group (`entry.dot`, else `dot`), its label red when `entry.urgent`; hides the lines past them; returns the y
 -- under the last.
@@ -554,8 +609,14 @@ local function drawLines(lines, entries, look, y, dot)
 			line.first:SetWidth(0) -- measured unbounded
 			local nameWidth = line.first:GetStringWidth() + 1
 			line.label:SetWidth(0)
-			local labelWidth = line.label:GetStringWidth() + 1
-			labelWidth = labelShare(room, nameWidth, labelWidth)
+			local labelWhole = line.label:GetStringWidth() + 1
+			local labelWidth = labelShare(room, nameWidth, labelWhole)
+			if labelWidth < labelWhole then
+				-- a time a little longer than its share takes a point or two smaller before it is cut
+				local font = look.label
+				local ink = entry.urgent and look.urgent or font[3]
+				ns.FitText(line.label, font[1], font[2], labelWidth - 1, font[2] - 2, font[4], ink)
+			end
 			line.label:SetWidth(math.max(1, labelWidth))
 			line.first:ClearAllPoints()
 			line.first:SetPoint("TOPLEFT", x + 14, -3)
@@ -565,9 +626,10 @@ local function drawLines(lines, entries, look, y, dot)
 			line.second:SetShown(entry.second ~= nil)
 			line.second:ClearAllPoints()
 			line.second:SetPoint("TOPLEFT", x + 14, -look.second)
-			-- a long target line shrinks a little, then is cut short, within the block
-			local sub = look.sub
-			ns.FitText(line.second, sub[1], sub[2], right - x - 14, sub[2] - 2, sub[4], sub[3])
+			line.count:ClearAllPoints()
+			line.count:SetPoint("TOPRIGHT", line, "TOPLEFT", right, -look.second)
+			-- a long target line shrinks a little, then is cut short before its count, within the block
+			fitSecond(line, entry.second or "", look.sub, right - x - 14)
 			y = y + look.step
 		end
 	end
@@ -628,6 +690,14 @@ local function drawHint(hint, look, text, y)
 	return y + EXTRA_LINE
 end
 
+-- Where a block's lines start, `start` down under its header: under the frame's corner ornament too (look.clear).
+---@param look HuntsTrackerLook
+---@param start number
+---@return number
+local function linesAt(look, start)
+	return math.max(start, look.clear or 0)
+end
+
 -- Draws the Pagle Wagers block at the block's top (HNT-R175–R177), or hides it for `content` nil; returns how far down
 -- the Hunts block's header goes under it.
 ---@param view HuntsTrackerWagersView
@@ -643,10 +713,11 @@ local function drawWagers(view, look, content)
 		return 0
 	end
 	drawHeader(view.header, view.title, view.chevron, look, ns.L.WAGERS_KICKER, 0, content.collapsed)
-	local y = drawLines(view.lines, content.collapsed and {} or content.runs, look, look.first, "wagers")
+	local from = linesAt(look, look.first)
+	local y = drawLines(view.lines, content.collapsed and {} or content.runs, look, from, "wagers")
 	y = drawMore(view.more, look, not content.collapsed and content.more or nil, y)
 	y = drawHint(view.hint, look, not content.collapsed and content.hint or nil, y)
-	return y + WAGERS_GAP
+	return (y == from and look.first or y) + WAGERS_GAP
 end
 
 --- Draws `content` on a tracker block in `look` (HNT-R76, HNT-R79, HNT-R175): the paper under both blocks; the Pagle
@@ -661,7 +732,8 @@ function ns.DrawTrackerBlock(view, look, content)
 	local block = view.frame
 	local top = drawWagers(view.wagers, look, content.wagers)
 	drawHeader(view.header, view.title, view.chevron, look, ns.L.TITLE, top, content.collapsed)
-	local y = drawLines(view.lines, content.hunts, look, top + look.first)
+	local from = linesAt(look, top + look.first)
+	local y = drawLines(view.lines, content.hunts, look, from)
 	y = drawMore(view.more, look, content.more, y)
 	view.emptyLine:SetShown(content.empty)
 	view.empty:SetShown(content.empty)
@@ -675,7 +747,8 @@ function ns.DrawTrackerBlock(view, look, content)
 		view.empty:SetPoint("TOPLEFT", look.x + 14, -2)
 		y = y + EXTRA_LINE
 	end
-	local height = ns.TrackerBlockHeight(look, top + look.first, y)
+	-- a block collapsed to its header keeps no room for the ornament: the header sits beside it
+	local height = ns.TrackerBlockHeight(look, top + look.first, y == from and top + look.first or y)
 	local slice = look.slice
 	block:SetSize(look.width, height)
 	view.paper:SetShown(look.frame ~= nil)

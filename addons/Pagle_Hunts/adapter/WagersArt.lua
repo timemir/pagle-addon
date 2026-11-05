@@ -109,6 +109,17 @@ end
 ---@field ink string
 ---@field words string?   -- its words as given, before capitals
 
+--- Sets `text`, in its ink, at `size` (capitals at 0.84 of it): its face, its tint and its leading when it wraps.
+---@param text WagerText
+---@param size number
+function ns.SizeWagerText(text, size)
+	local ink = inkOf(text.ink)
+	text:SetFontObject(ns.ArtFont(ink.face, ink.caps and size * 0.84 or size))
+	local color = LOOK[ink.color]
+	text:SetTextColor(color[1], color[2], color[3])
+	text:SetSpacing(math.max(0, ns.WagerLineHeight(text.ink) - ink.size))
+end
+
 --- Sets `text` in ink `name`: its face and size (capitals at 0.84 of it), its tint, and its leading when it wraps.
 ---@param text FontString
 ---@param name string
@@ -116,11 +127,8 @@ end
 function ns.SetWagerInk(text, name)
 	local ink = inkOf(name)
 	local shown = text --[[@as WagerText]]
-	shown:SetFontObject(ns.ArtFont(ink.face, ink.caps and ink.size * 0.84 or ink.size))
-	local color = LOOK[ink.color]
-	shown:SetTextColor(color[1], color[2], color[3])
-	shown:SetSpacing(math.max(0, ns.WagerLineHeight(name) - ink.size))
 	shown.ink = name
+	ns.SizeWagerText(shown, ink.size)
 	if shown.words then
 		shown:SetText((ink.caps or ink.upper) and Pagle.Upper(shown.words) or shown.words)
 	end
@@ -178,6 +186,26 @@ function ns.FitWagerText(text, words, room)
 	local width = math.max(1, math.min(math.ceil(text:GetStringWidth()) + 1, math.max(1, room)))
 	text:SetWidth(width)
 	return width
+end
+
+--- Sets `text` to `words` in its ink and keeps it within `room` as ns.FitWagerText does, first setting it a half point
+--- smaller at a time, down to `floor`, while it is wider (a longer language's words, a three-figure number in a post):
+--- only past the floor is it cut short. Returns the width it takes.
+---@param text WagerText
+---@param words string
+---@param room number
+---@param floor number
+---@return number
+function ns.ShrinkWagerText(text, words, room, floor)
+	local size = inkOf(text.ink).size
+	ns.SizeWagerText(text, size)
+	ns.SetWagerWords(text, words)
+	text:SetWidth(0)
+	while size > floor and text:GetStringWidth() > room do
+		size = math.max(floor, size - 0.5)
+		ns.SizeWagerText(text, size)
+	end
+	return ns.FitWagerText(text, words, room)
 end
 
 --- A texture showing a Wagers sprite; ns.SetSprite and ns.PlaceSprite (adapter/BookArt.lua) size and put it.
