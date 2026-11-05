@@ -154,6 +154,40 @@ describe("Stats' section on the Trackers page, in the panel", function()
 		assert.are.same({}, stopButtons(loaded, row))
 	end)
 
+	it(
+		"ends its label short of the count, wrapping on two lines, so a long one never runs under it (SET-R42)",
+		function()
+			local loaded = coreWithStats()
+
+			local row = loaded.client.settings.rowNamed(showTrackers(loaded), "Watched Dry spells")
+
+			local label, count
+			for _, child in ipairs(row.frame.children) do
+				if child.shown and child.text == "Watched Dry spells" then
+					label = child
+				elseif child.shown and child.text == "0 of 3" then
+					count = child
+				end
+			end
+			label, count = assert(label), assert(count)
+			assert.is_true(label:CanWordWrap())
+			assert.are.equal(2, label:GetMaxLines())
+			-- Both hang from the row's top centre: the label's right edge ends left of the count's left edge.
+			local right, left
+			for _, point in ipairs(label.points) do
+				if point[1] == "RIGHT" then
+					assert.are.equal(row.frame, point[2])
+					assert.are.equal("TOP", point[3])
+					right = point[4]
+				end
+			end
+			local countPoint = count.points[1]
+			assert.are.equal("TOP", countPoint[3])
+			left = countPoint[4]
+			assert(right and right < left, "the label runs under the count")
+		end
+	)
+
 	it("lists each watch oldest first, by the watched area's own name, with its button (SET-R42, STA-R60)", function()
 		local loaded = coreWithStats()
 		loaded.ns.Watch(NIGHTFIN, DARKSHORE)

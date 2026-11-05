@@ -94,10 +94,10 @@ describe("Core's faces", function()
 		end)
 	end
 
-	it("fall back to FRIZQT__ for a client font the client doesn't have", function()
+	it("fall back to the locale's body for a client heading the client doesn't have", function()
 		local _, made = core(nil, "koKR", { ["Fonts\\2002B.ttf"] = true })
 
-		assert.are.same({ FALLBACK, 21, "" }, made.PagleArtKick.font)
+		assert.are.same({ "Fonts\\2002.ttf", 21, "" }, made.PagleArtKick.font)
 		assert.are.same({ "Fonts\\2002.ttf", 16, "" }, made.PagleArtWhat.font)
 	end)
 
@@ -143,5 +143,159 @@ describe("ns.ResolveLanguage and the render rule (#522, SET-R10 row 9b)", functi
 	it("gives Game default's Locale on its own client", function()
 		assert.are.equal("koKR", ns.ResolveLanguage("default", "koKR"))
 		assert.are.equal("enUS", ns.ResolveLanguage("default", "enUS"))
+	end)
+end)
+
+describe("the within-locale fallback (CORE-R9)", function()
+	it("draws zhTW's body and heading in bKAI00M when the client has neither bHEI", function()
+		local loaded, made = core(nil, "zhTW", { ["Fonts\\bHEI00M.ttf"] = true, ["Fonts\\bHEI01B.ttf"] = true })
+
+		assert.are.same({ "Fonts\\bKAI00M.ttf", 16, "" }, made.PagleArtWhat.font)
+		assert.are.same({ "Fonts\\bKAI00M.ttf", 21, "" }, made.PagleArtKick.font)
+		assert.are.same({ "Fonts\\bKAI00M.ttf", 31, "" }, made.PagleArtName.font)
+		local font = loaded.env.CreateFont("ModuleFont")
+		assert.are.equal("Fonts\\bKAI00M.ttf", loaded.env.Pagle.SetFace(font, "Marcellus-Regular.ttf", 12))
+	end)
+
+	it("tries the heading next when only zhTW's body is missing", function()
+		local _, made = core(nil, "zhTW", { ["Fonts\\bHEI00M.ttf"] = true })
+
+		assert.are.same({ "Fonts\\bHEI01B.ttf", 16, "" }, made.PagleArtWhat.font)
+	end)
+
+	it("draws koKR's hand in 2002 and zhCN's in ARKai_T when the hand face is missing", function()
+		local _, korean = core(nil, "koKR", { ["Fonts\\K_Pagetext.TTF"] = true })
+		local _, chinese = core(nil, "zhCN", { ["Fonts\\ARKai_C.ttf"] = true })
+
+		assert.are.same({ "Fonts\\2002.ttf", 31, "" }, korean.PagleArtName.font)
+		assert.are.same({ "Fonts\\ARKai_T.ttf", 31, "" }, chinese.PagleArtName.font)
+	end)
+
+	it("draws ruRU's faces in ARIALN, its mono, before FRIZQT__, which has no Cyrillic", function()
+		local _, made = core(nil, "ruRU", { ["Fonts\\FRIZQT___CYR.TTF"] = true })
+
+		assert.are.same({ "Fonts\\ARIALN.TTF", 16, "" }, made.PagleArtWhat.font)
+	end)
+
+	it("falls back to FRIZQT__ only when none of the locale's faces loads", function()
+		local loaded, made = core(nil, "zhTW", {
+			["Fonts\\bHEI00M.ttf"] = true,
+			["Fonts\\bHEI01B.ttf"] = true,
+			["Fonts\\bKAI00M.ttf"] = true,
+		})
+
+		assert.are.same({ FALLBACK, 16, "" }, made.PagleArtWhat.font)
+		local font = loaded.env.CreateFont("ModuleFont")
+		assert.are.equal(FALLBACK, loaded.env.Pagle.SetFace(font, "Caveat-Bold.ttf", 12))
+	end)
+
+	it("keeps a bundled face's fallback FRIZQT__ on a Latin client", function()
+		local _, made = core(nil, "enUS", { [BUNDLED .. "IMFeENrm28P.ttf"] = true })
+
+		assert.are.same({ FALLBACK, 16, "" }, made.PagleArtWhat.font)
+	end)
+end)
+
+-- The Modules whose strings are loaded alongside Core's below: every one that has a string table.
+local MODULES = { "Pagle_Ledger", "Pagle_Hunts", "Pagle_Stats", "Pagle_TackleBoard", "Pagle_QoL" }
+local MIDDLE_DOT = "\194\183"
+
+-- Each string of `L` at any depth that holds `glyph`, as "KEY.form" paths.
+---@param L table
+---@param glyph string
+---@return string[]
+local function holding(L, glyph)
+	local found, seen = {}, {}
+	local function walk(t, path)
+		seen[t] = true
+		for key, value in pairs(t) do
+			local here = path .. tostring(key)
+			if type(value) == "string" and value:find(glyph, 1, true) then
+				found[#found + 1] = here
+			elseif type(value) == "table" and not seen[value] then
+				walk(value, here .. ".")
+			end
+		end
+	end
+	walk(L, "")
+	table.sort(found)
+	return found
+end
+
+-- Core and every Module logged in on a `client` locale with `setting` as the Language, on the real Locales.
+---@param setting string?
+---@param client string
+---@return LoadedAddon
+local function withModules(setting, client)
+	return loadAddon(
+		"Pagle",
+		foreverWith({
+			GetLocale = function()
+				return client
+			end,
+			PagleDB = setting and { global = { language = setting } } or nil,
+		}),
+		{ also = MODULES }
+	)
+end
+
+describe("the client faces' glyphs (CORE-R9)", function()
+	for _, setting in ipairs({ "enUS", "esES" }) do
+		it("leave no U+00B7 in any string Core or a Module draws, in " .. setting .. " on a ruRU client", function()
+			local loaded = withModules(setting, "ruRU")
+
+			assert.are.equal(setting, loaded.env.Pagle.GetLanguage())
+			for _, addon in ipairs({ "Pagle", unpack(MODULES) }) do
+				assert.are.same({}, holding(loaded.namespaces[addon].L, MIDDLE_DOT), addon)
+			end
+		end)
+	end
+
+	it("draw the separator as the bullet there, which FRIZQT___CYR and ARIALN both have", function()
+		local loaded = withModules("enUS", "ruRU")
+
+		assert.are.equal(" \226\128\162 ", loaded.ns.L.SHOP_TAG_SEPARATOR)
+		assert.are.equal(" \226\128\162 ", loaded.namespaces.Pagle_Hunts.L.TRACKER_JOIN)
+		assert.are.equal("{name} \226\128\162 {band} \226\128\162 {length}", loaded.ns.L.CATCH_TOAST)
+	end)
+
+	it("stay as written on a client whose faces are Pagle's own", function()
+		local english = withModules("enUS", "enUS")
+		local spanish = withModules("esES", "deDE")
+
+		assert.are.equal(" " .. MIDDLE_DOT .. " ", english.ns.L.SHOP_TAG_SEPARATOR)
+		assert.are.equal(" " .. MIDDLE_DOT .. " ", english.namespaces.Pagle_Hunts.L.TRACKER_JOIN)
+		assert.are_not.same({}, holding(spanish.ns.L, MIDDLE_DOT))
+	end)
+
+	it("swap the guillemets, which no zhCN or zhTW face has, for the arrows' ASCII", function()
+		for _, client in ipairs({ "zhCN", "zhTW" }) do
+			local loaded = withModules("enUS", client)
+
+			assert.are.equal("Next >", loaded.ns.L.GUIDE_NEXT, client)
+			assert.are.equal("< back", loaded.namespaces.Pagle_Ledger.L.JOURNAL_BACK, client)
+			for _, addon in ipairs({ "Pagle", unpack(MODULES) }) do
+				assert.are.same({}, holding(loaded.namespaces[addon].L, "\194\171"), addon)
+				assert.are.same({}, holding(loaded.namespaces[addon].L, "\194\187"), addon)
+			end
+		end
+	end)
+
+	it("change nothing on koKR, whose 2002 faces have every character the strings use", function()
+		local korean = withModules("enUS", "koKR")
+		local english = withModules("enUS", "enUS")
+
+		assert.are.same(english.ns.L, korean.ns.L)
+		assert.are.same(english.namespaces.Pagle_Hunts.L, korean.namespaces.Pagle_Hunts.L)
+	end)
+
+	it("are given to a Module's table through Pagle.ApplyClientGlyphs, which answers whether it changed one", function()
+		local loaded = withModules("enUS", "ruRU")
+		local L = { JOIN = " " .. MIDDLE_DOT .. " ", FORMS = { one = "a " .. MIDDLE_DOT .. " b" }, PLAIN = "text" }
+
+		assert.is_true(loaded.env.Pagle.ApplyClientGlyphs(L))
+		assert.are.same({ JOIN = " \226\128\162 ", FORMS = { one = "a \226\128\162 b" }, PLAIN = "text" }, L)
+		assert.is_false(loaded.env.Pagle.ApplyClientGlyphs(L))
+		assert.is_false(withModules("enUS", "enUS").env.Pagle.ApplyClientGlyphs({ JOIN = MIDDLE_DOT }))
 	end)
 end)

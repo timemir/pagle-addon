@@ -193,6 +193,9 @@ function ns.ApplyLanguage()
 	if ns.pseudo then
 		ns.PseudoLocalize(ns.L)
 	end
+	-- On a client whose faces are its own, what those lack takes a stand-in (CORE-R9, adapter/Fonts.lua), before the
+	-- wiring below copies strings out of ns.L.
+	ns.ApplyClientGlyphs(ns.L, GetLocale())
 	-- Core's font objects were made as its files loaded, in the bundled faces (adapter/Fonts.lua).
 	ns.faces:Refit()
 	-- Then the wiring that reads ns.L, now in the chosen language.

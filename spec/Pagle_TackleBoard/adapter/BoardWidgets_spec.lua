@@ -195,6 +195,29 @@ describe("the papers' lean (TKB-R102)", function()
 		assert.are.equal(0, paper.rotation)
 	end)
 
+	it("TKB-R103: swings words that can't turn along with their slip, straight, about the same nail", function()
+		local loaded, fake = board.load()
+		fake.login()
+		local ns = loaded.ns
+		local frame = loaded.env.CreateFrame("Frame")
+		local words = frame:CreateFontString()
+		words.SetRotation = nil -- a client whose font strings don't turn
+		local box, pivot, degrees = { 10, 70, 100, 20 }, { 68, 12 }, 14
+
+		ns.Swing(words, frame, box, degrees, pivot)
+
+		-- The line's centre (60, 80) turned 14 degrees about the nail, as the paper's is.
+		local angle = math.rad(degrees)
+		local dx, dy = 60 - pivot[1], 80 - pivot[2]
+		local point = words.points[1]
+		assert.is.near(pivot[1] + dx * math.cos(angle) - dy * math.sin(angle), point[4], 1e-9)
+		assert.is.near(-(pivot[2] + dx * math.sin(angle) + dy * math.cos(angle)), point[5], 1e-9)
+
+		ns.db.profile.lean = false
+		ns.Swing(words, frame, box, degrees, pivot)
+		assert.are.same({ "CENTER", frame, "TOPLEFT", 60, -80 }, words.points[1])
+	end)
+
 	it("offers no command for it: /pagle board lean opens the board as any /pagle board does", function()
 		local loaded, fake = board.load()
 		fake.login()

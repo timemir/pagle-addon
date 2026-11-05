@@ -73,6 +73,36 @@ function ns.GuideText(parent, face, size, ink, text, options)
 	return fontString
 end
 
+-- How small a fitted line may be set, as a share of its size: past that the client cuts it short with "...".
+local FIT_FLOOR = 0.75
+
+--- Holds a one-line `fontString` in the art's `face` at `size` to `width` (its text already set): measured unbounded,
+--- a text too wide is set smaller, in half-unit steps, down to FIT_FLOOR of its size, and its width is then held to
+--- `width`, so one still too wide is cut short by the client's "..." instead of running past it. Its ink is set again
+--- (`ink`, a role of ns.GUIDE_INKS), as a new font can bring its own. Returns the size it is set at.
+---@param fontString FontString
+---@param face PagleArtFace
+---@param size number
+---@param ink string
+---@param width number
+---@param shadow boolean?
+---@return number
+function ns.FitGuideText(fontString, face, size, ink, width, shadow)
+	fontString:SetWidth(0)
+	fontString:SetFontObject(ns.ArtFaceFont(face, size, shadow))
+	local natural = fontString:GetStringWidth()
+	local at = size
+	if natural > width then
+		local floor = math.ceil(size * FIT_FLOOR * 2) / 2
+		at = math.max(floor, math.floor(size * width / natural * 2) / 2)
+		fontString:SetFontObject(ns.ArtFaceFont(face, at, shadow))
+	end
+	local color = INKS[ink]
+	fontString:SetTextColor(color[1], color[2], color[3])
+	fontString:SetWidth(width)
+	return at
+end
+
 --- Puts `region`'s top left `x`, `y` from `relativeTo`'s top left (y grows downward), the kit's P.At.
 ---@param region Region
 ---@param relativeTo Region
@@ -85,6 +115,8 @@ end
 
 -- A page's text column: from 30 to 412 on a 442-unit page (the kit's W).
 local COLUMN_X, COLUMN_WIDTH = 30, 382
+-- The least room between the foot's skip link and Next ».
+local FOOT_GAP = 16
 
 --- A page's kicker: the small-caps line over its title, at the kit's place (ONB-R30's "A letter, left on the dock").
 ---@param page Frame
@@ -96,11 +128,14 @@ function ns.NewGuideKicker(page, text)
 	kicker:SetJustifyH("LEFT")
 	kicker:SetWordWrap(false)
 	kicker:SetText(text)
+	-- held to the column: a longer one is cut short, never into the spine
+	kicker:SetWidth(COLUMN_WIDTH)
 	ns.GuideAt(kicker, page, COLUMN_X, 24)
 	return kicker
 end
 
---- A page's title, under its kicker: IM Fell English at `size` (29, the right page's 25).
+--- A page's title, under its kicker: IM Fell English at `size` (29, the right page's 25), on one line across the
+--- column, set smaller when it is longer (ns.FitGuideText), so it never runs into the spine or off the page.
 ---@param page Frame
 ---@param text string
 ---@param size number?
@@ -108,8 +143,9 @@ end
 function ns.NewGuideTitle(page, text, size)
 	size = size or 29
 	local title = ns.GuideText(page, "print", size, "title", text)
-	-- the kit's line box is 1.05 of the size; the text sits in its middle
-	ns.GuideAt(title, page, COLUMN_X, 41 + size * 0.025)
+	local at = ns.FitGuideText(title, "print", size, "title", COLUMN_WIDTH)
+	-- the kit's line box is 1.05 of the size; the text sits in its middle, a smaller one too
+	ns.GuideAt(title, page, COLUMN_X, 41 + size * 0.025 + (size - at) / 2)
 	return title
 end
 
@@ -177,15 +213,23 @@ end
 ---@field label FontString
 ---@field dots Texture[]
 
+--- Held to `room` when given (ns.FitGuideText), its dots as long as its words.
 ---@param parent Frame
 ---@param text string
 ---@param onClick fun()
+---@param room number?
 ---@return PagleGuideLink
-function ns.NewGuideLink(parent, text, onClick)
+function ns.NewGuideLink(parent, text, onClick, room)
 	local link = CreateFrame("Button", nil, parent) --[[@as PagleGuideLink]]
 	link.label = ns.GuideText(link, "italic", 14, "note", text)
 	link.label:SetPoint("TOPLEFT", 0, -2.5)
 	local width = math.ceil(link.label:GetStringWidth())
+	if room and width > room then
+		ns.FitGuideText(link.label, "italic", 14, "note", room)
+		link.label:SetWidth(0)
+		width = math.min(room, math.ceil(link.label:GetStringWidth()))
+		link.label:SetWidth(room)
+	end
 	link:SetSize(math.max(1, width), 19)
 	-- the canvas's dotted underline: a dot every 2 units, 18 down
 	link.dots = {}
@@ -233,7 +277,8 @@ function ns.NewGuideBack(page, onClick)
 end
 
 --- The right page's foot (ONB-R23): the skip link on the left and the leather Next » on the right, at the kit's
---- places (30, 497.5 and right-aligned to 412, 490). Either may be left out.
+--- places (30, 497.5 and right-aligned to 412, 490). Either may be left out. The skip link keeps clear of Next: a
+--- longer one is set smaller, then cut short (ns.FitGuideText), never under it.
 ---@param page Frame
 ---@param skipLabel string?
 ---@param onSkip fun()
@@ -243,15 +288,17 @@ end
 ---@return PagleGuideButton? next
 function ns.NewGuideFoot(page, skipLabel, onSkip, nextLabel, onNext)
 	local skip, nextButton
-	if skipLabel then
-		skip = ns.NewGuideLink(page, skipLabel, onSkip)
-		ns.GuideAt(skip, page, COLUMN_X, 497.5)
-	end
+	local room = COLUMN_WIDTH
 	if nextLabel then
 		nextButton = ns.NewGuideButton(page, nextLabel, onNext)
 		nextButton:SetWidth(math.max(77, nextButton:GetWidth()))
 		nextButton:ClearAllPoints()
 		nextButton:SetPoint("TOPRIGHT", page, "TOPLEFT", COLUMN_X + COLUMN_WIDTH, -490)
+		room = COLUMN_WIDTH - nextButton:GetWidth() - FOOT_GAP
+	end
+	if skipLabel then
+		skip = ns.NewGuideLink(page, skipLabel, onSkip, room)
+		ns.GuideAt(skip, page, COLUMN_X, 497.5)
 	end
 	return skip, nextButton
 end

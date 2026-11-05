@@ -321,6 +321,110 @@ describe("a Module's First look (ONB-R56, ONB-R58, ONB-R90)", function()
 		assert.are.equal(1, note.alpha)
 	end)
 
+	-- The Ledger with a window laid out at `left`, 200 (900 x 700) and a set of `places` ({ x, y } each, 176 wide),
+	-- each note on its own 40 x 40 target, in the window's middle or at the place's third and fourth values; `dress` lays out what the window carries (its close,
+	-- its "?", its ribbons) before it shows. Returns the client load and the window.
+	local function lookAt(left, places, dress)
+		local loaded, window = core(function(Pagle, loaded)
+			local M = Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+			local window = layOut(loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent), left, 200, 900, 700)
+			window:SetSize(900, 700)
+			window:Hide()
+			local notes = {}
+			for i, at in ipairs(places) do
+				local targetLeft, targetBottom = at[3] or left + 400 + 10 * i, at[4] or 500
+				local target = layOut(loaded.env.CreateFrame("Frame", nil, window), targetLeft, targetBottom, 40, 40)
+				notes[i] = {
+					text = "Note " .. i .. ".",
+					target = function()
+						return target
+					end,
+					x = at[1],
+					y = at[2],
+					w = 176,
+				}
+			end
+			if dress then
+				dress(loaded, window)
+			end
+			M:RegisterFirstLook({ id = "ledger.journal", window = window, title = "the Fish Journal", notes = notes })
+			window:SetScript("OnShow", function()
+				M:ShowFirstLook("ledger.journal")
+			end)
+			return window
+		end)
+		return loaded, assert(window)
+	end
+
+	it("stacks a note under the one above it when their words would overlap, never over it (ONB-R58)", function()
+		-- each note is 35 tall at the fake's one line: the second, 10 under the first's top, starts 8 under its foot
+		local loaded, window = lookAt(600, { { -190, 100 }, { -190, 110 }, { -190, 300 } })
+
+		window:Show()
+
+		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -100 }, noteFrame(loaded, 1).points[1])
+		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -143 }, noteFrame(loaded, 2).points[1])
+		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -300 }, noteFrame(loaded, 3).points[1])
+	end)
+
+	it('slides a note held over the window\'s edge off its close and its "?" (ONB-R58, BOOK-R15)', function()
+		-- 120 free on the right: the note overlaps the edge, from 1736, where the close and the "?" sit at the top
+		local loaded, window = lookAt(900, { { 916, 0 } }, function(loaded, window)
+			window.close = layOut(loaded.env.CreateFrame("Button", nil, window), 1785, 885, 30, 30)
+			window.help = layOut(loaded.env.CreateFrame("Button", nil, window), 1750, 880, 30, 30)
+		end)
+
+		window:Show()
+
+		-- under the "?", the lower of the two, 8 clear of its foot at 880
+		assert.are.same({ "TOPLEFT", window, "TOPRIGHT", -64, -28 }, noteFrame(loaded, 1).points[1])
+	end)
+
+	it("slides a note held over the window's edge off what another note points at (ONB-R56, ONB-R58)", function()
+		-- 100 free on the left: both notes overlap the edge from 8 to 184, and the second's target sits by the first,
+		-- 800 down to 765 on screen: it slides up off it, the shorter way, 8 clear of its top at 800
+		local loaded, window = lookAt(100, { { -190, 100 }, { -190, 400, 150, 760 } })
+
+		window:Show()
+
+		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -92, -57 }, noteFrame(loaded, 1).points[1])
+		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -92, -400 }, noteFrame(loaded, 2).points[1])
+	end)
+
+	it(
+		"slides a note set over the window off what the window keeps clear, leaving margin notes be (ONB-R58)",
+		function()
+			-- the first note over the window, 700 to 876 across and 800 down to 765; the second in the left margin
+			local loaded, window = lookAt(600, { { 100, 100 }, { -190, 100 } }, function(loaded, window)
+				local paper = layOut(loaded.env.CreateFrame("Frame", nil, window), 690, 740, 100, 70)
+				local margin = layOut(loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent), 400, 740, 100, 70)
+				window.lookKeepClear = function()
+					return { paper, margin }
+				end
+			end)
+
+			window:Show()
+
+			-- up over the paper (to 8 above its top at 810) is shorter than down under it
+			assert.are.same({ "TOPLEFT", window, "TOPLEFT", 100, -47 }, noteFrame(loaded, 1).points[1])
+			assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -100 }, noteFrame(loaded, 2).points[1])
+		end
+	)
+
+	it("hangs the coach bar under a book's ribbons, not over them (ONB-R55, BOOK-R17)", function()
+		local loaded, window = lookAt(600, { { -190, 100 } }, function(loaded, window)
+			window.ribbons = {
+				layOut(loaded.env.CreateFrame("Button", nil, window), 700, 176, 40, 60),
+				layOut(loaded.env.CreateFrame("Button", nil, window), 800, 170, 40, 60),
+			}
+		end)
+
+		window:Show()
+
+		-- the lower ribbon ends 30 under the window's foot at 200
+		assert.are.same({ "TOP", window, "BOTTOM", 0, -38 }, loaded.ns.coachBar.points[1])
+	end)
+
 	it("raises an error at the Module's call for a set with a missing field, adding nothing (ONB-R90)", function()
 		local loaded = core(function(Pagle)
 			return Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })

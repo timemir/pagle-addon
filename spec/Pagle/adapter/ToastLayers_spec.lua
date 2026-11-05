@@ -206,6 +206,26 @@ describe("a toast in a composed toast style", function()
 		end
 	)
 
+	it("ends the name before the Coins' amount as it draws, wider than the amount's box (ANN-R82)", function()
+		local loaded, M = composedCore()
+		equip(loaded, STORM)
+
+		M:RaiseMoment({
+			rung = "toast",
+			kind = "spec",
+			title = "Nueva especie",
+			text = "Pargo de aleta nocturna del Mar de la Bruma, el grande",
+			coins = 12345,
+		})
+		loaded.client.advance(0)
+
+		local toast = loaded.ns.announcementFrames.toast
+		local rung = artOf(loaded, STORM, "toast")
+		local amountLeft = rung.amt.x + rung.amt.w - toast.coins.label:GetStringWidth()
+		assert(amountLeft < rung.amt.x, "the amount fits its box: the spec needs a wider one")
+		assert(rung.text.x + toast.text:GetWidth() < amountLeft, "the name runs under the amount")
+	end)
+
 	it(
 		"stands still in its resting frame with Animations off: every sprite as the kit drew it, but the lightning,"
 			.. " which only flashes, unseen (ANN-R82, SET-R30)",

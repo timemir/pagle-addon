@@ -1056,7 +1056,17 @@ local function drawComposedToast(frame, display, style)
 	local amt = rung.amt and place(rung.amt)
 	local width = box.w
 	if announcement.coins > 0 and amt then
-		width = math.min(width, amt.x - box.x - 4)
+		-- The words end before the amount as it draws: "+N", measured in its ink and set to end at the amount's
+		-- right, starts left of the amount's box when it is wider than it, and the name's end ran under it.
+		local label = frame.coins.label
+		local amtInk = ns.ToastInk(style, page, "amt")
+		if amtInk then
+			ns.SetInkFont(label, amtInk)
+		end
+		label:SetWidth(0) -- measured unbounded
+		label:SetText(ns.RenderText(L.ANNOUNCEMENT_COINS, { amount = ns.FormatCount(announcement.coins) }))
+		local amountLeft = math.min(amt.x, amt.x + amt.w - label:GetStringWidth())
+		width = math.min(width, amountLeft - box.x - 4)
 	end
 	local inks = ns.ToastInks(style, page)
 	local fonts = {

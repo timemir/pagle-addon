@@ -237,7 +237,8 @@ end
 local function bodyOn(journal, content, side)
 	local body = journal.bodies[content]
 	if not body then
-		body = ns.NewJournalPage(content, BODY_W, BODY_H - (side == "left" and BACK_ROOM or 0))
+		-- short of its ink scrollbar's room, which must lie inside the book's body to show (LED-R123)
+		body = ns.NewJournalPage(content, BODY_W - ns.JOURNAL_RAIL_ROOM, BODY_H - (side == "left" and BACK_ROOM or 0))
 		body:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
 		journal.bodies[content] = body
 	end

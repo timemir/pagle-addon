@@ -733,12 +733,12 @@ end)
 
 -- ---------------------------------------------------------------- the chosen look's stage and state
 
--- The stage's size (LED-R170, ledger.md › UI): 380 wide, the page body's 382 less a hair, and the well as tall as
--- Core's stage for a look: Pagle.DrawGoodPreview's "stage" is the shop's 390 x 190 (SHOP-R36), so the well is that and
--- the 2 of its rim each side, 194; the preview's frame, inside the rim, is wide enough for the widest sample toast
--- (464 at 0.8) and holds the whole stage, nothing of it past the well. A title's paper well is 156. Where the look
--- isn't owned, "A look before you have it" is under the well on the paper, in a line of its own.
-local STAGE_W, LOOK_H, TITLE_H, RIM = 380, 194, 156, 2
+-- The stage's size (LED-R170, ledger.md › UI): 376 wide, the page body's (382 less its scrollbar's 6), and the well as
+-- tall as Core's stage for a look: Pagle.DrawGoodPreview's "stage" is the shop's 390 x 190 (SHOP-R36), so the well is
+-- that and the 2 of its rim each side, 194; the preview's frame, inside the rim, is wide enough for the widest sample
+-- toast (464 at 0.8) and holds the whole stage, nothing of it past the well. A title's paper well is 156. Where the
+-- look isn't owned, "A look before you have it" is under the well on the paper, in a line of its own.
+local STAGE_W, LOOK_H, TITLE_H, RIM = 376, 194, 156, 2
 local CAPTION_GAP, CAPTION_H = 4, 18
 local STAGE_DARK, STAGE_RIM = "0d2a30", "e8c96a"
 

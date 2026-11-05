@@ -267,7 +267,7 @@ ns.Locale("ruRU", function(L)
 	L.LANGUAGE_RELOAD_NOW = "Перезагрузить"
 	L.LANGUAGE_RELOAD_TEXT = "Перезагрузить интерфейс, чтобы сменить язык?"
 	L.LEGEND_CREST_LEGEND = "Легенда"
-	L.LEGEND_CREST_UNWRITTEN = "Неписаный"
+	L.LEGEND_CREST_UNWRITTEN = "Неписаная"
 	L.LENGTH = { cm = "{length:1} см", ["in"] = "{length:1} дюйм." }
 	L.LENGTH_MARGIN_UNDER = { cm = "+<0,1 см", ["in"] = "+<0,1 дюйм." }
 	L.LETTER_KICKER = "Письмо, оставленное на причале"

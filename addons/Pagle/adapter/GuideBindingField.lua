@@ -23,6 +23,13 @@ local OWNER = "Pagle binding fields"
 local L = ns.L
 
 local WIDTH, HEIGHT = 382, 62
+-- Across the field: the label from 13, the cap 12 after it (the dashed cap's 128 wide), and the note from 12 after the
+-- cap to 13 from the right edge. The label is held so the note keeps at least NOTE_MIN; the dashed cap's words keep
+-- 8 inside each of its ends, on two lines when one is too long; the note keeps to two lines under the label's line,
+-- set smaller when its words need more (ns.FitGuideText for the label).
+local EDGE, CAP_GAP, CAP_W, CAP_PAD, NOTE_GAP, NOTE_MIN = 13, 12, 128, 8, 12, 90
+local NOTE_SIZE, NOTE_SPACING, NOTE_LINES, NOTE_FLOOR = 13, 4.55, 2, 10.5
+local WAIT_SIZE, WAIT_FLOOR = 14, 10.5
 -- The conflict box over the field: the kit's 76, and a line more for ONB-R43's note under its buttons.
 local CONFLICT_HEIGHT = 92
 -- The field's inks beyond the guide's: the key cap's words and the dashed cap's.
@@ -39,6 +46,7 @@ local RED = "|cff9a2a1a%s|r"
 ---@field state "unbound"|"listening"|"bound"|"conflict" what it shows now
 ---@field mode "rest"|"listening"|"conflict"
 ---@field greyed boolean whether its step greys it
+---@field capX number where its cap starts, 12 right of its label
 ---@field pending { key: string, old: string }? the key the conflict box asks about, and what it does now
 ---@field label FontString
 ---@field note FontString
@@ -96,6 +104,61 @@ local function setKeyCap(frame, words, sprite, text, least, pad, cap)
 	ns.SetThreeSlice(frame, "GuideParts", sprite, width, cap, "ARTWORK")
 end
 
+-- The width `fontString`'s words take on one line, measured unbounded, then its width held to `room`.
+---@param fontString FontString
+---@param room number
+---@return number
+local function heldTo(fontString, room)
+	fontString:SetWidth(0)
+	local natural = math.ceil(fontString:GetStringWidth())
+	fontString:SetWidth(room)
+	return math.min(natural, room)
+end
+
+-- Fits the dashed cap's words in it (ONB-R40): on one line at their size when they fit, else wrapped to two lines
+-- at the size that lets them, down to WAIT_FLOOR.
+---@param field PagleGuideBindingField
+local function fitWait(field)
+	local words, room = field.waitWords, CAP_W - 2 * CAP_PAD
+	words:SetWordWrap(false)
+	words:SetFontObject(ns.ArtFaceFont("italic", WAIT_SIZE))
+	words:SetWidth(0)
+	local natural = words:GetStringWidth()
+	if natural > room then
+		-- two lines hold about twice the room, less what a line break wastes
+		local size = math.max(WAIT_FLOOR, math.min(WAIT_SIZE, math.floor(WAIT_SIZE * room * 1.8 / natural * 2) / 2))
+		words:SetFontObject(ns.ArtFaceFont("italic", size))
+		words:SetWordWrap(true)
+		words:SetMaxLines(2)
+	end
+	local ink = ns.GUIDE_INKS.waiting
+	words:SetTextColor(ink[1], ink[2], ink[3])
+	words:SetWidth(room)
+end
+
+-- Fits the note right of the cap (ONB-R40): as wide as the room left there, on at most NOTE_LINES lines, set smaller
+-- in half-unit steps down to NOTE_FLOOR when its words need more.
+---@param field PagleGuideBindingField
+local function fitNote(field)
+	local note = field.note
+	note:SetWidth(WIDTH - EDGE - (field.capX + CAP_W + NOTE_GAP))
+	local size = NOTE_SIZE
+	local function room()
+		return NOTE_LINES * size + (NOTE_LINES - 1) * NOTE_SPACING + 0.5
+	end
+	local function set()
+		note:SetFontObject(ns.ArtFaceFont("italic", size))
+		note:SetSpacing(NOTE_SPACING)
+	end
+	set()
+	while size > NOTE_FLOOR and note:GetStringHeight() > room() do
+		size = size - 0.5
+		set()
+	end
+	local ink = ns.GUIDE_INKS.note
+	note:SetTextColor(ink[1], ink[2], ink[3])
+end
+
 -- Draws `field` as it is now: Listening, the conflict box over its paper, or at rest Bound with its action's first
 -- key or Not bound; greyed unless live. A field that isn't live stops listening and closes its conflict box.
 ---@param field PagleGuideBindingField
@@ -117,8 +180,10 @@ local function draw(field)
 	field.listenCap:SetShown(listening)
 	field.waitWords:SetShown(waiting)
 	field.waitWords:SetText(listening and L.GUIDE_BIND_LISTEN or L.GUIDE_BIND_CLICK)
+	fitWait(field)
 	field.note:SetShown(waiting)
 	field.note:SetText(listening and L.GUIDE_BIND_ESC or L.GUIDE_BIND_DEFAULT)
+	fitNote(field)
 	field.keyCap:SetShown(not waiting)
 	field.bound:SetShown(not waiting)
 	if not waiting then
@@ -277,16 +342,19 @@ function ns.NewGuideBindingField(parent, action, label)
 	field.action, field.mode, field.greyed = action, "rest", false
 	ns.NewNineSlice(field, "GuideParts", "bind", 8)
 	field.label = ns.GuideText(field, "print", 15, "body", label)
-	ns.GuideAt(field.label, field, 13, 21.5 + 2)
-	field.note = ns.GuideText(field, "italic", 13, "note", "", {
+	ns.GuideAt(field.label, field, EDGE, 21.5 + 2)
+	local labelRoom = WIDTH - 2 * EDGE - CAP_GAP - CAP_W - NOTE_GAP - NOTE_MIN
+	ns.FitGuideText(field.label, "print", 15, "body", labelRoom)
+	field.note = ns.GuideText(field, "italic", NOTE_SIZE, "note", "", {
 		wrap = true,
 		width = 130,
-		spacing = 4.55,
+		spacing = NOTE_SPACING,
 		justify = "RIGHT",
 	})
-	field.note:SetPoint("TOPRIGHT", field, "TOPLEFT", WIDTH - 13, -(22.3 + 2.275))
+	field.note:SetPoint("TOPRIGHT", field, "TOPLEFT", WIDTH - EDGE, -(22.3 + 2.275))
 	-- the cap sits 12 right of the label
-	local capX = 13 + math.ceil(field.label:GetStringWidth()) + 12
+	local capX = EDGE + heldTo(field.label, labelRoom) + CAP_GAP
+	field.capX = capX
 	field.waitCap = ns.ArtSprite(field, "GuideParts", "key-wait", "ARTWORK", 1)
 	ns.PlaceSprite(field.waitCap, field, capX, 11)
 	field.listenCap = ns.ArtSprite(field, "GuideParts", "key-listen", "ARTWORK", 1)

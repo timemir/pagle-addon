@@ -22,6 +22,8 @@ local WIDTH, HEIGHT = 1000, 660
 local FIT_WIDTH, FIT_HEIGHT, FIT_LIFT = 1010, 690, -10
 local CORK_X, CORK_Y, CORK_WIDTH, CORK_HEIGHT = 24, 34, 952, 466
 local LEDGE_Y = 500
+-- The plaque's room for its words: between its two screws, 120 either side of its centre, less their heads and a margin.
+local PLAQUE_ROOM = 210
 local LEDGE_HEIGHT = HEIGHT - LEDGE_Y
 
 -- Each part's place on the cork (the kit's): the pins over the left of it (logic/Pins.lua places each pin), the
@@ -225,6 +227,7 @@ local function build(board)
 	title:SetJustifyH("CENTER")
 	title:SetPoint("CENTER", frame, "TOP", 0, -2)
 	title:SetText(ns.Spaced(ns.L.TITLE))
+	ns.FitArtText(title, "Title", PLAQUE_ROOM)
 	frame.plaque = { label = title }
 
 	frame.ledge = placed(frame, WIDTH, LEDGE_HEIGHT, 0, LEDGE_Y)

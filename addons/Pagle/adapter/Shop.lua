@@ -52,6 +52,9 @@ local DOT, DOT_GAP, DOT_PAD = 10, 8, 8
 local CARD_X, CARD_Y = 534, 159
 local STAGE_X, STAGE_Y = 6, 16
 local STAGE_W, STAGE_H, WELL_H = ns.GOOD_PREVIEW_AREA_W, ns.GOOD_PREVIEW_AREA_H, ns.GOOD_PREVIEW_H
+-- How small a text on the lid's cards may be set to fit, as a share of its font's size; the gap at the description
+-- card's foot between a button and the text after it; and the hint's margin within the well.
+local FIT_FLOOR, FOOT_GAP, HINT_PAD = 0.7, 14, 10
 local INFO_Y, INFO_H, INFO_PAD = 385, 220, 20
 -- The purse: the coin, then the label over the balance; the bar's right end, 10 short of the "?" left of the close
 -- button (its 18 inset, 44 wide, the 6 between and the "?"'s 34), and its top with and without the held line under it.
@@ -154,6 +157,7 @@ local EXTENT_W, EXTENT_H, CENTRE_DY = 1000, 680, -20
 ---@field hint PagleShopFontString    "Pick a look to see it here." with nothing selected
 ---@field info PagleSprite            the description card
 ---@field infoX number                 the description card's text column's left
+---@field infoWidth number             the description card's text column's width
 ---@field infoDesigned { box: number[], height: number } the card sprite as designed, before it is stretched
 ---@field raised boolean               the card is the crate's, raised over the showcase card's paper (CRATE_RAISE)
 ---@field name PagleShopFontString
@@ -908,16 +912,20 @@ local function buildStage(frame)
 	stage.area:SetClipsChildren(true)
 	stage.swatch = ns.NewShopBezel(stage.area, 64)
 	stage.swatch:SetPoint("CENTER", stage.area, "TOP", 0, -WELL_H / 2)
+	-- Within the well, set smaller or wrapped on two lines if it must: centred and unbounded, a long one was clipped at
+	-- both its sides ("Выберите облик, чтобы увидеть его здесь.").
 	stage.hint = ns.ShopText(stage.area, "Stage")
 	stage.hint:SetPoint("CENTER", stage.area, "TOP", 0, -WELL_H / 2)
+	stage.hint:SetJustifyH("CENTER")
 	ns.SetShopText(stage.hint, L.SHOP_PICK)
+	ns.FitShopText(stage.hint, STAGE_W - 2 * HINT_PAD, FIT_FLOOR, 2)
 
 	-- The description card, stretched from its designed 176 to INFO_H: it is plain paper.
 	local info = ns.ArtSprite(frame, "Papers", "info", "ARTWORK", 2)
 	stage.infoDesigned = { box = { unpack(info.box) }, height = info:GetHeight() }
 	stage.info = info
 	local x, width = CARD_X + INFO_PAD, info.box[3] - 2 * INFO_PAD
-	stage.infoX = x
+	stage.infoX, stage.infoWidth = x, width
 	stage.name = ns.ShopText(frame, "GoodName")
 	stage.name:SetWidth(width)
 	stage.slotLine = ns.ShopText(frame, "Meta")
@@ -954,7 +962,7 @@ local function buildStage(frame)
 	stage.short:SetScript("OnClick", function(self)
 		ns.ShakeShopNote(self, function(dx)
 			stage.needed:ClearAllPoints()
-			stage.needed:SetPoint("LEFT", stage.buy, "RIGHT", 14 + dx, 0)
+			stage.needed:SetPoint("LEFT", stage.buy, "RIGHT", FOOT_GAP + dx, 0)
 		end)
 	end)
 	stage.short:Hide()
@@ -1144,6 +1152,15 @@ local function drawLook(stage, data, fresh)
 	ns.DrawLook(stage.area, stage.previews, stage.swatch, look, fresh)
 end
 
+-- The room a text at the description card's foot has, `before` past the foot's start (the button it follows and the
+-- gap), to the card's text edge.
+---@param stage PagleShopStageFrame
+---@param before number
+---@return number
+local function footRoom(stage, before)
+	return math.max(1, stage.infoX + stage.infoWidth - stage.footX - before)
+end
+
 -- Draws the description card's foot from `data`: Buy, "N more Coins" or Use, and the tags beside them, each at rest.
 ---@param stage PagleShopStageFrame
 ---@param data PagleShopStage
@@ -1159,7 +1176,8 @@ local function drawFoot(stage, data)
 	if data.needed then
 		ns.SetShopText(stage.needed, data.needed)
 		stage.needed:ClearAllPoints()
-		stage.needed:SetPoint("LEFT", stage.buy, "RIGHT", 14, 0)
+		stage.needed:SetPoint("LEFT", stage.buy, "RIGHT", FOOT_GAP, 0)
+		ns.FitShopText(stage.needed, footRoom(stage, data.buy and stage.buy:GetWidth() + FOOT_GAP or 0), FIT_FLOOR, 2)
 		stage.needed:Show()
 		stage.short:SetShown(data.buy ~= nil)
 	end
@@ -1170,10 +1188,11 @@ local function drawFoot(stage, data)
 	ns.SetShopText(stage.tags, table.concat(data.tags, L.SHOP_TAG_SEPARATOR))
 	stage.tags:ClearAllPoints()
 	if data.use then
-		stage.tags:SetPoint("LEFT", stage.use, "RIGHT", 14, 0)
+		stage.tags:SetPoint("LEFT", stage.use, "RIGHT", FOOT_GAP, 0)
 	else
 		stage.tags:SetPoint("LEFT", stage.use, "LEFT", 0, 0)
 	end
+	ns.FitShopText(stage.tags, footRoom(stage, data.use and stage.use:GetWidth() + FOOT_GAP or 0), FIT_FLOOR, 2)
 	stage.tags:SetAlpha(1)
 	stage.tags:SetShown(#data.tags > 0)
 end
@@ -1194,6 +1213,8 @@ local function drawStage(frame, data, fresh)
 		placeInfo(stage, frame, data.crate == true)
 	end
 	ns.SetShopText(stage.name, data.name)
+	-- The good's name set smaller, down to FIT_FLOOR of its size, before the client cuts it.
+	ns.FitShopText(stage.name, stage.infoWidth, FIT_FLOOR)
 	ns.SetShopText(stage.slotLine, data.slotLine)
 	ns.SetShopText(stage.description, data.description)
 	ns.SetShopText(stage.notes, table.concat(data.notes, "\n"))

@@ -343,6 +343,41 @@ describe("The Field report box's look (field-report.md › UI)", function()
 		end
 	end)
 
+	it(
+		"keeps long texts apart: the title before the X, the privacy line before the hint, the URL after its label, the website line after Close (field-report.md › UI)",
+		function()
+			local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
+			local L = loaded.ns.L
+			L.HELP_CHART = "Помочь нанести воды на карту"
+			L.FIELD_REPORT_PRIVACY = "Esto se publicará a la vista de todos. No contiene nombres de personajes."
+			L.FIELD_REPORT_COPY_HINT = "Ctrl+C para copiar"
+			L.FIELD_REPORT_POST_AT = "PUBLÍCALO EN"
+			L.FIELD_REPORT_WEBSITE = "Для сайта используйте /pagle export."
+
+			loaded.env.Pagle.OpenFieldReport()
+
+			local frame = assert(box(loaded))
+			-- How wide a text draws: its words, held to its width when it has one.
+			local function inked(text)
+				local width = text:GetWidth()
+				return width > 0 and math.min(width, text:GetStringWidth()) or text:GetStringWidth()
+			end
+			-- The X is 44 square, 12 in from the right edge.
+			assert(66 + inked(frame.title) < 520 - 12 - 44, "the title runs under the X")
+			assert(
+				22 + inked(frame.privacy) < 520 - 22 - frame.copyHint:GetStringWidth(),
+				"the privacy line runs under the copy hint"
+			)
+			assert.is_true(frame.privacy:CanWordWrap())
+			assert(frame.url.points[1][4] > 22 + frame.postAt:GetStringWidth(), "the label runs into the URL")
+			assert(
+				520 - 22 - inked(frame.website) > 260 + frame.close:GetWidth() / 2,
+				"the website line runs under Close"
+			)
+			assert.is_true(frame.website:CanWordWrap())
+		end
+	)
+
 	it("closes with the brass X too, giving back the keyboard (REP-R40)", function()
 		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
 		loaded.env.Pagle.OpenFieldReport()
