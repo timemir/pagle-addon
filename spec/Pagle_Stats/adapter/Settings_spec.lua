@@ -155,7 +155,7 @@ describe("Stats' section on the Trackers page, in the panel", function()
 	end)
 
 	it(
-		"ends its label short of the count, one line the client cuts, so a long one never runs under it (SET-R42)",
+		"ends its label short of the count, wrapping on two lines, so a long one never runs under it (SET-R42)",
 		function()
 			local loaded = coreWithStats()
 
@@ -170,7 +170,8 @@ describe("Stats' section on the Trackers page, in the panel", function()
 				end
 			end
 			label, count = assert(label), assert(count)
-			assert.is_false(label:CanWordWrap())
+			assert.is_true(label:CanWordWrap())
+			assert.are.equal(2, label:GetMaxLines())
 			-- Both hang from the row's top centre: the label's right edge ends left of the count's left edge.
 			local right, left
 			for _, point in ipairs(label.points) do

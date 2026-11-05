@@ -254,6 +254,37 @@ describe("A slot dropdown", function()
 		end
 	)
 
+	it(
+		"ends a slot's label short of its dropdown, wrapping on two lines, so a long one never runs under it (SET-R51)",
+		function()
+			local loaded = coreWithModules()
+
+			local row = loaded.client.settings.rowNamed(showLook(loaded), "Journal binding")
+
+			local label
+			for _, child in ipairs(row.frame.children) do
+				if child.shown and child.text == "Journal binding" then
+					label = child
+				end
+			end
+			label = assert(label)
+			local dropdown = loaded.client.settings.dropdownOf(row)
+			assert.is_true(label:CanWordWrap())
+			assert.are.equal(2, label:GetMaxLines())
+			-- Both hang from the row's top centre: the label's right edge ends left of the dropdown's left edge.
+			local right
+			for _, point in ipairs(label.points) do
+				if point[1] == "RIGHT" then
+					assert.are.equal(row.frame, point[2])
+					assert.are.equal("TOP", point[3])
+					right = point[4]
+				end
+			end
+			assert.are.equal("TOP", dropdown.points[1][3])
+			assert(right and right < dropdown.points[1][4], "the label runs under the dropdown")
+		end
+	)
+
 	it("shows no note once every good for sale in the slot is owned (SET-R51)", function()
 		local loaded = coreWithModules()
 		loaded.ns.goods:SetPurchased({ ["ledger.binding.ivy"] = true, ["ledger.binding.lapis"] = true })
