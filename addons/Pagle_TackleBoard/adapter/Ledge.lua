@@ -50,6 +50,17 @@ local CELL_COLUMNS, CELL_X, CELL_Y, CELL_HEIGHT, CELL_ROW = 6, 24, 44, 74, 78
 local CELL_WIDTH = (728 - 8 - 20) / CELL_COLUMNS
 -- The Refresh ticket's icon beside the count of Refreshes held: its height in UI units, its width following (#466).
 local REFRESH_ICON = 16
+-- The Refresh count's room, centred under the shop card (its centre 900 across the ledge): to the frame's leather at
+-- 976, so a long count never runs off the board.
+local REFRESH_ROOM = 152
+-- The tally plate's room for its words, inside its brass edge.
+local PLATE_ROOM = 196
+-- The card's columns: the log's, from 30, 344 wide, and the titles', from 406, 364 wide. A title row's threshold runs
+-- from 30 to its name at 104; the key under the log flows its entries left to right from 30, 8 apart, a new line 22
+-- under when the next would pass the log's right edge.
+local CARD_LEFT, CARD_LEFT_WIDTH, CARD_RIGHT, CARD_RIGHT_WIDTH = 30, 344, 406, 364
+local ROW_LABEL_X, ROW_NAME_X, ROW_GAP = 30, 104, 7
+local KEY_Y, KEY_LINE, KEY_ICON, KEY_GAP = 322, 22, 22, 8
 -- The Campfire on the ledge: its clickable box from the ledge's top left, holding the fire, its words and its sticks.
 local FIRE_X, FIRE_Y, FIRE_WIDTH, FIRE_HEIGHT = 20, 10, 290, 120
 -- The Campfire's stage (adapter/BoardMotion.lua's layers) by its flame's step (logic/Ledge.lua's CampfireView: 1 below
@@ -106,6 +117,7 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 ---@field counts FontString
 ---@field latest FontString
 ---@field held string?    -- its counts as they were, held until a goal done lands on the spike
+---@field room number      -- how wide its words may run (ns.FitArtText)
 
 ---@class TackleShopLink: Button
 ---@field card TackleSprite
@@ -138,6 +150,7 @@ local DAY_ICONS = { lit = "d-flame", burned = "d-burn", out = "d-out", unlit = "
 ---@field weeks FontString[]
 ---@field days TackleCardDayCell[]
 ---@field rows { milestones: TackleCardTitleRow[], tally: TackleCardTitleRow[], flybox: TackleCardTitleRow[] }
+---@field key FontString[]   -- the key's words under the log, in order
 ---@field close Button
 
 ---@class TackleFlyCellView: Frame
@@ -223,8 +236,12 @@ local function layoutSlip(slip)
 	local tops, layout
 	for _, fit in ipairs(SLIP_FITS) do
 		layout = SLIP_LAYOUTS[fit[1]]
-		slip.kicker:SetWidth(layout.width)
-		slip.note:SetWidth(layout.width)
+		-- The kicker and the note shrink to the layout's width before they are measured (a fly's long name), and keep
+		-- the whole width, as the goal text's box does.
+		for _, line in ipairs({ { slip.kicker, "DoneKind" }, { slip.note, "DoneNote" } }) do
+			ns.FitArtText(line[1], line[2], layout.width)
+			line[1]:SetWidth(layout.width)
+		end
 		label:SetWidth(layout.width)
 		ns.SetArtFont(label, fit[2])
 		local goalY = math.max(layout.goalY or 0, layout.kickerY + slip.kicker:GetStringHeight() + layout.gap)
@@ -369,6 +386,8 @@ local function cardHeading(card, x, y, width, title, note)
 	small:SetJustifyH("RIGHT")
 	small:SetPoint("TOPRIGHT", card, "TOPLEFT", x + width, -(y + 2))
 	small:SetText(note)
+	-- The two share the rule's width, never running into each other.
+	ns.FitArtPair(head, "CardHead", small, "CardNote", width, 12)
 	local rule = ns.BoardSolid(card, "C4A874", 1, "ARTWORK")
 	rule:ClearAllPoints()
 	rule:SetSize(width, 1)
@@ -430,11 +449,11 @@ local function newTitleRow(card, x, y)
 	row.mark = ns.ArtSprite(row, "Board", "mile-no", "ARTWORK")
 	ns.PlaceSprite(row.mark, row, 0, 3)
 	row.label = ns.ArtText(row, "CardLabel")
-	row.label:SetPoint("TOPLEFT", 30, -6)
+	row.label:SetPoint("TOPLEFT", ROW_LABEL_X, -6)
 	row.name = ns.ArtText(row, "CardEarned")
-	row.name:SetPoint("TOPLEFT", 104, -4)
+	row.name:SetPoint("TOPLEFT", ROW_NAME_X, -4)
 	row.more = ns.ArtText(row, "CardMore")
-	row.more:SetPoint("LEFT", row.name, "RIGHT", 7, 0)
+	row.more:SetPoint("LEFT", row.name, "RIGHT", ROW_GAP, 0)
 	row.coin = ns.ArtSprite(row, "Board", "coin", "ARTWORK")
 	ns.PlaceSprite(row.coin, row, 364 - 17, 5)
 	row.coins = ns.ArtText(row, "CardCoins")
@@ -463,12 +482,13 @@ local function buildCard(ledge)
 	card.close = ns.NewBoardCloseMark(card, card, "CardClose")
 	card.close:SetPoint("TOPLEFT", 740, -10)
 	card.heading = ns.ArtText(card, "CardTitle")
-	card.heading:SetPoint("TOPLEFT", 30, -26)
+	card.heading:SetPoint("TOPLEFT", CARD_LEFT, -26)
 	card.heading:SetText(L.CARD_TITLE)
+	ns.FitArtText(card.heading, "CardTitle", CARD_RIGHT - CARD_LEFT - 12)
 	card.fire = ns.ArtText(card, "CardFire")
-	card.fire:SetPoint("TOPLEFT", 30, -61)
+	card.fire:SetPoint("TOPLEFT", CARD_LEFT, -61)
 
-	cardHeading(card, 30, 96, 344, L.CARD_WEEKS, L.CARD_WEEKS_NOTE)
+	cardHeading(card, CARD_LEFT, 96, CARD_LEFT_WIDTH, L.CARD_WEEKS, L.CARD_WEEKS_NOTE)
 	card.heads, card.weeks, card.days = {}, {}, {}
 	for column = 1, 7 do
 		local head = ns.ArtText(card, "CardWeekday")
@@ -485,38 +505,44 @@ local function buildCard(ledge)
 			card.days[#card.days + 1] = newDayCell(card, x, y)
 		end
 	end
-	-- The key under the log.
-	for _, key in ipairs({ { "d-flame", "lit", 30 }, { "d-burn", "burned", 77 }, { "d-out", "out", 202 } }) do
+	-- The key under the log: lit, Kindling burned, went out and not lit flowing across the log's width, each measured,
+	-- then "before the board" on a line of its own.
+	card.key = {}
+	local x, y, right = CARD_LEFT, KEY_Y, CARD_LEFT + CARD_LEFT_WIDTH
+	for _, key in ipairs({ { "d-flame", "lit" }, { "d-burn", "burned" }, { "d-out", "out" }, { "d-unlit", "unlit" } }) do
 		local icon = ns.ArtSprite(card, "Board", key[1], "ARTWORK")
 		ns.SizeSprite(icon, 18)
-		ns.PlaceSprite(icon, card, key[3], 322)
 		local words = ns.ArtText(card, "CardLegend")
-		words:SetPoint("TOPLEFT", key[3] + 22, -324)
 		words:SetText(L.CARD_DAYS[key[2]])
+		local width = ns.FitArtText(words, "CardLegend", CARD_LEFT_WIDTH - KEY_ICON)
+		if x > CARD_LEFT and x + KEY_ICON + width > right then
+			x, y = CARD_LEFT, y + KEY_LINE
+		end
+		ns.PlaceSprite(icon, card, x, y)
+		words:SetPoint("TOPLEFT", x + KEY_ICON, -(y + 2))
+		card.key[#card.key + 1] = words
+		x = x + KEY_ICON + width + KEY_GAP
 	end
-	local unlit = ns.ArtSprite(card, "Board", "d-unlit", "ARTWORK")
-	ns.SizeSprite(unlit, 18)
-	ns.PlaceSprite(unlit, card, 285, 322)
-	local unlitWords = ns.ArtText(card, "CardLegend")
-	unlitWords:SetPoint("TOPLEFT", 307, -324)
-	unlitWords:SetText(L.CARD_DAYS.unlit)
+	y = y + KEY_LINE
 	local before = ns.ArtSprite(card, "Board", "day-pre", "ARTWORK")
 	ns.SizeSprite(before, 16, 14)
-	ns.PlaceSprite(before, card, 30, 344)
+	ns.PlaceSprite(before, card, CARD_LEFT, y)
 	local beforeWords = ns.ArtText(card, "CardLegend")
-	beforeWords:SetPoint("TOPLEFT", 50, -345)
+	beforeWords:SetPoint("TOPLEFT", CARD_LEFT + 20, -(y + 1))
 	beforeWords:SetText(L.CARD_DAYS.before)
+	ns.FitArtText(beforeWords, "CardLegend", CARD_LEFT_WIDTH - 20)
+	card.key[#card.key + 1] = beforeWords
 
 	card.rows = { milestones = {}, tally = {}, flybox = {} }
-	cardHeading(card, 406, 42, 364, L.CARD_MILESTONES, L.CARD_MILESTONES_NOTE)
+	cardHeading(card, CARD_RIGHT, 42, CARD_RIGHT_WIDTH, L.CARD_MILESTONES, L.CARD_MILESTONES_NOTE)
 	for i = 1, #ns.CAMPFIRE_MILESTONES do
-		card.rows.milestones[i] = newTitleRow(card, 406, 68 + (i - 1) * 28)
+		card.rows.milestones[i] = newTitleRow(card, CARD_RIGHT, 68 + (i - 1) * 28)
 	end
-	cardHeading(card, 406, 196, 364, L.CARD_TITLES, L.CARD_TITLES_NOTE)
+	cardHeading(card, CARD_RIGHT, 196, CARD_RIGHT_WIDTH, L.CARD_TITLES, L.CARD_TITLES_NOTE)
 	for i = 1, 3 do
-		card.rows.tally[i] = newTitleRow(card, 406, 222 + (i - 1) * 28)
+		card.rows.tally[i] = newTitleRow(card, CARD_RIGHT, 222 + (i - 1) * 28)
 	end
-	card.rows.flybox[1] = newTitleRow(card, 406, 306)
+	card.rows.flybox[1] = newTitleRow(card, CARD_RIGHT, 306)
 	ledge.card = card
 	return card
 end
@@ -550,12 +576,25 @@ local function drawTitle(row, title, mark)
 	ns.PlaceSprite(row.mark, row, 0, 3)
 	row.label:SetText(mark.label)
 	row.name:SetText(title.name)
-	ns.SetArtFont(row.name, title.earned and "CardEarned" or "CardNotEarned")
 	row.more:SetText(mark.more or "")
 	row.more:SetShown(mark.more ~= nil)
 	row.coin:SetShown(mark.paid ~= nil)
 	row.coins:SetShown(mark.paid ~= nil)
 	row.coins:SetText(mark.paid and tostring(mark.paid) or "")
+	-- The threshold keeps to its column, and the name and what is still to go end short of the Coins.
+	ns.FitArtText(row.label, "CardLabel", ROW_NAME_X - ROW_LABEL_X - 6)
+	local right = CARD_RIGHT_WIDTH
+	if mark.paid then
+		right = CARD_RIGHT_WIDTH - 17 + 2 - row.coins:GetStringWidth() - 8
+	end
+	ns.FitArtPair(
+		row.name,
+		title.earned and "CardEarned" or "CardNotEarned",
+		row.more,
+		"CardMore",
+		right - ROW_NAME_X,
+		ROW_GAP
+	)
 end
 
 -- Draws the card's contents (TKB-R106).
@@ -569,12 +608,16 @@ local function drawCard(card)
 		longest = fire.longest,
 		kindling = ns.Text(ns.L.KINDLING, { count = fire.kindling }),
 	}))
+	ns.FitArtText(card.fire, "CardFire", CARD_RIGHT - CARD_LEFT - 12)
 	local view = ns.CampfireCard(state, celebratedTitles())
+	-- Each weekday within its day's column, each week's date before the first day.
 	for i, head in ipairs(card.heads) do
 		head:SetText(Pagle.Upper(view.heads[i]))
+		ns.FitArtText(head, "CardWeekday", DAY_STEP - 2)
 	end
 	for i, week in ipairs(card.weeks) do
 		week:SetText(view.weeks[i])
+		ns.FitArtText(week, "CardWeek", DAY_X - CARD_LEFT - 4)
 	end
 	for i, cell in ipairs(card.days) do
 		drawDay(cell, view.days[i], view.days[i].day == state.day)
@@ -832,6 +875,7 @@ local function buildPlate(ledge)
 	local plate = CreateFrame("Button", nil, ledge) --[[@as TackleTallyPlate]]
 	plate:SetSize(232, 70)
 	plate:SetPoint("TOPLEFT", 576, -46)
+	plate.room = PLATE_ROOM
 	ns.PlaceSprite(ns.ArtSprite(plate, "Board", "tally", "ARTWORK"), plate, 0, 0)
 	plate.counts = ns.ArtText(plate, "Tally")
 	plate.counts:SetJustifyH("CENTER")
@@ -914,13 +958,15 @@ local function drawLedge(ledge, draw)
 	local tally = ns.TallyView(state)
 	local plate = ledge.plate
 	plate.counts:SetText(plate.held or tally.counts)
+	ns.FitArtText(plate.counts, "Tally", plate.room)
 	plate.latest:SetText(tally.latest or ns.L.TALLY_NO_TITLE)
-	ns.SetArtFont(plate.latest, tally.latest and "TallyTitle" or "TallyNone")
+	ns.FitArtText(plate.latest, tally.latest and "TallyTitle" or "TallyNone", plate.room)
 	ns.LeanSprite(ledge.shop.card, ledge.shop, 0, 0, 2.5)
 	ns.LeanSprite(ledge.shop.pointer, ledge.shop, 77, 27, 2.5)
 	ledge.refresh.label:SetText(
 		ns.TicketMarkup(REFRESH_ICON) .. " " .. ns.Text(ns.L.REFRESHES_HELD, { count = ns.RefreshesHeld() })
 	)
+	ns.FitArtText(ledge.refresh.label, "Longest", REFRESH_ROOM)
 	if ledge.card and ledge.card:IsShown() then
 		drawCard(ledge.card)
 	end

@@ -83,6 +83,16 @@ local function hover(widget)
 	widget:GetScript("OnEnter")(widget)
 end
 
+-- How wide a font string's words draw on the fake: its words' width (6 a character), cut to its own width if it has
+-- one, as the client cuts a line with "...".
+local function inked(fontString)
+	local words, width = fontString:GetStringWidth(), fontString:GetWidth()
+	if width and width > 0 then
+		return math.min(words, width)
+	end
+	return words
+end
+
 -- The spike's shown slips' texts, top to bottom.
 local function spiked(spike)
 	local texts = {}
@@ -295,6 +305,21 @@ describe("a done slip's lines (TKB-R103)", function()
 		end
 		assert.are.same({}, problems)
 		assert.is_true(smallest >= 10.5) -- no smaller than the smallest of its fonts
+	end)
+
+	it("TKB-R103: shrinks a note too long for the paper to fit its width, its words whole", function()
+		local loaded, spike = newSpike()
+
+		hang(loaded, { { "AVISO HECHO", "1 captura en Durotar", "+15 · Sombra crepuscular" } })
+		local note = spike.slips[1].note
+
+		assert.are.equal("+15 · Sombra crepuscular", note:GetText())
+		assert(note.font and note.font[2] < 16, "the note kept its full size")
+		assert(note.font[2] >= 16 * 0.7, "the note shrank past its floor")
+		assert.are.equal(114, note:GetWidth()) -- the kit's line, from 11 to 125
+
+		hang(loaded, { { "NOTICE DONE", "1 Catch in Durotar", "+10" } })
+		assert.is_nil(note.font) -- a short note is back at its size
 	end)
 
 	it(
@@ -570,6 +595,102 @@ describe("the Campfire card (TKB-R106, TKB-R64)", function()
 	end)
 end)
 
+describe("the Campfire card's words in a longer language (TKB-R106)", function()
+	-- The card's columns (adapter/Ledge.lua): the log's from 30 to 374, the titles' from 406 to 770; a day 42 across.
+	local LEFT, LEFT_RIGHT, TITLES_RIGHT, DAY_STEP = 30, 374, 364, 42
+
+	-- The card opened on a board whose words are Spanish-long (the pseudo-locale's +40% and more).
+	local function longCard()
+		local loaded, _, _, ledge = opened(WENT_OUT)
+		local L = loaded.ns.L
+		L.CARD_WEEKS = "Las últimas cuatro semanas del tablón"
+		L.CARD_WEEKS_NOTE = "días del tablón, en la hora del reino"
+		L.CARD_MILESTONES = "Hitos de la fogata del tablón"
+		L.CARD_MILESTONES_NOTE = "cada uno paga una sola vez"
+		L.WEEKDAYS = { "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" }
+		L.CARD_DAYS = {
+			lit = "encendida aquel día",
+			burned = "Leña quemada aquel día",
+			out = "se apagó del todo",
+			unlit = "sin encender todavía",
+			before = "antes del tablón",
+			today = "hoy",
+		}
+		L.CARD_LABELS.campfire = "{n} días de fogata seguidos"
+		ledge.fire:Click()
+		return ledge.card
+	end
+
+	-- A font string's left edge across the card, from its TOPLEFT or TOPRIGHT point on the card or its row.
+	local function leftOf(fontString)
+		local point = fontString.points[1]
+		local x = type(point[2]) == "number" and point[2] or point[4]
+		if point[1] == "TOPRIGHT" then
+			return x - inked(fontString)
+		end
+		return x
+	end
+
+	it("TKB-R106: keeps each heading clear of its note on the rule", function()
+		local card = longCard()
+		local texts = {}
+		for _, region in ipairs(card.children) do
+			if region.text then
+				texts[region.text] = region
+			end
+		end
+		local head, note =
+			texts["LAS ÚLTIMAS CUATRO SEMANAS DEL TABLÓN"], texts["días del tablón, en la hora del reino"]
+		assert(head and note, "the log's heading and its note")
+
+		assert(LEFT + inked(head) < leftOf(note), "the heading runs into its note")
+		assert(leftOf(note) + inked(note) <= LEFT_RIGHT, "the note runs past the rule")
+	end)
+
+	it("TKB-R106: keeps each weekday within its day's column", function()
+		local card = longCard()
+
+		for _, head in ipairs(card.heads) do
+			assert(inked(head) > 0 and inked(head) < DAY_STEP, head:GetText() .. " runs into the next day")
+		end
+	end)
+
+	it("TKB-R106: flows the key across the log, never one entry over another or past the log's edge", function()
+		local card = longCard()
+		local rows = {}
+		for _, words in ipairs(card.key) do
+			local point = words.points[1]
+			local y = point[3]
+			rows[y] = rows[y] or {}
+			table.insert(rows[y], { left = point[2], right = point[2] + inked(words), text = words:GetText() })
+		end
+		local lines = 0
+		for _, row in pairs(rows) do
+			lines = lines + 1
+			for i, entry in ipairs(row) do
+				assert(entry.right <= LEFT_RIGHT, entry.text .. " runs past the log")
+				if i > 1 then
+					assert(entry.left - 22 > row[i - 1].right, entry.text .. " is drawn over " .. row[i - 1].text)
+				end
+			end
+		end
+		assert(lines >= 3, "the long key took more lines")
+		assert.are.equal("antes del tablón", card.key[#card.key]:GetText())
+	end)
+
+	it("TKB-R106: keeps a title row's threshold out of the names' column, and the name short of the Coins", function()
+		local card = longCard()
+		local row = card.rows.milestones[1]
+
+		assert.are.equal("7 días de fogata seguidos", row.label:GetText())
+		assert(30 + inked(row.label) < 104, "the threshold runs into the name")
+		assert(
+			104 + inked(row.name) + 7 + inked(row.more) <= TITLES_RIGHT - 17 - row.coins:GetStringWidth(),
+			"the name and what is still to go run into the Coins"
+		)
+	end)
+end)
+
 describe("the Fly Box (TKB-R106)", function()
 	it('reads "1 of 30 tied" after one completion', function()
 		local _, _, _, ledge = opened(ONE_DONE_TODAY)
@@ -649,6 +770,21 @@ describe("the tally plate (TKB-R106, TKB-R64)", function()
 	end)
 end)
 
+describe("the tally plate in a longer language (TKB-R106)", function()
+	it("TKB-R106: holds its counts and its latest title inside the plate", function()
+		local loaded, _, _, ledge = opened(TWO_DONE_TODAY)
+		loaded.ns.State().titles.tally_25 = { day = 0, cast = "c" }
+		loaded.ns.L["boardtitle.tally_25.text"] = "el Pescador de Toda Confianza del Tablón"
+
+		loaded.ns.Redraw("projection")
+
+		local plate = ledge.plate
+		assert.are.equal("el Pescador de Toda Confianza del Tablón", plate.latest:GetText())
+		assert(inked(plate.latest) <= 196, "the title runs off the plate")
+		assert(inked(plate.counts) <= 196, "the counts run off the plate")
+	end)
+end)
+
 describe("the shop card (TKB-R106, SHOP-R41, TKB-R193)", function()
 	it("reads its words with a pointing hand drawn as a texture, and opens the Curio Shop", function()
 		local loaded, fake, _, ledge = opened(FRESH)
@@ -710,6 +846,21 @@ describe("the Refresh count (TKB-R106, REF-R5)", function()
 			five,
 			words(ledge.refresh.label),
 		})
+	end)
+
+	it("TKB-R106: keeps a longer count on the board, centred under the shop card", function()
+		local loaded, _, _, ledge = opened(FRESH)
+		loaded.ns.L.REFRESHES_HELD = {
+			one = "[{count} Ŕéfŕéšh ĥéłđ ŕéšéŕvéđ]",
+			other = "[{count} Ŕéfŕéšĥéš ĥéłđ ŕéšéŕvéđ]",
+		}
+
+		loaded.ns.Redraw("projection")
+
+		local label = ledge.refresh.label
+		assert.are.equal("[0 Ŕéfŕéšĥéš ĥéłđ ŕéšéŕvéđ]", words(label))
+		-- Centred at 900 across the ledge, it ends short of the frame's leather at 976.
+		assert(900 + inked(label) / 2 <= 976, "the count runs off the board")
 	end)
 
 	it("says under the mouse what a Refresh is for and where it comes from", function()

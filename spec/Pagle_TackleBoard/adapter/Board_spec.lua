@@ -6,9 +6,10 @@
 local board = dofile("spec/Pagle_TackleBoard/support.lua")
 
 -- Pagle_TackleBoard on a fake that has logged in, its board as the shell alone (no part renderers), and seams for the
--- board's two flags that a spec sets: `flags.started` (ns.IsStarted) and `flags.updating` (ns.IsUpdating).
-local function loggedIn()
-	local loaded, fake = board.load()
+-- board's two flags that a spec sets: `flags.started` (ns.IsStarted) and `flags.updating` (ns.IsUpdating). `options`
+-- go to board.load.
+local function loggedIn(options)
+	local loaded, fake = board.load(nil, options)
 	fake.login()
 	local flags = { started = false, updating = false }
 	loaded.ns.IsStarted = function()
@@ -113,6 +114,32 @@ describe("the Tackle Board's frame (TKB-R100)", function()
 		assert.are.same({ "TOPLEFT", frame, "TOPLEFT", 24, -34 }, frame.cork.points[1])
 		assert.are.same({ 1000, 160 }, { frame.ledge.width, frame.ledge.height })
 		assert.are.same({ "TOPLEFT", frame, "TOPLEFT", 0, -500 }, frame.ledge.points[1])
+	end)
+
+	it("TKB-R100: holds a longer title between the plaque's screws, shrunk to fit with its words whole", function()
+		local PLAQUE_ROOM = 210 -- between the screws, 120 either side of the plaque's centre
+		local _, _, tackle = loggedIn({
+			prepare = function(loaded)
+				loaded.ns.L.TITLE = "Tablón de aparejos"
+			end,
+		})
+		tackle:Toggle()
+		local label = tackle.frame.plaque.label
+
+		assert.are.equal("T A B L Ó N   D E   A P A R E J O S", label:GetText())
+		assert(label:GetWidth() <= PLAQUE_ROOM, "the title runs under the screws")
+		assert(label.font, "the title kept its full size")
+		assert(label.font[2] < 17, "the title kept its full size")
+		assert(label.font[2] >= 17 * 0.7, "the title shrank past its floor")
+	end)
+
+	it("TKB-R100: keeps the English title at its full size", function()
+		local _, _, tackle = loggedIn()
+		tackle:Toggle()
+		local label = tackle.frame.plaque.label
+
+		assert.is_nil(label.font)
+		assert.are.equal("PagleTackleBoardTitle", label.fontObject.name)
 	end)
 
 	it("lays one cork tile across the cork, and the Campfire's glow faintly over it before Start", function()
