@@ -1,0 +1,838 @@
+# Pagle's interface text in Russian (ruRU), over data/locale/enUS/tackleboard.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) for 1.1 and not yet reviewed by a native Russian speaker. It has
+# no human translator, so locale.toml names none. Strings that are only textures, or only the name Pagle, carry the
+# English as it is, so the Locale covers every key of the interface.
+
+[TITLE]
+value = "Доска снастей"
+en = "Tackle Board"
+
+[BOARD]
+value = "Доска снастей"
+en = "Tackle Board"
+
+[BOARD_SLASH_HELP]
+value = "Открыть или закрыть Доску снастей"
+en = "Open or close the Tackle Board"
+
+[START_MY_BOARD]
+value = "Повесить доску"
+en = "Start my board"
+
+[OPEN_BOARD]
+value = "Открыть Доску снастей"
+en = "Open Tackle Board"
+
+[EMPTY_SLIP]
+value = "Каждый день вывешиваются три объявления, а каждую неделю — экспедиция. Рыбачьте как угодно: они заполняются сами. За опоздание ничего не снимают."
+en = "Three Notices go up each day and an Expedition each week. Fish as you like: they fill in as you go. Nothing is ever taken down for being late."
+
+[UPDATING]
+value = "Обновляется…"
+en = "Updating…"
+
+[UPDATING_NOTE]
+value = "Перебираются все забросы с тех пор, как повесили доску. Снять цели можно будет после этого."
+en = "Reading back every Cast since the board went up. Taking goals down waits until it's done."
+
+[NAME_UNKNOWN]
+value = "…"
+en = "…"
+
+[AREA_UNKNOWN]
+value = "Зона {id}"
+en = "Area {id}"
+
+[CONTINENT_UNKNOWN]
+value = "Континент {id}"
+en = "Continent {id}"
+
+[CONTINENT_NAMES]
+value.0 = "Восточные королевства"
+value.1 = "Калимдор"
+en.0 = "Eastern Kingdoms"
+en.1 = "Kalimdor"
+
+[GOAL_TEXT]
+value.e.collector.one = "Новый для вас предмет подколлекции"
+value.e.collector.few = "{count} новых для вас предмета подколлекций"
+value.e.collector.many = "{count} новых для вас предметов подколлекций"
+value.e.collector.other = "{count} нового для вас предмета подколлекций"
+value.e.haul.one = "{count} улов в зоне {zone}"
+value.e.haul.few = "{count} улова в зоне {zone}"
+value.e.haul.many = "{count} уловов в зоне {zone}"
+value.e.haul.other = "{count} улова в зоне {zone}"
+value.e.rarity.2.one = "Улов необычной разновидности или лучше"
+value.e.rarity.2.few = "{count} улова необычной разновидности или лучше"
+value.e.rarity.2.many = "{count} уловов необычной разновидности или лучше"
+value.e.rarity.2.other = "{count} улова необычной разновидности или лучше"
+value.e.rarity.3.one = "Улов редкой разновидности или лучше"
+value.e.rarity.3.few = "{count} улова редкой разновидности или лучше"
+value.e.rarity.3.many = "{count} уловов редкой разновидности или лучше"
+value.e.rarity.3.other = "{count} улова редкой разновидности или лучше"
+value.e.variety = "Все виды в зоне {zone}"
+value.e.wanderer.one = "{continent}: уловы в {count} зоне"
+value.e.wanderer.few = "{continent}: уловы в {count} зонах"
+value.e.wanderer.many = "{continent}: уловы в {count} зонах"
+value.e.wanderer.other = "{continent}: уловы в {count} зоны"
+value.n.collector = "Сегодня: хлам и сундук"
+value.n.haul.one = "{count} улов в зоне {zone}"
+value.n.haul.few = "{count} улова в зоне {zone}"
+value.n.haul.many = "{count} уловов в зоне {zone}"
+value.n.haul.other = "{count} улова в зоне {zone}"
+value.n.lure.one = "Улов с приманкой"
+value.n.lure.few = "{count} улова с приманкой"
+value.n.lure.many = "{count} уловов с приманкой"
+value.n.lure.other = "{count} улова с приманкой"
+value.n.rarity.2.one = "Улов необычной разновидности или лучше"
+value.n.rarity.2.few = "{count} улова необычной разновидности или лучше"
+value.n.rarity.2.many = "{count} уловов необычной разновидности или лучше"
+value.n.rarity.2.other = "{count} улова необычной разновидности или лучше"
+value.n.rarity.3.one = "Улов редкой разновидности или лучше"
+value.n.rarity.3.few = "{count} улова редкой разновидности или лучше"
+value.n.rarity.3.many = "{count} уловов редкой разновидности или лучше"
+value.n.rarity.3.other = "{count} улова редкой разновидности или лучше"
+value.n.species = "{species}: {count} шт."
+value.n.variety.one = "{count} вид в зоне {zone}"
+value.n.variety.few = "{count} разных вида в зоне {zone}"
+value.n.variety.many = "{count} разных видов в зоне {zone}"
+value.n.variety.other = "{count} разного вида в зоне {zone}"
+value.n.wanderer.one = "Уловы сегодня в {count} зоне"
+value.n.wanderer.few = "Уловы сегодня в {count} зонах"
+value.n.wanderer.many = "Уловы сегодня в {count} зонах"
+value.n.wanderer.other = "Уловы сегодня в {count} зоны"
+en.e.collector.one = "A Sub-collection item you don't have"
+en.e.collector.other = "{count} Sub-collection items you don't have"
+en.e.haul.one = "{count} Catch in {zone}"
+en.e.haul.other = "{count} Catches in {zone}"
+en.e.rarity.2.one = "A Catch of an uncommon variety or better"
+en.e.rarity.2.other = "{count} Catches of an uncommon variety or better"
+en.e.rarity.3.one = "A Catch of a rare variety or better"
+en.e.rarity.3.other = "{count} Catches of a rare variety or better"
+en.e.variety = "Every Species of {zone}"
+en.e.wanderer.one = "Catches in {count} zone of {continent}"
+en.e.wanderer.other = "Catches in {count} zones of {continent}"
+en.n.collector = "A junk item and a container today"
+en.n.haul.one = "{count} Catch in {zone}"
+en.n.haul.other = "{count} Catches in {zone}"
+en.n.lure.one = "A Catch with a lure on"
+en.n.lure.other = "{count} Catches with a lure on"
+en.n.rarity.2.one = "A Catch of an uncommon variety or better"
+en.n.rarity.2.other = "{count} Catches of an uncommon variety or better"
+en.n.rarity.3.one = "A Catch of a rare variety or better"
+en.n.rarity.3.other = "{count} Catches of a rare variety or better"
+en.n.species = "{count} {species}"
+en.n.variety.one = "{count} Species in {zone}"
+en.n.variety.other = "{count} different Species in {zone}"
+en.n.wanderer.one = "Catches in {count} zone today"
+en.n.wanderer.other = "Catches in {count} zones today"
+
+[KINDS]
+value.collector = "Собиратель"
+value.haul = "Улов"
+value.lure = "Приманка"
+value.rarity = "Редкость"
+value.species = "Вид"
+value.variety = "Пестрота"
+value.wanderer = "Странник"
+en.collector = "Collector"
+en.haul = "Haul"
+en.lure = "Lure"
+en.rarity = "Rarity"
+en.species = "Species"
+en.variety = "Variety"
+en.wanderer = "Wanderer"
+
+[WHEREVER_IT_BITES]
+value = "где клюёт"
+en = "wherever it bites"
+
+[ANYWHERE]
+value = "где угодно"
+en = "anywhere"
+
+[WHERE_TODAY]
+value = "сегодня · {where}"
+en = "today · {where}"
+
+[WHERE_HERE]
+value = "{where} · здесь"
+en = "{where} · here"
+
+[POSTED]
+value = "Вывешено: {weekday} {day} {month}, {time}"
+en = "Posted {weekday} {day} {month}, {time}"
+
+[WEEKDAYS]
+value = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
+en = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+[MONTHS]
+value = ["янв.", "февр.", "мар.", "апр.", "мая", "июн.", "июл.", "авг.", "сент.", "окт.", "нояб.", "дек."]
+en = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+[HOURS_LEFT]
+value = "{n} ч"
+en = "{n}h"
+
+[MINUTES_LEFT]
+value = "{n} мин"
+en = "{n}m"
+
+[TAKE_DOWN_TITLE]
+value.e = "Снять эту экспедицию?"
+value.n = "Снять это объявление?"
+en.e = "Take down this Expedition?"
+en.n = "Take down this Notice?"
+
+[TAKE_DOWN_TEXT]
+value = "Прогресс ({progress}) пропадёт, а замену сегодня снять уже не получится."
+en = "Its progress ({progress}) is lost, and the new one can't be taken down again today."
+
+[TAKE_DOWN_PROGRESS]
+value = "{n}/{need}"
+en = "{n}/{need}"
+
+[TAKE_DOWN_YES]
+value = "Снять"
+en = "Take it down"
+
+[TAKE_DOWN_NO]
+value = "Оставить"
+en = "Keep it"
+
+[POST_TITLE]
+value.e = "Вывесить новую экспедицию?"
+value.n = "Вывесить новое объявление?"
+en.e = "Post a new Expedition?"
+en.n = "Post a new Notice?"
+
+[POST_TEXT]
+value = "На это уйдёт {cost}, и отменить это нельзя. Новую цель, как и любую другую, можно снять раз в день."
+en = "This uses {cost}, and it can't be undone. The new goal can be taken down once a day, like any other."
+
+[POST_YES]
+value = "Вывесить"
+en = "Post it"
+
+[POST_TIP_TITLE]
+value.e = "Вывесить экспедицию сейчас"
+value.n = "Вывесить объявление сейчас"
+en.e = "Post an Expedition now"
+en.n = "Post a Notice now"
+
+[POST_TIP]
+value.e = "Щелкните, чтобы повесить сюда новую экспедицию, не дожидаясь еженедельного сброса."
+value.n = "Щелкните, чтобы повесить сюда новое объявление, не дожидаясь следующего сброса."
+en.e = "Click to pin a fresh Expedition here instead of waiting for the weekly reset."
+en.n = "Click to pin a fresh Notice here instead of waiting for the next reset."
+
+[POST_TIP_COST]
+value = "Тратится 1 обновление. У вас: {held}."
+en = "It uses 1 Refresh. You hold {held}."
+
+[CATCHES]
+value.one = "{n} улов"
+value.few = "{n} улова"
+value.many = "{n} уловов"
+value.other = "{n} улова"
+en.one = "{n} Catch"
+en.other = "{n} Catches"
+
+[REFRESHES]
+value.one = "{count} обновление"
+value.few = "{count} обновления"
+value.many = "{count} обновлений"
+value.other = "{count} обновления"
+en.one = "{count} Refresh"
+en.other = "{count} Refreshes"
+
+[REFRESHES_HELD]
+value.one = "{count} обновление в запасе"
+value.few = "{count} обновления в запасе"
+value.many = "{count} обновлений в запасе"
+value.other = "{count} обновления в запасе"
+en.one = "{count} Refresh held"
+en.other = "{count} Refreshes held"
+
+[REFRESH_TIP_TITLE]
+value = "Обновления"
+en = "Refreshes"
+
+[REFRESH_TIP]
+value = "Каждое вывешивает новое объявление или экспедицию на пустое место доски. Щелкните по пустому месту, чтобы его потратить."
+en = "Each one posts a fresh Notice or Expedition in an empty slot on the board. Click an empty slot to use one."
+
+[REFRESH_TIP_SOURCE]
+value = "Их приносят Пари Пэгла."
+en = "Pagle Wagers earn them."
+
+[COINS]
+value.one = "{count} монета"
+value.few = "{count} монеты"
+value.many = "{count} монет"
+value.other = "{count} монеты"
+en.one = "{count} Coin"
+en.other = "{count} Coins"
+
+[PROGRESS]
+value = "{n} из {need}"
+en = "{n} of {need}"
+
+[PROGRESS_TODAY]
+value = "{n} из {need} сегодня"
+en = "{n} of {need} today"
+
+[PAYS]
+value.one = "даёт {count} монету"
+value.few = "даёт {count} монеты"
+value.many = "даёт {count} монет"
+value.other = "даёт {count} монеты"
+en.one = "pays {count} Coin"
+en.other = "pays {count} Coins"
+
+[PAYS_WORD]
+value = "даёт"
+en = "pays"
+
+[EXPEDITION]
+value = "Экспедиция"
+en = "Expedition"
+
+[IM_HERE]
+value = "Я здесь"
+en = "I'm here"
+
+[NO_LONGER_CATCHABLE]
+value = "больше не ловится"
+en = "no longer catchable"
+
+[TAKE_IT_DOWN]
+value = "снять"
+en = "take it down"
+
+[TAKE_DOWN_TIP_TITLE]
+value = "Снять"
+en = "Take it down"
+
+[TAKE_DOWN_TIP]
+value.e = "На её место встанет новая экспедиция другого типа. Прогресс этой пропадёт."
+value.n = "На его место встанет новое объявление другого типа. Прогресс этого пропадёт."
+en.e = "Pin a fresh Expedition of another kind in its place. Any progress on this one is lost."
+en.n = "Pin a fresh Notice of another kind in its place. Any progress on this one is lost."
+
+[TAKE_DOWN_TIP_ONCE]
+value = "Замену нельзя будет снять до ежедневного сброса (через {time}), если только она не перестанет ловиться."
+en = "The new one can't be taken down again until the daily reset (in {time}), unless it stops being catchable."
+
+[TAKE_DOWN_TIP_STRANDED]
+value = "Эта цель больше не ловится, поэтому её можно снять, хотя её сегодня уже вешали взамен."
+en = "This one is no longer catchable, so it can come down even though it was re-posted today."
+
+[TAKE_DOWN_TIP_STRANDED_FIRST]
+value = "Эта цель больше не ловится: на этом месте её никогда не выполнить."
+en = "This one is no longer catchable: it can never be finished where it hangs."
+
+[TAKE_DOWN_TIP_UPDATING]
+value = "Не сейчас: доска обновляется. Снять можно будет, когда это закончится."
+en = "Not while the board is updating. It can come down once that's done."
+
+[REPOSTED]
+value = "ЗАМЕНА"
+en = "RE-POSTED"
+
+[REPOSTED_HOVER]
+value = "Повешено сегодня взамен. Снять снова можно будет после ежедневного сброса (через {time})."
+en = "Re-posted today. It can be taken down again at the daily reset (in {time})."
+
+[ONLY_SINCE]
+value = "Считаются только мои уловы с этого момента"
+en = "Only my Catches since then count"
+
+[ONLY_SINCE_TODAY]
+value = "Считаются только мои уловы с этого момента, все за один день доски"
+en = "Only my Catches since then count, all on one board day"
+
+[EMPTY_NOTICE]
+value = "Новое объявление после сброса (через {time})"
+en = "A fresh Notice at reset (in {time})"
+
+[EMPTY_NOTICE_LATER]
+value = "Ещё объявления — после следующих сбросов"
+en = "More Notices at later resets"
+
+[EMPTY_EXPEDITION]
+value = "Новая экспедиция — после еженедельного сброса ({weekday})"
+en = "Next Expedition at the weekly reset ({weekday})"
+
+[EMPTY_EXPEDITION_LATER]
+value = "Ещё одна — неделей позже"
+en = "Another at the weekly reset after"
+
+[OVERFLOW_CHIP]
+value = "{kind}: {text}"
+en = "{kind}: {text}"
+
+[OVERFLOW_MORE]
+value = "+{n} ждут свободного места"
+en = "+{n} more waiting for a pin"
+
+[SPIKE_DONE]
+value = "Выполнено сегодня: {n}. Костёр горит."
+en = "{n} done today. The fire's lit."
+
+[SPIKE_EMPTY]
+value = "Выполненные цели накалывают сюда."
+en = "Done ones go on the spike."
+
+[SPIKE_HEAD]
+value = "Выполнено сегодня"
+en = "Done today"
+
+[SPIKE_NOTE]
+value = "+{coins} · {fly}"
+en = "+{coins} · {fly}"
+
+[SPIKE_NOTE_PLAIN]
+value = "+{coins}"
+en = "+{coins}"
+
+[SPIKE_COINS]
+value.one = "Награда: {count} монета"
+value.few = "Награда: {count} монеты"
+value.many = "Награда: {count} монет"
+value.other = "Награда: {count} монеты"
+en.one = "Paid {count} Coin"
+en.other = "Paid {count} Coins"
+
+[SPIKE_FLY]
+value = "Новая мушка в Коробку мушек: {fly}"
+en = "Tied for your Fly Box: {fly}"
+
+[CAMPFIRE_OUT]
+value = "Погас"
+en = "Gone out"
+
+[CAMPFIRE_UNLIT]
+value = "Ещё не разожжён"
+en = "Not lit yet"
+
+[CAMPFIRE_LONGEST]
+value = "рекорд {n}"
+en = "longest {n}"
+
+[DAYS_WORD]
+value.one = "день"
+value.few = "дня"
+value.many = "дней"
+value.other = "дня"
+en.one = "day"
+en.other = "days"
+
+[CARD_DATE]
+value = "{weekday} {day} {month}"
+en = "{weekday} {day} {month}"
+
+[CARD_DAYS]
+value.before = "до доски"
+value.burned = "сгорел хворост"
+value.lit = "горел"
+value.out = "погас"
+value.today = "сегодня"
+value.unlit = "не горел"
+en.before = "before the board"
+en.burned = "Kindling burned"
+en.lit = "lit"
+en.out = "went out"
+en.today = "today"
+en.unlit = "not lit"
+
+[CARD_NEEDS]
+value.campfire = "костёр в {n} дней"
+value.flybox = "связаны все мушки Коробки"
+value.tally = "{n} выполненных целей"
+en.campfire = "a Campfire of {n} days"
+en.flybox = "every Fly Box pattern tied"
+en.tally = "{n} goals done"
+
+[FLY_BOX_TIED]
+value = "Связано {n} из {total}"
+en = "{n} of {total} tied"
+
+[FLY_UNTIED]
+value = "ещё не связана"
+en = "not tied yet"
+
+[FLY_TIED]
+value = "Связана: {date}"
+en = "Tied {date}"
+
+[FLY_GOAL]
+value = "за цель: {goal}"
+en = "by: {goal}"
+
+[FLY_RARE]
+value = "только за экспедиции"
+en = "tied only by Expeditions"
+
+[TALLY_PLATE]
+value = "{notices} · {expeditions}"
+en = "{notices} · {expeditions}"
+
+[TALLY_NO_TITLE]
+value = "звания пока нет"
+en = "no title yet"
+
+[SHOP_LINK]
+value = "Монеты тратятся в Лавке диковин"
+en = "Coins go to the Curio Shop"
+
+[CARD_TITLE]
+value = "Костёр"
+en = "The Campfire"
+
+[CARD_FIRE]
+value = "{fire} · {longest} · {kindling}"
+en = "{fire} · {longest} · {kindling}"
+
+[KINDLING]
+value = "хворост: {count}"
+en = "{count} Kindling"
+
+[FLY_BOX]
+value = "Коробка мушек"
+en = "Fly Box"
+
+[CARD_WEEKS]
+value = "Последние четыре недели"
+en = "The last four weeks"
+
+[CARD_WEEKS_NOTE]
+value = "дни доски, серверное время"
+en = "board days, realm time"
+
+[CARD_SHORT_DATE]
+value = "{day} {month}"
+en = "{day} {month}"
+
+[CARD_MILESTONES]
+value = "Вехи"
+en = "Milestones"
+
+[CARD_MILESTONES_NOTE]
+value = "награда один раз"
+en = "each pays once"
+
+[CARD_TITLES]
+value = "Звания"
+en = "Titles"
+
+[CARD_TITLES_NOTE]
+value = "видны только на доске"
+en = "shown on the board only"
+
+[CARD_LABELS]
+value.campfire = "{n} дней"
+value.flybox = "Коробка мушек"
+value.tally = "{n} целей"
+en.campfire = "{n} days"
+en.flybox = "Fly Box"
+en.tally = "{n} goals"
+
+[CARD_MORE_CAMPFIRE]
+value.one = "ещё {count} день"
+value.few = "ещё {count} дня"
+value.many = "ещё {count} дней"
+value.other = "ещё {count} дня"
+en.one = "{count} more day"
+en.other = "{count} more days"
+
+[CARD_MORE_TALLY]
+value.one = "ещё {count} цель"
+value.few = "ещё {count} цели"
+value.many = "ещё {count} целей"
+value.other = "ещё {count} цели"
+en.one = "{count} more goal"
+en.other = "{count} more goals"
+
+[CARD_MORE_FLYBOX]
+value.one = "ещё {count} мушка"
+value.few = "ещё {count} мушки"
+value.many = "ещё {count} мушек"
+value.other = "ещё {count} мушки"
+en.one = "{count} more pattern"
+en.other = "{count} more patterns"
+
+[CLOSE_MARK]
+value = "×"
+en = "×"
+
+[DAYS]
+value.one = "{count} день"
+value.few = "{count} дня"
+value.many = "{count} дней"
+value.other = "{count} дня"
+en.one = "{count} day"
+en.other = "{count} days"
+
+[NOTICE_COMPLETE]
+value = "Объявление выполнено"
+en = "Notice complete"
+
+[EXPEDITION_COMPLETE]
+value = "Экспедиция выполнена"
+en = "Expedition complete"
+
+[TIED_FOR_FLY_BOX]
+value = "{goal}. Новая мушка в Коробку мушек: {fly}"
+en = "{goal}. Tied for your Fly Box: {fly}"
+
+[NOTICE_DONE]
+value = "Объявление готово"
+en = "Notice done"
+
+[EXPEDITION_DONE]
+value = "Экспедиция готова"
+en = "Expedition done"
+
+[CAMPFIRE_MILESTONE]
+value = "Костёр: {n} дней"
+en = "Campfire: {n} days"
+
+[TALLY_TITLE]
+value = "Выполнено целей: {n}"
+en = "{n} goals done"
+
+[FLY_BOX_COMPLETE]
+value = "Связаны все мушки"
+en = "Every pattern tied"
+
+[TITLE_LINE]
+value = "Звание: {title}"
+en = "Title: {title}"
+
+[KINDLING_AWAY]
+value = "Пока вас не было, костёр не погас: сгорело хвороста — {k}, на счету по-прежнему {count}."
+en = "Your Campfire kept burning while you were away: {k} Kindling used, still {count}."
+
+[KINDLING_BURNED]
+value = "День прошёл без целей: сгорело хвороста — {k}. Костёр по-прежнему {count}."
+en = "A day went by without a goal: {k} Kindling used. Campfire still {count}."
+
+[FIRE_OUT_AWAY]
+value = "Пока вас не было, ваш костёр погас. Ваш рекорд, {longest}, сохранён навсегда. Любая цель разожжёт новый, и хвороста снова будет 2."
+en = "Your Campfire went out while you were away. Your longest, {longest}, is kept for good. Any goal lights a new one, with 2 fresh Kindling."
+
+[FIRE_OUT]
+value = "Ваш костёр погас. Ваш рекорд, {longest}, сохранён навсегда. Любая цель разожжёт новый, и хвороста снова будет 2."
+en = "Your Campfire went out. Your longest, {longest}, is kept for good. Any goal lights a new one, with 2 fresh Kindling."
+
+[WRITE_UP_FIRST]
+value.one = "Ваша Доска снастей учла {count:n} заброс"
+value.few = "Ваша Доска снастей учла {count:n} заброса"
+value.many = "Ваша Доска снастей учла {count:n} забросов"
+value.other = "Ваша Доска снастей учла {count:n} заброса"
+en.one = "Your Tackle Board was written up from {count:n} Cast"
+en.other = "Your Tackle Board was written up from {count:n} Casts"
+
+[WRITE_UP_WHILE_OFF]
+value = "Пока Доска снастей была выключена"
+en = "While Tackle Board was off"
+
+[NOTICES]
+value.one = "{count} объявление"
+value.few = "{count} объявления"
+value.many = "{count} объявлений"
+value.other = "{count} объявления"
+en.one = "{count} Notice"
+en.other = "{count} Notices"
+
+[EXPEDITIONS]
+value.one = "{count} экспедиция"
+value.few = "{count} экспедиции"
+value.many = "{count} экспедиций"
+value.other = "{count} экспедиции"
+en.one = "{count} Expedition"
+en.other = "{count} Expeditions"
+
+[GOALS_AND]
+value = "{notices} и {expeditions}"
+en = "{notices} and {expeditions}"
+
+[GOALS_DONE]
+value = "Выполнено: {goals}"
+en = "{goals} done"
+
+[COINS_LINE]
+value = "Монеты Pagle +{coins}"
+en = "Pagle Coins +{coins}"
+
+[XP_LINE]
+value = "Опыт рыболова +{xp}"
+en = "Angler XP +{xp}"
+
+[FLIES_TIED]
+value.one = "{count} мушка связана для Коробки мушек"
+value.few = "{count} мушки связаны для Коробки мушек"
+value.many = "{count} мушек связано для Коробки мушек"
+value.other = "{count} мушки связано для Коробки мушек"
+en.one = "{count} fly tied for your Fly Box"
+en.other = "{count} flies tied for your Fly Box"
+
+[CAMPFIRE_DAYS]
+value.one = "Костёр: {count} день"
+value.few = "Костёр: {count} дня"
+value.many = "Костёр: {count} дней"
+value.other = "Костёр: {count} дня"
+en.one = "Campfire {count} day"
+en.other = "Campfire {count} days"
+
+[CAMPFIRE_BURNED]
+value = "{campfire} · сгорело хвороста: {k}"
+en = "{campfire} · {k} Kindling burned"
+
+[CAMPFIRE_WENT_OUT]
+value = "Ваш костёр погас; ваш рекорд, {longest}, сохранён"
+en = "Your Campfire went out; your longest, {longest}, is kept"
+
+[SUMMARY_LINE]
+value = "Доска снастей: {done} · {campfire}"
+en = "Tackle Board: {done} · {campfire}"
+
+[SUMMARY_LINE_NOTHING_DONE]
+value = "Доска снастей: {campfire}"
+en = "Tackle Board: {campfire}"
+
+[DONE_TODAY]
+value = "выполнено сегодня: {count}"
+en = "{count} done today"
+
+[CAMPFIRE_NOT_LIT]
+value = "Костёр не разожжён"
+en = "Campfire not lit"
+
+[SLOT_TRACKER_FRAME]
+value = "Рамка трекера Доски снастей"
+en = "Tackle Board tracker frame"
+
+[GOOD_EARNED_CAMPFIRE]
+value = "Костёр: {days} дней"
+en = "Campfire: {days} days"
+
+[TRACKER_OPEN]
+value = "открыто: {count}"
+en = "{count} open"
+
+[TRACKER_FIRE_OPEN]
+value = "{fire} · {open}"
+en = "{fire} · {open}"
+
+[TRACKER_COUNT]
+value = "{count}/{need}"
+en = "{count}/{need}"
+
+[TRACKER_EXPEDITION]
+value = "Экспедиция: {text}"
+en = "Expedition: {text}"
+
+[TRACKER_MORE]
+value = "+{n} на доске (в других местах)"
+en = "+{n} more on the board (elsewhere)"
+
+[TRACKER_ALL_DONE]
+value = "Всё выполнено. Новые объявления после сброса."
+en = "All done. Fresh Notices at reset."
+
+[TRACKER_COMPLETE]
+value = "Выполнено"
+en = "Complete"
+
+[SETTINGS_TRACKER]
+value = "Показывать цели, доступные здесь"
+en = "Show goals workable here"
+
+[SETTINGS_TRACKER_TOOLTIP]
+value = "Показывает цели, которые можно выполнить там, где вы находитесь. Если доски ещё нет, нажмите «Повесить доску» на странице Pagle."
+en = "Lists the goals you can work on where you are. Before your board is started, use Start my board on the Pagle page."
+
+[GUIDE_BLURB]
+value = "Небольшие цели на пробковой доске — если захотите. Они дождутся вас."
+en = "Small goals pinned to a cork board, if you want them. They wait while you’re away."
+
+[GUIDE_RIBBON]
+value = "Доска снастей"
+en = "Tackle Board"
+
+[GUIDE_SKIP]
+value = "Не сейчас"
+en = "Not now"
+
+[GUIDE_KICKER]
+value = "Доска снастей"
+en = "The Tackle Board"
+
+[GUIDE_TITLE]
+value = "Цели, которые вас дождутся"
+en = "Goals that wait for you"
+
+[GUIDE_BODY]
+value = "Небольшие объявления на пробковой доске: найти рыбу, побывать у воды. Рыбачьте когда угодно — они никуда не денутся."
+en = "Small Notices pinned to a cork board: a fish to find, a water to visit. Fish when you like; they’ll still be there."
+
+[GUIDE_CAMPFIRE]
+value = "{campfire} разгорается с каждым днём, когда вы выполняете объявление. Пропустите день — сгорит {kindling}, а костёр не погаснет."
+en = "{campfire} grows with each day you finish a Notice. Miss a day and {kindling} burns instead; it isn’t put out."
+
+[GUIDE_CAMPFIRE_TERM]
+value = "Ваш костёр"
+en = "Your Campfire"
+
+[GUIDE_KINDLING_TERM]
+value = "хворост"
+en = "Kindling"
+
+[GUIDE_FLY_BOX]
+value = "За каждое выполненное объявление — новая мушка. Её ждёт {flybox}."
+en = "Each Notice you finish ties one fly for your {flybox}."
+
+[GUIDE_ASK_KICKER]
+value = "Только если захотите"
+en = "Only if you want one"
+
+[GUIDE_ASK_TITLE]
+value = "Повесить вам доску?"
+en = "Shall I put up a board?"
+
+[GUIDE_FACTS]
+value = ["Три объявления в день и одна большая экспедиция в неделю.", "Они не исчезают. Уехали надолго? Вас дождутся до шести объявлений и двух экспедиций.", "Не нравится цель? Раз в день её можно снять и получить новую.", "Они приносят Монеты Pagle, {shop}"]
+en = ["Three Notices a day, and one bigger Expedition a week.", "None of them expire. Away a while? Up to six Notices and two Expeditions wait for you.", "Don’t fancy one? Each can be taken down for a fresh one, once a day.", "They pay Pagle Coins, {shop}"]
+
+[GUIDE_FACT_SHOP]
+value = "на которые покупают облики в Лавке диковин."
+en = "which buy looks in the Curio Shop."
+
+[BOARD_IS_UP]
+value = "Доска уже висит"
+en = "Your board is up"
+
+[GUIDE_LEAVE]
+value = "Или оставьте на потом. Доска ждёт в меню Pagle (пункт «Доска снастей») и в Настройках."
+en = "Or leave it for now. The board waits under Tackle Board in the Pagle menu, and in Settings."
+
+[LOOK_TITLE]
+value = "Доска снастей"
+en = "the Tackle Board"
+
+[LOOK_NOTES]
+value = [{ term = "Экспедиции", text = "{term} — крупные недельные цели. Они тоже ждут, не больше двух." }, { term = "не исчезает", text = "Объявление {term}. Не нравится? Раз в день его можно снять ради другого." }, { term = "костёр", text = "Ваш {term}: дни подряд хотя бы с одной выполненной целью. В пропущенный день вместо этого сгорает хворост." }, { term = "Коробка мушек", text = "Каждая выполненная цель — новая мушка. Её ждёт {term}." }, { term = "Монеты Pagle", text = "Они приносят {term}, которые тратятся на облики в Лавке диковин." }]
+en = [{ term = "Expeditions", text = "{term} are the bigger weekly ones. They wait too, up to two." }, { term = "never expires", text = "A Notice {term}. Don’t fancy it? Take it down, once a day, for another." }, { term = "Campfire", text = "Your {term}: days in a row with one done. A missed day burns Kindling instead." }, { term = "Fly Box", text = "Each one done ties a fly for your {term}." }, { term = "Pagle Coins", text = "They pay {term}, spent on looks in the Curio Shop." }]
+
+[LOOK_AGAIN_MARK]
+value = "?"
+en = "?"
+
+[LOOK_AGAIN]
+value = "Снова показать заметки к этой странице"
+en = "Show the notes for this page again"

@@ -1,0 +1,208 @@
+# Tackleboard's lore in Russian (ruRU), over data/lore/tackleboard.toml (DATA-R113, DATA-R114).
+# Machine-drafted: written by an AI model (Claude) for 1.1 and not yet reviewed by a native Russian speaker.
+
+[fly.murloc_nymph]
+name.value = "Мурлочья нимфа"
+name.en = "Murloc Nymph"
+
+[fly.westfall_wheatwing]
+name.value = "Пшеничное крыло жатвы"
+name.en = "Harvest Wheatwing"
+
+[fly.goldshire_gnat]
+name.value = "Мошка могильного мха"
+name.en = "Gravemoss Gnat"
+
+[fly.duskwood_shadow]
+name.value = "Вечерняя тень"
+name.en = "Gloaming Shadow"
+
+[fly.redridge_ember]
+name.value = "Уголёк красных скал"
+name.en = "Red Rock Ember"
+
+[fly.barrens_dun]
+name.value = "Подёнка саванны"
+name.en = "Savanna Dun"
+
+[fly.mudsnout_woolly]
+name.value = "Грязнорылый вулли"
+name.en = "Mudsnout Woolly"
+
+[fly.gnomish_whirligig]
+name.value = "Гномья вертушка"
+name.en = "Gnomish Whirligig"
+
+[fly.tarnished_spoon]
+name.value = "Потускневшая блесна"
+name.en = "Tarnished Spoon"
+
+[fly.ashenvale_olive]
+name.value = "Оливка старолесья"
+name.en = "Old-Growth Olive"
+
+[fly.kodo_hair_caddis]
+name.value = "Ручейник из шерсти кодо"
+name.en = "Kodo-Hair Caddis"
+
+[fly.elwynn_royal]
+name.value = "Королёк зелёной чащи"
+name.en = "Greenwood Royal"
+
+[fly.swamp_midge]
+name.value = "Болотный комарик"
+name.en = "Swamp Midge"
+
+[fly.raptor_quill]
+name.value = "Перо ящера"
+name.en = "Raptor Quill"
+
+[fly.silverpine_spinner]
+name.value = "Спиннер серых сосен"
+name.en = "Grey Pine Spinner"
+
+[fly.lakeshire_coachman]
+name.value = "Караванный кучер"
+name.en = "Caravan Coachman"
+
+[fly.bloodsail_streamer]
+name.value = "Стример Кровавого Паруса"
+name.en = "Bloodsail Streamer"
+
+[fly.booty_bay_bucktail]
+name.value = "Буканьерский бактейл"
+name.en = "Buccaneer Bucktail"
+
+[fly.desolace_drifter]
+name.value = "Скиталец сухих земель"
+name.en = "Bone-Dry Drifter"
+
+[fly.grimtotem_hackle]
+name.value = "Хакл Зловещего Тотема"
+name.en = "Grimtotem Hackle"
+
+[fly.needles_ant]
+name.value = "Муравей с плато"
+name.en = "Mesa Ant"
+
+[fly.feralas_fern]
+name.value = "Чащобный папоротник"
+name.en = "Thicket Fern"
+
+[fly.tanaris_sandfly]
+name.value = "Гоблинская песчаная мушка"
+name.en = "Steamwheedle Sandfly"
+
+[fly.darkshore_dun]
+name.value = "Подёнка морской дымки"
+name.en = "Sea-Mist Dun"
+
+[fly.nats_golden_doctor]
+name.value = "Золотой доктор Ната"
+name.en = "Nat's Golden Doctor"
+
+[fly.kraken_ink_streamer]
+name.value = "Стример в чернилах кракена"
+name.en = "Kraken Ink Streamer"
+
+[fly.phoenix_hackle]
+name.value = "Хакл феникса"
+name.en = "Phoenix Hackle"
+
+[fly.moonwell_silverwing]
+name.value = "Лунная среброкрылка"
+name.en = "Moonlight Silverwing"
+
+[fly.thunderhead_tiger]
+name.value = "Грозовой тигр"
+name.en = "Thunderhead Tiger"
+
+[fly.deepwater_duchess]
+name.value = "Глубинная герцогиня"
+name.en = "Deepwater Duchess"
+
+[boardtitle.tally_25]
+text.value = "Мастер на все руки"
+text.en = "Odd-Jobber"
+
+[boardtitle.tally_100]
+text.value = "Твёрдая рука"
+text.en = "Steady Hand"
+
+[boardtitle.tally_500]
+text.value = "Опора причала"
+text.en = "Pillar of the Pier"
+
+[boardtitle.campfire_7]
+text.value = "Знаток растопки"
+text.en = "Kindler"
+
+[boardtitle.campfire_30]
+text.value = "Хранитель огня"
+text.en = "Firekeeper"
+
+[boardtitle.campfire_100]
+text.value = "Страж очага"
+text.en = "Hearthwarden"
+
+[boardtitle.campfire_365]
+text.value = "Хранитель долгого костра"
+text.en = "Keeper of the Long Fire"
+
+[boardtitle.flybox]
+text.value = "Вязальщик мушек"
+text.en = "Fly-Tier"
+
+[boardgood."tackleboard.trackerframe.none"]
+name.value = "Без рамки"
+name.en = "No Frame"
+description.value = "Список сам по себе, и ничего за ним не приколото. От сырости не коробится."
+description.en = "The list on its own, with nothing pinned behind it. It never warps in the damp."
+
+[boardgood."tackleboard.trackerframe.corkboard"]
+name.value = "Пробковая доска"
+name.en = "Corkboard"
+description.value = "Пробка, вся в дырочках от булавок — от дел, давно законченных. Место ещё для одного всегда найдётся."
+description.en = "A slab of cork, pocked with pinholes from jobs long finished. There is always room for one more."
+
+[boardgood."tackleboard.trackerframe.driftwood"]
+name.value = "Обкатанная приливом доска"
+name.en = "Tideworn Plank"
+description.value = "Серая, как море, доска, отглаженная приливом и прибитая у пристани. Проплыла она больше, чем иная лодка."
+description.en = "A sea-grey plank, worn smooth by the tide and nailed up by the dock. It has travelled further than most boats."
+
+[boardgood."tackleboard.toaststyle.ember"]
+name.value = "Уголёк очага"
+name.en = "Hearth Ember"
+description.value = "Страница, что однажды чуть не ушла на растопку. Края до сих пор тлеют, когда приходит хорошая рыба."
+description.en = "A page that was nearly kindling once. The edges still glow when a good fish comes in."
+
+[boardgood."tackleboard.trackerframe.net"]
+name.value = "Рыболовная сеть"
+name.en = "Fishing Net"
+description.value = "Кусок старой сети поверх строк, и вдоль верхнего края ещё привязаны пробковые поплавки."
+description.en = "A square of old net hung over the lines, its cork floats still tied along the top."
+
+[boardgood."tackleboard.trackerframe.bamboo"]
+name.value = "Бамбуковые планки"
+name.en = "Bamboo Slats"
+description.value = "Бамбуковые планки, перехваченные бечёвкой, — такое сворачивают в трубку и суют в сумку со снастями."
+description.en = "Bamboo slats lashed with cord, the sort of thing you roll up and stuff in the tackle bag."
+
+[boardgood."tackleboard.trackerframe.tin"]
+name.value = "Жестянка для снастей"
+name.en = "Tackle Tin"
+description.value = "Зелёная эмалированная жестянка для снастей, вся во вмятинах и сколах. Крышка с тиснением, петля чуть тронута ржавчиной."
+description.en = "A green enamel tackle tin, dented and chipped, its lid embossed and its hinge a little rusty."
+
+[boardgood."tackleboard.trackerframe.bobber"]
+name.value = "Поплавок"
+name.en = "Bobber"
+description.value = "Красное поверх белого, как у хорошего поплавка, а в углу качается и сам поплавок — с леской и всем прочим."
+description.en = "Red over white like a good bobber, with one floating at the corner, line and all."
+
+[boardgood."tackleboard.trackerframe.embers"]
+name.value = "Живые угли"
+name.en = "Live Embers"
+description.value = "Обугленные обломки, выброшенные морем, и в трещинах ещё живёт огонь. На них ушёл целый год костров."
+description.en = "Charred driftwood with the fire still living in its cracks. A year of fires went into this one."

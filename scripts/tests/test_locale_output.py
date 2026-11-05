@@ -97,9 +97,10 @@ def test_a_table_value_is_written_as_the_lua_the_helper_reads(tmp_path: Path) ->
 
 
 def test_locales_xml_with_no_language_is_the_committed_file_less_the_languages_it_lists() -> None:
-    # The committed Core file lists esES (#528), the one language shipped; the skeleton is the same file without those lines.
+    # The committed Core file lists esES (#528) and ruRU, the languages shipped; the skeleton is the same file without
+    # those lines.
     committed = (REPO / "addons" / "Pagle" / "locale" / "Locales.xml").read_text(encoding="utf-8")
-    skeleton = "".join(line for line in committed.splitlines(keepends=True) if "esES" not in line)
+    skeleton = "".join(line for line in committed.splitlines(keepends=True) if "esES" not in line and "ruRU" not in line)
     assert locales_xml_text([]) == skeleton
 
 

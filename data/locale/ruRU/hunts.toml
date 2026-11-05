@@ -1,0 +1,1210 @@
+# Pagle's interface text in Russian (ruRU), over data/locale/enUS/hunts.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) for 1.1 and not yet reviewed by a native Russian speaker. It has
+# no human translator, so locale.toml names none. Strings that are only textures, or only the name Pagle, carry the
+# English as it is, so the Locale covers every key of the interface.
+
+[TITLE]
+value = "Охоты"
+en = "Hunts"
+
+[BOARD]
+value = "Охоты"
+en = "Hunts"
+
+[BOARD_SLASH_HELP]
+value = "Открыть или закрыть доску охот"
+en = "Open or close the Hunts board"
+
+[SLOT_TRACKER_FRAME]
+value = "Рамка трекера охот"
+en = "Hunts tracker frame"
+
+[PREVIEW_TRACKER_HUNTS]
+value = [["Ночной клёв", "через 37 мин"], ["Час у костра", "по желанию"]]
+en = [["Night Run", "in 37m"], ["Rack Hour", "on demand"]]
+
+[EARNED_TEXT]
+value.anySetTitle = "Завершите набор охот"
+value.deepTrench = "Ступень 3 во всех охотах омарового пари"
+value.everySetTitle = "Завершите все наборы охот"
+value.nightTide = "Ступень 3 в трёх ночных охотах пари"
+value.wagerCentury = "Завершено забегов пари: {earnedRuns:0}"
+value.wagerRuns = "Завершено забегов пари: {earnedRuns:0}"
+en.anySetTitle = "Finish a Hunt set"
+en.deepTrench = "Tier 3 in every Hunt of the lobster Wager"
+en.everySetTitle = "Finish every Hunt set"
+en.nightTide = "Tier 3 in three night Wager Hunts"
+en.wagerCentury = "{earnedRuns:0} Wager runs completed"
+en.wagerRuns = "{earnedRuns:0} Wager runs completed"
+
+[WINDOW_MOMENTS_SETTING]
+value = "Сообщать, когда открывается окно закреплённой охоты"
+en = "Tell me when a pinned Hunt's window opens"
+
+[WINDOW_MOMENTS_TOOLTIP]
+value = "Тихий кивок, когда открывается окно закреплённой охоты. Исчезает, когда окно закрывается."
+en = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes."
+
+[WINDOW_OPEN]
+value = "{name}: окно открыто"
+en = "{name} is open"
+
+[WINDOW_OPENED]
+value = "{name}: окно открылось в {from}"
+en = "{name} window opened {from}"
+
+[WINDOW_OPENED_UNTIL]
+value = "{name}: окно было открыто {from}–{window_opened_until_3}"
+en = "{name} window opened {from}–{window_opened_until_3}"
+
+[NAME_UNKNOWN]
+value = "…"
+en = "…"
+
+[DURATION_MINUTES]
+value = "{minutes:0} мин"
+en = "{minutes:0}m"
+
+[DURATION_HOURS]
+value = "{hours:0} ч"
+en = "{hours:0}h"
+
+[DURATION_HOURS_MINUTES]
+value = "{hours:0} ч {rest:0} мин"
+en = "{hours:0}h {rest:0}m"
+
+[DURATION_DAYS]
+value = "{days:0} д"
+en = "{days:0}d"
+
+[DURATION_DAYS_HOURS]
+value = "{days:0} д {hours:0} ч"
+en = "{days:0}d {hours:0}h"
+
+[CLOCK]
+value = "{hour}:{minute}"
+en = "{hour}:{minute}"
+
+[WEEKDAY_CLOCK]
+value = "{weekday} {time}"
+en = "{weekday} {time}"
+
+[DATE_SHORT]
+value = "{day:0} {monthsShort}"
+en = "{day:0} {monthsShort}"
+
+[DATE_FULL]
+value = "{shortDate} {year}"
+en = "{shortDate} {year}"
+
+[WEEKDAYS_SHORT]
+value = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
+en = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+[WEEKDAYS_PLURAL]
+value = ["по воскресеньям", "по понедельникам", "по вторникам", "по средам", "по четвергам", "по пятницам", "по субботам"]
+en = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"]
+
+[MONTHS_SHORT]
+value = ["янв.", "февр.", "мар.", "апр.", "мая", "июн.", "июл.", "авг.", "сент.", "окт.", "нояб.", "дек."]
+en = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+[MONTHS]
+value = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+en = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+[LABEL_NEED]
+value = "нужно {need:0}"
+en = "need {need:0}"
+
+[TRACKER_NEED]
+value = "нужно {need:0}"
+en = "needs {need:0}"
+
+[LABEL_UP_NOW]
+value = "уже идёт"
+en = "up now"
+
+[LABEL_ON_DEMAND]
+value = "по желанию"
+en = "on demand"
+
+[LABEL_ANY_TIME]
+value = "в любое время"
+en = "any time"
+
+[LABEL_WHILE_EVENT]
+value = "пока идёт событие"
+en = "while the event runs"
+
+[TRACKER_NOW]
+value = "сейчас"
+en = "now"
+
+[LABEL_UNTIL]
+value = "до {realmWhen}"
+en = "until {realmWhen}"
+
+[TRACKER_ENDS_IN]
+value = "ещё {duration}"
+en = "ends in {duration}"
+
+[LABEL_IN]
+value = "через {duration}"
+en = "in {duration}"
+
+[LABEL_BACK_IN]
+value = "снова с {monthOf}"
+en = "back in {monthOf}"
+
+[LABEL_NO_DATE]
+value = "дата неизвестна"
+en = "no date known"
+
+[LINE_UP_NOW]
+value = "Уже идёт."
+en = "Up now."
+
+[LINE_ON_DEMAND]
+value = "Когда я применю «{aura}»."
+en = "Whenever I set up {aura}."
+
+[LINE_ANY_TIME]
+value = "Открыто в любое время."
+en = "Open any time."
+
+[LINE_WHILE_EVENT]
+value = "Открыто, пока идёт событие."
+en = "Open while the event runs."
+
+[LINE_CLOSES]
+value = "Открыто сейчас. Закроется через {duration}, в {realmWhen}."
+en = "Open now. Closes in {duration}, at {realmWhen}."
+
+[LINE_UNTIL]
+value = "Открыто сейчас, до {monthOf}."
+en = "Open now, until {monthOf}."
+
+[LINE_SOON]
+value = "Откроется через {duration}, в {realmWhen}."
+en = "Opens in {duration}, at {realmWhen}."
+
+[LINE_OPENS_AT]
+value = "Откроется в {realmWhen}."
+en = "Opens at {realmWhen}."
+
+[LINE_OPENS_ON]
+value = "Откроется: {realmWhen}."
+en = "Opens {realmWhen}."
+
+[LINE_BACK]
+value = "Снова с {monthOf}."
+en = "Back in {monthOf}."
+
+[LINE_NO_DATE]
+value = "Дата неизвестна."
+en = "No date known."
+
+[LINE_NEEDS]
+value = "Нужно {need:0}; мой рекорд — {best:0}."
+en = "Needs {need:0}; my best is {best:0}."
+
+[LINE_JOIN]
+value = " "
+en = " "
+
+[LINE_LURE]
+value = "С приманкой дотянусь."
+en = "A lure gets me there."
+
+[JOIN_FIELDS]
+value = " · "
+en = " · "
+
+[JOIN_RANGES]
+value = ", "
+en = ", "
+
+[JOIN_OR]
+value = " или "
+en = " or "
+
+[TIME_RANGE]
+value = "{clock}–{time_range_2}"
+en = "{clock}–{time_range_2}"
+
+[SEASON_RANGE]
+value = "{dayOfYear} – {season_range_2}"
+en = "{dayOfYear} – {season_range_2}"
+
+[CONDITION_NIGHT]
+value = "Ночь {ranges}"
+en = "Night {ranges}"
+
+[CONDITION_DAY]
+value = "День {ranges}"
+en = "Day {ranges}"
+
+[CONDITION_TIME]
+value = "Серверное время {ranges}"
+en = "Realm time {ranges}"
+
+[CONDITION_SEASON]
+value = "{season} ({ranges})"
+en = "{season} ({ranges})"
+
+[SEASONS]
+value.autumn = "Осень"
+value.spring = "Весна"
+value.summer = "Лето"
+value.winter = "Зима"
+en.autumn = "Autumn"
+en.spring = "Spring"
+en.summer = "Summer"
+en.winter = "Winter"
+
+[CONDITION_EVENT]
+value = "{name}, {weekdaysPlural} в {clock} на {duration}"
+en = "{name}, {weekdaysPlural} {clock} for {duration}"
+
+[EVENT_UNKNOWN]
+value = "событие календаря"
+en = "a calendar event"
+
+[CONDITION_AREAS]
+value = "Место: {joined}"
+en = "In {joined}"
+
+[CONDITION_AURAS]
+value = "Пока действует {joined}"
+en = "While {joined} is up"
+
+[CONDITION_LURE]
+value = "С приманкой"
+en = "With a lure on"
+
+[CONDITION_SKILL]
+value = "Навык от {min:0} (приманки учитываются)"
+en = "Skill {min:0} or more (lures count)"
+
+[TARGET_UNCOMMON]
+value = "Любой необычный улов или лучше"
+en = "Any uncommon-or-better Catch"
+
+[TARGET_RARE]
+value = "Любой редкий улов или лучше"
+en = "Any rare-or-better Catch"
+
+[TARGET_ANY]
+value = "Любая рыба"
+en = "Any fish"
+
+[TARGET_MIN_BAND]
+value = "{line}, {bandName} или крупнее"
+en = "{line}, {bandName} or better"
+
+[TIMELINE_TITLE]
+value = "Что клюёт и когда"
+en = "What's biting, and when"
+
+[GROUP_HEADINGS]
+value.later = "Позже: откроется после или нужен навык выше"
+value.now = "Сейчас: открыто прямо сейчас"
+value.onDemand = "По желанию: начинается, когда начнёте вы"
+value.soon = "Скоро: откроется в ближайшие 3 часа"
+value.wagers = "Пари: идут днями, а не часами"
+en.later = "Later: opens after that, or needs more skill"
+en.now = "Now: open right now"
+en.onDemand = "On demand: starts when you do"
+en.soon = "Soon: opens within 3 hours"
+en.wagers = "Wagers: on for days, not hours"
+
+[GROUP_NAMES]
+value.later = "Позже"
+value.now = "Сейчас"
+value.onDemand = "По желанию"
+value.soon = "Скоро"
+value.wagers = "Пари"
+en.later = "Later"
+en.now = "Now"
+en.onDemand = "On demand"
+en.soon = "Soon"
+en.wagers = "Wagers"
+
+[GROUP_NOTES]
+value.later = "откроется после или нужен навык выше"
+value.now = "открыто прямо сейчас"
+value.onDemand = "начинается, когда начнёте вы"
+value.soon = "откроется в ближайшие 3 часа"
+value.wagers = "идут днями, а не часами"
+en.later = "opens after that, or needs more skill"
+en.now = "open right now"
+en.onDemand = "starts when you do"
+en.soon = "opens within 3 hours"
+en.wagers = "on for days, not hours"
+
+[TIMELINE_LEGEND]
+value = "Штриховка: открыто · Пунктир: окно не подтверждено · Карандаш: нужен навык выше · Синий: лагерь разбит"
+en = "Hatched: open · Dashed: window unconfirmed · Pencil: needs more skill · Blue: your camp is up"
+
+[LEGEND_ITEMS]
+value.camp = "лагерь разбит"
+value.dashed = "окно не подтверждено"
+value.hatched = "открыто"
+value.pencil = "нужен навык выше"
+en.camp = "your camp is up"
+en.dashed = "window unconfirmed"
+en.hatched = "open"
+en.pencil = "needs more skill"
+
+[TIMELINE_KICKER]
+value = "Доска"
+en = "The Board"
+
+[SET_KICKER]
+value = "Набор охот"
+en = "Hunt set"
+
+[SET_HUNTS_HEADING]
+value = "Охоты этого набора"
+en = "Hunts in this set"
+
+[RULER_REALM_TIME]
+value = "Серверное время"
+en = "Realm time"
+
+[RULER_NEXT]
+value = "на {ruler_next:0} ч вперёд"
+en = "next {ruler_next:0}h"
+
+[RULER_HOUR]
+value = "{hour}"
+en = "{hour}"
+
+[RULER_HOUR_12]
+value.am = "{ruler_hour_12:0}дп"
+value.pm = "{ruler_hour_12:0}пп"
+en.am = "{ruler_hour_12:0}a"
+en.pm = "{ruler_hour_12:0}p"
+
+[OUT_OF_SEASON]
+value = "не сезон"
+en = "out of season"
+
+[SET_HEADING_EARNS]
+value = "{name}: даёт звание {title}"
+en = "{name}: earns {title}"
+
+[SET_HEADING_EARNED]
+value = "{name}: {title}"
+en = "{name}: {title}"
+
+[NO_HUNTS]
+value = "Охот пока нет."
+en = "No Hunts yet."
+
+[WEEKDAY_DATE]
+value = "{weekday} {shortDate}"
+en = "{weekday} {shortDate}"
+
+[CLOCK_PAUSED]
+value = "{line} (пауза в бою)"
+en = "{line} (paused in combat)"
+
+[SHOW_COMPLETED]
+value = "показать завершённые"
+en = "show completed"
+
+[TRACKER_EMPTY]
+value = "Закрепите охоту, чтобы видеть её здесь."
+en = "Pin a Hunt to keep it here."
+
+[TRACKER_MORE]
+value = "+{more:0} ещё"
+en = "+{more:0} more"
+
+[TRACKER_FIRST]
+value = "{huntName} · {label}"
+en = "{huntName} · {label}"
+
+[TRACKER_JOIN]
+value = " · "
+en = " · "
+
+[TRACKER_HERE]
+value = "вы здесь"
+en = "you're here"
+
+[TRACKER_PROGRESS]
+value = "{progress:0} / {tiers:0}"
+en = "{progress:0} / {tiers:0}"
+
+[TRACKER_ALL_TIERS]
+value = "все ступени"
+en = "all tiers"
+
+[TRACKER_UPDATING]
+value = "обновляется…"
+en = "updating…"
+
+[TRACKER_SETTLED]
+value = "выиграно"
+en = "settled"
+
+[TRACKER_FIRST_MARKS]
+value = "{done:0} из {total:0} первых отметок"
+en = "{done:0} of {total:0} first marks"
+
+[TRACKER_CLOSEST]
+value = "{huntName}: {tracker_closest_2:0} / {tracker_closest_3:0}"
+en = "{huntName}: {tracker_closest_2:0} / {tracker_closest_3:0}"
+
+[TRACKER_WAGERS_MORE]
+value = "+{more:0} пари на кону"
+en = "+{more:0} more wagers on the table"
+
+[SETTING_SHOW_TRACKER]
+value = "Показывать трекер охот"
+en = "Show the Hunts tracker"
+
+[SETTING_SHOW_TRACKER_TOOLTIP]
+value = "Небольшой трекер под миникартой с охотами, которые вы закрепили на доске."
+en = "A small tracker under the minimap with the Hunts you've pinned on the board."
+
+[HUNT_COMPLETE]
+value = "Охота завершена"
+en = "Hunt complete"
+
+[HUNT_COMPLETE_STAMP]
+value = "Охота"
+en = "Hunt"
+
+[HUNT_TIER]
+value = "{trim} ступень"
+en = "{trim} tier"
+
+[HUNT_TIER_TEXT]
+value = "{name} · поймано: {tiers:0}"
+en = "{name} · {tiers:0} caught"
+
+[TRIMS]
+value.bronze = "Бронзовая"
+value.gold = "Золотая"
+value.silver = "Серебряная"
+en.bronze = "Bronze"
+en.gold = "Gold"
+en.silver = "Silver"
+
+[TITLE_EARNED]
+value = "Звание получено"
+en = "Title earned"
+
+[TITLE_EARNED_STAMP]
+value = "Звание"
+en = "Title"
+
+[WAGER_MARK]
+value = "Пари Пэгла"
+en = "Pagle Wagers"
+
+[WAGER_MARK_TEXT]
+value = "{name} · первая отметка"
+en = "{name} · first mark"
+
+[WAGER_MARK_STAMP]
+value = "Отметка"
+en = "Mark"
+
+[WAGER_TIER]
+value = "{trim} отметка"
+en = "{trim} mark"
+
+[WAGER_SETTLED]
+value = "Пари выиграно"
+en = "Wager settled"
+
+[WAGER_SETTLED_STAMP]
+value = "Выиграно"
+en = "Settled"
+
+[WRITE_UP_FIRST_BUILD]
+value.one = "Ваши охоты составлены по данным {count:n} заброса"
+value.few = "Ваши охоты составлены по данным {count:n} забросов"
+value.many = "Ваши охоты составлены по данным {count:n} забросов"
+value.other = "Ваши охоты составлены по данным {count:n} заброса"
+en.one = "Your Hunts were written up from {count:n} Cast"
+en.other = "Your Hunts were written up from {count:n} Casts"
+
+[WRITE_UP_WHILE_OFF]
+value = "Пока Охоты были выключены"
+en = "While Hunts was off"
+
+[WRITE_UP_COMPLETED]
+value.one = "{count:n} охота завершена"
+value.few = "{count:n} охоты завершены"
+value.many = "{count:n} охот завершено"
+value.other = "{count:n} охоты завершено"
+en.one = "{count:n} Hunt completed"
+en.other = "{count:n} Hunts completed"
+
+[WRITE_UP_FURTHER]
+value.one = "Ещё {count:n} ступень"
+value.few = "Ещё {count:n} ступени"
+value.many = "Ещё {count:n} ступеней"
+value.other = "Ещё {count:n} ступени"
+en.one = "{count:n} further tier"
+en.other = "{count:n} further tiers"
+
+[WRITE_UP_SETTLED]
+value.one = "{count:n} пари выиграно"
+value.few = "{count:n} пари выиграно"
+value.many = "{count:n} пари выиграно"
+value.other = "{count:n} пари выиграно"
+en.one = "{count:n} wager settled"
+en.other = "{count:n} wagers settled"
+
+[WRITE_UP_TITLE]
+value = "Звание: {title}"
+en = "Title: {title}"
+
+[WRITE_UP_COINS]
+value = "Монеты Pagle +{write_up_coins}"
+en = "Pagle Coins +{write_up_coins}"
+
+[WRITE_UP_XP]
+value = "Опыт рыболова +{write_up_xp}"
+en = "Angler XP +{write_up_xp}"
+
+[SUMMARY_LINE]
+value = "Охоты: выполнено {summary_line_1} из {summary_line_2} · {titles}"
+en = "Hunts: {summary_line_1} of {summary_line_2} done · {titles}"
+
+[SUMMARY_LINE_SETTLED]
+value = "Охоты: выполнено {summary_line_settled_1} из {summary_line_settled_2} · {titles} · {runs}"
+en = "Hunts: {summary_line_settled_1} of {summary_line_settled_2} done · {titles} · {runs}"
+
+[SUMMARY_TITLES]
+value.one = "{count:n} звание"
+value.few = "{count:n} звания"
+value.many = "{count:n} званий"
+value.other = "{count:n} звания"
+en.one = "{count:n} title"
+en.other = "{count:n} titles"
+
+[SUMMARY_SETTLED]
+value.one = "{count:n} пари выиграно"
+value.few = "{count:n} пари выиграно"
+value.many = "{count:n} пари выиграно"
+value.other = "{count:n} пари выиграно"
+en.one = "{count:n} wager settled"
+en.other = "{count:n} wagers settled"
+
+[ENTRY_KICKER]
+value = "{name} · {kind}"
+en = "{name} · {kind}"
+
+[ENTRY_NATURAL]
+value = "Природная"
+en = "Natural"
+
+[ENTRY_IMPOSED]
+value = "Особая"
+en = "Imposed"
+
+[ENTRY_RETIRED]
+value = "Снята {fullDate}"
+en = "Retired {fullDate}"
+
+[ENTRY_BACK]
+value = "назад: {name}"
+en = "back to {name}"
+
+[ENTRY_PIN]
+value = "Закрепить в трекере"
+en = "Pin to the tracker"
+
+[ENTRY_UNPIN]
+value = "Открепить"
+en = "Unpin"
+
+[SEAL_HUNTED]
+value = "Добыто {fullDate}"
+en = "Hunted {fullDate}"
+
+[SEAL_NOT_YET]
+value = "ещё нет"
+en = "not yet"
+
+[SEAL_HUNTED_WORD]
+value = "Добыто"
+en = "Hunted"
+
+[ENTRY_PINNED]
+value = "Закреплено"
+en = "Pinned"
+
+[ENTRY_PIN_WORD]
+value = "Закрепить"
+en = "Pin"
+
+[LADDER_NOT_YET]
+value = "ещё нет"
+en = "not yet"
+
+[LADDER_WHEN_ZONE]
+value = "{date}, {areaName}"
+en = "{date}, {areaName}"
+
+[LADDER_PROGRESS]
+value = "{ladder_progress_1:0} / {ladder_progress_2:0}"
+en = "{ladder_progress_1:0} / {ladder_progress_2:0}"
+
+[LADDER_CAUGHT]
+value = "поймано: {ladder_caught:0}"
+en = "{ladder_caught:0} caught"
+
+[EFFORT_CASTS]
+value.one = "{count:0} заброс"
+value.few = "{count:0} заброса"
+value.many = "{count:0} забросов"
+value.other = "{count:0} заброса"
+en.one = "{count:0} Cast"
+en.other = "{count:0} Casts"
+
+[EFFORT]
+value = "{casts} в этих условиях."
+en = "{casts} under these conditions."
+
+[EFFORT_SINCE]
+value = "{casts} в этих условиях, {sinceLast:0} — после моего последнего улова."
+en = "{casts} under these conditions, {sinceLast:0} since my last one."
+
+[EFFORT_ODDS]
+value = "Шансы — в Статистике."
+en = "Odds live in Stats."
+
+[SET_LINE]
+value = "{name}: {done:0} из {current:0} · {earned}"
+en = "{name}: {done:0} of {current:0} · {earned}"
+
+[SET_EARNS]
+value = "даёт звание {title}"
+en = "earns {title}"
+
+[SET_EARNED]
+value = "получено звание {title}"
+en = "earned {title}"
+
+[SET_LINE_UPDATING]
+value = "{name}: {updating}"
+en = "{name}: {updating}"
+
+[CHIP_HERE]
+value = "вы здесь"
+en = "you're here"
+
+[CHIP_MORE]
+value = "+{rest:0} ещё"
+en = "+{rest:0} more"
+
+[CHIP_SKILL]
+value = "навык {need:0}"
+en = "skill {need:0}"
+
+[CHIP_SHORT]
+value = "нужно {need:0}, рекорд: {best:0}"
+en = "needs {need:0}, best: {best:0}"
+
+[CHIP_LURE]
+value = "нужна приманка"
+en = "needs a lure"
+
+[CHIP_UNCONFIRMED]
+value = "не подтверждено"
+en = "unconfirmed"
+
+[UNCONFIRMED_WINDOW]
+value = "Это окно — приблизительная оценка."
+en = "This window is an estimate."
+
+[UNCONFIRMED_GATING]
+value = "Пока не замечено, что клюёт только в это окно."
+en = "Not yet seen biting only in this window."
+
+[ENTRY_ALL_DONE]
+value = "Все охоты здесь завершены. Отметьте «показать завершённые», чтобы увидеть их снова."
+en = "Every Hunt here is done. Tick \"show completed\" to see them again."
+
+[RIBBON_BOARD]
+value = "Доска"
+en = "Board"
+
+[CRUMB_HUNTS]
+value = "Охоты"
+en = "Hunts"
+
+[UPDATING]
+value = "Обновляется по Журналу уловов…"
+en = "Updating from your Catch log…"
+
+[NAMEPLATE]
+value = "{countText} · {nameplate_2}"
+en = "{countText} · {nameplate_2}"
+
+[NAMEPLATE_DONE]
+value.one = "{count} охота выполнена"
+value.few = "{count} охоты выполнены"
+value.many = "{count} охот выполнено"
+value.other = "{count} охоты выполнено"
+en.one = "{count} Hunt done"
+en.other = "{count} Hunts done"
+
+[NAMEPLATE_TITLE]
+value = "{title}, получено {fullDate}"
+en = "{title}, earned {fullDate}"
+
+[SET_PAGE_EARNS]
+value = "Даёт звание {title}"
+en = "Earns the title {title}"
+
+[SET_PAGE_EARNED]
+value = "Получено: {title}"
+en = "Earned: {title}"
+
+[SET_SEAL]
+value = "Звание получено {fullDate}"
+en = "Title earned {fullDate}"
+
+[SET_SEAL_WORD]
+value = "Получено"
+en = "Earned"
+
+[SET_PROGRESS]
+value = "Выполнено {done:0} из {current:0}"
+en = "{done:0} of {current:0} done"
+
+[SET_RULE]
+value = "Первая ступень в каждой охоте набора даёт звание."
+en = "The first tier of every Hunt earns the title."
+
+[SET_RETIRED]
+value = "Снятые"
+en = "Retired"
+
+[TOUR_BOARD]
+value = "доска охот: Доска, на выбранной ею охоте"
+en = "the Hunts board: the Board, on the Hunt it picks"
+
+[TOUR_BOARD_NOW]
+value = "доска охот: охота в группе «Сейчас»"
+en = "the Hunts board: a Hunt in Now"
+
+[TOUR_BOARD_SOON]
+value = "доска охот: охота в группе «Скоро»"
+en = "the Hunts board: a Hunt in Soon"
+
+[TOUR_BOARD_LATER]
+value = "доска охот: охота в группе «Позже»"
+en = "the Hunts board: a Hunt in Later"
+
+[TOUR_BOARD_ON_DEMAND]
+value = "доска охот: охота в группе «По желанию»"
+en = "the Hunts board: a Hunt in On demand"
+
+[TOUR_BOARD_WAGERS]
+value = "доска охот: полоса пари и группа «Пари», запись забега"
+en = "the Hunts board: the wager strip and the WAGERS group, a run's entry"
+
+[TOUR_WAGERS]
+value = "доска охот: разворот Пари Пэгла, билеты и лестница"
+en = "the Hunts board: the Pagle Wagers spread, its tickets and ladder"
+
+[TOUR_SET]
+value = "доска охот: страница набора с полученным званием"
+en = "the Hunts board: a set's page, its title earned"
+
+[TOUR_SET_ENTRY]
+value = "доска охот: запись, открытая со страницы её набора"
+en = "the Hunts board: an entry opened from its set's page"
+
+[TOUR_RETIRED]
+value = "доска охот: запись снятой охоты"
+en = "the Hunts board: a Retired Hunt's entry"
+
+[TOUR_TRACKER]
+value = "трекер охот в доке, с тремя закреплёнными"
+en = "the Hunts tracker in the dock, with three pins"
+
+[TOUR_BINDING]
+value = "доска охот в переплёте {good}"
+en = "the Hunts board in the {good} binding"
+
+[TOUR_TRACKER_FRAME]
+value = "трекер охот в рамке {good}"
+en = "the Hunts tracker in the {good} frame"
+
+[WAGERS_KICKER]
+value = "Пари Пэгла"
+en = "Pagle Wagers"
+
+[JOIN_ZONES]
+value = " и "
+en = " & "
+
+[STRIP_CLOSES]
+value = "закроется через {duration}"
+en = "closes in {duration}"
+
+[STRIP_MORE]
+value = "+{strip_more:0} ещё на кону"
+en = "+{strip_more:0} more on the table"
+
+[RUN_KICKER_ROTATION]
+value = "Из ротации · уровень вод: {bands}"
+en = "From the rotation · {bands} waters"
+
+[BANDS]
+value.high = "высокий"
+value.low = "низкий"
+value.mid = "средний"
+en.high = "high"
+en.low = "low"
+en.mid = "mid"
+
+[RUN_KICKER_PUSHED]
+value = "Прислано компаньоном"
+en = "Sent by the companion"
+
+[RUN_SETTLED_OPEN]
+value = "выиграно, но ещё открыто"
+en = "settled, and still open"
+
+[RUN_OPENS]
+value = "откроется в {realmWeekdayClock}"
+en = "opens {realmWeekdayClock}"
+
+[RUN_UNTIL_ALL]
+value = "до {untilWhen} · всего {length}"
+en = "until {untilWhen} · {length} in all"
+
+[RUN_UNTIL_TABLE]
+value = "до {untilWhen} · {length} на кону"
+en = "until {untilWhen} · {length} on the table"
+
+[SEAL_SETTLED_WORD]
+value = "Выиграно"
+en = "Settled"
+
+[SHAPES]
+value.big = "Крупные"
+value.haul = "Добыча"
+value.named = "Нужный вид"
+value.quality = "Качество"
+value.timed = "По времени"
+en.big = "Big ones"
+en.haul = "Haul"
+en.named = "Named fish"
+en.quality = "Quality"
+en.timed = "Timed"
+
+[RUN_HUNT_LINE]
+value = "{shapes} · {target}"
+en = "{shapes} · {target}"
+
+[RUN_TARGET_TIME]
+value = "{target}, {ranges}"
+en = "{target}, {ranges}"
+
+[RUN_HUNT_PROGRESS]
+value = "{run_hunt_progress_1} / {run_hunt_progress_2:0}"
+en = "{run_hunt_progress_1} / {run_hunt_progress_2:0}"
+
+[RUN_HUNT_CAUGHT]
+value = "поймано: {run_hunt_caught}"
+en = "{run_hunt_caught} caught"
+
+[RUN_WINDOW_OPEN]
+value = "открыто сейчас, до {clock}"
+en = "open now, until {clock}"
+
+[RUN_WINDOW_SHUT]
+value = "откроется в {clock}, через {duration}"
+en = "opens at {clock}, in {duration}"
+
+[RUN_CASTS]
+value.one = "{count} заброс в этих водах за забег · {done:0} из {total:0} первых отметок"
+value.few = "{count} заброса в этих водах за забег · {done:0} из {total:0} первых отметок"
+value.many = "{count} забросов в этих водах за забег · {done:0} из {total:0} первых отметок"
+value.other = "{count} заброса в этих водах за забег · {done:0} из {total:0} первых отметок"
+en.one = "{count} Cast in these waters this run · {done:0} of {total:0} first marks"
+en.other = "{count} Casts in these waters this run · {done:0} of {total:0} first marks"
+
+[PAY_SO_FAR]
+value = "Уже выплачено"
+en = "Paid so far"
+
+[PAY_AMOUNT]
+value = "+{xpRun:0} опыта · {coins:0} мон."
+en = "+{xpRun:0} XP · {coins:0} Coins"
+
+[PAY_SETTLE]
+value = "За выигрыш"
+en = "Settle it"
+
+[PAY_SETTLED]
+value = "Выиграно"
+en = "Settled"
+
+[PAY_PAID_OUT]
+value = "выплачено"
+en = "paid out"
+
+[RUN_PAY_RULE]
+value = "Первая отметка каждой охоты: +{xpEvent:0} опыта и {coinsEvent:0} мон.; каждая следующая ступень: +{run_pay_rule_3:0} опыта и {run_pay_rule_4:0} мон.; выигрыш пари: ещё +{xpRun:0} опыта и {coinsRun:0} мон."
+en = "Each Hunt's first mark pays +{xpEvent:0} XP and {coinsEvent:0} Coins, each tier after it +{run_pay_rule_3:0} XP and {run_pay_rule_4:0} Coins, and settling the wager +{xpRun:0} XP and {coinsRun:0} Coins more."
+
+[PAY_REFRESH]
+value.one = "+{count} обновление"
+value.few = "+{count} обновления"
+value.many = "+{count} обновлений"
+value.other = "+{count} обновления"
+en.one = "+{count} Refresh"
+en.other = "+{count} Refreshes"
+
+[REFRESH]
+value.one = "{count} обновление"
+value.few = "{count} обновления"
+value.many = "{count} обновлений"
+value.other = "{count} обновления"
+en.one = "{count} Refresh"
+en.other = "{count} Refreshes"
+
+[RUN_PAY_RULE_REFRESH_BOTH]
+value = " Третья отметка охоты также приносит {countText}, а выигрыш пари — ещё {settle:0}."
+en = " A Hunt's third mark also pays {countText}, and settling the wager {settle:0} more."
+
+[RUN_PAY_RULE_REFRESH_TIER]
+value = " Третья отметка охоты также приносит {countText}."
+en = " A Hunt's third mark also pays {countText}."
+
+[RUN_PAY_RULE_REFRESH_RUN]
+value = " Выигрыш пари также приносит {countText}."
+en = " Settling the wager also pays {countText}."
+
+[ENTRY_NONE_TITLE]
+value = "Читать пока нечего"
+en = "Nothing to read yet"
+
+[ENTRY_NONE_HAND]
+value = "Когда появится пари, оно будет записано здесь: его воды, его охоты и что оно приносит."
+en = "When a wager goes up it will be written here: its waters, its Hunts and what it pays."
+
+[RIBBON_ON]
+value = "идёт: {runsOn:0}"
+en = "{runsOn:0} on"
+
+[SPREAD_TITLE]
+value = "На кону"
+en = "On the table"
+
+[SPREAD_NOTE]
+value.one = "Идёт одно пари. Получите первую отметку каждой охоты, пока оно не закрылось."
+value.few = "Идёт пари: {count}. Получите первую отметку каждой охоты, пока её пари не закрылось."
+value.many = "Идёт пари: {count}. Получите первую отметку каждой охоты, пока её пари не закрылось."
+value.other = "Идёт пари: {count}. Получите первую отметку каждой охоты, пока её пари не закрылось."
+en.one = "One wager on. Land every Hunt's first mark before it closes."
+en.other = "{count} wagers on. Land every Hunt's first mark before its wager closes."
+
+[SPREAD_NOTE_AHEAD]
+value = "Сейчас ничего не идёт. Следующее пари откроется в {realmWeekdayClock}."
+en = "Nothing on just now. The next wager opens {realmWeekdayClock}."
+
+[SPREAD_NOTE_NONE]
+value = "На кону ничего нет, и новых пари пока не объявлено."
+en = "Nothing on the table, and nothing posted yet."
+
+[SPREAD_CLOSING]
+value = "{name} закроется через {duration}!"
+en = "{name} closes in {duration}!"
+
+[SPREAD_ON_NOW]
+value = "Идут сейчас"
+en = "On now"
+
+[SPREAD_AHEAD]
+value = "Впереди"
+en = "Ahead"
+
+[SPREAD_AHEAD_CAPTION]
+value = "объявлено, но до открытия может измениться"
+en = "posted, and may change before it opens"
+
+[SPREAD_EMPTY]
+value = "Пари на кону нет, и следующих не объявлено. Ротация выставит новое при следующей смене."
+en = "No wagers on the table, and none posted ahead. The rotation puts one on at the next turn."
+
+[TICKET_LINE]
+value = "{eventZonesText} · {ticket_line_2}"
+en = "{eventZonesText} · {ticket_line_2}"
+
+[TICKET_CLOSED_AT]
+value = "закрыто в {realmWhen}"
+en = "closed {realmWhen}"
+
+[TICKET_CLOSED]
+value = "закрыто"
+en = "closed"
+
+[TICKET_MARKS]
+value = "{done:0} из {hunts:0} первых отметок"
+en = "{done:0} of {hunts:0} first marks"
+
+[TICKET_UPDATING]
+value = "обновляется…"
+en = "updating…"
+
+[NEEDS_SKILL]
+value = "нужен навык {need:0}"
+en = "needs skill {need:0}"
+
+[AHEAD_OPENS]
+value = "откроется в {realmWeekdayClock}"
+en = "opens {realmWeekdayClock}"
+
+[AHEAD_FOR]
+value = "на {duration}"
+en = "for {duration}"
+
+[LADDER_LABEL]
+value = "Лестница"
+en = "The ladder"
+
+[HOLIDAYS]
+value.hallows_end = "Тыквовин"
+value.harvest_festival = "Неделя урожая"
+value.lunar_festival = "Лунный фестиваль"
+value.midsummer = "Огненный солнцеворот"
+value.noblegarden = "Сад чудес"
+value.stv_extravaganza = "Рыбомания Тернистой долины"
+value.winter_veil = "Зимний Покров"
+en.hallows_end = "Hallow's End"
+en.harvest_festival = "Harvest Festival"
+en.lunar_festival = "Lunar Festival"
+en.midsummer = "Midsummer Fire Festival"
+en.noblegarden = "Noblegarden"
+en.stv_extravaganza = "Stranglethorn Fishing Extravaganza"
+en.winter_veil = "Feast of Winter Veil"
+
+[WAGERS_SETTLED]
+value.one = "{shown} пари выиграно"
+value.few = "{shown} пари выиграно"
+value.many = "{shown} пари выиграно"
+value.other = "{shown} пари выиграно"
+en.one = "{shown} wager settled"
+en.other = "{shown} wagers settled"
+
+[WAGERS_LADDER_LINE]
+value = "{wagers_ladder_line_1} · ещё {wagers_ladder_line_2:0} до звания {title}"
+en = "{wagers_ladder_line_1} · {wagers_ladder_line_2:0} more for {title}"
+
+[GUIDE_BLURB]
+value = "Рыба, что клюёт только ночью, зимой или на ярмарке, — и какая из неё клюёт прямо сейчас."
+en = "Fish that only bite at night, in winter or at the fair, and which of them bite right now."
+
+[LOOK_TITLE]
+value = "Охоты"
+en = "Hunts"
+
+[LOOK_GROUPS]
+value = "*Сейчас*, *Скоро* и *Позже*: что открыто, что откроется в ближайшие три часа, и всё остальное."
+en = "*Now*, *Soon* and *Later*: what’s open, what opens within three hours, and the rest."
+
+[LOOK_NOW_LINE]
+value = "Красная линия — это *сейчас* по серверному времени. Штриховка показывает, когда открыта каждая охота."
+en = "The red line is *now*, in realm time. Hatched bars are when each Hunt is open."
+
+[LOOK_NATURAL]
+value = "*Природная* — значит, сама игра держит эту рыбу в её часах. Особые охоты — собственные правила Pagle."
+en = "*Natural* means the game itself keeps this fish to its hours. Imposed Hunts are Pagle’s own rules."
+
+[LOOK_PIN]
+value = "*Закрепите* охоту, чтобы она была в трекере, пока вы рыбачите."
+en = "*Pin* a Hunt to keep it on your tracker while you fish."
+
+[LOOK_SETS]
+value = "Каждая закладка — *набор охот*. Завершите в нём все охоты, и его звание ваше. В *Пари Пэгла* — пари, что сейчас на кону."
+en = "Each ribbon is a *Hunt set*. Finish every Hunt in one and its title is yours. *Pagle Wagers* holds the wagers on the table now."
+
+[LOOK_HELP]
+value = "?"
+en = "?"
+
+[LOOK_AGAIN]
+value = "Снова показать заметки к этой странице"
+en = "Show the notes for this page again"
+
+[HINT_MISSING]
+value = "Появились новые пари. Их приносит компаньон Pagle: больше опыта, больше монет и стиль плашек «Сонар»."
+en = "New wagers are out there. The Pagle companion brings them: more XP, more Coins, and the Sonar Scope toast style."
+
+[HINT_NOD]
+value = "Появились новые пари. Их приносит компаньон Pagle: больше опыта, больше монет."
+en = "New wagers are out there. The Pagle companion brings them: more XP, more Coins."
+
+[HINT_FIRST_INSTALL]
+value = "Только что установили? Один раз выйдите к выбору персонажа."
+en = "Installed it just now? Log out to character select once."
+
+[HINT_NOT_RUNNING]
+value = "Компаньон Pagle не запущен. Запустите его, чтобы получить пари этой недели."
+en = "The Pagle companion isn't running. Start it to get this week's wagers."
+
+[HINT_GET_IT]
+value = "Получить"
+en = "Get it"
+
+[HINT_DISMISS]
+value = "Скрыть"
+en = "Dismiss"
+
+[HINT_ADDRESS_KICKER]
+value = "Компаньон Pagle"
+en = "The Pagle companion"
+
+[HINT_ADDRESS_COPY]
+value = "Ctrl+C — скопировать"
+en = "Ctrl+C to copy"
+
+[HINT_ADDRESS_CLOSE]
+value = "Закрыть"
+en = "Close"
+
+[TRACKER_HINT_MISSING]
+value = "Новые пари с компаньоном Pagle"
+en = "New wagers with the Pagle companion"
+
+[TRACKER_HINT_NOT_RUNNING]
+value = "Компаньон Pagle не запущен"
+en = "Pagle companion not running"
+
+[TRACKER_HINT_WHY]
+value = "почему?"
+en = "why?"
+
+[COMPANION_HINT_SETTING]
+value = "Напоминать о компаньоне Pagle"
+en = "Remind me about the Pagle companion"
+
+[COMPANION_HINT_TOOLTIP]
+value = "Строка на доске охот и кивок раз в неделю, пока компаньон Pagle не приносит вам новых пари."
+en = "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you new wagers."
+
+[RUN_LOG_EVENT_IGNORED]
+value = "Охоты: присланное описание {run_log_event_ignored_1} проигнорировано: {problem} (HNT-R140)"
+en = "Hunts: the pushed definition of {run_log_event_ignored_1} is ignored: {problem} (HNT-R140)"
+
+[RUN_LOG_RUN_IGNORED]
+value = "Охоты: присланный забег {event} проигнорирован: нужен ID события и время start < end (HNT-R151)"
+en = "Hunts: a pushed run of {event} is ignored: it needs an event ID and times start < end (HNT-R151)"

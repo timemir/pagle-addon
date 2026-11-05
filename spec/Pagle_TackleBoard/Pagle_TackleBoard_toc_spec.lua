@@ -87,6 +87,7 @@ describe("Pagle_TackleBoard.toc", function()
 			local generated = {
 				["data/Lore.lua"] = true,
 				["data/Lore.esES.lua"] = true, -- a Locale's Lore (DATA-R104), beside its interface file
+				["data/Lore.ruRU.lua"] = true,
 				["data/BoardArt.lua"] = true,
 				["data/TicketArt.lua"] = true,
 			}

@@ -82,6 +82,7 @@ describe("Pagle_Hunts.toc", function()
 				["data/EventList.lua"] = true,
 				["data/Lore.lua"] = true,
 				["data/Lore.esES.lua"] = true, -- a Locale's Lore (DATA-R104), beside its interface file
+				["data/Lore.ruRU.lua"] = true,
 			}
 			local folders, handWrittenData = {}, {}
 			for _, file in ipairs(filesIn({ "lua" })) do

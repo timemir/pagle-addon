@@ -1,0 +1,988 @@
+# Pagle's interface text in Russian (ruRU), over data/locale/enUS/stats.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) for 1.1 and not yet reviewed by a native Russian speaker. It has
+# no human translator, so locale.toml names none. Strings that are only textures, or only the name Pagle, carry the
+# English as it is, so the Locale covers every key of the interface.
+
+[TITLE]
+value = "Статистика"
+en = "Stats"
+
+[BOOK]
+value = "Статистика"
+en = "Stats"
+
+[BOOK_SLASH_HELP]
+value = "Открыть или закрыть книгу статистики."
+en = "Open or close the Stats book."
+
+[SENTENCE_JOIN]
+value = " "
+en = " "
+
+[BOOK_ROOT]
+value = "Статистика"
+en = "Stats"
+
+[BOOK_WHERE_I_AM]
+value = "Где я"
+en = "Where I am"
+
+[BOOK_THIS_SESSION]
+value = "Эта сессия"
+en = "This Session"
+
+[BOOK_LAST_SESSION]
+value = "Моя прошлая сессия"
+en = "My last Session"
+
+[BOOK_LIFETIME]
+value = "За всё время"
+en = "Lifetime"
+
+[BOOK_SESSIONS]
+value = "Сессии"
+en = "Sessions"
+
+[BOOK_NAMEPLATE]
+value = "{book_nameplate_1} · {sessions} · с {date}"
+en = "{book_nameplate_1} · {sessions} · since {date}"
+
+[BOOK_NAMEPLATE_UNDATED]
+value = "{book_nameplate_undated_1} · {sessions}"
+en = "{book_nameplate_undated_1} · {sessions}"
+
+[BOOK_NO_CASTS]
+value = "Забросов пока нет"
+en = "No Casts yet"
+
+[BOOK_LIVE_LINE]
+value = "Сессия: {book_live_line_1} · {book_live_line_2} · {duration}"
+en = "Session: {book_live_line_1} · {book_live_line_2} · {duration}"
+
+[BOOK_UPDATING]
+value = "Обновляю записи…"
+en = "Updating my records…"
+
+[GUIDE_BLURB]
+value = "Только ваши цифры: шансы по вашим собственным забросам и сколько вы уже ждёте. Ничего не всплывает само."
+en = "Your own numbers: your odds, from your own Casts, and how long you’ve waited. It never pops up."
+
+[LOOK_TITLE]
+value = "Статистика"
+en = "Stats"
+
+[LOOK_ODDS_SINCE]
+value = "Вся рыба этих вод: ваши шансы и сколько забросов прошло с последнего улова."
+en = "Every fish of this water: your odds, and how many Casts since you last caught it."
+
+[LOOK_YOUR_ODDS]
+value = "*Ваши шансы* берутся только из ваших забросов и всегда говорят, из скольких."
+en = "*Your odds* come only from your own Casts, and always say how many."
+
+[LOOK_DRY_SPELL]
+value = "*Серия без улова* — это сколько вы ждёте. Невезение — не поломка: вам ничего не должны."
+en = "A *Dry spell* is how long you’ve waited. Unlucky isn’t broken: nothing is owed."
+
+[LOOK_WATCH]
+value = "*Следите* максимум за тремя рыбами, чтобы видеть их серии без улова на трекере."
+en = "*Watch* up to three fish to keep their Dry spells on your tracker."
+
+[LOOK_NEVER_POPS_UP]
+value = "Статистика *не всплывает* и ничего не объявляет. Она здесь, когда вы спросите."
+en = "Stats *never pops up* and never announces. It’s here when you ask."
+
+[LOOK_HELP]
+value = "?"
+en = "?"
+
+[LOOK_AGAIN]
+value = "Снова показать заметки к этой странице"
+en = "Show the notes for this page again"
+
+[SESSION_NUMBERED]
+value = "Сессия {index}"
+en = "Session {index}"
+
+[SESSION_SPAN]
+value = "{time} — {live}, у воды {duration}."
+en = "{time} to {live}, {duration} at the water."
+
+[SESSION_NOW]
+value = "сейчас"
+en = "now"
+
+[SESSION_CASTS]
+value = "Забросы"
+en = "Casts"
+
+[SESSION_CATCHES]
+value = "Уловы"
+en = "Catches"
+
+[SESSION_GOT_AWAY]
+value = "Сорвалось"
+en = "Got away"
+
+[SESSION_GOT_AWAY_VALUE]
+value = "{gotAway} ({gotAwayRate:0}%)"
+en = "{gotAway} ({gotAwayRate:0}%)"
+
+[SESSION_PER_HOUR]
+value = "Уловов в час"
+en = "Catches per hour"
+
+[SESSION_SKILL]
+value = "Прирост навыка"
+en = "Skill gained"
+
+[SESSION_SKILL_VALUE]
+value = "+{skill}"
+en = "+{skill}"
+
+[SESSION_BY_QUALITY]
+value = "По качеству"
+en = "By quality"
+
+[SESSION_WHERE_AND_WHO]
+value = "Где и кто"
+en = "Where and who"
+
+[SESSIONS_BEFORE_THAT]
+value = "До этого"
+en = "Before that"
+
+[SESSIONS_EARLIER]
+value = "Прошлые сессии"
+en = "Earlier Sessions"
+
+[SESSIONS_EVERY]
+value = "Все сессии"
+en = "Every Session"
+
+[SESSIONS_STARTED]
+value = "Начало"
+en = "Started"
+
+[SESSIONS_WHERE]
+value = "Где"
+en = "Where"
+
+[SESSIONS_LENGTH]
+value = "Время"
+en = "Length"
+
+[SESSIONS_CASTS]
+value = "Забросы"
+en = "Casts"
+
+[SESSIONS_CATCHES]
+value = "Уловы"
+en = "Catches"
+
+[SESSIONS_STARTED_AT]
+value = "{date} {time}"
+en = "{date} {time}"
+
+[SESSIONS_WHERE_JOIN]
+value = ", "
+en = ", "
+
+[SESSIONS_NOTE]
+value = "Сессия заканчивается после {sessions_note:0} мин без забросов."
+en = "A Session ends after {sessions_note:0} minutes without a Cast."
+
+[SESSIONS_LATER]
+value = "позже"
+en = "later"
+
+[SESSIONS_EARLIER_PAGE]
+value = "раньше"
+en = "earlier"
+
+[SESSIONS_PAGE]
+value = "стр. {page:0} из {pages:0}"
+en = "page {page:0} of {pages:0}"
+
+[NO_SESSIONS]
+value = "Сессий пока нет."
+en = "No Sessions yet."
+
+[NOTHING_IS_OWED]
+value = "Каждый заброс — свой жребий; вам ничего не должны."
+en = "Every Cast is its own roll; nothing is owed."
+
+[COUNTS]
+value.Casts.one = "{count:n} заброс"
+value.Casts.few = "{count:n} заброса"
+value.Casts.many = "{count:n} забросов"
+value.Casts.other = "{count:n} заброса"
+value.Catches.one = "{count:n} улов"
+value.Catches.few = "{count:n} улова"
+value.Catches.many = "{count:n} уловов"
+value.Catches.other = "{count:n} улова"
+value.Sessions.one = "{count:n} сессия"
+value.Sessions.few = "{count:n} сессии"
+value.Sessions.many = "{count:n} сессий"
+value.Sessions.other = "{count:n} сессии"
+value.anglers.one = "{count:n} рыболов из 100 ждёт"
+value.anglers.few = "{count:n} рыболова из 100 ждут"
+value.anglers.many = "{count:n} рыболовов из 100 ждут"
+value.anglers.other = "{count:n} рыболова из 100 ждут"
+value.waters.one = "{count:n} водоём"
+value.waters.few = "{count:n} водоёма"
+value.waters.many = "{count:n} водоёмов"
+value.waters.other = "{count:n} водоёма"
+en.Casts.one = "{count:n} Cast"
+en.Casts.other = "{count:n} Casts"
+en.Catches.one = "{count:n} Catch"
+en.Catches.other = "{count:n} Catches"
+en.Sessions.one = "{count:n} Session"
+en.Sessions.other = "{count:n} Sessions"
+en.anglers.one = "{count:n} angler in 100 waits"
+en.anglers.other = "{count:n} anglers in 100 wait"
+en.waters.one = "{count:n} water"
+en.waters.other = "{count:n} waters"
+
+[DURATION_UNDER_MINUTE]
+value = "меньше 1 мин"
+en = "under 1m"
+
+[DURATION_MINUTES]
+value = "{minutes:0} мин"
+en = "{minutes:0}m"
+
+[DURATION_HOURS]
+value = "{duration_hours_1:0} ч {duration_hours_2} мин"
+en = "{duration_hours_1:0}h {duration_hours_2}m"
+
+[AGO_NOW]
+value = "только что"
+en = "just now"
+
+[AGO_MINUTES]
+value = "{minutes:0} мин назад"
+en = "{minutes:0}m ago"
+
+[AGO_HOURS]
+value = "{hours:0} ч назад"
+en = "{hours:0}h ago"
+
+[AGO_DAYS]
+value = "{ago_days:0} д назад"
+en = "{ago_days:0}d ago"
+
+[DATE]
+value = "{day:0} {month} {year}"
+en = "{day:0} {month} {year}"
+
+[SESSION_HEADING]
+value = "{weekday}, {day:0} {month}"
+en = "{weekday} {day:0} {month}"
+
+[MONTHS_SHORT]
+value = ["янв.", "февр.", "мар.", "апр.", "мая", "июн.", "июл.", "авг.", "сент.", "окт.", "нояб.", "дек."]
+en = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+[MONTHS]
+value = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+en = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+[WEEKDAYS]
+value = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"]
+en = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+[ITEM_FALLBACK]
+value = "Предмет {itemID}"
+en = "Item {itemID}"
+
+[AREA_FALLBACK]
+value = "Область {areaID}"
+en = "Area {areaID}"
+
+[CHARACTER_NAME]
+value = "{name} {surname}"
+en = "{name} {surname}"
+
+[CHARACTER_FALLBACK]
+value = "Персонаж {index}"
+en = "Character {index}"
+
+[QUALITY_FALLBACK]
+value = "Качество {quality:0}"
+en = "Quality {quality:0}"
+
+[ODDS_HEADING]
+value = "Ваши шансы"
+en = "Your odds"
+
+[ODDS_LEARNING_SHORT]
+value = "сбор {odds_learning_short_1:0}/{oddsThreshold:0}"
+en = "learning {odds_learning_short_1:0}/{oddsThreshold:0}"
+
+[ODDS_LEARNING]
+value = "Сбор данных…"
+en = "Learning…"
+
+[ODDS_UNSEEN]
+value = "ещё не попадалась"
+en = "not seen yet"
+
+[ODDS_KNOWN_SHORT]
+value = "1 из {nice}"
+en = "1 in {nice}"
+
+[ODDS_KNOWN]
+value = "около 1 из {nice}"
+en = "about 1 in {nice}"
+
+[ODDS_ABOUT]
+value = "около"
+en = "about"
+
+[ODDS_HERE]
+value = "здесь"
+en = "here"
+
+[ODDS_ACROSS]
+value = "по всей зоне {areaName}"
+en = "across {areaName}"
+
+[ODDS_WITH_WINDOW]
+value = "{odds_with_window_1} {windowName}"
+en = "{odds_with_window_1} {windowName}"
+
+[ODDS_WITH_SIDE]
+value = "{odds_with_side_1}, {sideText}"
+en = "{odds_with_side_1}, {sideText}"
+
+[ODDS_SIDE_HI]
+value = "при навыке от {line:0}"
+en = "at or above {line:0} skill"
+
+[ODDS_SIDE_LO]
+value = "при навыке ниже {line:0}"
+en = "below {line:0} skill"
+
+[ODDS_LEARNING_SENTENCE]
+value = "{odds_learning_sentence_1} из {oddsThreshold:0} забросов {restsOn}, нужных, чтобы «Ваши шансы» показали число."
+en = "{odds_learning_sentence_1} of the {oddsThreshold:0} Casts I need {restsOn} before Your odds show a number."
+
+[ODDS_SCOPE_LINE]
+value = "Мои забросы {restsOn}: {odds_scope_line_1}; поймано: {odds_scope_line_3}."
+en = "From {odds_scope_line_1} of my Casts {restsOn}; {odds_scope_line_3} caught."
+
+[ODDS_UNSEEN_SENTENCE]
+value = "Забросов {restsOn}: {odds_unseen_sentence_1}. Реже, чем примерно 1 из {nice}, если она здесь вообще клюёт."
+en = "In {odds_unseen_sentence_1} Casts {restsOn}: rarer than about 1 in {nice}, if it bites here at all."
+
+[ODDS_RANGE]
+value = "Вероятно, от 1 из {likelier} до 1 из {rarer} (95%)."
+en = "Likely between 1 in {likelier} and 1 in {rarer} (95%)."
+
+[ODDS_RANGE_ROUNDING]
+value = "С точностью до округления 1 из {nice} (95%)."
+en = "Within rounding of 1 in {nice} (95%)."
+
+[ODDS_NOTE_ENTRY]
+value = "Pagle ещё не подтвердил, что она здесь клюёт."
+en = "Pagle hasn't confirmed it bites here yet."
+
+[ODDS_NOTE_WINDOW]
+value = "Время клёва ещё не подтверждено."
+en = "The window isn't confirmed yet."
+
+[ODDS_NOTE_LINE]
+value = "Порог без хлама ещё не подтверждён."
+en = "The no-junk line isn't confirmed yet."
+
+[ODDS_NOTE_POOL]
+value = "Открытая вода и косяки вместе: данных по косякам нет."
+en = "Open water and pools combined: there is no pool data."
+
+[WINDOW_NAMES]
+value.autumn = "осенью"
+value.day = "днём"
+value.event = "во время события"
+value.night = "ночью"
+value.other = "в своё время"
+value.spring = "весной"
+value.summer = "летом"
+value.winter = "зимой"
+en.autumn = "in autumn"
+en.day = "by day"
+en.event = "during its event"
+en.night = "by night"
+en.other = "in its window"
+en.spring = "in spring"
+en.summer = "in summer"
+en.winter = "in winter"
+
+[DRY_NONE_YET]
+value = "{dry_none_yet_1} {where}, пока без улова."
+en = "{dry_none_yet_1} {where}, none yet."
+
+[DRY_SINCE_ENTRY]
+value = "{dry_since_entry_1} с прошлого улова, {timeAgo}."
+en = "{dry_since_entry_1} since my last one, {timeAgo}."
+
+[DRY_SINCE_TRACKER]
+value = "{item}: {dry_since_tracker_1} с прошлого улова."
+en = "{dry_since_tracker_1} since my last {item}."
+
+[DRY_CAUGHT_LAST]
+value = "Последний заброс {where} — с уловом."
+en = "Caught one on my last Cast {where}."
+
+[DRY_LEARNING]
+value = "Оценка удачи появится, когда у «Ваших шансов» будет число."
+en = "A luck reading comes once Your odds have a number."
+
+[LUCK_NOTHING_UNUSUAL]
+value = "Ничего необычного."
+en = "Nothing unusual."
+
+[LUCK_ABOUT]
+value = "Примерно {luck_about} так долго. Ничего необычного."
+en = "About {luck_about} this long. Nothing unusual."
+
+[LUCK_LONG_WAIT]
+value = "Так долго ждёт примерно 1 рыболов из {nice}. Ожидание долгое, но удача вполне обычная."
+en = "Roughly 1 angler in {nice} waits this long. A long wait, but well within normal luck."
+
+[LUCK_UNLUCKY]
+value = "Так долго ждёт примерно 1 рыболов из {nice}. Невезение, а не поломка."
+en = "Roughly 1 angler in {nice} waits this long. Unlucky, not broken."
+
+[LUCK_VERY_UNLUCKY]
+value = "Так долго ждёт лишь около 1 рыболова из {nice}. {luckVeryUnluckyRoll}"
+en = "Only about 1 angler in {nice} waits this long. {luckVeryUnluckyRoll}"
+
+[LUCK_UNDER_A_MILLION]
+value = "Так долго ждёт меньше 1 рыболова на миллион. {luckVeryUnluckyRoll}"
+en = "Fewer than 1 angler in a million waits this long. {luckVeryUnluckyRoll}"
+
+[LUCK_VERY_UNLUCKY_ROLL]
+value = "Сильное невезение, но каждый заброс — по-прежнему свой жребий."
+en = "Very unlucky, and every Cast is still its own roll."
+
+[BANDS]
+value.normal = "обычно"
+value.unlucky = "не везёт"
+value.veryUnlucky = "очень не везёт"
+en.normal = "normal"
+en.unlucky = "unlucky"
+en.veryUnlucky = "very unlucky"
+
+[DRY_SHORT_SINCE]
+value = "{since} без улова"
+en = "{since} since"
+
+[DRY_SHORT_BAND]
+value = ", {bandWord}"
+en = ", {bandWord}"
+
+[DRY_JUST_NOW]
+value = "только что"
+en = "just now"
+
+[DRY_WATCH_SINCE]
+value = "{since} с прошлого улова{unluckySuffix}."
+en = "{since} since the last{unluckySuffix}."
+
+[DRY_WATCH_CAUGHT_LAST]
+value = "улов на последнем забросе."
+en = "caught on my last Cast."
+
+[DRY_WATCH_NONE_YET]
+value = "{dry_watch_none_yet}, пока без улова."
+en = "{dry_watch_none_yet}, none yet."
+
+[GROUPS]
+value.added.heading = "Тоже ловится здесь"
+value.added.note = "нет на карте Pagle для этих вод"
+value.any.heading = "В любое время"
+value.any.note = "Ваши шансы · Без улова"
+value.pools.heading = "Косяки"
+value.pools.note = "открытая вода и косяки вместе"
+value.window.heading = "В своё время"
+value.window.note = "только забросы в их время"
+en.added.heading = "Also caught here"
+en.added.note = "not on Pagle's chart for these waters"
+en.any.heading = "Any time"
+en.any.note = "Your odds · Dry spell"
+en.pools.heading = "Pools"
+en.pools.note = "open water and pools combined"
+en.window.heading = "In their window"
+en.window.note = "only Casts in their window"
+
+[PLACE_ZONE_KICKER]
+value = "Водоёмы"
+en = "Waters"
+
+[PLACE_HERE]
+value = "Я здесь"
+en = "I'm here"
+
+[PLACE_CASTS]
+value = "Моих забросов здесь: {record}."
+en = "{record} of my Casts here."
+
+[PLACE_NO_JUNK]
+value = "Без хлама с {line:0}."
+en = "No junk from {line:0}."
+
+[PLACE_NO_JUNK_PAST]
+value = "Без хлама с {line:0}; с навыком {live:0} я выше, поэтому считаются только такие забросы."
+en = "No junk from {line:0}; at {live:0} I'm past it, so only those Casts count."
+
+[PLACE_NO_JUNK_BELOW]
+value = "Без хлама с {line:0}; с навыком {live:0} я ниже, поэтому считаются только мои забросы ниже."
+en = "No junk from {line:0}; at {live:0} I'm below it, so only my Casts below it count."
+
+[PLACE_NO_CHART]
+value = "У Pagle пока нет карты этих вод."
+en = "Pagle has no chart of these waters yet."
+
+[PLACE_WATERS]
+value = "Водоёмы зоны"
+en = "Its waters"
+
+[PLACE_WATERS_NOTE]
+value = "мои забросы"
+en = "my Casts"
+
+[PLACE_NONE]
+value = "—"
+en = "—"
+
+[PLACE_ACROSS_ZONE]
+value = "Рыба, у которой меньше {oddsThreshold:0} забросов в {areaName}, пока считается по всей зоне {place_across_zone_3}."
+en = "Fish with fewer than {oddsThreshold:0} Casts in {areaName} use all of {place_across_zone_3} until then."
+
+[PLACE_ABOUT]
+value = "Об этих водах"
+en = "About these waters"
+
+[PLACE_CASTS_LABEL]
+value = "Забросы"
+en = "Casts"
+
+[PLACE_CATCHES_LABEL]
+value = "Уловы"
+en = "Catches"
+
+[PLACE_GOT_AWAY_LABEL]
+value = "Сорвалось"
+en = "Got away"
+
+[PLACE_GOT_AWAY]
+value = "{gotAway} ({rate:0}%)"
+en = "{gotAway} ({rate:0}%)"
+
+[PLACE_PICK]
+value = "Выберите рыбу слева, чтобы увидеть её шансы и серию без улова."
+en = "Pick a fish on the left for its odds and its Dry spell."
+
+[ENTRY_KICKER]
+value = "Ваши шансы · {areaName}"
+en = "Your odds · {areaName}"
+
+[ENTRY_KICKER_WINDOW]
+value = "{kicker}, {windowName}"
+en = "{kicker}, {windowName}"
+
+[ENTRY_WATCH]
+value = "следить"
+en = "watch"
+
+[ENTRY_WATCHING]
+value = "слежу"
+en = "watching"
+
+[ENTRY_DRY]
+value = "Без улова"
+en = "Dry spell"
+
+[ENTRY_DRY_NOTE]
+value = "считается как шансы выше"
+en = "counted like the odds above"
+
+[RULER_TICKS]
+value = ["все", "1 из 10", "1 из 100", "1 из 1 тыс.", "1 из 10 тыс.", "1 из 100 тыс.", "1 из 1 млн"]
+en = ["all", "1 in 10", "1 in 100", "1 in 1k", "1 in 10k", "1 in 100k", "1 in 1M"]
+
+[RULER_ME]
+value = "я"
+en = "me"
+
+[ENTRY_RECORDS]
+value = "В моих записях"
+en = "In my records"
+
+[ENTRY_CAUGHT_HERE]
+value = "Поймано в этой выборке"
+en = "Caught in this count"
+
+[ENTRY_CAUGHT_ANYWHERE]
+value = "Поймано везде"
+en = "Caught anywhere"
+
+[ENTRY_ITEM_PAGE]
+value = "Все водоёмы, где она клюёт"
+en = "Every water it bites in"
+
+[HOME_KICKER]
+value = "Водоёмы"
+en = "The waters"
+
+[HOME_TITLE]
+value = "Где я рыбачу"
+en = "Where I've fished"
+
+[HOME_INTRO]
+value = "Ваши шансы и серии без улова — только по моим забросам, а не по данным игры."
+en = "Your odds and Dry spells come only from my own Casts, never from game data."
+
+[HOME_TILE_LINE]
+value = "{home_tile_line_1} · {home_tile_line_2}"
+en = "{home_tile_line_1} · {home_tile_line_2}"
+
+[HOME_TILE_NOT_FISHED]
+value = "забросов ещё нет"
+en = "not fished yet"
+
+[HOME_HERE]
+value = "Я здесь"
+en = "I'm here"
+
+[HOME_WATCHING]
+value = "слежу: {watching:0}"
+en = "watching {watching:0}"
+
+[HOME_NOT_FISHED]
+value = "Забросов пока нигде нет."
+en = "Not fished anywhere yet."
+
+[HOME_RIGHT_NOW]
+value = "Прямо сейчас"
+en = "Right now"
+
+[HOME_PLACE]
+value = "{areaName}, {where}"
+en = "{areaName}, {where}"
+
+[HOME_FISHING]
+value = "Рыбачу: {where}."
+en = "Fishing {where}."
+
+[HOME_FISHING_WHEN]
+value = "Рыбачу: {where}, {window}."
+en = "Fishing {where}, {window}."
+
+[HOME_NOWHERE]
+value = "Не могу понять, где я."
+en = "I can't tell where I am."
+
+[HOME_SKILL_HI]
+value = "Навык {skill:0}, выше порога без хлама ({line:0})."
+en = "Skill {skill:0}, past the no-junk line ({line:0})."
+
+[HOME_SKILL_LO]
+value = "Навык {skill:0}, ниже порога без хлама ({line:0})."
+en = "Skill {skill:0}, below the no-junk line ({line:0})."
+
+[HOME_SESSION]
+value = "Эта сессия: {home_session_1}, {home_session_2}, сорвалось {gotAway}, идёт уже {duration}."
+en = "This Session: {home_session_1}, {home_session_2}, {gotAway} got away, {duration} so far."
+
+[HOME_LAST_SESSION]
+value = "Сейчас сессии нет. Прошлая закончилась {timeAgo}."
+en = "No Session right now. The last one ended {timeAgo}."
+
+[HOME_NO_SESSION]
+value = "Сессий пока не было."
+en = "No Session yet."
+
+[HOME_WATCHED]
+value = "Слежу за сериями без улова"
+en = "Dry spells I'm watching"
+
+[HOME_WATCHED_NOTE]
+value = "также на трекере"
+en = "also on the live tracker"
+
+[HOME_WATCH]
+value = "{name}, {areaName}: {drySpellWatchText}"
+en = "{name}, {areaName}: {drySpellWatchText}"
+
+[HOME_NO_WATCHES]
+value = "Пока ничего. Следить за серией без улова можно со страницы любой рыбы."
+en = "Nothing yet. Watch a Dry spell from any fish's page."
+
+[HOME_CONTENTS]
+value = "В этой книге"
+en = "In this book"
+
+[HOME_WHERE_I_AM]
+value = "Где я: {areaName}"
+en = "Where I am: {areaName}"
+
+[HOME_WHERE_UNKNOWN]
+value = "Где я: неизвестно"
+en = "Where I am: unknown"
+
+[HOME_EVERY_SESSION]
+value = "Все сессии"
+en = "Every Session"
+
+[ITEM_KICKER]
+value = "Рыба"
+en = "A fish"
+
+[ITEM_BITES_ANY]
+value = "Клюёт в любое время."
+en = "Bites at any hour."
+
+[ITEM_BITES_ONLY]
+value = "Клюёт только {windowName}."
+en = "Bites only {windowName}."
+
+[ITEM_BITES_ONLY_TIMED]
+value = "Клюёт только {windowName} ({ranges} по серверному времени)."
+en = "Bites only {windowName} ({ranges} realm time)."
+
+[ITEM_RANGE]
+value = "{windowTime}–{item_range_2}"
+en = "{windowTime}–{item_range_2}"
+
+[ITEM_RANGES_JOIN]
+value = ", "
+en = ", "
+
+[ITEM_POOL]
+value = "Бывает и в косяках; данных по косякам нет, поэтому всё считается вместе."
+en = "Also in pools; with no pool data, both are counted together."
+
+[ITEM_CAUGHT]
+value = "Поймано"
+en = "Caught"
+
+[ITEM_FIRST_CAUGHT]
+value = "Первый улов"
+en = "First caught"
+
+[ITEM_LAST_CAUGHT]
+value = "Последний улов"
+en = "Last caught"
+
+[ITEM_LAST_VALUE]
+value = "{date}, {timeAgo}"
+en = "{date}, {timeAgo}"
+
+[ITEM_NEVER]
+value = "—"
+en = "—"
+
+[ITEM_HERE_SINCE]
+value = "{short}; {since} с прошлого улова."
+en = "{short}; {since} since the last."
+
+[ITEM_HERE_CAUGHT_LAST]
+value = "{short}; улов на последнем забросе."
+en = "{short}; caught on my last Cast."
+
+[ITEM_HERE_NONE_YET]
+value = "{short}; пока без улова."
+en = "{short}; none yet."
+
+[ITEM_OPEN_HERE]
+value = "Открыть страницу этого места"
+en = "Open its page here"
+
+[ITEM_WATERS_KICKER]
+value = "Её водоёмы"
+en = "Its waters"
+
+[ITEM_WATERS_TITLE]
+value = "Где я её ловлю"
+en = "Where I've fished for it"
+
+[ITEM_TILE_LINE]
+value = "{areaName} · {short}"
+en = "{areaName} · {short}"
+
+[ITEM_NO_WATERS]
+value = "Там, где она клюёт, моих забросов пока нет."
+en = "I haven't fished anywhere it bites."
+
+[SEARCH_HINT]
+value = "Найти рыбу или водоём…"
+en = "Find a fish or a water…"
+
+[SEARCH_FISH]
+value = "рыба"
+en = "fish"
+
+[SEARCH_ZONE]
+value = "зона"
+en = "zone"
+
+[SEARCH_NONE]
+value = "В моих записях нет ничего с таким названием."
+en = "Nothing by that name in my records."
+
+[LIFETIME_TITLE]
+value = "Все мои забросы"
+en = "Every Cast I've made"
+
+[LIFETIME_CASTS]
+value = "Забросы"
+en = "Casts"
+
+[LIFETIME_CATCHES]
+value = "Уловы"
+en = "Catches"
+
+[LIFETIME_GOT_AWAY]
+value = "Сорвалось"
+en = "Got away"
+
+[LIFETIME_GOT_AWAY_VALUE]
+value = "{gotAway} ({gotAwayRate:0}%)"
+en = "{gotAway} ({gotAwayRate:0}%)"
+
+[LIFETIME_SESSIONS]
+value = "Сессии"
+en = "Sessions"
+
+[LIFETIME_TIME_AT_THE_WATER]
+value = "Время у воды"
+en = "Time at the water"
+
+[LIFETIME_BESTS]
+value = "Рекорды"
+en = "Bests"
+
+[LIFETIME_LONGEST]
+value = "Самая долгая сессия, {date}"
+en = "Longest Session, {date}"
+
+[LIFETIME_BEST_RATE]
+value = "Больше всего уловов в час, {date}"
+en = "Most Catches per hour, {date}"
+
+[LIFETIME_BY_SKILL]
+value = "Сорвалось, по навыку"
+en = "Got away, by skill"
+
+[LIFETIME_BY_SKILL_NOTE]
+value = "относительно порога без хлама каждого водоёма"
+en = "against each water's no-junk line"
+
+[LIFETIME_MARGIN_NAMES]
+value.hi0 = "на 0–24 выше"
+value.hi25 = "на 25+ выше"
+value.lo1 = "на 1–49 ниже"
+value.lo50 = "на 50+ ниже"
+en.hi0 = "0–24 over"
+en.hi25 = "25+ over"
+en.lo1 = "below by 1–49"
+en.lo50 = "below by 50+"
+
+[LIFETIME_MARGIN_VALUE]
+value = "{lifetime_margin_value_2}: {gotAwayRate:0}%"
+en = "{gotAwayRate:0}% of {lifetime_margin_value_2}"
+
+[LIFETIME_CHARACTERS]
+value = "Персонажи"
+en = "Characters"
+
+[LIFETIME_CHARACTER_VALUE]
+value = "{lifetime_character_value_1} · {lifetime_character_value_2} · сорвалось {gotAway}"
+en = "{lifetime_character_value_1} · {lifetime_character_value_2} · {gotAway} got away"
+
+[LIFETIME_CATCH_KICKER]
+value = "Улов"
+en = "The catch"
+
+[LIFETIME_EVERY_FISH]
+value = "Вся рыба"
+en = "Every fish"
+
+[LIFETIME_INDEX_NOTE]
+value = "Сколько поймано. Наведите курсор — первый и последний улов; щелкните — её водоёмы."
+en = "How many I've caught. Hover for first and last; click for its waters."
+
+[LIFETIME_FIRST_LAST]
+value = "Первый: {date}, последний: {lifetime_first_last_2}"
+en = "First {date}, last {lifetime_first_last_2}"
+
+[WATCH_FULL]
+value = "Следить можно максимум за {maxWatches:0} сериями без улова. Сначала перестаньте следить за одной."
+en = "You can watch up to {maxWatches:0} Dry spells. Stop watching one first."
+
+[WATCH_TRACKER_ON]
+value = "Pagle: трекер включён, чтобы показывать серии без улова, за которыми вы следите."
+en = "Pagle: live tracker turned on to show your watched Dry spells."
+
+[SETTINGS_TRACKER]
+value = "Показывать трекер"
+en = "Show the live tracker"
+
+[SETTINGS_TRACKER_TOOLTIP]
+value = "Показывает текущую сессию и серии без улова, за которыми вы следите, под миникартой. Включается, когда вы начинаете следить за серией."
+en = "Shows this Session and your watched Dry spells under the minimap. Watching a Dry spell turns it on."
+
+[SETTINGS_WATCHED]
+value = "Отслеживаемые серии без улова"
+en = "Watched Dry spells"
+
+[SETTINGS_WATCHED_TOOLTIP]
+value = "Начать или перестать следить можно на странице любой рыбы в книге статистики."
+en = "Watch or stop watching from any fish's page in the Stats book."
+
+[SETTINGS_WATCHED_COUNT]
+value = "{watches:0} из {maxWatches:0}"
+en = "{watches:0} of {maxWatches:0}"
+
+[SETTINGS_WATCHED_LINE]
+value = "{itemName}, {areaName}"
+en = "{itemName}, {areaName}"
+
+[SETTINGS_WATCHED_NONE]
+value = "Следить за серией без улова можно со страницы любой рыбы в книге статистики."
+en = "Watch a Dry spell from any fish's page in the Stats book."
+
+[SETTINGS_STOP_WATCHING]
+value = "Не следить"
+en = "Stop watching"
+
+[SLOT_TRACKER_FRAME]
+value = "Рамка трекера статистики"
+en = "Stats tracker frame"
+
+[TRACKER_SESSION]
+value = "Сессия · {duration}"
+en = "Session · {duration}"
+
+[TRACKER_COUNTS]
+value = "{tracker_counts_1} · {tracker_counts_2} · сорвалось {gotAway}"
+en = "{tracker_counts_1} · {tracker_counts_2} · {gotAway} got away"
+
+[TRACKER_PER_HOUR]
+value = "{perHour} в час · навык +{skill}"
+en = "{perHour} per hour · skill +{skill}"
+
+[TRACKER_JOIN]
+value = " · "
+en = " · "
+
+[TRACKER_NO_SESSION]
+value = "нет сессии"
+en = "no Session"
+
+[TRACKER_UPDATING]
+value = "обновление"
+en = "updating"

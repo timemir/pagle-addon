@@ -1,0 +1,1128 @@
+# Ledger's lore in Russian (ruRU), over data/lore/ledger.toml (DATA-R113, DATA-R114).
+# Machine-drafted: written by an AI model (Claude) for 1.1 and not yet reviewed by a native Russian speaker.
+
+[species.1467]
+blurb.value = "Весёлая рыбка, которая понятия не имеет, сколько поваров её уже дожидаются."
+blurb.en = "A cheerful little fish with no idea how many cooks are waiting for it."
+riddle.value = "Тихое озеро среди холмов, в обжитом крестьянском краю."
+riddle.en = "A calm hill lake in settled farming country."
+
+[species.4603]
+blurb.value = "Быстрый, яркий и очень собой доволен."
+blurb.en = "Fast, bright, and very pleased with itself."
+riddle.value = "Солёные берега на севере и на юге, по обе стороны моря."
+riddle.en = "Salt coasts north and south, on both sides of the sea."
+
+[species.6289]
+blurb.value = "Хватает всё подряд. Однажды — даже гномий сапог."
+blurb.en = "It bites anything, including, once, a gnome's boot."
+riddle.value = "Ленивые реки в краях, где начинают свой путь герои."
+riddle.en = "Lazy rivers in the lands where heroes begin."
+
+[species.6291]
+blurb.value = "Маленькая, яркая и повсюду. С неё начинается книга любого рыболова, и никто не признаётся, сколько таких отпустил обратно."
+blurb.en = "Small, bright and everywhere. Every angler's book starts here, and nobody admits how many they threw back."
+riddle.value = "Первое, что дёрнет леску новичка, — в самых кротких водах на свете."
+riddle.en = "The very first thing to tug a beginner's line, in the gentlest waters of all."
+
+[species.6299]
+blurb.value = "Выглядит плохо, пахнет хуже, а на огне превращается в то, что съел бы разве что ящер."
+blurb.en = "Looks bad, smells worse, cooks into something a raptor would eat."
+riddle.value = "Усталая серая вода угрюмого севера, по обе стороны моря."
+riddle.en = "Tired, grey water in the gloomy north, on both sides of the sea."
+
+[species.6303]
+blurb.value = "Скользкая — имя заслужила честно. А жарится лучше, чем имеет на то право."
+blurb.en = "Slippery enough to earn the name. Fries up better than it has any right to."
+riddle.value = "Мелкие берега, где бродят по колено начинающие искатели приключений."
+riddle.en = "Shallow coasts, where new adventurers wade."
+
+[species.6308]
+blurb.value = "Сплошные усы и обида. Дуется на дне, пока не решит, что пора драться."
+blurb.en = "All whiskers and grudge. It sulks on the bottom until it decides to fight."
+riddle.value = "Мутные реки по обе стороны моря."
+riddle.en = "Murky rivers on both sides of the sea."
+
+[species.6317]
+blurb.value = "Название дали дворфы, а дворфы всё называют по тому, как оно ведёт себя, когда пытаешься его удержать."
+blurb.en = "Named by dwarves, who name everything after how it behaves when you try to hold it."
+riddle.value = "Холодная высокогорная вода в краю дворфов."
+riddle.en = "Cold highland lake water, in dwarf country."
+
+[species.6358]
+blurb.value = "Алхимикам нужно его масло. Повара не желают иметь с ним ничего общего."
+blurb.en = "Alchemists want the oil. Cooks want nothing to do with it."
+riddle.value = "Косяк, после которого на прибрежной воде остаётся радужная плёнка."
+riddle.en = "A school that leaves a slick on coastal waters."
+
+[species.6359]
+blurb.value = "Тёплый на ощупь, даже вынутый из воды."
+blurb.en = "Warm to the touch, even out of the water."
+riddle.value = "Кружащие косяки цвета тлеющих углей у берегов севера и юга."
+riddle.en = "Swirling schools the colour of embers, off coasts north and south."
+
+[species.6361]
+blurb.value = "Краски блекнут в первый же час после поимки. Смотрите быстрее."
+blurb.en = "The colours fade within an hour of landing. Look quickly."
+riddle.value = "Открытое побережье, чуть дальше от берега, чем вы привыкли."
+riddle.en = "Open coast, a little further from shore than you're used to."
+
+[species.6362]
+blurb.value = "Упряма на леске, сладка на тарелке."
+blurb.en = "Stubborn on the line, sweet on the plate."
+riddle.value = "Морские берега от туманного севера до знойного юга, там, где дно резко уходит вниз."
+riddle.en = "Sea coasts from the misty north to the hot south, where the bottom drops away."
+
+[species.6458]
+blurb.value = "Не столько рыба, сколько предупреждение о здешней воде. Вымойте дважды — и подумайте ещё раз."
+blurb.en = "Less a fish than a warning about the water. Wash it twice, then think again."
+riddle.value = "Испорченная вода там, где гоблины бурят выжженные холмы и равнины."
+riddle.en = "Fouled water where goblins drill the parched hills and plains."
+
+[species.6522]
+blurb.value = "Ешьте на свой страх и риск. Что было в следующий час, каждый отведавший рассказывает по-своему."
+blurb.en = "Eat one at your own risk. No two anglers who did tell the same story about the hour after."
+riddle.value = "Странные косяки посреди сухих равнин, где сама вода будто нездорова."
+riddle.en = "Strange schools out on the dry plains, where the water itself seems unwell."
+
+[species.8365]
+blurb.value = "Голова и правда блестит. Нет, это не мифрил. Хватит спрашивать кузнеца."
+blurb.en = "The head really does shine. No, it isn't mithril. Stop asking the smith."
+riddle.value = "Озёра и реки в краях посуровее, от глухого леса до голой пустыни."
+riddle.en = "Lakes and rivers in rougher country, from deep forest to bare desert."
+
+[species.12238]
+blurb.value = "Широкий, медлительный и серый, как берега, в честь которых назван. Похлёбка из него лучше, чем первое впечатление."
+blurb.en = "Broad, slow and grey as the coast it's named for. It makes a better stew than a first impression."
+riddle.value = "Серая вода под старыми деревьями у лунного взморья — или далеко на юге, в пустыне."
+riddle.en = "Grey water under old trees on a moonlit coast, or far south in the desert."
+
+[species.13422]
+blurb.value = "Бронники хорошо платят за чешую. Угорь с таким уговором не согласен."
+blurb.en = "Armourers pay well for the scales. The eel disagrees with the arrangement."
+riddle.value = "Извивающийся клубок в глубокой морской воде у самых диких берегов."
+riddle.en = "A writhing swarm in deep sea water off the wilder coasts."
+
+[species.13754]
+blurb.value = "Такая тяжёлая, что иные рыболовы вываживают её сидя."
+blurb.en = "Heavy enough that some anglers fish it sitting down."
+riddle.value = "Открытое море у дальних берегов, на глубине, где водятся тяжеловесы."
+riddle.en = "Open sea off the far coasts, deep enough for the heavy ones."
+
+[species.13755]
+blurb.value = "Приходит вместе с заморозками. Щупалец больше, чем рыболов в силах распутать."
+blurb.en = "Arrives with the frost. More arms than an angler can reasonably untangle."
+riddle.value = "Тёплые берега, когда год поворачивает к холодам."
+riddle.en = "Warm shores, once the year turns cold."
+
+[species.13756]
+blurb.value = "Появляется с долгими днями и уходит с первым холодным ветром."
+blurb.en = "Turns up with the long days and leaves with the first cold wind."
+riddle.value = "Тёплые берега в тёплую половину года."
+riddle.en = "Warm shores in the warm half of the year."
+
+[species.13757]
+blurb.value = "Пощипывает. Не облизывайте."
+blurb.en = "Tingles. Don't lick it."
+riddle.value = "Треск в далёких диких водах, от рассвета до позднего вечера."
+riddle.en = "A crackle in far, wild waters, from sunrise into the late evening."
+
+[species.13758]
+blurb.value = "Жабры как угли. Хватает так, будто всерьёз."
+blurb.en = "Gills like embers. Bites like it means it."
+riddle.value = "Внутренние воды диких земель, днём и ночью."
+riddle.en = "Inland waters of the wilder lands, by day or by night."
+
+[species.13759]
+blurb.value = "Кормится при звёздах. Кто хочет его поймать, учится любить темноту."
+blurb.en = "Feeds by starlight. Anglers who want it learn to like the dark."
+riddle.value = "Дикие воды вдали от тихих мест, когда солнце уже село."
+riddle.en = "Wild waters far from the gentle shores, after the sun goes down."
+
+[species.13760]
+blurb.value = "Встаёт вместе с солнцем и поздно ложится. Где он бывает до рассвета, не знает никто."
+blurb.en = "Rises with the sun and keeps late hours. Nobody knows where it goes before dawn."
+riddle.value = "Дальние реки и озёра, тёплые и холодные, пока светло."
+riddle.en = "Far rivers and lakes, warm or cold, while the sun is up."
+
+[species.13888]
+blurb.value = "Сначала щиплет, а вопросов не задаёт вовсе."
+blurb.en = "Pinches first, asks questions never."
+riddle.value = "Глубокие скалистые воды на дальних краях света."
+riddle.en = "Deep rocky waters at the far edges of the world."
+
+[species.13889]
+blurb.value = "Бледен, как иней. Лучше всего съесть в день улова, что редко удаётся."
+blurb.en = "Pale as frost. Best eaten the day it's caught, which is rarely possible."
+riddle.value = "Самые дальние воды, какие есть: от замёрзших озёр до выжженных холмов."
+riddle.en = "The farthest waters there are, from frozen lakes to scorched hills."
+
+[species.13890]
+blurb.value = "Доспех носит снаружи, а норов внутри. Берите нож потяжелее."
+blurb.en = "Wears its armour on the outside and its temper on the inside. Bring a heavier knife."
+riddle.value = "Что-то тяжёлое в самых дальних водах, когда солнце уже село."
+riddle.en = "Something heavy in the farthest waters, after the sun goes down."
+
+[species.13893]
+blurb.value = "Старшая сестра. Понадобятся обе руки и, скорее всего, друг."
+blurb.en = "The big cousin. You will need both hands and probably a friend."
+riddle.value = "Глубокая вода у далёкого, всеми забытого побережья."
+riddle.en = "Deep water off a far and forgotten coast."
+
+[species.16967]
+blurb.value = "Крупный, быстрый и вкусный. Чаще всего его ловят для кого-то другого, и это обидно."
+blurb.en = "Big, quick and good eating. Most are caught as a favour for someone else, which seems a waste."
+riddle.value = "Широкая река сквозь влажный, заросший лес на дальнем западе."
+riddle.en = "A broad river through wet, overgrown forest in the far west."
+
+[species.16968]
+blurb.value = "Бьёт по наживке так, будто весь день ждал повода поспорить."
+blurb.en = "Hits the bait like it's been waiting all day for an argument."
+riddle.value = "Унылый серый берег на сухом и пустынном западном побережье."
+riddle.en = "A bleak, grey shore on a dry and empty western coast."
+
+[species.16969]
+blurb.value = "Парус — для красоты, и он это знает. Дерётся так, будто на него смотрят зрители."
+blurb.en = "That sail is for show, and it knows it. Fights like it has an audience."
+riddle.value = "Тёплое мелководье в джунглях, где море подступает к самым деревьям."
+riddle.en = "Warm jungle shallows, where the sea runs right up to the trees."
+
+[species.16970]
+blurb.value = "Яркий, как птица из джунглей, и вдвое хлопотнее на леске."
+blurb.en = "Bright as a jungle bird and twice as much trouble on the line."
+riddle.value = "Тёплое мутное мелководье, где болото сходится с морем."
+riddle.en = "Warm, murky shallows where a swamp meets the sea."
+
+[species.19807]
+blurb.value = "Рыба для состязаний. На вкус как победа — или хотя бы как долгий день попыток."
+blurb.en = "Tournament fish. Tastes of victory, or at least of a long afternoon trying."
+riddle.value = "Только пока в джунглях идёт большое состязание."
+riddle.en = "Only while the jungle's great contest is on."
+
+[species.19975]
+blurb.value = "Пахнет ровно так, как обещает название. И всё же кому-то где-то нужна дюжина."
+blurb.en = "Smells exactly as the name promises. Somebody, somewhere, still wants a dozen."
+riddle.value = "Бурлящая бурая вода в самой глубине душных джунглей."
+riddle.en = "Churning brown water, deep in the steaming jungle."
+
+[species.21071]
+blurb.value = "Пахнет холмами, мимо которых проплывает."
+blurb.en = "Smells like the hills it swims past."
+riddle.value = "Небольшие косяки в холмах и лесах, с лёгким запахом трав."
+riddle.en = "Small schools in the hills and forests, smelling faintly of herbs."
+
+[species.21153]
+blurb.value = "Шалфокунь подрос."
+blurb.en = "The sage grew up."
+riddle.value = "Косяки покрупнее, пахнущие травами, в снежных холмах и душных джунглях."
+riddle.en = "Bigger herb-scented schools, in snowy hills and steaming jungle."
+
+[species.251524]
+blurb.value = "Новое лицо в этих водах, и никто толком не знает, как оно здесь оказалось."
+blurb.en = "New to these waters, and nobody's quite sure how it got here."
+riddle.value = "Яркие новые косяки на тихом озере в восточных холмах."
+riddle.en = "Bright new schools on a quiet lake in the eastern hills."
+
+[legend.19803]
+blurb.value = "Большинство рыболовов видят лишь его след на воде. Этот сбавил ход ровно настолько, чтобы его вытащили."
+blurb.en = "Most anglers only ever see its wake. This one slowed down long enough to be landed."
+title.value = "Ловец полосатиков"
+title.en = "Racer-Chaser"
+
+[legend.19805]
+blurb.value = "Слишком хороша для стола на состязании — и, кажется, сама это знает."
+blurb.en = "Far too handsome for a contest table, and it seems to know it."
+title.value = "Головная боль Кифера"
+title.en = "Keefer's Rival"
+
+[legend.19806]
+blurb.value = "Держится по-королевски и бьётся так, будто рискует короной."
+blurb.en = "Carries itself like royalty, and fights as if it had a crown to lose."
+title.value = "Гроза королев"
+title.en = "Queen-Catcher"
+
+[sub.6297]
+plaque.value = "Дар воды. Владелец неизвестен, и пусть лучше так и останется."
+plaque.en = "Donated by the water. Owner unknown, and preferably staying that way."
+
+[sub.6301]
+plaque.value = "Принадлежал вознице. До сих пор будто ждёт свою повозку."
+plaque.en = "Belonged to someone who drove wagons. Still looks like it's waiting for one."
+
+[sub.6307]
+plaque.value = "Чернила давно расплылись. Пробка, надо отдать ей должное, выдержала."
+plaque.en = "The ink ran long ago. The cork, to its credit, held."
+
+[sub.6351]
+plaque.value = "Уронили разок, судя по виду, — а потом ещё раз, для верности."
+plaque.en = "Dropped once, by the look of it, and then again for good measure."
+
+[sub.6352]
+plaque.value = "Упакован в расчёте на сухое плавание. Не сложилось."
+plaque.en = "Packed for a dry voyage. It did not get one."
+
+[sub.6353]
+plaque.value = "Достаточно мал, чтобы уронить его за борт. Кто-то это доказал."
+plaque.en = "Small enough to lose over the side. Someone proved it."
+
+[sub.6354]
+plaque.value = "Мал, заперт, и открыть его хлопотнее, чем было носить."
+plaque.en = "Small, locked, and more trouble to open than it ever was to carry."
+
+[sub.6355]
+plaque.value = "Сделан так, чтобы пережить что угодно. Море до сих пор проверяет."
+plaque.en = "Built to survive anything. The sea has been testing the claim."
+
+[sub.6356]
+plaque.value = "Кто-то его запер, кто-то утопил, и ни тот ни другой за ним не вернулся."
+plaque.en = "Someone locked it, someone sank it, and neither came back for it."
+
+[sub.6357]
+plaque.value = "Запечатан наглухо от воды. Вода оказалась терпеливее."
+plaque.en = "Sealed tight against the water. The water was patient."
+
+[sub.6455]
+plaque.value = "Куда делась телега, по-прежнему выясняется."
+plaque.en = "Where the wagon went is still under investigation."
+
+[sub.6456]
+plaque.value = "Просьба не трогать экспонат руками."
+plaque.en = "Please do not touch the exhibit."
+
+[sub.6457]
+plaque.value = "Гном назвал бы это «почти работает»."
+plaque.en = "A gnome would call this 'nearly working'."
+
+[sub.6717]
+plaque.value = "Запчасти механика, упавшие за борт посреди работы. Он уверяет, что сначала потекла лодка."
+plaque.en = "A tinker's spare parts, dropped over the side mid-job. He insists the boat leaked first."
+
+[sub.6718]
+plaque.value = "Детали заводного утиного чучела — того, что взрывается. Хранить подальше от живых уток."
+plaque.en = "Parts for a clockwork duck decoy, the kind that explodes. Kept well away from the real ducks."
+
+[sub.6643]
+plaque.value = "Маленькая рыбка с большим аппетитом и без малейшего понятия, что считается едой."
+plaque.en = "A small fish with a large appetite and no sense of what counts as food."
+
+[sub.6645]
+plaque.value = "Укусил что-то слишком большое, чтобы проглотить, — и всё равно проглотил."
+plaque.en = "It bit something far too big to swallow, and swallowed it anyway."
+
+[sub.6647]
+plaque.value = "Кормилась со дна, куда рано или поздно попадает всё, что кто-либо уронил."
+plaque.en = "Fed off the bottom, where everyone's dropped things end up."
+
+[sub.7973]
+plaque.value = "Молчит о том, что внутри. Откройте всё равно: иногда там жемчужина."
+plaque.en = "Says nothing about what's inside. Open it anyway; sometimes it's a pearl."
+
+[sub.8366]
+plaque.value = "Съела что-то блестящее. Возможно, на этот раз даже мифрил."
+plaque.en = "Ate something shiny. Possibly even mithril, this time."
+
+[sub.13874]
+plaque.value = "Слишком тяжёл, чтобы плавать, и слишком тяжёл, чтобы унести далеко. Кто-то пробовал и то и другое."
+plaque.en = "Too heavy to float and too heavy to carry far. Someone tried both."
+
+[sub.13875]
+plaque.value = "Окован железом и вдобавок заперт. Что бы там ни лежало, оно стоило таких тревог."
+plaque.en = "Bound in iron and locked besides. Whatever's inside was worth the worry."
+
+[sub.13881]
+plaque.value = "Слишком жадная, чтобы перестать есть, и слишком сытая, чтобы уплыть."
+plaque.en = "Too greedy to stop eating, and too full to swim away."
+
+[sub.13918]
+plaque.value = "Укреплён, заперт — и всё равно утонул. Некоторым грузам не везёт никогда."
+plaque.en = "Reinforced, locked, and sunk anyway. Some cargo never gets a break."
+
+[sub.20708]
+plaque.value = "Запечатан так плотно, что вода внутрь не попала. Как, похоже, и владелец."
+plaque.en = "Sealed so tight the water never got in. Neither, it seems, did the owner."
+
+[sub.21113]
+plaque.value = "Воду не пропускает, как и обещано. Что он удержится на плаву, никто не обещал."
+plaque.en = "Watertight, as promised. Nobody promised it would float."
+
+[sub.21150]
+plaque.value = "Железо выдержало. Корабль, с которого он упал, — нет."
+plaque.en = "The iron held. The ship it came off did not."
+
+[sub.21162]
+plaque.value = "Раздутый, скользкий и полный чужой удачи. Вымойте потом руки."
+plaque.en = "Swollen, slick and full of someone else's luck. Wash your hands after."
+
+[sub.21164]
+plaque.value = "Упряма до последнего. Проглоченное отдала только ножу."
+plaque.en = "Stubborn to the last. It gave up what it swallowed only to a knife."
+
+[sub.21228]
+plaque.value = "Окован мифрилом. Кто его собирал, ждал неприятностей — и дождался."
+plaque.en = "Bound in mithril. Whoever packed it expected trouble, and got some."
+
+[sub.21243]
+plaque.value = "Достаточно велика, чтобы проглотить кошель целиком. Что и сделала."
+plaque.en = "Big enough to swallow a purse whole, and it did."
+
+[family.1]
+name.value = "Илистый луциан"
+name.en = "Mud Snapper"
+
+[family.2]
+name.value = "Зубатка"
+name.en = "Catfish"
+
+[family.3]
+name.value = "Морской окунь"
+name.en = "Yellowtail"
+
+[family.4]
+name.value = "Краснобородка"
+name.en = "Redgill"
+
+[family.5]
+name.value = "Лосось"
+name.en = "Salmon"
+
+[family.6]
+name.value = "Омар"
+name.en = "Lobster"
+
+[family.7]
+name.value = "Мощь-рыба"
+name.en = "Mightfish"
+
+[line.uncaughtlegend]
+text.value = "Некоторые рыбы попадаются раз в очень долгое время. Эта страница ждёт одну из них."
+text.en = "Some fish are only caught once in a long while. This page waits for one."
+
+[line.uncaughtjunk]
+text.value = "Постамент вытерт от пыли и готов. Экспонат запаздывает."
+text.en = "The plinth is dusted and ready. The exhibit is late."
+
+[line.uncaughttreasure]
+text.value = "Что-то запечатанное, ещё не найденное."
+text.en = "Something sealed, not yet found."
+
+[line.unchartedwaters]
+text.value = "Неизведанные воды. Карты этих мест пока нет."
+text.en = "Uncharted waters. No map of these yet."
+
+[title.level1]
+text.value = "Малёк"
+text.en = "Minnow"
+
+[title.level10]
+text.value = "Любитель"
+text.en = "Dabbler"
+
+[title.level20]
+text.value = "Мастер заброса"
+text.en = "Line-Caster"
+
+[title.level30]
+text.value = "Рыбак"
+text.en = "Fisher"
+
+[title.level40]
+text.value = "Морской волк"
+text.en = "Old Salt"
+
+[title.level50]
+text.value = "Чтец приливов"
+text.en = "Tide-Reader"
+
+[title.level60]
+text.value = "Ровня Нату Пэглу"
+text.en = "Nat's Peer"
+
+[title.prestige1]
+text.value = "Возвратный прилив"
+text.en = "Returning Tide"
+
+[title.prestige5]
+text.value = "Донное течение"
+text.en = "Undertow"
+
+[title.prestige10]
+text.value = "Отметка высокой воды"
+text.en = "High-Water Mark"
+
+[title.zonemaster]
+text.value = "Страж вод: {zone}"
+text.en = "Warden of {zone} Waters"
+
+[title."complete.ledger"]
+text.value = "Рыболов Азерота"
+text.en = "Angler of Azeroth"
+
+[title."complete.junk"]
+text.value = "Коллекционер сапог"
+text.en = "Collector of Boots"
+
+[title."complete.treasure"]
+text.value = "Спасатель затонувших грузов"
+text.en = "Keeper of Lost Cargo"
+
+[title."complete.trophy"]
+text.value = "Перевес"
+text.en = "Tipper of Scales"
+
+[title."complete.varieties"]
+text.value = "Знаток всех расцветок"
+text.en = "Keeper of Every Colour"
+
+[crest.alterac]
+name.value = "Сломанная башня"
+name.en = "The Broken Tower"
+description.value = "Сломанная башня на холодной вершине. Королевства больше нет. Ручьи всё так же хороши."
+description.en = "A broken tower on a cold peak. The kingdom is gone. The streams are still good."
+
+[crest.arathi]
+name.value = "Стоячие камни"
+name.en = "The Standing Stones"
+description.value = "Древние стоячие камни в высокогорной траве. Они старше всех, кто о них спорит."
+description.en = "Old standing stones on the highland grass, older than anyone who argues about them."
+
+[crest.badlands]
+name.value = "Каменная арка"
+name.en = "The Stone Arch"
+description.value = "Каменная арка, которую ветер доделывал десять тысяч лет. Воду берите с собой."
+description.en = "A stone arch the wind took ten thousand years to finish. Bring your own water."
+
+[crest.blackrock]
+name.value = "Чёрный шпиль"
+name.en = "The Black Spire"
+description.value = "Чёрная гора с огнём в трещинах и цепями на воротах. Рыбачить в лавовых озёрах — на свой страх и риск."
+description.en = "A black mountain with fire in its cracks and chains across its gate. Fish the lava pools at your own risk."
+
+[crest.blastedlands]
+name.value = "Пылающие врата"
+name.en = "The Burning Gate"
+description.value = "Врата из чёрного камня, а в них зелёный огонь. Рыбачить туда ходят не ради вида."
+description.en = "A gate of black stone with green fire in it. Nobody fishes there for the view."
+
+[crest.burningsteppes]
+name.value = "Горящая вершина"
+name.en = "The Burning Peak"
+description.value = "Гора в огне под пепельным небом. Вода там такая тёплая, что уху можно варить прямо в озере."
+description.en = "A mountain on fire under an ash sky. The water is warm enough to cook in."
+
+[crest.deadwind]
+name.value = "Одинокая башня"
+name.en = "The Lonely Tower"
+description.value = "Высокая башня в мёртвой долине. Заводи там тихие. Слишком тихие, говорят некоторые — и уходят."
+description.en = "A tall tower in a dead valley. The pools are quiet. Too quiet, some say, and leave."
+
+[crest.dunmorogh]
+name.value = "Баран"
+name.en = "The Ram"
+description.value = "Витые рога над снежным полем. У тамошних баранов своё мнение о чужаках."
+description.en = "Curled horns over a snowfield. The rams up there have opinions about strangers."
+
+[crest.duskwood]
+name.value = "Глаза в чаще"
+name.en = "Eyes in the Wood"
+description.value = "Два глаза меж чёрных деревьев. Рыболовы там не гасят фонарь и далеко не забрасывают."
+description.en = "Two eyes between black trees. Anglers there keep the lantern lit and the line short."
+
+[crest.easternplague]
+name.value = "Часовня"
+name.en = "The Chapel"
+description.value = "Маленькая часовня, не отдающая свой свет скверне. Рядом с ней хорошая вода."
+description.en = "A small chapel holding its light against the blight. Good water lies beside it."
+
+[crest.elwynn]
+name.value = "Старый дуб"
+name.en = "The Old Oak"
+description.value = "Первое озеро, которое видели почти все рыболовы, и дуб, под которым они сидели."
+description.en = "The first lake most anglers ever saw, and the oak they sat under."
+
+[crest.hillsbrad]
+name.value = "Три яблока"
+name.en = "Three Apples"
+description.value = "Три яблока из садов в предгорьях. Форель ниже мельницы жиреет на падалице."
+description.en = "Three apples from the foothill orchards. The trout below the mill are fat on windfalls."
+
+[crest.hinterlands]
+name.value = "Три пера"
+name.en = "Three Feathers"
+description.value = "Большие перья с диких холмов, где над реками гнездятся крупные птицы."
+description.en = "Great feathers from the wild hills, where big birds nest above the rivers."
+
+[crest.ironforge]
+name.value = "Наковальня"
+name.en = "The Anvil"
+description.value = "Наковальня перед кузней в сердце горы. Там, внизу, есть озеро, и дворфы в нём рыбачат."
+description.en = "An anvil before the mountain's forge. There is a lake under there, and dwarves fish it."
+
+[crest.lochmodan]
+name.value = "Великая плотина"
+name.en = "The Great Dam"
+description.value = "Плотина, что держит высокогорное озеро. Дворфы строили её на века, и она стоит."
+description.en = "A dam holding back a highland lake. Dwarves built it to last, and it has."
+
+[crest.lordamere]
+name.value = "Остров на озере"
+name.en = "The Lake Isle"
+description.value = "Лесистый остров на широком сером озере, у берега вытащена лодка. Тихая вода, и её много."
+description.en = "A wooded island on a wide grey lake, a boat drawn up on its shore. Quiet water, and plenty of it."
+
+[crest.redridge]
+name.value = "Три пика"
+name.en = "Three Peaks"
+description.value = "Три красных пика посреди горного озера, и у каждого своё отражение."
+description.en = "Three red peaks standing in a mountain lake, and every one of them reflected."
+
+[crest.riverglades]
+name.value = "Баржа"
+name.en = "The Barge"
+description.value = "Баржа на извилистой реке меж зелёных холмов. Торговля приходит туда по воде, и рыба тоже."
+description.en = "A barge on a winding river between green hills. Trade comes by water there, and so do fish."
+
+[crest.searinggorge]
+name.value = "Тигель"
+name.en = "The Crucible"
+description.value = "Тигель, из которого льётся расплавленное золото. Рыбалка там — это лава, так что запаситесь терпением и длинным удилищем."
+description.en = "A crucible pouring molten gold. Fishing there means lava, so bring patience and a long rod."
+
+[crest.silverpine]
+name.value = "Серебряные сосны"
+name.en = "Silver Pines"
+description.value = "Серебряные сосны на берегу тёмного озера. Почти каждую ночь там что-то воет."
+description.en = "Silver pines on a dark lake shore. Something howls out there most nights."
+
+[crest.stormwind]
+name.value = "Белая крепость"
+name.en = "The White Keep"
+description.value = "Белые стены и ворота над каналами. Город удит рыбу в собственных каналах — вежливо."
+description.en = "White walls and a gate over the canals. The city fishes its own waterways, politely."
+
+[crest.stranglethorn]
+name.value = "Прыжок"
+name.en = "The Leap"
+description.value = "Рыба выпрыгивает из прибоя у джунглей, будто прослышала о состязании."
+description.en = "A fish leaping clear of the jungle surf, as if it heard about the contest."
+
+[crest.swampofsorrows]
+name.value = "Затонувшее святилище"
+name.en = "The Drowned Shrine"
+description.value = "Крыша храма над болотной водой. Что под ней, то под ней и остаётся."
+description.en = "A temple roof breaking the swamp water. What is under it stays under it."
+
+[crest.tirisfal]
+name.value = "Летучая мышь"
+name.en = "The Bat"
+description.value = "Летучая мышь на фоне болезненной луны. Даже рыба там выглядит слегка уставшей."
+description.en = "A bat across a sickly moon. Even the fish there look a little tired."
+
+[crest.undercity]
+name.value = "Сломанная корона"
+name.en = "The Broken Crown"
+description.value = "Сломанная корона над зелёными каналами. Двора больше нет. Рыба в каналах осталась."
+description.en = "A broken crown over green canals. The court is gone. The canals still hold fish."
+
+[crest.westernplague]
+name.value = "Ворона"
+name.en = "The Crow"
+description.value = "Ворона на мёртвом дереве над пустыми полями. Фермеры ушли. Рыба — нет."
+description.en = "A crow on a dead tree over empty fields. The farmers left. The fish did not."
+
+[crest.westfall]
+name.value = "Мельница"
+name.en = "The Windmill"
+description.value = "Крылья мельницы над прибрежной дорогой. Море ближе, чем признают фермеры."
+description.en = "Sails turning over the coast road. The sea is closer than the farmers admit."
+
+[crest.wetlands]
+name.value = "Якорь"
+name.en = "The Anchor"
+description.value = "Портовый якорь, поднятый из ила. До сих пор слегка им пахнет."
+description.en = "A harbour's anchor, hauled up from the mud. Still smells faintly of it."
+
+[crest.ashenvale]
+name.value = "Огонёк"
+name.en = "The Wisp"
+description.value = "Огонёк плывёт меж тёмных деревьев. Лес замечает каждого рыболова, который задержался слишком долго."
+description.en = "A wisp drifting between dark trees. The forest notices every angler who stays too long."
+
+[crest.azshara]
+name.value = "Упавшая колонна"
+name.en = "The Fallen Column"
+description.value = "Колонна древней империи, по которой взбирается море. В тех руинах до сих пор что-то плавает."
+description.en = "A column of an old empire, the sea climbing it. Something still swims in those ruins."
+
+[crest.barrens]
+name.value = "Акация"
+name.en = "The Acacia"
+description.value = "Плосковерхое дерево на сухой равнине. Каждый оазис там — чьё-то любимое место."
+description.en = "A flat-topped tree on the dry plains. Every oasis out there is somebody's favourite spot."
+
+[crest.darkshore]
+name.value = "Полумесяц"
+name.en = "The Crescent"
+description.value = "Полумесяц над серой водой — для тех, кто рыбачит после заката."
+description.en = "A crescent over grey water, for anglers who fish after dark."
+
+[crest.darnassus]
+name.value = "Серебряный колодец"
+name.en = "The Silver Well"
+description.value = "Колодец, сияющий серебром под огромным деревом. Вся рыба города — в озере вокруг него."
+description.en = "A well glowing silver under a great tree. The lake around it holds the city's fish."
+
+[crest.desolace]
+name.value = "Рогатый череп"
+name.en = "The Horned Skull"
+description.value = "Огромный рогатый череп со старого кладбища. Берег там добрее, чем земли за ним."
+description.en = "A great horned skull from an old graveyard. The coast is kinder than the inland."
+
+[crest.durotar]
+name.value = "Скорпид"
+name.en = "The Scorpid"
+description.value = "Скорпид на красной земле. Побережье — компания получше скорпидов."
+description.en = "A scorpid on red earth. The coast is better company than the scorpids."
+
+[crest.dustwallow]
+name.value = "Фонарь"
+name.en = "The Lantern"
+description.value = "Фонарь, оставленный гореть на рыбацкой хижине в болотном тумане."
+description.en = "A lantern left burning on a fisherman's hut in the marsh fog."
+
+[crest.felwood]
+name.value = "Осквернённое дерево"
+name.en = "The Tainted Tree"
+description.value = "Искривлённое дерево с зелёным огнём в жилах. Любой улов оттуда мойте. Дважды."
+description.en = "A twisted tree with green fire in its veins. Wash every catch from there. Twice."
+
+[crest.feralas]
+name.value = "Водопад"
+name.en = "The Falls"
+description.value = "Вода падает меж исполинских деревьев — для рыболовов, что выбирают долгую дорогу."
+description.en = "Water falling between the giant trees, for anglers who take the long way."
+
+[crest.moonglade]
+name.value = "Оленьи рога"
+name.en = "The Antlers"
+description.value = "Рога над тихим озером под луной. Тихое место, и тишину здесь берегут нарочно."
+description.en = "Antlers over a still lake, under the moon. A quiet place, kept quiet on purpose."
+
+[crest.hyjal]
+name.value = "Росток"
+name.en = "The Sapling"
+description.value = "Зелёный росток, пробившийся из старых углей. Гора заживает, а с ней и её ручьи."
+description.en = "A green shoot rising out of old embers. The mountain is mending, and its streams with it."
+
+[crest.mulgore]
+name.value = "Тотем"
+name.en = "The Totem"
+description.value = "Резной тотем среди высокой травы на равнинах, где с холмов бегут чистые ручьи."
+description.en = "A carved totem on the long grass plains, where the streams run clear from the hills."
+
+[crest.orgrimmar]
+name.value = "Шипастые ворота"
+name.en = "The Spiked Gate"
+description.value = "Шипастые ворота в красном каньоне. Городские пруды глубже, чем кажутся."
+description.en = "A spiked gate in a red canyon. The city's pools are deeper than they look."
+
+[crest.shendralas]
+name.value = "Раскрытый фолиант"
+name.en = "The Open Tome"
+description.value = "Раскрытая книга на расколотом постаменте. Её хранят те, кто так и не перестал читать."
+description.en = "An open book on a broken pedestal, kept by people who never stopped reading."
+
+[crest.silithus]
+name.value = "Скарабей"
+name.en = "The Scarab"
+description.value = "Скарабей на песке пустыни. Озёра там маленькие и подозрительные."
+description.en = "A scarab on desert sand. The lakes there are small and suspicious."
+
+[crest.stonetalon]
+name.value = "Коготь"
+name.en = "The Talon"
+description.value = "Огромный коготь, сжимающий камень. Горная вода, холодная и быстрая."
+description.en = "A great talon gripping a stone. Mountain water, cold and quick."
+
+[crest.tanaris]
+name.value = "Солнце пустыни"
+name.en = "The Desert Sun"
+description.value = "Солнце над пустыней. Единственная тень на всю округу — у самой воды."
+description.en = "A desert sun over the only shade for miles: the shoreline."
+
+[crest.teldrassil]
+name.value = "Звёздная крона"
+name.en = "The Starlit Crown"
+description.value = "Дерево такое высокое, что его крона среди звёзд. Корни пьют очень старую воду."
+description.en = "A tree so tall its crown is in the stars. Its roots drink from very old water."
+
+[crest.thousandneedles]
+name.value = "Иглы"
+name.en = "The Needles"
+description.value = "Каменные иглы над равниной. Рыбачьте в их тени и не снимайте шляпу."
+description.en = "Stone needles rising from the flats. Fish in their shadows, and keep your hat on."
+
+[crest.thunderbluff]
+name.value = "Столовая гора"
+name.en = "The Mesa"
+description.value = "Высокая столовая гора с шатром наверху. Пруды внизу ловят водопады, а заодно и рыбу."
+description.en = "A high mesa with a tent on top. The pools below catch the falls, and the fish with them."
+
+[crest.ungoro]
+name.value = "След"
+name.en = "The Footprint"
+description.value = "След размером с гребную лодку. У кратера заботы поважнее рыбы."
+description.en = "A footprint the size of a rowing boat. The crater has bigger worries than fish."
+
+[crest.veiledsea]
+name.value = "Стена тумана"
+name.en = "The Fog Bank"
+description.value = "Корабль, наполовину скрытый морским туманом. Здесь рыба поднимается с большой глубины — как и всё остальное."
+description.en = "A ship half lost in a bank of sea fog. Out here the fish come up from very deep, and so does everything else."
+
+[crest.winterspring]
+name.value = "Мороз"
+name.en = "The Frost"
+description.value = "Снежинка над тихой водой, где подлёдный лов — самый настоящий лов."
+description.en = "A snowflake over still water, where ice fishing is real fishing."
+
+[crest.zephras]
+name.value = "Парящий остров"
+name.en = "The Floating Isle"
+description.value = "Остров, плывущий на облаке, и корабль, привязанный к камню. До воды далеко."
+description.en = "An island floating on cloud, its ship tied to the stone. The water is a long way down."
+
+[crest.hyjalcrater]
+name.value = "Озеро в кратере"
+name.en = "The Crater Lake"
+description.value = "Тихая вода в разбитом кольце чёрного камня. Когда-то здесь что-то горело; озеро об этом помалкивает."
+description.en = "Still water in a broken ring of black stone. Something burned here once; the lake has kept quiet about it."
+
+[ledgergood."ledger.binding.level10"]
+name.value = "Дублёная кожа"
+name.en = "Tanned Hide"
+description.value = "Кожа посветлее и помягче, уголки отполированы мокрыми пальцами за несколько сезонов."
+description.en = "Lighter, softer hide, worn smooth at the corners by a few seasons of wet thumbs."
+
+[ledgergood."ledger.binding.level20"]
+name.value = "Синева прилива"
+name.en = "Tidewater Blue"
+description.value = "Тёмно-синяя кожа с серебряными линиями, цвета гавани в сумерках."
+description.en = "Deep blue leather with silver rules, the colour of a harbour at dusk."
+
+[ledgergood."ledger.binding.level30"]
+name.value = "Камышовая зелень"
+name.en = "Reed Green"
+description.value = "Тёмно-зелёная кожа, позолота цвета сухого камыша и лёгкий запах речного берега."
+description.en = "Dark green leather, gilt the colour of dry reeds, and a faint smell of riverbank."
+
+[ledgergood."ledger.binding.level40"]
+name.value = "Бычья кровь"
+name.en = "Oxblood"
+description.value = "Тёмно-красная кожа и тяжёлая позолота. Рыбья кровь на ней почти не видна."
+description.en = "Deep red leather and heavy gilt. Fish blood barely shows on it."
+
+[ledgergood."ledger.binding.level50"]
+name.value = "Штормовая серость"
+name.en = "Storm Grey"
+description.value = "Сланцево-серая кожа с серебряным тиснением — для дней, когда на воду больше никто не выходит."
+description.en = "Slate-grey leather with silver tooling, for the days nobody else goes out."
+
+[ledgergood."ledger.binding.level60"]
+name.value = "Как у Ната Пэгла"
+name.en = "Nat's Own"
+description.value = "Почти чёрная кожа и яркое золото. Наряднее книга рыболова едва ли бывает."
+description.en = "Near-black leather and bright gold. About as fine as an angler's book gets."
+
+[ledgergood."ledger.binding.legend"]
+name.value = "Три золочёные рыбы"
+name.en = "Three Gilt Fish"
+description.value = "Синяя кожа с тиснением чешуи, а на обложке три золочёные рыбы гоняются друг за другом по одному и тому же кругу."
+description.en = "Blue leather embossed with scales, and on the cover three gilt fish chasing one another round the same circle."
+
+[ledgergood."ledger.binding.monster"]
+name.value = "Шкура чудовища"
+name.en = "Monster Hide"
+description.value = "Чешуйчатая шкура того, кто очень не хотел на берег. Застёгивается на один из его же зубов."
+description.en = "Scaled hide from something that did not want to be landed, shut with one of its own teeth."
+
+[ledgergood."ledger.binding.abyssal"]
+name.value = "Чернь бездны"
+name.en = "Abyssal Black"
+description.value = "Чёрная, как глубокая вода, и под поверхностью вьётся бледное свечение. Для рыболовов, что десять раз побывали на дне и вернулись."
+description.en = "Black as deep water, with a pale glow coiling under the surface. For anglers who have been to the bottom ten times and back."
+
+[ledgergood."ledger.binding.keeper"]
+name.value = "Золото хранителя"
+name.en = "Keeper's Gold"
+description.value = "Кремовый пергамент, почти утонувший в золоте. Для рыболова, в чьей книге больше нечего искать."
+description.en = "Cream vellum all but buried in gold. Kept for the angler whose book has nothing left to find."
+
+[ledgergood."ledger.binding.iridescent"]
+name.value = "Радужная чешуя"
+name.en = "Iridescent Scale"
+description.value = "Чешуя всех цветов, какие только отдавала вода, уложенная внахлёст. Дважды одинаковой её не увидеть."
+description.en = "Scales in every colour the water ever gave up, laid one over the next. It never looks the same twice."
+
+[ledgergood."ledger.toaststyle.legend"]
+name.value = "Рыбацкая байка"
+name.en = "The Tall Tale"
+description.value = "Для уловов, о которых на пристанях спорят годами. Золочёная кайма, синий шёлк, настоящая печать."
+description.en = "Kept for the catches people argue about at the docks for years. Gilt border, blue silk, a proper seal."
+
+[ledgergood."ledger.toaststyle.prestige"]
+name.value = "Пергамент цвета бычьей крови"
+name.en = "Oxblood Vellum"
+description.value = "Пергамент цвета бычьей крови и золочёные лавры — для рыболова, что начал заново и прошёл всё ещё раз."
+description.en = "Oxblood vellum and gilt laurels, for an angler who started over and did it all again."
+
+[ledgergood."ledger.soundset.concertina"]
+name.value = "Гармошка морского волка"
+name.en = "Old Salt's Concertina"
+description.value = "Обрывок морской песни, которую все знают наполовину, — на гармошке у того, кто знает её целиком."
+description.en = "A squeezebox phrase from a sea song everyone half-knows, played by somebody who knows all of it."
+
+[ledgergood."ledger.soundset.choir"]
+name.value = "Хор глубин"
+name.en = "Choir of the Deep"
+description.value = "Низкие голоса поднимаются из глубокой воды, а снизу подпевает что-то очень большое."
+description.en = "Low voices swelling up from deep water, and something very large singing along underneath."
+
+[ledgergood."ledger.binding.wave"]
+name.value = "Набегающая волна"
+name.en = "Breaking Wave"
+description.value = "Синий сафьян, в который вдавлена одна огромная волна, её гребень выведен золотом. Где-то у неё на плече — совсем крошечная лодка."
+description.en = "Blue morocco with one great wave pressed into it, its crest picked out in gold. Somewhere on its shoulder is a very small boat."
+
+[ledgergood."ledger.binding.logbook"]
+name.value = "Вахтенный журнал"
+name.en = "Captain's Logbook"
+description.value = "Холщовые крышки, уголки из телячьей кожи, компас, врезанный в обложку, и ремешок от брызг. Пятно от воды — в подарок."
+description.en = "Canvas boards and calfskin corners, a compass let into the cover and a strap to keep the spray out. The water stain came free."
+
+[ledgergood."ledger.binding.heartwood"]
+name.value = "Резная сердцевина"
+name.en = "Carved Heartwood"
+description.value = "Две доски старого дуба, на передней глубоко вырезана рыба, а плющ, которого никто не сажал, отговорить уже не выйдет."
+description.en = "Two boards of old oak, a fish carved deep into the front, and ivy that was never planted there and will not be talked out of it."
+
+[ledgergood."ledger.binding.stormglass"]
+name.value = "Реликварий с бурей"
+name.en = "Stormglass Reliquary"
+description.value = "Железные крышки, полосовые петли и окошко, в котором заперта буря. Кто посадил туда рыбу, никто не помнит."
+description.en = "Iron boards, strap hinges and a window with a storm kept in it. Nobody remembers putting the fish in there."
+
+[ledgergood."ledger.binding.lacquer"]
+name.value = "Кои на чёрном лаке"
+name.en = "Black Lacquer Koi"
+description.value = "Тридцать слоёв чёрного лака, два карпа кои в золоте и корешок, прошитый красным шёлком. Делают её год, а залапать можно за секунду."
+description.en = "Thirty coats of black lacquer, two koi laid in gold, and a spine sewn with red silk. It takes a year to make and a second to fingerprint."
+
+[ledgergood."ledger.binding.knit"]
+name.value = "Вязка с косами"
+name.en = "Cable Knit"
+description.value = "Обложка из той же шерсти, что и свитер рыболова, вплоть до застёжек. Слегка пахнет дождём и греет куда сильнее, чем ей положено."
+description.en = "A cover knitted from the same wool as the angler's jumper, toggles and all. It smells faintly of rain and is warmer than it has any right to be."
+
+[ledgergood."ledger.binding.flywallet"]
+name.value = "Кошелёк для мушек"
+name.en = "Fly Wallet"
+description.value = "Вощёный холст с овчиной внутри, а в овчине — мушки, которые сработали. Те, что не сработали, лежат на дне озера."
+description.en = "Waxed canvas with a fleece in the front, and in the fleece the flies that worked. The ones that did not are at the bottom of the lake."
+
+[ledgergood."ledger.binding.carapace"]
+name.value = "Панцирь краба"
+name.en = "Crab Carapace"
+description.value = "Панцирь краба, считавшего себя больше лодки и почти не ошибавшегося. Страницы он до сих пор держит зажатыми."
+description.en = "The shell of a crab that thought it was bigger than the boat, and very nearly was. It still pinches the pages shut."
+
+[ledgergood."ledger.binding.ember"]
+name.value = "Тлеющая чешуя"
+name.en = "Ember Scale"
+description.value = "Чешуя того, кто жил слишком близко к горну, в сердцевине до сих пор тёплая. На прикроватном столике её лучше не оставлять."
+description.en = "Scales from something that lived too near the forge, still warm at the heart. Do not leave it on the bedside table."
+
+[ledgergood."ledger.toaststyle.glass"]
+name.value = "Витраж часовни"
+name.en = "Chapel Glass"
+description.value = "Окно часовни у воды, вручную собранное в свинец. Слова — в единственном прозрачном стекле; остальное — рубин, кобальт и цвет позднего света."
+description.en = "A window from a chapel by the water, leaded by hand. The words sit in the one clear pane; the rest is ruby, cobalt and the colour of late light."
+
+[ledgergood."ledger.toaststyle.deep"]
+name.value = "Глубинная приманка"
+name.en = "The Deep Lure"
+description.value = "Написано при единственном свете на дне озера. Что-то там, внизу, держит улов в зубах и не торопится отпускать."
+description.en = "Written by the only light at the bottom of the lake. Something down there holds the catch in its teeth and is in no hurry to let go."
+
+[ledgergood."ledger.toaststyle.koi"]
+name.value = "Тушь и кои"
+name.en = "Ink and Koi"
+description.value = "Свиток художника, который всю жизнь рисовал только рыбу — и рисовал хорошо. Круг вокруг улова сделан на одном дыхании."
+description.en = "A scroll from a painter who only ever painted fish, and painted them well. The circle round the catch took one breath."
+
+[ledgergood."ledger.toaststyle.trophy"]
+name.value = "Трофей на стене"
+name.en = "Mounted Trophy"
+description.value = "Орех, латунь и четыре хороших шурупа. Из тех вещей, что вешают над камином и весь вечер потом показывают гостям."
+description.en = "Walnut, brass and four good screws. The sort of thing that goes over the fireplace and gets pointed at for the rest of the evening."
+
+[ledgergood."ledger.toaststyle.slate"]
+name.value = "Доска рыботорговца"
+name.en = "Fishmonger's Slate"
+description.value = "Написано мелом утром, к полудню уже на льду. Цена — сколько, по мнению торговца, покупатель стерпит."
+description.en = "Chalked up this morning, on ice by noon. The price is whatever the fishmonger thinks you can bear."
+
+[ledgergood."ledger.toaststyle.ice"]
+name.value = "Сквозь лёд"
+name.en = "Through the Ice"
+description.value = "Хороший чёрный лёд в ладонь толщиной, одна лунка и долгое ожидание. Когда взлетает флажок — бегом, и холод уже не в счёт."
+description.en = "Six inches of good black ice, one hole and a lot of waiting. When the flag goes up you run, and you do not mind the cold."
+
+[ledgergood."ledger.toaststyle.stitch"]
+name.value = "Вышивка крестиком"
+name.en = "Cross-Stitch Sampler"
+description.value = "Вышито кем-то терпеливым долгими вечерами между сезонами. Каждая рыба — это целый вечер; иголка так и торчит в канве."
+description.en = "Stitched by someone patient on the long nights between seasons. Every fish in it took an evening; the needle is still in."
+
+[ledgergood."ledger.toaststyle.crier"]
+name.value = "Указ глашатая"
+name.en = "Town Crier's Proclamation"
+description.value = "Оглашено на площади в полдень, между ценой на хлеб и рыцарем, которого посвятили в рыцари. Каждое слово — правда, плюс-минус дюйм."
+description.en = "Read out in the square at noon, between the price of bread and the knight who was knighted. Every word of it true, give or take an inch."
+
+[ledgergood."ledger.toaststyle.hall"]
+name.value = "Горный чертог"
+name.en = "Mountain Hall"
+description.value = "Высечено в живой скале под горой и инкрустировано кузнецом, который семь раз отмерил и столько же раз похвастался. Руны не дают остыть горну."
+description.en = "Cut from the living rock under the mountain and inlaid by a smith who measured twice and boasted three times. The runes keep the forge warm."
+
+[ledgergood."ledger.toaststyle.glade"]
+name.value = "Звёздная поляна"
+name.en = "Starlit Glade"
+description.value = "Написано при луне у края священного пруда, где вода помнит всех, кто когда-либо в ней плавал. Огоньки слетелись почитать через плечо."
+description.en = "Written by moonlight at the edge of a sacred pool, where the water remembers everything that ever swam in it. The wisps came to read over your shoulder."
+
+[ledgergood."ledger.toaststyle.blueprint"]
+name.value = "Чертёж изобретателя"
+name.en = "Tinker's Blueprint"
+description.value = "Начерчено в мастерской между тремя другими изобретениями и небольшим пожаром. Масштаб один к одному, допуски по желанию, улов гарантирован (не гарантирован)."
+description.en = "Drawn up in the workshop between three other inventions and a small fire. Scale one to one, tolerances optional, catch guaranteed (not guaranteed)."
+
+[ledgergood."ledger.toaststyle.drum"]
+name.value = "Барабан клана"
+name.en = "Clan Drum"
+description.value = "Кожа натянута на раму у костра, на ней ладонь клана, а бьют так, что просыпается соседняя долина. По удару на каждую рыбу, о которой стоит рассказать."
+description.en = "Stretched over a frame by the fire, painted with the clan’s hand and beaten loud enough to wake the next valley. One beat for every fish worth telling."
+
+[ledgergood."ledger.toaststyle.shroud"]
+name.value = "Могильный саван"
+name.en = "Grave Shroud"
+description.value = "Оторвано от полотна, в котором вас хоронили, и зашито обратно, когда вы выбрались порыбачить. Улов не против. Улов и не знает."
+description.en = "Torn from the cloth they buried you in, and stitched back up when you climbed out to go fishing. The catch doesn’t mind. The catch doesn’t know."
+
+[ledgergood."ledger.toaststyle.totem"]
+name.value = "Тотем равнин"
+name.en = "Plains Totem"
+description.value = "Нарисовано на шкуре у костра под очень большим небом тем, кто верит, что каждая рыба — дар Матери-Земли. Скажите спасибо."
+description.en = "Painted on a hide by a fire under a very large sky, by someone who believes every fish is a gift from the Earth. Say thank you."
+
+[ledgergood."ledger.toaststyle.hex"]
+name.value = "Сглаз джунглей"
+name.en = "Jungle Hex"
+description.value = "Связано знахарем на острове, где рыба кусается в ответ. Маска видела ваше будущее: больше рыбы. Маска видала и похуже."
+description.en = "Lashed together by a witch doctor on an island where the fish bite back. The mask has seen your future: more fish. The mask has seen worse."
+
+[ledgergood."ledger.toaststyle.lion"]
+name.value = "Хартия льва"
+name.en = "Lion's Charter"
+description.value = "Высечено из белого камня портового города, который всё никак не достроят, и скреплено львом его королей. Знамёна поднимают лишь ради улова, достойного труб."
+description.en = "Cut from the white stone of a harbour city that never stops building, and sealed under the lion of its kings. The banners only fly for a catch worth the trumpets."
+
+[ledgergood."ledger.toaststyle.warband"]
+name.value = "Железный отряд"
+name.en = "Iron Warband"
+description.value = "Выковано под красным небом в городе из железа и обид. Жаровни горят ради клана; следы когтей — для тех, кто сомневался в улове."
+description.en = "Hammered out under a red sky in a city built of iron and grudges. The braziers burn for the clan; the claw-marks are for whoever doubted the catch."
+
+[ledgergood."ledger.toaststyle.cartographer"]
+name.value = "Папка картографа"
+name.en = "Cartographer's Folio"
+description.value = "Карта, которую никогда не закончить. Все воды, что выучены наизусть, обведены тушью: берег, холмы, промеры у побережья. Остальное пока карандашом и ждёт."
+description.en = "A chart that is never finished. Every water you have learned by heart is inked in: coast, hills, the soundings offshore. The rest stays in pencil, waiting."
+
+[ledgergood."ledger.toaststyle.gala"]
+name.value = "Бал Рыбомании"
+name.en = "Extravaganza Gala"
+description.value = "Ночь великого состязания, когда вся гавань развешивает огни и никто не уходит домой до фейерверка. Этот — для рыболовов, что вернулись со всеми тремя."
+description.en = "The night of the great contest, when the whole harbour strings up its lights and nobody goes home before the fireworks. This one is for the anglers who brought back all three."
+
+[prestigeframe.none]
+name.value = "Неписаная"
+name.en = "Unwritten"
+description.value = "Кольцо, обведённое чернилами, и карандашная догадка о том, что ляжет вокруг него."
+description.en = "A ring in ink, and a pencilled guess at what will go round it."
+
+[prestigeframe.jetty]
+name.value = "Причал"
+name.en = "The Jetty"
+description.value = "Доски со старого причала, связанные в кольцо. Всё ещё пахнут дёгтем и отливом."
+description.en = "Planks off the old jetty, lashed into a ring, still smelling of tar and low tide."
+
+[prestigeframe.castoff]
+name.value = "Отплытие"
+name.en = "Casting Off"
+description.value = "Борт гребной лодки, обшитой внакрой, под тремя слоями краски, а поперёк него — убранные вёсла."
+description.en = "The rail of a clinker-built rowboat, three coats of paint deep, with the oars shipped across it."
+
+[prestigeframe.lighthouse]
+name.value = "Маяк"
+name.en = "The Lighthouse"
+description.value = "Фонарная комната на краю мыса: кругом стекло, и свет уходит далеко над водой."
+description.en = "The lamp room at the end of the point, glass all round and the light going out over the water."
+
+[prestigeframe.opensea]
+name.value = "Открытое море"
+name.en = "The Open Sea"
+description.value = "Роза ветров с карты штурмана: каждый румб верен, север увенчан золотом."
+description.en = "A compass rose off a navigator’s chart, every point of it true, the north crowned in gold."
+
+[prestigeframe.storm]
+name.value = "Буря"
+name.en = "The Storm"
+description.value = "Штурвал кеча в разгар шторма: красное дерево, латунь и восемь добрых спиц, а над головой по швам расходится небо."
+description.en = "The helm of a ketch in a full gale: mahogany, brass and eight good spokes, and the sky coming apart overhead."
+
+[prestigeframe.dive]
+name.value = "Погружение"
+name.en = "The Dive"
+description.value = "Медный водолазный шлем, привинченный и накачанный воздухом. Рыболов ушёл за борт посмотреть рыбе в глаза."
+description.en = "A copper diving helmet, bolted down and pumped full of air. The angler has gone over the side to look the fish in the eye."
+
+[prestigeframe.coral]
+name.value = "Коралловые сады"
+name.en = "The Coral Gardens"
+description.value = "Перламутровое кольцо посреди рифа: красный коралл с одной стороны, морской веер с другой, и вечно кто-нибудь проплывает мимо."
+description.en = "A ring of mother-of-pearl in a reef: red coral up one side, a sea fan on the other, and somebody always swimming past."
+
+[prestigeframe.midnight]
+name.value = "Полночная глубина"
+name.en = "The Midnight Zone"
+description.value = "Чёрное стекло оттуда, куда не доходит свет, и светят в нём лишь те, кто там живёт. Один из них проявил интерес."
+description.en = "Black glass from where no light comes down, lit by the things that live there. One of them has taken an interest."
+
+[prestigeframe.leviathan]
+name.value = "Левиафан"
+name.en = "The Leviathan"
+description.value = "Змей со дна всех матросских баек, свернувшийся вокруг кольца старого золота с собственным хвостом в пасти."
+description.en = "The serpent at the bottom of every sailor’s story, coiled round a ring of old gold with its own tail in its mouth."
+
+[prestigeframe.starward]
+name.value = "Звёздное море"
+name.en = "The Starward Sea"
+description.value = "Там, где кончается море, начинается небо: армиллярная сфера из золота и серебра под ночным небосводом и древние рыбы среди звёзд."
+description.en = "Where the sea runs out the sky begins: an armillary of gold and silver under the night, and the old fish among the stars."
+
+[prestigeframe.constellation]
+name.value = "Созвездие рыболова"
+name.en = "The Angler’s Constellation"
+description.value = "После десятого вас помещают на небо: рыболов из звёзд с удочкой и леской, а на конце лески — рыба. И ещё по звезде в короне за каждый престиж мастера."
+description.en = "Past the tenth, they put you in the sky: an angler of stars with a rod and a line, and a fish on the end of it. One more star in the crown for every Master Prestige."

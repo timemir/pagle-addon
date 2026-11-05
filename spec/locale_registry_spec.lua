@@ -126,38 +126,46 @@ describe("the locale line of every addon (ADR 0019)", function()
 				end
 			end)
 
-			it("lists esES's locale file, and its Lore where it has one, between Registry.lua and Apply.lua", function()
-				-- The generator writes the list from the files an addon has (DATA-R114), so the Lore entry is there
-				-- exactly where `data/Lore.esES.lua` is: the files differ by addon, and QoL has no Lore.
-				local expected = { "Registry.lua", "esES.lua" }
-				if readFileOrNil(dir .. "data/Lore.esES.lua") then
-					expected[#expected + 1] = "..\\data\\Lore.esES.lua"
-				end
-				expected[#expected + 1] = "Apply.lua"
+			it(
+				"lists esES's and ruRU's locale files, each with its Lore where it has one, between Registry.lua and Apply.lua",
+				function()
+					-- The generator writes the list from the files an addon has (DATA-R114), so a Lore entry is there
+					-- exactly where `data/Lore.<code>.lua` is: the files differ by addon, and QoL has no Lore.
+					local expected = { "Registry.lua" }
+					for _, code in ipairs({ "esES", "ruRU" }) do
+						expected[#expected + 1] = code .. ".lua"
+						if readFileOrNil(dir .. "data/Lore." .. code .. ".lua") then
+							expected[#expected + 1] = "..\\data\\Lore." .. code .. ".lua"
+						end
+					end
+					expected[#expected + 1] = "Apply.lua"
 
-				assert.are.same(expected, locales(read(dir .. "locale/Locales.xml")))
-			end)
+					assert.are.same(expected, locales(read(dir .. "locale/Locales.xml")))
+				end
+			)
 		end)
 	end
 
-	it("lists no language as listed: esES is shipped and registers unlisted in every addon", function()
-		for _, addon in ipairs(ADDONS) do
-			local ns = registry()
-			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
-			local chunk = assert(loadfile("addons/" .. addon .. "/locale/esES.lua"))
-			setfenv(chunk, setmetatable({ Pagle = {} }, { __index = _G }))
+	it("lists no language as listed: esES and ruRU are shipped and register unlisted in every addon", function()
+		for code, name in pairs({ esES = "Español", ruRU = "Русский" }) do
+			for _, addon in ipairs(ADDONS) do
+				local ns = registry()
+				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
+				local chunk = assert(loadfile("addons/" .. addon .. "/locale/" .. code .. ".lua"))
+				setfenv(chunk, setmetatable({ Pagle = {} }, { __index = _G }))
 
-			chunk(addon, ns)
+				chunk(addon, ns)
 
-			local info = assert(ns.LocaleInfo("esES"), addon)
-			assert.are.equal(false, info.listed, addon)
-			assert.are.equal("Español", info.name, addon)
+				local info = assert(ns.LocaleInfo(code), addon)
+				assert.are.equal(false, info.listed, addon)
+				assert.are.equal(name, info.name, addon)
+			end
 		end
-		-- No other language is shipped: the one code a locale file or a Lore file may carry is esES.
+		-- No other language is shipped: the codes a locale file or a Lore file may carry are esES and ruRU.
 		for _, addon in ipairs(ADDONS) do
 			for _, script in ipairs(locales(read("addons/" .. addon .. "/locale/Locales.xml"))) do
 				local code = script:match("(%a%a%u%u)%.lua$")
-				assert(code == nil or code == "esES", script)
+				assert(code == nil or code == "esES" or code == "ruRU", script)
 			end
 		end
 	end)
