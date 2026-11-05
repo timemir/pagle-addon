@@ -88,6 +88,8 @@ local RIGHT, CLOSES_GAP, PIP, PIP_GAP, STAMP_W, MORE_GAP, NAME_GAP, ZONES_GAP, Z
 --- How far the strip pushes the ruler and the list down the page, and the least room the companion hint takes under
 --- it beside: its lines' heights and spacing are added to it (HNT-R161, HNT-R170).
 ns.WAGER_STRIP_ROOM, ns.WAGER_HINT_ROOM = STRIP_HEIGHT + 8, 4
+-- "closes in …"'s size: the board's count hand (ns.BoardFonts().count).
+local CLOSES_SIZE = 17
 
 ---@class WagerPip: Frame
 ---@field pip true
@@ -232,11 +234,13 @@ local function drawRight(view, strip)
 	local button, width = view.button, view.width
 	local closes = view.closes
 	closes:SetText(strip.closes or "")
-	closes:SetWidth(0)
-	local closesWidth = math.min(math.ceil(closes:GetStringWidth()) + 1, width / 3)
-	closes:SetWidth(closesWidth)
+	-- the time is what the strip is for: whole up to half its width, a size or two smaller first in a longer
+	-- language (CORE-R8), the name taking what's left (ns.WagerStripFit)
 	local ink = strip.urgent and LOOK.nowLine or LOOK.red
-	closes:SetTextColor(ink[1], ink[2], ink[3])
+	ns.FitText(closes, "hand", CLOSES_SIZE, width / 2, CLOSES_SIZE - 2, false, ink)
+	closes:SetWidth(0)
+	local closesWidth = math.min(math.ceil(closes:GetStringWidth()) + 1, width / 2)
+	closes:SetWidth(closesWidth)
 	closes:ClearAllPoints()
 	closes:SetPoint("RIGHT", button, "TOPRIGHT", -RIGHT, -STRIP_HEIGHT / 2)
 	closes:Show()

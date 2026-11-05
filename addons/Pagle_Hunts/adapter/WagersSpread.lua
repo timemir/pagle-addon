@@ -537,7 +537,17 @@ function ns.FillWagerAheadRow(row, data)
 		dash:SetAlpha((data.selected and LOOK.hintDash or LOOK.aheadDash)[4])
 	end
 	row.mark:SetMark(data.mark)
-	local room = width - AHEAD_X - AHEAD_RROOM
+	-- when it opens and its length keep their whole width at the right, up to half the row (a longer language's
+	-- "opens …", CORE-R8); the name, zones and "needs skill" take the rest
+	local rroom = math.min(
+		width / 2,
+		math.max(
+			AHEAD_RROOM,
+			math.max(ns.FitWagerText(row.opens, data.opens, width), ns.FitWagerText(row.length, data.length, width))
+				+ AHEAD_R
+		)
+	)
+	local room = width - AHEAD_X - rroom
 	ns.FitWagerText(row.name, data.name, room)
 	ns.PlaceWagerText(row.name, row, AHEAD_X, AHEAD_NAME_Y)
 	local needWidth = 0
@@ -553,9 +563,9 @@ function ns.FillWagerAheadRow(row, data)
 	else
 		row.need:Hide()
 	end
-	ns.FitWagerText(row.opens, data.opens, AHEAD_RROOM - AHEAD_R)
+	ns.FitWagerText(row.opens, data.opens, rroom - AHEAD_R)
 	ns.PlaceWagerText(row.opens, row, AHEAD_R, AHEAD_OPENS_Y, true)
-	ns.FitWagerText(row.length, data.length, AHEAD_RROOM - AHEAD_R)
+	ns.FitWagerText(row.length, data.length, rroom - AHEAD_R)
 	ns.PlaceWagerText(row.length, row, AHEAD_R, AHEAD_ZONES_Y, true)
 end
 
