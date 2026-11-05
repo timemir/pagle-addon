@@ -1,0 +1,50 @@
+# Stats's lore in Russian (ruRU), over data/lore/stats.toml (DATA-R113, DATA-R114).
+# Machine-drafted: written by an AI model (Claude) for 1.1 and not yet reviewed by a native Russian speaker.
+
+[statsgood."stats.trackerframe.none"]
+name.value = "Без рамки"
+name.en = "No Frame"
+description.value = "Одни цифры, без всякой каймы. Начищать нечего, промокнуть тоже нечему."
+description.en = "The figures on their own, with no border. Nothing to polish, and nothing to get wet."
+
+[statsgood."stats.trackerframe.logbook"]
+name.value = "Судовой журнал"
+name.en = "Logbook"
+description.value = "Пергамент в бледную графу, как журнал начальника порта. Каждая цифра знает свою строку."
+description.en = "Parchment ruled in faint columns, like a harbourmaster's log. Every figure keeps to its line."
+
+[statsgood."stats.trackerframe.brass"]
+name.value = "Корабельная латунь"
+name.en = "Ship's Brass"
+description.value = "Тонкий латунный ободок с заклёпками по углам, как у корабельного компаса. Блестит в любую погоду."
+description.en = "A thin brass rim, riveted at each corner like a ship's compass. It keeps its shine in any weather."
+
+[statsgood."stats.trackerframe.greenbar"]
+name.value = "Бумага в зелёную полоску"
+name.en = "Green-Bar Paper"
+description.value = "Счётная бумага в бледно-зелёную полосу: в длинном столбце цифр строку не потеряешь."
+description.en = "Tally paper banded in pale green, so a long column of numbers never loses its place."
+
+[statsgood."stats.trackerframe.chalkboard"]
+name.value = "Школьная доска"
+name.en = "Chalkboard"
+description.value = "Зелёная школьная доска в сосновой раме. В углу так и остались чьи-то палочки счёта."
+description.en = "A green schoolroom board in a pine frame, with somebody’s tally marks still in the corner."
+
+[statsgood."stats.trackerframe.tidegauge"]
+name.value = "Футшток"
+name.en = "Tide Gauge"
+description.value = "Морское синее стекло за латунной приливной рейкой. Цифры на ней прибывают и убывают, как вода."
+description.en = "Sea-blue glass behind a brass tide staff, marked off so the numbers rise and fall like water."
+
+[statsgood."stats.trackerframe.abacus"]
+name.value = "Счёты"
+name.en = "Abacus"
+description.value = "Счёты с костяшками, сдвинутыми к краям, а между ними без затей записан итог."
+description.en = "A counting frame with the beads pushed to the ends, and the sum written plainly between them."
+
+[statsgood."stats.trackerframe.astrolabe"]
+name.value = "Астролябия"
+name.en = "Astrolabe"
+description.value = "Звёздная карта густой синевы под латунными кольцами — для рыболова, что прикидывает шансы по небу."
+description.en = "A star map in deep blue under brass rings, for an angler who reckons the odds by the sky."

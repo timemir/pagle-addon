@@ -7,6 +7,12 @@
 
 local TRANSLATED = { key = "CARD_CASTS", english = "Casts", russian = "Забросы" }
 local NBSP = "\194\160" -- U+00A0, Russian's thousands separator in the header
+-- A Ledger Lore key (DATA-R104), in English and in the shipped Lore.ruRU.lua.
+local LORE = {
+	key = "species.6362.blurb",
+	english = "Stubborn on the line, sweet on the plate.",
+	russian = "Упряма на леске, сладка на тарелке.",
+}
 
 -- The shipped Core locale file with `listed = false` changed to `listed = true`, in a temporary file; it is removed.
 ---@param action fun(path: string)
@@ -139,6 +145,34 @@ describe("ruRU as shipped, unlisted", function()
 	end)
 end)
 
+describe("ruRU's Lore as shipped", function()
+	it("registers a Module's Lore beside its interface text, and applies both", function()
+		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+		local L = loaded.ns.L
+		assert.are.equal(LORE.english, L[LORE.key])
+
+		loaded.ns.ApplyLocale("ruRU")
+
+		assert.are.equal(LORE.russian, L[LORE.key])
+		assert.are.equal("Рыболов", L.ANGLER_CRUMB)
+	end)
+
+	it("translates every Lore key English has, in each addon with Lore", function()
+		for _, addon in ipairs({ "Pagle", "Pagle_Hunts", "Pagle_Ledger", "Pagle_Stats", "Pagle_TackleBoard" }) do
+			local english, russian = {}, {}
+			for _, pair in ipairs({ { "data/Lore.lua", english }, { "data/Lore.ruRU.lua", russian } }) do
+				for key in readFile("addons/" .. addon .. "/" .. pair[1]):gmatch('\n\t*L%["([^"]+)"%] = ') do
+					pair[2][key] = true
+				end
+			end
+			assert(next(english) ~= nil, addon)
+			for key in pairs(english) do
+				assert(russian[key], addon .. " " .. key)
+			end
+		end
+	end)
+end)
+
 describe("ruRU once listed (a copy of the shipped file with listed = true)", function()
 	-- Core over these SavedVariables on a client of `client`, with the copy standing for locale/ruRU.lua; the Ledger
 	-- loads after it, as the client loads a Module, following Core's choice.
@@ -203,11 +237,12 @@ describe("ruRU once listed (a copy of the shipped file with listed = true)", fun
 		end
 	)
 
-	it("makes a Module follow Core with its own Russian", function()
+	it("makes a Module follow Core: its own Russian, with the Lore beside it", function()
 		withListedCopy(function(path)
 			local loaded = login(path, "ruRU", "ruRU")
 
 			assert.are.equal("Рыболов", loaded.namespaces.Pagle_Ledger.L.ANGLER_CRUMB)
+			assert.are.equal(LORE.russian, loaded.namespaces.Pagle_Ledger.L[LORE.key])
 			assert.are.same({}, loaded.client.errors)
 		end)
 	end)
