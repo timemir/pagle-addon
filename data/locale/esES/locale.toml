@@ -1,6 +1,10 @@
 # Spanish (Spain), the translation of PR #510 by Felipe Martin (fmartingr), converted to the 1.1 shape by
 # scripts/convert-text.py (#528). Not listed: listing needs 100% of the interface and one approval from a second
 # native Spanish speaker (docs/translations.md). esES also serves esMX until a separate esMX exists.
+#
+# For 1.1 the interface keys it had no text for were filled at the end of each file: fmartingr's own text from #510
+# that the converter missed, then machine-drafted text, each block marked as such. The machine-drafted strings are
+# not credited to a translator and await a native speaker's review.
 
 name = "Español"
 translators = ["fmartingr"]

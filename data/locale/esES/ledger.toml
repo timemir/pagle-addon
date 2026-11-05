@@ -1818,3 +1818,304 @@ en = "Never for sale and never earned: a crate gives it, or nothing does."
 [COLLECTION_PUT_AWAY]
 value = "Guardado: {name} está desactivado"
 en = "Put away: {name} is off"
+
+# Recovered for 1.1 (#528): fmartingr's translations from PR #510 that scripts/convert-text.py did not carry over
+# (a value on the line after `L.KEY =`, or a counted string), with `%s`/`%d` renamed to today's {fields}.
+# Each one's `-- EN:` in #510 is today's English. A note above an entry names a part that is machine-drafted.
+
+[WRITE_UP_FIRST_BUILD]
+value.one = "Tu Libro se ha escrito a partir de {count:n} Lance"
+value.many = "Tu Libro se ha escrito a partir de {count:n} Lances"
+value.other = "Tu Libro se ha escrito a partir de {count:n} Lances"
+en.one = "Your Ledger was written up from {count:n} Cast"
+en.other = "Your Ledger was written up from {count:n} Casts"
+
+[STAMP_TIP_LAND]
+value.one = "Captúralo {count} vez."
+value.many = "Captúralo {count} veces."
+value.other = "Captúralo {count} veces."
+en.one = "Land it {count} time."
+en.other = "Land it {count} times."
+
+# `one` machine-drafted
+[STAMP_TIP_ELEMENT_WINDOWS]
+value.one = "Captúralo en su ventana de elemento, en cualquier zona."
+value.many = "Captúralo en cada una de sus {count} ventanas de elemento, en cualquier zona."
+value.other = "Captúralo en cada una de sus {count} ventanas de elemento, en cualquier zona."
+en.one = "Land it under its element window, in any zone."
+en.other = "Land it under each of its {count} element windows, in any zone."
+
+# `one` machine-drafted
+[STAMP_TIP_ZONES]
+value.one = "Captúralo en cualquier zona."
+value.many = "Captúralo en {count} zonas distintas."
+value.other = "Captúralo en {count} zonas distintas."
+en.one = "Land it in any zone."
+en.other = "Land it in {count} different zones."
+
+[STAMP_TIP_ZONES_PROGRESS]
+value.one = "En {have:0} de {count:0} zona."
+value.many = "En {have:0} de {count:0} zonas."
+value.other = "En {have:0} de {count:0} zonas."
+en.one = "In {have:0} of {count:0} zone."
+en.other = "In {have:0} of {count:0} zones."
+
+[TROPHY_TIP_LANDED]
+value.one = "{done:0} de {count:0} peso capturado."
+value.many = "{done:0} de {count:0} pesos capturados."
+value.other = "{done:0} de {count:0} pesos capturados."
+en.one = "{done:0} of {count:0} weight landed."
+en.other = "{done:0} of {count:0} weights landed."
+
+[GUIDE_RIGHT_BODY]
+value = "Tu habilidad de Pesca es lo único que cuenta tu pasado con honestidad, así que cuenta desde el principio."
+en = "Your Fishing skill is the one thing that tells your past honestly, so it counts from the start."
+
+# Machine-drafted for 1.1, not yet reviewed by a native speaker: the interface keys esES had no text for.
+# A native Spanish speaker should check them before esES is listed (docs/translations.md).
+
+[HOME_SEAL]
+value = "Libro\n{completion}"
+en = "Ledger\n{completion}"
+
+[ENTRY_RIDDLE]
+value = "“{riddle}”"
+en = "\"{riddle}\""
+
+[ANGLER_CATCHES_NEXT]
+value.one = "{count:n} Captura · próximo hito {milestone}"
+value.many = "{count:n} Capturas · próximo hito {milestone}"
+value.other = "{count:n} Capturas · próximo hito {milestone}"
+en.one = "{count:n} Catch · next milestone {milestone}"
+en.other = "{count:n} Catches · next milestone {milestone}"
+
+[TOUR_HOME]
+value = "el Diario de peces: Inicio"
+en = "the Fish Journal: Home"
+
+[TOUR_ZONE]
+value = "el Diario de peces: la zona más pescada, con su Especie más capturada abierta"
+en = "the Fish Journal: the most-fished zone, its most-caught Species open"
+
+[TOUR_FISH]
+value = "el Diario de peces: la Especie más capturada"
+en = "the Fish Journal: the most-caught Species"
+
+[TOUR_TROPHY]
+value = "el Diario de peces: la Sala de trofeos, en una familia cobrada"
+en = "the Fish Journal: the Trophy Room, on a landed family"
+
+[TOUR_CURIOS]
+value = "el Diario de peces: Curiosidades"
+en = "the Fish Journal: Curios"
+
+[TOUR_LEGENDS]
+value = "el Diario de peces: Leyendas, en una capturada"
+en = "the Fish Journal: Legends, on a caught one"
+
+[TOUR_ANGLER]
+value = "el Diario de peces: la página del Pescador"
+en = "the Fish Journal: the Angler page"
+
+[TOUR_SEARCH]
+value = "el Diario de peces: resultados de búsqueda del nombre de la Especie más capturada"
+en = "the Fish Journal: search results for the most-caught Species' name"
+
+[COLLECTION_SLOT_FALLBACK]
+value.one = "{label}"
+value.many = "{label}"
+value.other = "{label}"
+en.one = "{label}"
+en.other = "{label}s"
+
+[COLLECTION_TITLE_NOUN]
+value = "Título"
+en = "Title"
+
+[COLLECTION_TITLES_NOUN]
+value = "Títulos"
+en = "Titles"
+
+# Machine-drafted for 1.1, with nothing to translate: fields, separators, marks, textures, numerals, names and
+# codes that read the same in Spanish (or stay English, as FISH_CREST_DROP_PREFIX and RECOVERY_REASONS do), so
+# that esES covers every key. A native speaker may still word any of them.
+
+[COUNT_OF]
+value = "{count_of_1} / {count_of_2}"
+en = "{count_of_1} / {count_of_2}"
+
+[SIZE_TEXT]
+value = "{name} · {length}"
+en = "{name} · {length}"
+
+[NAME_UNKNOWN]
+value = "..."
+en = "..."
+
+[CREST_PROGRESS]
+value = "{rank} · {completion:0}%"
+en = "{rank} · {completion:0}%"
+
+[ITEM_SIZE]
+value = "{name} · {size}"
+en = "{name} · {size}"
+
+[TEXT_WITH_TITLE]
+value = "{text_with_title_1}. {titles}"
+en = "{text_with_title_1}. {titles}"
+
+[FAMILY_STAR_TEXT]
+value = "{name} {stars}"
+en = "{name} {stars}"
+
+[STAR]
+value = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+en = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+
+[ZONE_NEXT_SEPARATOR]
+value = ", "
+en = ", "
+
+[ZONE_NEXT_WITH_NEW]
+value = "{line} · {found}"
+en = "{line} · {found}"
+
+[WRITE_UP_VARIETIES_COLOURS]
+value = "{varieties} · {colours}"
+en = "{varieties} · {colours}"
+
+[WRITE_UP_ZONES_MASTERED]
+value = "{zones} · {mastered}"
+en = "{zones} · {mastered}"
+
+[HOME_NOTE_RANK]
+value = "{zone}: {zoneRanks}. {nextRequirement}"
+en = "{zone}: {zoneRanks}. {nextRequirement}"
+
+[HOME_PERCENT]
+value = "{percent:0}%"
+en = "{percent:0}%"
+
+[HOME_NUMERALS]
+value = ["i.", "ii.", "iii.", "iv.", "v.", "vi."]
+en = ["i.", "ii.", "iii.", "iv.", "v.", "vi."]
+
+[HOME_ANGLER_MARK]
+value = "»"
+en = "»"
+
+[DATE_SHORT]
+value = "{day:0} {monthsShort}"
+en = "{day:0} {monthsShort}"
+
+[DATE_WITH_YEAR]
+value = "{short} {year}"
+en = "{short} {year}"
+
+[WINDOW_LINE]
+value = "{label}, {state}"
+en = "{label}, {state}"
+
+[HINT_SEPARATOR]
+value = " · "
+en = " · "
+
+[HINT_WINDOW_SEPARATOR]
+value = ", "
+en = ", "
+
+[HINT_MORE]
+value = "{name} +{hint_more_2:0}"
+en = "{name} +{hint_more_2:0}"
+
+[TILE_RANK]
+value = "{zoneRanks} · {completion:0}%"
+en = "{zoneRanks} · {completion:0}%"
+
+[LIST_SEPARATOR]
+value = ", "
+en = ", "
+
+[CHECK_ON]
+value = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:468:502:1836:1870|t"
+en = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:468:502:1836:1870|t"
+
+[CHECK_OFF]
+value = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:430:464:1836:1870|t"
+en = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:430:464:1836:1870|t"
+
+[ANGLER_MILESTONE]
+value = "{done} {threshold:0}"
+en = "{done} {threshold:0}"
+
+[ANGLER_MILESTONE_SEPARATOR]
+value = "   "
+en = "   "
+
+[ZONE_LADDER_SEPARATOR]
+value = "·"
+en = "·"
+
+[ZONE_GROUP_COUNT]
+value = "{done:0} / {total:0}"
+en = "{done:0} / {total:0}"
+
+[ZONE_GROUP_NOTE]
+value = "{note} · {zone_group_note_2}"
+en = "{note} · {zone_group_note_2}"
+
+[ZONE_REQUIREMENT]
+value = "{met} {zone_requirement_2}"
+en = "{met} {zone_requirement_2}"
+
+[ZONE_MARGIN_SEPARATOR]
+value = " · "
+en = " · "
+
+[ZONE_LOOSE_ITEM]
+value = "{item}: {zone_loose_item_2:0}×"
+en = "{item}: {zone_loose_item_2:0}×"
+
+[STAR_OFF]
+value = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:677:700:1126:1149|t"
+en = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:677:700:1126:1149|t"
+
+[LEGENDS_CAUGHT_MARK]
+value = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+en = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+
+[LEGENDS_FIRST]
+value = "{date}, {zone}, {character}"
+en = "{date}, {zone}, {character}"
+
+[LEGENDS_FIRST_NO_ZONE]
+value = "{date}, {character}"
+en = "{date}, {character}"
+
+[FOLLOWING_EXPIRED_MARK]
+value = "—"
+en = "—"
+
+[FOLLOWING_HARDCORE_STAMP]
+value = "HC"
+en = "HC"
+
+[GUIDE_MILESTONE_JOIN]
+value = ", "
+en = ", "
+
+[GUIDE_XP]
+value = "+{skillMilestoneXp} XP"
+en = "+{skillMilestoneXp} XP"
+
+[COLLECTION_FRAMES_JOIN]
+value = " · "
+en = " · "
+
+[COLLECTION_ADDED]
+value = "{words} · {dateAt}"
+en = "{words} · {dateAt}"
+
+[COLLECTION_KICKER]
+value = "{slotName} · {source}"
+en = "{slotName} · {source}"

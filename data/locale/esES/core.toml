@@ -931,8 +931,8 @@ value = "Pagle dev: los comandos de desarrollo están desactivados; /pagle dev o
 en = "Pagle dev: dev commands are off; /pagle dev on turns them on."
 
 [DEV_USAGE]
-value = "Pagle dev: /pagle dev on | off | endsession | preview <tipo> | stage <número> | glyphs | tour [module | list | stop] | probe | onboarding <comando> | content | views | pastetest <KB>"
-en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | onboarding <command> | content | views | pastetest <KB>"
+value = "Pagle dev: /pagle dev on | off | endsession | preview <tipo> | stage <número> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <comando> | content | views | pastetest <KB>"
+en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
 
 [DEV_PASTE_TEST_USAGE]
 value = "Pagle dev: /pagle dev pastetest <KB>, de {pasteTestMinKb} a {pasteTestMaxKb}; la comprobación copia 64, 128, 256 y 512."
@@ -1737,7 +1737,7 @@ en = [
 ]
 
 [GUIDE_WELCOME_PARTS]
-value = "Pagle viene en {parts} partes. Desactiva cualquiera en la lista de accesorios y no deja rastro."
+value = "Pagle viene en {parts}. Desactiva cualquiera en la lista de accesorios y no deja rastro."
 en = "Pagle comes in {parts}. Turn any of them off in the AddOns list and it leaves no trace."
 
 [GUIDE_BOX_MENU_NOTE]
@@ -1745,7 +1745,7 @@ value = "Haz clic en un nombre para abrirlo. */pagle* abre los Ajustes."
 en = "Click a name to open it. */pagle* opens Settings."
 
 [GUIDE_BOX_PARTS]
-value = "{parts} partes y una tienda"
+value = "{parts} y una tienda"
 en = "{parts}, and a shop"
 
 [GUIDE_BOX_SHOP]
@@ -1936,3 +1936,522 @@ en = "On the Fish Journal's bookplate."
 [PREVIEW_BINDING_NOTE]
 value = "Todos tus libros la llevan."
 en = "Every book of yours wears it."
+
+# Recovered for 1.1 (#528): fmartingr's translations from PR #510 that scripts/convert-text.py did not carry over
+# (a value on the line after `L.KEY =`, or a counted string), with `%s`/`%d` renamed to today's {fields}.
+# Each one's `-- EN:` in #510 is today's English. A note above an entry names a part that is machine-drafted.
+
+[TRAILER_ARMED]
+value = "Pagle: tráiler preparado. Empieza a grabar y pesca con tu Tecla de pesca. Esperando un pez con longitud de Pagle."
+en = "Pagle: trailer armed. Start recording, then fish with your Fishing key. Waiting for a fish with a Pagle length."
+
+[TRAILER_USAGE]
+value = "Pagle: /pagle trailer prepara una grabación; /pagle trailer stop la cancela; /pagle trailer status muestra su estado."
+en = "Pagle: /pagle trailer arms a recording; /pagle trailer stop cancels; /pagle trailer status shows its state."
+
+[LOG_UNREADABLE]
+value = "Pagle se ha detenido: tu Registro de capturas no se puede leer ({problem}) y no se ha cambiado nada. Antes de cerrar sesión o recargar, copia Pagle.lua y Pagle.lua.bak de WTF/Account/<cuenta>/SavedVariables a un lugar seguro y avísanos en github.com/timemir/pagle-addon/issues."
+en = "Pagle stopped: your Catch log can't be read ({problem}), and nothing has been changed. Before you log out or reload, copy Pagle.lua and Pagle.lua.bak from WTF/Account/<account>/SavedVariables somewhere safe, then report it at github.com/timemir/pagle-addon/issues."
+
+[LOG_UNREADABLE_PAUSED]
+value = "Pagle está detenido: tu Registro de capturas no se puede leer y no se ha cambiado nada. La línea del inicio de sesión dice qué hacer."
+en = "Pagle is stopped: your Catch log can't be read, and nothing has been changed. The line at login says what to do."
+
+[SETTINGS_TRACKER_RESET_TOOLTIP]
+value = "Arrastra con Mayús cualquier rastreador de Pagle para moverlos todos. Esto los devuelve bajo el minimapa."
+en = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap."
+
+[SETTINGS_TOAST_RESET_TOOLTIP]
+value = "Arrastra con Mayús un aviso emergente para mover los avisos emergentes y los Gestos. Esto los devuelve a la parte inferior de la pantalla."
+en = "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen."
+
+[SETTINGS_RELOAD_REMINDER_TOOLTIP]
+value = "Una línea en el chat cada {reloadReminderStep:0} Lances sin guardar. WoW solo guarda al hacer /reload o cerrar sesión, así que un cierre inesperado los pierde."
+en = "A chat line every {reloadReminderStep:0} Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them."
+
+[SETTINGS_LENGTH_UNIT_TOOLTIP]
+value = "Cómo muestra Pagle la longitud de tus Capturas. Los registros se guardan en milímetros, así que cambiarla solo cambia lo que ves."
+en = "How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes only what you see."
+
+[SETTINGS_CLOCK_TOOLTIP]
+value = "Cómo escribe Pagle una hora del día, como la hora del reino arriba del tablón de Cazas. Seguir el juego usa el modo de 24 horas del reloj del minimapa."
+en = "How Pagle writes a time of day, such as the realm time at the top of the Hunts board. Following the game uses the minimap clock's 24-hour mode."
+
+[SETTINGS_MINIMAP_ICON_TOOLTIP]
+value = "Un botón redondo de Pagle en el borde del minimapa que abre el menú de Pagle. El menú también está en el botón de accesorios junto al minimapa."
+en = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button by the minimap."
+
+[SETTINGS_ANGLER_TOOLTIPS_TOOLTIP]
+value = "Añade un bloque de Pagle al tooltip de los jugadores cuyo Pescador está en la web de Pagle. Necesita Pagle Companion."
+en = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle Companion."
+
+[SETTINGS_COZY_TOOLTIP]
+value = "No salta ni suena nada. Cada momento espera en el Resumen de sesión. El Destello de una Leyenda sigue apareciendo, en silencio."
+en = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently."
+
+[SETTINGS_BUDGET_TOOLTIP]
+value = "Cuando los avisos emergentes llegan muy seguidos, los pequeños se quedan en un Gesto discreto. Los récords siempre conservan su regla. En gris en el Modo acogedor, que ya lo retiene todo."
+en = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway."
+
+[SETTINGS_MOTION_TOOLTIP]
+value = "Los avisos emergentes entran deslizándose y se estampan, los estandartes dejan caer su sello y giran los rayos tras un estandarte o una Leyenda. Desactivadas, cada uno aparece ya asentado."
+en = "Toasts slide in and stamp themselves, banners drop their seal, and the rays behind a banner or a Legend turn. Off, each appears as it settles."
+
+[SETTINGS_EVERY_CATCH_TOOLTIP]
+value = "Un aviso emergente por cada captura: su nombre, talla y longitud. Si la misma pieza trae un momento mayor, se muestra ese, y pasado tu presupuesto de interrupciones se queda en una línea discreta. En gris en el Modo acogedor, que no muestra nada."
+en = "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which shows nothing."
+
+[SETTINGS_LOOK_PARAGRAPH]
+value = "Aspectos que tienes. Elige uno aquí, en la Colección del Diario de peces o con Usar en la Tienda de Curiosidades; todos cambian lo mismo."
+en = "Looks you own. Pick one here, in the Fish Journal's Collection or with Use in the Curio Shop; all of them change the same thing."
+
+[SETTINGS_FIELD_REPORT_TOOLTIP]
+value = "Copia lo que has sacado y los datos de Pagle aún no conocen, y pégalo en el formulario de incidencias."
+en = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form."
+
+[SETTINGS_PASTE_TOOLTIP]
+value = "Copia tu Registro de capturas como Cadena de pegado, para pegarlo en la web de Pagle sin el Companion."
+en = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion."
+
+[DEV_PASTE_TEST_SHOWN]
+value = "Pagle dev: hay una cadena de prueba de {testKB} KB en la ventana de exportación; cópiala y comprueba su longitud."
+en = "Pagle dev: a {testKB} KB test string is in the export window; copy it and check its length."
+
+[DEV_CONTENT_FRAMES]
+value = "Pagle dev: fotogramas en que corrió la comprobación: {frames}, el más largo {longest:2} ms (presupuesto {budget} ms)."
+en = "Pagle dev: frames the check ran in: {frames}, the longest {longest:2} ms (budget {budget} ms)."
+
+[DEV_STAGE_SET]
+value = "Pagle dev: el Cartographer's Folio se dibuja como si {dev_stage_set} zonas estuvieran en Maestro, hasta /pagle dev stage off."
+en = "Pagle dev: the Cartographer's Folio is drawn as if {dev_stage_set} zones were at Master, until /pagle dev stage off."
+
+[DEV_SKILL_NOT_SET]
+value = "Pagle dev: la habilidad de Pesca marca lo que dice el cliente; /pagle dev skill <rango> la sustituye."
+en = "Pagle dev: Fishing skill reads as the client says; /pagle dev skill <rank> overrides it."
+
+[DEV_SKILL_REMINDER]
+value = "Pagle dev: la habilidad de Pesca está sustituida por {rank}/{max} (/pagle dev skill off para quitarlo)."
+en = "Pagle dev: Fishing skill is overridden to {rank}/{max} (/pagle dev skill off to clear it)."
+
+# `one` machine-drafted
+[DEV_TOUR_STOPS]
+value.one = "1 parada"
+value.many = "{count} paradas"
+value.other = "{count} paradas"
+en.one = "1 stop"
+en.other = "{count} stops"
+
+[DEV_TOUR_START]
+value = "Pagle dev: recorriendo {stops} desde {clock}; una captura de pantalla de cada una va a la carpeta Screenshots."
+en = "Pagle dev: touring {stops} from {clock}; a screenshot of each goes to the Screenshots folder."
+
+[NOTE_TOAST]
+value = "La moneda son *Monedas Pagle*: se ganan haciendo cosas, nunca se compran, y se gastan en aspectos en la Tienda de Curiosidades."
+en = "The coin is *Pagle Coins*: earned by doing things, never bought, spent on looks in the Curio Shop."
+
+[LOOK_SHOP_LOOKS]
+value = "Todo aquí es un *aspecto*: avisos emergentes, sonidos, encuadernaciones, blasones. Nada te hace pescar mejor."
+en = "Everything here is a *look*: toasts, sounds, bindings, crests. Nothing makes you fish better."
+
+[GUIDE_BOX_TEXT]
+value = "Pagle es un pequeño equipo, no una gran ventana. Cada parte tiene su sitio, y todas se abren desde la entrada |cff3e220cPagle|r bajo el botón de accesorios junto a tu minimapa."
+en = "Pagle is a small kit, not one big window. Each part has its own place, and every one of them opens from the |cff3e220cPagle|r entry under the addons button by your minimap."
+
+[GUIDE_MOMENTS_BUDGET]
+value = "Como mucho {guide_moments_budget_1:0} interrupciones cada {guide_moments_budget_2:0} minutos: pasado eso, las pequeñas se quedan en un Gesto. Todo acaba en el Resumen de sesión cuando paras."
+en = "At most {guide_moments_budget_1:0} pop-ups every {guide_moments_budget_2:0} minutes: past that, small ones step down to a Nod. Everything lands on the Session summary when you stop."
+
+[GUIDE_OFF_TEXT]
+value = "La primera vez que pase algo nuevo (tu primer Gesto, tu primer pez nuevo, tu primer Resumen de sesión) dejaré una nota al lado. Una vez. Después, los márgenes quedan limpios."
+en = "The first time something new happens (your first Nod, your first new fish, your first Session summary) I’ll leave a note beside it. Once. After that the margins stay clean."
+
+[GUIDE_OFF_LOOKS]
+value.one = "¿No quieres notas? Desactiva las Notas al margen en los Ajustes. {guideListOf} trae unas notas breves la primera vez que se abre."
+value.many = "¿No quieres notas? Desactiva las Notas al margen en los Ajustes. {guideListOf} traen unas notas breves la primera vez que se abren."
+value.other = "¿No quieres notas? Desactiva las Notas al margen en los Ajustes. {guideListOf} traen unas notas breves la primera vez que se abren."
+en.one = "Don’t want notes? Turn off Margin notes in Settings. {guideListOf} gets a short set the first time you open it."
+en.other = "Don’t want notes? Turn off Margin notes in Settings. {guideListOf} each get a short set the first time you open them."
+
+# Machine-drafted for 1.1, not yet reviewed by a native speaker: the interface keys esES had no text for.
+# A native Spanish speaker should check them before esES is listed (docs/translations.md).
+
+[RECOVERY_NOT_LOADED]
+value = "Recuperación de Pagle: Pagle_Recovery no se ha cargado ({reason}), así que no se ha restaurado nada y tu Registro de capturas no ha cambiado. Quita Pagle_Recovery cuando la Recuperación esté completa."
+en = "Pagle Recovery: Pagle_Recovery didn't load ({reason}), so nothing was restored and your Catch log is unchanged. Remove Pagle_Recovery once Recovery is complete."
+
+[RECOVERY_OTHER_LOG]
+value = "Recuperación de Pagle: Pagle_Recovery es para otro Registro de capturas, así que aquí no se ha restaurado nada. Quítalo cuando la Recuperación esté completa."
+en = "Pagle Recovery: Pagle_Recovery is for another Catch log, so nothing was restored here. Remove it once Recovery is complete."
+
+[RECOVERY_STOPPED]
+value = "La Recuperación de Pagle se ha detenido: {reason}. Tu Registro de capturas no ha cambiado. Quita Pagle_Recovery para continuar, o exporta una nueva instantánea con /pagle recovery export."
+en = "Pagle Recovery stopped: {reason}. Your Catch log is unchanged. Remove Pagle_Recovery to resume, or export a new snapshot with /pagle recovery export."
+
+[RECOVERY_RESTORED]
+value = "La Recuperación de Pagle ha restaurado el Registro de capturas. Las entradas originales se conservan; /pagle recovery inspect muestra las retenidas para revisión. Sube como siempre, confirma la Recuperación en la web y luego quita Pagle_Recovery."
+en = "Pagle Recovery restored the Catch log. Original records are preserved; /pagle recovery inspect shows records held for review. Upload normally, confirm Recovery on the website, then remove Pagle_Recovery."
+
+[RECOVERY_EXPORT_UNAVAILABLE]
+value = "Exportación de Recuperación de Pagle no disponible: {reason}"
+en = "Pagle Recovery export unavailable: {reason}"
+
+[RECOVERY_USAGE]
+value = "Recuperación de Pagle: /pagle recovery export copia una instantánea local completa; /pagle recovery inspect [ID de solicitud] muestra las entradas retenidas para revisión."
+en = "Pagle Recovery: /pagle recovery export copies a complete local snapshot; /pagle recovery inspect [application ID] shows records held for review."
+
+[RECOVERY_ARCHIVE_LINE]
+value = "Archivo de Recuperación de Pagle: {id}"
+en = "Pagle Recovery archive: {id}"
+
+[RECOVERY_NO_BRANCHES]
+value = "Recuperación de Pagle: no hay ramas conservadas."
+en = "Pagle Recovery: no preserved branches."
+
+[RECOVERY_NO_BRANCH_FOUND]
+value = "Recuperación de Pagle: no se ha encontrado ninguna rama conservada. Usa /pagle recovery inspect <ID de solicitud> para un archivo más antiguo."
+en = "Pagle Recovery: no preserved branch found. Use /pagle recovery inspect <application ID> for an older archive."
+
+[RECOVERY_OLD_ARCHIVE]
+value = "Recuperación de Pagle: este archivo lo guardó un Pagle más antiguo, en un formato de Registro de capturas del que este no puede mostrar entradas. Sigue conservado."
+en = "Pagle Recovery: this archive was kept by an older Pagle, in a Catch log format this one can't show records from. It is still preserved."
+
+[RECOVERY_NO_STAGED]
+value = "Recuperación de Pagle: este archivo no tiene entradas retenidas para revisión."
+en = "Pagle Recovery: this archive has no records held for review."
+
+[RECOVERY_WINDOW_CAPTION]
+value = "Recuperación del Registro de capturas"
+en = "Catch log Recovery"
+
+[RECOVERY_SNAPSHOT_TITLE]
+value = "Instantánea de Recuperación"
+en = "Recovery snapshot"
+
+[RECOVERY_SNAPSHOT_PART]
+value = "Instantánea de Recuperación · parte {part} de {parts}"
+en = "Recovery snapshot · part {part} of {parts}"
+
+[RECOVERY_SNAPSHOT_NOTE]
+value = "Copia cada parte numerada. Pégalas juntas en la página de Recuperación de tu Registro de capturas en pagle.app. En Mac, usa Cmd+C."
+en = "Copy every numbered part. Paste them together on your Catch log's Recovery page at pagle.app. On Mac, use Cmd+C."
+
+[RECOVERY_RECORDS_TITLE]
+value = "Entradas de Recuperación"
+en = "Recovery records"
+
+[RECOVERY_RECORDS_NOTE]
+value = "Entradas originales conservadas y retenidas para revisión. No se han añadido a tu Registro de capturas restaurado. Rama original: {id}"
+en = "Preserved original records held for review. They have not been appended to your restored Catch log. Original branch: {id}"
+
+[RECOVERY_RECORD_LABEL]
+value = "Entrada {seq} · {reason}"
+en = "Record {seq} · {reason}"
+
+[RECOVERY_RECORD_MISSING]
+value = "(esta entrada no está en el registro conservado)"
+en = "(this record is not in the preserved log)"
+
+[RECOVERY_PROBLEMS]
+value.log_changed = "el Registro de capturas ha cambiado; exporta una nueva instantánea de Recuperación"
+value.format_differs = "la Recuperación es para otro formato de Registro de capturas"
+value.needs_format = "la Recuperación requiere el formato {format} del Registro de capturas"
+value.needs_readable = "la Recuperación requiere un Registro de capturas legible"
+value.snapshot_too_large = "instantánea demasiado grande"
+en.log_changed = "Catch log changed; export a new Recovery snapshot"
+en.format_differs = "Recovery is for a different Catch log format"
+en.needs_format = "Recovery requires Catch log format {format}"
+en.needs_readable = "Recovery requires a readable Catch log"
+en.snapshot_too_large = "snapshot too large"
+
+[SLASH_PAUSED_FOR_RECOVERY]
+value = "Pagle está en pausa por la Recuperación. Usa /pagle recovery export, o quita Pagle_Recovery y recarga."
+en = "Pagle is paused for Recovery. Use /pagle recovery export, or remove Pagle_Recovery and reload."
+
+[SETTINGS_LANGUAGE]
+value = "Idioma"
+en = "Language"
+
+[SETTINGS_LANGUAGE_TOOLTIP]
+value = "El idioma en que está escrito Pagle, en todos tus personajes. Un cambio se aplica tras un /reload. Los nombres que pone el juego, como objetos, zonas y calidad de objetos, siguen en el idioma del juego."
+en = "The language Pagle is written in, on every character. A change takes effect after a /reload. Names the game supplies, such as items, zones and item quality, stay in the game's language."
+
+[SETTINGS_LANGUAGE_GAME_DEFAULT]
+value = "Predeterminado del juego"
+en = "Game default"
+
+[LANGUAGE_RELOAD_TEXT]
+value = "¿Recargar la interfaz para cambiar el idioma?"
+en = "Reload the interface to change the language?"
+
+[LANGUAGE_RELOAD_NOW]
+value = "Recargar ahora"
+en = "Reload now"
+
+[LANGUAGE_RELOAD_LATER]
+value = "Más tarde"
+en = "Later"
+
+[FIELD_REPORT_WEBSITE]
+value = "Para la web, usa /pagle export."
+en = "For the website, use /pagle export."
+
+[SETTINGS_TRANSLATIONS]
+value = "Traducciones: {credits}"
+en = "Translations: {credits}"
+
+[SETTINGS_TRANSLATIONS_ENTRY]
+value = "{language} por {names}"
+en = "{language} by {names}"
+
+[DEV_PSEUDO_ON]
+value = "Pagle dev: pseudolocale activado; /reload para ver cada texto alargado, con acentos y entre corchetes."
+en = "Pagle dev: pseudo-locale on; /reload to see every string padded, accented and in brackets."
+
+[DEV_PSEUDO_OFF]
+value = "Pagle dev: pseudolocale desactivado; /reload para volver a tu idioma."
+en = "Pagle dev: pseudo-locale off; /reload to go back to your language."
+
+[DEV_FONTS_LINE]
+value = "Pagle dev: fuente {path}: {fontProbeSummary}"
+en = "Pagle dev: font {path}: {fontProbeSummary}"
+
+[DEV_FONTS_SAVED]
+value = "Pagle dev: {loaded} de {paths} fuentes del cliente cargan en este cliente {locale}; la muestra de cada una está en pantalla (un cuadro es un carácter que le falta a esa fuente; haz clic o pulsa Esc para cerrar). Fuentes guardadas; /reload para escribirlas."
+en = "Pagle dev: {loaded} of {paths} client fonts load on this {locale} client; the sample in each is on screen (a box is a character that font lacks; click it or press Esc to close). Fonts saved; /reload to write them."
+
+[GUIDE_PARTS]
+value.0 = "ninguna parte"
+value.1 = "una parte"
+value.2 = "dos partes"
+value.3 = "tres partes"
+value.4 = "cuatro partes"
+value.5 = "cinco partes"
+value.6 = "seis partes"
+value.7 = "siete partes"
+value.8 = "ocho partes"
+value.9 = "nueve partes"
+value.10 = "diez partes"
+en.0 = "no parts"
+en.1 = "one part"
+en.2 = "two parts"
+en.3 = "three parts"
+en.4 = "four parts"
+en.5 = "five parts"
+en.6 = "six parts"
+en.7 = "seven parts"
+en.8 = "eight parts"
+en.9 = "nine parts"
+en.10 = "ten parts"
+
+[GUIDE_PARTS_MORE]
+value.one = "{count} parte"
+value.many = "{count} partes"
+value.other = "{count} partes"
+en.one = "{count} part"
+en.other = "{count} parts"
+
+# Machine-drafted for 1.1, with nothing to translate: fields, separators, marks, textures, numerals, names and
+# codes that read the same in Spanish (or stay English, as FISH_CREST_DROP_PREFIX and RECOVERY_REASONS do), so
+# that esES covers every key. A native speaker may still word any of them.
+
+[TRAILER_CAPTION_NAME]
+value = "Pagle"
+en = "Pagle"
+
+[RECOVERY_REASONS]
+value.action_requires_review = "action_requires_review"
+value.source_invalid = "source_invalid"
+value.conflicting_observation = "conflicting_observation"
+value.source_order_incompatible = "source_order_incompatible"
+value.character_mapping = "character_mapping"
+value.capacity_limit = "capacity_limit"
+en.action_requires_review = "action_requires_review"
+en.source_invalid = "source_invalid"
+en.conflicting_observation = "conflicting_observation"
+en.source_order_incompatible = "source_order_incompatible"
+en.character_mapping = "character_mapping"
+en.capacity_limit = "capacity_limit"
+
+[CLOCK]
+value.12h.am = "{hour}:{minute} AM"
+value.12h.pm = "{hour}:{minute} PM"
+value.24h = "{hour}:{minute}"
+en.12h.am = "{hour}:{minute} AM"
+en.12h.pm = "{hour}:{minute} PM"
+en.24h = "{hour}:{minute}"
+
+[SETTINGS_CATEGORY]
+value = "Pagle"
+en = "Pagle"
+
+[SETTINGS_LANGUAGE_ENGLISH]
+value = "English"
+en = "English"
+
+[MINUTES]
+value = "{value:0} min"
+en = "{value:0} min"
+
+[ANNOUNCEMENT_STAMPS_MORE]
+value = "+{more:0}"
+en = "+{more:0}"
+
+[ANNOUNCEMENT_COINS]
+value = "+{amount}"
+en = "+{amount}"
+
+[CATCH_TOAST_KICKER]
+value = "{band} · {length}"
+en = "{band} · {length}"
+
+[CATCH_TOAST]
+value = "{name} · {band} · {length}"
+en = "{name} · {band} · {length}"
+
+[CATCH_TOAST_VARIETY]
+value = "{name} · {catch_toast_variety_2} · {band} · {length}"
+en = "{name} · {catch_toast_variety_2} · {band} · {length}"
+
+[TOAST_VARIETY_BEFORE]
+value = "{fish} ·"
+en = "{fish} ·"
+
+[CARD_HOURS]
+value = "{card_hours_1:0} h {card_hours_2} min"
+en = "{card_hours_1:0} h {card_hours_2} min"
+
+[MODULE_VERSION_DEV]
+value = "dev"
+en = "dev"
+
+[PASTE_CHOICE_PICKED]
+value = "• {word}"
+en = "• {word}"
+
+[PASTE_SIZE]
+value = "{paste_size:0} KB"
+en = "{paste_size:0} KB"
+
+[PASTE_PART_LINE]
+value = "{entries}  ·  {paste_part_line_2}"
+en = "{entries}  ·  {paste_part_line_2}"
+
+[SETTINGS_TRANSLATIONS_NAMES_JOIN]
+value = ", "
+en = ", "
+
+[SETTINGS_TRANSLATIONS_JOIN]
+value = "; "
+en = "; "
+
+[SHOP_LEGEND]
+value = "{title} {shop_legend_2}"
+en = "{title} {shop_legend_2}"
+
+[SHOP_SLOT_LINE]
+value = "{slotLabel} · {owner}"
+en = "{slotLabel} · {owner}"
+
+[SHOP_CORE]
+value = "Pagle"
+en = "Pagle"
+
+[SHOP_CRATE_CHANCE]
+value = "{chance:n}%"
+en = "{chance:n}%"
+
+[COMPARTMENT]
+value = "Pagle"
+en = "Pagle"
+
+[MENU_NAME]
+value = "Pagle"
+en = "Pagle"
+
+[SLASH_HELP_LINE]
+value = "/pagle {name}: {help}"
+en = "/pagle {name}: {help}"
+
+[DEV_PSEUDO_USAGE]
+value = "Pagle dev: /pagle dev pseudo on | off"
+en = "Pagle dev: /pagle dev pseudo on | off"
+
+[DEV_CONTENT_HEADER]
+value = "Pagle dev: generatedAt {generatedAt}, keyId {keyId}, seq {seq}, expires {expires}."
+en = "Pagle dev: generatedAt {generatedAt}, keyId {keyId}, seq {seq}, expires {expires}."
+
+[DEV_CONTENT_KIND]
+value = "{name} {counts}"
+en = "{name} {counts}"
+
+[PRESTIGE_NUMERALS]
+value = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+en = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+
+[ANGLER_TIP_LEDGER_VALUE]
+value = "{ledger:0}%"
+en = "{ledger:0}%"
+
+[DEV_ONBOARDING_USAGE]
+value = "Pagle dev: /pagle dev onboarding {usages}"
+en = "Pagle dev: /pagle dev onboarding {usages}"
+
+[DEV_SAMPLE_VARIETY_NAME]
+value = "Coral"
+en = "Coral"
+
+[DEV_CATCH_USAGE]
+value = "Pagle dev: /pagle dev catch <itemID> [areaID]"
+en = "Pagle dev: /pagle dev catch <itemID> [areaID]"
+
+[DEV_GLYPHS_ROW]
+value = "{object} ({usedBy}): {probe}"
+en = "{object} ({usedBy}): {probe}"
+
+[DEV_PROBE_LINE]
+value = "Pagle dev: {probeLine}"
+en = "Pagle dev: {probeLine}"
+
+[DEV_TOUR_LIST_LINE]
+value = "  {name}: {label}"
+en = "  {name}: {label}"
+
+[NOTES_JOIN]
+value = " "
+en = " "
+
+[GUIDE_CRUMB_PAGLE]
+value = "Pagle"
+en = "Pagle"
+
+[EVENING_CLOSE]
+value = "×"
+en = "×"
+
+[GUIDE_LIST_COMMA]
+value = ", "
+en = ", "
+
+[GUIDE_WELCOME_SIGNED]
+value = "Pagle"
+en = "Pagle"
+
+[GUIDE_BOX_MENU]
+value = "Pagle"
+en = "Pagle"
+
+[GUIDE_MOMENTS_SAMPLE_TEXT]
+value = "Oily Blackmouth"
+en = "Oily Blackmouth"
+
+[LETTER_SEAL]
+value = "P"
+en = "P"
+
+[FISH_CREST_DROP_PREFIX]
+value = "Raw "
+en = "Raw "
+
+[FISH_CREST_UNCAUGHT_JOIN]
+value = ", "
+en = ", "

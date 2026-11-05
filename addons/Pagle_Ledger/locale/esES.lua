@@ -12,6 +12,7 @@ local ns = select(2, ...)
 ns.Locale("esES", function(L)
 	L.ANGLER_AUTOMATIC = "Automático"
 	L.ANGLER_CATCHES = { many = "{count:n} Capturas", one = "{count:n} Captura", other = "{count:n} Capturas" }
+	L.ANGLER_CATCHES_NEXT = { many = "{count:n} Capturas · próximo hito {milestone}", one = "{count:n} Captura · próximo hito {milestone}", other = "{count:n} Capturas · próximo hito {milestone}" }
 	L.ANGLER_COMPLETE = "{percent:0}% del Libro completado ({angler_complete_2} de {angler_complete_3})"
 	L.ANGLER_CRUMB = "El Pescador"
 	L.ANGLER_EX_LIBRIS = "Ex libris"
@@ -19,7 +20,9 @@ ns.Locale("esES", function(L)
 	L.ANGLER_HANDS = "Manos en la caña"
 	L.ANGLER_KEPT_SINCE = "llevado desde el {since}"
 	L.ANGLER_LEDGER = "El Libro del Pescador"
+	L.ANGLER_MILESTONE = "{done} {threshold:0}"
 	L.ANGLER_MILESTONES = "Hitos"
+	L.ANGLER_MILESTONE_SEPARATOR = "   "
 	L.ANGLER_NO_PRESTIGE = "Aún sin Prestigio"
 	L.ANGLER_PARTS = { junk = "Museo de trastos", species = "Especies", treasure = "Tesoros", trophy = "Pesos de la Sala de trofeos", varieties = "Variedades", zones = "Zonas dominadas" }
 	L.ANGLER_PART_COUNT = "{angler_part_count_1} de {angler_part_count_2}"
@@ -33,6 +36,9 @@ ns.Locale("esES", function(L)
 	L.BRASS_PLATE_TITLE = "Nv {level:0} · {title} · Libro {percent:0}%"
 	L.CATCHES = { many = "{count:n} Capturas", one = "{count:n} Captura", other = "{count:n} Capturas" }
 	L.CAUGHT_STAR_TITLE = "Capturado"
+	L.CHECK_OFF = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:430:464:1836:1870|t"
+	L.CHECK_ON = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:468:502:1836:1870|t"
+	L.COLLECTION_ADDED = "{words} · {dateAt}"
 	L.COLLECTION_ADDED_BOUGHT = "Comprado"
 	L.COLLECTION_ADDED_CRATE = "De un Cofre de curiosidades"
 	L.COLLECTION_ADDED_EARNED = "Ganado"
@@ -56,6 +62,7 @@ ns.Locale("esES", function(L)
 	L.COLLECTION_ENOUGH = "Tienes {collection_enough} Monedas, suficiente."
 	L.COLLECTION_FALLBACK = "¿Sin ganar para el {dateAt}? Entonces también sale a la venta, por {collection_fallback_2} Monedas."
 	L.COLLECTION_FOR_SALE = { many = "{count:n} aspectos a la venta que aún no tienes.", one = "{count:n} aspecto a la venta que aún no tienes.", other = "{count:n} aspectos a la venta que aún no tienes." }
+	L.COLLECTION_FRAMES_JOIN = " · "
 	L.COLLECTION_HOW_BOUGHT = "Comprado el {date} por {price} Monedas."
 	L.COLLECTION_HOW_BOUGHT_FREE = "Comprado el {date}."
 	L.COLLECTION_HOW_CRATE = "De un Cofre de curiosidades, el {date}."
@@ -65,6 +72,7 @@ ns.Locale("esES", function(L)
 	L.COLLECTION_HOW_EARNED_LINE = "Ganado: {earnLine}."
 	L.COLLECTION_HOW_TO_EARN = "Cómo ganarlo"
 	L.COLLECTION_IN_USE = "En uso"
+	L.COLLECTION_KICKER = "{slotName} · {source}"
 	L.COLLECTION_LATELY = "Añadidos hace poco"
 	L.COLLECTION_LINE = "Todos los aspectos de Pagle: los que llevas, los que guardas y cómo ganar el resto."
 	L.COLLECTION_MODULES = { Core = "Pagle", Hunts = "Cazas", Ledger = "Libro de registro", QoL = "Comodidades", Stats = "Estadísticas", TackleBoard = "Tablón de aparejos" }
@@ -85,6 +93,7 @@ ns.Locale("esES", function(L)
 	L.COLLECTION_SIGNED = "Firmado “{name}”"
 	L.COLLECTION_SIGNED_AS = "Firmado como"
 	L.COLLECTION_SLASH_HELP = "Abre la Colección del Diario de peces"
+	L.COLLECTION_SLOT_FALLBACK = { many = "{label}", one = "{label}", other = "{label}" }
 	L.COLLECTION_SLOT_NAMES = {
 		["core.binding"] = { "Encuadernación", "Encuadernaciones" },
 		["core.crest"] = { "Blasón de ex libris", "Blasones de ex libris" },
@@ -107,8 +116,10 @@ ns.Locale("esES", function(L)
 	L.COLLECTION_TAG_SIGNED = "firmado como"
 	L.COLLECTION_TAG_YOURS = "Tuyo"
 	L.COLLECTION_TITLE = "La Colección"
+	L.COLLECTION_TITLES_NOUN = "Títulos"
 	L.COLLECTION_TITLE_DESCRIPTION = "Un título del Libro. Firma el Libro con él, y se muestra en tu placa de latón y en tu ex libris."
 	L.COLLECTION_TITLE_GROUPS = { ledger = "El Libro entero", legends = "Leyendas", levels = "Niveles y Prestigio", wardens = "Guardianes" }
+	L.COLLECTION_TITLE_NOUN = "Título"
 	L.COLLECTION_TRACKER_FRAME = "Marco de rastreador"
 	L.COLLECTION_TRACKER_FRAMES = "Marcos de rastreador"
 	L.COLLECTION_USE = "Úsalo"
@@ -116,10 +127,12 @@ ns.Locale("esES", function(L)
 	L.COLLECTION_WEARING = "Llevas {names}"
 	L.COLLECTION_YOURS_COUNT = "{collection_yours_count_1} de {collection_yours_count_2} tuyos"
 	L.CONTINENT_NAMES = { [0] = "Reinos del Este", [1] = "Kalimdor" }
+	L.COUNT_OF = "{count_of_1} / {count_of_2}"
 	L.CREST_EARNED = "Ganado: {name}"
 	L.CREST_NOTE_PROGRESS = "Se gana cuando {zoneName} llega a Maestro en el Diario de peces. Ahora es {rank}, {completion:0}%. {nextLine}."
 	L.CREST_NOTE_UNCHARTED = "Se gana cuando {zoneName} llega a Maestro en el Diario de peces, cuando sus aguas estén catalogadas."
 	L.CREST_NOTE_UNFISHED = "Se gana cuando {zoneName} llega a Maestro en el Diario de peces. Pesca algo allí para empezar."
+	L.CREST_PROGRESS = "{rank} · {completion:0}%"
 	L.CREST_UNCHARTED = "Aún sin catalogar"
 	L.CREST_UNFISHED = "Sin pescar"
 	L.CURIOS_CRUMB = "Curiosidades"
@@ -134,6 +147,8 @@ ns.Locale("esES", function(L)
 	L.CURIOS_TREASURES_KICKER = "Contenedores y tesoros"
 	L.CURIOS_TREASURES_TITLE = "Tesoros"
 	L.CURIOS_UNKNOWN_WATERS = "aguas desconocidas"
+	L.DATE_SHORT = "{day:0} {monthsShort}"
+	L.DATE_WITH_YEAR = "{short} {year}"
 	L.EARNED_COUNT = "{min} de {mark} {unit}"
 	L.EARNED_TEXT = { blueprint = "Captura 100 peces como gnomo", carapace = "50 almejas de boca grande", cartographer = "Maestro en 5 zonas", crier = "Captura 100 peces como humano", deep = "100 capturas pasada la medianoche", drum = "Captura 100 peces como orco", ember = "Prestigio VII", flywallet = "5 señuelos distintos", glade = "Captura 100 peces como elfo de la noche", glass = "12 esquirlas de cristal", hall = "Captura 100 peces como enano", heartwood = "Una pieza tras 10 que se escaparon", hex = "Captura 100 peces como trol", ice = "100 capturas en el hielo", knit = "10.000 Lances", koi = "25 parejas seguidas", lacquer = "30 días pescando", ledger = "Completa el Libro", legend = "Captura una Leyenda", legends = "Captura las tres Leyendas", lion = "Captura 300 peces con personajes de la Alianza", logbook = "25 zonas pescadas", monster = "Captura un Monstruo", prestige1 = "Prestigio I", prestige10 = "Prestigio X", prestige5 = "Prestigio V", shroud = "Captura 100 peces como no-muerto", slate = "30 Especies", stitch = "Los 20 peces del dechado", stormglass = "Maestro en 10 zonas", totem = "Captura 100 peces como tauren", trophy = "25 récords de tamaño", varieties = "Cada pez en cada color", warband = "Captura 300 peces con personajes de la Horda", wave = "300 capturas en el mar" }
 	L.EARNED_UNIT = { blueprint = "peces", carapace = "almejas", cartographer = "zonas", crier = "peces", deep = "capturas", drum = "peces", flywallet = "señuelos", glade = "peces", glass = "esquirlas", hall = "peces", hex = "peces", ice = "capturas", knit = "Lances", koi = "parejas", lacquer = "días", lion = "peces", logbook = "zonas", shroud = "peces", slate = "Especies", stitch = "peces", stormglass = "zonas", totem = "peces", trophy = "récords", warband = "peces", wave = "capturas" }
@@ -145,11 +160,13 @@ ns.Locale("esES", function(L)
 	L.ENTRY_LARGEST = "El más grande que he sacado: {size}"
 	L.ENTRY_ONLY_BY = " Solo de {joinAnd}."
 	L.ENTRY_REMOVED = "Ya no está en las aguas de Forever."
+	L.ENTRY_RIDDLE = "“{riddle}”"
 	L.ENTRY_STAMPS = { "Capturado", "En su elemento", "Habitual" }
 	L.ENTRY_UNKNOWN = "Un pez desconocido"
 	L.EPIC_VARIETY_TITLE = "Variedad épica"
 	L.EVERY_COLOUR_STAMP = "Todos los colores"
 	L.EVERY_COLOUR_TITLE = "Todos los colores de {itemName}"
+	L.FAMILY_STAR_TEXT = "{name} {stars}"
 	L.FAMILY_STAR_TITLE = "Familia de trofeos"
 	L.FIRST_LOOK_AGAIN = "Volver a mostrar las notas de esta página"
 	L.FIRST_LOOK_NOTES = "Notas para mí: lo que está más cerca de terminar. Se reescriben mientras pescas."
@@ -176,7 +193,9 @@ ns.Locale("esES", function(L)
 		expired = { "Estas páginas tienen más de un día.", "Pagle las ha apartado hasta que el Companion traiga otras nuevas.", "Abre el Companion y luego haz /reload." },
 		none = { "Aún no sigues a nadie.", "Sigue a un Pescador desde su página en la web de Pagle.", "El Companion los trae en menos de una hora; aparecen aquí tras tu próximo /reload." },
 	}
+	L.FOLLOWING_EXPIRED_MARK = "—"
 	L.FOLLOWING_HARDCORE = "Pescador Hardcore"
+	L.FOLLOWING_HARDCORE_STAMP = "HC"
 	L.FOLLOWING_KICKER = "En este Libro"
 	L.FOLLOWING_LEGENDS = "Leyendas"
 	L.FOLLOWING_LEGENDS_COUNT = "{following_legends_count_1} de {following_legends_count_2}"
@@ -196,19 +215,26 @@ ns.Locale("esES", function(L)
 	L.GUIDE_LATER = "para más tarde"
 	L.GUIDE_MILESTONE = "Hito de habilidad {threshold:0}"
 	L.GUIDE_MILESTONES = "Hitos de habilidad {head} y {thresholds:0}"
+	L.GUIDE_MILESTONE_JOIN = ", "
 	L.GUIDE_NOTE = "Activa una parte más tarde y repasará *cada Captura* desde hoy, y luego reseñará lo que habías ganado."
 	L.GUIDE_REACHED = "alcanzado el {dateAt}"
 	L.GUIDE_REACHED_BEFORE = "alcanzado antes de llegar Pagle"
 	L.GUIDE_READ_NOW = "leída ahora mismo"
 	L.GUIDE_RIBBON = "Tu Libro"
+	L.GUIDE_RIGHT_BODY = "Tu habilidad de Pesca es lo único que cuenta tu pasado con honestidad, así que cuenta desde el principio."
 	L.GUIDE_RIGHT_KICKER = "Ya anotado"
 	L.GUIDE_RIGHT_TITLE = "Lo que Pagle pudo ver"
 	L.GUIDE_TITLE = "Empieza con tu próximo pez"
 	L.GUIDE_TO_GO = "faltan {max:0} puntos"
+	L.GUIDE_XP = "+{skillMilestoneXp} XP"
 	L.HINT_ANY_SKILL = "cualquier habilidad"
 	L.HINT_ANY_TIME = "A cualquier hora"
+	L.HINT_MORE = "{name} +{hint_more_2:0}"
+	L.HINT_SEPARATOR = " · "
 	L.HINT_SKILL = "habilidad ~{skill:0}"
+	L.HINT_WINDOW_SEPARATOR = ", "
 	L.HOME_ANGLER = "El Pescador: manos e hitos"
+	L.HOME_ANGLER_MARK = "»"
 	L.HOME_CONTENTS = "En este Libro"
 	L.HOME_CURIOS = "Curiosidades: trastos, tesoros, sin catalogar"
 	L.HOME_KICKER = "Las aguas"
@@ -217,9 +243,14 @@ ns.Locale("esES", function(L)
 	L.HOME_NOTE_CAUGHT_STAR = "{name}: {home_note_caught_star_2:0} para |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
 	L.HOME_NOTE_NEW = "{zone}: {home_note_new_2:0} por descubrir"
 	L.HOME_NOTE_NONE = "¡A pescar!"
+	L.HOME_NOTE_RANK = "{zone}: {zoneRanks}. {nextRequirement}"
 	L.HOME_NOTE_STAR = "{name}: {home_note_star_2:0} para |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+	L.HOME_NUMERALS = { "i.", "ii.", "iii.", "iv.", "v.", "vi." }
+	L.HOME_PERCENT = "{percent:0}%"
+	L.HOME_SEAL = "Libro\n{completion}"
 	L.HOME_TITLE = "Donde he pescado"
 	L.ITEM_FALLBACK = "Objeto {itemID}"
+	L.ITEM_SIZE = "{name} · {size}"
 	L.JOURNAL = "Diario de peces"
 	L.JOURNAL_BACK = "« volver"
 	L.JOURNAL_CHART_PROMPT = "¿Has visto algo que Pagle no conoce?"
@@ -228,7 +259,10 @@ ns.Locale("esES", function(L)
 	L.JOURNAL_SEARCH_HINT = "Busca un pez o unas aguas…"
 	L.JOURNAL_SLASH_HELP = "Abre o cierra el Diario de peces"
 	L.JOURNAL_UPDATING = "El Libro se está escribiendo a partir de tu Registro de capturas."
+	L.LEGENDS_CAUGHT_MARK = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
 	L.LEGENDS_COUNT = "{legends_count_1} de {legends_count_2}. Quedan fuera de los cien del Libro."
+	L.LEGENDS_FIRST = "{date}, {zone}, {character}"
+	L.LEGENDS_FIRST_NO_ZONE = "{date}, {character}"
 	L.LEGENDS_INDEX = "El índice"
 	L.LEGENDS_KICKER = "Fuera de los cien"
 	L.LEGENDS_OPEN_PLATE = "Abrir la lámina"
@@ -244,9 +278,11 @@ ns.Locale("esES", function(L)
 	L.LEVEL_UP_STAMP = "Nivel {top:0}"
 	L.LEVEL_UP_TITLE = "Nivel de Pescador {top:0}"
 	L.LIST_LAST = " y "
+	L.LIST_SEPARATOR = ", "
 	L.MASTER_PRESTIGE_TITLE = "Prestigio de Maestro {stars:0}"
 	L.MONTHS = { "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" }
 	L.MONTHS_SHORT = { "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic" }
+	L.NAME_UNKNOWN = "..."
 	L.NEW_CURIO_STAMP = "¡Nueva!"
 	L.NEW_CURIO_TITLE = "Nueva curiosidad"
 	L.NEW_IN_ZONE_STAMP = "Nuevo aquí"
@@ -282,20 +318,37 @@ ns.Locale("esES", function(L)
 	L.SEARCH_WATERS = "Aguas"
 	L.SIZE_RECORD_STAMP = "Récord"
 	L.SIZE_RECORD_TITLE = "Récord de tamaño"
+	L.SIZE_TEXT = "{name} · {length}"
 	L.SKILL_MILESTONE_TEXT = "Pesca {threshold:0}"
 	L.SKILL_MILESTONE_TITLE = "Hito de habilidad"
 	L.STAMP_TIP_ELEMENT_MET = "Todas cumplidas: {joinAnd}."
 	L.STAMP_TIP_ELEMENT_NEEDED = "{have:0} de {need:0} cumplidas. Faltan: {joinAnd}."
+	L.STAMP_TIP_ELEMENT_WINDOWS = { many = "Captúralo en cada una de sus {count} ventanas de elemento, en cualquier zona.", one = "Captúralo en su ventana de elemento, en cualquier zona.", other = "Captúralo en cada una de sus {count} ventanas de elemento, en cualquier zona." }
+	L.STAMP_TIP_LAND = { many = "Captúralo {count} veces.", one = "Captúralo {count} vez.", other = "Captúralo {count} veces." }
 	L.STAMP_TIP_LANDED = "{min:0} de {need:0} capturados."
+	L.STAMP_TIP_ZONES = { many = "Captúralo en {count} zonas distintas.", one = "Captúralo en cualquier zona.", other = "Captúralo en {count} zonas distintas." }
+	L.STAMP_TIP_ZONES_PROGRESS = { many = "En {have:0} de {count:0} zonas.", one = "En {have:0} de {count:0} zona.", other = "En {have:0} de {count:0} zonas." }
+	L.STAR = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+	L.STAR_OFF = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:677:700:1126:1149|t"
 	L.SUMMARY_LINE = "Libro: Nivel de Pescador {level:0} · {percent:0}% completado"
 	L.SUMMARY_LINE_PRESTIGE = "Libro: Prestigio {prestige:0} · Nivel de Pescador {level:0} · {percent:0}% completado"
+	L.TEXT_WITH_TITLE = "{text_with_title_1}. {titles}"
 	L.TILE_NEW = "¡Nuevos: {newToFind:0}!"
+	L.TILE_RANK = "{zoneRanks} · {completion:0}%"
 	L.TILE_UNCHARTED = "aguas sin catalogar"
 	L.TILE_UNFISHED_ANY_SKILL = "sin pescar · cualquier habilidad"
 	L.TILE_UNFISHED_SKILL = "sin pescar · habilidad ~{skill:0}"
 	L.TITLE = "Libro de registro"
 	L.TITLE_EARNED = "Título ganado"
 	L.TITLE_LINE = "Título: {name}"
+	L.TOUR_ANGLER = "el Diario de peces: la página del Pescador"
+	L.TOUR_CURIOS = "el Diario de peces: Curiosidades"
+	L.TOUR_FISH = "el Diario de peces: la Especie más capturada"
+	L.TOUR_HOME = "el Diario de peces: Inicio"
+	L.TOUR_LEGENDS = "el Diario de peces: Leyendas, en una capturada"
+	L.TOUR_SEARCH = "el Diario de peces: resultados de búsqueda del nombre de la Especie más capturada"
+	L.TOUR_TROPHY = "el Diario de peces: la Sala de trofeos, en una familia cobrada"
+	L.TOUR_ZONE = "el Diario de peces: la zona más pescada, con su Especie más capturada abierta"
 	L.TROPHY_FAMILIES = "Familias"
 	L.TROPHY_FAMILIES_NOTE = "pesos"
 	L.TROPHY_FAMILY_KICKER = "Una familia de trofeos"
@@ -310,6 +363,7 @@ ns.Locale("esES", function(L)
 	L.TROPHY_TIP_HEAVIEST = "Captura su peso más alto de la lista, {trophy_tip_heaviest} lb."
 	L.TROPHY_TIP_HEAVIEST_DONE = "Capturado."
 	L.TROPHY_TIP_HEAVIEST_TODO = "Aún no."
+	L.TROPHY_TIP_LANDED = { many = "{done:0} de {count:0} pesos capturados.", one = "{done:0} de {count:0} peso capturado.", other = "{done:0} de {count:0} pesos capturados." }
 	L.TROPHY_TIP_NONE_YET = "Aún no has cobrado ninguno."
 	L.TROPHY_TIP_NO_WEIGHTS = "Esta familia aún no tiene pesos en la lista."
 	L.TROPHY_TIP_UNLISTED = "Capturado, aunque no está en la lista de esta familia."
@@ -334,10 +388,12 @@ ns.Locale("esES", function(L)
 	L.WINDOW_BACK_MINUTES = "vuelve en {window_back_minutes:0} min"
 	L.WINDOW_BACK_MONTH = "vuelve en {months}"
 	L.WINDOW_EVENT = "evento"
+	L.WINDOW_LINE = "{label}, {state}"
 	L.WINDOW_OPEN = "pican ahora"
 	L.WRITE_UP_COINS = "Monedas Pagle +{number}"
 	L.WRITE_UP_CURIO = { many = "{count:0} curiosidades", one = "{count:0} curiosidad", other = "{count:0} curiosidades" }
 	L.WRITE_UP_EVERY_COLOUR = { many = "{count:0} peces en todos los colores", one = "{count:0} pez en todos los colores", other = "{count:0} peces en todos los colores" }
+	L.WRITE_UP_FIRST_BUILD = { many = "Tu Libro se ha escrito a partir de {count:n} Lances", one = "Tu Libro se ha escrito a partir de {count:n} Lance", other = "Tu Libro se ha escrito a partir de {count:n} Lances" }
 	L.WRITE_UP_LEGENDS = { many = "{count:0} Leyendas", one = "{count:0} Leyenda", other = "{count:0} Leyendas" }
 	L.WRITE_UP_LEVEL = "Nivel de Pescador {shownLevel:0}"
 	L.WRITE_UP_LEVEL_ROSE = "Nivel de Pescador {before:0} a {shown:0}"
@@ -347,9 +403,11 @@ ns.Locale("esES", function(L)
 	L.WRITE_UP_SPECIES = { many = "{count:0} Especies", one = "{count:0} Especie", other = "{count:0} Especies" }
 	L.WRITE_UP_TROPHY = { many = "{count:0} pesos de trofeo", one = "{count:0} peso de trofeo", other = "{count:0} pesos de trofeo" }
 	L.WRITE_UP_VARIETIES = { many = "{count:0} variedades", one = "{count:0} variedad", other = "{count:0} variedades" }
+	L.WRITE_UP_VARIETIES_COLOURS = "{varieties} · {colours}"
 	L.WRITE_UP_WHILE_OFF = "Mientras el Libro estaba desactivado"
 	L.WRITE_UP_WITH_PRESTIGE = "{line} · Prestigio {rank:0}"
 	L.WRITE_UP_ZONES = { many = "{count:0} zonas con rango", one = "{count:0} zona con rango", other = "{count:0} zonas con rango" }
+	L.WRITE_UP_ZONES_MASTERED = "{zones} · {mastered}"
 	L.XP_BAR_FRESH = { many = " Agua fresca para {count:0} Capturas más.", one = " Agua fresca para {count:0} Captura más.", other = " Agua fresca para {count:0} Capturas más." }
 	L.XP_BAR_SET_ASIDE = "{carried} XP reservada para el próximo Prestigio"
 	L.XP_BAR_TEXT = "{into} de {cost}."
@@ -363,9 +421,14 @@ ns.Locale("esES", function(L)
 	L.ZONE_ANY_SKILL = "Cualquier habilidad"
 	L.ZONE_CAUGHT_ELSEWHERE = "{item} (capturado en otro sitio)"
 	L.ZONE_GROUPS = { anyTime = "A cualquier hora", curios = "Curiosidades", dayNight = "Día y noche", events = "Eventos", pools = "Bancos", seasonal = "De temporada", trophies = "Trofeos" }
+	L.ZONE_GROUP_COUNT = "{done:0} / {total:0}"
+	L.ZONE_GROUP_NOTE = "{note} · {zone_group_note_2}"
 	L.ZONE_KNOWN = "{completion:0}% de estas aguas conocido: {fishKnown:0} de {fish:0} peces, {landed:0} de {families:0} familias de trofeos"
+	L.ZONE_LADDER_SEPARATOR = "·"
+	L.ZONE_LOOSE_ITEM = "{item}: {zone_loose_item_2:0}×"
 	L.ZONE_LOOSE_PAGES = "Hojas sueltas"
 	L.ZONE_LOOSE_TITLE = "Lo que salió aquí"
+	L.ZONE_MARGIN_SEPARATOR = " · "
 	L.ZONE_MASTER_STAMP = "Maestro"
 	L.ZONE_MASTER_TITLE = "Maestro de zona"
 	L.ZONE_NEW_HERE = { many = "¡{count:0} por descubrir aquí! Mi sello se queda.", one = "¡{count:0} por descubrir aquí! Mi sello se queda.", other = "¡{count:0} por descubrir aquí! Mi sello se queda." }
@@ -378,14 +441,17 @@ ns.Locale("esES", function(L)
 	L.ZONE_NEXT_MASTER = { many = "Maestro: un trofeo de {count:0} familias más", one = "Maestro: un trofeo de {count:0} familia más", other = "Maestro: un trofeo de {count:0} familias más" }
 	L.ZONE_NEXT_MASTERED = "Maestro de estas aguas"
 	L.ZONE_NEXT_REGULAR = { many = "Habitual: {count:0} Especies más a cualquier hora", one = "Habitual: {count:0} Especie más a cualquier hora", other = "Habitual: {count:0} Especies más a cualquier hora" }
+	L.ZONE_NEXT_SEPARATOR = ", "
 	L.ZONE_NEXT_TREASURE = "un tesoro"
 	L.ZONE_NEXT_VISITOR = "Pesca algo aquí para ser Visitante"
+	L.ZONE_NEXT_WITH_NEW = "{line} · {found}"
 	L.ZONE_NOTHING_YET = "Nada capturado aquí todavía."
 	L.ZONE_PICK = "Elige un pez a la izquierda para leer su página."
 	L.ZONE_POOLS_NOTE = "aguas abiertas y bancos juntos"
 	L.ZONE_RANKS = { "Visitante", "Habitual", "Local", "Experto", "Maestro" }
 	L.ZONE_RANK_STAMP = "Sube de rango"
 	L.ZONE_RANK_TITLE = "Rango de zona: {zoneRanks}"
+	L.ZONE_REQUIREMENT = "{met} {zone_requirement_2}"
 	L.ZONE_REWARD = "Recompensa por maestría: cada sello nuevo da XP."
 	L.ZONE_REWARD_TITLE = "Recompensa por maestría: cada sello nuevo da XP. El sello de Maestro da el título {title}."
 	L.ZONE_SKILL = "Habilidad ~{skill:0}"
