@@ -557,8 +557,9 @@ end)
 -- The book binding (core/book-binding.md), on Core's real logic/BookBinding.lua: Pagle.NewBookBinding wears the
 -- equipped `core.binding` look (fake.ns.BindingLook) or a pinned one, follows AppearanceChanged on the fake's bus,
 -- dips on the motion driver above, and plays the page turn through the loaded Module's client (client.sounds,
--- "836 SFX"). It draws nothing: each book's `binding.skin` records the look on it (`look`) and the dip's alpha
--- (`dim`, 1 at rest), and counts as shown while its frame is visible.
+-- "836 SFX"). It draws nothing: each book's `binding.skin` records the look on it (`look`), the dip's alpha (`dim`, 1
+-- at rest) and the strip its book gave it for the wash (`strip`, BIND-R18), and counts as shown while its frame is
+-- visible.
 part(function(fake, Pagle, ns)
 	local bindings = ns.NewBookBindings({
 		lookOf = function(goodID)
@@ -567,9 +568,10 @@ part(function(fake, Pagle, ns)
 		equipped = function()
 			return Pagle.GetEquipped(ns.BINDING_SLOT)
 		end,
-		skin = function(frame)
+		skin = function(frame, options)
 			return {
 				dim = 1,
+				strip = (options --[[@as { strip: number? }]]).strip,
 				Dress = function(skin, look)
 					skin.look = look
 				end,

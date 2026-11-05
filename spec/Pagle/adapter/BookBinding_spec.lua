@@ -596,6 +596,51 @@ describe("Pagle.NewBookBinding's fittings, on Core's own catalogue of bindings (
 		end
 	)
 
+	it(
+		"washes a book's strip in the base colour of a cover or whole book, its own patterned art, under the words (BIND-R18)",
+		function()
+			local loaded = catalogue()
+			local ns = loaded.ns
+			local washed = {}
+			for _, binding in ipairs(ns.BINDINGS) do
+				local frame = bookFrame(loaded)
+				local regions = regionsOf(loaded.env.Pagle.NewBookBinding(frame, { pinned = binding.id, strip = 38 }))
+				local wash = regions.wash --[[@as table]]
+				local look = ns.BindingLook(binding.id)
+				assert.are.same({ "BACKGROUND", 2 }, { wash.layer, wash.sublevel }, binding.id)
+				assert.are.same({ { "TOPLEFT", 7, -7 }, { "TOPRIGHT", -7, -7 } }, wash.points, binding.id)
+				assert.are.equal(38 - 7, wash:GetHeight(), binding.id)
+				if look.tint == nil and look.band then
+					washed[binding.key] = true
+					assert(wash:IsShown(), binding.id)
+					for i = 1, 3 do
+						assert(math.abs(wash.color[i] - look.band[i] * 0.53) < 1e-9, binding.id)
+					end
+					assert.are.equal(0.6, wash.color[4], binding.id)
+				else
+					assert(not wash:IsShown(), binding.id)
+				end
+			end
+			-- the two whose motifs sat under the Hunts board's words, and Field Leather, a tinted leather, unwashed
+			assert.are.same({ true, true }, { washed.pathfinder, washed.wagersilk })
+			assert.is_nil(washed.field)
+		end
+	)
+
+	it("draws no wash for a binding with no strip, and dips the wash with the material (BIND-R18, BIND-R20)", function()
+		local loaded = catalogue()
+		local plain =
+			regionsOf(loaded.env.Pagle.NewBookBinding(bookFrame(loaded), { pinned = "hunts.binding.wagersilk" }))
+		local strip = regionsOf(
+			loaded.env.Pagle.NewBookBinding(bookFrame(loaded), { pinned = "hunts.binding.wagersilk", strip = 38 })
+		)
+
+		strip:Dim(0.25)
+
+		assert.is_nil(plain.wash)
+		assert.are.equal(0.25, (strip.wash --[[@as table]]).alpha)
+	end)
+
 	it("puts a whole book's fittings away when its book changes to another binding (BIND-R14, BIND-R15)", function()
 		local loaded = catalogue()
 		local frame = bookFrame(loaded)

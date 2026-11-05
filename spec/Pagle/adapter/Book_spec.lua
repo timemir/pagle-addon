@@ -74,6 +74,14 @@ describe("Pagle.NewBook (core/book.md)", function()
 		end)
 	end)
 
+	it("gives its binding the strip its words sit on, for the wash under them (BOOK-R12, BIND-R18)", function()
+		local shell, deeper = newBook(), newBook({ id = "deeper", name = "PagleDeeperBook", strip = 44 })
+		shell:Open()
+		deeper:Open()
+
+		assert.are.same({ 38, 44 }, { shell.binding.skin.strip, deeper.binding.skin.strip })
+	end)
+
 	it("draws each side with its renderer and lays the crumbs from the trail (BOOK-R21, BOOK-R24)", function()
 		local book = newBook()
 		local drawn = {}

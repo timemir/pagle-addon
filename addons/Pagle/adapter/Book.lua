@@ -868,7 +868,9 @@ local function build(book)
 		onLook = function(look)
 			wear(book, look)
 		end,
-	})
+		-- the strip of words, washed under them on a patterned cover (BIND-R18)
+		strip = strip,
+	} --[[@as PagleBookBindingOptions]])
 	frame.binding = book.binding
 
 	frame.close = newClose(frame)
