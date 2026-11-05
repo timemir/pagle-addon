@@ -4,7 +4,7 @@ An agent can't run the WoW client, but it can read what the client writes to dis
 
 ## Where the files live
 
-The Forever beta is in `_classic_beta_` under the WoW install. On the dev's machine that's `G:\World of Warcraft\_classic_beta_`, which WSL reaches as `/mnt/g/World of Warcraft/_classic_beta_`. The live install's folder name is unknown until launch (Nov 4).
+Live Forever is in `_forever_` under the WoW install (product `wowf`, confirmed at launch on 4 Nov 2026). On the dev's PC that's `G:\World of Warcraft\_forever_`, which WSL reaches as `/mnt/g/World of Warcraft/_forever_`; on the dev's Mac it's `/Applications/World of Warcraft/_forever_`. The beta's `_classic_beta_` may still sit next to it, but Pagle targets the live install. The realm folder under `WTF/Account/<ACCT>/` appears after a character's first login.
 
 For launch night and the 1.0 tag, [launch-runbook.md](launch-runbook.md) holds the plan, and `scripts/launch.py read <step>` runs the reader below with each dev step's flags and prints only that step's sections (launch-runbook.md › The read-wtf checklist).
 
@@ -32,7 +32,7 @@ Values that exist only while the client runs, like `C_Spell.GetSpellName(7620)` 
 The game should load the repo's `addons/*` folders, so edits go live after `/reload`. Windows: `scripts/link-addons.ps1 -AddOnsPath <AddOns folder>` junctions each folder. macOS: `scripts/link-addons.sh <AddOns folder>` symlinks each, the same way (run it again to re-point the links at another checkout or worktree; a real folder or file with an addon's name is never touched, the script stops and names it):
 
 ```sh
-scripts/link-addons.sh "/Applications/World of Warcraft/_classic_beta_/Interface/AddOns"
+scripts/link-addons.sh "/Applications/World of Warcraft/_forever_/Interface/AddOns"
 ```
 
 ### Retail UI check (macOS)
@@ -57,7 +57,7 @@ scripts/link-addons.sh "/Applications/World of Warcraft/_retail_/Interface/AddOn
 Run it in WSL, with the Lua 5.1 from `scripts/setup.sh`. `scripts/read-wtf.sh` runs it on that Lua from any directory:
 
 ```sh
-scripts/read-wtf.sh "/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>" \
+scripts/read-wtf.sh "/mnt/g/World of Warcraft/_forever_/WTF/Account/<ACCT>" \
     --character 70/<Name-Surname> [--cvar <name>]... [--addon <name>]... [--catalogue <Catalogue.lua>] \
     [--item <id>]... [--huntlist <HuntList.lua>] [--eventlist <EventList.lua>] [--hunt <id>]... \
     [--stats-item <id> --area <areaID>] [--skill N] [--now T] [--origin T] [--expect-casts N] [--since T]
@@ -188,7 +188,7 @@ They're ordinary `/pagle` subcommands, so they follow the restriction rules: in 
 
 ```sh
 .tools/bin/python scripts/pushed-content.py spec/Pagle/fixtures/content/good.txt --key-id devKey --seq 1 \
-    --out "/mnt/g/World of Warcraft/_classic_beta_/Interface/AddOns"
+    --out "/mnt/g/World of Warcraft/_forever_/Interface/AddOns"
 ```
 
 - **Unsigned,** as above, for the M8 exit check's step 6: the file has no `sig`, and Core ships no key anyway, so `/pagle dev content` reads `pushed content is missing: a missing field, sig.` Delete the `Pagle_Content` folder afterwards.
@@ -272,7 +272,7 @@ The log has a new `logId` (LOG-R15), `test = true`, which makes it a test log ([
 For checks 2 and 10: time the loading screen with a stopwatch, once with the real log and once with each big log, from clicking Enter World to the world showing. Pagle's own marks then say how much of that time is Pagle's. With dev mode on: `--install` a big log, log in (the new `logId` makes every projection rebuild from `seq` 0, LOG-R72: the rebuild check 10 times), wait until nothing is updating, log out, and run the reader: its Re-verification section has the size, the marks and each projection's rebuild. `--restore` after.
 
 ```sh
-ACCT="/mnt/g/World of Warcraft/_classic_beta_/WTF/Account/<ACCT>"
+ACCT="/mnt/g/World of Warcraft/_forever_/WTF/Account/<ACCT>"
 scripts/make-test-log.sh --account "$ACCT" --preset level10     # reads the account, writes only the stage
 scripts/make-test-log.sh --account "$ACCT" --install            # the game fully closed
 # play: log in as the character it names

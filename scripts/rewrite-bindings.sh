@@ -4,7 +4,7 @@
 #
 #   scripts/rewrite-bindings.sh <WTF folder> [--dry-run]
 #
-# e.g. scripts/rewrite-bindings.sh "/mnt/g/World of Warcraft/_classic_beta_/WTF" --dry-run
+# e.g. scripts/rewrite-bindings.sh "/mnt/g/World of Warcraft/_forever_/WTF" --dry-run
 #
 # Run it in WSL with the game fully closed: the client writes every SavedVariables file when it logs out, over
 # whatever this put there. Unless --dry-run, it refuses while a WoW process runs, and warns when it can't tell
