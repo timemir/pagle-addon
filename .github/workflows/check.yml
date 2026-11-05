@@ -19,6 +19,11 @@ permissions:
   contents: read
 
 jobs:
+  # The gate's stages run as four jobs at once (scripts/check.sh runs them all on one machine): the tests stage over
+  # three runners, each GATE_SHARD=<i>/3 of the busted shards, and the static stages (format, lint, api, types,
+  # generator) with the packaging on a fourth. One runner ran everything in 7-8.5 min, CPU-bound on its 4 vCPUs;
+  # this way the run ends near the longest shard. Every job sets the tools up the same way; the first on a cache
+  # miss saves them for the others.
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -68,12 +73,11 @@ jobs:
           key: mypy-${{ runner.os }}-${{ hashFiles('scripts/setup.sh', 'scripts/tools.env', 'scripts/pyproject.toml') }}-${{ github.sha }}
           restore-keys: mypy-${{ runner.os }}-${{ hashFiles('scripts/setup.sh', 'scripts/tools.env', 'scripts/pyproject.toml') }}-
 
-      # Four busted shards at once, one per vCPU: each peaks under 1.5 GB of ubuntu-latest's 16. See scripts/check.sh.
-      - name: Run the check gate
+      # The static stages; the tests stage runs in the tests jobs below. See scripts/check.sh.
+      - name: Run the check gate's static stages
         env:
           PAGLE_NO_COVERAGE: "1"
-          GATE_JOBS: "4"
-        run: /usr/bin/time -v bash scripts/check.sh
+        run: /usr/bin/time -v bash scripts/check.sh format lint api types generator
 
       - uses: actions/cache/save@v6
         if: steps.mypy.outputs.cache-hit != 'true'
@@ -96,6 +100,59 @@ jobs:
             sudo apt-get install -y --no-install-recommends "${missing[@]}"
           fi
           bash scripts/package.sh
+
+  # The tests stage, its busted shards dealt over three runners by GATE_SHARD (scripts/check.sh), four shards at
+  # once on each: each peaks under 1.5 GB of ubuntu-latest's 16.
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    name: tests (${{ matrix.shard }}/3)
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install setup prerequisites
+        run: |
+          source scripts/tools.env
+          missing=()
+          for pkg in $SETUP_APT_PACKAGES time; do
+            dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+          done
+          if ((${#missing[@]})); then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends "${missing[@]}"
+          fi
+
+      - uses: actions/cache/restore@v6
+        id: tools
+        with:
+          path: |
+            .tools
+            !.tools/cache
+          key: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-${{ hashFiles('scripts/tools.env') }}
+          restore-keys: tools-${{ runner.os }}-${{ hashFiles('scripts/setup.sh') }}-
+
+      - name: Set up the pinned tools
+        run: bash scripts/setup.sh
+
+      # The check job saves under this key too; whichever gets there first wins, the other's save is a warning.
+      - uses: actions/cache/save@v6
+        if: steps.tools.outputs.cache-hit != 'true'
+        with:
+          path: |
+            .tools
+            !.tools/cache
+          key: ${{ steps.tools.outputs.cache-primary-key }}
+
+      - name: Run the check gate's tests stage, this runner's shards
+        env:
+          PAGLE_NO_COVERAGE: "1"
+          GATE_JOBS: "4"
+          GATE_SHARD: ${{ matrix.shard }}/3
+        run: /usr/bin/time -v bash scripts/check.sh tests
 
   test-check:
     runs-on: ubuntu-latest
@@ -219,3 +276,25 @@ jobs:
 
       - name: Run the check gate with coverage reporting
         run: /usr/bin/time -v bash scripts/check.sh
+
+  # Records that this tree passed every job: an empty artifact named tested-tree-<tree sha>, kept 7 days. After a
+  # merge, scripts/hotfix.sh looks main's new tree up by that name: a squash merge onto a main that didn't move
+  # holds the very tree the pull request's run tested, so the hotfix is tagged at once, without waiting for main's
+  # own Check run of the same tree. Only green pull request runs leave one; nothing reads it but the script.
+  tested:
+    needs: [check, tests, test-check]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Name the tested tree
+        id: tree
+        run: |
+          echo "sha=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
+          : > "$RUNNER_TEMP/tested"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tested-tree-${{ steps.tree.outputs.sha }}
+          path: ${{ runner.temp }}/tested
+          retention-days: 7

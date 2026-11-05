@@ -5,6 +5,7 @@
 #   scripts/check.sh
 #   scripts/check.sh lint api     # only these stages, in gate order; setup and libs always run
 #   GATE_JOBS=8 scripts/check.sh    # busted shards at a time without coverage (default 4)
+#   GATE_SHARD=2/3 scripts/check.sh tests    # only every 3rd busted shard from the 2nd (the Check workflow's runners)
 #
 # A busted shard peaks near its largest spec file, under 1.5 GB, since spec/support/addon.lua lets each file's blocks
 # go once it ends; before that, one shard kept every file it ran and spec/Pagle_Ledger's reached 12 GB, which shut down
@@ -211,14 +212,18 @@ stage_tests() {
 		echo "check: no coverage report (coverage never gates)"
 }
 
-# Without coverage, the specs run in shards, each one busted without #slow, and the #slow pass is one more shard;
-# GATE_JOBS run at a time (#254). A shard is a directory in spec/ that holds specs, or the specs at the top of spec/.
-# The directories in split_dirs run as one shard per directory in them plus one for their own top, as spec/ does;
-# those in halved_dirs as two shards of every other file by name. Shards then take about as long as each other, so the
-# stage ends near the busiest one's time: spec/Pagle alone took a quarter of it, and its adapter/ most of that. The
-# shards are checked to run every spec in spec/ once. The #slow pass, among the longest, starts first.
+# Without coverage, the specs run in shards, each one busted without #slow, and the #slow pass is one more shard per
+# file that holds a #slow spec; GATE_JOBS run at a time (#254). A shard is a directory in spec/ that holds specs, or
+# the specs at the top of spec/. The directories in split_dirs run as one shard per directory in them plus one for
+# their own top, as spec/ does; those in halved_dirs as two shards of every other file by name. Shards then take
+# about as long as each other, so the stage ends near the busiest one's time: spec/Pagle alone took a quarter of it,
+# and its adapter/ most of that. The shards are checked to run every spec in spec/ once. The #slow shards, among the
+# longest, start first (one busted --tags=slow over every file took as long as the rest of the stage).
 # Every shard's output prints after they all finish, in order, then whether it passed and its wall time; any shard
 # that doesn't pass fails tests. A coverage run stays one busted: luacov's stats file isn't shard-safe.
+# GATE_SHARD=<i>/<n> runs only every n-th shard from the i-th, in that order: the Check workflow runs the tests
+# stage on n runners at once, each with its own i, and together they run every shard once. The shard list and its
+# check are the same on each, so a spec left out fails on every runner.
 split_dirs=(spec spec/Pagle)
 halved_dirs=(spec/Pagle/adapter)
 
@@ -280,15 +285,36 @@ busted_shards() {
 		diff <(echo "$all") <(echo "$covered") | grep '^[<>]' >&2
 		return 1
 	fi
-	shard_names+=("#slow")
-	shard_files+=("")
-	echo "tests: PAGLE_NO_COVERAGE=1, so the specs run without coverage, in ${#shard_names[@]} shards, $jobs at a time"
-	mkdir "$logs/shards" || return 1
-	local last=$((${#shard_names[@]} - 1)) order=()
-	order=("$last")
-	for ((i = 0; i < last; i++)); do
+	# The #slow shards, one per file with a #slow spec (a tag in a comment only makes a shard that runs nothing).
+	local first_slow=${#shard_names[@]} slow_file
+	while IFS= read -r slow_file; do
+		[[ -n $slow_file ]] || continue
+		shard_names+=("#slow $slow_file")
+		shard_files+=("$slow_file")
+	done < <(xargs grep -lF -- '#slow' <<<"$all" | LC_ALL=C sort)
+	local order=() selected=() shard=${GATE_SHARD:-}
+	for ((i = first_slow; i < ${#shard_names[@]}; i++)); do
 		order+=("$i")
 	done
+	for ((i = 0; i < first_slow; i++)); do
+		order+=("$i")
+	done
+	if [[ -n $shard ]]; then
+		[[ $shard =~ ^([1-9][0-9]*)/([1-9][0-9]*)$ ]] && ((BASH_REMATCH[1] <= BASH_REMATCH[2])) || {
+			echo "tests: GATE_SHARD must be <i>/<n> with 1 <= i <= n, not '$shard'" >&2
+			return 1
+		}
+		for ((i = 0; i < ${#order[@]}; i++)); do
+			((i % BASH_REMATCH[2] == BASH_REMATCH[1] - 1)) && selected+=("${order[i]}")
+		done
+		echo "tests: PAGLE_NO_COVERAGE=1, so the specs run without coverage, in ${#shard_names[@]} shards;" \
+			"GATE_SHARD=$shard runs ${#selected[@]} of them here, $jobs at a time"
+		order=()
+		((${#selected[@]} == 0)) || order=("${selected[@]}")
+	else
+		echo "tests: PAGLE_NO_COVERAGE=1, so the specs run without coverage, in ${#shard_names[@]} shards, $jobs at a time"
+	fi
+	mkdir "$logs/shards" || return 1
 	for i in "${order[@]}"; do
 		while ((running >= jobs)); do
 			wait_any
@@ -298,8 +324,8 @@ busted_shards() {
 		[[ -z ${shard_files[i]} ]] || while IFS= read -r file; do files+=("$file"); done <<<"${shard_files[i]}"
 		{
 			status=0 from=$SECONDS
-			if [[ ${shard_names[i]} == "#slow" ]]; then
-				"$bin/busted" --tags=slow || status=$?
+			if [[ ${shard_names[i]} == "#slow "* ]]; then
+				"$bin/busted" --tags=slow "${files[@]}" || status=$?
 			else
 				"$bin/busted" --exclude-tags=slow "${files[@]}" || status=$?
 			fi
@@ -309,6 +335,7 @@ busted_shards() {
 	done
 	wait
 	for i in "${!shard_names[@]}"; do
+		[[ -f $logs/shards/$i.log ]] || continue # another runner's, under GATE_SHARD
 		cat "$logs/shards/$i.log"
 		read -r status took 2>/dev/null <"$logs/shards/$i.status" || status=none took=0
 		if [[ $status == 0 ]]; then
