@@ -115,11 +115,14 @@ describe("Core's faces", function()
 		assert.are.same({ "Fonts\\FRIZQT___CYR.TTF", 16, "" }, made.PagleArtWhat.font)
 	end)
 
-	it("stay bundled in English chosen on a non-Latin client", function()
-		local loaded, made = core("enUS", "koKR")
+	it("stay the client's in English chosen on a non-Latin client, as the names it gives are in its script", function()
+		for client, body in pairs({ koKR = "Fonts\\2002.ttf", ruRU = "Fonts\\FRIZQT___CYR.TTF" }) do
+			local loaded, made = core("enUS", client)
 
-		assert.are.equal("enUS", loaded.env.Pagle.GetLanguage())
-		assert.are.same({ BUNDLED .. "IMFeENrm28P.ttf", 16, "" }, made.PagleArtWhat.font)
+			assert.are.equal("enUS", loaded.env.Pagle.GetLanguage())
+			assert.are.same({ body, 16, "" }, made.PagleArtWhat.font, client)
+			assert.are.equal(body, loaded.env.Pagle.FaceFile("IMFeENit28P.ttf"))
+		end
 	end)
 end)
 
