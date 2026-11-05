@@ -142,6 +142,15 @@ end
 ---@type string
 ns.language = ENGLISH
 
+--- A count as the Language writes it (CORE-R8, ADR 0019): ns.FormatNumber's separators, not the client's
+--- BreakUpLargeNumbers, which follows the game client's locale (an English client writes "1,000" in Spanish). For
+--- shown text only; nothing machine-read goes through it.
+---@param n number
+---@return string
+function ns.FormatCount(n)
+	return ns.FormatNumber(n)
+end
+
 -- What waits for the Language (CORE-R8): wiring a file would run as it loads, which copies strings out of `ns.L` and
 -- so would keep them English all session. `ns.ApplyLanguage` runs them in the order given, once it has applied the
 -- Language; one given after that runs at once. nil once they have run.

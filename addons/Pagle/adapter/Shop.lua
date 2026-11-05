@@ -1352,7 +1352,7 @@ end
 ---@param frame PagleShopFrame
 ---@param goodID string?
 function askToBuy(frame, goodID)
-	local purchase = ns.ShopModel(BreakUpLargeNumbers):Purchase(goodID)
+	local purchase = ns.ShopModel(ns.FormatCount):Purchase(goodID)
 	if not purchase then
 		return
 	end
@@ -1503,13 +1503,13 @@ local function playPurchase(frame, goodID, was)
 			ns.CloseShopBill(bill, BILL_X, BILL_Y, owner)
 		end,
 		balance = function(coins)
-			ns.SetShopText(purse.balance, BreakUpLargeNumbers(coins))
+			ns.SetShopText(purse.balance, ns.FormatCount(coins))
 		end,
 		balanceFrom = was.balance,
 		balanceTo = Pagle.GetBalance().balance,
 		coin = purse.coin,
 		row = function()
-			local model = ns.ShopModel(BreakUpLargeNumbers)
+			local model = ns.ShopModel(ns.FormatCount)
 			local data = model:Row(goodID)
 			if not (line and data and line.goodID == goodID) then
 				return nil
@@ -1525,7 +1525,7 @@ local function playPurchase(frame, goodID, was)
 		end,
 		lid = function()
 			local stage = frame.stage
-			local data = ns.ShopModel(BreakUpLargeNumbers):Stage(goodID)
+			local data = ns.ShopModel(ns.FormatCount):Stage(goodID)
 			if not data then
 				return {}, {}
 			end
@@ -1556,7 +1556,7 @@ end
 ---@param was integer
 ---@param moving boolean
 local function openCrate(frame, rolled, was, moving)
-	local model = ns.ShopModel(BreakUpLargeNumbers)
+	local model = ns.ShopModel(ns.FormatCount)
 	local data = model:CrateResult(rolled)
 	selected = model:Reselect(data.select, query)
 	local stage = frame.crate
@@ -1587,7 +1587,7 @@ local function openCrate(frame, rolled, was, moving)
 		-- The purse pays the crate's price out, and a payback counts its Coins back.
 		pay = {
 			balance = function(coins)
-				ns.SetShopText(purse.balance, BreakUpLargeNumbers(coins))
+				ns.SetShopText(purse.balance, ns.FormatCount(coins))
 			end,
 			balanceFrom = was,
 			balanceTo = was - ns.CRATE_PRICE,
@@ -1595,14 +1595,14 @@ local function openCrate(frame, rolled, was, moving)
 		},
 		count = data.payback and {
 			balance = function(coins)
-				ns.SetShopText(purse.balance, BreakUpLargeNumbers(coins))
+				ns.SetShopText(purse.balance, ns.FormatCount(coins))
 			end,
 			balanceFrom = was - ns.CRATE_PRICE,
 			balanceTo = Pagle.GetBalance().balance,
 			coin = purse.coin,
 		} or nil,
 		settlePurse = function()
-			ns.SetShopText(purse.balance, BreakUpLargeNumbers(Pagle.GetBalance().balance))
+			ns.SetShopText(purse.balance, ns.FormatCount(Pagle.GetBalance().balance))
 		end,
 		onDone = function()
 			settlePurchase(frame, true)
@@ -1647,7 +1647,7 @@ function buy(frame, goodID, useNow)
 	end
 	local was = {
 		balance = Pagle.GetBalance().balance,
-		inUse = inUseBeside(ns.ShopModel(BreakUpLargeNumbers):List(query), goodID),
+		inUse = inUseBeside(ns.ShopModel(ns.FormatCount):List(query), goodID),
 	}
 	frame.bill.goodID = nil
 	playing = moving and { committing = true } or nil
@@ -1813,7 +1813,7 @@ function redraw(fresh)
 			redraw(false)
 		end)
 	end
-	local model = ns.ShopModel(BreakUpLargeNumbers)
+	local model = ns.ShopModel(ns.FormatCount)
 	drawPurse(frame, model:Purse())
 	drawFilters(frame)
 	placeList(frame, drawChips(frame, model:Chips()))

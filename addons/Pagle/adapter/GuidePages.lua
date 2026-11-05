@@ -314,7 +314,7 @@ end
 ---@param menu PagleGuideMenuDrawing
 local function drawMenu(menu)
 	local entries =
-		ns.CoreCompartmentMenu(Pagle, ns.coreSubcommands, ns.Modules:Modules(), BreakUpLargeNumbers, securecallfunction)
+		ns.CoreCompartmentMenu(Pagle, ns.coreSubcommands, ns.Modules:Modules(), ns.FormatCount, securecallfunction)
 	local core = #entries - 4 -- the Modules' entries; Core's four (shop, export, Field report, Settings) close it
 	local y, n = MENU_TOP, 0
 	for i = 1, core do
@@ -329,7 +329,7 @@ local function drawMenu(menu)
 	end
 	n = n + 1
 	menuRow(menu, n, L.GUIDE_BOX_SHOP, y)
-	menu.balance:SetText(BreakUpLargeNumbers(Pagle.GetBalance().balance))
+	menu.balance:SetText(ns.FormatCount(Pagle.GetBalance().balance))
 	menu.balance:ClearAllPoints()
 	menu.balance:SetPoint("TOPRIGHT", menu, "TOPLEFT", 183, -(y + 5))
 	ns.PlaceSprite(menu.coin, menu, 189, y + 6)

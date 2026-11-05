@@ -28,8 +28,9 @@ local function qualityName(quality)
 end
 
 ns.WireText({
+	-- The Language's separators (CORE-R8), not the client's: the seam keeps its WoW name.
 	BreakUpLargeNumbers = function(n)
-		return BreakUpLargeNumbers(n)
+		return Pagle.Text("{n:n}", { n = n })
 	end,
 	Date = function(format, time)
 		return (date(format, time)) --[[@as string]]

@@ -87,7 +87,7 @@ describe("Stats' words", function()
 		end)
 
 		it(
-			"go through the client's BreakUpLargeNumbers, read when they're written (a count, through the helper)",
+			"take the Language's separators through Core's text helper, never the client's BreakUpLargeNumbers (CORE-R8)",
 			function()
 				local loaded = stats.load()
 				loaded.env.BreakUpLargeNumbers = function(n)
@@ -95,7 +95,7 @@ describe("Stats' words", function()
 				end
 
 				assert.are.equal("1,000 Casts", loaded.ns.Count(1000, "Casts"))
-				assert.are.equal("<1400>", loaded.ns.Nice(1447))
+				assert.are.equal("1,400", loaded.ns.Nice(1447))
 			end
 		)
 	end)

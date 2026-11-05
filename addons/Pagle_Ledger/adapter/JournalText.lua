@@ -9,6 +9,14 @@ local ns = select(2, ...)
 -- cache, maps, clocks and Core's Angler and window forecasts, each read when a page asks. An item the client hasn't
 -- cached is asked for, and its GET_ITEM_INFO_RECEIVED redraws the open Journal on the next frame.
 
+--- A count as the Language writes it (CORE-R8, ADR 0019): Core's text helper's separators, not the client's
+--- BreakUpLargeNumbers (an English client writes "1,000" in Spanish). The Journal's, the bindings' and the Ledger's.
+---@param n number
+---@return string
+function ns.FormatCount(n)
+	return Pagle.Text("{n:n}", { n = n })
+end
+
 -- The owner of the GET_ITEM_INFO_RECEIVED registration.
 local OWNER = "Pagle_Ledger Journal names"
 

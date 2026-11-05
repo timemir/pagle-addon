@@ -190,7 +190,7 @@ function ns.Outlets(module)
 			return ns.LedgerLogKey(Pagle.GetAngler())
 		end,
 		FormatNumber = function(n)
-			return BreakUpLargeNumbers(n)
+			return ns.FormatCount(n)
 		end,
 		RefreshGoods = function()
 			module:RefreshGoods()

@@ -133,7 +133,7 @@ end
 function Journal:Context() -- luacheck: no self
 	local state = ns.StateNow()
 	if not state then
-		return { updating = true, now = GetServerTime(), formatNumber = BreakUpLargeNumbers, text = ns.journalText }
+		return { updating = true, now = GetServerTime(), formatNumber = ns.FormatCount, text = ns.journalText }
 	end
 	return {
 		updating = false,
@@ -142,7 +142,7 @@ function Journal:Context() -- luacheck: no self
 		activeTitle = ns.db.profile.activeTitle,
 		ownsAll = Pagle.GetTestLogGrant("devGoods") == true,
 		now = GetServerTime(),
-		formatNumber = BreakUpLargeNumbers,
+		formatNumber = ns.FormatCount,
 		text = ns.journalText,
 		world = ns.world,
 		getItem = Pagle.GetItem,

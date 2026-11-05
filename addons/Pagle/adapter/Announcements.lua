@@ -229,7 +229,7 @@ local function setCoins(coins, amount, size, coinFirst)
 		coins:Hide()
 		return 0
 	end
-	coins.label:SetText(ns.RenderText(L.ANNOUNCEMENT_COINS, { amount = BreakUpLargeNumbers(amount) }))
+	coins.label:SetText(ns.RenderText(L.ANNOUNCEMENT_COINS, { amount = ns.FormatCount(amount) }))
 	local coin = ns.SetCoin(coins.coin, size)
 	local width = size + 8 + coins.label:GetStringWidth()
 	coins:SetSize(width, size)
@@ -1516,7 +1516,7 @@ local function drawBanner(frame, display)
 		ns.PlaceSprite(wax, wax:GetParent() --[[@as Frame]], 0, 0)
 	end
 	if seal.number then
-		local digits = BreakUpLargeNumbers(seal.number)
+		local digits = ns.FormatCount(seal.number)
 		ns.SetArtFont(number, #digits > 2 and "SealSmall" or "SealNumber")
 		number:SetText(digits)
 	end
