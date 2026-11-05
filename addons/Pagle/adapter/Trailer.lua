@@ -35,7 +35,11 @@ local function caption(text)
 		captionFrame:SetPoint("TOP", UIParent, "TOP", 0, -45)
 		captionFrame:EnableMouse(false)
 		captionFrame.label = captionFrame:CreateFontString(nil, "OVERLAY")
-		captionFrame.label:SetFont("Interface\\AddOns\\Pagle\\media\\fonts\\Marcellus-Regular.ttf", 27, "")
+		captionFrame.label:SetFont(
+			ns.LocaleFace("Interface\\AddOns\\Pagle\\media\\fonts\\Marcellus-Regular.ttf"),
+			27,
+			""
+		)
 		captionFrame.label:SetTextColor(1, 0.9, 0.68)
 		captionFrame.label:SetShadowOffset(2, -2)
 		captionFrame.label:SetShadowColor(0, 0, 0, 1)

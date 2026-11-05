@@ -29,6 +29,30 @@ local FACES = {
 -- What draws if a bundled face won't load: the client's own.
 local FALLBACK = "Fonts\\FRIZQT__.TTF"
 
+-- The client languages whose script the bundled faces lack (they draw Latin only, and SetFont doesn't fail on a
+-- missing glyph): there every face is the client's own font (CORE-R9, ADR 0019 "Scripts and fonts", #522).
+local CLIENT_FACE_LOCALES = { ruRU = true, koKR = true, zhCN = true, zhTW = true }
+
+--- The file to draw a bundled face's `path` in: on a ruRU, koKR, zhCN or zhTW client the client's own font,
+--- FrameXML's STANDARD_TEXT_FONT (else FRIZQT__), for every face; elsewhere `path` itself. Every kit in Core sets
+--- its fonts through it. STANDARD_TEXT_FONT is read by name, as Core.lua reads GetAddOnMetadata: a FrameXML variable,
+--- set per locale in Blizzard_Fonts_Shared/Shared/GameFonts.xml.
+---@param path string
+---@return string
+function ns.LocaleFace(path)
+	if CLIENT_FACE_LOCALES[GetLocale()] then
+		return rawget(_G, "STANDARD_TEXT_FONT") or FALLBACK
+	end
+	return path
+end
+
+-- The file a face of FACES draws in.
+---@param face string
+---@return string
+local function faceFile(face)
+	return ns.LocaleFace(FONT_DIR .. FACES[face])
+end
+
 -- Each font: its face, size and ink (a role in ns.ANNOUNCE_COLORS), and whether it has a shadow (what is drawn over
 -- the world does; what is on the page doesn't).
 local FONTS = {
@@ -82,7 +106,7 @@ ns.ART_FONTS = {}
 for key, def in pairs(FONTS) do
 	local name = "PagleArt" .. key
 	local font = CreateFont(name)
-	if font:SetFont(FONT_DIR .. FACES[def[1]], def[2], "") == false then
+	if font:SetFont(faceFile(def[1]), def[2], "") == false then
 		font:SetFont(FALLBACK, def[2], "")
 	end
 	local color = ns.ANNOUNCE_COLORS[def[3]]
@@ -130,7 +154,7 @@ function ns.SetArtFontScaled(fontString, key, scale)
 	ns.SetArtFont(fontString, key)
 	local def = FONTS[key]
 	local size = math.max(8, math.floor(def[2] * scale + 0.5))
-	if fontString:SetFont(FONT_DIR .. FACES[def[1]], size, "") == false then
+	if fontString:SetFont(faceFile(def[1]), size, "") == false then
 		fontString:SetFont(FALLBACK, size, "")
 	end
 end
@@ -177,9 +201,9 @@ function ns.ArtFaceFont(face, size, shadow)
 	local key = ("%s_%s%s"):format(face, (tostring(size):gsub("%.", "_")), shadow and "_s" or "")
 	local font = faceFonts[key]
 	if not font then
-		local file = assert(FACES[face], "the art has no face " .. tostring(face))
+		assert(FACES[face], "the art has no face " .. tostring(face))
 		font = CreateFont("PagleArtFace_" .. key)
-		if font:SetFont(FONT_DIR .. file, size, "") == false then
+		if font:SetFont(faceFile(face), size, "") == false then
 			font:SetFont(FALLBACK, size, "")
 		end
 		if shadow then
@@ -236,7 +260,7 @@ function ns.ShrinkToFit(fontString, key, width)
 	if natural > width then
 		local def = FONTS[key]
 		local size = math.max(math.ceil(def[2] * SHRINK_FLOOR), math.floor(def[2] * width / natural))
-		if fontString:SetFont(FONT_DIR .. FACES[def[1]], size, "") == false then
+		if fontString:SetFont(faceFile(def[1]), size, "") == false then
 			fontString:SetFont(FALLBACK, size, "")
 		end
 	end

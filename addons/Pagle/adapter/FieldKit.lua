@@ -41,7 +41,8 @@ local FONTS = {
 -- The font objects, made the first time each is asked for: PagleField<key>.
 ---@type table<string, table>
 local fonts = {}
--- The file each font object loaded: its bundled face, or the fallback.
+-- The file each font object loaded: its bundled face (the client's own font on a client whose script the faces lack,
+-- ns.LocaleFace), or the fallback.
 ---@type table<string, string>
 local fontFiles = {}
 
@@ -62,7 +63,7 @@ function ns.FieldFont(key)
 	if not fonts[key] then
 		local def = FONTS[key]
 		local made = CreateFont("PagleField" .. key)
-		fontFiles[key] = FONT_DIR .. def[1]
+		fontFiles[key] = ns.LocaleFace(FONT_DIR .. def[1])
 		if made:SetFont(fontFiles[key], def[2], "") == false then
 			fontFiles[key] = FALLBACK
 			made:SetFont(FALLBACK, def[2], "")

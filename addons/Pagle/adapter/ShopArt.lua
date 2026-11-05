@@ -133,7 +133,7 @@ ns.SHOP_FONTS = {}
 for key, def in pairs(FONTS) do
 	local name = "PagleShop" .. key
 	local font = CreateFont(name)
-	if font:SetFont(FONT_DIR .. FACES[def[1]], def[2], "") == false then
+	if font:SetFont(ns.LocaleFace(FONT_DIR .. FACES[def[1]]), def[2], "") == false then
 		font:SetFont(FALLBACK, def[2], "")
 	end
 	local ink = ns.SHOP_INKS[def[3]]
