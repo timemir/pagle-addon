@@ -64,6 +64,9 @@ end
 local NAME_X, CHECK_X = 37, 150
 -- The gap between a row's label, checkbox, line and button, and the checkbox's width.
 local GAP, CHECK_W = 8, 26
+-- The least width of the Field guide row's line, between its label and its button: a longer label or caption (a
+-- longer language's, CORE-R8) cuts the label short before the line goes under this, so the line never shrinks to "…".
+local LINE_MIN = 120
 -- Where a row's button ends, and its least width: a longer caption widens it leftwards, measured, so its words stay
 -- on it (SET-R11).
 local BUTTON_RIGHT, BUTTON_W, BUTTON_PAD = 540, 160, 24
@@ -101,6 +104,7 @@ local function widgets(frame)
 	end
 	own.text:Hide()
 	own.name:Hide()
+	own.name:SetWidth(0) -- a Getting started row may have cut its label short (rowLabel)
 	own.version:Hide()
 	own.state:Hide()
 	own.button:Hide()
@@ -155,15 +159,23 @@ local function textRow(text)
 end
 ns.SettingsTextRow = textRow
 
--- A row's label, at the status list's name column. Returns where its words end, measured.
+-- A row's label, at the status list's name column, on one line. Returns where its words end, measured; with `room`,
+-- held to that much, cut short by the client past it.
 ---@param own table
 ---@param label string
+---@param room number?
 ---@return number
-local function rowLabel(own, label)
+local function rowLabel(own, label, room)
 	own.name:SetWidth(0) -- measured unbounded
+	own.name:SetWordWrap(false)
 	own.name:SetText(label)
 	own.name:Show()
-	return NAME_X + own.name:GetStringWidth()
+	local width = own.name:GetStringWidth()
+	if room and width > room then
+		width = math.max(1, room)
+		own.name:SetWidth(width)
+	end
+	return NAME_X + width
 end
 
 -- A row's line, at `x`, wrapping within `width` when given (it then sits before a button), else one line.
@@ -200,14 +212,16 @@ local function rowButton(own, caption, onClick)
 	return BUTTON_RIGHT - width
 end
 
--- Where Getting started's checkboxes sit: CHECK_X, or `GAP` past the longer of the two checkbox rows' labels,
--- measured on `own`'s label, so a long label pushes both and they stay in one column (SET-R10 rows 5 and 6).
+-- Where Getting started's checkboxes sit: CHECK_X, or `GAP` past the longer of the checkbox rows' labels, measured
+-- on `own`'s label, so a long label pushes both and they stay in one column (SET-R10 rows 5 and 6). The First evening
+-- list's label counts only while its row is offered (`evening`), so it never pushes Margin notes' alone.
 ---@param own table
+---@param evening boolean
 ---@return number
-local function checkColumn(own)
-	local widest = 0
-	for _, label in ipairs({ L.SETTINGS_MARGIN_NOTES, L.SETTINGS_EVENING }) do
-		widest = math.max(widest, rowLabel(own, label))
+local function checkColumn(own, evening)
+	local widest = rowLabel(own, L.SETTINGS_MARGIN_NOTES)
+	if evening then
+		widest = math.max(widest, rowLabel(own, L.SETTINGS_EVENING))
 	end
 	return math.max(CHECK_X, widest + GAP)
 end
@@ -405,19 +419,24 @@ local function gettingStarted(layout)
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_GETTING_STARTED))
 	layout:AddInitializer(customRow(function(frame)
 		local own = widgets(frame)
-		local labelEnd = rowLabel(own, L.SETTINGS_FIELD_GUIDE)
 		local buttonLeft = rowButton(own, L.SETTINGS_SHOW_ME_AROUND, function()
 			HideUIPanel(SettingsPanel)
 			ns.guide:Open()
 		end)
-		-- The line wraps between the label and the button, so it never runs under either.
+		-- The line wraps between the label and the button, so it never runs under either, and keeps LINE_MIN: the
+		-- label is cut short first.
+		local labelEnd = rowLabel(own, L.SETTINGS_FIELD_GUIDE, buttonLeft - GAP - LINE_MIN - GAP - NAME_X)
 		local x = math.max(CHECK_X, labelEnd + GAP)
-		rowLine(own, x, L.SETTINGS_FIELD_GUIDE_LINE, math.max(1, buttonLeft - GAP - x))
+		rowLine(own, x, L.SETTINGS_FIELD_GUIDE_LINE, math.max(LINE_MIN, buttonLeft - GAP - x))
 	end, L.SETTINGS_FIELD_GUIDE))
+	local evening = ns.evening
+	-- whether the First evening list's row is offered, as the tree is built: both checkbox rows read it, so they share
+	-- one column
+	local offered = evening:IsOffered()
 	layout:AddInitializer(customRow(function(frame)
 		local own = widgets(frame)
 		local onboarding = ns.onboarding
-		local column = checkColumn(own)
+		local column = checkColumn(own, offered)
 		rowLabel(own, L.SETTINGS_MARGIN_NOTES)
 		rowCheck(own, column, onboarding:AreNotesOn(), function(checked)
 			onboarding:SetNotesOn(checked)
@@ -435,8 +454,7 @@ local function gettingStarted(layout)
 			GameTooltip:Hide()
 		end)
 	end, L.SETTINGS_MARGIN_NOTES))
-	local evening = ns.evening
-	if not evening:IsOffered() then
+	if not offered then
 		return
 	end
 	layout:AddInitializer(customRow(function(frame)
@@ -444,13 +462,15 @@ local function gettingStarted(layout)
 		if not evening:IsOffered() then
 			return
 		end
-		local column = checkColumn(own)
+		local column = checkColumn(own, true)
 		rowLabel(own, L.SETTINGS_EVENING)
 		local checkEnd = rowCheck(own, column, evening:IsShowing(), function(checked)
 			evening:SetShown(checked)
 		end)
 		local done, total = evening:Count()
-		rowLine(own, checkEnd + 4, ns.RenderText(L.SETTINGS_EVENING_LINE, { done = done, total = total }))
+		-- the count within the row, wrapping before its right edge (the button column's)
+		local x = checkEnd + 4
+		rowLine(own, x, ns.RenderText(L.SETTINGS_EVENING_LINE, { done = done, total = total }), BUTTON_RIGHT - x)
 	end, L.SETTINGS_EVENING))
 end
 
