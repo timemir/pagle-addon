@@ -495,13 +495,18 @@ end
 ---@field SetBar fun(self: BoardInkBarView, fill: number, label: string?, animate: boolean?) -- with `animate`, a fill
 --- that grows runs on
 
--- The bar's height, and the ink's end caps.
-local INK_HEIGHT, INK_CAP = 10, 6
+-- The bar's height, and the ink's end caps; the gap before its words, and the least its stroke shortens to.
+local INK_HEIGHT, INK_CAP, INK_GAP, INK_LEAST = 10, 6, 10, 120
 
+--- An ink bar `width` long on `parent`. With `room`, the room the bar and its words share: the bar shortens, down to
+--- INK_LEAST, so its words read whole beside it (a language's "Выполнено 3 из 4" or "62 / 100" past the kit's room for
+--- "3 of 4 done"), and only past that are they cut short.
 ---@param parent Frame
 ---@param width number
+---@param room number?
 ---@return BoardInkBarView
-function ns.NewBoardInkBar(parent, width)
+function ns.NewBoardInkBar(parent, width, room)
+	local full = width
 	local bar = CreateFrame("Frame", nil, parent) --[[@as BoardInkBarView]]
 	bar:SetSize(width, INK_HEIGHT)
 	bar.empty = CreateFrame("Frame", nil, bar) --[[@as HuntsThreeSlice]]
@@ -516,7 +521,8 @@ function ns.NewBoardInkBar(parent, width)
 	bar.fillSlice:SetPoint("TOPLEFT")
 	bar.fillSlice:SetFrameLevel(bar.empty:GetFrameLevel() + 1)
 	bar.label = ns.BoardText(bar, ns.BoardFonts().inkCount, LOOK.ink)
-	bar.label:SetPoint("LEFT", bar, "RIGHT", 10, 1)
+	bar.label:SetPoint("LEFT", bar, "RIGHT", INK_GAP, 1)
+	bar.label:SetWordWrap(false)
 	bar.value = 0
 	local _, sprite = ns.ArtSpriteOf("Parts", "ink-full")
 	local spriteLength = sprite.box[3]
@@ -534,10 +540,26 @@ function ns.NewBoardInkBar(parent, width)
 		bar.fill:SetShown(cut)
 		bar.fillSlice:SetShown(slice)
 	end
+	-- Sizes the bar and its words within `room` (measured unbounded): the bar its full width when they fit beside it.
+	local function fit()
+		if not room then
+			return
+		end
+		bar.label:SetWidth(0)
+		local words = math.ceil(bar.label:GetStringWidth()) + 1
+		local length = math.max(math.min(full, INK_LEAST), math.min(full, room - INK_GAP - words))
+		if length ~= width then
+			width = length
+			bar:SetSize(width, INK_HEIGHT)
+			ns.SetThreeSlice(bar.empty, "Parts", "ink-empty", width, INK_CAP, "ARTWORK", 0)
+		end
+		bar.label:SetWidth(math.max(1, math.min(words, room - INK_GAP - width)))
+	end
 	function bar.SetBar(self, fill, label, animate)
 		fill = math.max(0, math.min(1, fill))
 		local from = self.value
 		self.label:SetText(label or "")
+		fit()
 		self.value = fill
 		Pagle.StopMotion(self)
 		if not (animate and fill > from and self:IsVisible() and ns.MotionOn()) then

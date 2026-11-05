@@ -331,12 +331,122 @@ describe("a tracker frame's preview", function()
 				local middle = paper.middles[1]
 				assert.are.equal(true, middle:IsShown(), id)
 				assert.are.equal(tracker.height - look.slice.top - look.slice.foot, middle.height, id)
-				assert.are.equal(look.first + 2 * look.step + look.foot, tracker.height, id)
+				-- the lines start under the header, and under a corner ornament beside it
+				local from = math.max(look.first, look.clear or 0)
+				assert.are.equal(from + 2 * look.step + look.foot, tracker.height, id)
+				assert.are.same({ "TOPLEFT", 0, -from }, tracker.view.lines[1].points[1], id)
 				-- the words inside the kit's text insets
 				assert.are.equal(true, look.x >= 16 and look.right <= 262 - 16, id)
 			end
 		end
 	)
+
+	it(
+		"starts the lines under a frame's corner ornament and gives them the frame's width beside it, the header beside it (HNT-R123)",
+		function()
+			local loaded = loggedIn()
+			local ns = loaded.ns
+
+			-- each ornament's foot in the art (TrackerFrames2's texels at 2, in units down the frame), less the 3
+			-- units a line's words sit below its top: the map scrap's compass, the spyglass's orb, the ribbon's coin
+			for key, foot in pairs({ mapscrap = 58, spyglass = 50, wagerribbon = 54 }) do
+				local look = ns.TRACKER_FRAMES[FRAME .. "." .. key]
+				assert.are.equal(foot - 3, look.clear, key)
+				assert.are.equal(true, look.clear > look.first, key)
+				assert.are.equal(262 - 16, look.right, key) -- the lines run to the inset, under the ornament
+				local view = ns.NewTrackerBlock(loaded.env.CreateFrame("Frame"))
+				local hunt = { dot = "now", name = "Snapper Run", label = "ends in 2d 4h", second = "Shore Snapper" }
+				ns.DrawTrackerBlock(view, look, { hunts = { hunt }, empty = false, collapsed = false })
+				assert.are.same({ "TOPLEFT", 0, -look.clear }, view.lines[1].points[1], key)
+				assert.are.equal(look.clear + look.step + look.foot, view.frame.height, key)
+				-- the header stays at the top, beside the ornament
+				assert.are.same({ "TOPLEFT", 0, -0 }, view.header.points[1], key)
+				-- collapsed to its header, it keeps no room for the lines
+				ns.DrawTrackerBlock(view, look, { hunts = {}, empty = false, collapsed = true })
+				assert.are.equal(look.slice.top + look.slice.foot, view.frame.height, key)
+			end
+			-- the Pagle Wagers block collapsed to its header: the Hunts header right under it, not under the ornament
+			local look = ns.TRACKER_FRAMES[FRAME .. ".spyglass"]
+			local view = ns.NewTrackerBlock(loaded.env.CreateFrame("Frame"))
+			ns.DrawTrackerBlock(view, look, {
+				hunts = {},
+				empty = true,
+				collapsed = false,
+				wagers = { runs = {}, collapsed = true },
+			})
+			assert.are.same({ "TOPLEFT", 0, -(look.first + 6) }, view.header.points[1])
+		end
+	)
+
+	it(
+		"keeps a second line's count whole when the line is too long: the words before it cut short, its text whole (CORE-R8)",
+		function()
+			local loaded = loggedIn()
+			local ns = loaded.ns
+
+			local view = ns.NewTrackerBlock(loaded.env.CreateFrame("Frame"))
+			local look = ns.TRACKER_FRAMES["hunts.trackerframe.slate"]
+			local room = look.right - look.x - 14
+			local join = ns.L.TRACKER_JOIN
+			-- 6 px a byte in the fake, plus 1: each text's whole width
+			local function width(text)
+				return #text * 6 + 1
+			end
+			local long = "Любая рыба редкой разновидности или лучше в этих водах"
+				.. join
+				.. "5 / 12"
+			local short = "Shore Snapper" .. join .. "0 / 1"
+			local noJoin =
+				"Любая рыба редкой разновидности или лучше в этих водах и дальше"
+			local lines = {}
+			for i, second in ipairs({ long, short, noJoin }) do
+				lines[i] = { dot = "now", name = "Snapper Run", label = "now", second = second }
+			end
+			ns.DrawTrackerBlock(view, look, { hunts = lines, empty = false, collapsed = false })
+
+			assert.is_true(width(long) > room and width(short) <= room and width(noJoin) > room) -- the cases need it
+			-- too long: the count after the last join whole at the right, the line's start in the room before it
+			local cut = view.lines[1]
+			assert.are.equal(long, cut.second:GetText()) -- the line's text is never rewritten
+			assert.are.equal(true, cut.count:IsShown())
+			assert.are.equal(join .. "5 / 12", cut.count:GetText())
+			assert.are.equal(width(join .. "5 / 12"), cut.count.width)
+			assert.are.equal(room - width(join .. "5 / 12"), cut.second.width)
+			assert.are.same({ "TOPRIGHT", cut, "TOPLEFT", look.right, -look.second }, cut.count.points[1])
+			assert.are.equal(cut.second.fontObject, cut.count.fontObject) -- shrunk alike
+			-- one that fits: whole, no count of its own
+			assert.are.equal(false, view.lines[2].count:IsShown())
+			assert.are.equal(room, view.lines[2].second.width)
+			-- too long with no join to keep: cut at its end, as before
+			assert.are.equal(false, view.lines[3].count:IsShown())
+			assert.are.equal(room, view.lines[3].second.width)
+			-- the next draw of a line that fits hides the count again
+			lines[1].second = short
+			ns.DrawTrackerBlock(view, look, { hunts = lines, empty = false, collapsed = false })
+			assert.are.equal(false, view.lines[1].count:IsShown())
+		end
+	)
+
+	it("lets a time longer than its share take up to two points smaller before it is cut (CORE-R8)", function()
+		local loaded = loggedIn()
+		local ns = loaded.ns
+
+		local view = ns.NewTrackerBlock(loaded.env.CreateFrame("Frame"))
+		local look = ns.TRACKER_FRAMES["hunts.trackerframe.inkwash"]
+		local long =
+			"Родные воды: форель на закате, ход скумбрии и ещё длиннее"
+		local entries = {
+			{ dot = "now", name = long, label = "ещё 2 д 16 ч и ещё немного" },
+			{ dot = "now", name = "Snapper Run", label = "ещё 2 д" },
+		}
+		ns.DrawTrackerBlock(view, look, { hunts = entries, empty = false, collapsed = false })
+
+		local face, size = look.label[1], look.label[2]
+		-- cut to its share: smaller first (the fake never measures it narrower, so down to the floor)
+		assert.are.equal(ns.ArtFont(face, size - 2), view.lines[1].label.fontObject)
+		-- whole: its look's size
+		assert.are.equal(ns.ArtFont(face, size), view.lines[2].label.fontObject)
+	end)
 
 	it("keeps a collapsed expansion frame no shorter than its paper's top and foot (HNT-R123, HNT-R77)", function()
 		local loaded = loggedIn()
