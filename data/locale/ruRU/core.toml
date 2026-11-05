@@ -596,7 +596,7 @@ value = "Легенда"
 en = "Legend"
 
 [LEGEND_CREST_UNWRITTEN]
-value = "Неписаный"
+value = "Неписаная"
 en = "Unwritten"
 
 [ANNOUNCEMENT_WHILE_FIGHTING]
