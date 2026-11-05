@@ -402,12 +402,12 @@ local function show(card)
 	frame.numbersBox:SetShown(numbers ~= nil)
 	if numbers then
 		for i, key in ipairs(NUMBERS) do
-			local value = key == "seconds" and ns.CardDuration(numbers.seconds) or BreakUpLargeNumbers(numbers[key])
+			local value = key == "seconds" and ns.CardDuration(numbers.seconds) or ns.FormatCount(numbers[key])
 			setNumber(frame.numbers[i].value, value, frame.numberRooms[i])
 		end
 	end
 	-- ANN-R64: a section from a Module with a Field guide step ends with Show me around »
-	local rows = ns.CardRows(card, BreakUpLargeNumbers, function(module)
+	local rows = ns.CardRows(card, ns.FormatCount, function(module)
 		return ns.guideSteps ~= nil and ns.guideSteps:FirstOf(module) ~= nil
 	end)
 	-- Each row on the ruled line under the last row's last.

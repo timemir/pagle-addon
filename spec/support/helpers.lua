@@ -733,7 +733,7 @@ end
 -- "#" comments. Returns { base = {{lo, hi}, ...}, scripts = { name = {{lo, hi}, ...} }, locales = { code = { name } } }.
 ---@return table
 local function readGlyphTable()
-	local table_ = { base = {}, scripts = {}, locales = {} }
+	local table_ = { base = {}, scripts = {}, locales = {}, without = {} }
 	local section, key, open
 	for row in (readFile("data/glyphs.toml") .. "\n"):gmatch("([^\n]*)\n") do
 		local line = (row:gsub("%s*#.*$", "")):match("^%s*(.-)%s*$")
@@ -761,6 +761,8 @@ local function readGlyphTable()
 						table_.scripts[script] = open
 					elseif section == "locale" then
 						table_.locales[key] = open
+					elseif section == "without" then
+						table_.without[key] = open
 					else
 						error("data/glyphs.toml: unexpected key '" .. key .. "' in [" .. section .. "]")
 					end
@@ -784,14 +786,19 @@ local function readGlyphTable()
 	for name, ranges in pairs(table_.scripts) do
 		table_.scripts[name] = parse(ranges)
 	end
+	for code, ranges in pairs(table_.without) do
+		assert(table_.locales[code], "data/glyphs.toml: [without] " .. code .. ": not a Locale in [locale]")
+		table_.without[code] = parse(ranges)
+	end
 	return table_
 end
 
 local glyphRanges = {} -- each Locale's ranges by client code, read on first use
 
--- Locale `code`'s ranges (CORE-R9): the base set, then its scripts'. A code the table lacks is an error.
+-- Locale `code`'s ranges (CORE-R9): the base set, then its scripts', and what its fonts lack of them ([without]). A
+-- code the table lacks is an error.
 ---@param code string
----@return integer[][]
+---@return { ranges: integer[][], without: integer[][] }
 local function glyphRangesFor(code)
 	if not glyphRanges[code] then
 		local data = readGlyphTable()
@@ -803,7 +810,7 @@ local function glyphRangesFor(code)
 				ranges[#ranges + 1] = range
 			end
 		end
-		glyphRanges[code] = ranges
+		glyphRanges[code] = { ranges = ranges, without = data.without[code] or {} }
 	end
 	return glyphRanges[code]
 end
@@ -827,7 +834,8 @@ end
 ---@param code? string
 ---@return string[]
 function glyphsOutside(text, code)
-	local ranges = glyphRangesFor(code or "enUS")
+	local set = glyphRangesFor(code or "enUS")
+	local ranges, without = set.ranges, set.without
 	local found, i = {}, 1
 	while i <= #text do
 		local byte = text:byte(i)
@@ -857,6 +865,11 @@ function glyphsOutside(text, code)
 				if cp >= range[1] and cp <= range[2] then
 					allowed = true
 					break
+				end
+			end
+			for _, range in ipairs(without) do
+				if cp >= range[1] and cp <= range[2] then
+					allowed = false
 				end
 			end
 			if not allowed then

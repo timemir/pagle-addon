@@ -198,17 +198,20 @@ local function close()
 	end
 end
 
-ns.WireGuide(ns.host, {
-	show = show,
-	close = close,
-	hold = function(reason)
-		ns.HoldAnnouncements(reason)
-	end,
-	release = function(reason)
-		ns.ReleaseAnnouncements(reason)
-	end,
-	coreSteps = ns.GUIDE_CORE_STEPS,
-})
+-- Once the Language is applied (CORE-R8): Core's steps take their ribbons and links from ns.L as they are wired.
+ns.AfterLanguage(function()
+	ns.WireGuide(ns.host, {
+		show = show,
+		close = close,
+		hold = function(reason)
+			ns.HoldAnnouncements(reason)
+		end,
+		release = function(reason)
+			ns.ReleaseAnnouncements(reason)
+		end,
+		coreSteps = ns.GUIDE_CORE_STEPS,
+	})
+end)
 
 -- ONB-R84: a tour stop per step, Modules' included, once every enabled Module has registered its steps (CORE-R19).
 Pagle.RegisterCallback("Pagle guide tour", "ModulesChanged", function()

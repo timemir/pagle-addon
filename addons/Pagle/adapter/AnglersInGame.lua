@@ -18,37 +18,40 @@ local Pagle = Pagle
 -- The Companion's data addons, by folder name (IGV Contracts › The addon folders).
 local FOLLOWING_ADDON, ANGLERS_ADDON = ns.FOLLOWING_ADDON, ns.ANGLERS_ADDON
 
-ns.WireAnglerViews(ns.host, {
-	following = function()
-		return _G.PagleFollowingData
-	end,
-	-- Why there's no PagleFollowingData (IGV-R44, VIEW-R12), read as adapter/PushedContent.lua reads Pagle_Content's,
-	-- under pcall: a client that refuses the name leaves the reason unknown, never login step 2's later parts undone.
-	presence = function()
-		local ok, _, _, _, _, reason = pcall(C_AddOns.GetAddOnInfo, FOLLOWING_ADDON)
-		local read, loaded = pcall(C_AddOns.IsAddOnLoaded, FOLLOWING_ADDON)
-		return {
-			installed = not ok or reason ~= "MISSING",
-			loaded = read and loaded == true,
-			reason = ok and reason or nil,
-		}
-	end,
-	-- VIEW-R3, once per login. Its second return names why it didn't load ("MISSING", "DISABLED", …). Under pcall, as
-	-- it runs in the tooltip's post-call: an error is a failed load, never a broken tooltip.
-	load = function()
-		local ok, loaded, reason = pcall(C_AddOns.LoadAddOn, ANGLERS_ADDON)
-		if not ok then
-			return false, nil
-		end
-		return loaded == true, reason
-	end,
-	anglers = function()
-		return _G.PagleAnglersData
-	end,
-	isSecret = function(value)
-		return issecretvalue(value)
-	end,
-})
+-- Once the Language is applied (CORE-R8): the views' first reason ("not loaded yet") is read from ns.L as they are wired.
+ns.AfterLanguage(function()
+	ns.WireAnglerViews(ns.host, {
+		following = function()
+			return _G.PagleFollowingData
+		end,
+		-- Why there's no PagleFollowingData (IGV-R44, VIEW-R12), read as adapter/PushedContent.lua reads Pagle_Content's,
+		-- under pcall: a client that refuses the name leaves the reason unknown, never login step 2's later parts undone.
+		presence = function()
+			local ok, _, _, _, _, reason = pcall(C_AddOns.GetAddOnInfo, FOLLOWING_ADDON)
+			local read, loaded = pcall(C_AddOns.IsAddOnLoaded, FOLLOWING_ADDON)
+			return {
+				installed = not ok or reason ~= "MISSING",
+				loaded = read and loaded == true,
+				reason = ok and reason or nil,
+			}
+		end,
+		-- VIEW-R3, once per login. Its second return names why it didn't load ("MISSING", "DISABLED", …). Under pcall, as
+		-- it runs in the tooltip's post-call: an error is a failed load, never a broken tooltip.
+		load = function()
+			local ok, loaded, reason = pcall(C_AddOns.LoadAddOn, ANGLERS_ADDON)
+			if not ok then
+				return false, nil
+			end
+			return loaded == true, reason
+		end,
+		anglers = function()
+			return _G.PagleAnglersData
+		end,
+		isSecret = function(value)
+			return issecretvalue(value)
+		end,
+	})
+end)
 
 -- The Pagle block's colours, { r, g, b } by key (VIEW-R21); white for a line that names none.
 local COLORS = {}

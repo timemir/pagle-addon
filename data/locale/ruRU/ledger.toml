@@ -26,11 +26,11 @@ value = "Реестр"
 en = "Ledger"
 
 [SUMMARY_LINE]
-value = "Реестр: уровень рыболова {level:0} · заполнен на {percent:0}%"
+value = "Реестр: уровень рыболова {level:0} • заполнен на {percent:0}%"
 en = "Ledger: Angler Level {level:0} · {percent:0}% complete"
 
 [SUMMARY_LINE_PRESTIGE]
-value = "Реестр: престиж {prestige:0} · уровень рыболова {level:0} · заполнен на {percent:0}%"
+value = "Реестр: престиж {prestige:0} • уровень рыболова {level:0} • заполнен на {percent:0}%"
 en = "Ledger: Prestige {prestige:0} · Angler Level {level:0} · {percent:0}% complete"
 
 [ITEM_FALLBACK]
@@ -38,7 +38,7 @@ value = "Предмет {itemID}"
 en = "Item {itemID}"
 
 [SIZE_TEXT]
-value = "{name} · {length}"
+value = "{name} • {length}"
 en = "{name} · {length}"
 
 [NAME_UNKNOWN]
@@ -188,7 +188,7 @@ en.warband = "fish"
 en.wave = "catches"
 
 [CREST_PROGRESS]
-value = "{rank} · {completion:0}%"
+value = "{rank} • {completion:0}%"
 en = "{rank} · {completion:0}%"
 
 [CREST_UNFISHED]
@@ -304,7 +304,7 @@ value = "Записано"
 en = "Logged"
 
 [ITEM_SIZE]
-value = "{name} · {size}"
+value = "{name} • {size}"
 en = "{name} · {size}"
 
 [LEGEND_TITLE]
@@ -476,7 +476,7 @@ value = "Мастер этих вод"
 en = "Master of these waters"
 
 [ZONE_NEXT_WITH_NEW]
-value = "{line} · {found}"
+value = "{line} • {found}"
 en = "{line} · {found}"
 
 [ZONE_NEW_TO_FIND]
@@ -532,7 +532,7 @@ en.one = "{count:0} fish in every colour"
 en.other = "{count:0} fish in every colour"
 
 [WRITE_UP_VARIETIES_COLOURS]
-value = "{varieties} · {colours}"
+value = "{varieties} • {colours}"
 en = "{varieties} · {colours}"
 
 [WRITE_UP_ZONES]
@@ -552,7 +552,7 @@ en.one = "{count:0} mastered"
 en.other = "{count:0} mastered"
 
 [WRITE_UP_ZONES_MASTERED]
-value = "{zones} · {mastered}"
+value = "{zones} • {mastered}"
 en = "{zones} · {mastered}"
 
 [WRITE_UP_TROPHY]
@@ -572,7 +572,7 @@ en.one = "{count:0} curio"
 en.other = "{count:0} curios"
 
 [WRITE_UP_WITH_PRESTIGE]
-value = "{line} · престиж {rank:0}"
+value = "{line} • престиж {rank:0}"
 en = "{line} · Prestige {rank:0}"
 
 [WRITE_UP_LEGENDS]
@@ -700,11 +700,11 @@ value = "Рыболов: персонажи и вехи"
 en = "The Angler: hands and milestones"
 
 [BRASS_PLATE]
-value = "Ур. {level:0} · Реестр {percent:0}%"
+value = "Ур. {level:0} • Реестр {percent:0}%"
 en = "Lv {level:0} · Ledger {percent:0}%"
 
 [BRASS_PLATE_TITLE]
-value = "Ур. {level:0} · {title} · Реестр {percent:0}%"
+value = "Ур. {level:0} • {title} • Реестр {percent:0}%"
 en = "Lv {level:0} · {title} · Ledger {percent:0}%"
 
 [DATE_SHORT]
@@ -802,7 +802,7 @@ value = "В любое время"
 en = "Any time"
 
 [HINT_SEPARATOR]
-value = " · "
+value = " • "
 en = " · "
 
 [HINT_WINDOW_SEPARATOR]
@@ -822,7 +822,7 @@ value = "любой навык"
 en = "any skill"
 
 [TILE_RANK]
-value = "{zoneRanks} · {completion:0}%"
+value = "{zoneRanks} • {completion:0}%"
 en = "{zoneRanks} · {completion:0}%"
 
 [TILE_NEW]
@@ -830,11 +830,11 @@ value = "Новых: {newToFind:0}!"
 en = "{newToFind:0} new!"
 
 [TILE_UNFISHED_SKILL]
-value = "ещё не ловили · навык ~{skill:0}"
+value = "ещё не ловили • навык ~{skill:0}"
 en = "unfished · skill ~{skill:0}"
 
 [TILE_UNFISHED_ANY_SKILL]
-value = "ещё не ловили · любой навык"
+value = "ещё не ловили • любой навык"
 en = "unfished · any skill"
 
 [TILE_UNCHARTED]
@@ -1086,10 +1086,10 @@ en.one = "{count:n} Catch"
 en.other = "{count:n} Catches"
 
 [ANGLER_CATCHES_NEXT]
-value.one = "{count:n} улов · следующая веха {milestone}"
-value.few = "{count:n} улова · следующая веха {milestone}"
-value.many = "{count:n} уловов · следующая веха {milestone}"
-value.other = "{count:n} улова · следующая веха {milestone}"
+value.one = "{count:n} улов • следующая веха {milestone}"
+value.few = "{count:n} улова • следующая веха {milestone}"
+value.many = "{count:n} уловов • следующая веха {milestone}"
+value.other = "{count:n} улова • следующая веха {milestone}"
 en.one = "{count:n} Catch · next milestone {milestone}"
 en.other = "{count:n} Catches · next milestone {milestone}"
 
@@ -1138,7 +1138,7 @@ value = "За всё время"
 en = "All told"
 
 [ZONE_LADDER_SEPARATOR]
-value = "·"
+value = "•"
 en = "·"
 
 [ZONE_NEXT]
@@ -1174,7 +1174,7 @@ value = "{done:0} / {total:0}"
 en = "{done:0} / {total:0}"
 
 [ZONE_GROUP_NOTE]
-value = "{note} · {zone_group_note_2}"
+value = "{note} • {zone_group_note_2}"
 en = "{note} · {zone_group_note_2}"
 
 [ZONE_POOLS_NOTE]
@@ -1202,7 +1202,7 @@ value = "{item} (улов из других мест)"
 en = "{item} (caught elsewhere)"
 
 [ZONE_MARGIN_SEPARATOR]
-value = " · "
+value = " • "
 en = " · "
 
 [ZONE_ABOUT]
@@ -1482,11 +1482,11 @@ en.one = "{count:n} Angler you follow. Follow and unfollow on the Pagle website.
 en.other = "{count:n} Anglers you follow. Follow and unfollow on the Pagle website."
 
 [FOLLOWING_ROW]
-value = "Ур. {level:0} · {emblem} · {ledger:0}%"
+value = "Ур. {level:0} • {emblem} • {ledger:0}%"
 en = "Lv {level:0} · {emblem} · {ledger:0}%"
 
 [FOLLOWING_ROW_NO_PRESTIGE]
-value = "Ур. {level:0} · {ledger:0}%"
+value = "Ур. {level:0} • {ledger:0}%"
 en = "Lv {level:0} · {ledger:0}%"
 
 [FOLLOWING_HARDCORE_STAMP]
@@ -1594,7 +1594,7 @@ value = "Навык рыбной ловли — единственное, что
 en = "Your Fishing skill is the one thing that tells your past honestly, so it counts from the start."
 
 [GUIDE_HEADING]
-value = "{name} · Рыбная ловля {rank:0}"
+value = "{name} • Рыбная ловля {rank:0}"
 en = "{name} · Fishing {rank:0}"
 
 [GUIDE_READ_NOW]
@@ -1774,7 +1774,7 @@ value = "Подпись: «{name}»"
 en = "Signed “{name}”"
 
 [COLLECTION_FRAMES_JOIN]
-value = " · "
+value = " • "
 en = " · "
 
 [COLLECTION_REACH]
@@ -1794,7 +1794,7 @@ value = "{collection_seal_1}\nиз {collection_seal_2}"
 en = "{collection_seal_1}\nof {collection_seal_2}"
 
 [COLLECTION_ADDED]
-value = "{words} · {dateAt}"
+value = "{words} • {dateAt}"
 en = "{words} · {dateAt}"
 
 [COLLECTION_ADDED_BOUGHT]
@@ -1960,7 +1960,7 @@ value = "Подпись"
 en = "Signed as"
 
 [COLLECTION_STAGE_LINE]
-value = "{character} · уровень рыболова {shownLevel:0}"
+value = "{character} • уровень рыболова {shownLevel:0}"
 en = "{character} · Angler Level {shownLevel:0}"
 
 [COLLECTION_BEFORE]
@@ -1968,7 +1968,7 @@ value = "Облик до получения"
 en = "A look before you have it"
 
 [COLLECTION_KICKER]
-value = "{slotName} · {source}"
+value = "{slotName} • {source}"
 en = "{slotName} · {source}"
 
 [COLLECTION_SOURCE_DEFAULT]

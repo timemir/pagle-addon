@@ -73,7 +73,7 @@ function ns.Hunts.OnInitialize()
 			ns.Module:SetSummaryLine("hunts", text)
 		end,
 		FormatNumber = function(n)
-			return BreakUpLargeNumbers(n)
+			return Pagle.Text("{n:n}", { n = n }) -- the Language's separators (CORE-R8)
 		end,
 		ServerTime = GetServerTime,
 	})

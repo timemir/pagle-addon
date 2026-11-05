@@ -14,7 +14,7 @@ ns.Locale("ruRU", function(L)
 	L.BOARD = "Доска снастей"
 	L.BOARD_IS_UP = "Доска уже висит"
 	L.BOARD_SLASH_HELP = "Открыть или закрыть Доску снастей"
-	L.CAMPFIRE_BURNED = "{campfire} · сгорело хвороста: {k}"
+	L.CAMPFIRE_BURNED = "{campfire} • сгорело хвороста: {k}"
 	L.CAMPFIRE_DAYS = { few = "Костёр: {count} дня", many = "Костёр: {count} дней", one = "Костёр: {count} день", other = "Костёр: {count} дня" }
 	L.CAMPFIRE_LONGEST = "рекорд {n}"
 	L.CAMPFIRE_MILESTONE = "Костёр: {n} дней"
@@ -24,7 +24,7 @@ ns.Locale("ruRU", function(L)
 	L.CAMPFIRE_WENT_OUT = "Ваш костёр погас; ваш рекорд, {longest}, сохранён"
 	L.CARD_DATE = "{weekday} {day} {month}"
 	L.CARD_DAYS = { before = "до доски", burned = "сгорел хворост", lit = "горел", out = "погас", today = "сегодня", unlit = "не горел" }
-	L.CARD_FIRE = "{fire} · {longest} · {kindling}"
+	L.CARD_FIRE = "{fire} • {longest} • {kindling}"
 	L.CARD_LABELS = { campfire = "{n} дней", flybox = "Коробка мушек", tally = "{n} целей" }
 	L.CARD_MILESTONES = "Вехи"
 	L.CARD_MILESTONES_NOTE = "награда один раз"
@@ -56,6 +56,7 @@ ns.Locale("ruRU", function(L)
 	L.EXPEDITIONS = { few = "{count} экспедиции", many = "{count} экспедиций", one = "{count} экспедиция", other = "{count} экспедиции" }
 	L.EXPEDITION_COMPLETE = "Экспедиция выполнена"
 	L.EXPEDITION_DONE = "Экспедиция готова"
+	L.EXPEDITION_SEPARATOR = "   •   "
 	L.FIRE_OUT = "Ваш костёр погас. Ваш рекорд, {longest}, сохранён навсегда. Любая цель разожжёт новый, и хвороста снова будет 2."
 	L.FIRE_OUT_AWAY = "Пока вас не было, ваш костёр погас. Ваш рекорд, {longest}, сохранён навсегда. Любая цель разожжёт новый, и хвороста снова будет 2."
 	L.FLIES_TIED = { few = "{count} мушки связаны для Коробки мушек", many = "{count} мушек связано для Коробки мушек", one = "{count} мушка связана для Коробки мушек", other = "{count} мушки связано для Коробки мушек" }
@@ -163,10 +164,10 @@ ns.Locale("ruRU", function(L)
 	L.SPIKE_EMPTY = "Выполненные цели накалывают сюда."
 	L.SPIKE_FLY = "Новая мушка в Коробку мушек: {fly}"
 	L.SPIKE_HEAD = "Выполнено сегодня"
-	L.SPIKE_NOTE = "+{coins} · {fly}"
+	L.SPIKE_NOTE = "+{coins} • {fly}"
 	L.SPIKE_NOTE_PLAIN = "+{coins}"
 	L.START_MY_BOARD = "Повесить доску"
-	L.SUMMARY_LINE = "Доска снастей: {done} · {campfire}"
+	L.SUMMARY_LINE = "Доска снастей: {done} • {campfire}"
 	L.SUMMARY_LINE_NOTHING_DONE = "Доска снастей: {campfire}"
 	L.TAKE_DOWN_NO = "Оставить"
 	L.TAKE_DOWN_PROGRESS = "{n}/{need}"
@@ -181,7 +182,7 @@ ns.Locale("ruRU", function(L)
 	L.TAKE_DOWN_YES = "Снять"
 	L.TAKE_IT_DOWN = "снять"
 	L.TALLY_NO_TITLE = "звания пока нет"
-	L.TALLY_PLATE = "{notices} · {expeditions}"
+	L.TALLY_PLATE = "{notices} • {expeditions}"
 	L.TALLY_TITLE = "Выполнено целей: {n}"
 	L.TIED_FOR_FLY_BOX = "{goal}. Новая мушка в Коробку мушек: {fly}"
 	L.TITLE = "Доска снастей"
@@ -190,15 +191,15 @@ ns.Locale("ruRU", function(L)
 	L.TRACKER_COMPLETE = "Выполнено"
 	L.TRACKER_COUNT = "{count}/{need}"
 	L.TRACKER_EXPEDITION = "Экспедиция: {text}"
-	L.TRACKER_FIRE_OPEN = "{fire} · {open}"
+	L.TRACKER_FIRE_OPEN = "{fire} • {open}"
 	L.TRACKER_MORE = "+{n} на доске (в других местах)"
 	L.TRACKER_OPEN = "открыто: {count}"
 	L.UPDATING = "Обновляется…"
 	L.UPDATING_NOTE = "Перебираются все забросы с тех пор, как повесили доску. Снять цели можно будет после этого."
 	L.WEEKDAYS = { "Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб" }
 	L.WHEREVER_IT_BITES = "где клюёт"
-	L.WHERE_HERE = "{where} · здесь"
-	L.WHERE_TODAY = "сегодня · {where}"
+	L.WHERE_HERE = "{where} • здесь"
+	L.WHERE_TODAY = "сегодня • {where}"
 	L.WRITE_UP_FIRST = { few = "Ваша Доска снастей учла {count:n} заброса", many = "Ваша Доска снастей учла {count:n} забросов", one = "Ваша Доска снастей учла {count:n} заброс", other = "Ваша Доска снастей учла {count:n} заброса" }
 	L.WRITE_UP_WHILE_OFF = "Пока Доска снастей была выключена"
 	L.XP_LINE = "Опыт рыболова +{xp}"

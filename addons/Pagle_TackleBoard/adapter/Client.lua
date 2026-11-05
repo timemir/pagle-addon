@@ -58,9 +58,9 @@ ns.api = {
 		end
 		C_Item.RequestLoadItemDataByID(itemID)
 	end,
-	-- The client's number format, read at each call (TKB-R84: "written up from 2,340 Casts").
+	-- The Language's number format, read at each call (TKB-R84: "written up from 2,340 Casts"; CORE-R8).
 	FormatNumber = function(n)
-		return BreakUpLargeNumbers(n)
+		return Pagle.Text("{n:n}", { n = n })
 	end,
 	-- Core, through its API only (ADR 0001).
 	pagle = Pagle,

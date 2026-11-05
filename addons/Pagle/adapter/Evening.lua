@@ -249,6 +249,9 @@ local function sound(name)
 	end
 end
 
-ns.WireEvening(ns.host, { frame = frame, draw = draw, hide = hide, fold = fold, sound = sound })
--- ONB-R84: `core.onboarding.evening`, after Core's other stops of this file's time.
-ns.AddEveningTourStop()
+-- After the Field guide's wiring, which waits for the Language (CORE-R8, adapter/Guide.lua): the list hangs on ns.guide.
+ns.AfterLanguage(function()
+	ns.WireEvening(ns.host, { frame = frame, draw = draw, hide = hide, fold = fold, sound = sound })
+	-- ONB-R84: `core.onboarding.evening`, after Core's other stops of this file's time.
+	ns.AddEveningTourStop()
+end)

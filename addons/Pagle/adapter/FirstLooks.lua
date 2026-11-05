@@ -283,14 +283,17 @@ local function renumber(set, entries)
 	end
 end
 
-ns.WireFirstLooks(ns.host, {
-	show = show,
-	renumber = renumber,
-	hide = hide,
-	isShown = function(region)
-		return region:IsVisible() == true and region:GetLeft() ~= nil
-	end,
-})
+-- Once the Language is applied (CORE-R8): the Curio Shop's set takes its title and notes from ns.L as it is made.
+ns.AfterLanguage(function()
+	ns.WireFirstLooks(ns.host, {
+		show = show,
+		renumber = renumber,
+		hide = hide,
+		isShown = function(region)
+			return region:IsVisible() == true and region:GetLeft() ~= nil
+		end,
+	})
 
-ns.RegisterCoreFirstLook(ns.ShopFirstLook())
-ns.AddFirstLookTourStops()
+	ns.RegisterCoreFirstLook(ns.ShopFirstLook())
+	ns.AddFirstLookTourStops()
+end)

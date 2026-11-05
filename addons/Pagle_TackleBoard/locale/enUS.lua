@@ -57,6 +57,7 @@ ns.L = {
 	EXPEDITIONS = { one = "{count} Expedition", other = "{count} Expeditions" },
 	EXPEDITION_COMPLETE = "Expedition complete",
 	EXPEDITION_DONE = "Expedition done",
+	EXPEDITION_SEPARATOR = "   ·   ",
 	FIRE_OUT = "Your Campfire went out. Your longest, {longest}, is kept for good. Any goal lights a new one, with 2 fresh Kindling.",
 	FIRE_OUT_AWAY = "Your Campfire went out while you were away. Your longest, {longest}, is kept for good. Any goal lights a new one, with 2 fresh Kindling.",
 	FLIES_TIED = { one = "{count} fly tied for your Fly Box", other = "{count} flies tied for your Fly Box" },

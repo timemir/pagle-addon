@@ -112,7 +112,7 @@ function ns.RegisterBindings(module)
 		saved = function(good)
 			return ns.EarnedCount(good, { celebrated = ns.SavedCelebrated(), world = ns.world })
 		end,
-		formatNumber = BreakUpLargeNumbers,
+		formatNumber = ns.FormatCount,
 	})
 	for _, good in ipairs(countedGoods) do
 		module:RegisterGood(good)

@@ -116,7 +116,7 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
   - **known**: "about 1 in {nice(n / k)}", with the 95% Wilson range (STA-R45)
 
   Short forms, used in rows, tiles, the tracker and the item page: "learning {n}/100", "not seen yet", "1 in {nice(n / k)}". The long forms are on the entry (UI, place spread).
-- **STA-R44** Rounding. All rounding is half up (`floor(x + 0.5)`). `nice(x)` rounds for display: below 1.5 gives "1"; below 20, the nearest whole number; otherwise two significant figures, with thousands separators (`BreakUpLargeNumbers`). So 39.6 → "40", 212 → "210", 1,447 → "1,400".
+- **STA-R44** Rounding. All rounding is half up (`floor(x + 0.5)`). `nice(x)` rounds for display: below 1.5 gives "1"; below 20, the nearest whole number; otherwise two significant figures, with the Language's thousands separators (Core's text helper, CORE-R8; not the client's `BreakUpLargeNumbers`). So 39.6 → "40", 212 → "210", 1,447 → "1,400".
 - **STA-R45** The range is Wilson's score interval at z = 1.96 for `k` of `n`: with `p = k/n`, `d = 1 + z²/n`, `c = p + z²/(2n)`, `r = z·√(p(1−p)/n + z²/(4n²))`, the bounds are `lo = (c − r)/d` and `hi = (c + r)/d`. It reads "Likely between 1 in {nice(1/hi)} and 1 in {nice(1/lo)} (95%)." When both round to the same text, it reads "Within rounding of 1 in {nice(n/k)} (95%)."
 - **STA-R46** Labelling. The item's entry and the tracker's hover carry the heading **Your odds**; the short forms in rows, tiles and lines sit under their page's own headings. Every number says what it rests on, in this **scope line**:
 
@@ -157,7 +157,7 @@ Terms are used as `CONTEXT.md` defines them. Core rules are cited by ID (`LOG-R6
 - **STA-R59** Voice and formats:
   - Handwriting is first person ("212 Casts since my last one"); printed headings use the glossary terms **Your odds**, **Dry spell** and **Session**. The book has no name of its own: its breadcrumb root is "Stats".
   - Times and dates show in the player's local clock, like the game's own timestamps: a time as `date`'s hour and minute in Core's clock format (`Pagle.FormatClock`, CORE-R87: "09:07", or "9:07 AM" in 12-hour), a date as "{day} {month} {year}" ("5 Oct 2026"), a Session's heading as "{weekday} {day} {month}" ("Monday 5 October"), where `{day}` is the day of the month without a leading zero. From 1.1 the client's `date` gives only the numbers (`%d`, `%m`, `%w`, `%Y`, `%H`, `%M`); the month's and the weekday's names are Pagle's own, `ns.L.MONTHS_SHORT`, `ns.L.MONTHS` and `ns.L.WEEKDAYS` read by the month's number and by the weekday's number (1 = Sunday), because the client's `%b`, `%B` and `%A` name them in the C library's language, not Pagle's (#520). The templates `DATE` and `SESSION_HEADING` are the translator's to reorder. Windows show in realm time, in the same clock format ("18:00" or "6:00 PM"). The book and the tracker redraw when the format changes (`ClockFormatChanged`).
-  - Counts use `BreakUpLargeNumbers`. Every "{n} Casts", "{n} Catches", "{n} Sessions", "{n} waters" and "{n} anglers … wait" uses the singular when n is 1.
+  - Counts use the Language's thousands separators (Core's text helper, CORE-R8). Every "{n} Casts", "{n} Catches", "{n} Sessions", "{n} waters" and "{n} anglers … wait" uses the singular when n is 1.
   - A character shows as its name and surname, as Core stores them ("Ada Brook"). An item shows its `C_Item` name and icon; until they load, "Item {id}" with a question-mark icon. An area shows its `C_Map.GetAreaInfo` name, or "Area {id}" if it has none.
   - Item qualities use the game's own names and colours (`ITEM_QUALITY<n>_DESC`, `ITEM_QUALITY_COLORS`). On the book's paper a colour too pale to read on it (Common's white) is drawn in the paper's ink, by one rule wherever a quality is coloured: a place's rows and a Session's *By quality*.
   - A duration under a minute reads "under 1m", under an hour "21m", otherwise "1h 05m" (hours unbounded).
@@ -290,7 +290,7 @@ Sides in keys are `hi`, `lo` and `na` (STA-R13). Odds, ranges, the Cast threshol
 | `Pagle.RegisterCallback(owner, event, fn)` | every event above (CORE-R20) |
 | WoW: `C_Item.GetItemNameByID`, `C_Item.GetItemIconByID`, `C_Item.GetItemQualityByID`, `C_Item.RequestLoadItemDataByID`, event `ITEM_DATA_LOAD_RESULT` (through `Pagle.RegisterEvent`, CORE-R23); `C_Map.GetAreaInfo`; `UIErrorsFrame` | names, icons, quality, search, STA-R61, STA-R73 |
 | WoW: `ITEM_QUALITY<n>_DESC`, `ITEM_QUALITY_COLORS` | STA-R59 |
-| WoW: `BreakUpLargeNumbers`, `date`, `GetServerTime` | STA-R44, STA-R59 (numbers, dates and times) |
+| WoW: `date`, `GetServerTime`; Core: `Pagle.Text` (the separators) | STA-R44, STA-R59 (numbers, dates and times) |
 | WoW: `CreateFrame`, `CreateFont`, `GameTooltip`, `UISpecialFrames`, `C_Timer.After`, `Settings.CreateElementInitializer` | the book (STA-R70, STA-R73), the tracker's hover, the Watched Dry spells row ([Settings](#settings)) |
 
 ### Exposed

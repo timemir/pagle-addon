@@ -97,7 +97,7 @@ local function pageNow()
 		celebrated = { skill = celebrated.skill or {} },
 		angler = Pagle.GetAngler(),
 		text = ns.journalText,
-		formatNumber = BreakUpLargeNumbers,
+		formatNumber = ns.FormatCount,
 	})
 end
 

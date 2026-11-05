@@ -22,7 +22,7 @@ local OWNER = "Pagle compartment"
 ---@param root table the menu's root description
 local function generate(_, root)
 	local entries =
-		ns.CoreCompartmentMenu(Pagle, ns.coreSubcommands, ns.Modules:Modules(), BreakUpLargeNumbers, securecallfunction)
+		ns.CoreCompartmentMenu(Pagle, ns.coreSubcommands, ns.Modules:Modules(), ns.FormatCount, securecallfunction)
 	for _, entry in ipairs(entries) do
 		root:CreateButton(entry.label, function()
 			securecallfunction(entry.onClick)

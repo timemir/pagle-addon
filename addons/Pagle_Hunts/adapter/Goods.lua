@@ -503,6 +503,8 @@ local function drawMark(line, x, dial, group, paper)
 	line.dot:SetPoint("TOPLEFT", x, -8)
 end
 
+-- The least of a tracker line, right of its mark, that its label keeps when the name needs the rest (drawLines).
+local LABEL_SHARE = 0.3
 -- Draws each of `entries` (a Hunt's or a run's two lines) on `lines` from `y` down, after a run's time dial or a dot
 -- of its group (`entry.dot`, else `dot`), its label red when `entry.urgent`; hides the lines past them; returns the y
 -- under the last.
@@ -530,11 +532,21 @@ local function drawLines(lines, entries, look, y, dot)
 			line.label:SetText(entry.label)
 			line.label:ClearAllPoints()
 			line.label:SetPoint("TOPRIGHT", line, "TOPLEFT", right, -4)
+			-- The name first: it tells the lines apart. The label (a countdown, a group's word) takes what the name
+			-- leaves, and never less than its share of the line, cut short with an ellipsis past it; both whole when
+			-- they fit. A Language's words run longer than English's (CORE-R8).
+			local room = right - x - 14 - 6
 			setFont(line.first, look.name)
 			line.first:SetText(entry.name)
+			line.first:SetWidth(0) -- measured unbounded
+			local nameWidth = line.first:GetStringWidth() + 1
+			line.label:SetWidth(0)
+			local labelWidth = line.label:GetStringWidth() + 1
+			labelWidth = math.min(labelWidth, math.max(room * LABEL_SHARE, room - nameWidth))
+			line.label:SetWidth(math.max(1, labelWidth))
 			line.first:ClearAllPoints()
 			line.first:SetPoint("TOPLEFT", x + 14, -3)
-			line.first:SetWidth(math.max(1, right - x - 14 - line.label:GetStringWidth() - 6))
+			line.first:SetWidth(math.max(1, math.min(nameWidth, room - labelWidth)))
 			setFont(line.second, look.sub)
 			line.second:SetText(entry.second or "")
 			line.second:SetShown(entry.second ~= nil)

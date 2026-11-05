@@ -273,13 +273,21 @@ describe("the Stats book's art (STA-R70, stats.md › UI)", function()
 
 		-- at the row's right edge, past the odds' column; the name ends 8 before them (6 px a character in the fake)
 		assert.are.same({ "TOPRIGHT", -12, -3 }, row.odds.points[1])
-		local oddsLeft = 416 - 12 - #"learning 27/100" * 6
+		local oddsLeft = 416 - 12 - (#"learning 27/100" * 6 + 1)
 		assert.are.equal(oddsLeft - 8 - 32, row.name.width)
 		assert.is_true(row.name.width < #name * 6) -- cut short, the client's ellipsis at its end
 
 		data.watched = true -- the star takes its room from the name
 		row:SetRow(data)
 		assert.are.equal(oddsLeft - 8 - 32 - 12 - 5, row.name.width)
+
+		-- a reading longer than half the room is cut short there, and the name keeps the other half (CORE-R8)
+		data.watched = false
+		data.odds = "[ľéàŕñíñĝ 27/100 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~]"
+		row:SetRow(data)
+		local room = 416 - 12 - 8 - 32
+		assert.are.equal(room * 0.5, row.odds.width)
+		assert.are.equal(room - room * 0.5, row.name.width)
 
 		data.odds, data.oddsState, data.watched = "1 in 30", "known", false
 		row:SetRow(data) -- a known reading keeps its column, and a short name its own width
