@@ -23,7 +23,9 @@ ns.Locale("esES", function(L)
 	L.CAMPFIRE_OUT = "Apagada"
 	L.CAMPFIRE_UNLIT = "Aún sin encender"
 	L.CAMPFIRE_WENT_OUT = "Tu Hoguera se apagó; tu récord, {longest}, se conserva"
+	L.CARD_DATE = "{weekday} {day} {month}"
 	L.CARD_DAYS = { before = "antes del tablón", burned = "Leña quemada", lit = "encendida", out = "se apagó", today = "hoy", unlit = "sin encender" }
+	L.CARD_FIRE = "{fire} · {longest} · {kindling}"
 	L.CARD_LABELS = { campfire = "{n} días", flybox = "Caja de moscas", tally = "{n} objetivos" }
 	L.CARD_MILESTONES = "Hitos"
 	L.CARD_MILESTONES_NOTE = "cada uno paga una vez"
@@ -31,12 +33,14 @@ ns.Locale("esES", function(L)
 	L.CARD_MORE_FLYBOX = { many = "{count} patrones más", one = "{count} patrón más", other = "{count} patrones más" }
 	L.CARD_MORE_TALLY = { many = "{count} objetivos más", one = "{count} objetivo más", other = "{count} objetivos más" }
 	L.CARD_NEEDS = { campfire = "una Hoguera de {n} días", flybox = "la Caja de moscas completa", tally = "{n} objetivos hechos" }
+	L.CARD_SHORT_DATE = "{day} {month}"
 	L.CARD_TITLE = "La Hoguera"
 	L.CARD_TITLES = "Títulos"
 	L.CARD_TITLES_NOTE = "solo se ven en el tablón"
 	L.CARD_WEEKS = "Las últimas cuatro semanas"
 	L.CARD_WEEKS_NOTE = "días del tablón, hora del reino"
 	L.CATCHES = { many = "{n} Capturas", one = "{n} Captura", other = "{n} Capturas" }
+	L.CLOSE_MARK = "×"
 	L.COINS = { many = "{count} Monedas", one = "{count} Moneda", other = "{count} Monedas" }
 	L.COINS_LINE = "Monedas Pagle +{coins}"
 	L.CONTINENT_NAMES = { [0] = "Reinos del Este", [1] = "Kalimdor" }
@@ -65,6 +69,30 @@ ns.Locale("esES", function(L)
 	L.FLY_UNTIED = "aún sin montar"
 	L.GOALS_AND = "{notices} y {expeditions}"
 	L.GOALS_DONE = "Cumplidos: {goals}"
+	L.GOAL_TEXT = {
+		e = {
+			collector = { many = "{count} objetos de Subcolección que no tienes", one = "Un objeto de Subcolección que no tienes", other = "{count} objetos de Subcolección que no tienes" },
+			haul = { many = "{count} Capturas en {zone}", one = "{count} Captura en {zone}", other = "{count} Capturas en {zone}" },
+			rarity = {
+				[2] = { many = "{count} Capturas de variedad poco común o mejor", one = "Una Captura de variedad poco común o mejor", other = "{count} Capturas de variedad poco común o mejor" },
+				[3] = { many = "{count} Capturas de variedad rara o mejor", one = "Una Captura de variedad rara o mejor", other = "{count} Capturas de variedad rara o mejor" },
+			},
+			variety = "Todas las Especies de {zone}",
+			wanderer = { many = "Capturas en {count} zonas de {continent}", one = "Capturas en {count} zona de {continent}", other = "Capturas en {count} zonas de {continent}" },
+		},
+		n = {
+			collector = "Un objeto de basura y un contenedor hoy",
+			haul = { many = "{count} Capturas en {zone}", one = "{count} Captura en {zone}", other = "{count} Capturas en {zone}" },
+			lure = { many = "{count} Capturas con señuelo", one = "Una Captura con señuelo", other = "{count} Capturas con señuelo" },
+			rarity = {
+				[2] = { many = "{count} Capturas de variedad poco común o mejor", one = "Una Captura de variedad poco común o mejor", other = "{count} Capturas de variedad poco común o mejor" },
+				[3] = { many = "{count} Capturas de variedad rara o mejor", one = "Una Captura de variedad rara o mejor", other = "{count} Capturas de variedad rara o mejor" },
+			},
+			species = "{count} {species}",
+			variety = { many = "{count} Especies distintas en {zone}", one = "{count} Especie en {zone}", other = "{count} Especies distintas en {zone}" },
+			wanderer = { many = "Capturas en {count} zonas hoy", one = "Capturas en {count} zona hoy", other = "Capturas en {count} zonas hoy" },
+		},
+	}
 	L.GOOD_EARNED_CAMPFIRE = "Hoguera: {days} días"
 	L.GUIDE_ASK_KICKER = "Solo si quieres uno"
 	L.GUIDE_ASK_TITLE = "¿Te cuelgo un tablón?"
@@ -88,6 +116,7 @@ ns.Locale("esES", function(L)
 	L.KINDLING_BURNED = "Pasó un día sin objetivos: se gastó {k} de Leña. La Hoguera sigue en {count}."
 	L.KINDS = { collector = "Coleccionista", haul = "Botín", lure = "Señuelo", rarity = "Rareza", species = "Especie", variety = "Variedad", wanderer = "Viajero" }
 	L.LOOK_AGAIN = "Mostrar otra vez las notas de esta página"
+	L.LOOK_AGAIN_MARK = "?"
 	L.LOOK_NOTES = {
 		{ term = "Expediciones", text = "Las {term} son las grandes, semanales. También esperan, hasta dos." },
 		{ term = "nunca caduca", text = "Un Aviso {term}. ¿No te convence? Retíralo, una vez al día, por otro." },
@@ -98,6 +127,7 @@ ns.Locale("esES", function(L)
 	L.LOOK_TITLE = "el Tablón de aparejos"
 	L.MINUTES_LEFT = "{n} min"
 	L.MONTHS = { "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic" }
+	L.NAME_UNKNOWN = "…"
 	L.NOTICES = { many = "{count} Avisos", one = "{count} Aviso", other = "{count} Avisos" }
 	L.NOTICE_COMPLETE = "Aviso completado"
 	L.NOTICE_DONE = "Aviso cumplido"
@@ -105,10 +135,12 @@ ns.Locale("esES", function(L)
 	L.ONLY_SINCE = "Solo cuentan mis Capturas desde entonces"
 	L.ONLY_SINCE_TODAY = "Solo cuentan mis Capturas desde entonces, todas en un mismo día del tablón"
 	L.OPEN_BOARD = "Abrir Tablón de aparejos"
+	L.OVERFLOW_CHIP = "{kind}: {text}"
 	L.OVERFLOW_MORE = "+{n} más esperando un hueco"
 	L.PAYS = { many = "paga {count} Monedas", one = "paga {count} Moneda", other = "paga {count} Monedas" }
 	L.PAYS_WORD = "paga"
 	L.POSTED = "Colgado el {weekday} {day} {month}, {time}"
+	L.POST_TEXT = "Esto gasta {cost} y no se puede deshacer. El nuevo objetivo se puede retirar una vez al día, como cualquier otro."
 	L.POST_TIP = { e = "Haz clic para clavar aquí una Expedición nueva en vez de esperar al reinicio semanal.", n = "Haz clic para clavar aquí un Aviso nuevo en vez de esperar al próximo reinicio." }
 	L.POST_TIP_COST = "Gasta 1 Renovación. Tienes {held}."
 	L.POST_TIP_TITLE = { e = "Colgar una Expedición ahora", n = "Colgar un Aviso ahora" }
@@ -118,6 +150,7 @@ ns.Locale("esES", function(L)
 	L.PROGRESS_TODAY = "{n} de {need} hoy"
 	L.REFRESHES = { many = "{count} Renovaciones", one = "{count} Renovación", other = "{count} Renovaciones" }
 	L.REFRESHES_HELD = { many = "{count} Renovaciones disponibles", one = "{count} Renovación disponible", other = "{count} Renovaciones disponibles" }
+	L.REFRESH_TIP = "Cada una cuelga un Aviso o una Expedición nuevos en un hueco libre del tablón. Haz clic en un hueco libre para usarla."
 	L.REFRESH_TIP_SOURCE = "Se ganan con las Apuestas Pagle."
 	L.REFRESH_TIP_TITLE = "Renovaciones"
 	L.REPOSTED = "REEMPLAZO"
@@ -131,12 +164,17 @@ ns.Locale("esES", function(L)
 	L.SPIKE_EMPTY = "Los hechos van al pincho."
 	L.SPIKE_FLY = "Montada para tu Caja de moscas: {fly}"
 	L.SPIKE_HEAD = "Hechos hoy"
+	L.SPIKE_NOTE = "+{coins} · {fly}"
+	L.SPIKE_NOTE_PLAIN = "+{coins}"
 	L.START_MY_BOARD = "Empezar mi tablón"
 	L.SUMMARY_LINE = "Tablón de aparejos: {done} · {campfire}"
 	L.SUMMARY_LINE_NOTHING_DONE = "Tablón de aparejos: {campfire}"
 	L.TAKE_DOWN_NO = "Mantener"
+	L.TAKE_DOWN_PROGRESS = "{n}/{need}"
 	L.TAKE_DOWN_TEXT = "Se pierde su progreso ({progress}) y el nuevo objetivo no se podrá retirar otra vez hoy."
 	L.TAKE_DOWN_TIP = { e = "Clava en su lugar una Expedición nueva de otro tipo. Se pierde el progreso de esta.", n = "Clava en su lugar un Aviso nuevo de otro tipo. Se pierde el progreso de este." }
+	L.TAKE_DOWN_TIP_ONCE = "El nuevo objetivo no se podrá retirar hasta el reinicio diario (en {time}), salvo que deje de poder pescarse."
+	L.TAKE_DOWN_TIP_STRANDED = "Este objetivo ya no se puede pescar, así que puede retirarse aunque sea un reemplazo de hoy."
 	L.TAKE_DOWN_TIP_STRANDED_FIRST = "Este objetivo ya no se puede pescar: nunca podrá cumplirse donde está colgado."
 	L.TAKE_DOWN_TIP_TITLE = "Retirar"
 	L.TAKE_DOWN_TIP_UPDATING = "No mientras el tablón se actualiza. Podrá retirarse cuando termine."
@@ -144,13 +182,16 @@ ns.Locale("esES", function(L)
 	L.TAKE_DOWN_YES = "Retirar"
 	L.TAKE_IT_DOWN = "retirar"
 	L.TALLY_NO_TITLE = "aún sin título"
+	L.TALLY_PLATE = "{notices} · {expeditions}"
 	L.TALLY_TITLE = "{n} objetivos hechos"
 	L.TIED_FOR_FLY_BOX = "{goal}. Montada para tu Caja de moscas: {fly}"
 	L.TITLE = "Tablón de aparejos"
 	L.TITLE_LINE = "Título: {title}"
 	L.TRACKER_ALL_DONE = "Todo hecho. Avisos nuevos en el reinicio."
 	L.TRACKER_COMPLETE = "Hecho"
+	L.TRACKER_COUNT = "{count}/{need}"
 	L.TRACKER_EXPEDITION = "Expedición: {text}"
+	L.TRACKER_FIRE_OPEN = "{fire} · {open}"
 	L.TRACKER_MORE = "+{n} más en el tablón (en otro sitio)"
 	L.TRACKER_OPEN = "{count} por hacer"
 	L.UPDATING = "Actualizando…"

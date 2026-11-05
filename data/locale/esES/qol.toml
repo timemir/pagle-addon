@@ -380,3 +380,106 @@ en = "or use a set you made"
 [GUIDE_NUDGE_KICKER]
 value = "Si te vas aún vestido para pescar"
 en = "If you walk off still dressed for it"
+
+# Recovered for 1.1 (#528): fmartingr's translations from PR #510 that scripts/convert-text.py did not carry over
+# (a value on the line after `L.KEY =`, or a counted string), with `%s`/`%d` renamed to today's {fields}.
+# Each one's `-- EN:` in #510 is today's English. A note above an entry names a part that is machine-drafted.
+
+[SETTINGS_FISHING_KEY_TOOLTIP]
+value = "Cada pulsación hace lo siguiente que toca: lanzar, recoger, o un señuelo, equipo o almeja cuando haga falta."
+en = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed."
+
+[SETTINGS_AUDIO_MIX_TOOLTIP]
+value = "Mientras pescas: efectos al máximo; música, ambiente y diálogos en silencio; volumen general intacto. Todo vuelve a su sitio al acabar."
+en = "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards."
+
+[CONFLICT_TURNED_OFF_QOL]
+value = "Pagle: Pagle QoL desactivado. Escribe /reload para terminar. Pagle sigue registrando tus Capturas."
+en = "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches."
+
+[SETTINGS_FISHING_SET_TOOLTIP]
+value = "La Tecla de pesca te lo pone si no llevas caña en la mano. El doble clic se lo salta."
+en = "The Fishing key puts it on when no pole is in hand. Double-click skips this."
+
+[SETTINGS_SWAP_GEAR_TOOLTIP]
+value = "Alterna entre tu conjunto de pesca y lo que llevabas antes (guardado como Pagle Previous)."
+en = "Swaps between your fishing set and what you wore before (saved as Pagle Previous)."
+
+[GUIDE_CASTING_BODY]
+value = "Pulsa la Tecla de pesca y Pagle hace lo siguiente que toca, y luego espera a tu próxima pulsación. Nunca hace dos cosas a la vez, y nunca hace nada por su cuenta."
+en = "Press the Fishing key and Pagle does the one next thing, then waits for your next press. It never does two things at once, and it never does anything on its own."
+
+[GUIDE_CASTING_SMALL]
+value = "Los pasos que no hacen falta se saltan: sin ropa de pescar guardada, no hay paso de equipo; con un señuelo ya puesto, no hay paso de señuelo. Un botoncito junto al agua muestra qué hará tu próxima pulsación."
+en = "Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do."
+
+[GUIDE_RESTING]
+value = "La Tecla de pesca de Pagle descansa mientras la tenga {titles}. Puedes seguir lanzando con doble clic derecho."
+en = "Pagle’s Fishing key is resting while {titles} has it. You can still cast with a double right-click."
+
+[GUIDE_CLOTHES_BODY]
+value = "Si tienes un atuendo de pesca, Pagle puede ponértelo: la primera pulsación de la Tecla de pesca junto al agua te cambia la ropa, y lo que llevabas se guarda, listo para volver a ponértelo."
+en = "If you keep a fishing outfit, Pagle can put it on for you: the Fishing key’s first press at the water changes your clothes, and what you were wearing is kept, ready to put back."
+
+[GUIDE_CLOTHES_SMALL]
+value = "Los dos son conjuntos de equipo normales, así que también los verás en tu hoja de personaje. Si te alejas con la caña aún en la mano, una notita te recuerda cómo volver a cambiarte. Pagle nunca te cambia la ropa sin una pulsación."
+en = "Both are ordinary equipment sets, so you’ll see them in your character sheet too. When you walk away with your pole still in hand, a small note reminds you how to change back. Pagle never changes your clothes without a press."
+
+[GUIDE_SAVE_SMALL]
+value = "Ponte ahora el sombrero, los guantes y la caña, y pulsa el botón. Puedes hacerlo luego desde Ajustes » Pesca."
+en = "Wear your fishing hat, gloves and pole now, then press the button. You can do this later from Settings » Fishing."
+
+[GUIDE_SAVE_SLOTS]
+value = "Hacen falta dos huecos libres de conjunto de equipo: uno para tu ropa de pescar y otro para Pagle Previous."
+en = "Needs two free equipment set slots: one for your fishing clothes and one for Pagle Previous."
+
+[NOTE_LURE]
+value = "Tu caña no tiene señuelo. Tu próxima pulsación le pone el mejor de tus bolsas. |cff9a2a1aSolo eso|r; luego lanzas."
+en = "Your pole has no lure on. Your next press puts the best one in your bags on. |cff9a2a1aOnly that|r; then you cast."
+
+# Machine-drafted for 1.1, not yet reviewed by a native speaker: the interface keys esES had no text for.
+# A native Spanish speaker should check them before esES is listed (docs/translations.md).
+
+[SETTINGS_LURES_THIS]
+value = "Solo este"
+en = "Only this one"
+
+[CONFLICT_USE_THAT_ADDON]
+value = "Usar {title}"
+en = "Use {title}"
+
+[CONFLICT_USE_THOSE_ADDONS]
+value = "Usar los otros"
+en = "Use the others"
+
+[TOUR_SETTINGS]
+value = "las filas de Comodidades en la página de Pesca"
+en = "QoL's rows on the Fishing page"
+
+[TOUR_NUDGE]
+value = "un recordatorio de muestra para volver a cambiarte"
+en = "a sample swap-back Nudge"
+
+[TOUR_NOTES]
+value = "muestras de la nota de conflicto y de la nota de Recargar ahora"
+en = "samples of the conflict note and the Reload now note"
+
+# Machine-drafted for 1.1, with nothing to translate: fields, separators, marks, textures, numerals, names and
+# codes that read the same in Spanish (or stay English, as FISH_CREST_DROP_PREFIX and RECOVERY_REASONS do), so
+# that esES covers every key. A native speaker may still word any of them.
+
+[BINDING_HEADER]
+value = "Pagle"
+en = "Pagle"
+
+[SLASH_USAGE]
+value = "Pagle: /pagle qol input key|click|both"
+en = "Pagle: /pagle qol input key|click|both"
+
+[TITLES_JOIN]
+value = ", "
+en = ", "
+
+[GUIDE_CASTING_THEN]
+value = "»"
+en = "»"

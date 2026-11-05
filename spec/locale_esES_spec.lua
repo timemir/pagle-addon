@@ -2,13 +2,14 @@
 -- converted to the 1.1 shape. It is not listed (listing needs 100% of the interface and a second native speaker), so
 -- the Language setting cannot apply it; these specs load the real generated files under the real Registry.lua and
 -- Apply.lua, once by driving ApplyLocale (what a player cannot do yet) and once as it will load when the maintainer
--- flips `listed`: a copy of the shipped esES.lua with only that flag changed. A translated key reads Spanish, a key
--- the file lacks reads English.
+-- flips `listed`: a copy of the shipped esES.lua with only that flag changed. A translated key reads Spanish, and
+-- since 1.1's fill the file has every interface key, so a key it lacks (one the spec adds to English) reads English.
 
--- A key the Spanish has, and one it lacks. LANGUAGE_RELOAD_NOW is a 1.1 string #510 never had, so it stays English
--- whatever a translator adds for the keys listed as dropped.
+-- A key from #510, and one of the 1.1 strings #510 never had, filled for 1.1 (machine-drafted, awaiting review).
 local TRANSLATED = { key = "CARD_CASTS", english = "Casts", spanish = "Lances" }
-local UNTRANSLATED = { key = "LANGUAGE_RELOAD_NOW", english = "Reload now" }
+local FILLED = { key = "LANGUAGE_RELOAD_NOW", english = "Reload now", spanish = "Recargar ahora" }
+-- A key no Locale has: the spec puts it in English's table, so the overlay has nothing to write over it.
+local ENGLISH_ONLY = { key = "SPEC_ENGLISH_ONLY", english = "Only in English" }
 
 -- The shipped Core locale file with `listed = false` changed to `listed = true`, in a temporary file; it is removed.
 ---@param action fun(path: string)
@@ -62,12 +63,15 @@ describe("esES as shipped, unlisted", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 		local L = loaded.ns.L
 		assert.are.equal(TRANSLATED.english, L[TRANSLATED.key])
+		assert.are.equal(FILLED.english, L[FILLED.key])
+		L[ENGLISH_ONLY.key] = ENGLISH_ONLY.english
 
 		local record, errors = loaded.ns.ApplyLocale("esES")
 
 		assert.are.same({}, errors)
 		assert.are.equal(TRANSLATED.spanish, L[TRANSLATED.key])
-		assert.are.equal(UNTRANSLATED.english, L[UNTRANSLATED.key])
+		assert.are.equal(FILLED.spanish, L[FILLED.key])
+		assert.are.equal(ENGLISH_ONLY.english, L[ENGLISH_ONLY.key])
 		-- CLDR es: one is exactly 1, many a non-zero whole multiple of a million, everything else other.
 		assert.are.equal(",", record.decimal)
 		assert.are.equal(".", record.thousands)
@@ -111,13 +115,13 @@ describe("esES once listed (a copy of the shipped file with listed = true)", fun
 		)
 	end
 
-	it("shows Spanish for a translated key and English for one it lacks, when the setting is esES", function()
+	it("shows Spanish for #510's keys and for the keys filled for 1.1, when the setting is esES", function()
 		withListedCopy(function(path)
 			local loaded = login(path, "esES", "enUS")
 
 			assert.are.equal("esES", loaded.env.Pagle.GetLanguage())
 			assert.are.equal(TRANSLATED.spanish, loaded.ns.L[TRANSLATED.key])
-			assert.are.equal(UNTRANSLATED.english, loaded.ns.L[UNTRANSLATED.key])
+			assert.are.equal(FILLED.spanish, loaded.ns.L[FILLED.key])
 			assert.are.same({}, loaded.client.errors)
 		end)
 	end)
@@ -144,7 +148,7 @@ describe("esES once listed (a copy of the shipped file with listed = true)", fun
 
 			assert.are.equal("esES", loaded.env.Pagle.GetLanguage())
 			assert.are.equal(TRANSLATED.spanish, loaded.ns.L[TRANSLATED.key])
-			assert.are.equal(UNTRANSLATED.english, loaded.ns.L[UNTRANSLATED.key])
+			assert.are.equal(FILLED.spanish, loaded.ns.L[FILLED.key])
 		end)
 	end)
 

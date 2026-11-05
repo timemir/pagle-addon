@@ -849,3 +849,138 @@ en = "no Session"
 [TRACKER_UPDATING]
 value = "actualizando"
 en = "updating"
+
+# Machine-drafted for 1.1, not yet reviewed by a native speaker: the interface keys esES had no text for.
+# A native Spanish speaker should check them before esES is listed (docs/translations.md).
+
+[SESSION_HEADING]
+value = "{weekday}, {day:0} de {month}"
+en = "{weekday} {day:0} {month}"
+
+[MONTHS_SHORT]
+value = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+en = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+[MONTHS]
+value = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+en = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+[WEEKDAYS]
+value = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"]
+en = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+# Machine-drafted for 1.1, with nothing to translate: fields, separators, marks, textures, numerals, names and
+# codes that read the same in Spanish (or stay English, as FISH_CREST_DROP_PREFIX and RECOVERY_REASONS do), so
+# that esES covers every key. A native speaker may still word any of them.
+
+[SENTENCE_JOIN]
+value = " "
+en = " "
+
+[BOOK_NAMEPLATE_UNDATED]
+value = "{book_nameplate_undated_1} · {sessions}"
+en = "{book_nameplate_undated_1} · {sessions}"
+
+[LOOK_HELP]
+value = "?"
+en = "?"
+
+[SESSION_GOT_AWAY_VALUE]
+value = "{gotAway} ({gotAwayRate:0}%)"
+en = "{gotAway} ({gotAwayRate:0}%)"
+
+[SESSION_SKILL_VALUE]
+value = "+{skill}"
+en = "+{skill}"
+
+[SESSIONS_STARTED_AT]
+value = "{date} {time}"
+en = "{date} {time}"
+
+[SESSIONS_WHERE_JOIN]
+value = ", "
+en = ", "
+
+[DURATION_MINUTES]
+value = "{minutes:0}m"
+en = "{minutes:0}m"
+
+[DURATION_HOURS]
+value = "{duration_hours_1:0}h {duration_hours_2}m"
+en = "{duration_hours_1:0}h {duration_hours_2}m"
+
+[DATE]
+value = "{day:0} {month} {year}"
+en = "{day:0} {month} {year}"
+
+[CHARACTER_NAME]
+value = "{name} {surname}"
+en = "{name} {surname}"
+
+[ODDS_WITH_WINDOW]
+value = "{odds_with_window_1} {windowName}"
+en = "{odds_with_window_1} {windowName}"
+
+[ODDS_WITH_SIDE]
+value = "{odds_with_side_1}, {sideText}"
+en = "{odds_with_side_1}, {sideText}"
+
+[DRY_SHORT_BAND]
+value = ", {bandWord}"
+en = ", {bandWord}"
+
+[PLACE_NONE]
+value = "—"
+en = "—"
+
+[PLACE_GOT_AWAY]
+value = "{gotAway} ({rate:0}%)"
+en = "{gotAway} ({rate:0}%)"
+
+[ENTRY_KICKER_WINDOW]
+value = "{kicker}, {windowName}"
+en = "{kicker}, {windowName}"
+
+[HOME_TILE_LINE]
+value = "{home_tile_line_1} · {home_tile_line_2}"
+en = "{home_tile_line_1} · {home_tile_line_2}"
+
+[HOME_PLACE]
+value = "{areaName}, {where}"
+en = "{areaName}, {where}"
+
+[HOME_WATCH]
+value = "{name}, {areaName}: {drySpellWatchText}"
+en = "{name}, {areaName}: {drySpellWatchText}"
+
+[ITEM_RANGE]
+value = "{windowTime}–{item_range_2}"
+en = "{windowTime}–{item_range_2}"
+
+[ITEM_RANGES_JOIN]
+value = ", "
+en = ", "
+
+[ITEM_LAST_VALUE]
+value = "{date}, {timeAgo}"
+en = "{date}, {timeAgo}"
+
+[ITEM_NEVER]
+value = "—"
+en = "—"
+
+[ITEM_TILE_LINE]
+value = "{areaName} · {short}"
+en = "{areaName} · {short}"
+
+[LIFETIME_GOT_AWAY_VALUE]
+value = "{gotAway} ({gotAwayRate:0}%)"
+en = "{gotAway} ({gotAwayRate:0}%)"
+
+[SETTINGS_WATCHED_LINE]
+value = "{itemName}, {areaName}"
+en = "{itemName}, {areaName}"
+
+[TRACKER_JOIN]
+value = " · "
+en = " · "

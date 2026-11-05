@@ -985,3 +985,248 @@ en = "Remind me about the Pagle companion"
 [COMPANION_HINT_TOOLTIP]
 value = "Una línea en el tablero de Cazas, y un Gesto una vez por semana, mientras el acompañante de Pagle no te traiga apuestas nuevas."
 en = "A line on the Hunts board, and a Nod once a week, while the Pagle companion isn't bringing you new wagers."
+
+# Recovered for 1.1 (#528): fmartingr's translations from PR #510 that scripts/convert-text.py did not carry over
+# (a value on the line after `L.KEY =`, or a counted string), with `%s`/`%d` renamed to today's {fields}.
+# Each one's `-- EN:` in #510 is today's English. A note above an entry names a part that is machine-drafted.
+
+[WINDOW_MOMENTS_TOOLTIP]
+value = "Un Gesto discreto cuando se abre la franja de una Caza fijada. Se desvanece cuando se cierra."
+en = "A quiet Nod when a pinned Hunt's window opens. It fades when the window closes."
+
+[TIMELINE_LEGEND]
+value = "Rayado: abierta · Discontinua: franja sin confirmar · Lápiz: pide más habilidad · Azul: tu campamento está montado"
+en = "Hatched: open · Dashed: window unconfirmed · Pencil: needs more skill · Blue: your camp is up"
+
+[RUN_CASTS]
+value.one = "{count} Lance en estas aguas en esta ronda · {done:0} de {total:0} primeras marcas"
+value.many = "{count} Lances en estas aguas en esta ronda · {done:0} de {total:0} primeras marcas"
+value.other = "{count} Lances en estas aguas en esta ronda · {done:0} de {total:0} primeras marcas"
+en.one = "{count} Cast in these waters this run · {done:0} of {total:0} first marks"
+en.other = "{count} Casts in these waters this run · {done:0} of {total:0} first marks"
+
+# `many` and `other` machine-drafted
+[SPREAD_NOTE]
+value.one = "Una apuesta en curso. Consigue la primera marca de cada Caza antes de que cierre."
+value.many = "{count} apuestas en curso. Consigue la primera marca de cada Caza antes de que cierre su apuesta."
+value.other = "{count} apuestas en curso. Consigue la primera marca de cada Caza antes de que cierre su apuesta."
+en.one = "One wager on. Land every Hunt's first mark before it closes."
+en.other = "{count} wagers on. Land every Hunt's first mark before its wager closes."
+
+[LOOK_NOW_LINE]
+value = "La línea roja es el *ahora*, en hora del reino. Las barras rayadas marcan cuándo está abierta cada Caza."
+en = "The red line is *now*, in realm time. Hatched bars are when each Hunt is open."
+
+[LOOK_NATURAL]
+value = "*Natural* significa que el propio juego limita las horas de este pez. Las Cazas impuestas son reglas de Pagle."
+en = "*Natural* means the game itself keeps this fish to its hours. Imposed Hunts are Pagle’s own rules."
+
+# "Sonar Scope" changed to its esES Lore name, "Visor de sonar"
+[HINT_MISSING]
+value = "Hay apuestas nuevas por ahí. El acompañante de Pagle las trae: más XP, más Monedas y el estilo de aviso Visor de sonar."
+en = "New wagers are out there. The Pagle companion brings them: more XP, more Coins, and the Sonar Scope toast style."
+
+# Machine-drafted for 1.1, not yet reviewed by a native speaker: the interface keys esES had no text for.
+# A native Spanish speaker should check them before esES is listed (docs/translations.md).
+
+[TOUR_BOARD]
+value = "el tablero de Cazas: el Tablero, en la Caza que elige"
+en = "the Hunts board: the Board, on the Hunt it picks"
+
+[TOUR_BOARD_NOW]
+value = "el tablero de Cazas: una Caza en Ahora"
+en = "the Hunts board: a Hunt in Now"
+
+[TOUR_BOARD_SOON]
+value = "el tablero de Cazas: una Caza en Pronto"
+en = "the Hunts board: a Hunt in Soon"
+
+[TOUR_BOARD_LATER]
+value = "el tablero de Cazas: una Caza en Más tarde"
+en = "the Hunts board: a Hunt in Later"
+
+[TOUR_BOARD_ON_DEMAND]
+value = "el tablero de Cazas: una Caza en A demanda"
+en = "the Hunts board: a Hunt in On demand"
+
+[TOUR_BOARD_WAGERS]
+value = "el tablero de Cazas: la tira de apuestas y el grupo APUESTAS, la entrada de una ronda"
+en = "the Hunts board: the wager strip and the WAGERS group, a run's entry"
+
+[TOUR_WAGERS]
+value = "el tablero de Cazas: la mesa de Apuestas Pagle, sus boletos y su escalera"
+en = "the Hunts board: the Pagle Wagers spread, its tickets and ladder"
+
+[TOUR_SET]
+value = "el tablero de Cazas: la página de una serie, con su título ganado"
+en = "the Hunts board: a set's page, its title earned"
+
+[TOUR_SET_ENTRY]
+value = "el tablero de Cazas: una entrada abierta desde la página de su serie"
+en = "the Hunts board: an entry opened from its set's page"
+
+[TOUR_RETIRED]
+value = "el tablero de Cazas: la entrada de una Caza Retirada"
+en = "the Hunts board: a Retired Hunt's entry"
+
+[TOUR_TRACKER]
+value = "el rastreador de Cazas acoplado, con tres Cazas fijadas"
+en = "the Hunts tracker in the dock, with three pins"
+
+[TOUR_BINDING]
+value = "el tablero de Cazas en la encuadernación {good}"
+en = "the Hunts board in the {good} binding"
+
+[TOUR_TRACKER_FRAME]
+value = "el rastreador de Cazas en el marco {good}"
+en = "the Hunts tracker in the {good} frame"
+
+[RUN_LOG_EVENT_IGNORED]
+value = "Cazas: se ignora la definición recibida de {run_log_event_ignored_1}: {problem} (HNT-R140)"
+en = "Hunts: the pushed definition of {run_log_event_ignored_1} is ignored: {problem} (HNT-R140)"
+
+[RUN_LOG_RUN_IGNORED]
+value = "Cazas: se ignora una ronda recibida de {event}: necesita un ID de evento y horas de inicio < fin (HNT-R151)"
+en = "Hunts: a pushed run of {event} is ignored: it needs an event ID and times start < end (HNT-R151)"
+
+# Machine-drafted for 1.1, with nothing to translate: fields, separators, marks, textures, numerals, names and
+# codes that read the same in Spanish (or stay English, as FISH_CREST_DROP_PREFIX and RECOVERY_REASONS do), so
+# that esES covers every key. A native speaker may still word any of them.
+
+[NAME_UNKNOWN]
+value = "…"
+en = "…"
+
+[DURATION_MINUTES]
+value = "{minutes:0}m"
+en = "{minutes:0}m"
+
+[DURATION_HOURS]
+value = "{hours:0}h"
+en = "{hours:0}h"
+
+[DURATION_HOURS_MINUTES]
+value = "{hours:0}h {rest:0}m"
+en = "{hours:0}h {rest:0}m"
+
+[DURATION_DAYS]
+value = "{days:0}d"
+en = "{days:0}d"
+
+[DURATION_DAYS_HOURS]
+value = "{days:0}d {hours:0}h"
+en = "{days:0}d {hours:0}h"
+
+[CLOCK]
+value = "{hour}:{minute}"
+en = "{hour}:{minute}"
+
+[WEEKDAY_CLOCK]
+value = "{weekday} {time}"
+en = "{weekday} {time}"
+
+[DATE_SHORT]
+value = "{day:0} {monthsShort}"
+en = "{day:0} {monthsShort}"
+
+[DATE_FULL]
+value = "{shortDate} {year}"
+en = "{shortDate} {year}"
+
+[LINE_JOIN]
+value = " "
+en = " "
+
+[JOIN_FIELDS]
+value = " · "
+en = " · "
+
+[JOIN_RANGES]
+value = ", "
+en = ", "
+
+[TIME_RANGE]
+value = "{clock}–{time_range_2}"
+en = "{clock}–{time_range_2}"
+
+[SEASON_RANGE]
+value = "{dayOfYear} – {season_range_2}"
+en = "{dayOfYear} – {season_range_2}"
+
+[CONDITION_SEASON]
+value = "{season} ({ranges})"
+en = "{season} ({ranges})"
+
+[RULER_HOUR]
+value = "{hour}"
+en = "{hour}"
+
+[RULER_HOUR_12]
+value.am = "{ruler_hour_12:0}a"
+value.pm = "{ruler_hour_12:0}p"
+en.am = "{ruler_hour_12:0}a"
+en.pm = "{ruler_hour_12:0}p"
+
+[SET_HEADING_EARNED]
+value = "{name}: {title}"
+en = "{name}: {title}"
+
+[WEEKDAY_DATE]
+value = "{weekday} {shortDate}"
+en = "{weekday} {shortDate}"
+
+[TRACKER_FIRST]
+value = "{huntName} · {label}"
+en = "{huntName} · {label}"
+
+[TRACKER_JOIN]
+value = " · "
+en = " · "
+
+[TRACKER_PROGRESS]
+value = "{progress:0} / {tiers:0}"
+en = "{progress:0} / {tiers:0}"
+
+[TRACKER_CLOSEST]
+value = "{huntName}: {tracker_closest_2:0} / {tracker_closest_3:0}"
+en = "{huntName}: {tracker_closest_2:0} / {tracker_closest_3:0}"
+
+[ENTRY_KICKER]
+value = "{name} · {kind}"
+en = "{name} · {kind}"
+
+[LADDER_WHEN_ZONE]
+value = "{date}, {areaName}"
+en = "{date}, {areaName}"
+
+[LADDER_PROGRESS]
+value = "{ladder_progress_1:0} / {ladder_progress_2:0}"
+en = "{ladder_progress_1:0} / {ladder_progress_2:0}"
+
+[SET_LINE_UPDATING]
+value = "{name}: {updating}"
+en = "{name}: {updating}"
+
+[NAMEPLATE]
+value = "{countText} · {nameplate_2}"
+en = "{countText} · {nameplate_2}"
+
+[RUN_HUNT_LINE]
+value = "{shapes} · {target}"
+en = "{shapes} · {target}"
+
+[RUN_TARGET_TIME]
+value = "{target}, {ranges}"
+en = "{target}, {ranges}"
+
+[RUN_HUNT_PROGRESS]
+value = "{run_hunt_progress_1} / {run_hunt_progress_2:0}"
+en = "{run_hunt_progress_1} / {run_hunt_progress_2:0}"
+
+[TICKET_LINE]
+value = "{eventZonesText} · {ticket_line_2}"
+en = "{eventZonesText} · {ticket_line_2}"
+
+[LOOK_HELP]
+value = "?"
+en = "?"

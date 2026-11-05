@@ -696,3 +696,143 @@ en = [
 [LOOK_AGAIN]
 value = "Mostrar otra vez las notas de esta página"
 en = "Show the notes for this page again"
+
+# Recovered for 1.1 (#528): fmartingr's translations from PR #510 that scripts/convert-text.py did not carry over
+# (a value on the line after `L.KEY =`, or a counted string), with `%s`/`%d` renamed to today's {fields}.
+# Each one's `-- EN:` in #510 is today's English. A note above an entry names a part that is machine-drafted.
+
+# fmartingr's, as before 79baef98, but for `rarity.2` and `rarity.3`, machine-drafted: English split `rarity` by rank (#545)
+[GOAL_TEXT]
+value.e.collector.one = "Un objeto de Subcolección que no tienes"
+value.e.collector.many = "{count} objetos de Subcolección que no tienes"
+value.e.collector.other = "{count} objetos de Subcolección que no tienes"
+value.e.haul.one = "{count} Captura en {zone}"
+value.e.haul.many = "{count} Capturas en {zone}"
+value.e.haul.other = "{count} Capturas en {zone}"
+value.e.rarity.2.one = "Una Captura de variedad poco común o mejor"
+value.e.rarity.2.many = "{count} Capturas de variedad poco común o mejor"
+value.e.rarity.2.other = "{count} Capturas de variedad poco común o mejor"
+value.e.rarity.3.one = "Una Captura de variedad rara o mejor"
+value.e.rarity.3.many = "{count} Capturas de variedad rara o mejor"
+value.e.rarity.3.other = "{count} Capturas de variedad rara o mejor"
+value.e.variety = "Todas las Especies de {zone}"
+value.e.wanderer.one = "Capturas en {count} zona de {continent}"
+value.e.wanderer.many = "Capturas en {count} zonas de {continent}"
+value.e.wanderer.other = "Capturas en {count} zonas de {continent}"
+value.n.collector = "Un objeto de basura y un contenedor hoy"
+value.n.haul.one = "{count} Captura en {zone}"
+value.n.haul.many = "{count} Capturas en {zone}"
+value.n.haul.other = "{count} Capturas en {zone}"
+value.n.lure.one = "Una Captura con señuelo"
+value.n.lure.many = "{count} Capturas con señuelo"
+value.n.lure.other = "{count} Capturas con señuelo"
+value.n.rarity.2.one = "Una Captura de variedad poco común o mejor"
+value.n.rarity.2.many = "{count} Capturas de variedad poco común o mejor"
+value.n.rarity.2.other = "{count} Capturas de variedad poco común o mejor"
+value.n.rarity.3.one = "Una Captura de variedad rara o mejor"
+value.n.rarity.3.many = "{count} Capturas de variedad rara o mejor"
+value.n.rarity.3.other = "{count} Capturas de variedad rara o mejor"
+value.n.species = "{count} {species}"
+value.n.variety.one = "{count} Especie en {zone}"
+value.n.variety.many = "{count} Especies distintas en {zone}"
+value.n.variety.other = "{count} Especies distintas en {zone}"
+value.n.wanderer.one = "Capturas en {count} zona hoy"
+value.n.wanderer.many = "Capturas en {count} zonas hoy"
+value.n.wanderer.other = "Capturas en {count} zonas hoy"
+en.e.collector.one = "A Sub-collection item you don't have"
+en.e.collector.other = "{count} Sub-collection items you don't have"
+en.e.haul.one = "{count} Catch in {zone}"
+en.e.haul.other = "{count} Catches in {zone}"
+en.e.rarity.2.one = "A Catch of an uncommon variety or better"
+en.e.rarity.2.other = "{count} Catches of an uncommon variety or better"
+en.e.rarity.3.one = "A Catch of a rare variety or better"
+en.e.rarity.3.other = "{count} Catches of a rare variety or better"
+en.e.variety = "Every Species of {zone}"
+en.e.wanderer.one = "Catches in {count} zone of {continent}"
+en.e.wanderer.other = "Catches in {count} zones of {continent}"
+en.n.collector = "A junk item and a container today"
+en.n.haul.one = "{count} Catch in {zone}"
+en.n.haul.other = "{count} Catches in {zone}"
+en.n.lure.one = "A Catch with a lure on"
+en.n.lure.other = "{count} Catches with a lure on"
+en.n.rarity.2.one = "A Catch of an uncommon variety or better"
+en.n.rarity.2.other = "{count} Catches of an uncommon variety or better"
+en.n.rarity.3.one = "A Catch of a rare variety or better"
+en.n.rarity.3.other = "{count} Catches of a rare variety or better"
+en.n.species = "{count} {species}"
+en.n.variety.one = "{count} Species in {zone}"
+en.n.variety.other = "{count} different Species in {zone}"
+en.n.wanderer.one = "Catches in {count} zone today"
+en.n.wanderer.other = "Catches in {count} zones today"
+
+[POST_TEXT]
+value = "Esto gasta {cost} y no se puede deshacer. El nuevo objetivo se puede retirar una vez al día, como cualquier otro."
+en = "This uses {cost}, and it can't be undone. The new goal can be taken down once a day, like any other."
+
+[REFRESH_TIP]
+value = "Cada una cuelga un Aviso o una Expedición nuevos en un hueco libre del tablón. Haz clic en un hueco libre para usarla."
+en = "Each one posts a fresh Notice or Expedition in an empty slot on the board. Click an empty slot to use one."
+
+[TAKE_DOWN_TIP_ONCE]
+value = "El nuevo objetivo no se podrá retirar hasta el reinicio diario (en {time}), salvo que deje de poder pescarse."
+en = "The new one can't be taken down again until the daily reset (in {time}), unless it stops being catchable."
+
+[TAKE_DOWN_TIP_STRANDED]
+value = "Este objetivo ya no se puede pescar, así que puede retirarse aunque sea un reemplazo de hoy."
+en = "This one is no longer catchable, so it can come down even though it was re-posted today."
+
+# Machine-drafted for 1.1, with nothing to translate: fields, separators, marks, textures, numerals, names and
+# codes that read the same in Spanish (or stay English, as FISH_CREST_DROP_PREFIX and RECOVERY_REASONS do), so
+# that esES covers every key. A native speaker may still word any of them.
+
+[NAME_UNKNOWN]
+value = "…"
+en = "…"
+
+[TAKE_DOWN_PROGRESS]
+value = "{n}/{need}"
+en = "{n}/{need}"
+
+[OVERFLOW_CHIP]
+value = "{kind}: {text}"
+en = "{kind}: {text}"
+
+[SPIKE_NOTE]
+value = "+{coins} · {fly}"
+en = "+{coins} · {fly}"
+
+[SPIKE_NOTE_PLAIN]
+value = "+{coins}"
+en = "+{coins}"
+
+[CARD_DATE]
+value = "{weekday} {day} {month}"
+en = "{weekday} {day} {month}"
+
+[TALLY_PLATE]
+value = "{notices} · {expeditions}"
+en = "{notices} · {expeditions}"
+
+[CARD_FIRE]
+value = "{fire} · {longest} · {kindling}"
+en = "{fire} · {longest} · {kindling}"
+
+[CARD_SHORT_DATE]
+value = "{day} {month}"
+en = "{day} {month}"
+
+[CLOSE_MARK]
+value = "×"
+en = "×"
+
+[TRACKER_FIRE_OPEN]
+value = "{fire} · {open}"
+en = "{fire} · {open}"
+
+[TRACKER_COUNT]
+value = "{count}/{need}"
+en = "{count}/{need}"
+
+[LOOK_AGAIN_MARK]
+value = "?"
+en = "?"
