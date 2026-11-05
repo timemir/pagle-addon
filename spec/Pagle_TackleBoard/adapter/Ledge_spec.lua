@@ -747,6 +747,24 @@ describe("the Fly Box (TKB-R106)", function()
 	end)
 end)
 
+describe("the Fly Box in a longer language (TKB-R106)", function()
+	it("TKB-R106: holds its label to the box's plate, set smaller before it is cut, its words as written", function()
+		local fake = board.withHistory(ONE_DONE_TODAY)
+		local loaded = board.load(fake)
+		loaded.ns.L.FLY_BOX = "Коробка мушек"
+		fake.login()
+		fake.enterWorld()
+		loaded.client.runTimers()
+		loaded.ns.OpenBoard()
+
+		local title = loaded.ns.board.frame.parts.ledge.box.title
+		assert.are.equal(loaded.ns.Spaced("Коробка мушек"), title:GetText())
+		assert(title:GetStringWidth() > 170, "the label fits unbounded: the spec needs a longer one")
+		assert(inked(title) <= 170, "the label runs off the box's plate")
+		assert(title.font and title.font[2] < 14, "the label is not set smaller")
+	end)
+end)
+
 describe("the tally plate (TKB-R106, TKB-R64)", function()
 	it("shows the counts and the latest title", function()
 		local loaded, _, _, ledge = opened(TWO_DONE_TODAY)

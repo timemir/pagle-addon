@@ -55,6 +55,8 @@ local REFRESH_ICON = 16
 local REFRESH_ROOM = 152
 -- The tally plate's room for its words, inside its brass edge.
 local PLATE_ROOM = 196
+-- The Fly Box label's room, its brass plate's width (the guide's sample of the box holds its label the same).
+local BOX_ROOM = 170
 -- The card's columns: the log's, from 30, 344 wide, and the titles', from 406, 364 wide. A title row's threshold runs
 -- from 30 to its name at 104; the key under the log flows its entries left to right from 30, 8 apart, a new line 22
 -- under when the next would pass the log's right edge.
@@ -859,6 +861,9 @@ local function buildBox(ledge)
 	box.title:SetJustifyH("CENTER")
 	box.title:SetPoint("TOP", box, "TOPLEFT", 107, -35)
 	box.title:SetText(ns.Spaced(ns.L.FLY_BOX))
+	-- Held to the box's plate, set smaller before the client cuts it, as the guide's sample is: unbounded, a longer
+	-- language's label ran past the plate ("К О Р О Б К А   М У Ш Е К").
+	ns.FitArtText(box.title, "BoxLabel", BOX_ROOM)
 	box.count = ns.ArtText(box, "BoxCount")
 	box.count:SetJustifyH("CENTER")
 	box.count:SetPoint("TOP", box, "TOPLEFT", 107, -50)
