@@ -456,11 +456,15 @@ describe("the What's in the box step (ONB-R31, ONB-R91)", function()
 			"Tackle Board",
 			"Input: Both",
 			"Curio Shop",
+			"Copy for the website",
 			"Help chart the waters",
 			"Settings",
 		}, menuRows(menu))
 		assert.are.same({ "Pagle", "0", true }, { texts(menu)[1], menu.balance.text, menu.coin.shown })
 		assert.are.equal(page(loaded, "box", "left"), menu:GetParent())
+		-- nine rows 23 apart from 31, the rule's 9 and 6 under the last: it ends at 422.5, clear of « back at 508
+		assert.are.equal(253, menu:GetHeight())
+		assert.is_true(top(menu) + menu:GetHeight() < 508)
 
 		loaded.env.QoLInput = "Fishing key"
 		loaded.ns.guide:GoTo("welcome")
@@ -497,7 +501,10 @@ describe("the What's in the box step (ONB-R31, ONB-R91)", function()
 			"Pagle Coins come from things you achieve, and buy looks, never power.",
 			"Turn parts on in the AddOns list.",
 		}, { unpack(texts(right), 1, 4) })
-		assert.are.same({ "Curio Shop", "Help chart the waters", "Settings" }, menuRows(loaded.ns.guidePages.menu))
+		assert.are.same(
+			{ "Curio Shop", "Copy for the website", "Help chart the waters", "Settings" },
+			menuRows(loaded.ns.guidePages.menu)
+		)
 	end)
 end)
 

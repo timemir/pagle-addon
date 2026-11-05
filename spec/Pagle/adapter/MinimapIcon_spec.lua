@@ -14,6 +14,9 @@ local HIGHLIGHT = "Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight"
 -- How far the icon's centre sits from the minimap's: half the fake minimap's 198 units, and 5 more.
 local RADIUS = 104
 
+-- The "Copy for the website" entry, between the Curio Shop and Help chart the waters (CORE-R50, PST-R50).
+local PASTE = "Copy for the website"
+
 -- The Curio Shop entry with this balance, as CORE-R50 writes it: two spaces, the balance, a coin icon.
 local function curioShop(balance)
 	return "Curio Shop  " .. balance .. " |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
@@ -248,7 +251,7 @@ describe("A click on the minimap icon", function()
 		local menu = loaded.client.menus[1]
 		assert.are.equal(button, menu.owner)
 		assert.are.same(loaded.client.openCompartmentMenu("Pagle").texts(), menu.texts())
-		assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, menu.texts())
+		assert.are.same({ curioShop(0), PASTE, "Help chart the waters", "Settings" }, menu.texts())
 	end)
 
 	it("lists each Module's entries as the compartment does, read as it opens (CORE-R54, CORE-R52)", function()
@@ -281,7 +284,7 @@ describe("A click on the minimap icon", function()
 		button:Click("LeftButton")
 
 		assert.are.same(
-			{ "Hunts", "Input: Both 2", curioShop(0), "Help chart the waters", "Settings" },
+			{ "Hunts", "Input: Both 2", curioShop(0), PASTE, "Help chart the waters", "Settings" },
 			loaded.client.menus[2].texts()
 		)
 	end)
@@ -405,7 +408,7 @@ describe("Show the minimap icon", function()
 
 		assert.are.equal(1, #loaded.client.compartment)
 		assert.are.same(
-			{ curioShop(0), "Help chart the waters", "Settings" },
+			{ curioShop(0), PASTE, "Help chart the waters", "Settings" },
 			loaded.client.openCompartmentMenu("Pagle").texts()
 		)
 	end)

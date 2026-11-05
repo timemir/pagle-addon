@@ -289,6 +289,7 @@ ns.L = {
 	LOOK_SHOP_TITLE = "the Curio Shop",
 	MENU_CURIO_SHOP = "Curio Shop  {balance} |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
 	MENU_NAME = "Pagle",
+	MENU_PASTE = "Copy for the website",
 	MENU_SETTINGS = "Settings",
 	MENU_TOOLTIP_LETTER = "A letter for you",
 	MENU_TOOLTIP_WAITING = "{waiting:0} waiting",

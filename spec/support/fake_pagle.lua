@@ -85,9 +85,9 @@
 --- reports it and returns nothing.
 ---@field openedSettings string[] What each Pagle.OpenSettings opened: "root" or the topic (CORE-R43).
 ---@field menu fun(): PagleMenuEntry[] The compartment menu as it would open now, labels read (CORE-R50, CORE-R52);
---- each entry's onClick is what clicking it does. Its last three entries are the Curio Shop (it calls
---- Pagle.OpenShop), "Help chart the waters" (with " (N)" while Pagle.GetFieldReportCount() is above 0; it calls
---- Pagle.OpenFieldReport) and Settings.
+--- each entry's onClick is what clicking it does. Its last four entries are the Curio Shop (it calls
+--- Pagle.OpenShop), "Copy for the website" (it calls Pagle.OpenPasteExport), "Help chart the waters" (with " (N)"
+--- while Pagle.GetFieldReportCount() is above 0; it calls Pagle.OpenFieldReport) and Settings.
 ---@field coinReports { module: string, total: integer }[] Each M:ReportCoinsEarned Core accepted, in order, an
 --- unchanged total too (SHOP-R2).
 ---@field xpReports { module: string, total: integer, entry: PagleRecord? }[] Each M:ReportXPEarned Core accepted, in
@@ -211,6 +211,8 @@
 ---@field fieldReportsOpened PagleFieldReportView[] Each box Pagle.OpenFieldReport opened, in order: its message
 --- (REP-R41, REP-R42), or its parts and the issue form's URL (REP-R40). While restricted it opens none and prints
 --- REP-R44's line in `printed`.
+---@field pasteExportsOpened PaglePasteChoice[] The choice of each export window Pagle.OpenPasteExport opened, in order:
+--- always "new", the one it opens on (PST-R51). While restricted it opens none and prints PST-R50's line in `printed`.
 ---@field conditions ConditionsSnapshot The live conditions Pagle.GetConditions serves (without `restricted`, which
 --- follows setRestricted). Read it; change it with setConditions.
 ---@field setConditions fun(snapshot: ConditionsSnapshot) Replaces the live conditions and fires ConditionsChanged
@@ -877,6 +879,23 @@ part(function(fake, Pagle, ns, host)
 	Pagle.RegisterCallback(commands, "ModulesChanged", function()
 		commands:AddModules(fake.registry:Modules(), fake.report)
 	end)
+
+	-- The export window (PST-R50), on Core's real Pagle.OpenPasteExport, which /pagle export and the menu's "Copy for
+	-- the website" call: each opening's choice lands in fake.pasteExportsOpened, with no export made; while
+	-- restricted it prints PST-R50's line instead.
+	fake.pasteExportsOpened = {}
+	Pagle.OpenPasteExport = ns.OpenPasteExportFunction({
+		isRestricted = function()
+			return Pagle.IsRestricted()
+		end,
+		print = fake.print,
+		view = function(choice)
+			return { choice = choice }
+		end,
+		show = function(view)
+			fake.pasteExportsOpened[#fake.pasteExportsOpened + 1] = view.choice
+		end,
+	})
 
 	local core = ns.CoreSubcommands(Pagle)
 	function fake.menu()

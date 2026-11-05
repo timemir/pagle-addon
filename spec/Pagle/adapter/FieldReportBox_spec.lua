@@ -486,15 +486,21 @@ describe("The Field report box's size (REP-R47)", function()
 end)
 
 describe("The compartment menu's Help chart the waters entry (CORE-R50, REP-R43)", function()
-	it("reads Help chart the waters (3) at a count of 3, between the Curio Shop and Settings (CORE-R50)", function()
-		local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
-		assert.are.equal(3, loaded.env.Pagle.GetFieldReportCount())
+	it(
+		"reads Help chart the waters (3) at a count of 3, between Copy for the website and Settings (CORE-R50)",
+		function()
+			local loaded = enterWorld(loadCore(unchartedHistory(2, FIRST)), 2)
+			assert.are.equal(3, loaded.env.Pagle.GetFieldReportCount())
 
-		local texts = loaded.client.openCompartmentMenu("Pagle").texts()
+			local texts = loaded.client.openCompartmentMenu("Pagle").texts()
 
-		assert.are.same({ "Help chart the waters (3)", "Settings" }, { texts[#texts - 1], texts[#texts] })
-		assert.truthy(texts[#texts - 2]:find("^Curio Shop"))
-	end)
+			assert.are.same(
+				{ "Copy for the website", "Help chart the waters (3)", "Settings" },
+				{ texts[#texts - 2], texts[#texts - 1], texts[#texts] }
+			)
+			assert.truthy(texts[#texts - 3]:find("^Curio Shop"))
+		end
+	)
 
 	it("reads Help chart the waters at a count of 0 (CORE-R50)", function()
 		local loaded = enterWorld(loadCore({ BUILD_ENTRY }), 2)

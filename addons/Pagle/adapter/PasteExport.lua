@@ -293,7 +293,8 @@ end
 
 --- Opens the export window (PST-R50–R53): an export made now of the Catch log, on "New since last export", at part
 --- 1. While restricted it prints "Pagle: the export window opens after combat." instead, and a window already open
---- stays open. Every entry point calls it: /pagle export and the Settings root's button.
+--- stays open. Every entry point calls it: /pagle export, the Settings root's button and the compartment menu's
+--- "Copy for the website" (CORE-R50).
 Pagle.OpenPasteExport = ns.OpenPasteExportFunction({
 	isRestricted = function()
 		return Pagle.IsRestricted()

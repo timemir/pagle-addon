@@ -147,10 +147,11 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
 - **CORE-R50** Core registers one Addon Compartment entry, "Pagle". Clicking it opens a menu, in this order:
   1. for each registered Module by `def.order`: its views, then its extra `menu` entries
   2. "Curio Shop" with the balance (`BreakUpLargeNumbers`, then a coin icon), from M2; it shows 0 while held. Until the shop exists (M4) the entry is shown disabled, with the balance.
-  3. "Help chart the waters", followed by "(N)" when the Field report count is above 0
-  4. "Settings"
+  3. "Copy for the website", which opens the export window as `/pagle export` does (PST-R50); from 1.1 (#549), so the two copy-out entries sit together
+  4. "Help chart the waters", followed by "(N)" when the Field report count is above 0
+  5. "Settings"
 
-  For example, with the Ledger and QoL enabled: "Fish Journal", "Input: Both", "Curio Shop  1,950 ●", "Help chart the waters (3)", "Settings".
+  For example, with the Ledger and QoL enabled: "Fish Journal", "Input: Both", "Curio Shop  1,950 ●", "Copy for the website", "Help chart the waters (3)", "Settings".
 - **CORE-R51** While Cozy mode holds moments, the compartment entry's label shows how many are waiting ("Pagle · 3 waiting"); the count is defined in ANN-R42.
 - **CORE-R52** A menu `label` may be a function, so a Module can show live state (QoL's "Input: Both"); it is called each time the menu opens.
 - **CORE-R53** From M8.5, Core also shows a **minimap icon**: Core's own round button on the minimap's edge (a child of `Minimap`, in the usual minimap-button look: the favicon in a round mask with the client's tracking-border ring), its icon the website's favicon (a gilt "P" on parchment; `media/minimap/Pagle.blp`, from pagle-backend's `favicon.ico`, the 48 px image at 64 x 64). The player drags it around the minimap's edge (it stays on the edge, by angle; it never moves while restricted); its angle and shown state are saved account-wide (`PagleDB.global.minimap = { angle, hide }`). It is named `PagleMinimapButton`, so minimap-button collectors that gather a minimap's named children can take it. The compartment entry stays. Together they are **Pagle's menu**.

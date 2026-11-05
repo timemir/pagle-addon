@@ -5,7 +5,9 @@
 local CAST = "SPELL Fishing"
 -- The Curio Shop entry Core puts before Settings, with no Coins (CORE-R50).
 local CURIO_SHOP = "Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
--- The Help chart the waters entry Core puts between the Curio Shop and Settings, with no Field report (CORE-R50).
+-- The Copy for the website entry Core puts after the Curio Shop (CORE-R50, PST-R50).
+local PASTE = "Copy for the website"
+-- The Help chart the waters entry Core puts between it and Settings, with no Field report (CORE-R50).
 local HELP_CHART = "Help chart the waters"
 
 -- QoL loaded against FakePagle and logged in, with F bound to the Fishing key.
@@ -45,7 +47,7 @@ describe("Input", function()
 			for i, entry in ipairs(fake.menu()) do
 				labels[i] = entry.label
 			end
-			assert.are.same({ "Input: Both", CURIO_SHOP, HELP_CHART, "Settings" }, labels)
+			assert.are.same({ "Input: Both", CURIO_SHOP, PASTE, HELP_CHART, "Settings" }, labels)
 
 			loaded.ns.db.profile.input = "click"
 			assert.are.equal("Input: Double-click", inputEntry(fake).label)
@@ -170,14 +172,14 @@ describe("Input with Core", function()
 			end
 
 			local menu = openMenu()
-			assert.are.same({ "Input: Both", CURIO_SHOP, HELP_CHART, "Settings" }, menu.texts())
+			assert.are.same({ "Input: Both", CURIO_SHOP, PASTE, HELP_CHART, "Settings" }, menu.texts())
 			menu.click("Input: Both")
-			assert.are.same({ "Input: Fishing key", CURIO_SHOP, HELP_CHART, "Settings" }, openMenu().texts())
+			assert.are.same({ "Input: Fishing key", CURIO_SHOP, PASTE, HELP_CHART, "Settings" }, openMenu().texts())
 
 			loaded.env.SlashCmdList.PAGLE("qol input click")
 			assert.are.equal("Pagle: cast with a double right-click.", loaded.printed[#loaded.printed])
 			assert.is_nil(client.overrideAction("F"))
-			assert.are.same({ "Input: Double-click", CURIO_SHOP, HELP_CHART, "Settings" }, openMenu().texts())
+			assert.are.same({ "Input: Double-click", CURIO_SHOP, PASTE, HELP_CHART, "Settings" }, openMenu().texts())
 		end
 	)
 end)

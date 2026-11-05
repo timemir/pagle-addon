@@ -531,6 +531,10 @@ en = "Settings"
 value = 'Tienda de Curiosidades  {balance} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 en = 'Curio Shop  {balance} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 
+[MENU_PASTE]
+value = "Copiar para la web"
+en = "Copy for the website"
+
 [HELP_CHART]
 value = "Ayuda a catalogar las aguas"
 en = "Help chart the waters"
