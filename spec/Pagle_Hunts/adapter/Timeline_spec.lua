@@ -724,6 +724,27 @@ describe("the leather's clock and checkbox (HNT-R61)", function()
 		assert.are.same({ "08:25 · Sun 11 Oct · Autumn" }, shownTexts(run.ns.board.book.anchors.clock))
 	end)
 
+	it(
+		'keeps the date on one line and "show completed" short of the book\'s ? and × seals, a size down at a time'
+			.. " (HNT-R61)",
+		function()
+			local run = start({ catalogue = withSeasons() })
+			run.ns.L.SHOW_COMPLETED = "mostrar también las Cazas completadas" -- 37 bytes: 222 px in the fake
+			run.ns.ToggleBoard()
+
+			local anchors = run.ns.board.book.anchors
+			local clock = anchors.clock.children[1]
+			assert.are.same({ "08:15 · Sun 11 Oct · Autumn", false }, { clock:GetText(), clock:CanWordWrap() })
+			assert.are.equal(anchors.clock:GetWidth(), clock.width)
+			local label = anchors.completed.children[1].Text
+			assert.are.equal("mostrar también las Cazas completadas", label:GetText()) -- never rewritten
+			-- the anchor's 150 less the box (14), its gap (7) and the seals' 32 over the anchor's right end
+			assert.are.equal(150 - 14 - 7 - 32, label.width)
+			assert.are.equal(run.ns.ArtFont("italic", 11, true), label.fontObject)
+			assert.is_false(label:CanWordWrap())
+		end
+	)
+
 	it('saves "show completed" from its checkbox and redraws (HNT-R82)', function()
 		local run = start({ list = extraList({ ALWAYS, ALWAYS }) })
 		useState(run, { extra_1 = reached(1) })

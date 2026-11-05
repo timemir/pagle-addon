@@ -773,6 +773,11 @@ for _, mode in ipairs(ns.BOARD_MODES) do
 	ns.board:RegisterPage(mode, "left", drawPage)
 end
 
+-- The leather's words' sizes in the kit (BoardFonts' clock and check) and the least they are set at to fit; the gap
+-- between the checkbox and its words (ns.NewBoardCheck); the room the book's ? and × seals take over the checkbox
+-- anchor's right end (Core's wax seals, 26 across, hang from the frame's top right corner).
+local CLOCK_SIZE, CHECK_SIZE, LEATHER_FLOOR, CHECK_GAP, SEALS_ROOM = 14, 13.5, 11, 7, 32
+
 -- The leather's realm clock (HNT-R61): the grouping's time, so it freezes with it in combat (HNT-R43), its date and
 -- season from the live conditions, and "(paused in combat)" while the grouping is paused, in gilt.
 ---@type FontString?
@@ -783,11 +788,13 @@ ns.board:RegisterLeather("clock", function(anchor)
 		clockText = ns.BoardText(anchor, ns.BoardFonts().clock, LOOK.clock)
 		clockText:SetPoint("RIGHT", -8, 0)
 		clockText:SetJustifyH("RIGHT")
-		clockText:SetWidth(anchor:GetWidth())
+		clockText:SetWordWrap(false)
 	end
 	local snapshot = Pagle.GetConditions()
 	local season = ns.SeasonNow(snapshot, Pagle.GetWindowSpec, Pagle.MatchesConditions)
 	clockText:SetText(ns.TimelineClock(ns.ViewNow(), snapshot, season, ns.groups:IsPaused()))
+	-- on one line: a longer language's date and season a size down at a time, never wrapped under the strip
+	ns.FitText(clockText, "gilt", CLOCK_SIZE, anchor:GetWidth(), LEATHER_FLOOR, true, LOOK.clock)
 end)
 
 -- The leather's "show completed" box (HNT-R61, HNT-R82): the saved filter, which a click saves and redraws.
@@ -799,6 +806,10 @@ ns.board:RegisterLeather("completed", function(anchor)
 		completed = ns.NewBoardCheck(anchor)
 		completed:SetPoint("LEFT", 0, 0)
 		completed.Text:SetText(ns.L.SHOW_COMPLETED)
+		completed.Text:SetWordWrap(false)
+		-- short of the book's ? and × seals over the anchor's right end, a size down at a time before it is cut
+		local room = anchor:GetWidth() - completed:GetWidth() - CHECK_GAP - SEALS_ROOM
+		ns.FitText(completed.Text, "italic", CHECK_SIZE, room, LEATHER_FLOOR, true, LOOK.checkLabel)
 		completed:SetScript("OnClick", function(self)
 			self:Sync()
 			local on = self:GetChecked() == true
