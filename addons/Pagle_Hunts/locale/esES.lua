@@ -284,7 +284,7 @@ ns.Locale("esES", function(L)
 	L.WRITE_UP_XP = "XP de Pescador +{write_up_xp}"
 end, {
 	name = "Español",
-	listed = false,
+	listed = true,
 	translators = { "fmartingr" },
 	plural = function(n)
 		if n == 1 then

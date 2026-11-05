@@ -204,7 +204,7 @@ ns.Locale("ruRU", function(L)
 	L.XP_LINE = "Опыт рыболова +{xp}"
 end, {
 	name = "Русский",
-	listed = false,
+	listed = true,
 	plural = function(n)
 		if n ~= math.floor(n) then
 			return "other"

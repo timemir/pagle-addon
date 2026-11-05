@@ -35,14 +35,15 @@ local function login(setting, client, extra, replace)
 end
 
 describe("the shipped locale list", function()
-	it("registers esES unlisted: English is the only language a player can have until it is listed", function()
+	it("registers esES and ruRU listed, and applies neither while the setting is Game default on enUS", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 
-		-- fmartingr's Spanish (#510, #528): registered with its header, and never applied while `listed` is false.
+		-- fmartingr's Spanish (#510, #528) and the machine-drafted Russian, both listed for 1.1 by the maintainer.
 		assert.are.same(
-			{ code = "esES", name = "Español", listed = false, translators = { "fmartingr" } },
+			{ code = "esES", name = "Español", listed = true, translators = { "fmartingr" } },
 			loaded.ns.LocaleInfo("esES")
 		)
+		assert.are.same({ code = "ruRU", name = "Русский", listed = true }, loaded.ns.LocaleInfo("ruRU"))
 		assert.is_nil(loaded.ns.LocaleInfo("deDE"))
 		assert.are.equal("enUS", loaded.env.Pagle.GetLanguage())
 		assert.are.equal("A collection worth keeping", loaded.ns.L.TRAILER_CAPTION_JOURNAL)

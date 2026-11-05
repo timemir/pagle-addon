@@ -129,7 +129,7 @@ ns.Locale("ruRU", function(L)
 	L.TOUR_SETTINGS = "строки «Удобств» на странице «Рыбалка»"
 end, {
 	name = "Русский",
-	listed = false,
+	listed = true,
 	plural = function(n)
 		if n ~= math.floor(n) then
 			return "other"

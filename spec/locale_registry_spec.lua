@@ -146,7 +146,7 @@ describe("the locale line of every addon (ADR 0019)", function()
 		end)
 	end
 
-	it("lists no language as listed: esES and ruRU are shipped and register unlisted in every addon", function()
+	it("registers esES and ruRU listed in every addon, as the maintainer listed them for 1.1", function()
 		for code, name in pairs({ esES = "Español", ruRU = "Русский" }) do
 			for _, addon in ipairs(ADDONS) do
 				local ns = registry()
@@ -157,7 +157,7 @@ describe("the locale line of every addon (ADR 0019)", function()
 				chunk(addon, ns)
 
 				local info = assert(ns.LocaleInfo(code), addon)
-				assert.are.equal(false, info.listed, addon)
+				assert.are.equal(true, info.listed, addon)
 				assert.are.equal(name, info.name, addon)
 			end
 		end

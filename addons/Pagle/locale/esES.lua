@@ -595,7 +595,7 @@ ns.Locale("esES", function(L)
 	L.VIEWS_WRONG_COUNT = "count es {views_wrong_count_1}, pero {listName} contiene {list}"
 end, {
 	name = "Español",
-	listed = false,
+	listed = true,
 	translators = { "fmartingr" },
 	plural = function(n)
 		if n == 1 then

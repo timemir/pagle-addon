@@ -251,7 +251,7 @@ ns.Locale("ruRU", function(L)
 	L.WINDOW_NAMES = { autumn = "осенью", day = "днём", event = "во время события", night = "ночью", other = "в своё время", spring = "весной", summer = "летом", winter = "зимой" }
 end, {
 	name = "Русский",
-	listed = false,
+	listed = true,
 	plural = function(n)
 		if n ~= math.floor(n) then
 			return "other"
