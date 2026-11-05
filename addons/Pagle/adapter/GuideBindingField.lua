@@ -137,11 +137,14 @@ local function fitWait(field)
 end
 
 -- Fits the note right of the cap (ONB-R40): as wide as the room left there, on at most NOTE_LINES lines, set smaller
--- in half-unit steps down to NOTE_FLOOR when its words need more.
+-- in half-unit steps down to NOTE_FLOOR when its words need more. Still longer at the floor, it is held to NOTE_LINES
+-- and the client cuts its last line short with an ellipsis, inside the field. Measured with no line cap, as the
+-- client's string height counts only the lines it would draw.
 ---@param field PagleGuideBindingField
 local function fitNote(field)
 	local note = field.note
 	note:SetWidth(WIDTH - EDGE - (field.capX + CAP_W + NOTE_GAP))
+	note:SetMaxLines(0)
 	local size = NOTE_SIZE
 	local function room()
 		return NOTE_LINES * size + (NOTE_LINES - 1) * NOTE_SPACING + 0.5
@@ -155,6 +158,7 @@ local function fitNote(field)
 		size = size - 0.5
 		set()
 	end
+	note:SetMaxLines(NOTE_LINES)
 	local ink = ns.GUIDE_INKS.note
 	note:SetTextColor(ink[1], ink[2], ink[3])
 end

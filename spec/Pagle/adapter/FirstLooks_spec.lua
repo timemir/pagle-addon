@@ -22,12 +22,40 @@ local function layOut(region, left, bottom, width, height)
 	return region
 end
 
+-- Where the client lays out a region hung by its top from another's foot (the coach bar under its window, ONB-R55):
+-- centred under that foot, its anchor's offsets added, and kept inside the screen's foot, as SetClampedToScreen keeps
+-- the bar. Nil for a region hung otherwise, or from one not laid out.
+---@return { left: number, right: number, bottom: number, top: number }?
+local function hungRect(region)
+	local anchor = region.points[1]
+	local above = anchor and anchor[1] == "TOP" and anchor[3] == "BOTTOM" and anchor[2]
+	if not (type(above) == "table" and above.screenBottom) then
+		return nil
+	end
+	local width, height = region:GetWidth(), region:GetHeight()
+	local middle = (above.screenLeft + above.screenRight) / 2 + (anchor[4] or 0)
+	local top = math.max(height, above.screenBottom + (anchor[5] or 0))
+	return { left = middle - width / 2, right = middle + width / 2, top = top, bottom = top - height }
+end
+
 -- Lays out every region made from now on where the Curio Shop's case would sit on a 1920 x 1080 screen, so the
--- shop's targets count as on screen (ONB-R56: one not laid out drops its note).
+-- shop's targets count as on screen (ONB-R56: one not laid out drops its note); one hung under another's foot where
+-- the client puts it (hungRect).
 local function layOutFromNow(loaded)
 	local create = loaded.env.CreateFrame
 	local function lay(region)
-		return layOut(region, 470, 220, 980, 640)
+		layOut(region, 470, 220, 980, 640)
+		for method, edge in pairs({ GetLeft = "left", GetRight = "right", GetTop = "top", GetBottom = "bottom" }) do
+			local laid = region[method]
+			region[method] = function(self)
+				local hung = hungRect(self)
+				if hung then
+					return hung[edge]
+				end
+				return laid(self)
+			end
+		end
+		return region
 	end
 	loaded.env.CreateFrame = function(...)
 		local frame = lay(create(...))
@@ -408,6 +436,24 @@ describe("a Module's First look (ONB-R56, ONB-R58, ONB-R90)", function()
 			-- up over the paper (to 8 above its top at 810) is shorter than down under it
 			assert.are.same({ "TOPLEFT", window, "TOPLEFT", 100, -47 }, noteFrame(loaded, 1).points[1])
 			assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -100 }, noteFrame(loaded, 2).points[1])
+		end
+	)
+
+	it(
+		"slides a note off the coach bar where the client draws it, clamped above the screen's foot (ONB-R55, ONB-R58)",
+		function()
+			-- the window's foot 10 above the screen's: the bar's anchor would put it from 2 down past the screen, so the
+			-- client keeps it from 0 to its 40 units' top. The note over the window, its foot at 44, would sit 4 above it:
+			-- it slides up 4, to 8 clear of the bar's top
+			local loaded, window = lookAt(600, { { 300, 631 } }, function(_, window)
+				layOut(window, 600, 10, 900, 700)
+			end)
+
+			window:Show()
+
+			local coach = loaded.ns.coachBar
+			assert.are.same({ 0, 40 }, { coach:GetBottom(), coach:GetTop() })
+			assert.are.same({ "TOPLEFT", window, "TOPLEFT", 300, -627 }, noteFrame(loaded, 1).points[1])
 		end
 	)
 

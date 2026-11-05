@@ -840,6 +840,38 @@ describe("the Off you go step (ONB-R38)", function()
 		}, texts(list))
 	end)
 
+	-- Off to the water's top and the bottom of the line under it, on the right page (that line's box is 17.55 tall at
+	-- 13, as text() sets it), and the First evening list's foot.
+	local function offFoot(loaded)
+		local right = page(loaded, "off", "right")
+		local again = assert(find(right, "|cff3e220c/pagle guide|r opens this guide again."))
+		local list = loaded.ns.guidePages.evening
+		return top(loaded.ns.guidePages.offButton), top(again) - (17.55 - 13) / 2 + 17.55, top(list) + list:GetHeight()
+	end
+
+	it("puts Off to the water and the line under it at the board's places (ONB-R38)", function()
+		local buttonY, againFoot = offFoot(guideAt("off"))
+
+		assert.are.equal(359.7, buttonY)
+		assert.is_true(math.abs(againFoot - (359.7 + 56 + 17.55)) < 0.01)
+	end)
+
+	it(
+		"keeps Off to the water and the line under it above the foot when the list's paragraph wraps long (ONB-R38)",
+		function()
+			for _, lines in ipairs({ 5, 6, 7 }) do
+				local loaded = guideAt("off", nil, function(ns)
+					return { [ns.L.GUIDE_OFF_LIST_TEXT] = lines }
+				end)
+				local buttonY, againFoot, listFoot = offFoot(loaded)
+
+				assert(againFoot <= 486 + 0.01, lines .. " lines: the line under the button runs into the foot")
+				assert(buttonY >= listFoot + 4 - 0.01, lines .. " lines: the button runs into the list")
+				assert(againFoot - 17.55 >= buttonY + 46 + 4 - 0.01, lines .. " lines: the line runs into the button")
+			end
+		end
+	)
+
 	it("sets guideDone and closes with Off to the water, then calls its hook (ONB-R26, ONB-R38)", function()
 		local loaded = guideAt("off")
 		local docked = 0

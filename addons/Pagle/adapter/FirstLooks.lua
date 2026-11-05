@@ -199,14 +199,17 @@ local function unstack(placed, window)
 	}) do
 		taken[#taken + 1] = rectOf(region)
 	end
+	-- The coach bar where it is (placeBar hung it before this): it is clamped to the screen, so under a low window the
+	-- client draws it higher than its anchor says. Not laid out yet, where its anchor puts it.
 	local bar = ns.coachBar
 	if bar and bar:IsShown() then
-		local foot = rectOf(window)
-		if foot then
+		local rect, foot = rectOf(bar), rectOf(window)
+		if not rect and foot then
 			local top = foot.bottom - BAR_DROP - hangsBelow(window)
 			local middle, half = (foot.left + foot.right) / 2, bar:GetWidth() / 2
-			taken[#taken + 1] = { left = middle - half, right = middle + half, top = top, bottom = top - BAR_HEIGHT }
+			rect = { left = middle - half, right = middle + half, top = top, bottom = top - BAR_HEIGHT }
 		end
+		taken[#taken + 1] = rect
 	end
 	local order = {}
 	for frame in pairs(placed) do

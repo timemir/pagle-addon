@@ -663,9 +663,13 @@ end
 -- Off you go's places (board 9): the sample Nod's window and its note; the margin-notes paragraph; the list, Off to the
 -- water and the line under it. Each keeps its place unless what is above it runs down to it: then it starts OFF_GAP
 -- under that, and what follows it moves with it, so a paragraph or a note that wraps longer pushes the rest down
--- instead of running under it (ONB-R38).
+-- instead of running under it (ONB-R38). On the right, Off to the water (46 tall) and the line under it (its line box
+-- 17.55) end above OFF_FOOT_TOP, clear of Core's foot at 490, as the Ledger's step keeps its notes (FOOT_TOP): when the
+-- list text wraps long enough to push them past it, the button first rises from the board's place toward the list,
+-- down to OFF_GAP_MIN under it, then the line closes up under the button, down to OFF_AGAIN_MIN; past that they run on.
 local OFF_WINDOW_Y, OFF_NOTE_Y, OFF_LOOKS_Y, OFF_GAP = 191.5, 222, 317.5, 12
-local OFF_LIST_Y, OFF_BUTTON_Y, OFF_AGAIN_DROP = 124, 359.7, 56
+local OFF_LIST_Y, OFF_BUTTON_Y, OFF_AGAIN_DROP, OFF_AGAIN_LH = 124, 359.7, 56, 17.55
+local OFF_FOOT_TOP, OFF_GAP_MIN, OFF_AGAIN_MIN = 486, 4, 50
 
 --- Off you go (ONB-R38, board 9): the paragraph, the sample Nod with margin note 1, the margin-notes paragraph naming
 --- the windows with First looks; on the right, the First evening list as it will look and Off to the water, which
@@ -690,12 +694,16 @@ local OFF = {
 		local evening = newEvening(right, listY)
 		pages.evening = evening
 		tickEvening(evening)
-		-- Off to the water (ONB-R38): the kit's big leather button, and the line under it
-		local buttonY = math.max(OFF_BUTTON_Y + listY - OFF_LIST_Y, listY + evening:GetHeight() + OFF_GAP)
+		-- Off to the water (ONB-R38): the kit's big leather button, and the line under it, above the foot
+		local listFoot = listY + evening:GetHeight()
+		local buttonY = math.max(OFF_BUTTON_Y + listY - OFF_LIST_Y, listFoot + OFF_GAP)
+		buttonY = math.max(listFoot + OFF_GAP_MIN, math.min(buttonY, OFF_FOOT_TOP - OFF_AGAIN_DROP - OFF_AGAIN_LH))
+		local againY = buttonY
+			+ math.max(OFF_AGAIN_MIN, math.min(OFF_AGAIN_DROP, OFF_FOOT_TOP - OFF_AGAIN_LH - buttonY))
 		local button = ns.NewGuideButton(right, L.GUIDE_OFF, nav.Finish, W, 46, 18)
 		ns.GuideAt(button, right, X, buttonY)
 		pages.offButton = button
-		text(right, "italic", 13, "note", L.GUIDE_OFF_AGAIN, 221, buttonY + OFF_AGAIN_DROP, 17.55, { center = true })
+		text(right, "italic", 13, "note", L.GUIDE_OFF_AGAIN, 221, againY, OFF_AGAIN_LH, { center = true })
 	end,
 	onShow = function()
 		if pages.evening then
