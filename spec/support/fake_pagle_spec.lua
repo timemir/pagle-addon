@@ -623,6 +623,7 @@ describe("FakePagle", function()
 					"Hunts",
 					"Input: Both",
 					"Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
+					"Copy for the website",
 					"Help chart the waters",
 					"Settings",
 				}, labels)
@@ -658,6 +659,7 @@ describe("FakePagle", function()
 				assert.are.same({
 					"Input: Both",
 					"Curio Shop  0 |TInterface\\MoneyFrame\\UI-GoldIcon:0|t",
+					"Copy for the website",
 					"Help chart the waters",
 					"Settings",
 				}, labels)
@@ -678,6 +680,24 @@ describe("FakePagle", function()
 			assert.are.same({ "root" }, fake.openedSettings)
 			assert.are.same({ "Pagle: settings open after combat." }, fake.printed)
 		end)
+
+		it(
+			"opens the export window from Copy for the website, or prints PST-R50's line while restricted (CORE-R33,"
+				.. " PST-R50)",
+			function()
+				local fake = newFakePagle()
+				fake.login()
+
+				local menu = fake.menu()
+				assert.are.equal("Copy for the website", menu[#menu - 2].label)
+				menu[#menu - 2].onClick()
+				fake.setRestricted(true)
+				menu[#menu - 2].onClick()
+
+				assert.are.same({ "new" }, fake.pasteExportsOpened)
+				assert.are.same({ "Pagle: the export window opens after combat." }, fake.printed)
+			end
+		)
 
 		it(
 			"shows the Curio Shop entry with the balance as BreakUpLargeNumbers writes it, opening the shop (CORE-R50,"

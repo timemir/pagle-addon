@@ -1,5 +1,8 @@
 -- The Addon Compartment entry "Pagle" and its menu (CORE-R33, CORE-R50–R52; settings.md SET-R75).
 
+-- The "Copy for the website" entry, between the Curio Shop and Help chart the waters (CORE-R50, PST-R50).
+local PASTE = "Copy for the website"
+
 -- The Curio Shop entry with this balance, as CORE-R50 writes it: two spaces, the balance, a coin icon.
 local function curioShop(balance)
 	return "Curio Shop  " .. balance .. " |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
@@ -51,7 +54,7 @@ describe("The compartment entry", function()
 		assert.are.equal("Pagle · 2 waiting", loaded.client.compartment[1].text)
 		loaded.client.clickCompartment("Pagle · 2 waiting")
 		loaded.client.runTimers()
-		assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, loaded.client.menus[1].texts())
+		assert.are.same({ curioShop(0), PASTE, "Help chart the waters", "Settings" }, loaded.client.menus[1].texts())
 	end)
 
 	it(
@@ -61,7 +64,7 @@ describe("The compartment entry", function()
 			loaded.client.fire("PLAYER_LOGIN")
 
 			local menu = loaded.client.openCompartmentMenu("Pagle")
-			assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, menu.texts())
+			assert.are.same({ curioShop(0), PASTE, "Help chart the waters", "Settings" }, menu.texts())
 			menu.click("Settings")
 
 			assert.are.same({ "Pagle" }, openedNames(loaded))
@@ -109,7 +112,7 @@ describe("The compartment menu with Modules", function()
 	end
 
 	it(
-		"lists each Module's views then its menu entries, by def.order, then the Curio Shop and Settings (CORE-R50)",
+		"lists each Module's views then its menu entries, by def.order, then Core's own four entries (CORE-R50)",
 		function()
 			local loaded = loadCore()
 			registerBoth(loaded)
@@ -122,6 +125,7 @@ describe("The compartment menu with Modules", function()
 				"Pin a Hunt",
 				"Input: Both 1",
 				curioShop(0),
+				PASTE,
 				"Help chart the waters",
 				"Settings",
 			}, menu.texts())
@@ -176,7 +180,7 @@ describe("The compartment menu with Modules", function()
 		loaded.client.fire("PLAYER_LOGIN")
 
 		assert.are.same(
-			{ curioShop(0), "Help chart the waters", "Settings" },
+			{ curioShop(0), PASTE, "Help chart the waters", "Settings" },
 			loaded.client.openCompartmentMenu("Pagle").texts()
 		)
 		assert.are.equal(1, #reported)
@@ -203,14 +207,14 @@ describe("The compartment menu's Curio Shop entry", function()
 		ledger:ReportCoinsEarned(1200)
 		board:ReportCoinsEarned(150)
 		assert.are.same(
-			{ curioShop("1,350"), "Help chart the waters", "Settings" },
+			{ curioShop("1,350"), PASTE, "Help chart the waters", "Settings" },
 			loaded.client.openCompartmentMenu("Pagle").texts()
 		)
 
 		board:ReportCoinsEarned(750)
 
 		assert.are.same(
-			{ curioShop("1,950"), "Help chart the waters", "Settings" },
+			{ curioShop("1,950"), PASTE, "Help chart the waters", "Settings" },
 			loaded.client.openCompartmentMenu("Pagle").texts()
 		)
 	end)
@@ -235,10 +239,30 @@ describe("The compartment menu's Curio Shop entry", function()
 		loaded.ns.wallet:SetSpent(900)
 
 		assert.are.same(
-			{ curioShop(0), "Help chart the waters", "Settings" },
+			{ curioShop(0), PASTE, "Help chart the waters", "Settings" },
 			loaded.client.openCompartmentMenu("Pagle").texts()
 		)
 	end)
+end)
+
+describe("The compartment menu's Copy for the website entry", function()
+	it(
+		"opens the export window as /pagle export does, just before Help chart the waters (CORE-R50, PST-R50)",
+		function()
+			local loaded = loadCore()
+			loaded.client.fire("PLAYER_LOGIN")
+			assert.is_nil(loaded.ns.pasteExportWindow)
+
+			local menu = loaded.client.openCompartmentMenu("Pagle")
+			menu.click(PASTE)
+
+			local window = assert(loaded.ns.pasteExportWindow)
+			assert.is_true(window:IsShown())
+			assert.are.equal("Export for the website", window.title:GetText())
+			assert.are.same({}, openedNames(loaded))
+			assert.are.same({}, loaded.printed)
+		end
+	)
 end)
 
 describe("The compartment menu while restricted", function()
@@ -248,11 +272,22 @@ describe("The compartment menu while restricted", function()
 		setCombat(loaded, true)
 
 		local menu = loaded.client.openCompartmentMenu("Pagle")
-		assert.are.same({ curioShop(0), "Help chart the waters", "Settings" }, menu.texts())
+		assert.are.same({ curioShop(0), PASTE, "Help chart the waters", "Settings" }, menu.texts())
 		menu.click("Settings")
 
 		assert.are.same({}, openedNames(loaded))
 		assert.are.same({ "Pagle: settings open after combat." }, loaded.printed)
+	end)
+
+	it("Copy for the website prints PST-R50's line and opens nothing (CORE-R33, PST-R50)", function()
+		local loaded = loadCore()
+		loaded.client.fire("PLAYER_LOGIN")
+		setCombat(loaded, true)
+
+		loaded.client.openCompartmentMenu("Pagle").click(PASTE)
+
+		assert.is_nil(loaded.ns.pasteExportWindow)
+		assert.are.same({ "Pagle: the export window opens after combat." }, loaded.printed)
 	end)
 end)
 

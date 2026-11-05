@@ -308,13 +308,14 @@ local function menuRow(menu, i, label, y)
 end
 
 --- Draws the menu as the real one reads now (CORE-R50, CORE-R52): each registered Module's views and entries, a rule,
---- "Curio Shop" with the balance and a coin, "Help chart the waters" (with its count) and "Settings". The first row
---- has the wash under it, as the pointer's row on the canvas.
+--- "Curio Shop" with the balance and a coin, "Copy for the website", "Help chart the waters" (with its count) and
+--- "Settings". The first row has the wash under it, as the pointer's row on the canvas. With every Module on it is 253
+--- tall, ending at 422.5 on the left page, clear of « back at 508 (ONB-R31).
 ---@param menu PagleGuideMenuDrawing
 local function drawMenu(menu)
 	local entries =
 		ns.CoreCompartmentMenu(Pagle, ns.coreSubcommands, ns.Modules:Modules(), BreakUpLargeNumbers, securecallfunction)
-	local core = #entries - 3
+	local core = #entries - 4 -- the Modules' entries; Core's four (shop, export, Field report, Settings) close it
 	local y, n = MENU_TOP, 0
 	for i = 1, core do
 		n = n + 1

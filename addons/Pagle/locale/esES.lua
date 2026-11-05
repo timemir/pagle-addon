@@ -235,6 +235,7 @@ ns.Locale("esES", function(L)
 	L.LOOK_SHOP_STOCK = "El surtido *nunca rota*. Lo que hay hoy seguirá aquí el mes que viene."
 	L.LOOK_SHOP_TITLE = "la Tienda de Curiosidades"
 	L.MENU_CURIO_SHOP = "Tienda de Curiosidades  {balance} |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
+	L.MENU_PASTE = "Copiar para la web"
 	L.MENU_SETTINGS = "Ajustes"
 	L.MENU_TOOLTIP_LETTER = "Una carta para ti"
 	L.MENU_TOOLTIP_WAITING = "{waiting:0} en espera"

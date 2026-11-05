@@ -287,6 +287,8 @@ OPEN_VIEW = "Open {label}"
 MENU_SETTINGS = "Settings"
 # Its Curio Shop entry (CORE-R50): the balance as BreakUpLargeNumbers writes it, then a coin icon.
 MENU_CURIO_SHOP = 'Curio Shop  {balance} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+# Its export window entry (CORE-R50, PST-R50), just before the Field report entry: the Settings root's button's words.
+MENU_PASTE = "Copy for the website"
 # Its Field report entry (CORE-R50, REP-R43), which is also the box's title (REP-R40) and the Settings root's
 # section header (SET-R10 row 4); the entry adds the count while it is above 0.
 HELP_CHART = "Help chart the waters"
