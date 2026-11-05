@@ -5,6 +5,7 @@
 	that list), then the step that applies the Language. Paths are relative to this file. A new language adds a line
 	here and none in the TOC. -->
 	<Script file="Registry.lua"/>
+	<Script file="deDE.lua"/>
 	<Script file="esES.lua"/>
 	<Script file="..\data\Lore.esES.lua"/>
 	<Script file="ruRU.lua"/>

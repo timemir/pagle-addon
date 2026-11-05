@@ -299,7 +299,8 @@ describe("Core's fish crests on the client (VAR-R12, VAR-R13)", function()
 	)
 
 	it("leave another locale's item names as the client gives them (VAR-R12)", function()
-		local loaded = held("deDE")
+		-- frFR: a client whose language Pagle doesn't ship, so Game default keeps the English "{fish} Crest" pattern.
+		local loaded = held("frFR")
 		loaded.client.itemNames[4603] = "Raw Spotted Yellowtail"
 		loaded.client.fire("ADDON_LOADED", "Pagle")
 

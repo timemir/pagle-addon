@@ -38,6 +38,9 @@ OWN_NUMBERS = {
     "addons/Pagle/locale/enUS.lua": {
         "0.1": "a length margin, \"+<0.1 cm\" (LENGTH_MARGIN_UNDER, LOG-R69)",
     },
+    "addons/Pagle/locale/deDE.lua": {
+        "2.3": "\"2.340 Würfen\", a count with German's thousands separator (DEV_SAMPLE_WRITE_UP)",
+    },
     "addons/Pagle/locale/esES.lua": {
         "0.1": "a length margin, \"+<0.1 cm\" (LENGTH_MARGIN_UNDER, LOG-R69)",
         "2.3": "\"2.340 Lances\", a count with Spanish's thousands separator (DEV_SAMPLE_WRITE_UP, #528)",

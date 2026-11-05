@@ -1,0 +1,14 @@
+# German, machine-drafted for 1.1.1: an AI model (Claude) wrote every string, and no human translator has yet, so
+# `translators` names no one and the credits list no one for it (docs/translations.md › Credits). Listed for 1.1.1 by
+# the maintainer's decision, machine-drafted, before any native German speaker has reviewed it; corrections are
+# welcome (docs/translations.md › Getting your language listed). German draws in Pagle's bundled faces, which have
+# every letter it needs (ä ö ü Ä Ö Ü ß) but no capital ẞ, so an upper-cased ß stays ß (logic/Case.lua). Quotation
+# marks are »…«: the bundled faces draw „ and ‚ too, but they are outside every Locale's range (data/glyphs.toml).
+#
+# The player is addressed as "du".
+
+name = "Deutsch"
+listed = true
+plural = "one_other"
+decimal = ","
+thousands = "."
