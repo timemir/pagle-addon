@@ -1,33 +1,45 @@
-# The Field report triage (DATA-R117): when an issue labelled field-report is opened or edited, posts one comment on
-# it saying what the pasted report holds and what importing it would change, and edits that comment in place on later
-# runs (found by its hidden marker). scripts/triage-field-report.py writes the comment from the issue and the default
-# branch's data/ (scripts/tests/test_triage.py tests it on recorded issues, API answers and a wago.tools CSV); this
-# file only fetches what GitHub holds, runs it and calls gh. It never edits data/ and never pushes; the dev imports
-# reports by hand with scripts/import-field-report.py (DATA-R119).
+# The Field report triage (DATA-R117): every 30 minutes, and on demand, over the open issues labelled field-report.
+# On each one that is new or edited since its last triage it posts one comment saying what the pasted report holds and
+# what importing it would change, and edits that comment in place on later runs (found by its hidden marker; a second
+# hidden line holds a digest of the body it was written from, so an unchanged report is skipped without a download).
+# It has no issues trigger on purpose: GitHub can't filter issue events by label in `on:`, so an issues trigger
+# starts a run for every issue opened, edited or labelled, Field report or not.
+# scripts/triage-field-report.py writes the comment from the issue and the default branch's data/
+# (scripts/tests/test_triage.py tests it on recorded issues, API answers and a wago.tools CSV); this file only fetches
+# what GitHub holds, runs it and calls gh. It never edits data/ and never pushes; the dev imports reports by hand with
+# scripts/import-field-report.py (DATA-R119).
 #
 # The issue form (.github/ISSUE_TEMPLATE/field-report.yml) labels its issues field-report and needs-triage, but
 # GitHub drops a form label the repo doesn't have yet, so both must exist before the first report is filed. This
 # workflow creates field-report and needs-info when they're missing, for the runs after that.
+#
+# GitHub disables a public repo's scheduled workflows after 60 days with no repository activity; if this one stops
+# running, re-enable it from the Actions tab or with `gh workflow enable`.
 name: Field report triage
 
 on:
-  issues:
-    types: [opened, edited]
+  schedule:
+    - cron: "7,37 * * * *" # every 30 minutes, off the hour, when GitHub's scheduler is busiest
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: "One Field report issue to triage now, even if unchanged (empty: every open one that changed)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
-  issues: write # list the open Field reports, create the two labels if missing, post or edit the comment, label
+  issues: write # list the open Field reports, create the two labels if missing, post or edit the comments, label
 
 concurrency:
-  # Two runs on one issue at once could both post a comment; a later edit's run waits for the earlier one.
-  group: field-report-triage-${{ github.event.issue.number }}
+  # One triage at a time: two runs over the same issue could both post a comment.
+  group: field-report-triage
   cancel-in-progress: false
 
 jobs:
   triage:
-    if: contains(github.event.issue.labels.*.name, 'field-report')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       # The default branch: its data/ and its Catalogue.lua's fingerprint are what the report is judged against.
       - uses: actions/checkout@v7
@@ -46,33 +58,10 @@ jobs:
         with:
           python-version: ${{ steps.pins.outputs.python }}
 
-      # The open Field reports (the report's other parts, and earlier issues it supersedes) and this issue's
-      # comments (the Action's earlier one, to edit in place). The issue itself comes from the event payload.
-      - name: Fetch the open Field reports and this issue's comments
+      - name: Make sure the two labels exist
         env:
           GH_TOKEN: ${{ github.token }}
-          NUMBER: ${{ github.event.issue.number }}
         run: |
-          gh issue list --repo "$GITHUB_REPOSITORY" --label field-report --state open --limit 1000 \
-            --json number,body > "$RUNNER_TEMP/open.json"
-          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/issues/$NUMBER/comments" > "$RUNNER_TEMP/comments.json"
-
-      # Writes comment.md and result.json; it downloads ItemSparse from wago.tools for the Uncharted items' names, and
-      # fails the run only when its inputs can't be read.
-      - name: Write the triage comment
-        run: >-
-          python scripts/triage-field-report.py --event "$GITHUB_EVENT_PATH"
-          --open-issues "$RUNNER_TEMP/open.json" --comments "$RUNNER_TEMP/comments.json"
-          --out "$RUNNER_TEMP/triage"
-
-      - name: Post the comment and label the issue
-        env:
-          GH_TOKEN: ${{ github.token }}
-          NUMBER: ${{ github.event.issue.number }}
-        run: |
-          out="$RUNNER_TEMP/triage"
-          comment=$(jq -r '.comment // empty' "$out/result.json")
-          needs_info=$(jq -r '.needsInfo' "$out/result.json")
           labels=$(gh label list --repo "$GITHUB_REPOSITORY" --limit 1000 --json name --jq '.[].name')
           if ! grep -qxF field-report <<<"$labels"; then
             gh label create field-report --repo "$GITHUB_REPOSITORY" --color 0e8a16 \
@@ -82,16 +71,60 @@ jobs:
             gh label create needs-info --repo "$GITHUB_REPOSITORY" --color fbca04 \
               --description "Waiting on the reporter for more information"
           fi
-          if [[ -n "$comment" ]]; then
-            jq -n --rawfile body "$out/comment.md" '{body: $body}' |
-              gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment" --input - > /dev/null
-            echo "triage: edited comment $comment"
+
+      # For each open Field report (or the one asked for): its comments, then the triage, which skips a report whose
+      # comment was written from its current body unless one issue was asked for; then post or edit, and label.
+      # One report's failure doesn't stop the others; the run fails at the end if any did.
+      - name: Triage the open Field reports
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASKED: ${{ inputs.issue }}
+        run: |
+          work="$RUNNER_TEMP/triage"
+          mkdir -p "$work"
+          gh issue list --repo "$GITHUB_REPOSITORY" --label field-report --state open --limit 1000 \
+            --json number,body,labels > "$work/open.json"
+          if [[ -n "$ASKED" ]]; then
+            if ! jq -e --argjson n "$ASKED" 'any(.[]; .number == $n)' "$work/open.json" > /dev/null; then
+              echo "::error::#$ASKED is not an open issue labelled field-report"
+              exit 1
+            fi
+            numbers="$ASKED"
+            skip=()
           else
-            gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$out/comment.md"
+            numbers=$(jq -r '.[].number' "$work/open.json")
+            skip=(--skip-if-current)
           fi
-          # needs-info while the paste can't be read; a fixed paste takes it off again.
-          if [[ "$needs_info" == true ]]; then
-            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --add-label needs-info
-          elif jq -e '.issue.labels | any(.name == "needs-info")' "$GITHUB_EVENT_PATH" > /dev/null; then
-            gh issue edit "$NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label needs-info
-          fi
+          failed=0
+          for n in $numbers; do
+            dir="$work/$n"
+            mkdir -p "$dir/out"
+            jq --argjson n "$n" '{action: "scheduled", issue: (.[] | select(.number == $n))}' "$work/open.json" \
+              > "$dir/event.json"
+            if ! gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/issues/$n/comments" > "$dir/comments.json"; then
+              echo "::warning::#$n: couldn't read its comments"; failed=1; continue
+            fi
+            if ! python scripts/triage-field-report.py --event "$dir/event.json" --open-issues "$work/open.json" \
+              --comments "$dir/comments.json" --out "$dir/out" "${skip[@]}"; then
+              echo "::warning::#$n: the triage failed"; failed=1; continue
+            fi
+            if [[ $(jq -r '.skip // false' "$dir/out/result.json") == true ]]; then
+              continue
+            fi
+            comment=$(jq -r '.comment // empty' "$dir/out/result.json")
+            needs_info=$(jq -r '.needsInfo' "$dir/out/result.json")
+            if [[ -n "$comment" ]]; then
+              jq -n --rawfile body "$dir/out/comment.md" '{body: $body}' |
+                gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment" --input - > /dev/null
+              echo "triage: #$n: edited comment $comment"
+            else
+              gh issue comment "$n" --repo "$GITHUB_REPOSITORY" --body-file "$dir/out/comment.md"
+            fi
+            # needs-info while the paste can't be read; a fixed paste takes it off again.
+            if [[ "$needs_info" == true ]]; then
+              gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --add-label needs-info
+            elif jq -e '.issue.labels | any(.name == "needs-info")' "$dir/event.json" > /dev/null; then
+              gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --remove-label needs-info
+            fi
+          done
+          exit "$failed"

@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from cli_fixture import Canned
-from pagle_data.triage import CUT_NOTE, MARKER, Issue, main
+from pagle_data.triage import CUT_NOTE, MARKER, Issue, input_line, main
 from pagle_data.triage import triage as build
 from report_fixture import issue_body
 from report_fixture import part as report_part
@@ -75,6 +75,7 @@ def triage(
     open_issues: Sequence[tuple[int, str]] = (),
     comments: object = (),
     fetch: Canned | None = None,
+    skip_if_current: bool = False,
 ) -> Run:
     """The triage on the tree at root for issue number with body, as the workflow hands it over: the event payload,
     the open field-report issues (`gh issue list --json number,body`, this one among them) and the issue's comments
@@ -89,6 +90,8 @@ def triage(
     out = tmp_path / "out"
     argv = ["--event", str(work / "event.json"), "--open-issues", str(work / "open.json")]
     argv += ["--comments", str(work / "comments.json"), "--out", str(out)]
+    if skip_if_current:
+        argv.append("--skip-if-current")
     code = main(argv, root, fetch if fetch is not None else Canned({ITEM_SPARSE_URL: ITEM_SPARSE}))
     captured = capsys.readouterr()
     return Run(code, captured.out + captured.err, out)
@@ -306,3 +309,43 @@ def test_a_comment_over_githubs_limit_is_cut_with_a_note_and_its_code_block_clos
     assert len(found.comment) <= 4000
     assert found.comment.rstrip().endswith(CUT_NOTE)
     assert found.comment.count("```") % 2 == 0
+
+
+def test_the_comment_carries_the_digest_of_the_body_it_was_written_from(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R117: the scheduled run tells an edited report from an unchanged one by this second hidden line.
+    root = tree(tmp_path / "repo", BOBBER)
+    run = triage(root, tmp_path, capsys, CLEAN)
+    assert run.code == 0, run.output
+    assert run.lines[0] == MARKER
+    assert run.lines[1] == input_line(CLEAN)
+    assert input_line(CLEAN) != input_line(CLEAN + "\nedited")
+
+
+def test_the_scheduled_run_skips_an_unchanged_report_without_downloading(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # DATA-R117: every 30 minutes over the open reports; one whose comment matches its body costs nothing.
+    root = tree(tmp_path / "repo", BOBBER)
+    first = triage(root, tmp_path, capsys, CLEAN)
+    pages = [[bot_comment(9, first.comment)]]
+    fetch = Canned({})
+    run = triage(root, tmp_path, capsys, CLEAN, comments=pages, fetch=fetch, skip_if_current=True)
+    assert run.code == 0, run.output
+    assert run.result == {"comment": 9, "skip": True}
+    assert run.comment == ""
+    assert fetch.asked == []
+
+
+def test_the_scheduled_run_triages_an_edited_report_again(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    # DATA-R117: an edited body, or a comment from before the digest line, is triaged again and edited in place.
+    root = tree(tmp_path / "repo", BOBBER)
+    first = triage(root, tmp_path, capsys, CLEAN)
+    edited = first.comment.replace(input_line(CLEAN), input_line(CLEAN + "\nedited"))
+    old_style = "\n".join(line for line in first.lines if line != input_line(CLEAN))
+    for earlier in (edited, old_style):
+        run = triage(root, tmp_path, capsys, CLEAN, comments=[[bot_comment(9, earlier)]], skip_if_current=True)
+        assert run.code == 0, run.output
+        assert run.result == {"comment": 9, "needsInfo": False}
+        assert run.lines[1] == input_line(CLEAN)

@@ -17,13 +17,13 @@ Total time: about 60–90 minutes, plus an optional 15 minutes for the load-time
 
 ## 1. Install
 
-### 1.1 Find the Forever beta folder
+### 1.1 Find the Forever game folder
 
-The folder name is unconfirmed (reports say `_classic_beta_`), so check where yours is:
+Live Forever's folder is `_forever_` (confirmed at launch, 4 Nov 2026). To find it:
 
-1. Open the **Battle.net app** and select **WoW: Forever** with the beta/test version chosen in the version drop-down.
+1. Open the **Battle.net app** and select **WoW: Forever**.
 2. Click the **gear icon** next to the Play button and choose **Show in Explorer**.
-3. Explorer opens the game folder (for example `C:\Program Files (x86)\World of Warcraft\`). Inside, find the sub-folder that contains **`WowB.exe`** (or whichever `.exe` the beta launches). Its name starts and ends with an underscore, for example `_classic_beta_`. **Write the exact name down; it is one of the answers we need.**
+3. Explorer opens the game folder (for example `C:\Program Files (x86)\World of Warcraft\`). Inside, open the `_forever_` sub-folder.
 4. Inside that folder, open `Interface\AddOns`. If `Interface` or `AddOns` doesn't exist, create them, spelled exactly like that.
 
 ### 1.2 Copy the addon
@@ -31,15 +31,15 @@ The folder name is unconfirmed (reports say `_classic_beta_`), so check where yo
 Copy both folders from `probes/fishing-signals/` into `AddOns`, so you end up with:
 
 ```
-<beta folder>\Interface\AddOns\PagleProbe\PagleProbe.toc
-<beta folder>\Interface\AddOns\PagleProbe_Module\PagleProbe_Module.toc
+<game folder>\Interface\AddOns\PagleProbe\PagleProbe.toc
+<game folder>\Interface\AddOns\PagleProbe_Module\PagleProbe_Module.toc
 ```
 
 Copy the folders themselves, not their contents, and don't nest them one level deeper (watch out for this when unzipping).
 
 ### 1.3 Check the AddOns list (before logging in)
 
-1. Start the beta. At the **character selection** screen, click **AddOns** (bottom left).
+1. Start the game. At the **character selection** screen, click **AddOns** (bottom left).
 2. Check, and write down:
    - Is **PagleProbe** listed? Is **PagleProbe - Module** shown *nested/indented under* PagleProbe (a collapsible group)?
    - If they show as "out of date", tick **Load out of date AddOns**.
@@ -122,7 +122,7 @@ Do these in order. **Each time, type the `mark` command first**, then do the act
 
 ### Step 11: Disable the Module
 
-1. Open Explorer at `<beta folder>\WTF\Account\<YOUR ACCOUNT>\SavedVariables\` and note the **Date modified** of `PagleProbe_Module.lua`.
+1. Open Explorer at `<game folder>\WTF\Account\<YOUR ACCOUNT>\SavedVariables\` and note the **Date modified** of `PagleProbe_Module.lua`.
 2. In game: `/pprobe mark module-off`, then Esc → **Log Out**.
 3. At character select: **AddOns** → **untick** "PagleProbe - Module" (leave PagleProbe ticked) → Okay.
 4. **Exit the game fully and start it again**, then log in. The chat should say `Module: not loaded`.
@@ -133,7 +133,7 @@ Do these in order. **Each time, type the `mark` command first**, then do the act
 
 1. Catch 2–3 fish, then `/reload`.
 2. Catch 2–3 more fish. Type `/pprobe` and **write down** the number after "Loot windows".
-3. Open **Task Manager** (Ctrl+Shift+Esc), find the WoW beta process, and click **End task**. This simulates a crash.
+3. Open **Task Manager** (Ctrl+Shift+Esc), find the WoW process, and click **End task**. This simulates a crash.
 4. Start the game again and log in. Type `/pprobe` and **write down** "Loot windows" again.
 
 ### Step 13: Copy the report
@@ -163,10 +163,10 @@ Delete the two addon folders from `Interface\AddOns`. You can also delete `Pagle
 ## 3. What to paste back into issue #7
 
 1. The **`/pprobe report` output** (and the second one if you did Step 14).
-2. The **beta folder name** (Step 1.1) and the **full paths** of the saved-data files. They are normally:
-   - `<beta folder>\WTF\Account\<ACCOUNT>\SavedVariables\PagleProbe.lua`
-   - `<beta folder>\WTF\Account\<ACCOUNT>\SavedVariables\PagleProbe_Module.lua`
-   - `<beta folder>\WTF\Account\<ACCOUNT>\<Realm>\<Character>\SavedVariables\PagleProbe.lua` (the per-character file)
+2. The **game folder name** (Step 1.1) and the **full paths** of the saved-data files. They are normally:
+   - `<game folder>\WTF\Account\<ACCOUNT>\SavedVariables\PagleProbe.lua`
+   - `<game folder>\WTF\Account\<ACCOUNT>\SavedVariables\PagleProbe_Module.lua`
+   - `<game folder>\WTF\Account\<ACCOUNT>\<Realm>\<Character>\SavedVariables\PagleProbe.lua` (the per-character file)
    - Say whether `.lua.bak` files sit next to them.
 3. Answers you saw by eye:
    - Was the Module nested under PagleProbe in the AddOns list? Did you have to remove any `.toc` lines?

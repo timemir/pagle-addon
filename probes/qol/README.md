@@ -8,20 +8,20 @@
 
 ## 1. Install
 
-1. Find the Forever beta game folder. The folder name is not confirmed yet (it may be `_classic_beta_`).
+1. Find the Forever game folder. Live Forever's is `_forever_` (confirmed at launch, 4 Nov 2026).
    1. Open the Battle.net app and select **World of Warcraft**.
-   2. In the version drop-down above the Play button, pick the **Forever beta**.
+   2. In the version drop-down above the Play button, pick **WoW: Forever**.
    3. Click the gear icon next to Play, then **Show in Explorer**.
-   4. Explorer opens the `World of Warcraft` folder. It contains one sub-folder per game version, for example `_retail_`, `_classic_era_` and `_classic_beta_`. The right one holds the beta's `.exe`, which may be `WowB.exe`. If you're unsure, check which folder has the newest `.exe`.
+   4. Explorer opens the `World of Warcraft` folder. It contains one sub-folder per game version, for example `_retail_`, `_classic_era_` and `_forever_`. The right one is `_forever_`.
 2. Inside that folder, open `Interface\AddOns\`. If the folders don't exist, create them.
 3. Copy the whole `PagleQoLProbe` folder (from `probes/qol/` in this repo) into `Interface\AddOns\`. The result must look like this, with no extra folder in between:
    ```
-   <beta folder>\Interface\AddOns\PagleQoLProbe\PagleQoLProbe.toc
-   <beta folder>\Interface\AddOns\PagleQoLProbe\Core.lua
-   <beta folder>\Interface\AddOns\PagleQoLProbe\Tests.lua
-   <beta folder>\Interface\AddOns\PagleQoLProbe\UI.lua
+   <game folder>\Interface\AddOns\PagleQoLProbe\PagleQoLProbe.toc
+   <game folder>\Interface\AddOns\PagleQoLProbe\Core.lua
+   <game folder>\Interface\AddOns\PagleQoLProbe\Tests.lua
+   <game folder>\Interface\AddOns\PagleQoLProbe\UI.lua
    ```
-4. Start the beta. At character select, click **AddOns**:
+4. Start the game. At character select, click **AddOns**:
    - Make sure **Pagle QoL Probe (throwaway)** is ticked.
    - If it says *Out of date*, tick **Load out of date AddOns** at the top.
    - If it is missing or says *Incompatible*, stop and report that, with the folder path you used.
@@ -133,4 +133,4 @@ You must undo these yourself:
    - the **folder path** you installed into
    - anything odd you saw, such as red error windows, "AddOn blocked" pop-ups, or a test that did nothing at all
 
-If the report window won't copy, send the file `WTF\Account\<ACCOUNT>\SavedVariables\PagleQoLProbe.lua` from the beta folder instead. It has the same data, written when you log out or `/reload`.
+If the report window won't copy, send the file `WTF\Account\<ACCOUNT>\SavedVariables\PagleQoLProbe.lua` from the game folder instead. It has the same data, written when you log out or `/reload`.
