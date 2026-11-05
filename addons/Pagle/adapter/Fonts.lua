@@ -80,42 +80,84 @@ ns.PublishFaces(Pagle, ns.faces)
 
 --- What a client's own faces lack of the characters Pagle's strings use, and what is drawn in its place, by client
 --- code (CORE-R9). On a ruRU, koKR, zhCN or zhTW client every face is the client's whatever the Language
---- (faceLanguage), so English or Spanish there draws in fonts made for another script. From the fonts' cmaps (ruRU's
---- on build 1.60.1.70790 and in game; the others from the client's CASC files, unchanged since 6.0.1, not yet seen in
---- game): FRIZQT___CYR (ruRU's body, heading and hand) has no middle dot, so the separator draws as the bullet, which
---- it and ARIALN both have; ARKai_T and ARKai_C (zhCN) and bHEI00M, bHEI01B and bKAI00M (zhTW) have no guillemets,
---- which the English writes only as arrows ("Next »", "« back", "Settings » Announcements"), so they draw as "<" and
---- ">". koKR's 2002 and 2002B have every character the strings use; K_Pagetext, its hand, lacks the dashes and the
---- bullet but is left alone, as the body text would lose them for it. A Locale's own strings already keep to its
---- fonts (data/glyphs.toml [without]), so the swap changes nothing in them.
----@type table<string, table<string, string>>
+--- (faceLanguage), so English, Spanish or German there draws in fonts made for another script. From the fonts' cmaps
+--- (ruRU's on build 1.60.1.70790 and in game; the others from the client's CASC files, unchanged since 6.0.1, not yet
+--- seen in game): FRIZQT___CYR (ruRU's body, heading and hand) has no middle dot, so the separator draws as the bullet,
+--- which it and ARIALN both have; ARKai_T and ARKai_C (zhCN) and bHEI00M, bHEI01B and bKAI00M (zhTW) have no
+--- guillemets but have the curly double quotes, so a guillemet draws as swapGuillemets says. koKR's 2002 and 2002B have
+--- every character the strings use; K_Pagetext, its hand, lacks the dashes and the bullet but is left alone, as the
+--- body text would lose them for it. A Locale's own strings already keep to its fonts (data/glyphs.toml [without]), so
+--- the swap changes nothing in them.
+
+-- The guillemets « and » in UTF-8: the lead byte 0xC2, which no other character's bytes contain past their first,
+-- then 0xAB or 0xBB. And the curly double quotes “ and ”.
+local GUILLEMET, LEFT_GUILLEMET = "\194[\171\187]", "\194\171"
+local OPEN_QUOTE, CLOSE_QUOTE = "\226\128\156", "\226\128\157"
+
+-- Whether `char` (a string's byte, "" past either end) leaves a guillemet beside it standing apart: an end of the
+-- string, a space, or the pseudo-locale's brackets round the whole string.
+---@param char string
+---@return boolean
+local function apart(char)
+	return char == "" or char:find("^[%s%[%]]") ~= nil
+end
+
+-- `text` with each guillemet given its zhCN and zhTW stand-in. The strings use them two ways. An arrow stands apart,
+-- between spaces or at an end ("Next »", "« back", "Settings » Announcements", in every Language), and draws as "<"
+-- or ">". A quotation mark touches the words it holds (German's »Wie im Spiel«, Spanish's and Russian's «…»), and
+-- draws as the curly quotes, “ then ”, by turns along the string, whichever way the Language points them: as ">" and
+-- "<" German's would read backwards.
+---@param text string
+---@return string
+local function swapGuillemets(text)
+	local at = text:find(GUILLEMET)
+	if not at then
+		return text
+	end
+	local parts, from, open = {}, 1, false
+	while at do
+		local stand
+		if apart(text:sub(at - 1, at - 1)) and apart(text:sub(at + 2, at + 2)) then
+			stand = text:sub(at, at + 1) == LEFT_GUILLEMET and "<" or ">"
+		else
+			stand = open and CLOSE_QUOTE or OPEN_QUOTE
+			open = not open
+		end
+		parts[#parts + 1] = text:sub(from, at - 1)
+		parts[#parts + 1] = stand
+		from = at + 2
+		at = text:find(GUILLEMET, from)
+	end
+	parts[#parts + 1] = text:sub(from)
+	return table.concat(parts)
+end
+
+---@type table<string, fun(text: string): string>
 ns.CLIENT_GLYPHS = {
-	ruRU = { ["\194\183"] = "\226\128\162" },
-	zhCN = { ["\194\171"] = "<", ["\194\187"] = ">" },
-	zhTW = { ["\194\171"] = "<", ["\194\187"] = ">" },
+	ruRU = function(text)
+		return (text:gsub("\194\183", "\226\128\162"))
+	end,
+	zhCN = swapGuillemets,
+	zhTW = swapGuillemets,
 }
 
--- Swaps `swaps` in every string of `t` at any depth; answers whether one changed.
+-- Gives every string of `t` at any depth the stand-ins `swap` makes; answers whether one changed.
 ---@param t table
----@param swaps table<string, string>
+---@param swap fun(text: string): string
 ---@param seen table<table, true>
 ---@return boolean
-local function swapGlyphs(t, swaps, seen)
+local function swapGlyphs(t, swap, seen)
 	local changed = false
 	for key, value in pairs(t) do
 		if type(value) == "string" then
-			local text = value
-			for glyph, stand in pairs(swaps) do
-				-- Neither side holds a pattern or replacement character: a UTF-8 sequence or one ASCII sign.
-				text = text:gsub(glyph, stand)
-			end
+			local text = swap(value)
 			if text ~= value then
 				t[key] = text
 				changed = true
 			end
 		elseif type(value) == "table" and not seen[value] then
 			seen[value] = true
-			changed = swapGlyphs(value, swaps, seen) or changed
+			changed = swapGlyphs(value, swap, seen) or changed
 		end
 	end
 	return changed
@@ -130,11 +172,11 @@ end
 ---@param client any The client's `GetLocale()`.
 ---@return boolean changed
 function ns.ApplyClientGlyphs(L, client)
-	local swaps = ns.CLIENT_GLYPHS[client]
-	if type(L) ~= "table" or not swaps then
+	local swap = ns.CLIENT_GLYPHS[client]
+	if type(L) ~= "table" or not swap then
 		return false
 	end
-	return swapGlyphs(L, swaps, { [L] = true })
+	return swapGlyphs(L, swap, { [L] = true })
 end
 
 --- Applies ns.ApplyClientGlyphs to a Module's string table `L` as its files load, after its Locale and the pseudo-locale
