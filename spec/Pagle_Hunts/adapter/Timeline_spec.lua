@@ -277,6 +277,62 @@ describe("the timeline's ruler and washes (HNT-R62)", function()
 		assert.are.same({ "15", "18", "21", "00", "03", "06", "09" }, labels) -- 12 is half an hour off
 	end)
 
+	-- The ruler's drawn parts on the Board's left page.
+	local function rulerView(run)
+		return assert(run.ns.TimelinePageView(run.ns.board:Page({ mode = "board" }, "left")))
+	end
+
+	it(
+		'sets "next 22h" in the ruler\'s left column above "Realm time", clear of the hours, in a longer language too'
+			.. " (HNT-R62)",
+		function()
+			local run = hunts.start({
+				prepare = function(loaded)
+					loaded.ns.L.RULER_NEXT = "на {ruler_next:0} ч вперёд" -- ruRU's, 25 bytes: 150 px in the fake
+				end,
+			})
+			run.ns.ToggleBoard()
+
+			local view = rulerView(run)
+			local ahead, realmTime = view.ahead, view.realmTime
+			assert.are.equal("на 22 ч вперёд", ahead:GetText()) -- whole: bound by its width, never rewritten
+			-- left of the track (178), short of where an hour label centred on its first tick could reach
+			assert.are.same({ "TOPLEFT", view.top, "TOPLEFT", 0, -48 }, ahead.points[1])
+			assert(ahead.width > 0 and ahead.width <= 178 - 24, "the label stays in the left column")
+			assert.are.same({ "TOPLEFT", view.top, "TOPLEFT", 0, -65 }, realmTime.points[1])
+			assert(realmTime.width > 0 and realmTime.width <= 178 - 24, "Realm time stays in the left column")
+		end
+	)
+
+	it(
+		"draws an hour label only where it clears the one before it, in a language whose hours run long (HNT-R62)",
+		function()
+			local run = hunts.start({
+				prepare = function(loaded)
+					loaded.ns.L.RULER_HOUR = "{hour} h 00" -- 7 bytes: 42 px in the fake, past the ticks' 23.75 apart
+				end,
+			})
+			run.ns.ToggleBoard()
+
+			local shown = {}
+			for _, tick in ipairs(rulerView(run).ticks) do
+				if tick.label.shown then
+					local x = tick.label.points[1][4]
+					local half = #tick.label:GetText() * 6 / 2
+					shown[#shown + 1] = { left = x - half, right = x + half, text = tick.label:GetText() }
+				end
+			end
+			local texts = {}
+			for i, label in ipairs(shown) do
+				texts[i] = label.text
+			end
+			assert.are.same({ "12 h 00", "18 h 00", "00 h 00", "06 h 00" }, texts) -- every other one, 47.5 apart
+			for i = 2, #shown do
+				assert(shown[i].left > shown[i - 1].right, shown[i - 1].text .. " and " .. shown[i].text .. " meet")
+			end
+		end
+	)
+
 	it("washes the next 3 hours (Soon) and the spans the night window holds", function()
 		local run = start()
 		local now = SERVER_TIME

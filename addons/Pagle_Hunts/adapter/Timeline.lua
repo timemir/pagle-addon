@@ -31,7 +31,12 @@ local LOOK = ns.BOARD_LOOK
 -- The page's layout, in UI units down the page's body (the kit's canvas): the kicker and title, the ruler's hour
 -- labels, its ticks, its rule and "Realm time", the list scrolling under it, and the legend at the foot.
 local KICKER_Y, TITLE_Y = 1, 17
-local HOUR_Y, TICK_Y, MINOR_Y, RULE_Y, REALM_Y, NEXT_Y = 53, 69, 74, 82.5, 65, 58
+local HOUR_Y, TICK_Y, MINOR_Y, RULE_Y, REALM_Y, NEXT_Y = 53, 69, 74, 82.5, 65, 48
+-- The ruler's left column, where "next 22h" sits over "Realm time": from the page's left to short of the track by
+-- half an hour label, so neither meets a label centred on a tick at the ruler's start (HNT-R62). Over the ruler's right
+-- end, as the kit drew it, a longer language's words ("на 22 ч вперёд") ran over the hours and their ticks. And the
+-- least gap between two hour labels: a label that would come closer to the one before it is left out.
+local COLUMN_ROOM, HOUR_GAP = 178 - 24, 4
 local LIST_Y, LIST_HEIGHT, LEGEND_Y = 84, 368, 498
 -- The now line runs up through the ruler from here.
 local NOW_Y = 44
@@ -158,6 +163,8 @@ end
 ---@field top Frame               -- where the ruler starts down the page: the wager strip pushes it down (HNT-R161)
 ---@field listHeight number       -- the list's height, less what the strip takes
 ---@field ruler Frame             -- the ruler's labels, ticks and rule
+---@field ahead FontString        -- "next 22h", in the ruler's left column
+---@field realmTime FontString    -- "Realm time", under it
 ---@field ticks { mark: Texture, label: FontString }[]
 ---@field nowLine Texture
 ---@field column Frame            -- the track's column behind the list, for the washes
@@ -254,11 +261,27 @@ local function at(region, page, x, y)
 	region:SetPoint("TOPLEFT", page, "TOPLEFT", x, -y)
 end
 
--- The ruler's fixed parts: "Realm time" at its left, "next 22h" in the hand at its right, its minor ticks each hour
--- and its rule; the hours' labels and ticks come with each draw. `page` is the ruler's top (TimelinePageView.top).
+-- Bounds a one-line `text` to `room`: its own width when it fits, else a size down (`tight`, when given), and only
+-- past that cut short with an ellipsis by the client (measured unbounded first).
+---@param text FontString
+---@param room number
+---@param tight Font?
+local function bound(text, room, tight)
+	text:SetWordWrap(false)
+	text:SetWidth(0)
+	if tight and text:GetStringWidth() > room then
+		text:SetFontObject(tight)
+	end
+	text:SetWidth(math.max(1, math.min(math.ceil(text:GetStringWidth()) + 1, room)))
+end
+
+-- The ruler's fixed parts: in its left column "next 22h" in the hand over "Realm time", its minor ticks each hour and
+-- its rule; the hours' labels and ticks come with each draw. `page` is the ruler's top (TimelinePageView.top).
 ---@param page Frame
 ---@param width number
----@return Frame
+---@return Frame ruler
+---@return FontString ahead
+---@return FontString realm
 local function buildRuler(page, width)
 	local fonts = ns.BoardFonts()
 	local ruler = CreateFrame("Frame", nil, page)
@@ -266,14 +289,16 @@ local function buildRuler(page, width)
 	local realm = ns.BoardText(ruler, ns.ArtFont("print", 11), LOOK.kicker)
 	realm:SetText(ns.BoardSmallCaps(ns.L.RULER_REALM_TIME))
 	at(realm, page, 0, REALM_Y)
+	bound(realm, COLUMN_ROOM)
 	local ahead = ns.BoardText(ruler, fonts.count, LOOK.red)
-	ahead:SetJustifyH("RIGHT")
+	ahead:SetJustifyH("LEFT")
 	ahead:SetText(ns.Text(ns.L.RULER_NEXT, { ruler_next = math.floor(ns.RULER_AFTER / 3600) }))
-	ahead:SetPoint("TOPRIGHT", page, "TOPLEFT", width, -NEXT_Y)
+	at(ahead, page, 0, NEXT_Y)
+	bound(ahead, COLUMN_ROOM, fonts.marginTight)
 	local rule = ns.BoardSolid(ruler, LOOK.group, "ARTWORK")
 	rule:SetSize(width, 1.5)
 	at(rule, page, 0, RULE_Y)
-	return ruler
+	return ruler, ahead, realm
 end
 
 -- The page's frames, made at its first draw: the kicker and title, the ruler, the washes' column, the scrolling list
@@ -296,7 +321,7 @@ local function build(page)
 	local top = CreateFrame("Frame", nil, page)
 	top:SetSize(width, 1)
 	at(top, page, 0, 0)
-	local ruler = buildRuler(top, width)
+	local ruler, ahead, realmTime = buildRuler(top, width)
 
 	local column = CreateFrame("Frame", nil, page)
 	at(column, top, TRACK_X, LIST_Y)
@@ -340,6 +365,8 @@ local function build(page)
 		top = top,
 		listHeight = LIST_HEIGHT,
 		ruler = ruler,
+		ahead = ahead,
+		realmTime = realmTime,
 		ticks = {},
 		nowLine = nowLine,
 		column = column,
@@ -382,11 +409,13 @@ local function build(page)
 	return view
 end
 
--- Draws the ruler (HNT-R62): its hours' labels and ticks, a minor tick each hour, and the now line.
+-- Draws the ruler (HNT-R62): its hours' labels and ticks, a minor tick each hour, and the now line. A label that would
+-- meet the one before it (a language's longer hours, "21 h") is left out, its tick kept.
 ---@param view TimelinePageView
 ---@param ruler TimelineRuler
 local function drawRuler(view, ruler)
 	local fonts = ns.BoardFonts()
+	local lastRight -- the right edge of the last label drawn
 	for i, tick in ipairs(ruler.ticks) do
 		local drawn = view.ticks[i]
 		if not drawn then
@@ -406,6 +435,14 @@ local function drawRuler(view, ruler)
 		drawn.label:SetText(tick.label or "")
 		drawn.label:ClearAllPoints()
 		drawn.label:SetPoint("TOP", view.top, "TOPLEFT", x, -HOUR_Y)
+		if labelled then
+			drawn.label:SetWidth(0)
+			local half = drawn.label:GetStringWidth() / 2
+			labelled = not lastRight or x - half >= lastRight + HOUR_GAP
+			if labelled then
+				lastRight = x + half
+			end
+		end
 		drawn.label:SetShown(labelled)
 	end
 	for i = #ruler.ticks + 1, #view.ticks do
