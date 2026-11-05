@@ -1,5 +1,29 @@
 # Pagle
 
+## 1.1.0 (2026-11-05)
+
+Pagle speaks Spanish and Russian.
+
+### Added
+
+- Pagle in Spanish (Español) and Russian (Русский). Choose the language under Language in Pagle's settings, next to Clock; a `/reload` applies it, on every character. "Game default" follows your game client, so a Spanish or Russian client starts in its own language. Russian is offered on a Russian client, whose fonts draw it. Names the game itself supplies (fish, items, zones, events, spells) stay in your game's language. (#512)
+- Parts of both translations were drafted by machine and are waiting for a native speaker's review. Spotted something that reads wrong? Tell us on GitHub; corrections are welcome. The Translations line in Pagle's settings credits each language's translators. (#526, #528)
+- "Copy for the website" in Pagle's menu by the minimap, above Help chart the waters: the Paste string from `/pagle export`, one click away. (#549)
+- For Module and addon authors: Pagle's API is at version 2. `Pagle.Text` fills named `{fields}`, picks plural forms and writes numbers in the chosen language; `Pagle.GetLanguage` says which language that is, and `Pagle.Upper`, `Pagle.Lower` and `Pagle.FoldCase` handle accented letters. (#513, #516)
+
+### Changed
+
+- Numbers Pagle writes use the chosen language's separators, such as "1.850" in Spanish and "1 850" in Russian, whatever your game client is set to. What the website and the Field report read is unchanged. (#513, #559)
+- In Russian, Pagle separates with "•", which the Russian client's font draws. (#559)
+
+### Fixed
+
+- Rows in the Stats book and lines in the Hunts tracker keep the fish's or Hunt's name readable beside a long countdown or reading. (#559)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.0.2 (2026-11-05)
 
 ### Fixed
