@@ -52,7 +52,7 @@ Part of [Core](README.md). A **Paste string** is the no-install way to get the C
 
 ### The export window
 
-- **PST-R50** `/pagle export`, `Pagle.OpenPasteExport()` and the Settings root's button (SET-R10 row 12) open the **export window**. While `Pagle.IsRestricted()` is true no entry point opens it; each prints one chat line, "Pagle: the export window opens after combat.", and a window already open stays open (CORE-R33).
+- **PST-R50** `/pagle export`, `Pagle.OpenPasteExport()`, the Settings root's button (SET-R10 row 12) and, from 1.1, the compartment menu's "Copy for the website" (CORE-R50) open the **export window**. While `Pagle.IsRestricted()` is true no entry point opens it; each prints one chat line, "Pagle: the export window opens after combat.", and a window already open stays open (CORE-R33).
 - **PST-R51** The window shows, from the top:
   - the title, "Export for the website";
   - the privacy line, "Holds your characters' names. Paste it only on the Pagle website.", and "Ctrl+C to copy" beside it;
