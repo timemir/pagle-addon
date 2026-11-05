@@ -193,7 +193,7 @@ Ledger slice 2: the Journal book (Species, Zone Mastery, Sub-collections, Trophy
 - CORE-R9 (the characters the client's fonts have, #248), which every later milestone keeps
 - LOG-R78 for the Field report projection
 - LOG-R50 (`Pagle.NextWindow`), for LED-R127's window states
-- every rule in `field-report.md`: REP-R1–R5, REP-R10–R12, REP-R20–R23, REP-R25, REP-R26, REP-R30–R33, REP-R35–R37, REP-R40–R47, REP-R90–R96
+- every rule in `field-report.md`: REP-R1–R5, REP-R10–R12, REP-R20–R23, REP-R25, REP-R26, REP-R30–R33, REP-R35–R37, REP-R40–R48, REP-R90–R96
 
 **Content data rules:**
 - DATA-R8 for `data/observed/reports/`; DATA-R115–R123 (Field report intake: the issue form, the parser, the triage Action, the importer, `pooltext.toml`)

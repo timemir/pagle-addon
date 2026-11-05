@@ -28,6 +28,8 @@ local SLIP_X, SLIP_Y, SLIP_WIDTH, SLIP_HEIGHT = 34, 92, 426, 156
 local WHEEL_STEP = 36
 -- The line of the URL, and of the part controls and Close, as distances down from the top.
 local URL_Y, FOOT_Y = 279, 324
+-- The width of REP-R48's line at the bottom right, clear of Close at the centre; a longer line wraps.
+local WEBSITE_WIDTH = 160
 
 ---@class PagleFieldReportBox: PagleFieldWindow
 ---@field view PagleFieldReportView the view on show, built when it opened
@@ -42,6 +44,7 @@ local URL_Y, FOOT_Y = 279, 324
 ---@field postAt FontString
 ---@field url EditBox the issue form's URL, read-only
 ---@field close Button
+---@field website FontString REP-R48's line, pointing to the export window, with the text or a message
 
 --- The box, made the first time it opens.
 ---@type PagleFieldReportBox?
@@ -132,7 +135,8 @@ local function buildSlip(frame)
 end
 
 -- The box: the kit's sea chart window titled Help chart the waters, with the privacy line and the copy hint
--- (adapter/FieldKit.lua), the slip, the issue form's URL in a second read-only edit box, the part controls, and Close.
+-- (adapter/FieldKit.lua), the slip, the issue form's URL in a second read-only edit box, the part controls, Close, and
+-- the line pointing to the export window.
 -- Centred; Esc closes it (REP-R47).
 ---@return PagleFieldReportBox
 local function build()
@@ -170,6 +174,15 @@ local function build()
 		PlaySound(ns.FIELD_SOUND_CLICK, "SFX")
 		showPart(frame, frame.part + 1)
 	end)
+
+	-- At the bottom right, with the text or a message: the website wants the export window's Paste string, not this
+	-- (REP-R48).
+	frame.website = ns.FieldText(frame, "CopyHint")
+	frame.website:SetWordWrap(true)
+	frame.website:SetJustifyH("RIGHT")
+	frame.website:SetWidth(WEBSITE_WIDTH)
+	frame.website:SetPoint("RIGHT", frame, "TOPLEFT", WIDTH - 22, -FOOT_Y)
+	frame.website:SetText(L.FIELD_REPORT_WEBSITE)
 
 	-- At the bottom centre, clear of the part controls on the left.
 	frame.close = ns.FieldLeatherButton(frame, L.FIELD_REPORT_CLOSE)

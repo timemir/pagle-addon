@@ -264,6 +264,8 @@ ns.L = {
 	FIELD_REPORT_POST_AT = "POST IT AT",
 	FIELD_REPORT_PART = "Part %d of %d",
 	FIELD_REPORT_CLOSE = "Close",
+	-- REP-R48: at the bottom right, with the text or a message, so a Player after the website's Paste string finds it.
+	FIELD_REPORT_WEBSITE = "For the website, use /pagle export.",
 	FIELD_REPORT_NOTHING = "Nothing to report. Thanks for checking!",
 	FIELD_REPORT_UPDATING = "Updating... try again in a moment.",
 	FIELD_REPORT_AFTER_COMBAT = "Pagle: the Field report opens after combat.",
