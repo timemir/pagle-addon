@@ -353,7 +353,7 @@ describe("a Module's First look (ONB-R56, ONB-R58, ONB-R90)", function()
 			end)
 			return window
 		end)
-		return loaded, window
+		return loaded, assert(window)
 	end
 
 	it("stacks a note under the one above it when their words would overlap, never over it (ONB-R58)", function()
@@ -367,7 +367,7 @@ describe("a Module's First look (ONB-R56, ONB-R58, ONB-R90)", function()
 		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -300 }, noteFrame(loaded, 3).points[1])
 	end)
 
-	it("slides a note held over the window's edge off its close and its \"?\" (ONB-R58, BOOK-R15)", function()
+	it('slides a note held over the window\'s edge off its close and its "?" (ONB-R58, BOOK-R15)', function()
 		-- 120 free on the right: the note overlaps the edge, from 1736, where the close and the "?" sit at the top
 		local loaded, window = lookAt(900, { { 916, 0 } }, function(loaded, window)
 			window.close = layOut(loaded.env.CreateFrame("Button", nil, window), 1785, 885, 30, 30)
@@ -390,6 +390,26 @@ describe("a Module's First look (ONB-R56, ONB-R58, ONB-R90)", function()
 		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -92, -57 }, noteFrame(loaded, 1).points[1])
 		assert.are.same({ "TOPLEFT", window, "TOPLEFT", -92, -400 }, noteFrame(loaded, 2).points[1])
 	end)
+
+	it(
+		"slides a note set over the window off what the window keeps clear, leaving margin notes be (ONB-R58)",
+		function()
+			-- the first note over the window, 700 to 876 across and 800 down to 765; the second in the left margin
+			local loaded, window = lookAt(600, { { 100, 100 }, { -190, 100 } }, function(loaded, window)
+				local paper = layOut(loaded.env.CreateFrame("Frame", nil, window), 690, 740, 100, 70)
+				local margin = layOut(loaded.env.CreateFrame("Frame", nil, loaded.env.UIParent), 400, 740, 100, 70)
+				window.lookKeepClear = function()
+					return { paper, margin }
+				end
+			end)
+
+			window:Show()
+
+			-- up over the paper (to 8 above its top at 810) is shorter than down under it
+			assert.are.same({ "TOPLEFT", window, "TOPLEFT", 100, -47 }, noteFrame(loaded, 1).points[1])
+			assert.are.same({ "TOPLEFT", window, "TOPLEFT", -190, -100 }, noteFrame(loaded, 2).points[1])
+		end
+	)
 
 	it("hangs the coach bar under a book's ribbons, not over them (ONB-R55, BOOK-R17)", function()
 		local loaded, window = lookAt(600, { { -190, 100 } }, function(loaded, window)

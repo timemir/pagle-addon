@@ -162,19 +162,41 @@ local function slide(rect, taken, down)
 	return nil
 end
 
+-- The regions a window asks a note set over it to leave in sight (ONB-R58): `window.lookKeepClear`, a function a
+-- Module may put on its window returning a list of regions (the Tackle Board's pinned papers), read through the
+-- host's call so a mistake in it is reported and costs only this; their rectangles, those shown and laid out.
+---@param window Frame
+---@return { left: number, right: number, bottom: number, top: number }[]
+local function keptClear(window)
+	local keep = (window --[[@as { lookKeepClear: (fun(): Region[])? }]]).lookKeepClear
+	local rects = {}
+	if type(keep) ~= "function" then
+		return rects
+	end
+	local regions = ns.host.call(keep)
+	for _, region in ipairs(type(regions) == "table" and regions or {}) do
+		rects[#rects + 1] = rectOf(region)
+	end
+	return rects
+end
+
 -- Moves each note of the set, kept at its x, the least distance up or down that leaves it clear of the notes placed
 -- before it and of what must stay in sight: every note's target, the window's close and "?" (a book's `frame.close`
--- and `frame.help`, BOOK-R15), and the coach bar. A note whose words run longer than the canvas's (a translation, a
--- larger font) then pushes the next one down instead of printing over it, and a note held over the window's edge
--- (ONB-R58) slides off what it would hide. Notes are taken top to bottom; with no clear place on screen a note keeps
--- the lowest it can, inside the screen. `placed` is each note frame's rectangle as ns.PlaceLookNote put it, in
--- UIParent's units; returns how far each moves up (negative: down), by frame.
----@param placed table<PagleLookNoteFrame, { left: number, right: number, bottom: number, top: number }>
+-- and `frame.help`, BOOK-R15), the coach bar, and, for a note set over the window rather than in a margin, what the
+-- window asks to keep clear (keptClear). A note whose words run longer than the canvas's (a translation, a larger
+-- font) then pushes the next one down instead of printing over it, and a note held over the window's edge (ONB-R58)
+-- slides off what it would hide. Notes are taken top to bottom; with no clear place on screen a note keeps the lowest
+-- it can, inside the screen. `placed` is each note frame's rectangle as ns.PlaceLookNote put it, in UIParent's units,
+-- and whether the set puts it over the window; returns how far each moves up (negative: down), by frame.
+---@param placed table<PagleLookNoteFrame, { left: number, right: number, bottom: number, top: number, over: boolean }>
 ---@param window Frame
 ---@return table<PagleLookNoteFrame, number>
 local function unstack(placed, window)
 	local taken = {}
-	for _, region in ipairs({ (window --[[@as { close: Region? }]]).close, (window --[[@as { help: Region? }]]).help }) do
+	for _, region in ipairs({
+		(window --[[@as { close: Region? }]]).close,
+		(window --[[@as { help: Region? }]]).help,
+	}) do
 		taken[#taken + 1] = rectOf(region)
 	end
 	local bar = ns.coachBar
@@ -199,13 +221,23 @@ local function unstack(placed, window)
 		return a.entry.index < b.entry.index
 	end)
 	local screenTop = UIParent:GetHeight() - SCREEN_EDGE
+	local kept = keptClear(window)
 	local moves = {}
 	for _, frame in ipairs(order) do
 		local rect = placed[frame]
 		local height = rect.top - rect.bottom
+		local avoid = taken
+		if rect.over and #kept > 0 then
+			avoid = {}
+			for _, list in ipairs({ taken, kept }) do
+				for _, other in ipairs(list) do
+					avoid[#avoid + 1] = other
+				end
+			end
+		end
 		local best
 		for _, down in ipairs({ true, false }) do
-			local top = slide(rect, taken, down)
+			local top = slide(rect, avoid, down)
 			if top and top - height >= SCREEN_EDGE and top <= screenTop then
 				if not best or math.abs(top - rect.top) < math.abs(best - rect.top) then
 					best = top
@@ -213,7 +245,7 @@ local function unstack(placed, window)
 			end
 		end
 		if not best then
-			best = math.max(SCREEN_EDGE + height, math.min(screenTop, slide(rect, taken, true) or rect.top))
+			best = math.max(SCREEN_EDGE + height, math.min(screenTop, slide(rect, avoid, true) or rect.top))
 		end
 		moves[frame] = best - rect.top
 		taken[#taken + 1] = { left = rect.left, right = rect.right, top = best, bottom = best - height }
@@ -244,7 +276,13 @@ local function place()
 			if foot then
 				local left = (anchor.relativePoint == "TOPRIGHT" and foot.right or foot.left) + anchor.x
 				local top = foot.top + anchor.y
-				placed[frame] = { left = left, right = left + frame:GetWidth(), top = top, bottom = top - frame:GetHeight() }
+				placed[frame] = {
+					left = left,
+					right = left + frame:GetWidth(),
+					top = top,
+					bottom = top - frame:GetHeight(),
+					over = note.x + note.w > 0 and note.x < width,
+				}
 			end
 		end
 	end

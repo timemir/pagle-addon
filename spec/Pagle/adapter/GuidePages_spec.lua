@@ -105,6 +105,7 @@ local function guideAt(id, names, linesOf, blurbs, words)
 	return loaded
 end
 
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 local bounds = dofile("spec/support/bounds.lua")
 
 -- A font string's size, as the art's font object it is set in names it (ns.ArtFaceFont's PagleArtFace_<face>_<size>).
@@ -491,7 +492,7 @@ describe("the What's in the box step (ONB-R31, ONB-R91)", function()
 			L.GUIDE_BOX_SHOP = "Tienda de Curiosidades del Pescador"
 		end)
 		local menu = loaded.ns.guidePages.menu
-		local row = find(menu, "Tienda de Curiosidades del Pescador")
+		local row = assert(find(menu, "Tienda de Curiosidades del Pescador"))
 
 		-- the balance is right-aligned to 183: the name ends 8 short of where it starts
 		local balance = #menu.balance.text * 6
@@ -600,7 +601,7 @@ describe("the Moments step (ONB-R34, ONB-R35)", function()
 		local loaded = guideAt("moments", nil, nil, nil, function(L)
 			L.GUIDE_MOMENTS_SAMPLES.toast = { "UN AVISO EMERGENTE EN LA PANTALLA", L.GUIDE_MOMENTS_SAMPLES.toast[2] }
 		end)
-		local name = find(page(loaded, "moments", "left"), "UN AVISO EMERGENTE EN LA PANTALLA")
+		local name = assert(find(page(loaded, "moments", "left"), "UN AVISO EMERGENTE EN LA PANTALLA"))
 
 		assert.are.equal(156, name.width)
 		assert.is_true(sizeOf(name) < 16)
@@ -785,7 +786,7 @@ describe("the Off you go step (ONB-R38)", function()
 		end)
 		local list = loaded.ns.guidePages.evening
 
-		local item = find(list, "Abre el Diario de pesca y mira lo que ya has pescado esta noche")
+		local item = assert(find(list, "Abre el Diario de pesca y mira lo que ya has pescado esta noche"))
 		assert.are.equal(274 - 43 - 14, item.width)
 		assert.are.same({}, bounds.overflows(list))
 	end)
@@ -863,7 +864,7 @@ describe("the guide's titles and foot on every page (ONB-R23)", function()
 			L.GUIDE_BOX_TITLE = long
 		end)
 		local left = page(loaded, "box", "left")
-		local title = find(left, long)
+		local title = assert(find(left, long))
 
 		assert.are.equal(382, title.width)
 		assert.is_true(sizeOf(title) < 29)
@@ -876,9 +877,9 @@ describe("the guide's titles and foot on every page (ONB-R23)", function()
 			L.GUIDE_SKIP = long
 		end)
 		local right = page(loaded, "box", "right")
-		local label = find(right, long)
+		local label = assert(find(right, long))
 		local skip = label:GetParent()
-		local nextButton = find(right, loaded.ns.L.GUIDE_NEXT):GetParent()
+		local nextButton = assert(find(right, loaded.ns.L.GUIDE_NEXT)):GetParent()
 
 		-- Next » is right-aligned to 412: the link ends 16 short of its left edge
 		assert.is_true(30 + skip:GetWidth() <= 412 - nextButton:GetWidth() - 16)

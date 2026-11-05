@@ -74,6 +74,7 @@ local function click(fieldFrame, text)
 end
 
 describe("the binding field's words in a longer language (ONB-R40)", function()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 	local bounds = dofile("spec/support/bounds.lua")
 
 	-- Where a font string starts across the field, from its one anchor (its left, or its right less its width).
@@ -91,8 +92,13 @@ describe("the binding field's words in a longer language (ONB-R40)", function()
 		local loaded, page = onPage()
 		local L = loaded.ns.L
 		L.GUIDE_BIND_CLICK = "Щёлкните, чтобы назначить клавишу"
-		L.GUIDE_BIND_DEFAULT = "по умолчанию: ничего не назначено, клавишу можно выбрать"
-		local swap = loaded.ns.NewGuideBindingField(page, "PAGLE_SWAP_GEAR", "Переодеться в рыбацкую одежду")
+		L.GUIDE_BIND_DEFAULT =
+			"по умолчанию: ничего не назначено, клавишу можно выбрать"
+		local swap = loaded.ns.NewGuideBindingField(
+			page,
+			"PAGLE_SWAP_GEAR",
+			"Переодеться в рыбацкую одежду"
+		)
 
 		local label, waiting, note = swap.label, swap.waitWords, swap.note
 		-- the label ends 12 before the cap; the cap's words keep 8 inside its 128; the note starts 12 after it

@@ -540,7 +540,8 @@ local MOMENTS = {
 			ns.FitGuideText(name, "sc", 16, "title", SAMPLE_TEXT_W)
 			local lineY = at.name + shift + 19.6
 			local options = { wrap = true, width = SAMPLE_TEXT_W }
-			under = below(text(left, "italic", 13, "line", words[2], SAMPLE_TEXT_X, lineY, 16.9, options), lineY, 13, 16.9)
+			under =
+				below(text(left, "italic", 13, "line", words[2], SAMPLE_TEXT_X, lineY, 16.9, options), lineY, 13, 16.9)
 			budget = math.max(budget, under + BUDGET_GAP, at.y + shift + at.h + BUDGET_GAP)
 		end
 		local lively = ns.GUIDE_PRESETS[1].budget --[[@as table]]

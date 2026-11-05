@@ -880,23 +880,26 @@ describe("The Fishing clothes step (ONB-R33)", function()
 		assert.is_false(showing(setList(right)))
 	end)
 
-	it("puts 'or use a set you made' on its own line, the field under it, when it can't sit beside it (ONB-R33)", function()
-		local words = "o usa un conjunto de equipo que ya tengas guardado"
-		local fake = start(function(_, _, loaded)
-			loaded.ns.L.GUIDE_SAVE_OR = words
-		end)
+	it(
+		"puts 'or use a set you made' on its own line, the field under it, when it can't sit beside it (ONB-R33)",
+		function()
+			local words = "o usa un conjunto de equipo que ya tengas guardado"
+			local fake = start(function(_, _, loaded)
+				loaded.ns.L.GUIDE_SAVE_OR = words
+			end)
 
-		local _, right = open(fake, "clothes")
+			local _, right = open(fake, "clothes")
 
-		local orLine, dropdown = textReading(right, words), setField(right)
-		-- across the column on its own, wrapped, and the field 4 under it, Swap gear and the rest as far down
-		assert.are.same({ 382, true }, { orLine.width, orLine.wordWrap })
-		local orBottom = placeOf(orLine)[2] + orLine:GetStringHeight()
-		assert.is_true(placeOf(dropdown)[2] >= orBottom)
-		local shift = placeOf(dropdown)[2] - 181.7
-		assert.is_true(shift > 0)
-		assert.is.near(231.7 + shift, placeOf(field(right, "PAGLE_SWAP_GEAR"))[2], 0.001)
-	end)
+			local orLine, dropdown = textReading(right, words), setField(right)
+			-- across the column on its own, wrapped, and the field 4 under it, Swap gear and the rest as far down
+			assert.are.same({ 382, true }, { orLine.width, orLine.wordWrap })
+			local orBottom = placeOf(orLine)[2] + orLine:GetStringHeight()
+			assert.is_true(placeOf(dropdown)[2] >= orBottom)
+			local shift = placeOf(dropdown)[2] - 181.7
+			assert.is_true(shift > 0)
+			assert.is.near(231.7 + shift, placeOf(field(right, "PAGLE_SWAP_GEAR"))[2], 0.001)
+		end
+	)
 
 	it("keeps 'or use a set you made' beside the field, set smaller, when a little long (ONB-R33)", function()
 		local fake = start()
