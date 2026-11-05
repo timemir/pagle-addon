@@ -503,8 +503,22 @@ local function drawMark(line, x, dial, group, paper)
 	line.dot:SetPoint("TOPLEFT", x, -8)
 end
 
--- The least of a tracker line, right of its mark, that its label keeps when the name needs the rest (drawLines).
-local LABEL_SHARE = 0.3
+-- How a tracker line's name and label (a countdown, a group's word) share its room when both don't fit (drawLines,
+-- CORE-R8: a Language's words run longer than English's). The shorter keeps its whole width when that is no more than
+-- half the room, and the other takes the rest; when both are longer than half, each takes the room in proportion to
+-- its own width, so neither the Hunt's name nor its time is cut to nothing.
+---@param room number
+---@param name number the name's whole width
+---@param label number the label's whole width
+---@return number labelWidth
+local function labelShare(room, name, label)
+	if name + label <= room or label <= room / 2 then
+		return label
+	elseif name <= room / 2 then
+		return room - name
+	end
+	return room * label / (name + label)
+end
 -- Draws each of `entries` (a Hunt's or a run's two lines) on `lines` from `y` down, after a run's time dial or a dot
 -- of its group (`entry.dot`, else `dot`), its label red when `entry.urgent`; hides the lines past them; returns the y
 -- under the last.
@@ -532,9 +546,8 @@ local function drawLines(lines, entries, look, y, dot)
 			line.label:SetText(entry.label)
 			line.label:ClearAllPoints()
 			line.label:SetPoint("TOPRIGHT", line, "TOPLEFT", right, -4)
-			-- The name first: it tells the lines apart. The label (a countdown, a group's word) takes what the name
-			-- leaves, and never less than its share of the line, cut short with an ellipsis past it; both whole when
-			-- they fit. A Language's words run longer than English's (CORE-R8).
+			-- The name and the label share the line (labelShare): both whole when they fit, else the shorter whole
+			-- and the other cut short with an ellipsis, or each in proportion when both are long.
 			local room = right - x - 14 - 6
 			setFont(line.first, look.name)
 			line.first:SetText(entry.name)
@@ -542,7 +555,7 @@ local function drawLines(lines, entries, look, y, dot)
 			local nameWidth = line.first:GetStringWidth() + 1
 			line.label:SetWidth(0)
 			local labelWidth = line.label:GetStringWidth() + 1
-			labelWidth = math.min(labelWidth, math.max(room * LABEL_SHARE, room - nameWidth))
+			labelWidth = labelShare(room, nameWidth, labelWidth)
 			line.label:SetWidth(math.max(1, labelWidth))
 			line.first:ClearAllPoints()
 			line.first:SetPoint("TOPLEFT", x + 14, -3)
