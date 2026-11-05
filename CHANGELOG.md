@@ -1,5 +1,12 @@
 # Pagle
 
+## 1.0.1 (2026-11-05)
+
+### Changed
+
+- The Field report box ("Help chart the waters" in the Pagle menu, or `/pagle report`) now says "For the website, use /pagle export." The Field report is for the GitHub issue form. The Pagle website takes the Paste string from `/pagle export` (or Settings › Catch log › "Copy for the website") instead. (#548)
+- Pagle's data has been checked against Forever's live build, 1.60.1.70790. Nothing Pagle reads had changed. (#547)
+
 ## 1.0.0 (2026-11-04)
 
 The first release. Pagle is a fishing addon for World of Warcraft: Forever, for progression and collection, with a few quality-of-life touches beside them. It watches what you catch and rewards it. It never fishes for you.
