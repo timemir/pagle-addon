@@ -130,8 +130,9 @@ local RAIL_X, RAIL_Y, RAIL_W, POST_CY, POST, POST_TITLE_Y, POST_TITLE_W, TOKEN_C
 	6, 31.5, 445, 34.5, 20, 48.5, 120, 33.5, 24
 -- The room inside a post's ring (15 of its 20 units, from the art) for its number, and inside a ticket dial's ring (its
 -- 42-unit face's inner disc) for its time, and the least size either is set at before it is cut (CORE-R8: "100" and
--- "2d 20h" are wider in some fonts than the kit's); the least gap between two posts' titles.
-local POST_INNER, DIAL_INNER, RING_FLOOR, POST_TITLE_GAP = 15, 28, 7, 8
+-- "2d 20h" are wider in some fonts than the kit's); the least gap between two posts' titles, and the least width a
+-- title is cut to, its first letters and the ellipsis.
+local POST_INNER, DIAL_INNER, RING_FLOOR, POST_TITLE_GAP, POST_TITLE_MIN = 15, 28, 7, 8, 24
 -- Motion (HNT-R162's motion, data/art/wagers/art.json › motion): the stamp pressed from 1.6 times its size, in 0.22 s,
 -- then the ticket nudged a unit down and back in 0.12 s; the token sliding to its new share in 0.45 s.
 local THUMP_FROM, THUMP_DUR, NUDGE, NUDGE_DUR, SLIDE_DUR = 1.6, 0.22, 1, 0.12, 0.45
@@ -607,29 +608,10 @@ local function setShare(ladder, share)
 	ladder.token:Show()
 end
 
--- How two neighbouring words share `room` when both don't fit (as the tracker shares a line, CORE-R8): the shorter
--- keeps its whole width when that is no more than half the room, and the other takes the rest; when both are longer
--- than half, each takes the room in proportion to its own.
----@param room number
----@param a number
----@param b number
----@return number a
----@return number b
-local function shareRoom(room, a, b)
-	if a + b <= room then
-		return a, b
-	elseif a <= room / 2 then
-		return a, room - a
-	elseif b <= room / 2 then
-		return room - b, b
-	end
-	local first = room * a / (a + b)
-	return first, room - first
-end
-
 -- Lays the posts' titles under them (HNT-R162): each centred under its post, the last ending at the page's right, as
 -- wide as its words up to POST_TITLE_W, and narrower where it would run into the next (a longer language's titles,
--- CORE-R8): each pair shares the room between their posts by shareRoom, and the client cuts a narrowed title short.
+-- CORE-R8): each pair shares the room between their posts by ns.ShareRoom, and the client cuts a narrowed title short,
+-- never to under POST_TITLE_MIN, so two posts closer than POST_TITLE_GAP still show the start of each title.
 ---@param ladder WagersLadderView
 ---@param marks { at: number, title: string }[]
 local function layPostTitles(ladder, marks)
@@ -650,9 +632,9 @@ local function layPostTitles(ladder, marks)
 	for i = 1, n - 1 do
 		local j = i + 1
 		local right, left =
-			shareRoom(at[j] - at[i] - POST_TITLE_GAP, widths[i] * rightShare(i), widths[j] * leftShare(j))
-		widths[i] = math.min(widths[i], right / rightShare(i))
-		widths[j] = math.min(widths[j], left / leftShare(j))
+			ns.ShareRoom(at[j] - at[i] - POST_TITLE_GAP, widths[i] * rightShare(i), widths[j] * leftShare(j))
+		widths[i] = math.min(widths[i], math.max(POST_TITLE_MIN, right / rightShare(i)))
+		widths[j] = math.min(widths[j], math.max(POST_TITLE_MIN, left / leftShare(j)))
 	end
 	for i, mark in ipairs(marks) do
 		local title = ladder.titles[i]

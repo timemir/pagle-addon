@@ -264,6 +264,27 @@ describe("Look and Feel", function()
 	end)
 end)
 
+describe("ns.ShareRoom (CORE-R8)", function()
+	it(
+		"gives two words their whole widths when they fit, else the shorter whole within half, else each its share",
+		function()
+			local loaded = loggedIn()
+			local share = loaded.ns.ShareRoom
+
+			assert.are.same({ 30, 40 }, { share(100, 30, 40) })
+			assert.are.same({ 30, 70 }, { share(100, 30, 90) })
+			assert.are.same({ 70, 30 }, { share(100, 90, 30) })
+			assert.are.same({ 40, 60 }, { share(100, 80, 120) })
+		end
+	)
+
+	it("counts a room under nothing, two posts closer than their gap, as none, never handing out less", function()
+		local loaded = loggedIn()
+
+		assert.are.same({ 0, 0 }, { loaded.ns.ShareRoom(-6, 30, 40) })
+	end)
+end)
+
 describe("a tracker frame's preview", function()
 	it(
 		'draws a sample tracker with "Night Run · in 37m" and "Rack Hour · on demand" in that frame on the good\'s stage (HNT-R121, CORE-R73)',
