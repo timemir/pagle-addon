@@ -175,6 +175,7 @@ local function rowLine(own, x, text, width)
 	own.line:ClearAllPoints()
 	own.line:SetPoint("TOPLEFT", x, -1)
 	own.line:SetWordWrap(width ~= nil)
+	own.line:SetMaxLines(width and 2 or 0) -- two lines fill the row
 	own.line:SetWidth(width or 0)
 	own.line:SetText(text)
 	own.line:Show()

@@ -238,6 +238,7 @@ describe("The Settings root's Getting started section (ONB-R81, SET-R10)", funct
 		local buttonLeft = span(shown(row.frame, "Button"))
 
 		assert.is_true(text:CanWordWrap())
+		assert.are.equal(2, text:GetMaxLines())
 		assert(labelEnd < lineLeft, "the line starts under the label")
 		assert(lineRight < buttonLeft, "the line runs under the button")
 	end)
