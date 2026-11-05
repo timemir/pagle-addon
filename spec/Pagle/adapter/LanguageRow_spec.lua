@@ -1,10 +1,10 @@
 -- The Settings root's Language row (SET-R10 row 9b, SET-R13, CORE-R8, ADR 0019): the choices it offers, what a pick
 -- stores, and the Reload now note a change asks with. The Locales are fixtures registered here under real client
--- codes, since the dropdown looks the ten client codes up (ns.LANGUAGE_CODES): the one that ships, esES, is not
--- listed, so without these it offers only Game default and English.
+-- codes, since the dropdown looks the ten client codes up (ns.LANGUAGE_CODES); the shipped esES and ruRU (listed,
+-- spec/locale_esES_spec.lua and spec/locale_ruRU_spec.lua) are left out.
 
--- The shipped esES registers itself (unlisted); this spec registers its own under the real codes, so Core loads
--- without it.
+-- The shipped esES and ruRU register themselves; this spec registers its own under the real codes, so Core loads
+-- without them.
 local NO_LOCALES = { ["locale/Locales.xml"] = "spec/Pagle/fixtures/locale/LocalesNone.xml" }
 
 local PLURAL = function()

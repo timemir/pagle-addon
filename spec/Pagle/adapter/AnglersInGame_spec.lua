@@ -485,10 +485,16 @@ describe("the Companion's data addons", function()
 	end)
 
 	describe("Show other Anglers on player tooltips", function()
-		-- The Pagle website header and its first row (SET-R10 row 11), before the export button (row 12).
+		-- The Pagle website header and its first row (SET-R10 row 11), before the export button (row 12) and, while a
+		-- listed language has translators, the Translations line.
 		local function websiteRows(loaded)
 			local initializers = loaded.client.settings.category("Pagle").layout.initializers
-			return initializers[#initializers - 2], initializers[#initializers - 1]
+			for i, initializer in ipairs(initializers) do
+				if initializer:GetName() == "Pagle website" then
+					return initializer, initializers[i + 1]
+				end
+			end
+			error("no Pagle website header")
 		end
 
 		it(

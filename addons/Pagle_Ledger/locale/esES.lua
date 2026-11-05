@@ -463,7 +463,7 @@ ns.Locale("esES", function(L)
 	L.ZONE_UNKNOWN_FISH = "— desconocido —"
 end, {
 	name = "Español",
-	listed = false,
+	listed = true,
 	translators = { "fmartingr" },
 	plural = function(n)
 		if n == 1 then

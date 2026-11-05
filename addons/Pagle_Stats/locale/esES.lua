@@ -252,7 +252,7 @@ ns.Locale("esES", function(L)
 	L.WINDOW_NAMES = { autumn = "en otoño", day = "de día", event = "durante su evento", night = "de noche", other = "en su ventana", spring = "en primavera", summer = "en verano", winter = "en invierno" }
 end, {
 	name = "Español",
-	listed = false,
+	listed = true,
 	translators = { "fmartingr" },
 	plural = function(n)
 		if n == 1 then

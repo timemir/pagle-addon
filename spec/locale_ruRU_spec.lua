@@ -1,8 +1,6 @@
 -- The shipped Russian Locale, ruRU (DATA-R104, DATA-R114, CORE-R8, CORE-R9, ADR 0019): machine-drafted for 1.1, with
--- no human translator yet. It is not listed (listing needs 100% of the interface and an approval from a native
--- speaker), so the Language setting cannot apply it; these specs load the real generated files under the real
--- Registry.lua and Apply.lua, once by driving ApplyLocale (what a player cannot do yet) and once as it will load when
--- the maintainer flips `listed`: a copy of the shipped ruRU.lua with only that flag changed. As a non-Latin Locale it is
+-- no human translator yet. The maintainer listed it for 1.1 before a native speaker reviewed it; these specs load the
+-- real generated files under the real Registry.lua and Apply.lua, by the setting and by driving ApplyLocale. As a non-Latin Locale it is
 -- offered only on a ruRU client (ns.CanRenderLanguage), whose own fonts Core then draws with (logic/Fonts.lua).
 
 local TRANSLATED = { key = "CARD_CASTS", english = "Casts", russian = "Забросы" }
@@ -14,27 +12,18 @@ local LORE = {
 	russian = "Упряма на леске, сладка на тарелке.",
 }
 
--- The shipped Core locale file with `listed = false` changed to `listed = true`, in a temporary file; it is removed.
+-- The shipped Core locale file, listed since the maintainer listed it for 1.1; `action` gets its path.
 ---@param action fun(path: string)
 local function withListedCopy(action)
 	local text = readFile("addons/Pagle/locale/ruRU.lua")
-	local listed, count = text:gsub("listed = false", "listed = true")
-	assert.are.equal(1, count, "the shipped header says listed = false once")
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io or os
-	local path = os.tmpname()
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io or os
-	local file = assert(io.open(path, "w"))
-	file:write(listed)
-	file:close()
-	local ok, err = pcall(action, path)
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io or os
-	os.remove(path)
-	assert(ok, err)
+	local _, count = text:gsub("listed = true", "")
+	assert.are.equal(1, count, "the shipped header says listed = true once")
+	action("addons/Pagle/locale/ruRU.lua")
 end
 
-describe("ruRU as shipped, unlisted", function()
-	it("is never applied by the Language setting, on any client", function()
-		for _, client in ipairs({ "enUS", "ruRU" }) do
+describe("ruRU as shipped, listed", function()
+	it("applies on a ruRU client only, by the setting and on Game default", function()
+		for client, expected in pairs({ enUS = "enUS", ruRU = "ruRU" }) do
 			for _, setting in ipairs({ "ruRU", "default" }) do
 				local loaded = loadAddon(
 					"Pagle",
@@ -46,19 +35,27 @@ describe("ruRU as shipped, unlisted", function()
 					})
 				)
 
-				assert.are.equal("enUS", loaded.env.Pagle.GetLanguage(), client .. " " .. setting)
-				assert.are.equal(TRANSLATED.english, loaded.ns.L[TRANSLATED.key], client .. " " .. setting)
+				assert.are.equal(expected, loaded.env.Pagle.GetLanguage(), client .. " " .. setting)
+				local text = expected == "ruRU" and TRANSLATED.russian or TRANSLATED.english
+				assert.are.equal(text, loaded.ns.L[TRANSLATED.key], client .. " " .. setting)
 			end
 		end
 	end)
 
-	it("is not offered in the Language dropdown, nor credited", function()
+	it("is offered in the Language dropdown on a ruRU client only, and credits nobody", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 
-		for _, choice in ipairs(loaded.ns.LanguageChoices("ruRU")) do
-			assert.are_not.equal("ruRU", choice.value)
+		local function offered(client)
+			for _, choice in ipairs(loaded.ns.LanguageChoices(client)) do
+				if choice.value == "ruRU" then
+					return choice.label
+				end
+			end
 		end
-		assert.is_nil(loaded.ns.TranslatorCredits("ruRU"))
+		assert.are.equal("Русский", offered("ruRU"))
+		assert.is_nil(offered("enUS"))
+		-- Machine-drafted, it has no translator: on a ruRU client the line credits only esES's.
+		assert.are.equal("Translations: Español by fmartingr", loaded.ns.TranslatorCredits("ruRU"))
 	end)
 
 	it("names no translator: it is machine-drafted", function()
@@ -173,8 +170,8 @@ describe("ruRU's Lore as shipped", function()
 	end)
 end)
 
-describe("ruRU once listed (a copy of the shipped file with listed = true)", function()
-	-- Core over these SavedVariables on a client of `client`, with the copy standing for locale/ruRU.lua; the Ledger
+describe("ruRU listed, as shipped", function()
+	-- Core over these SavedVariables on a client of `client`, with the shipped locale/ruRU.lua; the Ledger
 	-- loads after it, as the client loads a Module, following Core's choice.
 	---@param path string
 	---@param setting any

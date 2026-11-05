@@ -594,7 +594,7 @@ ns.Locale("ruRU", function(L)
 	L.VIEWS_WRONG_COUNT = "count равно {views_wrong_count_1}, но {listName} содержит {list}"
 end, {
 	name = "Русский",
-	listed = false,
+	listed = true,
 	plural = function(n)
 		if n ~= math.floor(n) then
 			return "other"

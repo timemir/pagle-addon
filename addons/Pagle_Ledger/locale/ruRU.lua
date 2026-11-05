@@ -462,7 +462,7 @@ ns.Locale("ruRU", function(L)
 	L.ZONE_UNKNOWN_FISH = "— неизвестно —"
 end, {
 	name = "Русский",
-	listed = false,
+	listed = true,
 	plural = function(n)
 		if n ~= math.floor(n) then
 			return "other"

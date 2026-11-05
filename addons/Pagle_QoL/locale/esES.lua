@@ -130,7 +130,7 @@ ns.Locale("esES", function(L)
 	L.TOUR_SETTINGS = "las filas de Comodidades en la página de Pesca"
 end, {
 	name = "Español",
-	listed = false,
+	listed = true,
 	translators = { "fmartingr" },
 	plural = function(n)
 		if n == 1 then

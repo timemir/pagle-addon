@@ -88,6 +88,9 @@ describe("The Settings root with no Module On", function()
 			"Field guide",
 			"Margin notes",
 			"First evening list",
+			-- The Translations line (SET-R10): esES is listed with fmartingr's name, and ruRU, listed with no
+			-- translator, is credited by nobody (spec/Pagle/adapter/Translations_spec.lua).
+			"Translations: Español by fmartingr",
 		}, own)
 	end)
 
@@ -131,7 +134,8 @@ describe("The Settings root with no Module On", function()
 				"Show other Anglers on player tooltips",
 				"Catch log",
 				"Copy for the website",
-			}, { unpack(texts, #texts - 23) })
+				"Translations: Español by fmartingr",
+			}, { unpack(texts, #texts - 24) })
 			for _, name in ipairs({ "Ledger", "Hunts", "Stats", "Tackle Board", "QoL" }) do
 				assert.is_true(contains(texts, name))
 			end

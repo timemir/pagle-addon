@@ -1,8 +1,7 @@
 -- The shipped Spanish Locale, esES (DATA-R104, DATA-R114, CORE-R8, ADR 0019, #528): fmartingr's translation of #510
--- converted to the 1.1 shape. It is not listed (listing needs 100% of the interface and a second native speaker), so
--- the Language setting cannot apply it; these specs load the real generated files under the real Registry.lua and
--- Apply.lua, once by driving ApplyLocale (what a player cannot do yet) and once as it will load when the maintainer
--- flips `listed`: a copy of the shipped esES.lua with only that flag changed. A translated key reads Spanish, and
+-- converted to the 1.1 shape and filled for 1.1. The maintainer listed it for 1.1 before a second native speaker
+-- reviewed it, so the Language setting applies it; these specs load the real generated files under the real
+-- Registry.lua and Apply.lua, by the setting and by driving ApplyLocale. A translated key reads Spanish, and
 -- since 1.1's fill the file has every interface key, so a key it lacks (one the spec adds to English) reads English.
 
 -- A key from #510, and one of the 1.1 strings #510 never had, filled for 1.1 (machine-drafted, awaiting review).
@@ -11,28 +10,19 @@ local FILLED = { key = "LANGUAGE_RELOAD_NOW", english = "Reload now", spanish = 
 -- A key no Locale has: the spec puts it in English's table, so the overlay has nothing to write over it.
 local ENGLISH_ONLY = { key = "SPEC_ENGLISH_ONLY", english = "Only in English" }
 
--- The shipped Core locale file with `listed = false` changed to `listed = true`, in a temporary file; it is removed.
+-- The shipped Core locale file, listed since the maintainer listed it for 1.1; `action` gets its path.
 ---@param action fun(path: string)
 local function withListedCopy(action)
 	local text = readFile("addons/Pagle/locale/esES.lua")
-	local listed, count = text:gsub("listed = false", "listed = true")
-	assert.are.equal(1, count, "the shipped header says listed = false once")
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io or os
-	local path = os.tmpname()
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io or os
-	local file = assert(io.open(path, "w"))
-	file:write(listed)
-	file:close()
-	local ok, err = pcall(action, path)
-	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no io or os
-	os.remove(path)
-	assert(ok, err)
+	local _, count = text:gsub("listed = true", "")
+	assert.are.equal(1, count, "the shipped header says listed = true once")
+	action("addons/Pagle/locale/esES.lua")
 end
 
-describe("esES as shipped, unlisted", function()
-	it("is never applied by the Language setting, on any client", function()
-		for _, client in ipairs({ "enUS", "esES", "esMX" }) do
-			for _, setting in ipairs({ "esES", "default" }) do
+describe("esES as shipped, listed", function()
+	it("applies by the setting on any client, and on Game default on an esES or esMX client only", function()
+		for client, default in pairs({ enUS = "enUS", esES = "esES", esMX = "esES" }) do
+			for setting, language in pairs({ esES = "esES", default = default }) do
 				local loaded = loadAddon(
 					"Pagle",
 					foreverWith({
@@ -43,20 +33,22 @@ describe("esES as shipped, unlisted", function()
 					})
 				)
 
-				assert.are.equal("enUS", loaded.env.Pagle.GetLanguage(), client .. " " .. setting)
-				assert.are.equal(TRANSLATED.english, loaded.ns.L[TRANSLATED.key], client .. " " .. setting)
+				assert.are.equal(language, loaded.env.Pagle.GetLanguage(), client .. " " .. setting)
+				local expected = language == "esES" and TRANSLATED.spanish or TRANSLATED.english
+				assert.are.equal(expected, loaded.ns.L[TRANSLATED.key], client .. " " .. setting)
 			end
 		end
 	end)
 
-	it("is not offered in the Language dropdown", function()
+	it("is offered in the Language dropdown, and credits fmartingr, the translator of #510", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 
-		for _, choice in ipairs(loaded.ns.LanguageChoices("esES")) do
-			assert.are_not.equal("esES", choice.value)
+		local offered = false
+		for _, choice in ipairs(loaded.ns.LanguageChoices("enUS")) do
+			offered = offered or (choice.value == "esES" and choice.label == "Español")
 		end
-		-- An unlisted Locale is not credited either.
-		assert.is_nil(loaded.ns.TranslatorCredits("esES"))
+		assert.is_true(offered)
+		assert.are.equal("Translations: Español by fmartingr", loaded.ns.TranslatorCredits("enUS"))
 	end)
 
 	it("applies when ApplyLocale is driven directly: Spanish where it has text, English where it has none", function()
@@ -95,8 +87,8 @@ describe("esES as shipped, unlisted", function()
 	end)
 end)
 
-describe("esES once listed (a copy of the shipped file with listed = true)", function()
-	-- Core over these SavedVariables on a client of `client`, with the copy standing for locale/esES.lua; the Ledger
+describe("esES listed, as shipped", function()
+	-- Core over these SavedVariables on a client of `client`, with the shipped locale/esES.lua; the Ledger
 	-- loads after it, as the client loads a Module, following Core's choice.
 	---@param path string
 	---@param setting any

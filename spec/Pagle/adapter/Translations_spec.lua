@@ -1,9 +1,9 @@
 -- The Settings root's Translations line (SET-R10 row 13, ADR 0019, Credits): one line after the Catch log row crediting
 -- the translators of each listed language the client can render, and no row at all when none has translators. The
--- Locales are fixtures registered under real client codes, as spec/Pagle/adapter/LanguageRow_spec.lua does; none that
--- ships is listed, and the shipped esES is left out of these loads.
+-- Locales are fixtures registered under real client codes, as spec/Pagle/adapter/LanguageRow_spec.lua does, and the
+-- shipped esES and ruRU (both listed, spec/locale_esES_spec.lua and spec/locale_ruRU_spec.lua) are left out of these loads.
 
--- The shipped esES registers itself (unlisted); a spec that registers its own under a real code loads Core without it.
+-- The shipped esES and ruRU register themselves; a spec that registers its own under a real code loads Core without them.
 local NO_LOCALES = { ["locale/Locales.xml"] = "spec/Pagle/fixtures/locale/LocalesNone.xml" }
 
 local PLURAL = function()
