@@ -49,12 +49,19 @@ end
 
 --- Hunts logged in at `options.now` (THU_11) with the rotation's origin at `options.origin`, the live conditions at
 --- `options.clock` (AHEAD), names loaded, `options.history` (records) in the Catch log before login, `options.pushed`
---- as the pushed content, and `options.list` and `options.motion` to hunts.start; then the frames where the pushed
---- content's check ends and the run log's step runs (HNT-R151).
+--- as the pushed content, and `options.list` and `options.motion` to hunts.start, in `options.language` (what
+--- Pagle.GetLanguage answers: enUS by default); then the frames where the pushed content's check ends and the run log's
+--- step runs (HNT-R151).
 ---@return HuntsRun
 local function start(options)
 	local now, origin = options.now or THU_11, options.origin
+	local inLanguage
+	if options.language then
+		inLanguage = newFakePagle()
+		inLanguage.language = options.language
+	end
 	local r = hunts.start({
+		fake = inLanguage,
 		from = now - SERVER_TIME,
 		names = true,
 		events = pool,
@@ -762,6 +769,115 @@ describe("the run's entry on the spread (HNT-R163)", function()
 		assert.is_false(view.rows[3].window.shown)
 		assert.is_true(view.pay[1].shown)
 	end)
+end)
+
+-- Where a wager text inks across and down its box, at the fake's 6 pixels a character: its words within the width it was
+-- given, set by its justification from the point it hangs on (PlaceWagerText's TOPLEFT or TOPRIGHT, or a centred TOP),
+-- and as tall as its ink's size.
+---@return { left: number, right: number, top: number, bottom: number }
+local function inked(r, text, box)
+	local words = #(text.text or "") * 6
+	local width = text.width and text.width > 0 and text.width or words
+	local ink = math.min(words, width)
+	local point = text.points[1]
+	local left
+	if point[1] == "TOPRIGHT" then
+		left = box.width + point[4] - ink
+	elseif point[1] == "TOP" then
+		left = point[4] - ink / 2
+	else
+		left = point[4]
+	end
+	local top = -point[5]
+	return { left = left, right = left + ink, top = top, bottom = top + r.ns.WAGER_INKS[text.ink].size }
+end
+
+-- Whether two inked boxes share any ground.
+local function overlap(a, b)
+	return a.left < b.right and b.left < a.right and a.top < b.bottom and b.top < a.bottom
+end
+
+describe("the spread in a longer language (CORE-R8)", function()
+	it(
+		"keeps each pay box's label, amount and Refreshes apart and within it, both boxes one height (HNT-R117)",
+		function()
+			for _, language in ipairs({ "enUS", "ruRU" }) do
+				local r = oneOn({ language = language })
+				r.ns.OpenWagers()
+				local page = r.ns.board:Page(place(r), "right")
+				local view = r.ns.RunEntryView(page)
+
+				for i, box in ipairs(view.pay) do
+					local spans = {}
+					for _, part in ipairs({ "label", "amount", "refresh" }) do
+						if box[part].shown then
+							local span = inked(r, box[part], box)
+							spans[#spans + 1] = span
+							local where = ("%s box %d's %s"):format(language, i, part)
+							assert(span.left >= 0 and span.right <= box.width, where .. " runs past the box's sides")
+							assert(span.top >= 0 and span.bottom <= box.height, where .. " runs past the box's foot")
+						end
+					end
+					for a = 1, #spans do
+						for b = a + 1, #spans do
+							assert(not overlap(spans[a], spans[b]), ("%s box %d: words overprint"):format(language, i))
+						end
+					end
+				end
+				assert.is_true(view.pay[2].refresh.shown)
+				assert.are.equal(view.pay[1].height, view.pay[2].height)
+				assert.are.same({}, bounds.overflows(page))
+				if language == "enUS" then
+					-- where both fit, the Refreshes sit on the label's row, at the box's right, as the kit drew them
+					local label, refresh = view.pay[2].label, view.pay[2].refresh
+					assert.are.equal("TOPRIGHT", refresh.points[1][1])
+					assert.is_true(math.abs(inked(r, label, view.pay[2]).top - inked(r, refresh, view.pay[2]).top) < 3)
+				end
+			end
+		end
+	)
+
+	it(
+		"keeps the ladder's post titles apart, and each post's number and each ticket's time within its ring (HNT-R162)",
+		function()
+			for _, language in ipairs({ "enUS", "ruRU" }) do
+				local r = oneOn({ language = language })
+				r.ns.OpenWagers()
+				local left = r.ns.board:Page(place(r), "left")
+				local ladder = left.spread.ladder
+
+				local spans = {}
+				for i, title in ipairs(ladder.titles) do
+					assert.is_true(title.shown)
+					spans[i] = inked(r, title, ladder)
+					assert(
+						spans[i].left >= 0 and spans[i].right <= ladder.width,
+						language .. " title " .. i .. " leaves the page"
+					)
+				end
+				for i = 2, #spans do
+					assert(
+						spans[i - 1].right + 4 <= spans[i].left,
+						("%s: the titles of posts %d and %d run together"):format(language, i - 1, i)
+					)
+				end
+				-- a post's ring is 15 units inside; a ticket dial's face 28 (the art's inner disc of the 42-unit dial)
+				for i, number in ipairs(ladder.numbers) do
+					assert(
+						math.min(#number.text * 6, number.width) <= 15,
+						language .. " post " .. i .. "'s number spills it"
+					)
+				end
+				local ticket = ticketOf(r, SHORE)
+				assert(ticket.left.shown and ticket.left.text ~= "")
+				assert(
+					math.min(#ticket.left.text * 6, ticket.left.width) <= 28,
+					language .. ": the ticket's time spills its dial"
+				)
+				assert.are.same({}, bounds.overflows(left))
+			end
+		end
+	)
 end)
 
 describe("the spread's motion (HNT-R162)", function()

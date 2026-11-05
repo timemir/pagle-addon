@@ -128,6 +128,10 @@ local HINT_SRC, HINT_SRC_SIZE, HINT_X, HINT_R, HINT_SMALL_GAP, HINT_BUTTONS_GAP,
 local LADDER_UP, LADDER_LINE_H, LABEL_LADDER_Y, LADDER_LABEL_GAP = 65.5, 17.5, 4, 10
 local RAIL_X, RAIL_Y, RAIL_W, POST_CY, POST, POST_TITLE_Y, POST_TITLE_W, TOKEN_CY, TOKEN =
 	6, 31.5, 445, 34.5, 20, 48.5, 120, 33.5, 24
+-- The room inside a post's ring (15 of its 20 units, from the art) for its number, and inside a ticket dial's ring (its
+-- 42-unit face's inner disc) for its time, and the least size either is set at before it is cut (CORE-R8: "100" and
+-- "2d 20h" are wider in some fonts than the kit's); the least gap between two posts' titles.
+local POST_INNER, DIAL_INNER, RING_FLOOR, POST_TITLE_GAP = 15, 28, 7, 8
 -- Motion (HNT-R162's motion, data/art/wagers/art.json › motion): the stamp pressed from 1.6 times its size, in 0.22 s,
 -- then the ticket nudged a unit down and back in 0.12 s; the token sliding to its new share in 0.45 s.
 local THUMP_FROM, THUMP_DUR, NUDGE, NUDGE_DUR, SLIDE_DUR = 1.6, 0.22, 1, 0.12, 0.45
@@ -401,7 +405,7 @@ local function fillTicket(ticket, data)
 	)
 	ticket.dial:SetDial(data.dial)
 	ns.SetWagerInk(ticket.left, data.dial.urgent and "dialTextUrgent" or "dialText")
-	ns.SetWagerWords(ticket.left, data.dial.left or "")
+	ns.ShrinkWagerText(ticket.left, data.dial.left or "", DIAL_INNER, RING_FLOOR)
 	ticket.left:SetShown(data.dial.left ~= nil)
 	ticket.mark:SetMark(data.mark)
 	-- the name, cut before the holiday's tag is
@@ -593,6 +597,73 @@ local function setShare(ladder, share)
 	ladder.token:Show()
 end
 
+-- How two neighbouring words share `room` when both don't fit (as the tracker shares a line, CORE-R8): the shorter
+-- keeps its whole width when that is no more than half the room, and the other takes the rest; when both are longer
+-- than half, each takes the room in proportion to its own.
+---@param room number
+---@param a number
+---@param b number
+---@return number a
+---@return number b
+local function shareRoom(room, a, b)
+	if a + b <= room then
+		return a, b
+	elseif a <= room / 2 then
+		return a, room - a
+	elseif b <= room / 2 then
+		return room - b, b
+	end
+	local first = room * a / (a + b)
+	return first, room - first
+end
+
+-- Lays the posts' titles under them (HNT-R162): each centred under its post, the last ending at the page's right, as
+-- wide as its words up to POST_TITLE_W, and narrower where it would run into the next (a longer language's titles,
+-- CORE-R8): each pair shares the room between their posts by shareRoom, and the client cuts a narrowed title short.
+---@param ladder WagersLadderView
+---@param marks { at: number, title: string }[]
+local function layPostTitles(ladder, marks)
+	local width, n = ladder:GetWidth(), #marks
+	-- each title's place across: its post's centre, or the page's right for the last; and how much of it lies to
+	-- the left of that place and to the right (a half each when centred, all of it to the left when ending there)
+	local at, widths = {}, {}
+	for i, mark in ipairs(marks) do
+		at[i] = i == n and width or RAIL_X + RAIL_W * mark.at
+		widths[i] = ns.FitWagerText(ladder.titles[i], mark.title, POST_TITLE_W)
+	end
+	local function leftShare(i)
+		return i == n and 1 or 0.5
+	end
+	local function rightShare(i)
+		return i == n and 0 or 0.5
+	end
+	for i = 1, n - 1 do
+		local j = i + 1
+		local right, left =
+			shareRoom(at[j] - at[i] - POST_TITLE_GAP, widths[i] * rightShare(i), widths[j] * leftShare(j))
+		widths[i] = math.min(widths[i], right / rightShare(i))
+		widths[j] = math.min(widths[j], left / leftShare(j))
+	end
+	for i, mark in ipairs(marks) do
+		local title = ladder.titles[i]
+		ns.FitWagerText(title, mark.title, widths[i])
+		if i == n then
+			ns.PlaceWagerText(title, ladder, 0, POST_TITLE_Y, true)
+		else
+			title:SetJustifyH("CENTER")
+			title:ClearAllPoints()
+			title:SetPoint(
+				"TOP",
+				ladder,
+				"TOPLEFT",
+				at[i],
+				-(POST_TITLE_Y + (ns.WagerLineHeight("postTitle") - 11.5) / 2)
+			)
+			title:Show()
+		end
+	end
+end
+
 -- The settled count the ladder last showed, and in which showing: a change while the spread shows slides the token.
 ---@type { showing: integer?, settled: integer? }
 local ladderSeen = {}
@@ -651,23 +722,12 @@ local function layLadder(page, ladder, data, settled)
 		ns.PlaceSprite(post, ladder, cx - POST / 2, POST_CY - POST / 2)
 		local number = ladder.numbers[i]
 		ns.SetWagerInk(number, mark.reached and "postNumGot" or "postNum")
-		ns.SetWagerWords(number, tostring(mark.step))
+		ns.ShrinkWagerText(number, tostring(mark.step), POST_INNER, RING_FLOOR)
 		number:ClearAllPoints()
 		number:SetPoint("CENTER", ladder, "TOPLEFT", cx, -POST_CY)
 		number:Show()
-		local title = ladder.titles[i]
-		ns.FitWagerText(title, mark.title, POST_TITLE_W)
-		local last = i == #data.marks
-		if last then
-			ns.PlaceWagerText(title, ladder, 0, POST_TITLE_Y, true)
-		else
-			title:SetJustifyH("CENTER")
-			title:SetWidth(POST_TITLE_W)
-			title:ClearAllPoints()
-			title:SetPoint("TOP", ladder, "TOPLEFT", cx, -(POST_TITLE_Y + (ns.WagerLineHeight("postTitle") - 11.5) / 2))
-			title:Show()
-		end
 	end
+	layPostTitles(ladder, data.marks)
 	-- the token and the fill: none while updating; sliding to a new count while the spread shows (HNT-R162's motion)
 	local showing = ns.board:Showing()
 	local from = ladder.share
