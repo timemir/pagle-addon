@@ -276,3 +276,25 @@ jobs:
 
       - name: Run the check gate with coverage reporting
         run: /usr/bin/time -v bash scripts/check.sh
+
+  # Records that this tree passed every job: an empty artifact named tested-tree-<tree sha>, kept 7 days. After a
+  # merge, scripts/hotfix.sh looks main's new tree up by that name: a squash merge onto a main that didn't move
+  # holds the very tree the pull request's run tested, so the hotfix is tagged at once, without waiting for main's
+  # own Check run of the same tree. Only green pull request runs leave one; nothing reads it but the script.
+  tested:
+    needs: [check, tests, test-check]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Name the tested tree
+        id: tree
+        run: |
+          echo "sha=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
+          : > "$RUNNER_TEMP/tested"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: tested-tree-${{ steps.tree.outputs.sha }}
+          path: ${{ runner.temp }}/tested
+          retention-days: 7
