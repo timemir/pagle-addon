@@ -349,36 +349,45 @@ describe("a tracker frame's preview", function()
 		assert.are.equal(look.slice.top + look.slice.foot, view.frame.height)
 	end)
 
-	it("gives a line's name the room first, and the label what's left but its share (CORE-R8)", function()
+	it("shares a line between its name and its label: the shorter whole, or each in proportion (CORE-R8)", function()
 		local loaded = loggedIn()
 		local ns = loaded.ns
 
 		local view = ns.NewTrackerBlock(loaded.env.CreateFrame("Frame"))
 		local look = ns.TRACKER_FRAMES["hunts.trackerframe.slate"]
 		local room = look.right - look.x - 14 - 6
-		local label =
+		-- 6 px a byte in the fake, plus 1: each text's whole width
+		local function width(text)
+			return #text * 6 + 1
+		end
+		local longLabel =
 			"ещё 2 ч 30 мин до конца и ещё немного слов, чтобы было длинно"
-		local short = "Booty Bay Overflow"
+		local shortLabel = "acaba en 2d 4h"
+		local short = "Snapper Run"
 		local long =
 			"Родные воды: форель на закате, ход скумбрии и ещё длиннее"
 		local entries = {
-			{ dot = "now", name = short, label = label },
-			{ dot = "now", name = long, label = label },
+			{ dot = "now", name = short, label = longLabel },
+			{ dot = "now", name = long, label = shortLabel },
+			{ dot = "now", name = long, label = longLabel },
 			{ dot = "now", name = short, label = "now" },
 		}
 		ns.DrawTrackerBlock(view, look, { hunts = entries, empty = false, collapsed = false })
 
-		-- 6 px a character in the fake: a short name whole, the label the rest
-		local first = view.lines[1]
-		assert.are.equal(#short * 6 + 1, first.first.width)
-		assert.are.equal(room - (#short * 6 + 1), first.label.width)
-		-- a long name and a long label: the label keeps its share, the name the rest
-		local both = view.lines[2]
-		assert.are.equal(room * 0.3, both.label.width)
-		assert.are.equal(room - room * 0.3, both.first.width)
+		assert.is_true(width(short) <= room / 2 and width(shortLabel) <= room / 2) -- the cases below need it
+		-- a short name whole, the long label the rest
+		assert.are.equal(width(short), view.lines[1].first.width)
+		assert.are.equal(room - width(short), view.lines[1].label.width)
+		-- a short time whole, the long name the rest
+		assert.are.equal(width(shortLabel), view.lines[2].label.width)
+		assert.are.equal(room - width(shortLabel), view.lines[2].first.width)
+		-- both long: each in proportion to its width
+		local share = room * width(longLabel) / (width(long) + width(longLabel))
+		assert.are.equal(share, view.lines[3].label.width)
+		assert.are.equal(room - share, view.lines[3].first.width)
 		-- both short: both whole
-		assert.are.equal(#"now" * 6 + 1, view.lines[3].label.width)
-		assert.are.equal(#short * 6 + 1, view.lines[3].first.width)
+		assert.are.equal(width("now"), view.lines[4].label.width)
+		assert.are.equal(width(short), view.lines[4].first.width)
 	end)
 
 	it(
