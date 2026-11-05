@@ -1,0 +1,2094 @@
+# Pagle's interface text in Russian (ruRU), over data/locale/enUS/ledger.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) for 1.1 and not yet reviewed by a native Russian speaker. It has
+# no human translator, so locale.toml names none. Strings that are only textures, or only the name Pagle, carry the
+# English as it is, so the Locale covers every key of the interface.
+
+[COUNT_OF]
+value = "{count_of_1} / {count_of_2}"
+en = "{count_of_1} / {count_of_2}"
+
+[UNFISHED]
+value = "ещё не ловили"
+en = "unfished"
+
+[POOLS]
+value = "косяки"
+en = "pools"
+
+[TROPHY_TITLE]
+value = "Трофейный зал"
+en = "The Trophy Room"
+
+[TITLE]
+value = "Реестр"
+en = "Ledger"
+
+[SUMMARY_LINE]
+value = "Реестр: уровень рыболова {level:0} · заполнен на {percent:0}%"
+en = "Ledger: Angler Level {level:0} · {percent:0}% complete"
+
+[SUMMARY_LINE_PRESTIGE]
+value = "Реестр: престиж {prestige:0} · уровень рыболова {level:0} · заполнен на {percent:0}%"
+en = "Ledger: Prestige {prestige:0} · Angler Level {level:0} · {percent:0}% complete"
+
+[ITEM_FALLBACK]
+value = "Предмет {itemID}"
+en = "Item {itemID}"
+
+[SIZE_TEXT]
+value = "{name} · {length}"
+en = "{name} · {length}"
+
+[NAME_UNKNOWN]
+value = "..."
+en = "..."
+
+[CONTINENT_NAMES]
+value.0 = "Восточные королевства"
+value.1 = "Калимдор"
+en.0 = "Eastern Kingdoms"
+en.1 = "Kalimdor"
+
+[OTHER_WATERS]
+value = "Другие воды"
+en = "Other waters"
+
+[BINDING_EARNED]
+value = "Уровень рыболова {level:0}"
+en = "Angler Level {level:0}"
+
+[EARNED_TEXT]
+value.blueprint = "Поймать 100 рыб за гнома"
+value.carapace = "50 моллюсков-болтунов"
+value.cartographer = "Мастер в 5 зонах"
+value.crier = "Поймать 100 рыб за человека"
+value.deep = "100 уловов после полуночи"
+value.drum = "Поймать 100 рыб за орка"
+value.ember = "Престиж VII"
+value.flywallet = "5 разных приманок"
+value.glade = "Поймать 100 рыб за ночного эльфа"
+value.glass = "12 осколков стекла"
+value.hall = "Поймать 100 рыб за дворфа"
+value.heartwood = "Улов после 10 сорвавшихся"
+value.hex = "Поймать 100 рыб за тролля"
+value.ice = "100 уловов на льду"
+value.knit = "10 000 забросов"
+value.koi = "25 пар подряд"
+value.lacquer = "30 дней рыбалки"
+value.ledger = "Заполнить Реестр"
+value.legend = "Поймать легенду"
+value.legends = "Поймать все три легенды"
+value.lion = "Поймать 300 рыб персонажами Альянса"
+value.logbook = "Рыбалка в 25 зонах"
+value.monster = "Поймать Чудовище"
+value.prestige1 = "Престиж I"
+value.prestige10 = "Престиж X"
+value.prestige5 = "Престиж V"
+value.shroud = "Поймать 100 рыб за нежить"
+value.slate = "30 видов"
+value.stitch = "20 рыб с вышивки"
+value.stormglass = "Мастер в 10 зонах"
+value.totem = "Поймать 100 рыб за таурена"
+value.trophy = "25 рекордов размера"
+value.varieties = "Каждая рыба во всех цветах"
+value.warband = "Поймать 300 рыб персонажами Орды"
+value.wave = "300 уловов в море"
+en.blueprint = "Catch 100 fish as a Gnome"
+en.carapace = "50 Big-mouth Clams"
+en.cartographer = "Master in 5 zones"
+en.crier = "Catch 100 fish as a Human"
+en.deep = "100 catches after midnight"
+en.drum = "Catch 100 fish as an Orc"
+en.ember = "Prestige VII"
+en.flywallet = "5 different lures"
+en.glade = "Catch 100 fish as a Night Elf"
+en.glass = "12 glass shards"
+en.hall = "Catch 100 fish as a Dwarf"
+en.heartwood = "A catch after 10 got away"
+en.hex = "Catch 100 fish as a Troll"
+en.ice = "100 catches on the ice"
+en.knit = "10,000 Casts"
+en.koi = "25 pairs in a row"
+en.lacquer = "30 days fished"
+en.ledger = "Complete the Ledger"
+en.legend = "Land a Legend"
+en.legends = "Land all three Legends"
+en.lion = "Catch 300 fish on Alliance characters"
+en.logbook = "25 zones fished"
+en.monster = "Land a Monster"
+en.prestige1 = "Prestige I"
+en.prestige10 = "Prestige X"
+en.prestige5 = "Prestige V"
+en.shroud = "Catch 100 fish as an Undead"
+en.slate = "30 Species"
+en.stitch = "The sampler's 20 fish"
+en.stormglass = "Master in 10 zones"
+en.totem = "Catch 100 fish as a Tauren"
+en.trophy = "25 size records"
+en.varieties = "Every fish in every colour"
+en.warband = "Catch 300 fish on Horde characters"
+en.wave = "300 catches at sea"
+
+[EARNED_COUNT]
+value = "{min} из {mark} {unit}"
+en = "{min} of {mark} {unit}"
+
+[EARNED_UNIT]
+value.blueprint = "рыб"
+value.carapace = "моллюсков"
+value.cartographer = "зон"
+value.crier = "рыб"
+value.deep = "уловов"
+value.drum = "рыб"
+value.flywallet = "приманок"
+value.glade = "рыб"
+value.glass = "осколков"
+value.hall = "рыб"
+value.hex = "рыб"
+value.ice = "уловов"
+value.knit = "забросов"
+value.koi = "пар"
+value.lacquer = "дней"
+value.lion = "рыб"
+value.logbook = "зон"
+value.shroud = "рыб"
+value.slate = "видов"
+value.stitch = "рыб"
+value.stormglass = "зон"
+value.totem = "рыб"
+value.trophy = "рекордов"
+value.warband = "рыб"
+value.wave = "уловов"
+en.blueprint = "fish"
+en.carapace = "clams"
+en.cartographer = "zones"
+en.crier = "fish"
+en.deep = "catches"
+en.drum = "fish"
+en.flywallet = "lures"
+en.glade = "fish"
+en.glass = "shards"
+en.hall = "fish"
+en.hex = "fish"
+en.ice = "catches"
+en.knit = "Casts"
+en.koi = "pairs"
+en.lacquer = "days"
+en.lion = "fish"
+en.logbook = "zones"
+en.shroud = "fish"
+en.slate = "Species"
+en.stitch = "fish"
+en.stormglass = "zones"
+en.totem = "fish"
+en.trophy = "records"
+en.warband = "fish"
+en.wave = "catches"
+
+[CREST_PROGRESS]
+value = "{rank} · {completion:0}%"
+en = "{rank} · {completion:0}%"
+
+[CREST_UNFISHED]
+value = "Ещё не ловили"
+en = "Unfished"
+
+[CREST_UNCHARTED]
+value = "Воды ещё не изучены"
+en = "Not yet charted"
+
+[CREST_NOTE_PROGRESS]
+value = "Даётся за ранг Мастера в зоне {zoneName} в Рыбацком журнале. Сейчас: {rank}, {completion:0}%. {nextLine}."
+en = "Earned when {zoneName} reaches Master in the Fish Journal. It is {rank}, {completion:0}%. {nextLine}."
+
+[CREST_NOTE_UNFISHED]
+value = "Даётся за ранг Мастера в зоне {zoneName} в Рыбацком журнале. Поймайте там что угодно, чтобы начать."
+en = "Earned when {zoneName} reaches Master in the Fish Journal. Catch anything there to begin."
+
+[CREST_NOTE_UNCHARTED]
+value = "Даётся за ранг Мастера в зоне {zoneName} в Рыбацком журнале, когда её воды будут изучены."
+en = "Earned when {zoneName} reaches Master in the Fish Journal, once its waters are charted."
+
+[LEVEL_UP_TITLE]
+value = "Уровень рыболова {top:0}"
+en = "Angler Level {top:0}"
+
+[LEVEL_UP_STAMP]
+value = "Уровень {top:0}"
+en = "Level {top:0}"
+
+[LEVELS_RAISED]
+value.one = "+{count:0} уровень"
+value.few = "+{count:0} уровня"
+value.many = "+{count:0} уровней"
+value.other = "+{count:0} уровня"
+en.one = "+{count:0} level"
+en.other = "+{count:0} levels"
+
+[NEW_SPECIES_TITLE]
+value = "Новый вид"
+en = "New Species"
+
+[NEW_SPECIES_STAMP]
+value = "Новый!"
+en = "New!"
+
+[NEW_SPECIES_FIRST_NOTE]
+value = "Новый вид в вашем Реестре."
+en = "A new Species for your Ledger."
+
+[NEW_IN_ZONE_TITLE]
+value = "Впервые здесь"
+en = "New here"
+
+[NEW_IN_ZONE_TEXT]
+value = "{itemName} — {areaName}"
+en = "{itemName} in {areaName}"
+
+[NEW_IN_ZONE_STAMP]
+value = "Впервые"
+en = "New here"
+
+[SKILL_MILESTONE_TITLE]
+value = "Веха навыка"
+en = "Skill Milestone"
+
+[SKILL_MILESTONE_TEXT]
+value = "Рыбная ловля {threshold:0}"
+en = "Fishing {threshold:0}"
+
+[ZONE_RANK_TITLE]
+value = "Ранг зоны: {zoneRanks}"
+en = "Zone rank: {zoneRanks}"
+
+[ZONE_RANK_STAMP]
+value = "Новый ранг"
+en = "Rank up"
+
+[ZONE_MASTER_TITLE]
+value = "Мастер зоны"
+en = "Zone Master"
+
+[ZONE_MASTER_STAMP]
+value = "Мастер"
+en = "Master"
+
+[CREST_EARNED]
+value = "Получено: {name}"
+en = "Earned: {name}"
+
+[TROPHY_WEIGHT_TITLE]
+value = "Трофейный вес"
+en = "Trophy weight"
+
+[TROPHY_WEIGHT_STAMP]
+value = "Трофей"
+en = "Trophy"
+
+[NEW_CURIO_TITLE]
+value = "Новая диковина"
+en = "New curio"
+
+[NEW_CURIO_STAMP]
+value = "Новинка!"
+en = "New!"
+
+[UNCHARTED_TITLE]
+value = "Неизвестный улов записан"
+en = "Unknown catch, logged"
+
+[UNCHARTED_STAMP]
+value = "Записано"
+en = "Logged"
+
+[ITEM_SIZE]
+value = "{name} · {size}"
+en = "{name} · {size}"
+
+[LEGEND_TITLE]
+value = "Легенда"
+en = "Legend"
+
+[LEGEND_STAMP]
+value = "Легенда!"
+en = "Legend!"
+
+[PRESTIGE_READY_TITLE]
+value = "Престиж доступен"
+en = "Prestige ready"
+
+[PRESTIGE_READY_TEXT]
+value = "Откройте Рыбацкий журнал, чтобы начать новый Реестр."
+en = "Open the Fish Journal to begin a new Ledger."
+
+[PRESTIGE_READY_STAMP]
+value = "Престиж!"
+en = "Prestige ready"
+
+[PRESTIGE_TITLE]
+value = "Престиж {emblem}"
+en = "Prestige {emblem}"
+
+[MASTER_PRESTIGE_TITLE]
+value = "Престиж мастера {stars:0}"
+en = "Master Prestige {stars:0}"
+
+[CATCHES]
+value.one = "{count:n} улов"
+value.few = "{count:n} улова"
+value.many = "{count:n} уловов"
+value.other = "{count:n} улова"
+en.one = "{count:n} Catch"
+en.other = "{count:n} Catches"
+
+[SIZE_RECORD_TITLE]
+value = "Рекорд размера"
+en = "Size record"
+
+[SIZE_RECORD_STAMP]
+value = "Рекорд"
+en = "Record"
+
+[RULER_LENGTH]
+value = "длина"
+en = "length"
+
+[NEW_VARIETY_TITLE]
+value = "Новая разновидность"
+en = "New variety"
+
+[NEW_VARIETY_STAMP]
+value = "Новый цвет"
+en = "New variety"
+
+[RARE_VARIETY_TITLE]
+value = "Редкая разновидность"
+en = "Rare variety"
+
+[EPIC_VARIETY_TITLE]
+value = "Эпическая разновидность"
+en = "Epic variety"
+
+[EVERY_COLOUR_TITLE]
+value = "Все цвета: {itemName}"
+en = "Every colour of {itemName}"
+
+[EVERY_COLOUR_STAMP]
+value = "Все цвета"
+en = "Every colour"
+
+[TITLE_LINE]
+value = "Звание: {name}"
+en = "Title: {name}"
+
+[TEXT_WITH_TITLE]
+value = "{text_with_title_1}. {titles}"
+en = "{text_with_title_1}. {titles}"
+
+[TITLE_EARNED]
+value = "Звание получено"
+en = "Title earned"
+
+[CAUGHT_STAR_TITLE]
+value = "Улов есть"
+en = "Caught"
+
+[ELEMENT_STAR_TITLE]
+value = "В своей стихии"
+en = "In its element"
+
+[REGULAR_STAR_TITLE]
+value = "Частый улов"
+en = "Regular"
+
+[FAMILY_STAR_TITLE]
+value = "Трофейное семейство"
+en = "Trophy family"
+
+[FAMILY_STAR_TEXT]
+value = "{name} {stars}"
+en = "{name} {stars}"
+
+[STAR]
+value = '|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
+en = '|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
+
+[ZONE_RANKS]
+value = ["Гость", "Завсегдатай", "Местный", "Знаток", "Мастер"]
+en = ["Visitor", "Regular", "Local", "Expert", "Master"]
+
+[ZONE_NEXT_VISITOR]
+value = "Поймайте здесь что угодно, чтобы стать Гостем"
+en = "Catch anything here to become a Visitor"
+
+[ZONE_NEXT_REGULAR]
+value.one = "Завсегдатай: ещё {count:0} вид (в любое время)"
+value.few = "Завсегдатай: ещё {count:0} вида (в любое время)"
+value.many = "Завсегдатай: ещё {count:0} видов (в любое время)"
+value.other = "Завсегдатай: ещё {count:0} вида (в любое время)"
+en.one = "Regular: {count:0} more any-time Species"
+en.other = "Regular: {count:0} more any-time Species"
+
+[ZONE_NEXT_LOCAL]
+value.one = "Местный: ещё {count:0} вид (в любое время)"
+value.few = "Местный: ещё {count:0} вида (в любое время)"
+value.many = "Местный: ещё {count:0} видов (в любое время)"
+value.other = "Местный: ещё {count:0} вида (в любое время)"
+en.one = "Local: {count:0} more any-time Species"
+en.other = "Local: {count:0} more any-time Species"
+
+[ZONE_NEXT_EXPERT]
+value = "Знаток: {parts}"
+en = "Expert: {parts}"
+
+[ZONE_NEXT_GATED]
+value.one = "ещё {count:0} дневной, ночной, сезонный или событийный улов"
+value.few = "ещё {count:0} дневных, ночных, сезонных или событийных улова"
+value.many = "ещё {count:0} дневных, ночных, сезонных или событийных уловов"
+value.other = "ещё {count:0} дневного, ночного, сезонного или событийного улова"
+en.one = "{count:0} more day, night, seasonal or event catch"
+en.other = "{count:0} more day, night, seasonal or event catches"
+
+[ZONE_NEXT_JUNK]
+value = "что-нибудь из хлама"
+en = "a piece of junk"
+
+[ZONE_NEXT_TREASURE]
+value = "сокровище"
+en = "a treasure"
+
+[ZONE_NEXT_SEPARATOR]
+value = ", "
+en = ", "
+
+[ZONE_NEXT_MASTER]
+value.one = "Мастер: трофей ещё из {count:0} семейства"
+value.few = "Мастер: трофеи ещё из {count:0} семейств"
+value.many = "Мастер: трофеи ещё из {count:0} семейств"
+value.other = "Мастер: трофеи ещё из {count:0} семейства"
+en.one = "Master: a trophy from {count:0} more family"
+en.other = "Master: a trophy from {count:0} more families"
+
+[ZONE_NEXT_MASTERED]
+value = "Мастер этих вод"
+en = "Master of these waters"
+
+[ZONE_NEXT_WITH_NEW]
+value = "{line} · {found}"
+en = "{line} · {found}"
+
+[ZONE_NEW_TO_FIND]
+value.one = "ещё {count:0} вид к поиску: данные пополнились, а ваша печать остаётся"
+value.few = "ещё {count:0} вида к поиску: данные пополнились, а ваша печать остаётся"
+value.many = "ещё {count:0} видов к поиску: данные пополнились, а ваша печать остаётся"
+value.other = "ещё {count:0} вида к поиску: данные пополнились, а ваша печать остаётся"
+en.one = "{count:0} new to find: the data grew, and your seal stays"
+en.other = "{count:0} new to find: the data grew, and your seal stays"
+
+[WRITE_UP_FIRST_BUILD]
+value.one = "Ваш Реестр составлен по {count:n} забросу"
+value.few = "Ваш Реестр составлен по {count:n} забросам"
+value.many = "Ваш Реестр составлен по {count:n} забросам"
+value.other = "Ваш Реестр составлен по {count:n} заброса"
+en.one = "Your Ledger was written up from {count:n} Cast"
+en.other = "Your Ledger was written up from {count:n} Casts"
+
+[WRITE_UP_WHILE_OFF]
+value = "Пока Реестр был выключен"
+en = "While the Ledger was off"
+
+[WRITE_UP_LEVEL]
+value = "Уровень рыболова {shownLevel:0}"
+en = "Angler Level {shownLevel:0}"
+
+[WRITE_UP_LEVEL_ROSE]
+value = "Уровень рыболова: с {before:0} до {shown:0}"
+en = "Angler Level {before:0} to {shown:0}"
+
+[WRITE_UP_SPECIES]
+value.one = "{count:0} вид"
+value.few = "{count:0} вида"
+value.many = "{count:0} видов"
+value.other = "{count:0} вида"
+en.one = "{count:0} Species"
+en.other = "{count:0} Species"
+
+[WRITE_UP_VARIETIES]
+value.one = "{count:0} разновидность"
+value.few = "{count:0} разновидности"
+value.many = "{count:0} разновидностей"
+value.other = "{count:0} разновидности"
+en.one = "{count:0} variety"
+en.other = "{count:0} varieties"
+
+[WRITE_UP_EVERY_COLOUR]
+value.one = "{count:0} рыба во всех цветах"
+value.few = "{count:0} рыбы во всех цветах"
+value.many = "{count:0} рыб во всех цветах"
+value.other = "{count:0} рыбы во всех цветах"
+en.one = "{count:0} fish in every colour"
+en.other = "{count:0} fish in every colour"
+
+[WRITE_UP_VARIETIES_COLOURS]
+value = "{varieties} · {colours}"
+en = "{varieties} · {colours}"
+
+[WRITE_UP_ZONES]
+value.one = "{count:0} зона с рангом"
+value.few = "{count:0} зоны с рангом"
+value.many = "{count:0} зон с рангом"
+value.other = "{count:0} зоны с рангом"
+en.one = "{count:0} zone ranked"
+en.other = "{count:0} zones ranked"
+
+[WRITE_UP_MASTERED]
+value.one = "освоено: {count:0}"
+value.few = "освоено: {count:0}"
+value.many = "освоено: {count:0}"
+value.other = "освоено: {count:0}"
+en.one = "{count:0} mastered"
+en.other = "{count:0} mastered"
+
+[WRITE_UP_ZONES_MASTERED]
+value = "{zones} · {mastered}"
+en = "{zones} · {mastered}"
+
+[WRITE_UP_TROPHY]
+value.one = "{count:0} трофейный вес"
+value.few = "{count:0} трофейных веса"
+value.many = "{count:0} трофейных весов"
+value.other = "{count:0} трофейного веса"
+en.one = "{count:0} trophy weight"
+en.other = "{count:0} trophy weights"
+
+[WRITE_UP_CURIO]
+value.one = "{count:0} диковина"
+value.few = "{count:0} диковины"
+value.many = "{count:0} диковин"
+value.other = "{count:0} диковины"
+en.one = "{count:0} curio"
+en.other = "{count:0} curios"
+
+[WRITE_UP_WITH_PRESTIGE]
+value = "{line} · престиж {rank:0}"
+en = "{line} · Prestige {rank:0}"
+
+[WRITE_UP_LEGENDS]
+value.one = "{count:0} легенда"
+value.few = "{count:0} легенды"
+value.many = "{count:0} легенд"
+value.other = "{count:0} легенды"
+en.one = "{count:0} Legend"
+en.other = "{count:0} Legends"
+
+[WRITE_UP_MORE_TITLES]
+value.one = "+{count:0} звание"
+value.few = "+{count:0} звания"
+value.many = "+{count:0} званий"
+value.other = "+{count:0} звания"
+en.one = "+{count:0} more title"
+en.other = "+{count:0} more titles"
+
+[WRITE_UP_SKILL]
+value.one = "{count:0} веха навыка"
+value.few = "{count:0} вехи навыка"
+value.many = "{count:0} вех навыка"
+value.other = "{count:0} вехи навыка"
+en.one = "{count:0} Skill Milestone"
+en.other = "{count:0} Skill Milestones"
+
+[WRITE_UP_COINS]
+value = "Монеты Pagle +{number}"
+en = "Pagle Coins +{number}"
+
+[JOURNAL]
+value = "Рыбацкий журнал"
+en = "Fish Journal"
+
+[JOURNAL_SLASH_HELP]
+value = "Открыть или закрыть Рыбацкий журнал"
+en = "Open or close the Fish Journal"
+
+[JOURNAL_UPDATING]
+value = "Реестр составляется по вашему Журналу уловов."
+en = "The Ledger is being written up from your Catch log."
+
+[JOURNAL_HOME]
+value = "Главная"
+en = "Home"
+
+[JOURNAL_BACK]
+value = "« назад"
+en = "« back"
+
+[JOURNAL_SEARCH_HINT]
+value = "Найти рыбу или воды…"
+en = "Find a fish or a water…"
+
+[JOURNAL_HELP_CHART]
+value = "Помочь нанести воды на карту"
+en = "Help chart the waters"
+
+[JOURNAL_CHART_PROMPT]
+value = "Видели то, чего Pagle не знает?"
+en = "Seen something Pagle doesn't know?"
+
+[HOME_KICKER]
+value = "Воды"
+en = "The Waters"
+
+[HOME_TITLE]
+value = "Мои места рыбалки"
+en = "Where I've Fished"
+
+[HOME_NOTES]
+value = "Заметки для себя"
+en = "Notes to self"
+
+[HOME_NOTE_RANK]
+value = "{zone}: {zoneRanks}. {nextRequirement}"
+en = "{zone}: {zoneRanks}. {nextRequirement}"
+
+[HOME_NOTE_NEW]
+value = "{zone}: новых к поиску — {home_note_new_2:0}"
+en = "{zone}: {home_note_new_2:0} new to find"
+
+[HOME_NOTE_CAUGHT_STAR]
+value = '{name}: ещё {home_note_caught_star_2:0} до |TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
+en = '{name}: {home_note_caught_star_2:0} to |TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
+
+[HOME_NOTE_STAR]
+value = '{name}: ещё {home_note_star_2:0} до |TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
+en = '{name}: {home_note_star_2:0} to |TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
+
+[HOME_NOTE_NONE]
+value = "Пора на рыбалку!"
+en = "Go fishing!"
+
+[HOME_LEVEL]
+value = "Уровень рыболова"
+en = "Angler Level"
+
+[HOME_PERCENT]
+value = "{percent:0}%"
+en = "{percent:0}%"
+
+[HOME_CONTENTS]
+value = "В этом Реестре"
+en = "In this Ledger"
+
+[HOME_NUMERALS]
+value = ["i.", "ii.", "iii.", "iv.", "v.", "vi."]
+en = ["i.", "ii.", "iii.", "iv.", "v.", "vi."]
+
+[HOME_ANGLER_MARK]
+value = "»"
+en = "»"
+
+[HOME_SEAL]
+value = "Реестр\n{completion}"
+en = "Ledger\n{completion}"
+
+[HOME_CURIOS]
+value = "Диковины: хлам, сокровища, неизведанное"
+en = "Curios: junk, treasure, uncharted"
+
+[HOME_ANGLER]
+value = "Рыболов: персонажи и вехи"
+en = "The Angler: hands and milestones"
+
+[BRASS_PLATE]
+value = "Ур. {level:0} · Реестр {percent:0}%"
+en = "Lv {level:0} · Ledger {percent:0}%"
+
+[BRASS_PLATE_TITLE]
+value = "Ур. {level:0} · {title} · Реестр {percent:0}%"
+en = "Lv {level:0} · {title} · Ledger {percent:0}%"
+
+[DATE_SHORT]
+value = "{day:0} {monthsShort}"
+en = "{day:0} {monthsShort}"
+
+[DATE_WITH_YEAR]
+value = "{short} {year}"
+en = "{short} {year}"
+
+[MONTHS_SHORT]
+value = ["янв.", "февр.", "мар.", "апр.", "мая", "июн.", "июл.", "авг.", "сент.", "окт.", "нояб.", "дек."]
+en = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+[MONTHS]
+value = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"]
+en = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+[WINDOWS]
+value.autumn = "осень"
+value.day = "день"
+value."event.301" = "Рыбомания"
+value.night = "ночь"
+value.spring = "весна"
+value.summer = "лето"
+value.winter = "зима"
+en.autumn = "autumn"
+en.day = "day"
+en."event.301" = "Extravaganza"
+en.night = "night"
+en.spring = "spring"
+en.summer = "summer"
+en.winter = "winter"
+
+[WINDOW_EVENT]
+value = "событие"
+en = "event"
+
+[WINDOW_OPEN]
+value = "клюёт сейчас"
+en = "biting now"
+
+[WINDOW_BACK_HOURS]
+value = "снова через {window_back_hours:0} ч"
+en = "back in {window_back_hours:0} h"
+
+[WINDOW_BACK_MINUTES]
+value = "снова через {window_back_minutes:0} мин"
+en = "back in {window_back_minutes:0} min"
+
+[WINDOW_BACK_MONTH]
+value = "снова с {months}"
+en = "back in {months}"
+
+[WINDOW_LINE]
+value = "{label}, {state}"
+en = "{label}, {state}"
+
+[XP_BAR_TEXT]
+value = "{into} из {cost}."
+en = "{into} of {cost}."
+
+[XP_BAR_FRESH]
+value.one = " Свежая вода ещё на {count:0} улов."
+value.few = " Свежая вода ещё на {count:0} улова."
+value.many = " Свежая вода ещё на {count:0} уловов."
+value.other = " Свежая вода ещё на {count:0} улова."
+en.one = " Fresh Water for {count:0} more Catch."
+en.other = " Fresh Water for {count:0} more Catches."
+
+[XP_BAR_SET_ASIDE]
+value = "Опыт, отложенный до следующего престижа: {carried}"
+en = "{carried} XP set aside for the next Prestige"
+
+[XP_BAR_TIP_TITLE]
+value = "Откуда опыт этого восхождения"
+en = "Where this climb's XP came from"
+
+[XP_BAR_TIP_NOTE]
+value = "по источникам, примерно"
+en = "by source, roughly"
+
+[XP_SOURCE_OWN]
+value = "Уловы и открытия"
+en = "Catches and discoveries"
+
+[XP_SOURCE_NAMES]
+value.Hunts = "Охоты"
+value.TackleBoard = "Доска снастей"
+en.Hunts = "Hunts"
+en.TackleBoard = "Tackle Board"
+
+[HINT_ANY_TIME]
+value = "В любое время"
+en = "Any time"
+
+[HINT_SEPARATOR]
+value = " · "
+en = " · "
+
+[HINT_WINDOW_SEPARATOR]
+value = ", "
+en = ", "
+
+[HINT_MORE]
+value = "{name} +{hint_more_2:0}"
+en = "{name} +{hint_more_2:0}"
+
+[HINT_SKILL]
+value = "навык ~{skill:0}"
+en = "skill ~{skill:0}"
+
+[HINT_ANY_SKILL]
+value = "любой навык"
+en = "any skill"
+
+[TILE_RANK]
+value = "{zoneRanks} · {completion:0}%"
+en = "{zoneRanks} · {completion:0}%"
+
+[TILE_NEW]
+value = "Новых: {newToFind:0}!"
+en = "{newToFind:0} new!"
+
+[TILE_UNFISHED_SKILL]
+value = "ещё не ловили · навык ~{skill:0}"
+en = "unfished · skill ~{skill:0}"
+
+[TILE_UNFISHED_ANY_SKILL]
+value = "ещё не ловили · любой навык"
+en = "unfished · any skill"
+
+[TILE_UNCHARTED]
+value = "неизведанные воды"
+en = "uncharted waters"
+
+[LIST_SEPARATOR]
+value = ", "
+en = ", "
+
+[LIST_LAST]
+value = " и "
+en = " and "
+
+[ENTRY_STAMPS]
+value = ["Улов есть", "В своей стихии", "Частый улов"]
+en = ["Caught", "In its element", "Regular"]
+
+[STAMP_TIP_LAND]
+value.one = "Поймайте её {count} раз."
+value.few = "Поймайте её {count} раза."
+value.many = "Поймайте её {count} раз."
+value.other = "Поймайте её {count} раза."
+en.one = "Land it {count} time."
+en.other = "Land it {count} times."
+
+[STAMP_TIP_LANDED]
+value = "Поймано {min:0} из {need:0}."
+en = "{min:0} of {need:0} landed."
+
+[STAMP_TIP_ELEMENT_WINDOWS]
+value.one = "Поймайте её в её окно стихии, в любой зоне."
+value.few = "Поймайте её в каждое из её окон стихии ({count}), в любой зоне."
+value.many = "Поймайте её в каждое из её окон стихии ({count}), в любой зоне."
+value.other = "Поймайте её в каждое из её окон стихии ({count}), в любой зоне."
+en.one = "Land it under its element window, in any zone."
+en.other = "Land it under each of its {count} element windows, in any zone."
+
+[STAMP_TIP_ELEMENT_NEEDED]
+value = "Выполнено {have:0} из {need:0}. Осталось: {joinAnd}."
+en = "{have:0} of {need:0} met. Still needed: {joinAnd}."
+
+[STAMP_TIP_ELEMENT_MET]
+value = "Всё выполнено: {joinAnd}."
+en = "All met: {joinAnd}."
+
+[STAMP_TIP_ZONES]
+value.one = "Поймайте её в любой зоне."
+value.few = "Поймайте её в {count} разных зонах."
+value.many = "Поймайте её в {count} разных зонах."
+value.other = "Поймайте её в {count} разных зонах."
+en.one = "Land it in any zone."
+en.other = "Land it in {count} different zones."
+
+[STAMP_TIP_ZONES_PROGRESS]
+value.one = "В {have:0} из {count:0} зоны."
+value.few = "В {have:0} из {count:0} зон."
+value.many = "В {have:0} из {count:0} зон."
+value.other = "В {have:0} из {count:0} зоны."
+en.one = "In {have:0} of {count:0} zone."
+en.other = "In {have:0} of {count:0} zones."
+
+[ENTRY_FIRST]
+value = "Впервые поймано {date} в зоне {zone}, персонаж: {character}. Всего поймано: {caught}."
+en = "First landed {date} in {zone}, by {character}. {caught} caught."
+
+[ENTRY_FIRST_NO_ZONE]
+value = "Впервые поймано {date}, персонаж: {character}. Всего поймано: {caught}."
+en = "First landed {date}, by {character}. {caught} caught."
+
+[ENTRY_FOUND_IN]
+value = "Водится: {joinAnd}."
+en = "Found in {joinAnd}."
+
+[ENTRY_ONLY_BY]
+value = " Только: {joinAnd}."
+en = " Only by {joinAnd}."
+
+[ENTRY_LARGEST]
+value = "Мой крупнейший улов: {size}"
+en = "Largest I've landed: {size}"
+
+[ENTRY_REMOVED]
+value = "Больше не водится в водах Forever."
+en = "No longer found in Forever's waters."
+
+[ENTRY_UNKNOWN]
+value = "Неизвестная рыба"
+en = "An unknown fish"
+
+[ENTRY_RIDDLE]
+value = "«{riddle}»"
+en = "\"{riddle}\""
+
+[ENTRY_HINT_LINK]
+value = "Подсказка без загадок »"
+en = "Read the plain hint »"
+
+[FISH_KICKER]
+value = "Где её найти"
+en = "Where to find it"
+
+[FISH_TITLE]
+value = "Её воды"
+en = "Its waters"
+
+[FISH_CAUGHT_HERE]
+value = 'улов |TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:11:15:0:0:1024:2048:486:513:1586:1606|t'
+en = 'caught |TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:11:15:0:0:1024:2048:486:513:1586:1606|t'
+
+[FISH_WHEN]
+value = "Когда"
+en = "When"
+
+[FISH_CAUGHT]
+value = "{box} Улов есть ({min:0}/{caught:0})"
+en = "{box} Caught ({min:0}/{caught:0})"
+
+[FISH_ELEMENT]
+value = "{box} В своей стихии ({have:0}/{need:0})"
+en = "{box} In its element ({have:0}/{need:0})"
+
+[FISH_REGULAR]
+value = "{box} Частый улов ({min:0}/{regularCatches:0})"
+en = "{box} Regular ({min:0}/{regularCatches:0})"
+
+[CHECK_ON]
+value = '|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:468:502:1836:1870|t'
+en = '|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:468:502:1836:1870|t'
+
+[CHECK_OFF]
+value = '|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:430:464:1836:1870|t'
+en = '|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:430:464:1836:1870|t'
+
+[FISH_VARIETIES]
+value = "Разновидности"
+en = "Varieties"
+
+[FISH_VARIETIES_COUNT]
+value = "найдено {caughtCount:0} из {sizeOf:0}"
+en = "{caughtCount:0} of {sizeOf:0} found"
+
+[FISH_VARIETIES_LINK]
+value = "Все десять »"
+en = "See all ten »"
+
+[VARIETIES_TITLE]
+value = "Её цвета"
+en = "Its colours"
+
+[VARIETIES_CAUGHT]
+value = "поймано {caughtCount:0} из {sizeOf:0}"
+en = "{caughtCount:0} of {sizeOf:0} caught"
+
+[VARIETY_COUNT]
+value = "поймано: {variety_count}"
+en = "{variety_count} caught"
+
+[VARIETY_UNDISCOVERED]
+value = "Не найдено"
+en = "Undiscovered"
+
+[VARIETY_KICKER]
+value.common = "Обычный цвет"
+value.epic = "Эпический цвет"
+value.rare = "Редкий цвет"
+value.uncommon = "Необычный цвет"
+en.common = "A common colour"
+en.epic = "An epic colour"
+en.rare = "A rare colour"
+en.uncommon = "An uncommon colour"
+
+[VARIETY_NOT_DISCOVERED]
+value = "Ещё не найдено"
+en = "Not yet discovered"
+
+[VARIETY_ODDS]
+value = "Ещё не поймано. Примерно один улов из {oneIn}."
+en = "Not landed yet. About one Catch in {oneIn}."
+
+[VARIETY_ALL_TEN]
+value = "Все десять."
+en = "All ten."
+
+[VARIETY_TO_GO]
+value = "Осталось: {left:0}."
+en = "{left:0} to go."
+
+[SEARCH_NONE]
+value = "В Реестре пока нет ничего с таким названием."
+en = "Nothing by that name in the Ledger yet."
+
+[SEARCH_WATERS]
+value = "Воды"
+en = "Waters"
+
+[SEARCH_FISH]
+value = "Рыбы"
+en = "Fish"
+
+[ANGLER_CRUMB]
+value = "Рыболов"
+en = "The Angler"
+
+[ANGLER_EX_LIBRIS]
+value = "Ex Libris"
+en = "Ex Libris"
+
+[ANGLER_LEDGER]
+value = "Реестр рыболова"
+en = "The Angler's Ledger"
+
+[ANGLER_KEPT_SINCE]
+value = "ведётся с {since}"
+en = "kept since {since}"
+
+[ANGLER_TALLY]
+value = "Реестр"
+en = "The Ledger"
+
+[ANGLER_COMPLETE]
+value = "Реестр заполнен на {percent:0}% ({angler_complete_2} из {angler_complete_3})"
+en = "{percent:0}% of the Ledger complete ({angler_complete_2} of {angler_complete_3})"
+
+[ANGLER_PARTS]
+value.junk = "Музей хлама"
+value.species = "Виды"
+value.treasure = "Сокровища"
+value.trophy = "Веса Трофейного зала"
+value.varieties = "Разновидности"
+value.zones = "Освоенные зоны"
+en.junk = "Junk Museum"
+en.species = "Species"
+en.treasure = "Treasures"
+en.trophy = "Trophy Room weights"
+en.varieties = "Varieties"
+en.zones = "Zones mastered"
+
+[ANGLER_PART_COUNT]
+value = "{angler_part_count_1} из {angler_part_count_2}"
+en = "{angler_part_count_1} of {angler_part_count_2}"
+
+[ANGLER_CATCHES]
+value.one = "{count:n} улов"
+value.few = "{count:n} улова"
+value.many = "{count:n} уловов"
+value.other = "{count:n} улова"
+en.one = "{count:n} Catch"
+en.other = "{count:n} Catches"
+
+[ANGLER_CATCHES_NEXT]
+value.one = "{count:n} улов · следующая веха {milestone}"
+value.few = "{count:n} улова · следующая веха {milestone}"
+value.many = "{count:n} уловов · следующая веха {milestone}"
+value.other = "{count:n} улова · следующая веха {milestone}"
+en.one = "{count:n} Catch · next milestone {milestone}"
+en.other = "{count:n} Catches · next milestone {milestone}"
+
+[ANGLER_HANDS]
+value = "Кто держал удочку"
+en = "Hands on the Rod"
+
+[ANGLER_HAND]
+value = "навык {rank:0} / {max:0}"
+en = "skill {rank:0} / {max:0}"
+
+[ANGLER_MILESTONES]
+value = "Вехи"
+en = "Milestones"
+
+[ANGLER_MILESTONE]
+value = "{done} {threshold:0}"
+en = "{done} {threshold:0}"
+
+[ANGLER_MILESTONE_SEPARATOR]
+value = "   "
+en = "   "
+
+[ANGLER_NO_PRESTIGE]
+value = "Престижа пока нет"
+en = "No Prestige yet"
+
+[ANGLER_PRESTIGE]
+value = "Начать новый Реестр (престиж)"
+en = "Begin a new Ledger (Prestige)"
+
+[ANGLER_AUTOMATIC]
+value = "Автоматически"
+en = "Automatic"
+
+[ANGLER_XP_SOURCES]
+value = "Откуда ваш опыт"
+en = "Where your XP came from"
+
+[ANGLER_XP_CLIMB]
+value = "Это восхождение"
+en = "This climb"
+
+[ANGLER_XP_ALL]
+value = "За всё время"
+en = "All told"
+
+[ZONE_LADDER_SEPARATOR]
+value = "·"
+en = "·"
+
+[ZONE_NEXT]
+value = "Далее: {zone_next}"
+en = "Next: {zone_next}"
+
+[ZONE_NEW_HERE]
+value.one = "Здесь ещё {count:0} новинка! Моя печать остаётся."
+value.few = "Здесь ещё {count:0} новинки! Моя печать остаётся."
+value.many = "Здесь ещё {count:0} новинок! Моя печать остаётся."
+value.other = "Здесь ещё {count:0} новинки! Моя печать остаётся."
+en.one = "{count:0} new to find here! My seal stays."
+en.other = "{count:0} new to find here! My seal stays."
+
+[ZONE_GROUPS]
+value.anyTime = "В любое время"
+value.curios = "Диковины"
+value.dayNight = "День и ночь"
+value.events = "События"
+value.pools = "Косяки"
+value.seasonal = "Сезонные"
+value.trophies = "Трофеи"
+en.anyTime = "Any time"
+en.curios = "Curios"
+en.dayNight = "Day and night"
+en.events = "Events"
+en.pools = "Pools"
+en.seasonal = "Seasonal"
+en.trophies = "Trophies"
+
+[ZONE_GROUP_COUNT]
+value = "{done:0} / {total:0}"
+en = "{done:0} / {total:0}"
+
+[ZONE_GROUP_NOTE]
+value = "{note} · {zone_group_note_2}"
+en = "{note} · {zone_group_note_2}"
+
+[ZONE_POOLS_NOTE]
+value = "открытая вода и косяки вместе"
+en = "open water and pools combined"
+
+[ZONE_REQUIREMENT]
+value = "{met} {zone_requirement_2}"
+en = "{met} {zone_requirement_2}"
+
+[ZONE_TROPHY]
+value = "трофей: {name}, любой вес"
+en = "a {name} trophy, any weight"
+
+[ZONE_ALSO_NOTE]
+value = "Этого пока нет в списке Pagle для этих вод."
+en = "Not in Pagle's list for these waters yet."
+
+[ZONE_UNKNOWN_FISH]
+value = "— неизвестно —"
+en = "— unknown —"
+
+[ZONE_CAUGHT_ELSEWHERE]
+value = "{item} (улов из других мест)"
+en = "{item} (caught elsewhere)"
+
+[ZONE_MARGIN_SEPARATOR]
+value = " · "
+en = " · "
+
+[ZONE_ABOUT]
+value = "Об этих водах"
+en = "About these waters"
+
+[ZONE_SKILL]
+value = "Навык ~{skill:0}"
+en = "Skill ~{skill:0}"
+
+[ZONE_ANY_SKILL]
+value = "Любой навык"
+en = "Any skill"
+
+[ZONE_KNOWN]
+value = "Эти воды изучены на {completion:0}%: рыба — {fishKnown:0} из {fish:0}, трофейные семейства — {landed:0} из {families:0}"
+en = "{completion:0}% of these waters known: {fishKnown:0} of {fish:0} fish, {landed:0} of {families:0} trophy families"
+
+[ZONE_TROPHIES_HERE]
+value = "Трофеи, пойманные здесь"
+en = "Trophies landed here"
+
+[ZONE_REWARD]
+value = "Награда за мастерство: каждая новая печать приносит опыт."
+en = "Reward for mastery: each new seal earns XP."
+
+[ZONE_REWARD_TITLE]
+value = "Награда за мастерство: каждая новая печать приносит опыт. Печать Мастера даёт звание «{title}»."
+en = "Reward for mastery: each new seal earns XP. The Master seal earns the title {title}."
+
+[ZONE_PICK]
+value = "Выберите рыбу слева, чтобы открыть её страницу."
+en = "Pick a fish on the left to read its page."
+
+[ZONE_UNCHARTED_NOTE]
+value = "Каждый улов здесь всё равно записан и будет засчитан, когда данные Pagle обновятся."
+en = "Every catch here is still written down, and counted once Pagle's data catches up."
+
+[ZONE_LOOSE_PAGES]
+value = "Вкладные листы"
+en = "Loose pages"
+
+[ZONE_LOOSE_TITLE]
+value = "Что здесь попадалось"
+en = "What came up here"
+
+[ZONE_UNCHARTED_GROUP]
+value = "Неизведанное"
+en = "Uncharted"
+
+[ZONE_UNCHARTED_SEAL]
+value = "неизведано"
+en = "uncharted"
+
+[ZONE_LOOSE_ITEM]
+value = "{item}: {zone_loose_item_2:0}×"
+en = "{item}: {zone_loose_item_2:0}×"
+
+[ZONE_ALSO_CAUGHT_TITLE]
+value = "Также поймано здесь"
+en = "Also caught here"
+
+[ZONE_NOTHING_YET]
+value = "Здесь пока ничего не поймано."
+en = "Nothing caught here yet."
+
+[STAR_OFF]
+value = '|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:677:700:1126:1149|t'
+en = '|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:677:700:1126:1149|t'
+
+[TROPHY_WEIGHTS]
+value = "{trophy_weights_1} из {trophy_weights_2} весов."
+en = "{trophy_weights_1} of {trophy_weights_2} weights."
+
+[TROPHY_KICKER]
+value = "Собрание"
+en = "A collection"
+
+[TROPHY_FAMILIES]
+value = "Семейства"
+en = "Families"
+
+[TROPHY_FAMILIES_NOTE]
+value = "веса"
+en = "weights"
+
+[TROPHY_FAMILY_KICKER]
+value = "Трофейное семейство"
+en = "A trophy family"
+
+[TROPHY_HEAVIEST]
+value = "самый тяжёлый"
+en = "heaviest"
+
+[TROPHY_STAMPS]
+value = ["Любой вес", "Половина весов", "Самый тяжёлый"]
+en = ["Any weight", "Half the weights", "The heaviest"]
+
+[TROPHY_TIP_ANY]
+value = "Поймайте трофей этого семейства любого веса."
+en = "Land any weight of this family."
+
+[TROPHY_TIP_NONE_YET]
+value = "Пока ни одного."
+en = "None landed yet."
+
+[TROPHY_TIP_UNLISTED]
+value = "Пойман, хотя этого веса нет в списке семейства."
+en = "Landed, though not on this family's list."
+
+[TROPHY_TIP_LANDED]
+value.one = "Поймано: {done:0} из {count:0} веса."
+value.few = "Поймано: {done:0} из {count:0} весов."
+value.many = "Поймано: {done:0} из {count:0} весов."
+value.other = "Поймано: {done:0} из {count:0} веса."
+en.one = "{done:0} of {count:0} weight landed."
+en.other = "{done:0} of {count:0} weights landed."
+
+[TROPHY_TIP_HALF]
+value.one = "Поймайте его единственный вес из списка."
+value.few = "Поймайте хотя бы {need:0} из {count:0} указанных весов."
+value.many = "Поймайте хотя бы {need:0} из {count:0} указанных весов."
+value.other = "Поймайте хотя бы {need:0} из {count:0} указанного веса."
+en.one = "Land its one listed weight."
+en.other = "Land at least {need:0} of its {count:0} listed weights."
+
+[TROPHY_TIP_NO_WEIGHTS]
+value = "У этого семейства пока нет весов в списке."
+en = "This family lists no weights yet."
+
+[TROPHY_TIP_HEAVIEST]
+value = "Поймайте самый тяжёлый вес из списка: {trophy_tip_heaviest} фунт."
+en = "Land its heaviest listed weight, {trophy_tip_heaviest} lb."
+
+[TROPHY_TIP_HEAVIEST_DONE]
+value = "Пойман."
+en = "Landed."
+
+[TROPHY_TIP_HEAVIEST_TODO]
+value = "Ещё нет."
+en = "Not yet."
+
+[TROPHY_POUNDS]
+value = "фунты"
+en = "pounds"
+
+[TROPHY_LANDED]
+value = "Поймано {trophy_landed_1} из {trophy_landed_2}. Рекорд пока: {trophy_landed_3} фунт."
+en = "Landed {trophy_landed_1} of {trophy_landed_2}. Heaviest so far: {trophy_landed_3} lb."
+
+[TROPHY_NONE_LANDED]
+value = "Из этого семейства пока ни одного."
+en = "Not one of this family yet."
+
+[CURIOS_CRUMB]
+value = "Диковины"
+en = "Curios"
+
+[CURIOS_JUNK_KICKER]
+value = "Хлам"
+en = "Junk"
+
+[CURIOS_JUNK_TITLE]
+value = "Музей хлама"
+en = "The Junk Museum"
+
+[CURIOS_TREASURES_KICKER]
+value = "Сундуки и сокровища"
+en = "Containers and treasure"
+
+[CURIOS_EXHIBITS]
+value = "{curios_exhibits_1} из {curios_exhibits_2} экспонатов"
+en = "{curios_exhibits_1} of {curios_exhibits_2} exhibits"
+
+[CURIOS_EMPTY_PLINTH]
+value = "Пустой постамент"
+en = "An empty plinth"
+
+[CURIOS_TREASURES_TITLE]
+value = "Сокровища"
+en = "Treasures"
+
+[CURIOS_OPENED]
+value = "Открыто: {curios_opened_1} из {curios_opened_2}"
+en = "{curios_opened_1} of {curios_opened_2} opened"
+
+[CURIOS_LOOSE_PAGES]
+value = "Вкладные листы: «Неизведанное»"
+en = "Loose pages: Uncharted"
+
+[CURIOS_LOOSE_PAGE]
+value = "{item}: {curios_loose_page_2}× — {where}, впервые {date}. Pagle о таком не знает. Записано."
+en = "{item}: {curios_loose_page_2}× at {where}, first {date}. Unknown to Pagle. Logged."
+
+[CURIOS_UNKNOWN_WATERS]
+value = "неизвестные воды"
+en = "unknown waters"
+
+[CURIOS_NONE_UNCHARTED]
+value = "Нет. Каждый улов есть в Реестре."
+en = "None. Every catch is in the Ledger."
+
+[LEGENDS_TITLE]
+value = "Легенды"
+en = "Legends"
+
+[LEGENDS_KICKER]
+value = "Вне сотни"
+en = "Outside the hundred"
+
+[LEGENDS_INDEX]
+value = "Указатель"
+en = "The index"
+
+[LEGENDS_COUNT]
+value = "{legends_count_1} из {legends_count_2}. Они стоят вне сотни Реестра."
+en = "{legends_count_1} of {legends_count_2}. These sit outside the Ledger's hundred."
+
+[LEGENDS_UNWRITTEN]
+value = "неписаная легенда"
+en = "an unwritten legend"
+
+[LEGENDS_UNWRITTEN_TITLE]
+value = "Неписаная легенда"
+en = "An unwritten legend"
+
+[LEGENDS_CAUGHT_MARK]
+value = '|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
+en = '|TInterface\AddOns\Pagle_Ledger\media\journal\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t'
+
+[LEGENDS_FIRST]
+value = "{date}, {zone}, {character}"
+en = "{date}, {zone}, {character}"
+
+[LEGENDS_FIRST_NO_ZONE]
+value = "{date}, {character}"
+en = "{date}, {character}"
+
+[LEGENDS_OPEN_PLATE]
+value = "Открыть гравюру"
+en = "Open the plate"
+
+[LEGENDS_PLATE_RETURN]
+value = "Щелкните где угодно, чтобы вернуться."
+en = "Click anywhere to return."
+
+[LEGENDS_PLATE_KICKER]
+value = "Легенда этих вод"
+en = "A Legend of these waters"
+
+[LEGENDS_PLATE_SEAL]
+value = "Звание"
+en = "Title"
+
+[FOLLOWING_TITLE]
+value = "Подписки"
+en = "Following"
+
+[FOLLOWING_KICKER]
+value = "В этом Реестре"
+en = "In this Ledger"
+
+[FOLLOWING_EXPIRED_MARK]
+value = "—"
+en = "—"
+
+[FOLLOWING_NO_COMPANION]
+value = "нет компаньона"
+en = "no Companion"
+
+[FOLLOWING_COUNT]
+value.one = "Вы подписаны на {count:n} рыболова. Подписаться и отписаться можно на сайте Pagle."
+value.few = "Вы подписаны на {count:n} рыболовов. Подписаться и отписаться можно на сайте Pagle."
+value.many = "Вы подписаны на {count:n} рыболовов. Подписаться и отписаться можно на сайте Pagle."
+value.other = "Вы подписаны на {count:n} рыболова. Подписаться и отписаться можно на сайте Pagle."
+en.one = "{count:n} Angler you follow. Follow and unfollow on the Pagle website."
+en.other = "{count:n} Anglers you follow. Follow and unfollow on the Pagle website."
+
+[FOLLOWING_ROW]
+value = "Ур. {level:0} · {emblem} · {ledger:0}%"
+en = "Lv {level:0} · {emblem} · {ledger:0}%"
+
+[FOLLOWING_ROW_NO_PRESTIGE]
+value = "Ур. {level:0} · {ledger:0}%"
+en = "Lv {level:0} · {ledger:0}%"
+
+[FOLLOWING_HARDCORE_STAMP]
+value = "HC"
+en = "HC"
+
+[FOLLOWING_HARDCORE]
+value = "Хардкорный рыболов"
+en = "Hardcore Angler"
+
+[FOLLOWING_MORE]
+value.one = "и ещё {count:n} персонаж"
+value.few = "и ещё {count:n} персонажа"
+value.many = "и ещё {count:n} персонажей"
+value.other = "и ещё {count:n} персонажа"
+en.one = "and {count:n} more character"
+en.other = "and {count:n} more characters"
+
+[FOLLOWING_SEAL]
+value = "Реестр {ledger:0}%"
+en = "Ledger {ledger:0}%"
+
+[FOLLOWING_LEGENDS]
+value = "Легенды"
+en = "Legends"
+
+[FOLLOWING_LEGENDS_COUNT]
+value = "{following_legends_count_1} из {following_legends_count_2}"
+en = "{following_legends_count_1} of {following_legends_count_2}"
+
+[FOLLOWING_WATERS]
+value = "Освоенные воды"
+en = "Waters mastered"
+
+[FOLLOWING_CATCHES]
+value = "Уловов за всё время"
+en = "Lifetime Catches"
+
+[FOLLOWING_AS_OF]
+value = "Данные на {asOfDate}"
+en = "As of {asOfDate}"
+
+[FOLLOWING_EMPTY]
+value.absent = ["Эту страницу ведёт компаньон.", "Рыболовов, на которых вы подписаны на сайте Pagle, переносит в игру компаньон Pagle.", "Без него эта страница пуста. Вставка журнала всё равно обновит вашу страницу рыболова."]
+value.expired = ["Этим страницам больше суток.", "Pagle отложил их, пока компаньон не принесёт свежие.", "Запустите компаньон, затем /reload."]
+value.none = ["Вы пока ни на кого не подписаны.", "Подпишитесь на рыболова на его странице на сайте Pagle.", "Компаньон перенесёт их в течение часа; они появятся здесь после следующего /reload."]
+en.absent = ["The Companion keeps this page.", "Anglers you follow on the Pagle website are brought into the game by the Pagle Companion.", "Without it, this page stays empty. Pasting your log still updates your own Angler page."]
+en.expired = ["These pages are more than a day old.", "Pagle has set them aside until the Companion brings fresh ones.", "Start the Companion, then /reload."]
+en.none = ["You follow no one yet.", "Follow an Angler from their page on the Pagle website.", "The Companion brings them in within the hour; they show here after your next /reload."]
+
+[PRESTIGE_CONFIRM_KICKER]
+value = "Престиж"
+en = "Prestige"
+
+[PRESTIGE_CONFIRM_TITLE]
+value = "Начать новый Реестр?"
+en = "Begin a new Ledger?"
+
+[PRESTIGE_CONFIRM_TEXT]
+value = "Уровень рыболова снова пойдёт с 1. Всё заработанное останется с вами."
+en = "Your Angler Level climbs again from 1. Nothing you've earned is taken away."
+
+[PRESTIGE_CONFIRM_YES]
+value = "Престиж"
+en = "Prestige"
+
+[PRESTIGE_CONFIRM_NO]
+value = "Не сейчас"
+en = "Not yet"
+
+[GUIDE_BLURB]
+value = "Ваша книга: все воды и все рыбы, уровень рыболова, рекорды и звания."
+en = "Your book: every water and every fish, your Angler Level, records and titles."
+
+[GUIDE_RIBBON]
+value = "Ваш Реестр"
+en = "Your Ledger"
+
+[GUIDE_KICKER]
+value = "Ваш Реестр"
+en = "Your Ledger"
+
+[GUIDE_TITLE]
+value = "Всё начнётся со следующей рыбы"
+en = "It starts with your next fish"
+
+[GUIDE_BODY]
+value = "Pagle записывает только то, что видит. Рыбы, пойманной до сегодняшнего дня, в Реестре нет, и Pagle не станет притворяться, что она там есть. Ваш первый улов — первая страница."
+en = "Pagle writes down only what it sees. Fish you caught before today aren’t in your Ledger, and Pagle won’t pretend they are. Your first Catch is page one."
+
+[GUIDE_KEPT_NONE]
+value = "ведётся с … вашего первого улова"
+en = "kept since … your first Catch"
+
+[GUIDE_RIGHT_KICKER]
+value = "Уже вписано"
+en = "Already written in"
+
+[GUIDE_RIGHT_TITLE]
+value = "Что Pagle смог увидеть"
+en = "What Pagle could see"
+
+[GUIDE_RIGHT_BODY]
+value = "Навык рыбной ловли — единственное, что честно говорит о вашем прошлом, поэтому он учтён с самого начала."
+en = "Your Fishing skill is the one thing that tells your past honestly, so it counts from the start."
+
+[GUIDE_HEADING]
+value = "{name} · Рыбная ловля {rank:0}"
+en = "{name} · Fishing {rank:0}"
+
+[GUIDE_READ_NOW]
+value = "прочитано только что"
+en = "read just now"
+
+[GUIDE_MILESTONE]
+value = "Веха навыка {threshold:0}"
+en = "Skill Milestone {threshold:0}"
+
+[GUIDE_MILESTONES]
+value = "Вехи навыка {head} и {thresholds:0}"
+en = "Skill Milestones {head} and {thresholds:0}"
+
+[GUIDE_MILESTONE_JOIN]
+value = ", "
+en = ", "
+
+[GUIDE_REACHED_BEFORE]
+value = "достигнута до Pagle"
+en = "reached before Pagle came"
+
+[GUIDE_REACHED]
+value = "достигнута {dateAt}"
+en = "reached {dateAt}"
+
+[GUIDE_TO_GO]
+value = "ещё {max:0} ед. навыка"
+en = "{max:0} skill to go"
+
+[GUIDE_LATER]
+value = "на потом"
+en = "for later"
+
+[GUIDE_XP]
+value = "+{skillMilestoneXp} опыта"
+en = "+{skillMilestoneXp} XP"
+
+[GUIDE_ACCOUNT]
+value = "Все персонажи этой учётной записи пишут в один Реестр. Войдите другим — и Pagle прочитает и его навык рыбной ловли."
+en = "Every character on this account writes in the same Ledger. Log in with another and Pagle reads their Fishing skill too."
+
+[GUIDE_NOTE]
+value = "Включите модуль позже — и он перечитает *каждый улов* с сегодняшнего дня, а затем составит сводку заработанного."
+en = "Turn a part on later and it reads back through *every Catch* since today, then writes up what you’d earned."
+
+[NOTE_FRESH]
+value = "Вас не было, поэтому следующие уловы дают дополнительный опыт. Это *Свежая вода*, синяя часть шкалы. Отдых никогда не наказывается."
+en = "You’ve been away, so your next Catches earn bonus XP. That’s *Fresh Water*, the blue in your bar. A rest is never a penalty."
+
+[PRESTIGE_LETTER_KICKER]
+value = "Письмо, оставленное на причале"
+en = "A letter, left on the dock"
+
+[PRESTIGE_LETTER_TEXT]
+value = "Шестьдесят: вершина подъёма. Начните новый Реестр, когда пожелаете. Уровень снова пойдёт с 1, на Реестре появится отметка престижа, а всё заработанное останется с вами. Или оставайтесь на шестидесятом сколько угодно."
+en = "Sixty: the top of the climb. Begin a new Ledger whenever you like. Your level starts again from 1, a Prestige mark goes on your Ledger, and nothing you’ve earned is taken away. Or stay at sixty as long as you please."
+
+[PRESTIGE_LETTER_SHOW]
+value = "Показать"
+en = "Show me"
+
+[PRESTIGE_LETTER_LATER]
+value = "Позже"
+en = "Later"
+
+[NOTE_PRESTIGE]
+value = "*Начните новый Реестр* здесь, когда будете готовы. Спешить некуда."
+en = "*Begin a new Ledger* here, when you’re ready. No hurry."
+
+[FIRST_LOOK_TITLE]
+value = "Рыбацкий журнал"
+en = "the Fish Journal"
+
+[FIRST_LOOK_TILE]
+value = "У каждой воды, где вы рыбачите, есть плитка. Её ранг растёт от *Гостя* до *Мастера*."
+en = "Every water you fish gets a tile. Its rank climbs from *Visitor* to *Master*."
+
+[FIRST_LOOK_XP_BAR]
+value = "Ваш уровень рыболова. *Синий* отрезок — Свежая вода: дополнительный опыт после перерыва."
+en = "Your Angler Level. The *blue* stretch is Fresh Water: bonus XP after a break."
+
+[FIRST_LOOK_NOTES]
+value = "Заметки для себя: что ближе всего к завершению. Они переписываются сами, пока вы рыбачите."
+en = "Notes to self: what’s closest to done. They rewrite themselves as you fish."
+
+[FIRST_LOOK_SEARCH]
+value = "Найдите воду или рыбу. Непойманная рыба *никогда не называется*."
+en = "Find a water or a fish. A fish you haven’t caught is *never named*."
+
+[FIRST_LOOK_UNFISHED]
+value = "Пунктирные плитки — воды, где вы ещё не рыбачили, с навыком, который там нужен."
+en = "Dashed tiles are waters you haven’t fished yet, with the skill they ask."
+
+[FIRST_LOOK_AGAIN]
+value = "Снова показать заметки к этой странице"
+en = "Show the notes for this page again"
+
+[TOUR_HOME]
+value = "Рыбацкий журнал: главная"
+en = "the Fish Journal: Home"
+
+[TOUR_ZONE]
+value = "Рыбацкий журнал: самая обловленная зона, открыт самый частый в ней вид"
+en = "the Fish Journal: the most-fished zone, its most-caught Species open"
+
+[TOUR_FISH]
+value = "Рыбацкий журнал: самый частый вид"
+en = "the Fish Journal: the most-caught Species"
+
+[TOUR_TROPHY]
+value = "Рыбацкий журнал: Трофейный зал, на пойманном семействе"
+en = "the Fish Journal: the Trophy Room, on a landed family"
+
+[TOUR_CURIOS]
+value = "Рыбацкий журнал: диковины"
+en = "the Fish Journal: Curios"
+
+[TOUR_LEGENDS]
+value = "Рыбацкий журнал: легенды, на пойманной"
+en = "the Fish Journal: Legends, on a caught one"
+
+[TOUR_ANGLER]
+value = "Рыбацкий журнал: страница рыболова"
+en = "the Fish Journal: the Angler page"
+
+[TOUR_SEARCH]
+value = "Рыбацкий журнал: поиск по названию самого частого вида"
+en = "the Fish Journal: search results for the most-caught Species' name"
+
+[COLLECTION_CONTENTS]
+value = "Коллекция: облики и звания"
+en = "The Collection: looks and titles"
+
+[COLLECTION_CRUMB]
+value = "Коллекция"
+en = "The Collection"
+
+[COLLECTION_TITLE]
+value = "Коллекция"
+en = "The Collection"
+
+[COLLECTION_NEW_COUNT]
+value = "новых: {collection_new_count}"
+en = "{collection_new_count} new"
+
+[COLLECTION_NEW_MARK]
+value = "новинка!"
+en = "new!"
+
+[COLLECTION_SEARCH_HINT]
+value = "Найти облик…"
+en = "Find a look…"
+
+[COLLECTION_SEARCH_LOOKS]
+value = "Облики"
+en = "Looks"
+
+[COLLECTION_SLASH_HELP]
+value = "Открыть Коллекцию в Рыбацком журнале"
+en = "Open the Fish Journal's Collection"
+
+[COLLECTION_LINE]
+value = "Все облики Pagle: те, что на вас, те, что хранятся, и как получить остальные."
+en = "Every look Pagle has: the ones you wear, the ones you keep, and how to earn the rest."
+
+[COLLECTION_OF]
+value = "{collection_of_1} из {collection_of_2}"
+en = "{collection_of_1} of {collection_of_2}"
+
+[COLLECTION_WEARING]
+value = "Выбрано: {names}"
+en = "Wearing {names}"
+
+[COLLECTION_SIGNED]
+value = "Подпись: «{name}»"
+en = "Signed “{name}”"
+
+[COLLECTION_FRAMES_JOIN]
+value = " · "
+en = " · "
+
+[COLLECTION_REACH]
+value = "Рукой подать"
+en = "Within reach"
+
+[COLLECTION_LATELY]
+value = "Недавно добавлено"
+en = "Lately added"
+
+[COLLECTION_NEWEST_FIRST]
+value = "сначала новые"
+en = "newest first"
+
+[COLLECTION_SEAL]
+value = "{collection_seal_1}\nиз {collection_seal_2}"
+en = "{collection_seal_1}\nof {collection_seal_2}"
+
+[COLLECTION_ADDED]
+value = "{words} · {dateAt}"
+en = "{words} · {dateAt}"
+
+[COLLECTION_ADDED_BOUGHT]
+value = "Куплено"
+en = "Bought"
+
+[COLLECTION_ADDED_CRATE]
+value = "Из ящика диковин"
+en = "From a Curio crate"
+
+[COLLECTION_ADDED_EARNED]
+value = "Получено"
+en = "Earned"
+
+[COLLECTION_FOR_SALE]
+value.one = "В продаже {count:n} облик, которого у вас ещё нет."
+value.few = "В продаже {count:n} облика, которых у вас ещё нет."
+value.many = "В продаже {count:n} обликов, которых у вас ещё нет."
+value.other = "В продаже {count:n} облика, которых у вас ещё нет."
+en.one = "{count:n} look for sale you don't have yet."
+en.other = "{count:n} looks for sale you don't have yet."
+
+[COLLECTION_OPEN_SHOP]
+value = "Открыть Лавку диковин"
+en = "Open the Curio Shop"
+
+[COLLECTION_SHELF_KICKER]
+value = "Коллекция"
+en = "The Collection"
+
+[COLLECTION_YOURS_COUNT]
+value = "Ваших: {collection_yours_count_1} из {collection_yours_count_2}"
+en = "{collection_yours_count_1} of {collection_yours_count_2} yours"
+
+[COLLECTION_TAB_ALL]
+value = "Все"
+en = "All"
+
+[COLLECTION_TAB_YOURS]
+value = "Ваши"
+en = "Yours"
+
+[COLLECTION_TAB_EARN]
+value = "Получить"
+en = "To earn"
+
+[COLLECTION_TAB_SHOP]
+value = "В лавке"
+en = "In the shop"
+
+[COLLECTION_TAG_IN_USE]
+value = "Выбрано"
+en = "In use"
+
+[COLLECTION_TAG_SIGNED]
+value = "подпись"
+en = "signed as"
+
+[COLLECTION_TAG_YOURS]
+value = "Ваше"
+en = "Yours"
+
+[COLLECTION_TAG_DEFAULT]
+value = "По умолчанию"
+en = "The default"
+
+[COLLECTION_TAG_CRATE]
+value = "Ящик диковин"
+en = "Curio crate"
+
+[COLLECTION_TAG_PUT_AWAY]
+value = "Убрано"
+en = "Put away"
+
+[COLLECTION_SLOT_FALLBACK]
+value.one = "{label}"
+value.few = "{label}"
+value.many = "{label}"
+value.other = "{label}"
+en.one = "{label}"
+en.other = "{label}s"
+
+[COLLECTION_SLOT_NAMES]
+value."core.binding" = ["Переплёт", "Переплёты"]
+value."core.crest" = ["Герб экслибриса", "Гербы экслибриса"]
+value."core.soundset" = ["Набор звуков", "Наборы звуков"]
+value."core.toaststyle" = ["Стиль плашек", "Стили плашек"]
+en."core.binding" = ["Binding", "Bindings"]
+en."core.crest" = ["Bookplate crest", "Bookplate crests"]
+en."core.soundset" = ["Sound set", "Sound sets"]
+en."core.toaststyle" = ["Toast style", "Toast styles"]
+
+[COLLECTION_TRACKER_FRAME]
+value = "Рамка трекера"
+en = "Tracker frame"
+
+[COLLECTION_TRACKER_FRAMES]
+value = "Рамки трекеров"
+en = "Tracker frames"
+
+[COLLECTION_TITLE_NOUN]
+value = "Звание"
+en = "Title"
+
+[COLLECTION_TITLES_NOUN]
+value = "Звания"
+en = "Titles"
+
+[COLLECTION_TITLE_GROUPS]
+value.ledger = "Весь Реестр"
+value.legends = "Легенды"
+value.levels = "Уровни и престиж"
+value.wardens = "Хранители"
+en.ledger = "The whole Ledger"
+en.legends = "Legends"
+en.levels = "Levels and Prestige"
+en.wardens = "Wardens"
+
+[COLLECTION_AUTOMATIC_NOTE]
+value = "Ваше высшее звание по уровню, каким бы оно ни было"
+en = "Your highest level title, whatever it is"
+
+[COLLECTION_TITLE_DESCRIPTION]
+value = "Звание Реестра. Подпишите им Реестр, и оно появится на вашей латунной табличке и экслибрисе."
+en = "A title of the Ledger. Sign the Ledger with it, and it shows on your brass plate and your bookplate."
+
+[COLLECTION_EARN_MASTER]
+value = "Мастер: {zone}"
+en = "Master in {zone}"
+
+[COLLECTION_EARN_LEGEND]
+value = "Первый улов: {item}"
+en = "First Catch of {item}"
+
+[COLLECTION_EARN_JUNK]
+value = "Заполнить Музей хлама"
+en = "Fill the Junk Museum"
+
+[COLLECTION_EARN_TREASURE]
+value = "Найти все сокровища"
+en = "Find every Treasure"
+
+[COLLECTION_EARN_TROPHY]
+value = "Поймать трофеи всех весов"
+en = "Land every trophy weight"
+
+[COLLECTION_MODULES]
+value.Core = "Pagle"
+value.Hunts = "Охоты"
+value.Ledger = "Реестр"
+value.QoL = "Удобства"
+value.Stats = "Статистика"
+value.TackleBoard = "Доска снастей"
+en.Core = "Pagle"
+en.Hunts = "Hunts"
+en.Ledger = "Ledger"
+en.QoL = "QoL"
+en.Stats = "Stats"
+en.TackleBoard = "Tackle Board"
+
+[COLLECTION_SIGNED_AS]
+value = "Подпись"
+en = "Signed as"
+
+[COLLECTION_STAGE_LINE]
+value = "{character} · уровень рыболова {shownLevel:0}"
+en = "{character} · Angler Level {shownLevel:0}"
+
+[COLLECTION_BEFORE]
+value = "Облик до получения"
+en = "A look before you have it"
+
+[COLLECTION_KICKER]
+value = "{slotName} · {source}"
+en = "{slotName} · {source}"
+
+[COLLECTION_SOURCE_DEFAULT]
+value = "По умолчанию"
+en = "The default"
+
+[COLLECTION_SOURCE_SHOP]
+value = "Лавка диковин"
+en = "Curio Shop"
+
+[COLLECTION_SOURCE_CRATE]
+value = "Только из ящика диковин"
+en = "Curio crate only"
+
+[COLLECTION_SOURCE_REWARD]
+value = "Награда: {collectionModuleName}"
+en = "{collectionModuleName} reward"
+
+[COLLECTION_IN_USE]
+value = "Выбрано"
+en = "In use"
+
+[COLLECTION_USE]
+value = "Выбрать"
+en = "Use it"
+
+[COLLECTION_WEAR]
+value = "Надеть"
+en = "Wear it"
+
+[COLLECTION_SIGN]
+value = "Подписать"
+en = "Sign with it"
+
+[COLLECTION_EFFECTS]
+value."core.binding" = "Так переплетены все ваши книги."
+value."core.crest" = "Прикреплён к вашему экслибрису."
+value."core.soundset" = "Звучит в каждом оповещении."
+value."core.toaststyle" = "Так выглядит каждое оповещение."
+en."core.binding" = "Every book of yours wears it."
+en."core.crest" = "Pinned on your bookplate."
+en."core.soundset" = "Every Announcement plays it."
+en."core.toaststyle" = "Every Announcement wears it."
+
+[COLLECTION_EFFECT_TRACKER]
+value = "На трекере модуля «{collectionModuleName}»."
+en = "On the {collectionModuleName} tracker."
+
+[COLLECTION_EFFECT_TITLE]
+value = "Им подписан Реестр."
+en = "The Ledger is signed with it."
+
+[COLLECTION_HOW_DEFAULT]
+value = "Бесплатно и навсегда ваше."
+en = "Free, and always yours."
+
+[COLLECTION_HOW_BOUGHT]
+value = "Куплено {date}. Цена в монетах: {price}."
+en = "Bought {date} for {price} Coins."
+
+[COLLECTION_HOW_BOUGHT_FREE]
+value = "Куплено {date}."
+en = "Bought {date}."
+
+[COLLECTION_HOW_CRATE]
+value = "Из ящика диковин, {date}."
+en = "From a Curio crate, {date}."
+
+[COLLECTION_HOW_EARNED]
+value = "Получено {date}: {line}."
+en = "Earned {date}: {line}."
+
+[COLLECTION_HOW_EARNED_DATE]
+value = "Получено {date}."
+en = "Earned {date}."
+
+[COLLECTION_HOW_EARNED_LINE]
+value = "Получено: {earnLine}."
+en = "Earned: {earnLine}."
+
+[COLLECTION_HOW_TO_EARN]
+value = "Как получить"
+en = "How to earn it"
+
+[COLLECTION_COUNT]
+value = "{collection_count_1} из {collection_count_2}"
+en = "{collection_count_1} of {collection_count_2}"
+
+[COLLECTION_COUNT_UNIT]
+value = "{collection_count_unit_1} из {collection_count_unit_2} {unit}"
+en = "{collection_count_unit_1} of {collection_count_unit_2} {unit}"
+
+[COLLECTION_FALLBACK]
+value = "Не получено к {dateAt}? Тогда облик тоже поступит в продажу. Цена в монетах: {collection_fallback_2}."
+en = "Not earned by {dateAt}? Then it goes on sale too, for {collection_fallback_2} Coins."
+
+[COLLECTION_BUY]
+value = "Купить в Лавке диковин"
+en = "Buy in the Curio Shop"
+
+[COLLECTION_ENOUGH]
+value = "У вас монет: {collection_enough}. Хватает."
+en = "You have {collection_enough} Coins, enough for it."
+
+[COLLECTION_SHORT]
+value = "У вас монет: {collection_short_1}. Не хватает ещё {collection_short_2}."
+en = "You have {collection_short_1} Coins: {collection_short_2} more to go."
+
+[COLLECTION_CRATE_ONLY]
+value = "Только из ящика диковин."
+en = "Only ever from a Curio crate."
+
+[COLLECTION_OPEN_CRATE]
+value = "Открыть ящик"
+en = "Open a crate"
+
+[COLLECTION_CRATE_NOTE]
+value = "Не продаётся и не зарабатывается: его даёт только ящик — или никто."
+en = "Never for sale and never earned: a crate gives it, or nothing does."
+
+[COLLECTION_PUT_AWAY]
+value = "Убрано: модуль «{name}» выключен"
+en = "Put away: {name} is off"

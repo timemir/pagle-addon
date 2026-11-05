@@ -1,0 +1,478 @@
+# Pagle's interface text in Russian (ruRU), over data/locale/enUS/qol.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) for 1.1 and not yet reviewed by a native Russian speaker. It has
+# no human translator, so locale.toml names none. Strings that are only textures, or only the name Pagle, carry the
+# English as it is, so the Locale covers every key of the interface.
+
+[TITLE]
+value = "Удобства"
+en = "QoL"
+
+[SETTINGS_ACTION]
+value = "Настройки рыбалки »"
+en = "Fishing settings »"
+
+[BINDING_HEADER]
+value = "Pagle"
+en = "Pagle"
+
+[BINDING_FISHING_KEY]
+value = "Pagle: Клавиша рыбалки"
+en = "Pagle: Fishing key"
+
+[SETTINGS_CASTING]
+value = "Заброс"
+en = "Casting"
+
+[SETTINGS_CAST_WITH]
+value = "Способ заброса"
+en = "Cast with"
+
+[SETTINGS_CAST_WITH_TOOLTIP]
+value = "Также в меню отсека модификаций и через /pagle qol input."
+en = "Also on the compartment menu and /pagle qol input."
+
+[SETTINGS_CAST_WITH_KEY]
+value = "Клавиша рыбалки"
+en = "Fishing key"
+
+[SETTINGS_CAST_WITH_CLICK]
+value = "Двойной правый щелчок"
+en = "Double right-click"
+
+[SETTINGS_CAST_WITH_BOTH]
+value = "Оба"
+en = "Both"
+
+[SETTINGS_FISHING_KEY]
+value = "Клавиша рыбалки"
+en = "Fishing key"
+
+[SETTINGS_FISHING_KEY_TOOLTIP]
+value = "Каждое нажатие — одно следующее действие: заброс, подсечка или, когда нужно, приманка, экипировка или моллюск."
+en = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed."
+
+[SETTINGS_LURES_AND_CLAMS]
+value = "Приманки и моллюски"
+en = "Lures and clams"
+
+[SETTINGS_LURES]
+value = "Приманки"
+en = "Lures"
+
+[SETTINGS_LURES_TOOLTIP]
+value = "Если приманки нет, нажатие перед забросом ставит её."
+en = "A press before a cast applies a lure when none is on."
+
+[SETTINGS_LURES_OFF]
+value = "Выкл."
+en = "Off"
+
+[SETTINGS_LURES_BEST]
+value = "Лучшая из моих"
+en = "Best I have"
+
+[SETTINGS_LURES_THIS]
+value = "Только эта"
+en = "Only this one"
+
+[SETTINGS_LURE]
+value = "Приманка"
+en = "Lure"
+
+[SETTINGS_LURE_UNNAMED]
+value = "Предмет {item}"
+en = "Item {item}"
+
+[SETTINGS_CLAMS]
+value = "Открывать моллюсков в паузах"
+en = "Open clams between Casts"
+
+[SETTINGS_CLAMS_TOOLTIP]
+value = "Один моллюск за нажатие, никогда во время заброса."
+en = "One clam per press, never during a cast."
+
+[SETTINGS_WHILE_YOU_FISH]
+value = "Во время рыбалки"
+en = "While you fish"
+
+[SETTINGS_AUDIO_MIX]
+value = "Звук для рыбалки"
+en = "Fishing audio mix"
+
+[SETTINGS_AUDIO_MIX_TOOLTIP]
+value = "Во время рыбалки: звуки на максимум; музыка, звуки окружения и диалоги выключены; общая громкость не меняется. Потом всё возвращается."
+en = "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards."
+
+[SETTINGS_BACKGROUND_SOUND]
+value = "Звук в фоновом режиме"
+en = "Keep sound when the game is in the background"
+
+[SETTINGS_AUTO_LOOT]
+value = "Автосбор добычи на рыбалке"
+en = "Auto-loot while fishing"
+
+[SETTINGS_AUTO_LOOT_TOOLTIP]
+value = "Только во время рыбалки. Не действует, если автоматический сбор добычи уже включён."
+en = "Only while you fish. Skipped if you already have auto-loot on."
+
+[MENU_INPUT]
+value = "Заброс: {names}"
+en = "Input: {names}"
+
+[INPUT_KEY]
+value = "Клавиша рыбалки"
+en = "Fishing key"
+
+[INPUT_CLICK]
+value = "Двойной щелчок"
+en = "Double-click"
+
+[INPUT_BOTH]
+value = "Оба"
+en = "Both"
+
+[SLASH_HELP]
+value = "input key|click|both: выбрать способ заброса"
+en = "input key|click|both: choose how you cast"
+
+[SLASH_USAGE]
+value = "Pagle: /pagle qol input key|click|both"
+en = "Pagle: /pagle qol input key|click|both"
+
+[INPUT_SET_KEY]
+value = "Pagle: заброс клавишей рыбалки."
+en = "Pagle: cast with the Fishing key."
+
+[INPUT_SET_CLICK]
+value = "Pagle: заброс двойным правым щелчком."
+en = "Pagle: cast with a double right-click."
+
+[INPUT_SET_BOTH]
+value = "Pagle: заброс клавишей рыбалки или двойным правым щелчком."
+en = "Pagle: cast with the Fishing key or a double right-click."
+
+[CONFLICT_TEXT]
+value = "Две модификации претендуют на вашу клавишу рыбалки."
+en = "Two addons want your fishing key."
+
+[CONFLICT_USE_PAGLE]
+value = "Выбрать Pagle"
+en = "Use Pagle"
+
+[CONFLICT_USE_THAT_ADDON]
+value = "Выбрать {title}"
+en = "Use {title}"
+
+[CONFLICT_USE_THOSE_ADDONS]
+value = "Выбрать другие"
+en = "Use the others"
+
+[CONFLICT_TURNED_OFF]
+value = "Pagle: отключено — {titles}. Введите /reload, чтобы завершить."
+en = "Pagle: turned off {titles}. Type /reload to finish."
+
+[TITLES_JOIN]
+value = ", "
+en = ", "
+
+[CONFLICT_TURNED_OFF_QOL]
+value = "Pagle: Pagle QoL отключён. Введите /reload, чтобы завершить. Pagle продолжает записывать ваши уловы."
+en = "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches."
+
+[CONFLICT_RELOAD_TEXT]
+value = "Перезагрузить интерфейс сейчас, чтобы завершить?"
+en = "Reload the interface now to finish?"
+
+[CONFLICT_RELOAD_NOW]
+value = "Перезагрузить"
+en = "Reload now"
+
+[CONFLICT_RELOAD_LATER]
+value = "Позже"
+en = "Later"
+
+[NUDGE_OUT_OF_LURES]
+value = "Приманка кончилась, а в сумках больше нет ни одной."
+en = "Your lure is gone and there are none left in your bags."
+
+[NUDGE_OUT_OF_LURE]
+value = "Приманка кончилась, а в сумках больше нет приманки «{lureName}»."
+en = "Your lure is gone and there's no {lureName} left in your bags."
+
+[BINDING_SWAP_GEAR]
+value = "Pagle: Переодеться"
+en = "Pagle: Swap gear"
+
+[SETTINGS_GEAR]
+value = "Экипировка"
+en = "Gear"
+
+[SETTINGS_FISHING_SET]
+value = "Рыбацкий комплект"
+en = "Fishing set"
+
+[SETTINGS_FISHING_SET_TOOLTIP]
+value = "Клавиша рыбалки надевает его, если в руках нет удочки. Двойной щелчок этого не делает."
+en = "The Fishing key puts it on when no pole is in hand. Double-click skips this."
+
+[SETTINGS_FISHING_SET_NONE]
+value = "Нет (экипировка не меняется)"
+en = "None (gear stays as it is)"
+
+[SETTINGS_SAVE_FISHING_SET]
+value = "Сохранить надетое как рыбацкий комплект"
+en = "Save what I'm wearing as my fishing set"
+
+[SETTINGS_SWAP_GEAR]
+value = "Переодеться"
+en = "Swap gear"
+
+[SETTINGS_SWAP_GEAR_TOOLTIP]
+value = "Переключает между рыбацким комплектом и прежней экипировкой (она сохранена как Pagle Previous)."
+en = "Swaps between your fishing set and what you wore before (saved as Pagle Previous)."
+
+[GEAR_NEEDS_SLOT]
+value = "Pagle: нужен свободный слот комплекта экипировки для {setName}."
+en = "Pagle: needs a free equipment set slot for {setName}."
+
+[GEAR_NEEDS_TWO_SLOTS]
+value = "Pagle: нужны два свободных слота комплектов экипировки для {fishingSetName} и {previousSetName}."
+en = "Pagle: needs two free equipment set slots for {fishingSetName} and {previousSetName}."
+
+[NUDGE_SWAP_BACK]
+value = "Удочка всё ещё в руках. Нажмите {key}, чтобы переодеться обратно."
+en = "Still holding your pole. Press {key} to swap back."
+
+[NUDGE_SWAP_BACK_UNBOUND]
+value = "Удочка всё ещё в руках. Назначьте клавишу для {binding}, чтобы переодеваться одним нажатием."
+en = "Still holding your pole. Bind {binding} to swap back in one press."
+
+[BUTTON_CAST]
+value = "Заброс"
+en = "Cast"
+
+[BUTTON_REEL]
+value = "Подсечка"
+en = "Reel"
+
+[BUTTON_GEAR]
+value = "Экипировка"
+en = "Gear"
+
+[BUTTON_LURE]
+value = "Приманка"
+en = "Lure"
+
+[BUTTON_CLAM]
+value = "Моллюск"
+en = "Clam"
+
+[BUTTON_TOOLTIP_CAST]
+value = "Забросить"
+en = "Cast"
+
+[BUTTON_TOOLTIP_REEL]
+value = "Подсечь"
+en = "Reel in"
+
+[BUTTON_TOOLTIP_GEAR]
+value = "Надеть {name}"
+en = "Put on {name}"
+
+[BUTTON_TOOLTIP_LURE]
+value = "Применить {name}"
+en = "Apply {name}"
+
+[BUTTON_TOOLTIP_CLAM]
+value = "Открыть {name}"
+en = "Open {name}"
+
+[BUTTON_TOOLTIP_NOTHING]
+value = "Делать нечего"
+en = "Nothing to do"
+
+[SETTINGS_SHOW_BUTTON]
+value = "Кнопка следующего действия"
+en = "Show the next-action button"
+
+[SETTINGS_SHOW_BUTTON_TOOLTIP]
+value = "Показывает, что сделает следующее нажатие. Перетащите с Shift, чтобы сдвинуть."
+en = "Shows what your next press will do. Shift-drag to move."
+
+[SETTINGS_BUTTON_POSITION]
+value = "Положение кнопки"
+en = "Button position"
+
+[SETTINGS_BUTTON_RESET]
+value = "Сбросить"
+en = "Reset"
+
+[GUIDE_BLURB]
+value = "Клавиша рыбалки, рыбацкая одежда, приманки и моллюски: одно нажатие — одно действие."
+en = "The Fishing key, your fishing clothes, lures and clams: one press, one action."
+
+[GUIDE_CASTING_RIBBON]
+value = "Заброс"
+en = "Casting"
+
+[GUIDE_CASTING_KICKER]
+value = "Заброс"
+en = "Casting"
+
+[GUIDE_CASTING_TITLE]
+value = "Одна клавиша на весь заброс"
+en = "One key for the whole cast"
+
+[GUIDE_CASTING_BODY]
+value = "Нажмите клавишу рыбалки, и Pagle сделает одно следующее действие, а потом дождётся нового нажатия. Он никогда не делает двух дел сразу и ничего не делает сам."
+en = "Press the Fishing key and Pagle does the one next thing, then waits for your next press. It never does two things at once, and it never does anything on its own."
+
+[GUIDE_CASTING_GEAR]
+value = "надевается рыбацкая одежда"
+en = "your fishing clothes go on"
+
+[GUIDE_CASTING_LURE]
+value = "лучшая из ваших приманок"
+en = "the best lure you have"
+
+[GUIDE_CASTING_CAST]
+value = "и в воду!"
+en = "out it goes"
+
+[GUIDE_CASTING_REEL]
+value = "когда поплавок нырнёт"
+en = "when the bobber dips"
+
+[GUIDE_CASTING_THEN]
+value = "»"
+en = "»"
+
+[GUIDE_CASTING_SMALL]
+value = "Ненужные шаги пропускаются: нет сохранённой рыбацкой одежды — нет шага с экипировкой; приманка уже стоит — нет шага с приманкой. Маленькая кнопка у воды показывает, что сделает следующее нажатие."
+en = "Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do."
+
+[GUIDE_CASTING_NOTE]
+value = "*Двойной правый щелчок* по воде тоже забрасывает и подсекает, но никогда не меняет одежду."
+en = "A *double right-click* on the water casts and reels too, but never changes your clothes."
+
+[GUIDE_CHOICE_KICKER]
+value = "Ваш выбор"
+en = "Your choice"
+
+[GUIDE_CHOICE_TITLE]
+value = "Как вы будете забрасывать?"
+en = "How would you like to cast?"
+
+[GUIDE_CARD_KEY]
+value = "Клавиша рыбалки"
+en = "The Fishing key"
+
+[GUIDE_CARD_KEY_LINE]
+value = "Одна клавиша делает следующее действие, включая одежду и приманки."
+en = "One key does the next thing, clothes and lures included."
+
+[GUIDE_CARD_CLICK]
+value = "Двойной правый щелчок"
+en = "Double right-click"
+
+[GUIDE_CARD_CLICK_LINE]
+value = "Два щелчка правой кнопкой, как обычно. Занимать клавишу не нужно."
+en = "Right-click twice, as you would anyway. No key to give up."
+
+[GUIDE_CARD_BOTH]
+value = "Оба"
+en = "Both"
+
+[GUIDE_CARD_BOTH_LINE]
+value = "Клавиша — когда хочется, мышь — когда нет."
+en = "The key when you want it, the mouse when you don’t."
+
+[GUIDE_CARD_BOTH_TAG]
+value = "чаще всего"
+en = "the usual"
+
+[GUIDE_RESTING]
+value = "Клавиша рыбалки Pagle отдыхает, пока ею пользуется {titles}. Забрасывать можно и двойным правым щелчком."
+en = "Pagle’s Fishing key is resting while {titles} has it. You can still cast with a double right-click."
+
+[GUIDE_CLOTHES_RIBBON]
+value = "Рыбацкая одежда"
+en = "Fishing clothes"
+
+[GUIDE_CLOTHES_SKIP]
+value = "У меня нет рыбацкой одежды"
+en = "I don’t keep fishing clothes"
+
+[GUIDE_CLOTHES_KICKER]
+value = "Рыбацкая одежда"
+en = "Fishing clothes"
+
+[GUIDE_CLOTHES_TITLE]
+value = "Шляпа и удочка"
+en = "Your hat, your pole"
+
+[GUIDE_CLOTHES_BODY]
+value = "Если у вас есть рыбацкий наряд, Pagle наденет его за вас: первое нажатие клавиши рыбалки у воды переодевает вас, а прежняя одежда сохраняется, чтобы надеть её обратно."
+en = "If you keep a fishing outfit, Pagle can put it on for you: the Fishing key’s first press at the water changes your clothes, and what you were wearing is kept, ready to put back."
+
+[GUIDE_CLOTHES_PREVIOUS]
+value = "что было надето раньше"
+en = "what you wore before"
+
+[GUIDE_CLOTHES_FISHING]
+value = "ваша рыбацкая одежда"
+en = "your fishing clothes"
+
+[GUIDE_CLOTHES_ONE_KEY]
+value = "одна клавиша"
+en = "one key"
+
+[GUIDE_CLOTHES_SMALL]
+value = "Оба — обычные комплекты экипировки, так что вы увидите их и в окне персонажа. Если вы уйдёте с удочкой в руках, небольшая заметка напомнит, как переодеться обратно. Pagle никогда не переодевает вас без нажатия."
+en = "Both are ordinary equipment sets, so you’ll see them in your character sheet too. When you walk away with your pole still in hand, a small note reminds you how to change back. Pagle never changes your clothes without a press."
+
+[GUIDE_SAVE_KICKER]
+value = "Если у вас есть рыбацкий наряд"
+en = "If you have a fishing outfit"
+
+[GUIDE_SAVE_TITLE]
+value = "Наденьте и сохраните"
+en = "Put it on, then save it"
+
+[GUIDE_SAVE_SMALL]
+value = "Наденьте рыбацкую шляпу, перчатки и удочку, затем нажмите кнопку. Это можно сделать и позже: Настройки » Рыбалка."
+en = "Wear your fishing hat, gloves and pole now, then press the button. You can do this later from Settings » Fishing."
+
+[GUIDE_SAVE]
+value = "Сохранить надетое как рыбацкий комплект"
+en = "Save what I’m wearing as my fishing set"
+
+[GUIDE_SAVE_OR]
+value = "или выберите свой комплект"
+en = "or use a set you made"
+
+[GUIDE_SAVE_SLOTS]
+value = "Нужны два свободных слота комплектов экипировки: для рыбацкой одежды и для Pagle Previous."
+en = "Needs two free equipment set slots: one for your fishing clothes and one for Pagle Previous."
+
+[GUIDE_NUDGE_KICKER]
+value = "Если уйдёте, не переодевшись"
+en = "If you walk off still dressed for it"
+
+[NOTE_LURE]
+value = "На удочке нет приманки. Следующее нажатие поставит лучшую из тех, что в сумках. |cff9a2a1aТолько это|r; потом — заброс."
+en = "Your pole has no lure on. Your next press puts the best one in your bags on. |cff9a2a1aOnly that|r; then you cast."
+
+[TOUR_SETTINGS]
+value = "строки «Удобств» на странице «Рыбалка»"
+en = "QoL's rows on the Fishing page"
+
+[TOUR_NUDGE]
+value = "пример подсказки о смене экипировки"
+en = "a sample swap-back Nudge"
+
+[TOUR_NOTES]
+value = "примеры заметки о конфликте и заметки о перезагрузке"
+en = "samples of the conflict note and the Reload now note"

@@ -7,5 +7,6 @@
 	<Script file="Registry.lua"/>
 	<Script file="esES.lua"/>
 	<Script file="..\data\Lore.esES.lua"/>
+	<Script file="ruRU.lua"/>
 	<Script file="Apply.lua"/>
 </Ui>

@@ -1,0 +1,2420 @@
+# Pagle's interface text in Russian (ruRU), over data/locale/enUS/core.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) for 1.1 and not yet reviewed by a native Russian speaker. It has
+# no human translator, so locale.toml names none. Strings that are only textures, or only the name Pagle, carry the
+# English as it is, so the Locale covers every key of the interface.
+
+[TRAILER_CAPTION_CATCH]
+value = "У каждого улова своя история"
+en = "Every catch tells a story"
+
+[TRAILER_CAPTION_JOURNAL]
+value = "Коллекция, которую стоит хранить"
+en = "A collection worth keeping"
+
+[TRAILER_CAPTION_VARIETIES]
+value = "Двух одинаковых не бывает"
+en = "No two quite alike"
+
+[TRAILER_CAPTION_ANGLER]
+value = "Растите с каждым уловом"
+en = "Grow with every catch"
+
+[TRAILER_CAPTION_XP]
+value = "Каждое занятие идёт в зачёт"
+en = "Every pursuit adds up"
+
+[TRAILER_CAPTION_WAGERS]
+value = "Состязайтесь в событиях недели"
+en = "Race the week's events"
+
+[TRAILER_CAPTION_CRESTS]
+value = "Покорите свои воды"
+en = "Master your waters"
+
+[TRAILER_CAPTION_COLLECTIONS]
+value = "Сохраните памятные уловы"
+en = "Keep the memorable ones"
+
+[TRAILER_CAPTION_STATS]
+value = "Знайте свои воды"
+en = "Know your waters"
+
+[TRAILER_CAPTION_HUNTS]
+value = "Найдите новое приключение"
+en = "Find your next adventure"
+
+[TRAILER_CAPTION_BOARD]
+value = "Повод для ещё одного заброса"
+en = "A reason for another cast"
+
+[TRAILER_CAPTION_SHOP]
+value = "Всё на ваш вкус"
+en = "Make it yours"
+
+[TRAILER_CAPTION_COZY]
+value = "Наслаждайтесь тишиной"
+en = "Enjoy the quiet"
+
+[TRAILER_CAPTION_REPORT]
+value = "Делитесь открытиями"
+en = "Share what you discover"
+
+[TRAILER_CAPTION_NAME]
+value = "Pagle"
+en = "Pagle"
+
+[TRAILER_CAPTION_END]
+value = "Pagle: каждый улов — на бумаге."
+en = "Pagle: Every catch, written down."
+
+[TRAILER_LENGTH_NOTE]
+value = "Длина рассчитана Pagle"
+en = "Lengths simulated by Pagle"
+
+[TRAILER_ARMED]
+value = "Pagle: трейлер готов. Начните запись и рыбачьте клавишей рыбалки. Ждём рыбу, длину которой считает Pagle."
+en = "Pagle: trailer armed. Start recording, then fish with your Fishing key. Waiting for a fish with a Pagle length."
+
+[TRAILER_ACTIVE]
+value = "Pagle: трейлер уже запущен. /pagle trailer stop отменяет его."
+en = "Pagle: trailer already active. /pagle trailer stop cancels it."
+
+[TRAILER_STOPPED]
+value = "Pagle: трейлер остановлен. Данные модификации восстановлены."
+en = "Pagle: trailer stopped. Your addon data is restored."
+
+[TRAILER_COMPLETE]
+value = "Pagle: трейлер завершён. Данные модификации восстановлены."
+en = "Pagle: trailer complete. Your addon data is restored."
+
+[TRAILER_ERROR]
+value = "Pagle: трейлер остановлен из-за ошибки; данные модификации восстановлены."
+en = "Pagle: trailer stopped after an error; your addon data is restored."
+
+[TRAILER_COMBAT]
+value = "Pagle: трейлер остановлен из-за боя. Данные модификации восстановлены."
+en = "Pagle: trailer stopped for combat. Your addon data is restored."
+
+[TRAILER_NEW_CAST]
+value = "Pagle: трейлер остановлен из-за нового заброса. Данные модификации восстановлены."
+en = "Pagle: trailer stopped for a new cast. Your addon data is restored."
+
+[TRAILER_STATUS]
+value = "Трейлер Pagle: {state}"
+en = "Pagle trailer: {state}"
+
+[TRAILER_USAGE]
+value = "Pagle: /pagle trailer готовит запись; /pagle trailer stop отменяет; /pagle trailer status показывает состояние."
+en = "Pagle: /pagle trailer arms a recording; /pagle trailer stop cancels; /pagle trailer status shows its state."
+
+[TRAILER_AFTER_COMBAT]
+value = "Трейлер Pagle начнётся после боя."
+en = "The Pagle trailer starts after combat."
+
+[TRAILER_NEEDS_ANGLER]
+value = "Для трейлера Pagle нужен рыболов, вошедший в игру."
+en = "The Pagle trailer needs a logged-in Angler."
+
+[TRAILER_WAIT_HISTORY]
+value = "Подождите, пока Pagle дочитает ваш Журнал уловов."
+en = "Wait for Pagle to finish reading your Catch log."
+
+[TRAILER_WAIT_ANNOUNCEMENTS]
+value = "Дождитесь конца оповещений Pagle, прежде чем готовить трейлер."
+en = "Wait for Pagle's announcements to finish before arming the trailer."
+
+[TRAILER_ENABLE_MODULE]
+value = "Включите модуль Pagle «{name}», чтобы записать полный трейлер."
+en = "Enable Pagle {name} before recording the full trailer."
+
+[TRAILER_SUMMARY_LINE]
+value = "Личный рекорд, новые открытия и шаг к следующему уровню рыболова."
+en = "A personal best, new discoveries, and progress towards your next Angler Level."
+
+[TRAILER_SUMMARY_TITLE]
+value = "Улов, достойный памяти"
+en = "A catch worth keeping"
+
+[TRAILER_SUMMARY_TEXT]
+value = "Ваш рекорд хранится в Рыбацком журнале."
+en = "Your record lives in the Fish Journal."
+
+[LOG_FORMAT_CHANGED]
+value = "Pagle: формат журнала разработчика изменился; начат новый журнал."
+en = "Pagle: dev log format changed; started a new log."
+
+[LOG_UNREADABLE]
+value = "Pagle остановлен: ваш Журнал уловов не читается ({problem}), ничего не изменено. Прежде чем выйти или перезагрузить интерфейс, скопируйте Pagle.lua и Pagle.lua.bak из WTF/Account/<аккаунт>/SavedVariables в надёжное место, затем сообщите о проблеме на github.com/timemir/pagle-addon/issues."
+en = "Pagle stopped: your Catch log can't be read ({problem}), and nothing has been changed. Before you log out or reload, copy Pagle.lua and Pagle.lua.bak from WTF/Account/<account>/SavedVariables somewhere safe, then report it at github.com/timemir/pagle-addon/issues."
+
+[LOG_UNREADABLE_PAUSED]
+value = "Pagle остановлен: ваш Журнал уловов не читается, ничего не изменено. Что делать, сказано в сообщении при входе."
+en = "Pagle is stopped: your Catch log can't be read, and nothing has been changed. The line at login says what to do."
+
+[RECOVERY_NOT_LOADED]
+value = "Восстановление Pagle: Pagle_Recovery не загрузилась ({reason}), поэтому ничего не восстановлено, а ваш Журнал уловов не изменён. Удалите Pagle_Recovery, когда Восстановление завершится."
+en = "Pagle Recovery: Pagle_Recovery didn't load ({reason}), so nothing was restored and your Catch log is unchanged. Remove Pagle_Recovery once Recovery is complete."
+
+[RECOVERY_OTHER_LOG]
+value = "Восстановление Pagle: Pagle_Recovery предназначена для другого Журнала уловов, поэтому здесь ничего не восстановлено. Удалите её, когда Восстановление завершится."
+en = "Pagle Recovery: Pagle_Recovery is for another Catch log, so nothing was restored here. Remove it once Recovery is complete."
+
+[RECOVERY_STOPPED]
+value = "Восстановление Pagle остановлено: {reason}. Ваш Журнал уловов не изменён. Удалите Pagle_Recovery, чтобы продолжить, или экспортируйте новый снимок командой /pagle recovery export."
+en = "Pagle Recovery stopped: {reason}. Your Catch log is unchanged. Remove Pagle_Recovery to resume, or export a new snapshot with /pagle recovery export."
+
+[RECOVERY_RESTORED]
+value = "Восстановление Pagle вернуло Журнал уловов. Исходные записи сохранены; /pagle recovery inspect покажет записи, отложенные на проверку. Загрузите журнал как обычно, подтвердите Восстановление на сайте, затем удалите Pagle_Recovery."
+en = "Pagle Recovery restored the Catch log. Original records are preserved; /pagle recovery inspect shows records held for review. Upload normally, confirm Recovery on the website, then remove Pagle_Recovery."
+
+[RECOVERY_EXPORT_UNAVAILABLE]
+value = "Экспорт Восстановления Pagle недоступен: {reason}"
+en = "Pagle Recovery export unavailable: {reason}"
+
+[RECOVERY_USAGE]
+value = "Восстановление Pagle: /pagle recovery export копирует полный локальный снимок; /pagle recovery inspect [ID заявки] показывает записи, отложенные на проверку."
+en = "Pagle Recovery: /pagle recovery export copies a complete local snapshot; /pagle recovery inspect [application ID] shows records held for review."
+
+[RECOVERY_ARCHIVE_LINE]
+value = "Архив Восстановления Pagle: {id}"
+en = "Pagle Recovery archive: {id}"
+
+[RECOVERY_NO_BRANCHES]
+value = "Восстановление Pagle: сохранённых веток нет."
+en = "Pagle Recovery: no preserved branches."
+
+[RECOVERY_NO_BRANCH_FOUND]
+value = "Восстановление Pagle: сохранённая ветка не найдена. Для более старого архива используйте /pagle recovery inspect <ID заявки>."
+en = "Pagle Recovery: no preserved branch found. Use /pagle recovery inspect <application ID> for an older archive."
+
+[RECOVERY_OLD_ARCHIVE]
+value = "Восстановление Pagle: этот архив сохранила старая версия Pagle, в формате Журнала уловов, записи из которого эта версия показать не может. Архив по-прежнему сохранён."
+en = "Pagle Recovery: this archive was kept by an older Pagle, in a Catch log format this one can't show records from. It is still preserved."
+
+[RECOVERY_NO_STAGED]
+value = "Восстановление Pagle: в этом архиве нет записей, отложенных на проверку."
+en = "Pagle Recovery: this archive has no records held for review."
+
+[RECOVERY_WINDOW_CAPTION]
+value = "Восстановление журнала"
+en = "Catch log Recovery"
+
+[RECOVERY_SNAPSHOT_TITLE]
+value = "Снимок для Восстановления"
+en = "Recovery snapshot"
+
+[RECOVERY_SNAPSHOT_PART]
+value = "Снимок для Восстановления · часть {part} из {parts}"
+en = "Recovery snapshot · part {part} of {parts}"
+
+[RECOVERY_SNAPSHOT_NOTE]
+value = "Скопируйте все пронумерованные части. Вставьте их вместе на странице Восстановления вашего Журнала уловов на pagle.app. На Mac используйте Cmd+C."
+en = "Copy every numbered part. Paste them together on your Catch log's Recovery page at pagle.app. On Mac, use Cmd+C."
+
+[RECOVERY_RECORDS_TITLE]
+value = "Записи Восстановления"
+en = "Recovery records"
+
+[RECOVERY_RECORDS_NOTE]
+value = "Сохранённые исходные записи, отложенные на проверку. В восстановленный Журнал уловов они не добавлены. Исходная ветка: {id}"
+en = "Preserved original records held for review. They have not been appended to your restored Catch log. Original branch: {id}"
+
+[RECOVERY_RECORD_LABEL]
+value = "Запись {seq} · {reason}"
+en = "Record {seq} · {reason}"
+
+[RECOVERY_RECORD_MISSING]
+value = "(этой записи нет в сохранённом журнале)"
+en = "(this record is not in the preserved log)"
+
+[RECOVERY_REASONS]
+value.action_requires_review = "действие требует проверки"
+value.source_invalid = "недопустимый источник"
+value.conflicting_observation = "противоречивое наблюдение"
+value.source_order_incompatible = "несовместимый порядок источника"
+value.character_mapping = "сопоставление персонажей"
+value.capacity_limit = "превышен предел объёма"
+en.action_requires_review = "action_requires_review"
+en.source_invalid = "source_invalid"
+en.conflicting_observation = "conflicting_observation"
+en.source_order_incompatible = "source_order_incompatible"
+en.character_mapping = "character_mapping"
+en.capacity_limit = "capacity_limit"
+
+[RECOVERY_PROBLEMS]
+value.log_changed = "Журнал уловов изменился; экспортируйте новый снимок для Восстановления"
+value.format_differs = "Восстановление предназначено для другого формата Журнала уловов"
+value.needs_format = "Для Восстановления нужен формат Журнала уловов {format}"
+value.needs_readable = "Для Восстановления нужен читаемый Журнал уловов"
+value.snapshot_too_large = "снимок слишком велик"
+en.log_changed = "Catch log changed; export a new Recovery snapshot"
+en.format_differs = "Recovery is for a different Catch log format"
+en.needs_format = "Recovery requires Catch log format {format}"
+en.needs_readable = "Recovery requires a readable Catch log"
+en.snapshot_too_large = "snapshot too large"
+
+[SLASH_PAUSED_FOR_RECOVERY]
+value = "Pagle приостановлен для Восстановления. Используйте /pagle recovery export или удалите Pagle_Recovery и перезагрузите интерфейс."
+en = "Pagle is paused for Recovery. Use /pagle recovery export, or remove Pagle_Recovery and reload."
+
+[NOT_FOREVER]
+value = "Pagle: это не World of Warcraft: Forever, поэтому Pagle не включается."
+en = "Pagle: this isn't World of Warcraft: Forever, so Pagle stays off."
+
+[SIZE_BANDS]
+value = ["Мелочь", "Приличная", "Увесистая", "Громадина", "Чудовище"]
+en = ["Tiddler", "Decent", "Hefty", "Whopper", "Monster"]
+
+[VARIETY_RARITIES]
+value = ["Обычная", "Необычная", "Редкая", "Эпическая"]
+en = ["Common", "Uncommon", "Rare", "Epic"]
+
+[LENGTH]
+value.cm = "{length:1} см"
+value.in = "{length:1} дюйм."
+en.cm = "{length:1} cm"
+en.in = "{length:1} in"
+
+[LENGTH_MARGIN_UNDER]
+value.cm = "+<0,1 см"
+value.in = "+<0,1 дюйм."
+en.cm = "+<0.1 cm"
+en.in = "+<0.1 in"
+
+[CLOCK]
+value.12h.am = "{hour}:{minute} ДП"
+value.12h.pm = "{hour}:{minute} ПП"
+value.24h = "{hour}:{minute}"
+en.12h.am = "{hour}:{minute} AM"
+en.12h.pm = "{hour}:{minute} PM"
+en.24h = "{hour}:{minute}"
+
+[EVENT_REGISTER_FAILED]
+value = "Pagle: {owner} не удалось зарегистрировать событие {event}: {registered}"
+en = "Pagle: {owner} couldn't register the event {event}: {registered}"
+
+[EVENT_HANDLER_FAILED]
+value = "Pagle: обработчик {owner} для события {event} дал сбой: {err}"
+en = "Pagle: {owner}'s handler for the event {event} failed: {err}"
+
+[MODULE_NEEDS_NEWER_PAGLE]
+value = "Pagle: модулю Pagle «{title}» нужна более новая версия Pagle."
+en = "Pagle: Pagle {title} needs a newer Pagle."
+
+[SETTING_TOO_LATE]
+value = "Pagle: AddSetting модуля {name} пришёл после ModulesChanged, поэтому строка отброшена"
+en = "Pagle: {name}'s AddSetting came after ModulesChanged, so the row is dropped"
+
+[SETTINGS_CATEGORY]
+value = "Pagle"
+en = "Pagle"
+
+[SETTINGS_PAGES]
+value.announcements = "Оповещения"
+value.fishing = "Рыбалка"
+value.look = "Внешний вид"
+value.trackers = "Трекеры"
+en.announcements = "Announcements"
+en.fishing = "Fishing"
+en.look = "Look and Feel"
+en.trackers = "Trackers"
+
+[SETTINGS_TRACKER_POSITION]
+value = "Положение трекеров"
+en = "Tracker position"
+
+[SETTINGS_TRACKER_RESET]
+value = "Сбросить"
+en = "Reset"
+
+[SETTINGS_TRACKER_RESET_TOOLTIP]
+value = "Перетащите любой трекер Pagle с Shift, чтобы сдвинуть их все. Эта кнопка вернёт их под миникарту."
+en = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap."
+
+[SETTINGS_TOAST_POSITION]
+value = "Положение плашек"
+en = "Toast position"
+
+[SETTINGS_TOAST_RESET]
+value = "Сбросить"
+en = "Reset"
+
+[SETTINGS_TOAST_RESET_TOOLTIP]
+value = "Перетащите плашку с Shift, чтобы сдвинуть плашки и кивки. Эта кнопка вернёт их к нижнему краю экрана."
+en = "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen."
+
+[SETTINGS_NO_MODULE]
+value = "Ваши уловы записываются. Включите модуль, чтобы их увидеть."
+en = "Recording your Catches. Enable a Module to see them."
+
+[SETTINGS_MODULES]
+value = "Модули"
+en = "Modules"
+
+[SETTINGS_MODULES_NOTE]
+value = "Модули включаются и выключаются в списке модификаций."
+en = "Turn Modules on or off in the AddOns list."
+
+[SETTINGS_GETTING_STARTED]
+value = "Первые шаги"
+en = "Getting started"
+
+[SETTINGS_FIELD_GUIDE]
+value = "Полевой справочник"
+en = "Field guide"
+
+[SETTINGS_FIELD_GUIDE_LINE]
+value = "Восемь страниц, которые вы видели в первый день."
+en = "The eight pages you saw on your first day."
+
+[SETTINGS_SHOW_ME_AROUND]
+value = "Показать всё ещё раз"
+en = "Show me around again"
+
+[SETTINGS_MARGIN_NOTES]
+value = "Заметки на полях"
+en = "Margin notes"
+
+[SETTINGS_MARGIN_NOTES_TOOLTIP]
+value = "Объяснять то, что происходит впервые."
+en = "Explain things the first time they happen."
+
+[SETTINGS_SHOW_NOTES_AGAIN]
+value = "Показать их снова"
+en = "Show them again"
+
+[SETTINGS_EVENING]
+value = "Список первого вечера"
+en = "First evening list"
+
+[SETTINGS_EVENING_LINE]
+value = "Выполнено: {done:0} из {total:0}"
+en = "{done:0} of {total:0} done"
+
+[SETTINGS_SAVING]
+value = "Сохранение"
+en = "Saving"
+
+[SETTINGS_RELOAD_REMINDER]
+value = "Напоминать о /reload, если забросы не сохранены"
+en = "Remind me to /reload when Casts are unsaved"
+
+[SETTINGS_RELOAD_REMINDER_TOOLTIP]
+value = "Строка в чате всякий раз, как несохранённых забросов прибавится ещё {reloadReminderStep:0}. WoW сохраняет данные только при /reload или выходе, так что при сбое они пропадут."
+en = "A chat line every {reloadReminderStep:0} Casts not yet saved. WoW saves only on /reload or logout, so a crash loses them."
+
+[SETTINGS_UNITS]
+value = "Единицы"
+en = "Units"
+
+[SETTINGS_LENGTH_UNIT]
+value = "Единица длины"
+en = "Length unit"
+
+[SETTINGS_LENGTH_UNIT_TOOLTIP]
+value = "В чём Pagle показывает длину ваших уловов. Записи хранятся в миллиметрах, поэтому переключение меняет только отображение."
+en = "How Pagle shows the length of your Catches. Records are kept in millimetres, so switching changes only what you see."
+
+[SETTINGS_LENGTH_UNITS]
+value.cm = "Сантиметры"
+value.in = "Дюймы"
+en.cm = "Centimetres"
+en.in = "Inches"
+
+[SETTINGS_CLOCK]
+value = "Часы"
+en = "Clock"
+
+[SETTINGS_CLOCK_TOOLTIP]
+value = "Как Pagle пишет время суток, например серверное время вверху доски охот. «Как в игре» следует 24-часовому режиму часов на миникарте."
+en = "How Pagle writes a time of day, such as the realm time at the top of the Hunts board. Following the game uses the minimap clock's 24-hour mode."
+
+[SETTINGS_CLOCK_CHOICES]
+value.12h = "12-часовой (6:30 ПП)"
+value.24h = "24-часовой (18:30)"
+value.game = "Как в игре"
+en.12h = "12-hour (6:30 PM)"
+en.24h = "24-hour (18:30)"
+en.game = "Follow the game's clock"
+
+[SETTINGS_LANGUAGE]
+value = "Язык"
+en = "Language"
+
+[SETTINGS_LANGUAGE_TOOLTIP]
+value = "Язык интерфейса Pagle, общий для всех персонажей. Изменение вступает в силу после /reload. Названия, которые даёт игра, — предметы, зоны, качество предметов — остаются на языке игры."
+en = "The language Pagle is written in, on every character. A change takes effect after a /reload. Names the game supplies, such as items, zones and item quality, stay in the game's language."
+
+[SETTINGS_LANGUAGE_GAME_DEFAULT]
+value = "Как в игре"
+en = "Game default"
+
+[SETTINGS_LANGUAGE_ENGLISH]
+value = "English"
+en = "English"
+
+[LANGUAGE_RELOAD_TEXT]
+value = "Перезагрузить интерфейс, чтобы сменить язык?"
+en = "Reload the interface to change the language?"
+
+[LANGUAGE_RELOAD_NOW]
+value = "Перезагрузить"
+en = "Reload now"
+
+[LANGUAGE_RELOAD_LATER]
+value = "Позже"
+en = "Later"
+
+[SETTINGS_PAGLE_MENU]
+value = "Меню Pagle"
+en = "Pagle menu"
+
+[SETTINGS_MINIMAP_ICON]
+value = "Показывать значок у миникарты"
+en = "Show the minimap icon"
+
+[SETTINGS_MINIMAP_ICON_TOOLTIP]
+value = "Круглая кнопка Pagle на краю миникарты, открывающая меню Pagle. Меню есть и в отсеке модификаций у миникарты."
+en = "A round Pagle button on the minimap's edge that opens the Pagle menu. The menu is also in the AddOns button by the minimap."
+
+[SETTINGS_PAGLE_WEBSITE]
+value = "Сайт Pagle"
+en = "Pagle website"
+
+[SETTINGS_ANGLER_TOOLTIPS]
+value = "Показывать рыболовов в подсказках игроков"
+en = "Show other Anglers on player tooltips"
+
+[SETTINGS_ANGLER_TOOLTIPS_TOOLTIP]
+value = "Добавляет блок Pagle в подсказку игроков, чей рыболов есть на сайте Pagle. Нужен компаньон Pagle."
+en = "Adds a Pagle block to the tooltip of players whose Angler is on the Pagle website. Needs the Pagle Companion."
+
+[SETTINGS_COZY]
+value = "Уютный режим"
+en = "Cozy mode"
+
+[SETTINGS_COZY_TOOLTIP]
+value = "Ничего не всплывает и не звучит. Все моменты ждут в итогах сессии. Заставка легенды всё равно показывается, но беззвучно."
+en = "Nothing pops up or plays. Every moment waits in the Session summary. A Legend's splash still shows, silently."
+
+[SETTINGS_BUDGET]
+value = "Лимит прерываний"
+en = "Interruption budget"
+
+[SETTINGS_BUDGET_TOOLTIP]
+value = "Когда плашки идут слишком часто, мелкие уступают место тихому кивку. Рекорды всегда сохраняют свою линейку. Недоступно в Уютном режиме, где и так всё откладывается."
+en = "When toasts come close together, the smaller ones step down to a quiet Nod. Records always keep their ruler. Greyed out in Cozy mode, which holds everything anyway."
+
+[SETTINGS_BUDGET_COUNT]
+value = "Прерываний"
+en = "Interruptions"
+
+[SETTINGS_BUDGET_WINDOW]
+value = "За"
+en = "Per"
+
+[SETTINGS_EVERY_CATCH]
+value = "Показывать каждый улов"
+en = "Show every catch"
+
+[SETTINGS_MOTION]
+value = "Анимация"
+en = "Animations"
+
+[SETTINGS_MOTION_TOOLTIP]
+value = "Плашки выезжают и ставят штамп, баннеры опускают печать, а лучи за баннером или легендой вращаются. Если выключено, всё появляется сразу в итоговом виде."
+en = "Toasts slide in and stamp themselves, banners drop their seal, and the rays behind a banner or a Legend turn. Off, each appears as it settles."
+
+[SETTINGS_EVERY_CATCH_TOOLTIP]
+value = "Плашка для каждого улова: название, размер и длина. Если тот же улов принёс момент поважнее, показывается он, а сверх лимита прерываний плашка сменяется тихой строкой. Недоступно в Уютном режиме, где ничего не показывается."
+en = "A toast for each catch: its name, size band and length. A bigger moment for the same catch shows instead, and past your interruption budget it steps down to a quiet line. Greyed out in Cozy mode, which shows nothing."
+
+[SETTINGS_LOOK_PARAGRAPH]
+value = "Облики, которые у вас есть. Выберите один здесь, в Коллекции Рыбацкого журнала или кнопкой «Использовать» в Лавке диковин — всё это меняет одно и то же."
+en = "Looks you own. Pick one here, in the Fish Journal's Collection or with Use in the Curio Shop; all of them change the same thing."
+
+[SETTINGS_SLOT_MORE]
+value = "Ещё в Лавке диковин: {more:0}"
+en = "{more:0} more in the Curio Shop"
+
+[SETTINGS_MORE_LOOKS]
+value = "Другие облики"
+en = "More looks"
+
+[SETTINGS_COLLECTION_ROW]
+value = "Все облики и как их получить"
+en = "Every look, and how to earn it"
+
+[SETTINGS_COLLECTION_BUTTON]
+value = "Открыть Коллекцию"
+en = "Open the Collection"
+
+[SETTINGS_SHOP_ROW]
+value = "Покупайте облики за Монеты Pagle"
+en = "Buy more looks with Pagle Coins"
+
+[SETTINGS_SHOP_BUTTON]
+value = "Открыть Лавку диковин"
+en = "Open the Curio Shop"
+
+[MINUTES]
+value = "{value:0} мин"
+en = "{value:0} min"
+
+[ANNOUNCEMENT_MORE]
+value = "и ещё {beyond:0}"
+en = "+{beyond:0} more"
+
+[ANNOUNCEMENT_STAMPS_MORE]
+value = "+{more:0}"
+en = "+{more:0}"
+
+[ANNOUNCEMENT_COINS]
+value = "+{amount}"
+en = "+{amount}"
+
+[ANNOUNCEMENT_STAMP_REFRESH]
+value = "Обновление +{tickets:0}"
+en = "Refresh +{tickets:0}"
+
+[ANNOUNCEMENT_NEW_RECORD]
+value = "Новый рекорд"
+en = "New record"
+
+[ANNOUNCEMENT_SPLASH_HINT]
+value = "Щёлкните, чтобы продолжить"
+en = "Click anywhere to continue"
+
+[ANNOUNCEMENT_SPLASH_RELOAD]
+value = "/reload, чтобы сохранить её"
+en = "/reload to keep it safe"
+
+[LEGEND_CREST_LEGEND]
+value = "Легенда"
+en = "Legend"
+
+[LEGEND_CREST_UNWRITTEN]
+value = "Неписаный"
+en = "Unwritten"
+
+[ANNOUNCEMENT_WHILE_FIGHTING]
+value = "Пока вы сражались"
+en = "While you were fighting"
+
+[CATCH_TOAST_KICKER]
+value = "{band} · {length}"
+en = "{band} · {length}"
+
+[CATCH_TOAST_CAUGHT]
+value = "Поймано"
+en = "Caught"
+
+[CATCH_TOAST_ITEM]
+value = "Предмет {itemID}"
+en = "Item {itemID}"
+
+[CATCH_TOAST]
+value = "{name} · {band} · {length}"
+en = "{name} · {band} · {length}"
+
+[CATCH_TOAST_VARIETY]
+value = "{name} · {catch_toast_variety_2} · {band} · {length}"
+en = "{name} · {catch_toast_variety_2} · {band} · {length}"
+
+[TOAST_VARIETY_BEFORE]
+value = "{fish} ·"
+en = "{fish} ·"
+
+[CARD_SESSION]
+value = "Рыболовная сессия"
+en = "Fishing session"
+
+[CARD_LAST_SESSION]
+value = "Ваша прошлая сессия"
+en = "Your last session"
+
+[CARD_WRITE_UP]
+value = "Сводка"
+en = "Write-up"
+
+[CARD_CASTS]
+value = "Забросы"
+en = "Casts"
+
+[CARD_CATCHES]
+value = "Уловы"
+en = "Catches"
+
+[CARD_GOT_AWAY]
+value = "Сорвалось"
+en = "Got away"
+
+[CARD_TIME]
+value = "Время рыбалки"
+en = "Time fished"
+
+[CARD_HOURS]
+value = "{card_hours_1:0} ч {card_hours_2} мин"
+en = "{card_hours_1:0} h {card_hours_2} min"
+
+[CARD_COINS]
+value = 'Монеты Pagle +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+en = 'Pagle Coins +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+
+[CARD_CLOSE]
+value = "Закрыть"
+en = "Close"
+
+[TOAST_SAMPLE_TITLE]
+value = "Новый вид"
+en = "New Species"
+
+[TOAST_SAMPLE_TEXT]
+value = "Образец плашки"
+en = "A sample toast"
+
+[TOAST_SAMPLE_STAMP]
+value = "Здесь впервые"
+en = "New here"
+
+[TOAST_SHOW_ON_SCREEN]
+value = "Показать на экране"
+en = "Show on screen"
+
+[RELOAD_REMINDER]
+value = "Pagle: несохранённых забросов — {reload_reminder:0}. Сделайте /reload, чтобы их не потерять."
+en = "Pagle: {reload_reminder:0} Casts not yet saved. /reload to keep them safe."
+
+[SETTINGS_AFTER_COMBAT]
+value = "Pagle: настройки откроются после боя."
+en = "Pagle: settings open after combat."
+
+[SETTINGS_KEY_NOT_BOUND]
+value = "Не назначено"
+en = "Not Bound"
+
+[SETTINGS_KEY_WAITING]
+value = "Нажмите клавишу"
+en = "Press a key"
+
+[GUIDE_BIND_CLICK]
+value = "щёлкните, чтобы назначить"
+en = "click to bind"
+
+[GUIDE_BIND_DEFAULT]
+value = "по умолчанию: ничего не назначено"
+en = "default: nothing is bound"
+
+[GUIDE_BIND_LISTEN]
+value = "нажмите клавишу…"
+en = "press a key…"
+
+[GUIDE_BIND_ESC]
+value = "Esc оставит всё как было"
+en = "Esc leaves it as it was"
+
+[GUIDE_BIND_BOUND]
+value = "Назначено"
+en = "Bound"
+
+[GUIDE_BIND_PICK]
+value = "Выбрать другую клавишу"
+en = "Pick another key"
+
+[GUIDE_BIND_KEPT]
+value = "старое действие будет указано, а не потеряно молча"
+en = "the old use is listed, never silently lost"
+
+[GUIDE_BIND_ASK]
+value.PAGLE_FISHING_KEY = "уже назначена на {guide_bind_ask}. Назначить её на рыбалку?"
+value.PAGLE_SWAP_GEAR = "уже назначена на {guide_bind_ask}. Назначить её на смену снаряжения?"
+en.PAGLE_FISHING_KEY = "already does {guide_bind_ask}. Use it for fishing instead?"
+en.PAGLE_SWAP_GEAR = "already does {guide_bind_ask}. Use it to swap gear instead?"
+
+[GUIDE_BIND_USE]
+value.PAGLE_FISHING_KEY = "{bindingText} — для рыбалки"
+value.PAGLE_SWAP_GEAR = "{bindingText} — для смены снаряжения"
+en.PAGLE_FISHING_KEY = "Use {bindingText} for fishing"
+en.PAGLE_SWAP_GEAR = "Use {bindingText} to swap gear"
+
+[GUIDE_BIND_TOLD]
+value.PAGLE_FISHING_KEY = "Pagle: теперь {bindingText} делает заброс. Раньше эта клавиша выполняла «{oldName}»; если нужно, переназначьте это действие в разделе «Назначение клавиш»."
+value.PAGLE_SWAP_GEAR = "Pagle: теперь {bindingText} меняет снаряжение. Раньше эта клавиша выполняла «{oldName}»; если нужно, переназначьте это действие в разделе «Назначение клавиш»."
+en.PAGLE_FISHING_KEY = "Pagle: {bindingText} now casts. It used to do {oldName}; rebind that in Key Bindings if you need it."
+en.PAGLE_SWAP_GEAR = "Pagle: {bindingText} now swaps your gear. It used to do {oldName}; rebind that in Key Bindings if you need it."
+
+[MODULE_NAMES]
+value.Hunts = "Охоты"
+value.Ledger = "Реестр"
+value.QoL = "Удобства (QoL)"
+value.Stats = "Статистика"
+value.TackleBoard = "Доска снастей"
+en.Hunts = "Hunts"
+en.Ledger = "Ledger"
+en.QoL = "QoL"
+en.Stats = "Stats"
+en.TackleBoard = "Tackle Board"
+
+[MODULE_STATES]
+value.failedToStart = "Не запустился"
+value.needsNewerPagle = "Нужна новая версия Pagle"
+value.notInstalled = "Не установлен"
+value.off = "Выкл."
+value.on = "Вкл."
+en.failedToStart = "Failed to start"
+en.needsNewerPagle = "Needs a newer Pagle"
+en.notInstalled = "Not installed"
+en.off = "Off"
+en.on = "On"
+
+[MODULE_VERSION_DEV]
+value = "разраб."
+en = "dev"
+
+[OPEN_VIEW]
+value = "Открыть «{label}»"
+en = "Open {label}"
+
+[MENU_SETTINGS]
+value = "Настройки"
+en = "Settings"
+
+[MENU_CURIO_SHOP]
+value = 'Лавка диковин  {balance} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+en = 'Curio Shop  {balance} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
+
+[MENU_PASTE]
+value = "Копировать для сайта"
+en = "Copy for the website"
+
+[HELP_CHART]
+value = "Помочь нанести воды на карту"
+en = "Help chart the waters"
+
+[HELP_CHART_COUNT]
+value = "Помочь нанести воды на карту ({count:0})"
+en = "Help chart the waters ({count:0})"
+
+[FIELD_REPORT_PRIVACY]
+value = "Это будет опубликовано открыто. Имён персонажей здесь нет."
+en = "This will be posted publicly. It contains no character names."
+
+[FIELD_REPORT_COPY_HINT]
+value = "Ctrl+C — копировать"
+en = "Ctrl+C to copy"
+
+[FIELD_REPORT_POST_AT]
+value = "ОПУБЛИКУЙТЕ НА"
+en = "POST IT AT"
+
+[FIELD_REPORT_PART]
+value = "Часть {field_report_part_1:0} из {field_report_part_2:0}"
+en = "Part {field_report_part_1:0} of {field_report_part_2:0}"
+
+[FIELD_REPORT_CLOSE]
+value = "Закрыть"
+en = "Close"
+
+[FIELD_REPORT_WEBSITE]
+value = "Для сайта используйте /pagle export."
+en = "For the website, use /pagle export."
+
+[FIELD_REPORT_NOTHING]
+value = "Сообщать не о чем. Спасибо за проверку!"
+en = "Nothing to report. Thanks for checking!"
+
+[FIELD_REPORT_UPDATING]
+value = "Обновление… попробуйте чуть позже."
+en = "Updating... try again in a moment."
+
+[FIELD_REPORT_AFTER_COMBAT]
+value = "Pagle: Полевой отчёт откроется после боя."
+en = "Pagle: the Field report opens after combat."
+
+[SETTINGS_FIELD_REPORT_ROW]
+value = "Полевой отчёт"
+en = "Field report"
+
+[SETTINGS_FIELD_REPORT_BUTTON]
+value = "Открыть Полевой отчёт"
+en = "Open Field report"
+
+[SETTINGS_FIELD_REPORT_BUTTON_COUNT]
+value = "Открыть Полевой отчёт ({count:0})"
+en = "Open Field report ({count:0})"
+
+[SETTINGS_FIELD_REPORT_TOOLTIP]
+value = "Скопируйте пойманное, о чём данные Pagle ещё не знают, и вставьте в форму запроса."
+en = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form."
+
+[PASTE_TITLE]
+value = "Экспорт для сайта"
+en = "Export for the website"
+
+[PASTE_PRIVACY]
+value = "Содержит имена ваших персонажей. Вставляйте только на сайте Pagle."
+en = "Holds your characters' names. Paste it only on the Pagle website."
+
+[PASTE_COPY_HINT]
+value = "Ctrl+C — копировать"
+en = "Ctrl+C to copy"
+
+[PASTE_CHOICE_NEW]
+value = "Новое с прошлого экспорта"
+en = "New since last export"
+
+[PASTE_CHOICE_EVERYTHING]
+value = "Всё"
+en = "Everything"
+
+[PASTE_CHOICE_PICKED]
+value = "• {word}"
+en = "• {word}"
+
+[PASTE_ENTRIES]
+value = "Записи {from}–{paste_entries_2} из {total}"
+en = "Entries {from}–{paste_entries_2} of {total}"
+
+[PASTE_NO_ENTRIES]
+value = "Нет записей"
+en = "No entries"
+
+[PASTE_SIZE]
+value = "{paste_size:0} КБ"
+en = "{paste_size:0} KB"
+
+[PASTE_PART_LINE]
+value = "{entries}  ·  {paste_part_line_2}"
+en = "{entries}  ·  {paste_part_line_2}"
+
+[PASTE_IN_ORDER]
+value = "Вставляйте каждую часть отдельно, по порядку."
+en = "Paste each part on its own, in order."
+
+[PASTE_AT]
+value = "ВСТАВЬТЕ НА"
+en = "PASTE IT AT"
+
+[PASTE_PART]
+value = "Часть {paste_part_1:0} из {paste_part_2:0}"
+en = "Part {paste_part_1:0} of {paste_part_2:0}"
+
+[PASTE_CLOSE]
+value = "Закрыть"
+en = "Close"
+
+[PASTE_NOTHING_NEW]
+value = "Ничего нового с прошлого экспорта."
+en = "Nothing new since your last export."
+
+[PASTE_CANT_EXPORT]
+value = "Pagle не может экспортировать этот Журнал уловов."
+en = "Pagle can't export this Catch log."
+
+[PASTE_PREPARING]
+value = "Готовим вашу строку для вставки…"
+en = "Preparing your Paste string…"
+
+[PASTE_AFTER_COMBAT]
+value = "Pagle: окно экспорта откроется после боя."
+en = "Pagle: the export window opens after combat."
+
+[PASTE_TEST_LINE]
+value = "Тест копирования: {testKB:0} КБ"
+en = "Copy test: {testKB:0} KB"
+
+[SETTINGS_PASTE_ROW]
+value = "Журнал уловов"
+en = "Catch log"
+
+[SETTINGS_PASTE_BUTTON]
+value = "Копировать для сайта"
+en = "Copy for the website"
+
+[SETTINGS_PASTE_TOOLTIP]
+value = "Скопировать Журнал уловов строкой для вставки, чтобы вставить её на сайте Pagle без компаньона."
+en = "Copy your Catch log as a Paste string, to paste on the Pagle website without the Companion."
+
+[SETTINGS_TRANSLATIONS]
+value = "Переводы: {credits}"
+en = "Translations: {credits}"
+
+[SETTINGS_TRANSLATIONS_ENTRY]
+value = "{language}: {names}"
+en = "{language} by {names}"
+
+[SETTINGS_TRANSLATIONS_NAMES_JOIN]
+value = ", "
+en = ", "
+
+[SETTINGS_TRANSLATIONS_JOIN]
+value = "; "
+en = "; "
+
+[SHOP_AFTER_COMBAT]
+value = "Pagle: Лавка диковин откроется после боя."
+en = "Pagle: the Curio Shop opens after combat."
+
+[SHOP_COINS]
+value = "Монеты Pagle"
+en = "Pagle Coins"
+
+[SHOP_LEGEND]
+value = "{title} {shop_legend_2}"
+en = "{title} {shop_legend_2}"
+
+[SHOP_ALL_TIME]
+value = "Монет за всё время: {shop_all_time}"
+en = "{shop_all_time} Coins all time"
+
+[SHOP_OFF_NOTE]
+value = "Выключен: новых монет не даёт, заработанное остаётся."
+en = "Off: pays nothing new, keeps what it paid."
+
+[SHOP_SEARCH]
+value = "Найти облик…"
+en = "Find a look…"
+
+[SHOP_FILTERS]
+value.all = "Все"
+value.canAfford = "По карману"
+value.notOwned = "Нет у вас"
+value.owned = "Есть у вас"
+en.all = "All"
+en.canAfford = "Can afford"
+en.notOwned = "Not owned"
+en.owned = "Owned"
+
+[SHOP_ALL_CATEGORIES]
+value = "Все"
+en = "All"
+
+[SHOP_CATEGORIES]
+value.Announcements = "Оповещения"
+value.Books = "Книги"
+value.Crests = "Гербы"
+value.Trackers = "Трекеры"
+en.Announcements = "Announcements"
+en.Books = "Books"
+en.Crests = "Crests"
+en.Trackers = "Trackers"
+
+[SHOP_OWNED_COUNT]
+value = "{owned:0} из {slotGoods:0}"
+en = "{owned:0} of {slotGoods:0}"
+
+[SHOP_PUT_AWAY]
+value = "Убрано: модуль выключен"
+en = "Put away: Module off"
+
+[SHOP_KEEP]
+value = "Остаётся у вас"
+en = "Yours to keep"
+
+[SHOP_NO_MATCH]
+value = "Подходящих обликов нет."
+en = "No looks match."
+
+[SHOP_OWNED]
+value = "Есть"
+en = "Owned"
+
+[SHOP_IN_USE]
+value = "Используется"
+en = "In use"
+
+[SHOP_DEFAULT]
+value = "по умолчанию"
+en = "default"
+
+[SHOP_SLOT_LINE]
+value = "{slotLabel} · {owner}"
+en = "{slotLabel} · {owner}"
+
+[SHOP_CORE]
+value = "Pagle"
+en = "Pagle"
+
+[SHOP_BUY]
+value = "Купить за {shop_buy}"
+en = "Buy for {shop_buy}"
+
+[SHOP_MORE_NEEDED]
+value = "Не хватает монет: {shop_more_needed}"
+en = "{shop_more_needed} more Coins"
+
+[SHOP_OR_BUY]
+value = "Или купите за {shop_or_buy}"
+en = "Or buy it for {shop_or_buy}"
+
+[SHOP_MODULE_OFF]
+value = "{ownerName}: выключен"
+en = "{ownerName} is off"
+
+[SHOP_PICK]
+value = "Выберите облик, чтобы увидеть его здесь."
+en = "Pick a look to see it here."
+
+[SHOP_USE]
+value = "Использовать"
+en = "Use"
+
+[SHOP_BILL_HEAD]
+value = "Л А В К А   Д И К О В И Н"
+en = "C U R I O   S H O P"
+
+[SHOP_BUY_CONFIRM]
+value = "Купить «{name}»?"
+en = "Buy {name}?"
+
+[SHOP_PRICE_LINE]
+value = "Цена"
+en = "Price"
+
+[SHOP_LEFT_AFTER]
+value = "Останется Монет Pagle"
+en = "Pagle Coins left after"
+
+[SHOP_FOR_GOOD]
+value = "Облики остаются у вас навсегда."
+en = "Looks are yours for good."
+
+[SHOP_USE_NOW]
+value = "Использовать сразу"
+en = "Use it now"
+
+[SHOP_BUY_ACCEPT]
+value = "Купить"
+en = "Buy"
+
+[SHOP_BUY_CANCEL]
+value = "Отмена"
+en = "Cancel"
+
+[SHOP_HELD]
+value = "Ваш баланс — 0, пока Pagle пересчитывает прежние монеты. Новые монеты сначала восполнят этот счёт."
+en = "Your balance is 0 while Pagle re-counts earlier Coins. New Coins fill that in first."
+
+[SHOP_CRATE]
+value = "Ящик диковин"
+en = "Curio crate"
+
+[SHOP_CRATE_KIND]
+value = "Ящик обликов"
+en = "A crate of looks"
+
+[SHOP_CRATE_TIERS]
+value.1 = "Простой"
+value.2 = "Добротный"
+value.3 = "Живой"
+value.4 = "Витринный"
+value.5 = "Чудесный"
+value.6 = "Фамильный"
+value.curio = "Диковина"
+en.1 = "Plain"
+en.2 = "Fine"
+en.3 = "Lively"
+en.4 = "Showpiece"
+en.5 = "Marvel"
+en.6 = "Heirloom"
+en.curio = "Curio"
+
+[SHOP_CRATE_LEFT]
+value = "Осталось: {left:0}"
+en = "{left:0} left"
+
+[SHOP_CRATE_PAYS_BACK]
+value = "возврат {shop_crate_pays_back}"
+en = "pays back {shop_crate_pays_back}"
+
+[SHOP_CRATE_CHANCE]
+value = "{chance:n}%"
+en = "{chance:n}%"
+
+[SHOP_CRATE_PITY]
+value.one = "Диковина — в следующем ящике"
+value.few = "Диковина — в ближайших {count:0} ящиках"
+value.many = "Диковина — в ближайших {count:0} ящиках"
+value.other = "Диковина — в ближайших {count:0} ящика"
+en.one = "A Curio in the next crate"
+en.other = "A Curio within {count:0} more crates"
+
+[SHOP_CRATE_CONFIRM]
+value = "Открыть ящик диковин?"
+en = "Open a Curio crate?"
+
+[SHOP_CRATE_FINE]
+value = "Один облик, которого у вас ещё нет, — наудачу; шансы указаны на ящике."
+en = "One look you don't own yet, by chance; the chances are on the crate."
+
+[SHOP_CRATE_PAYBACK]
+value = "Монеты: +{shop_crate_payback}"
+en = "+{shop_crate_payback} Coins"
+
+[SHOP_CRATE_BACK]
+value = "Назад в лавку"
+en = "Back to the shop"
+
+[SHOP_CRATE_NEW_LOOK]
+value = "Новый облик"
+en = "A new look"
+
+[SHOP_CRATE_UNSHOWN]
+value = "Он появится здесь, когда его модуль будет включён."
+en = "It shows here once its Module is on."
+
+[SHOP_CRATE_KINDS]
+value.binding = "Переплёт"
+value.crest = "Герб"
+value.soundset = "Набор звуков"
+value.toaststyle = "Стиль плашек"
+value.trackerframe = "Рамка трекера"
+en.binding = "Binding"
+en.crest = "Crest"
+en.soundset = "Sound set"
+en.toaststyle = "Toast style"
+en.trackerframe = "Tracker frame"
+
+[SHOP_CRATE_YOURS]
+value = "Ваше"
+en = "Yours"
+
+[SHOP_CRATE_PAID_BACK]
+value = "Возвращено"
+en = "Paid back"
+
+[SHOP_CRATE_ONLY_NOTE]
+value = "Только в ящике диковин, не продаётся"
+en = "Only in a Curio crate, never for sale"
+
+[SHOP_FROM_CRATE]
+value = "Из ящика"
+en = "From a crate"
+
+[SHOP_SONAR_EARNED]
+value = "Подключите компаньон"
+en = "Link the companion"
+
+[COMPARTMENT]
+value = "Pagle"
+en = "Pagle"
+
+[COMPARTMENT_WAITING]
+value = "Pagle · ждут: {waiting:0}"
+en = "Pagle · {waiting:0} waiting"
+
+[MENU_NAME]
+value = "Pagle"
+en = "Pagle"
+
+[MENU_TOOLTIP_WAITING]
+value = "Ждут: {waiting:0}"
+en = "{waiting:0} waiting"
+
+[MENU_TOOLTIP_LETTER]
+value = "Вам письмо"
+en = "A letter for you"
+
+[SLASH_HELP_HEADER]
+value = "Команды Pagle:"
+en = "Pagle commands:"
+
+[SLASH_HELP_LINE]
+value = "/pagle {name}: {help}"
+en = "/pagle {name}: {help}"
+
+[SLASH_SKIPPED_NO_NAME]
+value = "Pagle: у команды /pagle {name} модуля {module} нет имени из одного слова; она пропущена"
+en = "Pagle: {module}'s /pagle entry {name} has no one-word name; it is skipped"
+
+[SLASH_SKIPPED_NO_FN]
+value = "Pagle: у команды /pagle {name} модуля {module} нет fn; она пропущена"
+en = "Pagle: {module}'s /pagle {name} has no fn; it is skipped"
+
+[SLASH_SKIPPED_RESERVED]
+value = "Pagle: команда /pagle {name} модуля {module} пропущена: Pagle резервирует {key}"
+en = "Pagle: {module}'s /pagle {name} is skipped: Pagle reserves {key}"
+
+[SLASH_SKIPPED_TAKEN]
+value = "Pagle: команда /pagle {name} модуля {module} пропущена: её уже использует {owners}"
+en = "Pagle: {module}'s /pagle {name} is skipped: {owners} already uses it"
+
+[DEV_ON]
+value = "Pagle dev: команды разработчика включены."
+en = "Pagle dev: dev commands are on."
+
+[DEV_OFF]
+value = "Pagle dev: команды разработчика выключены."
+en = "Pagle dev: dev commands are off."
+
+[DEV_IS_OFF]
+value = "Pagle dev: команды разработчика выключены; /pagle dev on их включает."
+en = "Pagle dev: dev commands are off; /pagle dev on turns them on."
+
+[DEV_USAGE]
+value = "Pagle dev: /pagle dev on | off | endsession | preview <тип> | stage <число> | glyphs | tour [модуль | list | stop] | probe | fonts | pseudo on | off | onboarding <команда> | content | views | pastetest <КБ>"
+en = "Pagle dev: /pagle dev on | off | endsession | preview <kind> | stage <count> | glyphs | tour [module | list | stop] | probe | fonts | pseudo on | off | onboarding <command> | content | views | pastetest <KB>"
+
+[DEV_PSEUDO_USAGE]
+value = "Pagle dev: /pagle dev pseudo on | off"
+en = "Pagle dev: /pagle dev pseudo on | off"
+
+[DEV_PSEUDO_ON]
+value = "Pagle dev: псевдолокаль включена; после /reload все строки будут удлинены, с диакритикой и в скобках."
+en = "Pagle dev: pseudo-locale on; /reload to see every string padded, accented and in brackets."
+
+[DEV_PSEUDO_OFF]
+value = "Pagle dev: псевдолокаль выключена; после /reload вернётся ваш язык."
+en = "Pagle dev: pseudo-locale off; /reload to go back to your language."
+
+[DEV_PASTE_TEST_USAGE]
+value = "Pagle dev: /pagle dev pastetest <КБ>, от {pasteTestMinKb} до {pasteTestMaxKb}; проверка копирует 64, 128, 256 и 512."
+en = "Pagle dev: /pagle dev pastetest <KB>, from {pasteTestMinKb} to {pasteTestMaxKb}; the check copies 64, 128, 256 and 512."
+
+[DEV_PASTE_TEST_SHOWN]
+value = "Pagle dev: тестовая строка на {testKB} КБ — в окне экспорта; скопируйте её и проверьте длину."
+en = "Pagle dev: a {testKB} KB test string is in the export window; copy it and check its length."
+
+[DEV_CONTENT_STATE]
+value = "Pagle dev: присланное содержимое: {state}."
+en = "Pagle dev: pushed content is {state}."
+
+[DEV_CONTENT_ABSENT]
+value = "Pagle dev: присланного содержимого нет: {reason}."
+en = "Pagle dev: pushed content is missing: {reason}."
+
+[DEV_CONTENT_HEADER]
+value = "Pagle dev: generatedAt {generatedAt}, keyId {keyId}, seq {seq}, expires {expires}."
+en = "Pagle dev: generatedAt {generatedAt}, keyId {keyId}, seq {seq}, expires {expires}."
+
+[DEV_CONTENT_KINDS]
+value = "Pagle dev: переданные типы: {counts}."
+en = "Pagle dev: kinds handed out: {counts}."
+
+[DEV_CONTENT_DROPPED]
+value = "Pagle dev: отброшенные как неизвестные типы: {dropped}."
+en = "Pagle dev: kinds dropped as unknown: {dropped}."
+
+[DEV_CONTENT_KIND]
+value = "{name} {counts}"
+en = "{name} {counts}"
+
+[DEV_CONTENT_NONE]
+value = "нет"
+en = "none"
+
+[DEV_CONTENT_FRAMES]
+value = "Pagle dev: кадров на проверку: {frames}, самый долгий — {longest:2} мс (бюджет {budget} мс)."
+en = "Pagle dev: frames the check ran in: {frames}, the longest {longest:2} ms (budget {budget} ms)."
+
+[PUSHED_NOT_INSTALLED]
+value = "нет файла (Pagle_Content не установлен)"
+en = "no file (Pagle_Content isn't installed)"
+
+[PUSHED_NOT_LOADED]
+value = "нет файла (Pagle_Content не загрузился: {reason})"
+en = "no file (Pagle_Content didn't load: {reason})"
+
+[PUSHED_NO_DATA]
+value = "нет файла (Pagle_Content загрузился, но не задал PagleContentData)"
+en = "no file (Pagle_Content loaded but set no PagleContentData)"
+
+[PUSHED_NOT_TABLE]
+value = "PagleContentData — не таблица"
+en = "PagleContentData isn't a table"
+
+[PUSHED_MISSING_FIELD]
+value = "нет поля {name}"
+en = "a missing field, {name}"
+
+[PUSHED_NOT_INTEGER]
+value = "{name} — не целое число"
+en = "{name} isn't a whole number"
+
+[PUSHED_NOT_STRING]
+value = "{name} — не строка"
+en = "{name} isn't a string"
+
+[PUSHED_BAD_KEY_ID]
+value = "keyId не из 1–32 символов A-Z, a-z, 0-9, _ и -"
+en = "a keyId that isn't 1 to 32 of A-Z, a-z, 0-9, _ and -"
+
+[PUSHED_UNKNOWN_VERSION]
+value = "неизвестный формат файла, v {pushed_unknown_version}"
+en = "an unknown file format, v {pushed_unknown_version}"
+
+[PUSHED_UNKNOWN_KEY]
+value = "неизвестный keyId, {keyId}"
+en = "an unknown keyId, {keyId}"
+
+[PUSHED_NOT_BASE64]
+value = "{pushed_not_base64_1} — не Base64 ({why})"
+en = "{pushed_not_base64_1} isn't Base64 ({why})"
+
+[PUSHED_OVER_CAP]
+value = "превышен предел размера: после декодирования {bytes} байт при максимуме {pushedSizeCap}"
+en = "over the size cap, {bytes} bytes decoded of {pushedSizeCap} at most"
+
+[PUSHED_BAD_SIGNATURE]
+value = "неверная подпись ({problem})"
+en = "a bad signature ({problem})"
+
+[PUSHED_LOWER_SEQ]
+value = "меньший seq, {seq}, ниже последнего принятого {last}"
+en = "a lower seq, {seq}, below the last accepted {last}"
+
+[PUSHED_EXPIRED]
+value = "срок истёк в {expires}, а серверное время — {now}"
+en = "expired at {expires}, and the server time is {now}"
+
+[PUSHED_PARSE_ERROR]
+value = "ошибка разбора на байте {pushed_parse_error_1}: {pushed_parse_error_2}"
+en = "a parse error at byte {pushed_parse_error_1}: {pushed_parse_error_2}"
+
+[PUSHED_CHECK_FAILED]
+value = "сама проверка завершилась сбоем (см. ошибку Lua)"
+en = "the check itself failed (see the Lua error)"
+
+[PAYLOAD_EXPECTED]
+value = "ожидалось {value}"
+en = "expected {value}"
+
+[PAYLOAD_EXPECTED_FIELD]
+value = "ожидалось имя поля"
+en = "expected a field name"
+
+[PAYLOAD_EXPECTED_ITEM]
+value = "ожидался элемент — таблица"
+en = "expected an item, a table"
+
+[PAYLOAD_BAD_ITEM]
+value = "элемент не начинается с kind = \"…\", v = <целое>"
+en = "an item that doesn't start kind = \"…\", v = <integer>"
+
+[PAYLOAD_BAD_NAME]
+value = "имя поля, не являющееся именем"
+en = "a field name that isn't a name"
+
+[PAYLOAD_UNEXPECTED]
+value = "неожиданный символ, {value}"
+en = "an unexpected character, {value}"
+
+[PAYLOAD_NAME_AS_VALUE]
+value = "имя {value} на месте значения"
+en = "a name, {value}, where a value goes"
+
+[PAYLOAD_NOT_INTEGER]
+value = "число, не являющееся десятичным целым"
+en = "a number that isn't a decimal integer"
+
+[PAYLOAD_TOO_LARGE]
+value = "целое длиной более {value} цифр"
+en = "an integer of more than {value} digits"
+
+[PAYLOAD_UNENDED_STRING]
+value = "незакрытая строка"
+en = "a string that doesn't end"
+
+[PAYLOAD_LINE_IN_STRING]
+value = "конец строки внутри строкового значения"
+en = "a line end inside a string"
+
+[PAYLOAD_BAD_ESCAPE]
+value = 'экранирование, отличное от \\, \" и \n'
+en = 'an escape other than \\, \" or \n'
+
+[PAYLOAD_DUPLICATE]
+value = "поле задано дважды, {value}"
+en = "a field given twice, {value}"
+
+[PAYLOAD_MIXED]
+value = "поле в списке значений"
+en = "a field in a list of values"
+
+[PAYLOAD_TOO_DEEP]
+value = "таблицы вложены глубже {value} уровней"
+en = "tables nested more than {value} deep"
+
+[PAYLOAD_ENDED]
+value = "данные обрываются слишком рано"
+en = "the payload ends too soon"
+
+[PAYLOAD_AFTER_TABLE]
+value = "что-то ещё после таблицы данных"
+en = "more after the payload's table"
+
+[DEV_VIEWS_LIVE]
+value = "Pagle dev: {name} активен."
+en = "Pagle dev: {name} is live."
+
+[DEV_VIEWS_ABSENT]
+value = "Pagle dev: {name} отсутствует: {reason}."
+en = "Pagle dev: {name} is absent: {reason}."
+
+[DEV_VIEWS_EXPIRED]
+value = "Pagle dev: {name} устарел: создан {age} с назад, срок годности — {viewExpiryAge} с."
+en = "Pagle dev: {name} is expired: generated {age} s ago, the expiry age is {viewExpiryAge} s."
+
+[DEV_VIEWS_FOLLOWING]
+value = "Pagle dev: Pagle_Following — generatedAt {generatedAt}, рыболовов {dev_views_following_2}."
+en = "Pagle dev: Pagle_Following's generatedAt {generatedAt}, Anglers {dev_views_following_2}."
+
+[DEV_VIEWS_ANGLERS]
+value = "Pagle dev: Pagle_Anglers — generatedAt {generatedAt}, блоков {dev_views_anglers_2}."
+en = "Pagle dev: Pagle_Anglers' generatedAt {generatedAt}, blocks {dev_views_anglers_2}."
+
+[DEV_VIEWS_LOADED]
+value = "Pagle dev: Pagle_Anglers загружен за этот вход в игру."
+en = "Pagle dev: Pagle_Anglers has loaded this login."
+
+[DEV_VIEWS_NOT_LOADED]
+value = "Pagle dev: Pagle_Anglers за этот вход в игру не загружался."
+en = "Pagle dev: Pagle_Anglers hasn't loaded this login."
+
+[DEV_VIEWS_NONE]
+value = "нет"
+en = "none"
+
+[VIEWS_NOT_READ]
+value = "ещё не прочитан (Pagle читает его при входе в игру)"
+en = "not read yet (Pagle reads it at login)"
+
+[VIEWS_NOT_LOADED_YET]
+value = "ещё не загружен (загрузится при первой подсказке об игроке, когда Pagle не ограничен и настройка подсказки включена)"
+en = "not loaded yet (it loads at the first player tooltip while Pagle isn't restricted, with the tooltip setting on)"
+
+[VIEWS_NOT_INSTALLED]
+value = "нет файла ({name} не установлен)"
+en = "no file ({name} isn't installed)"
+
+[VIEWS_DID_NOT_LOAD]
+value = "нет файла ({name} не загрузился: {reason})"
+en = "no file ({name} didn't load: {reason})"
+
+[VIEWS_NO_DATA]
+value = "нет файла ({name} загрузился, но не задал {global})"
+en = "no file ({name} loaded but set no {global})"
+
+[VIEWS_NOT_TABLE]
+value = "{global} — не таблица"
+en = "{global} isn't a table"
+
+[VIEWS_NOT_OK]
+value = "ok не равно true"
+en = "ok isn't true"
+
+[VIEWS_UNKNOWN_VERSION]
+value = "неизвестный формат файла, v {views_unknown_version}"
+en = "an unknown file format, v {views_unknown_version}"
+
+[VIEWS_NOT_NUMBER]
+value = "{field} — не число"
+en = "{field} isn't a number"
+
+[VIEWS_WRONG_COUNT]
+value = "count равно {views_wrong_count_1}, но {listName} содержит {list}"
+en = "count is {views_wrong_count_1}, but {listName} holds {list}"
+
+[VIEWS_BLOCK_NOT_TABLE]
+value = "блок {views_block_not_table} — не таблица"
+en = "block {views_block_not_table} isn't a table"
+
+[VIEWS_BLOCK_NOT_NUMBER]
+value = "в блоке {views_block_not_number_1} {field} — не число"
+en = "block {views_block_not_number_1}'s {field} isn't a number"
+
+[VIEWS_BLOCK_NOT_TITLES]
+value = "в блоке {views_block_not_titles} titles — не таблица"
+en = "block {views_block_not_titles}'s titles isn't a table"
+
+[VIEWS_BLOCK_LENGTH]
+value = "в блоке {views_block_length_1} длина {packed} — не {views_block_length_3} байт"
+en = "block {views_block_length_1}'s {packed} isn't {views_block_length_3} bytes long"
+
+[ANGLER_TIP_HEADER]
+value = "Рыболов Pagle"
+en = "Pagle Angler"
+
+[ANGLER_TIP_FOLLOWING]
+value = "Вы подписаны"
+en = "Following"
+
+[ANGLER_TIP_LEVEL]
+value = "Уровень рыболова"
+en = "Angler Level"
+
+[ANGLER_TIP_PRESTIGE]
+value = "{level:0} · {emblem} Престиж {prestigeNumerals}"
+en = "{level:0} · {emblem} Prestige {prestigeNumerals}"
+
+[ANGLER_TIP_MASTER_PRESTIGE]
+value = "{level:0} · {emblem} Престиж мастера {angler_tip_master_prestige_3:0}"
+en = "{level:0} · {emblem} Master Prestige {angler_tip_master_prestige_3:0}"
+
+[PRESTIGE_NUMERALS]
+value = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+en = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+
+[PRESTIGE_FRAME_MASTER]
+value = "Мастер"
+en = "Master"
+
+[ANGLER_TIP_LEDGER]
+value = "Реестр"
+en = "Ledger"
+
+[ANGLER_TIP_LEDGER_VALUE]
+value = "{ledger:0}%"
+en = "{ledger:0}%"
+
+[ANGLER_TIP_LEGENDS]
+value = "Легенды"
+en = "Legends"
+
+[ANGLER_TIP_LEGENDS_VALUE]
+value = "{legends:0} из {legendsTotal:0}"
+en = "{legends:0} of {legendsTotal:0}"
+
+[ANGLER_TIP_HARDCORE]
+value = "Хардкорный рыболов"
+en = "Hardcore Angler"
+
+[DEV_ONBOARDING_USAGE]
+value = "Pagle dev: /pagle dev onboarding {usages}"
+en = "Pagle dev: /pagle dev onboarding {usages}"
+
+[DEV_ONBOARDING_RESET]
+value = "Pagle dev: знакомство сброшено как для нового рыболова, письмо ждёт; /reload, чтобы начать с этого места."
+en = "Pagle dev: onboarding is back as a new Angler's, with the Letter waiting; /reload to start from there."
+
+[DEV_PREVIEW_KINDS]
+value = "Pagle dev: /pagle dev preview <тип>, где тип — один из: {devPreviewKinds}"
+en = "Pagle dev: /pagle dev preview <kind>, where kind is one of {devPreviewKinds}"
+
+[DEV_PREVIEWING]
+value = "Pagle dev: предпросмотр: {kind}."
+en = "Pagle dev: previewing a {kind}."
+
+[DEV_STAGE_SET]
+value = "Pagle dev: Фолиант картографа рисуется так, будто зон с рангом «Мастер» — {dev_stage_set}, до /pagle dev stage off."
+en = "Pagle dev: the Cartographer's Folio is drawn as if {dev_stage_set} zones were at Master, until /pagle dev stage off."
+
+[DEV_STAGE_OFF]
+value = "Pagle dev: Фолиант картографа рисуется на своей настоящей стадии."
+en = "Pagle dev: the Cartographer's Folio is drawn at its real stage."
+
+[DEV_STAGE_IS]
+value = "Pagle dev: Фолиант картографа рисуется так, будто зон с рангом «Мастер» — {devStageCount}."
+en = "Pagle dev: the Cartographer's Folio is drawn as if {devStageCount} zones were at Master."
+
+[DEV_STAGE_USAGE]
+value = "Pagle dev: /pagle dev stage <число зон с рангом «Мастер»> | off"
+en = "Pagle dev: /pagle dev stage <count of zones at Master> | off"
+
+[DEV_CARD_HELD]
+value = "Pagle dev: карточки ждут конца боя; попробуйте тогда."
+en = "Pagle dev: cards wait until combat ends; try again then."
+
+[DEV_SAMPLE_TOAST]
+value = "Новый вид"
+en = "New Species"
+
+[DEV_SAMPLE_STAMP]
+value = "Рекорд размера"
+en = "Size record"
+
+[DEV_SAMPLE_NOD]
+value = "Впервые здесь"
+en = "New here"
+
+[DEV_SAMPLE_VARIETY]
+value = "Редкая разновидность"
+en = "Rare variety"
+
+[DEV_SAMPLE_EPIC]
+value = "Эпическая разновидность"
+en = "Epic variety"
+
+[DEV_SAMPLE_VARIETY_NAME]
+value = "Коралловая"
+en = "Coral"
+
+[DEV_SAMPLE_BANNER]
+value = "Уровень рыболова 12"
+en = "Angler Level 12"
+
+[DEV_SAMPLE_SPLASH]
+value = "Легенда"
+en = "A Legend"
+
+[DEV_SAMPLE_TEXT]
+value = "Масляный черноротик (предпросмотр /pagle dev preview)"
+en = "Oily Blackmouth (a /pagle dev preview)"
+
+[DEV_SAMPLE_LINE]
+value = "Пример строки итогов"
+en = "A sample summary line"
+
+[DEV_SAMPLE_WRITE_UP]
+value = "Сводка вашего Реестра по 2 340 забросам"
+en = "Your Ledger was written up from 2,340 Casts"
+
+[DEV_SESSION_ENDED]
+value = "Pagle dev: сессия завершена, будто перерыв уже прошёл."
+en = "Pagle dev: the Session ended, as if its gap had passed."
+
+[DEV_NO_SESSION]
+value = "Pagle dev: открытой сессии нет."
+en = "Pagle dev: no Session is open."
+
+[DEV_NO_CHARACTER]
+value = "Pagle dev: персонаж ещё не вошёл в игру."
+en = "Pagle dev: no character is logged in yet."
+
+[DEV_CATCH_USAGE]
+value = "Pagle dev: /pagle dev catch <itemID> [areaID]"
+en = "Pagle dev: /pagle dev catch <itemID> [areaID]"
+
+[DEV_REAL_LOG]
+value = "Pagle dev: catch пишет в Журнал уловов, поэтому работает только с тестовым журналом (PagleLog.test); этот журнал настоящий, ничего не добавлено."
+en = "Pagle dev: catch writes to the Catch log, so it runs on a test log only (PagleLog.test); this log is real, and nothing was added."
+
+[DEV_UNKNOWN_AREA]
+value = "Pagle dev: {areaText} — не область из каталога Pagle."
+en = "Pagle dev: {areaText} isn't an area in Pagle's catalogue."
+
+[DEV_CAUGHT]
+value = "Pagle dev: пойман предмет {itemID} в зоне {zone} (запись {seq})."
+en = "Pagle dev: caught item {itemID} in zone {zone} (entry {seq})."
+
+[DEV_SKILL_USAGE]
+value = "Pagle dev: /pagle dev skill <ранг> [max], от 1 до 300 (max по умолчанию 300), или /pagle dev skill off"
+en = "Pagle dev: /pagle dev skill <rank> [max], from 1 to 300 (max defaults to 300), or /pagle dev skill off"
+
+[DEV_SKILL_SET]
+value = "Pagle dev: навык рыбной ловли теперь {rank}/{max}, что бы ни сообщал клиент. Забросы и замеры навыка записывают это значение. /pagle dev skill off вернёт значение клиента."
+en = "Pagle dev: Fishing skill now reads {rank}/{max}, whatever the client says. Casts and Skill Readings record it. /pagle dev skill off puts the client's back."
+
+[DEV_SKILL_CLEARED]
+value = "Pagle dev: навык рыбной ловли снова берётся из клиента."
+en = "Pagle dev: Fishing skill reads as the client says again."
+
+[DEV_SKILL_NOT_SET]
+value = "Pagle dev: навык рыбной ловли берётся из клиента; /pagle dev skill <ранг> его подменяет."
+en = "Pagle dev: Fishing skill reads as the client says; /pagle dev skill <rank> overrides it."
+
+[DEV_SKILL_REMINDER]
+value = "Pagle dev: навык рыбной ловли подменён на {rank}/{max} (/pagle dev skill off, чтобы сбросить)."
+en = "Pagle dev: Fishing skill is overridden to {rank}/{max} (/pagle dev skill off to clear it)."
+
+[DEV_GLYPHS_CHAT]
+value = "Pagle dev: проверка глифов шрифтом чата: {probe}"
+en = "Pagle dev: the glyph probe in the chat font: {probe}"
+
+[DEV_GLYPHS_SHOWN]
+value = "Pagle dev: та же строка каждым шрифтом Pagle — на экране; квадратик означает символ, которого в шрифте нет. Щёлкните по ней или нажмите Esc, чтобы закрыть."
+en = "Pagle dev: the same line in each font Pagle uses is on screen; a box is a character that font lacks. Click it or press Esc to close."
+
+[DEV_GLYPHS_ROW]
+value = "{object} ({usedBy}): {probe}"
+en = "{object} ({usedBy}): {probe}"
+
+[DEV_PROBE_LINE]
+value = "Pagle dev: {probeLine}"
+en = "Pagle dev: {probeLine}"
+
+[DEV_PROBE_SAVED]
+value = "Pagle dev: проверка сохранена; /reload, чтобы записать её."
+en = "Pagle dev: Probe saved; /reload to write it."
+
+[DEV_FONTS_LINE]
+value = "Pagle dev: шрифт {path}: {fontProbeSummary}"
+en = "Pagle dev: font {path}: {fontProbeSummary}"
+
+[DEV_FONTS_SAVED]
+value = "Pagle dev: на этом клиенте {locale} загружаются шрифты клиента: {loaded} из {paths}; образец каждого — на экране (квадратик означает символ, которого в шрифте нет; щёлкните или нажмите Esc, чтобы закрыть). Шрифты сохранены; /reload, чтобы записать их."
+en = "Pagle dev: {loaded} of {paths} client fonts load on this {locale} client; the sample in each is on screen (a box is a character that font lacks; click it or press Esc to close). Fonts saved; /reload to write them."
+
+[DEV_TOUR_STOPS]
+value.one = "1 остановка"
+value.few = "{count} остановки"
+value.many = "{count} остановок"
+value.other = "{count} остановки"
+en.one = "1 stop"
+en.other = "{count} stops"
+
+[DEV_TOUR_START]
+value = "Pagle dev: тур ({stops}) начат в {clock}; снимок каждой остановки сохраняется в папку Screenshots."
+en = "Pagle dev: touring {stops} from {clock}; a screenshot of each goes to the Screenshots folder."
+
+[DEV_TOUR_START_MANUAL]
+value = "Pagle dev: тур ({stops}) начат в {clock}; этот клиент не делает снимков экрана, так что нажимайте Print Screen, когда появится строка остановки."
+en = "Pagle dev: touring {stops} from {clock}; this client can't take screenshots, so press Print Screen as each stop's line appears."
+
+[DEV_TOUR_STOP]
+value = "Pagle dev: тур {index}/{stops}: {name}"
+en = "Pagle dev: tour {index}/{stops}: {name}"
+
+[DEV_TOUR_DONE]
+value = "Pagle dev: тур завершён в {clock}."
+en = "Pagle dev: the tour is done at {clock}."
+
+[DEV_TOUR_STOPPED]
+value = "Pagle dev: тур остановлен на {index}/{stops}."
+en = "Pagle dev: the tour stopped at {index}/{stops}."
+
+[DEV_TOUR_RESTRICTED_STOPPED]
+value = "Pagle dev: тур остановлен на {index}/{stops}: начался бой."
+en = "Pagle dev: the tour stopped at {index}/{stops}: combat started."
+
+[DEV_TOUR_STOPPING]
+value = "Pagle dev: тур остановится, когда скроется эта остановка."
+en = "Pagle dev: the tour stops once this stop hides."
+
+[DEV_TOUR_NOT_RUNNING]
+value = "Pagle dev: тур не запущен."
+en = "Pagle dev: no tour is running."
+
+[DEV_TOUR_RUNNING]
+value = "Pagle dev: тур уже идёт; /pagle dev tour stop его завершит."
+en = "Pagle dev: a tour is running; /pagle dev tour stop ends it."
+
+[DEV_TOUR_RESTRICTED]
+value = "Pagle dev: тур ждёт конца боя; попробуйте тогда."
+en = "Pagle dev: the tour waits until combat ends; try again then."
+
+[DEV_TOUR_NO_STOPS]
+value = "Pagle dev: остановки тура не зарегистрированы."
+en = "Pagle dev: no tour stops are registered."
+
+[DEV_TOUR_NO_STOPS_FOR]
+value = "Pagle dev: для {dev_tour_no_stops_for_1} нет остановок тура; остановки есть для: {known}."
+en = "Pagle dev: no tour stops for {dev_tour_no_stops_for_1}; stops are registered for {known}."
+
+[DEV_TOUR_LIST]
+value.one = "Pagle dev: 1 остановка тура:"
+value.few = "Pagle dev: {count:0} остановки тура:"
+value.many = "Pagle dev: {count:0} остановок тура:"
+value.other = "Pagle dev: {count:0} остановки тура:"
+en.one = "Pagle dev: 1 tour stop:"
+en.other = "Pagle dev: {count:0} tour stops:"
+
+[DEV_TOUR_ANNOUNCE]
+value = "образец оповещения: {kind}"
+en = "a sample {kind}"
+
+[DEV_TOUR_CARD]
+value = "образец карточки: {kind}"
+en = "a sample {kind} card"
+
+[DEV_TOUR_SHOP]
+value = "Лавка диковин"
+en = "the Curio Shop"
+
+[DEV_TOUR_FIELD_REPORT]
+value = "окно Полевого отчёта"
+en = "the Field report box"
+
+[DEV_TOUR_EXPORT]
+value = "окно экспорта"
+en = "the export window"
+
+[DEV_TOUR_GLYPHS]
+value = "панель проверки глифов"
+en = "the glyph probe panel"
+
+[DEV_TOUR_SETTINGS]
+value = "Настройки: {topic}"
+en = "Settings: {topic}"
+
+[DEV_TOUR_LIST_LINE]
+value = "  {name}: {label}"
+en = "  {name}: {label}"
+
+[SLASH_CORE_HELP]
+value = [{ help = "открыть настройки Pagle (или просто /pagle)", name = "settings" }, { help = "открыть или закрыть Лавку диковин", name = "shop" }, { help = "открыть Полевой отчёт и помочь нанести воды на карту", name = "report" }, { help = "скопировать Журнал уловов строкой для вставки на сайт Pagle", name = "export" }, { help = "экспортировать снимок для Восстановления или осмотреть сохранённые записи", name = "recovery" }, { help = "открыть Полевой справочник; /pagle guide notes снова покажет заметки на полях", name = "guide" }, { help = "список этих команд", name = "help" }]
+en = [{ help = "open Pagle's settings (also /pagle on its own)", name = "settings" }, { help = "open or close the Curio Shop", name = "shop" }, { help = "open the Field report, to help chart the waters", name = "report" }, { help = "copy your Catch log as a Paste string for the Pagle website", name = "export" }, { help = "export a Recovery snapshot or inspect preserved records", name = "recovery" }, { help = "open the Field guide; /pagle guide notes shows the margin notes again", name = "guide" }, { help = "list these commands", name = "help" }]
+
+[GUIDE_NOTES_AGAIN]
+value = "Pagle: заметки на полях снова покажутся, каждая по одному разу."
+en = "Pagle: margin notes will show again, once each."
+
+[NOTES_JOIN]
+value = " "
+en = " "
+
+[NOTE_NOD]
+value = "Это *кивок*: когда Pagle в последнее время много говорил, мелкие новости сжимаются до одной тихой строки. Через три секунды она исчезнет, а в Реестре останется навсегда."
+en = "That’s a *Nod*: when Pagle’s had a lot to say lately, the small news steps down to one quiet line. It’s gone in three seconds, and it’s in your Ledger for good."
+
+[NOTE_TOAST]
+value = "Эта монетка — *Монеты Pagle*: они даются за дела, не продаются и тратятся на облики в Лавке диковин."
+en = "The coin is *Pagle Coins*: earned by doing things, never bought, spent on looks in the Curio Shop."
+
+[NOTE_SUMMARY]
+value = "Вы отошли на пять минут, и сессия закрылась. Всё, что она принесла, — здесь, *даже то, что не всплывало*."
+en = "You stepped away five minutes, so the Session closed. Everything it earned is here, *even what never popped up*."
+
+[NOTE_UNCHARTED]
+value = "Pagle ещё не нанёс эту рыбу на карту. Она сохранена и будет засчитана в тот день, когда это случится. *Помочь нанести воды на карту* в меню Pagle копирует её, чтобы вы могли поделиться, если захотите."
+en = "Pagle hasn’t charted this one yet. It’s kept, and credited the day it is. *Help chart the waters* in the Pagle menu copies it out, to share if you like."
+
+[NOTE_WELCOME]
+value = "С возвращением. */pagle guide* покажет, что здесь к чему, если хотите экскурсию."
+en = "Welcome back. */pagle guide* shows you around, if you want the tour."
+
+[NOTE_CHARACTER]
+value = "Реестр один на всех персонажей. Только *рыбацкая одежда* у каждого своя."
+en = "Same Ledger on every character. Only your *fishing clothes* are per character."
+
+[DEV_NOTE_NONE]
+value = "Pagle dev: нет заметки на полях {dev_note_none_1}; заметки: {ids}."
+en = "Pagle dev: no margin note {dev_note_none_1}; the notes are {ids}."
+
+[DEV_NOTE_NO_TARGET]
+value = "Pagle dev: заметке на полях {dev_note_no_target} сейчас не на что указать на экране."
+en = "Pagle dev: margin note {dev_note_no_target} has nothing on screen to point at now."
+
+[LOOK_BAR_TITLE]
+value = "Первый взгляд · {title}"
+en = "First look · {title}"
+
+[LOOK_BAR_COUNT]
+value.one = "1 заметка, покажется один раз"
+value.few = "{count:0} заметки, покажутся один раз"
+value.many = "{count:0} заметок, покажутся один раз"
+value.other = "{count:0} заметки, покажутся один раз"
+en.one = "1 note, shown once"
+en.other = "{count:0} notes, shown once"
+
+[LOOK_BAR_DONE]
+value = "Понятно, убрать заметки"
+en = "Got it, put the notes away"
+
+[LOOK_AGAIN]
+value = "Снова показать заметки к этой странице"
+en = "Show the notes for this page again"
+
+[LOOK_SHOP_TITLE]
+value = "Лавка диковин"
+en = "the Curio Shop"
+
+[LOOK_SHOP_COINS]
+value = "Монеты даются только за то, что вы сделали. Полоса показывает, за что именно."
+en = "Coins come only from things you’ve done. The bar shows what paid them."
+
+[LOOK_SHOP_LOOKS]
+value = "Всё здесь — *облики*: плашки, звуки, переплёты, гербы. Рыбачить лучше ничто из этого не поможет."
+en = "Everything here is a *look*: toasts, sounds, bindings, crests. Nothing makes you fish better."
+
+[LOOK_SHOP_SHOW]
+value = "*Показать на экране* — и всё сыграет по-настоящему ещё до покупки."
+en = "*Show on screen* plays it for real before you buy."
+
+[LOOK_SHOP_STOCK]
+value = "Товар *никогда не меняется*. Что есть сегодня, будет и через месяц."
+en = "The stock *never rotates*. What’s here today is here next month."
+
+[DEV_LOOK_NONE]
+value = "Pagle dev: нет первого взгляда {dev_look_none_1}; наборы: {ids}."
+en = "Pagle dev: no First look {dev_look_none_1}; the sets are {ids}."
+
+[DEV_LOOK_CLOSED]
+value = "Pagle dev: окно первого взгляда {dev_look_closed} не открыто; сначала откройте его."
+en = "Pagle dev: First look {dev_look_closed}'s window isn't open; open it first."
+
+[DEV_LOOK_EMPTY]
+value = "Pagle dev: первому взгляду {dev_look_empty} сейчас не на что указать на экране."
+en = "Pagle dev: First look {dev_look_empty} has nothing on screen to point at now."
+
+[DEV_TOUR_LOOK]
+value = "первый взгляд: {title}"
+en = "the First look on {title}"
+
+[GUIDE_CRUMB_PAGLE]
+value = "Pagle"
+en = "Pagle"
+
+[GUIDE_CRUMB_GUIDE]
+value = "Полевой справочник"
+en = "A field guide"
+
+[GUIDE_COUNT]
+value = "|cfff6e3a8{index}|r из {guide_count_2:0}"
+en = "|cfff6e3a8{index}|r of {guide_count_2:0}"
+
+[GUIDE_SKIP]
+value = "Пропустить остальное"
+en = "Skip the rest"
+
+[GUIDE_NEXT]
+value = "Далее »"
+en = "Next »"
+
+[GUIDE_BACK]
+value = "« назад"
+en = "« back"
+
+[GUIDE_OFF]
+value = "Пора к воде"
+en = "Off to the water"
+
+[GUIDE_AFTER_COMBAT]
+value = "Pagle: Полевой справочник откроется после боя."
+en = "Pagle: the Field guide opens after combat."
+
+[GUIDE_SHOW_ME_AROUND]
+value = "Покажите, что к чему »"
+en = "Show me around »"
+
+[DEV_GUIDE_NO_STEP]
+value = "Pagle dev: нет шага справочника {dev_guide_no_step_1}; шаги: {ids}."
+en = "Pagle dev: no guide step {dev_guide_no_step_1}; the steps are {ids}."
+
+[DEV_TOUR_GUIDE_STEP]
+value = "Полевой справочник, шаг {dev_tour_guide_step}"
+en = "the Field guide at its {dev_tour_guide_step} step"
+
+[EVENING_TITLE]
+value = "Первый вечер"
+en = "First evening"
+
+[EVENING_COUNT]
+value = "{done:0} из {total:0}"
+en = "{done:0} of {total:0}"
+
+[EVENING_CLOSE]
+value = "×"
+en = "×"
+
+[EVENING_CAST]
+value = "Сделать заброс"
+en = "Make a Cast"
+
+[EVENING_CAST_HINT]
+value = "нажмите клавишу рыбалки или дважды щёлкните ПКМ"
+en = "press your Fishing key, or double right-click"
+
+[EVENING_CAST_HINT_NO_QOL]
+value = "примените Рыбную ловлю, глядя на воду"
+en = "right-click the water with Fishing"
+
+[EVENING_CATCH]
+value = "Вытащить улов"
+en = "Land a Catch"
+
+[EVENING_JOURNAL]
+value = "Открыть Рыбацкий журнал"
+en = "Open the Fish Journal"
+
+[EVENING_JOURNAL_HINT]
+value = "меню Pagle у миникарты » Рыбацкий журнал"
+en = "Pagle menu by the minimap » Fish Journal"
+
+[EVENING_HUNTS]
+value = "Узнать в Охотах, что клюёт"
+en = "See what’s biting on Hunts"
+
+[EVENING_HUNTS_HINT]
+value = "меню Pagle » Охоты"
+en = "Pagle menu » Hunts"
+
+[EVENING_SESSION]
+value = "Завершить сессию"
+en = "Finish a Session"
+
+[EVENING_SESSION_HINT]
+value = "отойдите на 5 минут — будут итоги"
+en = "step away 5 minutes for your summary"
+
+[EVENING_SHOP]
+value = "Заглянуть в Лавку диковин"
+en = "Peek into the Curio Shop"
+
+[EVENING_SHOP_HINT]
+value = "меню Pagle » Лавка диковин"
+en = "Pagle menu » Curio Shop"
+
+[DEV_TOUR_EVENING]
+value = "список первого вечера"
+en = "the First evening list"
+
+[GUIDE_RIBBON_WELCOME]
+value = "Добро пожаловать"
+en = "Welcome"
+
+[GUIDE_RIBBON_BOX]
+value = "Что в коробке"
+en = "What’s in the box"
+
+[GUIDE_RIBBON_MOMENTS]
+value = "Моменты"
+en = "Moments"
+
+[GUIDE_RIBBON_OFF]
+value = "В путь"
+en = "Off you go"
+
+[GUIDE_WELCOME_SKIP]
+value = "Обойдусь без экскурсии"
+en = "I’ll find my own way"
+
+[GUIDE_WELCOME_NEXT]
+value = "Покажите, что к чему »"
+en = "Show me around »"
+
+[GUIDE_WELCOME_KICKER]
+value = "Письмо, оставленное на причале"
+en = "A letter, left on the dock"
+
+[GUIDE_WELCOME_TITLE]
+value = "Дорогой рыболов,"
+en = "Dear Angler,"
+
+[GUIDE_WELCOME_RIGHT_KICKER]
+value = "Прежде всего"
+en = "Before anything else"
+
+[GUIDE_WELCOME_RIGHT_TITLE]
+value = "Три обещания"
+en = "Three promises"
+
+[GUIDE_BOX_KICKER]
+value = "Набор"
+en = "The kit"
+
+[GUIDE_BOX_TITLE]
+value = "Что лежало в коробке"
+en = "What came in the box"
+
+[GUIDE_MOMENTS_KICKER]
+value = "Моменты"
+en = "Moments"
+
+[GUIDE_MOMENTS_TITLE]
+value = "Когда случается что-то хорошее"
+en = "When something good happens"
+
+[GUIDE_MOMENTS_RIGHT_KICKER]
+value = "На ваш выбор"
+en = "Your choice"
+
+[GUIDE_MOMENTS_RIGHT_TITLE]
+value = "Насколько разговорчивым быть Pagle?"
+en = "How chatty should Pagle be?"
+
+[GUIDE_OFF_KICKER]
+value = "Пока это всё"
+en = "That’s all for now"
+
+[GUIDE_OFF_TITLE]
+value = "Остальному научит рыбалка"
+en = "The rest you learn by fishing"
+
+[GUIDE_OFF_RIGHT_KICKER]
+value = "Ваш первый вечер"
+en = "Your first evening"
+
+[GUIDE_OFF_RIGHT_TITLE]
+value = "Короткий список, если хотите"
+en = "A short list, if you like"
+
+[GUIDE_OFF_AGAIN]
+value = "|cff3e220c/pagle guide|r снова откроет этот справочник."
+en = "|cff3e220c/pagle guide|r opens this guide again."
+
+[GUIDE_PARTS]
+value.0 = "ноль частей"
+value.1 = "одна часть"
+value.2 = "две части"
+value.3 = "три части"
+value.4 = "четыре части"
+value.5 = "пять частей"
+value.6 = "шесть частей"
+value.7 = "семь частей"
+value.8 = "восемь частей"
+value.9 = "девять частей"
+value.10 = "десять частей"
+en.0 = "no parts"
+en.1 = "one part"
+en.2 = "two parts"
+en.3 = "three parts"
+en.4 = "four parts"
+en.5 = "five parts"
+en.6 = "six parts"
+en.7 = "seven parts"
+en.8 = "eight parts"
+en.9 = "nine parts"
+en.10 = "ten parts"
+
+[GUIDE_PARTS_MORE]
+value.one = "{count} часть"
+value.few = "{count} части"
+value.many = "{count} частей"
+value.other = "{count} части"
+en.one = "{count} part"
+en.other = "{count} parts"
+
+[GUIDE_LIST_COMMA]
+value = ", "
+en = ", "
+
+[GUIDE_LIST_AND]
+value = " и "
+en = " and "
+
+[GUIDE_WELCOME_LETTER]
+value = ["Отныне каждая рыба, которую вы вытащите из воды, будет записана: где, когда, какого размера и чего стоило её поймать.", "Порыбачьте подольше, и вода начнёт кое-что вам рассказывать: что клюёт только ночью, какая рыба раз за разом уходит, какой путь вы уже прошли.", "Давайте я всё покажу. Это займёт две минуты, а поменять всё можно и потом."]
+en = ["From now on, every fish you pull out of the water gets written down: where, when, how big, and what it took to land it.", "Fish long enough and the water starts telling you things: what bites only at night, which fish you keep missing, how far you’ve come.", "Let me show you around. It takes two minutes, and you can change everything later."]
+
+[GUIDE_WELCOME_SIGNED]
+value = "Pagle"
+en = "Pagle"
+
+[GUIDE_WELCOME_FOOT]
+value = "Всё это есть и в разделе Настройки » Модификации » Pagle."
+en = "Everything here is also in Options » AddOns » Pagle."
+
+[GUIDE_WELCOME_PROMISES]
+value = [["I", "Я никогда не рыбачу за вас.", "Pagle наблюдает и записывает. Каждое нажатие клавиши делает не больше одного действия, а рыбачат ваши руки."], ["II", "Ничто не сгорает.", "Нет ежедневных заданий, которые можно пропустить. Цели вас дождутся, а пропущенный день ничего у вас не отнимет."], ["III", "Каждая часть — по желанию."]]
+en = [["I", "I never fish for you.", "Pagle watches and writes things down. Every key press does one thing at most, and your hands do the fishing."], ["II", "Nothing expires.", "There are no dailies to miss. Goals wait for you, and a day away costs you nothing."], ["III", "Every part is optional."]]
+
+[GUIDE_WELCOME_PARTS]
+value = "У Pagle {parts}. Отключите любую в списке модификаций — и от неё не останется и следа."
+en = "Pagle comes in {parts}. Turn any of them off in the AddOns list and it leaves no trace."
+
+[GUIDE_BOX_TEXT]
+value = "Pagle — это небольшой набор, а не одно большое окно. У каждой части своё место, и все они открываются из пункта |cff3e220cPagle|r под кнопкой модификаций у миникарты."
+en = "Pagle is a small kit, not one big window. Each part has its own place, and every one of them opens from the |cff3e220cPagle|r entry under the addons button by your minimap."
+
+[GUIDE_BOX_MENU]
+value = "Pagle"
+en = "Pagle"
+
+[GUIDE_BOX_MENU_NOTE]
+value = "Щёлкните по названию, чтобы открыть. */pagle* открывает настройки."
+en = "Click a name to open it. */pagle* opens Settings."
+
+[GUIDE_BOX_PARTS]
+value = "{parts} и лавка"
+en = "{parts}, and a shop"
+
+[GUIDE_BOX_SHOP]
+value = "Лавка диковин"
+en = "Curio Shop"
+
+[GUIDE_BOX_SHOP_BLURB]
+value = "Монеты Pagle даются за ваши достижения и покупают облики, но не силу."
+en = "Pagle Coins come from things you achieve, and buy looks, never power."
+
+[GUIDE_BOX_NONE]
+value = "Включите части в списке модификаций."
+en = "Turn parts on in the AddOns list."
+
+[GUIDE_MOMENTS_TEXT]
+value = "Pagle сообщает о событиях в одном из трёх размеров. Чем больше момент, тем заметнее весть."
+en = "Pagle tells you, in one of three sizes. The bigger the moment, the bigger the note."
+
+[GUIDE_MOMENTS_SAMPLES]
+value.banner = ["Баннер", "Новый уровень рыболова и звание, что к нему прилагается."]
+value.nod = ["Кивок", "Когда Pagle в последнее время много говорил. Одна строка, исчезает через 3 секунды."]
+value.toast = ["Плашка", "Каждый улов, новая рыба, рекорд, заработанные монеты."]
+en.banner = ["A banner", "A new Angler Level, and the title that comes with it."]
+en.nod = ["A Nod", "When Pagle’s said a lot lately. One line, gone in 3 seconds."]
+en.toast = ["A toast", "Every Catch, a new fish, a record, Coins earned."]
+
+[GUIDE_MOMENTS_BUDGET]
+value = "Не больше {guide_moments_budget_1:0} всплывающих окон за {guide_moments_budget_2:0} мин.: сверх этого мелкие сменяются кивком. Когда вы закончите, всё окажется в итогах сессии."
+en = "At most {guide_moments_budget_1:0} pop-ups every {guide_moments_budget_2:0} minutes: past that, small ones step down to a Nod. Everything lands on the Session summary when you stop."
+
+[GUIDE_MOMENTS_SAMPLE_TEXT]
+value = "Масляный черноротик"
+en = "Oily Blackmouth"
+
+[GUIDE_PRESETS]
+value.cozy = ["Уютный", "Ничего не всплывает и не звучит. Всё ждёт итогов сессии."]
+value.lively = ["Живой", "Плашка на каждый улов; баннеры тоже, со звуком.", "всё по ходу"]
+value.quieter = ["Потише", "Без плашек на обычный улов и меньше всплывающих окон. Большие моменты всё равно видны."]
+en.cozy = ["Cozy", "Nothing pops up and nothing plays. It all waits for your Session summary."]
+en.lively = ["Lively", "A toast for every Catch; banners too, with sound.", "as it comes"]
+en.quieter = ["Quieter", "No toast for ordinary Catches, and fewer pop-ups. The big moments still show."]
+
+[GUIDE_PRESET_POPUPS]
+value = "до {guide_preset_popups_1:0} всплывающих окон за {guide_preset_popups_2:0} мин."
+en = "{guide_preset_popups_1:0} pop-ups in {guide_preset_popups_2:0} minutes"
+
+[GUIDE_PRESET_COZY_WHAT]
+value = "легенда всё равно покажется, но без звука"
+en = "a Legend still shows, silently"
+
+[GUIDE_PRESET_OWN]
+value = "Ваша собственная настройка, без изменений."
+en = "Your own mix, kept as it is."
+
+[GUIDE_MOMENTS_NOTE]
+value = "Каждый вариант лишь выставляет переключатели в Настройки » Оповещения; потом их можно подстроить."
+en = "Each one only sets the switches in Settings » Announcements, where you can fine-tune them later."
+
+[GUIDE_OFF_TEXT]
+value = "Когда впервые случится что-то новое (первый кивок, первая новая рыба, первые итоги сессии), я оставлю рядом заметку. Один раз. Дальше поля останутся чистыми."
+en = "The first time something new happens (your first Nod, your first new fish, your first Session summary) I’ll leave a note beside it. Once. After that the margins stay clean."
+
+[GUIDE_OFF_NOD_NOTE]
+value = "Это *кивок*: он есть у каждого улова. Исчезает через три секунды."
+en = "That’s a *Nod*: every Catch gets one. It’s gone in three seconds."
+
+[GUIDE_OFF_LOOKS]
+value.one = "Не нужны заметки? Отключите «Заметки на полях» в настройках. {guideListOf} при первом открытии покажет короткий набор заметок."
+value.few = "Не нужны заметки? Отключите «Заметки на полях» в настройках. {guideListOf} при первом открытии покажут по короткому набору заметок."
+value.many = "Не нужны заметки? Отключите «Заметки на полях» в настройках. {guideListOf} при первом открытии покажут по короткому набору заметок."
+value.other = "Не нужны заметки? Отключите «Заметки на полях» в настройках. {guideListOf} при первом открытии покажут по короткому набору заметок."
+en.one = "Don’t want notes? Turn off Margin notes in Settings. {guideListOf} gets a short set the first time you open it."
+en.other = "Don’t want notes? Turn off Margin notes in Settings. {guideListOf} each get a short set the first time you open them."
+
+[GUIDE_OFF_LIST_TEXT]
+value = "Он висит под заданиями и сам отмечает пункты. Закройте его, когда захотите."
+en = "It sits under your quests and ticks itself off. Close it whenever you like."
+
+[GUIDE_EVENING_TITLE]
+value = "Первый вечер"
+en = "First evening"
+
+[GUIDE_EVENING_COUNT]
+value = "{done:0} из {rows:0}"
+en = "{done:0} of {rows:0}"
+
+[GUIDE_EVENING_ITEMS]
+value.cast = "Сделать заброс"
+value.catch = "Вытащить улов"
+value.hunts = "Узнать в Охотах, что клюёт"
+value.journal = "Открыть Рыбацкий журнал"
+value.session = "Завершить сессию"
+value.shop = "Заглянуть в Лавку диковин"
+en.cast = "Make a Cast"
+en.catch = "Land a Catch"
+en.hunts = "See what’s biting on Hunts"
+en.journal = "Open the Fish Journal"
+en.session = "Finish a Session"
+en.shop = "Peek into the Curio Shop"
+
+[GUIDE_EVENING_HINTS]
+value.cast = "нажмите клавишу рыбалки или дважды щёлкните ПКМ"
+value.castNoQoL = "примените Рыбную ловлю, глядя на воду"
+value.session = "отойдите на 5 минут — будут итоги"
+en.cast = "press your Fishing key, or double right-click"
+en.castNoQoL = "right-click the water with Fishing"
+en.session = "step away 5 minutes for your summary"
+
+[LETTER_KICKER]
+value = "Письмо, оставленное на причале"
+en = "A letter, left on the dock"
+
+[LETTER_LINE]
+value = "Pagle прибыл. Откройте, когда будете готовы, — письмо подождёт."
+en = "Pagle has arrived. Open it whenever you’re ready; it’ll keep."
+
+[LETTER_OPEN]
+value = "Открыть письмо"
+en = "Open the letter"
+
+[LETTER_LATER]
+value = "Позже"
+en = "Later"
+
+[LETTER_SEAL]
+value = "P"
+en = "P"
+
+[DEV_TOUR_LETTER]
+value = "письмо"
+en = "the Letter"
+
+[DEV_TOUR_LETTER_OF]
+value = "письмо {dev_tour_letter_of}"
+en = "the letter {dev_tour_letter_of}"
+
+[DEV_LETTER_NONE]
+value = "Pagle dev: нет письма {dev_letter_none_1}; письма: {ids}."
+en = "Pagle dev: no letter {dev_letter_none_1}; the letters are {ids}."
+
+[SLOT_TOAST_STYLE]
+value = "Стиль плашек"
+en = "Toast style"
+
+[SLOT_SOUND_SET]
+value = "Набор звуков"
+en = "Sound set"
+
+[SLOT_CREST]
+value = "Гербы"
+en = "Crests"
+
+[SLOT_BOOK_BINDING]
+value = "Переплёт книг"
+en = "Book binding"
+
+[SLOT_CREST_ZONES]
+value = "Гербы зон"
+en = "Zone crests"
+
+[SLOT_CREST_FISH]
+value = "Рыбьи гербы"
+en = "Fish crests"
+
+[FISH_CREST_ITEM]
+value = "Предмет {speciesID}"
+en = "Item {speciesID}"
+
+[FISH_CREST_DROP_PREFIX]
+value = "Raw "
+en = "Raw "
+
+[FISH_CREST_ROW]
+value = "{fish_crest_row:0} из 10 разновидностей"
+en = "{fish_crest_row:0} of 10 varieties"
+
+[FISH_CREST_NOTE]
+value = "{fish}: разновидностей {fish_crest_note_1:0} из 10. Ещё в воде: {parts}."
+en = "{fish_crest_note_1:0} of 10 {fish} varieties. Still out there: {parts}."
+
+[FISH_CREST_NOTE_ALL]
+value = "{fish}: разновидностей {fish_crest_note_all_1:0} из 10."
+en = "{fish_crest_note_all_1:0} of 10 {fish} varieties."
+
+[FISH_CREST_UNCAUGHT]
+value = "{rarityName}: {counts:0}"
+en = "{counts:0} {rarityName}"
+
+[FISH_CREST_UNCAUGHT_JOIN]
+value = ", "
+en = ", "
+
+[PREVIEW_TOAST]
+value = "» Плашка"
+en = "» Toast"
+
+[PREVIEW_BANNER]
+value = "» Баннер"
+en = "» Banner"
+
+[PREVIEW_LEGEND]
+value = "» Легенда"
+en = "» Legend"
+
+[PREVIEW_STING_SHARED]
+value = "Звук легенды во всех наборах одинаков."
+en = "The Legend sting is the same in every set."
+
+[PREVIEW_EX_LIBRIS]
+value = "Ex Libris"
+en = "Ex Libris"
+
+[PREVIEW_CREST_NOTE]
+value = "На экслибрисе Рыбацкого журнала."
+en = "On the Fish Journal's bookplate."
+
+[PREVIEW_BINDING_NOTE]
+value = "Этот переплёт носят все ваши книги."
+en = "Every book of yours wears it."
