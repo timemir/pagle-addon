@@ -38,6 +38,19 @@ local function ledgerStep(fake)
 	return pages.left, pages.right
 end
 
+-- The guide notes (nav.Note's frames) drawn on `page`, shown or not, in order.
+---@param page table
+---@return table[]
+local function notesOn(page)
+	local notes = {}
+	for _, child in ipairs(page.children) do
+		if child.w and child.text then
+			notes[#notes + 1] = child
+		end
+	end
+	return notes
+end
+
 -- The guide parts (nav.Part's sprites) drawn on `page`, shown or not, in order.
 ---@param page table
 ---@return string[]
@@ -146,9 +159,40 @@ describe("the Ledger's onboarding", function()
 					end
 				end
 				assert.are.same({ "tick-red", "ring-ghost", "ring-ghost" }, marks)
-				-- the note is the guide's, 290 wide, its *term* for the guide's red pencil
-				local note = right.children[#right.children]
-				assert.are.same({ 70, 290 }, { note.x, note.w })
+				-- the note is the guide's, 290 wide, its *term* for the guide's red pencil; its copy across the column waits
+				local notes = notesOn(right)
+				assert.are.same({ { 70, 290, true }, { 30, 382, false } }, {
+					{ notes[1].x, notes[1].w, notes[1]:IsShown() },
+					{ notes[2].x, notes[2].w, notes[2]:IsShown() },
+				})
+			end
+		)
+
+		it(
+			"keeps the note off Core's foot: across the column when it would reach Next », lifted if it must (ONB-R23)",
+			function()
+				local fake = ledger()
+				local _, right = ledgerStep(fake)
+				local notes = notesOn(right)
+				local function topOf(region)
+					return -region.points[1][5]
+				end
+
+				-- a note as tall as a longer translation writes it: 290 wide it would pass 486, across the column it ends above
+				local natural = topOf(notes[1])
+				notes[1]:SetSize(290, 486 - natural + 20)
+				notes[2]:SetSize(382, 486 - natural - 10)
+				fake.guide:Close()
+				fake.guide:Open("ledger")
+
+				assert.are.same({ false, true }, { notes[1]:IsShown(), notes[2]:IsShown() })
+				assert.are.same({ 30, natural }, { notes[2].points[1][4], topOf(notes[2]) })
+
+				-- taller still, it is lifted to end at 486
+				notes[2]:SetSize(382, 486 - natural + 30)
+				fake.guide:Close()
+				fake.guide:Open("ledger")
+				assert.are.equal(486, topOf(notes[2]) + notes[2]:GetHeight())
 			end
 		)
 
