@@ -765,6 +765,55 @@ describe("a set's page, drawn (HNT-R66)", function()
 
 		assert.are.same({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }, place(run))
 	end)
+
+	it(
+		"sets a long heading a size down at a time, to 16, before the client cuts it short (HNT-R66, CORE-R8)",
+		function()
+			local run = start()
+			run.ns.L["set.fixture_dusk.name"] = "Часы в лагере"
+			run.ns.L["set.fixture_dusk.title"] = "Хранитель хижины у тихой лесной воды" -- past the page in the fake
+			run.ns.board:Open({ mode = "set", set = "fixture_dusk" })
+
+			local page = run.ns.board:Page(place(run), "left")
+			local title = assert(run.ns.TimelinePageView(page)).title
+			assert.are.equal(
+				"Часы в лагере: earns Хранитель хижины у тихой лесной воды",
+				title:GetText()
+			) -- never rewritten
+			assert(#title:GetText() * 6 > page:GetWidth(), "the heading runs past the page in the fake")
+			assert.are.equal(run.ns.ArtFont("print", 16), title.fontObject)
+			assert.are.equal(page:GetWidth(), title.width)
+
+			-- a short one stays in the kit's size
+			run.ns.board:Open({ mode = "board" })
+			local board = assert(run.ns.TimelinePageView(run.ns.board:Page(place(run), "left"))).title
+			assert.are.equal(run.ns.BoardFonts().heading, board.fontObject)
+		end
+	)
+
+	it("wraps the legend to a row above where a longer language's runs past the page (HNT-R62)", function()
+		local run = start()
+		run.ns.L.LEGEND_ITEMS.camp = "ваш лагерь разбит" -- ruRU's: 32 bytes
+		run.ns.board:Open({ mode = "board" })
+
+		local view = assert(run.ns.TimelinePageView(run.ns.board:Page(place(run), "left")))
+		local rows, texts = {}, {}
+		for i, text in ipairs(view.legendTexts) do
+			local point = text.points[1]
+			local x, y = point[4], -point[5]
+			texts[i] = text:GetText()
+			-- each item's words whole, within the page, on the foot's row or the one above it
+			assert.are.equal(#text:GetText() * 6, text:GetStringWidth())
+			assert(x + text:GetStringWidth() <= view.width, text:GetText() .. " runs past the page")
+			assert(y == 498 - 1 or y == 498 - 1 - 16, text:GetText() .. " sits at " .. y)
+			rows[y] = (rows[y] or 0) + 1
+			-- its bar on its row, before it
+			local bar = view.legendBars[i].points[1]
+			assert.are.same({ x - 18 - 5, -(y + 1) }, { bar[4], bar[5] })
+		end
+		assert.are.same({ "open", "window unconfirmed", "needs more skill", "ваш лагерь разбит" }, texts)
+		assert.are.same({ [497] = 1, [481] = 3 }, rows) -- the last one wraps, at the fake's 6 px a byte
+	end)
 end)
 
 describe("the timeline's mouse wheel (hunts.md › UI)", function()

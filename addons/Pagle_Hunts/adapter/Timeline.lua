@@ -31,6 +31,8 @@ local LOOK = ns.BOARD_LOOK
 -- The page's layout, in UI units down the page's body (the kit's canvas): the kicker and title, the ruler's hour
 -- labels, its ticks, its rule and "Realm time", the list scrolling under it, and the legend at the foot.
 local KICKER_Y, TITLE_Y = 1, 17
+-- The title's size in the kit (BoardFonts' heading), and the least it is set at to fit the page.
+local TITLE_SIZE, TITLE_FLOOR = 25, 16
 local HOUR_Y, TICK_Y, MINOR_Y, RULE_Y, REALM_Y, NEXT_Y = 53, 69, 74, 82.5, 65, 48
 -- The ruler's left column, where "next 22h" sits over "Realm time": from the page's left to short of the track by
 -- half an hour label, so neither meets a label centred on a tick at the ruler's start (HNT-R62). Over the ruler's right
@@ -53,8 +55,8 @@ local MARK_SIZE, MARK_Y = 22, 2
 local MORE_SIZE = 12
 -- The scroll rail, this far right of the list's edge.
 local RAIL_GAP, RAIL_WIDTH = 10, 4
--- The legend's bars and the gaps after each bar and each item.
-local LEGEND_BAR, LEGEND_GAP, LEGEND_ITEM_GAP = 18, 5, 14
+-- The legend's bars, the gaps after each bar and each item, and a row's step up when it wraps.
+local LEGEND_BAR, LEGEND_GAP, LEGEND_ITEM_GAP, LEGEND_ROW = 18, 5, 14, 16
 
 -- An aura's expiry in server time (HNT-R63): `GetServerTime() + (expirationTime - GetTime())`, read for display only;
 -- nil when the call or the aura is missing, `expirationTime` is 0, or it is secret.
@@ -642,24 +644,40 @@ local function drawList(view, timeline)
 	end
 end
 
--- Draws the legend at the page's foot (HNT-R62): each bar style's own stroke, then its words in italic.
+-- Draws the legend at the page's foot (HNT-R62): each bar style's own stroke, then its words in italic. An item that
+-- would run past the page starts a row above the foot's, in the room between the list's foot and the legend: a
+-- language's longer words wrap there, never cut.
 ---@param view TimelinePageView
 ---@param page Frame
 ---@param items { style: BoardBarStyle, text: string }[]
 local function drawLegend(view, page, items)
-	local x = 0
+	local places, rows, x = {}, 1, 0
 	for i, item in ipairs(items) do
-		local bar = ns.BoardPooled(view.legendBars, i, function()
-			return ns.NewBoardTimelineBar(view.legend)
-		end)
-		bar:SetBar(item.style, LEGEND_BAR)
-		at(bar, page, x, LEGEND_Y)
 		local text = ns.BoardPooled(view.legendTexts, i, function()
 			return ns.BoardText(view.legend, ns.BoardFonts().legend, LOOK.legend)
 		end)
 		text:SetText(item.text)
-		at(text, page, x + LEGEND_BAR + LEGEND_GAP, LEGEND_Y - 1)
-		x = x + LEGEND_BAR + LEGEND_GAP + text:GetStringWidth() + LEGEND_ITEM_GAP
+		text:SetWidth(0)
+		local words = text:GetStringWidth()
+		if x > 0 and x + LEGEND_BAR + LEGEND_GAP + words > view.width then
+			rows, x = rows + 1, 0
+		end
+		local room = view.width - x - LEGEND_BAR - LEGEND_GAP
+		if words > room then
+			text:SetWidth(math.max(1, room)) -- one item longer than the page: cut short
+		end
+		places[i] = { x = x, row = rows }
+		x = x + LEGEND_BAR + LEGEND_GAP + words + LEGEND_ITEM_GAP
+	end
+	for i, item in ipairs(items) do
+		local place = places[i]
+		local y = LEGEND_Y - (rows - place.row) * LEGEND_ROW
+		local bar = ns.BoardPooled(view.legendBars, i, function()
+			return ns.NewBoardTimelineBar(view.legend)
+		end)
+		bar:SetBar(item.style, LEGEND_BAR)
+		at(bar, page, place.x, y)
+		at(view.legendTexts[i], page, place.x + LEGEND_BAR + LEGEND_GAP, y - 1)
 	end
 	ns.BoardHideFrom(view.legendBars, #items)
 	ns.BoardHideFrom(view.legendTexts, #items)
@@ -726,7 +744,10 @@ local function drawPage(page, place)
 	end
 	placeTop(view, page, ns.DrawWagerStrip(page, timeline.strip))
 	local none = timeline.empty == "noHunts"
+	-- the heading a size down at a time where it runs long ("Часы в лагере: даёт звание Хранитель хижины"), to
+	-- TITLE_FLOOR, and only past that cut short by the client
 	view.title:SetText(timeline.title)
+	ns.FitText(view.title, "print", TITLE_SIZE, view.width, TITLE_FLOOR, nil, LOOK.title)
 	view.kicker:SetText(
 		ns.BoardSmallCaps(place.mode ~= "board" and place.set and ns.L.SET_KICKER or ns.L.TIMELINE_KICKER)
 	)
