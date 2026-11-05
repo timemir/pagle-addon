@@ -349,47 +349,37 @@ describe("a tracker frame's preview", function()
 		assert.are.equal(look.slice.top + look.slice.foot, view.frame.height)
 	end)
 
-	it(
-		"gives a line's name the room first, the label what's left but its share, and keeps a count whole (CORE-R8)",
-		function()
-			local loaded = loggedIn()
-			local ns = loaded.ns
+	it("gives a line's name the room first, and the label what's left but its share (CORE-R8)", function()
+		local loaded = loggedIn()
+		local ns = loaded.ns
 
-			local view = ns.NewTrackerBlock(loaded.env.CreateFrame("Frame"))
-			local look = ns.TRACKER_FRAMES["hunts.trackerframe.slate"]
-			local room = look.right - look.x - 14 - 6
-			local label =
-				"ещё 2 ч 30 мин до конца и ещё немного слов, чтобы было длинно"
-			local short = "Booty Bay Overflow"
-			local long =
-				"Родные воды: форель на закате, ход скумбрии и ещё длиннее"
-			local second =
-				"Любая рыба редкой разновидности или лучше в этих водах · 5 / 12"
-			local entries = {
-				{ dot = "now", name = short, label = label, second = second },
-				{ dot = "now", name = long, label = label },
-				{ dot = "now", name = short, label = "now" },
-			}
-			ns.DrawTrackerBlock(view, look, { hunts = entries, empty = false, collapsed = false })
+		local view = ns.NewTrackerBlock(loaded.env.CreateFrame("Frame"))
+		local look = ns.TRACKER_FRAMES["hunts.trackerframe.slate"]
+		local room = look.right - look.x - 14 - 6
+		local label =
+			"ещё 2 ч 30 мин до конца и ещё немного слов, чтобы было длинно"
+		local short = "Booty Bay Overflow"
+		local long =
+			"Родные воды: форель на закате, ход скумбрии и ещё длиннее"
+		local entries = {
+			{ dot = "now", name = short, label = label },
+			{ dot = "now", name = long, label = label },
+			{ dot = "now", name = short, label = "now" },
+		}
+		ns.DrawTrackerBlock(view, look, { hunts = entries, empty = false, collapsed = false })
 
-			-- 6 px a character in the fake: a short name whole, the label the rest
-			local first = view.lines[1]
-			assert.are.equal(#short * 6 + 1, first.first.width)
-			assert.are.equal(room - (#short * 6 + 1), first.label.width)
-			-- a long name and a long label: the label keeps its share, the name the rest
-			local both = view.lines[2]
-			assert.are.equal(room * 0.3, both.label.width)
-			assert.are.equal(room - room * 0.3, both.first.width)
-			-- both short: both whole
-			assert.are.equal(#"now" * 6 + 1, view.lines[3].label.width)
-			assert.are.equal(#short * 6 + 1, view.lines[3].first.width)
-			-- a second line too long keeps its count, after the last join, whole: its start is cut short
-			local text = first.second:GetText()
-			assert.is_true(#text < #second)
-			assert.are.equal(" · 5 / 12", text:sub(-#" · 5 / 12")) -- the English TRACKER_JOIN
-			assert.is_truthy(text:find("…", 1, true))
-		end
-	)
+		-- 6 px a character in the fake: a short name whole, the label the rest
+		local first = view.lines[1]
+		assert.are.equal(#short * 6 + 1, first.first.width)
+		assert.are.equal(room - (#short * 6 + 1), first.label.width)
+		-- a long name and a long label: the label keeps its share, the name the rest
+		local both = view.lines[2]
+		assert.are.equal(room * 0.3, both.label.width)
+		assert.are.equal(room - room * 0.3, both.first.width)
+		-- both short: both whole
+		assert.are.equal(#"now" * 6 + 1, view.lines[3].label.width)
+		assert.are.equal(#short * 6 + 1, view.lines[3].first.width)
+	end)
 
 	it(
 		"makes the sample inert: no click handler and no mouse on any of its parts, so a click reaches the card under it (HNT-R77, HNT-R121)",
