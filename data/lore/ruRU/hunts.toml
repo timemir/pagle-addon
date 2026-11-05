@@ -1,0 +1,716 @@
+# Hunts's lore in Russian (ruRU), over data/lore/hunts.toml, data/hunts/hunts.toml and data/hunts/events/ (DATA-R113, DATA-R114).
+# Machine-drafted: written by an AI model (Claude) for 1.1 and not yet reviewed by a native Russian speaker.
+
+[huntgood."hunts.trackerframe.none"]
+name.value = "Без рамки"
+name.en = "No Frame"
+description.value = "Только сами строки, и ничего вокруг."
+description.en = "Only the lines themselves, with nothing drawn around them."
+
+[huntgood."hunts.trackerframe.inkwash"]
+name.value = "Размытые чернила"
+name.en = "Ink Wash"
+description.value = "Лист, исписанный синими чернилами. Они чуть поплыли, будто страницу задело брызгами."
+description.en = "A sheet of paper written in blue ink, the wash run a little, like a page that caught the spray."
+
+[huntgood."hunts.trackerframe.waxseal"]
+name.value = "Сургучная печать"
+name.en = "Wax Seal"
+description.value = "Пергамент с красной чертой вдоль поля и сургучной печатью в углу — будто список и правда официальный."
+description.en = "Parchment with a red rule down its margin and a wax seal pressed in the corner, as if the list were official."
+
+[huntgood."hunts.soundset.nightwatch"]
+name.value = "Ночной дозор"
+name.en = "Night Watch"
+description.value = "Низкий колокол ночного дозора, гудение фонаря и сова, на глазах у которой прошёл каждый ваш улов."
+description.en = "A low bell for the night watch, a lantern humming and an owl who has seen every catch you ever made."
+
+[huntgood."hunts.binding.pathfinder"]
+name.value = "Телячья кожа следопыта"
+name.en = "Pathfinder's Calf"
+description.value = "Мягкая телячья кожа с оттиснутой розой ветров. Достаётся рыболовам, которые прошли целый набор охот до конца."
+description.en = "Soft calfskin pressed with a compass rose. Handed to anglers who saw a whole set of hunts through to the end."
+
+[huntgood."hunts.binding.fiveseal"]
+name.value = "Печать пяти наборов"
+name.en = "Five-Set Seal"
+description.value = "Чёрная кожа с вдавленными сургучными печатями — по одной на каждый набор охот. Такую никто не подделывает."
+description.en = "Black leather with wax seals pressed into it, one for every set of hunts there is. Nobody fakes this one."
+
+[huntgood."hunts.binding.wagersilk"]
+name.value = "Парча победителя"
+name.en = "Winner's Brocade"
+description.value = "Пурпурная шёлковая парча, затканная монетами и рыбами, наискосок — красная лента. Её дают рыболовам, которые раз за разом выигрывают у заведения."
+description.en = "Purple silk brocade woven with coins and fish, a red sash across it. Given to anglers who keep winning the house’s bets."
+
+[huntgood."hunts.trackerframe.slate"]
+name.value = "Грифельная доска"
+name.en = "Chalk Slate"
+description.value = "Грифельная доска в раме, обмотанной верёвкой. Каждое утро её исписывают мелом заново, к полудню всё уже затёрто."
+description.en = "A slate in a rope-bound frame, chalked fresh each morning and smudged by noon."
+
+[huntgood."hunts.trackerframe.mapscrap"]
+name.value = "Клочок карты"
+name.en = "Map Scrap"
+description.value = "Уголок, оторванный от охотничьей карты: пунктир тропы, компас и чей-то след от кружки."
+description.en = "A corner torn off a hunting map: a dotted trail, a compass, and somebody’s coffee ring."
+
+[huntgood."hunts.trackerframe.bounty"]
+name.value = "Розыскной лист"
+name.en = "Bounty Poster"
+description.value = "Прибит на стене у пристани, края загибаются. За рыбу на нём назначена цена, и цена растёт."
+description.en = "Nailed up at the dock house, edges curling. The fish on it has a price, and the price is going up."
+
+[huntgood."hunts.trackerframe.spyglass"]
+name.value = "Ободок подзорной трубы"
+name.en = "Spyglass Rim"
+description.value = "Тёмно-синяя эмаль между двумя латунными полосами, а окуляр в углу уже смотрит на следующую охоту."
+description.en = "Navy enamel between two brass rails, the eyepiece at the corner turned toward the next hunt."
+
+[huntgood."hunts.trackerframe.wagerribbon"]
+name.value = "Лента победителя"
+name.en = "Winner's Ribbon"
+description.value = "Пурпурная шёлковая лента с золотой бахромой — для рыболовов, которые раз за разом обыгрывают заведение на его же пари."
+description.en = "A purple silk ribbon with a gold fringe, for anglers who keep beating the house at its own wagers."
+
+[huntgood."hunts.toaststyle.nightfin"]
+name.value = "Ночной прилив"
+name.en = "Nightfin Tide"
+description.value = "За мысом, где кончается свет, под полной луной идёт ночная рыба. Замрите подольше — и одна перемахнёт прямо через лунный диск."
+description.en = "Out past the headland, where the light ends, the nightfin run under a full moon. Hold still long enough and one jumps clean across it."
+
+[huntgood."hunts.toaststyle.trench"]
+name.value = "Глубокая впадина"
+name.en = "The Deep Trench"
+description.value = "Глубже, чем доходит солнце, и глубже, чем светят фонарики удильщиков. Здесь живёт что-то очень большое, и леску оно уже заметило."
+description.en = "Below where the sunlight gives up, and below where the anglerfish lanterns give up. Something very large lives down here, and it has noticed the line."
+
+[huntgood."hunts.toaststyle.study"]
+name.value = "Кабинет Ната Пэгла"
+name.en = "Nat's Study"
+description.value = "Журнал раскрыт на столе, лампа ещё горит, чернильница открыта, а над страницей в тёплом воздухе висят его лучшие мушки. Никто ни разу не застал его за работой. Но и пустым этот стол никто не видел."
+description.en = "A journal open on a desk, the lamp still lit and the ink uncapped, his best flies hanging in the warm air over the page. Nobody has ever caught him at it. Nobody has ever seen the desk empty, either."
+
+[ladder.25]
+title.value = "Гроза букмекеров"
+title.en = "Bookmaker's Bane"
+
+[ladder.50]
+title.value = "Разорение букмекеров"
+title.en = "Bookmaker's Ruin"
+
+[ladder.100]
+title.value = "Отставка букмекеров"
+title.en = "Bookmaker's Retirement"
+
+[set.home_waters]
+name.value = "Родные воды"
+name.en = "Home Waters"
+title.value = "Работник пристани"
+title.en = "Dockhand"
+note.value = "Ваши первые воды, совсем рядом с домом."
+note.en = "Your first waters, close to home."
+
+[set.round_the_clock]
+name.value = "Круглые сутки"
+name.en = "Round the Clock"
+title.value = "Страж циферблата"
+title.en = "Clockwatcher"
+
+[set.turn_of_the_year]
+name.value = "Круговорот года"
+name.en = "Turn of the Year"
+title.value = "Знаток всех сезонов"
+title.en = "All-Seasons Hand"
+
+[set.sunday_showdown]
+name.value = "Воскресная схватка"
+name.en = "Sunday Showdown"
+title.value = "Соперник в джунглях"
+title.en = "Jungle Contender"
+note.value = "Рыбомания, только для персонажей 60-го уровня."
+note.en = "The Extravaganza, for level 60 characters only."
+
+[set.camp_hours]
+name.value = "Часы в лагере"
+name.en = "Camp Hours"
+title.value = "Хранитель хижины"
+title.en = "Hut Keeper"
+
+[hunt.home_waters]
+name.value = "Родные воды"
+name.en = "Home Waters"
+note.value = "Сгодится любая рыба. Каждый с чего-то начинает, и там всегда сыро."
+note.en = "Any fish will do. Everyone starts somewhere, and it's damp."
+
+[hunt.bloated_luck]
+name.value = "Раздутая удача"
+name.en = "Bloated Luck"
+note.value = "Тяжёлые не по размеру, и внутри что-то гремит."
+note.en = "Heavy for their size, and something rattles inside."
+
+[hunt.mackerel_run]
+name.value = "Ход скумбрии"
+name.en = "Mackerel Run"
+note.value = "Скользкая, её много, и водится она у всякого берега, который стоит так называть."
+note.en = "Slippery, plentiful and found on every coast worth the name."
+
+[hunt.lantern_hours]
+name.value = "Время фонаря"
+name.en = "Lantern Hours"
+note.value = "От вечернего колокола до глубокой ночи: один фонарь и тихий берег."
+note.en = "Evening bell to the small hours: one lantern and a quiet shore."
+
+[hunt.night_run]
+name.value = "Ночной ход"
+name.en = "Night Run"
+
+[hunt.first_light]
+name.value = "С первым лучом"
+name.en = "First Light"
+note.value = "Рассвет — только начало: лосось клюёт до самого вечера."
+note.en = "Dawn is only the start: the salmon bites well into the evening."
+
+[hunt.live_wire]
+name.value = "Под напряжением"
+name.en = "Live Wire"
+
+[hunt.armoured_after_dark]
+name.value = "В броне после заката"
+name.en = "Armoured After Dark"
+
+[hunt.summers_bass]
+name.value = "Летний окунь"
+name.en = "Summer's Bass"
+
+[hunt.winters_squid]
+name.value = "Зимний кальмар"
+name.en = "Winter's Squid"
+
+[hunt.tastyfish_haul]
+name.value = "Вкусный улов"
+name.en = "Tastyfish Haul"
+
+[hunt.riggles_angelfish]
+name.value = "Рыба-ангел на весы"
+name.en = "Riggle's Angelfish"
+
+[hunt.riggles_queenfish]
+name.value = "Королева на весы"
+name.en = "Riggle's Queenfish"
+
+[hunt.riggles_racer]
+name.value = "Гонщик на весы"
+name.en = "Riggle's Racer"
+
+[hunt.rack_hour]
+name.value = "Час у вешал"
+name.en = "Rack Hour"
+
+[hunt.hut_hour]
+name.value = "Час в хижине"
+name.en = "Hut Hour"
+
+[event.alterac_dawn_trout]
+name.value = "Форель на заре"
+name.en = "Dawn Trout"
+note.value = "Холодные озёра высоко среди пиков. Пари — на форель до завтрака, а иней на леске идёт в подарок."
+note.en = "Cold lakes high among the peaks. The wager is trout before breakfast, and the frost on the line comes free."
+
+[hunt.alterac_dawn_trout_haul]
+name.value = "Студёный садок"
+name.en = "A Cold Creel"
+
+[hunt.alterac_dawn_trout_smallfish]
+name.value = "Рыбёшка пригоршнями"
+name.en = "Smallfish by the Handful"
+
+[hunt.alterac_dawn_trout_catfish]
+name.value = "Усы в талой воде"
+name.en = "Whiskers in the Snowmelt"
+
+[hunt.alterac_dawn_trout_trout]
+name.value = "До завтрака"
+name.en = "Before Breakfast"
+
+[event.azshara_lobster]
+name.value = "Омары при свете лампы"
+name.en = "Lobster by Lamplight"
+note.value = "Изломанный берег из рухнувшего камня и поблёкшего величия. Омары держатся поближе к скалам, а желтохвосты — на расстоянии."
+note.en = "A broken coast of fallen stone and faded grandeur. The lobster keep close to the rocks, and the yellowtail keep their distance."
+
+[hunt.azshara_lobster_haul]
+name.value = "Корзина с изломанного берега"
+name.en = "Broken-Coast Basket"
+
+[hunt.azshara_lobster_lobster]
+name.value = "Омары у скал"
+name.en = "Lobster by the Rocks"
+
+[hunt.azshara_lobster_yellowtail]
+name.value = "Желтохвосты поодаль"
+name.en = "Yellowtail at a Distance"
+
+[hunt.azshara_lobster_night]
+name.value = "Ближе к полуночи"
+name.en = "Toward Midnight"
+
+[event.barrens_oddities]
+name.value = "Странный улов в сумерках"
+name.en = "Oddity at Dusk"
+note.value = "Водоёмы сухих равнин подбрасывают странную рыбу. Разглядите её на закате и дважды подумайте, прежде чем готовить."
+note.en = "The pools of the dry plains turn out some strange fish. Look them over at sundown, and think twice before cooking any."
+
+[hunt.barrens_oddities_haul]
+name.value = "Дары оазиса"
+name.en = "Oasis Pickings"
+
+[hunt.barrens_oddities_snapper]
+name.value = "Луцианы в заводях"
+name.en = "Snappers in the Pools"
+
+[hunt.barrens_oddities_albacore]
+name.value = "Тунец у причалов"
+name.en = "Albacore off the Docks"
+
+[hunt.barrens_oddities_oddity]
+name.value = "Странности на закате"
+name.en = "Strange Things at Sundown"
+
+[event.burning_steppes_salmon]
+name.value = "Лосось под пеплом"
+name.en = "Salmon under Ash"
+note.value = "Чёрные холмы, пепел на воде, а под ним лосось. Захватите шляпу с широкими полями."
+note.en = "Black hills, ash on the water and salmon under it. Bring a hat with a wide brim."
+
+[hunt.burning_steppes_salmon_haul]
+name.value = "Пепельная корзина"
+name.en = "An Ashen Basket"
+
+[hunt.burning_steppes_salmon_salmon]
+name.value = "Лосось сквозь копоть"
+name.en = "Salmon through the Soot"
+
+[hunt.burning_steppes_salmon_redgill]
+name.value = "Угли и краснобородка"
+name.en = "Embers and Redgill"
+
+[hunt.burning_steppes_salmon_noon]
+name.value = "Самые жаркие часы"
+name.en = "The Hottest Hours"
+
+[event.darkshore_moonlight]
+name.value = "Групер при луне"
+name.en = "Grouper by Moonlight"
+note.value = "Длинный серый берег под старыми тёмными деревьями. Пари — на групера, как только взойдёт луна, а ночи там долгие."
+note.en = "A long grey coast under old, dark trees. The wager is grouper once the moon is up, and the nights there are long."
+
+[hunt.darkshore_moonlight_haul]
+name.value = "Садок при луне"
+name.en = "A Moonlit Keepnet"
+
+[hunt.darkshore_moonlight_snapper]
+name.value = "Луцианы под деревьями"
+name.en = "Snappers under the Trees"
+
+[hunt.darkshore_moonlight_albacore]
+name.value = "Тунец подальше от берега"
+name.en = "Albacore Further Out"
+
+[hunt.darkshore_moonlight_grouper]
+name.value = "Луна над водой"
+name.en = "Moon over the Water"
+
+[event.deadwind_pass_night]
+name.value = "Холодный перевал, долгая ночь"
+name.en = "Cold Pass, Long Night"
+note.value = "Холодный перевал, где ничего не растёт, и старая башня, что стережёт дорогу. Лосось не обращает на неё внимания."
+note.en = "A cold pass where nothing grows, and an old tower keeping watch over the road. The salmon pay it no attention."
+
+[hunt.deadwind_pass_night_haul]
+name.value = "Что-то ещё клюёт"
+name.en = "Something Still Bites"
+
+[hunt.deadwind_pass_night_salmon]
+name.value = "Белая чешуя на перевале"
+name.en = "Whitescale in the Pass"
+
+[hunt.deadwind_pass_night_tower]
+name.value = "Под старой башней"
+name.en = "Under the Old Tower"
+
+[event.duskwood_witching]
+name.value = "Колдовской час"
+name.en = "Witching Hour"
+note.value = "Медленные чёрные реки сквозь лес, где толком никогда не светает. После полуночи рыба клюёт, а всё остальное кусается."
+note.en = "Slow black rivers through woods where it never quite gets light. After midnight the fish bite, and so does everything else."
+
+[hunt.duskwood_witching_haul]
+name.value = "Корзина при фонаре"
+name.en = "Lantern-Light Basket"
+
+[hunt.duskwood_witching_catfish]
+name.value = "Усы в темноте"
+name.en = "Whiskers in the Dark"
+
+[hunt.duskwood_witching_snapper]
+name.value = "Луцианы чёрной воды"
+name.en = "Black-Water Snappers"
+
+[hunt.duskwood_witching_midnight]
+name.value = "После двенадцатого удара"
+name.en = "After the Twelfth Bell"
+
+[event.dustwallow_marsh_night]
+name.value = "Поздно на болоте"
+name.en = "Late on the Marsh"
+note.value = "Тёплый сырой берег, который гудит всю ночь. Форель в протоках, желтохвост у берега, и кто-то вечно кусает за шею."
+note.en = "A warm, wet coast that hums all night. Trout in the creeks, yellowtail off the shore, and something always biting your neck."
+
+[hunt.dustwallow_marsh_night_haul]
+name.value = "Ведро болотной воды"
+name.en = "Bog-Water Bucket"
+
+[hunt.dustwallow_marsh_night_trout]
+name.value = "Форель в камышах"
+name.en = "Trout in the Reeds"
+
+[hunt.dustwallow_marsh_night_yellowtail]
+name.value = "Желтохвост у болот"
+name.en = "Yellowtail off the Marsh"
+
+[hunt.dustwallow_marsh_night_small_hours]
+name.value = "Глухая ночь"
+name.en = "Small Hours"
+
+[event.eastern_plaguelands_night]
+name.value = "Полночь на мёртвом востоке"
+name.en = "Midnight in the Dead East"
+note.value = "Никто не рыбачит на мёртвом востоке после заката, если может без этого обойтись. Лосось уже на это рассчитывает."
+note.en = "Nobody fishes the dead east after dark if they can help it. The salmon have come to count on that."
+
+[hunt.eastern_plaguelands_night_haul]
+name.value = "Корзина смельчака"
+name.en = "A Brave Basket"
+
+[hunt.eastern_plaguelands_night_salmon]
+name.value = "Бледный лосось, тёмная река"
+name.en = "Pale Salmon, Dark River"
+
+[hunt.eastern_plaguelands_night_midnight]
+name.value = "Лосось за полночь"
+name.en = "Salmon after Midnight"
+
+[event.eastern_plaguelands_redgill]
+name.value = "Мрачные озёра востока"
+name.en = "Grim Lakes of the East"
+note.value = "Мрачные с виду и щедрые в глубине — как большинство хороших озёр и некоторые старые рыболовы."
+note.en = "Grim to look at and generous underneath, like most good lakes and some old anglers."
+
+[hunt.eastern_plaguelands_redgill_haul]
+name.value = "Щедрость в глубине"
+name.en = "Generous Underneath"
+
+[hunt.eastern_plaguelands_redgill_salmon]
+name.value = "Лосось мрачных вод"
+name.en = "Grim-Water Salmon"
+
+[hunt.eastern_plaguelands_redgill_redgill]
+name.value = "Краснобородка из мути"
+name.en = "Redgill from the Murk"
+
+[event.felwood_moonglade]
+name.value = "Гнилой лес, ясное озеро"
+name.en = "Tainted Woods, Clear Lake"
+note.value = "Больные ручьи под осквернёнными деревьями, а за ними — тихое прозрачное озеро. Краснобородки разницы, кажется, не замечают."
+note.en = "Sickly streams under the tainted trees, and a clear, quiet lake beyond them. The redgill don't seem to notice the difference."
+
+[hunt.felwood_moonglade_haul]
+name.value = "Дурная вода, добрая вода"
+name.en = "Foul Water, Fair Water"
+
+[hunt.felwood_moonglade_redgill]
+name.value = "Невозмутимая краснобородка"
+name.en = "Redgill, Unbothered"
+
+[hunt.felwood_moonglade_trout]
+name.value = "Форель ясного озера"
+name.en = "Clear-Lake Trout"
+
+[event.feralas_redgill]
+name.value = "Краснобородка под дождём"
+name.en = "Redgill in the Rain"
+note.value = "Краснобородки — вверх по рекам, желтохвосты — у побережья, и над теми и другими дождь. Лес так никогда толком и не просыхает."
+note.en = "Redgill up the rivers, yellowtail off the coast, and rain over both. The forest never quite dries."
+
+[hunt.feralas_redgill_haul]
+name.value = "Дождь в корзине"
+name.en = "Rain in the Basket"
+
+[hunt.feralas_redgill_redgill]
+name.value = "Краснобородка вверх по рекам"
+name.en = "Redgill up the Rivers"
+
+[hunt.feralas_redgill_yellowtail]
+name.value = "Желтохвост у побережья"
+name.en = "Yellowtail off the Coast"
+
+[hunt.feralas_redgill_trout]
+name.value = "Форель под пологом леса"
+name.en = "Trout under the Canopy"
+
+[event.hinterlands_coast]
+name.value = "Где холмы сходятся с морем"
+name.en = "Where the Hills Meet the Sea"
+note.value = "Дикие холмы, грифоны над головой и тихое море в самом низу. Здешняя крупная рыба стоит того, чтобы спуститься."
+note.en = "Wild hill country, gryphons overhead, and a quiet sea at the bottom of it all. The mightfish are worth the climb down."
+
+[hunt.hinterlands_coast_haul]
+name.value = "Спуск с холмов"
+name.en = "Down from the Hills"
+
+[hunt.hinterlands_coast_yellowtail]
+name.value = "Желтохвост тихого моря"
+name.en = "Quiet-Sea Yellowtail"
+
+[hunt.hinterlands_coast_mightfish]
+name.value = "Стоило спускаться"
+name.en = "Worth the Climb"
+
+[hunt.hinterlands_coast_morning]
+name.value = "Прилив позднего утра"
+name.en = "Late-Morning Tide"
+
+[event.hinterlands_redgill]
+name.value = "Холодные реки, поздние ночи"
+name.en = "Cold Rivers, Late Nights"
+note.value = "Прозрачные холодные реки среди диких холмов. Краснобородки засиживаются допоздна, так что прихватите второе одеяло."
+note.en = "Clear, cold rivers through the wild hills. The redgill keep late hours, so bring a second blanket."
+
+[hunt.hinterlands_redgill_haul]
+name.value = "Корзина с речного берега"
+name.en = "A Riverbank Basket"
+
+[hunt.hinterlands_redgill_redgill]
+name.value = "Краснобородка с холмов"
+name.en = "Hill-River Redgill"
+
+[hunt.hinterlands_redgill_trout]
+name.value = "Форель на перекатах"
+name.en = "Trout in the Riffles"
+
+[hunt.hinterlands_redgill_night]
+name.value = "Поздние часы"
+name.en = "Late Hours"
+
+[event.loch_modan_frenzy]
+name.value = "Бешеная вода"
+name.en = "Frenzy Water"
+note.value = "Широкое холодное озеро в краю дворфов, где рыба дерётся не по размеру. Время от времени с ней попадается что-нибудь получше."
+note.en = "A wide, cold lake in dwarf country, where the fish fight above their size. Now and then something finer comes up with them."
+
+[hunt.loch_modan_frenzy_haul]
+name.value = "Корзина нагорья"
+name.en = "Highland Basket"
+
+[hunt.loch_modan_frenzy_frenzy]
+name.value = "Бешеный бой"
+name.en = "Fighting Frenzy"
+
+[hunt.loch_modan_frenzy_snapper]
+name.value = "Мелководье луцианов"
+name.en = "Snapper Shallows"
+
+[hunt.loch_modan_frenzy_quality]
+name.value = "Что-нибудь получше"
+name.en = "Something Finer"
+
+[event.silithus_coast]
+name.value = "Песок до самой воды"
+name.en = "Sand to the Water's Edge"
+note.value = "Песок до самой кромки воды, а в дюнах за спиной что-то жужжит. За прибоем — честная морская рыба."
+note.en = "Sand all the way down to the water, and something buzzing in the dunes behind. Past the surf it's honest sea fish."
+
+[hunt.silithus_coast_haul]
+name.value = "Честная морская рыба"
+name.en = "Honest Sea Fish"
+
+[hunt.silithus_coast_grouper]
+name.value = "Групер за прибоем"
+name.en = "Grouper past the Surf"
+
+[hunt.silithus_coast_albacore]
+name.value = "Тунец у песков"
+name.en = "Albacore off the Sand"
+
+[hunt.silithus_coast_mackerel]
+name.value = "Скумбрия у дюн"
+name.en = "Dune-Shore Mackerel"
+
+[event.silithus_salmon]
+name.value = "Лосось в песках"
+name.en = "Salmon in the Sand"
+note.value = "Лосось с белой чешуёй так далеко на юге — сюрприз для всех, и для самого лосося тоже. Ловите, пока не померк свет."
+note.en = "Whitescale this far south is a surprise to everyone, the salmon included. Take them while the light lasts."
+
+[hunt.silithus_salmon_haul]
+name.value = "Долгий путь на юг"
+name.en = "A Long Way South"
+
+[hunt.silithus_salmon_salmon]
+name.value = "Удивлённый лосось"
+name.en = "Surprised Salmon"
+
+[hunt.silithus_salmon_blackmouth]
+name.value = "Маслянистая публика"
+name.en = "Oily Customers"
+
+[hunt.silithus_salmon_dusk]
+name.value = "Пока не померк свет"
+name.en = "While the Light Lasts"
+
+[event.stranglethorn_coast]
+name.value = "Берег джунглей"
+name.en = "Jungle Shore"
+note.value = "Тёплая вода, длинные пляжи и треска под каждым камнем. Одним глазом поглядывайте на опушку."
+note.en = "Warm water, long beaches and a cod under every rock. Keep one eye on the treeline."
+
+[hunt.stranglethorn_coast_haul]
+name.value = "Корзина в тени пальм"
+name.en = "Palm-Shade Basket"
+
+[hunt.stranglethorn_coast_cod]
+name.value = "Треска под каждым камнем"
+name.en = "A Cod under Every Rock"
+
+[hunt.stranglethorn_coast_yellowtail]
+name.value = "Желтохвост на мелководье"
+name.en = "Yellowtail in the Shallows"
+
+[hunt.stranglethorn_coast_trout]
+name.value = "Форель из джунглей"
+name.en = "Jungle River Trout"
+
+[event.tanaris_yellowtail]
+name.value = "Полдень на пустынном берегу"
+name.en = "Noon on the Desert Coast"
+note.value = "Песок до самой линии прилива и ни клочка тени. Желтохвосту жара не мешает, рыболову — может."
+note.en = "Sand to the tideline and not a scrap of shade. The yellowtail don't mind the heat; the angler might."
+
+[hunt.tanaris_yellowtail_haul]
+name.value = "Корзина на солнцепёке"
+name.en = "Sun-Baked Basket"
+
+[hunt.tanaris_yellowtail_cod]
+name.value = "Треска у скал"
+name.en = "Cod off the Rocks"
+
+[hunt.tanaris_yellowtail_yellowtail]
+name.value = "Желтохвост у линии прилива"
+name.en = "Yellowtail by the Tideline"
+
+[hunt.tanaris_yellowtail_noon]
+name.value = "Полдень без тени"
+name.en = "No Shade at Noon"
+
+[event.tirisfal_silverpine_dusk]
+name.value = "Серые воды в сумерках"
+name.en = "Grey Waters at Dusk"
+note.value = "Холодная вода под серыми северными лесами, тихо, как на погосте. Здесь никто не спешит, а рыба — меньше всех."
+note.en = "Cold water under grey northern woods, quiet as a churchyard. Nobody here is in a hurry, least of all the fish."
+
+[hunt.tirisfal_silverpine_dusk_haul]
+name.value = "Тихое ведро"
+name.en = "A Quiet Bucket"
+
+[hunt.tirisfal_silverpine_dusk_mackerel]
+name.value = "Скумбрия холодных вод"
+name.en = "Cold-Water Mackerel"
+
+[hunt.tirisfal_silverpine_dusk_smallfish]
+name.value = "Проблеск мелкой рыбёшки"
+name.en = "A Glint of Smallfish"
+
+[hunt.tirisfal_silverpine_dusk_snapper]
+name.value = "Луцианы в час фонарей"
+name.en = "Snappers at Lamplighting"
+
+[event.ungoro_redgill]
+name.value = "Сумерки в кратере"
+name.en = "Dusk in the Crater"
+note.value = "Парящие озерца на дне кратера, полные краснобородок. Из папоротников за вами всегда следит кто-то покрупнее."
+note.en = "Steaming pools at the bottom of the crater, thick with redgill. Something larger is always watching from the ferns."
+
+[hunt.ungoro_redgill_haul]
+name.value = "Корзина со дна кратера"
+name.en = "A Crater-Floor Basket"
+
+[hunt.ungoro_redgill_redgill]
+name.value = "Краснобородка тёплых вод"
+name.en = "Warm-Water Redgill"
+
+[hunt.ungoro_redgill_trout]
+name.value = "Форель парящих озёр"
+name.en = "Steam-Pool Trout"
+
+[hunt.ungoro_redgill_dusk]
+name.value = "Взгляд из папоротников"
+name.en = "Watched from the Ferns"
+
+[event.western_plaguelands_lake]
+name.value = "После полудня среди мора"
+name.en = "An Afternoon in the Blight"
+note.value = "Мёртвые поля, больное небо и озеро, полное здоровых краснобородок. Про чуму им никто не сказал."
+note.en = "Dead fields, a sick sky and a lake full of healthy redgill. Nobody has told them about the plague."
+
+[hunt.western_plaguelands_lake_haul]
+name.value = "Корзина вопреки всему"
+name.en = "A Basket Despite It All"
+
+[hunt.western_plaguelands_lake_redgill]
+name.value = "Краснобородка в добром здравии"
+name.en = "Redgill in Good Health"
+
+[hunt.western_plaguelands_lake_trout]
+name.value = "Форель среди мора"
+name.en = "Trout in the Blight"
+
+[hunt.western_plaguelands_lake_afternoon]
+name.value = "До самого вечера"
+name.en = "Long Afternoon"
+
+[event.winterspring_daylight]
+name.value = "Короткие дни в снегах"
+name.en = "Short Days in the Snow"
+note.value = "Наверху, в снегах, дни коротки, а озёра холодны. Светлое время — на воде, тёмное — у огня."
+note.en = "Up in the snow the days are short and the lakes are cold. Spend the light on the water, and the dark by a fire."
+
+[hunt.winterspring_daylight_haul]
+name.value = "Обмороженная корзина"
+name.en = "A Frostbitten Basket"
+
+[hunt.winterspring_daylight_redgill]
+name.value = "Краснобородка в снегу"
+name.en = "Redgill in the Snow"
+
+[hunt.winterspring_daylight_morning]
+name.value = "Солнце на снегу"
+name.en = "Sun on the Snow"
+
+[event.winterspring_salmon]
+name.value = "Лосось под снегом"
+name.en = "Snowbound Salmon"
+note.value = "Холодная вода, белый лосось, и темнеет по вечерам рано. Осторожнее со льдом по дороге домой."
+note.en = "Cold water, white salmon and the evenings drawing in early. Mind the ice on the way home."
+
+[hunt.winterspring_salmon_haul]
+name.value = "Лёд на леске"
+name.en = "Ice on the Line"
+
+[hunt.winterspring_salmon_salmon]
+name.value = "Белая рыба, белые холмы"
+name.en = "White Fish, White Hills"
+
+[hunt.winterspring_salmon_evening]
+name.value = "Ранние сумерки"
+name.en = "Evenings Drawing In"
