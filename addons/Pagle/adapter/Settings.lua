@@ -67,6 +67,9 @@ local GAP, CHECK_W = 8, 26
 -- Where a row's button ends, and its least width: a longer caption widens it leftwards, measured, so its words stay
 -- on it (SET-R11).
 local BUTTON_RIGHT, BUTTON_W, BUTTON_PAD = 540, 160, 24
+-- Where a native row's control starts, from the row's top centre, and a native button's width: a Module's button row
+-- with no caption, drawn by Core, starts there and is never narrower.
+local CONTROL_X, NATIVE_BUTTON_W = -40, 200
 
 -- The status list's version and state columns (SET-R11).
 local VERSION_X, STATE_X = 180, 250
@@ -88,7 +91,6 @@ local function widgets(frame)
 		own.version:SetWordWrap(false)
 		own.state = fontString(frame, STATE_X)
 		own.button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate") --[[@as Button]]
-		own.button:SetPoint("TOPRIGHT", frame, "TOPLEFT", BUTTON_RIGHT, 3)
 		own.button:SetSize(BUTTON_W, 22)
 		-- Getting started's checkbox and line (SET-R10 rows 4–6)
 		own.check = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate") --[[@as CheckButton]]
@@ -188,7 +190,10 @@ local function rowButton(own, caption, onClick)
 	local button = own.button
 	button:SetText(caption)
 	local width = math.max(BUTTON_W, math.ceil(button:GetTextWidth()) + BUTTON_PAD)
+	button:ClearAllPoints()
+	button:SetPoint("TOPRIGHT", button:GetParent(), "TOPLEFT", BUTTON_RIGHT, 3)
 	button:SetWidth(width)
+	button:SetEnabled(true)
 	button:SetScript("OnClick", onClick)
 	button:Show()
 	return BUTTON_RIGHT - width
@@ -533,6 +538,50 @@ local function valueSetting(page, variable, varType, setting)
 	)
 end
 
+-- A Module's button row with no caption (SET-R2): its label on the button and no label beside it, on Core's own row,
+-- the button as wide as its words, measured, from where a native row's control starts. A native button is a fixed 200
+-- wide, and a long label ran past both its sides ("Guardar lo que llevo como conjunto de pesca"). It reads `isEnabled`
+-- each time it is drawn, as a keybinding row does, and is found by its label.
+---@param setting PagleSetting
+---@param onClick fun()
+---@return SettingsInitializer
+local function labelButtonRow(setting, onClick)
+	local function draw(frame)
+		local own = widgets(frame)
+		local button = own.button
+		button:SetText(setting.label)
+		button:ClearAllPoints()
+		button:SetPoint("TOPLEFT", frame, "TOP", CONTROL_X, 3)
+		button:SetWidth(math.max(NATIVE_BUTTON_W, math.ceil(button:GetTextWidth()) + BUTTON_PAD))
+		button:SetEnabled(setting.isEnabled == nil or setting.isEnabled() ~= false)
+		button:SetScript("OnClick", onClick)
+		button:Show()
+		if setting.tooltip then
+			frame:SetScript("OnEnter", function(row)
+				GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+				GameTooltip:SetText(setting.label)
+				GameTooltip:AddLine(setting.tooltip, 1, 1, 1, true)
+				GameTooltip:Show()
+			end)
+			frame:SetScript("OnLeave", function()
+				GameTooltip:Hide()
+			end)
+		end
+	end
+	-- Named by its label, as a native row is, for the tree's readers; found by it in the search.
+	local initializer = Settings.CreateElementInitializer(ROW_TEMPLATE, { draw = draw, name = setting.label })
+	initializer:AddSearchTags(setting.label)
+	return initializer
+end
+
+--- Whether Core draws a Module row on its own frames rather than natively, so it reads `isEnabled` as it draws: a
+--- keybinding row (SET-R20), and a button row with no caption.
+---@param setting PagleSetting
+---@return boolean
+local function drawnByCore(setting)
+	return setting.kind == "keybinding" or (setting.kind == "button" and setting.caption == nil)
+end
+
 -- One Module row as an initializer on `page`: a native one (SET-R5), or Core's own for a keybinding (SET-R20).
 ---@param page SettingsCategory
 ---@param layout SettingsLayout
@@ -579,7 +628,7 @@ local function moduleRow(page, layout, setting, variable, indented)
 			initializer =
 				CreateSettingsButtonInitializer(setting.label, setting.caption, onClick, setting.tooltip, true)
 		else
-			initializer = CreateSettingsButtonInitializer("", setting.label, onClick, setting.tooltip, true)
+			initializer = labelButtonRow(setting, onClick)
 		end
 	elseif kind == "keybinding" then
 		if not C_KeyBindings.GetBindingIndex(setting.binding) then
@@ -618,8 +667,8 @@ local function buildPage(topic, page, layout, entries)
 				if parent then
 					initializer:SetParentInitializer(parent)
 				end
-				-- A keybinding row reads its isEnabled as it draws (adapter/KeyBindingRow.lua).
-				if setting.isEnabled and setting.kind ~= "keybinding" then
+				-- A row Core draws reads its isEnabled as it draws (adapter/KeyBindingRow.lua, labelButtonRow).
+				if setting.isEnabled and not drawnByCore(setting) then
 					initializer:AddModifyPredicate(setting.isEnabled)
 				end
 			end
