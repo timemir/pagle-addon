@@ -13,4 +13,8 @@ if type(core) == "table" and type(core.GetLanguage) == "function" then
 	if type(core.ApplyPseudoLocale) == "function" then
 		core.ApplyPseudoLocale(ns.L)
 	end
+	-- What the client's own faces lack takes a stand-in, on a client whose faces they are (CORE-R9, 1.1.1).
+	if type(core.ApplyClientGlyphs) == "function" then
+		core.ApplyClientGlyphs(ns.L)
+	end
 end

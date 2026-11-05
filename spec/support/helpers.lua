@@ -296,22 +296,24 @@ end
 --- Its catalogue is the shipped one with nothing confirmed (DATA-R56), so an imported Field report confirming the
 --- fixture spot (Darkshore, The Long Wash, Oily Blackmouth) changes no spec. ADDON_LOADED, where Core builds its
 --- catalogue (LOG-R1), fires once that's done.
+--- `globals`, if given, are more of the client's globals (a `GetLocale` for another client's language).
 ---@param entries table?
 ---@param saved table?
+---@param globals table?
 ---@return LoadedAddon
-function loadCore(entries, saved)
+function loadCore(entries, saved, globals)
 	local clock
-	local loaded = loadAddon(
-		"Pagle",
-		foreverWith({
-			PagleLog = entries and entries.format and entries or savedLog(entries),
-			PagleDB = saved,
-			GetServerTime = function()
-				return SERVER_TIME + math.floor(clock and clock() or 0)
-			end,
-		}),
-		{ holdAddonLoaded = true }
-	)
+	local extra = {
+		PagleLog = entries and entries.format and entries or savedLog(entries),
+		PagleDB = saved,
+		GetServerTime = function()
+			return SERVER_TIME + math.floor(clock and clock() or 0)
+		end,
+	}
+	for key, value in pairs(globals or {}) do
+		extra[key] = value
+	end
+	local loaded = loadAddon("Pagle", foreverWith(extra), { holdAddonLoaded = true })
 	clock = loaded.client.time
 	unconfirmed(loaded.ns.catalogue)
 	loaded.client.fire("ADDON_LOADED", "Pagle")
