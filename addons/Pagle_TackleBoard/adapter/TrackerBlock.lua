@@ -207,7 +207,10 @@ ns.TRACKER_STYLES = {
 	}),
 	embers = kitStyle("embers", {
 		sprite = "frame-embers",
-		insets = { left = 16, right = 16, top = 14, foot = 22 },
+		-- goods.json's right inset is 16, but the glowing crack down its top right corner (from 243 of the art's 262
+		-- across, 68 down, in the middle that stretches) then ran under the header's chevron and the first goals'
+		-- counts: the frame reaches 28 past the words, so the crack, stretched with it, starts 6 clear of them
+		insets = { left = 16, right = 28, top = 14, foot = 22 },
 		slice = { top = 16, foot = 30, mode = "stretch" },
 		accent = "FF9A40",
 	}),

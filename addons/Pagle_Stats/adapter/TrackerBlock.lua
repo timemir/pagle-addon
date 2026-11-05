@@ -76,6 +76,9 @@ ns.TRACKER_INKS = {
 ---@field right number
 ---@field top number
 ---@field foot number          -- the room under the last line
+---@field clear number?        -- how far down the frame's corner ornament reaches: the lines under the header start
+--- under it
+---@field headRight number?    -- where the header's right text ends, clear of that ornament; `right` without one
 ---@field caps boolean         -- "Stats" in small caps
 ---@field shade boolean        -- the native look's fading shade behind each line
 ---@field paper boolean        -- band dots in ink on paper
@@ -114,14 +117,18 @@ end
 -- A Curio Shop expansion frame (goods.json): its sprite in TrackerFrames2, 262 wide; the words `insets` (left, right,
 -- top, foot) in from its edges; its three-slice's fixed top and foot, and its tiled middle's period (nil: stretched);
 -- its inks; and the type of the papers like it, `pale` (the Logbook's, dark ink with band dots in ink) or dark (the
--- Brass plate's, bright words with a shadow).
+-- Brass plate's, bright words with a shadow). A frame with an ornament at its top right, beside the header, gives
+-- `ornament`: its left edge and its foot. The header's right text then ends 6 short of it, and the lines start under
+-- it, less the 3 units a line's words sit below its top, so it is never drawn over a count, and take the frame's width
+-- to the right inset below it (as Hunts' tracker frames, HNT-R123).
 ---@param sprite string
 ---@param insets number[]
 ---@param slice number[]
 ---@param ink StatsTrackerInks
 ---@param pale boolean
+---@param ornament { left: number, foot: number }?
 ---@return StatsTrackerFrameLook
-local function kitLook(sprite, insets, slice, ink, pale)
+local function kitLook(sprite, insets, slice, ink, pale, ornament)
 	local width = 262
 	return {
 		frame = "TrackerFrames2",
@@ -134,6 +141,8 @@ local function kitLook(sprite, insets, slice, ink, pale)
 		right = width - insets[2],
 		top = insets[3],
 		foot = insets[4],
+		clear = ornament and ornament.foot - 3,
+		headRight = ornament and ornament.left - 6,
 		caps = pale,
 		shade = false,
 		paper = pale,
@@ -234,13 +243,16 @@ ns.TRACKER_LOOKS = {
 		kitInks("5a2a0a", "2a1a0a", "6a5030", "a8501a"),
 		true
 	),
-	-- A star map under brass rings, the rings over its top right.
+	-- A star map under brass rings, the rings over its top right: from 195 across and down to 73 (TrackerFrames2).
+	-- goods.json kept 60 clear at the right all the way down for them, and the rings' left edge still reached 7 under
+	-- the header's right text and the first count.
 	astrolabe = kitLook(
 		"frame-astrolabe",
-		{ 16, 60, 16, 16 },
+		{ 16, 16, 16, 16 },
 		{ 68, 20 },
 		kitInks("f0cd6a", "eef0ff", "a8b0d8", "f0cd6a"),
-		false
+		false,
+		{ left = 195, foot = 73 }
 	),
 }
 local LOOKS = ns.TRACKER_LOOKS
@@ -334,7 +346,7 @@ local function layOut(row, line, look)
 		text:SetPoint("TOPLEFT", x, -(look.caps and 7 or 5))
 		text:SetText(look.caps and ns.BookSmallCaps(line.text) or line.text)
 		setFont(count, look.em, ink.right)
-		count:SetPoint("TOPRIGHT", row, "TOPLEFT", right, -6)
+		count:SetPoint("TOPRIGHT", row, "TOPLEFT", look.headRight or right, -6)
 		count:SetText(line.right)
 		count:SetShown(line.right ~= nil)
 		return HEADER_HEIGHT
@@ -390,6 +402,10 @@ function ns.NewTrackerBlock(parent)
 			if not row then
 				row = newRow(block)
 				block.rows[i] = row
+			end
+			-- the lines under the header start under the frame's corner ornament (look.clear)
+			if line.kind ~= "header" and look.clear then
+				top = math.max(top, look.clear)
 			end
 			local height = layOut(row, line, look)
 			row:ClearAllPoints()
