@@ -73,6 +73,44 @@ local function click(fieldFrame, text)
 	control:Click()
 end
 
+describe("the binding field's words in a longer language (ONB-R40)", function()
+	---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+	local bounds = dofile("spec/support/bounds.lua")
+
+	-- Where a font string starts across the field, from its one anchor (its left, or its right less its width).
+	local function leftOf(fontString)
+		local point = fontString.points[1]
+		if point[1]:find("RIGHT") then
+			return point[4] - fontString.width
+		elseif point[1] == "CENTER" or point[1] == "TOP" then
+			return point[4] - fontString.width / 2
+		end
+		return point[4]
+	end
+
+	it("keeps its label, the dashed cap's words and the note apart, each in its own room", function()
+		local loaded, page = onPage()
+		local L = loaded.ns.L
+		L.GUIDE_BIND_CLICK = "Щёлкните, чтобы назначить клавишу"
+		L.GUIDE_BIND_DEFAULT =
+			"по умолчанию: ничего не назначено, клавишу можно выбрать"
+		local swap = loaded.ns.NewGuideBindingField(
+			page,
+			"PAGLE_SWAP_GEAR",
+			"Переодеться в рыбацкую одежду"
+		)
+
+		local label, waiting, note = swap.label, swap.waitWords, swap.note
+		-- the label ends 12 before the cap; the cap's words keep 8 inside its 128; the note starts 12 after it
+		assert.is_true(13 + label.width <= swap.capX - 12)
+		assert.are.equal(128 - 16, waiting.width)
+		assert.is_true(leftOf(waiting) >= swap.capX + 8 - 0.01)
+		assert.is_true(leftOf(waiting) + waiting.width <= swap.capX + 128 - 8 + 0.01)
+		assert.is_true(leftOf(note) >= swap.capX + 128 + 12 - 0.01)
+		assert.are.same({}, bounds.overflows(swap))
+	end)
+end)
+
 describe("the binding field's states (ONB-R40)", function()
 	it("is the field's size, and reads Not bound: its label, a dashed cap and the default", function()
 		local _, fishing = field()
