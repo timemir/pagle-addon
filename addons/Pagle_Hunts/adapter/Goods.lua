@@ -569,7 +569,8 @@ local function fitSecond(line, text, sub, room)
 	count:SetTextColor(sub[3][1], sub[3][2], sub[3][3])
 	count:SetText(text:sub(at))
 	count:SetWidth(0)
-	local countWidth = labelShare(room, whole + 1, count:GetStringWidth() + 1)
+	local countWhole = count:GetStringWidth() + 1
+	local countWidth = labelShare(room, whole - countWhole + 2, countWhole)
 	count:SetWidth(math.max(1, countWidth))
 	line.second:SetWidth(math.max(1, room - countWidth))
 end
