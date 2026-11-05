@@ -1,5 +1,29 @@
 # Pagle
 
+## 1.1.1 (2026-11-06)
+
+Pagle speaks German, and its pages fit longer languages.
+
+### Added
+
+- Pagle in German (Deutsch). Choose it under Language in Pagle's settings; a `/reload` applies it. "Game default" follows your game client, so a German client starts in German. The translation was drafted by machine and is waiting for a native speaker's review. Spotted something that reads wrong? Tell us on GitHub; corrections are welcome. (#565)
+
+### Fixed
+
+- In Spanish, Russian and German, text in the Field guide, the first-look notes, the settings, the Field report and Export windows, the Curio Shop, the Tackle Board, the Fish Journal, the Stats book and the Hunts board no longer runs into the next line, past its frame or under a button. A long line is set a little smaller, then wrapped or ended with "…". (#563, #564, #566, #570, #571)
+- The Hunts tracker keeps a line's count readable at the right when the line is too long, and a run's line goes on to a second line instead of being cut. The Wagers pay box, ladder and timeline make room for their numbers, and the now-line on the timeline passes under the headings instead of through them. (#566, #570)
+- The ornaments of the Hunts, Stats and Tackle Board tracker frames (the compass, orb, coin, astrolabe and embers) no longer sit on the tracker's words. (#568, #570)
+- Book covers whose leather has a pattern, such as Pathfinder's Calf and Winner's Brocade, no longer run it through the words along the top of the book. (#568)
+- An accent on a capital at the top of a book page, such as the Ä of "GEWÄSSER", is no longer cut off. (#571)
+- First-look notes no longer cover one another, the window's close and help buttons, the coach bar or a pinned Expedition, and their rings sit beside the words they point at, not on them. The coach bar sits below a book's ribbons. (#564, #568, #571)
+- The Fish Journal's pages show their scrollbar when a page is longer than the book. (#563)
+- Pagle's menu opens from the minimap icon when EllesmereUI or another add-on gathers the icon into a panel of its own. Before, the menu closed before you could click an entry. (#569)
+- On a Russian, Korean or Chinese game client, Pagle in English, Spanish or German no longer draws boxes where the client's fonts lack a character, and German quotation marks read as quotation marks on a Chinese client. A client font that is missing falls back to another of that client's fonts instead of one without its script. (#562, #568)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.1.0 (2026-11-05)
 
 Pagle speaks Spanish and Russian.
