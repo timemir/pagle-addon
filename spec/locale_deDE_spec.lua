@@ -4,6 +4,12 @@
 -- Locale it is offered on every client, and Game default applies it on a deDE client.
 
 local TRANSLATED = { key = "CARD_CASTS", english = "Casts", german = "Würfe" }
+-- A Ledger Lore key (DATA-R104), in English and in the shipped Lore.deDE.lua.
+local LORE = {
+	key = "species.6362.blurb",
+	english = "Stubborn on the line, sweet on the plate.",
+	german = "Stur an der Schnur, süß auf dem Teller.",
+}
 local CRUMB = "Der Angler" -- the Ledger's ANGLER_CRUMB in German
 
 -- The shipped Core locale file, listed since the maintainer listed it for 1.1.1; `action` gets its path.
@@ -123,6 +129,34 @@ describe("deDE as shipped, listed", function()
 	end)
 end)
 
+describe("deDE's Lore as shipped", function()
+	it("registers a Module's Lore beside its interface text, and applies both", function()
+		local loaded = loadAddon("Pagle_Ledger", FOREVER_GLOBALS)
+		local L = loaded.ns.L
+		assert.are.equal(LORE.english, L[LORE.key])
+
+		loaded.ns.ApplyLocale("deDE")
+
+		assert.are.equal(LORE.german, L[LORE.key])
+		assert.are.equal(CRUMB, L.ANGLER_CRUMB)
+	end)
+
+	it("translates every Lore key English has, in each addon with Lore", function()
+		for _, addon in ipairs({ "Pagle", "Pagle_Hunts", "Pagle_Ledger", "Pagle_Stats", "Pagle_TackleBoard" }) do
+			local english, german = {}, {}
+			for _, pair in ipairs({ { "data/Lore.lua", english }, { "data/Lore.deDE.lua", german } }) do
+				for key in readFile("addons/" .. addon .. "/" .. pair[1]):gmatch('\n\t*L%["([^"]+)"%] = ') do
+					pair[2][key] = true
+				end
+			end
+			assert(next(english) ~= nil, addon)
+			for key in pairs(english) do
+				assert(german[key], addon .. " " .. key)
+			end
+		end
+	end)
+end)
+
 describe("deDE listed, as shipped", function()
 	-- Core over these SavedVariables on a client of `client`, with the shipped locale/deDE.lua; the Ledger loads after
 	-- it, as the client loads a Module, following Core's choice.
@@ -173,11 +207,12 @@ describe("deDE listed, as shipped", function()
 		end
 	)
 
-	it("makes a Module follow Core: its own German", function()
+	it("makes a Module follow Core: its own German, with the Lore beside it", function()
 		withListedCopy(function(path)
 			local loaded = login(path, "deDE", "deDE")
 
 			assert.are.equal(CRUMB, loaded.namespaces.Pagle_Ledger.L.ANGLER_CRUMB)
+			assert.are.equal(LORE.german, loaded.namespaces.Pagle_Ledger.L[LORE.key])
 			assert.are.same({}, loaded.client.errors)
 		end)
 	end)

@@ -6,6 +6,7 @@
 	here and none in the TOC. -->
 	<Script file="Registry.lua"/>
 	<Script file="deDE.lua"/>
+	<Script file="..\data\Lore.deDE.lua"/>
 	<Script file="esES.lua"/>
 	<Script file="..\data\Lore.esES.lua"/>
 	<Script file="ruRU.lua"/>

@@ -1,0 +1,2978 @@
+# Core's lore in German (deDE), over data/lore/core.toml (DATA-R113, DATA-R114).
+# Machine-drafted: written by an AI model (Claude) for 1.1.1 and not yet reviewed by a native German speaker.
+
+[good."core.toaststyle.page"]
+name.value = "Abgerissene Seite"
+name.en = "Torn Page"
+description.value = "Eine frische Seite, aus dem Logbuch gerissen und an einen Lederrücken geheftet. Messingbeschlag, rote Tinte."
+description.en = "A fresh page torn from the logbook and pinned to a leather spine. Brass trim, red ink."
+
+[good."core.toaststyle.ripple"]
+name.value = "Wellenringe"
+name.en = "Ripple"
+description.value = "Blaues Leder und Silberbeschlag, und über die Seite ziehen feine Ringe, als hätte eben etwas gebissen."
+description.en = "Blue leather and silver trim, with faint rings spreading across the page as if something just bit."
+
+[good."core.toaststyle.lanternglow"]
+name.value = "Laternenschein"
+name.en = "Lantern Glow"
+description.value = "Eine warme Lampe, die hinter jedem Fang leuchtet, für Angler, die bis nach Einbruch der Dunkelheit draußen bleiben."
+description.en = "A warm lamp glowing behind each catch, for anglers who stay out past dark."
+
+[good."core.soundset.driftwood"]
+name.value = "Treibholz"
+name.en = "Driftwood"
+description.value = "Sanftes Klopfen von Holz, wie ein Rumpf, der gegen den Steg stößt."
+description.en = "Soft wooden knocks, like a hull bumping the jetty."
+
+[good."core.soundset.gilded"]
+name.value = "Vergoldet"
+name.en = "Gilded"
+description.value = "Kleine, helle Glöckchen. Etwas zu feierlich für eine Makrele, und doch kein bisschen fehl am Platz."
+description.en = "Small, bright bells. A touch grand for a mackerel, and none the worse for it."
+
+[good."core.crest.plain"]
+name.value = "Schlicht"
+name.en = "Plain"
+description.value = "Kein Wappen, nur der Name des Besitzers. Viele gute Angler wollten nie mehr."
+description.en = "No emblem, only the owner's name. Plenty of fine anglers never wanted more."
+
+[good."core.toaststyle.ship"]
+name.value = "Schiffslogbuch"
+name.en = "Ship's Log"
+description.value = "Eine Seite aus dem Logbuch des Schiffs, an einen Rücken aus Segeltuch gezurrt. Gezeitenspalten in Marineblau liniert, ein Anker am Rand."
+description.en = "A page from the ship’s log, lashed to a sailcloth spine. Tide columns ruled in navy, an anchor in the margin."
+
+[good."core.toaststyle.birch"]
+name.value = "Birkenrolle"
+name.en = "Birch Scroll"
+description.value = "Auf einen Streifen geschälter Rinde geschrieben und mit Bindfaden verschnürt. Die Tinte zieht ein und bleibt."
+description.en = "Written on a strip of peeled bark and tied with twine. The ink sinks in and stays."
+
+[good."core.toaststyle.tidepool"]
+name.value = "Gezeitentümpel"
+name.en = "Tidepool"
+description.value = "Eine Seite, die ins Wasser fiel und wieder herauskam. Sand im Falz, eine Muschel zurückgelassen."
+description.en = "A page that went in the water and came back out. Sand in the fold, a shell left behind."
+
+[good."core.toaststyle.chart"]
+name.value = "Seekarte"
+name.en = "Sea Chart"
+description.value = "Aus einer Karte gerissen, die niemand hätte verkaufen dürfen. Lotungen, Kurslinien und eine Windrose, die noch immer nach Norden zeigt."
+description.en = "Torn from a chart nobody should have sold. Soundings, rhumb lines and a compass rose that still points north."
+
+[good."core.toaststyle.frost"]
+name.value = "Frostbiss"
+name.en = "Frostbitten"
+description.value = "Über Nacht auf dem Eis liegen gelassen. Der Raureif wuchs von den Ecken herein, als die Tinte noch nass war."
+description.en = "Left out overnight on the ice. The rime grew in from the corners while the ink was still wet."
+
+[good."core.toaststyle.goblin"]
+name.value = "Goblin-Ticker"
+name.en = "Goblin Ticker"
+description.value = "Gedruckt auf einem Ticker, der nie stillsteht. Die Nieten sind tragend. Niemand weiß, was das Zahnrad tut."
+description.en = "Printed on a ticker that never stops. The rivets are load-bearing. Nobody knows what the gear does."
+
+[good."core.toaststyle.kelp"]
+name.value = "Tang & Perle"
+name.en = "Kelp & Pearl"
+description.value = "Ein Rücken, in Tang gewickelt und mit Perlen besetzt, die Seite glänzend wie das Innere einer Muschel."
+description.en = "A spine wrapped in kelp and studded with pearls, the page shining like the inside of a shell."
+
+[good."core.toaststyle.moon"]
+name.value = "Mondpergament"
+name.en = "Moonlit Vellum"
+description.value = "Nachtblaues Pergament, mit Silber beschrieben, für die Fänge, die nach den Laternen hereinkommen."
+description.en = "Night-blue vellum written in silver, for the catches that come in after the lanterns."
+
+[good."core.toaststyle.leaf"]
+name.value = "Gepresstes Blatt"
+name.en = "Pressed Leaf"
+description.value = "Ein großes Blatt, flach gepresst zwischen zwei schweren Büchern und golden getrocknet. Die Adern ziehen die Linien."
+description.en = "One great leaf, pressed flat between two heavy books and dried gold. The veins do the ruling."
+
+[good."core.toaststyle.bottle"]
+name.value = "Treibglasflasche"
+name.en = "Driftglass Bottle"
+description.value = "Aufgerollt, verkorkt und der Flut übergeben. Sie kam mit einem besseren Fang zurück, als sie mitgenommen hatte."
+description.en = "Rolled up, corked and given to the tide. It washed back with a better catch than it left with."
+
+[good."core.toaststyle.rune"]
+name.value = "Runenplatte"
+name.en = "Rune-Plate"
+description.value = "Gar kein Papier: eine Bronzeplatte, der Fang eingehämmert und die Runen ringsum geschnitten, damit alles ehrlich bleibt."
+description.en = "Not paper at all: a bronze plate, the catch hammered in and the runes cut round it to keep it honest."
+
+[good."core.toaststyle.folio"]
+name.value = "Illuminiertes Folio"
+name.en = "Illuminated Folio"
+description.value = "Blattgold, Lapislazuli und Zinnober, auf Pergament gelegt von einem Schreiber mit zu viel Zeit und zu wenig Fisch."
+description.en = "Gold leaf, lapis and vermilion, laid on vellum by a scribe with too much time and not enough fish."
+
+[good."core.soundset.rain"]
+name.value = "Regen auf dem See"
+name.en = "Rain on the Lake"
+description.value = "Tropfen, die einer nach dem anderen auf stilles Wasser fallen, und dahinter das leise Rauschen des Regens."
+description.en = "Drops landing on still water, one after another, and the faint hush of rain behind them."
+
+[good."core.soundset.marimba"]
+name.value = "Marimba-Ufer"
+name.en = "Marimba Shore"
+description.value = "Warme Holzstäbe, rasch die Tonleiter hinaufgerollt wie eine auflaufende Welle."
+description.en = "Warm wooden bars, rolled quickly up the scale like a wave coming in."
+
+[good."core.soundset.shipbell"]
+name.value = "Schiffsglocke"
+name.en = "Ship's Bell"
+description.value = "Die Messingglocke am Mast, für den Fang geläutet, und darunter knarren Tau und Planken."
+description.en = "The brass bell on the mast, rung for the catch, with the rope and timbers creaking under it."
+
+[good."core.soundset.squeaky"]
+name.value = "Quietschig"
+name.en = "Squeaky"
+description.value = "Eine Gummiente mit großen Ansichten über deinen Fang. Zweimal quietschen, einmal platschen, keine Reue."
+description.en = "A rubber duck with big opinions about your catch. Two squeaks, one splash, no regrets."
+
+[good."core.soundset.bubbleworks"]
+name.value = "Blasenwerk"
+name.en = "Bubbleworks"
+description.value = "Große runde Blasen, die aus der Tiefe aufsteigen, und irgendwo weit draußen sagt ein sehr freundlicher Wal Hallo."
+description.en = "Big round bubbles popping up from the deep, and somewhere far off a very friendly whale saying hello."
+
+[good."core.soundset.kalimba"]
+name.value = "Kalimba-Bach"
+name.en = "Kalimba Creek"
+description.value = "Ein Daumenklavier an fließendem Wasser, zwei Töne und ein leises Schnarren, als hätte der Bach sie gezupft."
+description.en = "A thumb piano by running water, two notes and a little buzz, as if the creek plucked them."
+
+[good."core.soundset.musicbox"]
+name.value = "Spieldose"
+name.en = "Music Box"
+description.value = "Eine winzige Aufziehmelodie aus einer Dose mit einem Fisch auf dem Deckel. Zwei Drehungen am Schlüssel, nicht mehr."
+description.en = "A tiny wind-up tune from a box with a fish painted on the lid. Two turns of the key, no more."
+
+[good."core.soundset.glass"]
+name.value = "Glasschwimmer"
+name.en = "Glass Floats"
+description.value = "Grüne Glasschwimmer, die in einem Netz aneinanderstoßen, und Blasen, die an ihnen vorbeisteigen."
+description.en = "Green glass floats knocking together on a net, with bubbles rising past them."
+
+[good."core.soundset.steelpan"]
+name.value = "Steeldrum-Lagune"
+name.en = "Steel Pan Lagoon"
+description.value = "Helle Steeldrums aus einer warmen Lagune, zwei Töne, die klingen, als wäre die Flut auf deiner Seite."
+description.en = "Bright steel drums from a warm lagoon, two notes that sound like the tide is on your side."
+
+[good."core.soundset.dulcimer"]
+name.value = "Tavernen-Hackbrett"
+name.en = "Tavern Dulcimer"
+description.value = "Ein Hackbrett aus der Ecke einer Hafentaverne, schnell und hell angeschlagen."
+description.en = "A hammered dulcimer from the corner of a dockside tavern, struck quick and bright."
+
+[good."core.soundset.goblintill"]
+name.value = "Goblinkasse"
+name.en = "Goblin Till"
+description.value = "Die Registrierkasse eines Goblins schlägt an wie ein Hauptgewinn, überall Münzen, und der Besitzer lacht darüber. Kein Umtausch."
+description.en = "A goblin's cash register going off like a jackpot, coins everywhere, and the owner laughing about it. No refunds."
+
+[good."core.soundset.kazoo"]
+name.value = "Kazoo-Parade"
+name.en = "Kazoo Parade"
+description.value = "Ein Kazoo, eine Lotusflöte und eine Partytröte ziehen durch den Hafen, als wäre Feiertag. Jetzt ist einer."
+description.en = "A kazoo, a slide whistle and a party horn marching through the harbour as if it were a holiday. It is now."
+
+[good."core.soundset.arcade"]
+name.value = "Spielautomat"
+name.en = "Arcade Cabinet"
+description.value = "Münzpiepsen und eine Siegesmelodie vom Automaten hinten in der Taverne. Einen Fisch einwerfen, um fortzufahren."
+description.en = "Coin blips and a level-up jingle from the cabinet in the back of the tavern. Insert one fish to continue."
+
+[good."core.soundset.boing"]
+name.value = "Boing!"
+name.en = "Boing!"
+description.value = "Eine Feder, ein Klatschen und ein Platschen, in welcher Reihenfolge der Fisch auch will. Niemand kommt zu Schaden."
+description.en = "A spring, a slap and a splash, in whatever order the fish decides. Nobody is hurt."
+
+[good."core.soundset.slime"]
+name.value = "Schleimzeit"
+name.en = "Slime Time"
+description.value = "Etwas Grünes, Wabbeliges freut sich über deinen Fang und schmatzt zustimmend."
+description.en = "Something green and wobbly is delighted about your catch and squelches its approval."
+
+[good."core.soundset.frost"]
+name.value = "Frostwindspiel"
+name.en = "Frost Chimes"
+description.value = "Eiszapfen, die im kalten Wind aneinanderklingen und noch lange nachklingen, wenn sie längst stillhängen."
+description.en = "Icicles chiming against one another in a cold wind, ringing long after they stop moving."
+
+[good."core.soundset.harp"]
+name.value = "Harfe der Lichtung"
+name.en = "Harp of the Glade"
+description.value = "Eine Harfe auf einer Waldlichtung, ein kurzer Strich über die Saiten, und die Blätter antworten."
+description.en = "A harp in a forest glade, a short sweep of strings and the leaves answering."
+
+[good."core.soundset.gizmo"]
+name.value = "Gnomischer Apparat"
+name.en = "Gnomish Gizmo"
+description.value = "Uhrwerkticken, eine Feder, die nachgibt, und zwei fröhliche Pieptöne. Er funktioniert ziemlich sicher."
+description.en = "Clockwork ticking, a spring letting go and two cheerful bleeps. It almost certainly works."
+
+[good."core.soundset.mrglglgl"]
+name.value = "Mrglglgl"
+name.en = "Mrglglgl"
+description.value = "Ein Murloc hat deinen Fang entdeckt und hat eine Meinung dazu. Mrgl! Mrglglgl!"
+description.en = "A murloc has spotted your catch and has opinions about it. Mrgl! Mrglglgl!"
+
+[good."core.soundset.parrot"]
+name.value = "Piratenpapagei"
+name.en = "Pirate Parrot"
+description.value = "Ein Papagei vom Hafen, eine Schiffskanone und eine Glocke. Der Papagei verkündet, die Piraten jubeln."
+description.en = "A parrot off the docks, a ship's cannon and a bell. The parrot announces, the pirates cheer."
+
+[good."core.soundset.laser"]
+name.value = "Gnomischer Laser"
+name.en = "Gnomish Laser"
+description.value = "Ein Gnomengerät, das zischt, wackelt und summt und mit einem fröhlichen Ding endet. Keine Waffe, vermutlich."
+description.en = "A gnome gadget that zaps, wobbles and hums, then finishes with a cheerful ding. Not a weapon, probably."
+
+[good."core.soundset.silithid"]
+name.value = "Silithidenschwarm"
+name.en = "Silithid Swarm"
+description.value = "Ein Schwarm Silithidenwespen schwirrt an deinem Fang vorbei, klickend und kreischend. Finger im Boot lassen."
+description.en = "A swarm of silithid wasps buzzing past your catch, clicking and shrieking. Keep your fingers in the boat."
+
+[good."core.soundset.succubus"]
+name.value = "Flüstern der Sukkubus"
+name.en = "Succubus' Whisper"
+description.value = "Eine Sukkubus im Gebälk, schnurrend und kichernd über deinen Fang. Sag es niemandem."
+description.en = "A succubus in the rafters, purring and cackling about your catch. Tell no one."
+
+[good."core.soundset.wardrums"]
+name.value = "Kriegstrommeln"
+name.en = "War Drums"
+description.value = "Tiefe Trommeln und ein dunkles Horn aus den Hügeln: ein Fang, verkündet wie der Beginn eines Marsches."
+description.en = "Deep drums and a low horn from the hills: a catch announced like the start of a march."
+
+[good."core.soundset.dragonroost"]
+name.value = "Drachenhorst"
+name.en = "Dragon's Roost"
+description.value = "Ein Drache auf einem hohen Sims, Flügelschlagen, und ein Horn antwortet auf sein Brüllen. Der Fisch war es wert, ihn zu wecken."
+description.en = "A dragon on a high ledge, wings beating and a horn answering its roar. The fish was worth waking it up."
+
+[good."core.toaststyle.sonar"]
+name.value = "Sonarschirm"
+name.en = "Sonar Scope"
+description.value = "Gebaut von einem Ingenieur, der die Fische sehen wollte, bevor sie ihn sahen. Er summt, er pingt, und bei einem Ping lag er noch nie falsch."
+description.en = "Built by an engineer who wanted to see the fish before they saw him. It hums, it pings, and it has never once been wrong about a ping."
+
+[good."core.toaststyle.foil"]
+name.value = "Glanzfolie"
+name.en = "Prize Foil"
+description.value = "Die seltene, beim ersten Versuch aus dem Päckchen gezogen. Halte sie ins Licht, und der ganze See fließt hindurch."
+description.en = "The rare one, pulled from the pack on the first try. Hold it to the light and the whole lake runs through it."
+
+[good."core.toaststyle.storm"]
+name.value = "Sturmfront"
+name.en = "Storm Front"
+description.value = "Der Fang, den du gemacht hast, als alle Vernünftigen schon drinnen waren. Der Wimpel sagt Sturm; der Angler sagt: noch ein Wurf."
+description.en = "The catch you made when everyone sensible had gone in. The pennant says gale; the angler says one more cast."
+
+[good."core.toaststyle.hive"]
+name.value = "Schwarmchitin"
+name.en = "Hive Chitin"
+description.value = "Abgestreift von etwas Großem, das unter den Dünen lebt und heraufkommt, wenn der Sand singt. Die Platten summen noch; die Augen wachen noch."
+description.en = "Shed by something big that lives under the dunes and comes up when the sand sings. The plates still hum; the eyes still watch."
+
+[good."core.toaststyle.ooze"]
+name.value = "Glibber"
+name.en = "Ooze"
+description.value = "Etwas kroch aus dem Sumpf und befand, dein Fang sei das Beste, was es je gefressen hat. Es verdaut noch die Gräten."
+description.en = "Something crawled out of the swamp and decided your catch was the best thing it had ever eaten. It is still digesting the bones."
+
+[good."core.toaststyle.robot"]
+name.value = "Mechanischer Angler"
+name.en = "Mechanical Angler"
+description.value = "Gebaut, um zu angeln, während sein Erbauer schlief. Er hat nie geschlafen, nie geblinzelt und nie einen Fisch entkommen lassen. Das rote Auge heißt, er denkt nach."
+description.en = "Built to fish while its maker slept. It has never slept, never blinked and never once let a fish go. The red eye means it is thinking."
+
+[good."core.toaststyle.spider"]
+name.value = "Netz der Witwe"
+name.en = "Widow's Web"
+description.value = "Über Nacht quer über das Fenster des Bootshauses gesponnen. Was sich darin fing, gehörte zuerst ihr; sie leiht dir nur den Namen."
+description.en = "Spun across the boathouse window overnight. Whatever got caught in it was hers first; she is only letting you borrow the name."
+
+[good."core.toaststyle.glacier"]
+name.value = "Gletscherherz"
+name.en = "Glacier Heart"
+description.value = "Geschnitten aus dem blauen Herzen eines Gletschers, älter als das erste Boot, wo die Kälte ganz hindurchgeht und das Licht verwandelt auf der anderen Seite austritt."
+description.en = "Cut from the blue heart of a glacier older than the first boat, where the cold goes all the way through and light comes out the other side changed."
+
+[good."core.toaststyle.magma"]
+name.value = "Magmastrom"
+name.en = "Magma Flow"
+description.value = "Aus einem Fluss geschmolzenen Gesteins geschöpft, von jemandem, der die Pfanne vergessen hatte. Die Kruste kühlt ab; der Fang nicht. Nicht anfassen."
+description.en = "Scooped from a river of molten rock by someone who forgot to bring a pan. The crust is cooling; the catch is not. Do not touch."
+
+[good."core.toaststyle.arcane"]
+name.value = "Arkanes Siegel"
+name.en = "Arcane Sigil"
+description.value = "Eingeschrieben in einer schwebenden Stadt violetter Türme, von einem Magier, der wissen wollte, ob man einen Fisch beschwören kann. Man kann. Der Fisch war nicht erfreut."
+description.en = "Inscribed in a floating city of violet towers, by a mage who wanted to know whether a fish could be summoned. It could. It was not pleased."
+
+[good."core.toaststyle.pirate"]
+name.value = "Schwarze Flagge"
+name.en = "Black Flag"
+description.value = "Vom Deck eines Schiffs gehebelt, das nur je eine Flagge führte. Die Mannschaft ist längst fort; der Papagei erinnert sich an jeden Fisch und erzählt dir davon, laut."
+description.en = "Prised off the deck of a ship that only ever flew one flag. The crew are long gone; the parrot remembers every fish and will tell you about them, loudly."
+
+[good."core.crest.fish.1467"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein Sonnenbarsch auf seegrünem Feld. Für den Angler, der jeden Fleck gesehen hat, den er tragen kann."
+description.en = "A sunfish on a field of lake green. For the angler who has seen every spot it can wear."
+
+[good."core.crest.fish.4603"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein Gelbschwanz, der durch blaues Wasser aufsteigt, in jeder Hinsicht mit dem Schwanz voran."
+description.en = "A yellowtail rising through blue water, tail first in every sense."
+
+[good."core.crest.fish.6289"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein Schnapper, ganz Kiefer, auf Teichgrün. Biss um Biss verdient."
+description.en = "A snapper all jaw, on pond green. Earned one bite at a time."
+
+[good."core.crest.fish.6291"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Der kleinste Fisch auf jedem Schild, und der, mit dem man am schwersten aufhört."
+description.en = "The smallest fish on any shield, and the hardest to stop catching."
+
+[good."core.crest.fish.6299"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein trauriger grauer Fisch auf dunklem Wasser. Jemand musste sie alle sammeln. Das warst du."
+description.en = "A sad grey fish on dark water. Somebody had to collect them all. It was you."
+
+[good."core.crest.fish.6303"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Eine gestreifte Makrele auf offener See, die wie üblich aus dem Rahmen gleitet."
+description.en = "A barred mackerel on open sea, slipping out of the frame as usual."
+
+[good."core.crest.fish.6308"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Barteln, Groll und Flussgrün. Jeder einzelne hat an deiner Schnur geschmollt."
+description.en = "Whiskers, grudge and river green. Every last one of them has sulked on your line."
+
+[good."core.crest.fish.6317"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Zähne auf einem Feld aus Bergseewasser. Zwerge wären einverstanden und würden dann ihre Finger zählen."
+description.en = "Teeth on a field of loch water. Dwarves would approve, then count their fingers."
+
+[good."core.crest.fish.6358"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein öliger Lachs auf Blau, glänzend. Jede Farbe, die das Öl hervorbringen konnte, ist verbucht."
+description.en = "An oily salmon on blue, gleaming. Every colour the oil could make, accounted for."
+
+[good."core.crest.fish.6359"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein roter Schnapper, der durch warmes Wasser aufsteigt, für den Angler, der ihn in jeder seiner Farben gesehen hat."
+description.en = "A red snapper rising through warm water, for the angler who has seen it in every colour it comes in."
+
+[good."core.crest.fish.6361"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein Thunfisch mit weit gespreizten Regenbogenflossen, Farben, die auf einem Schild nie verblassen."
+description.en = "An albacore with its rainbow fins spread wide, colours that never fade on a shield."
+
+[good."core.crest.fish.6362"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein gesprenkelter Kabeljau auf tiefem Blau, stur wie die Felsen, zwischen denen er sich versteckt."
+description.en = "A mottled cod on deep blue, stubborn as the rocks it hides among."
+
+[good."core.crest.fish.6458"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein kleiner Fisch auf trübem Wasser, so sauber, wie er je sein wird."
+description.en = "A small fish on murky water, as clean as it will ever be."
+
+[good."core.crest.fish.6522"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Etwas mit zu vielen Augen auf einem Feld aus schlechtem Wasser. Beweis für einen starken Magen."
+description.en = "Something with too many eyes on a field of bad water. Proof of a strong stomach."
+
+[good."core.crest.fish.8365"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Eine Forelle mit glänzendem Kopf, auf Flussgrün. Der Schmied hat aufgehört zu fragen."
+description.en = "A trout with a shining head, on river green. The smith has stopped asking."
+
+[good."core.crest.fish.12238"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein breiter grauer Zackenbarsch auf der grauen See, nach der er benannt ist, das Maul offen wie immer."
+description.en = "A broad grey grouper on the grey sea it is named for, mouth open as ever."
+
+[good."core.crest.fish.13422"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein steinschuppiger Aal, quer über blaues Wasser gerollt. Rüstungsschmiede begehren den Schild."
+description.en = "A stone-scaled eel coiled across blue water. Armourers covet the shield."
+
+[good."core.crest.fish.13754"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein schwerer blauer Fisch auf offener See, gebaut wie eine Faust."
+description.en = "A heavy blue fish on the open sea, built like a fist."
+
+[good."core.crest.fish.13755"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein bleicher Kalmar auf winterlichem Eisblau, jeder Arm endlich entwirrt."
+description.en = "A pale squid on winter ice-blue, every arm untangled at last."
+
+[good."core.crest.fish.13756"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein Barsch auf Seegrün, das Maul weit genug für die ganze Saison."
+description.en = "A bass on lake green, mouth wide enough for the whole season."
+
+[good."core.crest.fish.13757"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein Aal quer über einem stürmischen Feld, noch Funken an den Rändern."
+description.en = "An eel across a stormy field, sparks still at its edges."
+
+[good."core.crest.fish.13758"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein gestreifter Barsch auf glutrotem Feld. Die Kiemen sind das Hellste daran."
+description.en = "A barred perch on a field of ember red. The gills are the brightest thing on it."
+
+[good."core.crest.fish.13759"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein violetter Schnapper auf Nachtwasser. Meist im Dunkeln verdient."
+description.en = "A violet snapper on night water. Earned in the dark, mostly."
+
+[good."core.crest.fish.13760"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein goldgesprenkelter Lachs, der durch grünes Wasser aufsteigt und jede Stunde Licht einfängt."
+description.en = "A gold-flecked salmon rising through green water, catching every hour of light."
+
+[good."core.crest.fish.13888"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein Hummer auf Blau, Scheren voran, wie er darauf besteht."
+description.en = "A lobster on the blue, claws first, as it insists."
+
+[good."core.crest.fish.13889"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein frostbleicher Lachs auf kaltem Blau. Jede seiner Farben, gefangen, bevor sie schmolz."
+description.en = "A frost-pale salmon on cold blue. Every colour of it, caught before it melted."
+
+[good."core.crest.fish.13890"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein Fisch in Knochenplatten auf Eisblau, seine Panzerung endlich übertroffen."
+description.en = "A fish in bony plates on ice-blue, its armour finally outmatched."
+
+[good."core.crest.fish.13893"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Der große Vetter auf einem Feld aus Tiefsee. Brauchte oft beide Hände, und einen Freund."
+description.en = "The big cousin on a field of deep sea. Took both hands, and a friend, many times."
+
+[good."core.crest.fish.16967"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein Gelbflossenthun auf Flussgrün, die langen Flossen zurückgestrichen wie Banner."
+description.en = "A yellowfin tuna on river green, long fins swept back like banners."
+
+[good."core.crest.fish.16968"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein gestreifter Jäger, der blaues Wasser durchquert, Zähne voran."
+description.en = "A barred hunter crossing blue water, teeth first."
+
+[good."core.crest.fish.16969"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein Segelfisch auf dem Grünblau der Dschungelküste, das Segel fürs Publikum gehisst."
+description.en = "A sailfish on the jungle coast's green-blue, sail raised for the audience."
+
+[good."core.crest.fish.16970"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Eine grün-goldene Goldmakrele an der Dschungelküste, so leuchtend wie am Tag, als sie an Land kam."
+description.en = "A green and gold mahi on the jungle coast, bright as the day it was landed."
+
+[good."core.crest.fish.19807"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein sommersprossiger Fisch an der Küste des Wettbewerbs. Jede Spielart davon, jeder Wettbewerb."
+description.en = "A freckled fish on the contest coast. Every kind of it, every contest."
+
+[good."core.crest.fish.19975"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein gedrungener brauner Fisch auf trübem Wasser. Der Schild riecht zum Glück nicht."
+description.en = "A squat brown fish on murky water. The shield, mercifully, does not smell."
+
+[good."core.crest.fish.21071"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein kleiner Fisch mit aufgestellter hoher Flosse, auf dem Grün eines Hangbachs."
+description.en = "A small fish with its tall fin raised, on hillside-stream green."
+
+[good."core.crest.fish.21153"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Der Älteste seiner Art, alt und stattlich geworden, die Flosse ein Banner auf grünem Wasser."
+description.en = "The elder of its kind, grown old and grand, its fin a banner on green water."
+
+[good."core.crest.fish.251524"]
+name.value = "Wappen: {fish}"
+name.en = "{fish} Crest"
+description.value = "Ein goldener Fisch, der blaue Seide hinter sich herzieht, auf grünem Wasser. Noch immer weiß niemand, wie er hierherkam."
+description.en = "A gold fish trailing blue silk on green water. Still nobody knows how it got here."
+
+[good."core.crate"]
+name.value = "Kuriositätenkiste"
+name.en = "Curio crate"
+description.value = "Unten am Hafen gepackt, von jemandem, der nie sagt, was drin ist. Fast jede Kiste enthält eine Optik, die du noch nicht besitzt, seltener, je tiefer du gräbst. Meist Stroh."
+description.en = "Packed down at the docks by someone who never says what's in them. Nearly every crate holds one look you don't yet own, rarer the deeper you dig. Straw, mostly."
+
+[binding.field]
+name.value = "Feldleder"
+name.en = "Field Leather"
+description.value = "Schlichtes braunes Leder, gemacht, um verregnet zu werden, und das wird es meistens."
+description.en = "Plain brown leather, made to be rained on, and it usually is."
+
+[binding.birch]
+name.value = "Birkenrinde"
+name.en = "Birch Bark"
+description.value = "Blass und papieren, mit dunklen Sprenkeln. Wohl das einzige Buch hier, das schwimmen würde."
+description.en = "Pale and papery, with dark flecks. Likely the only book here that would float."
+
+[binding.chartlinen]
+name.value = "Gezeitenkarten-Leinen"
+name.en = "Tide-Chart Linen"
+description.value = "Blasses Leinen, bedruckt mit einer alten Karte, die Tiefenlinien an den Ecken von ein paar Jahren Daumen weich gerieben."
+description.en = "Pale linen printed with an old chart, its depth lines worn soft at the corners by a few seasons of thumbs."
+
+[binding.sailcloth]
+name.value = "Geteertes Segeltuch"
+name.en = "Tarred Sailcloth"
+description.value = "Altes Segel, gegen das Wetter schwarz geteert und an den Rändern mit Garn umwickelt."
+description.en = "Old sail, tarred black against the weather and whipped round the edges with twine."
+
+[binding.oilskin]
+name.value = "Ölzeug-Gelb"
+name.en = "Oilskin Yellow"
+description.value = "Gewachstes gelbes Tuch, das Regen und Gischt abweist. Man findet es ganz unten im Boot, und genau darum geht es."
+description.en = "Waxed yellow cloth that sheds rain and spray. You can find it at the bottom of the boat, which is the point."
+
+[binding.canvas]
+name.value = "Leinwand-Feldblock"
+name.en = "Canvas Field Pad"
+description.value = "Schlichte khakifarbene Leinwand, schabloniert mit einer Nummer, an deren Vergabe sich niemand erinnert. Passt gerade so in eine Manteltasche."
+description.en = "Plain khaki canvas, stencilled with a number nobody remembers assigning. Fits a coat pocket, just."
+
+[binding.kraft]
+name.value = "Gewachstes Packpapier"
+name.en = "Waxed Kraft"
+description.value = "Braunes Papier, mit Bienenwachs eingerieben, bis es Regen abschüttelt. Mit Bindfaden verschnürt, weil Knöpfe abfallen."
+description.en = "Brown paper rubbed with beeswax until it shrugs off rain. Tied with twine, because buttons fall off."
+
+[binding.tartan]
+name.value = "Schottenwolle"
+name.en = "Tartan Wool"
+description.value = "Dicke grün-marineblaue Wolle mit einer roten Linie darin. Warme Hände, feuchte Seiten, keine Reue."
+description.en = "Thick green-and-navy wool with a red line through it. Warm hands, damp pages, no regrets."
+
+[binding.buckram]
+name.value = "Seegrünes Buckram"
+name.en = "Sea-Green Buckram"
+description.value = "Steifes seegrünes Tuch mit cremefarbenen Linien. Gischt perlt ab und rollt geradewegs herunter."
+description.en = "Stiff sea-green cloth with cream rules. Spray beads up and rolls straight off."
+
+[binding.moss]
+name.value = "Moosgebunden"
+name.en = "Mossbound"
+description.value = "Leder, zu lange an einem feuchten Ufer liegen gelassen. Das Moos fasste Fuß, und das Buch scheint glücklicher damit."
+description.en = "Leather left too long on a damp bank. The moss took hold, and the book seems happier for it."
+
+[binding.driftwood]
+name.value = "Treibholzdeckel"
+name.en = "Driftwood Boards"
+description.value = "Drei Bretter aus grauem Treibholz, an einen Lederrücken genagelt. Schwer, ehrlich und leicht salzig."
+description.en = "Three boards of grey driftwood, nailed to a leather spine. Heavy, honest and faintly salty."
+
+[binding.eelskin]
+name.value = "Aalhaut"
+name.en = "Eelskin"
+description.value = "Streifen von Aalhaut, Seite an Seite genäht, dunkel und glatt, mit einem Glanz, der wandert, wenn das Licht es tut."
+description.en = "Strips of eelskin sewn side by side, dark and slick, with a shine that moves when the light does."
+
+[binding.kodo]
+name.value = "Kodohaut"
+name.en = "Kodo Hide"
+description.value = "Eine dicke Steppenhaut, das Haar stellenweise abgewetzt, mit Rohleder zugeschnürt. Sie wird den Angler überdauern."
+description.en = "A thick plains hide with the hair worn off in patches, laced shut with rawhide. It will outlast the angler."
+
+[binding.frosthide]
+name.value = "Frostgegerbte Haut"
+name.en = "Frost-Tanned Hide"
+description.value = "Haut, in der Kälte gegerbt, bis sie weiß wurde, am Rücken mit Fell besetzt für Hände ohne Handschuhe."
+description.en = "Hide cured in the cold until it went white, trimmed with fur along the spine for gloveless hands."
+
+[binding.netcork]
+name.value = "Netz über Kork"
+name.en = "Net over Cork"
+description.value = "Korkdeckel unter einem geknoteten Netz, mit einem Schwimmer daran. Es geht nicht unter, was mehr ist, als die meisten Bücher von sich sagen können."
+description.en = "Cork boards under a knotted net, with a float tied on. It will not sink, which is more than most books can say."
+
+[binding.tooled]
+name.value = "Punziertes Leder"
+name.en = "Tooled Leather"
+description.value = "Dunkles Leder, punziert mit Schilf und springenden Fischen, von jemandem mit scharfem Messer und langem Winter."
+description.en = "Dark leather tooled with reeds and leaping fish, by someone with a sharp knife and a long winter."
+
+[binding.maplinen]
+name.value = "Kartenleinen"
+name.en = "Map Linen"
+description.value = "Eine handgezeichnete Karte auf Leinen, der Pfad rot gepunktet und ein X, wo laut jemandem der Große wohnt."
+description.en = "A hand-drawn map on linen, the trail dotted in red and an X where somebody swears the big one lives."
+
+[binding.planks]
+name.value = "Gebundene Planken"
+name.en = "Bound Planks"
+description.value = "Dünne Planken, mit Leder und Messingschnallen zusammengeschnallt. Taugt zur Not auch als Schneidebrett."
+description.en = "Thin planks strapped together with leather and brass buckles. Doubles as a cutting board in a pinch."
+
+[binding.sharkskin]
+name.value = "Haifischhaut"
+name.en = "Sharkskin"
+description.value = "Raue graue Haut mit Silberprägung. Sie rutscht nicht aus einer nassen Hand."
+description.en = "Rough grey hide with silver tooling. It won't slip out of a wet hand."
+
+[binding.copper]
+name.value = "Genietetes Kupfer"
+name.en = "Riveted Copper"
+description.value = "Kupferplatten, über Deckel genietet, an den Nähten grün geworden. Laut beim Zuklappen, unmöglich zu verbeulen."
+description.en = "Copper plates riveted over boards, gone green at the seams. Loud to close, impossible to dent."
+
+[binding.velvet]
+name.value = "Nachtsamt"
+name.en = "Night Velvet"
+description.value = "Mitternachtssamt, mit silbernen Sternen und einem Mond bestickt. Am besten bei Laternenlicht zu lesen, und dann wird er auch gelesen."
+description.en = "Midnight velvet embroidered with silver stars and a moon. Best read by lantern, which is when it gets read."
+
+[binding.turtle]
+name.value = "Schildpatt"
+name.en = "Turtle Shell"
+description.value = "Polierte Panzerplatten, Bernstein und Rauch, in einen dunklen Rahmen gesetzt. Älter als das Buch, und es wird es wohl überdauern."
+description.en = "Polished shell plates, amber and smoke, set into a dark frame. Older than the book, and likely to outlive it."
+
+[binding.morocco]
+name.value = "Vergoldeter Saffian"
+name.en = "Gilded Morocco"
+description.value = "Rotes Ziegenleder, über und über mit goldenem Gitter punziert, die Art Einband, die man sonst hinter Glas aufbewahrt."
+description.en = "Red goatskin tooled all over in gold lattice, the kind of binding usually kept behind glass."
+
+[binding.verdigris]
+name.value = "Grünspan"
+name.en = "Verdigris"
+description.value = "Kupferecken und eine Kupferschließe, in der Seeluft grün geworden. Einst glänzend, kurz."
+description.en = "Copper corners and a copper clasp, gone green in the sea air. It was bright once, briefly."
+
+[binding.snakeskin]
+name.value = "Schlangenhaut"
+name.en = "Snakeskin"
+description.value = "Die Haut einer langen Sumpfschlange, noch gemustert mit den Rauten, mit denen sie jagte. Immer kühl in der Hand."
+description.en = "A long swamp snake’s skin, still patterned with the diamonds it hunted by. Cool to the touch, always."
+
+[binding.shagreen]
+name.value = "Rochenchagrin"
+name.en = "Stingray Shagreen"
+description.value = "Rochenhaut, genarbt wie Raureif, mit dem blassen Stern in der Mitte, den die alten Meister stets bewahrten."
+description.en = "Ray skin, pebbled like frost, with the pale star at its centre the old makers always kept."
+
+[binding.lacquer]
+name.value = "Rotlack"
+name.en = "Lacquered Red"
+description.value = "Schicht um Schicht roter Lack, poliert, bis er ein Spiegelbild hält, und ein vergoldeter Karpfen schwimmt darin."
+description.en = "Layer upon layer of red lacquer, polished until it holds a reflection, with a gilt carp swimming in it."
+
+[binding.bone]
+name.value = "Knochen & Rohleder"
+name.en = "Bone & Rawhide"
+description.value = "Rohleder, straff über einen Rahmen gespannt und mit zwei geschnitzten Knochenknebeln verschlossen. Knarrt in der Kälte."
+description.en = "Rawhide stretched taut over a frame and shut with two carved bone toggles. Creaks in the cold."
+
+[binding.brasscase]
+name.value = "Jägergehäuse aus Messing"
+name.en = "Brass Hunter's Case"
+description.value = "Ein Messinggehäuse, graviert mit einem springenden Fisch über dem Schilf, mit einem Riegel, der klickt, als meine er es ernst."
+description.en = "A brass case engraved with a leaping fish over the reeds, with a latch that clicks like it means it."
+
+[binding.coral]
+name.value = "Koralleneinlage"
+name.en = "Coral Inlay"
+description.value = "Rote Korallenäste in seegrünes Leder gesetzt, mit Perlen, wo die Äste enden."
+description.en = "Branches of red coral set into sea-green leather, with pearls where the branches end."
+
+[binding.scrimshaw]
+name.value = "Scrimshaw-Tafel"
+name.en = "Scrimshaw Panel"
+description.value = "Eine alte Elfenbeintafel, in die ein Matrose mit langer Reise und scharfem Messer ein Schiff und einen Fisch geritzt hat."
+description.en = "An old ivory panel scratched with a ship and a fish by some sailor with a long voyage and a sharp knife."
+
+[binding.shagreenbone]
+name.value = "Chagrin und Knochen"
+name.en = "Shagreen and Bone"
+description.value = "Grüne Rochenhaut, jede Narbe davon, mit Knochen eingelegt wie ein Sonnenaufgang. Für einen Kapitän gemacht, dessen Bücher zum Salon passen sollten."
+description.en = "Green ray-skin, every pebble of it, with bone laid in like a sunrise. Made for a captain who liked his books to match the saloon."
+
+[binding.pearl]
+name.value = "Perlmutt"
+name.en = "Mother-of-Pearl"
+description.value = "Ein Deckel aus Muschelschale, Stück für Stück geschnitten und wie Fliesen gefügt. Er wechselt die Farbe, sooft das Buch gedreht wird."
+description.en = "A cover of shell, cut piece by piece and fitted like tiles. It shifts colour every time the book is turned."
+
+[binding.trophycase]
+name.value = "Vergoldeter Trophäenschrank"
+name.en = "Gilded Trophy Case"
+description.value = "Ein Kasten aus dunklem Holz mit Glasfront, und hinter dem Glas ein in Gold gegossener Fisch. Öffnet sich wie ein Schrank."
+description.en = "A dark wood case with a glass front, and behind the glass a fish cast in gold. Opens like a cabinet."
+
+[variety."1467.sunset-breasted"]
+name.value = "Abendrotbrust"
+name.en = "Sunset-breasted"
+description.value = "Olivgrüne Flanken, dunkle Flecken, eine Brust wie Abendrot über dem See. Der, den jeder kennt."
+description.en = "Olive flanks, dark spots, a breast like a sunset over the lake. The one everybody knows."
+
+[variety."1467.pale-shallows"]
+name.value = "Blasses Flachwasser"
+name.en = "Pale Shallows"
+description.value = "Ausgebleicht von warmem Flachwasser und langen Nachmittagen. Die Flecken geben sich kaum Mühe."
+description.en = "Bleached by warm shallows and long afternoons. The spots barely bother."
+
+[variety."1467.copper-breasted"]
+name.value = "Kupferbrust"
+name.en = "Copper-breasted"
+description.value = "Eine Brust wie ein polierter Kessel. Die Köche zögern, kurz."
+description.en = "A breast like a polished kettle. The cooks hesitate, briefly."
+
+[variety."1467.peppered"]
+name.value = "Gepfeffert"
+name.en = "Peppered"
+description.value = "Flecken, zu Pfeffer gemahlen. Derselbe Fisch, feiner gewürzt."
+description.en = "Spots ground down to pepper. Same fish, finer seasoning."
+
+[variety."1467.blue-cheeked"]
+name.value = "Blauwange"
+name.en = "Blue-cheeked"
+description.value = "Zwei blaue Linien auf jeder Wange, wie Kriegsbemalung für einen sehr kleinen Krieg."
+description.en = "Two blue lines on each cheek, like war paint for a very small war."
+
+[variety."1467.barred"]
+name.value = "Quergestreift"
+name.en = "Barred"
+description.value = "Schwache Streifen die Flanken hinab, wie die Jungen sie tragen. Manche wachsen nie heraus."
+description.en = "Faint bars down the flanks, the way the young wear them. Some never grow out of it."
+
+[variety."1467.ember-spotted"]
+name.value = "Glutfleck"
+name.en = "Ember-spotted"
+description.value = "In den warmen Monaten werden die Flecken rot, als hätte er zu nah am Feuer gesessen."
+description.en = "The spots run red in the warm months, as if it sat too close to the fire."
+
+[variety."1467.golden"]
+name.value = "Golden"
+name.en = "Golden"
+description.value = "Alles Grün verschwunden, nur Gold übrig. Reiher sehen ihn quer über den See."
+description.en = "All the green gone, only gold left. Herons see it from across the lake."
+
+[variety."1467.midnight"]
+name.value = "Mitternacht"
+name.en = "Midnight"
+description.value = "Schwarz wie Seeschlamm, Flecken und alles. Leicht zu übersehen, und genau darum geht es."
+description.en = "Black as lake mud, spots and all. Easy to miss, which is rather the point."
+
+[variety."1467.sunburst"]
+name.value = "Sonnenstrahl"
+name.en = "Sunburst"
+description.value = "Orange Strahlen laufen vom Auge aus wie der Morgen über stillem Wasser. Er bleibt warm in der Hand."
+description.en = "Orange rays run out from the eye like morning over still water. It stays warm in the hand."
+
+[variety."4603.classic"]
+name.value = "Klassisch"
+name.en = "Classic"
+description.value = "Blaugrauer Rücken, gelber Schwanz, verstreute dunkle Flecken. So, wie jeder Küstenkoch ihn erwartet."
+description.en = "Blue-grey back, yellow tail, a scatter of dark spots. The look every coastal cook expects."
+
+[variety."4603.gold-striped"]
+name.value = "Goldstreif"
+name.en = "Gold-striped"
+description.value = "Eine gelbe Linie läuft von der Nase bis zum Schwanz, als hätte ihn jemand unterstrichen."
+description.en = "A yellow line runs nose to tail, as if somebody underlined it."
+
+[variety."4603.greenback"]
+name.value = "Grünrücken"
+name.en = "Greenback"
+description.value = "Am Rücken grüner, von krautigen Küsten. Der Schwanz bleibt stolz gelb."
+description.en = "Greener along the back, from weedy coasts. The tail stays proudly yellow."
+
+[variety."4603.silverside"]
+name.value = "Silberflanke"
+name.en = "Silverside"
+description.value = "Die Flanken hinab mehr Spiegel als Fisch. Die Flecken wenige und scheu."
+description.en = "More mirror than fish down the flanks. Spots few and shy."
+
+[variety."4603.dusky"]
+name.value = "Düster"
+name.en = "Dusky"
+description.value = "Dunkel aus tiefem Wasser, das Gelb zu altem Messing verblasst."
+description.en = "Dark from deep water, the yellow dulled to old brass."
+
+[variety."4603.leopard"]
+name.value = "Leopard"
+name.en = "Leopard"
+description.value = "Die Flecken wurden gierig und wuchsen zusammen. Hübsch, auf gedrängte Art."
+description.en = "The spots grew greedy and joined up. Handsome, in a crowded way."
+
+[variety."4603.sunset-tailed"]
+name.value = "Abendrotschwanz"
+name.en = "Sunset-tailed"
+description.value = "Der Schwanz brennt orange statt gelb. Noch stolzer auf sich, falls das möglich ist."
+description.en = "The tail burns orange instead of yellow. Even prouder of itself, if that were possible."
+
+[variety."4603.all-gold"]
+name.value = "Vollgold"
+name.en = "All-gold"
+description.value = "Gelb von Schwanz bis Nase. Möwen folgen dem Boot meilenweit."
+description.en = "Yellow from tail to nose. Gulls follow the boat for miles."
+
+[variety."4603.ghost"]
+name.value = "Geist"
+name.en = "Ghost"
+description.value = "Fast weiß, mit einem schwachen gelben Hauch am Schwanz. Sieht selbst außerhalb des Wassers aus wie unter Wasser."
+description.en = "Nearly white, with a faint yellow blush at the tail. Looks underwater even out of it."
+
+[variety."4603.tidecaller"]
+name.value = "Gezeitenrufer"
+name.en = "Tidecaller"
+description.value = "Feines blaues Netzmuster leuchtet entlang der Flanken. Alte Seeleute sagen, die Flut kippt, wenn einer an Land gezogen wird."
+description.en = "Fine blue netting glows along its flanks. Old sailors say the tide turns when one is landed."
+
+[variety."6289.mudbank"]
+name.value = "Schlammbank"
+name.en = "Mudbank"
+description.value = "Oben braun, unten hellbraun, Kiefer voran. Der Schnapper, den scheinbar jeder Teich der Welt hat."
+description.en = "Brown above, tan below, jaw first. The snapper every pond in the world seems to have."
+
+[variety."6289.reedbed"]
+name.value = "Röhricht"
+name.en = "Reedbed"
+description.value = "Schwache grüne Streifen, vom Verstecken im Schilf. Beißt trotzdem zuerst."
+description.en = "Faint green bars, from hiding among the reeds. Still bites first."
+
+[variety."6289.red-clay"]
+name.value = "Rotlehm"
+name.en = "Red Clay"
+description.value = "Rostrot, von Flussufern aus rotem Lehm. Schmeckt gleich, sieht heißer aus."
+description.en = "Rust-red, from riverbanks of red clay. Tastes the same, looks hotter."
+
+[variety."6289.speckled"]
+name.value = "Gesprenkelt"
+name.en = "Speckled"
+description.value = "Überall sommersprossig, wie ein Knecht nach der Ernte."
+description.en = "Freckled all over, like a farmhand after harvest."
+
+[variety."6289.blackjaw"]
+name.value = "Schwarzmaul"
+name.en = "Blackjaw"
+description.value = "Der Kiefer ist bis zu den Kiemen tintendunkel. Er hat Meinungen und teilt sie."
+description.en = "The jaw is ink-dark to the gills. It has opinions and it shares them."
+
+[variety."6289.brindle"]
+name.value = "Gestromt"
+name.en = "Brindle"
+description.value = "Gestreift wie das Fell eines Jagdhunds. Manche Angler schwören, er knurrt."
+description.en = "Streaked like a hound's coat. Some anglers swear it growls."
+
+[variety."6289.lantern-eyed"]
+name.value = "Laternenauge"
+name.en = "Lantern-eyed"
+description.value = "Augen, die das Licht fangen wie eine Lampe im Fenster. In der Dämmerung leichter zu finden."
+description.en = "Eyes that catch the light like a lamp in a window. Easier to find at dusk."
+
+[variety."6289.golden"]
+name.value = "Golden"
+name.en = "Golden"
+description.value = "Ein goldener Schnapper aus einem braunen Teich. Der Teich scheint so überrascht wie alle anderen."
+description.en = "A gold snapper from a brown pond. The pond seems as surprised as anyone."
+
+[variety."6289.pale"]
+name.value = "Bleich"
+name.en = "Pale"
+description.value = "Milchbleich, rosa an den Flossen. Zu hübsch für den Kiefer, den er trägt."
+description.en = "Milk-pale, pink at the fins. Too pretty for the jaw it carries."
+
+[variety."6289.old-bootbiter"]
+name.value = "Alter Stiefelbeißer"
+name.en = "Old Bootbiter"
+description.value = "Hakennarben, eine zerrissene Flosse und ein Ausdruck völliger Zuversicht. Jeder Teich hat einen."
+description.en = "Hook scars, a torn fin and an expression of total confidence. Every pond keeps one."
+
+[variety."6291.silver"]
+name.value = "Silbern"
+name.en = "Silver"
+description.value = "Schlichtes Silber, das zu Hunderten im Flachwasser blitzt. Der erste Fisch in sehr vielen Büchern."
+description.en = "Plain silver, flashing in the shallows by the hundred. The first fish in a great many books."
+
+[variety."6291.blue-striped"]
+name.value = "Blaustreif"
+name.en = "Blue-striped"
+description.value = "Ein ordentlicher blauer Streifen an jeder Seite, als wollte er amtlich aussehen."
+description.en = "A neat blue stripe down each side, as if it were trying to look official."
+
+[variety."6291.greenback"]
+name.value = "Grünrücken"
+name.en = "Greenback"
+description.value = "Grün über den Rücken, aus flachem, krautigem Wasser. Doppelt so schwer zu entdecken."
+description.en = "Green across the back, from shallow weedy water. Twice as hard to spot."
+
+[variety."6291.dotted"]
+name.value = "Getupft"
+name.en = "Dotted"
+description.value = "Eine Reihe kleiner Tupfen entlang der Flanke, ordentlich wie eine Naht."
+description.en = "A row of small dots along the flank, neat as stitching."
+
+[variety."6291.redfin"]
+name.value = "Rotflosse"
+name.en = "Redfin"
+description.value = "Flossen wie in Rot getaucht. Gibt im Schwarm an, selten allein."
+description.en = "Fins dipped in red. Shows off in a school, rarely alone."
+
+[variety."6291.rainbow"]
+name.value = "Regenbogen"
+name.en = "Rainbow"
+description.value = "Wirft beim Wenden Farben wie eine Seifenblase. An Land wird er grau."
+description.en = "Throws colours like a soap bubble when it turns. Gone grey once landed."
+
+[variety."6291.glass"]
+name.value = "Glas"
+name.en = "Glass"
+description.value = "Man sieht sein Rückgrat. Er sieht deins vermutlich auch."
+description.en = "You can see its backbone. It can probably see yours."
+
+[variety."6291.golden"]
+name.value = "Golden"
+name.en = "Golden"
+description.value = "Eine Goldmünze mit Flossen. Kinder wollen ihn behalten. Angler auch."
+description.en = "A gold coin with fins. Children want to keep it. Anglers want to keep it too."
+
+[variety."6291.inkfin"]
+name.value = "Tintenflosse"
+name.en = "Inkfin"
+description.value = "Dunkel wie eine Federspitze. Schwimmt mit den hellen und täuscht niemanden."
+description.en = "Dark as a quill's tip. Swims with the bright ones and fools nobody."
+
+[variety."6291.starlit"]
+name.value = "Sternenlicht"
+name.en = "Starlit"
+description.value = "Winzige blasse Punkte leuchten auf seinem Rücken wie eine klare Nacht. Bemerkenswert für etwas so Kleines."
+description.en = "Tiny pale specks glow along its back like a clear night. Remarkable, for something this small."
+
+[variety."6299.greyish"]
+name.value = "Gräulich"
+name.en = "Greyish"
+description.value = "Grau, schlaff und leicht zerknirscht. Sieht schlecht aus und riecht schlimmer."
+description.en = "Grey, limp and faintly apologetic. It looks bad and smells worse."
+
+[variety."6299.greenish"]
+name.value = "Grünlich"
+name.en = "Greenish"
+description.value = "Grüne Flecken, die nicht da sein sollten. Der Geruch kommt vor dem Fisch an."
+description.en = "Patches of green that should not be there. The smell arrives before the fish does."
+
+[variety."6299.blotchy"]
+name.value = "Fleckig"
+name.en = "Blotchy"
+description.value = "Bedeckt mit traurigen braunen Flecken. Niemand fragt, woher."
+description.en = "Covered in sad brown blotches. Nobody asks what caused them."
+
+[variety."6299.bony"]
+name.value = "Knochig"
+name.en = "Bony"
+description.value = "Mehr Rippen als Fisch. Er hat sich Mühe gegeben."
+description.en = "More ribs than fish. It tried its best."
+
+[variety."6299.bilious"]
+name.value = "Gallig"
+name.en = "Bilious"
+description.value = "Gelbgrün wie ein übler Morgen. Nur mit Handschuhen anfassen."
+description.en = "Yellow-green, like a bad morning. Handle with gloves."
+
+[variety."6299.bruised"]
+name.value = "Zerschunden"
+name.en = "Bruised"
+description.value = "Stellenweise lila und blau, als hätte er einen Kampf mit der Strömung verloren."
+description.en = "Purple and blue in patches, as if it lost a fight with the current."
+
+[variety."6299.wheezing"]
+name.value = "Keuchend"
+name.en = "Wheezing"
+description.value = "Die Kiemen flattern so, dass es fast wie ein Seufzer klingt. Er weiß es."
+description.en = "Gills flap in a way that sounds almost like a sigh. It knows."
+
+[variety."6299.recovered"]
+name.value = "Genesen"
+name.en = "Recovered"
+description.value = "Gesünder als die anderen. Und doch unverkennbar einer von ihnen."
+description.en = "Healthier than the rest. Still unmistakably one of them, somehow."
+
+[variety."6299.ashen"]
+name.value = "Aschgrau"
+name.en = "Ashen"
+description.value = "Grau bis auf die Knochen, als wäre er durch Asche geschwommen. Selbst die Fliegen halten Abstand."
+description.en = "Grey to the bone, like it swam through ash. Even the flies keep their distance."
+
+[variety."6299.blighted"]
+name.value = "Verseucht"
+name.en = "Blighted"
+description.value = "Schwache grüne Adern leuchten unter den Schuppen. Manche Gewässer erinnern sich, was in sie geflossen ist."
+description.en = "Faint green veins glow under the scales. Some waters remember what was spilled in them."
+
+[variety."6303.tiger-backed"]
+name.value = "Tigerrücken"
+name.en = "Tiger-backed"
+description.value = "Wellige dunkle Streifen auf blaugrünem Rücken, wie erstarrte Wellen."
+description.en = "Wavy dark bars across a blue-green back, like ripples frozen in place."
+
+[variety."6303.blueback"]
+name.value = "Blaurücken"
+name.en = "Blueback"
+description.value = "Blauer, von der offenen See. Lässt sich genauso gut braten."
+description.en = "Bluer, from the open sea. Fries up just as well."
+
+[variety."6303.spotted"]
+name.value = "Gefleckt"
+name.en = "Spotted"
+description.value = "Punkte, wo Streifen sein sollten. Makrelen nehmen es mit den Regeln nicht so genau."
+description.en = "Dots where the bars should be. Mackerel are not careful about the rules."
+
+[variety."6303.shallow-water"]
+name.value = "Flachwasser"
+name.en = "Shallow-water"
+description.value = "Blasser, aus sandigen Buchten nahe am Ufer. Glitscht trotzdem."
+description.en = "Paler, from sandy bays near the shore. Still slithers."
+
+[variety."6303.emerald"]
+name.value = "Smaragd"
+name.en = "Emerald"
+description.value = "Grün wie Tang, mit einem Schimmer, der binnen einer Stunde vergeht."
+description.en = "Green as kelp, with a shimmer that fades within the hour."
+
+[variety."6303.bronze"]
+name.value = "Bronze"
+name.en = "Bronze"
+description.value = "Bronze am Rücken wie eine alte Münze. Seltsam für eine Makrele. Ihr ist das egal."
+description.en = "Bronze along the back like an old coin. Odd for a mackerel. It doesn't care."
+
+[variety."6303.plainback"]
+name.value = "Glattrücken"
+name.en = "Plainback"
+description.value = "Gar keine Streifen. Rutscht ohne sie anscheinend schneller durch die Hände."
+description.en = "No bars at all. Slips through the hands faster without them, apparently."
+
+[variety."6303.golden"]
+name.value = "Golden"
+name.en = "Golden"
+description.value = "Goldene Streifen auf Gold. Sieht teuer aus. Brät wie eine Makrele."
+description.en = "Gold bars on gold. Looks expensive. Fries like a mackerel."
+
+[variety."6303.pearl"]
+name.value = "Perle"
+name.en = "Pearl"
+description.value = "Weiß wie eine Muschel, die Streifen nur ein Schatten ihrer selbst. Wunderschön, und immer noch glitschig."
+description.en = "White as a shell, the bars only a ghost of themselves. Lovely, and still slippery."
+
+[variety."6303.sea-witch"]
+name.value = "Meerhexe"
+name.en = "Sea-witch"
+description.value = "Streifen, die im Dunkeln meergrün leuchten. Seeleute werfen sie zurück. Dann bereuen sie es."
+description.en = "Bars that glow sea-green in the dark. Sailors throw these back. Then they regret it."
+
+[variety."6308.mudback"]
+name.value = "Schlammrücken"
+name.en = "Mudback"
+description.value = "Oben schlammbraun, unten cremefarben, überall Barteln. Der Wels, den scheinbar jeder Fluss hält."
+description.en = "Mud-brown above, cream below, whiskers everywhere. The catfish every river seems to keep."
+
+[variety."6308.spotted"]
+name.value = "Gefleckt"
+name.en = "Spotted"
+description.value = "Dunkle Flecken entlang der Flanken, wie bei einem jungen Gabelwels."
+description.en = "Dark spots along the flanks, like a channel catfish in its youth."
+
+[variety."6308.slate"]
+name.value = "Schiefer"
+name.en = "Slate"
+description.value = "Blaugrau wie Flussgestein. Genauso stur."
+description.en = "Blue-grey as river stone. Just as stubborn."
+
+[variety."6308.yellowbelly"]
+name.value = "Gelbbauch"
+name.en = "Yellowbelly"
+description.value = "Ein gelber Bauch und keine Scham darüber. Kämpft trotzdem."
+description.en = "A yellow belly and no shame about it. Fights anyway."
+
+[variety."6308.marbled"]
+name.value = "Marmoriert"
+name.en = "Marbled"
+description.value = "Gesprenkelt wie ein Flussbett, und genau dort verbringt er seine Zeit."
+description.en = "Mottled like a riverbed, which is exactly where it spends its time."
+
+[variety."6308.long-whiskered"]
+name.value = "Langbartel"
+name.en = "Long-whiskered"
+description.value = "Barteln doppelt so lang wie üblich. Sieht weise aus. Ist es nicht."
+description.en = "Whiskers twice the usual length. Wise-looking. Isn't."
+
+[variety."6308.black-barbel"]
+name.value = "Schwarzbartel"
+name.en = "Black Barbel"
+description.value = "Tintenschwarz von Bartel bis Schwanz. Schluckt das Licht und den größten Teil des Köders."
+description.en = "Inky from whisker to tail. Swallows the light and most of the bait."
+
+[variety."6308.calico"]
+name.value = "Dreifarbig"
+name.en = "Calico"
+description.value = "Orange, weiß und schwarz gefleckt wie eine Scheunenkatze. Genauso unbeeindruckt."
+description.en = "Orange, white and black in patches, like a barn cat. Just as unimpressed."
+
+[variety."6308.albino"]
+name.value = "Albino"
+name.en = "Albino"
+description.value = "Weiß mit rosa Augen. Hat offensichtlich nie die Sonne gesehen und hat es auch nicht vor."
+description.en = "White with pink eyes. Has clearly never seen the sun, and does not intend to."
+
+[variety."6308.riverbed-king"]
+name.value = "Flussbettkönig"
+name.en = "Riverbed King"
+description.value = "Barteln dick wie Seile und ein Maul wie eine Kellertür. Der Fluss füttert ihn seit Jahren."
+description.en = "Whiskers thick as rope and a mouth like a cellar door. The river has been feeding it for years."
+
+[variety."6317.slate-backed"]
+name.value = "Schieferrücken"
+name.en = "Slate-backed"
+description.value = "Grauer Rücken, roter Bauch, Zähne. Benannt danach, wie er sich benimmt, wenn man ihn hält."
+description.en = "Grey back, red belly, teeth. Named for how it behaves when held."
+
+[variety."6317.redbelly"]
+name.value = "Rotbauch"
+name.en = "Redbelly"
+description.value = "Ein Bauch rot wie eine Esse. Die Zähne sind dieselben."
+description.en = "A belly red as a forge. The teeth are the same."
+
+[variety."6317.peat-stained"]
+name.value = "Torfbraun"
+name.en = "Peat-stained"
+description.value = "Braun von torfigem Wasser. Schmeckt leicht nach Rauch."
+description.en = "Brown from peaty water. Tastes faintly of smoke."
+
+[variety."6317.silverflank"]
+name.value = "Silberflanke"
+name.en = "Silverflank"
+description.value = "Hell silberne Flanken mit glitzernden Schuppen. Trotzdem nur Zähne."
+description.en = "Bright silver flanks with a glitter of scales. Still all teeth."
+
+[variety."6317.ironjaw"]
+name.value = "Eisenkiefer"
+name.en = "Ironjaw"
+description.value = "Der Kiefer dunkel wie altes Eisen und fast so hart. Handschuhe empfohlen."
+description.en = "Jaw dark as old iron, and almost as hard. Gloves are advised."
+
+[variety."6317.ale-barred"]
+name.value = "Bierstreif"
+name.en = "Ale-barred"
+description.value = "Bernsteinfarbene Streifen wie ein gut gezapftes Bier. Zwerge geben diesen liebevolle Namen."
+description.en = "Amber bars like a well-poured ale. Dwarves name these fondly."
+
+[variety."6317.snowmelt"]
+name.value = "Schneeschmelze"
+name.en = "Snowmelt"
+description.value = "Blass aus der kältesten Ecke des Bergsees. Beißt genauso hart."
+description.en = "Pale from the coldest corner of the loch. Bites just as hard."
+
+[variety."6317.ruby"]
+name.value = "Rubin"
+name.en = "Ruby"
+description.value = "Ganz rot, wie ein Edelstein im Licht einer Grubenlampe. Irgendwer versucht immer, ihn zu verkaufen."
+description.en = "Red all over, like a gem in a miner's lamp. Somebody always tries to sell it."
+
+[variety."6317.blackwater"]
+name.value = "Schwarzwasser"
+name.en = "Blackwater"
+description.value = "Schwarz wie der Grund eines Bergwerksschachts. Die Zähne sind weiß."
+description.en = "Black as the bottom of a mine shaft. The teeth are white."
+
+[variety."6317.dam-breaker"]
+name.value = "Dammbrecher"
+name.en = "Dam-Breaker"
+description.value = "Zähne wie Meißel und ein Kiefer voller alter Splitter. Geschichten am Bergsee beginnen und enden mit ihm."
+description.en = "Teeth like chisels and a jaw full of old splinters. Loch-side stories begin and end with this one."
+
+[variety."6358.black-gummed"]
+name.value = "Schwarzgaumen"
+name.en = "Black-gummed"
+description.value = "Schwarzes Zahnfleisch, gefleckter Rücken, ein öliger Glanz. Alchemisten wollen das Öl."
+description.en = "Black gums, spotted back, an oily sheen. Alchemists want the oil."
+
+[variety."6358.greenback"]
+name.value = "Grünrücken"
+name.en = "Greenback"
+description.value = "Oben grüner, von Tangküsten. Genauso ölig."
+description.en = "Greener above, from kelp coasts. Just as oily."
+
+[variety."6358.bright-silver"]
+name.value = "Hellsilber"
+name.en = "Bright Silver"
+description.value = "Frisch aus offenem Wasser und hell wie eine Klinge. Das Öl ist trotzdem da."
+description.en = "Fresh from open water and bright as a blade. The oil is there all the same."
+
+[variety."6358.spotless"]
+name.value = "Makellos"
+name.en = "Spotless"
+description.value = "Kein einziger Fleck. Das Öl übernimmt das Verzieren."
+description.en = "Not a single spot. The oil does the decorating."
+
+[variety."6358.rainbow-slicked"]
+name.value = "Regenbogenglanz"
+name.en = "Rainbow-slicked"
+description.value = "Das Öl zeigt im Sonnenlicht jede Farbe. Hübscher, als etwas so Schmieriges verdient."
+description.en = "The oil shows every colour in sunlight. Prettier than anything this greasy deserves."
+
+[variety."6358.redflank"]
+name.value = "Rotflanke"
+name.en = "Redflank"
+description.value = "Zum Laichen an den Flanken rot geworden. Öliger denn je."
+description.en = "Gone red along the flanks for spawning. Oilier than ever."
+
+[variety."6358.hooknose"]
+name.value = "Hakennase"
+name.en = "Hooknose"
+description.value = "Ein Hakenkiefer von seiner Laichwanderung. Sieht stets beleidigt aus."
+description.en = "A hooked jaw from its spawning run. Looks offended at all times."
+
+[variety."6358.pearl"]
+name.value = "Perle"
+name.en = "Pearl"
+description.value = "Weiß, mit perligem Glanz von all dem Öl. Hübscher als sein Ruf."
+description.en = "White, with a pearly sheen from all that oil. Prettier than its reputation."
+
+[variety."6358.tar-black"]
+name.value = "Teerschwarz"
+name.en = "Tar-black"
+description.value = "Schwarz vom Maul bis zum Schwanz und glatt wie Teer. Hinterlässt auf allem, was er berührt, Spuren."
+description.en = "Black from mouth to tail and slick as tar. Leaves a mark on everything it touches."
+
+[variety."6358.lampblack"]
+name.value = "Lampenruß"
+name.en = "Lampblack"
+description.value = "Goldenes Öl sickert entlang seiner Schuppen und leuchtet schwach. Lampenmacher würden alles zahlen. Meist tun sie es."
+description.en = "Gold oil seeps along its scales and glows faintly. Lamp-makers would pay anything. They usually do."
+
+[variety."6359.flame-finned"]
+name.value = "Flammenflosse"
+name.en = "Flame-finned"
+description.value = "Roter Körper, Flossen wie Flammen. Die Farbe, die sich die meisten Angler beim Namen vorstellen."
+description.en = "Red body, fins like flame. The colour most anglers picture when they hear the name."
+
+[variety."6359.coral"]
+name.value = "Koralle"
+name.en = "Coral"
+description.value = "Rosiger, aus Riffwasser. Etwas kühler in der Hand."
+description.en = "Pinker, from reef water. A little cooler in the hand."
+
+[variety."6359.ember-spotted"]
+name.value = "Glutfleck"
+name.en = "Ember-spotted"
+description.value = "Dunkle Flecken wie Kohlestückchen auf Rot. Riecht beim Landen leicht nach Rauch."
+description.en = "Dark spots like cinders on red. Smells faintly of smoke when landed."
+
+[variety."6359.goldfin"]
+name.value = "Goldflosse"
+name.en = "Goldfin"
+description.value = "Goldene statt roter Flossen. Immer noch warm."
+description.en = "Fins of gold instead of red. Still warm."
+
+[variety."6359.deepwater"]
+name.value = "Tiefwasser"
+name.en = "Deepwater"
+description.value = "Dunkelrot aus tiefem Wasser. Hält die Wärme länger."
+description.en = "Dark crimson from deep water. Holds the heat longer."
+
+[variety."6359.flame-striped"]
+name.value = "Flammenstreif"
+name.en = "Flame-striped"
+description.value = "Gelbe Linien laufen an ihm hinab wie Flammen eine Wand hinauf."
+description.en = "Yellow lines run down it like flames up a wall."
+
+[variety."6359.smouldering"]
+name.value = "Schwelend"
+name.en = "Smouldering"
+description.value = "Dunkel wie ein abgedecktes Feuer, rot an den Rändern. Zu warm, um ihn lange zu halten."
+description.en = "Dark as a banked fire, red at the edges. Too warm to hold for long."
+
+[variety."6359.white-flame"]
+name.value = "Weißflamme"
+name.en = "White-flame"
+description.value = "Weiß, mit Flossen im Rosa glühender Kohle. Die Hitze ist echt."
+description.en = "White, with fins the pink of a hot coal. The heat is real."
+
+[variety."6359.charred"]
+name.value = "Verkohlt"
+name.en = "Charred"
+description.value = "Schwarz wie ein verbranntes Scheit, die Flossen glühen noch rot. Sieht gar aus. Ist es nicht."
+description.en = "Black as a burnt log, fins still glowing red. Looks cooked. Isn't."
+
+[variety."6359.phoenix-fin"]
+name.value = "Phönixflosse"
+name.en = "Phoenix-fin"
+description.value = "Die Flossen brennen golden, und der Körper glüht wie eine Esse. Das Wasser dampft um ihn, wenn er landet."
+description.en = "Fins burn gold and the body glows like a forge. Water steams around it as it lands."
+
+[variety."6361.many-hued"]
+name.value = "Vielfarbig"
+name.en = "Many-hued"
+description.value = "Stahlblauer Rücken, silberner Bauch, Flossen in allen Farben. Sie verblassen binnen einer Stunde, also schau schnell."
+description.en = "Steel-blue back, silver belly, fins in every colour. They fade within the hour, so look quickly."
+
+[variety."6361.deep-blue"]
+name.value = "Tiefblau"
+name.en = "Deep Blue"
+description.value = "Dunkler, von weit draußen. Die Flossen behalten ihre Farben etwas länger."
+description.en = "Darker, from far offshore. The fins keep their colours a little longer."
+
+[variety."6361.barred"]
+name.value = "Quergestreift"
+name.en = "Barred"
+description.value = "Blasse Streifen die Flanken hinab, wie Thunfische sie zeigen, wenn sie gierig fressen."
+description.en = "Pale bars down the flanks, as albacore show when feeding hard."
+
+[variety."6361.silverflank"]
+name.value = "Silberflanke"
+name.en = "Silverflank"
+description.value = "Mehr Silber als Blau. Der Regenbogen lebt allein in den Flossen."
+description.en = "More silver than blue. The rainbow lives in the fins alone."
+
+[variety."6361.sunset-finned"]
+name.value = "Abendrotflosse"
+name.en = "Sunset-finned"
+description.value = "Flossen in Orange und Rosé, wie ein Himmel am Ende eines guten Angeltags."
+description.en = "Fins of orange and rose, like a sky at the end of a good day's fishing."
+
+[variety."6361.violet"]
+name.value = "Violett"
+name.en = "Violet"
+description.value = "Ein violetter Schimmer auf dem Rücken. Nach dem Landen verblassen die Farben zu schmollendem Grau."
+description.en = "A violet sheen along the back. Colours fade to a sulky grey after landing."
+
+[variety."6361.longfin"]
+name.value = "Langflosse"
+name.en = "Longfin"
+description.value = "Brustflossen so lang wie ein Unterarm. Schwimmt, als gehöre ihm das Meer."
+description.en = "Pectoral fins as long as a forearm. Swims like it owns the sea."
+
+[variety."6361.prism"]
+name.value = "Prisma"
+name.en = "Prism"
+description.value = "Weiß wie Gischt, jeder Streifen eine andere Farbe. Hält sie einen ganzen Tag."
+description.en = "White as sea-foam, every stripe a different colour. Holds them for a whole day."
+
+[variety."6361.stormback"]
+name.value = "Sturmrücken"
+name.en = "Stormback"
+description.value = "Grau wie Gewittertürme, die Flossen zu Zinn verblasst. Beißt am besten kurz vor dem Regen."
+description.en = "Grey as thunderheads, fins dulled to pewter. Bites best just before rain."
+
+[variety."6361.aurora"]
+name.value = "Polarlicht"
+name.en = "Aurora"
+description.value = "Farben laufen in Wellen über ihn, von Grün bis Violett, und verblassen nie. Niemand kann es erklären."
+description.en = "Colours ripple over it in waves, green to violet, and never fade. Nobody can explain why."
+
+[variety."6362.rock-mottled"]
+name.value = "Felsmuster"
+name.en = "Rock-mottled"
+description.value = "Braun gesprenkelt wie die Felsen, zwischen denen er sich versteckt, mit einer hellen Linie an jeder Flanke."
+description.en = "Mottled brown like the rocks it hides among, with a pale line down each flank."
+
+[variety."6362.kelp-green"]
+name.value = "Tanggrün"
+name.en = "Kelp-green"
+description.value = "Grünbraun aus Tangwäldern. Zieht stärker, als er aussieht."
+description.en = "Green-brown from kelp beds. Pulls harder than it looks."
+
+[variety."6362.sandy"]
+name.value = "Sandig"
+name.en = "Sandy"
+description.value = "Blass wie ein Strand, fein gesprenkelt. Macht sich gut auf dem Teller."
+description.en = "Pale as a beach, fine-freckled. Shows up well on a plate."
+
+[variety."6362.harbour-grey"]
+name.value = "Hafengrau"
+name.en = "Harbour Grey"
+description.value = "Grau vom Hafenwasser. Gekocht genauso süß."
+description.en = "Grey from harbour water. Just as sweet once cooked."
+
+[variety."6362.red-rock"]
+name.value = "Rotfels"
+name.en = "Red Rock"
+description.value = "Rostrot, von Küsten aus rotem Fels. Einheimische halten ihn für einen anderen Fisch. Ist er nicht."
+description.en = "Rusty red, from red-rock coasts. Locals call it a different fish. It isn't."
+
+[variety."6362.leopard"]
+name.value = "Leopard"
+name.en = "Leopard"
+description.value = "Kräftige dunkle Flecken auf sandfarbenem Körper. Stur, selbst für einen Kabeljau."
+description.en = "Bold dark spots on a sandy body. Stubborn even by cod standards."
+
+[variety."6362.barnacled"]
+name.value = "Seepocken"
+name.en = "Barnacled"
+description.value = "Seepocken auf dem Kopf wie auf einem alten Rumpf. Macht das offensichtlich schon lange."
+description.en = "Barnacles on its head, like an old hull. Has clearly been at this a long time."
+
+[variety."6362.golden"]
+name.value = "Golden"
+name.en = "Golden"
+description.value = "Goldene Sprenkel auf Gold. Sieht aus wie eine Statue, die jemand nicht fertig gemacht hat."
+description.en = "Gold mottling over gold. Looks like a statue someone forgot to finish."
+
+[variety."6362.granite"]
+name.value = "Granit"
+name.en = "Granite"
+description.value = "Schwarz-weiß gesprenkelt wie ein Mühlstein. Wiegt, als wäre er einer."
+description.en = "Black and white speckle like a millstone. Weighs as if it were one."
+
+[variety."6362.stoneheart"]
+name.value = "Steinherz"
+name.en = "Stoneheart"
+description.value = "Schuppen wie Schiefer, dazwischen ein schwaches Leuchten. Zu finden, wo die Klippen auf tiefes Wasser treffen, und nirgends sonst."
+description.en = "Scales like slate, a faint glow between them. Found where the cliffs meet deep water, and nowhere else."
+
+[variety."6458.slicked"]
+name.value = "Ölverschmiert"
+name.en = "Slicked"
+description.value = "Ein kleiner Fisch unter einem schwarzen Ölmantel. Irgendwo flussaufwärts ist jemand sehr beschäftigt."
+description.en = "A small fish under a black coat of oil. Somewhere upstream, somebody is very busy."
+
+[variety."6458.rainbow-slick"]
+name.value = "Regenbogenfilm"
+name.en = "Rainbow Slick"
+description.value = "Das Öl wirft in der Sonne Regenbögen. Ein hübscher Anblick, und ein schlechtes Zeichen."
+description.en = "The oil throws rainbows in the sun. A pretty sight, and a bad sign."
+
+[variety."6458.tarred"]
+name.value = "Geteert"
+name.en = "Tarred"
+description.value = "Dicker schwarzer Teer in Flecken. Klebt an der Schnur und am Angler."
+description.en = "Thick black tar in patches. Sticks to the line and the angler."
+
+[variety."6458.muddy"]
+name.value = "Schlammig"
+name.en = "Muddy"
+description.value = "Mehr Schlamm als Öl. Eine Verbesserung, gewissermaßen."
+description.en = "More mud than oil. An improvement, of a sort."
+
+[variety."6458.half-clean"]
+name.value = "Halb sauber"
+name.en = "Half-clean"
+description.value = "Das Öl hat nur die Hälfte erwischt. Die andere Hälfte wirkt still erleichtert."
+description.en = "The oil only got half of it. The other half looks quietly relieved."
+
+[variety."6458.sulphur-stained"]
+name.value = "Schwefelfleckig"
+name.en = "Sulphur-stained"
+description.value = "Gelb von etwas Schlimmerem als Öl. Riecht auch so."
+description.en = "Yellow from something worse than oil. Smells like it, too."
+
+[variety."6458.rust-streaked"]
+name.value = "Roststreifig"
+name.en = "Rust-streaked"
+description.value = "Rostschlieren von altem Maschinenabfluss. Beinahe ein Fisch."
+description.en = "Streaks of rust from old machine runoff. Very nearly a fish."
+
+[variety."6458.somehow-clean"]
+name.value = "Irgendwie sauber"
+name.en = "Somehow Clean"
+description.value = "Sauber, hell, gesund. Muss von woanders hergeschwommen sein."
+description.en = "Clean, bright, healthy. It must have swum in from somewhere else."
+
+[variety."6458.black-gold"]
+name.value = "Schwarzes Gold"
+name.en = "Black Gold"
+description.value = "So dick überzogen, dass alles glänzt wie ein gewienerter Stiefel. Prospektoren werfen einen Blick darauf und fangen an zu graben."
+description.en = "Coated so thick it gleams like a polished boot. Prospectors take one look and start digging."
+
+[variety."6458.still-burning"]
+name.value = "Brennt noch"
+name.en = "Still Burning"
+description.value = "Das Öl auf dem Rücken glimmt noch, und nichts löscht es. Lieber nicht drinnen braten."
+description.en = "The oil on its back still smoulders, and nothing puts it out. Best not cooked indoors."
+
+[variety."6522.misshapen"]
+name.value = "Missgestalt"
+name.en = "Misshapen"
+description.value = "Grün, knotig und an mehreren Stellen zugleich falsch. Verzehr auf eigene Gefahr."
+description.en = "Green, lumpy and wrong in several places at once. Eat at your own risk."
+
+[variety."6522.purple-finned"]
+name.value = "Purpurflosse"
+name.en = "Purple-finned"
+description.value = "Flossen in Blutergusslila. Niemand ist sich einig, ob das besser oder schlimmer ist."
+description.en = "Fins of bruise-purple. Nobody agrees on whether that's better or worse."
+
+[variety."6522.two-tailed"]
+name.value = "Zweischwanz"
+name.en = "Two-tailed"
+description.value = "Zwei Schwänze, und er schwimmt, als stritte er mit sich, welchen er nehmen soll."
+description.en = "Two tails, and it swims as if arguing with itself about which to use."
+
+[variety."6522.spined"]
+name.value = "Stachelrücken"
+name.en = "Spined"
+description.value = "Ein Stachelkamm den Rücken entlang, der gestern noch nicht da war."
+description.en = "A ridge of spines down the back that weren't there yesterday."
+
+[variety."6522.many-eyed"]
+name.value = "Vieläugig"
+name.en = "Many-eyed"
+description.value = "Augenflecken die Flanken hinunter. Mindestens zwei davon blinzeln."
+description.en = "Eyespots all down the flanks. At least two of them blink."
+
+[variety."6522.glowgill"]
+name.value = "Glühkieme"
+name.en = "Glowgill"
+description.value = "Kiemen, die schwach grün glühen. Wirkt wie eine Warnung, und das ist es auch."
+description.en = "Gills that glow faintly green. Reads as a warning, and it is."
+
+[variety."6522.lizard-scaled"]
+name.value = "Echsenschuppe"
+name.en = "Lizard-scaled"
+description.value = "Schuppen wie die Haut eines Raptors. Halb Fisch, halb etwas mit Meinungen."
+description.en = "Scales like a raptor's hide. Half fish, half something with opinions."
+
+[variety."6522.pale-nightmare"]
+name.value = "Bleicher Albtraum"
+name.en = "Pale Nightmare"
+description.value = "Geisterbleich, die Innereien schwach sichtbar. Wirkt wie ein böser Traum am helllichten Mittag."
+description.en = "Ghost-pale, organs faintly visible. Has the look of a bad dream at noon."
+
+[variety."6522.crimson"]
+name.value = "Karmesin"
+name.en = "Crimson"
+description.value = "Rot, wo er grün sein sollte. Die Geschichten über die Stunde nach dem Verzehr werden immer schlimmer."
+description.en = "Red where it should be green. The stories about the hour after eating one get worse."
+
+[variety."6522.dreamers-spawn"]
+name.value = "Brut des Träumers"
+name.en = "Dreamer's Spawn"
+description.value = "Grünes Licht pulsiert unter den Schuppen, langsam wie Atem im Schlaf. Der Albtraum der Höhlen hat hier Spuren hinterlassen."
+description.en = "Green light pulses beneath its scales, slow as breathing in sleep. The caverns' nightmare left its mark here."
+
+[variety."8365.bright-headed"]
+name.value = "Glanzkopf"
+name.en = "Bright-headed"
+description.value = "Olivfarbener Leib, gesprenkelte Flanken, ein Kopf, der glänzt wie poliertes Metall. Die übliche Forelle warmer Flüsse."
+description.en = "Olive body, freckled flanks, a head that shines like polished metal. The usual trout of warm rivers."
+
+[variety."8365.rainbow-banded"]
+name.value = "Regenbogenband"
+name.en = "Rainbow-banded"
+description.value = "Ein rosa Band die Flanke entlang, wie es die Regenbogenforelle trägt."
+description.en = "A pink band down the flank, as a rainbow trout wears it."
+
+[variety."8365.brook-spotted"]
+name.value = "Bachgetupft"
+name.en = "Brook-spotted"
+description.value = "Helle Tupfen auf Oliv, aus kalten, schnellen Bächen."
+description.en = "Pale spots on olive, from cold quick streams."
+
+[variety."8365.steelhead"]
+name.value = "Stahlkopf"
+name.en = "Steelhead"
+description.value = "Graublau und glänzend, aus großen Gewässern. Zieht, als meinte sie es ernst."
+description.en = "Grey-blue and bright, from big waters. Pulls like it means it."
+
+[variety."8365.red-spotted"]
+name.value = "Rottupfen"
+name.en = "Red-spotted"
+description.value = "Rote Tupfen mit blauem Ring. Hübsch genug, dass ein Angler vor der Pfanne innehält."
+description.en = "Red spots ringed in blue. Pretty enough to make an angler pause before the pan."
+
+[variety."8365.goldhead"]
+name.value = "Goldkopf"
+name.en = "Goldhead"
+description.value = "Gold, wo der Glanz silbern sein sollte. Der Schmied fragt zweimal nach."
+description.en = "Gold where the shine should be silver. The smith asks twice."
+
+[variety."8365.parr-marked"]
+name.value = "Jugendzeichnung"
+name.en = "Parr-marked"
+description.value = "Flecken wie Daumenabdrücke die Flanken hinunter, wie junge Forellen sie tragen. Spät erwachsen geworden."
+description.en = "Thumbprint marks down the flanks, as young trout wear. A late bloomer."
+
+[variety."8365.golden"]
+name.value = "Golden"
+name.en = "Golden"
+description.value = "Ganz golden, wie die seltenen Forellen hoher Bergseen."
+description.en = "Gold all over, like the rare trout of high mountain lakes."
+
+[variety."8365.ironhead"]
+name.value = "Eisenkopf"
+name.en = "Ironhead"
+description.value = "Ganz dunkel, der Kopf wie Gusseisen. Genauso schwer zu garen."
+description.en = "Dark all over, the head like cast iron. Equally hard to cook."
+
+[variety."8365.quicksilver"]
+name.value = "Quecksilber"
+name.en = "Quicksilver"
+description.value = "Silbern von der Nase bis zum Schwanz, mit blassblauem Schimmer. Endlich hat der Schmied einen Fall."
+description.en = "Silver from nose to tail, with a pale blue gleam. The smith finally has a case."
+
+[variety."12238.coast-grey"]
+name.value = "Küstengrau"
+name.en = "Coast Grey"
+description.value = "Grau, dunkler grau gesprenkelt, breit wie ein Schild. Bewegt sich nur, wenn er muss."
+description.en = "Grey mottled with darker grey, broad as a shield. Moves only when it must."
+
+[variety."12238.mottled"]
+name.value = "Marmoriert"
+name.en = "Mottled"
+description.value = "Dunkle Flecken wie Felsen unter flachem Wasser. Sitzt still und wartet."
+description.en = "Dark blotches like rocks under shallow water. Sits still and waits."
+
+[variety."12238.brown"]
+name.value = "Braun"
+name.en = "Brown"
+description.value = "Braun aus schlammigen Mündungen. Ergibt denselben Eintopf."
+description.en = "Brown from muddy estuaries. Makes the same stew."
+
+[variety."12238.moon-pale"]
+name.value = "Mondbleich"
+name.en = "Moon-pale"
+description.value = "Blassgrau, als hätte der Mond ihn ausgebleicht. Ein besserer Eintopf, als der erste Eindruck verspricht."
+description.en = "Pale grey, as if the moon bleached it. A better stew than first impression."
+
+[variety."12238.rust-spotted"]
+name.value = "Rostfleck"
+name.en = "Rust-spotted"
+description.value = "Rostflecken auf Grau, wie ein Anker, der zu lange draußen lag."
+description.en = "Rusty spots over grey, like an anchor left out too long."
+
+[variety."12238.barred"]
+name.value = "Quergestreift"
+name.en = "Barred"
+description.value = "Breite dunkle Querbinden, die verblassen, wenn er ruht. Er ruht oft."
+description.en = "Broad dark bars that fade when it rests. It rests a lot."
+
+[variety."12238.bigmouth"]
+name.value = "Weitmaul"
+name.en = "Bigmouth"
+description.value = "Ein Maul, das eine Laterne schlucken könnte. Hat es vielleicht schon."
+description.en = "A mouth that could swallow a lantern. Possibly did."
+
+[variety."12238.night-dark"]
+name.value = "Nachtdunkel"
+name.en = "Night-dark"
+description.value = "Fast schwarz, aus dem tiefsten Teil der Bucht. Niemand sieht ihn, bis er beißt."
+description.en = "Nearly black, from the deepest part of the bay. Nobody sees it until it bites."
+
+[variety."12238.silverscale"]
+name.value = "Silberschuppe"
+name.en = "Silverscale"
+description.value = "Silbern, wo er grau sein sollte. Küstenangler sagen, er bringt Glück. Küstenangler brauchen Glück."
+description.en = "Silver where it should be grey. Coast anglers say it's lucky. Coast anglers need luck."
+
+[variety."12238.moonkissed"]
+name.value = "Mondgeküsst"
+name.en = "Moonkissed"
+description.value = "Helle Sprenkel leuchten darauf wie Sterne auf dunklem Wasser. Bei Vollmond gefangen, wenn die Geschichten stimmen."
+description.en = "Pale specks shine on it like stars on dark water. Caught under a full moon, if the stories are right."
+
+[variety."13422.pebble-scaled"]
+name.value = "Kieselschuppe"
+name.en = "Pebble-scaled"
+description.value = "Schuppen wie kleine graue Steine. Rüstungsschmiede zahlen gut. Der Aal sieht das anders."
+description.en = "Scales like small grey stones. Armourers pay well. The eel disagrees."
+
+[variety."13422.slate"]
+name.value = "Schiefer"
+name.en = "Slate"
+description.value = "Blaugrau wie Dachschiefer. Genauso schwer zu schneiden."
+description.en = "Blue-grey, like roofing slate. Just as hard to cut."
+
+[variety."13422.sandstone"]
+name.value = "Sandstein"
+name.en = "Sandstone"
+description.value = "Warme, sandfarbene Schuppen von Wüstenküsten. Beißt trotzdem."
+description.en = "Warm sandy scales, from desert coasts. Still bites."
+
+[variety."13422.moray-spotted"]
+name.value = "Muränenfleck"
+name.en = "Moray-spotted"
+description.value = "Überall dunkle Flecken wie die Haut einer Muräne. Freut sich genauso, dich zu sehen."
+description.en = "Dark spots all over, like a moray's hide. Equally pleased to see you."
+
+[variety."13422.banded"]
+name.value = "Gebändert"
+name.en = "Banded"
+description.value = "Ringe aus dunklem Stein über die ganze Länge, wie eine gemeißelte Säule."
+description.en = "Rings of dark stone down its length, like a carved pillar."
+
+[variety."13422.greenstone"]
+name.value = "Grünstein"
+name.en = "Greenstone"
+description.value = "Moosgrüne Schuppen. Sieht aus, als hätte er ein Jahrhundert im Flussbett gelegen."
+description.en = "Mossy green scales. Looks like it lay on a riverbed for a century."
+
+[variety."13422.marble"]
+name.value = "Marmor"
+name.en = "Marble"
+description.value = "Weiß mit grauen Adern wie ein Tempelboden. Rüstungsschmiede streiten sich darum."
+description.en = "White veined with grey, like a temple floor. Armourers fight over it."
+
+[variety."13422.obsidian"]
+name.value = "Obsidian"
+name.en = "Obsidian"
+description.value = "Schwarze, glasige Schuppen, jede mit scharfer Kante. Am Schwanz anfassen, und vorsichtig."
+description.en = "Black glassy scales with an edge on every one. Handle by the tail, and carefully."
+
+[variety."13422.gold-veined"]
+name.value = "Goldader"
+name.en = "Gold-veined"
+description.value = "Gold zieht sich durchs Grau wie Erz durch Fels. Juweliere sollen schon geweint haben."
+description.en = "Gold runs through the grey like ore in rock. Jewellers have been known to weep."
+
+[variety."13422.bedrock-ancient"]
+name.value = "Urgestein"
+name.en = "Bedrock Ancient"
+description.value = "Riesige Steinschuppen, rissig, mit bernsteinfarbenem Glühen in den Fugen. So alt wie die Klippe, aus der er kam, dem Anschein nach."
+description.en = "Huge stone scales, cracked and glowing amber in the seams. As old as the cliff it came from, by the look."
+
+[variety."13754.polished"]
+name.value = "Poliert"
+name.en = "Polished"
+description.value = "Gedrungen, blau und poliert wie ein neuer Stiefel. Zieht wie etwas doppelt so Großes."
+description.en = "Stout, blue and polished like a new boot. Pulls like something twice its size."
+
+[variety."13754.green-glass"]
+name.value = "Grünglas"
+name.en = "Green Glass"
+description.value = "Grün wie eine gegen das Licht gehaltene Flasche. Genauso schwer."
+description.en = "Green as a bottle held to the light. Just as heavy."
+
+[variety."13754.dappled"]
+name.value = "Lichtgetupft"
+name.en = "Dappled"
+description.value = "Lichttupfen über dem Rücken wie Sonne durch flaches Wasser."
+description.en = "Light dapples across its back like sun through shallow water."
+
+[variety."13754.bronzeback"]
+name.value = "Bronzerücken"
+name.en = "Bronzeback"
+description.value = "Ein bronzener Rücken und ein heller Bauch. Schwer genug, um ein Boot zu verankern."
+description.en = "A bronze back and a pale belly. Heavy enough to anchor a skiff."
+
+[variety."13754.barred"]
+name.value = "Quergestreift"
+name.en = "Barred"
+description.value = "Breite Querbinden über dem Glanz, wie ein Fisch im Schlachtgewand."
+description.en = "Broad bars across the gloss, like a fish dressed for battle."
+
+[variety."13754.humpbacked"]
+name.value = "Buckel"
+name.en = "Humpbacked"
+description.value = "Ein Muskelbuckel hinter dem Kopf. Zieht wie ein Maultier."
+description.en = "A hump of muscle behind the head. Pulls like a mule."
+
+[variety."13754.mirror"]
+name.value = "Spiegel"
+name.en = "Mirror"
+description.value = "So glänzend, dass ein Angler darin die Frisur prüfen könnte. Nach dem Kampf lassen es die meisten."
+description.en = "So glossy the angler can check their hair in it. Most don't, after the fight."
+
+[variety."13754.cobalt"]
+name.value = "Kobalt"
+name.en = "Cobalt"
+description.value = "Tiefes Kobaltblau, das violett schimmert. Sieht aus wie ein Juwel. Wiegt wie ein Amboss."
+description.en = "Deep cobalt blue that shimmers violet. Looks like a jewel. Weighs like an anvil."
+
+[variety."13754.onyx"]
+name.value = "Onyx"
+name.en = "Onyx"
+description.value = "Schwarzer Glanz wie Lack. Schluckt das Licht, und den Haken."
+description.en = "Black gloss, as if lacquered. Swallows the light, and the hook."
+
+[variety."13754.tidemight"]
+name.value = "Gezeitenkraft"
+name.en = "Tidemight"
+description.value = "Linien aus Meereslicht laufen unter dem Glanz. Zieht, als hinge die Flut selbst am anderen Ende."
+description.en = "Lines of sea-light run under the gloss. It pulls like the tide itself is on the other end."
+
+[variety."13755.frost-pink"]
+name.value = "Frostrosa"
+name.en = "Frost-pink"
+description.value = "Blassrosa, gesprenkelt mit dunklen Punkten, die beim Atmen kommen und gehen. Kommt mit dem Frost."
+description.en = "Pale pink, freckled with dark spots that come and go as it breathes. Arrives with the frost."
+
+[variety."13755.blushing"]
+name.value = "Errötet"
+name.en = "Blushing"
+description.value = "Ganz rot angelaufen, wie Kalmare, wenn sie erschrecken. Meist vor dem Angler."
+description.en = "Flushed red all over, the way squid go when startled. Usually by the angler."
+
+[variety."13755.milky"]
+name.value = "Milchig"
+name.en = "Milky"
+description.value = "Weiß und fast durchsichtig. Leicht im Eis zu verlieren."
+description.en = "White and nearly see-through. Easy to lose in the ice."
+
+[variety."13755.brindled"]
+name.value = "Gestromt"
+name.en = "Brindled"
+description.value = "Dunkle Streifen über den Mantel, wie Frostrisse in einer Fensterscheibe."
+description.en = "Dark stripes along the mantle, like frost cracks in a window."
+
+[variety."13755.long-armed"]
+name.value = "Langarm"
+name.en = "Long-armed"
+description.value = "Arme doppelt so lang wie üblich. Mehr zu entwirren, was unmöglich schien."
+description.en = "Arms twice the usual length. More to untangle, which seemed impossible."
+
+[variety."13755.ring-spotted"]
+name.value = "Ringfleck"
+name.en = "Ring-spotted"
+description.value = "Dunkle Ringe über den Mantel, wie eine Reihe wachsamer Augen."
+description.en = "Dark rings across the mantle like a row of watching eyes."
+
+[variety."13755.blueflash"]
+name.value = "Blaublitz"
+name.en = "Blueflash"
+description.value = "Blitzt blau auf, wenn man ihn berührt. Er mag es nicht, berührt zu werden."
+description.en = "Flashes blue when touched. It is not pleased to be touched."
+
+[variety."13755.crimson"]
+name.value = "Karmesin"
+name.en = "Crimson"
+description.value = "Ganz in tiefem Karmesin, der Farbe einer Warnung. Tintet doppelt so viel."
+description.en = "Deep crimson all over, the colour of a warning. Inks twice as much."
+
+[variety."13755.glassfrost"]
+name.value = "Glasfrost"
+name.en = "Glassfrost"
+description.value = "Klar wie Eis, an den Rändern bereift. Schmilzt in der Hand ein wenig, oder scheint es."
+description.en = "Clear as ice, rimed at the edges. Melts a little in the hand, or seems to."
+
+[variety."13755.frostlight"]
+name.value = "Frostlicht"
+name.en = "Frostlight"
+description.value = "Leuchtet im Dunkeln blassblau, wie Mondlicht auf Neuschnee. Nur in der tiefsten Kälte zu sehen."
+description.en = "Glows pale blue in the dark, like moonlight on new snow. Only seen in the deepest cold."
+
+[variety."13756.lateral-lined"]
+name.value = "Seitenlinie"
+name.en = "Lateral-lined"
+description.value = "Grün mit einer dunklen Linie auf jeder Flanke. Lauert unter allem, was Schatten wirft."
+description.en = "Green with a dark line down each flank. Lurks under anything that gives shade."
+
+[variety."13756.lily-pad"]
+name.value = "Seerosenblatt"
+name.en = "Lily-pad"
+description.value = "Gefleckt wie ein Teich voller Seerosenblätter, und genau dort lauert er."
+description.en = "Mottled like a pond full of lily pads, which is exactly where it lurks."
+
+[variety."13756.bronze"]
+name.value = "Bronze"
+name.en = "Bronze"
+description.value = "Bronze mit schwachen Querbinden, aus felsigem Wasser. Springt mehr als die grünen."
+description.en = "Bronze with faint bars, from rocky water. Jumps more than the green ones."
+
+[variety."13756.sun-bleached"]
+name.value = "Sonnengebleicht"
+name.en = "Sun-bleached"
+description.value = "Blass vom flachen Sommerwasser, der Streifen zu einem Schmierer verblasst. Warm in der Hand."
+description.en = "Pale from shallow summer water, the stripe faded to a smudge. Warm to hold."
+
+[variety."13756.bucketmouth"]
+name.value = "Eimermaul"
+name.en = "Bucketmouth"
+description.value = "Ein Maul wie ein Eimer. Schluckt Köder im Ganzen und manchmal kleine Enten."
+description.en = "A mouth like a bucket. Swallows lures whole, and sometimes small ducks."
+
+[variety."13756.red-eyed"]
+name.value = "Rotäugig"
+name.en = "Red-eyed"
+description.value = "Augen rot wie ein Sonnenuntergang im Sommer. Frisst am gierigsten in der Abendhitze."
+description.en = "Eyes red as a summer sunset. Feeds hardest in the evening heat."
+
+[variety."13756.tiger"]
+name.value = "Tiger"
+name.en = "Tiger"
+description.value = "Dunkle Querbinden, gebrochen wie Tigerstreifen. Kämpft auch wie einer, kurz."
+description.en = "Dark bars broken like tiger stripes. Fights like one, briefly."
+
+[variety."13756.golden"]
+name.value = "Golden"
+name.en = "Golden"
+description.value = "Gold mit einem bronzenen Streifen. Ein Sommernachmittag von einem Fisch."
+description.en = "Gold with a bronze stripe. A summer's afternoon of a fish."
+
+[variety."13756.shadow"]
+name.value = "Schatten"
+name.en = "Shadow"
+description.value = "Schwarzgrün und schwer zu sehen. Lebt im Schatten und mag es so."
+description.en = "Black-green and hard to see. Lives in the shade and prefers it."
+
+[variety."13756.midsummer"]
+name.value = "Mittsommer"
+name.en = "Midsummer"
+description.value = "Leuchtet warm golden wie der längste Abend des Jahres. Nur auf dem Höhepunkt des Sommers gefangen, und nur dann."
+description.en = "Glows warm gold, like the longest evening of the year. Caught at the height of summer, and only then."
+
+[variety."13757.thunder-dark"]
+name.value = "Donnerdunkel"
+name.en = "Thunder-dark"
+description.value = "Olivdunkel und summend. Kribbelt. Nicht ablecken."
+description.en = "Olive-dark and buzzing. Tingles. Don't lick it."
+
+[variety."13757.bolt-striped"]
+name.value = "Blitzstreifen"
+name.en = "Bolt-striped"
+description.value = "Gelbe Zickzacklinien die Flanken hinab, wie ein Kinderbild von einem Blitz."
+description.en = "Yellow zigzags down the flanks, like a child's drawing of lightning."
+
+[variety."13757.slate"]
+name.value = "Schiefer"
+name.en = "Slate"
+description.value = "Grau wie Gewitterwolken. Summt einen tieferen Ton."
+description.en = "Grey as storm clouds. Hums at a lower note."
+
+[variety."13757.ember-bellied"]
+name.value = "Glutbauch"
+name.en = "Ember-bellied"
+description.value = "Ein orangefarbener Bauch wie bei Zitteraalen warmer Flüsse. Beißt mit einem Funken."
+description.en = "An orange belly, like an electric eel of warm rivers. Bites with a spark."
+
+[variety."13757.spark-spotted"]
+name.value = "Funkenfleck"
+name.en = "Spark-spotted"
+description.value = "Helle Flecken, die knistern, wenn er zappelt. Handschuhe helfen nicht."
+description.en = "Pale spots that crackle when it thrashes. Gloves are no help."
+
+[variety."13757.long"]
+name.value = "Langflosse"
+name.en = "Long"
+description.value = "Eine Flosse über die ganze Körperlänge. Sie flattert wie eine Fahne im Sturm."
+description.en = "A fin that runs the whole length of its body. It ripples like a flag in a gale."
+
+[variety."13757.ozone"]
+name.value = "Ozon"
+name.en = "Ozone"
+description.value = "Riecht nach Regen nach einem Gewitter. Die Luft um ihn wird scharf."
+description.en = "Smells of rain after a storm. The air around it goes sharp."
+
+[variety."13757.white-bolt"]
+name.value = "Grellblitz"
+name.en = "White Bolt"
+description.value = "Weiß wie ein Blitzstrahl und kurz blendend, wenn er sich windet."
+description.en = "White as a lightning flash, and briefly blinding when it twists."
+
+[variety."13757.blackout"]
+name.value = "Schwarzstille"
+name.en = "Blackout"
+description.value = "Schwarz und still, bis man ihn berührt. Dann gar nicht mehr still."
+description.en = "Black and silent until touched. Then not silent at all."
+
+[variety."13757.stormcaller"]
+name.value = "Sturmrufer"
+name.en = "Stormcaller"
+description.value = "Blaue Blitze gabeln sich über den Körper und ins Wasser. Wolken ziehen auf, solange er an der Schnur hängt, oder es scheint so."
+description.en = "Blue lightning forks across its body and into the water. Clouds gather while it's on the line, or seem to."
+
+[variety."13758.ember-gilled"]
+name.value = "Glutkieme"
+name.en = "Ember-gilled"
+description.value = "Quergestreift wie ein Barsch, mit Kiemen rot wie Glut. Das übliche Aussehen, und das übliche Temperament."
+description.en = "Barred like a perch, with gills red as embers. The usual look, and the usual temper."
+
+[variety."13758.yellow"]
+name.value = "Gelb"
+name.en = "Yellow"
+description.value = "Goldgelb mit dunklen Querbinden. Hell wie eine Lampe in grünem Wasser."
+description.en = "Yellow-gold with dark bars. Bright as a lamp in green water."
+
+[variety."13758.olive"]
+name.value = "Oliv"
+name.en = "Olive"
+description.value = "Dunkleres Oliv, aus zugewachsenen Flüssen. Die Kiemen leuchten dagegen umso heller."
+description.en = "Darker olive, from overgrown rivers. The gills shine brighter by contrast."
+
+[variety."13758.spotted"]
+name.value = "Gefleckt"
+name.en = "Spotted"
+description.value = "Flecken statt Querbinden. Gleiches Temperament."
+description.en = "Spots instead of bars. Same temper."
+
+[variety."13758.redfin"]
+name.value = "Rotflosse"
+name.en = "Redfin"
+description.value = "Flossen so rot wie die Kiemen. Der ganze Fisch sieht wütend aus, weil er es ist."
+description.en = "Fins as red as the gills. The whole fish looks angry, because it is."
+
+[variety."13758.cinder"]
+name.value = "Aschenglut"
+name.en = "Cinder"
+description.value = "Aschgrau mit rot glühenden Kiemen, wie eine Kohle aus einem erloschenen Feuer."
+description.en = "Ash-grey with glowing red gills, like a coal pulled from a dead fire."
+
+[variety."13758.fire-gilled"]
+name.value = "Feuerkieme"
+name.en = "Fire-gilled"
+description.value = "Die Kiemen glühen tatsächlich. Niemand ist sicher, ob das Wasser kalt genug war."
+description.en = "The gills actually glow. Nobody's sure the water was cold enough."
+
+[variety."13758.golden"]
+name.value = "Golden"
+name.en = "Golden"
+description.value = "Gold mit scharlachroten Kiemen. Sieht aus wie etwas aus dem Brunnen eines Lords."
+description.en = "Gold with scarlet gills. Looks like something from a lord's fountain."
+
+[variety."13758.ghost"]
+name.value = "Geist"
+name.en = "Ghost"
+description.value = "Bleich, mit rosa Kiemen und schwachen Querbinden. Fühlt sich selbst im Sommer kalt an."
+description.en = "Pale, with pink gills and faint bars. Feels cold even in summer."
+
+[variety."13758.fel-scarred"]
+name.value = "Teufelsnarbe"
+name.en = "Fel-scarred"
+description.value = "Grünes Feuer läuft unter den Schuppen, wo das Rot sein sollte. Er kam aus Wasser, das sich an eine Verderbnis erinnert."
+description.en = "Green fire runs under the scales where its red should be. It came from water that remembers a corruption."
+
+[variety."13759.starfeeder"]
+name.value = "Sternfresser"
+name.en = "Starfeeder"
+description.value = "Dunkelviolett mit Flossen wie die Nacht. Frisst im Sternenlicht."
+description.en = "Dark violet with fins like the night. Feeds by starlight."
+
+[variety."13759.dusk"]
+name.value = "Abenddämmerung"
+name.en = "Dusk"
+description.value = "Violetter Rücken, rosa Bauch, wie der Himmel kurz nach Sonnenuntergang."
+description.en = "Violet back, rose belly, like the sky just after sunset."
+
+[variety."13759.indigo"]
+name.value = "Indigo"
+name.en = "Indigo"
+description.value = "Tiefes Indigo. Verschwindet im Wasser, sobald der Mond sich verzieht."
+description.en = "Deep indigo. Vanishes in the water as soon as the moon goes in."
+
+[variety."13759.star-speckled"]
+name.value = "Sternsprenkel"
+name.en = "Star-speckled"
+description.value = "Helle Sprenkel den Rücken entlang, wie ein Himmel mit ein paar Sternen."
+description.en = "Pale specks along the back, like a sky with a few stars out."
+
+[variety."13759.moonfin"]
+name.value = "Mondflosse"
+name.en = "Moonfin"
+description.value = "Silberweiße Flossen, die das Mondlicht fangen. Angler lernen, die Dunkelheit zu mögen."
+description.en = "Silver-white fins that catch the moonlight. Anglers learn to like the dark."
+
+[variety."13759.crescent-marked"]
+name.value = "Mondsichel"
+name.en = "Crescent-marked"
+description.value = "Eine helle Sichel auf jeder Flanke, als hätte der Mond einen Fingerabdruck hinterlassen."
+description.en = "A pale crescent on each flank, as if the moon left a fingerprint."
+
+[variety."13759.owl-eyed"]
+name.value = "Eulenauge"
+name.en = "Owl-eyed"
+description.value = "Riesige goldene Augen, gemacht für die Dunkelheit. Starrt direkt zurück."
+description.en = "Huge golden eyes made for the dark. Stares right back."
+
+[variety."13759.eclipse"]
+name.value = "Finsternis"
+name.en = "Eclipse"
+description.value = "Schwarz, an den Flossen golden gesäumt, wie die verdunkelte Sonne."
+description.en = "Black, rimmed with gold at the fins, like the sun gone dark."
+
+[variety."13759.dawn-caught"]
+name.value = "Morgengrauen"
+name.en = "Dawn-caught"
+description.value = "Rosa und gold, gefangen, als die Nacht endete. Ein Nachtfisch, der zu lange aufgeblieben ist."
+description.en = "Pink and gold, caught as the night ended. A night fish that stayed up too late."
+
+[variety."13759.starsong"]
+name.value = "Sternenlied"
+name.en = "Starsong"
+description.value = "Die Sprenkel leuchten wie der Nachthimmel und wandern beim Drehen, wie kreisende Sterne. Auf dem Steg wird es still."
+description.en = "Its specks shine like the night sky and move as it turns, like stars wheeling. Silence falls on the dock."
+
+[variety."13760.coin-scaled"]
+name.value = "Münzschuppe"
+name.en = "Coin-scaled"
+description.value = "Silbern mit goldgefleckten Schuppen, die das Licht fangen wie Münzen in einem Bach."
+description.en = "Silver with gold-flecked scales that catch the light like coins in a stream."
+
+[variety."13760.morning"]
+name.value = "Morgen"
+name.en = "Morning"
+description.value = "Am Bauch pfirsichfarben angehaucht, wie das erste Licht auf einem Fluss."
+description.en = "Flushed peach along the belly, like first light on a river."
+
+[variety."13760.river-dark"]
+name.value = "Flussdunkel"
+name.en = "River-dark"
+description.value = "Dunkler, aus schattigen Flüssen. Die Goldflecken stechen hervor."
+description.en = "Darker, from shaded rivers. The gold flecks stand out."
+
+[variety."13760.silverbright"]
+name.value = "Silberhell"
+name.en = "Silverbright"
+description.value = "Hell silbern, frisch aus dem Meer. Kaum ein Goldfleck."
+description.en = "Bright silver, fresh from the sea. Barely a fleck of gold."
+
+[variety."13760.red-run"]
+name.value = "Rotzug"
+name.en = "Red Run"
+description.value = "Rot geworden für den Laichzug, mit grünem Kopf. In einem guten Jahr färbt sich der Fluss rot von ihnen."
+description.en = "Gone red for the spawning run, with a green head. The river turns red with them in a good year."
+
+[variety."13760.hooknose"]
+name.value = "Hakennase"
+name.en = "Hooknose"
+description.value = "Ein grimmiger Hakenkiefer vom Zug flussaufwärts. Sieht bereit aus, mit einem Bären zu kämpfen."
+description.en = "A fierce hooked jaw from its run upriver. Looks ready to fight a bear."
+
+[variety."13760.noonday"]
+name.value = "Mittag"
+name.en = "Noonday"
+description.value = "Gold den ganzen Rücken entlang, wie ein Fluss zur Mittagszeit."
+description.en = "Gold all along the back, like a river at noon."
+
+[variety."13760.copper"]
+name.value = "Kupfer"
+name.en = "Copper"
+description.value = "Poliertes Kupfer von Kopf bis Schwanz. Schmeckt nach Lachs, sieht aus wie ein Kessel."
+description.en = "Polished copper from head to tail. Tastes like salmon, looks like a kettle."
+
+[variety."13760.twilight"]
+name.value = "Zwielicht"
+name.en = "Twilight"
+description.value = "Violett und orange, wie das letzte Licht auf dem Fluss. Bei voller Dunkelheit verschwunden."
+description.en = "Violet and orange, like the last light on the river. Gone by full dark."
+
+[variety."13760.sunfire"]
+name.value = "Sonnenfeuer"
+name.en = "Sunfire"
+description.value = "Jede Schuppe golden erleuchtet wie eine winzige Sonne. Warm wie ein Herdstein. Kaum direkt anzusehen."
+description.en = "Every scale lit gold like a tiny sun. Warm as a hearthstone. Hard to look at directly."
+
+[variety."13888.blue-black"]
+name.value = "Blauschwarz"
+name.en = "Blue-black"
+description.value = "Blauschwarzer Panzer, leicht gesprenkelt, Scheren voran. Die Sorte, die sich unter jedem Stein der Bucht versteckt."
+description.en = "Blue-black shell, lightly speckled, claws first. The kind that hides under every rock in the bay."
+
+[variety."13888.sea-green"]
+name.value = "Meergrün"
+name.en = "Sea-green"
+description.value = "Grünschwarz, wie ein Hummer kälterer Meere."
+description.en = "Green-black, like a lobster of colder seas."
+
+[variety."13888.mud-brown"]
+name.value = "Schlammbraun"
+name.en = "Mud-brown"
+description.value = "Braun von schlammigen Bänken. Kneift genauso fest."
+description.en = "Brown from muddy shelves. Pinches just as hard."
+
+[variety."13888.barnacled"]
+name.value = "Seepocken"
+name.en = "Barnacled"
+description.value = "Überall Seepocken auf dem Panzer. Hat sich lange nicht gehäutet und bereut nichts."
+description.en = "Barnacles all over the shell. Hasn't moulted in a long while, and isn't sorry."
+
+[variety."13888.red-banded"]
+name.value = "Rotband"
+name.en = "Red-banded"
+description.value = "Rote Bänder über den Schwanz. Sieht schon halb gekocht aus. Ist er nicht."
+description.en = "Red bands across the tail. Looks half-cooked already. Isn't."
+
+[variety."13888.bigclaw"]
+name.value = "Riesenschere"
+name.en = "Bigclaw"
+description.value = "Eine Schere doppelt so groß wie die andere. Weiß genau, welche er benutzt."
+description.en = "One claw twice the size of the other. Knows exactly which one to use."
+
+[variety."13888.calico"]
+name.value = "Dreifarbig"
+name.en = "Calico"
+description.value = "Orange und schwarz gefleckt wie eine Schildpattkatze. Kaum jemand glaubt es."
+description.en = "Orange and black in patches, like a tortoiseshell cat. Hardly anyone believes it."
+
+[variety."13888.sapphire"]
+name.value = "Saphir"
+name.en = "Sapphire"
+description.value = "Ganz leuchtend blau. Einer unter sehr vielen. Kneift wie die anderen."
+description.en = "Bright blue all over. One in a great many. Pinches like the rest."
+
+[variety."13888.ghost"]
+name.value = "Geist"
+name.en = "Ghost"
+description.value = "Weiß wie Knochen. Selbst die Scheren sind bleich. Das Temperament nicht."
+description.en = "White as bone. Even the claws are pale. Even the temper isn't."
+
+[variety."13888.abyssal"]
+name.value = "Abgrund"
+name.en = "Abyssal"
+description.value = "Violettes Licht glüht aus den Gelenken des Panzers. Aus sehr tiefem Wasser heraufgeklettert, und sichtlich verärgert darüber."
+description.en = "Violet light glows from the joints of its shell. Climbed up from very deep water, and seems annoyed about it."
+
+[variety."13889.frost-white"]
+name.value = "Frostbleich"
+name.en = "Frost-white"
+description.value = "Blasses Silber, leicht gesprenkelt, kalt in der Hand, egal wie lange er in der Sonne liegt."
+description.en = "Pale silver, lightly speckled, cold to the touch however long it sits in the sun."
+
+[variety."13889.silverblue"]
+name.value = "Silberblau"
+name.en = "Silverblue"
+description.value = "Ein blauer Schimmer auf dem Rücken, von Gletscherwasser."
+description.en = "A blue cast along the back, from glacier water."
+
+[variety."13889.snowflake"]
+name.value = "Schneeflocke"
+name.en = "Snowflake"
+description.value = "Leuchtend weiße Tupfen auf Silber, wie Schnee auf einem gefrorenen See."
+description.en = "Bright white spots on silver, like snow on a frozen lake."
+
+[variety."13889.pearl"]
+name.value = "Perle"
+name.en = "Pearl"
+description.value = "Perlmuttglanz ganz ohne Flecken. Sieht geschnitzt aus."
+description.en = "A pearly sheen with no spots at all. Looks carved."
+
+[variety."13889.spawn-blush"]
+name.value = "Laichröte"
+name.en = "Spawn-blush"
+description.value = "Ein rosa Hauch an den Flanken zur Laichzeit. Selten in so kaltem Wasser."
+description.en = "A pink blush along the flanks for spawning. Rare in such cold water."
+
+[variety."13889.hot-spring"]
+name.value = "Thermalquelle"
+name.en = "Hot-spring"
+description.value = "Wärmer getönt, aus Gewässern, wo die Quellen aufsteigen. Dampft, wenn er an Land kommt."
+description.en = "Warmer-toned, from waters where the springs rise. Steam comes off it when landed."
+
+[variety."13889.hooknose"]
+name.value = "Hakennase"
+name.en = "Hooknose"
+description.value = "Ein Hakenkiefer und ein kalter Blick. Frost auf Barteln, die er gar nicht hat."
+description.en = "A hooked jaw and a cold stare. Frost on the whiskers that it doesn't have."
+
+[variety."13889.crystal"]
+name.value = "Kristall"
+name.en = "Crystal"
+description.value = "Stellenweise klar wie Eis. Die Pfanne wirkt irgendwie falsch."
+description.en = "Clear as ice in places. The pan seems wrong somehow."
+
+[variety."13889.ashen"]
+name.value = "Aschgrau"
+name.en = "Ashen"
+description.value = "Grau wie Asche, aus Gewässern nahe den verseuchten Landen. Trotzdem gut zu essen, heißt es."
+description.en = "Grey as ash, from waters near the blighted lands. Still fine eating, they say."
+
+[variety."13889.wintersheen"]
+name.value = "Winterglanz"
+name.en = "Wintersheen"
+description.value = "Frostmuster bedecken jede Schuppe und glühen schwach blau. Er taut nie auf, nicht einmal in der Pfanne."
+description.en = "Frost patterns cover every scale and glow faintly blue. It never thaws, not even in the pan."
+
+[variety."13890.bony-backed"]
+name.value = "Knochenrücken"
+name.en = "Bony-backed"
+description.value = "Knochenplatten den Rücken hinab wie beim Stör. Trägt die Rüstung außen, das Temperament innen."
+description.en = "Bony plates down the back like a sturgeon. Wears its armour outside, temper inside."
+
+[variety."13890.bronze-plated"]
+name.value = "Bronzeplatte"
+name.en = "Bronze-plated"
+description.value = "Platten in der Farbe alter Bronze. Sieht paradetauglich aus."
+description.en = "Plates the colour of old bronze. Looks fit for a parade."
+
+[variety."13890.iron-plated"]
+name.value = "Eisenplatte"
+name.en = "Iron-plated"
+description.value = "Graue Platten wie eine Eisenrüstung. Ein schwereres Messer mitbringen."
+description.en = "Grey plates like iron armour. Bring a heavier knife."
+
+[variety."13890.moss-backed"]
+name.value = "Moosrücken"
+name.en = "Moss-backed"
+description.value = "Grünes Moos auf den Platten. Hat sich lange nicht bewegt, dann plötzlich doch."
+description.en = "Green moss on its plates. Hasn't moved in a while, then suddenly has."
+
+[variety."13890.spiked"]
+name.value = "Stachelig"
+name.en = "Spiked"
+description.value = "Jede Platte mit einem Stachel. Vernünftige Angler nehmen den Kescher."
+description.en = "Every plate tipped with a spike. Sensible anglers use the net."
+
+[variety."13890.battle-scarred"]
+name.value = "Kampfnarbe"
+name.en = "Battle-scarred"
+description.value = "Verbeulte Platten und alte Furchen. Was auch immer ihn fressen wollte, hat aufgegeben."
+description.en = "Dented plates and old gouges. Whatever tried to eat it gave up."
+
+[variety."13890.ring-plated"]
+name.value = "Ringplatte"
+name.en = "Ring-plated"
+description.value = "Platten in sauberen Ringen, wie ein Bänderpanzer."
+description.en = "Plates in neat rings, like a coat of banded mail."
+
+[variety."13890.gilded"]
+name.value = "Vergoldet"
+name.en = "Gilded"
+description.value = "Goldgesäumte Platten wie die Paraderüstung eines Ritters. Kämpft auch wie ein Ritter."
+description.en = "Gold-edged plates, like a knight's parade armour. Fights like a knight, too."
+
+[variety."13890.ore-plated"]
+name.value = "Erzplatte"
+name.en = "Ore-plated"
+description.value = "Platten mit grüngrauem Glanz, wie das härteste Erz der Berge. Das Messer gibt zuerst auf."
+description.en = "Plates with a green-grey shine, like the hardest ore in the mountains. The knife gives up first."
+
+[variety."13890.ancient-bulwark"]
+name.value = "Uraltes Bollwerk"
+name.en = "Ancient Bulwark"
+description.value = "Platten dick wie Schilde, mit alten, golden glühenden Linien. Als hätte ihn jemand vor langer Zeit geschmiedet und schwimmen lassen."
+description.en = "Plates thick as shields, carved with old lines that glow gold. As if somebody forged it long ago and set it swimming."
+
+[variety."13893.big-blue"]
+name.value = "Blauriese"
+name.en = "Big Blue"
+description.value = "Riesig, blau und breit. Beide Hände, und vermutlich ein Freund."
+description.en = "Huge, blue and broad. Both hands, and probably a friend."
+
+[variety."13893.storm-grey"]
+name.value = "Sturmgrau"
+name.en = "Storm-grey"
+description.value = "Grau wie die Bucht im Sturm. Fühlt sich an, als wöge er genauso viel."
+description.en = "Grey as the bay in a storm. Feels like it weighs as much."
+
+[variety."13893.barred"]
+name.value = "Quergestreift"
+name.en = "Barred"
+description.value = "Breite dunkle Querbinden an den Seiten wie Spanten an einem Schiffsrumpf."
+description.en = "Broad dark bars down its sides like ribs on a ship's hull."
+
+[variety."13893.sea-green"]
+name.value = "Meergrün"
+name.en = "Sea-green"
+description.value = "Grün wie tiefes Wasser. Es braucht drei, um ihn ins Boot zu ziehen."
+description.en = "Green as deep water. Takes three to pull it into the boat."
+
+[variety."13893.old-scarback"]
+name.value = "Alter Narbenrücken"
+name.en = "Old Scarback"
+description.value = "Narben von Zähnen, größer, als irgendein Angler sie je treffen möchte."
+description.en = "Scars from teeth bigger than any angler wants to meet."
+
+[variety."13893.hump-shouldered"]
+name.value = "Buckelschulter"
+name.en = "Hump-shouldered"
+description.value = "Ein großer Buckel hinter dem Kopf. Gebaut wie ein Anlegepfahl."
+description.en = "A great hump behind the head. Built like a dock piling."
+
+[variety."13893.spotted"]
+name.value = "Gefleckt"
+name.en = "Spotted"
+description.value = "Helle Flecken auf dunklem Rücken wie Schaum auf einer Welle."
+description.en = "Pale spots across a dark back like foam on a wave."
+
+[variety."13893.golden"]
+name.value = "Golden"
+name.en = "Golden"
+description.value = "Ein goldener Riese. Ohne den Fisch glaubt niemand die Geschichte."
+description.en = "A golden giant. Nobody believes the story without the fish."
+
+[variety."13893.abyss-dark"]
+name.value = "Abgrunddunkel"
+name.en = "Abyss-dark"
+description.value = "Schwarzblau, aus dem tiefsten Graben der Bucht. Zerrt, als wollte der Graben ihn zurück."
+description.en = "Black-blue, from the deepest trench of the bay. Tugs like the trench wants it back."
+
+[variety."13893.leviathans-get"]
+name.value = "Leviathanbrut"
+name.en = "Leviathan's Get"
+description.value = "Leuchtende Linien wie alte Runen an den Flanken. Die ältesten Geschichten der Bucht handeln von etwas Größerem. Ein Anfang."
+description.en = "Glowing lines like old runes along its flanks. The bay's oldest stories are about something bigger than this. It's a start."
+
+[variety."16967.yellowfin"]
+name.value = "Gelbflosse"
+name.en = "Yellowfin"
+description.value = "Dunkelblauer Rücken, silberner Bauch, lange gelbe Flossen. Der Fisch, für den der Fluss berühmt ist."
+description.en = "Dark blue back, silver belly, long yellow fins. The fish the river is famous for."
+
+[variety."16967.verdant"]
+name.value = "Waldgrün"
+name.en = "Verdant"
+description.value = "Ein grüner Schimmer auf dem Rücken, vom Flusswasser unter den großen Bäumen."
+description.en = "A green cast along the back, from river water under the great trees."
+
+[variety."16967.feeding-barred"]
+name.value = "Jagdstreifen"
+name.en = "Feeding-barred"
+description.value = "Helle Querbinden blitzen an den Flanken, wie Thunfische sie bei der Jagd zeigen. Mitten beim Fressen gefangen."
+description.en = "Pale bars flash on its flanks, as tuna show when hunting. Caught mid-meal."
+
+[variety."16967.silverflank"]
+name.value = "Silberflanke"
+name.en = "Silverflank"
+description.value = "Helleres Silber die ganze Seite entlang. Die gelben Flossen wirken aufgemalt."
+description.en = "Brighter silver all down the side. The yellow fins look painted on."
+
+[variety."16967.sickle-fin"]
+name.value = "Sichelflosse"
+name.en = "Sickle-fin"
+description.value = "Flossen, lang und gebogen wie Sicheln. Gebaut für lange Reisen flussabwärts."
+description.en = "Fins grown long and curved like sickles. Built for long journeys downriver."
+
+[variety."16967.gold-belted"]
+name.value = "Goldgürtel"
+name.en = "Gold-belted"
+description.value = "Ein goldener Streifen vom Auge bis zum Schwanz. Ein Gefallen in Fischform, im feinsten Gewand."
+description.en = "A gold stripe from eye to tail. A favour fish in its finest clothes."
+
+[variety."16967.mossback"]
+name.value = "Moosrücken"
+name.en = "Mossback"
+description.value = "Oben grünschwarz, als wüchse der Wald darauf. Schwimmt langsam, dann sehr schnell."
+description.en = "Green-black above, as if the forest grew on it. Swims slow, then very fast."
+
+[variety."16967.imperial"]
+name.value = "Kaiserblau"
+name.en = "Imperial"
+description.value = "Tiefes Königsblau mit leuchtend goldenen Flossen. Zu prächtig, um für irgendwen ein Gefallen zu sein."
+description.en = "Deep royal blue with fins of bright gold. Looks too fine to be a favour for anybody."
+
+[variety."16967.ghostfin"]
+name.value = "Geisterflosse"
+name.en = "Ghostfin"
+description.value = "Ganz bleich, die Flossen fast durchsichtig. Schwimmt wie ein Spiegelbild."
+description.en = "Pale all over, the fins almost clear. Swims like a reflection."
+
+[variety."16967.leaf-lit"]
+name.value = "Blattlicht"
+name.en = "Leaf-lit"
+description.value = "Blassgrünes Licht wandert unter den Schuppen wie Sonne durch Laub. Die alte Magie des Waldes steckt in diesen Gewässern."
+description.en = "Pale green light moves under its scales like sun through leaves. The forest's old magic is in these waters."
+
+[variety."16968.silver-barred"]
+name.value = "Silberstreif"
+name.en = "Silver-barred"
+description.value = "Lang, silbern und quergestreift, mit einem Maul voller Zähne. Für eine einzige Sache gebaut."
+description.en = "Long, silver and barred, with a jaw full of teeth. Built for one thing."
+
+[variety."16968.sandstrand"]
+name.value = "Sandstrand"
+name.en = "Sandstrand"
+description.value = "Sandfarben, aus den Untiefen einer trockenen Küste. Unsichtbar, bis er zuschlägt."
+description.en = "Sand-coloured, from the shallows of a dry coast. Invisible until it strikes."
+
+[variety."16968.spotted"]
+name.value = "Gefleckt"
+name.en = "Spotted"
+description.value = "Schwarze Flecken nahe dem Schwanz, wie sie die Großen bekommen. Wartet noch immer auf Streit."
+description.en = "Black spots near the tail, as the big ones grow. Still waiting for an argument."
+
+[variety."16968.greyback"]
+name.value = "Graurücken"
+name.en = "Greyback"
+description.value = "Oben schlicht grau, unten weiß. Nur Zähne und Absicht."
+description.en = "Plain grey above, white below. Just teeth and intent."
+
+[variety."16968.needlejaw"]
+name.value = "Nadelkiefer"
+name.en = "Needlejaw"
+description.value = "Zähne wie eine Reihe Nadeln. Hinterher die Finger zählen."
+description.en = "Teeth like a row of needles. Count your fingers after."
+
+[variety."16968.bronze"]
+name.value = "Bronze"
+name.en = "Bronze"
+description.value = "Bronzene Querbinden, aus warmem Wasser. Doppeltes Temperament."
+description.en = "Bronze-barred, from warm water. Twice the temper."
+
+[variety."16968.chevron"]
+name.value = "Pfeilmuster"
+name.en = "Chevron"
+description.value = "Dunkle Winkel den Rücken hinab wie Pfeile, die auf Ärger zeigen."
+description.en = "Dark chevrons down its back like arrows pointing at trouble."
+
+[variety."16968.blackback"]
+name.value = "Schwarzrücken"
+name.en = "Blackback"
+description.value = "Oben schwarz, unten stahlgrau. Schlägt aus dem Dunkeln zu."
+description.en = "Black above, steel below. Strikes from the dark."
+
+[variety."16968.ghost"]
+name.value = "Geist"
+name.en = "Ghost"
+description.value = "Weiß und fast durchsichtig, die Querbinden nur ein Schatten ihrer selbst. Die Zähne sind völlig echt."
+description.en = "White and nearly clear, the bars a shadow of themselves. The teeth are perfectly solid."
+
+[variety."16968.bonecutter"]
+name.value = "Knochensäger"
+name.en = "Bonecutter"
+description.value = "Zähne wie Knochensägen und ein Rücken voller alter Spuren. Geschichten von der trockenen Küste sagen, er habe drei Jäger überlebt."
+description.en = "Teeth like bone saws and a back covered in old marks. Dry-coast stories say it outlived three hunters."
+
+[variety."16969.spotted-sail"]
+name.value = "Tupfensegel"
+name.en = "Spotted Sail"
+description.value = "Blauer Rücken, silberner Bauch, ein hohes, getupftes Segel. Stellt es auf, sobald jemand hinsieht."
+description.en = "Blue back, silver belly, a tall sail dotted with spots. Raises it the moment anyone watches."
+
+[variety."16969.barred"]
+name.value = "Quergestreift"
+name.en = "Barred"
+description.value = "Hellblaue Querbinden an den Flanken, mitten im Kampf aufleuchtend. Am besten in der Luft zu sehen, wo er den Kampf verbringt."
+description.en = "Pale blue bars down the flanks, lit up mid-fight. Best seen in the air, which is where it spends the fight."
+
+[variety."16969.violet-sail"]
+name.value = "Veilchensegel"
+name.en = "Violet Sail"
+description.value = "Das Segel glüht violett, wenn er aufgeregt ist. Er ist immer aufgeregt."
+description.en = "The sail glows violet when it's excited. It's always excited."
+
+[variety."16969.silver"]
+name.value = "Silbern"
+name.en = "Silver"
+description.value = "Mehr silbern als blau. Das Segel bleibt so leuchtend wie immer."
+description.en = "Silver more than blue. The sail stays bright as ever."
+
+[variety."16969.tall-sailed"]
+name.value = "Hochsegel"
+name.en = "Tall-sailed"
+description.value = "Ein Segel, höher als der Fisch tief ist. Der Wind erfasst es an der Schnur."
+description.en = "A sail taller than the fish is deep. Wind catches it on the line."
+
+[variety."16969.jungle-green"]
+name.value = "Dschungelgrün"
+name.en = "Jungle-green"
+description.value = "Grün wie der Dschungel hinter der Küste. Gibt trotzdem genauso an."
+description.en = "Green as the jungle behind the coast. Shows off just the same."
+
+[variety."16969.sunset-sail"]
+name.value = "Abendsegel"
+name.en = "Sunset Sail"
+description.value = "Ein orangefarbenes Segel, wie die Küste am Abend. Springt mehr als die blauen."
+description.en = "An orange sail, like the coast at evening. Leaps more than the blue ones."
+
+[variety."16969.royal"]
+name.value = "Königsblau"
+name.en = "Royal"
+description.value = "Tiefes Königsblau, das Segel golden getupft. Angler halten ihn abwechselnd."
+description.en = "Deep royal blue, the sail spotted gold. Anglers take turns holding it."
+
+[variety."16969.white-sail"]
+name.value = "Segeltuch"
+name.en = "White Sail"
+description.value = "Bleich wie Segeltuch. Seeleute schwören, er verheißt gutes Wetter."
+description.en = "Pale as a ship's canvas. Sailors swear it's a sign of good weather."
+
+[variety."16969.skyleaper"]
+name.value = "Himmelsspringer"
+name.en = "Skyleaper"
+description.value = "Linien aus blauem Licht laufen beim Sprung das Segel hinauf. Scheint länger in der Luft zu hängen, als ein Fisch sollte."
+description.en = "Lines of blue light ripple up the sail as it leaps. Seems to hang in the air longer than any fish should."
+
+[variety."16970.dorado"]
+name.value = "Dorado"
+name.en = "Dorado"
+description.value = "Grün und gold mit blauen Flecken, wie ein Papagei, der mit dem Schwimmen angefangen hat."
+description.en = "Green and gold with blue spots, like a parrot that took up swimming."
+
+[variety."16970.gold-flanked"]
+name.value = "Goldflanke"
+name.en = "Gold-flanked"
+description.value = "Mehr Gold als Grün. Wird kurz nach dem Landen grau, also schnell hinsehen."
+description.en = "More gold than green. Fades to grey soon after landing, so look quickly."
+
+[variety."16970.bluefin"]
+name.value = "Blauflosse"
+name.en = "Bluefin"
+description.value = "Blau an Rücken und Flossen. Kühler im Kopf. Nicht viel."
+description.en = "Blue along the back and fins. Cooler-headed. Not by much."
+
+[variety."16970.reed-green"]
+name.value = "Schilfgrün"
+name.en = "Reed-green"
+description.value = "Mattgrün, aus dem nebligen Schilf. Kaum zu sehen, bis er springt."
+description.en = "Dull green, from the misty reeds. Hard to see until it jumps."
+
+[variety."16970.bull-headed"]
+name.value = "Stierkopf"
+name.en = "Bull-headed"
+description.value = "Eine stumpfe, hohe Stirn wie ein Mahi-Bulle. Greift das Boot an."
+description.en = "A blunt, tall forehead like a bull mahi. Charges the boat."
+
+[variety."16970.barred"]
+name.value = "Quergestreift"
+name.en = "Barred"
+description.value = "Dunkle Querbinden blitzen an den Seiten auf, wenn er am Haken hängt. Er ist außer sich."
+description.en = "Dark bars flash on its sides when hooked. It's furious."
+
+[variety."16970.fog-pale"]
+name.value = "Nebelbleich"
+name.en = "Fog-pale"
+description.value = "Bleich, als wäre der Sumpfnebel in die Farbe gezogen. Kämpft wie eine Nebelbank, dann wie ein Maultier."
+description.en = "Pale, as if the swamp mist got into the colour. Fights like a fog bank, then like a mule."
+
+[variety."16970.emerald"]
+name.value = "Smaragd"
+name.en = "Emerald"
+description.value = "Rein grün, ganz ohne Gold. Wie ein Edelstein, der ins Moor gefallen ist."
+description.en = "Pure green, no gold at all. Like a gem dropped in the marsh."
+
+[variety."16970.sunfire"]
+name.value = "Sonnenfeuer"
+name.en = "Sunfire"
+description.value = "Orange und gold, wie ein Feuer am Ufer. Der Sumpf verstummt, um hinzusehen."
+description.en = "Orange and gold, like a fire at the water's edge. The swamp goes quiet to look."
+
+[variety."16970.marsh-lantern"]
+name.value = "Sumpflaterne"
+name.en = "Marsh Lantern"
+description.value = "Die Flecken glühen grüngolden im Nebel wie Laternen im Sumpf. Die Einheimischen sagen, er führt Angler in die Irre."
+description.en = "Its spots glow green-gold in the mist, like lanterns in a swamp. Locals say it leads anglers astray."
+
+[variety."19807.contest-speckle"]
+name.value = "Wettbewerbssprenkel"
+name.en = "Contest Speckle"
+description.value = "Silbergrau und gesprenkelt. Jeder Teilnehmer auf dem Steg kennt ihn vom Sehen."
+description.en = "Silvery-grey and freckled. Every contestant on the dock knows this one by sight."
+
+[variety."19807.silver-speckle"]
+name.value = "Silbersprenkel"
+name.en = "Silver Speckle"
+description.value = "Helleres Silber, aus offenem Wasser. Dieselben Sprenkel."
+description.en = "Brighter silver, from open water. Same freckles."
+
+[variety."19807.olive"]
+name.value = "Oliv"
+name.en = "Olive"
+description.value = "Grüner Rücken, aus verkrauteten Untiefen. Die Teilnehmer greifen trotzdem zu."
+description.en = "Green-backed, from weedy shallows. Contestants grab them anyway."
+
+[variety."19807.big-spotted"]
+name.value = "Münzfleck"
+name.en = "Big-spotted"
+description.value = "Flecken wie hingeworfene Münzen. Irgendwer behauptet immer, es sei ein anderer Fisch."
+description.en = "Spots like thrown coins. Somebody always claims it's a different fish."
+
+[variety."19807.red-speckled"]
+name.value = "Rotsprenkel"
+name.en = "Red-speckled"
+description.value = "Rote Sommersprossen. Sieht schon gewürzt aus."
+description.en = "Red freckles. Looks seasoned already."
+
+[variety."19807.gilded"]
+name.value = "Vergoldet"
+name.en = "Gilded"
+description.value = "Gold mit braunen Sommersprossen. Auf dem Steg bildet sich eine Menge."
+description.en = "Gold with brown freckles. A crowd gathers on the dock."
+
+[variety."19807.lucky-speckle"]
+name.value = "Glückssprenkel"
+name.en = "Lucky Speckle"
+description.value = "Ein Sprenkel in Hufeisenform. Fürs Glück behalten, dann zu Mittag gegessen."
+description.en = "One speckle shaped like a horseshoe. Kept for luck, then eaten for lunch."
+
+[variety."19807.pale"]
+name.value = "Bleich"
+name.en = "Pale"
+description.value = "Weiß mit schwachen cremefarbenen Sprenkeln. Zieht bei jedem Wettbewerb Blicke auf sich."
+description.en = "White with faint cream freckles. Turns heads at every contest."
+
+[variety."19807.black"]
+name.value = "Schwarz"
+name.en = "Black"
+description.value = "Schwarz mit weißen Sprenkeln, wie ein Nachthimmel in Eile."
+description.en = "Black with white freckles, like a night sky in a hurry."
+
+[variety."19807.champions"]
+name.value = "Siegerfang"
+name.en = "Champion's"
+description.value = "Jeder Sprenkel glänzt wie eine Goldmünze. Ein Fisch, von dem man sich noch jahrelang erzählt."
+description.en = "Every freckle shines like a gold coin. The kind of fish that gets its own story told for years."
+
+[variety."19975.slimeback"]
+name.value = "Schleimrücken"
+name.en = "Slimeback"
+description.value = "Braun, schleimig und gedrungen. Die Nase findet ihn vor den Augen."
+description.en = "Brown, slimy and squat. The nose finds it before the eyes do."
+
+[variety."19975.skunk-striped"]
+name.value = "Stinktierstreifen"
+name.en = "Skunk-striped"
+description.value = "Ein heller Streifen von Kopf bis Schwanz. Eine Warnung, und eine faire."
+description.en = "A pale stripe from head to tail. A warning, and a fair one."
+
+[variety."19975.jungle-mud"]
+name.value = "Dschungelschlamm"
+name.en = "Jungle-mud"
+description.value = "Grünbraun, aus tiefem Dschungelschlamm. Riecht auch danach."
+description.en = "Green-brown, from deep jungle mud. Smells of it, too."
+
+[variety."19975.spotted"]
+name.value = "Gefleckt"
+name.en = "Spotted"
+description.value = "Dunkle Flecken auf Braun, wie Schlamm auf Schlamm gespritzt."
+description.en = "Dark spots on brown, like mud splashed on mud."
+
+[variety."19975.ochre"]
+name.value = "Ocker"
+name.en = "Ochre"
+description.value = "Ockergelb wie der Ton, mit dem die Trolle malen. Riecht nicht besser."
+description.en = "Ochre-yellow, like the clay the trolls paint with. Smells no better."
+
+[variety."19975.long-whiskered"]
+name.value = "Langbartel"
+name.en = "Long-whiskered"
+description.value = "Lange Barteln, die durch den Schlamm schleifen. Findet jeden Köder, riecht jeden."
+description.en = "Long barbels that trail in the mud. Finds every bait, smells every one."
+
+[variety."19975.masked"]
+name.value = "Maske"
+name.en = "Masked"
+description.value = "Ein dunkles Band über den Augen wie eine geschnitzte Maske. Sieht aus, als wüsste er Dinge."
+description.en = "A dark band across the eyes like a carved mask. Looks like it knows things."
+
+[variety."19975.bloodmud"]
+name.value = "Blutschlamm"
+name.en = "Bloodmud"
+description.value = "Dunkelrot, aus Schlamm, wo einst Opfer dargebracht wurden. Besser nicht nachfragen."
+description.en = "Dark red, from mud where old offerings were made. Best not asked about."
+
+[variety."19975.pale"]
+name.value = "Bleich"
+name.en = "Pale"
+description.value = "Knochenbleich, aus Wasser unter uraltem Stein. Der Geruch überdauert die Farbe."
+description.en = "Bone-pale, from water under ancient stone. The smell survives the colour."
+
+[variety."19975.idol-touched"]
+name.value = "Götzenberührt"
+name.en = "Idol-touched"
+description.value = "Schwache rotviolette Adern glühen auf dem Rücken wie alte Götzenfarbe. Selbst die Bestien dieser Gewässer halten Abstand."
+description.en = "Faint red-violet veins glow on its back like old idol paint. Even the beasts of these waters keep clear of it."
+
+[variety."21071.hillside"]
+name.value = "Hügelhang"
+name.en = "Hillside"
+description.value = "Salbeigrün und gesprenkelt, wie die Hügel über dem Bach, aus dem er kam."
+description.en = "Sage-green and freckled, like the hills above the stream it came from."
+
+[variety."21071.silver-sage"]
+name.value = "Silbersalbei"
+name.en = "Silver Sage"
+description.value = "Silbrig, wie Salbeiblätter, die der Wind umdreht."
+description.en = "Silvery, like sage leaves turned over in the wind."
+
+[variety."21071.dark-sage"]
+name.value = "Dunkelsalbei"
+name.en = "Dark Sage"
+description.value = "Tiefgrün, aus schattigen Bächen. Riecht stärker."
+description.en = "Deep green, from shaded streams. Smells stronger."
+
+[variety."21071.banded"]
+name.value = "Gebändert"
+name.en = "Banded"
+description.value = "Schwache Bänder wie Reihen in einem Kräutergarten."
+description.en = "Faint bands like rows in a herb garden."
+
+[variety."21071.lavender-finned"]
+name.value = "Lavendelflosse"
+name.en = "Lavender-finned"
+description.value = "Flossen in Lavendelfarbe. Riecht auch ein wenig danach."
+description.en = "Fins the colour of lavender. Smells, faintly, of it too."
+
+[variety."21071.thyme-spotted"]
+name.value = "Thymiantupfen"
+name.en = "Thyme-spotted"
+description.value = "Winzige lila Tupfen wie Thymianblüten. Die Köche sind einverstanden."
+description.en = "Tiny purple spots like thyme flowers. The cooks approve."
+
+[variety."21071.gold-sage"]
+name.value = "Goldsalbei"
+name.en = "Gold Sage"
+description.value = "Gelbgrün wie trockenes Sommergras. Riecht nach einem langen heißen Tag."
+description.en = "Yellow-green like dry summer grass. Smells of a long hot day."
+
+[variety."21071.frost-sage"]
+name.value = "Frostsalbei"
+name.en = "Frost Sage"
+description.value = "Blass, jede Schuppe mit bereiftem Rand. Schmeckt irgendwie reiner."
+description.en = "Pale with a frosted edge to every scale. Tastes cleaner, somehow."
+
+[variety."21071.sweetgrass"]
+name.value = "Duftgras"
+name.en = "Sweetgrass"
+description.value = "Leuchtend grün und süß duftend. Der einzige Fisch, den je jemand zur Wäsche in die Schublade legen wollte."
+description.en = "Bright green and sweet-smelling. The only fish anybody has wanted to put in a drawer with the linen."
+
+[variety."21071.mindbright"]
+name.value = "Geistesklar"
+name.en = "Mindbright"
+description.value = "Blasses Licht flackert in den Linien der Schuppen. Angler, die ihn essen, sagen, sie dächten klarer. Das sagen sie oft."
+description.en = "Pale light flickers in the lines of its scales. Anglers who eat it say they think more clearly. They say that a lot."
+
+[variety."21153.full-grown"]
+name.value = "Ausgewachsen"
+name.en = "Full-grown"
+description.value = "Der Salbei ist aufgegangen: größer, dunkler, noch immer duftend."
+description.en = "The sage grew up: bigger, darker, still fragrant."
+
+[variety."21153.moss-green"]
+name.value = "Moosgrün"
+name.en = "Moss-green"
+description.value = "Gefleckt wie Moos auf altem Stein. Riecht nach feuchtem Wald."
+description.en = "Mottled like moss on old stone. Smells of a damp forest."
+
+[variety."21153.silver"]
+name.value = "Silbern"
+name.en = "Silver"
+description.value = "Ein silberner Riese seiner Art. Wurde groß und hell."
+description.en = "A silver giant of its kind. Grew up and got bright."
+
+[variety."21153.bronze"]
+name.value = "Bronze"
+name.en = "Bronze"
+description.value = "Bronzefarben, aus gerbstoffdunklen Flüssen. Schmeckt leicht nach Tee."
+description.en = "Bronze from tannin-dark rivers. Tastes faintly of tea."
+
+[variety."21153.banded"]
+name.value = "Gebändert"
+name.en = "Banded"
+description.value = "Breite Bänder wie die Ringe eines Baumes. Die alten haben mehr."
+description.en = "Broad bands like the rings of a tree. The old ones have more."
+
+[variety."21153.violet-finned"]
+name.value = "Veilchenflosse"
+name.en = "Violet-finned"
+description.value = "Lila Flossen, wie blühender Salbei. Im Frühling duftet er stärker."
+description.en = "Purple fins, like a sage in bloom. The scent is stronger in spring."
+
+[variety."21153.bearded"]
+name.value = "Rauschebart"
+name.en = "Bearded"
+description.value = "Lange, nachschleifende Flossen wie der Bart eines alten Weisen. Sieht weiser aus, als er ist."
+description.en = "Long trailing fins like an old sage's beard. Looks wiser than it is."
+
+[variety."21153.golden"]
+name.value = "Golden"
+name.en = "Golden"
+description.value = "Golden und duftend. Riecht nach Honig auf warmem Stein."
+description.en = "Gold and fragrant. Smells like honey on warm stone."
+
+[variety."21153.ashen"]
+name.value = "Aschgrau"
+name.en = "Ashen"
+description.value = "Grau wie Rauch, und er riecht schwach nach Weihrauch. Niemand verbrennt mehr Salbei am Wasser."
+description.en = "Grey as smoke, and it smells faintly of incense. Nobody burns sage near the water any more."
+
+[variety."21153.elder-sage"]
+name.value = "Uralter Salbei"
+name.en = "Elder Sage"
+description.value = "Alt, riesig, die Schuppen von blassgoldenen Linien erleuchtet wie Adern in einem Blatt. Manche Orte bewahren ihre ältesten Dinge."
+description.en = "Old, huge, its scales lit with pale gold lines like veins in a leaf. Some places keep their oldest things."
+
+[variety."251524.whimsical"]
+name.value = "Verspielt"
+name.en = "Whimsical"
+description.value = "Gold, mit wallenden blauen Flossen wie die Schals einer Tänzerin. Sieht aus, als hätte ihn jemand in bester Laune gemalt."
+description.en = "Gold, with flowing blue fins like a dancer's scarves. Looks painted by somebody in a very good mood."
+
+[variety."251524.mint"]
+name.value = "Minze"
+name.en = "Mint"
+description.value = "Minzgrün mit rosa Punkten. Sieht aus wie eine Süßigkeit vom Jahrmarkt."
+description.en = "Mint green with pink dots. Looks like a sweet from a fair."
+
+[variety."251524.lemon"]
+name.value = "Zitrone"
+name.en = "Lemon"
+description.value = "Zitronengelb mit blauen Punkten. Scheint sich sehr über etwas zu freuen."
+description.en = "Lemon yellow with blue dots. It seems very pleased about something."
+
+[variety."251524.lilac"]
+name.value = "Flieder"
+name.en = "Lilac"
+description.value = "Fliederfarben mit cremefarbenen Streifen. Schwimmt in Schleifen, ohne erkennbaren Grund."
+description.en = "Lilac with cream stripes. Swims in loops, for no clear reason."
+
+[variety."251524.polka-dotted"]
+name.value = "Tupfenkleid"
+name.en = "Polka-dotted"
+description.value = "Große weiße Punkte auf Rosa, wie ein Festkleid. Er weiß es."
+description.en = "Big white dots on pink, like a festival dress. It knows."
+
+[variety."251524.swirled"]
+name.value = "Wirbel"
+name.en = "Swirled"
+description.value = "Rosa und Blau ineinander gewirbelt wie Zuckerguss. Macht Angler hungrig auf das Falsche."
+description.en = "Pink and blue swirled together like icing. Makes anglers hungry for the wrong thing."
+
+[variety."251524.frill-finned"]
+name.value = "Rüschenflosse"
+name.en = "Frill-finned"
+description.value = "Flossen wie Spitzenrüschen. Hoffnungslos im Schwimmen, aber trotzdem entzückt."
+description.en = "Fins like lace ruffles. Hopeless at swimming, delighted anyway."
+
+[variety."251524.rainbow"]
+name.value = "Regenbogen"
+name.en = "Rainbow"
+description.value = "Jede Farbe in Streifen, als hätte ein Kind mit einem vollen Malkasten gemalt. Es glitzert."
+description.en = "Every colour in stripes, as if painted by a child with a full box. It glitters."
+
+[variety."251524.murk-touched"]
+name.value = "Trübsinn"
+name.en = "Murk-touched"
+description.value = "Dunkelviolett, die Punkte gedämpft. Der Einzige seiner Art, der aussieht, als hätte er einen schlechten Tag gehabt."
+description.en = "Dark purple, its dots dimmed. The only one of its kind that looks like it has had a bad day."
+
+[variety."251524.dreamfin"]
+name.value = "Traumflosse"
+name.en = "Dreamfin"
+description.value = "Leuchtet zart rosa und blau und hinterlässt einen schwachen Schimmer im Wasser. Kleinen Kindern erzählt man, er erfülle Wünsche. Niemand prüft es nach."
+description.en = "Glows soft pink and blue, and leaves a faint shimmer in the water behind it. Small children are told it grants wishes. Nobody checks."
