@@ -829,8 +829,8 @@ describe("a set's page, drawn (HNT-R66)", function()
 			assert(y == 498 - 1 or y == 498 - 1 - 16, text:GetText() .. " sits at " .. y)
 			rows[y] = (rows[y] or 0) + 1
 			-- its bar on its row, before it
-			local bar = view.legendBars[i].points[1]
-			assert.are.same({ x - 18 - 5, -(y + 1) }, { bar[4], bar[5] })
+			local stroke = view.legendBars[i].points[1]
+			assert.are.same({ x - 18 - 5, -(y + 1) }, { stroke[4], stroke[5] })
 		end
 		assert.are.same({ "open", "window unconfirmed", "needs more skill", "ваш лагерь разбит" }, texts)
 		assert.are.same({ [497] = 1, [481] = 3 }, rows) -- the last one wraps, at the fake's 6 px a byte

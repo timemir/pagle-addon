@@ -101,7 +101,7 @@ describe("a Hunt's entry on the board", function()
 			function()
 				local run = start()
 				run.state.hunts.fixture_snapper = progress(1, 96, 11, 1)
-				local page, view = open(run, { mode = "board", hunt = "fixture_snapper" })
+				local _, view = open(run, { mode = "board", hunt = "fixture_snapper" })
 				local fonts = run.ns.BoardFonts()
 				assert.are.same({ fonts.hand, true }, { view.effort.fontObject, view.odds:IsShown() })
 
