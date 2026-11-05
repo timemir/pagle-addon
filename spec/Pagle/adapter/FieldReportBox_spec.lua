@@ -1,5 +1,5 @@
 -- The Field report box and its entry points (field-report.md › Privacy, › The box and its entry points; REP-R37,
--- REP-R40–R47, REP-R93; CORE-R33, CORE-R40, CORE-R50, CORE-R61; settings.md SET-R10, SET-R12).
+-- REP-R40–R48, REP-R93; CORE-R33, CORE-R40, CORE-R50, CORE-R61; settings.md SET-R10, SET-R12).
 
 local URL = "https://github.com/timemir/pagle-addon/issues/new?template=field-report.yml"
 
@@ -286,6 +286,19 @@ describe("The Field report box's look (field-report.md › UI)", function()
 		assert.is_false(frame.copyHint:IsShown())
 		assert.is_false(frame.postAt:IsShown())
 		assert.is_false(frame.thumb:IsShown())
+	end)
+
+	it("points to the export window at the bottom right, with the text or a message (REP-R48)", function()
+		for _, history in ipairs({ unchartedHistory(2, FIRST), { BUILD_ENTRY } }) do
+			local loaded = enterWorld(loadCore(history), 2)
+
+			loaded.env.Pagle.OpenFieldReport()
+
+			local frame = assert(box(loaded))
+			assert.are.equal("For the website, use /pagle export.", frame.website:GetText())
+			assert.is_true(frame.website:IsShown())
+			assert.are.same({ { "RIGHT", frame, "TOPLEFT", 498, -324 } }, frame.website.points)
+		end
 	end)
 
 	it("greys the arrow that can't page further", function()
