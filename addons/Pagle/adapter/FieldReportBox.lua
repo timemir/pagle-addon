@@ -28,8 +28,9 @@ local SLIP_X, SLIP_Y, SLIP_WIDTH, SLIP_HEIGHT = 34, 92, 426, 156
 local WHEEL_STEP = 36
 -- The line of the URL, and of the part controls and Close, as distances down from the top.
 local URL_Y, FOOT_Y = 279, 324
--- The width of REP-R48's line at the bottom right, clear of Close at the centre; a longer line wraps.
-local WEBSITE_WIDTH = 160
+-- REP-R48's line at the bottom right: the gap it keeps from Close at the centre, and how small it may be set to stay
+-- on one line, as a share of its font's size.
+local WEBSITE_GAP, WEBSITE_FLOOR = 12, 0.7
 
 ---@class PagleFieldReportBox: PagleFieldWindow
 ---@field view PagleFieldReportView the view on show, built when it opened
@@ -175,18 +176,19 @@ local function build()
 		showPart(frame, frame.part + 1)
 	end)
 
-	-- At the bottom right, with the text or a message: the website wants the export window's Paste string, not this
-	-- (REP-R48).
-	frame.website = ns.FieldText(frame, "CopyHint")
-	frame.website:SetWordWrap(true)
-	frame.website:SetJustifyH("RIGHT")
-	frame.website:SetWidth(WEBSITE_WIDTH)
-	frame.website:SetPoint("RIGHT", frame, "TOPLEFT", WIDTH - 22, -FOOT_Y)
-	frame.website:SetText(L.FIELD_REPORT_WEBSITE)
-
 	-- At the bottom centre, clear of the part controls on the left.
 	frame.close = ns.FieldLeatherButton(frame, L.FIELD_REPORT_CLOSE)
 	frame.close:SetPoint("CENTER", frame, "TOP", 0, -FOOT_Y)
+
+	-- At the bottom right, with the text or a message: the website wants the export window's Paste string, not this
+	-- (REP-R48). It runs from Close's right edge, measured, to the margin, set smaller if it must (down to
+	-- WEBSITE_FLOOR) to stay one line, else wrapped on two.
+	frame.website = ns.FieldText(frame, "CopyHint")
+	frame.website:SetJustifyH("RIGHT")
+	frame.website:SetPoint("RIGHT", frame, "TOPLEFT", WIDTH - 22, -FOOT_Y)
+	frame.website:SetText(L.FIELD_REPORT_WEBSITE)
+	local room = WIDTH / 2 - frame.close:GetWidth() / 2 - 22 - WEBSITE_GAP
+	ns.FieldFitText(frame.website, "CopyHint", room, WEBSITE_FLOOR, 2)
 	frame.close:SetScript("OnClick", function()
 		if not frame.closing then
 			PlaySound(ns.FIELD_SOUND_CLICK, "SFX")
@@ -196,19 +198,10 @@ local function build()
 	return frame
 end
 
--- Lays out the URL line (ns.FieldReportUrlLine): "POST IT AT" at its font's size, set smaller if the client draws it
--- too wide to end before the chart's URL field, and the URL edit box after it, so the two never overlap.
+-- Lays out the URL line (ns.FieldUrlLine), so the label and the URL never overlap.
 ---@param frame PagleFieldReportBox
 local function layOutUrlLine(frame)
-	local label = frame.postAt
-	label:SetFontObject(ns.FieldFont("PostAt"))
-	local scale, urlX = ns.FieldReportUrlLine(label:GetStringWidth())
-	if scale < 1 then
-		ns.FieldScaleFont(label, "PostAt", scale)
-	end
-	frame.url:ClearAllPoints()
-	frame.url:SetPoint("LEFT", frame, "TOPLEFT", urlX, -URL_Y)
-	frame.url:SetWidth(WIDTH - 42 - urlX)
+	ns.FieldUrlLine(frame, frame.postAt, frame.url, WIDTH, URL_Y)
 end
 
 -- Opens the box with `view`, at part 1 (REP-R40), or with REP-R41's or REP-R42's line on the bare chart, and no text.

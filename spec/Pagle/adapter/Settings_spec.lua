@@ -722,9 +722,14 @@ describe("A Module's value rows", function()
 			},
 		})
 
-		assert.is_false(loaded.client.settings.show(page)[3].frame.enabled)
+		-- A button with no caption is Core's own row, its button greyed as it draws.
+		local function enabled()
+			local frame = loaded.client.settings.show(page)[3].frame
+			return loaded.client.settings.buttonsOf(frame)[1]:IsEnabled()
+		end
+		assert.is_false(enabled())
 		live = true
-		assert.is_true(loaded.client.settings.show(page)[3].frame.enabled)
+		assert.is_true(enabled())
 	end)
 
 	it("offer a dropdown's options read each time it opens (SET-R62)", function()
@@ -801,15 +806,36 @@ describe("A Module's button row", function()
 	end)
 
 	it("without a caption, puts its label on the button and shows no label, as before (CORE-R42, SET-R2)", function()
+		local clicked = 0
 		local initializer, frame, settings = shown({
 			kind = "button",
 			label = "Save what I'm wearing as my fishing set",
-			onClick = function() end,
+			onClick = function()
+				clicked = clicked + 1
+			end,
 		})
 
-		assert.are.same({ "", "Save what I'm wearing as my fishing set" }, settings.textsOf(frame))
+		assert.are.same({ "Save what I'm wearing as my fishing set" }, settings.textsOf(frame))
 		assert.are.same({ "SAVE WHAT I'M WEARING AS MY FISHING SET" }, initializer.searchTags)
+		settings.buttonsOf(frame)[1]:Click()
+		assert.are.equal(1, clicked)
 	end)
+
+	it(
+		"without a caption, is Core's own row with the button as wide as its words, so they stay on it (SET-R2, SET-R5)",
+		function()
+			local label = "Guardar lo que llevo como conjunto de pesca, el de siempre"
+			local initializer, frame, settings = shown({ kind = "button", label = label, onClick = function() end })
+
+			local button = settings.buttonsOf(frame)[1]
+			assert.are.equal("PagleSettingsRowTemplate", initializer.template)
+			assert.are.equal(label, initializer:GetName())
+			assert.is_true(button:GetWidth() >= button:GetTextWidth())
+			-- Never narrower than a native button, from where a native row's control starts.
+			assert.is_true(button:GetWidth() >= 200)
+			assert.are.same({ "TOPLEFT", frame, "TOP", -40, 3 }, { button:GetPoint() })
+		end
+	)
 
 	it("raises an error at the caller for a caption that isn't a string (CORE-R42)", function()
 		local loaded = loadWithQoL()

@@ -174,6 +174,88 @@ describe("The Settings root's Getting started section (ONB-R81, SET-R10)", funct
 		assert.is_not_nil(rowOf(loaded, "Field guide"))
 	end)
 
+	-- Where a drawn widget's left and right edges sit across its row, from its first point: SetPoint(point, x, y) or
+	-- with a relative frame at its left (TOPLEFT), or ending there (TOPRIGHT).
+	local function span(widget)
+		local point = widget.points[1]
+		local x = type(point[2]) == "number" and point[2] or point[4]
+		local width = widget.kind == "FontString" and (widget:GetWidth() > 0 and widget:GetWidth())
+			or widget.kind == "FontString" and widget:GetStringWidth()
+			or widget:GetWidth()
+		if point[1] == "TOPRIGHT" then
+			return x - width, x
+		end
+		return x, x + width
+	end
+
+	-- The shown font string reading `text` on `frame`.
+	local function textOn(frame, text)
+		for _, child in ipairs(frame.children) do
+			if child.shown and child.kind == "FontString" and child.text == text then
+				return child
+			end
+		end
+		error("no text " .. text)
+	end
+
+	it("sets the checkbox and its count past a long label, measured, so none draws over another (SET-R10)", function()
+		local loaded = ready()
+		local long = "Lista de la Primera tarde, la de siempre"
+		loaded.ns.L.SETTINGS_EVENING = long
+		loaded.ns.L.SETTINGS_MARGIN_NOTES = long .. " (notas)"
+
+		for _, label in ipairs({ long, long .. " (notas)" }) do
+			local row = rowNamed(loaded, label)
+			local _, labelEnd = span(textOn(row.frame, label))
+			local checkLeft, checkRight = span(shown(row.frame, "CheckButton"))
+			assert(labelEnd < checkLeft, "the checkbox sits over " .. label)
+			if label == long then
+				local countLeft = span(textOn(row.frame, "0 of 5 done"))
+				assert(checkRight <= countLeft, "the count runs under the checkbox")
+			end
+		end
+	end)
+
+	it("keeps short labels' checkboxes in one column (SET-R10)", function()
+		local loaded = ready()
+
+		local notes = span(shown(rowNamed(loaded, "Margin notes").frame, "CheckButton"))
+		local evening = span(shown(rowNamed(loaded, "First evening list").frame, "CheckButton"))
+
+		assert.are.equal(notes, evening)
+	end)
+
+	it("wraps the Field guide's line between its label and its button, so it never runs under it (SET-R10)", function()
+		local loaded = ready()
+		local line = "Las ocho páginas que viste el primer día, y alguna más que no viste entonces."
+		loaded.ns.L.SETTINGS_FIELD_GUIDE_LINE = line
+		loaded.ns.L.SETTINGS_SHOW_ME_AROUND = "Enséñamelo todo otra vez, por favor"
+
+		local row = rowNamed(loaded, "Field guide")
+		local text = textOn(row.frame, line)
+		local _, labelEnd = span(textOn(row.frame, "Field guide"))
+		local lineLeft, lineRight = span(text)
+		local buttonLeft = span(shown(row.frame, "Button"))
+
+		assert.is_true(text:CanWordWrap())
+		assert.are.equal(2, text:GetMaxLines())
+		assert(labelEnd < lineLeft, "the line starts under the label")
+		assert(lineRight < buttonLeft, "the line runs under the button")
+	end)
+
+	it("widens a button to its caption, measured, keeping its right edge (SET-R10, SET-R11)", function()
+		local loaded = ready()
+		local caption = "Enséñamelo todo otra vez, por favor"
+		loaded.ns.L.SETTINGS_SHOW_ME_AROUND = caption
+
+		local button = shown(rowNamed(loaded, "Field guide").frame, "Button")
+		local _, right = span(button)
+		local _, notesRight = span(shown(rowNamed(loaded, "Margin notes").frame, "Button"))
+
+		assert.is_true(button:GetWidth() >= button:GetTextWidth())
+		assert.are.equal(notesRight, right)
+	end)
+
 	it("is left by the root's Defaults button (SET-R13)", function()
 		local loaded = ready()
 		state(loaded).notesOn = false

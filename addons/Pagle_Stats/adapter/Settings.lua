@@ -34,6 +34,8 @@ local LINE = 26
 local LABEL_X = 52
 local VALUE_X = -80
 local BUTTON_X = 140
+-- The gap between the label's end and the count.
+local LABEL_GAP = 8
 
 ---@class StatsWatchedRowWidgets
 ---@field label FontString
@@ -70,6 +72,11 @@ local function widgets(frame)
 			lines = {},
 		}
 		own.label:SetPoint("TOPLEFT", LABEL_X, -6)
+		-- The label ends a gap short of the count and wraps onto a second line under itself, where the label column
+		-- is empty: unbounded, a long one ran under it ("Отслеживаемые серии без улова" over "0 из 3").
+		own.label:SetPoint("RIGHT", frame, "TOP", VALUE_X - LABEL_GAP, 0)
+		own.label:SetWordWrap(true)
+		own.label:SetMaxLines(2)
 		own.count:SetPoint("TOPLEFT", frame, "TOP", VALUE_X, -6)
 		own.none:SetPoint("TOPLEFT", frame, "TOP", VALUE_X, -6 - LINE)
 		own.none:SetPoint("RIGHT", -20, 0)

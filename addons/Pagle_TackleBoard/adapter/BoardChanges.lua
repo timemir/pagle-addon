@@ -208,6 +208,7 @@ local function goalDone(frame, slot, hung, before, after)
 		if plate and tally then
 			plate.held = tally
 			plate.counts:SetText(tally)
+			ns.FitArtText(plate.counts, "Tally", plate.room)
 		end
 		if spike.label and label then
 			spike.held = label

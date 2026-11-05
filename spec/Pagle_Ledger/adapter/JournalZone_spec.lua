@@ -397,6 +397,57 @@ describe("the Journal's zone spread", function()
 			assert.is_true(ladder.rungs[3].ring == nil or not ladder.rungs[3].ring.shown)
 			assert.is_true(ladder.rungs[3].text:IsShown())
 		end)
+
+		-- The dot between two ranks was given the width of "·" whatever it was: ruRU's wider "•" ran into the next rank
+		-- ("Гость •Завсегдатай", #560). Each separator is measured; a ladder wider than its page is set smaller.
+		it(
+			"led_r135 leaves a space either side of a separator as wide as it is, and sets a long ladder smaller",
+			function()
+				local fake, loaded = zoneSpread(DARKSHORE)
+
+				fake.language = "ruRU"
+				loaded.ns.L.ZONE_RANKS =
+					{ "Гость", "Завсегдатай", "Местный", "Знаток", "Мастер" }
+				loaded.ns.L.ZONE_LADDER_SEPARATOR = "•"
+				loaded.ns.journal:Draw()
+
+				local ladder = loaded.ns.journal.shown.left.drawn.ladder[1]
+				local function left(region)
+					local anchor = region.points[1]
+					return type(anchor[2]) == "number" and anchor[2] or anchor[4]
+				end
+				for i = 2, 5 do
+					local before, rung = ladder.rungs[i - 1].text, ladder.rungs[i]
+					assert.are.equal("•", rung.dot.text)
+					assert(left(rung.dot) >= left(before) + before:GetStringWidth() + 4, "a space before the dot")
+					assert(
+						left(rung.text) >= left(rung.dot) + rung.dot:GetStringWidth() + 4,
+						("a space after the dot before %s"):format(rung.text.text)
+					)
+				end
+				assert(ladder.rungs[1].text.fontObject.font[2] < 15, "a ladder wider than its page is set smaller")
+			end
+		)
+
+		-- A seal's words wrap at its width, but a single word wider than the seal ("ЗАВСЕГДАТАЙ") can't, and ran past
+		-- the wax (#560): a seal sets its words smaller until its widest word fits across it.
+		it("led_r135 sets a seal's words smaller when a word is wider than the seal, and English as the kit", function()
+			local fake, loaded = zoneSpread(DARKSHORE)
+			local seal = loaded.ns.journal.shown.left.drawn.seal[1].seal
+			local room = seal.size - 10
+			assert.are.equal(11.5, seal.label.fontObject.font[2])
+
+			fake.language = "ruRU"
+			loaded.ns.L.ZONE_RANKS =
+				{ "Гость", "Завсегдатай", "Местный", "Знаток", "Мастер" }
+			loaded.ns.journal:Draw()
+
+			local size = seal.label.fontObject.font[2]
+			assert(size < 11.5, "set smaller")
+			assert(size >= 7.5, "but never below the floor")
+			assert.are.equal(room, seal.label:GetWidth(), "and wrapping at the seal's width")
+			assert.are.equal("Местный", seal.label:GetText())
+		end)
 	end)
 
 	describe("for a zone that isn't charted", function()

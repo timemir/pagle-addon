@@ -357,7 +357,8 @@ local function coreRowAsWritten(settings, frame, texts)
 	if kind == "text" then
 		return { "text", texts[1] }
 	end
-	local out = { kind, texts[1], caption = caption }
+	-- A Module's button with no caption is drawn by Core too, its label on the button and none beside it (SET-R2).
+	local out = { kind, texts[1] ~= caption and texts[1] or nil, caption = caption }
 	for i = 2, #texts do
 		if texts[i] ~= caption and texts[i] ~= "" then
 			out.line = texts[i]
@@ -544,6 +545,10 @@ local function isGreyed(loaded, row)
 		return not keyRowDrawn(loaded, row.frame).live
 	elseif template == "PagleSettingsSlotRowTemplate" then
 		return not loaded.client.settings.dropdownOf(row):IsEnabled()
+	elseif template == "PagleSettingsRowTemplate" then
+		-- A Module's button with no caption, drawn by Core: its button greyed as it draws (SET-R2).
+		local button = loaded.client.settings.buttonsOf(row.frame)[1]
+		return button ~= nil and not button:IsEnabled()
 	end
 	return row.frame.enabled == false
 end

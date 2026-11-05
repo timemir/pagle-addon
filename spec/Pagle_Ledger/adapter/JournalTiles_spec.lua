@@ -115,4 +115,24 @@ describe("a zone tile on the Fish Journal's pages (LED-R131)", function()
 		assert.are.same({ 49, 69 }, { top(swamp.line), top(swamp.barCase) })
 		assert.is_true(top(swamp.barFill) + 4 <= TILE_H)
 	end)
+
+	-- "caught ✓" in a longer language ran out of the tile's left edge, over the rank line (#560): it keeps to at most
+	-- about half the line's room, and the rank line takes what it leaves.
+	it("led_r131 keeps a long caught line on its tile, and the rank line clear of it", function()
+		local _, tiles = drawnTiles({
+			{
+				name = "Stranglethorn Vale",
+				line = "Local · 63% of the way to Expert",
+				bar = 0.63,
+				line2 = "[çàüĝĥţ ĥéŕé ŵĩţĥ à ļõñĝ ŵõŕð]",
+			},
+		})
+		local vale = tiles[1]
+		local room = vale.tileW - 20
+		local line2W, lineW = vale.line2:GetWidth(), vale.line:GetWidth()
+
+		assert(line2W > 0 and line2W <= room * 0.55, ("caught's %d keeps to its share of %d"):format(line2W, room))
+		-- the rank line from 10 in, "caught" ending 8 short of the right: never on each other
+		assert(10 + lineW <= vale.tileW - 8 - line2W, "the rank line ends before the caught line starts")
+	end)
 end)

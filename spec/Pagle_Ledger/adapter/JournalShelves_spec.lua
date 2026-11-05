@@ -610,9 +610,10 @@ describe("a shelf's spread (LED-R169)", function()
 	it(
 		"lays toast styles two across at 176 × 54, bindings four across at 70 × 92, crests five across at 56 × 62 (LED-R169, ledger.md › UI)",
 		function()
-			local sizes = {}
+			local sizes, page = {}, 0
 			for _, shelf in ipairs({ "core.toaststyle", "core.soundset", "core.binding", "core.crest" }) do
 				local _, loaded = shelfOf(shelf)
+				page = loaded.ns.journal.shown.left.width
 				local view = cards(loaded)[1].view
 				local art = view.art
 				sizes[#sizes + 1] = { art:GetWidth(), art:GetHeight(), view:GetWidth() }
@@ -626,7 +627,6 @@ describe("a shelf's spread (LED-R169)", function()
 			assert.are.same({ 56, 62 }, { sizes[4][1], sizes[4][2] })
 			assert.are.same({ 40, 40 }, { sizes[2][1], sizes[2][2] })
 			-- two across: a card's width is under half the page's body, five across a fifth
-			local page = 382
 			assert.is_true(sizes[1][3] > page / 2 - 8 and sizes[1][3] < page / 2)
 			assert.is_true(sizes[3][3] > page / 4 - 8 and sizes[3][3] < page / 4)
 			assert.is_true(sizes[4][3] > page / 5 - 8 and sizes[4][3] < page / 5)
@@ -924,7 +924,7 @@ describe("the right page's stage and its price (LED-R170)", function()
 		assert(previewH >= AREA_H, "the preview frame holds the whole 190")
 		assert(previewW >= TOAST_W, "the preview frame holds the widest sample toast")
 		assert.are.equal(wellH, previewY + previewH + 2, "and ends where the well does, less the rim")
-		assert(wellW <= 382, "the well fits the page body")
+		assert(wellW <= loaded.ns.journal.shown.right.width, "the well fits the page body")
 		assert.is_true(widget.preview:IsShown())
 	end)
 

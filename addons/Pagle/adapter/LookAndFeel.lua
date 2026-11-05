@@ -38,6 +38,9 @@ local widgetsOf = setmetatable({}, { __mode = "k" })
 ---@type table<Frame, string>
 local slotOf = setmetatable({}, { __mode = "k" })
 
+-- Where the dropdown starts, from the row's top centre, and the gap the label keeps before it.
+local DROPDOWN_X, LABEL_GAP = -80, 8
+
 -- The widgets on `frame`, made the first time a slot row draws on it: the label at the left as a native row's, the
 -- dropdown beside it, and the note under the dropdown.
 ---@param frame Frame
@@ -45,11 +48,16 @@ local slotOf = setmetatable({}, { __mode = "k" })
 local function widgets(frame)
 	local own = widgetsOf[frame]
 	if not own then
+		-- The label ends a gap short of the dropdown and wraps onto a second line under itself, within the row's
+		-- height: unbounded, a long one ran under the dropdown ("Marco del rastreador de Estadísticas").
 		local label = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		label:SetPoint("TOPLEFT", 37, -6)
+		label:SetPoint("RIGHT", frame, "TOP", DROPDOWN_X - LABEL_GAP, 0)
 		label:SetJustifyH("LEFT")
+		label:SetWordWrap(true)
+		label:SetMaxLines(2)
 		local dropdown = CreateFrame("DropdownButton", nil, frame, "WowStyle1DropdownTemplate") --[[@as DropdownButton]]
-		dropdown:SetPoint("TOPLEFT", frame, "TOP", -80, -2)
+		dropdown:SetPoint("TOPLEFT", frame, "TOP", DROPDOWN_X, -2)
 		dropdown:SetWidth(220)
 		local note = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 		note:SetPoint("TOPLEFT", dropdown, "BOTTOMLEFT", 2, -2)
