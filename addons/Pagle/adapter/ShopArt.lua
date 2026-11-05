@@ -169,6 +169,30 @@ function ns.SetShopText(fontString, text)
 	fontString:SetText(text or "")
 end
 
+--- Holds a shop font string, its text already set, to `room`: measured unbounded in its font, a text too wide is set
+--- smaller, down to `floor` of the font's size, and one still too wide is held to `room`, where the client cuts it with
+--- "..." or, given `lines` above 1, wraps it on up to that many lines.
+---@param fontString PagleShopFontString
+---@param room number
+---@param floor number
+---@param lines integer?
+function ns.FitShopText(fontString, room, floor, lines)
+	local key = fontString.shopFont
+	local def = FONTS[key]
+	ns.SetShopFont(fontString, key)
+	fontString:SetWidth(0) -- measured unbounded
+	local natural = fontString:GetStringWidth()
+	if natural > room then
+		ns.faces:Set(fontString, FACES[def[1]], math.max(def[2] * floor, def[2] * room / natural))
+	end
+	local wraps = (lines or 1) > 1
+	fontString:SetWordWrap(wraps)
+	if wraps then
+		fontString:SetMaxLines(lines)
+	end
+	fontString:SetWidth(room)
+end
+
 --- A one-line font string on `frame` in the shop's font `key`.
 ---@param frame Frame
 ---@param key string

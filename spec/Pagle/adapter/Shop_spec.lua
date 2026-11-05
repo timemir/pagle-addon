@@ -947,6 +947,39 @@ describe("The Curio Shop's stage", function()
 		end
 	)
 
+	it(
+		"keeps a long N more Coins, name and hint within their cards: smaller, then wrapped or cut (wallet-and-shop.md › UI)",
+		function()
+			local loaded, handles = shopCore()
+			handles.Ledger:ReportCoinsEarned(100)
+			loaded.ns.L.SHOP_MORE_NEEDED = "[{shop_more_needed} мореé Коинс нииидед, ещё и ещё]"
+
+			loaded.env.Pagle.OpenShop("hunts.cover.velvet")
+
+			local stage = shopFrame(loaded).stage
+			local right = stage.infoX + stage.infoWidth
+			-- The note follows Buy at the card's foot, and ends by the card's text edge, on up to two lines.
+			local needed = stage.needed
+			assert(needed:GetWidth() > 0, "N more Coins is unbounded")
+			assert(
+				stage.footX + stage.buy:GetWidth() + 14 + needed:GetWidth() <= right,
+				"N more Coins runs off the card"
+			)
+			assert.is_true(needed:CanWordWrap())
+			assert.are.equal(2, needed:GetMaxLines())
+			-- Measured wider than its room, it is set smaller than its font's size.
+			assert(needed.font and needed.font[2] < 20, "N more Coins is not set smaller")
+			-- The good's name is held to the card's text column.
+			assert.are.equal(stage.infoWidth, stage.name:GetWidth())
+			-- The hint, with nothing selected, is held within the well, centred.
+			assert(
+				stage.hint:GetWidth() > 0 and stage.hint:GetWidth() < loaded.ns.GOOD_PREVIEW_AREA_W,
+				"the hint is unbounded"
+			)
+			assert.are.equal("CENTER", stage.hint.justifyH)
+		end
+	)
+
 	it("dims Buy for a price the balance can't cover, with N more Coins (wallet-and-shop.md › UI)", function()
 		local loaded, handles = shopCore()
 		handles.Ledger:ReportCoinsEarned(100)
