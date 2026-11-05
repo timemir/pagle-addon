@@ -1,0 +1,478 @@
+# Pagle's interface text in German (deDE), over data/locale/enUS/qol.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) for 1.1.1 and not yet reviewed by a native German speaker. It has
+# no human translator, so locale.toml names none. Strings that are only textures, or only the name Pagle, carry the
+# English as it is, so the Locale covers every key of the interface.
+
+[TITLE]
+value = "Komfort"
+en = "QoL"
+
+[SETTINGS_ACTION]
+value = "Angeleinstellungen »"
+en = "Fishing settings »"
+
+[BINDING_HEADER]
+value = "Pagle"
+en = "Pagle"
+
+[BINDING_FISHING_KEY]
+value = "Pagle: Angeltaste"
+en = "Pagle: Fishing key"
+
+[SETTINGS_CASTING]
+value = "Auswerfen"
+en = "Casting"
+
+[SETTINGS_CAST_WITH]
+value = "Auswerfen mit"
+en = "Cast with"
+
+[SETTINGS_CAST_WITH_TOOLTIP]
+value = "Auch im Addon-Menü und mit /pagle qol input."
+en = "Also on the compartment menu and /pagle qol input."
+
+[SETTINGS_CAST_WITH_KEY]
+value = "Angeltaste"
+en = "Fishing key"
+
+[SETTINGS_CAST_WITH_CLICK]
+value = "Doppelter Rechtsklick"
+en = "Double right-click"
+
+[SETTINGS_CAST_WITH_BOTH]
+value = "Beides"
+en = "Both"
+
+[SETTINGS_FISHING_KEY]
+value = "Angeltaste"
+en = "Fishing key"
+
+[SETTINGS_FISHING_KEY_TOOLTIP]
+value = "Jeder Druck macht genau den nächsten Schritt: auswerfen, einholen oder bei Bedarf Köder, Ausrüstung oder Muschel."
+en = "Each press does the next single thing: cast, reel, or a lure, gear or clam when needed."
+
+[SETTINGS_LURES_AND_CLAMS]
+value = "Köder und Muscheln"
+en = "Lures and clams"
+
+[SETTINGS_LURES]
+value = "Köder"
+en = "Lures"
+
+[SETTINGS_LURES_TOOLTIP]
+value = "Ein Druck vor dem Auswerfen bringt einen Köder an, wenn keiner dran ist."
+en = "A press before a cast applies a lure when none is on."
+
+[SETTINGS_LURES_OFF]
+value = "Aus"
+en = "Off"
+
+[SETTINGS_LURES_BEST]
+value = "Mein bester"
+en = "Best I have"
+
+[SETTINGS_LURES_THIS]
+value = "Nur diesen"
+en = "Only this one"
+
+[SETTINGS_LURE]
+value = "Köder"
+en = "Lure"
+
+[SETTINGS_LURE_UNNAMED]
+value = "Gegenstand {item}"
+en = "Item {item}"
+
+[SETTINGS_CLAMS]
+value = "Muscheln zwischen Würfen öffnen"
+en = "Open clams between Casts"
+
+[SETTINGS_CLAMS_TOOLTIP]
+value = "Eine Muschel pro Druck, nie während eines Wurfs."
+en = "One clam per press, never during a cast."
+
+[SETTINGS_WHILE_YOU_FISH]
+value = "Während du angelst"
+en = "While you fish"
+
+[SETTINGS_AUDIO_MIX]
+value = "Ton beim Angeln"
+en = "Fishing audio mix"
+
+[SETTINGS_AUDIO_MIX_TOOLTIP]
+value = "Während du angelst: Effekte voll; Musik, Umgebung und Dialoge stumm; Gesamtlautstärke unverändert. Danach wiederhergestellt."
+en = "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards."
+
+[SETTINGS_BACKGROUND_SOUND]
+value = "Ton behalten, wenn das Spiel im Hintergrund ist"
+en = "Keep sound when the game is in the background"
+
+[SETTINGS_AUTO_LOOT]
+value = "Beim Angeln automatisch plündern"
+en = "Auto-loot while fishing"
+
+[SETTINGS_AUTO_LOOT_TOOLTIP]
+value = "Nur während du angelst. Entfällt, wenn automatisches Plündern schon an ist."
+en = "Only while you fish. Skipped if you already have auto-loot on."
+
+[MENU_INPUT]
+value = "Eingabe: {names}"
+en = "Input: {names}"
+
+[INPUT_KEY]
+value = "Angeltaste"
+en = "Fishing key"
+
+[INPUT_CLICK]
+value = "Doppelklick"
+en = "Double-click"
+
+[INPUT_BOTH]
+value = "Beides"
+en = "Both"
+
+[SLASH_HELP]
+value = "input key|click|both: wähle, wie du auswirfst"
+en = "input key|click|both: choose how you cast"
+
+[SLASH_USAGE]
+value = "Pagle: /pagle qol input key|click|both"
+en = "Pagle: /pagle qol input key|click|both"
+
+[INPUT_SET_KEY]
+value = "Pagle: Auswerfen mit der Angeltaste."
+en = "Pagle: cast with the Fishing key."
+
+[INPUT_SET_CLICK]
+value = "Pagle: Auswerfen mit doppeltem Rechtsklick."
+en = "Pagle: cast with a double right-click."
+
+[INPUT_SET_BOTH]
+value = "Pagle: Auswerfen mit der Angeltaste oder doppeltem Rechtsklick."
+en = "Pagle: cast with the Fishing key or a double right-click."
+
+[CONFLICT_TEXT]
+value = "Zwei Addons wollen deine Angeltaste."
+en = "Two addons want your fishing key."
+
+[CONFLICT_USE_PAGLE]
+value = "Pagle verwenden"
+en = "Use Pagle"
+
+[CONFLICT_USE_THAT_ADDON]
+value = "{title} verwenden"
+en = "Use {title}"
+
+[CONFLICT_USE_THOSE_ADDONS]
+value = "Die anderen verwenden"
+en = "Use the others"
+
+[CONFLICT_TURNED_OFF]
+value = "Pagle: {titles} deaktiviert. Gib /reload ein, um abzuschließen."
+en = "Pagle: turned off {titles}. Type /reload to finish."
+
+[TITLES_JOIN]
+value = ", "
+en = ", "
+
+[CONFLICT_TURNED_OFF_QOL]
+value = "Pagle: Pagle QoL deaktiviert. Gib /reload ein, um abzuschließen. Pagle zeichnet deine Fänge weiter auf."
+en = "Pagle: turned off Pagle QoL. Type /reload to finish. Pagle keeps recording your Catches."
+
+[CONFLICT_RELOAD_TEXT]
+value = "Die Oberfläche jetzt neu laden, um abzuschließen?"
+en = "Reload the interface now to finish?"
+
+[CONFLICT_RELOAD_NOW]
+value = "Jetzt neu laden"
+en = "Reload now"
+
+[CONFLICT_RELOAD_LATER]
+value = "Später"
+en = "Later"
+
+[NUDGE_OUT_OF_LURES]
+value = "Dein Köder ist weg, und in deinen Taschen ist keiner mehr."
+en = "Your lure is gone and there are none left in your bags."
+
+[NUDGE_OUT_OF_LURE]
+value = "Dein Köder ist weg, und in deinen Taschen ist kein {lureName} mehr."
+en = "Your lure is gone and there's no {lureName} left in your bags."
+
+[BINDING_SWAP_GEAR]
+value = "Pagle: Ausrüstung wechseln"
+en = "Pagle: Swap gear"
+
+[SETTINGS_GEAR]
+value = "Ausrüstung"
+en = "Gear"
+
+[SETTINGS_FISHING_SET]
+value = "Angelset"
+en = "Fishing set"
+
+[SETTINGS_FISHING_SET_TOOLTIP]
+value = "Die Angeltaste legt es an, wenn du keine Angelrute in der Hand hast. Doppelklick überspringt das."
+en = "The Fishing key puts it on when no pole is in hand. Double-click skips this."
+
+[SETTINGS_FISHING_SET_NONE]
+value = "Keins (Ausrüstung bleibt, wie sie ist)"
+en = "None (gear stays as it is)"
+
+[SETTINGS_SAVE_FISHING_SET]
+value = "Was ich trage als Angelset speichern"
+en = "Save what I'm wearing as my fishing set"
+
+[SETTINGS_SWAP_GEAR]
+value = "Ausrüstung wechseln"
+en = "Swap gear"
+
+[SETTINGS_SWAP_GEAR_TOOLTIP]
+value = "Wechselt zwischen deinem Angelset und dem, was du vorher getragen hast (gespeichert als Pagle Previous)."
+en = "Swaps between your fishing set and what you wore before (saved as Pagle Previous)."
+
+[GEAR_NEEDS_SLOT]
+value = "Pagle: braucht einen freien Ausrüstungsset-Platz für {setName}."
+en = "Pagle: needs a free equipment set slot for {setName}."
+
+[GEAR_NEEDS_TWO_SLOTS]
+value = "Pagle: braucht zwei freie Ausrüstungsset-Plätze für {fishingSetName} und {previousSetName}."
+en = "Pagle: needs two free equipment set slots for {fishingSetName} and {previousSetName}."
+
+[NUDGE_SWAP_BACK]
+value = "Du hältst noch deine Angelrute. Drück {key}, um zurückzuwechseln."
+en = "Still holding your pole. Press {key} to swap back."
+
+[NUDGE_SWAP_BACK_UNBOUND]
+value = "Du hältst noch deine Angelrute. Belege {binding}, um mit einem Druck zurückzuwechseln."
+en = "Still holding your pole. Bind {binding} to swap back in one press."
+
+[BUTTON_CAST]
+value = "Werfen"
+en = "Cast"
+
+[BUTTON_REEL]
+value = "Einholen"
+en = "Reel"
+
+[BUTTON_GEAR]
+value = "Ausrüstung"
+en = "Gear"
+
+[BUTTON_LURE]
+value = "Köder"
+en = "Lure"
+
+[BUTTON_CLAM]
+value = "Muschel"
+en = "Clam"
+
+[BUTTON_TOOLTIP_CAST]
+value = "Auswerfen"
+en = "Cast"
+
+[BUTTON_TOOLTIP_REEL]
+value = "Einholen"
+en = "Reel in"
+
+[BUTTON_TOOLTIP_GEAR]
+value = "{name} anlegen"
+en = "Put on {name}"
+
+[BUTTON_TOOLTIP_LURE]
+value = "{name} anbringen"
+en = "Apply {name}"
+
+[BUTTON_TOOLTIP_CLAM]
+value = "{name} öffnen"
+en = "Open {name}"
+
+[BUTTON_TOOLTIP_NOTHING]
+value = "Nichts zu tun"
+en = "Nothing to do"
+
+[SETTINGS_SHOW_BUTTON]
+value = "Knopf für die nächste Aktion zeigen"
+en = "Show the next-action button"
+
+[SETTINGS_SHOW_BUTTON_TOOLTIP]
+value = "Zeigt, was dein nächster Druck tut. Umschalt-Ziehen zum Verschieben."
+en = "Shows what your next press will do. Shift-drag to move."
+
+[SETTINGS_BUTTON_POSITION]
+value = "Knopfposition"
+en = "Button position"
+
+[SETTINGS_BUTTON_RESET]
+value = "Zurücksetzen"
+en = "Reset"
+
+[GUIDE_BLURB]
+value = "Die Angeltaste, deine Angelkleidung, Köder und Muscheln: ein Druck, eine Aktion."
+en = "The Fishing key, your fishing clothes, lures and clams: one press, one action."
+
+[GUIDE_CASTING_RIBBON]
+value = "Auswerfen"
+en = "Casting"
+
+[GUIDE_CASTING_KICKER]
+value = "Auswerfen"
+en = "Casting"
+
+[GUIDE_CASTING_TITLE]
+value = "Eine Taste für den ganzen Wurf"
+en = "One key for the whole cast"
+
+[GUIDE_CASTING_BODY]
+value = "Drück die Angeltaste, und Pagle macht genau den nächsten Schritt und wartet dann auf deinen nächsten Druck. Es macht nie zwei Dinge auf einmal und nie etwas von selbst."
+en = "Press the Fishing key and Pagle does the one next thing, then waits for your next press. It never does two things at once, and it never does anything on its own."
+
+[GUIDE_CASTING_GEAR]
+value = "die Angelkleidung kommt an"
+en = "your fishing clothes go on"
+
+[GUIDE_CASTING_LURE]
+value = "dein bester Köder"
+en = "the best lure you have"
+
+[GUIDE_CASTING_CAST]
+value = "und raus damit"
+en = "out it goes"
+
+[GUIDE_CASTING_REEL]
+value = "wenn der Schwimmer abtaucht"
+en = "when the bobber dips"
+
+[GUIDE_CASTING_THEN]
+value = "»"
+en = "»"
+
+[GUIDE_CASTING_SMALL]
+value = "Unnötige Schritte entfallen: kein Angelset gespeichert, kein Ausrüstungsschritt; schon ein Köder dran, kein Köderschritt. Ein kleiner Knopf am Wasser zeigt, was dein nächster Druck tut."
+en = "Steps you don’t need are passed over: no fishing clothes saved, no gear step; a lure already on, no lure step. A small button by the water shows what your next press will do."
+
+[GUIDE_CASTING_NOTE]
+value = "Ein *doppelter Rechtsklick* aufs Wasser wirft auch aus und holt ein, wechselt aber nie deine Kleidung."
+en = "A *double right-click* on the water casts and reels too, but never changes your clothes."
+
+[GUIDE_CHOICE_KICKER]
+value = "Deine Wahl"
+en = "Your choice"
+
+[GUIDE_CHOICE_TITLE]
+value = "Wie möchtest du auswerfen?"
+en = "How would you like to cast?"
+
+[GUIDE_CARD_KEY]
+value = "Die Angeltaste"
+en = "The Fishing key"
+
+[GUIDE_CARD_KEY_LINE]
+value = "Eine Taste macht den nächsten Schritt, Kleidung und Köder inklusive."
+en = "One key does the next thing, clothes and lures included."
+
+[GUIDE_CARD_CLICK]
+value = "Doppelter Rechtsklick"
+en = "Double right-click"
+
+[GUIDE_CARD_CLICK_LINE]
+value = "Zweimal rechtsklicken, wie sonst auch. Keine Taste, die du hergeben musst."
+en = "Right-click twice, as you would anyway. No key to give up."
+
+[GUIDE_CARD_BOTH]
+value = "Beides"
+en = "Both"
+
+[GUIDE_CARD_BOTH_LINE]
+value = "Die Taste, wenn du sie willst, die Maus, wenn nicht."
+en = "The key when you want it, the mouse when you don’t."
+
+[GUIDE_CARD_BOTH_TAG]
+value = "das Übliche"
+en = "the usual"
+
+[GUIDE_RESTING]
+value = "Pagles Angeltaste ruht, solange {titles} sie hat. Du kannst weiter mit doppeltem Rechtsklick auswerfen."
+en = "Pagle’s Fishing key is resting while {titles} has it. You can still cast with a double right-click."
+
+[GUIDE_CLOTHES_RIBBON]
+value = "Angelkleidung"
+en = "Fishing clothes"
+
+[GUIDE_CLOTHES_SKIP]
+value = "Ich habe keine Angelkleidung"
+en = "I don’t keep fishing clothes"
+
+[GUIDE_CLOTHES_KICKER]
+value = "Angelkleidung"
+en = "Fishing clothes"
+
+[GUIDE_CLOTHES_TITLE]
+value = "Dein Hut, deine Rute"
+en = "Your hat, your pole"
+
+[GUIDE_CLOTHES_BODY]
+value = "Wenn du Angelkleidung hast, kann Pagle sie dir anziehen: Der erste Druck der Angeltaste am Wasser wechselt deine Kleidung, und was du vorher getragen hast, liegt bereit, um es wieder anzuziehen."
+en = "If you keep a fishing outfit, Pagle can put it on for you: the Fishing key’s first press at the water changes your clothes, and what you were wearing is kept, ready to put back."
+
+[GUIDE_CLOTHES_PREVIOUS]
+value = "was du vorher getragen hast"
+en = "what you wore before"
+
+[GUIDE_CLOTHES_FISHING]
+value = "deine Angelkleidung"
+en = "your fishing clothes"
+
+[GUIDE_CLOTHES_ONE_KEY]
+value = "eine Taste"
+en = "one key"
+
+[GUIDE_CLOTHES_SMALL]
+value = "Beides sind gewöhnliche Ausrüstungssets, du siehst sie also auch in deinem Charakterfenster. Wenn du mit der Rute in der Hand weggehst, erinnert dich eine kleine Notiz, wie du zurückwechselst. Pagle wechselt deine Kleidung nie ohne einen Druck."
+en = "Both are ordinary equipment sets, so you’ll see them in your character sheet too. When you walk away with your pole still in hand, a small note reminds you how to change back. Pagle never changes your clothes without a press."
+
+[GUIDE_SAVE_KICKER]
+value = "Wenn du Angelkleidung hast"
+en = "If you have a fishing outfit"
+
+[GUIDE_SAVE_TITLE]
+value = "Anziehen, dann speichern"
+en = "Put it on, then save it"
+
+[GUIDE_SAVE_SMALL]
+value = "Zieh jetzt Angelhut, Handschuhe und Rute an und drück dann den Knopf. Das geht auch später unter Einstellungen » Angeln."
+en = "Wear your fishing hat, gloves and pole now, then press the button. You can do this later from Settings » Fishing."
+
+[GUIDE_SAVE]
+value = "Was ich trage als Angelset speichern"
+en = "Save what I’m wearing as my fishing set"
+
+[GUIDE_SAVE_OR]
+value = "oder nimm ein eigenes Set"
+en = "or use a set you made"
+
+[GUIDE_SAVE_SLOTS]
+value = "Braucht zwei freie Ausrüstungsset-Plätze: einen für deine Angelkleidung und einen für Pagle Previous."
+en = "Needs two free equipment set slots: one for your fishing clothes and one for Pagle Previous."
+
+[GUIDE_NUDGE_KICKER]
+value = "Wenn du noch in Angelkleidung weggehst"
+en = "If you walk off still dressed for it"
+
+[NOTE_LURE]
+value = "An deiner Rute ist kein Köder. Dein nächster Druck bringt den besten aus deinen Taschen an. |cff9a2a1aNur das|r; dann wirfst du aus."
+en = "Your pole has no lure on. Your next press puts the best one in your bags on. |cff9a2a1aOnly that|r; then you cast."
+
+[TOUR_SETTINGS]
+value = "die Zeilen von Komfort auf der Seite Angeln"
+en = "QoL's rows on the Fishing page"
+
+[TOUR_NUDGE]
+value = "ein Beispiel-Stups zum Zurückwechseln"
+en = "a sample swap-back Nudge"
+
+[TOUR_NOTES]
+value = "Beispiele der Konfliktnotiz und der Notiz »Jetzt neu laden«"
+en = "samples of the conflict note and the Reload now note"

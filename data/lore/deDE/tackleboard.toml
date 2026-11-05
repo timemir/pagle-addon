@@ -1,0 +1,208 @@
+# Tackleboard's lore in German (deDE), over data/lore/tackleboard.toml (DATA-R113, DATA-R114).
+# Machine-drafted: written by an AI model (Claude) for 1.1.1 and not yet reviewed by a native German speaker.
+
+[fly.murloc_nymph]
+name.value = "Murlocnymphe"
+name.en = "Murloc Nymph"
+
+[fly.westfall_wheatwing]
+name.value = "Ernte-Weizenflügel"
+name.en = "Harvest Wheatwing"
+
+[fly.goldshire_gnat]
+name.value = "Grabmoosmücke"
+name.en = "Gravemoss Gnat"
+
+[fly.duskwood_shadow]
+name.value = "Dämmerschatten"
+name.en = "Gloaming Shadow"
+
+[fly.redridge_ember]
+name.value = "Rotfelsglut"
+name.en = "Red Rock Ember"
+
+[fly.barrens_dun]
+name.value = "Savannen-Dun"
+name.en = "Savanna Dun"
+
+[fly.mudsnout_woolly]
+name.value = "Schlammschnauzen-Woolly"
+name.en = "Mudsnout Woolly"
+
+[fly.gnomish_whirligig]
+name.value = "Gnomischer Kreisel"
+name.en = "Gnomish Whirligig"
+
+[fly.tarnished_spoon]
+name.value = "Angelaufener Blinker"
+name.en = "Tarnished Spoon"
+
+[fly.ashenvale_olive]
+name.value = "Urwald-Olive"
+name.en = "Old-Growth Olive"
+
+[fly.kodo_hair_caddis]
+name.value = "Kodohaar-Köcherfliege"
+name.en = "Kodo-Hair Caddis"
+
+[fly.elwynn_royal]
+name.value = "Grünwald-Royal"
+name.en = "Greenwood Royal"
+
+[fly.swamp_midge]
+name.value = "Sumpfmücke"
+name.en = "Swamp Midge"
+
+[fly.raptor_quill]
+name.value = "Raptorkiel"
+name.en = "Raptor Quill"
+
+[fly.silverpine_spinner]
+name.value = "Graukiefern-Spinner"
+name.en = "Grey Pine Spinner"
+
+[fly.lakeshire_coachman]
+name.value = "Karawanen-Coachman"
+name.en = "Caravan Coachman"
+
+[fly.bloodsail_streamer]
+name.value = "Blutsegel-Streamer"
+name.en = "Bloodsail Streamer"
+
+[fly.booty_bay_bucktail]
+name.value = "Freibeuter-Bucktail"
+name.en = "Buccaneer Bucktail"
+
+[fly.desolace_drifter]
+name.value = "Knochentrockener Drifter"
+name.en = "Bone-Dry Drifter"
+
+[fly.grimtotem_hackle]
+name.value = "Grimmtotem-Hechel"
+name.en = "Grimtotem Hackle"
+
+[fly.needles_ant]
+name.value = "Tafelberg-Ameise"
+name.en = "Mesa Ant"
+
+[fly.feralas_fern]
+name.value = "Dickichtfarn"
+name.en = "Thicket Fern"
+
+[fly.tanaris_sandfly]
+name.value = "Dampfdruck-Sandfliege"
+name.en = "Steamwheedle Sandfly"
+
+[fly.darkshore_dun]
+name.value = "Seenebel-Dun"
+name.en = "Sea-Mist Dun"
+
+[fly.nats_golden_doctor]
+name.value = "Nats Goldener Doktor"
+name.en = "Nat's Golden Doctor"
+
+[fly.kraken_ink_streamer]
+name.value = "Krakentinten-Streamer"
+name.en = "Kraken Ink Streamer"
+
+[fly.phoenix_hackle]
+name.value = "Phönixhechel"
+name.en = "Phoenix Hackle"
+
+[fly.moonwell_silverwing]
+name.value = "Mondlicht-Silberflügel"
+name.en = "Moonlight Silverwing"
+
+[fly.thunderhead_tiger]
+name.value = "Gewitterwolken-Tiger"
+name.en = "Thunderhead Tiger"
+
+[fly.deepwater_duchess]
+name.value = "Tiefwasser-Herzogin"
+name.en = "Deepwater Duchess"
+
+[boardtitle.tally_25]
+text.value = "Allzweckhand"
+text.en = "Odd-Jobber"
+
+[boardtitle.tally_100]
+text.value = "Ruhige Hand"
+text.en = "Steady Hand"
+
+[boardtitle.tally_500]
+text.value = "Säule des Stegs"
+text.en = "Pillar of the Pier"
+
+[boardtitle.campfire_7]
+text.value = "Zunderhand"
+text.en = "Kindler"
+
+[boardtitle.campfire_30]
+text.value = "Feuerwache"
+text.en = "Firekeeper"
+
+[boardtitle.campfire_100]
+text.value = "Wache am Herd"
+text.en = "Hearthwarden"
+
+[boardtitle.campfire_365]
+text.value = "Wache des langen Feuers"
+text.en = "Keeper of the Long Fire"
+
+[boardtitle.flybox]
+text.value = "Hand am Bindestock"
+text.en = "Fly-Tier"
+
+[boardgood."tackleboard.trackerframe.none"]
+name.value = "Ohne Rahmen"
+name.en = "No Frame"
+description.value = "Nur die Liste, ohne etwas dahinter. Sie verzieht sich nie in der Feuchte."
+description.en = "The list on its own, with nothing pinned behind it. It never warps in the damp."
+
+[boardgood."tackleboard.trackerframe.corkboard"]
+name.value = "Korkbrett"
+name.en = "Corkboard"
+description.value = "Eine Korkplatte voller Nadellöcher von längst erledigten Aufträgen. Für einen weiteren ist immer Platz."
+description.en = "A slab of cork, pocked with pinholes from jobs long finished. There is always room for one more."
+
+[boardgood."tackleboard.trackerframe.driftwood"]
+name.value = "Gezeitenbrett"
+name.en = "Tideworn Plank"
+description.value = "Eine meergraue Planke, von der Flut glatt geschliffen und am Anleger angenagelt. Sie ist weiter gereist als die meisten Boote."
+description.en = "A sea-grey plank, worn smooth by the tide and nailed up by the dock. It has travelled further than most boats."
+
+[boardgood."tackleboard.toaststyle.ember"]
+name.value = "Herdglut"
+name.en = "Hearth Ember"
+description.value = "Eine Seite, die einmal fast im Feuer gelandet wäre. Die Ränder glühen noch, wenn ein guter Fisch anbeißt."
+description.en = "A page that was nearly kindling once. The edges still glow when a good fish comes in."
+
+[boardgood."tackleboard.trackerframe.net"]
+name.value = "Fischernetz"
+name.en = "Fishing Net"
+description.value = "Ein Stück altes Netz über den Zeilen, oben noch mit seinen Korkschwimmern."
+description.en = "A square of old net hung over the lines, its cork floats still tied along the top."
+
+[boardgood."tackleboard.trackerframe.bamboo"]
+name.value = "Bambuslatten"
+name.en = "Bamboo Slats"
+description.value = "Mit Schnur verzurrte Bambuslatten, so etwas, das man aufrollt und in die Angeltasche stopft."
+description.en = "Bamboo slats lashed with cord, the sort of thing you roll up and stuff in the tackle bag."
+
+[boardgood."tackleboard.trackerframe.tin"]
+name.value = "Köderdose"
+name.en = "Tackle Tin"
+description.value = "Eine grüne Emaille-Köderdose, verbeult und angeschlagen, mit geprägtem Deckel und leicht rostigem Scharnier."
+description.en = "A green enamel tackle tin, dented and chipped, its lid embossed and its hinge a little rusty."
+
+[boardgood."tackleboard.trackerframe.bobber"]
+name.value = "Schwimmer"
+name.en = "Bobber"
+description.value = "Rot über Weiß wie ein guter Schwimmer, und in der Ecke treibt einer, samt Schnur."
+description.en = "Red over white like a good bobber, with one floating at the corner, line and all."
+
+[boardgood."tackleboard.trackerframe.embers"]
+name.value = "Lebende Glut"
+name.en = "Live Embers"
+description.value = "Verkohltes Treibholz, in dessen Rissen das Feuer noch lebt. Ein ganzes Jahr voller Feuer steckt darin."
+description.en = "Charred driftwood with the fire still living in its cracks. A year of fires went into this one."

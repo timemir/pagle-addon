@@ -62,6 +62,30 @@ ruRU = [
 	"U+0400", # Ѐ
 	"U+0450", # ѐ
 ]
+# deDE draws in Pagle's bundled faces (IM Fell English rm/it/sc, Marcellus, Caveat, Cutive Mono). Their cmaps (read
+# 5 Nov 2026 with fontTools) have every letter German needs (ä ö ü Ä Ö Ü ß), the dashes, the bullet, the ellipsis, the
+# middle dot, « » and the curly quotes; only Cutive Mono has the capital ẞ (U+1E9E), which is outside the range anyway.
+# What one face or more lacks of the range is below: the IM Fell faces most of it, Cutive Mono the soft hyphen and
+# Ţ ţ. Every face also draws „ and ‚ (U+201E, U+201A), which stay outside every range: German quotes with »…«.
+deDE = [
+	"U+00AD",        # the soft hyphen: Cutive Mono
+	"U+0108-U+010B", # Ĉ ĉ Ċ ċ: IM Fell
+	"U+0114-U+0115", # Ĕ ĕ: IM Fell
+	"U+011C-U+011D", # Ĝ ĝ: IM Fell
+	"U+0120-U+0121", # Ġ ġ: IM Fell
+	"U+0124-U+0129", # Ĥ ĥ Ħ ħ Ĩ ĩ: IM Fell
+	"U+012C-U+012D", # Ĭ ĭ: IM Fell
+	"U+0132-U+0135", # Ĳ ĳ Ĵ ĵ: IM Fell
+	"U+0138",        # ĸ: IM Fell
+	"U+013F-U+0140", # Ŀ ŀ: IM Fell
+	"U+0149-U+014B", # ŉ Ŋ ŋ: IM Fell
+	"U+014E-U+014F", # Ŏ ŏ: IM Fell
+	"U+015C-U+015D", # Ŝ ŝ: IM Fell
+	"U+0162-U+0163", # Ţ ţ: Cutive Mono
+	"U+0166-U+0169", # Ŧ ŧ Ũ ũ: IM Fell
+	"U+016C-U+016D", # Ŭ ŭ: IM Fell
+	"U+017F",        # the long s ſ: IM Fell small caps, Marcellus, Caveat, Cutive Mono
+]
 
 # Every Locale the client has, by its full client code. A file named for a code not listed here fails the glyph check,
 # so a new Locale starts by adding its line.

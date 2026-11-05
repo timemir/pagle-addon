@@ -27,12 +27,12 @@ local KINDS = {
 }
 
 -- The tooltips settings.md gives (Core's and Hunts' rows) and the owners' specs give (every other Module row).
--- The Translations line (SET-R10, ADR 0019 › Credits): the listed esES credits fmartingr, and the listed ruRU, machine-
--- drafted, has no translator to credit. Its names come from the Locale headers, not from a string table.
+-- The Translations line (SET-R10, ADR 0019 › Credits): the listed esES credits fmartingr, and the listed ruRU and deDE,
+-- machine-drafted, have no translator to credit. Its names come from the Locale headers, not from a string table.
 local TRANSLATIONS_LINE = "Translations: Español by fmartingr"
 -- What the Locale headers give the tree rather than a string table: that line, and the Language dropdown's choice for
 -- each listed Locale the enUS client renders, by its own name (SET-R10 row 9b).
-local FROM_HEADERS = { [TRANSLATIONS_LINE] = true, ["Español"] = true }
+local FROM_HEADERS = { [TRANSLATIONS_LINE] = true, ["Deutsch"] = true, ["Español"] = true }
 
 local TIPS = {
 	fieldReport = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form.",

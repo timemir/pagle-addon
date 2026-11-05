@@ -35,16 +35,18 @@ local function login(setting, client, extra, replace)
 end
 
 describe("the shipped locale list", function()
-	it("registers esES and ruRU listed, and applies neither while the setting is Game default on enUS", function()
+	it("registers deDE, esES and ruRU listed, and applies none while the setting is Game default on enUS", function()
 		local loaded = loadAddon("Pagle", FOREVER_GLOBALS)
 
-		-- fmartingr's Spanish (#510, #528) and the machine-drafted Russian, both listed for 1.1 by the maintainer.
+		-- fmartingr's Spanish (#510, #528) and the machine-drafted Russian, both listed for 1.1 by the maintainer, and the
+		-- machine-drafted German, listed for 1.1.1.
 		assert.are.same(
 			{ code = "esES", name = "Español", listed = true, translators = { "fmartingr" } },
 			loaded.ns.LocaleInfo("esES")
 		)
 		assert.are.same({ code = "ruRU", name = "Русский", listed = true }, loaded.ns.LocaleInfo("ruRU"))
-		assert.is_nil(loaded.ns.LocaleInfo("deDE"))
+		assert.are.same({ code = "deDE", name = "Deutsch", listed = true }, loaded.ns.LocaleInfo("deDE"))
+		assert.is_nil(loaded.ns.LocaleInfo("frFR"))
 		assert.are.equal("enUS", loaded.env.Pagle.GetLanguage())
 		assert.are.equal("A collection worth keeping", loaded.ns.L.TRAILER_CAPTION_JOURNAL)
 	end)

@@ -127,12 +127,12 @@ describe("the locale line of every addon (ADR 0019)", function()
 			end)
 
 			it(
-				"lists esES's and ruRU's locale files, each with its Lore where it has one, between Registry.lua and Apply.lua",
+				"lists deDE's, esES's and ruRU's locale files, each with its Lore where it has one, between Registry.lua and Apply.lua",
 				function()
 					-- The generator writes the list from the files an addon has (DATA-R114), so a Lore entry is there
 					-- exactly where `data/Lore.<code>.lua` is: the files differ by addon, and QoL has no Lore.
 					local expected = { "Registry.lua" }
-					for _, code in ipairs({ "esES", "ruRU" }) do
+					for _, code in ipairs({ "deDE", "esES", "ruRU" }) do
 						expected[#expected + 1] = code .. ".lua"
 						if readFileOrNil(dir .. "data/Lore." .. code .. ".lua") then
 							expected[#expected + 1] = "..\\data\\Lore." .. code .. ".lua"
@@ -146,8 +146,8 @@ describe("the locale line of every addon (ADR 0019)", function()
 		end)
 	end
 
-	it("registers esES and ruRU listed in every addon, as the maintainer listed them for 1.1", function()
-		for code, name in pairs({ esES = "Español", ruRU = "Русский" }) do
+	it("registers deDE, esES and ruRU listed in every addon, as the maintainer listed them (deDE for 1.1.1)", function()
+		for code, name in pairs({ deDE = "Deutsch", esES = "Español", ruRU = "Русский" }) do
 			for _, addon in ipairs(ADDONS) do
 				local ns = registry()
 				---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no loadfile
@@ -161,11 +161,11 @@ describe("the locale line of every addon (ADR 0019)", function()
 				assert.are.equal(name, info.name, addon)
 			end
 		end
-		-- No other language is shipped: the codes a locale file or a Lore file may carry are esES and ruRU.
+		-- No other language is shipped: the codes a locale file or a Lore file may carry are deDE, esES and ruRU.
 		for _, addon in ipairs(ADDONS) do
 			for _, script in ipairs(locales(read("addons/" .. addon .. "/locale/Locales.xml"))) do
 				local code = script:match("(%a%a%u%u)%.lua$")
-				assert(code == nil or code == "esES" or code == "ruRU", script)
+				assert(code == nil or code == "deDE" or code == "esES" or code == "ruRU", script)
 			end
 		end
 	end)

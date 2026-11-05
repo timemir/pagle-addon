@@ -1,0 +1,2030 @@
+# Pagle's interface text in German (deDE), over data/locale/enUS/ledger.toml (DATA-R114). `value` is the
+# translation, `en` the English it was translated from.
+#
+# Machine-drafted: written by an AI model (Claude) for 1.1.1 and not yet reviewed by a native German speaker. It has
+# no human translator, so locale.toml names none. Strings that are only textures, or only the name Pagle, carry the
+# English as it is, so the Locale covers every key of the interface.
+
+[COUNT_OF]
+value = "{count_of_1} / {count_of_2}"
+en = "{count_of_1} / {count_of_2}"
+
+[UNFISHED]
+value = "unbefischt"
+en = "unfished"
+
+[POOLS]
+value = "Schwärme"
+en = "pools"
+
+[TROPHY_TITLE]
+value = "Das Trophäenzimmer"
+en = "The Trophy Room"
+
+[TITLE]
+value = "Anglerbuch"
+en = "Ledger"
+
+[SUMMARY_LINE]
+value = "Anglerbuch: Anglerstufe {level:0} · {percent:0}% vollständig"
+en = "Ledger: Angler Level {level:0} · {percent:0}% complete"
+
+[SUMMARY_LINE_PRESTIGE]
+value = "Anglerbuch: Prestige {prestige:0} · Anglerstufe {level:0} · {percent:0}% vollständig"
+en = "Ledger: Prestige {prestige:0} · Angler Level {level:0} · {percent:0}% complete"
+
+[ITEM_FALLBACK]
+value = "Gegenstand {itemID}"
+en = "Item {itemID}"
+
+[SIZE_TEXT]
+value = "{name} · {length}"
+en = "{name} · {length}"
+
+[NAME_UNKNOWN]
+value = "..."
+en = "..."
+
+[CONTINENT_NAMES]
+value.0 = "Östliche Königreiche"
+value.1 = "Kalimdor"
+en.0 = "Eastern Kingdoms"
+en.1 = "Kalimdor"
+
+[OTHER_WATERS]
+value = "Andere Gewässer"
+en = "Other waters"
+
+[BINDING_EARNED]
+value = "Anglerstufe {level:0}"
+en = "Angler Level {level:0}"
+
+[EARNED_TEXT]
+value.blueprint = "Fange 100 Fische als Gnom"
+value.carapace = "50 Großmaulmuscheln"
+value.cartographer = "Meister in 5 Gebieten"
+value.crier = "Fange 100 Fische als Mensch"
+value.deep = "100 Fänge nach Mitternacht"
+value.drum = "Fange 100 Fische als Orc"
+value.ember = "Prestige VII"
+value.flywallet = "5 verschiedene Köder"
+value.glade = "Fange 100 Fische als Nachtelf"
+value.glass = "12 Glasscherben"
+value.hall = "Fange 100 Fische als Zwerg"
+value.heartwood = "Ein Fang, nachdem 10 entkamen"
+value.hex = "Fange 100 Fische als Troll"
+value.ice = "100 Fänge auf dem Eis"
+value.knit = "10.000 Würfe"
+value.koi = "25 Paare in Folge"
+value.lacquer = "30 Angeltage"
+value.ledger = "Vervollständige das Anglerbuch"
+value.legend = "Fange eine Legende"
+value.legends = "Fange alle drei Legenden"
+value.lion = "Fange 300 Fische mit Allianzcharakteren"
+value.logbook = "In 25 Gebieten geangelt"
+value.monster = "Fange ein Monster"
+value.prestige1 = "Prestige I"
+value.prestige10 = "Prestige X"
+value.prestige5 = "Prestige V"
+value.shroud = "Fange 100 Fische als Untoter"
+value.slate = "30 Arten"
+value.stitch = "Die 20 Fische des Stickmusters"
+value.stormglass = "Meister in 10 Gebieten"
+value.totem = "Fange 100 Fische als Tauren"
+value.trophy = "25 Längenrekorde"
+value.varieties = "Jeder Fisch in jeder Farbe"
+value.warband = "Fange 300 Fische mit Hordecharakteren"
+value.wave = "300 Fänge auf See"
+en.blueprint = "Catch 100 fish as a Gnome"
+en.carapace = "50 Big-mouth Clams"
+en.cartographer = "Master in 5 zones"
+en.crier = "Catch 100 fish as a Human"
+en.deep = "100 catches after midnight"
+en.drum = "Catch 100 fish as an Orc"
+en.ember = "Prestige VII"
+en.flywallet = "5 different lures"
+en.glade = "Catch 100 fish as a Night Elf"
+en.glass = "12 glass shards"
+en.hall = "Catch 100 fish as a Dwarf"
+en.heartwood = "A catch after 10 got away"
+en.hex = "Catch 100 fish as a Troll"
+en.ice = "100 catches on the ice"
+en.knit = "10,000 Casts"
+en.koi = "25 pairs in a row"
+en.lacquer = "30 days fished"
+en.ledger = "Complete the Ledger"
+en.legend = "Land a Legend"
+en.legends = "Land all three Legends"
+en.lion = "Catch 300 fish on Alliance characters"
+en.logbook = "25 zones fished"
+en.monster = "Land a Monster"
+en.prestige1 = "Prestige I"
+en.prestige10 = "Prestige X"
+en.prestige5 = "Prestige V"
+en.shroud = "Catch 100 fish as an Undead"
+en.slate = "30 Species"
+en.stitch = "The sampler's 20 fish"
+en.stormglass = "Master in 10 zones"
+en.totem = "Catch 100 fish as a Tauren"
+en.trophy = "25 size records"
+en.varieties = "Every fish in every colour"
+en.warband = "Catch 300 fish on Horde characters"
+en.wave = "300 catches at sea"
+
+[EARNED_COUNT]
+value = "{min} von {mark} {unit}"
+en = "{min} of {mark} {unit}"
+
+[EARNED_UNIT]
+value.blueprint = "Fischen"
+value.carapace = "Muscheln"
+value.cartographer = "Gebieten"
+value.crier = "Fischen"
+value.deep = "Fängen"
+value.drum = "Fischen"
+value.flywallet = "Ködern"
+value.glade = "Fischen"
+value.glass = "Scherben"
+value.hall = "Fischen"
+value.hex = "Fischen"
+value.ice = "Fängen"
+value.knit = "Würfen"
+value.koi = "Paaren"
+value.lacquer = "Tagen"
+value.lion = "Fischen"
+value.logbook = "Gebieten"
+value.shroud = "Fischen"
+value.slate = "Arten"
+value.stitch = "Fischen"
+value.stormglass = "Gebieten"
+value.totem = "Fischen"
+value.trophy = "Rekorden"
+value.warband = "Fischen"
+value.wave = "Fängen"
+en.blueprint = "fish"
+en.carapace = "clams"
+en.cartographer = "zones"
+en.crier = "fish"
+en.deep = "catches"
+en.drum = "fish"
+en.flywallet = "lures"
+en.glade = "fish"
+en.glass = "shards"
+en.hall = "fish"
+en.hex = "fish"
+en.ice = "catches"
+en.knit = "Casts"
+en.koi = "pairs"
+en.lacquer = "days"
+en.lion = "fish"
+en.logbook = "zones"
+en.shroud = "fish"
+en.slate = "Species"
+en.stitch = "fish"
+en.stormglass = "zones"
+en.totem = "fish"
+en.trophy = "records"
+en.warband = "fish"
+en.wave = "catches"
+
+[CREST_PROGRESS]
+value = "{rank} · {completion:0}%"
+en = "{rank} · {completion:0}%"
+
+[CREST_UNFISHED]
+value = "Unbefischt"
+en = "Unfished"
+
+[CREST_UNCHARTED]
+value = "Noch nicht kartiert"
+en = "Not yet charted"
+
+[CREST_NOTE_PROGRESS]
+value = "Verdient, wenn {zoneName} im Fischjournal Meister erreicht. Stand: {rank}, {completion:0}%. {nextLine}."
+en = "Earned when {zoneName} reaches Master in the Fish Journal. It is {rank}, {completion:0}%. {nextLine}."
+
+[CREST_NOTE_UNFISHED]
+value = "Verdient, wenn {zoneName} im Fischjournal Meister erreicht. Fang dort irgendetwas, um zu beginnen."
+en = "Earned when {zoneName} reaches Master in the Fish Journal. Catch anything there to begin."
+
+[CREST_NOTE_UNCHARTED]
+value = "Verdient, wenn {zoneName} im Fischjournal Meister erreicht, sobald die Gewässer dort kartiert sind."
+en = "Earned when {zoneName} reaches Master in the Fish Journal, once its waters are charted."
+
+[LEVEL_UP_TITLE]
+value = "Anglerstufe {top:0}"
+en = "Angler Level {top:0}"
+
+[LEVEL_UP_STAMP]
+value = "Stufe {top:0}"
+en = "Level {top:0}"
+
+[LEVELS_RAISED]
+value.one = "+{count:0} Stufe"
+value.other = "+{count:0} Stufen"
+en.one = "+{count:0} level"
+en.other = "+{count:0} levels"
+
+[NEW_SPECIES_TITLE]
+value = "Neue Art"
+en = "New Species"
+
+[NEW_SPECIES_STAMP]
+value = "Neu!"
+en = "New!"
+
+[NEW_SPECIES_FIRST_NOTE]
+value = "Eine neue Art für dein Anglerbuch."
+en = "A new Species for your Ledger."
+
+[NEW_IN_ZONE_TITLE]
+value = "Neu hier"
+en = "New here"
+
+[NEW_IN_ZONE_TEXT]
+value = "{itemName} in {areaName}"
+en = "{itemName} in {areaName}"
+
+[NEW_IN_ZONE_STAMP]
+value = "Neu hier"
+en = "New here"
+
+[SKILL_MILESTONE_TITLE]
+value = "Fertigkeitsmeilenstein"
+en = "Skill Milestone"
+
+[SKILL_MILESTONE_TEXT]
+value = "Angeln {threshold:0}"
+en = "Fishing {threshold:0}"
+
+[ZONE_RANK_TITLE]
+value = "Gebietsrang: {zoneRanks}"
+en = "Zone rank: {zoneRanks}"
+
+[ZONE_RANK_STAMP]
+value = "Aufstieg"
+en = "Rank up"
+
+[ZONE_MASTER_TITLE]
+value = "Gebietsmeister"
+en = "Zone Master"
+
+[ZONE_MASTER_STAMP]
+value = "Meister"
+en = "Master"
+
+[CREST_EARNED]
+value = "Verdient: {name}"
+en = "Earned: {name}"
+
+[TROPHY_WEIGHT_TITLE]
+value = "Trophäengewicht"
+en = "Trophy weight"
+
+[TROPHY_WEIGHT_STAMP]
+value = "Trophäe"
+en = "Trophy"
+
+[NEW_CURIO_TITLE]
+value = "Neue Kuriosität"
+en = "New curio"
+
+[NEW_CURIO_STAMP]
+value = "Neu!"
+en = "New!"
+
+[UNCHARTED_TITLE]
+value = "Unbekannter Fang, notiert"
+en = "Unknown catch, logged"
+
+[UNCHARTED_STAMP]
+value = "Notiert"
+en = "Logged"
+
+[ITEM_SIZE]
+value = "{name} · {size}"
+en = "{name} · {size}"
+
+[LEGEND_TITLE]
+value = "Legende"
+en = "Legend"
+
+[LEGEND_STAMP]
+value = "Legende!"
+en = "Legend!"
+
+[PRESTIGE_READY_TITLE]
+value = "Prestige bereit"
+en = "Prestige ready"
+
+[PRESTIGE_READY_TEXT]
+value = "Öffne das Fischjournal, um ein neues Anglerbuch zu beginnen."
+en = "Open the Fish Journal to begin a new Ledger."
+
+[PRESTIGE_READY_STAMP]
+value = "Prestige bereit"
+en = "Prestige ready"
+
+[PRESTIGE_TITLE]
+value = "Prestige {emblem}"
+en = "Prestige {emblem}"
+
+[MASTER_PRESTIGE_TITLE]
+value = "Meisterprestige {stars:0}"
+en = "Master Prestige {stars:0}"
+
+[CATCHES]
+value.one = "{count:n} Fang"
+value.other = "{count:n} Fänge"
+en.one = "{count:n} Catch"
+en.other = "{count:n} Catches"
+
+[SIZE_RECORD_TITLE]
+value = "Längenrekord"
+en = "Size record"
+
+[SIZE_RECORD_STAMP]
+value = "Rekord"
+en = "Record"
+
+[RULER_LENGTH]
+value = "Länge"
+en = "length"
+
+[NEW_VARIETY_TITLE]
+value = "Neue Variante"
+en = "New variety"
+
+[NEW_VARIETY_STAMP]
+value = "Neue Variante"
+en = "New variety"
+
+[RARE_VARIETY_TITLE]
+value = "Seltene Variante"
+en = "Rare variety"
+
+[EPIC_VARIETY_TITLE]
+value = "Epische Variante"
+en = "Epic variety"
+
+[EVERY_COLOUR_TITLE]
+value = "Alle Farben von {itemName}"
+en = "Every colour of {itemName}"
+
+[EVERY_COLOUR_STAMP]
+value = "Alle Farben"
+en = "Every colour"
+
+[TITLE_LINE]
+value = "Titel: {name}"
+en = "Title: {name}"
+
+[TEXT_WITH_TITLE]
+value = "{text_with_title_1}. {titles}"
+en = "{text_with_title_1}. {titles}"
+
+[TITLE_EARNED]
+value = "Titel verdient"
+en = "Title earned"
+
+[CAUGHT_STAR_TITLE]
+value = "Gefangen"
+en = "Caught"
+
+[ELEMENT_STAR_TITLE]
+value = "In seinem Element"
+en = "In its element"
+
+[REGULAR_STAR_TITLE]
+value = "Stammgast"
+en = "Regular"
+
+[FAMILY_STAR_TITLE]
+value = "Trophäenfamilie"
+en = "Trophy family"
+
+[FAMILY_STAR_TEXT]
+value = "{name} {stars}"
+en = "{name} {stars}"
+
+[STAR]
+value = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+en = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+
+[ZONE_RANKS]
+value = ["Besucher", "Stammgast", "Einheimischer", "Experte", "Meister"]
+en = ["Visitor", "Regular", "Local", "Expert", "Master"]
+
+[ZONE_NEXT_VISITOR]
+value = "Fang hier irgendetwas, um Besucher zu werden"
+en = "Catch anything here to become a Visitor"
+
+[ZONE_NEXT_REGULAR]
+value.one = "Stammgast: noch {count:0} jederzeit fangbare Art"
+value.other = "Stammgast: noch {count:0} jederzeit fangbare Arten"
+en.one = "Regular: {count:0} more any-time Species"
+en.other = "Regular: {count:0} more any-time Species"
+
+[ZONE_NEXT_LOCAL]
+value.one = "Einheimischer: noch {count:0} jederzeit fangbare Art"
+value.other = "Einheimischer: noch {count:0} jederzeit fangbare Arten"
+en.one = "Local: {count:0} more any-time Species"
+en.other = "Local: {count:0} more any-time Species"
+
+[ZONE_NEXT_EXPERT]
+value = "Experte: {parts}"
+en = "Expert: {parts}"
+
+[ZONE_NEXT_GATED]
+value.one = "noch {count:0} Tag-, Nacht-, Saison- oder Ereignisfang"
+value.other = "noch {count:0} Tag-, Nacht-, Saison- oder Ereignisfänge"
+en.one = "{count:0} more day, night, seasonal or event catch"
+en.other = "{count:0} more day, night, seasonal or event catches"
+
+[ZONE_NEXT_JUNK]
+value = "ein Stück Plunder"
+en = "a piece of junk"
+
+[ZONE_NEXT_TREASURE]
+value = "ein Schatz"
+en = "a treasure"
+
+[ZONE_NEXT_SEPARATOR]
+value = ", "
+en = ", "
+
+[ZONE_NEXT_MASTER]
+value.one = "Meister: eine Trophäe aus noch {count:0} Familie"
+value.other = "Meister: eine Trophäe aus noch {count:0} Familien"
+en.one = "Master: a trophy from {count:0} more family"
+en.other = "Master: a trophy from {count:0} more families"
+
+[ZONE_NEXT_MASTERED]
+value = "Meister dieser Gewässer"
+en = "Master of these waters"
+
+[ZONE_NEXT_WITH_NEW]
+value = "{line} · {found}"
+en = "{line} · {found}"
+
+[ZONE_NEW_TO_FIND]
+value.one = "{count:0} neu zu finden: die Daten sind gewachsen, dein Siegel bleibt"
+value.other = "{count:0} neu zu finden: die Daten sind gewachsen, dein Siegel bleibt"
+en.one = "{count:0} new to find: the data grew, and your seal stays"
+en.other = "{count:0} new to find: the data grew, and your seal stays"
+
+[WRITE_UP_FIRST_BUILD]
+value.one = "Dein Anglerbuch wurde aus {count:n} Wurf erstellt"
+value.other = "Dein Anglerbuch wurde aus {count:n} Würfen erstellt"
+en.one = "Your Ledger was written up from {count:n} Cast"
+en.other = "Your Ledger was written up from {count:n} Casts"
+
+[WRITE_UP_WHILE_OFF]
+value = "Während das Anglerbuch aus war"
+en = "While the Ledger was off"
+
+[WRITE_UP_LEVEL]
+value = "Anglerstufe {shownLevel:0}"
+en = "Angler Level {shownLevel:0}"
+
+[WRITE_UP_LEVEL_ROSE]
+value = "Anglerstufe {before:0} auf {shown:0}"
+en = "Angler Level {before:0} to {shown:0}"
+
+[WRITE_UP_SPECIES]
+value.one = "{count:0} Art"
+value.other = "{count:0} Arten"
+en.one = "{count:0} Species"
+en.other = "{count:0} Species"
+
+[WRITE_UP_VARIETIES]
+value.one = "{count:0} Variante"
+value.other = "{count:0} Varianten"
+en.one = "{count:0} variety"
+en.other = "{count:0} varieties"
+
+[WRITE_UP_EVERY_COLOUR]
+value.one = "{count:0} Fisch in allen Farben"
+value.other = "{count:0} Fische in allen Farben"
+en.one = "{count:0} fish in every colour"
+en.other = "{count:0} fish in every colour"
+
+[WRITE_UP_VARIETIES_COLOURS]
+value = "{varieties} · {colours}"
+en = "{varieties} · {colours}"
+
+[WRITE_UP_ZONES]
+value.one = "{count:0} Gebiet mit Rang"
+value.other = "{count:0} Gebiete mit Rang"
+en.one = "{count:0} zone ranked"
+en.other = "{count:0} zones ranked"
+
+[WRITE_UP_MASTERED]
+value.one = "{count:0} gemeistert"
+value.other = "{count:0} gemeistert"
+en.one = "{count:0} mastered"
+en.other = "{count:0} mastered"
+
+[WRITE_UP_ZONES_MASTERED]
+value = "{zones} · {mastered}"
+en = "{zones} · {mastered}"
+
+[WRITE_UP_TROPHY]
+value.one = "{count:0} Trophäengewicht"
+value.other = "{count:0} Trophäengewichte"
+en.one = "{count:0} trophy weight"
+en.other = "{count:0} trophy weights"
+
+[WRITE_UP_CURIO]
+value.one = "{count:0} Kuriosität"
+value.other = "{count:0} Kuriositäten"
+en.one = "{count:0} curio"
+en.other = "{count:0} curios"
+
+[WRITE_UP_WITH_PRESTIGE]
+value = "{line} · Prestige {rank:0}"
+en = "{line} · Prestige {rank:0}"
+
+[WRITE_UP_LEGENDS]
+value.one = "{count:0} Legende"
+value.other = "{count:0} Legenden"
+en.one = "{count:0} Legend"
+en.other = "{count:0} Legends"
+
+[WRITE_UP_MORE_TITLES]
+value.one = "+{count:0} weiterer Titel"
+value.other = "+{count:0} weitere Titel"
+en.one = "+{count:0} more title"
+en.other = "+{count:0} more titles"
+
+[WRITE_UP_SKILL]
+value.one = "{count:0} Fertigkeitsmeilenstein"
+value.other = "{count:0} Fertigkeitsmeilensteine"
+en.one = "{count:0} Skill Milestone"
+en.other = "{count:0} Skill Milestones"
+
+[WRITE_UP_COINS]
+value = "Pagle-Münzen +{number}"
+en = "Pagle Coins +{number}"
+
+[JOURNAL]
+value = "Fischjournal"
+en = "Fish Journal"
+
+[JOURNAL_SLASH_HELP]
+value = "Fischjournal öffnen oder schließen"
+en = "Open or close the Fish Journal"
+
+[JOURNAL_UPDATING]
+value = "Das Anglerbuch wird aus deinem Fangprotokoll erstellt."
+en = "The Ledger is being written up from your Catch log."
+
+[JOURNAL_HOME]
+value = "Start"
+en = "Home"
+
+[JOURNAL_BACK]
+value = "« zurück"
+en = "« back"
+
+[JOURNAL_SEARCH_HINT]
+value = "Fisch oder Gewässer suchen…"
+en = "Find a fish or a water…"
+
+[JOURNAL_HELP_CHART]
+value = "Hilf, die Gewässer zu kartieren"
+en = "Help chart the waters"
+
+[JOURNAL_CHART_PROMPT]
+value = "Etwas gesehen, das Pagle nicht kennt?"
+en = "Seen something Pagle doesn't know?"
+
+[HOME_KICKER]
+value = "Die Gewässer"
+en = "The Waters"
+
+[HOME_TITLE]
+value = "Wo ich geangelt habe"
+en = "Where I've Fished"
+
+[HOME_NOTES]
+value = "Notizen für mich"
+en = "Notes to self"
+
+[HOME_NOTE_RANK]
+value = "{zone}: {zoneRanks}. {nextRequirement}"
+en = "{zone}: {zoneRanks}. {nextRequirement}"
+
+[HOME_NOTE_NEW]
+value = "{zone}: {home_note_new_2:0} neu zu finden"
+en = "{zone}: {home_note_new_2:0} new to find"
+
+[HOME_NOTE_CAUGHT_STAR]
+value = "{name}: noch {home_note_caught_star_2:0} bis |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+en = "{name}: {home_note_caught_star_2:0} to |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+
+[HOME_NOTE_STAR]
+value = "{name}: noch {home_note_star_2:0} bis |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+en = "{name}: {home_note_star_2:0} to |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+
+[HOME_NOTE_NONE]
+value = "Geh angeln!"
+en = "Go fishing!"
+
+[HOME_LEVEL]
+value = "Anglerstufe"
+en = "Angler Level"
+
+[HOME_PERCENT]
+value = "{percent:0}%"
+en = "{percent:0}%"
+
+[HOME_CONTENTS]
+value = "In diesem Anglerbuch"
+en = "In this Ledger"
+
+[HOME_NUMERALS]
+value = ["i.", "ii.", "iii.", "iv.", "v.", "vi."]
+en = ["i.", "ii.", "iii.", "iv.", "v.", "vi."]
+
+[HOME_ANGLER_MARK]
+value = "»"
+en = "»"
+
+[HOME_SEAL]
+value = "Anglerbuch\n{completion}"
+en = "Ledger\n{completion}"
+
+[HOME_CURIOS]
+value = "Kuriositäten: Plunder, Schätze, Unverzeichnetes"
+en = "Curios: junk, treasure, uncharted"
+
+[HOME_ANGLER]
+value = "Der Angler: Hände und Meilensteine"
+en = "The Angler: hands and milestones"
+
+[BRASS_PLATE]
+value = "St. {level:0} · Anglerbuch {percent:0}%"
+en = "Lv {level:0} · Ledger {percent:0}%"
+
+[BRASS_PLATE_TITLE]
+value = "St. {level:0} · {title} · Anglerbuch {percent:0}%"
+en = "Lv {level:0} · {title} · Ledger {percent:0}%"
+
+[DATE_SHORT]
+value = "{day:0}. {monthsShort}"
+en = "{day:0} {monthsShort}"
+
+[DATE_WITH_YEAR]
+value = "{short} {year}"
+en = "{short} {year}"
+
+[MONTHS_SHORT]
+value = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."]
+en = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+[MONTHS]
+value = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
+en = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+[WINDOWS]
+value.autumn = "Herbst"
+value.day = "Tag"
+value."event.301" = "Anglerwettbewerb"
+value.night = "Nacht"
+value.spring = "Frühling"
+value.summer = "Sommer"
+value.winter = "Winter"
+en.autumn = "autumn"
+en.day = "day"
+en."event.301" = "Extravaganza"
+en.night = "night"
+en.spring = "spring"
+en.summer = "summer"
+en.winter = "winter"
+
+[WINDOW_EVENT]
+value = "Ereignis"
+en = "event"
+
+[WINDOW_OPEN]
+value = "beißt jetzt"
+en = "biting now"
+
+[WINDOW_BACK_HOURS]
+value = "wieder in {window_back_hours:0} Std."
+en = "back in {window_back_hours:0} h"
+
+[WINDOW_BACK_MINUTES]
+value = "wieder in {window_back_minutes:0} Min."
+en = "back in {window_back_minutes:0} min"
+
+[WINDOW_BACK_MONTH]
+value = "wieder im {months}"
+en = "back in {months}"
+
+[WINDOW_LINE]
+value = "{label}, {state}"
+en = "{label}, {state}"
+
+[XP_BAR_TEXT]
+value = "{into} von {cost}."
+en = "{into} of {cost}."
+
+[XP_BAR_FRESH]
+value.one = " Frischwasser für noch {count:0} Fang."
+value.other = " Frischwasser für noch {count:0} Fänge."
+en.one = " Fresh Water for {count:0} more Catch."
+en.other = " Fresh Water for {count:0} more Catches."
+
+[XP_BAR_SET_ASIDE]
+value = "{carried} EP für das nächste Prestige zurückgelegt"
+en = "{carried} XP set aside for the next Prestige"
+
+[XP_BAR_TIP_TITLE]
+value = "Woher die EP dieses Aufstiegs kamen"
+en = "Where this climb's XP came from"
+
+[XP_BAR_TIP_NOTE]
+value = "nach Quelle, ungefähr"
+en = "by source, roughly"
+
+[XP_SOURCE_OWN]
+value = "Fänge und Entdeckungen"
+en = "Catches and discoveries"
+
+[XP_SOURCE_NAMES]
+value.Hunts = "Jagden"
+value.TackleBoard = "Anglertafel"
+en.Hunts = "Hunts"
+en.TackleBoard = "Tackle Board"
+
+[HINT_ANY_TIME]
+value = "Jederzeit"
+en = "Any time"
+
+[HINT_SEPARATOR]
+value = " · "
+en = " · "
+
+[HINT_WINDOW_SEPARATOR]
+value = ", "
+en = ", "
+
+[HINT_MORE]
+value = "{name} +{hint_more_2:0}"
+en = "{name} +{hint_more_2:0}"
+
+[HINT_SKILL]
+value = "Fertigkeit ~{skill:0}"
+en = "skill ~{skill:0}"
+
+[HINT_ANY_SKILL]
+value = "jede Fertigkeit"
+en = "any skill"
+
+[TILE_RANK]
+value = "{zoneRanks} · {completion:0}%"
+en = "{zoneRanks} · {completion:0}%"
+
+[TILE_NEW]
+value = "{newToFind:0} neu!"
+en = "{newToFind:0} new!"
+
+[TILE_UNFISHED_SKILL]
+value = "unbefischt · Fertigkeit ~{skill:0}"
+en = "unfished · skill ~{skill:0}"
+
+[TILE_UNFISHED_ANY_SKILL]
+value = "unbefischt · jede Fertigkeit"
+en = "unfished · any skill"
+
+[TILE_UNCHARTED]
+value = "unverzeichnete Gewässer"
+en = "uncharted waters"
+
+[LIST_SEPARATOR]
+value = ", "
+en = ", "
+
+[LIST_LAST]
+value = " und "
+en = " and "
+
+[ENTRY_STAMPS]
+value = ["Gefangen", "In seinem Element", "Stammgast"]
+en = ["Caught", "In its element", "Regular"]
+
+[STAMP_TIP_LAND]
+value.one = "{count}-mal fangen."
+value.other = "{count}-mal fangen."
+en.one = "Land it {count} time."
+en.other = "Land it {count} times."
+
+[STAMP_TIP_LANDED]
+value = "{min:0} von {need:0} gefangen."
+en = "{min:0} of {need:0} landed."
+
+[STAMP_TIP_ELEMENT_WINDOWS]
+value.one = "In seinem Elementfenster fangen, in beliebigem Gebiet."
+value.other = "In jedem seiner {count} Elementfenster fangen, in beliebigem Gebiet."
+en.one = "Land it under its element window, in any zone."
+en.other = "Land it under each of its {count} element windows, in any zone."
+
+[STAMP_TIP_ELEMENT_NEEDED]
+value = "{have:0} von {need:0} erfüllt. Noch nötig: {joinAnd}."
+en = "{have:0} of {need:0} met. Still needed: {joinAnd}."
+
+[STAMP_TIP_ELEMENT_MET]
+value = "Alle erfüllt: {joinAnd}."
+en = "All met: {joinAnd}."
+
+[STAMP_TIP_ZONES]
+value.one = "In beliebigem Gebiet fangen."
+value.other = "In {count} verschiedenen Gebieten fangen."
+en.one = "Land it in any zone."
+en.other = "Land it in {count} different zones."
+
+[STAMP_TIP_ZONES_PROGRESS]
+value.one = "In {have:0} von {count:0} Gebiet."
+value.other = "In {have:0} von {count:0} Gebieten."
+en.one = "In {have:0} of {count:0} zone."
+en.other = "In {have:0} of {count:0} zones."
+
+[ENTRY_FIRST]
+value = "Zuerst gefangen am {date} in {zone}, von {character}. {caught} gefangen."
+en = "First landed {date} in {zone}, by {character}. {caught} caught."
+
+[ENTRY_FIRST_NO_ZONE]
+value = "Zuerst gefangen am {date}, von {character}. {caught} gefangen."
+en = "First landed {date}, by {character}. {caught} caught."
+
+[ENTRY_FOUND_IN]
+value = "Zu finden in {joinAnd}."
+en = "Found in {joinAnd}."
+
+[ENTRY_ONLY_BY]
+value = " Nur bei {joinAnd}."
+en = " Only by {joinAnd}."
+
+[ENTRY_LARGEST]
+value = "Mein größter Fang: {size}"
+en = "Largest I've landed: {size}"
+
+[ENTRY_REMOVED]
+value = "In den Gewässern von Forever nicht mehr zu finden."
+en = "No longer found in Forever's waters."
+
+[ENTRY_UNKNOWN]
+value = "Ein unbekannter Fisch"
+en = "An unknown fish"
+
+[ENTRY_RIDDLE]
+value = "»{riddle}«"
+en = "\"{riddle}\""
+
+[ENTRY_HINT_LINK]
+value = "Klaren Hinweis lesen »"
+en = "Read the plain hint »"
+
+[FISH_KICKER]
+value = "Fundorte"
+en = "Where to find it"
+
+[FISH_TITLE]
+value = "Seine Gewässer"
+en = "Its waters"
+
+[FISH_CAUGHT_HERE]
+value = "gefangen |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:11:15:0:0:1024:2048:486:513:1586:1606|t"
+en = "caught |TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:11:15:0:0:1024:2048:486:513:1586:1606|t"
+
+[FISH_WHEN]
+value = "Wann"
+en = "When"
+
+[FISH_CAUGHT]
+value = "{box} Gefangen ({min:0}/{caught:0})"
+en = "{box} Caught ({min:0}/{caught:0})"
+
+[FISH_ELEMENT]
+value = "{box} In seinem Element ({have:0}/{need:0})"
+en = "{box} In its element ({have:0}/{need:0})"
+
+[FISH_REGULAR]
+value = "{box} Stammgast ({min:0}/{regularCatches:0})"
+en = "{box} Regular ({min:0}/{regularCatches:0})"
+
+[CHECK_ON]
+value = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:468:502:1836:1870|t"
+en = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:468:502:1836:1870|t"
+
+[CHECK_OFF]
+value = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:430:464:1836:1870|t"
+en = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:430:464:1836:1870|t"
+
+[FISH_VARIETIES]
+value = "Varianten"
+en = "Varieties"
+
+[FISH_VARIETIES_COUNT]
+value = "{caughtCount:0} von {sizeOf:0} gefunden"
+en = "{caughtCount:0} of {sizeOf:0} found"
+
+[FISH_VARIETIES_LINK]
+value = "Alle zehn ansehen »"
+en = "See all ten »"
+
+[VARIETIES_TITLE]
+value = "Seine Farben"
+en = "Its colours"
+
+[VARIETIES_CAUGHT]
+value = "{caughtCount:0} von {sizeOf:0} gefangen"
+en = "{caughtCount:0} of {sizeOf:0} caught"
+
+[VARIETY_COUNT]
+value = "{variety_count} gefangen"
+en = "{variety_count} caught"
+
+[VARIETY_UNDISCOVERED]
+value = "Unentdeckt"
+en = "Undiscovered"
+
+[VARIETY_KICKER]
+value.common = "Eine gewöhnliche Farbe"
+value.epic = "Eine epische Farbe"
+value.rare = "Eine seltene Farbe"
+value.uncommon = "Eine ungewöhnliche Farbe"
+en.common = "A common colour"
+en.epic = "An epic colour"
+en.rare = "A rare colour"
+en.uncommon = "An uncommon colour"
+
+[VARIETY_NOT_DISCOVERED]
+value = "Noch nicht entdeckt"
+en = "Not yet discovered"
+
+[VARIETY_ODDS]
+value = "Noch nicht gefangen. Etwa ein Fang von {oneIn}."
+en = "Not landed yet. About one Catch in {oneIn}."
+
+[VARIETY_ALL_TEN]
+value = "Alle zehn."
+en = "All ten."
+
+[VARIETY_TO_GO]
+value = "Noch {left:0}."
+en = "{left:0} to go."
+
+[SEARCH_NONE]
+value = "Noch nichts mit diesem Namen im Anglerbuch."
+en = "Nothing by that name in the Ledger yet."
+
+[SEARCH_WATERS]
+value = "Gewässer"
+en = "Waters"
+
+[SEARCH_FISH]
+value = "Fische"
+en = "Fish"
+
+[ANGLER_CRUMB]
+value = "Der Angler"
+en = "The Angler"
+
+[ANGLER_EX_LIBRIS]
+value = "Ex Libris"
+en = "Ex Libris"
+
+[ANGLER_LEDGER]
+value = "Das Anglerbuch"
+en = "The Angler's Ledger"
+
+[ANGLER_KEPT_SINCE]
+value = "geführt seit {since}"
+en = "kept since {since}"
+
+[ANGLER_TALLY]
+value = "Das Anglerbuch"
+en = "The Ledger"
+
+[ANGLER_COMPLETE]
+value = "{percent:0}% des Anglerbuchs vollständig ({angler_complete_2} von {angler_complete_3})"
+en = "{percent:0}% of the Ledger complete ({angler_complete_2} of {angler_complete_3})"
+
+[ANGLER_PARTS]
+value.junk = "Plundermuseum"
+value.species = "Arten"
+value.treasure = "Schätze"
+value.trophy = "Trophäenzimmer-Gewichte"
+value.varieties = "Varianten"
+value.zones = "Gemeisterte Gebiete"
+en.junk = "Junk Museum"
+en.species = "Species"
+en.treasure = "Treasures"
+en.trophy = "Trophy Room weights"
+en.varieties = "Varieties"
+en.zones = "Zones mastered"
+
+[ANGLER_PART_COUNT]
+value = "{angler_part_count_1} von {angler_part_count_2}"
+en = "{angler_part_count_1} of {angler_part_count_2}"
+
+[ANGLER_CATCHES]
+value.one = "{count:n} Fang"
+value.other = "{count:n} Fänge"
+en.one = "{count:n} Catch"
+en.other = "{count:n} Catches"
+
+[ANGLER_CATCHES_NEXT]
+value.one = "{count:n} Fang · nächster Meilenstein {milestone}"
+value.other = "{count:n} Fänge · nächster Meilenstein {milestone}"
+en.one = "{count:n} Catch · next milestone {milestone}"
+en.other = "{count:n} Catches · next milestone {milestone}"
+
+[ANGLER_HANDS]
+value = "Hände an der Rute"
+en = "Hands on the Rod"
+
+[ANGLER_HAND]
+value = "Fertigkeit {rank:0} / {max:0}"
+en = "skill {rank:0} / {max:0}"
+
+[ANGLER_MILESTONES]
+value = "Meilensteine"
+en = "Milestones"
+
+[ANGLER_MILESTONE]
+value = "{done} {threshold:0}"
+en = "{done} {threshold:0}"
+
+[ANGLER_MILESTONE_SEPARATOR]
+value = "   "
+en = "   "
+
+[ANGLER_NO_PRESTIGE]
+value = "Noch kein Prestige"
+en = "No Prestige yet"
+
+[ANGLER_PRESTIGE]
+value = "Neues Anglerbuch beginnen (Prestige)"
+en = "Begin a new Ledger (Prestige)"
+
+[ANGLER_AUTOMATIC]
+value = "Automatisch"
+en = "Automatic"
+
+[ANGLER_XP_SOURCES]
+value = "Woher deine EP kamen"
+en = "Where your XP came from"
+
+[ANGLER_XP_CLIMB]
+value = "Dieser Aufstieg"
+en = "This climb"
+
+[ANGLER_XP_ALL]
+value = "Insgesamt"
+en = "All told"
+
+[ZONE_LADDER_SEPARATOR]
+value = "·"
+en = "·"
+
+[ZONE_NEXT]
+value = "Nächstes: {zone_next}"
+en = "Next: {zone_next}"
+
+[ZONE_NEW_HERE]
+value.one = "{count:0} hier neu zu finden! Mein Siegel bleibt."
+value.other = "{count:0} hier neu zu finden! Mein Siegel bleibt."
+en.one = "{count:0} new to find here! My seal stays."
+en.other = "{count:0} new to find here! My seal stays."
+
+[ZONE_GROUPS]
+value.anyTime = "Jederzeit"
+value.curios = "Kuriositäten"
+value.dayNight = "Tag und Nacht"
+value.events = "Ereignisse"
+value.pools = "Schwärme"
+value.seasonal = "Saisonal"
+value.trophies = "Trophäen"
+en.anyTime = "Any time"
+en.curios = "Curios"
+en.dayNight = "Day and night"
+en.events = "Events"
+en.pools = "Pools"
+en.seasonal = "Seasonal"
+en.trophies = "Trophies"
+
+[ZONE_GROUP_COUNT]
+value = "{done:0} / {total:0}"
+en = "{done:0} / {total:0}"
+
+[ZONE_GROUP_NOTE]
+value = "{note} · {zone_group_note_2}"
+en = "{note} · {zone_group_note_2}"
+
+[ZONE_POOLS_NOTE]
+value = "offenes Wasser und Schwärme zusammen"
+en = "open water and pools combined"
+
+[ZONE_REQUIREMENT]
+value = "{met} {zone_requirement_2}"
+en = "{met} {zone_requirement_2}"
+
+[ZONE_TROPHY]
+value = "eine Trophäe: {name}, beliebiges Gewicht"
+en = "a {name} trophy, any weight"
+
+[ZONE_ALSO_NOTE]
+value = "Noch nicht in Pagles Liste für diese Gewässer."
+en = "Not in Pagle's list for these waters yet."
+
+[ZONE_UNKNOWN_FISH]
+value = "— unbekannt —"
+en = "— unknown —"
+
+[ZONE_CAUGHT_ELSEWHERE]
+value = "{item} (anderswo gefangen)"
+en = "{item} (caught elsewhere)"
+
+[ZONE_MARGIN_SEPARATOR]
+value = " · "
+en = " · "
+
+[ZONE_ABOUT]
+value = "Über diese Gewässer"
+en = "About these waters"
+
+[ZONE_SKILL]
+value = "Fertigkeit ~{skill:0}"
+en = "Skill ~{skill:0}"
+
+[ZONE_ANY_SKILL]
+value = "Jede Fertigkeit"
+en = "Any skill"
+
+[ZONE_KNOWN]
+value = "{completion:0}% dieser Gewässer bekannt: {fishKnown:0} von {fish:0} Fischen, {landed:0} von {families:0} Trophäenfamilien"
+en = "{completion:0}% of these waters known: {fishKnown:0} of {fish:0} fish, {landed:0} of {families:0} trophy families"
+
+[ZONE_TROPHIES_HERE]
+value = "Hier gefangene Trophäen"
+en = "Trophies landed here"
+
+[ZONE_REWARD]
+value = "Lohn der Meisterschaft: Jedes neue Siegel bringt EP."
+en = "Reward for mastery: each new seal earns XP."
+
+[ZONE_REWARD_TITLE]
+value = "Lohn der Meisterschaft: Jedes neue Siegel bringt EP. Das Meistersiegel bringt den Titel {title}."
+en = "Reward for mastery: each new seal earns XP. The Master seal earns the title {title}."
+
+[ZONE_PICK]
+value = "Wähle links einen Fisch, um seine Seite zu lesen."
+en = "Pick a fish on the left to read its page."
+
+[ZONE_UNCHARTED_NOTE]
+value = "Jeder Fang hier wird trotzdem notiert und gezählt, sobald Pagles Daten nachziehen."
+en = "Every catch here is still written down, and counted once Pagle's data catches up."
+
+[ZONE_LOOSE_PAGES]
+value = "Lose Seiten"
+en = "Loose pages"
+
+[ZONE_LOOSE_TITLE]
+value = "Was hier hochkam"
+en = "What came up here"
+
+[ZONE_UNCHARTED_GROUP]
+value = "Unverzeichnet"
+en = "Uncharted"
+
+[ZONE_UNCHARTED_SEAL]
+value = "unverzeichnet"
+en = "uncharted"
+
+[ZONE_LOOSE_ITEM]
+value = "{item}: {zone_loose_item_2:0}×"
+en = "{item}: {zone_loose_item_2:0}×"
+
+[ZONE_ALSO_CAUGHT_TITLE]
+value = "Hier auch gefangen"
+en = "Also caught here"
+
+[ZONE_NOTHING_YET]
+value = "Hier noch nichts gefangen."
+en = "Nothing caught here yet."
+
+[STAR_OFF]
+value = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:677:700:1126:1149|t"
+en = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:677:700:1126:1149|t"
+
+[TROPHY_WEIGHTS]
+value = "{trophy_weights_1} von {trophy_weights_2} Gewichten."
+en = "{trophy_weights_1} of {trophy_weights_2} weights."
+
+[TROPHY_KICKER]
+value = "Eine Teilsammlung"
+en = "A collection"
+
+[TROPHY_FAMILIES]
+value = "Familien"
+en = "Families"
+
+[TROPHY_FAMILIES_NOTE]
+value = "Gewichte"
+en = "weights"
+
+[TROPHY_FAMILY_KICKER]
+value = "Eine Trophäenfamilie"
+en = "A trophy family"
+
+[TROPHY_HEAVIEST]
+value = "schwerstes"
+en = "heaviest"
+
+[TROPHY_STAMPS]
+value = ["Beliebiges Gewicht", "Hälfte der Gewichte", "Das schwerste"]
+en = ["Any weight", "Half the weights", "The heaviest"]
+
+[TROPHY_TIP_ANY]
+value = "Fange ein beliebiges Gewicht dieser Familie."
+en = "Land any weight of this family."
+
+[TROPHY_TIP_NONE_YET]
+value = "Noch keins gefangen."
+en = "None landed yet."
+
+[TROPHY_TIP_UNLISTED]
+value = "Gefangen, aber nicht auf der Liste dieser Familie."
+en = "Landed, though not on this family's list."
+
+[TROPHY_TIP_LANDED]
+value.one = "{done:0} von {count:0} Gewicht gefangen."
+value.other = "{done:0} von {count:0} Gewichten gefangen."
+en.one = "{done:0} of {count:0} weight landed."
+en.other = "{done:0} of {count:0} weights landed."
+
+[TROPHY_TIP_HALF]
+value.one = "Fange ihr einziges gelistetes Gewicht."
+value.other = "Fange mindestens {need:0} ihrer {count:0} gelisteten Gewichte."
+en.one = "Land its one listed weight."
+en.other = "Land at least {need:0} of its {count:0} listed weights."
+
+[TROPHY_TIP_NO_WEIGHTS]
+value = "Diese Familie listet noch keine Gewichte."
+en = "This family lists no weights yet."
+
+[TROPHY_TIP_HEAVIEST]
+value = "Fange ihr schwerstes gelistetes Gewicht, {trophy_tip_heaviest} Pfd."
+en = "Land its heaviest listed weight, {trophy_tip_heaviest} lb."
+
+[TROPHY_TIP_HEAVIEST_DONE]
+value = "Gefangen."
+en = "Landed."
+
+[TROPHY_TIP_HEAVIEST_TODO]
+value = "Noch nicht."
+en = "Not yet."
+
+[TROPHY_POUNDS]
+value = "Pfund"
+en = "pounds"
+
+[TROPHY_LANDED]
+value = "{trophy_landed_1} von {trophy_landed_2} gefangen. Schwerstes bisher: {trophy_landed_3} Pfd."
+en = "Landed {trophy_landed_1} of {trophy_landed_2}. Heaviest so far: {trophy_landed_3} lb."
+
+[TROPHY_NONE_LANDED]
+value = "Noch keiner aus dieser Familie."
+en = "Not one of this family yet."
+
+[CURIOS_CRUMB]
+value = "Kuriositäten"
+en = "Curios"
+
+[CURIOS_JUNK_KICKER]
+value = "Plunder"
+en = "Junk"
+
+[CURIOS_JUNK_TITLE]
+value = "Das Plundermuseum"
+en = "The Junk Museum"
+
+[CURIOS_TREASURES_KICKER]
+value = "Behälter und Schätze"
+en = "Containers and treasure"
+
+[CURIOS_EXHIBITS]
+value = "{curios_exhibits_1} von {curios_exhibits_2} Exponaten"
+en = "{curios_exhibits_1} of {curios_exhibits_2} exhibits"
+
+[CURIOS_EMPTY_PLINTH]
+value = "Ein leerer Sockel"
+en = "An empty plinth"
+
+[CURIOS_TREASURES_TITLE]
+value = "Schätze"
+en = "Treasures"
+
+[CURIOS_OPENED]
+value = "{curios_opened_1} von {curios_opened_2} geöffnet"
+en = "{curios_opened_1} of {curios_opened_2} opened"
+
+[CURIOS_LOOSE_PAGES]
+value = "Lose Seiten: Unverzeichnet"
+en = "Loose pages: Uncharted"
+
+[CURIOS_LOOSE_PAGE]
+value = "{item}: {curios_loose_page_2}× in {where}, zuerst am {date}. Pagle unbekannt. Notiert."
+en = "{item}: {curios_loose_page_2}× at {where}, first {date}. Unknown to Pagle. Logged."
+
+[CURIOS_UNKNOWN_WATERS]
+value = "unbekannten Gewässern"
+en = "unknown waters"
+
+[CURIOS_NONE_UNCHARTED]
+value = "Keine. Jeder Fang steht im Anglerbuch."
+en = "None. Every catch is in the Ledger."
+
+[LEGENDS_TITLE]
+value = "Legenden"
+en = "Legends"
+
+[LEGENDS_KICKER]
+value = "Jenseits der hundert"
+en = "Outside the hundred"
+
+[LEGENDS_INDEX]
+value = "Das Verzeichnis"
+en = "The index"
+
+[LEGENDS_COUNT]
+value = "{legends_count_1} von {legends_count_2}. Sie liegen außerhalb der 100% des Anglerbuchs."
+en = "{legends_count_1} of {legends_count_2}. These sit outside the Ledger's hundred."
+
+[LEGENDS_UNWRITTEN]
+value = "eine ungeschriebene Legende"
+en = "an unwritten legend"
+
+[LEGENDS_UNWRITTEN_TITLE]
+value = "Eine ungeschriebene Legende"
+en = "An unwritten legend"
+
+[LEGENDS_CAUGHT_MARK]
+value = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+en = "|TInterface\\AddOns\\Pagle_Ledger\\media\\journal\\LedgerParts:0:0:0:0:1024:2048:650:673:1126:1149|t"
+
+[LEGENDS_FIRST]
+value = "{date}, {zone}, {character}"
+en = "{date}, {zone}, {character}"
+
+[LEGENDS_FIRST_NO_ZONE]
+value = "{date}, {character}"
+en = "{date}, {character}"
+
+[LEGENDS_OPEN_PLATE]
+value = "Tafel öffnen"
+en = "Open the plate"
+
+[LEGENDS_PLATE_RETURN]
+value = "Klicke irgendwo, um zurückzukehren."
+en = "Click anywhere to return."
+
+[LEGENDS_PLATE_KICKER]
+value = "Eine Legende dieser Gewässer"
+en = "A Legend of these waters"
+
+[LEGENDS_PLATE_SEAL]
+value = "Titel"
+en = "Title"
+
+[FOLLOWING_TITLE]
+value = "Gefolgte Angler"
+en = "Following"
+
+[FOLLOWING_KICKER]
+value = "In diesem Anglerbuch"
+en = "In this Ledger"
+
+[FOLLOWING_EXPIRED_MARK]
+value = "—"
+en = "—"
+
+[FOLLOWING_NO_COMPANION]
+value = "kein Begleiter"
+en = "no Companion"
+
+[FOLLOWING_COUNT]
+value.one = "Du folgst {count:n} Angler. Folgen oder entfolgen kannst du auf der Pagle-Website."
+value.other = "Du folgst {count:n} Anglern. Folgen oder entfolgen kannst du auf der Pagle-Website."
+en.one = "{count:n} Angler you follow. Follow and unfollow on the Pagle website."
+en.other = "{count:n} Anglers you follow. Follow and unfollow on the Pagle website."
+
+[FOLLOWING_ROW]
+value = "St. {level:0} · {emblem} · {ledger:0}%"
+en = "Lv {level:0} · {emblem} · {ledger:0}%"
+
+[FOLLOWING_ROW_NO_PRESTIGE]
+value = "St. {level:0} · {ledger:0}%"
+en = "Lv {level:0} · {ledger:0}%"
+
+[FOLLOWING_HARDCORE_STAMP]
+value = "HC"
+en = "HC"
+
+[FOLLOWING_HARDCORE]
+value = "Hardcore-Angler"
+en = "Hardcore Angler"
+
+[FOLLOWING_MORE]
+value.one = "und {count:n} weiterer Charakter"
+value.other = "und {count:n} weitere Charaktere"
+en.one = "and {count:n} more character"
+en.other = "and {count:n} more characters"
+
+[FOLLOWING_SEAL]
+value = "Anglerbuch {ledger:0}%"
+en = "Ledger {ledger:0}%"
+
+[FOLLOWING_LEGENDS]
+value = "Legenden"
+en = "Legends"
+
+[FOLLOWING_LEGENDS_COUNT]
+value = "{following_legends_count_1} von {following_legends_count_2}"
+en = "{following_legends_count_1} of {following_legends_count_2}"
+
+[FOLLOWING_WATERS]
+value = "Gemeisterte Gewässer"
+en = "Waters mastered"
+
+[FOLLOWING_CATCHES]
+value = "Fänge insgesamt"
+en = "Lifetime Catches"
+
+[FOLLOWING_AS_OF]
+value = "Stand: {asOfDate}"
+en = "As of {asOfDate}"
+
+[FOLLOWING_EMPTY]
+value.absent = ["Der Begleiter führt diese Seite.", "Angler, denen du auf der Pagle-Website folgst, bringt der Pagle-Begleiter ins Spiel.", "Ohne ihn bleibt diese Seite leer. Wenn du dein Protokoll einfügst, wird deine eigene Anglerseite trotzdem aktualisiert."]
+value.expired = ["Diese Seiten sind älter als einen Tag.", "Pagle hat sie beiseitegelegt, bis der Begleiter frische bringt.", "Starte den Begleiter, dann /reload."]
+value.none = ["Du folgst noch niemandem.", "Folge einem Angler über seine Seite auf der Pagle-Website.", "Der Begleiter holt ihn innerhalb einer Stunde herein; nach deinem nächsten /reload erscheint er hier."]
+en.absent = ["The Companion keeps this page.", "Anglers you follow on the Pagle website are brought into the game by the Pagle Companion.", "Without it, this page stays empty. Pasting your log still updates your own Angler page."]
+en.expired = ["These pages are more than a day old.", "Pagle has set them aside until the Companion brings fresh ones.", "Start the Companion, then /reload."]
+en.none = ["You follow no one yet.", "Follow an Angler from their page on the Pagle website.", "The Companion brings them in within the hour; they show here after your next /reload."]
+
+[PRESTIGE_CONFIRM_KICKER]
+value = "Prestige"
+en = "Prestige"
+
+[PRESTIGE_CONFIRM_TITLE]
+value = "Ein neues Anglerbuch beginnen?"
+en = "Begin a new Ledger?"
+
+[PRESTIGE_CONFIRM_TEXT]
+value = "Deine Anglerstufe steigt wieder ab 1. Nichts, was du verdient hast, wird dir genommen."
+en = "Your Angler Level climbs again from 1. Nothing you've earned is taken away."
+
+[PRESTIGE_CONFIRM_YES]
+value = "Prestige"
+en = "Prestige"
+
+[PRESTIGE_CONFIRM_NO]
+value = "Noch nicht"
+en = "Not yet"
+
+[GUIDE_BLURB]
+value = "Dein Buch: jedes Gewässer und jeder Fisch, deine Anglerstufe, Rekorde und Titel."
+en = "Your book: every water and every fish, your Angler Level, records and titles."
+
+[GUIDE_RIBBON]
+value = "Dein Anglerbuch"
+en = "Your Ledger"
+
+[GUIDE_KICKER]
+value = "Dein Anglerbuch"
+en = "Your Ledger"
+
+[GUIDE_TITLE]
+value = "Es beginnt mit deinem nächsten Fisch"
+en = "It starts with your next fish"
+
+[GUIDE_BODY]
+value = "Pagle schreibt nur auf, was es sieht. Fische, die du vor heute gefangen hast, stehen nicht in deinem Anglerbuch, und Pagle tut nicht so, als ob. Dein erster Fang ist Seite eins."
+en = "Pagle writes down only what it sees. Fish you caught before today aren’t in your Ledger, and Pagle won’t pretend they are. Your first Catch is page one."
+
+[GUIDE_KEPT_NONE]
+value = "geführt seit … deinem ersten Fang"
+en = "kept since … your first Catch"
+
+[GUIDE_RIGHT_KICKER]
+value = "Schon eingetragen"
+en = "Already written in"
+
+[GUIDE_RIGHT_TITLE]
+value = "Was Pagle sehen konnte"
+en = "What Pagle could see"
+
+[GUIDE_RIGHT_BODY]
+value = "Deine Angelfertigkeit ist das Einzige, was ehrlich von deiner Vergangenheit erzählt, darum zählt sie von Anfang an."
+en = "Your Fishing skill is the one thing that tells your past honestly, so it counts from the start."
+
+[GUIDE_HEADING]
+value = "{name} · Angeln {rank:0}"
+en = "{name} · Fishing {rank:0}"
+
+[GUIDE_READ_NOW]
+value = "gerade eben gelesen"
+en = "read just now"
+
+[GUIDE_MILESTONE]
+value = "Fertigkeitsmeilenstein {threshold:0}"
+en = "Skill Milestone {threshold:0}"
+
+[GUIDE_MILESTONES]
+value = "Fertigkeitsmeilensteine {head} und {thresholds:0}"
+en = "Skill Milestones {head} and {thresholds:0}"
+
+[GUIDE_MILESTONE_JOIN]
+value = ", "
+en = ", "
+
+[GUIDE_REACHED_BEFORE]
+value = "erreicht, bevor Pagle kam"
+en = "reached before Pagle came"
+
+[GUIDE_REACHED]
+value = "erreicht am {dateAt}"
+en = "reached {dateAt}"
+
+[GUIDE_TO_GO]
+value = "noch {max:0} Fertigkeitspunkte"
+en = "{max:0} skill to go"
+
+[GUIDE_LATER]
+value = "für später"
+en = "for later"
+
+[GUIDE_XP]
+value = "+{skillMilestoneXp} EP"
+en = "+{skillMilestoneXp} XP"
+
+[GUIDE_ACCOUNT]
+value = "Jeder Charakter dieses Accounts schreibt in dasselbe Anglerbuch. Melde dich mit einem anderen an, und Pagle liest auch dessen Angelfertigkeit."
+en = "Every character on this account writes in the same Ledger. Log in with another and Pagle reads their Fishing skill too."
+
+[GUIDE_NOTE]
+value = "Schalte später einen Teil ein, und er liest *jeden Fang* seit heute nach und trägt ein, was du dir verdient hast."
+en = "Turn a part on later and it reads back through *every Catch* since today, then writes up what you’d earned."
+
+[NOTE_FRESH]
+value = "Du warst eine Weile weg, also bringen deine nächsten Fänge Bonus-EP. Das ist *Frischwasser*, das Blau in deiner Leiste. Eine Pause ist nie eine Strafe."
+en = "You’ve been away, so your next Catches earn bonus XP. That’s *Fresh Water*, the blue in your bar. A rest is never a penalty."
+
+[PRESTIGE_LETTER_KICKER]
+value = "Ein Brief, am Steg hinterlassen"
+en = "A letter, left on the dock"
+
+[PRESTIGE_LETTER_TEXT]
+value = "Sechzig: der Gipfel des Aufstiegs. Beginne ein neues Anglerbuch, wann immer du willst. Deine Stufe beginnt wieder bei 1, dein Anglerbuch bekommt ein Prestigezeichen, und nichts, was du verdient hast, wird dir genommen. Oder bleib auf sechzig, so lange du magst."
+en = "Sixty: the top of the climb. Begin a new Ledger whenever you like. Your level starts again from 1, a Prestige mark goes on your Ledger, and nothing you’ve earned is taken away. Or stay at sixty as long as you please."
+
+[PRESTIGE_LETTER_SHOW]
+value = "Zeig es mir"
+en = "Show me"
+
+[PRESTIGE_LETTER_LATER]
+value = "Später"
+en = "Later"
+
+[NOTE_PRESTIGE]
+value = "*Beginne hier ein neues Anglerbuch*, wenn du so weit bist. Keine Eile."
+en = "*Begin a new Ledger* here, when you’re ready. No hurry."
+
+[FIRST_LOOK_TITLE]
+value = "das Fischjournal"
+en = "the Fish Journal"
+
+[FIRST_LOOK_TILE]
+value = "Jedes Gewässer, in dem du angelst, bekommt eine Kachel. Ihr Rang steigt vom *Besucher* bis zum *Meister*."
+en = "Every water you fish gets a tile. Its rank climbs from *Visitor* to *Master*."
+
+[FIRST_LOOK_XP_BAR]
+value = "Deine Anglerstufe. Der *blaue* Abschnitt ist Frischwasser: Bonus-EP nach einer Pause."
+en = "Your Angler Level. The *blue* stretch is Fresh Water: bonus XP after a break."
+
+[FIRST_LOOK_NOTES]
+value = "Notizen für mich: was fast geschafft ist. Sie schreiben sich beim Angeln selbst neu."
+en = "Notes to self: what’s closest to done. They rewrite themselves as you fish."
+
+[FIRST_LOOK_SEARCH]
+value = "Finde ein Gewässer oder einen Fisch. Ein Fisch, den du nicht gefangen hast, wird *nie genannt*."
+en = "Find a water or a fish. A fish you haven’t caught is *never named*."
+
+[FIRST_LOOK_UNFISHED]
+value = "Gestrichelte Kacheln sind Gewässer, in denen du noch nicht geangelt hast, mit der Fertigkeit, die sie verlangen."
+en = "Dashed tiles are waters you haven’t fished yet, with the skill they ask."
+
+[FIRST_LOOK_AGAIN]
+value = "Notizen für diese Seite erneut zeigen"
+en = "Show the notes for this page again"
+
+[TOUR_HOME]
+value = "das Fischjournal: Start"
+en = "the Fish Journal: Home"
+
+[TOUR_ZONE]
+value = "das Fischjournal: das meistbefischte Gebiet, seine meistgefangene Art geöffnet"
+en = "the Fish Journal: the most-fished zone, its most-caught Species open"
+
+[TOUR_FISH]
+value = "das Fischjournal: die meistgefangene Art"
+en = "the Fish Journal: the most-caught Species"
+
+[TOUR_TROPHY]
+value = "das Fischjournal: das Trophäenzimmer, bei einer gefangenen Familie"
+en = "the Fish Journal: the Trophy Room, on a landed family"
+
+[TOUR_CURIOS]
+value = "das Fischjournal: Kuriositäten"
+en = "the Fish Journal: Curios"
+
+[TOUR_LEGENDS]
+value = "das Fischjournal: Legenden, bei einer gefangenen"
+en = "the Fish Journal: Legends, on a caught one"
+
+[TOUR_ANGLER]
+value = "das Fischjournal: die Anglerseite"
+en = "the Fish Journal: the Angler page"
+
+[TOUR_SEARCH]
+value = "das Fischjournal: Suchergebnisse zum Namen der meistgefangenen Art"
+en = "the Fish Journal: search results for the most-caught Species' name"
+
+[COLLECTION_CONTENTS]
+value = "Die Sammlung: Optiken und Titel"
+en = "The Collection: looks and titles"
+
+[COLLECTION_CRUMB]
+value = "Die Sammlung"
+en = "The Collection"
+
+[COLLECTION_TITLE]
+value = "Die Sammlung"
+en = "The Collection"
+
+[COLLECTION_NEW_COUNT]
+value = "{collection_new_count} neu"
+en = "{collection_new_count} new"
+
+[COLLECTION_NEW_MARK]
+value = "neu!"
+en = "new!"
+
+[COLLECTION_SEARCH_HINT]
+value = "Optik suchen…"
+en = "Find a look…"
+
+[COLLECTION_SEARCH_LOOKS]
+value = "Optiken"
+en = "Looks"
+
+[COLLECTION_SLASH_HELP]
+value = "Die Sammlung des Fischjournals öffnen"
+en = "Open the Fish Journal's Collection"
+
+[COLLECTION_LINE]
+value = "Jede Optik, die Pagle hat: die du trägst, die du besitzt, und wie du den Rest verdienst."
+en = "Every look Pagle has: the ones you wear, the ones you keep, and how to earn the rest."
+
+[COLLECTION_OF]
+value = "{collection_of_1} von {collection_of_2}"
+en = "{collection_of_1} of {collection_of_2}"
+
+[COLLECTION_WEARING]
+value = "Getragen: {names}"
+en = "Wearing {names}"
+
+[COLLECTION_SIGNED]
+value = "Signiert »{name}«"
+en = "Signed “{name}”"
+
+[COLLECTION_FRAMES_JOIN]
+value = " · "
+en = " · "
+
+[COLLECTION_REACH]
+value = "Fast geschafft"
+en = "Within reach"
+
+[COLLECTION_LATELY]
+value = "Kürzlich hinzugefügt"
+en = "Lately added"
+
+[COLLECTION_NEWEST_FIRST]
+value = "neueste zuerst"
+en = "newest first"
+
+[COLLECTION_SEAL]
+value = "{collection_seal_1}\nvon {collection_seal_2}"
+en = "{collection_seal_1}\nof {collection_seal_2}"
+
+[COLLECTION_ADDED]
+value = "{words} · {dateAt}"
+en = "{words} · {dateAt}"
+
+[COLLECTION_ADDED_BOUGHT]
+value = "Gekauft"
+en = "Bought"
+
+[COLLECTION_ADDED_CRATE]
+value = "Aus einer Kuriositätenkiste"
+en = "From a Curio crate"
+
+[COLLECTION_ADDED_EARNED]
+value = "Verdient"
+en = "Earned"
+
+[COLLECTION_FOR_SALE]
+value.one = "{count:n} Optik zu kaufen, die du noch nicht hast."
+value.other = "{count:n} Optiken zu kaufen, die du noch nicht hast."
+en.one = "{count:n} look for sale you don't have yet."
+en.other = "{count:n} looks for sale you don't have yet."
+
+[COLLECTION_OPEN_SHOP]
+value = "Kuriositätenladen öffnen"
+en = "Open the Curio Shop"
+
+[COLLECTION_SHELF_KICKER]
+value = "Die Sammlung"
+en = "The Collection"
+
+[COLLECTION_YOURS_COUNT]
+value = "{collection_yours_count_1} von {collection_yours_count_2} gehören dir"
+en = "{collection_yours_count_1} of {collection_yours_count_2} yours"
+
+[COLLECTION_TAB_ALL]
+value = "Alle"
+en = "All"
+
+[COLLECTION_TAB_YOURS]
+value = "Deine"
+en = "Yours"
+
+[COLLECTION_TAB_EARN]
+value = "Zu verdienen"
+en = "To earn"
+
+[COLLECTION_TAB_SHOP]
+value = "Im Laden"
+en = "In the shop"
+
+[COLLECTION_TAG_IN_USE]
+value = "In Gebrauch"
+en = "In use"
+
+[COLLECTION_TAG_SIGNED]
+value = "signiert als"
+en = "signed as"
+
+[COLLECTION_TAG_YOURS]
+value = "Deins"
+en = "Yours"
+
+[COLLECTION_TAG_DEFAULT]
+value = "Standard"
+en = "The default"
+
+[COLLECTION_TAG_CRATE]
+value = "Kuriositätenkiste"
+en = "Curio crate"
+
+[COLLECTION_TAG_PUT_AWAY]
+value = "Weggelegt"
+en = "Put away"
+
+[COLLECTION_SLOT_FALLBACK]
+value.one = "{label}"
+value.other = "{label}"
+en.one = "{label}"
+en.other = "{label}s"
+
+[COLLECTION_SLOT_NAMES]
+value."core.binding" = ["Einband", "Einbände"]
+value."core.crest" = ["Exlibris-Wappen", "Exlibris-Wappen"]
+value."core.soundset" = ["Klangset", "Klangsets"]
+value."core.toaststyle" = ["Einblendungsstil", "Einblendungsstile"]
+en."core.binding" = ["Binding", "Bindings"]
+en."core.crest" = ["Bookplate crest", "Bookplate crests"]
+en."core.soundset" = ["Sound set", "Sound sets"]
+en."core.toaststyle" = ["Toast style", "Toast styles"]
+
+[COLLECTION_TRACKER_FRAME]
+value = "Trackerrahmen"
+en = "Tracker frame"
+
+[COLLECTION_TRACKER_FRAMES]
+value = "Trackerrahmen"
+en = "Tracker frames"
+
+[COLLECTION_TITLE_NOUN]
+value = "Titel"
+en = "Title"
+
+[COLLECTION_TITLES_NOUN]
+value = "Titel"
+en = "Titles"
+
+[COLLECTION_TITLE_GROUPS]
+value.ledger = "Das ganze Anglerbuch"
+value.legends = "Legenden"
+value.levels = "Stufen und Prestige"
+value.wardens = "Hüter"
+en.ledger = "The whole Ledger"
+en.legends = "Legends"
+en.levels = "Levels and Prestige"
+en.wardens = "Wardens"
+
+[COLLECTION_AUTOMATIC_NOTE]
+value = "Dein höchster Stufentitel, welcher es auch ist"
+en = "Your highest level title, whatever it is"
+
+[COLLECTION_TITLE_DESCRIPTION]
+value = "Ein Titel des Anglerbuchs. Signiere das Anglerbuch damit, und er erscheint auf deinem Messingschild und deinem Exlibris."
+en = "A title of the Ledger. Sign the Ledger with it, and it shows on your brass plate and your bookplate."
+
+[COLLECTION_EARN_MASTER]
+value = "Meister in {zone}"
+en = "Master in {zone}"
+
+[COLLECTION_EARN_LEGEND]
+value = "Erster Fang von {item}"
+en = "First Catch of {item}"
+
+[COLLECTION_EARN_JUNK]
+value = "Fülle das Plundermuseum"
+en = "Fill the Junk Museum"
+
+[COLLECTION_EARN_TREASURE]
+value = "Finde jeden Schatz"
+en = "Find every Treasure"
+
+[COLLECTION_EARN_TROPHY]
+value = "Fange jedes Trophäengewicht"
+en = "Land every trophy weight"
+
+[COLLECTION_MODULES]
+value.Core = "Pagle"
+value.Hunts = "Jagden"
+value.Ledger = "Anglerbuch"
+value.QoL = "Komfort"
+value.Stats = "Statistik"
+value.TackleBoard = "Anglertafel"
+en.Core = "Pagle"
+en.Hunts = "Hunts"
+en.Ledger = "Ledger"
+en.QoL = "QoL"
+en.Stats = "Stats"
+en.TackleBoard = "Tackle Board"
+
+[COLLECTION_SIGNED_AS]
+value = "Signiert als"
+en = "Signed as"
+
+[COLLECTION_STAGE_LINE]
+value = "{character} · Anglerstufe {shownLevel:0}"
+en = "{character} · Angler Level {shownLevel:0}"
+
+[COLLECTION_BEFORE]
+value = "Eine Optik, bevor du sie hast"
+en = "A look before you have it"
+
+[COLLECTION_KICKER]
+value = "{slotName} · {source}"
+en = "{slotName} · {source}"
+
+[COLLECTION_SOURCE_DEFAULT]
+value = "Standard"
+en = "The default"
+
+[COLLECTION_SOURCE_SHOP]
+value = "Kuriositätenladen"
+en = "Curio Shop"
+
+[COLLECTION_SOURCE_CRATE]
+value = "Nur aus der Kuriositätenkiste"
+en = "Curio crate only"
+
+[COLLECTION_SOURCE_REWARD]
+value = "Belohnung: {collectionModuleName}"
+en = "{collectionModuleName} reward"
+
+[COLLECTION_IN_USE]
+value = "In Gebrauch"
+en = "In use"
+
+[COLLECTION_USE]
+value = "Benutzen"
+en = "Use it"
+
+[COLLECTION_WEAR]
+value = "Tragen"
+en = "Wear it"
+
+[COLLECTION_SIGN]
+value = "Damit signieren"
+en = "Sign with it"
+
+[COLLECTION_EFFECTS]
+value."core.binding" = "Jedes deiner Bücher trägt ihn."
+value."core.crest" = "An dein Exlibris geheftet."
+value."core.soundset" = "Jede Meldung spielt es."
+value."core.toaststyle" = "Jede Meldung trägt ihn."
+en."core.binding" = "Every book of yours wears it."
+en."core.crest" = "Pinned on your bookplate."
+en."core.soundset" = "Every Announcement plays it."
+en."core.toaststyle" = "Every Announcement wears it."
+
+[COLLECTION_EFFECT_TRACKER]
+value = "Auf dem Tracker von {collectionModuleName}."
+en = "On the {collectionModuleName} tracker."
+
+[COLLECTION_EFFECT_TITLE]
+value = "Das Anglerbuch ist damit signiert."
+en = "The Ledger is signed with it."
+
+[COLLECTION_HOW_DEFAULT]
+value = "Kostenlos und immer deins."
+en = "Free, and always yours."
+
+[COLLECTION_HOW_BOUGHT]
+value = "Gekauft am {date} für {price} Münzen."
+en = "Bought {date} for {price} Coins."
+
+[COLLECTION_HOW_BOUGHT_FREE]
+value = "Gekauft am {date}."
+en = "Bought {date}."
+
+[COLLECTION_HOW_CRATE]
+value = "Aus einer Kuriositätenkiste, {date}."
+en = "From a Curio crate, {date}."
+
+[COLLECTION_HOW_EARNED]
+value = "Verdient am {date}: {line}."
+en = "Earned {date}: {line}."
+
+[COLLECTION_HOW_EARNED_DATE]
+value = "Verdient am {date}."
+en = "Earned {date}."
+
+[COLLECTION_HOW_EARNED_LINE]
+value = "Verdient: {earnLine}."
+en = "Earned: {earnLine}."
+
+[COLLECTION_HOW_TO_EARN]
+value = "So verdienst du es"
+en = "How to earn it"
+
+[COLLECTION_COUNT]
+value = "{collection_count_1} von {collection_count_2}"
+en = "{collection_count_1} of {collection_count_2}"
+
+[COLLECTION_COUNT_UNIT]
+value = "{collection_count_unit_1} von {collection_count_unit_2} {unit}"
+en = "{collection_count_unit_1} of {collection_count_unit_2} {unit}"
+
+[COLLECTION_FALLBACK]
+value = "Bis {dateAt} nicht verdient? Dann kommt es auch in den Verkauf, für {collection_fallback_2} Münzen."
+en = "Not earned by {dateAt}? Then it goes on sale too, for {collection_fallback_2} Coins."
+
+[COLLECTION_BUY]
+value = "Im Kuriositätenladen kaufen"
+en = "Buy in the Curio Shop"
+
+[COLLECTION_ENOUGH]
+value = "Du hast {collection_enough} Münzen, genug dafür."
+en = "You have {collection_enough} Coins, enough for it."
+
+[COLLECTION_SHORT]
+value = "Du hast {collection_short_1} Münzen: Es fehlen noch {collection_short_2}."
+en = "You have {collection_short_1} Coins: {collection_short_2} more to go."
+
+[COLLECTION_CRATE_ONLY]
+value = "Nur aus einer Kuriositätenkiste."
+en = "Only ever from a Curio crate."
+
+[COLLECTION_OPEN_CRATE]
+value = "Eine Kiste öffnen"
+en = "Open a crate"
+
+[COLLECTION_CRATE_NOTE]
+value = "Nie zu kaufen und nie zu verdienen: Eine Kiste gibt es dir, oder nichts."
+en = "Never for sale and never earned: a crate gives it, or nothing does."
+
+[COLLECTION_PUT_AWAY]
+value = "Weggelegt: {name} ist aus"
+en = "Put away: {name} is off"
