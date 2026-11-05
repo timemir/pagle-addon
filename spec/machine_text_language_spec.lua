@@ -23,8 +23,8 @@ describe("machine-read text in every Language (CORE-R8)", function()
 		end
 
 		assert.are.equal(pastes.enUS, pastes.esES)
-		assert.truthy(lines.enUS:find("1,202", 1, true), lines.enUS)
-		assert.truthy(lines.esES:find("1.202", 1, true), lines.esES)
+		assert(lines.enUS:find("1,202", 1, true), lines.enUS)
+		assert(lines.esES:find("1.202", 1, true), lines.esES)
 	end)
 
 	it("keeps the Field report text byte for byte", function()
