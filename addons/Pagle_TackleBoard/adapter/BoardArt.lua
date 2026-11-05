@@ -27,6 +27,22 @@ ns.BOARD_FONT_FACES = {
 -- What draws if a bundled face won't load: the client's own.
 local FALLBACK = "Fonts\\FRIZQT__.TTF"
 
+-- The client languages whose script the bundled faces lack (they draw Latin only, and SetFont doesn't fail on a
+-- missing glyph): there every face is the client's own font, as in Core's kits (CORE-R9, #522).
+local CLIENT_FACE_LOCALES = { ruRU = true, koKR = true, zhCN = true, zhTW = true }
+
+--- The file to draw a bundled face's `path` in: on a ruRU, koKR, zhCN or zhTW client the client's own font,
+--- FrameXML's STANDARD_TEXT_FONT (else FRIZQT__), for every face; elsewhere `path` itself. The Tackle Board's own copy of Core's
+--- ns.LocaleFace (adapter/Art.lua), as a Module reaches none of Core's code (ADR 0001).
+---@param path string
+---@return string
+function ns.LocaleFace(path)
+	if CLIENT_FACE_LOCALES[GetLocale()] then
+		return rawget(_G, "STANDARD_TEXT_FONT") or FALLBACK
+	end
+	return path
+end
+
 --- Each of the board's fonts, from the kit (PagleArtBoard's Board.lua, Overlays.lua, Tracker.lua): its face, size and
 --- ink ("RRGGBB"), and whether it has a shadow (words on the dark frame, the drawer and the trackers do).
 ---@type table<string, { [1]: string, [2]: number, [3]: string, [4]: boolean? }>
@@ -207,7 +223,7 @@ function ns.ArtFont(key)
 	end
 	local def = assert(ns.BOARD_FONTS[key], "the Tackle Board has no font " .. tostring(key))
 	font = CreateFont("PagleTackleBoard" .. key)
-	if font:SetFont(ns.BOARD_FONT_FACES[def[1]], def[2], "") == false then
+	if font:SetFont(ns.LocaleFace(ns.BOARD_FONT_FACES[def[1]]), def[2], "") == false then
 		font:SetFont(FALLBACK, def[2], "")
 	end
 	local color = ns.BoardHex(def[3])
