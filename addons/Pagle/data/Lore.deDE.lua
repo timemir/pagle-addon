@@ -995,6 +995,6 @@ ns.Locale("deDE", function(L)
 	L["variety.8365.rainbow-banded.name"] = "Regenbogenband"
 	L["variety.8365.red-spotted.description"] = "Rote Tupfen mit blauem Ring. Hübsch genug, dass ein Angler vor der Pfanne innehält."
 	L["variety.8365.red-spotted.name"] = "Rottupfen"
-	L["variety.8365.steelhead.description"] = "Graublau und glänzend, aus großen Gewässern. Zieht, als meinte sie es ernst."
+	L["variety.8365.steelhead.description"] = "Graublau und glänzend, aus großen Gewässern. Zieht, als wäre es ernst gemeint."
 	L["variety.8365.steelhead.name"] = "Stahlkopf"
 end)
