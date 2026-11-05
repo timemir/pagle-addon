@@ -3,6 +3,7 @@ the Check workflow's release-zip step) to what they may publish (CORE-R74)."""
 
 import os
 from pathlib import Path
+import re
 import subprocess
 import textwrap
 
@@ -68,7 +69,8 @@ def test_check_workflow_packages_the_zip_without_publishing_it() -> None:
     text = workflow_text("check.yml")
     assert mapping(text, "permissions:") == {"contents": "read"}
     assert "secrets." not in text
-    step = text.split("      - name: Package and check the release zip\n", 1)[1].split("\n  test-check:", 1)[0]
+    # The step's text up to the next job's header (a line at the jobs' two-space indent).
+    step = re.split(r"\n  (?=\S)", text.split("      - name: Package and check the release zip\n", 1)[1], 1)[0]
     assert "env:" not in step
     assert step.rstrip().endswith("bash scripts/package.sh")
     package = (ROOT / "scripts/package.sh").read_text()
