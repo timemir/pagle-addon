@@ -96,6 +96,30 @@ describe("a Hunt's entry on the board", function()
 			assert.are.equal(0.1, view.bar.value)
 		end)
 
+		it(
+			"keeps the effort counter on the page when a longer language runs the entry past its foot (HNT-R64)",
+			function()
+				local run = start()
+				run.state.hunts.fixture_snapper = progress(1, 96, 11, 1)
+				local page, view = open(run, { mode = "board", hunt = "fixture_snapper" })
+				local fonts = run.ns.BoardFonts()
+				assert.are.same({ fonts.hand, true }, { view.effort.fontObject, view.odds:IsShown() })
+
+				-- the conditions wrap long, as a language's longer words do: the entry would end past the page's foot
+				view.conditions.GetStringHeight = function()
+					return 400
+				end
+				run.ns.board:Draw()
+
+				-- the pointer to Stats goes, and the counter is set small, so it ends on the page
+				local effort = "96 Casts under these conditions, 11 since my last one."
+				assert.are.same(
+					{ effort, fonts.note, false },
+					{ view.effort:GetText(), view.effort.fontObject, view.odds:IsShown() }
+				)
+			end
+		)
+
 		it("draws an undone Hunt's dashed 'not yet' and only its effort Casts (HNT-R26)", function()
 			local run = start()
 			run.state.hunts.fixture_snapper = progress(0, 12, 12, 0)
