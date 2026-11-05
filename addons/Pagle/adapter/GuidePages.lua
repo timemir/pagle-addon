@@ -264,8 +264,10 @@ local WELCOME = {
 ---@field highlight Texture        -- the first row's wash, which the margin note points at
 ---@field separator Texture
 
--- The menu's rows: 23 units each from 31 down, a rule 4 under the Modules' entries taking 9.
+-- The menu's rows: 23 units each from 31 down, a rule 4 under the Modules' entries taking 9. A row's words start 14 in
+-- and end by 14 from the menu's right; the Curio Shop's end that far left of its balance, right-aligned to 183.
 local MENU_TOP, MENU_ROW, MENU_GAP, MENU_WIDTH = 31, 23, 9, 214
+local MENU_TEXT_X, MENU_BALANCE_X, MENU_BALANCE_GAP = 14, 183, 8
 
 ---@param left Frame
 ---@return PagleGuideMenuDrawing
@@ -290,20 +292,24 @@ local function newMenu(left)
 	return menu
 end
 
--- Row `i`'s words on `menu`, `label` at `y`: made the first time, reused after.
+-- Row `i`'s words on `menu`, `label` at `y`: made the first time, reused after. Its words are held to `room` (to the
+-- menu's right edge when nil): a longer label is set smaller, then cut short (ns.FitGuideText), never under the
+-- balance or past the menu.
 ---@param menu PagleGuideMenuDrawing
 ---@param i integer
 ---@param label string
 ---@param y number
-local function menuRow(menu, i, label, y)
+---@param room number?
+local function menuRow(menu, i, label, y, room)
 	local row = menu.rows[i]
 	if not row then
-		row = text(menu, "gilt", 13, "title", "", 14, 0, 13)
-		hue(row, "menuRow")
+		row = text(menu, "gilt", 13, "title", "", MENU_TEXT_X, 0, 13)
 		menu.rows[i] = row
 	end
 	row:SetText(label)
-	ns.GuideAt(row, menu, 14, y + 5)
+	ns.FitGuideText(row, "gilt", 13, "title", room or MENU_WIDTH - 2 * MENU_TEXT_X)
+	hue(row, "menuRow")
+	ns.GuideAt(row, menu, MENU_TEXT_X, y + 5)
 	row:Show()
 end
 
@@ -328,10 +334,11 @@ local function drawMenu(menu)
 		y = y + MENU_GAP
 	end
 	n = n + 1
-	menuRow(menu, n, L.GUIDE_BOX_SHOP, y)
 	menu.balance:SetText(ns.FormatCount(Pagle.GetBalance().balance))
 	menu.balance:ClearAllPoints()
-	menu.balance:SetPoint("TOPRIGHT", menu, "TOPLEFT", 183, -(y + 5))
+	menu.balance:SetPoint("TOPRIGHT", menu, "TOPLEFT", MENU_BALANCE_X, -(y + 5))
+	local balance = math.ceil(menu.balance:GetStringWidth())
+	menuRow(menu, n, L.GUIDE_BOX_SHOP, y, MENU_BALANCE_X - balance - MENU_BALANCE_GAP - MENU_TEXT_X)
 	ns.PlaceSprite(menu.coin, menu, 189, y + 6)
 	y = y + MENU_ROW
 	for i = core + 2, #entries do
@@ -464,7 +471,11 @@ local BOX = {
 
 -- ---------------------------------------------------------------------------------------------------- Moments
 
--- The samples' windows and their names' places (board 6): x, y, w, h, and the name's y.
+-- The samples' windows and their names' places (board 6): x, y, w, h, and the name's y. Beside each window its name
+-- on one line (held to SAMPLE_TEXT_W, set smaller when longer) and its line under it, wrapped. A name keeps its place
+-- unless the line above it runs down to it: then it, and its window with it, start SAMPLE_GAP under that line, and so
+-- on down, and the budget paragraph starts under the lower of the last window and the last line (ONB-R34).
+local SAMPLE_TEXT_X, SAMPLE_TEXT_W, SAMPLE_GAP, BUDGET_Y, BUDGET_GAP = 256, 156, 10, 377.3, 12
 local SAMPLES = {
 	{ form = "nod", x = X, y = 137.6, w = 214, h = 30, name = 125.9 },
 	{ form = "toast", x = X, y = 189.3, w = 214, h = 62, name = 193.6 },
@@ -518,13 +529,19 @@ local MOMENTS = {
 		ns.NewGuideKicker(left, L.GUIDE_MOMENTS_KICKER)
 		ns.NewGuideTitle(left, L.GUIDE_MOMENTS_TITLE)
 		small(left, L.GUIDE_MOMENTS_TEXT, 79.4)
+		local under, budget = 0, BUDGET_Y
 		for _, at in ipairs(SAMPLES) do
-			local window = sampleWindow(left, at.form, at.x, at.y, at.w, at.h)
+			local shift = math.max(0, under + SAMPLE_GAP - at.name)
+			local window = sampleWindow(left, at.form, at.x, at.y + shift, at.w, at.h)
 			pages.windows[#pages.windows + 1] = window
 			pages.samples[at.form] = drawSample(window)
 			local words = L.GUIDE_MOMENTS_SAMPLES[at.form]
-			text(left, "sc", 16, "title", words[1], 256, at.name, 17.6)
-			text(left, "italic", 13, "line", words[2], 256, at.name + 19.6, 16.9, { wrap = true, width = 156 })
+			local name = text(left, "sc", 16, "title", words[1], SAMPLE_TEXT_X, at.name + shift, 17.6)
+			ns.FitGuideText(name, "sc", 16, "title", SAMPLE_TEXT_W)
+			local lineY = at.name + shift + 19.6
+			local options = { wrap = true, width = SAMPLE_TEXT_W }
+			under = below(text(left, "italic", 13, "line", words[2], SAMPLE_TEXT_X, lineY, 16.9, options), lineY, 13, 16.9)
+			budget = math.max(budget, under + BUDGET_GAP, at.y + shift + at.h + BUDGET_GAP)
 		end
 		local lively = ns.GUIDE_PRESETS[1].budget --[[@as table]]
 		small(
@@ -533,7 +550,7 @@ local MOMENTS = {
 				L.GUIDE_MOMENTS_BUDGET,
 				{ guide_moments_budget_1 = lively.count, guide_moments_budget_2 = lively.window / 60 }
 			),
-			377.3
+			budget
 		)
 
 		ns.NewGuideKicker(right, L.GUIDE_MOMENTS_RIGHT_KICKER)
@@ -571,22 +588,41 @@ local MOMENTS = {
 
 -- ---------------------------------------------------------------------------------------------------- Off you go
 
--- The list's width, its rows' heights with and without a hint, and where its first row starts.
+-- The list's width, its rows' heights with and without a hint, and where its first row starts; where an item's words
+-- start and how far from the list's right edge they end, and the room its header leaves its count.
 local LIST_WIDTH, ROW_HINTED, ROW_PLAIN, LIST_TOP = 274, 34.6, 21.6, 30
+local ITEM_X, ITEM_END, COUNT_ROOM = 43, 14, 64
+
+-- An item's words, or its hint, on one line held to the list's paper (ns.FitGuideText): a longer one is set smaller,
+-- then cut short, never past the paper's edge.
+---@param fontString FontString
+---@param face PagleArtFace
+---@param size number
+---@param ink string
+---@return FontString
+local function onPaper(fontString, face, size, ink)
+	ns.FitGuideText(fontString, face, size, ink, LIST_WIDTH - ITEM_X - ITEM_END)
+	return fontString
+end
 
 ---@param right Frame
+---@param y number
 ---@return PagleGuideEveningView
-local function newEvening(right)
+local function newEvening(right, y)
 	local list = CreateFrame("Frame", nil, right) --[[@as PagleGuideEveningView]]
-	ns.GuideAt(list, right, 84, 124)
+	ns.GuideAt(list, right, 84, y)
 	list:SetFrameLevel(right:GetFrameLevel() + 2)
-	text(list, "sc", 15, "title", L.GUIDE_EVENING_TITLE, 24, 8, 20)
+	local title = text(list, "sc", 15, "title", L.GUIDE_EVENING_TITLE, 24, 8, 20)
+	ns.FitGuideText(title, "sc", 15, "title", LIST_WIDTH - 24 - COUNT_ROOM)
 	list.count = text(list, "italic", 12.5, "kicker", "", LIST_WIDTH - 8, 10, 17, { right = true })
 	list.rows = {}
-	local y = LIST_TOP
+	y = LIST_TOP
 	for _, item in ipairs(ns.GuideEveningPreview(ns.Modules:Modules())) do
-		local words = text(list, "print", 13.5, "body", item.text, 43, y + 2, 17.6)
-		local strike = rule(list, 43, y + 11, math.max(1, math.ceil(words:GetStringWidth())), "strike", 0.6)
+		local words = onPaper(text(list, "print", 13.5, "body", item.text, ITEM_X, y + 2, 17.6), "print", 13.5, "body")
+		words:SetWidth(0)
+		local inked = math.min(LIST_WIDTH - ITEM_X - ITEM_END, math.ceil(words:GetStringWidth()))
+		words:SetWidth(LIST_WIDTH - ITEM_X - ITEM_END)
+		local strike = rule(list, ITEM_X, y + 11, math.max(1, inked), "strike", 0.6)
 		strike:SetDrawLayer("OVERLAY")
 		list.rows[#list.rows + 1] = {
 			id = item.id,
@@ -597,7 +633,7 @@ local function newEvening(right)
 			strike = strike,
 		}
 		if item.hint then
-			text(list, "italic", 12.5, "small", item.hint, 43, y + 19.6, 16.3)
+			onPaper(text(list, "italic", 12.5, "small", item.hint, ITEM_X, y + 19.6, 16.3), "italic", 12.5, "small")
 		end
 		y = y + (item.hint and ROW_HINTED or ROW_PLAIN)
 	end
@@ -623,6 +659,13 @@ local function tickEvening(list)
 	list.count:SetText(ns.RenderText(L.GUIDE_EVENING_COUNT, { done = done, rows = #list.rows }))
 end
 
+-- Off you go's places (board 9): the sample Nod's window and its note; the margin-notes paragraph; the list, Off to the
+-- water and the line under it. Each keeps its place unless what is above it runs down to it: then it starts OFF_GAP
+-- under that, and what follows it moves with it, so a paragraph or a note that wraps longer pushes the rest down
+-- instead of running under it (ONB-R38).
+local OFF_WINDOW_Y, OFF_NOTE_Y, OFF_LOOKS_Y, OFF_GAP = 191.5, 222, 317.5, 12
+local OFF_LIST_Y, OFF_BUTTON_Y, OFF_AGAIN_DROP = 124, 359.7, 56
+
 --- Off you go (ONB-R38, board 9): the paragraph, the sample Nod with margin note 1, the margin-notes paragraph naming
 --- the windows with First looks; on the right, the First evening list as it will look and Off to the water, which
 --- finishes the guide (guideDone, closing it, then the hook that docks the list, #328).
@@ -631,23 +674,27 @@ local OFF = {
 	build = function(left, right, nav)
 		ns.NewGuideKicker(left, L.GUIDE_OFF_KICKER)
 		ns.NewGuideTitle(left, L.GUIDE_OFF_TITLE)
-		body(left, L.GUIDE_OFF_TEXT, 85.4)
-		local window = sampleWindow(left, "nod", 40, 191.5, 214, 30)
+		local paragraph = body(left, L.GUIDE_OFF_TEXT, 85.4)
+		local shift = math.max(0, below(paragraph, 85.4, 15, 20.7) + OFF_GAP - OFF_WINDOW_Y)
+		local window = sampleWindow(left, "nod", 40, OFF_WINDOW_Y + shift, 214, 30)
 		pages.offWindow, pages.offSample = window, drawSample(window)
-		nav.Note(left, L.GUIDE_OFF_NOD_NOTE, 226, 222, 216, window, 1)
-		small(left, ns.GuideLooksLine(ns.GuideLookWindows(ns.Modules:Modules(), ns.firstLooks:List())), 317.5)
+		local nod = nav.Note(left, L.GUIDE_OFF_NOD_NOTE, 226, OFF_NOTE_Y + shift, 216, window, 1)
+		local looksY = math.max(OFF_LOOKS_Y + shift, OFF_NOTE_Y + shift + nod:GetHeight() + OFF_GAP)
+		small(left, ns.GuideLooksLine(ns.GuideLookWindows(ns.Modules:Modules(), ns.firstLooks:List())), looksY)
 
 		ns.NewGuideKicker(right, L.GUIDE_OFF_RIGHT_KICKER)
 		ns.NewGuideTitle(right, L.GUIDE_OFF_RIGHT_TITLE, 25)
-		small(right, L.GUIDE_OFF_LIST_TEXT, 73.3)
-		local evening = newEvening(right)
+		local listText = small(right, L.GUIDE_OFF_LIST_TEXT, 73.3)
+		local listY = math.max(OFF_LIST_Y, below(listText, 73.3, 13.5, 18.225) + OFF_GAP)
+		local evening = newEvening(right, listY)
 		pages.evening = evening
 		tickEvening(evening)
 		-- Off to the water (ONB-R38): the kit's big leather button, and the line under it
+		local buttonY = math.max(OFF_BUTTON_Y + listY - OFF_LIST_Y, listY + evening:GetHeight() + OFF_GAP)
 		local button = ns.NewGuideButton(right, L.GUIDE_OFF, nav.Finish, W, 46, 18)
-		ns.GuideAt(button, right, X, 359.7)
+		ns.GuideAt(button, right, X, buttonY)
 		pages.offButton = button
-		text(right, "italic", 13, "note", L.GUIDE_OFF_AGAIN, 221, 415.7, 17.55, { center = true })
+		text(right, "italic", 13, "note", L.GUIDE_OFF_AGAIN, 221, buttonY + OFF_AGAIN_DROP, 17.55, { center = true })
 	end,
 	onShow = function()
 		if pages.evening then

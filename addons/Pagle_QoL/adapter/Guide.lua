@@ -125,16 +125,61 @@ local function write(parent, face, size, ink, words, x, y, lead, options)
 	return text
 end
 
+-- How small a line held to its room may be set, as a share of its size: past that it wraps, or the client cuts it
+-- short with "...".
+local FIT_FLOOR = 0.75
+
+-- A text's width on one line, measured unbounded (its width set after).
+---@param text FontString
+---@return number
+local function natural(text)
+	text:SetWidth(0)
+	return text:GetStringWidth()
+end
+
+-- Holds a one-line `text` in the kit's `face` at `size`, in ink `ink`, to `room`: a text too wide is set smaller, in
+-- half-unit steps down to FIT_FLOOR of its size, and then held to `room`, so one still too wide is cut short by the
+-- client's "..." instead of running into what is beside it. Returns whether it fits whole.
+---@param text FontString
+---@param face string
+---@param size number
+---@param ink string
+---@param room number
+---@return boolean
+local function fit(text, face, size, ink, room)
+	local width = natural(text)
+	if width > room then
+		local floor = math.ceil(size * FIT_FLOOR * 2) / 2
+		text:SetFontObject(ns.FaceFont(face, math.max(floor, math.floor(size * room / width * 2) / 2)))
+		local color = INKS[ink]
+		text:SetTextColor(color[1], color[2], color[3])
+	end
+	text:SetWidth(room)
+	return width * FIT_FLOOR <= room
+end
+
+-- Where a text `write` set at `y` in a line box `lead` tall at `size` ends: its measured height as the client wraps it
+-- and the half-leading above its first line and below its last. What follows a text that can wrap is laid from this,
+-- so a longer translation pushes it down instead of running into it.
+---@param text FontString
+---@param y number
+---@param size number
+---@param lead number
+---@return number
+local function below(text, y, size, lead)
+	return y + text:GetStringHeight() + (lead - size)
+end
+
 -- A page's kicker and title (the kit's kicker and title): small caps over IM Fell English at `size` (29, the right
--- page's 25).
+-- page's 25), each on one line across the column, set smaller when longer (fit), never into the spine.
 ---@param page Frame
 ---@param kicker string
 ---@param title string
 ---@param size number?
 local function heading(page, kicker, title, size)
 	size = size or 29
-	write(page, "sc", 14, "kicker", kicker, COLUMN_X, 24, 14)
-	write(page, "print", size, "title", title, COLUMN_X, 41, size * 1.05)
+	fit(write(page, "sc", 14, "kicker", kicker, COLUMN_X, 24, 14), "sc", 14, "kicker", COLUMN)
+	fit(write(page, "print", size, "title", title, COLUMN_X, 41, size * 1.05), "print", size, "title", COLUMN)
 end
 
 -- A paragraph of the body (15 on 20.7) or of small print (13.5 on 18.225) across the column, its top at `y`.
@@ -184,6 +229,33 @@ local function sampleIcons()
 	}
 end
 
+-- The sample faces' pitch on the Casting step's left page, and the least room between two faces' label slips.
+local FACE_PITCH, SLIP_GAP = 97.6, 8
+
+-- Holds a sample face's label to its share of the row (FACE_PITCH less SLIP_GAP, its slip's ends included): a longer
+-- one is set smaller, then cut short, and its slip drawn to it, so two faces' labels never run together.
+---@param face PagleQoLButtonFace
+local function fitFaceLabel(face)
+	local label = face.Label
+	if not label:IsShown() then
+		return
+	end
+	local room = math.floor(FACE_PITCH - SLIP_GAP - ns.LabelWidth(0))
+	-- the face's Label type (FieldArt's: Caveat SemiBold 18 in ink), at its size again before it is measured
+	local size, ink = 18, ns.FIELD_INKS.ink
+	label:SetFontObject(ns.FaceFont("handSemi", size))
+	label:SetTextColor(ink[1], ink[2], ink[3])
+	local width = natural(label)
+	if width > room then
+		size = math.max(math.ceil(size * FIT_FLOOR * 2) / 2, math.floor(size * room / width * 2) / 2)
+		label:SetFontObject(ns.FaceFont("handSemi", size))
+		label:SetTextColor(ink[1], ink[2], ink[3])
+		width = math.min(room, natural(label))
+	end
+	label:SetWidth(room)
+	ns.SetThreeSlice(face.Paper, "Field", "label", ns.LabelWidth(math.ceil(width)), 8, "ARTWORK")
+end
+
 -- Draws the Casting step as things are now: the sequence with the Fishing key's first key on its caps as the button
 -- shows it under this Input (QOL-R70), the chosen Input's card, the Fishing key field greyed under Double right-click
 -- or while QoL stands down, with the resting line then (ONB-R100), and the checkbox.
@@ -197,6 +269,7 @@ local function refreshCasting()
 	local icons = sampleIcons()
 	for _, sample in ipairs(pages.faces) do
 		ns.SetButtonFace(sample.face, ns.ButtonLook(sample.action, icons, nil), hotkey)
+		fitFaceLabel(sample.face)
 	end
 	for _, choice in ipairs(pages.cards) do
 		(choice.card --[[@as PagleGuideChoiceCard]]):SetChosen(choice.input == input)
@@ -254,19 +327,24 @@ local function buildCasting(left, right, nav)
 	paragraph(left, L.GUIDE_CASTING_BODY, 85.4)
 	local faces = {}
 	local sequence = ns.GuideSequence()
+	-- the small print starts under the lowest caption, and the note under it, when they wrap longer than the art's
+	local under = 0
 	for i, press in ipairs(sequence) do
-		local x = 34 + (i - 1) * 97.6
+		local x = 34 + (i - 1) * FACE_PITCH
 		local frame = CreateFrame("Frame", nil, left)
 		frame:SetFrameLevel(left:GetFrameLevel() + 3)
 		faces[i] = { face = ns.DrawButtonFace(frame), action = press.action }
 		at(frame, left, x + 13, 173.5)
-		write(left, "italic", 12.5, "line", press.caption, x + 39, 263.5, 15.625, { width = 78, centre = true })
+		local caption =
+			write(left, "italic", 12.5, "line", press.caption, x + 39, 263.5, 15.625, { width = 78, centre = true })
+		under = math.max(under, below(caption, 263.5, 12.5, 15.625))
 		if i < #sequence then
 			write(left, "hand", 26, "kicker", L.GUIDE_CASTING_THEN, x + 87.8, 191.5, 33, { centre = true })
 		end
 	end
-	paragraph(left, L.GUIDE_CASTING_SMALL, 320.8, true)
-	nav.Note(left, L.GUIDE_CASTING_NOTE, 56, 400, 300)
+	local smallY = math.max(320.8, under + 12)
+	local small = paragraph(left, L.GUIDE_CASTING_SMALL, smallY, true)
+	nav.Note(left, L.GUIDE_CASTING_NOTE, 56, math.max(400, below(small, smallY, 13.5, 18.225) + 14), 300)
 
 	heading(right, L.GUIDE_CHOICE_KICKER, L.GUIDE_CHOICE_TITLE, 25)
 	local resting = write(right, "italic", 13.5, "red", "", COLUMN_X, 70, 18, { width = COLUMN })
@@ -303,6 +381,7 @@ end
 
 --- One set card on the Fishing clothes step: its name and four slots.
 ---@class PagleQoLSetCard
+---@field frame Frame its panel
 ---@field name FontString
 ---@field icons Texture[]
 ---@field placeholders string[]
@@ -316,36 +395,45 @@ end
 ---@field save PagleQoLNoteButton Save what I'm wearing as my fishing set
 ---@field message FontString Save's message, in red, while it couldn't (ONB-R105)
 ---@field lower Frame what's under the message, moved down by it
+---@field lowerY number how far down the paragraph over Save, wrapped longer than the art's, puts Save and all under it
 ---@field dropdown Button the Fishing set field
 ---@field choice FontString the set it shows
 ---@field list PagleQoLSetList the field's list, open under it after a click
 ---@field field Frame the Swap gear binding field (nav.BindingField)
 ---@field nudge Frame the swap-back Nudge's sample strip
+---@field nudgeY number where the strip's top sits on `lower`
 
 local clothes ---@type PagleQoLClothesPages?
+-- The room "or use a set you made" has left of the Fishing set field (at 139.2), 8 short of it.
+local OR_ROOM = 139.2 - 8 - COLUMN_X
 -- Save's message while it shows: kept until the step is left (ONB-R105).
 local saveMessage ---@type string?
 -- Opens the Fishing set field's list, filled as things are now (below, after refreshClothes, which it calls).
 local openList ---@type fun(list: PagleQoLSetList)
+
+-- The room a set card's name and line keep inside its 166-unit panel.
+local CARD_TEXT = 166 - 16
 
 -- A set card on `page` at `x` (the kit's kit()): the guide's card panel, the set's name in small caps, four slots
 -- (each an icon in the atlas's slot ring) and its line in italic.
 ---@param page Frame
 ---@param nav PagleGuideNav
 ---@param x number
+---@param y number
 ---@param default string
 ---@param line string
 ---@param placeholders string[]
 ---@param tint number[]
 ---@return PagleQoLSetCard
-local function setCard(page, nav, x, default, line, placeholders, tint)
+local function setCard(page, nav, x, y, default, line, placeholders, tint)
 	local frame = CreateFrame("Frame", nil, page)
 	frame:SetSize(166, 108.6)
-	at(frame, page, x, 171.5)
+	at(frame, page, x, y)
 	frame:SetFrameLevel(page:GetFrameLevel() + 1)
 	nav.Panel(frame, "card", 6)
 	local card = {
 		name = write(frame, "sc", 15, "title", default, 83, 11, 19, { centre = true }),
+		frame = frame,
 		icons = {},
 		placeholders = placeholders,
 		tint = tint,
@@ -360,7 +448,7 @@ local function setCard(page, nav, x, default, line, placeholders, tint)
 		card.icons[i] = icon
 		place(nav.Part(frame, "slot"), frame, x0, 38)
 	end
-	write(frame, "italic", 12.5, "line", line, 83, 80, 15.6, { centre = true })
+	fit(write(frame, "italic", 12.5, "line", line, 83, 80, 15.6, { centre = true }), "italic", 12.5, "line", CARD_TEXT)
 	return card
 end
 
@@ -370,6 +458,8 @@ end
 ---@param set PagleQoLGuideSet?
 local function showSet(card, set)
 	card.name:SetText(set and set.name or card.default)
+	card.name:SetFontObject(ns.FaceFont("sc", 15))
+	fit(card.name, "sc", 15, "title", CARD_TEXT)
 	local slots = ns.SetCardSlots(set and set.items, function(itemID)
 		return C_Item.GetItemIconByID(itemID)
 	end, card.placeholders)
@@ -421,7 +511,7 @@ local function refreshClothes()
 		pages.lower,
 		pages.lower:GetParent() --[[@as Region]],
 		0,
-		saveMessage and math.ceil(pages.message:GetStringHeight()) or 0
+		pages.lowerY + (saveMessage and math.ceil(pages.message:GetStringHeight()) or 0)
 	)
 	local key = GetBindingKey("PAGLE_SWAP_GEAR")
 	local nudge = pages.nudge
@@ -430,7 +520,7 @@ local function refreshClothes()
 	-- A line too long for the column is drawn smaller, as the whole strip.
 	local scale = ns.FitScale(nudge:GetWidth(), COLUMN)
 	nudge:SetScale(scale)
-	at(nudge, nudge:GetParent() --[[@as Region]], COLUMN_X / scale, 390.8 / scale)
+	at(nudge, nudge:GetParent() --[[@as Region]], COLUMN_X / scale, pages.nudgeY / scale)
 end
 
 --- The Fishing set field's list: the field's paper, opened under it, a row per choice. It is the page's own, drawn as
@@ -619,13 +709,14 @@ end
 -- under it (setList), or closes it.
 ---@param parent Frame
 ---@param nav PagleGuideNav
+---@param y number its top on `parent`
 ---@return Button dropdown
 ---@return FontString choice
 ---@return PagleQoLSetList list
-local function setField(parent, nav)
+local function setField(parent, nav, y)
 	local dropdown = CreateFrame("Button", nil, parent)
 	dropdown:SetSize(272.8, 32)
-	at(dropdown, parent, 139.2, 181.7)
+	at(dropdown, parent, 139.2, y)
 	nav.Panel(dropdown, "field", 6)
 	local choice = write(dropdown, "print", 14.5, "title", "", 10.8, 7, 18)
 	place(nav.Part(dropdown, "caret"), dropdown, 254.8, 9.3)
@@ -650,42 +741,71 @@ end
 local function buildClothes(left, right, nav)
 	local L = ns.L
 	heading(left, L.GUIDE_CLOTHES_KICKER, L.GUIDE_CLOTHES_TITLE)
-	paragraph(left, L.GUIDE_CLOTHES_BODY, 85.4)
+	local body = paragraph(left, L.GUIDE_CLOTHES_BODY, 85.4)
+	-- the cards, the arrows and the line under them move down together when the paragraph wraps longer than the art's
+	local down = math.max(0, below(body, 85.4, 15, 20.7) + 12 - 171.5)
 	local previous = setCard(
 		left,
 		nav,
 		36,
+		171.5 + down,
 		ns.PREVIOUS_SET_NAME,
 		L.GUIDE_CLOTHES_PREVIOUS,
 		PREVIOUS_PLACEHOLDERS,
 		{ 0.85, 0.88, 0.95 }
 	)
-	local fishing =
-		setCard(left, nav, 268, ns.FISHING_SET_NAME, L.GUIDE_CLOTHES_FISHING, FISHING_PLACEHOLDERS, { 0.85, 1, 0.95 })
-	place(nav.Part(left, "arrows"), left, 212, 203)
-	write(left, "hand", 17, "hand", L.GUIDE_CLOTHES_ONE_KEY, 235, 233, 17, { centre = true })
-	paragraph(left, L.GUIDE_CLOTHES_SMALL, 302.1, true)
+	local fishing = setCard(
+		left,
+		nav,
+		268,
+		171.5 + down,
+		ns.FISHING_SET_NAME,
+		L.GUIDE_CLOTHES_FISHING,
+		FISHING_PLACEHOLDERS,
+		{ 0.85, 1, 0.95 }
+	)
+	place(nav.Part(left, "arrows"), left, 212, 203 + down)
+	write(left, "hand", 17, "hand", L.GUIDE_CLOTHES_ONE_KEY, 235, 233 + down, 17, { centre = true })
+	paragraph(left, L.GUIDE_CLOTHES_SMALL, 302.1 + down, true)
 
 	heading(right, L.GUIDE_SAVE_KICKER, L.GUIDE_SAVE_TITLE, 25)
-	paragraph(right, L.GUIDE_SAVE_SMALL, 75.3, true)
+	local small = paragraph(right, L.GUIDE_SAVE_SMALL, 75.3, true)
+	-- Save, its message and all under it move down together when the paragraph wraps longer than the art's
+	local lowerY = math.max(0, below(small, 75.3, 13.5, 18.225) + 8 - 126.7)
 	local save = ns.NewNoteButton(right, L.GUIDE_SAVE, false, COLUMN)
-	at(save, right, COLUMN_X, 126.7)
+	at(save, right, COLUMN_X, 126.7 + lowerY)
 	save:SetScript("OnClick", function()
 		PlaySound(SOUND_CLICK, "SFX")
 		saveMessage = ns.SaveFishingSet()
 		refreshClothes()
 	end)
-	local message = write(right, "italic", 13.5, "red", "", COLUMN_X, 174, 18, { width = COLUMN })
+	local message = write(right, "italic", 13.5, "red", "", COLUMN_X, 174 + lowerY, 18, { width = COLUMN })
 	message:Hide()
 	local lower = CreateFrame("Frame", nil, right)
 	lower:SetSize(right:GetWidth(), right:GetHeight())
-	at(lower, right, 0, 0)
-	write(lower, "italic", 13.5, "line", L.GUIDE_SAVE_OR, COLUMN_X, 189, 18)
-	local dropdown, choice, list = setField(lower, nav)
+	at(lower, right, 0, lowerY)
+	-- "or use a set you made" sits left of the Fishing set field, set smaller when it is longer; when even that
+	-- won't fit, it takes the column's width on its own and the field goes under it, and what follows moves down
+	local orY, fieldY, shift = 189, 181.7, 0
+	local orLine = write(lower, "italic", 13.5, "line", L.GUIDE_SAVE_OR, COLUMN_X, orY, 18)
+	if not fit(orLine, "italic", 13.5, "line", OR_ROOM) then
+		orLine:SetFontObject(ns.FaceFont("italic", 13.5))
+		orLine:SetTextColor(INKS.line[1], INKS.line[2], INKS.line[3])
+		orLine:SetWordWrap(true)
+		orLine:SetWidth(COLUMN)
+		orLine:SetSpacing(18 - 13.5)
+		orY = 181.7
+		at(orLine, lower, COLUMN_X, orY + (18 - 13.5) / 2)
+		fieldY = below(orLine, orY, 13.5, 18) + 4
+		shift = fieldY - 181.7
+	end
+	local dropdown, choice, list = setField(lower, nav, fieldY)
 	local field = nav.BindingField(lower, "PAGLE_SWAP_GEAR", L.SETTINGS_SWAP_GEAR)
-	at(field, lower, COLUMN_X, 231.7)
-	write(lower, "italic", 13, "note", L.GUIDE_SAVE_SLOTS, COLUMN_X, 307.7, 17.55, { width = COLUMN })
-	write(lower, "sc", 14, "kicker", L.GUIDE_NUDGE_KICKER, COLUMN_X, 370, 14)
+	at(field, lower, COLUMN_X, 231.7 + shift)
+	local slotsY = 307.7 + shift
+	local slots = write(lower, "italic", 13, "note", L.GUIDE_SAVE_SLOTS, COLUMN_X, slotsY, 17.55, { width = COLUMN })
+	local kickerY = math.max(370 + shift, below(slots, slotsY, 13, 17.55) + 12)
+	fit(write(lower, "sc", 14, "kicker", L.GUIDE_NUDGE_KICKER, COLUMN_X, kickerY, 14), "sc", 14, "kicker", COLUMN)
 	local nudge = CreateFrame("Frame", nil, lower)
 	nudge:SetFrameLevel(lower:GetFrameLevel() + 1)
 	clothes = {
@@ -694,11 +814,13 @@ local function buildClothes(left, right, nav)
 		save = save,
 		message = message,
 		lower = lower,
+		lowerY = lowerY,
 		dropdown = dropdown,
 		choice = choice,
 		list = list,
 		field = field,
 		nudge = nudge,
+		nudgeY = kickerY + 20.8,
 	}
 	refreshClothes()
 end

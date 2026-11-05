@@ -55,8 +55,9 @@ end
 
 -- Core logged in on Forever with the Modules named in `names` registered (every one when nil), Animations off, and the
 -- guide open at step `id`, its texts wrapping as `linesOf` says (see measure) when given, and a Module named in
--- `blurbs` registering that guideBlurb in place of its own. Returns the client load.
-local function guideAt(id, names, linesOf, blurbs)
+-- `blurbs` registering that guideBlurb in place of its own; `words` changes ns.L before the guide opens (a longer
+-- translation). Returns the client load.
+local function guideAt(id, names, linesOf, blurbs, words)
 	local loaded = loadCore({ BUILD_ENTRY })
 	for _, module in ipairs(MODULES) do
 		local wanted = names == nil
@@ -97,8 +98,20 @@ local function guideAt(id, names, linesOf, blurbs)
 	if linesOf then
 		measure(loaded, linesOf)
 	end
+	if words then
+		words(loaded.ns.L)
+	end
 	loaded.ns.guide:Open(id)
 	return loaded
+end
+
+local bounds = dofile("spec/support/bounds.lua")
+
+-- A font string's size, as the art's font object it is set in names it (ns.ArtFaceFont's PagleArtFace_<face>_<size>).
+local function sizeOf(fontString)
+	local name = fontString.fontObject and fontString.fontObject.name or tostring(fontString.fontObject)
+	local whole, part = name:match("_(%d+)_?(%d*)$")
+	return tonumber(whole .. (part ~= "" and "." .. part or ""))
 end
 
 -- Step `id`'s `side` page.
@@ -473,6 +486,21 @@ describe("the What's in the box step (ONB-R31, ONB-R91)", function()
 		assert.is_false(reads(menu, "Input: Both"))
 	end)
 
+	it("holds the Curio Shop's row clear of its balance, however long its name (ONB-R31)", function()
+		local loaded = guideAt("box", nil, nil, nil, function(L)
+			L.GUIDE_BOX_SHOP = "Tienda de Curiosidades del Pescador"
+		end)
+		local menu = loaded.ns.guidePages.menu
+		local row = find(menu, "Tienda de Curiosidades del Pescador")
+
+		-- the balance is right-aligned to 183: the name ends 8 short of where it starts
+		local balance = #menu.balance.text * 6
+		assert(row.width and row.width > 0, "the shop's row has a width")
+		assert.is_true(14 + row.width <= 183 - balance - 8)
+		assert.is_true(sizeOf(row) < 13)
+		assert.are.same({}, bounds.overflows(menu))
+	end)
+
 	it("pencils the note 'Click a name to open it. /pagle opens Settings.' beside the menu", function()
 		local loaded = guideAt("box")
 		local left = page(loaded, "box", "left")
@@ -544,6 +572,39 @@ describe("the Moments step (ONB-R34, ONB-R35)", function()
 					.. " Session summary when you stop."
 			)
 		)
+	end)
+
+	it("starts a sample's name under the line above it when that wraps long, its window with it (ONB-R34)", function()
+		local nodLine = "When Pagle’s said a lot lately. One line, gone in 3 seconds."
+		local loaded = guideAt("moments", nil, function()
+			return { [nodLine] = 4 }
+		end)
+		local left = page(loaded, "moments", "left")
+		local windows = loaded.ns.guidePages.windows
+
+		local line, toast, banner = find(left, nodLine), find(left, "A toast"), find(left, "A banner")
+		assert.is_true(top(toast) >= bottom(line) + 10)
+		-- the toast's window moves down with its name, as far
+		assert.is.near(top(toast) - (193.6 + 0.8), top(windows[2]) - 189.3, 0.01)
+		assert.is_true(top(banner) > bottom(find(left, "Every Catch, a new fish, a record, Coins earned.")))
+		-- the budget paragraph starts under the banner's window
+		local budget = find(
+			left,
+			"At most 40 pop-ups every 5 minutes: past that, small ones step down to a Nod. Everything lands on the"
+				.. " Session summary when you stop."
+		)
+		assert.is_true(top(budget) > top(windows[3]) + 104)
+	end)
+
+	it("keeps each sample's name on one line beside its window, set smaller when longer (ONB-R34)", function()
+		local loaded = guideAt("moments", nil, nil, nil, function(L)
+			L.GUIDE_MOMENTS_SAMPLES.toast = { "UN AVISO EMERGENTE EN LA PANTALLA", L.GUIDE_MOMENTS_SAMPLES.toast[2] }
+		end)
+		local name = find(page(loaded, "moments", "left"), "UN AVISO EMERGENTE EN LA PANTALLA")
+
+		assert.are.equal(156, name.width)
+		assert.is_true(sizeOf(name) < 16)
+		assert.are.same({}, bounds.overflows(page(loaded, "moments", "left")))
 	end)
 
 	it("shows Lively chosen for a new Angler's settings, the three cards in order with their lines", function()
@@ -702,6 +763,33 @@ describe("the Off you go step (ONB-R38)", function()
 		)
 	end)
 
+	it("starts the margin-notes paragraph under the Nod's note when the note wraps long (ONB-R38)", function()
+		local nodNote = "That’s a *Nod*: every Catch gets one. It’s gone in three seconds."
+		local loaded = guideAt("off", nil, function()
+			return { [nodNote:gsub("%*(.-)%*", "|cff9a2a1a%1|r")] = 6 }
+		end)
+		local left = page(loaded, "off", "left")
+
+		local note = find(left, nodNote:gsub("%*(.-)%*", "|cff9a2a1a%1|r")):GetParent()
+		local looks = find(
+			left,
+			"Don’t want notes? Turn off Margin notes in Settings. The Fish Journal, Hunts, Stats, the Tackle Board"
+				.. " and the Curio Shop each get a short set the first time you open them."
+		)
+		assert.is_true(top(looks) >= top(note) + note:GetHeight() + 12)
+	end)
+
+	it("holds each item of the First evening list to its paper, however long (ONB-R38, ONB-R61)", function()
+		local loaded = guideAt("off", nil, nil, nil, function(L)
+			L.GUIDE_EVENING_ITEMS.journal = "Abre el Diario de pesca y mira lo que ya has pescado esta noche"
+		end)
+		local list = loaded.ns.guidePages.evening
+
+		local item = find(list, "Abre el Diario de pesca y mira lo que ya has pescado esta noche")
+		assert.are.equal(274 - 43 - 14, item.width)
+		assert.are.same({}, bounds.overflows(list))
+	end)
+
 	it("names only the registered windows (ONB-R38, ONB-R102)", function()
 		local loaded = guideAt("off", { "Stats", "QoL" })
 
@@ -765,5 +853,36 @@ describe("the Off you go step (ONB-R38)", function()
 		assert.is_true(loaded.env.PagleDB.global.onboarding.guideDone)
 		assert.is_false(loaded.ns.guide:IsOpen())
 		assert.are.equal(1, docked)
+	end)
+end)
+
+describe("the guide's titles and foot on every page (ONB-R23)", function()
+	it("holds a long title to the column on one line, set smaller, never into the spine", function()
+		local long = "Lo que hay en la caja, y todo lo que puedes hacer con ello esta misma noche"
+		local loaded = guideAt("box", nil, nil, nil, function(L)
+			L.GUIDE_BOX_TITLE = long
+		end)
+		local left = page(loaded, "box", "left")
+		local title = find(left, long)
+
+		assert.are.equal(382, title.width)
+		assert.is_true(sizeOf(title) < 29)
+		assert.are.same({}, bounds.overflows(left))
+	end)
+
+	it("keeps the skip link clear of Next », set smaller and cut short when longer", function()
+		local long = "Saltarse todo lo demás y empezar a pescar ahora mismo sin leer nada"
+		local loaded = guideAt("box", nil, nil, nil, function(L)
+			L.GUIDE_SKIP = long
+		end)
+		local right = page(loaded, "box", "right")
+		local label = find(right, long)
+		local skip = label:GetParent()
+		local nextButton = find(right, loaded.ns.L.GUIDE_NEXT):GetParent()
+
+		-- Next » is right-aligned to 412: the link ends 16 short of its left edge
+		assert.is_true(30 + skip:GetWidth() <= 412 - nextButton:GetWidth() - 16)
+		assert.is_true(30 + label.width <= 412 - nextButton:GetWidth() - 16)
+		assert.is_true(sizeOf(label) < 14)
 	end)
 end)
