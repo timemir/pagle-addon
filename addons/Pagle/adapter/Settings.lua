@@ -59,8 +59,14 @@ local function fontString(frame, x)
 	return text
 end
 
--- Where Getting started's checkbox sits on a row, and its line after it (SET-R10 rows 4–6).
-local CHECK_X, LINE_X = 150, 180
+-- Where a row's label starts (the status list's name column), and where Getting started's checkbox and line sit
+-- after it at the least (SET-R10 rows 4–6): a longer label pushes them right, measured, so none draws over it.
+local NAME_X, CHECK_X = 37, 150
+-- The gap between a row's label, checkbox, line and button, and the checkbox's width.
+local GAP, CHECK_W = 8, 26
+-- Where a row's button ends, and its least width: a longer caption widens it leftwards, measured, so its words stay
+-- on it (SET-R11).
+local BUTTON_RIGHT, BUTTON_W, BUTTON_PAD = 540, 160, 24
 
 -- The status list's version and state columns (SET-R11).
 local VERSION_X, STATE_X = 180, 250
@@ -75,19 +81,18 @@ local function widgets(frame)
 		text:SetPoint("RIGHT", -20, 0)
 		text:SetJustifyH("LEFT")
 		text:SetWordWrap(true)
-		own = { text = text, name = fontString(frame, 37), version = fontString(frame, VERSION_X) }
+		own = { text = text, name = fontString(frame, NAME_X), version = fontString(frame, VERSION_X) }
 		-- One line that ends 6 pixels short of the state, cut with "..." by the client: unbounded, a long version
 		-- ran under the state ("On" drawn over "@project-version@", SET-R11).
 		own.version:SetWidth(STATE_X - VERSION_X - 6)
 		own.version:SetWordWrap(false)
 		own.state = fontString(frame, STATE_X)
 		own.button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate") --[[@as Button]]
-		own.button:SetPoint("TOPLEFT", 380, 3)
-		own.button:SetSize(160, 22)
+		own.button:SetPoint("TOPRIGHT", frame, "TOPLEFT", BUTTON_RIGHT, 3)
+		own.button:SetSize(BUTTON_W, 22)
 		-- Getting started's checkbox and line (SET-R10 rows 4–6)
 		own.check = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate") --[[@as CheckButton]]
-		own.check:SetPoint("TOPLEFT", CHECK_X, 5)
-		own.check:SetSize(26, 26)
+		own.check:SetSize(CHECK_W, CHECK_W)
 		own.line = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		own.line:SetJustifyH("LEFT")
 		widgetsOf[frame] = own
@@ -148,6 +153,77 @@ local function textRow(text)
 end
 ns.SettingsTextRow = textRow
 
+-- A row's label, at the status list's name column. Returns where its words end, measured.
+---@param own table
+---@param label string
+---@return number
+local function rowLabel(own, label)
+	own.name:SetWidth(0) -- measured unbounded
+	own.name:SetText(label)
+	own.name:Show()
+	return NAME_X + own.name:GetStringWidth()
+end
+
+-- A row's line, at `x`, wrapping within `width` when given (it then sits before a button), else one line.
+---@param own table
+---@param x number
+---@param text string
+---@param width number?
+local function rowLine(own, x, text, width)
+	own.line:ClearAllPoints()
+	own.line:SetPoint("TOPLEFT", x, -1)
+	own.line:SetWordWrap(width ~= nil)
+	own.line:SetWidth(width or 0)
+	own.line:SetText(text)
+	own.line:Show()
+end
+
+-- A row's button, ending at the status list's button column's right edge, as wide as its caption needs and never
+-- narrower than BUTTON_W. Returns its left edge.
+---@param own table
+---@param caption string
+---@param onClick fun()
+---@return number
+local function rowButton(own, caption, onClick)
+	local button = own.button
+	button:SetText(caption)
+	local width = math.max(BUTTON_W, math.ceil(button:GetTextWidth()) + BUTTON_PAD)
+	button:SetWidth(width)
+	button:SetScript("OnClick", onClick)
+	button:Show()
+	return BUTTON_RIGHT - width
+end
+
+-- Where Getting started's checkboxes sit: CHECK_X, or `GAP` past the longer of the two checkbox rows' labels,
+-- measured on `own`'s label, so a long label pushes both and they stay in one column (SET-R10 rows 5 and 6).
+---@param own table
+---@return number
+local function checkColumn(own)
+	local widest = 0
+	for _, label in ipairs({ L.SETTINGS_MARGIN_NOTES, L.SETTINGS_EVENING }) do
+		widest = math.max(widest, rowLabel(own, label))
+	end
+	return math.max(CHECK_X, widest + GAP)
+end
+
+-- A row's checkbox, `checked` as it is now, at `x`; a click hands `onClick` the state it toggled to. Returns its right
+-- edge.
+---@param own table
+---@param x number
+---@param checked boolean
+---@param onClick fun(checked: boolean)
+---@return number
+local function rowCheck(own, x, checked, onClick)
+	own.check:ClearAllPoints()
+	own.check:SetPoint("TOPLEFT", x, 5)
+	own.check:SetChecked(checked)
+	own.check:SetScript("OnClick", function(check)
+		onClick(check:GetChecked() == true)
+	end)
+	own.check:Show()
+	return x + CHECK_W
+end
+
 --- The status list's line for the roster Module at `index`, read now (CORE-R41, CORE-R44, SET-R11): its name, its
 --- TOC version, its state and, while On, its button.
 ---@param index integer
@@ -197,11 +273,9 @@ local function statusList()
 			own.state:Show()
 			local button = line.button
 			if button then
-				own.button:SetText(button.label)
-				own.button:SetScript("OnClick", function()
+				rowButton(own, button.label, function()
 					press(button)
 				end)
-				own.button:Show()
 			end
 		end, L.SETTINGS_MODULES)
 	end
@@ -313,47 +387,6 @@ local function pagleWebsiteSection(category, layout)
 	end
 end
 
--- A row's label, at the status list's name column.
----@param own table
----@param label string
-local function rowLabel(own, label)
-	own.name:SetText(label)
-	own.name:Show()
-end
-
--- A row's line, at `x`.
----@param own table
----@param x number
----@param text string
-local function rowLine(own, x, text)
-	own.line:ClearAllPoints()
-	own.line:SetPoint("TOPLEFT", x, -1)
-	own.line:SetText(text)
-	own.line:Show()
-end
-
--- A row's button, at the status list's button column.
----@param own table
----@param caption string
----@param onClick fun()
-local function rowButton(own, caption, onClick)
-	own.button:SetText(caption)
-	own.button:SetScript("OnClick", onClick)
-	own.button:Show()
-end
-
--- A row's checkbox, `checked` as it is now; a click hands `onClick` the state it toggled to.
----@param own table
----@param checked boolean
----@param onClick fun(checked: boolean)
-local function rowCheck(own, checked, onClick)
-	own.check:SetChecked(checked)
-	own.check:SetScript("OnClick", function(check)
-		onClick(check:GetChecked() == true)
-	end)
-	own.check:Show()
-end
-
 -- The Getting started section (CORE-R40, SET-R10 rows 4–6, ONB-R81), Core's own rows, drawn by Core on its frames
 -- (SET-R5, SET-R6): "Field guide" with its line and Show me around again, which closes the panel as the status list's
 -- buttons do (SET-R12) and opens the guide (ONB-R22); Margin notes' checkbox (notesOn, with its tooltip) and Show
@@ -366,18 +399,21 @@ local function gettingStarted(layout)
 	layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L.SETTINGS_GETTING_STARTED))
 	layout:AddInitializer(customRow(function(frame)
 		local own = widgets(frame)
-		rowLabel(own, L.SETTINGS_FIELD_GUIDE)
-		rowLine(own, CHECK_X, L.SETTINGS_FIELD_GUIDE_LINE)
-		rowButton(own, L.SETTINGS_SHOW_ME_AROUND, function()
+		local labelEnd = rowLabel(own, L.SETTINGS_FIELD_GUIDE)
+		local buttonLeft = rowButton(own, L.SETTINGS_SHOW_ME_AROUND, function()
 			HideUIPanel(SettingsPanel)
 			ns.guide:Open()
 		end)
+		-- The line wraps between the label and the button, so it never runs under either.
+		local x = math.max(CHECK_X, labelEnd + GAP)
+		rowLine(own, x, L.SETTINGS_FIELD_GUIDE_LINE, math.max(1, buttonLeft - GAP - x))
 	end, L.SETTINGS_FIELD_GUIDE))
 	layout:AddInitializer(customRow(function(frame)
 		local own = widgets(frame)
 		local onboarding = ns.onboarding
+		local column = checkColumn(own)
 		rowLabel(own, L.SETTINGS_MARGIN_NOTES)
-		rowCheck(own, onboarding:AreNotesOn(), function(checked)
+		rowCheck(own, column, onboarding:AreNotesOn(), function(checked)
 			onboarding:SetNotesOn(checked)
 		end)
 		rowButton(own, L.SETTINGS_SHOW_NOTES_AGAIN, function()
@@ -402,12 +438,13 @@ local function gettingStarted(layout)
 		if not evening:IsOffered() then
 			return
 		end
+		local column = checkColumn(own)
 		rowLabel(own, L.SETTINGS_EVENING)
-		rowCheck(own, evening:IsShowing(), function(checked)
+		local checkEnd = rowCheck(own, column, evening:IsShowing(), function(checked)
 			evening:SetShown(checked)
 		end)
 		local done, total = evening:Count()
-		rowLine(own, LINE_X, ns.RenderText(L.SETTINGS_EVENING_LINE, { done = done, total = total }))
+		rowLine(own, checkEnd + 4, ns.RenderText(L.SETTINGS_EVENING_LINE, { done = done, total = total }))
 	end, L.SETTINGS_EVENING))
 end
 

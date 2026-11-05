@@ -36,6 +36,13 @@ local FONTS = {
 	Message = { "Caveat-Bold.ttf", 32, "sea" },
 	Button = { "Marcellus-Regular.ttf", 17, "gilt", true },
 }
+-- The window's edges' margin, the title's start, the brass X's inset and size, and the gap kept between texts.
+local MARGIN, TITLE_X, CORNER_X, CORNER_SIZE, GAP = 22, 66, 12, 44, 10
+-- How small the title and the privacy line may be set to fit, as a share of their fonts' sizes.
+local TITLE_FLOOR, PRIVACY_FLOOR = 0.75, 0.8
+-- The least gap between a URL line's label and its URL box.
+local URL_GAP = 8
+
 -- The font objects, made the first time each is asked for: PagleField<key>.
 ---@type table<string, table>
 local fonts = {}
@@ -82,6 +89,55 @@ function ns.FieldScaleFont(label, key, scale)
 	local def = FONTS[key]
 	label:SetFont(fontFiles[key], def[2] * scale, "")
 	label:SetTextColor(ns.FieldInk(def[3]))
+end
+
+--- Fits `label`, in the kit's font `key` with its text set, to `room`: measured unbounded at the font's size, a text
+--- too wide is set smaller, down to `floor` of that size, and one still too wide is held to `room`, where the client
+--- cuts it with "...", or, given `lines` above 1, wraps it on up to that many lines. Returns the scale it is set at.
+---@param label FontString
+---@param key string
+---@param room number
+---@param floor number
+---@param lines integer?
+---@return number
+function ns.FieldFitText(label, key, room, floor, lines)
+	label:SetFontObject(ns.FieldFont(key))
+	label:SetWidth(0) -- measured unbounded
+	local natural = label:GetStringWidth()
+	local scale = 1
+	if natural > room then
+		scale = math.max(floor, room / natural)
+		ns.FieldScaleFont(label, key, scale)
+	end
+	local wraps = (lines or 1) > 1
+	label:SetWordWrap(wraps)
+	if wraps then
+		label:SetMaxLines(lines)
+	end
+	label:SetWidth(room)
+	return scale
+end
+
+--- Lays out a window's URL line `y` down (ns.FieldReportUrlLine, field-report.md › UI): `label` ("POST IT AT", "PASTE
+--- IT AT") at its font's size, set smaller if the client draws it too wide to end before the chart's URL field, and the
+--- `url` box after it. The label is measured again as drawn at that size, so a face drawn wider than its share still
+--- ends URL_GAP before the URL, and the two never touch.
+---@param frame Frame
+---@param label FontString
+---@param url EditBox
+---@param width number the window's
+---@param y number
+function ns.FieldUrlLine(frame, label, url, width, y)
+	label:SetFontObject(ns.FieldFont("PostAt"))
+	label:SetWidth(0) -- measured unbounded
+	local scale, urlX = ns.FieldReportUrlLine(label:GetStringWidth())
+	if scale < 1 then
+		ns.FieldScaleFont(label, "PostAt", scale)
+	end
+	urlX = math.max(urlX, MARGIN + label:GetStringWidth() + URL_GAP)
+	url:ClearAllPoints()
+	url:SetPoint("LEFT", frame, "TOPLEFT", urlX, -y)
+	url:SetWidth(width - 42 - urlX)
 end
 
 --- A one-line font string on `frame` in the kit's font `key`.
@@ -240,7 +296,7 @@ end
 ---@return PagleFieldBrassButton
 function ns.FieldBrassButton(frame, name)
 	local made = CreateFrame("Button", nil, frame) --[[@as PagleFieldBrassButton]]
-	made:SetSize(44, 44)
+	made:SetSize(CORNER_SIZE, CORNER_SIZE)
 	made.art = ns.ArtSprite(made, "Field", name)
 	ns.PlaceSprite(made.art, made, 0, 0)
 	return made
@@ -305,20 +361,27 @@ function ns.NewFieldWindow(name, width, height, title, privacy, copyHint)
 	frame.chart = ns.ArtSprite(frame, "Chart", "chart", "BACKGROUND")
 	local compass = ns.ArtSprite(frame, "Field", "compass")
 	ns.PlaceSprite(compass, frame, 22, 16)
+	-- The title ends before the brass X, set smaller if it must (down to TITLE_FLOOR), then cut by the client.
 	frame.title = ns.FieldText(frame, "Title")
-	frame.title:SetPoint("LEFT", frame, "TOPLEFT", 66, -33)
+	frame.title:SetPoint("LEFT", frame, "TOPLEFT", TITLE_X, -33)
 	frame.title:SetText(title)
+	ns.FieldFitText(frame.title, "Title", width - CORNER_X - CORNER_SIZE - GAP - TITLE_X, TITLE_FLOOR)
 	frame.closeCorner = ns.FieldBrassButton(frame, "close")
-	frame.closeCorner:SetPoint("TOPRIGHT", -12, -10)
+	frame.closeCorner:SetPoint("TOPRIGHT", -CORNER_X, -10)
 	frame.closeCorner:SetScript("OnClick", function()
 		ns.FieldFadeClose(frame)
 	end)
-	frame.privacy = ns.FieldText(frame, "Privacy")
-	frame.privacy:SetPoint("TOPLEFT", 22, -58)
-	frame.privacy:SetText(privacy)
+	-- The copy hint at the right, whole; the privacy line before it, set smaller if it must (down to PRIVACY_FLOOR),
+	-- then on two lines, so the two never overprint.
 	frame.copyHint = ns.FieldText(frame, "CopyHint")
-	frame.copyHint:SetPoint("TOPRIGHT", -22, -56)
+	frame.copyHint:SetPoint("TOPRIGHT", -MARGIN, -56)
 	frame.copyHint:SetText(copyHint)
+	frame.copyHint:SetWidth(0) -- measured unbounded
+	local hintWidth = frame.copyHint:GetStringWidth()
+	frame.privacy = ns.FieldText(frame, "Privacy")
+	frame.privacy:SetPoint("TOPLEFT", MARGIN, -58)
+	frame.privacy:SetText(privacy)
+	ns.FieldFitText(frame.privacy, "Privacy", width - 2 * MARGIN - hintWidth - GAP, PRIVACY_FLOOR, 2)
 
 	-- Hidden until it first opens, before its OnHide is set, so building it plays nothing.
 	frame:Hide()
