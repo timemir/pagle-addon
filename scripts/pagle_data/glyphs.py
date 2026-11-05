@@ -29,10 +29,13 @@ class Glyphs:
     locale: str
     ranges: tuple[Range, ...]
     scripts: tuple[str, ...]
+    without: tuple[Range, ...] = ()
 
     def has(self, char: str) -> bool:
-        """Whether the client's fonts have char for this Locale."""
+        """Whether the client's fonts have char for this Locale: in its ranges and not among what its fonts lack."""
         point = ord(char)
+        if any(low <= point <= high for low, high in self.without):
+            return False
         return any(low <= point <= high for low, high in self.ranges)
 
     @property
@@ -76,12 +79,20 @@ def read_glyphs(path: Path = GLYPHS_TOML) -> dict[str, Glyphs]:
         name: _ranges(table.get("ranges") if isinstance(table, dict) else None, f"[script.{name}] ranges")
         for name, table in _table(document, "script").items()
     }
+    lacks = document.get("without", {})
+    if not isinstance(lacks, dict):
+        raise ValueError(f"{FILE}: [without] is a table of Locale codes")
+    locales = _table(document, "locale")
+    for code in lacks:
+        if code not in locales:
+            raise ValueError(f"{FILE}: [without] {code}: not a Locale in [locale]")
     result: dict[str, Glyphs] = {}
-    for code, names in _table(document, "locale").items():
+    for code, names in locales.items():
         if not isinstance(names, list) or not all(isinstance(name, str) and name in scripts for name in names):
             raise ValueError(f"{FILE}: [locale] {code}: expected a list of the names in [script.*]")
         ranges = base + tuple(item for name in names for item in scripts[name])
-        result[code] = Glyphs(code, ranges, tuple(names))
+        without = _ranges(lacks[code], f"[without] {code}") if code in lacks else ()
+        result[code] = Glyphs(code, ranges, tuple(names), without)
     return result
 
 

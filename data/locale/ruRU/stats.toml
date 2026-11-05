@@ -46,11 +46,11 @@ value = "Сессии"
 en = "Sessions"
 
 [BOOK_NAMEPLATE]
-value = "{book_nameplate_1} · {sessions} · с {date}"
+value = "{book_nameplate_1} • {sessions} • с {date}"
 en = "{book_nameplate_1} · {sessions} · since {date}"
 
 [BOOK_NAMEPLATE_UNDATED]
-value = "{book_nameplate_undated_1} · {sessions}"
+value = "{book_nameplate_undated_1} • {sessions}"
 en = "{book_nameplate_undated_1} · {sessions}"
 
 [BOOK_NO_CASTS]
@@ -58,7 +58,7 @@ value = "Забросов пока нет"
 en = "No Casts yet"
 
 [BOOK_LIVE_LINE]
-value = "Сессия: {book_live_line_1} · {book_live_line_2} · {duration}"
+value = "Сессия: {book_live_line_1} • {book_live_line_2} • {duration}"
 en = "Session: {book_live_line_1} · {book_live_line_2} · {duration}"
 
 [BOOK_UPDATING]
@@ -503,7 +503,7 @@ en = "{dry_watch_none_yet}, none yet."
 value.added.heading = "Тоже ловится здесь"
 value.added.note = "нет на карте Pagle для этих вод"
 value.any.heading = "В любое время"
-value.any.note = "Ваши шансы · Без улова"
+value.any.note = "Ваши шансы • Без улова"
 value.pools.heading = "Косяки"
 value.pools.note = "открытая вода и косяки вместе"
 value.window.heading = "В своё время"
@@ -586,7 +586,7 @@ value = "Выберите рыбу слева, чтобы увидеть её ш
 en = "Pick a fish on the left for its odds and its Dry spell."
 
 [ENTRY_KICKER]
-value = "Ваши шансы · {areaName}"
+value = "Ваши шансы • {areaName}"
 en = "Your odds · {areaName}"
 
 [ENTRY_KICKER_WINDOW]
@@ -646,7 +646,7 @@ value = "Ваши шансы и серии без улова — только п
 en = "Your odds and Dry spells come only from my own Casts, never from game data."
 
 [HOME_TILE_LINE]
-value = "{home_tile_line_1} · {home_tile_line_2}"
+value = "{home_tile_line_1} • {home_tile_line_2}"
 en = "{home_tile_line_1} · {home_tile_line_2}"
 
 [HOME_TILE_NOT_FISHED]
@@ -810,7 +810,7 @@ value = "Где я её ловлю"
 en = "Where I've fished for it"
 
 [ITEM_TILE_LINE]
-value = "{areaName} · {short}"
+value = "{areaName} • {short}"
 en = "{areaName} · {short}"
 
 [ITEM_NO_WATERS]
@@ -900,7 +900,7 @@ value = "Персонажи"
 en = "Characters"
 
 [LIFETIME_CHARACTER_VALUE]
-value = "{lifetime_character_value_1} · {lifetime_character_value_2} · сорвалось {gotAway}"
+value = "{lifetime_character_value_1} • {lifetime_character_value_2} • сорвалось {gotAway}"
 en = "{lifetime_character_value_1} · {lifetime_character_value_2} · {gotAway} got away"
 
 [LIFETIME_CATCH_KICKER]
@@ -964,19 +964,19 @@ value = "Рамка трекера статистики"
 en = "Stats tracker frame"
 
 [TRACKER_SESSION]
-value = "Сессия · {duration}"
+value = "Сессия • {duration}"
 en = "Session · {duration}"
 
 [TRACKER_COUNTS]
-value = "{tracker_counts_1} · {tracker_counts_2} · сорвалось {gotAway}"
+value = "{tracker_counts_1} • {tracker_counts_2} • сорвалось {gotAway}"
 en = "{tracker_counts_1} · {tracker_counts_2} · {gotAway} got away"
 
 [TRACKER_PER_HOUR]
-value = "{perHour} в час · навык +{skill}"
+value = "{perHour} в час • навык +{skill}"
 en = "{perHour} per hour · skill +{skill}"
 
 [TRACKER_JOIN]
-value = " · "
+value = " • "
 en = " · "
 
 [TRACKER_NO_SESSION]

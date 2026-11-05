@@ -154,11 +154,11 @@ value = "где угодно"
 en = "anywhere"
 
 [WHERE_TODAY]
-value = "сегодня · {where}"
+value = "сегодня • {where}"
 en = "today · {where}"
 
 [WHERE_HERE]
-value = "{where} · здесь"
+value = "{where} • здесь"
 en = "{where} · here"
 
 [POSTED]
@@ -301,6 +301,10 @@ en = "pays"
 value = "Экспедиция"
 en = "Expedition"
 
+[EXPEDITION_SEPARATOR]
+value = "   •   "
+en = "   ·   "
+
 [IM_HERE]
 value = "Я здесь"
 en = "I'm here"
@@ -392,7 +396,7 @@ value = "Выполнено сегодня"
 en = "Done today"
 
 [SPIKE_NOTE]
-value = "+{coins} · {fly}"
+value = "+{coins} • {fly}"
 en = "+{coins} · {fly}"
 
 [SPIKE_NOTE_PLAIN]
@@ -478,7 +482,7 @@ value = "только за экспедиции"
 en = "tied only by Expeditions"
 
 [TALLY_PLATE]
-value = "{notices} · {expeditions}"
+value = "{notices} • {expeditions}"
 en = "{notices} · {expeditions}"
 
 [TALLY_NO_TITLE]
@@ -494,7 +498,7 @@ value = "Костёр"
 en = "The Campfire"
 
 [CARD_FIRE]
-value = "{fire} · {longest} · {kindling}"
+value = "{fire} • {longest} • {kindling}"
 en = "{fire} · {longest} · {kindling}"
 
 [KINDLING]
@@ -690,7 +694,7 @@ en.one = "Campfire {count} day"
 en.other = "Campfire {count} days"
 
 [CAMPFIRE_BURNED]
-value = "{campfire} · сгорело хвороста: {k}"
+value = "{campfire} • сгорело хвороста: {k}"
 en = "{campfire} · {k} Kindling burned"
 
 [CAMPFIRE_WENT_OUT]
@@ -698,7 +702,7 @@ value = "Ваш костёр погас; ваш рекорд, {longest}, сох�
 en = "Your Campfire went out; your longest, {longest}, is kept"
 
 [SUMMARY_LINE]
-value = "Доска снастей: {done} · {campfire}"
+value = "Доска снастей: {done} • {campfire}"
 en = "Tackle Board: {done} · {campfire}"
 
 [SUMMARY_LINE_NOTHING_DONE]
@@ -726,7 +730,7 @@ value = "открыто: {count}"
 en = "{count} open"
 
 [TRACKER_FIRE_OPEN]
-value = "{fire} · {open}"
+value = "{fire} • {open}"
 en = "{fire} · {open}"
 
 [TRACKER_COUNT]

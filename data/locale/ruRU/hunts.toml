@@ -220,7 +220,7 @@ value = "С приманкой дотянусь."
 en = "A lure gets me there."
 
 [JOIN_FIELDS]
-value = " · "
+value = " • "
 en = " · "
 
 [JOIN_RANGES]
@@ -346,7 +346,7 @@ en.soon = "opens within 3 hours"
 en.wagers = "on for days, not hours"
 
 [TIMELINE_LEGEND]
-value = "Штриховка: открыто · Пунктир: окно не подтверждено · Карандаш: нужен навык выше · Синий: лагерь разбит"
+value = "Штриховка: открыто • Пунктир: окно не подтверждено • Карандаш: нужен навык выше • Синий: лагерь разбит"
 en = "Hatched: open · Dashed: window unconfirmed · Pencil: needs more skill · Blue: your camp is up"
 
 [LEGEND_ITEMS]
@@ -426,11 +426,11 @@ value = "+{more:0} ещё"
 en = "+{more:0} more"
 
 [TRACKER_FIRST]
-value = "{huntName} · {label}"
+value = "{huntName} • {label}"
 en = "{huntName} · {label}"
 
 [TRACKER_JOIN]
-value = " · "
+value = " • "
 en = " · "
 
 [TRACKER_HERE]
@@ -486,7 +486,7 @@ value = "{trim} ступень"
 en = "{trim} tier"
 
 [HUNT_TIER_TEXT]
-value = "{name} · поймано: {tiers:0}"
+value = "{name} • поймано: {tiers:0}"
 en = "{name} · {tiers:0} caught"
 
 [TRIMS]
@@ -510,7 +510,7 @@ value = "Пари Пэгла"
 en = "Pagle Wagers"
 
 [WAGER_MARK_TEXT]
-value = "{name} · первая отметка"
+value = "{name} • первая отметка"
 en = "{name} · first mark"
 
 [WAGER_MARK_STAMP]
@@ -578,11 +578,11 @@ value = "Опыт рыболова +{write_up_xp}"
 en = "Angler XP +{write_up_xp}"
 
 [SUMMARY_LINE]
-value = "Охоты: выполнено {summary_line_1} из {summary_line_2} · {titles}"
+value = "Охоты: выполнено {summary_line_1} из {summary_line_2} • {titles}"
 en = "Hunts: {summary_line_1} of {summary_line_2} done · {titles}"
 
 [SUMMARY_LINE_SETTLED]
-value = "Охоты: выполнено {summary_line_settled_1} из {summary_line_settled_2} · {titles} · {runs}"
+value = "Охоты: выполнено {summary_line_settled_1} из {summary_line_settled_2} • {titles} • {runs}"
 en = "Hunts: {summary_line_settled_1} of {summary_line_settled_2} done · {titles} · {runs}"
 
 [SUMMARY_TITLES]
@@ -602,7 +602,7 @@ en.one = "{count:n} wager settled"
 en.other = "{count:n} wagers settled"
 
 [ENTRY_KICKER]
-value = "{name} · {kind}"
+value = "{name} • {kind}"
 en = "{name} · {kind}"
 
 [ENTRY_NATURAL]
@@ -686,7 +686,7 @@ value = "Шансы — в Статистике."
 en = "Odds live in Stats."
 
 [SET_LINE]
-value = "{name}: {done:0} из {current:0} · {earned}"
+value = "{name}: {done:0} из {current:0} • {earned}"
 en = "{name}: {done:0} of {current:0} · {earned}"
 
 [SET_EARNS]
@@ -750,7 +750,7 @@ value = "Обновляется по Журналу уловов…"
 en = "Updating from your Catch log…"
 
 [NAMEPLATE]
-value = "{countText} · {nameplate_2}"
+value = "{countText} • {nameplate_2}"
 en = "{countText} · {nameplate_2}"
 
 [NAMEPLATE_DONE]
@@ -862,7 +862,7 @@ value = "+{strip_more:0} ещё на кону"
 en = "+{strip_more:0} more on the table"
 
 [RUN_KICKER_ROTATION]
-value = "Из ротации · уровень вод: {bands}"
+value = "Из ротации • уровень вод: {bands}"
 en = "From the rotation · {bands} waters"
 
 [BANDS]
@@ -886,11 +886,11 @@ value = "откроется в {realmWeekdayClock}"
 en = "opens {realmWeekdayClock}"
 
 [RUN_UNTIL_ALL]
-value = "до {untilWhen} · всего {length}"
+value = "до {untilWhen} • всего {length}"
 en = "until {untilWhen} · {length} in all"
 
 [RUN_UNTIL_TABLE]
-value = "до {untilWhen} · {length} на кону"
+value = "до {untilWhen} • {length} на кону"
 en = "until {untilWhen} · {length} on the table"
 
 [SEAL_SETTLED_WORD]
@@ -910,7 +910,7 @@ en.quality = "Quality"
 en.timed = "Timed"
 
 [RUN_HUNT_LINE]
-value = "{shapes} · {target}"
+value = "{shapes} • {target}"
 en = "{shapes} · {target}"
 
 [RUN_TARGET_TIME]
@@ -934,10 +934,10 @@ value = "откроется в {clock}, через {duration}"
 en = "opens at {clock}, in {duration}"
 
 [RUN_CASTS]
-value.one = "{count} заброс в этих водах за забег · {done:0} из {total:0} первых отметок"
-value.few = "{count} заброса в этих водах за забег · {done:0} из {total:0} первых отметок"
-value.many = "{count} забросов в этих водах за забег · {done:0} из {total:0} первых отметок"
-value.other = "{count} заброса в этих водах за забег · {done:0} из {total:0} первых отметок"
+value.one = "{count} заброс в этих водах за забег • {done:0} из {total:0} первых отметок"
+value.few = "{count} заброса в этих водах за забег • {done:0} из {total:0} первых отметок"
+value.many = "{count} забросов в этих водах за забег • {done:0} из {total:0} первых отметок"
+value.other = "{count} заброса в этих водах за забег • {done:0} из {total:0} первых отметок"
 en.one = "{count} Cast in these waters this run · {done:0} of {total:0} first marks"
 en.other = "{count} Casts in these waters this run · {done:0} of {total:0} first marks"
 
@@ -946,7 +946,7 @@ value = "Уже выплачено"
 en = "Paid so far"
 
 [PAY_AMOUNT]
-value = "+{xpRun:0} опыта · {coins:0} мон."
+value = "+{xpRun:0} опыта • {coins:0} мон."
 en = "+{xpRun:0} XP · {coins:0} Coins"
 
 [PAY_SETTLE]
@@ -1046,7 +1046,7 @@ value = "Пари на кону нет, и следующих не объявл�
 en = "No wagers on the table, and none posted ahead. The rotation puts one on at the next turn."
 
 [TICKET_LINE]
-value = "{eventZonesText} · {ticket_line_2}"
+value = "{eventZonesText} • {ticket_line_2}"
 en = "{eventZonesText} · {ticket_line_2}"
 
 [TICKET_CLOSED_AT]
@@ -1106,7 +1106,7 @@ en.one = "{shown} wager settled"
 en.other = "{shown} wagers settled"
 
 [WAGERS_LADDER_LINE]
-value = "{wagers_ladder_line_1} · ещё {wagers_ladder_line_2:0} до звания {title}"
+value = "{wagers_ladder_line_1} • ещё {wagers_ladder_line_2:0} до звания {title}"
 en = "{wagers_ladder_line_1} · {wagers_ladder_line_2:0} more for {title}"
 
 [GUIDE_BLURB]

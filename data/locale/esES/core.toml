@@ -679,6 +679,10 @@ en = "Off: pays nothing new, keeps what it paid."
 value = "Busca un aspecto…"
 en = "Find a look…"
 
+[SHOP_TAG_SEPARATOR]
+value = " · "
+en = " · "
+
 [SHOP_FILTERS]
 value.all = "Todos"
 value.canAfford = "Asequibles"

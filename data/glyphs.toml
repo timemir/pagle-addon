@@ -44,6 +44,19 @@ ranges = [
 	"U+FF01-U+FF5E", # the fullwidth forms of ASCII punctuation and digits: ， ： ； ！ ？ （ ）
 ]
 
+# What a Locale's fonts lack of its range, by client code: code points its generated files may not draw although the
+# base set or a script has them. A Locale whose faces are the client's (ruRU, koKR, zhCN, zhTW; ADR 0019) draws the
+# base set in those faces, not in Pagle's bundled ones, so a gap in them is listed here once someone has read the
+# font's cmap or `/pagle dev glyphs` in game. ruRU: the Russian client's FRIZQT___CYR.TTF (the body, heading and hand)
+# has every Latin-1 character but the middle dot, and no Ѐ or ѐ (cmap of build 1.60.1.70790, read 5 Nov 2026, and the
+# ruRU probe agree); its ARIALN.TTF (the mono) has all three. Its separator is "•" (U+2022), which both draw.
+[without]
+ruRU = [
+	"U+00B7", # the middle dot "·", every Latin face's separator
+	"U+0400", # Ѐ
+	"U+0450", # ѐ
+]
+
 # Every Locale the client has, by its full client code. A file named for a code not listed here fails the glyph check,
 # so a new Locale starts by adding its line.
 [locale]

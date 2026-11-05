@@ -57,6 +57,7 @@ ns.Locale("esES", function(L)
 	L.EXPEDITIONS = { many = "{count} Expediciones", one = "{count} Expedición", other = "{count} Expediciones" }
 	L.EXPEDITION_COMPLETE = "Expedición completada"
 	L.EXPEDITION_DONE = "Expedición cumplida"
+	L.EXPEDITION_SEPARATOR = "   ·   "
 	L.FIRE_OUT = "Tu Hoguera se apagó. Tu récord, {longest}, se guarda para siempre. Cualquier objetivo enciende una nueva, con 2 de Leña nueva."
 	L.FIRE_OUT_AWAY = "Tu Hoguera se apagó mientras no estabas. Tu récord, {longest}, se guarda para siempre. Cualquier objetivo enciende una nueva, con 2 de Leña nueva."
 	L.FLIES_TIED = { many = "{count} moscas montadas para tu Caja de moscas", one = "{count} mosca montada para tu Caja de moscas", other = "{count} moscas montadas para tu Caja de moscas" }

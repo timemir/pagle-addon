@@ -71,3 +71,13 @@ def test_the_other_scripts_pass_in_their_own_locale_and_fail_in_a_latin_one(loca
 def test_a_locale_the_table_lacks_is_an_error() -> None:
     with pytest.raises(ValueError, match="no range for the Locale 'xxXX'"):
         glyphs_for("xxXX")
+
+
+def test_a_locale_drops_what_its_fonts_lack() -> None:
+    """data/glyphs.toml [without]: the ruRU client's FRIZQT___CYR.TTF has no middle dot, so ruRU's range fails it."""
+    russian = glyphs_for("ruRU")
+    assert not russian.has("\u00b7")
+    assert not russian.has("\u0400")
+    assert russian.has("\u2022")
+    assert russian.has("Ж")
+    assert glyphs_for("esES").has("\u00b7")

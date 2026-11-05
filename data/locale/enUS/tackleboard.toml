@@ -130,6 +130,7 @@ PAYS.other = "pays {count} Coins"
 PAYS_WORD = "pays"
 # An Expedition poster's header, before its kind.
 EXPEDITION = "Expedition"
+EXPEDITION_SEPARATOR = "   ·   " # between the slip's kicker parts; a language whose fonts lack "·" uses its own (CORE-R9)
 IM_HERE = "I'm here"
 NO_LONGER_CATCHABLE = "no longer catchable"
 TAKE_IT_DOWN = "take it down"

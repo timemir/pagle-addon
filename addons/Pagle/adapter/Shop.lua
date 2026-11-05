@@ -65,8 +65,6 @@ local SEGMENTS = {
 local OTHER_SEGMENT = { "seg-board", { 0.6, 0.6, 0.6 } }
 -- A faded segment's opacity (a Module off), and a greyed row's (Put away).
 local OFF_ALPHA, GREYED_ALPHA = 0.45, 0.55
--- What separates tags on the stage.
-local TAG_SEPARATOR = " · "
 -- The bill of sale: its paper's size and top left on the case; where its wax seal lands, from the paper's top left.
 local BILL_W, BILL_H, BILL_X, BILL_Y = 400, 420, 290, 56
 local SEAL_X, SEAL_Y = 342, 300
@@ -1169,7 +1167,7 @@ local function drawFoot(stage, data)
 		ns.SetShopButton(stage.use, L.SHOP_USE, false, true)
 		stage.use:Show()
 	end
-	ns.SetShopText(stage.tags, table.concat(data.tags, TAG_SEPARATOR))
+	ns.SetShopText(stage.tags, table.concat(data.tags, L.SHOP_TAG_SEPARATOR))
 	stage.tags:ClearAllPoints()
 	if data.use then
 		stage.tags:SetPoint("LEFT", stage.use, "RIGHT", 14, 0)

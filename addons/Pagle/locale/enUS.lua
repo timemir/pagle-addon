@@ -514,6 +514,7 @@ ns.L = {
 	SHOP_SEARCH = "Find a look…",
 	SHOP_SLOT_LINE = "{slotLabel} · {owner}",
 	SHOP_SONAR_EARNED = "Link the companion",
+	SHOP_TAG_SEPARATOR = " · ",
 	SHOP_USE = "Use",
 	SHOP_USE_NOW = "Use it now",
 	SIZE_BANDS = { "Tiddler", "Decent", "Hefty", "Whopper", "Monster" },

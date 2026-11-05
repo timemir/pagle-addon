@@ -244,11 +244,23 @@ describe("Every string the package draws (CORE-R9)", function()
 			)
 		end)
 
-		it("keeps the base set in every locale, and nothing a font lacks", function()
+		it("keeps the base set in every locale but what its fonts lack, and nothing a font lacks", function()
 			for _, code in ipairs(glyphLocales()) do
-				assert.are.same({}, outside("Café × 3 · » — … “x” ‘y’ •", code))
+				assert.are.same({}, outside("Café × 3 » — … “x” ‘y’ •", code))
 				assert.are.same({ "U+2192", "U+2605" }, outside("→ ★", code))
 			end
+			assert.are.same({}, outside("·", "esES"))
+		end)
+
+		-- The ruRU client's FRIZQT___CYR.TTF has no middle dot, Ѐ or ѐ (data/glyphs.toml [without]): a box on screen.
+		it("fails the middle dot in ruRU, whose client font draws a box for it", function()
+			assert.are.same({ "U+00B7", "U+2713" }, outside("Мелочь · 46,5 см ✓", "ruRU"))
+			assert.are.same({ "U+0400", "U+0450" }, outside("Ѐѐ", "ruRU"))
+			assert.are.same({}, outside("Мелочь • 46,5 см — «Ёрш» ×", "ruRU"))
+			assert.are.same(
+				{ "addons/Pagle/locale/ruRU.lua:1: U+00B7" },
+				offences("addons/Pagle/locale/ruRU.lua", 'L.A = "a · b"')
+			)
 		end)
 
 		it("has a range for the eleven client locales, and fails a file named for another code", function()

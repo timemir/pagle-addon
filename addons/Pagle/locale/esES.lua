@@ -514,6 +514,7 @@ ns.Locale("esES", function(L)
 	L.SHOP_SEARCH = "Busca un aspecto…"
 	L.SHOP_SLOT_LINE = "{slotLabel} · {owner}"
 	L.SHOP_SONAR_EARNED = "Vincula el Companion"
+	L.SHOP_TAG_SEPARATOR = " · "
 	L.SHOP_USE = "Usar"
 	L.SHOP_USE_NOW = "Usarlo ya"
 	L.SIZE_BANDS = { "Pececillo", "Decente", "Robusto", "Descomunal", "Monstruo" }

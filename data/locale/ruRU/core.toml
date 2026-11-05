@@ -206,7 +206,7 @@ value = "Снимок для Восстановления"
 en = "Recovery snapshot"
 
 [RECOVERY_SNAPSHOT_PART]
-value = "Снимок для Восстановления · часть {part} из {parts}"
+value = "Снимок для Восстановления • часть {part} из {parts}"
 en = "Recovery snapshot · part {part} of {parts}"
 
 [RECOVERY_SNAPSHOT_NOTE]
@@ -222,7 +222,7 @@ value = "Сохранённые исходные записи, отложенн�
 en = "Preserved original records held for review. They have not been appended to your restored Catch log. Original branch: {id}"
 
 [RECOVERY_RECORD_LABEL]
-value = "Запись {seq} · {reason}"
+value = "Запись {seq} • {reason}"
 en = "Record {seq} · {reason}"
 
 [RECOVERY_RECORD_MISSING]
@@ -604,7 +604,7 @@ value = "Пока вы сражались"
 en = "While you were fighting"
 
 [CATCH_TOAST_KICKER]
-value = "{band} · {length}"
+value = "{band} • {length}"
 en = "{band} · {length}"
 
 [CATCH_TOAST_CAUGHT]
@@ -616,15 +616,15 @@ value = "Предмет {itemID}"
 en = "Item {itemID}"
 
 [CATCH_TOAST]
-value = "{name} · {band} · {length}"
+value = "{name} • {band} • {length}"
 en = "{name} · {band} · {length}"
 
 [CATCH_TOAST_VARIETY]
-value = "{name} · {catch_toast_variety_2} · {band} · {length}"
+value = "{name} • {catch_toast_variety_2} • {band} • {length}"
 en = "{name} · {catch_toast_variety_2} · {band} · {length}"
 
 [TOAST_VARIETY_BEFORE]
-value = "{fish} ·"
+value = "{fish} •"
 en = "{fish} ·"
 
 [CARD_SESSION]
@@ -886,7 +886,7 @@ value = "{paste_size:0} КБ"
 en = "{paste_size:0} KB"
 
 [PASTE_PART_LINE]
-value = "{entries}  ·  {paste_part_line_2}"
+value = "{entries}  •  {paste_part_line_2}"
 en = "{entries}  ·  {paste_part_line_2}"
 
 [PASTE_IN_ORDER]
@@ -977,6 +977,10 @@ en = "Off: pays nothing new, keeps what it paid."
 value = "Найти облик…"
 en = "Find a look…"
 
+[SHOP_TAG_SEPARATOR]
+value = " • "
+en = " · "
+
 [SHOP_FILTERS]
 value.all = "Все"
 value.canAfford = "По карману"
@@ -1030,7 +1034,7 @@ value = "по умолчанию"
 en = "default"
 
 [SHOP_SLOT_LINE]
-value = "{slotLabel} · {owner}"
+value = "{slotLabel} • {owner}"
 en = "{slotLabel} · {owner}"
 
 [SHOP_CORE]
@@ -1202,7 +1206,7 @@ value = "Pagle"
 en = "Pagle"
 
 [COMPARTMENT_WAITING]
-value = "Pagle · ждут: {waiting:0}"
+value = "Pagle • ждут: {waiting:0}"
 en = "Pagle · {waiting:0} waiting"
 
 [MENU_NAME]
@@ -1546,11 +1550,11 @@ value = "Уровень рыболова"
 en = "Angler Level"
 
 [ANGLER_TIP_PRESTIGE]
-value = "{level:0} · {emblem} Престиж {prestigeNumerals}"
+value = "{level:0} • {emblem} Престиж {prestigeNumerals}"
 en = "{level:0} · {emblem} Prestige {prestigeNumerals}"
 
 [ANGLER_TIP_MASTER_PRESTIGE]
-value = "{level:0} · {emblem} Престиж мастера {angler_tip_master_prestige_3:0}"
+value = "{level:0} • {emblem} Престиж мастера {angler_tip_master_prestige_3:0}"
 en = "{level:0} · {emblem} Master Prestige {angler_tip_master_prestige_3:0}"
 
 [PRESTIGE_NUMERALS]
@@ -1878,7 +1882,7 @@ value = "Pagle dev: заметке на полях {dev_note_no_target} сейч
 en = "Pagle dev: margin note {dev_note_no_target} has nothing on screen to point at now."
 
 [LOOK_BAR_TITLE]
-value = "Первый взгляд · {title}"
+value = "Первый взгляд • {title}"
 en = "First look · {title}"
 
 [LOOK_BAR_COUNT]

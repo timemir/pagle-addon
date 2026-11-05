@@ -249,7 +249,7 @@ function ns.DrawGoalSlip(slip, goal, view, lean)
 	ns.SetSprite(slip.icon, "Board", (slip.poster and "b-" or "k-") .. goal.kind)
 	ns.PlaceSprite(slip.icon, slip, slip.poster and 22 or 13, slip.poster and 6 or 13)
 	if slip.poster then
-		slip.kicker:SetText(ns.Spaced(ns.L.EXPEDITION) .. "   ·   " .. ns.Spaced(view.kicker))
+		slip.kicker:SetText(ns.Spaced(ns.L.EXPEDITION) .. ns.L.EXPEDITION_SEPARATOR .. ns.Spaced(view.kicker))
 	else
 		slip.kicker:SetText(Pagle.Upper(view.kicker))
 	end

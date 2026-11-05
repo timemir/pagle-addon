@@ -361,6 +361,7 @@ SHOP_LEGEND = "{title} {shop_legend_2}"
 SHOP_ALL_TIME = "{shop_all_time} Coins all time"
 SHOP_OFF_NOTE = "Off: pays nothing new, keeps what it paid."
 SHOP_SEARCH = "Find a look…"
+SHOP_TAG_SEPARATOR = " · " # between a good's tags; a language whose fonts lack "·" uses its own (CORE-R9)
 SHOP_FILTERS.all = "All"
 SHOP_FILTERS.canAfford = "Can afford"
 SHOP_FILTERS.notOwned = "Not owned"

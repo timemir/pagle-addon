@@ -503,8 +503,55 @@ local function drawMark(line, x, dial, group, paper)
 	line.dot:SetPoint("TOPLEFT", x, -8)
 end
 
--- The most of a tracker line, right of its mark, that its label may take (drawLines).
-local LABEL_SHARE = 0.5
+-- The least of a tracker line, right of its mark, that its label keeps when the name needs the rest (drawLines).
+local LABEL_SHARE = 0.3
+-- The least room the start of a second line keeps, before its last part, for a few letters and an ellipsis.
+local SECOND_HEAD = 24
+
+-- Drops the last UTF-8 character of `text`.
+---@param text string
+---@return string
+local function dropLast(text)
+	local cut = #text
+	while cut > 1 and text:byte(cut) >= 128 and text:byte(cut) < 192 do
+		cut = cut - 1
+	end
+	return text:sub(1, cut - 1)
+end
+
+-- Sets `text` on `line` (font already fitted) within `width`, keeping its last part, after the last `join`, whole: the
+-- count a tracker's second line ends with ("5 / 12"). When it is too long the start is cut short with an ellipsis, not
+-- the end, so a longer language never hides the total (CORE-R8).
+---@param line FontString
+---@param text string
+---@param join string
+---@param width number
+local function setKeepingLast(line, text, join, width)
+	line:SetWidth(0) -- measured unbounded
+	line:SetText(text)
+	local at = text:find(join, 1, true)
+	local last
+	while at do
+		last = at
+		at = text:find(join, at + 1, true)
+	end
+	if line:GetStringWidth() > width and last then
+		local head, tail = text:sub(1, last - 1), text:sub(last)
+		line:SetText(tail)
+		local room = width - line:GetStringWidth()
+		if room < SECOND_HEAD then
+			text = text:sub(last + #join)
+		else
+			repeat
+				head = dropLast(head)
+				line:SetText(head .. "…")
+			until head == "" or line:GetStringWidth() <= room
+			text = head == "" and text:sub(last + #join) or head .. "…" .. tail
+		end
+		line:SetText(text)
+	end
+	line:SetWidth(width)
+end
 
 -- Draws each of `entries` (a Hunt's or a run's two lines) on `lines` from `y` down, after a run's time dial or a dot
 -- of its group (`entry.dot`, else `dot`), its label red when `entry.urgent`; hides the lines past them; returns the y
@@ -533,24 +580,30 @@ local function drawLines(lines, entries, look, y, dot)
 			line.label:SetText(entry.label)
 			line.label:ClearAllPoints()
 			line.label:SetPoint("TOPRIGHT", line, "TOPLEFT", right, -4)
-			-- The label (a countdown, a group's word) takes at most its share of the line, cut short with an ellipsis
-			-- past it, so the name always keeps the rest: a Language's words run longer than English's (CORE-R8).
+			-- The name first: it tells the lines apart. The label (a countdown, a group's word) takes what the name
+			-- leaves, and never less than its share of the line, cut short with an ellipsis past it; both whole when
+			-- they fit. A Language's words run longer than English's (CORE-R8).
 			local room = right - x - 14 - 6
-			line.label:SetWidth(0) -- measured unbounded
-			line.label:SetWidth(math.max(1, math.min(line.label:GetStringWidth() + 1, room * LABEL_SHARE)))
 			setFont(line.first, look.name)
 			line.first:SetText(entry.name)
+			line.first:SetWidth(0) -- measured unbounded
+			local nameWidth = line.first:GetStringWidth() + 1
+			line.label:SetWidth(0)
+			local labelWidth = line.label:GetStringWidth() + 1
+			labelWidth = math.min(labelWidth, math.max(room * LABEL_SHARE, room - nameWidth))
+			line.label:SetWidth(math.max(1, labelWidth))
 			line.first:ClearAllPoints()
 			line.first:SetPoint("TOPLEFT", x + 14, -3)
-			line.first:SetWidth(math.max(1, room - line.label:GetWidth()))
+			line.first:SetWidth(math.max(1, math.min(nameWidth, room - labelWidth)))
 			setFont(line.second, look.sub)
 			line.second:SetText(entry.second or "")
 			line.second:SetShown(entry.second ~= nil)
 			line.second:ClearAllPoints()
 			line.second:SetPoint("TOPLEFT", x + 14, -look.second)
-			-- a long target line shrinks a little, then is cut short, within the block
+			-- a long target line shrinks a little, then its start is cut short, keeping the count it ends with whole
 			local sub = look.sub
 			ns.FitText(line.second, sub[1], sub[2], right - x - 14, sub[2] - 2, sub[4], sub[3])
+			setKeepingLast(line.second, entry.second or "", ns.L.TRACKER_JOIN, right - x - 14)
 			y = y + look.step
 		end
 	end
