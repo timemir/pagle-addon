@@ -18,7 +18,7 @@ Pagle speaks Spanish and Russian.
 
 ### Fixed
 
-- Rows in the Stats book and lines in the Hunts tracker keep the fish's or Hunt's name readable beside a long countdown or reading. (#559)
+- Rows in the Stats book and lines in the Hunts tracker keep the fish's or Hunt's name readable beside a long countdown or reading, and a Hunt's time is never cut to nothing. (#559, #561)
 
 ### TRANSLATORS
 
