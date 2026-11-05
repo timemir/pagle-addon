@@ -182,9 +182,11 @@ ship() {
 		checks_green "$addon" "$pr"
 		# 3. The merge: a squash, so main's new tree is the tested merge tree when main didn't move.
 		say "merging #$pr"
-		gh pr merge -R "$addon" "$pr" --squash --delete-branch || fail "couldn't merge #$pr"
+		# No --delete-branch: gh would check main out here too, which fails in a worktree that has it elsewhere.
+		gh pr merge -R "$addon" "$pr" --squash || fail "couldn't merge #$pr"
 		merged=$(gh pr view -R "$addon" "$pr" --json mergeCommit --jq '.mergeCommit.oid')
 		[[ -n $merged ]] || fail "#$pr merged but has no merge commit"
+		git push --quiet origin --delete "$branch" 2>/dev/null || true
 	else
 		say "the branch's pull request is merged already, as $merged"
 	fi
