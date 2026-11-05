@@ -1,5 +1,11 @@
 # Pagle
 
+## 1.0.2 (2026-11-05)
+
+### Fixed
+
+- On Russian, Korean and Chinese clients, fish, item and zone names no longer show as empty squares: Pagle now draws its text in the game's own font there. (#553)
+
 ## 1.0.1 (2026-11-05)
 
 ### Changed
