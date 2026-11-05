@@ -303,6 +303,8 @@ FIELD_REPORT_COPY_HINT = "Ctrl+C to copy"
 FIELD_REPORT_POST_AT = "POST IT AT"
 FIELD_REPORT_PART = "Part {field_report_part_1:0} of {field_report_part_2:0}"
 FIELD_REPORT_CLOSE = "Close"
+# REP-R48: at the bottom right, with the text or a message, so a Player after the website's Paste string finds it.
+FIELD_REPORT_WEBSITE = "For the website, use /pagle export."
 FIELD_REPORT_NOTHING = "Nothing to report. Thanks for checking!"
 FIELD_REPORT_UPDATING = "Updating... try again in a moment."
 FIELD_REPORT_AFTER_COMBAT = "Pagle: the Field report opens after combat."

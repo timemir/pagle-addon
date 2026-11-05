@@ -168,6 +168,7 @@ ns.L = {
 	FIELD_REPORT_POST_AT = "POST IT AT",
 	FIELD_REPORT_PRIVACY = "This will be posted publicly. It contains no character names.",
 	FIELD_REPORT_UPDATING = "Updating... try again in a moment.",
+	FIELD_REPORT_WEBSITE = "For the website, use /pagle export.",
 	FISH_CREST_DROP_PREFIX = "Raw ",
 	FISH_CREST_ITEM = "Item {speciesID}",
 	FISH_CREST_NOTE = "{fish_crest_note_1:0} of 10 {fish} varieties. Still out there: {parts}.",
