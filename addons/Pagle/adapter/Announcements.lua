@@ -1331,7 +1331,7 @@ local function drawComposedToast(frame, display, style)
 	end
 	local stamps, placed, record = setStampRows(frame, announcement, function(stamp, text, scale)
 		ns.SetStamp(stamp, text, style, page, scale)
-		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
+		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil, style)
 	end, function(scale)
 		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, page, scale)
 	end, {
@@ -1502,7 +1502,7 @@ local function drawToast(frame, display, style)
 	end
 	local stamps, placed, record = setStampRows(frame, announcement, function(stamp, text, scale)
 		ns.SetStamp(stamp, text, style, nil, scale)
-		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
+		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil, style)
 	end, function(scale)
 		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, nil, scale)
 	end, {

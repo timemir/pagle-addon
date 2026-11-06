@@ -677,12 +677,26 @@ function ns.SetStamp(stamp, text, style, page, scale)
 	stamp:Show()
 end
 
---- Inks a rubber stamp ns.SetStamp has set in `color` (a variety's rarity ink, VAR-R26, ANN-R80): its word and its
---- border or plate, greyed first so the colour shows true. With none it puts the border and plate back as drawn, the
---- word's ink being SetStamp's own each time.
+-- An ink this light or less (Rec. 709 weights over its values) is dark: a word on it, or beside it, is set light.
+local DARK_INK = 0.45
+
+-- An ink's Rec. 709 luminance, 0 to 1.
+---@param color number[]
+---@return number
+local function luminance(color)
+	return 0.2126 * color[1] + 0.7152 * color[2] + 0.0722 * color[3]
+end
+
+--- Inks a rubber stamp ns.SetStamp has set in `style` in `color` (a variety's rarity ink, VAR-R28, ANN-R80): its border
+--- or plate, greyed first so the colour shows true, and its word light or dark to read on what is behind it (#582). A
+--- composed style's plate is filled, and greyed then tinted it is no lighter than `color`: on a dark one the word is
+--- cream, else the handwriting's ink. A classic style's border is an outline, so its word stands on the page: in
+--- `color` where the style writes dark on it, cream where it writes light (a night-blue or oxblood page). With no
+--- colour it puts the border and plate back as drawn, the word's ink being SetStamp's own each time.
 ---@param stamp PagleStamp
 ---@param color number[]?
-function ns.TintStamp(stamp, color)
+---@param style PagleToastStyle
+function ns.TintStamp(stamp, color, style)
 	local border = stamp.border
 	local regions = { border.left, border.middle, border.right }
 	for _, slice in ipairs(stamp.plate or {}) do
@@ -696,7 +710,16 @@ function ns.TintStamp(stamp, color)
 			region:SetVertexColor(1, 1, 1)
 		end
 	end
-	if color then
-		stamp.label:SetTextColor(color[1], color[2], color[3])
+	if not color then
+		return
 	end
+	local word
+	if stamp.layered then
+		word = luminance(color) <= DARK_INK and ns.ANNOUNCE_COLORS.cream or ns.ANNOUNCE_COLORS.ink
+	elseif luminance(ns.ANNOUNCE_COLORS[style.name]) > DARK_INK then
+		word = ns.ANNOUNCE_COLORS.cream
+	else
+		word = luminance(color) <= DARK_INK and color or ns.ANNOUNCE_COLORS.ink
+	end
+	stamp.label:SetTextColor(word[1], word[2], word[3])
 end
