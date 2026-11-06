@@ -112,6 +112,35 @@ describe("/pagle export and Pagle.OpenPasteExport (PST-R50, PST-R51, CORE-R61)",
 		end
 	)
 
+	it(
+		"puts a label of several words too wide for the room before the chart's URL field on two lines there, the URL"
+			.. " still at 98 (PST-R51, field-report.md › UI)",
+		function()
+			local loaded = withCasts(3)
+			loaded.ns.L.PASTE_AT = "FÜGE ES EIN AUF"
+
+			pagle(loaded, "export")
+
+			local frame = assert(window(loaded))
+			-- One line, even at three quarters, it runs onto the chart's URL field at 90.
+			assert(22 + #"FÜGE ES EIN AUF" * 6 * 0.75 > 86, "the case overflows on one line")
+			assert.are.equal("FÜGE ES EIN AUF", frame.pasteAt:GetText(), "its words untouched")
+			assert.is_true(frame.pasteAt:CanWordWrap())
+			assert.are.equal(64, frame.pasteAt:GetWidth(), "on two lines in the 64 before the field")
+			assert.are.same({ { "LEFT", frame, "TOPLEFT", 98, -279 } }, frame.url.points)
+		end
+	)
+
+	it("keeps PASTE IT AT on one line, the URL at 98 (PST-R51)", function()
+		local loaded = withCasts(3)
+
+		pagle(loaded, "export")
+
+		local frame = assert(window(loaded))
+		assert.is_false(frame.pasteAt:CanWordWrap())
+		assert.are.same({ { "LEFT", frame, "TOPLEFT", 98, -279 } }, frame.url.points)
+	end)
+
 	it("keeps the string on one line, never wrapped (PST-R31)", function()
 		local loaded = withCasts(3)
 
