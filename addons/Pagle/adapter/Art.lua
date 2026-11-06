@@ -690,7 +690,7 @@ end
 --- Inks a rubber stamp ns.SetStamp has set in `style` in `color` (a variety's rarity ink, VAR-R28, ANN-R80): its border
 --- or plate, greyed first so the colour shows true, and its word light or dark to read on what is behind it (#582). A
 --- composed style's plate is filled, and greyed then tinted it is no lighter than `color`: on a dark one the word is
---- cream, else the handwriting's ink. A round one style's border is an outline, so its word stands on the page: in
+--- cream, else the handwriting's ink. A classic style's border is an outline, so its word stands on the page: in
 --- `color` where the style writes dark on it, cream where it writes light (a night-blue or oxblood page). With no
 --- colour it puts the border and plate back as drawn, the word's ink being SetStamp's own each time.
 ---@param stamp PagleStamp
