@@ -1884,7 +1884,8 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 			assert.are.same({ 2 }, { stamped.stamps })
 			same(stamped, "stamps")
 
-			-- A long size kicker beside a second stamp, so that the kicker's own font steps down.
+			-- A long size kicker beside a stamp too wide for any row beside it at 0.9, so that the kicker's own font steps
+			-- down (#582: a second stamp now hangs in a second row instead).
 			local own = kickerOf(
 				loaded,
 				M,
@@ -1892,14 +1893,13 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 					kind = "newVariety",
 					order = 120,
 					text = "Coral",
-					stamp = "New variety",
+					stamp = "Rare variety of the deeps",
 					icon = ITEM,
 					cast = CAST,
 					ownStamp = true,
 					kicker = "Trophy · 123.4 cm",
 					variety = { name = "Coral", rarity = "common", fish = "Cat" },
-				}),
-				moment("nod", "New here", { cast = CAST, stamp = "New here" })
+				})
 			)
 			assert(own.size < loaded.ns.ArtFontSize("What"), "the kicker is " .. own.size)
 			same(own, "stepped down kicker")
@@ -2071,132 +2071,219 @@ describe("a toast announcing a variety on the client (#424, VAR-R25, VAR-R26, AN
 		return toast
 	end
 
+	-- Each stamp showing, the New record stamp's too once it is set, as it hangs: its words, its font's size (11, the
+	-- Stamp font's, when it isn't squeezed), its left and right edges and its centre's depth down the page.
+	local function hung(toast)
+		local out = {}
+		local function note(stamp, pivot)
+			local _, _, _, x, y = pivot:GetPoint()
+			out[#out + 1] = {
+				text = stamp.label:GetText(),
+				size = stamp.label.font and stamp.label.font[2] or 11,
+				left = x - stamp:GetWidth() / 2,
+				right = x + stamp:GetWidth() / 2,
+				y = -y,
+			}
+		end
+		for i, stamp in ipairs(toast.stamps) do
+			if stamp.shown then
+				note(stamp, toast.pivots[i])
+			end
+		end
+		if toast.display.announcement.headline.ruler then
+			note(toast.ruler.record, toast.recordPivot)
+		end
+		return out
+	end
+
+	-- The kicker's right edge, across the page.
+	local function kickerRight(loaded, toast)
+		return loaded.ns.ToastPage(toast.display.announcement).tx + toast.title:GetWidth()
+	end
+
+	-- Every stamp ends right of the kicker and a gap of 10, the words' as the stamps' (ANN-R80).
+	local function clearOfKicker(loaded, toast)
+		local right = kickerRight(loaded, toast)
+		for _, stamp in ipairs(hung(toast)) do
+			assert(
+				stamp.left >= right + 10,
+				("%s starts at %.1f, the kicker ends at %.1f"):format(stamp.text, stamp.left, right)
+			)
+		end
+	end
+
+	-- A first-catch Common variety's own toast, its kicker the size text (VAR-R28), with "New here" riding on it.
+	local function ownAndHere(fields)
+		local own = moment("toast.low", "New variety", {
+			kind = "newVariety",
+			order = 120,
+			text = "Coral",
+			stamp = "New variety",
+			icon = ITEM,
+			cast = CAST,
+			ownStamp = true,
+			kicker = "Trophy · 123.4 cm",
+			variety = { name = "Coral", rarity = "common", fish = "Cat" },
+		})
+		local here = moment("nod", "New here", { cast = CAST, stamp = "New here" })
+		for key, value in pairs(fields or {}) do
+			here[key] = value
+		end
+		return own, here
+	end
+
 	it(
-		"steps the kicker down from 16 only as far as a stamp row needs, never letting the stamps reach it, for an own"
-			.. " stamp with a long size kicker and a second stamp, or a ruled toast with its New record stamp (#467)",
+		"keeps a row of two stamps at 0.9 of their size at least, a readable 10, with the kicker at its 16, when that"
+			.. " fits beside the kicker (#582, ANN-R80)",
 		function()
 			local loaded, M = loadCore()
-			local function leftEdge(toast)
-				local lefts = {}
-				for i, stamp in ipairs(toast.stamps) do
-					if stamp.shown then
-						lefts[#lefts + 1] = select(4, toast.pivots[i]:GetPoint()) - stamp:GetWidth() / 2
-					end
-				end
-				if toast.ruler.record.shown ~= false and toast.display.announcement.headline.ruler then
-					lefts[#lefts + 1] = select(4, toast.recordPivot:GetPoint()) - toast.ruler.record:GetWidth() / 2
-				end
-				table.sort(lefts)
-				return lefts[1]
-			end
-			local function kickerRight(toast)
-				local page = loaded.ns.ToastPage(toast.display.announcement)
-				return page.tx + toast.title:GetWidth()
-			end
-
-			-- A Common variety's own toast, its kicker the size text, and a second stamp riding on it.
-			local own = moment("toast.low", "New variety", {
-				kind = "newVariety",
-				order = 120,
-				text = "Coral",
-				stamp = "New variety",
-				icon = ITEM,
-				cast = CAST,
-				ownStamp = true,
-				kicker = "Trophy · 123.4 cm",
-				variety = { name = "Coral", rarity = "common", fish = "Cat" },
-			})
-			raise(loaded, M, own, moment("nod", "New here", { cast = CAST, stamp = "New here" }))
+			-- The issue's toast: the size record's kicker, the riding New variety and the ruler's New record stamp.
+			raise(loaded, M, recordAndVariety("common"))
 			local toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
-			local size = toast.title.font[2]
-			assert.are.same({ "TROPHY · 123.4 CM", "NEW VARIETY", "NEW HERE" }, {
-				toast.title:GetText(),
-				toast.stamps[1].label:GetText(),
-				toast.stamps[2].label:GetText(),
-			})
-			assert(size < 16 and size >= 13, "the kicker is " .. size)
-			assert(
-				leftEdge(toast) >= kickerRight(toast) + 10,
-				("%.1f from %.1f"):format(leftEdge(toast), kickerRight(toast))
+
+			assert.are.equal(16, toast.title.font and toast.title.font[2] or 16)
+			local stamps = hung(toast)
+			assert.are.same({ "NEW VARIETY", "NEW RECORD" }, { stamps[1].text, stamps[2].text })
+			for _, stamp in ipairs(stamps) do
+				assert(stamp.size == 10, stamp.text .. " is at " .. stamp.size)
+				assert(stamp.y < 30, stamp.text .. " is in the first row")
+			end
+			clearOfKicker(loaded, toast)
+		end
+	)
+
+	it(
+		"hangs the stamps that don't fit beside the kicker at 0.9 in a second row under the first, at their full size,"
+			.. " the kicker keeping its 16 (#582, ANN-R80, VAR-R28)",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, ownAndHere())
+			local toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+
+			assert.are.same(
+				{ "TROPHY · 123.4 CM", 16 },
+				{ toast.title:GetText(), toast.title.font and toast.title.font[2] or 16 }
 			)
+			local stamps = hung(toast)
+			assert.are.same({ "NEW VARIETY", "NEW HERE" }, { stamps[1].text, stamps[2].text })
+			-- Both at full size and from the same right edge, the page's top right; the second a row lower: a stamp's
+			-- 26 and a gap of 4 under the first.
+			assert.are.same({ 11, 11 }, { stamps[1].size, stamps[2].size })
+			assert.are.same({ 434, 434 }, { stamps[1].right, stamps[2].right })
+			assert.are.same({ 15, 45 }, { stamps[1].y, stamps[2].y })
+			clearOfKicker(loaded, toast)
+			loaded.client.advance(TOAST + LEAVE_TOAST)
+
+			-- Alone, its stamp has room in the first row, and the kicker keeps its 16.
+			raise(loaded, M, (ownAndHere()))
+			toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+			assert.are.equal(16, toast.title.font and toast.title.font[2] or 16)
+			stamps = hung(toast)
+			assert.are.same({ 1, 11, 15 }, { #stamps, stamps[1].size, stamps[1].y })
+			clearOfKicker(loaded, toast)
+		end
+	)
+
+	it(
+		"ends the name line's room 8 before the second row, so a long name scrolls clear of its stamps (#582, ANN-R101)",
+		function()
+			local loaded, M = loadCore()
+			local own, here = ownAndHere()
+			own.variety.fish = "Raw Bristle Whisker Catfish of the Deep Reaches"
+			raise(loaded, M, own, here)
+			local toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+
+			local stamps = hung(toast)
+			assert(stamps[2].y > 30, "the second row")
+			local page = loaded.ns.ToastPage(toast.display.announcement)
+			assert(toast.nameScroll and toast.nameScroll > 0, "it scrolls")
+			-- The clip hangs 4 before the line, at the words' left, and ends with its room (ANN-R101).
+			local clipRight = page.tx - 4 + toast.nameClip:GetWidth()
+			assert(math.abs(stamps[2].left - 8 - clipRight) < 1e-6, ("the clip ends at %.2f"):format(clipRight))
+		end
+	)
+
+	it(
+		"ends a second row before the Coins when it hangs as low as they stand, the first row as before (#582, #571)",
+		function()
+			local loaded, M = loadCore()
+			raise(loaded, M, ownAndHere({ coins = 5 }))
+			local toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+
+			local page = loaded.ns.ToastPage(toast.display.announcement)
+			local coinsLeft = page.w - 2 - toast.coins:GetWidth()
+			local stamps = hung(toast)
+			assert.are.same({ 434, coinsLeft - 4 }, { stamps[1].right, stamps[2].right })
+			assert(stamps[2].y > 30, "the second row")
+			clearOfKicker(loaded, toast)
+		end
+	)
+
+	it(
+		"breaks three stamps and the New record stamp into two rows at their full size, the New record stamp in the"
+			.. " second, every one clear of the kicker (#424, #582, ANN-R80, ANN-R22)",
+		function()
+			local loaded, M = loadCore()
+			local record, variety = recordAndVariety("common")
+			raise(loaded, M, record, variety, moment("nod", "New here", { cast = CAST, stamp = "New here" }))
+			local toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+
+			local stamps = hung(toast)
+			assert.are.same(
+				{ "NEW VARIETY", "NEW HERE", "NEW RECORD" },
+				{ stamps[1].text, stamps[2].text, stamps[3].text }
+			)
+			for _, stamp in ipairs(stamps) do
+				assert.are.equal(11, stamp.size)
+			end
+			assert.is_true(stamps[1].y < 30 and stamps[2].y < 30)
+			-- The New record stamp lands on the second row, from the page's top right, level with any other there: a
+			-- row (a stamp's 26 and a gap of 4) under the first's highest.
+			assert.are.same({ 434, 15 + 30 }, { stamps[3].right, stamps[3].y })
+			-- It ends clear of the ruler's numbers, which stand up to 8 above the ruler's top.
+			local _, _, _, _, rulerY = toast.ruler:GetPoint()
+			assert(
+				stamps[3].y + 13 <= -rulerY - 8,
+				("the second row ends at %.1f, the ruler starts at %.1f"):format(stamps[3].y + 13, -rulerY)
+			)
+			clearOfKicker(loaded, toast)
+		end
+	)
+
+	it(
+		"still steps the kicker down toward 13, then squeezes a stamp too wide for any row beside it, as the last"
+			.. " resort (#467, #582, ANN-R80)",
+		function()
+			local loaded, M = loadCore()
+			local own = ownAndHere()
+			own.stamp = "Rare variety of the deeps"
+			raise(loaded, M, own)
+			local toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
+
+			assert.are.equal(13, toast.title.font[2])
+			local stamps = hung(toast)
+			assert.are.same({ 1, 8 }, { #stamps, stamps[1].size })
+			clearOfKicker(loaded, toast)
 			-- The name line is still where the block is centred, for the kicker as it now is.
 			local page = loaded.ns.ToastPage(toast.display.announcement)
 			local nameTop = -select(5, toast.title:GetPoint()) + 14 - select(5, toast.text:GetPoint())
 			assert.is_true(math.abs(nameTop - ((page.h - (14 + 5 + 14)) / 2 + 14 + 5)) < 0.01)
-			loaded.client.advance(TOAST + LEAVE_TOAST)
-
-			-- Alone, the same kicker keeps its 16: the stamp has room.
-			raise(loaded, M, own)
-			toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
-			assert.are.equal(16, toast.title.font and toast.title.font[2] or 16)
-			assert.is_true(leftEdge(toast) >= kickerRight(toast) + 10)
-			loaded.client.advance(TOAST + LEAVE_TOAST)
-
-			-- A ruled toast: the size record's kicker with its New record stamp and a riding New variety.
-			local record, variety = recordAndVariety("common")
-			raise(loaded, M, record, variety)
-			toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
-			assert(
-				leftEdge(toast) >= kickerRight(toast) + 10,
-				("%.1f from %.1f"):format(leftEdge(toast), kickerRight(toast))
-			)
 		end
 	)
 
-	it("hangs three stamps and the New record stamp clear of the kicker, squeezing them to fit (#424)", function()
+	it("keeps a ruled toast's stamps clear of its kicker in every row (#467, #582)", function()
 		local loaded, M = loadCore()
 		local record, variety = recordAndVariety("common")
-		local here = moment("nod", "New here", { cast = CAST, stamp = "New here" })
-		raise(loaded, M, record, variety, here)
-		local toast = frameOf(loaded, "toast") --[[@as table]]
-		-- The fake client measures a word at a flat 6 units a letter; the client's grow with the font. Measure as it
-		-- does, so a smaller font makes a narrower stamp, and the kicker as wide as the print is.
-		local function measure(label)
-			label.GetStringWidth = function(self)
-				return #(self.text or "") * 0.62 * (self.font and self.font[2] or 11)
-			end
-		end
-		for _, stamp in ipairs(toast.stamps) do
-			measure(stamp.label)
-		end
-		measure(toast.ruler.record.label)
-		toast.title.GetStringWidth = function(self)
-			return #(self.text or "") * 8.5
-		end
+		record.title = "Size record of the week"
+		raise(loaded, M, record, variety)
+		local toast = measuredBySize(loaded, frameOf(loaded, "toast") --[[@as table]])
 
-		loaded.ns.DrawAnnouncement(toast, toast.display)
-
-		local page = loaded.ns.ToastPage(toast.display.announcement)
-		local kickerRight = page.tx + toast.title:GetWidth()
-		local lefts, sizes = {}, {}
-		local function note(stamp, pivot)
-			local x = select(4, pivot:GetPoint())
-			lefts[#lefts + 1] = x - stamp:GetWidth() / 2
-			sizes[#sizes + 1] = stamp.label.font and stamp.label.font[2] or 11
+		local stamps = hung(toast)
+		assert.are.equal(2, #stamps)
+		for _, stamp in ipairs(stamps) do
+			assert(stamp.size >= 10, stamp.text .. " is at " .. stamp.size)
 		end
-		local shown = 0
-		for i, stamp in ipairs(toast.stamps) do
-			if stamp.shown then
-				shown = shown + 1
-				note(stamp, toast.pivots[i])
-			end
-		end
-		note(toast.ruler.record, toast.recordPivot)
-		assert.are.equal(2, shown)
-		table.sort(lefts)
-		assert.are.equal(
-			true,
-			lefts[1] >= kickerRight,
-			("the row starts at %.1f, the kicker ends at %.1f"):format(lefts[1], kickerRight)
-		)
-		-- Squeezed, not dropped: every word still shows, in a smaller font.
-		for _, size in ipairs(sizes) do
-			assert.is_true(size < 11 and size >= 8)
-		end
-		assert.are.same(
-			{ "NEW VARIETY", "NEW HERE" },
-			{ toast.stamps[1].label:GetText(), toast.stamps[2].label:GetText() }
-		)
+		clearOfKicker(loaded, toast)
 	end)
 
 	it(
@@ -3279,5 +3366,75 @@ describe("moving the Toast column on the client (ANN-R98)", function()
 
 		local point, relativeTo, relativePoint, x, y = frameOf(loaded, "banner"):GetPoint(1)
 		assert.are.same({ "TOP", loaded.env.UIParent, "TOP", 0, -120 }, { point, relativeTo, relativePoint, x, y })
+	end)
+
+	-- What GameTooltip shows, and beside which frame: its lines while shown, its owner and anchor.
+	local function hint(loaded)
+		local tooltip = loaded.env.GameTooltip
+		return { lines = loaded.client.tooltipLines(), owner = tooltip.shown and tooltip.owner or nil }
+	end
+
+	it(
+		'says "Shift-drag to move" beside a toast or Nod under the pointer, and takes it away as the pointer leaves'
+			.. " (#582, ANN-R98)",
+		function()
+			local loaded, _, _, toast, nod = withColumn()
+
+			for _, frame in ipairs({ toast, nod }) do
+				frame.scripts.OnEnter(frame)
+				assert.are.same({ lines = { "Shift-drag to move" }, owner = frame }, hint(loaded))
+				-- Beside the column, not over the entry above it.
+				assert.are.equal("ANCHOR_RIGHT", loaded.env.GameTooltip.anchor)
+				frame.scripts.OnLeave(frame)
+				assert.are.same({ lines = {} }, hint(loaded))
+			end
+		end
+	)
+
+	it(
+		"takes the hint away as a drag starts, and shows none once the Angler has moved the column, until Reset (#582,"
+			.. " ANN-R98)",
+		function()
+			local loaded, _, _, toast = withColumn()
+			loaded.client.keysDown.SHIFT = true
+
+			toast.scripts.OnEnter(toast)
+			toast.scripts.OnMouseDown(toast, "LeftButton")
+			toast.scripts.OnDragStart(toast)
+			assert.are.same({ lines = {} }, hint(loaded))
+			local anchor = loaded.ns.columnAnchor
+			anchor.screenCenter, anchor.screenBottom = { SCREEN_WIDTH / 2 + 200, 500.5 }, 500
+			toast.scripts.OnDragStop(toast)
+			toast.scripts.OnMouseUp(toast, "LeftButton")
+			toast.scripts.OnLeave(toast)
+
+			toast.scripts.OnEnter(toast)
+			assert.are.same({ lines = {} }, hint(loaded))
+			toast.scripts.OnLeave(toast)
+
+			assert.is_true(loaded.ns.ResetToastColumn())
+			toast.scripts.OnEnter(toast)
+			assert.are.same({ lines = { "Shift-drag to move" }, owner = toast }, hint(loaded))
+		end
+	)
+
+	it("shows no hint while restricted, when a drag can't start (#582, ANN-R98)", function()
+		local loaded, _, _, toast = withColumn()
+		loaded.env.Pagle.IsRestricted = function()
+			return true
+		end
+
+		toast.scripts.OnEnter(toast)
+
+		assert.are.same({ lines = {} }, hint(loaded))
+	end)
+
+	it("takes the hint away with a toast that leaves under the pointer (#582, ANN-R98)", function()
+		local loaded, _, _, toast = withColumn()
+
+		toast.scripts.OnEnter(toast)
+		toast.scripts.OnMouseUp(toast, "LeftButton")
+
+		assert.are.same({ lines = {} }, hint(loaded))
 	end)
 end)

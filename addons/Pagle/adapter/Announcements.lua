@@ -548,6 +548,26 @@ local function setFontAt(fontString, font, size)
 	end
 end
 
+-- A headline's text, its name line under the kicker, in the Angler's hand: held to `width`, its font shrinking to fit
+-- first. Again, narrower, when a second row of stamps takes the end of its room (#582). Returns the height it measures
+-- at its font's own size, before any shrink.
+---@param frame PagleAnnouncementFrame
+---@param text string
+---@param fonts { what: PagleWordsFont, name: PagleWordsFont }
+---@param inks { what: string, name: string }
+---@param width number
+---@return number
+local function writeName(frame, text, fonts, inks, width)
+	local line = frame.text
+	setFont(line, fonts.name)
+	ns.Ink(line, inks.name)
+	line:SetText(text)
+	local height = line:GetStringHeight()
+	shrink(line, fonts.name, width)
+	line:Show()
+	return height
+end
+
 -- The headline's words at `x`, `y` from the frame's top left: its title printed in capitals, its text under it in the
 -- Angler's hand; or, with no text, the title alone in the hand. Each is held to `width`, the hand shrinking to fit
 -- first. `fonts` and `inks` give the printed and handwritten fonts and inks. Returns the heights the kicker and the name
@@ -567,13 +587,7 @@ local function writeHeadline(frame, headline, fonts, inks, width)
 		title:SetText(printed(fonts.what, headline.title))
 		local kicker = title:GetStringHeight()
 		fit(title, width)
-		setFont(text, fonts.name)
-		ns.Ink(text, inks.name)
-		text:SetText(headline.text)
-		local name = text:GetStringHeight()
-		shrink(text, fonts.name, width)
-		text:Show()
-		return { kicker = kicker, name = name }
+		return { kicker = kicker, name = writeName(frame, headline.text, fonts, inks, width) }
 	else
 		setFont(title, fonts.name)
 		ns.Ink(title, inks.name)
@@ -891,68 +905,180 @@ end
 
 -- The gap between a toast's kicker and its name line.
 local TOAST_LINE_GAP = 5
--- The scales a toast's stamp row is squeezed through, largest first, to fit right of its kicker.
-local STAMP_SCALES = { 1, 0.9, 0.8, 0.7 }
--- The gap between a toast's kicker and the stamp row.
+-- The scales a toast's stamps are squeezed through, largest first, to fit right of its kicker: never under 0.9 (the
+-- Stamp font's 11 at 10) while the kicker can step down or a second row can take them (#582).
+local STAMP_SCALES = { 1, 0.9 }
+-- Past all that, the last resort, at the kicker's floor: only a stamp too wide for any row beside it needs it.
+local STAMP_LAST_SCALES = { 0.8, 0.7 }
+-- The gap between a toast's kicker and its stamps.
 local STAMP_KICKER_GAP = 10
+-- A second row hangs this far under the first's plates (#582), and the name line's room ends this far before it.
+local STAMP_ROW_GAP, STAMP_NAME_GAP = 4, 8
+-- The Torn Page's and the other drawn styles' rubber stamp: as tall as its border's box.
+local STAMP_HEIGHT = 26
+-- The Torn Page's stamps hang a little unevenly in the first row, as stamped by hand: each one's top this far down
+-- the page, in turn; and the New record stamp's centre 19 down. A second row hangs level, its tops STAMP_DROPS[1] and
+-- a row's pitch down, so it ends as high as it can.
+local STAMP_DROPS = { 2, 8, 4, 6, 3, 7 }
+local RECORD_DROP = 19
+-- How far a ruled toast's numbers (the landed record's and the old one's, in the hand at 19) stand above the ruler's
+-- own top: a second row of stamps there ends at least this far above it, or the stamps keep to one row.
+local RULER_RISE = 8
+-- Composed styles whose own art, drawn over the words (ANN-R82's "over" host), covers where a second row would hang:
+-- Widow's Web's spider on its thread and the Cartographer's Folio's compass rose (#584's review): one row for them.
+local ONE_ROW_STYLES = { ["core.toaststyle.spider"] = true, ["ledger.toaststyle.cartographer"] = true }
 
--- The smallest a toast's kicker steps down to, to leave its stamp row room: the size it had before #467 (a composed
+-- The smallest a toast's kicker steps down to, to leave its stamps room: the size it had before #467 (a composed
 -- style's own kit size).
 local KICKER_FLOOR = 13
 
--- Sets a toast's stamps, and its New record stamp when a ruled toast has one, at the largest of STAMP_SCALES at which
--- the row, hung right to left from `x` with `gap` between them, still ends right of the kicker's right edge and a gap
--- (the kicker starting `left` from the body's left): the stamps' words and padding shrink together. If the row at the
--- smallest scale still reaches the kicker (the larger 16 kicker of a size band and length, "TROPHY · 123.4 CM", beside
--- a second stamp, or the New record stamp), the kicker's font steps down a unit at a time to `kicker.floor`, the size
--- it had before #467, and the row is fitted again at each, `placeBlock` setting the words' block again for the
--- kicker's new height. At that floor it stays as it is, which only a row of four or more can need. `set` sets a
--- stamp, `setRecord` the New record stamp, each at a scale. Returns the stamps showing and the New record stamp's
--- width.
+-- Hangs stamps `widths` wide, in order, right to left with `gap` between: in the first row from `rights[1]`, and with
+-- `rows` 2, those that don't fit there in a second from `rights[2]`, each one ending at `limit` or right of it.
+-- Returns each one's row and right edge, or nil if they don't all fit; with `force` they hang as they come, fitting or
+-- not.
+---@param widths number[]
+---@param rights number[]
+---@param limit number
+---@param gap number
+---@param rows integer
+---@param force boolean?
+---@return { row: integer, right: number }[]?
+local function hang(widths, rights, limit, gap, rows, force)
+	local placed, row, at = {}, 1, rights[1]
+	for i, width in ipairs(widths) do
+		-- A row with a stamp in it already passes the rest on to the next.
+		if at - width < limit and at < rights[row] and row < rows then
+			row, at = row + 1, rights[row + 1]
+		end
+		if at - width < limit and not force then
+			return nil
+		end
+		placed[i] = { row = row, right = at }
+		at = at - width - gap
+	end
+	return placed
+end
+
+-- Where a toast's stamps may hang. `rights`: each row's right edge from the body's left, the stamp's place's, and a
+-- second row's 4 before the Coins when it hangs as low as they stand.
+---@class PagleStampRows
+---@field rights number[] each row's right edge
+---@field gap number between two stamps in a row
+---@field left number where the kicker starts
+---@field rows integer how many rows the stamps may take: 2, or 1 on "While you were fighting"
+---@field withRecord boolean a ruled toast's New record stamp hangs with them, last
+
+-- Sets a toast's stamps, and its New record stamp when a ruled toast has one, hung by `layout` (#424, #467, #582).
+-- Every stamp ends right of the kicker's right edge and a gap. They are tried, in this order, until they fit:
+--   1. in one row at each of STAMP_SCALES, the kicker's font stepping down a unit at a time from its size to
+--      `kicker.floor`, the size it had before #467, between;
+--   2. in two rows, the stamps that don't fit in the first hanging in the second, the same way from the kicker's size;
+--   3. as the last resort, in two rows at the kicker's floor, at STAMP_LAST_SCALES; at the last they stay as they are,
+--      which only a stamp too wide for any row beside the kicker can need.
+-- `placeBlock` sets the words' block again for each new kicker size. `set` sets a stamp, `setRecord` the New record
+-- stamp, each at a scale. Returns the stamps showing; where each one hangs, then the New record stamp; and the New
+-- record stamp's width.
 ---@param frame PagleAnnouncementFrame
 ---@param announcement PagleAnnouncement
 ---@param set fun(stamp: PagleStamp, text: string, scale: number)
 ---@param setRecord fun(scale: number)
----@param x number
----@param gap number
----@param left number
----@param withRecord boolean
+---@param layout PagleStampRows
 ---@param kicker { font: PagleWordsFont, floor: number, ink: string }
 ---@param placeBlock fun()
 ---@return PagleStamp[]
+---@return { row: integer, right: number }[]
 ---@return number
-local function setStampRow(frame, announcement, set, setRecord, x, gap, left, withRecord, kicker, placeBlock)
+local function setStampRows(frame, announcement, set, setRecord, layout, kicker, placeBlock)
 	local ruler = frame.ruler --[[@as PagleRulerView]]
-	local stamps
-	local size = fontSize(kicker.font)
-	while true do
-		local limit = left + frame.title:GetWidth() + STAMP_KICKER_GAP
-		local fits
-		for _, scale in ipairs(STAMP_SCALES) do
-			stamps = fillStamps(frame, announcement, function(stamp, text)
-				set(stamp, text, scale)
-			end)
-			setRecord(scale)
-			ruler.stampScale = scale
-			local total = withRecord and ruler.record:GetWidth() + gap or 0
-			for _, stamp in ipairs(stamps) do
-				total = total + stamp:GetWidth() + gap
-			end
-			fits = x - (total - gap) >= limit
-			if fits then
-				break
+	local base = fontSize(kicker.font)
+	local size = base
+	local stamps, placed
+	local function try(at, scale, rows, force)
+		if at ~= size then
+			size = at
+			setFontAt(frame.title, kicker.font, at)
+			ns.Ink(frame.title, kicker.ink)
+			fit(frame.title, math.huge)
+			placeBlock()
+		end
+		stamps = fillStamps(frame, announcement, function(stamp, text)
+			set(stamp, text, scale)
+		end)
+		setRecord(scale)
+		ruler.stampScale = scale
+		local widths = {}
+		for i, stamp in ipairs(stamps) do
+			widths[i] = stamp:GetWidth()
+		end
+		if layout.withRecord then
+			widths[#widths + 1] = ruler.record:GetWidth()
+		end
+		local limit = layout.left + frame.title:GetWidth() + STAMP_KICKER_GAP
+		placed = hang(widths, layout.rights, limit, layout.gap, rows, force)
+		return placed ~= nil
+	end
+	for rows = 1, layout.rows do
+		for at = base, kicker.floor, -1 do
+			for _, scale in ipairs(STAMP_SCALES) do
+				if try(at, scale, rows) then
+					return stamps, placed, ruler.record:GetWidth()
+				end
 			end
 		end
-		if fits or size <= kicker.floor then
+	end
+	for i, scale in ipairs(STAMP_LAST_SCALES) do
+		if try(kicker.floor, scale, layout.rows, i == #STAMP_LAST_SCALES) then
 			break
 		end
-		size = math.max(kicker.floor, size - 1)
-		setFontAt(frame.title, kicker.font, size)
-		ns.Ink(frame.title, kicker.ink)
-		fit(frame.title, math.huge)
-		placeBlock()
 	end
-	return stamps, ruler.record:GetWidth()
+	return stamps,
+		placed, --[[@as { row: integer, right: number }[] ]]
+		ruler.record:GetWidth()
+end
+
+-- Where a toast's second row of stamps starts from the body's left, or nil when they all hang in the first.
+---@param stamps PagleStamp[]
+---@param placed { row: integer, right: number }[]
+---@param record number the New record stamp's width, last in `placed` when it hangs
+---@return number?
+local function secondRowLeft(stamps, placed, record)
+	local left
+	for i, at in ipairs(placed) do
+		if at.row == 2 then
+			local width = stamps[i] and stamps[i]:GetWidth() or record
+			left = math.min(left or math.huge, at.right - width)
+		end
+	end
+	return left
+end
+
+-- A toast's name line's room once its stamps hang (#582): `room`, or, when a second row of stamps hangs beside the
+-- line, less, to end STAMP_NAME_GAP before that row: the line's clip ends with its room (ANN-R101), so the name never
+-- shows nearer the plates than that.
+-- With less, the line is written again in it (writeName, writeToastVariety) and the block placed again. Returns the
+-- room and the line's width as writeToastVariety gives it (`line` as it was when the room stays).
+---@param frame PagleAnnouncementFrame
+---@param headline { text: string? }
+---@param look PagleToastVarietyLook?
+---@param fonts { what: PagleWordsFont, name: PagleWordsFont }
+---@param inks { what: string, name: string }
+---@param room number
+---@param line number?
+---@param rows { left: number, row: number?, placeBlock: fun() } where the line and the second row (nil: none) start
+---@return number room
+---@return number? line
+local function roomBesideStamps(frame, headline, look, fonts, inks, room, line, rows)
+	if not (rows.row and headline.text and frame.text:IsShown()) then
+		return room, line
+	end
+	local narrower = rows.row - STAMP_NAME_GAP - rows.left
+	if narrower >= room then
+		return room, line
+	end
+	writeName(frame, headline.text, fonts, inks, narrower)
+	line = writeToastVariety(frame, look, fonts.name, inks.name, narrower)
+	rows.placeBlock()
+	return narrower, line
 end
 
 -- The toast page's red ruling line, which the Torn Page's art draws across the page under the kicker, and which every
@@ -1119,6 +1245,9 @@ local function drawComposedToast(frame, display, style)
 	box.y = rung.text.y
 	local amt = rung.amt and place(rung.amt)
 	local width = box.w
+	-- Where the Coins stand, when they show: the coin's box and the amount's as it draws, from their left and top.
+	local coinsAt
+	local coinBox = rung.coin and place(rung.coin)
 	if announcement.coins > 0 and amt then
 		-- The words end before the amount as it draws: "+N", measured in its ink and set to end at the amount's
 		-- right, starts left of the amount's box when it is wider than it, and the name's end ran under it.
@@ -1131,6 +1260,10 @@ local function drawComposedToast(frame, display, style)
 		label:SetText(ns.RenderText(L.ANNOUNCEMENT_COINS, { amount = ns.FormatCount(announcement.coins) }))
 		local amountLeft = math.min(amt.x, amt.x + amt.w - label:GetStringWidth())
 		width = math.min(width, amountLeft - box.x - 4)
+		coinsAt = {
+			left = math.min(amountLeft, coinBox and coinBox.x or math.huge),
+			top = math.min(amt.y, coinBox and coinBox.y or math.huge),
+		}
 	end
 	local inks = ns.ToastInks(style, page)
 	local fonts = {
@@ -1157,22 +1290,19 @@ local function drawComposedToast(frame, display, style)
 		placeWords(frame, body, box.x, page, headline, box.y, announcement.fighting, natural)
 	end
 	placeBlock()
-	local clip = frame.nameClip --[[@as Frame]]
-	clip:ClearAllPoints()
-	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
-	clip:SetSize(nameClipWidth(frame, line, lineWidth), fontSize(fonts.name) + 22)
-	clip:SetShown(frame.text:IsShown())
 
 	local ruler = frame.ruler --[[@as PagleRulerView]]
 	ruler.style = style
 	ns.Ink(ruler.label, inks.label)
 	ns.Ink(ruler.value, inks.value)
 	ruler:ClearAllPoints()
+	local rulerTop = math.huge
 	if page.ruled then
 		local top = box.y
 			+ (frame.text:IsShown() and fontSize(fonts.what) + TOAST_LINE_GAP or 0)
 			+ fontSize(fonts.name)
 			+ 4
+		rulerTop = top
 		ruler:SetPoint("TOPLEFT", body, "TOPLEFT", box.x, -top)
 		layRuler(ruler, width - 6, headline.ruler.label, body, box.x)
 	end
@@ -1188,41 +1318,58 @@ local function drawComposedToast(frame, display, style)
 		more:SetPoint("TOPLEFT", nameLine(frame), "BOTTOMLEFT", 2, 2)
 	end
 
-	-- The stamps hang right to left from the style's stamp's top right, each by its centre from a pivot.
+	-- The stamps hang right to left from the style's stamp's top right, each by its centre from a pivot; a second row
+	-- (#582) its plate's height and STAMP_ROW_GAP under the first, ending 4 before the Coins when it hangs as low as
+	-- they stand, and none on a ruled toast where it would reach the ruler's numbers.
 	local spot = place(ns.ToastStampArt(style, page))
 	local x, y = spot.x + spot.w, spot.y + spot.h / 2
-	local stamps, record = setStampRow(
-		frame,
-		announcement,
-		function(stamp, text, scale)
-			ns.SetStamp(stamp, text, style, page, scale)
-			ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
-		end,
-		function(scale)
-			ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, page, scale)
-		end,
-		x,
-		2,
-		box.x,
-		page.ruled == true,
-		{
-			font = fonts.what,
-			floor = (ns.ToastInk(style, page, "what") or { size = KICKER_FLOOR }).size,
-			ink = inks.what,
-		},
-		placeBlock
-	)
+	local pitch = spot.h + STAMP_ROW_GAP
+	local lowest = y + pitch + spot.h / 2
+	local second = x
+	if coinsAt and lowest > coinsAt.top then
+		second = math.min(x, coinsAt.left - 4)
+	end
+	local stamps, placed, record = setStampRows(frame, announcement, function(stamp, text, scale)
+		ns.SetStamp(stamp, text, style, page, scale)
+		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
+	end, function(scale)
+		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, page, scale)
+	end, {
+		rights = { x, second },
+		gap = 2,
+		left = box.x,
+		rows = (announcement.fighting or lowest > rulerTop - RULER_RISE or ONE_ROW_STYLES[style.id]) and 1 or 2,
+		withRecord = page.ruled == true,
+	}, {
+		font = fonts.what,
+		floor = (ns.ToastInk(style, page, "what") or { size = KICKER_FLOOR }).size,
+		ink = inks.what,
+	}, placeBlock)
 	local pivots = frame.pivots --[[@as Frame[] ]]
 	for i, stamp in ipairs(stamps) do
-		local stampWidth = stamp:GetWidth()
-		pivots[i]:SetPoint("CENTER", body, "TOPLEFT", x - stampWidth / 2, -y)
+		local at = placed[i]
+		pivots[i]:SetPoint("CENTER", body, "TOPLEFT", at.right - stamp:GetWidth() / 2, -(y + (at.row - 1) * pitch))
 		stamp:SetPoint("CENTER", pivots[i], "CENTER")
-		x = x - stampWidth - 2
 	end
+	-- Only a ruled toast shows its New record stamp.
+	local at = placed[#stamps + 1] or { row = 1, right = x }
 	ruler.record:Hide()
-	frame.recordPivot:SetPoint("CENTER", body, "TOPLEFT", x - record / 2, -y)
+	frame.recordPivot:SetPoint("CENTER", body, "TOPLEFT", at.right - record / 2, -(y + (at.row - 1) * pitch))
 	ruler.record:ClearAllPoints()
 	ruler.record:SetPoint("CENTER", frame.recordPivot, "CENTER")
+
+	-- The clip the name is written out in, round the name as written, in its room as the stamps leave it.
+	local room
+	room, line = roomBesideStamps(frame, headline, look, fonts, inks, lineWidth, line, {
+		left = box.x,
+		row = secondRowLeft(stamps, placed, record),
+		placeBlock = placeBlock,
+	})
+	local clip = frame.nameClip --[[@as Frame]]
+	clip:ClearAllPoints()
+	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
+	clip:SetSize(nameClipWidth(frame, line, room), fontSize(fonts.name) + 22)
+	clip:SetShown(frame.text:IsShown())
 
 	-- The Coins: the brass coin centred in the coin's box, the amount ending at the amount's right.
 	local coins = frame.coins
@@ -1232,7 +1379,7 @@ local function drawComposedToast(frame, display, style)
 		ns.SetInkFont(label, amtInk)
 	end
 	coins:ClearAllPoints()
-	local coin = rung.coin and place(rung.coin)
+	local coin = coinBox
 	local size = coin and coin.w / COIN_TURN or page.coin
 	if setCoins(coins, announcement.coins, size, false) > 0 then
 		ns.Ink(label, inks.amt)
@@ -1315,21 +1462,17 @@ local function drawToast(frame, display, style)
 		placeWords(frame, body, page.tx, page, headline, page.ty, announcement.fighting, nil, kickerTop())
 	end
 	placeBlock()
-	-- The clip the name is written out in, round the name as written.
-	local clip = frame.nameClip --[[@as Frame]]
-	clip:ClearAllPoints()
-	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
-	clip:SetSize(nameClipWidth(frame, line, lineWidth), ns.ArtFontSize(fonts.name) + 22)
-	clip:SetShown(frame.text:IsShown())
 
 	local ruler = frame.ruler --[[@as PagleRulerView]]
 	ruler.style = style
 	ns.Ink(ruler.label, inks.label)
 	ns.Ink(ruler.value, inks.value)
 	ruler:ClearAllPoints()
+	local rulerTop = math.huge
 	if page.ruled then
 		local nameSize = ns.ArtFontSize(fonts.name)
 		local top = page.ty + (frame.text:IsShown() and ns.ArtFontSize(fonts.what) + TOAST_LINE_GAP or 0) + nameSize + 4
+		rulerTop = top
 		ruler:SetPoint("TOPLEFT", body, "TOPLEFT", page.tx, -top)
 		layRuler(ruler, width - 6, headline.ruler.label, body, page.tx)
 	end
@@ -1349,26 +1492,60 @@ local function drawToast(frame, display, style)
 	frame.wax:SetShown(page.high == true)
 	tintWax(frame.wax --[[@as PagleSprite]], style)
 	local x = page.high and page.w - 96 or page.w - 30
-	local drops = { 2, 8, 4, 6, 3, 7 }
-	local stamps, record = setStampRow(frame, announcement, function(stamp, text, scale)
+	-- A second row is a stamp's height and STAMP_ROW_GAP under the first. Hanging as low as the Coins stand (all but
+	-- a ruled page's), it ends 4 before them, as the words do (#571).
+	local pitch = STAMP_HEIGHT + STAMP_ROW_GAP
+	local lowest = STAMP_DROPS[1] + STAMP_HEIGHT + pitch
+	local second = x
+	if coinsWidth > 0 and lowest > page.h + 2 - page.coin then
+		second = math.min(x, page.w - 2 - coinsWidth - 4)
+	end
+	local stamps, placed, record = setStampRows(frame, announcement, function(stamp, text, scale)
 		ns.SetStamp(stamp, text, style, nil, scale)
 		ns.TintStamp(stamp, look and look.stamp == text and look.ink or nil)
 	end, function(scale)
 		ns.SetStamp(ruler.record, L.ANNOUNCEMENT_NEW_RECORD, style, nil, scale)
-	end, x, 4, page.tx, page.ruled == true, { font = fonts.what, floor = KICKER_FLOOR, ink = inks.what }, placeBlock)
+	end, {
+		rights = { x, second },
+		gap = 4,
+		left = page.tx,
+		rows = (announcement.fighting or lowest > rulerTop - RULER_RISE) and 1 or 2,
+		withRecord = page.ruled == true,
+	}, { font = fonts.what, floor = KICKER_FLOOR, ink = inks.what }, placeBlock)
 	-- Each stamp hangs by its centre from a pivot, so it slams down about its middle (adapter/Art.lua's ns.Pivot).
 	local pivots = frame.pivots --[[@as Frame[] ]]
+	local level = STAMP_DROPS[1] + STAMP_HEIGHT / 2 + pitch
 	for i, stamp in ipairs(stamps) do
-		local stampWidth = stamp:GetWidth()
-		pivots[i]:SetPoint("CENTER", body, "TOPLEFT", x - stampWidth / 2, -(drops[i] + 13))
+		local at = placed[i]
+		local y = at.row == 1 and STAMP_DROPS[i] + STAMP_HEIGHT / 2 or level
+		pivots[i]:SetPoint("CENTER", body, "TOPLEFT", at.right - stamp:GetWidth() / 2, -y)
 		stamp:SetPoint("CENTER", pivots[i], "CENTER")
-		x = x - stampWidth - 4
 	end
-	-- The New record stamp lands to their left once the ruler fills: measured now to hang it by its centre.
+	-- The New record stamp lands after them once the ruler fills: measured now to hang it by its centre. Only a ruled
+	-- toast shows it.
+	local at = placed[#stamps + 1] or { row = 1, right = x }
 	ruler.record:Hide()
-	frame.recordPivot:SetPoint("CENTER", body, "TOPLEFT", x - record / 2, -19)
+	frame.recordPivot:SetPoint(
+		"CENTER",
+		body,
+		"TOPLEFT",
+		at.right - record / 2,
+		-(at.row == 1 and RECORD_DROP or level)
+	)
 	ruler.record:ClearAllPoints()
 	ruler.record:SetPoint("CENTER", frame.recordPivot, "CENTER")
+	-- The clip the name is written out in, round the name as written, in its room as the stamps leave it.
+	local room
+	room, line = roomBesideStamps(frame, headline, look, fonts, inks, lineWidth, line, {
+		left = page.tx,
+		row = secondRowLeft(stamps, placed, record),
+		placeBlock = placeBlock,
+	})
+	local clip = frame.nameClip --[[@as Frame]]
+	clip:ClearAllPoints()
+	clip:SetPoint("TOPLEFT", frame.text, "TOPLEFT", -4, 8)
+	clip:SetSize(nameClipWidth(frame, line, room), ns.ArtFontSize(fonts.name) + 22)
+	clip:SetShown(frame.text:IsShown())
 
 	frame.coins:ClearAllPoints()
 	if coinsWidth > 0 then
@@ -2225,6 +2402,27 @@ local function placeColumn()
 end
 UIParent:HookScript("OnSizeChanged", placeColumn)
 
+-- The pointer on a toast or Nod says how the column moves (ANN-R98, #582): "Shift-drag to move" in GameTooltip beside
+-- it, on its right so it covers no entry above, while the Angler hasn't moved the column (no foot saved) and a drag
+-- could start (no move in progress, not restricted).
+---@param frame table
+local function showMoveHint(frame)
+	if movingColumn or Pagle.IsRestricted() or ns.db.profile.announcements.point ~= nil then
+		return
+	end
+	GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
+	GameTooltip:SetText(L.SHIFT_DRAG_HINT, 1, 1, 1)
+	GameTooltip:Show()
+end
+
+-- Takes the hint away from `frame`, if GameTooltip is still its: the pointer leaving it, a drag starting, it leaving.
+---@param frame table
+local function hideMoveHint(frame)
+	if GameTooltip:IsOwned(frame) then
+		GameTooltip:Hide()
+	end
+end
+
 -- A Shift-drag of `frame`, a toast or Nod, moves the column (ANN-R98): with Shift held and outside restriction, the
 -- lanes hold the column (every clock stops, nothing enters or leaves) and the anchor follows the pointer.
 ---@param frame table
@@ -2232,6 +2430,7 @@ local function startColumnMove(frame)
 	if movingColumn or not IsShiftKeyDown() or Pagle.IsRestricted() then
 		return
 	end
+	hideMoveHint(frame)
 	movingColumn, dragEndsClick = frame, true
 	ns.lanes:HoldColumn()
 	columnAnchor:StartMoving()
@@ -2296,7 +2495,8 @@ end
 
 -- A frame of `form` not in use, made if none is. The column's take the pointer: on one, its clock stands still, and a
 -- click sends it away, then runs its headline's `onClick` if it has one (ANN-R20), under securecallfunction so a
--- Module's failure is reported, not raised; a Shift-drag moves the column instead (ANN-R98).
+-- Module's failure is reported, not raised; a Shift-drag moves the column instead, which the pointer on one says until
+-- the column has been moved (ANN-R98).
 ---@param form PagleAnnouncementForm
 ---@return PagleAnnouncementFrame
 local function acquire(form)
@@ -2312,9 +2512,11 @@ local function acquire(form)
 		frame:SetScript("OnEnter", function(self)
 			if self.display then
 				ns.lanes:Pause(self.display)
+				showMoveHint(self)
 			end
 		end)
 		frame:SetScript("OnLeave", function(self)
+			hideMoveHint(self)
 			if self.display then
 				ns.lanes:Resume(self.display)
 			end
@@ -2470,6 +2672,7 @@ local function hide(display, atOnce)
 	if movingColumn == frame then
 		endColumnMove()
 	end
+	hideMoveHint(frame)
 	frame.display, frame.drawnRuler, frame.moved = nil, nil, nil
 	ns.StopMotion(frame)
 	-- A composed style's layers stop looping as their toast goes (ANN-R82), and the splash's crest as it goes (LED-R153).

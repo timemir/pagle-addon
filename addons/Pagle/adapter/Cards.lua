@@ -8,9 +8,10 @@ end
 
 -- The cards on the client (announcements.md › Session summary, › Write-up, › UI): logic/Cards.lua over
 -- PagleDB.global, the projection machinery's idle hook and the lanes' empty state, drawing each card centre-screen
--- until the Angler moves it with a Shift-drag (ANN-R102), closed with its button, its corner's close mark or Esc. The look is the announcements art kit's session card
--- (adapter/Art.lua), the same in every toast style: a page torn from the ledger under a leather head with the gilt
--- title, Core's numbers in the Angler's hand, then the rows on the page's ruled lines.
+-- until the Angler moves it with a Shift-drag (ANN-R102), closed with its button, its corner's close mark or Esc. The
+-- look is the announcements art kit's session card (adapter/Art.lua), the same in every toast style: a page torn from
+-- the ledger under a leather head with the gilt title, Core's numbers in the Angler's hand, then the rows on the
+-- page's ruled lines.
 local L = ns.L
 
 -- The card frame's global name: UISpecialFrames takes names, and Esc hides the frames it lists.
