@@ -231,6 +231,78 @@ describe("a toast in a composed toast style", function()
 	end)
 
 	it(
+		"hangs a stamp that doesn't fit beside the kicker in a second row under the style's own, its plate's height and"
+			.. " 4 lower, ending before the Coins and the name line ending before it (#582, ANN-R80, ANN-R82)",
+		function()
+			local loaded, M = composedCore()
+			equip(loaded, STORM)
+			local cast = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
+			-- A kicker 26 letters long, at the fake's 6 a letter, leaves the first row room for one plate of two.
+			M:RaiseMoment({
+				rung = "toast",
+				kind = "spec",
+				title = "New Species of the Far Sea",
+				text = "Nightfin Snapper of the Misty Sea, the big one",
+				cast = cast,
+			})
+			M:RaiseMoment({ rung = "nod", kind = "spec", title = "Rank up", cast = cast, coins = 5 })
+			M:RaiseMoment({ rung = "nod", kind = "spec", title = "New here", cast = cast })
+			loaded.client.advance(0)
+
+			local toast = loaded.ns.announcementFrames.toast
+			local rung = artOf(loaded, STORM, "toast")
+			local spec =
+				loaded.ns.ToastStampArt(loaded.ns.ToastStyleOf(STORM), loaded.ns.ToastPage(toast.display.announcement))
+			local kickerRight = rung.text.x + toast.title:GetWidth()
+			local rows = {}
+			for i = 1, 2 do
+				local stamp = toast.stamps[i]
+				local _, _, _, x, y = toast.pivots[i]:GetPoint()
+				rows[i] =
+					{ text = stamp.label:GetText(), left = x - stamp.width / 2, right = x + stamp.width / 2, y = -y }
+				assert(rows[i].left >= kickerRight + 10, rows[i].text .. " reaches the kicker")
+			end
+			assert.are.same({ "RANK UP", "NEW HERE" }, { rows[1].text, rows[2].text })
+			assert.is_true(near(spec.x + spec.w, rows[1].right) and near(spec.y + spec.h / 2, rows[1].y))
+			assert.is_true(near(rows[1].y + spec.h + 4, rows[2].y))
+			-- The second row hangs as low as the Coins stand, so it ends 4 before their amount as it draws.
+			local amountLeft = math.min(rung.amt.x, rung.amt.x + rung.amt.w - toast.coins.label:GetStringWidth())
+			assert.is_true(rows[2].y + spec.h / 2 > math.min(rung.amt.y, rung.coin.y))
+			assert.is_true(near(amountLeft - 4, rows[2].right))
+			-- The name line's room ends 8 before the second row, and its clip with it (ANN-R101).
+			loaded.client.update(7.1)
+			assert(toast.nameScroll and toast.nameScroll > 0, "the name scrolls")
+			assert.is_true(near(rows[2].left - 8, rung.text.x - 4 + toast.nameClip:GetWidth()))
+		end
+	)
+
+	it(
+		"keeps a ruled toast's stamps to one row in a style whose second row would reach down to the ruler's numbers"
+			.. " (#582, ANN-R22, ANN-R82)",
+		function()
+			local loaded, M = composedCore()
+			-- The Deep Lure's plate is 41 tall: a second row would end 73 down, past its ruler's numbers.
+			equip(loaded, DEEP)
+			local cast = ("%s-%d-0"):format(PLAYER_GUID, SERVER_TIME)
+			M:RaiseMoment({
+				rung = "toast",
+				kind = "spec",
+				title = "Size record of the Far Sea",
+				text = "Nightfin Snapper",
+				cast = cast,
+				ruler = { old = 30, new = 34, unit = "length", label = "Decent" },
+			})
+			M:RaiseMoment({ rung = "nod", kind = "spec", title = "New variety", cast = cast })
+			loaded.client.advance(0)
+
+			local toast = loaded.ns.announcementFrames.toast
+			local _, _, _, _, first = toast.pivots[1]:GetPoint()
+			local _, _, _, _, record = toast.recordPivot:GetPoint()
+			assert.are.equal(first, record)
+		end
+	)
+
+	it(
 		"stands still in its resting frame with Animations off: every sprite as the kit drew it, but the lightning,"
 			.. " which only flashes, unseen (ANN-R82, SET-R30)",
 		function()
