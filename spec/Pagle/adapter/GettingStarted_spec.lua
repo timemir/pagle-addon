@@ -243,6 +243,55 @@ describe("The Settings root's Getting started section (ONB-R81, SET-R10)", funct
 		assert(lineRight < buttonLeft, "the line runs under the button")
 	end)
 
+	it(
+		"keeps the Field guide's line 120 wide, cutting a long label short first, never to a bare ellipsis (SET-R10)",
+		function()
+			local loaded = ready()
+			local label = "Feldführer für Anglerinnen und Angler"
+			loaded.ns.L.SETTINGS_FIELD_GUIDE = label
+			loaded.ns.L.SETTINGS_SHOW_ME_AROUND = "Zeig mir noch einmal alles"
+
+			local row = rowNamed(loaded, label)
+			local name = textOn(row.frame, label)
+			local _, labelEnd = span(name)
+			local lineLeft, lineRight = span(textOn(row.frame, loaded.ns.L.SETTINGS_FIELD_GUIDE_LINE))
+			local buttonLeft = span(shown(row.frame, "Button"))
+
+			assert.is_false(name:CanWordWrap())
+			assert(name:GetWidth() > 0 and name:GetWidth() < #label * 6, "the label isn't cut short")
+			assert(labelEnd < lineLeft, "the line starts under the label")
+			assert(lineRight - lineLeft >= 120, "the line is narrower than 120")
+			assert(lineRight < buttonLeft, "the line runs under the button")
+		end
+	)
+
+	it("holds the First evening list's count within the row, wrapping before its right edge (SET-R10)", function()
+		local loaded = ready()
+		loaded.ns.L.SETTINGS_EVENING_LINE =
+			"{done:0} von {total:0} erledigt, und der Rest wartet noch auf dich am Wasser"
+
+		local row = rowNamed(loaded, "First evening list")
+		local count = textOn(row.frame, "0 von 5 erledigt, und der Rest wartet noch auf dich am Wasser")
+		local left, right = span(count)
+
+		assert.is_true(count:CanWordWrap())
+		assert.are.equal(2, count:GetMaxLines())
+		assert(right <= 540, "the count runs past the row's right edge")
+		assert(left >= span(shown(row.frame, "CheckButton")), "the count starts under the checkbox")
+	end)
+
+	it(
+		"sets Margin notes' checkbox by its own label alone when the First evening list isn't offered (SET-R10)",
+		function()
+			local loaded = ready({ BUILD_ENTRY, castEntry(SERVER_TIME - 4000) })
+			loaded.ns.L.SETTINGS_EVENING = "Lista de la Primera tarde, la de siempre, la de toda la vida"
+
+			local check = span(shown(rowNamed(loaded, "Margin notes").frame, "CheckButton"))
+
+			assert.are.equal(150, check)
+		end
+	)
+
 	it("widens a button to its caption, measured, keeping its right edge (SET-R10, SET-R11)", function()
 		local loaded = ready()
 		local caption = "Enséñamelo todo otra vez, por favor"

@@ -268,17 +268,61 @@ describe("the client faces' glyphs (CORE-R9)", function()
 		assert.are_not.same({}, holding(spanish.ns.L, MIDDLE_DOT))
 	end)
 
-	it("swap the guillemets, which no zhCN or zhTW face has, for the arrows' ASCII", function()
-		for _, client in ipairs({ "zhCN", "zhTW" }) do
-			local loaded = withModules("enUS", client)
+	for _, setting in ipairs({ "enUS", "esES", "deDE" }) do
+		it("leave no guillemet, which no zhCN or zhTW face has, in any string drawn in " .. setting, function()
+			for _, client in ipairs({ "zhCN", "zhTW" }) do
+				local loaded = withModules(setting, client)
 
-			assert.are.equal("Next >", loaded.ns.L.GUIDE_NEXT, client)
-			assert.are.equal("< back", loaded.namespaces.Pagle_Ledger.L.JOURNAL_BACK, client)
-			for _, addon in ipairs({ "Pagle", unpack(MODULES) }) do
-				assert.are.same({}, holding(loaded.namespaces[addon].L, "\194\171"), addon)
-				assert.are.same({}, holding(loaded.namespaces[addon].L, "\194\187"), addon)
+				assert.are.equal(setting, loaded.env.Pagle.GetLanguage())
+				for _, addon in ipairs({ "Pagle", unpack(MODULES) }) do
+					assert.are.same({}, holding(loaded.namespaces[addon].L, "\194\171"), addon)
+					assert.are.same({}, holding(loaded.namespaces[addon].L, "\194\187"), addon)
+				end
 			end
+		end)
+	end
+
+	it("draw a guillemet standing apart, an arrow, as the arrow's ASCII there", function()
+		for _, client in ipairs({ "zhCN", "zhTW" }) do
+			local english = withModules("enUS", client)
+			local german = withModules("deDE", client)
+
+			assert.are.equal("Next >", english.ns.L.GUIDE_NEXT, client)
+			assert.are.equal("< back", english.namespaces.Pagle_Ledger.L.JOURNAL_BACK, client)
+			assert.are.equal(">", english.namespaces.Pagle_Ledger.L.HOME_ANGLER_MARK, client)
+			assert.are.equal("> Toast", english.ns.L.PREVIEW_TOAST, client)
+			assert.are.equal(
+				"Zieh jetzt Angelhut, Handschuhe und Rute an und drück dann den Knopf. Das geht auch später unter "
+					.. "Einstellungen > Angeln.",
+				german.namespaces.Pagle_QoL.L.GUIDE_SAVE_SMALL,
+				client
+			)
 		end
+	end)
+
+	it("draw guillemets that hold words, quotation marks either way round, as the curly quotes there", function()
+		for _, client in ipairs({ "zhCN", "zhTW" }) do
+			local german = withModules("deDE", client)
+
+			assert.are.equal("\226\128\156{riddle}\226\128\157", german.namespaces.Pagle_Ledger.L.ENTRY_RIDDLE, client)
+			assert(
+				german.ns.L.SETTINGS_CLOCK_TOOLTIP:find(" \226\128\156Wie im Spiel\226\128\157 nutzt ", 1, true),
+				client
+			)
+		end
+		local loaded = withModules("enUS", "zhCN")
+		local L = {
+			SPANISH = "Usa \194\171Como en el juego\194\187 y \194\171otra\194\187.",
+			MIXED = "Ajustes \194\187 \194\171Pesca\194\187",
+			PSEUDO = "[Next \194\187]",
+		}
+
+		assert.is_true(loaded.env.Pagle.ApplyClientGlyphs(L))
+		assert.are.same({
+			SPANISH = "Usa \226\128\156Como en el juego\226\128\157 y \226\128\156otra\226\128\157.",
+			MIXED = "Ajustes > \226\128\156Pesca\226\128\157",
+			PSEUDO = "[Next >]",
+		}, L)
 	end)
 
 	it("change nothing on koKR, whose 2002 faces have every character the strings use", function()

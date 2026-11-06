@@ -109,6 +109,26 @@ describe("the binding field's words in a longer language (ONB-R40)", function()
 		assert.is_true(leftOf(note) >= swap.capX + 128 + 12 - 0.01)
 		assert.are.same({}, bounds.overflows(swap))
 	end)
+
+	it("sets a note still over two lines at its least size on two, which the client ends with an ellipsis", function()
+		local loaded, swap = field("PAGLE_SWAP_GEAR", "Umziehen")
+		local note = swap.note
+		-- three lines of words at every size, as the client measures them with no line cap; two with the cap, as it
+		-- counts only the lines it draws
+		local caps = {}
+		note.GetStringHeight = function(self)
+			caps[#caps + 1] = self:GetMaxLines()
+			return (self:GetMaxLines() > 0 and 2 or 3) * 14
+		end
+		loaded.ns.L.GUIDE_BIND_DEFAULT = ("Standard: nichts belegt, jede Taste ist frei wählbar. "):rep(3)
+
+		swap:Refresh()
+
+		-- measured at every size from 13 down to the least, 10.5, each with no cap; then capped at two lines
+		assert.are.same({ 0, 0, 0, 0, 0 }, caps)
+		assert.are.equal("PagleArtFace_italic_10_5", note.fontObject.name)
+		assert.are.equal(2, note:GetMaxLines())
+	end)
 end)
 
 describe("the binding field's states (ONB-R40)", function()

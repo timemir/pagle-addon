@@ -223,6 +223,31 @@ describe("A tracker block in the Curio Shop expansion's frames", function()
 		)
 	end
 
+	it(
+		"keeps the astrolabe's rings clear: the header's right text ends beside them, the lines start under them (STA-R88)",
+		function()
+			local block, ns = newBlock()
+			local look = ns.TRACKER_LOOKS.astrolabe
+			block:SetFrame(look)
+			block:SetLines(LINES)
+
+			-- the rings reach from 195 across and down to 73 (TrackerFrames2's frame-astrolabe): the header's right text
+			-- ends 6 short of them, and the first line starts at 70, its words 3 below that
+			local header, first = block.rows[1], block.rows[2]
+			assert.are.same({ "TOPRIGHT", header, "TOPLEFT", 189, -6 }, { header.right:GetPoint(1) })
+			assert.are.equal(-70, select(3, first:GetPoint(1)))
+			-- under them, the lines take the frame's width to its 16-unit inset
+			local watch = block.rows[4]
+			assert.are.same({ "TOPRIGHT", watch, "TOPLEFT", 246, -4 }, { watch.right:GetPoint(1) })
+			-- every other frame has no ornament: its first line straight under the header
+			for _, name in ipairs({ "greenbar", "chalkboard", "tidegauge", "abacus" }) do
+				local other = ns.TRACKER_LOOKS[name]
+				block:SetFrame(other)
+				assert.are.equal(-(other.top + 26), select(3, block.rows[2]:GetPoint(1)), name)
+			end
+		end
+	)
+
 	it("cuts each tile of a tiled middle from the middle's top, at its own span (STA-R88)", function()
 		local block, ns = newBlock()
 		local look = ns.TRACKER_LOOKS.greenbar

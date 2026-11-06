@@ -514,21 +514,38 @@ local function drawMark(line, x, dial, group, paper)
 	line.dot:SetPoint("TOPLEFT", x, -8)
 end
 
--- How a tracker line's name and label (a countdown, a group's word) share its room when both don't fit (drawLines,
--- CORE-R8: a Language's words run longer than English's). The shorter keeps its whole width when that is no more than
--- half the room, and the other takes the rest; when both are longer than half, each takes the room in proportion to
--- its own width, so neither the Hunt's name nor its time is cut to nothing.
+--- How two neighbouring words, `a` and `b` units wide whole, share `room` (CORE-R8: a Language's words run longer
+--- than English's): both whole when they fit; else the shorter keeps its whole width when that is no more than half
+--- the room, and the other takes the rest; when both are longer than half, each takes the room in proportion to its
+--- own width, so neither is cut to nothing. A room under nothing (two posts closer than their gap) counts as none.
+--- A tracker line's name and label share it so (labelShare), and the Wagers ladder's neighbouring post titles.
+---@param room number
+---@param a number
+---@param b number
+---@return number a
+---@return number b
+function ns.ShareRoom(room, a, b)
+	room = math.max(0, room)
+	if a + b <= room then
+		return a, b
+	elseif a <= room / 2 then
+		return a, room - a
+	elseif b <= room / 2 then
+		return room - b, b
+	end
+	local first = room * a / (a + b)
+	return first, room - first
+end
+
+-- How a tracker line's name and label (a countdown, a group's word) share its room when both don't fit (drawLines):
+-- the label's share by ns.ShareRoom.
 ---@param room number
 ---@param name number the name's whole width
 ---@param label number the label's whole width
 ---@return number labelWidth
 local function labelShare(room, name, label)
-	if name + label <= room or label <= room / 2 then
-		return label
-	elseif name <= room / 2 then
-		return room - name
-	end
-	return room * label / (name + label)
+	local _, labelWidth = ns.ShareRoom(room, name, label)
+	return labelWidth
 end
 
 -- Where the last part of a second line starts in `text`, at its last `join` ("5 / 12" after " · "), or nil with none.
@@ -547,8 +564,9 @@ end
 
 -- Fits a second line `line.second` (its text set, in its look's font `sub`) to `room`: a little smaller first, as any
 -- long line; still too long, its last part, after the last join, is drawn whole by `line.count` at the right (CORE-R8:
--- a Language's words run longer, and the count is what the line is for), and `line.second` keeps its whole text but
--- only the room before it, so the client cuts it short with an ellipsis just where the count starts. Only widths
+-- a Language's words run longer, and the last part is what the line ends on: a Hunt's progress count, "5 / 12", or
+-- with no count, TRACKER_HERE; a run's closest Hunt, "<Hunt>: 2 / 4"), and `line.second` keeps its whole text but
+-- only the room before it, so the client cuts it short with an ellipsis just where that part starts. Only widths
 -- change: what it reads is the line's text. The two share the room as a line's name and label do (labelShare).
 ---@param line HuntsTrackerLineButton
 ---@param text string

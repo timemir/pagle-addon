@@ -203,7 +203,9 @@ describe("A tracker block in one of the Curio Shop expansion's frames (TKB-R125)
 		tin = { "frame-tin", { 16, 16, 16, 30 }, { top = 20, foot = 44, mode = "stretch" } },
 		-- the kit's top inset of 10 is under the bobber's red band, 14 deep: the words start under both
 		bobber = { "frame-bobber", { 16, 50, 24, 14 }, { top = 44, foot = 14, mode = "stretch" } },
-		embers = { "frame-embers", { 16, 16, 14, 22 }, { top = 16, foot = 30, mode = "stretch" } },
+		-- the kit's right inset of 16 put its crack, from 243 of the art's 262 across, under the words' right end: the
+		-- frame reaches 28 past them
+		embers = { "frame-embers", { 16, 28, 14, 22 }, { top = 16, foot = 30, mode = "stretch" } },
 	}
 
 	-- The pieces of `frame` shown, each as { its anchor's x and y, its width and height, its texture coordinates }.
@@ -291,6 +293,19 @@ describe("A tracker block in one of the Curio Shop expansion's frames (TKB-R125)
 		assert.are.same({ "TOPLEFT", 18, -16 }, block.rows[1].text.points[1])
 		-- the header's words 16 down in place of No frame's 4, and 30 under the last line in place of 4
 		assert.are.equal(plain + (16 - 4) + (30 - 4), block:GetHeight())
+	end)
+
+	it("keeps the Live Embers' crack, down its top right corner, clear of the words' right end (TKB-R125)", function()
+		local block, ns = newBlock()
+		local style = ns.TRACKER_STYLES.embers
+		block:SetFrame(style)
+		block:SetLines(LINES)
+
+		-- the frame is stretched across to the words' width and its reach; the crack starts 243 of the art's 262 in
+		local width = ns.TRACKER_WIDTH + style.left + style.right
+		assert.are.equal(width, block.frame.width)
+		local crack = 243 / 262 * width
+		assert(crack >= style.left + ns.TRACKER_WIDTH + 4, "the crack runs under the words' right end")
 	end)
 
 	it(

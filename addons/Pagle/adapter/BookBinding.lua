@@ -42,6 +42,12 @@ local RIBBON_SHOWN = RIBBON_UP + RIBBON_TAIL
 local FILLET_INSET, FILLET_WIDTH, FILLET_ALPHA = 5, 1.6, 0.75
 -- The band's and the features' alpha through a dip, at the material's `alpha`: never below 0.4 (BIND-R20).
 local BAND_FLOOR = 0.4
+-- The strip's wash (BIND-R18): a cover's or a whole book's material is its own art, a pattern of motifs (Pathfinder's
+-- compass roses, Winner's Brocade's coins and fish), and a book's strip sets its words on it. The wash lays the
+-- material's base colour over the strip, so the motifs sink under the words and the strip reads as the cover's own
+-- leather: the look's band tone, which is that base brightened 1.9 times (logic/Bindings.lua's EXPANSION_BAND_GAIN),
+-- taken back down by WASH_SHADE, at WASH_ALPHA. A tinted leather is one colour already and takes none.
+local WASH_SHADE, WASH_ALPHA = 0.53, 0.6
 -- An untinted material: white.
 local WHITE = { 1, 1, 1 }
 -- The four corners, in the order the corner pieces are made: the top-left piece mirrored across for the even ones,
@@ -60,6 +66,7 @@ local EDGES = {
 ---@field frame Frame
 ---@field fill Texture           -- the material
 ---@field vignette Texture
+---@field wash Texture?          -- the strip's wash, over the material, on a book with a strip (options.strip)
 ---@field band Frame             -- six levels over the book's frame
 ---@field bandPieces Texture[]   -- its nine slices' eight pieces
 ---@field gilt Frame             -- one level over the band: the features
@@ -246,6 +253,15 @@ function Regions:Dress(look)
 	for _, edge in ipairs(self.rules) do
 		edge:SetShown(look.tooled == true)
 	end
+	local wash = self.wash
+	if wash then
+		-- a material that is its own art: no tint, a band tone (BIND-R18)
+		local base = look.tint == nil and look.band or nil
+		if base then
+			wash:SetColorTexture(base[1] * WASH_SHADE, base[2] * WASH_SHADE, base[3] * WASH_SHADE, WASH_ALPHA)
+		end
+		wash:SetShown(base ~= nil)
+	end
 	self.giltCorner:SetShown(look.giltCorner == true)
 	dressCorners(self, look)
 	-- a whole book's parts (BIND-R14–R16)
@@ -298,6 +314,9 @@ end
 ---@param alpha number
 function Regions:Dim(alpha)
 	self.fill:SetAlpha(alpha)
+	if self.wash then
+		self.wash:SetAlpha(alpha)
+	end
 	self.band:SetAlpha(BAND_FLOOR + (1 - BAND_FLOOR) * alpha)
 end
 
@@ -307,10 +326,16 @@ function Regions:IsShown()
 	return self.frame:IsVisible()
 end
 
--- Makes the regions of a book's binding on `frame` (BIND-R10–R12), drawing nothing yet: the material and the vignette
--- on its BACKGROUND layer, the band on a frame six levels up, the features on one a level above that.
+--- A book's binding options as Core's books shell gives them: also how far down its strip of words reaches, from the
+--- frame's top (BOOK-R12), for the wash under them (BIND-R18).
+---@class PagleBookBindingStripOptions: PagleBookBindingOptions
+---@field strip number?
+
+-- Makes the regions of a book's binding on `frame` (BIND-R10–R12, BIND-R18), drawing nothing yet: the material, the
+-- vignette and, with a strip, its wash on its BACKGROUND layer, the band on a frame six levels up, the features on one
+-- a level above that.
 ---@param frame Frame
----@param options PagleBookBindingOptions
+---@param options PagleBookBindingStripOptions
 ---@return PagleBookBindingRegions
 local function newRegions(frame, options)
 	local sublevel = options.sublevel or 0
@@ -322,6 +347,15 @@ local function newRegions(frame, options)
 	local sprite = book.sprites.vignette
 	cut(vignette, book, sprite.x + 1, sprite.y + 1, sprite.w - 2, sprite.h - 2)
 	vignette:SetAllPoints(fill)
+	-- the strip's wash, from the material's top to the strip's foot, across it (BIND-R18)
+	local wash
+	if options.strip then
+		wash = frame:CreateTexture(nil, "BACKGROUND", nil, sublevel + 2)
+		wash:SetPoint("TOPLEFT", INSET, -INSET)
+		wash:SetPoint("TOPRIGHT", -INSET, -INSET)
+		wash:SetHeight(options.strip - INSET)
+		wash:Hide()
+	end
 	local band = CreateFrame("Frame", nil, frame)
 	band:SetAllPoints()
 	band:SetFrameLevel(frame:GetFrameLevel() + 6)
@@ -357,6 +391,7 @@ local function newRegions(frame, options)
 		frame = frame,
 		fill = fill,
 		vignette = vignette,
+		wash = wash,
 		band = band,
 		bandPieces = bandPieces(band),
 		gilt = gilt,

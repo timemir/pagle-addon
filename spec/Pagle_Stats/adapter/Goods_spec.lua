@@ -293,7 +293,8 @@ local KIT = {
 	["stats.trackerframe.astrolabe"] = {
 		sprite = "frame-astrolabe",
 		rect = { 1122, 2 },
-		insets = { 16, 60, 16, 16 },
+		-- goods.json's right inset was 60, kept clear all the way down for the rings; the lines start under them instead
+		insets = { 16, 16, 16, 16 },
 		slice = { 68, 20 },
 		inks = { "f0cd6a", "eef0ff", "a8b0d8", "f0cd6a" },
 	},
