@@ -400,6 +400,34 @@ describe("a tracker frame's preview", function()
 	)
 
 	it(
+		"keeps a corner ornament in the frame's kept top, so a tall block's stretched middle never draws it down onto the first line (HNT-R123)",
+		function()
+			local loaded = loggedIn()
+			local ns = loaded.ns
+
+			-- each ornament's foot in the art, measured from TrackerFrames2's texels at 2 (units down the frame): the
+			-- map scrap's compass reaches 58.5, the spyglass's orb 50.5 and the ribbon's coin 52. The middle is
+			-- stretched to the block (ns.SetVSlice), so any of it under the top's slice drew lower the taller the
+			-- block: with the Pagle Wagers block above the Hunts, the compass ran onto the first run's time.
+			for key, foot in pairs({ mapscrap = 58.5, spyglass = 50.5, wagerribbon = 52 }) do
+				local look = ns.TRACKER_FRAMES[FRAME .. "." .. key]
+				assert(look.slice.top >= foot, key .. "'s top keeps only " .. look.slice.top .. " of its ornament")
+				-- the lines still start under it, at its foot less the 3 units a line's words sit below its top
+				assert(look.clear >= math.floor(foot) - 3, key)
+			end
+		end
+	)
+
+	it("sets the bounty poster's header clear under the rule below WANTED (HNT-R123)", function()
+		local loaded = loggedIn()
+		local look = loaded.ns.TRACKER_FRAMES[FRAME .. ".bounty"]
+		-- the rule is drawn 34 to 35.5 units down the frame (TrackerFrames2's texels 80 to 83 at 2, less the sprite's
+		-- 6-unit margin); the header's words started at 36, right under it, and the rule ran through "Pagles Wetten"
+		assert(look.titleY >= 35.5 + 4, "the header starts at " .. look.titleY)
+		assert.are.equal(look.titleY + 20, look.first)
+	end)
+
+	it(
 		"keeps a second line's count whole when the line is too long: the words before it cut short, its text whole (CORE-R8)",
 		function()
 			local loaded = loggedIn()

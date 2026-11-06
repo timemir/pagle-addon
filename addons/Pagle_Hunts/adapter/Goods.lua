@@ -140,6 +140,10 @@ local LOOKS = ns.TRACKER_LOOKS
 -- spyglass's orb (50) and the wager ribbon's coin (54). The first lines start under it (`clear`, its foot less the 3
 -- units a line's words sit below its top), so it is never drawn over a time, and the lines take the frame's width to
 -- the 16-unit inset, where before the spyglass and the ribbon kept 46 clear all the way down for it.
+-- The frame's top is kept as drawn and its middle stretched to the block (ns.SetVSlice), so each top slice reaches
+-- past its ornament's foot (58.5, 50.5 and 52 in the art): with less, the ornament's foot was stretched down with the
+-- middle, the further the taller the block, and with the Pagle Wagers block above the Hunts the compass sat on the
+-- first run's time. The bounty poster's header sits 4 units under the rule below WANTED (34 to 35.5), not right on it.
 ---@type { key: string, insets: number[], slice: number[], inks: string[], paper: boolean, clear: number? }[]
 local KIT_FRAMES = {
 	{
@@ -152,14 +156,14 @@ local KIT_FRAMES = {
 	{
 		key = "mapscrap",
 		insets = { 16, 16, 14, 14 },
-		slice = { 50, 24 },
+		slice = { 59, 24 },
 		inks = { "5a1a0a", "2a1a0a", "6a5030", "9a2a1a" },
 		paper = true,
 		clear = 55,
 	},
 	{
 		key = "bounty",
-		insets = { 18, 18, 36, 14 },
+		insets = { 18, 18, 40, 14 },
 		slice = { 42, 20 },
 		inks = { "5a1a0a", "2a1406", "6a4a24", "9a2a1a" },
 		paper = true,
@@ -167,7 +171,7 @@ local KIT_FRAMES = {
 	{
 		key = "spyglass",
 		insets = { 16, 16, 18, 18 },
-		slice = { 48, 14 },
+		slice = { 51, 14 },
 		inks = { "f0cd6a", "e8eef8", "a8b4c8", "f0cd6a" },
 		paper = false,
 		clear = 47,
@@ -175,7 +179,7 @@ local KIT_FRAMES = {
 	{
 		key = "wagerribbon",
 		insets = { 16, 16, 14, 22 },
-		slice = { 48, 26 },
+		slice = { 52, 26 },
 		inks = { "f0cd6a", "f4e8ff", "c0a8d8", "f0cd6a" },
 		paper = false,
 		clear = 51,
