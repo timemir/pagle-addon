@@ -787,6 +787,32 @@ describe("a set's page, drawn (HNT-R66)", function()
 		assert.are.same({ mode = "entry", set = "fixture_dusk", hunt = "fixture_snapper" }, place(run))
 	end)
 
+	it("sets each group's heading over the now line, so the line never strikes through its note (HNT-R62)", function()
+		local run = start()
+		-- deDE's notes: in the client the now line, 2 hours along the ruler, ran through "Stunden" and "braucht"
+		run.ns.L.GROUP_NOTES.soon = "öffnet innerhalb von 3 Stunden"
+		run.ns.L.GROUP_NOTES.later = "öffnet danach oder braucht mehr Fertigkeit"
+		run.ns.board:Open({ mode = "board" })
+
+		local view = assert(run.ns.TimelinePageView(run.ns.board:Page(place(run), "left")))
+		local line = view.nowLine.points[1][4] -- across the page, as the ruler places it
+		local crossing = 0
+		for group, heading in pairs(view.headings) do
+			if heading:IsShown() then
+				-- each heading's frame is over the frame the now line is drawn on, and its words on its top layer
+				local over = view.nowLine:GetParent()
+				assert(heading:GetFrameLevel() > over:GetFrameLevel(), group .. "'s heading is under the now line")
+				assert.are.equal("OVERLAY", heading.note.layer)
+				-- the note's words reach across the line in the fake (17 + the name + 8 on, 6 px a byte)
+				local from = 17 + heading.label:GetStringWidth() + 8
+				if from < line and from + heading.note:GetStringWidth() > line then
+					crossing = crossing + 1
+				end
+			end
+		end
+		assert(crossing >= 1, "no note reaches the now line, so this checks nothing")
+	end)
+
 	it(
 		"sets a long heading a size down at a time, to 16, before the client cuts it short (HNT-R66, CORE-R8)",
 		function()

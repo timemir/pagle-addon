@@ -233,12 +233,16 @@ local function newRow(view)
 	return row
 end
 
--- A group's heading: its dot, its name in small caps, its note in italic, and its row count in the margin.
+-- A group's heading: its dot, its name in small caps, its note in italic, and its row count in the margin. It is set
+-- over the frame the now line is drawn on, so the line passes under its words: a language's longer note ("öffnet
+-- danach oder braucht mehr Fertigkeit", and English's "Later" note too) reaches across the line, which ran through
+-- it. The rows stay under the line, their bars crossing it as the kit drew them.
 ---@param view TimelinePageView
 ---@return TimelineHeadingView
 local function newHeading(view)
 	local fonts = ns.BoardFonts()
 	local heading = CreateFrame("Frame", nil, view.content) --[[@as TimelineHeadingView]]
+	heading:SetFrameLevel(view.nowLine:GetParent():GetFrameLevel() + 1)
 	heading:SetSize(view.width, HEADING_GAP + HEADING_HEIGHT)
 	heading.dot = ns.NewBoardDot(heading, 9)
 	heading.dot:SetPoint("TOPLEFT", 0, -(HEADING_GAP + 6))
