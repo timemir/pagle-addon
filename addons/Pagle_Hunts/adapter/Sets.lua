@@ -84,6 +84,8 @@ end
 local KICKER_Y, NAME_Y, TITLE_Y = 3, 19, 55
 local SEAL, SEAL_RIGHT, SEAL_DOWN, TITLE_WIDTH, BAR_WIDTH, BAR_Y = 88, 38.5, 40, 227, 238, 118
 local HEADING_GAP, RULE_GAP, LIST_GAP = 18, 18, 10
+-- The least size the name is set at beside the seal before the client cuts it (the kit's is 29).
+local NAME_FLOOR = 22
 local LINE_HEIGHT, TICK_ROOM, DOT, DOT_STEP, GAP = 28, 22, 1.5, 4, 8
 
 ---@class SetsLine: Button
@@ -238,6 +240,8 @@ local function drawSetPage(page, place)
 	local data = ns.BoardSetPage(place.set --[[@as string]])
 	view.seal:SetSeal(data.seal or ns.L.SEAL_NOT_YET, data.seal ~= nil, data.sealLines)
 	view.name:SetText(data.name)
+	-- a long name (a language's longer ones, "Heimische Gewässer") a size down at a time before it is cut
+	ns.FitText(view.name, "print", 29, page:GetWidth() - 2 * SEAL_RIGHT, NAME_FLOOR, nil, LOOK.title)
 	view.titleLine:SetText(data.titleLine)
 	local y = put(view.titleLine, TITLE_Y, view.titleLine:GetStringHeight())
 	y = math.max(y + GAP, BAR_Y)

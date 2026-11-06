@@ -569,6 +569,28 @@ describe("opening the board (HNT-R67)", function()
 		assert.is_true(has(texts, "opens after that, or needs more skill"))
 	end)
 
+	it("sets a row's long name a size down at a time before the client cuts it in its column (HNT-R63)", function()
+		local run = start()
+		wait(run, untilRealm(14))
+		run.ns.L["hunt.fixture_snapper.name"] = "Forelle im Morgengrauen" -- 23 bytes: 138 in the fake, under 140
+		run.ns.L["hunt.fixture_oddity.name"] = "Seltsames in der Dämmerung" -- 27 bytes: 162, over it
+		run.ns.ToggleBoard()
+
+		local names = {}
+		for _, row in ipairs(drawnRows(run)) do
+			names[row.huntID] = row.name
+		end
+		local fonts = run.ns.BoardFonts()
+		-- a name that fits keeps the kit's size, in the kit's column
+		assert.are.same({ fonts.text, 140 }, { names.fixture_snapper.fontObject, names.fixture_snapper.width })
+		-- a longer one keeps its words, set smaller, in the column (the fake's widths don't shrink with it, so it is
+		-- set at the floor, and the client cuts it there)
+		local oddity = names.fixture_oddity
+		assert.are.equal("Seltsames in der Dämmerung", oddity.text)
+		assert.are.equal(run.ns.ArtFont("print", 11.5), oddity.fontObject)
+		assert.are.equal(140, oddity.width)
+	end)
+
 	it("reads HNT-R67's line on the right page when every Hunt is hidden, and selects none", function()
 		local run = start({ list = extraList({ ALWAYS }) })
 		useState(run, { extra_1 = reached(1) })

@@ -591,4 +591,24 @@ describe("a set's page on the board (HNT-R66)", function()
 		assert.are.equal(page:GetWidth(), bar.width + 10 + bar.label.width)
 		assert.are.same({ "LEFT", bar, "RIGHT", 10, 1 }, bar.label.points[1])
 	end)
+
+	it("sets a long set name a size down at a time beside the seal before the client cuts it (HNT-R66)", function()
+		local run = start()
+		run.ns.L["set.fixture_dusk.name"] = "Heimische Gewässer am Ufer" -- 27 bytes: 162 in the fake
+		opened(run, { mode = "set", set = "fixture_dusk" })
+
+		local page = rightPage(run)
+		local name = page.view.name
+		local room = page:GetWidth() - 2 * 38.5 -- short of the seal
+		assert(#name:GetText() * 6 <= room, "the name fits in the fake")
+		assert.are.same({ run.ns.BoardFonts().title, room }, { name.fontObject, name.width })
+
+		run = start()
+		run.ns.L["set.fixture_dusk.name"] = "Heimische Gewässer an den stillen Ufern im Norden" -- 50 bytes: 300, past it
+		opened(run, { mode = "set", set = "fixture_dusk" })
+		name = rightPage(run).view.name
+		assert.are.equal("Heimische Gewässer an den stillen Ufern im Norden", name:GetText()) -- never rewritten
+		assert.are_not.equal(run.ns.BoardFonts().title, name.fontObject)
+		assert.are.equal(room, name.width)
+	end)
 end)

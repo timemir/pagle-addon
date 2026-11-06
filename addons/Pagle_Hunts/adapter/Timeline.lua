@@ -45,6 +45,8 @@ local NOW_Y = 44
 -- Each row's columns: the medallion, the name, the track (190 units for the ruler's 24 hours), and the margin label
 -- right-aligned at the list's edge.
 local NAME_X, NAME_WIDTH, TRACK_X, TRACK_WIDTH, MARGIN_INSET = 31, 140, 178, 190, 3
+-- The least size a long name is set at in its column before the client cuts it short (the kit's is 14).
+local NAME_FLOOR = 11.5
 local ROW_HEIGHT, HEADING_GAP, HEADING_HEIGHT = 26, 10, 24
 -- A row's slide to its new place, and a Hunt just opened's flash under its row: up to 22% by 0.35 s, gone by 1.4 s.
 local SLIDE, FLASH, FLASH_PEAK = 0.4, 1.4, 0.22
@@ -562,6 +564,8 @@ local function drawRow(view, drawn, row, y, slide)
 	end
 	drawn.pin:SetShown(row.pinned)
 	drawn.name:SetText(row.name)
+	-- a long name (a language's longer ones, "Seltsames in der Dämmerung") a size down at a time before it is cut
+	ns.FitText(drawn.name, "print", 14, NAME_WIDTH, NAME_FLOOR, nil, LOOK.ink)
 	for i, bar in ipairs(row.bars) do
 		local barView = ns.BoardPooled(drawn.bars, i, function()
 			return ns.NewBoardTimelineBar(drawn.track)
