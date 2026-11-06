@@ -589,6 +589,7 @@ local function fitSecond(line, text, sub, room, wrap)
 	line.second:SetWidth(0) -- measured unbounded
 	local whole = line.second:GetStringWidth()
 	if wrap and whole > room then
+		setFont(line.second, sub) -- at the look's own size, now it has two lines
 		line.count:Hide()
 		line.second:SetWordWrap(true)
 		line.second:SetMaxLines(2)

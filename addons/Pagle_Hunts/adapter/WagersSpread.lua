@@ -624,6 +624,7 @@ local function layPostTitles(ladder, marks)
 	local at, widths = {}, {}
 	for i, mark in ipairs(marks) do
 		at[i] = i == n and width or RAIL_X + RAIL_W * mark.at
+		ns.SetWagerInk(ladder.titles[i], "postTitle") -- measured at the kit's size, whatever the last draw set it at
 		widths[i] = ns.FitWagerText(ladder.titles[i], mark.title, POST_TITLE_W)
 	end
 	local function leftShare(i)

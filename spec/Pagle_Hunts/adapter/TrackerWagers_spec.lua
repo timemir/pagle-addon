@@ -457,12 +457,13 @@ describe("the tracker's Pagle Wagers lines in a longer language (HNT-R175, CORE-
 		assert.are.equal("1 von 3 ersten Kerben · Raw Mithril Head Trout: 0 / 1", second) -- never rewritten
 		local room = look.right - look.x - 14
 		assert(#second * 6 > room, "the second line fits in the fake, so this checks nothing")
-		-- whole, over two lines, the line a line taller; no count split off it
-		assert.are.same({ true, 2, room, false }, {
+		-- whole, over two lines at the look's own size, the line a line taller; no count split off it
+		assert.are.same({ true, 2, room, false, r.ns.ArtFont(look.sub[1], look.sub[2], look.sub[4]) }, {
 			line.second:CanWordWrap(),
 			line.second:GetMaxLines(),
 			line.second.width,
 			line.count:IsShown(),
+			line.second.fontObject,
 		})
 		assert(line.height > look.step, "the line keeps its one-line height")
 		local next = r.ns.tracker.wagers.lines[2]

@@ -895,6 +895,16 @@ describe("the spread in a longer language (CORE-R8)", function()
 			end
 		end
 		assert(narrowed > 0, "no title is narrowed in the fake, so this checks nothing")
+
+		-- drawn again, each title is measured at the kit's size again: the same sizes and widths
+		local before = {}
+		for i, title in ipairs(ladder.titles) do
+			before[i] = { title.fontObject, title.width }
+		end
+		r.ns.board:Draw()
+		for i, title in ipairs(ladder.titles) do
+			assert.are.same(before[i], { title.fontObject, title.width }, "title " .. i)
+		end
 	end)
 end)
 
