@@ -94,8 +94,12 @@ value = "Volumen general"
 en = "Master volume"
 
 [SETTINGS_AUDIO_MASTER_TOOLTIP]
-value = "Sube o baja todos los canales. No se puede desactivar: no oirías el chapoteo."
-en = "Turns every channel up or down. It has no Off: you'd miss the splash."
+value = "Marcado, ajusta el volumen general mientras pescas. No se puede desactivar ni bajar del 10%, para que sigas oyendo el chapoteo."
+en = "Ticked, sets the master volume while you fish. It has no Off and goes no lower than 10%, so you still hear the splash."
+
+[SETTINGS_AUDIO_CHANNEL_TOOLTIP]
+value = "Marcado, ajusta este canal mientras pescas: al 0% se desactiva. Sin marcar, lo deja como está."
+en = "Ticked, sets this channel while you fish: at 0% it's off. Unticked, leaves it as it is."
 
 [SETTINGS_AUDIO_EFFECTS]
 value = "Efectos"

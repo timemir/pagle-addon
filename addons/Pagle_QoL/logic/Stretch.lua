@@ -124,6 +124,10 @@ ns.AUDIO_CHANNELS = {
 	{ key = "dialog", volume = "Sound_DialogVolume", enable = "Sound_EnableDialog" },
 }
 
+--- The lowest master volume the audio mix sets, in percent, so the bobber's splash stays audible: master has no Off
+--- (QOL-R62, qol.md › Tunables).
+ns.AUDIO_MASTER_MIN = 10
+
 --- The CVar that picks the game's sound output device, by its index in the client's list from 0 (QOL-R68).
 ns.OUTPUT_DEVICE_CVAR = "Sound_OutputDriverIndex"
 
@@ -135,19 +139,24 @@ local function volumeValue(percent)
 	return (("%.2f"):format(percent / 100):gsub("0$", ""))
 end
 
--- The rows of one channel under its setting (QOL-R62): "keep" leases nothing; "off" its on/off CVar at 0; a volume
--- in percent its on/off CVar at 1, then its volume. Master leases only a volume.
+-- The rows of one channel under its setting (QOL-R62): unticked leases nothing; ticked at 0% its on/off CVar at 0
+-- (Off); ticked at a volume its on/off CVar at 1, then its volume. Master has no on/off CVar: it leases only its
+-- volume, never below AUDIO_MASTER_MIN.
 ---@param channel { key: string, volume: string, enable: string? }
----@param level PagleQoLAudioLevel
+---@param level PagleQoLAudioChannel
 ---@param rows PagleQoLLeaseRow[] added to in place
 local function addChannel(channel, level, rows)
-	if type(level) == "number" then
-		if channel.enable then
-			rows[#rows + 1] = { name = channel.enable, value = "1" }
-		end
-		rows[#rows + 1] = { name = channel.volume, value = volumeValue(level) }
-	elseif level == "off" and channel.enable then
+	if not level.on then
+		return
+	end
+	local volume = level.volume
+	if not channel.enable then
+		rows[#rows + 1] = { name = channel.volume, value = volumeValue(math.max(ns.AUDIO_MASTER_MIN, volume)) }
+	elseif volume <= 0 then
 		rows[#rows + 1] = { name = channel.enable, value = "0" }
+	else
+		rows[#rows + 1] = { name = channel.enable, value = "1" }
+		rows[#rows + 1] = { name = channel.volume, value = volumeValue(volume) }
 	end
 end
 
@@ -177,11 +186,8 @@ function ns.AudioMixRows(audio, devices)
 	local defaults = ns.DB_DEFAULTS.profile.audio
 	local rows = {}
 	for _, channel in ipairs(ns.AUDIO_CHANNELS) do
-		local level = audio[channel.key]
-		if level == nil then
-			level = defaults[channel.key]
-		end
-		addChannel(channel, level --[[@as PagleQoLAudioLevel]], rows)
+		local level = audio[channel.key] or defaults[channel.key]
+		addChannel(channel, level --[[@as PagleQoLAudioChannel]], rows)
 	end
 	local index = ns.OutputDeviceIndex(devices, audio.device or defaults.device)
 	if index then
@@ -202,18 +208,21 @@ ns.AUTO_LOOT_LEASE = {
 	{ name = "autoLootDefault", value = "1" },
 }
 
---- A channel's setting in the Fishing audio mix (QOL-R62): "keep" (Don't change), "off", or a volume in percent.
----@alias PagleQoLAudioLevel "keep"|"off"|integer
+--- A channel's setting in the Fishing audio mix (QOL-R62): whether the mix changes it, and its volume in percent; 0 is
+--- Off for a channel with an on/off CVar.
+---@class PagleQoLAudioChannel
+---@field on boolean
+---@field volume number
 
 --- `PagleQoLDB.profile.audio` (qol.md › Data). A level or device it lacks is its default (ns.DB_DEFAULTS).
 ---@class PagleQoLAudioSettings
 ---@field on boolean
 ---@field background boolean
----@field master PagleQoLAudioLevel?
----@field effects PagleQoLAudioLevel?
----@field music PagleQoLAudioLevel?
----@field ambience PagleQoLAudioLevel?
----@field dialog PagleQoLAudioLevel?
+---@field master PagleQoLAudioChannel?
+---@field effects PagleQoLAudioChannel?
+---@field music PagleQoLAudioChannel?
+---@field ambience PagleQoLAudioChannel?
+---@field dialog PagleQoLAudioChannel?
 ---@field device string? the output device's name, or "" for Don't change (QOL-R68)
 
 --- The While you fish settings a stretch's lease follows: `PagleQoLDB.profile`'s `audio` and `autoLoot` (qol.md ›

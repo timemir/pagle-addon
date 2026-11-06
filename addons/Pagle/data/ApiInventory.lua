@@ -69,6 +69,7 @@ ns.API_INVENTORY = {
 	"CreateFrame",
 	"CreateKeyChordStringUsingMetaKeyState",
 	"CreateSettingsButtonInitializer",
+	"CreateSettingsCheckboxSliderInitializer",
 	"CreateSettingsListSectionHeaderInitializer",
 	"ERR_FISH_ESCAPED",
 	"Enum",

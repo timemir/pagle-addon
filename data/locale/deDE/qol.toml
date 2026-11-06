@@ -110,8 +110,12 @@ value = "Gesamtlautstärke"
 en = "Master volume"
 
 [SETTINGS_AUDIO_MASTER_TOOLTIP]
-value = "Macht alle Kanäle lauter oder leiser. Ein Aus gibt es nicht: Sonst hörst du das Platschen nicht."
-en = "Turns every channel up or down. It has no Off: you'd miss the splash."
+value = "Angehakt: stellt die Gesamtlautstärke beim Angeln ein. Ein Aus gibt es nicht, und sie geht nicht unter 10%, damit du das Platschen noch hörst."
+en = "Ticked, sets the master volume while you fish. It has no Off and goes no lower than 10%, so you still hear the splash."
+
+[SETTINGS_AUDIO_CHANNEL_TOOLTIP]
+value = "Angehakt: stellt diesen Kanal beim Angeln ein, bei 0% ist er aus. Nicht angehakt: bleibt er, wie er ist."
+en = "Ticked, sets this channel while you fish: at 0% it's off. Unticked, leaves it as it is."
 
 [SETTINGS_AUDIO_EFFECTS]
 value = "Effekte"

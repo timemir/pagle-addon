@@ -41,6 +41,9 @@ stds.wow = {
 		-- The Settings tree (CORE-R40–R44, settings.md); the Settings table itself is in stds.wow_variables.
 		"CreateSettingsListSectionHeaderInitializer",
 		"CreateSettingsButtonInitializer",
+		-- A checkboxSlider row (CORE-R42): Blizzard_Settings_Shared/Blizzard_SettingControls.lua at the forever 1.60.1
+		-- commit, as Controls' mouse speed row uses it.
+		"CreateSettingsCheckboxSliderInitializer",
 		C_KeyBindings = { fields = { "GetBindingIndex" } },
 		-- A Module's keybinding row, Core's own (SET-R20, #120): it binds as Blizzard's KeybindListener does, through
 		-- the client's SetBinding, SaveBindings and GetCurrentBindingSet (GetBindingKey and GetBindingText are listed

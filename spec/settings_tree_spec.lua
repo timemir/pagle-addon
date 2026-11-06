@@ -19,6 +19,7 @@ local KINDS = {
 	SettingsListSectionHeaderTemplate = "header",
 	SettingsCheckboxControlTemplate = "checkbox",
 	SettingsSliderControlTemplate = "slider",
+	SettingsCheckboxSliderControlTemplate = "checkboxSlider",
 	SettingsDropdownControlTemplate = "dropdown",
 	SettingButtonControlTemplate = "button",
 	PagleSettingsKeyRowTemplate = "keybinding",
@@ -33,9 +34,6 @@ local TRANSLATIONS_LINE = "Translations: Español by fmartingr"
 -- What the Locale headers give the tree rather than a string table: that line, and the Language dropdown's choice for
 -- each listed Locale the enUS client renders, by its own name (SET-R10 row 9b).
 local FROM_HEADERS = { [TRANSLATIONS_LINE] = true, ["Deutsch"] = true, ["Español"] = true }
--- What the client gives the tree rather than a string table: the fake client's one sound output device, in the
--- Output device dropdown (QOL-R68).
-local FROM_CLIENT = { ["System Default"] = true }
 
 local TIPS = {
 	fieldReport = "Copy what you've caught that Pagle's data doesn't know yet, and paste it into the issue form.",
@@ -53,7 +51,9 @@ local TIPS = {
 	lures = "A press before a cast applies a lure when none is on.",
 	clams = "One clam per press, never during a cast.",
 	audio = "While you fish: each channel and the output device as set below. Put back afterwards.",
-	master = "Turns every channel up or down. It has no Off: you'd miss the splash.",
+	master = "Ticked, sets the master volume while you fish. It has no Off and goes no lower than 10%, so you still hear "
+		.. "the splash.",
+	channel = "Ticked, sets this channel while you fish: at 0% it's off. Unticked, leaves it as it is.",
 	device = "Plays the game's sound here while you fish. The sound drops out for a moment as it switches, at the start "
 		.. "and at the end.",
 	autoLoot = "Only while you fish. Skipped if you already have auto-loot on.",
@@ -150,11 +150,11 @@ local EXPECTED = {
 			{ "checkbox", "Open clams between Casts", tip = TIPS.clams, of = "QoL" },
 			{ "header", "While you fish", of = "QoL" },
 			{ "checkbox", "Fishing audio mix", tip = TIPS.audio, of = "QoL" },
-			{ "dropdown", "Master volume", under = true, tip = TIPS.master, of = "QoL" },
-			{ "dropdown", "Effects", under = true, of = "QoL" },
-			{ "dropdown", "Music", under = true, of = "QoL" },
-			{ "dropdown", "Ambience", under = true, of = "QoL" },
-			{ "dropdown", "Dialog", under = true, of = "QoL" },
+			{ "checkboxSlider", "Master volume", under = true, tip = TIPS.master, range = { 10, 100, 5 }, of = "QoL" },
+			{ "checkboxSlider", "Effects", under = true, tip = TIPS.channel, range = { 0, 100, 5 }, of = "QoL" },
+			{ "checkboxSlider", "Music", under = true, tip = TIPS.channel, range = { 0, 100, 5 }, of = "QoL" },
+			{ "checkboxSlider", "Ambience", under = true, tip = TIPS.channel, range = { 0, 100, 5 }, of = "QoL" },
+			{ "checkboxSlider", "Dialog", under = true, tip = TIPS.channel, range = { 0, 100, 5 }, of = "QoL" },
 			{ "dropdown", "Output device", under = true, tip = TIPS.device, of = "QoL" },
 			{ "checkbox", "Keep sound when the game is in the background", under = true, of = "QoL" },
 			{ "checkbox", "Auto-loot while fishing", tip = TIPS.autoLoot, of = "QoL" },
@@ -403,8 +403,8 @@ local function asWritten(loaded, row, top)
 	else
 		out = { KINDS[template] or template, initializer:GetName() }
 	end
-	if out[1] == "slider" then
-		local options = initializer:GetData().options
+	if out[1] == "slider" or out[1] == "checkboxSlider" then
+		local options = initializer:GetData().options or initializer:GetData().sliderOptions
 		local min, max = options.minValue, options.maxValue
 		out.range = { min, max, (max - min) / options.steps }
 	end
@@ -589,6 +589,13 @@ end
 local function setRow(loaded, name, label, value)
 	local settings = loaded.client.settings
 	local row = settings.rowNamed(settings.show(settings.page(name)), label)
+	-- A checkboxSlider's value is { checkbox, slider }: its box and its slider, each through its own setting.
+	local data = row.initializer:GetData()
+	if data.cbSetting then
+		data.cbSetting:SetValue(value[1])
+		data.sliderSetting:SetValue(value[2])
+		return
+	end
 	row.initializer:GetSetting():SetValue(value)
 end
 
@@ -634,24 +641,53 @@ describe("Greying in the Settings tree", function()
 		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
 	end)
 
-	it("greys the audio mix's rows while it is off (SET-R20, SET-R31)", function()
+	it("greys the audio mix's rows while it is off, hiding its channels' rows (SET-R20, SET-R31)", function()
 		local loaded = ready()
+		local CHANNELS = { "Master volume", "Effects", "Music", "Ambience", "Dialog" }
+		local function shown()
+			local labels = {}
+			for _, row in ipairs(loaded.client.settings.show(loaded.client.settings.page("Fishing"))) do
+				labels[row.initializer:GetName() or ""] = true
+			end
+			return labels
+		end
 
 		setRow(loaded, "Fishing", "Fishing audio mix", false)
-		assert.are.same({
-			"Swap gear",
-			"Lure",
-			"Master volume",
-			"Effects",
-			"Music",
-			"Ambience",
-			"Dialog",
-			"Output device",
-			"Keep sound when the game is in the background",
-		}, greyedOn(loaded, "Fishing"))
+		assert.are.same(
+			{ "Swap gear", "Lure", "Output device", "Keep sound when the game is in the background" },
+			greyedOn(loaded, "Fishing")
+		)
+		for _, label in ipairs(CHANNELS) do
+			assert(shown()[label] == nil, label)
+		end
 
 		setRow(loaded, "Fishing", "Fishing audio mix", true)
 		assert.are.same({ "Swap gear", "Lure" }, greyedOn(loaded, "Fishing"))
+		for _, label in ipairs(CHANNELS) do
+			assert(shown()[label] == true, label)
+		end
+	end)
+
+	it("greys a channel's slider while its box is unticked, keeping its volume, and shows it (SET-R31)", function()
+		local loaded = ready()
+		local settings = loaded.client.settings
+		local function row(label)
+			return settings.rowNamed(settings.show(settings.page("Fishing")), label)
+		end
+
+		assert.are.same({ false, true, "100%" }, {
+			row("Master volume").frame.sliderEnabled,
+			row("Effects").frame.sliderEnabled,
+			row("Effects").frame.valueLabel,
+		})
+		assert.are.equal("Off", row("Music").frame.valueLabel)
+
+		setRow(loaded, "Fishing", "Effects", { false, 40 })
+		assert.are.same({ false, 40, "40%" }, {
+			row("Effects").frame.sliderEnabled,
+			row("Effects").frame.sliderValue,
+			row("Effects").frame.valueLabel,
+		})
 	end)
 
 	it("greys Button position while the next-action button is off (SET-R20)", function()
@@ -746,6 +782,8 @@ local function valuesOn(loaded, name)
 	for _, row in ipairs(loaded.client.settings.show(loaded.client.settings.page(name))) do
 		if row.initializer:GetSetting() then
 			values[row.initializer:GetName()] = row.frame.value
+		elseif row.initializer:GetData().cbSetting then
+			values[row.initializer:GetName()] = { row.frame.value, row.frame.sliderValue }
 		end
 	end
 	return values
@@ -815,15 +853,20 @@ describe("Each page's Defaults button", function()
 			)
 			assert.are.same({
 				"Ambience",
+				"Ambience",
 				"Auto-loot while fishing",
 				"Cast with",
 				"Dialog",
+				"Dialog",
+				"Effects",
 				"Effects",
 				"Fishing audio mix",
 				"Keep sound when the game is in the background",
 				"Lure",
 				"Lures",
 				"Master volume",
+				"Master volume",
+				"Music",
 				"Music",
 				"Open clams between Casts",
 				"Output device",
@@ -906,12 +949,11 @@ describe("Each page's Defaults button", function()
 				["Lures"] = "one",
 				["Lure"] = qol.LURES[2].itemID,
 				["Open clams between Casts"] = false,
-				["Fishing audio mix"] = false,
-				["Master volume"] = "60",
-				["Effects"] = "off",
-				["Music"] = "30",
-				["Ambience"] = "keep",
-				["Dialog"] = "100",
+				["Master volume"] = { true, 60 },
+				["Effects"] = { true, 0 },
+				["Music"] = { true, 30 },
+				["Ambience"] = { false, 55 },
+				["Dialog"] = { true, 100 },
 				["Output device"] = "System Default",
 				["Keep sound when the game is in the background"] = true,
 				["Auto-loot while fishing"] = false,
@@ -919,11 +961,13 @@ describe("Each page's Defaults button", function()
 			}) do
 				setRow(loaded, "Fishing", label, value)
 			end
+			-- Last: with the mix off, its channels' rows are hidden (SET-R31).
+			setRow(loaded, "Fishing", "Fishing audio mix", false)
 
 			loaded.client.settings.defaults(loaded.client.settings.page("Fishing"))
 
-			-- qol.md › Settings' defaults: Both, Best I have, the Shiny Bauble, on, on, Don't change, 100%, Off, Off, Off,
-			-- Don't change, off, on, on.
+			-- qol.md › Settings' defaults: Both, Best I have, the Shiny Bauble, on, on, master unticked at 100%, effects
+			-- ticked at 100%, music, ambience and dialog ticked at 0% (Off), Don't change, off, on, on.
 			assert.are.same({
 				["Cast with"] = "both",
 				["Fishing set"] = 3,
@@ -931,11 +975,11 @@ describe("Each page's Defaults button", function()
 				["Lure"] = 6529,
 				["Open clams between Casts"] = true,
 				["Fishing audio mix"] = true,
-				["Master volume"] = "keep",
-				["Effects"] = "100",
-				["Music"] = "off",
-				["Ambience"] = "off",
-				["Dialog"] = "off",
+				["Master volume"] = { false, 100 },
+				["Effects"] = { true, 100 },
+				["Music"] = { true, 0 },
+				["Ambience"] = { true, 0 },
+				["Dialog"] = { true, 0 },
 				["Output device"] = "",
 				["Keep sound when the game is in the background"] = false,
 				["Auto-loot while fishing"] = true,
@@ -1077,9 +1121,9 @@ describe("Each page's Defaults button", function()
 	end)
 end)
 
--- The rows whose options are names the client gives, not Pagle's strings: the lure table's items (QOL-R54) and the
--- character's own equipment sets (QOL-R40).
-local CLIENT_NAMED = { Lure = true, ["Fishing set"] = true }
+-- The rows whose options are names the client gives, not Pagle's strings: the lure table's items (QOL-R54), the
+-- character's own equipment sets (QOL-R40) and the sound output devices (QOL-R68).
+local CLIENT_NAMED = { Lure = true, ["Fishing set"] = true, ["Output device"] = true }
 
 -- Every string the tree draws, each once, as { text, what }: `what` is "row" for a row's label, a button's caption
 -- and a header (SET-R2), "text" for everything else (tooltips, notes, paragraphs, status texts, keys, values and
@@ -1361,11 +1405,7 @@ describe("The Settings tree's strings", function()
 		local tables = stringTables(loads)
 		local stray = {}
 		for _, string in ipairs(strings) do
-			if
-				not FROM_HEADERS[string.text]
-				and not FROM_CLIENT[string.text]
-				and not fromStringTable(string.text, tables)
-			then
+			if not FROM_HEADERS[string.text] and not fromStringTable(string.text, tables) then
 				stray[#stray + 1] = string.text
 			end
 		end

@@ -368,15 +368,20 @@ describe("The audio mix and auto-loot leases", function()
 		return fake, client, loaded
 	end
 
-	-- Sets a QoL row on the Fishing page by its label, a checkbox ticked or a dropdown's value, as the native row's
-	-- set does.
+	-- Sets a QoL row on the Fishing page by its label, as the native row's set does: a checkbox ticked, a dropdown's
+	-- value, or a channel's box and then its slider's volume, given as { ticked, volume }.
 	---@param fake FakePagle
 	---@param label string
-	---@param value boolean|string
+	---@param value boolean|string|table
 	local function tick(fake, label, value)
 		for _, row in ipairs(assert(fake.settingsPage("fishing"))) do
 			if row.label == label then
-				row.setting.set(value)
+				if type(value) == "table" then
+					row.setting.set(value[1])
+					row.setting.slider.set(value[2])
+				else
+					row.setting.set(value)
+				end
 				return
 			end
 		end
@@ -686,44 +691,47 @@ describe("The audio mix and auto-loot leases", function()
 			end
 		)
 
-		it("leases each channel's state: Don't change, Off, or its switch on and its volume (QOL-R62)", function()
-			local fake, client = startDevices(function(fake)
-				tick(fake, "Master volume", "60")
-				tick(fake, "Effects", "keep")
-				tick(fake, "Music", "30")
-				tick(fake, "Ambience", "off")
-				tick(fake, "Dialog", "100")
-			end)
+		it(
+			"leases each channel's state: nothing unticked, Off at 0%, or its switch on and its volume (QOL-R62)",
+			function()
+				local fake, client = startDevices(function(fake)
+					tick(fake, "Master volume", { true, 60 })
+					tick(fake, "Effects", { false, 100 })
+					tick(fake, "Music", { true, 30 })
+					tick(fake, "Ambience", { true, 0 })
+					tick(fake, "Dialog", { true, 100 })
+				end)
 
-			fake.fire("CastStarted")
+				fake.fire("CastStarted")
 
-			-- The player's music and dialog are on already, so only their volumes change.
-			assert.are.same(
-				{
-					"set Sound_MasterVolume 0.6",
-					"set Sound_MusicVolume 0.3",
-					"set Sound_EnableAmbience 0",
-					"set Sound_DialogVolume 1.0",
-				},
-				callsOn(
-					client,
-					"Sound_MasterVolume",
-					"Sound_EnableSFX",
-					"Sound_SFXVolume",
-					"Sound_EnableMusic",
-					"Sound_MusicVolume",
-					"Sound_EnableAmbience",
-					"Sound_AmbienceVolume",
-					"Sound_EnableDialog",
-					"Sound_DialogVolume"
+				-- The player's music and dialog are on already, so only their volumes change.
+				assert.are.same(
+					{
+						"set Sound_MasterVolume 0.6",
+						"set Sound_MusicVolume 0.3",
+						"set Sound_EnableAmbience 0",
+						"set Sound_DialogVolume 1.0",
+					},
+					callsOn(
+						client,
+						"Sound_MasterVolume",
+						"Sound_EnableSFX",
+						"Sound_SFXVolume",
+						"Sound_EnableMusic",
+						"Sound_MusicVolume",
+						"Sound_EnableAmbience",
+						"Sound_AmbienceVolume",
+						"Sound_EnableDialog",
+						"Sound_DialogVolume"
+					)
 				)
-			)
-			fake.fireGameEvent("PLAYER_LOGOUT")
-			assert.are.same("0.8", client.cvars.Sound_MasterVolume)
-			assert.are.same("0.25", client.cvars.Sound_MusicVolume)
-			assert.are.same("1", client.cvars.Sound_EnableMusic)
-			assert.are.same("0.75", client.cvars.Sound_DialogVolume)
-		end)
+				fake.fireGameEvent("PLAYER_LOGOUT")
+				assert.are.same("0.8", client.cvars.Sound_MasterVolume)
+				assert.are.same("0.25", client.cvars.Sound_MusicVolume)
+				assert.are.same("1", client.cvars.Sound_EnableMusic)
+				assert.are.same("0.75", client.cvars.Sound_DialogVolume)
+			end
+		)
 
 		it(
 			"switches to the chosen device and restarts the sound system, then back with a restart at the end (QOL-R68)",
@@ -816,7 +824,7 @@ describe("The audio mix and auto-loot leases", function()
 					fake.fire("CastStarted")
 					client.cvarCalls = {}
 
-					tick(fake, "Effects", "50")
+					tick(fake, "Effects", { true, 50 })
 
 					assert.are.same({ "set Sound_SFXVolume 0.5" }, client.cvarCalls)
 					assert.are.same(
@@ -835,17 +843,17 @@ describe("The audio mix and auto-loot leases", function()
 				end
 			)
 
-			it("turns a channel from a volume to Off and to Don't change at once (QOL-R65)", function()
+			it("turns a channel from a volume to 0% (Off), then unticks it, at once (QOL-R65)", function()
 				local fake, client = startDevices(function(fake)
-					tick(fake, "Music", "30")
+					tick(fake, "Music", { true, 30 })
 				end)
 				fake.fire("CastStarted")
 
-				tick(fake, "Music", "off")
+				tick(fake, "Music", { true, 0 })
 				assert.are.equal("0", client.cvars.Sound_EnableMusic)
 				assert.are.equal("0.25", client.cvars.Sound_MusicVolume)
 
-				tick(fake, "Music", "keep")
+				tick(fake, "Music", { false, 0 })
 				assert.are.equal("1", client.cvars.Sound_EnableMusic)
 			end)
 

@@ -42,11 +42,11 @@ describe("QoL's Fishing page with FakePagle", function()
 			{ "QoL", "checkbox", "Open clams between Casts", false },
 			{ "QoL", "header", "While you fish", false },
 			{ "QoL", "checkbox", "Fishing audio mix", false },
-			{ "QoL", "dropdown", "Master volume", true },
-			{ "QoL", "dropdown", "Effects", true },
-			{ "QoL", "dropdown", "Music", true },
-			{ "QoL", "dropdown", "Ambience", true },
-			{ "QoL", "dropdown", "Dialog", true },
+			{ "QoL", "checkboxSlider", "Master volume", true },
+			{ "QoL", "checkboxSlider", "Effects", true },
+			{ "QoL", "checkboxSlider", "Music", true },
+			{ "QoL", "checkboxSlider", "Ambience", true },
+			{ "QoL", "checkboxSlider", "Dialog", true },
 			{ "QoL", "dropdown", "Output device", true },
 			{ "QoL", "checkbox", "Keep sound when the game is in the background", true },
 			{ "QoL", "checkbox", "Auto-loot while fishing", false },
@@ -325,15 +325,19 @@ describe("QoL's Fishing page with FakePagle", function()
 			fake.login()
 
 			local defaults, values = {}, {}
-			for _, label in ipairs({ "Master volume", "Effects", "Music", "Ambience", "Dialog", "Output device" }) do
-				defaults[#defaults + 1] = rowOf(fake, label).default
-				values[#values + 1] = rowOf(fake, label).get()
+			for _, label in ipairs({ "Master volume", "Effects", "Music", "Ambience", "Dialog" }) do
+				local row = rowOf(fake, label)
+				defaults[#defaults + 1] = { row.default, row.slider.default }
+				values[#values + 1] = { row.get(), row.slider.get() }
 			end
 
-			assert.are.same({ "keep", "100", "off", "off", "off", "" }, defaults)
+			-- Master unticked; effects ticked at 100%; music, ambience and dialog ticked at 0%, Off: 1.1's mix.
+			assert.are.same({ { false, 100 }, { true, 100 }, { true, 0 }, { true, 0 }, { true, 0 } }, defaults)
 			assert.are.same(defaults, values)
+			assert.are.equal("", rowOf(fake, "Output device").default)
+			assert.are.equal("", rowOf(fake, "Output device").get())
 			assert.are.equal(
-				"Turns every channel up or down. It has no Off: you'd miss the splash.",
+				"Ticked, sets the master volume while you fish. It has no Off and goes no lower than 10%, so you still hear the splash.",
 				rowOf(fake, "Master volume").tooltip
 			)
 			assert.are.equal(
@@ -341,7 +345,11 @@ describe("QoL's Fishing page with FakePagle", function()
 				rowOf(fake, "Output device").tooltip
 			)
 			for _, label in ipairs({ "Effects", "Music", "Ambience", "Dialog" }) do
-				assert(rowOf(fake, label).tooltip == nil, label)
+				assert(
+					rowOf(fake, label).tooltip
+						== "Ticked, sets this channel while you fish: at 0% it's off. Unticked, leaves it as it is.",
+					label
+				)
 			end
 		end
 	)
@@ -782,11 +790,11 @@ describe("ns.AddSettings with a fake store", function()
 			audio = {
 				on = true,
 				background = false,
-				master = "keep",
-				effects = 100,
-				music = "off",
-				ambience = "off",
-				dialog = "off",
+				master = { on = false, volume = 100 },
+				effects = { on = true, volume = 100 },
+				music = { on = true, volume = 0 },
+				ambience = { on = true, volume = 0 },
+				dialog = { on = true, volume = 0 },
 				device = "",
 			},
 			autoLoot = true,
@@ -937,53 +945,52 @@ describe("ns.AddSettings with a fake store", function()
 		assert.is_false(rows["Keep sound when the game is in the background"].isEnabled())
 	end)
 
-	it("offers each channel Don't change, Off and 10% to 100% in steps of 10; master no Off (QOL-R62)", function()
+	it("gives each channel a 0% to 100% slider in steps of 5, master's from 10%, 0% reading Off (QOL-R62)", function()
 		local rows = addRows()
-		local levels = {}
-		for level = 10, 100, 10 do
-			levels[#levels + 1] = { value = tostring(level), label = level .. "%" }
-		end
-		local function with(...)
-			local options = { ... }
-			for _, level in ipairs(levels) do
-				options[#options + 1] = level
-			end
-			return options
-		end
-		local keep, off = { value = "keep", label = "Don't change" }, { value = "off", label = "Off" }
 
-		assert.are.same(with(keep), rows["Master volume"].options())
 		for _, label in ipairs({ "Effects", "Music", "Ambience", "Dialog" }) do
-			assert.are.same(with(keep, off), rows[label].options(), label)
+			local slider = rows[label].slider
+			assert.are.same({ 0, 100, 5 }, { slider.min, slider.max, slider.step }, label)
+			assert.are.same({ "Off", "5%", "100%" }, { slider.format(0), slider.format(5), slider.format(100) }, label)
 		end
+		local master = rows["Master volume"].slider
+		assert.are.same({ 10, 100, 5 }, { master.min, master.max, master.step })
+		assert.are.same({ "10%", "100%" }, { master.format(10), master.format(100) })
 	end)
 
-	it(
-		"stores a channel's volume as a number, Don't change and Off as words, through the lease change (QOL-R62, QOL-R65)",
-		function()
-			local rows, profile, calls = addRows()
+	it("stores a channel's box and volume in the profile, each through the lease change (QOL-R62, QOL-R65)", function()
+		local rows, profile, calls = addRows()
 
-			rows["Master volume"].set("60")
-			rows["Effects"].set("off")
-			rows["Music"].set("30")
-			rows["Ambience"].set("keep")
+		rows["Master volume"].set(true)
+		rows["Master volume"].slider.set(60)
+		rows["Effects"].slider.set(0)
+		rows["Music"].slider.set(30)
+		rows["Ambience"].set(false)
 
-			assert.are.same({ 60, "off", 30, "keep", "off" }, {
-				profile.audio.master,
-				profile.audio.effects,
-				profile.audio.music,
-				profile.audio.ambience,
-				profile.audio.dialog,
-			})
-			assert.are.same({ "60", "off", "30", "keep" }, {
-				rows["Master volume"].get(),
-				rows["Effects"].get(),
-				rows["Music"].get(),
-				rows["Ambience"].get(),
-			})
-			assert.are.same({ { "changeLease" }, { "changeLease" }, { "changeLease" }, { "changeLease" } }, calls)
+		assert.are.same({
+			{ on = true, volume = 60 },
+			{ on = true, volume = 0 },
+			{ on = true, volume = 30 },
+			{ on = false, volume = 0 },
+			{ on = true, volume = 0 },
+		}, {
+			profile.audio.master,
+			profile.audio.effects,
+			profile.audio.music,
+			profile.audio.ambience,
+			profile.audio.dialog,
+		})
+		assert.are.same({ true, 60, false, 30 }, {
+			rows["Master volume"].get(),
+			rows["Master volume"].slider.get(),
+			rows["Ambience"].get(),
+			rows["Music"].slider.get(),
+		})
+		assert.are.equal(5, #calls)
+		for _, call in ipairs(calls) do
+			assert.are.same({ "changeLease" }, call)
 		end
-	)
+	end)
 
 	it("offers Don't change and each output device the client lists now, once each (QOL-R68)", function()
 		local rows, profile, calls = addRows()
@@ -1012,7 +1019,7 @@ describe("ns.AddSettings with a fake store", function()
 		assert.are.equal("USB Headset", rows["Output device"].get())
 	end)
 
-	it("greys every row under the audio mix while it is off, keeping their values (SET-R31)", function()
+	it("turns every row under the audio mix off while it is off, keeping their values (SET-R31)", function()
 		local rows, profile = addRows()
 		local under = { "Master volume", "Effects", "Music", "Ambience", "Dialog", "Output device" }
 		for _, label in ipairs(under) do
@@ -1024,7 +1031,7 @@ describe("ns.AddSettings with a fake store", function()
 		for _, label in ipairs(under) do
 			assert(rows[label].isEnabled() == false, label)
 		end
-		assert.are.equal("100", rows["Effects"].get())
+		assert.are.same({ true, 100 }, { rows["Effects"].get(), rows["Effects"].slider.get() })
 	end)
 
 	it("resets the button's place through the store (QOL-R73)", function()

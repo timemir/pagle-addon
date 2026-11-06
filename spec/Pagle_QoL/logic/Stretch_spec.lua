@@ -394,38 +394,50 @@ describe("QoL's Fishing stretch logic", function()
 			)
 		end)
 
+		-- A channel's setting: ticked or not, at a volume in percent.
+		local function at(on, volume)
+			return { on = on, volume = volume }
+		end
+		local UNTICKED = at(false, 100)
+
 		-- Each case: a channel, its setting, then the rows the mix leases for it (QOL-R62).
 		local CASES = {
-			{ "master", "keep", {} },
-			{ "master", 80, { "Sound_MasterVolume=0.8" } },
-			{ "master", 100, { "Sound_MasterVolume=1.0" } },
-			{ "effects", "keep", {} },
-			{ "effects", "off", { "Sound_EnableSFX=0" } },
-			{ "effects", 50, { "Sound_EnableSFX=1", "Sound_SFXVolume=0.5" } },
-			{ "music", "keep", {} },
-			{ "music", "off", { "Sound_EnableMusic=0" } },
-			{ "music", 30, { "Sound_EnableMusic=1", "Sound_MusicVolume=0.3" } },
-			{ "ambience", "keep", {} },
-			{ "ambience", "off", { "Sound_EnableAmbience=0" } },
-			{ "ambience", 100, { "Sound_EnableAmbience=1", "Sound_AmbienceVolume=1.0" } },
-			{ "dialog", "keep", {} },
-			{ "dialog", "off", { "Sound_EnableDialog=0" } },
-			{ "dialog", 5, { "Sound_EnableDialog=1", "Sound_DialogVolume=0.05" } },
+			{ "master", UNTICKED, {} },
+			{ "master", at(true, 80), { "Sound_MasterVolume=0.8" } },
+			{ "master", at(true, 100), { "Sound_MasterVolume=1.0" } },
+			{ "master", at(true, 0), { "Sound_MasterVolume=0.1" } },
+			{ "effects", UNTICKED, {} },
+			{ "effects", at(false, 0), {} },
+			{ "effects", at(true, 0), { "Sound_EnableSFX=0" } },
+			{ "effects", at(true, 50), { "Sound_EnableSFX=1", "Sound_SFXVolume=0.5" } },
+			{ "music", UNTICKED, {} },
+			{ "music", at(true, 0), { "Sound_EnableMusic=0" } },
+			{ "music", at(true, 30), { "Sound_EnableMusic=1", "Sound_MusicVolume=0.3" } },
+			{ "ambience", UNTICKED, {} },
+			{ "ambience", at(true, 0), { "Sound_EnableAmbience=0" } },
+			{ "ambience", at(true, 100), { "Sound_EnableAmbience=1", "Sound_AmbienceVolume=1.0" } },
+			{ "dialog", UNTICKED, {} },
+			{ "dialog", at(true, 0), { "Sound_EnableDialog=0" } },
+			{ "dialog", at(true, 5), { "Sound_EnableDialog=1", "Sound_DialogVolume=0.05" } },
 		}
 		for _, case in ipairs(CASES) do
 			it(
-				("leases %s for %s set to %s: nothing, its switch off, or its switch on and its volume (QOL-R62)"):format(
+				(
+					"leases %s for %s %s at %d%%: nothing unticked, its switch off at 0, else its switch on and its volume"
+					.. " (QOL-R62)"
+				):format(
 					#case[3] == 0 and "nothing" or table.concat(case[3], ", "),
 					case[1],
-					tostring(case[2])
+					case[2].on and "ticked" or "unticked",
+					case[2].volume
 				),
 				function()
 					local settings = {
-						master = "keep",
-						effects = "keep",
-						music = "keep",
-						ambience = "keep",
-						dialog = "keep",
+						master = UNTICKED,
+						effects = UNTICKED,
+						music = UNTICKED,
+						ambience = UNTICKED,
+						dialog = UNTICKED,
 						device = "",
 					}
 					settings[case[1]] = case[2]
@@ -435,17 +447,13 @@ describe("QoL's Fishing stretch logic", function()
 			)
 		end
 
-		it("never turns master off and never leases Sound_EnableAllSound (QOL-R62)", function()
-			local rows = ns.AudioMixRows(
-				audio({ master = "off", effects = "off", music = 0, ambience = "off", dialog = "off" }),
-				DEVICES
-			)
+		it("never turns master off or below 10%, and never leases Sound_EnableAllSound (QOL-R62)", function()
+			local rows = ns.AudioMixRows(audio({ master = at(true, 5), music = at(true, 0) }), DEVICES)
 
+			assert.are.same("Sound_MasterVolume=0.1", named(rows)[1])
 			for _, row in ipairs(rows) do
-				assert.are_not.equal("Sound_MasterVolume", row.name)
 				assert.are_not.equal("Sound_EnableAllSound", row.name)
 			end
-			assert.are.same({ "Sound_EnableMusic=1", "Sound_MusicVolume=0.0" }, { named(rows)[2], named(rows)[3] })
 		end)
 
 		it("leases the chosen output device by its index from 0, after the channels (QOL-R68)", function()
@@ -461,10 +469,10 @@ describe("QoL's Fishing stretch logic", function()
 				{ "Sound_OutputDriverIndex=0" },
 				named(ns.AudioMixRows(
 					audio({
-						effects = "keep",
-						music = "keep",
-						ambience = "keep",
-						dialog = "keep",
+						effects = UNTICKED,
+						music = UNTICKED,
+						ambience = UNTICKED,
+						dialog = UNTICKED,
 						device = "System Default",
 					}),
 					DEVICES
@@ -493,7 +501,7 @@ describe("QoL's Fishing stretch logic", function()
 
 		it("leases no device and no channel while the audio mix is off (QOL-R62)", function()
 			local rows = ns.LeaseRows(
-				{ audio = audio({ on = false, master = 50, device = "Headset" }), autoLoot = false },
+				{ audio = audio({ on = false, master = at(true, 50), device = "Headset" }), autoLoot = false },
 				DEVICES
 			)
 
@@ -558,7 +566,8 @@ describe("QoL's Fishing stretch logic", function()
 		end)
 
 		it("leases a CVar again when its value changes: Effects from 100% to 50% (QOL-R65)", function()
-			local half = { audio = { on = true, background = true, effects = 50 }, autoLoot = true }
+			local half =
+				{ audio = { on = true, background = true, effects = { on = true, volume = 50 } }, autoLoot = true }
 
 			local lease, restore = ns.LeaseChange(ns.LeaseRows(ON), ns.LeaseRows(half))
 
@@ -567,10 +576,12 @@ describe("QoL's Fishing stretch logic", function()
 		end)
 
 		it(
-			"leases the switch off and restores the volume when a channel goes from a volume to Off (QOL-R65)",
+			"leases the switch off and restores the volume when a channel goes from a volume to 0%, Off (QOL-R65)",
 			function()
-				local half = { audio = { on = true, background = true, music = 50 }, autoLoot = true }
-				local off = { audio = { on = true, background = true, music = "off" }, autoLoot = true }
+				local half =
+					{ audio = { on = true, background = true, music = { on = true, volume = 50 } }, autoLoot = true }
+				local off =
+					{ audio = { on = true, background = true, music = { on = true, volume = 0 } }, autoLoot = true }
 
 				local lease, restore = ns.LeaseChange(ns.LeaseRows(half), ns.LeaseRows(off))
 
@@ -579,8 +590,9 @@ describe("QoL's Fishing stretch logic", function()
 			end
 		)
 
-		it("restores a channel's CVars when it goes to Don't change (QOL-R65)", function()
-			local keep = { audio = { on = true, background = true, effects = "keep" }, autoLoot = true }
+		it("restores a channel's CVars when it's unticked (QOL-R65)", function()
+			local keep =
+				{ audio = { on = true, background = true, effects = { on = false, volume = 100 } }, autoLoot = true }
 
 			local lease, restore = ns.LeaseChange(ns.LeaseRows(ON), ns.LeaseRows(keep))
 

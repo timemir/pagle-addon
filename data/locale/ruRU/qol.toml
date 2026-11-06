@@ -110,8 +110,12 @@ value = "Общая громкость"
 en = "Master volume"
 
 [SETTINGS_AUDIO_MASTER_TOOLTIP]
-value = "Делает громче или тише все каналы. Выключить её нельзя: иначе вы не услышите всплеск."
-en = "Turns every channel up or down. It has no Off: you'd miss the splash."
+value = "Если отмечено, задаёт общую громкость на время рыбалки. Выключить её нельзя, и ниже 10% она не опускается, чтобы вы слышали всплеск."
+en = "Ticked, sets the master volume while you fish. It has no Off and goes no lower than 10%, so you still hear the splash."
+
+[SETTINGS_AUDIO_CHANNEL_TOOLTIP]
+value = "Если отмечено, задаёт этот канал на время рыбалки: при 0% он выключен. Если нет, канал не меняется."
+en = "Ticked, sets this channel while you fish: at 0% it's off. Unticked, leaves it as it is."
 
 [SETTINGS_AUDIO_EFFECTS]
 value = "Эффекты"

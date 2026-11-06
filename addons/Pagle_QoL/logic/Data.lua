@@ -22,17 +22,17 @@ ns.DB_DEFAULTS = {
 		lures = { mode = "best", item = 6529 },
 		-- Open clams between Casts (QOL-R56).
 		clams = true,
-		-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62). Each channel is "keep" (Don't
-		-- change), "off" or a volume in percent, and the output device a name, "" for Don't change (QOL-R68): the
-		-- defaults are the mix 1.1 leased.
+		-- While you fish: what a Fishing stretch leases besides soft-interact (QOL-R62). Each channel is whether the mix
+		-- changes it and its volume in percent, 0 being Off, and the output device a name, "" for Don't change
+		-- (QOL-R68): the defaults are the mix 1.1 leased.
 		audio = {
 			on = true,
 			background = false,
-			master = "keep",
-			effects = 100,
-			music = "off",
-			ambience = "off",
-			dialog = "off",
+			master = { on = false, volume = 100 },
+			effects = { on = true, volume = 100 },
+			music = { on = true, volume = 0 },
+			ambience = { on = true, volume = 0 },
+			dialog = { on = true, volume = 0 },
 			device = "",
 		},
 		autoLoot = true,

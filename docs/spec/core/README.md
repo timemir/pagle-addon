@@ -130,7 +130,7 @@ Terms are used as `CONTEXT.md` defines them. Numbers live in each file's Tunable
   - **Off**: disabled in the AddOns list (this session's state, read with CORE-R16)
   - **Not installed**: `C_AddOns.GetAddOnInfo` reports it missing
 - **CORE-R42** A Module adds options with `M:AddSetting(topic, setting)`, where `topic` is `"fishing"`, `"announcements"` or `"trackers"`. It does this before `ModulesChanged` (CORE-R19); Core builds the pages then. A later call is reported through `geterrorhandler()` and dropped.
-  - A call with a mistake in it raises an error at the caller and adds nothing: an unknown topic or `kind`, a `setting` that isn't a table, a missing `label`, a field its kind requires missing or of the wrong type (`get` and `set` for checkbox, slider and dropdown; `min`, `max` and `step` for a slider; `options` for a dropdown; `onClick` for a button; `binding` for a keybinding; `init` for custom), a button's `caption` that isn't a string, an `id` the Module already used on that page, or a `parent` naming none of its earlier rows there.
+  - A call with a mistake in it raises an error at the caller and adds nothing: an unknown topic or `kind`, a `setting` that isn't a table, a missing `label`, a field its kind requires missing or of the wrong type (`get` and `set` for checkbox, slider, dropdown and checkboxSlider; `min`, `max` and `step` for a slider; `options` for a dropdown; `onClick` for a button; `binding` for a keybinding; `init` for custom; from 1.2.0, `slider` for a checkboxSlider, a table with `get`, `set`, `min`, `max` and `step`), a button's `caption` or a slider's `format` of the wrong type, an `id` the Module already used on that page, or a `parent` naming none of its earlier rows there.
   - On each page, Core's own rows come first. Each Module's rows follow, in `def.order`, under a header with its `def.title`. The header is left out when the Module's first row is a header of its own.
   - A page with no rows isn't registered: Fishing while QoL is off, or Trackers with no tracker Module on.
   - A setting's value lives in the Module's own DB, reached through the setting's `get` and `set`.
@@ -291,16 +291,18 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 
 ```lua
 ---@class PagleSetting
----@field kind "header"|"checkbox"|"slider"|"dropdown"|"button"|"keybinding"|"custom"
+---@field kind "header"|"checkbox"|"slider"|"checkboxSlider"|"dropdown"|"button"|"keybinding"|"custom"   -- checkboxSlider from 1.2.0
 ---@field id? string               -- needed if another row names it as parent; unique among this Module's rows on this page
 ---@field label string
 ---@field tooltip? string
----@field get? fun(): any          -- value kinds: checkbox, slider, dropdown
+---@field get? fun(): any          -- value kinds: checkbox, slider, dropdown, and a checkboxSlider's box
 ---@field set? fun(value: any)
 ---@field default? any             -- what the page's Defaults button restores
 ---@field min? number              -- slider
 ---@field max? number
 ---@field step? number
+---@field format? fun(value: number): string  -- slider: its value's text, shown on the right; none without it (1.2.0)
+---@field slider? { get: fun(): number, set: fun(value: number), default: number?, min: number, max: number, step: number, format: (fun(value: number): string)? }  -- checkboxSlider: the slider beside the box, greyed while it is unticked (1.2.0)
 ---@field options? fun(): { value: any, label: string }[]   -- dropdown
 ---@field onClick? fun()           -- button
 ---@field caption? string          -- button: the text on the button, with `label` beside it; without it, `label` is on the button and the row has no label (SET-R2)
@@ -310,7 +312,7 @@ ADR 0008 names the record call `Pagle.AppendRecord`; it lives on the handle so C
 ---@field init? fun(): table       -- custom: returns a Settings initializer (e.g. Stats' watched Dry spells)
 ```
 
-Rows map onto the native Settings initializers, except a keybinding row, which Core draws itself so that it can grey out (SET-R20); `AddSetting` raises a Lua error for an unknown `topic` or `kind`.
+Rows map onto the native Settings initializers, except a keybinding row, which Core draws itself so that it can grey out (SET-R20). A checkboxSlider row's native control can't grey, so while its `isEnabled` is false it is hidden (SET-R31); `AddSetting` raises a Lua error for an unknown `topic` or `kind`.
 
 ### `M:RegisterTourStop(id, label, show, hide)`
 

@@ -8,8 +8,8 @@ local ns = select(2, ...)
 -- QoL's rows on Core's Fishing page (qol.md › Settings, SET-R20): pure logic, the handle and the store passed in
 -- (CORE-R7). Each Track Q step adds its section's rows here, in the order qol.md lists them.
 
---- The step between the volumes a Fishing audio mix channel offers, in percent (QOL-R62, qol.md › Tunables).
-local AUDIO_LEVEL_STEP = 10
+--- The step of a Fishing audio mix channel's volume slider, in percent, as Game › Sound's (QOL-R62, qol.md › Tunables).
+local AUDIO_VOLUME_STEP = 5
 
 --- What QoL's logic reads and changes a setting through: PagleQoLDB's profile and the adapter calls a change makes
 --- (CORE-R7). adapter/QoL.lua builds it. QoL's OnInitialize opens PagleQoLDB after the rows are added but before
@@ -204,12 +204,14 @@ function ns.AddSettings(M, store)
 			end)
 		end,
 	})
-	-- The rows under the audio mix are greyed out while it is off, keeping their values (SET-R31).
+	-- The rows under the audio mix are greyed out while it is off, keeping their values; a channel's row is hidden
+	-- instead, as its native control can't grey (SET-R31).
 	local function audioOn()
 		return store.profile().audio.on
 	end
-	-- Each channel's level while you fish (QOL-R62): Don't change, Off (not for master, which has no switch) or a
-	-- volume from 10% to 100% in steps of 10. The dropdown's values are strings; the profile keeps a volume a number.
+	-- Each channel while you fish (QOL-R62), as Game › Sound's rows: ticked, the mix sets it to the slider's volume,
+	-- 0% being Off; unticked, it is left as it is and the slider greys. Master has no Off: its slider starts at
+	-- ns.AUDIO_MASTER_MIN.
 	local channels = {
 		{ key = "master", label = L.SETTINGS_AUDIO_MASTER, tooltip = L.SETTINGS_AUDIO_MASTER_TOOLTIP },
 		{ key = "effects", label = L.SETTINGS_AUDIO_EFFECTS, canTurnOff = true },
@@ -218,31 +220,41 @@ function ns.AddSettings(M, store)
 		{ key = "dialog", label = L.SETTINGS_AUDIO_DIALOG, canTurnOff = true },
 	}
 	for _, channel in ipairs(channels) do
+		local default = defaults.audio[channel.key] --[[@as PagleQoLAudioChannel]]
 		M:AddSetting("fishing", {
-			kind = "dropdown",
+			kind = "checkboxSlider",
 			parent = "audio",
 			label = channel.label,
-			tooltip = channel.tooltip,
-			default = tostring(defaults.audio[channel.key]),
+			tooltip = channel.tooltip or L.SETTINGS_AUDIO_CHANNEL_TOOLTIP,
+			default = default.on,
 			get = function()
-				return tostring(store.profile().audio[channel.key])
+				return store.profile().audio[channel.key].on
 			end,
 			set = function(value)
 				store.changeLease(function(profile)
-					profile.audio[channel.key] = tonumber(value) or value
+					profile.audio[channel.key].on = value
 				end)
 			end,
-			options = function()
-				local options = { { value = "keep", label = L.SETTINGS_AUDIO_KEEP } }
-				if channel.canTurnOff then
-					options[#options + 1] = { value = "off", label = L.SETTINGS_AUDIO_OFF }
-				end
-				for level = AUDIO_LEVEL_STEP, 100, AUDIO_LEVEL_STEP do
-					options[#options + 1] =
-						{ value = tostring(level), label = ns.Text(L.SETTINGS_AUDIO_LEVEL, { level = level }) }
-				end
-				return options
-			end,
+			slider = {
+				default = default.volume,
+				min = channel.canTurnOff and 0 or ns.AUDIO_MASTER_MIN,
+				max = 100,
+				step = AUDIO_VOLUME_STEP,
+				get = function()
+					return store.profile().audio[channel.key].volume
+				end,
+				set = function(value)
+					store.changeLease(function(profile)
+						profile.audio[channel.key].volume = value
+					end)
+				end,
+				format = function(value)
+					if channel.canTurnOff and value <= 0 then
+						return L.SETTINGS_AUDIO_OFF
+					end
+					return ns.Text(L.SETTINGS_AUDIO_LEVEL, { level = value })
+				end,
+			},
 			isEnabled = audioOn,
 		})
 	end
