@@ -151,6 +151,41 @@ function ns.FormatCount(n)
 	return ns.FormatNumber(n)
 end
 
+--- How wide each line of `fontString`'s words inks when they wrap within `room`, at most `lines` of them (all when
+--- nil), found as the client breaks them: a word at a time, each line's words measured unbounded through the font
+--- string, which is then given back its text and width. A line is never wider than `room` (a word longer than the room
+--- is cut there). A done item's strike-through crosses each (the First evening list, ONB-R62).
+---@param fontString FontString
+---@param room number
+---@param lines integer?
+---@return number[]
+function ns.LineWidths(fontString, room, lines)
+	local text, width = fontString:GetText() or "", fontString:GetWidth()
+	local widths, line, lineW = {}, nil, 0
+	fontString:SetWidth(0)
+	for word in text:gmatch("%S+") do
+		local candidate = line and line .. " " .. word or word
+		fontString:SetText(candidate)
+		local candidateW = fontString:GetStringWidth()
+		if line and candidateW > room then
+			widths[#widths + 1] = math.min(room, math.ceil(lineW))
+			fontString:SetText(word)
+			line, lineW = word, fontString:GetStringWidth()
+		else
+			line, lineW = candidate, candidateW
+		end
+	end
+	if line then
+		widths[#widths + 1] = math.min(room, math.ceil(lineW))
+	end
+	fontString:SetText(text)
+	fontString:SetWidth(width)
+	for i = #widths, (lines or #widths) + 1, -1 do
+		widths[i] = nil
+	end
+	return widths
+end
+
 -- What waits for the Language (CORE-R8): wiring a file would run as it loads, which copies strings out of `ns.L` and
 -- so would keep them English all session. `ns.ApplyLanguage` runs them in the order given, once it has applied the
 -- Language; one given after that runs at once. nil once they have run.

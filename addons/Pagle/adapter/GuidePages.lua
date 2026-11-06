@@ -626,7 +626,7 @@ local function newEvening(right, y)
 		-- struck through every line it wraps to, each as wide as its words
 		local strikes = {}
 		local lines = math.floor(more / 17.6 + 0.5) + 1
-		for k, inked in ipairs(ns.GuideLineWidths(words, LIST_WIDTH - ITEM_X - ITEM_END, lines)) do
+		for k, inked in ipairs(ns.LineWidths(words, LIST_WIDTH - ITEM_X - ITEM_END, lines)) do
 			local strike = rule(list, ITEM_X, y + 11 + (k - 1) * 17.6, math.max(1, inked), "strike", 0.6)
 			strike:SetDrawLayer("OVERLAY")
 			strikes[k] = strike

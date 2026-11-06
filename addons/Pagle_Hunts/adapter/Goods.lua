@@ -704,8 +704,13 @@ local function drawMore(more, look, text, y)
 	return y + EXTRA_LINE
 end
 
--- Draws the companion hint's line at `y` (HNT-R176): its words, cut short before "why?" at the right; or hides it
--- for nil. Returns the y under it.
+-- The least size the companion hint's words are set at before they wrap to a second line instead.
+local HINT_FLOOR = 11
+
+-- Draws the companion hint's line at `y` (HNT-R176): its words before "why?" at the right, measured unbounded; too
+-- long for that room (every language's, English's too, in the client's face), set a size down at a time to
+-- HINT_FLOOR, and past that wrapped onto a second line at the kit's size, the line that much taller; or hides it for
+-- nil. Returns the y under it.
 ---@param hint HuntsTrackerHintLine
 ---@param look HuntsTrackerLook
 ---@param text string?
@@ -718,7 +723,6 @@ local function drawHint(hint, look, text, y)
 	end
 	hint:ClearAllPoints()
 	hint:SetPoint("TOPLEFT", 0, -y)
-	hint:SetSize(look.width, EXTRA_LINE)
 	local why = hint.why
 	setFont(why.text, look.label)
 	why.text:SetText(ns.L.TRACKER_HINT_WHY)
@@ -729,12 +733,28 @@ local function drawHint(hint, look, text, y)
 	why:SetPoint("TOPRIGHT", hint, "TOPLEFT", look.right, 0)
 	why:SetSize(whyWidth, EXTRA_LINE)
 	why:Show()
-	setFont(hint.text, look.sub)
-	hint.text:SetText(text)
-	hint.text:ClearAllPoints()
-	hint.text:SetPoint("LEFT", look.x + 14, 0)
-	hint.text:SetWidth(math.max(1, look.right - look.x - 14 - whyWidth - 6))
-	return y + EXTRA_LINE
+	local words, sub = hint.text, look.sub
+	local room = math.max(1, look.right - look.x - 14 - whyWidth - 6)
+	setFont(words, sub)
+	words:SetText(text)
+	words:SetWordWrap(false)
+	words:SetMaxLines(0)
+	words:ClearAllPoints()
+	words:SetPoint("LEFT", look.x + 14, 0)
+	ns.FitText(words, sub[1], sub[2], room - 1, HINT_FLOOR, sub[4], sub[3])
+	words:SetWidth(0)
+	local drop = 0
+	if words:GetStringWidth() + 1 > room then
+		setFont(words, sub)
+		local oneLine = words:GetStringHeight()
+		words:SetWordWrap(true)
+		words:SetMaxLines(2)
+		words:SetWidth(room)
+		drop = math.max(0, words:GetStringHeight() - oneLine)
+	end
+	words:SetWidth(room)
+	hint:SetSize(look.width, EXTRA_LINE + drop)
+	return y + EXTRA_LINE + drop
 end
 
 -- Where a block's lines start, `start` down under its header: under the frame's corner ornament too (look.clear).

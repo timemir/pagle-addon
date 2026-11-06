@@ -236,7 +236,7 @@ local function draw(list, ticked)
 		if line.done then
 			-- through every line it wraps to, each as wide as its words
 			local lines = math.floor(more / TEXT_LH + 0.5) + 1
-			local widths = ns.GuideLineWidths(row.text, WIDTH - TEXT_X - TEXT_END, lines)
+			local widths = ns.LineWidths(row.text, WIDTH - TEXT_X - TEXT_END, lines)
 			for k, inked in ipairs(widths) do
 				local strike = strikeAt(row, k)
 				strike:SetSize(math.max(1, inked), 1)
