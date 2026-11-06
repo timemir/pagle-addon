@@ -661,6 +661,7 @@ describe("an Announcement drawn standing still (ONB-R34, wallet-and-shop.md › 
 		"ends a long name 4 before the Coins as they draw, the coin and +N, on Torn Page, drawn the shell's way"
 			.. " (ANN-R80, ANN-R82)",
 		function()
+			---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
 			local bounds = dofile("spec/support/bounds.lua")
 			local loaded = styledCore()
 			local page = pageOf(loaded)
