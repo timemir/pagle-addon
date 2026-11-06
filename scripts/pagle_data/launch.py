@@ -526,9 +526,11 @@ def read_env(path: Path) -> dict[str, str]:
 
 
 def leased_cvars(root: Path) -> list[str]:
-    """QoL's leased CVars, as Stretch.lua lists them (QOL-R62), for check 9 (QOL-R67)."""
+    """QoL's leased CVars, as Stretch.lua lists them (QOL-R62, QOL-R68), for check 9 (QOL-R67): each lease row's,
+    each audio mix channel's volume and switch, and the output device's."""
     text = (root / LEASED_CVARS).read_text(encoding="utf-8")
-    return list(dict.fromkeys(re.findall(r'\{ name = "([A-Za-z_]+)", value = ', text)))
+    pattern = r'(?:\{ name = |\bvolume = |\benable = |OUTPUT_DEVICE_CVAR = )"([A-Za-z_]+)"'
+    return list(dict.fromkeys(re.findall(pattern, text)))
 
 
 def read_args(root: Path, step: Step, account: str, character: str | None, wow: str | None, casts: int | None,

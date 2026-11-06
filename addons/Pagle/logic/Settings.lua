@@ -9,16 +9,18 @@ ns.SETTINGS_TOPICS = { "fishing", "announcements", "trackers" }
 
 --- One row a Module adds to a topic page (core/README.md › Contracts, CORE-R42).
 ---@class PagleSetting
----@field kind "header"|"checkbox"|"slider"|"dropdown"|"button"|"keybinding"|"custom"
+---@field kind "header"|"checkbox"|"slider"|"checkboxSlider"|"dropdown"|"button"|"keybinding"|"custom"
 ---@field id? string               -- needed if another row names it as parent; unique among this Module's rows on this page
 ---@field label string
 ---@field tooltip? string
----@field get? fun(): any          -- value kinds: checkbox, slider, dropdown
+---@field get? fun(): any          -- value kinds: checkbox, slider, dropdown, and checkboxSlider's checkbox
 ---@field set? fun(value: any)
 ---@field default? any             -- what the page's Defaults button restores
 ---@field min? number              -- slider
 ---@field max? number
 ---@field step? number
+---@field format? fun(value: number): string  -- slider: the value's text beside it; without it none shows
+---@field slider? PagleSettingSlider  -- checkboxSlider: the slider beside the checkbox, live only while it is ticked
 ---@field options? fun(): { value: any, label: string }[]   -- dropdown
 ---@field onClick? fun()           -- button
 ---@field caption? string          -- button: the text on the button, with `label` beside it; without it, `label` is on the button and the row has no label (SET-R2)
@@ -27,11 +29,22 @@ ns.SETTINGS_TOPICS = { "fishing", "announcements", "trackers" }
 ---@field isEnabled? fun(): boolean  -- greyed out when false
 ---@field init? fun(): table       -- custom: returns a Settings initializer (e.g. Stats' watched Dry spells)
 
+--- A checkboxSlider row's slider (CORE-R42): its value, range, Defaults value and value text, as a slider row's.
+---@class PagleSettingSlider
+---@field get fun(): number
+---@field set fun(value: number)
+---@field default? number
+---@field min number
+---@field max number
+---@field step number
+---@field format? fun(value: number): string
+
 -- What each kind needs besides its label, as field = Lua type (CORE-R42's PagleSetting).
 local KINDS = {
 	header = {},
 	checkbox = { get = "function", set = "function" },
 	slider = { get = "function", set = "function", min = "number", max = "number", step = "number" },
+	checkboxSlider = { get = "function", set = "function", slider = "table" },
 	dropdown = { get = "function", set = "function", options = "function" },
 	button = { onClick = "function" },
 	keybinding = { binding = "string" },
@@ -41,7 +54,12 @@ local KINDS = {
 -- What each kind may have besides, as field = Lua type: checked only when it is there (CORE-R42's PagleSetting).
 local OPTIONAL = {
 	button = { caption = "string" },
+	slider = { format = "function" },
 }
+
+-- What a checkboxSlider's `slider` needs, and may have, as field = Lua type (CORE-R42's PagleSettingSlider).
+local SLIDER = { get = "function", set = "function", min = "number", max = "number", step = "number" }
+local SLIDER_OPTIONAL = { format = "function", default = "number" }
 
 --- A row on a topic page, in page order: a Module's row, the header Core puts before a Module's rows, or a slot
 --- dropdown Core ends a Module's section with.
@@ -106,6 +124,18 @@ local function problem(section, topic, setting)
 	for field, luaType in pairs(OPTIONAL[setting.kind] or {}) do
 		if setting[field] ~= nil and type(setting[field]) ~= luaType then
 			return ("a %s setting's %s is a %s"):format(setting.kind, field, luaType)
+		end
+	end
+	if setting.kind == "checkboxSlider" then
+		for field, luaType in pairs(SLIDER) do
+			if type(setting.slider[field]) ~= luaType then
+				return ("a checkboxSlider setting's slider needs %s, a %s"):format(field, luaType)
+			end
+		end
+		for field, luaType in pairs(SLIDER_OPTIONAL) do
+			if setting.slider[field] ~= nil and type(setting.slider[field]) ~= luaType then
+				return ("a checkboxSlider setting's slider's %s is a %s"):format(field, luaType)
+			end
 		end
 	end
 	if setting.id ~= nil and section and section.ids[setting.id] then

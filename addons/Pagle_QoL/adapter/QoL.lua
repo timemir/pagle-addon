@@ -20,6 +20,7 @@ local store = {
 	setInput = ns.SetInput,
 	evaluate = ns.EvaluateFishingKey,
 	changeLease = ns.ChangeLeaseSetting,
+	outputDevices = ns.OutputDevices,
 	itemName = ns.ItemName,
 	fishingSetChoice = ns.FishingSetChoice,
 	chooseFishingSet = ns.ChooseFishingSet,

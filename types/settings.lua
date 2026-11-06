@@ -29,6 +29,8 @@
 ---@field GetSetting fun(self: SettingsInitializer): SettingsProxySetting?
 ---@field SetParentInitializer fun(self: SettingsInitializer, parent: SettingsInitializer, modifyPredicate?: fun(): boolean)
 ---@field AddModifyPredicate fun(self: SettingsInitializer, predicate: fun(): boolean)
+---@field AddShownPredicate fun(self: SettingsInitializer, predicate: fun(): boolean) shown only while each returns true
+--- (SettingsSearchableElementMixin, Blizzard_Settings.lua)
 ---@field AddSearchTags fun(self: SettingsInitializer, ...: string)
 --- A setting variable (despite the name, any registered setting's) whose change re-evaluates the shown row's state.
 ---@field AddEvaluateStateCVar fun(self: SettingsInitializer, variable: string)
@@ -131,6 +133,18 @@ function CreateSettingsListSectionHeaderInitializer(name, tooltip) end
 ---@param addSearchTags boolean
 ---@return SettingsInitializer
 function CreateSettingsButtonInitializer(name, buttonText, buttonClick, tooltip, addSearchTags) end
+
+--- A checkbox with a slider beside it, the slider live only while the box is ticked
+--- (Blizzard_SettingControls.lua, SettingsCheckboxSliderControlMixin).
+---@param cb SettingsProxySetting the box's setting
+---@param cbLabel string
+---@param cbTip string?
+---@param slider SettingsProxySetting the slider's setting
+---@param options SettingsSliderOptions
+---@param sliderLabel string
+---@param sliderTip string?
+---@return SettingsInitializer
+function CreateSettingsCheckboxSliderInitializer(cb, cbLabel, cbTip, slider, options, sliderLabel, sliderTip) end
 
 --- The Settings panel (Blizzard_SettingsPanel.xml).
 ---@type Frame

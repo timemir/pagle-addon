@@ -41,6 +41,9 @@ stds.wow = {
 		-- The Settings tree (CORE-R40–R44, settings.md); the Settings table itself is in stds.wow_variables.
 		"CreateSettingsListSectionHeaderInitializer",
 		"CreateSettingsButtonInitializer",
+		-- A checkboxSlider row (CORE-R42): Blizzard_Settings_Shared/Blizzard_SettingControls.lua at the forever 1.60.1
+		-- commit, as Controls' mouse speed row uses it.
+		"CreateSettingsCheckboxSliderInitializer",
 		C_KeyBindings = { fields = { "GetBindingIndex" } },
 		-- A Module's keybinding row, Core's own (SET-R20, #120): it binds as Blizzard's KeybindListener does, through
 		-- the client's SetBinding, SaveBindings and GetCurrentBindingSet (GetBindingKey and GetBindingText are listed
@@ -130,9 +133,12 @@ stds.wow = {
 		-- forever dump has GetMouseFoci and not GetMouseFocus, so the fallback's case never arises on Forever.
 		"GetMouseFoci",
 		"WorldFrame",
-		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64).
+		-- QoL's Fishing stretch and its CVar lease (QOL-R61–R64), and the output device it may lease (QOL-R68).
 		"GetCVar",
 		"SetCVar",
+		"Sound_GameSystem_GetNumOutputDrivers",
+		"Sound_GameSystem_GetOutputDriverNameByIndex",
+		"Sound_GameSystem_RestartSoundSystem",
 		"IsMounted",
 		-- QoL's Reload now note (QOL-R83) and Core's, for a changed Language (SET-R14): ReloadUI is unprotected on build
 		-- 70338 (QOL-R102). The QoL boundary spec allows QoL's one call, spec/Pagle/adapter/LanguageRow_spec.lua Core's.

@@ -60,6 +60,8 @@ local newWidget = dofile("spec/support/widgets.lua").newWidget
 -- 1.60.1 commit: SettingsControlMixin:IsEnabled and SettingsButtonControlMixin:EvaluateState read
 -- EvaluateModifyPredicates). KeyBindingFrameBindingTemplateMixin (Blizzard_Keybindings.lua) never reads them, nor
 -- does a section header, and a custom template's Init draws its own state, so none of those gets `enabled` (#120).
+-- Nor does SettingsCheckboxSliderControlMixin: a SettingsListElementMixin, whose IsEnabled reads only Kiosk; it greys
+-- only its slider, while its checkbox is unticked (`sliderEnabled`).
 local GREYING_TEMPLATES = {
 	SettingsCheckboxControlTemplate = true,
 	SettingsSliderControlTemplate = true,
@@ -72,7 +74,8 @@ local GREYING_TEMPLATES = {
 ---@param template string
 ---@param data table?
 local function newInitializer(template, data)
-	local initializer = { template = template, data = data or {}, searchTags = {}, modifyPredicates = {} }
+	local initializer =
+		{ template = template, data = data or {}, searchTags = {}, modifyPredicates = {}, shownPredicates = {} }
 	function initializer:GetData()
 		return self.data
 	end
@@ -100,6 +103,19 @@ local function newInitializer(template, data)
 	end
 	function initializer:AddModifyPredicate(fn)
 		self.modifyPredicates[#self.modifyPredicates + 1] = fn
+	end
+	-- SettingsSearchableElementMixin:AddShownPredicate and ShouldShow: the list shows the row only while each returns
+	-- true, laid out again after each value change (SettingsListMixin:RepairDisplay).
+	function initializer:AddShownPredicate(fn)
+		self.shownPredicates[#self.shownPredicates + 1] = fn
+	end
+	function initializer:ShouldShow()
+		for _, predicate in ipairs(self.shownPredicates) do
+			if not predicate() then
+				return false
+			end
+		end
+		return true
 	end
 	function initializer:EvaluateModifyPredicates()
 		for _, predicate in ipairs(self.modifyPredicates) do
@@ -152,6 +168,14 @@ local function newInitializer(template, data)
 		if self.data.setting then
 			frame.value = self.data.setting:GetValue()
 			self:FormatValue(frame)
+		elseif self.data.cbSetting then
+			-- SettingsCheckboxSliderControlMixin:Init and EvaluateState: the checkbox's value, the slider's value and
+			-- its Right label, and the slider live only while the box is ticked.
+			frame.value = self.data.cbSetting:GetValue()
+			frame.sliderValue = self.data.sliderSetting:GetValue()
+			local formatter = self.data.sliderOptions.formatters and self.data.sliderOptions.formatters[2]
+			frame.valueLabel = formatter and formatter(frame.sliderValue) or nil
+			frame.sliderEnabled = frame.value == true
 		end
 		if GREYING_TEMPLATES[self.template] then
 			frame.enabled = self:EvaluateModifyPredicates()
@@ -345,6 +369,32 @@ return function(client, stubs)
 		end)
 		return initializer
 	end
+	-- CreateSettingsCheckboxSliderInitializer (Blizzard_SettingControls.lua at the forever 1.60.1 commit): the data
+	-- carries both settings and no `setting`, so GetSetting is nil, and the search tags are both labels.
+	stubs.CreateSettingsCheckboxSliderInitializer = function(
+		cbSetting,
+		cbLabel,
+		cbTooltip,
+		sliderSetting,
+		sliderOptions,
+		sliderLabel,
+		sliderTooltip
+	)
+		assert(cbSetting:GetVariableType() == "boolean" and sliderSetting:GetVariableType() == "number")
+		local initializer = newInitializer("SettingsCheckboxSliderControlTemplate", {
+			name = cbLabel,
+			tooltip = cbTooltip,
+			cbSetting = cbSetting,
+			cbLabel = cbLabel,
+			cbTooltip = cbTooltip,
+			sliderSetting = sliderSetting,
+			sliderOptions = sliderOptions,
+			sliderLabel = sliderLabel,
+			sliderTooltip = sliderTooltip,
+		})
+		initializer:AddSearchTags(cbLabel, sliderLabel)
+		return initializer
+	end
 	stubs.CreateKeybindingEntryInitializer = function(bindingIndex, search)
 		return newInitializer("KeyBindingFrameBindingTemplate", { bindingIndex = bindingIndex, search = search })
 	end
@@ -399,9 +449,12 @@ return function(client, stubs)
 		settings.panel:Show()
 		local rows = {}
 		for _, initializer in ipairs(category.layout.initializers) do
-			local frame = newFrame(initializer)
-			initializer:InitFrame(frame)
-			rows[#rows + 1] = { initializer = initializer, frame = frame }
+			-- SettingsListMixin:Display lists only the rows whose ShouldShow is true.
+			if initializer:ShouldShow() then
+				local frame = newFrame(initializer)
+				initializer:InitFrame(frame)
+				rows[#rows + 1] = { initializer = initializer, frame = frame }
+			end
 		end
 		settings.shown = rows
 		return rows
@@ -444,6 +497,11 @@ return function(client, stubs)
 				frame.value = setting:GetValue()
 				initializer:FormatValue(frame)
 				watched = true
+			end
+			-- SettingsCheckboxSliderControlMixin hears both its settings: the box re-evaluates the slider's state.
+			local data = initializer:GetData()
+			if data.cbSetting == setting or data.sliderSetting == setting then
+				initializer:InitFrame(frame)
 			end
 			if watched and GREYING_TEMPLATES[initializer.template] then
 				frame.enabled = initializer:EvaluateModifyPredicates()

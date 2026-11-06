@@ -48,7 +48,11 @@
 ---@field cvars table<string, string> Each CVar's value as `GetCVar` reads it. `SetCVar` stores `tostring(value)`
 --- and fires `CVAR_UPDATE(name, value)` through `fireGameEvent` before it returns; a CVar not listed is one the
 --- client doesn't know (`GetCVar` returns nil).
----@field cvarCalls string[] Each `SetCVar` call, in order: "set <name> <value>".
+---@field cvarCalls string[] Each `SetCVar` call, in order: "set <name> <value>", and each
+--- `Sound_GameSystem_RestartSoundSystem` call among them: "restart sound".
+---@field outputDevices string[] The sound output devices' names, by index from 0, as
+--- `Sound_GameSystem_GetNumOutputDrivers` and `Sound_GameSystem_GetOutputDriverNameByIndex` read them. Default: the
+--- system default alone.
 ---@field mounted boolean? Whether the player is mounted, as `IsMounted()` reads it.
 ---@field uiErrors { text: string, r: number?, g: number?, b: number? }[] Each `UIErrorsFrame:AddMessage` call, in
 --- order: the game's error text at the top of the screen.
@@ -445,6 +449,17 @@ return function(client, stubs)
 		client.cvarCalls[#client.cvarCalls + 1] = ("set %s %s"):format(name, tostring(value))
 		client.cvars[name] = tostring(value)
 		client.fireGameEvent("CVAR_UPDATE", name, tostring(value))
+	end
+	-- The sound output devices (QOL-R68), as Game › Sound lists them, and the sound system's restart.
+	client.outputDevices = { "System Default" }
+	stubs.Sound_GameSystem_GetNumOutputDrivers = function()
+		return #client.outputDevices
+	end
+	stubs.Sound_GameSystem_GetOutputDriverNameByIndex = function(index)
+		return client.outputDevices[index + 1]
+	end
+	stubs.Sound_GameSystem_RestartSoundSystem = function()
+		client.cvarCalls[#client.cvarCalls + 1] = "restart sound"
 	end
 	stubs.IsMounted = function()
 		return client.mounted == true

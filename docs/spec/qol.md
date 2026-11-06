@@ -177,19 +177,39 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
   | Feature | CVars set for the stretch | On by default |
   |---|---|---|
   | Soft-interact (for the reel; can't be turned off) | `SoftTargetInteract` = 3; `SoftTargetInteractRange` = 15, only if the player's value is below 15; `SoftTargetInteractRangeIsHard` = 0 | always |
-  | Fishing audio mix | `Sound_EnableSFX` = 1, `Sound_SFXVolume` = 1.0, `Sound_EnableMusic` = 0, `Sound_EnableAmbience` = 0, `Sound_EnableDialog` = 0; `Sound_MasterVolume` and `Sound_EnableAllSound` untouched | on |
-  | ↳ Keep sound when the game is in the background (only while the audio mix is on) | `Sound_EnableSoundWhenGameIsInBG` = 1 | off |
+  | Fishing audio mix | each channel by its setting, below, then the output device (QOL-R68); `Sound_EnableAllSound` untouched. Under the defaults (master unticked; effects ticked at 100%; music, ambience and dialog ticked at 0%, Off; device Don't change) that is `Sound_EnableSFX` = 1, `Sound_SFXVolume` = 1.0, `Sound_EnableMusic` = 0, `Sound_EnableAmbience` = 0, `Sound_EnableDialog` = 0, in that order, with master untouched: 1.1's mix | on |
+  | ↳ Keep sound in the background (only while the audio mix is on) | `Sound_EnableSoundWhenGameIsInBG` = 1 | off |
   | Auto-loot while fishing | `autoLootDefault` = 1 | on |
 
   A CVar that already holds the leased value (compared as numbers) isn't leased, so auto-loot is skipped if the player already has it on.
+
+  *From 1.2.0,* the audio mix leases each channel by its Settings row, a box with a volume slider beside it, in this order:
+
+  | Channel | Volume CVar | Switch CVar |
+  |---|---|---|
+  | Master | `Sound_MasterVolume` | none |
+  | Effects | `Sound_SFXVolume` | `Sound_EnableSFX` |
+  | Music | `Sound_MusicVolume` | `Sound_EnableMusic` |
+  | Ambience | `Sound_AmbienceVolume` | `Sound_EnableAmbience` |
+  | Dialog | `Sound_DialogVolume` | `Sound_EnableDialog` |
+
+  - **Unticked** (Don't change): neither CVar is leased, whatever the slider says.
+  - **Ticked at 0%** (Off): the switch = 0; the volume isn't leased.
+  - **Ticked at *n*%** (5–100, in steps of 5): the switch = 1, then the volume = *n*/100, written with at least one decimal (`1.0`, `0.5`, `0.35`).
+  - **Master** has no switch, so it has no Off: ticked, it leases only `Sound_MasterVolume` = *n*/100, its slider running from 10% to 100% and a lower stored value read as 10%, so the bobber's splash stays audible. `Sound_EnableAllSound` is never leased.
 - **QOL-R63** **Lease and restore:**
   1. Before changing a CVar, QoL writes `{ name, orig }` (the player's value, as `GetCVar` returns it) into `PagleQoLDB.global.lease`.
-  2. It sets the CVar with `SetCVar`, then stores what `GetCVar` reads back as `set` in the same entry.
+  2. It sets the CVar with `SetCVar`, then stores what `GetCVar` reads back as `set` in the same entry. *From 1.2.0:* if `GetCVar` reads back nothing, as the output device may while the sound system restarts (QOL-R68), `set` is the value it set.
   3. When the stretch ends, it restores each leased CVar to `orig` **only if it still reads `set`** (compared as numbers when both parse as numbers, else as strings): a value the player changed during the stretch is theirs and stays. Then the entry is removed. An entry whose restore must wait (QOL-R66) stays until it is restored.
 - **QOL-R64** **Leftover restore:** at `ADDON_LOADED`, before anything else, QoL restores every entry left in `global.lease` under the same "still reads `set`" test and removes each entry it restored. If `InCombatLockdown()` is true at load (a `/reload` in combat), these wait as in QOL-R66.
-- **QOL-R65** Turning the audio mix, its background option or auto-loot off during a stretch restores its CVars at once (turning the audio mix off restores the background CVar too); turning one on leases them at once.
+- **QOL-R65** Turning the audio mix, its background option or auto-loot off during a stretch restores its CVars at once (turning the audio mix off restores the background CVar and the output device too); turning one on leases them at once. *From 1.2.0,* ticking or unticking a channel, moving its slider or changing the output device during a stretch does the same CVar by CVar: a CVar the new setting no longer leases is restored at once, one it newly leases is leased at once, and one it leases at a new value (effects from 100% to 50%, another device) is set to that value at once, each step of a slider being a change. While that CVar still reads its entry's `set`, the entry keeps its `orig` and takes the new `set`, so the restore at the end still puts back the player's own value (QOL-R63); a CVar the player changed since is leased afresh from their value.
 - **QOL-R66** A CVar restore that falls due while `InCombatLockdown()` is true waits for `RestrictionChanged(false)`.
 - **QOL-R67** **After a crash.** SavedVariables are written only at logout or `/reload` (LOG-R85), and QoL restores at `PLAYER_LOGOUT`, so a crash leaves no lease in `PagleQoLDB` to restore; QOL-R64 only catches restores that were deferred or failed. QoL makes no promise about a crash. Whether leased CVars stay changed after one is checked in M1 dogfooding: kill the client mid-stretch, log in, and read the leased CVars. If they stayed changed, a follow-up ticket designs a fix; until then this rule stands.
+- **QOL-R68** *From 1.2.0.* **The output device.** The audio mix's Output device row names a device by the name the client gives it, or Don't change. At each lease QoL lists the client's devices (`Sound_GameSystem_GetNumOutputDrivers()` and `Sound_GameSystem_GetOutputDriverNameByIndex(index)`, indices from 0, as Game › Sound lists them) and, if the chosen name is among them, leases `Sound_OutputDriverIndex` = its index (the first, if two share the name), after the channels, under QOL-R62–R66 like every other CVar: only away from its value, restored only while it still reads `set`, waiting out lockdown, restored at load if left over, and never leased while standing down (QOL-R82).
+  - The lease entry also keeps `origName`, the name of the player's own device at `orig`'s index when it was leased. Each restore first looks that name up in the client's list as it is then and, if it is there, restores its index now, so devices reordered in between (a headset unplugged, then a `/reload`) don't put back whatever took the old index. If the name is gone, the raw `orig` index is restored, as for any CVar. The "still reads `set`" test is unchanged.
+  - A device that isn't listed (an unplugged headset), or a client without those calls, leases no device; the rest of the mix is leased as usual, and nothing errors. The row keeps the choice and lists it as "{device} (not found)"; the next stretch with the device back leases it.
+  - Whenever a lease or a restore (at a stretch's start or end, a change mid-stretch, the leftover restore, the restore after lockdown) leaves `Sound_OutputDriverIndex` reading a different value from before it, QoL then calls `Sound_GameSystem_RestartSoundSystem()` once, so the sound moves to that device at once. One that leaves it as it was (Don't change, the chosen device already playing, a restore the player overruled) restarts nothing, and neither does the restore at `PLAYER_LOGOUT`: the client loads its sound from the CVars again after a logout or `/reload`.
+  - The restart drops the game's sound for a moment, at a stretch's start and end; the row's tooltip says so.
 
 ### The next-action button
 
@@ -233,13 +253,15 @@ Checked on the live build in M9 (each failure retires or changes only the rule i
 |---|---|---|
 | `global.schemaVersion` | integer; ordered migration steps on load | `1` |
 | `global.gear` | `{ [characterGUID] = { setID = integer, name = string } }`, the chosen fishing set (QOL-R40) | `{}` |
-| `global.lease` | `{ { name = string, orig = string, set = string } }`, CVars currently leased, `set` as read back (QOL-R63) | `{}` |
+| `global.lease` | `{ { name = string, orig = string, set = string, origName = string? } }`, CVars currently leased, `set` as read back (QOL-R63); `origName` on the output device's entry only, the player's device by name (from 1.2.0, QOL-R68) | `{}` |
 | `profile.input` | `"key"`, `"click"`, `"both"` | `"both"` |
 | `profile.lures` | `{ mode = "off"|"best"|"one", item = itemID }` | `{ mode = "best", item = 6529 }` |
 | `profile.clams` | boolean | `true` |
-| `profile.audio` | `{ on = boolean, background = boolean }` | `{ on = true, background = false }` |
+| `profile.audio` | `{ on = boolean, background = boolean, master, effects, music, ambience, dialog = { on = boolean, volume = number }, device = string }`: each channel whether the mix changes it (its box) and its volume in percent (its slider), 0 being Off, and the output device's name, `""` for Don't change (the channels and device from 1.2.0, QOL-R62, QOL-R68) | `{ on = true, background = false, master = { on = false, volume = 100 }, effects = { on = true, volume = 100 }, music = { on = true, volume = 0 }, ambience = { on = true, volume = 0 }, dialog = { on = true, volume = 0 }, device = "" }` |
 | `profile.autoLoot` | boolean | `true` |
 | `profile.indicator` | `{ shown = boolean, untilPole = boolean, point = { point, relativeTo = "UIParent", relativePoint, x, y } or nil }`; `untilPole` is Hide until a fishing pole is in hand (QOL-R72, from 1.2.0), which AceDB's default gives a profile that has none | `{ shown = true, untilPole = false, point = nil }` |
+
+The 1.2.0 keys in `profile.audio` need no migration step: AceDB fills a key a saved profile lacks from these defaults, a channel's `on` or `volume` too, so a profile saved by 1.1 leases 1.1's mix until the player changes a row. `global.lease` entries are unchanged; the output device's entry is one like any other.
 
 QoL writes nothing to `PagleLog` or `PagleDB`. It has no projection, so a content-fingerprint or rules change never touches it.
 
@@ -300,7 +322,13 @@ All on the **Fishing** page (`M:AddSetting("fishing", …)`), in this order. Eac
 | | ↳ Lure | the lure table's items; live only for Only this one | Shiny Bauble |
 | | Open clams between Casts | on/off | on |
 | While you fish | Fishing audio mix | on/off | on |
-| | ↳ Keep sound when the game is in the background | on/off; greyed out while the audio mix is off | off |
+| | ↳ Master volume | box and slider (as Game › Sound's), 10% to 100% in steps of 5, the slider greyed while unticked; hidden while the audio mix is off | unticked, 100% |
+| | ↳ Effects | box and slider, 0% (shown as Off) to 100% in steps of 5, the slider greyed while unticked; hidden while the audio mix is off | ticked, 100% |
+| | ↳ Music | as Effects | ticked, 0% (Off) |
+| | ↳ Ambience | as Effects | ticked, 0% (Off) |
+| | ↳ Dialog | as Effects | ticked, 0% (Off) |
+| | ↳ Output device | Don't change / each device the client lists when the menu opens, a chosen one that isn't there listed as "{device} (not found)" (QOL-R68); greyed out while the audio mix is off | Don't change |
+| | ↳ Keep sound in the background | on/off; greyed out while the audio mix is off | off |
 | | Auto-loot while fishing | on/off | on |
 | | Show the next-action button | on/off | on |
 | | ↳ Hide until a fishing pole is in hand | on/off; greyed out while Show the next-action button is off | off |
@@ -313,7 +341,11 @@ Tooltips:
 - **Swap gear:** "Swaps between your fishing set and what you wore before (saved as Pagle Previous)."
 - **Lures:** "A press before a cast applies a lure when none is on."
 - **Open clams between Casts:** "One clam per press, never during a cast."
-- **Fishing audio mix:** "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards."
+- **Fishing audio mix:** "While you fish: each channel and the output device as set below. Put back afterwards." (1.1: "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards.")
+- **Master volume:** "Ticked, sets the master volume while you fish. It has no Off and goes no lower than 10%, so you still hear the splash."
+- **Effects, Music, Ambience, Dialog:** "Ticked, sets this channel while you fish: at 0% it's off. Unticked, leaves it as it is."
+- **Output device:** "Plays the game's sound here while you fish. The sound drops out for a moment as it switches, at the start and at the end."
+- **Keep sound in the background:** "While you fish, the sound keeps playing when the game is in the background." (from 1.2.0; the label was "Keep sound when the game is in the background" in 1.1, too wide for its row)
 - **Auto-loot while fishing:** "Only while you fish. Skipped if you already have auto-loot on."
 - **Show the next-action button:** "Shows what your next press will do. Shift-drag to move."
 - **Hide until a fishing pole is in hand:** "Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or you're fishing."
@@ -329,7 +361,8 @@ The Fishing set dropdown reads and writes the current character's choice (`globa
 | Click hold limit | 0.3 s from mouse-down to mouse-up | QOL-R13 |
 | Re-evaluation tick while armed | 0.5 s | QOL-R25 |
 | Soft-interact lease | `SoftTargetInteract` 3, `SoftTargetInteractRange` at least 15, `SoftTargetInteractRangeIsHard` 0 (probe B1) | QOL-R62 |
-| Audio mix | SFX on at 1.0; music, ambience, dialog off | QOL-R62 |
+| Audio mix defaults | master unticked (at 100%); effects ticked at 100% (SFX on at 1.0); music, ambience, dialog ticked at 0% (off); device Don't change: 1.1's mix | QOL-R62, QOL-R68 |
+| Audio mix sliders | 0% to 100% in steps of 5 (Game › Sound's step); master from 10% | QOL-R62 |
 | Nudge display | 3 s, then a 0.5 s fade; 4 px below `UIErrorsFrame`; a 40 px strip, 30 px of paper either side of the line | QOL-R75 |
 | Result wait (gear swap, lure) | 2 s | QOL-R29 |
 | Reel wait (the reel didn't take) | 0.5 s after a reel press | QOL-R35 |

@@ -368,14 +368,20 @@ describe("The audio mix and auto-loot leases", function()
 		return fake, client, loaded
 	end
 
-	-- Ticks or unticks a QoL checkbox on the Fishing page by its label, as the native row's set does.
+	-- Sets a QoL row on the Fishing page by its label, as the native row's set does: a checkbox ticked, a dropdown's
+	-- value, or a channel's box and then its slider's volume, given as { ticked, volume }.
 	---@param fake FakePagle
 	---@param label string
-	---@param value boolean
+	---@param value boolean|string|table
 	local function tick(fake, label, value)
 		for _, row in ipairs(assert(fake.settingsPage("fishing"))) do
 			if row.label == label then
-				row.setting.set(value)
+				if type(value) == "table" then
+					row.setting.set(value[1])
+					row.setting.slider.set(value[2])
+				else
+					row.setting.set(value)
+				end
 				return
 			end
 		end
@@ -446,7 +452,7 @@ describe("The audio mix and auto-loot leases", function()
 
 	it("never touches master volume or Sound_EnableAllSound (QOL-R62)", function()
 		local fake, client = startAll(function(fake)
-			tick(fake, "Keep sound when the game is in the background", true)
+			tick(fake, "Keep sound in the background", true)
 		end)
 
 		fake.fire("CastStarted")
@@ -472,7 +478,7 @@ describe("The audio mix and auto-loot leases", function()
 		for _, case in ipairs({ { true, true, true }, { true, false, false }, { false, true, false } }) do
 			local fake, client = startAll(function(fake)
 				tick(fake, "Fishing audio mix", case[1])
-				tick(fake, "Keep sound when the game is in the background", case[2])
+				tick(fake, "Keep sound in the background", case[2])
 			end)
 
 			fake.fire("CastStarted")
@@ -498,7 +504,7 @@ describe("The audio mix and auto-loot leases", function()
 			"restores the audio mix and background CVars at once when the mix turns off, keeping soft-interact (QOL-R65)",
 			function()
 				local fake, client, loaded = startAll(function(fake)
-					tick(fake, "Keep sound when the game is in the background", true)
+					tick(fake, "Keep sound in the background", true)
 				end)
 				fake.fire("CastStarted")
 				assert.are.equal("1", client.cvars.Sound_EnableSoundWhenGameIsInBG)
@@ -524,7 +530,7 @@ describe("The audio mix and auto-loot leases", function()
 
 		it("leases them again at once when the mix turns back on (QOL-R65)", function()
 			local fake, client = startAll(function(fake)
-				tick(fake, "Keep sound when the game is in the background", true)
+				tick(fake, "Keep sound in the background", true)
 			end)
 			fake.fire("CastStarted")
 			tick(fake, "Fishing audio mix", false)
@@ -541,10 +547,10 @@ describe("The audio mix and auto-loot leases", function()
 			local fake, client, loaded = startAll()
 			fake.fire("CastStarted")
 
-			tick(fake, "Keep sound when the game is in the background", true)
+			tick(fake, "Keep sound in the background", true)
 			assert.are.equal("1", client.cvars.Sound_EnableSoundWhenGameIsInBG)
 
-			tick(fake, "Keep sound when the game is in the background", false)
+			tick(fake, "Keep sound in the background", false)
 			assert.are.equal("0", client.cvars.Sound_EnableSoundWhenGameIsInBG)
 			assert.are.equal("0", client.cvars.Sound_EnableMusic)
 			assert.is_nil(leasedNames(loaded).Sound_EnableSoundWhenGameIsInBG)
@@ -590,7 +596,7 @@ describe("The audio mix and auto-loot leases", function()
 		local fake, client = startAll()
 
 		tick(fake, "Fishing audio mix", false)
-		tick(fake, "Keep sound when the game is in the background", true)
+		tick(fake, "Keep sound in the background", true)
 		tick(fake, "Auto-loot while fishing", false)
 		tick(fake, "Fishing audio mix", true)
 
@@ -634,6 +640,381 @@ describe("The audio mix and auto-loot leases", function()
 			loaded.client.cvars
 		)
 		assert.are.same({}, leaseOf(loaded))
+	end)
+	describe("each channel's level and the output device", function()
+		local DEVICES = { "System Default", "Speakers", "Headset" }
+
+		-- startAll with the client's devices as DEVICES, the speakers (index 1) playing, and the players' own volumes
+		-- for the channels the defaults don't lease.
+		local function startDevices(after)
+			return startAll(function(fake, client, loaded)
+				client.outputDevices = DEVICES
+				client.cvars.Sound_OutputDriverIndex = "1"
+				client.cvars.Sound_MusicVolume = "0.25"
+				client.cvars.Sound_AmbienceVolume = "0.6"
+				client.cvars.Sound_DialogVolume = "0.75"
+				if after then
+					after(fake, client, loaded)
+				end
+			end)
+		end
+
+		-- The sound system's restarts among the client's calls.
+		local function restarts(client)
+			local count = 0
+			for _, call in ipairs(client.cvarCalls) do
+				if call == "restart sound" then
+					count = count + 1
+				end
+			end
+			return count
+		end
+
+		it(
+			"leases 1.1's mix under the defaults, and neither master nor the device, with no restart (QOL-R62, QOL-R68)",
+			function()
+				local fake, client = startDevices()
+
+				fake.fire("CastStarted")
+
+				assert.are.same({
+					"set SoftTargetInteract 3",
+					"set SoftTargetInteractRange 15",
+					"set SoftTargetInteractRangeIsHard 0",
+					"set Sound_EnableSFX 1",
+					"set Sound_SFXVolume 1.0",
+					"set Sound_EnableMusic 0",
+					"set Sound_EnableAmbience 0",
+					"set Sound_EnableDialog 0",
+					"set autoLootDefault 1",
+				}, client.cvarCalls)
+			end
+		)
+
+		it(
+			"leases each channel's state: nothing unticked, Off at 0%, or its switch on and its volume (QOL-R62)",
+			function()
+				local fake, client = startDevices(function(fake)
+					tick(fake, "Master volume", { true, 60 })
+					tick(fake, "Effects", { false, 100 })
+					tick(fake, "Music", { true, 30 })
+					tick(fake, "Ambience", { true, 0 })
+					tick(fake, "Dialog", { true, 100 })
+				end)
+
+				fake.fire("CastStarted")
+
+				-- The player's music and dialog are on already, so only their volumes change.
+				assert.are.same(
+					{
+						"set Sound_MasterVolume 0.6",
+						"set Sound_MusicVolume 0.3",
+						"set Sound_EnableAmbience 0",
+						"set Sound_DialogVolume 1.0",
+					},
+					callsOn(
+						client,
+						"Sound_MasterVolume",
+						"Sound_EnableSFX",
+						"Sound_SFXVolume",
+						"Sound_EnableMusic",
+						"Sound_MusicVolume",
+						"Sound_EnableAmbience",
+						"Sound_AmbienceVolume",
+						"Sound_EnableDialog",
+						"Sound_DialogVolume"
+					)
+				)
+				fake.fireGameEvent("PLAYER_LOGOUT")
+				assert.are.same("0.8", client.cvars.Sound_MasterVolume)
+				assert.are.same("0.25", client.cvars.Sound_MusicVolume)
+				assert.are.same("1", client.cvars.Sound_EnableMusic)
+				assert.are.same("0.75", client.cvars.Sound_DialogVolume)
+			end
+		)
+
+		it(
+			"switches to the chosen device and restarts the sound system, then back with a restart at the end (QOL-R68)",
+			function()
+				local fake, client, loaded = startDevices(function(fake)
+					tick(fake, "Output device", "Headset")
+				end)
+
+				fake.fire("CastStarted")
+				assert.are.equal("2", client.cvars.Sound_OutputDriverIndex)
+				assert.are.same({ "set Sound_OutputDriverIndex 2" }, callsOn(client, "Sound_OutputDriverIndex"))
+				assert.are.equal("restart sound", client.cvarCalls[#client.cvarCalls])
+				assert.are.equal(1, restarts(client))
+
+				client.cvarCalls = {}
+				client.mounted = true
+				fake.fireGameEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+				assert.are.equal("1", client.cvars.Sound_OutputDriverIndex)
+				assert.are.equal("restart sound", client.cvarCalls[#client.cvarCalls])
+				assert.are.equal(1, restarts(client))
+				assert.are.same({}, leaseOf(loaded))
+			end
+		)
+
+		it("doesn't restart the sound system when the chosen device is already playing (QOL-R68)", function()
+			local fake, client = startDevices(function(fake)
+				tick(fake, "Output device", "Speakers")
+			end)
+
+			fake.fire("CastStarted")
+			fake.fireGameEvent("PLAYER_LOGOUT")
+
+			assert.are.same({}, callsOn(client, "Sound_OutputDriverIndex"))
+			assert.are.equal(0, restarts(client))
+		end)
+
+		it(
+			"leases no device and restarts nothing while the chosen one is unplugged, leasing the rest (QOL-R68)",
+			function()
+				local fake, client, loaded = startDevices(function(fake, client)
+					tick(fake, "Output device", "Headset")
+					client.outputDevices = { "System Default", "Speakers" }
+				end)
+
+				assert.has_no_error(function()
+					fake.fire("CastStarted")
+				end)
+
+				assert.are.equal("1", client.cvars.Sound_OutputDriverIndex)
+				assert.are.equal(0, restarts(client))
+				assert.are.equal("0", client.cvars.Sound_EnableMusic)
+				assert.is_nil(leasedNames(loaded).Sound_OutputDriverIndex)
+			end
+		)
+
+		it("leases nothing for the device on a client without the device calls (QOL-R68)", function()
+			local fake, client, loaded = startDevices(function(fake, _, loaded)
+				tick(fake, "Output device", "Headset")
+				loaded.env.Sound_GameSystem_GetNumOutputDrivers = nil
+			end)
+
+			fake.fire("CastStarted")
+
+			assert.are.equal("1", client.cvars.Sound_OutputDriverIndex)
+			assert.is_nil(leasedNames(loaded).Sound_OutputDriverIndex)
+		end)
+
+		it(
+			"leaves the device the player picked mid-stretch, restarting nothing at the end (QOL-R63, QOL-R68)",
+			function()
+				local fake, client = startDevices(function(fake)
+					tick(fake, "Output device", "Headset")
+				end)
+				fake.fire("CastStarted")
+				client.cvars.Sound_OutputDriverIndex = "0"
+				client.cvarCalls = {}
+
+				fake.fireGameEvent("PLAYER_LOGOUT")
+
+				assert.are.equal("0", client.cvars.Sound_OutputDriverIndex)
+				assert.are.equal(0, restarts(client))
+			end
+		)
+
+		describe("changed mid-stretch", function()
+			it(
+				"leases a channel's new volume at once and still restores the player's own at the end (QOL-R65)",
+				function()
+					local fake, client, loaded = startDevices()
+					fake.fire("CastStarted")
+					client.cvarCalls = {}
+
+					tick(fake, "Effects", { true, 50 })
+
+					assert.are.same({ "set Sound_SFXVolume 0.5" }, client.cvarCalls)
+					assert.are.same(
+						{ name = "Sound_SFXVolume", orig = "0.4", set = "0.5" },
+						(function()
+							for _, entry in ipairs(leaseOf(loaded)) do
+								if entry.name == "Sound_SFXVolume" then
+									return entry
+								end
+							end
+						end)()
+					)
+					fake.fireGameEvent("PLAYER_LOGOUT")
+					assert.are.same(allValues().Sound_SFXVolume, client.cvars.Sound_SFXVolume)
+					assert.are.same(allValues().Sound_EnableSFX, client.cvars.Sound_EnableSFX)
+				end
+			)
+
+			it("turns a channel from a volume to 0% (Off), then unticks it, at once (QOL-R65)", function()
+				local fake, client = startDevices(function(fake)
+					tick(fake, "Music", { true, 30 })
+				end)
+				fake.fire("CastStarted")
+
+				tick(fake, "Music", { true, 0 })
+				assert.are.equal("0", client.cvars.Sound_EnableMusic)
+				assert.are.equal("0.25", client.cvars.Sound_MusicVolume)
+
+				tick(fake, "Music", { false, 0 })
+				assert.are.equal("1", client.cvars.Sound_EnableMusic)
+			end)
+
+			it(
+				"switches to a newly chosen device with one restart, and back for Don't change with one (QOL-R65, QOL-R68)",
+				function()
+					local fake, client = startDevices(function(fake)
+						tick(fake, "Output device", "Headset")
+					end)
+					fake.fire("CastStarted")
+					client.cvarCalls = {}
+
+					tick(fake, "Output device", "System Default")
+					assert.are.equal("0", client.cvars.Sound_OutputDriverIndex)
+					assert.are.equal(1, restarts(client))
+
+					client.cvarCalls = {}
+					tick(fake, "Output device", "")
+					assert.are.equal("1", client.cvars.Sound_OutputDriverIndex)
+					assert.are.same({ "set Sound_OutputDriverIndex 1", "restart sound" }, client.cvarCalls)
+
+					client.cvarCalls = {}
+					fake.fireGameEvent("PLAYER_LOGOUT")
+					assert.are.equal(0, restarts(client))
+				end
+			)
+
+			it("puts the device back with one restart when the audio mix turns off (QOL-R65, QOL-R68)", function()
+				local fake, client = startDevices(function(fake)
+					tick(fake, "Output device", "Headset")
+				end)
+				fake.fire("CastStarted")
+				client.cvarCalls = {}
+
+				tick(fake, "Fishing audio mix", false)
+
+				assert.are.equal("1", client.cvars.Sound_OutputDriverIndex)
+				assert.are.equal(1, restarts(client))
+			end)
+		end)
+
+		it("waits for RestrictionChanged(false) to put the device back and restart (QOL-R66, QOL-R68)", function()
+			local fake, client, loaded = startDevices(function(fake)
+				tick(fake, "Output device", "Headset")
+			end)
+			local setLockdown = lockdownOf(loaded)
+			fake.fire("CastStarted")
+			client.cvarCalls = {}
+
+			setLockdown(true)
+			fake.setRestricted(true)
+			assert.are.equal("2", client.cvars.Sound_OutputDriverIndex)
+			assert.are.same({}, client.cvarCalls)
+
+			setLockdown(false)
+			fake.setRestricted(false)
+			assert.are.equal("1", client.cvars.Sound_OutputDriverIndex)
+			assert.are.same({ "restart sound" }, { client.cvarCalls[#client.cvarCalls] })
+			assert.are.equal(1, restarts(client))
+		end)
+
+		it(
+			"puts a device left in global.lease back at ADDON_LOADED, restarting the sound system (QOL-R64, QOL-R68)",
+			function()
+				local fake = newFakePagle()
+				local loaded = fake.load("Pagle_QoL", { holdAddonLoaded = true })
+				loaded.env.PagleQoLDB = {
+					global = {
+						schemaVersion = 1,
+						lease = { { name = "Sound_OutputDriverIndex", orig = "1", set = "2" } },
+					},
+				}
+				loaded.client.cvars = { Sound_OutputDriverIndex = "2" }
+
+				loaded.client.fire("ADDON_LOADED", "Pagle_QoL")
+
+				assert.are.same({ "set Sound_OutputDriverIndex 1", "restart sound" }, loaded.client.cvarCalls)
+				assert.are.same({}, leaseOf(loaded))
+			end
+		)
+
+		it(
+			"puts the device back without a restart at logout or /reload, as the client reloads sound (QOL-R68)",
+			function()
+				local fake, client = startDevices(function(fake)
+					tick(fake, "Output device", "Headset")
+				end)
+				fake.fire("CastStarted")
+				client.cvarCalls = {}
+
+				fake.fireGameEvent("PLAYER_LOGOUT")
+
+				assert.are.equal("1", client.cvars.Sound_OutputDriverIndex)
+				assert.are.same({ "set Sound_OutputDriverIndex 1" }, callsOn(client, "Sound_OutputDriverIndex"))
+				assert.are.equal(0, restarts(client))
+			end
+		)
+
+		it("puts the player's own device back by name after the devices reordered (QOL-R68)", function()
+			local fake, client, loaded = startDevices(function(fake)
+				tick(fake, "Output device", "Headset")
+			end)
+			fake.fire("CastStarted")
+			local named
+			for _, entry in ipairs(leaseOf(loaded)) do
+				if entry.name == "Sound_OutputDriverIndex" then
+					named = entry.origName
+				end
+			end
+			assert.are.equal("Speakers", named)
+			-- A monitor's speakers appear before the player's, which move from index 1 to 2.
+			client.outputDevices = { "System Default", "Monitor", "Speakers", "Headset" }
+			client.cvars.Sound_OutputDriverIndex = "2"
+			client.cvarCalls = {}
+
+			client.mounted = true
+			fake.fireGameEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
+
+			assert.are.equal("2", client.cvars.Sound_OutputDriverIndex)
+		end)
+
+		it(
+			"puts a leftover device back by name at ADDON_LOADED, or by its index when it's gone (QOL-R64, QOL-R68)",
+			function()
+				for _, case in ipairs({
+					{ { "System Default", "Monitor", "Speakers", "Headset" }, "2" },
+					{ { "System Default", "Headset" }, "1" },
+				}) do
+					local fake = newFakePagle()
+					local loaded = fake.load("Pagle_QoL", { holdAddonLoaded = true })
+					loaded.env.PagleQoLDB = {
+						global = {
+							schemaVersion = 1,
+							lease = {
+								{ name = "Sound_OutputDriverIndex", orig = "1", set = "3", origName = "Speakers" },
+							},
+						},
+					}
+					loaded.client.outputDevices = case[1]
+					loaded.client.cvars = { Sound_OutputDriverIndex = "3" }
+
+					loaded.client.fire("ADDON_LOADED", "Pagle_QoL")
+
+					assert.are.equal(case[2], loaded.client.cvars.Sound_OutputDriverIndex)
+					assert.are.same({}, leaseOf(loaded))
+				end
+			end
+		)
+
+		it("leases no device while QoL stands down (QOL-R82, QOL-R68)", function()
+			local fake, client = startDevices(function(fake, _, loaded)
+				tick(fake, "Output device", "Headset")
+				loaded.ns.IsArmed = function()
+					return false
+				end
+			end)
+
+			fake.fire("CastStarted")
+
+			assert.are.same({}, client.cvarCalls)
+		end)
 	end)
 end)
 

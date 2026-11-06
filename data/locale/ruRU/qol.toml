@@ -102,12 +102,68 @@ value = "Звук для рыбалки"
 en = "Fishing audio mix"
 
 [SETTINGS_AUDIO_MIX_TOOLTIP]
-value = "Во время рыбалки: звуки на максимум; музыка, звуки окружения и диалоги выключены; общая громкость не меняется. Потом всё возвращается."
-en = "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards."
+value = "Во время рыбалки: каждый канал и устройство вывода — как задано ниже. Потом всё возвращается."
+en = "While you fish: each channel and the output device as set below. Put back afterwards."
+
+[SETTINGS_AUDIO_MASTER]
+value = "Общая громкость"
+en = "Master volume"
+
+[SETTINGS_AUDIO_MASTER_TOOLTIP]
+value = "Если отмечено, задаёт общую громкость на время рыбалки. Выключить её нельзя, и ниже 10% она не опускается, чтобы вы слышали всплеск."
+en = "Ticked, sets the master volume while you fish. It has no Off and goes no lower than 10%, so you still hear the splash."
+
+[SETTINGS_AUDIO_CHANNEL_TOOLTIP]
+value = "Если отмечено, задаёт этот канал на время рыбалки: при 0% он выключен. Если нет, канал не меняется."
+en = "Ticked, sets this channel while you fish: at 0% it's off. Unticked, leaves it as it is."
+
+[SETTINGS_AUDIO_EFFECTS]
+value = "Эффекты"
+en = "Effects"
+
+[SETTINGS_AUDIO_MUSIC]
+value = "Музыка"
+en = "Music"
+
+[SETTINGS_AUDIO_AMBIENCE]
+value = "Звуки окружения"
+en = "Ambience"
+
+[SETTINGS_AUDIO_DIALOG]
+value = "Диалоги"
+en = "Dialog"
+
+[SETTINGS_AUDIO_KEEP]
+value = "Не менять"
+en = "Don't change"
+
+[SETTINGS_AUDIO_OFF]
+value = "Выкл."
+en = "Off"
+
+[SETTINGS_AUDIO_LEVEL]
+value = "{level:0}%"
+en = "{level:0}%"
+
+[SETTINGS_AUDIO_DEVICE]
+value = "Устройство вывода"
+en = "Output device"
+
+[SETTINGS_AUDIO_DEVICE_TOOLTIP]
+value = "Во время рыбалки звук игры идёт сюда. При переключении звук на миг пропадает: в начале и в конце."
+en = "Plays the game's sound here while you fish. The sound drops out for a moment as it switches, at the start and at the end."
+
+[SETTINGS_AUDIO_DEVICE_MISSING]
+value = "{device} (не найдено)"
+en = "{device} (not found)"
 
 [SETTINGS_BACKGROUND_SOUND]
 value = "Звук в фоновом режиме"
-en = "Keep sound when the game is in the background"
+en = "Keep sound in the background"
+
+[SETTINGS_BACKGROUND_SOUND_TOOLTIP]
+value = "Во время рыбалки звук не выключается, когда игра в фоновом режиме."
+en = "While you fish, the sound keeps playing when the game is in the background."
 
 [SETTINGS_AUTO_LOOT]
 value = "Автосбор добычи на рыбалке"

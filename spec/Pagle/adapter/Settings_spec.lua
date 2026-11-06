@@ -305,6 +305,61 @@ describe("M:AddSetting", function()
 				M:AddSetting("fishing", { kind = "keybinding", label = "Fishing key" })
 			end)
 		)
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a slider setting's format is a function",
+			errorOf(function()
+				M:AddSetting("fishing", {
+					kind = "slider",
+					label = "Volume",
+					get = function() end,
+					set = function() end,
+					min = 0,
+					max = 1,
+					step = 1,
+					format = "%",
+				})
+			end)
+		)
+		local function checkboxSlider(slider)
+			return {
+				kind = "checkboxSlider",
+				label = "Music",
+				get = function() end,
+				set = function() end,
+				slider = slider,
+			}
+		end
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a checkboxSlider setting needs slider, a table",
+			errorOf(function()
+				M:AddSetting("fishing", checkboxSlider(nil))
+			end)
+		)
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a checkboxSlider setting's slider needs step, a number",
+			errorOf(function()
+				M:AddSetting(
+					"fishing",
+					checkboxSlider({ get = function() end, set = function() end, min = 0, max = 100 })
+				)
+			end)
+		)
+		assert.matches(
+			"Settings_spec%.lua:%d+: .*a checkboxSlider setting's slider's default is a number",
+			errorOf(function()
+				M:AddSetting(
+					"fishing",
+					checkboxSlider({
+						get = function() end,
+						set = function() end,
+						min = 0,
+						max = 100,
+						step = 5,
+						default = "100",
+					})
+				)
+			end)
+		)
 	end)
 
 	it("raises an error at the caller for an id the Module already used on that page (CORE-R42)", function()
@@ -730,6 +785,134 @@ describe("A Module's value rows", function()
 		assert.is_false(enabled())
 		live = true
 		assert.is_true(enabled())
+	end)
+
+	it("show a slider's value through its format, and none without one (SET-R5)", function()
+		local loaded, page = trackersWith({
+			{
+				kind = "slider",
+				label = "Per",
+				min = 1,
+				max = 15,
+				step = 1,
+				get = function()
+					return 5
+				end,
+				set = function() end,
+				format = function(value)
+					return value .. " min"
+				end,
+			},
+			{
+				kind = "slider",
+				label = "Count",
+				min = 1,
+				max = 60,
+				step = 1,
+				get = function()
+					return 40
+				end,
+				set = function() end,
+			},
+		})
+		local rows = loaded.client.settings.show(page)
+
+		assert.are.equal("5 min", loaded.client.settings.rowNamed(rows, "Per").frame.valueLabel)
+		assert.is_nil(loaded.client.settings.rowNamed(rows, "Count").frame.valueLabel)
+	end)
+
+	describe("a checkboxSlider", function()
+		-- A Music row: its box and volume in `state`, live while `state.live`.
+		local function music(state)
+			return {
+				kind = "checkboxSlider",
+				label = "Music",
+				tooltip = "While you fish.",
+				default = true,
+				get = function()
+					return state.on
+				end,
+				set = function(value)
+					state.on = value
+				end,
+				slider = {
+					default = 0,
+					min = 0,
+					max = 100,
+					step = 5,
+					get = function()
+						return state.volume
+					end,
+					set = function(value)
+						state.volume = value
+					end,
+					format = function(value)
+						return value == 0 and "Off" or value .. "%"
+					end,
+				},
+				isEnabled = function()
+					return state.live
+				end,
+			}
+		end
+
+		it("is the native checkbox with a slider beside it, the slider live while ticked (SET-R5)", function()
+			local state = { on = false, volume = 40, live = true }
+			local loaded, page = trackersWith({ music(state) })
+			local settings = loaded.client.settings
+			local row = settings.rowNamed(settings.show(page), "Music")
+			local data = row.initializer:GetData()
+
+			assert.are.same(
+				{ "SettingsCheckboxSliderControlTemplate", "Music", "While you fish.", "Music", "While you fish." },
+				{ row.initializer:GetTemplate(), data.cbLabel, data.cbTooltip, data.sliderLabel, data.sliderTooltip }
+			)
+			assert.are.same({ false, 40, "40%", false }, {
+				row.frame.value,
+				row.frame.sliderValue,
+				row.frame.valueLabel,
+				row.frame.sliderEnabled,
+			})
+			assert.are.same(
+				{ 0, 100, 20 },
+				{ data.sliderOptions.minValue, data.sliderOptions.maxValue, data.sliderOptions.steps }
+			)
+
+			data.cbSetting:SetValue(true)
+			data.sliderSetting:SetValue(0)
+			assert.are.same({ true, 0 }, { state.on, state.volume })
+			row = settings.rowNamed(settings.show(page), "Music")
+			assert.are.same({ true, "Off", true }, { row.frame.value, row.frame.valueLabel, row.frame.sliderEnabled })
+		end)
+
+		it("gives the page's Defaults button both its defaults (SET-R60)", function()
+			local state = { on = false, volume = 40, live = true }
+			local loaded, page = trackersWith({ music(state) })
+
+			loaded.client.settings.defaults(page)
+
+			assert.are.same({ true, 0 }, { state.on, state.volume })
+		end)
+
+		it("is hidden while its isEnabled is false, its control never greying (SET-R31)", function()
+			local state = { on = true, volume = 40, live = false }
+			local loaded, page = trackersWith({ music(state) })
+			local settings = loaded.client.settings
+			local function shown()
+				for _, row in ipairs(settings.show(page)) do
+					if row.initializer:GetName() == "Music" then
+						return row
+					end
+				end
+				return nil
+			end
+
+			assert.is_nil(shown())
+			state.live = true
+			local row = assert(shown())
+			assert.is_nil(row.frame.enabled)
+			assert.are.same({}, row.initializer.modifyPredicates)
+		end)
 	end)
 
 	it("offer a dropdown's options read each time it opens (SET-R62)", function()

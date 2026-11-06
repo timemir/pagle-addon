@@ -559,6 +559,18 @@ local function valueSetting(page, variable, varType, setting)
 	)
 end
 
+-- A slider's native options: its range and step, and its value's text on the right through `format`, as Game ›
+-- Sound's volume sliders show theirs; with no `format`, no text (SET-R5).
+---@param slider PagleSetting|PagleSettingSlider
+---@return SettingsSliderOptions
+local function sliderOptions(slider)
+	local options = Settings.CreateSliderOptions(slider.min, slider.max, slider.step)
+	if slider.format then
+		options:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, slider.format)
+	end
+	return options
+end
+
 -- A Module's button row with no caption (SET-R2): its label on the button and no label beside it, on Core's own row,
 -- the button as wide as its words, measured, from where a native row's control starts. A native button is a fixed 200
 -- wide, and a long label ran past both its sides ("Guardar lo que llevo como conjunto de pesca"). It reads `isEnabled`
@@ -619,13 +631,34 @@ local function moduleRow(page, layout, setting, variable, indented)
 			setting.tooltip
 		)
 	elseif kind == "slider" then
-		local options = Settings.CreateSliderOptions(setting.min, setting.max, setting.step)
 		return Settings.CreateSlider(
 			page,
 			valueSetting(page, variable, Settings.VarType.Number, setting),
-			options,
+			sliderOptions(setting),
 			setting.tooltip
 		)
+	elseif kind == "checkboxSlider" then
+		-- The native checkbox with a slider beside it, as Game › Sound's and Controls' rows (SET-R5): two settings,
+		-- each restored by Defaults; the control greys the slider while the box is unticked.
+		local slider = setting.slider --[[@as PagleSettingSlider]]
+		local sliderSetting = valueSetting(page, variable .. "_slider", Settings.VarType.Number, {
+			kind = "slider",
+			label = setting.label,
+			default = slider.default,
+			get = slider.get,
+			set = slider.set,
+		})
+		local initializer = CreateSettingsCheckboxSliderInitializer(
+			valueSetting(page, variable, Settings.VarType.Boolean, setting),
+			setting.label,
+			setting.tooltip,
+			sliderSetting,
+			sliderOptions(slider),
+			setting.label,
+			setting.tooltip
+		)
+		layout:AddInitializer(initializer)
+		return initializer
 	elseif kind == "dropdown" then
 		local value = setting.default
 		if value == nil then
@@ -688,8 +721,14 @@ local function buildPage(topic, page, layout, entries)
 				if parent then
 					initializer:SetParentInitializer(parent)
 				end
-				-- A row Core draws reads its isEnabled as it draws (adapter/KeyBindingRow.lua, labelButtonRow).
-				if setting.isEnabled and not drawnByCore(setting) then
+				-- A row Core draws reads its isEnabled as it draws (adapter/KeyBindingRow.lua, labelButtonRow). A
+				-- checkboxSlider's native control never reads modify predicates (SettingsCheckboxSliderControlMixin is a
+				-- SettingsListElementMixin, whose IsEnabled reads only Kiosk), so it is hidden while its isEnabled is
+				-- false instead: the panel lays its rows out again after each value change (SettingsPanelMixin:
+				-- OnSettingValueChanged, RepairDisplay), as Game › Subtitles' rows show and hide (SET-R31).
+				if setting.isEnabled and setting.kind == "checkboxSlider" then
+					initializer:AddShownPredicate(setting.isEnabled)
+				elseif setting.isEnabled and not drawnByCore(setting) then
 					initializer:AddModifyPredicate(setting.isEnabled)
 				end
 			end

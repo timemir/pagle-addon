@@ -43,30 +43,84 @@ local function lease()
 	return global.lease
 end
 
+--- The client's sound output devices, by index from 0, as Game › Sound lists them (QOL-R68): read at each call, so a
+--- headset plugged in or out since shows. None on a client without the calls.
+---@return string[]
+function ns.OutputDevices()
+	local devices = {}
+	if Sound_GameSystem_GetNumOutputDrivers and Sound_GameSystem_GetOutputDriverNameByIndex then
+		for index = 0, (Sound_GameSystem_GetNumOutputDrivers() or 0) - 1 do
+			devices[index + 1] = Sound_GameSystem_GetOutputDriverNameByIndex(index) or ""
+		end
+	end
+	return devices
+end
+
+-- Whether PLAYER_LOGOUT has come: the client reloads its sound from the CVars after a logout or /reload anyway.
+local loggingOut = false
+
+-- Runs `change`, a lease or a restore, then restarts the sound system if it changed the output device, so the sound
+-- moves to the device now (QOL-R68). A lease or restore that leaves the device as it was restarts nothing, nor does
+-- one at logout or /reload.
+---@param change fun()
+local function changingSound(change)
+	if loggingOut then
+		change()
+		return
+	end
+	local before = GetCVar(ns.OUTPUT_DEVICE_CVAR)
+	change()
+	local after = GetCVar(ns.OUTPUT_DEVICE_CVAR)
+	if
+		before ~= nil
+		and after ~= nil
+		and not ns.SameCVarValue(before, after)
+		and Sound_GameSystem_RestartSoundSystem
+	then
+		Sound_GameSystem_RestartSoundSystem()
+	end
+end
+
 -- Restores every leased CVar now, or with `only` just the ones it names, or, under lockdown, leaves the lease to
--- wait for RestrictionChanged(false) (QOL-R63, QOL-R65, QOL-R66).
+-- wait for RestrictionChanged(false) (QOL-R63, QOL-R65, QOL-R66). It doesn't restart the sound system.
 ---@param only table<string, true>?
-local function restore(only)
+local function restoreLease(only)
 	if not InCombatLockdown() then
+		-- The player's own device by its name, where the client lists it now (QOL-R68).
+		ns.ResolveLeasedDevice(lease(), ns.OutputDevices())
 		ns.RestoreLease(lease(), cvars, only)
 	end
 end
 
+-- restoreLease, restarting the sound system if it put the output device back (QOL-R68).
+---@param only table<string, true>?
+local function restore(only)
+	changingSound(function()
+		restoreLease(only)
+	end)
+end
+
 --- Changes a While you fish setting with `change(profile)` (QOL-R62). During a stretch, the CVars of a feature it
---- turned off are restored at once and those of one it turned on are leased at once; the rest of the lease stays
---- as it is (QOL-R65). Outside one, the next stretch follows the new setting.
+--- turned off are restored at once and those it turned on or gave a new value (a channel's level, the output device)
+--- are leased at once; the rest of the lease stays as it is (QOL-R65). Outside one, the next stretch follows the new
+--- setting.
 ---@param change fun(profile: PagleQoLLeaseSettings) changes `PagleQoLDB.profile` in place
 function ns.ChangeLeaseSetting(change)
 	---@type PagleQoLLeaseSettings QoL's OnInitialize opened PagleQoLDB before its page has any row to change
 	local profile = ns.db.profile
-	local before = ns.LeaseRows(profile)
+	local devices = ns.OutputDevices()
+	local before = ns.LeaseRows(profile, devices)
 	change(profile)
 	if not stretch:IsRunning() then
 		return
 	end
-	local rows, names = ns.LeaseChange(before, ns.LeaseRows(profile))
-	restore(names)
-	ns.Lease(lease(), rows, cvars)
+	local rows, names = ns.LeaseChange(before, ns.LeaseRows(profile, devices))
+	-- One restart at most, for the restore and the lease together (QOL-R68).
+	changingSound(function()
+		restoreLease(names)
+		ns.Lease(lease(), rows, cvars)
+		ns.NameLeasedDevice(lease(), devices)
+	end)
 end
 
 local onUpdate
@@ -119,10 +173,14 @@ function ns.StartStretch()
 	restore()
 
 	-- A stretch starts only while armed, so never while restricted or standing down (QOL-R30, QOL-R82). It leases
-	-- soft-interact and each While you fish feature that is on (QOL-R62).
+	-- soft-interact and each While you fish feature that is on (QOL-R62), the output device among them (QOL-R68).
 	Pagle.RegisterCallback(OWNER, "CastStarted", function()
 		if stretch:CastStarted(ns.IsArmed()) then
-			ns.Lease(lease(), ns.LeaseRows(ns.db.profile), cvars)
+			changingSound(function()
+				local devices = ns.OutputDevices()
+				ns.Lease(lease(), ns.LeaseRows(ns.db.profile, devices), cvars)
+				ns.NameLeasedDevice(lease(), devices)
+			end)
 		end
 		setOnUpdate()
 	end)
@@ -147,6 +205,7 @@ function ns.StartStretch()
 	-- AceDB may have stripped the profile's defaults already (QOL-R30, QOL-R63). A restore that must wait stays in the
 	-- lease, saved for the leftover restore (QOL-R64).
 	Pagle.RegisterEvent(OWNER, "PLAYER_LOGOUT", function()
+		loggingOut = true
 		ns.LogOut()
 		ns.EndStretch()
 	end)
