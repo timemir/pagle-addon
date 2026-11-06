@@ -106,7 +106,7 @@ ns.Locale("deDE", function(L)
 	L.SETTINGS_FISHING_SET_NONE = "Keins (Ausrüstung bleibt)"
 	L.SETTINGS_FISHING_SET_TOOLTIP = "Die Angeltaste legt es an, wenn du keine Angelrute in der Hand hast. Doppelklick überspringt das."
 	L.SETTINGS_GEAR = "Ausrüstung"
-	L.SETTINGS_HIDE_UNTIL_POLE = "Ausblenden, bis du eine Angelrute in der Hand hast"
+	L.SETTINGS_HIDE_UNTIL_POLE = "Nur mit Angelrute in der Hand"
 	L.SETTINGS_HIDE_UNTIL_POLE_TOOLTIP = "Hält den Knopf verborgen, solange du nicht deine Angelkleidung trägst. Er erscheint, sobald du eine Angelrute in der Hand hast oder angelst."
 	L.SETTINGS_LURE = "Köder"
 	L.SETTINGS_LURES = "Köder"

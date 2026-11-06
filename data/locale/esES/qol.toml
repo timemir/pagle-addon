@@ -254,7 +254,7 @@ value = "Muestra qué hará tu próxima pulsación. Mayús y arrastrar para move
 en = "Shows what your next press will do. Shift-drag to move."
 
 [SETTINGS_HIDE_UNTIL_POLE]
-value = "Ocultar hasta tener una caña en la mano"
+value = "Solo con la caña en la mano"
 en = "Hide until a fishing pole is in hand"
 
 [SETTINGS_HIDE_UNTIL_POLE_TOOLTIP]
