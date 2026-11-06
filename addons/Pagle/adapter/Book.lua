@@ -16,6 +16,8 @@ local Pagle = Pagle
 -- (BOOK-R1). FakePagle loads this same file on a Module's client fake (spec/support/fake_pagle.lua).
 
 local SHELL = ns.BOOK_SHELL
+-- How far a page's scroll frame reaches above its body, so an accent over a first-line capital isn't clipped (BOOK-R11).
+local HEADROOM = 4
 local RIBBON = ns.BOOK_RIBBON
 local rgb = ns.Rgb
 
@@ -1198,11 +1200,18 @@ local function viewOf(book, page, side, leaf)
 		local clip = CreateFrame("Frame", nil, paper)
 		clip:SetClipsChildren(true)
 		clip:SetAllPoints()
+		-- The scroll frame clips what it holds, so it starts HEADROOM above the body: a capital's accent on the body's
+		-- first line (the Ä of a kicker's GEWÄSSER) rises past the line's top and would be cut there. The content
+		-- keeps the body's place, HEADROOM down its holder, which is what scrolls.
 		local scroll = CreateFrame("ScrollFrame", nil, clip) --[[@as ScrollFrame]]
-		scroll:SetAllPoints(body)
-		local content = CreateFrame("Frame", nil, scroll)
+		scroll:SetPoint("TOPLEFT", body, "TOPLEFT", 0, HEADROOM)
+		scroll:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT")
+		local holder = CreateFrame("Frame", nil, scroll)
+		holder:SetSize(body:GetWidth(), body:GetHeight() + HEADROOM)
+		scroll:SetScrollChild(holder)
+		local content = CreateFrame("Frame", nil, holder)
+		content:SetPoint("TOPLEFT", 0, -HEADROOM)
 		content:SetSize(body:GetWidth(), body:GetHeight())
-		scroll:SetScrollChild(content)
 		scroll:EnableMouseWheel(true)
 		local wheel = { height = body:GetHeight() }
 		scroll:SetScript("OnMouseWheel", function(self, delta)
@@ -1400,7 +1409,9 @@ function Book:Draw(how)
 				view.clip:SetAlpha(mode == "fade" and 0 or 1)
 			end
 			local height = renderer(view.content, router:Place())
-			view.content:SetHeight(math.max(1, height or frame.bodies[side]:GetHeight()))
+			local contentHeight = math.max(1, height or frame.bodies[side]:GetHeight())
+			view.content:SetHeight(contentHeight)
+			view.content:GetParent():SetHeight(contentHeight + HEADROOM)
 			if moved or flip then
 				view.scroll:SetVerticalScroll(0)
 			end

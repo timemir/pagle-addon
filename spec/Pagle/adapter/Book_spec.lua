@@ -100,6 +100,25 @@ describe("Pagle.NewBook (core/book.md)", function()
 		assert.are.same({ page = "home" }, book:Place())
 	end)
 
+	it(
+		"clips a side's content 4 units above its body, so a first-line capital's accent shows, while its top"
+			.. " stays the body's and its height scrolls (BOOK-R21)",
+		function()
+			local book = newBook()
+			book:RegisterPage("leaf", "left", function()
+				return 900
+			end)
+			book:Open({ page = "leaf", n = 1 })
+			local view = book.drawnSides.left
+			local body = book.frame.bodies.left
+			local holder = view.scroll.scrollChild
+			assert.are.same({ "TOPLEFT", body, "TOPLEFT", 0, 4 }, view.scroll.points[1])
+			assert.are.equal(holder, view.content:GetParent())
+			assert.are.same({ "TOPLEFT", 0, -4 }, view.content.points[1])
+			assert.are.same({ 900, 904 }, { view.content:GetHeight(), holder:GetHeight() })
+		end
+	)
+
 	it("turns the page with its sound and hook as it changes page while open (BOOK-R31, BOOK-R33)", function()
 		local phases = {}
 		local book = newBook({
