@@ -1049,6 +1049,34 @@ local function newTile(parent, width)
 	return tile
 end
 
+-- Fits a tile's rank line to `room`, its text set (LED-R131), and returns how far its first line rises above its place
+-- at `lineY`. A line that fits is one line there, as wide as its words. A longer one (German "unbefischt · jede Fertigkeit",
+-- "Einheimischer · 63%", 1.1.1) wraps onto two lines whose last stays at the kit's place over the bar, rising into the
+-- room under a name of one line; with no room there, under a name of two, it stays one line and the client cuts it.
+---@param tile LedgerZoneTileView
+---@param room number
+---@param lineY number
+---@return number
+local function rankLineRise(tile, room, lineY)
+	local line = tile.line
+	line:SetWordWrap(false)
+	line:SetWidth(0)
+	if line:GetStringWidth() + 1 <= room then
+		bound(line, room)
+		return 0
+	end
+	local oneLine = line:GetStringHeight()
+	line:SetWordWrap(true)
+	line:SetMaxLines(2)
+	line:SetWidth(room)
+	local rise = math.max(0, line:GetStringHeight() - oneLine)
+	if lineY - rise >= NAME_Y + tile.name:GetStringHeight() + 2 then
+		return rise
+	end
+	line:SetWordWrap(false)
+	return 0
+end
+
 -- Fills a tile with `data` (LedgerZoneTile).
 ---@param tile LedgerZoneTileView
 ---@param data LedgerZoneTile
@@ -1080,8 +1108,6 @@ local function fillTile(tile, data, open)
 	local base = dashed and LINE_Y_DASHED or LINE_Y
 	local lineY = math.min(base + LINE_DROP, math.max(base, math.ceil(NAME_Y + tile.name:GetStringHeight() + 2)))
 	ns.JournalRestyle(tile.line, "italic", 13, dashed and INK.noteLight or INK.tileInk)
-	tile.line:ClearAllPoints()
-	tile.line:SetPoint("TOPLEFT", 10, -lineY)
 	tile.line:SetText(data.line or "")
 	-- "caught" and its check as wide as its words, to at most a little over half the row (a longer language's is cut there by the
 	-- client), and the rank line in what it leaves (#560: it ran out of the tile's left edge, over the rank line)
@@ -1091,7 +1117,8 @@ local function fillTile(tile, data, open)
 		bound(tile.line2, (w - 20) * 0.55)
 		line2W = tile.line2:GetWidth() + 6
 	end
-	bound(tile.line, w - 20 - line2W)
+	tile.line:ClearAllPoints()
+	tile.line:SetPoint("TOPLEFT", 10, -(lineY - rankLineRise(tile, w - 20 - line2W, lineY)))
 	tile.line2:ClearAllPoints()
 	tile.line2:SetPoint("TOPRIGHT", -8, -(lineY - 5))
 	ns.JournalAt(tile.barCase, tile, 10, lineY + 20)
