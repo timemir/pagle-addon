@@ -1,5 +1,29 @@
 # Pagle
 
+## 1.1.2 (2026-11-06)
+
+Long names scroll, and the last cut labels fit.
+
+### Added
+
+- A fish's name too long for its toast scrolls slowly to its end and back, so you can read all of it, where it used to be cut short with "…". With Animations off it's cut short as before. (#573)
+- Pagle's entry in the game's Addon Compartment shows Pagle's icon. (#572)
+- For contributors: `scripts/measure-layout.sh` runs `/pagle dev tour` with every text measured in its real font, and reports text that's cut, off its page or overlapping, before an in-game test. (#577)
+
+### Fixed
+
+- Settings labels that the game's Settings panel cut short now fit: "Announce open Hunt windows" in English, and shorter wording for a few labels in German, Spanish and Russian. Their tooltips keep the full sentence. (#578)
+- The Hunts tracker's "New wagers with the Pagle companion" line is no longer cut short, in any language. It's set a little smaller, or goes on to a second line. (#578)
+- A book ribbon whose name took three lines (Spanish "Las veinticuatro horas") is set smaller so it fits on two. (#578)
+- A done item on the First evening list is struck through on every line it wraps to, not only the first. (#578)
+- On the Wagers ladder, two posts too close for both titles show one of them, never two printed over each other. (#578)
+- A first-look ring on tightly stacked rows stays on its own row's words. (#578)
+- German "UNGESCHRIEBEN" stays whole on the Legend crest. (#578)
+
+### TRANSLATORS
+
+- Español: fmartingr
+
 ## 1.1.1 (2026-11-06)
 
 Pagle speaks German, and its pages fit longer languages.
