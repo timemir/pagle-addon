@@ -434,7 +434,7 @@ describe("the Journal's zone spread", function()
 		it("led_r135 sets a seal's words smaller when a word is wider than the seal, and English as the kit", function()
 			local fake, loaded = zoneSpread(DARKSHORE)
 			local seal = loaded.ns.journal.shown.left.drawn.seal[1].seal
-			local room = seal.size - 10
+			local room = seal.label:GetWidth()
 			assert.are.equal(11.5, seal.label.fontObject.font[2])
 
 			fake.language = "ruRU"

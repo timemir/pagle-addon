@@ -1229,6 +1229,12 @@ local function drawToast(frame, display, style)
 	local fonts = { what = "What", name = page.high and "NameHigh" or "Name" }
 	-- A ruled toast's name line ends before the ruler's numbers.
 	local lineWidth = page.ruled and math.min(width, rulerNameLimit(width - 6)) or width
+	-- The Coins, at the bottom right, as wide as they draw: the coin and "+N". The words end 4 before them, as a
+	-- composed style's do; the 34 kept for them was narrower than the coin and its amount, and a long name ran under.
+	local coinsWidth = setCoins(frame.coins, announcement.coins, page.coin, false)
+	if coinsWidth > 0 then
+		lineWidth = math.min(lineWidth, page.w - 2 - coinsWidth - 4 - page.tx)
+	end
 	frame.text:ClearAllPoints()
 	frame.text:SetPoint("TOPLEFT", frame.title, "BOTTOMLEFT", 0, -TOAST_LINE_GAP)
 	if announcement.fighting then
@@ -1301,7 +1307,7 @@ local function drawToast(frame, display, style)
 	ruler.record:SetPoint("CENTER", frame.recordPivot, "CENTER")
 
 	frame.coins:ClearAllPoints()
-	if setCoins(frame.coins, announcement.coins, page.coin, false) > 0 then
+	if coinsWidth > 0 then
 		frame.coins:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT", -2, -2)
 		ns.Ink(frame.coins.label, inks.amt)
 	end

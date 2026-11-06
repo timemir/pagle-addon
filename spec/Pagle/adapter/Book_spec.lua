@@ -100,6 +100,25 @@ describe("Pagle.NewBook (core/book.md)", function()
 		assert.are.same({ page = "home" }, book:Place())
 	end)
 
+	it(
+		"clips a side's content 4 units above its body, so a first-line capital's accent shows, while its top"
+			.. " stays the body's and its height scrolls (BOOK-R21)",
+		function()
+			local book = newBook()
+			book:RegisterPage("leaf", "left", function()
+				return 900
+			end)
+			book:Open({ page = "leaf", n = 1 })
+			local view = book.drawnSides.left
+			local body = book.frame.bodies.left
+			local holder = view.scroll.scrollChild
+			assert.are.same({ "TOPLEFT", body, "TOPLEFT", 0, 4 }, view.scroll.points[1])
+			assert.are.equal(holder, view.content:GetParent())
+			assert.are.same({ "TOPLEFT", 0, -4 }, view.content.points[1])
+			assert.are.same({ 900, 904 }, { view.content:GetHeight(), holder:GetHeight() })
+		end
+	)
+
 	it("turns the page with its sound and hook as it changes page while open (BOOK-R31, BOOK-R33)", function()
 		local phases = {}
 		local book = newBook({
@@ -301,6 +320,35 @@ describe("Pagle.NewBook (core/book.md)", function()
 		assert.is_true(label:CanWordWrap())
 		assert.are.equal(82, label.width)
 		assert.are.equal(2, label:GetMaxLines())
+	end)
+
+	-- The size a ribbon's name is set at, from its gilt face's font object (ns.ArtFaceFont's "gilt_<size>_s").
+	local function giltSize(label)
+		local size = assert(label.fontObject.name:match("^PagleArtFace_gilt_([%d_]+)_s$"), label.fontObject.name)
+		return tonumber((size:gsub("_", ".")))
+	end
+
+	it("sets a word wider than the room inside a ribbon's stitches smaller, its words kept (BOOK-R17)", function()
+		local book = newBook({
+			ribbons = {
+				{ id = "home", text = "Angelkleidung", color = { 0.2, 0.4, 0.2 }, target = { page = "home" } },
+				{ id = "one", text = "Dein Anglerbuch", color = { 0.5, 0.2, 0.2 }, target = { page = "leaf", n = 1 } },
+			},
+		})
+		book:Open()
+		local long, short = book.frame.ribbons[1].label, book.frame.ribbons[2].label
+
+		-- One word, 78 wide at 12 on the fake: past the 74 between the stitches, with no space to wrap at.
+		long:SetWidth(0)
+		assert.are.equal(78, long:GetStringWidth())
+		long:SetWidth(82)
+		assert.is_true(giltSize(long) < 12)
+		assert.are.same({ "Angelkleidung", 82 }, { long:GetText(), long.width })
+		-- Two words, each within the room: they wrap at 12, as before.
+		assert.are.same({ "Dein Anglerbuch", 12, 82 }, { short:GetText(), giltSize(short), short.width })
+
+		book:SetRibbons({ { id = "home", text = "Home", color = { 0.2, 0.4, 0.2 }, target = { page = "home" } } })
+		assert.are.same({ "Home", 12 }, { long:GetText(), giltSize(long) })
 	end)
 
 	it("reads as closed while it fades out after a close (BOOK-R23)", function()

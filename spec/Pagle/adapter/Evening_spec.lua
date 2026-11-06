@@ -6,6 +6,10 @@
 
 local TICK, LIST_DONE = "856 SFX", "878 SFX"
 
+-- Where the fake client's words land across a frame (spec/support/bounds.lua).
+---@diagnostic disable-next-line: undefined-global -- busted runs on stock Lua 5.1; the WoW client has no dofile
+local bounds = dofile("spec/support/bounds.lua")
+
 -- Types `/pagle <msg>` in chat.
 local function pagle(loaded, msg)
 	loaded.env.SlashCmdList.PAGLE(msg)
@@ -101,6 +105,35 @@ describe("The First evening list on the client", function()
 		-- The kit's tracker: 274 wide, the header 30, a line 21.6 or 34.6 with its hint, 12 under the last.
 		assert.are.equal(274, loaded.ns.eveningFrame:GetWidth())
 		assert.is_true(math.abs(loaded.ns.eveningFrame:GetHeight() - (30 + 34.6 + 5 * 21.6 + 12)) < 0.01)
+	end)
+
+	it("wraps a line too long for its paper within it, its row and the paper growing (ONB-R61)", function()
+		local long = "Wirf einen Blick in den Kuriositätenladen"
+		local loaded = withList()
+		loaded.ns.L.EVENING_SHOP = long
+		-- The client wraps it to two lines (17.6 a line at 13.5); the fake measures one, so its height is the client's.
+		local GuideText = loaded.ns.GuideText
+		loaded.ns.GuideText = function(...)
+			local fontString = GuideText(...)
+			fontString.GetStringHeight = function(self)
+				return (self.wordWrap and self.text == long) and 13.5 * 2 + 4.1 or 14
+			end
+			return fontString
+		end
+
+		offToTheWater(loaded)
+
+		local frame = loaded.ns.eveningFrame
+		local line
+		for _, row in ipairs(frame.rows) do
+			line = row.text.text == long and row.text or line
+		end
+		assert(line, "no shop line")
+		-- One line at 6 a byte runs past the paper's right edge, from where a line starts.
+		assert.is_true(43 + #long * 6 > 274)
+		assert.are.same({ 274 - 43 - 14, true }, { line.width, line.wordWrap })
+		assert.is_true(math.abs(frame:GetHeight() - (30 + 34.6 + 5 * 21.6 + 17.6 + 12)) < 0.01)
+		assert.are.same({}, bounds.overflows(frame.body))
 	end)
 
 	it("ticks a real Cast and Catch, a Session ending without a card and the shop opening (ONB-R61)", function()

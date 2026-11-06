@@ -23,6 +23,10 @@ local L = ns.L
 
 -- The kit's tracker: 274 wide; its header row 30 tall; a line 21.6 tall, 34.6 with its hint; 12 under the last.
 local WIDTH, TOP, LINE, LINE_HINT, BOTTOM = 274, 30, 21.6, 34.6, 12
+-- Where a line's words start, the room they keep from the paper's right edge, and a line's and a hint's size and line
+-- box: a line or hint longer than the room wraps on within it, its row growing by a line box a line.
+local TEXT_X, TEXT_END = 43, 14
+local TEXT_SIZE, TEXT_LH, HINT_SIZE, HINT_LH = 13.5, 17.6, 12.5, 16.3
 
 -- The list's inks (the kit's P.Tracker): a done line, the next one, the rest.
 ns.GUIDE_INKS.eveningDone = ns.Rgb("6A5A48")
@@ -117,9 +121,17 @@ local function rowAt(i)
 			wash = wash,
 			box = ns.ArtSprite(body, "GuideParts", "li-box", "ARTWORK", 1),
 			tick = ns.ArtSprite(body, "GuideParts", "li-done", "ARTWORK", 1),
-			text = ns.GuideText(body, "print", 13.5, "evening", ""),
+			text = ns.GuideText(body, "print", TEXT_SIZE, "evening", "", {
+				wrap = true,
+				width = WIDTH - TEXT_X - TEXT_END,
+				spacing = TEXT_LH - TEXT_SIZE,
+			}),
 			strike = strike,
-			hint = ns.GuideText(body, "italic", 12.5, "small", ""),
+			hint = ns.GuideText(body, "italic", HINT_SIZE, "small", "", {
+				wrap = true,
+				width = WIDTH - TEXT_X - TEXT_END,
+				spacing = HINT_LH - HINT_SIZE,
+			}),
 		}
 		frame.rows[i] = row
 	end
@@ -154,6 +166,17 @@ local function popTick(tick)
 	})
 end
 
+-- How much lower than one line `fontString` ends as the client wraps it: whole line boxes `lh` tall, counted from its
+-- height, so one line measured a little taller than its size still counts one.
+---@param fontString FontString
+---@param size number
+---@param lh number
+---@return number
+local function moreLines(fontString, size, lh)
+	local lines = math.max(1, math.floor((fontString:GetStringHeight() + lh - size) / lh + 0.5))
+	return (lines - 1) * lh
+end
+
 -- Puts the body back in its place, whole: a fold under way gives way.
 local function settle()
 	Pagle.StopMotion(body)
@@ -179,8 +202,11 @@ local function draw(list, ticked)
 	local y = TOP
 	for i, line in ipairs(list.lines) do
 		local row = rowAt(i)
-		local height = line.hint and LINE_HINT or LINE
 		hideRow(row)
+		row.text:SetText(line.text)
+		row.hint:SetText(line.hint or "")
+		local more = moreLines(row.text, TEXT_SIZE, TEXT_LH)
+		local height = (line.hint and LINE_HINT + moreLines(row.hint, HINT_SIZE, HINT_LH) or LINE) + more
 		if line.next then
 			row.wash:SetSize(WIDTH - 22, height)
 			ns.GuideAt(row.wash, body, 18, y)
@@ -190,21 +216,23 @@ local function draw(list, ticked)
 		local box = line.done and row.tick or row.box
 		ns.CenterSpriteAt(box, body, 24 + 6, y + 4 + 6)
 		box:Show()
-		row.text:SetText(line.text)
 		inkOf(row.text, line.done and "eveningDone" or line.next and "eveningNext" or "evening")
-		ns.GuideAt(row.text, body, 43, y + 2 + 2.05)
+		ns.GuideAt(row.text, body, TEXT_X, y + 2 + (TEXT_LH - TEXT_SIZE) / 2)
 		row.text:Show()
 		if line.done then
-			row.strike:SetSize(math.ceil(row.text:GetStringWidth()), 1)
-			ns.GuideAt(row.strike, body, 43, y + 11)
+			-- through its first line: as wide as its words, or the room when they wrap
+			local room = WIDTH - TEXT_X - TEXT_END
+			row.text:SetWidth(0)
+			row.strike:SetSize(math.min(room, math.ceil(row.text:GetStringWidth())), 1)
+			row.text:SetWidth(room)
+			ns.GuideAt(row.strike, body, TEXT_X, y + 11)
 			row.strike:Show()
 			if line.id == ticked then
 				popTick(row.tick)
 			end
 		end
 		if line.hint then
-			row.hint:SetText(line.hint)
-			ns.GuideAt(row.hint, body, 43, y + 19.6 + 1.9)
+			ns.GuideAt(row.hint, body, TEXT_X, y + more + 19.6 + (HINT_LH - HINT_SIZE) / 2)
 			row.hint:Show()
 		end
 		y = y + height

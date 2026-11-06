@@ -524,6 +524,28 @@ describe("/pagle dev glyphs", function()
 	end)
 end)
 
+describe("/pagle dev glyphs' panel in a longer language", function()
+	it("lays a row that wraps above the next, never over it, and fits the panel to its rows (#248)", function()
+		local loaded = loadCore({ BUILD_ENTRY })
+		enterWorld(loaded, 2)
+		pagle(loaded, "dev on")
+		pagle(loaded, "dev glyphs")
+		local frame = loaded.ns.glyphProbeFrame
+		-- The first row's words wrap on three lines, as a German row's "what uses it" may.
+		frame.rows[1].GetStringHeight = function()
+			return 60
+		end
+
+		frame:Click()
+		pagle(loaded, "dev glyphs")
+
+		assert.are.same({ "TOPLEFT", 16, -16 }, frame.rows[1].points[1])
+		assert.are.same({ "TOPLEFT", 16, -(16 + 68) }, frame.rows[2].points[1])
+		assert.are.same({ "TOPLEFT", 16, -(16 + 68 + 40) }, frame.rows[3].points[1])
+		assert.are.equal(16 + 68 + 40 * (#frame.rows - 1) + 16, frame:GetHeight())
+	end)
+end)
+
 -- /pagle dev skill (#465): the retail UI check reports Fishing skill 1, where the skill reach (ADR 0014) lets every
 -- record grow by a millimetre. The fake client's Fishing reads 75/150 with no modifier.
 describe("/pagle dev skill", function()

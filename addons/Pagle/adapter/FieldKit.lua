@@ -40,8 +40,9 @@ local FONTS = {
 local MARGIN, TITLE_X, CORNER_X, CORNER_SIZE, GAP = 22, 66, 12, 44, 10
 -- How small the title and the privacy line may be set to fit, as a share of their fonts' sizes.
 local TITLE_FLOOR, PRIVACY_FLOOR = 0.75, 0.8
--- The least gap between a URL line's label and its URL box.
-local URL_GAP = 8
+-- The least gap between a URL line's label and its URL box; where the chart's URL field starts, the room kept before it,
+-- and where the URL box starts on it (ns.FieldReportUrlLine); how small a label may be set to fit.
+local URL_GAP, URL_FIELD_X, URL_FIELD_GAP, URL_X, URL_FLOOR = 8, 90, 4, 98, 0.75
 
 -- The font objects, made the first time each is asked for: PagleField<key>.
 ---@type table<string, table>
@@ -118,10 +119,52 @@ function ns.FieldFitText(label, key, room, floor, lines)
 	return scale
 end
 
+-- Where the label's words are measured, one hidden font string per label, so its own text is never changed to measure.
+---@type table<FontString, FontString>
+local measurers = setmetatable({}, { __mode = "k" })
+
+--- How wide `words` draw on one line in the label's font at its size, unbounded.
+---@param label FontString
+---@param words string[]
+---@param from integer
+---@param to integer
+---@return number
+local function wordsWidth(label, words, from, to)
+	local measurer = measurers[label]
+	if not measurer then
+		measurer = (label:GetParent() --[[@as Frame]]):CreateFontString(nil, "OVERLAY")
+		measurer:SetFontObject(ns.FieldFont("PostAt"))
+		measurer:SetWordWrap(false)
+		measurer:Hide()
+		measurers[label] = measurer
+	end
+	measurer:SetText(table.concat(words, " ", from, to))
+	return measurer:GetStringWidth()
+end
+
+--- The label's two lines at their narrowest, as wide as the wider: its words split where neither line is wider. Nil
+--- for a single word.
+---@param label FontString
+---@return number?
+local function twoLinesWidth(label)
+	local words = {}
+	for word in (label:GetText() or ""):gmatch("%S+") do
+		words[#words + 1] = word
+	end
+	local best
+	for split = 1, #words - 1 do
+		local wider = math.max(wordsWidth(label, words, 1, split), wordsWidth(label, words, split + 1, #words))
+		best = math.min(best or wider, wider)
+	end
+	return best
+end
+
 --- Lays out a window's URL line `y` down (ns.FieldReportUrlLine, field-report.md › UI): `label` ("POST IT AT", "PASTE
 --- IT AT") at its font's size, set smaller if the client draws it too wide to end before the chart's URL field, and the
---- `url` box after it. The label is measured again as drawn at that size, so a face drawn wider than its share still
---- ends URL_GAP before the URL, and the two never touch.
+--- `url` box after it. A label of several words too wide for that even at three quarters of its size ("FÜGE ES EIN
+--- AUF") goes on two lines in the room before the field instead, split where neither line is wider, set smaller only as
+--- far as its wider line needs. The label is measured again as drawn at that size, so a face drawn wider than its share
+--- still ends URL_GAP before the URL, and the two never touch.
 ---@param frame Frame
 ---@param label FontString
 ---@param url EditBox
@@ -129,12 +172,24 @@ end
 ---@param y number
 function ns.FieldUrlLine(frame, label, url, width, y)
 	label:SetFontObject(ns.FieldFont("PostAt"))
+	label:SetWordWrap(false)
 	label:SetWidth(0) -- measured unbounded
-	local scale, urlX = ns.FieldReportUrlLine(label:GetStringWidth())
+	local natural = label:GetStringWidth()
+	local scale, urlX = ns.FieldReportUrlLine(natural)
+	local room = URL_FIELD_X - URL_FIELD_GAP - MARGIN
+	local lines = natural * scale > room and twoLinesWidth(label)
+	local drawn
+	if lines then
+		scale = math.max(URL_FLOOR, math.min(1, room / lines))
+		drawn = math.max(room, lines * scale)
+		label:SetWordWrap(true)
+		label:SetMaxLines(2)
+		label:SetWidth(drawn)
+	end
 	if scale < 1 then
 		ns.FieldScaleFont(label, "PostAt", scale)
 	end
-	urlX = math.max(urlX, MARGIN + label:GetStringWidth() + URL_GAP)
+	urlX = math.max(lines and URL_X or urlX, MARGIN + (drawn or label:GetStringWidth()) + URL_GAP)
 	url:ClearAllPoints()
 	url:SetPoint("LEFT", frame, "TOPLEFT", urlX, -y)
 	url:SetWidth(width - 42 - urlX)

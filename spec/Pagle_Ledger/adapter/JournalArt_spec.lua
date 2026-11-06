@@ -90,6 +90,27 @@ describe("the Fish Journal's art (ledger.md › UI)", function()
 		assert.are.equal("Ledger\n62%", seal.label.text)
 	end)
 
+	-- The seal's words wrapped at its square less 10, wider than its wax: German "Anglerbuch" on Home's seal and
+	-- "Besucher" on a zone's ran onto the parchment (1.1.1). The wax covers 104 of the sprite's 128 texels across its
+	-- middle; the words keep inside it with a margin.
+	it("led_r132 keeps a seal's words on its wax, setting a word wider than the wax smaller", function()
+		local _, loaded = openJournal()
+		local WAX = 104 / 128
+		for _, size in ipairs({ 64, 70, 76, 78 }) do
+			local seal = loaded.ns.JournalSeal(loaded.ns.journal.frame, size, 12)
+			assert(seal.label:GetWidth() <= size * WAX - 4, ("a %s seal's words wrap on its wax"):format(size))
+		end
+		local seal = loaded.ns.JournalSeal(loaded.ns.journal.frame, 76, 13)
+		local word = "Anglerbuch"
+		assert(#word * 6 > 76 * WAX - 4, "the word is wider than the wax")
+
+		loaded.ns.JournalSetSeal(seal, word .. "\n62%", true)
+
+		assert(seal.label.fontObject.font[2] < 13, "set smaller")
+		assert(seal.label:GetWidth() <= 76 * WAX - 4, "and wrapping on the wax")
+		assert.are.equal("Anglerbuch\n62%", seal.label:GetText())
+	end)
+
 	it(
 		"crops a medallion's icon to inside its square border, so the round mask shows no flat edge in the ring",
 		function()
