@@ -14,7 +14,9 @@ end
 ---@field glyphProbeFrame PagleDevGlyphsFrame? `/pagle dev glyphs`' panel, once built
 ---@field fontProbeFrame PagleDevGlyphsFrame? `/pagle dev fonts`' panel, once built
 
-local ROW_HEIGHT, PAD, SIZE = 40, 16, 16
+-- A row's least height (one row's room until 1.1.1), the panel's padding, the rows' font size, and the gap under a row's
+-- words.
+local ROW_HEIGHT, PAD, SIZE, ROW_GAP = 40, 16, 16, 8
 
 --- One panel: the frame's global name (UISpecialFrames takes names, and Esc hides the frames it lists), the prefix of
 --- its rows' font objects, the field of `ns` that keeps its frame, and its width.
@@ -76,7 +78,6 @@ local function build(panel, fonts)
 	frame.rows = {}
 	for i, font in ipairs(fonts) do
 		local row = frame:CreateFontString(nil, "OVERLAY", fontObject(panel, font, i))
-		row:SetPoint("TOPLEFT", PAD, -PAD - ROW_HEIGHT * (i - 1))
 		row:SetWidth(panel.width - PAD * 2)
 		row:SetJustifyH("LEFT")
 		frame.rows[i] = row
@@ -86,6 +87,19 @@ local function build(panel, fonts)
 	end)
 	table.insert(UISpecialFrames, panel.frameName)
 	return frame
+end
+
+-- Lays the rows down the panel by what their words measure, each at least ROW_HEIGHT, and fits the panel to them: a row
+-- that wraps (a longer language's "what uses it") pushes the next down instead of drawing over it.
+---@param frame PagleDevGlyphsFrame
+local function layOut(frame)
+	local y = PAD
+	for _, row in ipairs(frame.rows) do
+		row:ClearAllPoints()
+		row:SetPoint("TOPLEFT", PAD, -y)
+		y = y + math.max(ROW_HEIGHT, row:GetStringHeight() + ROW_GAP)
+	end
+	frame:SetHeight(y + PAD)
 end
 
 -- Shows `probe` once in each of `fonts` in `panel`, each row labelled with its font and what uses it. One frame per
@@ -107,6 +121,7 @@ local function show(panel, fonts, probe)
 			)
 		end
 	end
+	layOut(frame)
 	frame:Show()
 end
 
