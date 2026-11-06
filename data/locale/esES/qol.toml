@@ -253,6 +253,14 @@ en = "Show the next-action button"
 value = "Muestra qué hará tu próxima pulsación. Mayús y arrastrar para moverlo."
 en = "Shows what your next press will do. Shift-drag to move."
 
+[SETTINGS_HIDE_UNTIL_POLE]
+value = "Ocultar hasta tener una caña en la mano"
+en = "Hide until a fishing pole is in hand"
+
+[SETTINGS_HIDE_UNTIL_POLE_TOOLTIP]
+value = "Mantiene el botón oculto mientras no llevas tu ropa de pescar. Aparece en cuanto tienes una caña en la mano o estás pescando."
+en = "Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or you're fishing."
+
 [SETTINGS_BUTTON_POSITION]
 value = "Posición del botón"
 en = "Button position"

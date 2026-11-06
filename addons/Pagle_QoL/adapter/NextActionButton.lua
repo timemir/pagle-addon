@@ -275,6 +275,7 @@ function ns.ShowNextAction(state, keys)
 	end
 	local visible = ns.ButtonShown({
 		setting = ns.db.profile.indicator.shown,
+		untilPole = ns.db.profile.indicator.untilPole,
 		standingDown = ns.IsStandingDown(),
 		stretch = ns.RunningStretch() ~= nil,
 		poleInHand = pole,

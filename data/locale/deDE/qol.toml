@@ -301,6 +301,14 @@ en = "Show the next-action button"
 value = "Zeigt, was dein nächster Druck tut. Umschalt-Ziehen zum Verschieben."
 en = "Shows what your next press will do. Shift-drag to move."
 
+[SETTINGS_HIDE_UNTIL_POLE]
+value = "Ausblenden, bis du eine Angelrute in der Hand hast"
+en = "Hide until a fishing pole is in hand"
+
+[SETTINGS_HIDE_UNTIL_POLE_TOOLTIP]
+value = "Hält den Knopf verborgen, solange du nicht deine Angelkleidung trägst. Er erscheint, sobald du eine Angelrute in der Hand hast oder angelst."
+en = "Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or you're fishing."
+
 [SETTINGS_BUTTON_POSITION]
 value = "Knopfposition"
 en = "Button position"

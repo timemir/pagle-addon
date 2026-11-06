@@ -195,7 +195,7 @@ Terms are used as `CONTEXT.md` defines them. A **game action** is the character 
 
 - **QOL-R70** The **next-action button** is a small, movable frame in the field art kit's look (see [UI](#ui)): the next action's icon, round (36 px) in a 52 px brass bezel; the Fishing key's first bound key on a brass key cap over the bezel's top left, in the short form action bars use (`GetBindingText(key, true)`; no key cap under Input *Double-click*, or with no key bound); and a one-word label on a slip of paper tucked under the bezel.
 - **QOL-R71** Icon and label per next action: cast and reel show the Fishing spell's icon (`C_Spell.GetSpellTexture(7620)`) labelled "Cast" or "Reel"; equip shows the fishing set's icon, "Gear"; a lure shows its item icon, "Lure"; a clam its item icon, "Clam"; *nothing* keeps the last icon shown (the Fishing icon if none was shown yet), desaturated and greyed with the bezel, with no label. Checked on build 1.60.1.70790 on 2026-11-05 (the launch probe, #272): Forever's four rank spells have icon 134071, not 7620's 136245. The key and the Guide keep 7620's icon on purpose (the dev's call, 5 Nov 2026), so check 21's icon verdict is expected to fail.
-- **QOL-R72** It is visible only while the setting is on, QoL isn't standing down, and a Fishing stretch is running, a fishing pole is in hand, or the gear step is ready (QOL-R43). In combat it shows *nothing* (desaturated).
+- **QOL-R72** It is visible only while the setting is on, QoL isn't standing down, and a Fishing stretch is running, a fishing pole is in hand, or the gear step is ready (QOL-R43). With *Hide until a fishing pole is in hand* on (from 1.2.0), the gear step alone doesn't show it: it waits for a Fishing stretch or a pole in hand, while the Fishing key still puts the fishing set on (QOL-R20). In combat it shows *nothing* (desaturated).
 - **QOL-R73** It is display only: clicking it does nothing, and it isn't a secure frame. Shift-drag moves it (never while restricted); the position is saved in `PagleQoLDB.profile.indicator.point`. The Reset row puts it back at the default: bottom centre of the screen, 230 px up (above the main action bar).
 - **QOL-R74** Hovering it shows a tooltip of its own to its right (the kit's lacquer tooltip: gilt words on a dark ground in a gilt hairline, not `GameTooltip`) naming the next action: "Cast", "Reel in", "Put on {set name}", "Apply {lure name}", "Open {clam name}", or "Nothing to do". Item names come from `C_Item`, waiting for the item to load (`Item:ContinueOnItemLoad`) when it isn't cached.
 
@@ -239,7 +239,7 @@ Checked on the live build in M9 (each failure retires or changes only the rule i
 | `profile.clams` | boolean | `true` |
 | `profile.audio` | `{ on = boolean, background = boolean }` | `{ on = true, background = false }` |
 | `profile.autoLoot` | boolean | `true` |
-| `profile.indicator` | `{ shown = boolean, point = { point, relativeTo = "UIParent", relativePoint, x, y } or nil }` | `{ shown = true, point = nil }` |
+| `profile.indicator` | `{ shown = boolean, untilPole = boolean, point = { point, relativeTo = "UIParent", relativePoint, x, y } or nil }`; `untilPole` is Hide until a fishing pole is in hand (QOL-R72, from 1.2.0), which AceDB's default gives a profile that has none | `{ shown = true, untilPole = false, point = nil }` |
 
 QoL writes nothing to `PagleLog` or `PagleDB`. It has no projection, so a content-fingerprint or rules change never touches it.
 
@@ -303,6 +303,7 @@ All on the **Fishing** page (`M:AddSetting("fishing", …)`), in this order. Eac
 | | ↳ Keep sound when the game is in the background | on/off; greyed out while the audio mix is off | off |
 | | Auto-loot while fishing | on/off | on |
 | | Show the next-action button | on/off | on |
+| | ↳ Hide until a fishing pole is in hand | on/off; greyed out while Show the next-action button is off | off |
 | | ↳ Button position | Reset; greyed out while Show the next-action button is off | |
 
 Tooltips:
@@ -315,6 +316,7 @@ Tooltips:
 - **Fishing audio mix:** "While you fish: effects at full; music, ambience and dialog muted; master untouched. Put back afterwards."
 - **Auto-loot while fishing:** "Only while you fish. Skipped if you already have auto-loot on."
 - **Show the next-action button:** "Shows what your next press will do. Shift-drag to move."
+- **Hide until a fishing pole is in hand:** "Keeps the button hidden while you're out of your fishing gear. It shows once a pole is in hand or you're fishing."
 
 The Fishing set dropdown reads and writes the current character's choice (`global.gear[guid]`); every other row is account-wide. The page's Defaults button restores the defaults above and leaves the fishing set, the key bindings and the button's position alone.
 
