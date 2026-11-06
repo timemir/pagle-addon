@@ -2546,6 +2546,35 @@ describe("a long name line scrolling on the client (ANN-R101)", function()
 	end)
 
 	it(
+		"holds the line where it is through the toast's fade, then puts it back at its start once gone (ANN-R101)",
+		function()
+			local loaded = loadCore()
+			local toast = catchToast(loaded, ("F"):rep(30), ("V"):rep(20))
+			assert(lineOf(toast) > ROOM, "the line overflows: " .. lineOf(toast))
+			loaded.client.update(WRITTEN + loaded.ns.MARQUEE_HOLD + 0.5)
+			local mid = scrolled(toast)
+			assert(mid > 0, "mid-glide")
+
+			-- Its time is up: it starts to leave, still on screen, fading.
+			loaded.client.advance(TOAST)
+			assert.is_false(showing(loaded, "toast"))
+			assert.is_true(toast:IsShown())
+			local fading = {}
+			for _ = 1, 3 do
+				loaded.client.update(0.1)
+				fading[#fading + 1] = scrolled(toast)
+			end
+			assert.is_true(toast.alpha < 1)
+			assert.are.same({ mid, mid, mid }, fading)
+
+			loaded.client.advance(LEAVE_TOAST + 0.1)
+			loaded.client.update(0.1)
+			assert.is_false(toast:IsShown())
+			assert.are.same({ 0, -4 }, { scrolled(toast) })
+		end
+	)
+
+	it(
 		"starts the next toast on the same pooled frame at its line's start, with no offset or scroll of the last"
 			.. " (ANN-R101)",
 		function()
