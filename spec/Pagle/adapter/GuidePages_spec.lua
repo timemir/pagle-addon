@@ -780,16 +780,42 @@ describe("the Off you go step (ONB-R38)", function()
 		assert.is_true(top(looks) >= top(note) + note:GetHeight() + 12)
 	end)
 
-	it("holds each item of the First evening list to its paper, however long (ONB-R38, ONB-R61)", function()
-		local loaded = guideAt("off", nil, nil, nil, function(L)
-			L.GUIDE_EVENING_ITEMS.journal = "Abre el Diario de pesca y mira lo que ya has pescado esta noche"
-		end)
-		local list = loaded.ns.guidePages.evening
+	it(
+		"wraps an item or a hint too long for the First evening list's paper, its row growing (ONB-R38, ONB-R61)",
+		function()
+			local long = "Wirf einen Blick in den Kuriositätenladen"
+			local hint = "drück deine Angeltaste oder mach einen Doppel-Rechtsklick"
+			local function lists(lines)
+				local loaded = guideAt(
+					"off",
+					nil,
+					function()
+						return { [long] = lines, [hint] = lines }
+					end,
+					nil,
+					function(L)
+						L.GUIDE_EVENING_ITEMS.shop = long
+						L.GUIDE_EVENING_HINTS.cast = hint
+					end
+				)
+				return loaded.ns.guidePages.evening
+			end
+			local list, one = lists(2), lists(1)
 
-		local item = assert(find(list, "Abre el Diario de pesca y mira lo que ya has pescado esta noche"))
-		assert.are.equal(274 - 43 - 14, item.width)
-		assert.are.same({}, bounds.overflows(list))
-	end)
+			local item, cast = assert(find(list, long)), assert(find(list, hint))
+			-- On one line at 6 a byte, both run past the paper's 217 for an item's words.
+			assert.is_true(#long * 6 > 217 and #hint * 6 > 217)
+			for _, words in ipairs({ item, cast }) do
+				assert.are.same({ 274 - 43 - 14, true }, { words.width, words.wordWrap })
+			end
+			assert.are.equal(13.5, sizeOf(item))
+			-- the cast row's hint takes a second line (16.3), pushing the rows under it down; the shop's item a second
+			-- (17.6), the paper with it
+			assert.is.near(top(find(one, "Land a Catch")) + 16.3, top(find(list, "Land a Catch")), 1e-9)
+			assert.is.near(one:GetHeight() + 16.3 + 17.6, list:GetHeight(), 1e-9)
+			assert.are.same({}, bounds.overflows(list))
+		end
+	)
 
 	it("names only the registered windows (ONB-R38, ONB-R102)", function()
 		local loaded = guideAt("off", { "Stats", "QoL" })
