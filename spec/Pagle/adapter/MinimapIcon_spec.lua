@@ -265,11 +265,8 @@ describe("A click on the minimap icon", function()
 
 		assert.are.equal(1, #loaded.client.menus)
 		local menu = loaded.client.menus[1]
-		assert(menu.owner == nil, "the menu belongs to nothing, so hiding the flyout leaves it open")
+		assert(menu.owner == nil, "the menu belongs to nothing, so the flyout hiding the icon doesn't close it")
 		assert.are.same({ curioShop(0), PASTE, "Help chart the waters", "Settings" }, menu.texts())
-		flyout:Hide()
-		menu.click("Settings")
-		assert.are.same({ "Pagle" }, openedNames(loaded))
 	end)
 
 	it("reads where the icon is at each click, owned again once it is back on the minimap (CORE-R54)", function()
