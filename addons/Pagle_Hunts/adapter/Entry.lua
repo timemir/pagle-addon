@@ -87,16 +87,19 @@ local function newChip(parent)
 	return chip
 end
 
--- The smallest a chip's words shrink to before they are cut short.
-local CHIP_FLOOR = 11
+-- The smallest a chip's words shrink to before they are cut short; a note too long for one line even then wraps to
+-- two at the chips' own size instead, its chip this much taller (a line of the small face).
+local CHIP_FLOOR, CHIP_LINE = 11, 15
 
 -- Dresses `chip` as `data` says, and sizes it to its words, no wider than `room` (the page's width): longer words
 -- shrink, then are cut short with an ellipsis, with the full words in its tooltip. Returns its width.
 ---@param chip EntryChipView
 ---@param data HuntEntryChip
 ---@param room number
+---@param oneLine boolean? an entry still too long once tight (draw): a long note is cut on one line, as other chips
+--- are, not wrapped
 ---@return number
-local function setChip(chip, data, room)
+local function setChip(chip, data, room, oneLine)
 	local unconfirmed = data.kind == "unconfirmed"
 	local ink = data.short and LOOK.red or unconfirmed and LOOK.unconfirmed or LOOK.chipText
 	chip.label:SetFontObject(unconfirmed and ns.BoardFonts().note or ns.BoardFonts().small)
@@ -106,7 +109,21 @@ local function setChip(chip, data, room)
 	chip.badge:SetShown(data.badge ~= nil)
 	local badge = data.badge and math.ceil(chip.badge:GetStringWidth()) + 6 or 0
 	local words = room - 2 * CHIP_PAD - badge
+	chip.label:SetWordWrap(false)
+	chip.label:SetMaxLines(0)
+	chip.label:SetWidth(0)
 	local fitted = math.ceil(chip.label:GetStringWidth()) > words
+	local wraps = data.kind == "note" and not oneLine
+	if fitted and wraps and math.ceil(chip.label:GetStringWidth()) * CHIP_FLOOR / 13.5 > words then
+		-- a note (a language's longer ones): whole over two lines, in a chip a line taller
+		chip.label:SetWordWrap(true)
+		chip.label:SetMaxLines(2)
+		chip.label:SetWidth(words)
+		chip.tooltip = data.tooltip
+		ns.SetTallThreeSlice(chip.face, "Parts", "chip", room, 11, CHIP_LINE, "BACKGROUND")
+		chip:SetSize(room, CHIP_HEIGHT + CHIP_LINE)
+		return room
+	end
 	if fitted then
 		ns.FitText(
 			chip.label,
@@ -124,7 +141,7 @@ local function setChip(chip, data, room)
 	local width = math.min(math.ceil(chip.label:GetStringWidth()), words) + 2 * CHIP_PAD + badge
 	local face = data.badge and "chip-here" or data.short and "chip-red" or unconfirmed and "chip-unc" or "chip"
 	ns.SetThreeSlice(chip.face, "Parts", face, width, 11, "BACKGROUND")
-	chip:SetWidth(width)
+	chip:SetSize(width, CHIP_HEIGHT)
 	return width
 end
 
@@ -309,30 +326,33 @@ local function line(text, words, y, after)
 	return y + text:GetStringHeight() + (after or 2)
 end
 
--- Lays out the chips in rows across `width`, from `y` down; returns the y below them.
+-- Lays out the chips in rows across `width`, from `y` down, a row as tall as its tallest chip (a note wrapped to two
+-- lines, unless `oneLine`); returns the y below them.
 ---@param view EntryView
 ---@param chips HuntEntryChip[]
 ---@param y number
 ---@param width number
+---@param oneLine boolean?
 ---@return number
-local function layChips(view, chips, y, width)
+local function layChips(view, chips, y, width, oneLine)
 	if #chips == 0 then
 		return y
 	end
-	local x = 0
+	local x, rowHeight = 0, CHIP_HEIGHT
 	for i, data in ipairs(chips) do
 		local chip = ns.BoardPooled(view.chips, i, function()
 			return newChip(view.page)
 		end)
-		local chipWidth = setChip(chip, data, width)
+		local chipWidth = setChip(chip, data, width, oneLine)
 		if x > 0 and x + chipWidth > width then
-			x, y = 0, y + CHIP_STEP
+			x, y, rowHeight = 0, y + rowHeight + CHIP_STEP - CHIP_HEIGHT, CHIP_HEIGHT
 		end
+		rowHeight = math.max(rowHeight, chip:GetHeight())
 		chip:ClearAllPoints()
 		chip:SetPoint("TOPLEFT", x, -y)
 		x = x + chipWidth + CHIP_GAP
 	end
-	return y + CHIP_HEIGHT
+	return y + rowHeight
 end
 
 -- Lays out the tier ladder from `y` down (HNT-R64, HNT-R18): each tier's mark in its trim's ink, filled once
@@ -436,7 +456,8 @@ local function layFoot(view, entry, y, compact)
 end
 
 -- Lays out `entry` (logic/Entry.lua's HuntEntry) of Hunt `huntID` on its page from the top to the ladder; `tight`
--- keeps a long name to one line a size down, sets the window line a size down and the gaps between blocks closer.
+-- keeps a long name to one line a size down, sets the window line a size down, cuts a long note on one line rather
+-- than wrap it, and sets the gaps between blocks closer.
 -- Returns the y under the ladder.
 ---@param view EntryView
 ---@param entry HuntEntry
@@ -444,8 +465,9 @@ end
 ---@param same boolean
 ---@param again boolean laid again in this draw (layLadder)
 ---@param tight boolean
+---@param oneLine boolean a long note cut on one line, not wrapped (setChip)
 ---@return number
-local function layBody(view, entry, huntID, same, again, tight)
+local function layBody(view, entry, huntID, same, again, tight, oneLine)
 	hideAll(view)
 	local width = view.page:GetWidth()
 	local top = 0
@@ -492,13 +514,23 @@ local function layBody(view, entry, huntID, same, again, tight)
 	inkText(view.window, LOOK.hand)
 	y = line(view.window, entry.window, y, 4)
 	y = line(view.conditions, entry.conditions, y)
-	y = layChips(view, entry.chips, y + gap, width) + (tight and CHIPS_FOOT_TIGHT or CHIPS_FOOT)
+	y = layChips(view, entry.chips, y + gap, width, oneLine) + (tight and CHIPS_FOOT_TIGHT or CHIPS_FOOT)
 	return layLadder(view, entry.ladder, y, same, again) + gap
 end
 
+-- The entry's steps, each tighter than the one before (draw): as the kit lays it; the foot compact; the body tight; a
+-- long note cut on one line.
+local TIGHTER = {
+	{},
+	{ compact = true },
+	{ compact = true, tight = true },
+	{ compact = true, tight = true, oneLine = true },
+}
+
 -- Draws `entry` of Hunt `huntID` on its page, top to bottom, as the kit lays it; where a language's longer lines run
 -- it past the page's foot (the page's frame cuts what passes it, the set line first), a step tighter at a time until
--- it ends on the page: its foot compact (layFoot), then its body tight (layBody), then the conditions line kept to
+-- it ends on the page: its foot compact (layFoot), then its body tight (layBody), then a long note cut on one line
+-- rather than wrapped, then the conditions line kept to
 -- fewer lines, the client ending it with an ellipsis (its zones are the chips' too, the rest in "+N more"'s tooltip).
 ---@param view EntryView
 ---@param entry HuntEntry
@@ -511,20 +543,19 @@ local function draw(view, entry, huntID)
 	view.shown, view.showing = huntID, showing
 	local height = view.page:GetHeight()
 	view.conditions:SetMaxLines(0)
-	if layFoot(view, entry, layBody(view, entry, huntID, same, false, false), false) <= height then
-		return
+	for step, tighter in ipairs(TIGHTER) do
+		local y = layBody(view, entry, huntID, same, step > 1, tighter.tight, tighter.oneLine)
+		if layFoot(view, entry, y, tighter.compact) <= height then
+			return
+		end
 	end
-	if layFoot(view, entry, layBody(view, entry, huntID, same, true, false), true) <= height then
-		return
-	end
-	local ends = layFoot(view, entry, layBody(view, entry, huntID, same, true, true), true)
-	if ends <= height or not entry.conditions then
+	if not entry.conditions then
 		return
 	end
 	local lines = math.floor(view.conditions:GetStringHeight() / CONDITIONS_LINE + 0.5)
 	for most = lines - 1, 1, -1 do
 		view.conditions:SetMaxLines(most)
-		if layFoot(view, entry, layBody(view, entry, huntID, same, true, true), true) <= height then
+		if layFoot(view, entry, layBody(view, entry, huntID, same, true, true, true), true) <= height then
 			return
 		end
 	end

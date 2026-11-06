@@ -183,6 +183,32 @@ describe("a Hunt's entry on the board", function()
 			assert.are.equal(page:GetWidth() - 71, view.kicker.width)
 		end)
 
+		it("wraps a note too long for one line even set small to two lines in a taller chip (HNT-R65)", function()
+			local run = start()
+			-- deDE's: at the chips' least size, 11, it still ran past the page and was cut ("…eine Laterne und ei…")
+			local long = "Von der Abendglocke bis tief in die Nacht: eine Laterne und ein stilles Ufer."
+			run.ns.L["hunt.fixture_snapper.note"] = long
+			local page, view = open(run, { mode = "board", hunt = "fixture_snapper" })
+
+			local chip = chipOf(view, long) -- its words whole, never rewritten
+			assert(#long * 6 > page:GetWidth(), "the note fits on a line in the fake, so this checks nothing")
+			assert.are.same({ true, 2, run.ns.BoardFonts().small }, {
+				chip.label:CanWordWrap(),
+				chip.label:GetMaxLines(),
+				chip.label.fontObject,
+			})
+			assert.are.equal(page:GetWidth(), chip.width)
+			assert(chip.height > 22, "the chip keeps one line's height")
+			assert.is_true(chip.face.tall[1]:IsShown())
+			-- the set's note, the next chip, starts under it
+			local after = chipOf(view, "After the lamps are lit.")
+			assert.are.equal(-chip.points[1][3] + chip.height + 5, -after.points[1][3])
+
+			-- a short note is the kit's one-line chip
+			assert.are.same({ false, 22 }, { after.label:CanWordWrap(), after.height })
+			assert.is_false(after.face.tall ~= nil and after.face.tall[1]:IsShown())
+		end)
+
 		it("draws an undone Hunt's dashed 'not yet' and only its effort Casts (HNT-R26)", function()
 			local run = start()
 			run.state.hunts.fixture_snapper = progress(0, 12, 12, 0)
