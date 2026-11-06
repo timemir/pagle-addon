@@ -626,3 +626,220 @@ describe("the Session summary cards", function()
 		assert.are.equal("Fishing session", shownTitle(loaded))
 	end)
 end)
+
+describe("moving the card (ANN-R102)", function()
+	-- UIParent is 1920 × 1080 here, so its centre is (960, 540).
+	local SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080
+
+	-- Core logged in with two stored summary cards, the first on screen.
+	local function withCard(saved)
+		saved = saved or {}
+		saved.global = saved.global or { cards = { storedCard(1, "First"), storedCard(2, "Second") } }
+		local loaded = loadCore(history(2), saved)
+		loaded.env.Pagle.RegisterModule({ name = "Ledger", title = "Ledger", order = 10 })
+		enterWorld(loaded)
+		frames(loaded)
+		assert.are.equal("Fishing session", shownTitle(loaded))
+		return loaded, loaded.ns.cardFrame
+	end
+
+	-- Where the card is: its CENTER's offsets from UIParent's CENTER.
+	local function centreOf(loaded)
+		local point, relativeTo, relativePoint, x, y = loaded.ns.cardFrame:GetPoint(1)
+		assert.are.same({ "CENTER", loaded.env.UIParent, "CENTER" }, { point, relativeTo, relativePoint })
+		return { x = x, y = y }
+	end
+
+	-- A left-button drag of the card that is let go with its centre at (`x`, `y`) from UIParent's centre, as the
+	-- client reports it then. Returns whether the drag moved the card.
+	local function dragCard(frame, x, y)
+		frame.scripts.OnDragStart(frame, "LeftButton")
+		local moved = frame.moving == true
+		frame.screenCenter = { SCREEN_WIDTH / 2 + x, SCREEN_HEIGHT / 2 + y }
+		frame.scripts.OnDragStop(frame)
+		return moved
+	end
+
+	-- The saved point, if any.
+	local function saved(loaded)
+		local cards = loaded.ns.db.profile.cards
+		return cards and cards.point
+	end
+
+	it("stands centre-screen with nothing saved, and takes a left-button drag (ANN-R102)", function()
+		local loaded, frame = withCard()
+
+		assert.is_nil(saved(loaded))
+		assert.are.same({ x = 0, y = 0 }, centreOf(loaded))
+		assert.are.same({ "LeftButton" }, frame.dragButtons)
+		assert.is_true(frame:IsMovable())
+	end)
+
+	it("moves with a Shift-drag and saves where it is left (ANN-R102)", function()
+		local loaded, frame = withCard()
+		loaded.client.keysDown.SHIFT = true
+
+		assert.is_true(dragCard(frame, 200, 150))
+
+		assert.are.same({ x = 200, y = 150 }, saved(loaded))
+		assert.are.same({ x = 200, y = 150 }, centreOf(loaded))
+		assert.is_false(frame.moving)
+		-- The client's layout cache never keeps it: profile.cards.point is the one place its position is kept.
+		assert.is_false(frame:IsUserPlaced())
+		assert.are.equal("Fishing session", shownTitle(loaded))
+	end)
+
+	it("doesn't move with a plain drag (ANN-R102)", function()
+		local loaded, frame = withCard()
+
+		assert.is_false(dragCard(frame, 200, 150))
+
+		assert.is_nil(saved(loaded))
+		assert.are.same({ x = 0, y = 0 }, centreOf(loaded))
+	end)
+
+	it("doesn't move while restricted, Shift or not (ANN-R102)", function()
+		local loaded, frame = withCard()
+		loaded.client.keysDown.SHIFT = true
+		loaded.env.Pagle.IsRestricted = function()
+			return true
+		end
+
+		assert.is_false(dragCard(frame, 200, 150))
+
+		assert.is_nil(saved(loaded))
+		assert.are.same({ x = 0, y = 0 }, centreOf(loaded))
+	end)
+
+	it("stops a drag where it is when the card hides for restriction, and saves it (ANN-R102, ANN-R35)", function()
+		local loaded, frame = withCard()
+		loaded.client.keysDown.SHIFT = true
+		frame.scripts.OnDragStart(frame, "LeftButton")
+		frame.screenCenter = { SCREEN_WIDTH / 2 - 150, SCREEN_HEIGHT / 2 + 100 }
+
+		setCombat(loaded, true)
+
+		assert.is_nil(shownCard(loaded))
+		assert.is_false(frame.moving)
+		assert.are.same({ x = -150, y = 100 }, saved(loaded))
+		-- Letting go later changes nothing.
+		frame.screenCenter = { SCREEN_WIDTH / 2 + 300, SCREEN_HEIGHT / 2 }
+		frame.scripts.OnDragStop(frame)
+		assert.are.same({ x = -150, y = 100 }, saved(loaded))
+		-- And when it is over, the card shows again where it was left.
+		setCombat(loaded, false)
+		loaded.client.advance(2)
+		frames(loaded)
+		assert.are.equal("Fishing session", shownTitle(loaded))
+		assert.are.same({ x = -150, y = 100 }, centreOf(loaded))
+	end)
+
+	it("shows the next card where the last was left (ANN-R102)", function()
+		local loaded, frame = withCard()
+		loaded.client.keysDown.SHIFT = true
+		dragCard(frame, -300, 120)
+
+		close(loaded)
+
+		assert.are.same({ "# Ledger", "Second" }, shownCard(loaded).rows)
+		assert.are.same({ x = -300, y = 120 }, centreOf(loaded))
+	end)
+
+	it("shows at the saved point at the next login (ANN-R102, announcements.md › Data)", function()
+		local first, frame = withCard()
+		first.client.keysDown.SHIFT = true
+		dragCard(frame, 250, -100)
+
+		local loaded = withCard(first.env.PagleDB)
+
+		assert.are.same({ x = 250, y = -100 }, centreOf(loaded))
+	end)
+
+	it("reads a saved value it can't make sense of as centred (ANN-R102)", function()
+		for _, point in ipairs({ "garbage", { x = 1 }, { x = 0 / 0, y = 3 }, { x = math.huge, y = 0 } }) do
+			local loaded = loadCore(history(2), { global = { cards = { storedCard(1, "First") } } })
+			loaded.ns.db.profile.cards = { point = point }
+			enterWorld(loaded)
+			frames(loaded)
+
+			assert.are.same({ x = 0, y = 0 }, centreOf(loaded))
+		end
+	end)
+
+	it("keeps the dropped card on the screen, whole (ANN-R102)", function()
+		local loaded, frame = withCard()
+		loaded.client.keysDown.SHIFT = true
+		local height = frame:GetHeight()
+
+		dragCard(frame, 5000, 5000)
+
+		-- 580 wide: its centre no nearer the edges than half that, and half its height.
+		local corner = { x = SCREEN_WIDTH / 2 - 290, y = SCREEN_HEIGHT / 2 - height / 2 }
+		assert.are.same(corner, saved(loaded))
+		assert.are.same(corner, centreOf(loaded))
+		dragCard(frame, -5000, -5000)
+		assert.are.same({ x = -corner.x, y = -corner.y }, saved(loaded))
+	end)
+
+	it(
+		"places a saved point the screen can't hold at the nearest that fits, without rewriting it (ANN-R102)",
+		function()
+			local loaded = loadCore(history(2), { global = { cards = { storedCard(1, "First") } } })
+			loaded.ns.db.profile.cards = { point = { x = 5000, y = -5000 } }
+			enterWorld(loaded)
+			frames(loaded)
+			local height = loaded.ns.cardFrame:GetHeight()
+
+			assert.are.same({ x = SCREEN_WIDTH / 2 - 290, y = -(SCREEN_HEIGHT / 2 - height / 2) }, centreOf(loaded))
+			assert.are.same({ x = 5000, y = -5000 }, loaded.ns.db.profile.cards.point)
+		end
+	)
+
+	it("keeps the card on screen when the screen shrinks, and follows a bigger one back (ANN-R102)", function()
+		local loaded = withCard()
+		loaded.ns.db.profile.cards = { point = { x = 600, y = 300 } }
+		-- The next card shows at the saved point.
+		close(loaded)
+		local height = loaded.ns.cardFrame:GetHeight()
+		assert.are.same({ x = 600, y = 300 }, centreOf(loaded))
+
+		loaded.env.UIParent:SetSize(1366, 768)
+
+		assert.are.same({ x = 1366 / 2 - 290, y = math.min(300, 768 / 2 - height / 2) }, centreOf(loaded))
+		assert.are.same({ x = 600, y = 300 }, loaded.ns.db.profile.cards.point)
+		loaded.env.UIParent:SetSize(SCREEN_WIDTH, SCREEN_HEIGHT)
+		assert.are.same({ x = 600, y = 300 }, centreOf(loaded))
+	end)
+
+	it("Reset clears the saved point and puts the card on screen back in the centre (ANN-R102)", function()
+		local loaded, frame = withCard()
+		loaded.client.keysDown.SHIFT = true
+		dragCard(frame, 200, 150)
+
+		assert.is_true(loaded.ns.ResetCard())
+
+		assert.is_nil(saved(loaded))
+		assert.are.same({ x = 0, y = 0 }, centreOf(loaded))
+	end)
+
+	it("Reset does nothing while restricted (ANN-R102)", function()
+		local loaded, frame = withCard()
+		loaded.client.keysDown.SHIFT = true
+		dragCard(frame, 200, 150)
+		loaded.env.Pagle.IsRestricted = function()
+			return true
+		end
+
+		assert.is_false(loaded.ns.ResetCard())
+
+		assert.are.same({ x = 200, y = 150 }, saved(loaded))
+		assert.are.same({ x = 200, y = 150 }, centreOf(loaded))
+	end)
+
+	it('says "Shift-drag to move" at the page\'s foot, beside the close button (ANN-R102)', function()
+		local _, frame = withCard()
+
+		assert.are.equal("Shift-drag to move", frame.moveHint:GetText())
+		assert.is_true(frame.moveHint:IsShown())
+	end)
+end)

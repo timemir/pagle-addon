@@ -172,7 +172,7 @@ The rules below are authoritative; this sketch only summarises them.
   | Animations | checkbox | on ([announcements.md › Motion](core/announcements.md#motion), `motion`) | | "Toasts slide in and stamp themselves, banners drop their seal, and the rays behind a banner or a Legend turn. Off, each appears as it settles." |
   | Toast style | slot dropdown, `core.toaststyle` (SET-R51) | owned styles · `core.toaststyle.page` (ANN-R80) | | |
   | Sound set | slot dropdown, `core.soundset` (SET-R51) | owned sets · `core.soundset.driftwood` (ANN-R72) | | |
-  | Toast position | button "Reset" (SET-R34) | | | "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen." |
+  | Toast position | button "Reset" (SET-R34) | | | "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started." |
 
   Values are stored in `PagleDB.profile.announcements` and the two looks in `PagleDB.profile.appearance` ([announcements.md](core/announcements.md#data)). The two slot rows exist from M4, when Core registers its slots (SHOP-R25); in M2 and M3 the page ends after Per and the Toast position button (SET-R34). Show every catch arrives with the catch Nod ([#256](https://github.com/timemir/pagle-addon/issues/256)), which [#437](https://github.com/timemir/pagle-addon/issues/437) made the catch toast, Animations with the art kit's motion. Every row here is a native checkbox, slider or Core's own slot dropdown row (SET-R5, SET-R51), so nothing is written onto Blizzard's rows (SET-R6).
 - **SET-R31** A greyed-out row keeps its value. Each row's greying is re-evaluated on its own condition (SET-R61): turning Cozy mode off makes Interruption budget and Show every catch live again, and Interruptions and Per too unless the budget is off. *From 1.2.0,* a `checkboxSlider` row can't grey: its control (SettingsCheckboxSliderControlMixin) never reads its initializer's modify predicates. So while its `isEnabled` returns false it is hidden instead (`AddShownPredicate`), keeping its values; the panel lays the page out again after every value change (SettingsPanelMixin:OnSettingValueChanged), so it goes and comes back at once, as Game › Subtitles' rows do. The audio mix's channel rows are the only ones (SET-R20).
@@ -185,7 +185,7 @@ The rules below are authoritative; this sketch only summarises them.
 
   Neither is greyed out in Cozy mode: the Nod then goes to the Session summary (ANN-R40), as moments do. The second row is registered only while Hunts' companion hint switch is on (HNT-R172), which it is at 1.0, so 1.0's section has both rows. *Default chosen while building (#305): hunts.md › Settings put it on a "Hunts" page, which Settings doesn't have (SET-R1); it governs a reminder and its Nod, so it sits here after the window row. Dismissing the hint on the board turns it off; turning it on brings the hint and the Nod back.* No other Module adds rows to Announcements: the Ledger has no rows, Stats raises no moments (STA-R2), and the Tackle Board's and QoL's sections are on other pages.
 - **SET-R33** The Announcements page's Defaults button restores every row of SET-R30 and SET-R32 to its default, the two looks included (SET-R60), and so the companion row, while it is registered, to on. It leaves the Toast position button alone (SET-R34).
-- **SET-R34** The Announcements page ends Core's rows with "Toast position", a button "Reset" that clears the saved foot and puts the Toast column back at the bottom of the screen (ANN-R98). Tooltip: "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen." It is never greyed out; pressed while restricted, it does nothing, since the column never moves then (ANN-R98). It is a button, not a value row, so Defaults leaves it (SET-R60).
+- **SET-R34** The Announcements page ends Core's rows with "Toast position", a button "Reset" that clears the saved foot and puts the Toast column back at the bottom of the screen (ANN-R98), and, from 1.2.1, clears the card's saved point and puts it back centre-screen (ANN-R102). Tooltip: "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started." It is never greyed out; pressed while restricted, it does nothing, since neither moves then (ANN-R98, ANN-R102). It is a button, not a value row, so Defaults leaves it (SET-R60).
 
 ### Trackers
 
@@ -271,7 +271,7 @@ This file adds no data. Each row's value lives with its owner:
 | Cozy mode, the budget, Show every catch, Animations | `PagleDB.profile.announcements` |
 | Every slot dropdown | `PagleDB.profile.appearance[slot]` (SHOP-R32) |
 | Tracker position | `PagleDB.profile.dock.point` (Core README Data) |
-| Toast position | `PagleDB.profile.announcements.point` (ANN-R98) |
+| Toast position | `PagleDB.profile.announcements.point` (ANN-R98) and `PagleDB.profile.cards.point` (ANN-R102) |
 | Fishing | `PagleQoLDB` (qol.md Data), the fishing set per character in `global.gear[guid]` |
 | Hunts' rows | `PagleHuntsDB.profile.tracker.shown`, `profile.windowMoments`, `profile.companionHint` (only while its switch is on, HNT-R172) |
 | Stats' rows | `PagleStatsDB.profile.tracker`, `profile.watched` |

@@ -417,6 +417,10 @@ en = 'Pagle Coins +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 value = "Cerrar"
 en = "Close"
 
+[SHIFT_DRAG_HINT]
+value = "Arrastra con Mayús para mover"
+en = "Shift-drag to move"
+
 [TOAST_SAMPLE_TITLE]
 value = "Nueva Especie"
 en = "New Species"
@@ -1966,8 +1970,8 @@ value = "Arrastra con Mayús cualquier rastreador de Pagle para moverlos todos. 
 en = "Shift-drag any Pagle tracker to move them all. This puts them back under the minimap."
 
 [SETTINGS_TOAST_RESET_TOOLTIP]
-value = "Arrastra con Mayús un aviso emergente para mover los avisos emergentes y los Gestos. Esto los devuelve a la parte inferior de la pantalla."
-en = "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen."
+value = "Arrastra con Mayús un aviso emergente para mover los avisos emergentes y los Gestos, o el Resumen de sesión para moverlo. Esto los devuelve a todos a su sitio."
+en = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started."
 
 [SETTINGS_RELOAD_REMINDER_TOOLTIP]
 value = "Una línea en el chat cada {reloadReminderStep:0} Lances sin guardar. WoW solo guarda al hacer /reload o cerrar sesión, así que un cierre inesperado los pierde."

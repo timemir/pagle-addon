@@ -210,25 +210,29 @@ describe("The Toast position row", function()
 
 		assert.are.equal("Reset", reset:GetText())
 		assert.are.equal(
-			"Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen.",
+			"Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back"
+				.. " where they started.",
 			row(loaded, TOAST_POSITION):GetTooltip()
 		)
 		assert.are.same({}, row(loaded, TOAST_POSITION).modifyPredicates)
 		assert.is_true(reset:IsEnabled())
 	end)
 
-	it("clears the saved foot when pressed (SET-R30, ANN-R98)", function()
+	it("clears the saved foot and the card's saved point when pressed (SET-R30, ANN-R98, ANN-R102)", function()
 		local loaded = login(core())
 		stored(loaded).point = { x = 120, y = 400 }
+		loaded.ns.db.profile.cards = { point = { x = 200, y = 150 } }
 
 		toastReset(loaded):Click()
 
 		assert.is_nil(stored(loaded).point)
+		assert.is_nil(loaded.ns.db.profile.cards.point)
 	end)
 
 	it("does nothing while restricted, though it isn't greyed out (SET-R93, ANN-R98)", function()
 		local loaded = login(core())
 		stored(loaded).point = { x = 120, y = 400 }
+		loaded.ns.db.profile.cards = { point = { x = 200, y = 150 } }
 		local reset = toastReset(loaded)
 		setCombat(loaded, true)
 
@@ -236,6 +240,7 @@ describe("The Toast position row", function()
 		reset:Click()
 
 		assert.are.same({ x = 120, y = 400 }, stored(loaded).point)
+		assert.are.same({ x = 200, y = 150 }, loaded.ns.db.profile.cards.point)
 	end)
 end)
 

@@ -140,10 +140,11 @@ ns.CoreSettingsRows.announcements = function(page, layout)
 		ns.SlotDropdown(page, layout, slot, "announcements")
 	end
 
-	-- Where toasts and Nods appear (ANN-R98): a button that puts the column back at the bottom of the screen. Never
-	-- greyed out; pressed while restricted it does nothing. A button row isn't a value row, so Defaults leaves it
-	-- alone (SET-R60).
+	-- Where toasts and Nods appear (ANN-R98) and the card (ANN-R102): a button that puts the column back at the bottom
+	-- of the screen and the card back in the centre. Never greyed out; pressed while restricted it does nothing. A
+	-- button row isn't a value row, so Defaults leaves it alone (SET-R60).
 	layout:AddInitializer(CreateSettingsButtonInitializer(L.SETTINGS_TOAST_POSITION, L.SETTINGS_TOAST_RESET, function()
 		ns.ResetToastColumn()
+		ns.ResetCard()
 	end, L.SETTINGS_TOAST_RESET_TOOLTIP, true))
 end

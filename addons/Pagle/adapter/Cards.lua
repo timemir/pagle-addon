@@ -7,8 +7,8 @@ if not Pagle then
 end
 
 -- The cards on the client (announcements.md › Session summary, › Write-up, › UI): logic/Cards.lua over
--- PagleDB.global, the projection machinery's idle hook and the lanes' empty state, drawing each card centre-screen,
--- closed with its button, its corner's close mark or Esc. The look is the announcements art kit's session card
+-- PagleDB.global, the projection machinery's idle hook and the lanes' empty state, drawing each card centre-screen
+-- until the Angler moves it with a Shift-drag (ANN-R102), closed with its button, its corner's close mark or Esc. The look is the announcements art kit's session card
 -- (adapter/Art.lua), the same in every toast style: a page torn from the ledger under a leather head with the gilt
 -- title, Core's numbers in the Angler's hand, then the rows on the page's ruled lines.
 local L = ns.L
@@ -63,10 +63,123 @@ local DETAIL_SIZE = 20
 ---@field content Frame
 ---@field rows PagleCardRowView[]
 ---@field close Button
+---@field moveHint FontString "Shift-drag to move", beside the close button (ANN-R102)
 
 --- The card frame, made the first time a card shows.
 ---@type PagleCardFrame?
 ns.cardFrame = nil
+
+-- Whether a Shift-drag is moving the card frame now (ANN-R102).
+local dragging = false
+
+--- Where the card stands (ANN-R102): its CENTER, `x` right of and `y` above UIParent's CENTER, in UIParent's units.
+--- `profile.cards.point` is one.
+---@class PagleCardPoint
+---@field x number
+---@field y number
+
+-- A finite number.
+---@param value any
+---@return boolean
+local function finite(value)
+	return type(value) == "number" and value > -math.huge and value < math.huge
+end
+
+-- The card's saved point, `profile.cards.point` (ANN-R102), or nil: none, or a value that isn't `{ x, y }` of two
+-- finite numbers. Read from the profile each time, so a profile change is followed.
+---@return PagleCardPoint?
+local function savedPoint()
+	local cards = ns.db and ns.db.profile.cards
+	local point = type(cards) == "table" and cards.point or nil
+	if type(point) == "table" and finite(point.x) and finite(point.y) then
+		return { x = point.x, y = point.y }
+	end
+	return nil
+end
+
+-- Saves `point` as the card's, `profile.cards.point`, or clears it with nil. The profile's defaults (logic/Migrations.lua)
+-- have no `cards`, so the table is made here.
+---@param point PagleCardPoint?
+local function savePoint(point)
+	local profile = ns.db and ns.db.profile
+	if not profile then
+		return
+	end
+	local cards = profile.cards
+	if type(cards) ~= "table" then
+		cards = {}
+		profile.cards = cards
+	end
+	cards.point = point
+end
+
+-- `point` moved the least that keeps the whole card, `height` tall, on the screen as it is now (ANN-R102).
+-- A screen too narrow or too short for it centres it that way.
+---@param point PagleCardPoint
+---@param height number the card's height
+---@return PagleCardPoint
+local function clampPoint(point, height)
+	local roomX = math.max(UIParent:GetWidth() / 2 - WIDTH / 2, 0)
+	local roomY = math.max(UIParent:GetHeight() / 2 - height / 2, 0)
+	return { x = math.max(-roomX, math.min(roomX, point.x)), y = math.max(-roomY, math.min(roomY, point.y)) }
+end
+
+-- Puts the card frame at its saved point, or centre-screen with none, clamped to the screen as it is now and to the
+-- card's height (ANN-R102); the saved value is left as it is. Leaves it to the pointer during a drag.
+---@param frame PagleCardFrame
+local function place(frame)
+	if dragging then
+		return
+	end
+	local point = clampPoint(savedPoint() or { x = 0, y = 0 }, frame:GetHeight() or 0)
+	frame:ClearAllPoints()
+	frame:SetPoint("CENTER", UIParent, "CENTER", point.x, point.y)
+end
+
+-- A drag of the card (ANN-R102): with Shift held and outside restriction, the card follows the pointer.
+---@param frame PagleCardFrame
+local function startDrag(frame)
+	if dragging or not IsShiftKeyDown() or Pagle.IsRestricted() then
+		return
+	end
+	dragging = true
+	frame:StartMoving()
+end
+
+-- Ends a drag in progress where the card is now: its centre, kept on the screen, is saved to `profile.cards.point`
+-- (ANN-R102). Nothing with no drag in progress.
+---@param frame PagleCardFrame
+local function endDrag(frame)
+	if not dragging then
+		return
+	end
+	dragging = false
+	frame:StopMovingOrSizing()
+	-- The frame is named (UISpecialFrames), so the client would keep it in its layout cache: profile.cards.point is
+	-- the one place its position is kept.
+	frame:SetUserPlaced(false)
+	local x, y = frame:GetCenter()
+	if x and y then
+		savePoint(
+			clampPoint({ x = x - UIParent:GetWidth() / 2, y = y - UIParent:GetHeight() / 2 }, frame:GetHeight() or 0)
+		)
+	end
+	place(frame)
+end
+
+--- The Announcements page's Toast position Reset, for the card (SET-R34, ANN-R102): clears `profile.cards.point` and
+--- puts the card back centre-screen, the one on screen with it. While restricted it does nothing. True when it did.
+---@return boolean
+function ns.ResetCard()
+	if Pagle.IsRestricted() then
+		return false
+	end
+	savePoint(nil)
+	if ns.cardFrame then
+		place(ns.cardFrame)
+	end
+	return true
+end
 
 -- The player closed the card on screen, with a button or Esc: logic/Cards.lua removes it and shows the next.
 ---@param frame PagleCardFrame
@@ -242,10 +355,15 @@ end
 ---@return PagleCardFrame
 local function build()
 	local frame = CreateFrame("Frame", FRAME_NAME, UIParent) --[[@as PagleCardFrame]]
-	frame:SetPoint("CENTER")
 	frame:SetWidth(WIDTH)
 	frame:SetFrameStrata("MEDIUM")
 	frame:EnableMouse(true)
+	-- A Shift-drag on the page moves it (ANN-R102); its buttons take their own clicks.
+	frame:SetMovable(true)
+	frame:SetClampedToScreen(true)
+	frame:RegisterForDrag("LeftButton")
+	frame:SetScript("OnDragStart", startDrag)
+	frame:SetScript("OnDragStop", endDrag)
 	local function close()
 		closed(frame)
 	end
@@ -321,16 +439,33 @@ local function build()
 	frame.close = giltButton(frame, close)
 	frame.close:SetPoint("BOTTOM", frame, "BOTTOM", 0, CLOSE_BOTTOM)
 	frame.close:SetFrameLevel(frame.foot:GetFrameLevel() + 2)
+	-- "Shift-drag to move" in small print right of the close button, as wide as the room there (ANN-R102); on the
+	-- close button's level, over the foot's art.
+	local hintRoom = (WIDTH - frame.close:GetWidth()) / 2 - 34 - 12
+	frame.moveHint = ns.ArtText(frame.close, "CardNumLabel")
+	frame.moveHint:SetText(L.SHIFT_DRAG_HINT)
+	frame.moveHint:SetJustifyH("RIGHT")
+	frame.moveHint:SetWidth(0) -- measured unbounded
+	-- A longer one wraps to a second line, both beside the button.
+	frame.moveHint:SetWordWrap(true)
+	frame.moveHint:SetWidth(math.min(frame.moveHint:GetStringWidth(), hintRoom))
+	frame.moveHint:SetPoint("RIGHT", frame, "BOTTOMRIGHT", -34, CLOSE_BOTTOM + 22)
 
 	-- Esc hides it (CloseSpecialWindows). Hiding UIParent (Alt-Z, a cinematic) also runs OnHide but leaves it shown:
 	-- that isn't the player closing it.
 	frame:SetScript("OnHide", function(self)
+		-- A drag in progress ends where it is and is saved, as a drop: restriction hides the card (ANN-R35, ANN-R102).
+		endDrag(self)
 		if not self:IsShown() then
 			closed(self)
 		end
 	end)
 	table.insert(UISpecialFrames, FRAME_NAME)
 	frame:Hide()
+	-- Kept on the screen when it changes size (ANN-R102).
+	UIParent:HookScript("OnSizeChanged", function()
+		place(frame)
+	end)
 	return frame
 end
 
@@ -432,6 +567,7 @@ local function show(card)
 	local body = page - FOOT
 	layBody(frame, body)
 	frame:SetHeight(HEAD + body + FOOT)
+	place(frame)
 	frame:Show()
 	-- ONB-R52: the first Session summary's Margin note, adapter/MarginNotes.lua's, looked up when called.
 	if ns.NoteCard then

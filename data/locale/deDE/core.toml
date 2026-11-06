@@ -342,8 +342,8 @@ value = "Zurücksetzen"
 en = "Reset"
 
 [SETTINGS_TOAST_RESET_TOOLTIP]
-value = "Ziehe eine Einblendung mit gedrückter Umschalttaste, um Einblendungen und Winke zu verschieben. Dies setzt sie wieder an den unteren Bildschirmrand."
-en = "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen."
+value = "Ziehe eine Einblendung mit gedrückter Umschalttaste, um Einblendungen und Winke zu verschieben, oder die Sitzungsübersicht, um sie zu verschieben. Dies setzt alle wieder an ihren Ausgangsplatz."
+en = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started."
 
 [SETTINGS_NO_MODULE]
 value = "Deine Fänge werden aufgezeichnet. Aktiviere ein Modul, um sie zu sehen."
@@ -666,6 +666,10 @@ en = "Pagle Coins +{coins} |TInterface\\MoneyFrame\\UI-GoldIcon:0|t"
 [CARD_CLOSE]
 value = "Schließen"
 en = "Close"
+
+[SHIFT_DRAG_HINT]
+value = "Ziehe mit Umschalttaste zum Verschieben"
+en = "Shift-drag to move"
 
 [TOAST_SAMPLE_TITLE]
 value = "Neue Art"

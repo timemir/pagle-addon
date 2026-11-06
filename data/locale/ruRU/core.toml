@@ -342,8 +342,8 @@ value = "Сбросить"
 en = "Reset"
 
 [SETTINGS_TOAST_RESET_TOOLTIP]
-value = "Перетащите плашку с Shift, чтобы сдвинуть плашки и кивки. Эта кнопка вернёт их к нижнему краю экрана."
-en = "Shift-drag a toast to move the toasts and Nods. This puts them back at the bottom of the screen."
+value = "Перетащите плашку с Shift, чтобы сдвинуть плашки и кивки, или итоги сессии, чтобы сдвинуть их. Эта кнопка вернёт всё на свои места."
+en = "Shift-drag a toast to move the toasts and Nods, or the Session summary to move it. This puts them all back where they started."
 
 [SETTINGS_NO_MODULE]
 value = "Ваши уловы записываются. Включите модуль, чтобы их увидеть."
@@ -666,6 +666,10 @@ en = 'Pagle Coins +{coins} |TInterface\MoneyFrame\UI-GoldIcon:0|t'
 [CARD_CLOSE]
 value = "Закрыть"
 en = "Close"
+
+[SHIFT_DRAG_HINT]
+value = "Перетащите с Shift, чтобы сдвинуть"
+en = "Shift-drag to move"
 
 [TOAST_SAMPLE_TITLE]
 value = "Новый вид"
