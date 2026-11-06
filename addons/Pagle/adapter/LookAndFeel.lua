@@ -67,8 +67,13 @@ local function widgets(frame)
 		local note = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 		note:SetPoint("TOPLEFT", dropdown, "BOTTOMLEFT", 2, -2)
 		note:SetJustifyH("LEFT")
-		-- Measures the goods' names in the dropdown's font, hidden, so the dropdown's own text is never changed.
+		-- Measures the goods' names in the dropdown's font (its template's Text's, else the small highlight font it
+		-- inherits), hidden, so the dropdown's own text is never changed.
 		local measure = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		local shown = (dropdown --[[@as table]]).Text --[[@as FontString?]]
+		if shown and shown.GetFontObject and shown:GetFontObject() then
+			measure:SetFontObject(shown:GetFontObject())
+		end
 		measure:SetWordWrap(false)
 		measure:Hide()
 		own = { label = label, dropdown = dropdown, note = note, measure = measure }
