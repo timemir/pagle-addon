@@ -689,24 +689,97 @@ describe("the Angler page's Where your XP came from", function()
 		end
 	)
 
-	-- A longer language's column heads were cut to "Est…" in their 84 (#560): a head too wide for its column is set
-	-- smaller, and only cut past the smallest size.
-	it(
-		"led_r150 sets column heads too wide for their column smaller, both alike, and the kit's at the kit's size",
-		function()
-			local _, loaded = anglerPage()
-			local head = loaded.ns.journal.shown.right.drawn.xpSource[1]
-			assert.are.equal(12.5, head.climb.fontObject.font[2])
+	-- The tally's note was held to 0.6 of the line whatever its heading left: German "7% des Anglerbuchs vollständig
+	-- (14 von 1…" was cut beside "Das Anglerbuch" (1.1.1). It takes what the heading's words leave.
+	it("led_r146 gives the tally's completion the room its heading leaves, at least 0.6 of the line", function()
+		local _, loaded = anglerPage()
+		loaded.ns.L.ANGLER_TALLY = "Das Anglerbuch"
+		loaded.ns.L.ANGLER_COMPLETE =
+			"{percent:0}% des Anglerbuchs vollständig ({angler_complete_2} von {angler_complete_3})"
 
-			loaded.ns.L.ANGLER_XP_CLIMB = "Ŧĥîš çļîɱƀ šô ƒàŕ"
-			loaded.ns.journal:Draw()
+		loaded.ns.journal:Draw()
 
-			head = loaded.ns.journal.shown.right.drawn.xpSource[1]
-			local size = head.climb.fontObject.font[2]
-			assert(size < 12.5 and size >= 9, ("set smaller, to %s"):format(size))
-			assert.are.equal(size, head.total.fontObject.font[2], "the other head is set alike")
+		local tally
+		for _, widget in ipairs(loaded.ns.journal.shown.left.drawn.kicker) do
+			if widget.label:GetText() == "Das Anglerbuch" then
+				tally = widget
+			end
 		end
-	)
+		local width = loaded.ns.journal.shown.left.width
+		local words = tally.note:GetStringWidth()
+		assert(words + 1 > width * 0.6, "the German is wider than 0.6 of the line")
+		assert.are.equal(words + 1, tally.note:GetWidth(), "as wide as its words")
+		assert(tally.label:GetWidth() + 8 + tally.note:GetWidth() <= width, "beside the heading's words")
+		assert.are.equal(#"Das Anglerbuch" * 6 + 1, tally.label:GetWidth(), "which keep theirs")
+	end)
+
+	-- A longer language's column heads were cut to "Est…" in their 84 (#560), and German "DIESER AUFSTI…" even after
+	-- they were set smaller to one line (1.1.1). Heads too wide for their column wrap onto two lines, both alike, the
+	-- header standing that much taller; only a word wider than the column is set smaller. The client's measures stood
+	-- in: small capitals run near half their size a letter, a line stands 14 tall.
+	local function measuredHeads(head)
+		for _, label in ipairs({ head.climb, head.total }) do
+			function label.GetStringWidth(self)
+				local letters = select(2, (self.text or ""):gsub("[^\128-\191]", ""))
+				return letters * 0.5 * self.fontObject.font[2]
+			end
+			function label.GetStringHeight(self)
+				local wrapped = self.wordWrap and (self.width or 0) > 0 and self:GetStringWidth() > self.width
+				return wrapped and 28 or 14
+			end
+		end
+	end
+
+	it("led_r150 wraps column heads too wide for their column onto two lines, both alike, the kit's as the kit", function()
+		local _, loaded = anglerPage()
+		local head = loaded.ns.journal.shown.right.drawn.xpSource[1]
+		measuredHeads(head)
+		loaded.ns.journal:Draw()
+		assert.are.same({ 12.5, false, false }, { head.climb.fontObject.font[2], head.climb.wordWrap, head.total.wordWrap })
+		-- how far under the head the first line starts
+		local function below()
+			local drawn = loaded.ns.journal.shown.right.drawn.xpSource
+			local top = function(region)
+				return -region.points[1][#region.points[1]]
+			end
+			return top(drawn[2]) - top(drawn[1])
+		end
+		local english = below()
+
+		loaded.ns.L.ANGLER_XP_CLIMB = "Dieser Aufstieg"
+		loaded.ns.L.ANGLER_XP_ALL = "Insgesamt"
+		loaded.ns.journal:Draw()
+
+		head = loaded.ns.journal.shown.right.drawn.xpSource[1]
+		local room = 84 - 6
+		assert(15 * 0.5 * 12.5 > room, "the German head is wider than its column")
+		assert.are.same({ 12.5, true, 2, room }, {
+			head.climb.fontObject.font[2],
+			head.climb.wordWrap,
+			head.climb.maxLines,
+			head.climb:GetWidth(),
+		})
+		assert.are.same({ 12.5, true }, { head.total.fontObject.font[2], head.total.wordWrap })
+		assert.are.equal("Dieser Aufstieg", head.climb:GetText())
+		-- the next line starts under the head's two lines
+		assert.are.equal(english + 14, below())
+	end)
+
+	it("led_r150 sets a word wider than its column smaller, both heads alike", function()
+		local _, loaded = anglerPage()
+		measuredHeads(loaded.ns.journal.shown.right.drawn.xpSource[1])
+		loaded.ns.L.ANGLER_XP_CLIMB = "Ŧĥîšçļîɱƀšôƒàŕ ŵîðé"
+		loaded.ns.journal:Draw()
+
+		local head = loaded.ns.journal.shown.right.drawn.xpSource[1]
+		local size = head.climb.fontObject.font[2]
+		assert(14 * 0.5 * 12.5 + 1 > 78, "its first word is wider than the column")
+		assert(size < 12.5 and size >= 9, ("set smaller, to %s"):format(size))
+		head.climb:SetText("Ŧĥîšçļîɱƀšôƒàŕ")
+		assert(head.climb:GetStringWidth() + 1 <= 78, "until it fits")
+		assert.are.equal(size, head.total.fontObject.font[2], "the other head is set alike")
+		assert.is_true(head.climb.wordWrap)
+	end)
 
 	it("shows only the Ledger's own line with no source reported yet (LED-R150)", function()
 		local _, loaded = anglerPage()

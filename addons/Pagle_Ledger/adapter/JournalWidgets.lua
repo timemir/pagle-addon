@@ -184,7 +184,15 @@ makers.kicker = function(parent)
 		self.label:SetText(block.text)
 		self.note:SetText(block.value or "")
 		self.note:SetShown(group and block.value ~= nil)
-		local noteW = block.value and group and math.min(self.note:GetStringWidth() + 1, width * 0.6) or 0
+		-- the note as wide as its words, to what the heading's words leave, and at least 0.6 of the line (German "7% des
+		-- Anglerbuchs vollständig (14 von 189)" was cut at 0.6 beside a short heading, 1.1.1); both measured unbounded
+		local noteW = 0
+		if block.value and group then
+			self.label:SetWidth(0)
+			self.note:SetWidth(0)
+			local room = math.max(width * 0.6, width - (self.label:GetStringWidth() + 1) - 8)
+			noteW = math.min(self.note:GetStringWidth() + 1, room)
+		end
 		self.note:SetWidth(math.max(1, noteW))
 		bound(self.label, width - noteW - (noteW > 0 and 8 or 0))
 		self.rule:SetShown(group)
@@ -504,6 +512,19 @@ end
 local XP_COLUMN_W = 84
 local XP_HEAD_FLOOR = 9
 
+-- The widest of `label`'s words, each measured on its own through the label, which is then given back its text.
+---@param label FontString
+---@return number
+local function widestWordOf(label)
+	local text, widest = label:GetText() or "", 0
+	for word in text:gmatch("%S+") do
+		label:SetText(word)
+		widest = math.max(widest, label:GetStringWidth())
+	end
+	label:SetText(text)
+	return widest
+end
+
 -- A line of "Where your XP came from" (LED-R150): its source's name, then this climb's XP and all told's in two
 -- columns at the right; with `header`, the columns' heads in small capitals; with `off` (its Module is off, AXP-R90),
 -- greyed and struck through in red ink, as the Curio Shop's purse strikes a Module that is off.
@@ -538,27 +559,52 @@ makers.xpSource = function(parent)
 		self.total:SetText(block.total or "")
 		-- the columns from the right: all told at the edge, this climb before it, the name in what is left
 		local column = math.min(XP_COLUMN_W, width / 4)
+		local room, wrapped = column - 6, false
+		for _, head in ipairs({ self.climb, self.total }) do
+			head:SetWordWrap(false)
+		end
 		if header then
-			-- heads too wide for their column (a longer language's) are set smaller, both alike, to XP_HEAD_FLOOR; past
-			-- it the client cuts them (#560)
-			local widest = 0
+			-- heads too wide for their column (a longer language's), measured unbounded, wrap onto two lines, both alike
+			-- (#560 set them smaller to one line, and German "DIESER AUFSTI…" was cut even so, 1.1.1); they are set
+			-- smaller only where a word is wider than the column, to XP_HEAD_FLOOR, past which the client cuts it
+			local widest, widestWord = 0, 0
 			for _, head in ipairs({ self.climb, self.total }) do
 				head:SetWidth(0)
 				widest = math.max(widest, head:GetStringWidth())
+				widestWord = math.max(widestWord, widestWordOf(head))
 			end
-			if widest > column - 6 then
-				local fit = math.max(XP_HEAD_FLOOR, math.floor(size * (column - 6) / widest * 2) / 2)
-				ns.JournalRestyle(self.climb, face, fit, figure)
-				ns.JournalRestyle(self.total, face, fit, figure)
+			if widest + 1 > room then
+				wrapped = true
+				local fit = size
+				if widestWord + 1 > room then
+					fit = math.max(XP_HEAD_FLOOR, math.floor(size * room / (widestWord + 1) * 2) / 2)
+				end
+				for _, head in ipairs({ self.climb, self.total }) do
+					ns.JournalRestyle(head, face, fit, figure)
+					head:SetWordWrap(true)
+					head:SetMaxLines(2)
+				end
+			end
+		end
+		-- the heads' one line, measured unbounded, to know how much taller two stand
+		local oneLine = 0
+		if wrapped then
+			for _, head in ipairs({ self.climb, self.total }) do
+				head:SetWidth(0)
+				oneLine = math.max(oneLine, head:GetStringHeight())
 			end
 		end
 		self.total:ClearAllPoints()
 		self.total:SetPoint("TOPRIGHT", self, "TOPLEFT", width, header and -4 or -3)
 		self.climb:ClearAllPoints()
 		self.climb:SetPoint("TOPRIGHT", self, "TOPLEFT", width - column, header and -4 or -3)
-		bound(self.total, column - 6)
-		bound(self.climb, column - 6)
+		bound(self.total, room)
+		bound(self.climb, room)
 		bound(self.label, math.max(1, width - 2 * column - 6))
+		local drop = 0
+		if wrapped then
+			drop = math.max(0, self.climb:GetStringHeight() - oneLine, self.total:GetStringHeight() - oneLine)
+		end
 		for _, strike in ipairs(self.strikes) do
 			strike:SetShown(off)
 		end
@@ -566,7 +612,7 @@ makers.xpSource = function(parent)
 		if same and before and before ~= block.value then
 			ns.JournalInk(self.climb)
 		end
-		return header and 20 or 22
+		return header and 20 + drop or 22
 	end
 	return widget
 end
